@@ -106,13 +106,13 @@ GridVolumeRegion::GridVolumeRegion(Rgb sa, Rgb ss, Rgb le, float gg, Point3 pmin
 		short i_0 = 0, i_1 = 0;
 		input_stream.read((char *)&i_0, 1);
 		input_stream.read((char *)&i_1, 1);
-		Y_VERBOSE << "GridVolume: " << i_0 << " " << i_1 << YENDL;
+		if(Y_LOG_HAS_VERBOSE) Y_VERBOSE << "GridVolume: " << i_0 << " " << i_1 << YENDL;
 		dim[i] = (((unsigned short)i_0 << 8) | (unsigned short)i_1);
 	}
 
 	int size_per_voxel = file_size / (dim[0] * dim[1] * dim[2]);
 
-	Y_VERBOSE << "GridVolume: " << dim[0] << " " << dim[1] << " " << dim[2] << " " << file_size << " " << size_per_voxel << YENDL;
+	if(Y_LOG_HAS_VERBOSE) Y_VERBOSE << "GridVolume: " << dim[0] << " " << dim[1] << " " << dim[2] << " " << file_size << " " << size_per_voxel << YENDL;
 
 	size_x_ = dim[0];
 	size_y_ = dim[1];
@@ -153,11 +153,11 @@ GridVolumeRegion::GridVolumeRegion(Rgb sa, Rgb ss, Rgb le, float gg, Point3 pmin
 		}
 	}
 
-	Y_VERBOSE << "GridVolume: Vol.[" << s_a_ << ", " << s_s_ << ", " << l_e_ << "]" << YENDL;
+	if(Y_LOG_HAS_VERBOSE) Y_VERBOSE << "GridVolume: Vol.[" << s_a_ << ", " << s_s_ << ", " << l_e_ << "]" << YENDL;
 }
 
 GridVolumeRegion::~GridVolumeRegion() {
-	Y_VERBOSE << "GridVolume: Freeing grid data" << YENDL;
+	if(Y_LOG_HAS_VERBOSE) Y_VERBOSE << "GridVolume: Freeing grid data" << YENDL;
 
 	for(int x = 0; x < size_x_; ++x)
 	{

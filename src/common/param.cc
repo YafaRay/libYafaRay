@@ -224,9 +224,12 @@ std::string ParamMap::print() const
 
 void ParamMap::printDebug() const
 {
-	for(const auto &it : dicc_)
+	if(Y_LOG_HAS_DEBUG)
 	{
-		Y_DEBUG << "'" + it.first + "' (" + it.second.printType() + ") = '" + it.second.print() + "'\n";
+		for(const auto &it : dicc_)
+		{
+			Y_DEBUG << "'" + it.first + "' (" + it.second.printType() + ") = '" + it.second.print() + "'\n";
+		}
 	}
 }
 

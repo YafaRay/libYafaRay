@@ -53,11 +53,11 @@ DarkSkyBackground::DarkSkyBackground(const Point3 dir, float turb, float pwr, fl
 	theta_s_ = math::acos(sun_dir_.z_);
 
 	act = (night_sky_) ? "ON" : "OFF";
-	Y_VERBOSE << "DarkSky: Night mode [ " << act << " ]" << YENDL;
-	Y_VERBOSE << "DarkSky: Solar Declination in Degrees (" << math::radToDeg(theta_s_) << ")" << YENDL;
+	if(Y_LOG_HAS_VERBOSE) Y_VERBOSE << "DarkSky: Night mode [ " << act << " ]" << YENDL;
+	if(Y_LOG_HAS_VERBOSE) Y_VERBOSE << "DarkSky: Solar Declination in Degrees (" << math::radToDeg(theta_s_) << ")" << YENDL;
 	act = (clamp) ? "active." : "inactive.";
-	Y_VERBOSE << "DarkSky: RGB Clamping " << act << YENDL;
-	Y_VERBOSE << "DarkSky: Altitude " << alt_ << YENDL;
+	if(Y_LOG_HAS_VERBOSE) Y_VERBOSE << "DarkSky: RGB Clamping " << act << YENDL;
+	if(Y_LOG_HAS_VERBOSE) Y_VERBOSE << "DarkSky: Altitude " << alt_ << YENDL;
 
 	cos_theta_s_ = math::cos(theta_s_);
 	cos_theta_2_ = cos_theta_s_ * cos_theta_s_;
@@ -221,7 +221,7 @@ std::shared_ptr<Background> DarkSkyBackground::factory(ParamMap &params, Scene &
 	bool cast_shadows = true;
 	bool cast_shadows_sun = true;
 
-	Y_VERBOSE << "DarkSky: Begin" << YENDL;
+	if(Y_LOG_HAS_VERBOSE) Y_VERBOSE << "DarkSky: Begin" << YENDL;
 
 	params.getParam("from", dir);
 	params.getParam("turbidity", turb);
@@ -274,7 +274,7 @@ std::shared_ptr<Background> DarkSkyBackground::factory(ParamMap &params, Scene &
 		Rgb suncol = dark_sky->getAttenuatedSunColor();
 		double angle = 0.5 * (2.0 - d.z_);
 
-		Y_VERBOSE << "DarkSky: SunColor = " << suncol << YENDL;
+		if(Y_LOG_HAS_VERBOSE) Y_VERBOSE << "DarkSky: SunColor = " << suncol << YENDL;
 
 		ParamMap p;
 		p["type"] = std::string("sunlight");
@@ -287,7 +287,7 @@ std::shared_ptr<Background> DarkSkyBackground::factory(ParamMap &params, Scene &
 		p["with_caustic"] = caus;
 		p["with_diffuse"] = diff;
 
-		Y_VERBOSE << "DarkSky: Adding a \"Real Sun\"" << YENDL;
+		if(Y_LOG_HAS_VERBOSE) Y_VERBOSE << "DarkSky: Adding a \"Real Sun\"" << YENDL;
 
 		scene.createLight("DarkSky_RealSun", p);
 	}
@@ -301,14 +301,14 @@ std::shared_ptr<Background> DarkSkyBackground::factory(ParamMap &params, Scene &
 		bgp["with_diffuse"] = diff;
 		bgp["cast_shadows"] = cast_shadows;
 
-		Y_VERBOSE << "DarkSky: Adding background light" << YENDL;
+		if(Y_LOG_HAS_VERBOSE) Y_VERBOSE << "DarkSky: Adding background light" << YENDL;
 
 		Light *bglight = scene.createLight("DarkSky_bgLight", bgp);
 
 		bglight->setBackground(dark_sky);
 	}
 
-	Y_VERBOSE << "DarkSky: End" << YENDL;
+	if(Y_LOG_HAS_VERBOSE) Y_VERBOSE << "DarkSky: End" << YENDL;
 
 	return dark_sky;
 }

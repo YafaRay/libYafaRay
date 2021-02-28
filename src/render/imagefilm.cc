@@ -48,7 +48,11 @@ typedef float FilterFunc_t(float dx, float dy);
 
 std::unique_ptr<ImageFilm> ImageFilm::factory(const ParamMap &params, Scene *scene)
 {
-	Y_DEBUG PRTEXT(**ImageFilm::factory) PREND; params.printDebug();
+	if(Y_LOG_HAS_DEBUG)
+	{
+		Y_DEBUG PRTEXT(**ImageFilm::factory) PREND;
+		params.printDebug();
+	}
 	std::string name;
 	std::string tiles_order;
 	int width = 320, height = 240, xstart = 0, ystart = 0;
@@ -79,14 +83,14 @@ std::unique_ptr<ImageFilm> ImageFilm::factory(const ParamMap &params, Scene *sce
 	params.getParam("film_autosave_interval_passes", film_load_save.auto_save_.interval_passes_);
 	params.getParam("film_autosave_interval_seconds", film_load_save.auto_save_.interval_seconds_);
 
-	Y_DEBUG << "Images autosave: " << images_autosave_interval_type_string << ", " << images_autosave_params.interval_passes_ << ", " << images_autosave_params.interval_seconds_ << YENDL;
+	if(Y_LOG_HAS_DEBUG) Y_DEBUG << "Images autosave: " << images_autosave_interval_type_string << ", " << images_autosave_params.interval_passes_ << ", " << images_autosave_params.interval_seconds_ << YENDL;
 
 	if(images_autosave_interval_type_string == "pass-interval") images_autosave_params.interval_type_ = ImageFilm::ImageFilm::AutoSaveParams::IntervalType::Pass;
 	else if(images_autosave_interval_type_string == "time-interval") images_autosave_params.interval_type_ = ImageFilm::AutoSaveParams::IntervalType::Time;
 	else images_autosave_params.interval_type_ = ImageFilm::AutoSaveParams::IntervalType::None;
 
 
-	Y_DEBUG << "ImageFilm load/save mode: " << film_load_save_mode_str << ", path:'" << film_load_save.path_ << "', interval: " << film_autosave_interval_type_str << ", " << film_load_save.auto_save_.interval_passes_ << ", " << film_load_save.auto_save_.interval_seconds_ << YENDL;
+	if(Y_LOG_HAS_DEBUG) Y_DEBUG << "ImageFilm load/save mode: " << film_load_save_mode_str << ", path:'" << film_load_save.path_ << "', interval: " << film_autosave_interval_type_str << ", " << film_load_save.auto_save_.interval_passes_ << ", " << film_load_save.auto_save_.interval_seconds_ << YENDL;
 
 	if(film_load_save_mode_str == "load-save") film_load_save.mode_ = ImageFilm::FilmLoadSave::LoadAndSave;
 	else if(film_load_save_mode_str == "save") film_load_save.mode_ = ImageFilm::FilmLoadSave::Save;
@@ -105,7 +109,7 @@ std::unique_ptr<ImageFilm> ImageFilm::factory(const ParamMap &params, Scene *sce
 	ImageSplitter::TilesOrderType tiles_order_type = ImageSplitter::CentreRandom;
 	if(tiles_order == "linear") tiles_order_type = ImageSplitter::Linear;
 	else if(tiles_order == "random") tiles_order_type = ImageSplitter::Random;
-	else if(tiles_order != "centre") Y_VERBOSE << "ImageFilm: " << "Defaulting to Centre tiles order." << YENDL; // this is info imho not a warning
+	else if(tiles_order != "centre" && Y_LOG_HAS_VERBOSE) Y_VERBOSE << "ImageFilm: " << "Defaulting to Centre tiles order." << YENDL; // this is info imho not a warning
 
 	auto film = std::unique_ptr<ImageFilm>(new ImageFilm(width, height, xstart, ystart, scene->getNumThreads(), scene->getRenderControl(), scene->getLayers(), scene->getOutputs(), filt_sz, type, show_sampled_pixels, tile_size, tiles_order_type));
 
@@ -243,7 +247,7 @@ int ImageFilm::nextPass(const RenderView *render_view, RenderControl &render_con
 
 	std::stringstream pass_string;
 
-	Y_DEBUG << "nPass=" << n_pass_ << " imagesAutoSavePassCounter=" << images_auto_save_params_.pass_counter_ << " filmAutoSavePassCounter=" << film_load_save_.auto_save_.pass_counter_ << YENDL;
+	if(Y_LOG_HAS_DEBUG) Y_DEBUG << "nPass=" << n_pass_ << " imagesAutoSavePassCounter=" << images_auto_save_params_.pass_counter_ << " filmAutoSavePassCounter=" << film_load_save_.auto_save_.pass_counter_ << YENDL;
 
 	if(render_control.inProgress() && !session_global.isPreview())	//avoid saving images/film if we are just rendering material/world/lights preview windows, etc
 	{
@@ -574,14 +578,14 @@ void ImageFilm::finishArea(const RenderView *render_view, RenderControl &render_
 
 		if((images_auto_save_params_.interval_type_ == ImageFilm::AutoSaveParams::IntervalType::Time) && (images_auto_save_params_.timer_ > images_auto_save_params_.interval_seconds_))
 		{
-			Y_DEBUG << "imagesAutoSaveTimer=" << images_auto_save_params_.timer_ << YENDL;
+			if(Y_LOG_HAS_DEBUG) Y_DEBUG << "imagesAutoSaveTimer=" << images_auto_save_params_.timer_ << YENDL;
 			flush(render_view, render_control, All);
 			resetImagesAutoSaveTimer();
 		}
 
 		if((film_load_save_.mode_ == FilmLoadSave::LoadAndSave || film_load_save_.mode_ == FilmLoadSave::Save) && (film_load_save_.auto_save_.interval_type_ == ImageFilm::AutoSaveParams::IntervalType::Time) && (film_load_save_.auto_save_.timer_ > film_load_save_.auto_save_.interval_seconds_))
 		{
-			Y_DEBUG << "filmAutoSaveTimer=" << film_load_save_.auto_save_.timer_ << YENDL;
+			if(Y_LOG_HAS_DEBUG) Y_DEBUG << "filmAutoSaveTimer=" << film_load_save_.auto_save_.timer_ << YENDL;
 			imageFilmSave();
 			resetFilmAutoSaveTimer();
 		}
@@ -696,7 +700,7 @@ void ImageFilm::flush(const RenderView *render_view, const RenderControl &render
 
 		logger_global.clearMemoryLog();
 		out_mutex_.unlock();
-		Y_VERBOSE << "imageFilm: Done." << YENDL;
+		if(Y_LOG_HAS_VERBOSE) Y_VERBOSE << "imageFilm: Done." << YENDL;
 	}
 }
 
@@ -998,7 +1002,7 @@ void ImageFilm::imageFilmLoadAllInFolder(RenderControl &render_control)
 	std::vector<std::string> film_file_paths_list;
 	for(const auto &file_name : files_list)
 	{
-		//Y_DEBUG PR(fileName) PREND;
+		//if(Y_LOG_HAS_DEBUG) Y_DEBUG PR(fileName) PREND;
 		if(File::exists(dir + "//" + file_name, true))
 		{
 			const Path file_path {file_name };
@@ -1006,11 +1010,11 @@ void ImageFilm::imageFilmLoadAllInFolder(RenderControl &render_control)
 			const std::string base = file_path.getBaseName();
 			const int base_rfind_result = base.rfind(base_image_file_name, 0);
 
-			//Y_DEBUG PR(baseImageFileName) PR(fileName) PR(base) PR(ext) PR(base_rfind_result) PREND;
+			//if(Y_LOG_HAS_DEBUG) Y_DEBUG PR(baseImageFileName) PR(fileName) PR(base) PR(ext) PR(base_rfind_result) PREND;
 			if(ext == "film" && base_rfind_result == 0)
 			{
 				film_file_paths_list.push_back(dir + "//" + file_name);
-				//Y_DEBUG << "Added: " << dir + "//" + fileName << YENDL;
+				//if(Y_LOG_HAS_DEBUG) Y_DEBUG << "Added: " << dir + "//" + fileName << YENDL;
 			}
 		}
 	}
@@ -1048,7 +1052,7 @@ void ImageFilm::imageFilmLoadAllInFolder(RenderControl &render_control)
 		}
 		if(sampling_offset_ < loaded_film->sampling_offset_) sampling_offset_ = loaded_film->sampling_offset_;
 		if(base_sampling_offset_ < loaded_film->base_sampling_offset_) base_sampling_offset_ = loaded_film->base_sampling_offset_;
-		Y_VERBOSE << "ImageFilm: loaded film '" << film_file << "'" << YENDL;
+		if(Y_LOG_HAS_VERBOSE) Y_VERBOSE << "ImageFilm: loaded film '" << film_file << "'" << YENDL;
 	}
 	if(any_film_loaded) render_control.setResumed();
 	if(progress_bar_) progress_bar_->setTag(old_tag);
@@ -1158,7 +1162,7 @@ void ImageFilm::imageFilmFileBackup() const
 
 	if(File::exists(film_path, true))
 	{
-		Y_VERBOSE << "imageFilm: Creating backup of previously saved film to: \"" << film_path_backup << "\"" << YENDL;
+		if(Y_LOG_HAS_VERBOSE) Y_VERBOSE << "imageFilm: Creating backup of previously saved film to: \"" << film_path_backup << "\"" << YENDL;
 		const bool result_ok = File::rename(film_path, film_path_backup, true, true);
 		if(!result_ok) Y_WARNING << "imageFilm: error during imageFilm file backup" << YENDL;
 	}

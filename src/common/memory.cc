@@ -28,10 +28,10 @@ void CustomDeleter<T>::operator()(T *object)
 {
 	if(!object)
 	{
-		Y_DEBUG << "Custom deleter destruction, null pointer, exiting" << YENDL;
+		if(Y_LOG_HAS_DEBUG) Y_DEBUG << "Custom deleter destruction, null pointer, exiting" << YENDL;
 		return;
 	}
-	Y_DEBUG << "Custom deleter destruction '" << object->getName() << "' auto deletion = " << (object->isAutoDeleted() ? " true (internally owned), destroying it!" : " false (externally owned), not destroying it") << YENDL;
+	if(Y_LOG_HAS_DEBUG) Y_DEBUG << "Custom deleter destruction '" << object->getName() << "' auto deletion = " << (object->isAutoDeleted() ? " true (internally owned), destroying it!" : " false (externally owned), not destroying it") << YENDL;
 	if(object->isAutoDeleted()) delete object;
 }
 

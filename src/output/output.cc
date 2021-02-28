@@ -30,7 +30,11 @@ BEGIN_YAFARAY
 
 UniquePtr_t<ColorOutput> ColorOutput::factory(const ParamMap &params, const Scene &scene)
 {
-	Y_DEBUG PRTEXT(**ColorOutput) PREND; params.printDebug();
+	if(Y_LOG_HAS_DEBUG)
+	{
+		Y_DEBUG PRTEXT(**ColorOutput) PREND;
+		params.printDebug();
+	}
 	std::string type;
 	params.getParam("type", type);
 	if(type == "image_output") return ImageOutput::factory(params, scene);

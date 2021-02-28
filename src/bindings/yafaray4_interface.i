@@ -187,10 +187,10 @@ public:
 
 	void setRenderCallbacks(PyObject *py_draw_area_callback, PyObject *py_flush_callback)
 	{
-		//Y_DEBUG PRTEXT(setRenderCallbacks b4) PR(py_draw_area_callback_) PR(py_flush_callback_) PREND;
+		//if(Y_LOG_HAS_DEBUG) Y_DEBUG PRTEXT(setRenderCallbacks b4) PR(py_draw_area_callback_) PR(py_flush_callback_) PREND;
 		py_draw_area_callback_ = py_draw_area_callback;
 		py_flush_callback_ = py_flush_callback;
-		//Y_DEBUG PRTEXT(setRenderCallbacks after) PR(py_draw_area_callback_) PR(py_flush_callback_) PREND;
+		//if(Y_LOG_HAS_DEBUG) Y_DEBUG PRTEXT(setRenderCallbacks after) PR(py_draw_area_callback_) PR(py_flush_callback_) PREND;
 	}
 
     virtual void init(int width, int height, const Layers *layers, const std::map<std::string, std::unique_ptr<RenderView>> *render_views) override
@@ -199,7 +199,7 @@ public:
 		PyGILState_STATE gstate;
 		gstate = PyGILState_Ensure();
 
-		//Y_DEBUG PRTEXT(PythonOutputInit) PR(py_draw_area_callback_) PR(py_flush_callback_) PREND;
+		//if(Y_LOG_HAS_DEBUG) Y_DEBUG PRTEXT(PythonOutputInit) PR(py_draw_area_callback_) PR(py_flush_callback_) PREND;
 
 		ColorOutput::init(width, height, layers, render_views);
 		for(const auto &render_view : *render_views)
@@ -241,7 +241,7 @@ public:
 
 	virtual void flush(const RenderControl &render_control) override
 	{
-		//Y_DEBUG PRTEXT(flush) PREND;
+		//if(Y_LOG_HAS_DEBUG) Y_DEBUG PRTEXT(flush) PREND;
 		if(!py_flush_callback_) return;
 
 		SWIG_PYTHON_THREAD_BEGIN_BLOCK;
@@ -251,7 +251,7 @@ public:
 		TilesLayers *tiles_layers = tiles_views_.at(view_name).get();
 		const size_t num_tiles_layers = tiles_layers->size();
 		PyObject* groupTile = PyTuple_New(num_tiles_layers);
-		//Y_DEBUG PR(groupTile) PREND; if(groupTile) //Y_DEBUG PR(groupTile->ob_refcnt) PREND;
+		//if(Y_LOG_HAS_DEBUG) Y_DEBUG PR(groupTile) PREND; if(groupTile) //if(Y_LOG_HAS_DEBUG) Y_DEBUG PR(groupTile->ob_refcnt) PREND;
 		size_t tuple_index = 0;
 		for(auto &tile : *tiles_layers)
 		{
@@ -261,14 +261,14 @@ public:
 			tile.second.area_y_1_ = height_;
 			std::string layer_name = tile.second.image_layer_->layer_.getExportedImageName();
 			if(layer_name.empty()) layer_name = tile.second.image_layer_->layer_.getTypeName();
-			//Y_DEBUG PR(view_name) PR(tuple_index) PR(tiles_layers->size()) PR(Layer::getTypeName(tile.first)) PR(tiles_layers) PR(&tile.second) PREND;
+			//if(Y_LOG_HAS_DEBUG) Y_DEBUG PR(view_name) PR(tuple_index) PR(tiles_layers->size()) PR(Layer::getTypeName(tile.first)) PR(tiles_layers) PR(&tile.second) PREND;
 			PyObject* groupItem = Py_BuildValue("sO", layer_name.c_str(), &tile.second);
-			//Y_DEBUG PR(groupItem) PREND; if(groupItem) //Y_DEBUG PR(groupItem->ob_refcnt) PREND;
+			//if(Y_LOG_HAS_DEBUG) Y_DEBUG PR(groupItem) PREND; if(groupItem) //if(Y_LOG_HAS_DEBUG) Y_DEBUG PR(groupItem->ob_refcnt) PREND;
 			PyTuple_SET_ITEM(groupTile, tuple_index, groupItem);
 			++tuple_index;
 		}
 		PyObject* result = PyObject_CallFunction(py_flush_callback_, "iisO", width_, height_, view_name.c_str(), groupTile);
-		//Y_DEBUG PR(result) PREND; if(result) //Y_DEBUG PR(result->ob_refcnt) PREND;
+		//if(Y_LOG_HAS_DEBUG) Y_DEBUG PR(result) PREND; if(result) //if(Y_LOG_HAS_DEBUG) Y_DEBUG PR(result->ob_refcnt) PREND;
 
 		Py_XDECREF(result);
 		Py_XDECREF(groupTile);
@@ -279,7 +279,7 @@ public:
 
 	virtual void flushArea(int x0, int y0, int x1, int y1) override
 	{
-		//Y_DEBUG PRTEXT(flushArea) PREND;
+		//if(Y_LOG_HAS_DEBUG) Y_DEBUG PRTEXT(flushArea) PREND;
 		// Do nothing if we are rendering preview_ renders
 		if(preview_ || !py_draw_area_callback_) return;
 
@@ -291,7 +291,7 @@ public:
 		TilesLayers *tiles_layers = tiles_views_.at(view_name).get();
 		const size_t num_tiles_layers = tiles_layers->size();
 		PyObject* groupTile = PyTuple_New(num_tiles_layers);
-		//Y_DEBUG PR(groupTile) PREND; if(groupTile) //Y_DEBUG PR(groupTile->ob_refcnt) PREND;
+		//if(Y_LOG_HAS_DEBUG) Y_DEBUG PR(groupTile) PREND; if(groupTile) //if(Y_LOG_HAS_DEBUG) Y_DEBUG PR(groupTile->ob_refcnt) PREND;
 		size_t tuple_index = 0;
 		for(auto &tile : *tiles_layers)
 		{
@@ -301,9 +301,9 @@ public:
 			tile.second.area_y_1_ = y1 - border_y_;
 			std::string layer_name = tile.second.image_layer_->layer_.getExportedImageName();
 			if(layer_name.empty()) layer_name = tile.second.image_layer_->layer_.getTypeName();
-			//Y_DEBUG PR(view_name) PR(tuple_index) PR(tiles_layers->size()) PR(Layer::getTypeName(tile.first)) PR(tiles_layers) PR(&tile.second) PR(tile.second.getTypeName()) PREND;
+			//if(Y_LOG_HAS_DEBUG) Y_DEBUG PR(view_name) PR(tuple_index) PR(tiles_layers->size()) PR(Layer::getTypeName(tile.first)) PR(tiles_layers) PR(&tile.second) PR(tile.second.getTypeName()) PREND;
 			PyObject* groupItem = Py_BuildValue("sO", layer_name.c_str(), &tile.second);
-			//Y_DEBUG PR(groupItem) PREND; if(groupItem) //Y_DEBUG PR(groupItem->ob_refcnt) PREND;
+			//if(Y_LOG_HAS_DEBUG) Y_DEBUG PR(groupItem) PREND; if(groupItem) //if(Y_LOG_HAS_DEBUG) Y_DEBUG PR(groupItem->ob_refcnt) PREND;
 			PyTuple_SET_ITEM(groupTile, tuple_index, groupItem);
 			++tuple_index;
 		}
@@ -311,7 +311,7 @@ public:
 		const int area_width = x1 - x0;
 		const int area_height = y1 - y0;
 		PyObject* result = PyObject_CallFunction(py_draw_area_callback_, "iiiisO", x0 - border_x_, height_ - (y1 - border_y_), area_width, area_height, view_name.c_str(), groupTile);
-		//Y_DEBUG PR(result) PREND; if(result) //Y_DEBUG PR(result->ob_refcnt) PREND;
+		//if(Y_LOG_HAS_DEBUG) Y_DEBUG PR(result) PREND; if(result) //if(Y_LOG_HAS_DEBUG) Y_DEBUG PR(result->ob_refcnt) PREND;
 
 		Py_XDECREF(result);
 		Py_XDECREF(groupTile);
@@ -322,7 +322,7 @@ public:
 
 	virtual void highlightArea(int x0, int y0, int x1, int y1) override
 	{
-		//Y_DEBUG PRTEXT(highlightArea) PREND;
+		//if(Y_LOG_HAS_DEBUG) Y_DEBUG PRTEXT(highlightArea) PREND;
 		// Do nothing if we are rendering preview_ renders
 		if(preview_ || !py_draw_area_callback_) return;
 
@@ -349,17 +349,17 @@ public:
 		gstate = PyGILState_Ensure();
 
 		PyObject* groupTile = PyTuple_New(1);
-		//Y_DEBUG PR(groupTile) PREND; if(groupTile) //Y_DEBUG PR(groupTile->ob_refcnt) PREND;
+		//if(Y_LOG_HAS_DEBUG) Y_DEBUG PR(groupTile) PREND; if(groupTile) //if(Y_LOG_HAS_DEBUG) Y_DEBUG PR(groupTile->ob_refcnt) PREND;
 
 		std::string layer_name = tile->image_layer_->layer_.getExportedImageName();
 		if(layer_name.empty()) layer_name = tile->image_layer_->layer_.getTypeName();
-		//Y_DEBUG PR(view_name) PR(tiles_layers->size()) PR(Layer::getTypeName(Layer::Combined)) PR(tiles_layers) PR(tile) PREND;
+		//if(Y_LOG_HAS_DEBUG) Y_DEBUG PR(view_name) PR(tiles_layers->size()) PR(Layer::getTypeName(Layer::Combined)) PR(tiles_layers) PR(tile) PREND;
 		PyObject* groupItem = Py_BuildValue("sO", layer_name.c_str(), tile);
-		//Y_DEBUG PR(groupItem) PREND; if(groupItem) //Y_DEBUG PR(groupItem->ob_refcnt) PREND;
+		//if(Y_LOG_HAS_DEBUG) Y_DEBUG PR(groupItem) PREND; if(groupItem) //if(Y_LOG_HAS_DEBUG) Y_DEBUG PR(groupItem->ob_refcnt) PREND;
 		PyTuple_SET_ITEM(groupTile, 0, groupItem);
 		
 		PyObject* result = PyObject_CallFunction(py_draw_area_callback_, "iiiisO", tile->area_x_0_, height_ - tile->area_y_1_, w, h, view_name.c_str(), groupTile);
-		//Y_DEBUG PR(result) PREND; if(result) //Y_DEBUG PR(result->ob_refcnt) PREND;
+		//if(Y_LOG_HAS_DEBUG) Y_DEBUG PR(result) PREND; if(result) //if(Y_LOG_HAS_DEBUG) Y_DEBUG PR(result->ob_refcnt) PREND;
 		
 		Py_XDECREF(result);
 		Py_XDECREF(groupTile);
@@ -519,7 +519,7 @@ END_YAFARAY
 	void render(PyObject *py_progress_callback)
 	{
 		auto pbar_wrap = std::unique_ptr<YafPyProgress>(new YafPyProgress(py_progress_callback));
-		//Y_DEBUG PR(py_progress_callback) PREND;
+		//if(Y_LOG_HAS_DEBUG) Y_DEBUG PR(py_progress_callback) PREND;
 		Py_BEGIN_ALLOW_THREADS;
 		self->render(pbar_wrap.get());
 		Py_END_ALLOW_THREADS;

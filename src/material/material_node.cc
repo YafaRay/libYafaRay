@@ -138,7 +138,7 @@ bool NodeMaterial::loadNodes(const std::list<ParamMap> &params_list, Scene &scen
 		{
 			shaders_table_[name] = std::move(shader);
 			color_nodes_.push_back(shaders_table_[name].get());
-			Y_VERBOSE << "NodeMaterial: Added ShaderNode '" << name << "'! (" << (void *)shaders_table_[name].get() << ")" << YENDL;
+			if(Y_LOG_HAS_VERBOSE) Y_VERBOSE << "NodeMaterial: Added ShaderNode '" << name << "'! (" << (void *)shaders_table_[name].get() << ")" << YENDL;
 		}
 		else
 		{

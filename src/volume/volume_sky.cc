@@ -114,7 +114,7 @@ SkyVolumeRegion::SkyVolumeRegion(Rgb sa, Rgb ss, Rgb le, Point3 pmin, Point3 pma
 	s_s_ = Rgb(0.f);
 	l_e_ = le;
 	g_ = 0.f;
-	Y_VERBOSE << "SkyVolume: Vol. [" << s_ray_ << ", " << s_mie_ << ", " << l_e_ << "]" << YENDL;
+	if(Y_LOG_HAS_VERBOSE) Y_VERBOSE << "SkyVolume: Vol. [" << s_ray_ << ", " << s_mie_ << ", " << l_e_ << "]" << YENDL;
 }
 
 END_YAFARAY

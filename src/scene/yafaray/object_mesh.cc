@@ -28,7 +28,13 @@ BEGIN_YAFARAY
 
 std::unique_ptr<Object> MeshObject::factory(ParamMap &params, const Scene &scene)
 {
-	//Y_DEBUG PRTEXT(MeshObject::factory) PREND; params.printDebug();
+/*
+	if(Y_LOG_HAS_DEBUG)
+	{
+		Y_DEBUG PRTEXT(MeshObject::factory) PREND;
+		params.printDebug();
+	}
+*/
 	std::string name, light_name, visibility, base_object_name;
 	bool is_base_object = false, has_uv = false, has_orco = false;
 	int num_faces = 0, num_vertices = 0;

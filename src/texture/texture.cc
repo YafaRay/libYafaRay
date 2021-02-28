@@ -26,7 +26,11 @@ BEGIN_YAFARAY
 
 std::unique_ptr<Texture> Texture::factory(ParamMap &params, const Scene &scene)
 {
-	Y_DEBUG PRTEXT(**Texture) PREND; params.printDebug();
+	if(Y_LOG_HAS_DEBUG)
+	{
+		Y_DEBUG PRTEXT(**Texture) PREND;
+		params.printDebug();
+	}
 	std::string type;
 	params.getParam("type", type);
 	if(type == "blend") return BlendTexture::factory(params, scene);

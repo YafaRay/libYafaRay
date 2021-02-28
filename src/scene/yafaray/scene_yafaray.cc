@@ -81,7 +81,7 @@ void YafaRayScene::clearObjects()
 
 bool YafaRayScene::endObject()
 {
-	Y_DEBUG PRTEXT(YafaRayScene::endObject) PREND;
+	if(Y_LOG_HAS_DEBUG) Y_DEBUG PRTEXT(YafaRayScene::endObject) PREND;
 	if(creation_state_.stack_.front() != CreationState::Object) return false;
 	const bool result = current_object_->calculateObject(creation_state_.current_material_);
 	creation_state_.stack_.pop_front();
@@ -90,7 +90,7 @@ bool YafaRayScene::endObject()
 
 bool YafaRayScene::smoothNormals(const std::string &name, float angle)
 {
-	Y_DEBUG PRTEXT(YafaRayScene::startObject) PR(name) PR(angle) PREND;
+	if(Y_LOG_HAS_DEBUG) Y_DEBUG PRTEXT(YafaRayScene::startObject) PR(name) PR(angle) PREND;
 	if(creation_state_.stack_.front() != CreationState::Geometry) return false;
 	Object *object;
 	if(!name.empty())
@@ -116,7 +116,7 @@ bool YafaRayScene::smoothNormals(const std::string &name, float angle)
 
 int YafaRayScene::addVertex(const Point3 &p)
 {
-	//Y_DEBUG PRTEXT(YafaRayScene::addVertex) PR(p) PREND;
+	//if(Y_LOG_HAS_DEBUG) Y_DEBUG PRTEXT(YafaRayScene::addVertex) PR(p) PREND;
 	if(creation_state_.stack_.front() != CreationState::Object) return -1;
 	MeshObject *mesh_object = MeshObject::getMeshFromObject(current_object_);
 	if(!mesh_object) return -1;
@@ -192,7 +192,7 @@ Object *YafaRayScene::createObject(const std::string &name, ParamMap &params)
 	{
 		object->setName(name);
 		objects_[name] = std::move(object);
-		INFO_VERBOSE_SUCCESS(name, type);
+		if(Y_LOG_HAS_VERBOSE) INFO_VERBOSE_SUCCESS(name, type);
 		creation_state_.stack_.push_front(CreationState::Object);
 		creation_state_.changes_ |= CreationState::Flags::CGeom;
 		current_object_ = objects_[name].get();
@@ -235,7 +235,7 @@ bool YafaRayScene::updateObjects()
 
 	accelerator_ = Accelerator::factory(primitives, params);
 	scene_bound_ = accelerator_->getBound();
-	Y_VERBOSE << "Scene: New scene bound is: " << "(" << scene_bound_.a_.x_ << ", " << scene_bound_.a_.y_ << ", " << scene_bound_.a_.z_ << "), (" << scene_bound_.g_.x_ << ", " << scene_bound_.g_.y_ << ", " << scene_bound_.g_.z_ << ")" << YENDL;
+	if(Y_LOG_HAS_VERBOSE) Y_VERBOSE << "Scene: New scene bound is: " << "(" << scene_bound_.a_.x_ << ", " << scene_bound_.a_.y_ << ", " << scene_bound_.a_.z_ << "), (" << scene_bound_.g_.x_ << ", " << scene_bound_.g_.y_ << ", " << scene_bound_.g_.z_ << ")" << YENDL;
 
 	if(shadow_bias_auto_) shadow_bias_ = shadow_bias_global;
 	if(ray_min_dist_auto_) ray_min_dist_ = min_raydist_global;
@@ -319,8 +319,8 @@ bool YafaRayScene::isShadowed(RenderData &render_data, const Ray &ray, int max_d
 
 bool YafaRayScene::addInstance(const std::string &base_object_name, const Matrix4 &obj_to_world)
 {
-	//Y_DEBUG PRTEXT(YafaRayScene::addInstance) PR(base_object_name) PREND;
-	//Y_DEBUG PRPREC(6) PR(obj_to_world) PREND;
+	//if(Y_LOG_HAS_DEBUG) Y_DEBUG PRTEXT(YafaRayScene::addInstance) PR(base_object_name) PREND;
+	//if(Y_LOG_HAS_DEBUG) Y_DEBUG PRPREC(6) PR(obj_to_world) PREND;
 	const Object *base_object = objects_.find(base_object_name)->second.get();
 	if(objects_.find(base_object_name) == objects_.end())
 	{
@@ -331,7 +331,7 @@ bool YafaRayScene::addInstance(const std::string &base_object_name, const Matrix
 	if(id > 0)
 	{
 		const std::string instance_name = base_object_name + "-" + std::to_string(id);
-		Y_DEBUG << "  " PRTEXT(Instance:) PR(instance_name) PR(base_object_name) PREND;
+		if(Y_LOG_HAS_DEBUG) Y_DEBUG << "  " PRTEXT(Instance:) PR(instance_name) PR(base_object_name) PREND;
 		objects_[instance_name] = std::unique_ptr<Object>(new ObjectInstance(*base_object, obj_to_world));
 		return true;
 	}

@@ -196,7 +196,7 @@ inline void Texture::setAdjustments(float intensity, float contrast, float satur
 
 	if(adjustments_set_)
 	{
-		Y_VERBOSE << "Texture: modified texture adjustment values:" << adjustments_stream.str() << YENDL;
+		if(Y_LOG_HAS_VERBOSE) Y_VERBOSE << "Texture: modified texture adjustment values:" << adjustments_stream.str() << YENDL;
 	}
 }
 

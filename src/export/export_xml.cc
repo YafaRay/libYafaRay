@@ -48,7 +48,7 @@ void XmlExport::createScene()
 
 void XmlExport::clearAll()
 {
-	Y_VERBOSE << "XmlExport: cleaning up..." << YENDL;
+	if(Y_LOG_HAS_VERBOSE) Y_VERBOSE << "XmlExport: cleaning up..." << YENDL;
 	if(xml_file_.is_open())
 	{
 		xml_file_.flush();

@@ -64,9 +64,11 @@ class LogEntry
 class LIBYAFARAY_EXPORT Logger
 {
 	public:
-		enum { VlMute = 0, VlError, VlWarning, VlParams, VlInfo, VlVerbose, VlDebug, };
+		enum LogLevel : int { VlMute = 0, VlError, VlWarning, VlParams, VlInfo, VlVerbose, VlDebug, };
 		Logger() = default;
 		Logger(const Logger &) = delete; //deleting copy constructor so we can use a std::mutex as a class member (not copiable)
+
+		LogLevel getMaxLogLevel() const;
 
 		void enablePrintDateTime(bool value) { print_datetime_ = value; }
 		void setConsoleMasterVerbosity(const std::string &str_v_level);
@@ -159,6 +161,13 @@ extern LIBYAFARAY_EXPORT Logger logger_global;
 #define Y_WARNING logger_global.out(yafaray4::Logger::VlWarning)
 #define Y_ERROR logger_global.out(yafaray4::Logger::VlError)
 #define YENDL std::endl
+
+#define Y_LOG_HAS_DEBUG (logger_global.getMaxLogLevel() >= yafaray4::Logger::VlDebug)
+#define Y_LOG_HAS_VERBOSE (logger_global.getMaxLogLevel() >= yafaray4::Logger::VlVerbose)
+#define Y_LOG_HAS_INFO (logger_global.getMaxLogLevel() >= yafaray4::Logger::VlInfo)
+#define Y_LOG_HAS_PARAMS (logger_global.getMaxLogLevel() >= yafaray4::Logger::VlParams)
+#define Y_LOG_HAS_WARNING (logger_global.getMaxLogLevel() >= yafaray4::Logger::VlWarning)
+#define Y_LOG_HAS_ERROR (logger_global.getMaxLogLevel() >= yafaray4::Logger::VlError)
 
 END_YAFARAY
 

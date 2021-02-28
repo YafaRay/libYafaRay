@@ -26,7 +26,11 @@ BEGIN_YAFARAY
 
 std::unique_ptr<ShaderNode> ShaderNode::factory(const ParamMap &params, const Scene &scene)
 {
-	Y_DEBUG PRTEXT(**ShaderNode) PREND; params.printDebug();
+	if(Y_LOG_HAS_DEBUG)
+	{
+		Y_DEBUG PRTEXT(**ShaderNode) PREND;
+		params.printDebug();
+	}
 	std::string type;
 	params.getParam("type", type);
 	if(type == "texture_mapper") return TextureMapperNode::factory(params, scene);

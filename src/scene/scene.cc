@@ -56,7 +56,11 @@ BEGIN_YAFARAY
 
 std::unique_ptr<Scene> Scene::factory(ParamMap &params)
 {
-	Y_DEBUG PRTEXT(**Scene::factory) PREND; params.printDebug();
+	if(Y_LOG_HAS_DEBUG)
+	{
+		Y_DEBUG PRTEXT(**Scene::factory) PREND;
+		params.printDebug();
+	}
 	std::string type;
 	params.getParam("type", type);
 	std::unique_ptr<Scene> scene;
@@ -136,14 +140,14 @@ void Scene::setNumThreads(int threads)
 
 	if(nthreads_ == -1) //Automatic detection of number of threads supported by this system, taken from Blender. (DT)
 	{
-		Y_VERBOSE << "Automatic Detection of Threads: Active." << YENDL;
+		if(Y_LOG_HAS_VERBOSE) Y_VERBOSE << "Automatic Detection of Threads: Active." << YENDL;
 		const SysInfo sys_info;
 		nthreads_ = sys_info.getNumSystemThreads();
-		Y_VERBOSE << "Number of Threads supported: [" << nthreads_ << "]." << YENDL;
+		if(Y_LOG_HAS_VERBOSE) Y_VERBOSE << "Number of Threads supported: [" << nthreads_ << "]." << YENDL;
 	}
 	else
 	{
-		Y_VERBOSE << "Automatic Detection of Threads: Inactive." << YENDL;
+		if(Y_LOG_HAS_VERBOSE) Y_VERBOSE << "Automatic Detection of Threads: Inactive." << YENDL;
 	}
 
 	Y_PARAMS << "Using [" << nthreads_ << "] Threads." << YENDL;
@@ -160,14 +164,14 @@ void Scene::setNumThreadsPhotons(int threads_photons)
 
 	if(nthreads_photons_ == -1) //Automatic detection of number of threads supported by this system, taken from Blender. (DT)
 	{
-		Y_VERBOSE << "Automatic Detection of Threads for Photon Mapping: Active." << YENDL;
+		if(Y_LOG_HAS_VERBOSE) Y_VERBOSE << "Automatic Detection of Threads for Photon Mapping: Active." << YENDL;
 		const SysInfo sys_info;
 		nthreads_photons_ = sys_info.getNumSystemThreads();
-		Y_VERBOSE << "Number of Threads supported for Photon Mapping: [" << nthreads_photons_ << "]." << YENDL;
+		if(Y_LOG_HAS_VERBOSE) Y_VERBOSE << "Number of Threads supported for Photon Mapping: [" << nthreads_photons_ << "]." << YENDL;
 	}
 	else
 	{
-		Y_VERBOSE << "Automatic Detection of Threads for Photon Mapping: Inactive." << YENDL;
+		if(Y_LOG_HAS_VERBOSE) Y_VERBOSE << "Automatic Detection of Threads for Photon Mapping: Inactive." << YENDL;
 	}
 
 	Y_PARAMS << "Using for Photon Mapping [" << nthreads_photons_ << "] Threads." << YENDL;
@@ -402,8 +406,8 @@ Light *Scene::createLight(const std::string &name, ParamMap &params)
 	if(light)
 	{
 		lights_[name] = std::move(light);
-		if(lights_[name]->lightEnabled()) INFO_VERBOSE_SUCCESS(name, type);
-		else INFO_VERBOSE_SUCCESS_DISABLED(name, type);
+		if(Y_LOG_HAS_VERBOSE && lights_[name]->lightEnabled()) INFO_VERBOSE_SUCCESS(name, type);
+		else if(Y_LOG_HAS_VERBOSE) INFO_VERBOSE_SUCCESS_DISABLED(name, type);
 		creation_state_.changes_ |= CreationState::Flags::CLight;
 		return lights_[name].get();
 	}
@@ -429,7 +433,7 @@ Material *Scene::createMaterial(const std::string &name, ParamMap &params, std::
 	if(material)
 	{
 		materials_[name] = std::move(material);
-		INFO_VERBOSE_SUCCESS(name, type);
+		if(Y_LOG_HAS_VERBOSE) INFO_VERBOSE_SUCCESS(name, type);
 		return materials_[name].get();
 	}
 	ERR_ON_CREATE(type);
@@ -452,7 +456,7 @@ T *Scene::createMapItem(const std::string &name, const std::string &class_name, 
 	if(item)
 	{
 		map[name] = std::move(item);
-		INFO_VERBOSE_SUCCESS(name, class_name);
+		if(Y_LOG_HAS_VERBOSE) INFO_VERBOSE_SUCCESS(name, class_name);
 		return map[name].get();
 	}
 	ERR_ON_CREATE(class_name);
@@ -471,7 +475,7 @@ T *Scene::createMapItem(const std::string &name, const std::string &class_name, 
 	{
 		item->setAutoDelete(auto_delete); //By default all objects will autodelete as usual unique_ptr. If that's not desired, auto_delete can be set to false but then the object class must have the setAutoDelete and isAutoDeleted methods
 		map[name] = std::move(item);
-		INFO_VERBOSE_SUCCESS(name, class_name);
+		if(Y_LOG_HAS_VERBOSE) INFO_VERBOSE_SUCCESS(name, class_name);
 		return map[name].get();
 	}
 	ERR_ON_CREATE(class_name);
@@ -500,7 +504,7 @@ T *Scene::createMapItem(const std::string &name, const std::string &class_name, 
 	if(item)
 	{
 		map[name] = std::move(item);
-		INFO_VERBOSE_SUCCESS(name, type);
+		if(Y_LOG_HAS_VERBOSE) INFO_VERBOSE_SUCCESS(name, type);
 		return map[name].get();
 	}
 	ERR_ON_CREATE(type);
@@ -531,7 +535,7 @@ T *Scene::createMapItem(const std::string &name, const std::string &class_name, 
 	{
 		item->setAutoDelete(auto_delete); //By default all objects will autodelete as usual unique_ptr. If that's not desired, auto_delete can be set to false but then the object class must have the setAutoDelete and isAutoDeleted methods
 		map[name] = std::move(item);
-		INFO_VERBOSE_SUCCESS(name, type);
+		if(Y_LOG_HAS_VERBOSE) INFO_VERBOSE_SUCCESS(name, type);
 		return map[name].get();
 	}
 	ERR_ON_CREATE(type);
@@ -560,7 +564,7 @@ std::shared_ptr<T> Scene::createMapItem(const std::string &name, const std::stri
 	if(item)
 	{
 		map[name] = std::move(item);
-		INFO_VERBOSE_SUCCESS(name, type);
+		if(Y_LOG_HAS_VERBOSE) INFO_VERBOSE_SUCCESS(name, type);
 		return map[name];
 	}
 	ERR_ON_CREATE(type);
@@ -629,7 +633,11 @@ const Layers Scene::getLayersWithExportedImages() const
 */
 bool Scene::setupScene(Scene &scene, const ParamMap &params, std::shared_ptr<ProgressBar> pb)
 {
-	Y_DEBUG PRTEXT(**Scene::setupScene) PREND; params.printDebug();
+	if(Y_LOG_HAS_DEBUG)
+	{
+		Y_DEBUG PRTEXT(**Scene::setupScene) PREND;
+		params.printDebug();
+	}
 	std::string name;
 	std::string aa_dark_detection_type_string = "none";
 	AaNoiseParams aa_noise_params;
@@ -737,7 +745,7 @@ bool Scene::setupScene(Scene &scene, const ParamMap &params, std::shared_ptr<Pro
 	scene.shadow_bias_ = adv_shadow_bias_value;
 	scene.ray_min_dist_auto_ = adv_auto_min_raydist_enabled;
 	scene.ray_min_dist_ = adv_min_raydist_value;
-	Y_DEBUG << "adv_base_sampling_offset=" << adv_base_sampling_offset << YENDL;
+	if(Y_LOG_HAS_DEBUG) Y_DEBUG << "adv_base_sampling_offset=" << adv_base_sampling_offset << YENDL;
 	image_film_->setBaseSamplingOffset(adv_base_sampling_offset);
 	image_film_->setComputerNode(adv_computer_node);
 	image_film_->setBackgroundResampling(background_resampling);
@@ -746,7 +754,11 @@ bool Scene::setupScene(Scene &scene, const ParamMap &params, std::shared_ptr<Pro
 
 void Scene::defineLayer(const ParamMap &params)
 {
-	Y_DEBUG PRTEXT(**Scene::defineLayer) PREND; params.printDebug();
+	if(Y_LOG_HAS_DEBUG)
+	{
+		Y_DEBUG PRTEXT(**Scene::defineLayer) PREND;
+		params.printDebug();
+	}
 	std::string layer_type_name, image_type_name, exported_image_name, exported_image_type_name;
 	params.getParam("type", layer_type_name);
 	params.getParam("image_type", image_type_name);
@@ -777,16 +789,16 @@ void Scene::defineLayer(const Layer::Type &layer_type, const Image::Type &image_
 				existing_layer->getImageType() == image_type &&
 				existing_layer->getExportedImageType() == exported_image_type) return;
 
-		Y_DEBUG << "Scene: had previously defined: " << existing_layer->print() << YENDL;
+		if(Y_LOG_HAS_DEBUG) Y_DEBUG << "Scene: had previously defined: " << existing_layer->print() << YENDL;
 		if(image_type == Image::Type::None && existing_layer->getImageType() != Image::Type::None)
 		{
-			Y_DEBUG << "Scene: the layer '" << Layer::getTypeName(layer_type) << "' had previously a defined internal image which cannot be removed." << YENDL;
+			if(Y_LOG_HAS_DEBUG) Y_DEBUG << "Scene: the layer '" << Layer::getTypeName(layer_type) << "' had previously a defined internal image which cannot be removed." << YENDL;
 		}
 		else existing_layer->setImageType(image_type);
 
 		if(exported_image_type == Image::Type::None && existing_layer->getExportedImageType() != Image::Type::None)
 		{
-			Y_DEBUG << "Scene: the layer '" << Layer::getTypeName(layer_type) << "' was previously an exported layer and cannot be changed into an internal layer now." << YENDL;
+			if(Y_LOG_HAS_DEBUG) Y_DEBUG << "Scene: the layer '" << Layer::getTypeName(layer_type) << "' was previously an exported layer and cannot be changed into an internal layer now." << YENDL;
 		}
 		else
 		{
@@ -876,7 +888,7 @@ void Scene::defineDependentLayers()
 
 void Scene::setupLayersParameters(const ParamMap &params)
 {
-	Y_DEBUG PRTEXT(**Scene::setupLayersParameters) PREND;
+	if(Y_LOG_HAS_DEBUG) Y_DEBUG PRTEXT(**Scene::setupLayersParameters) PREND;
 	params.printDebug();
 	setEdgeToonParams(params);
 	setMaskParams(params);

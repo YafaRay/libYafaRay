@@ -68,7 +68,7 @@ AcceleratorKdTree::AcceleratorKdTree(const std::vector<const Primitive *> &primi
 	//experiment: add penalty to cost ratio to reduce memory usage on huge scenes
 	if(log_leaves > 16.0) cost_ratio_ += 0.25 * (log_leaves - 16.0);
 	all_bounds_ = std::unique_ptr<Bound[]>(new Bound[total_prims_ + prim_clip_thresh_ + 1]);
-	Y_VERBOSE << "Kd-Tree: Getting primitive bounds..." << YENDL;
+	if(Y_LOG_HAS_VERBOSE) Y_VERBOSE << "Kd-Tree: Getting primitive bounds..." << YENDL;
 	for(uint32_t i = 0; i < total_prims_; i++)
 	{
 		all_bounds_[i] = primitives[i]->getBound();
@@ -83,7 +83,7 @@ AcceleratorKdTree::AcceleratorKdTree(const std::vector<const Primitive *> &primi
 		const double foo = (tree_bound_.g_[i] - tree_bound_.a_[i]) * 0.001;
 		tree_bound_.a_[i] -= foo, tree_bound_.g_[i] += foo;
 	}
-	Y_VERBOSE << "Kd-Tree: Done." << YENDL;
+	if(Y_LOG_HAS_VERBOSE) Y_VERBOSE << "Kd-Tree: Done." << YENDL;
 	// get working memory for tree construction
 	std::array<std::unique_ptr<BoundEdge[]>, 3> edges;
 	const uint32_t r_mem_size = 3 * total_prims_;
@@ -100,28 +100,31 @@ AcceleratorKdTree::AcceleratorKdTree(const std::vector<const Primitive *> &primi
 	for(int i = 0; i < max_depth_ + 2; i++) clip_[i].pos_ = ClipPlane::Pos::None;
 #endif
 	/* build tree */
-	Y_VERBOSE << "Kd-Tree: Starting recursive build..." << YENDL;
+	if(Y_LOG_HAS_VERBOSE) Y_VERBOSE << "Kd-Tree: Starting recursive build..." << YENDL;
 	buildTree(total_prims_, primitives, tree_bound_, left_prims.get(),
 			  left_prims.get(), right_prims.get(), edges, // <= working memory
 	          r_mem_size, 0, 0);
 
 	//print some stats:
 	c_end = clock() - c_start;
-	Y_VERBOSE << "Kd-Tree: Stats (" << static_cast<float>(c_end) / static_cast<float>(CLOCKS_PER_SEC) << "s)" << YENDL;
-	Y_VERBOSE << "Kd-Tree: used/allocated nodes: " << next_free_node_ << "/" << allocated_nodes_count_
-			  << " (" << 100.f * static_cast<float>(next_free_node_) / allocated_nodes_count_ << "%)" << YENDL;
-	Y_VERBOSE << "Kd-Tree: Primitives in tree: " << total_prims_ << YENDL;
-	Y_VERBOSE << "Kd-Tree: Interior nodes: " << kd_stats_.kd_inodes_ << " / " << "leaf nodes: " << kd_stats_.kd_leaves_
-			  << " (empty: " << kd_stats_.empty_kd_leaves_ << " = " << 100.f * static_cast<float>(kd_stats_.empty_kd_leaves_) / kd_stats_.kd_leaves_ << "%)" << YENDL;
-	Y_VERBOSE << "Kd-Tree: Leaf prims: " << kd_stats_.kd_prims_ << " (" << static_cast<float>(kd_stats_.kd_prims_) / total_prims_ << " x prims in tree, leaf size: " << max_leaf_size_ << ")" << YENDL;
-	Y_VERBOSE << "Kd-Tree: => " << static_cast<float>(kd_stats_.kd_prims_) / (kd_stats_.kd_leaves_ - kd_stats_.empty_kd_leaves_) << " prims per non-empty leaf" << YENDL;
-	Y_VERBOSE << "Kd-Tree: Leaves due to depth limit/bad splits: " << kd_stats_.depth_limit_reached_ << "/" << kd_stats_.num_bad_splits_ << YENDL;
-	Y_VERBOSE << "Kd-Tree: clipped primitives: " << kd_stats_.clip_ << " (" << kd_stats_.bad_clip_ << " bad clips, " << kd_stats_.null_clip_ << " null clips)" << YENDL;
+	if(Y_LOG_HAS_VERBOSE)
+	{
+		Y_VERBOSE << "Kd-Tree: Stats (" << static_cast<float>(c_end) / static_cast<float>(CLOCKS_PER_SEC) << "s)" << YENDL;
+		Y_VERBOSE << "Kd-Tree: used/allocated nodes: " << next_free_node_ << "/" << allocated_nodes_count_
+				  << " (" << 100.f * static_cast<float>(next_free_node_) / allocated_nodes_count_ << "%)" << YENDL;
+		Y_VERBOSE << "Kd-Tree: Primitives in tree: " << total_prims_ << YENDL;
+		Y_VERBOSE << "Kd-Tree: Interior nodes: " << kd_stats_.kd_inodes_ << " / " << "leaf nodes: " << kd_stats_.kd_leaves_
+				  << " (empty: " << kd_stats_.empty_kd_leaves_ << " = " << 100.f * static_cast<float>(kd_stats_.empty_kd_leaves_) / kd_stats_.kd_leaves_ << "%)" << YENDL;
+		Y_VERBOSE << "Kd-Tree: Leaf prims: " << kd_stats_.kd_prims_ << " (" << static_cast<float>(kd_stats_.kd_prims_) / total_prims_ << " x prims in tree, leaf size: " << max_leaf_size_ << ")" << YENDL;
+		Y_VERBOSE << "Kd-Tree: => " << static_cast<float>(kd_stats_.kd_prims_) / (kd_stats_.kd_leaves_ - kd_stats_.empty_kd_leaves_) << " prims per non-empty leaf" << YENDL;
+		Y_VERBOSE << "Kd-Tree: Leaves due to depth limit/bad splits: " << kd_stats_.depth_limit_reached_ << "/" << kd_stats_.num_bad_splits_ << YENDL;
+		Y_VERBOSE << "Kd-Tree: clipped primitives: " << kd_stats_.clip_ << " (" << kd_stats_.bad_clip_ << " bad clips, " << kd_stats_.null_clip_ << " null clips)" << YENDL;
+	}
 }
 
 AcceleratorKdTree::~AcceleratorKdTree()
 {
-	Y_VERBOSE << "Kd-Tree: Done" << YENDL;
+	if(Y_LOG_HAS_VERBOSE) Y_VERBOSE << "Kd-Tree: Done" << YENDL;
 }
 
 // ============================================================
@@ -245,21 +248,24 @@ AcceleratorKdTree::SplitCost AcceleratorKdTree::pigeonMinCost(float e_bonus, flo
 		} // for all bins
 		if(n_below != n_prims || n_above != 0)
 		{
-			int c_1 = 0, c_2 = 0, c_3 = 0, c_4 = 0, c_5 = 0;
-			Y_VERBOSE << "SCREWED!!\n";
-			for(int i = 0; i < num_bins; i++) { c_1 += bins[i].n_; std::cout << bins[i].n_ << " ";}
-			Y_VERBOSE << "\nn total: " << c_1 << "\n";
-			for(int i = 0; i < num_bins; i++) { c_2 += bins[i].c_left_; Y_VERBOSE << bins[i].c_left_ << " ";}
-			Y_VERBOSE << "\nc_left total: " << c_2 << "\n";
-			for(int i = 0; i < num_bins; i++) { c_3 += bins[i].c_bleft_; Y_VERBOSE << bins[i].c_bleft_ << " ";}
-			Y_VERBOSE << "\nc_bleft total: " << c_3 << "\n";
-			for(int i = 0; i < num_bins; i++) { c_4 += bins[i].c_both_; Y_VERBOSE << bins[i].c_both_ << " ";}
-			Y_VERBOSE << "\nc_both total: " << c_4 << "\n";
-			for(int i = 0; i < num_bins; i++) { c_5 += bins[i].c_right_; Y_VERBOSE << bins[i].c_right_ << " ";}
-			Y_VERBOSE << "\nc_right total: " << c_5 << "\n";
-			Y_VERBOSE << "\nnPrims: " << n_prims << " nBelow: " << n_below << " nAbove: " << n_above << "\n";
-			Y_VERBOSE << "total left: " << c_2 + c_3 + c_4 << "\ntotal right: " << c_4 + c_5 << "\n";
-			Y_VERBOSE << "n/2: " << c_1 / 2 << "\n";
+			if(Y_LOG_HAS_VERBOSE)
+			{
+				int c_1 = 0, c_2 = 0, c_3 = 0, c_4 = 0, c_5 = 0;
+				Y_VERBOSE << "SCREWED!!\n";
+				for(int i = 0; i < num_bins; i++) { c_1 += bins[i].n_; std::cout << bins[i].n_ << " ";}
+				Y_VERBOSE << "\nn total: " << c_1 << "\n";
+				for(int i = 0; i < num_bins; i++) { c_2 += bins[i].c_left_; Y_VERBOSE << bins[i].c_left_ << " ";}
+				Y_VERBOSE << "\nc_left total: " << c_2 << "\n";
+				for(int i = 0; i < num_bins; i++) { c_3 += bins[i].c_bleft_; Y_VERBOSE << bins[i].c_bleft_ << " ";}
+				Y_VERBOSE << "\nc_bleft total: " << c_3 << "\n";
+				for(int i = 0; i < num_bins; i++) { c_4 += bins[i].c_both_; Y_VERBOSE << bins[i].c_both_ << " ";}
+				Y_VERBOSE << "\nc_both total: " << c_4 << "\n";
+				for(int i = 0; i < num_bins; i++) { c_5 += bins[i].c_right_; Y_VERBOSE << bins[i].c_right_ << " ";}
+				Y_VERBOSE << "\nc_right total: " << c_5 << "\n";
+				Y_VERBOSE << "\nnPrims: " << n_prims << " nBelow: " << n_below << " nAbove: " << n_above << "\n";
+				Y_VERBOSE << "total left: " << c_2 + c_3 + c_4 << "\ntotal right: " << c_4 + c_5 << "\n";
+				Y_VERBOSE << "n/2: " << c_1 / 2 << "\n";
+			}
 			throw std::logic_error("cost function mismatch");
 		}
 		for(auto &bin : bins) bin.reset();
@@ -395,7 +401,10 @@ AcceleratorKdTree::SplitCost AcceleratorKdTree::minimalCost(float e_bonus, float
 				if(edges[axis][i].end_ == BoundEdge::EndBound::Both) --n_above;
 			}
 		}
-		if(n_below != n_prims || n_above != 0) Y_VERBOSE << "you screwed your new idea!\n";
+		if(n_below != n_prims || n_above != 0)
+		{
+			if(Y_LOG_HAS_VERBOSE) Y_VERBOSE << "you screwed your new idea!\n";
+		}
 	}
 	return split;
 }
@@ -443,7 +452,7 @@ int AcceleratorKdTree::buildTree(uint32_t n_prims, const std::vector<const Primi
 			{
 				//if(ct->clipToBound(b_ext, clip_[depth], all_bounds_[total_prims_ + n_overl], cdata_[prim_clip_thresh_ * depth + old_idx], cdata_[prim_clip_thresh_ * (depth + 1) + n_overl], nullptr))
 				const PolyDouble::ClipResultWithBound clip_result = ct->clipToBound(b_ext, clip_[depth], cdata_[prim_clip_thresh_ * depth + old_idx], nullptr);
-				//Y_DEBUG PRPREC(12) << " depth=" << depth << " i=" << i << " poly_id=" << old_idx << " i_poly=" << cdata_[prim_clip_thresh_ * depth + old_idx].print() << " result=" << clip_result.clip_result_code_ << " o_poly=" << clip_result.poly_.print() PREND;
+				//if(Y_LOG_HAS_DEBUG) Y_DEBUG PRPREC(12) << " depth=" << depth << " i=" << i << " poly_id=" << old_idx << " i_poly=" << cdata_[prim_clip_thresh_ * depth + old_idx].print() << " result=" << clip_result.clip_result_code_ << " o_poly=" << clip_result.poly_.print() PREND;
 
 				if(clip_result.clip_result_code_ == PolyDouble::ClipResultWithBound::Correct)
 				{

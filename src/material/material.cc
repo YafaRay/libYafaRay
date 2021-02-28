@@ -40,7 +40,11 @@ float Material::highest_sampling_factor_ = 1.f;
 
 std::unique_ptr<Material> Material::factory(ParamMap &params, std::list<ParamMap> &eparams, Scene &scene)
 {
-	Y_DEBUG PRTEXT(**Material) PREND; params.printDebug();
+	if(Y_LOG_HAS_DEBUG)
+	{
+		Y_DEBUG PRTEXT(**Material) PREND;
+		params.printDebug();
+	}
 	std::string type;
 	params.getParam("type", type);
 	if(type == "blend_mat") return BlendMaterial::factory(params, eparams, scene);

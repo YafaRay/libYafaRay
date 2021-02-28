@@ -212,7 +212,7 @@ bool ExrFormat::saveToFile(const std::string &name, const Image *image)
 	try
 	{
 		file.writePixels(h);
-		Y_VERBOSE << getFormatName() << ": Done." << YENDL;
+		if(Y_LOG_HAS_VERBOSE) Y_VERBOSE << getFormatName() << ": Done." << YENDL;
 	}
 	catch(const std::exception &exc)
 	{
@@ -258,7 +258,7 @@ bool ExrFormat::saveToFileMultiChannel(const std::string &name, const ImageLayer
 		const std::string exported_image_name = image_layer.second.layer_.getExportedImageName();
 		if(!exported_image_name.empty()) layer_name += "-" + exported_image_name;
 		exr_layer_name = "RenderLayer." + layer_name + ".";
-		Y_VERBOSE << "    Writing EXR Layer: " << layer_name << YENDL;
+		if(Y_LOG_HAS_VERBOSE) Y_VERBOSE << "    Writing EXR Layer: " << layer_name << YENDL;
 
 		const std::string channel_r_string = exr_layer_name + "R";
 		const std::string channel_g_string = exr_layer_name + "G";
@@ -307,7 +307,7 @@ bool ExrFormat::saveToFileMultiChannel(const std::string &name, const ImageLayer
 	try
 	{
 		file.writePixels(h_0);
-		Y_VERBOSE << getFormatName() << ": Done." << YENDL;
+		if(Y_LOG_HAS_VERBOSE) Y_VERBOSE << getFormatName() << ": Done." << YENDL;
 		pixels.clear();
 	}
 	catch(const std::exception &exc)

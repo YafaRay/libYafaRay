@@ -31,7 +31,11 @@ BEGIN_YAFARAY
 
 std::unique_ptr<VolumeRegion> VolumeRegion::factory(const ParamMap &params, const Scene &scene)
 {
-	Y_DEBUG PRTEXT(**VolumeRegion) PREND; params.printDebug();
+	if(Y_LOG_HAS_DEBUG)
+	{
+		Y_DEBUG PRTEXT(**VolumeRegion) PREND;
+		params.printDebug();
+	}
 	std::string type;
 	params.getParam("type", type);
 	if(type == "ExpDensityVolume") return ExpDensityVolumeRegion::factory(params, scene);
@@ -44,7 +48,11 @@ std::unique_ptr<VolumeRegion> VolumeRegion::factory(const ParamMap &params, cons
 
 std::unique_ptr<VolumeHandler> VolumeHandler::factory(const ParamMap &params, const Scene &scene)
 {
-	Y_DEBUG PRTEXT(**VolumeHandler) PREND; params.printDebug();
+	if(Y_LOG_HAS_DEBUG)
+	{
+		Y_DEBUG PRTEXT(**VolumeHandler) PREND;
+		params.printDebug();
+	}
 	std::string type;
 	params.getParam("type", type);
 	if(type == "beer") return BeerVolumeHandler::factory(params, scene);

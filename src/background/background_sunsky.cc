@@ -241,7 +241,7 @@ std::shared_ptr<Background> SunSkyBackground::factory(ParamMap &params, Scene &s
 		float invpdf = (2.f * M_PI * (1.f - cos_angle));
 		suncol *= invpdf * power;
 
-		Y_VERBOSE << "Sunsky: sun color = " << suncol << YENDL;
+		if(Y_LOG_HAS_VERBOSE) Y_VERBOSE << "Sunsky: sun color = " << suncol << YENDL;
 
 		ParamMap p;
 		p["type"] = std::string("sunlight");

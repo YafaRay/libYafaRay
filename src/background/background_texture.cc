@@ -134,7 +134,7 @@ std::shared_ptr<Background> TextureBackground::factory(ParamMap &params, Scene &
 		{
 			Y_INFO << "TextureBackground: starting background SmartIBL blurring with IBL Blur factor=" << ibl_blur << YENDL;
 			tex->generateMipMaps();
-			Y_VERBOSE << "TextureBackground: background SmartIBL blurring done using mipmaps." << YENDL;
+			if(Y_LOG_HAS_VERBOSE) Y_VERBOSE << "TextureBackground: background SmartIBL blurring done using mipmaps." << YENDL;
 		}
 
 		Light *bglight = scene.createLight("textureBackground_bgLight", bgp);

@@ -101,7 +101,7 @@ std::unique_ptr<VolumeRegion> UniformVolumeRegion::factory(const ParamMap &param
 UniformVolumeRegion::UniformVolumeRegion(Rgb sa, Rgb ss, Rgb le, float gg, Point3 pmin, Point3 pmax, int attgrid_scale) :
 		VolumeRegion(sa, ss, le, gg, pmin, pmax, attgrid_scale)
 {
-	Y_VERBOSE << "UniformVolume: Vol.[" << s_a_ << ", " << s_s_ << ", " << l_e_ << ", " << pmin << ", " << pmax << ", " << attgrid_scale << "]" << YENDL;
+	if(Y_LOG_HAS_VERBOSE) Y_VERBOSE << "UniformVolume: Vol.[" << s_a_ << ", " << s_s_ << ", " << l_e_ << ", " << pmin << ", " << pmax << ", " << attgrid_scale << "]" << YENDL;
 }
 
 END_YAFARAY

@@ -51,13 +51,13 @@ bool DebugOutput::putPixel(int x, int y, const ColorLayer &color_layer)
 {
 	const std::string layer_type_name = Layer::getTypeName(color_layer.layer_type_);
 	const std::string view = current_render_view_ ? current_render_view_->getName() : "";
-	Y_DEBUG PRTEXT(DebugOutput::putPixel) PR(x) PR(y) PR(layer_type_name) PR(color_layer.color_) PR(view) PREND;
+	if(Y_LOG_HAS_DEBUG) Y_DEBUG PRTEXT(DebugOutput::putPixel) PR(x) PR(y) PR(layer_type_name) PR(color_layer.color_) PR(view) PREND;
 	return true;
 }
 
 void DebugOutput::flush(const RenderControl &render_control)
 {
-	Y_DEBUG PRTEXT(DebugOutput::flush) PREND;
+	if(Y_LOG_HAS_DEBUG) Y_DEBUG PRTEXT(DebugOutput::flush) PREND;
 }
 
 END_YAFARAY

@@ -215,7 +215,7 @@ void ImageOutput::saveImageFile(const std::string &filename, const Layer::Type &
 		}
 		else
 		{
-			Y_VERBOSE << name_ << ": Denoise was not possible, saving image without denoise postprocessing." << YENDL;
+			if(Y_LOG_HAS_VERBOSE) Y_VERBOSE << name_ << ": Denoise was not possible, saving image without denoise postprocessing." << YENDL;
 			format->saveToFile(filename, image.get());
 		}
 	}
@@ -236,7 +236,7 @@ void ImageOutput::saveImageFile(const std::string &filename, const Layer::Type &
 			}
 			else
 			{
-				Y_VERBOSE << name_ << ": Denoise was not possible, saving image without denoise postprocessing." << YENDL;
+				if(Y_LOG_HAS_VERBOSE) Y_VERBOSE << name_ << ": Denoise was not possible, saving image without denoise postprocessing." << YENDL;
 				format->saveAlphaChannelOnlyToFile(file_name_alpha, image.get());
 			}
 		}

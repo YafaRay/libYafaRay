@@ -132,19 +132,22 @@ bool TiledIntegrator::render(ImageFilm *image_film, RenderControl &render_contro
 	Y_PARAMS << "Min. " << aa_noise_params_.samples_ << " samples" << YENDL;
 	Y_PARAMS << aa_noise_params_.inc_samples_ << " per additional pass" << YENDL;
 	Y_PARAMS << "Resampled pixels floor: " << aa_noise_params_.resampled_floor_ << "% (" << aa_resampled_floor_pixels << " pixels)" << YENDL;
-	Y_VERBOSE << "AA_sample_multiplier_factor: " << aa_noise_params_.sample_multiplier_factor_ << YENDL;
-	Y_VERBOSE << "AA_light_sample_multiplier_factor: " << aa_noise_params_.light_sample_multiplier_factor_ << YENDL;
-	Y_VERBOSE << "AA_indirect_sample_multiplier_factor: " << aa_noise_params_.indirect_sample_multiplier_factor_ << YENDL;
-	Y_VERBOSE << "AA_detect_color_noise: " << aa_noise_params_.detect_color_noise_ << YENDL;
+	if(Y_LOG_HAS_VERBOSE)
+	{
+		Y_VERBOSE << "AA_sample_multiplier_factor: " << aa_noise_params_.sample_multiplier_factor_ << YENDL;
+		Y_VERBOSE << "AA_light_sample_multiplier_factor: " << aa_noise_params_.light_sample_multiplier_factor_ << YENDL;
+		Y_VERBOSE << "AA_indirect_sample_multiplier_factor: " << aa_noise_params_.indirect_sample_multiplier_factor_ << YENDL;
+		Y_VERBOSE << "AA_detect_color_noise: " << aa_noise_params_.detect_color_noise_ << YENDL;
 
-	if(aa_noise_params_.dark_detection_type_ == AaNoiseParams::DarkDetectionType::Linear)	Y_VERBOSE << "AA_threshold (linear): " << aa_noise_params_.threshold_ << ", dark factor: " << aa_noise_params_.dark_threshold_factor_ << YENDL;
-	else if(aa_noise_params_.dark_detection_type_ == AaNoiseParams::DarkDetectionType::Curve)	Y_VERBOSE << "AA_threshold (curve)" << YENDL;
-	else Y_VERBOSE << "AA threshold:" << aa_noise_params_.threshold_ << YENDL;
+		if(aa_noise_params_.dark_detection_type_ == AaNoiseParams::DarkDetectionType::Linear) Y_VERBOSE << "AA_threshold (linear): " << aa_noise_params_.threshold_ << ", dark factor: " << aa_noise_params_.dark_threshold_factor_ << YENDL;
+		else if(aa_noise_params_.dark_detection_type_ == AaNoiseParams::DarkDetectionType::Curve) Y_VERBOSE << "AA_threshold (curve)" << YENDL;
+		else Y_VERBOSE << "AA threshold:" << aa_noise_params_.threshold_ << YENDL;
 
-	Y_VERBOSE << "AA_variance_edge_size: " << aa_noise_params_.variance_edge_size_ << YENDL;
-	Y_VERBOSE << "AA_variance_pixels: " << aa_noise_params_.variance_pixels_ << YENDL;
-	Y_VERBOSE << "AA_clamp_samples: " << aa_noise_params_.clamp_samples_ << YENDL;
-	Y_VERBOSE << "AA_clamp_indirect: " << aa_noise_params_.clamp_indirect_ << YENDL;
+		Y_VERBOSE << "AA_variance_edge_size: " << aa_noise_params_.variance_edge_size_ << YENDL;
+		Y_VERBOSE << "AA_variance_pixels: " << aa_noise_params_.variance_pixels_ << YENDL;
+		Y_VERBOSE << "AA_clamp_samples: " << aa_noise_params_.clamp_samples_ << YENDL;
+		Y_VERBOSE << "AA_clamp_indirect: " << aa_noise_params_.clamp_indirect_ << YENDL;
+	}
 	Y_PARAMS << "Max. " << aa_noise_params_.samples_ + std::max(0, aa_noise_params_.passes_ - 1) * aa_noise_params_.inc_samples_ << " total samples" << YENDL;
 
 	pass_string << "Rendering pass 1 of " << std::max(1, aa_noise_params_.passes_) << "...";
@@ -216,7 +219,7 @@ bool TiledIntegrator::render(ImageFilm *image_film, RenderControl &render_contro
 
 		int aa_samples_mult = (int) ceilf(aa_noise_params_.inc_samples_ * aa_sample_multiplier_);
 
-		Y_DEBUG << "acumAASamples=" << acum_aa_samples << " AA_samples=" << aa_noise_params_.samples_ << " AA_samples_mult=" << aa_samples_mult << YENDL;
+		if(Y_LOG_HAS_DEBUG) Y_DEBUG << "acumAASamples=" << acum_aa_samples << " AA_samples=" << aa_noise_params_.samples_ << " AA_samples_mult=" << aa_samples_mult << YENDL;
 
 		if(resampled_pixels > 0) renderPass(render_view, aa_samples_mult, acum_aa_samples, true, i, render_control);
 
@@ -227,7 +230,7 @@ bool TiledIntegrator::render(ImageFilm *image_film, RenderControl &render_contro
 			float aa_variation_ratio = std::min(8.f, ((float) aa_resampled_floor_pixels / resampled_pixels)); //This allows the variation for the new pass in the AA threshold and AA samples to depend, with a certain maximum per pass, on the ratio between how many pixeles were resampled and the target floor, to get a faster approach for noise removal.
 			aa_noise_params_.threshold_ *= (1.f - 0.1f * aa_variation_ratio);
 
-			Y_VERBOSE << getName() << ": Resampled pixels (" << resampled_pixels << ") below the floor (" << aa_resampled_floor_pixels << "): new AA Threshold (-" << aa_variation_ratio * 0.1f * 100.f << "%) for next pass = " << aa_noise_params_.threshold_ << YENDL;
+			if(Y_LOG_HAS_VERBOSE) Y_VERBOSE << getName() << ": Resampled pixels (" << resampled_pixels << ") below the floor (" << aa_resampled_floor_pixels << "): new AA Threshold (-" << aa_variation_ratio * 0.1f * 100.f << "%) for next pass = " << aa_noise_params_.threshold_ << YENDL;
 
 			if(aa_noise_params_.threshold_ > 0.f) aa_threshold_changed = true;
 		}
@@ -243,7 +246,7 @@ bool TiledIntegrator::render(ImageFilm *image_film, RenderControl &render_contro
 
 bool TiledIntegrator::renderPass(const RenderView *render_view, int samples, int offset, bool adaptive, int aa_pass_number, RenderControl &render_control)
 {
-	Y_DEBUG << "Sampling: samples=" << samples << " Offset=" << offset << " Base Offset=" << + image_film_->getBaseSamplingOffset() << "  AA_pass_number=" << aa_pass_number << YENDL;
+	if(Y_LOG_HAS_DEBUG) Y_DEBUG << "Sampling: samples=" << samples << " Offset=" << offset << " Base Offset=" << + image_film_->getBaseSamplingOffset() << "  AA_pass_number=" << aa_pass_number << YENDL;
 
 	prePass(samples, (offset + image_film_->getBaseSamplingOffset()), adaptive, render_control, render_view);
 
@@ -344,7 +347,7 @@ bool TiledIntegrator::renderTile(RenderArea &a, const RenderView *render_view, c
 				}
 			}
 
-			//Y_DEBUG << "idxSamplingFactorExtPass="<<idxSamplingFactorExtPass<<" idxSamplingFactorAuxPass="<<idxSamplingFactorAuxPass<<" matSampleFactor="<<matSampleFactor<<" n_samples_adjusted="<<n_samples_adjusted<<" n_samples="<<n_samples<<YENDL;
+			//if(Y_LOG_HAS_DEBUG) Y_DEBUG << "idxSamplingFactorExtPass="<<idxSamplingFactorExtPass<<" idxSamplingFactorAuxPass="<<idxSamplingFactorAuxPass<<" matSampleFactor="<<matSampleFactor<<" n_samples_adjusted="<<n_samples_adjusted<<" n_samples="<<n_samples<<YENDL;
 
 			rstate.pixel_number_ = x * i + j;
 			rstate.sampling_offs_ = sample::fnv32ABuf(i * sample::fnv32ABuf(j)); //fnv_32a_buf(rstate.pixelNumber);

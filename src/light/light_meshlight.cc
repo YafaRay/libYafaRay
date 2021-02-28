@@ -78,7 +78,7 @@ void MeshLight::init(Scene &scene)
 		// tell the mesh that a meshlight is associated with it (not sure if this is the best place though):
 		mesh_object_->setLight(this);
 
-		Y_VERBOSE << "MeshLight: triangles:" << num_primitives_ << ", double sided:" << double_sided_ << ", area:" << area_ << " color:" << color_ << YENDL;
+		if(Y_LOG_HAS_VERBOSE) Y_VERBOSE << "MeshLight: triangles:" << num_primitives_ << ", double sided:" << double_sided_ << ", area:" << area_ << " color:" << color_ << YENDL;
 	}
 }
 

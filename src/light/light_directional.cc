@@ -51,7 +51,7 @@ void DirectionalLight::init(Scene &scene)
 		radius_ = world_radius_;
 	}
 	area_pdf_ = 1.f / (radius_ * radius_); // Pi cancels out with our weird conventions :p
-	Y_VERBOSE << "DirectionalLight: pos " << position_ << " world radius: " << world_radius_ << YENDL;
+	if(Y_LOG_HAS_VERBOSE) Y_VERBOSE << "DirectionalLight: pos " << position_ << " world radius: " << world_radius_ << YENDL;
 }
 
 
@@ -141,7 +141,7 @@ std::unique_ptr<Light> DirectionalLight::factory(ParamMap &params, const Scene &
 	{
 		if(!params.getParam("from", from))
 		{
-			if(params.getParam("position", from)) Y_VERBOSE << "DirectionalLight: Deprecated parameter 'position', use 'from' instead" << YENDL;
+			if(params.getParam("position", from) && Y_LOG_HAS_VERBOSE) Y_VERBOSE << "DirectionalLight: Deprecated parameter 'position', use 'from' instead" << YENDL;
 		}
 		params.getParam("radius", rad);
 	}

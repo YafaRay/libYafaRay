@@ -41,7 +41,7 @@ BEGIN_YAFARAY
 
 std::unique_ptr<Image> Image::factory(int width, int height, const Type &type, const Optimization &optimization)
 {
-	Y_DEBUG PRTEXT(**Image::factory) PREND;
+	if(Y_LOG_HAS_DEBUG) Y_DEBUG PRTEXT(**Image::factory) PREND;
 	if(type == Type::ColorAlphaWeight) return std::unique_ptr<Image>(new ImageColorAlphaWeight(width, height));
 	else if(type == Type::GrayAlphaWeight) return std::unique_ptr<Image>(new ImageGrayAlphaWeight(width, height));
 	else if(type == Type::ColorAlpha && optimization == Optimization::None) return std::unique_ptr<Image>(new ImageColorAlpha(width, height));

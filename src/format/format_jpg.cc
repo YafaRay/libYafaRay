@@ -112,7 +112,7 @@ bool JpgFormat::saveToFile(const std::string &name, const Image *image)
 	jpeg_destroy_compress(&info);
 
 	File::close(fp);
-	Y_VERBOSE << getFormatName() << ": Done." << YENDL;
+	if(Y_LOG_HAS_VERBOSE) Y_VERBOSE << getFormatName() << ": Done." << YENDL;
 	return true;
 }
 
@@ -157,7 +157,7 @@ bool JpgFormat::saveAlphaChannelOnlyToFile(const std::string &name, const Image 
 	jpeg_destroy_compress(&info);
 
 	File::close(fp);
-	Y_VERBOSE << getFormatName() << ": Done." << YENDL;
+	if(Y_LOG_HAS_VERBOSE) Y_VERBOSE << getFormatName() << ": Done." << YENDL;
 	return true;
 }
 
@@ -254,7 +254,7 @@ std::unique_ptr<Image> JpgFormat::loadFromFile(const std::string &name, const Im
 	jpeg_destroy_decompress(&info);
 
 	File::close(fp);
-	Y_VERBOSE << getFormatName() << ": Done." << YENDL;
+	if(Y_LOG_HAS_VERBOSE) Y_VERBOSE << getFormatName() << ": Done." << YENDL;
 	return image;
 }
 

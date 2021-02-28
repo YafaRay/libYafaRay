@@ -34,7 +34,11 @@ BEGIN_YAFARAY
 
 std::unique_ptr<Integrator> Integrator::factory(ParamMap &params, const Scene &scene)
 {
-	Y_DEBUG PRTEXT(**Integrator) PREND; params.printDebug();
+	if(Y_LOG_HAS_DEBUG)
+	{
+		Y_DEBUG PRTEXT(**Integrator) PREND;
+		params.printDebug();
+	}
 	std::string type;
 	params.getParam("type", type);
 	if(type == "bidirectional")

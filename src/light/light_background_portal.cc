@@ -80,7 +80,7 @@ void BackgroundPortalLight::init(Scene &scene)
 	{
 		mesh_object_->setVisibility(Visibility::Invisible);
 		initIs();
-		Y_VERBOSE << "bgPortalLight: Triangles:" << num_primitives_ << ", Area:" << area_ << YENDL;
+		if(Y_LOG_HAS_VERBOSE) Y_VERBOSE << "bgPortalLight: Triangles:" << num_primitives_ << ", Area:" << area_ << YENDL;
 		mesh_object_->setLight(this);
 	}
 }

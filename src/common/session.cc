@@ -32,7 +32,7 @@ Session session_global{ };
 
 Session::Session()
 {
-	Y_VERBOSE << "Session:started" << YENDL;
+	if(Y_LOG_HAS_VERBOSE) Y_VERBOSE << "Session:started" << YENDL;
 #if defined(_WIN32)
 	SetConsoleOutputCP(65001);	//set Windows Console to UTF8 so the image path can be displayed correctly
 #endif
@@ -46,7 +46,7 @@ Session::Session()
 
 Session::~Session()
 {
-	Y_VERBOSE << "Session: ended" << YENDL;
+	if(Y_LOG_HAS_VERBOSE) Y_VERBOSE << "Session: ended" << YENDL;
 }
 
 void Session::setInteractive(bool interactive)

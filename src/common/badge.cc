@@ -314,7 +314,7 @@ std::unique_ptr<Image> Badge::generateImage(const std::string &denoise_params, c
 	}
 	else Y_WARNING << "Badge: default YafaRay params badge icon could not be loaded. No icon will be shown." << YENDL;
 
-	Y_VERBOSE << "Badge: Rendering parameters badge created." << YENDL;
+	if(Y_LOG_HAS_VERBOSE) Y_VERBOSE << "Badge: Rendering parameters badge created." << YENDL;
 
 	return badge_image;
 }

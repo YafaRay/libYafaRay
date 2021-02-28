@@ -73,7 +73,7 @@ bool TgaFormat::saveToFile(const std::string &name, const Image *image)
 	}
 	std::fwrite(&footer, sizeof(TgaFooter), 1, fp);
 	File::close(fp);
-	Y_VERBOSE << getFormatName() << ": Done." << YENDL;
+	if(Y_LOG_HAS_VERBOSE) Y_VERBOSE << getFormatName() << ": Done." << YENDL;
 	return true;
 }
 
@@ -390,7 +390,7 @@ std::unique_ptr<Image> TgaFormat::loadFromFile(const std::string &name, const Im
 		}
 	}
 	File::close(fp);
-	Y_VERBOSE << getFormatName() << ": Done." << YENDL;
+	if(Y_LOG_HAS_VERBOSE) Y_VERBOSE << getFormatName() << ": Done." << YENDL;
 	return image;
 }
 

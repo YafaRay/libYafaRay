@@ -535,7 +535,7 @@ bool MonteCarloIntegrator::createCausticMap(const RenderView *render_view, const
 		Y_INFO << getName() << ": Loading caustic photon map from: " << filename << ". If it does not match the scene you could have crashes and/or incorrect renders, USE WITH CARE!" << YENDL;
 		if(session_global.caustic_map_.get()->load(filename))
 		{
-			Y_VERBOSE << getName() << ": Caustic map loaded." << YENDL;
+			if(Y_LOG_HAS_VERBOSE) Y_VERBOSE << getName() << ": Caustic map loaded." << YENDL;
 			return true;
 		}
 		else
@@ -582,7 +582,7 @@ bool MonteCarloIntegrator::createCausticMap(const RenderView *render_view, const
 		for(int i = 0; i < num_lights; ++i) energies[i] = caus_lights[i]->totalEnergy().energy();
 		auto light_power_d = std::unique_ptr<Pdf1D>(new Pdf1D(energies.get(), num_lights));
 
-		Y_VERBOSE << getName() << ": Light(s) photon color testing for caustics map:" << YENDL;
+		if(Y_LOG_HAS_VERBOSE) Y_VERBOSE << getName() << ": Light(s) photon color testing for caustics map:" << YENDL;
 
 		for(int i = 0; i < num_lights; ++i)
 		{
@@ -590,7 +590,7 @@ bool MonteCarloIntegrator::createCausticMap(const RenderView *render_view, const
 			pcol = caus_lights[i]->emitPhoton(.5, .5, .5, .5, ray, light_pdf);
 			light_num_pdf = light_power_d->func_[i] * light_power_d->inv_integral_;
 			pcol *= f_num_lights * light_pdf / light_num_pdf; //remember that lightPdf is the inverse of the pdf, hence *=...
-			Y_VERBOSE << getName() << ": Light [" << i + 1 << "] Photon col:" << pcol << " | lnpdf: " << light_num_pdf << YENDL;
+			if(Y_LOG_HAS_VERBOSE) Y_VERBOSE << getName() << ": Light [" << i + 1 << "] Photon col:" << pcol << " | lnpdf: " << light_num_pdf << YENDL;
 		}
 
 		int pb_step;
@@ -613,15 +613,15 @@ bool MonteCarloIntegrator::createCausticMap(const RenderView *render_view, const
 
 		pb->done();
 		pb->setTag("Caustic photon map built.");
-		Y_VERBOSE << getName() << ": Done." << YENDL;
+		if(Y_LOG_HAS_VERBOSE) Y_VERBOSE << getName() << ": Done." << YENDL;
 		Y_INFO << getName() << ": Shot " << curr << " caustic photons from " << num_lights << " light(s)." << YENDL;
-		Y_VERBOSE << getName() << ": Stored caustic photons: " << session_global.caustic_map_.get()->nPhotons() << YENDL;
+		if(Y_LOG_HAS_VERBOSE) Y_VERBOSE << getName() << ": Stored caustic photons: " << session_global.caustic_map_.get()->nPhotons() << YENDL;
 
 		if(session_global.caustic_map_.get()->nPhotons() > 0)
 		{
 			pb->setTag("Building caustic photons kd-tree...");
 			session_global.caustic_map_.get()->updateTree();
-			Y_VERBOSE << getName() << ": Done." << YENDL;
+			if(Y_LOG_HAS_VERBOSE) Y_VERBOSE << getName() << ": Done." << YENDL;
 		}
 
 		if(photon_map_processing_ == PhotonsGenerateAndSave)
@@ -629,13 +629,10 @@ bool MonteCarloIntegrator::createCausticMap(const RenderView *render_view, const
 			pb->setTag("Saving caustic photon map to file...");
 			std::string filename = scene_->getImageFilm()->getFilmSavePath() + "_caustic.photonmap";
 			Y_INFO << getName() << ": Saving caustic photon map to: " << filename << YENDL;
-			if(session_global.caustic_map_.get()->save(filename)) Y_VERBOSE << getName() << ": Caustic map saved." << YENDL;
+			if(session_global.caustic_map_.get()->save(filename) && Y_LOG_HAS_VERBOSE) Y_VERBOSE << getName() << ": Caustic map saved." << YENDL;
 		}
 	}
-	else
-	{
-		Y_VERBOSE << getName() << ": No caustic source lights found, skiping caustic map building..." << YENDL;
-	}
+	else if(Y_LOG_HAS_VERBOSE) Y_VERBOSE << getName() << ": No caustic source lights found, skiping caustic map building..." << YENDL;
 	return true;
 }
 

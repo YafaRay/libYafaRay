@@ -30,7 +30,11 @@ BEGIN_YAFARAY
 
 std::shared_ptr<Background> Background::factory(ParamMap &params, Scene &scene)
 {
-	Y_DEBUG PRTEXT(**Background) PREND; params.printDebug();
+	if(Y_LOG_HAS_DEBUG)
+	{
+		Y_DEBUG PRTEXT(**Background) PREND;
+		params.printDebug();
+	}
 	std::string type;
 	params.getParam("type", type);
 	if(type == "darksky") return DarkSkyBackground::factory(params, scene);

@@ -29,7 +29,7 @@ BEGIN_YAFARAY
 
 std::unique_ptr<RenderView> RenderView::factory(ParamMap &params, const Scene &scene)
 {
-	Y_DEBUG PRTEXT(**RenderView) PREND;
+	if(Y_LOG_HAS_DEBUG) Y_DEBUG PRTEXT(**RenderView) PREND;
 	params.printDebug();
 	std::string name;
 	std::string camera_name;

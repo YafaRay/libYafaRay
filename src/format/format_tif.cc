@@ -92,7 +92,7 @@ bool TifFormat::saveToFile(const std::string &name, const Image *image)
 	}
 	libtiff::TIFFClose(out);
 	libtiff::_TIFFfree(scanline);
-	Y_VERBOSE << getFormatName() << ": Done." << YENDL;
+	if(Y_LOG_HAS_VERBOSE) Y_VERBOSE << getFormatName() << ": Done." << YENDL;
 	return true;
 }
 
@@ -138,7 +138,7 @@ std::unique_ptr<Image> TifFormat::loadFromFile(const std::string &name, const Im
 	}
 	libtiff::_TIFFfree(tiff_data);
 	libtiff::TIFFClose(tif);
-	Y_VERBOSE << getFormatName() << ": Done." << YENDL;
+	if(Y_LOG_HAS_VERBOSE) Y_VERBOSE << getFormatName() << ": Done." << YENDL;
 	return image;
 }
 

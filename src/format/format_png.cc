@@ -92,7 +92,7 @@ bool PngFormat::saveToFile(const std::string &name, const Image *image)
 	File::close(fp);
 	// cleanup:
 	for(int i = 0; i < h; i++) delete [] row_pointers[i];
-	Y_VERBOSE << getFormatName() << ": Done." << YENDL;
+	if(Y_LOG_HAS_VERBOSE) Y_VERBOSE << getFormatName() << ": Done." << YENDL;
 	return true;
 }
 
@@ -124,7 +124,7 @@ std::unique_ptr<Image> PngFormat::loadFromFile(const std::string &name, const Im
 	png_set_sig_bytes(png_ptr, 8);
 	std::unique_ptr<Image> image = readFromStructs(png_structs, optimization, color_space, gamma);
 	File::close(fp);
-	Y_VERBOSE << getFormatName() << ": Done." << YENDL;
+	if(Y_LOG_HAS_VERBOSE) Y_VERBOSE << getFormatName() << ": Done." << YENDL;
 	return image;
 }
 

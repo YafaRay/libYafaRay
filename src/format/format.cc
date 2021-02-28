@@ -31,7 +31,11 @@ BEGIN_YAFARAY
 
 std::unique_ptr<Format> Format::factory(ParamMap &params)
 {
-	Y_DEBUG PRTEXT(**Format) PREND; params.printDebug();
+	if(Y_LOG_HAS_DEBUG)
+	{
+		Y_DEBUG PRTEXT(**Format) PREND;
+		params.printDebug();
+	}
 	std::string type;
 	params.getParam("type", type);
 

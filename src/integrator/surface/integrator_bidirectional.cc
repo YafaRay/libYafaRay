@@ -105,12 +105,15 @@ void clearPath_global(std::vector<PathEvalVertex> &p, int s, int t)
 void checkPath_global(std::vector<PathEvalVertex> &p, int s, int t)
 {
 #if BIDIR_DEBUG
-	for(int i = 0; i < s + t; ++i)
+	if(Y_LOG_HAS_DEBUG)
 	{
-		pathEvalVert_t &v = p[i];
-		if(v.pdf_f == -1.f) Y_DEBUG << integratorName << ": " << "path[" << i << "].pdf_f uninitialized! (s=" << s << " t=" << t << ")\n" << YENDL;
-		if(v.pdf_b == -1.f)  Y_DEBUG << integratorName << ": " << "path[" << i << "].pdf_b uninitialized! (s=" << s << " t=" << t << ")\n" << YENDL;
-		if(v.G == -1.f)  Y_DEBUG << integratorName << ": " << "path[" << i << "].G uninitialized! (s=" << s << " t=" << t << ")\n" << YENDL;
+		for(int i = 0; i < s + t; ++i)
+		{
+			pathEvalVert_t &v = p[i];
+			if(v.pdf_f == -1.f) Y_DEBUG << integratorName << ": " << "path[" << i << "].pdf_f uninitialized! (s=" << s << " t=" << t << ")\n" << YENDL;
+			if(v.pdf_b == -1.f) Y_DEBUG << integratorName << ": " << "path[" << i << "].pdf_b uninitialized! (s=" << s << " t=" << t << ")\n" << YENDL;
+			if(v.G == -1.f) Y_DEBUG << integratorName << ": " << "path[" << i << "].G uninitialized! (s=" << s << " t=" << t << ")\n" << YENDL;
+		}
 	}
 #endif
 }
@@ -171,8 +174,11 @@ bool BidirectionalIntegrator::preprocess(const RenderControl &render_control, co
 
 	for(int i = 0; i < num_lights; ++i) inv_light_power_d_[lights_[i]] = light_power_d_->func_[i] * light_power_d_->inv_integral_;
 
-	for(int i = 0; i < num_lights; ++i) Y_DEBUG << getName() << ": " << energies[i] << " (" << light_power_d_->func_[i] << ") " << YENDL;
-	Y_DEBUG << getName() << ": preprocess(): lights: " << num_lights << " invIntegral:" << light_power_d_->inv_integral_ << YENDL;
+	if(Y_LOG_HAS_DEBUG)
+	{
+		for(int i = 0; i < num_lights; ++i) Y_DEBUG << getName() << ": " << energies[i] << " (" << light_power_d_->func_[i] << ") " << YENDL;
+		Y_DEBUG << getName() << ": preprocess(): lights: " << num_lights << " invIntegral:" << light_power_d_->inv_integral_ << YENDL;
+	}
 
 	//nPaths = 0;
 	light_image_ = image_film_;// new imageFilm_t(cam->resX(), cam->resY(), 0, 0, *lightOut, 1.5f);
@@ -186,14 +192,14 @@ bool BidirectionalIntegrator::preprocess(const RenderControl &render_control, co
 	float pdf;
 	ray_t wo = cam->shootRay(10.25, 10.25, 0, 0, wt);
 	bool proj = cam->project(wo, 0, 0, u, v, pdf);
-	Y_DEBUG << integratorName << ": " << "camera u=" << u << " v=" << v << " pdf=" << pdf << " (returned " << proj << ")" << YENDL;
+	if(Y_LOG_HAS_DEBUG) Y_DEBUG << integratorName << ": " << "camera u=" << u << " v=" << v << " pdf=" << pdf << " (returned " << proj << ")" << YENDL;
 	float integral = 0.f;
 	for(int i=0; i<10000; ++i)
 	{
 	    wo.dir = SampleSphere((float)i/10000.f, RI_vdC(i));
 	    if( cam->project(wo, 0, 0, u, v, pdf) ) integral += pdf;
 	}
-	Y_DEBUG << integratorName << ": " << "Camera pdf integral: " << integral/10000.f << YENDL;
+	if(Y_LOG_HAS_DEBUG) Y_DEBUG << integratorName << ": " << "Camera pdf integral: " << integral/10000.f << YENDL;
 
 
 	//test...
@@ -210,7 +216,7 @@ bool BidirectionalIntegrator::preprocess(const RenderControl &render_control, co
 	    lights[0]->emitPdf(sp, wo.dir, Apdf, dirPdf, cos_wo);
 	    integral += dirPdf;
 	}
-	Y_DEBUG << integratorName << ": " << "Light pdf integral: " << integral/10000.f << YENDL;
+	if(Y_LOG_HAS_DEBUG) Y_DEBUG << integratorName << ": " << "Light pdf integral: " << integral/10000.f << YENDL;
 	*/
 
 	std::stringstream set;
@@ -233,7 +239,7 @@ bool BidirectionalIntegrator::preprocess(const RenderControl &render_control, co
 
 void BidirectionalIntegrator::cleanup()
 {
-	//	Y_DEBUG << integratorName << ": " << "cleanup: flushing light image" << YENDL;
+	//	if(Y_LOG_HAS_DEBUG) Y_DEBUG << integratorName << ": " << "cleanup: flushing light image" << YENDL;
 	int n_paths = 0;
 	for(int i = 0; i < (int)thread_data_.size(); ++i)
 	{
@@ -304,7 +310,7 @@ Rgba BidirectionalIntegrator::integrate(RenderData &render_data, const DiffRay &
 		// test!
 		ls.area_pdf_ *= light_num_pdf;
 
-		if(dbg < 10) Y_DEBUG << getName() << ": " << "lightNumPdf=" << light_num_pdf << YENDL;
+		if(dbg < 10 && Y_LOG_HAS_DEBUG) Y_DEBUG << getName() << ": " << "lightNumPdf=" << light_num_pdf << YENDL;
 		++dbg;
 
 		// setup vl
@@ -477,7 +483,7 @@ int BidirectionalIntegrator::createPath(RenderData &render_data, const Ray &star
 		v.g_ = v_prev.cos_wo_ * v.cos_wi_ / v.ds_;
 		++n_vert;
 		render_data.arena_ = v.userdata_;
-		//if(dbg<10) Y_DEBUG << integratorName << ": " << nVert << "  mat: " << (void*) mat << " alpha:" << v.alpha << " p_f_s:" << v_prev.f_s << " qi:"<< v_prev.qi << YENDL;
+		//if(dbg<10) if(Y_LOG_HAS_DEBUG) Y_DEBUG << integratorName << ": " << nVert << "  mat: " << (void*) mat << " alpha:" << v.alpha << " p_f_s:" << v_prev.f_s << " qi:"<< v_prev.qi << YENDL;
 		mat->initBsdf(render_data, v.sp_, m_bsdf);
 		// create tentative sample for next path segment
 		Sample s(prng(), prng(), BsdfFlags::All, true);
@@ -506,8 +512,10 @@ int BidirectionalIntegrator::createPath(RenderData &render_data, const Ray &star
 			v.pdf_wi_ = mat->pdf(render_data, v.sp_, ray.dir_, v.wi_, BsdfFlags::All); // all BSDFs? think so...
 			v.qi_wi_ = std::min(0.98f, v.f_s_.col2Bri() * v.cos_wi_ / v.pdf_wi_);
 		}
-		if(v.qi_wi_ < 0) Y_DEBUG << getName() << ": " << "v[" << n_vert << "].qi_wi=" << v.qi_wi_ << " (" << v.f_s_.col2Bri() << " " << v.cos_wi_ << " " << v.pdf_wi_ << ")\n"
-								 << "\t" << v.pdf_wo_ << "  flags:" << static_cast<unsigned int>(s.sampled_flags_) << YENDL;
+		if(v.qi_wi_ < 0 && Y_LOG_HAS_DEBUG)
+		{
+			Y_DEBUG << getName() << ": " << "v[" << n_vert << "].qi_wi=" << v.qi_wi_ << " (" << v.f_s_.col2Bri() << " " << v.cos_wi_ << " " << v.pdf_wi_ << ")\n" << "\t" << v.pdf_wo_ << "  flags:" << static_cast<unsigned int>(s.sampled_flags_) << YENDL;
+		}
 
 		v.flags_ = s.sampled_flags_;
 		v.wo_ = ray.dir_;
@@ -896,7 +904,7 @@ Rgb BidirectionalIntegrator::evalLPath(RenderData &render_data, int t, PathData 
 	Rgb c_uw = lcol * pd.f_z_ * z.alpha_ * std::abs(z.sp_.n_ * l_ray.dir_); // f_y, cos_x0_f and r^2 computed in connectLPath...(light pdf)
 	if(tr_shad_) c_uw *= scol;
 	// hence c_st is only cos_x1_b * f_z...like path tracing
-	//if(dbg < 10) Y_DEBUG << integratorName << ": " << "evalLPath(): f_z:" << pd.f_z << " C_uw:" << C_uw << YENDL;
+	//if(dbg < 10) if(Y_LOG_HAS_DEBUG) Y_DEBUG << integratorName << ": " << "evalLPath(): f_z:" << pd.f_z << " C_uw:" << C_uw << YENDL;
 	++dbg;
 	return c_uw;
 }

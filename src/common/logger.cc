@@ -362,5 +362,10 @@ void Logger::statsIncrementBucket(std::string stat_name, double stat_value, doub
 	statsAdd(stat_name, increment_amount, index);
 }
 
+Logger::LogLevel Logger::getMaxLogLevel() const
+{
+	return static_cast<LogLevel>(std::max(console_master_verbosity_level_, log_master_verbosity_level_));
+}
+
 END_YAFARAY
 

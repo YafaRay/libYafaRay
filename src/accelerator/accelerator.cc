@@ -27,7 +27,11 @@ BEGIN_YAFARAY
 
 std::unique_ptr<Accelerator> Accelerator::factory(const std::vector<const Primitive *> &primitives_list, ParamMap &params)
 {
-	Y_DEBUG PRTEXT(**Accelerator) PREND; params.printDebug();
+	if(Y_LOG_HAS_DEBUG)
+	{
+		Y_DEBUG PRTEXT(**Accelerator) PREND;
+		params.printDebug();
+	}
 	std::string type;
 	params.getParam("type", type);
 	std::unique_ptr<Accelerator> accelerator;

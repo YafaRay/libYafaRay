@@ -30,7 +30,11 @@ BEGIN_YAFARAY
 
 Primitive *SpherePrimitive::factory(ParamMap &params, const Scene &scene, const Object &object)
 {
-	Y_DEBUG PRTEXT(**SpherePrimitive) PREND; params.printDebug();
+	if(Y_LOG_HAS_DEBUG)
+	{
+		Y_DEBUG PRTEXT(**SpherePrimitive) PREND;
+		params.printDebug();
+	}
 	Point3 center(0.f, 0.f, 0.f);
 	double radius(1.f);
 	const Material *mat;

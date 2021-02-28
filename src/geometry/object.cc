@@ -28,7 +28,11 @@ BEGIN_YAFARAY
 
 std::unique_ptr<Object> Object::factory(ParamMap &params, const Scene &scene)
 {
-	Y_DEBUG PRTEXT(Object::factory) PREND; params.printDebug();
+	if(Y_LOG_HAS_DEBUG)
+	{
+		Y_DEBUG PRTEXT(Object::factory) PREND;
+		params.printDebug();
+	}
 	std::string type;
 	params.getParam("type", type);
 	if(type == "mesh") return MeshObject::factory(params, scene);

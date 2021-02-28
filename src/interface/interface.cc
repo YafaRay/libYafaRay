@@ -83,19 +83,19 @@ void Interface::createScene()
 
 Interface::~Interface()
 {
-	Y_VERBOSE << "Interface: Deleting scene..." << YENDL;
+	if(Y_LOG_HAS_VERBOSE) Y_VERBOSE << "Interface: Deleting scene..." << YENDL;
 	Y_INFO << "Interface: Done." << YENDL;
 	logger_global.clearAll();
 }
 
 void Interface::clearAll()
 {
-	Y_VERBOSE << "Interface: Cleaning scene..." << YENDL;
+	if(Y_LOG_HAS_VERBOSE) Y_VERBOSE << "Interface: Cleaning scene..." << YENDL;
 	scene_->clearAll();
 	params_->clear();
 	eparams_->clear();
 	cparams_ = params_.get();
-	Y_VERBOSE << "Interface: Cleanup done." << YENDL;
+	if(Y_LOG_HAS_VERBOSE) Y_VERBOSE << "Interface: Cleanup done." << YENDL;
 }
 
 void Interface::defineLayer(const std::string &layer_type_name, const std::string &exported_image_type_name, const std::string &exported_image_name, const std::string &image_type_name)
@@ -320,12 +320,12 @@ std::string Interface::getVersion() const
 
 void Interface::printDebug(const std::string &msg) const
 {
-	Y_DEBUG << msg << YENDL;
+	if(Y_LOG_HAS_DEBUG) Y_DEBUG << msg << YENDL;
 }
 
 void Interface::printVerbose(const std::string &msg) const
 {
-	Y_VERBOSE << msg << YENDL;
+	if(Y_LOG_HAS_VERBOSE) Y_VERBOSE << msg << YENDL;
 }
 
 void Interface::printInfo(const std::string &msg) const

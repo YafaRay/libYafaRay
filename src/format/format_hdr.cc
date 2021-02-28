@@ -110,7 +110,7 @@ std::unique_ptr<Image> HdrFormat::loadFromFile(const std::string &name, const Im
 		}
 	}
 	File::close(fp);
-	Y_VERBOSE << getFormatName() << ": Done." << YENDL;
+	if(Y_LOG_HAS_VERBOSE) Y_VERBOSE << getFormatName() << ": Done." << YENDL;
 	return image;
 }
 
@@ -336,7 +336,7 @@ bool HdrFormat::saveToFile(const std::string &name, const Image *image)
 		}
 		file.close();
 	}
-	Y_VERBOSE << getFormatName() << ": Done." << YENDL;
+	if(Y_LOG_HAS_VERBOSE) Y_VERBOSE << getFormatName() << ": Done." << YENDL;
 	return true;
 }
 

@@ -458,7 +458,7 @@ void ImageTexture::generateEwaLookupTable()
 {
 	if(!ewa_weight_lut_)
 	{
-		Y_DEBUG << "** GENERATING EWA LOOKUP **" << YENDL;
+		if(Y_LOG_HAS_DEBUG) Y_DEBUG << "** GENERATING EWA LOOKUP **" << YENDL;
 		ewa_weight_lut_ = static_cast<float *>(malloc(sizeof(float) * ewa_weight_lut_size_));
 		for(int i = 0; i < ewa_weight_lut_size_; ++i)
 		{
@@ -479,7 +479,7 @@ void ImageTexture::generateMipMaps()
 	int w = images_.at(0)->getWidth();
 	int h = images_.at(0)->getHeight();
 
-	Y_VERBOSE << "Format: generating mipmaps for texture of resolution [" << w << " x " << h << "]" << YENDL;
+	if(Y_LOG_HAS_VERBOSE) Y_VERBOSE << "Format: generating mipmaps for texture of resolution [" << w << " x " << h << "]" << YENDL;
 
 	const cv::Mat a(h, w, CV_32FC4);
 	cv::Mat_<cv::Vec4f> a_vec = a;
@@ -522,10 +522,10 @@ void ImageTexture::generateMipMaps()
 		}
 		w = w_2;
 		h = h_2;
-		Y_DEBUG << "Format: generated mipmap " << img_index << " [" << w_2 << " x " << h_2 << "]" << YENDL;
+		if(Y_LOG_HAS_DEBUG) Y_DEBUG << "Format: generated mipmap " << img_index << " [" << w_2 << " x " << h_2 << "]" << YENDL;
 	}
 
-	Y_VERBOSE << "Format: mipmap generation done: " << img_index << " mipmaps generated." << YENDL;
+	if(Y_LOG_HAS_VERBOSE) Y_VERBOSE << "Format: mipmap generation done: " << img_index << " mipmaps generated." << YENDL;
 #else
 	Y_WARNING << "Format: cannot generate mipmaps, YafaRay was not built with OpenCV support which is needed for mipmap processing." << YENDL;
 #endif
@@ -584,9 +584,9 @@ std::unique_ptr<Texture> ImageTexture::factory(ParamMap &params, const Scene &sc
 
 	if(format->isHdr())
 	{
-		if(color_space != ColorSpace::LinearRgb) Y_VERBOSE << "ImageTexture: The image is a HDR/EXR file: forcing linear RGB and ignoring selected color space '" << color_space_str << "' and the gamma setting." << YENDL;
+		if(color_space != ColorSpace::LinearRgb && Y_LOG_HAS_VERBOSE) Y_VERBOSE << "ImageTexture: The image is a HDR/EXR file: forcing linear RGB and ignoring selected color space '" << color_space_str << "' and the gamma setting." << YENDL;
 		color_space = LinearRgb;
-		if(image_optimization_str != "none") Y_VERBOSE << "ImageTexture: The image is a HDR/EXR file: forcing texture optimization to 'none' and ignoring selected texture optimization '" << image_optimization_str << "'" << YENDL;
+		if(image_optimization_str != "none" && Y_LOG_HAS_VERBOSE) Y_VERBOSE << "ImageTexture: The image is a HDR/EXR file: forcing texture optimization to 'none' and ignoring selected texture optimization '" << image_optimization_str << "'" << YENDL;
 		image_optimization = Image::Optimization::None;
 	}
 
@@ -614,7 +614,7 @@ std::unique_ptr<Texture> ImageTexture::factory(ParamMap &params, const Scene &sc
 		tex->generateMipMaps();
 		if(!session_global.getDifferentialRaysEnabled())
 		{
-			Y_VERBOSE << "At least one texture using mipmaps interpolation, enabling ray differentials." << YENDL;
+			if(Y_LOG_HAS_VERBOSE) Y_VERBOSE << "At least one texture using mipmaps interpolation, enabling ray differentials." << YENDL;
 			session_global.setDifferentialRaysEnabled(true);	//If there is at least one texture using mipmaps, then enable differential rays in the rendering process.
 		}
 

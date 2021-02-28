@@ -78,8 +78,8 @@ bool SppmIntegrator::render(ImageFilm *image_film, RenderControl &render_control
 	aa_light_sample_multiplier_ = 1.f;
 	aa_indirect_sample_multiplier_ = 1.f;
 
-	Y_VERBOSE << getName() << ": AA_clamp_samples: " << aa_noise_params_.clamp_samples_ << YENDL;
-	Y_VERBOSE << getName() << ": AA_clamp_indirect: " << aa_noise_params_.clamp_indirect_ << YENDL;
+	if(Y_LOG_HAS_VERBOSE) Y_VERBOSE << getName() << ": AA_clamp_samples: " << aa_noise_params_.clamp_samples_ << YENDL;
+	if(Y_LOG_HAS_VERBOSE) Y_VERBOSE << getName() << ": AA_clamp_indirect: " << aa_noise_params_.clamp_indirect_ << YENDL;
 
 	std::stringstream set;
 
@@ -92,7 +92,7 @@ bool SppmIntegrator::render(ImageFilm *image_film, RenderControl &render_control
 	set << "RayDepth=" << r_depth_ << "  ";
 
 	render_info_ += set.str();
-	Y_VERBOSE << set.str() << YENDL;
+	if(Y_LOG_HAS_VERBOSE) Y_VERBOSE << set.str() << YENDL;
 
 
 	pass_string << "Rendering pass 1 of " << std::max(1, pass_num_) << "...";
@@ -173,7 +173,7 @@ bool SppmIntegrator::render(ImageFilm *image_film, RenderControl &render_control
 	set << "\nPhotons=" << n_photons_ << " search=" << n_search_ << " radius=" << ds_radius_ << "(init.estim=" << initial_estimate << ") total photons=" << totaln_photons_ << "  ";
 
 	render_info_ += set.str();
-	Y_VERBOSE << set.str() << YENDL;
+	if(Y_LOG_HAS_VERBOSE) Y_VERBOSE << set.str() << YENDL;
 
 	return true;
 }
@@ -579,14 +579,14 @@ void SppmIntegrator::prePass(int samples, int offset, bool adaptive, const Rende
 
 	light_power_d_ = std::unique_ptr<Pdf1D>(new Pdf1D(energies.get(), num_d_lights));
 
-	Y_VERBOSE << getName() << ": Light(s) photon color testing for photon map:" << YENDL;
+	if(Y_LOG_HAS_VERBOSE) Y_VERBOSE << getName() << ": Light(s) photon color testing for photon map:" << YENDL;
 
 	for(int i = 0; i < num_d_lights; ++i)
 	{
 		pcol = tmplights[i]->emitPhoton(.5, .5, .5, .5, ray, light_pdf);
 		light_num_pdf = light_power_d_->func_[i] * light_power_d_->inv_integral_;
 		pcol *= f_num_lights * light_pdf / light_num_pdf; //remember that lightPdf is the inverse of the pdf, hence *=...
-		Y_VERBOSE << getName() << ": Light [" << i + 1 << "] Photon col:" << pcol << " | lnpdf: " << light_num_pdf << YENDL;
+		if(Y_LOG_HAS_VERBOSE) Y_VERBOSE << getName() << ": Light [" << i + 1 << "] Photon col:" << pcol << " | lnpdf: " << light_num_pdf << YENDL;
 	}
 
 	//shoot photons
@@ -628,18 +628,18 @@ void SppmIntegrator::prePass(int samples, int offset, bool adaptive, const Rende
 
 	pb->done();
 	pb->setTag(previous_progress_tag + " - photon map built.");
-	Y_VERBOSE << getName() << ":Photon map built." << YENDL;
+	if(Y_LOG_HAS_VERBOSE) Y_VERBOSE << getName() << ":Photon map built." << YENDL;
 	Y_INFO << getName() << ": Shot " << curr << " photons from " << num_d_lights << " light(s)" << YENDL;
 
 	totaln_photons_ +=  n_photons_;	// accumulate the total photon number, not using nPath for the case of hashgrid.
 
-	Y_VERBOSE << getName() << ": Stored photons: " << session_global.diffuse_map_.get()->nPhotons() + session_global.caustic_map_.get()->nPhotons() << YENDL;
+	if(Y_LOG_HAS_VERBOSE) Y_VERBOSE << getName() << ": Stored photons: " << session_global.diffuse_map_.get()->nPhotons() + session_global.caustic_map_.get()->nPhotons() << YENDL;
 
 	if(b_hashgrid_)
 	{
 		Y_INFO << getName() << ": Building photons hashgrid:" << YENDL;
 		photon_grid_.updateGrid();
-		Y_VERBOSE << getName() << ": Done." << YENDL;
+		if(Y_LOG_HAS_VERBOSE) Y_VERBOSE << getName() << ": Done." << YENDL;
 	}
 	else
 	{
@@ -647,13 +647,13 @@ void SppmIntegrator::prePass(int samples, int offset, bool adaptive, const Rende
 		{
 			Y_INFO << getName() << ": Building diffuse photons kd-tree:" << YENDL;
 			session_global.diffuse_map_.get()->updateTree();
-			Y_VERBOSE << getName() << ": Done." << YENDL;
+			if(Y_LOG_HAS_VERBOSE) Y_VERBOSE << getName() << ": Done." << YENDL;
 		}
 		if(session_global.caustic_map_.get()->nPhotons() > 0)
 		{
 			Y_INFO << getName() << ": Building caustic photons kd-tree:" << YENDL;
 			session_global.caustic_map_.get()->updateTree();
-			Y_VERBOSE << getName() << ": Done." << YENDL;
+			if(Y_LOG_HAS_VERBOSE) Y_VERBOSE << getName() << ": Done." << YENDL;
 		}
 		if(session_global.diffuse_map_.get()->nPhotons() < 50)
 		{
@@ -779,8 +779,17 @@ GatherInfo SppmIntegrator::traceGatherRay(yafaray4::RenderData &render_data, yaf
 				if(n_gathered > n_max_global)
 				{
 					n_max_global = n_gathered;
-					Y_DEBUG << "maximum Photons: " << n_max_global << ", radius2: " << radius_2 << "\n";
-					if(n_max_global == 10) for(int j = 0; j < n_gathered; ++j) Y_DEBUG << "col:" << gathered[j].photon_->color() << "\n";
+					if(Y_LOG_HAS_DEBUG)
+					{
+						Y_DEBUG << "maximum Photons: " << n_max_global << ", radius2: " << radius_2 << "\n";
+						if(n_max_global == 10)
+						{
+							for(int j = 0; j < n_gathered; ++j)
+							{
+								Y_DEBUG << "col:" << gathered[j].photon_->color() << "\n";
+							}
+						}
+					}
 				}
 				for(int i = 0; i < n_gathered; ++i)
 				{

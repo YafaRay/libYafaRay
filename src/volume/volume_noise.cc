@@ -69,7 +69,7 @@ std::unique_ptr<VolumeRegion> NoiseVolumeRegion::factory(const ParamMap &params,
 
 	if(tex_name.empty())
 	{
-		Y_VERBOSE << "NoiseVolume: Noise texture not set, the volume region won't be created." << YENDL;
+		if(Y_LOG_HAS_VERBOSE) Y_VERBOSE << "NoiseVolume: Noise texture not set, the volume region won't be created." << YENDL;
 		return nullptr;
 	}
 
@@ -77,7 +77,7 @@ std::unique_ptr<VolumeRegion> NoiseVolumeRegion::factory(const ParamMap &params,
 
 	if(!noise)
 	{
-		Y_VERBOSE << "NoiseVolume: Noise texture '" << tex_name << "' couldn't be found, the volume region won't be created." << YENDL;
+		if(Y_LOG_HAS_VERBOSE) Y_VERBOSE << "NoiseVolume: Noise texture '" << tex_name << "' couldn't be found, the volume region won't be created." << YENDL;
 		return nullptr;
 	}
 

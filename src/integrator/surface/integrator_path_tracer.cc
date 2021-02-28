@@ -110,7 +110,10 @@ bool PathIntegrator::preprocess(const RenderControl &render_control, const Rende
 
 	render_info_ += set.str();
 
-	for(std::string line; std::getline(set, line, '\n');) Y_VERBOSE << line << YENDL;
+	if(Y_LOG_HAS_VERBOSE)
+	{
+		for(std::string line; std::getline(set, line, '\n');) Y_VERBOSE << line << YENDL;
+	}
 
 	return success;
 }

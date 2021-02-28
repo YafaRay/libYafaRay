@@ -240,7 +240,7 @@ bool SpotLight::intersect(const Ray &ray, float &t, Rgb &col, float &ipdf) const
 			}
 
 			ipdf = 1.f / (t * t);
-			Y_VERBOSE << "SpotLight: ipdf, color = " << ipdf << ", " << color_ << YENDL;
+			if(Y_LOG_HAS_VERBOSE) Y_VERBOSE << "SpotLight: ipdf, color = " << ipdf << ", " << color_ << YENDL;
 			return true;
 		}
 	}

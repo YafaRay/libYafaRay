@@ -330,7 +330,7 @@ void startElDocument_global(XmlParser &parser, const char *element, const char *
 
 void endElDocument_global(XmlParser &parser, const char *)
 {
-	Y_VERBOSE << "XMLParser: Finished document" << YENDL;
+	if(Y_LOG_HAS_VERBOSE) Y_VERBOSE << "XMLParser: Finished document" << YENDL;
 }
 
 // scene-state, i.e. expect only primary elements

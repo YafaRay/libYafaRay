@@ -128,7 +128,7 @@ PointKdTree<T>::PointKdTree(const std::vector<T> &dat, const std::string &map_na
 
 	buildTree(0, n_elements_, tree_bound_, elements.get());
 
-	Y_VERBOSE << "pointKdTree: " << map_name << " tree built." << YENDL;
+	if(Y_LOG_HAS_VERBOSE) Y_VERBOSE << "pointKdTree: " << map_name << " tree built." << YENDL;
 }
 
 template<class T>
@@ -286,7 +286,7 @@ void PointKdTree<T>::lookup(const Point3 &p, const LookupProc &proc, float &max_
 	++Y_LOOKUPS;
 	if(Y_LOOKUPS == 159999)
 	{
-		Y_VERBOSE << "pointKd-Tree:average photons tested per lookup:" << double(Y_PROCS) / double(Y_LOOKUPS) << YENDL;
+		if(Y_LOG_HAS_VERBOSE) Y_VERBOSE << "pointKd-Tree:average photons tested per lookup:" << double(Y_PROCS) / double(Y_LOOKUPS) << YENDL;
 	}
 #endif
 }

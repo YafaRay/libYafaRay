@@ -51,9 +51,9 @@ AcceleratorSimpleTest::AcceleratorSimpleTest(const std::vector<const Primitive *
 	}
 	for(const auto &object_data : objects_data_)
 	{
-		Y_VERBOSE << "AcceleratorSimpleTest: Primitives in object '" << (object_data.first)->getName() << "': " << object_data.second.primitives_.size() << ", bound: (" << object_data.second.bound_.a_ << ", " << object_data.second.bound_.g_ << ")" << YENDL;
+		if(Y_LOG_HAS_VERBOSE) Y_VERBOSE << "AcceleratorSimpleTest: Primitives in object '" << (object_data.first)->getName() << "': " << object_data.second.primitives_.size() << ", bound: (" << object_data.second.bound_.a_ << ", " << object_data.second.bound_.g_ << ")" << YENDL;
 	}
-	Y_VERBOSE << "AcceleratorSimpleTest: Objects: " << objects_data_.size() << ", primitives in tree: " << num_primitives << ", bound: (" << bound_.a_ << ", " << bound_.g_ << ")" << YENDL;
+	if(Y_LOG_HAS_VERBOSE) Y_VERBOSE << "AcceleratorSimpleTest: Objects: " << objects_data_.size() << ", primitives in tree: " << num_primitives << ", bound: (" << bound_.a_ << ", " << bound_.g_ << ")" << YENDL;
 }
 
 AcceleratorIntersectData AcceleratorSimpleTest::intersect(const Ray &ray, float t_max) const

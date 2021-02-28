@@ -167,7 +167,7 @@ bool LayerNode::configInputs(const ParamMap &params, const NodeFinder &find)
 		upper_layer_ = find(name);
 		if(!upper_layer_)
 		{
-			Y_VERBOSE << "LayerNode: Couldn't get upper_layer " << name << YENDL;
+			if(Y_LOG_HAS_VERBOSE) Y_VERBOSE << "LayerNode: Couldn't get upper_layer " << name << YENDL;
 			return false;
 		}
 	}

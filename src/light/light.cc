@@ -35,7 +35,11 @@ BEGIN_YAFARAY
 
 std::unique_ptr<Light> Light::factory(ParamMap &params, const Scene &scene)
 {
-	Y_DEBUG PRTEXT(**Light) PREND; params.printDebug();
+	if(Y_LOG_HAS_DEBUG)
+	{
+		Y_DEBUG PRTEXT(**Light) PREND;
+		params.printDebug();
+	}
 	std::string type;
 	params.getParam("type", type);
 	if(type == "arealight") return AreaLight::factory(params, scene);

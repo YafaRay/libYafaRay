@@ -66,7 +66,7 @@ ExpDensityVolumeRegion::ExpDensityVolumeRegion(Rgb sa, Rgb ss, Rgb le, float gg,
 {
 	a_ = aa;
 	b_ = bb;
-	Y_VERBOSE << "ExpDensityVolume vol: " << s_a_ << " " << s_s_ << " " << l_e_ << " " << a_ << " " << b_ << YENDL;
+	if(Y_LOG_HAS_VERBOSE) Y_VERBOSE << "ExpDensityVolume vol: " << s_a_ << " " << s_s_ << " " << l_e_ << " " << a_ << " " << b_ << YENDL;
 }
 
 END_YAFARAY
