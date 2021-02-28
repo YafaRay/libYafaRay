@@ -44,7 +44,7 @@ struct ParserState
 {
 	StartElementCb_t start_;
 	EndElementCb_t end_;
-	void *userdata_ = nullptr;
+	std::string element_name_;
 	int level_;
 	std::string last_section_; //! to show last section previous to a XML Parser error
 	std::string last_element_; //! to show last element previous to a XML Parser error
@@ -55,11 +55,11 @@ class XmlParser
 {
 	public:
 		XmlParser(ParamMap &r, ColorSpace input_color_space, float input_gamma);
-		void pushState(StartElementCb_t start, EndElementCb_t end, void *userdata = nullptr);
+		void pushState(StartElementCb_t start, EndElementCb_t end, const std::string &element_name);
 		void popState();
 		void startElement(const char *element, const char **attrs) { ++level_; if(current_) current_->start_(*this, element, attrs); }
 		void endElement(const char *element)	{ if(current_) current_->end_(*this, element); --level_; }
-		void *stateData() { return current_->userdata_; }
+		std::string stateElementName() { return current_->element_name_; }
 		void setParam(const std::string &name, const Parameter &param) { (*cparams_)[name] = param; }
 		int currLevel() const { return level_; }
 		int stateLevel() const { return current_ ? current_->level_ : -1; }

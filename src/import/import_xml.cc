@@ -36,7 +36,7 @@ BEGIN_YAFARAY
 
 void XmlParser::setLastElementName(const char *element_name)
 {
-	if(element_name) current_->last_element_ = std::string(element_name);
+	if(element_name) current_->last_element_ = element_name;
 	else current_->last_element_.clear();
 }
 
@@ -48,36 +48,36 @@ void XmlParser::setLastElementNameAttrs(const char **element_attrs)
 		for(int n = 0; element_attrs[n]; ++n)
 		{
 			if(n > 0) current_->last_element_attrs_ += " ";
-			current_->last_element_attrs_ += (std::string(element_attrs[n]));
+			current_->last_element_attrs_ += element_attrs[n];
 		}
 	}
 }
 
-void startDocument_global(void *user_data)
+void startDocument_global(void *)
 {
 	//Empty
 }
 
-void endDocument_global(void *user_data)
+void endDocument_global(void *)
 {
 	//Empty
 }
 
 void startElement_global(void *user_data, const xmlChar *name, const xmlChar **attrs)
 {
-	XmlParser &parser = *((XmlParser *)user_data);
+	XmlParser &parser = *static_cast<XmlParser *>(user_data);
 	parser.startElement((const char *)name, (const char **)attrs);
 }
 
 void endElement_global(void *user_data, const xmlChar *name)
 {
-	XmlParser &parser = *((XmlParser *)user_data);
+	XmlParser &parser = *static_cast<XmlParser *>(user_data);
 	parser.endElement((const char *)name);
 }
 
 static void myWarning_global(void *user_data, const char *msg, ...)
 {
-	XmlParser &parser = *((XmlParser *)user_data);
+	XmlParser &parser = *static_cast<XmlParser *>(user_data);
 	va_list args;
 	va_start(args, msg);
 	const size_t message_size = 1000;
@@ -91,7 +91,7 @@ static void myWarning_global(void *user_data, const char *msg, ...)
 
 static void myError_global(void *user_data, const char *msg, ...)
 {
-	XmlParser &parser = *((XmlParser *)user_data);
+	XmlParser &parser = *static_cast<XmlParser *>(user_data);
 	va_list args;
 	va_start(args, msg);
 	const size_t message_size = 1000;
@@ -105,7 +105,7 @@ static void myError_global(void *user_data, const char *msg, ...)
 
 static void myFatalError_global(void *user_data, const char *msg, ...)
 {
-	XmlParser &parser = *((XmlParser *)user_data);
+	XmlParser &parser = *static_cast<XmlParser *>(user_data);
 	va_list args;
 	va_start(args, msg);
 	const size_t message_size = 1000;
@@ -173,15 +173,15 @@ XmlParser::XmlParser(ParamMap &r, ColorSpace input_color_space, float input_gamm
 		render_(r), input_gamma_(input_gamma), input_color_space_(input_color_space)
 {
 	cparams_ = &params_;
-	pushState(startElDocument_global, endElDocument_global);
+	pushState(startElDocument_global, endElDocument_global, "___no_name___");
 }
 
-void XmlParser::pushState(StartElementCb_t start, EndElementCb_t end, void *userdata)
+void XmlParser::pushState(StartElementCb_t start, EndElementCb_t end, const std::string &element_name)
 {
 	ParserState state;
 	state.start_ = start;
 	state.end_ = end;
-	state.userdata_ = userdata;
+	state.element_name_ = element_name;
 	state.level_ = level_;
 	state_stack_.push_back(state);
 	current_ = &state_stack_.back();
@@ -263,11 +263,10 @@ void parseParam_global(const char **attrs, Parameter &param, XmlParser &parser)
 	if(!attrs[0]) return;
 	if(!attrs[2]) // only one attribute => bool, integer or float value
 	{
-		std::string attr(attrs[0]);
-		if(attr == "ival") { int i = atoi(attrs[1]); param = Parameter(i); return; }
-		else if(attr == "fval") { double f = atof(attrs[1]); param = Parameter(f); return; }
-		else if(attr == "bval") { bool b = str2Bool_global(attrs[1]); param = Parameter(b); return; }
-		else if(attr == "sval") { param = Parameter(std::string(attrs[1])); return; }
+		if(!strcmp(attrs[0], "ival")) { int i = atoi(attrs[1]); param = Parameter(i); return; }
+		else if(!strcmp(attrs[0], "fval")) { double f = atof(attrs[1]); param = Parameter(f); return; }
+		else if(!strcmp(attrs[0], "bval")) { bool b = str2Bool_global(attrs[1]); param = Parameter(b); return; }
+		else if(!strcmp(attrs[0], "sval")) { param = Parameter(std::string(attrs[1])); return; }
 	}
 	Rgba c(0.f); Vec3 v(0, 0, 0); Matrix4 m;
 	Parameter::Type type = Parameter::None;
@@ -309,14 +308,14 @@ void parseParam_global(const char **attrs, Parameter &param, XmlParser &parser)
 / start- and endElement callbacks for the different states
 =============================================================*/
 
-void endElDummy_global(XmlParser &parser, const char *element)
+void endElDummy_global(XmlParser &parser, const char *)
 {
 	parser.popState();
 }
 
-void startElDummy_global(XmlParser &parser, const char *element, const char **attrs)
+void startElDummy_global(XmlParser &parser, const char *, const char **)
 {
-	parser.pushState(startElDummy_global, endElDummy_global);
+	parser.pushState(startElDummy_global, endElDummy_global, "___no_name___");
 }
 
 void startElDocument_global(XmlParser &parser, const char *element, const char **attrs)
@@ -326,10 +325,10 @@ void startElDocument_global(XmlParser &parser, const char *element, const char *
 	parser.setLastElementNameAttrs(attrs);
 
 	if(strcmp(element, "scene")) Y_WARNING << "XMLParser: skipping <" << element << ">" << YENDL;   /* parser.error("Expected scene definition"); */
-	else parser.pushState(startElScene_global, endElScene_global);
+	else parser.pushState(startElScene_global, endElScene_global, "___no_name___");
 }
 
-void endElDocument_global(XmlParser &parser, const char *element)
+void endElDocument_global(XmlParser &parser, const char *)
 {
 	Y_VERBOSE << "XMLParser: Finished document" << YENDL;
 }
@@ -343,65 +342,61 @@ void startElScene_global(XmlParser &parser, const char *element, const char **at
 	parser.setLastElementName(element);
 	parser.setLastElementNameAttrs(attrs);
 
-	std::string el(element), *name = nullptr;
-	if(el == "material" || el == "integrator" || el == "light" || el == "texture" || el == "camera" || el == "background" || el == "volumeregion" || el == "logging_badge" || el == "output" || el == "render_view")
+	if(!strcmp(element, "material") || !strcmp(element, "integrator") || !strcmp(element, "light") || !strcmp(element, "texture") || !strcmp(element, "camera") || !strcmp(element, "background") || !strcmp(element, "volumeregion") || !strcmp(element, "logging_badge") || !strcmp(element, "output") || !strcmp(element, "render_view"))
 	{
+		std::string element_name;
 		if(!attrs[0])
 		{
 			Y_ERROR << "XMLParser: No attributes for scene element given!" << YENDL;
 			return;
 		}
-		else if(!strcmp(attrs[0], "name")) name = new std::string(attrs[1]);
+		else if(!strcmp(attrs[0], "name")) element_name = attrs[1];
 		else
 		{
 			Y_ERROR << "XMLParser: Attribute for scene element does not match 'name'!" << YENDL;
 			return;
 		}
-		parser.pushState(startElParammap_global, endElParammap_global, name);
+		parser.pushState(startElParammap_global, endElParammap_global, element_name);
 	}
-	else if(el == "layer" || el == "layers_parameters" || el == "scene_parameters")
+	else if(!strcmp(element, "layer") || !strcmp(element, "layers_parameters") || !strcmp(element, "scene_parameters"))
 	{
-		name = new std::string("");
-		parser.pushState(startElParammap_global, endElParammap_global, name);
+		parser.pushState(startElParammap_global, endElParammap_global, "___no_name___");
 	}
-	else if(el == "object")
+	else if(!strcmp(element, "object"))
 	{
-		name = new std::string("Object_" + std::to_string(parser.scene_->getNextFreeId()));
-		parser.pushState(startElObject_global, endElObject_global, name);
+		const std::string element_name = "Object_" + std::to_string(parser.scene_->getNextFreeId());
+		parser.pushState(startElObject_global, endElObject_global, element_name);
 		if(!parser.scene_->startObjects()) Y_ERROR << "XMLParser: Invalid scene state on startGeometry()!" << YENDL;
 	}
-	else if(el == "smooth")
+	else if(!strcmp(element, "smooth"))
 	{
 		float angle = 181;
-		std::string object_name;
+		std::string element_name;
 		for(int n = 0; attrs[n]; ++n)
 		{
-			std::string attr_name(attrs[n]);
-			if(attr_name == "object_name") object_name = std::string(attrs[n + 1]);
-			else if(attr_name == "angle") angle = atof(attrs[n + 1]);
+			if(!strcmp(attrs[n], "object_name")) element_name = attrs[n + 1];
+			else if(!strcmp(attrs[n],"angle")) angle = atof(attrs[n + 1]);
 		}
 		//not optimal to take ID blind...
 		parser.scene_->startObjects();
-		bool success = parser.scene_->smoothNormals(object_name, angle);
-		if(!success) Y_ERROR << "XMLParser: Couldn't smooth object with object_name='" << object_name << "', angle = " << angle << YENDL;
-
+		bool success = parser.scene_->smoothNormals(element_name, angle);
+		if(!success) Y_ERROR << "XMLParser: Couldn't smooth object with object_name='" << element_name << "', angle = " << angle << YENDL;
 		parser.scene_->endObjects();
-		parser.pushState(startElDummy_global, endElDummy_global);
+		parser.pushState(startElDummy_global, endElDummy_global, "___no_name___");
 	}
-	else if(el == "render")
+	else if(!strcmp(element, "render"))
 	{
 		parser.cparams_ = &parser.render_;
-		parser.pushState(startElParammap_global, endElRender_global);
+		parser.pushState(startElParammap_global, endElRender_global, "___no_name___");
 	}
-	else if(el == "instance")
+	else if(!strcmp(element, "instance"))
 	{
-		std::string *base_object_name = new std::string;
+		std::string element_name;
 		for(int n = 0; attrs[n]; n++)
 		{
-			std::string attr(attrs[n]);
-			if(attr == "base_object_name") *base_object_name = attrs[n + 1];
+			if(!strcmp(attrs[n], "base_object_name")) element_name = attrs[n + 1];
 		}
-		parser.pushState(startElInstance_global, endElInstance_global, base_object_name);
+		parser.pushState(startElInstance_global, endElInstance_global, element_name);
 	}
 	else Y_WARNING << "XMLParser: Skipping unrecognized scene element" << YENDL;
 }
@@ -423,8 +418,7 @@ void startElObject_global(XmlParser &parser, const char *element, const char **a
 	parser.setLastElementName(element);
 	parser.setLastElementNameAttrs(attrs);
 
-	std::string el(element);
-	if(el == "p")
+	if(!strcmp(element, "p"))
 	{
 		Point3 p, op;
 		bool has_orco = false;
@@ -432,13 +426,13 @@ void startElObject_global(XmlParser &parser, const char *element, const char **a
 		if(has_orco) parser.scene_->addVertex(p, op);
 		else parser.scene_->addVertex(p);
 	}
-	else if(el == "n")
+	else if(!strcmp(element, "n"))
 	{
 		Vec3 n(0.0, 0.0, 0.0);
 		if(!parseNormal_global(attrs, n)) return;
 		parser.scene_->addNormal(n);
 	}
-	else if(el == "f")
+	else if(!strcmp(element, "f"))
 	{
 		std::vector<int> vertices_indices, uv_indices;
 		vertices_indices.reserve(3);
@@ -461,7 +455,7 @@ void startElObject_global(XmlParser &parser, const char *element, const char **a
 		}
 		parser.scene_->addFace(vertices_indices, uv_indices);
 	}
-	else if(el == "uv")
+	else if(!strcmp(element, "uv"))
 	{
 		float u = 0, v = 0;
 		for(; attrs && attrs[0]; attrs += 2)
@@ -471,14 +465,14 @@ void startElObject_global(XmlParser &parser, const char *element, const char **a
 				case 'u': u = atof(attrs[1]);
 					if(!(math::isValid(u)))
 					{
-						Y_WARNING << std::scientific << std::setprecision(6) << "XMLParser: invalid value in \"" << el << "\" xml entry: " << attrs[0] << "=" << attrs[1] << ". Replacing with 0.0." << YENDL;
+						Y_WARNING << std::scientific << std::setprecision(6) << "XMLParser: invalid value in \"" << element << "\" xml entry: " << attrs[0] << "=" << attrs[1] << ". Replacing with 0.0." << YENDL;
 						u = 0.f;
 					}
 					break;
 				case 'v': v = atof(attrs[1]);
 					if(!(math::isValid(v)))
 					{
-						Y_WARNING << std::scientific << std::setprecision(6) << "XMLParser: invalid value in \"" << el << "\" xml entry: " << attrs[0] << "=" << attrs[1] << ". Replacing with 0.0." << YENDL;
+						Y_WARNING << std::scientific << std::setprecision(6) << "XMLParser: invalid value in \"" << element << "\" xml entry: " << attrs[0] << "=" << attrs[1] << ". Replacing with 0.0." << YENDL;
 						v = 0.f;
 					}
 					break;
@@ -488,24 +482,24 @@ void startElObject_global(XmlParser &parser, const char *element, const char **a
 		}
 		parser.scene_->addUv(u, v);
 	}
-	else if(el == "set_material")
+	else if(!strcmp(element, "set_material"))
 	{
 		std::string mat_name(attrs[1]);
 		const Material *material = parser.scene_->getMaterial(mat_name);
 		if(!material) Y_WARNING << "XMLParser: Unknown material, using default!" << YENDL;
 		parser.scene_->setCurrentMaterial(material);
 	}
-	else if(el == "object_parameters")
+	else if(!strcmp(element, "object_parameters"))
 	{
-		std::string *name = nullptr;
-		if(!strcmp(attrs[0], "name")) name = new std::string(attrs[1]);
-		parser.pushState(startElParammap_global, endElParammap_global, name);
+		std::string element_name;
+		if(!strcmp(attrs[0], "name")) element_name = attrs[1];
+		parser.pushState(startElParammap_global, endElParammap_global, element_name);
 	}
 }
 
 void endElObject_global(XmlParser &parser, const char *element)
 {
-	if(std::string(element) == "object")
+	if(!strcmp(element, "object"))
 	{
 		if(!parser.scene_->endObject()) Y_ERROR << "XMLParser: Invalid scene state on endObject()!" << YENDL;
 		if(!parser.scene_->endObjects()) Y_ERROR << "XMLParser: Invalid scene state on endGeometry()!" << YENDL;
@@ -519,9 +513,7 @@ void startElInstance_global(XmlParser &parser, const char *element, const char *
 	parser.setLastElementName(element);
 	parser.setLastElementNameAttrs(attrs);
 
-	std::string el(element);
-	const std::string base_object_name = *(std::string *)parser.stateData();
-	if(el == "transform")
+	if(!strcmp(element, "transform"))
 	{
 		float m[4][4];
 		for(int n = 0; attrs[n]; ++n)
@@ -533,13 +525,13 @@ void startElInstance_global(XmlParser &parser, const char *element, const char *
 				m[i][j] = atof(attrs[n + 1]);
 			}
 		}
-		parser.scene_->addInstance(base_object_name, m);
+		parser.scene_->addInstance(parser.stateElementName(), m);
 	}
 }
 
 void endElInstance_global(XmlParser &parser, const char *element)
 {
-	if(std::string(element) == "instance")
+	if(!strcmp(element, "instance"))
 	{
 		parser.popState();
 	}
@@ -554,29 +546,28 @@ void startElParammap_global(XmlParser &parser, const char *element, const char *
 	parser.setLastElementName(element);
 	parser.setLastElementNameAttrs(attrs);
 	// support for lists of paramMaps
-	if(std::string(element) == "list_element")
+	if(!strcmp(element, "list_element"))
 	{
 		parser.eparams_.push_back(ParamMap());
 		parser.cparams_ = &parser.eparams_.back();
-		parser.pushState(startElParamlist_global, endElParamlist_global);
+		parser.pushState(startElParamlist_global, endElParamlist_global, "___no_name___");
 		return;
 	}
 	Parameter param;
 	parseParam_global(attrs, param, parser);
-	parser.setParam(std::string(element), param);
+	parser.setParam(element, param);
 }
 
 void endElParammap_global(XmlParser &parser, const char *element)
 {
-	bool exit_state = (parser.currLevel() == parser.stateLevel());
+	const bool exit_state = (parser.currLevel() == parser.stateLevel());
 	if(exit_state)
 	{
-		std::string el(element);
-		std::string *name = (std::string *)parser.stateData();
-		if(!name) Y_ERROR << "XMLParser: No name for scene element available!" << YENDL;
+		const std::string element_name = parser.stateElementName();
+		if(element_name.empty()) Y_ERROR << "XMLParser: No name for scene element available!" << YENDL;
 		else
 		{
-			if(el == "scene_parameters")
+			if(!strcmp(element, "scene_parameters"))
 			{
 				parser.scene_ = Scene::factory(parser.params_);
 				if(!parser.scene_)
@@ -584,21 +575,20 @@ void endElParammap_global(XmlParser &parser, const char *element)
 					Y_ERROR << "XML Loader: scene could not be created." << YENDL;
 				}
 			}
-			else if(el == "material") parser.scene_->createMaterial(*name, parser.params_, parser.eparams_);
-			else if(el == "integrator") parser.scene_->createIntegrator(*name, parser.params_);
-			else if(el == "light") parser.scene_->createLight(*name, parser.params_);
-			else if(el == "texture") parser.scene_->createTexture(*name, parser.params_);
-			else if(el == "camera") parser.scene_->createCamera(*name, parser.params_);
-			else if(el == "background") parser.scene_->createBackground(*name, parser.params_);
-			else if(el == "object_parameters") parser.scene_->createObject(*name, parser.params_);
-			else if(el == "volumeregion") parser.scene_->createVolumeRegion(*name, parser.params_);
-			else if(el == "layers_parameters") parser.scene_->setupLayersParameters(parser.params_);
-			else if(el == "layer") parser.scene_->defineLayer(parser.params_);
-			else if(el == "output") parser.scene_->createOutput(*name, parser.params_);
-			else if(el == "render_view") parser.scene_->createRenderView(*name, parser.params_);
+			else if(!strcmp(element, "material")) parser.scene_->createMaterial(element_name, parser.params_, parser.eparams_);
+			else if(!strcmp(element, "integrator")) parser.scene_->createIntegrator(element_name, parser.params_);
+			else if(!strcmp(element, "light")) parser.scene_->createLight(element_name, parser.params_);
+			else if(!strcmp(element, "texture")) parser.scene_->createTexture(element_name, parser.params_);
+			else if(!strcmp(element, "camera")) parser.scene_->createCamera(element_name, parser.params_);
+			else if(!strcmp(element, "background")) parser.scene_->createBackground(element_name, parser.params_);
+			else if(!strcmp(element, "object_parameters")) parser.scene_->createObject(element_name, parser.params_);
+			else if(!strcmp(element, "volumeregion")) parser.scene_->createVolumeRegion(element_name, parser.params_);
+			else if(!strcmp(element, "layers_parameters")) parser.scene_->setupLayersParameters(parser.params_);
+			else if(!strcmp(element, "layer")) parser.scene_->defineLayer(parser.params_);
+			else if(!strcmp(element, "output")) parser.scene_->createOutput(element_name, parser.params_);
+			else if(!strcmp(element, "render_view")) parser.scene_->createRenderView(element_name, parser.params_);
 			else Y_WARNING << "XMLParser: Unexpected end-tag of scene element!" << YENDL;
 		}
-		delete name;
 		parser.popState(); parser.params_.clear(); parser.eparams_.clear();
 	}
 }
@@ -610,12 +600,12 @@ void startElParamlist_global(XmlParser &parser, const char *element, const char 
 	parser.setLastElementNameAttrs(attrs);
 	Parameter param;
 	parseParam_global(attrs, param, parser);
-	parser.setParam(std::string(element), param);
+	parser.setParam(element, param);
 }
 
 void endElParamlist_global(XmlParser &parser, const char *element)
 {
-	if(std::string(element) == "list_element")
+	if(!strcmp(element, "list_element"))
 	{
 		parser.popState();
 		parser.cparams_ = &parser.params_;
