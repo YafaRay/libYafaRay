@@ -54,15 +54,14 @@ SppmIntegrator::SppmIntegrator(unsigned int d_photons, int passnum, bool transp_
 	b_hashgrid_ = false;
 }
 
-bool SppmIntegrator::preprocess(const RenderControl &render_control, const RenderView *render_view)
+bool SppmIntegrator::preprocess(const RenderControl &render_control, const RenderView *render_view, ImageFilm *image_film)
 {
+	image_film_ = image_film;
 	return true;
 }
 
-bool SppmIntegrator::render(ImageFilm *image_film, RenderControl &render_control, const RenderView *render_view)
+bool SppmIntegrator::render(RenderControl &render_control, const RenderView *render_view)
 {
-	image_film_ = image_film;
-
 	std::stringstream pass_string;
 	aa_noise_params_ = scene_->getAaParameters();
 

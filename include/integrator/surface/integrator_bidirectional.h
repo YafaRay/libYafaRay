@@ -39,13 +39,12 @@ class BidirectionalIntegrator final : public TiledIntegrator
 {
 	public:
 		static std::unique_ptr<Integrator> factory(ParamMap &params, const Scene &scene);
-		virtual ~BidirectionalIntegrator() override;
 
 	private:
 		BidirectionalIntegrator(bool transp_shad = false, int shadow_depth = 4);
 		virtual std::string getShortName() const override { return "BdPT"; }
 		virtual std::string getName() const override { return "BidirectionalPathTracer"; }
-		virtual bool preprocess(const RenderControl &render_control, const RenderView *render_view) override;
+		virtual bool preprocess(const RenderControl &render_control, const RenderView *render_view, ImageFilm *image_film) override;
 		virtual void cleanup() override;
 		virtual Rgba integrate(RenderData &render_data, const DiffRay &ray, int additional_depth, ColorLayers *color_layers, const RenderView *render_view) const override;
 		Rgb sampleAmbientOcclusionLayer(RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo) const;
@@ -71,7 +70,6 @@ class BidirectionalIntegrator final : public TiledIntegrator
 		std::unique_ptr<Pdf1D> light_power_d_;
 		float f_num_lights_;
 		std::map <const Light *, float> inv_light_power_d_;
-		ImageFilm *light_image_ = nullptr;
 
 		bool use_ambient_occlusion_; //! Use ambient occlusion
 		int ao_samples_; //! Ambient occlusion samples

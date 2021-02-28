@@ -99,10 +99,8 @@ void TiledIntegrator::precalcDepths(const RenderView *render_view)
 	if(max_depth_ > 0.f) max_depth_ = 1.f / (max_depth_ - min_depth_);
 }
 
-bool TiledIntegrator::render(ImageFilm *image_film, RenderControl &render_control, const RenderView *render_view)
+bool TiledIntegrator::render(RenderControl &render_control, const RenderView *render_view)
 {
-	image_film_ = image_film;
-
 	std::stringstream pass_string;
 	aa_noise_params_ = scene_->getAaParameters();
 

@@ -138,21 +138,14 @@ class PathData
 		int n_paths_;             //!< number of paths that have been sampled (for current thread and image)
 };
 
-BidirectionalIntegrator::BidirectionalIntegrator(bool transp_shad, int shadow_depth): tr_shad_(transp_shad), s_depth_(shadow_depth),
-																					  light_power_d_(nullptr), light_image_(nullptr)
+BidirectionalIntegrator::BidirectionalIntegrator(bool transp_shad, int shadow_depth): tr_shad_(transp_shad), s_depth_(shadow_depth)
 {
 	//Empty
 }
 
-BidirectionalIntegrator::~BidirectionalIntegrator()
+bool BidirectionalIntegrator::preprocess(const RenderControl &render_control, const RenderView *render_view, ImageFilm *image_film)
 {
-	//done in cleanup() now...
-	//for(unsigned int i=0; i<pathData.lightPath.size(); ++i) free(pathData.lightPath[i].userdata);
-	//for(unsigned int i=0; i<pathData.eyePath.size(); ++i) free(pathData.eyePath[i].userdata);
-}
-
-bool BidirectionalIntegrator::preprocess(const RenderControl &render_control, const RenderView *render_view)
-{
+	image_film_ = image_film;
 	thread_data_.resize(scene_->getNumThreads());
 	for(int t = 0; t < scene_->getNumThreads(); ++t)
 	{
@@ -181,8 +174,7 @@ bool BidirectionalIntegrator::preprocess(const RenderControl &render_control, co
 	}
 
 	//nPaths = 0;
-	light_image_ = image_film_;// new imageFilm_t(cam->resX(), cam->resY(), 0, 0, *lightOut, 1.5f);
-	light_image_->setDensityEstimation(true);
+	image_film_->setDensityEstimation(true);
 	//lightImage->setInteractive(false);
 	//lightImage->init();
 
@@ -248,7 +240,7 @@ void BidirectionalIntegrator::cleanup()
 		for(int i = 0; i < max_path_length_global; ++i) free(path_data.light_path_[i].userdata_);
 		for(int i = 0; i < max_path_length_global; ++i) free(path_data.eye_path_[i].userdata_);
 	}
-	light_image_->setNumDensitySamples(n_paths); //dirty hack...
+	if(image_film_) image_film_->setNumDensitySamples(n_paths); //dirty hack...
 }
 
 /* ============================================================
@@ -350,7 +342,7 @@ Rgba BidirectionalIntegrator::integrate(RenderData &render_data, const DiffRay &
 				float ix, idx, iy, idy;
 				idx = std::modf(path_data.u_, &ix);
 				idy = std::modf(path_data.v_, &iy);
-				light_image_->addDensitySample(li_col, ix, iy, idx, idy);
+				image_film_->addDensitySample(li_col, ix, iy, idx, idy);
 			}
 		}
 #endif

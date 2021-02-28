@@ -267,8 +267,9 @@ void PhotonIntegrator::photonMapKdTreeWorker(PhotonMap *photon_map)
 	photon_map->updateTree();
 }
 
-bool PhotonIntegrator::preprocess(const RenderControl &render_control, const RenderView *render_view)
+bool PhotonIntegrator::preprocess(const RenderControl &render_control, const RenderView *render_view, ImageFilm *image_film)
 {
+	image_film_ = image_film;
 	std::shared_ptr<ProgressBar> pb;
 	if(intpb_) pb = intpb_;
 	else pb = std::make_shared<ConsoleProgressBar>(80);

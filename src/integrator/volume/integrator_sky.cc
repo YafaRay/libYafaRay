@@ -78,7 +78,7 @@ SkyIntegrator::SkyIntegrator(float s_size, float a, float ss, float t) {
 	std::cout << "SkyIntegrator: b_m: " << b_m_ << " b_r: " << b_r_ << std::endl;
 }
 
-bool SkyIntegrator::preprocess(const RenderControl &render_control, const RenderView *render_view)
+bool SkyIntegrator::preprocess(const RenderControl &render_control, const RenderView *render_view, ImageFilm *)
 {
 	background_ = scene_->getBackground();
 	return true;

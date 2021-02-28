@@ -40,7 +40,7 @@ class DebugIntegrator final : public TiledIntegrator
 		DebugIntegrator(SurfaceProperties dt);
 		virtual std::string getShortName() const override { return "DBG"; }
 		virtual std::string getName() const override { return "DebugIntegrator"; }
-		virtual bool preprocess(const RenderControl &render_control, const RenderView *render_view) override;
+		virtual bool preprocess(const RenderControl &render_control, const RenderView *render_view, ImageFilm *image_film) override;
 		virtual Rgba integrate(RenderData &render_data, const DiffRay &ray, int additional_depth, ColorLayers *color_layers, const RenderView *render_view) const override;
 
 		std::vector<const Light *> lights_;

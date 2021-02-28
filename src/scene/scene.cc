@@ -239,16 +239,14 @@ bool Scene::render()
 				Y_WARNING << "Scene: No cameras or lights found at RenderView " << it.second->getName() << "', skipping this RenderView..." << YENDL;
 				continue;
 			}
-			success = (surf_integrator_->preprocess(render_control_, it.second.get()) && vol_integrator_->preprocess(render_control_, it.second.get()));
+			success = (surf_integrator_->preprocess(render_control_, it.second.get(), image_film_.get()) && vol_integrator_->preprocess(render_control_, it.second.get(), image_film_.get()));
 			if(!success)
 			{
 				Y_ERROR << "Scene: Preprocessing process failed, exiting..." << YENDL;
 				return false;
 			}
-			surf_integrator_->cleanup();
-			image_film_->cleanup();
 			render_control_.setStarted();
-			success = surf_integrator_->render(image_film_.get(), render_control_, it.second.get());
+			success = surf_integrator_->render(render_control_, it.second.get());
 			if(!success)
 			{
 				Y_ERROR << "Scene: Rendering process failed, exiting..." << YENDL;
@@ -256,8 +254,10 @@ bool Scene::render()
 			}
 			render_control_.setRenderInfo(surf_integrator_->getRenderInfo());
 			render_control_.setAaNoiseInfo(surf_integrator_->getAaNoiseInfo());
+			surf_integrator_->cleanup();
 			image_film_->flush(it.second.get(), render_control_);
 			render_control_.setFinished();
+			image_film_->cleanup();
 		}
 	}
 	else

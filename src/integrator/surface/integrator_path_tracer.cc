@@ -51,8 +51,9 @@ PathIntegrator::PathIntegrator(bool transp_shad, int shadow_depth)
 	no_recursive_ = false;
 }
 
-bool PathIntegrator::preprocess(const RenderControl &render_control, const RenderView *render_view)
+bool PathIntegrator::preprocess(const RenderControl &render_control, const RenderView *render_view, ImageFilm *image_film)
 {
+	image_film_ = image_film;
 	std::stringstream set;
 	g_timer_global.addEvent("prepass");
 	g_timer_global.start("prepass");

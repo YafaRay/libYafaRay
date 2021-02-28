@@ -38,7 +38,7 @@ SingleScatterIntegrator::SingleScatterIntegrator(float s_size, bool adapt, bool 
 	Y_PARAMS << "SingleScatter: stepSize: " << step_size_ << " adaptive: " << adaptive_ << " optimize: " << optimize_ << YENDL;
 }
 
-bool SingleScatterIntegrator::preprocess(const RenderControl &render_control, const RenderView *render_view)
+bool SingleScatterIntegrator::preprocess(const RenderControl &render_control, const RenderView *render_view, ImageFilm *)
 {
 	Y_INFO << "SingleScatter: Preprocessing..." << YENDL;
 

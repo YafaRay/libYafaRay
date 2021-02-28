@@ -45,8 +45,9 @@ DirectLightIntegrator::DirectLightIntegrator(bool transp_shad, int shadow_depth,
 	r_depth_ = ray_depth;
 }
 
-bool DirectLightIntegrator::preprocess(const RenderControl &render_control, const RenderView *render_view)
+bool DirectLightIntegrator::preprocess(const RenderControl &render_control, const RenderView *render_view, ImageFilm *image_film)
 {
+	image_film_ = image_film;
 	bool success = true;
 	std::stringstream set;
 	g_timer_global.addEvent("prepass");
