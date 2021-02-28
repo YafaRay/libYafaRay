@@ -24,6 +24,7 @@
 #include "constants.h"
 #include "common/collection.h"
 #include "image/image.h"
+#include "common/flags.h"
 #include <set>
 #include <map>
 #include <string>
@@ -116,6 +117,12 @@ class LIBYAFARAY_EXPORT Layer final
 		Layer() = default;
 		Layer(const Type &type, const Image::Type &image_type = Image::Type::None, const Image::Type &exported_image_type = Image::Type::None, const std::string &exported_image_name = "");
 		Layer(const std::string &type_name, const std::string &image_type_name = "", const std::string &exported_image_type_name = "", const std::string &exported_image_name = "");
+		struct Flags : public yafaray4::Flags
+		{
+			Flags() = default;
+			Flags(unsigned int flags) : yafaray4::Flags(flags) { }
+			enum Enum : unsigned int { None = 0, BasicLayers = 1 << 0, DepthLayers = 1 << 1, DiffuseLayers = 1 << 2, IndexLayers = 1 << 3, DebugLayers = 1 << 4, };
+		} flags_; //!< Flags to group layers and improve runtime performance
 		Type getType() const { return type_; }
 		std::string getTypeName() const { return getTypeName(type_); }
 		int getNumExportedChannels() const { return Image::getNumChannels(exported_image_type_); }
@@ -126,6 +133,7 @@ class LIBYAFARAY_EXPORT Layer final
 		Image::Type getExportedImageType() const { return exported_image_type_; }
 		std::string getExportedImageTypeName() const { return Image::getTypeName(exported_image_type_); }
 		std::string getExportedImageName() const { return exported_image_name_; }
+		Flags getFlags() const { return getFlags(type_); }
 		std::string print() const;
 
 		void setType(const Type &type) { type_ = type; }
@@ -138,6 +146,7 @@ class LIBYAFARAY_EXPORT Layer final
 		static bool applyColorSpace(const Type &type);
 		static Rgba getDefaultColor(const Type &type);
 		static Image::Type getDefaultImageType(const Type &type);
+		static Flags getFlags(const Type &type);
 		static const std::map<Type, std::string> &getMapTypeTypeName() { return map_type_typename_; }
 
 	private:
@@ -179,9 +188,10 @@ struct EdgeToonParams //Options for Edge detection and Toon Render Layers
 class Layers final : public Collection<Layer::Type, Layer>
 {
 	public:
+		void setLayer(const Layer::Type key, const Layer &layer) { flags_ |= Layer::getFlags(key); set(key, layer); };
+		Layer::Flags getFlags() const { return flags_; }
 		bool isDefined(const Layer::Type &type) const;
 		bool isDefinedAny(const std::vector<Layer::Type> &types) const;
-		Layer::Type highestDefined() const { if(!items_.empty()) return items_.rbegin()->first; else return Layer::Combined; };
 		const Layers getLayersWithImages() const;
 		LIBYAFARAY_EXPORT const Layers getLayersWithExportedImages() const;
 
@@ -193,6 +203,7 @@ class Layers final : public Collection<Layer::Type, Layer>
 		static const std::map<Layer::Type, std::string> &listAvailable() { return Layer::getMapTypeTypeName(); }
 
 	private:
+		Layer::Flags flags_; //!< Combined flags of all layers defined, to group them and provide better runtime performance
 		MaskParams mask_params_;
 		EdgeToonParams edge_toon_params_;
 };

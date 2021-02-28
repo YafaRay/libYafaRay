@@ -863,7 +863,7 @@ Rgb PhotonIntegrator::finalGathering(RenderData &render_data, const SurfacePoint
 
 Rgba PhotonIntegrator::integrate(RenderData &render_data, const DiffRay &ray, int additional_depth, ColorLayers *color_layers, const RenderView *render_view) const
 {
-	const bool layers_used = render_data.raylevel_ == 0 && color_layers && color_layers->size() > 1;
+	const bool layers_used = render_data.raylevel_ == 0 && color_layers && color_layers->getFlags() != Layer::Flags::None;
 
 	static int n_max = 0;
 	static int calls = 0;

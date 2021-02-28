@@ -51,7 +51,7 @@ MonteCarloIntegrator::~MonteCarloIntegrator() = default;
 
 Rgb MonteCarloIntegrator::estimateAllDirectLight(RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo, ColorLayers *color_layers) const
 {
-	const bool layers_used = render_data.raylevel_ == 0 && color_layers && color_layers->size() > 1;
+	const bool layers_used = render_data.raylevel_ == 0 && color_layers && color_layers->getFlags() != Layer::Flags::None;
 
 	Rgb col;
 	unsigned int loffs = 0;
@@ -85,7 +85,7 @@ Rgb MonteCarloIntegrator::estimateOneDirectLight(RenderData &render_data, const 
 
 Rgb MonteCarloIntegrator::doLightEstimation(RenderData &render_data, Light *light, const SurfacePoint &sp, const Vec3 &wo, const unsigned int  &loffs, ColorLayers *color_layers) const
 {
-	const bool layers_used = render_data.raylevel_ == 0 && color_layers && color_layers->size() > 1;
+	const bool layers_used = render_data.raylevel_ == 0 && color_layers && color_layers->getFlags() != Layer::Flags::None;
 
 	Rgb col(0.f);
 	bool shadowed;
@@ -672,7 +672,7 @@ Rgb MonteCarloIntegrator::estimateCausticPhotons(RenderData &render_data, const 
 
 void MonteCarloIntegrator::recursiveRaytrace(RenderData &render_data, const DiffRay &ray, const BsdfFlags &bsdfs, SurfacePoint &sp, const Vec3 &wo, Rgb &col, float &alpha, int additional_depth, ColorLayers *color_layers) const
 {
-	const bool layers_used = render_data.raylevel_ == 0 && color_layers && color_layers->size() > 1;
+	const bool layers_used = render_data.raylevel_ == 0 && color_layers && color_layers->getFlags() != Layer::Flags::None;
 
 	const Material *material = sp.material_;
 	const SpDifferentials sp_diff(sp, ray);

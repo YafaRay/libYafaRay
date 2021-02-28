@@ -210,6 +210,67 @@ bool Layer::applyColorSpace(const Type &type)
 	}
 }
 
+Layer::Flags Layer::getFlags(const Type &type)
+{
+	switch(type) //Default image type for images created to render each layer type
+	{
+		case Disabled:
+		case Combined:
+		case AaSamples: return Layer::Flags::None;
+
+		case ZDepthNorm:
+		case ZDepthAbs:
+		case Mist: return Layer::Flags::DepthLayers;
+
+		case Diffuse:
+		case DiffuseNoShadow:
+		case DiffuseIndirect:
+		case DiffuseColor: return Layer::Flags::BasicLayers | Layer::Flags::DiffuseLayers;
+
+		case ObjIndexAbs:
+		case ObjIndexNorm:
+		case ObjIndexAuto:
+		case ObjIndexAutoAbs:
+		case MatIndexAbs:
+		case MatIndexNorm:
+		case MatIndexAuto:
+		case MatIndexAutoAbs:
+		case ObjIndexMask:
+		case ObjIndexMaskShadow:
+		case ObjIndexMaskAll:
+		case MatIndexMask:
+		case MatIndexMaskShadow:
+		case MatIndexMaskAll: return Layer::Flags::IndexLayers;
+
+		case NormalSmooth:
+		case NormalGeom:
+		case Uv:
+		case BarycentricUvw:
+		case DebugNu:
+		case DebugNv:
+		case DebugDpdu:
+		case DebugDpdv:
+		case DebugDsdu:
+		case DebugDsdv:
+		case DebugLightEstimationLightDirac:
+		case DebugLightEstimationLightSampling:
+		case DebugLightEstimationMatSampling:
+		case DebugWireframe:
+		case DebugFacesEdges:
+		case DebugObjectsEdges:
+		case DebugSamplingFactor:
+		case DebugDpLengths:
+		case DebugDpdx:
+		case DebugDpdy:
+		case DebugDpdxy:
+		case DebugDudxDvdx:
+		case DebugDudyDvdy:
+		case DebugDudxyDvdxy: return Layer::Flags::DebugLayers;
+
+		default: return Layer::Flags::BasicLayers;
+	}
+}
+
 std::string Layer::print() const
 {
 	std::stringstream ss;

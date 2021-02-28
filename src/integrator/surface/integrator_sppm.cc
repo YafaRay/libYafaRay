@@ -688,7 +688,7 @@ Rgba SppmIntegrator::integrate(RenderData &render_data, const DiffRay &ray, int 
 
 GatherInfo SppmIntegrator::traceGatherRay(yafaray4::RenderData &render_data, yafaray4::DiffRay &ray, yafaray4::HitPoint &hp, ColorLayers *color_layers)
 {
-	const bool layers_used = render_data.raylevel_ == 1 && color_layers && color_layers->size() > 1;
+	const bool layers_used = render_data.raylevel_ == 1 && color_layers && color_layers->getFlags() != Layer::Flags::None;
 
 	static int n_max_global = 0;
 	static int calls_global = 0;

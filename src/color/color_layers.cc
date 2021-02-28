@@ -26,6 +26,7 @@ ColorLayers::ColorLayers(const Layers &layers) : mask_params_(layers.getMaskPara
 	{
 		set(layer.first, layer.first);
 	}
+	flags_ = layers.getFlags();
 }
 
 void ColorLayers::setDefaultColors()
