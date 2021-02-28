@@ -348,7 +348,7 @@ bool SppmIntegrator::renderTile(RenderArea &a, const RenderView *render_view, co
 	return true;
 }
 
-void SppmIntegrator::photonWorker(PhotonMap *diffuse_map, PhotonMap *caustic_map, int thread_id, const Scene *scene, const RenderView *render_view, const RenderControl &render_control, unsigned int n_photons, const Pdf1D *light_power_d, int num_d_lights, const std::vector<Light *> &tmplights, ProgressBar *pb, int pb_step, unsigned int &total_photons_shot, int max_bounces, Random &prng)
+void SppmIntegrator::photonWorker(PhotonMap *diffuse_map, PhotonMap *caustic_map, int thread_id, const Scene *scene, const RenderView *render_view, const RenderControl &render_control, unsigned int n_photons, const Pdf1D *light_power_d, int num_d_lights, const std::vector<const Light *> &tmplights, ProgressBar *pb, int pb_step, unsigned int &total_photons_shot, int max_bounces, Random &prng)
 {
 	Ray ray;
 	float light_num_pdf, light_pdf, s_1, s_2, s_3, s_4, s_5, s_6, s_7, s_l;
@@ -553,7 +553,7 @@ void SppmIntegrator::prePass(int samples, int offset, bool adaptive, const Rende
 	}
 
 	lights_ = render_view->getLightsVisible();
-	std::vector<Light *> tmplights;
+	std::vector<const Light *> tmplights;
 
 	//background do not emit photons, or it is merged into normal light?
 

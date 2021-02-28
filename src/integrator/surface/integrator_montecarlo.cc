@@ -83,7 +83,7 @@ Rgb MonteCarloIntegrator::estimateOneDirectLight(RenderData &render_data, const 
 	return doLightEstimation(render_data, lights_[lnum], sp, wo, lnum) * light_num;
 }
 
-Rgb MonteCarloIntegrator::doLightEstimation(RenderData &render_data, Light *light, const SurfacePoint &sp, const Vec3 &wo, const unsigned int  &loffs, ColorLayers *color_layers) const
+Rgb MonteCarloIntegrator::doLightEstimation(RenderData &render_data, const Light *light, const SurfacePoint &sp, const Vec3 &wo, const unsigned int  &loffs, ColorLayers *color_layers) const
 {
 	const bool layers_used = render_data.raylevel_ == 0 && color_layers && color_layers->getFlags() != Layer::Flags::None;
 
@@ -374,7 +374,7 @@ Rgb MonteCarloIntegrator::doLightEstimation(RenderData &render_data, Light *ligh
 	return col;
 }
 
-void MonteCarloIntegrator::causticWorker(PhotonMap *caustic_map, int thread_id, const Scene *scene, const RenderView *render_view, const RenderControl &render_control, unsigned int n_caus_photons, Pdf1D *light_power_d, int num_lights, const std::vector<Light *> &caus_lights, int caus_depth, ProgressBar *pb, int pb_step, unsigned int &total_photons_shot)
+void MonteCarloIntegrator::causticWorker(PhotonMap *caustic_map, int thread_id, const Scene *scene, const RenderView *render_view, const RenderControl &render_control, unsigned int n_caus_photons, Pdf1D *light_power_d, int num_lights, const std::vector<const Light *> &caus_lights, int caus_depth, ProgressBar *pb, int pb_step, unsigned int &total_photons_shot)
 {
 	bool done = false;
 	float s_1, s_2, s_3, s_4, s_5, s_6, s_7, s_l;
@@ -562,7 +562,7 @@ bool MonteCarloIntegrator::createCausticMap(const RenderView *render_view, const
 	session_global.caustic_map_.get()->setNumThreadsPkDtree(scene_->getNumThreadsPhotons());
 
 	Ray ray;
-	std::vector<Light *> caus_lights;
+	std::vector<const Light *> caus_lights;
 
 	for(unsigned int i = 0; i < lights_.size(); ++i)
 	{

@@ -134,7 +134,7 @@ inline double cosInter_global(double y_1, double y_2, double mu)
 	return y_1 * (1.0f - mu_2) + y_2 * mu_2;
 }
 
-float VolumeRegion::attenuation(const Point3 p, Light *l) const
+float VolumeRegion::attenuation(const Point3 p, const Light *l) const
 {
 	if(attenuation_grid_map_.find(l) == attenuation_grid_map_.end())
 	{

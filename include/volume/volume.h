@@ -60,7 +60,7 @@ class VolumeRegion
 			return sigmaA(p, v) + sigmaS(p, v);
 		}
 
-		float attenuation(const Point3 p, Light *l) const;
+		float attenuation(const Point3 p, const Light *l) const;
 
 		// w_l: dir *from* the light, w_s: direction, into which should be scattered
 		virtual float p(const Vec3 &w_l, const Vec3 &w_s) const
@@ -80,7 +80,7 @@ class VolumeRegion
 		Bound getBb() const { return b_box_; }
 
 		int att_grid_x_, att_grid_y_, att_grid_z_; // FIXME: un-hardcode
-		std::map<Light *, float *> attenuation_grid_map_; // FIXME: un-hardcode
+		std::map<const Light *, float *> attenuation_grid_map_; // FIXME: un-hardcode
 
 	protected:
 		Bound b_box_;

@@ -80,9 +80,9 @@ bool RenderView::init(const Scene &scene)
 	return true;
 }
 
-const std::vector<Light *> RenderView::getLightsVisible() const
+const std::vector<const Light *> RenderView::getLightsVisible() const
 {
-	std::vector<Light *> result;
+	std::vector<const Light *> result;
 	for(const auto &l : lights_)
 	{
 		if(l.second->lightEnabled() && !l.second->photonOnly()) result.push_back(l.second);
@@ -90,9 +90,9 @@ const std::vector<Light *> RenderView::getLightsVisible() const
 	return result;
 }
 
-const std::vector<Light *> RenderView::getLightsEmittingCausticPhotons() const
+const std::vector<const Light *> RenderView::getLightsEmittingCausticPhotons() const
 {
-	std::vector<Light *> result;
+	std::vector<const Light *> result;
 	for(const auto &l : lights_)
 	{
 		if(l.second->lightEnabled() && l.second->shootsCausticP()) result.push_back(l.second);
@@ -100,9 +100,9 @@ const std::vector<Light *> RenderView::getLightsEmittingCausticPhotons() const
 	return result;
 }
 
-const std::vector<Light *> RenderView::getLightsEmittingDiffusePhotons() const
+const std::vector<const Light *> RenderView::getLightsEmittingDiffusePhotons() const
 {
-	std::vector<Light *> result;
+	std::vector<const Light *> result;
 	for(const auto &l : lights_)
 	{
 		if(l.second->lightEnabled() && l.second->shootsDiffuseP()) result.push_back(l.second);

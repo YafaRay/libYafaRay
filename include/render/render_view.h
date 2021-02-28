@@ -46,9 +46,9 @@ class RenderView final
 		const std::map<std::string, Light *> getLights() const { return lights_; }
 		bool isSpectral() const { return wavelength_ != 0.f; }
 		float getWaveLength() const { return wavelength_; }
-		const std::vector<Light *> getLightsVisible() const;
-		const std::vector<Light *> getLightsEmittingCausticPhotons() const;
-		const std::vector<Light *> getLightsEmittingDiffusePhotons() const;
+		const std::vector<const Light *> getLightsVisible() const;
+		const std::vector<const Light *> getLightsEmittingCausticPhotons() const;
+		const std::vector<const Light *> getLightsEmittingDiffusePhotons() const;
 
 	private:
 		RenderView(const std::string &name, const std::string &camera_name, const std::string &light_names, float wavelength) : name_(name), camera_name_(camera_name), light_names_(light_names), wavelength_(wavelength) { }

@@ -105,7 +105,7 @@ PhotonIntegrator::PhotonIntegrator(unsigned int d_photons, unsigned int c_photon
 	max_bounces_ = 5;
 }
 
-void PhotonIntegrator::diffuseWorker(PhotonMap *diffuse_map, int thread_id, const Scene *scene, const RenderView *render_view, const RenderControl &render_control, unsigned int n_diffuse_photons, const Pdf1D *light_power_d, int num_d_lights, const std::vector<Light *> &tmplights, ProgressBar *pb, int pb_step, unsigned int &total_photons_shot, int max_bounces, bool final_gather, PreGatherData &pgdat)
+void PhotonIntegrator::diffuseWorker(PhotonMap *diffuse_map, int thread_id, const Scene *scene, const RenderView *render_view, const RenderControl &render_control, unsigned int n_diffuse_photons, const Pdf1D *light_power_d, int num_d_lights, const std::vector<const Light *> &tmplights, ProgressBar *pb, int pb_step, unsigned int &total_photons_shot, int max_bounces, bool final_gather, PreGatherData &pgdat)
 {
 	Ray ray;
 	float light_num_pdf, light_pdf, s_1, s_2, s_3, s_4, s_5, s_6, s_7, s_l;
@@ -290,7 +290,7 @@ bool PhotonIntegrator::preprocess(const RenderControl &render_control, const Ren
 	set << "RayDepth=" << r_depth_ << "  ";
 
 	lights_ = render_view->getLightsVisible();
-	std::vector<Light *> tmplights;
+	std::vector<const Light *> tmplights;
 
 	if(use_photon_caustics_)
 	{
