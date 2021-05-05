@@ -1,4 +1,3 @@
-
 ###############################################################################
 # UserConfig File                                                              
 ###############################################################################
@@ -39,24 +38,6 @@ set(WITH_PNG ON)
 # Build with TIFF image I/O support, default:ON
 set(WITH_TIFF ON)
 
-# Enable XML Import capability (required for XML Loader), default:ON
-set(WITH_XMLImport ON)
-
-# Enable XML Loader build, default:ON
-set(WITH_XML_LOADER ON)
-
-# Enable the YafaRay Python bindings, default:ON
-set(WITH_YAF_PY_BINDINGS ON)
-
-# Enable the YafaRay Ruby bindings, default:OFF
-set(WITH_YAF_RUBY_BINDINGS OFF)
-
-# Enable Qt Gui build, default: OFF
-set(WITH_QT OFF)
-
-# Embed font for QT GUI (useful for some buggy QT installations), default: OFF
-set(EMBED_FONT_QT OFF)
-
 
 ############################ Path setting variables ############################
 # Default:                                                                     
@@ -80,38 +61,11 @@ set(EMBED_FONT_QT OFF)
 # this will install the libraries in ${USER_INSTALL_PREFIX}/lib
 # NOTE: under windows platforms this variable is ignored                       
 
-##set(YAF_LIB_DIR lib)
-
-# The Python Bindings Installation Path
-# Default: ${YAF_LIB_DIR}
-#                                                                              
-# this will install the Python bindings on ${YAF_LIB_DIR}
-# you can set this path to your local blender scripts directory
-# or whatever suits you best
-
-##set(YAF_BINDINGS_PY_DIR ${YAF_LIB_DIR})
-
-# The Ruby Bindings Installation Path                                          
-# Default: ${YAF_LIB_DIR}
-#                                                                              
-# this will install the Ruby bindings once                                     
-# ${YAF_LIB_DIR}
-# you can set this path to whatever suits you best                             
-
-##set(YAF_BINDINGS_RUBY_DIR ${YAF_LIB_DIR})
-
-# include files instalation dir                                                
-# Default: include/yafaray
-#                                                                              
-# Note: include files will not be installed when building as Blender AddOn
-# By default: ${USER_INSTALL_PREFIX}/include/yafaray
-
 ##set(YAF_INCL_DIR "include/yafaray")
 
 # documentation instalation dir                                                
 # Default: share/doc/yafaray
 #                                                                              
-# Note: this is *ignored* if YafaRay is built as a Blender Add-On. In that case, the Blender-Exporter docs will be used instead
 # By default: ${USER_INSTALL_PREFIX}/share/doc/yafaray
 
 ##set(YAF_DOC_DIR "share/doc/yafaray")
@@ -119,7 +73,6 @@ set(EMBED_FONT_QT OFF)
 # tests instalation dir                                                
 # Default: share/yafaray/tests
 #                                                                              
-# Note: this is *ignored* if YafaRay is built as a Blender Add-On. In that case, the Blender-Exporter tests will be used instead
 # By default: ${USER_INSTALL_PREFIX}/share/yafaray/tests
 
 ##set(YAF_TESTS_DIR "share/yafaray/tests")
@@ -169,19 +122,6 @@ set(EMBED_FONT_QT OFF)
 ##set(USER_DEBUG_EXTRA_FLAGS "")
 
 
-######################## Executable location variables #########################
-# Here you can set the paths to search for executables, you can leave blank    
-# the ones you don't need                                                      
-#                                                                              
-# Path to swig executable                                                      
-
-##set(YAF_USER_SWIG_BIN_DIR "")
-
-
-# Path to Qt qmake executable                                                     #
-##set(YAF_USER_QT_BIN_DIR "")
-
-
 ########################### Extra linking variables ############################
 # the variable YAF_USER_EXTRA_LIBS can be used to add extra linkage in case    
 # one of your dependencies has a dynamic link that is not included in the      
@@ -207,13 +147,6 @@ set(EMBED_FONT_QT OFF)
 # Use this variable to set extra defines that your build might require         
 
 ##set(YAF_USER_EXTRA_DEFS "")
-
-
-########################### Required Python version ############################
-# Use this variable to set the Python version you want to use for the bindings 
-# Default: 3.5                                                                 
-
-##set(YAF_PY_VERSION 3.5)
 
 
 ############################## Code Speed Up ###################################

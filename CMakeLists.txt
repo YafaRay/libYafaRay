@@ -11,14 +11,8 @@ option(WITH_OpenEXR "Build with OpenEXR image I/O support" ON)
 option(WITH_JPEG "Build with JPEG image I/O support" ON)
 option(WITH_PNG "Build with PNG image I/O support" ON)
 option(WITH_TIFF "Build with TIFF image I/O support" ON)
-option(WITH_XMLImport "Build with XML import/parser support" ON)
-option(WITH_XML_LOADER "Build XML Loader" ON)
-option(WITH_QT "Enable Qt Gui build" OFF)
-option(WITH_YAF_PY_BINDINGS "Enable the YafaRay Python bindings" ON)
-option(WITH_YAF_RUBY_BINDINGS "Enable the YafaRay Ruby bindings" OFF)
 option(WITH_OpenCV "Build OpenCV image processing support" ON)
 option(DEBUG_BUILD "Enable debug build mode" OFF)
-option(EMBED_FONT_QT "Embed font for QT GUI (useful for some buggy QT installations)" OFF)
 option(FAST_MATH "Enable mathematic approximations to make code faster" ON)
 option(FAST_TRIG "Enable trigonometric approximations to make code faster" ON)
 option(WITH_MINGW_STD_THREADS "Use MinGW-Std-Threads 3rd party library. Useful with old MinGW versions that do not include C++11 threads libraries or where they are slower than they should. Set it to OFF with newer versions of MinGW or a conflict might happen causing crashes." OFF)
@@ -65,16 +59,6 @@ endif(YAF_USER_LIBRARY_DIRS)
 
 SET(YAF_PROGRAM_PATH "")
 
-if(YAF_USER_QT_BIN_DIR)
-	SET(CMAKE_PROGRAM_PATH ${YAF_USER_QT_BIN_DIR} CACHE STRING "Executables search directories" FORCE)
-endif(YAF_USER_QT_BIN_DIR)
-
-if(YAF_USER_SWIG_BIN_DIR)
-	UNSET(SWIG_EXECUTABLE CACHE)
-	UNSET(SWIG_FOUND CACHE)
-	FIND_PROGRAM(SWIG_EXECUTABLE swig PATHS ${YAF_USER_SWIG_BIN_DIR} NO_DEFAULT_PATH)
-endif(YAF_USER_SWIG_BIN_DIR)
-
 if(YAF_USER_EXTRA_LIBS)
 	set(CMAKE_CXX_STANDARD_LIBRARIES "${CMAKE_CXX_STANDARD_LIBRARIES} ${YAF_USER_EXTRA_LIBS}" CACHE STRING "Standard C++ libraries" FORCE)
 endif(YAF_USER_EXTRA_LIBS)
@@ -91,26 +75,6 @@ if(WITH_OpenCV)
 else(WITH_OpenCV)
 	message("Using OpenCV: no")
 endif(WITH_OpenCV)
-
-if(WITH_XML_LOADER)
-	message("Building XML loader: yes (requires XML Import)")
-	set(WITH_XMLImport ON)
-else(WITH_XML_LOADER)
-	message("Building XML loader: no")
-endif(WITH_XML_LOADER)
-
-if(WITH_XMLImport)
-	message("Building with XML Import support: yes (requires LibXML2)")
-	find_package(LibXml2 REQUIRED)
-	if(LIBXML2_FOUND)
-		message("	Using LibXML2: yes")
-		add_definitions(-DHAVE_XML)
-	else(LIBXML2_FOUND)
-		message("	Using LibXML2: no (not found)")
-	endif(LIBXML2_FOUND)
-else(WITH_XMLImport)
-	message("Building with XML Import support: no")
-endif(WITH_XMLImport)
 
 if(WITH_OpenEXR OR WITH_PNG OR WITH_XML_LOADER)
 	INCLUDE(FindZLIB)
@@ -163,25 +127,6 @@ else(WITH_TIFF)
 	message("Using TIFF: no")
 endif(WITH_TIFF)
 
-if(WITH_QT)
-	find_package(Qt5Widgets REQUIRED)
-	message("Using Qt: yes")
-else(WITH_QT)
-	message("Using Qt: no")
-endif(WITH_QT)
-
-if(WITH_YAF_PY_BINDINGS)
-	message("Building Python bindings: yes")
-else(WITH_YAF_PY_BINDINGS)
-	message("Building Python bindings: no")
-endif(WITH_YAF_PY_BINDINGS)
-
-if(WITH_YAF_RUBY_BINDINGS)
-	message("Building Ruby bindings: yes")
-else(WITH_YAF_RUBY_BINDINGS)
-	message("Building Ruby bindings: no")
-endif(WITH_YAF_RUBY_BINDINGS)
-
 if(DEBUG_BUILD)
 	set(CMAKE_BUILD_TYPE Debug CACHE STRING "Build mode" FORCE)
 else(DEBUG_BUILD)
@@ -211,101 +156,60 @@ if (USER_INSTALL_PREFIX)
 endif (USER_INSTALL_PREFIX)
 
 # Load the packaging config
+
 include(CMakeConfig/CPackConfig.txt)
 
-if(NOT WIN32)
-	# installation directories
+# installation directories
 
-	if(NOT YAF_BIN_DIR)
-		set(YAF_BIN_DIR bin)
-	endif(NOT YAF_BIN_DIR)
+if(NOT YAF_BIN_DIR)
+	set(YAF_BIN_DIR bin)
+endif(NOT YAF_BIN_DIR)
 
+if(WIN32)
+	set(YAF_LIB_DIR ${YAF_BIN_DIR})
+else(WIN32)
 	if(NOT YAF_LIB_DIR)
 		set(YAF_LIB_DIR lib)
 	endif(NOT YAF_LIB_DIR)
+endif(WIN32)
 
-	if(NOT YAF_BINDINGS_PY_DIR)
-		set(YAF_BINDINGS_PY_DIR ${YAF_LIB_DIR})
-	endif(NOT YAF_BINDINGS_PY_DIR)
+# build flags
 
-	if(NOT YAF_BINDINGS_RUBY_DIR)
-		set(YAF_BINDINGS_RUBY_DIR ${YAF_LIB_DIR})
-	endif(NOT YAF_BINDINGS_RUBY_DIR)
-
-	# build flags
+if(WIN32 AND NOT MINGW) # MSVC
+	set(CMAKE_CXX_FLAGS "/DWIN32 /D_WIN32 /D_USE_MATH_DEFINES /DNOMINMAX /EHsc /MD /nologo" CACHE STRING "Default compiler flags" FORCE)
+else(WIN32 AND NOT MINGW)
 	set(CMAKE_CXX_FLAGS "-Wall -Wno-unused-result" CACHE STRING "Default compiler flags" FORCE)
-	
-	if(USER_RELEASE_OPTIMIZATION_FLAGS)
-		set(YAF_CXX_FLAGS_RELEASE ${USER_RELEASE_OPTIMIZATION_FLAGS})
-	else(USER_RELEASE_OPTIMIZATION_FLAGS)
+endif(WIN32 AND NOT MINGW)
+
+if(USER_RELEASE_OPTIMIZATION_FLAGS)
+	set(YAF_CXX_FLAGS_RELEASE ${USER_RELEASE_OPTIMIZATION_FLAGS})
+else(USER_RELEASE_OPTIMIZATION_FLAGS)
+	if(WIN32 AND NOT MINGW) # MSVC
+		set(YAF_CXX_FLAGS_RELEASE "/Ot /Ox")
+	else(WIN32 AND NOT MINGW)
 		set(YAF_CXX_FLAGS_RELEASE "-Wall -std=c++11 -pthread -O3 -ffast-math -Wno-unused-result -fvisibility=hidden -Wl,--no-undefined")
-	endif(USER_RELEASE_OPTIMIZATION_FLAGS)
-	
-	if(USER_DEBUG_OPTIMIZATION_FLAGS)
-		set(YAF_CXX_FLAGS_DEBUG ${USER_DEBUG_OPTIMIZATION_FLAGS})
-	else(USER_DEBUG_OPTIMIZATION_FLAGS)
+	endif(WIN32 AND NOT MINGW)
+endif(USER_RELEASE_OPTIMIZATION_FLAGS)
+
+if(USER_DEBUG_OPTIMIZATION_FLAGS)
+	set(YAF_CXX_FLAGS_DEBUG ${USER_DEBUG_OPTIMIZATION_FLAGS})
+else(USER_DEBUG_OPTIMIZATION_FLAGS)
+	if(WIN32 AND NOT MINGW) # MSVC
+		set(YAF_CXX_FLAGS_DEBUG "/Zi /GS /RTC1 /Od")
+	else(WIN32 AND NOT MINGW)
 		set(YAF_CXX_FLAGS_DEBUG "-Wall -std=c++11 -pthread -ggdb -Wno-unused-result -fvisibility=hidden -Wl,--no-undefined")
-	endif(USER_DEBUG_OPTIMIZATION_FLAGS)
-	
-	if(APPLE)
-		set(CMAKE_INSTALL_NAME_DIR @rpath)
-	endif(APPLE)
-	
-	set(YAF_TARGET_TYPE LIBRARY)
-	
-else(NOT WIN32)
-	# installation directories
+	endif(WIN32 AND NOT MINGW)
+endif(USER_DEBUG_OPTIMIZATION_FLAGS)
 
-	if(NOT YAF_BIN_DIR)
-		set(YAF_BIN_DIR bin)
-	endif(NOT YAF_BIN_DIR)
+if(APPLE)
+	set(CMAKE_INSTALL_NAME_DIR @rpath)
+endif(APPLE)
 
-	set(YAF_LIB_DIR ${YAF_BIN_DIR})
+set(YAF_TARGET_TYPE LIBRARY)
 
-	if(NOT YAF_BINDINGS_PY_DIR)
-		set(YAF_BINDINGS_PY_DIR ${YAF_LIB_DIR})
-	endif(NOT YAF_BINDINGS_PY_DIR)
-
-	if(NOT YAF_BINDINGS_RUBY_DIR)
-		set(YAF_BINDINGS_RUBY_DIR ${YAF_LIB_DIR})
-	endif(NOT YAF_BINDINGS_RUBY_DIR)
-
-	# build flags
-	if(MINGW)
-		set(CMAKE_CXX_FLAGS "-Wall -Wno-unused-result" CACHE STRING "Default compiler flags" FORCE)
-
-		if(USER_RELEASE_OPTIMIZATION_FLAGS)
-			set(YAF_CXX_FLAGS_RELEASE ${USER_RELEASE_OPTIMIZATION_FLAGS})
-		else(USER_RELEASE_OPTIMIZATION_FLAGS)
-			set(YAF_CXX_FLAGS_RELEASE "-Wall -std=c++11 -pthread -O3 -ffast-math -Wno-unused-result -fvisibility=hidden -Wl,--no-undefined")
-		endif(USER_RELEASE_OPTIMIZATION_FLAGS)
-		
-		if(USER_DEBUG_OPTIMIZATION_FLAGS)
-			set(YAF_CXX_FLAGS_DEBUG ${USER_DEBUG_OPTIMIZATION_FLAGS})
-		else(USER_DEBUG_OPTIMIZATION_FLAGS)
-			set(YAF_CXX_FLAGS_DEBUG "-Wall -std=c++11 -pthread -ggdb -Wno-unused-result -fvisibility=hidden -Wl,--no-undefined")
-		endif(USER_DEBUG_OPTIMIZATION_FLAGS)
-
-	else(MINGW)
-		set(CMAKE_CXX_FLAGS "/DWIN32 /D_WIN32 /D_USE_MATH_DEFINES /DNOMINMAX /EHsc /MD /nologo" CACHE STRING "Default compiler flags" FORCE)
-
-		if(USER_RELEASE_OPTIMIZATION_FLAGS)
-			set(YAF_CXX_FLAGS_RELEASE ${USER_RELEASE_OPTIMIZATION_FLAGS})
-		else(USER_RELEASE_OPTIMIZATION_FLAGS)
-			set(YAF_CXX_FLAGS_RELEASE "/Ot /Ox")
-		endif(USER_RELEASE_OPTIMIZATION_FLAGS)
-		
-		if(USER_DEBUG_OPTIMIZATION_FLAGS)
-			set(YAF_CXX_FLAGS_DEBUG ${USER_DEBUG_OPTIMIZATION_FLAGS})
-		else(USER_DEBUG_OPTIMIZATION_FLAGS)
-			set(YAF_CXX_FLAGS_DEBUG "/Zi /GS /RTC1 /Od")
-		endif(USER_DEBUG_OPTIMIZATION_FLAGS)
-
-	endif(MINGW)
-
+if(WIN32)
 	set(YAF_TARGET_TYPE ARCHIVE DESTINATION ${CMAKE_INSTALL_PREFIX}/lib RUNTIME)
-
-endif(NOT WIN32)
+endif(WIN32)
 
 if(USER_RELEASE_EXTRA_FLAGS)
 	set(YAF_CXX_FLAGS_RELEASE "${YAF_CXX_FLAGS_RELEASE} ${USER_RELEASE_EXTRA_FLAGS}")
@@ -334,6 +238,7 @@ else (USER_DBGFLAGS)
 endif (USER_DBGFLAGS)
 
 # Code speedup due mathematical approximations
+
 if (FAST_MATH)
 	add_definitions(-DFAST_MATH)
 endif (FAST_MATH)
@@ -343,6 +248,7 @@ if (FAST_TRIG)
 endif (FAST_TRIG)
 
 # Adding subdirectories
+
 set(dir include)
 file (GLOB_RECURSE headers "${dir}/*.h")
 

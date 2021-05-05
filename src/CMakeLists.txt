@@ -5,7 +5,6 @@ else(APPLE)
 endif(APPLE)
 
 set(CMAKE_SHARED_LIBRARY_PREFIX "")
-#set(YAF_INCLUDE_DIRS ${CMAKE_SOURCE_DIR}/include ${CMAKE_SOURCE_DIR}/yafaray/core ${CMAKE_BINARY_DIR}/yafaray)
 set(YAF_INCLUDE_DIRS ${CMAKE_SOURCE_DIR}/include ${CMAKE_BINARY_DIR} ${CMAKE_BINARY_DIR}/include)
 set(YAF_DEFINITIONS "-DBUILDING_LIBYAFARAY")
 
@@ -64,12 +63,6 @@ if(WITH_Freetype)
     list(APPEND YAF_DEPS_LIB_DIRS ${FREETYPE_LIBRARIES})
     list(APPEND YAF_DEFINITIONS "-DHAVE_FREETYPE")
 endif(WITH_Freetype)
-
-if(WITH_XMLImport)
-    list(APPEND YAF_DEPS_INCLUDE_DIRS ${LIBXML2_INCLUDE_DIR})
-    list(APPEND YAF_DEPS_LIB_DIRS ${LIBXML2_LIBRARIES})
-    list(APPEND YAF_DEFINITIONS "-DHAVE_XML_IMPORT")
-endif(WITH_XMLImport)
 
 # Generating config headers
 include(${CMAKE_SOURCE_DIR}/CMakeConfig/GenConfHeaders.txt)
@@ -134,13 +127,3 @@ target_include_directories(libyafaray4 PRIVATE ${YAF_INCLUDE_DIRS})
 target_include_directories(libyafaray4 SYSTEM BEFORE PRIVATE ${YAF_DEPS_INCLUDE_DIRS})
 target_link_libraries(libyafaray4 PRIVATE ${YAF_DEPS_LIB_DIRS})
 install(TARGETS libyafaray4 DESTINATION)
-
-if(WITH_XML_LOADER)
-	add_subdirectory(loader_xml)
-endif(WITH_XML_LOADER)
-
-if(WITH_QT)
-	add_subdirectory(gui)
-endif(WITH_QT)
-
-add_subdirectory(bindings)
