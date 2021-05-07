@@ -17,7 +17,6 @@
  */
 
 #include <stdio.h>
-#include <malloc.h>
 #include "test01.h"
 #include "interface/interface_c.h"
 

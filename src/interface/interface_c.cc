@@ -242,11 +242,14 @@ void yafaray4_setLogVerbosityLevel(const char *str_v_level)
 
 char * yafaray4_getVersion() //!< Get version to check against the exporters
 {
-	const yafaray4::Interface *interface = new yafaray4::Interface();
+	yafaray4::Interface *interface = new yafaray4::Interface();
+	interface->printWarning("Testing");
+	interface->createScene();
 	const std::string version = interface->getVersion();
 	delete interface;
-	char *version_ptr = (char *) malloc(version.size()+1);
-	strncpy(version_ptr, version.c_str(), version.size()+1);
+	size_t buf_length = (version.size() + 1) * sizeof(char); //+1 to include 0x00 C string termination
+	char *version_ptr = (char *) malloc(buf_length);
+	strncpy(version_ptr, version.c_str(), buf_length);
 	return version_ptr;
 }
 
