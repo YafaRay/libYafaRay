@@ -23,7 +23,6 @@
 #include "accelerator/accelerator.h"
 #include "geometry/bound.h"
 #include "geometry/primitive.h"
-#include "scene/yafaray/object_yafaray.h"
 #include "common/thread.h"
 #include <array>
 

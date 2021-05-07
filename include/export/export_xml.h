@@ -75,8 +75,6 @@ class LIBYAFARAY_EXPORT XmlExport: public Interface
 		ColorSpace xml_color_space_ = RawManualGamma;
 };
 
-typedef XmlExport *XmlExportConstructor_t();
-
 END_YAFARAY
 
 #endif // YAFARAY_EXPORT_XML_H

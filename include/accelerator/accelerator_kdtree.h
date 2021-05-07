@@ -24,7 +24,6 @@
 #include "common/memory_arena.h"
 #include "geometry/bound.h"
 #include "geometry/primitive.h"
-#include "scene/yafaray/object_yafaray.h"
 #include <array>
 
 BEGIN_YAFARAY

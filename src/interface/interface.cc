@@ -371,15 +371,5 @@ void Interface::setLogVerbosityLevel(const std::string &str_v_level)
 	logger_global.setLogMasterVerbosity(str_v_level);
 }
 
-// export "factory"...
-
-extern "C"
-{
-	Interface *getYafray_global()
-	{
-		return new Interface();
-	}
-}
-
 END_YAFARAY
 

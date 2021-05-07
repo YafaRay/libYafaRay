@@ -334,12 +334,4 @@ void XmlExport::setXmlColorSpace(std::string color_space_string, float gamma_val
 	xml_gamma_ = gamma_val;
 }
 
-extern "C"
-{
-	XmlExport *getYafrayXml_global(const char *fname)
-	{
-		return new XmlExport(fname);
-	}
-}
-
 END_YAFARAY
