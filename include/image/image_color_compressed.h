@@ -28,7 +28,7 @@
 BEGIN_YAFARAY
 
 //!< Compressed Rgb (16 bit/pixel) [LOSSY!] image buffer
-class LIBYAFARAY_EXPORT ImageColorCompressed final : public Image
+class ImageColorCompressed final : public Image
 {
 	public:
 		ImageColorCompressed(int width, int height) : Image(width, height), buffer_{width, height} { }

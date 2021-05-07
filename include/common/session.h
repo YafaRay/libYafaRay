@@ -30,7 +30,7 @@ BEGIN_YAFARAY
 
 class PhotonMap;
 
-class LIBYAFARAY_EXPORT Session
+class Session
 {
 	public:
 		Session();

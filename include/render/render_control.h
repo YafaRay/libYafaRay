@@ -25,7 +25,7 @@
 
 BEGIN_YAFARAY
 
-class LIBYAFARAY_EXPORT RenderControl final
+class RenderControl final
 {
 	public:
 		void setStarted();

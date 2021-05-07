@@ -36,7 +36,7 @@ class ParamMap;
 class Scene;
 enum ColorSpace : int;
 
-class LIBYAFARAY_EXPORT Format
+class Format
 {
 	public:
 		static std::unique_ptr<Format> factory(ParamMap &params);

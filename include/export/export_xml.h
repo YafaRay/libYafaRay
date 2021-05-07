@@ -27,7 +27,7 @@
 
 BEGIN_YAFARAY
 
-class LIBYAFARAY_EXPORT XmlExport: public Interface
+class XmlExport: public Interface
 {
 	public:
 		XmlExport(const char *fname);

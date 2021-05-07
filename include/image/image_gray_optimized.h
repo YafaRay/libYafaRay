@@ -28,7 +28,7 @@
 BEGIN_YAFARAY
 
 //!< Optimized grayscale (8 bit/pixel) image buffer
-class LIBYAFARAY_EXPORT ImageGrayOptimized final : public Image
+class ImageGrayOptimized final : public Image
 {
 	public:
 		ImageGrayOptimized(int width, int height) : Image(width, height), buffer_{width, height} { }

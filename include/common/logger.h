@@ -61,7 +61,7 @@ class LogEntry
 		std::string description_;
 };
 
-class LIBYAFARAY_EXPORT Logger
+class Logger
 {
 	public:
 		enum LogLevel : int { VlMute = 0, VlError, VlWarning, VlParams, VlInfo, VlVerbose, VlDebug, };

@@ -28,7 +28,7 @@
 BEGIN_YAFARAY
 
 //!< Rgba weighted float image buffer (160 bit/pixel)
-class LIBYAFARAY_EXPORT ImageColorAlphaWeight final : public Image
+class ImageColorAlphaWeight final : public Image
 {
 	public:
 		ImageColorAlphaWeight(int width, int height) : Image(width, height), buffer_{width, height} { }

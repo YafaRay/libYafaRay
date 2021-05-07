@@ -44,7 +44,7 @@ class ParamMap;
 class RenderView;
 class ColorOutput;
 
-class LIBYAFARAY_EXPORT ColorOutput
+class ColorOutput
 {
 	public:
 		static UniquePtr_t<ColorOutput> factory(const ParamMap &params, const Scene &scene);

@@ -28,7 +28,7 @@
 BEGIN_YAFARAY
 
 //!< Optimized Rgba (40 bit/pixel) image buffer
-class LIBYAFARAY_EXPORT ImageColorAlphaOptimized final : public Image
+class ImageColorAlphaOptimized final : public Image
 {
 	public:
 		ImageColorAlphaOptimized(int width, int height) : Image(width, height), buffer_{width, height} { }

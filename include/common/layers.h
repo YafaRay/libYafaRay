@@ -35,7 +35,7 @@ BEGIN_YAFARAY
 
 class Rgba;
 
-class LIBYAFARAY_EXPORT Layer final
+class Layer final
 {
 	public:
 		enum Type : int

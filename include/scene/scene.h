@@ -71,7 +71,7 @@ typedef unsigned int ObjId_t;
 	to keep this one as optimized as possible;
 */
 
-class LIBYAFARAY_EXPORT Scene
+class Scene
 {
 	public:
 		static std::unique_ptr<Scene> factory(ParamMap &params);

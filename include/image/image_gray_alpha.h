@@ -28,7 +28,7 @@
 BEGIN_YAFARAY
 
 //!< Grayscale with alpha float (64 bit/pixel) image buffer
-class LIBYAFARAY_EXPORT ImageGrayAlpha final : public Image
+class ImageGrayAlpha final : public Image
 {
 	public:
 		ImageGrayAlpha(int width, int height) : Image(width, height), buffer_{width, height} { }

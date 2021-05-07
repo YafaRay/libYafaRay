@@ -30,7 +30,7 @@
 
 BEGIN_YAFARAY
 
-class LIBYAFARAY_EXPORT Path final
+class Path final
 {
 	public:
 		Path(const std::string &full_path);

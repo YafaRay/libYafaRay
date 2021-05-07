@@ -46,7 +46,7 @@ class ProgressBar;
 class Matrix4;
 class Object;
 
-class LIBYAFARAY_EXPORT Interface
+class Interface
 {
 	public:
 		Interface();

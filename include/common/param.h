@@ -34,7 +34,7 @@ class Matrix4;
 
 /*! a class that can hold exactly one value of a range types.
 */
-class LIBYAFARAY_EXPORT Parameter
+class Parameter
 {
 	public:
 		enum Type : int { None = -1, Int = 1, Bool, Float, String, Vector, Color, Matrix };
@@ -86,7 +86,7 @@ class LIBYAFARAY_EXPORT Parameter
 		std::vector<float> vval_;
 };
 
-class LIBYAFARAY_EXPORT ParamMap
+class ParamMap
 {
 	public:
 		ParamMap() = default;

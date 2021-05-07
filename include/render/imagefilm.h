@@ -50,7 +50,7 @@ class ParamMap;
 class RenderControl;
 class RenderView;
 
-class LIBYAFARAY_EXPORT ImageFilm final
+class ImageFilm final
 {
 	public:
 		enum class FilterType : int { Box, Mitchell, Gauss, Lanczos };

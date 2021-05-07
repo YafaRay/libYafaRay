@@ -28,7 +28,7 @@
 BEGIN_YAFARAY
 
 //!< Rgb float image buffer (96 bit/pixel)
-class LIBYAFARAY_EXPORT ImageColor final : public Image
+class ImageColor final : public Image
 {
 	public:
 		ImageColor(int width, int height) : Image(width, height), buffer_{width, height} { }

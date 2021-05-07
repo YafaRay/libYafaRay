@@ -28,7 +28,7 @@
 BEGIN_YAFARAY
 
 //!< Grayscale weighted with alpha float (96 bit/pixel) image buffer
-class LIBYAFARAY_EXPORT ImageGrayAlphaWeight final : public Image
+class ImageGrayAlphaWeight final : public Image
 {
 	public:
 		ImageGrayAlphaWeight(int width, int height) : Image(width, height), buffer_{width, height} { }
