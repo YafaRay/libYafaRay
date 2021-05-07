@@ -16,6 +16,7 @@ option(DEBUG_BUILD "Enable debug build mode" OFF)
 option(FAST_MATH "Enable mathematic approximations to make code faster" ON)
 option(FAST_TRIG "Enable trigonometric approximations to make code faster" ON)
 option(WITH_MINGW_STD_THREADS "Use MinGW-Std-Threads 3rd party library. Useful with old MinGW versions that do not include C++11 threads libraries or where they are slower than they should. Set it to OFF with newer versions of MinGW or a conflict might happen causing crashes." OFF)
+option(BUILD_TESTS "Build test libYafaRay client examples" ON)
 
 ###### Packages and Definitions #########
 
@@ -253,6 +254,20 @@ set(dir include)
 file (GLOB_RECURSE headers "${dir}/*.h")
 
 add_subdirectory(src)
+
+if(BUILD_TESTS)
+	FIND_PACKAGE(libYafaRay)
+	message("Building libYafaRay test code clients: yes")
+	if(libYafaRay_FOUND)
+		INCLUDE_DIRECTORIES(SYSTEM ${libYafaRay_INCLUDE_DIR} )
+		add_subdirectory(tests/test01)
+	else(libYafaRay_FOUND)
+		message("libYafaRay not found")
+		add_subdirectory(tests)
+	endif(libYafaRay_FOUND)
+else(BUILD_TESTS)
+	message("Building libYafaRay test code clients: no")
+endif(BUILD_TESTS)
 
 # Generating config headers
 
