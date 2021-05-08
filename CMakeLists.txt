@@ -188,7 +188,7 @@ else(USER_RELEASE_OPTIMIZATION_FLAGS)
 	if(WIN32 AND NOT MINGW) # MSVC
 		set(YAF_CXX_FLAGS_RELEASE "/Ot /Ox")
 	else(WIN32 AND NOT MINGW)
-		set(YAF_CXX_FLAGS_RELEASE "-Wall -std=c++11 -pthread -O3 -ffast-math -Wno-unused-result -fvisibility=hidden -Wl,--no-undefined")
+		set(YAF_CXX_FLAGS_RELEASE "-Wall -std=c++11 -pthread -O3 -ffast-math -Wno-unused-result -fvisibility=hidden -fvisibility-inlines-hidden -Wl,--no-undefined,--version-script=${CMAKE_SOURCE_DIR}/include/interface/interface_c_export_symbols.map")
 	endif(WIN32 AND NOT MINGW)
 endif(USER_RELEASE_OPTIMIZATION_FLAGS)
 
