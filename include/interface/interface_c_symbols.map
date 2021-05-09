@@ -1,7 +1,6 @@
 LIBYAFARAY_4.0 {
     global:
-        yafaray4_getVersion;
-        yafaray4_free;
+        yafaray4_*;
 
     local:
         *;

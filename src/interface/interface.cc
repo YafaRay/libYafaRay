@@ -191,26 +191,26 @@ void Interface::paramsSetColor(const char *name, float r, float g, float b, floa
 	(*cparams_)[std::string(name)] = Parameter(col);
 }
 
-void Interface::paramsSetColor(const char *name, float *rgb, bool with_alpha)
+void Interface::paramsSetColor(const char *name, const float *rgb, bool with_alpha)
 {
 	Rgba col(rgb[0], rgb[1], rgb[2], (with_alpha ? rgb[3] : 1.f));
 	col.linearRgbFromColorSpace(input_color_space_, input_gamma_);
 	(*cparams_)[std::string(name)] = Parameter(col);
 }
 
-void Interface::paramsSetMatrix(const char *name, float m[4][4], bool transpose)
+void Interface::paramsSetMatrix(const char *name, const float m[4][4], bool transpose)
 {
 	if(transpose)	(*cparams_)[std::string(name)] = Matrix4(m).transpose();
 	else		(*cparams_)[std::string(name)] = Matrix4(m);
 }
 
-void Interface::paramsSetMatrix(const char *name, double m[4][4], bool transpose)
+void Interface::paramsSetMatrix(const char *name, const double m[4][4], bool transpose)
 {
 	if(transpose)	(*cparams_)[std::string(name)] = Matrix4(m).transpose();
 	else		(*cparams_)[std::string(name)] = Matrix4(m);
 }
 
-void Interface::paramsSetMemMatrix(const char *name, float *matrix, bool transpose)
+void Interface::paramsSetMemMatrix(const char *name, const float *matrix, bool transpose)
 {
 	float mat[4][4];
 	int i, j;
@@ -220,7 +220,7 @@ void Interface::paramsSetMemMatrix(const char *name, float *matrix, bool transpo
 	paramsSetMatrix(name, mat, transpose);
 }
 
-void Interface::paramsSetMemMatrix(const char *name, double *matrix, bool transpose)
+void Interface::paramsSetMemMatrix(const char *name, const double *matrix, bool transpose)
 {
 	double mat[4][4];
 	int i, j;
