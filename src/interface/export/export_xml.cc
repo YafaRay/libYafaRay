@@ -16,7 +16,7 @@
  *      Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-#include "export/export_xml.h"
+#include "interface/export/export_xml.h"
 #include "common/logger.h"
 #include "scene/scene.h"
 #include "geometry/matrix4.h"

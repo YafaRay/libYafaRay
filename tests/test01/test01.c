@@ -16,14 +16,14 @@
  *      Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-#include "interface/interface_c.h"
+#include "interface/yafaray_c_api.h"
 
 int main()
 {
 	//Basic libYafaRay C API usage example, rendering a cube with a TGA texture
 
 	//YafaRay standard rendering interface
-	yaf4_Interface_t *yi = yafaray4_createInterface(YAFARAY_INTERFACE_FOR_RENDERING, NULL);
+	yafaray4_Interface_t *yi = yafaray4_createInterface(YAFARAY_INTERFACE_FOR_RENDERING, NULL);
 	yafaray4_setConsoleVerbosityLevel(yi, "debug");
 
 	//Creating scene
@@ -159,7 +159,7 @@ int main()
 	yafaray4_paramsSetInt(yi, "threads", -1);
 	yafaray4_paramsSetInt(yi, "threads_photons", -1);
 	//Rendering
-	yafaray4_render(yi, NULL, 0);
+	yafaray4_render(yi, NULL);
 	yafaray4_paramsClearAll(yi);
 
 	//Destroying YafaRay interface. Scene and all objects inside are automatically destroyed

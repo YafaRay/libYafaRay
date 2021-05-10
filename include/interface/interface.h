@@ -99,7 +99,6 @@ class Interface
 		virtual void defineLayer(const std::string &layer_type_name, const std::string &exported_image_type_name, const std::string &exported_image_name, const std::string &image_type_name = "");
 		virtual bool setupLayersParameters();
 		virtual void abort();
-		virtual ParamMap *getRenderParameters() { return params_.get(); }
 
 		bool setInteractive(bool interactive);
 		void enablePrintDateTime(bool value);
