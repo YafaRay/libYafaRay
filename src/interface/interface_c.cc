@@ -23,11 +23,10 @@
 #include "geometry/matrix4.h"
 #include "render/monitor.h"
 
-struct yafaray4_Interface *yafaray4_createInterface(const char *interface_type)
+struct yafaray4_Interface *yafaray4_createInterface(yafaray4_Interface_Type_t interface_type, const char *exported_file_path)
 {
-	std::string interface_type_str(interface_type);
 	yafaray4::Interface *interface;
-	if(interface_type_str == "export_xml") interface = new yafaray4::XmlExport("test.xml"); //FIXME!!!
+	if(interface_type == YAFARAY_INTERFACE_EXPORT_XML) interface = new yafaray4::XmlExport(exported_file_path);
 	else interface = new yafaray4::Interface();
 	return reinterpret_cast<yafaray4_Interface *>(interface);
 }

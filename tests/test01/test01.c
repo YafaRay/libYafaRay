@@ -23,7 +23,7 @@ int main()
 	//Basic libYafaRay C API usage example, rendering a cube with a TGA texture
 
 	//YafaRay standard rendering interface
-	yaf4_Interface_t *yi = yafaray4_createInterface("render");
+	yaf4_Interface_t *yi = yafaray4_createInterface(YAFARAY_INTERFACE_FOR_RENDERING, NULL);
 	yafaray4_setConsoleVerbosityLevel(yi, "debug");
 
 	//Creating scene

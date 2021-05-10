@@ -34,7 +34,9 @@ extern "C" {
 	struct yafaray4_ColorOutput;
 	struct yafaray4_ProgressBar;
 
-	LIBYAFARAY_EXPORT yaf4_Interface_t *yafaray4_createInterface(const char *interface_type);
+	typedef enum yafaray4_Interface_Type { YAFARAY_INTERFACE_FOR_RENDERING, YAFARAY_INTERFACE_EXPORT_XML } yafaray4_Interface_Type_t;
+
+	LIBYAFARAY_EXPORT yaf4_Interface_t *yafaray4_createInterface(yafaray4_Interface_Type_t interface_type, const char *exported_file_path);
 	LIBYAFARAY_EXPORT void yafaray4_destroyInterface(yaf4_Interface_t *interface);
 	LIBYAFARAY_EXPORT void yafaray4_createScene(yaf4_Interface_t *interface);
 	LIBYAFARAY_EXPORT bool_t yafaray4_startGeometry(yaf4_Interface_t *interface); //!< call before creating geometry; only meshes and vmaps can be created in this state
