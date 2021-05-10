@@ -59,7 +59,6 @@ extern "C" {
 	LIBYAFARAY_EXPORT void yafaray4_paramsSetColor(yaf4_Interface_t *interface, const char *name, float r, float g, float b, float a);
 	LIBYAFARAY_EXPORT void yafaray4_paramsSetMatrix(yaf4_Interface_t *interface, const char *name, const float m[4][4], bool_t transpose);
 	LIBYAFARAY_EXPORT void yafaray4_paramsClearAll(yaf4_Interface_t *interface); 	//!< clear the paramMap and paramList
-	LIBYAFARAY_EXPORT void yafaray4_paramsStartList(yaf4_Interface_t *interface); //!< start writing parameters to the extended paramList (used by materials)
 	LIBYAFARAY_EXPORT void yafaray4_paramsPushList(yaf4_Interface_t *interface); 	//!< push new list item in paramList (e.g. new shader node description)
 	LIBYAFARAY_EXPORT void yafaray4_paramsEndList(yaf4_Interface_t *interface); 	//!< revert to writing to normal paramMap
 	LIBYAFARAY_EXPORT void yafaray4_setCurrentMaterial(yaf4_Interface_t *interface, const char *name);

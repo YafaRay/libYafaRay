@@ -243,12 +243,6 @@ void Interface::paramsClearAll()
 	cparams_ = params_.get();
 }
 
-void Interface::paramsStartList()
-{
-	if(!eparams_->empty()) eparams_->push_back(ParamMap());
-	else Y_WARNING << "Interface: Appending to existing list!" << YENDL;
-	cparams_ = &eparams_->back();
-}
 void Interface::paramsPushList()
 {
 	eparams_->push_back(ParamMap());

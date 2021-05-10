@@ -78,7 +78,6 @@ class Interface
 		virtual void paramsSetMemMatrix(const char *name, const float *matrix, bool transpose = false);
 		virtual void paramsSetMemMatrix(const char *name, const double *matrix, bool transpose = false);
 		virtual void paramsClearAll(); 	//!< clear the paramMap and paramList
-		virtual void paramsStartList(); //!< start writing parameters to the extended paramList (used by materials)
 		virtual void paramsPushList(); 	//!< push new list item in paramList (e.g. new shader node description)
 		virtual void paramsEndList(); 	//!< revert to writing to normal paramMap
 		virtual void setCurrentMaterial(const char *name);

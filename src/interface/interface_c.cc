@@ -143,11 +143,6 @@ void yafaray4_paramsClearAll(yaf4_Interface_t *interface) 	//!< clear the paramM
 	reinterpret_cast<yafaray4::Interface *>(interface)->paramsClearAll();
 }
 
-void yafaray4_paramsStartList(yaf4_Interface_t *interface) //!< start writing parameters to the extended paramList (used by materials)
-{
-	reinterpret_cast<yafaray4::Interface *>(interface)->paramsStartList();
-}
-
 void yafaray4_paramsPushList(yaf4_Interface_t *interface) 	//!< push new list item in paramList (e.g. new shader node description)
 {
 	reinterpret_cast<yafaray4::Interface *>(interface)->paramsPushList();
