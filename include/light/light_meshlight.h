@@ -68,8 +68,6 @@ class MeshLight final : public Light
 		float area_, inv_area_;
 		MeshObject *mesh_object_ = nullptr;
 		std::unique_ptr<Accelerator> accelerator_;
-		//debug stuff:
-		int *stats_ = nullptr;
 };
 
 END_YAFARAY

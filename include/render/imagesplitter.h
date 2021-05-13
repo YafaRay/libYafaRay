@@ -88,7 +88,7 @@ class ImageSplitter final
 		int size() const {return static_cast<int>(regions_.size());};
 
 	private:
-		int width_, height_, blocksize_;
+		int blocksize_;
 		std::vector<Region> regions_;
 		TilesOrderType tilesorder_;
 };

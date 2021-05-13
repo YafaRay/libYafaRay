@@ -29,7 +29,7 @@ HashGrid::HashGrid(double cell_size, unsigned int grid_size, yafaray4::Bound b_b
 
 void HashGrid::setParm(double cell_size, unsigned int grid_size, Bound b_box)
 {
-	cell_size = cell_size;
+	cell_size_ = cell_size;
 	inv_cell_size_ = 1. / cell_size;
 	grid_size_ = grid_size;
 	bounding_box_ = b_box;

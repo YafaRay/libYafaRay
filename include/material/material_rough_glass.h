@@ -54,7 +54,6 @@ class RoughGlassMaterial final : public NodeMaterial
 		Rgb beer_sigma_a_;
 		float ior_;
 		float a_2_;
-		float a_;
 		bool absorb_ = false, disperse_ = false, fake_shadow_;
 		float dispersion_power_;
 		float cauchy_a_, cauchy_b_;

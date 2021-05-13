@@ -54,7 +54,6 @@ class SpotLight final : public Light
 		float cos_start_, cos_end_; //<! cosStart is actually larger than cosEnd, because cos goes from +1 to -1
 		float icos_diff_; //<! 1.0/(cosStart-cosEnd);
 		Rgb color_; //<! color, premulitplied by light intensity
-		float intensity_;
 		std::unique_ptr<Pdf1D> pdf_;
 		float interv_1_, interv_2_;
 

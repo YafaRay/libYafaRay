@@ -49,7 +49,7 @@ class TextureMapperNode final : public ShaderNode
 		Projection projection_;
 		int map_x_ = 1, map_y_ = 2, map_z_ = 3; //!< axis mapping; 0:set to zero, 1:x, 2:y, 3:z
 		Point3 p_du_, p_dv_, p_dw_;
-		float d_u_, d_v_, d_w_, d_uv_;
+		float d_u_, d_v_, d_w_;
 		const Texture *tex_ = nullptr;
 		Vec3 scale_;
 		Vec3 offset_;

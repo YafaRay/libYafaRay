@@ -49,7 +49,6 @@ class AngularCamera final : public Camera
 		virtual Ray shootRay(float px, float py, float lu, float lv, float &wt) const override;
 		virtual Point3 screenproject(const Point3 &p) const override;
 
-		float aspect_;
 		float focal_length_;
 		float max_radius_;
 		bool circular_;

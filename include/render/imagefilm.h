@@ -151,7 +151,6 @@ class ImageFilm final
 
 	private:
 		int width_, height_, cx_0_, cx_1_, cy_0_, cy_1_;
-		int badge_height_; //!< height of the rendering parameters badge;
 		bool show_mask_;
 		int tile_size_;
 		ImageSplitter::TilesOrderType tiles_order_;

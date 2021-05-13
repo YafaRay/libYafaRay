@@ -40,8 +40,6 @@ class EquirectangularCamera final : public Camera
 		virtual void setAxis(const Vec3 &vx, const Vec3 &vy, const Vec3 &vz) override;
 		virtual Ray shootRay(float px, float py, float lu, float lv, float &wt) const override;
 		virtual Point3 screenproject(const Point3 &p) const override;
-
-		float aspect_;
 };
 
 

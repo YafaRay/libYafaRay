@@ -96,7 +96,7 @@ extern "C" {
 	LIBYAFARAY_EXPORT void yafaray4_setInputColorSpace(const char *color_space_string, float gamma_val);
 	LIBYAFARAY_EXPORT void yafaray4_free(void *ptr); //!< Free memory allocated by libYafaRay
 #ifdef __cplusplus
-};
+}
 #endif
 
 #endif //YAFARAY_C_API_H

@@ -194,7 +194,7 @@ Rgba PathIntegrator::integrate(RenderData &render_data, const DiffRay &ray, int 
 
 		if(bsdfs.hasAny(path_flags))
 		{
-			Rgb path_col(0.0), wl_col;
+			Rgb path_col(0.0);
 			path_flags |= (BsdfFlags::Diffuse | BsdfFlags::Reflect | BsdfFlags::Transmit);
 			int n_samples = std::max(1, n_paths_ / render_data.ray_division_);
 			for(int i = 0; i < n_samples; ++i)

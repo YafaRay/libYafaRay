@@ -34,6 +34,7 @@ class Light;
 class PathData;
 class PathVertex;
 class ImageFilm;
+class Pdf1D;
 
 class BidirectionalIntegrator final : public TiledIntegrator
 {
@@ -60,8 +61,7 @@ class BidirectionalIntegrator final : public TiledIntegrator
 		float pathWeight0T(RenderData &render_data, int t, PathData &pd) const;
 
 		bool tr_shad_;        //!< calculate transparent shadows for transparent objects
-		bool include_bg_;    //!< determined on precrocess;
-		int s_depth_, bounces_;
+		int s_depth_;
 		//mutable std::vector<pathVertex_t> lightPath, eyePath;
 		//mutable int nPaths;
 		//mutable pathData_t pathData;

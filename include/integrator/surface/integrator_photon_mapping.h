@@ -59,7 +59,6 @@ class PhotonIntegrator final : public MonteCarloIntegrator
 
 		bool use_photon_diffuse_; //!< enable/disable diffuse photon processing
 		bool final_gather_, show_map_;
-		bool prepass_;
 		unsigned int n_diffuse_photons_;
 		int n_diffuse_search_;
 		int gather_bounces_;

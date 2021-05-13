@@ -201,12 +201,10 @@ class Rgbe final
 		Rgbe(const Rgb &s);
 		operator Rgb () const
 		{
-			Rgb res;
-			float f;
 			if(rgbe_[3])
 			{
 				/*nonzero pixel*/
-				f = math::ldexp(1.0, rgbe_[3] - (128 + 8));
+				const float f = math::ldexp(1.0, rgbe_[3] - (128 + 8));
 				return Rgb(rgbe_[0] * f, rgbe_[1] * f, rgbe_[2] * f);
 			}
 			else return Rgb(0, 0, 0);

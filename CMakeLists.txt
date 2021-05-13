@@ -188,7 +188,10 @@ else(USER_RELEASE_OPTIMIZATION_FLAGS)
 	if(WIN32 AND NOT MINGW) # MSVC
 		set(YAF_CXX_FLAGS_RELEASE "/Ot /Ox")
 	else(WIN32 AND NOT MINGW)
-		set(YAF_CXX_FLAGS_RELEASE "-Wall -std=c++11 -pthread -O3 -ffast-math -Wno-unused-result -fvisibility=hidden -fvisibility-inlines-hidden -Wl,--no-undefined,--version-script=${CMAKE_SOURCE_DIR}/include/yafaray_c_api_symbols.map")
+		set(YAF_CXX_FLAGS_RELEASE "-Wall -std=c++11 -pthread -O3 -ffast-math -Wno-unused-result -fvisibility=hidden -fvisibility-inlines-hidden")
+		if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+			string(APPEND YAF_CXX_FLAGS_RELEASE " -Wl,--no-undefined,--version-script=${CMAKE_SOURCE_DIR}/include/yafaray_c_api_symbols.map")
+		endif(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
 	endif(WIN32 AND NOT MINGW)
 endif(USER_RELEASE_OPTIMIZATION_FLAGS)
 
@@ -198,7 +201,10 @@ else(USER_DEBUG_OPTIMIZATION_FLAGS)
 	if(WIN32 AND NOT MINGW) # MSVC
 		set(YAF_CXX_FLAGS_DEBUG "/Zi /GS /RTC1 /Od")
 	else(WIN32 AND NOT MINGW)
-		set(YAF_CXX_FLAGS_DEBUG "-Wall -std=c++11 -pthread -ggdb -Wno-unused-result -fvisibility=hidden -fvisibility-inlines-hidden -Wl,--no-undefined,--version-script=${CMAKE_SOURCE_DIR}/include/yafaray_c_api_symbols.map")
+		set(YAF_CXX_FLAGS_DEBUG "-Wall -Wpedantic -std=c++11 -pthread -ggdb -Wno-unused-result -fvisibility=hidden -fvisibility-inlines-hidden")
+		if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+			string(APPEND YAF_CXX_FLAGS_DEBUG " -Wl,--no-undefined,--version-script=${CMAKE_SOURCE_DIR}/include/yafaray_c_api_symbols.map")
+			endif(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
 	endif(WIN32 AND NOT MINGW)
 endif(USER_DEBUG_OPTIMIZATION_FLAGS)
 

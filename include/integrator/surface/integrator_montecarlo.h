@@ -33,6 +33,7 @@ class Photon;
 class Vec3;
 class Light;
 struct BsdfFlags;
+class Pdf1D;
 
 enum PhotonMapProcessing
 {

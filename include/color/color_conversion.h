@@ -106,7 +106,7 @@ inline ColorConv::ColorConv(bool cl, bool g_enc, ColorSpace cs, float exposure) 
 			mat_ = s_rgb_d_65_global;
 			break;
 	}
-};
+}
 
 inline Rgb ColorConv::fromXyz(float x, float y, float z, bool force_gamma) const
 {

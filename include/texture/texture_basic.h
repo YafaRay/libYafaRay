@@ -36,7 +36,7 @@ class CloudsTexture final : public Texture
 					  const Rgb &c_1, const Rgb &c_2,
 					  const std::string &ntype, const std::string &btype);
 		virtual Rgba getColor(const Point3 &p, const MipMapParams *mipmap_params = nullptr) const override;
-		virtual float getFloat(const Point3 &p, const MipMapParams *mipmap_params = nullptr) const override;;
+		virtual float getFloat(const Point3 &p, const MipMapParams *mipmap_params = nullptr) const override;
 
 		int depth_, bias_;
 		float size_;
@@ -56,7 +56,7 @@ class MarbleTexture final : public Texture
 					  float turb, float shp, bool hrd, const std::string &ntype, const std::string &shape);
 
 		virtual Rgba getColor(const Point3 &p, const MipMapParams *mipmap_params = nullptr) const override;
-		virtual float getFloat(const Point3 &p, const MipMapParams *mipmap_params = nullptr) const override;;
+		virtual float getFloat(const Point3 &p, const MipMapParams *mipmap_params = nullptr) const override;
 
 		int octaves_;
 		Rgb color_1_, color_2_;
@@ -76,7 +76,7 @@ class WoodTexture final : public Texture
 					bool hrd, const std::string &ntype, const std::string &wtype, const std::string &shape);
 
 		virtual Rgba getColor(const Point3 &p, const MipMapParams *mipmap_params = nullptr) const override;
-		virtual float getFloat(const Point3 &p, const MipMapParams *mipmap_params = nullptr) const override;;
+		virtual float getFloat(const Point3 &p, const MipMapParams *mipmap_params = nullptr) const override;
 
 		int octaves_;
 		Rgb color_1_, color_2_;
@@ -99,7 +99,7 @@ class VoronoiTexture final : public Texture
 					   float mex, float sz,
 					   float isc, const std::string &dname);
 		virtual Rgba getColor(const Point3 &p, const MipMapParams *mipmap_params = nullptr) const override;
-		virtual float getFloat(const Point3 &p, const MipMapParams *mipmap_params = nullptr) const override;;
+		virtual float getFloat(const Point3 &p, const MipMapParams *mipmap_params = nullptr) const override;
 
 		float w_1_, w_2_, w_3_, w_4_;	// feature weights
 		float aw_1_, aw_2_, aw_3_, aw_4_;	// absolute value of above
@@ -120,7 +120,7 @@ class MusgraveTexture final : public Texture
 						float size, float iscale,
 						const std::string &ntype, const std::string &mtype);
 		virtual Rgba getColor(const Point3 &p, const MipMapParams *mipmap_params = nullptr) const override;
-		virtual float getFloat(const Point3 &p, const MipMapParams *mipmap_params = nullptr) const override;;
+		virtual float getFloat(const Point3 &p, const MipMapParams *mipmap_params = nullptr) const override;
 
 		Rgb color_1_, color_2_;
 		float size_, iscale_;
@@ -138,7 +138,7 @@ class DistortedNoiseTexture final : public Texture
 							  float distort, float size,
 							  const std::string &noiseb_1, const std::string noiseb_2);
 		virtual Rgba getColor(const Point3 &p, const MipMapParams *mipmap_params = nullptr) const override;
-		virtual float getFloat(const Point3 &p, const MipMapParams *mipmap_params = nullptr) const override;;
+		virtual float getFloat(const Point3 &p, const MipMapParams *mipmap_params = nullptr) const override;
 
 		Rgb color_1_, color_2_;
 		float distort_, size_;

@@ -30,7 +30,7 @@ BEGIN_YAFARAY
 
 
 RoughGlassMaterial::RoughGlassMaterial(float ior, Rgb filt_c, const Rgb &srcol, bool fake_s, float alpha, float disp_pow, Visibility e_visibility):
-		filter_color_(filt_c), specular_reflection_color_(srcol), ior_(ior), a_2_(alpha * alpha), a_(alpha), fake_shadow_(fake_s), dispersion_power_(disp_pow)
+		filter_color_(filt_c), specular_reflection_color_(srcol), ior_(ior), a_2_(alpha * alpha), fake_shadow_(fake_s), dispersion_power_(disp_pow)
 {
 	visibility_ = e_visibility;
 	bsdf_flags_ = BsdfFlags::AllGlossy;

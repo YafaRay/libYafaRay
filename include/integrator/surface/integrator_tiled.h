@@ -29,8 +29,7 @@ BEGIN_YAFARAY
 
 class SurfacePoint;
 class PhotonMap;
-class Pdf1D;
-class RenderArea;
+struct RenderArea;
 enum class DarkDetectionType : int;
 
 class ThreadControl final

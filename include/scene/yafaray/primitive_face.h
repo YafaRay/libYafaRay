@@ -27,7 +27,7 @@
 BEGIN_YAFARAY
 
 class MeshObject;
-class Uv;
+struct Uv;
 
 class FacePrimitive: public Primitive
 {

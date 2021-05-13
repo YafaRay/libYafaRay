@@ -32,7 +32,7 @@ BEGIN_YAFARAY
 
 AreaLight::AreaLight(const Point3 &c, const Vec3 &v_1, const Vec3 &v_2,
 					 const Rgb &col, float inte, int nsam, bool light_enabled, bool cast_shadows):
-		corner_(c), to_x_(v_1), to_y_(v_2), samples_(nsam), intensity_(inte)
+		corner_(c), to_x_(v_1), to_y_(v_2), samples_(nsam)
 {
 	light_enabled_ = light_enabled;
 	cast_shadows_ = cast_shadows;

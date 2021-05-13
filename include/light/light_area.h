@@ -55,7 +55,6 @@ class AreaLight final : public Light
 		Rgb color_; //!< includes intensity amplification! so...
 		int samples_;
 		std::string object_name_;
-		float intensity_; //!< ...this is actually redundant.
 		float area_, inv_area_;
 };
 

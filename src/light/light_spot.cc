@@ -28,7 +28,7 @@
 BEGIN_YAFARAY
 
 SpotLight::SpotLight(const Point3 &from, const Point3 &to, const Rgb &col, float power, float angle, float falloff, bool s_sha, int smpl, float ssfuzzy, bool b_light_enabled, bool b_cast_shadows):
-		Light(Light::Flags::Singular), position_(from), intensity_(power), soft_shadows_(s_sha), shadow_fuzzy_(ssfuzzy), samples_(smpl)
+		Light(Light::Flags::Singular), position_(from), soft_shadows_(s_sha), shadow_fuzzy_(ssfuzzy), samples_(smpl)
 {
 	light_enabled_ = b_light_enabled;
 	cast_shadows_ = b_cast_shadows;

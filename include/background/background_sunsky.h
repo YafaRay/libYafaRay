@@ -49,7 +49,6 @@ class SunSkyBackground final : public Background
 		Rgb getSkyCol(const Ray &ray) const;
 
 		Vec3 sun_dir_;
-		float turbidity_;
 		double theta_s_, phi_s_;	// sun coords
 		double theta_2_, theta_3_, t_, t_2_;
 		double zenith_Y_, zenith_x_, zenith_y_;
