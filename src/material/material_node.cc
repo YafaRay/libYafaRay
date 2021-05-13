@@ -143,6 +143,7 @@ bool NodeMaterial::loadNodes(const std::list<ParamMap> &params_list, Scene &scen
 		else
 		{
 			Y_ERROR << "NodeMaterial: No shader node could be constructed.'" << type << "'!" << YENDL;
+			color_nodes_.clear(); //Empty the nodes table, to prevent further crashes later in rendering, when any of the nodes cannot be created
 			error = true;
 			break;
 		}
