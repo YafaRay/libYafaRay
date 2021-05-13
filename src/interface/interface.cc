@@ -39,10 +39,10 @@ RenderControl *global_render_control_global = nullptr;
 #ifdef WIN32
 BOOL WINAPI ctrlCHandler_global(DWORD signal)
 {
-	Y_WARNING << "Interface: Render aborted by user." << YENDL;
+	Y_WARNING << "Interface: Render canceled by user." << YENDL;
 	if(global_render_control_global)
 	{
-		global_render_control_global->setAborted();
+		global_render_control_global->setCanceled();
 		return TRUE;
 	}
 	else exit(1);
@@ -50,8 +50,8 @@ BOOL WINAPI ctrlCHandler_global(DWORD signal)
 #else
 void ctrlCHandler_global(int signal)
 {
-	Y_WARNING << "Interface: Render aborted by user." << YENDL;
-	if(global_render_control_global) global_render_control_global->setAborted();
+	Y_WARNING << "Interface: Render canceled by user." << YENDL;
+	if(global_render_control_global) global_render_control_global->setCanceled();
 	else exit(1);
 }
 #endif
@@ -285,10 +285,10 @@ void Interface::clearOutputs()
 	return scene_->clearOutputs();
 }
 
-void Interface::abort()
+void Interface::cancel()
 {
-	if(scene_) scene_->getRenderControl().setAborted();
-	Y_WARNING << "Interface: Render aborted by user." << YENDL;
+	if(scene_) scene_->getRenderControl().setCanceled();
+	Y_WARNING << "Interface: Render canceled by user." << YENDL;
 }
 
 void Interface::setCurrentMaterial(const Material *material)

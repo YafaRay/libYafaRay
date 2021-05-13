@@ -58,7 +58,7 @@ bool PhotonMap::load(const std::string &filename)
 	File file(filename);
 	if(!file.open("rb"))
 	{
-		Y_WARNING << "PhotonMap file '" << filename << "' not found, aborting load operation";
+		Y_WARNING << "PhotonMap file '" << filename << "' not found, canceling load operation";
 		return false;
 	}
 

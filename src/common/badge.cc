@@ -84,7 +84,7 @@ std::string Badge::getRenderInfo(const RenderControl &render_control) const
 	g_timer_global.splitTime(times, &times, &timem, &timeh);
 	ss_badge << " | " << image_width_ << "x" << image_height_;
 	if(render_control.inProgress()) ss_badge << " | " << (render_control.resumed() ? "film loaded + " : "") << "in progress " << std::fixed << std::setprecision(1) << render_control.currentPassPercent() << "% of pass: " << render_control.currentPass() << " / " << render_control.totalPasses();
-	else if(render_control.aborted()) ss_badge << " | " << (render_control.resumed() ? "film loaded + " : "") << "stopped at " << std::fixed << std::setprecision(1) << render_control.currentPassPercent() << "% of pass: " << render_control.currentPass() << " / " << render_control.totalPasses();
+	else if(render_control.canceled()) ss_badge << " | " << (render_control.resumed() ? "film loaded + " : "") << "stopped at " << std::fixed << std::setprecision(1) << render_control.currentPassPercent() << "% of pass: " << render_control.currentPass() << " / " << render_control.totalPasses();
 	else
 	{
 		if(render_control.resumed()) ss_badge << " | film loaded + " << render_control.totalPasses() - 1 << " passes";

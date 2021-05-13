@@ -213,7 +213,7 @@ void ImageFilm::init(RenderControl &render_control, int num_passes)
 	if(progress_bar_) progress_bar_->init(width_ * height_);
 	render_control.setCurrentPassPercent(progress_bar_->getPercent());
 
-	abort_ = false;
+	cancel_ = false;
 	completed_cnt_ = 0;
 	n_pass_ = 1;
 	n_passes_ = num_passes;
@@ -452,7 +452,7 @@ int ImageFilm::nextPass(const RenderView *render_view, RenderControl &render_con
 
 bool ImageFilm::nextArea(RenderArea &a)
 {
-	if(abort_) return false;
+	if(cancel_) return false;
 
 	int ifilterw = (int) ceil(filterw_);
 
@@ -547,7 +547,7 @@ void ImageFilm::finishArea(const RenderView *render_view, RenderControl &render_
 			{
 				if(output.second && !output.second->isImageOutput())
 				{
-					if(!output.second->putPixel(i, j, color_layers)) abort_ = true;
+					if(!output.second->putPixel(i, j, color_layers)) cancel_ = true;
 				}
 			}
 		}
@@ -876,7 +876,7 @@ bool ImageFilm::imageFilmLoad(const std::string &filename)
 	File file(filename);
 	if(!file.open("rb"))
 	{
-		Y_WARNING << "imageFilm file '" << filename << "' not found, aborting load operation";
+		Y_WARNING << "imageFilm file '" << filename << "' not found, canceling load operation";
 		return false;
 	}
 

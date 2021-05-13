@@ -31,7 +31,7 @@ class RenderControl final
 		void setStarted();
 		void setResumed();
 		void setFinished();
-		void setAborted();
+		void setCanceled();
 		void setTotalPasses(int total_passes);
 		void setCurrentPass(int current_pass);
 		void setCurrentPassPercent(float current_pass_percent);
@@ -41,7 +41,7 @@ class RenderControl final
 		bool inProgress() const;
 		bool resumed() const;
 		bool finished() const;
-		bool aborted() const;
+		bool canceled() const;
 		int totalPasses() const;
 		int currentPass() const;
 		float currentPassPercent() const;
@@ -52,7 +52,7 @@ class RenderControl final
 		bool render_in_progress_ = false;
 		bool render_finished_ = false;
 		bool render_resumed_ = false;
-		bool render_aborted_ = false;
+		bool render_canceled_ = false;
 		int total_passes_ = 0;
 		int current_pass_ = 0;
 		float current_pass_percent_ = 0.f;

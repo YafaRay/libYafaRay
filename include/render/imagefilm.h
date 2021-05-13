@@ -162,7 +162,7 @@ class ImageFilm final
 		volatile int next_area_;
 		int area_cnt_, completed_cnt_;
 		bool split_ = true;
-		bool abort_ = false;
+		bool cancel_ = false;
 		bool background_resampling_ = true;   //If false, the background will not be resampled in subsequent adaptative AA passes
 		//Options for Film saving/loading correct sampling, as well as multi computer film saving
 		unsigned int base_sampling_offset_ = 0;	//Base sampling offset, in case of multi-computer rendering each should have a different offset so they don't "repeat" the same samples (user configurable)

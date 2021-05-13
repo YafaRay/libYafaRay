@@ -26,7 +26,7 @@ void RenderControl::setStarted()
 	render_in_progress_ = true;
 	render_finished_ = false;
 	render_resumed_ = false;
-	render_aborted_ = false;
+	render_canceled_ = false;
 	total_passes_ = 0;
 	current_pass_ = 0;
 	current_pass_percent_ = 0.f;
@@ -38,7 +38,7 @@ void RenderControl::setResumed()
 	render_in_progress_ = true;
 	render_finished_ = false;
 	render_resumed_ = true;
-	render_aborted_ = false;
+	render_canceled_ = false;
 }
 
 void RenderControl::setFinished()
@@ -48,11 +48,11 @@ void RenderControl::setFinished()
 	render_finished_ = true;
 }
 
-void RenderControl::setAborted()
+void RenderControl::setCanceled()
 {
 	std::lock_guard<std::mutex>lock_guard(mutx_);
 	render_in_progress_ = false;
-	render_aborted_ = true;
+	render_canceled_ = true;
 }
 
 void RenderControl::setTotalPasses(int total_passes)
@@ -98,9 +98,9 @@ bool RenderControl::finished() const
 	return render_finished_;
 }
 
-bool RenderControl::aborted() const
+bool RenderControl::canceled() const
 {
-	return render_aborted_;
+	return render_canceled_;
 }
 
 int RenderControl::totalPasses() const

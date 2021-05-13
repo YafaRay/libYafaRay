@@ -254,9 +254,9 @@ yafaray4_bool_t yafaray4_setupLayersParameters(yafaray4_Interface_t *interface)
 	return static_cast<yafaray4_bool_t>(reinterpret_cast<yafaray4::Interface *>(interface)->setupLayersParameters());
 }
 
-void yafaray4_abort(yafaray4_Interface_t *interface)
+void yafaray4_cancel(yafaray4_Interface_t *interface)
 {
-	reinterpret_cast<yafaray4::Interface *>(interface)->abort();
+	reinterpret_cast<yafaray4::Interface *>(interface)->cancel();
 }
 
 yafaray4_bool_t yafaray4_setInteractive(yafaray4_Interface_t *interface, yafaray4_bool_t interactive)

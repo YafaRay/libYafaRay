@@ -147,7 +147,7 @@ bool SppmIntegrator::render(RenderControl &render_control, const RenderView *ren
 	int pass_info = 1;
 	for(int i = 1; i < pass_num_; ++i) //progress pass, the offset start from 1 as it is 0 based.
 	{
-		if(render_control.aborted()) break;
+		if(render_control.canceled()) break;
 		pass_info = i + 1;
 		image_film_->nextPass(render_view, render_control, false, getName());
 		n_refined_ = 0;
@@ -214,7 +214,7 @@ bool SppmIntegrator::renderTile(RenderArea &a, const RenderView *render_view, co
 	{
 		for(int j = a.x_; j < end_x; ++j)
 		{
-			if(render_control.aborted()) break;
+			if(render_control.canceled()) break;
 
 			rstate.pixel_number_ = x * i + j;
 			rstate.sampling_offs_ = sample::fnv32ABuf(i * sample::fnv32ABuf(j)); //fnv_32a_buf(rstate.pixelNumber);
@@ -515,7 +515,7 @@ void SppmIntegrator::photonWorker(PhotonMap *diffuse_map, PhotonMap *caustic_map
 			pb->mutx_.lock();
 			pb->update();
 			pb->mutx_.unlock();
-			if(render_control.aborted()) { return; }
+			if(render_control.canceled()) { return; }
 		}
 		done = (curr >= n_photons_thread);
 	}

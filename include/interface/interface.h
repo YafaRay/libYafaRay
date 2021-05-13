@@ -98,7 +98,7 @@ class Interface
 		virtual void render(ProgressBar *pb = nullptr, bool auto_delete_progress_bar = false); //!< render the scene...
 		virtual void defineLayer(const std::string &layer_type_name, const std::string &exported_image_type_name, const std::string &exported_image_name, const std::string &image_type_name = "");
 		virtual bool setupLayersParameters();
-		virtual void abort();
+		virtual void cancel();
 
 		bool setInteractive(bool interactive);
 		void enablePrintDateTime(bool value);

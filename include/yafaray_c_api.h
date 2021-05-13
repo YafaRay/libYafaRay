@@ -77,7 +77,7 @@ extern "C" {
 	LIBYAFARAY_EXPORT void yafaray4_render(yafaray4_Interface_t *interface, yafaray4_ProgressBar_t *pb); //!< render the scene...
 	LIBYAFARAY_EXPORT void yafaray4_defineLayer(yafaray4_Interface_t *interface, const char *layer_type_name, const char *exported_image_type_name, const char *exported_image_name, const char *image_type_name);
 	LIBYAFARAY_EXPORT yafaray4_bool_t yafaray4_setupLayersParameters(yafaray4_Interface_t *interface);
-	LIBYAFARAY_EXPORT void yafaray4_abort(yafaray4_Interface_t *interface);
+	LIBYAFARAY_EXPORT void yafaray4_cancel(yafaray4_Interface_t *interface);
 
 	LIBYAFARAY_EXPORT yafaray4_bool_t yafaray4_setInteractive(yafaray4_Interface_t *interface, yafaray4_bool_t interactive);
 	LIBYAFARAY_EXPORT void yafaray4_enablePrintDateTime(yafaray4_Interface_t *interface, yafaray4_bool_t value);

@@ -52,7 +52,7 @@ void TiledIntegrator::renderWorker(TiledIntegrator *integrator, const Scene *sce
 
 	while(image_film_->nextArea(a))
 	{
-		if(render_control.aborted()) break;
+		if(render_control.canceled()) break;
 		integrator->renderTile(a, render_view, render_control, samples, offset, adaptive, thread_id, aa_pass);
 
 		std::unique_lock<std::mutex> lk(control->m_);
@@ -190,7 +190,7 @@ bool TiledIntegrator::render(RenderControl &render_control, const RenderView *re
 
 	for(int i = 1; i < aa_noise_params_.passes_; ++i)
 	{
-		if(render_control.aborted()) break;
+		if(render_control.canceled()) break;
 
 		//scene->getSurfIntegrator()->setSampleMultiplier(scene->getSurfIntegrator()->getSampleMultiplier() * AA_sample_multiplier_factor);
 
@@ -318,7 +318,7 @@ bool TiledIntegrator::renderTile(RenderArea &a, const RenderView *render_view, c
 	{
 		for(int j = a.x_; j < end_x; ++j)
 		{
-			if(render_control.aborted()) break;
+			if(render_control.canceled()) break;
 
 			float mat_sample_factor = 1.f;
 			int n_samples_adjusted = n_samples;
