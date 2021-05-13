@@ -21,6 +21,7 @@
 #include "interface/export/export_xml.h"
 #include "geometry/matrix4.h"
 #include "render/monitor.h"
+#include "image/image.h"
 #include <cstring>
 
 yafaray4_Interface_t *yafaray4_createInterface(yafaray4_Interface_Type_t interface_type, const char *exported_file_path)
@@ -318,4 +319,49 @@ void yafaray4_printError(yafaray4_Interface_t *interface, const char *msg)
 void yafaray4_setInputColorSpace(yafaray4_Interface_t *interface, const char *color_space_string, float gamma_val)
 {
 	reinterpret_cast<yafaray4::Interface *>(interface)->setInputColorSpace(color_space_string, gamma_val);
+}
+
+yafaray4_Image_t *yafaray4_createImage(int width, int height, const yafaray4_ImageType_t type, const yafaray4_ImageOptimization_t optimization)
+{
+	yafaray4::Image::Type image_type;
+	if(type == YAFARAY_IMAGE_TYPE_GRAY) image_type = yafaray4::Image::Type::Gray;
+	else if(type == YAFARAY_IMAGE_TYPE_GRAY_ALPHA) image_type = yafaray4::Image::Type::GrayAlpha;
+	else if(type == YAFARAY_IMAGE_TYPE_COLOR) image_type = yafaray4::Image::Type::Color;
+	else image_type = yafaray4::Image::Type::ColorAlpha;
+
+	yafaray4::Image::Optimization image_optimization;
+	if(optimization == YAFARAY_IMAGE_OPTIMIZATION_OPTIMIZED) image_optimization = yafaray4::Image::Optimization::Optimized;
+	else if(optimization == YAFARAY_IMAGE_OPTIMIZATION_COMPRESSED) image_optimization = yafaray4::Image::Optimization::Compressed;
+	else image_optimization = yafaray4::Image::Optimization::None;
+
+	yafaray4::Image *image = yafaray4::Image::factoryRawPointer(width, height, image_type, image_optimization);
+	return reinterpret_cast<yafaray4_Image_t *>(image);
+}
+
+yafaray4_bool_t yafaray4_setImageColor(yafaray4_Image_t *image, int x, int y, float red, float green, float blue, float alpha)
+{
+	yafaray4::Image *yaf_image = reinterpret_cast<yafaray4::Image *>(image);
+	if(x < 0 || x >= yaf_image->getWidth()) return YAFARAY_BOOL_FALSE;
+	else if(y < 0 || y >= yaf_image->getHeight()) return YAFARAY_BOOL_FALSE;
+	yaf_image->setColor(x, y, {red, green, blue, alpha});
+	return YAFARAY_BOOL_TRUE;
+}
+
+yafaray4_bool_t yafaray4_getImageColor(const yafaray4_Image_t *image, int x, int y, float *red, float *green, float *blue, float *alpha)
+{
+	const yafaray4::Image *yaf_image = reinterpret_cast<const yafaray4::Image *>(image);
+	if(x < 0 || x >= yaf_image->getWidth()) return YAFARAY_BOOL_FALSE;
+	else if(y < 0 || y >= yaf_image->getHeight()) return YAFARAY_BOOL_FALSE;
+	const yafaray4::Rgba color = yaf_image->getColor(x, y);
+	*red = color.r_;
+	*green = color.g_;
+	*blue = color.b_;
+	*alpha = color.a_;
+	return YAFARAY_BOOL_TRUE;
+}
+
+void yafaray4_destroyImage(yafaray4_Image_t *image)
+{
+	yafaray4::Image *yaf_image = reinterpret_cast<yafaray4::Image *>(image);
+	delete yaf_image;
 }

@@ -42,18 +42,24 @@ BEGIN_YAFARAY
 std::unique_ptr<Image> Image::factory(int width, int height, const Type &type, const Optimization &optimization)
 {
 	if(Y_LOG_HAS_DEBUG) Y_DEBUG PRTEXT(**Image::factory) PREND;
-	if(type == Type::ColorAlphaWeight) return std::unique_ptr<Image>(new ImageColorAlphaWeight(width, height));
-	else if(type == Type::GrayAlphaWeight) return std::unique_ptr<Image>(new ImageGrayAlphaWeight(width, height));
-	else if(type == Type::ColorAlpha && optimization == Optimization::None) return std::unique_ptr<Image>(new ImageColorAlpha(width, height));
-	else if(type == Type::ColorAlpha && optimization == Optimization::Optimized) return std::unique_ptr<Image>(new ImageColorAlphaOptimized(width, height));
-	else if(type == Type::ColorAlpha && optimization == Optimization::Compressed) return std::unique_ptr<Image>(new ImageColorAlphaCompressed(width, height));
-	else if(type == Type::Color && optimization == Optimization::None) return std::unique_ptr<Image>(new ImageColor(width, height));
-	else if(type == Type::Color && optimization == Optimization::Optimized) return std::unique_ptr<Image>(new ImageColorOptimized(width, height));
-	else if(type == Type::Color && optimization == Optimization::Compressed) return std::unique_ptr<Image>(new ImageColorCompressed(width, height));
-	else if(type == Type::GrayAlpha) return std::unique_ptr<Image>(new ImageGrayAlpha(width, height));
-	else if(type == Type::GrayWeight) return std::unique_ptr<Image>(new ImageGrayWeight(width, height));
-	else if(type == Type::Gray && optimization == Optimization::None) return std::unique_ptr<Image>(new ImageGray(width, height));
-	else if(type == Type::Gray && (optimization == Optimization::Optimized || optimization == Optimization::Compressed)) return std::unique_ptr<Image>(new ImageGrayOptimized(width, height));
+	return std::unique_ptr<Image>(Image::factoryRawPointer(width, height, type, optimization));
+}
+
+Image *Image::factoryRawPointer(int width, int height, const Type &type, const Optimization &optimization)
+{
+	if(Y_LOG_HAS_DEBUG) Y_DEBUG PRTEXT(**Image::factoryRawPointer) PREND;
+	if(type == Type::ColorAlphaWeight) return new ImageColorAlphaWeight(width, height);
+	else if(type == Type::GrayAlphaWeight) return new ImageGrayAlphaWeight(width, height);
+	else if(type == Type::ColorAlpha && optimization == Optimization::None) return new ImageColorAlpha(width, height);
+	else if(type == Type::ColorAlpha && optimization == Optimization::Optimized) return new ImageColorAlphaOptimized(width, height);
+	else if(type == Type::ColorAlpha && optimization == Optimization::Compressed) return new ImageColorAlphaCompressed(width, height);
+	else if(type == Type::Color && optimization == Optimization::None) return new ImageColor(width, height);
+	else if(type == Type::Color && optimization == Optimization::Optimized) return new ImageColorOptimized(width, height);
+	else if(type == Type::Color && optimization == Optimization::Compressed) return new ImageColorCompressed(width, height);
+	else if(type == Type::GrayAlpha) return new ImageGrayAlpha(width, height);
+	else if(type == Type::GrayWeight) return new ImageGrayWeight(width, height);
+	else if(type == Type::Gray && optimization == Optimization::None) return new ImageGray(width, height);
+	else if(type == Type::Gray && (optimization == Optimization::Optimized || optimization == Optimization::Compressed)) return new ImageGrayOptimized(width, height);
 	else return nullptr;
 }
 

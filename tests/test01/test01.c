@@ -16,6 +16,7 @@
  *      Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
+#include <stdio.h>
 #include "yafaray_c_api.h"
 
 int main()
@@ -31,11 +32,27 @@ int main()
 	yafaray4_createScene(yi);
 	yafaray4_paramsClearAll(yi);
 
-	//Creating texture
+	//Creating texture from file
 	yafaray4_paramsSetString(yi, "type", "image");
 	yafaray4_paramsSetString(yi, "filename", "test01_tex.tga");
 	yafaray4_createTexture(yi, "TextureTGA");
 	yafaray4_paramsClearAll(yi);
+
+	//Creating texture from RAM
+	const int width = 4;
+	const int height = 3;
+	yafaray4_Image_t *image = yafaray4_createImage(width, height, YAFARAY_IMAGE_TYPE_COLOR_ALPHA, YAFARAY_IMAGE_OPTIMIZATION_NONE);
+	for(int i = 0; i < width; ++i)
+		for(int j = 0; j < height; ++j)
+			yafaray4_setImageColor(image, i, j, i, j, i+j, 1);
+	for(int i = 0; i < width; ++i)
+		for(int j = 0; j < height; ++j)
+		{
+			float r, g, b, a;
+			const yafaray4_bool_t result = yafaray4_getImageColor(image, i, j, &r, &g, &b, &a);
+			printf("Color at %d,%d: result=%d, r=%f, g=%f, b=%f, a=%f\n", i, j, result, r, g, b, a);
+		}
+	yafaray4_destroyImage(image);
 
 	//Creating material
 	//General material parameters

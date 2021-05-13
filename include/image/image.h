@@ -46,6 +46,7 @@ class Image
 		enum class Optimization : int { None, Optimized, Compressed };
 		enum class Position : int { None, Top, Bottom, Left, Right, Overlay };
 		static std::unique_ptr<Image> factory(int width, int height, const Type &type, const Optimization &optimization);
+		static Image *factoryRawPointer(int width, int height, const Type &type, const Optimization &optimization);
 		virtual ~Image() = default;
 
 		virtual Type getType() const = 0;

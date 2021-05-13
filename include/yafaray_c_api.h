@@ -28,12 +28,16 @@ extern "C" {
 	typedef struct yafaray4_Interface yafaray4_Interface_t;
 	typedef struct yafaray4_ColorOutput yafaray4_ColorOutput_t;
 	typedef struct yafaray4_ProgressBar yafaray4_ProgressBar_t;
+	typedef struct yafaray4_Image yafaray4_Image_t;
 
 	typedef enum { YAFARAY_INTERFACE_FOR_RENDERING, YAFARAY_INTERFACE_EXPORT_XML } yafaray4_Interface_Type_t;
 	typedef enum { YAFARAY_BOOL_FALSE = 0, YAFARAY_BOOL_TRUE = 1} yafaray4_bool_t;
+	typedef enum { YAFARAY_IMAGE_TYPE_GRAY, YAFARAY_IMAGE_TYPE_GRAY_ALPHA, YAFARAY_IMAGE_TYPE_COLOR, YAFARAY_IMAGE_TYPE_COLOR_ALPHA } yafaray4_ImageType_t;
+	typedef enum { YAFARAY_IMAGE_OPTIMIZATION_NONE, YAFARAY_IMAGE_OPTIMIZATION_OPTIMIZED, YAFARAY_IMAGE_OPTIMIZATION_COMPRESSED } yafaray4_ImageOptimization_t;
 
 	LIBYAFARAY_EXPORT yafaray4_Interface_t *yafaray4_createInterface(yafaray4_Interface_Type_t interface_type, const char *exported_file_path);
 	LIBYAFARAY_EXPORT void yafaray4_destroyInterface(yafaray4_Interface_t *interface);
+
 	LIBYAFARAY_EXPORT void yafaray4_createScene(yafaray4_Interface_t *interface);
 	LIBYAFARAY_EXPORT yafaray4_bool_t yafaray4_startGeometry(yafaray4_Interface_t *interface); //!< call before creating geometry; only meshes and vmaps can be created in this state
 	LIBYAFARAY_EXPORT yafaray4_bool_t yafaray4_endGeometry(yafaray4_Interface_t *interface); //!< call after creating geometry;
@@ -63,6 +67,7 @@ extern "C" {
 	LIBYAFARAY_EXPORT yafaray4_bool_t yafaray4_createObject(yafaray4_Interface_t *interface, const char *name);
 	LIBYAFARAY_EXPORT yafaray4_bool_t yafaray4_createLight(yafaray4_Interface_t *interface, const char *name);
 	LIBYAFARAY_EXPORT yafaray4_bool_t yafaray4_createTexture(yafaray4_Interface_t *interface, const char *name);
+	LIBYAFARAY_EXPORT yafaray4_bool_t yafaray4_createTextureFromImage(yafaray4_Interface_t *interface, const char *name, const yafaray4_Image_t *image);
 	LIBYAFARAY_EXPORT yafaray4_bool_t yafaray4_createMaterial(yafaray4_Interface_t *interface, const char *name);
 	LIBYAFARAY_EXPORT yafaray4_bool_t yafaray4_createCamera(yafaray4_Interface_t *interface, const char *name);
 	LIBYAFARAY_EXPORT yafaray4_bool_t yafaray4_createBackground(yafaray4_Interface_t *interface, const char *name);
@@ -95,6 +100,12 @@ extern "C" {
 
 	LIBYAFARAY_EXPORT void yafaray4_setInputColorSpace(const char *color_space_string, float gamma_val);
 	LIBYAFARAY_EXPORT void yafaray4_free(void *ptr); //!< Free memory allocated by libYafaRay
+
+	LIBYAFARAY_EXPORT yafaray4_Image_t *yafaray4_createImage(int width, int height, const yafaray4_ImageType_t type, const yafaray4_ImageOptimization_t optimization);
+	LIBYAFARAY_EXPORT yafaray4_bool_t yafaray4_setImageColor(yafaray4_Image_t *image, int x, int y, float red, float green, float blue, float alpha);
+	LIBYAFARAY_EXPORT yafaray4_bool_t yafaray4_getImageColor(const yafaray4_Image_t *image, int x, int y, float *red, float *green, float *blue, float *alpha);
+	LIBYAFARAY_EXPORT void yafaray4_destroyImage(yafaray4_Image_t *image);
+
 #ifdef __cplusplus
 }
 #endif
