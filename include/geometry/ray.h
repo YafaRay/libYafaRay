@@ -20,7 +20,7 @@
 #ifndef YAFARAY_RAY_H
 #define YAFARAY_RAY_H
 
-#include "constants.h"
+#include "yafaray_conf.h"
 #include "geometry/vector.h"
 
 BEGIN_YAFARAY

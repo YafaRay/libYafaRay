@@ -22,7 +22,7 @@
 #ifndef YAFARAY_RENDER_VIEW_H
 #define YAFARAY_RENDER_VIEW_H
 
-#include "constants.h"
+#include "yafaray_conf.h"
 #include "common/collection.h"
 #include "common/memory.h"
 #include <string>

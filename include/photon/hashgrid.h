@@ -20,7 +20,7 @@
 #ifndef YAFARAY_HASHGRID_H
 #define YAFARAY_HASHGRID_H
 
-#include "constants.h"
+#include "yafaray_conf.h"
 #include "geometry/bound.h"
 #include <list>
 #include <vector>

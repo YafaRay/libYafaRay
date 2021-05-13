@@ -23,7 +23,7 @@
 #ifndef YAFARAY_VECTOR_H
 #define YAFARAY_VECTOR_H
 
-#include "constants.h"
+#include "yafaray_conf.h"
 #include "math/math.h"
 #include "math/random.h"
 #include <iostream>

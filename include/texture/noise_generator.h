@@ -23,7 +23,7 @@
 #include "geometry/vector.h"
 #include "color/color.h"
 
-#include "constants.h"
+#include "yafaray_conf.h"
 
 BEGIN_YAFARAY
 

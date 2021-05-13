@@ -20,7 +20,7 @@
 #ifndef YAFARAY_HALTON_H
 #define YAFARAY_HALTON_H
 
-#include "constants.h"
+#include "yafaray_conf.h"
 #include <algorithm>
 
 BEGIN_YAFARAY

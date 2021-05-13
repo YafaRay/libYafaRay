@@ -25,7 +25,7 @@
 #define YAFARAY_CAMERA_H
 
 #include <memory>
-#include "constants.h"
+#include "yafaray_conf.h"
 #include "geometry/plane.h"
 #include "common/memory.h"
 

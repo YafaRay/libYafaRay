@@ -20,7 +20,7 @@
 #ifndef YAFARAY_MONITOR_H
 #define YAFARAY_MONITOR_H
 
-#include "constants.h"
+#include "yafaray_conf.h"
 #include "common/thread.h"
 #include <string>
 

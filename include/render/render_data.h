@@ -20,7 +20,7 @@
 #ifndef YAFARAY_RENDER_DATA_H
 #define YAFARAY_RENDER_DATA_H
 
-#include "constants.h"
+#include "yafaray_conf.h"
 
 BEGIN_YAFARAY
 

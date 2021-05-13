@@ -20,7 +20,7 @@
 #ifndef YAFARAY_SPECTRUM_H
 #define YAFARAY_SPECTRUM_H
 
-#include "constants.h"
+#include "yafaray_conf.h"
 #include "color/color.h"
 
 BEGIN_YAFARAY

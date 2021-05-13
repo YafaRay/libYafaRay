@@ -20,7 +20,7 @@
 #ifndef YAFARAY_INTERSECT_DATA_H
 #define YAFARAY_INTERSECT_DATA_H
 
-#include "constants.h"
+#include "yafaray_conf.h"
 
 BEGIN_YAFARAY
 

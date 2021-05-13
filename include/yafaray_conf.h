@@ -17,8 +17,8 @@
  *      Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-#ifndef YAFARAY_CONSTANTS_H
-#define YAFARAY_CONSTANTS_H
+#ifndef YAFARAY_CONF_H
+#define YAFARAY_CONF_H
 
 #define BEGIN_YAFARAY namespace yafaray4 {
 #define END_YAFARAY }
@@ -39,4 +39,4 @@
 #define LIBYAFARAY_EXPORT YF_IMPORT
 #endif // BUILDING_LIBYAFARAY
 
-#endif // YAFARAY_CONSTANTS_H
+#endif // YAFARAY_CONF_H

@@ -20,7 +20,7 @@
 #ifndef YAFARAY_VOLUME_H
 #define YAFARAY_VOLUME_H
 
-#include "constants.h"
+#include "yafaray_conf.h"
 #include "geometry/bound.h"
 #include "color/color.h"
 #include "common/memory.h"

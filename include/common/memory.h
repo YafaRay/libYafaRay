@@ -20,7 +20,7 @@
 #ifndef YAFARAY_MEMORY_H
 #define YAFARAY_MEMORY_H
 
-#include "constants.h"
+#include "yafaray_conf.h"
 #include <memory>
 
 BEGIN_YAFARAY

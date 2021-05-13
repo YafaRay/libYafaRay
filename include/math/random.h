@@ -22,7 +22,7 @@
 #ifndef YAFARAY_RANDOM_H
 #define YAFARAY_RANDOM_H
 
-#include "constants.h"
+#include "yafaray_conf.h"
 #include "math/math.h"
 
 BEGIN_YAFARAY

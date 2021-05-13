@@ -20,7 +20,7 @@
 #ifndef YAFARAY_CAMERA_PERSPECTIVE_H
 #define YAFARAY_CAMERA_PERSPECTIVE_H
 
-#include "constants.h"
+#include "yafaray_conf.h"
 #include "camera/camera.h"
 #include <vector>
 

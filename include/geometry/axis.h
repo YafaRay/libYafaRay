@@ -20,7 +20,7 @@
 #ifndef YAFARAY_AXIS_H
 #define YAFARAY_AXIS_H
 
-#include "constants.h"
+#include "yafaray_conf.h"
 #include <array>
 
 BEGIN_YAFARAY

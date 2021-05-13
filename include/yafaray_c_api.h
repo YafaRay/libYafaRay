@@ -19,7 +19,7 @@
 #ifndef YAFARAY_C_API_H
 #define YAFARAY_C_API_H
 
-#include "constants.h"
+#include "yafaray_conf.h"
 #include <stddef.h>
 
 #ifdef __cplusplus

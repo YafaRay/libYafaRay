@@ -16,7 +16,7 @@
  *      Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-#include "interface/yafaray_c_api.h"
+#include "yafaray_c_api.h"
 #include "interface/interface.h"
 #include "interface/export/export_xml.h"
 #include "geometry/matrix4.h"

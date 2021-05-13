@@ -21,7 +21,7 @@
 #define YAFARAY_BACKGROUND_H
 
 #include <memory>
-#include "constants.h"
+#include "yafaray_conf.h"
 
 BEGIN_YAFARAY
 

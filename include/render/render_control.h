@@ -20,7 +20,7 @@
 #ifndef YAFARAY_RENDER_CONTROL_H
 #define YAFARAY_RENDER_CONTROL_H
 
-#include "constants.h"
+#include "yafaray_conf.h"
 #include "common/thread.h"
 
 BEGIN_YAFARAY

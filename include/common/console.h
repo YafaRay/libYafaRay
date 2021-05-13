@@ -22,7 +22,7 @@
 #ifndef YAFARAY_CONSOLE_H
 #define YAFARAY_CONSOLE_H
 
-#include "constants.h"
+#include "yafaray_conf.h"
 #include "common/logger.h"
 #include <iostream>
 #include <iomanip>

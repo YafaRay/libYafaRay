@@ -20,7 +20,7 @@
 #ifndef YAFARAY_BUFFER_H
 #define YAFARAY_BUFFER_H
 
-#include "constants.h"
+#include "yafaray_conf.h"
 #include <vector>
 #include <array>
 

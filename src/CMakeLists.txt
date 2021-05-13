@@ -115,7 +115,7 @@ aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/volume SOURCES_SUBDIR)
 list(APPEND SOURCES_DIR ${SOURCES_SUBDIR})
 
 
-add_library(libyafaray4 SHARED ${SOURCES_DIR})
+add_library(libyafaray4 SHARED yafaray_c_api.cc ${SOURCES_DIR})
 target_compile_definitions(libyafaray4 PRIVATE ${YAF_DEFINITIONS})
 target_include_directories(libyafaray4 PRIVATE ${YAF_INCLUDE_DIRS})
 target_include_directories(libyafaray4 SYSTEM BEFORE PRIVATE ${YAF_DEPS_INCLUDE_DIRS})

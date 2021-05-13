@@ -20,7 +20,7 @@
 #ifndef YAFARAY_VECTOR_DOUBLE_H
 #define YAFARAY_VECTOR_DOUBLE_H
 
-#include "constants.h"
+#include "yafaray_conf.h"
 
 BEGIN_YAFARAY
 

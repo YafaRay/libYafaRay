@@ -20,7 +20,7 @@
 #ifndef YAFARAY_SAMPLE_PDF1D_H
 #define YAFARAY_SAMPLE_PDF1D_H
 
-#include "constants.h"
+#include "yafaray_conf.h"
 #include "sampler/sample.h"
 #include "common/logger.h"
 #include <cstring>

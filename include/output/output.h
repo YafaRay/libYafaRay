@@ -24,7 +24,7 @@
 #ifndef YAFARAY_OUTPUT_H
 #define YAFARAY_OUTPUT_H
 
-#include "constants.h"
+#include "yafaray_conf.h"
 #include "color/color.h"
 #include "common/badge.h"
 #include "common/memory.h"

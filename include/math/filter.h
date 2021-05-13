@@ -22,7 +22,7 @@
 #ifndef YAFARAY_FILTER_H
 #define YAFARAY_FILTER_H
 
-#include "constants.h"
+#include "yafaray_conf.h"
 #include "math/math.h"
 
 BEGIN_YAFARAY

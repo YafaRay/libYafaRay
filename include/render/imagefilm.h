@@ -24,7 +24,7 @@
 #ifndef YAFARAY_IMAGEFILM_H
 #define YAFARAY_IMAGEFILM_H
 
-#include "constants.h"
+#include "yafaray_conf.h"
 #include "imagesplitter.h"
 #include "common/thread.h"
 #include "common/aa_noise_params.h"

@@ -24,7 +24,7 @@
 #ifndef YAFARAY_FORMAT_TGA_UTIL_H
 #define YAFARAY_FORMAT_TGA_UTIL_H
 
-#include "constants.h"
+#include "yafaray_conf.h"
 #include "color/color.h"
 
 BEGIN_YAFARAY

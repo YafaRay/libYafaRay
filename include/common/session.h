@@ -23,7 +23,7 @@
 #ifndef YAFARAY_SESSION_H
 #define YAFARAY_SESSION_H
 
-#include "constants.h"
+#include "yafaray_conf.h"
 #include "thread.h"
 
 BEGIN_YAFARAY

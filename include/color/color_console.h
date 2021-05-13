@@ -22,7 +22,7 @@
 #ifndef YAFARAY_COLOR_CONSOLE_H
 #define YAFARAY_COLOR_CONSOLE_H
 
-#include "constants.h"
+#include "yafaray_conf.h"
 #include <iostream>
 
 BEGIN_YAFARAY

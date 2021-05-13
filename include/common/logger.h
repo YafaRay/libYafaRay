@@ -25,7 +25,7 @@
 #ifndef YAFARAY_LOGGER_H
 #define YAFARAY_LOGGER_H
 
-#include "constants.h"
+#include "yafaray_conf.h"
 #include "thread.h"
 #include <ctime>
 #include <iostream>
