@@ -30,6 +30,9 @@
 #include "image/image_gray_weight.h"
 #include "image/image_gray.h"
 #include "image/image_gray_optimized.h"
+#include "common/file.h"
+#include "common/string.h"
+#include "format/format.h"
 #include "common/logger.h"
 #include "common/param.h"
 
@@ -38,6 +41,69 @@
 #endif
 
 BEGIN_YAFARAY
+
+std::unique_ptr<Image> Image::factory(ParamMap &params, const Scene &scene)
+{
+	if(Y_LOG_HAS_DEBUG) Y_DEBUG PRTEXT(**Image::factory params) PREND;
+	int width = 100;
+	int height = 100;
+	std::string name;
+	std::string image_type_str = "ColorAlpha";
+	std::string image_optimization_str = "optimized";
+	std::string color_space_str = "Raw_Manual_Gamma";
+	double gamma = 1.0;
+	std::string filename;
+	params.getParam("name", name);
+	params.getParam("type", image_type_str);
+	params.getParam("image_optimization", image_optimization_str);
+	params.getParam("filename", filename);
+	params.getParam("width", width);
+	params.getParam("height", height);
+	params.getParam("color_space", color_space_str);
+	params.getParam("gamma", gamma);
+	Image::Optimization optimization = Image::getOptimizationTypeFromName(image_optimization_str);
+	const Type type = Image::getTypeFromName(image_type_str);
+	ColorSpace color_space = Rgb::colorSpaceFromName(color_space_str);
+
+	std::unique_ptr<Image> image;
+
+	if(filename.empty())
+	{
+		Y_INFO << "Image '" << name << "': creating empty image with width=" << width << " height=" << height << YENDL;
+	}
+	else
+	{
+		const Path path(filename);
+		ParamMap format_params;
+		format_params["type"] = toLower_global(path.getExtension());
+		std::unique_ptr<Format> format = std::unique_ptr<Format>(Format::factory(format_params));
+		if(format)
+		{
+			if(format->isHdr())
+			{
+				if(color_space != ColorSpace::LinearRgb && Y_LOG_HAS_VERBOSE) Y_VERBOSE << "Image: The image is a HDR/EXR file: forcing linear RGB and ignoring selected color space '" << color_space_str << "' and the gamma setting." << YENDL;
+				color_space = LinearRgb;
+				if(image_optimization_str != "none" && Y_LOG_HAS_VERBOSE) Y_VERBOSE << "Image: The image is a HDR/EXR file: forcing texture optimization to 'none' and ignoring selected texture optimization '" << image_optimization_str << "'" << YENDL;
+				optimization = Image::Optimization::None;
+			}
+			if(type == Type::Gray || type == Type::GrayAlpha || type == Type::GrayWeight || type == Type::GrayAlphaWeight) format->setGrayScaleSetting(true);
+			image = format->loadFromFile(filename, optimization, color_space, gamma);
+		}
+
+		if(image)
+		{
+			Y_INFO << "Image '" << name << "': loaded from file '" << filename << "'" << YENDL;
+		}
+		else
+		{
+			Y_ERROR << "Image '" << name << "': Couldn't load from file '" << filename << "', creating empty image with width=" << width << " height=" << height << YENDL;
+			image = Image::factory(width, height, type, optimization);
+		}
+	}
+	image->color_space_ = color_space;
+	image->gamma_ = gamma;
+	return image;
+}
 
 std::unique_ptr<Image> Image::factory(int width, int height, const Type &type, const Optimization &optimization)
 {

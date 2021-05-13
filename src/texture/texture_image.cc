@@ -36,13 +36,9 @@ BEGIN_YAFARAY
 
 float *ImageTexture::ewa_weight_lut_ = nullptr;
 
-ImageTexture::ImageTexture(std::unique_ptr<Image> image)
+ImageTexture::ImageTexture(std::shared_ptr<Image> image)
 {
 	images_.emplace_back(std::move(image));
-}
-
-ImageTexture::~ImageTexture()
-{
 }
 
 void ImageTexture::resolution(int &x, int &y, int &z) const
@@ -546,68 +542,42 @@ ImageTexture::ClipMode string2Cliptype_global(const std::string &clipname)
 std::unique_ptr<Texture> ImageTexture::factory(ParamMap &params, const Scene &scene)
 {
 	std::string name;
+	std::string image_name;
 	std::string interpolation_type_str;
 	double gamma = 1.0;
 	double expadj = 0.0;
 	bool normalmap = false;
-	std::string color_space_str = "Raw_Manual_Gamma";
-	std::string image_optimization_str = "optimized";
-	bool img_grayscale = false;
+	params.getParam("name", name);
 	params.getParam("interpolate", interpolation_type_str);
-	params.getParam("color_space", color_space_str);
 	params.getParam("gamma", gamma);
 	params.getParam("exposure_adjust", expadj);
 	params.getParam("normalmap", normalmap);
-	params.getParam("filename", name);
-	params.getParam("image_optimization", image_optimization_str);
-	params.getParam("img_grayscale", img_grayscale);
+	params.getParam("image_name", image_name);
 
-	if(name.empty())
+	const InterpolationType interpolation_type = getInterpolationTypeFromName(interpolation_type_str);
+
+	if(image_name.empty())
 	{
-		Y_ERROR << "ImageTexture: Required argument filename not found for image texture" << YENDL;
+		Y_ERROR << "ImageTexture: Required argument image_name not found for image texture" << YENDL;
 		return nullptr;
 	}
 
-	const InterpolationType interpolation_type = Texture::getInterpolationTypeFromName(interpolation_type_str);
-	ColorSpace color_space = Rgb::colorSpaceFromName(color_space_str);
-	Image::Optimization image_optimization = Image::getOptimizationTypeFromName(image_optimization_str);
-	const Path path(name);
-
-	ParamMap format_params;
-	format_params["type"] = toLower_global(path.getExtension());
-	std::unique_ptr<Format> format = std::unique_ptr<Format>(Format::factory(format_params));
-	if(!format)
-	{
-		Y_ERROR << "ImageTexture: Couldn't create image handler, dropping texture." << YENDL;
-		return nullptr;
-	}
-
-	if(format->isHdr())
-	{
-		if(color_space != ColorSpace::LinearRgb && Y_LOG_HAS_VERBOSE) Y_VERBOSE << "ImageTexture: The image is a HDR/EXR file: forcing linear RGB and ignoring selected color space '" << color_space_str << "' and the gamma setting." << YENDL;
-		color_space = LinearRgb;
-		if(image_optimization_str != "none" && Y_LOG_HAS_VERBOSE) Y_VERBOSE << "ImageTexture: The image is a HDR/EXR file: forcing texture optimization to 'none' and ignoring selected texture optimization '" << image_optimization_str << "'" << YENDL;
-		image_optimization = Image::Optimization::None;
-	}
-
-	format->setGrayScaleSetting(img_grayscale);
-
-	std::unique_ptr<Image> image = format->loadFromFile(name, image_optimization, color_space, gamma);
+	std::shared_ptr<Image> image = scene.getImage(image_name);
 	if(!image)
 	{
 		Y_ERROR << "ImageTexture: Couldn't load image file, dropping texture." << YENDL;
 		return nullptr;
 	}
 
-	auto tex = std::unique_ptr<ImageTexture>(new ImageTexture(std::move(image)));
+	auto tex = std::unique_ptr<ImageTexture>(new ImageTexture(image));
 	if(!tex) //FIXME: this will never be true, replace by exception handling??
 	{
 		Y_ERROR << "ImageTexture: Couldn't create image texture." << YENDL;
 		return nullptr;
 	}
 
-	tex->original_image_file_color_space_ = color_space;
-	tex->original_image_file_gamma_ = gamma;
+	tex->original_image_file_color_space_ = image->getColorSpace();
+	tex->original_image_file_gamma_ = image->getGamma();
 
 	if(interpolation_type == InterpolationType::Trilinear || interpolation_type == InterpolationType::Ewa)
 	{

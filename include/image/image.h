@@ -24,12 +24,15 @@
 
 #include "yafaray_conf.h"
 #include "common/memory.h"
+#include "color/color.h"
 #include <string>
 
 BEGIN_YAFARAY
 
 class Rgba;
 class Layer;
+class ParamMap;
+class Scene;
 
 struct DenoiseParams
 {
@@ -45,6 +48,7 @@ class Image
 		enum class Type : int { None, Gray, GrayAlpha, GrayWeight, GrayAlphaWeight, Color, ColorAlpha, ColorAlphaWeight };
 		enum class Optimization : int { None, Optimized, Compressed };
 		enum class Position : int { None, Top, Bottom, Left, Right, Overlay };
+		static std::unique_ptr<Image> factory(ParamMap &params, const Scene &scene);
 		static std::unique_ptr<Image> factory(int width, int height, const Type &type, const Optimization &optimization);
 		static Image *factoryRawPointer(int width, int height, const Type &type, const Optimization &optimization);
 		virtual ~Image() = default;
@@ -65,6 +69,8 @@ class Image
 		int getNumChannels() const { return getNumChannels(getType()); }
 		bool hasAlpha() const { return hasAlpha(getType()); }
 		bool isGrayscale() const { return isGrayscale(getType()); }
+		ColorSpace getColorSpace() const { return color_space_; }
+		float getGamma() const { return gamma_; }
 
 		static Type imageTypeWithAlpha(Type image_type);
 		static Type imageTypeWithWeight(Type image_type);
@@ -83,6 +89,8 @@ class Image
 		Image(int width, int height) : width_(width), height_(height) { }
 		int width_ = 0;
 		int height_ = 0;
+		ColorSpace color_space_ = RawManualGamma;
+		float gamma_ = 1.f;
 };
 
 END_YAFARAY

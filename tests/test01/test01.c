@@ -32,27 +32,26 @@ int main()
 	yafaray4_createScene(yi);
 	yafaray4_paramsClearAll(yi);
 
-	//Creating texture from file
-	yafaray4_paramsSetString(yi, "type", "image");
-	yafaray4_paramsSetString(yi, "filename", "test01_tex.tga");
-	yafaray4_createTexture(yi, "TextureTGA");
+	//Creating image from RAM or file
+	const int width = 200;
+	const int height = 200;
+	yafaray4_paramsSetString(yi, "type", "ColorAlpha");
+	yafaray4_paramsSetString(yi, "image_optimization", "none"); //Note: only "none" allows more HDR values > 1.f
+	yafaray4_paramsSetInt(yi, "width", width);
+	yafaray4_paramsSetInt(yi, "height", height);
+	yafaray4_paramsSetString(yi, "filename", "test01_texNO.tga");
+	yafaray4_Image_t *image = yafaray4_createImage(yi, "Image01");
 	yafaray4_paramsClearAll(yi);
 
-	//Creating texture from RAM
-	const int width = 4;
-	const int height = 3;
-	yafaray4_Image_t *image = yafaray4_createImage(width, height, YAFARAY_IMAGE_TYPE_COLOR_ALPHA, YAFARAY_IMAGE_OPTIMIZATION_NONE);
 	for(int i = 0; i < width; ++i)
 		for(int j = 0; j < height; ++j)
-			yafaray4_setImageColor(image, i, j, i, j, i+j, 1);
-	for(int i = 0; i < width; ++i)
-		for(int j = 0; j < height; ++j)
-		{
-			float r, g, b, a;
-			const yafaray4_bool_t result = yafaray4_getImageColor(image, i, j, &r, &g, &b, &a);
-			printf("Color at %d,%d: result=%d, r=%f, g=%f, b=%f, a=%f\n", i, j, result, r, g, b, a);
-		}
-	yafaray4_destroyImage(image);
+			yafaray4_setImageColor(image, i, j, 0.01f * i, 0.01f * j, 0.01f * (i + j), 1.f);
+
+	//Creating texture from image
+	yafaray4_paramsSetString(yi, "type", "image");
+	yafaray4_paramsSetString(yi, "image_name", "Image01");
+	yafaray4_createTexture(yi, "TextureTGA");
+	yafaray4_paramsClearAll(yi);
 
 	//Creating material
 	//General material parameters

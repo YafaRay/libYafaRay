@@ -49,10 +49,9 @@ class ImageTexture final : public Texture
 	public:
 		enum class ClipMode : int { Extend, Clip, ClipCube, Repeat, Checker };
 		static std::unique_ptr<Texture> factory(ParamMap &params, const Scene &scene);
-		virtual ~ImageTexture() override;
 
 	private:
-		ImageTexture(std::unique_ptr<Image> image);
+		ImageTexture(std::shared_ptr<Image> image);
 		virtual bool discrete() const override { return true; }
 		virtual bool isThreeD() const override { return false; }
 		virtual bool isNormalmap() const override { return normalmap_; }
@@ -80,7 +79,7 @@ class ImageTexture final : public Texture
 		float checker_dist_;
 		int xrepeat_, yrepeat_;
 		ClipMode tex_clip_mode_;
-		std::vector<std::unique_ptr<Image>> images_;
+		std::vector<std::shared_ptr<Image>> images_;
 		ColorSpace original_image_file_color_space_;
 		float original_image_file_gamma_;
 		bool mirror_x_;

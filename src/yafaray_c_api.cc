@@ -321,21 +321,9 @@ void yafaray4_setInputColorSpace(yafaray4_Interface_t *interface, const char *co
 	reinterpret_cast<yafaray4::Interface *>(interface)->setInputColorSpace(color_space_string, gamma_val);
 }
 
-yafaray4_Image_t *yafaray4_createImage(int width, int height, const yafaray4_ImageType_t type, const yafaray4_ImageOptimization_t optimization)
+yafaray4_Image_t *yafaray4_createImage(yafaray4_Interface_t *interface, const char *name)
 {
-	yafaray4::Image::Type image_type;
-	if(type == YAFARAY_IMAGE_TYPE_GRAY) image_type = yafaray4::Image::Type::Gray;
-	else if(type == YAFARAY_IMAGE_TYPE_GRAY_ALPHA) image_type = yafaray4::Image::Type::GrayAlpha;
-	else if(type == YAFARAY_IMAGE_TYPE_COLOR) image_type = yafaray4::Image::Type::Color;
-	else image_type = yafaray4::Image::Type::ColorAlpha;
-
-	yafaray4::Image::Optimization image_optimization;
-	if(optimization == YAFARAY_IMAGE_OPTIMIZATION_OPTIMIZED) image_optimization = yafaray4::Image::Optimization::Optimized;
-	else if(optimization == YAFARAY_IMAGE_OPTIMIZATION_COMPRESSED) image_optimization = yafaray4::Image::Optimization::Compressed;
-	else image_optimization = yafaray4::Image::Optimization::None;
-
-	yafaray4::Image *image = yafaray4::Image::factoryRawPointer(width, height, image_type, image_optimization);
-	return reinterpret_cast<yafaray4_Image_t *>(image);
+	return reinterpret_cast<yafaray4_Image_t *>(reinterpret_cast<yafaray4::Interface *>(interface)->createImage(name));
 }
 
 yafaray4_bool_t yafaray4_setImageColor(yafaray4_Image_t *image, int x, int y, float red, float green, float blue, float alpha)
@@ -358,10 +346,4 @@ yafaray4_bool_t yafaray4_getImageColor(const yafaray4_Image_t *image, int x, int
 	*blue = color.b_;
 	*alpha = color.a_;
 	return YAFARAY_BOOL_TRUE;
-}
-
-void yafaray4_destroyImage(yafaray4_Image_t *image)
-{
-	yafaray4::Image *yaf_image = reinterpret_cast<yafaray4::Image *>(image);
-	delete yaf_image;
 }

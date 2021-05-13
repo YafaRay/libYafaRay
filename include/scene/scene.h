@@ -129,6 +129,7 @@ class Scene
 		Integrator *getIntegrator(const std::string &name) const;
 		ColorOutput *getOutput(const std::string &name) const;
 		RenderView *getRenderView(const std::string &name) const;
+		std::shared_ptr<Image> getImage(const std::string &name) const;
 		const std::map<std::string, std::unique_ptr<RenderView>> &getRenderViews() const { return render_views_; }
 		const std::map<std::string, std::unique_ptr<VolumeRegion>> &getVolumeRegions() const { return volume_regions_; }
 		const std::map<std::string, std::unique_ptr<Light>> &getLights() const { return lights_; }
@@ -143,6 +144,7 @@ class Scene
 		VolumeHandler *createVolumeHandler(const std::string &name, ParamMap &params);
 		VolumeRegion *createVolumeRegion(const std::string &name, ParamMap &params);
 		RenderView *createRenderView(const std::string &name, ParamMap &params);
+		std::shared_ptr<Image> createImage(const std::string &name, ParamMap &params);
 		ColorOutput *createOutput(const std::string &name, ParamMap &params, bool auto_delete = true);
 		ColorOutput *createOutput(const std::string &name, UniquePtr_t<ColorOutput> output, bool auto_delete = true);
 		bool removeOutput(const std::string &name);
@@ -210,6 +212,7 @@ class Scene
 		std::map<std::string, std::unique_ptr<VolumeRegion>> volume_regions_;
 		std::map<std::string, UniquePtr_t<ColorOutput>> outputs_;
 		std::map<std::string, std::unique_ptr<RenderView>> render_views_;
+		std::map<std::string, std::shared_ptr<Image>> images_;
 		Layers layers_;
 };
 

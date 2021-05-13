@@ -101,10 +101,9 @@ extern "C" {
 	LIBYAFARAY_EXPORT void yafaray4_setInputColorSpace(const char *color_space_string, float gamma_val);
 	LIBYAFARAY_EXPORT void yafaray4_free(void *ptr); //!< Free memory allocated by libYafaRay
 
-	LIBYAFARAY_EXPORT yafaray4_Image_t *yafaray4_createImage(int width, int height, const yafaray4_ImageType_t type, const yafaray4_ImageOptimization_t optimization);
+	LIBYAFARAY_EXPORT yafaray4_Image_t *yafaray4_createImage(yafaray4_Interface_t *interface, const char *name);
 	LIBYAFARAY_EXPORT yafaray4_bool_t yafaray4_setImageColor(yafaray4_Image_t *image, int x, int y, float red, float green, float blue, float alpha);
 	LIBYAFARAY_EXPORT yafaray4_bool_t yafaray4_getImageColor(const yafaray4_Image_t *image, int x, int y, float *red, float *green, float *blue, float *alpha);
-	LIBYAFARAY_EXPORT void yafaray4_destroyImage(yafaray4_Image_t *image);
 
 #ifdef __cplusplus
 }

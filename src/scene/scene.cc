@@ -381,6 +381,11 @@ RenderView *Scene::getRenderView(const std::string &name) const
 	return Scene::findMapItem<RenderView>(name, render_views_);
 }
 
+std::shared_ptr<Image> Scene::getImage(const std::string &name) const
+{
+	return Scene::findMapItem<Image>(name, images_);
+}
+
 bool Scene::removeOutput(const std::string &name)
 {
 	ColorOutput *output = getOutput(name);
@@ -614,6 +619,11 @@ VolumeRegion *Scene::createVolumeRegion(const std::string &name, ParamMap &param
 RenderView *Scene::createRenderView(const std::string &name, ParamMap &params)
 {
 	return createMapItem<RenderView>(name, "RenderView", params, render_views_, this, false);
+}
+
+std::shared_ptr<Image> Scene::createImage(const std::string &name, ParamMap &params)
+{
+	return createMapItem<Image>(name, "Image", params, images_, this);
 }
 
 const Layers Scene::getLayersWithImages() const

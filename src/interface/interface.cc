@@ -263,6 +263,7 @@ Background *Interface::createBackground(const char *name) { return scene_->creat
 Integrator *Interface::createIntegrator(const char *name) { return scene_->createIntegrator(name, *params_); }
 VolumeRegion *Interface::createVolumeRegion(const char *name) { return scene_->createVolumeRegion(name, *params_); }
 RenderView *Interface::createRenderView(const char *name) { return scene_->createRenderView(name, *params_); }
+Image *Interface::createImage(const char *name) { return scene_->createImage(name, *params_).get(); }
 
 ColorOutput *Interface::createOutput(const char *name, bool auto_delete)
 {

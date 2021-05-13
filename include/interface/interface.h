@@ -45,6 +45,7 @@ class Format;
 class ProgressBar;
 class Matrix4;
 class Object;
+class Image;
 
 class Interface
 {
@@ -90,6 +91,7 @@ class Interface
 		virtual Integrator *createIntegrator(const char *name);
 		virtual VolumeRegion *createVolumeRegion(const char *name);
 		virtual RenderView *createRenderView(const char *name);
+		virtual Image *createImage(const char *name);
 		virtual ColorOutput *createOutput(const char *name, bool auto_delete = true); //!< ColorOutput creation, usually for internally-owned outputs that are destroyed when the scene is deleted or when libYafaRay instance is closed. If the client wants to keep ownership, it can set the "auto_delete" to false.
 		virtual ColorOutput *createOutput(const char *name, ColorOutput *output, bool auto_delete = false); //!< ColorOutput creation, usually for externally client-owned and client-supplied outputs that are *NOT* destroyed when the scene is deleted or when libYafaRay instance is closed. If the client wants to transfer ownership to libYafaRay, it can set the "auto_delete" to true.
 		bool removeOutput(const char *name);
