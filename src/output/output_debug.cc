@@ -28,7 +28,7 @@
 
 BEGIN_YAFARAY
 
-UniquePtr_t<ColorOutput> DebugOutput::factory(const ParamMap &params, const Scene &scene)
+UniquePtr_t<ColorOutput> DebugOutput::factory(const ParamMap &params, const Scene &scene, void *callback_user_data, OutputPutpixelCallback_t output_putpixel_callback, OutputFlushAreaCallback_t output_flush_area_callback, OutputFlushCallback_t output_flush_callback)
 {
 	std::string name;
 	std::string color_space_str = "Raw_Manual_Gamma";

@@ -467,9 +467,9 @@ void AcceleratorKdTreeMultiThread::buildTreeWorker(const std::vector<const Primi
 				prim_indices.emplace_back(prim_id);
 			}
 		}
-		new_indices = std::ref(poly_indices); //Using polygon indices instead of primitive indices now!
-		new_primitive_indices = std::ref(prim_indices); //Only forwarding the primitive indices corresponding with currently existing polygons
-		new_bounds = std::ref(poly_bounds); //Using polygon indices for bounds too, instead of primitive indices now.
+		new_indices = std::reference_wrapper<const std::vector<uint32_t>>(poly_indices); //Using polygon indices instead of primitive indices now!
+		new_primitive_indices = std::reference_wrapper<const std::vector<uint32_t>>(prim_indices); //Only forwarding the primitive indices corresponding with currently existing polygons
+		new_bounds = std::reference_wrapper<const std::vector<Bound>>(poly_bounds); //Using polygon indices for bounds too, instead of primitive indices now.
 	}
 #endif
 

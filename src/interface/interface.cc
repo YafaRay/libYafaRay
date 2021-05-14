@@ -265,9 +265,9 @@ VolumeRegion *Interface::createVolumeRegion(const char *name) { return scene_->c
 RenderView *Interface::createRenderView(const char *name) { return scene_->createRenderView(name, *params_); }
 Image *Interface::createImage(const char *name) { return scene_->createImage(name, *params_).get(); }
 
-ColorOutput *Interface::createOutput(const char *name, bool auto_delete)
+ColorOutput *Interface::createOutput(const char *name, bool auto_delete, void *callback_user_data, OutputPutpixelCallback_t output_putpixel_callback, OutputFlushAreaCallback_t output_flush_area_callback, OutputFlushCallback_t output_flush_callback)
 {
-	return scene_->createOutput(name, *params_, auto_delete);
+	return scene_->createOutput(name, *params_, auto_delete, callback_user_data, output_putpixel_callback, output_flush_area_callback, output_flush_callback);
 }
 
 ColorOutput *Interface::createOutput(const char *name, ColorOutput *output, bool auto_delete)

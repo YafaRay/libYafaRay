@@ -92,7 +92,7 @@ class Interface
 		virtual VolumeRegion *createVolumeRegion(const char *name);
 		virtual RenderView *createRenderView(const char *name);
 		virtual Image *createImage(const char *name);
-		virtual ColorOutput *createOutput(const char *name, bool auto_delete = true); //!< ColorOutput creation, usually for internally-owned outputs that are destroyed when the scene is deleted or when libYafaRay instance is closed. If the client wants to keep ownership, it can set the "auto_delete" to false.
+		virtual ColorOutput *createOutput(const char *name, bool auto_delete = true, void *callback_user_data = nullptr, OutputPutpixelCallback_t output_putpixel_callback = nullptr, OutputFlushAreaCallback_t output_flush_area_callback = nullptr, OutputFlushCallback_t output_flush_callback = nullptr); //!< ColorOutput creation, usually for internally-owned outputs that are destroyed when the scene is deleted or when libYafaRay instance is closed. If the client wants to keep ownership, it can set the "auto_delete" to false.
 		virtual ColorOutput *createOutput(const char *name, ColorOutput *output, bool auto_delete = false); //!< ColorOutput creation, usually for externally client-owned and client-supplied outputs that are *NOT* destroyed when the scene is deleted or when libYafaRay instance is closed. If the client wants to transfer ownership to libYafaRay, it can set the "auto_delete" to true.
 		bool removeOutput(const char *name);
 		virtual void clearOutputs();

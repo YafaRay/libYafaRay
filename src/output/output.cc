@@ -19,8 +19,8 @@
 
 #include "output/output.h"
 #include "output/output_image.h"
-#include "output/output_memory.h"
 #include "output/output_debug.h"
+#include "output/output_callback.h"
 #include "color/color_layers.h"
 #include "scene/scene.h"
 #include "common/logger.h"
@@ -28,7 +28,7 @@
 
 BEGIN_YAFARAY
 
-UniquePtr_t<ColorOutput> ColorOutput::factory(const ParamMap &params, const Scene &scene)
+UniquePtr_t<ColorOutput> ColorOutput::factory(const ParamMap &params, const Scene &scene, void *callback_user_data, OutputPutpixelCallback_t output_putpixel_callback, OutputFlushAreaCallback_t output_flush_area_callback, OutputFlushCallback_t output_flush_callback)
 {
 	if(Y_LOG_HAS_DEBUG)
 	{
@@ -37,13 +37,13 @@ UniquePtr_t<ColorOutput> ColorOutput::factory(const ParamMap &params, const Scen
 	}
 	std::string type;
 	params.getParam("type", type);
-	if(type == "image_output") return ImageOutput::factory(params, scene);
-	else if(type == "memory_output") return MemoryInputOutput::factory(params, scene);
-	else if(type == "debug_output") return DebugOutput::factory(params, scene);
+	if(type == "image_output") return ImageOutput::factory(params, scene, callback_user_data, output_putpixel_callback, output_flush_area_callback, output_flush_callback);
+	else if(type == "debug_output") return DebugOutput::factory(params, scene, callback_user_data, output_putpixel_callback, output_flush_area_callback, output_flush_callback);
+    else if(type == "callback_output") return CallbackOutput::factory(params, scene, callback_user_data, output_putpixel_callback, output_flush_area_callback, output_flush_callback);
 	else return nullptr;
 }
 
-ColorOutput::ColorOutput(const std::string &name, const ColorSpace color_space, float gamma, bool with_alpha, bool alpha_premultiply) : name_(name), color_space_(color_space), gamma_(gamma), with_alpha_(with_alpha), alpha_premultiply_(alpha_premultiply)
+ColorOutput::ColorOutput(const std::string &name, const ColorSpace color_space, float gamma, bool with_alpha, bool alpha_premultiply, void *callback_user_data, OutputPutpixelCallback_t output_putpixel_callback, OutputFlushAreaCallback_t output_flush_area_callback, OutputFlushCallback_t output_flush_callback) : name_(name), color_space_(color_space), gamma_(gamma), with_alpha_(with_alpha), alpha_premultiply_(alpha_premultiply), callback_user_data_(callback_user_data), output_pixel_callback_(output_putpixel_callback), output_flush_area_callback_(output_flush_area_callback), output_flush_callback_(output_flush_callback)
 {
 	if(color_space == RawManualGamma)
 	{

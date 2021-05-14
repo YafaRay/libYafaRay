@@ -203,9 +203,9 @@ yafaray4_bool_t yafaray4_createRenderView(yafaray4_Interface_t *interface, const
 	return static_cast<yafaray4_bool_t>(reinterpret_cast<yafaray4::Interface *>(interface)->createRenderView(name) != nullptr);
 }
 
-yafaray4_bool_t yafaray4_createInternalOutput(yafaray4_Interface_t *interface, const char *name, yafaray4_bool_t auto_delete) //!< ColorOutput creation, usually for internally-owned outputs that are destroyed when the scene is deleted or when libYafaRay instance is closed. If the client wants to keep ownership, it can set the "auto_delete" to false.
+yafaray4_bool_t yafaray4_createOutput(yafaray4_Interface_t *interface, const char *name, yafaray4_bool_t auto_delete, void *callback_user_data, OutputPutpixelCallback_t output_putpixel_callback, OutputFlushAreaCallback_t output_flush_area_callback, OutputFlushCallback_t output_flush_callback) //!< ColorOutput creation, usually for internally-owned outputs that are destroyed when the scene is deleted or when libYafaRay instance is closed. If the client wants to keep ownership, it can set the "auto_delete" to false.
 {
-	return static_cast<yafaray4_bool_t>(reinterpret_cast<yafaray4::Interface *>(interface)->createOutput(name, auto_delete) != nullptr);
+	return static_cast<yafaray4_bool_t>(reinterpret_cast<yafaray4::Interface *>(interface)->createOutput(name, auto_delete, callback_user_data, output_putpixel_callback, output_flush_area_callback, output_flush_callback) != nullptr);
 }
 
 yafaray4_bool_t yafaray4_setExternalOutput(yafaray4_Interface_t *interface, const char *name, yafaray4_ColorOutput_t *output, yafaray4_bool_t auto_delete) //!< ColorOutput creation, usually for externally client-owned and client-supplied outputs that are *NOT* destroyed when the scene is deleted or when libYafaRay instance is closed. If the client wants to transfer ownership to libYafaRay, it can set the "auto_delete" to true.

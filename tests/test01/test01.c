@@ -19,13 +19,33 @@
 #include <stdio.h>
 #include "yafaray_c_api.h"
 
+void putPixelCallback(const char *view_name, const char *layer_name, int x, int y, float r, float g, float b, float a, void *callback_user_data)
+{
+    if(x % 100 == 0 && y % 100 == 0) printf("**** putPixelCallback view_name='%s', layer_name='%s', x=%d, y=%d, rgba={%f,%f,%f,%f}, callback_user_data=%p\n", view_name, layer_name, x, y, r, g, b, a, callback_user_data);
+}
+
+void flushAreaCallback(const char *view_name, int x_0, int y_0, int x_1, int y_1, void *callback_user_data)
+{
+    printf("**** flushAreaCallback view_name='%s', x_0=%d, y_0=%d, x_1=%d, y_1=%d, callback_user_data=%p\n", view_name, x_0, y_0, x_1, y_1, callback_user_data);
+}
+
+void flushCallback(const char *view_name, void *callback_user_data)
+{
+    printf("**** flushCallback view_name='%s', callback_user_data=%p\n", view_name, callback_user_data);
+}
+
 int main()
 {
+    const char user_data[] = "User data in RAM";
+
+    printf("user_data: %p\n", (void *) user_data);
+
 	//Basic libYafaRay C API usage example, rendering a cube with a TGA texture
 
 	//YafaRay standard rendering interface
 	yafaray4_Interface_t *yi = yafaray4_createInterface(YAFARAY_INTERFACE_FOR_RENDERING, NULL);
 	yafaray4_setConsoleVerbosityLevel(yi, "debug");
+    yafaray4_setInteractive(yi, YAFARAY_BOOL_TRUE);
 
 	//Creating scene
 	yafaray4_paramsSetString(yi, "type", "yafaray");
@@ -147,8 +167,13 @@ int main()
 	//Creating image output
 	yafaray4_paramsSetString(yi, "type", "image_output");
 	yafaray4_paramsSetString(yi, "image_path", "./test01-output1.tga");
-	yafaray4_createInternalOutput(yi, "output1_tga", 1);
+    yafaray4_createOutput(yi, "output1_tga", YAFARAY_BOOL_TRUE, NULL, NULL, NULL, NULL);
 	yafaray4_paramsClearAll(yi);
+
+    //Creating callback output
+    yafaray4_paramsSetString(yi, "type", "callback_output");
+    yafaray4_createOutput(yi, "test_callback_output", YAFARAY_BOOL_TRUE, (void *) user_data, putPixelCallback, flushAreaCallback, flushCallback);
+    yafaray4_paramsClearAll(yi);
 
 	//Creating surface integrator
 	yafaray4_paramsSetString(yi, "type", "directlighting");

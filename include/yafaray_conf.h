@@ -39,4 +39,10 @@
 #define LIBYAFARAY_EXPORT YF_IMPORT
 #endif // BUILDING_LIBYAFARAY
 
+//Callback definitions for the C API
+//FIXME: Should we care about the function call convention being the same for libYafaRay and its client(s)?
+typedef void (*OutputPutpixelCallback_t)(const char *view_name, const char *layer_name, int x, int y, float r, float g, float b, float a, void *callback_user_data);
+typedef void (*OutputFlushAreaCallback_t)(const char *view_name, int x_0, int y_0, int x_1, int y_1, void *callback_user_data);
+typedef void (*OutputFlushCallback_t)(const char *view_name, void *callback_user_data);
+
 #endif // YAFARAY_CONF_H

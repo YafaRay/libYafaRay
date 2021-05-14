@@ -47,7 +47,7 @@ class ColorOutput;
 class ColorOutput
 {
 	public:
-		static UniquePtr_t<ColorOutput> factory(const ParamMap &params, const Scene &scene);
+		static UniquePtr_t<ColorOutput> factory(const ParamMap &params, const Scene &scene, void *callback_user_data, OutputPutpixelCallback_t output_putpixel_callback, OutputFlushAreaCallback_t output_flush_area_callback, OutputFlushCallback_t output_flush_callback);
 		virtual ~ColorOutput() = default;
 		void setAutoDelete(bool value) { auto_delete_ = value; }
 		void setLoggingParams(const ParamMap &params);
@@ -69,7 +69,7 @@ class ColorOutput
 		std::unique_ptr<Image> generateBadgeImage(const RenderControl &render_control) const;
 
 	protected:
-		ColorOutput(const std::string &name = "out", const ColorSpace color_space = ColorSpace::RawManualGamma, float gamma = 1.f, bool with_alpha = true, bool alpha_premultiply = false);
+		ColorOutput(const std::string &name = "out", const ColorSpace color_space = ColorSpace::RawManualGamma, float gamma = 1.f, bool with_alpha = true, bool alpha_premultiply = false, void *callback_user_data = nullptr, OutputPutpixelCallback_t output_putpixel_callback = nullptr, OutputFlushAreaCallback_t output_flush_area_callback = nullptr, OutputFlushCallback_t output_flush_callback = nullptr);
 		ColorLayer preProcessColor(const ColorLayer &color_layer);
 		virtual std::string printDenoiseParams() const { return ""; }
 		ColorSpace getColorSpace() const { return color_space_; }
@@ -90,6 +90,10 @@ class ColorOutput
 		const RenderView *current_render_view_ = nullptr;
 		const std::map<std::string, std::unique_ptr<RenderView>> *render_views_ = nullptr;
 		const Layers *layers_ = nullptr;
+        void *callback_user_data_ = nullptr;
+        OutputPutpixelCallback_t output_pixel_callback_ = nullptr;
+        OutputFlushAreaCallback_t output_flush_area_callback_ = nullptr;
+        OutputFlushCallback_t output_flush_callback_ = nullptr;
 };
 
 END_YAFARAY
