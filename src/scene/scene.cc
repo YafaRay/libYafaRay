@@ -578,31 +578,31 @@ std::shared_ptr<T> Scene::createMapItem(const std::string &name, const std::stri
 
 ColorOutput *Scene::createOutput(const std::string &name, ParamMap &params, bool auto_delete, void *callback_user_data, OutputPutpixelCallback_t output_putpixel_callback, OutputFlushAreaCallback_t output_flush_area_callback, OutputFlushCallback_t output_flush_callback)
 {
-    std::string pname = "ColorOutput";
-    params["name"] = std::string(name);
-    if(outputs_.find(name) != outputs_.end())
-    {
-        WARN_EXIST; return nullptr;
-    }
-    std::string type;
-    if(! params.getParam("type", type))
-    {
-        if(true)//check_type_exists)
-        {
-            ERR_NO_TYPE;
-            return nullptr;
-        }
-    }
-    UniquePtr_t<ColorOutput> item = ColorOutput::factory(params, *this, callback_user_data, output_putpixel_callback, output_flush_area_callback, output_flush_callback);
-    if(item)
-    {
-        item->setAutoDelete(auto_delete); //By default all objects will autodelete as usual unique_ptr. If that's not desired, auto_delete can be set to false but then the object class must have the setAutoDelete and isAutoDeleted methods
-        outputs_[name] = std::move(item);
-        if(Y_LOG_HAS_VERBOSE) INFO_VERBOSE_SUCCESS(name, type);
-        return outputs_[name].get();
-    }
-    ERR_ON_CREATE(type);
-    return nullptr;
+	std::string pname = "ColorOutput";
+	params["name"] = std::string(name);
+	if(outputs_.find(name) != outputs_.end())
+	{
+		WARN_EXIST; return nullptr;
+	}
+	std::string type;
+	if(! params.getParam("type", type))
+	{
+		if(true)//check_type_exists)
+		{
+			ERR_NO_TYPE;
+			return nullptr;
+		}
+	}
+	UniquePtr_t<ColorOutput> item = ColorOutput::factory(params, *this, callback_user_data, output_putpixel_callback, output_flush_area_callback, output_flush_callback);
+	if(item)
+	{
+		item->setAutoDelete(auto_delete); //By default all objects will autodelete as usual unique_ptr. If that's not desired, auto_delete can be set to false but then the object class must have the setAutoDelete and isAutoDeleted methods
+		outputs_[name] = std::move(item);
+		if(Y_LOG_HAS_VERBOSE) INFO_VERBOSE_SUCCESS(name, type);
+		return outputs_[name].get();
+	}
+	ERR_ON_CREATE(type);
+	return nullptr;
 }
 
 Texture *Scene::createTexture(const std::string &name, ParamMap &params)

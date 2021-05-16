@@ -17,35 +17,59 @@
  */
 
 #include <stdio.h>
+#include <malloc.h>
+#include <math.h>
+#include <string.h>
 #include "yafaray_c_api.h"
+
+struct ResultImage
+{
+    int width_;
+    int height_;
+    char *data_;
+};
 
 void putPixelCallback(const char *view_name, const char *layer_name, int x, int y, float r, float g, float b, float a, void *callback_user_data)
 {
-    if(x % 100 == 0 && y % 100 == 0) printf("**** putPixelCallback view_name='%s', layer_name='%s', x=%d, y=%d, rgba={%f,%f,%f,%f}, callback_user_data=%p\n", view_name, layer_name, x, y, r, g, b, a, callback_user_data);
+	if(x % 100 == 0 && y % 100 == 0) printf("**** putPixelCallback view_name='%s', layer_name='%s', x=%d, y=%d, rgba={%f,%f,%f,%f}, callback_user_data=%p\n", view_name, layer_name, x, y, r, g, b, a, callback_user_data);
+	if(strcmp(layer_name, "combined") == 0)
+	{
+		struct ResultImage *result_image = (struct ResultImage *) callback_user_data;
+		const int width = result_image->width_;
+		const int height = result_image->height_;
+		const size_t idx = 3 * (y * width + x);
+		*(result_image->data_ + idx + 0) = (char) trunc(r * 255.f);
+		*(result_image->data_ + idx + 1) = (char) trunc(g * 255.f);
+		*(result_image->data_ + idx + 2) = (char) trunc(b * 255.f);
+	}
 }
 
 void flushAreaCallback(const char *view_name, int x_0, int y_0, int x_1, int y_1, void *callback_user_data)
 {
-    printf("**** flushAreaCallback view_name='%s', x_0=%d, y_0=%d, x_1=%d, y_1=%d, callback_user_data=%p\n", view_name, x_0, y_0, x_1, y_1, callback_user_data);
+	printf("**** flushAreaCallback view_name='%s', x_0=%d, y_0=%d, x_1=%d, y_1=%d, callback_user_data=%p\n", view_name, x_0, y_0, x_1, y_1, callback_user_data);
 }
 
 void flushCallback(const char *view_name, void *callback_user_data)
 {
-    printf("**** flushCallback view_name='%s', callback_user_data=%p\n", view_name, callback_user_data);
+	printf("**** flushCallback view_name='%s', callback_user_data=%p\n", view_name, callback_user_data);
 }
 
 int main()
 {
-    const char user_data[] = "User data in RAM";
+	struct ResultImage result_image;
+	result_image.width_ = 400;
+	result_image.height_ = 400;
+	const size_t result_image_size_bytes = 3 * result_image.width_ * result_image.height_ * sizeof(char);
+	result_image.data_ = malloc(result_image_size_bytes);
 
-    printf("user_data: %p\n", (void *) user_data);
+	printf("result_image: %p\n", (void *) &result_image);
 
 	//Basic libYafaRay C API usage example, rendering a cube with a TGA texture
 
 	//YafaRay standard rendering interface
 	yafaray4_Interface_t *yi = yafaray4_createInterface(YAFARAY_INTERFACE_FOR_RENDERING, NULL);
 	yafaray4_setConsoleVerbosityLevel(yi, "debug");
-    yafaray4_setInteractive(yi, YAFARAY_BOOL_TRUE);
+	yafaray4_setInteractive(yi, YAFARAY_BOOL_TRUE);
 
 	//Creating scene
 	yafaray4_paramsSetString(yi, "type", "yafaray");
@@ -53,18 +77,18 @@ int main()
 	yafaray4_paramsClearAll(yi);
 
 	//Creating image from RAM or file
-	const int width = 200;
-	const int height = 200;
+	const int tex_width = 200;
+	const int tex_height = 200;
 	yafaray4_paramsSetString(yi, "type", "ColorAlpha");
 	yafaray4_paramsSetString(yi, "image_optimization", "none"); //Note: only "none" allows more HDR values > 1.f
-	yafaray4_paramsSetInt(yi, "width", width);
-	yafaray4_paramsSetInt(yi, "height", height);
+	yafaray4_paramsSetInt(yi, "tex_width", tex_width);
+	yafaray4_paramsSetInt(yi, "tex_height", tex_height);
 	yafaray4_paramsSetString(yi, "filename", "test01_texNO.tga");
 	yafaray4_Image_t *image = yafaray4_createImage(yi, "Image01");
 	yafaray4_paramsClearAll(yi);
 
-	for(int i = 0; i < width; ++i)
-		for(int j = 0; j < height; ++j)
+	for(int i = 0; i < tex_width; ++i)
+		for(int j = 0; j < tex_height; ++j)
 			yafaray4_setImageColor(image, i, j, 0.01f * i, 0.01f * j, 0.01f * (i + j), 1.f);
 
 	//Creating texture from image
@@ -150,8 +174,8 @@ int main()
 
 	//Creating camera
 	yafaray4_paramsSetString(yi, "type", "perspective");
-	yafaray4_paramsSetInt(yi, "resx", 640);
-	yafaray4_paramsSetInt(yi, "resy", 480);
+	yafaray4_paramsSetInt(yi, "resx", result_image.width_);
+	yafaray4_paramsSetInt(yi, "resy", result_image.height_);
 	yafaray4_paramsSetFloat(yi, "focal", 1.1);
 	yafaray4_paramsSetVector(yi, "from", 8.6, -7.2, 8.1);
 	yafaray4_paramsSetVector(yi, "to", 8.0, -6.7, 7.6);
@@ -172,7 +196,7 @@ int main()
 
     //Creating callback output
     yafaray4_paramsSetString(yi, "type", "callback_output");
-    yafaray4_createOutput(yi, "test_callback_output", YAFARAY_BOOL_TRUE, (void *) user_data, putPixelCallback, flushAreaCallback, flushCallback);
+    yafaray4_createOutput(yi, "test_callback_output", YAFARAY_BOOL_TRUE, (void *) &result_image, putPixelCallback, flushAreaCallback, flushCallback);
     yafaray4_paramsClearAll(yi);
 
 	//Creating surface integrator
@@ -195,8 +219,8 @@ int main()
 	yafaray4_paramsSetString(yi, "volintegrator_name", "volintegr");
 	yafaray4_paramsSetString(yi, "scene_accelerator", "yafaray-kdtree-original");
 	yafaray4_paramsSetString(yi, "background_name", "world_background");
-	yafaray4_paramsSetInt(yi, "width", 640);
-	yafaray4_paramsSetInt(yi, "height", 480);
+	yafaray4_paramsSetInt(yi, "width", result_image.width_);
+	yafaray4_paramsSetInt(yi, "height", result_image.height_);
 	yafaray4_paramsSetInt(yi, "threads", -1);
 	yafaray4_paramsSetInt(yi, "threads_photons", -1);
 	//Rendering
@@ -205,5 +229,10 @@ int main()
 
 	//Destroying YafaRay interface. Scene and all objects inside are automatically destroyed
 	yafaray4_destroyInterface(yi);
+	FILE *fp = fopen("test.ppm", "wb");
+	fprintf(fp, "P6 %d %d %d ", result_image.width_, result_image.height_, 255);
+	fwrite(result_image.data_, result_image_size_bytes, 1, fp);
+	fclose(fp);
+	free(result_image.data_);
 	return 0;
 }
