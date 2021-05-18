@@ -37,6 +37,7 @@
 #include "color/color_layers.h"
 #include "background/background.h"
 #include "render/render_data.h"
+#include "accelerator/accelerator.h"
 
 BEGIN_YAFARAY
 
@@ -425,7 +426,7 @@ void SppmIntegrator::photonWorker(PhotonMap *diffuse_map, PhotonMap *caustic_map
 		const Material *material = nullptr;
 		BsdfFlags bsdfs;
 
-		while(scene->intersect(ray, sp))   //scatter photons.
+		while(Accelerator::intersect(*(scene_->getAccelerator()), ray, sp))   //scatter photons.
 		{
 			if(std::isnan(pcol.r_) || std::isnan(pcol.g_) || std::isnan(pcol.b_))
 			{
@@ -703,7 +704,8 @@ GatherInfo SppmIntegrator::traceGatherRay(yafaray4::RenderData &render_data, yaf
 	if(transp_background_) alpha = 0.0;
 	else alpha = 1.0;
 
-	if(scene_->intersect(ray, sp))
+	if(Accelerator::intersect(*(scene_->getAccelerator()),
+ray, sp))
 	{
 		alignas (16) unsigned char userdata[user_data_size_];
 		render_data.arena_ = static_cast<void *>(userdata);

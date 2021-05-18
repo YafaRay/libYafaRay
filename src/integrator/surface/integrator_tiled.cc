@@ -40,6 +40,7 @@
 #include "color/color_layers.h"
 #include "render/render_data.h"
 #include "output/output.h"
+#include "accelerator/accelerator.h"
 
 BEGIN_YAFARAY
 
@@ -88,7 +89,7 @@ void TiledIntegrator::precalcDepths(const RenderView *render_view)
 			{
 				ray.tmax_ = -1.f;
 				ray = camera->shootRay(i, j, 0.5f, 0.5f, wt);
-				scene_->intersect(ray, sp);
+				Accelerator::intersect(*(scene_->getAccelerator()), ray, sp);
 				if(ray.tmax_ > max_depth_) max_depth_ = ray.tmax_;
 				if(ray.tmax_ < min_depth_ && ray.tmax_ >= 0.f) min_depth_ = ray.tmax_;
 			}

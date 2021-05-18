@@ -36,6 +36,7 @@
 #include "background/background.h"
 #include "render/imagefilm.h"
 #include "render/render_data.h"
+#include "accelerator/accelerator.h"
 
 BEGIN_YAFARAY
 
@@ -171,7 +172,7 @@ void PhotonIntegrator::diffuseWorker(PhotonMap *diffuse_map, int thread_id, cons
 		const Material *material = nullptr;
 		BsdfFlags bsdfs;
 
-		while(scene->intersect(ray, sp))
+		while(Accelerator::intersect(*(scene_->getAccelerator()), ray, sp))
 		{
 			if(std::isnan(pcol.r_) || std::isnan(pcol.g_) || std::isnan(pcol.b_))
 			{
@@ -760,7 +761,8 @@ Rgb PhotonIntegrator::finalGathering(RenderData &render_data, const SurfacePoint
 		pRay.from_ = hit.p_;
 		throughput = scol;
 
-		if(!(did_hit = scene_->intersect(pRay, hit))) continue;   //hit background
+		if(!(did_hit = Accelerator::intersect(*(scene_->getAccelerator()),
+pRay, hit))) continue;   //hit background
 
 		p_mat = hit.material_;
 		length = pRay.tmax_;
@@ -826,7 +828,8 @@ Rgb PhotonIntegrator::finalGathering(RenderData &render_data, const SurfacePoint
 			pRay.tmax_ = -1.0;
 			pRay.from_ = hit.p_;
 			throughput *= scol;
-			did_hit = scene_->intersect(pRay, hit);
+			did_hit = Accelerator::intersect(*(scene_->getAccelerator()),
+pRay, hit);
 
 			if(!did_hit) //hit background
 			{
@@ -879,7 +882,8 @@ Rgba PhotonIntegrator::integrate(RenderData &render_data, const DiffRay &ray, in
 	if(transp_background_) alpha = 0.0;
 	else alpha = 1.0;
 
-	if(scene_->intersect(ray, sp))
+	if(Accelerator::intersect(*(scene_->getAccelerator()),
+ray, sp))
 	{
 		alignas (16) unsigned char userdata[user_data_size_];
 		render_data.arena_ = static_cast<void *>(userdata);

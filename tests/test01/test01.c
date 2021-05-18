@@ -260,8 +260,8 @@ int main()
 	yafaray4_paramsSetString(yi, "background_name", "world_background");
 	yafaray4_paramsSetInt(yi, "width", result_image.width_);
 	yafaray4_paramsSetInt(yi, "height", result_image.height_);
-	yafaray4_paramsSetInt(yi, "AA_minsamples",  1000);
-	yafaray4_paramsSetInt(yi, "AA_passes",  100);
+//	yafaray4_paramsSetInt(yi, "AA_minsamples",  1000);
+//	yafaray4_paramsSetInt(yi, "AA_passes",  100);
 	yafaray4_paramsSetInt(yi, "threads", -1);
 	yafaray4_paramsSetInt(yi, "threads_photons", -1);
 	//Rendering

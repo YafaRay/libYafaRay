@@ -57,6 +57,7 @@ class SurfacePoint;
 class Matrix4;
 class Rgb;
 class RenderData;
+class Accelerator;
 enum class DarkDetectionType : int;
 
 typedef unsigned int ObjId_t;
@@ -88,11 +89,8 @@ class Scene
 		virtual bool endObject() = 0;
 		virtual bool addInstance(const std::string &base_object_name, const Matrix4 &obj_to_world) = 0;
 		virtual bool updateObjects() = 0;
-		virtual bool intersect(const Ray &ray, SurfacePoint &sp) const = 0;
-		virtual bool intersect(const DiffRay &ray, SurfacePoint &sp) const = 0;
-		virtual bool isShadowed(const RenderData &render_data, const Ray &ray, float &obj_index, float &mat_index) const = 0;
-		virtual bool isShadowed(RenderData &render_data, const Ray &ray, int max_depth, Rgb &filt, float &obj_index, float &mat_index) const = 0;
 		virtual Object *getObject(const std::string &name) const = 0;
+		virtual const Accelerator *getAccelerator() const = 0;
 
 		ObjId_t getNextFreeId();
 		bool startObjects();
@@ -159,6 +157,8 @@ class Scene
 		void clearLayers();
 		void clearRenderViews();
 		const Layers &getLayers() const { return layers_; }
+		float getShadowBias() const { return shadow_bias_; }
+		float getRayMinDist() const { return ray_min_dist_; }
 
 		VolumeIntegrator *vol_integrator_ = nullptr;
 		float shadow_bias_ = 1.0e-4f;  //shadow bias to apply to shadows to avoid self-shadow artifacts

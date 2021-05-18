@@ -26,6 +26,7 @@
 #include "common/param.h"
 #include "scene/scene.h"
 #include "render/render_data.h"
+#include "accelerator/accelerator.h"
 
 BEGIN_YAFARAY
 
@@ -74,7 +75,7 @@ Rgba DebugIntegrator::integrate(RenderData &render_data, const DiffRay &ray, int
 	void *o_udat = render_data.arena_;
 	const bool old_lights_geometry_material_emit = render_data.lights_geometry_material_emit_;
 	//shoot ray into scene
-	if(scene_->intersect(ray, sp))
+	if(Accelerator::intersect(*(scene_->getAccelerator()), ray, sp))
 	{
 		if(show_pn_)
 		{

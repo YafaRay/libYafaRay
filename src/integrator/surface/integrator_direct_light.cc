@@ -30,6 +30,7 @@
 #include "color/color_layers.h"
 #include "render/render_data.h"
 #include "render/imagesplitter.h"
+#include "accelerator/accelerator.h"
 
 BEGIN_YAFARAY
 
@@ -114,7 +115,7 @@ Rgba DirectLightIntegrator::integrate(RenderData &render_data, const DiffRay &ra
 
 	// Shoot ray into scene
 
-	if(scene_->intersect(ray, sp)) // If it hits
+	if(Accelerator::intersect(*(scene_->getAccelerator()), ray, sp)) // If it hits
 	{
 		alignas (16) unsigned char userdata[user_data_size_];
 		render_data.arena_ = static_cast<void *>(userdata);
