@@ -136,7 +136,7 @@ Rgba PathIntegrator::integrate(RenderData &render_data, const DiffRay &ray, int 
 	else alpha = 1.0;
 
 	//shoot ray into scene
-	if(Accelerator::intersect(*(scene_->getAccelerator()), ray, sp))
+	if(scene_->getAccelerator()->intersect(ray, sp))
 	{
 		// if camera ray initialize sampling offset:
 		if(render_data.raylevel_ == 0)
@@ -233,8 +233,7 @@ Rgba PathIntegrator::integrate(RenderData &render_data, const DiffRay &ray, int 
 				p_ray.tmax_ = -1.0;
 				p_ray.from_ = sp.p_;
 
-				if(!Accelerator::intersect(*(scene_->getAccelerator()),
-p_ray, *hit)) continue; //hit background
+				if(!scene_->getAccelerator()->intersect(p_ray, *hit)) continue; //hit background
 
 				render_data.arena_ = n_udat;
 				const Material *p_mat = hit->material_;
@@ -283,7 +282,7 @@ p_ray, *hit)) continue; //hit background
 					p_ray.tmax_ = -1.0;
 					p_ray.from_ = hit->p_;
 
-					if(!Accelerator::intersect(*(scene_->getAccelerator()), p_ray, *hit_2)) //hit background
+					if(!scene_->getAccelerator()->intersect(p_ray, *hit_2)) //hit background
 					{
 						const auto &background = scene_->getBackground();
 						if((caustic && background && background->hasIbl() && background->shootsCaustic()))

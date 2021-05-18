@@ -256,7 +256,7 @@ Rgba BidirectionalIntegrator::integrate(RenderData &render_data, const DiffRay &
 	Ray testray = ray;
 	float alpha = 1.f;
 
-	if(Accelerator::intersect(*(scene_->getAccelerator()), testray, sp))
+	if(scene_->getAccelerator()->intersect(testray, sp))
 	{
 		Vec3 wo = -ray.dir_;
 		static int dbg = 0;
@@ -466,7 +466,7 @@ int BidirectionalIntegrator::createPath(RenderData &render_data, const Ray &star
 	{
 		PathVertex &v = path[n_vert];
 		const PathVertex &v_prev = path[n_vert - 1];
-		if(!Accelerator::intersect(*(scene_->getAccelerator()), ray, v.sp_)) break;
+		if(!scene_->getAccelerator()->intersect(ray, v.sp_)) break;
 		const Material *mat = v.sp_.material_;
 		// compute alpha_i+1 = alpha_i * fs(wi, wo) / P_proj(wo), where P_proj = bsdf_pdf(wo) / cos(wo*N)
 		v.alpha_ = v_prev.alpha_ * v_prev.f_s_ * v_prev.cos_wo_ / (v_prev.pdf_wo_ * v_prev.qi_wo_);
@@ -877,7 +877,7 @@ Rgb BidirectionalIntegrator::evalPath(RenderData &render_data, int s, int t, Pat
 	Rgb c_uw = y.alpha_ * c_st * z.alpha_;
 	Ray con_ray(y.sp_.p_, pd.w_l_e_, 0.0005, pd.d_yz_);
 	Rgb scol = Rgb(0.f);
-	const bool shadowed = (tr_shad_) ? Accelerator::isShadowed(*(scene_->getAccelerator()), render_data, con_ray, s_depth_, scol, mask_obj_index, mask_mat_index, scene_->getShadowBias()) : Accelerator::isShadowed(*(scene_->getAccelerator()), render_data, con_ray, mask_obj_index, mask_mat_index, scene_->getShadowBias());
+	const bool shadowed = (tr_shad_) ? scene_->getAccelerator()->isShadowed(render_data, con_ray, s_depth_, scol, mask_obj_index, mask_mat_index, scene_->getShadowBias()) : scene_->getAccelerator()->isShadowed(render_data, con_ray, mask_obj_index, mask_mat_index, scene_->getShadowBias());
 	if(shadowed) return Rgb(0.f);
 	if(tr_shad_) c_uw *= scol;
 	return c_uw;
@@ -889,7 +889,7 @@ Rgb BidirectionalIntegrator::evalLPath(RenderData &render_data, int t, PathData 
 	static int dbg = 0;
 	float mask_obj_index = 0.f, mask_mat_index = 0.f;
 	Rgb scol = Rgb(0.f);
-	const bool shadowed = (tr_shad_) ? Accelerator::isShadowed(*(scene_->getAccelerator()), render_data, l_ray, s_depth_, scol, mask_obj_index, mask_mat_index, scene_->getShadowBias()) : Accelerator::isShadowed(*(scene_->getAccelerator()), render_data, l_ray, mask_obj_index, mask_mat_index, scene_->getShadowBias());
+	const bool shadowed = (tr_shad_) ? scene_->getAccelerator()->isShadowed(render_data, l_ray, s_depth_, scol, mask_obj_index, mask_mat_index, scene_->getShadowBias()) : scene_->getAccelerator()->isShadowed(render_data, l_ray, mask_obj_index, mask_mat_index, scene_->getShadowBias());
 	if(shadowed) return Rgb(0.f);
 
 	const PathVertex &z = pd.eye_path_[t - 1];
@@ -911,7 +911,7 @@ Rgb BidirectionalIntegrator::evalPathE(RenderData &render_data, int s, PathData 
 	Ray con_ray(y.sp_.p_, pd.w_l_e_, 0.0005, pd.d_yz_);
 
 	Rgb scol = Rgb(0.f);
-	const bool shadowed = (tr_shad_) ? Accelerator::isShadowed(*(scene_->getAccelerator()), render_data, con_ray, s_depth_, scol, mask_obj_index, mask_mat_index, scene_->getShadowBias()) : Accelerator::isShadowed(*(scene_->getAccelerator()), render_data, con_ray, mask_obj_index, mask_mat_index, scene_->getShadowBias());
+	const bool shadowed = (tr_shad_) ? scene_->getAccelerator()->isShadowed(render_data, con_ray, s_depth_, scol, mask_obj_index, mask_mat_index, scene_->getShadowBias()) : scene_->getAccelerator()->isShadowed(render_data, con_ray, mask_obj_index, mask_mat_index, scene_->getShadowBias());
 	if(shadowed) return Rgb(0.f);
 
 	//eval material
@@ -1018,7 +1018,7 @@ Rgb BidirectionalIntegrator::sampleAmbientOcclusionLayer(RenderData &render_data
 			col += material->emit(render_data, sp, wo) * s.pdf_;
 		}
 
-		shadowed = tr_shad_ ? Accelerator::isShadowed(*(scene_->getAccelerator()), render_data, light_ray, s_depth_, scol, mask_obj_index, mask_mat_index, scene_->getShadowBias()) : Accelerator::isShadowed(*(scene_->getAccelerator()), render_data, light_ray, mask_obj_index, mask_mat_index, scene_->getShadowBias());
+		shadowed = tr_shad_ ? scene_->getAccelerator()->isShadowed(render_data, light_ray, s_depth_, scol, mask_obj_index, mask_mat_index, scene_->getShadowBias()) : scene_->getAccelerator()->isShadowed(render_data, light_ray, mask_obj_index, mask_mat_index, scene_->getShadowBias());
 
 		if(!shadowed)
 		{
@@ -1072,7 +1072,7 @@ Rgb BidirectionalIntegrator::sampleAmbientOcclusionClayLayer(RenderData &render_
 			col += material->emit(render_data, sp, wo) * s.pdf_;
 		}
 
-		shadowed = Accelerator::isShadowed(*(scene_->getAccelerator()), render_data, light_ray, mask_obj_index, mask_mat_index, scene_->getShadowBias());
+		shadowed = scene_->getAccelerator()->isShadowed(render_data, light_ray, mask_obj_index, mask_mat_index, scene_->getShadowBias());
 
 		if(!shadowed)
 		{

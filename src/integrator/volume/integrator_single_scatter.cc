@@ -167,7 +167,7 @@ Rgb SingleScatterIntegrator::getInScatter(RenderData &render_data, Ray &step_ray
 			{
 				// ...shadowed...
 				if(light_ray.tmax_ < 0.f) light_ray.tmax_ = 1e10;  // infinitely distant light
-				bool shadowed = Accelerator::isShadowed(*(scene_->getAccelerator()), render_data, light_ray, mask_obj_index, mask_mat_index, scene_->getShadowBias());
+				bool shadowed = scene_->getAccelerator()->isShadowed(render_data, light_ray, mask_obj_index, mask_mat_index, scene_->getShadowBias());
 				if(!shadowed)
 				{
 					float light_tr = 0.0f;
@@ -216,7 +216,7 @@ Rgb SingleScatterIntegrator::getInScatter(RenderData &render_data, Ray &step_ray
 				{
 					// ...shadowed...
 					if(light_ray.tmax_ < 0.f) light_ray.tmax_ = 1e10;  // infinitely distant light
-					bool shadowed = Accelerator::isShadowed(*(scene_->getAccelerator()), render_data, light_ray, mask_obj_index, mask_mat_index, scene_->getShadowBias());
+					bool shadowed = scene_->getAccelerator()->isShadowed(render_data, light_ray, mask_obj_index, mask_mat_index, scene_->getShadowBias());
 					if(!shadowed)
 					{
 						ccol += ls.col_ / ls.pdf_;

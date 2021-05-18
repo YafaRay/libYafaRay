@@ -56,10 +56,10 @@ class Accelerator
 		virtual AcceleratorIntersectData intersectS(const Ray &ray, float t_max, float shadow_bias) const = 0;
 		virtual AcceleratorTsIntersectData intersectTs(RenderData &render_data, const Ray &ray, int max_depth, float dist, float shadow_bias) const = 0;
 		virtual Bound getBound() const = 0;
-		static bool intersect(const Accelerator &accelerator, const Ray &ray, SurfacePoint &sp);
-		static bool intersect(const Accelerator &accelerator, const DiffRay &ray, SurfacePoint &sp);
-		static bool isShadowed(const Accelerator &accelerator, const RenderData &render_data, const Ray &ray, float &obj_index, float &mat_index, float shadow_bias);
-		static bool isShadowed(const Accelerator &accelerator, RenderData &render_data, const Ray &ray, int max_depth, Rgb &filt, float &obj_index, float &mat_index, float shadow_bias);
+		bool intersect(const Ray &ray, SurfacePoint &sp) const;
+		bool intersect(const DiffRay &ray, SurfacePoint &sp) const;
+		bool isShadowed(const RenderData &render_data, const Ray &ray, float &obj_index, float &mat_index, float shadow_bias) const;
+		bool isShadowed(RenderData &render_data, const Ray &ray, int max_depth, Rgb &filt, float &obj_index, float &mat_index, float shadow_bias) const;
 };
 
 END_YAFARAY

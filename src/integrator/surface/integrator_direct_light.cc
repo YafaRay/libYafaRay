@@ -115,7 +115,7 @@ Rgba DirectLightIntegrator::integrate(RenderData &render_data, const DiffRay &ra
 
 	// Shoot ray into scene
 
-	if(Accelerator::intersect(*(scene_->getAccelerator()), ray, sp)) // If it hits
+	if(scene_->getAccelerator()->intersect(ray, sp)) // If it hits
 	{
 		alignas (16) unsigned char userdata[user_data_size_];
 		render_data.arena_ = static_cast<void *>(userdata);
