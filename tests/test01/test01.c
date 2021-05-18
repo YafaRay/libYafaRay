@@ -20,7 +20,12 @@
 #include <malloc.h>
 #include <math.h>
 #include <string.h>
+#include <stdlib.h>
 #include "yafaray_c_api.h"
+#include <signal.h>
+#ifdef WIN32
+#include <windows.h>
+#endif
 
 struct ResultImage
 {
@@ -54,8 +59,42 @@ void flushCallback(const char *view_name, void *callback_user_data)
 	printf("**** flushCallback view_name='%s', callback_user_data=%p\n", view_name, callback_user_data);
 }
 
+
+yafaray4_Interface_t *yi = NULL;
+
+#ifdef WIN32
+BOOL WINAPI ctrlCHandler_global(DWORD signal)
+{
+	yafaray4_printWarning(yi, "CTRL+C pressed, cancelling.\n");
+	if(yi)
+	{
+		yafaray4_cancelRendering(yi);
+		return TRUE;
+	}
+	else exit(1);
+}
+#else
+void ctrlCHandler_global(int signal)
+{
+	yafaray4_printWarning(yi, "CTRL+C pressed, cancelling.\n");
+	if(yi) yafaray4_cancelRendering(yi);
+	else exit(1);
+}
+#endif
+
 int main()
 {
+	//handle CTRL+C events
+	#ifdef WIN32
+		SetConsoleCtrlHandler(ctrlCHandler_global, TRUE);
+	#else
+		struct sigaction signal_handler;
+		signal_handler.sa_handler = ctrlCHandler_global;
+		sigemptyset(&signal_handler.sa_mask);
+		signal_handler.sa_flags = 0;
+		sigaction(SIGINT, &signal_handler, NULL);
+	#endif
+
 	struct ResultImage result_image;
 	result_image.width_ = 400;
 	result_image.height_ = 400;
@@ -67,7 +106,7 @@ int main()
 	//Basic libYafaRay C API usage example, rendering a cube with a TGA texture
 
 	//YafaRay standard rendering interface
-	yafaray4_Interface_t *yi = yafaray4_createInterface(YAFARAY_INTERFACE_FOR_RENDERING, NULL);
+	yi = yafaray4_createInterface(YAFARAY_INTERFACE_FOR_RENDERING, NULL);
 	yafaray4_setConsoleVerbosityLevel(yi, "debug");
 	yafaray4_setInteractive(yi, YAFARAY_BOOL_TRUE);
 
@@ -221,6 +260,8 @@ int main()
 	yafaray4_paramsSetString(yi, "background_name", "world_background");
 	yafaray4_paramsSetInt(yi, "width", result_image.width_);
 	yafaray4_paramsSetInt(yi, "height", result_image.height_);
+	yafaray4_paramsSetInt(yi, "AA_minsamples",  1000);
+	yafaray4_paramsSetInt(yi, "AA_passes",  100);
 	yafaray4_paramsSetInt(yi, "threads", -1);
 	yafaray4_paramsSetInt(yi, "threads_photons", -1);
 	//Rendering

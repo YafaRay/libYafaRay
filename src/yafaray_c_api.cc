@@ -347,3 +347,8 @@ yafaray4_bool_t yafaray4_getImageColor(const yafaray4_Image_t *image, int x, int
 	*alpha = color.a_;
 	return YAFARAY_BOOL_TRUE;
 }
+
+void yafaray4_cancelRendering(yafaray4_Interface_t *interface)
+{
+	reinterpret_cast<yafaray4::Interface *>(interface)->cancel();
+}

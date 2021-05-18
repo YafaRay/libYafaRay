@@ -28,47 +28,10 @@
 #include "render/monitor.h"
 #include <signal.h>
 
-#ifdef WIN32
-#include <windows.h>
-#endif
-
 BEGIN_YAFARAY
-
-RenderControl *global_render_control_global = nullptr;
-
-#ifdef WIN32
-BOOL WINAPI ctrlCHandler_global(DWORD signal)
-{
-	Y_WARNING << "Interface: Render canceled by user." << YENDL;
-	if(global_render_control_global)
-	{
-		global_render_control_global->setCanceled();
-		return TRUE;
-	}
-	else exit(1);
-}
-#else
-void ctrlCHandler_global(int signal)
-{
-	Y_WARNING << "Interface: Render canceled by user." << YENDL;
-	if(global_render_control_global) global_render_control_global->setCanceled();
-	else exit(1);
-}
-#endif
 
 Interface::Interface()
 {
-	//handle CTRL+C events
-#ifdef WIN32
-	SetConsoleCtrlHandler(ctrlCHandler_global, true);
-#else
-	struct ::sigaction signal_handler;
-	signal_handler.sa_handler = ctrlCHandler_global;
-	sigemptyset(&signal_handler.sa_mask);
-	signal_handler.sa_flags = 0;
-	sigaction(SIGINT, &signal_handler, nullptr);
-#endif
-
 	params_ = std::unique_ptr<ParamMap>(new ParamMap);
 	eparams_ = std::unique_ptr<std::list<ParamMap>>(new std::list<ParamMap>);
 	cparams_ = params_.get();
@@ -78,7 +41,6 @@ void Interface::createScene()
 {
 	scene_ = Scene::factory(*params_);
 	params_->clear();
-	global_render_control_global = &scene_->getRenderControl();	//for the CTRL+C handler
 }
 
 Interface::~Interface()

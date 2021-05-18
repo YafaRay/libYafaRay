@@ -98,6 +98,8 @@ extern "C" {
 	LIBYAFARAY_EXPORT void yafaray4_printWarning(yafaray4_Interface_t *interface, const char *msg);
 	LIBYAFARAY_EXPORT void yafaray4_printError(yafaray4_Interface_t *interface, const char *msg);
 
+	LIBYAFARAY_EXPORT void yafaray4_cancelRendering(yafaray4_Interface_t *interface);
+
 	LIBYAFARAY_EXPORT void yafaray4_setInputColorSpace(const char *color_space_string, float gamma_val);
 	LIBYAFARAY_EXPORT void yafaray4_free(void *ptr); //!< Free memory allocated by libYafaRay
 
