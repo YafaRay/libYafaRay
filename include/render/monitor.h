@@ -31,49 +31,57 @@ class ProgressBar
 	public:
 		virtual ~ProgressBar() = default;
 		//! initialize (or reset) the monitor, give the total number of steps that can occur
-		virtual void init(int total_steps = 100) = 0;
-		//! update the montior, increment by given number of steps; init has to be called before the first update.
-		virtual void update(int steps = 1) = 0;
+		virtual void init(int steps_total = 100) { std::lock_guard<std::mutex> lock_guard(mutx_); steps_total_ = steps_total; steps_done_ = 0;}
+		//! update the montior, increment by given number of steps_increment; init has to be called before the first update.
+		virtual void update(int steps_increment = 1) { std::lock_guard<std::mutex> lock_guard(mutx_); steps_done_ += steps_increment; }
 		//! finish progress bar. It could output some summary, simply disappear from GUI or whatever...
-		virtual void done() = 0;
+		virtual void done() { std::lock_guard<std::mutex> lock_guard(mutx_); steps_done_ = steps_total_; }
 		//! method to pass some informative text to the progress bar in case needed
-		virtual void setTag(const char *text) = 0;
-		virtual void setTag(std::string text) = 0;
-		virtual std::string getTag() const = 0;
-		virtual float getPercent() const = 0;
-		virtual float getTotalSteps() const = 0;
-		void setAutoDelete(bool value) { auto_delete_ = value; }
+		virtual void setTag(const std::string &text) { std::lock_guard<std::mutex> lock_guard(mutx_); tag_ = text; }
+		virtual std::string getTag() const { return tag_; }
+		virtual float getPercent() const;
+		virtual float getTotalSteps() const { return steps_total_; }
+		void setAutoDelete(bool value) { std::lock_guard<std::mutex> lock_guard(mutx_); auto_delete_ = value; }
 		bool isAutoDeleted() const { return auto_delete_; }
 		std::string getName() const { return "ProgressBar"; }
-		std::mutex mutx_;
 
 	protected:
 		bool auto_delete_ = true; //!< If true, the progress bar is owned by libYafaRay and it is automatically deleted when render finishes. Set it to false when the libYafaRay client owns the progress bar.
+		int steps_total_ = 0;
+		int steps_done_ = 0;
+		std::string tag_;
+		std::mutex mutx_;
 };
 
 /*! the default console progress bar (implemented in console.cc)
 */
-class ConsoleProgressBar : public ProgressBar
+class ConsoleProgressBar final : public ProgressBar
 {
 	public:
 		ConsoleProgressBar(int cwidth = 80);
 		virtual void init(int total_steps) override;
-		virtual void update(int steps = 1) override;
+		virtual void update(int steps_increment = 1) override;
 		virtual void done() override;
-		virtual void setTag(const char *text) override { tag_ = std::string(text); };
-		virtual void setTag(std::string text) override { tag_ = text; };
-		virtual std::string getTag() const override { return tag_; }
-		virtual float getPercent() const override;
-		virtual float getTotalSteps() const override { return n_steps_; }
 
-	protected:
+	private:
 		int width_, total_bar_len_;
 		int last_bar_len_;
-		int n_steps_;
-		int done_steps_;
-		std::string tag_;
 };
 
+class CallbackProgressBar final : public ProgressBar
+{
+	public:
+		CallbackProgressBar(void *callback_user_data, MonitorCallback_t monitor_callback);
+		virtual void init(int total_steps) override;
+		virtual void update(int steps_increment = 1) override;
+		virtual void done() override;
+		virtual void setTag(const std::string &text) override;
+
+	private:
+		void updateCallback() { monitor_callback_(steps_total_, steps_done_, tag_.c_str(), callback_user_data_); }
+		void *callback_user_data_ = nullptr;
+		MonitorCallback_t monitor_callback_ = nullptr;
+};
 
 END_YAFARAY
 

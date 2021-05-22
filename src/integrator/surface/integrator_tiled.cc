@@ -458,7 +458,7 @@ bool TiledIntegrator::renderTile(RenderArea &a, const RenderView *render_view, c
 	return true;
 }
 
-void TiledIntegrator::generateCommonLayers(RenderData &render_data, const SurfacePoint &sp, const DiffRay &ray, ColorLayers *color_layers) const
+void TiledIntegrator::generateCommonLayers(RenderData &render_data, const SurfacePoint &sp, const DiffRay &ray, ColorLayers *color_layers)
 {
 	const bool layers_used = render_data.raylevel_ == 0 && color_layers && color_layers->getFlags() != Layer::Flags::None;
 

@@ -59,6 +59,12 @@ void flushCallback(const char *view_name, void *callback_user_data)
 	printf("**** flushCallback view_name='%s', callback_user_data=%p\n", view_name, callback_user_data);
 }
 
+void monitorCallback(int steps_total, int steps_done, const char *tag, void *callback_user_data)
+{
+	*((int *) callback_user_data) = steps_total;
+	printf("**** monitorCallback steps_total=%d, steps_done=%d, tag='%s', callback_user_data=%p\n", steps_total, steps_done, tag, callback_user_data);
+}
+
 
 yafaray4_Interface_t *yi = NULL;
 
@@ -230,13 +236,13 @@ int main()
 	//Creating image output
 	yafaray4_paramsSetString(yi, "type", "image_output");
 	yafaray4_paramsSetString(yi, "image_path", "./test01-output1.tga");
-    yafaray4_createOutput(yi, "output1_tga", YAFARAY_BOOL_TRUE, NULL, NULL, NULL, NULL);
+	yafaray4_createOutput(yi, "output1_tga", YAFARAY_BOOL_TRUE, NULL, NULL, NULL, NULL);
 	yafaray4_paramsClearAll(yi);
 
-    //Creating callback output
-    yafaray4_paramsSetString(yi, "type", "callback_output");
-    yafaray4_createOutput(yi, "test_callback_output", YAFARAY_BOOL_TRUE, (void *) &result_image, putPixelCallback, flushAreaCallback, flushCallback);
-    yafaray4_paramsClearAll(yi);
+	//Creating callback output
+	yafaray4_paramsSetString(yi, "type", "callback_output");
+	yafaray4_createOutput(yi, "test_callback_output", YAFARAY_BOOL_TRUE, (void *) &result_image, putPixelCallback, flushAreaCallback, flushCallback);
+yafaray4_paramsClearAll(yi);
 
 	//Creating surface integrator
 	yafaray4_paramsSetString(yi, "type", "directlighting");
@@ -260,12 +266,14 @@ int main()
 	yafaray4_paramsSetString(yi, "background_name", "world_background");
 	yafaray4_paramsSetInt(yi, "width", result_image.width_);
 	yafaray4_paramsSetInt(yi, "height", result_image.height_);
-//	yafaray4_paramsSetInt(yi, "AA_minsamples",  1000);
+//	yafaray4_paramsSetInt(yi, "AA_minsamples",  100);
 //	yafaray4_paramsSetInt(yi, "AA_passes",  100);
 	yafaray4_paramsSetInt(yi, "threads", -1);
 	yafaray4_paramsSetInt(yi, "threads_photons", -1);
 	//Rendering
-	yafaray4_render(yi, NULL);
+	int total_steps = 0;
+	yafaray4_render(yi, &total_steps, monitorCallback);
+	printf("END: total_steps = %d\n", total_steps);
 	yafaray4_paramsClearAll(yi);
 
 	//Destroying YafaRay interface. Scene and all objects inside are automatically destroyed

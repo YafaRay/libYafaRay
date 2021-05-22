@@ -246,9 +246,7 @@ void PhotonIntegrator::diffuseWorker(PhotonMap *diffuse_map, int thread_id, cons
 		++curr;
 		if(curr % pb_step == 0)
 		{
-			pb->mutx_.lock();
 			pb->update();
-			pb->mutx_.unlock();
 			if(render_control.canceled()) { return; }
 		}
 		done = (curr >= n_diffuse_photons_thread);

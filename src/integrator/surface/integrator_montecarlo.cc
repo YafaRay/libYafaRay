@@ -510,9 +510,7 @@ void MonteCarloIntegrator::causticWorker(PhotonMap *caustic_map, int thread_id, 
 		++curr;
 		if(curr % pb_step == 0)
 		{
-			pb->mutx_.lock();
 			pb->update();
-			pb->mutx_.unlock();
 			if(render_control.canceled()) { return; }
 		}
 		done = (curr >= n_caus_photons_thread);

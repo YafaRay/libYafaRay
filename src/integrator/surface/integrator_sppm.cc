@@ -513,9 +513,7 @@ void SppmIntegrator::photonWorker(PhotonMap *diffuse_map, PhotonMap *caustic_map
 		++curr;
 		if(curr % pb_step == 0)
 		{
-			pb->mutx_.lock();
 			pb->update();
-			pb->mutx_.unlock();
 			if(render_control.canceled()) { return; }
 		}
 		done = (curr >= n_photons_thread);

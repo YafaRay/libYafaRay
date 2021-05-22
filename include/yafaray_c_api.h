@@ -26,8 +26,6 @@
 extern "C" {
 #endif
 	typedef struct yafaray4_Interface yafaray4_Interface_t;
-	typedef struct yafaray4_ColorOutput yafaray4_ColorOutput_t;
-	typedef struct yafaray4_ProgressBar yafaray4_ProgressBar_t;
 	typedef struct yafaray4_Image yafaray4_Image_t;
 
 	typedef enum { YAFARAY_INTERFACE_FOR_RENDERING, YAFARAY_INTERFACE_EXPORT_XML } yafaray4_Interface_Type_t;
@@ -75,11 +73,10 @@ extern "C" {
 	LIBYAFARAY_EXPORT yafaray4_bool_t yafaray4_createVolumeRegion(yafaray4_Interface_t *interface, const char *name);
 	LIBYAFARAY_EXPORT yafaray4_bool_t yafaray4_createRenderView(yafaray4_Interface_t *interface, const char *name);
 	LIBYAFARAY_EXPORT yafaray4_bool_t yafaray4_createOutput(yafaray4_Interface_t *interface, const char *name, yafaray4_bool_t auto_delete, void *callback_user_data, OutputPutpixelCallback_t output_putpixel_callback, OutputFlushAreaCallback_t output_flush_area_callback, OutputFlushCallback_t output_flush_callback); //!< ColorOutput creation, usually for internally-owned outputs that are destroyed when the scene is deleted or when libYafaRay instance is closed. If the client wants to keep ownership, it can set the "auto_delete" to false.
-	LIBYAFARAY_EXPORT yafaray4_bool_t yafaray4_setExternalOutput(yafaray4_Interface_t *interface, const char *name, yafaray4_ColorOutput_t *output, yafaray4_bool_t auto_delete); //!< ColorOutput creation, usually for externally client-owned and client-supplied outputs that are *NOT* destroyed when the scene is deleted or when libYafaRay instance is closed. If the client wants to transfer ownership to libYafaRay, it can set the "auto_delete" to true.
 	LIBYAFARAY_EXPORT yafaray4_bool_t yafaray4_removeOutput(yafaray4_Interface_t *interface, const char *name);
 	LIBYAFARAY_EXPORT void yafaray4_clearOutputs(yafaray4_Interface_t *interface);
 	LIBYAFARAY_EXPORT void yafaray4_clearAll(yafaray4_Interface_t *interface);
-	LIBYAFARAY_EXPORT void yafaray4_render(yafaray4_Interface_t *interface, yafaray4_ProgressBar_t *pb); //!< render the scene...
+	LIBYAFARAY_EXPORT void yafaray4_render(yafaray4_Interface_t *interface, void *callback_user_data, MonitorCallback_t monitor_callback); //!< render the scene...
 	LIBYAFARAY_EXPORT void yafaray4_defineLayer(yafaray4_Interface_t *interface, const char *layer_type_name, const char *exported_image_type_name, const char *exported_image_name, const char *image_type_name);
 	LIBYAFARAY_EXPORT yafaray4_bool_t yafaray4_setupLayersParameters(yafaray4_Interface_t *interface);
 	LIBYAFARAY_EXPORT void yafaray4_cancel(yafaray4_Interface_t *interface);

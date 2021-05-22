@@ -208,11 +208,6 @@ yafaray4_bool_t yafaray4_createOutput(yafaray4_Interface_t *interface, const cha
 	return static_cast<yafaray4_bool_t>(reinterpret_cast<yafaray4::Interface *>(interface)->createOutput(name, auto_delete, callback_user_data, output_putpixel_callback, output_flush_area_callback, output_flush_callback) != nullptr);
 }
 
-yafaray4_bool_t yafaray4_setExternalOutput(yafaray4_Interface_t *interface, const char *name, yafaray4_ColorOutput_t *output, yafaray4_bool_t auto_delete) //!< ColorOutput creation, usually for externally client-owned and client-supplied outputs that are *NOT* destroyed when the scene is deleted or when libYafaRay instance is closed. If the client wants to transfer ownership to libYafaRay, it can set the "auto_delete" to true.
-{
-	return static_cast<yafaray4_bool_t>(reinterpret_cast<yafaray4::Interface *>(interface)->createOutput(name, reinterpret_cast<yafaray4::ColorOutput *>(output), auto_delete) != nullptr);
-}
-
 yafaray4_bool_t yafaray4_removeOutput(yafaray4_Interface_t *interface, const char *name)
 {
 	return static_cast<yafaray4_bool_t>(reinterpret_cast<yafaray4::Interface *>(interface)->removeOutput(name));
@@ -228,21 +223,12 @@ void yafaray4_clearAll(yafaray4_Interface_t *interface)
 	reinterpret_cast<yafaray4::Interface *>(interface)->clearAll();
 }
 
-void yafaray4_render(yafaray4_Interface_t *interface, yafaray4_ProgressBar_t *pb) //!< render the scene...
+void yafaray4_render(yafaray4_Interface_t *interface, void *callback_user_data, MonitorCallback_t monitor_callback) //!< render the scene...
 {
 	yafaray4::ProgressBar *progress_bar;
-	bool auto_delete_progress_bar;
-	if(pb)
-	{
-		progress_bar = reinterpret_cast<yafaray4::ProgressBar *>(pb);
-		auto_delete_progress_bar = false;
-	}
-	else
-	{
-		progress_bar = new yafaray4::ConsoleProgressBar();
-		auto_delete_progress_bar = true;
-	}
-	reinterpret_cast<yafaray4::Interface *>(interface)->render(progress_bar, auto_delete_progress_bar);
+	if(monitor_callback) progress_bar = new yafaray4::CallbackProgressBar(callback_user_data, monitor_callback);
+	else progress_bar = new yafaray4::ConsoleProgressBar();
+	reinterpret_cast<yafaray4::Interface *>(interface)->render(progress_bar, true);
 }
 
 void yafaray4_defineLayer(yafaray4_Interface_t *interface, const char *layer_type_name, const char *exported_image_type_name, const char *exported_image_name, const char *image_type_name)
