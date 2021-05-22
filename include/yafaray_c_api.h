@@ -44,7 +44,7 @@ extern "C" {
 	LIBYAFARAY_EXPORT int yafaray4_addVertex(yafaray4_Interface_t *interface, double x, double y, double z);
 	LIBYAFARAY_EXPORT int yafaray4_addVertexWithOrco(yafaray4_Interface_t *interface, double x, double y, double z, double ox, double oy, double oz);
 	LIBYAFARAY_EXPORT void yafaray4_addNormal(yafaray4_Interface_t *interface, double nx, double ny, double nz);
-	LIBYAFARAY_EXPORT yafaray4_bool_t yafaray4_addFace(yafaray4_Interface_t *interface, int a, int b, int c);
+	LIBYAFARAY_EXPORT yafaray4_bool_t yafaray4_addTriangle(yafaray4_Interface_t *interface, int a, int b, int c);
 	LIBYAFARAY_EXPORT yafaray4_bool_t yafaray4_addFaceWithUv(yafaray4_Interface_t *interface, int a, int b, int c, int uv_a, int uv_b, int uv_c);
 	LIBYAFARAY_EXPORT int yafaray4_addUv(yafaray4_Interface_t *interface, float u, float v);
 	LIBYAFARAY_EXPORT yafaray4_bool_t yafaray4_smoothMesh(yafaray4_Interface_t *interface, const char *name, double angle);

@@ -76,7 +76,7 @@ void yafaray4_addNormal(yafaray4_Interface_t *interface, double nx, double ny, d
 	reinterpret_cast<yafaray4::Interface *>(interface)->addNormal(nx, ny, nz);
 }
 
-yafaray4_bool_t yafaray4_addFace(yafaray4_Interface_t *interface, int a, int b, int c) //!< add a triangle given vertex indices and material pointer
+yafaray4_bool_t yafaray4_addTriangle(yafaray4_Interface_t *interface, int a, int b, int c) //!< add a triangle given vertex indices and material pointer
 {
 	return static_cast<yafaray4_bool_t>(reinterpret_cast<yafaray4::Interface *>(interface)->addFace(a, b, c));
 }

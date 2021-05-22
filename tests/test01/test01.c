@@ -161,18 +161,18 @@ int main()
 	/* Setting up material for the faces (each face or group of faces can have different materials assigned) */
 	yafaray4_setCurrentMaterial(yi, "MaterialTGA");
 	/* Adding faces indicating the vertices indices used in each face */
-	yafaray4_addFace(yi, 2, 0, 1);
-	yafaray4_addFace(yi, 2, 1, 3);
-	yafaray4_addFace(yi, 3, 7, 6);
-	yafaray4_addFace(yi, 3, 6, 2);
-	yafaray4_addFace(yi, 7, 5, 4);
-	yafaray4_addFace(yi, 7, 4, 6);
-	yafaray4_addFace(yi, 0, 4, 5);
-	yafaray4_addFace(yi, 0, 5, 1);
-	yafaray4_addFace(yi, 0, 2, 6);
-	yafaray4_addFace(yi, 0, 6, 4);
-	yafaray4_addFace(yi, 5, 7, 3);
-	yafaray4_addFace(yi, 5, 3, 1);
+	yafaray4_addTriangle(yi, 2, 0, 1);
+	yafaray4_addTriangle(yi, 2, 1, 3);
+	yafaray4_addTriangle(yi, 3, 7, 6);
+	yafaray4_addTriangle(yi, 3, 6, 2);
+	yafaray4_addTriangle(yi, 7, 5, 4);
+	yafaray4_addTriangle(yi, 7, 4, 6);
+	yafaray4_addTriangle(yi, 0, 4, 5);
+	yafaray4_addTriangle(yi, 0, 5, 1);
+	yafaray4_addTriangle(yi, 0, 2, 6);
+	yafaray4_addTriangle(yi, 0, 6, 4);
+	yafaray4_addTriangle(yi, 5, 7, 3);
+	yafaray4_addTriangle(yi, 5, 3, 1);
 
 	/* Ending definition of geometric objects */
 	yafaray4_endGeometry(yi);
