@@ -37,20 +37,18 @@ extern "C" {
 	LIBYAFARAY_EXPORT void yafaray4_destroyInterface(yafaray4_Interface_t *interface);
 
 	LIBYAFARAY_EXPORT void yafaray4_createScene(yafaray4_Interface_t *interface);
-	LIBYAFARAY_EXPORT yafaray4_bool_t yafaray4_startGeometry(yafaray4_Interface_t *interface); //!< call before creating geometry; only meshes and vmaps can be created in this state
-	LIBYAFARAY_EXPORT yafaray4_bool_t yafaray4_endGeometry(yafaray4_Interface_t *interface); //!< call after creating geometry;
+	LIBYAFARAY_EXPORT yafaray4_bool_t yafaray4_startGeometry(yafaray4_Interface_t *interface);
+	LIBYAFARAY_EXPORT yafaray4_bool_t yafaray4_endGeometry(yafaray4_Interface_t *interface);
 	LIBYAFARAY_EXPORT unsigned int yafaray4_getNextFreeId(yafaray4_Interface_t *interface);
-	LIBYAFARAY_EXPORT yafaray4_bool_t yafaray4_endObject(yafaray4_Interface_t *interface); //!< end current mesh and return to geometry state
-	LIBYAFARAY_EXPORT int yafaray4_addVertex(yafaray4_Interface_t *interface, double x, double y, double z); //!< add vertex to mesh; returns index to be used for addTriangle
-	LIBYAFARAY_EXPORT int yafaray4_addVertexWithOrco(yafaray4_Interface_t *interface, double x, double y, double z, double ox, double oy, double oz); //!< add vertex with Orco to mesh; returns index to be used for addTriangle
-	LIBYAFARAY_EXPORT void yafaray4_addNormal(yafaray4_Interface_t *interface, double nx, double ny, double nz); //!< add vertex normal to mesh; the vertex that will be attached to is the last one inserted by addVertex method
-	LIBYAFARAY_EXPORT yafaray4_bool_t yafaray4_addFace(yafaray4_Interface_t *interface, int a, int b, int c); //!< add a triangle given vertex indices and material pointer
-	LIBYAFARAY_EXPORT yafaray4_bool_t yafaray4_addFaceWithUv(yafaray4_Interface_t *interface, int a, int b, int c, int uv_a, int uv_b, int uv_c); //!< add a triangle given vertex and uv indices and material pointer
-	LIBYAFARAY_EXPORT int  yafaray4_addUv(yafaray4_Interface_t *interface, float u, float v); //!< add a UV coordinate pair; returns index to be used for addTriangle
-	LIBYAFARAY_EXPORT yafaray4_bool_t yafaray4_smoothMesh(yafaray4_Interface_t *interface, const char *name, double angle); //!< smooth vertex normals of mesh with given ID and angle (in degrees)
+	LIBYAFARAY_EXPORT yafaray4_bool_t yafaray4_endObject(yafaray4_Interface_t *interface);
+	LIBYAFARAY_EXPORT int yafaray4_addVertex(yafaray4_Interface_t *interface, double x, double y, double z);
+	LIBYAFARAY_EXPORT int yafaray4_addVertexWithOrco(yafaray4_Interface_t *interface, double x, double y, double z, double ox, double oy, double oz);
+	LIBYAFARAY_EXPORT void yafaray4_addNormal(yafaray4_Interface_t *interface, double nx, double ny, double nz);
+	LIBYAFARAY_EXPORT yafaray4_bool_t yafaray4_addFace(yafaray4_Interface_t *interface, int a, int b, int c);
+	LIBYAFARAY_EXPORT yafaray4_bool_t yafaray4_addFaceWithUv(yafaray4_Interface_t *interface, int a, int b, int c, int uv_a, int uv_b, int uv_c);
+	LIBYAFARAY_EXPORT int yafaray4_addUv(yafaray4_Interface_t *interface, float u, float v);
+	LIBYAFARAY_EXPORT yafaray4_bool_t yafaray4_smoothMesh(yafaray4_Interface_t *interface, const char *name, double angle);
 	LIBYAFARAY_EXPORT yafaray4_bool_t yafaray4_addInstance(yafaray4_Interface_t *interface, const char *base_object_name, const float obj_to_world[4][4]);
-	// functions to build paramMaps instead of passing them from Blender
-	// (decouling implementation details of STL containers, paraMap_t etc. as much as possible)
 	LIBYAFARAY_EXPORT void yafaray4_paramsSetVector(yafaray4_Interface_t *interface, const char *name, double x, double y, double z);
 	LIBYAFARAY_EXPORT void yafaray4_paramsSetString(yafaray4_Interface_t *interface, const char *name, const char *s);
 	LIBYAFARAY_EXPORT void yafaray4_paramsSetBool(yafaray4_Interface_t *interface, const char *name, yafaray4_bool_t b);
@@ -58,9 +56,9 @@ extern "C" {
 	LIBYAFARAY_EXPORT void yafaray4_paramsSetFloat(yafaray4_Interface_t *interface, const char *name, double f);
 	LIBYAFARAY_EXPORT void yafaray4_paramsSetColor(yafaray4_Interface_t *interface, const char *name, float r, float g, float b, float a);
 	LIBYAFARAY_EXPORT void yafaray4_paramsSetMatrix(yafaray4_Interface_t *interface, const char *name, const float m[4][4], yafaray4_bool_t transpose);
-	LIBYAFARAY_EXPORT void yafaray4_paramsClearAll(yafaray4_Interface_t *interface); 	//!< clear the paramMap and paramList
-	LIBYAFARAY_EXPORT void yafaray4_paramsPushList(yafaray4_Interface_t *interface); 	//!< push new list item in paramList (e.g. new shader node description)
-	LIBYAFARAY_EXPORT void yafaray4_paramsEndList(yafaray4_Interface_t *interface); 	//!< revert to writing to normal paramMap
+	LIBYAFARAY_EXPORT void yafaray4_paramsClearAll(yafaray4_Interface_t *interface);
+	LIBYAFARAY_EXPORT void yafaray4_paramsPushList(yafaray4_Interface_t *interface);
+	LIBYAFARAY_EXPORT void yafaray4_paramsEndList(yafaray4_Interface_t *interface);
 	LIBYAFARAY_EXPORT void yafaray4_setCurrentMaterial(yafaray4_Interface_t *interface, const char *name);
 	LIBYAFARAY_EXPORT yafaray4_bool_t yafaray4_createObject(yafaray4_Interface_t *interface, const char *name);
 	LIBYAFARAY_EXPORT yafaray4_bool_t yafaray4_createLight(yafaray4_Interface_t *interface, const char *name);
@@ -72,34 +70,27 @@ extern "C" {
 	LIBYAFARAY_EXPORT yafaray4_bool_t yafaray4_createIntegrator(yafaray4_Interface_t *interface, const char *name);
 	LIBYAFARAY_EXPORT yafaray4_bool_t yafaray4_createVolumeRegion(yafaray4_Interface_t *interface, const char *name);
 	LIBYAFARAY_EXPORT yafaray4_bool_t yafaray4_createRenderView(yafaray4_Interface_t *interface, const char *name);
-	LIBYAFARAY_EXPORT yafaray4_bool_t yafaray4_createOutput(yafaray4_Interface_t *interface, const char *name, yafaray4_bool_t auto_delete, void *callback_user_data, OutputPutpixelCallback_t output_putpixel_callback, OutputFlushAreaCallback_t output_flush_area_callback, OutputFlushCallback_t output_flush_callback); //!< ColorOutput creation, usually for internally-owned outputs that are destroyed when the scene is deleted or when libYafaRay instance is closed. If the client wants to keep ownership, it can set the "auto_delete" to false.
+	LIBYAFARAY_EXPORT yafaray4_bool_t yafaray4_createOutput(yafaray4_Interface_t *interface, const char *name, yafaray4_bool_t auto_delete, void *callback_user_data, OutputPutpixelCallback_t output_putpixel_callback, OutputFlushAreaCallback_t output_flush_area_callback, OutputFlushCallback_t output_flush_callback);
 	LIBYAFARAY_EXPORT yafaray4_bool_t yafaray4_removeOutput(yafaray4_Interface_t *interface, const char *name);
 	LIBYAFARAY_EXPORT void yafaray4_clearOutputs(yafaray4_Interface_t *interface);
 	LIBYAFARAY_EXPORT void yafaray4_clearAll(yafaray4_Interface_t *interface);
-	LIBYAFARAY_EXPORT void yafaray4_render(yafaray4_Interface_t *interface, void *callback_user_data, MonitorCallback_t monitor_callback); //!< render the scene...
+	LIBYAFARAY_EXPORT void yafaray4_render(yafaray4_Interface_t *interface, void *callback_user_data, MonitorCallback_t monitor_callback);
 	LIBYAFARAY_EXPORT void yafaray4_defineLayer(yafaray4_Interface_t *interface, const char *layer_type_name, const char *exported_image_type_name, const char *exported_image_name, const char *image_type_name);
 	LIBYAFARAY_EXPORT yafaray4_bool_t yafaray4_setupLayersParameters(yafaray4_Interface_t *interface);
 	LIBYAFARAY_EXPORT void yafaray4_cancel(yafaray4_Interface_t *interface);
-
 	LIBYAFARAY_EXPORT yafaray4_bool_t yafaray4_setInteractive(yafaray4_Interface_t *interface, yafaray4_bool_t interactive);
 	LIBYAFARAY_EXPORT void yafaray4_enablePrintDateTime(yafaray4_Interface_t *interface, yafaray4_bool_t value);
 	LIBYAFARAY_EXPORT void yafaray4_setConsoleVerbosityLevel(yafaray4_Interface_t *interface, const char *str_v_level);
 	LIBYAFARAY_EXPORT void yafaray4_setLogVerbosityLevel(yafaray4_Interface_t *interface, const char *str_v_level);
-	LIBYAFARAY_EXPORT void yafaray4_getVersion(yafaray4_Interface_t *interface, char *dest_string, size_t dest_string_size); //!< Get version to check against the exporters
-
-	/*! Console Printing wrappers to report in color with yafaray's own console coloring */
+	LIBYAFARAY_EXPORT void yafaray4_getVersion(yafaray4_Interface_t *interface, char *dest_string, size_t dest_string_size);
 	LIBYAFARAY_EXPORT void yafaray4_printDebug(yafaray4_Interface_t *interface, const char *msg);
 	LIBYAFARAY_EXPORT void yafaray4_printVerbose(yafaray4_Interface_t *interface, const char *msg);
 	LIBYAFARAY_EXPORT void yafaray4_printInfo(yafaray4_Interface_t *interface, const char *msg);
 	LIBYAFARAY_EXPORT void yafaray4_printParams(yafaray4_Interface_t *interface, const char *msg);
 	LIBYAFARAY_EXPORT void yafaray4_printWarning(yafaray4_Interface_t *interface, const char *msg);
 	LIBYAFARAY_EXPORT void yafaray4_printError(yafaray4_Interface_t *interface, const char *msg);
-
 	LIBYAFARAY_EXPORT void yafaray4_cancelRendering(yafaray4_Interface_t *interface);
-
 	LIBYAFARAY_EXPORT void yafaray4_setInputColorSpace(const char *color_space_string, float gamma_val);
-	LIBYAFARAY_EXPORT void yafaray4_free(void *ptr); //!< Free memory allocated by libYafaRay
-
 	LIBYAFARAY_EXPORT yafaray4_Image_t *yafaray4_createImage(yafaray4_Interface_t *interface, const char *name);
 	LIBYAFARAY_EXPORT yafaray4_bool_t yafaray4_setImageColor(yafaray4_Image_t *image, int x, int y, float red, float green, float blue, float alpha);
 	LIBYAFARAY_EXPORT yafaray4_bool_t yafaray4_getImageColor(const yafaray4_Image_t *image, int x, int y, float *red, float *green, float *blue, float *alpha);
@@ -108,4 +99,4 @@ extern "C" {
 }
 #endif
 
-#endif //YAFARAY_C_API_H
+#endif /* YAFARAY_C_API_H */

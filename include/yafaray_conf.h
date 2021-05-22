@@ -23,27 +23,27 @@
 #define BEGIN_YAFARAY namespace yafaray4 {
 #define END_YAFARAY }
 
-// define symbol export and import attributes
+/* define symbol export and import attributes */
 #ifdef _WIN32
 #define YF_EXPORT __declspec(dllexport)
 #define YF_IMPORT __declspec(dllimport)
-#else // _WIN32
+#else /* _WIN32 */
 #define YF_EXPORT __attribute__ ((visibility("default")))
 #define YF_IMPORT
-#endif // _WIN32
+#endif /* _WIN32 */
 
-// automatic macros that switch between import and export, depending on compiler environment
+/* automatic macros that switch between import and export, depending on compiler environment */
 #ifdef BUILDING_LIBYAFARAY
 #define LIBYAFARAY_EXPORT YF_EXPORT
-#else // BUILDING_LIBYAFARAY
+#else /* BUILDING_LIBYAFARAY */
 #define LIBYAFARAY_EXPORT YF_IMPORT
-#endif // BUILDING_LIBYAFARAY
+#endif /* BUILDING_LIBYAFARAY */
 
-//Callback definitions for the C API
-//FIXME: Should we care about the function call convention being the same for libYafaRay and its client(s)?
+/* Callback definitions for the C API */
+/* FIXME: Should we care about the function call convention being the same for libYafaRay and its client(s)? */
 typedef void (*OutputPutpixelCallback_t)(const char *view_name, const char *layer_name, int x, int y, float r, float g, float b, float a, void *callback_user_data);
 typedef void (*OutputFlushAreaCallback_t)(const char *view_name, int x_0, int y_0, int x_1, int y_1, void *callback_user_data);
 typedef void (*OutputFlushCallback_t)(const char *view_name, void *callback_user_data);
 typedef void (*MonitorCallback_t)(int steps_total, int steps_done, const char *tag, void *callback_user_data);
 
-#endif // YAFARAY_CONF_H
+#endif /* YAFARAY_CONF_H */
