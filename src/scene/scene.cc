@@ -284,7 +284,6 @@ void Scene::clearNonObjects()
 	cameras_.clear();
 	backgrounds_.clear();
 	integrators_.clear();
-	volume_handlers_.clear();
 	volume_regions_.clear();
 	outputs_.clear();
 	render_views_.clear();
@@ -628,11 +627,6 @@ Camera *Scene::createCamera(const std::string &name, ParamMap &params)
 Integrator *Scene::createIntegrator(const std::string &name, ParamMap &params)
 {
 	return createMapItem<Integrator>(name, "Integrator", params, integrators_, this);
-}
-
-VolumeHandler *Scene::createVolumeHandler(const std::string &name, ParamMap &params)
-{
-	return createMapItem<VolumeHandler>(name, "VolumeHandler", params, volume_handlers_, this);
 }
 
 VolumeRegion *Scene::createVolumeRegion(const std::string &name, ParamMap &params)

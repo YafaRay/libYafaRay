@@ -77,9 +77,9 @@ class Material
 				Rgb col_;
 			} reflect_, refract_;
 		};
-		static std::unique_ptr<Material> factory(ParamMap &params, std::list<ParamMap> &eparams, Scene &scene);
+		static std::unique_ptr<Material> factory(ParamMap &params, std::list<ParamMap> &eparams, const Scene &scene);
 		Material();
-		virtual ~Material() { resetMaterialIndex(); }
+		virtual ~Material();
 
 		/*! Initialize the BSDF of a material. You must call this with the current surface point
 			first before any other methods (except isTransparent/getTransparency)! The renderstate
@@ -129,7 +129,7 @@ class Material
 
 		/*! get the volumetric handler for space at specified side of the surface
 			\param inside true means space opposite of surface normal, which is considered "inside" */
-		virtual const VolumeHandler *getVolumeHandler(bool inside) const { return inside ? vol_i_ : vol_o_; }
+		virtual const VolumeHandler *getVolumeHandler(bool inside) const { return inside ? vol_i_.get() : vol_o_.get(); }
 
 		/*! special function, get the alpha-value of a material, used to calculate the alpha-channel */
 		virtual float getAlpha(const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo) const { return 1.f; }
@@ -195,8 +195,8 @@ class Material
 		bool receive_shadows_ = true; //!< enables/disables material reception of shadows.
 
 		size_t req_mem_ = 0; //!< the amount of "temporary" memory required to compute/store surface point specific data
-		VolumeHandler *vol_i_ = nullptr; //!< volumetric handler for space inside material (opposed to surface normal)
-		VolumeHandler *vol_o_ = nullptr; //!< volumetric handler for space outside ofmaterial (where surface normal points to)
+		std::unique_ptr<VolumeHandler> vol_i_; //!< volumetric handler for space inside material (opposed to surface normal)
+		std::unique_ptr<VolumeHandler> vol_o_; //!< volumetric handler for space outside ofmaterial (where surface normal points to)
 		unsigned int material_index_ = 0;	//!< Material Index for the material-index render pass
 		Rgb material_index_auto_color_ = 0.f;	//!< Material Index color automatically generated for the material-index-auto (color) render pass
 		int additional_depth_ = 0;	//!< Per-material additional ray-depth

@@ -128,7 +128,7 @@ float MaskMaterial::getAlpha(const RenderData &render_data, const SurfacePoint &
 	return alpha;
 }
 
-std::unique_ptr<Material> MaskMaterial::factory(ParamMap &params, std::list< ParamMap > &eparams, Scene &scene)
+std::unique_ptr<Material> MaskMaterial::factory(ParamMap &params, std::list< ParamMap > &eparams, const Scene &scene)
 {
 	std::string name;
 	if(!params.getParam("material1", name)) return nullptr;

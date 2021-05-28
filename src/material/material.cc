@@ -31,6 +31,7 @@
 #include "sampler/sample.h"
 #include "sampler/halton.h"
 #include "common/logger.h"
+#include "volume/volume.h"
 
 BEGIN_YAFARAY
 
@@ -38,7 +39,7 @@ unsigned int Material::material_index_highest_ = 1;
 unsigned int Material::material_index_auto_ = 0;
 float Material::highest_sampling_factor_ = 1.f;
 
-std::unique_ptr<Material> Material::factory(ParamMap &params, std::list<ParamMap> &eparams, Scene &scene)
+std::unique_ptr<Material> Material::factory(ParamMap &params, std::list<ParamMap> &eparams, const Scene &scene)
 {
 	if(Y_LOG_HAS_DEBUG)
 	{
@@ -73,6 +74,11 @@ Material::Material()
 	}
 	while(r + g + b < 0.5f);
 	material_index_auto_color_ = Rgb(r, g, b);
+}
+
+Material::~Material()
+{
+	resetMaterialIndex();
 }
 
 Rgb Material::sampleClay(const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo, Vec3 &wi, Sample &s, float &w) const {

@@ -448,7 +448,7 @@ Material::Specular CoatedGlossyMaterial::getSpecular(const RenderData &render_da
 	return specular;
 }
 
-std::unique_ptr<Material> CoatedGlossyMaterial::factory(ParamMap &params, std::list< ParamMap > &param_list, Scene &scene)
+std::unique_ptr<Material> CoatedGlossyMaterial::factory(ParamMap &params, std::list< ParamMap > &param_list, const Scene &scene)
 {
 	Rgb col(1.f), dcol(1.f), mir_col(1.f);
 	float refl = 1.f;

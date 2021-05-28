@@ -515,7 +515,7 @@ float ShinyDiffuseMaterial::getAlpha(const RenderData &render_data, const Surfac
 	return 1.f;
 }
 
-std::unique_ptr<Material> ShinyDiffuseMaterial::factory(ParamMap &params, std::list<ParamMap> &params_list, Scene &scene)
+std::unique_ptr<Material> ShinyDiffuseMaterial::factory(ParamMap &params, std::list<ParamMap> &params_list, const Scene &scene)
 {
 	/// Material Parameters
 	Rgb diffuse_color = 1.f;

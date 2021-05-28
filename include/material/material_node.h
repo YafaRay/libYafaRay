@@ -39,7 +39,7 @@ class NodeMaterial: public Material
 
 	protected:
 		/*! load nodes from parameter map list */
-		bool loadNodes(const std::list<ParamMap> &params_list, Scene &scene);
+		bool loadNodes(const std::list<ParamMap> &params_list, const Scene &scene);
 		/** parse node shaders to fill nodeList */
 		void parseNodes(const ParamMap &params, std::vector<ShaderNode *> &roots, std::map<std::string, ShaderNode *> &node_list);
 		/* put nodes in evaluation order in "allSorted" given all root nodes;

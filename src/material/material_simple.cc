@@ -57,7 +57,7 @@ float LightMaterial::pdf(const RenderData &render_data, const SurfacePoint &sp, 
 {
 	return 0.f;
 }
-std::unique_ptr<Material> LightMaterial::factory(ParamMap &params, std::list< ParamMap > &eparans, Scene &scene)
+std::unique_ptr<Material> LightMaterial::factory(ParamMap &params, std::list< ParamMap > &eparans, const Scene &scene)
 {
 	Rgb col(1.0);
 	double power = 1.0;

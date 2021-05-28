@@ -139,7 +139,6 @@ class Scene
 		std::shared_ptr<Background> createBackground(const std::string &name, ParamMap &params);
 		Integrator *createIntegrator(const std::string &name, ParamMap &params);
 		ShaderNode *createShaderNode(const std::string &name, ParamMap &params);
-		VolumeHandler *createVolumeHandler(const std::string &name, ParamMap &params);
 		VolumeRegion *createVolumeRegion(const std::string &name, ParamMap &params);
 		RenderView *createRenderView(const std::string &name, ParamMap &params);
 		std::shared_ptr<Image> createImage(const std::string &name, ParamMap &params);
@@ -208,7 +207,6 @@ class Scene
 		std::map<std::string, std::shared_ptr<Background>> backgrounds_;
 		std::map<std::string, std::unique_ptr<Integrator>> integrators_;
 		std::map<std::string, std::unique_ptr<ShaderNode>> shaders_;
-		std::map<std::string, std::unique_ptr<VolumeHandler>> volume_handlers_;
 		std::map<std::string, std::unique_ptr<VolumeRegion>> volume_regions_;
 		std::map<std::string, UniquePtr_t<ColorOutput>> outputs_;
 		std::map<std::string, std::unique_ptr<RenderView>> render_views_;

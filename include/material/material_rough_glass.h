@@ -27,7 +27,7 @@ BEGIN_YAFARAY
 class RoughGlassMaterial final : public NodeMaterial
 {
 	public:
-		static std::unique_ptr<Material> factory(ParamMap &, std::list< ParamMap > &, Scene &);
+		static std::unique_ptr<Material> factory(ParamMap &, std::list< ParamMap > &, const Scene &);
 
 	private:
 		RoughGlassMaterial(float ior, Rgb filt_c, const Rgb &srcol, bool fake_s, float alpha, float disp_pow, Visibility e_visibility = Visibility::NormalVisible);

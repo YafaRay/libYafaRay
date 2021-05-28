@@ -25,6 +25,7 @@
 #include "color/spectrum.h"
 #include "common/param.h"
 #include "render/render_data.h"
+#include "volume/volume.h"
 
 BEGIN_YAFARAY
 
@@ -291,7 +292,7 @@ float GlassMaterial::getMatIor() const
 	return ior_;
 }
 
-std::unique_ptr<Material> GlassMaterial::factory(ParamMap &params, std::list< ParamMap > &param_list, Scene &scene)
+std::unique_ptr<Material> GlassMaterial::factory(ParamMap &params, std::list< ParamMap > &param_list, const Scene &scene)
 {
 	double ior = 1.4;
 	double filt = 0.f;
@@ -367,7 +368,7 @@ std::unique_ptr<Material> GlassMaterial::factory(ParamMap &params, std::list< Pa
 				map["type"] = std::string("beer");
 				map["absorption_col"] = absorp;
 				map["absorption_dist"] = Parameter(dist);
-				mat->vol_i_ = scene.createVolumeHandler(name, map);
+				mat->vol_i_ = VolumeHandler::factory(map, scene);
 				mat->bsdf_flags_ |= BsdfFlags::Volumetric;
 			}
 		}
@@ -448,7 +449,7 @@ Material::Specular MirrorMaterial::getSpecular(const RenderData &render_data, co
 	return specular;
 }
 
-std::unique_ptr<Material> MirrorMaterial::factory(ParamMap &params, std::list< ParamMap > &param_list, Scene &scene)
+std::unique_ptr<Material> MirrorMaterial::factory(ParamMap &params, std::list< ParamMap > &param_list, const Scene &scene)
 {
 	Rgb col(1.0);
 	float refl = 1.0;
@@ -465,7 +466,7 @@ Rgb NullMaterial::sample(const RenderData &render_data, const SurfacePoint &sp, 
 	return Rgb(0.f);
 }
 
-std::unique_ptr<Material> NullMaterial::factory(ParamMap &, std::list< ParamMap > &, Scene &)
+std::unique_ptr<Material> NullMaterial::factory(ParamMap &, std::list< ParamMap > &, const Scene &)
 {
 	return std::unique_ptr<Material>(new NullMaterial());
 }

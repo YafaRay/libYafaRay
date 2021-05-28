@@ -29,7 +29,7 @@ BEGIN_YAFARAY
 class GlassMaterial final : public NodeMaterial
 {
 	public:
-		static std::unique_ptr<Material> factory(ParamMap &, std::list< ParamMap > &, Scene &);
+		static std::unique_ptr<Material> factory(ParamMap &, std::list< ParamMap > &, const Scene &);
 
 	private:
 		GlassMaterial(float ior, Rgb filt_c, const Rgb &srcol, double disp_pow, bool fake_s, Visibility e_visibility = Visibility::NormalVisible);
@@ -67,7 +67,7 @@ a simple mirror mat
 class MirrorMaterial final : public Material
 {
 	public:
-		static std::unique_ptr<Material> factory(ParamMap &, std::list< ParamMap > &, Scene &);
+		static std::unique_ptr<Material> factory(ParamMap &, std::list< ParamMap > &, const Scene &);
 
 	private:
 		MirrorMaterial(Rgb r_col, float ref_val): ref_(ref_val)
@@ -92,7 +92,7 @@ stored on surfaces that don't affect the scene
 class NullMaterial final : public Material
 {
 	public:
-		static std::unique_ptr<Material> factory(ParamMap &, std::list< ParamMap > &, Scene &);
+		static std::unique_ptr<Material> factory(ParamMap &, std::list< ParamMap > &, const Scene &);
 
 	private:
 		NullMaterial() = default;

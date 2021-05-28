@@ -25,6 +25,7 @@
 #include "common/param.h"
 #include "geometry/surface.h"
 #include "render/render_data.h"
+#include "volume/volume.h"
 
 BEGIN_YAFARAY
 
@@ -267,7 +268,7 @@ float RoughGlassMaterial::getMatIor() const
 	return ior_;
 }
 
-std::unique_ptr<Material> RoughGlassMaterial::factory(ParamMap &params, std::list< ParamMap > &param_list, Scene &scene)
+std::unique_ptr<Material> RoughGlassMaterial::factory(ParamMap &params, std::list< ParamMap > &param_list, const Scene &scene)
 {
 	float ior = 1.4;
 	float filt = 0.f;
@@ -347,7 +348,7 @@ std::unique_ptr<Material> RoughGlassMaterial::factory(ParamMap &params, std::lis
 				map["type"] = std::string("beer");
 				map["absorption_col"] = absorp;
 				map["absorption_dist"] = Parameter(dist);
-				mat->vol_i_ = scene.createVolumeHandler(name, map);
+				mat->vol_i_ = VolumeHandler::factory(map, scene);
 				mat->bsdf_flags_ |= BsdfFlags::Volumetric;
 			}
 		}

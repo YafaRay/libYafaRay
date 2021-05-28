@@ -34,7 +34,7 @@ BEGIN_YAFARAY
 class BlendMaterial final : public NodeMaterial
 {
 	public:
-		static std::unique_ptr<Material> factory(ParamMap &params, std::list<ParamMap> &eparams, Scene &scene);
+		static std::unique_ptr<Material> factory(ParamMap &params, std::list<ParamMap> &eparams, const Scene &scene);
 		virtual ~BlendMaterial() override;
 
 	private:

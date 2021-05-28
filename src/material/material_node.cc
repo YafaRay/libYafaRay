@@ -97,7 +97,7 @@ void NodeMaterial::evalBump(NodeStack &stack, const RenderData &render_data, Sur
 	applyBump(sp, du, dv);
 }
 
-bool NodeMaterial::loadNodes(const std::list<ParamMap> &params_list, Scene &scene)
+bool NodeMaterial::loadNodes(const std::list<ParamMap> &params_list, const Scene &scene)
 {
 	bool error = false;
 	std::string type;

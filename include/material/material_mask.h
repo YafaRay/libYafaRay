@@ -30,7 +30,7 @@ class Scene;
 class MaskMaterial final : public NodeMaterial
 {
 	public:
-		static std::unique_ptr<Material> factory(ParamMap &, std::list< ParamMap > &, Scene &);
+		static std::unique_ptr<Material> factory(ParamMap &, std::list< ParamMap > &, const Scene &);
 
 	private:
 		MaskMaterial(const Material *m_1, const Material *m_2, float thresh, Visibility visibility = Visibility::NormalVisible);

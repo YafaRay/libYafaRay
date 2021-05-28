@@ -399,7 +399,7 @@ const VolumeHandler *BlendMaterial::getVolumeHandler(bool inside) const
 	else return vol_2;
 }
 
-std::unique_ptr<Material> BlendMaterial::factory(ParamMap &params, std::list<ParamMap> &eparams, Scene &scene)
+std::unique_ptr<Material> BlendMaterial::factory(ParamMap &params, std::list<ParamMap> &eparams, const Scene &scene)
 {
 	std::string name;
 	double blend_val = 0.5;
