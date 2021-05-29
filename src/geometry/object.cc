@@ -26,17 +26,17 @@
 
 BEGIN_YAFARAY
 
-std::unique_ptr<Object> Object::factory(ParamMap &params, const Scene &scene)
+std::unique_ptr<Object> Object::factory(Logger &logger, ParamMap &params, const Scene &scene)
 {
-	if(Y_LOG_HAS_DEBUG)
+	if(logger.isDebug())
 	{
-		Y_DEBUG PRTEXT(Object::factory) PREND;
-		params.printDebug();
+		logger.logDebug("Object::factory");
+		params.logContents(logger);
 	}
 	std::string type;
 	params.getParam("type", type);
-	if(type == "mesh") return MeshObject::factory(params, scene);
-	else if(type == "curve") return CurveObject::factory(params, scene);
+	if(type == "mesh") return MeshObject::factory(logger, params, scene);
+	else if(type == "curve") return CurveObject::factory(logger, params, scene);
 	else if(type == "sphere")
 	{
 		auto object = std::unique_ptr<PrimitiveObject>(new PrimitiveObject);

@@ -30,8 +30,9 @@
 
 BEGIN_YAFARAY
 
-Interface::Interface()
+Interface::Interface(const ::yafaray4_LoggerCallback_t logger_callback, void *callback_user_data)
 {
+	logger_ = std::unique_ptr<Logger>(new Logger(logger_callback, callback_user_data));
 	params_ = std::unique_ptr<ParamMap>(new ParamMap);
 	eparams_ = std::unique_ptr<std::list<ParamMap>>(new std::list<ParamMap>);
 	cparams_ = params_.get();
@@ -39,25 +40,25 @@ Interface::Interface()
 
 void Interface::createScene()
 {
-	scene_ = Scene::factory(*params_);
+	scene_ = Scene::factory(*logger_, *params_);
 	params_->clear();
 }
 
 Interface::~Interface()
 {
-	if(Y_LOG_HAS_VERBOSE) Y_VERBOSE << "Interface: Deleting scene..." << YENDL;
-	Y_INFO << "Interface: Done." << YENDL;
-	logger_global.clearAll();
+	if(logger_->isVerbose()) logger_->logVerbose("Interface: Deleting scene...");
+	logger_->logInfo("Interface: Done.");
+	logger_->clearAll();
 }
 
 void Interface::clearAll()
 {
-	if(Y_LOG_HAS_VERBOSE) Y_VERBOSE << "Interface: Cleaning scene..." << YENDL;
+	if(logger_->isVerbose()) logger_->logVerbose("Interface: Cleaning scene...");
 	scene_->clearAll();
 	params_->clear();
 	eparams_->clear();
 	cparams_ = params_.get();
-	if(Y_LOG_HAS_VERBOSE) Y_VERBOSE << "Interface: Cleanup done." << YENDL;
+	if(logger_->isVerbose()) logger_->logVerbose("Interface: Cleanup done.");
 }
 
 void Interface::defineLayer(const std::string &layer_type_name, const std::string &exported_image_type_name, const std::string &exported_image_name, const std::string &image_type_name)
@@ -227,7 +228,7 @@ VolumeRegion *Interface::createVolumeRegion(const char *name) { return scene_->c
 RenderView *Interface::createRenderView(const char *name) { return scene_->createRenderView(name, *params_); }
 Image *Interface::createImage(const char *name) { return scene_->createImage(name, *params_).get(); }
 
-ColorOutput *Interface::createOutput(const char *name, bool auto_delete, void *callback_user_data, OutputPutpixelCallback_t output_putpixel_callback, OutputFlushAreaCallback_t output_flush_area_callback, OutputFlushCallback_t output_flush_callback)
+ColorOutput *Interface::createOutput(const char *name, bool auto_delete, void *callback_user_data, yafaray4_OutputPutpixelCallback_t output_putpixel_callback, yafaray4_OutputFlushAreaCallback_t output_flush_area_callback, yafaray4_OutputFlushCallback_t output_flush_callback)
 {
 	return scene_->createOutput(name, *params_, auto_delete, callback_user_data, output_putpixel_callback, output_flush_area_callback, output_flush_callback);
 }
@@ -251,7 +252,7 @@ void Interface::clearOutputs()
 void Interface::cancel()
 {
 	if(scene_) scene_->getRenderControl().setCanceled();
-	Y_WARNING << "Interface: Render canceled by user." << YENDL;
+	logger_->logWarning("Interface: Render canceled by user.");
 }
 
 void Interface::setCurrentMaterial(const Material *material)
@@ -277,32 +278,32 @@ std::string Interface::getVersion() const
 
 void Interface::printDebug(const std::string &msg) const
 {
-	if(Y_LOG_HAS_DEBUG) Y_DEBUG << msg << YENDL;
+	if(logger_->isDebug())logger_->logDebug(msg);
 }
 
 void Interface::printVerbose(const std::string &msg) const
 {
-	if(Y_LOG_HAS_VERBOSE) Y_VERBOSE << msg << YENDL;
+	if(logger_->isVerbose()) logger_->logVerbose(msg);
 }
 
 void Interface::printInfo(const std::string &msg) const
 {
-	Y_INFO << msg << YENDL;
+	logger_->logInfo(msg);
 }
 
 void Interface::printParams(const std::string &msg) const
 {
-	Y_PARAMS << msg << YENDL;
+	logger_->logParams(msg);
 }
 
 void Interface::printWarning(const std::string &msg) const
 {
-	Y_WARNING << msg << YENDL;
+	logger_->logWarning(msg);
 }
 
 void Interface::printError(const std::string &msg) const
 {
-	Y_ERROR << msg << YENDL;
+	logger_->logError(msg);
 }
 
 void Interface::render(ProgressBar *pb, bool auto_delete_progress_bar)
@@ -315,17 +316,22 @@ void Interface::render(ProgressBar *pb, bool auto_delete_progress_bar)
 
 void Interface::enablePrintDateTime(bool value)
 {
-	logger_global.enablePrintDateTime(value);
+	logger_->enablePrintDateTime(value);
 }
 
-void Interface::setConsoleVerbosityLevel(const std::string &str_v_level)
+void Interface::setConsoleVerbosityLevel(const ::yafaray4_LogLevel_t &log_level)
 {
-	logger_global.setConsoleMasterVerbosity(str_v_level);
+	logger_->setConsoleMasterVerbosity(log_level);
 }
 
-void Interface::setLogVerbosityLevel(const std::string &str_v_level)
+void Interface::setLogVerbosityLevel(const ::yafaray4_LogLevel_t &log_level)
 {
-	logger_global.setLogMasterVerbosity(str_v_level);
+	logger_->setLogMasterVerbosity(log_level);
+}
+
+void Interface::setConsoleLogColorsEnabled(bool console_log_colors_enabled) const
+{
+	logger_->setConsoleLogColorsEnabled(console_log_colors_enabled);
 }
 
 END_YAFARAY

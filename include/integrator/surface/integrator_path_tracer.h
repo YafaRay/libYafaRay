@@ -28,10 +28,10 @@ BEGIN_YAFARAY
 class PathIntegrator final : public MonteCarloIntegrator
 {
 	public:
-		static std::unique_ptr<Integrator> factory(ParamMap &params, const Scene &scene);
+		static std::unique_ptr<Integrator> factory(Logger &logger, ParamMap &params, const Scene &scene);
 
 	private:
-		PathIntegrator(bool transp_shad = false, int shadow_depth = 4);
+		PathIntegrator(Logger &logger, bool transp_shad = false, int shadow_depth = 4);
 		virtual std::string getShortName() const override { return "PT"; }
 		virtual std::string getName() const override { return "PathTracer"; }
 		virtual bool preprocess(const RenderControl &render_control, const RenderView *render_view, ImageFilm *image_film) override;

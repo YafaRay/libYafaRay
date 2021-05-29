@@ -162,7 +162,7 @@ std::unique_ptr<Image> Badge::generateImage(const std::string &denoise_params, c
 	std::string line;
 	while(std::getline(ss_badge, line)) ++badge_line_count;
 	const int badge_height = (badge_line_count + additional_blank_lines) * std::ceil(line_height * font_size_factor_);
-	std::unique_ptr<Image> badge_image = Image::factory(image_width_, badge_height, Image::Type::Color, Image::Optimization::None);
+	std::unique_ptr<Image> badge_image = Image::factory(logger_, image_width_, badge_height, Image::Type::Color, Image::Optimization::None);
 
 #ifdef HAVE_FREETYPE
 	FT_Library library;
@@ -180,7 +180,7 @@ std::unique_ptr<Image> Badge::generateImage(const std::string &denoise_params, c
 	// initialize library
 	if(FT_Init_FreeType(&library))
 	{
-		Y_ERROR << "Badge: FreeType lib couldn't be initialized!" << YENDL;
+		logger_.logError("Badge: FreeType lib couldn't be initialized!");
 		return nullptr;
 	}
 
@@ -190,17 +190,17 @@ std::unique_ptr<Image> Badge::generateImage(const std::string &denoise_params, c
 	{
 		if(FT_New_Memory_Face(library, (const FT_Byte *)guifont_global, guifont_size_global, 0, &face))
 		{
-			Y_ERROR << "Badge: FreeType couldn't load the default font!" << YENDL;
+			logger_.logError("Badge: FreeType couldn't load the default font!");
 			return nullptr;
 		}
 	}
 	else if(FT_New_Face(library, font_path.c_str(), 0, &face))
 	{
-		Y_WARNING << "Badge: FreeType couldn't load the font '" << font_path << "', loading default font." << YENDL;
+		logger_.logWarning("Badge: FreeType couldn't load the font '", font_path, "', loading default font.");
 
 		if(FT_New_Memory_Face(library, (const FT_Byte *)guifont_global, guifont_size_global, 0, &face))
 		{
-			Y_ERROR << "Badge: FreeType couldn't load the default font!" << YENDL;
+			logger_.logError("Badge: FreeType couldn't load the default font!");
 			return nullptr;
 		}
 	}
@@ -210,7 +210,7 @@ std::unique_ptr<Image> Badge::generateImage(const std::string &denoise_params, c
 	// set character size
 	if(FT_Set_Char_Size(face, (FT_F26Dot6)(fontsize * 64.0), 0, 0, 0))
 	{
-		Y_ERROR << "Badge: FreeType couldn't set the character size!" << YENDL;
+		logger_.logError("Badge: FreeType couldn't set the character size!");
 		return nullptr;
 	}
 
@@ -236,7 +236,7 @@ std::unique_ptr<Image> Badge::generateImage(const std::string &denoise_params, c
 			fontsize = 9.5f * getFontSizeFactor();
 			if(FT_Set_Char_Size(face, (FT_F26Dot6)(fontsize * 64.0), 0, 0, 0))
 			{
-				Y_ERROR << "Badge: FreeType couldn't set the character size!" << YENDL;
+				logger_.logError("Badge: FreeType couldn't set the character size!");
 				return nullptr;
 			}
 
@@ -249,7 +249,7 @@ std::unique_ptr<Image> Badge::generateImage(const std::string &denoise_params, c
 		// Load glyph image into the slot (erase previous one)
 		if(FT_Load_Char(face, wtext_utf_32[n], FT_LOAD_DEFAULT))
 		{
-			Y_ERROR << "Badge: FreeType Couldn't load the glyph image for: '" << wtext_utf_32[n] << "'!" << YENDL;
+			logger_.logError("Badge: FreeType Couldn't load the glyph image for: '", wtext_utf_32[n], "'!");
 			continue;
 		}
 
@@ -283,16 +283,16 @@ std::unique_ptr<Image> Badge::generateImage(const std::string &denoise_params, c
 
 		ParamMap logo_image_params;
 		logo_image_params["type"] = imagehandler_type;
-		std::unique_ptr<Format> logo_format = std::unique_ptr<Format>(Format::factory(logo_image_params));
+		std::unique_ptr<Format> logo_format = std::unique_ptr<Format>(Format::factory(logger_, logo_image_params));
 		if(logo_format) logo = logo_format->loadFromFile(getIconPath(), Image::Optimization::None, ColorSpace::Srgb, 1.f);
-		if(!logo_format || !logo) Y_WARNING << "Badge: custom params badge icon '" << getIconPath() << "' could not be loaded. Using default YafaRay icon." << YENDL;
+		if(!logo_format || !logo) logger_.logWarning("Badge: custom params badge icon '", getIconPath(), "' could not be loaded. Using default YafaRay icon.");
 	}
 
 	if(!logo)
 	{
 		ParamMap logo_image_params;
 		logo_image_params["type"] = std::string("png");
-		std::unique_ptr<Format> logo_format = std::unique_ptr<Format>(Format::factory(logo_image_params));
+		std::unique_ptr<Format> logo_format = std::unique_ptr<Format>(Format::factory(logger_, logo_image_params));
 		if(logo_format) logo = logo_format->loadFromMemory(yaf_logo_tiny_global, yaf_logo_tiny_size_global, Image::Optimization::None, ColorSpace::Srgb, 1.f);
 	}
 
@@ -300,7 +300,7 @@ std::unique_ptr<Image> Badge::generateImage(const std::string &denoise_params, c
 	{
 		int logo_width = logo->getWidth();
 		int logo_height = logo->getHeight();
-		if(logo_width > 80 || logo_height > 45) Y_WARNING << "Badge: custom params badge logo is quite big (" << logo_width << " x " << logo_height << "). It could invade other areas in the badge. Please try to keep logo size smaller than 80 x 45, for example." << YENDL;
+		if(logo_width > 80 || logo_height > 45) logger_.logWarning("Badge: custom params badge logo is quite big (", logo_width, " x ", logo_height, "). It could invade other areas in the badge. Please try to keep logo size smaller than 80 x 45, for example.");
 		int lx, ly;
 		logo_width = std::min(logo_width, image_width_);
 		logo_height = std::min(logo_height, badge_height);
@@ -312,9 +312,9 @@ std::unique_ptr<Image> Badge::generateImage(const std::string &denoise_params, c
 				else badge_image->setColor(image_width_ - logo_width + lx, badge_height - logo_height + ly, logo->getColor(lx, ly));
 			}
 	}
-	else Y_WARNING << "Badge: default YafaRay params badge icon could not be loaded. No icon will be shown." << YENDL;
+	else logger_.logWarning("Badge: default YafaRay params badge icon could not be loaded. No icon will be shown.");
 
-	if(Y_LOG_HAS_VERBOSE) Y_VERBOSE << "Badge: Rendering parameters badge created." << YENDL;
+	if(logger_.isVerbose()) logger_.logVerbose("Badge: Rendering parameters badge created.");
 
 	return badge_image;
 }

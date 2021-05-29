@@ -37,7 +37,7 @@ float NoiseVolumeRegion::density(Point3 p) const
 	return d;
 }
 
-std::unique_ptr<VolumeRegion> NoiseVolumeRegion::factory(const ParamMap &params, const Scene &scene)
+std::unique_ptr<VolumeRegion> NoiseVolumeRegion::factory(Logger &logger, const ParamMap &params, const Scene &scene)
 {
 	float ss = .1f;
 	float sa = .1f;
@@ -69,7 +69,7 @@ std::unique_ptr<VolumeRegion> NoiseVolumeRegion::factory(const ParamMap &params,
 
 	if(tex_name.empty())
 	{
-		if(Y_LOG_HAS_VERBOSE) Y_VERBOSE << "NoiseVolume: Noise texture not set, the volume region won't be created." << YENDL;
+		if(logger.isVerbose()) logger.logVerbose("NoiseVolume: Noise texture not set, the volume region won't be created.");
 		return nullptr;
 	}
 
@@ -77,11 +77,11 @@ std::unique_ptr<VolumeRegion> NoiseVolumeRegion::factory(const ParamMap &params,
 
 	if(!noise)
 	{
-		if(Y_LOG_HAS_VERBOSE) Y_VERBOSE << "NoiseVolume: Noise texture '" << tex_name << "' couldn't be found, the volume region won't be created." << YENDL;
+		if(logger.isVerbose()) logger.logVerbose("NoiseVolume: Noise texture '", tex_name, "' couldn't be found, the volume region won't be created.");
 		return nullptr;
 	}
 
-	return std::unique_ptr<VolumeRegion>(new NoiseVolumeRegion(Rgb(sa), Rgb(ss), Rgb(le), g, cov, sharp, dens, Point3(min[0], min[1], min[2]), Point3(max[0], max[1], max[2]), att_sc, noise));
+	return std::unique_ptr<VolumeRegion>(new NoiseVolumeRegion(logger, Rgb(sa), Rgb(ss), Rgb(le), g, cov, sharp, dens, Point3(min[0], min[1], min[2]), Point3(max[0], max[1], max[2]), att_sc, noise));
 }
 
 END_YAFARAY

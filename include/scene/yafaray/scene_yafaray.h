@@ -30,10 +30,10 @@ class Primitive;
 class YafaRayScene final : public Scene
 {
 	public:
-		static std::unique_ptr<Scene> factory(ParamMap &params);
+		static std::unique_ptr<Scene> factory(Logger &logger, ParamMap &params);
 
 	private:
-		YafaRayScene();
+		YafaRayScene(Logger &logger);
 		YafaRayScene(const YafaRayScene &s) = delete;
 		virtual ~YafaRayScene() override;
 		virtual int  addVertex(const Point3 &p) override;

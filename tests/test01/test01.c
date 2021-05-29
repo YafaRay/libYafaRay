@@ -37,6 +37,8 @@ void putPixelCallback(const char *view_name, const char *layer_name, int x, int 
 void flushAreaCallback(const char *view_name, int x_0, int y_0, int x_1, int y_1, void *callback_user_data);
 void flushCallback(const char *view_name, void *callback_user_data);
 void monitorCallback(int steps_total, int steps_done, const char *tag, void *callback_user_data);
+void loggerCallback(yafaray4_LogLevel_t log_level, long datetime, const char *time_of_day, const char *description, void *callback_user_data);
+
 yafaray4_Interface_t *yi = NULL;
 
 #ifdef WIN32
@@ -81,8 +83,9 @@ int main()
 	/* Basic libYafaRay C API usage example, rendering a cube with a TGA texture */
 
 	/* YafaRay standard rendering interface */
-	yi = yafaray4_createInterface(YAFARAY_INTERFACE_FOR_RENDERING, NULL);
-	yafaray4_setConsoleVerbosityLevel(yi, "debug");
+	yi = yafaray4_createInterface(YAFARAY_INTERFACE_FOR_RENDERING, NULL, NULL, &result_image);
+	yafaray4_setConsoleLogColorsEnabled(yi, YAFARAY_BOOL_TRUE);
+	yafaray4_setConsoleVerbosityLevel(yi, YAFARAY_LOG_LEVEL_DEBUG);
 	yafaray4_setInteractive(yi, YAFARAY_BOOL_TRUE);
 
 	/* Creating scene */
@@ -215,8 +218,8 @@ int main()
 
 	/* Creating callback output */
 	yafaray4_paramsSetString(yi, "type", "callback_output");
-	yafaray4_createOutput(yi, "test_callback_output", YAFARAY_BOOL_TRUE, (void *) &result_image, putPixelCallback, flushAreaCallback, flushCallback);
-yafaray4_paramsClearAll(yi);
+	/*yafaray4_createOutput(yi, "test_callback_output", YAFARAY_BOOL_TRUE, (void *) &result_image, putPixelCallback, flushAreaCallback, flushCallback);
+yafaray4_paramsClearAll(yi);*/
 
 	/* Creating surface integrator */
 	yafaray4_paramsSetString(yi, "type", "directlighting");
@@ -240,12 +243,12 @@ yafaray4_paramsClearAll(yi);
 	yafaray4_paramsSetString(yi, "background_name", "world_background");
 	yafaray4_paramsSetInt(yi, "width", result_image.width_);
 	yafaray4_paramsSetInt(yi, "height", result_image.height_);
-/*	yafaray4_paramsSetInt(yi, "AA_minsamples",  100);
-	yafaray4_paramsSetInt(yi, "AA_passes",  100);*/
+	yafaray4_paramsSetInt(yi, "AA_minsamples",  50);
+/*	yafaray4_paramsSetInt(yi, "AA_passes",  100);*/
 	yafaray4_paramsSetInt(yi, "threads", -1);
 	yafaray4_paramsSetInt(yi, "threads_photons", -1);
 	/* Rendering */
-	yafaray4_render(yi, &total_steps, monitorCallback);
+	yafaray4_render(yi, &total_steps, NULL /*monitorCallback*/);
 	printf("END: total_steps = %d\n", total_steps);
 	yafaray4_paramsClearAll(yi);
 
@@ -291,4 +294,9 @@ void monitorCallback(int steps_total, int steps_done, const char *tag, void *cal
 {
 	*((int *) callback_user_data) = steps_total;
 	printf("**** monitorCallback steps_total=%d, steps_done=%d, tag='%s', callback_user_data=%p\n", steps_total, steps_done, tag, callback_user_data);
+}
+
+void loggerCallback(yafaray4_LogLevel_t log_level, long datetime, const char *time_of_day, const char *description, void *callback_user_data)
+{
+	printf("**** loggerCallback log_level=%d, datetime=%ld, time_of_day='%s', description='%s', callback_user_data=%p\n", log_level, datetime, time_of_day, description, callback_user_data);
 }

@@ -84,8 +84,8 @@ Matrix4 &Matrix4::inverse()
 		}
 		if(max == 0)
 		{
-			Y_ERROR << "Serious error inverting matrix" << YENDL;
-			Y_ERROR << i << YENDL;
+			/*logger_.logError("Serious error inverting matrix");
+			logger_.logError(i);*/
 			invalid_ = 1;
 		}
 		SWAP(matrix_, i, ci); SWAP(iden, i, ci);

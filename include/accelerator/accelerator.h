@@ -35,6 +35,7 @@ class Ray;
 class DiffRay;
 class Primitive;
 class SurfacePoint;
+class Logger;
 
 struct AcceleratorIntersectData : IntersectData
 {
@@ -50,7 +51,8 @@ struct AcceleratorTsIntersectData : AcceleratorIntersectData
 class Accelerator
 {
 	public:
-		static std::unique_ptr<Accelerator> factory(const std::vector<const Primitive *> &primitives_list, ParamMap &params);
+		static std::unique_ptr<Accelerator> factory(Logger &logger, const std::vector<const Primitive *> &primitives_list, ParamMap &params);
+		Accelerator(Logger &logger) : logger_(logger) { }
 		virtual ~Accelerator() = default;
 		virtual AcceleratorIntersectData intersect(const Ray &ray, float t_max) const = 0;
 		virtual AcceleratorIntersectData intersectS(const Ray &ray, float t_max, float shadow_bias) const = 0;
@@ -60,6 +62,9 @@ class Accelerator
 		bool intersect(const DiffRay &ray, SurfacePoint &sp) const;
 		bool isShadowed(const RenderData &render_data, const Ray &ray, float &obj_index, float &mat_index, float shadow_bias) const;
 		bool isShadowed(RenderData &render_data, const Ray &ray, int max_depth, Rgb &filt, float &obj_index, float &mat_index, float shadow_bias) const;
+
+	protected:
+		Logger &logger_;
 };
 
 END_YAFARAY

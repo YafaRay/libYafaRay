@@ -29,10 +29,10 @@ class Background;
 class SkyIntegrator : public VolumeIntegrator
 {
 	public:
-		static std::unique_ptr<Integrator> factory(ParamMap &params, const Scene &scene);
+		static std::unique_ptr<Integrator> factory(Logger &logger, ParamMap &params, const Scene &scene);
 
 	private:
-		SkyIntegrator(float s_size, float a, float ss, float t);
+		SkyIntegrator(Logger &logger, float s_size, float a, float ss, float t);
 		virtual std::string getShortName() const override { return "Sky"; }
 		virtual std::string getName() const override { return "Sky"; }
 		virtual bool preprocess(const RenderControl &render_control, const RenderView *render_view, ImageFilm *image_film) override;

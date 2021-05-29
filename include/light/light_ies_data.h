@@ -33,7 +33,7 @@ class IesData final
 {
 	public:
 		IesData() = default;
-		bool parseIesFile(const std::string &file);
+		bool parseIesFile(Logger &logger, const std::string &file);
 		float getRadiance(float h_ang, float v_ang) const;
 		float getMaxVAngle() const { return max_v_angle_; }
 
@@ -120,18 +120,18 @@ float IesData::getRadiance(float h_ang, float v_ang) const
 
 // IES description: http://lumen.iee.put.poznan.pl/kw/iesna.txt
 
-bool IesData::parseIesFile(const std::string &file)
+bool IesData::parseIesFile(Logger &logger, const std::string &file)
 {
 	//FIXME: migrate to new file_t system
 	using namespace std;
 
-	if(Y_LOG_HAS_VERBOSE) Y_VERBOSE << "IES Parser: Parsing IES file " << file << YENDL;
+	if(logger.isVerbose()) logger.logVerbose("IES Parser: Parsing IES file ", file);
 
 	ifstream fin(file.c_str(), std::ios::in);
 
 	if(!fin)
 	{
-		Y_ERROR << "IES Parser: Could not open IES file: " << file << YENDL;
+		logger.logError("IES Parser: Could not open IES file: ", file);
 		return false;
 	}
 
@@ -142,18 +142,18 @@ bool IesData::parseIesFile(const std::string &file)
 
 	if(length < 7)
 	{
-		Y_ERROR << "IES Parser: file is too small, only " << length << " bytes long." << YENDL;
+		logger.logError("IES Parser: file is too small, only ", length, " bytes long.");
 		return false;
 	}
 
 	//check header is correct
 	char ies_check_characters[7];
 	fin.get(ies_check_characters, 7);
-	if(Y_LOG_HAS_DEBUG) Y_DEBUG << "std::string(ies_check_characters)=" << std::string(ies_check_characters) << YENDL;
+	if(logger.isDebug())logger.logDebug("std::string(ies_check_characters)=", std::string(ies_check_characters));
 
 	if(std::string(ies_check_characters) != "IESNA:")
 	{
-		Y_ERROR << "IES Parser: wrong file format, first characters are not \"IESNA:\"" << YENDL;
+		logger.logError("IES Parser: wrong file format, first characters are not \"IESNA:\"");
 		return false;
 	}
 
@@ -174,7 +174,7 @@ bool IesData::parseIesFile(const std::string &file)
 	{
 		if(line == "TILT=INCLUDE")
 		{
-			if(Y_LOG_HAS_VERBOSE) Y_VERBOSE << "IES Parser: Tilt data included in IES file." << YENDL << "Skiping..." << YENDL;
+			if(logger.isVerbose()) logger.logVerbose("IES Parser: Tilt data included in IES file, Skiping...");
 
 			int pairs = 0;
 
@@ -183,42 +183,42 @@ bool IesData::parseIesFile(const std::string &file)
 
 			for(int i = 0; i < (pairs * 2); i++) fin >> line;
 
-			if(Y_LOG_HAS_VERBOSE) Y_VERBOSE << "IES Parser: Tilt data skipped." << YENDL;
+			if(logger.isVerbose()) logger.logVerbose("IES Parser: Tilt data skipped.");
 		}
 		else if(line == "TILT=NONE")
 		{
-			if(Y_LOG_HAS_VERBOSE) Y_VERBOSE << "IES Parser: No tilt data." << YENDL;
+			if(logger.isVerbose()) logger.logVerbose("IES Parser: No tilt data.");
 		}
 		else if(line == "TILT=NONE")
 		{
-			if(Y_LOG_HAS_VERBOSE) Y_VERBOSE << "IES Parser: Tilt data in another file." << YENDL;
+			if(logger.isVerbose()) logger.logVerbose("IES Parser: Tilt data in another file.");
 		}
 	}
 	else
 	{
 		fin.close();
-		Y_WARNING << "IES Parser: Tilt not found IES invalid!" << YENDL;
+		logger.logWarning("IES Parser: Tilt not found IES invalid!");
 		return false;
 	}
 
 	float candela_mult = 0.f;
 
 	fin >> line;
-	if(Y_LOG_HAS_VERBOSE) Y_VERBOSE << "IES Parser: Number of lamps: " << line << YENDL;
+	if(logger.isVerbose()) logger.logVerbose("IES Parser: Number of lamps: ", line);
 	fin >> line;
-	if(Y_LOG_HAS_VERBOSE) Y_VERBOSE << "IES Parser: lumens per lamp: " << line << YENDL;
+	if(logger.isVerbose()) logger.logVerbose("IES Parser: lumens per lamp: ", line);
 	fin >> candela_mult;
 	candela_mult *= 0.001;
-	if(Y_LOG_HAS_VERBOSE) Y_VERBOSE << "IES Parser: Candela multiplier (kcd): " << candela_mult << YENDL;
+	if(logger.isVerbose()) logger.logVerbose("IES Parser: Candela multiplier (kcd): ", candela_mult);
 	fin >> vert_angles_;
-	if(Y_LOG_HAS_VERBOSE) Y_VERBOSE << "IES Parser: Vertical Angles: " << vert_angles_ << YENDL;
+	if(logger.isVerbose()) logger.logVerbose("IES Parser: Vertical Angles: ", vert_angles_);
 	fin >> hor_angles_;
-	if(Y_LOG_HAS_VERBOSE) Y_VERBOSE << "IES Parser: Horizontal Angles: " << hor_angles_ << YENDL;
+	if(logger.isVerbose()) logger.logVerbose("IES Parser: Horizontal Angles: ", hor_angles_);
 	type_ = 0;
 	fin >> type_;
-	if(Y_LOG_HAS_VERBOSE) Y_VERBOSE << "IES Parser: Photometric Type: " << type_ << YENDL;
+	if(logger.isVerbose()) logger.logVerbose("IES Parser: Photometric Type: ", type_);
 	fin >> line;
-	if(Y_LOG_HAS_VERBOSE) Y_VERBOSE << "IES Parser: Units Type: " << line << YENDL;
+	if(logger.isVerbose()) logger.logVerbose("IES Parser: Units Type: ", line);
 
 	float w = 0.f, l = 0.f, h = 0.f;
 
@@ -226,99 +226,96 @@ bool IesData::parseIesFile(const std::string &file)
 	fin >> l;
 	fin >> h;
 
-	if(Y_LOG_HAS_VERBOSE)
+	if(logger.isVerbose())
 	{
-		Y_VERBOSE << "IES Parser: Luminous opening dimensions:" << YENDL;
-		Y_VERBOSE << "IES Parser: (Width, Length, Height) = (" << w << ", " << l << ", " << h << ")" << YENDL;
-		Y_VERBOSE << "IES Parser: Lamp Geometry: ";
+		logger.logVerbose("IES Parser: Luminous opening dimensions:");
+		logger.logVerbose("IES Parser: (Width, Length, Height) = (", w, ", ", l, ", ", h, ")");
+		logger.logVerbose("IES Parser: Lamp Geometry: ");
 
 		//Check geometry type
 		if(w == 0.f && l == 0.f && h == 0.f)
 		{
-			Y_VERBOSE << "Point Light" << YENDL;
+			logger.logVerbose("Point Light");
 		}
 		else if(w >= 0.f && l >= 0.f && h >= 0.f)
 		{
-			Y_VERBOSE << "Rectangular Light" << YENDL;
+			logger.logVerbose("Rectangular Light");
 		}
 		else if(w < 0.f && l == 0.f && h == 0.f)
 		{
-			Y_VERBOSE << "Circular Light" << YENDL;
+			logger.logVerbose("Circular Light");
 		}
 		else if(w < 0.f && l == 0.f && h < 0.f)
 		{
-			Y_VERBOSE << "Shpere Light" << YENDL;
+			logger.logVerbose("Shpere Light");
 		}
 		else if(w < 0.f && l == 0.f && h >= 0.f)
 		{
-			Y_VERBOSE << "Vertical Cylindric Light" << YENDL;
+			logger.logVerbose("Vertical Cylindric Light");
 		}
 		else if(w == 0.f && l >= 0.f && h < 0.f)
 		{
-			Y_VERBOSE << "Horizontal Cylindric Light (Along width)" << YENDL;
+			logger.logVerbose("Horizontal Cylindric Light (Along width)");
 		}
 		else if(w >= 0.f && l == 0.f && h < 0.f)
 		{
-			Y_VERBOSE << "Horizontal Cylindric Light (Along length)" << YENDL;
+			logger.logVerbose("Horizontal Cylindric Light (Along length)");
 		}
 		else if(w < 0.f && l >= 0.f && h >= 0.f)
 		{
-			Y_VERBOSE << "Elipse Light (Along width)" << YENDL;
+			logger.logVerbose("Elipse Light (Along width)");
 		}
 		else if(w >= 0.f && l < 0.f && h >= 0.f)
 		{
-			Y_VERBOSE << "Elipse Light (Along length)" << YENDL;
+			logger.logVerbose("Elipse Light (Along length)");
 		}
 		else if(w < 0.f && l >= 0.f && h < 0.f)
 		{
-			Y_VERBOSE << "Elipsoid Light (Along width)" << YENDL;
+			logger.logVerbose("Elipsoid Light (Along width)");
 		}
 		else if(w >= 0.f && l < 0.f && h < 0.f)
 		{
-			Y_VERBOSE << "Elipsoid Light (Along length)" << YENDL;
+			logger.logVerbose("Elipsoid Light (Along length)");
 		}
 	}
 
 	fin >> line;
-	if(Y_LOG_HAS_VERBOSE) Y_VERBOSE << "IES Parser: Ballast Factor: " << line << YENDL;
+	if(logger.isVerbose()) logger.logVerbose("IES Parser: Ballast Factor: ", line);
 	fin >> line;
-	if(Y_LOG_HAS_VERBOSE) Y_VERBOSE << "IES Parser: Ballast-Lamp Photometric Factor: " << line << YENDL;
+	if(logger.isVerbose()) logger.logVerbose("IES Parser: Ballast-Lamp Photometric Factor: ", line);
 	fin >> line;
-	if(Y_LOG_HAS_VERBOSE) Y_VERBOSE << "IES Parser: Input Watts: " << line << YENDL;
+	if(logger.isVerbose()) logger.logVerbose("IES Parser: Input Watts: ", line);
 
 	vert_angle_map_ = std::unique_ptr<float[]>(new float[vert_angles_]);
 
 	max_v_angle_ = 0.f;
 
-	if(Y_LOG_HAS_VERBOSE) Y_VERBOSE << "IES Parser: Vertical Angle Map:" << YENDL;
+	if(logger.isVerbose()) logger.logVerbose("IES Parser: Vertical Angle Map:");
 
 	for(int i = 0; i < vert_angles_; ++i)
 	{
 		fin >> vert_angle_map_[i];
 		if(max_v_angle_ < vert_angle_map_[i]) max_v_angle_ = vert_angle_map_[i];
-		std::cout << vert_angle_map_[i] << ", ";
+		logger.logVerbose(vert_angle_map_[i]);
 	}
-
-	std::cout << YENDL;
 
 	if(vert_angle_map_[0] > 0.f)
 	{
-		if(Y_LOG_HAS_VERBOSE) Y_VERBOSE << "IES Parser: Vertical Angle Map (transformed):" << YENDL;
+		if(logger.isVerbose()) logger.logVerbose("IES Parser: Vertical Angle Map (transformed):");
 		float minus = vert_angle_map_[0];
 		max_v_angle_ -= minus;
 		for(int i = 0; i < vert_angles_; ++i)
 		{
 			vert_angle_map_[i] -= minus;
-			std::cout << vert_angle_map_[i] << ", ";
+			logger.logVerbose(vert_angle_map_[i]);
 		}
-		std::cout << std::endl;
 	}
 
-	if(Y_LOG_HAS_VERBOSE) Y_VERBOSE << "IES Parser: Max vertical angle (degrees): " << max_v_angle_ << YENDL;
+	if(logger.isVerbose()) logger.logVerbose("IES Parser: Max vertical angle (degrees): ", max_v_angle_);
 
 	max_v_angle_ = math::degToRad(max_v_angle_);
 
-	if(Y_LOG_HAS_VERBOSE) Y_VERBOSE << "IES Parser: Max vertical angle (radians): " << max_v_angle_ << YENDL;
+	if(logger.isVerbose()) logger.logVerbose("IES Parser: Max vertical angle (radians): ", max_v_angle_);
 
 	bool h_adjust = false;
 
@@ -330,7 +327,7 @@ bool IesData::parseIesFile(const std::string &file)
 
 	hor_angle_map_ = std::unique_ptr<float[]>(new float[hor_angles_]);
 
-	if(Y_LOG_HAS_VERBOSE) Y_VERBOSE << "IES Parser: Horizontal Angle Map:" << YENDL;
+	if(logger.isVerbose()) logger.logVerbose("IES Parser: Horizontal Angle Map:");
 
 	for(int i = 0; i < hor_angles_; ++i)
 	{
@@ -354,12 +351,12 @@ bool IesData::parseIesFile(const std::string &file)
 		}
 	}
 
-	if(Y_LOG_HAS_VERBOSE) Y_VERBOSE << "IES Parser: maxRad = " << max_rad_ << YENDL;
+	if(logger.isVerbose()) logger.logVerbose("IES Parser: maxRad = ", max_rad_);
 	max_rad_ = 1.f / max_rad_;
 
 	fin.close();
 
-	if(Y_LOG_HAS_VERBOSE) Y_VERBOSE << "IES Parser: IES File parsed successfully" << YENDL;
+	if(logger.isVerbose()) logger.logVerbose("IES Parser: IES File parsed successfully");
 
 	return true;
 }

@@ -27,14 +27,14 @@
 
 BEGIN_YAFARAY
 
-IesLight::IesLight(const Point3 &from, const Point3 &to, const Rgb &col, float power, const std::string ies_file, int smpls, bool s_sha, float ang, bool b_light_enabled, bool b_cast_shadows):
-		Light(Light::Flags::Singular), position_(from), samples_(smpls), soft_shadow_(s_sha)
+IesLight::IesLight(Logger &logger, const Point3 &from, const Point3 &to, const Rgb &col, float power, const std::string ies_file, int smpls, bool s_sha, float ang, bool b_light_enabled, bool b_cast_shadows):
+		Light(logger, Light::Flags::Singular), position_(from), samples_(smpls), soft_shadow_(s_sha)
 {
 	light_enabled_ = b_light_enabled;
 	cast_shadows_ = b_cast_shadows;
 	ies_data_ = std::unique_ptr<IesData>(new IesData());
 
-	if((ies_ok_ = ies_data_->parseIesFile(ies_file)))
+	if((ies_ok_ = ies_data_->parseIesFile(logger, ies_file)))
 	{
 		ndir_ = (from - to);
 		ndir_.normalize();
@@ -187,7 +187,7 @@ void IesLight::emitPdf(const SurfacePoint &sp, const Vec3 &wo, float &area_pdf, 
 	dir_pdf = (rad > 0.f) ? (tot_energy_ / rad) : 0.f;
 }
 
-std::unique_ptr<Light> IesLight::factory(ParamMap &params, const Scene &scene)
+std::unique_ptr<Light> IesLight::factory(Logger &logger, ParamMap &params, const Scene &scene)
 {
 	Point3 from(0.0);
 	Point3 to(0.f, 0.f, -1.f);
@@ -217,7 +217,7 @@ std::unique_ptr<Light> IesLight::factory(ParamMap &params, const Scene &scene)
 	params.getParam("with_diffuse", shoot_d);
 	params.getParam("photon_only", p_only);
 
-	auto light = std::unique_ptr<IesLight>(new IesLight(from, to, color, power, file, sam, s_sha, ang, light_enabled, cast_shadows));
+	auto light = std::unique_ptr<IesLight>(new IesLight(logger, from, to, color, power, file, sam, s_sha, ang, light_enabled, cast_shadows));
 
 	if(!light->isIesOk()) return nullptr;
 

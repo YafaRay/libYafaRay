@@ -29,8 +29,8 @@ class ImageLayers;
 class CallbackOutput final : public ColorOutput
 {
 	public:
-		static UniquePtr_t<ColorOutput> factory(const ParamMap &params, const Scene &scene, void *callback_user_data, OutputPutpixelCallback_t output_putpixel_callback, OutputFlushAreaCallback_t output_flush_area_callback, OutputFlushCallback_t output_flush_callback);
-		CallbackOutput(int width, int height, void *callback_user_data, OutputPutpixelCallback_t output_putpixel_callback, OutputFlushAreaCallback_t output_flush_area_callback, OutputFlushCallback_t output_flush_callback, const std::string &name = "out", const ColorSpace color_space = ColorSpace::RawManualGamma, float gamma = 1.f, bool with_alpha = true, bool alpha_premultiply = false) : ColorOutput(name, color_space, gamma, with_alpha, alpha_premultiply, callback_user_data, output_putpixel_callback, output_flush_area_callback, output_flush_callback) { width_ = width; height_ = height; }
+		static UniquePtr_t <yafaray4::ColorOutput> factory(Logger &logger, const ParamMap &params, const Scene &scene, void *callback_user_data, yafaray4_OutputPutpixelCallback_t output_putpixel_callback, yafaray4_OutputFlushAreaCallback_t output_flush_area_callback, yafaray4_OutputFlushCallback_t output_flush_callback);
+		CallbackOutput(Logger &logger, int width, int height, void *callback_user_data, yafaray4_OutputPutpixelCallback_t output_putpixel_callback, yafaray4_OutputFlushAreaCallback_t output_flush_area_callback, yafaray4_OutputFlushCallback_t output_flush_callback, const std::string &name = "out", const ColorSpace color_space = ColorSpace::RawManualGamma, float gamma = 1.f, bool with_alpha = true, bool alpha_premultiply = false) : ColorOutput(logger, name, color_space, gamma, with_alpha, alpha_premultiply, callback_user_data, output_putpixel_callback, output_flush_area_callback, output_flush_callback) { width_ = width; height_ = height; }
 
 	private:
 		virtual bool putPixel(int x, int y, const ColorLayer &color_layer) override;

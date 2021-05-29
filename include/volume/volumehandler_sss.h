@@ -30,10 +30,10 @@ class Scene;
 class SssVolumeHandler final : public BeerVolumeHandler
 {
 	public:
-		static std::unique_ptr<VolumeHandler> factory(const ParamMap &params, const Scene &scene);
+		static std::unique_ptr<VolumeHandler> factory(Logger &logger, const ParamMap &params, const Scene &scene);
 
 	private:
-		SssVolumeHandler(const Rgb &a_col, const Rgb &s_col, double dist);
+		SssVolumeHandler(Logger &logger, const Rgb &a_col, const Rgb &s_col, double dist);
 		virtual bool scatter(const RenderData &render_data, const Ray &ray, Ray &s_ray, PSample &s) const override;
 
 		float dist_s_;

@@ -24,6 +24,7 @@
 #include "integrator_tiled.h"
 #include "color/color.h"
 #include <map>
+#include <common/logger.h>
 
 BEGIN_YAFARAY
 
@@ -39,10 +40,10 @@ class Pdf1D;
 class BidirectionalIntegrator final : public TiledIntegrator
 {
 	public:
-		static std::unique_ptr<Integrator> factory(ParamMap &params, const Scene &scene);
+		static std::unique_ptr<Integrator> factory(yafaray4::Logger &logger, ParamMap &params, const Scene &scene);
 
 	private:
-		BidirectionalIntegrator(bool transp_shad = false, int shadow_depth = 4);
+		BidirectionalIntegrator(Logger &logger, bool transp_shad = false, int shadow_depth = 4);
 		virtual std::string getShortName() const override { return "BdPT"; }
 		virtual std::string getName() const override { return "BidirectionalPathTracer"; }
 		virtual bool preprocess(const RenderControl &render_control, const RenderView *render_view, ImageFilm *image_film) override;

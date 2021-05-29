@@ -36,10 +36,10 @@ class AcceleratorSimpleTest final : Accelerator
 			Bound bound_;
 			std::vector<const Primitive *> primitives_;
 		};
-		static std::unique_ptr<Accelerator> factory(const std::vector<const Primitive *> &primitives, ParamMap &params);
+		static std::unique_ptr<Accelerator> factory(Logger &logger, const std::vector<const Primitive *> &primitives, ParamMap &params);
 
 	private:
-		AcceleratorSimpleTest(const std::vector<const Primitive *> &primitives);
+		AcceleratorSimpleTest(Logger &logger, const std::vector<const Primitive *> &primitives);
 		virtual AcceleratorIntersectData intersect(const Ray &ray, float t_max) const override;
 		virtual AcceleratorIntersectData intersectS(const Ray &ray, float t_max, float shadow_bias) const override;
 		virtual AcceleratorTsIntersectData intersectTs(RenderData &render_data, const Ray &ray, int max_depth, float dist, float shadow_bias) const override;

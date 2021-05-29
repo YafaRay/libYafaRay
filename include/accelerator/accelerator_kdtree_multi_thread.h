@@ -40,7 +40,7 @@ struct IntersectData;
 class AcceleratorKdTreeMultiThread final : public Accelerator
 {
 	public:
-		static std::unique_ptr<Accelerator> factory(const std::vector<const Primitive *> &primitives, ParamMap &params);
+		static std::unique_ptr<Accelerator> factory(Logger &logger, const std::vector<const Primitive *> &primitives, ParamMap &params);
 
 	private:
 		struct Parameters;
@@ -51,7 +51,7 @@ class AcceleratorKdTreeMultiThread final : public Accelerator
 		struct Stack;
 		class BoundEdge;
 		class TreeBin;
-		AcceleratorKdTreeMultiThread(const std::vector<const Primitive *> &primitives, const Parameters &parameters);
+		AcceleratorKdTreeMultiThread(Logger &logger, const std::vector<const Primitive *> &primitives, const Parameters &parameters);
 		virtual ~AcceleratorKdTreeMultiThread() override;
 		virtual AcceleratorIntersectData intersect(const Ray &ray, float t_max) const override;
 		virtual AcceleratorIntersectData intersectS(const Ray &ray, float t_max, float shadow_bias) const override;
@@ -60,8 +60,8 @@ class AcceleratorKdTreeMultiThread final : public Accelerator
 
 		Result buildTree(const std::vector<const Primitive *> &primitives, const Bound &node_bound, const std::vector<uint32_t> &indices, int depth, uint32_t next_node_id, int bad_refines, const std::vector<Bound> &bounds, const Parameters &parameters, const ClipPlane &clip_plane, const std::vector<PolyDouble> &polygons, const std::vector<uint32_t> &primitive_indices) const;
 		void buildTreeWorker(const std::vector<const Primitive *> &primitives, const Bound &node_bound, const std::vector<uint32_t> &indices, int depth, uint32_t next_node_id, int bad_refines, const std::vector<Bound> &bounds, const Parameters &parameters, const ClipPlane &clip_plane, const std::vector<PolyDouble> &polygons, const std::vector<uint32_t> &primitive_indices, Result &result) const;
-		static SplitCost pigeonMinCost(float e_bonus, float cost_ratio, const std::vector<Bound> &bounds, const Bound &node_bound, const std::vector<uint32_t> &prim_indices);
-		static SplitCost minimalCost(float e_bonus, float cost_ratio, const Bound &node_bound, const std::vector<uint32_t> &indices, const std::vector<Bound> &bounds);
+		static SplitCost pigeonMinCost(Logger &logger, float e_bonus, float cost_ratio, const std::vector<Bound> &bounds, const Bound &node_bound, const std::vector<uint32_t> &prim_indices);
+		static SplitCost minimalCost(Logger &logger, float e_bonus, float cost_ratio, const Bound &node_bound, const std::vector<uint32_t> &indices, const std::vector<Bound> &bounds);
 		static AcceleratorIntersectData intersect(const Ray &ray, float t_max, const std::vector<Node> &nodes, const Bound &tree_bound);
 		static AcceleratorIntersectData intersectS(const Ray &ray, float t_max, float shadow_bias, const std::vector<Node> &nodes, const Bound &tree_bound);
 		static AcceleratorTsIntersectData intersectTs(RenderData &render_data, const Ray &ray, int max_depth, float t_max, float shadow_bias, const std::vector<Node> &nodes, const Bound &tree_bound);
@@ -84,7 +84,7 @@ struct AcceleratorKdTreeMultiThread::Parameters
 
 struct AcceleratorKdTreeMultiThread::Stats
 {
-	void outputLog(uint32_t num_primitives, int max_leaf_size) const;
+	void outputLog(Logger &logger, uint32_t num_primitives, int max_leaf_size) const;
 	Stats operator += (const Stats &kd_stats);
 	int kd_inodes_ = 0;
 	int kd_leaves_ = 0;

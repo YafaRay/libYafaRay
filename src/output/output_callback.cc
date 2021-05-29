@@ -24,7 +24,7 @@
 
 BEGIN_YAFARAY
 
-UniquePtr_t<ColorOutput> CallbackOutput::factory(const ParamMap &params, const Scene &scene, void *callback_user_data, OutputPutpixelCallback_t output_putpixel_callback, OutputFlushAreaCallback_t output_flush_area_callback, OutputFlushCallback_t output_flush_callback)
+UniquePtr_t <yafaray4::ColorOutput> CallbackOutput::factory(Logger &logger, const ParamMap &params, const Scene &scene, void *callback_user_data, yafaray4_OutputPutpixelCallback_t output_putpixel_callback, yafaray4_OutputFlushAreaCallback_t output_flush_area_callback, yafaray4_OutputFlushCallback_t output_flush_callback)
 {
 	std::string name;
 	int width = 0;
@@ -42,7 +42,7 @@ UniquePtr_t<ColorOutput> CallbackOutput::factory(const ParamMap &params, const S
 
 	const ColorSpace color_space = Rgb::colorSpaceFromName(color_space_str);
 
-	return UniquePtr_t<ColorOutput>(new CallbackOutput(width, height, callback_user_data, output_putpixel_callback, output_flush_area_callback, output_flush_callback, name, color_space, gamma, alpha_premultiply));
+	return UniquePtr_t<ColorOutput>(new CallbackOutput(logger, width, height, callback_user_data, output_putpixel_callback, output_flush_area_callback, output_flush_callback, name, color_space, gamma, alpha_premultiply));
 }
 
 bool CallbackOutput::putPixel(int x, int y, const ColorLayer &color_layer)

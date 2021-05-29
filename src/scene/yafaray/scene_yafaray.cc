@@ -39,28 +39,15 @@
 
 BEGIN_YAFARAY
 
-#define Y_VERBOSE_SCENE Y_VERBOSE << "Scene (YafaRay): "
-#define Y_ERROR_SCENE Y_ERROR << "Scene (YafaRay): "
-#define Y_WARN_SCENE Y_WARNING << "Scene (YafaRay): "
-
-#define WARN_EXIST Y_WARN_SCENE << "Sorry, " << pname << " \"" << name << "\" already exists!" << YENDL
-
-#define ERR_NO_TYPE Y_ERROR_SCENE << pname << " type not specified for \"" << name << "\" node!" << YENDL
-#define ERR_ON_CREATE(t) Y_ERROR_SCENE << "No " << pname << " could be constructed '" << t << "'!" << YENDL
-
-#define INFO_VERBOSE_SUCCESS(name, t) Y_VERBOSE_SCENE << "Added " << pname << " '"<< name << "' (" << t << ")!" << YENDL
-#define INFO_VERBOSE_SUCCESS_DISABLED(name, t) Y_VERBOSE_SCENE << "Added " << pname << " '"<< name << "' (" << t << ")! [DISABLED]" << YENDL
-
-
-std::unique_ptr<Scene> YafaRayScene::factory(ParamMap &params)
+std::unique_ptr<Scene> YafaRayScene::factory(Logger &logger, ParamMap &params)
 {
 	std::string scene_mode;
 	params.getParam("mode", scene_mode);
-	auto scene = std::unique_ptr<Scene>(new YafaRayScene());
+	auto scene = std::unique_ptr<Scene>(new YafaRayScene(logger));
 	return scene;
 }
 
-YafaRayScene::YafaRayScene()
+YafaRayScene::YafaRayScene(Logger &logger) : Scene(logger)
 {
 	current_object_ = nullptr;
 }
@@ -78,7 +65,7 @@ void YafaRayScene::clearObjects()
 
 bool YafaRayScene::endObject()
 {
-	if(Y_LOG_HAS_DEBUG) Y_DEBUG PRTEXT(YafaRayScene::endObject) PREND;
+	if(logger_.isDebug()) logger_.logDebug("YafaRayScene::endObject");
 	if(creation_state_.stack_.front() != CreationState::Object) return false;
 	const bool result = current_object_->calculateObject(creation_state_.current_material_);
 	creation_state_.stack_.pop_front();
@@ -87,7 +74,7 @@ bool YafaRayScene::endObject()
 
 bool YafaRayScene::smoothNormals(const std::string &name, float angle)
 {
-	if(Y_LOG_HAS_DEBUG) Y_DEBUG PRTEXT(YafaRayScene::startObject) PR(name) PR(angle) PREND;
+	if(logger_.isDebug()) logger_.logDebug("YafaRayScene::startObject) PR(name) PR(angle");
 	if(creation_state_.stack_.front() != CreationState::Geometry) return false;
 	Object *object;
 	if(!name.empty())
@@ -101,21 +88,21 @@ bool YafaRayScene::smoothNormals(const std::string &name, float angle)
 		object = current_object_;
 		if(!object) return false;
 	}
-	MeshObject *mesh_object = MeshObject::getMeshFromObject(object);
+	MeshObject *mesh_object = MeshObject::getMeshFromObject(logger_, object);
 	if(!mesh_object) return false;
 	else if(mesh_object->hasNormalsExported() && mesh_object->numNormals() == mesh_object->numVertices())
 	{
 		mesh_object->setSmooth(true);
 		return true;
 	}
-	else return mesh_object->smoothNormals(angle);
+	else return mesh_object->smoothNormals(logger_, angle);
 }
 
 int YafaRayScene::addVertex(const Point3 &p)
 {
-	//if(Y_LOG_HAS_DEBUG) Y_DEBUG PRTEXT(YafaRayScene::addVertex) PR(p) PREND;
+	//if(logger_.isDebug()) logger.logDebug("YafaRayScene::addVertex) PR(p");
 	if(creation_state_.stack_.front() != CreationState::Object) return -1;
-	MeshObject *mesh_object = MeshObject::getMeshFromObject(current_object_);
+	MeshObject *mesh_object = MeshObject::getMeshFromObject(logger_, current_object_);
 	if(!mesh_object) return -1;
 	else
 	{
@@ -133,7 +120,7 @@ int YafaRayScene::addVertex(const Point3 &p)
 int YafaRayScene::addVertex(const Point3 &p, const Point3 &orco)
 {
 	if(creation_state_.stack_.front() != CreationState::Object) return -1;
-	MeshObject *mesh_object = MeshObject::getMeshFromObject(current_object_);
+	MeshObject *mesh_object = MeshObject::getMeshFromObject(logger_, current_object_);
 	if(!mesh_object) return -1;
 	else
 	{
@@ -148,7 +135,7 @@ int YafaRayScene::addVertex(const Point3 &p, const Point3 &orco)
 void YafaRayScene::addNormal(const Vec3 &n)
 {
 	if(creation_state_.stack_.front() != CreationState::Object) return;
-	MeshObject *mesh_object = MeshObject::getMeshFromObject(current_object_);
+	MeshObject *mesh_object = MeshObject::getMeshFromObject(logger_, current_object_);
 	if(!mesh_object) return;
 	mesh_object->addNormal(n);
 }
@@ -156,7 +143,7 @@ void YafaRayScene::addNormal(const Vec3 &n)
 bool YafaRayScene::addFace(const std::vector<int> &vert_indices, const std::vector<int> &uv_indices)
 {
 	if(creation_state_.stack_.front() != CreationState::Object) return false;
-	MeshObject *mesh_object = MeshObject::getMeshFromObject(current_object_);
+	MeshObject *mesh_object = MeshObject::getMeshFromObject(logger_, current_object_);
 	if(!mesh_object) return false;
 	mesh_object->addFace(vert_indices, uv_indices, creation_state_.current_material_);
 	return true;
@@ -165,7 +152,7 @@ bool YafaRayScene::addFace(const std::vector<int> &vert_indices, const std::vect
 int YafaRayScene::addUv(float u, float v)
 {
 	if(creation_state_.stack_.front() != CreationState::Object) return false;
-	MeshObject *mesh_object = MeshObject::getMeshFromObject(current_object_);
+	MeshObject *mesh_object = MeshObject::getMeshFromObject(logger_, current_object_);
 	if(!mesh_object) return -1;
 	return mesh_object->addUvValue({u, v});
 }
@@ -175,27 +162,27 @@ Object *YafaRayScene::createObject(const std::string &name, ParamMap &params)
 	std::string pname = "Object";
 	if(objects_.find(name) != objects_.end())
 	{
-		WARN_EXIST;
+		logWarnExist(logger_, pname, name);
 		return nullptr;
 	}
 	std::string type;
 	if(!params.getParam("type", type))
 	{
-		ERR_NO_TYPE;
+		logErrNoType(logger_, pname, name, type);
 		return nullptr;
 	}
-	std::unique_ptr<Object> object = Object::factory(params, *this);
+	std::unique_ptr<Object> object = Object::factory(logger_, params, *this);
 	if(object)
 	{
 		object->setName(name);
 		objects_[name] = std::move(object);
-		if(Y_LOG_HAS_VERBOSE) INFO_VERBOSE_SUCCESS(name, type);
+		if(logger_.isVerbose()) logInfoVerboseSuccess(logger_, pname, name, type);
 		creation_state_.stack_.push_front(CreationState::Object);
 		creation_state_.changes_ |= CreationState::Flags::CGeom;
 		current_object_ = objects_[name].get();
 		return objects_[name].get();
 	}
-	ERR_ON_CREATE(type);
+	logErrOnCreate(logger_, pname, name, type);
 	return nullptr;
 }
 
@@ -218,7 +205,7 @@ bool YafaRayScene::updateObjects()
 	}
 	if(primitives.empty())
 	{
-		Y_ERROR << "Scene: Scene is empty..." << YENDL;
+		logger_.logError("Scene: Scene is empty...");
 		return false;
 	}
 	ParamMap params;
@@ -230,32 +217,32 @@ bool YafaRayScene::updateObjects()
 	params["empty_bonus"] = 0.33f;
 	params["accelerator_threads"] = getNumThreads();
 
-	accelerator_ = Accelerator::factory(primitives, params);
+	accelerator_ = Accelerator::factory(logger_, primitives, params);
 	scene_bound_ = accelerator_->getBound();
-	if(Y_LOG_HAS_VERBOSE) Y_VERBOSE << "Scene: New scene bound is: " << "(" << scene_bound_.a_.x_ << ", " << scene_bound_.a_.y_ << ", " << scene_bound_.a_.z_ << "), (" << scene_bound_.g_.x_ << ", " << scene_bound_.g_.y_ << ", " << scene_bound_.g_.z_ << ")" << YENDL;
+	if(logger_.isVerbose()) logger_.logVerbose("Scene: New scene bound is: ", "(", scene_bound_.a_.x_, ", ", scene_bound_.a_.y_, ", ", scene_bound_.a_.z_, "), (", scene_bound_.g_.x_, ", ", scene_bound_.g_.y_, ", ", scene_bound_.g_.z_, ")");
 
 	if(shadow_bias_auto_) shadow_bias_ = shadow_bias_global;
 	if(ray_min_dist_auto_) ray_min_dist_ = min_raydist_global;
 
-	Y_INFO << "Scene: total scene dimensions: X=" << scene_bound_.longX() << ", Y=" << scene_bound_.longY() << ", Z=" << scene_bound_.longZ() << ", volume=" << scene_bound_.vol() << ", Shadow Bias=" << shadow_bias_ << (shadow_bias_auto_ ? " (auto)" : "") << ", Ray Min Dist=" << ray_min_dist_ << (ray_min_dist_auto_ ? " (auto)" : "") << YENDL;
+	logger_.logInfo("Scene: total scene dimensions: X=", scene_bound_.longX(), ", Y=", scene_bound_.longY(), ", Z=", scene_bound_.longZ(), ", volume=", scene_bound_.vol(), ", Shadow Bias=", shadow_bias_, (shadow_bias_auto_ ? " (auto)" : ""), ", Ray Min Dist=", ray_min_dist_, (ray_min_dist_auto_ ? " (auto)" : ""));
 	return true;
 }
 
 bool YafaRayScene::addInstance(const std::string &base_object_name, const Matrix4 &obj_to_world)
 {
-	//if(Y_LOG_HAS_DEBUG) Y_DEBUG PRTEXT(YafaRayScene::addInstance) PR(base_object_name) PREND;
-	//if(Y_LOG_HAS_DEBUG) Y_DEBUG PRPREC(6) PR(obj_to_world) PREND;
+	//if(logger_.isDebug()) logger.logDebug("YafaRayScene::addInstance) PR(base_object_name");
+	//if(logger_.isDebug()) Y_DEBUG PRPREC(6) PR(obj_to_world");
 	const Object *base_object = objects_.find(base_object_name)->second.get();
 	if(objects_.find(base_object_name) == objects_.end())
 	{
-		Y_ERROR << "Base mesh for instance doesn't exist " << base_object_name << YENDL;
+		logger_.logError("Base mesh for instance doesn't exist ", base_object_name);
 		return false;
 	}
 	int id = getNextFreeId();
 	if(id > 0)
 	{
 		const std::string instance_name = base_object_name + "-" + std::to_string(id);
-		if(Y_LOG_HAS_DEBUG) Y_DEBUG << "  " PRTEXT(Instance:) PR(instance_name) PR(base_object_name) PREND;
+		if(logger_.isDebug())logger_.logDebug("  Instance: ", instance_name, " base_object_name=", base_object_name);
 		objects_[instance_name] = std::unique_ptr<Object>(new ObjectInstance(*base_object, obj_to_world));
 		return true;
 	}

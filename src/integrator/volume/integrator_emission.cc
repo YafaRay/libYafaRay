@@ -62,9 +62,9 @@ Rgba EmissionIntegrator::integrate(RenderData &render_data, const Ray &ray, int 
 	return result;
 }
 
-std::unique_ptr<Integrator> EmissionIntegrator::factory(ParamMap &params, const Scene &scene)
+std::unique_ptr<Integrator> EmissionIntegrator::factory(Logger &logger, ParamMap &params, const Scene &scene)
 {
-	return std::unique_ptr<Integrator>(new EmissionIntegrator());
+	return std::unique_ptr<Integrator>(new EmissionIntegrator(logger));
 }
 
 END_YAFARAY

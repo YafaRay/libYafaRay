@@ -24,7 +24,6 @@
 #include "common/logger.h"
 #include "common/file.h"
 #include "common/badge.h"
-#include "color/color_console.h"
 #include <algorithm>
 #include <cmath>
 
@@ -55,17 +54,7 @@ void Logger::saveTxtLog(const std::string &name, const Badge &badge, const Rende
 			if(print_datetime_) ss << "[" << Logger::printDate(log_entry.date_time_) << " " << Logger::printTime(log_entry.date_time_);
 			ss << " (" << Logger::printDuration(log_entry.duration_) << ")";
 			if(print_datetime_) ss << "] ";
-
-			switch(log_entry.verbosity_level_)
-			{
-				case VlDebug: ss << "DEBUG: "; break;
-				case VlVerbose: ss << "VERB: "; break;
-				case VlInfo: ss << "INFO: "; break;
-				case VlParams: ss << "PARM: "; break;
-				case VlWarning: ss << "WARNING: "; break;
-				case VlError: ss << "ERROR: "; break;
-				default: ss << "LOG: "; break;
-			}
+			ss << logLevelStringFromLevel(log_entry.verbosity_level_) << ": ";
 			ss << log_entry.description_;
 		}
 	}
@@ -152,17 +141,8 @@ void Logger::saveHtmlLog(const std::string &name, const Badge &badge, const Rend
 		{
 			if(print_datetime_) ss << "<tr><td>" << Logger::printDate(log_entry.date_time_) << "</td><td>" << Logger::printTime(log_entry.date_time_) << "</td>";
 			ss << "<td>" << Logger::printDuration(log_entry.duration_) << "</td>";
-
-			switch(log_entry.verbosity_level_)
-			{
-				case VlDebug: ss << "<td BGCOLOR=#ff80ff>DEBUG: "; break;
-				case VlVerbose: ss << "<td BGCOLOR=#80ff80>VERB: "; break;
-				case VlInfo: ss << "<td BGCOLOR=#40ff40>INFO: "; break;
-				case VlParams: ss << "<td BGCOLOR=#80ffff>PARM: "; break;
-				case VlWarning: ss << "<td BGCOLOR=#ffff00>WARNING: "; break;
-				case VlError: ss << "<td BGCOLOR=#ff4040>ERROR: "; break;
-				default: ss << "<td>LOG: "; break;
-			}
+			ss << "<td BGCOLOR=#" << htmlColorFromLevel(log_entry.verbosity_level_) << ">";
+			ss << logLevelStringFromLevel(log_entry.verbosity_level_) << ": ";
 			ss << "</td><td>" << log_entry.description_ << "</td></tr>";
 		}
 		ss << std::endl << "</table></body></html>" << std::endl;
@@ -183,89 +163,71 @@ void Logger::clearAll()
 	image_path_.clear();
 }
 
-Logger &Logger::out(int verbosity_level)
-{
-#if !defined(_WIN32) || defined(__MINGW32__)
-	//Don't lock if building with Visual Studio because it cause hangs when executing YafaRay in Windows 7 for some weird reason!
-	std::lock_guard<std::mutex> lock_guard(mutx_);
-#else
-#endif
-	verbosity_level_ = verbosity_level;
-	const std::time_t current_datetime = std::time(nullptr);
-
-	if(verbosity_level_ <= log_master_verbosity_level_)
-	{
-		if(previous_log_event_date_time_ == 0) previous_log_event_date_time_ = current_datetime;
-		const double duration = std::difftime(current_datetime, previous_log_event_date_time_);
-		memory_log_.push_back(LogEntry(current_datetime, duration, verbosity_level_, ""));
-		previous_log_event_date_time_ = current_datetime;
-	}
-
-	if(verbosity_level_ <= console_master_verbosity_level_)
-	{
-		if(previous_console_event_date_time_ == 0) previous_console_event_date_time_ = current_datetime;
-		const double duration = std::difftime(current_datetime, previous_console_event_date_time_);
-		std::string date_time_str;
-		if(print_datetime_) date_time_str = "[" + Logger::printTime(current_datetime) + "] ";
-		if(console_log_colors_enabled_)
-		{
-			switch(verbosity_level_)
-			{
-				case VlDebug: std::cout << ConsoleColor(ConsoleColor::Magenta) << date_time_str << "DEBUG"; break;
-				case VlVerbose: std::cout << ConsoleColor(ConsoleColor::Green) << date_time_str << "VERB"; break;
-				case VlInfo: std::cout << ConsoleColor(ConsoleColor::Green) << date_time_str << "INFO"; break;
-				case VlParams: std::cout << ConsoleColor(ConsoleColor::Cyan) << date_time_str << "PARM"; break;
-				case VlWarning: std::cout << ConsoleColor(ConsoleColor::Yellow) << date_time_str << "WARNING"; break;
-				case VlError: std::cout << ConsoleColor(ConsoleColor::Red) << date_time_str << "ERROR"; break;
-				default: std::cout << ConsoleColor(ConsoleColor::White) << date_time_str << "LOG"; break;
-			}
-		}
-		else
-		{
-			switch(verbosity_level_)
-			{
-				case VlDebug: std::cout << date_time_str << "DEBUG"; break;
-				case VlVerbose: std::cout << date_time_str << "VERB"; break;
-				case VlInfo: std::cout << date_time_str << "INFO"; break;
-				case VlParams: std::cout << date_time_str << "PARM"; break;
-				case VlWarning: std::cout << date_time_str << "WARNING"; break;
-				case VlError: std::cout << date_time_str << "ERROR"; break;
-				default: std::cout << date_time_str << "LOG"; break;
-			}
-		}
-		if(duration == 0) std::cout << ": ";
-		else std::cout << " (" << Logger::printDurationSimpleFormat(duration) << "): ";
-		if(console_log_colors_enabled_) std::cout << ConsoleColor();
-		previous_console_event_date_time_ = current_datetime;
-	}
-	return *this;
-}
-
 int Logger::vlevelFromString(std::string str_v_level)
 {
 	int vlevel;
-	if(str_v_level == "debug") vlevel = VlDebug;
-	else if(str_v_level == "verbose") vlevel = VlVerbose;
-	else if(str_v_level == "info") vlevel = VlInfo;
-	else if(str_v_level == "params") vlevel = VlParams;
-	else if(str_v_level == "warning") vlevel = VlWarning;
-	else if(str_v_level == "error") vlevel = VlError;
-	else if(str_v_level == "mute") vlevel = VlMute;
-	else if(str_v_level == "disabled") vlevel = VlMute;
-	else vlevel = VlVerbose;
+	if(str_v_level == "debug") vlevel = YAFARAY_LOG_LEVEL_DEBUG;
+	else if(str_v_level == "verbose") vlevel = YAFARAY_LOG_LEVEL_VERBOSE;
+	else if(str_v_level == "info") vlevel = YAFARAY_LOG_LEVEL_INFO;
+	else if(str_v_level == "params") vlevel = YAFARAY_LOG_LEVEL_PARAMS;
+	else if(str_v_level == "warning") vlevel = YAFARAY_LOG_LEVEL_WARNING;
+	else if(str_v_level == "error") vlevel = YAFARAY_LOG_LEVEL_ERROR;
+	else if(str_v_level == "mute") vlevel = YAFARAY_LOG_LEVEL_MUTE;
+	else if(str_v_level == "disabled") vlevel = YAFARAY_LOG_LEVEL_MUTE;
+	else vlevel = YAFARAY_LOG_LEVEL_VERBOSE;
 	return vlevel;
 }
 
-void Logger::setConsoleMasterVerbosity(const std::string &str_v_level)
+std::string Logger::logLevelStringFromLevel(int v_level)
 {
-	const int vlevel = Logger::vlevelFromString(str_v_level);
-	console_master_verbosity_level_ = std::max((int)VlMute, std::min(vlevel, (int)VlDebug));
+	switch(v_level)
+	{
+		case YAFARAY_LOG_LEVEL_DEBUG: return "DEBUG";
+		case YAFARAY_LOG_LEVEL_VERBOSE: return "VERB";
+		case YAFARAY_LOG_LEVEL_INFO: return "INFO";
+		case YAFARAY_LOG_LEVEL_PARAMS: return "PARM";
+		case YAFARAY_LOG_LEVEL_WARNING: return "WARNING";
+		case YAFARAY_LOG_LEVEL_ERROR: return "ERROR";
+		default: return "LOG";
+	}
 }
 
-void Logger::setLogMasterVerbosity(const std::string &str_v_level)
+ConsoleColor Logger::consoleColorFromLevel(int v_level)
 {
-	const int vlevel = Logger::vlevelFromString(str_v_level);
-	log_master_verbosity_level_ = std::max((int)VlMute, std::min(vlevel, (int)VlDebug));
+	switch(v_level)
+	{
+	case YAFARAY_LOG_LEVEL_DEBUG: return ConsoleColor::Magenta;
+	case YAFARAY_LOG_LEVEL_VERBOSE: return ConsoleColor::Green;
+	case YAFARAY_LOG_LEVEL_INFO: return ConsoleColor::Green;
+	case YAFARAY_LOG_LEVEL_PARAMS: return ConsoleColor::Cyan;
+	case YAFARAY_LOG_LEVEL_WARNING: return ConsoleColor::Yellow;
+	case YAFARAY_LOG_LEVEL_ERROR: return ConsoleColor::Red;
+	default: return ConsoleColor::White;
+	}
+}
+
+std::string Logger::htmlColorFromLevel(int v_level)
+{
+	switch(v_level)
+	{
+		case YAFARAY_LOG_LEVEL_DEBUG: return "ff80ff";
+		case YAFARAY_LOG_LEVEL_VERBOSE: return "80ff80";
+		case YAFARAY_LOG_LEVEL_INFO: return "40ff40";
+		case YAFARAY_LOG_LEVEL_PARAMS: return "80ffff";
+		case YAFARAY_LOG_LEVEL_WARNING: return "ffff00";
+		case YAFARAY_LOG_LEVEL_ERROR: return "ff4040";
+		default: return "ffffff";
+	}
+}
+
+void Logger::setConsoleMasterVerbosity(const ::yafaray4_LogLevel_t &log_level)
+{
+	console_master_verbosity_level_ = std::max(static_cast<int>(YAFARAY_LOG_LEVEL_MUTE), std::min(static_cast<int>(log_level), static_cast<int>(YAFARAY_LOG_LEVEL_DEBUG)));
+}
+
+void Logger::setLogMasterVerbosity(const ::yafaray4_LogLevel_t &log_level)
+{
+	log_master_verbosity_level_ = std::max(static_cast<int>(YAFARAY_LOG_LEVEL_MUTE), std::min(static_cast<int>(log_level), static_cast<int>(YAFARAY_LOG_LEVEL_DEBUG)));
 }
 
 std::string Logger::printTime(const std::time_t &datetime)
@@ -362,9 +324,9 @@ void Logger::statsIncrementBucket(std::string stat_name, double stat_value, doub
 	statsAdd(stat_name, increment_amount, index);
 }
 
-Logger::LogLevel Logger::getMaxLogLevel() const
+::yafaray4_LogLevel_t Logger::getMaxLogLevel() const
 {
-	return static_cast<LogLevel>(std::max(console_master_verbosity_level_, log_master_verbosity_level_));
+	return static_cast<::yafaray4_LogLevel_t>(std::max(console_master_verbosity_level_, log_master_verbosity_level_));
 }
 
 END_YAFARAY

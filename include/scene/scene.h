@@ -75,8 +75,8 @@ typedef unsigned int ObjId_t;
 class Scene
 {
 	public:
-		static std::unique_ptr<Scene> factory(ParamMap &params);
-		Scene();
+		static std::unique_ptr<Scene> factory(Logger &logger, ParamMap &params);
+		Scene(Logger &logger);
 		Scene(const Scene &s) = delete;
 		virtual ~Scene();
 		virtual int addVertex(const Point3 &p) = 0;
@@ -142,7 +142,7 @@ class Scene
 		VolumeRegion *createVolumeRegion(const std::string &name, ParamMap &params);
 		RenderView *createRenderView(const std::string &name, ParamMap &params);
 		std::shared_ptr<Image> createImage(const std::string &name, ParamMap &params);
-		ColorOutput *createOutput(const std::string &name, ParamMap &params, bool auto_delete = true, void *callback_user_data = nullptr, OutputPutpixelCallback_t output_putpixel_callback = nullptr, OutputFlushAreaCallback_t output_flush_area_callback = nullptr, OutputFlushCallback_t output_flush_callback = nullptr);
+		ColorOutput *createOutput(const std::string &name, ParamMap &params, bool auto_delete = true, void *callback_user_data = nullptr, yafaray4_OutputPutpixelCallback_t output_putpixel_callback = nullptr, yafaray4_OutputFlushAreaCallback_t output_flush_area_callback = nullptr, yafaray4_OutputFlushCallback_t output_flush_callback = nullptr);
 		ColorOutput *createOutput(const std::string &name, UniquePtr_t<ColorOutput> output, bool auto_delete = true);
 		bool removeOutput(const std::string &name);
 		void clearOutputs();
@@ -158,6 +158,12 @@ class Scene
 		const Layers &getLayers() const { return layers_; }
 		float getShadowBias() const { return shadow_bias_; }
 		float getRayMinDist() const { return ray_min_dist_; }
+
+		static void logWarnExist(Logger &logger, const std::string &pname, const std::string &name);
+		static void logErrNoType(Logger &logger, const std::string &pname, const std::string &name, const std::string &type);
+		static void logErrOnCreate(Logger &logger, const std::string &pname, const std::string &name, const std::string &t);
+		static void logInfoVerboseSuccess(Logger &logger, const std::string &pname, const std::string &name, const std::string &t);
+		static void logInfoVerboseSuccessDisabled(Logger &logger, const std::string &pname, const std::string &name, const std::string &t);
 
 		VolumeIntegrator *vol_integrator_ = nullptr;
 		float shadow_bias_ = 1.0e-4f;  //shadow bias to apply to shadows to avoid self-shadow artifacts
@@ -179,6 +185,7 @@ class Scene
 		std::string scene_accelerator_;
 		std::map<std::string, std::unique_ptr<Light>> lights_;
 		std::map<std::string, std::unique_ptr<Material>> materials_;
+		Logger &logger_;
 
 	private:
 		const Layers getLayersWithImages() const;
@@ -188,11 +195,11 @@ class Scene
 		template <typename T> static std::shared_ptr<T> findMapItem(const std::string &name, const std::map<std::string, std::shared_ptr<T>> &map);
 		void setMaskParams(const ParamMap &params);
 		void setEdgeToonParams(const ParamMap &params);
-		template <typename T> static T *createMapItem(const std::string &name, const std::string &class_name, std::unique_ptr<T> item, std::map<std::string, std::unique_ptr<T>> &map);
-		template <typename T> static T *createMapItem(const std::string &name, const std::string &class_name, UniquePtr_t<T> item, std::map<std::string, UniquePtr_t<T>> &map, bool auto_delete);
-		template <typename T> static T *createMapItem(const std::string &name, const std::string &class_name, ParamMap &params, std::map<std::string, std::unique_ptr<T>> &map, Scene *scene, bool check_type_exists = true);
-		template <typename T> static T *createMapItem(const std::string &name, const std::string &class_name, ParamMap &params, std::map<std::string, UniquePtr_t<T>> &map, bool auto_delete, Scene *scene, bool check_type_exists = true);
-		template <typename T> static std::shared_ptr<T> createMapItem(const std::string &name, const std::string &class_name, ParamMap &params, std::map<std::string, std::shared_ptr<T>> &map, Scene *scene, bool check_type_exists = true);
+		template <typename T> static T *createMapItem(Logger &logger, const std::string &name, const std::string &class_name, std::unique_ptr<T> item, std::map<std::string, std::unique_ptr<T>> &map);
+		template <typename T> static T *createMapItem(Logger &logger, const std::string &name, const std::string &class_name, UniquePtr_t<T> item, std::map<std::string, UniquePtr_t<T>> &map, bool auto_delete);
+		template <typename T> static T *createMapItem(Logger &logger, const std::string &name, const std::string &class_name, ParamMap &params, std::map<std::string, std::unique_ptr<T>> &map, Scene *scene, bool check_type_exists = true);
+		template <typename T> static T *createMapItem(Logger &logger, const std::string &name, const std::string &class_name, ParamMap &params, std::map<std::string, UniquePtr_t<T>> &map, bool auto_delete, Scene *scene, bool check_type_exists = true);
+		template <typename T> static std::shared_ptr<T> createMapItem(Logger &logger, const std::string &name, const std::string &class_name, ParamMap &params, std::map<std::string, std::shared_ptr<T>> &map, Scene *scene, bool check_type_exists = true);
 		void defineBasicLayers();
 		void defineDependentLayers(); //!< This function generates the basic/auxiliary layers. Must be called *after* defining all render layers with the defineLayer function.
 

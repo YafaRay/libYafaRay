@@ -34,7 +34,7 @@ class LayerNode final : public ShaderNode
 			Flags(unsigned int flags) : yafaray4::Flags(flags) { }
 			enum Enum : unsigned int { None = 0, RgbToInt = 1 << 0, Stencil = 1 << 1, Negative = 1 << 2, AlphaMix = 1 << 3 };
 		};
-		static std::unique_ptr<ShaderNode> factory(const ParamMap &params, const Scene &scene);
+		static std::unique_ptr<ShaderNode> factory(Logger &logger, const ParamMap &params, const Scene &scene);
 
 	private:
 		enum class BlendMode { Mix, Add, Mult, Sub, Screen, Div, Diff, Dark, Light };
@@ -44,7 +44,7 @@ class LayerNode final : public ShaderNode
 		LayerNode(const Flags &flags, float col_fac, float var_fac, float def_val, const Rgba &def_col, const BlendMode &blend_mode);
 		virtual void eval(NodeStack &stack, const RenderData &render_data, const SurfacePoint &sp) const override;
 		virtual void evalDerivative(NodeStack &stack, const RenderData &render_data, const SurfacePoint &sp) const override;
-		virtual bool configInputs(const ParamMap &params, const NodeFinder &find) override;
+		virtual bool configInputs(Logger &logger, const ParamMap &params, const NodeFinder &find) override;
 		//virtual void getDerivative(const surfacePoint_t &sp, float &du, float &dv) const;
 		virtual bool getDependencies(std::vector<const ShaderNode *> &dep) const override;
 

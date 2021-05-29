@@ -31,9 +31,10 @@ BEGIN_YAFARAY
 class ExrFormat final : public Format
 {
 	public:
-		static std::unique_ptr<Format> factory(ParamMap &params);
+		static std::unique_ptr<Format> factory(Logger &logger, ParamMap &params);
 
 	private:
+		ExrFormat(Logger &logger) : Format(logger) { }
 		virtual std::string getFormatName() const override { return "ExrFormat"; }
 		virtual std::unique_ptr<Image> loadFromFile(const std::string &name, const Image::Optimization &optimization, const ColorSpace &color_space, float gamma) override;
 		virtual bool saveToFile(const std::string &name, const Image *image) override;

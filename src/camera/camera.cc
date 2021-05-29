@@ -31,25 +31,25 @@
 
 BEGIN_YAFARAY
 
-std::unique_ptr<Camera> Camera::factory(ParamMap &params, const Scene &scene)
+std::unique_ptr<Camera> Camera::factory(Logger &logger, ParamMap &params, const Scene &scene)
 {
-	if(Y_LOG_HAS_DEBUG)
+	if(logger.isDebug())
 	{
-		Y_DEBUG PRTEXT(**Camera) PREND;
-		params.printDebug();
+		logger.logDebug("**Camera");
+		params.logContents(logger);
 	}
 	std::string type;
 	params.getParam("type", type);
-	if(type == "angular") return AngularCamera::factory(params, scene);
-	else if(type == "perspective") return PerspectiveCamera::factory(params, scene);
-	else if(type == "architect") return ArchitectCamera::factory(params, scene);
-	else if(type == "orthographic") return OrthographicCamera::factory(params, scene);
-	else if(type == "equirectangular") return EquirectangularCamera::factory(params, scene);
+	if(type == "angular") return AngularCamera::factory(logger, params, scene);
+	else if(type == "perspective") return PerspectiveCamera::factory(logger, params, scene);
+	else if(type == "architect") return ArchitectCamera::factory(logger, params, scene);
+	else if(type == "orthographic") return OrthographicCamera::factory(logger, params, scene);
+	else if(type == "equirectangular") return EquirectangularCamera::factory(logger, params, scene);
 	else return nullptr;
 }
 
-Camera::Camera(const Point3 &pos, const Point3 &look, const Point3 &up, int resx, int resy, float aspect, const float near_clip_distance, const float far_clip_distance) :
-		position_(pos), resx_(resx), resy_(resy), aspect_ratio_(aspect * (float)resy_ / (float)resx_)
+Camera::Camera(Logger &logger, const Point3 &pos, const Point3 &look, const Point3 &up, int resx, int resy, float aspect, const float near_clip_distance, const float far_clip_distance) :
+		position_(pos), resx_(resx), resy_(resy), aspect_ratio_(aspect * (float)resy_ / (float)resx_), logger_(logger)
 {
 	// Calculate and store camera axis
 	cam_y_ = up - position_;

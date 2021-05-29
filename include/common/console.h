@@ -215,9 +215,9 @@ void CliParser::setAppName(const std::string &name, const std::string &b_usage)
 }
 void CliParser::printUsage() const
 {
-	Y_INFO << app_name_ << YENDL
+	logger_.logInfo(app_name_ << YENDL
 		   << "Usage: " << bin_name_ << " " << basic_usage_ << YENDL
-		   << "OPTIONS:" << YENDL;
+		   << "OPTIONS:");
 	for(size_t i = 0; i < reg_options_.size(); i++)
 	{
 		std::stringstream name;
@@ -225,14 +225,14 @@ void CliParser::printUsage() const
 		std::cout << "    "
 				  << std::setiosflags(std::ios::left) << std::setw(35)
 				  << name.str()
-				  << reg_options_[i]->desc_ << YENDL;
+				  << reg_options_[i]->desc_);
 	}
-	Y_INFO << "Usage instructions end." << YENDL;
+	logger_.logInfo("Usage instructions end.");
 }
 
 void CliParser::printError() const
 {
-	Y_ERROR << parse_error_ << YENDL;
+	logger_.logError(parse_error_);
 }
 
 bool CliParser::parseCommandLine()

@@ -32,10 +32,10 @@ class Scene;
 class ExpDensityVolumeRegion final : public DensityVolumeRegion
 {
 	public:
-		static std::unique_ptr<VolumeRegion> factory(const ParamMap &params, const Scene &scene);
+		static std::unique_ptr<VolumeRegion> factory(Logger &logger, const ParamMap &params, const Scene &scene);
 
 	private:
-		ExpDensityVolumeRegion(Rgb sa, Rgb ss, Rgb le, float gg, Point3 pmin, Point3 pmax, int attgrid_scale, float aa, float bb);
+		ExpDensityVolumeRegion(Logger &logger, Rgb sa, Rgb ss, Rgb le, float gg, Point3 pmin, Point3 pmax, int attgrid_scale, float aa, float bb);
 		virtual float density(Point3 p) const override;
 
 		float a_, b_;

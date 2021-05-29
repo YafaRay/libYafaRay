@@ -22,6 +22,7 @@
 #ifndef YAFARAY_LIGHT_IES_H
 #define YAFARAY_LIGHT_IES_H
 
+#include <common/logger.h>
 #include "light/light.h"
 #include "geometry/vector.h"
 
@@ -34,10 +35,10 @@ class IesData;
 class IesLight final : public Light
 {
 	public:
-		static std::unique_ptr<Light> factory(ParamMap &params, const Scene &scene);
+		static std::unique_ptr<Light> factory(Logger &logger, ParamMap &params, const Scene &scene);
 
 	private:
-		IesLight(const Point3 &from, const Point3 &to, const Rgb &col, float power, const std::string ies_file, int smpls, bool s_sha, float ang, bool b_light_enabled = true, bool b_cast_shadows = true);
+		IesLight(Logger &logger, const Point3 &from, const Point3 &to, const Rgb &col, float power, const std::string ies_file, int smpls, bool s_sha, float ang, bool b_light_enabled = true, bool b_cast_shadows = true);
 		virtual Rgb totalEnergy() const override{ return color_ * tot_energy_;};
 		virtual int nSamples() const override { return samples_; };
 		virtual bool diracLight() const override { return !soft_shadow_; }

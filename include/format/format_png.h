@@ -32,9 +32,10 @@ struct PngStructs;
 class PngFormat final : public Format
 {
 	public:
-		static std::unique_ptr<Format> factory(ParamMap &params);
+		static std::unique_ptr<Format> factory(Logger &logger, ParamMap &params);
 
 	private:
+		PngFormat(Logger &logger) : Format(logger) { }
 		virtual std::string getFormatName() const override { return "PngFormat"; }
 		virtual std::unique_ptr<Image> loadFromFile(const std::string &name, const Image::Optimization &optimization, const ColorSpace &color_space, float gamma) override;
 		virtual std::unique_ptr<Image> loadFromMemory(const uint8_t *data, size_t size, const Image::Optimization &optimization, const ColorSpace &color_space, float gamma) override;

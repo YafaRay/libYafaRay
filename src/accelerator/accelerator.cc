@@ -31,25 +31,25 @@
 
 BEGIN_YAFARAY
 
-std::unique_ptr<Accelerator> Accelerator::factory(const std::vector<const Primitive *> &primitives_list, ParamMap &params)
+std::unique_ptr<Accelerator> Accelerator::factory(Logger &logger, const std::vector<const Primitive *> &primitives_list, ParamMap &params)
 {
-	if(Y_LOG_HAS_DEBUG)
+	if(logger.isDebug())
 	{
-		Y_DEBUG PRTEXT(**Accelerator) PREND;
-		params.printDebug();
+		logger.logDebug("**Accelerator");
+		params.logContents(logger);
 	}
 	std::string type;
 	params.getParam("type", type);
 	std::unique_ptr<Accelerator> accelerator;
-	if(type == "yafaray-kdtree-original") accelerator = AcceleratorKdTree::factory(primitives_list, params);
-	else if(type == "yafaray-kdtree-multi-thread") accelerator = AcceleratorKdTreeMultiThread::factory(primitives_list, params);
-	else if(type == "yafaray-simpletest") accelerator = AcceleratorSimpleTest::factory(primitives_list, params);
+	if(type == "yafaray-kdtree-original") accelerator = AcceleratorKdTree::factory(logger, primitives_list, params);
+	else if(type == "yafaray-kdtree-multi-thread") accelerator = AcceleratorKdTreeMultiThread::factory(logger, primitives_list, params);
+	else if(type == "yafaray-simpletest") accelerator = AcceleratorSimpleTest::factory(logger, primitives_list, params);
 
-	if(accelerator) Y_INFO << "Accelerator type '" << type << "' created." << YENDL;
+	if(accelerator) logger.logInfo("Accelerator type '", type, "' created.");
 	else
 	{
-		Y_WARNING << "Accelerator type '" << type << "' could not be created, using standard single-thread KdTree instead." << YENDL;
-		accelerator = AcceleratorKdTree::factory(primitives_list, params);
+		logger.logWarning("Accelerator type '", type, "' could not be created, using standard single-thread KdTree instead.");
+		accelerator = AcceleratorKdTree::factory(logger, primitives_list, params);
 	}
 	return accelerator;
 }

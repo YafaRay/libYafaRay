@@ -35,10 +35,10 @@ class ParamMap;
 class BackgroundLight final : public Light
 {
 	public:
-		static std::unique_ptr<Light> factory(ParamMap &params, const Scene &scene);
+		static std::unique_ptr<Light> factory(Logger &logger, ParamMap &params, const Scene &scene);
 
 	private:
-		BackgroundLight(int sampl, bool invert_intersect = false, bool light_enabled = true, bool cast_shadows = true);
+		BackgroundLight(Logger &logger, int sampl, bool invert_intersect = false, bool light_enabled = true, bool cast_shadows = true);
 		virtual void init(Scene &scene) override;
 		virtual Rgb totalEnergy() const override;
 		virtual Rgb emitPhoton(float s_1, float s_2, float s_3, float s_4, Ray &ray, float &ipdf) const override;

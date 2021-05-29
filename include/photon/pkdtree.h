@@ -77,8 +77,8 @@ template <class T>
 class PointKdTree
 {
 	public:
-		PointKdTree() {};
-		PointKdTree(const std::vector<T> &dat, const std::string &map_name, int num_threads = 1);
+		PointKdTree() = default;
+		PointKdTree(Logger &logger, const std::vector<T> &dat, const std::string &map_name, int num_threads = 1);
 		~PointKdTree() { if(nodes_) free(nodes_); }
 		template<class LookupProc> void lookup(const Point3 &p, const LookupProc &proc, float &max_dist_squared) const;
 	protected:
@@ -100,14 +100,14 @@ class PointKdTree
 };
 
 template<class T>
-PointKdTree<T>::PointKdTree(const std::vector<T> &dat, const std::string &map_name, int num_threads)
+PointKdTree<T>::PointKdTree(Logger &logger, const std::vector<T> &dat, const std::string &map_name, int num_threads)
 {
 	next_free_node_ = 0;
 	n_elements_ = dat.size();
 
 	if(n_elements_ == 0)
 	{
-		Y_ERROR << "pointKdTree: " << map_name << " empty vector!" << YENDL;
+		logger.logError("pointKdTree: ", map_name, " empty vector!");
 		return;
 	}
 
@@ -124,11 +124,11 @@ PointKdTree<T>::PointKdTree(const std::vector<T> &dat, const std::string &map_na
 	max_level_threads_ = (int) std::ceil(math::log2((float) num_threads)); //in how many pkdtree levels we will spawn threads, so we create at least as many threads as scene threads parameter (or more)
 	int real_threads = static_cast<int>(math::pow(2.f, max_level_threads_)); //real amount of threads we will create during pkdtree creation depending on the maximum level where we will generate threads
 
-	Y_INFO << "pointKdTree: Starting " << map_name << " recusive tree build for " << n_elements_ << " elements [using " << real_threads << " threads]" << YENDL;
+	logger.logInfo("pointKdTree: Starting ", map_name, " recusive tree build for ", n_elements_, " elements [using ", real_threads, " threads]");
 
 	buildTree(0, n_elements_, tree_bound_, elements.get());
 
-	if(Y_LOG_HAS_VERBOSE) Y_VERBOSE << "pointKdTree: " << map_name << " tree built." << YENDL;
+	if(logger.isVerbose()) logger.logVerbose("pointKdTree: ", map_name, " tree built.");
 }
 
 template<class T>
@@ -286,7 +286,7 @@ void PointKdTree<T>::lookup(const Point3 &p, const LookupProc &proc, float &max_
 	++Y_LOOKUPS;
 	if(Y_LOOKUPS == 159999)
 	{
-		if(Y_LOG_HAS_VERBOSE) Y_VERBOSE << "pointKd-Tree:average photons tested per lookup:" << double(Y_PROCS) / double(Y_LOOKUPS) << YENDL;
+		if(logger_.isVerbose()) logger_.logVerbose("pointKd-Tree:average photons tested per lookup:", double(Y_PROCS) / double(Y_LOOKUPS));
 	}
 #endif
 }

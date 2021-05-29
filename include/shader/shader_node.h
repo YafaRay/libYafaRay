@@ -65,7 +65,7 @@ class NodeFinder final : public Collection<std::string, ShaderNode *>
 class ShaderNode
 {
 	public:
-		static std::unique_ptr<ShaderNode> factory(const ParamMap &params, const Scene &scene);
+		static std::unique_ptr<ShaderNode> factory(Logger &logger, const ParamMap &params, const Scene &scene);
 		virtual ~ShaderNode() = default;
 		unsigned int getId() const { return id_; }
 		void setId(unsigned int id) { id_ = id; }
@@ -79,7 +79,7 @@ class ShaderNode
 		{ stack[this->id_] = NodeResult(Rgba(0.f), 0.f); }
 		/*! configure the inputs. gets the same paramMap the factory functions get, but shader nodes
 			may be created in any order and linked afterwards, so inputs may not exist yet on instantiation */
-		virtual bool configInputs(const ParamMap &params, const NodeFinder &find) = 0;
+		virtual bool configInputs(Logger &logger, const ParamMap &params, const NodeFinder &find) = 0;
 		//! return the nodes on which the output of this one depends
 		/*! you may only call this after successfully calling configInputs!
 			\param dep empty (!) vector to return the dependencies

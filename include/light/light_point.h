@@ -22,6 +22,7 @@
 #ifndef YAFARAY_LIGHT_POINT_H
 #define YAFARAY_LIGHT_POINT_H
 
+#include <common/logger.h>
 #include "light/light.h"
 #include "geometry/vector.h"
 
@@ -33,10 +34,10 @@ class Scene;
 class PointLight final : public Light
 {
 	public:
-		static std::unique_ptr<Light> factory(ParamMap &params, const Scene &scene);
+		static std::unique_ptr<Light> factory(Logger &logger, ParamMap &params, const Scene &scene);
 
 	private:
-		PointLight(const Point3 &pos, const Rgb &col, float inte, bool b_light_enabled = true, bool b_cast_shadows = true);
+		PointLight(Logger &logger, const Point3 &pos, const Rgb &col, float inte, bool b_light_enabled = true, bool b_cast_shadows = true);
 		virtual Rgb totalEnergy() const override { return color_ * 4.0f * M_PI; }
 		virtual Rgb emitPhoton(float s_1, float s_2, float s_3, float s_4, Ray &ray, float &ipdf) const override;
 		virtual Rgb emitSample(Vec3 &wo, LSample &s) const override;

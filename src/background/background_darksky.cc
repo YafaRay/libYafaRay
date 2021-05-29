@@ -37,9 +37,8 @@
 
 BEGIN_YAFARAY
 
-DarkSkyBackground::DarkSkyBackground(const Point3 dir, float turb, float pwr, float sky_bright, bool clamp, float av, float bv, float cv, float dv, float ev,
-									 float altitude, bool night, float exp, bool genc, ColorConv::ColorSpace cs, bool ibl, bool with_caustic):
-		power_(pwr * sky_bright), sky_brightness_(sky_bright), color_conv_(clamp, genc, cs, exp), alt_(altitude), night_sky_(night)
+DarkSkyBackground::DarkSkyBackground(Logger &logger, const Point3 dir, float turb, float pwr, float sky_bright, bool clamp, float av, float bv, float cv, float dv, float ev, float altitude, bool night, float exp, bool genc, ColorConv::ColorSpace cs, bool ibl, bool with_caustic):
+		Background(logger), power_(pwr * sky_bright), sky_brightness_(sky_bright), color_conv_(clamp, genc, cs, exp), alt_(altitude), night_sky_(night)
 {
 	std::string act;
 
@@ -53,11 +52,14 @@ DarkSkyBackground::DarkSkyBackground(const Point3 dir, float turb, float pwr, fl
 	theta_s_ = math::acos(sun_dir_.z_);
 
 	act = (night_sky_) ? "ON" : "OFF";
-	if(Y_LOG_HAS_VERBOSE) Y_VERBOSE << "DarkSky: Night mode [ " << act << " ]" << YENDL;
-	if(Y_LOG_HAS_VERBOSE) Y_VERBOSE << "DarkSky: Solar Declination in Degrees (" << math::radToDeg(theta_s_) << ")" << YENDL;
-	act = (clamp) ? "active." : "inactive.";
-	if(Y_LOG_HAS_VERBOSE) Y_VERBOSE << "DarkSky: RGB Clamping " << act << YENDL;
-	if(Y_LOG_HAS_VERBOSE) Y_VERBOSE << "DarkSky: Altitude " << alt_ << YENDL;
+	if(logger_.isVerbose())
+	{
+		logger_.logVerbose("DarkSky: Night mode [ ", act, " ]");
+		logger_.logVerbose("DarkSky: Solar Declination in Degrees (", math::radToDeg(theta_s_), ")");
+		act = (clamp) ? "active." : "inactive.";
+		logger_.logVerbose("DarkSky: RGB Clamping ", act);
+		logger_.logVerbose("DarkSky: Altitude ", alt_);
+	}
 
 	cos_theta_s_ = math::cos(theta_s_);
 	cos_theta_2_ = cos_theta_s_ * cos_theta_s_;
@@ -198,7 +200,7 @@ Rgb DarkSkyBackground::eval(const Ray &ray, bool from_postprocessed) const
 	return getSkyCol(ray) * power_;
 }
 
-std::shared_ptr<Background> DarkSkyBackground::factory(ParamMap &params, Scene &scene)
+std::shared_ptr<Background> DarkSkyBackground::factory(Logger &logger, ParamMap &params, Scene &scene)
 {
 	Point3 dir(1, 1, 1);
 	float turb = 4.0;
@@ -221,7 +223,7 @@ std::shared_ptr<Background> DarkSkyBackground::factory(ParamMap &params, Scene &
 	bool cast_shadows = true;
 	bool cast_shadows_sun = true;
 
-	if(Y_LOG_HAS_VERBOSE) Y_VERBOSE << "DarkSky: Begin" << YENDL;
+	if(logger.isVerbose()) logger.logVerbose("DarkSky: Begin");
 
 	params.getParam("from", dir);
 	params.getParam("turbidity", turb);
@@ -264,7 +266,7 @@ std::shared_ptr<Background> DarkSkyBackground::factory(ParamMap &params, Scene &
 		pw *= 0.5;
 	}
 
-	auto dark_sky = std::make_shared<DarkSkyBackground>(DarkSkyBackground(dir, turb, power, bright, clamp, av, bv, cv, dv, ev, altitude, night, exp, gamma_enc, color_s, bgl, caus));
+	auto dark_sky = std::make_shared<DarkSkyBackground>(DarkSkyBackground(logger, dir, turb, power, bright, clamp, av, bv, cv, dv, ev, altitude, night, exp, gamma_enc, color_s, bgl, caus));
 
 	if(add_sun && math::radToDeg(math::acos(dir.z_)) < 100.0)
 	{
@@ -274,7 +276,7 @@ std::shared_ptr<Background> DarkSkyBackground::factory(ParamMap &params, Scene &
 		Rgb suncol = dark_sky->getAttenuatedSunColor();
 		double angle = 0.5 * (2.0 - d.z_);
 
-		if(Y_LOG_HAS_VERBOSE) Y_VERBOSE << "DarkSky: SunColor = " << suncol << YENDL;
+		if(logger.isVerbose()) logger.logVerbose("DarkSky: SunColor = ", suncol);
 
 		ParamMap p;
 		p["type"] = std::string("sunlight");
@@ -287,7 +289,7 @@ std::shared_ptr<Background> DarkSkyBackground::factory(ParamMap &params, Scene &
 		p["with_caustic"] = caus;
 		p["with_diffuse"] = diff;
 
-		if(Y_LOG_HAS_VERBOSE) Y_VERBOSE << "DarkSky: Adding a \"Real Sun\"" << YENDL;
+		if(logger.isVerbose()) logger.logVerbose("DarkSky: Adding a \"Real Sun\"");
 
 		scene.createLight("DarkSky_RealSun", p);
 	}
@@ -301,14 +303,14 @@ std::shared_ptr<Background> DarkSkyBackground::factory(ParamMap &params, Scene &
 		bgp["with_diffuse"] = diff;
 		bgp["cast_shadows"] = cast_shadows;
 
-		if(Y_LOG_HAS_VERBOSE) Y_VERBOSE << "DarkSky: Adding background light" << YENDL;
+		if(logger.isVerbose()) logger.logVerbose("DarkSky: Adding background light");
 
 		Light *bglight = scene.createLight("DarkSky_bgLight", bgp);
 
 		bglight->setBackground(dark_sky);
 	}
 
-	if(Y_LOG_HAS_VERBOSE) Y_VERBOSE << "DarkSky: End" << YENDL;
+	if(logger.isVerbose()) logger.logVerbose("DarkSky: End");
 
 	return dark_sky;
 }

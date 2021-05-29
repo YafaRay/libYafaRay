@@ -25,10 +25,10 @@
 
 BEGIN_YAFARAY
 
-EquirectangularCamera::EquirectangularCamera(const Point3 &pos, const Point3 &look, const Point3 &up,
+EquirectangularCamera::EquirectangularCamera(Logger &logger, const Point3 &pos, const Point3 &look, const Point3 &up,
 											 int resx, int resy, float asp,
 											 float const near_clip_distance, float const far_clip_distance) :
-		Camera(pos, look, up, resx, resy, asp, near_clip_distance, far_clip_distance)
+		Camera(logger, pos, look, up, resx, resy, asp, near_clip_distance, far_clip_distance)
 {
 	// Initialize camera specific plane coordinates
 	setAxis(cam_x_, cam_y_, cam_z_);
@@ -63,7 +63,7 @@ Ray EquirectangularCamera::shootRay(float px, float py, float lu, float lv, floa
 	return ray;
 }
 
-std::unique_ptr<Camera> EquirectangularCamera::factory(ParamMap &params, const Scene &scene)
+std::unique_ptr<Camera> EquirectangularCamera::factory(Logger &logger, ParamMap &params, const Scene &scene)
 {
 	Point3 from(0, 1, 0), to(0, 0, 0), up(0, 1, 1);
 	int resx = 320, resy = 200;
@@ -80,7 +80,7 @@ std::unique_ptr<Camera> EquirectangularCamera::factory(ParamMap &params, const S
 	params.getParam("nearClip", near_clip);
 	params.getParam("farClip", far_clip);
 
-	return std::unique_ptr<Camera>(new EquirectangularCamera(from, to, up, resx, resy, aspect, near_clip, far_clip));
+	return std::unique_ptr<Camera>(new EquirectangularCamera(logger, from, to, up, resx, resy, aspect, near_clip, far_clip));
 }
 
 Point3 EquirectangularCamera::screenproject(const Point3 &p) const

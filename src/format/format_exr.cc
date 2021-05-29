@@ -212,11 +212,11 @@ bool ExrFormat::saveToFile(const std::string &name, const Image *image)
 	try
 	{
 		file.writePixels(h);
-		if(Y_LOG_HAS_VERBOSE) Y_VERBOSE << getFormatName() << ": Done." << YENDL;
+		if(logger_.isVerbose()) logger_.logVerbose(getFormatName(), ": Done.");
 	}
 	catch(const std::exception &exc)
 	{
-		Y_ERROR << getFormatName() << ": " << exc.what() << YENDL;
+		logger_.logError(getFormatName(), ": ", exc.what());
 		result = false;
 	}
 
@@ -237,7 +237,7 @@ bool ExrFormat::saveToFileMultiChannel(const std::string &name, const ImageLayer
 
 	if(!all_image_buffers_same_size)
 	{
-		Y_ERROR << getFormatName() << ": Saving Multilayer EXR failed: not all the images in the imageBuffer have the same size. Make sure all images in buffer have the same size or use a non-multilayered EXR format." << YENDL;
+		logger_.logError(getFormatName(), ": Saving Multilayer EXR failed: not all the images in the imageBuffer have the same size. Make sure all images in buffer have the same size or use a non-multilayered EXR format.");
 		return false;
 	}
 
@@ -258,7 +258,7 @@ bool ExrFormat::saveToFileMultiChannel(const std::string &name, const ImageLayer
 		const std::string exported_image_name = image_layer.second.layer_.getExportedImageName();
 		if(!exported_image_name.empty()) layer_name += "-" + exported_image_name;
 		exr_layer_name = "RenderLayer." + layer_name + ".";
-		if(Y_LOG_HAS_VERBOSE) Y_VERBOSE << "    Writing EXR Layer: " << layer_name << YENDL;
+		if(logger_.isVerbose()) logger_.logVerbose("    Writing EXR Layer: ", layer_name);
 
 		const std::string channel_r_string = exr_layer_name + "R";
 		const std::string channel_g_string = exr_layer_name + "G";
@@ -307,12 +307,12 @@ bool ExrFormat::saveToFileMultiChannel(const std::string &name, const ImageLayer
 	try
 	{
 		file.writePixels(h_0);
-		if(Y_LOG_HAS_VERBOSE) Y_VERBOSE << getFormatName() << ": Done." << YENDL;
+		if(logger_.isVerbose()) logger_.logVerbose(getFormatName(), ": Done.");
 		pixels.clear();
 	}
 	catch(const std::exception &exc)
 	{
-		Y_ERROR << getFormatName() << ": " << exc.what() << YENDL;
+		logger_.logError(getFormatName(), ": ", exc.what());
 		pixels.clear();
 		result = false;
 	}
@@ -322,11 +322,11 @@ bool ExrFormat::saveToFileMultiChannel(const std::string &name, const ImageLayer
 std::unique_ptr<Image> ExrFormat::loadFromFile(const std::string &name, const Image::Optimization &optimization, const ColorSpace &color_space, float gamma)
 {
 	std::FILE *fp = File::open(name.c_str(), "rb");
-	Y_INFO << getFormatName() << ": Loading image \"" << name << "\"..." << YENDL;
+	logger_.logInfo(getFormatName(), ": Loading image \"", name, "\"...");
 
 	if(!fp)
 	{
-		Y_ERROR << getFormatName() << ": Cannot open file " << name << YENDL;
+		logger_.logError(getFormatName(), ": Cannot open file ", name);
 		return nullptr;
 	}
 	else
@@ -346,7 +346,7 @@ std::unique_ptr<Image> ExrFormat::loadFromFile(const std::string &name, const Im
 		const int width  = dw.max.x - dw.min.x + 1;
 		const int height = dw.max.y - dw.min.y + 1;
 		const Image::Type type = Image::getTypeFromSettings(true, grayscale_);
-		image = Image::factory(width, height, type, optimization);
+		image = Image::factory(logger_, width, height, type, optimization);
 		Imf::Array2D<Imf::Rgba> pixels;
 		pixels.resizeErase(width, height);
 		file.setFrameBuffer(&pixels[0][0] - dw.min.y - dw.min.x * height, height, 1);
@@ -368,15 +368,15 @@ std::unique_ptr<Image> ExrFormat::loadFromFile(const std::string &name, const Im
 	}
 	catch(const std::exception &exc)
 	{
-		Y_ERROR << getFormatName() << ": " << exc.what() << YENDL;
+		logger_.logError(getFormatName(), ": ", exc.what());
 		image = nullptr;
 	}
 	return image;
 }
 
-std::unique_ptr<Format> ExrFormat::factory(ParamMap &params)
+std::unique_ptr<Format> ExrFormat::factory(Logger &logger, ParamMap &params)
 {
-	return std::unique_ptr<Format>(new ExrFormat());
+	return std::unique_ptr<Format>(new ExrFormat(logger));
 }
 
 END_YAFARAY

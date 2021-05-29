@@ -33,6 +33,7 @@ class Rgba;
 class Layer;
 class ParamMap;
 class Scene;
+class Logger;
 
 struct DenoiseParams
 {
@@ -48,9 +49,9 @@ class Image
 		enum class Type : int { None, Gray, GrayAlpha, GrayWeight, GrayAlphaWeight, Color, ColorAlpha, ColorAlphaWeight };
 		enum class Optimization : int { None, Optimized, Compressed };
 		enum class Position : int { None, Top, Bottom, Left, Right, Overlay };
-		static std::unique_ptr<Image> factory(ParamMap &params, const Scene &scene);
-		static std::unique_ptr<Image> factory(int width, int height, const Type &type, const Optimization &optimization);
-		static Image *factoryRawPointer(int width, int height, const Type &type, const Optimization &optimization);
+		static std::unique_ptr<Image> factory(Logger &logger, ParamMap &params, const Scene &scene);
+		static std::unique_ptr<Image> factory(Logger &logger, int width, int height, const Type &type, const Optimization &optimization);
+		static Image *factoryRawPointer(Logger &logger, int width, int height, const Type &type, const Optimization &optimization);
 		virtual ~Image() = default;
 
 		virtual Type getType() const = 0;
@@ -82,8 +83,8 @@ class Image
 		static bool hasAlpha(const Type &image_type);
 		static bool isGrayscale(const Type &image_type);
 		static Type getTypeFromSettings(bool has_alpha, bool grayscale, bool has_weight = false);
-		static std::unique_ptr<Image> getDenoisedLdrImage(const Image *image, const DenoiseParams &denoise_params); //!< Provides a denoised buffer, but only works with LDR images (that can be represented in 8-bit 0..255 values). If attempted with HDR images they would lose the HDR range and become unusable!
-		static std::unique_ptr<Image> getComposedImage(const Image *image_1, const Image *image_2, const Position &position_image_2, int overlay_x = 0, int overlay_y = 0);
+		static std::unique_ptr<Image> getDenoisedLdrImage(Logger &logger, const Image *image, const DenoiseParams &denoise_params); //!< Provides a denoised buffer, but only works with LDR images (that can be represented in 8-bit 0..255 values). If attempted with HDR images they would lose the HDR range and become unusable!
+		static std::unique_ptr<Image> getComposedImage(Logger &logger, const Image *image_1, const Image *image_2, const Position &position_image_2, int overlay_x = 0, int overlay_y = 0);
 
 	protected:
 		Image(int width, int height) : width_(width), height_(height) { }

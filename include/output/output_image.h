@@ -35,8 +35,8 @@ class Format;
 class ImageOutput final : public ColorOutput
 {
 	public:
-		static UniquePtr_t<ColorOutput> factory(const ParamMap &params, const Scene &scene, void *callback_user_data = nullptr, OutputPutpixelCallback_t output_putpixel_callback = nullptr, OutputFlushAreaCallback_t output_flush_area_callback = nullptr, OutputFlushCallback_t output_flush_callback = nullptr);
-		ImageOutput(const std::string &image_path, int border_x, int border_y, const DenoiseParams denoise_params, const std::string &name = "out", const ColorSpace color_space = ColorSpace::RawManualGamma, float gamma = 1.f, bool with_alpha = true, bool alpha_premultiply = false, bool multi_layer = true, void *callback_user_data = nullptr, OutputPutpixelCallback_t output_putpixel_callback = nullptr, OutputFlushAreaCallback_t output_flush_area_callback = nullptr, OutputFlushCallback_t output_flush_callback = nullptr);
+		static UniquePtr_t <yafaray4::ColorOutput> factory(Logger &logger, const ParamMap &params, const Scene &scene, void *callback_user_data, yafaray4_OutputPutpixelCallback_t output_putpixel_callback, yafaray4_OutputFlushAreaCallback_t output_flush_area_callback, yafaray4_OutputFlushCallback_t output_flush_callback);
+		ImageOutput(Logger &logger, const std::string &image_path, int border_x, int border_y, const DenoiseParams denoise_params, const std::string &name = "out", const ColorSpace color_space = ColorSpace::RawManualGamma, float gamma = 1.f, bool with_alpha = true, bool alpha_premultiply = false, bool multi_layer = true, void *callback_user_data = nullptr, yafaray4_OutputPutpixelCallback_t output_putpixel_callback = nullptr, yafaray4_OutputFlushAreaCallback_t output_flush_area_callback = nullptr, yafaray4_OutputFlushCallback_t output_flush_callback = nullptr);
 		virtual ~ImageOutput() override;
 
 	private:

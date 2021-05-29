@@ -144,7 +144,7 @@ void LayerNode::evalDerivative(NodeStack &stack, const RenderData &render_data, 
 	stack[this->getId()] = NodeResult(Rgba(rdu, rdv, 0.f, stencil_tin), 0.f);
 }
 
-bool LayerNode::configInputs(const ParamMap &params, const NodeFinder &find)
+bool LayerNode::configInputs(Logger &logger, const ParamMap &params, const NodeFinder &find)
 {
 	std::string name;
 	if(params.getParam("input", name))
@@ -152,13 +152,13 @@ bool LayerNode::configInputs(const ParamMap &params, const NodeFinder &find)
 		input_ = find(name);
 		if(!input_)
 		{
-			Y_WARNING << "LayerNode: Couldn't get input " << name << YENDL;
+			logger.logWarning("LayerNode: Couldn't get input ", name);
 			return false;
 		}
 	}
 	else
 	{
-		Y_WARNING << "LayerNode: input not set" << YENDL;
+		logger.logWarning("LayerNode: input not set");
 		return false;
 	}
 
@@ -167,7 +167,7 @@ bool LayerNode::configInputs(const ParamMap &params, const NodeFinder &find)
 		upper_layer_ = find(name);
 		if(!upper_layer_)
 		{
-			if(Y_LOG_HAS_VERBOSE) Y_VERBOSE << "LayerNode: Couldn't get upper_layer " << name << YENDL;
+			if(logger.isVerbose()) logger.logVerbose("LayerNode: Couldn't get upper_layer ", name);
 			return false;
 		}
 	}
@@ -302,7 +302,7 @@ float LayerNode::textureValueBlend(float tex, float out, float fact, float facg,
 	}
 }
 
-std::unique_ptr<ShaderNode> LayerNode::factory(const ParamMap &params, const Scene &scene)
+std::unique_ptr<ShaderNode> LayerNode::factory(Logger &logger, const ParamMap &params, const Scene &scene)
 {
 	Rgb def_col(1.f);
 	bool do_color = true, do_scalar = false, color_input = true, use_alpha = false;

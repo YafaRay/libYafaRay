@@ -58,7 +58,7 @@ bool PhotonMap::load(const std::string &filename)
 	File file(filename);
 	if(!file.open("rb"))
 	{
-		Y_WARNING << "PhotonMap file '" << filename << "' not found, canceling load operation";
+		logger_.logWarning("PhotonMap file '", filename, "' not found, canceling load operation");
 		return false;
 	}
 
@@ -66,7 +66,7 @@ bool PhotonMap::load(const std::string &filename)
 	file.read(header);
 	if(header != "YAF_PHOTONMAPv1")
 	{
-		Y_WARNING << "PhotonMap file '" << filename << "' does not contain a valid YafaRay photon map";
+		logger_.logWarning("PhotonMap file '", filename, "' does not contain a valid YafaRay photon map");
 		file.close();
 		return false;
 	}
@@ -119,7 +119,7 @@ void PhotonMap::updateTree()
 {
 	if(photons_.size() > 0)
 	{
-		tree_ = std::unique_ptr<kdtree::PointKdTree<Photon>>(new kdtree::PointKdTree<Photon>(photons_, name_, threads_pkd_tree_));
+		tree_ = std::unique_ptr<kdtree::PointKdTree<Photon>>(new kdtree::PointKdTree<Photon>(logger_, photons_, name_, threads_pkd_tree_));
 		updated_ = true;
 	}
 	else tree_ = nullptr;

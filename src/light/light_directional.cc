@@ -26,8 +26,8 @@
 
 BEGIN_YAFARAY
 
-DirectionalLight::DirectionalLight(const Point3 &pos, Vec3 dir, const Rgb &col, float inte, bool inf, float rad, bool b_light_enabled, bool b_cast_shadows):
-		Light(Light::Flags::DiracDir), position_(pos), direction_(dir), radius_(rad), infinite_(inf)
+DirectionalLight::DirectionalLight(Logger &logger, const Point3 &pos, Vec3 dir, const Rgb &col, float inte, bool inf, float rad, bool b_light_enabled, bool b_cast_shadows):
+		Light(logger, Light::Flags::DiracDir), position_(pos), direction_(dir), radius_(rad), infinite_(inf)
 {
 	light_enabled_ = b_light_enabled;
 	cast_shadows_ = b_cast_shadows;
@@ -51,7 +51,7 @@ void DirectionalLight::init(Scene &scene)
 		radius_ = world_radius_;
 	}
 	area_pdf_ = 1.f / (radius_ * radius_); // Pi cancels out with our weird conventions :p
-	if(Y_LOG_HAS_VERBOSE) Y_VERBOSE << "DirectionalLight: pos " << position_ << " world radius: " << world_radius_ << YENDL;
+	if(logger_.isVerbose()) logger_.logVerbose("DirectionalLight: pos ", position_, " world radius: ", world_radius_);
 }
 
 
@@ -113,7 +113,7 @@ Rgb DirectionalLight::emitSample(Vec3 &wo, LSample &s) const
 	return color_;
 }
 
-std::unique_ptr<Light> DirectionalLight::factory(ParamMap &params, const Scene &scene)
+std::unique_ptr<Light> DirectionalLight::factory(Logger &logger, ParamMap &params, const Scene &scene)
 {
 	Point3 from(0.0);
 	Point3 dir(0.0, 0.0, 1.0);
@@ -141,12 +141,12 @@ std::unique_ptr<Light> DirectionalLight::factory(ParamMap &params, const Scene &
 	{
 		if(!params.getParam("from", from))
 		{
-			if(params.getParam("position", from) && Y_LOG_HAS_VERBOSE) Y_VERBOSE << "DirectionalLight: Deprecated parameter 'position', use 'from' instead" << YENDL;
+			if(params.getParam("position", from) && logger.isVerbose()) logger.logVerbose("DirectionalLight: Deprecated parameter 'position', use 'from' instead");
 		}
 		params.getParam("radius", rad);
 	}
 
-	auto light = std::unique_ptr<DirectionalLight>(new DirectionalLight(from, Vec3(dir.x_, dir.y_, dir.z_), color, power, inf, rad, light_enabled, cast_shadows));
+	auto light = std::unique_ptr<DirectionalLight>(new DirectionalLight(logger, from, Vec3(dir.x_, dir.y_, dir.z_), color, power, inf, rad, light_enabled, cast_shadows));
 
 	light->shoot_caustic_ = shoot_c;
 	light->shoot_diffuse_ = shoot_d;

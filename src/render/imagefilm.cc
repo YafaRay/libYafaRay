@@ -46,12 +46,12 @@ static constexpr int max_filter_size_global = 8;
 typedef float FilterFunc_t(float dx, float dy);
 
 
-std::unique_ptr<ImageFilm> ImageFilm::factory(const ParamMap &params, Scene *scene)
+std::unique_ptr<ImageFilm> ImageFilm::factory(Logger &logger, const ParamMap &params, Scene *scene)
 {
-	if(Y_LOG_HAS_DEBUG)
+	if(logger.isDebug())
 	{
-		Y_DEBUG PRTEXT(**ImageFilm::factory) PREND;
-		params.printDebug();
+		logger.logDebug("**ImageFilm::factory");
+		params.logContents(logger);
 	}
 	std::string name;
 	std::string tiles_order;
@@ -83,14 +83,14 @@ std::unique_ptr<ImageFilm> ImageFilm::factory(const ParamMap &params, Scene *sce
 	params.getParam("film_autosave_interval_passes", film_load_save.auto_save_.interval_passes_);
 	params.getParam("film_autosave_interval_seconds", film_load_save.auto_save_.interval_seconds_);
 
-	if(Y_LOG_HAS_DEBUG) Y_DEBUG << "Images autosave: " << images_autosave_interval_type_string << ", " << images_autosave_params.interval_passes_ << ", " << images_autosave_params.interval_seconds_ << YENDL;
+	if(logger.isDebug())logger.logDebug("Images autosave: ", images_autosave_interval_type_string, ", ", images_autosave_params.interval_passes_, ", ", images_autosave_params.interval_seconds_);
 
 	if(images_autosave_interval_type_string == "pass-interval") images_autosave_params.interval_type_ = ImageFilm::ImageFilm::AutoSaveParams::IntervalType::Pass;
 	else if(images_autosave_interval_type_string == "time-interval") images_autosave_params.interval_type_ = ImageFilm::AutoSaveParams::IntervalType::Time;
 	else images_autosave_params.interval_type_ = ImageFilm::AutoSaveParams::IntervalType::None;
 
 
-	if(Y_LOG_HAS_DEBUG) Y_DEBUG << "ImageFilm load/save mode: " << film_load_save_mode_str << ", path:'" << film_load_save.path_ << "', interval: " << film_autosave_interval_type_str << ", " << film_load_save.auto_save_.interval_passes_ << ", " << film_load_save.auto_save_.interval_seconds_ << YENDL;
+	if(logger.isDebug())logger.logDebug("ImageFilm load/save mode: ", film_load_save_mode_str, ", path:'", film_load_save.path_, "', interval: ", film_autosave_interval_type_str, ", ", film_load_save.auto_save_.interval_passes_, ", ", film_load_save.auto_save_.interval_seconds_);
 
 	if(film_load_save_mode_str == "load-save") film_load_save.mode_ = ImageFilm::FilmLoadSave::LoadAndSave;
 	else if(film_load_save_mode_str == "save") film_load_save.mode_ = ImageFilm::FilmLoadSave::Save;
@@ -104,33 +104,33 @@ std::unique_ptr<ImageFilm> ImageFilm::factory(const ParamMap &params, Scene *sce
 	if(name == "mitchell") type = ImageFilm::FilterType::Mitchell;
 	else if(name == "gauss") type = ImageFilm::FilterType::Gauss;
 	else if(name == "lanczos") type = ImageFilm::FilterType::Lanczos;
-	else if(name != "box") Y_WARNING << "ImageFilm: " << "No AA filter defined defaulting to Box!" << YENDL;
+	else if(name != "box") logger.logWarning("ImageFilm: ", "No AA filter defined defaulting to Box!");
 
 	ImageSplitter::TilesOrderType tiles_order_type = ImageSplitter::CentreRandom;
 	if(tiles_order == "linear") tiles_order_type = ImageSplitter::Linear;
 	else if(tiles_order == "random") tiles_order_type = ImageSplitter::Random;
-	else if(tiles_order != "centre" && Y_LOG_HAS_VERBOSE) Y_VERBOSE << "ImageFilm: " << "Defaulting to Centre tiles order." << YENDL; // this is info imho not a warning
+	else if(tiles_order != "centre" && logger.isVerbose()) logger.logVerbose("ImageFilm: ", "Defaulting to Centre tiles order."); // this is info imho not a warning
 
-	auto film = std::unique_ptr<ImageFilm>(new ImageFilm(width, height, xstart, ystart, scene->getNumThreads(), scene->getRenderControl(), scene->getLayers(), scene->getOutputs(), filt_sz, type, show_sampled_pixels, tile_size, tiles_order_type));
+	auto film = std::unique_ptr<ImageFilm>(new ImageFilm(logger, width, height, xstart, ystart, scene->getNumThreads(), scene->getRenderControl(), scene->getLayers(), scene->getOutputs(), filt_sz, type, show_sampled_pixels, tile_size, tiles_order_type));
 
 	film->setImagesAutoSaveParams(images_autosave_params);
 	film->setFilmLoadSaveParams(film_load_save);
 
-	if(images_autosave_params.interval_type_ == ImageFilm::AutoSaveParams::IntervalType::Pass) Y_INFO << "ImageFilm: " << "AutoSave partially rendered image every " << images_autosave_params.interval_passes_ << " passes" << YENDL;
+	if(images_autosave_params.interval_type_ == ImageFilm::AutoSaveParams::IntervalType::Pass) logger.logInfo("ImageFilm: ", "AutoSave partially rendered image every ", images_autosave_params.interval_passes_, " passes");
 
-	if(images_autosave_params.interval_type_ == ImageFilm::AutoSaveParams::IntervalType::Time) Y_INFO << "ImageFilm: " << "AutoSave partially rendered image every " << images_autosave_params.interval_seconds_ << " seconds" << YENDL;
+	if(images_autosave_params.interval_type_ == ImageFilm::AutoSaveParams::IntervalType::Time) logger.logInfo("ImageFilm: ", "AutoSave partially rendered image every ", images_autosave_params.interval_seconds_, " seconds");
 
-	if(film_load_save.mode_ != ImageFilm::FilmLoadSave::Save) Y_INFO << "ImageFilm: " << "Enabling imageFilm file saving feature" << YENDL;
-	if(film_load_save.mode_ == ImageFilm::FilmLoadSave::LoadAndSave) Y_INFO << "ImageFilm: " << "Enabling imageFilm Loading feature. It will load and combine the ImageFilm files from the currently selected image output folder before start rendering, autodetecting each film format (binary/text) automatically. If they don't match exactly the scene, bad results could happen. Use WITH CARE!" << YENDL;
+	if(film_load_save.mode_ != ImageFilm::FilmLoadSave::Save) logger.logInfo("ImageFilm: ", "Enabling imageFilm file saving feature");
+	if(film_load_save.mode_ == ImageFilm::FilmLoadSave::LoadAndSave) logger.logInfo("ImageFilm: ", "Enabling imageFilm Loading feature. It will load and combine the ImageFilm files from the currently selected image output folder before start rendering, autodetecting each film format (binary/text) automatically. If they don't match exactly the scene, bad results could happen. Use WITH CARE!");
 
-	if(film_load_save.auto_save_.interval_type_ == ImageFilm::AutoSaveParams::IntervalType::Pass) Y_INFO << "ImageFilm: " << "AutoSave internal imageFilm every " << film_load_save.auto_save_.interval_passes_ << " passes" << YENDL;
+	if(film_load_save.auto_save_.interval_type_ == ImageFilm::AutoSaveParams::IntervalType::Pass) logger.logInfo("ImageFilm: ", "AutoSave internal imageFilm every ", film_load_save.auto_save_.interval_passes_, " passes");
 
-	if(film_load_save.auto_save_.interval_type_ == ImageFilm::AutoSaveParams::IntervalType::Time) Y_INFO << "ImageFilm: " << "AutoSave internal imageFilm image every " << film_load_save.auto_save_.interval_seconds_ << " seconds" << YENDL;
+	if(film_load_save.auto_save_.interval_type_ == ImageFilm::AutoSaveParams::IntervalType::Time) logger.logInfo("ImageFilm: ", "AutoSave internal imageFilm image every ", film_load_save.auto_save_.interval_seconds_, " seconds");
 
 	return film;
 }
 
-ImageFilm::ImageFilm (int width, int height, int xstart, int ystart, int num_threads, RenderControl &render_control, const Layers &layers, const std::map<std::string, UniquePtr_t<ColorOutput>> &outputs, float filter_size, FilterType filt, bool show_sam_mask, int t_size, ImageSplitter::TilesOrderType tiles_order_type) : width_(width), height_(height), cx_0_(xstart), cy_0_(ystart), show_mask_(show_sam_mask), tile_size_(t_size), tiles_order_(tiles_order_type), num_threads_(num_threads), layers_(layers), outputs_(outputs), filterw_(filter_size * 0.5), flags_(width, height), weights_(width, height)
+ImageFilm::ImageFilm(Logger &logger, int width, int height, int xstart, int ystart, int num_threads, RenderControl &render_control, const Layers &layers, const std::map<std::string, UniquePtr_t<ColorOutput>> &outputs, float filter_size, FilterType filt, bool show_sam_mask, int t_size, ImageSplitter::TilesOrderType tiles_order_type) : width_(width), height_(height), cx_0_(xstart), cy_0_(ystart), show_mask_(show_sam_mask), tile_size_(t_size), tiles_order_(tiles_order_type), num_threads_(num_threads), layers_(layers), outputs_(outputs), filterw_(filter_size * 0.5), flags_(width, height), weights_(width, height), logger_(logger)
 {
 	cx_1_ = xstart + width;
 	cy_1_ = ystart + height;
@@ -141,7 +141,7 @@ ImageFilm::ImageFilm (int width, int height, int xstart, int ystart, int num_thr
 	{
 		Image::Type image_type = l.second.getImageType();
 		image_type = Image::imageTypeWithAlpha(image_type); //Alpha channel is needed in all images of the weight normalization process will cause problems
-		std::unique_ptr<Image> image = Image::factory(width, height, image_type, Image::Optimization::None);
+		std::unique_ptr<Image> image = Image::factory(logger, width, height, image_type, Image::Optimization::None);
 		image_layers_.set(l.first, {std::move(image), l.second});
 	}
 
@@ -210,7 +210,7 @@ void ImageFilm::init(RenderControl &render_control, int num_passes)
 	}
 	else area_cnt_ = 1;
 
-	if(progress_bar_) progress_bar_->init(width_ * height_);
+	if(progress_bar_) progress_bar_->init(width_ * height_, logger_.getConsoleLogColorsEnabled());
 	render_control.setCurrentPassPercent(progress_bar_->getPercent());
 
 	cancel_ = false;
@@ -247,7 +247,7 @@ int ImageFilm::nextPass(const RenderView *render_view, RenderControl &render_con
 
 	std::stringstream pass_string;
 
-	if(Y_LOG_HAS_DEBUG) Y_DEBUG << "nPass=" << n_pass_ << " imagesAutoSavePassCounter=" << images_auto_save_params_.pass_counter_ << " filmAutoSavePassCounter=" << film_load_save_.auto_save_.pass_counter_ << YENDL;
+	if(logger_.isDebug())logger_.logDebug("nPass=", n_pass_, " imagesAutoSavePassCounter=", images_auto_save_params_.pass_counter_, " filmAutoSavePassCounter=", film_load_save_.auto_save_.pass_counter_);
 
 	if(render_control.inProgress() && !session_global.isPreview())	//avoid saving images/film if we are just rendering material/world/lights preview windows, etc
 	{
@@ -437,11 +437,11 @@ int ImageFilm::nextPass(const RenderView *render_view, RenderControl &render_con
 
 	pass_string << "Rendering pass " << n_pass_ << " of " << n_passes_ << ", resampling " << n_resample << " pixels.";
 
-	Y_INFO << integrator_name << ": " << pass_string.str() << YENDL;
+	logger_.logInfo(integrator_name, ": ", pass_string.str());
 
 	if(progress_bar_)
 	{
-		progress_bar_->init(width_ * height_);
+		progress_bar_->init(width_ * height_, logger_.getConsoleLogColorsEnabled());
 		render_control.setCurrentPassPercent(progress_bar_->getPercent());
 		progress_bar_->setTag(pass_string.str().c_str());
 	}
@@ -578,14 +578,14 @@ void ImageFilm::finishArea(const RenderView *render_view, RenderControl &render_
 
 		if((images_auto_save_params_.interval_type_ == ImageFilm::AutoSaveParams::IntervalType::Time) && (images_auto_save_params_.timer_ > images_auto_save_params_.interval_seconds_))
 		{
-			if(Y_LOG_HAS_DEBUG) Y_DEBUG << "imagesAutoSaveTimer=" << images_auto_save_params_.timer_ << YENDL;
+			if(logger_.isDebug())logger_.logDebug("imagesAutoSaveTimer=", images_auto_save_params_.timer_);
 			flush(render_view, render_control, All);
 			resetImagesAutoSaveTimer();
 		}
 
 		if((film_load_save_.mode_ == FilmLoadSave::LoadAndSave || film_load_save_.mode_ == FilmLoadSave::Save) && (film_load_save_.auto_save_.interval_type_ == ImageFilm::AutoSaveParams::IntervalType::Time) && (film_load_save_.auto_save_.timer_ > film_load_save_.auto_save_.interval_seconds_))
 		{
-			if(Y_LOG_HAS_DEBUG) Y_DEBUG << "filmAutoSaveTimer=" << film_load_save_.auto_save_.timer_ << YENDL;
+			if(logger_.isDebug())logger_.logDebug("filmAutoSaveTimer=", film_load_save_.auto_save_.timer_);
 			imageFilmSave();
 			resetFilmAutoSaveTimer();
 		}
@@ -606,7 +606,7 @@ void ImageFilm::flush(const RenderView *render_view, const RenderControl &render
 	if(render_control.finished())
 	{
 		out_mutex_.lock();
-		Y_INFO << "imageFilm: Flushing buffer (View '" << render_view->getName() << "')..." << YENDL;
+		logger_.logInfo("imageFilm: Flushing buffer (View '", render_view->getName(), "')...");
 	}
 
 	float density_factor = 0.f;
@@ -672,11 +672,11 @@ void ImageFilm::flush(const RenderView *render_view, const RenderControl &render
 			{
 				std::stringstream ss;
 				ss << output.second->printBadge(render_control);
-				Y_PARAMS << "--------------------------------------------------------------------------------" << YENDL;
-				for(std::string line; std::getline(ss, line, '\n');) if(line != "" && line != "\n") Y_PARAMS << line << YENDL;
-				Y_PARAMS << "--------------------------------------------------------------------------------" << YENDL;
+				logger_.logParams("--------------------------------------------------------------------------------");
+				for(std::string line; std::getline(ss, line, '\n');) if(line != "" && line != "\n") logger_.logParams(line);
+				logger_.logParams("--------------------------------------------------------------------------------");
 			}
-			Y_INFO << pass_string.str() << YENDL;
+			logger_.logInfo(pass_string.str());
 			std::string old_tag;
 			if(progress_bar_)
 			{
@@ -698,9 +698,9 @@ void ImageFilm::flush(const RenderView *render_view, const RenderControl &render
 		g_timer_global.stop("imagesAutoSaveTimer");
 		g_timer_global.stop("filmAutoSaveTimer");
 
-		logger_global.clearMemoryLog();
+		logger_.clearMemoryLog();
 		out_mutex_.unlock();
-		if(Y_LOG_HAS_VERBOSE) Y_VERBOSE << "imageFilm: Done." << YENDL;
+		if(logger_.isVerbose()) logger_.logVerbose("imageFilm: Done.");
 	}
 }
 
@@ -871,12 +871,12 @@ std::string ImageFilm::getFilmPath() const
 
 bool ImageFilm::imageFilmLoad(const std::string &filename)
 {
-	Y_INFO << "imageFilm: Loading film from: \"" << filename << YENDL;
+	logger_.logInfo("imageFilm: Loading film from: \"", filename);
 
 	File file(filename);
 	if(!file.open("rb"))
 	{
-		Y_WARNING << "imageFilm file '" << filename << "' not found, canceling load operation";
+		logger_.logWarning("imageFilm file '", filename, "' not found, canceling load operation");
 		return false;
 	}
 
@@ -884,7 +884,7 @@ bool ImageFilm::imageFilmLoad(const std::string &filename)
 	file.read(header);
 	if(header != "YAF_FILMv4_0_0")
 	{
-		Y_WARNING << "imageFilm file '" << filename << "' does not contain a valid YafaRay image file";
+		logger_.logWarning("imageFilm file '", filename, "' does not contain a valid YafaRay image file");
 		file.close();
 		return false;
 	}
@@ -896,7 +896,7 @@ bool ImageFilm::imageFilmLoad(const std::string &filename)
 	file.read<int>(filmload_check_w);
 	if(filmload_check_w != width_)
 	{
-		Y_WARNING << "imageFilm: loading/reusing film check failed. Image width, expected=" << width_ << ", in reused/loaded film=" << filmload_check_w << YENDL;
+		logger_.logWarning("imageFilm: loading/reusing film check failed. Image width, expected=", width_, ", in reused/loaded film=", filmload_check_w);
 		return false;
 	}
 
@@ -904,7 +904,7 @@ bool ImageFilm::imageFilmLoad(const std::string &filename)
 	file.read<int>(filmload_check_h);
 	if(filmload_check_h != height_)
 	{
-		Y_WARNING << "imageFilm: loading/reusing film check failed. Image height, expected=" << height_ << ", in reused/loaded film=" << filmload_check_h << YENDL;
+		logger_.logWarning("imageFilm: loading/reusing film check failed. Image height, expected=", height_, ", in reused/loaded film=", filmload_check_h);
 		return false;
 	}
 
@@ -912,7 +912,7 @@ bool ImageFilm::imageFilmLoad(const std::string &filename)
 	file.read<int>(filmload_check_cx_0);
 	if(filmload_check_cx_0 != cx_0_)
 	{
-		Y_WARNING << "imageFilm: loading/reusing film check failed. Border cx0, expected=" << cx_0_ << ", in reused/loaded film=" << filmload_check_cx_0 << YENDL;
+		logger_.logWarning("imageFilm: loading/reusing film check failed. Border cx0, expected=", cx_0_, ", in reused/loaded film=", filmload_check_cx_0);
 		return false;
 	}
 
@@ -920,7 +920,7 @@ bool ImageFilm::imageFilmLoad(const std::string &filename)
 	file.read<int>(filmload_check_cx_1);
 	if(filmload_check_cx_1 != cx_1_)
 	{
-		Y_WARNING << "imageFilm: loading/reusing film check failed. Border cx1, expected=" << cx_1_ << ", in reused/loaded film=" << filmload_check_cx_1 << YENDL;
+		logger_.logWarning("imageFilm: loading/reusing film check failed. Border cx1, expected=", cx_1_, ", in reused/loaded film=", filmload_check_cx_1);
 		return false;
 	}
 
@@ -928,7 +928,7 @@ bool ImageFilm::imageFilmLoad(const std::string &filename)
 	file.read<int>(filmload_check_cy_0);
 	if(filmload_check_cy_0 != cy_0_)
 	{
-		Y_WARNING << "imageFilm: loading/reusing film check failed. Border cy0, expected=" << cy_0_ << ", in reused/loaded film=" << filmload_check_cy_0 << YENDL;
+		logger_.logWarning("imageFilm: loading/reusing film check failed. Border cy0, expected=", cy_0_, ", in reused/loaded film=", filmload_check_cy_0);
 		return false;
 	}
 
@@ -936,7 +936,7 @@ bool ImageFilm::imageFilmLoad(const std::string &filename)
 	file.read<int>(filmload_check_cy_1);
 	if(filmload_check_cy_1 != cy_1_)
 	{
-		Y_WARNING << "imageFilm: loading/reusing film check failed. Border cy1, expected=" << cy_1_ << ", in reused/loaded film=" << filmload_check_cy_1 << YENDL;
+		logger_.logWarning("imageFilm: loading/reusing film check failed. Border cy1, expected=", cy_1_, ", in reused/loaded film=", filmload_check_cy_1);
 		return false;
 	}
 
@@ -944,7 +944,7 @@ bool ImageFilm::imageFilmLoad(const std::string &filename)
 	file.read<int>(loaded_image_layers_size);
 	if(loaded_image_layers_size != static_cast<int>(image_layers_.size()))
 	{
-		Y_WARNING << "imageFilm: loading/reusing film check failed. Number of image layers, expected=" << image_layers_.size() << ", in reused/loaded film=" << loaded_image_layers_size << YENDL;
+		logger_.logWarning("imageFilm: loading/reusing film check failed. Number of image layers, expected=", image_layers_.size(), ", in reused/loaded film=", loaded_image_layers_size);
 		return false;
 	}
 
@@ -983,7 +983,7 @@ void ImageFilm::imageFilmLoadAllInFolder(RenderControl &render_control)
 	std::stringstream pass_string;
 	pass_string << "Loading ImageFilm files";
 
-	Y_INFO << pass_string.str() << YENDL;
+	logger_.logInfo(pass_string.str());
 
 	std::string old_tag;
 
@@ -1002,7 +1002,7 @@ void ImageFilm::imageFilmLoadAllInFolder(RenderControl &render_control)
 	std::vector<std::string> film_file_paths_list;
 	for(const auto &file_name : files_list)
 	{
-		//if(Y_LOG_HAS_DEBUG) Y_DEBUG PR(fileName) PREND;
+		//if(logger_.isDebug()) Y_DEBUG PR(fileName");
 		if(File::exists(dir + "//" + file_name, true))
 		{
 			const Path file_path {file_name };
@@ -1010,11 +1010,11 @@ void ImageFilm::imageFilmLoadAllInFolder(RenderControl &render_control)
 			const std::string base = file_path.getBaseName();
 			const int base_rfind_result = base.rfind(base_image_file_name, 0);
 
-			//if(Y_LOG_HAS_DEBUG) Y_DEBUG PR(baseImageFileName) PR(fileName) PR(base) PR(ext) PR(base_rfind_result) PREND;
+			//if(logger_.isDebug()) Y_DEBUG PR(baseImageFileName) PR(fileName) PR(base) PR(ext) PR(base_rfind_result");
 			if(ext == "film" && base_rfind_result == 0)
 			{
 				film_file_paths_list.push_back(dir + "//" + file_name);
-				//if(Y_LOG_HAS_DEBUG) Y_DEBUG << "Added: " << dir + "//" + fileName << YENDL;
+				//if(logger_.isDebug())logger_.logDebug("Added: " << dir + "//" + fileName);
 			}
 		}
 	}
@@ -1023,10 +1023,10 @@ void ImageFilm::imageFilmLoadAllInFolder(RenderControl &render_control)
 	bool any_film_loaded = false;
 	for(const auto &film_file : film_file_paths_list)
 	{
-		auto loaded_film = std::unique_ptr<ImageFilm>(new ImageFilm(width_, height_, cx_0_, cy_0_, num_threads_, render_control, layers_, outputs_, 1.0, FilterType::Box));
+		auto loaded_film = std::unique_ptr<ImageFilm>(new ImageFilm(logger_, width_, height_, cx_0_, cy_0_, num_threads_, render_control, layers_, outputs_, 1.0, FilterType::Box));
 		if(!loaded_film->imageFilmLoad(film_file))
 		{
-			Y_WARNING << "ImageFilm: Could not load film file '" << film_file << "'" << YENDL;
+			logger_.logWarning("ImageFilm: Could not load film file '", film_file, "'");
 			continue;
 		}
 		else any_film_loaded = true;
@@ -1052,7 +1052,7 @@ void ImageFilm::imageFilmLoadAllInFolder(RenderControl &render_control)
 		}
 		if(sampling_offset_ < loaded_film->sampling_offset_) sampling_offset_ = loaded_film->sampling_offset_;
 		if(base_sampling_offset_ < loaded_film->base_sampling_offset_) base_sampling_offset_ = loaded_film->base_sampling_offset_;
-		if(Y_LOG_HAS_VERBOSE) Y_VERBOSE << "ImageFilm: loaded film '" << film_file << "'" << YENDL;
+		if(logger_.isVerbose()) logger_.logVerbose("ImageFilm: loaded film '", film_file, "'");
 	}
 	if(any_film_loaded) render_control.setResumed();
 	if(progress_bar_) progress_bar_->setTag(old_tag);
@@ -1064,7 +1064,7 @@ bool ImageFilm::imageFilmSave()
 	std::stringstream pass_string;
 	pass_string << "Saving internal ImageFilm file";
 
-	Y_INFO << pass_string.str() << YENDL;
+	logger_.logInfo(pass_string.str());
 
 	std::string old_tag;
 
@@ -1092,13 +1092,13 @@ bool ImageFilm::imageFilmSave()
 	const int weights_w = weights_.getWidth();
 	if(weights_w != width_)
 	{
-		Y_WARNING << "ImageFilm saving problems, film weights width " << width_ << " different from internal 2D image width " << weights_w << YENDL;
+		logger_.logWarning("ImageFilm saving problems, film weights width ", width_, " different from internal 2D image width ", weights_w);
 		result_ok = false;
 	}
 	const int weights_h = weights_.getHeight();
 	if(weights_h != height_)
 	{
-		Y_WARNING << "ImageFilm saving problems, film weights height " << height_ << " different from internal 2D image height " << weights_h << YENDL;
+		logger_.logWarning("ImageFilm saving problems, film weights height ", height_, " different from internal 2D image height ", weights_h);
 		result_ok = false;
 	}
 	for(int y = 0; y < height_; ++y)
@@ -1114,14 +1114,14 @@ bool ImageFilm::imageFilmSave()
 		const int img_w = img.second.image_->getWidth();
 		if(img_w != width_)
 		{
-			Y_WARNING << "ImageFilm saving problems, film width " << width_ << " different from internal 2D image width " << img_w << YENDL;
+			logger_.logWarning("ImageFilm saving problems, film width ", width_, " different from internal 2D image width ", img_w);
 			result_ok = false;
 			break;
 		}
 		const int img_h = img.second.image_->getHeight();
 		if(img_h != height_)
 		{
-			Y_WARNING << "ImageFilm saving problems, film height " << height_ << " different from internal 2D image height " << img_h << YENDL;
+			logger_.logWarning("ImageFilm saving problems, film height ", height_, " different from internal 2D image height ", img_h);
 			result_ok = false;
 			break;
 		}
@@ -1147,7 +1147,7 @@ void ImageFilm::imageFilmFileBackup() const
 	std::stringstream pass_string;
 	pass_string << "Creating backup of the previous ImageFilm file...";
 
-	Y_INFO << pass_string.str() << YENDL;
+	logger_.logInfo(pass_string.str());
 
 	std::string old_tag;
 
@@ -1162,9 +1162,9 @@ void ImageFilm::imageFilmFileBackup() const
 
 	if(File::exists(film_path, true))
 	{
-		if(Y_LOG_HAS_VERBOSE) Y_VERBOSE << "imageFilm: Creating backup of previously saved film to: \"" << film_path_backup << "\"" << YENDL;
+		if(logger_.isVerbose()) logger_.logVerbose("imageFilm: Creating backup of previously saved film to: \"", film_path_backup, "\"");
 		const bool result_ok = File::rename(film_path, film_path_backup, true, true);
-		if(!result_ok) Y_WARNING << "imageFilm: error during imageFilm file backup" << YENDL;
+		if(!result_ok) logger_.logWarning("imageFilm: error during imageFilm file backup");
 	}
 
 	if(progress_bar_) progress_bar_->setTag(old_tag);

@@ -24,8 +24,8 @@
 
 BEGIN_YAFARAY
 
-SssVolumeHandler::SssVolumeHandler(const Rgb &a_col, const Rgb &s_col, double dist):
-		BeerVolumeHandler(a_col, dist), dist_s_(dist), scatter_col_(s_col)
+SssVolumeHandler::SssVolumeHandler(Logger &logger, const Rgb &a_col, const Rgb &s_col, double dist):
+		BeerVolumeHandler(logger, a_col, dist), dist_s_(dist), scatter_col_(s_col)
 {}
 
 bool SssVolumeHandler::scatter(const RenderData &render_data, const Ray &ray, Ray &s_ray, PSample &s) const
@@ -38,14 +38,14 @@ bool SssVolumeHandler::scatter(const RenderData &render_data, const Ray &ray, Ra
 	return true;
 }
 
-std::unique_ptr<VolumeHandler> SssVolumeHandler::factory(const ParamMap &params, const Scene &scene)
+std::unique_ptr<VolumeHandler> SssVolumeHandler::factory(Logger &logger, const ParamMap &params, const Scene &scene)
 {
 	Rgb a_col(0.5f), s_col(0.8f);
 	double dist = 1.f;
 	params.getParam("absorption_col", a_col);
 	params.getParam("absorption_dist", dist);
 	params.getParam("scatter_col", s_col);
-	return std::unique_ptr<VolumeHandler>(new SssVolumeHandler(a_col, s_col, dist));
+	return std::unique_ptr<VolumeHandler>(new SssVolumeHandler(logger, a_col, s_col, dist));
 }
 
 END_YAFARAY

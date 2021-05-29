@@ -25,10 +25,10 @@
 
 BEGIN_YAFARAY
 
-ArchitectCamera::ArchitectCamera(const Point3 &pos, const Point3 &look, const Point3 &up,
+ArchitectCamera::ArchitectCamera(Logger &logger, const Point3 &pos, const Point3 &look, const Point3 &up,
 								 int resx, int resy, float aspect,
 								 float df, float ap, float dofd, BokehType bt, BkhBiasType bbt, float bro, float const near_clip_distance, float const far_clip_distance)
-	: PerspectiveCamera(pos, look, up, resx, resy, aspect, df, ap, dofd, bt, bbt, bro, near_clip_distance, far_clip_distance)
+	: PerspectiveCamera(logger, pos, look, up, resx, resy, aspect, df, ap, dofd, bt, bbt, bro, near_clip_distance, far_clip_distance)
 {
 	// Initialize camera specific plane coordinates
 	setAxis(cam_x_, cam_y_, cam_z_);
@@ -86,7 +86,7 @@ Point3 ArchitectCamera::screenproject(const Point3 &p) const
 	return s;
 }
 
-std::unique_ptr<Camera> ArchitectCamera::factory(ParamMap &params, const Scene &scene)
+std::unique_ptr<Camera> ArchitectCamera::factory(Logger &logger, ParamMap &params, const Scene &scene)
 {
 	std::string bkhtype = "disk1", bkhbias = "uniform";
 	Point3 from(0, 1, 0), to(0, 0, 0), up(0, 1, 1);
@@ -123,7 +123,7 @@ std::unique_ptr<Camera> ArchitectCamera::factory(ParamMap &params, const Scene &
 	if(bkhbias == "center") 		bbt = BbCenter;
 	else if(bkhbias == "edge") 		bbt = BbEdge;
 
-	return std::unique_ptr<Camera>(new ArchitectCamera(from, to, up, resx, resy, aspect, dfocal, apt, dofd, bt, bbt, bkhrot, near_clip, far_clip));
+	return std::unique_ptr<Camera>(new ArchitectCamera(logger, from, to, up, resx, resy, aspect, dfocal, apt, dofd, bt, bbt, bkhrot, near_clip, far_clip));
 }
 
 END_YAFARAY

@@ -36,7 +36,7 @@ BEGIN_YAFARAY
 
 float *ImageTexture::ewa_weight_lut_ = nullptr;
 
-ImageTexture::ImageTexture(std::shared_ptr<Image> image)
+ImageTexture::ImageTexture(Logger &logger, std::shared_ptr<Image> image) : Texture(logger)
 {
 	images_.emplace_back(std::move(image));
 }
@@ -454,7 +454,7 @@ void ImageTexture::generateEwaLookupTable()
 {
 	if(!ewa_weight_lut_)
 	{
-		if(Y_LOG_HAS_DEBUG) Y_DEBUG << "** GENERATING EWA LOOKUP **" << YENDL;
+		if(logger_.isDebug())logger_.logDebug("** GENERATING EWA LOOKUP **");
 		ewa_weight_lut_ = static_cast<float *>(malloc(sizeof(float) * ewa_weight_lut_size_));
 		for(int i = 0; i < ewa_weight_lut_size_; ++i)
 		{
@@ -475,7 +475,7 @@ void ImageTexture::generateMipMaps()
 	int w = images_.at(0)->getWidth();
 	int h = images_.at(0)->getHeight();
 
-	if(Y_LOG_HAS_VERBOSE) Y_VERBOSE << "Format: generating mipmaps for texture of resolution [" << w << " x " << h << "]" << YENDL;
+	if(logger_.isVerbose()) logger_.logVerbose("Format: generating mipmaps for texture of resolution [", w, " x ", h, "]");
 
 	const cv::Mat a(h, w, CV_32FC4);
 	cv::Mat_<cv::Vec4f> a_vec = a;
@@ -495,10 +495,10 @@ void ImageTexture::generateMipMaps()
 	//Mipmap generation using the temporary full float buffer to reduce information loss
 	while(w > 1 || h > 1)
 	{
-		int w_2 = (w + 1) / 2;
-		int h_2 = (h + 1) / 2;
+		const int w_2 = (w + 1) / 2;
+		const int h_2 = (h + 1) / 2;
 		++img_index;
-		images_.emplace_back(Image::factory(w_2, h_2, images_[img_index - 1]->getType(), images_[img_index - 1]->getOptimization()));
+		images_.emplace_back(Image::factory(logger_, w_2, h_2, images_[img_index - 1]->getType(), images_[img_index - 1]->getOptimization()));
 
 		const cv::Mat b(h_2, w_2, CV_32FC4);
 		const cv::Mat_<cv::Vec4f> b_vec = b;
@@ -518,12 +518,12 @@ void ImageTexture::generateMipMaps()
 		}
 		w = w_2;
 		h = h_2;
-		if(Y_LOG_HAS_DEBUG) Y_DEBUG << "Format: generated mipmap " << img_index << " [" << w_2 << " x " << h_2 << "]" << YENDL;
+		if(logger_.isDebug())logger_.logDebug("Format: generated mipmap ", img_index, " [", w_2, " x ", h_2, "]");
 	}
 
-	if(Y_LOG_HAS_VERBOSE) Y_VERBOSE << "Format: mipmap generation done: " << img_index << " mipmaps generated." << YENDL;
+	if(logger_.isVerbose()) logger_.logVerbose("Format: mipmap generation done: ", img_index, " mipmaps generated.");
 #else
-	Y_WARNING << "Format: cannot generate mipmaps, YafaRay was not built with OpenCV support which is needed for mipmap processing." << YENDL;
+	logger_.logWarning("Format: cannot generate mipmaps, YafaRay was not built with OpenCV support which is needed for mipmap processing.");
 #endif
 }
 
@@ -539,7 +539,7 @@ ImageTexture::ClipMode string2Cliptype_global(const std::string &clipname)
 	return tex_clipmode;
 }
 
-std::unique_ptr<Texture> ImageTexture::factory(ParamMap &params, const Scene &scene)
+std::unique_ptr<Texture> ImageTexture::factory(Logger &logger, ParamMap &params, const Scene &scene)
 {
 	std::string name;
 	std::string image_name;
@@ -558,21 +558,21 @@ std::unique_ptr<Texture> ImageTexture::factory(ParamMap &params, const Scene &sc
 
 	if(image_name.empty())
 	{
-		Y_ERROR << "ImageTexture: Required argument image_name not found for image texture" << YENDL;
+		logger.logError("ImageTexture: Required argument image_name not found for image texture");
 		return nullptr;
 	}
 
 	std::shared_ptr<Image> image = scene.getImage(image_name);
 	if(!image)
 	{
-		Y_ERROR << "ImageTexture: Couldn't load image file, dropping texture." << YENDL;
+		logger.logError("ImageTexture: Couldn't load image file, dropping texture.");
 		return nullptr;
 	}
 
-	auto tex = std::unique_ptr<ImageTexture>(new ImageTexture(image));
+	auto tex = std::unique_ptr<ImageTexture>(new ImageTexture(logger, image));
 	if(!tex) //FIXME: this will never be true, replace by exception handling??
 	{
-		Y_ERROR << "ImageTexture: Couldn't create image texture." << YENDL;
+		logger.logError("ImageTexture: Couldn't create image texture.");
 		return nullptr;
 	}
 
@@ -584,7 +584,7 @@ std::unique_ptr<Texture> ImageTexture::factory(ParamMap &params, const Scene &sc
 		tex->generateMipMaps();
 		if(!session_global.getDifferentialRaysEnabled())
 		{
-			if(Y_LOG_HAS_VERBOSE) Y_VERBOSE << "At least one texture using mipmaps interpolation, enabling ray differentials." << YENDL;
+			if(logger.isVerbose()) logger.logVerbose("At least one texture using mipmaps interpolation, enabling ray differentials.");
 			session_global.setDifferentialRaysEnabled(true);	//If there is at least one texture using mipmaps, then enable differential rays in the rendering process.
 		}
 

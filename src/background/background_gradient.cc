@@ -26,8 +26,8 @@
 
 BEGIN_YAFARAY
 
-GradientBackground::GradientBackground(Rgb gzcol, Rgb ghcol, Rgb szcol, Rgb shcol, bool ibl, bool with_caustic):
-		gzenith_(gzcol), ghoriz_(ghcol), szenith_(szcol), shoriz_(shcol)
+GradientBackground::GradientBackground(Logger &logger, Rgb gzcol, Rgb ghcol, Rgb szcol, Rgb shcol, bool ibl, bool with_caustic):
+		Background(logger), gzenith_(gzcol), ghoriz_(ghcol), szenith_(szcol), shoriz_(shcol)
 {
 	with_ibl_ = ibl;
 	shoot_caustic_ = with_caustic;
@@ -52,7 +52,7 @@ Rgb GradientBackground::eval(const Ray &ray, bool from_postprocessed) const
 	return color;
 }
 
-std::shared_ptr<Background> GradientBackground::factory(ParamMap &params, Scene &scene)
+std::shared_ptr<Background> GradientBackground::factory(Logger &logger, ParamMap &params, Scene &scene)
 {
 	Rgb gzenith, ghoriz, szenith(0.4f, 0.5f, 1.f), shoriz(1.f);
 	float p = 1.0;
@@ -75,7 +75,7 @@ std::shared_ptr<Background> GradientBackground::factory(ParamMap &params, Scene 
 	params.getParam("with_caustic", caus);
 	params.getParam("with_diffuse", diff);
 
-	auto grad_bg = std::make_shared<GradientBackground>(GradientBackground(gzenith * p, ghoriz * p, szenith * p, shoriz * p, bgl, true));
+	auto grad_bg = std::make_shared<GradientBackground>(GradientBackground(logger, gzenith * p, ghoriz * p, szenith * p, shoriz * p, bgl, true));
 
 	if(bgl)
 	{

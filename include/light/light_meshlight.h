@@ -39,10 +39,10 @@ class Scene;
 class MeshLight final : public Light
 {
 	public:
-		static std::unique_ptr<Light> factory(ParamMap &params, const Scene &scene);
+		static std::unique_ptr<Light> factory(Logger &logger, ParamMap &params, const Scene &scene);
 
 	private:
-		MeshLight(const std::string &object_name, const Rgb &col, int sampl, bool dbl_s = false, bool light_enabled = true, bool cast_shadows = true);
+		MeshLight(Logger &logger, const std::string &object_name, const Rgb &col, int sampl, bool dbl_s = false, bool light_enabled = true, bool cast_shadows = true);
 		virtual void init(Scene &scene) override;
 		virtual Rgb totalEnergy() const override;
 		virtual Rgb emitPhoton(float s_1, float s_2, float s_3, float s_4, Ray &ray, float &ipdf) const override;

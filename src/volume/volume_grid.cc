@@ -57,7 +57,7 @@ float GridVolumeRegion::density(Point3 p) const
 	return dens;
 }
 
-std::unique_ptr<VolumeRegion> GridVolumeRegion::factory(const ParamMap &params, const Scene &scene)
+std::unique_ptr<VolumeRegion> GridVolumeRegion::factory(Logger &logger, const ParamMap &params, const Scene &scene)
 {
 	float ss = .1f;
 	float sa = .1f;
@@ -76,10 +76,11 @@ std::unique_ptr<VolumeRegion> GridVolumeRegion::factory(const ParamMap &params, 
 	params.getParam("maxY", max[1]);
 	params.getParam("maxZ", max[2]);
 
-	return std::unique_ptr<VolumeRegion>(new GridVolumeRegion(Rgb(sa), Rgb(ss), Rgb(le), g, Point3(min[0], min[1], min[2]), Point3(max[0], max[1], max[2])));
+	return std::unique_ptr<VolumeRegion>(new GridVolumeRegion(logger, Rgb(sa), Rgb(ss), Rgb(le), g, Point3(min[0], min[1], min[2]), Point3(max[0], max[1], max[2])));
 }
 
-GridVolumeRegion::GridVolumeRegion(Rgb sa, Rgb ss, Rgb le, float gg, Point3 pmin, Point3 pmax) {
+GridVolumeRegion::GridVolumeRegion(Logger &logger, Rgb sa, Rgb ss, Rgb le, float gg, Point3 pmin, Point3 pmax) : DensityVolumeRegion(logger)
+{
 	b_box_ = Bound(pmin, pmax);
 	s_a_ = sa;
 	s_s_ = ss;
@@ -91,7 +92,7 @@ GridVolumeRegion::GridVolumeRegion(Rgb sa, Rgb ss, Rgb le, float gg, Point3 pmin
 
 	std::ifstream input_stream;
 	input_stream.open("/home/public/3dkram/cloud2_3.df3");
-	if(!input_stream) Y_ERROR << "GridVolume: Error opening input stream" << YENDL;
+	if(!input_stream) logger_.logError("GridVolume: Error opening input stream");
 
 	input_stream.seekg(0, std::ios_base::beg);
 	std::ifstream::pos_type begin_pos = input_stream.tellg();
@@ -106,13 +107,13 @@ GridVolumeRegion::GridVolumeRegion(Rgb sa, Rgb ss, Rgb le, float gg, Point3 pmin
 		short i_0 = 0, i_1 = 0;
 		input_stream.read((char *)&i_0, 1);
 		input_stream.read((char *)&i_1, 1);
-		if(Y_LOG_HAS_VERBOSE) Y_VERBOSE << "GridVolume: " << i_0 << " " << i_1 << YENDL;
+		if(logger_.isVerbose()) logger_.logVerbose("GridVolume: ", i_0, " ", i_1);
 		dim[i] = (((unsigned short)i_0 << 8) | (unsigned short)i_1);
 	}
 
 	int size_per_voxel = file_size / (dim[0] * dim[1] * dim[2]);
 
-	if(Y_LOG_HAS_VERBOSE) Y_VERBOSE << "GridVolume: " << dim[0] << " " << dim[1] << " " << dim[2] << " " << file_size << " " << size_per_voxel << YENDL;
+	if(logger_.isVerbose()) logger_.logVerbose("GridVolume: ", dim[0], " ", dim[1], " ", dim[2], " ", file_size, " ", size_per_voxel);
 
 	size_x_ = dim[0];
 	size_y_ = dim[1];
@@ -153,11 +154,11 @@ GridVolumeRegion::GridVolumeRegion(Rgb sa, Rgb ss, Rgb le, float gg, Point3 pmin
 		}
 	}
 
-	if(Y_LOG_HAS_VERBOSE) Y_VERBOSE << "GridVolume: Vol.[" << s_a_ << ", " << s_s_ << ", " << l_e_ << "]" << YENDL;
+	if(logger_.isVerbose()) logger_.logVerbose("GridVolume: Vol.[", s_a_, ", ", s_s_, ", ", l_e_, "]");
 }
 
 GridVolumeRegion::~GridVolumeRegion() {
-	if(Y_LOG_HAS_VERBOSE) Y_VERBOSE << "GridVolume: Freeing grid data" << YENDL;
+	if(logger_.isVerbose()) logger_.logVerbose("GridVolume: Freeing grid data");
 
 	for(int x = 0; x < size_x_; ++x)
 	{

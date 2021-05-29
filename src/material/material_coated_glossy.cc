@@ -39,8 +39,8 @@ BEGIN_YAFARAY
 #define C_GLOSSY  	1
 #define C_DIFFUSE 	2
 
-CoatedGlossyMaterial::CoatedGlossyMaterial(const Rgb &col, const Rgb &dcol, const Rgb &mir_col, float mirror_strength, float reflect, float diff, float ior, float expo, bool as_diff, Visibility e_visibility):
-		gloss_color_(col), diff_color_(dcol), mirror_color_(mir_col), mirror_strength_(mirror_strength), ior_(ior), exponent_(expo), reflectivity_(reflect), diffuse_(diff), as_diffuse_(as_diff)
+CoatedGlossyMaterial::CoatedGlossyMaterial(Logger &logger, const Rgb &col, const Rgb &dcol, const Rgb &mir_col, float mirror_strength, float reflect, float diff, float ior, float expo, bool as_diff, Visibility e_visibility):
+		NodeMaterial(logger), gloss_color_(col), diff_color_(dcol), mirror_color_(mir_col), mirror_strength_(mirror_strength), ior_(ior), exponent_(expo), reflectivity_(reflect), diffuse_(diff), as_diffuse_(as_diff)
 {
 	visibility_ = e_visibility;
 	c_flags_[C_SPECULAR] = (BsdfFlags::Specular | BsdfFlags::Reflect);
@@ -448,7 +448,7 @@ Material::Specular CoatedGlossyMaterial::getSpecular(const RenderData &render_da
 	return specular;
 }
 
-std::unique_ptr<Material> CoatedGlossyMaterial::factory(ParamMap &params, std::list< ParamMap > &param_list, const Scene &scene)
+std::unique_ptr<Material> CoatedGlossyMaterial::factory(Logger &logger, ParamMap &params, std::list<ParamMap> &param_list, const Scene &scene)
 {
 	Rgb col(1.f), dcol(1.f), mir_col(1.f);
 	float refl = 1.f;
@@ -495,7 +495,7 @@ std::unique_ptr<Material> CoatedGlossyMaterial::factory(ParamMap &params, std::l
 
 	if(ior == 1.f) ior = 1.0000001f;
 
-	auto mat = std::unique_ptr<CoatedGlossyMaterial>(new CoatedGlossyMaterial(col, dcol, mir_col, mirror_strength, refl, diff, ior, exponent, as_diff, visibility));
+	auto mat = std::unique_ptr<CoatedGlossyMaterial>(new CoatedGlossyMaterial(logger, col, dcol, mir_col, mirror_strength, refl, diff, ior, exponent, as_diff, visibility));
 
 	mat->setMaterialIndex(mat_pass_index);
 	mat->receive_shadows_ = receive_shadows;
@@ -548,7 +548,7 @@ std::unique_ptr<Material> CoatedGlossyMaterial::factory(ParamMap &params, std::l
 	{
 		mat->parseNodes(params, roots, node_list);
 	}
-	else Y_ERROR << "CoatedGlossy: loadNodes() failed!" << YENDL;
+	else logger.logError("CoatedGlossy: loadNodes() failed!");
 
 	mat->diffuse_shader_ = node_list["diffuse_shader"];
 	mat->glossy_shader_ = node_list["glossy_shader"];

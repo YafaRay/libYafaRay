@@ -31,7 +31,7 @@
 
 BEGIN_YAFARAY
 
-UniquePtr_t<ColorOutput> ImageOutput::factory(const ParamMap &params, const Scene &scene, void *callback_user_data, OutputPutpixelCallback_t output_putpixel_callback, OutputFlushAreaCallback_t output_flush_area_callback, OutputFlushCallback_t output_flush_callback)
+UniquePtr_t <yafaray4::ColorOutput> ImageOutput::factory(Logger &logger, const ParamMap &params, const Scene &scene, void *callback_user_data, yafaray4_OutputPutpixelCallback_t output_putpixel_callback, yafaray4_OutputFlushAreaCallback_t output_flush_area_callback, yafaray4_OutputFlushCallback_t output_flush_callback)
 {
 	std::string name;
 	std::string image_path;
@@ -60,13 +60,13 @@ UniquePtr_t<ColorOutput> ImageOutput::factory(const ParamMap &params, const Scen
 	params.getParam("denoise_mix", denoise_params.mix_);
 
 	const ColorSpace color_space = Rgb::colorSpaceFromName(color_space_str);
-	auto output = UniquePtr_t<ColorOutput>(new ImageOutput(image_path, border_x, border_y, denoise_params, name, color_space, gamma, with_alpha, alpha_premultiply, multi_layer));
+	auto output = UniquePtr_t<ColorOutput>(new ImageOutput(logger, image_path, border_x, border_y, denoise_params, name, color_space, gamma, with_alpha, alpha_premultiply, multi_layer));
 	output->setLoggingParams(params);
 	output->setBadgeParams(params);
 	return output;
 }
 
-ImageOutput::ImageOutput(const std::string &image_path, int border_x, int border_y, const DenoiseParams denoise_params, const std::string &name, const ColorSpace color_space, float gamma, bool with_alpha, bool alpha_premultiply, bool multi_layer, void *callback_user_data, OutputPutpixelCallback_t output_putpixel_callback, OutputFlushAreaCallback_t output_flush_area_callback, OutputFlushCallback_t output_flush_callback) : ColorOutput(name, color_space, gamma, with_alpha, alpha_premultiply, callback_user_data, output_putpixel_callback, output_flush_area_callback, output_flush_callback), image_path_(image_path), border_x_(border_x), border_y_(border_y), multi_layer_(multi_layer), denoise_params_(denoise_params)
+ImageOutput::ImageOutput(Logger &logger, const std::string &image_path, int border_x, int border_y, const DenoiseParams denoise_params, const std::string &name, const ColorSpace color_space, float gamma, bool with_alpha, bool alpha_premultiply, bool multi_layer, void *callback_user_data, yafaray4_OutputPutpixelCallback_t output_putpixel_callback, yafaray4_OutputFlushAreaCallback_t output_flush_area_callback, yafaray4_OutputFlushCallback_t output_flush_callback) : ColorOutput(logger, name, color_space, gamma, with_alpha, alpha_premultiply, callback_user_data, output_putpixel_callback, output_flush_area_callback, output_flush_callback), image_path_(image_path), border_x_(border_x), border_y_(border_y), multi_layer_(multi_layer), denoise_params_(denoise_params)
 {
 	//Empty
 }
@@ -95,7 +95,7 @@ void ImageOutput::init(int width, int height, const Layers *layers, const std::m
 	{
 		{
 			Image::Type image_type = it.second.getImageType();
-			std::unique_ptr<Image> image = Image::factory(width, height, image_type, Image::Optimization::None);
+			std::unique_ptr<Image> image = Image::factory(logger_, width, height, image_type, Image::Optimization::None);
 			image_layers_->set(it.first, {std::move(image), it.second});
 		}
 	}
@@ -122,7 +122,7 @@ void ImageOutput::flush(const RenderControl &render_control)
 
 	ParamMap params;
 	params["type"] = ext;
-	std::unique_ptr<Format> format = Format::factory(params);
+	std::unique_ptr<Format> format = Format::factory(logger_, params);
 	
 	if(format)
 	{
@@ -137,7 +137,7 @@ void ImageOutput::flush(const RenderControl &render_control)
 			const std::string fname_pass = directory + base_name + " (" + "multilayer" + ")." + ext;
 			saveImageFileMultiChannel(fname_pass, format.get(), render_control);
 
-			logger_global.setImagePath(fname_pass); //to show the image in the HTML log output
+			logger_.setImagePath(fname_pass); //to show the image in the HTML log output
 		}
 		else
 		{
@@ -149,7 +149,7 @@ void ImageOutput::flush(const RenderControl &render_control)
 				if(layer_type == Layer::Combined)
 				{
 					saveImageFile(image_path_, layer_type, format.get(), render_control); //default imagehandler filename, when not using views nor passes and for reloading into Blender
-					logger_global.setImagePath(image_path_); //to show the image in the HTML log output
+					logger_.setImagePath(image_path_); //to show the image in the HTML log output
 				}
 
 				if(layer_type != Layer::Disabled && (image_layers_->size() > 1 || render_views_->size() > 1))
@@ -166,30 +166,30 @@ void ImageOutput::flush(const RenderControl &render_control)
 	if(save_log_txt_)
 	{
 		std::string f_log_txt_name = directory + "/" + base_name + "_log.txt";
-		logger_global.saveTxtLog(f_log_txt_name, badge_, render_control);
+		logger_.saveTxtLog(f_log_txt_name, badge_, render_control);
 	}
 	if(save_log_html_)
 	{
 		std::string f_log_html_name = directory + "/" + base_name + "_log.html";
-		logger_global.saveHtmlLog(f_log_html_name, badge_, render_control);
+		logger_.saveHtmlLog(f_log_html_name, badge_, render_control);
 	}
-	if(logger_global.getSaveStats())
+	if(logger_.getSaveStats())
 	{
 		std::string f_stats_name = directory + "/" + base_name + "_stats.csv";
-		logger_global.statsSaveToFile(f_stats_name, /*sorted=*/ true);
+		logger_.statsSaveToFile(f_stats_name, /*sorted=*/ true);
 	}
 }
 
 void ImageOutput::saveImageFile(const std::string &filename, const Layer::Type &layer_type, Format *format, const RenderControl &render_control)
 {
-	if(render_control.inProgress()) Y_INFO << name_ << ": Autosaving partial render (" << math::roundFloatPrecision(render_control.currentPassPercent(), 0.01) << "% of pass " << render_control.currentPass() << " of " << render_control.totalPasses() << ") file as \"" << filename << "\"...  " << printDenoiseParams() << YENDL;
-	else Y_INFO << name_ << ": Saving file as \"" << filename << "\"...  " << printDenoiseParams() << YENDL;
+	if(render_control.inProgress()) logger_.logInfo(name_, ": Autosaving partial render (", math::roundFloatPrecision(render_control.currentPassPercent(), 0.01), "% of pass ", render_control.currentPass(), " of ", render_control.totalPasses(), ") file as \"", filename, "\"...  ", printDenoiseParams());
+	else logger_.logInfo(name_, ": Saving file as \"", filename, "\"...  ", printDenoiseParams());
 
 	std::shared_ptr<Image> image = (*image_layers_)(layer_type).image_;
 
 	if(!image)
 	{
-		Y_WARNING << name_ << ": Image does not exist (it is null) and could not be saved." << YENDL;
+		logger_.logWarning(name_, ": Image does not exist (it is null) and could not be saved.");
 		return;
 	}
 
@@ -198,24 +198,24 @@ void ImageOutput::saveImageFile(const std::string &filename, const Layer::Type &
 		const std::unique_ptr<Image> badge_image = generateBadgeImage(render_control);
 		Image::Position badge_image_position = Image::Position::Bottom;
 		if(badge_.getPosition() == Badge::Position::Top) badge_image_position = Image::Position::Top;
-		image = Image::getComposedImage(image.get(), badge_image.get(), badge_image_position);
+		image = Image::getComposedImage(logger_, image.get(), badge_image.get(), badge_image_position);
 		if(!image)
 		{
-			Y_WARNING << name_ << ": Image could not be composed with badge and could not be saved." << YENDL;
+			logger_.logWarning(name_, ": Image could not be composed with badge and could not be saved.");
 			return;
 		}
 	}
 
 	if(denoiseEnabled())
 	{
-		std::unique_ptr<Image> image_denoised = Image::getDenoisedLdrImage(image.get(), denoise_params_);
+		std::unique_ptr<Image> image_denoised = Image::getDenoisedLdrImage(logger_, image.get(), denoise_params_);
 		if(image_denoised)
 		{
 			format->saveToFile(filename, image_denoised.get());
 		}
 		else
 		{
-			if(Y_LOG_HAS_VERBOSE) Y_VERBOSE << name_ << ": Denoise was not possible, saving image without denoise postprocessing." << YENDL;
+			if(logger_.isVerbose()) logger_.logVerbose(name_, ": Denoise was not possible, saving image without denoise postprocessing.");
 			format->saveToFile(filename, image.get());
 		}
 	}
@@ -225,18 +225,18 @@ void ImageOutput::saveImageFile(const std::string &filename, const Layer::Type &
 	{
 		Path file_path(filename);
 		std::string file_name_alpha = file_path.getBaseName() + "_alpha." + file_path.getExtension();
-		Y_INFO << name_ << ": Saving separate alpha channel file as \"" << file_name_alpha << "\"...  " << printDenoiseParams() << YENDL;
+		logger_.logInfo(name_, ": Saving separate alpha channel file as \"", file_name_alpha, "\"...  ", printDenoiseParams());
 
 		if(denoiseEnabled())
 		{
-			std::unique_ptr<Image> image_denoised = Image::getDenoisedLdrImage(image.get(), denoise_params_);
+			std::unique_ptr<Image> image_denoised = Image::getDenoisedLdrImage(logger_, image.get(), denoise_params_);
 			if(image_denoised)
 			{
 				format->saveAlphaChannelOnlyToFile(file_name_alpha, image_denoised.get());
 			}
 			else
 			{
-				if(Y_LOG_HAS_VERBOSE) Y_VERBOSE << name_ << ": Denoise was not possible, saving image without denoise postprocessing." << YENDL;
+				if(logger_.isVerbose()) logger_.logVerbose(name_, ": Denoise was not possible, saving image without denoise postprocessing.");
 				format->saveAlphaChannelOnlyToFile(file_name_alpha, image.get());
 			}
 		}
@@ -254,7 +254,7 @@ void ImageOutput::saveImageFileMultiChannel(const std::string &filename, Format 
 		ImageLayers image_layers_badge;
 		for(const auto &image_layer : *image_layers_)
 		{
-			std::unique_ptr<Image> image_layer_badge = Image::getComposedImage(image_layer.second.image_.get(), badge_image.get(), badge_image_position);
+			std::unique_ptr<Image> image_layer_badge = Image::getComposedImage(logger_, image_layer.second.image_.get(), badge_image.get(), badge_image_position);
 			image_layers_badge.set(image_layer.first, {std::move(image_layer_badge), image_layer.second.layer_});
 		}
 		format->saveToFileMultiChannel(filename, &image_layers_badge);
@@ -267,7 +267,7 @@ std::string ImageOutput::printDenoiseParams() const
 #ifdef HAVE_OPENCV	//Denoise only works if YafaRay is built with OpenCV support
 	if(!denoiseEnabled()) return "";
 	std::stringstream param_string;
-	param_string << "| Image file denoise enabled [mix=" << denoise_params_.mix_ << ", h(Luminance)=" << denoise_params_.hlum_ << ", h(Chrominance)=" << denoise_params_.hcol_ << "]" << YENDL;
+	param_string << "| Image file denoise enabled [mix=" << denoise_params_.mix_ << ", h(Luminance)=" << denoise_params_.hlum_ <<  ", h(Chrominance)=" << denoise_params_.hcol_ << "]";
 	return param_string.str();
 #else
 	return "";

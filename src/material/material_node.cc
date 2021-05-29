@@ -64,7 +64,7 @@ void NodeMaterial::solveNodesOrder(const std::vector<ShaderNode *> &roots)
 	//set all IDs = 0 to indicate "not tested yet"
 	for(unsigned int i = 0; i < color_nodes_.size(); ++i) color_nodes_[i]->setId(0);
 	for(unsigned int i = 0; i < roots.size(); ++i) recursiveSolver_global(roots[i], color_nodes_sorted_);
-	if(color_nodes_.size() != color_nodes_sorted_.size()) Y_WARNING << "NodeMaterial: Unreachable nodes!" << YENDL;
+	if(color_nodes_.size() != color_nodes_sorted_.size()) logger_.logWarning("NodeMaterial: Unreachable nodes!");
 	//give the nodes an index to be used as the "stack"-index.
 	//using the order of evaluation can't hurt, can it?
 	for(unsigned int i = 0; i < color_nodes_sorted_.size(); ++i)
@@ -110,39 +110,39 @@ bool NodeMaterial::loadNodes(const std::list<ParamMap> &params_list, const Scene
 		{
 			if(element != "shader_node") continue;
 		}
-		else Y_WARNING << "NodeMaterial: No element type given; assuming shader node" << YENDL;
+		else logger_.logWarning("NodeMaterial: No element type given; assuming shader node");
 
 		if(!param_map.getParam("name", name))
 		{
-			Y_ERROR << "NodeMaterial: Name of shader node not specified!" << YENDL;
+			logger_.logError("NodeMaterial: Name of shader node not specified!");
 			error = true;
 			break;
 		}
 
 		if(shaders_table_.find(name) != shaders_table_.end())
 		{
-			Y_ERROR << "NodeMaterial: Multiple nodes with identically names!" << YENDL;
+			logger_.logError("NodeMaterial: Multiple nodes with identically names!");
 			error = true;
 			break;
 		}
 
 		if(!param_map.getParam("type", type))
 		{
-			Y_ERROR << "NodeMaterial: Type of shader node not specified!" << YENDL;
+			logger_.logError("NodeMaterial: Type of shader node not specified!");
 			error = true;
 			break;
 		}
 
-		std::unique_ptr<ShaderNode> shader = ShaderNode::factory(param_map, scene);
+		std::unique_ptr<ShaderNode> shader = ShaderNode::factory(logger_, param_map, scene);
 		if(shader)
 		{
 			shaders_table_[name] = std::move(shader);
 			color_nodes_.push_back(shaders_table_[name].get());
-			if(Y_LOG_HAS_VERBOSE) Y_VERBOSE << "NodeMaterial: Added ShaderNode '" << name << "'! (" << (void *)shaders_table_[name].get() << ")" << YENDL;
+			if(logger_.isVerbose()) logger_.logVerbose("NodeMaterial: Added ShaderNode '", name, "'! (", (void *)shaders_table_[name].get(), ")");
 		}
 		else
 		{
-			Y_ERROR << "NodeMaterial: No shader node could be constructed.'" << type << "'!" << YENDL;
+			logger_.logError("NodeMaterial: No shader node could be constructed.'", type, "'!");
 			color_nodes_.clear(); //Empty the nodes table, to prevent further crashes later in rendering, when any of the nodes cannot be created
 			error = true;
 			break;
@@ -155,9 +155,9 @@ bool NodeMaterial::loadNodes(const std::list<ParamMap> &params_list, const Scene
 		int n = 0;
 		for(const auto &param_map : params_list)
 		{
-			if(!color_nodes_[n]->configInputs(param_map, finder))
+			if(!color_nodes_[n]->configInputs(logger_, param_map, finder))
 			{
-				Y_ERROR << "NodeMaterial: Shader node configuration failed! (n=" << n << ")" << YENDL;
+				logger_.logError("NodeMaterial: Shader node configuration failed! (n=", n, ")");
 				error = true; break;
 			}
 			++n;
@@ -181,7 +181,7 @@ void NodeMaterial::parseNodes(const ParamMap &params, std::vector<ShaderNode *> 
 				current_node.second = node_found->second.get();
 				roots.push_back(current_node.second);
 			}
-			else Y_WARNING << "Shader node " << current_node.first << " '" << name << "' does not exist!" << YENDL;
+			else logger_.logWarning("Shader node ", current_node.first, " '", name, "' does not exist!");
 		}
 	}
 }

@@ -112,8 +112,8 @@ struct FoundPhoton
 class PhotonMap final
 {
 	public:
-		PhotonMap() = default;
-		PhotonMap(const std::string &mapname, int threads): name_(mapname), threads_pkd_tree_(threads) { }
+		PhotonMap(Logger &logger) : logger_(logger) { }
+		PhotonMap(Logger &logger, const std::string &mapname, int threads): name_(mapname), threads_pkd_tree_(threads), logger_(logger) { }
 		void setNumPaths(int n) { paths_ = n; }
 		void setName(const std::string &mapname) { name_ = mapname; }
 		void setNumThreadsPkDtree(int threads) { threads_pkd_tree_ = threads; }
@@ -141,6 +141,7 @@ class PhotonMap final
 		std::unique_ptr<kdtree::PointKdTree<Photon>> tree_;
 		std::string name_;
 		int threads_pkd_tree_ = 1;
+		Logger &logger_;
 };
 
 // photon "processes" for lookup

@@ -25,13 +25,14 @@
 #include <string>
 
 BEGIN_YAFARAY
+
 //! Progress bar abstract class with pure virtual members
 class ProgressBar
 {
 	public:
 		virtual ~ProgressBar() = default;
 		//! initialize (or reset) the monitor, give the total number of steps that can occur
-		virtual void init(int steps_total = 100) { std::lock_guard<std::mutex> lock_guard(mutx_); steps_total_ = steps_total; steps_done_ = 0;}
+		virtual void init(int steps_total, bool colors_enabled) { std::lock_guard<std::mutex> lock_guard(mutx_); steps_total_ = steps_total; steps_done_ = 0; colors_enabled_ = colors_enabled; }
 		//! update the montior, increment by given number of steps_increment; init has to be called before the first update.
 		virtual void update(int steps_increment = 1) { std::lock_guard<std::mutex> lock_guard(mutx_); steps_done_ += steps_increment; }
 		//! finish progress bar. It could output some summary, simply disappear from GUI or whatever...
@@ -44,9 +45,11 @@ class ProgressBar
 		void setAutoDelete(bool value) { std::lock_guard<std::mutex> lock_guard(mutx_); auto_delete_ = value; }
 		bool isAutoDeleted() const { return auto_delete_; }
 		std::string getName() const { return "ProgressBar"; }
+		static void printBar(bool colors_enabled, int progress_empty, int progress_full, int percent);
 
 	protected:
 		bool auto_delete_ = true; //!< If true, the progress bar is owned by libYafaRay and it is automatically deleted when render finishes. Set it to false when the libYafaRay client owns the progress bar.
+		bool colors_enabled_ = true;
 		int steps_total_ = 0;
 		int steps_done_ = 0;
 		std::string tag_;
@@ -59,7 +62,7 @@ class ConsoleProgressBar final : public ProgressBar
 {
 	public:
 		ConsoleProgressBar(int cwidth = 80);
-		virtual void init(int total_steps) override;
+		virtual void init(int total_steps, bool colors_enabled) override;
 		virtual void update(int steps_increment = 1) override;
 		virtual void done() override;
 
@@ -71,8 +74,8 @@ class ConsoleProgressBar final : public ProgressBar
 class CallbackProgressBar final : public ProgressBar
 {
 	public:
-		CallbackProgressBar(void *callback_user_data, MonitorCallback_t monitor_callback);
-		virtual void init(int total_steps) override;
+		CallbackProgressBar(void *callback_user_data, yafaray4_MonitorCallback_t monitor_callback);
+		virtual void init(int total_steps, bool colors_enabled) override;
 		virtual void update(int steps_increment = 1) override;
 		virtual void done() override;
 		virtual void setTag(const std::string &text) override;
@@ -80,7 +83,7 @@ class CallbackProgressBar final : public ProgressBar
 	private:
 		void updateCallback() { monitor_callback_(steps_total_, steps_done_, tag_.c_str(), callback_user_data_); }
 		void *callback_user_data_ = nullptr;
-		MonitorCallback_t monitor_callback_ = nullptr;
+		yafaray4_MonitorCallback_t monitor_callback_ = nullptr;
 };
 
 END_YAFARAY

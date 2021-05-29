@@ -27,8 +27,8 @@
 
 BEGIN_YAFARAY
 
-ShinyDiffuseMaterial::ShinyDiffuseMaterial(const Rgb &diffuse_color, const Rgb &mirror_color, float diffuse_strength, float transparency_strength, float translucency_strength, float mirror_strength, float emit_strength, float transmit_filter_strength, Visibility visibility):
-		diffuse_color_(diffuse_color), mirror_color_(mirror_color),
+ShinyDiffuseMaterial::ShinyDiffuseMaterial(Logger &logger, const Rgb &diffuse_color, const Rgb &mirror_color, float diffuse_strength, float transparency_strength, float translucency_strength, float mirror_strength, float emit_strength, float transmit_filter_strength, Visibility visibility):
+		NodeMaterial(logger), diffuse_color_(diffuse_color), mirror_color_(mirror_color),
 		mirror_strength_(mirror_strength), transparency_strength_(transparency_strength), translucency_strength_(translucency_strength), diffuse_strength_(diffuse_strength), transmit_filter_strength_(transmit_filter_strength)
 {
 	visibility_ = visibility;
@@ -443,7 +443,7 @@ Material::Specular ShinyDiffuseMaterial::getSpecular(const RenderData &render_da
 	if(is_mirror_)
 	{
 		specular.reflect_.enabled_ = true;
-		//Y_WARNING << sp.N << " | " << N << YENDL;
+		//logger_.logWarning(sp.N << " | " << N);
 		specular.reflect_.dir_ = wo;
 		specular.reflect_.dir_.reflect(n);
 		const float cos_wi_ng = specular.reflect_.dir_ * ng;
@@ -515,7 +515,7 @@ float ShinyDiffuseMaterial::getAlpha(const RenderData &render_data, const Surfac
 	return 1.f;
 }
 
-std::unique_ptr<Material> ShinyDiffuseMaterial::factory(ParamMap &params, std::list<ParamMap> &params_list, const Scene &scene)
+std::unique_ptr<Material> ShinyDiffuseMaterial::factory(Logger &logger, ParamMap &params, std::list<ParamMap> &params_list, const Scene &scene)
 {
 	/// Material Parameters
 	Rgb diffuse_color = 1.f;
@@ -569,7 +569,7 @@ std::unique_ptr<Material> ShinyDiffuseMaterial::factory(ParamMap &params, std::l
 	const Visibility visibility = visibilityFromString_global(s_visibility);
 
 	// !!remember to put diffuse multiplier in material itself!
-	auto mat = std::unique_ptr<ShinyDiffuseMaterial>(new ShinyDiffuseMaterial(diffuse_color, mirror_color, diffuse_strength, transparency_strength, translucency_strength, mirror_strength, emit_strength, transmit_filter_strength, visibility));
+	auto mat = std::unique_ptr<ShinyDiffuseMaterial>(new ShinyDiffuseMaterial(logger, diffuse_color, mirror_color, diffuse_strength, transparency_strength, translucency_strength, mirror_strength, emit_strength, transmit_filter_strength, visibility));
 
 	mat->setMaterialIndex(mat_pass_index);
 	mat->receive_shadows_ = receive_shadows;
@@ -624,7 +624,7 @@ std::unique_ptr<Material> ShinyDiffuseMaterial::factory(ParamMap &params, std::l
 	{
 		mat->parseNodes(params, roots, node_list);
 	}
-	else Y_ERROR << "ShinyDiffuse: Loading shader nodes failed!" << YENDL;
+	else logger.logError("ShinyDiffuse: Loading shader nodes failed!");
 
 	mat->diffuse_shader_      = node_list["diffuse_shader"];
 	mat->mirror_color_shader_  = node_list["mirror_color_shader"];

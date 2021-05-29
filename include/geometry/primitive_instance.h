@@ -44,7 +44,7 @@ class PrimitiveInstance : public Primitive
 		virtual Bound getBound(const Matrix4 *) const override;
 		virtual bool intersectsBound(const ExBound &b, const Matrix4 *) const override;
 		virtual bool clippingSupport() const override { return base_primitive_->clippingSupport(); }
-		virtual PolyDouble::ClipResultWithBound clipToBound(const std::array<Vec3Double, 2> &bound, const ClipPlane &clip_plane, const PolyDouble &poly, const Matrix4 *obj_to_world) const override;
+		virtual PolyDouble::ClipResultWithBound clipToBound(Logger &logger, const std::array<Vec3Double, 2> &bound, const ClipPlane &clip_plane, const PolyDouble &poly, const Matrix4 *obj_to_world) const override;
 		virtual IntersectData intersect(const Ray &ray, const Matrix4 *) const override;
 		virtual SurfacePoint getSurface(const Point3 &hit_point, const IntersectData &intersect_data, const Matrix4 *) const override;
 		virtual const Material *getMaterial() const override { return base_primitive_->getMaterial(); }

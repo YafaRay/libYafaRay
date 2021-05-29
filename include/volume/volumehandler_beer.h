@@ -30,11 +30,11 @@ class Scene;
 class BeerVolumeHandler : public VolumeHandler
 {
 	public:
-		static std::unique_ptr<VolumeHandler> factory(const ParamMap &params, const Scene &scene);
+		static std::unique_ptr<VolumeHandler> factory(Logger &logger, const ParamMap &params, const Scene &scene);
 
 	protected:
-		BeerVolumeHandler(const Rgb &sigma): sigma_a_(sigma) {};
-		BeerVolumeHandler(const Rgb &acol, double dist);
+		BeerVolumeHandler(Logger &logger, const Rgb &sigma): VolumeHandler(logger), sigma_a_(sigma) {};
+		BeerVolumeHandler(Logger &logger, const Rgb &acol, double dist);
 
 	private:
 		virtual bool transmittance(const RenderData &render_data, const Ray &ray, Rgb &col) const override;

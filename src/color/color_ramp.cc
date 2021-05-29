@@ -28,7 +28,6 @@ BEGIN_YAFARAY
 
 ColorRamp::ColorRamp(const std::string &mode_str, const std::string &interpolation_str, const std::string &hue_interpolation_str)
 {
-	if(Y_LOG_HAS_DEBUG) Y_DEBUG << "modeStr='" << mode_str << "' interpolationStr='" << interpolation_str << "' hue_interpolationStr='" << hue_interpolation_str << "'" << YENDL;
 	if(mode_str == "RGB" || mode_str == "rgb") mode_ = Rgb;
 	else if(mode_str == "HSV" || mode_str == "hsv") mode_ = Hsv;
 	else if(mode_str == "HSL" || mode_str == "hsl") mode_ = Hsl;

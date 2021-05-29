@@ -31,11 +31,13 @@ class RenderData;
 class Light;
 class Rgb;
 class Ray;
+class Logger;
 
 class Background
 {
 	public:
-		static std::shared_ptr<Background> factory(ParamMap &params, Scene &scene);
+		static std::shared_ptr<Background> factory(Logger &logger, ParamMap &params, Scene &scene);
+		Background(Logger &logger) : logger_(logger) { }
 		virtual ~Background() = default;
 		//! get the background color for a given ray
 		virtual Rgb operator()(const Ray &ray, RenderData &render_data, bool from_postprocessed = false) const = 0;
@@ -50,6 +52,7 @@ class Background
 	protected:
 		bool with_ibl_ = false;
 		bool shoot_caustic_ = false;
+		Logger &logger_;
 };
 
 END_YAFARAY

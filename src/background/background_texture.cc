@@ -28,8 +28,8 @@
 
 BEGIN_YAFARAY
 
-TextureBackground::TextureBackground(const Texture *texture, Projection proj, float bpower, float rot, bool ibl, float ibl_blur, bool with_caustic):
-		tex_(texture), project_(proj), power_(bpower), ibl_blur_mipmap_level_(math::pow(ibl_blur, 2.f))
+TextureBackground::TextureBackground(Logger &logger, const Texture *texture, Projection proj, float bpower, float rot, bool ibl, float ibl_blur, bool with_caustic):
+		Background(logger), tex_(texture), project_(proj), power_(bpower), ibl_blur_mipmap_level_(math::pow(ibl_blur, 2.f))
 {
 	with_ibl_ = ibl;
 	shoot_caustic_ = with_caustic;
@@ -78,7 +78,7 @@ Rgb TextureBackground::eval(const Ray &ray, bool use_ibl_blur) const
 	return power_ * ret;
 }
 
-std::shared_ptr<Background> TextureBackground::factory(ParamMap &params, Scene &scene)
+std::shared_ptr<Background> TextureBackground::factory(Logger &logger, ParamMap &params, Scene &scene)
 {
 	Texture *tex = nullptr;
 	std::string texname;
@@ -95,13 +95,13 @@ std::shared_ptr<Background> TextureBackground::factory(ParamMap &params, Scene &
 
 	if(!params.getParam("texture", texname))
 	{
-		Y_ERROR << "TextureBackground: No texture given for texture background!" << YENDL;
+		logger.logError("TextureBackground: No texture given for texture background!");
 		return nullptr;
 	}
 	tex = scene.getTexture(texname);
 	if(!tex)
 	{
-		Y_ERROR << "TextureBackground: Texture '" << texname << "' for textureback not existant!" << YENDL;
+		logger.logError("TextureBackground: Texture '", texname, "' for textureback not existant!");
 		return nullptr;
 	}
 	if(params.getParam("mapping", mapping))
@@ -118,7 +118,7 @@ std::shared_ptr<Background> TextureBackground::factory(ParamMap &params, Scene &
 	params.getParam("with_diffuse", diffuse);
 	params.getParam("cast_shadows", cast_shadows);
 
-	auto tex_bg = std::make_shared<TextureBackground>(TextureBackground(tex, pr, power, rot, ibl, ibl_blur, caust));
+	auto tex_bg = std::make_shared<TextureBackground>(TextureBackground(logger, tex, pr, power, rot, ibl, ibl_blur, caust));
 
 	if(ibl)
 	{
@@ -132,9 +132,9 @@ std::shared_ptr<Background> TextureBackground::factory(ParamMap &params, Scene &
 
 		if(ibl_blur > 0.f)
 		{
-			Y_INFO << "TextureBackground: starting background SmartIBL blurring with IBL Blur factor=" << ibl_blur << YENDL;
+			logger.logInfo("TextureBackground: starting background SmartIBL blurring with IBL Blur factor=", ibl_blur);
 			tex->generateMipMaps();
-			if(Y_LOG_HAS_VERBOSE) Y_VERBOSE << "TextureBackground: background SmartIBL blurring done using mipmaps." << YENDL;
+			if(logger.isVerbose()) logger.logVerbose("TextureBackground: background SmartIBL blurring done using mipmaps.");
 		}
 
 		Light *bglight = scene.createLight("textureBackground_bgLight", bgp);
@@ -143,7 +143,7 @@ std::shared_ptr<Background> TextureBackground::factory(ParamMap &params, Scene &
 
 		if(ibl_clamp_sampling > 0.f)
 		{
-			Y_INFO << "TextureBackground: using IBL sampling clamp=" << ibl_clamp_sampling << YENDL;
+			logger.logInfo("TextureBackground: using IBL sampling clamp=", ibl_clamp_sampling);
 
 			bglight->setClampIntersect(ibl_clamp_sampling);
 		}

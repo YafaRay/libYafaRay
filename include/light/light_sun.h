@@ -22,6 +22,7 @@
 #ifndef YAFARAY_LIGHT_SUN_H
 #define YAFARAY_LIGHT_SUN_H
 
+#include <common/logger.h>
 #include "light/light.h"
 #include "geometry/vector.h"
 
@@ -33,10 +34,10 @@ class Scene;
 class SunLight final : public Light
 {
 	public:
-		static std::unique_ptr<Light> factory(ParamMap &params, const Scene &scene);
+		static std::unique_ptr<Light> factory(Logger &logger, ParamMap &params, const Scene &scene);
 
 	private:
-		SunLight(Vec3 dir, const Rgb &col, float inte, float angle, int n_samples, bool b_light_enabled = true, bool b_cast_shadows = true);
+		SunLight(Logger &logger, Vec3 dir, const Rgb &col, float inte, float angle, int n_samples, bool b_light_enabled = true, bool b_cast_shadows = true);
 		virtual void init(Scene &scene);
 		virtual Rgb totalEnergy() const { return color_ * e_pdf_; }
 		virtual Rgb emitPhoton(float s_1, float s_2, float s_3, float s_4, Ray &ray, float &ipdf) const;

@@ -25,6 +25,7 @@
 #include "color/color.h"
 #include "common/memory.h"
 #include <sstream>
+#include <common/logger.h>
 
 BEGIN_YAFARAY
 
@@ -41,15 +42,15 @@ struct LSample;
 class Light
 {
 	public:
-		static std::unique_ptr<Light> factory(ParamMap &params, const Scene &scene);
+		static std::unique_ptr<Light> factory(Logger &logger, ParamMap &params, const Scene &scene);
 		struct Flags : public yafaray4::Flags
 		{
 			Flags() = default;
 			Flags(unsigned int flags) : yafaray4::Flags(flags) { }
 			enum Enum : unsigned int { None = 0, DiracDir = 1, Singular = 1 << 1 };
 		};
-		Light() = default;
-		Light(const Flags &flags): flags_(flags) {}
+		Light(Logger &logger) : logger_(logger) { }
+		Light(Logger &logger, const Flags &flags): flags_(flags), logger_(logger) { }
 		virtual ~Light() = default;
 		//! allow for preprocessing when scene loading has finished
 		virtual void init(Scene &scene) {}
@@ -104,7 +105,7 @@ class Light
 		bool shoot_diffuse_; //!<enable/disable if the light can shoot diffuse photons (photonmap integrator)
 		bool photon_only_; //!<enable/disable if the light is a photon-only light (only shoots photons, not illuminating)
 		float clamp_intersect_ = 0.f;	//!<trick to reduce light sampling noise at the expense of realism and inexact overall light. 0.f disables clamping
-
+		Logger &logger_;
 };
 
 struct LSample

@@ -26,7 +26,7 @@
 
 BEGIN_YAFARAY
 
-ConstantBackground::ConstantBackground(Rgb col, bool ibl, bool with_caustic) : color_(col)
+ConstantBackground::ConstantBackground(Logger &logger, Rgb col, bool ibl, bool with_caustic) : Background(logger), color_(col)
 {
 	with_ibl_ = ibl;
 	shoot_caustic_ = with_caustic;
@@ -42,7 +42,7 @@ Rgb ConstantBackground::eval(const Ray &ray, bool use_ibl_blur) const
 	return color_;
 }
 
-std::shared_ptr<Background> ConstantBackground::factory(ParamMap &params, Scene &scene)
+std::shared_ptr<Background> ConstantBackground::factory(Logger &logger, ParamMap &params, Scene &scene)
 {
 	Rgb col(0.f);
 	float power = 1.0;
@@ -60,7 +60,7 @@ std::shared_ptr<Background> ConstantBackground::factory(ParamMap &params, Scene 
 	params.getParam("with_caustic", caus);
 	params.getParam("with_diffuse", diff);
 
-	auto const_bg = std::make_shared<ConstantBackground>(ConstantBackground(col * power, ibl, true));
+	auto const_bg = std::make_shared<ConstantBackground>(ConstantBackground(logger, col * power, ibl, true));
 
 	if(ibl)
 	{

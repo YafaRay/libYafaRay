@@ -24,11 +24,11 @@
 #include "image/image.h"
 #include <cstring>
 
-yafaray4_Interface_t *yafaray4_createInterface(yafaray4_Interface_Type_t interface_type, const char *exported_file_path)
+yafaray4_Interface_t *yafaray4_createInterface(yafaray4_Interface_Type_t interface_type, const char *exported_file_path, const yafaray4_LoggerCallback_t logger_callback, void *callback_user_data)
 {
 	yafaray4::Interface *interface;
 	if(interface_type == YAFARAY_INTERFACE_EXPORT_XML) interface = new yafaray4::XmlExport(exported_file_path);
-	else interface = new yafaray4::Interface();
+	else interface = new yafaray4::Interface(logger_callback, callback_user_data);
 	return reinterpret_cast<yafaray4_Interface *>(interface);
 }
 
@@ -203,7 +203,7 @@ yafaray4_bool_t yafaray4_createRenderView(yafaray4_Interface_t *interface, const
 	return static_cast<yafaray4_bool_t>(reinterpret_cast<yafaray4::Interface *>(interface)->createRenderView(name) != nullptr);
 }
 
-yafaray4_bool_t yafaray4_createOutput(yafaray4_Interface_t *interface, const char *name, yafaray4_bool_t auto_delete, void *callback_user_data, OutputPutpixelCallback_t output_putpixel_callback, OutputFlushAreaCallback_t output_flush_area_callback, OutputFlushCallback_t output_flush_callback) //!< ColorOutput creation, usually for internally-owned outputs that are destroyed when the scene is deleted or when libYafaRay instance is closed. If the client wants to keep ownership, it can set the "auto_delete" to false.
+yafaray4_bool_t yafaray4_createOutput(yafaray4_Interface_t *interface, const char *name, yafaray4_bool_t auto_delete, void *callback_user_data, yafaray4_OutputPutpixelCallback_t output_putpixel_callback, yafaray4_OutputFlushAreaCallback_t output_flush_area_callback, yafaray4_OutputFlushCallback_t output_flush_callback) //!< ColorOutput creation, usually for internally-owned outputs that are destroyed when the scene is deleted or when libYafaRay instance is closed. If the client wants to keep ownership, it can set the "auto_delete" to false.
 {
 	return static_cast<yafaray4_bool_t>(reinterpret_cast<yafaray4::Interface *>(interface)->createOutput(name, auto_delete, callback_user_data, output_putpixel_callback, output_flush_area_callback, output_flush_callback) != nullptr);
 }
@@ -223,7 +223,7 @@ void yafaray4_clearAll(yafaray4_Interface_t *interface)
 	reinterpret_cast<yafaray4::Interface *>(interface)->clearAll();
 }
 
-void yafaray4_render(yafaray4_Interface_t *interface, void *callback_user_data, MonitorCallback_t monitor_callback) //!< render the scene...
+void yafaray4_render(yafaray4_Interface_t *interface, void *callback_user_data, yafaray4_MonitorCallback_t monitor_callback) //!< render the scene...
 {
 	yafaray4::ProgressBar *progress_bar;
 	if(monitor_callback) progress_bar = new yafaray4::CallbackProgressBar(callback_user_data, monitor_callback);
@@ -256,14 +256,14 @@ void yafaray4_enablePrintDateTime(yafaray4_Interface_t *interface, yafaray4_bool
 	reinterpret_cast<yafaray4::Interface *>(interface)->enablePrintDateTime(value);
 }
 
-void yafaray4_setConsoleVerbosityLevel(yafaray4_Interface_t *interface, const char *str_v_level)
+void yafaray4_setConsoleVerbosityLevel(yafaray4_Interface_t *interface, yafaray4_LogLevel_t log_level)
 {
-	reinterpret_cast<yafaray4::Interface *>(interface)->setConsoleVerbosityLevel(str_v_level);
+	reinterpret_cast<yafaray4::Interface *>(interface)->setConsoleVerbosityLevel(log_level);
 }
 
-void yafaray4_setLogVerbosityLevel(yafaray4_Interface_t *interface, const char *str_v_level)
+void yafaray4_setLogVerbosityLevel(yafaray4_Interface_t *interface, yafaray4_LogLevel_t log_level)
 {
-	reinterpret_cast<yafaray4::Interface *>(interface)->setLogVerbosityLevel(str_v_level);
+	reinterpret_cast<yafaray4::Interface *>(interface)->setLogVerbosityLevel(log_level);
 }
 
 void yafaray4_getVersion(yafaray4_Interface_t *interface, char *dest_string, size_t dest_string_size) //!< Get version to check against the exporters
@@ -337,4 +337,9 @@ yafaray4_bool_t yafaray4_getImageColor(const yafaray4_Image_t *image, int x, int
 void yafaray4_cancelRendering(yafaray4_Interface_t *interface)
 {
 	reinterpret_cast<yafaray4::Interface *>(interface)->cancel();
+}
+
+void yafaray4_setConsoleLogColorsEnabled(yafaray4_Interface_t *interface, yafaray4_bool_t colors_enabled)
+{
+	reinterpret_cast<yafaray4::Interface *>(interface)->setConsoleLogColorsEnabled(colors_enabled);
 }

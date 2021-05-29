@@ -28,7 +28,7 @@
 
 BEGIN_YAFARAY
 
-UniquePtr_t<ColorOutput> DebugOutput::factory(const ParamMap &params, const Scene &scene, void *callback_user_data, OutputPutpixelCallback_t output_putpixel_callback, OutputFlushAreaCallback_t output_flush_area_callback, OutputFlushCallback_t output_flush_callback)
+UniquePtr_t <yafaray4::ColorOutput> DebugOutput::factory(Logger &logger, const ParamMap &params, const Scene &scene, void *callback_user_data, yafaray4_OutputPutpixelCallback_t output_putpixel_callback, yafaray4_OutputFlushAreaCallback_t output_flush_area_callback, yafaray4_OutputFlushCallback_t output_flush_callback)
 {
 	std::string name;
 	std::string color_space_str = "Raw_Manual_Gamma";
@@ -43,7 +43,7 @@ UniquePtr_t<ColorOutput> DebugOutput::factory(const ParamMap &params, const Scen
 	params.getParam("alpha_premultiply", alpha_premultiply);
 
 	const ColorSpace color_space = Rgb::colorSpaceFromName(color_space_str);
-	auto output = UniquePtr_t<ColorOutput>(new DebugOutput(name, color_space, gamma, with_alpha, alpha_premultiply));
+	auto output = UniquePtr_t<ColorOutput>(new DebugOutput(logger, name, color_space, gamma, with_alpha, alpha_premultiply));
 	return output;
 }
 
@@ -51,13 +51,13 @@ bool DebugOutput::putPixel(int x, int y, const ColorLayer &color_layer)
 {
 	const std::string layer_type_name = Layer::getTypeName(color_layer.layer_type_);
 	const std::string view = current_render_view_ ? current_render_view_->getName() : "";
-	if(Y_LOG_HAS_DEBUG) Y_DEBUG PRTEXT(DebugOutput::putPixel) PR(x) PR(y) PR(layer_type_name) PR(color_layer.color_) PR(view) PREND;
+	if(logger_.isDebug()) logger_.logDebug("DebugOutput::putPixel) PR(x) PR(y) PR(layer_type_name) PR(color_layer.color_) PR(view");
 	return true;
 }
 
 void DebugOutput::flush(const RenderControl &render_control)
 {
-	if(Y_LOG_HAS_DEBUG) Y_DEBUG PRTEXT(DebugOutput::flush) PREND;
+	if(logger_.isDebug()) logger_.logDebug("DebugOutput::flush");
 }
 
 END_YAFARAY

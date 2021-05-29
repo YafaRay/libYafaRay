@@ -42,37 +42,50 @@
 
 BEGIN_YAFARAY
 
-#define Y_VERBOSE_SCENE Y_VERBOSE << "Scene: "
-#define Y_ERROR_SCENE Y_ERROR << "Scene: "
-#define Y_WARN_SCENE Y_WARNING << "Scene: "
-
-#define WARN_EXIST Y_WARN_SCENE << "Sorry, " << pname << " \"" << name << "\" already exists!" << YENDL
-
-#define ERR_NO_TYPE Y_ERROR_SCENE << pname << " type not specified for \"" << name << "\" node!" << YENDL
-#define ERR_ON_CREATE(t) Y_ERROR_SCENE << "No " << pname << " could be constructed '" << t << "'!" << YENDL
-
-#define INFO_VERBOSE_SUCCESS(name, t) Y_VERBOSE_SCENE << "Added " << pname << " '"<< name << "' (" << t << ")!" << YENDL
-#define INFO_VERBOSE_SUCCESS_DISABLED(name, t) Y_VERBOSE_SCENE << "Added " << pname << " '"<< name << "' (" << t << ")! [DISABLED]" << YENDL
-
-std::unique_ptr<Scene> Scene::factory(ParamMap &params)
+void Scene::logWarnExist(Logger &logger, const std::string &pname, const std::string &name)
 {
-	if(Y_LOG_HAS_DEBUG)
+	logger.logWarning("Scene: Sorry, ", pname, " \"", name, "\" already exists!");
+}
+
+void Scene::logErrNoType(Logger &logger, const std::string &pname, const std::string &name, const std::string &type)
+{
+	logger.logError("Scene: ", pname, " type '", type, "' not specified for \"", name, "\" node!");
+}
+
+void Scene::logErrOnCreate(Logger &logger, const std::string &pname, const std::string &name, const std::string &t)
+{
+	logger.logError("Scene: ", "No ", pname, " could be constructed '", t, "'!");
+}
+
+void Scene::logInfoVerboseSuccess(Logger &logger, const std::string &pname, const std::string &name, const std::string &t)
+{
+	logger.logVerbose("Scene: ", "Added ", pname, " '", name, "' (", t, ")!");
+}
+
+void Scene::logInfoVerboseSuccessDisabled(Logger &logger, const std::string &pname, const std::string &name, const std::string &t)
+{
+	logger.logVerbose("Scene: ", "Added ", pname, " '", name, "' (", t, ")! [DISABLED]");
+}
+
+std::unique_ptr<Scene> Scene::factory(Logger &logger, ParamMap &params)
+{
+	if(logger.isDebug())
 	{
-		Y_DEBUG PRTEXT(**Scene::factory) PREND;
-		params.printDebug();
+		logger.logDebug("**Scene::factory");
+		params.logContents(logger);
 	}
 	std::string type;
 	params.getParam("type", type);
 	std::unique_ptr<Scene> scene;
-	if(type == "yafaray") scene = YafaRayScene::factory(params);
-	else scene = YafaRayScene::factory(params);
+	if(type == "yafaray") scene = YafaRayScene::factory(logger, params);
+	else scene = YafaRayScene::factory(logger, params);
 
-	if(scene) Y_INFO << "Interface: created scene of type '" << type << "'" << YENDL;
-	else Y_ERROR << "Interface: could not create scene of type '" << type << "'" << YENDL;
+	if(scene) logger.logInfo("Interface: created scene of type '", type, "'");
+	else logger.logError("Interface: could not create scene of type '", type, "'");
 	return scene;
 }
 
-Scene::Scene()
+Scene::Scene(Logger &logger) : logger_(logger)
 {
 	creation_state_.changes_ = CreationState::Flags::CAll;
 	creation_state_.stack_.push_front(CreationState::Ready);
@@ -81,12 +94,12 @@ Scene::Scene()
 	std::string compiler = YAFARAY_BUILD_COMPILER;
 	if(!YAFARAY_BUILD_PLATFORM.empty()) compiler = YAFARAY_BUILD_PLATFORM + "-" + YAFARAY_BUILD_COMPILER;
 
-	Y_INFO << "LibYafaRay (" << YAFARAY_BUILD_VERSION << ")" << " " << YAFARAY_BUILD_OS << " " << YAFARAY_BUILD_ARCHITECTURE << " (" << compiler << ")" << YENDL;
+	logger_.logInfo("LibYafaRay (", YAFARAY_BUILD_VERSION, ")", " ", YAFARAY_BUILD_OS, " ", YAFARAY_BUILD_ARCHITECTURE, " (", compiler, ")");
 	session_global.setDifferentialRaysEnabled(false);	//By default, disable ray differential calculations. Only if at least one texture uses them, then enable differentials.
 	createDefaultMaterial();
 
 #ifndef HAVE_OPENCV
-	Y_WARNING << "libYafaRay built without OpenCV support. The following functionality will not work: image output denoise, background IBL blur, object/face edge render layers, toon render layer." << YENDL;
+	logger_.logWarning("libYafaRay built without OpenCV support. The following functionality will not work: image output denoise, background IBL blur, object/face edge render layers, toon render layer.");
 #endif
 }
 
@@ -140,17 +153,17 @@ void Scene::setNumThreads(int threads)
 
 	if(nthreads_ == -1) //Automatic detection of number of threads supported by this system, taken from Blender. (DT)
 	{
-		if(Y_LOG_HAS_VERBOSE) Y_VERBOSE << "Automatic Detection of Threads: Active." << YENDL;
+		if(logger_.isVerbose()) logger_.logVerbose("Automatic Detection of Threads: Active.");
 		const SysInfo sys_info;
 		nthreads_ = sys_info.getNumSystemThreads();
-		if(Y_LOG_HAS_VERBOSE) Y_VERBOSE << "Number of Threads supported: [" << nthreads_ << "]." << YENDL;
+		if(logger_.isVerbose()) logger_.logVerbose("Number of Threads supported: [", nthreads_, "].");
 	}
 	else
 	{
-		if(Y_LOG_HAS_VERBOSE) Y_VERBOSE << "Automatic Detection of Threads: Inactive." << YENDL;
+		if(logger_.isVerbose()) logger_.logVerbose("Automatic Detection of Threads: Inactive.");
 	}
 
-	Y_PARAMS << "Using [" << nthreads_ << "] Threads." << YENDL;
+	logger_.logParams("Using [", nthreads_, "] Threads.");
 
 	std::stringstream set;
 	set << "CPU threads=" << nthreads_ << std::endl;
@@ -164,17 +177,17 @@ void Scene::setNumThreadsPhotons(int threads_photons)
 
 	if(nthreads_photons_ == -1) //Automatic detection of number of threads supported by this system, taken from Blender. (DT)
 	{
-		if(Y_LOG_HAS_VERBOSE) Y_VERBOSE << "Automatic Detection of Threads for Photon Mapping: Active." << YENDL;
+		if(logger_.isVerbose()) logger_.logVerbose("Automatic Detection of Threads for Photon Mapping: Active.");
 		const SysInfo sys_info;
 		nthreads_photons_ = sys_info.getNumSystemThreads();
-		if(Y_LOG_HAS_VERBOSE) Y_VERBOSE << "Number of Threads supported for Photon Mapping: [" << nthreads_photons_ << "]." << YENDL;
+		if(logger_.isVerbose()) logger_.logVerbose("Number of Threads supported for Photon Mapping: [", nthreads_photons_, "].");
 	}
 	else
 	{
-		if(Y_LOG_HAS_VERBOSE) Y_VERBOSE << "Automatic Detection of Threads for Photon Mapping: Inactive." << YENDL;
+		if(logger_.isVerbose()) logger_.logVerbose("Automatic Detection of Threads for Photon Mapping: Inactive.");
 	}
 
-	Y_PARAMS << "Using for Photon Mapping [" << nthreads_photons_ << "] Threads." << YENDL;
+	logger_.logParams("Using for Photon Mapping [", nthreads_photons_, "] Threads.");
 }
 
 void Scene::setBackground(std::shared_ptr<Background> bg)
@@ -210,12 +223,12 @@ bool Scene::render()
 {
 	if(!image_film_)
 	{
-		Y_ERROR << "Scene: No ImageFilm present, bailing out..." << YENDL;
+		logger_.logError("Scene: No ImageFilm present, bailing out...");
 		return false;
 	}
 	if(!surf_integrator_)
 	{
-		Y_ERROR << "Scene: No surface integrator, bailing out..." << YENDL;
+		logger_.logError("Scene: No surface integrator, bailing out...");
 		return false;
 	}
 
@@ -233,23 +246,23 @@ bool Scene::render()
 		{
 			for(auto &o : outputs_) o.second->setRenderView(it.second.get());
 			std::stringstream inte_settings;
-			bool success = it.second->init(*this);
+			bool success = it.second->init(logger_, *this);
 			if(!success)
 			{
-				Y_WARNING << "Scene: No cameras or lights found at RenderView " << it.second->getName() << "', skipping this RenderView..." << YENDL;
+				logger_.logWarning("Scene: No cameras or lights found at RenderView ", it.second->getName(), "', skipping this RenderView...");
 				continue;
 			}
 			success = (surf_integrator_->preprocess(render_control_, it.second.get(), image_film_.get()) && vol_integrator_->preprocess(render_control_, it.second.get(), image_film_.get()));
 			if(!success)
 			{
-				Y_ERROR << "Scene: Preprocessing process failed, exiting..." << YENDL;
+				logger_.logError("Scene: Preprocessing process failed, exiting...");
 				return false;
 			}
 			render_control_.setStarted();
 			success = surf_integrator_->render(render_control_, it.second.get());
 			if(!success)
 			{
-				Y_ERROR << "Scene: Rendering process failed, exiting..." << YENDL;
+				logger_.logError("Scene: Rendering process failed, exiting...");
 				return false;
 			}
 			render_control_.setRenderInfo(surf_integrator_->getRenderInfo());
@@ -262,7 +275,7 @@ bool Scene::render()
 	}
 	else
 	{
-		Y_INFO << "Scene: No changes in scene since last render, bailing out..." << YENDL;
+		logger_.logInfo("Scene: No changes in scene since last render, bailing out...");
 		return false;
 	}
 	creation_state_.changes_ = CreationState::Flags::CNone;
@@ -399,23 +412,23 @@ Light *Scene::createLight(const std::string &name, ParamMap &params)
 	params["name"] = std::string(name);
 	if(lights_.find(name) != lights_.end())
 	{
-		WARN_EXIST; return nullptr;
+		logWarnExist(logger_, pname, name); return nullptr;
 	}
 	std::string type;
 	if(! params.getParam("type", type))
 	{
-		ERR_NO_TYPE; return nullptr;
+		logErrNoType(logger_, pname, name, type); return nullptr;
 	}
-	auto light = Light::factory(params, *this);
+	auto light = Light::factory(logger_, params, *this);
 	if(light)
 	{
 		lights_[name] = std::move(light);
-		if(Y_LOG_HAS_VERBOSE && lights_[name]->lightEnabled()) INFO_VERBOSE_SUCCESS(name, type);
-		else if(Y_LOG_HAS_VERBOSE) INFO_VERBOSE_SUCCESS_DISABLED(name, type);
+		if(logger_.isVerbose() && lights_[name]->lightEnabled()) logInfoVerboseSuccess(logger_, pname, name, type);
+		else if(logger_.isVerbose()) logInfoVerboseSuccessDisabled(logger_, pname, name, type);
 		creation_state_.changes_ |= CreationState::Flags::CLight;
 		return lights_[name].get();
 	}
-	ERR_ON_CREATE(type);
+	logErrOnCreate(logger_, pname, name, type);
 	return nullptr;
 }
 
@@ -425,223 +438,223 @@ Material *Scene::createMaterial(const std::string &name, ParamMap &params, std::
 	params["name"] = std::string(name);
 	if(materials_.find(name) != materials_.end())
 	{
-		WARN_EXIST; return nullptr;
+		logWarnExist(logger_, pname, name); return nullptr;
 	}
 	std::string type;
 	if(! params.getParam("type", type))
 	{
-		ERR_NO_TYPE; return nullptr;
+		logErrNoType(logger_, pname, name, type); return nullptr;
 	}
 	params["name"] = name;
-	auto material = Material::factory(params, eparams, *this);
+	auto material = Material::factory(logger_, params, eparams, *this);
 	if(material)
 	{
 		materials_[name] = std::move(material);
-		if(Y_LOG_HAS_VERBOSE) INFO_VERBOSE_SUCCESS(name, type);
+		if(logger_.isVerbose()) logInfoVerboseSuccess(logger_, pname, name, type);
 		return materials_[name].get();
 	}
-	ERR_ON_CREATE(type);
+	logErrOnCreate(logger_, pname, name, type);
 	return nullptr;
 }
 
 ColorOutput *Scene::createOutput(const std::string &name, UniquePtr_t<ColorOutput> output, bool auto_delete)
 {
-	return createMapItem<ColorOutput>(name, "ColorOutput", std::move(output), outputs_, auto_delete);
+	return createMapItem<ColorOutput>(logger_, name, "ColorOutput", std::move(output), outputs_, auto_delete);
 }
 
 template <typename T>
-T *Scene::createMapItem(const std::string &name, const std::string &class_name, std::unique_ptr<T> item, std::map<std::string, std::unique_ptr<T>> &map)
+T *Scene::createMapItem(Logger &logger, const std::string &name, const std::string &class_name, std::unique_ptr<T> item, std::map<std::string, std::unique_ptr<T>> &map)
 {
 	std::string pname = class_name;
 	if(map.find(name) != map.end())
 	{
-		WARN_EXIST; return nullptr;
+		logWarnExist(logger, pname, name); return nullptr;
 	}
 	if(item)
 	{
 		map[name] = std::move(item);
-		if(Y_LOG_HAS_VERBOSE) INFO_VERBOSE_SUCCESS(name, class_name);
+		if(logger.isVerbose()) logInfoVerboseSuccess(logger, pname, name, class_name);
 		return map[name].get();
 	}
-	ERR_ON_CREATE(class_name);
+	logErrOnCreate(logger, pname, name, class_name);
 	return nullptr;
 }
 
 template <typename T>
-T *Scene::createMapItem(const std::string &name, const std::string &class_name, UniquePtr_t<T> item, std::map<std::string, UniquePtr_t<T>> &map, bool auto_delete)
+T *Scene::createMapItem(Logger &logger, const std::string &name, const std::string &class_name, UniquePtr_t<T> item, std::map<std::string, UniquePtr_t<T>> &map, bool auto_delete)
 {
 	std::string pname = class_name;
 	if(map.find(name) != map.end())
 	{
-		WARN_EXIST; return nullptr;
+		logWarnExist(logger, pname, name); return nullptr;
 	}
 	if(item)
 	{
 		item->setAutoDelete(auto_delete); //By default all objects will autodelete as usual unique_ptr. If that's not desired, auto_delete can be set to false but then the object class must have the setAutoDelete and isAutoDeleted methods
 		map[name] = std::move(item);
-		if(Y_LOG_HAS_VERBOSE) INFO_VERBOSE_SUCCESS(name, class_name);
+		if(logger.isVerbose()) logInfoVerboseSuccess(logger, pname, name, class_name);
 		return map[name].get();
 	}
-	ERR_ON_CREATE(class_name);
+	logErrOnCreate(logger, pname, name, class_name);
 	return nullptr;
 }
 
 template <typename T>
-T *Scene::createMapItem(const std::string &name, const std::string &class_name, ParamMap &params, std::map<std::string, std::unique_ptr<T>> &map, Scene *scene, bool check_type_exists)
+T *Scene::createMapItem(Logger &logger, const std::string &name, const std::string &class_name, ParamMap &params, std::map<std::string, std::unique_ptr<T>> &map, Scene *scene, bool check_type_exists)
 {
 	std::string pname = class_name;
 	params["name"] = std::string(name);
 	if(map.find(name) != map.end())
 	{
-		WARN_EXIST; return nullptr;
+		logWarnExist(logger, pname, name); return nullptr;
 	}
 	std::string type;
 	if(! params.getParam("type", type))
 	{
 		if(check_type_exists)
 		{
-			ERR_NO_TYPE;
+			logErrNoType(logger, pname, name, type);
 			return nullptr;
 		}
 	}
-	std::unique_ptr<T> item = T::factory(params, *scene);
+	std::unique_ptr<T> item = T::factory(logger, params, *scene);
 	if(item)
 	{
 		map[name] = std::move(item);
-		if(Y_LOG_HAS_VERBOSE) INFO_VERBOSE_SUCCESS(name, type);
+		if(logger.isVerbose()) logInfoVerboseSuccess(logger, pname, name, type);
 		return map[name].get();
 	}
-	ERR_ON_CREATE(type);
+	logErrOnCreate(logger, pname, name, type);
 	return nullptr;
 }
 
 template <typename T>
-T *Scene::createMapItem(const std::string &name, const std::string &class_name, ParamMap &params, std::map<std::string, UniquePtr_t<T>> &map, bool auto_delete, Scene *scene, bool check_type_exists)
+T *Scene::createMapItem(Logger &logger, const std::string &name, const std::string &class_name, ParamMap &params, std::map<std::string, UniquePtr_t<T>> &map, bool auto_delete, Scene *scene, bool check_type_exists)
 {
 
 	std::string pname = class_name;
 	params["name"] = std::string(name);
 	if(map.find(name) != map.end())
 	{
-		WARN_EXIST; return nullptr;
+		logWarnExist(logger, pname, name); return nullptr;
 	}
 	std::string type;
 	if(! params.getParam("type", type))
 	{
 		if(check_type_exists)
 		{
-			ERR_NO_TYPE;
+			logErrNoType(logger, pname, name, type);
 			return nullptr;
 		}
 	}
-	UniquePtr_t<T> item = T::factory(params, *scene);
+	UniquePtr_t<T> item = T::factory(logger, params, *scene);
 	if(item)
 	{
 		item->setAutoDelete(auto_delete); //By default all objects will autodelete as usual unique_ptr. If that's not desired, auto_delete can be set to false but then the object class must have the setAutoDelete and isAutoDeleted methods
 		map[name] = std::move(item);
-		if(Y_LOG_HAS_VERBOSE) INFO_VERBOSE_SUCCESS(name, type);
+		if(logger.isVerbose()) logInfoVerboseSuccess(logger, pname, name, type);
 		return map[name].get();
 	}
-	ERR_ON_CREATE(type);
+	logErrOnCreate(logger, pname, name, type);
 	return nullptr;
 }
 
 template <typename T>
-std::shared_ptr<T> Scene::createMapItem(const std::string &name, const std::string &class_name, ParamMap &params, std::map<std::string, std::shared_ptr<T>> &map, Scene *scene, bool check_type_exists)
+std::shared_ptr<T> Scene::createMapItem(Logger &logger, const std::string &name, const std::string &class_name, ParamMap &params, std::map<std::string, std::shared_ptr<T>> &map, Scene *scene, bool check_type_exists)
 {
 	std::string pname = class_name;
 	params["name"] = std::string(name);
 	if(map.find(name) != map.end())
 	{
-		WARN_EXIST; return nullptr;
+		logWarnExist(logger, pname, name); return nullptr;
 	}
 	std::string type;
 	if(! params.getParam("type", type))
 	{
 		if(check_type_exists)
 		{
-			ERR_NO_TYPE;
+			logErrNoType(logger, pname, name, type);
 			return nullptr;
 		}
 	}
-	std::shared_ptr<T> item = T::factory(params, *scene);
+	std::shared_ptr<T> item = T::factory(logger, params, *scene);
 	if(item)
 	{
 		map[name] = std::move(item);
-		if(Y_LOG_HAS_VERBOSE) INFO_VERBOSE_SUCCESS(name, type);
+		if(logger.isVerbose()) logInfoVerboseSuccess(logger, pname, name, type);
 		return map[name];
 	}
-	ERR_ON_CREATE(type);
+	logErrOnCreate(logger, pname, name, type);
 	return nullptr;
 }
 
-ColorOutput *Scene::createOutput(const std::string &name, ParamMap &params, bool auto_delete, void *callback_user_data, OutputPutpixelCallback_t output_putpixel_callback, OutputFlushAreaCallback_t output_flush_area_callback, OutputFlushCallback_t output_flush_callback)
+ColorOutput *Scene::createOutput(const std::string &name, ParamMap &params, bool auto_delete, void *callback_user_data, yafaray4_OutputPutpixelCallback_t output_putpixel_callback, yafaray4_OutputFlushAreaCallback_t output_flush_area_callback, yafaray4_OutputFlushCallback_t output_flush_callback)
 {
 	std::string pname = "ColorOutput";
 	params["name"] = std::string(name);
 	if(outputs_.find(name) != outputs_.end())
 	{
-		WARN_EXIST; return nullptr;
+		logWarnExist(logger_, pname, name); return nullptr;
 	}
 	std::string type;
 	if(! params.getParam("type", type))
 	{
 		if(true)//check_type_exists)
 		{
-			ERR_NO_TYPE;
+			logErrNoType(logger_, pname, name, type);
 			return nullptr;
 		}
 	}
-	UniquePtr_t<ColorOutput> item = ColorOutput::factory(params, *this, callback_user_data, output_putpixel_callback, output_flush_area_callback, output_flush_callback);
+	UniquePtr_t<ColorOutput> item = ColorOutput::factory(logger_, params, *this, callback_user_data, output_putpixel_callback, output_flush_area_callback, output_flush_callback);
 	if(item)
 	{
 		item->setAutoDelete(auto_delete); //By default all objects will autodelete as usual unique_ptr. If that's not desired, auto_delete can be set to false but then the object class must have the setAutoDelete and isAutoDeleted methods
 		outputs_[name] = std::move(item);
-		if(Y_LOG_HAS_VERBOSE) INFO_VERBOSE_SUCCESS(name, type);
+		if(logger_.isVerbose()) logInfoVerboseSuccess(logger_, pname, name, type);
 		return outputs_[name].get();
 	}
-	ERR_ON_CREATE(type);
+	logErrOnCreate(logger_, pname, name, type);
 	return nullptr;
 }
 
 Texture *Scene::createTexture(const std::string &name, ParamMap &params)
 {
-	return createMapItem<Texture>(name, "Texture", params, textures_, this);
+	return createMapItem<Texture>(logger_, name, "Texture", params, textures_, this);
 }
 
 ShaderNode *Scene::createShaderNode(const std::string &name, ParamMap &params)
 {
-	return createMapItem<ShaderNode>(name, "ShaderNode", params, shaders_, this);
+	return createMapItem<ShaderNode>(logger_, name, "ShaderNode", params, shaders_, this);
 }
 
 std::shared_ptr<Background> Scene::createBackground(const std::string &name, ParamMap &params)
 {
-	return createMapItem<Background>(name, "Background", params, backgrounds_, this);
+	return createMapItem<Background>(logger_, name, "Background", params, backgrounds_, this);
 }
 
 Camera *Scene::createCamera(const std::string &name, ParamMap &params)
 {
-	return createMapItem<Camera>(name, "Camera", params, cameras_, this);
+	return createMapItem<Camera>(logger_, name, "Camera", params, cameras_, this);
 }
 
 Integrator *Scene::createIntegrator(const std::string &name, ParamMap &params)
 {
-	return createMapItem<Integrator>(name, "Integrator", params, integrators_, this);
+	return createMapItem<Integrator>(logger_, name, "Integrator", params, integrators_, this);
 }
 
 VolumeRegion *Scene::createVolumeRegion(const std::string &name, ParamMap &params)
 {
-	return createMapItem<VolumeRegion>(name, "VolumeRegion", params, volume_regions_, this);
+	return createMapItem<VolumeRegion>(logger_, name, "VolumeRegion", params, volume_regions_, this);
 }
 
 RenderView *Scene::createRenderView(const std::string &name, ParamMap &params)
 {
-	return createMapItem<RenderView>(name, "RenderView", params, render_views_, this, false);
+	return createMapItem<RenderView>(logger_, name, "RenderView", params, render_views_, this, false);
 }
 
 std::shared_ptr<Image> Scene::createImage(const std::string &name, ParamMap &params)
 {
-	return createMapItem<Image>(name, "Image", params, images_, this);
+	return createMapItem<Image>(logger_, name, "Image", params, images_, this);
 }
 
 const Layers Scene::getLayersWithImages() const
@@ -661,10 +674,10 @@ const Layers Scene::getLayersWithExportedImages() const
 */
 bool Scene::setupScene(Scene &scene, const ParamMap &params, std::shared_ptr<ProgressBar> pb)
 {
-	if(Y_LOG_HAS_DEBUG)
+	if(logger_.isDebug())
 	{
-		Y_DEBUG PRTEXT(**Scene::setupScene) PREND;
-		params.printDebug();
+		logger_.logDebug("**Scene::setupScene");
+		params.logContents(logger_);
 	}
 	std::string name;
 	std::string aa_dark_detection_type_string = "none";
@@ -680,30 +693,30 @@ bool Scene::setupScene(Scene &scene, const ParamMap &params, std::shared_ptr<Pro
 
 	if(!params.getParam("integrator_name", name))
 	{
-		Y_ERROR_SCENE << "Specify an Integrator!!" << YENDL;
+		logger_.logError("Scene: ", "Specify an Integrator!!");
 		return false;
 	}
 	Integrator *integrator = this->getIntegrator(name);
 	if(!integrator)
 	{
-		Y_ERROR_SCENE << "Specify an _existing_ Integrator!!" << YENDL;
+		logger_.logError("Scene: ", "Specify an _existing_ Integrator!!");
 		return false;
 	}
 	if(integrator->getType() != Integrator::Surface)
 	{
-		Y_ERROR_SCENE << "Integrator '" << name << "' is not a surface integrator!" << YENDL;
+		logger_.logError("Scene: ", "Integrator '", name, "' is not a surface integrator!");
 		return false;
 	}
 
 	if(!params.getParam("volintegrator_name", name))
 	{
-		Y_ERROR_SCENE << "Specify a Volume Integrator!" << YENDL;
+		logger_.logError("Scene: ", "Specify a Volume Integrator!");
 		return false;
 	}
 	Integrator *volume_integrator = this->getIntegrator(name);
 	if(volume_integrator->getType() != Integrator::Volume)
 	{
-		Y_ERROR_SCENE << "Integrator '" << name << "' is not a volume integrator!" << YENDL;
+		logger_.logError("Scene: ", "Integrator '", name, "' is not a volume integrator!");
 		return false;
 	}
 
@@ -711,7 +724,7 @@ bool Scene::setupScene(Scene &scene, const ParamMap &params, std::shared_ptr<Pro
 	if(params.getParam("background_name", name))
 	{
 		background = getBackground(name);
-		if(!background) Y_ERROR_SCENE << "please specify an _existing_ Background!!" << YENDL;
+		if(!background) logger_.logError("Scene: ", "please specify an _existing_ Background!!");
 	}
 
 	params.getParam("AA_passes", aa_noise_params.passes_);
@@ -746,7 +759,7 @@ bool Scene::setupScene(Scene &scene, const ParamMap &params, std::shared_ptr<Pro
 
 	defineBasicLayers();
 	defineDependentLayers();
-	image_film_ = ImageFilm::factory(params, this);
+	image_film_ = ImageFilm::factory(logger_, params, this);
 
 	if(pb)
 	{
@@ -773,7 +786,7 @@ bool Scene::setupScene(Scene &scene, const ParamMap &params, std::shared_ptr<Pro
 	scene.shadow_bias_ = adv_shadow_bias_value;
 	scene.ray_min_dist_auto_ = adv_auto_min_raydist_enabled;
 	scene.ray_min_dist_ = adv_min_raydist_value;
-	if(Y_LOG_HAS_DEBUG) Y_DEBUG << "adv_base_sampling_offset=" << adv_base_sampling_offset << YENDL;
+	if(logger_.isDebug())logger_.logDebug("adv_base_sampling_offset=", adv_base_sampling_offset);
 	image_film_->setBaseSamplingOffset(adv_base_sampling_offset);
 	image_film_->setComputerNode(adv_computer_node);
 	image_film_->setBackgroundResampling(background_resampling);
@@ -782,10 +795,10 @@ bool Scene::setupScene(Scene &scene, const ParamMap &params, std::shared_ptr<Pro
 
 void Scene::defineLayer(const ParamMap &params)
 {
-	if(Y_LOG_HAS_DEBUG)
+	if(logger_.isDebug())
 	{
-		Y_DEBUG PRTEXT(**Scene::defineLayer) PREND;
-		params.printDebug();
+		logger_.logDebug("**Scene::defineLayer");
+		params.logContents(logger_);
 	}
 	std::string layer_type_name, image_type_name, exported_image_name, exported_image_type_name;
 	params.getParam("type", layer_type_name);
@@ -807,7 +820,7 @@ void Scene::defineLayer(const Layer::Type &layer_type, const Image::Type &image_
 {
 	if(layer_type == Layer::Disabled)
 	{
-		Y_WARNING << "Scene: cannot create layer '" << Layer::getTypeName(layer_type) << "' of unknown or disabled layer type" << YENDL;
+		logger_.logWarning("Scene: cannot create layer '", Layer::getTypeName(layer_type), "' of unknown or disabled layer type");
 		return;
 	}
 
@@ -817,16 +830,16 @@ void Scene::defineLayer(const Layer::Type &layer_type, const Image::Type &image_
 				existing_layer->getImageType() == image_type &&
 				existing_layer->getExportedImageType() == exported_image_type) return;
 
-		if(Y_LOG_HAS_DEBUG) Y_DEBUG << "Scene: had previously defined: " << existing_layer->print() << YENDL;
+		if(logger_.isDebug())logger_.logDebug("Scene: had previously defined: ", existing_layer->print());
 		if(image_type == Image::Type::None && existing_layer->getImageType() != Image::Type::None)
 		{
-			if(Y_LOG_HAS_DEBUG) Y_DEBUG << "Scene: the layer '" << Layer::getTypeName(layer_type) << "' had previously a defined internal image which cannot be removed." << YENDL;
+			if(logger_.isDebug())logger_.logDebug("Scene: the layer '", Layer::getTypeName(layer_type), "' had previously a defined internal image which cannot be removed.");
 		}
 		else existing_layer->setImageType(image_type);
 
 		if(exported_image_type == Image::Type::None && existing_layer->getExportedImageType() != Image::Type::None)
 		{
-			if(Y_LOG_HAS_DEBUG) Y_DEBUG << "Scene: the layer '" << Layer::getTypeName(layer_type) << "' was previously an exported layer and cannot be changed into an internal layer now." << YENDL;
+			if(logger_.isDebug())logger_.logDebug("Scene: the layer '", Layer::getTypeName(layer_type), "' was previously an exported layer and cannot be changed into an internal layer now.");
 		}
 		else
 		{
@@ -834,13 +847,13 @@ void Scene::defineLayer(const Layer::Type &layer_type, const Image::Type &image_
 			existing_layer->setExportedImageName(exported_image_name);
 		}
 		existing_layer->setType(layer_type);
-		Y_INFO << "Scene: layer redefined: " + existing_layer->print() << YENDL;
+		logger_.logInfo("Scene: layer redefined: " + existing_layer->print());
 	}
 	else
 	{
 		Layer new_layer(layer_type, image_type, exported_image_type, exported_image_name);
 		layers_.set(layer_type, new_layer);
-		Y_INFO << "Scene: layer defined: " << new_layer.print() << YENDL;
+		logger_.logInfo("Scene: layer defined: ", new_layer.print());
 	}
 }
 
@@ -916,8 +929,8 @@ void Scene::defineDependentLayers()
 
 void Scene::setupLayersParameters(const ParamMap &params)
 {
-	if(Y_LOG_HAS_DEBUG) Y_DEBUG PRTEXT(**Scene::setupLayersParameters) PREND;
-	params.printDebug();
+	if(logger_.isDebug()) logger_.logDebug("**Scene::setupLayersParameters");
+	params.logContents(logger_);
 	setEdgeToonParams(params);
 	setMaskParams(params);
 }

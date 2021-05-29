@@ -32,10 +32,10 @@ class Scene;
 class SkyVolumeRegion final : public VolumeRegion
 {
 	public:
-		static std::unique_ptr<VolumeRegion> factory(const ParamMap &params, const Scene &scene);
+		static std::unique_ptr<VolumeRegion> factory(Logger &logger, const ParamMap &params, const Scene &scene);
 
 	private:
-		SkyVolumeRegion(Rgb sa, Rgb ss, Rgb le, Point3 pmin, Point3 pmax);
+		SkyVolumeRegion(Logger &logger, Rgb sa, Rgb ss, Rgb le, Point3 pmin, Point3 pmax);
 		virtual float p(const Vec3 &w_l, const Vec3 &w_s) const override;
 		float phaseRayleigh(const Vec3 &w_l, const Vec3 &w_s) const;
 		float phaseMie(const Vec3 &w_l, const Vec3 &w_s) const;

@@ -25,28 +25,28 @@
 BEGIN_YAFARAY
 
 // Initialization of the master instance of yafLog
-Logger logger_global{ };
+Logger logger_{ }; //FIXME!!!
 
 // Initialization of the master session instance
 Session session_global{ };
 
 Session::Session()
 {
-	if(Y_LOG_HAS_VERBOSE) Y_VERBOSE << "Session:started" << YENDL;
+	if(logger_.isVerbose()) logger_.logVerbose("Session:started");
 #if defined(_WIN32)
 	SetConsoleOutputCP(65001);	//set Windows Console to UTF8 so the image path can be displayed correctly
 #endif
-	caustic_map_ = std::unique_ptr<PhotonMap>(new PhotonMap);
+	caustic_map_ = std::unique_ptr<PhotonMap>(new PhotonMap(logger_));
 	caustic_map_->setName("Caustic Photon Map");
-	diffuse_map_ = std::unique_ptr<PhotonMap>(new PhotonMap);
+	diffuse_map_ = std::unique_ptr<PhotonMap>(new PhotonMap(logger_));
 	diffuse_map_->setName("Diffuse Photon Map");
-	radiance_map_ = std::unique_ptr<PhotonMap>(new PhotonMap);
+	radiance_map_ = std::unique_ptr<PhotonMap>(new PhotonMap(logger_));
 	radiance_map_->setName("FG Radiance Photon Map");
 }
 
 Session::~Session()
 {
-	if(Y_LOG_HAS_VERBOSE) Y_VERBOSE << "Session: ended" << YENDL;
+	if(logger_.isVerbose()) logger_.logVerbose("Session: ended");
 }
 
 void Session::setInteractive(bool interactive)

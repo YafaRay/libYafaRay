@@ -32,10 +32,10 @@ class Scene;
 class UniformVolumeRegion : public VolumeRegion
 {
 	public:
-		static std::unique_ptr<VolumeRegion> factory(const ParamMap &params, const Scene &scene);
+		static std::unique_ptr<VolumeRegion> factory(Logger &logger, const ParamMap &params, const Scene &scene);
 
 	private:
-		UniformVolumeRegion(Rgb sa, Rgb ss, Rgb le, float gg, Point3 pmin, Point3 pmax, int attgrid_scale);
+		UniformVolumeRegion(Logger &logger, Rgb sa, Rgb ss, Rgb le, float gg, Point3 pmin, Point3 pmax, int attgrid_scale);
 		virtual Rgb sigmaA(const Point3 &p, const Vec3 &v) const;
 		virtual Rgb sigmaS(const Point3 &p, const Vec3 &v) const;
 		virtual Rgb emission(const Point3 &p, const Vec3 &v) const;

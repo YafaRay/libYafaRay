@@ -42,9 +42,9 @@
 
 BEGIN_YAFARAY
 
-std::unique_ptr<Image> Image::factory(ParamMap &params, const Scene &scene)
+std::unique_ptr<Image> Image::factory(Logger &logger, ParamMap &params, const Scene &scene)
 {
-	if(Y_LOG_HAS_DEBUG) Y_DEBUG PRTEXT(**Image::factory params) PREND;
+	if(logger.isDebug()) logger.logDebug("**Image::factory params");
 	int width = 100;
 	int height = 100;
 	std::string name;
@@ -69,21 +69,21 @@ std::unique_ptr<Image> Image::factory(ParamMap &params, const Scene &scene)
 
 	if(filename.empty())
 	{
-		Y_INFO << "Image '" << name << "': creating empty image with width=" << width << " height=" << height << YENDL;
+		logger.logInfo("Image '", name, "': creating empty image with width=", width, " height=", height);
 	}
 	else
 	{
 		const Path path(filename);
 		ParamMap format_params;
 		format_params["type"] = toLower_global(path.getExtension());
-		std::unique_ptr<Format> format = std::unique_ptr<Format>(Format::factory(format_params));
+		std::unique_ptr<Format> format = std::unique_ptr<Format>(Format::factory(logger, format_params));
 		if(format)
 		{
 			if(format->isHdr())
 			{
-				if(color_space != ColorSpace::LinearRgb && Y_LOG_HAS_VERBOSE) Y_VERBOSE << "Image: The image is a HDR/EXR file: forcing linear RGB and ignoring selected color space '" << color_space_str << "' and the gamma setting." << YENDL;
+				if(color_space != ColorSpace::LinearRgb && logger.isVerbose()) logger.logVerbose("Image: The image is a HDR/EXR file: forcing linear RGB and ignoring selected color space '", color_space_str, "' and the gamma setting.");
 				color_space = LinearRgb;
-				if(image_optimization_str != "none" && Y_LOG_HAS_VERBOSE) Y_VERBOSE << "Image: The image is a HDR/EXR file: forcing texture optimization to 'none' and ignoring selected texture optimization '" << image_optimization_str << "'" << YENDL;
+				if(image_optimization_str != "none" && logger.isVerbose()) logger.logVerbose("Image: The image is a HDR/EXR file: forcing texture optimization to 'none' and ignoring selected texture optimization '", image_optimization_str, "'");
 				optimization = Image::Optimization::None;
 			}
 			if(type == Type::Gray || type == Type::GrayAlpha || type == Type::GrayWeight || type == Type::GrayAlphaWeight) format->setGrayScaleSetting(true);
@@ -92,12 +92,12 @@ std::unique_ptr<Image> Image::factory(ParamMap &params, const Scene &scene)
 
 		if(image)
 		{
-			Y_INFO << "Image '" << name << "': loaded from file '" << filename << "'" << YENDL;
+			logger.logInfo("Image '", name, "': loaded from file '", filename, "'");
 		}
 		else
 		{
-			Y_ERROR << "Image '" << name << "': Couldn't load from file '" << filename << "', creating empty image with width=" << width << " height=" << height << YENDL;
-			image = Image::factory(width, height, type, optimization);
+			logger.logError("Image '", name, "': Couldn't load from file '", filename, "', creating empty image with width=", width, " height=", height);
+			image = Image::factory(logger, width, height, type, optimization);
 		}
 	}
 	image->color_space_ = color_space;
@@ -105,15 +105,15 @@ std::unique_ptr<Image> Image::factory(ParamMap &params, const Scene &scene)
 	return image;
 }
 
-std::unique_ptr<Image> Image::factory(int width, int height, const Type &type, const Optimization &optimization)
+std::unique_ptr<Image> Image::factory(Logger &logger, int width, int height, const Type &type, const Optimization &optimization)
 {
-	if(Y_LOG_HAS_DEBUG) Y_DEBUG PRTEXT(**Image::factory) PREND;
-	return std::unique_ptr<Image>(Image::factoryRawPointer(width, height, type, optimization));
+	if(logger.isDebug()) logger.logDebug("**Image::factory");
+	return std::unique_ptr<Image>(Image::factoryRawPointer(logger, width, height, type, optimization));
 }
 
-Image *Image::factoryRawPointer(int width, int height, const Type &type, const Optimization &optimization)
+Image *Image::factoryRawPointer(Logger &logger, int width, int height, const Type &type, const Optimization &optimization)
 {
-	if(Y_LOG_HAS_DEBUG) Y_DEBUG PRTEXT(**Image::factoryRawPointer) PREND;
+	if(logger.isDebug()) logger.logDebug("**Image::factoryRawPointer");
 	if(type == Type::ColorAlphaWeight) return new ImageColorAlphaWeight(width, height);
 	else if(type == Type::GrayAlphaWeight) return new ImageGrayAlphaWeight(width, height);
 	else if(type == Type::ColorAlpha && optimization == Optimization::None) return new ImageColorAlpha(width, height);
@@ -248,12 +248,12 @@ std::string Image::getTypeName(const Type &image_type)
 	}
 }
 
-std::unique_ptr<Image> Image::getDenoisedLdrImage(const Image *image, const DenoiseParams &denoise_params)
+std::unique_ptr<Image> Image::getDenoisedLdrImage(Logger &logger, const Image *image, const DenoiseParams &denoise_params)
 {
 #ifdef HAVE_OPENCV
 	if(!denoise_params.enabled_) return nullptr;
 
-	std::unique_ptr<Image> image_denoised = Image::factory(image->getWidth(), image->getHeight(), image->getType(), image->getOptimization());
+	std::unique_ptr<Image> image_denoised = Image::factory(logger, image->getWidth(), image->getHeight(), image->getType(), image->getOptimization());
 	if(!image_denoised) return image_denoised;
 
 	const int width = image_denoised->getWidth();
@@ -297,7 +297,7 @@ std::unique_ptr<Image> Image::getDenoisedLdrImage(const Image *image, const Deno
 #endif //HAVE_OPENCV
 }
 
-std::unique_ptr<Image> Image::getComposedImage(const Image *image_1, const Image *image_2, const Position &position_image_2, int overlay_x, int overlay_y)
+std::unique_ptr<Image> Image::getComposedImage(Logger &logger, const Image *image_1, const Image *image_2, const Position &position_image_2, int overlay_x, int overlay_y)
 {
 	if(!image_1 || !image_2) return nullptr;
 	const int width_1 = image_1->getWidth();
@@ -315,7 +315,7 @@ std::unique_ptr<Image> Image::getComposedImage(const Image *image_1, const Image
 		case Position::Overlay: break;
 		default: return nullptr;
 	}
-	std::unique_ptr<Image> result = Image::factory(width, height, image_1->getType(), image_1->getOptimization());
+	std::unique_ptr<Image> result = Image::factory(logger, width, height, image_1->getType(), image_1->getOptimization());
 
 	for(int x = 0; x < width; ++x)
 	{

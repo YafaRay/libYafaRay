@@ -28,8 +28,8 @@
 
 BEGIN_YAFARAY
 
-BlendMaterial::BlendMaterial(const Material *m_1, const Material *m_2, float bval, Visibility visibility):
-		mat_1_(m_1), mat_2_(m_2)
+BlendMaterial::BlendMaterial(Logger &logger, const Material *m_1, const Material *m_2, float bval, Visibility visibility):
+		NodeMaterial(logger), mat_1_(m_1), mat_2_(m_2)
 {
 	visibility_ = visibility;
 	bsdf_flags_ = mat_1_->getFlags() | mat_2_->getFlags();
@@ -399,7 +399,7 @@ const VolumeHandler *BlendMaterial::getVolumeHandler(bool inside) const
 	else return vol_2;
 }
 
-std::unique_ptr<Material> BlendMaterial::factory(ParamMap &params, std::list<ParamMap> &eparams, const Scene &scene)
+std::unique_ptr<Material> BlendMaterial::factory(Logger &logger, ParamMap &params, std::list<ParamMap> &eparams, const Scene &scene)
 {
 	std::string name;
 	double blend_val = 0.5;
@@ -431,7 +431,7 @@ std::unique_ptr<Material> BlendMaterial::factory(ParamMap &params, std::list<Par
 
 	const Visibility visibility = visibilityFromString_global(s_visibility);
 
-	auto mat = std::unique_ptr<BlendMaterial>(new BlendMaterial(m_1, m_2, blend_val, visibility));
+	auto mat = std::unique_ptr<BlendMaterial>(new BlendMaterial(logger, m_1, m_2, blend_val, visibility));
 
 	mat->setMaterialIndex(mat_pass_index);
 	mat->receive_shadows_ = receive_shadows;
@@ -455,14 +455,14 @@ std::unique_ptr<Material> BlendMaterial::factory(ParamMap &params, std::list<Par
 			}
 			else
 			{
-				Y_ERROR << "Blend: Blend shader node '" << name << "' does not exist!" << YENDL;
+				logger.logError("Blend: Blend shader node '", name, "' does not exist!");
 				return nullptr;
 			}
 		}
 	}
 	else
 	{
-		Y_ERROR << "Blend: loadNodes() failed!" << YENDL;
+		logger.logError("Blend: loadNodes() failed!");
 		return nullptr;
 	}
 	mat->solveNodesOrder(roots);

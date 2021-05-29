@@ -35,10 +35,10 @@ BEGIN_YAFARAY
 class LightMaterial final : public Material
 {
 	public:
-		static std::unique_ptr<Material> factory(ParamMap &params, std::list< ParamMap > &eparans, const Scene &scene);
+		static std::unique_ptr<Material> factory(Logger &logger, ParamMap &params, std::list<ParamMap> &eparans, const Scene &scene);
 
 	private:
-		LightMaterial(Rgb light_c, bool ds = false);
+		LightMaterial(Logger &logger, Rgb light_c, bool ds = false);
 		virtual void initBsdf(const RenderData &render_data, SurfacePoint &sp, BsdfFlags &bsdf_types) const { bsdf_types = bsdf_flags_; }
 		virtual Rgb eval(const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wl, const BsdfFlags &bsdfs, bool force_eval = false) const {return Rgb(0.0);}
 		virtual Rgb sample(const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo, Vec3 &wi, Sample &s, float &w) const;

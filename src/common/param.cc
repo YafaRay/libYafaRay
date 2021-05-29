@@ -222,13 +222,13 @@ std::string ParamMap::print() const
 	return result;
 }
 
-void ParamMap::printDebug() const
+void ParamMap::logContents(Logger &logger) const
 {
-	if(Y_LOG_HAS_DEBUG)
+	if(logger.isDebug())
 	{
 		for(const auto &it : dicc_)
 		{
-			Y_DEBUG << "'" + it.first + "' (" + it.second.printType() + ") = '" + it.second.print() + "'\n";
+			logger.logDebug("'" + it.first + "' (" + it.second.printType() + ") = '" + it.second.print() + "'");
 		}
 	}
 }

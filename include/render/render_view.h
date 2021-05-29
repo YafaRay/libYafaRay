@@ -28,6 +28,7 @@
 #include <string>
 #include <vector>
 #include <memory>
+#include <common/logger.h>
 
 BEGIN_YAFARAY
 
@@ -39,8 +40,8 @@ class Scene;
 class RenderView final
 {
 	public:
-		static std::unique_ptr<RenderView> factory(ParamMap &params, const Scene &scene);
-		bool init(const Scene &scene);
+		static std::unique_ptr<RenderView> factory(Logger &logger, ParamMap &params, const Scene &scene);
+		bool init(Logger &logger, const Scene &scene);
 		std::string getName() const { return name_; }
 		const Camera *getCamera() const { return camera_; }
 		const std::map<std::string, Light *> getLights() const { return lights_; }

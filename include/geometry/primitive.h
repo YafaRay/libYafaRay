@@ -25,6 +25,7 @@
 #include "geometry/poly_double.h"
 #include <vector>
 #include <array>
+#include <common/logger.h>
 
 BEGIN_YAFARAY
 
@@ -74,7 +75,7 @@ class Primitive
 		Visibility getVisibility() const;
 		/*! calculate the overlapping box of given bound and primitive
 			\return: false:=doesn't overlap bound; true:=valid clip exists */
-		virtual PolyDouble::ClipResultWithBound clipToBound(const std::array<Vec3Double, 2> &bound, const ClipPlane &clip_plane, const PolyDouble &poly, const Matrix4 *obj_to_world) const;
+		virtual PolyDouble::ClipResultWithBound clipToBound(Logger &logger, const std::array<Vec3Double, 2> &bound, const ClipPlane &clip_plane, const PolyDouble &poly, const Matrix4 *obj_to_world) const;
 
 	protected:
 		const Object &base_object_;

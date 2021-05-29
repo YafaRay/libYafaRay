@@ -61,10 +61,10 @@ struct GatherInfo final
 class SppmIntegrator final : public MonteCarloIntegrator
 {
 	public:
-		static std::unique_ptr<Integrator> factory(ParamMap &params, const Scene &scene);
+		static std::unique_ptr<Integrator> factory(Logger &logger, ParamMap &params, const Scene &scene);
 
 	private:
-		SppmIntegrator(unsigned int d_photons, int passnum, bool transp_shad, int shadow_depth);
+		SppmIntegrator(Logger &logger, unsigned int d_photons, int passnum, bool transp_shad, int shadow_depth);
 		virtual std::string getShortName() const override { return "SPPM"; }
 		virtual std::string getName() const override { return "SPPM"; }
 		virtual bool render(RenderControl &render_control, const RenderView *render_view) override;

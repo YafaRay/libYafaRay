@@ -39,29 +39,29 @@ unsigned int Material::material_index_highest_ = 1;
 unsigned int Material::material_index_auto_ = 0;
 float Material::highest_sampling_factor_ = 1.f;
 
-std::unique_ptr<Material> Material::factory(ParamMap &params, std::list<ParamMap> &eparams, const Scene &scene)
+std::unique_ptr<Material> Material::factory(Logger &logger, ParamMap &params, std::list<ParamMap> &eparams, const Scene &scene)
 {
-	if(Y_LOG_HAS_DEBUG)
+	if(logger.isDebug())
 	{
-		Y_DEBUG PRTEXT(**Material) PREND;
-		params.printDebug();
+		logger.logDebug("**Material");
+		params.logContents(logger);
 	}
 	std::string type;
 	params.getParam("type", type);
-	if(type == "blend_mat") return BlendMaterial::factory(params, eparams, scene);
-	else if(type == "coated_glossy") return CoatedGlossyMaterial::factory(params, eparams, scene);
-	else if(type == "glass") return GlassMaterial::factory(params, eparams, scene);
-	else if(type == "mirror") return MirrorMaterial::factory(params, eparams, scene);
-	else if(type == "null") return NullMaterial::factory(params, eparams, scene);
-	else if(type == "glossy") return GlossyMaterial::factory(params, eparams, scene);
-	else if(type == "rough_glass") return RoughGlassMaterial::factory(params, eparams, scene);
-	else if(type == "shinydiffusemat") return ShinyDiffuseMaterial::factory(params, eparams, scene);
-	else if(type == "light_mat") return LightMaterial::factory(params, eparams, scene);
-	else if(type == "mask_mat") return MaskMaterial::factory(params, eparams, scene);
+	if(type == "blend_mat") return BlendMaterial::factory(logger, params, eparams, scene);
+	else if(type == "coated_glossy") return CoatedGlossyMaterial::factory(logger, params, eparams, scene);
+	else if(type == "glass") return GlassMaterial::factory(logger, params, eparams, scene);
+	else if(type == "mirror") return MirrorMaterial::factory(logger, params, eparams, scene);
+	else if(type == "null") return NullMaterial::factory(logger, params, eparams, scene);
+	else if(type == "glossy") return GlossyMaterial::factory(logger, params, eparams, scene);
+	else if(type == "rough_glass") return RoughGlassMaterial::factory(logger, params, eparams, scene);
+	else if(type == "shinydiffusemat") return ShinyDiffuseMaterial::factory(logger, params, eparams, scene);
+	else if(type == "light_mat") return LightMaterial::factory(logger, params, eparams, scene);
+	else if(type == "mask_mat") return MaskMaterial::factory(logger, params, eparams, scene);
 	else return nullptr;
 }
 
-Material::Material()
+Material::Material(Logger &logger) : logger_(logger)
 {
 	material_index_auto_++;
 	srand(material_index_auto_);

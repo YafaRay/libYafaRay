@@ -73,7 +73,7 @@ Rgb UniformVolumeRegion::emission(const Point3 &p, const Vec3 &v) const
 		return Rgb(0.f);
 }
 
-std::unique_ptr<VolumeRegion> UniformVolumeRegion::factory(const ParamMap &params, const Scene &scene)
+std::unique_ptr<VolumeRegion> UniformVolumeRegion::factory(Logger &logger, const ParamMap &params, const Scene &scene)
 {
 	float ss = .1f;
 	float sa = .1f;
@@ -95,13 +95,13 @@ std::unique_ptr<VolumeRegion> UniformVolumeRegion::factory(const ParamMap &param
 	params.getParam("maxZ", max[2]);
 	params.getParam("attgridScale", att_sc);
 
-	return std::unique_ptr<VolumeRegion>(new UniformVolumeRegion(Rgb(sa), Rgb(ss), Rgb(le), g, Point3(min[0], min[1], min[2]), Point3(max[0], max[1], max[2]), att_sc));
+	return std::unique_ptr<VolumeRegion>(new UniformVolumeRegion(logger, Rgb(sa), Rgb(ss), Rgb(le), g, Point3(min[0], min[1], min[2]), Point3(max[0], max[1], max[2]), att_sc));
 }
 
-UniformVolumeRegion::UniformVolumeRegion(Rgb sa, Rgb ss, Rgb le, float gg, Point3 pmin, Point3 pmax, int attgrid_scale) :
-		VolumeRegion(sa, ss, le, gg, pmin, pmax, attgrid_scale)
+UniformVolumeRegion::UniformVolumeRegion(Logger &logger, Rgb sa, Rgb ss, Rgb le, float gg, Point3 pmin, Point3 pmax, int attgrid_scale) :
+		VolumeRegion(logger, sa, ss, le, gg, pmin, pmax, attgrid_scale)
 {
-	if(Y_LOG_HAS_VERBOSE) Y_VERBOSE << "UniformVolume: Vol.[" << s_a_ << ", " << s_s_ << ", " << l_e_ << ", " << pmin << ", " << pmax << ", " << attgrid_scale << "]" << YENDL;
+	if(logger_.isVerbose()) logger_.logVerbose("UniformVolume: Vol.[", s_a_, ", ", s_s_, ", ", l_e_, ", ", pmin, ", ", pmax, ", ", attgrid_scale, "]");
 }
 
 END_YAFARAY

@@ -106,14 +106,14 @@ void clearPath_global(std::vector<PathEvalVertex> &p, int s, int t)
 void checkPath_global(std::vector<PathEvalVertex> &p, int s, int t)
 {
 #if BIDIR_DEBUG
-	if(Y_LOG_HAS_DEBUG)
+	if(logger_.isDebug())
 	{
 		for(int i = 0; i < s + t; ++i)
 		{
 			pathEvalVert_t &v = p[i];
-			if(v.pdf_f == -1.f) Y_DEBUG << integratorName << ": " << "path[" << i << "].pdf_f uninitialized! (s=" << s << " t=" << t << ")\n" << YENDL;
-			if(v.pdf_b == -1.f) Y_DEBUG << integratorName << ": " << "path[" << i << "].pdf_b uninitialized! (s=" << s << " t=" << t << ")\n" << YENDL;
-			if(v.G == -1.f) Y_DEBUG << integratorName << ": " << "path[" << i << "].G uninitialized! (s=" << s << " t=" << t << ")\n" << YENDL;
+			if(v.pdf_f == -1.f)logger_.logDebug(integratorName, ": ", "path[", i, "].pdf_f uninitialized! (s=", s, " t=", t, ")\n");
+			if(v.pdf_b == -1.f)logger_.logDebug(integratorName, ": ", "path[", i, "].pdf_b uninitialized! (s=", s, " t=", t, ")\n");
+			if(v.G == -1.f)logger_.logDebug(integratorName, ": ", "path[", i, "].G uninitialized! (s=", s, " t=", t, ")\n");
 		}
 	}
 #endif
@@ -139,7 +139,7 @@ class PathData
 		int n_paths_;             //!< number of paths that have been sampled (for current thread and image)
 };
 
-BidirectionalIntegrator::BidirectionalIntegrator(bool transp_shad, int shadow_depth): tr_shad_(transp_shad), s_depth_(shadow_depth)
+BidirectionalIntegrator::BidirectionalIntegrator(Logger &logger, bool transp_shad, int shadow_depth): TiledIntegrator(logger), tr_shad_(transp_shad), s_depth_(shadow_depth)
 {
 	//Empty
 }
@@ -168,10 +168,10 @@ bool BidirectionalIntegrator::preprocess(const RenderControl &render_control, co
 
 	for(int i = 0; i < num_lights; ++i) inv_light_power_d_[lights_[i]] = light_power_d_->func_[i] * light_power_d_->inv_integral_;
 
-	if(Y_LOG_HAS_DEBUG)
+	if(logger_.isDebug())
 	{
-		for(int i = 0; i < num_lights; ++i) Y_DEBUG << getName() << ": " << energies[i] << " (" << light_power_d_->func_[i] << ") " << YENDL;
-		Y_DEBUG << getName() << ": preprocess(): lights: " << num_lights << " invIntegral:" << light_power_d_->inv_integral_ << YENDL;
+		for(int i = 0; i < num_lights; ++i)logger_.logDebug(getName(), ": ", energies[i], " (", light_power_d_->func_[i], ") ");
+		logger_.logDebug(getName(), ": preprocess(): lights: ", num_lights, " invIntegral:", light_power_d_->inv_integral_);
 	}
 
 	//nPaths = 0;
@@ -185,14 +185,14 @@ bool BidirectionalIntegrator::preprocess(const RenderControl &render_control, co
 	float pdf;
 	ray_t wo = cam->shootRay(10.25, 10.25, 0, 0, wt);
 	bool proj = cam->project(wo, 0, 0, u, v, pdf);
-	if(Y_LOG_HAS_DEBUG) Y_DEBUG << integratorName << ": " << "camera u=" << u << " v=" << v << " pdf=" << pdf << " (returned " << proj << ")" << YENDL;
+	if(logger_.isDebug())logger_.logDebug(integratorName << ": " << "camera u=" << u << " v=" << v << " pdf=" << pdf << " (returned " << proj << ")");
 	float integral = 0.f;
 	for(int i=0; i<10000; ++i)
 	{
 	    wo.dir = SampleSphere((float)i/10000.f, RI_vdC(i));
 	    if( cam->project(wo, 0, 0, u, v, pdf) ) integral += pdf;
 	}
-	if(Y_LOG_HAS_DEBUG) Y_DEBUG << integratorName << ": " << "Camera pdf integral: " << integral/10000.f << YENDL;
+	if(logger_.isDebug())logger_.logDebug(integratorName << ": " << "Camera pdf integral: " << integral/10000.f);
 
 
 	//test...
@@ -209,7 +209,7 @@ bool BidirectionalIntegrator::preprocess(const RenderControl &render_control, co
 	    lights[0]->emitPdf(sp, wo.dir, Apdf, dirPdf, cos_wo);
 	    integral += dirPdf;
 	}
-	if(Y_LOG_HAS_DEBUG) Y_DEBUG << integratorName << ": " << "Light pdf integral: " << integral/10000.f << YENDL;
+	if(logger_.isDebug())logger_.logDebug(integratorName << ": " << "Light pdf integral: " << integral/10000.f);
 	*/
 
 	std::stringstream set;
@@ -232,7 +232,7 @@ bool BidirectionalIntegrator::preprocess(const RenderControl &render_control, co
 
 void BidirectionalIntegrator::cleanup()
 {
-	//	if(Y_LOG_HAS_DEBUG) Y_DEBUG << integratorName << ": " << "cleanup: flushing light image" << YENDL;
+	//	if(logger_.isDebug())logger_.logDebug(integratorName << ": " << "cleanup: flushing light image");
 	int n_paths = 0;
 	for(int i = 0; i < (int)thread_data_.size(); ++i)
 	{
@@ -293,7 +293,7 @@ Rgba BidirectionalIntegrator::integrate(RenderData &render_data, const DiffRay &
 		lray.tmin_ = scene_->ray_min_dist_;
 		lray.tmax_ = -1.f;
 		float light_num_pdf;
-		int light_num = light_power_d_->dSample(prng(), &light_num_pdf);
+		int light_num = light_power_d_->dSample(logger_, prng(), &light_num_pdf);
 		light_num_pdf *= f_num_lights_;
 		LSample ls;
 		ls.s_1_ = prng(), ls.s_2_ = prng(), ls.s_3_ = prng(), ls.s_4_ = prng();
@@ -303,7 +303,7 @@ Rgba BidirectionalIntegrator::integrate(RenderData &render_data, const DiffRay &
 		// test!
 		ls.area_pdf_ *= light_num_pdf;
 
-		if(dbg < 10 && Y_LOG_HAS_DEBUG) Y_DEBUG << getName() << ": " << "lightNumPdf=" << light_num_pdf << YENDL;
+		if(dbg < 10 && logger_.isDebug())logger_.logDebug(getName(), ": ", "lightNumPdf=", light_num_pdf);
 		++dbg;
 
 		// setup vl
@@ -476,7 +476,7 @@ int BidirectionalIntegrator::createPath(RenderData &render_data, const Ray &star
 		v.g_ = v_prev.cos_wo_ * v.cos_wi_ / v.ds_;
 		++n_vert;
 		render_data.arena_ = v.userdata_;
-		//if(dbg<10) if(Y_LOG_HAS_DEBUG) Y_DEBUG << integratorName << ": " << nVert << "  mat: " << (void*) mat << " alpha:" << v.alpha << " p_f_s:" << v_prev.f_s << " qi:"<< v_prev.qi << YENDL;
+		//if(dbg<10) if(logger_.isDebug())logger_.logDebug(integratorName << ": " << nVert << "  mat: " << (void*) mat << " alpha:" << v.alpha << " p_f_s:" << v_prev.f_s << " qi:"<< v_prev.qi);
 		mat->initBsdf(render_data, v.sp_, m_bsdf);
 		// create tentative sample for next path segment
 		Sample s(prng(), prng(), BsdfFlags::All, true);
@@ -505,9 +505,9 @@ int BidirectionalIntegrator::createPath(RenderData &render_data, const Ray &star
 			v.pdf_wi_ = mat->pdf(render_data, v.sp_, ray.dir_, v.wi_, BsdfFlags::All); // all BSDFs? think so...
 			v.qi_wi_ = std::min(0.98f, v.f_s_.col2Bri() * v.cos_wi_ / v.pdf_wi_);
 		}
-		if(v.qi_wi_ < 0 && Y_LOG_HAS_DEBUG)
+		if(v.qi_wi_ < 0 && logger_.isDebug())
 		{
-			Y_DEBUG << getName() << ": " << "v[" << n_vert << "].qi_wi=" << v.qi_wi_ << " (" << v.f_s_.col2Bri() << " " << v.cos_wi_ << " " << v.pdf_wi_ << ")\n" << "\t" << v.pdf_wo_ << "  flags:" << static_cast<unsigned int>(s.sampled_flags_) << YENDL;
+			logger_.logDebug(getName(), ": ", "v[", n_vert, "].qi_wi=", v.qi_wi_, " (", v.f_s_.col2Bri(), " ", v.cos_wi_, " ", v.pdf_wi_, ")\n", "\t", v.pdf_wo_, "  flags:", static_cast<unsigned int>(s.sampled_flags_));
 		}
 
 		v.flags_ = s.sampled_flags_;
@@ -626,7 +626,7 @@ inline bool BidirectionalIntegrator::connectLPath(RenderData &render_data, int t
 	int n_lights_i = lights_.size();
 	if(n_lights_i == 0) return false;
 	float light_num_pdf, cos_wo;
-	int lnum = light_power_d_->dSample((*render_data.prng_)(), &light_num_pdf);
+	int lnum = light_power_d_->dSample(logger_, (*render_data.prng_)(), &light_num_pdf);
 	light_num_pdf *= f_num_lights_;
 	if(lnum > n_lights_i - 1) lnum = n_lights_i - 1;
 	const Light *light = lights_[lnum];
@@ -897,7 +897,7 @@ Rgb BidirectionalIntegrator::evalLPath(RenderData &render_data, int t, PathData 
 	Rgb c_uw = lcol * pd.f_z_ * z.alpha_ * std::abs(z.sp_.n_ * l_ray.dir_); // f_y, cos_x0_f and r^2 computed in connectLPath...(light pdf)
 	if(tr_shad_) c_uw *= scol;
 	// hence c_st is only cos_x1_b * f_z...like path tracing
-	//if(dbg < 10) if(Y_LOG_HAS_DEBUG) Y_DEBUG << integratorName << ": " << "evalLPath(): f_z:" << pd.f_z << " C_uw:" << C_uw << YENDL;
+	//if(dbg < 10) if(logger_.isDebug())logger_.logDebug(integratorName << ": " << "evalLPath(): f_z:" << pd.f_z << " C_uw:" << C_uw);
 	++dbg;
 	return c_uw;
 }
@@ -1086,7 +1086,7 @@ Rgb BidirectionalIntegrator::sampleAmbientOcclusionClayLayer(RenderData &render_
 }
 
 
-std::unique_ptr<Integrator> BidirectionalIntegrator::factory(ParamMap &params, const Scene &scene)
+std::unique_ptr<Integrator> BidirectionalIntegrator::factory(Logger &logger, ParamMap &params, const Scene &scene)
 {
 	bool do_ao = false;
 	int ao_samples = 32;
@@ -1106,7 +1106,7 @@ std::unique_ptr<Integrator> BidirectionalIntegrator::factory(ParamMap &params, c
 	params.getParam("bg_transp", bg_transp);
 	params.getParam("bg_transp_refract", bg_transp_refract);
 
-	auto inte = std::unique_ptr<BidirectionalIntegrator>(new BidirectionalIntegrator(transp_shad, shadow_depth));
+	auto inte = std::unique_ptr<BidirectionalIntegrator>(new BidirectionalIntegrator(logger, transp_shad, shadow_depth));
 
 	// AO settings
 	inte->use_ambient_occlusion_ = do_ao;

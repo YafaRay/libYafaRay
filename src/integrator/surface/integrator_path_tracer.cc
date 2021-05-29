@@ -39,7 +39,7 @@ BEGIN_YAFARAY
 
 class Pdf1D;
 
-PathIntegrator::PathIntegrator(bool transp_shad, int shadow_depth)
+PathIntegrator::PathIntegrator(Logger &logger, bool transp_shad, int shadow_depth) : MonteCarloIntegrator(logger)
 {
 	tr_shad_ = transp_shad;
 	s_depth_ = shadow_depth;
@@ -106,15 +106,15 @@ bool PathIntegrator::preprocess(const RenderControl &render_control, const Rende
 	}
 
 	g_timer_global.stop("prepass");
-	Y_INFO << getName() << ": Photonmap building time: " << std::fixed << std::setprecision(1) << g_timer_global.getTime("prepass") << "s" << " (" << scene_->getNumThreadsPhotons() << " thread(s))" << YENDL;
+	logger_.logInfo(getName(), ": Photonmap building time: ", std::fixed, std::setprecision(1), g_timer_global.getTime("prepass"), "s", " (", scene_->getNumThreadsPhotons(), " thread(s))");
 
 	set << "| photon maps: " << std::fixed << std::setprecision(1) << g_timer_global.getTime("prepass") << "s" << " [" << scene_->getNumThreadsPhotons() << " thread(s)]";
 
 	render_info_ += set.str();
 
-	if(Y_LOG_HAS_VERBOSE)
+	if(logger_.isVerbose())
 	{
-		for(std::string line; std::getline(set, line, '\n');) Y_VERBOSE << line << YENDL;
+		for(std::string line; std::getline(set, line, '\n');) logger_.logVerbose(line);
 	}
 
 	return success;
@@ -389,7 +389,7 @@ Rgba PathIntegrator::integrate(RenderData &render_data, const DiffRay &ray, int 
 	return Rgba(col, alpha);
 }
 
-std::unique_ptr<Integrator> PathIntegrator::factory(ParamMap &params, const Scene &scene)
+std::unique_ptr<Integrator> PathIntegrator::factory(Logger &logger, ParamMap &params, const Scene &scene)
 {
 	bool transp_shad = false, no_rec = false;
 	int shadow_depth = 5;
@@ -421,7 +421,7 @@ std::unique_ptr<Integrator> PathIntegrator::factory(ParamMap &params, const Scen
 	params.getParam("AO_color", ao_col);
 	params.getParam("photon_maps_processing", photon_maps_processing_str);
 
-	auto inte = std::unique_ptr<PathIntegrator>(new PathIntegrator(transp_shad, shadow_depth));
+	auto inte = std::unique_ptr<PathIntegrator>(new PathIntegrator(logger, transp_shad, shadow_depth));
 	if(params.getParam("caustic_type", c_method))
 	{
 		bool use_photons = false;

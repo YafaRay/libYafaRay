@@ -53,7 +53,7 @@ bool PngFormat::saveToFile(const std::string &name, const Image *image)
 	std::FILE *fp = File::open(name, "wb");
 	if(!fp)
 	{
-		Y_ERROR << getFormatName() << ": Cannot open file " << name << YENDL;
+		logger_.logError(getFormatName(), ": Cannot open file ", name);
 		return false;
 	}
 	const int h = image->getHeight();
@@ -92,23 +92,23 @@ bool PngFormat::saveToFile(const std::string &name, const Image *image)
 	File::close(fp);
 	// cleanup:
 	for(int i = 0; i < h; i++) delete [] row_pointers[i];
-	if(Y_LOG_HAS_VERBOSE) Y_VERBOSE << getFormatName() << ": Done." << YENDL;
+	if(logger_.isVerbose()) logger_.logVerbose(getFormatName(), ": Done.");
 	return true;
 }
 
 std::unique_ptr<Image> PngFormat::loadFromFile(const std::string &name, const Image::Optimization &optimization, const ColorSpace &color_space, float gamma)
 {
 	std::FILE *fp = File::open(name, "rb");
-	Y_INFO << getFormatName() << ": Loading image \"" << name << "\"..." << YENDL;
+	logger_.logInfo(getFormatName(), ": Loading image \"", name, "\"...");
 	if(!fp)
 	{
-		Y_ERROR << getFormatName() << ": Cannot open file " << name << YENDL;
+		logger_.logError(getFormatName(), ": Cannot open file ", name);
 		return nullptr;
 	}
 	uint8_t signature[8];
 	if(fread(signature, 1, 8, fp) != 8)
 	{
-		Y_ERROR << getFormatName() << ": EOF found or error reading image file while reading PNG signature." << YENDL;
+		logger_.logError(getFormatName(), ": EOF found or error reading image file while reading PNG signature.");
 		File::close(fp);
 		return nullptr;
 	}
@@ -124,7 +124,7 @@ std::unique_ptr<Image> PngFormat::loadFromFile(const std::string &name, const Im
 	png_set_sig_bytes(png_ptr, 8);
 	std::unique_ptr<Image> image = readFromStructs(png_structs, optimization, color_space, gamma);
 	File::close(fp);
-	if(Y_LOG_HAS_VERBOSE) Y_VERBOSE << getFormatName() << ": Done." << YENDL;
+	if(logger_.isVerbose()) logger_.logVerbose(getFormatName(), ": Done.");
 	return image;
 }
 
@@ -134,7 +134,7 @@ std::unique_ptr<Image> PngFormat::loadFromMemory(const uint8_t *data, size_t siz
 	uint8_t signature[8];
 	if(reader->read(signature, 8) < 8)
 	{
-		Y_ERROR << getFormatName() << ": EOF found on image data while reading PNG signature." << YENDL;
+		logger_.logError(getFormatName(), ": EOF found on image data while reading PNG signature.");
 		return nullptr;
 	}
 	png_structp png_ptr = nullptr;
@@ -154,24 +154,24 @@ bool PngFormat::fillReadStructs(uint8_t *sig, const PngStructs &png_structs)
 {
 	if(png_sig_cmp(sig, 0, 8))
 	{
-		Y_ERROR << getFormatName() << ": Data is not from a PNG image!" << YENDL;
+		logger_.logError(getFormatName(), ": Data is not from a PNG image!");
 		return false;
 	}
 	if(!(png_structs.png_ptr_ = png_create_read_struct(PNG_LIBPNG_VER_STRING, nullptr, nullptr, nullptr)))
 	{
-		Y_ERROR << getFormatName() << ": Allocation of png struct failed!" << YENDL;
+		logger_.logError(getFormatName(), ": Allocation of png struct failed!");
 		return false;
 	}
 	if(!(png_structs.info_ptr_ = png_create_info_struct(png_structs.png_ptr_)))
 	{
 		png_destroy_read_struct(&png_structs.png_ptr_, nullptr, nullptr);
-		Y_ERROR << getFormatName() << ": Allocation of png info failed!" << YENDL;
+		logger_.logError(getFormatName(), ": Allocation of png info failed!");
 		return false;
 	}
 	if(setjmp(png_jmpbuf(png_structs.png_ptr_)))
 	{
 		png_destroy_read_struct(&png_structs.png_ptr_, &png_structs.info_ptr_, nullptr);
-		Y_ERROR << getFormatName() << ": Long jump triggered error!" << YENDL;
+		logger_.logError(getFormatName(), ": Long jump triggered error!");
 		return false;
 	}
 	return true;
@@ -181,19 +181,19 @@ bool PngFormat::fillWriteStructs(std::FILE *fp, unsigned int color_type, const P
 {
 	if(!(png_structs.png_ptr_ = png_create_write_struct(PNG_LIBPNG_VER_STRING, nullptr, nullptr, nullptr)))
 	{
-		Y_ERROR << getFormatName() << ": Allocation of png struct failed!" << YENDL;
+		logger_.logError(getFormatName(), ": Allocation of png struct failed!");
 		return false;
 	}
 	if(!(png_structs.info_ptr_ = png_create_info_struct(png_structs.png_ptr_)))
 	{
 		png_destroy_read_struct(&png_structs.png_ptr_, nullptr, nullptr);
-		Y_ERROR << getFormatName() << ": Allocation of png info failed!" << YENDL;
+		logger_.logError(getFormatName(), ": Allocation of png info failed!");
 		return false;
 	}
 	if(setjmp(png_jmpbuf(png_structs.png_ptr_)))
 	{
 		png_destroy_read_struct(&png_structs.png_ptr_, &png_structs.info_ptr_, nullptr);
-		Y_ERROR << getFormatName() << ": Long jump triggered error!" << YENDL;
+		logger_.logError(getFormatName(), ": Long jump triggered error!");
 		return false;
 	}
 	png_init_io(png_structs.png_ptr_, fp);
@@ -235,7 +235,7 @@ std::unique_ptr<Image> PngFormat::readFromStructs(const PngStructs &png_structs,
 			}
 			break;
 		default:
-			Y_ERROR << getFormatName() << ": PNG type is not supported!" << YENDL;
+			logger_.logError(getFormatName(), ": PNG type is not supported!");
 			longjmp(png_jmpbuf(png_structs.png_ptr_), 1);
 	}
 	// yes i know w and h are unsigned ints and the value can be much bigger, i'll think if a different memeber var is really needed since...
@@ -243,7 +243,7 @@ std::unique_ptr<Image> PngFormat::readFromStructs(const PngStructs &png_structs,
 	// even 2,147,483,647 (max signed int positive value) pixels on one side is purpostrous
 	// at 1 channel, 8 bits per channel and the other side of 1 pixel wide the resulting image uses 2gb of memory
 	const Image::Type type = Image::getTypeFromSettings(has_alpha, (num_chan == 1 || grayscale_));
-	std::unique_ptr<Image> image = Image::factory(w, h, type, optimization);
+	std::unique_ptr<Image> image = Image::factory(logger_, w, h, type, optimization);
 	auto row_pointers = std::unique_ptr<png_bytep[]>(new png_bytep[h]);
 	int bit_mult = 1;
 	if(bit_depth == 16) bit_mult = 2;
@@ -329,9 +329,9 @@ std::unique_ptr<Image> PngFormat::readFromStructs(const PngStructs &png_structs,
 	return image;
 }
 
-std::unique_ptr<Format> PngFormat::factory(ParamMap &params)
+std::unique_ptr<Format> PngFormat::factory(Logger &logger, ParamMap &params)
 {
-	return std::unique_ptr<Format>(new PngFormat());
+	return std::unique_ptr<Format>(new PngFormat(logger));
 }
 
 END_YAFARAY

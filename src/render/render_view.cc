@@ -27,10 +27,13 @@
 
 BEGIN_YAFARAY
 
-std::unique_ptr<RenderView> RenderView::factory(ParamMap &params, const Scene &scene)
+std::unique_ptr<RenderView> RenderView::factory(Logger &logger, ParamMap &params, const Scene &scene)
 {
-	if(Y_LOG_HAS_DEBUG) Y_DEBUG PRTEXT(**RenderView) PREND;
-	params.printDebug();
+	if(logger.isDebug())
+	{
+		logger.logDebug("**RenderView");
+		params.logContents(logger);
+	}
 	std::string name;
 	std::string camera_name;
 	std::string light_names; //Separated by semicolon ";"
@@ -43,12 +46,12 @@ std::unique_ptr<RenderView> RenderView::factory(ParamMap &params, const Scene &s
 	return std::unique_ptr<RenderView>(new RenderView(name, camera_name, light_names, wavelength));
 }
 
-bool RenderView::init(const Scene &scene)
+bool RenderView::init(Logger &logger, const Scene &scene)
 {
 	camera_ = scene.getCamera(camera_name_);
 	if(!camera_)
 	{
-		Y_ERROR << "RenderView '" << name_ << "': Camera not found in the scene." << YENDL;
+		logger.logError("RenderView '", name_, "': Camera not found in the scene.");
 		return false;
 	}
 
@@ -66,7 +69,7 @@ bool RenderView::init(const Scene &scene)
 			const Light *light = scene.getLight(light_name);
 			if(!light)
 			{
-				Y_WARNING << "RenderView '" << name_ << "' init: view '" << name_ << "' could not find light '" << light_name << "', skipping..." << YENDL;
+				logger.logWarning("RenderView '", name_, "' init: view '", name_, "' could not find light '", light_name, "', skipping...");
 				continue;
 			}
 			lights_[light_name] = scene.getLight(light_name);
@@ -74,7 +77,7 @@ bool RenderView::init(const Scene &scene)
 	}
 	if(lights_.empty())
 	{
-		Y_ERROR << "RenderView '" << name_ << "': Lights not found in the scene." << YENDL;
+		logger.logError("RenderView '", name_, "': Lights not found in the scene.");
 		return false;
 	}
 	return true;

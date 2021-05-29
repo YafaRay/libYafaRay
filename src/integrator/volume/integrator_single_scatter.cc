@@ -30,18 +30,19 @@
 
 BEGIN_YAFARAY
 
-SingleScatterIntegrator::SingleScatterIntegrator(float s_size, bool adapt, bool opt) {
+SingleScatterIntegrator::SingleScatterIntegrator(Logger &logger, float s_size, bool adapt, bool opt) : VolumeIntegrator(logger)
+{
 	adaptive_ = adapt;
 	step_size_ = s_size;
 	optimize_ = opt;
 	adaptive_step_size_ = s_size * 100.0f;
 
-	Y_PARAMS << "SingleScatter: stepSize: " << step_size_ << " adaptive: " << adaptive_ << " optimize: " << optimize_ << YENDL;
+	logger_.logParams("SingleScatter: stepSize: ", step_size_, " adaptive: ", adaptive_, " optimize: ", optimize_);
 }
 
 bool SingleScatterIntegrator::preprocess(const RenderControl &render_control, const RenderView *render_view, ImageFilm *)
 {
-	Y_INFO << "SingleScatter: Preprocessing..." << YENDL;
+	logger_.logInfo("SingleScatter: Preprocessing...");
 
 	lights_ = render_view->getLightsVisible();
 	const auto &volumes = scene_->getVolumeRegions();
@@ -63,7 +64,7 @@ bool SingleScatterIntegrator::preprocess(const RenderControl &render_control, co
 			float y_size_inv = 1.f / (float)y_size;
 			float z_size_inv = 1.f / (float)z_size;
 
-			Y_PARAMS << "SingleScatter: volume, attGridMaps with size: " << x_size << " " << y_size << " " << x_size << std::endl;
+			logger_.logParams("SingleScatter: volume, attGridMaps with size: ", x_size, " ", y_size, " ", x_size);
 
 			for(auto l = lights_.begin(); l != lights_.end(); ++l)
 			{
@@ -456,14 +457,15 @@ Rgba SingleScatterIntegrator::integrate(RenderData &render_data, const Ray &ray,
 	return result;
 }
 
-std::unique_ptr<Integrator> SingleScatterIntegrator::factory(ParamMap &params, const Scene &scene) {
+std::unique_ptr<Integrator> SingleScatterIntegrator::factory(Logger &logger, ParamMap &params, const Scene &scene)
+{
 	bool adapt = false;
 	bool opt = false;
 	float s_size = 1.f;
 	params.getParam("stepSize", s_size);
 	params.getParam("adaptive", adapt);
 	params.getParam("optimize", opt);
-	return std::unique_ptr<Integrator>(new SingleScatterIntegrator(s_size, adapt, opt));
+	return std::unique_ptr<Integrator>(new SingleScatterIntegrator(logger, s_size, adapt, opt));
 }
 
 END_YAFARAY

@@ -30,9 +30,9 @@ BEGIN_YAFARAY
 
 //int hit_t1=0, hit_t2=0;
 
-AreaLight::AreaLight(const Point3 &c, const Vec3 &v_1, const Vec3 &v_2,
+AreaLight::AreaLight(Logger &logger, const Point3 &c, const Vec3 &v_1, const Vec3 &v_2,
 					 const Rgb &col, float inte, int nsam, bool light_enabled, bool cast_shadows):
-		corner_(c), to_x_(v_1), to_y_(v_2), samples_(nsam)
+		Light(logger), corner_(c), to_x_(v_1), to_y_(v_2), samples_(nsam)
 {
 	light_enabled_ = light_enabled;
 	cast_shadows_ = cast_shadows;
@@ -57,7 +57,7 @@ void AreaLight::init(Scene &scene)
 	{
 		Object *obj = scene.getObject(object_name_);
 		if(obj) obj->setLight(this);
-		else Y_WARNING << "AreaLight: Invalid object ID given!" << YENDL;
+		else logger_.logWarning("AreaLight: Invalid object ID given!");
 	}
 }
 
@@ -168,7 +168,7 @@ void AreaLight::emitPdf(const SurfacePoint &sp, const Vec3 &wo, float &area_pdf,
 	dir_pdf = cos_wo > 0 ? cos_wo : 0.f;
 }
 
-std::unique_ptr<Light> AreaLight::factory(ParamMap &params, const Scene &scene)
+std::unique_ptr<Light> AreaLight::factory(Logger &logger, ParamMap &params, const Scene &scene)
 {
 	Point3 corner(0.0);
 	Point3 p_1(0.0);
@@ -196,7 +196,7 @@ std::unique_ptr<Light> AreaLight::factory(ParamMap &params, const Scene &scene)
 	params.getParam("with_diffuse", shoot_d);
 	params.getParam("photon_only", p_only);
 
-	auto light = std::unique_ptr<AreaLight>(new AreaLight(corner, p_1 - corner, p_2 - corner, color, power, samples, light_enabled, cast_shadows));
+	auto light = std::unique_ptr<AreaLight>(new AreaLight(logger, corner, p_1 - corner, p_2 - corner, color, power, samples, light_enabled, cast_shadows));
 
 	light->object_name_ = object_name;
 	light->shoot_caustic_ = shoot_c;

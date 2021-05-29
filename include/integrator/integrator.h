@@ -25,6 +25,7 @@
 
 #include "yafaray_conf.h"
 #include <string>
+#include <common/logger.h>
 #include "render/render_control.h"
 #include "render/render_view.h"
 
@@ -47,9 +48,9 @@ class ImageFilm;
 class Integrator
 {
 	public:
-		static std::unique_ptr<Integrator> factory(ParamMap &params, const Scene &scene);
+		static std::unique_ptr<Integrator> factory(Logger &logger, ParamMap &params, const Scene &scene);
 
-		Integrator() = default;
+		Integrator(Logger &logger) : logger_(logger) { }
 		virtual ~Integrator() = default;
 		//! this MUST be called before any other member function!
 		virtual bool render(RenderControl &render_control, const RenderView *render_view) { return false; }
@@ -76,6 +77,7 @@ class Integrator
 		std::string aa_noise_info_;
 		const Scene *scene_ = nullptr;
 		std::shared_ptr<ProgressBar> intpb_;
+		Logger &logger_;
 };
 
 class SurfaceIntegrator: public Integrator
@@ -84,7 +86,7 @@ class SurfaceIntegrator: public Integrator
 		virtual Rgba integrate(RenderData &render_data, const DiffRay &ray, int additional_depth, ColorLayers *color_layers, const RenderView *render_view) const = 0;
 
 	protected:
-		SurfaceIntegrator() = default;
+		SurfaceIntegrator(Logger &logger) : Integrator(logger) { }
 		virtual Type getType() const override { return Surface; }
 
 	protected:
@@ -98,7 +100,7 @@ class VolumeIntegrator: public Integrator
 		virtual Rgba integrate(RenderData &render_data, const Ray &ray, int additional_depth = 0) const = 0;
 		virtual bool preprocess(const RenderControl &render_control, const RenderView *render_view, ImageFilm *image_film) override { return true; };
 	protected:
-		VolumeIntegrator() = default;
+		VolumeIntegrator(Logger &logger) : Integrator(logger) { }
 		virtual Type getType() const override { return Volume; }
 };
 

@@ -24,24 +24,24 @@
 
 BEGIN_YAFARAY
 
-std::unique_ptr<Texture> Texture::factory(ParamMap &params, const Scene &scene)
+std::unique_ptr<Texture> Texture::factory(Logger &logger, ParamMap &params, const Scene &scene)
 {
-	if(Y_LOG_HAS_DEBUG)
+	if(logger.isDebug())
 	{
-		Y_DEBUG PRTEXT(**Texture) PREND;
-		params.printDebug();
+		logger.logDebug("**Texture");
+		params.logContents(logger);
 	}
 	std::string type;
 	params.getParam("type", type);
-	if(type == "blend") return BlendTexture::factory(params, scene);
-	else if(type == "clouds") return CloudsTexture::factory(params, scene);
-	else if(type == "marble") return MarbleTexture::factory(params, scene);
-	else if(type == "wood") return WoodTexture::factory(params, scene);
-	else if(type == "voronoi") return VoronoiTexture::factory(params, scene);
-	else if(type == "musgrave") return MusgraveTexture::factory(params, scene);
-	else if(type == "distorted_noise") return DistortedNoiseTexture::factory(params, scene);
-	else if(type == "rgb_cube") return RgbCubeTexture::factory(params, scene);
-	else if(type == "image") return ImageTexture::factory(params, scene);
+	if(type == "blend") return BlendTexture::factory(logger, params, scene);
+	else if(type == "clouds") return CloudsTexture::factory(logger, params, scene);
+	else if(type == "marble") return MarbleTexture::factory(logger, params, scene);
+	else if(type == "wood") return WoodTexture::factory(logger, params, scene);
+	else if(type == "voronoi") return VoronoiTexture::factory(logger, params, scene);
+	else if(type == "musgrave") return MusgraveTexture::factory(logger, params, scene);
+	else if(type == "distorted_noise") return DistortedNoiseTexture::factory(logger, params, scene);
+	else if(type == "rgb_cube") return RgbCubeTexture::factory(logger, params, scene);
+	else if(type == "image") return ImageTexture::factory(logger, params, scene);
 	else return nullptr;
 }
 

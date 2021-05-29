@@ -34,22 +34,27 @@ class Light;
 class Ray;
 class ParamMap;
 class Scene;
+class Logger;
 
 class VolumeHandler
 {
 	public:
-		static std::unique_ptr<VolumeHandler> factory(const ParamMap &params, const Scene &scene);
+		static std::unique_ptr<VolumeHandler> factory(Logger &logger, const ParamMap &params, const Scene &scene);
+		VolumeHandler(Logger &logger) : logger_(logger) { }
 		virtual bool transmittance(const RenderData &render_data, const Ray &ray, Rgb &col) const = 0;
 		virtual bool scatter(const RenderData &render_data, const Ray &ray, Ray &s_ray, PSample &s) const = 0;
 		virtual ~VolumeHandler() = default;
+
+	protected:
+		Logger &logger_;
 };
 
 class VolumeRegion
 {
 	public:
-		static std::unique_ptr<VolumeRegion> factory(const ParamMap &params, const Scene &scene);
-		VolumeRegion() = default;
-		VolumeRegion(Rgb sa, Rgb ss, Rgb le, float gg, Point3 pmin, Point3 pmax, int attgrid_scale);
+		static std::unique_ptr<VolumeRegion> factory(Logger &logger, const ParamMap &params, const Scene &scene);
+		VolumeRegion(Logger &logger) : logger_(logger) { }
+		VolumeRegion(Logger &logger, Rgb sa, Rgb ss, Rgb le, float gg, Point3 pmin, Point3 pmax, int attgrid_scale);
 		virtual ~VolumeRegion() = default;
 
 		virtual Rgb sigmaA(const Point3 &p, const Vec3 &v) const = 0;
@@ -87,15 +92,16 @@ class VolumeRegion
 		Rgb s_a_, s_s_, l_e_;
 		bool have_s_a_, have_s_s_, have_l_e_;
 		float g_;
+		Logger &logger_;
 		// TODO: add transform for BB
 };
 
 class DensityVolumeRegion : public VolumeRegion
 {
 	protected:
-		DensityVolumeRegion() = default;
-		DensityVolumeRegion(Rgb sa, Rgb ss, Rgb le, float gg, Point3 pmin, Point3 pmax, int attgrid_scale) :
-			VolumeRegion(sa, ss, le, gg, pmin, pmax, attgrid_scale) {}
+		DensityVolumeRegion(Logger &logger) : VolumeRegion(logger) {}
+		DensityVolumeRegion(Logger &logger, Rgb sa, Rgb ss, Rgb le, float gg, Point3 pmin, Point3 pmax, int attgrid_scale) :
+			VolumeRegion(logger, sa, ss, le, gg, pmin, pmax, attgrid_scale) {}
 
 		virtual float density(Point3 p) const = 0;
 

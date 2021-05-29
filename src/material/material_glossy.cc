@@ -29,8 +29,8 @@
 
 BEGIN_YAFARAY
 
-GlossyMaterial::GlossyMaterial(const Rgb &col, const Rgb &dcol, float reflect, float diff, float expo, bool as_diff, Visibility e_visibility):
-		gloss_color_(col), diff_color_(dcol), exponent_(expo), reflectivity_(reflect), diffuse_(diff), as_diffuse_(as_diff)
+GlossyMaterial::GlossyMaterial(Logger &logger, const Rgb &col, const Rgb &dcol, float reflect, float diff, float expo, bool as_diff, Visibility e_visibility):
+		NodeMaterial(logger), gloss_color_(col), diff_color_(dcol), exponent_(expo), reflectivity_(reflect), diffuse_(diff), as_diffuse_(as_diff)
 {
 	visibility_ = e_visibility;
 	bsdf_flags_ = BsdfFlags::None;
@@ -367,7 +367,7 @@ float GlossyMaterial::pdf(const RenderData &render_data, const SurfacePoint &sp,
 	return pdf;
 }
 
-std::unique_ptr<Material> GlossyMaterial::factory(ParamMap &params, std::list< ParamMap > &param_list, const Scene &scene)
+std::unique_ptr<Material> GlossyMaterial::factory(Logger &logger, ParamMap &params, std::list<ParamMap> &param_list, const Scene &scene)
 {
 	Rgb col(1.f), dcol(1.f);
 	float refl = 1.f;
@@ -407,7 +407,7 @@ std::unique_ptr<Material> GlossyMaterial::factory(ParamMap &params, std::list< P
 
 	const Visibility visibility = visibilityFromString_global(s_visibility);
 
-	auto mat = std::unique_ptr<GlossyMaterial>(new GlossyMaterial(col, dcol, refl, diff, exponent, as_diff, visibility));
+	auto mat = std::unique_ptr<GlossyMaterial>(new GlossyMaterial(logger, col, dcol, refl, diff, exponent, as_diff, visibility));
 
 	mat->setMaterialIndex(mat_pass_index);
 	mat->receive_shadows_ = receive_shadows;
@@ -457,7 +457,7 @@ std::unique_ptr<Material> GlossyMaterial::factory(ParamMap &params, std::list< P
 	{
 		mat->parseNodes(params, roots, node_list);
 	}
-	else Y_ERROR << "Glossy: loadNodes() failed!" << YENDL;
+	else logger.logError("Glossy: loadNodes() failed!");
 
 	mat->diffuse_shader_ = node_list["diffuse_shader"];
 	mat->glossy_shader_ = node_list["glossy_shader"];

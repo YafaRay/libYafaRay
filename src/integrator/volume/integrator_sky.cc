@@ -47,7 +47,8 @@ float mieScatter_global(float theta)
 	return (1.f - ((theta - 80.f) / 100.f)) * 0.1644f + ((theta - 80.f) / 100.f) * 0.1;
 }
 
-SkyIntegrator::SkyIntegrator(float s_size, float a, float ss, float t) {
+SkyIntegrator::SkyIntegrator(Logger &logger, float s_size, float a, float ss, float t) : VolumeIntegrator(logger)
+{
 	step_size_ = s_size;
 	alpha_ = a;
 	//sigma_t = ss;
@@ -232,7 +233,8 @@ Rgba SkyIntegrator::integrate(RenderData &render_data, const Ray &ray, int addit
 	return s_0_r * i_r + s_0_m * i_m;
 }
 
-std::unique_ptr<Integrator> SkyIntegrator::factory(ParamMap &params, const Scene &scene) {
+std::unique_ptr<Integrator> SkyIntegrator::factory(Logger &logger, ParamMap &params, const Scene &scene)
+{
 	float s_size = 1.f;
 	float a = .5f;
 	float ss = .1f;
@@ -241,7 +243,7 @@ std::unique_ptr<Integrator> SkyIntegrator::factory(ParamMap &params, const Scene
 	params.getParam("sigma_t", ss);
 	params.getParam("alpha", a);
 	params.getParam("turbidity", t);
-	return std::unique_ptr<Integrator>(new SkyIntegrator(s_size, a, ss, t));
+	return std::unique_ptr<Integrator>(new SkyIntegrator(logger, s_size, a, ss, t));
 }
 
 

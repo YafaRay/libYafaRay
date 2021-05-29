@@ -23,7 +23,7 @@
 
 BEGIN_YAFARAY
 
-BeerVolumeHandler::BeerVolumeHandler(const Rgb &acol, double dist)
+BeerVolumeHandler::BeerVolumeHandler(Logger &logger, const Rgb &acol, double dist) : VolumeHandler(logger)
 {
 	const float maxlog = math::log(1e38f);
 	sigma_a_.r_ = (acol.r_ > 1e-38f) ? -log(acol.r_) : maxlog;
@@ -50,13 +50,13 @@ bool BeerVolumeHandler::scatter(const RenderData &render_data, const Ray &ray, R
 	return false;
 }
 
-std::unique_ptr<VolumeHandler> BeerVolumeHandler::factory(const ParamMap &params, const Scene &scene)
+std::unique_ptr<VolumeHandler> BeerVolumeHandler::factory(Logger &logger, const ParamMap &params, const Scene &scene)
 {
 	Rgb a_col(0.5f);
 	double dist = 1.f;
 	params.getParam("absorption_col", a_col);
 	params.getParam("absorption_dist", dist);
-	return std::unique_ptr<VolumeHandler>(new BeerVolumeHandler(a_col, dist));
+	return std::unique_ptr<VolumeHandler>(new BeerVolumeHandler(logger, a_col, dist));
 }
 
 END_YAFARAY

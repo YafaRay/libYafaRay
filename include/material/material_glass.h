@@ -29,10 +29,10 @@ BEGIN_YAFARAY
 class GlassMaterial final : public NodeMaterial
 {
 	public:
-		static std::unique_ptr<Material> factory(ParamMap &, std::list< ParamMap > &, const Scene &);
+		static std::unique_ptr<Material> factory(Logger &logger, ParamMap &, std::list<ParamMap> &, const Scene &);
 
 	private:
-		GlassMaterial(float ior, Rgb filt_c, const Rgb &srcol, double disp_pow, bool fake_s, Visibility e_visibility = Visibility::NormalVisible);
+		GlassMaterial(Logger &logger, float ior, Rgb filt_c, const Rgb &srcol, double disp_pow, bool fake_s, Visibility e_visibility = Visibility::NormalVisible);
 		virtual void initBsdf(const RenderData &render_data, SurfacePoint &sp, BsdfFlags &bsdf_types) const;
 		virtual Rgb eval(const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wl, const BsdfFlags &bsdfs, bool force_eval = false) const {return Rgb(0.0);}
 		virtual Rgb sample(const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo, Vec3 &wi, Sample &s, float &w) const;
@@ -67,10 +67,10 @@ a simple mirror mat
 class MirrorMaterial final : public Material
 {
 	public:
-		static std::unique_ptr<Material> factory(ParamMap &, std::list< ParamMap > &, const Scene &);
+		static std::unique_ptr<Material> factory(Logger &logger, ParamMap &, std::list<ParamMap> &, const Scene &);
 
 	private:
-		MirrorMaterial(Rgb r_col, float ref_val): ref_(ref_val)
+		MirrorMaterial(Logger &logger, Rgb r_col, float ref_val): Material(logger), ref_(ref_val)
 		{
 			if(ref_ > 1.0) ref_ = 1.0;
 			ref_col_ = r_col * ref_val;
@@ -92,10 +92,10 @@ stored on surfaces that don't affect the scene
 class NullMaterial final : public Material
 {
 	public:
-		static std::unique_ptr<Material> factory(ParamMap &, std::list< ParamMap > &, const Scene &);
+		static std::unique_ptr<Material> factory(Logger &logger, ParamMap &, std::list<ParamMap> &, const Scene &);
 
 	private:
-		NullMaterial() = default;
+		NullMaterial(Logger &logger) : Material(logger) { }
 		virtual void initBsdf(const RenderData &render_data, SurfacePoint &sp, BsdfFlags &bsdf_types) const override { bsdf_types = BsdfFlags::None; }
 		virtual Rgb eval(const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wl, const BsdfFlags &bsdfs, bool force_eval = false) const override {return Rgb(0.0);}
 		virtual Rgb sample(const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo, Vec3 &wi, Sample &s, float &w) const override;

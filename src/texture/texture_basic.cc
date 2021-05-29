@@ -95,10 +95,10 @@ void textureReadColorRamp_global(const ParamMap &params, Texture *tex)
 // Clouds Texture
 //-----------------------------------------------------------------------------------------
 
-CloudsTexture::CloudsTexture(int dep, float sz, bool hd,
+CloudsTexture::CloudsTexture(Logger &logger, int dep, float sz, bool hd,
 							 const Rgb &c_1, const Rgb &c_2,
 							 const std::string &ntype, const std::string &btype)
-	: depth_(dep), size_(sz), hard_(hd), color_1_(c_1), color_2_(c_2)
+	: Texture(logger), depth_(dep), size_(sz), hard_(hd), color_1_(c_1), color_2_(c_2)
 {
 	bias_ = BiasType::None;
 	if(btype == "positive") bias_ = BiasType::Positive;
@@ -123,8 +123,7 @@ Rgba CloudsTexture::getColor(const Point3 &p, const MipMapParams *mipmap_params)
 	else return applyColorAdjustments(color_ramp_->getColorInterpolated(getFloat(p)));
 }
 
-std::unique_ptr<Texture> CloudsTexture::factory(ParamMap &params,
-												const Scene &scene)
+std::unique_ptr<Texture> CloudsTexture::factory(Logger &logger, ParamMap &params, const Scene &scene)
 {
 	Rgb color_1(0.0), color_2(1.0);
 	int depth = 2;
@@ -154,7 +153,7 @@ std::unique_ptr<Texture> CloudsTexture::factory(ParamMap &params,
 
 	params.getParam("use_color_ramp", use_color_ramp);
 
-	auto tex = std::unique_ptr<Texture>(new CloudsTexture(depth, size, hard, color_1, color_2, ntype, btype));
+	auto tex = std::unique_ptr<Texture>(new CloudsTexture(logger, depth, size, hard, color_1, color_2, ntype, btype));
 	tex->setAdjustments(intensity, contrast, saturation, hue, clamp, factor_red, factor_green, factor_blue);
 
 	if(use_color_ramp) textureReadColorRamp_global(params, tex.get());
@@ -166,9 +165,9 @@ std::unique_ptr<Texture> CloudsTexture::factory(ParamMap &params,
 // Simple Marble Texture
 //-----------------------------------------------------------------------------------------
 
-MarbleTexture::MarbleTexture(int oct, float sz, const Rgb &c_1, const Rgb &c_2,
+MarbleTexture::MarbleTexture(Logger &logger, int oct, float sz, const Rgb &c_1, const Rgb &c_2,
 							 float turb, float shp, bool hrd, const std::string &ntype, const std::string &shape)
-	: octaves_(oct), color_1_(c_1), color_2_(c_2), turb_(turb), size_(sz), hard_(hrd)
+	: Texture(logger), octaves_(oct), color_1_(c_1), color_2_(c_2), turb_(turb), size_(sz), hard_(hrd)
 {
 	sharpness_ = 1.f;
 	if(shp > 1) sharpness_ = 1.f / shp;
@@ -204,8 +203,7 @@ Rgba MarbleTexture::getColor(const Point3 &p, const MipMapParams *mipmap_params)
 	else return applyColorAdjustments(color_ramp_->getColorInterpolated(getFloat(p)));
 }
 
-std::unique_ptr<Texture> MarbleTexture::factory(ParamMap &params,
-												const Scene &scene)
+std::unique_ptr<Texture> MarbleTexture::factory(Logger &logger, ParamMap &params, const Scene &scene)
 {
 	Rgb col_1(0.0), col_2(1.0);
 	int oct = 2;
@@ -236,7 +234,7 @@ std::unique_ptr<Texture> MarbleTexture::factory(ParamMap &params,
 
 	params.getParam("use_color_ramp", use_color_ramp);
 
-	auto tex = std::unique_ptr<Texture>(new MarbleTexture(oct, sz, col_1, col_2, turb, shp, hrd, ntype, shape));
+	auto tex = std::unique_ptr<Texture>(new MarbleTexture(logger, oct, sz, col_1, col_2, turb, shp, hrd, ntype, shape));
 	tex->setAdjustments(intensity, contrast, saturation, hue, clamp, factor_red, factor_green, factor_blue);
 	if(use_color_ramp) textureReadColorRamp_global(params, tex.get());
 
@@ -248,9 +246,9 @@ std::unique_ptr<Texture> MarbleTexture::factory(ParamMap &params,
 // Simple Wood Texture
 //-----------------------------------------------------------------------------------------
 
-WoodTexture::WoodTexture(int oct, float sz, const Rgb &c_1, const Rgb &c_2, float turb,
+WoodTexture::WoodTexture(Logger &logger, int oct, float sz, const Rgb &c_1, const Rgb &c_2, float turb,
 						 bool hrd, const std::string &ntype, const std::string &wtype, const std::string &shape)
-	: octaves_(oct), color_1_(c_1), color_2_(c_2), turb_(turb), size_(sz), hard_(hrd)
+	: Texture(logger), octaves_(oct), color_1_(c_1), color_2_(c_2), turb_(turb), size_(sz), hard_(hrd)
 {
 	rings_ = (wtype == "rings");
 	n_gen_ = newNoise_global(ntype);
@@ -290,8 +288,7 @@ Rgba WoodTexture::getColor(const Point3 &p, const MipMapParams *mipmap_params) c
 	else return applyColorAdjustments(color_ramp_->getColorInterpolated(getFloat(p)));
 }
 
-std::unique_ptr<Texture> WoodTexture::factory(ParamMap &params,
-											  const Scene &scene)
+std::unique_ptr<Texture> WoodTexture::factory(Logger &logger, ParamMap &params, const Scene &scene)
 {
 	Rgb col_1(0.0), col_2(1.0);
 	int oct = 2;
@@ -324,9 +321,9 @@ std::unique_ptr<Texture> WoodTexture::factory(ParamMap &params,
 	params.getParam("use_color_ramp", use_color_ramp);
 
 	if(params.getParam("ringscale_x", old_rxy) || params.getParam("ringscale_y", old_rxy))
-		Y_WARNING << "TextureWood: 'ringscale_x' and 'ringscale_y' are obsolete, use 'size' instead" << YENDL;
+		logger.logWarning("TextureWood: 'ringscale_x' and 'ringscale_y' are obsolete, use 'size' instead");
 
-	auto tex = std::unique_ptr<Texture>(new WoodTexture(oct, sz, col_1, col_2, turb, hrd, ntype, wtype, shape));
+	auto tex = std::unique_ptr<Texture>(new WoodTexture(logger, oct, sz, col_1, col_2, turb, hrd, ntype, wtype, shape));
 	tex->setAdjustments(intensity, contrast, saturation, hue, clamp, factor_red, factor_green, factor_blue);
 	if(use_color_ramp) textureReadColorRamp_global(params, tex.get());
 
@@ -352,7 +349,7 @@ float RgbCubeTexture::getFloat(const Point3 &p, const MipMapParams *mipmap_param
 	return applyIntensityContrastAdjustments(col.energy());
 }
 
-std::unique_ptr<Texture> RgbCubeTexture::factory(ParamMap &params, const Scene &scene)
+std::unique_ptr<Texture> RgbCubeTexture::factory(Logger &logger, ParamMap &params, const Scene &scene)
 {
 	float intensity = 1.f, contrast = 1.f, saturation = 1.f, hue = 0.f, factor_red = 1.f, factor_green = 1.f, factor_blue = 1.f;
 	bool clamp = false;
@@ -369,7 +366,7 @@ std::unique_ptr<Texture> RgbCubeTexture::factory(ParamMap &params, const Scene &
 
 	params.getParam("use_color_ramp", use_color_ramp);
 
-	auto tex = std::unique_ptr<Texture>(new RgbCubeTexture());
+	auto tex = std::unique_ptr<Texture>(new RgbCubeTexture(logger));
 	tex->setAdjustments(intensity, contrast, saturation, hue, clamp, factor_red, factor_green, factor_blue);
 	if(use_color_ramp) textureReadColorRamp_global(params, tex.get());
 
@@ -380,12 +377,12 @@ std::unique_ptr<Texture> RgbCubeTexture::factory(ParamMap &params, const Scene &
 // voronoi block
 //-----------------------------------------------------------------------------------------
 
-VoronoiTexture::VoronoiTexture(const Rgb &c_1, const Rgb &c_2,
+VoronoiTexture::VoronoiTexture(Logger &logger, const Rgb &c_1, const Rgb &c_2,
 							   const ColorMode &color_mode,
 							   float w_1, float w_2, float w_3, float w_4,
 							   float mex, float sz,
 							   float isc, const std::string &dname)
-	: w_1_(w_1), w_2_(w_2), w_3_(w_3), w_4_(w_4), size_(sz), color_mode_(color_mode)
+	: Texture(logger), w_1_(w_1), w_2_(w_2), w_3_(w_3), w_4_(w_4), size_(sz), color_mode_(color_mode)
 {
 	VoronoiNoiseGenerator::DMetricType dm = VoronoiNoiseGenerator::DistReal;
 	if(dname == "squared")
@@ -446,7 +443,7 @@ Rgba VoronoiTexture::getColor(const Point3 &p, const MipMapParams *mipmap_params
 	else return applyColorAdjustments(Rgba(inte, inte, inte, inte));
 }
 
-std::unique_ptr<Texture> VoronoiTexture::factory(ParamMap &params, const Scene &scene)
+std::unique_ptr<Texture> VoronoiTexture::factory(Logger &logger, ParamMap &params, const Scene &scene)
 {
 	Rgb col_1(0.0), col_2(1.0);
 	std::string cltype, dname;
@@ -489,7 +486,7 @@ std::unique_ptr<Texture> VoronoiTexture::factory(ParamMap &params, const Scene &
 
 	params.getParam("use_color_ramp", use_color_ramp);
 
-	auto tex = std::unique_ptr<Texture>(new VoronoiTexture(col_1, col_2, color_mode, fw_1, fw_2, fw_3, fw_4, mex, sz, isc, dname));
+	auto tex = std::unique_ptr<Texture>(new VoronoiTexture(logger, col_1, col_2, color_mode, fw_1, fw_2, fw_3, fw_4, mex, sz, isc, dname));
 	tex->setAdjustments(intensity, contrast, saturation, hue, clamp, factor_red, factor_green, factor_blue);
 	if(use_color_ramp) textureReadColorRamp_global(params, tex.get());
 
@@ -500,11 +497,11 @@ std::unique_ptr<Texture> VoronoiTexture::factory(ParamMap &params, const Scene &
 // Musgrave block
 //-----------------------------------------------------------------------------------------
 
-MusgraveTexture::MusgraveTexture(const Rgb &c_1, const Rgb &c_2,
+MusgraveTexture::MusgraveTexture(Logger &logger, const Rgb &c_1, const Rgb &c_2,
 								 float h, float lacu, float octs, float offs, float gain,
 								 float size, float iscale,
 								 const std::string &ntype, const std::string &mtype)
-	: color_1_(c_1), color_2_(c_2), size_(size), iscale_(iscale)
+	: Texture(logger), color_1_(c_1), color_2_(c_2), size_(size), iscale_(iscale)
 {
 	n_gen_ = newNoise_global(ntype);
 	if(mtype == "multifractal")
@@ -530,7 +527,7 @@ Rgba MusgraveTexture::getColor(const Point3 &p, const MipMapParams *mipmap_param
 	else return applyColorAdjustments(color_ramp_->getColorInterpolated(getFloat(p)));
 }
 
-std::unique_ptr<Texture> MusgraveTexture::factory(ParamMap &params, const Scene &scene)
+std::unique_ptr<Texture> MusgraveTexture::factory(Logger &logger, ParamMap &params, const Scene &scene)
 {
 	Rgb col_1(0.0), col_2(1.0);
 	std::string ntype, mtype;
@@ -564,7 +561,7 @@ std::unique_ptr<Texture> MusgraveTexture::factory(ParamMap &params, const Scene 
 
 	params.getParam("use_color_ramp", use_color_ramp);
 
-	auto tex = std::unique_ptr<Texture>(new MusgraveTexture(col_1, col_2, h, lacu, octs, offs, gain, size, iscale, ntype, mtype));
+	auto tex = std::unique_ptr<Texture>(new MusgraveTexture(logger, col_1, col_2, h, lacu, octs, offs, gain, size, iscale, ntype, mtype));
 	tex->setAdjustments(intensity, contrast, saturation, hue, clamp, factor_red, factor_green, factor_blue);
 	if(use_color_ramp) textureReadColorRamp_global(params, tex.get());
 
@@ -575,10 +572,10 @@ std::unique_ptr<Texture> MusgraveTexture::factory(ParamMap &params, const Scene 
 // Distored Noise block
 //-----------------------------------------------------------------------------------------
 
-DistortedNoiseTexture::DistortedNoiseTexture(const Rgb &c_1, const Rgb &c_2,
+DistortedNoiseTexture::DistortedNoiseTexture(Logger &logger, const Rgb &c_1, const Rgb &c_2,
 											 float distort, float size,
 											 const std::string &noiseb_1, const std::string noiseb_2)
-	: color_1_(c_1), color_2_(c_2), distort_(distort), size_(size)
+	: Texture(logger), color_1_(c_1), color_2_(c_2), distort_(distort), size_(size)
 {
 	n_gen_1_ = newNoise_global(noiseb_1);
 	n_gen_2_ = newNoise_global(noiseb_2);
@@ -600,7 +597,7 @@ Rgba DistortedNoiseTexture::getColor(const Point3 &p, const MipMapParams *mipmap
 	else return applyColorAdjustments(color_ramp_->getColorInterpolated(getFloat(p)));
 }
 
-std::unique_ptr<Texture> DistortedNoiseTexture::factory(ParamMap &params, const Scene &scene)
+std::unique_ptr<Texture> DistortedNoiseTexture::factory(Logger &logger, ParamMap &params, const Scene &scene)
 {
 	Rgb col_1(0.0), col_2(1.0);
 	std::string ntype_1, ntype_2;
@@ -629,7 +626,7 @@ std::unique_ptr<Texture> DistortedNoiseTexture::factory(ParamMap &params, const 
 
 	params.getParam("use_color_ramp", use_color_ramp);
 
-	auto tex = std::unique_ptr<Texture>(new DistortedNoiseTexture(col_1, col_2, dist, size, ntype_1, ntype_2));
+	auto tex = std::unique_ptr<Texture>(new DistortedNoiseTexture(logger, col_1, col_2, dist, size, ntype_1, ntype_2));
 	tex->setAdjustments(intensity, contrast, saturation, hue, clamp, factor_red, factor_green, factor_blue);
 	if(use_color_ramp) textureReadColorRamp_global(params, tex.get());
 
@@ -641,7 +638,7 @@ std::unique_ptr<Texture> DistortedNoiseTexture::factory(ParamMap &params, const 
 //-----------------------------------------------------------------------------------------
 
 
-BlendTexture::BlendTexture(const std::string &stype, bool use_flip_axis)
+BlendTexture::BlendTexture(Logger &logger, const std::string &stype, bool use_flip_axis) : Texture(logger)
 {
 	use_flip_axis_ = use_flip_axis;
 	if(stype == "lin") progression_type_ = Linear;
@@ -713,7 +710,7 @@ Rgba BlendTexture::getColor(const Point3 &p, const MipMapParams *mipmap_params) 
 	else return applyColorAdjustments(color_ramp_->getColorInterpolated(getFloat(p)));
 }
 
-std::unique_ptr<Texture> BlendTexture::factory(ParamMap &params, const Scene &scene)
+std::unique_ptr<Texture> BlendTexture::factory(Logger &logger, ParamMap &params, const Scene &scene)
 {
 	std::string stype;
 	float intensity = 1.f, contrast = 1.f, saturation = 1.f, hue = 0.f, factor_red = 1.f, factor_green = 1.f, factor_blue = 1.f;
@@ -725,7 +722,7 @@ std::unique_ptr<Texture> BlendTexture::factory(ParamMap &params, const Scene &sc
 	params.getParam("use_color_ramp", use_color_ramp);
 	params.getParam("use_flip_axis", use_flip_axis);
 
-	auto tex = std::unique_ptr<Texture>(new BlendTexture(stype, use_flip_axis));
+	auto tex = std::unique_ptr<Texture>(new BlendTexture(logger, stype, use_flip_axis));
 	tex->setAdjustments(intensity, contrast, saturation, hue, clamp, factor_red, factor_green, factor_blue);
 	if(use_color_ramp) textureReadColorRamp_global(params, tex.get());
 

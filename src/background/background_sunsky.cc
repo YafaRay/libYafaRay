@@ -34,7 +34,7 @@ BEGIN_YAFARAY
 // and a thread on gamedev.net on skycolor algorithms
 
 
-SunSkyBackground::SunSkyBackground(const Point3 dir, float turb, float a_var, float b_var, float c_var, float d_var, float e_var, float pwr, bool ibl, bool with_caustic): power_(pwr)
+SunSkyBackground::SunSkyBackground(Logger &logger, const Point3 dir, float turb, float a_var, float b_var, float c_var, float d_var, float e_var, float pwr, bool ibl, bool with_caustic): Background(logger), power_(pwr)
 {
 	with_ibl_ = ibl;
 	shoot_caustic_ = with_caustic;
@@ -179,7 +179,7 @@ Rgb SunSkyBackground::eval(const Ray &ray, bool from_postprocessed) const
 	return power_ * getSkyCol(ray);
 }
 
-std::shared_ptr<Background> SunSkyBackground::factory(ParamMap &params, Scene &scene)
+std::shared_ptr<Background> SunSkyBackground::factory(Logger &logger, ParamMap &params, Scene &scene)
 {
 	Point3 dir(1, 1, 1);	// same as sunlight, position interpreted as direction
 	float turb = 4.0;	// turbidity of atmosphere
@@ -218,7 +218,7 @@ std::shared_ptr<Background> SunSkyBackground::factory(ParamMap &params, Scene &s
 	params.getParam("with_caustic", caus);
 	params.getParam("with_diffuse", diff);
 
-	auto new_sunsky = std::make_shared<SunSkyBackground>(SunSkyBackground(dir, turb, av, bv, cv, dv, ev, power, bgl, true));
+	auto new_sunsky = std::make_shared<SunSkyBackground>(SunSkyBackground(logger, dir, turb, av, bv, cv, dv, ev, power, bgl, true));
 
 	if(bgl)
 	{
@@ -241,7 +241,7 @@ std::shared_ptr<Background> SunSkyBackground::factory(ParamMap &params, Scene &s
 		float invpdf = (2.f * M_PI * (1.f - cos_angle));
 		suncol *= invpdf * power;
 
-		if(Y_LOG_HAS_VERBOSE) Y_VERBOSE << "Sunsky: sun color = " << suncol << YENDL;
+		if(logger.isVerbose()) logger.logVerbose("Sunsky: sun color = ", suncol);
 
 		ParamMap p;
 		p["type"] = std::string("sunlight");

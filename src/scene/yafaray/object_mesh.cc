@@ -26,15 +26,13 @@
 
 BEGIN_YAFARAY
 
-std::unique_ptr<Object> MeshObject::factory(ParamMap &params, const Scene &scene)
+std::unique_ptr<Object> MeshObject::factory(Logger &logger, ParamMap &params, const Scene &scene)
 {
-/*
-	if(Y_LOG_HAS_DEBUG)
+	if(logger.isDebug())
 	{
-		Y_DEBUG PRTEXT(MeshObject::factory) PREND;
-		params.printDebug();
+		logger.logDebug("MeshObject::factory");
+		params.logContents(logger);
 	}
-*/
 	std::string name, light_name, visibility, base_object_name;
 	bool is_base_object = false, has_uv = false, has_orco = false;
 	int num_faces = 0, num_vertices = 0;
@@ -125,7 +123,7 @@ float getAngleSine_global(const std::array<int, 3> &triangle_indices, const std:
 	return edge_1.sinFromVectors(edge_2);
 }
 
-bool MeshObject::smoothNormals(float angle)
+bool MeshObject::smoothNormals(Logger &logger, float angle)
 {
 	const size_t points_size = points_.size();
 	normals_.resize(points_size, {0, 0, 0});
@@ -232,7 +230,7 @@ bool MeshObject::smoothNormals(float angle)
 				}
 				else
 				{
-					Y_ERROR << "Mesh smoothing error!" << YENDL;
+					logger.logError("Mesh smoothing error!");
 					return false;
 				}
 			}
@@ -242,11 +240,11 @@ bool MeshObject::smoothNormals(float angle)
 	return true;
 }
 
-MeshObject *MeshObject::getMeshFromObject(Object *object)
+MeshObject *MeshObject::getMeshFromObject(Logger &logger, Object *object)
 {
 	if(!object->isMesh())
 	{
-		Y_ERROR << "Scene: the object '" << object->getName() << "' is not a mesh object" << YENDL;
+		logger.logError("Scene: the object '", object->getName(), "' is not a mesh object");
 		return nullptr;
 	}
 	else return static_cast<MeshObject *>(object);

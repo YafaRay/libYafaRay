@@ -38,10 +38,10 @@ class Pdf1D final
 		static void inline cumulateStep1DDf(const float *f, int n_steps, float *integral, float *cdf);
 		Pdf1D() = default;
 		Pdf1D(float *f, int n);
-		float sample(float u, float *pdf) const;
+		float sample(Logger &logger, float u, float *pdf) const;
 		// take a discrete sample.
 		// determines an index in the array from which the CDF was taked from, rather than a sample in [0;1]
-		int dSample(float u, float *pdf) const;
+		int dSample(Logger &logger, float u, float *pdf) const;
 		// Distribution1D Data
 
 		std::unique_ptr<float[]> func_, cdf_;
@@ -75,14 +75,14 @@ inline void Pdf1D::cumulateStep1DDf(const float *f, int n_steps, float *integral
 		cdf[i] /= *integral;
 }
 
-inline float Pdf1D::sample(float u, float *pdf) const
+inline float Pdf1D::sample(Logger &logger, float u, float *pdf) const
 {
 	// Find surrounding cdf segments
 	const float *ptr = std::lower_bound(cdf_.get(), cdf_.get() + count_ + 1, u);
 	int index = static_cast<int>(ptr - cdf_.get() - 1);
 	if(index < 0) //Hopefully this should no longer be necessary from now on, as a minimum value slightly over 0.f has been set to the scrHalton function to avoid ptr and cdf to coincide (which caused index = -1)
 	{
-		Y_ERROR << "Index out of bounds in pdf1D_t::Sample: index, u, ptr, cdf = " << index << ", " << u << ", " << ptr << ", " << cdf_.get() << YENDL;
+		logger.logError("Index out of bounds in pdf1D_t::Sample: index, u, ptr, cdf = ", index, ", ", u, ", ", ptr, ", ", cdf_.get());
 		index = 0;
 	}
 	// Return offset along current cdf segment
@@ -91,7 +91,7 @@ inline float Pdf1D::sample(float u, float *pdf) const
 	return index + delta;
 }
 
-inline int Pdf1D::dSample(float u, float *pdf) const
+inline int Pdf1D::dSample(Logger &logger, float u, float *pdf) const
 {
 	if(u == 0.f)
 	{
@@ -102,7 +102,7 @@ inline int Pdf1D::dSample(float u, float *pdf) const
 	int index = static_cast<int>(ptr - cdf_.get() - 1);
 	if(index < 0)
 	{
-		Y_ERROR << "Index out of bounds in pdf1D_t::Sample: index, u, ptr, cdf = " << index << ", " << u << ", " << ptr << ", " << cdf_.get() << YENDL;
+		logger.logError("Index out of bounds in pdf1D_t::Sample: index, u, ptr, cdf = ", index, ", ", u, ", ", ptr, ", ", cdf_.get());
 		index = 0;
 	}
 	if(pdf) *pdf = func_[index] * inv_integral_;

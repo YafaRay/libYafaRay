@@ -34,8 +34,8 @@
 
 BEGIN_YAFARAY
 
-MeshLight::MeshLight(const std::string &object_name, const Rgb &col, int sampl, bool dbl_s, bool light_enabled, bool cast_shadows):
-		object_name_(object_name), double_sided_(dbl_s), color_(col), samples_(sampl)
+MeshLight::MeshLight(Logger &logger, const std::string &object_name, const Rgb &col, int sampl, bool dbl_s, bool light_enabled, bool cast_shadows):
+		Light(logger), object_name_(object_name), double_sided_(dbl_s), color_(col), samples_(sampl)
 {
 	light_enabled_ = light_enabled;
 	cast_shadows_ = cast_shadows;
@@ -66,7 +66,7 @@ void MeshLight::initIs()
 	params["cost_ratio"] = 0.8f;
 	params["empty_bonus"] = 0.33f;
 
-	accelerator_ = Accelerator::factory(primitives_, params);
+	accelerator_ = Accelerator::factory(logger_, primitives_, params);
 }
 
 void MeshLight::init(Scene &scene)
@@ -78,17 +78,17 @@ void MeshLight::init(Scene &scene)
 		// tell the mesh that a meshlight is associated with it (not sure if this is the best place though):
 		mesh_object_->setLight(this);
 
-		if(Y_LOG_HAS_VERBOSE) Y_VERBOSE << "MeshLight: triangles:" << num_primitives_ << ", double sided:" << double_sided_ << ", area:" << area_ << " color:" << color_ << YENDL;
+		if(logger_.isVerbose()) logger_.logVerbose("MeshLight: triangles:", num_primitives_, ", double sided:", double_sided_, ", area:", area_, " color:", color_);
 	}
 }
 
 void MeshLight::sampleSurface(Point3 &p, Vec3 &n, float s_1, float s_2) const
 {
 	float prim_pdf;
-	int prim_num = area_dist_->dSample(s_1, &prim_pdf);
+	int prim_num = area_dist_->dSample(logger_, s_1, &prim_pdf);
 	if(prim_num >= area_dist_->count_)
 	{
-		Y_WARNING << "MeshLight: Sampling error!" << YENDL;
+		logger_.logWarning("MeshLight: Sampling error!");
 		return;
 	}
 	float ss_1, delta = area_dist_->cdf_[prim_num + 1];
@@ -220,7 +220,7 @@ void MeshLight::emitPdf(const SurfacePoint &sp, const Vec3 &wo, float &area_pdf,
 }
 
 
-std::unique_ptr<Light> MeshLight::factory(ParamMap &params, const Scene &scene)
+std::unique_ptr<Light> MeshLight::factory(Logger &logger, ParamMap &params, const Scene &scene)
 {
 	bool double_s = false;
 	Rgb color(1.0);
@@ -244,7 +244,7 @@ std::unique_ptr<Light> MeshLight::factory(ParamMap &params, const Scene &scene)
 	params.getParam("with_diffuse", shoot_d);
 	params.getParam("photon_only", p_only);
 
-	auto light = std::unique_ptr<MeshLight>(new MeshLight(object_name, color * (float)power * M_PI, samples, double_s, light_enabled, cast_shadows));
+	auto light = std::unique_ptr<MeshLight>(new MeshLight(logger, object_name, color * (float)power * M_PI, samples, double_s, light_enabled, cast_shadows));
 
 	light->shoot_caustic_ = shoot_c;
 	light->shoot_diffuse_ = shoot_d;

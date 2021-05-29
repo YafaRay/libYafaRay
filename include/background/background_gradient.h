@@ -34,10 +34,10 @@ class ParamMap;
 class GradientBackground final : public Background
 {
 	public:
-		static std::shared_ptr<Background> factory(ParamMap &params, Scene &scene);
+		static std::shared_ptr<Background> factory(Logger &logger, ParamMap &params, Scene &scene);
 
 	private:
-		GradientBackground(Rgb gzcol, Rgb ghcol, Rgb szcol, Rgb shcol, bool ibl, bool with_caustic);
+		GradientBackground(Logger &logger, Rgb gzcol, Rgb ghcol, Rgb szcol, Rgb shcol, bool ibl, bool with_caustic);
 		virtual Rgb operator()(const Ray &ray, RenderData &render_data, bool from_postprocessed = false) const override;
 		virtual Rgb eval(const Ray &ray, bool from_postprocessed = false) const override;
 

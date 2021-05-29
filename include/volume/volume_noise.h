@@ -33,12 +33,12 @@ class Texture;
 class NoiseVolumeRegion final : public DensityVolumeRegion
 {
 	public:
-		static std::unique_ptr<VolumeRegion> factory(const ParamMap &params, const Scene &scene);
+		static std::unique_ptr<VolumeRegion> factory(Logger &logger, const ParamMap &params, const Scene &scene);
 
 	private:
-		NoiseVolumeRegion(Rgb sa, Rgb ss, Rgb le, float gg, float cov, float sharp, float dens,
+		NoiseVolumeRegion(Logger &logger, Rgb sa, Rgb ss, Rgb le, float gg, float cov, float sharp, float dens,
 						  Point3 pmin, Point3 pmax, int attgrid_scale, Texture *noise) :
-				DensityVolumeRegion(sa, ss, le, gg, pmin, pmax, attgrid_scale)
+				DensityVolumeRegion(logger, sa, ss, le, gg, pmin, pmax, attgrid_scale)
 		{
 			tex_dist_noise_ = noise;
 			cover_ = cov;

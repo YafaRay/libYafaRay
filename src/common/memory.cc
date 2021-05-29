@@ -26,12 +26,12 @@ BEGIN_YAFARAY
 template <typename T>
 void CustomDeleter<T>::operator()(T *object)
 {
-	if(!object)
+/*	if(!object)
 	{
-		if(Y_LOG_HAS_DEBUG) Y_DEBUG << "Custom deleter destruction, null pointer, exiting" << YENDL;
+		if(logger_.isDebug()) Y_DEBUG, "Custom deleter destruction, null pointer, exiting");
 		return;
 	}
-	if(Y_LOG_HAS_DEBUG) Y_DEBUG << "Custom deleter destruction '" << object->getName() << "' auto deletion = " << (object->isAutoDeleted() ? " true (internally owned), destroying it!" : " false (externally owned), not destroying it") << YENDL;
+	if(logger_.isDebug()) Y_DEBUG, "Custom deleter destruction '", object->getName(), "' auto deletion = ", (object->isAutoDeleted() ? " true (internally owned), destroying it!" : " false (externally owned), not destroying it"));*/
 	if(object->isAutoDeleted()) delete object;
 }
 

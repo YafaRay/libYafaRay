@@ -29,8 +29,8 @@
 
 BEGIN_YAFARAY
 
-GlassMaterial::GlassMaterial(float ior, Rgb filt_c, const Rgb &srcol, double disp_pow, bool fake_s, Visibility e_visibility):
-		filter_color_(filt_c), specular_reflection_color_(srcol), fake_shadow_(fake_s), dispersion_power_(disp_pow)
+GlassMaterial::GlassMaterial(Logger &logger, float ior, Rgb filt_c, const Rgb &srcol, double disp_pow, bool fake_s, Visibility e_visibility):
+		NodeMaterial(logger), filter_color_(filt_c), specular_reflection_color_(srcol), fake_shadow_(fake_s), dispersion_power_(disp_pow)
 {
 	visibility_ = e_visibility;
 	ior_ = ior;
@@ -292,7 +292,7 @@ float GlassMaterial::getMatIor() const
 	return ior_;
 }
 
-std::unique_ptr<Material> GlassMaterial::factory(ParamMap &params, std::list< ParamMap > &param_list, const Scene &scene)
+std::unique_ptr<Material> GlassMaterial::factory(Logger &logger, ParamMap &params, std::list<ParamMap> &param_list, const Scene &scene)
 {
 	double ior = 1.4;
 	double filt = 0.f;
@@ -330,7 +330,7 @@ std::unique_ptr<Material> GlassMaterial::factory(ParamMap &params, std::list< Pa
 
 	const Visibility visibility = visibilityFromString_global(s_visibility);
 
-	auto mat = std::unique_ptr<GlassMaterial>(new GlassMaterial(ior, filt * filt_col + Rgb(1.f - filt), sr_col, disp_power, fake_shad, visibility));
+	auto mat = std::unique_ptr<GlassMaterial>(new GlassMaterial(logger, ior, filt * filt_col + Rgb(1.f - filt), sr_col, disp_power, fake_shad, visibility));
 
 	mat->setMaterialIndex(mat_pass_index);
 	mat->receive_shadows_ = receive_shadows;
@@ -368,7 +368,7 @@ std::unique_ptr<Material> GlassMaterial::factory(ParamMap &params, std::list< Pa
 				map["type"] = std::string("beer");
 				map["absorption_col"] = absorp;
 				map["absorption_dist"] = Parameter(dist);
-				mat->vol_i_ = VolumeHandler::factory(map, scene);
+				mat->vol_i_ = VolumeHandler::factory(logger, map, scene);
 				mat->bsdf_flags_ |= BsdfFlags::Volumetric;
 			}
 		}
@@ -388,7 +388,7 @@ std::unique_ptr<Material> GlassMaterial::factory(ParamMap &params, std::list< Pa
 	{
 		mat->parseNodes(params, roots, node_list);
 	}
-	else Y_ERROR << "Glass: loadNodes() failed!" << YENDL;
+	else logger.logError("Glass: loadNodes() failed!");
 
 	mat->mirror_color_shader_ = node_list["mirror_color_shader"];
 	mat->bump_shader_ = node_list["bump_shader"];
@@ -449,13 +449,13 @@ Material::Specular MirrorMaterial::getSpecular(const RenderData &render_data, co
 	return specular;
 }
 
-std::unique_ptr<Material> MirrorMaterial::factory(ParamMap &params, std::list< ParamMap > &param_list, const Scene &scene)
+std::unique_ptr<Material> MirrorMaterial::factory(Logger &logger, ParamMap &params, std::list<ParamMap> &param_list, const Scene &scene)
 {
 	Rgb col(1.0);
 	float refl = 1.0;
 	params.getParam("color", col);
 	params.getParam("reflect", refl);
-	return std::unique_ptr<Material>(new MirrorMaterial(col, refl));
+	return std::unique_ptr<Material>(new MirrorMaterial(logger, col, refl));
 }
 
 
@@ -466,9 +466,9 @@ Rgb NullMaterial::sample(const RenderData &render_data, const SurfacePoint &sp, 
 	return Rgb(0.f);
 }
 
-std::unique_ptr<Material> NullMaterial::factory(ParamMap &, std::list< ParamMap > &, const Scene &)
+std::unique_ptr<Material> NullMaterial::factory(Logger &logger, ParamMap &, std::list<ParamMap> &, const Scene &)
 {
-	return std::unique_ptr<Material>(new NullMaterial());
+	return std::unique_ptr<Material>(new NullMaterial(logger));
 }
 
 END_YAFARAY

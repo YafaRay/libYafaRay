@@ -31,10 +31,10 @@ class Scene;
 class ArchitectCamera final : public PerspectiveCamera
 {
 	public:
-		static std::unique_ptr<Camera> factory(ParamMap &params, const Scene &scene);
+		static std::unique_ptr<Camera> factory(Logger &logger, ParamMap &params, const Scene &scene);
 
 	private:
-		ArchitectCamera(const Point3 &pos, const Point3 &look, const Point3 &up,
+		ArchitectCamera(Logger &logger, const Point3 &pos, const Point3 &look, const Point3 &up,
 						int resx, int resy, float aspect = 1,
 						float df = 1, float ap = 0, float dofd = 0, BokehType bt = BkDisk1, BkhBiasType bbt = BbNone, float bro = 0,
 						float const near_clip_distance = 0.0f, float const far_clip_distance = 1e6f);

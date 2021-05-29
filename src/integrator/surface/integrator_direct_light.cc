@@ -34,7 +34,7 @@
 
 BEGIN_YAFARAY
 
-DirectLightIntegrator::DirectLightIntegrator(bool transp_shad, int shadow_depth, int ray_depth)
+DirectLightIntegrator::DirectLightIntegrator(Logger &logger, bool transp_shad, int shadow_depth, int ray_depth) : MonteCarloIntegrator(logger)
 {
 	caus_radius_ = 0.25;
 	caus_depth_ = 10;
@@ -86,15 +86,15 @@ bool DirectLightIntegrator::preprocess(const RenderControl &render_control, cons
 	}
 
 	g_timer_global.stop("prepass");
-	Y_INFO << getName() << ": Photonmap building time: " << std::fixed << std::setprecision(1) << g_timer_global.getTime("prepass") << "s" << " (" << scene_->getNumThreadsPhotons() << " thread(s))" << YENDL;
+	logger_.logInfo(getName(), ": Photonmap building time: ", std::fixed, std::setprecision(1), g_timer_global.getTime("prepass"), "s", " (", scene_->getNumThreadsPhotons(), " thread(s))");
 
 	set << "| photon maps: " << std::fixed << std::setprecision(1) << g_timer_global.getTime("prepass") << "s" << " [" << scene_->getNumThreadsPhotons() << " thread(s)]";
 
 	render_info_ += set.str();
 
-	if(Y_LOG_HAS_VERBOSE)
+	if(logger_.isVerbose())
 	{
-		for(std::string line; std::getline(set, line, '\n');) Y_VERBOSE << line << YENDL;
+		for(std::string line; std::getline(set, line, '\n');) logger_.logVerbose(line);
 	}
 
 	return success;
@@ -215,7 +215,7 @@ Rgba DirectLightIntegrator::integrate(RenderData &render_data, const DiffRay &ra
 	return Rgba(col, alpha);
 }
 
-std::unique_ptr<Integrator> DirectLightIntegrator::factory(ParamMap &params, const Scene &scene)
+std::unique_ptr<Integrator> DirectLightIntegrator::factory(Logger &logger, ParamMap &params, const Scene &scene)
 {
 	bool transp_shad = false;
 	bool caustics = false;
@@ -247,7 +247,7 @@ std::unique_ptr<Integrator> DirectLightIntegrator::factory(ParamMap &params, con
 	params.getParam("bg_transp_refract", bg_transp_refract);
 	params.getParam("photon_maps_processing", photon_maps_processing_str);
 
-	auto inte = std::unique_ptr<DirectLightIntegrator>(new DirectLightIntegrator(transp_shad, shadow_depth, raydepth));
+	auto inte = std::unique_ptr<DirectLightIntegrator>(new DirectLightIntegrator(logger, transp_shad, shadow_depth, raydepth));
 	// caustic settings
 	inte->use_photon_caustics_ = caustics;
 	inte->n_caus_photons_ = photons;

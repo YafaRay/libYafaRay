@@ -31,16 +31,16 @@ BEGIN_YAFARAY
 class TgaFormat;
 struct TgaHeader;
 class RgbAlpha;
-template <typename T> class ImageBuffer2D;
 
 typedef Rgba (TgaFormat::*ColorProcessor_t)(void *data);
 
 class TgaFormat final : public Format
 {
 	public:
-		static std::unique_ptr<Format> factory(ParamMap &params);
+		static std::unique_ptr<Format> factory(Logger &logger, ParamMap &params);
 
 	private:
+		TgaFormat(Logger &logger) : Format(logger) { }
 		virtual std::string getFormatName() const override { return "TgaFormat"; }
 		virtual std::unique_ptr<Image> loadFromFile(const std::string &name, const Image::Optimization &optimization, const ColorSpace &color_space, float gamma) override;
 		virtual bool saveToFile(const std::string &name, const Image *image) override;

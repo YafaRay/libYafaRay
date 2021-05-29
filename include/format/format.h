@@ -25,8 +25,9 @@
 #define YAFARAY_FORMAT_H
 
 #include "yafaray_conf.h"
-#include "image/image.h"
 #include "common/memory.h"
+#include "image/image.h"
+#include "image/image_buffers.h"
 #include <limits>
 
 BEGIN_YAFARAY
@@ -34,15 +35,18 @@ BEGIN_YAFARAY
 class ImageLayers;
 class ParamMap;
 class Scene;
+//class Image;
+//class Logger;
 enum ColorSpace : int;
 
 class Format
 {
 	public:
-		static std::unique_ptr<Format> factory(ParamMap &params);
+		static std::unique_ptr<Format> factory(Logger &logger, ParamMap &params);
+		Format(Logger &logger) : logger_(logger) { }
 		virtual ~Format() = default;
 		virtual std::unique_ptr<Image> loadFromFile(const std::string &name, const Image::Optimization &optimization, const ColorSpace &color_space, float gamma) = 0;
-		virtual std::unique_ptr<Image> loadFromMemory(const uint8_t *data, size_t size, const Image::Optimization &optimization, const ColorSpace &color_space, float gamma) {return nullptr; }
+		virtual std::unique_ptr<Image> loadFromMemory(const uint8_t *data, size_t size, const Image::Optimization &optimization, const ColorSpace &color_space, float gamma);
 		virtual bool saveToFile(const std::string &name, const Image *image) = 0;
 		virtual bool saveAlphaChannelOnlyToFile(const std::string &name, const Image *image) { return false; }
 		virtual bool saveToFileMultiChannel(const std::string &name, const ImageLayers *image_layers) { return false; };
@@ -54,7 +58,7 @@ class Format
 
 	protected:
 		bool grayscale_ = false; //!< Converts the information loaded from the texture RGB to grayscale to reduce memory usage for bump or mask textures, for example. Alpha is ignored in this case.
-
+		Logger &logger_;
 		static constexpr double inv_31_ = 1.0 / 31.0;
 		static constexpr double inv_max_8_bit_ = 1.0 / static_cast<double>(std::numeric_limits<uint8_t>::max());
 		static constexpr double inv_max_16_bit_ = 1.0 / static_cast<double>(std::numeric_limits<uint16_t>::max());

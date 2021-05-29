@@ -28,8 +28,8 @@
 
 BEGIN_YAFARAY
 
-SphereLight::SphereLight(const Point3 &c, float rad, const Rgb &col, float inte, int nsam, bool b_light_enabled, bool b_cast_shadows):
-		center_(c), radius_(rad), samples_(nsam)
+SphereLight::SphereLight(Logger &logger, const Point3 &c, float rad, const Rgb &col, float inte, int nsam, bool b_light_enabled, bool b_cast_shadows):
+		Light(logger), center_(c), radius_(rad), samples_(nsam)
 {
 	light_enabled_ = b_light_enabled;
 	cast_shadows_ = b_cast_shadows;
@@ -46,7 +46,7 @@ void SphereLight::init(Scene &scene)
 	{
 		Object *obj = scene.getObject(object_name_);
 		if(obj) obj->setLight(this);
-		else Y_ERROR << "SphereLight: Invalid object ID given!" << YENDL;
+		else logger_.logError("SphereLight: Invalid object ID given!");
 	}
 }
 
@@ -160,7 +160,7 @@ Rgb SphereLight::emitSample(Vec3 &wo, LSample &s) const
 	return color_;
 }
 
-std::unique_ptr<Light> SphereLight::factory(ParamMap &params, const Scene &scene)
+std::unique_ptr<Light> SphereLight::factory(Logger &logger, ParamMap &params, const Scene &scene)
 {
 	Point3 from(0.0);
 	Rgb color(1.0);
@@ -186,7 +186,7 @@ std::unique_ptr<Light> SphereLight::factory(ParamMap &params, const Scene &scene
 	params.getParam("with_diffuse", shoot_d);
 	params.getParam("photon_only", p_only);
 
-	auto light = std::unique_ptr<SphereLight>(new SphereLight(from, radius, color, power, samples, light_enabled, cast_shadows));
+	auto light = std::unique_ptr<SphereLight>(new SphereLight(logger, from, radius, color, power, samples, light_enabled, cast_shadows));
 
 	light->object_name_ = object_name;
 	light->shoot_caustic_ = shoot_c;

@@ -305,7 +305,7 @@ void TextureMapperNode::evalDerivative(NodeStack &stack, const RenderData &rende
 	stack[this->getId()] = NodeResult(Rgba(du, dv, 0.f, 0.f), 0.f);
 }
 
-std::unique_ptr<ShaderNode> TextureMapperNode::factory(const ParamMap &params, const Scene &scene)
+std::unique_ptr<ShaderNode> TextureMapperNode::factory(Logger &logger, const ParamMap &params, const Scene &scene)
 {
 	const Texture *tex = nullptr;
 	std::string texname, option;
@@ -318,13 +318,13 @@ std::unique_ptr<ShaderNode> TextureMapperNode::factory(const ParamMap &params, c
 	Matrix4 mtx(1);
 	if(!params.getParam("texture", texname))
 	{
-		Y_ERROR << "TextureMapper: No texture given for texture mapper!" << YENDL;
+		logger.logError("TextureMapper: No texture given for texture mapper!");
 		return nullptr;
 	}
 	tex = scene.getTexture(texname);
 	if(!tex)
 	{
-		Y_ERROR << "TextureMapper: texture '" << texname << "' does not exist!" << YENDL;
+		logger.logError("TextureMapper: texture '", texname, "' does not exist!");
 		return nullptr;
 	}
 	auto tm = std::unique_ptr<TextureMapperNode>(new TextureMapperNode(tex));
@@ -380,7 +380,7 @@ void ValueNode::eval(NodeStack &stack, const RenderData &render_data, const Surf
 	stack[this->getId()] = NodeResult(color_, value_);
 }
 
-std::unique_ptr<ShaderNode> ValueNode::factory(const ParamMap &params, const Scene &scene)
+std::unique_ptr<ShaderNode> ValueNode::factory(Logger &logger, const ParamMap &params, const Scene &scene)
 {
 	Rgb col(1.f);
 	float alpha = 1.f;
@@ -433,7 +433,7 @@ void MixNode::eval(NodeStack &stack, const RenderData &render_data, const Surfac
 	stack[this->getId()] = NodeResult(color, scalar);
 }
 
-bool MixNode::configInputs(const ParamMap &params, const NodeFinder &find)
+bool MixNode::configInputs(Logger &logger, const ParamMap &params, const NodeFinder &find)
 {
 	std::string name;
 	if(params.getParam("input1", name))
@@ -441,13 +441,13 @@ bool MixNode::configInputs(const ParamMap &params, const NodeFinder &find)
 		input_1_ = find(name);
 		if(!input_1_)
 		{
-			Y_ERROR << "MixNode: Couldn't get input1 " << name << YENDL;
+			logger.logError("MixNode: Couldn't get input1 ", name);
 			return false;
 		}
 	}
 	else if(!params.getParam("color1", col_1_))
 	{
-		Y_ERROR << "MixNode: Color1 not set" << YENDL;
+		logger.logError("MixNode: Color1 not set");
 		return false;
 	}
 
@@ -456,13 +456,13 @@ bool MixNode::configInputs(const ParamMap &params, const NodeFinder &find)
 		input_2_ = find(name);
 		if(!input_2_)
 		{
-			Y_ERROR << "MixNode: Couldn't get input2 " << name << YENDL;
+			logger.logError("MixNode: Couldn't get input2 ", name);
 			return false;
 		}
 	}
 	else if(!params.getParam("color2", col_2_))
 	{
-		Y_ERROR << "MixNode: Color2 not set" << YENDL;
+		logger.logError("MixNode: Color2 not set");
 		return false;
 	}
 
@@ -471,13 +471,13 @@ bool MixNode::configInputs(const ParamMap &params, const NodeFinder &find)
 		factor_ = find(name);
 		if(!factor_)
 		{
-			Y_ERROR << "MixNode: Couldn't get factor " << name << YENDL;
+			logger.logError("MixNode: Couldn't get factor ", name);
 			return false;
 		}
 	}
 	else if(!params.getParam("value", cfactor_))
 	{
-		Y_ERROR << "MixNode: Value not set" << YENDL;
+		logger.logError("MixNode: Value not set");
 		return false;
 	}
 
@@ -659,7 +659,7 @@ class OverlayNode: public MixNode
 };
 
 
-std::unique_ptr<ShaderNode> MixNode::factory(const ParamMap &params, const Scene &scene)
+std::unique_ptr<ShaderNode> MixNode::factory(Logger &logger, const ParamMap &params, const Scene &scene)
 {
 	float cfactor = 0.5f;
 	std::string blend_mode;

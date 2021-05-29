@@ -24,19 +24,19 @@
 
 BEGIN_YAFARAY
 
-std::unique_ptr<ShaderNode> ShaderNode::factory(const ParamMap &params, const Scene &scene)
+std::unique_ptr<ShaderNode> ShaderNode::factory(Logger &logger, const ParamMap &params, const Scene &scene)
 {
-	if(Y_LOG_HAS_DEBUG)
+	if(logger.isDebug())
 	{
-		Y_DEBUG PRTEXT(**ShaderNode) PREND;
-		params.printDebug();
+		logger.logDebug("**ShaderNode");
+		params.logContents(logger);
 	}
 	std::string type;
 	params.getParam("type", type);
-	if(type == "texture_mapper") return TextureMapperNode::factory(params, scene);
-	else if(type == "value") return ValueNode::factory(params, scene);
-	else if(type == "mix") return MixNode::factory(params, scene);
-	else if(type == "layer") return LayerNode::factory(params, scene);
+	if(type == "texture_mapper") return TextureMapperNode::factory(logger, params, scene);
+	else if(type == "value") return ValueNode::factory(logger, params, scene);
+	else if(type == "mix") return MixNode::factory(logger, params, scene);
+	else if(type == "layer") return LayerNode::factory(logger, params, scene);
 	else return nullptr;
 }
 

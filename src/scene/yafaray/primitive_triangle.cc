@@ -185,12 +185,12 @@ void TrianglePrimitive::calculateShadingSpace(SurfacePoint &sp) const
 	sp.ds_dv_.z_ = sp.n_ * sp.dp_dv_;
 }
 
-PolyDouble::ClipResultWithBound TrianglePrimitive::clipToBound(const std::array<Vec3Double, 2> &bound, const ClipPlane &clip_plane, const PolyDouble &poly, const Matrix4 *obj_to_world) const
+PolyDouble::ClipResultWithBound TrianglePrimitive::clipToBound(Logger &logger, const std::array<Vec3Double, 2> &bound, const ClipPlane &clip_plane, const PolyDouble &poly, const Matrix4 *obj_to_world) const
 {
 	if(clip_plane.pos_ != ClipPlane::Pos::None) // re-clip
 	{
 		const double split = (clip_plane.pos_ == ClipPlane::Pos::Lower) ? bound[0][clip_plane.axis_] : bound[1][clip_plane.axis_];
-		const PolyDouble::ClipResultWithBound clip_result = PolyDouble::planeClipWithBound(split, clip_plane, poly);
+		const PolyDouble::ClipResultWithBound clip_result = PolyDouble::planeClipWithBound(logger, split, clip_plane, poly);
 		if(clip_result.clip_result_code_ == PolyDouble::ClipResultWithBound::Correct) return clip_result;
 		else if(clip_result.clip_result_code_ == PolyDouble::ClipResultWithBound::NoOverlapDisappeared) return {PolyDouble::ClipResultWithBound::NoOverlapDisappeared};
 		//else: do initial clipping below, if there are any other PolyDouble::ClipResult results (errors)
@@ -201,7 +201,7 @@ PolyDouble::ClipResultWithBound TrianglePrimitive::clipToBound(const std::array<
 	};
 	PolyDouble poly_triangle;
 	for(const auto &vert : triangle_vertices) poly_triangle.addVertex({vert.x_, vert.y_, vert.z_ });
-	return PolyDouble::boxClip(bound[0], bound[1], poly_triangle);
+	return PolyDouble::boxClip(logger, bound[1], poly_triangle, bound[0]);
 }
 
 float TrianglePrimitive::surfaceArea(const std::array<Point3, 3> &vertices)

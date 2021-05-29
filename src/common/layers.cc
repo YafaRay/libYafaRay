@@ -120,11 +120,6 @@ std::map<std::string, Layer::Type> Layer::initMapTypeNamesTypes()
 
 std::map<Layer::Type, std::string> Layer::initMapTypeTypeNames(const std::map<std::string, Layer::Type> &map_typename_type)
 {
-	if(map_typename_type.empty())
-	{
-		Y_ERROR << "Layer::initMapTypeTypeNames: map_typename_type, cannot initialize layers, exiting..." << YENDL;
-		exit(-1);
-	}
 	std::map<Layer::Type, std::string> map_type_typename;
 	for(const auto &it : map_typename_type)
 	{

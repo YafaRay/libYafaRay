@@ -32,29 +32,29 @@
 
 BEGIN_YAFARAY
 
-std::unique_ptr<Integrator> Integrator::factory(ParamMap &params, const Scene &scene)
+std::unique_ptr<Integrator> Integrator::factory(Logger &logger, ParamMap &params, const Scene &scene)
 {
-	if(Y_LOG_HAS_DEBUG)
+	if(logger.isDebug())
 	{
-		Y_DEBUG PRTEXT(**Integrator) PREND;
-		params.printDebug();
+		logger.logDebug("**Integrator");
+		params.logContents(logger);
 	}
 	std::string type;
 	params.getParam("type", type);
 	if(type == "bidirectional")
 	{
-		Y_WARNING << "The Bidirectional integrator is UNSTABLE at the moment and needs to be improved. It might give unexpected and perhaps even incorrect render results. Use at your own risk." << YENDL;
-		return BidirectionalIntegrator::factory(params, scene);
+		logger.logWarning("The Bidirectional integrator is UNSTABLE at the moment and needs to be improved. It might give unexpected and perhaps even incorrect render results. Use at your own risk.");
+		return BidirectionalIntegrator::factory(logger, params, scene);
 	}
-	else if(type == "DebugIntegrator") return DebugIntegrator::factory(params, scene);
-	else if(type == "directlighting") return DirectLightIntegrator::factory(params, scene);
-	else if(type == "pathtracing") return PathIntegrator::factory(params, scene);
-	else if(type == "photonmapping") return PhotonIntegrator::factory(params, scene);
-	else if(type == "SPPM") return SppmIntegrator::factory(params, scene);
-	else if(type == "none") return EmptyVolumeIntegrator::factory(params, scene);
-	else if(type == "EmissionIntegrator") return EmissionIntegrator::factory(params, scene);
-	else if(type == "SingleScatterIntegrator") return SingleScatterIntegrator::factory(params, scene);
-	else if(type == "SkyIntegrator") return SkyIntegrator::factory(params, scene);
+	else if(type == "DebugIntegrator") return DebugIntegrator::factory(logger, params, scene);
+	else if(type == "directlighting") return DirectLightIntegrator::factory(logger, params, scene);
+	else if(type == "pathtracing") return PathIntegrator::factory(logger, params, scene);
+	else if(type == "photonmapping") return PhotonIntegrator::factory(logger, params, scene);
+	else if(type == "SPPM") return SppmIntegrator::factory(logger, params, scene);
+	else if(type == "none") return EmptyVolumeIntegrator::factory(logger, params, scene);
+	else if(type == "EmissionIntegrator") return EmissionIntegrator::factory(logger, params, scene);
+	else if(type == "SingleScatterIntegrator") return SingleScatterIntegrator::factory(logger, params, scene);
+	else if(type == "SkyIntegrator") return SkyIntegrator::factory(logger, params, scene);
 	else return nullptr;
 }
 

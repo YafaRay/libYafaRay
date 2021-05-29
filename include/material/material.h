@@ -26,6 +26,7 @@
 #include "common/visibility.h"
 #include "common/memory.h"
 #include "geometry/vector.h"
+#include "shader/shader_node.h"
 #include <list>
 
 BEGIN_YAFARAY
@@ -37,6 +38,7 @@ class RenderData;
 class VolumeHandler;
 struct Sample;
 struct PSample;
+class Logger;
 
 struct BsdfFlags : public yafaray4::Flags
 {
@@ -77,8 +79,8 @@ class Material
 				Rgb col_;
 			} reflect_, refract_;
 		};
-		static std::unique_ptr<Material> factory(ParamMap &params, std::list<ParamMap> &eparams, const Scene &scene);
-		Material();
+		static std::unique_ptr<Material> factory(Logger &logger, ParamMap &params, std::list<ParamMap> &eparams, const Scene &scene);
+		Material(Logger &logger);
 		virtual ~Material();
 
 		/*! Initialize the BSDF of a material. You must call this with the current surface point
@@ -215,6 +217,7 @@ class Material
 		static float highest_sampling_factor_;	//!< Class shared variable containing the highest material sampling factor. This is used to calculate the max. possible samples for the Sampling pass.
 		static unsigned int material_index_auto_;	//!< Material Index automatically generated for the material-index-auto render pass
 		static unsigned int material_index_highest_;	//!< Class shared variable containing the highest material index used for the Normalized Material Index pass.
+		Logger &logger_;
 };
 
 struct Sample

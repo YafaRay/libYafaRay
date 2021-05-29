@@ -54,8 +54,8 @@ inline float sinSample_global(float s)
 	return math::sin(s * M_PI);
 }
 
-BackgroundLight::BackgroundLight(int sampl, bool invert_intersect, bool light_enabled, bool cast_shadows):
-		Light(Light::Flags::None), samples_(sampl), abs_inter_(invert_intersect)
+BackgroundLight::BackgroundLight(Logger &logger, int sampl, bool invert_intersect, bool light_enabled, bool cast_shadows):
+		Light(logger, Light::Flags::None), samples_(sampl), abs_inter_(invert_intersect)
 {
 	light_enabled_ = light_enabled;
 	cast_shadows_ = cast_shadows;
@@ -103,9 +103,9 @@ inline float BackgroundLight::calcFromSample(float s_1, float s_2, float &u, flo
 {
 	int iv;
 	float pdf_1 = 0.f, pdf_2 = 0.f;
-	v = v_dist_->sample(s_2, &pdf_2);
+	v = v_dist_->sample(logger_, s_2, &pdf_2);
 	iv = clampSample_global(addOff_global(v), v_dist_->count_);
-	u = u_dist_[iv]->sample(s_1, &pdf_1);
+	u = u_dist_[iv]->sample(logger_, s_1, &pdf_1);
 	u *= u_dist_[iv]->inv_count_;
 	v *= v_dist_->inv_count_;
 	if(inv)return CALC_INV_PDF(pdf_1, pdf_2, v);
@@ -221,7 +221,7 @@ void BackgroundLight::emitPdf(const SurfacePoint &sp, const Vec3 &wo, float &are
 	area_pdf = 1.f;
 }
 
-std::unique_ptr<Light> BackgroundLight::factory(ParamMap &params, const Scene &scene)
+std::unique_ptr<Light> BackgroundLight::factory(Logger &logger, ParamMap &params, const Scene &scene)
 {
 	int samples = 16;
 	bool shoot_d = true;
@@ -239,7 +239,7 @@ std::unique_ptr<Light> BackgroundLight::factory(ParamMap &params, const Scene &s
 	params.getParam("cast_shadows", cast_shadows);
 	params.getParam("photon_only", p_only);
 
-	auto light = std::unique_ptr<BackgroundLight>(new BackgroundLight(samples, abs_int, light_enabled, cast_shadows));
+	auto light = std::unique_ptr<BackgroundLight>(new BackgroundLight(logger, samples, abs_int, light_enabled, cast_shadows));
 
 	light->shoot_caustic_ = shoot_c;
 	light->shoot_diffuse_ = shoot_d;

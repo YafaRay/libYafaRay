@@ -43,7 +43,8 @@ METHODDEF(void) jpgErrorMessage_global(j_common_ptr info)
 {
 	char buffer[JMSG_LENGTH_MAX];
 	(*info->err->format_message)(info, buffer);
-	Y_ERROR << "JPEG Library Error: " << buffer << YENDL;
+	//logger_.logError("JPEG Library Error: ", buffer);
+	std::cout << "JPEG Library Error: " << buffer << std::endl;
 }
 
 struct JpgErrorManager
@@ -67,7 +68,7 @@ bool JpgFormat::saveToFile(const std::string &name, const Image *image)
 	std::FILE *fp = File::open(name, "wb");
 	if(!fp)
 	{
-		Y_ERROR << getFormatName() << ": Cannot open file for writing " << name << YENDL;
+		logger_.logError(getFormatName(), ": Cannot open file for writing ", name);
 		return false;
 	}
 
@@ -112,7 +113,7 @@ bool JpgFormat::saveToFile(const std::string &name, const Image *image)
 	jpeg_destroy_compress(&info);
 
 	File::close(fp);
-	if(Y_LOG_HAS_VERBOSE) Y_VERBOSE << getFormatName() << ": Done." << YENDL;
+	if(logger_.isVerbose()) logger_.logVerbose(getFormatName(), ": Done.");
 	return true;
 }
 
@@ -121,7 +122,7 @@ bool JpgFormat::saveAlphaChannelOnlyToFile(const std::string &name, const Image 
 	std::FILE *fp = File::open(name, "wb");
 	if(!fp)
 	{
-		Y_ERROR << getFormatName() << ": Cannot open file for writing " << name << YENDL;
+		logger_.logError(getFormatName(), ": Cannot open file for writing ", name);
 		return false;
 	}
 	const int height = image->getHeight();
@@ -157,17 +158,17 @@ bool JpgFormat::saveAlphaChannelOnlyToFile(const std::string &name, const Image 
 	jpeg_destroy_compress(&info);
 
 	File::close(fp);
-	if(Y_LOG_HAS_VERBOSE) Y_VERBOSE << getFormatName() << ": Done." << YENDL;
+	if(logger_.isVerbose()) logger_.logVerbose(getFormatName(), ": Done.");
 	return true;
 }
 
 std::unique_ptr<Image> JpgFormat::loadFromFile(const std::string &name, const Image::Optimization &optimization, const ColorSpace &color_space, float gamma)
 {
 	std::FILE *fp = File::open(name, "rb");
-	Y_INFO << getFormatName() << ": Loading image \"" << name << "\"..." << YENDL;
+	logger_.logInfo(getFormatName(), ": Loading image \"", name, "\"...");
 	if(!fp)
 	{
-		Y_ERROR << getFormatName() << ": Cannot open file " << name << YENDL;
+		logger_.logError(getFormatName(), ": Cannot open file ", name);
 		return nullptr;
 	}
 	jpeg_decompress_struct info;
@@ -194,7 +195,7 @@ std::unique_ptr<Image> JpgFormat::loadFromFile(const std::string &name, const Im
 	const bool is_cmyk = ((info.out_color_space == JCS_CMYK) & (info.output_components == 4));// TODO: findout if blender's non-standard jpeg + alpha comply with this or not, the code for conversion is below
 	if((!is_gray) && (!is_rgb) && (!is_cmyk))
 	{
-		Y_ERROR << getFormatName() << ": Unsupported color space: " << info.out_color_space << "| Color components: " << info.output_components << YENDL;
+		logger_.logError(getFormatName(), ": Unsupported color space: ", info.out_color_space, "| Color components: ", info.output_components);
 		jpeg_finish_decompress(&info);
 		jpeg_destroy_decompress(&info);
 		File::close(fp);
@@ -203,7 +204,7 @@ std::unique_ptr<Image> JpgFormat::loadFromFile(const std::string &name, const Im
 	const int width = info.output_width;
 	const int height = info.output_height;
 	const Image::Type type = Image::getTypeFromSettings(false, grayscale_);
-	std::unique_ptr<Image> image = Image::factory(width, height, type, optimization);
+	std::unique_ptr<Image> image = Image::factory(logger_, width, height, type, optimization);
 
 	uint8_t *scanline = new uint8_t[width * info.output_components];
 	for(int y = 0; info.output_scanline < info.output_height; ++y)
@@ -254,14 +255,14 @@ std::unique_ptr<Image> JpgFormat::loadFromFile(const std::string &name, const Im
 	jpeg_destroy_decompress(&info);
 
 	File::close(fp);
-	if(Y_LOG_HAS_VERBOSE) Y_VERBOSE << getFormatName() << ": Done." << YENDL;
+	if(logger_.isVerbose()) logger_.logVerbose(getFormatName(), ": Done.");
 	return image;
 }
 
 
-std::unique_ptr<Format> JpgFormat::factory(ParamMap &params)
+std::unique_ptr<Format> JpgFormat::factory(Logger &logger, ParamMap &params)
 {
-	return std::unique_ptr<Format>(new JpgFormat());
+	return std::unique_ptr<Format>(new JpgFormat(logger));
 }
 
 END_YAFARAY

@@ -36,10 +36,12 @@ class Rgba;
 class Image;
 class ParamMap;
 class Scene;
+class Logger;
 
 class Badge
 {
 	public:
+		Badge(Logger &logger) : logger_(logger) { }
 		void setParams(const ParamMap &params);
 		enum class Position : int { None, Top, Bottom };
 		Position getPosition() const { return position_; }
@@ -87,6 +89,7 @@ class Badge
 		std::string comments_;
 		std::string icon_path_;
 		std::string font_path_;
+		Logger &logger_;
 };
 
 END_YAFARAY

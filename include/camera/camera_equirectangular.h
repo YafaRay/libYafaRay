@@ -31,10 +31,10 @@ class Scene;
 class EquirectangularCamera final : public Camera
 {
 	public:
-		static std::unique_ptr<Camera> factory(ParamMap &params, const Scene &scene);
+		static std::unique_ptr<Camera> factory(Logger &logger, ParamMap &params, const Scene &scene);
 
 	private:
-		EquirectangularCamera(const Point3 &pos, const Point3 &look, const Point3 &up,
+		EquirectangularCamera(Logger &logger, const Point3 &pos, const Point3 &look, const Point3 &up,
 							  int resx, int resy, float aspect,
 							  float const near_clip_distance = 0.0f, float const far_clip_distance = 1e6f);
 		virtual void setAxis(const Vec3 &vx, const Vec3 &vy, const Vec3 &vz) override;

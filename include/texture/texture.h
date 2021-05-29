@@ -33,13 +33,15 @@ BEGIN_YAFARAY
 class ParamMap;
 class Scene;
 class MipMapParams;
+class Logger;
 
 enum class InterpolationType : int { None, Bilinear, Bicubic, Trilinear, Ewa };
 
 class Texture
 {
 	public :
-		static std::unique_ptr<Texture> factory(ParamMap &params, const Scene &scene);
+		static std::unique_ptr<Texture> factory(Logger &logger, ParamMap &params, const Scene &scene);
+		Texture(Logger &logger) : logger_(logger) { }
 		virtual ~Texture() = default;
 
 		/* indicate wether the the texture is discrete (e.g. image map) or continuous */
@@ -79,6 +81,7 @@ class Texture
 		bool adjustments_set_ = false;
 		std::unique_ptr<ColorRamp> color_ramp_;
 		InterpolationType interpolation_type_ = InterpolationType::Bilinear;
+		Logger &logger_;
 };
 
 inline void angmap_global(const Point3 &p, float &u, float &v)
@@ -196,7 +199,7 @@ inline void Texture::setAdjustments(float intensity, float contrast, float satur
 
 	if(adjustments_set_)
 	{
-		if(Y_LOG_HAS_VERBOSE) Y_VERBOSE << "Texture: modified texture adjustment values:" << adjustments_stream.str() << YENDL;
+		if(logger_.isVerbose()) logger_.logVerbose("Texture: modified texture adjustment values:", adjustments_stream.str());
 	}
 }
 

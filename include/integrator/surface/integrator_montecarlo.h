@@ -46,7 +46,7 @@ enum PhotonMapProcessing
 class MonteCarloIntegrator: public TiledIntegrator
 {
 	public:
-		MonteCarloIntegrator();
+		MonteCarloIntegrator(Logger &logger);
 
 	protected:
 		virtual ~MonteCarloIntegrator() override;

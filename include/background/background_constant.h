@@ -34,10 +34,10 @@ class ParamMap;
 class ConstantBackground final : public Background
 {
 	public:
-		static std::shared_ptr<Background> factory(ParamMap &params, Scene &scene);
+		static std::shared_ptr<Background> factory(Logger &logger, ParamMap &params, Scene &scene);
 
 	private:
-		ConstantBackground(Rgb col, bool ibl, bool with_caustic);
+		ConstantBackground(Logger &logger, Rgb col, bool ibl, bool with_caustic);
 		virtual Rgb operator()(const Ray &ray, RenderData &render_data, bool use_ibl_blur = false) const override;
 		virtual Rgb eval(const Ray &ray, bool use_ibl_blur = false) const override;
 

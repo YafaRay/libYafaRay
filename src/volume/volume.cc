@@ -29,38 +29,39 @@
 
 BEGIN_YAFARAY
 
-std::unique_ptr<VolumeRegion> VolumeRegion::factory(const ParamMap &params, const Scene &scene)
+std::unique_ptr<VolumeRegion> VolumeRegion::factory(Logger &logger, const ParamMap &params, const Scene &scene)
 {
-	if(Y_LOG_HAS_DEBUG)
+	if(logger.isDebug())
 	{
-		Y_DEBUG PRTEXT(**VolumeRegion) PREND;
-		params.printDebug();
+		logger.logDebug("**VolumeRegion");
+		params.logContents(logger);
 	}
 	std::string type;
 	params.getParam("type", type);
-	if(type == "ExpDensityVolume") return ExpDensityVolumeRegion::factory(params, scene);
-	else if(type == "GridVolume") return GridVolumeRegion::factory(params, scene);
-	else if(type == "NoiseVolume") return NoiseVolumeRegion::factory(params, scene);
-	else if(type == "SkyVolume") return SkyVolumeRegion::factory(params, scene);
-	else if(type == "UniformVolume") return UniformVolumeRegion::factory(params, scene);
+	if(type == "ExpDensityVolume") return ExpDensityVolumeRegion::factory(logger, params, scene);
+	else if(type == "GridVolume") return GridVolumeRegion::factory(logger, params, scene);
+	else if(type == "NoiseVolume") return NoiseVolumeRegion::factory(logger, params, scene);
+	else if(type == "SkyVolume") return SkyVolumeRegion::factory(logger, params, scene);
+	else if(type == "UniformVolume") return UniformVolumeRegion::factory(logger, params, scene);
 	else return nullptr;
 }
 
-std::unique_ptr<VolumeHandler> VolumeHandler::factory(const ParamMap &params, const Scene &scene)
+std::unique_ptr<VolumeHandler> VolumeHandler::factory(Logger &logger, const ParamMap &params, const Scene &scene)
 {
-	if(Y_LOG_HAS_DEBUG)
+	if(logger.isDebug())
 	{
-		Y_DEBUG PRTEXT(**VolumeHandler) PREND;
-		params.printDebug();
+		logger.logDebug("**VolumeHandler");
+		params.logContents(logger);
 	}
 	std::string type;
 	params.getParam("type", type);
-	if(type == "beer") return BeerVolumeHandler::factory(params, scene);
-	else if(type == "sss") return SssVolumeHandler::factory(params, scene);
+	if(type == "beer") return BeerVolumeHandler::factory(logger, params, scene);
+	else if(type == "sss") return SssVolumeHandler::factory(logger, params, scene);
 	else return nullptr;
 }
 
-VolumeRegion::VolumeRegion(Rgb sa, Rgb ss, Rgb le, float gg, Point3 pmin, Point3 pmax, int attgrid_scale) {
+VolumeRegion::VolumeRegion(Logger &logger, Rgb sa, Rgb ss, Rgb le, float gg, Point3 pmin, Point3 pmax, int attgrid_scale) : logger_(logger)
+{
 	b_box_ = Bound(pmin, pmax);
 	s_a_ = sa;
 	s_s_ = ss;
@@ -138,7 +139,7 @@ float VolumeRegion::attenuation(const Point3 p, const Light *l) const
 {
 	if(attenuation_grid_map_.find(l) == attenuation_grid_map_.end())
 	{
-		Y_WARNING << "VolumeRegion: Attenuation Map is missing" << YENDL;
+		logger_.logWarning("VolumeRegion: Attenuation Map is missing");
 	}
 
 	const float *attenuation_grid = attenuation_grid_map_.at(l);

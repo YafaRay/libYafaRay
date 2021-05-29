@@ -23,12 +23,12 @@
 
 BEGIN_YAFARAY
 
-std::unique_ptr<Object> CurveObject::factory(ParamMap &params, const Scene &scene)
+std::unique_ptr<Object> CurveObject::factory(Logger &logger, ParamMap &params, const Scene &scene)
 {
-	if(Y_LOG_HAS_DEBUG)
+	if(logger.isDebug())
 	{
-		Y_DEBUG PRTEXT(CurveObject::factory) PREND;
-		params.printDebug();
+		logger.logDebug("CurveObject::factory");
+		params.logContents(logger);
 	}
 	std::string name, light_name, visibility, base_object_name;
 	bool is_base_object = false, has_uv = false, has_orco = false;

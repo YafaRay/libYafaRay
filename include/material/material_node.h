@@ -34,7 +34,7 @@ class NodeStack;
 class NodeMaterial: public Material
 {
 	public:
-		NodeMaterial() = default;
+		NodeMaterial(Logger &logger) : Material(logger) { }
 		virtual ~NodeMaterial() override;
 
 	protected:

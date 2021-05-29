@@ -25,9 +25,9 @@
 
 BEGIN_YAFARAY
 
-OrthographicCamera::OrthographicCamera(const Point3 &pos, const Point3 &look, const Point3 &up,
+OrthographicCamera::OrthographicCamera(Logger &logger, const Point3 &pos, const Point3 &look, const Point3 &up,
 									   int resx, int resy, float aspect, float scale, float const near_clip_distance, float const far_clip_distance)
-	: Camera(pos, look, up, resx, resy, aspect, near_clip_distance, far_clip_distance), scale_(scale)
+	: Camera(logger, pos, look, up, resx, resy, aspect, near_clip_distance, far_clip_distance), scale_(scale)
 {
 	// Initialize camera specific plane coordinates
 	setAxis(cam_x_, cam_y_, cam_z_);
@@ -78,7 +78,7 @@ Point3 OrthographicCamera::screenproject(const Point3 &p) const
 	return s;
 }
 
-std::unique_ptr<Camera> OrthographicCamera::factory(ParamMap &params, const Scene &scene)
+std::unique_ptr<Camera> OrthographicCamera::factory(Logger &logger, ParamMap &params, const Scene &scene)
 {
 	Point3 from(0, 1, 0), to(0, 0, 0), up(0, 1, 1);
 	int resx = 320, resy = 200;
@@ -97,7 +97,7 @@ std::unique_ptr<Camera> OrthographicCamera::factory(ParamMap &params, const Scen
 	params.getParam("farClip", far_clip);
 	params.getParam("view_name", view_name);
 
-	return std::unique_ptr<Camera>(new OrthographicCamera(from, to, up, resx, resy, aspect, scale, near_clip, far_clip));
+	return std::unique_ptr<Camera>(new OrthographicCamera(logger, from, to, up, resx, resy, aspect, scale, near_clip, far_clip));
 }
 
 END_YAFARAY

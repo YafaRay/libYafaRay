@@ -34,10 +34,10 @@ class Rgb;
 class SingleScatterIntegrator final : public VolumeIntegrator
 {
 	public:
-		static std::unique_ptr<Integrator> factory(ParamMap &params, const Scene &scene);
+		static std::unique_ptr<Integrator> factory(Logger &logger, ParamMap &params, const Scene &scene);
 
 	private:
-		SingleScatterIntegrator(float s_size, bool adapt, bool opt);
+		SingleScatterIntegrator(Logger &logger, float s_size, bool adapt, bool opt);
 		virtual std::string getShortName() const override { return "SSc"; }
 		virtual std::string getName() const override { return "SingleScatter"; }
 		virtual bool preprocess(const RenderControl &render_control, const RenderView *render_view, ImageFilm *image_film) override;

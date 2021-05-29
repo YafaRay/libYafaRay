@@ -30,9 +30,8 @@
 
 BEGIN_YAFARAY
 
-DebugIntegrator::DebugIntegrator(SurfaceProperties dt)
+DebugIntegrator::DebugIntegrator(Logger &logger, SurfaceProperties dt) : TiledIntegrator(logger), debug_type_(dt)
 {
-	debug_type_ = dt;
 	render_info_ += "Debug integrator: '";
 	switch(dt)
 	{
@@ -108,14 +107,14 @@ Rgba DebugIntegrator::integrate(RenderData &render_data, const DiffRay &ray, int
 	return Rgba(col, 1.f);
 }
 
-std::unique_ptr<Integrator> DebugIntegrator::factory(ParamMap &params, const Scene &scene)
+std::unique_ptr<Integrator> DebugIntegrator::factory(Logger &logger, ParamMap &params, const Scene &scene)
 {
 	int dt = 1;
 	bool pn = false;
 	params.getParam("debugType", dt);
 	params.getParam("showPN", pn);
 	std::cout << "debugType " << dt << std::endl;
-	auto inte = std::unique_ptr<DebugIntegrator>(new DebugIntegrator(static_cast<SurfaceProperties>(dt)));
+	auto inte = std::unique_ptr<DebugIntegrator>(new DebugIntegrator(logger, static_cast<SurfaceProperties>(dt)));
 	inte->show_pn_ = pn;
 
 	return inte;

@@ -25,11 +25,11 @@
 
 BEGIN_YAFARAY
 
-PerspectiveCamera::PerspectiveCamera(const Point3 &pos, const Point3 &look, const Point3 &up,
+PerspectiveCamera::PerspectiveCamera(Logger &logger, const Point3 &pos, const Point3 &look, const Point3 &up,
 									 int resx, int resy, float aspect,
 									 float df, float ap, float dofd, BokehType bt, BkhBiasType bbt, float bro,
 									 float const near_clip_distance, float const far_clip_distance) :
-		Camera(pos, look, up, resx, resy, aspect, near_clip_distance, far_clip_distance), bkhtype_(bt), bkhbias_(bbt), aperture_(ap), focal_distance_(df), dof_distance_(dofd)
+		Camera(logger, pos, look, up, resx, resy, aspect, near_clip_distance, far_clip_distance), bkhtype_(bt), bkhbias_(bbt), aperture_(ap), focal_distance_(df), dof_distance_(dofd)
 {
 	// Initialize camera specific plane coordinates
 	setAxis(cam_x_, cam_y_, cam_z_);
@@ -180,7 +180,7 @@ bool PerspectiveCamera::project(const Ray &wo, float lu, float lv, float &u, flo
 
 bool PerspectiveCamera::sampleLense() const { return aperture_ != 0; }
 
-std::unique_ptr<Camera> PerspectiveCamera::factory(ParamMap &params, const Scene &scene)
+std::unique_ptr<Camera> PerspectiveCamera::factory(Logger &logger, ParamMap &params, const Scene &scene)
 {
 	std::string bkhtype = "disk1", bkhbias = "uniform";
 	Point3 from(0, 1, 0), to(0, 0, 0), up(0, 1, 1);
@@ -217,7 +217,7 @@ std::unique_ptr<Camera> PerspectiveCamera::factory(ParamMap &params, const Scene
 	if(bkhbias == "center") 		bbt = BbCenter;
 	else if(bkhbias == "edge") 		bbt = BbEdge;
 
-	return std::unique_ptr<Camera>(new PerspectiveCamera(from, to, up, resx, resy, aspect, dfocal, apt, dofd, bt, bbt, bkhrot, near_clip, far_clip));
+	return std::unique_ptr<Camera>(new PerspectiveCamera(logger, from, to, up, resx, resy, aspect, dfocal, apt, dofd, bt, bbt, bkhrot, near_clip, far_clip));
 }
 
 END_YAFARAY

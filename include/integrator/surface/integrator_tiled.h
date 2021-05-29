@@ -45,6 +45,7 @@ class ThreadControl final
 class TiledIntegrator : public SurfaceIntegrator
 {
 	public:
+		TiledIntegrator(Logger &logger) : SurfaceIntegrator(logger) { }
 		/*! Rendering prepasses to precalc suff in case needed */
 		virtual void prePass(int samples, int offset, bool adaptive, const RenderControl &render_control, const RenderView *render_view) { } //!< Called before the proper rendering of all the tiles starts
 		/*! do whatever is required to render the image; default implementation renders image in passes

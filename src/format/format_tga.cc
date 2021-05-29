@@ -73,7 +73,7 @@ bool TgaFormat::saveToFile(const std::string &name, const Image *image)
 	}
 	std::fwrite(&footer, sizeof(TgaFooter), 1, fp);
 	File::close(fp);
-	if(Y_LOG_HAS_VERBOSE) Y_VERBOSE << getFormatName() << ": Done." << YENDL;
+	if(logger_.isVerbose()) logger_.logVerbose(getFormatName(), ": Done.");
 	return true;
 }
 
@@ -190,12 +190,12 @@ bool TgaFormat::precheckFile(TgaHeader &header, const std::string &name, bool &i
 	switch(header.image_type_)
 	{
 		case NoData:
-			Y_ERROR << getFormatName() << ": TGA file \"" << name << "\" has no image data!" << YENDL;
+			logger_.logError(getFormatName(), ": TGA file \"", name, "\" has no image data!");
 			return false;
 		case UncColorMap:
 			if(!header.color_map_type_)
 			{
-				Y_ERROR << getFormatName() << ": TGA file \"" << name << "\" has ColorMap type and no color map embedded!" << YENDL;
+				logger_.logError(getFormatName(), ": TGA file \"", name, "\" has ColorMap type and no color map embedded!");
 				return false;
 			}
 			has_color_map = true;
@@ -206,7 +206,7 @@ bool TgaFormat::precheckFile(TgaHeader &header, const std::string &name, bool &i
 		case RleColorMap:
 			if(!header.color_map_type_)
 			{
-				Y_ERROR << getFormatName() << ": TGA file \"" << name << "\" has ColorMap type and no color map embedded!" << YENDL;
+				logger_.logError(getFormatName(), ": TGA file \"", name, "\" has ColorMap type and no color map embedded!");
 				return false;
 			}
 			has_color_map = true;
@@ -226,7 +226,7 @@ bool TgaFormat::precheckFile(TgaHeader &header, const std::string &name, bool &i
 	{
 		if(header.cm_entry_bit_depth_ != 15 && header.cm_entry_bit_depth_ != 16 && header.cm_entry_bit_depth_ != 24 && header.cm_entry_bit_depth_ != 32)
 		{
-			Y_ERROR << getFormatName() << ": TGA file \"" << name << "\" has a ColorMap bit depth not supported! (BitDepth:" << (int)header.cm_entry_bit_depth_ << ")" << YENDL;
+			logger_.logError(getFormatName(), ": TGA file \"", name, "\" has a ColorMap bit depth not supported! (BitDepth:", (int)header.cm_entry_bit_depth_, ")");
 			return false;
 		}
 	}
@@ -234,12 +234,12 @@ bool TgaFormat::precheckFile(TgaHeader &header, const std::string &name, bool &i
 	{
 		if(header.bit_depth_ != 8 && header.bit_depth_ != 16)
 		{
-			Y_ERROR << getFormatName() << ": TGA file \"" << name << "\" has an invalid bit depth only 8 bit depth gray images are supported" << YENDL;
+			logger_.logError(getFormatName(), ": TGA file \"", name, "\" has an invalid bit depth only 8 bit depth gray images are supported");
 			return false;
 		}
 		if(alpha_bit_depth != 8 && header.bit_depth_ == 16)
 		{
-			Y_ERROR << getFormatName() << ": TGA file \"" << name << "\" an invalid alpha bit depth for 16 bit gray image" << YENDL;
+			logger_.logError(getFormatName(), ": TGA file \"", name, "\" an invalid alpha bit depth for 16 bit gray image");
 			return false;
 		}
 	}
@@ -247,7 +247,7 @@ bool TgaFormat::precheckFile(TgaHeader &header, const std::string &name, bool &i
 	{
 		if(header.bit_depth_ > 16)
 		{
-			Y_ERROR << getFormatName() << ": TGA file \"" << name << "\" has an invalid bit depth only 8 and 16 bit depth indexed images are supported" << YENDL;
+			logger_.logError(getFormatName(), ": TGA file \"", name, "\" has an invalid bit depth only 8 and 16 bit depth indexed images are supported");
 			return false;
 		}
 	}
@@ -255,17 +255,17 @@ bool TgaFormat::precheckFile(TgaHeader &header, const std::string &name, bool &i
 	{
 		if(header.bit_depth_ != 15 && header.bit_depth_ != 16 && header.bit_depth_ != 24 && header.bit_depth_ != 32)
 		{
-			Y_ERROR << getFormatName() << ": TGA file \"" << name << "\" has an invalid bit depth only 15/16, 24 and 32 bit depth true color images are supported (BitDepth: " << (int)header.bit_depth_ << ")" << YENDL;
+			logger_.logError(getFormatName(), ": TGA file \"", name, "\" has an invalid bit depth only 15/16, 24 and 32 bit depth true color images are supported (BitDepth: ", (int)header.bit_depth_, ")");
 			return false;
 		}
 		if(alpha_bit_depth != 1 && header.bit_depth_ == 16)
 		{
-			Y_ERROR << getFormatName() << ": TGA file \"" << name << "\" an invalid alpha bit depth for 16 bit color image" << YENDL;
+			logger_.logError(getFormatName(), ": TGA file \"", name, "\" an invalid alpha bit depth for 16 bit color image");
 			return false;
 		}
 		if(alpha_bit_depth != 8 && header.bit_depth_ == 32)
 		{
-			Y_ERROR << getFormatName() << ": TGA file \"" << name << "\" an invalid alpha bit depth for 32 bit color image" << YENDL;
+			logger_.logError(getFormatName(), ": TGA file \"", name, "\" an invalid alpha bit depth for 32 bit color image");
 			return false;
 		}
 	}
@@ -275,10 +275,10 @@ bool TgaFormat::precheckFile(TgaHeader &header, const std::string &name, bool &i
 std::unique_ptr<Image> TgaFormat::loadFromFile(const std::string &name, const Image::Optimization &optimization, const ColorSpace &color_space, float gamma)
 {
 	std::FILE *fp = File::open(name, "rb");
-	Y_INFO << getFormatName() << ": Loading image \"" << name << "\"..." << YENDL;
+	logger_.logInfo(getFormatName(), ": Loading image \"", name, "\"...");
 	if(!fp)
 	{
-		Y_ERROR << getFormatName() << ": Cannot open file " << name << YENDL;
+		logger_.logError(getFormatName(), ": Cannot open file ", name);
 		return nullptr;
 	}
 	TgaHeader header;
@@ -298,7 +298,7 @@ std::unique_ptr<Image> TgaFormat::loadFromFile(const std::string &name, const Im
 	const bool has_alpha = (alpha_bit_depth != 0 || header.cm_entry_bit_depth_ == 32);
 	Image::Type type = Image::getTypeFromSettings(has_alpha, grayscale_);
 	if(!has_alpha && !grayscale_ && (header.cm_entry_bit_depth_ == 16 || header.cm_entry_bit_depth_ == 32 || header.bit_depth_ == 16 || header.bit_depth_ == 32)) type = Image::Type::ColorAlpha;
-	std::unique_ptr<Image> image = Image::factory(header.width_, header.height_, type, optimization);
+	std::unique_ptr<Image> image = Image::factory(logger_, header.width_, header.height_, type, optimization);
 	color_map_ = nullptr;
 	// Read the colormap if needed
 	if(has_color_map)
@@ -390,13 +390,13 @@ std::unique_ptr<Image> TgaFormat::loadFromFile(const std::string &name, const Im
 		}
 	}
 	File::close(fp);
-	if(Y_LOG_HAS_VERBOSE) Y_VERBOSE << getFormatName() << ": Done." << YENDL;
+	if(logger_.isVerbose()) logger_.logVerbose(getFormatName(), ": Done.");
 	return image;
 }
 
-std::unique_ptr<Format> TgaFormat::factory(ParamMap &params)
+std::unique_ptr<Format> TgaFormat::factory(Logger &logger, ParamMap &params)
 {
-	return std::unique_ptr<Format>(new TgaFormat());
+	return std::unique_ptr<Format>(new TgaFormat(logger));
 }
 
 END_YAFARAY

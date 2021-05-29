@@ -23,17 +23,17 @@
 
 BEGIN_YAFARAY
 
-PolyDouble::ClipResult PolyDouble::planeClip(double pos, const ClipPlane &clip_plane, const PolyDouble &poly)
+PolyDouble::ClipResult PolyDouble::planeClip(Logger &logger, double pos, const ClipPlane &clip_plane, const PolyDouble &poly)
 {
 	const int poly_num_vertices = poly.numVertices();
 	if(poly_num_vertices < 3)
 	{
-		Y_WARNING << "Polygon clip: polygon with only " << poly.numVertices() << " vertices (less than 3), poly is 'degenerated'!" << YENDL;
+		logger.logWarning("Polygon clip: polygon with only ", poly.numVertices(), " vertices (less than 3), poly is 'degenerated'!");
 		return ClipResult::FatalError;
 	}
 	else if(poly_num_vertices > 10)
 	{
-		Y_WARNING << "Polygon clip: polygon with " << poly.numVertices() << " vertices (more than maximum 10), poly is limited to 10 vertices/edges, something is wrong!" << YENDL;
+		logger.logWarning("Polygon clip: polygon with ", poly.numVertices(), " vertices (more than maximum 10), poly is limited to 10 vertices/edges, something is wrong!");
 		return ClipResult::FatalError;
 	}
 	PolyDouble::ClipResult clip_result;
@@ -89,12 +89,12 @@ PolyDouble::ClipResult PolyDouble::planeClip(double pos, const ClipPlane &clip_p
 	if(clipped_poly_num_vertices == 0) return ClipResult::NoOverlapDisappeared;
 	else if(clipped_poly_num_vertices > 10)
 	{
-		Y_WARNING << "Polygon clip: polygon with " << poly_num_vertices << " vertices, after clipping has " << clipped_poly_num_vertices << " vertices, that cannot happen as PolyDouble class is limited to a maximum of 10 edges/vertices, up to a quad plus up to a maximum 6 extra vertices (one for each clipping plane), something is wrong!" << YENDL;
+		logger.logWarning("Polygon clip: polygon with ", poly_num_vertices, " vertices, after clipping has ", clipped_poly_num_vertices, " vertices, that cannot happen as PolyDouble class is limited to a maximum of 10 edges/vertices, up to a quad plus up to a maximum 6 extra vertices (one for each clipping plane), something is wrong!");
 		return ClipResult::FatalError;
 	}
 	else if(clipped_poly_num_vertices < 3)
 	{
-		Y_WARNING << "Polygon clip: polygon with " << poly_num_vertices << " vertices, after clipping has only " << clipped_poly_num_vertices << " vertices, clip is 'degenerated'!" << YENDL;
+		logger.logWarning("Polygon clip: polygon with ", poly_num_vertices, " vertices, after clipping has only ", clipped_poly_num_vertices, " vertices, clip is 'degenerated'!");
 		return ClipResult::DegeneratedLessThan3Edges;
 	}
 	clip_result.clip_result_code_ = ClipResult::Correct;
@@ -123,9 +123,9 @@ Bound PolyDouble::getBound(const PolyDouble &poly)
 	return bound;
 }
 
-PolyDouble::ClipResultWithBound PolyDouble::planeClipWithBound(double pos, const ClipPlane &clip_plane, const PolyDouble &poly)
+PolyDouble::ClipResultWithBound PolyDouble::planeClipWithBound(Logger &logger, double pos, const ClipPlane &clip_plane, const PolyDouble &poly)
 {
-	ClipResultWithBound clip_result = planeClip(pos, clip_plane, poly);
+	ClipResultWithBound clip_result = planeClip(logger, pos, clip_plane, poly);
 	clip_result.box_ = getBound(clip_result.poly_);
 	clip_result.clip_result_code_ = ClipResult::Correct;
 	return clip_result;
@@ -138,16 +138,16 @@ PolyDouble::ClipResultWithBound PolyDouble::planeClipWithBound(double pos, const
 			ClipResult::FatalError: fatal error occured
 			ClipResult::DegeneratedLessThan3Edges: resulting polygon degenerated to less than 3 edges
 */
-PolyDouble::ClipResultWithBound PolyDouble::boxClip(const Vec3Double &b_min, const Vec3Double &b_max, const PolyDouble &poly)
+PolyDouble::ClipResultWithBound PolyDouble::boxClip(Logger &logger, const Vec3Double &b_max, const PolyDouble &poly, const Vec3Double &b_min)
 {
 	ClipResultWithBound clip_result;
 	clip_result.poly_ = poly;
 	//for each axis
 	for(int axis = 0; axis < 3; ++axis)
 	{
-		clip_result = planeClip(b_min[axis], {axis, ClipPlane::Pos::Lower}, clip_result.poly_);
+		clip_result = planeClip(logger, b_min[axis], {axis, ClipPlane::Pos::Lower}, clip_result.poly_);
 		if(clip_result.clip_result_code_ != ClipResult::Correct) return {clip_result.clip_result_code_ };
-		clip_result = planeClip(b_max[axis], {axis, ClipPlane::Pos::Upper}, clip_result.poly_);
+		clip_result = planeClip(logger, b_max[axis], {axis, ClipPlane::Pos::Upper}, clip_result.poly_);
 		if(clip_result.clip_result_code_ != ClipResult::Correct) return {clip_result.clip_result_code_ };
 	}
 	clip_result.box_ = getBound(clip_result.poly_);

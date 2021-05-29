@@ -22,6 +22,7 @@
 #ifndef YAFARAY_MATERIAL_GLOSSY_H
 #define YAFARAY_MATERIAL_GLOSSY_H
 
+#include <common/logger.h>
 #include "material/material_node.h"
 
 BEGIN_YAFARAY
@@ -29,10 +30,10 @@ BEGIN_YAFARAY
 class GlossyMaterial final : public NodeMaterial
 {
 	public:
-		static std::unique_ptr<Material> factory(ParamMap &, std::list< ParamMap > &, const Scene &);
+		static std::unique_ptr<Material> factory(Logger &logger, ParamMap &, std::list<ParamMap> &, const Scene &);
 
 	private:
-		GlossyMaterial(const Rgb &col, const Rgb &dcol, float reflect, float diff, float expo, bool as_diffuse, Visibility e_visibility = Visibility::NormalVisible);
+		GlossyMaterial(Logger &logger, const Rgb &col, const Rgb &dcol, float reflect, float diff, float expo, bool as_diffuse, Visibility e_visibility = Visibility::NormalVisible);
 		virtual void initBsdf(const RenderData &render_data, SurfacePoint &sp, BsdfFlags &bsdf_types) const override;
 		virtual Rgb eval(const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wi, const BsdfFlags &bsdfs, bool force_eval = false) const override;
 		virtual Rgb sample(const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo, Vec3 &wi, Sample &s, float &w) const override;

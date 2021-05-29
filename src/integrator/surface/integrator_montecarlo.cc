@@ -47,7 +47,11 @@ BEGIN_YAFARAY
 static constexpr int loffs_delta_global = 4567; //just some number to have different sequences per light...and it's a prime even...
 
 //Constructor and destructor defined here to avoid issues with std::unique_ptr<Pdf1D> being Pdf1D incomplete in the header (forward declaration)
-MonteCarloIntegrator::MonteCarloIntegrator() = default;
+MonteCarloIntegrator::MonteCarloIntegrator(Logger &logger) : TiledIntegrator(logger)
+{
+	//Empty
+}
+
 MonteCarloIntegrator::~MonteCarloIntegrator() = default;
 
 Rgb MonteCarloIntegrator::estimateAllDirectLight(RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo, ColorLayers *color_layers) const
@@ -413,12 +417,12 @@ void MonteCarloIntegrator::causticWorker(PhotonMap *caustic_map, int thread_id, 
 
 		s_l = float(haltoncurr) / float(n_caus_photons);
 
-		const int light_num = light_power_d->dSample(s_l, &light_num_pdf);
+		const int light_num = light_power_d->dSample(logger_, s_l, &light_num_pdf);
 
 		if(light_num >= num_lights)
 		{
 			caustic_map->mutx_.lock();
-			Y_ERROR << getName() << ": lightPDF sample error! " << s_l << "/" << light_num << YENDL;
+			logger_.logError(getName(), ": lightPDF sample error! ", s_l, "/", light_num);
 			caustic_map->mutx_.unlock();
 			return;
 		}
@@ -445,7 +449,7 @@ void MonteCarloIntegrator::causticWorker(PhotonMap *caustic_map, int thread_id, 
 			if(std::isnan(pcol.r_) || std::isnan(pcol.g_) || std::isnan(pcol.b_))
 			{
 				caustic_map->mutx_.lock();
-				Y_WARNING << getName() << ": NaN (photon color)" << YENDL;
+				logger_.logWarning(getName(), ": NaN (photon color)");
 				caustic_map->mutx_.unlock();
 				break;
 			}
@@ -531,26 +535,26 @@ bool MonteCarloIntegrator::createCausticMap(const RenderView *render_view, const
 	{
 		pb->setTag("Loading caustic photon map from file...");
 		const std::string filename = scene_->getImageFilm()->getFilmSavePath() + "_caustic.photonmap";
-		Y_INFO << getName() << ": Loading caustic photon map from: " << filename << ". If it does not match the scene you could have crashes and/or incorrect renders, USE WITH CARE!" << YENDL;
+		logger_.logInfo(getName(), ": Loading caustic photon map from: ", filename, ". If it does not match the scene you could have crashes and/or incorrect renders, USE WITH CARE!");
 		if(session_global.caustic_map_.get()->load(filename))
 		{
-			if(Y_LOG_HAS_VERBOSE) Y_VERBOSE << getName() << ": Caustic map loaded." << YENDL;
+			if(logger_.isVerbose()) logger_.logVerbose(getName(), ": Caustic map loaded.");
 			return true;
 		}
 		else
 		{
 			photon_map_processing_ = PhotonsGenerateAndSave;
-			Y_WARNING << getName() << ": photon map loading failed, changing to Generate and Save mode." << YENDL;
+			logger_.logWarning(getName(), ": photon map loading failed, changing to Generate and Save mode.");
 		}
 	}
 
 	if(photon_map_processing_ == PhotonsReuse)
 	{
-		Y_INFO << getName() << ": Reusing caustics photon map from memory. If it does not match the scene you could have crashes and/or incorrect renders, USE WITH CARE!" << YENDL;
+		logger_.logInfo(getName(), ": Reusing caustics photon map from memory. If it does not match the scene you could have crashes and/or incorrect renders, USE WITH CARE!");
 		if(session_global.caustic_map_.get()->nPhotons() == 0)
 		{
 			photon_map_processing_ = PhotonsGenerateOnly;
-			Y_WARNING << getName() << ": One of the photon maps in memory was empty, they cannot be reused: changing to Generate mode." << YENDL;
+			logger_.logWarning(getName(), ": One of the photon maps in memory was empty, they cannot be reused: changing to Generate mode.");
 		}
 		else return true;
 	}
@@ -581,7 +585,7 @@ bool MonteCarloIntegrator::createCausticMap(const RenderView *render_view, const
 		for(int i = 0; i < num_lights; ++i) energies[i] = caus_lights[i]->totalEnergy().energy();
 		auto light_power_d = std::unique_ptr<Pdf1D>(new Pdf1D(energies.get(), num_lights));
 
-		if(Y_LOG_HAS_VERBOSE) Y_VERBOSE << getName() << ": Light(s) photon color testing for caustics map:" << YENDL;
+		if(logger_.isVerbose()) logger_.logVerbose(getName(), ": Light(s) photon color testing for caustics map:");
 
 		for(int i = 0; i < num_lights; ++i)
 		{
@@ -589,12 +593,12 @@ bool MonteCarloIntegrator::createCausticMap(const RenderView *render_view, const
 			pcol = caus_lights[i]->emitPhoton(.5, .5, .5, .5, ray, light_pdf);
 			light_num_pdf = light_power_d->func_[i] * light_power_d->inv_integral_;
 			pcol *= f_num_lights * light_pdf / light_num_pdf; //remember that lightPdf is the inverse of the pdf, hence *=...
-			if(Y_LOG_HAS_VERBOSE) Y_VERBOSE << getName() << ": Light [" << i + 1 << "] Photon col:" << pcol << " | lnpdf: " << light_num_pdf << YENDL;
+			if(logger_.isVerbose()) logger_.logVerbose(getName(), ": Light [", i + 1, "] Photon col:", pcol, " | lnpdf: ", light_num_pdf);
 		}
 
 		int pb_step;
-		Y_INFO << getName() << ": Building caustics photon map..." << YENDL;
-		pb->init(128);
+		logger_.logInfo(getName(), ": Building caustics photon map...");
+		pb->init(128, logger_.getConsoleLogColorsEnabled());
 		pb_step = std::max(1U, n_caus_photons_ / 128);
 		pb->setTag("Building caustics photon map...");
 
@@ -604,7 +608,7 @@ bool MonteCarloIntegrator::createCausticMap(const RenderView *render_view, const
 
 		n_caus_photons_ = std::max((unsigned int) n_threads, (n_caus_photons_ / n_threads) * n_threads); //rounding the number of diffuse photons so it's a number divisible by the number of threads (distribute uniformly among the threads). At least 1 photon per thread
 
-		Y_PARAMS << getName() << ": Shooting " << n_caus_photons_ << " photons across " << n_threads << " threads (" << (n_caus_photons_ / n_threads) << " photons/thread)" << YENDL;
+		logger_.logParams(getName(), ": Shooting ", n_caus_photons_, " photons across ", n_threads, " threads (", (n_caus_photons_ / n_threads), " photons/thread)");
 
 		std::vector<std::thread> threads;
 		for(int i = 0; i < n_threads; ++i) threads.push_back(std::thread(&MonteCarloIntegrator::causticWorker, this, session_global.caustic_map_.get(), i, scene_, render_view, std::ref(render_control), n_caus_photons_, light_power_d.get(), num_lights, caus_lights, caus_depth_, pb.get(), pb_step, std::ref(curr)));
@@ -612,26 +616,26 @@ bool MonteCarloIntegrator::createCausticMap(const RenderView *render_view, const
 
 		pb->done();
 		pb->setTag("Caustic photon map built.");
-		if(Y_LOG_HAS_VERBOSE) Y_VERBOSE << getName() << ": Done." << YENDL;
-		Y_INFO << getName() << ": Shot " << curr << " caustic photons from " << num_lights << " light(s)." << YENDL;
-		if(Y_LOG_HAS_VERBOSE) Y_VERBOSE << getName() << ": Stored caustic photons: " << session_global.caustic_map_.get()->nPhotons() << YENDL;
+		if(logger_.isVerbose()) logger_.logVerbose(getName(), ": Done.");
+		logger_.logInfo(getName(), ": Shot ", curr, " caustic photons from ", num_lights, " light(s).");
+		if(logger_.isVerbose()) logger_.logVerbose(getName(), ": Stored caustic photons: ", session_global.caustic_map_.get()->nPhotons());
 
 		if(session_global.caustic_map_.get()->nPhotons() > 0)
 		{
 			pb->setTag("Building caustic photons kd-tree...");
 			session_global.caustic_map_.get()->updateTree();
-			if(Y_LOG_HAS_VERBOSE) Y_VERBOSE << getName() << ": Done." << YENDL;
+			if(logger_.isVerbose()) logger_.logVerbose(getName(), ": Done.");
 		}
 
 		if(photon_map_processing_ == PhotonsGenerateAndSave)
 		{
 			pb->setTag("Saving caustic photon map to file...");
 			std::string filename = scene_->getImageFilm()->getFilmSavePath() + "_caustic.photonmap";
-			Y_INFO << getName() << ": Saving caustic photon map to: " << filename << YENDL;
-			if(session_global.caustic_map_.get()->save(filename) && Y_LOG_HAS_VERBOSE) Y_VERBOSE << getName() << ": Caustic map saved." << YENDL;
+			logger_.logInfo(getName(), ": Saving caustic photon map to: ", filename);
+			if(session_global.caustic_map_.get()->save(filename) && logger_.isVerbose()) logger_.logVerbose(getName(), ": Caustic map saved.");
 		}
 	}
-	else if(Y_LOG_HAS_VERBOSE) Y_VERBOSE << getName() << ": No caustic source lights found, skiping caustic map building..." << YENDL;
+	else if(logger_.isVerbose()) logger_.logVerbose(getName(), ": No caustic source lights found, skiping caustic map building...");
 	return true;
 }
 

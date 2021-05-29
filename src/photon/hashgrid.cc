@@ -89,7 +89,7 @@ void HashGrid::updateGrid()
 	{
 		if(!hash_grid_[i] || hash_grid_[i]->size() == 0) notused++;
 	}
-	if(Y_LOG_HAS_VERBOSE) Y_VERBOSE << "HashGrid: there are " << notused << " enties not used!" << std::endl;
+	//if(logger_.isVerbose()) logger_.logVerbose("HashGrid: there are ", notused, " enties not used!", std::endl;
 }
 
 unsigned int HashGrid::gather(const Point3 &p, FoundPhoton *found, unsigned int k, float sq_radius)

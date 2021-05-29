@@ -33,7 +33,7 @@ extern "C" {
 	typedef enum { YAFARAY_IMAGE_TYPE_GRAY, YAFARAY_IMAGE_TYPE_GRAY_ALPHA, YAFARAY_IMAGE_TYPE_COLOR, YAFARAY_IMAGE_TYPE_COLOR_ALPHA } yafaray4_ImageType_t;
 	typedef enum { YAFARAY_IMAGE_OPTIMIZATION_NONE, YAFARAY_IMAGE_OPTIMIZATION_OPTIMIZED, YAFARAY_IMAGE_OPTIMIZATION_COMPRESSED } yafaray4_ImageOptimization_t;
 
-	LIBYAFARAY_EXPORT yafaray4_Interface_t *yafaray4_createInterface(yafaray4_Interface_Type_t interface_type, const char *exported_file_path);
+	LIBYAFARAY_EXPORT yafaray4_Interface_t *yafaray4_createInterface(yafaray4_Interface_Type_t interface_type, const char *exported_file_path, const yafaray4_LoggerCallback_t logger_callback, void *callback_user_data);
 	LIBYAFARAY_EXPORT void yafaray4_destroyInterface(yafaray4_Interface_t *interface);
 
 	LIBYAFARAY_EXPORT void yafaray4_createScene(yafaray4_Interface_t *interface);
@@ -70,18 +70,18 @@ extern "C" {
 	LIBYAFARAY_EXPORT yafaray4_bool_t yafaray4_createIntegrator(yafaray4_Interface_t *interface, const char *name);
 	LIBYAFARAY_EXPORT yafaray4_bool_t yafaray4_createVolumeRegion(yafaray4_Interface_t *interface, const char *name);
 	LIBYAFARAY_EXPORT yafaray4_bool_t yafaray4_createRenderView(yafaray4_Interface_t *interface, const char *name);
-	LIBYAFARAY_EXPORT yafaray4_bool_t yafaray4_createOutput(yafaray4_Interface_t *interface, const char *name, yafaray4_bool_t auto_delete, void *callback_user_data, OutputPutpixelCallback_t output_putpixel_callback, OutputFlushAreaCallback_t output_flush_area_callback, OutputFlushCallback_t output_flush_callback);
+	LIBYAFARAY_EXPORT yafaray4_bool_t yafaray4_createOutput(yafaray4_Interface_t *interface, const char *name, yafaray4_bool_t auto_delete, void *callback_user_data, yafaray4_OutputPutpixelCallback_t output_putpixel_callback, yafaray4_OutputFlushAreaCallback_t output_flush_area_callback, yafaray4_OutputFlushCallback_t output_flush_callback);
 	LIBYAFARAY_EXPORT yafaray4_bool_t yafaray4_removeOutput(yafaray4_Interface_t *interface, const char *name);
 	LIBYAFARAY_EXPORT void yafaray4_clearOutputs(yafaray4_Interface_t *interface);
 	LIBYAFARAY_EXPORT void yafaray4_clearAll(yafaray4_Interface_t *interface);
-	LIBYAFARAY_EXPORT void yafaray4_render(yafaray4_Interface_t *interface, void *callback_user_data, MonitorCallback_t monitor_callback);
+	LIBYAFARAY_EXPORT void yafaray4_render(yafaray4_Interface_t *interface, void *callback_user_data, yafaray4_MonitorCallback_t monitor_callback);
 	LIBYAFARAY_EXPORT void yafaray4_defineLayer(yafaray4_Interface_t *interface, const char *layer_type_name, const char *exported_image_type_name, const char *exported_image_name, const char *image_type_name);
 	LIBYAFARAY_EXPORT yafaray4_bool_t yafaray4_setupLayersParameters(yafaray4_Interface_t *interface);
 	LIBYAFARAY_EXPORT void yafaray4_cancel(yafaray4_Interface_t *interface);
 	LIBYAFARAY_EXPORT yafaray4_bool_t yafaray4_setInteractive(yafaray4_Interface_t *interface, yafaray4_bool_t interactive);
 	LIBYAFARAY_EXPORT void yafaray4_enablePrintDateTime(yafaray4_Interface_t *interface, yafaray4_bool_t value);
-	LIBYAFARAY_EXPORT void yafaray4_setConsoleVerbosityLevel(yafaray4_Interface_t *interface, const char *str_v_level);
-	LIBYAFARAY_EXPORT void yafaray4_setLogVerbosityLevel(yafaray4_Interface_t *interface, const char *str_v_level);
+	LIBYAFARAY_EXPORT void yafaray4_setConsoleVerbosityLevel(yafaray4_Interface_t *interface, yafaray4_LogLevel_t log_level);
+	LIBYAFARAY_EXPORT void yafaray4_setLogVerbosityLevel(yafaray4_Interface_t *interface, yafaray4_LogLevel_t log_level);
 	LIBYAFARAY_EXPORT void yafaray4_getVersion(yafaray4_Interface_t *interface, char *dest_string, size_t dest_string_size);
 	LIBYAFARAY_EXPORT void yafaray4_printDebug(yafaray4_Interface_t *interface, const char *msg);
 	LIBYAFARAY_EXPORT void yafaray4_printVerbose(yafaray4_Interface_t *interface, const char *msg);
@@ -94,6 +94,7 @@ extern "C" {
 	LIBYAFARAY_EXPORT yafaray4_Image_t *yafaray4_createImage(yafaray4_Interface_t *interface, const char *name);
 	LIBYAFARAY_EXPORT yafaray4_bool_t yafaray4_setImageColor(yafaray4_Image_t *image, int x, int y, float red, float green, float blue, float alpha);
 	LIBYAFARAY_EXPORT yafaray4_bool_t yafaray4_getImageColor(const yafaray4_Image_t *image, int x, int y, float *red, float *green, float *blue, float *alpha);
+	LIBYAFARAY_EXPORT void yafaray4_setConsoleLogColorsEnabled(yafaray4_Interface_t *interface, yafaray4_bool_t colors_enabled);
 
 #ifdef __cplusplus
 }

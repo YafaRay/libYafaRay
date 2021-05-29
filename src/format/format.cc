@@ -29,12 +29,12 @@
 
 BEGIN_YAFARAY
 
-std::unique_ptr<Format> Format::factory(ParamMap &params)
+std::unique_ptr<Format> Format::factory(Logger &logger, ParamMap &params)
 {
-	if(Y_LOG_HAS_DEBUG)
+	if(logger.isDebug())
 	{
-		Y_DEBUG PRTEXT(**Format) PREND;
-		params.printDebug();
+		logger.logDebug("**Format");
+		params.logContents(logger);
 	}
 	std::string type;
 	params.getParam("type", type);
@@ -45,21 +45,26 @@ std::unique_ptr<Format> Format::factory(ParamMap &params)
 	else if(type == "jpeg") type = "jpg";
 	else if(type == "pic") type = "hdr";
 
-	if(type == "tga") return TgaFormat::factory(params);
-	else if(type == "hdr") return HdrFormat::factory(params);
+	if(type == "tga") return TgaFormat::factory(logger, params);
+	else if(type == "hdr") return HdrFormat::factory(logger, params);
 #ifdef HAVE_OPENEXR
-	else if(type == "exr") return ExrFormat::factory(params);
+	else if(type == "exr") return ExrFormat::factory(logger, params);
 #endif // HAVE_OPENEXR
 #ifdef HAVE_JPEG
-	else if(type == "jpg") return JpgFormat::factory(params);
+	else if(type == "jpg") return JpgFormat::factory(logger, params);
 #endif // HAVE_JPEG
 #ifdef HAVE_PNG
-	else if(type == "png") return PngFormat::factory(params);
+	else if(type == "png") return PngFormat::factory(logger, params);
 #endif // HAVE_PNG
 #ifdef HAVE_TIFF
-	else if(type == "tif") return TifFormat::factory(params);
+	else if(type == "tif") return TifFormat::factory(logger, params);
 #endif // HAVE_TIFF
 	else return nullptr;
+}
+
+std::unique_ptr<Image> Format::loadFromMemory(const uint8_t *data, size_t size, const Image::Optimization &optimization, const ColorSpace &color_space, float gamma)
+{
+	return nullptr;
 }
 
 END_YAFARAY

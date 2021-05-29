@@ -28,7 +28,7 @@
 
 BEGIN_YAFARAY
 
-std::unique_ptr<Accelerator> AcceleratorKdTreeMultiThread::factory(const std::vector<const Primitive *> &primitives, ParamMap &params)
+std::unique_ptr<Accelerator> AcceleratorKdTreeMultiThread::factory(Logger &logger, const std::vector<const Primitive *> &primitives, ParamMap &params)
 {
 	AcceleratorKdTreeMultiThread::Parameters parameters;
 
@@ -39,16 +39,16 @@ std::unique_ptr<Accelerator> AcceleratorKdTreeMultiThread::factory(const std::ve
 	params.getParam("accelerator_threads", parameters.num_threads_);
 	params.getParam("accelerator_min_indices_threads", parameters.min_indices_to_spawn_threads_);
 
-	auto accelerator = std::unique_ptr<Accelerator>(new AcceleratorKdTreeMultiThread(primitives, parameters));
+	auto accelerator = std::unique_ptr<Accelerator>(new AcceleratorKdTreeMultiThread(logger, primitives, parameters));
 	return accelerator;
 }
 
-AcceleratorKdTreeMultiThread::AcceleratorKdTreeMultiThread(const std::vector<const Primitive *> &primitives, const Parameters &parameters)
+AcceleratorKdTreeMultiThread::AcceleratorKdTreeMultiThread(Logger &logger, const std::vector<const Primitive *> &primitives, const Parameters &parameters) : Accelerator(logger)
 {
 	Parameters tree_build_parameters = parameters;
 
 	const uint32_t num_primitives = static_cast<uint32_t>(primitives.size());
-	Y_INFO << "Kd-Tree MultiThread: Starting build (" << num_primitives << " prims, cost_ratio:" << parameters.cost_ratio_ << " empty_bonus:" << parameters.empty_bonus_ << ") [using " << tree_build_parameters.num_threads_ << " threads, min indices to spawn threads: " << tree_build_parameters.min_indices_to_spawn_threads_ << "]" << YENDL;
+	logger_.logInfo("Kd-Tree MultiThread: Starting build (", num_primitives, " prims, cost_ratio:", parameters.cost_ratio_, " empty_bonus:", parameters.empty_bonus_, ") [using ", tree_build_parameters.num_threads_, " threads, min indices to spawn threads: ", tree_build_parameters.min_indices_to_spawn_threads_, "]");
 	clock_t clock_start = clock();
 	if(tree_build_parameters.max_depth_ <= 0) tree_build_parameters.max_depth_ = static_cast<int>(7.0f + 1.66f * log(static_cast<float>(num_primitives)));
 	const double log_leaves = 1.442695f * log(static_cast<double >(num_primitives)); // = base2 log
@@ -64,7 +64,7 @@ AcceleratorKdTreeMultiThread::AcceleratorKdTreeMultiThread(const std::vector<con
 	std::vector<Bound> bounds;
 	bounds.reserve(num_primitives);
 	tree_bound_ = primitives.front()->getBound();
-	if(Y_LOG_HAS_VERBOSE) Y_VERBOSE << "Kd-Tree MultiThread: Getting primitive bounds..." << YENDL;
+	if(logger_.isVerbose()) logger_.logVerbose("Kd-Tree MultiThread: Getting primitive bounds...");
 	for(const auto &primitive : primitives)
 	{
 		bounds.emplace_back(primitive->getBound());
@@ -78,34 +78,34 @@ AcceleratorKdTreeMultiThread::AcceleratorKdTreeMultiThread(const std::vector<con
 		const double foo = (tree_bound_.g_[axis] - tree_bound_.a_[axis]) * 0.001;
 		tree_bound_.a_[axis] -= foo, tree_bound_.g_[axis] += foo;
 	}
-	if(Y_LOG_HAS_VERBOSE) Y_VERBOSE << "Kd-Tree MultiThread: Done." << YENDL;
+	if(logger_.isVerbose()) logger_.logVerbose("Kd-Tree MultiThread: Done.");
 	std::vector<uint32_t> prim_indices(num_primitives);
 	for(uint32_t prim_num = 0; prim_num < num_primitives; prim_num++) prim_indices[prim_num] = prim_num;
-	if(Y_LOG_HAS_VERBOSE) Y_VERBOSE << "Kd-Tree MultiThread: Starting recursive build..." << YENDL;
+	if(logger_.isVerbose()) logger_.logVerbose("Kd-Tree MultiThread: Starting recursive build...");
 	const Result kd_tree_result = buildTree(primitives, tree_bound_, prim_indices, 0, 0, 0, bounds, tree_build_parameters, ClipPlane::Pos::None, {}, {});
 	nodes_ = std::move(kd_tree_result.nodes_);
 	//print some stats:
 	const clock_t clock_elapsed = clock() - clock_start;
-	if(Y_LOG_HAS_VERBOSE)
+	if(logger_.isVerbose())
 	{
-		Y_VERBOSE << "Kd-Tree MultiThread: CPU total clocks (in seconds): " << static_cast<float>(clock_elapsed) / static_cast<float>(CLOCKS_PER_SEC) << "s (actual CPU work, including the work done by all threads added together)" << YENDL;
-		Y_VERBOSE << "Kd-Tree MultiThread: used/allocated nodes: " << nodes_.size() << "/" << nodes_.capacity()
-				  << " (" << 100.f * static_cast<float>(nodes_.size()) / nodes_.capacity() << "%)" << YENDL;
+		logger_.logVerbose("Kd-Tree MultiThread: CPU total clocks (in seconds): ", static_cast<float>(clock_elapsed) / static_cast<float>(CLOCKS_PER_SEC), "s (actual CPU work, including the work done by all threads added together)");
+		logger_.logVerbose("Kd-Tree MultiThread: used/allocated nodes: ", nodes_.size(), "/", nodes_.capacity()
+				 , " (", 100.f * static_cast<float>(nodes_.size()) / nodes_.capacity(), "%)");
 	}
-	kd_tree_result.stats_.outputLog(num_primitives, tree_build_parameters.max_leaf_size_);
+	kd_tree_result.stats_.outputLog(logger, num_primitives, tree_build_parameters.max_leaf_size_);
 }
 
-void AcceleratorKdTreeMultiThread::Stats::outputLog(uint32_t num_primitives, int max_leaf_size) const
+void AcceleratorKdTreeMultiThread::Stats::outputLog(Logger &logger, uint32_t num_primitives, int max_leaf_size) const
 {
-	if(Y_LOG_HAS_VERBOSE)
+	if(logger.isVerbose())
 	{
-		Y_VERBOSE << "Kd-Tree MultiThread: Primitives in tree: " << num_primitives << YENDL;
-		Y_VERBOSE << "Kd-Tree MultiThread: Interior nodes: " << kd_inodes_ << " / " << "leaf nodes: " << kd_leaves_
-				  << " (empty: " << empty_kd_leaves_ << " = " << 100.f * static_cast<float>(empty_kd_leaves_) / kd_leaves_ << "%)" << YENDL;
-		Y_VERBOSE << "Kd-Tree MultiThread: Leaf prims: " << kd_prims_ << " (" << static_cast<float>(kd_prims_) / num_primitives << " x prims in tree, leaf size: " << max_leaf_size << ")" << YENDL;
-		Y_VERBOSE << "Kd-Tree MultiThread: => " << static_cast<float>(kd_prims_) / (kd_leaves_ - empty_kd_leaves_) << " prims per non-empty leaf" << YENDL;
-		Y_VERBOSE << "Kd-Tree MultiThread: Leaves due to depth limit/bad splits: " << depth_limit_reached_ << "/" << num_bad_splits_ << YENDL;
-		Y_VERBOSE << "Kd-Tree MultiThread: clipped primitives: " << clip_ << " (" << bad_clip_ << " bad clips, " << null_clip_ << " null clips)" << YENDL;
+		logger.logVerbose("Kd-Tree MultiThread: Primitives in tree: ", num_primitives);
+		logger.logVerbose("Kd-Tree MultiThread: Interior nodes: ", kd_inodes_, " / ", "leaf nodes: ", kd_leaves_
+				 , " (empty: ", empty_kd_leaves_, " = ", 100.f * static_cast<float>(empty_kd_leaves_) / kd_leaves_, "%)");
+		logger.logVerbose("Kd-Tree MultiThread: Leaf prims: ", kd_prims_, " (", static_cast<float>(kd_prims_) / num_primitives, " x prims in tree, leaf size: ", max_leaf_size, ")");
+		logger.logVerbose("Kd-Tree MultiThread: => ", static_cast<float>(kd_prims_) / (kd_leaves_ - empty_kd_leaves_), " prims per non-empty leaf");
+		logger.logVerbose("Kd-Tree MultiThread: Leaves due to depth limit/bad splits: ", depth_limit_reached_, "/", num_bad_splits_);
+		logger.logVerbose("Kd-Tree MultiThread: clipped primitives: ", clip_, " (", bad_clip_, " bad clips, ", null_clip_, " null clips)");
 	}
 }
 
@@ -126,7 +126,7 @@ AcceleratorKdTreeMultiThread::Stats AcceleratorKdTreeMultiThread::Stats::operato
 
 AcceleratorKdTreeMultiThread::~AcceleratorKdTreeMultiThread()
 {
-	if(Y_LOG_HAS_VERBOSE) Y_VERBOSE << "Kd-Tree MultiThread: Done" << YENDL;
+	if(logger_.isVerbose()) logger_.logVerbose("Kd-Tree MultiThread: Done");
 }
 
 // ============================================================
@@ -135,7 +135,7 @@ AcceleratorKdTreeMultiThread::~AcceleratorKdTreeMultiThread()
 	and binning => O(n)
 */
 
-AcceleratorKdTreeMultiThread::SplitCost AcceleratorKdTreeMultiThread::pigeonMinCost(float e_bonus, float cost_ratio, const std::vector<Bound> &bounds, const Bound &node_bound, const std::vector<uint32_t> &prim_indices)
+AcceleratorKdTreeMultiThread::SplitCost AcceleratorKdTreeMultiThread::pigeonMinCost(Logger &logger, float e_bonus, float cost_ratio, const std::vector<Bound> &bounds, const Bound &node_bound, const std::vector<uint32_t> &prim_indices)
 {
 	const uint32_t num_prim_indices = static_cast<uint32_t>(prim_indices.size());
 	static constexpr int max_bin = 1024;
@@ -251,23 +251,23 @@ AcceleratorKdTreeMultiThread::SplitCost AcceleratorKdTreeMultiThread::pigeonMinC
 		} // for all bins
 		if(num_left != num_prim_indices || num_right != 0)
 		{
-			if(Y_LOG_HAS_VERBOSE)
+			if(logger.isVerbose())
 			{
 				int c_1 = 0, c_2 = 0, c_3 = 0, c_4 = 0, c_5 = 0;
-				Y_VERBOSE << "SCREWED!!\n";
-				for(const auto &bin : bins) { c_1 += bin.n_; std::cout << bin.n_ << " ";}
-				Y_VERBOSE << "\nn total: " << c_1 << "\n";
-				for(const auto &bin : bins) { c_2 += bin.c_left_; Y_VERBOSE << bin.c_left_ << " ";}
-				Y_VERBOSE << "\nc_left total: " << c_2 << "\n";
-				for(const auto &bin : bins) { c_3 += bin.c_bleft_; Y_VERBOSE << bin.c_bleft_ << " ";}
-				Y_VERBOSE << "\nc_bleft total: " << c_3 << "\n";
-				for(const auto &bin : bins) { c_4 += bin.c_both_; Y_VERBOSE << bin.c_both_ << " ";}
-				Y_VERBOSE << "\nc_both total: " << c_4 << "\n";
-				for(const auto &bin : bins) { c_5 += bin.c_right_; Y_VERBOSE << bin.c_right_ << " ";}
-				Y_VERBOSE << "\nc_right total: " << c_5 << "\n";
-				Y_VERBOSE << "\nnPrims: " << num_prim_indices << " num_left: " << num_left << " num_right: " << num_right << "\n";
-				Y_VERBOSE << "total left: " << c_2 + c_3 + c_4 << "\ntotal right: " << c_4 + c_5 << "\n";
-				Y_VERBOSE << "n/2: " << c_1 / 2 << "\n";
+				logger.logVerbose("SCREWED!!");
+				for(const auto &bin : bins) { c_1 += bin.n_; logger.logVerbose(bin.n_, " "); }
+				logger.logVerbose("\nn total: ", c_1);
+				for(const auto &bin : bins) { c_2 += bin.c_left_; logger.logVerbose(bin.c_left_, " "); }
+				logger.logVerbose("\nc_left total: ", c_2);
+				for(const auto &bin : bins) { c_3 += bin.c_bleft_; logger.logVerbose(bin.c_bleft_, " "); }
+				logger.logVerbose("\nc_bleft total: ", c_3);
+				for(const auto &bin : bins) { c_4 += bin.c_both_; logger.logVerbose(bin.c_both_, " "); }
+				logger.logVerbose("\nc_both total: ", c_4);
+				for(const auto &bin : bins) { c_5 += bin.c_right_; logger.logVerbose(bin.c_right_, " "); }
+				logger.logVerbose("\nc_right total: ", c_5);
+				logger.logVerbose("\nnPrims: ", num_prim_indices, " num_left: ", num_left, " num_right: ", num_right);
+				logger.logVerbose("total left: ", c_2 + c_3 + c_4, "\ntotal right: ", c_4 + c_5);
+				logger.logVerbose("n/2: ", c_1 / 2);
 			}
 			throw std::logic_error("cost function mismatch");
 		}
@@ -281,7 +281,7 @@ AcceleratorKdTreeMultiThread::SplitCost AcceleratorKdTreeMultiThread::pigeonMinC
 	Cost function: Find the optimal split with SAH
 */
 
-AcceleratorKdTreeMultiThread::SplitCost AcceleratorKdTreeMultiThread::minimalCost(float e_bonus, float cost_ratio, const Bound &node_bound, const std::vector<uint32_t> &indices, const std::vector<Bound> &bounds)
+AcceleratorKdTreeMultiThread::SplitCost AcceleratorKdTreeMultiThread::minimalCost(Logger &logger, float e_bonus, float cost_ratio, const Bound &node_bound, const std::vector<uint32_t> &indices, const std::vector<Bound> &bounds)
 {
 	const uint32_t num_indices = static_cast<uint32_t>(indices.size());
 	const Vec3 node_bound_axes {node_bound.longX(), node_bound.longY(), node_bound.longZ() };
@@ -386,7 +386,7 @@ AcceleratorKdTreeMultiThread::SplitCost AcceleratorKdTreeMultiThread::minimalCos
 				if(edges_all_axes[axis][edge_id].end_ == BoundEdge::EndBound::Both) --num_right;
 			}
 		}
-		if((num_left != num_indices || num_right != 0) && Y_LOG_HAS_VERBOSE) Y_VERBOSE << "you screwed your new idea!\n";
+		if((num_left != num_indices || num_right != 0) && logger.isVerbose()) logger.logVerbose("you screwed your new idea!");
 	}
 	if(split.axis_ != Axis::None) split.edges_ = std::move(edges_all_axes[split.axis_]);
 	return split;
@@ -445,10 +445,10 @@ void AcceleratorKdTreeMultiThread::buildTreeWorker(const std::vector<const Primi
 			if(primitive->clippingSupport())
 			{
 				const uint32_t poly_id = (clip_plane.pos_ != ClipPlane::Pos::None) ? indices[index_num] : 0; //If the clipping plane is "None" the initial polygon will be ignored anyway, so we can use poly_id=0 to avoid going outside the list of polygons during first clip, when the indices list is a list of primitives indices and not a list of polygons indices
-				const PolyDouble::ClipResultWithBound clip_result = primitive->clipToBound(b_ext, clip_plane, polygons[poly_id], nullptr);
+				const PolyDouble::ClipResultWithBound clip_result = primitive->clipToBound(logger_, b_ext, clip_plane, polygons[poly_id], nullptr);
 				//std::string polygon_str = "(polygons empty!)";
 				//if(!polygons.empty()) polygon_str = polygons[poly_id].print();
-				//if(Y_LOG_HAS_DEBUG) Y_DEBUG PRPREC(12) << " depth=" << depth << " i=" << index_num << " poly_id=" << poly_id << " i_poly=" << polygon_str << " result=" << clip_result.clip_result_code_ << " o_poly=" << clip_result.poly_.print() PREND;
+				//if(logger_.isDebug()) Y_DEBUG PRPREC(12) << " depth=" << depth << " i=" << index_num << " poly_id=" << poly_id << " i_poly=" << polygon_str << " result=" << clip_result.clip_result_code_ << " o_poly=" << clip_result.poly_.print(");
 
 				if(clip_result.clip_result_code_ == PolyDouble::ClipResultWithBound::Correct)
 				{
@@ -488,8 +488,8 @@ void AcceleratorKdTreeMultiThread::buildTreeWorker(const std::vector<const Primi
 	//<< calculate cost for all axes and chose minimum >>
 	const float modified_empty_bonus = parameters.empty_bonus_ * (1.1 - static_cast<float>(depth) / static_cast<float>(parameters.max_depth_));
 	SplitCost split;
-	if(num_new_indices > pigeon_sort_threshold) split = pigeonMinCost(modified_empty_bonus, parameters.cost_ratio_, new_bounds, node_bound, new_indices);
-	else split = minimalCost(modified_empty_bonus, parameters.cost_ratio_, node_bound, new_indices, new_bounds);
+	if(num_new_indices > pigeon_sort_threshold) split = pigeonMinCost(logger_, modified_empty_bonus, parameters.cost_ratio_, new_bounds, node_bound, new_indices);
+	else split = minimalCost(logger_, modified_empty_bonus, parameters.cost_ratio_, node_bound, new_indices, new_bounds);
 	result.stats_.early_out_ += split.stats_early_out_;
 	//<< if (minimum > leafcost) increase bad refines >>
 	if(split.cost_ > static_cast<float>(num_new_indices)) ++bad_refines;

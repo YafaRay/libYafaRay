@@ -34,22 +34,22 @@ BEGIN_YAFARAY
 std::unique_ptr<Image> HdrFormat::loadFromFile(const std::string &name, const Image::Optimization &optimization, const ColorSpace &color_space, float gamma)
 {
 	std::FILE *fp = File::open(name, "rb");
-	Y_INFO << getFormatName() << ": Loading image \"" << name << "\"..." << YENDL;
+	logger_.logInfo(getFormatName(), ": Loading image \"", name, "\"...");
 	if(!fp)
 	{
-		Y_ERROR << getFormatName() << ": Cannot open file " << name << YENDL;
+		logger_.logError(getFormatName(), ": Cannot open file ", name);
 		return nullptr;
 	}
 	int width = 0;
 	int height = 0;
 	if(!readHeader(fp, width, height))
 	{
-		Y_ERROR << getFormatName() << ": An error has occurred while reading the header..." << YENDL;
+		logger_.logError(getFormatName(), ": An error has occurred while reading the header...");
 		File::close(fp);
 		return nullptr;
 	}
 	const Image::Type type = Image::getTypeFromSettings(true, grayscale_);
-	std::unique_ptr<Image> image = Image::factory(width, height, type, optimization);
+	std::unique_ptr<Image> image = Image::factory(logger_, width, height, type, optimization);
 	const int scan_width = (header_.y_first_) ? width : height;
 	// run length encoding is not allowed so read flat and exit
 	if((scan_width < 8) || (scan_width > 0x7fff))
@@ -58,7 +58,7 @@ std::unique_ptr<Image> HdrFormat::loadFromFile(const std::string &name, const Im
 		{
 			if(!readOrle(fp, y, scan_width, image.get(), color_space, gamma))
 			{
-				Y_ERROR << getFormatName() << ": An error has occurred while reading uncompressed scanline..." << YENDL;
+				logger_.logError(getFormatName(), ": An error has occurred while reading uncompressed scanline...");
 				File::close(fp);
 				return nullptr;
 			}
@@ -72,13 +72,13 @@ std::unique_ptr<Image> HdrFormat::loadFromFile(const std::string &name, const Im
 		RgbePixel pix;
 		if(std::fread((char *)&pix, 1, sizeof(RgbePixel), fp) != sizeof(RgbePixel))
 		{
-			Y_ERROR << getFormatName() << ": An error has occurred while reading scanline start..." << YENDL;
+			logger_.logError(getFormatName(), ": An error has occurred while reading scanline start...");
 			File::close(fp);
 			return nullptr;
 		}
 		if(std::feof(fp))
 		{
-			Y_ERROR << getFormatName() << ": EOF reached while reading scanline start..." << YENDL;
+			logger_.logError(getFormatName(), ": EOF reached while reading scanline start...");
 			File::close(fp);
 			return nullptr;
 		}
@@ -86,13 +86,13 @@ std::unique_ptr<Image> HdrFormat::loadFromFile(const std::string &name, const Im
 		{
 			if(pix.getArleCount() > scan_width)
 			{
-				Y_ERROR << getFormatName() << ": Error reading, invalid ARLE scanline width..." << YENDL;
+				logger_.logError(getFormatName(), ": Error reading, invalid ARLE scanline width...");
 				File::close(fp);
 				return nullptr;
 			}
 			if(!readArle(fp, y, pix.getArleCount(), image.get(), color_space, gamma))
 			{
-				Y_ERROR << getFormatName() << ": An error has occurred while reading ARLE scanline..." << YENDL;
+				logger_.logError(getFormatName(), ": An error has occurred while reading ARLE scanline...");
 				File::close(fp);
 				return nullptr;
 			}
@@ -103,14 +103,14 @@ std::unique_ptr<Image> HdrFormat::loadFromFile(const std::string &name, const Im
 			std::fseek(fp, static_cast<long int>(-sizeof(RgbePixel)), SEEK_CUR);
 			if(!readOrle(fp, y, scan_width, image.get(), color_space, gamma))
 			{
-				Y_ERROR << getFormatName() << ": An error has occurred while reading RLE scanline..." << YENDL;
+				logger_.logError(getFormatName(), ": An error has occurred while reading RLE scanline...");
 				File::close(fp);
 				return nullptr;
 			}
 		}
 	}
 	File::close(fp);
-	if(Y_LOG_HAS_VERBOSE) Y_VERBOSE << getFormatName() << ": Done." << YENDL;
+	if(logger_.isVerbose()) logger_.logVerbose(getFormatName(), ": Done.");
 	return image;
 }
 
@@ -122,7 +122,7 @@ bool HdrFormat::readHeader(FILE *fp, int &width, int &height)
 	std::string line = std::string(linebuf);
 	if(line.find("#?") == std::string::npos)
 	{
-		Y_ERROR << getFormatName() << ": File is not a valid Radiance RBGE image..." << YENDL;
+		logger_.logError(getFormatName(), ": File is not a valid Radiance RBGE image...");
 		std::free(linebuf);
 		return false;
 	}
@@ -140,7 +140,7 @@ bool HdrFormat::readHeader(FILE *fp, int &width, int &height)
 		{
 			if(line.substr(found_pos + 7).find("32-bit_rle_rgbe") == std::string::npos)
 			{
-				Y_ERROR << getFormatName() << ": Sorry this is an XYZE file, only RGBE images are supported..." << YENDL;
+				logger_.logError(getFormatName(), ": Sorry this is an XYZE file, only RGBE images are supported...");
 				std::free(linebuf);
 				return false;
 			}
@@ -203,7 +203,7 @@ bool HdrFormat::readOrle(std::FILE *fp, int y, int scan_width, Image *image, con
 	{
 		if(std::fread((char *)&pixel, 1, sizeof(RgbePixel), fp) != sizeof(RgbePixel))
 		{
-			Y_ERROR << getFormatName() << ": An error has occurred while reading RLE scanline header..." << YENDL;
+			logger_.logError(getFormatName(), ": An error has occurred while reading RLE scanline header...");
 			return false;
 		}
 		// RLE encoded
@@ -212,7 +212,7 @@ bool HdrFormat::readOrle(std::FILE *fp, int y, int scan_width, Image *image, con
 			int count = pixel.getOrleCount(rshift);
 			if(count > scan_width - x)
 			{
-				Y_ERROR << getFormatName() << ": Scanline width greater than image width..." << YENDL;
+				logger_.logError(getFormatName(), ": Scanline width greater than image width...");
 				return false;
 			}
 			pixel = scanline[x - 1];
@@ -244,7 +244,7 @@ bool HdrFormat::readArle(std::FILE *fp, int y, int scan_width, Image *image, con
 	auto scanline = std::unique_ptr<RgbePixel[]>(new RgbePixel[scan_width]); // Scanline buffer
 	if(!scanline) //FIXME: this no longer does anything since exceptions were introduced, failing "new" does not return nullptr but an exception (which is unhandled here)
 	{
-		Y_ERROR << getFormatName() << ": Unable to allocate buffer memory..." << YENDL;
+		logger_.logError(getFormatName(), ": Unable to allocate buffer memory...");
 		return false;
 	}
 	// Read the 4 pieces of the scanline in order RGBE
@@ -256,7 +256,7 @@ bool HdrFormat::readArle(std::FILE *fp, int y, int scan_width, Image *image, con
 			uint8_t count = 0; // run description
 			if(std::fread((char *)&count, 1, 1, fp) != 1)
 			{
-				Y_ERROR << getFormatName() << ": An error has occurred while reading ARLE scanline..." << YENDL;
+				logger_.logError(getFormatName(), ": An error has occurred while reading ARLE scanline...");
 				return false;
 			}
 			if(count > 128)
@@ -264,13 +264,13 @@ bool HdrFormat::readArle(std::FILE *fp, int y, int scan_width, Image *image, con
 				count &= 0x7F; // get the value without the run flag (value mask: 01111111)
 				if(count + j > scan_width)
 				{
-					Y_ERROR << getFormatName() << ": Run width greater than image width..." << YENDL;
+					logger_.logError(getFormatName(), ": Run width greater than image width...");
 					return false;
 				}
 				uint8_t col = 0; // color component
 				if(std::fread((char *)&col, 1, 1, fp) != 1)
 				{
-					Y_ERROR << getFormatName() << ": An error has occurred while reading ARLE scanline..." << YENDL;
+					logger_.logError(getFormatName(), ": An error has occurred while reading ARLE scanline...");
 					return false;
 				}
 				while(count--) scanline[j++][chan] = col;
@@ -279,7 +279,7 @@ bool HdrFormat::readArle(std::FILE *fp, int y, int scan_width, Image *image, con
 			{
 				if(count + j > scan_width)
 				{
-					Y_ERROR << getFormatName() << ": Non-run width greater than image width or equal to zero..." << YENDL;
+					logger_.logError(getFormatName(), ": Non-run width greater than image width or equal to zero...");
 					return false;
 				}
 				while(count--)
@@ -287,7 +287,7 @@ bool HdrFormat::readArle(std::FILE *fp, int y, int scan_width, Image *image, con
 					uint8_t col = 0; // color component
 					if(std::fread((char *)&col, 1, 1, fp) != 1)
 					{
-						Y_ERROR << getFormatName() << ": An error has occurred while reading ARLE scanline..." << YENDL;
+						logger_.logError(getFormatName(), ": An error has occurred while reading ARLE scanline...");
 						return false;
 					}
 					scanline[j++][chan] = col;
@@ -330,13 +330,13 @@ bool HdrFormat::saveToFile(const std::string &name, const Image *image)
 			// write the scanline RLE compressed by channel in 4 separated blocks not as contigous pixels pixel blocks
 			if(!writeScanline(file, scanline.get(), image))
 			{
-				Y_ERROR << getFormatName() << ": An error has occurred during scanline saving..." << YENDL;
+				logger_.logError(getFormatName(), ": An error has occurred during scanline saving...");
 				return false;
 			}
 		}
 		file.close();
 	}
-	if(Y_LOG_HAS_VERBOSE) Y_VERBOSE << getFormatName() << ": Done." << YENDL;
+	if(logger_.isVerbose()) logger_.logVerbose(getFormatName(), ": Done.");
 	return true;
 }
 
@@ -412,9 +412,9 @@ bool HdrFormat::writeScanline(std::ofstream &file, RgbePixel *scanline, const Im
 	return true;
 }
 
-std::unique_ptr<Format> HdrFormat::factory(ParamMap &params)
+std::unique_ptr<Format> HdrFormat::factory(Logger &logger, ParamMap &params)
 {
-	return std::unique_ptr<Format>(new HdrFormat());
+	return std::unique_ptr<Format>(new HdrFormat(logger));
 }
 
 END_YAFARAY

@@ -24,6 +24,7 @@
 #include "geometry/bound.h"
 #include <vector>
 #include <array>
+#include <common/logger.h>
 
 BEGIN_YAFARAY
 
@@ -40,10 +41,10 @@ class PolyDouble
 		struct ClipResult;
 		struct ClipResultWithBound;
 		/* Sutherland-Hodgman triangle clipping */
-		static ClipResultWithBound planeClipWithBound(double pos, const ClipPlane &clip_plane, const PolyDouble &poly);
-		static ClipResultWithBound boxClip(const Vec3Double &b_min, const Vec3Double &b_max, const PolyDouble &poly);
+		static PolyDouble::ClipResultWithBound planeClipWithBound(Logger &logger, double pos, const ClipPlane &clip_plane, const PolyDouble &poly);
+		static PolyDouble::ClipResultWithBound boxClip(Logger &logger, const Vec3Double &b_max, const PolyDouble &poly, const Vec3Double &b_min);
 	private:
-		static ClipResult planeClip(double pos, const ClipPlane &clip_plane, const PolyDouble &poly);
+		static PolyDouble::ClipResult planeClip(Logger &logger, double pos, const ClipPlane &clip_plane, const PolyDouble &poly);
 		static Bound getBound(const PolyDouble &poly);
 		std::array<Vec3Double, 10> vertices_; //Limited to triangles + 6 clipping planes cuts, or to quads + 6 clipping planes (total 10 edges/vertices max)
 		size_t size_ = 0;

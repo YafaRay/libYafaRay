@@ -27,8 +27,8 @@
 
 BEGIN_YAFARAY
 
-SpotLight::SpotLight(const Point3 &from, const Point3 &to, const Rgb &col, float power, float angle, float falloff, bool s_sha, int smpl, float ssfuzzy, bool b_light_enabled, bool b_cast_shadows):
-		Light(Light::Flags::Singular), position_(from), soft_shadows_(s_sha), shadow_fuzzy_(ssfuzzy), samples_(smpl)
+SpotLight::SpotLight(Logger &logger, const Point3 &from, const Point3 &to, const Rgb &col, float power, float angle, float falloff, bool s_sha, int smpl, float ssfuzzy, bool b_light_enabled, bool b_cast_shadows):
+		Light(logger, Light::Flags::Singular), position_(from), soft_shadows_(s_sha), shadow_fuzzy_(ssfuzzy), samples_(smpl)
 {
 	light_enabled_ = b_light_enabled;
 	cast_shadows_ = b_cast_shadows;
@@ -154,7 +154,7 @@ Rgb SpotLight::emitPhoton(float s_1, float s_2, float s_3, float s_4, Ray &ray, 
 	else // sample in the falloff area
 	{
 		float spdf;
-		float sm_2 = pdf_->sample(s_2, &spdf) * pdf_->inv_count_;
+		float sm_2 = pdf_->sample(logger_, s_2, &spdf) * pdf_->inv_count_;
 		ipdf = math::mult_pi_by_2 * (cos_start_ - cos_end_) / (interv_2_ * spdf);
 		double cos_ang = cos_end_ + (cos_start_ - cos_end_) * (double)sm_2;
 		double sin_ang = math::sqrt(1.0 - cos_ang * cos_ang);
@@ -178,7 +178,7 @@ Rgb SpotLight::emitSample(Vec3 &wo, LSample &s) const
 	else // sample in the falloff area
 	{
 		float spdf;
-		float sm_2 = pdf_->sample(s.s_2_, &spdf) * pdf_->inv_count_;
+		float sm_2 = pdf_->sample(logger_, s.s_2_, &spdf) * pdf_->inv_count_;
 		s.dir_pdf_ = (interv_2_ * spdf) / (math::mult_pi_by_2 * (cos_start_ - cos_end_));
 		double cos_ang = cos_end_ + (cos_start_ - cos_end_) * (double)sm_2;
 		double sin_ang = math::sqrt(1.0 - cos_ang * cos_ang);
@@ -240,14 +240,14 @@ bool SpotLight::intersect(const Ray &ray, float &t, Rgb &col, float &ipdf) const
 			}
 
 			ipdf = 1.f / (t * t);
-			if(Y_LOG_HAS_VERBOSE) Y_VERBOSE << "SpotLight: ipdf, color = " << ipdf << ", " << color_ << YENDL;
+			if(logger_.isVerbose()) logger_.logVerbose("SpotLight: ipdf, color = ", ipdf, ", ", color_);
 			return true;
 		}
 	}
 	return false;
 }
 
-std::unique_ptr<Light> SpotLight::factory(ParamMap &params, const Scene &scene)
+std::unique_ptr<Light> SpotLight::factory(Logger &logger, ParamMap &params, const Scene &scene)
 {
 	Point3 from(0.0);
 	Point3 to(0.f, 0.f, -1.f);
@@ -278,7 +278,7 @@ std::unique_ptr<Light> SpotLight::factory(ParamMap &params, const Scene &scene)
 	params.getParam("with_caustic", shoot_c);
 	params.getParam("with_diffuse", shoot_d);
 
-	auto light = std::unique_ptr<SpotLight>(new SpotLight(from, to, color, power, angle, falloff, soft_shadows, smpl, ssfuzzy, light_enabled, cast_shadows));
+	auto light = std::unique_ptr<SpotLight>(new SpotLight(logger, from, to, color, power, angle, falloff, soft_shadows, smpl, ssfuzzy, light_enabled, cast_shadows));
 
 	light->shoot_caustic_ = shoot_c;
 	light->shoot_diffuse_ = shoot_d;

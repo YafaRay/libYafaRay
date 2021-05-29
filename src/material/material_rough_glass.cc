@@ -30,8 +30,8 @@
 BEGIN_YAFARAY
 
 
-RoughGlassMaterial::RoughGlassMaterial(float ior, Rgb filt_c, const Rgb &srcol, bool fake_s, float alpha, float disp_pow, Visibility e_visibility):
-		filter_color_(filt_c), specular_reflection_color_(srcol), ior_(ior), a_2_(alpha * alpha), fake_shadow_(fake_s), dispersion_power_(disp_pow)
+RoughGlassMaterial::RoughGlassMaterial(Logger &logger, float ior, Rgb filt_c, const Rgb &srcol, bool fake_s, float alpha, float disp_pow, Visibility e_visibility):
+		NodeMaterial(logger), filter_color_(filt_c), specular_reflection_color_(srcol), ior_(ior), a_2_(alpha * alpha), fake_shadow_(fake_s), dispersion_power_(disp_pow)
 {
 	visibility_ = e_visibility;
 	bsdf_flags_ = BsdfFlags::AllGlossy;
@@ -268,7 +268,7 @@ float RoughGlassMaterial::getMatIor() const
 	return ior_;
 }
 
-std::unique_ptr<Material> RoughGlassMaterial::factory(ParamMap &params, std::list< ParamMap > &param_list, const Scene &scene)
+std::unique_ptr<Material> RoughGlassMaterial::factory(Logger &logger, ParamMap &params, std::list<ParamMap> &param_list, const Scene &scene)
 {
 	float ior = 1.4;
 	float filt = 0.f;
@@ -310,7 +310,7 @@ std::unique_ptr<Material> RoughGlassMaterial::factory(ParamMap &params, std::lis
 
 	alpha = std::max(1e-4f, std::min(alpha * 0.5f, 1.f));
 
-	auto mat = std::unique_ptr<RoughGlassMaterial>(new RoughGlassMaterial(ior, filt * filt_col + Rgb(1.f - filt), sr_col, fake_shad, alpha, disp_power, visibility));
+	auto mat = std::unique_ptr<RoughGlassMaterial>(new RoughGlassMaterial(logger, ior, filt * filt_col + Rgb(1.f - filt), sr_col, fake_shad, alpha, disp_power, visibility));
 
 	mat->setMaterialIndex(mat_pass_index);
 	mat->receive_shadows_ = receive_shadows;
@@ -348,7 +348,7 @@ std::unique_ptr<Material> RoughGlassMaterial::factory(ParamMap &params, std::lis
 				map["type"] = std::string("beer");
 				map["absorption_col"] = absorp;
 				map["absorption_dist"] = Parameter(dist);
-				mat->vol_i_ = VolumeHandler::factory(map, scene);
+				mat->vol_i_ = VolumeHandler::factory(logger, map, scene);
 				mat->bsdf_flags_ |= BsdfFlags::Volumetric;
 			}
 		}
@@ -370,7 +370,7 @@ std::unique_ptr<Material> RoughGlassMaterial::factory(ParamMap &params, std::lis
 		mat->parseNodes(params, roots, node_list);
 	}
 	else
-		Y_ERROR << "RoughGlass: loadNodes() failed!" << YENDL;
+		logger.logError("RoughGlass: loadNodes() failed!");
 
 	mat->mirror_color_shader_ = node_list["mirror_color_shader"];
 	mat->bump_shader_ = node_list["bump_shader"];

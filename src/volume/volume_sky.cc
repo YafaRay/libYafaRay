@@ -83,7 +83,7 @@ float SkyVolumeRegion::phaseMie(const Vec3 &w_l, const Vec3 &w_s) const
 }
 
 
-std::unique_ptr<VolumeRegion> SkyVolumeRegion::factory(const ParamMap &params, const Scene &scene)
+std::unique_ptr<VolumeRegion> SkyVolumeRegion::factory(Logger &logger, const ParamMap &params, const Scene &scene)
 {
 	float ss = .1f;
 	float sa = .1f;
@@ -102,10 +102,11 @@ std::unique_ptr<VolumeRegion> SkyVolumeRegion::factory(const ParamMap &params, c
 	params.getParam("maxY", max[1]);
 	params.getParam("maxZ", max[2]);
 
-	return std::unique_ptr<VolumeRegion>(new SkyVolumeRegion(Rgb(sa), Rgb(ss), Rgb(le), Point3(min[0], min[1], min[2]), Point3(max[0], max[1], max[2])));
+	return std::unique_ptr<VolumeRegion>(new SkyVolumeRegion(logger, Rgb(sa), Rgb(ss), Rgb(le), Point3(min[0], min[1], min[2]), Point3(max[0], max[1], max[2])));
 }
 
-SkyVolumeRegion::SkyVolumeRegion(Rgb sa, Rgb ss, Rgb le, Point3 pmin, Point3 pmax) {
+SkyVolumeRegion::SkyVolumeRegion(Logger &logger, Rgb sa, Rgb ss, Rgb le, Point3 pmin, Point3 pmax) : VolumeRegion(logger)
+{
 	b_box_ = Bound(pmin, pmax);
 	s_a_ = Rgb(0.f);
 	s_ray_ = sa;
@@ -114,7 +115,7 @@ SkyVolumeRegion::SkyVolumeRegion(Rgb sa, Rgb ss, Rgb le, Point3 pmin, Point3 pma
 	s_s_ = Rgb(0.f);
 	l_e_ = le;
 	g_ = 0.f;
-	if(Y_LOG_HAS_VERBOSE) Y_VERBOSE << "SkyVolume: Vol. [" << s_ray_ << ", " << s_mie_ << ", " << l_e_ << "]" << YENDL;
+	if(logger_.isVerbose()) logger_.logVerbose("SkyVolume: Vol. [", s_ray_, ", ", s_mie_, ", ", l_e_, "]");
 }
 
 END_YAFARAY

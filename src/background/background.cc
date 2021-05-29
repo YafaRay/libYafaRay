@@ -28,20 +28,20 @@
 
 BEGIN_YAFARAY
 
-std::shared_ptr<Background> Background::factory(ParamMap &params, Scene &scene)
+std::shared_ptr<Background> Background::factory(Logger &logger, ParamMap &params, Scene &scene)
 {
-	if(Y_LOG_HAS_DEBUG)
+	if(logger.isDebug())
 	{
-		Y_DEBUG PRTEXT(**Background) PREND;
-		params.printDebug();
+		logger.logDebug("**Background");
+		params.logContents(logger);
 	}
 	std::string type;
 	params.getParam("type", type);
-	if(type == "darksky") return DarkSkyBackground::factory(params, scene);
-	else if(type == "gradientback") return GradientBackground::factory(params, scene);
-	else if(type == "sunsky") return SunSkyBackground::factory(params, scene);
-	else if(type == "textureback") return TextureBackground::factory(params, scene);
-	else if(type == "constant") return ConstantBackground::factory(params, scene);
+	if(type == "darksky") return DarkSkyBackground::factory(logger, params, scene);
+	else if(type == "gradientback") return GradientBackground::factory(logger, params, scene);
+	else if(type == "sunsky") return SunSkyBackground::factory(logger, params, scene);
+	else if(type == "textureback") return TextureBackground::factory(logger, params, scene);
+	else if(type == "constant") return ConstantBackground::factory(logger, params, scene);
 	else return nullptr;
 }
 

@@ -37,9 +37,9 @@ BEGIN_YAFARAY
 
 Path::Path(const std::string &directory, const std::string &base_name, const std::string &extension) : directory_(directory), base_name_(base_name), extension_(extension)
 {
-	//if(Y_LOG_HAS_DEBUG) Y_DEBUG << "Directory: " << directory << YENDL;
-	//if(Y_LOG_HAS_DEBUG) Y_DEBUG << "Base name: " << baseName << YENDL;
-	//if(Y_LOG_HAS_DEBUG) Y_DEBUG << "Extension: " << extension << YENDL;
+	//// if(logger_.isDebug())logger_.logDebug("Directory: " << directory);
+	//// if(logger_.isDebug())logger_.logDebug("Base name: " << baseName);
+	//// if(logger_.isDebug())logger_.logDebug("Extension: " << extension);
 }
 
 Path::Path(const std::string &full_path)
@@ -67,9 +67,9 @@ Path::Path(const std::string &full_path)
 		base_name_ = full_name;
 		extension_  = "";
 	}
-	//if(Y_LOG_HAS_DEBUG) Y_DEBUG << "Directory: " << directory << YENDL;
-	//if(Y_LOG_HAS_DEBUG) Y_DEBUG << "Base name: " << baseName << YENDL;
-	//if(Y_LOG_HAS_DEBUG) Y_DEBUG << "Extension: " << extension << YENDL;
+	//// if(logger_.isDebug())logger_.logDebug("Directory: " << directory);
+	//// if(logger_.isDebug())logger_.logDebug("Base name: " << baseName);
+	//// if(logger_.isDebug())logger_.logDebug("Extension: " << extension);
 }
 
 std::string Path::getParent(const std::string &path)
@@ -87,7 +87,7 @@ std::string Path::getParentDirectory() const
 
 std::string Path::getFullPath() const
 {
-	////if(Y_LOG_HAS_DEBUG) Y_DEBUG PR(directory) PR(baseName) PR(extension) PREND;
+	////// if(logger_.isDebug()) Y_DEBUG PR(directory) PR(baseName) PR(extension");
 	std::string full_path;
 	if(!directory_.empty()) full_path += directory_ + "/";
 	full_path += base_name_;
@@ -106,7 +106,7 @@ File::File(const Path &path) : path_(path)
 
 File::~File()
 {
-	if(Y_LOG_HAS_DEBUG) Y_DEBUG PRTEXT(File::~File closing) PR(fp_) PR(path_.getFullPath()) PREND;
+	// if(logger_.isDebug()) logger.logDebug("File::~File closing) PR(fp_) PR(path_.getFullPath()");
 	File::close();
 }
 
@@ -202,7 +202,7 @@ bool File::append(const char *buffer, size_t size)
 
 int File::close()
 {
-	if(Y_LOG_HAS_DEBUG) Y_DEBUG PRTEXT(File::close) PR(fp_) PR(path_.getFullPath()) PREND;
+	// if(logger_.isDebug()) logger.logDebug("File::close) PR(fp_) PR(path_.getFullPath()");
 	if(!fp_) return false;
 	int result = std::fclose(fp_);
 	fp_ = nullptr;
@@ -221,7 +221,7 @@ std::FILE *File::open(const std::string &path, const std::string &access_mode)
 #else //_WIN32
 	fp = std::fopen(path.c_str(), access_mode.c_str());
 #endif //_WIN32
-	if(Y_LOG_HAS_DEBUG) Y_DEBUG PRTEXT(File::open) PR(path) PR(access_mode) PR(fp) PREND;
+	// if(logger_.isDebug()) logger.logDebug("File::open) PR(path) PR(access_mode) PR(fp");
 	return fp;
 }
 
@@ -232,7 +232,7 @@ std::FILE *File::open(const Path &path, const std::string &access_mode)
 
 int File::close(std::FILE *fp)
 {
-	if(Y_LOG_HAS_DEBUG) Y_DEBUG PRTEXT(File::close execution) PR(fp) PREND;
+	// if(logger_.isDebug()) logger.logDebug("File::close execution) PR(fp");
 	return std::fclose(fp);
 }
 
@@ -246,20 +246,20 @@ bool File::exists(const std::string &path, bool files_only)
 	const int errsav = errno;
 	char timebuf[26];
 	/* const errno_t err = */ ::ctime_s(timebuf, 26, &buf.st_mtime);
-	//if(Y_LOG_HAS_DEBUG) Y_DEBUG <<  "Time modified : " << timebuf << YENDL;
+	//// if(logger_.isDebug())logger_.logDebug( "Time modified : " << timebuf);
 #else //_WIN32
 	struct ::stat buf;
 	errno = 0;
 	/*const int result = */::lstat(path.c_str(), &buf);   //use regular stat or else use lstat so it does not follow symlinks?
 	const int errsav = errno;
 #endif //_WIN32
-	//if(Y_LOG_HAS_DEBUG) Y_DEBUG << "Result stat: " << result << YENDL;
-	//if(Y_LOG_HAS_DEBUG) Y_DEBUG << "File size     : " << buf.st_size << YENDL;
-	//if(Y_LOG_HAS_DEBUG) Y_DEBUG << "Drive         : " << buf.st_dev + 'A' << YENDL;
-	//if(Y_LOG_HAS_DEBUG) Y_DEBUG << "Type:         : " << buf.st_mode << YENDL;
-	//if(Y_LOG_HAS_DEBUG) Y_DEBUG << "S_ISREG(buf.st_mode): " << ((buf.st_mode & S_IFMT) == S_IFREG) << YENDL;
-	//if(Y_LOG_HAS_DEBUG) Y_DEBUG << "errsav: " << errsav << ", ENOENT=" << ENOENT << YENDL;
-	//if(Y_LOG_HAS_DEBUG) Y_DEBUG << "path: " << path << YENDL;
+	//// if(logger_.isDebug())logger_.logDebug("Result stat: " << result);
+	//// if(logger_.isDebug())logger_.logDebug("File size     : " << buf.st_size);
+	//// if(logger_.isDebug())logger_.logDebug("Drive         : " << buf.st_dev + 'A');
+	//// if(logger_.isDebug())logger_.logDebug("Type:         : " << buf.st_mode);
+	//// if(logger_.isDebug())logger_.logDebug("S_ISREG(buf.st_mode): " << ((buf.st_mode & S_IFMT) == S_IFREG));
+	//// if(logger_.isDebug())logger_.logDebug("errsav: " << errsav << ", ENOENT=" << ENOENT);
+	//// if(logger_.isDebug())logger_.logDebug("path: " << path);
 	if(files_only) return errsav != ENOENT && ((buf.st_mode & S_IFMT) == S_IFREG);
 	else return errno != ENOENT;
 }

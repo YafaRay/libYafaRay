@@ -20,6 +20,7 @@
 #ifndef YAFARAY_LIGHT_AREA_H
 #define YAFARAY_LIGHT_AREA_H
 
+#include <common/logger.h>
 #include "light/light.h"
 #include "geometry/vector.h"
 
@@ -31,11 +32,10 @@ class ParamMap;
 class AreaLight final : public Light
 {
 	public:
-		static std::unique_ptr<Light> factory(ParamMap &params, const Scene &scene);
+		static std::unique_ptr<Light> factory(Logger &logger, ParamMap &params, const Scene &scene);
 
 	private:
-		AreaLight(const Point3 &c, const Vec3 &v_1, const Vec3 &v_2,
-				  const Rgb &col, float inte, int nsam, bool light_enabled = true, bool cast_shadows = true);
+		AreaLight(Logger &logger, const Point3 &c, const Vec3 &v_1, const Vec3 &v_2, const Rgb &col, float inte, int nsam, bool light_enabled = true, bool cast_shadows = true);
 		virtual void init(Scene &scene) override;
 		virtual Rgb totalEnergy() const override;
 		virtual Rgb emitPhoton(float s_1, float s_2, float s_3, float s_4, Ray &ray, float &ipdf) const override;

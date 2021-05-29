@@ -33,25 +33,25 @@
 
 BEGIN_YAFARAY
 
-std::unique_ptr<Light> Light::factory(ParamMap &params, const Scene &scene)
+std::unique_ptr<Light> Light::factory(Logger &logger, ParamMap &params, const Scene &scene)
 {
-	if(Y_LOG_HAS_DEBUG)
+	if(logger.isDebug())
 	{
-		Y_DEBUG PRTEXT(**Light) PREND;
-		params.printDebug();
+		logger.logDebug("**Light");
+		params.logContents(logger);
 	}
 	std::string type;
 	params.getParam("type", type);
-	if(type == "arealight") return AreaLight::factory(params, scene);
-	else if(type == "bgPortalLight") return BackgroundPortalLight::factory(params, scene);
-	else if(type == "meshlight") return MeshLight::factory(params, scene);
-	else if(type == "bglight") return BackgroundLight::factory(params, scene);
-	else if(type == "directional") return DirectionalLight::factory(params, scene);
-	else if(type == "ieslight") return IesLight::factory(params, scene);
-	else if(type == "pointlight") return PointLight::factory(params, scene);
-	else if(type == "spherelight") return SphereLight::factory(params, scene);
-	else if(type == "spotlight") return SpotLight::factory(params, scene);
-	else if(type == "sunlight") return SunLight::factory(params, scene);
+	if(type == "arealight") return AreaLight::factory(logger, params, scene);
+	else if(type == "bgPortalLight") return BackgroundPortalLight::factory(logger, params, scene);
+	else if(type == "meshlight") return MeshLight::factory(logger, params, scene);
+	else if(type == "bglight") return BackgroundLight::factory(logger, params, scene);
+	else if(type == "directional") return DirectionalLight::factory(logger, params, scene);
+	else if(type == "ieslight") return IesLight::factory(logger, params, scene);
+	else if(type == "pointlight") return PointLight::factory(logger, params, scene);
+	else if(type == "spherelight") return SphereLight::factory(logger, params, scene);
+	else if(type == "spotlight") return SpotLight::factory(logger, params, scene);
+	else if(type == "sunlight") return SunLight::factory(logger, params, scene);
 	else return nullptr;
 }
 

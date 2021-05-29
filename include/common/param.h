@@ -31,6 +31,7 @@ class Rgb;
 class Rgba;
 class Vec3;
 class Matrix4;
+class Logger;
 
 /*! a class that can hold exactly one value of a range types.
 */
@@ -100,7 +101,7 @@ class ParamMap
 		}
 		Parameter &operator [](const std::string &key);
 		std::string print() const;
-		void printDebug() const;
+		void logContents(Logger &logger) const;
 
 		void clear();
 		std::map<std::string, Parameter>::const_iterator begin() const;

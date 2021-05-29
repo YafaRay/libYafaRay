@@ -26,8 +26,8 @@ BEGIN_YAFARAY
 class DebugOutput final : public ColorOutput
 {
 	public:
-		static UniquePtr_t<ColorOutput> factory(const ParamMap &params, const Scene &scene, void *callback_user_data = nullptr, OutputPutpixelCallback_t output_putpixel_callback = nullptr, OutputFlushAreaCallback_t output_flush_area_callback = nullptr, OutputFlushCallback_t output_flush_callback = nullptr);
-		DebugOutput(const std::string &name = "out", const ColorSpace color_space = ColorSpace::RawManualGamma, float gamma = 1.f, bool with_alpha = true, bool alpha_premultiply = false, void *callback_user_data = nullptr, OutputPutpixelCallback_t output_putpixel_callback = nullptr, OutputFlushAreaCallback_t output_flush_area_callback = nullptr, OutputFlushCallback_t output_flush_callback = nullptr) : ColorOutput(name, color_space, gamma, with_alpha, alpha_premultiply, callback_user_data, output_putpixel_callback, output_flush_area_callback, output_flush_callback) { }
+		static UniquePtr_t <yafaray4::ColorOutput> factory(Logger &logger, const ParamMap &params, const Scene &scene, void *callback_user_data, yafaray4_OutputPutpixelCallback_t output_putpixel_callback, yafaray4_OutputFlushAreaCallback_t output_flush_area_callback, yafaray4_OutputFlushCallback_t output_flush_callback);
+		DebugOutput(Logger &logger, const std::string &name = "out", const ColorSpace color_space = ColorSpace::RawManualGamma, float gamma = 1.f, bool with_alpha = true, bool alpha_premultiply = false, void *callback_user_data = nullptr, yafaray4_OutputPutpixelCallback_t output_putpixel_callback = nullptr, yafaray4_OutputFlushAreaCallback_t output_flush_area_callback = nullptr, yafaray4_OutputFlushCallback_t output_flush_callback = nullptr) : ColorOutput(logger, name, color_space, gamma, with_alpha, alpha_premultiply, callback_user_data, output_putpixel_callback, output_flush_area_callback, output_flush_callback) { }
 
 	private:
 		virtual bool putPixel(int x, int y, const ColorLayer &color_layer) override;

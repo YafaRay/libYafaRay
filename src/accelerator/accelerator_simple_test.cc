@@ -23,13 +23,13 @@
 
 BEGIN_YAFARAY
 
-std::unique_ptr<Accelerator> AcceleratorSimpleTest::factory(const std::vector<const Primitive *> &primitives, ParamMap &params)
+std::unique_ptr<Accelerator> AcceleratorSimpleTest::factory(Logger &logger, const std::vector<const Primitive *> &primitives, ParamMap &params)
 {
-	auto accelerator = std::unique_ptr<Accelerator>(new AcceleratorSimpleTest(primitives));
+	auto accelerator = std::unique_ptr<Accelerator>(new AcceleratorSimpleTest(logger, primitives));
 	return accelerator;
 }
 
-AcceleratorSimpleTest::AcceleratorSimpleTest(const std::vector<const Primitive *> &primitives) : primitives_(primitives), bound_(primitives.front()->getBound())
+AcceleratorSimpleTest::AcceleratorSimpleTest(Logger &logger, const std::vector<const Primitive *> &primitives) : Accelerator(logger), primitives_(primitives), bound_(primitives.front()->getBound())
 {
 	const size_t num_primitives = primitives_.size();
 	for(const auto &primitive : primitives)
@@ -51,9 +51,9 @@ AcceleratorSimpleTest::AcceleratorSimpleTest(const std::vector<const Primitive *
 	}
 	for(const auto &object_data : objects_data_)
 	{
-		if(Y_LOG_HAS_VERBOSE) Y_VERBOSE << "AcceleratorSimpleTest: Primitives in object '" << (object_data.first)->getName() << "': " << object_data.second.primitives_.size() << ", bound: (" << object_data.second.bound_.a_ << ", " << object_data.second.bound_.g_ << ")" << YENDL;
+		if(logger_.isVerbose()) logger_.logVerbose("AcceleratorSimpleTest: Primitives in object '", (object_data.first)->getName(), "': ", object_data.second.primitives_.size(), ", bound: (", object_data.second.bound_.a_, ", ", object_data.second.bound_.g_, ")");
 	}
-	if(Y_LOG_HAS_VERBOSE) Y_VERBOSE << "AcceleratorSimpleTest: Objects: " << objects_data_.size() << ", primitives in tree: " << num_primitives << ", bound: (" << bound_.a_ << ", " << bound_.g_ << ")" << YENDL;
+	if(logger_.isVerbose()) logger_.logVerbose("AcceleratorSimpleTest: Objects: ", objects_data_.size(), ", primitives in tree: ", num_primitives, ", bound: (", bound_.a_, ", ", bound_.g_, ")");
 }
 
 AcceleratorIntersectData AcceleratorSimpleTest::intersect(const Ray &ray, float t_max) const

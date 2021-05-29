@@ -16,6 +16,7 @@
  *      Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
+#include <common/logger.h>
 #include "geometry/primitive_instance.h"
 #include "geometry/object_instance.h"
 #include "geometry/surface.h"
@@ -34,9 +35,9 @@ bool PrimitiveInstance::intersectsBound(const ExBound &b, const Matrix4 *) const
 	return base_primitive_->intersectsBound(b, base_object_.getObjToWorldMatrix());
 }
 
-PolyDouble::ClipResultWithBound PrimitiveInstance::clipToBound(const std::array<Vec3Double, 2> &bound, const ClipPlane &clip_plane, const PolyDouble &poly, const Matrix4 *obj_to_world) const
+PolyDouble::ClipResultWithBound PrimitiveInstance::clipToBound(Logger &logger, const std::array<Vec3Double, 2> &bound, const ClipPlane &clip_plane, const PolyDouble &poly, const Matrix4 *obj_to_world) const
 {
-	return base_primitive_->clipToBound(bound, clip_plane, poly, base_object_.getObjToWorldMatrix());
+	return base_primitive_->clipToBound(logger, bound, clip_plane, poly, base_object_.getObjToWorldMatrix());
 }
 
 IntersectData PrimitiveInstance::intersect(const Ray &ray, const Matrix4 *) const

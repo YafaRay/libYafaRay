@@ -49,7 +49,7 @@ bool TifFormat::saveToFile(const std::string &name, const Image *image)
 #endif
 	if(!out)
 	{
-		Y_ERROR << getFormatName() << ": Cannot open file " << name << YENDL;
+		logger_.logError(getFormatName(), ": Cannot open file ", name);
 		return false;
 	}
 	const int h = image->getHeight();
@@ -84,7 +84,7 @@ bool TifFormat::saveToFile(const std::string &name, const Image *image)
 		}
 		if(TIFFWriteScanline(out, scanline, y, 0) < 0)
 		{
-			Y_ERROR << getFormatName() << ": An error occurred while writing TIFF file" << YENDL;
+			logger_.logError(getFormatName(), ": An error occurred while writing TIFF file");
 			libtiff::TIFFClose(out);
 			libtiff::_TIFFfree(scanline);
 			return false;
@@ -92,7 +92,7 @@ bool TifFormat::saveToFile(const std::string &name, const Image *image)
 	}
 	libtiff::TIFFClose(out);
 	libtiff::_TIFFfree(scanline);
-	if(Y_LOG_HAS_VERBOSE) Y_VERBOSE << getFormatName() << ": Done." << YENDL;
+	if(logger_.isVerbose()) logger_.logVerbose(getFormatName(), ": Done.");
 	return true;
 }
 
@@ -106,21 +106,21 @@ std::unique_ptr<Image> TifFormat::loadFromFile(const std::string &name, const Im
 #endif
 	if(!tif)
 	{
-		Y_ERROR << getFormatName() << ": Cannot open file " << name << YENDL;
+		logger_.logError(getFormatName(), ": Cannot open file ", name);
 		return nullptr;
 	}
-	Y_INFO << getFormatName() << ": Loading image \"" << name << "\"..." << YENDL;
+	logger_.logInfo(getFormatName(), ": Loading image \"", name, "\"...");
 	libtiff::uint32 w, h;
 	TIFFGetField(tif, TIFFTAG_IMAGEWIDTH, &w);
 	TIFFGetField(tif, TIFFTAG_IMAGELENGTH, &h);
 	libtiff::uint32 *tiff_data = (libtiff::uint32 *)libtiff::_TIFFmalloc(w * h * sizeof(libtiff::uint32));
 	if(!libtiff::TIFFReadRGBAImage(tif, w, h, tiff_data, 0))
 	{
-		Y_ERROR << getFormatName() << ": Error reading TIFF file" << YENDL;
+		logger_.logError(getFormatName(), ": Error reading TIFF file");
 		return nullptr;
 	}
 	const Image::Type type = Image::getTypeFromSettings(true, grayscale_);
-	std::unique_ptr<Image> image = Image::factory(w, h, type, optimization);
+	std::unique_ptr<Image> image = Image::factory(logger_, w, h, type, optimization);
 	int i = 0;
 	for(int y = static_cast<int>(h) - 1; y >= 0; y--)
 	{
@@ -138,13 +138,13 @@ std::unique_ptr<Image> TifFormat::loadFromFile(const std::string &name, const Im
 	}
 	libtiff::_TIFFfree(tiff_data);
 	libtiff::TIFFClose(tif);
-	if(Y_LOG_HAS_VERBOSE) Y_VERBOSE << getFormatName() << ": Done." << YENDL;
+	if(logger_.isVerbose()) logger_.logVerbose(getFormatName(), ": Done.");
 	return image;
 }
 
-std::unique_ptr<Format> TifFormat::factory(ParamMap &params)
+std::unique_ptr<Format> TifFormat::factory(Logger &logger, ParamMap &params)
 {
-	return std::unique_ptr<Format>(new TifFormat());
+	return std::unique_ptr<Format>(new TifFormat(logger));
 }
 
 END_YAFARAY

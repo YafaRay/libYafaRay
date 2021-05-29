@@ -36,6 +36,7 @@ class Scene;
 
 class Vec3;
 class Point3;
+class Logger;
 
 //! Camera base class.
 /*!
@@ -44,9 +45,9 @@ class Point3;
 class Camera
 {
 	public:
-		static std::unique_ptr<Camera> factory(ParamMap &params, const Scene &scene);
-		Camera() = default;
-		Camera(const Point3 &pos, const Point3 &look, const Point3 &up, int resx, int resy, float aspect, float const near_clip_distance, float const far_clip_distance);
+		static std::unique_ptr<Camera> factory(Logger &logger, ParamMap &params, const Scene &scene);
+		Camera(Logger &logger) : logger_(logger) { }
+		Camera(Logger &logger, const Point3 &pos, const Point3 &look, const Point3 &up, int resx, int resy, float aspect, float const near_clip_distance, float const far_clip_distance);
 		virtual ~Camera() = default;
 		virtual void setAxis(const Vec3 &vx, const Vec3 &vy, const Vec3 &vz) = 0; //!< Set camera axis
 		/*! Shoot a new ray from the camera gived image pixel coordinates px,py and lense dof effect */
@@ -80,6 +81,7 @@ class Camera
 		std::string camera_name_;       //<! Camera name
 		Plane near_plane_, far_plane_;
 		float near_clip_, far_clip_;
+		Logger &logger_;
 };
 
 

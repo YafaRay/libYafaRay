@@ -29,9 +29,10 @@ BEGIN_YAFARAY
 class EmptyVolumeIntegrator final : public VolumeIntegrator
 {
 	public:
-		static std::unique_ptr<Integrator> factory(ParamMap &params, const Scene &scene);
+		static std::unique_ptr<Integrator> factory(Logger &logger, ParamMap &params, const Scene &scene);
 
 	private:
+		EmptyVolumeIntegrator(Logger &logger) : VolumeIntegrator(logger) { }
 		virtual std::string getShortName() const override { return "EV"; }
 		virtual std::string getName() const override { return "EmptyVolume"; }
 		virtual Rgba transmittance(RenderData &render_data, const Ray &ray) const override;

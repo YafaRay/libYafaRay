@@ -32,8 +32,8 @@
 
 BEGIN_YAFARAY
 
-BackgroundPortalLight::BackgroundPortalLight(const std::string &object_name, int sampl, float pow, bool light_enabled, bool cast_shadows):
-		object_name_(object_name), samples_(sampl), power_(pow)
+BackgroundPortalLight::BackgroundPortalLight(Logger &logger, const std::string &object_name, int sampl, float pow, bool light_enabled, bool cast_shadows):
+		Light(logger), object_name_(object_name), samples_(sampl), power_(pow)
 {
 	light_enabled_ = light_enabled;
 	cast_shadows_ = cast_shadows;
@@ -64,7 +64,7 @@ void BackgroundPortalLight::initIs()
 	params["cost_ratio"] = 0.8f;
 	params["empty_bonus"] = 0.33f;
 
-	accelerator_ = Accelerator::factory(primitives_, params);
+	accelerator_ = Accelerator::factory(logger_, primitives_, params);
 }
 
 void BackgroundPortalLight::init(Scene &scene)
@@ -80,7 +80,7 @@ void BackgroundPortalLight::init(Scene &scene)
 	{
 		mesh_object_->setVisibility(Visibility::Invisible);
 		initIs();
-		if(Y_LOG_HAS_VERBOSE) Y_VERBOSE << "bgPortalLight: Triangles:" << num_primitives_ << ", Area:" << area_ << YENDL;
+		if(logger_.isVerbose()) logger_.logVerbose("bgPortalLight: Triangles:", num_primitives_, ", Area:", area_);
 		mesh_object_->setLight(this);
 	}
 }
@@ -88,10 +88,10 @@ void BackgroundPortalLight::init(Scene &scene)
 void BackgroundPortalLight::sampleSurface(Point3 &p, Vec3 &n, float s_1, float s_2) const
 {
 	float prim_pdf;
-	int prim_num = area_dist_->dSample(s_1, &prim_pdf);
+	int prim_num = area_dist_->dSample(logger_, s_1, &prim_pdf);
 	if(prim_num >= area_dist_->count_)
 	{
-		Y_WARNING << "bgPortalLight: Sampling error!" << YENDL;
+		logger_.logWarning("bgPortalLight: Sampling error!");
 		return;
 	}
 	float ss_1, delta = area_dist_->cdf_[prim_num + 1];
@@ -218,7 +218,7 @@ void BackgroundPortalLight::emitPdf(const SurfacePoint &sp, const Vec3 &wo, floa
 }
 
 
-std::unique_ptr<Light> BackgroundPortalLight::factory(ParamMap &params, const Scene &scene)
+std::unique_ptr<Light> BackgroundPortalLight::factory(Logger &logger, ParamMap &params, const Scene &scene)
 {
 	int samples = 4;
 	std::string object_name;
@@ -238,7 +238,7 @@ std::unique_ptr<Light> BackgroundPortalLight::factory(ParamMap &params, const Sc
 	params.getParam("light_enabled", light_enabled);
 	params.getParam("cast_shadows", cast_shadows);
 
-	auto light = std::unique_ptr<BackgroundPortalLight>(new BackgroundPortalLight(object_name, samples, pow, light_enabled, cast_shadows));
+	auto light = std::unique_ptr<BackgroundPortalLight>(new BackgroundPortalLight(logger, object_name, samples, pow, light_enabled, cast_shadows));
 
 	light->shoot_caustic_ = shoot_c;
 	light->shoot_diffuse_ = shoot_d;

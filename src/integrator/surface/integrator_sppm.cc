@@ -43,7 +43,7 @@ BEGIN_YAFARAY
 
 static constexpr int n_max_gather_global = 1000; //used to gather all the photon in the radius. seems could get a better way to do that
 
-SppmIntegrator::SppmIntegrator(unsigned int d_photons, int passnum, bool transp_shad, int shadow_depth)
+SppmIntegrator::SppmIntegrator(Logger &logger, unsigned int d_photons, int passnum, bool transp_shad, int shadow_depth) : MonteCarloIntegrator(logger), diffuse_map_(logger), caustic_map_(logger)
 {
 	n_photons_ = d_photons;
 	pass_num_ = passnum;
@@ -78,8 +78,8 @@ bool SppmIntegrator::render(RenderControl &render_control, const RenderView *ren
 	aa_light_sample_multiplier_ = 1.f;
 	aa_indirect_sample_multiplier_ = 1.f;
 
-	if(Y_LOG_HAS_VERBOSE) Y_VERBOSE << getName() << ": AA_clamp_samples: " << aa_noise_params_.clamp_samples_ << YENDL;
-	if(Y_LOG_HAS_VERBOSE) Y_VERBOSE << getName() << ": AA_clamp_indirect: " << aa_noise_params_.clamp_indirect_ << YENDL;
+	if(logger_.isVerbose()) logger_.logVerbose(getName(), ": AA_clamp_samples: ", aa_noise_params_.clamp_samples_);
+	if(logger_.isVerbose()) logger_.logVerbose(getName(), ": AA_clamp_indirect: ", aa_noise_params_.clamp_indirect_);
 
 	std::stringstream set;
 
@@ -92,11 +92,11 @@ bool SppmIntegrator::render(RenderControl &render_control, const RenderView *ren
 	set << "RayDepth=" << r_depth_ << "  ";
 
 	render_info_ += set.str();
-	if(Y_LOG_HAS_VERBOSE) Y_VERBOSE << set.str() << YENDL;
+	if(logger_.isVerbose()) logger_.logVerbose(set.str());
 
 
 	pass_string << "Rendering pass 1 of " << std::max(1, pass_num_) << "...";
-	Y_INFO << getName() << ": " << pass_string.str() << YENDL;
+	logger_.logInfo(getName(), ": ", pass_string.str());
 	if(intpb_) intpb_->setTag(pass_string.str().c_str());
 
 	g_timer_global.addEvent("rendert");
@@ -118,7 +118,7 @@ bool SppmIntegrator::render(RenderControl &render_control, const RenderView *ren
 		intpb_->setTag(pass_string.str().c_str());
 	}
 
-	Y_INFO << getName() << ": " << pass_string.str() << YENDL;
+	logger_.logInfo(getName(), ": ", pass_string.str());
 
 	const Camera *camera = render_view->getCamera();
 
@@ -154,14 +154,14 @@ bool SppmIntegrator::render(RenderControl &render_control, const RenderView *ren
 		n_refined_ = 0;
 		renderPass(render_view, 1, acum_aa_samples, false, i, render_control); // offset are only related to the passNum, since we alway have only one sample.
 		acum_aa_samples += 1;
-		Y_INFO << getName() << ": This pass refined " << n_refined_ << " of " << hp_num << " pixels." << YENDL;
+		logger_.logInfo(getName(), ": This pass refined ", n_refined_, " of ", hp_num, " pixels.");
 	}
 	max_depth_ = 0.f;
 	g_timer_global.stop("rendert");
 	g_timer_global.stop("imagesAutoSaveTimer");
 	g_timer_global.stop("filmAutoSaveTimer");
 	render_control.setFinished();
-	Y_INFO << getName() << ": Overall rendertime: " << g_timer_global.getTime("rendert") << "s." << YENDL;
+	logger_.logInfo(getName(), ": Overall rendertime: ", g_timer_global.getTime("rendert"), "s.");
 
 	// Integrator Settings for "drawRenderSettings()" in imageFilm, SPPM has own render method, so "getSettings()"
 	// in integrator.h has no effect and Integrator settings won't be printed to the parameter badge.
@@ -173,7 +173,7 @@ bool SppmIntegrator::render(RenderControl &render_control, const RenderView *ren
 	set << "\nPhotons=" << n_photons_ << " search=" << n_search_ << " radius=" << ds_radius_ << "(init.estim=" << initial_estimate << ") total photons=" << totaln_photons_ << "  ";
 
 	render_info_ += set.str();
-	if(Y_LOG_HAS_VERBOSE) Y_VERBOSE << set.str() << YENDL;
+	if(logger_.isVerbose()) logger_.logVerbose(set.str());
 
 	return true;
 }
@@ -399,11 +399,11 @@ void SppmIntegrator::photonWorker(PhotonMap *diffuse_map, PhotonMap *caustic_map
 		}
 
 		s_l = float(haltoncurr) * inv_diff_photons; // Does sL also need more random for each pass?
-		int light_num = light_power_d->dSample(s_l, &light_num_pdf);
+		int light_num = light_power_d->dSample(logger_, s_l, &light_num_pdf);
 		if(light_num >= num_d_lights)
 		{
 			diffuse_map->mutx_.lock();
-			Y_ERROR << getName() << ": lightPDF sample error! " << s_l << "/" << light_num << "\n";
+			logger_.logError(getName(), ": lightPDF sample error! ", s_l, "/", light_num);
 			diffuse_map->mutx_.unlock();
 			return;
 		}
@@ -431,7 +431,7 @@ void SppmIntegrator::photonWorker(PhotonMap *diffuse_map, PhotonMap *caustic_map
 			if(std::isnan(pcol.r_) || std::isnan(pcol.g_) || std::isnan(pcol.b_))
 			{
 				diffuse_map->mutx_.lock();
-				Y_WARNING << getName() << ": NaN  on photon color for light" << light_num + 1 << "." << YENDL;
+				logger_.logWarning(getName(), ": NaN  on photon color for light", light_num + 1, ".");
 				diffuse_map->mutx_.unlock();
 				continue;
 			}
@@ -534,7 +534,7 @@ void SppmIntegrator::prePass(int samples, int offset, bool adaptive, const Rende
 	g_timer_global.addEvent("prepass");
 	g_timer_global.start("prepass");
 
-	Y_INFO << getName() << ": Starting Photon tracing pass..." << YENDL;
+	logger_.logInfo(getName(), ": Starting Photon tracing pass...");
 
 	if(b_hashgrid_) photon_grid_.clear();
 	else
@@ -577,14 +577,14 @@ void SppmIntegrator::prePass(int samples, int offset, bool adaptive, const Rende
 
 	light_power_d_ = std::unique_ptr<Pdf1D>(new Pdf1D(energies.get(), num_d_lights));
 
-	if(Y_LOG_HAS_VERBOSE) Y_VERBOSE << getName() << ": Light(s) photon color testing for photon map:" << YENDL;
+	if(logger_.isVerbose()) logger_.logVerbose(getName(), ": Light(s) photon color testing for photon map:");
 
 	for(int i = 0; i < num_d_lights; ++i)
 	{
 		pcol = tmplights[i]->emitPhoton(.5, .5, .5, .5, ray, light_pdf);
 		light_num_pdf = light_power_d_->func_[i] * light_power_d_->inv_integral_;
 		pcol *= f_num_lights * light_pdf / light_num_pdf; //remember that lightPdf is the inverse of the pdf, hence *=...
-		if(Y_LOG_HAS_VERBOSE) Y_VERBOSE << getName() << ": Light [" << i + 1 << "] Photon col:" << pcol << " | lnpdf: " << light_num_pdf << YENDL;
+		if(logger_.isVerbose()) logger_.logVerbose(getName(), ": Light [", i + 1, "] Photon col:", pcol, " | lnpdf: ", light_num_pdf);
 	}
 
 	//shoot photons
@@ -607,10 +607,10 @@ void SppmIntegrator::prePass(int samples, int offset, bool adaptive, const Rende
 	}
 	else pb = std::make_shared<ConsoleProgressBar>(80);
 
-	if(b_hashgrid_) Y_INFO << getName() << ": Building photon hashgrid..." << YENDL;
-	else Y_INFO << getName() << ": Building photon map..." << YENDL;
+	if(b_hashgrid_) logger_.logInfo(getName(), ": Building photon hashgrid...");
+	else logger_.logInfo(getName(), ": Building photon map...");
 
-	pb->init(128);
+	pb->init(128, logger_.getConsoleLogColorsEnabled());
 	pb_step = std::max(1U, n_photons_ / 128);
 	pb->setTag(previous_progress_tag + " - building photon map...");
 
@@ -618,7 +618,7 @@ void SppmIntegrator::prePass(int samples, int offset, bool adaptive, const Rende
 
 	n_photons_ = std::max((unsigned int) n_threads, (n_photons_ / n_threads) * n_threads); //rounding the number of diffuse photons so it's a number divisible by the number of threads (distribute uniformly among the threads). At least 1 photon per thread
 
-	Y_PARAMS << getName() << ": Shooting " << n_photons_ << " photons across " << n_threads << " threads (" << (n_photons_ / n_threads) << " photons/thread)" << YENDL;
+	logger_.logParams(getName(), ": Shooting ", n_photons_, " photons across ", n_threads, " threads (", (n_photons_ / n_threads), " photons/thread)");
 
 	std::vector<std::thread> threads;
 	for(int i = 0; i < n_threads; ++i) threads.push_back(std::thread(&SppmIntegrator::photonWorker, this, session_global.diffuse_map_.get(), session_global.caustic_map_.get(), i, scene_, render_view, std::ref(render_control), n_photons_, light_power_d_.get(), num_d_lights, tmplights, pb.get(), pb_step, std::ref(curr), max_bounces_, std::ref(prng)));
@@ -626,36 +626,36 @@ void SppmIntegrator::prePass(int samples, int offset, bool adaptive, const Rende
 
 	pb->done();
 	pb->setTag(previous_progress_tag + " - photon map built.");
-	if(Y_LOG_HAS_VERBOSE) Y_VERBOSE << getName() << ":Photon map built." << YENDL;
-	Y_INFO << getName() << ": Shot " << curr << " photons from " << num_d_lights << " light(s)" << YENDL;
+	if(logger_.isVerbose()) logger_.logVerbose(getName(), ":Photon map built.");
+	logger_.logInfo(getName(), ": Shot ", curr, " photons from ", num_d_lights, " light(s)");
 
 	totaln_photons_ +=  n_photons_;	// accumulate the total photon number, not using nPath for the case of hashgrid.
 
-	if(Y_LOG_HAS_VERBOSE) Y_VERBOSE << getName() << ": Stored photons: " << session_global.diffuse_map_.get()->nPhotons() + session_global.caustic_map_.get()->nPhotons() << YENDL;
+	if(logger_.isVerbose()) logger_.logVerbose(getName(), ": Stored photons: ", session_global.diffuse_map_.get()->nPhotons() + session_global.caustic_map_.get()->nPhotons());
 
 	if(b_hashgrid_)
 	{
-		Y_INFO << getName() << ": Building photons hashgrid:" << YENDL;
+		logger_.logInfo(getName(), ": Building photons hashgrid:");
 		photon_grid_.updateGrid();
-		if(Y_LOG_HAS_VERBOSE) Y_VERBOSE << getName() << ": Done." << YENDL;
+		if(logger_.isVerbose()) logger_.logVerbose(getName(), ": Done.");
 	}
 	else
 	{
 		if(session_global.diffuse_map_.get()->nPhotons() > 0)
 		{
-			Y_INFO << getName() << ": Building diffuse photons kd-tree:" << YENDL;
+			logger_.logInfo(getName(), ": Building diffuse photons kd-tree:");
 			session_global.diffuse_map_.get()->updateTree();
-			if(Y_LOG_HAS_VERBOSE) Y_VERBOSE << getName() << ": Done." << YENDL;
+			if(logger_.isVerbose()) logger_.logVerbose(getName(), ": Done.");
 		}
 		if(session_global.caustic_map_.get()->nPhotons() > 0)
 		{
-			Y_INFO << getName() << ": Building caustic photons kd-tree:" << YENDL;
+			logger_.logInfo(getName(), ": Building caustic photons kd-tree:");
 			session_global.caustic_map_.get()->updateTree();
-			if(Y_LOG_HAS_VERBOSE) Y_VERBOSE << getName() << ": Done." << YENDL;
+			if(logger_.isVerbose()) logger_.logVerbose(getName(), ": Done.");
 		}
 		if(session_global.diffuse_map_.get()->nPhotons() < 50)
 		{
-			Y_ERROR << getName() << ": Too few photons, stopping now." << YENDL;
+			logger_.logError(getName(), ": Too few photons, stopping now.");
 			return;
 		}
 	}
@@ -665,14 +665,14 @@ void SppmIntegrator::prePass(int samples, int offset, bool adaptive, const Rende
 	g_timer_global.stop("prepass");
 
 	if(b_hashgrid_)
-		Y_INFO << getName() << ": PhotonGrid building time: " << g_timer_global.getTime("prepass") << YENDL;
+		logger_.logInfo(getName(), ": PhotonGrid building time: ", g_timer_global.getTime("prepass"));
 	else
-		Y_INFO << getName() << ": PhotonMap building time: " << g_timer_global.getTime("prepass") << YENDL;
+		logger_.logInfo(getName(), ": PhotonMap building time: ", g_timer_global.getTime("prepass"));
 
 	if(intpb_)
 	{
 		intpb_->setTag(previous_progress_tag);
-		intpb_->init(previous_progress_total_steps);
+		intpb_->init(previous_progress_total_steps, logger_.getConsoleLogColorsEnabled());
 	}
 	return;
 }
@@ -777,14 +777,14 @@ GatherInfo SppmIntegrator::traceGatherRay(yafaray4::RenderData &render_data, yaf
 				if(n_gathered > n_max_global)
 				{
 					n_max_global = n_gathered;
-					if(Y_LOG_HAS_DEBUG)
+					if(logger_.isDebug())
 					{
-						Y_DEBUG << "maximum Photons: " << n_max_global << ", radius2: " << radius_2 << "\n";
+						logger_.logDebug("maximum Photons: ", n_max_global, ", radius2: ", radius_2);
 						if(n_max_global == 10)
 						{
 							for(int j = 0; j < n_gathered; ++j)
 							{
-								Y_DEBUG << "col:" << gathered[j].photon_->color() << "\n";
+								logger_.logDebug("col:", gathered[j].photon_->color());
 							}
 						}
 					}
@@ -1247,7 +1247,7 @@ void SppmIntegrator::initializePpm(const RenderView *render_view)
 
 }
 
-std::unique_ptr<Integrator> SppmIntegrator::factory(ParamMap &params, const Scene &scene)
+std::unique_ptr<Integrator> SppmIntegrator::factory(Logger &logger, ParamMap &params, const Scene &scene)
 {
 	bool transp_shad = false;
 	bool pm_ire = false;
@@ -1285,7 +1285,7 @@ std::unique_ptr<Integrator> SppmIntegrator::factory(ParamMap &params, const Scen
 	params.getParam("AO_distance", ao_dist);
 	params.getParam("AO_color", ao_col);
 
-	auto inte = std::unique_ptr<SppmIntegrator>(new SppmIntegrator(num_photons, pass_num, transp_shad, shadow_depth));
+	auto inte = std::unique_ptr<SppmIntegrator>(new SppmIntegrator(logger, num_photons, pass_num, transp_shad, shadow_depth));
 	inte->r_depth_ = raydepth;
 	inte->max_bounces_ = bounces;
 	inte->initial_factor_ = times;

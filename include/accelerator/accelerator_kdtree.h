@@ -40,7 +40,7 @@ struct IntersectData;
 class AcceleratorKdTree final : public Accelerator
 {
 	public:
-		static std::unique_ptr<Accelerator> factory(const std::vector<const Primitive *> &primitives, ParamMap &params);
+		static std::unique_ptr<Accelerator> factory(Logger &logger, const std::vector<const Primitive *> &primitives, ParamMap &params);
 
 	private:
 		struct Stats;
@@ -49,7 +49,7 @@ class AcceleratorKdTree final : public Accelerator
 		class BoundEdge;
 		struct SplitCost;
 		class TreeBin;
-		AcceleratorKdTree(const std::vector<const Primitive *> &primitives, int depth = -1, int leaf_size = 2,
+		AcceleratorKdTree(Logger &logger, const std::vector<const Primitive *> &primitives, int depth = -1, int leaf_size = 2,
 						  float cost_ratio = 0.35, float empty_bonus = 0.33);
 		virtual ~AcceleratorKdTree() override;
 		virtual AcceleratorIntersectData intersect(const Ray &ray, float t_max) const override;
@@ -61,8 +61,8 @@ class AcceleratorKdTree final : public Accelerator
 
 		int buildTree(uint32_t n_prims, const std::vector<const Primitive *> &original_primitives, const Bound &node_bound, uint32_t *prim_nums, uint32_t *left_prims, uint32_t *right_prims, const std::array<std::unique_ptr<BoundEdge[]>, 3> &edges, uint32_t right_mem_size, int depth, int bad_refines);
 
-		static SplitCost pigeonMinCost(float e_bonus, float cost_ratio, uint32_t n_prims, const Bound *all_bounds, const Bound &node_bound, const uint32_t *prim_idx);
-		static SplitCost minimalCost(float e_bonus, float cost_ratio, uint32_t n_prims, const Bound &node_bound, const uint32_t *prim_idx, const Bound *all_bounds, const Bound *all_bounds_general, const std::array<std::unique_ptr<BoundEdge[]>, 3> &edges, Stats &kd_stats);
+		static SplitCost pigeonMinCost(Logger &logger, float e_bonus, float cost_ratio, uint32_t n_prims, const Bound *all_bounds, const Bound &node_bound, const uint32_t *prim_idx);
+		static SplitCost minimalCost(Logger &logger, float e_bonus, float cost_ratio, uint32_t n_prims, const Bound &node_bound, const uint32_t *prim_idx, const Bound *all_bounds, const Bound *all_bounds_general, const std::array<std::unique_ptr<BoundEdge[]>, 3> &edges, Stats &kd_stats);
 
 		static AcceleratorIntersectData intersect(const Ray &ray, float t_max, const Node *nodes, const Bound &tree_bound);
 		static AcceleratorIntersectData intersectS(const Ray &ray, float t_max, float shadow_bias, const Node *nodes, const Bound &tree_bound);

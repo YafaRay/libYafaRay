@@ -28,7 +28,7 @@
 
 BEGIN_YAFARAY
 
-std::unique_ptr<Accelerator> AcceleratorKdTree::factory(const std::vector<const Primitive *> &primitives, ParamMap &params)
+std::unique_ptr<Accelerator> AcceleratorKdTree::factory(Logger &logger, const std::vector<const Primitive *> &primitives, ParamMap &params)
 {
 	int depth = -1;
 	int leaf_size = 2;
@@ -40,16 +40,16 @@ std::unique_ptr<Accelerator> AcceleratorKdTree::factory(const std::vector<const 
 	params.getParam("cost_ratio", cost_ratio);
 	params.getParam("empty_bonus", empty_bonus);
 
-	auto accelerator = std::unique_ptr<Accelerator>(new AcceleratorKdTree(primitives, depth, leaf_size, cost_ratio, empty_bonus));
+	auto accelerator = std::unique_ptr<Accelerator>(new AcceleratorKdTree(logger, primitives, depth, leaf_size, cost_ratio, empty_bonus));
 	return accelerator;
 }
 
-AcceleratorKdTree::AcceleratorKdTree(const std::vector<const Primitive *> &primitives, int depth, int leaf_size,
+AcceleratorKdTree::AcceleratorKdTree(Logger &logger, const std::vector<const Primitive *> &primitives, int depth, int leaf_size,
 									 float cost_ratio, float empty_bonus)
-	: cost_ratio_(cost_ratio), e_bonus_(empty_bonus), max_depth_(depth)
+	: Accelerator(logger), cost_ratio_(cost_ratio), e_bonus_(empty_bonus), max_depth_(depth)
 {
 	total_prims_ = static_cast<uint32_t>(primitives.size());
-	Y_INFO << "Kd-Tree: Starting build (" << total_prims_ << " prims, cr:" << cost_ratio_ << " eb:" << e_bonus_ << ")" << YENDL;
+	logger_.logInfo("Kd-Tree: Starting build (", total_prims_, " prims, cr:", cost_ratio_, " eb:", e_bonus_, ")");
 	clock_t c_start, c_end;
 	c_start = clock();
 	next_free_node_ = 0;
@@ -68,7 +68,7 @@ AcceleratorKdTree::AcceleratorKdTree(const std::vector<const Primitive *> &primi
 	//experiment: add penalty to cost ratio to reduce memory usage on huge scenes
 	if(log_leaves > 16.0) cost_ratio_ += 0.25 * (log_leaves - 16.0);
 	all_bounds_ = std::unique_ptr<Bound[]>(new Bound[total_prims_ + prim_clip_thresh_ + 1]);
-	if(Y_LOG_HAS_VERBOSE) Y_VERBOSE << "Kd-Tree: Getting primitive bounds..." << YENDL;
+	if(logger_.isVerbose()) logger_.logVerbose("Kd-Tree: Getting primitive bounds...");
 	for(uint32_t i = 0; i < total_prims_; i++)
 	{
 		all_bounds_[i] = primitives[i]->getBound();
@@ -83,7 +83,7 @@ AcceleratorKdTree::AcceleratorKdTree(const std::vector<const Primitive *> &primi
 		const double foo = (tree_bound_.g_[i] - tree_bound_.a_[i]) * 0.001;
 		tree_bound_.a_[i] -= foo, tree_bound_.g_[i] += foo;
 	}
-	if(Y_LOG_HAS_VERBOSE) Y_VERBOSE << "Kd-Tree: Done." << YENDL;
+	if(logger_.isVerbose()) logger_.logVerbose("Kd-Tree: Done.");
 	// get working memory for tree construction
 	std::array<std::unique_ptr<BoundEdge[]>, 3> edges;
 	const uint32_t r_mem_size = 3 * total_prims_;
@@ -100,31 +100,31 @@ AcceleratorKdTree::AcceleratorKdTree(const std::vector<const Primitive *> &primi
 	for(int i = 0; i < max_depth_ + 2; i++) clip_[i].pos_ = ClipPlane::Pos::None;
 #endif
 	/* build tree */
-	if(Y_LOG_HAS_VERBOSE) Y_VERBOSE << "Kd-Tree: Starting recursive build..." << YENDL;
+	if(logger_.isVerbose()) logger_.logVerbose("Kd-Tree: Starting recursive build...");
 	buildTree(total_prims_, primitives, tree_bound_, left_prims.get(),
 			  left_prims.get(), right_prims.get(), edges, // <= working memory
 	          r_mem_size, 0, 0);
 
 	//print some stats:
 	c_end = clock() - c_start;
-	if(Y_LOG_HAS_VERBOSE)
+	if(logger_.isVerbose())
 	{
-		Y_VERBOSE << "Kd-Tree: Stats (" << static_cast<float>(c_end) / static_cast<float>(CLOCKS_PER_SEC) << "s)" << YENDL;
-		Y_VERBOSE << "Kd-Tree: used/allocated nodes: " << next_free_node_ << "/" << allocated_nodes_count_
-				  << " (" << 100.f * static_cast<float>(next_free_node_) / allocated_nodes_count_ << "%)" << YENDL;
-		Y_VERBOSE << "Kd-Tree: Primitives in tree: " << total_prims_ << YENDL;
-		Y_VERBOSE << "Kd-Tree: Interior nodes: " << kd_stats_.kd_inodes_ << " / " << "leaf nodes: " << kd_stats_.kd_leaves_
-				  << " (empty: " << kd_stats_.empty_kd_leaves_ << " = " << 100.f * static_cast<float>(kd_stats_.empty_kd_leaves_) / kd_stats_.kd_leaves_ << "%)" << YENDL;
-		Y_VERBOSE << "Kd-Tree: Leaf prims: " << kd_stats_.kd_prims_ << " (" << static_cast<float>(kd_stats_.kd_prims_) / total_prims_ << " x prims in tree, leaf size: " << max_leaf_size_ << ")" << YENDL;
-		Y_VERBOSE << "Kd-Tree: => " << static_cast<float>(kd_stats_.kd_prims_) / (kd_stats_.kd_leaves_ - kd_stats_.empty_kd_leaves_) << " prims per non-empty leaf" << YENDL;
-		Y_VERBOSE << "Kd-Tree: Leaves due to depth limit/bad splits: " << kd_stats_.depth_limit_reached_ << "/" << kd_stats_.num_bad_splits_ << YENDL;
-		Y_VERBOSE << "Kd-Tree: clipped primitives: " << kd_stats_.clip_ << " (" << kd_stats_.bad_clip_ << " bad clips, " << kd_stats_.null_clip_ << " null clips)" << YENDL;
+		logger_.logVerbose("Kd-Tree: Stats (", static_cast<float>(c_end) / static_cast<float>(CLOCKS_PER_SEC), "s)");
+		logger_.logVerbose("Kd-Tree: used/allocated nodes: ", next_free_node_, "/", allocated_nodes_count_
+				 , " (", 100.f * static_cast<float>(next_free_node_) / allocated_nodes_count_, "%)");
+		logger_.logVerbose("Kd-Tree: Primitives in tree: ", total_prims_);
+		logger_.logVerbose("Kd-Tree: Interior nodes: ", kd_stats_.kd_inodes_, " / ", "leaf nodes: ", kd_stats_.kd_leaves_
+				 , " (empty: ", kd_stats_.empty_kd_leaves_, " = ", 100.f * static_cast<float>(kd_stats_.empty_kd_leaves_) / kd_stats_.kd_leaves_, "%)");
+		logger_.logVerbose("Kd-Tree: Leaf prims: ", kd_stats_.kd_prims_, " (", static_cast<float>(kd_stats_.kd_prims_) / total_prims_, " x prims in tree, leaf size: ", max_leaf_size_, ")");
+		logger_.logVerbose("Kd-Tree: => ", static_cast<float>(kd_stats_.kd_prims_) / (kd_stats_.kd_leaves_ - kd_stats_.empty_kd_leaves_), " prims per non-empty leaf");
+		logger_.logVerbose("Kd-Tree: Leaves due to depth limit/bad splits: ", kd_stats_.depth_limit_reached_, "/", kd_stats_.num_bad_splits_);
+		logger_.logVerbose("Kd-Tree: clipped primitives: ", kd_stats_.clip_, " (", kd_stats_.bad_clip_, " bad clips, ", kd_stats_.null_clip_, " null clips)");
 	}
 }
 
 AcceleratorKdTree::~AcceleratorKdTree()
 {
-	if(Y_LOG_HAS_VERBOSE) Y_VERBOSE << "Kd-Tree: Done" << YENDL;
+	if(logger_.isVerbose()) logger_.logVerbose("Kd-Tree: Done");
 }
 
 // ============================================================
@@ -133,7 +133,7 @@ AcceleratorKdTree::~AcceleratorKdTree()
 	and binning => O(n)
 */
 
-AcceleratorKdTree::SplitCost AcceleratorKdTree::pigeonMinCost(float e_bonus, float cost_ratio, uint32_t n_prims, const Bound *all_bounds, const Bound &node_bound, const uint32_t *prim_idx)
+AcceleratorKdTree::SplitCost AcceleratorKdTree::pigeonMinCost(Logger &logger, float e_bonus, float cost_ratio, uint32_t n_prims, const Bound *all_bounds, const Bound &node_bound, const uint32_t *prim_idx)
 {
 	static constexpr int max_bin = 1024;
 	static constexpr int num_bins = max_bin + 1;
@@ -248,23 +248,23 @@ AcceleratorKdTree::SplitCost AcceleratorKdTree::pigeonMinCost(float e_bonus, flo
 		} // for all bins
 		if(n_below != n_prims || n_above != 0)
 		{
-			if(Y_LOG_HAS_VERBOSE)
+			if(logger.isVerbose())
 			{
 				int c_1 = 0, c_2 = 0, c_3 = 0, c_4 = 0, c_5 = 0;
-				Y_VERBOSE << "SCREWED!!\n";
-				for(int i = 0; i < num_bins; i++) { c_1 += bins[i].n_; std::cout << bins[i].n_ << " ";}
-				Y_VERBOSE << "\nn total: " << c_1 << "\n";
-				for(int i = 0; i < num_bins; i++) { c_2 += bins[i].c_left_; Y_VERBOSE << bins[i].c_left_ << " ";}
-				Y_VERBOSE << "\nc_left total: " << c_2 << "\n";
-				for(int i = 0; i < num_bins; i++) { c_3 += bins[i].c_bleft_; Y_VERBOSE << bins[i].c_bleft_ << " ";}
-				Y_VERBOSE << "\nc_bleft total: " << c_3 << "\n";
-				for(int i = 0; i < num_bins; i++) { c_4 += bins[i].c_both_; Y_VERBOSE << bins[i].c_both_ << " ";}
-				Y_VERBOSE << "\nc_both total: " << c_4 << "\n";
-				for(int i = 0; i < num_bins; i++) { c_5 += bins[i].c_right_; Y_VERBOSE << bins[i].c_right_ << " ";}
-				Y_VERBOSE << "\nc_right total: " << c_5 << "\n";
-				Y_VERBOSE << "\nnPrims: " << n_prims << " nBelow: " << n_below << " nAbove: " << n_above << "\n";
-				Y_VERBOSE << "total left: " << c_2 + c_3 + c_4 << "\ntotal right: " << c_4 + c_5 << "\n";
-				Y_VERBOSE << "n/2: " << c_1 / 2 << "\n";
+				logger.logVerbose("SCREWED!!");
+				for(int i = 0; i < num_bins; i++) { c_1 += bins[i].n_; logger.logVerbose(bins[i].n_, " "); }
+				logger.logVerbose("n total: ", c_1);
+				for(int i = 0; i < num_bins; i++) { c_2 += bins[i].c_left_; logger.logVerbose(bins[i].c_left_, " "); }
+				logger.logVerbose("c_left total: ", c_2);
+				for(int i = 0; i < num_bins; i++) { c_3 += bins[i].c_bleft_; logger.logVerbose(bins[i].c_bleft_, " "); }
+				logger.logVerbose("c_bleft total: ", c_3);
+				for(int i = 0; i < num_bins; i++) { c_4 += bins[i].c_both_; logger.logVerbose(bins[i].c_both_, " "); }
+				logger.logVerbose("c_both total: ", c_4);
+				for(int i = 0; i < num_bins; i++) { c_5 += bins[i].c_right_; logger.logVerbose(bins[i].c_right_, " "); }
+				logger.logVerbose("c_right total: ", c_5);
+				logger.logVerbose("nPrims: ", n_prims, " nBelow: ", n_below, " nAbove: ", n_above);
+				logger.logVerbose("total left: ", c_2 + c_3 + c_4, "\ntotal right: ", c_4 + c_5);
+				logger.logVerbose("n/2: ", c_1 / 2);
 			}
 			throw std::logic_error("cost function mismatch");
 		}
@@ -278,7 +278,7 @@ AcceleratorKdTree::SplitCost AcceleratorKdTree::pigeonMinCost(float e_bonus, flo
 	Cost function: Find the optimal split with SAH
 */
 
-AcceleratorKdTree::SplitCost AcceleratorKdTree::minimalCost(float e_bonus, float cost_ratio, uint32_t n_prims, const Bound &node_bound, const uint32_t *prim_idx, const Bound *all_bounds, const Bound *all_bounds_general, const std::array<std::unique_ptr<BoundEdge[]>, 3> &edges, Stats &kd_stats)
+AcceleratorKdTree::SplitCost AcceleratorKdTree::minimalCost(Logger &logger, float e_bonus, float cost_ratio, uint32_t n_prims, const Bound &node_bound, const uint32_t *prim_idx, const Bound *all_bounds, const Bound *all_bounds_general, const std::array<std::unique_ptr<BoundEdge[]>, 3> &edges, Stats &kd_stats)
 {
 	const std::array<float, 3> node_bound_axes {node_bound.longX(), node_bound.longY(), node_bound.longZ() };
 	const std::array<float, 3> inv_node_bound_axes { 1.f / node_bound_axes[0], 1.f / node_bound_axes[1], 1.f / node_bound_axes[2] };
@@ -403,7 +403,7 @@ AcceleratorKdTree::SplitCost AcceleratorKdTree::minimalCost(float e_bonus, float
 		}
 		if(n_below != n_prims || n_above != 0)
 		{
-			if(Y_LOG_HAS_VERBOSE) Y_VERBOSE << "you screwed your new idea!\n";
+			if(logger.isVerbose()) logger.logVerbose("you screwed your new idea!");
 		}
 	}
 	return split;
@@ -451,8 +451,8 @@ int AcceleratorKdTree::buildTree(uint32_t n_prims, const std::vector<const Primi
 			if(ct->clippingSupport())
 			{
 				//if(ct->clipToBound(b_ext, clip_[depth], all_bounds_[total_prims_ + n_overl], cdata_[prim_clip_thresh_ * depth + old_idx], cdata_[prim_clip_thresh_ * (depth + 1) + n_overl], nullptr))
-				const PolyDouble::ClipResultWithBound clip_result = ct->clipToBound(b_ext, clip_[depth], cdata_[prim_clip_thresh_ * depth + old_idx], nullptr);
-				//if(Y_LOG_HAS_DEBUG) Y_DEBUG PRPREC(12) << " depth=" << depth << " i=" << i << " poly_id=" << old_idx << " i_poly=" << cdata_[prim_clip_thresh_ * depth + old_idx].print() << " result=" << clip_result.clip_result_code_ << " o_poly=" << clip_result.poly_.print() PREND;
+				const PolyDouble::ClipResultWithBound clip_result = ct->clipToBound(logger_, b_ext, clip_[depth], cdata_[prim_clip_thresh_ * depth + old_idx], nullptr);
+				//if(logger_.isDebug()) Y_DEBUG PRPREC(12) << " depth=" << depth << " i=" << i << " poly_id=" << old_idx << " i_poly=" << cdata_[prim_clip_thresh_ * depth + old_idx].print() << " result=" << clip_result.clip_result_code_ << " o_poly=" << clip_result.poly_.print(");
 
 				if(clip_result.clip_result_code_ == PolyDouble::ClipResultWithBound::Correct)
 				{
@@ -488,11 +488,11 @@ int AcceleratorKdTree::buildTree(uint32_t n_prims, const std::vector<const Primi
 	const float base_bonus = e_bonus_;
 	e_bonus_ *= 1.1 - static_cast<float>(depth) / static_cast<float>(max_depth_);
 	SplitCost split;
-	if(n_prims > pigeonhole_sort_thresh_) split = pigeonMinCost(e_bonus_, cost_ratio_, n_prims, all_bounds_.get(), node_bound, prim_nums);
+	if(n_prims > pigeonhole_sort_thresh_) split = pigeonMinCost(logger_, e_bonus_, cost_ratio_, n_prims, all_bounds_.get(), node_bound, prim_nums);
 #if PRIMITIVE_CLIPPING > 0
-	else if(n_prims <= prim_clip_thresh_) split = minimalCost(e_bonus_, cost_ratio_, n_prims, node_bound, prim_nums, all_bounds_.get() + total_prims_, all_bounds_.get(), edges, kd_stats_);
+	else if(n_prims <= prim_clip_thresh_) split = minimalCost(logger_, e_bonus_, cost_ratio_, n_prims, node_bound, prim_nums, all_bounds_.get() + total_prims_, all_bounds_.get(), edges, kd_stats_);
 #endif
-	else split = minimalCost(e_bonus_, cost_ratio_, n_prims, node_bound, prim_nums, all_bounds_.get(), all_bounds_.get(), edges, kd_stats_);
+	else split = minimalCost(logger_, e_bonus_, cost_ratio_, n_prims, node_bound, prim_nums, all_bounds_.get(), all_bounds_.get(), edges, kd_stats_);
 	e_bonus_ = base_bonus; //restore eBonus
 	//<< if (minimum > leafcost) increase bad refines >>
 	if(split.best_cost_ > n_prims) ++bad_refines;

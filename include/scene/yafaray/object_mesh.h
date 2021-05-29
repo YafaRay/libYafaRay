@@ -25,6 +25,7 @@
 #include "geometry/uv.h"
 #include "common/memory.h"
 #include <vector>
+#include <common/logger.h>
 
 BEGIN_YAFARAY
 
@@ -35,7 +36,7 @@ class Material;
 class MeshObject : public ObjectYafaRay
 {
 	public:
-		static std::unique_ptr<Object> factory(ParamMap &params, const Scene &scene);
+		static std::unique_ptr<Object> factory(Logger &logger, ParamMap &params, const Scene &scene);
 		MeshObject(int num_vertices, int num_faces, bool has_uv = false, bool has_orco = false);
 		virtual ~MeshObject() override;
 		virtual bool isMesh() const override { return true; }
@@ -63,10 +64,10 @@ class MeshObject : public ObjectYafaRay
 		void addNormal(const Vec3 &n);
 		int addUvValue(const Uv &uv) { uv_values_.push_back(uv); return static_cast<int>(uv_values_.size()) - 1; }
 		void setSmooth(bool smooth) { is_smooth_ = smooth; }
-		bool smoothNormals(float angle);
+		bool smoothNormals(Logger &logger, float angle);
 		//int convertToBezierControlPoints();
 		virtual bool calculateObject(const Material *material) override;
-		static MeshObject *getMeshFromObject(Object *object);
+		static MeshObject *getMeshFromObject(Logger &logger, Object *object);
 
 	protected:
 		std::vector<std::unique_ptr<FacePrimitive>> faces_;

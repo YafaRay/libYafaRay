@@ -29,12 +29,12 @@ XmlExport::XmlExport(const char *fname) : xml_name_(std::string(fname))
 	xml_file_.open(xml_name_.c_str());
 	if(!xml_file_.is_open())
 	{
-		Y_ERROR << "XmlExport: Couldn't open " << xml_name_ << YENDL;
+		logger_->logError("XmlExport: Couldn't open ", xml_name_);
 		return;
 	}
-	else Y_INFO << "XmlExport: Writing scene to: " << xml_name_ << YENDL;
+	else logger_->logInfo("XmlExport: Writing scene to: ", xml_name_);
 	xml_file_ << std::boolalpha;
-	xml_file_ << "<?xml version=\"1.0\"?>" << YENDL;
+	xml_file_ << "<?xml version=\"1.0\"?>\n";
 }
 
 void XmlExport::createScene()
@@ -48,7 +48,7 @@ void XmlExport::createScene()
 
 void XmlExport::clearAll()
 {
-	if(Y_LOG_HAS_VERBOSE) Y_VERBOSE << "XmlExport: cleaning up..." << YENDL;
+	if(logger_->isVerbose()) logger_->logVerbose("XmlExport: cleaning up...");
 	if(xml_file_.is_open())
 	{
 		xml_file_.flush();
@@ -291,7 +291,7 @@ VolumeRegion *XmlExport::createVolumeRegion(const char *name)
 	return nullptr;
 }
 
-ColorOutput *XmlExport::createOutput(const char *name, bool auto_delete, void *callback_user_data, OutputPutpixelCallback_t output_putpixel_callback, OutputFlushAreaCallback_t output_flush_area_callback, OutputFlushCallback_t output_flush_callback)
+ColorOutput *XmlExport::createOutput(const char *name, bool auto_delete, void *callback_user_data, yafaray4_OutputPutpixelCallback_t output_putpixel_callback, yafaray4_OutputFlushAreaCallback_t output_flush_area_callback, yafaray4_OutputFlushCallback_t output_flush_callback)
 {
 	xml_file_ << "\n<output name=\"" << name << "\">\n";
 	writeParamMap(*params_);
@@ -323,7 +323,7 @@ void XmlExport::render(ProgressBar *pb, bool)
 	xml_file_ << "\n<render>\n";
 	writeParamMap(*params_);
 	xml_file_ << "</render>\n";
-	xml_file_ << "</scene>" << YENDL;
+	xml_file_ << "</scene>\n";
 	xml_file_.flush();
 	xml_file_.close();
 }

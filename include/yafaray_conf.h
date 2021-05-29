@@ -41,9 +41,12 @@
 
 /* Callback definitions for the C API */
 /* FIXME: Should we care about the function call convention being the same for libYafaRay and its client(s)? */
-typedef void (*OutputPutpixelCallback_t)(const char *view_name, const char *layer_name, int x, int y, float r, float g, float b, float a, void *callback_user_data);
-typedef void (*OutputFlushAreaCallback_t)(const char *view_name, int x_0, int y_0, int x_1, int y_1, void *callback_user_data);
-typedef void (*OutputFlushCallback_t)(const char *view_name, void *callback_user_data);
-typedef void (*MonitorCallback_t)(int steps_total, int steps_done, const char *tag, void *callback_user_data);
+typedef void (*yafaray4_OutputPutpixelCallback_t)(const char *view_name, const char *layer_name, int x, int y, float r, float g, float b, float a, void *callback_user_data);
+typedef void (*yafaray4_OutputFlushAreaCallback_t)(const char *view_name, int x_0, int y_0, int x_1, int y_1, void *callback_user_data);
+typedef void (*yafaray4_OutputFlushCallback_t)(const char *view_name, void *callback_user_data);
+typedef void (*yafaray4_MonitorCallback_t)(int steps_total, int steps_done, const char *tag, void *callback_user_data);
+enum yafaray4_LogLevel { YAFARAY_LOG_LEVEL_MUTE = 0, YAFARAY_LOG_LEVEL_ERROR, YAFARAY_LOG_LEVEL_WARNING, YAFARAY_LOG_LEVEL_PARAMS, YAFARAY_LOG_LEVEL_INFO, YAFARAY_LOG_LEVEL_VERBOSE, YAFARAY_LOG_LEVEL_DEBUG };
+typedef enum yafaray4_LogLevel yafaray4_LogLevel_t;
+typedef void (*yafaray4_LoggerCallback_t)(yafaray4_LogLevel_t log_level, long datetime, const char *time_of_day, const char *description, void *callback_user_data);
 
 #endif /* YAFARAY_CONF_H */

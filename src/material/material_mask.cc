@@ -26,8 +26,8 @@
 
 BEGIN_YAFARAY
 
-MaskMaterial::MaskMaterial(const Material *m_1, const Material *m_2, float thresh, Visibility visibility):
-		mat_1_(m_1), mat_2_(m_2), threshold_(thresh)
+MaskMaterial::MaskMaterial(Logger &logger, const Material *m_1, const Material *m_2, float thresh, Visibility visibility):
+		NodeMaterial(logger), mat_1_(m_1), mat_2_(m_2), threshold_(thresh)
 {
 	visibility_ = visibility;
 	bsdf_flags_ = mat_1_->getFlags() | mat_2_->getFlags();
@@ -128,7 +128,7 @@ float MaskMaterial::getAlpha(const RenderData &render_data, const SurfacePoint &
 	return alpha;
 }
 
-std::unique_ptr<Material> MaskMaterial::factory(ParamMap &params, std::list< ParamMap > &eparams, const Scene &scene)
+std::unique_ptr<Material> MaskMaterial::factory(Logger &logger, ParamMap &params, std::list<ParamMap> &eparams, const Scene &scene)
 {
 	std::string name;
 	if(!params.getParam("material1", name)) return nullptr;
@@ -147,7 +147,7 @@ std::unique_ptr<Material> MaskMaterial::factory(ParamMap &params, std::list< Par
 	params.getParam("visibility", s_visibility);
 
 	const Visibility visibility = visibilityFromString_global(s_visibility);
-	auto mat = std::unique_ptr<MaskMaterial>(new MaskMaterial(m_1, m_2, thresh, visibility));
+	auto mat = std::unique_ptr<MaskMaterial>(new MaskMaterial(logger, m_1, m_2, thresh, visibility));
 	mat->receive_shadows_ = receive_shadows;
 
 	std::vector<ShaderNode *> roots;
@@ -159,14 +159,14 @@ std::unique_ptr<Material> MaskMaterial::factory(ParamMap &params, std::list< Par
 			if(i != mat->shaders_table_.end()) { mat->mask_ = i->second.get(); roots.push_back(mat->mask_); }
 			else
 			{
-				Y_ERROR << "MaskMat: Mask shader node '" << name << "' does not exist!" << YENDL;
+				logger.logError("MaskMat: Mask shader node '", name, "' does not exist!");
 				return nullptr;
 			}
 		}
 	}
 	else
 	{
-		Y_ERROR << "MaskMat: loadNodes() failed!" << YENDL;
+		logger.logError("MaskMat: loadNodes() failed!");
 		return nullptr;
 	}
 	mat->solveNodesOrder(roots);

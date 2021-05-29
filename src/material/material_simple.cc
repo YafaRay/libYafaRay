@@ -32,7 +32,7 @@ surface light sources (area, sphere, mesh lights...)
 
 BEGIN_YAFARAY
 
-LightMaterial::LightMaterial(Rgb light_c, bool ds): light_col_(light_c), double_sided_(ds)
+LightMaterial::LightMaterial(Logger &logger, Rgb light_c, bool ds): Material(logger), light_col_(light_c), double_sided_(ds)
 {
 	bsdf_flags_ = BsdfFlags::Emit;
 }
@@ -57,7 +57,7 @@ float LightMaterial::pdf(const RenderData &render_data, const SurfacePoint &sp, 
 {
 	return 0.f;
 }
-std::unique_ptr<Material> LightMaterial::factory(ParamMap &params, std::list< ParamMap > &eparans, const Scene &scene)
+std::unique_ptr<Material> LightMaterial::factory(Logger &logger, ParamMap &params, std::list<ParamMap> &eparans, const Scene &scene)
 {
 	Rgb col(1.0);
 	double power = 1.0;
@@ -66,7 +66,7 @@ std::unique_ptr<Material> LightMaterial::factory(ParamMap &params, std::list< Pa
 	params.getParam("color", col);
 	params.getParam("power", power);
 	params.getParam("double_sided", ds);
-	return std::unique_ptr<Material>(new LightMaterial(col * static_cast<float>(power), ds));
+	return std::unique_ptr<Material>(new LightMaterial(logger, col * static_cast<float>(power), ds));
 }
 
 END_YAFARAY
