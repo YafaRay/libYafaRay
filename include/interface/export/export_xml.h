@@ -30,7 +30,7 @@ BEGIN_YAFARAY
 class XmlExport: public Interface
 {
 	public:
-		XmlExport(const char *fname);
+		XmlExport(const char *fname, const ::yafaray4_LoggerCallback_t logger_callback = nullptr, void *callback_user_data = nullptr, ::yafaray4_DisplayConsole_t logger_display_console = YAFARAY_DISPLAY_CONSOLE_NORMAL);
 		virtual void createScene() override;
 		virtual bool setupLayersParameters() override; //!< setup render passes information
 		virtual void defineLayer(const std::string &layer_type_name, const std::string &exported_image_type_name, const std::string &exported_image_name, const std::string &image_type_name = "") override;

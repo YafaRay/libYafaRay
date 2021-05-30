@@ -27,7 +27,7 @@
 yafaray4_Interface_t *yafaray4_createInterface(yafaray4_Interface_Type_t interface_type, const char *exported_file_path, const yafaray4_LoggerCallback_t logger_callback, void *callback_user_data, yafaray4_DisplayConsole_t display_console)
 {
 	yafaray4::Interface *interface;
-	if(interface_type == YAFARAY_INTERFACE_EXPORT_XML) interface = new yafaray4::XmlExport(exported_file_path);
+	if(interface_type == YAFARAY_INTERFACE_EXPORT_XML) interface = new yafaray4::XmlExport(exported_file_path, logger_callback, callback_user_data, display_console);
 	else interface = new yafaray4::Interface(logger_callback, callback_user_data, display_console);
 	return reinterpret_cast<yafaray4_Interface *>(interface);
 }
