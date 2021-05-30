@@ -80,8 +80,8 @@ Rgb DensityVolumeRegion::tau(const Ray &ray, float step_size, float offset) cons
 	Bound::Cross cross = crossBound(ray);
 	// ray doesn't hit the BB
 	if(!cross.crossed_) return {0.f};
-	if(ray.tmax_ < cross.enter_ && ray.tmax_ >= 0) return Rgb(0.f);
-	if(ray.tmax_ < cross.leave_ && ray.tmax_ >= 0) cross.leave_ = ray.tmax_;
+	if(ray.tmax_ < cross.enter_ && ray.tmax_ >= 0.f) return Rgb(0.f);
+	if(ray.tmax_ < cross.leave_ && ray.tmax_ >= 0.f) cross.leave_ = ray.tmax_;
 	if(cross.enter_ < 0.f) cross.enter_ = 0.f;
 
 	// distance travelled in the volume
@@ -126,15 +126,6 @@ Rgb DensityVolumeRegion::tau(const Ray &ray, float step_size, float offset) cons
 	return tau_val;
 }
 
-inline float min_global(float a, float b) { return (a > b) ? b : a; }
-inline float max_global(float a, float b) { return (a < b) ? b : a; }
-
-inline double cosInter_global(double y_1, double y_2, double mu)
-{
-	const double mu_2 = (1.0f - math::cos(mu * M_PI)) / 2.0f;
-	return y_1 * (1.0f - mu_2) + y_2 * mu_2;
-}
-
 float VolumeRegion::attenuation(const Point3 p, const Light *l) const
 {
 	if(attenuation_grid_map_.find(l) == attenuation_grid_map_.end())
@@ -144,38 +135,38 @@ float VolumeRegion::attenuation(const Point3 p, const Light *l) const
 
 	const float *attenuation_grid = attenuation_grid_map_.at(l);
 
-	float x = (p.x_ - b_box_.a_.x_) / b_box_.longX() * att_grid_x_ - 0.5f;
-	float y = (p.y_ - b_box_.a_.y_) / b_box_.longY() * att_grid_y_ - 0.5f;
-	float z = (p.z_ - b_box_.a_.z_) / b_box_.longZ() * att_grid_z_ - 0.5f;
+	const float x = (p.x_ - b_box_.a_.x_) / b_box_.longX() * att_grid_x_ - 0.5f;
+	const float y = (p.y_ - b_box_.a_.y_) / b_box_.longY() * att_grid_y_ - 0.5f;
+	const float z = (p.z_ - b_box_.a_.z_) / b_box_.longZ() * att_grid_z_ - 0.5f;
 
 	//Check that the point is within the bounding box, return 0 if outside the box
 	if(x < -0.5f || y < -0.5f || z < -0.5f) return 0.f;
 	else if(x > (att_grid_x_ - 0.5f) || y > (att_grid_y_ - 0.5f) || z > (att_grid_z_ - 0.5f)) return 0.f;
 
 	// cell vertices in which p lies
-	int x_0 = max_global(0, floor(x));
-	int y_0 = max_global(0, floor(y));
-	int z_0 = max_global(0, floor(z));
+	const int x_0 = std::max(0.f, floorf(x));
+	const int y_0 = std::max(0.f, floorf(y));
+	const int z_0 = std::max(0.f, floorf(z));
 
-	int x_1 = min_global(att_grid_x_ - 1, ceil(x));
-	int y_1 = min_global(att_grid_y_ - 1, ceil(y));
-	int z_1 = min_global(att_grid_z_ - 1, ceil(z));
+	const int x_1 = std::min(att_grid_x_ - 1.f, ceilf(x));
+	const int y_1 = std::min(att_grid_y_ - 1.f, ceilf(y));
+	const int z_1 = std::min(att_grid_z_ - 1.f, ceilf(z));
 
 	// offsets
-	float xd = x - x_0;
-	float yd = y - y_0;
-	float zd = z - z_0;
+	const float xd = x - x_0;
+	const float yd = y - y_0;
+	const float zd = z - z_0;
 
 	// trilinear combination
-	float i_1 = attenuation_grid[x_0 + y_0 * att_grid_x_ + att_grid_y_ * att_grid_x_ * z_0] * (1 - zd) + attenuation_grid[x_0 + y_0 * att_grid_x_ + att_grid_y_ * att_grid_x_ * z_1] * zd;
-	float i_2 = attenuation_grid[x_0 + y_1 * att_grid_x_ + att_grid_y_ * att_grid_x_ * z_0] * (1 - zd) + attenuation_grid[x_0 + y_1 * att_grid_x_ + att_grid_y_ * att_grid_x_ * z_1] * zd;
-	float j_1 = attenuation_grid[x_1 + y_0 * att_grid_x_ + att_grid_y_ * att_grid_x_ * z_0] * (1 - zd) + attenuation_grid[x_1 + y_0 * att_grid_x_ + att_grid_y_ * att_grid_x_ * z_1] * zd;
-	float j_2 = attenuation_grid[x_1 + y_1 * att_grid_x_ + att_grid_y_ * att_grid_x_ * z_0] * (1 - zd) + attenuation_grid[x_1 + y_1 * att_grid_x_ + att_grid_y_ * att_grid_x_ * z_1] * zd;
+	const float i_1 = attenuation_grid[x_0 + y_0 * att_grid_x_ + att_grid_y_ * att_grid_x_ * z_0] * (1 - zd) + attenuation_grid[x_0 + y_0 * att_grid_x_ + att_grid_y_ * att_grid_x_ * z_1] * zd;
+	const float i_2 = attenuation_grid[x_0 + y_1 * att_grid_x_ + att_grid_y_ * att_grid_x_ * z_0] * (1 - zd) + attenuation_grid[x_0 + y_1 * att_grid_x_ + att_grid_y_ * att_grid_x_ * z_1] * zd;
+	const float j_1 = attenuation_grid[x_1 + y_0 * att_grid_x_ + att_grid_y_ * att_grid_x_ * z_0] * (1 - zd) + attenuation_grid[x_1 + y_0 * att_grid_x_ + att_grid_y_ * att_grid_x_ * z_1] * zd;
+	const float j_2 = attenuation_grid[x_1 + y_1 * att_grid_x_ + att_grid_y_ * att_grid_x_ * z_0] * (1 - zd) + attenuation_grid[x_1 + y_1 * att_grid_x_ + att_grid_y_ * att_grid_x_ * z_1] * zd;
 
-	float w_1 = i_1 * (1 - yd) + i_2 * yd;
-	float w_2 = j_1 * (1 - yd) + j_2 * yd;
+	const float w_1 = i_1 * (1 - yd) + i_2 * yd;
+	const float w_2 = j_1 * (1 - yd) + j_2 * yd;
 
-	float att = w_1 * (1 - xd) + w_2 * xd;
+	const float att = w_1 * (1 - xd) + w_2 * xd;
 
 	return att;
 }

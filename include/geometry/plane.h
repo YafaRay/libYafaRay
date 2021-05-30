@@ -25,15 +25,18 @@
 
 BEGIN_YAFARAY
 
-struct Plane
+class Plane final
 {
-	Vec3 p_;
-	Vec3 n_;
+	public:
+		float rayIntersection(Ray const &ray) const;
+
+		Vec3 p_;
+		Vec3 n_;
 };
 
-inline float rayPlaneIntersection_global(Ray const &ray, Plane const &plane)
+inline float Plane::rayIntersection(Ray const &ray) const
 {
-	return plane.n_ * (plane.p_ - static_cast<Vec3>(ray.from_)) / (ray.dir_ * plane.n_);
+	return n_ * (p_ - static_cast<Vec3>(ray.from_)) / (ray.dir_ * n_);
 }
 
 END_YAFARAY

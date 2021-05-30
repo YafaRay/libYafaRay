@@ -57,8 +57,8 @@ Ray EquirectangularCamera::shootRay(float px, float py, float lu, float lv, floa
 	const float theta = M_PI_2 * v;
 	ray.dir_ = math::cos(theta) * (math::cos(phi) * vto_ + math::sin(phi) * vright_) + math::sin(theta) * vup_;
 
-	ray.tmin_ = rayPlaneIntersection_global(ray, near_plane_);
-	ray.tmax_ = rayPlaneIntersection_global(ray, far_plane_);
+	ray.tmin_ = near_plane_.rayIntersection(ray);
+	ray.tmax_ = far_plane_.rayIntersection(ray);
 
 	return ray;
 }

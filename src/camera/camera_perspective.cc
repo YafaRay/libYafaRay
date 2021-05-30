@@ -132,8 +132,8 @@ Ray PerspectiveCamera::shootRay(float px, float py, float lu, float lv, float &w
 	ray.from_ = position_;
 	ray.dir_ = vright_ * px + vup_ * py + vto_;
 	ray.dir_.normalize();
-	ray.tmin_ = rayPlaneIntersection_global(ray, near_plane_);
-	ray.tmax_ = rayPlaneIntersection_global(ray, far_plane_);
+	ray.tmin_ = near_plane_.rayIntersection(ray);
+	ray.tmax_ = far_plane_.rayIntersection(ray);
 	if(aperture_ != 0.f)
 	{
 		float u, v;
