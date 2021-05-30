@@ -57,7 +57,6 @@ void XmlExport::clearAll()
 	params_->clear();
 	eparams_->clear();
 	cparams_ = params_.get();
-	nmat_ = 0;
 	next_obj_ = 0;
 }
 
@@ -304,6 +303,14 @@ RenderView *XmlExport::createRenderView(const char *name)
 	xml_file_ << "\n<render_view name=\"" << name << "\">\n";
 	writeParamMap(*params_);
 	xml_file_ << "</render_view>\n";
+	return nullptr;
+}
+
+Image *XmlExport::createImage(const char *name)
+{
+	xml_file_ << "\n<image name=\"" << name << "\">\n";
+	writeParamMap(*params_);
+	xml_file_ << "</image>\n";
 	return nullptr;
 }
 

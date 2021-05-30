@@ -56,6 +56,7 @@ class XmlExport: public Interface
 		virtual Integrator *createIntegrator(const char *name) override;
 		virtual VolumeRegion *createVolumeRegion(const char *name) override;
 		virtual RenderView *createRenderView(const char *name) override;
+		virtual Image *createImage(const char *name) override;
 		virtual ColorOutput *createOutput(const char *name, bool auto_delete = true, void *callback_user_data = nullptr, yafaray4_OutputPutpixelCallback_t output_putpixel_callback = nullptr, yafaray4_OutputFlushAreaCallback_t output_flush_area_callback = nullptr, yafaray4_OutputFlushCallback_t output_flush_callback = nullptr) override;
 		virtual void clearAll() override; //!< clear the whole environment + scene, i.e. free (hopefully) all memory.
 		virtual void clearOutputs() override { }
@@ -68,7 +69,6 @@ class XmlExport: public Interface
 		std::ofstream xml_file_;
 		std::string xml_name_;
 		std::string current_material_;
-		size_t nmat_ = 0;
 		int n_uvs_ = 0;
 		unsigned int next_obj_ = 0;
 		float xml_gamma_ = 1.f;

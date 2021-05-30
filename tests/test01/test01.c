@@ -83,7 +83,7 @@ int main()
 	/* Basic libYafaRay C API usage example, rendering a cube with a TGA texture */
 
 	/* YafaRay standard rendering interface */
-	yi = yafaray4_createInterface(YAFARAY_INTERFACE_FOR_RENDERING, NULL, loggerCallback, &result_image, YAFARAY_DISPLAY_CONSOLE_NORMAL);
+	yi = yafaray4_createInterface(YAFARAY_INTERFACE_EXPORT_XML, "test01.xml", loggerCallback, &result_image, YAFARAY_DISPLAY_CONSOLE_NORMAL);
 	yafaray4_setConsoleLogColorsEnabled(yi, YAFARAY_BOOL_TRUE);
 	yafaray4_setConsoleVerbosityLevel(yi, YAFARAY_LOG_LEVEL_DEBUG);
 	yafaray4_setInteractive(yi, YAFARAY_BOOL_TRUE);
