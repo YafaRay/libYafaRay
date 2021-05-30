@@ -22,7 +22,6 @@
 
 #include "render/imagefilm.h"
 #include "common/logger.h"
-#include "common/session.h"
 #include "output/output.h"
 #include "format/format.h"
 #include "scene/scene.h"
@@ -227,7 +226,7 @@ void ImageFilm::init(RenderControl &render_control, int num_passes)
 	g_timer_global.start("imagesAutoSaveTimer");
 	g_timer_global.start("filmAutoSaveTimer");
 
-	if(!session_global.isPreview())	// Avoid doing the Film Load & Save operations and updating the film check values when we are just rendering a preview!
+	if(!render_control.isPreview())	// Avoid doing the Film Load & Save operations and updating the film check values when we are just rendering a preview!
 	{
 		if(film_load_save_.mode_ == FilmLoadSave::LoadAndSave) imageFilmLoadAllInFolder(render_control);	//Load all the existing Film in the images output folder, combining them together. It will load only the Film files with the same "base name" as the output image film (including file name, computer node name and frame) to allow adding samples to animations.
 		if(film_load_save_.mode_ == FilmLoadSave::LoadAndSave || film_load_save_.mode_ == FilmLoadSave::Save) imageFilmFileBackup(); //If the imageFilm is set to Save, at the start rename the previous film file as a "backup" just in case the user has made a mistake and wants to get the previous film back.
@@ -249,7 +248,7 @@ int ImageFilm::nextPass(const RenderView *render_view, RenderControl &render_con
 
 	if(logger_.isDebug())logger_.logDebug("nPass=", n_pass_, " imagesAutoSavePassCounter=", images_auto_save_params_.pass_counter_, " filmAutoSavePassCounter=", film_load_save_.auto_save_.pass_counter_);
 
-	if(render_control.inProgress() && !session_global.isPreview())	//avoid saving images/film if we are just rendering material/world/lights preview windows, etc
+	if(render_control.inProgress() && !render_control.isPreview())	//avoid saving images/film if we are just rendering material/world/lights preview windows, etc
 	{
 		if((images_auto_save_params_.interval_type_ == ImageFilm::AutoSaveParams::IntervalType::Pass) && (images_auto_save_params_.pass_counter_ >= images_auto_save_params_.interval_passes_))
 		{
@@ -391,7 +390,7 @@ int ImageFilm::nextPass(const RenderView *render_view, RenderControl &render_con
 				{
 					++n_resample;
 
-					if(session_global.isInteractive() && show_mask_)
+					if(render_control.isInteractive() && show_mask_)
 					{
 						float mat_sample_factor = 1.f;
 						const float weight = weights_(x, y).getFloat();
@@ -425,7 +424,7 @@ int ImageFilm::nextPass(const RenderView *render_view, RenderControl &render_con
 		n_resample = height_ * width_;
 	}
 
-	if(session_global.isInteractive())
+	if(render_control.isInteractive())
 	{
 		for(auto &output : outputs_)
 		{
@@ -450,7 +449,7 @@ int ImageFilm::nextPass(const RenderView *render_view, RenderControl &render_con
 	return n_resample;
 }
 
-bool ImageFilm::nextArea(RenderArea &a)
+bool ImageFilm::nextArea(const RenderControl &render_control, RenderArea &a)
 {
 	if(cancel_) return false;
 
@@ -470,7 +469,7 @@ bool ImageFilm::nextArea(RenderArea &a)
 			a.sy_0_ = a.y_ + ifilterw;
 			a.sy_1_ = a.y_ + a.h_ - ifilterw;
 
-			if(session_global.isInteractive())
+			if(render_control.isInteractive())
 			{
 				out_mutex_.lock();
 				int end_x = a.x_ + a.w_, end_y = a.y_ + a.h_;
@@ -553,7 +552,7 @@ void ImageFilm::finishArea(const RenderView *render_view, RenderControl &render_
 		}
 	}
 
-	if(session_global.isInteractive())
+	if(render_control.isInteractive())
 	{
 		for(auto &output : outputs_)
 		{
@@ -564,7 +563,7 @@ void ImageFilm::finishArea(const RenderView *render_view, RenderControl &render_
 		}
 	}
 
-	if(render_control.inProgress() && !session_global.isPreview())	//avoid saving images/film if we are just rendering material/world/lights preview windows, etc
+	if(render_control.inProgress() && !render_control.isPreview())	//avoid saving images/film if we are just rendering material/world/lights preview windows, etc
 	{
 		g_timer_global.stop("imagesAutoSaveTimer");
 		images_auto_save_params_.timer_ += g_timer_global.getTime("imagesAutoSaveTimer");
@@ -690,7 +689,7 @@ void ImageFilm::flush(const RenderView *render_view, const RenderControl &render
 
 	if(render_control.finished())
 	{
-		if(!session_global.isPreview() && (film_load_save_.mode_ == FilmLoadSave::LoadAndSave || film_load_save_.mode_ == FilmLoadSave::Save))
+		if(!render_control.isPreview() && (film_load_save_.mode_ == FilmLoadSave::LoadAndSave || film_load_save_.mode_ == FilmLoadSave::Save))
 		{
 			imageFilmSave();
 		}

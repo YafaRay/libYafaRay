@@ -23,6 +23,7 @@
 #include "scene/scene.h"
 #include "common/param.h"
 #include "render/render_data.h"
+#include "photon/photon.h"
 
 /*=============================================================
 a material intended for visible light sources, i.e. it has no

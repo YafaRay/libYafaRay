@@ -26,7 +26,6 @@
 #include "material/material.h"
 #include "scene/scene.h"
 #include "volume/volume.h"
-#include "common/session.h"
 #include "light/light.h"
 #include "color/spectrum.h"
 #include "sampler/halton.h"
@@ -49,7 +48,8 @@ static constexpr int loffs_delta_global = 4567; //just some number to have diffe
 //Constructor and destructor defined here to avoid issues with std::unique_ptr<Pdf1D> being Pdf1D incomplete in the header (forward declaration)
 MonteCarloIntegrator::MonteCarloIntegrator(Logger &logger) : TiledIntegrator(logger)
 {
-	//Empty
+	caustic_map_ = std::unique_ptr<PhotonMap>(new PhotonMap(logger));
+	caustic_map_->setName("Caustic Photon Map");
 }
 
 MonteCarloIntegrator::~MonteCarloIntegrator() = default;
@@ -536,7 +536,7 @@ bool MonteCarloIntegrator::createCausticMap(const RenderView *render_view, const
 		pb->setTag("Loading caustic photon map from file...");
 		const std::string filename = scene_->getImageFilm()->getFilmSavePath() + "_caustic.photonmap";
 		logger_.logInfo(getName(), ": Loading caustic photon map from: ", filename, ". If it does not match the scene you could have crashes and/or incorrect renders, USE WITH CARE!");
-		if(session_global.caustic_map_.get()->load(filename))
+		if(caustic_map_->load(filename))
 		{
 			if(logger_.isVerbose()) logger_.logVerbose(getName(), ": Caustic map loaded.");
 			return true;
@@ -551,7 +551,7 @@ bool MonteCarloIntegrator::createCausticMap(const RenderView *render_view, const
 	if(photon_map_processing_ == PhotonsReuse)
 	{
 		logger_.logInfo(getName(), ": Reusing caustics photon map from memory. If it does not match the scene you could have crashes and/or incorrect renders, USE WITH CARE!");
-		if(session_global.caustic_map_.get()->nPhotons() == 0)
+		if(caustic_map_->nPhotons() == 0)
 		{
 			photon_map_processing_ = PhotonsGenerateOnly;
 			logger_.logWarning(getName(), ": One of the photon maps in memory was empty, they cannot be reused: changing to Generate mode.");
@@ -559,10 +559,10 @@ bool MonteCarloIntegrator::createCausticMap(const RenderView *render_view, const
 		else return true;
 	}
 
-	session_global.caustic_map_.get()->clear();
-	session_global.caustic_map_.get()->setNumPaths(0);
-	session_global.caustic_map_.get()->reserveMemory(n_caus_photons_);
-	session_global.caustic_map_.get()->setNumThreadsPkDtree(scene_->getNumThreadsPhotons());
+	caustic_map_->clear();
+	caustic_map_->setNumPaths(0);
+	caustic_map_->reserveMemory(n_caus_photons_);
+	caustic_map_->setNumThreadsPkDtree(scene_->getNumThreadsPhotons());
 
 	Ray ray;
 	std::vector<const Light *> caus_lights;
@@ -611,19 +611,19 @@ bool MonteCarloIntegrator::createCausticMap(const RenderView *render_view, const
 		logger_.logParams(getName(), ": Shooting ", n_caus_photons_, " photons across ", n_threads, " threads (", (n_caus_photons_ / n_threads), " photons/thread)");
 
 		std::vector<std::thread> threads;
-		for(int i = 0; i < n_threads; ++i) threads.push_back(std::thread(&MonteCarloIntegrator::causticWorker, this, session_global.caustic_map_.get(), i, scene_, render_view, std::ref(render_control), n_caus_photons_, light_power_d.get(), num_lights, caus_lights, caus_depth_, pb.get(), pb_step, std::ref(curr)));
+		for(int i = 0; i < n_threads; ++i) threads.push_back(std::thread(&MonteCarloIntegrator::causticWorker, this, caustic_map_.get(), i, scene_, render_view, std::ref(render_control), n_caus_photons_, light_power_d.get(), num_lights, caus_lights, caus_depth_, pb.get(), pb_step, std::ref(curr)));
 		for(auto &t : threads) t.join();
 
 		pb->done();
 		pb->setTag("Caustic photon map built.");
 		if(logger_.isVerbose()) logger_.logVerbose(getName(), ": Done.");
 		logger_.logInfo(getName(), ": Shot ", curr, " caustic photons from ", num_lights, " light(s).");
-		if(logger_.isVerbose()) logger_.logVerbose(getName(), ": Stored caustic photons: ", session_global.caustic_map_.get()->nPhotons());
+		if(logger_.isVerbose()) logger_.logVerbose(getName(), ": Stored caustic photons: ", caustic_map_->nPhotons());
 
-		if(session_global.caustic_map_.get()->nPhotons() > 0)
+		if(caustic_map_->nPhotons() > 0)
 		{
 			pb->setTag("Building caustic photons kd-tree...");
-			session_global.caustic_map_.get()->updateTree();
+			caustic_map_->updateTree();
 			if(logger_.isVerbose()) logger_.logVerbose(getName(), ": Done.");
 		}
 
@@ -632,7 +632,7 @@ bool MonteCarloIntegrator::createCausticMap(const RenderView *render_view, const
 			pb->setTag("Saving caustic photon map to file...");
 			std::string filename = scene_->getImageFilm()->getFilmSavePath() + "_caustic.photonmap";
 			logger_.logInfo(getName(), ": Saving caustic photon map to: ", filename);
-			if(session_global.caustic_map_.get()->save(filename) && logger_.isVerbose()) logger_.logVerbose(getName(), ": Caustic map saved.");
+			if(caustic_map_->save(filename) && logger_.isVerbose()) logger_.logVerbose(getName(), ": Caustic map saved.");
 		}
 	}
 	else if(logger_.isVerbose()) logger_.logVerbose(getName(), ": No caustic source lights found, skiping caustic map building...");
@@ -641,14 +641,14 @@ bool MonteCarloIntegrator::createCausticMap(const RenderView *render_view, const
 
 Rgb MonteCarloIntegrator::estimateCausticPhotons(RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo) const
 {
-	if(!session_global.caustic_map_.get()->ready()) return Rgb(0.f);
+	if(!caustic_map_->ready()) return Rgb(0.f);
 
 	auto gathered = std::unique_ptr<FoundPhoton[]>(new FoundPhoton[n_caus_search_]);//(foundPhoton_t *)alloca(nCausSearch * sizeof(foundPhoton_t));
 	int n_gathered = 0;
 
 	float g_radius_square = caus_radius_ * caus_radius_;
 
-	n_gathered = session_global.caustic_map_.get()->gather(sp.p_, gathered.get(), n_caus_search_, g_radius_square);
+	n_gathered = caustic_map_->gather(sp.p_, gathered.get(), n_caus_search_, g_radius_square);
 
 	g_radius_square = 1.f / g_radius_square;
 
@@ -668,7 +668,7 @@ Rgb MonteCarloIntegrator::estimateCausticPhotons(RenderData &render_data, const 
 			k = sample::kernel(gathered[i].dist_square_, g_radius_square);
 			sum += surf_col * k * photon->color();
 		}
-		sum *= 1.f / (float(session_global.caustic_map_.get()->nPaths()));
+		sum *= 1.f / (float(caustic_map_->nPaths()));
 	}
 	return sum;
 }

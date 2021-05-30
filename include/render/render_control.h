@@ -48,6 +48,12 @@ class RenderControl final
 		std::string getRenderInfo() const { return render_info_; }
 		std::string getAaNoiseInfo() const { return aa_noise_info_; }
 
+		void setInteractive(bool interactive);
+		void setDifferentialRaysEnabled(bool value) { ray_differentials_enabled_ = value; }
+		bool getDifferentialRaysEnabled() const { return ray_differentials_enabled_; }
+		bool isPreview() const { return false; } //FIXME!
+		bool isInteractive() const;
+
 	private:
 		bool render_in_progress_ = false;
 		bool render_finished_ = false;
@@ -58,7 +64,8 @@ class RenderControl final
 		float current_pass_percent_ = 0.f;
 		std::string render_info_;
 		std::string aa_noise_info_;
-
+		bool ray_differentials_enabled_ = false;  //!< By default, disable ray differential calculations. Only if at least one texture uses them, then enable differentials. This should avoid the (many) extra calculations when they are not necessary.
+		bool interactive_ = false;
 		std::mutex mutx_;
 };
 

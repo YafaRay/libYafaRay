@@ -23,6 +23,7 @@
 #include "light/light.h"
 #include "common/param.h"
 #include "render/render_data.h"
+#include "photon/photon.h"
 
 BEGIN_YAFARAY
 

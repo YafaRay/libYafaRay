@@ -28,6 +28,7 @@
 #include "integrator/integrator.h"
 #include "geometry/object.h"
 #include "material/material.h"
+#include "photon/photon.h"
 
 BEGIN_YAFARAY
 

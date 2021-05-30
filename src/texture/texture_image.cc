@@ -20,7 +20,6 @@
  */
 
 #include "texture/texture_image.h"
-#include "common/session.h"
 #include "common/string.h"
 #include "common/param.h"
 #include "scene/scene.h"
@@ -539,7 +538,7 @@ ImageTexture::ClipMode string2Cliptype_global(const std::string &clipname)
 	return tex_clipmode;
 }
 
-std::unique_ptr<Texture> ImageTexture::factory(Logger &logger, ParamMap &params, const Scene &scene)
+std::unique_ptr<Texture> ImageTexture::factory(Logger &logger, ParamMap &params, Scene &scene)
 {
 	std::string name;
 	std::string image_name;
@@ -582,10 +581,10 @@ std::unique_ptr<Texture> ImageTexture::factory(Logger &logger, ParamMap &params,
 	if(interpolation_type == InterpolationType::Trilinear || interpolation_type == InterpolationType::Ewa)
 	{
 		tex->generateMipMaps();
-		if(!session_global.getDifferentialRaysEnabled())
+		if(!scene.getRenderControl().getDifferentialRaysEnabled())
 		{
 			if(logger.isVerbose()) logger.logVerbose("At least one texture using mipmaps interpolation, enabling ray differentials.");
-			session_global.setDifferentialRaysEnabled(true);	//If there is at least one texture using mipmaps, then enable differential rays in the rendering process.
+			scene.getRenderControl().setDifferentialRaysEnabled(true);	//If there is at least one texture using mipmaps, then enable differential rays in the rendering process.
 		}
 
 		/*//FIXME DAVID: TEST SAVING MIPMAPS. CAREFUL: IT COULD CAUSE CRASHES!

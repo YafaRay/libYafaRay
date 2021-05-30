@@ -25,6 +25,7 @@
 #include "common/logger.h"
 #include "math/interpolation.h"
 #include "render/render_data.h"
+#include "photon/photon.h"
 
 BEGIN_YAFARAY
 

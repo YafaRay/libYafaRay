@@ -21,7 +21,6 @@
 #include "scene/scene.h"
 #include "yafaray_config.h"
 #include "scene/yafaray/scene_yafaray.h"
-#include "common/session.h"
 #include "common/logger.h"
 #include "common/sysinfo.h"
 #include "accelerator/accelerator.h"
@@ -95,7 +94,7 @@ Scene::Scene(Logger &logger) : logger_(logger)
 	if(!YAFARAY_BUILD_PLATFORM.empty()) compiler = YAFARAY_BUILD_PLATFORM + "-" + YAFARAY_BUILD_COMPILER;
 
 	logger_.logInfo("LibYafaRay (", YAFARAY_BUILD_VERSION, ")", " ", YAFARAY_BUILD_OS, " ", YAFARAY_BUILD_ARCHITECTURE, " (", compiler, ")");
-	session_global.setDifferentialRaysEnabled(false);	//By default, disable ray differential calculations. Only if at least one texture uses them, then enable differentials.
+	render_control_.setDifferentialRaysEnabled(false);	//By default, disable ray differential calculations. Only if at least one texture uses them, then enable differentials.
 	createDefaultMaterial();
 
 #ifndef HAVE_OPENCV

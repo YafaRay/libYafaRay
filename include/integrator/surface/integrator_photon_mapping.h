@@ -65,6 +65,7 @@ class PhotonIntegrator final : public MonteCarloIntegrator
 		float ds_radius_; //!< diffuse search radius
 		float lookup_rad_; //!< square radius to lookup radiance photons, as infinity is no such good idea ;)
 		float gather_dist_; //!< minimum distance to terminate path tracing (unless gatherBounces is reached)
+		std::unique_ptr<PhotonMap> diffuse_map_, radiance_map_;
 };
 
 END_YAFARAY

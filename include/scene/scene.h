@@ -111,7 +111,6 @@ class Scene
 
 		Background *getBackground() const;
 		const ImageFilm *getImageFilm() const { return image_film_.get(); }
-		RenderControl render_control_;
 		Bound getSceneBound() const;
 		int getNumThreads() const { return nthreads_; }
 		int getNumThreadsPhotons() const { return nthreads_photons_; }
@@ -185,6 +184,7 @@ class Scene
 		std::string scene_accelerator_;
 		std::map<std::string, std::unique_ptr<Light>> lights_;
 		std::map<std::string, std::unique_ptr<Material>> materials_;
+		RenderControl render_control_;
 		Logger &logger_;
 
 	private:

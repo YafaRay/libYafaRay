@@ -40,7 +40,7 @@ enum class InterpolationType : int { None, Bilinear, Bicubic, Trilinear, Ewa };
 class Texture
 {
 	public :
-		static std::unique_ptr<Texture> factory(Logger &logger, ParamMap &params, const Scene &scene);
+		static std::unique_ptr<Texture> factory(Logger &logger, ParamMap &params, Scene &scene);
 		Texture(Logger &logger) : logger_(logger) { }
 		virtual ~Texture() = default;
 

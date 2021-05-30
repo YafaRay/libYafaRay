@@ -82,7 +82,6 @@ class SppmIntegrator final : public MonteCarloIntegrator
 		void photonWorker(PhotonMap *diffuse_map, PhotonMap *caustic_map, int thread_id, const Scene *scene, const RenderView *render_view, const RenderControl &render_control, unsigned int n_photons, const Pdf1D *light_power_d, int num_d_lights, const std::vector<const Light *> &tmplights, ProgressBar *pb, int pb_step, unsigned int &total_photons_shot, int max_bounces, Random &prng);
 
 		HashGrid  photon_grid_; // the hashgrid for holding photons
-		PhotonMap diffuse_map_, caustic_map_; // photonmap
 		unsigned int n_photons_; //photon number to scatter
 		float ds_radius_; // used to do initial radius estimate
 		int n_search_;// now used to do initial radius estimate
@@ -94,6 +93,7 @@ class SppmIntegrator final : public MonteCarloIntegrator
 		Halton hal_1_{2, 0}, hal_2_{3, 0}, hal_3_{5, 0}, hal_4_{7, 0}; // halton sequence to do
 		std::vector<HitPoint>hit_points_; // per-pixel refine data
 		unsigned int n_refined_; // Debug info: Refined pixel per pass
+		std::unique_ptr<PhotonMap> diffuse_map_;
 		std::mutex mutex_;
 };
 

@@ -53,12 +53,12 @@ class ProgressBar
 		int steps_total_ = 0;
 		int steps_done_ = 0;
 		std::string tag_;
+		std::mutex mutx_;
 
 	private:
 		void updateCallback();
 		yafaray_ProgressBarCallback_t progress_bar_callback_ = nullptr;
 		void *callback_user_data_ = nullptr;
-		std::mutex mutx_;
 };
 
 /*! the default console progress bar (implemented in console.cc)

@@ -26,6 +26,7 @@
 #include "geometry/surface.h"
 #include "render/render_data.h"
 #include "volume/volume.h"
+#include "photon/photon.h"
 
 BEGIN_YAFARAY
 

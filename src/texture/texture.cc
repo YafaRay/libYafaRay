@@ -24,7 +24,7 @@
 
 BEGIN_YAFARAY
 
-std::unique_ptr<Texture> Texture::factory(Logger &logger, ParamMap &params, const Scene &scene)
+std::unique_ptr<Texture> Texture::factory(Logger &logger, ParamMap &params, Scene &scene)
 {
 	if(logger.isDebug())
 	{

@@ -19,7 +19,6 @@
 #include "interface/interface.h"
 #include "yafaray_config.h"
 #include "common/logger.h"
-#include "common/session.h"
 #include "scene/scene.h"
 #include "geometry/matrix4.h"
 #include "render/imagefilm.h"
@@ -27,6 +26,9 @@
 #include "output/output.h"
 #include "render/progress_bar.h"
 #include <signal.h>
+#if defined(_WIN32)
+#include <windows.h>
+#endif
 
 BEGIN_YAFARAY
 
@@ -36,6 +38,9 @@ Interface::Interface(const ::yafaray_LoggerCallback_t logger_callback, void *cal
 	params_ = std::unique_ptr<ParamMap>(new ParamMap);
 	eparams_ = std::unique_ptr<std::list<ParamMap>>(new std::list<ParamMap>);
 	cparams_ = params_.get();
+#if defined(_WIN32)
+	if(logger_display_console == YAFARAY_DISPLAY_CONSOLE_NORMAL) SetConsoleOutputCP(65001);	//set Windows Console to UTF8 so the image path can be displayed correctly
+#endif
 }
 
 void Interface::createScene()
@@ -74,8 +79,12 @@ bool Interface::setupLayersParameters()
 
 bool Interface::setInteractive(bool interactive)
 {
-	session_global.setInteractive(interactive);
-	return true;
+	if(scene_)
+	{
+		scene_->getRenderControl().setInteractive(interactive);
+		return true;
+	}
+	else return false;
 }
 
 bool Interface::startGeometry() { return scene_->startObjects(); }

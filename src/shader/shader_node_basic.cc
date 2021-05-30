@@ -23,6 +23,7 @@
 #include "geometry/surface.h"
 #include "texture/texture_image.h"
 #include "render/render_data.h"
+#include "photon/photon.h"
 
 BEGIN_YAFARAY
 

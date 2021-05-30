@@ -24,8 +24,6 @@
  */
 
 #include "integrator/surface/integrator_tiled.h"
-#include "common/logger.h"
-#include "common/session.h"
 #include "common/layers.h"
 #include "material/material.h"
 #include "geometry/surface.h"
@@ -41,6 +39,7 @@
 #include "render/render_data.h"
 #include "output/output.h"
 #include "accelerator/accelerator.h"
+#include "photon/photon.h"
 
 BEGIN_YAFARAY
 
@@ -51,7 +50,7 @@ void TiledIntegrator::renderWorker(TiledIntegrator *integrator, const Scene *sce
 {
 	RenderArea a;
 
-	while(image_film_->nextArea(a))
+	while(image_film_->nextArea(render_control, a))
 	{
 		if(render_control.canceled()) break;
 		integrator->renderTile(a, render_view, render_control, samples, offset, adaptive, thread_id, aa_pass);
@@ -171,7 +170,7 @@ bool TiledIntegrator::render(RenderControl &render_control, const RenderView *re
 	max_depth_ = 0.f;
 	min_depth_ = 1e38f;
 
-	diff_rays_enabled_ = session_global.getDifferentialRaysEnabled();	//enable ray differentials for mipmap calculation if there is at least one image texture using Mipmap interpolation
+	diff_rays_enabled_ = render_control.getDifferentialRaysEnabled();	//enable ray differentials for mipmap calculation if there is at least one image texture using Mipmap interpolation
 
 	if(scene_->getLayers().isDefinedAny({Layer::ZDepthNorm, Layer::Mist})) precalcDepths(render_view);
 

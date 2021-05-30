@@ -21,11 +21,14 @@
 #define YAFARAY_RENDER_DATA_H
 
 #include "yafaray_conf.h"
+#include "common/memory.h"
 
 BEGIN_YAFARAY
 
 class Random;
 class Camera;
+class PhotonMap;
+class Logger;
 
 class RenderData final
 {
@@ -33,14 +36,7 @@ class RenderData final
 		RenderData() = default;
 		RenderData(Random *rand) : prng_(rand) { }
 		RenderData(const RenderData &r) = delete;
-		void setDefaults()
-		{
-			raylevel_ = 0;
-			chromatic_ = true;
-			ray_division_ = 1;
-			ray_offset_ = 0;
-			dc_1_ = dc_2_ = 0.f;
-		}
+		void setDefaults();
 
 		int raylevel_ = 0;
 		float depth_ = 0;
@@ -57,9 +53,18 @@ class RenderData final
 		float wavelength_ = 0.f; //!< the (normalized) wavelength being used when chromatic is false. The range is defined going from 400nm (0.0) to 700nm (1.0), although the widest range humans can perceive is ofteb given 380-780nm.
 		float time_ = 0.f; //!< the current (normalized) frame time
 		const Camera *cam_ = nullptr;
-		Random *const prng_ = nullptr; //!< a pseudorandom number generator
+		Random *prng_ = nullptr; //!< a pseudorandom number generator
 		mutable void *arena_ = nullptr; //!< a fixed amount of memory where materials may keep data to avoid recalculations...really need better memory management :(
 };
+
+inline void RenderData::setDefaults()
+{
+	raylevel_ = 0;
+	chromatic_ = true;
+	ray_division_ = 1;
+	ray_offset_ = 0;
+	dc_1_ = dc_2_ = 0.f;
+}
 
 END_YAFARAY
 

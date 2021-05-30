@@ -84,6 +84,7 @@ void ConsoleProgressBar::update(int steps_increment)
 	if(!(bar_len >= 0)) bar_len = 0;
 	if(bar_len > last_bar_len_)
 	{
+		std::lock_guard<std::mutex> lock_guard(mutx_);
 		printBar(colors_enabled_, total_bar_len_ - bar_len, bar_len, (int) (100 * progress));
 	}
 	last_bar_len_ = bar_len;
@@ -92,6 +93,7 @@ void ConsoleProgressBar::update(int steps_increment)
 void ConsoleProgressBar::done()
 {
 	ProgressBar::done();
+	std::lock_guard<std::mutex> lock_guard(mutx_);
 	printBar(colors_enabled_, 0, total_bar_len_, 100);
 	std::cout << std::endl;
 }
@@ -101,15 +103,15 @@ void ConsoleProgressBar::printBar(bool colors_enabled, int progress_empty, int p
 	std::cout << "\r";
 	if(colors_enabled) std::cout << ConsoleColor(ConsoleColor::Green);
 	std::cout << "Progress: ";
-	if(colors_enabled) std::cout << ConsoleColor(ConsoleColor::Red, true);
+	if(colors_enabled) std::cout << ConsoleColor();
 	std::cout << "[";
 	if(colors_enabled) std::cout << ConsoleColor(ConsoleColor::Green, true);
 	std::cout << std::string(progress_full, '#') << std::string(progress_empty, ' ');
-	if(colors_enabled) std::cout << ConsoleColor(ConsoleColor::Red, true);
+	if(colors_enabled) std::cout << ConsoleColor();
 	std::cout << "] ";
 	if(colors_enabled) std::cout << ConsoleColor();
 	std::cout << "(";
-	if(colors_enabled) std::cout << ConsoleColor(ConsoleColor::Yellow, true);
+	if(colors_enabled) std::cout << ConsoleColor(ConsoleColor::Green, true);
 	std::cout << percent << "%";
 	if(colors_enabled) std::cout << ConsoleColor();
 	std::cout << ")" << std::flush;

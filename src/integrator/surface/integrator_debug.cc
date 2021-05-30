@@ -27,6 +27,7 @@
 #include "scene/scene.h"
 #include "render/render_data.h"
 #include "accelerator/accelerator.h"
+#include "photon/photon.h"
 
 BEGIN_YAFARAY
 

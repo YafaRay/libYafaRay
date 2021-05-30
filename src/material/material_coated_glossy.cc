@@ -27,6 +27,7 @@
 #include "geometry/surface.h"
 #include "common/logger.h"
 #include "render/render_data.h"
+#include "photon/photon.h"
 
 BEGIN_YAFARAY
 

@@ -86,7 +86,7 @@ class ImageFilm final
 		/*! Return the next area to be rendered
 			CAUTION! This method MUST be threadsafe!
 			\return false if no area is left to be handed out, true otherwise */
-		bool nextArea(RenderArea &a);
+		bool nextArea(const RenderControl &render_control, RenderArea &a);
 		/*! Indicate that all pixels inside the area have been sampled for this pass */
 		void finishArea(const RenderView *render_view, RenderControl &render_control, RenderArea &a);
 		/*! Output all pixels to the color output */

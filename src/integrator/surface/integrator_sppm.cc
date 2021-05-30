@@ -21,7 +21,6 @@
 #include "integrator/surface/integrator_sppm.h"
 #include "geometry/surface.h"
 #include "common/layers.h"
-#include "common/session.h"
 #include "volume/volume.h"
 #include "common/param.h"
 #include "scene/scene.h"
@@ -43,7 +42,7 @@ BEGIN_YAFARAY
 
 static constexpr int n_max_gather_global = 1000; //used to gather all the photon in the radius. seems could get a better way to do that
 
-SppmIntegrator::SppmIntegrator(Logger &logger, unsigned int d_photons, int passnum, bool transp_shad, int shadow_depth) : MonteCarloIntegrator(logger), diffuse_map_(logger), caustic_map_(logger)
+SppmIntegrator::SppmIntegrator(Logger &logger, unsigned int d_photons, int passnum, bool transp_shad, int shadow_depth) : MonteCarloIntegrator(logger)
 {
 	n_photons_ = d_photons;
 	pass_num_ = passnum;
@@ -53,6 +52,11 @@ SppmIntegrator::SppmIntegrator(Logger &logger, unsigned int d_photons, int passn
 	s_depth_ = shadow_depth;
 	tr_shad_ = transp_shad;
 	b_hashgrid_ = false;
+
+	caustic_map_ = std::unique_ptr<PhotonMap>(new PhotonMap(logger));
+	caustic_map_->setName("Caustic Photon Map");
+	diffuse_map_ = std::unique_ptr<PhotonMap>(new PhotonMap(logger));
+	diffuse_map_->setName("Diffuse Photon Map");
 }
 
 bool SppmIntegrator::preprocess(const RenderControl &render_control, const RenderView *render_view, ImageFilm *image_film)
@@ -125,7 +129,7 @@ bool SppmIntegrator::render(RenderControl &render_control, const RenderView *ren
 	max_depth_ = 0.f;
 	min_depth_ = 1e38f;
 
-	diff_rays_enabled_ = session_global.getDifferentialRaysEnabled();	//enable ray differentials for mipmap calculation if there is at least one image texture using Mipmap interpolation
+	diff_rays_enabled_ = render_control.getDifferentialRaysEnabled();	//enable ray differentials for mipmap calculation if there is at least one image texture using Mipmap interpolation
 
 	if(scene_->getLayers().isDefinedAny({Layer::ZDepthNorm, Layer::Mist})) precalcDepths(render_view);
 
@@ -539,15 +543,15 @@ void SppmIntegrator::prePass(int samples, int offset, bool adaptive, const Rende
 	if(b_hashgrid_) photon_grid_.clear();
 	else
 	{
-		session_global.diffuse_map_.get()->clear();
-		session_global.diffuse_map_.get()->setNumPaths(0);
-		session_global.diffuse_map_.get()->reserveMemory(n_photons_);
-		session_global.diffuse_map_.get()->setNumThreadsPkDtree(scene_->getNumThreadsPhotons());
+		diffuse_map_->clear();
+		diffuse_map_->setNumPaths(0);
+		diffuse_map_->reserveMemory(n_photons_);
+		diffuse_map_->setNumThreadsPkDtree(scene_->getNumThreadsPhotons());
 
-		session_global.caustic_map_.get()->clear();
-		session_global.caustic_map_.get()->setNumPaths(0);
-		session_global.caustic_map_.get()->reserveMemory(n_photons_);
-		session_global.caustic_map_.get()->setNumThreadsPkDtree(scene_->getNumThreadsPhotons());
+		caustic_map_->clear();
+		caustic_map_->setNumPaths(0);
+		caustic_map_->reserveMemory(n_photons_);
+		caustic_map_->setNumThreadsPkDtree(scene_->getNumThreadsPhotons());
 	}
 
 	lights_ = render_view->getLightsVisible();
@@ -621,7 +625,7 @@ void SppmIntegrator::prePass(int samples, int offset, bool adaptive, const Rende
 	logger_.logParams(getName(), ": Shooting ", n_photons_, " photons across ", n_threads, " threads (", (n_photons_ / n_threads), " photons/thread)");
 
 	std::vector<std::thread> threads;
-	for(int i = 0; i < n_threads; ++i) threads.push_back(std::thread(&SppmIntegrator::photonWorker, this, session_global.diffuse_map_.get(), session_global.caustic_map_.get(), i, scene_, render_view, std::ref(render_control), n_photons_, light_power_d_.get(), num_d_lights, tmplights, pb.get(), pb_step, std::ref(curr), max_bounces_, std::ref(prng)));
+	for(int i = 0; i < n_threads; ++i) threads.push_back(std::thread(&SppmIntegrator::photonWorker, this, diffuse_map_.get(), caustic_map_.get(), i, scene_, render_view, std::ref(render_control), n_photons_, light_power_d_.get(), num_d_lights, tmplights, pb.get(), pb_step, std::ref(curr), max_bounces_, std::ref(prng)));
 	for(auto &t : threads) t.join();
 
 	pb->done();
@@ -631,7 +635,7 @@ void SppmIntegrator::prePass(int samples, int offset, bool adaptive, const Rende
 
 	totaln_photons_ +=  n_photons_;	// accumulate the total photon number, not using nPath for the case of hashgrid.
 
-	if(logger_.isVerbose()) logger_.logVerbose(getName(), ": Stored photons: ", session_global.diffuse_map_.get()->nPhotons() + session_global.caustic_map_.get()->nPhotons());
+	if(logger_.isVerbose()) logger_.logVerbose(getName(), ": Stored photons: ", diffuse_map_->nPhotons() + caustic_map_->nPhotons());
 
 	if(b_hashgrid_)
 	{
@@ -641,19 +645,19 @@ void SppmIntegrator::prePass(int samples, int offset, bool adaptive, const Rende
 	}
 	else
 	{
-		if(session_global.diffuse_map_.get()->nPhotons() > 0)
+		if(diffuse_map_->nPhotons() > 0)
 		{
 			logger_.logInfo(getName(), ": Building diffuse photons kd-tree:");
-			session_global.diffuse_map_.get()->updateTree();
+			diffuse_map_->updateTree();
 			if(logger_.isVerbose()) logger_.logVerbose(getName(), ": Done.");
 		}
-		if(session_global.caustic_map_.get()->nPhotons() > 0)
+		if(caustic_map_->nPhotons() > 0)
 		{
 			logger_.logInfo(getName(), ": Building caustic photons kd-tree:");
-			session_global.caustic_map_.get()->updateTree();
+			caustic_map_->updateTree();
 			if(logger_.isVerbose()) logger_.logVerbose(getName(), ": Done.");
 		}
-		if(session_global.diffuse_map_.get()->nPhotons() < 50)
+		if(diffuse_map_->nPhotons() < 50)
 		{
 			logger_.logError(getName(), ": Too few photons, stopping now.");
 			return;
@@ -745,10 +749,10 @@ GatherInfo SppmIntegrator::traceGatherRay(yafaray4::RenderData &render_data, yaf
 			float radius_2 = radius_1;
 			int n_gathered_1 = 0, n_gathered_2 = 0;
 
-			if(session_global.diffuse_map_.get()->nPhotons() > 0)
-				n_gathered_1 = session_global.diffuse_map_.get()->gather(sp.p_, gathered.get(), n_search_, radius_1);
-			if(session_global.caustic_map_.get()->nPhotons() > 0)
-				n_gathered_2 = session_global.caustic_map_.get()->gather(sp.p_, gathered.get(), n_search_, radius_2);
+			if(diffuse_map_->nPhotons() > 0)
+				n_gathered_1 = diffuse_map_->gather(sp.p_, gathered.get(), n_search_, radius_1);
+			if(caustic_map_->nPhotons() > 0)
+				n_gathered_2 = caustic_map_->gather(sp.p_, gathered.get(), n_search_, radius_2);
 			if(n_gathered_1 > 0 || n_gathered_2 > 0) // it none photon gathered, we just skip.
 			{
 				if(radius_1 < radius_2) // we choose the smaller one to be the initial radius.
@@ -767,9 +771,9 @@ GatherInfo SppmIntegrator::traceGatherRay(yafaray4::RenderData &render_data, yaf
 			n_gathered = photon_grid_.gather(sp.p_, gathered.get(), n_max_gather_global, radius_2); // disable now
 		else
 		{
-			if(session_global.diffuse_map_.get()->nPhotons() > 0) // this is needed to avoid a runtime error.
+			if(diffuse_map_->nPhotons() > 0) // this is needed to avoid a runtime error.
 			{
-				n_gathered = session_global.diffuse_map_.get()->gather(sp.p_, gathered.get(), n_max_gather_global, radius_2); //we always collected all the photon inside the radius
+				n_gathered = diffuse_map_->gather(sp.p_, gathered.get(), n_max_gather_global, radius_2); //we always collected all the photon inside the radius
 			}
 
 			if(n_gathered > 0)
@@ -818,11 +822,11 @@ GatherInfo SppmIntegrator::traceGatherRay(yafaray4::RenderData &render_data, yaf
 			}
 
 			// gather caustics photons
-			if(bsdfs.hasAny(BsdfFlags::Diffuse) && session_global.caustic_map_.get()->ready())
+			if(bsdfs.hasAny(BsdfFlags::Diffuse) && caustic_map_->ready())
 			{
 
 				radius_2 = hp.radius_2_; //reset radius2 & nGathered
-				n_gathered = session_global.caustic_map_.get()->gather(sp.p_, gathered.get(), n_max_gather_global, radius_2);
+				n_gathered = caustic_map_->gather(sp.p_, gathered.get(), n_max_gather_global, radius_2);
 				if(n_gathered > 0)
 				{
 					Rgb surf_col(0.f);

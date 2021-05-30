@@ -33,6 +33,7 @@
 #include "sampler/sample_pdf1d.h"
 #include "render/render_data.h"
 #include "accelerator/accelerator.h"
+#include "photon/photon.h"
 
 BEGIN_YAFARAY
 
