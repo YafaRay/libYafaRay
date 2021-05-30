@@ -142,7 +142,7 @@ class Scene
 		VolumeRegion *createVolumeRegion(const std::string &name, ParamMap &params);
 		RenderView *createRenderView(const std::string &name, ParamMap &params);
 		std::shared_ptr<Image> createImage(const std::string &name, ParamMap &params);
-		ColorOutput *createOutput(const std::string &name, ParamMap &params, bool auto_delete = true, void *callback_user_data = nullptr, yafaray4_OutputPutpixelCallback_t output_putpixel_callback = nullptr, yafaray4_OutputFlushAreaCallback_t output_flush_area_callback = nullptr, yafaray4_OutputFlushCallback_t output_flush_callback = nullptr);
+		ColorOutput *createOutput(const std::string &name, ParamMap &params, bool auto_delete = true, void *callback_user_data = nullptr, yafaray_OutputPutpixelCallback_t output_putpixel_callback = nullptr, yafaray_OutputFlushAreaCallback_t output_flush_area_callback = nullptr, yafaray_OutputFlushCallback_t output_flush_callback = nullptr);
 		ColorOutput *createOutput(const std::string &name, UniquePtr_t<ColorOutput> output, bool auto_delete = true);
 		bool removeOutput(const std::string &name);
 		void clearOutputs();

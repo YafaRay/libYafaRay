@@ -28,7 +28,7 @@
 
 BEGIN_YAFARAY
 
-UniquePtr_t <yafaray4::ColorOutput> ColorOutput::factory(Logger &logger, const ParamMap &params, const Scene &scene, void *callback_user_data, yafaray4_OutputPutpixelCallback_t output_putpixel_callback, yafaray4_OutputFlushAreaCallback_t output_flush_area_callback, yafaray4_OutputFlushCallback_t output_flush_callback)
+UniquePtr_t <yafaray4::ColorOutput> ColorOutput::factory(Logger &logger, const ParamMap &params, const Scene &scene, void *callback_user_data, yafaray_OutputPutpixelCallback_t output_putpixel_callback, yafaray_OutputFlushAreaCallback_t output_flush_area_callback, yafaray_OutputFlushCallback_t output_flush_callback)
 {
 	if(logger.isDebug())
 	{
@@ -43,7 +43,7 @@ UniquePtr_t <yafaray4::ColorOutput> ColorOutput::factory(Logger &logger, const P
 	else return nullptr;
 }
 
-ColorOutput::ColorOutput(Logger &logger, const std::string &name, const ColorSpace color_space, float gamma, bool with_alpha, bool alpha_premultiply, void *callback_user_data, yafaray4_OutputPutpixelCallback_t output_putpixel_callback, yafaray4_OutputFlushAreaCallback_t output_flush_area_callback, yafaray4_OutputFlushCallback_t output_flush_callback) : name_(name), color_space_(color_space), gamma_(gamma), with_alpha_(with_alpha), alpha_premultiply_(alpha_premultiply), badge_(logger), callback_user_data_(callback_user_data), output_pixel_callback_(output_putpixel_callback), output_flush_area_callback_(output_flush_area_callback), output_flush_callback_(output_flush_callback), logger_(logger)
+ColorOutput::ColorOutput(Logger &logger, const std::string &name, const ColorSpace color_space, float gamma, bool with_alpha, bool alpha_premultiply, void *callback_user_data, yafaray_OutputPutpixelCallback_t output_putpixel_callback, yafaray_OutputFlushAreaCallback_t output_flush_area_callback, yafaray_OutputFlushCallback_t output_flush_callback) : name_(name), color_space_(color_space), gamma_(gamma), with_alpha_(with_alpha), alpha_premultiply_(alpha_premultiply), badge_(logger), callback_user_data_(callback_user_data), output_pixel_callback_(output_putpixel_callback), output_flush_area_callback_(output_flush_area_callback), output_flush_callback_(output_flush_callback), logger_(logger)
 {
 	if(color_space == RawManualGamma)
 	{

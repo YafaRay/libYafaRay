@@ -30,7 +30,7 @@
 
 BEGIN_YAFARAY
 
-Interface::Interface(const ::yafaray4_LoggerCallback_t logger_callback, void *callback_user_data, ::yafaray4_DisplayConsole_t logger_display_console)
+Interface::Interface(const ::yafaray_LoggerCallback_t logger_callback, void *callback_user_data, ::yafaray_DisplayConsole_t logger_display_console)
 {
 	logger_ = std::unique_ptr<Logger>(new Logger(logger_callback, callback_user_data, logger_display_console));
 	params_ = std::unique_ptr<ParamMap>(new ParamMap);
@@ -228,7 +228,7 @@ VolumeRegion *Interface::createVolumeRegion(const char *name) { return scene_->c
 RenderView *Interface::createRenderView(const char *name) { return scene_->createRenderView(name, *params_); }
 Image *Interface::createImage(const char *name) { return scene_->createImage(name, *params_).get(); }
 
-ColorOutput *Interface::createOutput(const char *name, bool auto_delete, void *callback_user_data, yafaray4_OutputPutpixelCallback_t output_putpixel_callback, yafaray4_OutputFlushAreaCallback_t output_flush_area_callback, yafaray4_OutputFlushCallback_t output_flush_callback)
+ColorOutput *Interface::createOutput(const char *name, bool auto_delete, void *callback_user_data, yafaray_OutputPutpixelCallback_t output_putpixel_callback, yafaray_OutputFlushAreaCallback_t output_flush_area_callback, yafaray_OutputFlushCallback_t output_flush_callback)
 {
 	return scene_->createOutput(name, *params_, auto_delete, callback_user_data, output_putpixel_callback, output_flush_area_callback, output_flush_callback);
 }
@@ -306,7 +306,7 @@ void Interface::printError(const std::string &msg) const
 	logger_->logError(msg);
 }
 
-void Interface::render(ProgressBar *pb, bool auto_delete_progress_bar, ::yafaray4_DisplayConsole_t progress_bar_display_console)
+void Interface::render(ProgressBar *pb, bool auto_delete_progress_bar, ::yafaray_DisplayConsole_t progress_bar_display_console)
 {
 	std::shared_ptr<ProgressBar> progress_bar(pb, CustomDeleter<ProgressBar>());
 	progress_bar->setAutoDelete(auto_delete_progress_bar);
@@ -319,12 +319,12 @@ void Interface::enablePrintDateTime(bool value)
 	logger_->enablePrintDateTime(value);
 }
 
-void Interface::setConsoleVerbosityLevel(const ::yafaray4_LogLevel_t &log_level)
+void Interface::setConsoleVerbosityLevel(const ::yafaray_LogLevel_t &log_level)
 {
 	logger_->setConsoleMasterVerbosity(log_level);
 }
 
-void Interface::setLogVerbosityLevel(const ::yafaray4_LogLevel_t &log_level)
+void Interface::setLogVerbosityLevel(const ::yafaray_LogLevel_t &log_level)
 {
 	logger_->setLogMasterVerbosity(log_level);
 }

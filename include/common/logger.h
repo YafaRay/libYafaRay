@@ -60,16 +60,16 @@ class LogEntry final
 class Logger final
 {
 	public:
-		Logger(const ::yafaray4_LoggerCallback_t logger_callback = nullptr, void *callback_user_data = nullptr, ::yafaray4_DisplayConsole_t logger_display_console = YAFARAY_DISPLAY_CONSOLE_NORMAL) : logger_callback_(logger_callback), callback_user_data_(callback_user_data), logger_display_console_(logger_display_console) { }
+		Logger(const ::yafaray_LoggerCallback_t logger_callback = nullptr, void *callback_user_data = nullptr, ::yafaray_DisplayConsole_t logger_display_console = YAFARAY_DISPLAY_CONSOLE_NORMAL) : logger_callback_(logger_callback), callback_user_data_(callback_user_data), logger_display_console_(logger_display_console) { }
 		Logger(const Logger &) = delete; //deleting copy constructor so we can use a std::mutex as a class member (not copiable)
 
-		::yafaray4_LogLevel_t getMaxLogLevel() const;
+		::yafaray_LogLevel_t getMaxLogLevel() const;
 		bool isVerbose() const { return getMaxLogLevel() >= ::YAFARAY_LOG_LEVEL_VERBOSE; }
 		bool isDebug() const { return getMaxLogLevel() >= ::YAFARAY_LOG_LEVEL_DEBUG; }
 
 		void enablePrintDateTime(bool value) { print_datetime_ = value; }
-		void setConsoleMasterVerbosity(const ::yafaray4_LogLevel_t &log_level);
-		void setLogMasterVerbosity(const ::yafaray4_LogLevel_t &log_level);
+		void setConsoleMasterVerbosity(const ::yafaray_LogLevel_t &log_level);
+		void setLogMasterVerbosity(const ::yafaray_LogLevel_t &log_level);
 
 		void setImagePath(const std::string &path) { image_path_ = path; }
 		void setConsoleLogColorsEnabled(bool console_log_colors_enabled) { console_log_colors_enabled_ = console_log_colors_enabled; }
@@ -124,9 +124,9 @@ class Logger final
 		bool console_log_colors_enabled_ = true;	//If false, will supress the colors from the Console log, to help some 3rd party software that cannot handle properly the color ANSI codes
 		std::time_t previous_console_event_date_time_ = 0;
 		std::time_t previous_log_event_date_time_ = 0;
-		const yafaray4_LoggerCallback_t logger_callback_ = nullptr;
+		const yafaray_LoggerCallback_t logger_callback_ = nullptr;
 		void *callback_user_data_ = nullptr;
-		::yafaray4_DisplayConsole_t logger_display_console_;
+		::yafaray_DisplayConsole_t logger_display_console_;
 		std::unordered_map <std::string, double> diagnostics_stats_;
 		std::mutex mutx_;  //To try to avoid garbled output when there are several threads trying to output data to the log
 };
@@ -159,7 +159,7 @@ template <class ...Args> void Logger::log(int verbosity_level, const Args &...ar
 
 	if(logger_callback_)
 	{
-		logger_callback_(static_cast<yafaray4_LogLevel_t>(verbosity_level), current_datetime, time_of_day.c_str(), description.c_str(), callback_user_data_);
+		logger_callback_(static_cast<yafaray_LogLevel_t>(verbosity_level), current_datetime, time_of_day.c_str(), description.c_str(), callback_user_data_);
 	}
 
 	if(logger_display_console_ == YAFARAY_DISPLAY_CONSOLE_NORMAL && verbosity_level <= console_master_verbosity_level_)

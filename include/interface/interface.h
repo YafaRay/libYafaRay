@@ -51,7 +51,7 @@ class Logger;
 class Interface
 {
 	public:
-		Interface(const ::yafaray4_LoggerCallback_t logger_callback = nullptr, void *callback_user_data = nullptr, ::yafaray4_DisplayConsole_t logger_display_console = YAFARAY_DISPLAY_CONSOLE_NORMAL);
+		Interface(const ::yafaray_LoggerCallback_t logger_callback = nullptr, void *callback_user_data = nullptr, ::yafaray_DisplayConsole_t logger_display_console = YAFARAY_DISPLAY_CONSOLE_NORMAL);
 		virtual ~Interface();
 		virtual void createScene();
 		virtual bool startGeometry(); //!< call before creating geometry; only meshes and vmaps can be created in this state
@@ -93,20 +93,20 @@ class Interface
 		virtual VolumeRegion *createVolumeRegion(const char *name);
 		virtual RenderView *createRenderView(const char *name);
 		virtual Image *createImage(const char *name);
-		virtual ColorOutput *createOutput(const char *name, bool auto_delete = true, void *callback_user_data = nullptr, yafaray4_OutputPutpixelCallback_t output_putpixel_callback = nullptr, yafaray4_OutputFlushAreaCallback_t output_flush_area_callback = nullptr, yafaray4_OutputFlushCallback_t output_flush_callback = nullptr); //!< ColorOutput creation, usually for internally-owned outputs that are destroyed when the scene is deleted or when libYafaRay instance is closed. If the client wants to keep ownership, it can set the "auto_delete" to false.
+		virtual ColorOutput *createOutput(const char *name, bool auto_delete = true, void *callback_user_data = nullptr, yafaray_OutputPutpixelCallback_t output_putpixel_callback = nullptr, yafaray_OutputFlushAreaCallback_t output_flush_area_callback = nullptr, yafaray_OutputFlushCallback_t output_flush_callback = nullptr); //!< ColorOutput creation, usually for internally-owned outputs that are destroyed when the scene is deleted or when libYafaRay instance is closed. If the client wants to keep ownership, it can set the "auto_delete" to false.
 		virtual ColorOutput *createOutput(const char *name, ColorOutput *output, bool auto_delete = false); //!< ColorOutput creation, usually for externally client-owned and client-supplied outputs that are *NOT* destroyed when the scene is deleted or when libYafaRay instance is closed. If the client wants to transfer ownership to libYafaRay, it can set the "auto_delete" to true.
 		bool removeOutput(const char *name);
 		virtual void clearOutputs();
 		virtual void clearAll();
-		virtual void render(ProgressBar *pb = nullptr, bool auto_delete_progress_bar = false, ::yafaray4_DisplayConsole_t progress_bar_display_console = YAFARAY_DISPLAY_CONSOLE_NORMAL); //!< render the scene...
+		virtual void render(ProgressBar *pb = nullptr, bool auto_delete_progress_bar = false, ::yafaray_DisplayConsole_t progress_bar_display_console = YAFARAY_DISPLAY_CONSOLE_NORMAL); //!< render the scene...
 		virtual void defineLayer(const std::string &layer_type_name, const std::string &exported_image_type_name, const std::string &exported_image_name, const std::string &image_type_name = "");
 		virtual bool setupLayersParameters();
 		virtual void cancel();
 
 		bool setInteractive(bool interactive);
 		void enablePrintDateTime(bool value);
-		void setConsoleVerbosityLevel(const ::yafaray4_LogLevel_t &log_level);
-		void setLogVerbosityLevel(const ::yafaray4_LogLevel_t &log_level);
+		void setConsoleVerbosityLevel(const ::yafaray_LogLevel_t &log_level);
+		void setLogVerbosityLevel(const ::yafaray_LogLevel_t &log_level);
 		std::string getVersion() const; //!< Get version to check against the exporters
 
 		/*! Console Printing wrappers to report in color with yafaray's own console coloring */

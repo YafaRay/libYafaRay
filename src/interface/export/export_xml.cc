@@ -24,7 +24,7 @@
 
 BEGIN_YAFARAY
 
-XmlExport::XmlExport(const char *fname, const ::yafaray4_LoggerCallback_t logger_callback, void *callback_user_data, ::yafaray4_DisplayConsole_t logger_display_console) : Interface(logger_callback, callback_user_data, logger_display_console), xml_name_(std::string(fname))
+XmlExport::XmlExport(const char *fname, const ::yafaray_LoggerCallback_t logger_callback, void *callback_user_data, ::yafaray_DisplayConsole_t logger_display_console) : Interface(logger_callback, callback_user_data, logger_display_console), xml_name_(std::string(fname))
 {
 	xml_file_.open(xml_name_.c_str());
 	if(!xml_file_.is_open())
@@ -290,7 +290,7 @@ VolumeRegion *XmlExport::createVolumeRegion(const char *name)
 	return nullptr;
 }
 
-ColorOutput *XmlExport::createOutput(const char *name, bool auto_delete, void *callback_user_data, yafaray4_OutputPutpixelCallback_t output_putpixel_callback, yafaray4_OutputFlushAreaCallback_t output_flush_area_callback, yafaray4_OutputFlushCallback_t output_flush_callback)
+ColorOutput *XmlExport::createOutput(const char *name, bool auto_delete, void *callback_user_data, yafaray_OutputPutpixelCallback_t output_putpixel_callback, yafaray_OutputFlushAreaCallback_t output_flush_area_callback, yafaray_OutputFlushCallback_t output_flush_callback)
 {
 	xml_file_ << "\n<output name=\"" << name << "\">\n";
 	writeParamMap(*params_);
@@ -325,7 +325,7 @@ Object *XmlExport::createObject(const char *name)
 	return nullptr;
 }
 
-void XmlExport::render(ProgressBar *pb, bool, ::yafaray4_DisplayConsole_t)
+void XmlExport::render(ProgressBar *pb, bool, ::yafaray_DisplayConsole_t)
 {
 	xml_file_ << "\n<render>\n";
 	writeParamMap(*params_);

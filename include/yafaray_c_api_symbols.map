@@ -1,6 +1,6 @@
 LIBYAFARAY_4.0 {
     global:
-        yafaray4_*;
+        yafaray_*;
 
     local:
         *;

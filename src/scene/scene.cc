@@ -588,7 +588,7 @@ std::shared_ptr<T> Scene::createMapItem(Logger &logger, const std::string &name,
 	return nullptr;
 }
 
-ColorOutput *Scene::createOutput(const std::string &name, ParamMap &params, bool auto_delete, void *callback_user_data, yafaray4_OutputPutpixelCallback_t output_putpixel_callback, yafaray4_OutputFlushAreaCallback_t output_flush_area_callback, yafaray4_OutputFlushCallback_t output_flush_callback)
+ColorOutput *Scene::createOutput(const std::string &name, ParamMap &params, bool auto_delete, void *callback_user_data, yafaray_OutputPutpixelCallback_t output_putpixel_callback, yafaray_OutputFlushAreaCallback_t output_flush_area_callback, yafaray_OutputFlushCallback_t output_flush_callback)
 {
 	std::string pname = "ColorOutput";
 	params["name"] = std::string(name);

@@ -28,7 +28,7 @@
 
 BEGIN_YAFARAY
 
-UniquePtr_t <yafaray4::ColorOutput> DebugOutput::factory(Logger &logger, const ParamMap &params, const Scene &scene, void *callback_user_data, yafaray4_OutputPutpixelCallback_t output_putpixel_callback, yafaray4_OutputFlushAreaCallback_t output_flush_area_callback, yafaray4_OutputFlushCallback_t output_flush_callback)
+UniquePtr_t <yafaray4::ColorOutput> DebugOutput::factory(Logger &logger, const ParamMap &params, const Scene &scene, void *callback_user_data, yafaray_OutputPutpixelCallback_t output_putpixel_callback, yafaray_OutputFlushAreaCallback_t output_flush_area_callback, yafaray_OutputFlushCallback_t output_flush_callback)
 {
 	std::string name;
 	std::string color_space_str = "Raw_Manual_Gamma";
