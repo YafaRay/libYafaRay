@@ -65,7 +65,8 @@ void ConsoleProgressBar::init(int total_steps, bool colors_enabled)
 {
 	ProgressBar::init(total_steps, colors_enabled);
 	last_bar_len_ = 0;
-	printBar(colors_enabled, total_bar_len_, 0, 0);
+	//printBar(colors_enabled, total_bar_len_, 0, 0);
+	//std::cout << std::endl;
 }
 
 void ConsoleProgressBar::update(int steps_increment)
@@ -85,6 +86,7 @@ void ConsoleProgressBar::done()
 {
 	ProgressBar::done();
 	printBar(colors_enabled_, 0, total_bar_len_, 100);
+	std::cout << std::endl;
 }
 
 CallbackProgressBar::CallbackProgressBar(void *callback_user_data, yafaray4_MonitorCallback_t monitor_callback): callback_user_data_(callback_user_data), monitor_callback_(monitor_callback)
