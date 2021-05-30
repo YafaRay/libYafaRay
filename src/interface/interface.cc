@@ -25,7 +25,7 @@
 #include "render/imagefilm.h"
 #include "common/param.h"
 #include "output/output.h"
-#include "render/monitor.h"
+#include "render/progress_bar.h"
 #include <signal.h>
 
 BEGIN_YAFARAY

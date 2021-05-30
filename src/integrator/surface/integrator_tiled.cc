@@ -35,7 +35,7 @@
 #include "render/imagefilm.h"
 #include "camera/camera.h"
 #include "scene/scene.h"
-#include "render/monitor.h"
+#include "render/progress_bar.h"
 #include "sampler/sample.h"
 #include "color/color_layers.h"
 #include "render/render_data.h"

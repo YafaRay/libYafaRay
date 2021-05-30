@@ -26,7 +26,7 @@
 #include "color/color_layers.h"
 #include "common/param.h"
 #include "scene/scene.h"
-#include "render/monitor.h"
+#include "render/progress_bar.h"
 #include "sampler/halton.h"
 #include "sampler/sample.h"
 #include "sampler/sample_pdf1d.h"

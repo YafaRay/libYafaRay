@@ -28,7 +28,7 @@
 #include "scene/scene.h"
 #include "common/file.h"
 #include "common/param.h"
-#include "render/monitor.h"
+#include "render/progress_bar.h"
 #include "common/timer.h"
 #include "color/color_layers.h"
 #include "math/filter.h"

@@ -31,7 +31,7 @@
 #include "color/spectrum.h"
 #include "sampler/halton.h"
 #include "render/imagefilm.h"
-#include "render/monitor.h"
+#include "render/progress_bar.h"
 #include "photon/photon.h"
 #include "sampler/sample.h"
 #include "sampler/sample_pdf1d.h"

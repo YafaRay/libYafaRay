@@ -16,7 +16,7 @@
  *      Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-#include "render/monitor.h"
+#include "render/progress_bar.h"
 #include "common/logger.h"
 #include "color/color_console.h"
 #include "math/math.h"

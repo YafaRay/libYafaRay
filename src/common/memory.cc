@@ -19,7 +19,7 @@
 #include "common/memory.h"
 #include "common/logger.h"
 #include "output/output.h"
-#include "render/monitor.h"
+#include "render/progress_bar.h"
 
 BEGIN_YAFARAY
 

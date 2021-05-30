@@ -25,7 +25,7 @@
 #include "volume/volume.h"
 #include "common/param.h"
 #include "scene/scene.h"
-#include "render/monitor.h"
+#include "render/progress_bar.h"
 #include "common/timer.h"
 #include "render/imagefilm.h"
 #include "camera/camera.h"

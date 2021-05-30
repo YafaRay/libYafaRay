@@ -20,7 +20,7 @@
 #include "interface/interface.h"
 #include "interface/export/export_xml.h"
 #include "geometry/matrix4.h"
-#include "render/monitor.h"
+#include "render/progress_bar.h"
 #include "image/image.h"
 #include <cstring>
 

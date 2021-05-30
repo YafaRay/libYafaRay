@@ -17,8 +17,8 @@
  *      Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-#ifndef YAFARAY_MONITOR_H
-#define YAFARAY_MONITOR_H
+#ifndef YAFARAY_PROGRESS_BAR_H
+#define YAFARAY_PROGRESS_BAR_H
 
 #include "yafaray_conf.h"
 #include "common/thread.h"
@@ -88,4 +88,4 @@ class CallbackProgressBar final : public ProgressBar
 
 END_YAFARAY
 
-#endif // YAFARAY_MONITOR_H
+#endif // YAFARAY_PROGRESS_BAR_H
