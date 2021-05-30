@@ -310,7 +310,6 @@ void Interface::render(ProgressBar *pb, bool auto_delete_progress_bar, ::yafaray
 {
 	std::shared_ptr<ProgressBar> progress_bar(pb, CustomDeleter<ProgressBar>());
 	progress_bar->setAutoDelete(auto_delete_progress_bar);
-	progress_bar->setDisplay(progress_bar_display_console);
 	if(!scene_->setupScene(*scene_, *params_, progress_bar)) return;
 	scene_->render();
 }

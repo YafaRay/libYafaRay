@@ -226,8 +226,8 @@ void yafaray4_clearAll(yafaray4_Interface_t *interface)
 void yafaray4_render(yafaray4_Interface_t *interface, yafaray4_ProgressBarCallback_t monitor_callback, void *callback_user_data, yafaray4_DisplayConsole_t progress_bar_display_console) //!< render the scene...
 {
 	yafaray4::ProgressBar *progress_bar;
-	if(monitor_callback) progress_bar = new yafaray4::CallbackProgressBar(callback_user_data, monitor_callback);
-	else progress_bar = new yafaray4::ConsoleProgressBar();
+	if(progress_bar_display_console == YAFARAY_DISPLAY_CONSOLE_NORMAL) progress_bar = new yafaray4::ConsoleProgressBar(80, monitor_callback, callback_user_data);
+	else progress_bar = new yafaray4::ProgressBar(monitor_callback, callback_user_data);
 	reinterpret_cast<yafaray4::Interface *>(interface)->render(progress_bar, true, progress_bar_display_console);
 }
 

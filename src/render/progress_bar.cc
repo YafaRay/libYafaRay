@@ -30,25 +30,6 @@
 
 BEGIN_YAFARAY
 
-void ProgressBar::printBar(bool colors_enabled, int progress_empty, int progress_full, int percent)
-{
-	std::cout << "\r";
-	if(colors_enabled) std::cout << ConsoleColor(ConsoleColor::Green);
-	std::cout << "Progress: ";
-	if(colors_enabled) std::cout << ConsoleColor(ConsoleColor::Red, true);
-	std::cout << "[";
-	if(colors_enabled) std::cout << ConsoleColor(ConsoleColor::Green, true);
-	std::cout << std::string(progress_full, '#') << std::string(progress_empty, ' ');
-	if(colors_enabled) std::cout << ConsoleColor(ConsoleColor::Red, true);
-	std::cout << "] ";
-	if(colors_enabled) std::cout << ConsoleColor();
-	std::cout << "(";
-	if(colors_enabled) std::cout << ConsoleColor(ConsoleColor::Yellow, true);
-	std::cout << percent << "%";
-	if(colors_enabled) std::cout << ConsoleColor();
-	std::cout << ")" << std::flush;
-}
-
 float ProgressBar::getPercent() const
 {
 	float progress = 0.f;
@@ -56,7 +37,33 @@ float ProgressBar::getPercent() const
 	return progress;
 }
 
-ConsoleProgressBar::ConsoleProgressBar(int cwidth): width_(cwidth)
+void ProgressBar::update(int steps_increment)
+{
+	std::lock_guard<std::mutex> lock_guard(mutx_);
+	steps_done_ += steps_increment;
+	updateCallback();
+}
+
+void ProgressBar::done()
+{
+	std::lock_guard<std::mutex> lock_guard(mutx_);
+	steps_done_ = steps_total_;
+	updateCallback();
+}
+
+void ProgressBar::setTag(const std::string &text)
+{
+	std::lock_guard<std::mutex> lock_guard(mutx_);
+	tag_ = text;
+	updateCallback();
+}
+
+void ProgressBar::updateCallback()
+{
+	if(progress_bar_callback_) progress_bar_callback_(steps_total_, steps_done_, tag_.c_str(), callback_user_data_);
+}
+
+ConsoleProgressBar::ConsoleProgressBar(int cwidth, yafaray4_ProgressBarCallback_t monitor_callback, void *callback_user_data): ProgressBar(monitor_callback, callback_user_data), width_(cwidth)
 {
 	total_bar_len_ = width_ - 22;
 }
@@ -89,33 +96,23 @@ void ConsoleProgressBar::done()
 	std::cout << std::endl;
 }
 
-CallbackProgressBar::CallbackProgressBar(void *callback_user_data, yafaray4_ProgressBarCallback_t monitor_callback): callback_user_data_(callback_user_data), monitor_callback_(monitor_callback)
+void ConsoleProgressBar::printBar(bool colors_enabled, int progress_empty, int progress_full, int percent)
 {
+	std::cout << "\r";
+	if(colors_enabled) std::cout << ConsoleColor(ConsoleColor::Green);
+	std::cout << "Progress: ";
+	if(colors_enabled) std::cout << ConsoleColor(ConsoleColor::Red, true);
+	std::cout << "[";
+	if(colors_enabled) std::cout << ConsoleColor(ConsoleColor::Green, true);
+	std::cout << std::string(progress_full, '#') << std::string(progress_empty, ' ');
+	if(colors_enabled) std::cout << ConsoleColor(ConsoleColor::Red, true);
+	std::cout << "] ";
+	if(colors_enabled) std::cout << ConsoleColor();
+	std::cout << "(";
+	if(colors_enabled) std::cout << ConsoleColor(ConsoleColor::Yellow, true);
+	std::cout << percent << "%";
+	if(colors_enabled) std::cout << ConsoleColor();
+	std::cout << ")" << std::flush;
 }
-
-void CallbackProgressBar::init(int total_steps, bool colors_enabled)
-{
-	ProgressBar::init(total_steps, colors_enabled);
-	updateCallback();
-}
-
-void CallbackProgressBar::update(int steps_increment)
-{
-	ProgressBar::update(steps_increment);
-	updateCallback();
-}
-
-void CallbackProgressBar::setTag(const std::string &text)
-{
-	ProgressBar::setTag(text);
-	updateCallback();
-}
-
-void CallbackProgressBar::done()
-{
-	ProgressBar::done();
-	updateCallback();
-}
-
 
 END_YAFARAY
