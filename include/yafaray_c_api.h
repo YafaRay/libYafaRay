@@ -29,11 +29,9 @@ extern "C" {
 	typedef struct yafaray4_Image yafaray4_Image_t;
 
 	typedef enum { YAFARAY_INTERFACE_FOR_RENDERING, YAFARAY_INTERFACE_EXPORT_XML } yafaray4_Interface_Type_t;
-	typedef enum { YAFARAY_BOOL_FALSE = 0, YAFARAY_BOOL_TRUE = 1} yafaray4_bool_t;
-	typedef enum { YAFARAY_IMAGE_TYPE_GRAY, YAFARAY_IMAGE_TYPE_GRAY_ALPHA, YAFARAY_IMAGE_TYPE_COLOR, YAFARAY_IMAGE_TYPE_COLOR_ALPHA } yafaray4_ImageType_t;
-	typedef enum { YAFARAY_IMAGE_OPTIMIZATION_NONE, YAFARAY_IMAGE_OPTIMIZATION_OPTIMIZED, YAFARAY_IMAGE_OPTIMIZATION_COMPRESSED } yafaray4_ImageOptimization_t;
+	typedef enum { YAFARAY_BOOL_FALSE = 0, YAFARAY_BOOL_TRUE = 1 } yafaray4_bool_t;
 
-	LIBYAFARAY_EXPORT yafaray4_Interface_t *yafaray4_createInterface(yafaray4_Interface_Type_t interface_type, const char *exported_file_path, const yafaray4_LoggerCallback_t logger_callback, void *callback_user_data);
+	LIBYAFARAY_EXPORT yafaray4_Interface_t *yafaray4_createInterface(yafaray4_Interface_Type_t interface_type, const char *exported_file_path, const yafaray4_LoggerCallback_t logger_callback, void *callback_user_data, yafaray4_DisplayConsole_t display_console);
 	LIBYAFARAY_EXPORT void yafaray4_destroyInterface(yafaray4_Interface_t *interface);
 
 	LIBYAFARAY_EXPORT void yafaray4_createScene(yafaray4_Interface_t *interface);
@@ -70,11 +68,11 @@ extern "C" {
 	LIBYAFARAY_EXPORT yafaray4_bool_t yafaray4_createIntegrator(yafaray4_Interface_t *interface, const char *name);
 	LIBYAFARAY_EXPORT yafaray4_bool_t yafaray4_createVolumeRegion(yafaray4_Interface_t *interface, const char *name);
 	LIBYAFARAY_EXPORT yafaray4_bool_t yafaray4_createRenderView(yafaray4_Interface_t *interface, const char *name);
-	LIBYAFARAY_EXPORT yafaray4_bool_t yafaray4_createOutput(yafaray4_Interface_t *interface, const char *name, yafaray4_bool_t auto_delete, void *callback_user_data, yafaray4_OutputPutpixelCallback_t output_putpixel_callback, yafaray4_OutputFlushAreaCallback_t output_flush_area_callback, yafaray4_OutputFlushCallback_t output_flush_callback);
+	LIBYAFARAY_EXPORT yafaray4_bool_t yafaray4_createOutput(yafaray4_Interface_t *interface, const char *name, yafaray4_bool_t auto_delete, yafaray4_OutputPutpixelCallback_t output_putpixel_callback, yafaray4_OutputFlushAreaCallback_t output_flush_area_callback, yafaray4_OutputFlushCallback_t output_flush_callback, void *callback_user_data);
 	LIBYAFARAY_EXPORT yafaray4_bool_t yafaray4_removeOutput(yafaray4_Interface_t *interface, const char *name);
 	LIBYAFARAY_EXPORT void yafaray4_clearOutputs(yafaray4_Interface_t *interface);
 	LIBYAFARAY_EXPORT void yafaray4_clearAll(yafaray4_Interface_t *interface);
-	LIBYAFARAY_EXPORT void yafaray4_render(yafaray4_Interface_t *interface, void *callback_user_data, yafaray4_MonitorCallback_t monitor_callback);
+	LIBYAFARAY_EXPORT void yafaray4_render(yafaray4_Interface_t *interface, yafaray4_ProgressBarCallback_t monitor_callback, void *callback_user_data, yafaray4_DisplayConsole_t progress_bar_display_console);
 	LIBYAFARAY_EXPORT void yafaray4_defineLayer(yafaray4_Interface_t *interface, const char *layer_type_name, const char *exported_image_type_name, const char *exported_image_name, const char *image_type_name);
 	LIBYAFARAY_EXPORT yafaray4_bool_t yafaray4_setupLayersParameters(yafaray4_Interface_t *interface);
 	LIBYAFARAY_EXPORT void yafaray4_cancel(yafaray4_Interface_t *interface);

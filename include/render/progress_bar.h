@@ -46,6 +46,8 @@ class ProgressBar
 		bool isAutoDeleted() const { return auto_delete_; }
 		std::string getName() const { return "ProgressBar"; }
 		static void printBar(bool colors_enabled, int progress_empty, int progress_full, int percent);
+		void setDisplay(::yafaray4_DisplayConsole_t progress_bar_display) { progress_bar_display_ = progress_bar_display; }
+		::yafaray4_DisplayConsole_t getDisplay() const { return progress_bar_display_; }
 
 	protected:
 		bool auto_delete_ = true; //!< If true, the progress bar is owned by libYafaRay and it is automatically deleted when render finishes. Set it to false when the libYafaRay client owns the progress bar.
@@ -53,6 +55,7 @@ class ProgressBar
 		int steps_total_ = 0;
 		int steps_done_ = 0;
 		std::string tag_;
+		::yafaray4_DisplayConsole_t progress_bar_display_ = YAFARAY_DISPLAY_CONSOLE_NORMAL;
 		std::mutex mutx_;
 };
 
@@ -74,7 +77,7 @@ class ConsoleProgressBar final : public ProgressBar
 class CallbackProgressBar final : public ProgressBar
 {
 	public:
-		CallbackProgressBar(void *callback_user_data, yafaray4_MonitorCallback_t monitor_callback);
+		CallbackProgressBar(void *callback_user_data, yafaray4_ProgressBarCallback_t monitor_callback);
 		virtual void init(int total_steps, bool colors_enabled) override;
 		virtual void update(int steps_increment = 1) override;
 		virtual void done() override;
@@ -83,7 +86,7 @@ class CallbackProgressBar final : public ProgressBar
 	private:
 		void updateCallback() { monitor_callback_(steps_total_, steps_done_, tag_.c_str(), callback_user_data_); }
 		void *callback_user_data_ = nullptr;
-		yafaray4_MonitorCallback_t monitor_callback_ = nullptr;
+		yafaray4_ProgressBarCallback_t monitor_callback_ = nullptr;
 };
 
 END_YAFARAY

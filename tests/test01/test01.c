@@ -83,7 +83,7 @@ int main()
 	/* Basic libYafaRay C API usage example, rendering a cube with a TGA texture */
 
 	/* YafaRay standard rendering interface */
-	yi = yafaray4_createInterface(YAFARAY_INTERFACE_FOR_RENDERING, NULL, NULL, &result_image);
+	yi = yafaray4_createInterface(YAFARAY_INTERFACE_FOR_RENDERING, NULL, loggerCallback, &result_image, YAFARAY_DISPLAY_CONSOLE_NORMAL);
 	yafaray4_setConsoleLogColorsEnabled(yi, YAFARAY_BOOL_TRUE);
 	yafaray4_setConsoleVerbosityLevel(yi, YAFARAY_LOG_LEVEL_DEBUG);
 	yafaray4_setInteractive(yi, YAFARAY_BOOL_TRUE);
@@ -218,8 +218,8 @@ int main()
 
 	/* Creating callback output */
 	yafaray4_paramsSetString(yi, "type", "callback_output");
-	/*yafaray4_createOutput(yi, "test_callback_output", YAFARAY_BOOL_TRUE, (void *) &result_image, putPixelCallback, flushAreaCallback, flushCallback);
-yafaray4_paramsClearAll(yi);*/
+	yafaray4_createOutput(yi, "test_callback_output", YAFARAY_BOOL_TRUE, putPixelCallback, flushAreaCallback, flushCallback, (void *) &result_image);
+yafaray4_paramsClearAll(yi);
 
 	/* Creating surface integrator */
 	yafaray4_paramsSetString(yi, "type", "directlighting");
@@ -248,7 +248,7 @@ yafaray4_paramsClearAll(yi);*/
 	yafaray4_paramsSetInt(yi, "threads", -1);
 	yafaray4_paramsSetInt(yi, "threads_photons", -1);
 	/* Rendering */
-	yafaray4_render(yi, &total_steps, NULL /*monitorCallback*/);
+	yafaray4_render(yi, monitorCallback, &total_steps, YAFARAY_DISPLAY_CONSOLE_NORMAL);
 	printf("END: total_steps = %d\n", total_steps);
 	yafaray4_paramsClearAll(yi);
 

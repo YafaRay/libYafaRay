@@ -89,7 +89,7 @@ void ConsoleProgressBar::done()
 	std::cout << std::endl;
 }
 
-CallbackProgressBar::CallbackProgressBar(void *callback_user_data, yafaray4_MonitorCallback_t monitor_callback): callback_user_data_(callback_user_data), monitor_callback_(monitor_callback)
+CallbackProgressBar::CallbackProgressBar(void *callback_user_data, yafaray4_ProgressBarCallback_t monitor_callback): callback_user_data_(callback_user_data), monitor_callback_(monitor_callback)
 {
 }
 

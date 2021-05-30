@@ -59,7 +59,7 @@ class XmlExport: public Interface
 		virtual ColorOutput *createOutput(const char *name, bool auto_delete = true, void *callback_user_data = nullptr, yafaray4_OutputPutpixelCallback_t output_putpixel_callback = nullptr, yafaray4_OutputFlushAreaCallback_t output_flush_area_callback = nullptr, yafaray4_OutputFlushCallback_t output_flush_callback = nullptr) override;
 		virtual void clearAll() override; //!< clear the whole environment + scene, i.e. free (hopefully) all memory.
 		virtual void clearOutputs() override { }
-		virtual void render(ProgressBar *pb = nullptr, bool auto_delete_progress_bar = false) override; //!< render the scene...
+		virtual void render(ProgressBar *pb = nullptr, bool auto_delete_progress_bar = false, ::yafaray4_DisplayConsole_t progress_bar_display_console = YAFARAY_DISPLAY_CONSOLE_NORMAL) override; //!< render the scene...
 		void setXmlColorSpace(std::string color_space_string, float gamma_val);
 
 	protected:

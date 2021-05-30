@@ -24,11 +24,11 @@
 #include "image/image.h"
 #include <cstring>
 
-yafaray4_Interface_t *yafaray4_createInterface(yafaray4_Interface_Type_t interface_type, const char *exported_file_path, const yafaray4_LoggerCallback_t logger_callback, void *callback_user_data)
+yafaray4_Interface_t *yafaray4_createInterface(yafaray4_Interface_Type_t interface_type, const char *exported_file_path, const yafaray4_LoggerCallback_t logger_callback, void *callback_user_data, yafaray4_DisplayConsole_t display_console)
 {
 	yafaray4::Interface *interface;
 	if(interface_type == YAFARAY_INTERFACE_EXPORT_XML) interface = new yafaray4::XmlExport(exported_file_path);
-	else interface = new yafaray4::Interface(logger_callback, callback_user_data);
+	else interface = new yafaray4::Interface(logger_callback, callback_user_data, display_console);
 	return reinterpret_cast<yafaray4_Interface *>(interface);
 }
 
@@ -203,7 +203,7 @@ yafaray4_bool_t yafaray4_createRenderView(yafaray4_Interface_t *interface, const
 	return static_cast<yafaray4_bool_t>(reinterpret_cast<yafaray4::Interface *>(interface)->createRenderView(name) != nullptr);
 }
 
-yafaray4_bool_t yafaray4_createOutput(yafaray4_Interface_t *interface, const char *name, yafaray4_bool_t auto_delete, void *callback_user_data, yafaray4_OutputPutpixelCallback_t output_putpixel_callback, yafaray4_OutputFlushAreaCallback_t output_flush_area_callback, yafaray4_OutputFlushCallback_t output_flush_callback) //!< ColorOutput creation, usually for internally-owned outputs that are destroyed when the scene is deleted or when libYafaRay instance is closed. If the client wants to keep ownership, it can set the "auto_delete" to false.
+yafaray4_bool_t yafaray4_createOutput(yafaray4_Interface_t *interface, const char *name, yafaray4_bool_t auto_delete, yafaray4_OutputPutpixelCallback_t output_putpixel_callback, yafaray4_OutputFlushAreaCallback_t output_flush_area_callback, yafaray4_OutputFlushCallback_t output_flush_callback, void *callback_user_data) //!< ColorOutput creation, usually for internally-owned outputs that are destroyed when the scene is deleted or when libYafaRay instance is closed. If the client wants to keep ownership, it can set the "auto_delete" to false.
 {
 	return static_cast<yafaray4_bool_t>(reinterpret_cast<yafaray4::Interface *>(interface)->createOutput(name, auto_delete, callback_user_data, output_putpixel_callback, output_flush_area_callback, output_flush_callback) != nullptr);
 }
@@ -223,12 +223,12 @@ void yafaray4_clearAll(yafaray4_Interface_t *interface)
 	reinterpret_cast<yafaray4::Interface *>(interface)->clearAll();
 }
 
-void yafaray4_render(yafaray4_Interface_t *interface, void *callback_user_data, yafaray4_MonitorCallback_t monitor_callback) //!< render the scene...
+void yafaray4_render(yafaray4_Interface_t *interface, yafaray4_ProgressBarCallback_t monitor_callback, void *callback_user_data, yafaray4_DisplayConsole_t progress_bar_display_console) //!< render the scene...
 {
 	yafaray4::ProgressBar *progress_bar;
 	if(monitor_callback) progress_bar = new yafaray4::CallbackProgressBar(callback_user_data, monitor_callback);
 	else progress_bar = new yafaray4::ConsoleProgressBar();
-	reinterpret_cast<yafaray4::Interface *>(interface)->render(progress_bar, true);
+	reinterpret_cast<yafaray4::Interface *>(interface)->render(progress_bar, true, progress_bar_display_console);
 }
 
 void yafaray4_defineLayer(yafaray4_Interface_t *interface, const char *layer_type_name, const char *exported_image_type_name, const char *exported_image_name, const char *image_type_name)

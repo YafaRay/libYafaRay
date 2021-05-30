@@ -30,9 +30,9 @@
 
 BEGIN_YAFARAY
 
-Interface::Interface(const ::yafaray4_LoggerCallback_t logger_callback, void *callback_user_data)
+Interface::Interface(const ::yafaray4_LoggerCallback_t logger_callback, void *callback_user_data, ::yafaray4_DisplayConsole_t logger_display_console)
 {
-	logger_ = std::unique_ptr<Logger>(new Logger(logger_callback, callback_user_data));
+	logger_ = std::unique_ptr<Logger>(new Logger(logger_callback, callback_user_data, logger_display_console));
 	params_ = std::unique_ptr<ParamMap>(new ParamMap);
 	eparams_ = std::unique_ptr<std::list<ParamMap>>(new std::list<ParamMap>);
 	cparams_ = params_.get();
@@ -306,10 +306,11 @@ void Interface::printError(const std::string &msg) const
 	logger_->logError(msg);
 }
 
-void Interface::render(ProgressBar *pb, bool auto_delete_progress_bar)
+void Interface::render(ProgressBar *pb, bool auto_delete_progress_bar, ::yafaray4_DisplayConsole_t progress_bar_display_console)
 {
 	std::shared_ptr<ProgressBar> progress_bar(pb, CustomDeleter<ProgressBar>());
 	progress_bar->setAutoDelete(auto_delete_progress_bar);
+	progress_bar->setDisplay(progress_bar_display_console);
 	if(!scene_->setupScene(*scene_, *params_, progress_bar)) return;
 	scene_->render();
 }

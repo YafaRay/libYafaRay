@@ -51,7 +51,7 @@ class Logger;
 class Interface
 {
 	public:
-		Interface(const ::yafaray4_LoggerCallback_t logger_callback = nullptr, void *callback_user_data = nullptr);
+		Interface(const ::yafaray4_LoggerCallback_t logger_callback = nullptr, void *callback_user_data = nullptr, ::yafaray4_DisplayConsole_t logger_display_console = YAFARAY_DISPLAY_CONSOLE_NORMAL);
 		virtual ~Interface();
 		virtual void createScene();
 		virtual bool startGeometry(); //!< call before creating geometry; only meshes and vmaps can be created in this state
@@ -98,7 +98,7 @@ class Interface
 		bool removeOutput(const char *name);
 		virtual void clearOutputs();
 		virtual void clearAll();
-		virtual void render(ProgressBar *pb = nullptr, bool auto_delete_progress_bar = false); //!< render the scene...
+		virtual void render(ProgressBar *pb = nullptr, bool auto_delete_progress_bar = false, ::yafaray4_DisplayConsole_t progress_bar_display_console = YAFARAY_DISPLAY_CONSOLE_NORMAL); //!< render the scene...
 		virtual void defineLayer(const std::string &layer_type_name, const std::string &exported_image_type_name, const std::string &exported_image_name, const std::string &image_type_name = "");
 		virtual bool setupLayersParameters();
 		virtual void cancel();
