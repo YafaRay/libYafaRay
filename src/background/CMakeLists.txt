@@ -1,0 +1,9 @@
+target_sources(libyafaray4
+	PRIVATE
+		${CMAKE_CURRENT_SOURCE_DIR}/background.cc
+		${CMAKE_CURRENT_SOURCE_DIR}/background_constant.cc
+		${CMAKE_CURRENT_SOURCE_DIR}/background_darksky.cc
+		${CMAKE_CURRENT_SOURCE_DIR}/background_gradient.cc
+		${CMAKE_CURRENT_SOURCE_DIR}/background_sunsky.cc
+		${CMAKE_CURRENT_SOURCE_DIR}/background_texture.cc
+)

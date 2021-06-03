@@ -193,7 +193,7 @@ class Layers final : public Collection<Layer::Type, Layer>
 		bool isDefined(const Layer::Type &type) const;
 		bool isDefinedAny(const std::vector<Layer::Type> &types) const;
 		const Layers getLayersWithImages() const;
-		LIBYAFARAY_EXPORT const Layers getLayersWithExportedImages() const;
+		const Layers getLayersWithExportedImages() const;
 
 		const MaskParams &getMaskParams() const { return mask_params_; }
 		void setMaskParams(const MaskParams &mask_params) { mask_params_ = mask_params; }

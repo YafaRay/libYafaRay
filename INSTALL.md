@@ -7,7 +7,6 @@ Dependencies:
     * C++11 compliant compiler
 
   * Optional, depending on options selected in CMake:
-    * meganz/mingw-std-threads
     * \>=zlib-1.2.8
     * \>=opencv-3.1.0
     * \>=freetype-2.4.0

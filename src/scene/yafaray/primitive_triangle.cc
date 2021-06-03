@@ -16,7 +16,7 @@
  *      Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-#include "yafaray_config.h"
+//#include "yafaray_config.h"
 #include "scene/yafaray/primitive_triangle.h"
 #include "scene/yafaray/object_mesh.h"
 #include "geometry/axis.h"

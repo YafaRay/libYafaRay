@@ -1,5 +1,5 @@
 #
-# Try to find OpenEXR's libraries, and include path.
+# Try to find older OpenEXR v2.2.x libraries, and include path.
 # Once done this will define:
 #
 # OPENEXR_FOUND = OpenEXR found. 
@@ -7,8 +7,7 @@
 # OPENEXR_LIBRARIES = libraries that are needed to use OpenEXR.
 # 
 
-INCLUDE(FindZLIB)
-
+find_package(ZLIB)
 
 IF(ZLIB_FOUND)
 

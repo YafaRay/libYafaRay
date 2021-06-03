@@ -1,0 +1,11 @@
+target_sources(libyafaray4
+	PRIVATE
+		${CMAKE_CURRENT_SOURCE_DIR}/volume.cc
+		${CMAKE_CURRENT_SOURCE_DIR}/volume_exp_density.cc
+		${CMAKE_CURRENT_SOURCE_DIR}/volume_grid.cc
+		${CMAKE_CURRENT_SOURCE_DIR}/volume_noise.cc
+		${CMAKE_CURRENT_SOURCE_DIR}/volume_sky.cc
+		${CMAKE_CURRENT_SOURCE_DIR}/volume_uniform.cc
+		${CMAKE_CURRENT_SOURCE_DIR}/volumehandler_beer.cc
+		${CMAKE_CURRENT_SOURCE_DIR}/volumehandler_sss.cc
+)

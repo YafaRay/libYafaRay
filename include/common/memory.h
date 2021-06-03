@@ -32,7 +32,7 @@ BEGIN_YAFARAY
  *   - getName() function is also required in the class to get object name (if any)
  */
 template <typename T>
-struct LIBYAFARAY_EXPORT CustomDeleter
+struct CustomDeleter
 {
 	void operator()(T *object);
 };

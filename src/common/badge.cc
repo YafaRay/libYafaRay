@@ -18,7 +18,7 @@
  *
  */
 
-#include "yafaray_config.h"
+//#include "yafaray_config.h"
 #include "common/badge.h"
 #include "common/param.h"
 #include "color/color.h"

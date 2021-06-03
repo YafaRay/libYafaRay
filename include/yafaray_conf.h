@@ -23,22 +23,6 @@
 #define BEGIN_YAFARAY namespace yafaray4 {
 #define END_YAFARAY }
 
-/* define symbol export and import attributes */
-#ifdef _WIN32
-#define YF_EXPORT __declspec(dllexport)
-#define YF_IMPORT __declspec(dllimport)
-#else /* _WIN32 */
-#define YF_EXPORT __attribute__ ((visibility("default")))
-#define YF_IMPORT
-#endif /* _WIN32 */
-
-/* automatic macros that switch between import and export, depending on compiler environment */
-#ifdef BUILDING_LIBYAFARAY
-#define LIBYAFARAY_EXPORT YF_EXPORT
-#else /* BUILDING_LIBYAFARAY */
-#define LIBYAFARAY_EXPORT YF_IMPORT
-#endif /* BUILDING_LIBYAFARAY */
-
 /* Callback definitions for the C API */
 /* FIXME: Should we care about the function call convention being the same for libYafaRay and its client(s)? */
 typedef void (*yafaray_OutputPutpixelCallback_t)(const char *view_name, const char *layer_name, int x, int y, float r, float g, float b, float a, void *callback_user_data);

@@ -19,7 +19,7 @@
  */
 
 #include "scene/scene.h"
-#include "yafaray_config.h"
+//#include "yafaray_config.h"
 #include "scene/yafaray/scene_yafaray.h"
 #include "common/logger.h"
 #include "common/sysinfo.h"

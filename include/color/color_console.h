@@ -83,7 +83,7 @@ struct ConsoleColor final
 };
 
 
-std::ostream LIBYAFARAY_EXPORT &operator<<(std::ostream &o, const ConsoleColor &c);
+std::ostream &operator<<(std::ostream &o, const ConsoleColor &c);
 
 END_YAFARAY
 

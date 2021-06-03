@@ -1,0 +1,13 @@
+target_sources(libyafaray4
+	PRIVATE
+		${CMAKE_CURRENT_SOURCE_DIR}/axis.cc
+		${CMAKE_CURRENT_SOURCE_DIR}/bound.cc
+		${CMAKE_CURRENT_SOURCE_DIR}/matrix4.cc
+		${CMAKE_CURRENT_SOURCE_DIR}/object.cc
+		${CMAKE_CURRENT_SOURCE_DIR}/object_instance.cc
+		${CMAKE_CURRENT_SOURCE_DIR}/poly_double.cc
+		${CMAKE_CURRENT_SOURCE_DIR}/primitive.cc
+		${CMAKE_CURRENT_SOURCE_DIR}/primitive_instance.cc
+		${CMAKE_CURRENT_SOURCE_DIR}/surface.cc
+		${CMAKE_CURRENT_SOURCE_DIR}/vector.cc
+)

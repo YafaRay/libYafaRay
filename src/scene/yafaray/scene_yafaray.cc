@@ -18,7 +18,7 @@
  */
 
 #include "scene/yafaray/scene_yafaray.h"
-#include "yafaray_config.h"
+//#include "yafaray_config.h"
 #include "common/logger.h"
 #include "accelerator/accelerator.h"
 #include "common/param.h"

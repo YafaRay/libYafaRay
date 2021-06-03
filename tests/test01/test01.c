@@ -83,7 +83,7 @@ int main()
 	/* Basic libYafaRay C API usage example, rendering a cube with a TGA texture */
 
 	/* YafaRay standard rendering interface */
-	yi = yafaray_createInterface(YAFARAY_INTERFACE_FOR_RENDERING, "test01.xml", NULL/*loggerCallback*/, &result_image, YAFARAY_DISPLAY_CONSOLE_NORMAL);
+	yi = yafaray_createInterface(YAFARAY_INTERFACE_FOR_RENDERING, "test01.xml", loggerCallback, &result_image, YAFARAY_DISPLAY_CONSOLE_NORMAL);
 	yafaray_setConsoleLogColorsEnabled(yi, YAFARAY_BOOL_TRUE);
 	yafaray_setConsoleVerbosityLevel(yi, YAFARAY_LOG_LEVEL_DEBUG);
 	yafaray_setInteractive(yi, YAFARAY_BOOL_TRUE);
@@ -218,7 +218,7 @@ int main()
 
 	/* Creating callback output */
 	yafaray_paramsSetString(yi, "type", "callback_output");
-	yafaray_createOutput(yi, "test_callback_output", YAFARAY_BOOL_TRUE, NULL, NULL, NULL, /*putPixelCallback, flushAreaCallback, flushCallback, */(void *) &result_image);
+	yafaray_createOutput(yi, "test_callback_output", YAFARAY_BOOL_TRUE, putPixelCallback, flushAreaCallback, flushCallback, (void *) &result_image);
 yafaray_paramsClearAll(yi);
 
 	/* Creating surface integrator */
@@ -244,12 +244,12 @@ yafaray_paramsClearAll(yi);
 	yafaray_paramsSetString(yi, "background_name", "world_background");
 	yafaray_paramsSetInt(yi, "width", result_image.width_);
 	yafaray_paramsSetInt(yi, "height", result_image.height_);
-	yafaray_paramsSetInt(yi, "AA_minsamples",  50);
+/*	yafaray_paramsSetInt(yi, "AA_minsamples",  50);*/
 /*	yafaray_paramsSetInt(yi, "AA_passes",  100);*/
 	yafaray_paramsSetInt(yi, "threads", -1);
 	yafaray_paramsSetInt(yi, "threads_photons", -1);
 	/* Rendering */
-	yafaray_render(yi, NULL/*monitorCallback*/, &total_steps, YAFARAY_DISPLAY_CONSOLE_NORMAL);
+	yafaray_render(yi, monitorCallback, &total_steps, YAFARAY_DISPLAY_CONSOLE_NORMAL);
 	printf("END: total_steps = %d\n", total_steps);
 	yafaray_paramsClearAll(yi);
 

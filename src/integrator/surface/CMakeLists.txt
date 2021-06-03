@@ -1,0 +1,11 @@
+target_sources(libyafaray4
+	PRIVATE
+		${CMAKE_CURRENT_SOURCE_DIR}/integrator_bidirectional.cc
+		${CMAKE_CURRENT_SOURCE_DIR}/integrator_debug.cc
+		${CMAKE_CURRENT_SOURCE_DIR}/integrator_direct_light.cc
+		${CMAKE_CURRENT_SOURCE_DIR}/integrator_montecarlo.cc
+		${CMAKE_CURRENT_SOURCE_DIR}/integrator_path_tracer.cc
+		${CMAKE_CURRENT_SOURCE_DIR}/integrator_photon_mapping.cc
+		${CMAKE_CURRENT_SOURCE_DIR}/integrator_sppm.cc
+		${CMAKE_CURRENT_SOURCE_DIR}/integrator_tiled.cc
+)

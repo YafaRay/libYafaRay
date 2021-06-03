@@ -17,7 +17,7 @@
  */
 
 #include "interface/interface.h"
-#include "yafaray_config.h"
+//#include "yafaray_config.h"
 #include "common/logger.h"
 #include "scene/scene.h"
 #include "geometry/matrix4.h"

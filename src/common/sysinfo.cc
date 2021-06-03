@@ -21,14 +21,15 @@
 //Threads detection code moved here from scene.cc
 
 #include "common/sysinfo.h"
-#include "yafaray_config.h"
+//#include "yafaray_config.h"
 
 #ifdef __APPLE__
 #include <sys/sysctl.h>
 #elif _WIN32
 #include <windows.h>
 #endif
-#if HAVE_UNISTD_H
+
+#if !defined(_WIN32) || defined(__MINGW32__)
 #include <unistd.h>
 #endif
 
