@@ -133,9 +133,9 @@ void yafaray_paramsSetColor(yafaray_Interface_t *interface, const char *name, fl
 	reinterpret_cast<yafaray4::Interface *>(interface)->paramsSetColor(name, r, g, b, a);
 }
 
-void yafaray_paramsSetMatrix(yafaray_Interface_t *interface, const char *name, const float m[4][4], yafaray_bool_t transpose)
+void yafaray_paramsSetMatrix(yafaray_Interface_t *interface, const char *name, const float *m, yafaray_bool_t transpose)
 {
-	reinterpret_cast<yafaray4::Interface *>(interface)->paramsSetMatrix(name, m, transpose);
+	reinterpret_cast<yafaray4::Interface *>(interface)->paramsSetMemMatrix(name, m, transpose);
 }
 
 void yafaray_paramsClearAll(yafaray_Interface_t *interface) 	//!< clear the paramMap and paramList
