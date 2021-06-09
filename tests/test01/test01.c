@@ -233,7 +233,13 @@ yafaray_paramsClearAll(yi);
 	yafaray_paramsClearAll(yi);
 
 	/* Defining internal and exported layers */
-	yafaray_defineLayer(yi, "combined", "ColorAlpha", "Combined", "ColorAlphaWeight");
+	yafaray_paramsSetString(yi, "type", "combined");
+	yafaray_paramsSetString(yi, "image_type", "ColorAlpha");
+	yafaray_paramsSetString(yi, "exported_image_name", "Combined");
+	yafaray_paramsSetString(yi, "exported_image_type", "ColorAlphaWeight");
+	yafaray_defineLayer(yi);
+	yafaray_paramsClearAll(yi);
+
 	yafaray_setupLayersParameters(yi);
 	yafaray_paramsClearAll(yi);
 

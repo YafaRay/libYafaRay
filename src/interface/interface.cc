@@ -66,9 +66,9 @@ void Interface::clearAll()
 	if(logger_->isVerbose()) logger_->logVerbose("Interface: Cleanup done.");
 }
 
-void Interface::defineLayer(const std::string &layer_type_name, const std::string &exported_image_type_name, const std::string &exported_image_name, const std::string &image_type_name)
+void Interface::defineLayer()
 {
-	scene_->defineLayer(layer_type_name, image_type_name, exported_image_type_name, exported_image_name);
+	scene_->defineLayer(*params_);
 }
 
 bool Interface::setupLayersParameters()

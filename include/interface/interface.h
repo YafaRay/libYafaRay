@@ -100,7 +100,7 @@ class Interface
 		virtual void clearAll();
 		virtual void setupRender();
 		virtual void render(ProgressBar *pb = nullptr, bool auto_delete_progress_bar = false, ::yafaray_DisplayConsole_t progress_bar_display_console = YAFARAY_DISPLAY_CONSOLE_NORMAL); //!< render the scene...
-		virtual void defineLayer(const std::string &layer_type_name, const std::string &exported_image_type_name, const std::string &exported_image_name, const std::string &image_type_name = "");
+		virtual void defineLayer();
 		virtual bool setupLayersParameters();
 		virtual void cancel();
 

@@ -236,9 +236,9 @@ void yafaray_render(yafaray_Interface_t *interface, yafaray_ProgressBarCallback_
 	reinterpret_cast<yafaray4::Interface *>(interface)->render(progress_bar, true, progress_bar_display_console);
 }
 
-void yafaray_defineLayer(yafaray_Interface_t *interface, const char *layer_type_name, const char *exported_image_type_name, const char *exported_image_name, const char *image_type_name)
+void yafaray_defineLayer(yafaray_Interface_t *interface)
 {
-	reinterpret_cast<yafaray4::Interface *>(interface)->defineLayer(layer_type_name, exported_image_type_name, exported_image_name, image_type_name);
+	reinterpret_cast<yafaray4::Interface *>(interface)->defineLayer();
 }
 
 yafaray_bool_t yafaray_setupLayersParameters(yafaray_Interface_t *interface)

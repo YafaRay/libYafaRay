@@ -33,7 +33,7 @@ class XmlExport: public Interface
 		XmlExport(const char *fname, const ::yafaray_LoggerCallback_t logger_callback = nullptr, void *callback_user_data = nullptr, ::yafaray_DisplayConsole_t logger_display_console = YAFARAY_DISPLAY_CONSOLE_NORMAL);
 		virtual void createScene() override;
 		virtual bool setupLayersParameters() override; //!< setup render passes information
-		virtual void defineLayer(const std::string &layer_type_name, const std::string &exported_image_type_name, const std::string &exported_image_name, const std::string &image_type_name = "") override;
+		virtual void defineLayer() override;
 		virtual bool startGeometry() override;
 		virtual bool endGeometry() override;
 		virtual unsigned int getNextFreeId() override;
