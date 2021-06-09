@@ -81,7 +81,7 @@ yafaray_bool_t yafaray_addTriangle(yafaray_Interface_t *interface, int a, int b,
 	return static_cast<yafaray_bool_t>(reinterpret_cast<yafaray4::Interface *>(interface)->addFace(a, b, c));
 }
 
-yafaray_bool_t yafaray_addFaceWithUv(yafaray_Interface_t *interface, int a, int b, int c, int uv_a, int uv_b, int uv_c) //!< add a triangle given vertex and uv indices and material pointer
+yafaray_bool_t yafaray_addTriangleWithUv(yafaray_Interface_t *interface, int a, int b, int c, int uv_a, int uv_b, int uv_c) //!< add a triangle given vertex and uv indices and material pointer
 {
 	return static_cast<yafaray_bool_t>(reinterpret_cast<yafaray4::Interface *>(interface)->addFace(a, b, c, uv_a, uv_b, uv_c));
 }
