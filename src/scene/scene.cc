@@ -671,11 +671,11 @@ const Layers Scene::getLayersWithExportedImages() const
 	attention: since this function creates an image film and asigns it to the scene,
 	you need to delete it before deleting the scene!
 */
-bool Scene::setupScene(Scene &scene, const ParamMap &params, std::shared_ptr<ProgressBar> pb)
+bool Scene::setupSceneRenderParams(Scene &scene, const ParamMap &params)
 {
 	if(logger_.isDebug())
 	{
-		logger_.logDebug("**Scene::setupScene");
+		logger_.logDebug("**Scene::setupSceneRenderParams");
 		params.logContents(logger_);
 	}
 	std::string name;
@@ -760,12 +760,6 @@ bool Scene::setupScene(Scene &scene, const ParamMap &params, std::shared_ptr<Pro
 	defineDependentLayers();
 	image_film_ = ImageFilm::factory(logger_, params, this);
 
-	if(pb)
-	{
-		image_film_->setProgressBar(pb);
-		integrator->setProgressBar(pb);
-	}
-
 	params.getParam("filter_type", name); // AA filter type
 	std::stringstream aa_settings;
 	aa_settings << "AA Settings (" << ((!name.empty()) ? name : "box") << "): Tile size=" << image_film_->getTileSize();
@@ -791,6 +785,25 @@ bool Scene::setupScene(Scene &scene, const ParamMap &params, std::shared_ptr<Pro
 	image_film_->setBackgroundResampling(background_resampling);
 	return true;
 }
+
+bool Scene::setupSceneProgressBar(Scene &scene, std::shared_ptr<ProgressBar> pb)
+{
+	if(logger_.isDebug())
+	{
+		logger_.logDebug("**Scene::setupSceneProgressBar");
+	}
+
+	if(pb)
+	{
+		if(image_film_) image_film_->setProgressBar(pb);
+		else logger_.logError("Scene: image film does not exist, cannot set progress bar");
+
+		if(getSurfIntegrator()) getSurfIntegrator()->setProgressBar(pb);
+		else logger_.logError("Scene: integrator does not exist, cannot set progress bar");
+	}
+	return true;
+}
+
 
 void Scene::defineLayer(const ParamMap &params)
 {

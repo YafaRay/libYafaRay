@@ -248,10 +248,11 @@ yafaray_paramsClearAll(yi);
 /*	yafaray_paramsSetInt(yi, "AA_passes",  100);*/
 	yafaray_paramsSetInt(yi, "threads", -1);
 	yafaray_paramsSetInt(yi, "threads_photons", -1);
+	yafaray_setupRender(yi);
+	yafaray_paramsClearAll(yi);
 	/* Rendering */
 	yafaray_render(yi, monitorCallback, &total_steps, YAFARAY_DISPLAY_CONSOLE_NORMAL);
 	printf("END: total_steps = %d\n", total_steps);
-	yafaray_paramsClearAll(yi);
 
 	/* Destroying YafaRay interface. Scene and all objects inside are automatically destroyed */
 	yafaray_destroyInterface(yi);

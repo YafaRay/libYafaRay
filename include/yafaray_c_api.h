@@ -73,6 +73,7 @@ extern "C" {
 	YAFARAY_C_API_EXPORT yafaray_bool_t yafaray_removeOutput(yafaray_Interface_t *interface, const char *name);
 	YAFARAY_C_API_EXPORT void yafaray_clearOutputs(yafaray_Interface_t *interface);
 	YAFARAY_C_API_EXPORT void yafaray_clearAll(yafaray_Interface_t *interface);
+	YAFARAY_C_API_EXPORT void yafaray_setupRender(yafaray_Interface_t *interface);
 	YAFARAY_C_API_EXPORT void yafaray_render(yafaray_Interface_t *interface, yafaray_ProgressBarCallback_t monitor_callback, void *callback_user_data, yafaray_DisplayConsole_t progress_bar_display_console);
 	YAFARAY_C_API_EXPORT void yafaray_defineLayer(yafaray_Interface_t *interface, const char *layer_type_name, const char *exported_image_type_name, const char *exported_image_name, const char *image_type_name);
 	YAFARAY_C_API_EXPORT yafaray_bool_t yafaray_setupLayersParameters(yafaray_Interface_t *interface);

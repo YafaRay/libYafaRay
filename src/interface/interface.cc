@@ -315,11 +315,16 @@ void Interface::printError(const std::string &msg) const
 	logger_->logError(msg);
 }
 
+void Interface::setupRender()
+{
+	scene_->setupSceneRenderParams(*scene_, *params_);
+}
+
 void Interface::render(ProgressBar *pb, bool auto_delete_progress_bar, ::yafaray_DisplayConsole_t progress_bar_display_console)
 {
 	std::shared_ptr<ProgressBar> progress_bar(pb, CustomDeleter<ProgressBar>());
 	progress_bar->setAutoDelete(auto_delete_progress_bar);
-	if(!scene_->setupScene(*scene_, *params_, progress_bar)) return;
+	if(!scene_->setupSceneProgressBar(*scene_, progress_bar)) return;
 	scene_->render();
 }
 

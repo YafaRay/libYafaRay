@@ -223,6 +223,11 @@ void yafaray_clearAll(yafaray_Interface_t *interface)
 	reinterpret_cast<yafaray4::Interface *>(interface)->clearAll();
 }
 
+void yafaray_setupRender(yafaray_Interface_t *interface)
+{
+	reinterpret_cast<yafaray4::Interface *>(interface)->setupRender();
+}
+
 void yafaray_render(yafaray_Interface_t *interface, yafaray_ProgressBarCallback_t monitor_callback, void *callback_user_data, yafaray_DisplayConsole_t progress_bar_display_console) //!< render the scene...
 {
 	yafaray4::ProgressBar *progress_bar;

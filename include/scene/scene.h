@@ -147,7 +147,8 @@ class Scene
 		void clearOutputs();
 		std::map<std::string, UniquePtr_t<ColorOutput>> &getOutputs() { return outputs_; }
 		const std::map<std::string, UniquePtr_t<ColorOutput>> &getOutputs() const { return outputs_; }
-		bool setupScene(Scene &scene, const ParamMap &params, std::shared_ptr<ProgressBar> pb = nullptr);
+		bool setupSceneRenderParams(Scene &scene, const ParamMap &params);
+		bool setupSceneProgressBar(Scene &scene, std::shared_ptr<ProgressBar> pb = nullptr);
 		void defineLayer(const ParamMap &params);
 		void defineLayer(const std::string &layer_type_name, const std::string &image_type_name, const std::string &exported_image_type_name, const std::string &exported_image_name);
 		void defineLayer(const Layer::Type &layer_type, const Image::Type &image_type = Image::Type::None, const Image::Type &exported_image_type = Image::Type::None, const std::string &exported_image_name = "");

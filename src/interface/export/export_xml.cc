@@ -325,11 +325,15 @@ Object *XmlExport::createObject(const char *name)
 	return nullptr;
 }
 
-void XmlExport::render(ProgressBar *pb, bool, ::yafaray_DisplayConsole_t)
+void XmlExport::setupRender()
 {
 	xml_file_ << "\n<render>\n";
 	writeParamMap(*params_);
 	xml_file_ << "</render>\n";
+}
+
+void XmlExport::render(ProgressBar *pb, bool, ::yafaray_DisplayConsole_t)
+{
 	xml_file_ << "</scene>\n";
 	xml_file_.flush();
 	xml_file_.close();
