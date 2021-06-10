@@ -69,7 +69,7 @@ std::unique_ptr<Image> Image::factory(Logger &logger, ParamMap &params, const Sc
 
 	if(filename.empty())
 	{
-		logger.logInfo("Image '", name, "': creating empty image with width=", width, " height=", height);
+		logger.logVerbose("Image '", name, "': creating empty image with width=", width, " height=", height);
 	}
 	else
 	{
@@ -97,11 +97,14 @@ std::unique_ptr<Image> Image::factory(Logger &logger, ParamMap &params, const Sc
 		else
 		{
 			logger.logError("Image '", name, "': Couldn't load from file '", filename, "', creating empty image with width=", width, " height=", height);
-			image = Image::factory(logger, width, height, type, optimization);
 		}
 	}
-	image->color_space_ = color_space;
-	image->gamma_ = gamma;
+	if(!image) image = Image::factory(logger, width, height, type, optimization);
+	if(image)
+	{
+		image->color_space_ = color_space;
+		image->gamma_ = gamma;
+	}
 	return image;
 }
 
