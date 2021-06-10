@@ -22,6 +22,8 @@
 #include "geometry/matrix4.h"
 #include "render/progress_bar.h"
 #include "image/image.h"
+#include "common/logger.h"
+#include "color/color.h"
 #include <cstring>
 
 yafaray_Interface_t *yafaray_createInterface(yafaray_Interface_Type_t interface_type, const char *exported_file_path, const yafaray_LoggerCallback_t logger_callback, void *callback_user_data, yafaray_DisplayConsole_t display_console)
@@ -349,4 +351,9 @@ void yafaray_cancelRendering(yafaray_Interface_t *interface)
 void yafaray_setConsoleLogColorsEnabled(yafaray_Interface_t *interface, yafaray_bool_t colors_enabled)
 {
 	reinterpret_cast<yafaray4::Interface *>(interface)->setConsoleLogColorsEnabled(colors_enabled);
+}
+
+yafaray_LogLevel_t yafaray_logLevelFromString(const char *log_level_string)
+{
+	return static_cast<yafaray_LogLevel_t>(yafaray4::Logger::vlevelFromString(log_level_string));
 }

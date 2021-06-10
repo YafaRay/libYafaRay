@@ -82,6 +82,7 @@ extern "C" {
 	YAFARAY_C_API_EXPORT void yafaray_enablePrintDateTime(yafaray_Interface_t *interface, yafaray_bool_t value);
 	YAFARAY_C_API_EXPORT void yafaray_setConsoleVerbosityLevel(yafaray_Interface_t *interface, yafaray_LogLevel_t log_level);
 	YAFARAY_C_API_EXPORT void yafaray_setLogVerbosityLevel(yafaray_Interface_t *interface, yafaray_LogLevel_t log_level);
+	YAFARAY_C_API_EXPORT yafaray_LogLevel_t yafaray_logLevelFromString(const char *log_level_string);
 	YAFARAY_C_API_EXPORT void yafaray_getVersion(yafaray_Interface_t *interface, char *dest_string, size_t dest_string_size);
 	YAFARAY_C_API_EXPORT void yafaray_printDebug(yafaray_Interface_t *interface, const char *msg);
 	YAFARAY_C_API_EXPORT void yafaray_printVerbose(yafaray_Interface_t *interface, const char *msg);
@@ -90,7 +91,7 @@ extern "C" {
 	YAFARAY_C_API_EXPORT void yafaray_printWarning(yafaray_Interface_t *interface, const char *msg);
 	YAFARAY_C_API_EXPORT void yafaray_printError(yafaray_Interface_t *interface, const char *msg);
 	YAFARAY_C_API_EXPORT void yafaray_cancelRendering(yafaray_Interface_t *interface);
-	YAFARAY_C_API_EXPORT void yafaray_setInputColorSpace(const char *color_space_string, float gamma_val);
+	YAFARAY_C_API_EXPORT void yafaray_setInputColorSpace(yafaray_Interface_t *interface, const char *color_space_string, float gamma_val);
 	YAFARAY_C_API_EXPORT yafaray_Image_t *yafaray_createImage(yafaray_Interface_t *interface, const char *name);
 	YAFARAY_C_API_EXPORT yafaray_bool_t yafaray_setImageColor(yafaray_Image_t *image, int x, int y, float red, float green, float blue, float alpha);
 	YAFARAY_C_API_EXPORT yafaray_bool_t yafaray_getImageColor(const yafaray_Image_t *image, int x, int y, float *red, float *green, float *blue, float *alpha);
