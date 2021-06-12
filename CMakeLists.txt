@@ -32,16 +32,16 @@ project(libYafaRay
 
 list(APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake/modules")
 
-option(BUILD_SHARED_LIBS "Build project libraries as shared libraries" ON)
-option(BUILD_TESTS "Build test libYafaRay client examples" ON)
-option(FAST_MATH "Enable mathematic approximations to make code faster" ON)
-option(FAST_TRIG "Enable trigonometric approximations to make code faster" ON)
-option(WITH_Freetype "Build with font rendering FreeType support")
-option(WITH_JPEG "Build with JPEG image I/O support")
-option(WITH_OpenCV "Build OpenCV image processing support")
-option(WITH_OpenEXR "Build with OpenEXR image I/O support")
-option(WITH_PNG "Build with PNG image I/O support")
-option(WITH_TIFF "Build with TIFF image I/O support")
+option(YAFARAY_BUILD_SHARED_LIBS "Build project libraries as shared libraries" ON)
+option(YAFARAY_BUILD_TESTS "Build test libYafaRay client examples" ON)
+option(YAFARAY_FAST_MATH "Enable mathematic approximations to make code faster" ON)
+option(YAFARAY_FAST_TRIG "Enable trigonometric approximations to make code faster" ON)
+option(YAFARAY_WITH_Freetype "Build with font rendering FreeType support")
+option(YAFARAY_WITH_JPEG "Build with JPEG image I/O support")
+option(YAFARAY_WITH_OpenCV "Build OpenCV image processing support")
+option(YAFARAY_WITH_OpenEXR "Build with OpenEXR image I/O support")
+option(YAFARAY_WITH_PNG "Build with PNG image I/O support")
+option(YAFARAY_WITH_TIFF "Build with TIFF image I/O support")
 
 get_property(BUILD_TYPE_MULTI_CONFIG GLOBAL PROPERTY GENERATOR_IS_MULTI_CONFIG)
 if(BUILD_TYPE_MULTI_CONFIG)
@@ -63,8 +63,10 @@ else()
 	endif()
 endif()
 
+set(BUILD_SHARED_LIBS ${YAFARAY_BUILD_SHARED_LIBS})
+
 include(message_boolean)
-message_boolean("Building libYafaRay test code clients" BUILD_TESTS "yes" "no")
+message_boolean("Building libYafaRay test code clients" YAFARAY_BUILD_TESTS "yes" "no")
 message_boolean("Building project libraries as" BUILD_SHARED_LIBS "shared" "static")
 
 include(GNUInstallDirs)
@@ -83,7 +85,7 @@ set(CMAKE_INSTALL_RPATH ${BASE_RPATH} ${BASE_RPATH}/${RPATH_RELDIR})
 
 add_subdirectory(src)
 
-if(BUILD_TESTS)
+if(YAFARAY_BUILD_TESTS)
 	add_subdirectory(tests)
 endif()
 
