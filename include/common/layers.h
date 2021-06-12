@@ -175,7 +175,7 @@ struct EdgeToonParams //Options for Edge detection and Toon Render Layers
 	int thickness_ = 2; //!Thickness of the edges used in the Object Edge and Toon Render Layers
 	float threshold_ = 0.3f; //!Threshold for the edge detection process used in the Object Edge and Toon Render Layers
 	float smoothness_ = 0.75f; //!Smoothness (blur) of the edges used in the Object Edge and Toon Render Layers
-	std::array<float, 3> toon_color_ = {0.f, 0.f, 0.f}; //!Color of the edges used in the Toon Render Layers.
+	std::array<float, 3> toon_color_ {{0.f, 0.f, 0.f}}; //!Color of the edges used in the Toon Render Layers.
 	//Using array<float, 3> to avoid including color.h header dependency
 	float toon_pre_smooth_ = 3.f; //!Toon effect: smoothness applied to the original image
 	float toon_quantization_ = 0.1f; //!Toon effect: color Quantization applied to the original image

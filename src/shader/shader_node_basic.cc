@@ -144,10 +144,12 @@ void TextureMapperNode::getCoords(Point3 &texpt, Vec3 &ng, const SurfacePoint &s
 		case Transformed: texpt = mtx_ * sp.p_; ng = mtx_ * sp.ng_; break;  // apply 4x4 matrix of object for mapping also to true surface normals
 		case Window: texpt = render_data.cam_->screenproject(sp.p_); ng = sp.ng_; break;
 		case Normal:
-			Vec3 camx, camy, camz;
-			render_data.cam_->getAxis(camx, camy, camz);
-			texpt = Point3(sp.n_ * camx, -sp.n_ * camy, 0);
-			ng = sp.ng_;
+			{
+				Vec3 camx, camy, camz;
+				render_data.cam_->getAxis(camx, camy, camz);
+				texpt = Point3(sp.n_ * camx, -sp.n_ * camy, 0);
+				ng = sp.ng_;
+			}
 			break;
 		case Stick: // Not implemented yet use GLOB
 		case Stress: // Not implemented yet use GLOB
