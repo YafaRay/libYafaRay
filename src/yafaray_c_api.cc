@@ -24,6 +24,7 @@
 #include "image/image.h"
 #include "common/logger.h"
 #include "color/color.h"
+#include "common/version_build_info.h"
 #include <cstring>
 
 yafaray_Interface_t *yafaray_createInterface(yafaray_Interface_Type_t interface_type, const char *exported_file_path, const yafaray_LoggerCallback_t logger_callback, void *callback_user_data, yafaray_DisplayConsole_t display_console)
@@ -273,9 +274,9 @@ void yafaray_setLogVerbosityLevel(yafaray_Interface_t *interface, yafaray_LogLev
 	reinterpret_cast<yafaray4::Interface *>(interface)->setLogVerbosityLevel(log_level);
 }
 
-void yafaray_getVersion(yafaray_Interface_t *interface, char *dest_string, size_t dest_string_size) //!< Get version to check against the exporters
+void yafaray_getVersion(char *dest_string, size_t dest_string_size) //!< Get version to check against the exporters
 {
-	if(dest_string) strncpy(dest_string, reinterpret_cast<yafaray4::Interface *>(interface)->getVersion().c_str(), dest_string_size);
+	if(dest_string) strncpy(dest_string, yafaray4::buildinfo::getVersion().c_str(), dest_string_size);
 }
 
 /*! Console Printing wrappers to report in color with yafaray's own console coloring */

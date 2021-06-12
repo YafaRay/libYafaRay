@@ -108,7 +108,6 @@ class Interface
 		void enablePrintDateTime(bool value);
 		void setConsoleVerbosityLevel(const ::yafaray_LogLevel_t &log_level);
 		void setLogVerbosityLevel(const ::yafaray_LogLevel_t &log_level);
-		std::string getVersion() const; //!< Get version to check against the exporters
 
 		/*! Console Printing wrappers to report in color with yafaray's own console coloring */
 		void printDebug(const std::string &msg) const;

@@ -17,7 +17,7 @@
  */
 
 #include "interface/interface.h"
-#include "yafaray_build_info.h"
+#include "common/version_build_info.h"
 #include "common/logger.h"
 #include "scene/scene.h"
 #include "geometry/matrix4.h"
@@ -25,7 +25,6 @@
 #include "common/param.h"
 #include "output/output.h"
 #include "render/progress_bar.h"
-#include <signal.h>
 #if defined(_WIN32)
 #include <windows.h>
 #endif
@@ -278,11 +277,6 @@ const Material *Interface::getCurrentMaterial() const
 {
 	if(scene_) return scene_->getCurrentMaterial();
 	else return nullptr;
-}
-
-std::string Interface::getVersion() const
-{
-	return YAFARAY_VERSION;
 }
 
 void Interface::printDebug(const std::string &msg) const
