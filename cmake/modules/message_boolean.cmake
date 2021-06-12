@@ -16,7 +16,13 @@
 #      Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 #
 
-target_sources(libyafaray4
-	PRIVATE
-		${CMAKE_CURRENT_SOURCE_DIR}/halton.cc
-)
+include_guard()
+
+# Function to show a message with an appended text that depends on a boolean variable (for example: "with PNG: yes" (or no))
+function(message_boolean MESSAGE BOOL_VAR TEXT_TRUE TEXT_FALSE)
+	if(${BOOL_VAR})
+		message("${MESSAGE}: ${TEXT_TRUE}")
+	else()
+		message("${MESSAGE}: ${TEXT_FALSE}")
+	endif()
+endfunction()

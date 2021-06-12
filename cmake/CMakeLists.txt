@@ -16,7 +16,4 @@
 #      Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 #
 
-target_sources(libyafaray4
-	PRIVATE
-		${CMAKE_CURRENT_SOURCE_DIR}/halton.cc
-)
+add_subdirectory(generated_headers)

@@ -1,3 +1,21 @@
+#****************************************************************************
+#      This is part of the libYafaRay package
+#
+#      This library is free software; you can redistribute it and/or
+#      modify it under the terms of the GNU Lesser General Public
+#      License as published by the Free Software Foundation; either
+#      version 2.1 of the License, or (at your option) any later version.
+#
+#      This library is distributed in the hope that it will be useful,
+#      but WITHOUT ANY WARRANTY; without even the implied warranty of
+#      MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+#      Lesser General Public License for more details.
+#
+#      You should have received a copy of the GNU Lesser General Public
+#      License along with this library; if not, write to the Free Software
+#      Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+#
+
 if(WIN32)
 	list(APPEND YAF_DEFINITIONS "WIN32")
 	list(APPEND YAF_DEFINITIONS "_USE_MATH_DEFINES")
@@ -87,8 +105,8 @@ add_library(libyafaray4)
 set_target_properties(libyafaray4 PROPERTIES PREFIX "" VERSION 4.0.0 SOVERSION 4)
 set_target_properties(libyafaray4 PROPERTIES CXX_STANDARD 11 CXX_STANDARD_REQUIRED ON CXX_EXTENSIONS OFF)
 set_target_properties(libyafaray4 PROPERTIES C_VISIBILITY_PRESET hidden CXX_VISIBILITY_PRESET hidden VISIBILITY_INLINES_HIDDEN hidden)
-target_compile_definitions(libyafaray4 PRIVATE ${YAF_DEFINITIONS} YAFARAY_BUILD_COMPILER=std::string\(\"FIXME\"\) YAFARAY_BUILD_PLATFORM=std::string\(\"FIXME\"\) YAFARAY_BUILD_OS=std::string\(\"FIXME\"\) YAFARAY_BUILD_ARCHITECTURE=std::string\(\"FIXME\"\) YAFARAY_BUILD_VERSION=std::string\(\"FIXME\"\) min_raydist_global=0.0005 shadow_bias_global=0.005)
-target_include_directories(libyafaray4 PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../include ${CMAKE_BINARY_DIR}/src)
+target_compile_definitions(libyafaray4 PRIVATE ${YAF_DEFINITIONS})
+target_include_directories(libyafaray4 PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../include ${PROJECT_BINARY_DIR}/src)
 target_include_directories(libyafaray4 INTERFACE $<INSTALL_INTERFACE:include>)
 target_include_directories(libyafaray4 SYSTEM BEFORE PRIVATE ${YAF_DEPS_INCLUDE_DIRS})
 target_link_libraries(libyafaray4 PRIVATE ${YAF_DEPS})
@@ -136,7 +154,7 @@ install(TARGETS libyafaray4
 install(FILES
 		../include/yafaray_conf.h
 		../include/yafaray_c_api.h
-		${CMAKE_BINARY_DIR}/src/yafaray_c_api_export.h
+		${PROJECT_BINARY_DIR}/src/yafaray_c_api_export.h
 		DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
 		)
 

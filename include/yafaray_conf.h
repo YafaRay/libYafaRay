@@ -23,6 +23,9 @@
 #define BEGIN_YAFARAY namespace yafaray4 {
 #define END_YAFARAY }
 
+static const float min_raydist_global = 0.00005f;
+static const float shadow_bias_global = 0.0005f;
+
 /* Callback definitions for the C API */
 /* FIXME: Should we care about the function call convention being the same for libYafaRay and its client(s)? */
 typedef void (*yafaray_OutputPutpixelCallback_t)(const char *view_name, const char *layer_name, int x, int y, float r, float g, float b, float a, void *callback_user_data);

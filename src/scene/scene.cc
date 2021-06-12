@@ -19,7 +19,7 @@
  */
 
 #include "scene/scene.h"
-//#include "yafaray_config.h"
+#include "common/version_build_info.h"
 #include "scene/yafaray/scene_yafaray.h"
 #include "common/logger.h"
 #include "common/sysinfo.h"
@@ -90,10 +90,10 @@ Scene::Scene(Logger &logger) : logger_(logger)
 	creation_state_.stack_.push_front(CreationState::Ready);
 	creation_state_.next_free_id_ = std::numeric_limits<int>::max();
 
-	std::string compiler = YAFARAY_BUILD_COMPILER;
-	if(!YAFARAY_BUILD_PLATFORM.empty()) compiler = YAFARAY_BUILD_PLATFORM + "-" + YAFARAY_BUILD_COMPILER;
+	std::string compiler = buildinfo::getBuildCompiler();
+	if(!buildinfo::getBuildPlatform().empty()) compiler = buildinfo::getBuildPlatform() + "-" + compiler;
 
-	logger_.logInfo("LibYafaRay (", YAFARAY_BUILD_VERSION, ")", " ", YAFARAY_BUILD_OS, " ", YAFARAY_BUILD_ARCHITECTURE, " (", compiler, ")");
+	logger_.logInfo("LibYafaRay (", buildinfo::getVersion(), ")", " ", buildinfo::getBuildOs(), " ", buildinfo::getBuildArchitectureBits(), " (", compiler, ")");
 	render_control_.setDifferentialRaysEnabled(false);	//By default, disable ray differential calculations. Only if at least one texture uses them, then enable differentials.
 	createDefaultMaterial();
 

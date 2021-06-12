@@ -18,7 +18,8 @@
  *
  */
 
-//#include "yafaray_config.h"
+#include "yafaray_conf.h"
+#include "common/version_build_info.h"
 #include "common/badge.h"
 #include "common/param.h"
 #include "color/color.h"
@@ -26,8 +27,8 @@
 #include "common/timer.h"
 #include "resource/yafLogoTiny.h"
 #include "format/format.h"
-#include "common/string.h"
 #include "math/interpolation.h"
+#include "common/string.h"
 
 #if HAVE_FREETYPE
 	#include "resource/guifont.h"
@@ -74,9 +75,9 @@ std::string Badge::getFields() const
 std::string Badge::getRenderInfo(const RenderControl &render_control) const
 {
 	std::stringstream ss_badge;
-	std::string compiler = YAFARAY_BUILD_COMPILER;
-	if(!YAFARAY_BUILD_PLATFORM.empty()) compiler = YAFARAY_BUILD_PLATFORM + "-" + YAFARAY_BUILD_COMPILER;
-	ss_badge << "\nYafaRay (" << YAFARAY_BUILD_VERSION << ")" << " " << YAFARAY_BUILD_OS << " " << YAFARAY_BUILD_ARCHITECTURE << " (" << compiler << ")";
+	std::string compiler = buildinfo::getBuildCompiler();
+	if(!buildinfo::getBuildPlatform().empty()) compiler = buildinfo::getBuildPlatform() + "-" + compiler;
+	ss_badge << "\nYafaRay (" << buildinfo::getVersion() << ")" << " " << buildinfo::getBuildOs() << " " << buildinfo::getBuildArchitectureBits() << " (" << compiler << ")";
 	ss_badge << std::setprecision(2);
 	double times = g_timer_global.getTimeNotStopping("rendert");
 	if(render_control.finished()) times = g_timer_global.getTime("rendert");

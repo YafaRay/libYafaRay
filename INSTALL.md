@@ -1,10 +1,9 @@
 libYafaRay uses CMake for the building process in Linux, Windows and MacOSX systems.
 
-See directory "building" for example procedures to build libYafaRay
-
 Dependencies:
   * Required
     * C++11 compliant compiler
+    * \>=cmake-3.14
 
   * Optional, depending on options selected in CMake:
     * \>=zlib-1.2.8
@@ -18,4 +17,4 @@ Dependencies:
 
 Notes about dependencies:
  * ZLib is needed if libPNG or OpenEXR are used.
- * OpenCV is used to do some image processing, most importantly texture mipmaps for Trilinear or EWA interpolations.
+ * OpenCV is used to do some image processing, most importantly LDR denoise, edge/toon layers and texture mipmaps for Trilinear or EWA interpolations.

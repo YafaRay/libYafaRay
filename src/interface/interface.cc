@@ -17,7 +17,7 @@
  */
 
 #include "interface/interface.h"
-//#include "yafaray_config.h"
+#include "yafaray_build_info.h"
 #include "common/logger.h"
 #include "scene/scene.h"
 #include "geometry/matrix4.h"
@@ -282,7 +282,7 @@ const Material *Interface::getCurrentMaterial() const
 
 std::string Interface::getVersion() const
 {
-	return YAFARAY_BUILD_VERSION;
+	return YAFARAY_VERSION;
 }
 
 void Interface::printDebug(const std::string &msg) const

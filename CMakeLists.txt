@@ -1,12 +1,36 @@
-cmake_minimum_required(VERSION 3.10)
-cmake_policy(SET CMP0048 NEW)
+#****************************************************************************
+#      This is part of the libYafaRay package
+#
+#      This library is free software; you can redistribute it and/or
+#      modify it under the terms of the GNU Lesser General Public
+#      License as published by the Free Software Foundation; either
+#      version 2.1 of the License, or (at your option) any later version.
+#
+#      This library is distributed in the hope that it will be useful,
+#      but WITHOUT ANY WARRANTY; without even the implied warranty of
+#      MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+#      Lesser General Public License for more details.
+#
+#      You should have received a copy of the GNU Lesser General Public
+#      License along with this library; if not, write to the Free Software
+#      Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+#
+
+cmake_minimum_required(VERSION 3.14)
+
+set(YAFARAY_VERSION_MAJOR 4)
+set(YAFARAY_VERSION_MINOR 0)
+set(YAFARAY_VERSION_PATCH 0)
+set(YAFARAY_VERSION "${YAFARAY_VERSION_MAJOR}.${YAFARAY_VERSION_MINOR}.${YAFARAY_VERSION_PATCH}")
+set(YAFARAY_VERSION_STATE "-pre-alpha")
+set(YAFARAY_VERSION_STATE_DESCRIPTION "(PRE-ALPHA UNSTABLE VERSION, WORK IN PROGRESS) - ")
 
 project(libYafaRay
-		VERSION 4.0.0
-		DESCRIPTION "(PRE-ALPHA UNSTABLE VERSION) libYafaRay is a free open-source montecarlo raytracing engine released under the LGPL 2.1 license. Raytracing is a rendering technique for generating realistic images by tracing the path of light through a 3D scene"
+		VERSION "${YAFARAY_VERSION}"
+		DESCRIPTION "${YAFARAY_VERSION_STATE_DESCRIPTION}libYafaRay is a free open-source montecarlo raytracing engine released under the LGPL 2.1 license. Raytracing is a rendering technique for generating realistic images by tracing the path of light through a 3D scene"
 		LANGUAGES C CXX)
 
-list(APPEND CMAKE_MODULE_PATH "${libYafaRay_SOURCE_DIR}/cmake/modules")
+list(APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake/modules")
 
 option(BUILD_SHARED_LIBS "Build project libraries as shared libraries" ON)
 option(BUILD_TESTS "Build test libYafaRay client examples" ON)
@@ -19,14 +43,27 @@ option(WITH_OpenEXR "Build with OpenEXR image I/O support")
 option(WITH_PNG "Build with PNG image I/O support")
 option(WITH_TIFF "Build with TIFF image I/O support")
 
-function(message_boolean MESSAGE BOOL_VAR TEXT_TRUE TEXT_FALSE)
-	if(${BOOL_VAR})
-		message("${MESSAGE}: ${TEXT_TRUE}")
-	else()
-		message("${MESSAGE}: ${TEXT_FALSE}")
+get_property(BUILD_TYPE_MULTI_CONFIG GLOBAL PROPERTY GENERATOR_IS_MULTI_CONFIG)
+if(BUILD_TYPE_MULTI_CONFIG)
+	if(NOT "Profile" IN_LIST CMAKE_CONFIGURATION_TYPES)
+		list(APPEND CMAKE_CONFIGURATION_TYPES Profile)
 	endif()
-endfunction()
+else()
+	set(BUILD_TYPES_ALLOWED Debug Release RelWithDebInfo)
+	set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS "${BUILD_TYPES_ALLOWED}")
+	if(NOT CMAKE_BUILD_TYPE)
+		set(CMAKE_BUILD_TYPE "Debug" CACHE STRING "" FORCE)
+	elseif(NOT CMAKE_BUILD_TYPE IN_LIST BUILD_TYPES_ALLOWED)
+		message(FATAL_ERROR "Unknown CMAKE_BUILD_TYPE option: ${CMAKE_BUILD_TYPE}")
+	else()
+		set(YAFARAY_BUILD_TYPE ${CMAKE_BUILD_TYPE})
+		if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+			set(YAFARAY_BUILD_TYPE_DEBUG "-DEBUG")
+		endif()
+	endif()
+endif()
 
+include(message_boolean)
 message_boolean("Building libYafaRay test code clients" BUILD_TESTS "yes" "no")
 message_boolean("Building project libraries as" BUILD_SHARED_LIBS "shared" "static")
 
@@ -50,3 +87,4 @@ if(BUILD_TESTS)
 	add_subdirectory(tests)
 endif()
 
+add_subdirectory(cmake)
