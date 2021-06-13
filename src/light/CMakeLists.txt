@@ -18,15 +18,15 @@
 
 target_sources(libyafaray4
 	PRIVATE
-		${CMAKE_CURRENT_SOURCE_DIR}/light.cc
-		${CMAKE_CURRENT_SOURCE_DIR}/light_area.cc
-		${CMAKE_CURRENT_SOURCE_DIR}/light_background.cc
-		${CMAKE_CURRENT_SOURCE_DIR}/light_background_portal.cc
-		${CMAKE_CURRENT_SOURCE_DIR}/light_directional.cc
-		${CMAKE_CURRENT_SOURCE_DIR}/light_ies.cc
-		${CMAKE_CURRENT_SOURCE_DIR}/light_meshlight.cc
-		${CMAKE_CURRENT_SOURCE_DIR}/light_point.cc
-		${CMAKE_CURRENT_SOURCE_DIR}/light_sphere.cc
-		${CMAKE_CURRENT_SOURCE_DIR}/light_spot.cc
-		${CMAKE_CURRENT_SOURCE_DIR}/light_sun.cc
+		light.cc
+		light_area.cc
+		light_background.cc
+		light_background_portal.cc
+		light_directional.cc
+		light_ies.cc
+		light_meshlight.cc
+		light_point.cc
+		light_sphere.cc
+		light_spot.cc
+		light_sun.cc
 )

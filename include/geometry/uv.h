@@ -20,7 +20,7 @@
 #ifndef YAFARAY_UV_H
 #define YAFARAY_UV_H
 
-#include "yafaray_conf.h"
+#include "public_api/yafaray_conf.h"
 
 BEGIN_YAFARAY
 

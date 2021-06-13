@@ -16,96 +16,15 @@
 #      Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 #
 
-message_boolean("Using mathematical" YAFARAY_FAST_MATH "approximations (faster)" "precise values (slower)")
-if(YAFARAY_FAST_MATH)
-	list(APPEND YAF_DEFINITIONS "FAST_MATH")
-endif()
-
-message_boolean("Using trigonometric" YAFARAY_FAST_TRIG "approximations (faster)" "precise values (slower)")
-if(YAFARAY_FAST_TRIG)
-	list(APPEND YAF_DEFINITIONS "FAST_TRIG")
-endif()
-
-message_boolean("Using OpenCV" YAFARAY_WITH_OpenCV "yes" "no")
-if(YAFARAY_WITH_OpenCV)
-	FIND_PACKAGE(OpenCV COMPONENTS core imgproc photo REQUIRED)
-	list(APPEND YAF_DEFINITIONS "HAVE_OPENCV")
-	list(APPEND YAF_DEPS opencv_core opencv_imgproc opencv_photo)
-endif()
-
-if(YAFARAY_WITH_OpenEXR OR YAFARAY_WITH_PNG)
-	find_package(ZLIB)
-	if(NOT ZLIB_FOUND)
-		message(FATAL_ERROR "ZLib not found: if XML Loader, OpenEXR or PNG options are enabled, ZLib is required.")
-	endif()
-endif()
-
-message_boolean("Using FreeType" YAFARAY_WITH_Freetype "yes" "no")
-if(YAFARAY_WITH_Freetype)
-	find_package(Freetype REQUIRED)
-	list(APPEND YAF_DEFINITIONS "HAVE_FREETYPE")
-	list(APPEND YAF_DEPS Freetype::Freetype)
-endif()
-
-message_boolean("Using OpenEXR" YAFARAY_WITH_OpenEXR "yes" "no")
-if(YAFARAY_WITH_OpenEXR)
-	find_package(Imath CONFIG)
-	if(NOT TARGET Imath::Imath)
-		message("-- Imath not found (not OpenEXR v3.x), looking for IlmBase and OpenEXR v2.4/2.5")
-		find_package(IlmBase CONFIG)
-		if (NOT TARGET IlmBase::IlmBase)
-			message("-- IlmBase not found (not OpenEXR v2.4/2.5), looking for old OpenEXR v2.2")
-		endif()
-	endif()
-	find_package(OpenEXR REQUIRED)
-	list(APPEND YAF_DEFINITIONS "HAVE_OPENEXR")
-	if(TARGET OpenEXR::OpenEXR)
-		list(APPEND YAF_DEPS OpenEXR::OpenEXR)
-	elseif(TARGET OpenEXR::IlmImf)
-		list(APPEND YAF_DEPS OpenEXR::IlmImf)
-	else()
-		list(APPEND YAF_DEPS_INCLUDE_DIRS ${OPENEXR_INCLUDE_DIRS})
-		list(APPEND YAF_DEPS ${OPENEXR_LIBRARIES})
-	endif()
-endif()
-
-message_boolean("Using JPEG" YAFARAY_WITH_JPEG "yes" "no")
-if(YAFARAY_WITH_JPEG)
-	find_package(JPEG REQUIRED)
-	list(APPEND YAF_DEFINITIONS "HAVE_JPEG")
-	list(APPEND YAF_DEPS JPEG::JPEG)
-endif()
-
-message_boolean("Using PNG" YAFARAY_WITH_PNG "yes" "no")
-if(YAFARAY_WITH_PNG)
-	find_package(PNG REQUIRED)
-	list(APPEND YAF_DEFINITIONS "HAVE_PNG")
-	list(APPEND YAF_DEPS PNG::PNG)
-endif()
-
-message_boolean("Using TIFF" YAFARAY_WITH_TIFF "yes" "no")
-if(YAFARAY_WITH_TIFF)
-	find_package(TIFF REQUIRED)
-	list(APPEND YAF_DEFINITIONS "HAVE_TIFF")
-	list(APPEND YAF_DEPS TIFF::TIFF)
-endif()
-
 add_library(libyafaray4)
 set_target_properties(libyafaray4 PROPERTIES PREFIX "" VERSION 4.0.0 SOVERSION 4)
 set_target_properties(libyafaray4 PROPERTIES CXX_STANDARD 11 CXX_STANDARD_REQUIRED ON CXX_EXTENSIONS OFF)
-set_target_properties(libyafaray4 PROPERTIES C_VISIBILITY_PRESET hidden CXX_VISIBILITY_PRESET hidden VISIBILITY_INLINES_HIDDEN hidden)
-target_compile_definitions(libyafaray4 PRIVATE ${YAF_DEFINITIONS})
-target_include_directories(libyafaray4 PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../include ${PROJECT_BINARY_DIR}/src)
+set_target_properties(libyafaray4 PROPERTIES CXX_VISIBILITY_PRESET hidden VISIBILITY_INLINES_HIDDEN ON)
+target_include_directories(libyafaray4 PRIVATE ${PROJECT_SOURCE_DIR}/include ${PROJECT_BINARY_DIR}/include)
 target_include_directories(libyafaray4 INTERFACE $<INSTALL_INTERFACE:include>)
-target_include_directories(libyafaray4 SYSTEM BEFORE PRIVATE ${YAF_DEPS_INCLUDE_DIRS})
-target_link_libraries(libyafaray4 PRIVATE ${YAF_DEPS})
+
 find_package(Threads REQUIRED)
 target_link_libraries(libyafaray4 PRIVATE Threads::Threads)
-
-target_sources(libyafaray4
-	PRIVATE
-		${CMAKE_CURRENT_SOURCE_DIR}/yafaray_c_api.cc
-)
 
 add_subdirectory(accelerator)
 add_subdirectory(background)
@@ -122,6 +41,7 @@ add_subdirectory(material)
 add_subdirectory(math)
 add_subdirectory(output)
 add_subdirectory(photon)
+add_subdirectory(public_api)
 add_subdirectory(render)
 add_subdirectory(sampler)
 add_subdirectory(scene)
@@ -129,9 +49,50 @@ add_subdirectory(shader)
 add_subdirectory(texture)
 add_subdirectory(volume)
 
+message_boolean("Using mathematical" YAFARAY_FAST_MATH "approximations (faster)" "precise values (slower)")
+if(YAFARAY_FAST_MATH)
+	list(APPEND YAF_COMMON_DEFINITIONS "FAST_MATH")
+endif()
+
+message_boolean("Using trigonometric" YAFARAY_FAST_TRIG "approximations (faster)" "precise values (slower)")
+if(YAFARAY_FAST_TRIG)
+	list(APPEND YAF_COMMON_DEFINITIONS "FAST_TRIG")
+endif()
+
+message_boolean("Using FreeType" YAFARAY_WITH_Freetype "yes" "no")
+if(YAFARAY_WITH_Freetype)
+	find_package(Freetype REQUIRED)
+	list(APPEND YAF_COMMON_DEFINITIONS "HAVE_FREETYPE")
+	target_link_libraries(libyafaray4 PRIVATE Freetype::Freetype)
+endif()
+
+message_boolean("Using OpenCV" YAFARAY_WITH_OpenCV "yes" "no")
+if(YAFARAY_WITH_OpenCV)
+	FIND_PACKAGE(OpenCV COMPONENTS core imgproc photo REQUIRED)
+	list(APPEND YAF_COMMON_DEFINITIONS "HAVE_OPENCV")
+	target_link_libraries(libyafaray4 PRIVATE opencv_core opencv_imgproc opencv_photo)
+endif()
+
+# Custom definitions
+target_compile_definitions(libyafaray4 PRIVATE ${YAF_COMMON_DEFINITIONS})
+
+# Custom linker options
+if(CMAKE_SYSTEM_NAME MATCHES "Linux" AND (CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID STREQUAL "Clang"))
+	target_link_options(libyafaray4 PRIVATE
+			"LINKER:SHELL:--no-undefined"
+			"LINKER:SHELL:--version-script=${PROJECT_SOURCE_DIR}/include/public_api/yafaray_c_api_symbols.map" # Custom symbols export and versioning map
+			"$<$<CONFIG:RELEASE>:LINKER:SHELL:-s>" # Strip in release builds
+			)
+endif()
+
+# Copy C API include files to binary directory for other targets to use
+file(MAKE_DIRECTORY ${PROJECT_BINARY_DIR}/include)
+configure_file(${PROJECT_SOURCE_DIR}/include/public_api/yafaray_conf.h ${PROJECT_BINARY_DIR}/include/)
+configure_file(${PROJECT_SOURCE_DIR}/include/public_api/yafaray_c_api.h ${PROJECT_BINARY_DIR}/include/)
+
 # Shared target used for generating export header # with the name mytools_export.h, which will be suitable # for both the shared and static targets
 include(GenerateExportHeader)
-generate_export_header(libyafaray4 BASE_NAME yafaray_c_api)
+generate_export_header(libyafaray4 BASE_NAME yafaray_c_api EXPORT_FILE_NAME ${PROJECT_BINARY_DIR}/include/yafaray_c_api_export.h)
 
 install(TARGETS libyafaray4
 		EXPORT LibYafaRay
@@ -141,10 +102,10 @@ install(TARGETS libyafaray4
 		)
 
 install(FILES
-		../include/yafaray_conf.h
-		../include/yafaray_c_api.h
-		${PROJECT_BINARY_DIR}/src/yafaray_c_api_export.h
-		${PROJECT_BINARY_DIR}/src/yafaray_build_info.h
+		${PROJECT_SOURCE_DIR}/include/public_api/yafaray_conf.h
+		${PROJECT_SOURCE_DIR}/include/public_api/yafaray_c_api.h
+		${PROJECT_BINARY_DIR}/include/yafaray_c_api_export.h
+		${PROJECT_BINARY_DIR}/include/yafaray_build_info.h
 		DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
 		)
 

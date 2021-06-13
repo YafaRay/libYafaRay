@@ -21,7 +21,7 @@
 #ifndef YAFARAY_FLAGS_H
 #define YAFARAY_FLAGS_H
 
-#include "yafaray_conf.h"
+#include "public_api/yafaray_conf.h"
 #include <sstream>
 
 BEGIN_YAFARAY

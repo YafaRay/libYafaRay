@@ -23,7 +23,7 @@
 #ifndef YAFARAY_INTEGRATOR_H
 #define YAFARAY_INTEGRATOR_H
 
-#include "yafaray_conf.h"
+#include "public_api/yafaray_conf.h"
 #include <string>
 #include <common/logger.h>
 #include "render/render_control.h"

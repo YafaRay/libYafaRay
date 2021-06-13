@@ -18,12 +18,12 @@
 
 target_sources(libyafaray4
 	PRIVATE
-		${CMAKE_CURRENT_SOURCE_DIR}/object_curve.cc
-		${CMAKE_CURRENT_SOURCE_DIR}/object_mesh.cc
-		${CMAKE_CURRENT_SOURCE_DIR}/object_yafaray.cc
-		${CMAKE_CURRENT_SOURCE_DIR}/primitive_face.cc
-		${CMAKE_CURRENT_SOURCE_DIR}/primitive_sphere.cc
-		${CMAKE_CURRENT_SOURCE_DIR}/primitive_triangle.cc
-		${CMAKE_CURRENT_SOURCE_DIR}/primitive_triangle_bspline.cc
-		${CMAKE_CURRENT_SOURCE_DIR}/scene_yafaray.cc
+		object_curve.cc
+		object_mesh.cc
+		object_yafaray.cc
+		primitive_face.cc
+		primitive_sphere.cc
+		primitive_triangle.cc
+		primitive_triangle_bspline.cc
+		scene_yafaray.cc
 )

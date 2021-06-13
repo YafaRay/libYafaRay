@@ -22,7 +22,7 @@
 #ifndef YAFARAY_IMAGE_H
 #define YAFARAY_IMAGE_H
 
-#include "yafaray_conf.h"
+#include "public_api/yafaray_conf.h"
 #include "common/memory.h"
 #include "color/color.h"
 #include <string>

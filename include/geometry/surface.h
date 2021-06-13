@@ -23,7 +23,7 @@
 #ifndef YAFARAY_SURFACE_H
 #define YAFARAY_SURFACE_H
 
-#include "yafaray_conf.h"
+#include "public_api/yafaray_conf.h"
 #include "geometry/vector.h"
 #include "geometry/intersect_data.h"
 #include "color/color.h"

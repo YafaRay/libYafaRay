@@ -22,8 +22,9 @@
 #ifndef LIBYAFARAY_VERSION_BUILD_INFO_H
 #define LIBYAFARAY_VERSION_BUILD_INFO_H
 
-#include "yafaray_conf.h"
+#include "public_api/yafaray_conf.h"
 #include <string>
+#include <vector>
 
 BEGIN_YAFARAY
 
@@ -44,11 +45,13 @@ namespace buildinfo
 	std::string getCommitsSinceTag();
 	std::string getBuildArchitectureBits();
 	std::string getBuildCompiler();
+	std::string getBuildCompilerVersion();
 	std::string getBuildOs();
-	std::string getBuildPlatform();
 	std::string getBuildType();
-	std::string getBuildDebug();
+	std::string getBuildTypeSuffix();
 	std::string getBuildOptions();
+	std::string getBuildFlags();
+	std::vector<std::string> getAllBuildDetails();
 }
 
 END_YAFARAY

@@ -20,8 +20,6 @@
  *
  */
 
-#ifdef HAVE_OPENEXR
-
 #include "format/format_exr.h"
 #include "common/logger.h"
 #include "common/param.h"
@@ -380,5 +378,3 @@ std::unique_ptr<Format> ExrFormat::factory(Logger &logger, ParamMap &params)
 }
 
 END_YAFARAY
-
-#endif // HAVE_OPENEXR

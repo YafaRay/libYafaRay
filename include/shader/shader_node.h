@@ -20,7 +20,7 @@
 #ifndef YAFARAY_SHADER_NODE_H
 #define YAFARAY_SHADER_NODE_H
 
-#include "yafaray_conf.h"
+#include "public_api/yafaray_conf.h"
 #include "scene/scene.h"
 #include "color/color.h"
 #include "common/collection.h"

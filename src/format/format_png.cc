@@ -20,8 +20,6 @@
  *
  */
 
-#ifdef HAVE_PNG
-
 #include "format/format_png.h"
 #include "color/color.h"
 #include "common/logger.h"
@@ -335,5 +333,3 @@ std::unique_ptr<Format> PngFormat::factory(Logger &logger, ParamMap &params)
 }
 
 END_YAFARAY
-
-#endif // HAVE_PNG

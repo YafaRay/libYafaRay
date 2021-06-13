@@ -20,8 +20,6 @@
  *
  */
 
-#ifdef HAVE_JPEG
-
 #include "format/format_jpg.h"
 #include "common/logger.h"
 #include "common/param.h"
@@ -266,5 +264,3 @@ std::unique_ptr<Format> JpgFormat::factory(Logger &logger, ParamMap &params)
 }
 
 END_YAFARAY
-
-#endif // HAVE_JPEG

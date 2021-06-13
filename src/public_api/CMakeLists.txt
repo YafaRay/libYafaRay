@@ -18,9 +18,5 @@
 
 target_sources(libyafaray4
 	PRIVATE
-		imagefilm.cc
-		imagesplitter.cc
-		progress_bar.cc
-		render_control.cc
-		render_view.cc
+		yafaray_c_api.cc
 )

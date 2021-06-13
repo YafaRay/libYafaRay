@@ -20,7 +20,7 @@
 #ifndef YAFARAY_PHOTON_H
 #define YAFARAY_PHOTON_H
 
-#include "yafaray_conf.h"
+#include "public_api/yafaray_conf.h"
 
 #include "pkdtree.h"
 #include "color/color.h"

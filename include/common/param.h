@@ -20,7 +20,7 @@
 #ifndef YAFARAY_PARAM_H
 #define YAFARAY_PARAM_H
 
-#include "yafaray_conf.h"
+#include "public_api/yafaray_conf.h"
 #include <map>
 #include <vector>
 #include <string>

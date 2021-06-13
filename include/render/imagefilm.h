@@ -24,7 +24,7 @@
 #ifndef YAFARAY_IMAGEFILM_H
 #define YAFARAY_IMAGEFILM_H
 
-#include "yafaray_conf.h"
+#include "public_api/yafaray_conf.h"
 #include "imagesplitter.h"
 #include "common/aa_noise_params.h"
 #include "common/layers.h"

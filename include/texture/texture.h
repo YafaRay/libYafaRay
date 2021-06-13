@@ -20,7 +20,7 @@
 #ifndef YAFARAY_TEXTURE_H
 #define YAFARAY_TEXTURE_H
 
-#include "yafaray_conf.h"
+#include "public_api/yafaray_conf.h"
 #include "color/color.h"
 #include "color/color_ramp.h"
 #include "geometry/vector.h"

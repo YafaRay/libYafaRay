@@ -20,7 +20,7 @@
 #ifndef YAFARAY_ACCELERATOR_H
 #define YAFARAY_ACCELERATOR_H
 
-#include "yafaray_conf.h"
+#include "public_api/yafaray_conf.h"
 #include "geometry/intersect_data.h"
 #include "color/color.h"
 #include "common/memory.h"

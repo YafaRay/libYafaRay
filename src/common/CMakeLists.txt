@@ -18,13 +18,13 @@
 
 target_sources(libyafaray4
 	PRIVATE
-		${CMAKE_CURRENT_SOURCE_DIR}/badge.cc
-		${CMAKE_CURRENT_SOURCE_DIR}/file.cc
-		${CMAKE_CURRENT_SOURCE_DIR}/layers.cc
-		${CMAKE_CURRENT_SOURCE_DIR}/logger.cc
-		${CMAKE_CURRENT_SOURCE_DIR}/memory.cc
-		${CMAKE_CURRENT_SOURCE_DIR}/param.cc
-		${CMAKE_CURRENT_SOURCE_DIR}/sysinfo.cc
-		${CMAKE_CURRENT_SOURCE_DIR}/timer.cc
-		${CMAKE_CURRENT_SOURCE_DIR}/version_build_info.cc
+		badge.cc
+		file.cc
+		layers.cc
+		logger.cc
+		memory.cc
+		param.cc
+		sysinfo.cc
+		timer.cc
+		version_build_info.cc
 )

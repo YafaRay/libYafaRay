@@ -23,7 +23,7 @@
 #ifndef YAFARAY_MATRIX4_H
 #define YAFARAY_MATRIX4_H
 
-#include "yafaray_conf.h"
+#include "public_api/yafaray_conf.h"
 #include "vector.h"
 #include <iostream>
 

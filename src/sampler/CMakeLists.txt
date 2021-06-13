@@ -18,5 +18,5 @@
 
 target_sources(libyafaray4
 	PRIVATE
-		${CMAKE_CURRENT_SOURCE_DIR}/halton.cc
+		halton.cc
 )

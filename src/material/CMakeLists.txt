@@ -18,14 +18,14 @@
 
 target_sources(libyafaray4
 	PRIVATE
-		${CMAKE_CURRENT_SOURCE_DIR}/material.cc
-		${CMAKE_CURRENT_SOURCE_DIR}/material_blend.cc
-		${CMAKE_CURRENT_SOURCE_DIR}/material_coated_glossy.cc
-		${CMAKE_CURRENT_SOURCE_DIR}/material_glass.cc
-		${CMAKE_CURRENT_SOURCE_DIR}/material_glossy.cc
-		${CMAKE_CURRENT_SOURCE_DIR}/material_mask.cc
-		${CMAKE_CURRENT_SOURCE_DIR}/material_node.cc
-		${CMAKE_CURRENT_SOURCE_DIR}/material_rough_glass.cc
-		${CMAKE_CURRENT_SOURCE_DIR}/material_shiny_diffuse.cc
-		${CMAKE_CURRENT_SOURCE_DIR}/material_simple.cc
+		material.cc
+		material_blend.cc
+		material_coated_glossy.cc
+		material_glass.cc
+		material_glossy.cc
+		material_mask.cc
+		material_node.cc
+		material_rough_glass.cc
+		material_shiny_diffuse.cc
+		material_simple.cc
 )

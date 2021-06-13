@@ -89,11 +89,16 @@ Scene::Scene(Logger &logger) : logger_(logger)
 	creation_state_.changes_ = CreationState::Flags::CAll;
 	creation_state_.stack_.push_front(CreationState::Ready);
 	creation_state_.next_free_id_ = std::numeric_limits<int>::max();
-
-	std::string compiler = buildinfo::getBuildCompiler();
-	if(!buildinfo::getBuildPlatform().empty()) compiler = buildinfo::getBuildPlatform() + "-" + compiler;
-
-	logger_.logInfo("LibYafaRay (", buildinfo::getVersion(), ")", " ", buildinfo::getBuildOs(), " ", buildinfo::getBuildArchitectureBits(), " (", compiler, ")");
+	logger_.logInfo("LibYafaRay (", buildinfo::getVersion(), buildinfo::getBuildTypeSuffix(), ")", " ", buildinfo::getBuildOs(), " ", buildinfo::getBuildArchitectureBits(), "bit (", buildinfo::getBuildCompiler(), ")");
+	logger_.logDebug("LibYafaRay build details:");
+	if(logger_.isDebug())
+	{
+		const std::vector<std::string> build_details = buildinfo::getAllBuildDetails();
+		for(const auto &build_detail : build_details)
+		{
+			logger_.logDebug(build_detail);
+		}
+	}
 	render_control_.setDifferentialRaysEnabled(false);	//By default, disable ray differential calculations. Only if at least one texture uses them, then enable differentials.
 	createDefaultMaterial();
 

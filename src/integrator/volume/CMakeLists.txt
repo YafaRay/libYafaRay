@@ -18,8 +18,8 @@
 
 target_sources(libyafaray4
 	PRIVATE
-		${CMAKE_CURRENT_SOURCE_DIR}/integrator_emission.cc
-		${CMAKE_CURRENT_SOURCE_DIR}/integrator_empty_volume.cc
-		${CMAKE_CURRENT_SOURCE_DIR}/integrator_single_scatter.cc
-		${CMAKE_CURRENT_SOURCE_DIR}/integrator_sky.cc
+		integrator_emission.cc
+		integrator_empty_volume.cc
+		integrator_single_scatter.cc
+		integrator_sky.cc
 )

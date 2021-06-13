@@ -38,10 +38,34 @@ std::string buildinfo::getGitCommitDateTime() { return YAFARAY_VERSION_GIT_COMMI
 std::string buildinfo::getCommitsSinceTag() { return YAFARAY_VERSION_GIT_COMMITS_SINCE_TAG; }
 std::string buildinfo::getBuildArchitectureBits() { return YAFARAY_BUILD_ARCHITECTURE_BITS; }
 std::string buildinfo::getBuildCompiler() { return YAFARAY_BUILD_COMPILER; }
+std::string buildinfo::getBuildCompilerVersion() { return YAFARAY_BUILD_COMPILER_VERSION; }
 std::string buildinfo::getBuildOs() { return YAFARAY_BUILD_OS; }
-std::string buildinfo::getBuildPlatform() { return YAFARAY_BUILD_PLATFORM; }
 std::string buildinfo::getBuildType() { return YAFARAY_BUILD_TYPE; }
-std::string buildinfo::getBuildDebug() { return YAFARAY_BUILD_TYPE_DEBUG; }
+std::string buildinfo::getBuildTypeSuffix() { return YAFARAY_BUILD_TYPE_SUFFIX; }
 std::string buildinfo::getBuildOptions() { return YAFARAY_BUILD_OPTIONS_COMPILE_DEFINITIONS; }
+std::string buildinfo::getBuildFlags() { return YAFARAY_BUILD_FLAGS; }
+
+std::vector<std::string> buildinfo::getAllBuildDetails()
+{
+	std::vector<std::string> result;
+	result.emplace_back("Version = '" + getVersion() + "'");
+	result.emplace_back("VersionState = '" + getVersionState() + "'");
+	result.emplace_back("VersionStateDescription = '" + getVersionStateDescription() + "'");
+	result.emplace_back("Git = '" + getGit() + "'");
+	result.emplace_back("GitTag = '" + getGitTag() + "'");
+	result.emplace_back("GitBranch = '" + getGitBranch() + "'");
+	result.emplace_back("GitDirty = '" + getGitDirty() + "'");
+	result.emplace_back("GitCommit = '" + getGitCommit() + "'");
+	result.emplace_back("GitCommitDateTime = '" + getGitCommitDateTime() + "'");
+	result.emplace_back("CommitsSinceTag = '" + getCommitsSinceTag() + "'");
+	result.emplace_back("BuildArchitectureBits = '" + getBuildArchitectureBits() + "'");
+	result.emplace_back("BuildCompiler = '" + getBuildCompiler() + "'");
+	result.emplace_back("BuildCompilerVersion = '" + getBuildCompilerVersion() + "'");
+	result.emplace_back("BuildOs = '" + getBuildOs() + "'");
+	result.emplace_back("BuildType = '" + getBuildType() + "'");
+	result.emplace_back("BuildOptions = '" + getBuildOptions() + "'");
+	result.emplace_back("BuildCompilerFlags = '" + getBuildFlags() + "'");
+	return result;
+}
 
 END_YAFARAY

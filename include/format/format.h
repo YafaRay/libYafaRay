@@ -24,7 +24,7 @@
 #ifndef YAFARAY_FORMAT_H
 #define YAFARAY_FORMAT_H
 
-#include "yafaray_conf.h"
+#include "public_api/yafaray_conf.h"
 #include "common/memory.h"
 #include "image/image.h"
 #include "image/image_buffers.h"

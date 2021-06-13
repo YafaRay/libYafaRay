@@ -1,7 +1,0 @@
-LIBYAFARAY_4.0 {
-    global:
-        yafaray_*;
-
-    local:
-        *;
-};

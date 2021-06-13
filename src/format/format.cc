@@ -18,12 +18,20 @@
  */
 
 #include "format/format.h"
-#include "format/format_exr.h"
-#include "format/format_hdr.h"
-#include "format/format_jpg.h"
-#include "format/format_png.h"
 #include "format/format_tga.h"
+#include "format/format_hdr.h"
+#ifdef HAVE_OPENEXR
+#include "format/format_exr.h"
+#endif
+#ifdef HAVE_JPEG
+#include "format/format_jpg.h"
+#endif
+#ifdef HAVE_PNG
+#include "format/format_png.h"
+#endif
+#ifdef HAVE_TIFF
 #include "format/format_tif.h"
+#endif
 #include "common/param.h"
 #include "common/logger.h"
 
@@ -36,30 +44,32 @@ std::unique_ptr<Format> Format::factory(Logger &logger, ParamMap &params)
 		logger.logDebug("**Format");
 		params.logContents(logger);
 	}
+
 	std::string type;
 	params.getParam("type", type);
-
 	type = toLower_global(type);
-	if(type == "tiff") type = "tif";
-	else if(type == "tpic") type = "tga";
-	else if(type == "jpeg") type = "jpg";
-	else if(type == "pic") type = "hdr";
 
-	if(type == "tga") return TgaFormat::factory(logger, params);
-	else if(type == "hdr") return HdrFormat::factory(logger, params);
+	if(type == "tga" || type == "tpic") return TgaFormat::factory(logger, params);
+	else if(type == "hdr" || type == "pic") return HdrFormat::factory(logger, params);
 #ifdef HAVE_OPENEXR
 	else if(type == "exr") return ExrFormat::factory(logger, params);
 #endif // HAVE_OPENEXR
 #ifdef HAVE_JPEG
-	else if(type == "jpg") return JpgFormat::factory(logger, params);
+	else if(type == "jpg" || type == "jpeg") return JpgFormat::factory(logger, params);
 #endif // HAVE_JPEG
 #ifdef HAVE_PNG
 	else if(type == "png") return PngFormat::factory(logger, params);
 #endif // HAVE_PNG
 #ifdef HAVE_TIFF
-	else if(type == "tif") return TifFormat::factory(logger, params);
+	else if(type == "tif" || type == "tiff") return TifFormat::factory(logger, params);
 #endif // HAVE_TIFF
-	else return nullptr;
+	else
+	{
+		std::string name;
+		params.getParam("name", name);
+		logger.logError("Cannot process file, libYafaRay has not been built with support for image file format '" + type + "'");
+		return nullptr;
+	}
 }
 
 std::unique_ptr<Image> Format::loadFromMemory(const uint8_t *data, size_t size, const Image::Optimization &optimization, const ColorSpace &color_space, float gamma)

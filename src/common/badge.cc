@@ -18,7 +18,7 @@
  *
  */
 
-#include "yafaray_conf.h"
+#include "public_api/yafaray_conf.h"
 #include "common/version_build_info.h"
 #include "common/badge.h"
 #include "common/param.h"
@@ -75,9 +75,7 @@ std::string Badge::getFields() const
 std::string Badge::getRenderInfo(const RenderControl &render_control) const
 {
 	std::stringstream ss_badge;
-	std::string compiler = buildinfo::getBuildCompiler();
-	if(!buildinfo::getBuildPlatform().empty()) compiler = buildinfo::getBuildPlatform() + "-" + compiler;
-	ss_badge << "\nYafaRay (" << buildinfo::getVersion() << ")" << " " << buildinfo::getBuildOs() << " " << buildinfo::getBuildArchitectureBits() << " (" << compiler << ")";
+	ss_badge << "\nYafaRay (" << buildinfo::getVersion() << buildinfo::getBuildTypeSuffix() << ")" << " " << buildinfo::getBuildOs() << " " << buildinfo::getBuildArchitectureBits() << "bit (" << buildinfo::getBuildCompiler() << ")";
 	ss_badge << std::setprecision(2);
 	double times = g_timer_global.getTimeNotStopping("rendert");
 	if(render_control.finished()) times = g_timer_global.getTime("rendert");

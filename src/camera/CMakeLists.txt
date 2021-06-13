@@ -18,10 +18,10 @@
 
 target_sources(libyafaray4
 	PRIVATE
-		${CMAKE_CURRENT_SOURCE_DIR}/camera.cc
-		${CMAKE_CURRENT_SOURCE_DIR}/camera_angular.cc
-		${CMAKE_CURRENT_SOURCE_DIR}/camera_architect.cc
-		${CMAKE_CURRENT_SOURCE_DIR}/camera_equirectangular.cc
-		${CMAKE_CURRENT_SOURCE_DIR}/camera_orthographic.cc
-		${CMAKE_CURRENT_SOURCE_DIR}/camera_perspective.cc
+		camera.cc
+		camera_angular.cc
+		camera_architect.cc
+		camera_equirectangular.cc
+		camera_orthographic.cc
+		camera_perspective.cc
 )

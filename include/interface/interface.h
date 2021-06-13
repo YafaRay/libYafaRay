@@ -20,7 +20,7 @@
 #ifndef YAFARAY_INTERFACE_H
 #define YAFARAY_INTERFACE_H
 
-#include "yafaray_conf.h"
+#include "public_api/yafaray_conf.h"
 #include "color/color.h"
 #include <list>
 #include <vector>

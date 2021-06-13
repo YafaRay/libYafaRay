@@ -20,8 +20,6 @@
  *
  */
 
-#ifdef HAVE_TIFF
-
 #include "format/format_tif.h"
 #include "common/logger.h"
 #include "common/param.h"
@@ -148,5 +146,3 @@ std::unique_ptr<Format> TifFormat::factory(Logger &logger, ParamMap &params)
 }
 
 END_YAFARAY
-
-#endif // HAVE_TIFF

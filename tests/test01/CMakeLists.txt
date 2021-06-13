@@ -19,7 +19,7 @@
 add_executable(yafaray_test01 test01.c)
 set_target_properties(yafaray_test01 PROPERTIES C_STANDARD 90 C_STANDARD_REQUIRED ON C_EXTENSIONS OFF)
 target_link_libraries(yafaray_test01 PRIVATE libyafaray4)
-target_include_directories(yafaray_test01 PRIVATE ../../include ${PROJECT_BINARY_DIR}/src)
+target_include_directories(yafaray_test01 PRIVATE ${PROJECT_BINARY_DIR}/include)
 
 install(TARGETS yafaray_test01
 		RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
