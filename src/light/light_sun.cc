@@ -46,7 +46,7 @@ void SunLight::init(Scene &scene)
 	Bound w = scene.getSceneBound();
 	world_radius_ = 0.5 * (w.g_ - w.a_).length();
 	world_center_ = 0.5 * (w.a_ + w.g_);
-	e_pdf_ = (M_PI * world_radius_ * world_radius_);
+	e_pdf_ = (math::num_pi * world_radius_ * world_radius_);
 }
 
 bool SunLight::illumSample(const SurfacePoint &sp, LSample &s, Ray &wi) const

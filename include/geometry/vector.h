@@ -30,10 +30,6 @@
 
 BEGIN_YAFARAY
 
-#ifndef M_PI    //in most cases pi is defined as M_PI in cmath ohterwise we define it
-#define M_PI 3.1415926535897932384626433832795
-#endif
-
 class Point3;
 
 #if defined(__GNUC__) && !defined(__clang__)

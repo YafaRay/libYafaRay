@@ -135,12 +135,12 @@ void Vec3::shirleyDisk(float r_1, float r_2, float &u, float &v)
 		if(a > b)  	// Reg.1
 		{
 			r = a;
-			phi = M_PI_4 * (b / a);
+			phi = math::div_pi_by_4 * (b / a);
 		}
 		else  			// Reg.2
 		{
 			r = b;
-			phi = M_PI_4 * (2 - a / b);
+			phi = math::div_pi_by_4 * (2 - a / b);
 		}
 	}
 	else
@@ -148,13 +148,13 @@ void Vec3::shirleyDisk(float r_1, float r_2, float &u, float &v)
 		if(a < b)  	// Reg.3
 		{
 			r = -a;
-			phi = M_PI_4 * (4 + b / a);
+			phi = math::div_pi_by_4 * (4 + b / a);
 		}
 		else  			// Reg.4
 		{
 			r = -b;
 			if(b != 0)
-				phi = M_PI_4 * (6 - a / b);
+				phi = math::div_pi_by_4 * (6 - a / b);
 			else
 				phi = 0;
 		}

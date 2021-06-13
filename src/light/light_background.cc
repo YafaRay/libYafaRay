@@ -51,7 +51,7 @@ inline float clampZero_global(float val)
 
 inline float sinSample_global(float s)
 {
-	return math::sin(s * M_PI);
+	return math::sin(s * math::num_pi);
 }
 
 BackgroundLight::BackgroundLight(Logger &logger, int sampl, bool invert_intersect, bool light_enabled, bool cast_shadows):

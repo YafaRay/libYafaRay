@@ -72,14 +72,14 @@ float SkyVolumeRegion::p(const Vec3 &w_l, const Vec3 &w_s) const
 float SkyVolumeRegion::phaseRayleigh(const Vec3 &w_l, const Vec3 &w_s) const
 {
 	float costheta = (w_l * w_s);
-	return 3.f / (16.f * M_PI) * (1.f + costheta * costheta) * s_ray_.energy();
+	return 3.f / (16.f * math::num_pi) * (1.f + costheta * costheta) * s_ray_.energy();
 }
 
 float SkyVolumeRegion::phaseMie(const Vec3 &w_l, const Vec3 &w_s) const
 {
 	float k = 1.55f * g_ - .55f * g_ * g_ * g_;
 	float kcostheta = k * (w_l * w_s);
-	return 1.f / (4.f * M_PI) * (1.f - k * k) / ((1.f - kcostheta) * (1.f - kcostheta)) * s_mie_.energy();
+	return 1.f / (4.f * math::num_pi) * (1.f - k * k) / ((1.f - kcostheta) * (1.f - kcostheta)) * s_mie_.energy();
 }
 
 

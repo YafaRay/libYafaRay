@@ -54,7 +54,7 @@ void PhotonIntegrator::preGatherWorker(PreGatherData *gdata, float ds_rad, int n
 	auto gathered = std::unique_ptr<FoundPhoton[]>(new FoundPhoton[n_search]);
 
 	float radius = 0.f;
-	float i_scale = 1.f / ((float)gdata->diffuse_map_->nPaths() * M_PI);
+	float i_scale = 1.f / ((float)gdata->diffuse_map_->nPaths() * math::num_pi);
 	float scale = 0.f;
 
 	while(start < total)
@@ -999,7 +999,7 @@ Rgba PhotonIntegrator::integrate(RenderData &render_data, const DiffRay &ray, in
 				{
 					if(n_gathered > n_max) n_max = n_gathered;
 
-					float scale = 1.f / ((float)diffuse_map_->nPaths() * radius * M_PI);
+					float scale = 1.f / ((float)diffuse_map_->nPaths() * radius * math::num_pi);
 					for(int i = 0; i < n_gathered; ++i)
 					{
 						const Vec3 pdir = gathered[i].photon_->direction();

@@ -919,7 +919,7 @@ Rgb BidirectionalIntegrator::evalPathE(RenderData &render_data, int s, PathData 
 	render_data.arena_ = y.userdata_;
 	//Rgb f_y = y.sp.material->eval(state, y.sp, y.wi, pd.w_l_e, BSDF_ALL);
 	//TODO:
-	Rgb c_uw = y.alpha_ * M_PI * pd.f_y_ * pd.path_[s].g_;
+	Rgb c_uw = y.alpha_ * math::num_pi * pd.f_y_ * pd.path_[s].g_;
 	if(tr_shad_) c_uw *= scol;
 	return c_uw;
 }

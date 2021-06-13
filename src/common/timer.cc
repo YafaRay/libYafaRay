@@ -37,7 +37,7 @@ bool Timer::start(const std::string &name)
 {
 	auto i = events_.find(name);
 	if(i == events_.end()) return false;
-#ifdef WIN32
+#ifdef _WIN32
 	i->second.start_ = clock();
 #else
 	struct ::timezone tz;
@@ -52,7 +52,7 @@ bool Timer::stop(const std::string &name)
 	auto i = events_.find(name);
 	if(i == events_.end()) return false;
 	if(!(i->second.started_)) return false;
-#ifdef WIN32
+#ifdef _WIN32
 	i->second.finish_ = clock();
 #else
 	struct ::timezone tz;
@@ -75,7 +75,7 @@ double Timer::getTime(const std::string &name)
 {
 	auto i = events_.find(name);
 	if(i == events_.end()) return -1;
-#ifdef WIN32
+#ifdef _WIN32
 	else return (static_cast<double>(i->second.finish_ - i->second.start_)) / CLOCKS_PER_SEC;
 #else
 	else
@@ -90,7 +90,7 @@ double Timer::getTimeNotStopping(const std::string &name)
 {
 	auto i = events_.find(name);
 	if(i == events_.end()) return -1;
-#ifdef WIN32
+#ifdef _WIN32
 	else return (static_cast<double>(clock() - i->second.start_)) / CLOCKS_PER_SEC;
 #else
 	else

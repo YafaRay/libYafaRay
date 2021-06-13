@@ -16,12 +16,6 @@
 #      Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 #
 
-if(WIN32)
-	list(APPEND YAF_DEFINITIONS "WIN32")
-	list(APPEND YAF_DEFINITIONS "_USE_MATH_DEFINES")
-	list(APPEND YAF_DEFINITIONS "_hypot=hypot")
-endif()
-
 message_boolean("Using mathematical" YAFARAY_FAST_MATH "approximations (faster)" "precise values (slower)")
 if(YAFARAY_FAST_MATH)
 	list(APPEND YAF_DEFINITIONS "FAST_MATH")

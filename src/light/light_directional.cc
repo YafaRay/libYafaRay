@@ -94,7 +94,7 @@ Rgb DirectionalLight::emitPhoton(float s_1, float s_2, float s_3, float s_4, Ray
 	Vec3::shirleyDisk(s_1, s_2, u, v);
 	ray.from_ = position_ + radius_ * (u * du_ + v * dv_);
 	if(infinite_) ray.from_ += direction_ * world_radius_;
-	ipdf = M_PI * radius_ * radius_; //4.0f * M_PI;
+	ipdf = math::num_pi * radius_ * radius_; //4.0f * num_pi;
 	return color_;
 }
 

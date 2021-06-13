@@ -90,7 +90,7 @@ inline void angmap_global(const Point3 &p, float &u, float &v)
 	u = v = 0.f;
 	if(r > 0.f)
 	{
-		const float phi_ratio = M_1_PI * math::acos(p.y_);//[0,1] range
+		const float phi_ratio = math::div_1_by_pi * math::acos(p.y_);//[0,1] range
 		r = phi_ratio / math::sqrt(r);
 		u = p.x_ * r;// costheta * r * phiRatio
 		v = p.z_ * r;// sintheta * r * phiRatio
@@ -107,7 +107,7 @@ inline void tubemap_global(const Point3 &p, float &u, float &v)
 	if(d > 0)
 	{
 		d = 1 / math::sqrt(d);
-		u = 0.5f * (1 - (atan2(p.x_ * d, p.y_ * d) * M_1_PI));
+		u = 0.5f * (1 - (atan2(p.x_ * d, p.y_ * d) * math::div_1_by_pi));
 	}
 }
 
@@ -128,13 +128,13 @@ inline void spheremap_global(const Point3 &p, float &u, float &v)
 		u = 1.f - phi_ratio;
 	}
 
-	v = 1.f - (math::acos(p.z_ / math::sqrt(sqrt_r_theta)) * M_1_PI);
+	v = 1.f - (math::acos(p.z_ / math::sqrt(sqrt_r_theta)) * math::div_1_by_pi);
 }
 
 // maps u,v coords in the 0..1 interval to a direction
 inline void invSpheremap_global(float u, float v, Vec3 &p)
 {
-	const float theta = v * M_PI;
+	const float theta = v * math::num_pi;
 	const float phi = -(u * math::mult_pi_by_2);
 	const float costheta = math::cos(theta), sintheta = math::sin(theta);
 	const float cosphi = math::cos(phi), sinphi = math::sin(phi);

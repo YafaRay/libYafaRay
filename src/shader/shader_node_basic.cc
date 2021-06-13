@@ -63,7 +63,7 @@ inline Point3 tubemap_global(const Point3 &p)
 	if(d > 0.f)
 	{
 		res.z_ = 1.f / math::sqrt(d);
-		res.x_ = -atan2(p.x_, p.y_) * M_1_PI;
+		res.x_ = -atan2(p.x_, p.y_) * math::div_1_by_pi;
 	}
 	else res.x_ = res.z_ = 0.f;
 	return res;
@@ -77,8 +77,8 @@ inline Point3 spheremap_global(const Point3 &p)
 	if(d > 0.f)
 	{
 		res.z_ = math::sqrt(d);
-		if((p.x_ != 0.f) && (p.y_ != 0.f)) res.x_ = -atan2(p.x_, p.y_) * M_1_PI;
-		res.y_ = 1.f - 2.f * (math::acos(p.z_ / res.z_) * M_1_PI);
+		if((p.x_ != 0.f) && (p.y_ != 0.f)) res.x_ = -atan2(p.x_, p.y_) * math::div_1_by_pi;
+		res.y_ = 1.f - 2.f * (math::acos(p.z_ / res.z_) * math::div_1_by_pi);
 	}
 	return res;
 }

@@ -35,8 +35,8 @@ TextureBackground::TextureBackground(Logger &logger, const Texture *texture, Pro
 	shoot_caustic_ = with_caustic;
 
 	rotation_ = 2.f * rot / 360.f;
-	sin_r_ = math::sin(M_PI * rotation_);
-	cos_r_ = math::cos(M_PI * rotation_);
+	sin_r_ = math::sin(math::num_pi * rotation_);
+	cos_r_ = math::cos(math::num_pi * rotation_);
 }
 
 Rgb TextureBackground::operator()(const Ray &ray, RenderData &render_data, bool use_ibl_blur) const

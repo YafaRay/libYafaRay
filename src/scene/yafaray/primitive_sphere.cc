@@ -92,8 +92,8 @@ SurfacePoint SpherePrimitive::getSurface(const Point3 &hit, const IntersectData 
 	sp.has_orco_ = true;
 	sp.p_ = hit;
 	Vec3::createCs(sp.n_, sp.nu_, sp.nv_);
-	sp.u_ = atan2(normal.y_, normal.x_) * M_1_PI + 1;
-	sp.v_ = 1.f - math::acos(normal.z_) * M_1_PI;
+	sp.u_ = atan2(normal.y_, normal.x_) * math::div_1_by_pi + 1;
+	sp.v_ = 1.f - math::acos(normal.z_) * math::div_1_by_pi;
 	sp.light_ = nullptr;
 	return sp;
 }

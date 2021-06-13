@@ -53,8 +53,8 @@ Ray EquirectangularCamera::shootRay(float px, float py, float lu, float lv, floa
 	ray.from_ = position_;
 	float u = 2.f * px / (float)resx_ - 1.f;
 	float v = 2.f * py / (float)resy_ - 1.f;
-	const float phi = M_PI * u;
-	const float theta = M_PI_2 * v;
+	const float phi = math::num_pi * u;
+	const float theta = math::div_pi_by_2 * v;
 	ray.dir_ = math::cos(theta) * (math::cos(phi) * vto_ + math::sin(phi) * vright_) + math::sin(theta) * vup_;
 
 	ray.tmin_ = near_plane_.rayIntersection(ray);
@@ -95,8 +95,8 @@ Point3 EquirectangularCamera::screenproject(const Point3 &p) const
 	float dy = cam_y_ * dir;
 	float dz = cam_z_ * dir;
 
-	s.x_ = -dx / (4.f * M_PI * dz);
-	s.y_ = -dy / (4.f * M_PI * dz);
+	s.x_ = -dx / (4.f * math::num_pi * dz);
+	s.y_ = -dy / (4.f * math::num_pi * dz);
 	s.z_ = 0;
 
 	return s;

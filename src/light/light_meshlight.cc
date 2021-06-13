@@ -134,7 +134,7 @@ bool MeshLight::illumSample(const SurfacePoint &sp, LSample &s, Ray &wi) const
 	// pdf = distance^2 / area * cos(norm, ldir);
 	float area_mul_cosangle = area_ * cos_angle;
 	//TODO: replace the hardcoded value (1e-8f) by a macro for min/max values: here used, to avoid dividing by zero
-	s.pdf_ = dist_sqr * M_PI / ((area_mul_cosangle == 0.f) ? 1e-8f : area_mul_cosangle);
+	s.pdf_ = dist_sqr * math::num_pi / ((area_mul_cosangle == 0.f) ? 1e-8f : area_mul_cosangle);
 	s.flags_ = flags_;
 	if(s.sp_)
 	{
@@ -163,7 +163,7 @@ Rgb MeshLight::emitPhoton(float s_1, float s_2, float s_3, float s_4, Ray &ray, 
 
 Rgb MeshLight::emitSample(Vec3 &wo, LSample &s) const
 {
-	s.area_pdf_ = inv_area_ * M_PI;
+	s.area_pdf_ = inv_area_ * math::num_pi;
 	sampleSurface(s.sp_->p_, s.sp_->ng_, s.s_3_, s.s_4_);
 	s.sp_->n_ = s.sp_->ng_;
 	Vec3 du, dv;
@@ -199,7 +199,7 @@ bool MeshLight::intersect(const Ray &ray, float &t, Rgb &col, float &ipdf) const
 		else return false;
 	}
 	const float idist_sqr = 1.f / (t * t);
-	ipdf = idist_sqr * area_ * cos_angle * (1.f / M_PI);
+	ipdf = idist_sqr * area_ * cos_angle * math::div_1_by_pi;
 	col = color_;
 	return true;
 }
@@ -209,12 +209,12 @@ float MeshLight::illumPdf(const SurfacePoint &sp, const SurfacePoint &sp_light) 
 	Vec3 wo = sp.p_ - sp_light.p_;
 	float r_2 = wo.normLenSqr();
 	float cos_n = wo * sp_light.ng_;
-	return cos_n > 0 ? r_2 * M_PI / (area_ * cos_n) : (double_sided_ ? r_2 * M_PI / (area_ * -cos_n) : 0.f);
+	return cos_n > 0 ? r_2 * math::num_pi / (area_ * cos_n) : (double_sided_ ? r_2 * math::num_pi / (area_ * -cos_n) : 0.f);
 }
 
 void MeshLight::emitPdf(const SurfacePoint &sp, const Vec3 &wo, float &area_pdf, float &dir_pdf, float &cos_wo) const
 {
-	area_pdf = inv_area_ * M_PI;
+	area_pdf = inv_area_ * math::num_pi;
 	cos_wo = wo * sp.n_;
 	dir_pdf = cos_wo > 0.f ? (double_sided_ ? cos_wo * 0.5f : cos_wo) : (double_sided_ ? -cos_wo * 0.5f : 0.f);
 }
@@ -244,7 +244,7 @@ std::unique_ptr<Light> MeshLight::factory(Logger &logger, ParamMap &params, cons
 	params.getParam("with_diffuse", shoot_d);
 	params.getParam("photon_only", p_only);
 
-	auto light = std::unique_ptr<MeshLight>(new MeshLight(logger, object_name, color * (float)power * M_PI, samples, double_s, light_enabled, cast_shadows));
+	auto light = std::unique_ptr<MeshLight>(new MeshLight(logger, object_name, color * (float)power * math::num_pi, samples, double_s, light_enabled, cast_shadows));
 
 	light->shoot_caustic_ = shoot_c;
 	light->shoot_diffuse_ = shoot_d;

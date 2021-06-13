@@ -80,7 +80,7 @@ Rgb PointLight::emitPhoton(float s_1, float s_2, float s_3, float s_4, Ray &ray,
 {
 	ray.from_ = position_;
 	ray.dir_ = sample::sphere(s_1, s_2);
-	ipdf = 4.0f * M_PI;
+	ipdf = 4.0f * math::num_pi;
 	return color_;
 }
 

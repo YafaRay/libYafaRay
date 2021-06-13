@@ -38,7 +38,7 @@ class PointLight final : public Light
 
 	private:
 		PointLight(Logger &logger, const Point3 &pos, const Rgb &col, float inte, bool b_light_enabled = true, bool b_cast_shadows = true);
-		virtual Rgb totalEnergy() const override { return color_ * 4.0f * M_PI; }
+		virtual Rgb totalEnergy() const override { return color_ * 4.0f * math::num_pi; }
 		virtual Rgb emitPhoton(float s_1, float s_2, float s_3, float s_4, Ray &ray, float &ipdf) const override;
 		virtual Rgb emitSample(Vec3 &wo, LSample &s) const override;
 		virtual bool diracLight() const override { return true; }

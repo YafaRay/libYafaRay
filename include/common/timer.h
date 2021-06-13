@@ -51,7 +51,7 @@ class Timer
 		{
 			Tdata(): started_(false), stopped_(false) {};
 			clock_t start_, finish_;
-#ifndef WIN32
+#ifndef _WIN32
 			timeval tvs_, tvf_;
 #endif
 			bool started_, stopped_;

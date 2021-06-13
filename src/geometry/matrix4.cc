@@ -128,11 +128,11 @@ void Matrix4::translate(float dx, float dy, float dz)
 void Matrix4::rotateZ(float degrees)
 {
 	float temp = degrees;
-	temp = fmod(temp, (float)360.0);
-	if(temp < 0) temp = ((float)360.0) - temp;
-	temp = temp * (M_PI / ((float)180));
+	temp = fmod(temp, 360.f);
+	if(temp < 0.f) temp = 360.f - temp;
+	temp *= math::div_pi_by_180;
 
-	Matrix4 aux(1);
+	Matrix4 aux(1.f);
 	aux[0][0] = math::cos(temp);
 	aux[0][1] = -math::sin(temp);
 	aux[1][0] = math::sin(temp);
@@ -144,11 +144,11 @@ void Matrix4::rotateZ(float degrees)
 void Matrix4::rotateX(float degrees)
 {
 	float temp = degrees;
-	temp = fmod(temp, (float)360.0);
-	if(temp < 0) temp = ((float)360.0) - temp;
-	temp = temp * (M_PI / ((float)180));
+	temp = fmod(temp, 360.f);
+	if(temp < 0.f) temp = 360.f - temp;
+	temp *= math::div_pi_by_180;
 
-	Matrix4 aux(1);
+	Matrix4 aux(1.f);
 	aux[1][1] = math::cos(temp);
 	aux[1][2] = -math::sin(temp);
 	aux[2][1] = math::sin(temp);
@@ -160,11 +160,11 @@ void Matrix4::rotateX(float degrees)
 void Matrix4::rotateY(float degrees)
 {
 	float temp = degrees;
-	temp = fmod(temp, (float)360.0);
-	if(temp < 0) temp = ((float)360.0) - temp;
-	temp = temp * (M_PI / ((float)180));
+	temp = fmod(temp, 360.f);
+	if(temp < 0.f) temp = 360.f - temp;
+	temp *= math::div_pi_by_180;
 
-	Matrix4 aux(1);
+	Matrix4 aux(1.f);
 	aux[0][0] = math::cos(temp);
 	aux[0][2] = math::sin(temp);
 	aux[2][0] = -math::sin(temp);

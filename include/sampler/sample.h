@@ -31,13 +31,13 @@ namespace sample
 inline float kernel(float r_photon_2, float ir_gather_2)
 {
 	const float s = (1.f - r_photon_2 * ir_gather_2);
-	return 3.f * ir_gather_2 * M_1_PI * s * s;
+	return 3.f * ir_gather_2 * math::div_1_by_pi * s * s;
 }
 
 inline float cKernel(float r_photon_2, float r_gather_2, float ir_gather_2)
 {
 	const float r_p = math::sqrt(r_photon_2), ir_g = 1.f / math::sqrt(r_gather_2);
-	return 3.f * (1.f - r_p * ir_g) * ir_gather_2 * M_1_PI;
+	return 3.f * (1.f - r_p * ir_g) * ir_gather_2 * math::div_1_by_pi;
 }
 
 //! Sample a cosine-weighted hemisphere given the the coordinate system built by N, Ru, Rv.

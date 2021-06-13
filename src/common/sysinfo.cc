@@ -39,7 +39,7 @@ int SysInfo::getNumSystemThreads() const
 {
 	int nthreads = 1;
 
-#ifdef WIN32
+#ifdef _WIN32
 	SYSTEM_INFO info;
 	GetSystemInfo(&info);
 	nthreads = static_cast<int>(info.dwNumberOfProcessors);

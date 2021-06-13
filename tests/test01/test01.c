@@ -22,7 +22,7 @@
 #include "yafaray_c_api.h"
 #include <signal.h>
 
-#ifdef WIN32
+#ifdef _WIN32
 #include <windows.h>
 #endif
 
@@ -41,7 +41,7 @@ void loggerCallback(yafaray_LogLevel_t log_level, long datetime, const char *tim
 
 yafaray_Interface_t *yi = NULL;
 
-#ifdef WIN32
+#ifdef _WIN32
 BOOL WINAPI ctrlCHandler_global(DWORD signal)
 {
 	yafaray_printWarning(yi, "CTRL+C pressed, cancelling.\n");
@@ -68,7 +68,7 @@ int main()
 	int total_steps = 0;
 
 	/* handle CTRL+C events */
-	#ifdef WIN32
+	#ifdef _WIN32
 		SetConsoleCtrlHandler(ctrlCHandler_global, TRUE);
 	#else
 		signal(SIGINT, ctrlCHandler_global);

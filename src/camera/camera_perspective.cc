@@ -174,7 +174,7 @@ bool PerspectiveCamera::project(const Ray &wo, float lu, float lv, float &u, flo
 
 	// pdf = 1/A_pix * r^2 / cos(forward, dir), where r^2 is also 1/cos(vto, dir)^2
 	const float cos_wo = dz; //camZ * wo.dir;
-	pdf = 8.f * M_PI / (a_pix_ * cos_wo * cos_wo * cos_wo);
+	pdf = 8.f * math::num_pi / (a_pix_ * cos_wo * cos_wo * cos_wo);
 	return true;
 }
 

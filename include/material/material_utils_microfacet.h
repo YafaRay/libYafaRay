@@ -22,12 +22,12 @@
 
 BEGIN_YAFARAY
 
-inline constexpr float pdfDivisor_global(float cos) { return 8.f * M_PI * (cos * 0.99f + 0.04f); }
-inline float asDivisor_global(float cos_1, float cos_i, float cos_o) { return 8.f * M_PI * ((cos_1 * std::max(cos_i, cos_o)) * 0.99f + 0.04f); }
+inline constexpr float pdfDivisor_global(float cos) { return 8.f * math::num_pi * (cos * 0.99f + 0.04f); }
+inline float asDivisor_global(float cos_1, float cos_i, float cos_o) { return 8.f * math::num_pi * ((cos_1 * std::max(cos_i, cos_o)) * 0.99f + 0.04f); }
 
 inline void sampleQuadrantAniso_global(Vec3 &h, float s_1, float s_2, float e_u, float e_v)
 {
-	float phi = std::atan(math::sqrt((e_u + 1.f) / (e_v + 1.f)) * std::tan(M_PI_2 * s_1));
+	float phi = std::atan(math::sqrt((e_u + 1.f) / (e_v + 1.f)) * std::tan(math::div_pi_by_2 * s_1));
 	float cos_phi = math::cos(phi);
 	float sin_phi = math::sin(phi);
 	float cos_theta, sin_theta;
@@ -114,7 +114,7 @@ inline float ggxD_global(float alpha_2, float cos_theta_2, float tan_theta_2)
 {
 	float cos_theta_4 = cos_theta_2 * cos_theta_2;
 	float a_tan = alpha_2 + tan_theta_2;
-	float div = (M_PI * cos_theta_4 * a_tan * a_tan);
+	float div = (math::num_pi * cos_theta_4 * a_tan * a_tan);
 	return alpha_2 / div;
 }
 
