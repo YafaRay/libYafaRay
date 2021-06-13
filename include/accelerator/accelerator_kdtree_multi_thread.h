@@ -23,8 +23,8 @@
 #include "accelerator/accelerator.h"
 #include "geometry/bound.h"
 #include "geometry/primitive.h"
-#include "common/thread.h"
 #include <array>
+#include <atomic>
 
 BEGIN_YAFARAY
 

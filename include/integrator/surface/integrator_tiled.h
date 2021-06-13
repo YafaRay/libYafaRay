@@ -21,9 +21,9 @@
 #define YAFARAY_INTEGRATOR_TILED_H
 
 #include "integrator/integrator.h"
-#include "common/thread.h"
 #include "common/aa_noise_params.h"
 #include <vector>
+#include <condition_variable>
 
 BEGIN_YAFARAY
 

@@ -21,8 +21,8 @@
 #define YAFARAY_PROGRESS_BAR_H
 
 #include "yafaray_conf.h"
-#include "common/thread.h"
 #include <string>
+#include <mutex>
 
 BEGIN_YAFARAY
 

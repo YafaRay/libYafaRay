@@ -26,7 +26,6 @@
 #define YAFARAY_LOGGER_H
 
 #include "yafaray_conf.h"
-#include "thread.h"
 #include "color/color_console.h"
 #include <ctime>
 #include <iostream>
@@ -34,6 +33,7 @@
 #include <sstream>
 #include <unordered_map>
 #include <vector>
+#include <mutex>
 
 BEGIN_YAFARAY
 

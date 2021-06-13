@@ -21,7 +21,8 @@
 #define YAFARAY_RENDER_CONTROL_H
 
 #include "yafaray_conf.h"
-#include "common/thread.h"
+#include <string>
+#include <mutex>
 
 BEGIN_YAFARAY
 

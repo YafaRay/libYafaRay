@@ -26,13 +26,12 @@
 
 #include "yafaray_conf.h"
 #include "imagesplitter.h"
-#include "common/thread.h"
 #include "common/aa_noise_params.h"
 #include "common/layers.h"
 #include "common/memory.h"
 #include "image/image_buffers.h"
 #include "image/image_layers.h"
-
+#include <mutex>
 
 BEGIN_YAFARAY
 

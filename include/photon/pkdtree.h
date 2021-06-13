@@ -22,10 +22,10 @@
 
 #include "yafaray_conf.h"
 #include "common/logger.h"
-#include "common/thread.h"
 #include "geometry/bound.h"
 #include <vector>
 #include <cstdlib>
+#include <thread>
 
 BEGIN_YAFARAY
 

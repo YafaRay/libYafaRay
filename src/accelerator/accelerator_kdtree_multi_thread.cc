@@ -25,6 +25,7 @@
 #include "geometry/axis.h"
 #include "common/param.h"
 #include "output/output.h"
+#include <thread>
 
 BEGIN_YAFARAY
 
