@@ -41,8 +41,8 @@ std::string buildinfo::getBuildCompiler() { return YAFARAY_BUILD_COMPILER; }
 std::string buildinfo::getBuildCompilerVersion() { return YAFARAY_BUILD_COMPILER_VERSION; }
 std::string buildinfo::getBuildOs() { return YAFARAY_BUILD_OS; }
 std::string buildinfo::getBuildType() { return YAFARAY_BUILD_TYPE; }
-std::string buildinfo::getBuildTypeSuffix() { return YAFARAY_BUILD_TYPE_SUFFIX; }
-std::string buildinfo::getBuildOptions() { return YAFARAY_BUILD_OPTIONS_COMPILE_DEFINITIONS; }
+std::string buildinfo::getBuildTypeSuffix() { return getBuildType().empty() ? "" : "-" + getBuildType(); }
+std::string buildinfo::getBuildOptions() { return YAFARAY_BUILD_OPTIONS; }
 std::string buildinfo::getBuildFlags() { return YAFARAY_BUILD_FLAGS; }
 
 std::vector<std::string> buildinfo::getAllBuildDetails()
