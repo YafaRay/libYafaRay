@@ -42,20 +42,20 @@ Interface::Interface(const ::yafaray_LoggerCallback_t logger_callback, void *cal
 #endif
 }
 
-void Interface::createScene()
+void Interface::createScene() noexcept
 {
 	scene_ = Scene::factory(*logger_, *params_);
 	params_->clear();
 }
 
-Interface::~Interface()
+Interface::~Interface() noexcept
 {
 	if(logger_->isVerbose()) logger_->logVerbose("Interface: Deleting scene...");
 	logger_->logInfo("Interface: Done.");
 	logger_->clearAll();
 }
 
-void Interface::clearAll()
+void Interface::clearAll() noexcept
 {
 	if(logger_->isVerbose()) logger_->logVerbose("Interface: Cleaning scene...");
 	scene_->clearAll();
@@ -65,18 +65,18 @@ void Interface::clearAll()
 	if(logger_->isVerbose()) logger_->logVerbose("Interface: Cleanup done.");
 }
 
-void Interface::defineLayer()
+void Interface::defineLayer() noexcept
 {
 	scene_->defineLayer(*params_);
 }
 
-bool Interface::setupLayersParameters()
+bool Interface::setupLayersParameters() noexcept
 {
 	scene_->setupLayersParameters(*params_);
 	return true;
 }
 
-bool Interface::setInteractive(bool interactive)
+bool Interface::setInteractive(bool interactive) noexcept
 {
 	if(scene_)
 	{
@@ -86,102 +86,102 @@ bool Interface::setInteractive(bool interactive)
 	else return false;
 }
 
-bool Interface::startGeometry() { return scene_->startObjects(); }
+bool Interface::startGeometry() noexcept { return scene_->startObjects(); }
 
-bool Interface::endGeometry() { return scene_->endObjects(); }
+bool Interface::endGeometry() noexcept { return scene_->endObjects(); }
 
-unsigned int Interface::getNextFreeId()
+unsigned int Interface::getNextFreeId() noexcept
 {
 	ObjId_t id;
 	id = scene_->getNextFreeId();
 	return id;
 }
 
-bool Interface::endObject() { return scene_->endObject(); }
+bool Interface::endObject() noexcept { return scene_->endObject(); }
 
-int  Interface::addVertex(double x, double y, double z) { return scene_->addVertex(Point3(x, y, z)); }
+int  Interface::addVertex(double x, double y, double z) noexcept { return scene_->addVertex(Point3(x, y, z)); }
 
-int  Interface::addVertex(double x, double y, double z, double ox, double oy, double oz)
+int  Interface::addVertex(double x, double y, double z, double ox, double oy, double oz) noexcept
 {
 	return scene_->addVertex(Point3(x, y, z), Point3(ox, oy, oz));
 }
 
-void Interface::addNormal(double x, double y, double z)
+void Interface::addNormal(double x, double y, double z) noexcept
 {
 	scene_->addNormal(Vec3(x, y, z));
 }
 
-bool Interface::addFace(int a, int b, int c)
+bool Interface::addFace(int a, int b, int c) noexcept
 {
 	return scene_->addFace({a, b, c});
 }
 
-bool Interface::addFace(int a, int b, int c, int uv_a, int uv_b, int uv_c)
+bool Interface::addFace(int a, int b, int c, int uv_a, int uv_b, int uv_c) noexcept
 {
 	return scene_->addFace({a, b, c}, {uv_a, uv_b, uv_c});
 }
 
-int Interface::addUv(float u, float v) { return scene_->addUv(u, v); }
+int Interface::addUv(float u, float v) noexcept { return scene_->addUv(u, v); }
 
-bool Interface::smoothMesh(const char *name, double angle) { return scene_->smoothNormals(name, angle); }
+bool Interface::smoothMesh(const char *name, double angle) noexcept { return scene_->smoothNormals(name, angle); }
 
-bool Interface::addInstance(const char *base_object_name, const Matrix4 &obj_to_world)
+bool Interface::addInstance(const char *base_object_name, const Matrix4 &obj_to_world) noexcept
 {
 	return scene_->addInstance(base_object_name, obj_to_world);
 }
 
-void Interface::paramsSetVector(const char *name, double x, double y, double z)
+void Interface::paramsSetVector(const char *name, double x, double y, double z) noexcept
 {
 	(*cparams_)[std::string(name)] = Parameter(Vec3(x, y, z));
 }
 
-void Interface::paramsSetString(const char *name, const char *s)
+void Interface::paramsSetString(const char *name, const char *s) noexcept
 {
 	(*cparams_)[std::string(name)] = Parameter(std::string(s));
 }
 
-void Interface::paramsSetBool(const char *name, bool b)
+void Interface::paramsSetBool(const char *name, bool b) noexcept
 {
 	(*cparams_)[std::string(name)] = Parameter(b);
 }
 
-void Interface::paramsSetInt(const char *name, int i)
+void Interface::paramsSetInt(const char *name, int i) noexcept
 {
 	(*cparams_)[std::string(name)] = Parameter(i);
 }
 
-void Interface::paramsSetFloat(const char *name, double f)
+void Interface::paramsSetFloat(const char *name, double f) noexcept
 {
 	(*cparams_)[std::string(name)] = Parameter(f);
 }
 
-void Interface::paramsSetColor(const char *name, float r, float g, float b, float a)
+void Interface::paramsSetColor(const char *name, float r, float g, float b, float a) noexcept
 {
 	Rgba col(r, g, b, a);
 	col.linearRgbFromColorSpace(input_color_space_, input_gamma_);
 	(*cparams_)[std::string(name)] = Parameter(col);
 }
 
-void Interface::paramsSetColor(const char *name, const float *rgb, bool with_alpha)
+void Interface::paramsSetColor(const char *name, const float *rgb, bool with_alpha) noexcept
 {
 	Rgba col(rgb[0], rgb[1], rgb[2], (with_alpha ? rgb[3] : 1.f));
 	col.linearRgbFromColorSpace(input_color_space_, input_gamma_);
 	(*cparams_)[std::string(name)] = Parameter(col);
 }
 
-void Interface::paramsSetMatrix(const char *name, const float m[4][4], bool transpose)
+void Interface::paramsSetMatrix(const char *name, const float m[4][4], bool transpose) noexcept
 {
 	if(transpose)	(*cparams_)[std::string(name)] = Matrix4(m).transpose();
 	else		(*cparams_)[std::string(name)] = Matrix4(m);
 }
 
-void Interface::paramsSetMatrix(const char *name, const double m[4][4], bool transpose)
+void Interface::paramsSetMatrix(const char *name, const double m[4][4], bool transpose) noexcept
 {
 	if(transpose)	(*cparams_)[std::string(name)] = Matrix4(m).transpose();
 	else		(*cparams_)[std::string(name)] = Matrix4(m);
 }
 
-void Interface::paramsSetMemMatrix(const char *name, const float *matrix, bool transpose)
+void Interface::paramsSetMemMatrix(const char *name, const float *matrix, bool transpose) noexcept
 {
 	float mat[4][4];
 	int i, j;
@@ -191,7 +191,7 @@ void Interface::paramsSetMemMatrix(const char *name, const float *matrix, bool t
 	paramsSetMatrix(name, mat, transpose);
 }
 
-void Interface::paramsSetMemMatrix(const char *name, const double *matrix, bool transpose)
+void Interface::paramsSetMemMatrix(const char *name, const double *matrix, bool transpose) noexcept
 {
 	double mat[4][4];
 	int i, j;
@@ -201,120 +201,120 @@ void Interface::paramsSetMemMatrix(const char *name, const double *matrix, bool 
 	paramsSetMatrix(name, mat, transpose);
 }
 
-void Interface::setInputColorSpace(const std::string &color_space_string, float gamma_val)
+void Interface::setInputColorSpace(const std::string &color_space_string, float gamma_val) noexcept
 {
 	input_color_space_ = Rgb::colorSpaceFromName(color_space_string);
 	input_gamma_ = gamma_val;
 }
 
-void Interface::paramsClearAll()
+void Interface::paramsClearAll() noexcept
 {
 	params_->clear();
 	eparams_->clear();
 	cparams_ = params_.get();
 }
 
-void Interface::paramsPushList()
+void Interface::paramsPushList() noexcept
 {
 	eparams_->push_back(ParamMap());
 	cparams_ = &eparams_->back();
 }
 
-void Interface::paramsEndList()
+void Interface::paramsEndList() noexcept
 {
 	cparams_ = params_.get();
 }
 
-Object *Interface::createObject(const char *name) { return scene_->createObject(name, *params_); }
-Light *Interface::createLight(const char *name) { return scene_->createLight(name, *params_); }
-Texture *Interface::createTexture(const char *name) { return scene_->createTexture(name, *params_); }
-Material *Interface::createMaterial(const char *name) { return scene_->createMaterial(name, *params_, *eparams_); }
-Camera *Interface::createCamera(const char *name) { return scene_->createCamera(name, *params_); }
-Background *Interface::createBackground(const char *name) { return scene_->createBackground(name, *params_).get(); }
-Integrator *Interface::createIntegrator(const char *name) { return scene_->createIntegrator(name, *params_); }
-VolumeRegion *Interface::createVolumeRegion(const char *name) { return scene_->createVolumeRegion(name, *params_); }
-RenderView *Interface::createRenderView(const char *name) { return scene_->createRenderView(name, *params_); }
-Image *Interface::createImage(const char *name) { return scene_->createImage(name, *params_).get(); }
+Object *Interface::createObject(const char *name) noexcept { return scene_->createObject(name, *params_); }
+Light *Interface::createLight(const char *name) noexcept { return scene_->createLight(name, *params_); }
+Texture *Interface::createTexture(const char *name) noexcept { return scene_->createTexture(name, *params_); }
+Material *Interface::createMaterial(const char *name) noexcept { return scene_->createMaterial(name, *params_, *eparams_); }
+Camera *Interface::createCamera(const char *name) noexcept { return scene_->createCamera(name, *params_); }
+Background *Interface::createBackground(const char *name) noexcept { return scene_->createBackground(name, *params_).get(); }
+Integrator *Interface::createIntegrator(const char *name) noexcept { return scene_->createIntegrator(name, *params_); }
+VolumeRegion *Interface::createVolumeRegion(const char *name) noexcept { return scene_->createVolumeRegion(name, *params_); }
+RenderView *Interface::createRenderView(const char *name) noexcept { return scene_->createRenderView(name, *params_); }
+Image *Interface::createImage(const char *name) noexcept { return scene_->createImage(name, *params_).get(); }
 
-ColorOutput *Interface::createOutput(const char *name, bool auto_delete, void *callback_user_data, yafaray_OutputPutpixelCallback_t output_putpixel_callback, yafaray_OutputFlushAreaCallback_t output_flush_area_callback, yafaray_OutputFlushCallback_t output_flush_callback)
+ColorOutput *Interface::createOutput(const char *name, bool auto_delete, void *callback_user_data, yafaray_OutputPutpixelCallback_t output_putpixel_callback, yafaray_OutputFlushAreaCallback_t output_flush_area_callback, yafaray_OutputFlushCallback_t output_flush_callback) noexcept
 {
 	return scene_->createOutput(name, *params_, auto_delete, callback_user_data, output_putpixel_callback, output_flush_area_callback, output_flush_callback);
 }
 
-ColorOutput *Interface::createOutput(const char *name, ColorOutput *output, bool auto_delete)
+ColorOutput *Interface::createOutput(const char *name, ColorOutput *output, bool auto_delete) noexcept
 {
 	auto output_unique = UniquePtr_t<ColorOutput>(output);
 	return scene_->createOutput(name, std::move(output_unique), auto_delete);
 }
 
-bool Interface::removeOutput(const char *name)
+bool Interface::removeOutput(const char *name) noexcept
 {
 	return scene_->removeOutput(name);
 }
 
-void Interface::clearOutputs()
+void Interface::clearOutputs() noexcept
 {
 	return scene_->clearOutputs();
 }
 
-void Interface::cancel()
+void Interface::cancel() noexcept
 {
 	if(scene_) scene_->getRenderControl().setCanceled();
 	logger_->logWarning("Interface: Render canceled by user.");
 }
 
-void Interface::setCurrentMaterial(const Material *material)
+void Interface::setCurrentMaterial(const Material *material) noexcept
 {
 	if(scene_) scene_->setCurrentMaterial(material);
 }
 
-void Interface::setCurrentMaterial(const char *name)
+void Interface::setCurrentMaterial(const char *name) noexcept
 {
 	if(scene_) scene_->setCurrentMaterial(scene_->getMaterial(std::string(name)));
 }
 
-const Material *Interface::getCurrentMaterial() const
+const Material *Interface::getCurrentMaterial() const noexcept
 {
 	if(scene_) return scene_->getCurrentMaterial();
 	else return nullptr;
 }
 
-void Interface::printDebug(const std::string &msg) const
+void Interface::printDebug(const std::string &msg) const noexcept
 {
 	if(logger_->isDebug())logger_->logDebug(msg);
 }
 
-void Interface::printVerbose(const std::string &msg) const
+void Interface::printVerbose(const std::string &msg) const noexcept
 {
 	if(logger_->isVerbose()) logger_->logVerbose(msg);
 }
 
-void Interface::printInfo(const std::string &msg) const
+void Interface::printInfo(const std::string &msg) const noexcept
 {
 	logger_->logInfo(msg);
 }
 
-void Interface::printParams(const std::string &msg) const
+void Interface::printParams(const std::string &msg) const noexcept
 {
 	logger_->logParams(msg);
 }
 
-void Interface::printWarning(const std::string &msg) const
+void Interface::printWarning(const std::string &msg) const noexcept
 {
 	logger_->logWarning(msg);
 }
 
-void Interface::printError(const std::string &msg) const
+void Interface::printError(const std::string &msg) const noexcept
 {
 	logger_->logError(msg);
 }
 
-void Interface::setupRender()
+void Interface::setupRender() noexcept
 {
 	scene_->setupSceneRenderParams(*scene_, *params_);
 }
 
-void Interface::render(ProgressBar *pb, bool auto_delete_progress_bar, ::yafaray_DisplayConsole_t progress_bar_display_console)
+void Interface::render(ProgressBar *pb, bool auto_delete_progress_bar, ::yafaray_DisplayConsole_t progress_bar_display_console) noexcept
 {
 	std::shared_ptr<ProgressBar> progress_bar(pb, CustomDeleter<ProgressBar>());
 	progress_bar->setAutoDelete(auto_delete_progress_bar);
@@ -322,22 +322,22 @@ void Interface::render(ProgressBar *pb, bool auto_delete_progress_bar, ::yafaray
 	scene_->render();
 }
 
-void Interface::enablePrintDateTime(bool value)
+void Interface::enablePrintDateTime(bool value) noexcept
 {
 	logger_->enablePrintDateTime(value);
 }
 
-void Interface::setConsoleVerbosityLevel(const ::yafaray_LogLevel_t &log_level)
+void Interface::setConsoleVerbosityLevel(const ::yafaray_LogLevel_t &log_level) noexcept
 {
 	logger_->setConsoleMasterVerbosity(log_level);
 }
 
-void Interface::setLogVerbosityLevel(const ::yafaray_LogLevel_t &log_level)
+void Interface::setLogVerbosityLevel(const ::yafaray_LogLevel_t &log_level) noexcept
 {
 	logger_->setLogMasterVerbosity(log_level);
 }
 
-void Interface::setConsoleLogColorsEnabled(bool console_log_colors_enabled) const
+void Interface::setConsoleLogColorsEnabled(bool console_log_colors_enabled) const noexcept
 {
 	logger_->setConsoleLogColorsEnabled(console_log_colors_enabled);
 }

@@ -37,7 +37,7 @@ XmlExport::XmlExport(const char *fname, const ::yafaray_LoggerCallback_t logger_
 	xml_file_ << "<?xml version=\"1.0\"?>\n";
 }
 
-void XmlExport::createScene()
+void XmlExport::createScene() noexcept
 {
 	xml_file_ << "<scene>\n\n";
 	xml_file_ << "<scene_parameters>\n";
@@ -46,7 +46,7 @@ void XmlExport::createScene()
 	xml_file_ << "</scene_parameters>\n";
 }
 
-void XmlExport::clearAll()
+void XmlExport::clearAll() noexcept
 {
 	if(logger_->isVerbose()) logger_->logVerbose("XmlExport: cleaning up...");
 	if(xml_file_.is_open())
@@ -60,7 +60,7 @@ void XmlExport::clearAll()
 	next_obj_ = 0;
 }
 
-bool XmlExport::setupLayersParameters()
+bool XmlExport::setupLayersParameters() noexcept
 {
 	xml_file_ << "\n<layers_parameters>\n";
 	writeParamMap(*params_);
@@ -69,7 +69,7 @@ bool XmlExport::setupLayersParameters()
 	return true;
 }
 
-void XmlExport::defineLayer()
+void XmlExport::defineLayer() noexcept
 {
 	xml_file_ << "\n<layer>\n";
 	writeParamMap(*params_);
@@ -77,40 +77,40 @@ void XmlExport::defineLayer()
 	xml_file_ << "</layer>\n";
 }
 
-bool XmlExport::startGeometry() { return true; }
+bool XmlExport::startGeometry() noexcept { return true; }
 
-bool XmlExport::endGeometry() { return true; }
+bool XmlExport::endGeometry() noexcept { return true; }
 
-unsigned int XmlExport::getNextFreeId()
+unsigned int XmlExport::getNextFreeId() noexcept
 {
 	return ++next_obj_;
 }
 
-bool XmlExport::endObject()
+bool XmlExport::endObject() noexcept
 {
 	xml_file_ << "</object>\n";
 	return true;
 }
 
-int XmlExport::addVertex(double x, double y, double z)
+int XmlExport::addVertex(double x, double y, double z) noexcept
 {
 	xml_file_ << "\t<p x=\"" << x << "\" y=\"" << y << "\" z=\"" << z << "\"/>\n";
 	return 0;
 }
 
-int XmlExport::addVertex(double x, double y, double z, double ox, double oy, double oz)
+int XmlExport::addVertex(double x, double y, double z, double ox, double oy, double oz) noexcept
 {
 	xml_file_ << "\t<p x=\"" << x << "\" y=\"" << y << "\" z=\"" << z
 			  << "\" ox=\"" << ox << "\" oy=\"" << oy << "\" oz=\"" << oz << "\"/>\n";
 	return 0;
 }
 
-void XmlExport::addNormal(double x, double y, double z)
+void XmlExport::addNormal(double x, double y, double z) noexcept
 {
 	xml_file_ << "\t<n x=\"" << x << "\" y=\"" << y << "\" z=\"" << z << "\"/>\n";
 }
 
-void XmlExport::setCurrentMaterial(const char *name)
+void XmlExport::setCurrentMaterial(const char *name) noexcept
 {
 	const std::string name_str(name);
 	if(name_str != current_material_) //need to set current material
@@ -120,32 +120,32 @@ void XmlExport::setCurrentMaterial(const char *name)
 	}
 }
 
-bool XmlExport::addFace(int a, int b, int c)
+bool XmlExport::addFace(int a, int b, int c) noexcept
 {
 	xml_file_ << "\t<f a=\"" << a << "\" b=\"" << b << "\" c=\"" << c << "\"/>\n";
 	return true;
 }
 
-bool XmlExport::addFace(int a, int b, int c, int uv_a, int uv_b, int uv_c)
+bool XmlExport::addFace(int a, int b, int c, int uv_a, int uv_b, int uv_c) noexcept
 {
 	xml_file_ << "\t<f a=\"" << a << "\" b=\"" << b << "\" c=\"" << c
 			  << "\" uv_a=\"" << uv_a << "\" uv_b=\"" << uv_b << "\" uv_c=\"" << uv_c << "\"/>\n";
 	return true;
 }
 
-int XmlExport::addUv(float u, float v)
+int XmlExport::addUv(float u, float v) noexcept
 {
 	xml_file_ << "\t<uv u=\"" << u << "\" v=\"" << v << "\"/>\n";
 	return n_uvs_++;
 }
 
-bool XmlExport::smoothMesh(const char *name, double angle)
+bool XmlExport::smoothMesh(const char *name, double angle) noexcept
 {
 	xml_file_ << "<smooth object_name=\"" << name << "\" angle=\"" << angle << "\"/>\n";
 	return true;
 }
 
-void writeMatrix_global(const std::string &name, const Matrix4 &m, std::ofstream &xml_file)
+void writeMatrix_global(const std::string &name, const Matrix4 &m, std::ofstream &xml_file) noexcept
 {
 	xml_file << "<" << name << " m00=\"" << m[0][0] << "\" m01=\"" << m[0][1] << "\" m02=\"" << m[0][2] << "\" m03=\"" << m[0][3] << "\""
 			 << " m10=\"" << m[1][0] << "\" m11=\"" << m[1][1] << "\" m12=\"" << m[1][2] << "\" m13=\"" << m[1][3] << "\""
@@ -153,7 +153,7 @@ void writeMatrix_global(const std::string &name, const Matrix4 &m, std::ofstream
 			 << " m30=\"" << m[3][0] << "\" m31=\"" << m[3][1] << "\" m32=\"" << m[3][2] << "\" m33=\"" << m[3][3] << "\"/>";
 }
 
-inline void writeParam_global(const std::string &name, const Parameter &param, std::ofstream &xml_file, ColorSpace xml_color_space, float xml_gamma)
+inline void writeParam_global(const std::string &name, const Parameter &param, std::ofstream &xml_file, ColorSpace xml_color_space, float xml_gamma) noexcept
 {
 	const Parameter::Type type = param.type();
 	if(type == Parameter::Int)
@@ -205,7 +205,7 @@ inline void writeParam_global(const std::string &name, const Parameter &param, s
 	}
 }
 
-bool XmlExport::addInstance(const char *base_object_name, const Matrix4 &obj_to_world)
+bool XmlExport::addInstance(const char *base_object_name, const Matrix4 &obj_to_world) noexcept
 {
 	xml_file_ << "\n<instance base_object_name=\"" << base_object_name << "\" >\n\t";
 	writeMatrix_global("transform", obj_to_world, xml_file_);
@@ -213,7 +213,7 @@ bool XmlExport::addInstance(const char *base_object_name, const Matrix4 &obj_to_
 	return true;
 }
 
-void XmlExport::writeParamMap(const ParamMap &param_map, int indent)
+void XmlExport::writeParamMap(const ParamMap &param_map, int indent) noexcept
 {
 	const std::string tabs(indent, '\t');
 	for(const auto &param : param_map)
@@ -223,7 +223,7 @@ void XmlExport::writeParamMap(const ParamMap &param_map, int indent)
 	}
 }
 
-void XmlExport::writeParamList(int indent)
+void XmlExport::writeParamList(int indent) noexcept
 {
 	const std::string tabs(indent, '\t');
 	for(const auto &param : *eparams_)
@@ -234,7 +234,7 @@ void XmlExport::writeParamList(int indent)
 	}
 }
 
-Light *XmlExport::createLight(const char *name)
+Light *XmlExport::createLight(const char *name) noexcept
 {
 	xml_file_ << "\n<light name=\"" << name << "\">\n";
 	writeParamMap(*params_);
@@ -242,7 +242,7 @@ Light *XmlExport::createLight(const char *name)
 	return nullptr;
 }
 
-Texture *XmlExport::createTexture(const char *name)
+Texture *XmlExport::createTexture(const char *name) noexcept
 {
 	xml_file_ << "\n<texture name=\"" << name << "\">\n";
 	writeParamMap(*params_);
@@ -250,7 +250,7 @@ Texture *XmlExport::createTexture(const char *name)
 	return nullptr;
 }
 
-Material *XmlExport::createMaterial(const char *name)
+Material *XmlExport::createMaterial(const char *name) noexcept
 {
 	xml_file_ << "\n<material name=\"" << name << "\">\n";
 	writeParamMap(*params_);
@@ -258,21 +258,21 @@ Material *XmlExport::createMaterial(const char *name)
 	xml_file_ << "</material>\n";
 	return nullptr;
 }
-Camera *XmlExport::createCamera(const char *name)
+Camera *XmlExport::createCamera(const char *name) noexcept
 {
 	xml_file_ << "\n<camera name=\"" << name << "\">\n";
 	writeParamMap(*params_);
 	xml_file_ << "</camera>\n";
 	return nullptr;
 }
-Background *XmlExport::createBackground(const char *name)
+Background *XmlExport::createBackground(const char *name) noexcept
 {
 	xml_file_ << "\n<background name=\"" << name << "\">\n";
 	writeParamMap(*params_);
 	xml_file_ << "</background>\n";
 	return nullptr;
 }
-Integrator *XmlExport::createIntegrator(const char *name)
+Integrator *XmlExport::createIntegrator(const char *name) noexcept
 {
 	xml_file_ << "\n<integrator name=\"" << name << "\">\n";
 	writeParamMap(*params_);
@@ -280,7 +280,7 @@ Integrator *XmlExport::createIntegrator(const char *name)
 	return nullptr;
 }
 
-VolumeRegion *XmlExport::createVolumeRegion(const char *name)
+VolumeRegion *XmlExport::createVolumeRegion(const char *name) noexcept
 {
 	xml_file_ << "\n<volumeregion name=\"" << name << "\">\n";
 	writeParamMap(*params_);
@@ -288,7 +288,7 @@ VolumeRegion *XmlExport::createVolumeRegion(const char *name)
 	return nullptr;
 }
 
-ColorOutput *XmlExport::createOutput(const char *name, bool auto_delete, void *callback_user_data, yafaray_OutputPutpixelCallback_t output_putpixel_callback, yafaray_OutputFlushAreaCallback_t output_flush_area_callback, yafaray_OutputFlushCallback_t output_flush_callback)
+ColorOutput *XmlExport::createOutput(const char *name, bool auto_delete, void *callback_user_data, yafaray_OutputPutpixelCallback_t output_putpixel_callback, yafaray_OutputFlushAreaCallback_t output_flush_area_callback, yafaray_OutputFlushCallback_t output_flush_callback) noexcept
 {
 	xml_file_ << "\n<output name=\"" << name << "\">\n";
 	writeParamMap(*params_);
@@ -296,7 +296,7 @@ ColorOutput *XmlExport::createOutput(const char *name, bool auto_delete, void *c
 	return nullptr;
 }
 
-RenderView *XmlExport::createRenderView(const char *name)
+RenderView *XmlExport::createRenderView(const char *name) noexcept
 {
 	xml_file_ << "\n<render_view name=\"" << name << "\">\n";
 	writeParamMap(*params_);
@@ -304,7 +304,7 @@ RenderView *XmlExport::createRenderView(const char *name)
 	return nullptr;
 }
 
-Image *XmlExport::createImage(const char *name)
+Image *XmlExport::createImage(const char *name) noexcept
 {
 	xml_file_ << "\n<image name=\"" << name << "\">\n";
 	writeParamMap(*params_);
@@ -312,7 +312,7 @@ Image *XmlExport::createImage(const char *name)
 	return nullptr;
 }
 
-Object *XmlExport::createObject(const char *name)
+Object *XmlExport::createObject(const char *name) noexcept
 {
 	n_uvs_ = 0;
 	xml_file_ << "\n<object>\n";
@@ -323,21 +323,21 @@ Object *XmlExport::createObject(const char *name)
 	return nullptr;
 }
 
-void XmlExport::setupRender()
+void XmlExport::setupRender() noexcept
 {
 	xml_file_ << "\n<render>\n";
 	writeParamMap(*params_);
 	xml_file_ << "</render>\n";
 }
 
-void XmlExport::render(ProgressBar *pb, bool, ::yafaray_DisplayConsole_t)
+void XmlExport::render(ProgressBar *pb, bool, ::yafaray_DisplayConsole_t) noexcept
 {
 	xml_file_ << "</scene>\n";
 	xml_file_.flush();
 	xml_file_.close();
 }
 
-void XmlExport::setXmlColorSpace(std::string color_space_string, float gamma_val)
+void XmlExport::setXmlColorSpace(std::string color_space_string, float gamma_val) noexcept
 {
 	xml_color_space_ = Rgb::colorSpaceFromName(color_space_string, ColorSpace::Srgb);
 	xml_gamma_ = gamma_val;
