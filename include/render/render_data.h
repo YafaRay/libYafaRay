@@ -20,7 +20,7 @@
 #ifndef YAFARAY_RENDER_DATA_H
 #define YAFARAY_RENDER_DATA_H
 
-#include "public_api/yafaray_conf.h"
+#include "common/yafaray_common.h"
 #include "common/memory.h"
 
 BEGIN_YAFARAY

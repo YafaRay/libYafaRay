@@ -20,7 +20,7 @@
 #ifndef YAFARAY_PKDTREE_H
 #define YAFARAY_PKDTREE_H
 
-#include "public_api/yafaray_conf.h"
+#include "common/yafaray_common.h"
 #include "common/logger.h"
 #include "geometry/bound.h"
 #include <vector>

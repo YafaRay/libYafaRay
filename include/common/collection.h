@@ -22,7 +22,7 @@
 #ifndef YAFARAY_COLLECTION_H
 #define YAFARAY_COLLECTION_H
 
-#include "public_api/yafaray_conf.h"
+#include "yafaray_common.h"
 #include <map>
 
 BEGIN_YAFARAY

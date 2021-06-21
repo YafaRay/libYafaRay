@@ -22,7 +22,7 @@
 #ifndef YAFARAY_SYSINFO_H
 #define YAFARAY_SYSINFO_H
 
-#include "public_api/yafaray_conf.h"
+#include "yafaray_common.h"
 
 BEGIN_YAFARAY
 

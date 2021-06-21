@@ -20,7 +20,7 @@
 #ifndef YAFARAY_VISIBILITY_H
 #define YAFARAY_VISIBILITY_H
 
-#include "public_api/yafaray_conf.h"
+#include "yafaray_common.h"
 #include <string>
 
 BEGIN_YAFARAY

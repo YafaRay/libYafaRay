@@ -20,7 +20,7 @@
 #ifndef YAFARAY_SCENE_H
 #define YAFARAY_SCENE_H
 
-#include "public_api/yafaray_conf.h"
+#include "common/yafaray_common.h"
 #include "common/layers.h"
 #include "render/render_view.h"
 #include "render/render_control.h"

@@ -20,7 +20,7 @@
 #ifndef YAFARAY_OBJECT_H
 #define YAFARAY_OBJECT_H
 
-#include "public_api/yafaray_conf.h"
+#include "common/yafaray_common.h"
 #include "color/color.h"
 #include "common/visibility.h"
 #include <vector>

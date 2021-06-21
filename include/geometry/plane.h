@@ -20,7 +20,7 @@
 #ifndef YAFARAY_PLANE_H
 #define YAFARAY_PLANE_H
 
-#include "public_api/yafaray_conf.h"
+#include "common/yafaray_common.h"
 #include "geometry/ray.h"
 
 BEGIN_YAFARAY

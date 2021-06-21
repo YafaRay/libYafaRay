@@ -274,7 +274,7 @@ void yafaray_setLogVerbosityLevel(yafaray_Interface_t *interface, yafaray_LogLev
 	reinterpret_cast<yafaray4::Interface *>(interface)->setLogVerbosityLevel(log_level);
 }
 
-void yafaray_getVersion(char *dest_string, size_t dest_string_size) //!< Get version to check against the exporters
+void yafaray_getVersion(char *dest_string, unsigned int dest_string_size) //!< Get version to check against the exporters
 {
 	if(dest_string) strncpy(dest_string, yafaray4::buildinfo::getVersion().c_str(), dest_string_size);
 }

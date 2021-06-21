@@ -24,7 +24,7 @@
 #ifndef YAFARAY_BOUND_H
 #define YAFARAY_BOUND_H
 
-#include "public_api/yafaray_conf.h"
+#include "common/yafaray_common.h"
 #include "ray.h"
 #include "geometry/vector_double.h"
 

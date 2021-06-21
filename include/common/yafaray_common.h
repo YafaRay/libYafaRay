@@ -17,34 +17,13 @@
  *      Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-#ifndef YAFARAY_SPECTRUM_H
-#define YAFARAY_SPECTRUM_H
+#ifndef YAFARAY_COMMON_H
+#define YAFARAY_COMMON_H
 
-#include "common/yafaray_common.h"
-#include "color/color.h"
+#define BEGIN_YAFARAY namespace yafaray4 {
+#define END_YAFARAY }
 
-BEGIN_YAFARAY
+static const float min_raydist_global = 0.00005f;
+static const float shadow_bias_global = 0.0005f;
 
-void wl2RgbFromCie_global(float wl, Rgb &col);
-//void approxSpectrumRGB(float wl, Rgb &col);
-//void fakeSpectrum(float p, Rgb &col);
-void cauchyCoefficients_global(float ior, float disp_pw, float &cauchy_a, float &cauchy_b);
-float getIoRcolor_global(float w, float cauchy_a, float cauchy_b, Rgb &col);
-Rgb wl2Xyz_global(float wl);
-
-static inline float getIor_global(float w, float cauchy_a, float cauchy_b)
-{
-	float wl = 300.f * w + 400.f;
-	return cauchy_a + cauchy_b / (wl * wl);
-}
-
-static inline void wl2Rgb_global(float w, Rgb &wl_col)
-{
-	float wl = 300.f * w + 400.f;
-	wl2RgbFromCie_global(wl, wl_col);
-	wl_col *= 2.214032659670777114f;
-}
-
-END_YAFARAY
-
-#endif // YAFARAY_SPECTRUM_H
+#endif // YAFARAY_COMMON_H

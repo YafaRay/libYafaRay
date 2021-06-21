@@ -18,7 +18,7 @@
  *
  */
 
-#include "public_api/yafaray_conf.h"
+#include "common/yafaray_common.h"
 #include "common/version_build_info.h"
 #include "common/badge.h"
 #include "common/param.h"

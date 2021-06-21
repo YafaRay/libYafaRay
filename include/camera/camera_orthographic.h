@@ -20,7 +20,7 @@
 #ifndef YAFARAY_CAMERA_ORTHOGRAPHIC_H
 #define YAFARAY_CAMERA_ORTHOGRAPHIC_H
 
-#include "public_api/yafaray_conf.h"
+#include "common/yafaray_common.h"
 #include "camera/camera.h"
 
 BEGIN_YAFARAY

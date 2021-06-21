@@ -20,7 +20,7 @@
 #ifndef YAFARAY_LIGHT_H
 #define YAFARAY_LIGHT_H
 
-#include "public_api/yafaray_conf.h"
+#include "common/yafaray_common.h"
 #include "common/flags.h"
 #include "color/color.h"
 #include "common/memory.h"

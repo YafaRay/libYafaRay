@@ -21,7 +21,7 @@
 #ifndef YAFARAY_LAYERS_H
 #define YAFARAY_LAYERS_H
 
-#include "public_api/yafaray_conf.h"
+#include "yafaray_common.h"
 #include "common/collection.h"
 #include "image/image.h"
 #include "common/flags.h"

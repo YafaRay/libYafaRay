@@ -22,7 +22,7 @@
 #ifndef YAFARAY_LIGHT_IES_DATA_H
 #define YAFARAY_LIGHT_IES_DATA_H
 
-#include "public_api/yafaray_conf.h"
+#include "common/yafaray_common.h"
 #include <fstream>
 #include "common/logger.h"
 

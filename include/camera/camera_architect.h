@@ -20,7 +20,7 @@
 #ifndef YAFARAY_CAMERA_ARCHITECT_H
 #define YAFARAY_CAMERA_ARCHITECT_H
 
-#include "public_api/yafaray_conf.h"
+#include "common/yafaray_common.h"
 #include "camera/camera_perspective.h"
 
 BEGIN_YAFARAY

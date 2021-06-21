@@ -21,7 +21,7 @@
 #define YAFARAY_BACKGROUND_H
 
 #include <memory>
-#include "public_api/yafaray_conf.h"
+#include "common/yafaray_common.h"
 
 BEGIN_YAFARAY
 

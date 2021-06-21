@@ -20,7 +20,7 @@
 #ifndef YAFARAY_RENDER_CONTROL_H
 #define YAFARAY_RENDER_CONTROL_H
 
-#include "public_api/yafaray_conf.h"
+#include "common/yafaray_common.h"
 #include <string>
 #include <mutex>
 

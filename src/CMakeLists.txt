@@ -87,7 +87,6 @@ endif()
 
 # Copy C API include files to binary directory for other targets to use
 file(MAKE_DIRECTORY ${PROJECT_BINARY_DIR}/include)
-configure_file(${PROJECT_SOURCE_DIR}/include/public_api/yafaray_conf.h ${PROJECT_BINARY_DIR}/include/)
 configure_file(${PROJECT_SOURCE_DIR}/include/public_api/yafaray_c_api.h ${PROJECT_BINARY_DIR}/include/)
 
 # Shared target used for generating export header # with the name mytools_export.h, which will be suitable # for both the shared and static targets
@@ -102,7 +101,6 @@ install(TARGETS libyafaray4
 		)
 
 install(FILES
-		${PROJECT_SOURCE_DIR}/include/public_api/yafaray_conf.h
 		${PROJECT_SOURCE_DIR}/include/public_api/yafaray_c_api.h
 		${PROJECT_BINARY_DIR}/include/yafaray_c_api_export.h
 		${PROJECT_BINARY_DIR}/include/yafaray_build_info.h

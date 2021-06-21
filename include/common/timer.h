@@ -20,7 +20,7 @@
 #ifndef YAFARAY_TIMER_H
 #define YAFARAY_TIMER_H
 
-#include "public_api/yafaray_conf.h"
+#include "yafaray_common.h"
 #include <time.h>
 #include <string>
 #include <map>

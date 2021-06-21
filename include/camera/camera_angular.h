@@ -20,7 +20,6 @@
 #ifndef YAFARAY_CAMERA_ANGULAR_H
 #define YAFARAY_CAMERA_ANGULAR_H
 
-#include "public_api/yafaray_conf.h"
 #include "camera/camera.h"
 
 BEGIN_YAFARAY

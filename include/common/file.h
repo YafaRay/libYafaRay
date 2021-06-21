@@ -24,7 +24,7 @@
 #ifndef YAFARAY_FILE_H
 #define YAFARAY_FILE_H
 
-#include "public_api/yafaray_conf.h"
+#include "yafaray_common.h"
 #include <string>
 #include <vector>
 

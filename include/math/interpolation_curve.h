@@ -22,7 +22,7 @@
 #ifndef YAFARAY_INTERPOLATION_CURVE_H
 #define YAFARAY_INTERPOLATION_CURVE_H
 
-#include "public_api/yafaray_conf.h"
+#include "common/yafaray_common.h"
 
 BEGIN_YAFARAY
 

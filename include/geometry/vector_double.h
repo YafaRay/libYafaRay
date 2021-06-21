@@ -20,7 +20,7 @@
 #ifndef YAFARAY_VECTOR_DOUBLE_H
 #define YAFARAY_VECTOR_DOUBLE_H
 
-#include "public_api/yafaray_conf.h"
+#include "common/yafaray_common.h"
 #include "geometry/axis.h"
 #include <sstream>
 #include <iomanip>

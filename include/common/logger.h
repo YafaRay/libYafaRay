@@ -25,7 +25,8 @@
 #ifndef YAFARAY_LOGGER_H
 #define YAFARAY_LOGGER_H
 
-#include "public_api/yafaray_conf.h"
+#include "yafaray_common.h"
+#include "public_api/yafaray_c_api.h"
 #include "color/color_console.h"
 #include <ctime>
 #include <iostream>

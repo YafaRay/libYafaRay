@@ -22,7 +22,7 @@
 #ifndef LIBYAFARAY_VERSION_BUILD_INFO_H
 #define LIBYAFARAY_VERSION_BUILD_INFO_H
 
-#include "public_api/yafaray_conf.h"
+#include "yafaray_common.h"
 #include <string>
 #include <vector>
 
