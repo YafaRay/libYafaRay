@@ -117,10 +117,10 @@ class Layer final
 		Layer() = default;
 		Layer(const Type &type, const Image::Type &image_type = Image::Type::None, const Image::Type &exported_image_type = Image::Type::None, const std::string &exported_image_name = "");
 		Layer(const std::string &type_name, const std::string &image_type_name = "", const std::string &exported_image_type_name = "", const std::string &exported_image_name = "");
-		struct Flags : public yafaray4::Flags
+		struct Flags : public yafaray::Flags
 		{
 			Flags() = default;
-			Flags(unsigned int flags) : yafaray4::Flags(flags) { }
+			Flags(unsigned int flags) : yafaray::Flags(flags) { }
 			enum Enum : unsigned int { None = 0, BasicLayers = 1 << 0, DepthLayers = 1 << 1, DiffuseLayers = 1 << 2, IndexLayers = 1 << 3, DebugLayers = 1 << 4, };
 		} flags_; //!< Flags to group layers and improve runtime performance
 		Type getType() const { return type_; }

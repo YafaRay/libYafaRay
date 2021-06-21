@@ -43,10 +43,10 @@ class Light
 {
 	public:
 		static std::unique_ptr<Light> factory(Logger &logger, ParamMap &params, const Scene &scene);
-		struct Flags : public yafaray4::Flags
+		struct Flags : public yafaray::Flags
 		{
 			Flags() = default;
-			Flags(unsigned int flags) : yafaray4::Flags(flags) { }
+			Flags(unsigned int flags) : yafaray::Flags(flags) { }
 			enum Enum : unsigned int { None = 0, DiracDir = 1, Singular = 1 << 1 };
 		};
 		Light(Logger &logger) : logger_(logger) { }

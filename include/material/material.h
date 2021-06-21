@@ -40,11 +40,11 @@ struct Sample;
 struct PSample;
 class Logger;
 
-struct BsdfFlags : public yafaray4::Flags
+struct BsdfFlags : public Flags
 {
 	BsdfFlags() = default;
-	BsdfFlags(const yafaray4::Flags &flags) : yafaray4::Flags(flags) { }
-	BsdfFlags(unsigned int flags) : yafaray4::Flags(flags) { }
+	BsdfFlags(const Flags &flags) : Flags(flags) { }
+	BsdfFlags(unsigned int flags) : Flags(flags) { }
 	enum Enum : unsigned int
 	{
 			None		= 0,

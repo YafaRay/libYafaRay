@@ -28,10 +28,10 @@ BEGIN_YAFARAY
 class LayerNode final : public ShaderNode
 {
 	public:
-		struct Flags : public yafaray4::Flags
+		struct Flags : public yafaray::Flags
 		{
 			Flags() = default;
-			Flags(unsigned int flags) : yafaray4::Flags(flags) { }
+			Flags(unsigned int flags) : yafaray::Flags(flags) { }
 			enum Enum : unsigned int { None = 0, RgbToInt = 1 << 0, Stencil = 1 << 1, Negative = 1 << 2, AlphaMix = 1 << 3 };
 		};
 		static std::unique_ptr<ShaderNode> factory(Logger &logger, const ParamMap &params, const Scene &scene);

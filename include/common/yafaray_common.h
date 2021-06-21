@@ -20,7 +20,7 @@
 #ifndef YAFARAY_COMMON_H
 #define YAFARAY_COMMON_H
 
-#define BEGIN_YAFARAY namespace yafaray4 {
+#define BEGIN_YAFARAY namespace yafaray {
 #define END_YAFARAY }
 
 static const float min_raydist_global = 0.00005f;

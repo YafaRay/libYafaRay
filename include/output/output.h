@@ -48,7 +48,7 @@ class ColorOutput;
 class ColorOutput
 {
 	public:
-		static UniquePtr_t <yafaray4::ColorOutput> factory(Logger &logger, const ParamMap &params, const Scene &scene, void *callback_user_data, yafaray_OutputPutpixelCallback_t output_putpixel_callback, yafaray_OutputFlushAreaCallback_t output_flush_area_callback, yafaray_OutputFlushCallback_t output_flush_callback);
+		static UniquePtr_t <ColorOutput> factory(Logger &logger, const ParamMap &params, const Scene &scene, void *callback_user_data, yafaray_OutputPutpixelCallback_t output_putpixel_callback, yafaray_OutputFlushAreaCallback_t output_flush_area_callback, yafaray_OutputFlushCallback_t output_flush_callback);
 		virtual ~ColorOutput() = default;
 		void setAutoDelete(bool value) { auto_delete_ = value; }
 		void setLoggingParams(const ParamMap &params);

@@ -40,7 +40,7 @@ class Pdf1D;
 class BidirectionalIntegrator final : public TiledIntegrator
 {
 	public:
-		static std::unique_ptr<Integrator> factory(yafaray4::Logger &logger, ParamMap &params, const Scene &scene);
+		static std::unique_ptr<Integrator> factory(Logger &logger, ParamMap &params, const Scene &scene);
 
 	private:
 		BidirectionalIntegrator(Logger &logger, bool transp_shad = false, int shadow_depth = 4);
