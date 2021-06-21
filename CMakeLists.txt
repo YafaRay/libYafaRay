@@ -22,12 +22,13 @@ set(YAFARAY_VERSION_MAJOR 4)
 set(YAFARAY_VERSION_MINOR 0)
 set(YAFARAY_VERSION_PATCH 0)
 set(YAFARAY_VERSION "${YAFARAY_VERSION_MAJOR}.${YAFARAY_VERSION_MINOR}.${YAFARAY_VERSION_PATCH}")
-set(YAFARAY_VERSION_STATE "-pre-alpha")
-set(YAFARAY_VERSION_STATE_DESCRIPTION "(PRE-ALPHA UNSTABLE VERSION, WORK IN PROGRESS) - ")
+set(YAFARAY_VERSION_PRE_RELEASE "pre-alpha")
+set(YAFARAY_VERSION_PRE_RELEASE_DESCRIPTION "PRE-ALPHA UNSTABLE VERSION, WORK IN PROGRESS.")
+set(YAFARAY_VERSION_DESCRIPTION "libYafaRay is a free open-source montecarlo raytracing engine released under the LGPL 2.1 license. Raytracing is a rendering technique for generating realistic images by tracing the path of light through a 3D scene. ${YAFARAY_VERSION_PRE_RELEASE_DESCRIPTION}")
 
 project(libYafaRay
 		VERSION "${YAFARAY_VERSION}"
-		DESCRIPTION "${YAFARAY_VERSION_STATE_DESCRIPTION}libYafaRay is a free open-source montecarlo raytracing engine released under the LGPL 2.1 license. Raytracing is a rendering technique for generating realistic images by tracing the path of light through a 3D scene"
+		DESCRIPTION "${YAFARAY_VERSION_DESCRIPTION}"
 		LANGUAGES C CXX)
 
 list(APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake/modules")

@@ -23,12 +23,13 @@
 
 BEGIN_YAFARAY
 
-std::string buildinfo::getVersionString() { return YAFARAY_VERSION + getGitLine(false); }
+std::string buildinfo::getVersionString() { return YAFARAY_VERSION_STRING + getGitLine(false); }
+std::string buildinfo::getVersionDescription() { return YAFARAY_VERSION_DESCRIPTION; }
 int buildinfo::getVersionMajor() { return YAFARAY_VERSION_MAJOR; }
 int buildinfo::getVersionMinor() { return YAFARAY_VERSION_MINOR; }
 int buildinfo::getVersionPatch() { return YAFARAY_VERSION_PATCH; }
-std::string buildinfo::getVersionState() { return YAFARAY_VERSION_STATE; }
-std::string buildinfo::getVersionStateDescription() { return YAFARAY_VERSION_STATE_DESCRIPTION; }
+std::string buildinfo::getVersionPreRelease() { return YAFARAY_VERSION_PRE_RELEASE; }
+std::string buildinfo::getVersionPreReleaseDescription() { return YAFARAY_VERSION_PRE_RELEASE_DESCRIPTION; }
 std::string buildinfo::getGitDescribe() { return YAFARAY_VERSION_GIT; }
 std::string buildinfo::getGitTag() { return YAFARAY_VERSION_GIT_TAG; }
 std::string buildinfo::getGitBranch() { return YAFARAY_VERSION_GIT_BRANCH; }
@@ -76,8 +77,9 @@ std::vector<std::string> buildinfo::getAllBuildDetails()
 {
 	std::vector<std::string> result;
 	result.emplace_back("Version = '" + getVersionString() + "'");
-	result.emplace_back("VersionState = '" + getVersionState() + "'");
-	result.emplace_back("VersionStateDescription = '" + getVersionStateDescription() + "'");
+	result.emplace_back("VersionDescription = '" + getVersionDescription() + "'");
+	result.emplace_back("VersionState = '" + getVersionPreRelease() + "'");
+	result.emplace_back("VersionStateDescription = '" + getVersionPreReleaseDescription() + "'");
 	result.emplace_back("GitDescribe = '" + getGitDescribe() + "'");
 	result.emplace_back("GitShortLine = '" + getGitLine(false) + "'");
 	result.emplace_back("GitLongLine = '" + getGitLine(true) + "'");

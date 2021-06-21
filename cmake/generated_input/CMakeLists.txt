@@ -71,4 +71,9 @@ if(YAFARAY_WITH_TIFF)
 	list(APPEND YAFARAY_BUILD_OPTIONS "YAFARAY_WITH_TIFF")
 endif()
 
+set(YAFARAY_VERSION_STRING "${YAFARAY_VERSION}")
+if(NOT YAFARAY_VERSION_PRE_RELEASE STREQUAL "")
+	string(APPEND YAFARAY_VERSION_STRING "-${YAFARAY_VERSION_PRE_RELEASE}")
+endif()
+
 configure_file(yafaray_version_build_info.h.in ${PROJECT_BINARY_DIR}/include/yafaray_version_build_info.h)
