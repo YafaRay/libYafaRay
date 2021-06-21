@@ -89,7 +89,7 @@ Scene::Scene(Logger &logger) : logger_(logger)
 	creation_state_.changes_ = CreationState::Flags::CAll;
 	creation_state_.stack_.push_front(CreationState::Ready);
 	creation_state_.next_free_id_ = std::numeric_limits<int>::max();
-	logger_.logInfo("LibYafaRay (", buildinfo::getVersion(), buildinfo::getBuildTypeSuffix(), ")", " ", buildinfo::getBuildOs(), " ", buildinfo::getBuildArchitectureBits(), "bit (", buildinfo::getBuildCompiler(), ")");
+	logger_.logInfo("LibYafaRay (", buildinfo::getVersionString(), buildinfo::getBuildTypeSuffix(), ")", " ", buildinfo::getBuildOs(), " ", buildinfo::getBuildArchitectureBits(), "bit (", buildinfo::getBuildCompiler(), ")");
 	logger_.logDebug("LibYafaRay build details:");
 	if(logger_.isDebug())
 	{

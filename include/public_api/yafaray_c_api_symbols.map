@@ -52,7 +52,10 @@ LIBYAFARAY_4.0.0 {
         yafaray_setConsoleVerbosityLevel;
         yafaray_setLogVerbosityLevel;
         yafaray_logLevelFromString;
-        yafaray_getVersion;
+        yafaray_getVersionString;
+        yafaray_getVersionMajor;
+        yafaray_getVersionMinor;
+        yafaray_getVersionPatch;
         yafaray_printVerbose;
         yafaray_printInfo;
         yafaray_printParams;

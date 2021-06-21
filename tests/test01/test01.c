@@ -66,6 +66,15 @@ int main()
 	struct ResultImage result_image;
 	size_t result_image_size_bytes;
 	int total_steps = 0;
+	char *version_string;
+
+	printf("***** Test client 'test01' for libYafaRay *****\n");
+	printf("Using libYafaRay version (%d.%d.%d)\n", yafaray_getVersionMajor(), yafaray_getVersionMinor(), yafaray_getVersionPatch());
+	const int version_string_size = 100;
+	version_string = malloc(version_string_size * sizeof(char));
+	yafaray_getVersionString(version_string, version_string_size);
+	printf("    libYafaRay version details: '%s'\n\n", version_string);
+	free(version_string);
 
 	/* handle CTRL+C events */
 	#ifdef _WIN32

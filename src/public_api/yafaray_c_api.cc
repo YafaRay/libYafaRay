@@ -274,10 +274,18 @@ void yafaray_setLogVerbosityLevel(yafaray_Interface_t *interface, yafaray_LogLev
 	reinterpret_cast<yafaray::Interface *>(interface)->setLogVerbosityLevel(log_level);
 }
 
-void yafaray_getVersion(char *dest_string, unsigned int dest_string_size) //!< Get version to check against the exporters
+void yafaray_getVersionString(char *dest_string, unsigned int dest_string_size)
 {
-	if(dest_string) strncpy(dest_string, yafaray::buildinfo::getVersion().c_str(), dest_string_size);
+	if(!dest_string || dest_string_size == 0) return;
+	const std::string version_string = yafaray::buildinfo::getVersionString();
+	const unsigned int copy_length = std::min(dest_string_size - 1, static_cast<unsigned int>(version_string.size()));
+	if(dest_string) strncpy(dest_string, version_string.c_str(), copy_length);
+	*(dest_string + copy_length) = 0x00; //Make sure that the destination string gets null terminated
 }
+
+int yafaray_getVersionMajor() { return yafaray::buildinfo::getVersionMajor(); }
+int yafaray_getVersionMinor() { return yafaray::buildinfo::getVersionMinor(); }
+int yafaray_getVersionPatch() { return yafaray::buildinfo::getVersionPatch(); }
 
 /*! Console Printing wrappers to report in color with yafaray's own console coloring */
 void yafaray_printDebug(yafaray_Interface_t *interface, const char *msg)

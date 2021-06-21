@@ -75,7 +75,7 @@ std::string Badge::getFields() const
 std::string Badge::getRenderInfo(const RenderControl &render_control) const
 {
 	std::stringstream ss_badge;
-	ss_badge << "\nYafaRay (" << buildinfo::getVersion() << buildinfo::getBuildTypeSuffix() << ")" << " " << buildinfo::getBuildOs() << " " << buildinfo::getBuildArchitectureBits() << "bit (" << buildinfo::getBuildCompiler() << ")";
+	ss_badge << "\nYafaRay (" << buildinfo::getVersionString() << buildinfo::getBuildTypeSuffix() << ")" << " " << buildinfo::getBuildOs() << " " << buildinfo::getBuildArchitectureBits() << "bit (" << buildinfo::getBuildCompiler() << ")";
 	ss_badge << std::setprecision(2);
 	double times = g_timer_global.getTimeNotStopping("rendert");
 	if(render_control.finished()) times = g_timer_global.getTime("rendert");

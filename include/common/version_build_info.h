@@ -30,13 +30,14 @@ BEGIN_YAFARAY
 
 namespace buildinfo
 {
-	std::string getVersion();
+	std::string getVersionString();
 	int getVersionMajor();
 	int getVersionMinor();
 	int getVersionPatch();
 	std::string getVersionState();
 	std::string getVersionStateDescription();
-	std::string getGit();
+	std::string getGitDescribe();
+	std::string getGitLine(bool long_line);
 	std::string getGitTag();
 	std::string getGitBranch();
 	std::string getGitDirty();

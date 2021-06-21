@@ -19,17 +19,17 @@
  */
 
 #include "common/version_build_info.h"
-#include "yafaray_build_info.h"
+#include "yafaray_version_build_info.h"
 
 BEGIN_YAFARAY
 
-std::string buildinfo::getVersion() { return YAFARAY_VERSION; }
+std::string buildinfo::getVersionString() { return YAFARAY_VERSION + getGitLine(false); }
 int buildinfo::getVersionMajor() { return YAFARAY_VERSION_MAJOR; }
 int buildinfo::getVersionMinor() { return YAFARAY_VERSION_MINOR; }
 int buildinfo::getVersionPatch() { return YAFARAY_VERSION_PATCH; }
 std::string buildinfo::getVersionState() { return YAFARAY_VERSION_STATE; }
 std::string buildinfo::getVersionStateDescription() { return YAFARAY_VERSION_STATE_DESCRIPTION; }
-std::string buildinfo::getGit() { return YAFARAY_VERSION_GIT; }
+std::string buildinfo::getGitDescribe() { return YAFARAY_VERSION_GIT; }
 std::string buildinfo::getGitTag() { return YAFARAY_VERSION_GIT_TAG; }
 std::string buildinfo::getGitBranch() { return YAFARAY_VERSION_GIT_BRANCH; }
 std::string buildinfo::getGitDirty() { return YAFARAY_VERSION_GIT_DIRTY; }
@@ -41,17 +41,46 @@ std::string buildinfo::getBuildCompiler() { return YAFARAY_BUILD_COMPILER; }
 std::string buildinfo::getBuildCompilerVersion() { return YAFARAY_BUILD_COMPILER_VERSION; }
 std::string buildinfo::getBuildOs() { return YAFARAY_BUILD_OS; }
 std::string buildinfo::getBuildType() { return YAFARAY_BUILD_TYPE; }
-std::string buildinfo::getBuildTypeSuffix() { return getBuildType().empty() ? "" : "-" + getBuildType(); }
 std::string buildinfo::getBuildOptions() { return YAFARAY_BUILD_OPTIONS; }
 std::string buildinfo::getBuildFlags() { return YAFARAY_BUILD_FLAGS; }
+std::string buildinfo::getBuildTypeSuffix()
+{
+	const std::string build_type = getBuildType();
+	if(build_type.empty() || build_type == "RELEASE") return "";
+	else return "/" + build_type;
+}
+
+std::string buildinfo::getGitLine(bool long_line)
+{
+	// If no Git data or it's just master branch without any changes since last tag, then return an empty string
+	std::string branch = getGitBranch();
+	if(branch == "master") branch.clear();
+	std::string commits_since_tag = getCommitsSinceTag();
+	if(commits_since_tag == "0") commits_since_tag.clear();
+	const std::string dirty = getGitDirty();
+
+	if(branch.empty() && dirty.empty() && commits_since_tag.empty()) return "";
+	std::string result = "+git";
+	if(long_line)
+	{
+		if(!branch.empty()) result += "." + branch;
+		result += "." + getGitTag();
+		if(!commits_since_tag.empty()) result += ".+" + commits_since_tag;
+	}
+	result += ".g" + getGitCommit().substr(0, 8);
+	if(!dirty.empty()) result += ".dirty";
+	return result;
+}
 
 std::vector<std::string> buildinfo::getAllBuildDetails()
 {
 	std::vector<std::string> result;
-	result.emplace_back("Version = '" + getVersion() + "'");
+	result.emplace_back("Version = '" + getVersionString() + "'");
 	result.emplace_back("VersionState = '" + getVersionState() + "'");
 	result.emplace_back("VersionStateDescription = '" + getVersionStateDescription() + "'");
-	result.emplace_back("Git = '" + getGit() + "'");
+	result.emplace_back("GitDescribe = '" + getGitDescribe() + "'");
+	result.emplace_back("GitShortLine = '" + getGitLine(false) + "'");
+	result.emplace_back("GitLongLine = '" + getGitLine(true) + "'");
 	result.emplace_back("GitTag = '" + getGitTag() + "'");
 	result.emplace_back("GitBranch = '" + getGitBranch() + "'");
 	result.emplace_back("GitDirty = '" + getGitDirty() + "'");

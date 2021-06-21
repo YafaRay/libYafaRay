@@ -107,7 +107,7 @@ install(TARGETS libyafaray4
 install(FILES
 		${PROJECT_SOURCE_DIR}/include/public_api/yafaray_c_api.h
 		${PROJECT_BINARY_DIR}/include/yafaray_c_api_export.h
-		${PROJECT_BINARY_DIR}/include/yafaray_build_info.h
+		${PROJECT_BINARY_DIR}/include/yafaray_version_build_info.h
 		DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
 		)
 

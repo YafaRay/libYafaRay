@@ -71,4 +71,4 @@ if(YAFARAY_WITH_TIFF)
 	list(APPEND YAFARAY_BUILD_OPTIONS "YAFARAY_WITH_TIFF")
 endif()
 
-configure_file(yafaray_build_info.h.in ${PROJECT_BINARY_DIR}/include/yafaray_build_info.h)
+configure_file(yafaray_version_build_info.h.in ${PROJECT_BINARY_DIR}/include/yafaray_version_build_info.h)

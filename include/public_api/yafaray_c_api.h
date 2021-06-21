@@ -42,7 +42,8 @@ extern "C" {
 	typedef void (*yafaray_ProgressBarCallback_t)(int steps_total, int steps_done, const char *tag, void *callback_user_data);
 	typedef void (*yafaray_LoggerCallback_t)(yafaray_LogLevel_t log_level, long datetime, const char *time_of_day, const char *description, void *callback_user_data);
 
-	/* C API Public functions */
+	/* C API Public functions.
+	 * In the source code the YafaRay developers *MUST* ensure that each of them appears in the Exported Symbols Map file with the correct annotated version */
 	YAFARAY_C_API_EXPORT yafaray_Interface_t *yafaray_createInterface(yafaray_Interface_Type_t interface_type, const char *exported_file_path, const yafaray_LoggerCallback_t logger_callback, void *callback_user_data, yafaray_DisplayConsole_t display_console);
 	YAFARAY_C_API_EXPORT void yafaray_destroyInterface(yafaray_Interface_t *interface);
 	YAFARAY_C_API_EXPORT void yafaray_createScene(yafaray_Interface_t *interface);
@@ -93,7 +94,10 @@ extern "C" {
 	YAFARAY_C_API_EXPORT void yafaray_setConsoleVerbosityLevel(yafaray_Interface_t *interface, yafaray_LogLevel_t log_level);
 	YAFARAY_C_API_EXPORT void yafaray_setLogVerbosityLevel(yafaray_Interface_t *interface, yafaray_LogLevel_t log_level);
 	YAFARAY_C_API_EXPORT yafaray_LogLevel_t yafaray_logLevelFromString(const char *log_level_string);
-	YAFARAY_C_API_EXPORT void yafaray_getVersion(char *dest_string, unsigned int dest_string_size);
+	YAFARAY_C_API_EXPORT void yafaray_getVersionString(char *dest_string, unsigned int dest_string_size);
+	YAFARAY_C_API_EXPORT int yafaray_getVersionMajor();
+	YAFARAY_C_API_EXPORT int yafaray_getVersionMinor();
+	YAFARAY_C_API_EXPORT int yafaray_getVersionPatch();
 	YAFARAY_C_API_EXPORT void yafaray_printVerbose(yafaray_Interface_t *interface, const char *msg);
 	YAFARAY_C_API_EXPORT void yafaray_printInfo(yafaray_Interface_t *interface, const char *msg);
 	YAFARAY_C_API_EXPORT void yafaray_printParams(yafaray_Interface_t *interface, const char *msg);
