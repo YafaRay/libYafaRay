@@ -93,9 +93,14 @@ endif()
 file(MAKE_DIRECTORY ${PROJECT_BINARY_DIR}/include)
 configure_file(${PROJECT_SOURCE_DIR}/include/public_api/yafaray_c_api.h ${PROJECT_BINARY_DIR}/include/)
 
-# Shared target used for generating export header # with the name mytools_export.h, which will be suitable # for both the shared and static targets
+# Shared target used for generating export header for both the shared and static targets
 include(GenerateExportHeader)
 generate_export_header(libyafaray4 BASE_NAME yafaray_c_api EXPORT_FILE_NAME ${PROJECT_BINARY_DIR}/include/yafaray_c_api_export.h)
+
+include(CMakePackageConfigHelpers)
+write_basic_package_version_file(${PROJECT_BINARY_DIR}/cmake/LibYafaRayConfigVersion.cmake
+		COMPATIBILITY "SameMajorVersion"
+		)
 
 install(TARGETS libyafaray4
 		EXPORT LibYafaRay
@@ -107,7 +112,6 @@ install(TARGETS libyafaray4
 install(FILES
 		${PROJECT_SOURCE_DIR}/include/public_api/yafaray_c_api.h
 		${PROJECT_BINARY_DIR}/include/yafaray_c_api_export.h
-		${PROJECT_BINARY_DIR}/include/yafaray_version_build_info.h
 		DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
 		)
 
@@ -115,4 +119,9 @@ install(EXPORT LibYafaRay
 		DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/LibYafaRay
 		NAMESPACE LibYafaRay::
 		FILE LibYafaRayConfig.cmake
+		)
+
+install(FILES
+		${PROJECT_BINARY_DIR}/cmake/LibYafaRayConfigVersion.cmake
+		DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/LibYafaRay
 		)

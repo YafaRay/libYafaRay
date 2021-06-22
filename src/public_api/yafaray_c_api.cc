@@ -279,7 +279,7 @@ void yafaray_getVersionString(char *dest_string, unsigned int dest_string_size)
 	if(!dest_string || dest_string_size == 0) return;
 	const std::string version_string = yafaray::buildinfo::getVersionString();
 	const unsigned int copy_length = std::min(dest_string_size - 1, static_cast<unsigned int>(version_string.size()));
-	if(dest_string) strncpy(dest_string, version_string.c_str(), copy_length);
+	strncpy(dest_string, version_string.c_str(), copy_length);
 	*(dest_string + copy_length) = 0x00; //Make sure that the destination string gets null terminated
 }
 
