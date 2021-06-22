@@ -98,6 +98,7 @@ extern "C" {
 	YAFARAY_C_API_EXPORT int yafaray_getVersionMajor();
 	YAFARAY_C_API_EXPORT int yafaray_getVersionMinor();
 	YAFARAY_C_API_EXPORT int yafaray_getVersionPatch();
+	YAFARAY_C_API_EXPORT void yafaray_printDebug(yafaray_Interface_t *interface, const char *msg);
 	YAFARAY_C_API_EXPORT void yafaray_printVerbose(yafaray_Interface_t *interface, const char *msg);
 	YAFARAY_C_API_EXPORT void yafaray_printInfo(yafaray_Interface_t *interface, const char *msg);
 	YAFARAY_C_API_EXPORT void yafaray_printParams(yafaray_Interface_t *interface, const char *msg);
