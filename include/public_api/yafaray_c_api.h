@@ -21,6 +21,8 @@
 
 #include "yafaray_c_api_export.h"
 
+#define YAFARAY_C_API_VERSION_MAJOR 4
+
 #ifdef __cplusplus
 extern "C" {
 #endif
