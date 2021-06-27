@@ -46,12 +46,16 @@ void RenderControl::setFinished()
 	std::lock_guard<std::mutex>lock_guard(mutx_);
 	render_in_progress_ = false;
 	render_finished_ = true;
+	render_resumed_ = false;
+	render_canceled_ = false;
 }
 
 void RenderControl::setCanceled()
 {
 	std::lock_guard<std::mutex>lock_guard(mutx_);
 	render_in_progress_ = false;
+	render_finished_ = false;
+	render_resumed_ = false;
 	render_canceled_ = true;
 }
 
