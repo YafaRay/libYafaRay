@@ -42,6 +42,11 @@ Interface::Interface(const ::yafaray_LoggerCallback_t logger_callback, void *cal
 #endif
 }
 
+void Interface::setLoggingCallback(const ::yafaray_LoggerCallback_t logger_callback, void *callback_user_data)
+{
+	logger_->setCallback(logger_callback, callback_user_data);
+}
+
 void Interface::createScene() noexcept
 {
 	scene_ = Scene::factory(*logger_, *params_);

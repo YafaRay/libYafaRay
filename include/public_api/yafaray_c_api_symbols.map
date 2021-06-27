@@ -4,6 +4,7 @@ LIBYAFARAY_4.0.0 {
     global:
         yafaray_createInterface;
         yafaray_destroyInterface;
+        yafaray_setLoggingCallback;
         yafaray_createScene;
         yafaray_startGeometry;
         yafaray_endGeometry;

@@ -40,6 +40,11 @@ void yafaray_destroyInterface(yafaray_Interface_t *interface)
 	delete reinterpret_cast<yafaray::Interface *>(interface);
 }
 
+void yafaray_setLoggingCallback(yafaray_Interface_t *interface, const yafaray_LoggerCallback_t logger_callback, void *callback_user_data)
+{
+	reinterpret_cast<yafaray::Interface *>(interface)->setLoggingCallback(logger_callback, callback_user_data);
+}
+
 void yafaray_createScene(yafaray_Interface_t *interface)
 {
 	reinterpret_cast<yafaray::Interface *>(interface)->createScene();

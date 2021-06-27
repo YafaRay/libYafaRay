@@ -48,6 +48,7 @@ extern "C" {
 	 * In the source code the YafaRay developers *MUST* ensure that each of them appears in the Exported Symbols Map file with the correct annotated version */
 	YAFARAY_C_API_EXPORT yafaray_Interface_t *yafaray_createInterface(yafaray_Interface_Type_t interface_type, const char *exported_file_path, const yafaray_LoggerCallback_t logger_callback, void *callback_user_data, yafaray_DisplayConsole_t display_console);
 	YAFARAY_C_API_EXPORT void yafaray_destroyInterface(yafaray_Interface_t *interface);
+	YAFARAY_C_API_EXPORT void yafaray_setLoggingCallback(yafaray_Interface_t *interface, const yafaray_LoggerCallback_t logger_callback, void *callback_user_data);
 	YAFARAY_C_API_EXPORT void yafaray_createScene(yafaray_Interface_t *interface);
 	YAFARAY_C_API_EXPORT yafaray_bool_t yafaray_startGeometry(yafaray_Interface_t *interface);
 	YAFARAY_C_API_EXPORT yafaray_bool_t yafaray_endGeometry(yafaray_Interface_t *interface);

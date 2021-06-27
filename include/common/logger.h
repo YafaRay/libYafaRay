@@ -64,6 +64,8 @@ class Logger final
 		Logger(const ::yafaray_LoggerCallback_t logger_callback = nullptr, void *callback_user_data = nullptr, ::yafaray_DisplayConsole_t logger_display_console = YAFARAY_DISPLAY_CONSOLE_NORMAL) : logger_callback_(logger_callback), callback_user_data_(callback_user_data), logger_display_console_(logger_display_console) { }
 		Logger(const Logger &) = delete; //deleting copy constructor so we can use a std::mutex as a class member (not copiable)
 
+		void setCallback(const ::yafaray_LoggerCallback_t logger_callback, void *callback_user_data) { logger_callback_ = logger_callback; callback_user_data_ = callback_user_data; }
+
 		::yafaray_LogLevel_t getMaxLogLevel() const;
 		bool isVerbose() const { return getMaxLogLevel() >= ::YAFARAY_LOG_LEVEL_VERBOSE; }
 		bool isDebug() const { return getMaxLogLevel() >= ::YAFARAY_LOG_LEVEL_DEBUG; }
@@ -125,7 +127,7 @@ class Logger final
 		bool console_log_colors_enabled_ = true;	//If false, will supress the colors from the Console log, to help some 3rd party software that cannot handle properly the color ANSI codes
 		std::time_t previous_console_event_date_time_ = 0;
 		std::time_t previous_log_event_date_time_ = 0;
-		const yafaray_LoggerCallback_t logger_callback_ = nullptr;
+		yafaray_LoggerCallback_t logger_callback_ = nullptr;
 		void *callback_user_data_ = nullptr;
 		::yafaray_DisplayConsole_t logger_display_console_;
 		std::unordered_map <std::string, double> diagnostics_stats_;

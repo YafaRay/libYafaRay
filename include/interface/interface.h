@@ -54,6 +54,7 @@ class Interface
 	public:
 		Interface(const ::yafaray_LoggerCallback_t logger_callback = nullptr, void *callback_user_data = nullptr, ::yafaray_DisplayConsole_t logger_display_console = YAFARAY_DISPLAY_CONSOLE_NORMAL);
 		virtual ~Interface() noexcept;
+		void setLoggingCallback(const ::yafaray_LoggerCallback_t logger_callback, void *callback_user_data);
 		virtual void createScene() noexcept;
 		virtual bool startGeometry() noexcept; //!< call before creating geometry; only meshes and vmaps can be created in this state
 		virtual bool endGeometry() noexcept; //!< call after creating geometry;
