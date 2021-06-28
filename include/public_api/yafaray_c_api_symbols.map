@@ -6,6 +6,8 @@ LIBYAFARAY_4.0.0 {
         yafaray_destroyInterface;
         yafaray_setLoggingCallback;
         yafaray_createScene;
+        yafaray_getSceneFilmWidth;
+        yafaray_getSceneFilmHeight;
         yafaray_startGeometry;
         yafaray_endGeometry;
         yafaray_getNextFreeId;
@@ -44,8 +46,6 @@ LIBYAFARAY_4.0.0 {
         yafaray_setOutputFlushAreaCallback;
         yafaray_setOutputFlushCallback;
         yafaray_setOutputHighlightCallback;
-        yafaray_getOutputWidth;
-        yafaray_getOutputHeight;
         yafaray_removeOutput;
         yafaray_clearOutputs;
         yafaray_clearAll;

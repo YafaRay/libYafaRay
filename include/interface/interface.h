@@ -56,6 +56,8 @@ class Interface
 		virtual ~Interface() noexcept;
 		void setLoggingCallback(const ::yafaray_LoggerCallback_t logger_callback, void *callback_user_data);
 		virtual void createScene() noexcept;
+		int getSceneFilmWidth() const noexcept;
+		int getSceneFilmHeight() const noexcept;
 		virtual bool startGeometry() noexcept; //!< call before creating geometry; only meshes and vmaps can be created in this state
 		virtual bool endGeometry() noexcept; //!< call after creating geometry;
 		virtual unsigned int getNextFreeId() noexcept;
@@ -101,8 +103,6 @@ class Interface
 		void setOutputFlushAreaCallback(const char *output_name, yafaray_OutputFlushAreaCallback_t flush_area_callback, void *flush_area_callback_user_data) noexcept;
 		void setOutputFlushCallback(const char *output_name, yafaray_OutputFlushCallback_t flush_callback, void *flush_callback_user_data) noexcept;
 		void setOutputHighlightCallback(const char *output_name, yafaray_OutputHighlightCallback_t highlight_callback, void *highlight_callback_user_data) noexcept;
-		int getOutputWidth(const char *output_name) const noexcept;
-		int getOutputHeight(const char *output_name) const noexcept;
 		bool removeOutput(const char *name) noexcept;
 		virtual void clearOutputs() noexcept;
 		virtual void clearAll() noexcept;

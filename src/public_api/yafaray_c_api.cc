@@ -235,14 +235,14 @@ void yafaray_setOutputHighlightCallback(yafaray_Interface_t *interface, const ch
 	reinterpret_cast<yafaray::Interface *>(interface)->setOutputHighlightCallback(output_name, highlight_callback, highlight_callback_user_data);
 }
 
-int yafaray_getOutputWidth(const yafaray_Interface_t *interface, const char *output_name)
+int yafaray_getSceneFilmWidth(const yafaray_Interface_t *interface)
 {
-	return reinterpret_cast<const yafaray::Interface *>(interface)->getOutputWidth(output_name);
+	return reinterpret_cast<const yafaray::Interface *>(interface)->getSceneFilmWidth();
 }
 
-int yafaray_getOutputHeight(const yafaray_Interface_t *interface, const char *output_name)
+int yafaray_getSceneFilmHeight(const yafaray_Interface_t *interface)
 {
-	return reinterpret_cast<const yafaray::Interface *>(interface)->getOutputHeight(output_name);
+	return reinterpret_cast<const yafaray::Interface *>(interface)->getSceneFilmHeight();
 }
 
 yafaray_bool_t yafaray_removeOutput(yafaray_Interface_t *interface, const char *name)

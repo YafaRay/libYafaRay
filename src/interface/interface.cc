@@ -276,17 +276,17 @@ void Interface::setOutputHighlightCallback(const char *output_name, yafaray_Outp
 	if(output) output->setHighlightCallback(highlight_callback_user_data, highlight_callback);
 }
 
-int Interface::getOutputWidth(const char *output_name) const noexcept
+int Interface::getSceneFilmWidth() const noexcept
 {
-	const ColorOutput *output = scene_->getOutput(output_name);
-	if(output) return output->getWidth();
+	const ImageFilm *image_film = scene_->getImageFilm();
+	if(image_film) return image_film->getWidth();
 	else return 0;
 }
 
-int Interface::getOutputHeight(const char *output_name) const noexcept
+int Interface::getSceneFilmHeight() const noexcept
 {
-	ColorOutput *output = scene_->getOutput(output_name);
-	if(output) return output->getHeight();
+	const ImageFilm *image_film = scene_->getImageFilm();
+	if(image_film) return image_film->getHeight();
 	else return 0;
 }
 
