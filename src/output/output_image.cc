@@ -31,7 +31,7 @@
 
 BEGIN_YAFARAY
 
-UniquePtr_t <ColorOutput> ImageOutput::factory(Logger &logger, const ParamMap &params, const Scene &scene, void *callback_user_data, yafaray_OutputPutpixelCallback_t output_putpixel_callback, yafaray_OutputFlushAreaCallback_t output_flush_area_callback, yafaray_OutputFlushCallback_t output_flush_callback)
+UniquePtr_t <ColorOutput> ImageOutput::factory(Logger &logger, const ParamMap &params, const Scene &scene)
 {
 	std::string name;
 	std::string image_path;
@@ -66,7 +66,7 @@ UniquePtr_t <ColorOutput> ImageOutput::factory(Logger &logger, const ParamMap &p
 	return output;
 }
 
-ImageOutput::ImageOutput(Logger &logger, const std::string &image_path, int border_x, int border_y, const DenoiseParams denoise_params, const std::string &name, const ColorSpace color_space, float gamma, bool with_alpha, bool alpha_premultiply, bool multi_layer, void *callback_user_data, yafaray_OutputPutpixelCallback_t output_putpixel_callback, yafaray_OutputFlushAreaCallback_t output_flush_area_callback, yafaray_OutputFlushCallback_t output_flush_callback) : ColorOutput(logger, name, color_space, gamma, with_alpha, alpha_premultiply, callback_user_data, output_putpixel_callback, output_flush_area_callback, output_flush_callback), image_path_(image_path), border_x_(border_x), border_y_(border_y), multi_layer_(multi_layer), denoise_params_(denoise_params)
+ImageOutput::ImageOutput(Logger &logger, const std::string &image_path, int border_x, int border_y, const DenoiseParams denoise_params, const std::string &name, const ColorSpace color_space, float gamma, bool with_alpha, bool alpha_premultiply, bool multi_layer) : ColorOutput(logger, name, color_space, gamma, with_alpha, alpha_premultiply), image_path_(image_path), border_x_(border_x), border_y_(border_y), multi_layer_(multi_layer), denoise_params_(denoise_params)
 {
 	//Empty
 }

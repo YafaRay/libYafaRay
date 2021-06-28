@@ -36,6 +36,7 @@ struct ResultImage
 void putPixelCallback(const char *view_name, const char *layer_name, int x, int y, float r, float g, float b, float a, void *callback_user_data);
 void flushAreaCallback(const char *view_name, int x_0, int y_0, int x_1, int y_1, void *callback_user_data);
 void flushCallback(const char *view_name, void *callback_user_data);
+void highlightCallback(const char *view_name, int area_number, int x_0, int y_0, int x_1, int y_1, void *callback_user_data);
 void monitorCallback(int steps_total, int steps_done, const char *tag, void *callback_user_data);
 void loggerCallback(yafaray_LogLevel_t log_level, long datetime, const char *time_of_day, const char *description, void *callback_user_data);
 
@@ -95,12 +96,12 @@ int main()
 	yi = yafaray_createInterface(YAFARAY_INTERFACE_FOR_RENDERING, "test01.xml", loggerCallback, &result_image, YAFARAY_DISPLAY_CONSOLE_NORMAL);
 	yafaray_setConsoleLogColorsEnabled(yi, YAFARAY_BOOL_TRUE);
 	yafaray_setConsoleVerbosityLevel(yi, YAFARAY_LOG_LEVEL_DEBUG);
-	yafaray_setInteractive(yi, YAFARAY_BOOL_TRUE);
 
 	/* Creating scene */
 	yafaray_paramsSetString(yi, "type", "yafaray");
 	yafaray_createScene(yi);
 	yafaray_paramsClearAll(yi);
+	yafaray_setInteractive(yi, YAFARAY_BOOL_TRUE);
 
 	{
 		/* Creating image from RAM or file */
@@ -222,13 +223,17 @@ int main()
 	/* Creating image output */
 	yafaray_paramsSetString(yi, "type", "image_output");
 	yafaray_paramsSetString(yi, "image_path", "./test01-output1.tga");
-	yafaray_createOutput(yi, "output1_tga", YAFARAY_BOOL_TRUE, NULL, NULL, NULL, NULL);
+	yafaray_createOutput(yi, "output1_tga", YAFARAY_BOOL_TRUE);
 	yafaray_paramsClearAll(yi);
 
 	/* Creating callback output */
 	yafaray_paramsSetString(yi, "type", "callback_output");
-	yafaray_createOutput(yi, "test_callback_output", YAFARAY_BOOL_TRUE, putPixelCallback, flushAreaCallback, flushCallback, (void *) &result_image);
-yafaray_paramsClearAll(yi);
+	yafaray_createOutput(yi, "test_callback_output", YAFARAY_BOOL_TRUE);
+	yafaray_paramsClearAll(yi);
+	yafaray_setOutputPutPixelCallback(yi, "test_callback_output", putPixelCallback, (void *) &result_image);
+	yafaray_setOutputFlushAreaCallback(yi, "test_callback_output", flushAreaCallback, (void *) &result_image);
+	yafaray_setOutputFlushCallback(yi, "test_callback_output", flushCallback, (void *) &result_image);
+	yafaray_setOutputHighlightCallback(yi, "test_callback_output", highlightCallback, (void *) &result_image);
 
 	/* Creating surface integrator */
 	/*yafaray_paramsSetString(yi, "type", "directlighting");*/
@@ -305,6 +310,11 @@ void flushAreaCallback(const char *view_name, int x_0, int y_0, int x_1, int y_1
 void flushCallback(const char *view_name, void *callback_user_data)
 {
 	printf("**** flushCallback view_name='%s', callback_user_data=%p\n", view_name, callback_user_data);
+}
+
+void highlightCallback(const char *view_name, int area_number, int x_0, int y_0, int x_1, int y_1, void *callback_user_data)
+{
+	printf("**** highlightCallback view_name='%s', area_number=%d, x_0=%d, y_0=%d, x_1=%d, y_1=%d, callback_user_data=%p\n", view_name, area_number, x_0, y_0, x_1, y_1, callback_user_data);
 }
 
 void monitorCallback(int steps_total, int steps_done, const char *tag, void *callback_user_data)

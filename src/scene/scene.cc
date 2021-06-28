@@ -609,7 +609,7 @@ ColorOutput *Scene::createOutput(const std::string &name, ParamMap &params, bool
 			return nullptr;
 		}
 	}
-	UniquePtr_t<ColorOutput> item = ColorOutput::factory(logger_, params, *this, callback_user_data, output_putpixel_callback, output_flush_area_callback, output_flush_callback);
+	UniquePtr_t<ColorOutput> item = ColorOutput::factory(logger_, params, *this);
 	if(item)
 	{
 		item->setAutoDelete(auto_delete); //By default all objects will autodelete as usual unique_ptr. If that's not desired, auto_delete can be set to false but then the object class must have the setAutoDelete and isAutoDeleted methods

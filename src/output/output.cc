@@ -28,7 +28,7 @@
 
 BEGIN_YAFARAY
 
-UniquePtr_t <ColorOutput> ColorOutput::factory(Logger &logger, const ParamMap &params, const Scene &scene, void *callback_user_data, yafaray_OutputPutpixelCallback_t output_putpixel_callback, yafaray_OutputFlushAreaCallback_t output_flush_area_callback, yafaray_OutputFlushCallback_t output_flush_callback)
+UniquePtr_t <ColorOutput> ColorOutput::factory(Logger &logger, const ParamMap &params, const Scene &scene)
 {
 	if(logger.isDebug())
 	{
@@ -37,13 +37,13 @@ UniquePtr_t <ColorOutput> ColorOutput::factory(Logger &logger, const ParamMap &p
 	}
 	std::string type;
 	params.getParam("type", type);
-	if(type == "image_output") return ImageOutput::factory(logger, params, scene, callback_user_data, output_putpixel_callback, output_flush_area_callback, output_flush_callback);
-	else if(type == "debug_output") return DebugOutput::factory(logger, params, scene, callback_user_data, output_putpixel_callback, output_flush_area_callback, output_flush_callback);
-    else if(type == "callback_output") return CallbackOutput::factory(logger, params, scene, callback_user_data, output_putpixel_callback, output_flush_area_callback, output_flush_callback);
+	if(type == "image_output") return ImageOutput::factory(logger, params, scene);
+	else if(type == "debug_output") return DebugOutput::factory(logger, params, scene);
+	else if(type == "callback_output") return CallbackOutput::factory(logger, params, scene);
 	else return nullptr;
 }
 
-ColorOutput::ColorOutput(Logger &logger, const std::string &name, const ColorSpace color_space, float gamma, bool with_alpha, bool alpha_premultiply, void *callback_user_data, yafaray_OutputPutpixelCallback_t output_putpixel_callback, yafaray_OutputFlushAreaCallback_t output_flush_area_callback, yafaray_OutputFlushCallback_t output_flush_callback) : name_(name), color_space_(color_space), gamma_(gamma), with_alpha_(with_alpha), alpha_premultiply_(alpha_premultiply), badge_(logger), callback_user_data_(callback_user_data), output_pixel_callback_(output_putpixel_callback), output_flush_area_callback_(output_flush_area_callback), output_flush_callback_(output_flush_callback), logger_(logger)
+ColorOutput::ColorOutput(Logger &logger, const std::string &name, const ColorSpace color_space, float gamma, bool with_alpha, bool alpha_premultiply) : name_(name), color_space_(color_space), gamma_(gamma), with_alpha_(with_alpha), alpha_premultiply_(alpha_premultiply), badge_(logger), logger_(logger)
 {
 	if(color_space == RawManualGamma)
 	{
@@ -109,6 +109,30 @@ void ColorOutput::setLoggingParams(const ParamMap &params)
 void ColorOutput::setBadgeParams(const ParamMap &params)
 {
 	badge_.setParams(params);
+}
+
+void ColorOutput::setPutPixelCallback(void *callback_user_data, yafaray_OutputPutpixelCallback_t put_pixel_callback)
+{
+	put_pixel_callback_ = put_pixel_callback;
+	put_pixel_callback_user_data_ = callback_user_data;
+}
+
+void ColorOutput::setFlushAreaCallback(void *callback_user_data, yafaray_OutputFlushAreaCallback_t flush_area_callback)
+{
+	flush_area_callback_ = flush_area_callback;
+	flush_area_callback_user_data_ = callback_user_data;
+}
+
+void ColorOutput::setFlushCallback(void *callback_user_data, yafaray_OutputFlushCallback_t flush_callback)
+{
+	flush_callback_ = flush_callback;
+	flush_area_callback_user_data_ = callback_user_data;
+}
+
+void ColorOutput::setHighlightCallback(void *callback_user_data, yafaray_OutputHighlightCallback_t highlight_callback)
+{
+	highlight_callback_ = highlight_callback;
+	highlight_callback_user_data_ = callback_user_data;
 }
 
 END_YAFARAY

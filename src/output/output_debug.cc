@@ -28,7 +28,7 @@
 
 BEGIN_YAFARAY
 
-UniquePtr_t <ColorOutput> DebugOutput::factory(Logger &logger, const ParamMap &params, const Scene &scene, void *callback_user_data, yafaray_OutputPutpixelCallback_t output_putpixel_callback, yafaray_OutputFlushAreaCallback_t output_flush_area_callback, yafaray_OutputFlushCallback_t output_flush_callback)
+UniquePtr_t <ColorOutput> DebugOutput::factory(Logger &logger, const ParamMap &params, const Scene &scene)
 {
 	std::string name;
 	std::string color_space_str = "Raw_Manual_Gamma";
@@ -51,13 +51,26 @@ bool DebugOutput::putPixel(int x, int y, const ColorLayer &color_layer)
 {
 	const std::string layer_type_name = Layer::getTypeName(color_layer.layer_type_);
 	const std::string view = current_render_view_ ? current_render_view_->getName() : "";
-	if(logger_.isDebug()) logger_.logDebug("DebugOutput::putPixel) PR(x) PR(y) PR(layer_type_name) PR(color_layer.color_) PR(view");
+	if(logger_.isDebug()) logger_.logDebug("DebugOutput::putPixel x=", std::to_string(x), " y=", std::to_string(y), " layer=", layer_type_name, " color=", color_layer.color_, " view = ", view);
 	return true;
 }
 
 void DebugOutput::flush(const RenderControl &render_control)
 {
-	if(logger_.isDebug()) logger_.logDebug("DebugOutput::flush");
+	const std::string view = current_render_view_ ? current_render_view_->getName() : "";
+	if(logger_.isDebug()) logger_.logDebug("DebugOutput::flush", " view = ", view);
+}
+
+void DebugOutput::flushArea(int x_0, int y_0, int x_1, int y_1)
+{
+	const std::string view = current_render_view_ ? current_render_view_->getName() : "";
+	if(logger_.isDebug()) logger_.logDebug("DebugOutput::flushArea x_0=", std::to_string(x_0), " y_0=", std::to_string(y_0), " x_1=", std::to_string(x_1), " y_1=", std::to_string(y_1), " view = ", view);
+}
+
+void DebugOutput::highlightArea(int area_number, int x_0, int y_0, int x_1, int y_1)
+{
+	const std::string view = current_render_view_ ? current_render_view_->getName() : "";
+	if(logger_.isDebug()) logger_.logDebug("DebugOutput::flushArea area_number=", std::to_string(area_number), " x_0=", std::to_string(x_0), " y_0=", std::to_string(y_0), " x_1=", std::to_string(x_1), " y_1=", std::to_string(y_1), " view = ", view);
 }
 
 END_YAFARAY

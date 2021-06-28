@@ -211,9 +211,28 @@ yafaray_bool_t yafaray_createRenderView(yafaray_Interface_t *interface, const ch
 	return static_cast<yafaray_bool_t>(reinterpret_cast<yafaray::Interface *>(interface)->createRenderView(name) != nullptr);
 }
 
-yafaray_bool_t yafaray_createOutput(yafaray_Interface_t *interface, const char *name, yafaray_bool_t auto_delete, yafaray_OutputPutpixelCallback_t output_putpixel_callback, yafaray_OutputFlushAreaCallback_t output_flush_area_callback, yafaray_OutputFlushCallback_t output_flush_callback, void *callback_user_data) //!< ColorOutput creation, usually for internally-owned outputs that are destroyed when the scene is deleted or when libYafaRay instance is closed. If the client wants to keep ownership, it can set the "auto_delete" to false.
+yafaray_bool_t yafaray_createOutput(yafaray_Interface_t *interface, const char *name, yafaray_bool_t auto_delete) //!< ColorOutput creation, usually for internally-owned outputs that are destroyed when the scene is deleted or when libYafaRay instance is closed. If the client wants to keep ownership, it can set the "auto_delete" to false.
 {
-	return static_cast<yafaray_bool_t>(reinterpret_cast<yafaray::Interface *>(interface)->createOutput(name, auto_delete, callback_user_data, output_putpixel_callback, output_flush_area_callback, output_flush_callback) != nullptr);
+	return static_cast<yafaray_bool_t>(reinterpret_cast<yafaray::Interface *>(interface)->createOutput(name, auto_delete) != nullptr);
+}
+void yafaray_setOutputPutPixelCallback(yafaray_Interface_t *interface, const char *output_name, yafaray_OutputPutpixelCallback_t putpixel_callback, void *putpixel_callback_user_data)
+{
+	reinterpret_cast<yafaray::Interface *>(interface)->setOutputPutPixelCallback(output_name, putpixel_callback, putpixel_callback_user_data);
+}
+
+void yafaray_setOutputFlushAreaCallback(yafaray_Interface_t *interface, const char *output_name, yafaray_OutputFlushAreaCallback_t flush_area_callback, void *flush_area_callback_user_data)
+{
+	reinterpret_cast<yafaray::Interface *>(interface)->setOutputFlushAreaCallback(output_name, flush_area_callback, flush_area_callback_user_data);
+}
+
+void yafaray_setOutputFlushCallback(yafaray_Interface_t *interface, const char *output_name, yafaray_OutputFlushCallback_t flush_callback, void *flush_callback_user_data)
+{
+	reinterpret_cast<yafaray::Interface *>(interface)->setOutputFlushCallback(output_name, flush_callback, flush_callback_user_data);
+}
+
+void yafaray_setOutputHighlightCallback(yafaray_Interface_t *interface, const char *output_name, yafaray_OutputHighlightCallback_t highlight_callback, void *highlight_callback_user_data)
+{
+	reinterpret_cast<yafaray::Interface *>(interface)->setOutputHighlightCallback(output_name, highlight_callback, highlight_callback_user_data);
 }
 
 yafaray_bool_t yafaray_removeOutput(yafaray_Interface_t *interface, const char *name)

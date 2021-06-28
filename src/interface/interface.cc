@@ -252,6 +252,30 @@ ColorOutput *Interface::createOutput(const char *name, ColorOutput *output, bool
 	return scene_->createOutput(name, std::move(output_unique), auto_delete);
 }
 
+void Interface::setOutputPutPixelCallback(const char *output_name, yafaray_OutputPutpixelCallback_t putpixel_callback, void *putpixel_callback_user_data) noexcept
+{
+	ColorOutput *output = scene_->getOutput(output_name);
+	if(output) output->setPutPixelCallback(putpixel_callback_user_data, putpixel_callback);
+}
+
+void Interface::setOutputFlushAreaCallback(const char *output_name, yafaray_OutputFlushAreaCallback_t flush_area_callback, void *flush_area_callback_user_data) noexcept
+{
+	ColorOutput *output = scene_->getOutput(output_name);
+	if(output) output->setFlushAreaCallback(flush_area_callback_user_data, flush_area_callback);
+}
+
+void Interface::setOutputFlushCallback(const char *output_name, yafaray_OutputFlushCallback_t flush_callback, void *flush_callback_user_data) noexcept
+{
+	ColorOutput *output = scene_->getOutput(output_name);
+	if(output) output->setFlushCallback(flush_callback_user_data, flush_callback);
+}
+
+void Interface::setOutputHighlightCallback(const char *output_name, yafaray_OutputHighlightCallback_t highlight_callback, void *highlight_callback_user_data) noexcept
+{
+	ColorOutput *output = scene_->getOutput(output_name);
+	if(output) output->setHighlightCallback(highlight_callback_user_data, highlight_callback);
+}
+
 bool Interface::removeOutput(const char *name) noexcept
 {
 	return scene_->removeOutput(name);
