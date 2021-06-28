@@ -236,7 +236,7 @@ bool Scene::render()
 		return false;
 	}
 
-	if(creation_state_.changes_ != CreationState::Flags::CNone)
+	//if(creation_state_.changes_ != CreationState::Flags::CNone) //FIXME: handle better subsequent scene renders differently if previous render already complete
 	{
 		for(auto &l : getLights()) l.second->init(*this);
 
@@ -276,11 +276,6 @@ bool Scene::render()
 			render_control_.setFinished();
 			image_film_->cleanup();
 		}
-	}
-	else
-	{
-		logger_.logInfo("Scene: No changes in scene since last render, bailing out...");
-		return false;
 	}
 	creation_state_.changes_ = CreationState::Flags::CNone;
 	return true;
