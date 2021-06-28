@@ -89,6 +89,8 @@ extern "C" {
 	YAFARAY_C_API_EXPORT void yafaray_setOutputFlushAreaCallback(yafaray_Interface_t *interface, const char *output_name, yafaray_OutputFlushAreaCallback_t flush_area_callback, void *flush_area_callback_user_data);
 	YAFARAY_C_API_EXPORT void yafaray_setOutputFlushCallback(yafaray_Interface_t *interface, const char *output_name, yafaray_OutputFlushCallback_t flush_callback, void *flush_callback_user_data);
 	YAFARAY_C_API_EXPORT void yafaray_setOutputHighlightCallback(yafaray_Interface_t *interface, const char *output_name, yafaray_OutputHighlightCallback_t highlight_callback, void *highlight_callback_user_data);
+	YAFARAY_C_API_EXPORT int yafaray_getOutputWidth(const yafaray_Interface_t *interface, const char *output_name);
+	YAFARAY_C_API_EXPORT int yafaray_getOutputHeight(const yafaray_Interface_t *interface, const char *output_name);
 	YAFARAY_C_API_EXPORT yafaray_bool_t yafaray_removeOutput(yafaray_Interface_t *interface, const char *name);
 	YAFARAY_C_API_EXPORT void yafaray_clearOutputs(yafaray_Interface_t *interface);
 	YAFARAY_C_API_EXPORT void yafaray_clearAll(yafaray_Interface_t *interface);

@@ -101,6 +101,8 @@ class Interface
 		void setOutputFlushAreaCallback(const char *output_name, yafaray_OutputFlushAreaCallback_t flush_area_callback, void *flush_area_callback_user_data) noexcept;
 		void setOutputFlushCallback(const char *output_name, yafaray_OutputFlushCallback_t flush_callback, void *flush_callback_user_data) noexcept;
 		void setOutputHighlightCallback(const char *output_name, yafaray_OutputHighlightCallback_t highlight_callback, void *highlight_callback_user_data) noexcept;
+		int getOutputWidth(const char *output_name) const noexcept;
+		int getOutputHeight(const char *output_name) const noexcept;
 		bool removeOutput(const char *name) noexcept;
 		virtual void clearOutputs() noexcept;
 		virtual void clearAll() noexcept;

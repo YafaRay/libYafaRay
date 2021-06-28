@@ -44,6 +44,8 @@ LIBYAFARAY_4.0.0 {
         yafaray_setOutputFlushAreaCallback;
         yafaray_setOutputFlushCallback;
         yafaray_setOutputHighlightCallback;
+        yafaray_getOutputWidth;
+        yafaray_getOutputHeight;
         yafaray_removeOutput;
         yafaray_clearOutputs;
         yafaray_clearAll;
