@@ -56,6 +56,7 @@ void Logger::saveTxtLog(const std::string &name, const Badge &badge, const Rende
 			if(print_datetime_) ss << "] ";
 			ss << logLevelStringFromLevel(log_entry.verbosity_level_) << ": ";
 			ss << log_entry.description_;
+			ss << std::endl;
 		}
 	}
 	File log_file(name);
