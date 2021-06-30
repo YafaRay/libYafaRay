@@ -67,15 +67,15 @@ int main()
 	struct ResultImage result_image;
 	size_t result_image_size_bytes;
 	int total_steps = 0;
-	char *version_string;
+	char *version_string = NULL;
+	char *layers_string = NULL;
+	char *views_string = NULL;
 
 	printf("***** Test client 'test01' for libYafaRay *****\n");
 	printf("Using libYafaRay version (%d.%d.%d)\n", yafaray_getVersionMajor(), yafaray_getVersionMinor(), yafaray_getVersionPatch());
-	const int version_string_size = 100;
-	version_string = malloc(version_string_size * sizeof(char));
-	yafaray_getVersionString(version_string, version_string_size);
+	version_string = yafaray_getVersionString();
 	printf("    libYafaRay version details: '%s'\n\n", version_string);
-	free(version_string);
+	yafaray_deallocateCharPointer(version_string);
 
 	/* handle CTRL+C events */
 	#ifdef _WIN32
@@ -248,9 +248,9 @@ int main()
 
 	/* Defining internal and exported layers */
 	yafaray_paramsSetString(yi, "type", "combined");
-	yafaray_paramsSetString(yi, "image_type", "ColorAlpha");
+	yafaray_paramsSetString(yi, "image_type", "ColorAlphaWeight");
 	yafaray_paramsSetString(yi, "exported_image_name", "Combined");
-	yafaray_paramsSetString(yi, "exported_image_type", "ColorAlphaWeight");
+	yafaray_paramsSetString(yi, "exported_image_type", "ColorAlpha");
 	yafaray_defineLayer(yi);
 	yafaray_paramsClearAll(yi);
 
@@ -270,6 +270,14 @@ int main()
 	yafaray_paramsSetInt(yi, "threads_photons", -1);
 	yafaray_setupRender(yi);
 	yafaray_paramsClearAll(yi);
+
+	layers_string = yafaray_getLayersTable(yi);
+	views_string = yafaray_getViewsTable(yi);
+	printf("** Layers defined:\n%s\n", layers_string);
+	printf("** Views defined:\n%s\n", views_string);
+	yafaray_deallocateCharPointer(layers_string);
+	yafaray_deallocateCharPointer(views_string);
+
 	/* Rendering */
 	yafaray_render(yi, monitorCallback, &total_steps, YAFARAY_DISPLAY_CONSOLE_NORMAL);
 	printf("END: total_steps = %d\n", total_steps);
@@ -286,7 +294,12 @@ int main()
 	return 0;
 }
 
-
+float forceRange01(float value)
+{
+	if(value > 1.f) return 1.f;
+	else if(value < 0.f) return 0.f;
+	else return value;
+}
 
 void putPixelCallback(const char *view_name, const char *layer_name, int x, int y, float r, float g, float b, float a, void *callback_user_data)
 {
@@ -296,9 +309,9 @@ void putPixelCallback(const char *view_name, const char *layer_name, int x, int 
 		struct ResultImage *result_image = (struct ResultImage *) callback_user_data;
 		const int width = result_image->width_;
 		const size_t idx = 3 * (y * width + x);
-		*(result_image->data_ + idx + 0) = (char) (r * 255.f);
-		*(result_image->data_ + idx + 1) = (char) (g * 255.f);
-		*(result_image->data_ + idx + 2) = (char) (b * 255.f);
+		*(result_image->data_ + idx + 0) = (char) (forceRange01(r) * 255.f);
+		*(result_image->data_ + idx + 1) = (char) (forceRange01(g) * 255.f);
+		*(result_image->data_ + idx + 2) = (char) (forceRange01(b) * 255.f);
 	}
 }
 

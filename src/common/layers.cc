@@ -273,7 +273,7 @@ std::string Layer::print() const
 	if(hasInternalImage()) ss << " with internal image type: '" << getImageTypeName() << "'";
 	if(isExported())
 	{
-		ss << " with exported image type: '" << getExportedImageTypeName() << "'";
+		ss << " with exported image type: '" << getExportedImageTypeNameLong() << "'";
 		if(!getExportedImageName().empty()) ss << " and name: '" << getExportedImageName() << "'";
 	}
 	return ss.str();
@@ -306,6 +306,20 @@ const Layers Layers::getLayersWithExportedImages() const
 		if(it.second.isExported()) result.set(it.first, it.second);
 	}
 	return result;
+}
+
+std::string Layers::printExportedTable() const
+{
+	std::stringstream ss;
+	for(const auto &it : items_)
+	{
+		const Layer &layer = it.second;
+		if(layer.isExported())
+		{
+			ss << layer.getExportedImageName() << '\t' << layer.getTypeName() << '\t' << layer.getExportedImageTypeNameShort() << '\t' << layer.getNumExportedChannels() << '\t' << layer.getExportedImageTypeNameLong() << '\n';
+		}
+	}
+	return ss.str();
 }
 
 END_YAFARAY

@@ -308,19 +308,6 @@ void yafaray_setLogVerbosityLevel(yafaray_Interface_t *interface, yafaray_LogLev
 	reinterpret_cast<yafaray::Interface *>(interface)->setLogVerbosityLevel(log_level);
 }
 
-void yafaray_getVersionString(char *dest_string, unsigned int dest_string_size)
-{
-	if(!dest_string || dest_string_size == 0) return;
-	const std::string version_string = yafaray::buildinfo::getVersionString();
-	const unsigned int copy_length = std::min(dest_string_size - 1, static_cast<unsigned int>(version_string.size()));
-	strncpy(dest_string, version_string.c_str(), copy_length);
-	*(dest_string + copy_length) = 0x00; //Make sure that the destination string gets null terminated
-}
-
-int yafaray_getVersionMajor() { return yafaray::buildinfo::getVersionMajor(); }
-int yafaray_getVersionMinor() { return yafaray::buildinfo::getVersionMinor(); }
-int yafaray_getVersionPatch() { return yafaray::buildinfo::getVersionPatch(); }
-
 /*! Console Printing wrappers to report in color with yafaray's own console coloring */
 void yafaray_printDebug(yafaray_Interface_t *interface, const char *msg)
 {
@@ -399,4 +386,36 @@ void yafaray_setConsoleLogColorsEnabled(yafaray_Interface_t *interface, yafaray_
 yafaray_LogLevel_t yafaray_logLevelFromString(const char *log_level_string)
 {
 	return static_cast<yafaray_LogLevel_t>(yafaray::Logger::vlevelFromString(log_level_string));
+}
+
+int yafaray_getVersionMajor() { return yafaray::buildinfo::getVersionMajor(); }
+int yafaray_getVersionMinor() { return yafaray::buildinfo::getVersionMinor(); }
+int yafaray_getVersionPatch() { return yafaray::buildinfo::getVersionPatch(); }
+
+char *createCString(const std::string &std_string)
+{
+	const size_t string_size = std_string.size();
+	char *c_string = new char[string_size + 1];
+	std::strcpy(c_string, std_string.c_str());
+	return c_string;
+}
+
+char *yafaray_getVersionString()
+{
+	return createCString(yafaray::buildinfo::getVersionString());
+}
+
+char *yafaray_getLayersTable(const yafaray_Interface_t *interface)
+{
+	return createCString(reinterpret_cast<const yafaray::Interface *>(interface)->printLayersTable());
+}
+
+char *yafaray_getViewsTable(const yafaray_Interface_t *interface)
+{
+	return createCString(reinterpret_cast<const yafaray::Interface *>(interface)->printViewsTable());
+}
+
+void yafaray_deallocateCharPointer(char *string_pointer_to_deallocate)
+{
+	delete[] string_pointer_to_deallocate;
 }

@@ -66,7 +66,7 @@ class Image
 
 		int getWidth() const { return width_; }
 		int getHeight() const { return height_; }
-		std::string getTypeName() const { return getTypeName(getType()); }
+		std::string getTypeName() const { return getTypeNameLong(getType()); }
 		int getNumChannels() const { return getNumChannels(getType()); }
 		bool hasAlpha() const { return hasAlpha(getType()); }
 		bool isGrayscale() const { return isGrayscale(getType()); }
@@ -75,7 +75,8 @@ class Image
 
 		static Type imageTypeWithAlpha(Type image_type);
 		static Type imageTypeWithWeight(Type image_type);
-		static std::string getTypeName(const Type &image_type);
+		static std::string getTypeNameLong(const Type &image_type);
+		static std::string getTypeNameShort(const Type &image_type);
 		static Type getTypeFromName(const std::string &image_type_name);
 		static int getNumChannels(const Type &image_type);
 		static Optimization getOptimizationTypeFromName(const std::string &optimization_type_name);

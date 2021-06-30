@@ -290,6 +290,28 @@ int Interface::getSceneFilmHeight() const noexcept
 	else return 0;
 }
 
+std::string Interface::printLayersTable() const noexcept
+{
+	if(scene_) return scene_->getLayers().printExportedTable();
+	else return "";
+}
+
+std::string Interface::printViewsTable() const noexcept
+{
+	if(scene_)
+	{
+		std::stringstream ss;
+		const auto &views = scene_->getRenderViews();
+		for(const auto &it : views)
+		{
+			const RenderView *view = it.second.get();
+			ss << view->getName() << '\n';
+		}
+		return ss.str();
+	}
+	else return "";
+}
+
 bool Interface::removeOutput(const char *name) noexcept
 {
 	return scene_->removeOutput(name);

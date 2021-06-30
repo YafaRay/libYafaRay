@@ -236,7 +236,7 @@ std::string Image::getOptimizationName(const Optimization &optimization_type)
 	}
 }
 
-std::string Image::getTypeName(const Type &image_type)
+std::string Image::getTypeNameLong(const Type &image_type)
 {
 	switch(image_type)
 	{
@@ -248,6 +248,21 @@ std::string Image::getTypeName(const Type &image_type)
 		case Type::GrayAlpha: return "Gray + Alpha [2 channels]";
 		case Type::Gray: return "Gray [1 channel]";
 		default: return "unknown image type [0 channels]";
+	}
+}
+
+std::string Image::getTypeNameShort(const Type &image_type)
+{
+	switch(image_type)
+	{
+		case Type::ColorAlphaWeight: return "ColorAlphaWeight";
+		case Type::ColorAlpha: return "ColorAlpha";
+		case Type::Color: return "Color";
+		case Type::GrayAlphaWeight: return "GrayAlphaWeight";
+		case Type::GrayWeight: return "GrayWeight";
+		case Type::GrayAlpha: return "GrayAlpha";
+		case Type::Gray: return "Gray";
+		default: return "unknown";
 	}
 }
 

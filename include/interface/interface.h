@@ -58,6 +58,8 @@ class Interface
 		virtual void createScene() noexcept;
 		int getSceneFilmWidth() const noexcept;
 		int getSceneFilmHeight() const noexcept;
+		std::string printLayersTable() const noexcept;
+		std::string printViewsTable() const noexcept;
 		virtual bool startGeometry() noexcept; //!< call before creating geometry; only meshes and vmaps can be created in this state
 		virtual bool endGeometry() noexcept; //!< call after creating geometry;
 		virtual unsigned int getNextFreeId() noexcept;

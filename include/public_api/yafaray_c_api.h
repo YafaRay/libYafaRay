@@ -104,10 +104,6 @@ extern "C" {
 	YAFARAY_C_API_EXPORT void yafaray_setConsoleVerbosityLevel(yafaray_Interface_t *interface, yafaray_LogLevel_t log_level);
 	YAFARAY_C_API_EXPORT void yafaray_setLogVerbosityLevel(yafaray_Interface_t *interface, yafaray_LogLevel_t log_level);
 	YAFARAY_C_API_EXPORT yafaray_LogLevel_t yafaray_logLevelFromString(const char *log_level_string);
-	YAFARAY_C_API_EXPORT void yafaray_getVersionString(char *dest_string, unsigned int dest_string_size);
-	YAFARAY_C_API_EXPORT int yafaray_getVersionMajor();
-	YAFARAY_C_API_EXPORT int yafaray_getVersionMinor();
-	YAFARAY_C_API_EXPORT int yafaray_getVersionPatch();
 	YAFARAY_C_API_EXPORT void yafaray_printDebug(yafaray_Interface_t *interface, const char *msg);
 	YAFARAY_C_API_EXPORT void yafaray_printVerbose(yafaray_Interface_t *interface, const char *msg);
 	YAFARAY_C_API_EXPORT void yafaray_printInfo(yafaray_Interface_t *interface, const char *msg);
@@ -120,6 +116,15 @@ extern "C" {
 	YAFARAY_C_API_EXPORT yafaray_bool_t yafaray_setImageColor(yafaray_Image_t *image, int x, int y, float red, float green, float blue, float alpha);
 	YAFARAY_C_API_EXPORT yafaray_bool_t yafaray_getImageColor(const yafaray_Image_t *image, int x, int y, float *red, float *green, float *blue, float *alpha);
 	YAFARAY_C_API_EXPORT void yafaray_setConsoleLogColorsEnabled(yafaray_Interface_t *interface, yafaray_bool_t colors_enabled);
+	YAFARAY_C_API_EXPORT int yafaray_getVersionMajor();
+	YAFARAY_C_API_EXPORT int yafaray_getVersionMinor();
+	YAFARAY_C_API_EXPORT int yafaray_getVersionPatch();
+	/* The following functions return a text string where memory is allocated by libYafaRay itself. Do not free the char* directly with free, use "yafaray_deallocateCharPointer" to free them instead to ensure proper deallocation. */
+	YAFARAY_C_API_EXPORT char *yafaray_getVersionString();
+	YAFARAY_C_API_EXPORT char *yafaray_getLayersTable(const yafaray_Interface_t *interface);
+	YAFARAY_C_API_EXPORT char *yafaray_getViewsTable(const yafaray_Interface_t *interface);
+	YAFARAY_C_API_EXPORT void yafaray_deallocateCharPointer(char *string_pointer_to_deallocate);
+
 
 #ifdef __cplusplus
 }

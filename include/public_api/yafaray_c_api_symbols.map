@@ -59,10 +59,6 @@ LIBYAFARAY_4.0.0 {
         yafaray_setConsoleVerbosityLevel;
         yafaray_setLogVerbosityLevel;
         yafaray_logLevelFromString;
-        yafaray_getVersionString;
-        yafaray_getVersionMajor;
-        yafaray_getVersionMinor;
-        yafaray_getVersionPatch;
         yafaray_printDebug;
         yafaray_printVerbose;
         yafaray_printInfo;
@@ -75,6 +71,13 @@ LIBYAFARAY_4.0.0 {
         yafaray_setImageColor;
         yafaray_getImageColor;
         yafaray_setConsoleLogColorsEnabled;
+        yafaray_getVersionMajor;
+        yafaray_getVersionMinor;
+        yafaray_getVersionPatch;
+        yafaray_getVersionString;
+        yafaray_getLayersTable;
+        yafaray_getViewsTable;
+        yafaray_deallocateCharPointer;
 
     local:
         *;

@@ -129,9 +129,10 @@ class Layer final
 		bool hasInternalImage() const { return (image_type_ != Image::Type::None); }
 		bool isExported() const { return (exported_image_type_ != Image::Type::None); }
 		Image::Type getImageType() const { return image_type_; }
-		std::string getImageTypeName() const { return Image::getTypeName(image_type_); }
+		std::string getImageTypeName() const { return Image::getTypeNameLong(image_type_); }
 		Image::Type getExportedImageType() const { return exported_image_type_; }
-		std::string getExportedImageTypeName() const { return Image::getTypeName(exported_image_type_); }
+		std::string getExportedImageTypeNameLong() const { return Image::getTypeNameLong(exported_image_type_); }
+		std::string getExportedImageTypeNameShort() const { return Image::getTypeNameShort(exported_image_type_); }
 		std::string getExportedImageName() const { return exported_image_name_; }
 		Flags getFlags() const { return getFlags(type_); }
 		std::string print() const;
@@ -194,6 +195,7 @@ class Layers final : public Collection<Layer::Type, Layer>
 		bool isDefinedAny(const std::vector<Layer::Type> &types) const;
 		const Layers getLayersWithImages() const;
 		const Layers getLayersWithExportedImages() const;
+		std::string printExportedTable() const;
 
 		const MaskParams &getMaskParams() const { return mask_params_; }
 		void setMaskParams(const MaskParams &mask_params) { mask_params_ = mask_params; }
