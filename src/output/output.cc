@@ -126,7 +126,7 @@ void ColorOutput::setFlushAreaCallback(void *callback_user_data, yafaray_OutputF
 void ColorOutput::setFlushCallback(void *callback_user_data, yafaray_OutputFlushCallback_t flush_callback)
 {
 	flush_callback_ = flush_callback;
-	flush_area_callback_user_data_ = callback_user_data;
+	flush_callback_user_data_ = callback_user_data;
 }
 
 void ColorOutput::setHighlightCallback(void *callback_user_data, yafaray_OutputHighlightCallback_t highlight_callback)
