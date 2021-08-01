@@ -53,7 +53,6 @@ LIBYAFARAY_4.0.0 {
         yafaray_render;
         yafaray_defineLayer;
         yafaray_setupLayersParameters;
-        yafaray_cancel;
         yafaray_setInteractive;
         yafaray_enablePrintDateTime;
         yafaray_setConsoleVerbosityLevel;
