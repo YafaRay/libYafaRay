@@ -42,7 +42,6 @@ class ImageOutput final : public ColorOutput
 	private:
 		virtual bool putPixel(int x, int y, const ColorLayer &color_layer) override;
 		virtual void flush(const RenderControl &render_control) override;
-		virtual void flushArea(int x_0, int y_0, int x_1, int y_1) override {} // not used by images... yet
 		virtual bool isImageOutput() const override { return true; }
 		virtual std::string printDenoiseParams() const override;
 		virtual void init(int width, int height, const Layers *layers, const std::map<std::string, std::unique_ptr<RenderView>> *render_views) override;

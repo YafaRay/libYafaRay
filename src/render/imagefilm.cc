@@ -475,7 +475,7 @@ bool ImageFilm::nextArea(const RenderControl &render_control, RenderArea &a)
 				int end_x = a.x_ + a.w_, end_y = a.y_ + a.h_;
 				for(auto &output : outputs_)
 				{
-					if(output.second && !output.second->isImageOutput()) output.second->highlightArea(n, a.x_, a.y_, end_x, end_y);
+					if(output.second && !output.second->isImageOutput()) output.second->highlightArea(a.id_, a.x_, a.y_, end_x, end_y);
 				}
 				out_mutex_.unlock();
 			}
@@ -558,7 +558,7 @@ void ImageFilm::finishArea(const RenderView *render_view, RenderControl &render_
 		{
 			if(output.second && !output.second->isImageOutput())
 			{
-				output.second->flushArea(a.x_, a.y_, end_x + cx_0_, end_y + cy_0_);
+				output.second->flushArea(a.id_, a.x_, a.y_, end_x + cx_0_, end_y + cy_0_);
 			}
 		}
 	}

@@ -59,8 +59,8 @@ class ColorOutput
 		void setHighlightCallback(void *callback_user_data, yafaray_OutputHighlightCallback_t highlight_callback);
 		virtual bool putPixel(int x, int y, const ColorLayer &color_layer) = 0;
 		virtual void flush(const RenderControl &render_control) = 0;
-		virtual void flushArea(int x_0, int y_0, int x_1, int y_1) { }
-		virtual void highlightArea(int area_number, int x_0, int y_0, int x_1, int y_1) { }
+		virtual void flushArea(int area_id, int x_0, int y_0, int x_1, int y_1) { }
+		virtual void highlightArea(int area_id, int x_0, int y_0, int x_1, int y_1) { }
 		virtual bool isImageOutput() const { return false; }
 		virtual bool isPreview() const { return false; }
 		virtual void init(int width, int height, const Layers *layers, const std::map<std::string, std::unique_ptr<RenderView>> *render_views);

@@ -60,14 +60,14 @@ void CallbackOutput::flush(const RenderControl &render_control)
 	if(flush_callback_) flush_callback_(current_render_view_->getName().c_str(), flush_callback_user_data_);
 }
 
-void CallbackOutput::flushArea(int x_0, int y_0, int x_1, int y_1)
+void CallbackOutput::flushArea(int area_id, int x_0, int y_0, int x_1, int y_1)
 {
-	if(flush_area_callback_) flush_area_callback_(current_render_view_->getName().c_str(), x_0, y_0, x_1, y_1, flush_area_callback_user_data_);
+	if(flush_area_callback_) flush_area_callback_(current_render_view_->getName().c_str(), area_id, x_0, y_0, x_1, y_1, flush_area_callback_user_data_);
 }
 
-void CallbackOutput::highlightArea(int area_number, int x_0, int y_0, int x_1, int y_1)
+void CallbackOutput::highlightArea(int area_id, int x_0, int y_0, int x_1, int y_1)
 {
-	if(highlight_callback_) highlight_callback_(current_render_view_->getName().c_str(), area_number, x_0, y_0, x_1, y_1, highlight_callback_user_data_);
+	if(highlight_callback_) highlight_callback_(current_render_view_->getName().c_str(), area_id, x_0, y_0, x_1, y_1, highlight_callback_user_data_);
 }
 
 END_YAFARAY

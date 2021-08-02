@@ -34,9 +34,9 @@ struct ResultImage
 };
 
 void putPixelCallback(const char *view_name, const char *layer_name, int x, int y, float r, float g, float b, float a, void *callback_user_data);
-void flushAreaCallback(const char *view_name, int x_0, int y_0, int x_1, int y_1, void *callback_user_data);
+void flushAreaCallback(const char *view_name, int area_id, int x_0, int y_0, int x_1, int y_1, void *callback_user_data);
 void flushCallback(const char *view_name, void *callback_user_data);
-void highlightCallback(const char *view_name, int area_number, int x_0, int y_0, int x_1, int y_1, void *callback_user_data);
+void highlightCallback(const char *view_name, int area_id, int x_0, int y_0, int x_1, int y_1, void *callback_user_data);
 void monitorCallback(int steps_total, int steps_done, const char *tag, void *callback_user_data);
 void loggerCallback(yafaray_LogLevel_t log_level, long datetime, const char *time_of_day, const char *description, void *callback_user_data);
 
@@ -315,9 +315,9 @@ void putPixelCallback(const char *view_name, const char *layer_name, int x, int 
 	}
 }
 
-void flushAreaCallback(const char *view_name, int x_0, int y_0, int x_1, int y_1, void *callback_user_data)
+void flushAreaCallback(const char *view_name, int area_id, int x_0, int y_0, int x_1, int y_1, void *callback_user_data)
 {
-	printf("**** flushAreaCallback view_name='%s', x_0=%d, y_0=%d, x_1=%d, y_1=%d, callback_user_data=%p\n", view_name, x_0, y_0, x_1, y_1, callback_user_data);
+	printf("**** flushAreaCallback view_name='%s', area_id=%d, x_0=%d, y_0=%d, x_1=%d, y_1=%d, callback_user_data=%p\n", view_name, area_id, x_0, y_0, x_1, y_1, callback_user_data);
 }
 
 void flushCallback(const char *view_name, void *callback_user_data)
@@ -325,9 +325,9 @@ void flushCallback(const char *view_name, void *callback_user_data)
 	printf("**** flushCallback view_name='%s', callback_user_data=%p\n", view_name, callback_user_data);
 }
 
-void highlightCallback(const char *view_name, int area_number, int x_0, int y_0, int x_1, int y_1, void *callback_user_data)
+void highlightCallback(const char *view_name, int area_id, int x_0, int y_0, int x_1, int y_1, void *callback_user_data)
 {
-	printf("**** highlightCallback view_name='%s', area_number=%d, x_0=%d, y_0=%d, x_1=%d, y_1=%d, callback_user_data=%p\n", view_name, area_number, x_0, y_0, x_1, y_1, callback_user_data);
+	printf("**** highlightCallback view_name='%s', area_id=%d, x_0=%d, y_0=%d, x_1=%d, y_1=%d, callback_user_data=%p\n", view_name, area_id, x_0, y_0, x_1, y_1, callback_user_data);
 }
 
 void monitorCallback(int steps_total, int steps_done, const char *tag, void *callback_user_data)

@@ -35,8 +35,8 @@ class CallbackOutput final : public ColorOutput
 	private:
 		virtual bool putPixel(int x, int y, const ColorLayer &color_layer) override;
 		virtual void flush(const RenderControl &render_control) override;
-		virtual void flushArea(int x_0, int y_0, int x_1, int y_1) override;
-		virtual void highlightArea(int area_number, int x_0, int y_0, int x_1, int y_1) override;
+		virtual void flushArea(int area_id, int x_0, int y_0, int x_1, int y_1) override;
+		virtual void highlightArea(int area_id, int x_0, int y_0, int x_1, int y_1) override;
 };
 
 

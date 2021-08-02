@@ -109,6 +109,7 @@ bool ImageSplitter::getArea(int n, RenderArea &area)
 {
 	if(n < 0 || n >= (int)regions_.size()) return false;
 	Region &r = regions_[n];
+	area.id_ = n;
 	area.x_ = r.x_;
 	area.y_ = r.y_;
 	area.w_ = r.w_;
