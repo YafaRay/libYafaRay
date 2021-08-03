@@ -79,7 +79,6 @@ extern "C" {
 	YAFARAY_C_API_EXPORT yafaray_bool_t yafaray_createObject(yafaray_Interface_t *interface, const char *name);
 	YAFARAY_C_API_EXPORT yafaray_bool_t yafaray_createLight(yafaray_Interface_t *interface, const char *name);
 	YAFARAY_C_API_EXPORT yafaray_bool_t yafaray_createTexture(yafaray_Interface_t *interface, const char *name);
-	YAFARAY_C_API_EXPORT yafaray_bool_t yafaray_createTextureFromImage(yafaray_Interface_t *interface, const char *name, const yafaray_Image_t *image);
 	YAFARAY_C_API_EXPORT yafaray_bool_t yafaray_createMaterial(yafaray_Interface_t *interface, const char *name);
 	YAFARAY_C_API_EXPORT yafaray_bool_t yafaray_createCamera(yafaray_Interface_t *interface, const char *name);
 	YAFARAY_C_API_EXPORT yafaray_bool_t yafaray_createBackground(yafaray_Interface_t *interface, const char *name);

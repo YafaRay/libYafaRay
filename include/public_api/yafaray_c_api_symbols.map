@@ -34,7 +34,6 @@ LIBYAFARAY_4.0.0 {
         yafaray_createObject;
         yafaray_createLight;
         yafaray_createTexture;
-        yafaray_createTextureFromImage;
         yafaray_createMaterial;
         yafaray_createCamera;
         yafaray_createBackground;
