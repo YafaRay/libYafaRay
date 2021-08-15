@@ -148,7 +148,7 @@ Rgb MonteCarloIntegrator::doLightEstimation(RenderData &render_data, const Light
 
 			if(shadowed && layers_used)
 			{
-				const MaskParams &mask_params = color_layers->getMaskParams();
+				const MaskParams &mask_params = scene_->getMaskParams();
 				if(color_layers->find(Layer::MatIndexMaskShadow) && mask_mat_index == mask_params.mat_index_) col_shadow_mat_mask += Rgb(1.f);
 				if(color_layers->find(Layer::ObjIndexMaskShadow) && mask_obj_index == mask_params.obj_index_) col_shadow_obj_mask += Rgb(1.f);
 			}
@@ -277,7 +277,7 @@ Rgb MonteCarloIntegrator::doLightEstimation(RenderData &render_data, const Light
 
 				if(layers_used && (shadowed || ls.pdf_ <= 1e-6f))
 				{
-					const MaskParams &mask_params = color_layers->getMaskParams();
+					const MaskParams &mask_params = scene_->getMaskParams();
 					if(color_layers->find(Layer::MatIndexMaskShadow) && mask_mat_index == mask_params.mat_index_) col_shadow_mat_mask += Rgb(1.f);
 					if(color_layers->find(Layer::ObjIndexMaskShadow) && mask_obj_index == mask_params.obj_index_) col_shadow_obj_mask += Rgb(1.f);
 				}

@@ -48,6 +48,7 @@ class ColorLayers;
 class ParamMap;
 class RenderControl;
 class RenderView;
+struct EdgeToonParams;
 
 class ImageFilm final
 {
@@ -81,15 +82,15 @@ class ImageFilm final
 		/*! Prepare for next pass, i.e. reset area_cnt, check if pixels need resample...
 			\param adaptive_aa if true, flag pixels to be resampled
 			\param threshold color threshold for adaptive antialiasing */
-		int nextPass(const RenderView *render_view, RenderControl &render_control, bool adaptive_aa, std::string integrator_name, bool skip_nrender_layer = false);
+		int nextPass(const RenderView *render_view, RenderControl &render_control, bool adaptive_aa, std::string integrator_name, const EdgeToonParams &edge_params, bool skip_nrender_layer = false);
 		/*! Return the next area to be rendered
 			CAUTION! This method MUST be threadsafe!
 			\return false if no area is left to be handed out, true otherwise */
 		bool nextArea(const RenderControl &render_control, RenderArea &a);
 		/*! Indicate that all pixels inside the area have been sampled for this pass */
-		void finishArea(const RenderView *render_view, RenderControl &render_control, RenderArea &a);
+		void finishArea(const RenderView *render_view, RenderControl &render_control, RenderArea &a, const EdgeToonParams &edge_params);
 		/*! Output all pixels to the color output */
-		void flush(const RenderView *render_view, const RenderControl &render_control, int flags = All);
+		void flush(const RenderView *render_view, const RenderControl &render_control, const EdgeToonParams &edge_params, int flags = All);
 		void cleanup() { weights_.clear(); }
 		/*! query if sample (x,y) was flagged to need more samples.
 			IMPORTANT! You may only call this after you have called nextPass(true, ...), otherwise
@@ -144,8 +145,8 @@ class ImageFilm final
 		void resetImagesAutoSaveTimer() { images_auto_save_params_.timer_ = 0.0; }
 		void resetFilmAutoSaveTimer() { film_load_save_.auto_save_.timer_ = 0.0; }
 
-		void generateDebugFacesEdges(int xstart, int width, int ystart, int height, bool drawborder);
-		void generateToonAndDebugObjectEdges(int xstart, int width, int ystart, int height, bool drawborder);
+		void generateDebugFacesEdges(int xstart, int width, int ystart, int height, bool drawborder, const EdgeToonParams &edge_params);
+		void generateToonAndDebugObjectEdges(int xstart, int width, int ystart, int height, bool drawborder, const EdgeToonParams &edge_params);
 		const ImageLayers *getImageLayers() const { return &image_layers_; }
 
 	private:

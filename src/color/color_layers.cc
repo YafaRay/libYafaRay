@@ -20,7 +20,7 @@
 
 BEGIN_YAFARAY
 
-ColorLayers::ColorLayers(const Layers &layers) : mask_params_(layers.getMaskParams())
+ColorLayers::ColorLayers(const Layers &layers)
 {
 	for(const auto &layer : layers)
 	{

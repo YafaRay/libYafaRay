@@ -272,7 +272,7 @@ bool Scene::render()
 			render_control_.setRenderInfo(surf_integrator_->getRenderInfo());
 			render_control_.setAaNoiseInfo(surf_integrator_->getAaNoiseInfo());
 			surf_integrator_->cleanup();
-			image_film_->flush(it.second.get(), render_control_);
+			image_film_->flush(it.second.get(), render_control_, getEdgeToonParams());
 			render_control_.setFinished();
 			image_film_->cleanup();
 		}
@@ -960,7 +960,7 @@ void Scene::setMaskParams(const ParamMap &params)
 	mask_params.invert_ = mask_invert;
 	mask_params.only_ = mask_only;
 
-	layers_.setMaskParams(mask_params);
+	setMaskParams(mask_params);
 }
 
 void Scene::setEdgeToonParams(const ParamMap &params)
@@ -1001,7 +1001,7 @@ void Scene::setEdgeToonParams(const ParamMap &params)
 	edge_params.face_threshold_ = faces_edge_threshold;
 	edge_params.face_smoothness_ = faces_edge_smoothness;
 
-	layers_.setEdgeToonParams(edge_params);
+	setEdgeToonParams(edge_params);
 }
 
 END_YAFARAY

@@ -41,12 +41,10 @@ class ColorLayers final : public Collection<Layer::Type, ColorLayer>  //Actual b
 		ColorLayers(const Layers &layers);
 		void setDefaultColors();
 		bool isDefinedAny(const std::vector<Layer::Type> &types) const;
-		MaskParams getMaskParams() const { return mask_params_; }
 		Layer::Flags getFlags() const { return flags_; }
 
 	private:
 		Layer::Flags flags_ = Layer::Flags::None;
-		const MaskParams &mask_params_;
 };
 
 END_YAFARAY

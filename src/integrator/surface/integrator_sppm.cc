@@ -154,7 +154,7 @@ bool SppmIntegrator::render(RenderControl &render_control, const RenderView *ren
 	{
 		if(render_control.canceled()) break;
 		pass_info = i + 1;
-		image_film_->nextPass(render_view, render_control, false, getName());
+		image_film_->nextPass(render_view, render_control, false, getName(), scene_->getEdgeToonParams());
 		n_refined_ = 0;
 		renderPass(render_view, 1, acum_aa_samples, false, i, render_control); // offset are only related to the passNum, since we alway have only one sample.
 		acum_aa_samples += 1;
@@ -212,7 +212,7 @@ bool SppmIntegrator::renderTile(RenderArea &a, const RenderView *render_view, co
 	float inv_aa_max_possible_samples = 1.f / ((float) aa_max_possible_samples);
 
 	const Layers &layers = scene_->getLayers();
-	const MaskParams mask_params = layers.getMaskParams();
+	const MaskParams &mask_params = scene_->getMaskParams();
 	ColorLayers color_layers(layers);
 
 	for(int i = a.y_; i < end_y; ++i)
@@ -1171,7 +1171,7 @@ GatherInfo SppmIntegrator::traceGatherRay(RenderData &render_data, DiffRay &ray,
 
 		if(layers_used)
 		{
-			generateCommonLayers(render_data, sp, ray, color_layers);
+			generateCommonLayers(render_data, sp, ray, scene_->getMaskParams(), color_layers);
 
 			if(ColorLayer *color_layer = color_layers->find(Layer::Ao))
 			{

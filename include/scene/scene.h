@@ -61,6 +61,29 @@ enum class DarkDetectionType : int;
 
 typedef unsigned int ObjId_t;
 
+struct MaskParams
+{
+	unsigned int obj_index_ = 0; //!Object Index used for masking in/out in the Mask Render Layers
+	unsigned int mat_index_ = 0; //!Material Index used for masking in/out in the Mask Render Layers
+	bool invert_ = false; //!False=mask in, True=mask out
+	bool only_ = false; //!False=rendered image is masked, True=only the mask is shown without rendered image
+};
+
+struct EdgeToonParams //Options for Edge detection and Toon Render Layers
+{
+	int thickness_ = 2; //!Thickness of the edges used in the Object Edge and Toon Render Layers
+	float threshold_ = 0.3f; //!Threshold for the edge detection process used in the Object Edge and Toon Render Layers
+	float smoothness_ = 0.75f; //!Smoothness (blur) of the edges used in the Object Edge and Toon Render Layers
+	std::array<float, 3> toon_color_ {{0.f, 0.f, 0.f}}; //!Color of the edges used in the Toon Render Layers.
+	//Using array<float, 3> to avoid including color.h header dependency
+	float toon_pre_smooth_ = 3.f; //!Toon effect: smoothness applied to the original image
+	float toon_quantization_ = 0.1f; //!Toon effect: color Quantization applied to the original image
+	float toon_post_smooth_ = 3.f; //!Toon effect: smoothness applied after Quantization
+	int face_thickness_ = 1; //!Thickness of the edges used in the Faces Edge Render Layers
+	float face_threshold_ = 0.01f; //!Threshold for the edge detection process used in the Faces Edge Render Layers
+	float face_smoothness_ = 0.5f; //!Smoothness (blur) of the edges used in the Faces Edge Render Layers
+};
+
 /*! describes an instance of a scene, including all data and functionality to
 	create and render a whole scene on the lowest "layer".
 	Allocating, configuring and deallocating scene elements etc. however has
@@ -151,7 +174,6 @@ class Scene
 		void defineLayer(const ParamMap &params);
 		void defineLayer(const std::string &layer_type_name, const std::string &image_type_name, const std::string &exported_image_type_name, const std::string &exported_image_name);
 		void defineLayer(const Layer::Type &layer_type, const Image::Type &image_type = Image::Type::None, const Image::Type &exported_image_type = Image::Type::None, const std::string &exported_image_name = "");
-		void setupLayersParameters(const ParamMap &params);
 		void clearLayers();
 		void clearRenderViews();
 		const Layers &getLayers() const { return layers_; }
@@ -163,6 +185,11 @@ class Scene
 		static void logErrOnCreate(Logger &logger, const std::string &pname, const std::string &name, const std::string &t);
 		static void logInfoVerboseSuccess(Logger &logger, const std::string &pname, const std::string &name, const std::string &t);
 		static void logInfoVerboseSuccessDisabled(Logger &logger, const std::string &pname, const std::string &name, const std::string &t);
+
+		const MaskParams &getMaskParams() const { return mask_params_; }
+		void setMaskParams(const MaskParams &mask_params) { mask_params_ = mask_params; }
+		const EdgeToonParams &getEdgeToonParams() const { return edge_toon_params_; }
+		void setEdgeToonParams(const EdgeToonParams &edge_toon_params) { edge_toon_params_ = edge_toon_params; }
 
 		VolumeIntegrator *vol_integrator_ = nullptr;
 		float shadow_bias_ = 1.0e-4f;  //shadow bias to apply to shadows to avoid self-shadow artifacts
@@ -219,6 +246,8 @@ class Scene
 		std::map<std::string, std::unique_ptr<RenderView>> render_views_;
 		std::map<std::string, std::shared_ptr<Image>> images_;
 		Layers layers_;
+		MaskParams mask_params_;
+		EdgeToonParams edge_toon_params_;
 };
 
 END_YAFARAY

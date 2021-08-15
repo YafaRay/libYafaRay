@@ -339,7 +339,7 @@ Rgba PathIntegrator::integrate(RenderData &render_data, const DiffRay &ray, int 
 
 		if(layers_used)
 		{
-			generateCommonLayers(render_data, sp, ray, color_layers);
+			generateCommonLayers(render_data, sp, ray, scene_->getMaskParams(), color_layers);
 
 			if(ColorLayer *color_layer = color_layers->find(Layer::Ao))
 			{

@@ -205,12 +205,12 @@ bool TiledIntegrator::render(RenderControl &render_control, const RenderView *re
 		if(resampled_pixels <= 0.f && !aa_threshold_changed)
 		{
 			logger_.logInfo(getName(), ": in previous pass there were 0 pixels to be resampled and the AA threshold did not change, so this pass resampling check and rendering will be skipped.");
-			image_film_->nextPass(render_view, render_control, true, getName(), /*skipNextPass=*/true);
+			image_film_->nextPass(render_view, render_control, true, getName(), scene_->getEdgeToonParams(), /*skipNextPass=*/true);
 		}
 		else
 		{
 			image_film_->setAaThreshold(aa_noise_params_.threshold_);
-			resampled_pixels = image_film_->nextPass(render_view, render_control, true, getName());
+			resampled_pixels = image_film_->nextPass(render_view, render_control, true, getName(), scene_->getEdgeToonParams());
 			aa_threshold_changed = false;
 		}
 
@@ -266,7 +266,7 @@ bool TiledIntegrator::renderPass(const RenderView *render_view, int samples, int
 		tc.c_.wait(lk);
 		for(size_t i = 0; i < tc.areas_.size(); ++i)
 		{
-			image_film_->finishArea(render_view, render_control, tc.areas_[i]);
+			image_film_->finishArea(render_view, render_control, tc.areas_[i], scene_->getEdgeToonParams());
 		}
 		tc.areas_.clear();
 	}
@@ -306,7 +306,7 @@ bool TiledIntegrator::renderTile(RenderArea &a, const RenderView *render_view, c
 	Halton hal_v(5);
 
 	const Layers &layers = scene_->getLayers();
-	const MaskParams &mask_params = layers.getMaskParams();
+	const MaskParams &mask_params = scene_->getMaskParams();
 	ColorLayers color_layers(layers);
 
 	const Image *sampling_factor_image_pass = (*image_film_->getImageLayers())(Layer::DebugSamplingFactor).image_.get();
@@ -457,7 +457,7 @@ bool TiledIntegrator::renderTile(RenderArea &a, const RenderView *render_view, c
 	return true;
 }
 
-void TiledIntegrator::generateCommonLayers(RenderData &render_data, const SurfacePoint &sp, const DiffRay &ray, ColorLayers *color_layers)
+void TiledIntegrator::generateCommonLayers(RenderData &render_data, const SurfacePoint &sp, const DiffRay &ray, const MaskParams &mask_params, ColorLayers *color_layers)
 {
 	const bool layers_used = render_data.raylevel_ == 0 && color_layers && color_layers->getFlags() != Layer::Flags::None;
 
@@ -666,7 +666,7 @@ void TiledIntegrator::generateCommonLayers(RenderData &render_data, const Surfac
 
 			if((color_layer = color_layers->find(Layer::ObjIndexMask)))
 			{
-				if(sp.object_->getAbsObjectIndex() == color_layers->getMaskParams().obj_index_) color_layer->color_ = Rgba(1.f);
+				if(sp.object_->getAbsObjectIndex() == mask_params.obj_index_) color_layer->color_ = Rgba(1.f);
 			}
 
 			if((color_layer = color_layers->find(Layer::ObjIndexMaskAll)))
@@ -684,7 +684,7 @@ void TiledIntegrator::generateCommonLayers(RenderData &render_data, const Surfac
 
 			if((color_layer = color_layers->find(Layer::MatIndexMask)))
 			{
-				if(sp.material_->getAbsMaterialIndex() == color_layers->getMaskParams().mat_index_) color_layer->color_ = Rgba(1.f);
+				if(sp.material_->getAbsMaterialIndex() == mask_params.mat_index_) color_layer->color_ = Rgba(1.f);
 			}
 
 			if((color_layer = color_layers->find(Layer::MatIndexMaskAll)))

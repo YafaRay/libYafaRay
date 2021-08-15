@@ -233,7 +233,7 @@ void ImageFilm::init(RenderControl &render_control, int num_passes)
 	}
 }
 
-int ImageFilm::nextPass(const RenderView *render_view, RenderControl &render_control, bool adaptive_aa, std::string integrator_name, bool skip_nrender_layer)
+int ImageFilm::nextPass(const RenderView *render_view, RenderControl &render_control, bool adaptive_aa, std::string integrator_name, const EdgeToonParams &edge_params, bool skip_nrender_layer)
 {
 	splitter_mutex_.lock();
 	next_area_ = 0;
@@ -254,7 +254,7 @@ int ImageFilm::nextPass(const RenderView *render_view, RenderControl &render_con
 		{
 			for(auto &output : outputs_)
 			{
-				if(output.second && output.second->isImageOutput()) this->flush(render_view, render_control, All);
+				if(output.second && output.second->isImageOutput()) this->flush(render_view, render_control, edge_params, All);
 			}
 		}
 
@@ -499,7 +499,7 @@ bool ImageFilm::nextArea(const RenderControl &render_control, RenderArea &a)
 	return false;
 }
 
-void ImageFilm::finishArea(const RenderView *render_view, RenderControl &render_control, RenderArea &a)
+void ImageFilm::finishArea(const RenderView *render_view, RenderControl &render_control, RenderArea &a, const EdgeToonParams &edge_params)
 {
 	out_mutex_.lock();
 	int end_x = a.x_ + a.w_ - cx_0_, end_y = a.y_ + a.h_ - cy_0_;
@@ -508,12 +508,12 @@ void ImageFilm::finishArea(const RenderView *render_view, RenderControl &render_
 
 	if(layers_.isDefined(Layer::DebugFacesEdges))
 	{
-		generateDebugFacesEdges(a.x_ - cx_0_, end_x, a.y_ - cy_0_, end_y, true);
+		generateDebugFacesEdges(a.x_ - cx_0_, end_x, a.y_ - cy_0_, end_y, true, edge_params);
 	}
 
 	if(layers_.isDefinedAny({Layer::DebugObjectsEdges, Layer::Toon}))
 	{
-		generateToonAndDebugObjectEdges(a.x_ - cx_0_, end_x, a.y_ - cy_0_, end_y, true);
+		generateToonAndDebugObjectEdges(a.x_ - cx_0_, end_x, a.y_ - cy_0_, end_y, true, edge_params);
 	}
 
 	for(int j = a.y_ - cy_0_; j < end_y; ++j)
@@ -578,7 +578,7 @@ void ImageFilm::finishArea(const RenderView *render_view, RenderControl &render_
 		if((images_auto_save_params_.interval_type_ == ImageFilm::AutoSaveParams::IntervalType::Time) && (images_auto_save_params_.timer_ > images_auto_save_params_.interval_seconds_))
 		{
 			if(logger_.isDebug())logger_.logDebug("imagesAutoSaveTimer=", images_auto_save_params_.timer_);
-			flush(render_view, render_control, All);
+			flush(render_view, render_control, edge_params, All);
 			resetImagesAutoSaveTimer();
 		}
 
@@ -600,7 +600,7 @@ void ImageFilm::finishArea(const RenderView *render_view, RenderControl &render_
 	out_mutex_.unlock();
 }
 
-void ImageFilm::flush(const RenderView *render_view, const RenderControl &render_control, int flags)
+void ImageFilm::flush(const RenderView *render_view, const RenderControl &render_control, const EdgeToonParams &edge_params, int flags)
 {
 	if(render_control.finished())
 	{
@@ -615,11 +615,11 @@ void ImageFilm::flush(const RenderView *render_view, const RenderControl &render
 	const Layers layers = layers_.getLayersWithImages();
 	if(layers.isDefined(Layer::DebugFacesEdges))
 	{
-		generateDebugFacesEdges(0, width_, 0, height_, false);
+		generateDebugFacesEdges(0, width_, 0, height_, false, edge_params);
 	}
 	if(layers.isDefinedAny({Layer::DebugObjectsEdges, Layer::Toon}))
 	{
-		generateToonAndDebugObjectEdges(0, width_, 0, height_, false);
+		generateToonAndDebugObjectEdges(0, width_, 0, height_, false, edge_params);
 	}
 
 	ColorLayers color_layers(layers);
@@ -1199,9 +1199,8 @@ void edgeImageDetection_global(std::vector<cv::Mat> &image_mat, float edge_thres
 	if(smoothness > 0.f) cv::GaussianBlur(image_mat.at(0), image_mat.at(0), cv::Size(3, 3), /*sigmaX=*/ smoothness);
 }
 
-void ImageFilm::generateDebugFacesEdges(int xstart, int width, int ystart, int height, bool drawborder)
+void ImageFilm::generateDebugFacesEdges(int xstart, int width, int ystart, int height, bool drawborder, const EdgeToonParams &edge_params)
 {
-	const EdgeToonParams &edge_params = layers_.getEdgeToonParams();
 	const Image *normal_image = image_layers_(Layer::NormalGeom).image_.get();
 	const Image *z_depth_image = image_layers_(Layer::ZDepthNorm).image_.get();
 	Image *debug_faces_edges_image = image_layers_(Layer::DebugFacesEdges).image_.get();
@@ -1241,9 +1240,8 @@ void ImageFilm::generateDebugFacesEdges(int xstart, int width, int ystart, int h
 	}
 }
 
-void ImageFilm::generateToonAndDebugObjectEdges(int xstart, int width, int ystart, int height, bool drawborder)
+void ImageFilm::generateToonAndDebugObjectEdges(int xstart, int width, int ystart, int height, bool drawborder, const EdgeToonParams &edge_params)
 {
-	const EdgeToonParams &edge_params = layers_.getEdgeToonParams();
 	const Image *normal_image = image_layers_(Layer::NormalSmooth).image_.get();
 	const Image *z_depth_image = image_layers_(Layer::ZDepthNorm).image_.get();
 	Image *debug_objects_edges_image = image_layers_(Layer::DebugObjectsEdges).image_.get();
