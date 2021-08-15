@@ -114,23 +114,48 @@ std::unique_ptr<Image> Image::factory(Logger &logger, int width, int height, con
 Image *Image::factoryRawPointer(Logger &logger, int width, int height, const Type &type, const Optimization &optimization)
 {
 	if(logger.isDebug()) logger.logDebug("**Image::factoryRawPointer");
-	if(type == Type::ColorAlpha && optimization == Optimization::None) return new ImageColorAlpha(width, height);
-	else if(type == Type::ColorAlpha && optimization == Optimization::Optimized) return new ImageColorAlphaOptimized(width, height);
-	else if(type == Type::ColorAlpha && optimization == Optimization::Compressed) return new ImageColorAlphaCompressed(width, height);
-	else if(type == Type::Color && optimization == Optimization::None) return new ImageColor(width, height);
-	else if(type == Type::Color && optimization == Optimization::Optimized) return new ImageColorOptimized(width, height);
-	else if(type == Type::Color && optimization == Optimization::Compressed) return new ImageColorCompressed(width, height);
-	else if(type == Type::GrayAlpha) return new ImageGrayAlpha(width, height);
-	else if(type == Type::Gray && optimization == Optimization::None) return new ImageGray(width, height);
-	else if(type == Type::Gray && (optimization == Optimization::Optimized || optimization == Optimization::Compressed)) return new ImageGrayOptimized(width, height);
+	if(type == Type::ColorAlpha)
+	{
+		switch(optimization)
+		{
+			case Optimization::Optimized: return new ImageColorAlphaOptimized(width, height);
+			case Optimization::Compressed: return new ImageColorAlphaCompressed(width, height);
+			default: return new ImageColorAlpha(width, height);
+		}
+	}
+	else if(type == Type::Color)
+	{
+		switch(optimization)
+		{
+			case Optimization::Optimized: return new ImageColorOptimized(width, height);
+			case Optimization::Compressed: return new ImageColorCompressed(width, height);
+			default: return new ImageColor(width, height);
+		}
+	}
+	else if(type == Type::GrayAlpha)
+	{
+		return new ImageGrayAlpha(width, height);
+	}
+	else if(type == Type::Gray)
+	{
+		switch(optimization)
+		{
+			case Optimization::Compressed:
+			case Optimization::Optimized: return new ImageGrayOptimized(width, height);
+			default: return new ImageGray(width, height);
+		}
+	}
 	else return nullptr;
 }
 
 Image::Type Image::imageTypeWithAlpha(Type image_type)
 {
-	if(image_type == Type::Gray) image_type = Type::GrayAlpha;
-	else if(image_type == Type::Color) image_type = Type::ColorAlpha;
-	return image_type;
+	switch(image_type)
+	{
+		case Type::Gray: return Type::GrayAlpha;
+		case Type::Color: return Type::ColorAlpha;
+		default: return image_type;
+	}
 }
 
 Image::Type Image::getTypeFromName(const std::string &image_type_name)
@@ -180,10 +205,9 @@ bool Image::isGrayscale(const Type &image_type)
 
 Image::Type Image::getTypeFromSettings(bool has_alpha, bool grayscale)
 {
-	Type result = Type::Color;
-	if(grayscale) result = Type::Gray;
-	if(has_alpha) result = Image::imageTypeWithAlpha(result);
-	return result;
+	Type type = grayscale ? Type::Gray : Type::Color;
+	if(has_alpha) type = Image::imageTypeWithAlpha(type);
+	return type;
 }
 
 Image::Optimization Image::getOptimizationTypeFromName(const std::string &optimization_type_name)
