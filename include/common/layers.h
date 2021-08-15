@@ -82,8 +82,7 @@ class Layers final : public Collection<Layer::Type, Layer>
 
 inline bool Layers::isDefined(const Layer::Type &type) const
 {
-	if(type == Layer::Combined) return true;
-	else if(type == Layer::Disabled) return false;
+	if(type == Layer::Disabled) return false;
 	else return find(type);
 }
 

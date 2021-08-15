@@ -246,17 +246,6 @@ int main()
 	yafaray_createIntegrator(yi, "volintegr");
 	yafaray_paramsClearAll(yi);
 
-	/* Defining internal and exported layers */
-	yafaray_paramsSetString(yi, "type", "combined");
-	yafaray_paramsSetString(yi, "image_type", "ColorAlphaWeight");
-	yafaray_paramsSetString(yi, "exported_image_name", "Combined");
-	yafaray_paramsSetString(yi, "exported_image_type", "ColorAlpha");
-	yafaray_defineLayer(yi);
-	yafaray_paramsClearAll(yi);
-
-	yafaray_setupLayersParameters(yi);
-	yafaray_paramsClearAll(yi);
-
 	/* Setting up render parameters */
 	yafaray_paramsSetString(yi, "integrator_name", "surfintegr");
 	yafaray_paramsSetString(yi, "volintegrator_name", "volintegr");
