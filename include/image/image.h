@@ -46,7 +46,7 @@ struct DenoiseParams
 class Image
 {
 	public:
-		enum class Type : int { None, Gray, GrayAlpha, GrayWeight, GrayAlphaWeight, Color, ColorAlpha, ColorAlphaWeight };
+		enum class Type : int { None, Gray, GrayAlpha, Color, ColorAlpha };
 		enum class Optimization : int { None, Optimized, Compressed };
 		enum class Position : int { None, Top, Bottom, Left, Right, Overlay };
 		static std::unique_ptr<Image> factory(Logger &logger, ParamMap &params, const Scene &scene);
@@ -58,10 +58,8 @@ class Image
 		virtual Optimization getOptimization() const = 0;
 		virtual Rgba getColor(int x, int y) const = 0;
 		virtual float getFloat(int x, int y) const = 0;
-		virtual float getWeight(int x, int y) const { return 0.f; }
 		virtual void setColor(int x, int y, const Rgba &col) = 0;
 		virtual void setFloat(int x, int y, float val) = 0;
-		virtual void setWeight(int x, int y, float val) { }
 		virtual void clear() = 0;
 
 		int getWidth() const { return width_; }
@@ -74,7 +72,6 @@ class Image
 		float getGamma() const { return gamma_; }
 
 		static Type imageTypeWithAlpha(Type image_type);
-		static Type imageTypeWithWeight(Type image_type);
 		static std::string getTypeNameLong(const Type &image_type);
 		static std::string getTypeNameShort(const Type &image_type);
 		static Type getTypeFromName(const std::string &image_type_name);
@@ -83,7 +80,7 @@ class Image
 		static std::string getOptimizationName(const Optimization &optimization_type);
 		static bool hasAlpha(const Type &image_type);
 		static bool isGrayscale(const Type &image_type);
-		static Type getTypeFromSettings(bool has_alpha, bool grayscale, bool has_weight = false);
+		static Type getTypeFromSettings(bool has_alpha, bool grayscale);
 		static std::unique_ptr<Image> getDenoisedLdrImage(Logger &logger, const Image *image, const DenoiseParams &denoise_params); //!< Provides a denoised buffer, but only works with LDR images (that can be represented in 8-bit 0..255 values). If attempted with HDR images they would lose the HDR range and become unusable!
 		static std::unique_ptr<Image> getComposedImage(Logger &logger, const Image *image_1, const Image *image_2, const Position &position_image_2, int overlay_x = 0, int overlay_y = 0);
 

@@ -18,16 +18,13 @@
  */
 
 #include "image/image.h"
-#include "image/image_color_alpha_weight.h"
 #include "image/image_color_alpha.h"
 #include "image/image_color_alpha_optimized.h"
 #include "image/image_color_alpha_compressed.h"
 #include "image/image_color.h"
 #include "image/image_color_optimized.h"
 #include "image/image_color_compressed.h"
-#include "image/image_gray_alpha_weight.h"
 #include "image/image_gray_alpha.h"
-#include "image/image_gray_weight.h"
 #include "image/image_gray.h"
 #include "image/image_gray_optimized.h"
 #include "common/file.h"
@@ -86,7 +83,7 @@ std::unique_ptr<Image> Image::factory(Logger &logger, ParamMap &params, const Sc
 				if(image_optimization_str != "none" && logger.isVerbose()) logger.logVerbose("Image: The image is a HDR/EXR file: forcing texture optimization to 'none' and ignoring selected texture optimization '", image_optimization_str, "'");
 				optimization = Image::Optimization::None;
 			}
-			if(type == Type::Gray || type == Type::GrayAlpha || type == Type::GrayWeight || type == Type::GrayAlphaWeight) format->setGrayScaleSetting(true);
+			if(type == Type::Gray || type == Type::GrayAlpha) format->setGrayScaleSetting(true);
 			image = format->loadFromFile(filename, optimization, color_space, gamma);
 		}
 
@@ -117,16 +114,13 @@ std::unique_ptr<Image> Image::factory(Logger &logger, int width, int height, con
 Image *Image::factoryRawPointer(Logger &logger, int width, int height, const Type &type, const Optimization &optimization)
 {
 	if(logger.isDebug()) logger.logDebug("**Image::factoryRawPointer");
-	if(type == Type::ColorAlphaWeight) return new ImageColorAlphaWeight(width, height);
-	else if(type == Type::GrayAlphaWeight) return new ImageGrayAlphaWeight(width, height);
-	else if(type == Type::ColorAlpha && optimization == Optimization::None) return new ImageColorAlpha(width, height);
+	if(type == Type::ColorAlpha && optimization == Optimization::None) return new ImageColorAlpha(width, height);
 	else if(type == Type::ColorAlpha && optimization == Optimization::Optimized) return new ImageColorAlphaOptimized(width, height);
 	else if(type == Type::ColorAlpha && optimization == Optimization::Compressed) return new ImageColorAlphaCompressed(width, height);
 	else if(type == Type::Color && optimization == Optimization::None) return new ImageColor(width, height);
 	else if(type == Type::Color && optimization == Optimization::Optimized) return new ImageColorOptimized(width, height);
 	else if(type == Type::Color && optimization == Optimization::Compressed) return new ImageColorCompressed(width, height);
 	else if(type == Type::GrayAlpha) return new ImageGrayAlpha(width, height);
-	else if(type == Type::GrayWeight) return new ImageGrayWeight(width, height);
 	else if(type == Type::Gray && optimization == Optimization::None) return new ImageGray(width, height);
 	else if(type == Type::Gray && (optimization == Optimization::Optimized || optimization == Optimization::Compressed)) return new ImageGrayOptimized(width, height);
 	else return nullptr;
@@ -136,26 +130,13 @@ Image::Type Image::imageTypeWithAlpha(Type image_type)
 {
 	if(image_type == Type::Gray) image_type = Type::GrayAlpha;
 	else if(image_type == Type::Color) image_type = Type::ColorAlpha;
-	else if(image_type == Type::GrayWeight) image_type = Type::GrayAlphaWeight;
-	return image_type;
-}
-
-Image::Type Image::imageTypeWithWeight(Type image_type)
-{
-	if(image_type == Type::Gray) image_type = Type::GrayWeight;
-	else if(image_type == Type::GrayAlpha) image_type = Type::GrayAlphaWeight;
-	else if(image_type == Type::Color) image_type = Type::ColorAlphaWeight;
-	else if(image_type == Type::ColorAlpha) image_type = Type::ColorAlphaWeight;
 	return image_type;
 }
 
 Image::Type Image::getTypeFromName(const std::string &image_type_name)
 {
-	if(image_type_name == "ColorAlphaWeight") return Type::ColorAlphaWeight;
-	else if(image_type_name == "ColorAlpha") return Type::ColorAlpha;
+	if(image_type_name == "ColorAlpha") return Type::ColorAlpha;
 	else if(image_type_name == "Color") return Type::Color;
-	else if(image_type_name == "GrayAlphaWeight") return Type::GrayAlphaWeight;
-	else if(image_type_name == "GrayWeight") return Type::GrayWeight;
 	else if(image_type_name == "GrayAlpha") return Type::GrayAlpha;
 	else if(image_type_name == "Gray") return Type::Gray;
 	else return Type::None;
@@ -165,11 +146,8 @@ int Image::getNumChannels(const Type &image_type)
 {
 	switch(image_type)
 	{
-		case Type::ColorAlphaWeight: return 5;
 		case Type::ColorAlpha: return 4;
-		case Type::Color:
-		case Type::GrayAlphaWeight: return 3;
-		case Type::GrayWeight:
+		case Type::Color: return 3;
 		case Type::GrayAlpha: return 2;
 		case Type::Gray: return 1;
 		default: return 0;
@@ -181,11 +159,8 @@ bool Image::hasAlpha(const Type &image_type)
 	switch(image_type)
 	{
 		case Type::Color:
-		case Type::GrayWeight:
 		case Type::Gray: return false;
-		case Type::ColorAlphaWeight:
 		case Type::ColorAlpha:
-		case Type::GrayAlphaWeight:
 		case Type::GrayAlpha:
 		default: return true;
 	}
@@ -196,22 +171,18 @@ bool Image::isGrayscale(const Type &image_type)
 	switch(image_type)
 	{
 		case Type::Gray:
-		case Type::GrayAlpha:
-		case Type::GrayWeight:
-		case Type::GrayAlphaWeight: return true;
+		case Type::GrayAlpha: return true;
 		case Type::Color:
 		case Type::ColorAlpha:
-		case Type::ColorAlphaWeight:
 		default: return false;
 	}
 }
 
-Image::Type Image::getTypeFromSettings(bool has_alpha, bool grayscale, bool has_weight)
+Image::Type Image::getTypeFromSettings(bool has_alpha, bool grayscale)
 {
 	Type result = Type::Color;
 	if(grayscale) result = Type::Gray;
 	if(has_alpha) result = Image::imageTypeWithAlpha(result);
-	if(has_weight) result = Image::imageTypeWithWeight(result);
 	return result;
 }
 
@@ -240,11 +211,8 @@ std::string Image::getTypeNameLong(const Type &image_type)
 {
 	switch(image_type)
 	{
-		case Type::ColorAlphaWeight: return "Color + Alpha (weighted) [5 channels]";
 		case Type::ColorAlpha: return "Color + Alpha [4 channels]";
 		case Type::Color: return "Color [3 channels]";
-		case Type::GrayAlphaWeight: return "Gray + Alpha (weighted) [3 channels]";
-		case Type::GrayWeight: return "Gray (weighted) [2 channels]";
 		case Type::GrayAlpha: return "Gray + Alpha [2 channels]";
 		case Type::Gray: return "Gray [1 channel]";
 		default: return "unknown image type [0 channels]";
@@ -255,11 +223,8 @@ std::string Image::getTypeNameShort(const Type &image_type)
 {
 	switch(image_type)
 	{
-		case Type::ColorAlphaWeight: return "ColorAlphaWeight";
 		case Type::ColorAlpha: return "ColorAlpha";
 		case Type::Color: return "Color";
-		case Type::GrayAlphaWeight: return "GrayAlphaWeight";
-		case Type::GrayWeight: return "GrayWeight";
 		case Type::GrayAlpha: return "GrayAlpha";
 		case Type::Gray: return "Gray";
 		default: return "unknown";
