@@ -20,6 +20,7 @@ target_sources(libyafaray4
 	PRIVATE
 		badge.cc
 		file.cc
+		layer.cc
 		layers.cc
 		logger.cc
 		memory.cc
