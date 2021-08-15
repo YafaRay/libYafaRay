@@ -278,11 +278,6 @@ void yafaray_defineLayer(yafaray_Interface_t *interface)
 	reinterpret_cast<yafaray::Interface *>(interface)->defineLayer();
 }
 
-yafaray_bool_t yafaray_setupLayersParameters(yafaray_Interface_t *interface)
-{
-	return static_cast<yafaray_bool_t>(reinterpret_cast<yafaray::Interface *>(interface)->setupLayersParameters());
-}
-
 yafaray_bool_t yafaray_setInteractive(yafaray_Interface_t *interface, yafaray_bool_t interactive)
 {
 	return static_cast<yafaray_bool_t>(reinterpret_cast<yafaray::Interface *>(interface)->setInteractive(interactive));

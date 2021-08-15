@@ -75,12 +75,6 @@ void Interface::defineLayer() noexcept
 	scene_->defineLayer(*params_);
 }
 
-bool Interface::setupLayersParameters() noexcept
-{
-	scene_->setupLayersParameters(*params_);
-	return true;
-}
-
 bool Interface::setInteractive(bool interactive) noexcept
 {
 	if(scene_)

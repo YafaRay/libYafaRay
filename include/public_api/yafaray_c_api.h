@@ -96,7 +96,6 @@ extern "C" {
 	YAFARAY_C_API_EXPORT void yafaray_setupRender(yafaray_Interface_t *interface);
 	YAFARAY_C_API_EXPORT void yafaray_render(yafaray_Interface_t *interface, yafaray_ProgressBarCallback_t monitor_callback, void *callback_user_data, yafaray_DisplayConsole_t progress_bar_display_console);
 	YAFARAY_C_API_EXPORT void yafaray_defineLayer(yafaray_Interface_t *interface);
-	YAFARAY_C_API_EXPORT yafaray_bool_t yafaray_setupLayersParameters(yafaray_Interface_t *interface);
 	YAFARAY_C_API_EXPORT yafaray_bool_t yafaray_setInteractive(yafaray_Interface_t *interface, yafaray_bool_t interactive);
 	YAFARAY_C_API_EXPORT void yafaray_enablePrintDateTime(yafaray_Interface_t *interface, yafaray_bool_t value);
 	YAFARAY_C_API_EXPORT void yafaray_setConsoleVerbosityLevel(yafaray_Interface_t *interface, yafaray_LogLevel_t log_level);

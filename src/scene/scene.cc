@@ -758,6 +758,9 @@ bool Scene::setupSceneRenderParams(Scene &scene, const ParamMap &params)
 
 	defineBasicLayers();
 	defineDependentLayers();
+	setMaskParams(params);
+	setEdgeToonParams(params);
+
 	image_film_ = ImageFilm::factory(logger_, params, this);
 
 	params.getParam("filter_type", name); // AA filter type
@@ -937,14 +940,6 @@ void Scene::defineDependentLayers()
 				break;
 		}
 	}
-}
-
-void Scene::setupLayersParameters(const ParamMap &params)
-{
-	if(logger_.isDebug()) logger_.logDebug("**Scene::setupLayersParameters");
-	params.logContents(logger_);
-	setEdgeToonParams(params);
-	setMaskParams(params);
 }
 
 void Scene::setMaskParams(const ParamMap &params)

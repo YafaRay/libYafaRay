@@ -111,7 +111,6 @@ class Interface
 		virtual void setupRender() noexcept;
 		virtual void render(ProgressBar *pb = nullptr, bool auto_delete_progress_bar = false, ::yafaray_DisplayConsole_t progress_bar_display_console = YAFARAY_DISPLAY_CONSOLE_NORMAL) noexcept; //!< render the scene...
 		virtual void defineLayer() noexcept;
-		virtual bool setupLayersParameters() noexcept;
 		virtual void cancel() noexcept;
 
 		bool setInteractive(bool interactive) noexcept;

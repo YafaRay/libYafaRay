@@ -60,15 +60,6 @@ void XmlExport::clearAll() noexcept
 	next_obj_ = 0;
 }
 
-bool XmlExport::setupLayersParameters() noexcept
-{
-	xml_file_ << "\n<layers_parameters>\n";
-	writeParamMap(*params_);
-	params_->clear();
-	xml_file_ << "</layers_parameters>\n";
-	return true;
-}
-
 void XmlExport::defineLayer() noexcept
 {
 	xml_file_ << "\n<layer>\n";
