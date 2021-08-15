@@ -40,13 +40,12 @@ class ColorLayers final : public Collection<Layer::Type, ColorLayer>  //Actual b
 	public:
 		ColorLayers(const Layers &layers);
 		void setDefaultColors();
-		void setLayer(const Layer::Type key, const ColorLayer &layer) { flags_ |= Layer::getFlags(key); set(key, layer); };
 		bool isDefinedAny(const std::vector<Layer::Type> &types) const;
 		MaskParams getMaskParams() const { return mask_params_; }
 		Layer::Flags getFlags() const { return flags_; }
 
 	private:
-		Layer::Flags flags_;
+		Layer::Flags flags_ = Layer::Flags::None;
 		const MaskParams &mask_params_;
 };
 

@@ -189,8 +189,6 @@ struct EdgeToonParams //Options for Edge detection and Toon Render Layers
 class Layers final : public Collection<Layer::Type, Layer>
 {
 	public:
-		void setLayer(const Layer::Type key, const Layer &layer) { flags_ |= Layer::getFlags(key); set(key, layer); };
-		Layer::Flags getFlags() const { return flags_; }
 		bool isDefined(const Layer::Type &type) const;
 		bool isDefinedAny(const std::vector<Layer::Type> &types) const;
 		const Layers getLayersWithImages() const;
@@ -205,7 +203,6 @@ class Layers final : public Collection<Layer::Type, Layer>
 		static const std::map<Layer::Type, std::string> &listAvailable() { return Layer::getMapTypeTypeName(); }
 
 	private:
-		Layer::Flags flags_; //!< Combined flags of all layers defined, to group them and provide better runtime performance
 		MaskParams mask_params_;
 		EdgeToonParams edge_toon_params_;
 };
