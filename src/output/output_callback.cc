@@ -45,6 +45,22 @@ UniquePtr_t <ColorOutput> CallbackOutput::factory(Logger &logger, const ParamMap
 	return UniquePtr_t<ColorOutput>(new CallbackOutput(logger, width, height, name, color_space, gamma, alpha_premultiply));
 }
 
+void CallbackOutput::init(int width, int height, const Layers *layers, const std::map<std::string, std::unique_ptr<RenderView>> *render_views)
+{
+	ColorOutput::init(width, height, layers, render_views);
+	if(init_callback_)
+	{
+		for(auto &render_view : *render_views)
+		{
+			init_callback_(render_view.second->getName().c_str(), "", width, height, 0, init_callback_user_data_);
+		}
+		for(auto &layer : *layers)
+		{
+			init_callback_("", layer.second.getExportedImageName().c_str(), width, height, layer.second.getNumExportedChannels(), init_callback_user_data_);
+		}
+	}
+}
+
 bool CallbackOutput::putPixel(int x, int y, const ColorLayer &color_layer)
 {
 	const float &r = color_layer.color_.r_;

@@ -31,6 +31,7 @@ class CallbackOutput final : public ColorOutput
 	public:
 		static UniquePtr_t <ColorOutput> factory(Logger &logger, const ParamMap &params, const Scene &scene);
 		CallbackOutput(Logger &logger, int width, int height, const std::string &name = "out", const ColorSpace color_space = ColorSpace::RawManualGamma, float gamma = 1.f, bool with_alpha = true, bool alpha_premultiply = false) : ColorOutput(logger, name, color_space, gamma, with_alpha, alpha_premultiply) { width_ = width; height_ = height; }
+		virtual void init(int width, int height, const Layers *layers, const std::map<std::string, std::unique_ptr<RenderView>> *render_views) override;
 
 	private:
 		virtual bool putPixel(int x, int y, const ColorLayer &color_layer) override;

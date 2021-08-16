@@ -53,6 +53,7 @@ class ColorOutput
 		void setAutoDelete(bool value) { auto_delete_ = value; }
 		void setLoggingParams(const ParamMap &params);
 		void setBadgeParams(const ParamMap &params);
+		void setInitCallback(void *callback_user_data, yafaray_OutputInitCallback_t init_callback);
 		void setPutPixelCallback(void *callback_user_data, yafaray_OutputPutpixelCallback_t put_pixel_callback);
 		void setFlushAreaCallback(void *callback_user_data, yafaray_OutputFlushAreaCallback_t flush_area_callback);
 		void setFlushCallback(void *callback_user_data, yafaray_OutputFlushCallback_t flush_callback);
@@ -95,6 +96,8 @@ class ColorOutput
 		const RenderView *current_render_view_ = nullptr;
 		const std::map<std::string, std::unique_ptr<RenderView>> *render_views_ = nullptr;
 		const Layers *layers_ = nullptr;
+		yafaray_OutputInitCallback_t init_callback_ = nullptr;
+		void *init_callback_user_data_ = nullptr;
 		yafaray_OutputPutpixelCallback_t put_pixel_callback_ = nullptr;
 		void *put_pixel_callback_user_data_ = nullptr;
 		yafaray_OutputFlushAreaCallback_t flush_area_callback_ = nullptr;

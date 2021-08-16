@@ -111,6 +111,13 @@ void ColorOutput::setBadgeParams(const ParamMap &params)
 	badge_.setParams(params);
 }
 
+void ColorOutput::setInitCallback(void *callback_user_data, yafaray_OutputInitCallback_t init_callback)
+{
+	init_callback_ = init_callback;
+	init_callback_user_data_ = callback_user_data;
+
+}
+
 void ColorOutput::setPutPixelCallback(void *callback_user_data, yafaray_OutputPutpixelCallback_t put_pixel_callback)
 {
 	put_pixel_callback_ = put_pixel_callback;

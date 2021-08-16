@@ -246,6 +246,12 @@ ColorOutput *Interface::createOutput(const char *name, ColorOutput *output, bool
 	return scene_->createOutput(name, std::move(output_unique), auto_delete);
 }
 
+void Interface::setOutputInitCallback(const char *output_name, yafaray_OutputInitCallback_t init_callback, void *init_callback_user_data) noexcept
+{
+	ColorOutput *output = scene_->getOutput(output_name);
+	if(output) output->setInitCallback(init_callback_user_data, init_callback);
+}
+
 void Interface::setOutputPutPixelCallback(const char *output_name, yafaray_OutputPutpixelCallback_t putpixel_callback, void *putpixel_callback_user_data) noexcept
 {
 	ColorOutput *output = scene_->getOutput(output_name);

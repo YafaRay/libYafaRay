@@ -33,6 +33,7 @@ struct ResultImage
     char *data_;
 };
 
+void initCallback(const char *view_name, const char *layer_name, int weight, int height, int layer_exported_channels, void *callback_user_data);
 void putPixelCallback(const char *view_name, const char *layer_name, int x, int y, float r, float g, float b, float a, void *callback_user_data);
 void flushAreaCallback(const char *view_name, int area_id, int x_0, int y_0, int x_1, int y_1, void *callback_user_data);
 void flushCallback(const char *view_name, void *callback_user_data);
@@ -230,6 +231,7 @@ int main()
 	yafaray_paramsSetString(yi, "type", "callback_output");
 	yafaray_createOutput(yi, "test_callback_output", YAFARAY_BOOL_TRUE);
 	yafaray_paramsClearAll(yi);
+	yafaray_setOutputInitCallback(yi, "test_callback_output", initCallback, (void *) &result_image);
 	yafaray_setOutputPutPixelCallback(yi, "test_callback_output", putPixelCallback, (void *) &result_image);
 	yafaray_setOutputFlushAreaCallback(yi, "test_callback_output", flushAreaCallback, (void *) &result_image);
 	yafaray_setOutputFlushCallback(yi, "test_callback_output", flushCallback, (void *) &result_image);
@@ -288,6 +290,11 @@ float forceRange01(float value)
 	if(value > 1.f) return 1.f;
 	else if(value < 0.f) return 0.f;
 	else return value;
+}
+
+void initCallback(const char *view_name, const char *layer_name, int weight, int height, int layer_exported_channels, void *callback_user_data)
+{
+	printf("**** InitCallback view_name='%s', layer_name='%s', weight=%d, height=%d, layer_exported_channels=%d, callback_user_data=%p\n", view_name, layer_name, weight, height, layer_exported_channels, callback_user_data);
 }
 
 void putPixelCallback(const char *view_name, const char *layer_name, int x, int y, float r, float g, float b, float a, void *callback_user_data)

@@ -215,6 +215,12 @@ yafaray_bool_t yafaray_createOutput(yafaray_Interface_t *interface, const char *
 {
 	return static_cast<yafaray_bool_t>(reinterpret_cast<yafaray::Interface *>(interface)->createOutput(name, auto_delete) != nullptr);
 }
+
+void yafaray_setOutputInitCallback(yafaray_Interface_t *interface, const char *output_name, yafaray_OutputInitCallback_t init_callback, void *init_callback_user_data)
+{
+	reinterpret_cast<yafaray::Interface *>(interface)->setOutputInitCallback(output_name, init_callback, init_callback_user_data);
+}
+
 void yafaray_setOutputPutPixelCallback(yafaray_Interface_t *interface, const char *output_name, yafaray_OutputPutpixelCallback_t putpixel_callback, void *putpixel_callback_user_data)
 {
 	reinterpret_cast<yafaray::Interface *>(interface)->setOutputPutPixelCallback(output_name, putpixel_callback, putpixel_callback_user_data);
