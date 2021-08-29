@@ -24,6 +24,7 @@
 #ifndef YAFARAY_IMAGEFILM_H
 #define YAFARAY_IMAGEFILM_H
 
+#include "yafaray_c_api.h"
 #include "common/yafaray_common.h"
 #include "imagesplitter.h"
 #include "common/aa_noise_params.h"
@@ -86,7 +87,7 @@ class ImageFilm final
 		/*! Return the next area to be rendered
 			CAUTION! This method MUST be threadsafe!
 			\return false if no area is left to be handed out, true otherwise */
-		bool nextArea(const RenderControl &render_control, RenderArea &a);
+		bool nextArea(const RenderView *render_view, const RenderControl &render_control, RenderArea &a);
 		/*! Indicate that all pixels inside the area have been sampled for this pass */
 		void finishArea(const RenderView *render_view, RenderControl &render_control, RenderArea &a, const EdgeToonParams &edge_params);
 		/*! Output all pixels to the color output */
@@ -148,6 +149,13 @@ class ImageFilm final
 		void generateDebugFacesEdges(int xstart, int width, int ystart, int height, bool drawborder, const EdgeToonParams &edge_params);
 		void generateToonAndDebugObjectEdges(int xstart, int width, int ystart, int height, bool drawborder, const EdgeToonParams &edge_params);
 		const ImageLayers *getImageLayers() const { return &image_layers_; }
+		void setRenderViews(const std::map<std::string, std::unique_ptr<RenderView>> *render_views) { render_views_ = render_views; }
+
+		void setFilmInitCallback(yafaray_FilmInitCallback_t init_callback, void *callback_user_data);
+		void setFilmPutPixelCallback(yafaray_FilmPutpixelCallback_t put_pixel_callback, void *callback_user_data);
+		void setFilmFlushAreaCallback(yafaray_FilmFlushAreaCallback_t flush_area_callback, void *callback_user_data);
+		void setFilmFlushCallback(yafaray_FilmFlushCallback_t flush_callback, void *callback_user_data);
+		void setFilmHighlightCallback(yafaray_FilmHighlightCallback_t highlight_callback, void *callback_user_data);
 
 	private:
 		int width_, height_, cx_0_, cx_1_, cy_0_, cy_1_;
@@ -173,8 +181,6 @@ class ImageFilm final
 		const std::map<std::string, UniquePtr_t<ColorOutput>> &outputs_;
 		std::unique_ptr<ImageSplitter> splitter_;
 		std::shared_ptr<ProgressBar> progress_bar_;
-		//const Scene *scene_ = nullptr;
-		//const RenderControl *render_control_;
 
 		AutoSaveParams images_auto_save_params_;
 		FilmLoadSave film_load_save_;
@@ -189,6 +195,18 @@ class ImageFilm final
 		ImageLayers image_layers_;
 		std::unique_ptr<ImageBuffer2D<Rgb>> density_image_; //!< storage for z-buffer channel
 		Logger &logger_;
+		const std::map<std::string, std::unique_ptr<RenderView>> *render_views_ = nullptr;
+
+		yafaray_FilmInitCallback_t film_init_callback_ = nullptr;
+		void *film_init_callback_user_data_ = nullptr;
+		yafaray_FilmPutpixelCallback_t film_put_pixel_callback_ = nullptr;
+		void *film_put_pixel_callback_user_data_ = nullptr;
+		yafaray_FilmFlushAreaCallback_t film_flush_area_callback_ = nullptr;
+		void *film_flush_area_callback_user_data_ = nullptr;
+		yafaray_FilmFlushCallback_t film_flush_callback_ = nullptr;
+		void *film_flush_callback_user_data_ = nullptr;
+		yafaray_FilmHighlightCallback_t film_highlight_callback_ = nullptr;
+		void *film_highlight_callback_user_data_ = nullptr;
 };
 
 END_YAFARAY

@@ -67,10 +67,4 @@ void DebugOutput::flushArea(int area_id, int x_0, int y_0, int x_1, int y_1)
 	if(logger_.isDebug()) logger_.logDebug("DebugOutput::flushArea area_id=", std::to_string(area_id), " x_0=", std::to_string(x_0), " y_0=", std::to_string(y_0), " x_1=", std::to_string(x_1), " y_1=", std::to_string(y_1), " view = ", view);
 }
 
-void DebugOutput::highlightArea(int area_id, int x_0, int y_0, int x_1, int y_1)
-{
-	const std::string view = current_render_view_ ? current_render_view_->getName() : "";
-	if(logger_.isDebug()) logger_.logDebug("DebugOutput::highlightArea area_id=", std::to_string(area_id), " x_0=", std::to_string(x_0), " y_0=", std::to_string(y_0), " x_1=", std::to_string(x_1), " y_1=", std::to_string(y_1), " view = ", view);
-}
-
 END_YAFARAY

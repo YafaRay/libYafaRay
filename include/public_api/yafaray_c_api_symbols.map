@@ -41,11 +41,11 @@ LIBYAFARAY_4.0.0 {
         yafaray_createVolumeRegion;
         yafaray_createRenderView;
         yafaray_createOutput;
-        yafaray_setOutputInitCallback;
-        yafaray_setOutputPutPixelCallback;
-        yafaray_setOutputFlushAreaCallback;
-        yafaray_setOutputFlushCallback;
-        yafaray_setOutputHighlightCallback;
+        yafaray_setFilmInitCallback;
+        yafaray_setFilmPutPixelCallback;
+        yafaray_setFilmFlushAreaCallback;
+        yafaray_setFilmFlushCallback;
+        yafaray_setFilmHighlightCallback;
         yafaray_removeOutput;
         yafaray_clearOutputs;
         yafaray_clearAll;

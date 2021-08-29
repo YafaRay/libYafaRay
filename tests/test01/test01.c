@@ -227,16 +227,6 @@ int main()
 	yafaray_createOutput(yi, "output1_tga", YAFARAY_BOOL_TRUE);
 	yafaray_paramsClearAll(yi);
 
-	/* Creating callback output */
-	yafaray_paramsSetString(yi, "type", "callback_output");
-	yafaray_createOutput(yi, "test_callback_output", YAFARAY_BOOL_TRUE);
-	yafaray_paramsClearAll(yi);
-	yafaray_setOutputInitCallback(yi, "test_callback_output", initCallback, (void *) &result_image);
-	yafaray_setOutputPutPixelCallback(yi, "test_callback_output", putPixelCallback, (void *) &result_image);
-	yafaray_setOutputFlushAreaCallback(yi, "test_callback_output", flushAreaCallback, (void *) &result_image);
-	yafaray_setOutputFlushCallback(yi, "test_callback_output", flushCallback, (void *) &result_image);
-	yafaray_setOutputHighlightCallback(yi, "test_callback_output", highlightCallback, (void *) &result_image);
-
 	/* Creating surface integrator */
 	/*yafaray_paramsSetString(yi, "type", "directlighting");*/
 	yafaray_paramsSetString(yi, "type", "photonmapping");
@@ -247,6 +237,13 @@ int main()
 	yafaray_paramsSetString(yi, "type", "none");
 	yafaray_createIntegrator(yi, "volintegr");
 	yafaray_paramsClearAll(yi);
+
+	/* Setting up Film callbacks, must be done before yafaray_setupRender() */
+	yafaray_setFilmInitCallback(yi, initCallback, (void *) &result_image);
+	yafaray_setFilmPutPixelCallback(yi, putPixelCallback, (void *) &result_image);
+	yafaray_setFilmFlushAreaCallback(yi, flushAreaCallback, (void *) &result_image);
+	yafaray_setFilmFlushCallback(yi, flushCallback, (void *) &result_image);
+	yafaray_setFilmHighlightCallback(yi, highlightCallback, (void *) &result_image);
 
 	/* Setting up render parameters */
 	yafaray_paramsSetString(yi, "integrator_name", "surfintegr");

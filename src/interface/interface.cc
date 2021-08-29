@@ -235,7 +235,7 @@ VolumeRegion *Interface::createVolumeRegion(const char *name) noexcept { return 
 RenderView *Interface::createRenderView(const char *name) noexcept { return scene_->createRenderView(name, *params_); }
 Image *Interface::createImage(const char *name) noexcept { return scene_->createImage(name, *params_).get(); }
 
-ColorOutput *Interface::createOutput(const char *name, bool auto_delete, void *callback_user_data, yafaray_OutputPutpixelCallback_t output_putpixel_callback, yafaray_OutputFlushAreaCallback_t output_flush_area_callback, yafaray_OutputFlushCallback_t output_flush_callback) noexcept
+ColorOutput *Interface::createOutput(const char *name, bool auto_delete, void *callback_user_data, yafaray_FilmPutpixelCallback_t output_putpixel_callback, yafaray_FilmFlushAreaCallback_t output_flush_area_callback, yafaray_FilmFlushCallback_t output_flush_callback) noexcept
 {
 	return scene_->createOutput(name, *params_, auto_delete, callback_user_data, output_putpixel_callback, output_flush_area_callback, output_flush_callback);
 }
@@ -246,34 +246,29 @@ ColorOutput *Interface::createOutput(const char *name, ColorOutput *output, bool
 	return scene_->createOutput(name, std::move(output_unique), auto_delete);
 }
 
-void Interface::setOutputInitCallback(const char *output_name, yafaray_OutputInitCallback_t init_callback, void *init_callback_user_data) noexcept
+void Interface::setFilmInitCallback(yafaray_FilmInitCallback_t init_callback, void *init_callback_user_data) noexcept
 {
-	ColorOutput *output = scene_->getOutput(output_name);
-	if(output) output->setInitCallback(init_callback_user_data, init_callback);
+	if(scene_) scene_->setFilmInitCallback(init_callback, init_callback_user_data);
 }
 
-void Interface::setOutputPutPixelCallback(const char *output_name, yafaray_OutputPutpixelCallback_t putpixel_callback, void *putpixel_callback_user_data) noexcept
+void Interface::setFilmPutPixelCallback(yafaray_FilmPutpixelCallback_t putpixel_callback, void *putpixel_callback_user_data) noexcept
 {
-	ColorOutput *output = scene_->getOutput(output_name);
-	if(output) output->setPutPixelCallback(putpixel_callback_user_data, putpixel_callback);
+	if(scene_) scene_->setFilmPutPixelCallback(putpixel_callback, putpixel_callback_user_data);
 }
 
-void Interface::setOutputFlushAreaCallback(const char *output_name, yafaray_OutputFlushAreaCallback_t flush_area_callback, void *flush_area_callback_user_data) noexcept
+void Interface::setFilmFlushAreaCallback(yafaray_FilmFlushAreaCallback_t flush_area_callback, void *flush_area_callback_user_data) noexcept
 {
-	ColorOutput *output = scene_->getOutput(output_name);
-	if(output) output->setFlushAreaCallback(flush_area_callback_user_data, flush_area_callback);
+	if(scene_) scene_->setFilmFlushAreaCallback(flush_area_callback, flush_area_callback_user_data);
 }
 
-void Interface::setOutputFlushCallback(const char *output_name, yafaray_OutputFlushCallback_t flush_callback, void *flush_callback_user_data) noexcept
+void Interface::setFilmFlushCallback(yafaray_FilmFlushCallback_t flush_callback, void *flush_callback_user_data) noexcept
 {
-	ColorOutput *output = scene_->getOutput(output_name);
-	if(output) output->setFlushCallback(flush_callback_user_data, flush_callback);
+	if(scene_) scene_->setFilmFlushCallback(flush_callback, flush_callback_user_data);
 }
 
-void Interface::setOutputHighlightCallback(const char *output_name, yafaray_OutputHighlightCallback_t highlight_callback, void *highlight_callback_user_data) noexcept
+void Interface::setFilmHighlightCallback(yafaray_FilmHighlightCallback_t highlight_callback, void *highlight_callback_user_data) noexcept
 {
-	ColorOutput *output = scene_->getOutput(output_name);
-	if(output) output->setHighlightCallback(highlight_callback_user_data, highlight_callback);
+	if(scene_) scene_->setFilmHighlightCallback(highlight_callback, highlight_callback_user_data);
 }
 
 int Interface::getSceneFilmWidth() const noexcept

@@ -216,29 +216,29 @@ yafaray_bool_t yafaray_createOutput(yafaray_Interface_t *interface, const char *
 	return static_cast<yafaray_bool_t>(reinterpret_cast<yafaray::Interface *>(interface)->createOutput(name, auto_delete) != nullptr);
 }
 
-void yafaray_setOutputInitCallback(yafaray_Interface_t *interface, const char *output_name, yafaray_OutputInitCallback_t init_callback, void *init_callback_user_data)
+void yafaray_setFilmInitCallback(yafaray_Interface_t *interface, yafaray_FilmInitCallback_t init_callback, void *init_callback_user_data)
 {
-	reinterpret_cast<yafaray::Interface *>(interface)->setOutputInitCallback(output_name, init_callback, init_callback_user_data);
+	reinterpret_cast<yafaray::Interface *>(interface)->setFilmInitCallback(init_callback, init_callback_user_data);
 }
 
-void yafaray_setOutputPutPixelCallback(yafaray_Interface_t *interface, const char *output_name, yafaray_OutputPutpixelCallback_t putpixel_callback, void *putpixel_callback_user_data)
+void yafaray_setFilmPutPixelCallback(yafaray_Interface_t *interface, yafaray_FilmPutpixelCallback_t putpixel_callback, void *putpixel_callback_user_data)
 {
-	reinterpret_cast<yafaray::Interface *>(interface)->setOutputPutPixelCallback(output_name, putpixel_callback, putpixel_callback_user_data);
+	reinterpret_cast<yafaray::Interface *>(interface)->setFilmPutPixelCallback(putpixel_callback, putpixel_callback_user_data);
 }
 
-void yafaray_setOutputFlushAreaCallback(yafaray_Interface_t *interface, const char *output_name, yafaray_OutputFlushAreaCallback_t flush_area_callback, void *flush_area_callback_user_data)
+void yafaray_setFilmFlushAreaCallback(yafaray_Interface_t *interface, yafaray_FilmFlushAreaCallback_t flush_area_callback, void *flush_area_callback_user_data)
 {
-	reinterpret_cast<yafaray::Interface *>(interface)->setOutputFlushAreaCallback(output_name, flush_area_callback, flush_area_callback_user_data);
+	reinterpret_cast<yafaray::Interface *>(interface)->setFilmFlushAreaCallback(flush_area_callback, flush_area_callback_user_data);
 }
 
-void yafaray_setOutputFlushCallback(yafaray_Interface_t *interface, const char *output_name, yafaray_OutputFlushCallback_t flush_callback, void *flush_callback_user_data)
+void yafaray_setFilmFlushCallback(yafaray_Interface_t *interface, yafaray_FilmFlushCallback_t flush_callback, void *flush_callback_user_data)
 {
-	reinterpret_cast<yafaray::Interface *>(interface)->setOutputFlushCallback(output_name, flush_callback, flush_callback_user_data);
+	reinterpret_cast<yafaray::Interface *>(interface)->setFilmFlushCallback(flush_callback, flush_callback_user_data);
 }
 
-void yafaray_setOutputHighlightCallback(yafaray_Interface_t *interface, const char *output_name, yafaray_OutputHighlightCallback_t highlight_callback, void *highlight_callback_user_data)
+void yafaray_setFilmHighlightCallback(yafaray_Interface_t *interface, yafaray_FilmHighlightCallback_t highlight_callback, void *highlight_callback_user_data)
 {
-	reinterpret_cast<yafaray::Interface *>(interface)->setOutputHighlightCallback(output_name, highlight_callback, highlight_callback_user_data);
+	reinterpret_cast<yafaray::Interface *>(interface)->setFilmHighlightCallback(highlight_callback, highlight_callback_user_data);
 }
 
 int yafaray_getSceneFilmWidth(const yafaray_Interface_t *interface)

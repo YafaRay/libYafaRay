@@ -31,7 +31,6 @@
 #include "common/timer.h"
 #include "color/color_layers.h"
 #include "math/filter.h"
-#include "math/interpolation.h"
 
 #ifdef HAVE_OPENCV
 #include <opencv2/photo/photo.hpp>
@@ -231,6 +230,19 @@ void ImageFilm::init(RenderControl &render_control, int num_passes)
 		if(film_load_save_.mode_ == FilmLoadSave::LoadAndSave) imageFilmLoadAllInFolder(render_control);	//Load all the existing Film in the images output folder, combining them together. It will load only the Film files with the same "base name" as the output image film (including file name, computer node name and frame) to allow adding samples to animations.
 		if(film_load_save_.mode_ == FilmLoadSave::LoadAndSave || film_load_save_.mode_ == FilmLoadSave::Save) imageFilmFileBackup(); //If the imageFilm is set to Save, at the start rename the previous film file as a "backup" just in case the user has made a mistake and wants to get the previous film back.
 	}
+
+	if(film_init_callback_)
+	{
+		for(const auto &render_view : *render_views_)
+		{
+			film_init_callback_(render_view.second->getName().c_str(), "", width_, height_, 0, film_init_callback_user_data_);
+		}
+		const Layers &layers = layers_.getLayersWithExportedImages();
+		for(const auto &layer : layers)
+		{
+			film_init_callback_("", layer.second.getExportedImageName().c_str(), width_, height_, layer.second.getNumExportedChannels(), film_init_callback_user_data_);
+		}
+	}
 }
 
 int ImageFilm::nextPass(const RenderView *render_view, RenderControl &render_control, bool adaptive_aa, std::string integrator_name, const EdgeToonParams &edge_params, bool skip_nrender_layer)
@@ -414,6 +426,15 @@ int ImageFilm::nextPass(const RenderView *render_view, RenderControl &render_con
 						{
 							if(output.second && !output.second->isImageOutput()) output.second->putPixel(x, y, color_layers);
 						}
+						if(film_put_pixel_callback_)
+						{
+							for(const auto &color_layer : color_layers)
+							{
+								const Rgba &col = color_layer.second.color_;
+								const Layer::Type &layer_type = color_layer.second.layer_type_;
+								film_put_pixel_callback_(render_view->getName().c_str(), Layer::getTypeName(layer_type).c_str(), x, y, col.r_, col.g_, col.b_, col.a_, film_put_pixel_callback_user_data_);
+							}
+						}
 					}
 				}
 			}
@@ -424,13 +445,7 @@ int ImageFilm::nextPass(const RenderView *render_view, RenderControl &render_con
 		n_resample = height_ * width_;
 	}
 
-	if(render_control.isInteractive())
-	{
-		for(auto &output : outputs_)
-		{
-			if(output.second && !output.second->isImageOutput()) output.second->flush(render_control);
-		}
-	}
+	if(film_flush_callback_) film_flush_callback_(render_view->getName().c_str(), film_flush_callback_user_data_);
 
 	if(render_control.resumed()) pass_string << "Film loaded + ";
 
@@ -449,7 +464,7 @@ int ImageFilm::nextPass(const RenderView *render_view, RenderControl &render_con
 	return n_resample;
 }
 
-bool ImageFilm::nextArea(const RenderControl &render_control, RenderArea &a)
+bool ImageFilm::nextArea(const RenderView *render_view, const RenderControl &render_control, RenderArea &a)
 {
 	if(cancel_) return false;
 
@@ -469,15 +484,11 @@ bool ImageFilm::nextArea(const RenderControl &render_control, RenderArea &a)
 			a.sy_0_ = a.y_ + ifilterw;
 			a.sy_1_ = a.y_ + a.h_ - ifilterw;
 
-			if(render_control.isInteractive())
+			if(film_highlight_callback_)
 			{
-				out_mutex_.lock();
-				int end_x = a.x_ + a.w_, end_y = a.y_ + a.h_;
-				for(auto &output : outputs_)
-				{
-					if(output.second && !output.second->isImageOutput()) output.second->highlightArea(a.id_, a.x_, a.y_, end_x, end_y);
-				}
-				out_mutex_.unlock();
+				const int end_x = a.x_ + a.w_;
+				const int end_y = a.y_ + a.h_;
+				film_highlight_callback_(render_view->getName().c_str(), a.id_, a.x_, a.y_, end_x, end_y, film_highlight_callback_user_data_);
 			}
 			return true;
 		}
@@ -549,8 +560,20 @@ void ImageFilm::finishArea(const RenderView *render_view, RenderControl &render_
 					if(!output.second->putPixel(i, j, color_layers)) cancel_ = true;
 				}
 			}
+
+			if(film_put_pixel_callback_)
+			{
+				for(const auto &color_layer : color_layers)
+				{
+					const Rgba &col = color_layer.second.color_;
+					const Layer::Type &layer_type = color_layer.second.layer_type_;
+					film_put_pixel_callback_(render_view->getName().c_str(), Layer::getTypeName(layer_type).c_str(), i, j, col.r_, col.g_, col.b_, col.a_, film_put_pixel_callback_user_data_);
+				}
+			}
 		}
 	}
+
+	if(film_flush_area_callback_) film_flush_area_callback_(render_view->getName().c_str(), a.id_, a.x_, a.y_, end_x + cx_0_, end_y + cy_0_, film_flush_area_callback_user_data_);
 
 	if(render_control.isInteractive())
 	{
@@ -657,8 +680,20 @@ void ImageFilm::flush(const RenderView *render_view, const RenderControl &render
 			{
 				if(output.second) output.second->putPixel(i, j, color_layers);
 			}
+
+			if(film_put_pixel_callback_)
+			{
+				for(const auto &color_layer : color_layers)
+				{
+					const Rgba &col = color_layer.second.color_;
+					const Layer::Type &layer_type = color_layer.second.layer_type_;
+					film_put_pixel_callback_(render_view->getName().c_str(), Layer::getTypeName(layer_type).c_str(), i, j, col.r_, col.g_, col.b_, col.a_, film_put_pixel_callback_user_data_);
+				}
+			}
 		}
 	}
+
+	if(film_flush_callback_) film_flush_callback_(render_view->getName().c_str(), film_flush_callback_user_data_);
 
 	for(auto &output : outputs_)
 	{
@@ -1169,6 +1204,36 @@ void ImageFilm::imageFilmFileBackup() const
 	if(progress_bar_) progress_bar_->setTag(old_tag);
 }
 
+void ImageFilm::setFilmInitCallback(yafaray_FilmInitCallback_t init_callback, void *callback_user_data)
+{
+	film_init_callback_ = init_callback;
+	film_init_callback_user_data_ = callback_user_data;
+
+}
+
+void ImageFilm::setFilmPutPixelCallback(yafaray_FilmPutpixelCallback_t put_pixel_callback, void *callback_user_data)
+{
+	film_put_pixel_callback_ = put_pixel_callback;
+	film_put_pixel_callback_user_data_ = callback_user_data;
+}
+
+void ImageFilm::setFilmFlushAreaCallback(yafaray_FilmFlushAreaCallback_t flush_area_callback, void *callback_user_data)
+{
+	film_flush_area_callback_ = flush_area_callback;
+	film_flush_area_callback_user_data_ = callback_user_data;
+}
+
+void ImageFilm::setFilmFlushCallback(yafaray_FilmFlushCallback_t flush_callback, void *callback_user_data)
+{
+	film_flush_callback_ = flush_callback;
+	film_flush_callback_user_data_ = callback_user_data;
+}
+
+void ImageFilm::setFilmHighlightCallback(yafaray_FilmHighlightCallback_t highlight_callback, void *callback_user_data)
+{
+	film_highlight_callback_ = highlight_callback;
+	film_highlight_callback_user_data_ = callback_user_data;
+}
 
 //The next edge detection, debug faces/object edges and toon functions will only work if YafaRay is built with OpenCV support
 #ifdef HAVE_OPENCV

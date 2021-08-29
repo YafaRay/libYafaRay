@@ -19,7 +19,6 @@
 target_sources(libyafaray4
 	PRIVATE
 		output.cc
-		output_callback.cc
 		output_debug.cc
 		output_image.cc
 )

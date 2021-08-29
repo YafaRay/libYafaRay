@@ -53,17 +53,10 @@ class ColorOutput
 		void setAutoDelete(bool value) { auto_delete_ = value; }
 		void setLoggingParams(const ParamMap &params);
 		void setBadgeParams(const ParamMap &params);
-		void setInitCallback(void *callback_user_data, yafaray_OutputInitCallback_t init_callback);
-		void setPutPixelCallback(void *callback_user_data, yafaray_OutputPutpixelCallback_t put_pixel_callback);
-		void setFlushAreaCallback(void *callback_user_data, yafaray_OutputFlushAreaCallback_t flush_area_callback);
-		void setFlushCallback(void *callback_user_data, yafaray_OutputFlushCallback_t flush_callback);
-		void setHighlightCallback(void *callback_user_data, yafaray_OutputHighlightCallback_t highlight_callback);
 		virtual bool putPixel(int x, int y, const ColorLayer &color_layer) = 0;
 		virtual void flush(const RenderControl &render_control) = 0;
 		virtual void flushArea(int area_id, int x_0, int y_0, int x_1, int y_1) { }
-		virtual void highlightArea(int area_id, int x_0, int y_0, int x_1, int y_1) { }
 		virtual bool isImageOutput() const { return false; }
-		virtual bool isPreview() const { return false; }
 		virtual void init(int width, int height, const Layers *layers, const std::map<std::string, std::unique_ptr<RenderView>> *render_views);
 		bool putPixel(int x, int y, const ColorLayers &color_layers);
 		void setRenderView(const RenderView *render_view) { current_render_view_ = render_view; }
@@ -96,16 +89,6 @@ class ColorOutput
 		const RenderView *current_render_view_ = nullptr;
 		const std::map<std::string, std::unique_ptr<RenderView>> *render_views_ = nullptr;
 		const Layers *layers_ = nullptr;
-		yafaray_OutputInitCallback_t init_callback_ = nullptr;
-		void *init_callback_user_data_ = nullptr;
-		yafaray_OutputPutpixelCallback_t put_pixel_callback_ = nullptr;
-		void *put_pixel_callback_user_data_ = nullptr;
-		yafaray_OutputFlushAreaCallback_t flush_area_callback_ = nullptr;
-		void *flush_area_callback_user_data_ = nullptr;
-		yafaray_OutputFlushCallback_t flush_callback_ = nullptr;
-		void *flush_callback_user_data_ = nullptr;
-		yafaray_OutputHighlightCallback_t highlight_callback_ = nullptr;
-		void *highlight_callback_user_data_ = nullptr;
 		Logger &logger_;
 };
 

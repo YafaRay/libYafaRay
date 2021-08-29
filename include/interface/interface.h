@@ -99,13 +99,13 @@ class Interface
 		virtual VolumeRegion *createVolumeRegion(const char *name) noexcept;
 		virtual RenderView *createRenderView(const char *name) noexcept;
 		virtual Image *createImage(const char *name) noexcept;
-		virtual ColorOutput *createOutput(const char *name, bool auto_delete = true, void *callback_user_data = nullptr, yafaray_OutputPutpixelCallback_t output_putpixel_callback = nullptr, yafaray_OutputFlushAreaCallback_t output_flush_area_callback = nullptr, yafaray_OutputFlushCallback_t output_flush_callback = nullptr) noexcept; //!< ColorOutput creation, usually for internally-owned outputs that are destroyed when the scene is deleted or when libYafaRay instance is closed. If the client wants to keep ownership, it can set the "auto_delete" to false.
+		virtual ColorOutput *createOutput(const char *name, bool auto_delete = true, void *callback_user_data = nullptr, yafaray_FilmPutpixelCallback_t output_putpixel_callback = nullptr, yafaray_FilmFlushAreaCallback_t output_flush_area_callback = nullptr, yafaray_FilmFlushCallback_t output_flush_callback = nullptr) noexcept; //!< ColorOutput creation, usually for internally-owned outputs that are destroyed when the scene is deleted or when libYafaRay instance is closed. If the client wants to keep ownership, it can set the "auto_delete" to false.
 		virtual ColorOutput *createOutput(const char *name, ColorOutput *output, bool auto_delete = false) noexcept; //!< ColorOutput creation, usually for externally client-owned and client-supplied outputs that are *NOT* destroyed when the scene is deleted or when libYafaRay instance is closed. If the client wants to transfer ownership to libYafaRay, it can set the "auto_delete" to true.
-		void setOutputInitCallback(const char *output_name, yafaray_OutputInitCallback_t init_callback, void *init_callback_user_data) noexcept;
-		void setOutputPutPixelCallback(const char *output_name, yafaray_OutputPutpixelCallback_t putpixel_callback, void *putpixel_callback_user_data) noexcept;
-		void setOutputFlushAreaCallback(const char *output_name, yafaray_OutputFlushAreaCallback_t flush_area_callback, void *flush_area_callback_user_data) noexcept;
-		void setOutputFlushCallback(const char *output_name, yafaray_OutputFlushCallback_t flush_callback, void *flush_callback_user_data) noexcept;
-		void setOutputHighlightCallback(const char *output_name, yafaray_OutputHighlightCallback_t highlight_callback, void *highlight_callback_user_data) noexcept;
+		void setFilmInitCallback(yafaray_FilmInitCallback_t init_callback, void *init_callback_user_data) noexcept;
+		void setFilmPutPixelCallback(yafaray_FilmPutpixelCallback_t putpixel_callback, void *putpixel_callback_user_data) noexcept;
+		void setFilmFlushAreaCallback(yafaray_FilmFlushAreaCallback_t flush_area_callback, void *flush_area_callback_user_data) noexcept;
+		void setFilmFlushCallback(yafaray_FilmFlushCallback_t flush_callback, void *flush_callback_user_data) noexcept;
+		void setFilmHighlightCallback(yafaray_FilmHighlightCallback_t highlight_callback, void *highlight_callback_user_data) noexcept;
 		bool removeOutput(const char *name) noexcept;
 		virtual void clearOutputs() noexcept;
 		virtual void clearAll() noexcept;

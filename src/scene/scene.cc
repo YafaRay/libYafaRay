@@ -587,7 +587,7 @@ std::shared_ptr<T> Scene::createMapItem(Logger &logger, const std::string &name,
 	return nullptr;
 }
 
-ColorOutput *Scene::createOutput(const std::string &name, ParamMap &params, bool auto_delete, void *callback_user_data, yafaray_OutputPutpixelCallback_t output_putpixel_callback, yafaray_OutputFlushAreaCallback_t output_flush_area_callback, yafaray_OutputFlushCallback_t output_flush_callback)
+ColorOutput *Scene::createOutput(const std::string &name, ParamMap &params, bool auto_delete, void *callback_user_data, yafaray_FilmPutpixelCallback_t output_putpixel_callback, yafaray_FilmFlushAreaCallback_t output_flush_area_callback, yafaray_FilmFlushCallback_t output_flush_callback)
 {
 	std::string pname = "ColorOutput";
 	params["name"] = std::string(name);
@@ -786,6 +786,13 @@ bool Scene::setupSceneRenderParams(Scene &scene, const ParamMap &params)
 	image_film_->setBaseSamplingOffset(adv_base_sampling_offset);
 	image_film_->setComputerNode(adv_computer_node);
 	image_film_->setBackgroundResampling(background_resampling);
+	image_film_->setFilmInitCallback(film_init_callback_, film_init_callback_user_data_);
+	image_film_->setFilmPutPixelCallback(film_put_pixel_callback_, film_put_pixel_callback_user_data_);
+	image_film_->setFilmHighlightCallback(film_highlight_callback_, film_highlight_callback_user_data_);
+	image_film_->setFilmFlushAreaCallback(film_flush_area_callback_, film_flush_area_callback_user_data_);
+	image_film_->setFilmFlushCallback(film_flush_callback_, film_flush_callback_user_data_);
+	image_film_->setRenderViews(&render_views_);
+
 	return true;
 }
 
@@ -1002,6 +1009,37 @@ void Scene::setEdgeToonParams(const ParamMap &params)
 	edge_params.face_smoothness_ = faces_edge_smoothness;
 
 	setEdgeToonParams(edge_params);
+}
+
+void Scene::setFilmInitCallback(yafaray_FilmInitCallback_t init_callback, void *callback_user_data)
+{
+	film_init_callback_ = init_callback;
+	film_init_callback_user_data_ = callback_user_data;
+
+}
+
+void Scene::setFilmPutPixelCallback(yafaray_FilmPutpixelCallback_t put_pixel_callback, void *callback_user_data)
+{
+	film_put_pixel_callback_ = put_pixel_callback;
+	film_put_pixel_callback_user_data_ = callback_user_data;
+}
+
+void Scene::setFilmFlushAreaCallback(yafaray_FilmFlushAreaCallback_t flush_area_callback, void *callback_user_data)
+{
+	film_flush_area_callback_ = flush_area_callback;
+	film_flush_area_callback_user_data_ = callback_user_data;
+}
+
+void Scene::setFilmFlushCallback(yafaray_FilmFlushCallback_t flush_callback, void *callback_user_data)
+{
+	film_flush_callback_ = flush_callback;
+	film_flush_callback_user_data_ = callback_user_data;
+}
+
+void Scene::setFilmHighlightCallback(yafaray_FilmHighlightCallback_t highlight_callback, void *callback_user_data)
+{
+	film_highlight_callback_ = highlight_callback;
+	film_highlight_callback_user_data_ = callback_user_data;
 }
 
 END_YAFARAY

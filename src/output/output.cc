@@ -20,7 +20,6 @@
 #include "output/output.h"
 #include "output/output_image.h"
 #include "output/output_debug.h"
-#include "output/output_callback.h"
 #include "color/color_layers.h"
 #include "scene/scene.h"
 #include "common/logger.h"
@@ -39,7 +38,6 @@ UniquePtr_t <ColorOutput> ColorOutput::factory(Logger &logger, const ParamMap &p
 	params.getParam("type", type);
 	if(type == "image_output") return ImageOutput::factory(logger, params, scene);
 	else if(type == "debug_output") return DebugOutput::factory(logger, params, scene);
-	else if(type == "callback_output") return CallbackOutput::factory(logger, params, scene);
 	else return nullptr;
 }
 
@@ -109,37 +107,6 @@ void ColorOutput::setLoggingParams(const ParamMap &params)
 void ColorOutput::setBadgeParams(const ParamMap &params)
 {
 	badge_.setParams(params);
-}
-
-void ColorOutput::setInitCallback(void *callback_user_data, yafaray_OutputInitCallback_t init_callback)
-{
-	init_callback_ = init_callback;
-	init_callback_user_data_ = callback_user_data;
-
-}
-
-void ColorOutput::setPutPixelCallback(void *callback_user_data, yafaray_OutputPutpixelCallback_t put_pixel_callback)
-{
-	put_pixel_callback_ = put_pixel_callback;
-	put_pixel_callback_user_data_ = callback_user_data;
-}
-
-void ColorOutput::setFlushAreaCallback(void *callback_user_data, yafaray_OutputFlushAreaCallback_t flush_area_callback)
-{
-	flush_area_callback_ = flush_area_callback;
-	flush_area_callback_user_data_ = callback_user_data;
-}
-
-void ColorOutput::setFlushCallback(void *callback_user_data, yafaray_OutputFlushCallback_t flush_callback)
-{
-	flush_callback_ = flush_callback;
-	flush_callback_user_data_ = callback_user_data;
-}
-
-void ColorOutput::setHighlightCallback(void *callback_user_data, yafaray_OutputHighlightCallback_t highlight_callback)
-{
-	highlight_callback_ = highlight_callback;
-	highlight_callback_user_data_ = callback_user_data;
 }
 
 END_YAFARAY

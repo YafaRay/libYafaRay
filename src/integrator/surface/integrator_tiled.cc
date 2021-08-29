@@ -50,7 +50,7 @@ void TiledIntegrator::renderWorker(TiledIntegrator *integrator, const Scene *sce
 {
 	RenderArea a;
 
-	while(image_film_->nextArea(render_control, a))
+	while(image_film_->nextArea(render_view, render_control, a))
 	{
 		if(render_control.canceled()) break;
 		integrator->renderTile(a, render_view, render_control, samples, offset, adaptive, thread_id, aa_pass);

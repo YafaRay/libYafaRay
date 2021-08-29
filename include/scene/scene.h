@@ -163,7 +163,7 @@ class Scene
 		VolumeRegion *createVolumeRegion(const std::string &name, ParamMap &params);
 		RenderView *createRenderView(const std::string &name, ParamMap &params);
 		std::shared_ptr<Image> createImage(const std::string &name, ParamMap &params);
-		ColorOutput *createOutput(const std::string &name, ParamMap &params, bool auto_delete = true, void *callback_user_data = nullptr, yafaray_OutputPutpixelCallback_t output_putpixel_callback = nullptr, yafaray_OutputFlushAreaCallback_t output_flush_area_callback = nullptr, yafaray_OutputFlushCallback_t output_flush_callback = nullptr);
+		ColorOutput *createOutput(const std::string &name, ParamMap &params, bool auto_delete = true, void *callback_user_data = nullptr, yafaray_FilmPutpixelCallback_t output_putpixel_callback = nullptr, yafaray_FilmFlushAreaCallback_t output_flush_area_callback = nullptr, yafaray_FilmFlushCallback_t output_flush_callback = nullptr);
 		ColorOutput *createOutput(const std::string &name, UniquePtr_t<ColorOutput> output, bool auto_delete = true);
 		bool removeOutput(const std::string &name);
 		void clearOutputs();
@@ -190,6 +190,12 @@ class Scene
 		void setMaskParams(const MaskParams &mask_params) { mask_params_ = mask_params; }
 		const EdgeToonParams &getEdgeToonParams() const { return edge_toon_params_; }
 		void setEdgeToonParams(const EdgeToonParams &edge_toon_params) { edge_toon_params_ = edge_toon_params; }
+
+		void setFilmInitCallback(yafaray_FilmInitCallback_t init_callback, void *callback_user_data);
+		void setFilmPutPixelCallback(yafaray_FilmPutpixelCallback_t put_pixel_callback, void *callback_user_data);
+		void setFilmFlushAreaCallback(yafaray_FilmFlushAreaCallback_t flush_area_callback, void *callback_user_data);
+		void setFilmFlushCallback(yafaray_FilmFlushCallback_t flush_callback, void *callback_user_data);
+		void setFilmHighlightCallback(yafaray_FilmHighlightCallback_t highlight_callback, void *callback_user_data);
 
 		VolumeIntegrator *vol_integrator_ = nullptr;
 		float shadow_bias_ = 1.0e-4f;  //shadow bias to apply to shadows to avoid self-shadow artifacts
@@ -248,6 +254,17 @@ class Scene
 		Layers layers_;
 		MaskParams mask_params_;
 		EdgeToonParams edge_toon_params_;
+
+		yafaray_FilmInitCallback_t film_init_callback_ = nullptr;
+		void *film_init_callback_user_data_ = nullptr;
+		yafaray_FilmPutpixelCallback_t film_put_pixel_callback_ = nullptr;
+		void *film_put_pixel_callback_user_data_ = nullptr;
+		yafaray_FilmFlushAreaCallback_t film_flush_area_callback_ = nullptr;
+		void *film_flush_area_callback_user_data_ = nullptr;
+		yafaray_FilmFlushCallback_t film_flush_callback_ = nullptr;
+		void *film_flush_callback_user_data_ = nullptr;
+		yafaray_FilmHighlightCallback_t film_highlight_callback_ = nullptr;
+		void *film_highlight_callback_user_data_ = nullptr;
 };
 
 END_YAFARAY
