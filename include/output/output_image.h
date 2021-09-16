@@ -36,7 +36,7 @@ class ImageOutput final : public ColorOutput
 {
 	public:
 		static UniquePtr_t <ColorOutput> factory(Logger &logger, const ParamMap &params, const Scene &scene);
-		ImageOutput(Logger &logger, const std::string &image_path, int border_x, int border_y, const DenoiseParams denoise_params, const std::string &name = "out", const ColorSpace color_space = ColorSpace::RawManualGamma, float gamma = 1.f, bool with_alpha = true, bool alpha_premultiply = false, bool multi_layer = true);
+		ImageOutput(Logger &logger, const std::string &image_path, const DenoiseParams denoise_params, const std::string &name, const ColorSpace color_space, float gamma, bool with_alpha, bool alpha_premultiply, bool multi_layer);
 		virtual ~ImageOutput() override;
 
 	private:
@@ -52,8 +52,6 @@ class ImageOutput final : public ColorOutput
 		DenoiseParams getDenoiseParams() const { return denoise_params_; }
 
 		std::string image_path_;
-		float border_x_;
-		float border_y_;
 		bool multi_layer_ = true;
 		DenoiseParams denoise_params_;
 		std::unique_ptr<ImageLayers> image_layers_;

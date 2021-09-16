@@ -35,8 +35,6 @@ UniquePtr_t <ColorOutput> ImageOutput::factory(Logger &logger, const ParamMap &p
 {
 	std::string name;
 	std::string image_path;
-	int border_x = 0;
-	int border_y = 0;
 	std::string color_space_str = "Raw_Manual_Gamma";
 	float gamma = 1.f;
 	bool with_alpha = false;
@@ -46,8 +44,6 @@ UniquePtr_t <ColorOutput> ImageOutput::factory(Logger &logger, const ParamMap &p
 
 	params.getParam("name", name);
 	params.getParam("image_path", image_path);
-	params.getParam("border_x", border_x);
-	params.getParam("border_y", border_y);
 	params.getParam("color_space", color_space_str);
 	params.getParam("gamma", gamma);
 	params.getParam("alpha_channel", with_alpha);
@@ -60,13 +56,13 @@ UniquePtr_t <ColorOutput> ImageOutput::factory(Logger &logger, const ParamMap &p
 	params.getParam("denoise_mix", denoise_params.mix_);
 
 	const ColorSpace color_space = Rgb::colorSpaceFromName(color_space_str);
-	auto output = UniquePtr_t<ColorOutput>(new ImageOutput(logger, image_path, border_x, border_y, denoise_params, name, color_space, gamma, with_alpha, alpha_premultiply, multi_layer));
+	auto output = UniquePtr_t<ColorOutput>(new ImageOutput(logger, image_path, denoise_params, name, color_space, gamma, with_alpha, alpha_premultiply, multi_layer));
 	output->setLoggingParams(params);
 	output->setBadgeParams(params);
 	return output;
 }
 
-ImageOutput::ImageOutput(Logger &logger, const std::string &image_path, int border_x, int border_y, const DenoiseParams denoise_params, const std::string &name, const ColorSpace color_space, float gamma, bool with_alpha, bool alpha_premultiply, bool multi_layer) : ColorOutput(logger, name, color_space, gamma, with_alpha, alpha_premultiply), image_path_(image_path), border_x_(border_x), border_y_(border_y), multi_layer_(multi_layer), denoise_params_(denoise_params)
+ImageOutput::ImageOutput(Logger &logger, const std::string &image_path, const DenoiseParams denoise_params, const std::string &name, const ColorSpace color_space, float gamma, bool with_alpha, bool alpha_premultiply, bool multi_layer) : ColorOutput(logger, name, color_space, gamma, with_alpha, alpha_premultiply), image_path_(image_path), multi_layer_(multi_layer), denoise_params_(denoise_params)
 {
 	//Empty
 }
@@ -105,7 +101,7 @@ bool ImageOutput::putPixel(int x, int y, const ColorLayer &color_layer)
 {
 	if(image_layers_)
 	{
-		image_layers_->setColor(x + border_x_, y + border_y_, color_layer);
+		image_layers_->setColor(x, y, color_layer);
 		return true;
 	}
 	else return false;
