@@ -67,23 +67,9 @@ ImageOutput::ImageOutput(Logger &logger, const std::string &image_path, const De
 	//Empty
 }
 
-ImageOutput::~ImageOutput()
-{
-	clearImageLayers();
-}
-
-void ImageOutput::clearImageLayers()
-{
-	if(image_layers_)
-	{
-		image_layers_ = nullptr;
-	}
-}
-
 void ImageOutput::init(int width, int height, const Layers *layers, const std::map<std::string, std::unique_ptr<RenderView>> *render_views)
 {
 	ColorOutput::init(width, height, layers, render_views);
-	clearImageLayers();
 	image_layers_ = std::unique_ptr<ImageLayers>(new ImageLayers());
 
 	const Layers layers_exported = layers_->getLayersWithExportedImages();

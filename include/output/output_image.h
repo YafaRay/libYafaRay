@@ -37,7 +37,6 @@ class ImageOutput final : public ColorOutput
 	public:
 		static UniquePtr_t <ColorOutput> factory(Logger &logger, const ParamMap &params, const Scene &scene);
 		ImageOutput(Logger &logger, const std::string &image_path, const DenoiseParams denoise_params, const std::string &name, const ColorSpace color_space, float gamma, bool with_alpha, bool alpha_premultiply, bool multi_layer);
-		virtual ~ImageOutput() override;
 
 	private:
 		virtual bool putPixel(int x, int y, const ColorLayer &color_layer) override;
@@ -47,7 +46,6 @@ class ImageOutput final : public ColorOutput
 		virtual void init(int width, int height, const Layers *layers, const std::map<std::string, std::unique_ptr<RenderView>> *render_views) override;
 		void saveImageFile(const std::string &filename, const Layer::Type &layer_type, Format *format, const RenderControl &render_control);
 		void saveImageFileMultiChannel(const std::string &filename, Format *format, const RenderControl &render_control);
-		void clearImageLayers();
 		bool denoiseEnabled() const { return denoise_params_.enabled_; }
 
 		std::string image_path_;
