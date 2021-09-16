@@ -49,7 +49,6 @@ class ImageOutput final : public ColorOutput
 		void saveImageFileMultiChannel(const std::string &filename, Format *format, const RenderControl &render_control);
 		void clearImageLayers();
 		bool denoiseEnabled() const { return denoise_params_.enabled_; }
-		DenoiseParams getDenoiseParams() const { return denoise_params_; }
 
 		std::string image_path_;
 		bool multi_layer_ = true;
