@@ -24,7 +24,7 @@
 #include "geometry/primitive.h"
 #include "geometry/axis.h"
 #include "common/param.h"
-#include "output/output.h"
+#include "image/image_output.h"
 #include <thread>
 
 BEGIN_YAFARAY

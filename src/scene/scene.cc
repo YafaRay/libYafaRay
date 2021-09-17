@@ -36,7 +36,7 @@
 #include "render/imagefilm.h"
 #include "format/format.h"
 #include "volume/volume.h"
-#include "output/output.h"
+#include "image/image_output.h"
 #include "render/render_view.h"
 
 BEGIN_YAFARAY
@@ -382,9 +382,9 @@ ShaderNode *Scene::getShaderNode(const std::string &name) const
 	return Scene::findMapItem<ShaderNode>(name, shaders_);
 }
 
-ColorOutput *Scene::getOutput(const std::string &name) const
+ImageOutput *Scene::getOutput(const std::string &name) const
 {
-	return Scene::findMapItem<ColorOutput>(name, outputs_);
+	return Scene::findMapItem<ImageOutput>(name, outputs_);
 }
 
 RenderView *Scene::getRenderView(const std::string &name) const
@@ -399,7 +399,7 @@ std::shared_ptr<Image> Scene::getImage(const std::string &name) const
 
 bool Scene::removeOutput(const std::string &name)
 {
-	ColorOutput *output = getOutput(name);
+	ImageOutput *output = getOutput(name);
 	if(!output) return false;
 	outputs_.erase(name);
 	return true;
@@ -456,9 +456,9 @@ Material *Scene::createMaterial(const std::string &name, ParamMap &params, std::
 	return nullptr;
 }
 
-ColorOutput *Scene::createOutput(const std::string &name, UniquePtr_t<ColorOutput> output, bool auto_delete)
+ImageOutput *Scene::createOutput(const std::string &name, UniquePtr_t<ImageOutput> output, bool auto_delete)
 {
-	return createMapItem<ColorOutput>(logger_, name, "ColorOutput", std::move(output), outputs_, auto_delete);
+	return createMapItem<ImageOutput>(logger_, name, "ColorOutput", std::move(output), outputs_, auto_delete);
 }
 
 template <typename T>
@@ -587,7 +587,7 @@ std::shared_ptr<T> Scene::createMapItem(Logger &logger, const std::string &name,
 	return nullptr;
 }
 
-ColorOutput *Scene::createOutput(const std::string &name, ParamMap &params, bool auto_delete, void *callback_user_data, yafaray_FilmPutpixelCallback_t output_putpixel_callback, yafaray_FilmFlushAreaCallback_t output_flush_area_callback, yafaray_FilmFlushCallback_t output_flush_callback)
+ImageOutput *Scene::createOutput(const std::string &name, ParamMap &params, bool auto_delete, void *callback_user_data, yafaray_FilmPutpixelCallback_t output_putpixel_callback, yafaray_FilmFlushAreaCallback_t output_flush_area_callback, yafaray_FilmFlushCallback_t output_flush_callback)
 {
 	std::string pname = "ColorOutput";
 	params["name"] = std::string(name);
@@ -604,7 +604,7 @@ ColorOutput *Scene::createOutput(const std::string &name, ParamMap &params, bool
 			return nullptr;
 		}
 	}
-	UniquePtr_t<ColorOutput> item = ColorOutput::factory(logger_, params, *this);
+	UniquePtr_t<ImageOutput> item = ImageOutput::factory(logger_, params, *this);
 	if(item)
 	{
 		item->setAutoDelete(auto_delete); //By default all objects will autodelete as usual unique_ptr. If that's not desired, auto_delete can be set to false but then the object class must have the setAutoDelete and isAutoDeleted methods

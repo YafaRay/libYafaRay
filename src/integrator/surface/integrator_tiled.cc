@@ -37,7 +37,7 @@
 #include "sampler/sample.h"
 #include "color/color_layers.h"
 #include "render/render_data.h"
-#include "output/output.h"
+#include "image/image_output.h"
 #include "accelerator/accelerator.h"
 #include "photon/photon.h"
 

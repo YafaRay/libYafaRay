@@ -31,7 +31,7 @@
 #include "common/param.h"
 #include "scene/scene.h"
 #include "light/light.h"
-#include "output/output.h"
+#include "image/image_output.h"
 #include "color/spectral_data.h"
 #include "math/interpolation_curve.h"
 

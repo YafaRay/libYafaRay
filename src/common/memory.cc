@@ -18,7 +18,7 @@
 
 #include "common/memory.h"
 #include "common/logger.h"
-#include "output/output.h"
+#include "image/image_output.h"
 #include "render/progress_bar.h"
 
 BEGIN_YAFARAY
@@ -35,7 +35,7 @@ void CustomDeleter<T>::operator()(T *object)
 	if(object->isAutoDeleted()) delete object;
 }
 
-template struct CustomDeleter<ColorOutput>;
+template struct CustomDeleter<ImageOutput>;
 template struct CustomDeleter<ProgressBar>;
 
 END_YAFARAY

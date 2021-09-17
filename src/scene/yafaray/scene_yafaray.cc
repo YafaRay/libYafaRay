@@ -31,7 +31,7 @@
 #include "shader/shader_node.h"
 #include "render/imagefilm.h"
 #include "volume/volume.h"
-#include "output/output.h"
+#include "image/image_output.h"
 #include "scene/yafaray/object_mesh.h"
 #include "geometry/object_instance.h"
 #include "geometry/uv.h"

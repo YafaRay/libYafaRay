@@ -24,7 +24,7 @@
 #include "common/param.h"
 #include "scene/scene.h"
 #include "light/light.h"
-#include "output/output.h"
+#include "image/image_output.h"
 
 BEGIN_YAFARAY
 

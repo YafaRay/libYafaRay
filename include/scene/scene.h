@@ -45,7 +45,7 @@ class ShaderNode;
 class Object;
 class ImageFilm;
 class Scene;
-class ColorOutput;
+class ImageOutput;
 class ProgressBar;
 class Format;
 class ParamMap;
@@ -146,7 +146,7 @@ class Scene
 		Light *getLight(const std::string &name) const;
 		std::shared_ptr<Background> getBackground(const std::string &name) const;
 		Integrator *getIntegrator(const std::string &name) const;
-		ColorOutput *getOutput(const std::string &name) const;
+		ImageOutput *getOutput(const std::string &name) const;
 		RenderView *getRenderView(const std::string &name) const;
 		std::shared_ptr<Image> getImage(const std::string &name) const;
 		const std::map<std::string, std::unique_ptr<RenderView>> &getRenderViews() const { return render_views_; }
@@ -163,12 +163,12 @@ class Scene
 		VolumeRegion *createVolumeRegion(const std::string &name, ParamMap &params);
 		RenderView *createRenderView(const std::string &name, ParamMap &params);
 		std::shared_ptr<Image> createImage(const std::string &name, ParamMap &params);
-		ColorOutput *createOutput(const std::string &name, ParamMap &params, bool auto_delete = true, void *callback_user_data = nullptr, yafaray_FilmPutpixelCallback_t output_putpixel_callback = nullptr, yafaray_FilmFlushAreaCallback_t output_flush_area_callback = nullptr, yafaray_FilmFlushCallback_t output_flush_callback = nullptr);
-		ColorOutput *createOutput(const std::string &name, UniquePtr_t<ColorOutput> output, bool auto_delete = true);
+		ImageOutput *createOutput(const std::string &name, ParamMap &params, bool auto_delete = true, void *callback_user_data = nullptr, yafaray_FilmPutpixelCallback_t output_putpixel_callback = nullptr, yafaray_FilmFlushAreaCallback_t output_flush_area_callback = nullptr, yafaray_FilmFlushCallback_t output_flush_callback = nullptr);
+		ImageOutput *createOutput(const std::string &name, UniquePtr_t<ImageOutput> output, bool auto_delete = true);
 		bool removeOutput(const std::string &name);
 		void clearOutputs();
-		std::map<std::string, UniquePtr_t<ColorOutput>> &getOutputs() { return outputs_; }
-		const std::map<std::string, UniquePtr_t<ColorOutput>> &getOutputs() const { return outputs_; }
+		std::map<std::string, UniquePtr_t<ImageOutput>> &getOutputs() { return outputs_; }
+		const std::map<std::string, UniquePtr_t<ImageOutput>> &getOutputs() const { return outputs_; }
 		bool setupSceneRenderParams(Scene &scene, const ParamMap &params);
 		bool setupSceneProgressBar(Scene &scene, std::shared_ptr<ProgressBar> pb = nullptr);
 		void defineLayer(const ParamMap &params);
@@ -248,7 +248,7 @@ class Scene
 		std::map<std::string, std::unique_ptr<Integrator>> integrators_;
 		std::map<std::string, std::unique_ptr<ShaderNode>> shaders_;
 		std::map<std::string, std::unique_ptr<VolumeRegion>> volume_regions_;
-		std::map<std::string, UniquePtr_t<ColorOutput>> outputs_;
+		std::map<std::string, UniquePtr_t<ImageOutput>> outputs_;
 		std::map<std::string, std::unique_ptr<RenderView>> render_views_;
 		std::map<std::string, std::shared_ptr<Image>> images_;
 		Layers layers_;

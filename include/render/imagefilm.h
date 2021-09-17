@@ -43,7 +43,7 @@ BEGIN_YAFARAY
 
 class ProgressBar;
 class Scene;
-class ColorOutput;
+class ImageOutput;
 class Rgb;
 class ColorLayers;
 class ParamMap;
@@ -75,7 +75,7 @@ class ImageFilm final
 
 		static std::unique_ptr<ImageFilm> factory(Logger &logger, const ParamMap &params, Scene *scene);
 		/*! imageFilm_t Constructor */
-		ImageFilm(Logger &logger, int width, int height, int xstart, int ystart, int num_threads, RenderControl &render_control, const Layers &layers, const std::map<std::string, UniquePtr_t<ColorOutput>> &outputs, float filter_size = 1.0, FilterType filt = FilterType::Box,
+		ImageFilm(Logger &logger, int width, int height, int xstart, int ystart, int num_threads, RenderControl &render_control, const Layers &layers, const std::map<std::string, UniquePtr_t<ImageOutput>> &outputs, float filter_size = 1.0, FilterType filt = FilterType::Box,
 				  bool show_sam_mask = false, int t_size = 32,
 				  ImageSplitter::TilesOrderType tiles_order_type = ImageSplitter::Linear);
 		/*! Initialize imageFilm for new rendering, i.e. set pixels black etc */
@@ -178,7 +178,7 @@ class ImageFilm final
 		int num_density_samples_ = 0;
 		AaNoiseParams aa_noise_params_;
 		const Layers &layers_;
-		const std::map<std::string, UniquePtr_t<ColorOutput>> &outputs_;
+		const std::map<std::string, UniquePtr_t<ImageOutput>> &outputs_;
 		std::unique_ptr<ImageSplitter> splitter_;
 		std::shared_ptr<ProgressBar> progress_bar_;
 

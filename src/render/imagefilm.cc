@@ -22,7 +22,7 @@
 
 #include "render/imagefilm.h"
 #include "common/logger.h"
-#include "output/output.h"
+#include "image/image_output.h"
 #include "format/format.h"
 #include "scene/scene.h"
 #include "common/file.h"
@@ -128,7 +128,7 @@ std::unique_ptr<ImageFilm> ImageFilm::factory(Logger &logger, const ParamMap &pa
 	return film;
 }
 
-ImageFilm::ImageFilm(Logger &logger, int width, int height, int xstart, int ystart, int num_threads, RenderControl &render_control, const Layers &layers, const std::map<std::string, UniquePtr_t<ColorOutput>> &outputs, float filter_size, FilterType filt, bool show_sam_mask, int t_size, ImageSplitter::TilesOrderType tiles_order_type) : width_(width), height_(height), cx_0_(xstart), cy_0_(ystart), show_mask_(show_sam_mask), tile_size_(t_size), tiles_order_(tiles_order_type), num_threads_(num_threads), layers_(layers), outputs_(outputs), filterw_(filter_size * 0.5), flags_(width, height), weights_(width, height), logger_(logger)
+ImageFilm::ImageFilm(Logger &logger, int width, int height, int xstart, int ystart, int num_threads, RenderControl &render_control, const Layers &layers, const std::map<std::string, UniquePtr_t<ImageOutput>> &outputs, float filter_size, FilterType filt, bool show_sam_mask, int t_size, ImageSplitter::TilesOrderType tiles_order_type) : width_(width), height_(height), cx_0_(xstart), cy_0_(ystart), show_mask_(show_sam_mask), tile_size_(t_size), tiles_order_(tiles_order_type), num_threads_(num_threads), layers_(layers), outputs_(outputs), filterw_(filter_size * 0.5), flags_(width, height), weights_(width, height), logger_(logger)
 {
 	cx_1_ = xstart + width;
 	cy_1_ = ystart + height;
@@ -266,7 +266,7 @@ int ImageFilm::nextPass(const RenderView *render_view, RenderControl &render_con
 		{
 			for(auto &output : outputs_)
 			{
-				if(output.second && output.second->isImageOutput()) this->flush(render_view, render_control, edge_params, All);
+				if(output.second) this->flush(render_view, render_control, edge_params, All);
 			}
 		}
 
@@ -422,10 +422,7 @@ int ImageFilm::nextPass(const RenderView *render_view, RenderControl &render_con
 							else
 								color_layers(it.first).color_.set(pix_col_bri, 0.7f, mat_sample_factor > 1.f ? 0.7f : pix_col_bri, 1.f);
 						}
-						for(auto &output : outputs_)
-						{
-							if(output.second && !output.second->isImageOutput()) output.second->putPixel(x, y, color_layers);
-						}
+
 						if(film_put_pixel_callback_)
 						{
 							for(const auto &color_layer : color_layers)
@@ -553,13 +550,6 @@ void ImageFilm::finishArea(const RenderView *render_view, RenderControl &render_
 					color_layers(layer_type).color_ = it.second.image_->getColor(i, j).normalized(weight);
 				}
 			}
-			for(auto &output : outputs_)
-			{
-				if(output.second && !output.second->isImageOutput())
-				{
-					if(!output.second->putPixel(i, j, color_layers)) cancel_ = true;
-				}
-			}
 
 			if(film_put_pixel_callback_)
 			{
@@ -574,17 +564,6 @@ void ImageFilm::finishArea(const RenderView *render_view, RenderControl &render_
 	}
 
 	if(film_flush_area_callback_) film_flush_area_callback_(render_view->getName().c_str(), a.id_, a.x_, a.y_, end_x + cx_0_, end_y + cy_0_, film_flush_area_callback_user_data_);
-
-	if(render_control.isInteractive())
-	{
-		for(auto &output : outputs_)
-		{
-			if(output.second && !output.second->isImageOutput())
-			{
-				output.second->flushArea(a.id_, a.x_, a.y_, end_x + cx_0_, end_y + cy_0_);
-			}
-		}
-	}
 
 	if(render_control.inProgress() && !render_control.isPreview())	//avoid saving images/film if we are just rendering material/world/lights preview windows, etc
 	{
@@ -697,11 +676,10 @@ void ImageFilm::flush(const RenderView *render_view, const RenderControl &render
 
 	for(auto &output : outputs_)
 	{
-		if(output.second && (render_control.finished() || output.second->isImageOutput()))
+		if(output.second)
 		{
 			std::stringstream pass_string;
-			pass_string << "Flushing output '" << output.second->getName() << "'";
-			if(output.second->isImageOutput()) pass_string << " and saving image files.";
+			pass_string << "Flushing output '" << output.second->getName() << "' and saving image files.";
 			if(render_control.finished())
 			{
 				std::stringstream ss;

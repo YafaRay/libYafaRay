@@ -23,7 +23,7 @@
 #include "geometry/matrix4.h"
 #include "render/imagefilm.h"
 #include "common/param.h"
-#include "output/output.h"
+#include "image/image_output.h"
 #include "render/progress_bar.h"
 #if defined(_WIN32)
 #include <windows.h>
@@ -235,14 +235,14 @@ VolumeRegion *Interface::createVolumeRegion(const char *name) noexcept { return 
 RenderView *Interface::createRenderView(const char *name) noexcept { return scene_->createRenderView(name, *params_); }
 Image *Interface::createImage(const char *name) noexcept { return scene_->createImage(name, *params_).get(); }
 
-ColorOutput *Interface::createOutput(const char *name, bool auto_delete, void *callback_user_data, yafaray_FilmPutpixelCallback_t output_putpixel_callback, yafaray_FilmFlushAreaCallback_t output_flush_area_callback, yafaray_FilmFlushCallback_t output_flush_callback) noexcept
+ImageOutput *Interface::createOutput(const char *name, bool auto_delete, void *callback_user_data, yafaray_FilmPutpixelCallback_t output_putpixel_callback, yafaray_FilmFlushAreaCallback_t output_flush_area_callback, yafaray_FilmFlushCallback_t output_flush_callback) noexcept
 {
 	return scene_->createOutput(name, *params_, auto_delete, callback_user_data, output_putpixel_callback, output_flush_area_callback, output_flush_callback);
 }
 
-ColorOutput *Interface::createOutput(const char *name, ColorOutput *output, bool auto_delete) noexcept
+ImageOutput *Interface::createOutput(const char *name, ImageOutput *output, bool auto_delete) noexcept
 {
-	auto output_unique = UniquePtr_t<ColorOutput>(output);
+	auto output_unique = UniquePtr_t<ImageOutput>(output);
 	return scene_->createOutput(name, std::move(output_unique), auto_delete);
 }
 

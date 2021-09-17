@@ -1,7 +1,6 @@
 /****************************************************************************
- *
  *      This is part of the libYafaRay package
- *      Copyright (C) 2010 Rodrigo Placencia Vazquez
+ *      Copyright (C) 2006  Mathias Wein
  *
  *      This library is free software; you can redistribute it and/or
  *      modify it under the terms of the GNU Lesser General Public
@@ -16,23 +15,86 @@
  *      You should have received a copy of the GNU Lesser General Public
  *      License along with this library; if not, write to the Free Software
  *      Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
- *
  */
 
-#include "output/output_image.h"
+#include "image/image_output.h"
 #include "color/color_layers.h"
-#include "common/logger.h"
-#include "common/file.h"
-#include "common/param.h"
-#include "format/format.h"
-#include "image/image_layers.h"
-#include "render/render_view.h"
 #include "scene/scene.h"
+#include "common/logger.h"
+#include "common/param.h"
+#include "common/layers.h"
+#include "common/file.h"
+#include "format/format.h"
+#include "render/render_view.h"
 
 BEGIN_YAFARAY
 
-UniquePtr_t <ColorOutput> ImageOutput::factory(Logger &logger, const ParamMap &params, const Scene &scene)
+ImageOutput::ImageOutput(Logger &logger, const std::string &image_path, const DenoiseParams denoise_params, const std::string &name, const ColorSpace color_space, float gamma, bool with_alpha, bool alpha_premultiply, bool multi_layer) : name_(name), color_space_(color_space), gamma_(gamma), with_alpha_(with_alpha), alpha_premultiply_(alpha_premultiply), badge_(logger), logger_(logger), image_path_(image_path), multi_layer_(multi_layer), denoise_params_(denoise_params)
 {
+	if(color_space == RawManualGamma)
+	{
+		//If the gamma is too close to 1.f, or negative, ignore gamma and do a pure linear RGB processing without gamma.
+		if(gamma <= 0 || std::abs(1.f - gamma) <= 0.001)
+		{
+			color_space_ = LinearRgb;
+			gamma_ = 1.f;
+		}
+	}
+}
+
+bool ImageOutput::putPixel(int x, int y, const ColorLayers &color_layers)
+{
+	for(const auto &color_layer : color_layers)
+	{
+		const ColorLayer preprocessed_color_layer = preProcessColor(color_layer.second);
+		putPixel(x, y, preprocessed_color_layer);
+	}
+	return true;
+}
+
+ColorLayer ImageOutput::preProcessColor(const ColorLayer &color_layer)
+{
+	ColorLayer result = color_layer;
+	result.color_.clampRgb0();
+	if(Layer::applyColorSpace(result.layer_type_)) result.color_.colorSpaceFromLinearRgb(color_space_, gamma_);
+	if(alpha_premultiply_) result.color_.alphaPremultiply();
+
+	//To make sure we don't have any weird Alpha values outside the range [0.f, +1.f]
+	if(result.color_.a_ < 0.f) result.color_.a_ = 0.f;
+	else if(result.color_.a_ > 1.f) result.color_.a_ = 1.f;
+
+	return result;
+}
+
+std::string ImageOutput::printBadge(const RenderControl &render_control) const
+{
+	return badge_.print(printDenoiseParams(), render_control);
+}
+
+std::unique_ptr<Image> ImageOutput::generateBadgeImage(const RenderControl &render_control) const
+{
+	return badge_.generateImage(printDenoiseParams(), render_control);
+}
+
+void ImageOutput::setLoggingParams(const ParamMap &params)
+{
+	params.getParam("logging_save_txt", save_log_txt_);
+	params.getParam("logging_save_html", save_log_html_);
+}
+
+void ImageOutput::setBadgeParams(const ParamMap &params)
+{
+	badge_.setParams(params);
+}
+
+UniquePtr_t <ImageOutput> ImageOutput::factory(Logger &logger, const ParamMap &params, const Scene &scene)
+{
+	if(logger.isDebug())
+	{
+		logger.logDebug("**ImageOutput");
+		params.logContents(logger);
+	}
+
 	std::string name;
 	std::string image_path;
 	std::string color_space_str = "Raw_Manual_Gamma";
@@ -56,20 +118,20 @@ UniquePtr_t <ColorOutput> ImageOutput::factory(Logger &logger, const ParamMap &p
 	params.getParam("denoise_mix", denoise_params.mix_);
 
 	const ColorSpace color_space = Rgb::colorSpaceFromName(color_space_str);
-	auto output = UniquePtr_t<ColorOutput>(new ImageOutput(logger, image_path, denoise_params, name, color_space, gamma, with_alpha, alpha_premultiply, multi_layer));
+	auto output = UniquePtr_t<ImageOutput>(new ImageOutput(logger, image_path, denoise_params, name, color_space, gamma, with_alpha, alpha_premultiply, multi_layer));
 	output->setLoggingParams(params);
 	output->setBadgeParams(params);
 	return output;
 }
 
-ImageOutput::ImageOutput(Logger &logger, const std::string &image_path, const DenoiseParams denoise_params, const std::string &name, const ColorSpace color_space, float gamma, bool with_alpha, bool alpha_premultiply, bool multi_layer) : ColorOutput(logger, name, color_space, gamma, with_alpha, alpha_premultiply), image_path_(image_path), multi_layer_(multi_layer), denoise_params_(denoise_params)
-{
-	//Empty
-}
-
 void ImageOutput::init(int width, int height, const Layers *layers, const std::map<std::string, std::unique_ptr<RenderView>> *render_views)
 {
-	ColorOutput::init(width, height, layers, render_views);
+	width_ = width;
+	height_ = height;
+	render_views_ = render_views;
+	layers_ = layers;
+	badge_.setImageWidth(width_);
+	badge_.setImageHeight(height_);
 	image_layers_ = std::unique_ptr<ImageLayers>(new ImageLayers());
 
 	const Layers layers_exported = layers_->getLayersWithExportedImages();
@@ -105,7 +167,7 @@ void ImageOutput::flush(const RenderControl &render_control)
 	ParamMap params;
 	params["type"] = ext;
 	std::unique_ptr<Format> format = Format::factory(logger_, params);
-	
+
 	if(format)
 	{
 		if(multi_layer_ && format->supportsMultiLayer())
@@ -256,5 +318,5 @@ std::string ImageOutput::printDenoiseParams() const
 #endif
 }
 
-END_YAFARAY
 
+END_YAFARAY

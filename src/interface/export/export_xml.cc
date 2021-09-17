@@ -279,7 +279,7 @@ VolumeRegion *XmlExport::createVolumeRegion(const char *name) noexcept
 	return nullptr;
 }
 
-ColorOutput *XmlExport::createOutput(const char *name, bool auto_delete, void *callback_user_data, yafaray_FilmPutpixelCallback_t output_putpixel_callback, yafaray_FilmFlushAreaCallback_t output_flush_area_callback, yafaray_FilmFlushCallback_t output_flush_callback) noexcept
+ImageOutput *XmlExport::createOutput(const char *name, bool auto_delete, void *callback_user_data, yafaray_FilmPutpixelCallback_t output_putpixel_callback, yafaray_FilmFlushAreaCallback_t output_flush_area_callback, yafaray_FilmFlushCallback_t output_flush_callback) noexcept
 {
 	xml_file_ << "\n<output name=\"" << name << "\">\n";
 	writeParamMap(*params_);
