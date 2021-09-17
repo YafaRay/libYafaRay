@@ -243,7 +243,7 @@ bool Scene::render()
 
 		for(auto &output : outputs_)
 		{
-			output.second->init(image_film_->getExportedImageLayers(), &render_views_);
+			output.second->init(image_film_->getWidth(), image_film_->getHeight(), image_film_->getExportedImageLayers(), &render_views_);
 		}
 
 		if(creation_state_.changes_ & CreationState::Flags::CGeom) updateObjects();

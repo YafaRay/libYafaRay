@@ -41,7 +41,7 @@ class ImageOutput final
 		void setLoggingParams(const ParamMap &params);
 		void setBadgeParams(const ParamMap &params);
 		void flush(const RenderControl &render_control);
-		void init(const ImageLayers *exported_image_layers, const std::map<std::string, std::unique_ptr<RenderView>> *render_views);
+		void init(int width, int height, const ImageLayers *exported_image_layers, const std::map<std::string, std::unique_ptr<RenderView>> *render_views);
 		void setRenderView(const RenderView *render_view) { current_render_view_ = render_view; }
 		std::string getName() const { return name_; }
 		std::string printBadge(const RenderControl &render_control) const;
