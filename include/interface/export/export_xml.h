@@ -56,11 +56,11 @@ class XmlExport: public Interface
 		virtual VolumeRegion *createVolumeRegion(const char *name) noexcept override;
 		virtual RenderView *createRenderView(const char *name) noexcept override;
 		virtual Image *createImage(const char *name) noexcept override;
-		virtual ImageOutput *createOutput(const char *name, bool auto_delete = true, void *callback_user_data = nullptr, yafaray_FilmPutpixelCallback_t output_putpixel_callback = nullptr, yafaray_FilmFlushAreaCallback_t output_flush_area_callback = nullptr, yafaray_FilmFlushCallback_t output_flush_callback = nullptr) noexcept override;
+		virtual ImageOutput *createOutput(const char *name, void *callback_user_data = nullptr, yafaray_FilmPutpixelCallback_t output_putpixel_callback = nullptr, yafaray_FilmFlushAreaCallback_t output_flush_area_callback = nullptr, yafaray_FilmFlushCallback_t output_flush_callback = nullptr) noexcept override;
 		virtual void clearAll() noexcept override; //!< clear the whole environment + scene, i.e. free (hopefully) all memory.
 		virtual void clearOutputs() noexcept override { }
 		virtual void setupRender() noexcept override;
-		virtual void render(ProgressBar *pb = nullptr, bool auto_delete_progress_bar = false, ::yafaray_DisplayConsole_t progress_bar_display_console = YAFARAY_DISPLAY_CONSOLE_NORMAL) noexcept override; //!< render the scene...
+		virtual void render(std::shared_ptr<ProgressBar> progress_bar) noexcept override; //!< render the scene...
 		void setXmlColorSpace(std::string color_space_string, float gamma_val) noexcept;
 
 	protected:

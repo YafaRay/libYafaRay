@@ -44,12 +44,9 @@ class ProgressBar
 		virtual std::string getTag() const { return tag_; }
 		virtual float getPercent() const;
 		virtual float getTotalSteps() const { return steps_total_; }
-		void setAutoDelete(bool value) { std::lock_guard<std::mutex> lock_guard(mutx_); auto_delete_ = value; }
-		bool isAutoDeleted() const { return auto_delete_; }
 		std::string getName() const { return "ProgressBar"; }
 
 	protected:
-		bool auto_delete_ = true; //!< If true, the progress bar is owned by libYafaRay and it is automatically deleted when render finishes. Set it to false when the libYafaRay client owns the progress bar.
 		bool colors_enabled_ = true;
 		int steps_total_ = 0;
 		int steps_done_ = 0;

@@ -21,7 +21,6 @@
 #define YAFARAY_MATERIAL_NODE_H
 
 #include "material/material.h"
-#include "common/memory.h"
 #include <map>
 #include <vector>
 

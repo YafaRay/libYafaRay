@@ -23,8 +23,8 @@
 #include "common/yafaray_common.h"
 #include "geometry/intersect_data.h"
 #include "color/color.h"
-#include "common/memory.h"
 #include <vector>
+#include <memory>
 
 BEGIN_YAFARAY
 

@@ -235,15 +235,15 @@ VolumeRegion *Interface::createVolumeRegion(const char *name) noexcept { return 
 RenderView *Interface::createRenderView(const char *name) noexcept { return scene_->createRenderView(name, *params_); }
 Image *Interface::createImage(const char *name) noexcept { return scene_->createImage(name, *params_).get(); }
 
-ImageOutput *Interface::createOutput(const char *name, bool auto_delete, void *callback_user_data, yafaray_FilmPutpixelCallback_t output_putpixel_callback, yafaray_FilmFlushAreaCallback_t output_flush_area_callback, yafaray_FilmFlushCallback_t output_flush_callback) noexcept
+ImageOutput *Interface::createOutput(const char *name, void *callback_user_data, yafaray_FilmPutpixelCallback_t output_putpixel_callback, yafaray_FilmFlushAreaCallback_t output_flush_area_callback, yafaray_FilmFlushCallback_t output_flush_callback) noexcept
 {
-	return scene_->createOutput(name, *params_, auto_delete, callback_user_data, output_putpixel_callback, output_flush_area_callback, output_flush_callback);
+	return scene_->createOutput(name, *params_, callback_user_data, output_putpixel_callback, output_flush_area_callback, output_flush_callback);
 }
 
-ImageOutput *Interface::createOutput(const char *name, ImageOutput *output, bool auto_delete) noexcept
+ImageOutput *Interface::createOutput(const char *name, ImageOutput *output) noexcept
 {
-	auto output_unique = UniquePtr_t<ImageOutput>(output);
-	return scene_->createOutput(name, std::move(output_unique), auto_delete);
+	auto output_unique = std::unique_ptr<ImageOutput>(output);
+	return scene_->createOutput(name, std::move(output_unique));
 }
 
 void Interface::setFilmInitCallback(yafaray_FilmInitCallback_t init_callback, void *init_callback_user_data) noexcept
@@ -374,10 +374,8 @@ void Interface::setupRender() noexcept
 	scene_->setupSceneRenderParams(*scene_, *params_);
 }
 
-void Interface::render(ProgressBar *pb, bool auto_delete_progress_bar, ::yafaray_DisplayConsole_t progress_bar_display_console) noexcept
+void Interface::render(std::shared_ptr<ProgressBar> progress_bar) noexcept
 {
-	std::shared_ptr<ProgressBar> progress_bar(pb, CustomDeleter<ProgressBar>());
-	progress_bar->setAutoDelete(auto_delete_progress_bar);
 	if(!scene_->setupSceneProgressBar(*scene_, progress_bar)) return;
 	scene_->render();
 }

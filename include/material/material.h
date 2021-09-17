@@ -24,7 +24,6 @@
 #include "common/flags.h"
 #include "color/color.h"
 #include "common/visibility.h"
-#include "common/memory.h"
 #include "geometry/vector.h"
 #include "shader/shader_node.h"
 #include <list>

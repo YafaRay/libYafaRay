@@ -22,9 +22,9 @@
 #define YAFARAY_BADGE_H
 
 #include "yafaray_common.h"
-#include "common/memory.h"
 #include "render/render_control.h"
 #include <string>
+#include <memory>
 
 #if HAVE_FREETYPE
 	struct FT_Bitmap_;

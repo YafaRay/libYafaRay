@@ -37,8 +37,7 @@ class Format;
 class ImageOutput final
 {
 	public:
-		static UniquePtr_t <ImageOutput> factory(Logger &logger, const ParamMap &params, const Scene &scene);
-		void setAutoDelete(bool value) { auto_delete_ = value; }
+		static std::unique_ptr<ImageOutput> factory(Logger &logger, const ParamMap &params, const Scene &scene);
 		void setLoggingParams(const ParamMap &params);
 		void setBadgeParams(const ParamMap &params);
 		bool putPixel(int x, int y, const ColorLayer &color_layer);
@@ -46,7 +45,6 @@ class ImageOutput final
 		void init(int width, int height, const Layers *layers, const std::map<std::string, std::unique_ptr<RenderView>> *render_views);
 		bool putPixel(int x, int y, const ColorLayers &color_layers);
 		void setRenderView(const RenderView *render_view) { current_render_view_ = render_view; }
-		bool isAutoDeleted() const { return auto_delete_; }
 		int getWidth() const { return width_; }
 		int getHeight() const { return height_; }
 		std::string getName() const { return name_; }
@@ -66,7 +64,6 @@ class ImageOutput final
 
 		std::string name_ = "out";
 		std::string image_path_;
-		bool auto_delete_ = true; //!< If true, the output is owned by libYafaRay and it is automatically deleted when removed from scene outputs list or when scene is deleted. Set it to false when the libYafaRay client owns the output.
 		int width_ = 0;
 		int height_ = 0;
 		ColorSpace color_space_ = ColorSpace::RawManualGamma;

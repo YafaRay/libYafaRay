@@ -24,7 +24,6 @@
 
 #include "common/yafaray_common.h"
 #include "common/collection.h"
-#include "common/memory.h"
 #include <string>
 #include <vector>
 #include <memory>

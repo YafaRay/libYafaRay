@@ -99,8 +99,8 @@ class Interface
 		virtual VolumeRegion *createVolumeRegion(const char *name) noexcept;
 		virtual RenderView *createRenderView(const char *name) noexcept;
 		virtual Image *createImage(const char *name) noexcept;
-		virtual ImageOutput *createOutput(const char *name, bool auto_delete = true, void *callback_user_data = nullptr, yafaray_FilmPutpixelCallback_t output_putpixel_callback = nullptr, yafaray_FilmFlushAreaCallback_t output_flush_area_callback = nullptr, yafaray_FilmFlushCallback_t output_flush_callback = nullptr) noexcept; //!< ColorOutput creation, usually for internally-owned outputs that are destroyed when the scene is deleted or when libYafaRay instance is closed. If the client wants to keep ownership, it can set the "auto_delete" to false.
-		virtual ImageOutput *createOutput(const char *name, ImageOutput *output, bool auto_delete = false) noexcept; //!< ColorOutput creation, usually for externally client-owned and client-supplied outputs that are *NOT* destroyed when the scene is deleted or when libYafaRay instance is closed. If the client wants to transfer ownership to libYafaRay, it can set the "auto_delete" to true.
+		virtual ImageOutput *createOutput(const char *name, void *callback_user_data = nullptr, yafaray_FilmPutpixelCallback_t output_putpixel_callback = nullptr, yafaray_FilmFlushAreaCallback_t output_flush_area_callback = nullptr, yafaray_FilmFlushCallback_t output_flush_callback = nullptr) noexcept;
+		virtual ImageOutput *createOutput(const char *name, ImageOutput *output) noexcept;
 		void setFilmInitCallback(yafaray_FilmInitCallback_t init_callback, void *init_callback_user_data) noexcept;
 		void setFilmPutPixelCallback(yafaray_FilmPutpixelCallback_t putpixel_callback, void *putpixel_callback_user_data) noexcept;
 		void setFilmFlushAreaCallback(yafaray_FilmFlushAreaCallback_t flush_area_callback, void *flush_area_callback_user_data) noexcept;
@@ -110,7 +110,7 @@ class Interface
 		virtual void clearOutputs() noexcept;
 		virtual void clearAll() noexcept;
 		virtual void setupRender() noexcept;
-		virtual void render(ProgressBar *pb = nullptr, bool auto_delete_progress_bar = false, ::yafaray_DisplayConsole_t progress_bar_display_console = YAFARAY_DISPLAY_CONSOLE_NORMAL) noexcept; //!< render the scene...
+		virtual void render(std::shared_ptr<ProgressBar> progress_bar) noexcept; //!< render the scene...
 		virtual void defineLayer() noexcept;
 		virtual void cancel() noexcept;
 

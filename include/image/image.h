@@ -23,9 +23,9 @@
 #define YAFARAY_IMAGE_H
 
 #include "common/yafaray_common.h"
-#include "common/memory.h"
 #include "color/color.h"
 #include <string>
+#include <memory>
 
 BEGIN_YAFARAY
 

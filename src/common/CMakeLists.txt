@@ -23,7 +23,6 @@ target_sources(libyafaray4
 		layer.cc
 		layers.cc
 		logger.cc
-		memory.cc
 		param.cc
 		sysinfo.cc
 		timer.cc

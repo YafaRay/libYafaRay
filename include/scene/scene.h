@@ -27,7 +27,6 @@
 #include "image/image.h"
 #include "common/aa_noise_params.h"
 #include "geometry/bound.h"
-#include "common/memory.h"
 #include <vector>
 #include <map>
 #include <list>
@@ -163,14 +162,14 @@ class Scene
 		VolumeRegion *createVolumeRegion(const std::string &name, ParamMap &params);
 		RenderView *createRenderView(const std::string &name, ParamMap &params);
 		std::shared_ptr<Image> createImage(const std::string &name, ParamMap &params);
-		ImageOutput *createOutput(const std::string &name, ParamMap &params, bool auto_delete = true, void *callback_user_data = nullptr, yafaray_FilmPutpixelCallback_t output_putpixel_callback = nullptr, yafaray_FilmFlushAreaCallback_t output_flush_area_callback = nullptr, yafaray_FilmFlushCallback_t output_flush_callback = nullptr);
-		ImageOutput *createOutput(const std::string &name, UniquePtr_t<ImageOutput> output, bool auto_delete = true);
+		ImageOutput *createOutput(const std::string &name, ParamMap &params, void *callback_user_data = nullptr, yafaray_FilmPutpixelCallback_t output_putpixel_callback = nullptr, yafaray_FilmFlushAreaCallback_t output_flush_area_callback = nullptr, yafaray_FilmFlushCallback_t output_flush_callback = nullptr);
+		ImageOutput *createOutput(const std::string &name, std::unique_ptr<ImageOutput> output);
 		bool removeOutput(const std::string &name);
 		void clearOutputs();
-		std::map<std::string, UniquePtr_t<ImageOutput>> &getOutputs() { return outputs_; }
-		const std::map<std::string, UniquePtr_t<ImageOutput>> &getOutputs() const { return outputs_; }
+		std::map<std::string, std::unique_ptr<ImageOutput>> &getOutputs() { return outputs_; }
+		const std::map<std::string, std::unique_ptr<ImageOutput>> &getOutputs() const { return outputs_; }
 		bool setupSceneRenderParams(Scene &scene, const ParamMap &params);
-		bool setupSceneProgressBar(Scene &scene, std::shared_ptr<ProgressBar> pb = nullptr);
+		bool setupSceneProgressBar(Scene &scene, std::shared_ptr<ProgressBar> progress_bar);
 		void defineLayer(const ParamMap &params);
 		void defineLayer(const std::string &layer_type_name, const std::string &image_type_name, const std::string &exported_image_type_name, const std::string &exported_image_name);
 		void defineLayer(const Layer::Type &layer_type, const Image::Type &image_type = Image::Type::None, const Image::Type &exported_image_type = Image::Type::None, const std::string &exported_image_name = "");
@@ -224,14 +223,11 @@ class Scene
 		const Layers getLayersWithImages() const;
 		const Layers getLayersWithExportedImages() const;
 		template <typename T> static T *findMapItem(const std::string &name, const std::map<std::string, std::unique_ptr<T>> &map);
-		template <typename T> static T *findMapItem(const std::string &name, const std::map<std::string, UniquePtr_t<T>> &map);
 		template <typename T> static std::shared_ptr<T> findMapItem(const std::string &name, const std::map<std::string, std::shared_ptr<T>> &map);
 		void setMaskParams(const ParamMap &params);
 		void setEdgeToonParams(const ParamMap &params);
 		template <typename T> static T *createMapItem(Logger &logger, const std::string &name, const std::string &class_name, std::unique_ptr<T> item, std::map<std::string, std::unique_ptr<T>> &map);
-		template <typename T> static T *createMapItem(Logger &logger, const std::string &name, const std::string &class_name, UniquePtr_t<T> item, std::map<std::string, UniquePtr_t<T>> &map, bool auto_delete);
 		template <typename T> static T *createMapItem(Logger &logger, const std::string &name, const std::string &class_name, ParamMap &params, std::map<std::string, std::unique_ptr<T>> &map, Scene *scene, bool check_type_exists = true);
-		template <typename T> static T *createMapItem(Logger &logger, const std::string &name, const std::string &class_name, ParamMap &params, std::map<std::string, UniquePtr_t<T>> &map, bool auto_delete, Scene *scene, bool check_type_exists = true);
 		template <typename T> static std::shared_ptr<T> createMapItem(Logger &logger, const std::string &name, const std::string &class_name, ParamMap &params, std::map<std::string, std::shared_ptr<T>> &map, Scene *scene, bool check_type_exists = true);
 		void defineBasicLayers();
 		void defineDependentLayers(); //!< This function generates the basic/auxiliary layers. Must be called *after* defining all render layers with the defineLayer function.
@@ -248,7 +244,7 @@ class Scene
 		std::map<std::string, std::unique_ptr<Integrator>> integrators_;
 		std::map<std::string, std::unique_ptr<ShaderNode>> shaders_;
 		std::map<std::string, std::unique_ptr<VolumeRegion>> volume_regions_;
-		std::map<std::string, UniquePtr_t<ImageOutput>> outputs_;
+		std::map<std::string, std::unique_ptr<ImageOutput>> outputs_;
 		std::map<std::string, std::unique_ptr<RenderView>> render_views_;
 		std::map<std::string, std::shared_ptr<Image>> images_;
 		Layers layers_;

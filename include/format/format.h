@@ -25,7 +25,6 @@
 #define YAFARAY_FORMAT_H
 
 #include "common/yafaray_common.h"
-#include "common/memory.h"
 #include "image/image.h"
 #include "image/image_buffers.h"
 #include <limits>
@@ -35,8 +34,6 @@ BEGIN_YAFARAY
 class ImageLayers;
 class ParamMap;
 class Scene;
-//class Image;
-//class Logger;
 enum ColorSpace : int;
 
 class Format

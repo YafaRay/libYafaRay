@@ -128,7 +128,7 @@ std::unique_ptr<ImageFilm> ImageFilm::factory(Logger &logger, const ParamMap &pa
 	return film;
 }
 
-ImageFilm::ImageFilm(Logger &logger, int width, int height, int xstart, int ystart, int num_threads, RenderControl &render_control, const Layers &layers, const std::map<std::string, UniquePtr_t<ImageOutput>> &outputs, float filter_size, FilterType filt, bool show_sam_mask, int t_size, ImageSplitter::TilesOrderType tiles_order_type) : width_(width), height_(height), cx_0_(xstart), cy_0_(ystart), show_mask_(show_sam_mask), tile_size_(t_size), tiles_order_(tiles_order_type), num_threads_(num_threads), layers_(layers), outputs_(outputs), filterw_(filter_size * 0.5), flags_(width, height), weights_(width, height), logger_(logger)
+ImageFilm::ImageFilm(Logger &logger, int width, int height, int xstart, int ystart, int num_threads, RenderControl &render_control, const Layers &layers, const std::map<std::string, std::unique_ptr<ImageOutput>> &outputs, float filter_size, FilterType filt, bool show_sam_mask, int t_size, ImageSplitter::TilesOrderType tiles_order_type) : width_(width), height_(height), cx_0_(xstart), cy_0_(ystart), show_mask_(show_sam_mask), tile_size_(t_size), tiles_order_(tiles_order_type), num_threads_(num_threads), layers_(layers), outputs_(outputs), filterw_(filter_size * 0.5), flags_(width, height), weights_(width, height), logger_(logger)
 {
 	cx_1_ = xstart + width;
 	cy_1_ = ystart + height;
@@ -174,7 +174,7 @@ ImageFilm::ImageFilm(Logger &logger, int width, int height, int xstart, int ysta
 	table_scale_ = 0.9999 * filter_table_size_global / filterw_;
 	area_cnt_ = 0;
 
-	progress_bar_ = UniquePtr_t<ProgressBar>(new ConsoleProgressBar(80));
+	progress_bar_ = std::unique_ptr<ProgressBar>(new ConsoleProgressBar(80));
 	render_control.setCurrentPassPercent(progress_bar_->getPercent());
 
 	aa_noise_params_.detect_color_noise_ = false;

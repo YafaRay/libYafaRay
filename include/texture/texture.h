@@ -25,7 +25,6 @@
 #include "color/color_ramp.h"
 #include "geometry/vector.h"
 #include "common/logger.h"
-#include "common/memory.h"
 #include <sstream>
 
 BEGIN_YAFARAY

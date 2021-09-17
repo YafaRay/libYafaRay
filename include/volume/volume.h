@@ -23,7 +23,6 @@
 #include "common/yafaray_common.h"
 #include "geometry/bound.h"
 #include "color/color.h"
-#include "common/memory.h"
 #include <map>
 
 BEGIN_YAFARAY

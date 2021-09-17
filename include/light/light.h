@@ -23,9 +23,9 @@
 #include "common/yafaray_common.h"
 #include "common/flags.h"
 #include "color/color.h"
-#include "common/memory.h"
 #include <sstream>
 #include <common/logger.h>
+#include <memory>
 
 BEGIN_YAFARAY
 

@@ -87,7 +87,7 @@ void ImageOutput::setBadgeParams(const ParamMap &params)
 	badge_.setParams(params);
 }
 
-UniquePtr_t <ImageOutput> ImageOutput::factory(Logger &logger, const ParamMap &params, const Scene &scene)
+std::unique_ptr<ImageOutput> ImageOutput::factory(Logger &logger, const ParamMap &params, const Scene &scene)
 {
 	if(logger.isDebug())
 	{
@@ -118,7 +118,7 @@ UniquePtr_t <ImageOutput> ImageOutput::factory(Logger &logger, const ParamMap &p
 	params.getParam("denoise_mix", denoise_params.mix_);
 
 	const ColorSpace color_space = Rgb::colorSpaceFromName(color_space_str);
-	auto output = UniquePtr_t<ImageOutput>(new ImageOutput(logger, image_path, denoise_params, name, color_space, gamma, with_alpha, alpha_premultiply, multi_layer));
+	auto output = std::unique_ptr<ImageOutput>(new ImageOutput(logger, image_path, denoise_params, name, color_space, gamma, with_alpha, alpha_premultiply, multi_layer));
 	output->setLoggingParams(params);
 	output->setBadgeParams(params);
 	return output;

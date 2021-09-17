@@ -21,7 +21,6 @@
 #define YAFARAY_RENDER_DATA_H
 
 #include "common/yafaray_common.h"
-#include "common/memory.h"
 
 BEGIN_YAFARAY
 

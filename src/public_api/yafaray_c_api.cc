@@ -211,9 +211,9 @@ yafaray_bool_t yafaray_createRenderView(yafaray_Interface_t *interface, const ch
 	return static_cast<yafaray_bool_t>(reinterpret_cast<yafaray::Interface *>(interface)->createRenderView(name) != nullptr);
 }
 
-yafaray_bool_t yafaray_createOutput(yafaray_Interface_t *interface, const char *name, yafaray_bool_t auto_delete) //!< ColorOutput creation, usually for internally-owned outputs that are destroyed when the scene is deleted or when libYafaRay instance is closed. If the client wants to keep ownership, it can set the "auto_delete" to false.
+yafaray_bool_t yafaray_createOutput(yafaray_Interface_t *interface, const char *name)
 {
-	return static_cast<yafaray_bool_t>(reinterpret_cast<yafaray::Interface *>(interface)->createOutput(name, auto_delete) != nullptr);
+	return static_cast<yafaray_bool_t>(reinterpret_cast<yafaray::Interface *>(interface)->createOutput(name) != nullptr);
 }
 
 void yafaray_setFilmInitCallback(yafaray_Interface_t *interface, yafaray_FilmInitCallback_t init_callback, void *init_callback_user_data)
@@ -271,12 +271,12 @@ void yafaray_setupRender(yafaray_Interface_t *interface)
 	reinterpret_cast<yafaray::Interface *>(interface)->setupRender();
 }
 
-void yafaray_render(yafaray_Interface_t *interface, yafaray_ProgressBarCallback_t monitor_callback, void *callback_user_data, yafaray_DisplayConsole_t progress_bar_display_console) //!< render the scene...
+void yafaray_render(yafaray_Interface_t *interface, yafaray_ProgressBarCallback_t monitor_callback, void *callback_user_data, yafaray_DisplayConsole_t progress_bar_display_console)
 {
-	yafaray::ProgressBar *progress_bar;
-	if(progress_bar_display_console == YAFARAY_DISPLAY_CONSOLE_NORMAL) progress_bar = new yafaray::ConsoleProgressBar(80, monitor_callback, callback_user_data);
-	else progress_bar = new yafaray::ProgressBar(monitor_callback, callback_user_data);
-	reinterpret_cast<yafaray::Interface *>(interface)->render(progress_bar, true, progress_bar_display_console);
+	std::shared_ptr<yafaray::ProgressBar> progress_bar;
+	if(progress_bar_display_console == YAFARAY_DISPLAY_CONSOLE_NORMAL) progress_bar = std::make_shared<yafaray::ConsoleProgressBar>(80, monitor_callback, callback_user_data);
+	else progress_bar = std::make_shared<yafaray::ProgressBar>(monitor_callback, callback_user_data);
+	reinterpret_cast<yafaray::Interface *>(interface)->render(progress_bar);
 }
 
 void yafaray_defineLayer(yafaray_Interface_t *interface)

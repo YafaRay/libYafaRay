@@ -27,7 +27,6 @@
 #include <memory>
 #include "common/yafaray_common.h"
 #include "geometry/plane.h"
-#include "common/memory.h"
 
 BEGIN_YAFARAY
 

@@ -38,6 +38,7 @@
 #include "volume/volume.h"
 #include "image/image_output.h"
 #include "render/render_view.h"
+#include "render/progress_bar.h"
 
 BEGIN_YAFARAY
 
@@ -332,14 +333,6 @@ T *Scene::findMapItem(const std::string &name, const std::map<std::string, std::
 }
 
 template <typename T>
-T *Scene::findMapItem(const std::string &name, const std::map<std::string, UniquePtr_t<T>> &map)
-{
-	auto i = map.find(name);
-	if(i != map.end()) return i->second.get();
-	else return nullptr;
-}
-
-template <typename T>
 std::shared_ptr<T> Scene::findMapItem(const std::string &name, const std::map<std::string, std::shared_ptr<T>> &map)
 {
 	auto i = map.find(name);
@@ -456,9 +449,9 @@ Material *Scene::createMaterial(const std::string &name, ParamMap &params, std::
 	return nullptr;
 }
 
-ImageOutput *Scene::createOutput(const std::string &name, UniquePtr_t<ImageOutput> output, bool auto_delete)
+ImageOutput *Scene::createOutput(const std::string &name, std::unique_ptr<ImageOutput> output)
 {
-	return createMapItem<ImageOutput>(logger_, name, "ColorOutput", std::move(output), outputs_, auto_delete);
+	return createMapItem<ImageOutput>(logger_, name, "ImageOutput", std::move(output), outputs_);
 }
 
 template <typename T>
@@ -471,25 +464,6 @@ T *Scene::createMapItem(Logger &logger, const std::string &name, const std::stri
 	}
 	if(item)
 	{
-		map[name] = std::move(item);
-		if(logger.isVerbose()) logInfoVerboseSuccess(logger, pname, name, class_name);
-		return map[name].get();
-	}
-	logErrOnCreate(logger, pname, name, class_name);
-	return nullptr;
-}
-
-template <typename T>
-T *Scene::createMapItem(Logger &logger, const std::string &name, const std::string &class_name, UniquePtr_t<T> item, std::map<std::string, UniquePtr_t<T>> &map, bool auto_delete)
-{
-	std::string pname = class_name;
-	if(map.find(name) != map.end())
-	{
-		logWarnExist(logger, pname, name); return nullptr;
-	}
-	if(item)
-	{
-		item->setAutoDelete(auto_delete); //By default all objects will autodelete as usual unique_ptr. If that's not desired, auto_delete can be set to false but then the object class must have the setAutoDelete and isAutoDeleted methods
 		map[name] = std::move(item);
 		if(logger.isVerbose()) logInfoVerboseSuccess(logger, pname, name, class_name);
 		return map[name].get();
@@ -528,37 +502,6 @@ T *Scene::createMapItem(Logger &logger, const std::string &name, const std::stri
 }
 
 template <typename T>
-T *Scene::createMapItem(Logger &logger, const std::string &name, const std::string &class_name, ParamMap &params, std::map<std::string, UniquePtr_t<T>> &map, bool auto_delete, Scene *scene, bool check_type_exists)
-{
-
-	std::string pname = class_name;
-	params["name"] = std::string(name);
-	if(map.find(name) != map.end())
-	{
-		logWarnExist(logger, pname, name); return nullptr;
-	}
-	std::string type;
-	if(! params.getParam("type", type))
-	{
-		if(check_type_exists)
-		{
-			logErrNoType(logger, pname, name, type);
-			return nullptr;
-		}
-	}
-	UniquePtr_t<T> item = T::factory(logger, params, *scene);
-	if(item)
-	{
-		item->setAutoDelete(auto_delete); //By default all objects will autodelete as usual unique_ptr. If that's not desired, auto_delete can be set to false but then the object class must have the setAutoDelete and isAutoDeleted methods
-		map[name] = std::move(item);
-		if(logger.isVerbose()) logInfoVerboseSuccess(logger, pname, name, type);
-		return map[name].get();
-	}
-	logErrOnCreate(logger, pname, name, type);
-	return nullptr;
-}
-
-template <typename T>
 std::shared_ptr<T> Scene::createMapItem(Logger &logger, const std::string &name, const std::string &class_name, ParamMap &params, std::map<std::string, std::shared_ptr<T>> &map, Scene *scene, bool check_type_exists)
 {
 	std::string pname = class_name;
@@ -587,7 +530,7 @@ std::shared_ptr<T> Scene::createMapItem(Logger &logger, const std::string &name,
 	return nullptr;
 }
 
-ImageOutput *Scene::createOutput(const std::string &name, ParamMap &params, bool auto_delete, void *callback_user_data, yafaray_FilmPutpixelCallback_t output_putpixel_callback, yafaray_FilmFlushAreaCallback_t output_flush_area_callback, yafaray_FilmFlushCallback_t output_flush_callback)
+ImageOutput *Scene::createOutput(const std::string &name, ParamMap &params, void *callback_user_data, yafaray_FilmPutpixelCallback_t output_putpixel_callback, yafaray_FilmFlushAreaCallback_t output_flush_area_callback, yafaray_FilmFlushCallback_t output_flush_callback)
 {
 	std::string pname = "ColorOutput";
 	params["name"] = std::string(name);
@@ -604,10 +547,9 @@ ImageOutput *Scene::createOutput(const std::string &name, ParamMap &params, bool
 			return nullptr;
 		}
 	}
-	UniquePtr_t<ImageOutput> item = ImageOutput::factory(logger_, params, *this);
+	std::unique_ptr<ImageOutput> item = ImageOutput::factory(logger_, params, *this);
 	if(item)
 	{
-		item->setAutoDelete(auto_delete); //By default all objects will autodelete as usual unique_ptr. If that's not desired, auto_delete can be set to false but then the object class must have the setAutoDelete and isAutoDeleted methods
 		outputs_[name] = std::move(item);
 		if(logger_.isVerbose()) logInfoVerboseSuccess(logger_, pname, name, type);
 		return outputs_[name].get();
@@ -796,19 +738,19 @@ bool Scene::setupSceneRenderParams(Scene &scene, const ParamMap &params)
 	return true;
 }
 
-bool Scene::setupSceneProgressBar(Scene &scene, std::shared_ptr<ProgressBar> pb)
+bool Scene::setupSceneProgressBar(Scene &scene, std::shared_ptr<ProgressBar> progress_bar)
 {
 	if(logger_.isDebug())
 	{
 		logger_.logDebug("**Scene::setupSceneProgressBar");
 	}
 
-	if(pb)
+	if(progress_bar)
 	{
-		if(image_film_) image_film_->setProgressBar(pb);
+		if(image_film_) image_film_->setProgressBar(progress_bar);
 		else logger_.logError("Scene: image film does not exist, cannot set progress bar");
 
-		if(getSurfIntegrator()) getSurfIntegrator()->setProgressBar(pb);
+		if(getSurfIntegrator()) getSurfIntegrator()->setProgressBar(progress_bar);
 		else logger_.logError("Scene: integrator does not exist, cannot set progress bar");
 	}
 	return true;
