@@ -32,6 +32,7 @@ class Collection
 {
 	public:
 		size_t size() const { return items_.size(); }
+		bool empty() const { return items_.empty(); }
 		void set(const K &key, const T &item) { items_[key] = item; };
 		void clear() { items_.clear(); };
 		typename std::map<K, T>::iterator begin() { return items_.begin(); }

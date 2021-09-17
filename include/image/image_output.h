@@ -40,13 +40,9 @@ class ImageOutput final
 		static std::unique_ptr<ImageOutput> factory(Logger &logger, const ParamMap &params, const Scene &scene);
 		void setLoggingParams(const ParamMap &params);
 		void setBadgeParams(const ParamMap &params);
-		bool putPixel(int x, int y, const ColorLayer &color_layer);
 		void flush(const RenderControl &render_control);
-		void init(int width, int height, const Layers *layers, const std::map<std::string, std::unique_ptr<RenderView>> *render_views);
-		bool putPixel(int x, int y, const ColorLayers &color_layers);
+		void init(const ImageLayers *exported_image_layers, const std::map<std::string, std::unique_ptr<RenderView>> *render_views);
 		void setRenderView(const RenderView *render_view) { current_render_view_ = render_view; }
-		int getWidth() const { return width_; }
-		int getHeight() const { return height_; }
 		std::string getName() const { return name_; }
 		std::string printBadge(const RenderControl &render_control) const;
 		std::unique_ptr<Image> generateBadgeImage(const RenderControl &render_control) const;
@@ -64,21 +60,18 @@ class ImageOutput final
 
 		std::string name_ = "out";
 		std::string image_path_;
-		int width_ = 0;
-		int height_ = 0;
 		ColorSpace color_space_ = ColorSpace::RawManualGamma;
 		float gamma_ = 1.f;
 		bool with_alpha_ = false;
 		bool alpha_premultiply_ = false;
 		bool multi_layer_ = true;
 		DenoiseParams denoise_params_;
-		std::unique_ptr<ImageLayers> image_layers_;
+		const ImageLayers *image_layers_ = nullptr;
 		bool save_log_txt_ = false; //Enable/disable text log file saving with exported images
 		bool save_log_html_ = false; //Enable/disable HTML file saving with exported images
 		Badge badge_;
 		const RenderView *current_render_view_ = nullptr;
 		const std::map<std::string, std::unique_ptr<RenderView>> *render_views_ = nullptr;
-		const Layers *layers_ = nullptr;
 		Logger &logger_;
 };
 

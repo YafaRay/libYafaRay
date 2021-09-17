@@ -34,4 +34,28 @@ Rgba ImageLayers::getColor(int x, int y, const Layer &layer)
 	else return {0.f};
 }
 
+int ImageLayers::getWidth() const
+{
+	int width = 0;
+	//Obtain the maximum dimension across all images in the image layers
+	for(const auto &image_layer : items_)
+	{
+		const int image_width = image_layer.second.image_->getWidth();
+		if(width < image_width) width = image_width;
+	}
+	return width;
+}
+
+int ImageLayers::getHeight() const
+{
+	int height = 0;
+	//Obtain the maximum dimension across all images in the image layers
+	for(const auto &image_layer : items_)
+	{
+		const int image_width = image_layer.second.image_->getWidth();
+		if(height < image_width) height = image_width;
+	}
+	return height;
+}
+
 END_YAFARAY

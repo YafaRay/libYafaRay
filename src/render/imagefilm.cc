@@ -134,16 +134,6 @@ ImageFilm::ImageFilm(Logger &logger, int width, int height, int xstart, int ysta
 	cy_1_ = ystart + height;
 	filter_table_ = std::unique_ptr<float[]>(new float[filter_table_size_global * filter_table_size_global]);
 
-	//Creation of the image buffers for the render passes
-	for(const auto &l : layers_.getLayersWithImages())
-	{
-		Image::Type image_type = l.second.getImageType();
-		image_type = Image::imageTypeWithAlpha(image_type); //Alpha channel is needed in all images of the weight normalization process will cause problems
-		std::unique_ptr<Image> image = Image::factory(logger, width, height, image_type, Image::Optimization::None);
-		image_layers_.set(l.first, {std::move(image), l.second});
-	}
-
-	density_image_ = nullptr;
 	estimate_density_ = false;
 
 	// fill filter table:
@@ -186,17 +176,35 @@ ImageFilm::ImageFilm(Logger &logger, int width, int height, int xstart, int ysta
 
 void ImageFilm::init(RenderControl &render_control, int num_passes)
 {
-	// Clear color buffers
-	for(auto &it : image_layers_)
+	//Creation of the image buffers for the render passes
+	film_image_layers_.clear();
+	for(const auto &l : layers_.getLayersWithImages())
 	{
-		it.second.image_->clear();
+		Image::Type image_type = l.second.getImageType();
+		image_type = Image::imageTypeWithAlpha(image_type); //Alpha channel is needed in all images of the weight normalization process will cause problems
+		std::unique_ptr<Image> image = Image::factory(logger_, width_, height_, image_type, Image::Optimization::None);
+		film_image_layers_.set(l.first, {std::move(image), l.second});
+	}
+
+	exported_image_layers_.clear();
+
+	if(!outputs_.empty())
+	{
+		//If there are any ImageOutputs, creation of the image buffers for the image outputs exported images
+		exported_image_layers_.clear();
+		for(const auto &l: layers_.getLayersWithExportedImages())
+		{
+			Image::Type image_type = l.second.getImageType();
+			image_type = Image::imageTypeWithAlpha(image_type); //Alpha channel is needed in all images of the weight normalization process will cause problems
+			std::unique_ptr<Image> image = Image::factory(logger_, width_, height_, image_type, Image::Optimization::None);
+			exported_image_layers_.set(l.first, {std::move(image), l.second});
+		}
 	}
 
 	// Clear density image
 	if(estimate_density_)
 	{
-		if(!density_image_) density_image_ = std::unique_ptr<ImageBuffer2D<Rgb>>(new ImageBuffer2D<Rgb>(width_, height_));
-		else density_image_->clear();
+		density_image_ = std::unique_ptr<ImageBuffer2D<Rgb>>(new ImageBuffer2D<Rgb>(width_, height_));
 	}
 
 	// Setup the bucket splitter
@@ -277,7 +285,7 @@ int ImageFilm::nextPass(const RenderView *render_view, RenderControl &render_con
 		}
 	}
 
-	const Image *sampling_factor_image_pass = image_layers_(Layer::DebugSamplingFactor).image_.get();
+	const Image *sampling_factor_image_pass = film_image_layers_(Layer::DebugSamplingFactor).image_.get();
 
 	if(n_pass_ == 0) flags_.fill(true);
 	else flags_.fill(false);
@@ -313,7 +321,7 @@ int ImageFilm::nextPass(const RenderView *render_view, RenderControl &render_con
 					if(!background_resampling_ && mat_sample_factor == 0.f) continue;
 				}
 
-				Rgba pix_col = image_layers_(Layer::Combined).image_->getColor(x, y).normalized(weight);
+				Rgba pix_col = film_image_layers_(Layer::Combined).image_->getColor(x, y).normalized(weight);
 				float pix_col_bri = pix_col.abscol2Bri();
 
 				if(aa_noise_params_.dark_detection_type_ == AaNoiseParams::DarkDetectionType::Linear && aa_noise_params_.dark_threshold_factor_ > 0.f)
@@ -325,19 +333,19 @@ int ImageFilm::nextPass(const RenderView *render_view, RenderControl &render_con
 					aa_thresh_scaled = darkThresholdCurveInterpolate(pix_col_bri);
 				}
 
-				if(pix_col.colorDifference(image_layers_(Layer::Combined).image_->getColor(x + 1, y).normalized(weights_(x + 1, y).getFloat()), aa_noise_params_.detect_color_noise_) >= aa_thresh_scaled)
+				if(pix_col.colorDifference(film_image_layers_(Layer::Combined).image_->getColor(x + 1, y).normalized(weights_(x + 1, y).getFloat()), aa_noise_params_.detect_color_noise_) >= aa_thresh_scaled)
 				{
 					flags_.set(x, y, true); flags_.set(x + 1, y, true);
 				}
-				if(pix_col.colorDifference(image_layers_(Layer::Combined).image_->getColor(x, y + 1).normalized(weights_(x, y + 1).getFloat()), aa_noise_params_.detect_color_noise_) >= aa_thresh_scaled)
+				if(pix_col.colorDifference(film_image_layers_(Layer::Combined).image_->getColor(x, y + 1).normalized(weights_(x, y + 1).getFloat()), aa_noise_params_.detect_color_noise_) >= aa_thresh_scaled)
 				{
 					flags_.set(x, y, true); flags_.set(x, y + 1, true);
 				}
-				if(pix_col.colorDifference(image_layers_(Layer::Combined).image_->getColor(x + 1, y + 1).normalized(weights_(x + 1, y + 1).getFloat()), aa_noise_params_.detect_color_noise_) >= aa_thresh_scaled)
+				if(pix_col.colorDifference(film_image_layers_(Layer::Combined).image_->getColor(x + 1, y + 1).normalized(weights_(x + 1, y + 1).getFloat()), aa_noise_params_.detect_color_noise_) >= aa_thresh_scaled)
 				{
 					flags_.set(x, y, true); flags_.set(x + 1, y + 1, true);
 				}
-				if(x > 0 && pix_col.colorDifference(image_layers_(Layer::Combined).image_->getColor(x - 1, y + 1).normalized(weights_(x - 1, y + 1).getFloat()), aa_noise_params_.detect_color_noise_) >= aa_thresh_scaled)
+				if(x > 0 && pix_col.colorDifference(film_image_layers_(Layer::Combined).image_->getColor(x - 1, y + 1).normalized(weights_(x - 1, y + 1).getFloat()), aa_noise_params_.detect_color_noise_) >= aa_thresh_scaled)
 				{
 					flags_.set(x, y, true); flags_.set(x - 1, y + 1, true);
 				}
@@ -354,8 +362,8 @@ int ImageFilm::nextPass(const RenderView *render_view, RenderControl &render_con
 						if(xi < 0) xi = 0;
 						else if(xi >= width_ - 1) xi = width_ - 2;
 
-						Rgba cx_0 = image_layers_(Layer::Combined).image_->getColor(xi, y).normalized(weights_(xi, y).getFloat());
-						Rgba cx_1 = image_layers_(Layer::Combined).image_->getColor(xi + 1, y).normalized(weights_(xi + 1, y).getFloat());
+						Rgba cx_0 = film_image_layers_(Layer::Combined).image_->getColor(xi, y).normalized(weights_(xi, y).getFloat());
+						Rgba cx_1 = film_image_layers_(Layer::Combined).image_->getColor(xi + 1, y).normalized(weights_(xi + 1, y).getFloat());
 
 						if(cx_0.colorDifference(cx_1, aa_noise_params_.detect_color_noise_) >= aa_thresh_scaled) ++variance_x;
 					}
@@ -366,8 +374,8 @@ int ImageFilm::nextPass(const RenderView *render_view, RenderControl &render_con
 						if(yi < 0) yi = 0;
 						else if(yi >= height_ - 1) yi = height_ - 2;
 
-						Rgba cy_0 = image_layers_(Layer::Combined).image_->getColor(x, yi).normalized(weights_(x, yi).getFloat());
-						Rgba cy_1 = image_layers_(Layer::Combined).image_->getColor(x, yi + 1).normalized(weights_(x, yi + 1).getFloat());
+						Rgba cy_0 = film_image_layers_(Layer::Combined).image_->getColor(x, yi).normalized(weights_(x, yi).getFloat());
+						Rgba cy_1 = film_image_layers_(Layer::Combined).image_->getColor(x, yi + 1).normalized(weights_(x, yi + 1).getFloat());
 
 						if(cy_0.colorDifference(cy_1, aa_noise_params_.detect_color_noise_) >= aa_thresh_scaled) ++variance_y;
 					}
@@ -412,7 +420,7 @@ int ImageFilm::nextPass(const RenderView *render_view, RenderControl &render_con
 							if(!background_resampling_ && mat_sample_factor == 0.f) continue;
 						}
 
-						for(const auto &it : image_layers_)
+						for(const auto &it : film_image_layers_)
 						{
 							Rgb pix = it.second.image_->getColor(x, y).normalized(weight);
 							float pix_col_bri = pix.abscol2Bri();
@@ -529,7 +537,7 @@ void ImageFilm::finishArea(const RenderView *render_view, RenderControl &render_
 		for(int i = a.x_ - cx_0_; i < end_x; ++i)
 		{
 			const float weight = weights_(i, j).getFloat();
-			for(const auto &it : image_layers_)
+			for(const auto &it : film_image_layers_)
 			{
 				const Layer::Type layer_type = it.first;
 				if(layer_type == Layer::AaSamples)
@@ -630,7 +638,7 @@ void ImageFilm::flush(const RenderView *render_view, const RenderControl &render
 		for(int i = 0; i < width_; i++)
 		{
 			const float weight = weights_(i, j).getFloat();
-			for(const auto &it : image_layers_)
+			for(const auto &it : film_image_layers_)
 			{
 				const Layer::Type layer_type = it.first;
 				if(layer_type == Layer::AaSamples)
@@ -655,9 +663,16 @@ void ImageFilm::flush(const RenderView *render_view, const RenderControl &render
 				if(estimate_density_ && (flags & Densityimage) && layer_type == Layer::Combined && density_factor > 0.f) color_layers(layer_type).color_ += Rgba((*density_image_)(i, j) * density_factor, 0.f);
 			}
 
-			for(auto &output : outputs_)
+			//FIXME: replace with native imagefilm output image layers
+/*			for(auto &output : outputs_)
 			{
 				if(output.second) output.second->putPixel(i, j, color_layers);
+			}*/
+			for(const auto &color_layer : color_layers)
+			{
+				//const ColorLayer preprocessed_color_layer = preProcessColor(color_layer.second);
+				//putPixel(x, y, preprocessed_color_layer);
+				exported_image_layers_.setColor(i, j, color_layer.second);
 			}
 
 			if(film_put_pixel_callback_)
@@ -769,7 +784,7 @@ void ImageFilm::addSample(int x, int y, float dx, float dy, const RenderArea *a,
 			weights_(i - cx_0_, j - cy_0_).setFloat(weights_(i - cx_0_, j - cy_0_).getFloat() + filter_wt);
 
 			// update pixel values with filtered sample contribution
-			for(auto &it : image_layers_)
+			for(auto &it : film_image_layers_)
 			{
 				Rgba col = color_layers ? (*color_layers)(it.first).color_ : 0.f;
 
@@ -954,9 +969,9 @@ bool ImageFilm::imageFilmLoad(const std::string &filename)
 
 	int loaded_image_layers_size;
 	file.read<int>(loaded_image_layers_size);
-	if(loaded_image_layers_size != static_cast<int>(image_layers_.size()))
+	if(loaded_image_layers_size != static_cast<int>(film_image_layers_.size()))
 	{
-		logger_.logWarning("imageFilm: loading/reusing film check failed. Number of image layers, expected=", image_layers_.size(), ", in reused/loaded film=", loaded_image_layers_size);
+		logger_.logWarning("imageFilm: loading/reusing film check failed. Number of image layers, expected=", film_image_layers_.size(), ", in reused/loaded film=", loaded_image_layers_size);
 		return false;
 	}
 
@@ -970,7 +985,7 @@ bool ImageFilm::imageFilmLoad(const std::string &filename)
 		}
 	}
 
-	for(auto &it : image_layers_)
+	for(auto &it : film_image_layers_)
 	{
 		for(int y = 0; y < height_; ++y)
 		{
@@ -1051,9 +1066,9 @@ void ImageFilm::imageFilmLoadAllInFolder(RenderControl &render_control)
 			}
 		}
 
-		for(auto &it : image_layers_)
+		for(auto &it : film_image_layers_)
 		{
-			const ImageLayers &loaded_image_layers = loaded_film->image_layers_;
+			const ImageLayers &loaded_image_layers = loaded_film->film_image_layers_;
 			for(int i = 0; i < width_; ++i)
 			{
 				for(int j = 0; j < height_; ++j)
@@ -1099,7 +1114,7 @@ bool ImageFilm::imageFilmSave()
 	file.append<int>(cx_1_);
 	file.append<int>(cy_0_);
 	file.append<int>(cy_1_);
-	file.append<int>((int) image_layers_.size());
+	file.append<int>((int) film_image_layers_.size());
 
 	const int weights_w = weights_.getWidth();
 	if(weights_w != width_)
@@ -1121,7 +1136,7 @@ bool ImageFilm::imageFilmSave()
 		}
 	}
 
-	for(const auto &img : image_layers_)
+	for(const auto &img : film_image_layers_)
 	{
 		const int img_w = img.second.image_->getWidth();
 		if(img_w != width_)
@@ -1244,9 +1259,9 @@ void edgeImageDetection_global(std::vector<cv::Mat> &image_mat, float edge_thres
 
 void ImageFilm::generateDebugFacesEdges(int xstart, int width, int ystart, int height, bool drawborder, const EdgeToonParams &edge_params)
 {
-	const Image *normal_image = image_layers_(Layer::NormalGeom).image_.get();
-	const Image *z_depth_image = image_layers_(Layer::ZDepthNorm).image_.get();
-	Image *debug_faces_edges_image = image_layers_(Layer::DebugFacesEdges).image_.get();
+	const Image *normal_image = film_image_layers_(Layer::NormalGeom).image_.get();
+	const Image *z_depth_image = film_image_layers_(Layer::ZDepthNorm).image_.get();
+	Image *debug_faces_edges_image = film_image_layers_(Layer::DebugFacesEdges).image_.get();
 
 	if(normal_image && z_depth_image)
 	{
@@ -1285,10 +1300,10 @@ void ImageFilm::generateDebugFacesEdges(int xstart, int width, int ystart, int h
 
 void ImageFilm::generateToonAndDebugObjectEdges(int xstart, int width, int ystart, int height, bool drawborder, const EdgeToonParams &edge_params)
 {
-	const Image *normal_image = image_layers_(Layer::NormalSmooth).image_.get();
-	const Image *z_depth_image = image_layers_(Layer::ZDepthNorm).image_.get();
-	Image *debug_objects_edges_image = image_layers_(Layer::DebugObjectsEdges).image_.get();
-	Image *toon_image = image_layers_(Layer::Toon).image_.get();
+	const Image *normal_image = film_image_layers_(Layer::NormalSmooth).image_.get();
+	const Image *z_depth_image = film_image_layers_(Layer::ZDepthNorm).image_.get();
+	Image *debug_objects_edges_image = film_image_layers_(Layer::DebugObjectsEdges).image_.get();
+	Image *toon_image = film_image_layers_(Layer::Toon).image_.get();
 
 	const float toon_pre_smooth = edge_params.toon_pre_smooth_;
 	const float toon_quantization = edge_params.toon_quantization_;
@@ -1314,9 +1329,9 @@ void ImageFilm::generateToonAndDebugObjectEdges(int xstart, int width, int ystar
 				col_normal = (*normal_image).getColor(i, j).normalized(weight);
 				z_depth = (*z_depth_image).getColor(i, j).normalized(weight).a_; //FIXME: can be further optimized
 
-				image_mat_combined_vec(j, i)[0] = image_layers_(Layer::Combined).image_->getColor(i, j).normalized(weight).b_;
-				image_mat_combined_vec(j, i)[1] = image_layers_(Layer::Combined).image_->getColor(i, j).normalized(weight).g_;
-				image_mat_combined_vec(j, i)[2] = image_layers_(Layer::Combined).image_->getColor(i, j).normalized(weight).r_;
+				image_mat_combined_vec(j, i)[0] = film_image_layers_(Layer::Combined).image_->getColor(i, j).normalized(weight).b_;
+				image_mat_combined_vec(j, i)[1] = film_image_layers_(Layer::Combined).image_->getColor(i, j).normalized(weight).g_;
+				image_mat_combined_vec(j, i)[2] = film_image_layers_(Layer::Combined).image_->getColor(i, j).normalized(weight).r_;
 
 				image_mat.at(0).at<float>(j, i) = col_normal.getR();
 				image_mat.at(1).at<float>(j, i) = col_normal.getG();

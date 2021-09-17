@@ -47,6 +47,8 @@ class ImageLayers final : public Collection<Layer::Type, ImageLayer>  //Actual b
 	public:
 		void setColor(int x, int y, const ColorLayer &color_layer);
 		Rgba getColor(int x, int y, const Layer &layer);
+		int getWidth() const;
+		int getHeight() const;
 };
 
 END_YAFARAY

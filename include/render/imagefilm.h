@@ -147,7 +147,8 @@ class ImageFilm final
 
 		void generateDebugFacesEdges(int xstart, int width, int ystart, int height, bool drawborder, const EdgeToonParams &edge_params);
 		void generateToonAndDebugObjectEdges(int xstart, int width, int ystart, int height, bool drawborder, const EdgeToonParams &edge_params);
-		const ImageLayers *getImageLayers() const { return &image_layers_; }
+		const ImageLayers *getImageLayers() const { return &film_image_layers_; }
+		const ImageLayers *getExportedImageLayers() const { return &exported_image_layers_; }
 		void setRenderViews(const std::map<std::string, std::unique_ptr<RenderView>> *render_views) { render_views_ = render_views; }
 
 		void setFilmInitCallback(yafaray_FilmInitCallback_t init_callback, void *callback_user_data);
@@ -191,7 +192,8 @@ class ImageFilm final
 
 		ImageBuffer2D<bool> flags_; //!< flags for adaptive AA sampling;
 		ImageBuffer2D<Gray> weights_;
-		ImageLayers image_layers_;
+		ImageLayers film_image_layers_;
+		ImageLayers exported_image_layers_;
 		std::unique_ptr<ImageBuffer2D<Rgb>> density_image_; //!< storage for z-buffer channel
 		Logger &logger_;
 		const std::map<std::string, std::unique_ptr<RenderView>> *render_views_ = nullptr;

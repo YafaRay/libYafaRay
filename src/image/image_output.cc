@@ -26,6 +26,7 @@
 #include "common/file.h"
 #include "format/format.h"
 #include "render/render_view.h"
+#include "render/imagefilm.h"
 
 BEGIN_YAFARAY
 
@@ -42,6 +43,7 @@ ImageOutput::ImageOutput(Logger &logger, const std::string &image_path, const De
 	}
 }
 
+/*
 bool ImageOutput::putPixel(int x, int y, const ColorLayers &color_layers)
 {
 	for(const auto &color_layer : color_layers)
@@ -51,6 +53,7 @@ bool ImageOutput::putPixel(int x, int y, const ColorLayers &color_layers)
 	}
 	return true;
 }
+*/
 
 ColorLayer ImageOutput::preProcessColor(const ColorLayer &color_layer)
 {
@@ -124,28 +127,15 @@ std::unique_ptr<ImageOutput> ImageOutput::factory(Logger &logger, const ParamMap
 	return output;
 }
 
-void ImageOutput::init(int width, int height, const Layers *layers, const std::map<std::string, std::unique_ptr<RenderView>> *render_views)
+void ImageOutput::init(const ImageLayers *exported_image_layers, const std::map<std::string, std::unique_ptr<RenderView>> *render_views)
 {
-	width_ = width;
-	height_ = height;
+	image_layers_ = exported_image_layers;
 	render_views_ = render_views;
-	layers_ = layers;
-	badge_.setImageWidth(width_);
-	badge_.setImageHeight(height_);
-	image_layers_ = std::unique_ptr<ImageLayers>(new ImageLayers());
-
-	const Layers layers_exported = layers_->getLayersWithExportedImages();
-	for(const auto &it : layers_exported)
-	{
-		{
-			Image::Type image_type = it.second.getImageType();
-			std::unique_ptr<Image> image = Image::factory(logger_, width, height, image_type, Image::Optimization::None);
-			image_layers_->set(it.first, {std::move(image), it.second});
-		}
-	}
+	badge_.setImageWidth(image_layers_->getWidth());
+	badge_.setImageHeight(image_layers_->getHeight());
 }
 
-bool ImageOutput::putPixel(int x, int y, const ColorLayer &color_layer)
+/*bool ImageOutput::putPixel(int x, int y, const ColorLayer &color_layer)
 {
 	if(image_layers_)
 	{
@@ -153,7 +143,7 @@ bool ImageOutput::putPixel(int x, int y, const ColorLayer &color_layer)
 		return true;
 	}
 	else return false;
-}
+}*/
 
 void ImageOutput::flush(const RenderControl &render_control)
 {
@@ -303,7 +293,7 @@ void ImageOutput::saveImageFileMultiChannel(const std::string &filename, Format 
 		}
 		format->saveToFileMultiChannel(filename, &image_layers_badge);
 	}
-	else format->saveToFileMultiChannel(filename, image_layers_.get());
+	else format->saveToFileMultiChannel(filename, image_layers_);
 }
 
 std::string ImageOutput::printDenoiseParams() const
