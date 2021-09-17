@@ -632,18 +632,18 @@ void ImageFilm::flush(const RenderView *render_view, const RenderControl &render
 		generateToonAndDebugObjectEdges(0, width_, 0, height_, false, edge_params);
 	}
 
-	ColorLayers color_layers(layers);
-	for(int j = 0; j < height_; j++)
+	for(const auto &it : film_image_layers_)
 	{
-		for(int i = 0; i < width_; i++)
+		for(int j = 0; j < height_; j++)
 		{
-			const float weight = weights_(i, j).getFloat();
-			for(const auto &it : film_image_layers_)
+			for(int i = 0; i < width_; i++)
 			{
+				Rgba color{0.f};
+				const float weight = weights_(i, j).getFloat();
 				const Layer::Type layer_type = it.first;
 				if(layer_type == Layer::AaSamples)
 				{
-					color_layers(layer_type).color_ = it.second.image_->getColor(i, j).normalized(weight);
+					color = it.second.image_->getColor(i, j).normalized(weight);
 				}
 				else if(layer_type == Layer::ObjIndexAbs ||
 						layer_type == Layer::ObjIndexAutoAbs ||
@@ -651,37 +651,21 @@ void ImageFilm::flush(const RenderView *render_view, const RenderControl &render
 						layer_type == Layer::MatIndexAutoAbs
 						)
 				{
-					color_layers(layer_type).color_ = it.second.image_->getColor(i, j).normalized(weight);
-					color_layers(layer_type).color_.ceil(); //To correct the antialiasing and ceil the "mixed" values to the upper integer
+					color = it.second.image_->getColor(i, j).normalized(weight);
+					color.ceil(); //To correct the antialiasing and ceil the "mixed" values to the upper integer
 				}
-				else
+				else if(flags & RegularImage) color = it.second.image_->getColor(i, j).normalized(weight);
+
+				if(estimate_density_ && (flags & Densityimage) && layer_type == Layer::Combined && density_factor > 0.f) color += Rgba((*density_image_)(i, j) * density_factor, 0.f);
+
+				if(it.second.layer_.isExported())
 				{
-					if(flags & RegularImage) color_layers(layer_type).color_ = it.second.image_->getColor(i, j).normalized(weight);
-					else color_layers(layer_type).color_ = Rgba(0.f);
-				}
+					exported_image_layers_.setColor(i, j, {color, layer_type});
 
-				if(estimate_density_ && (flags & Densityimage) && layer_type == Layer::Combined && density_factor > 0.f) color_layers(layer_type).color_ += Rgba((*density_image_)(i, j) * density_factor, 0.f);
-			}
-
-			//FIXME: replace with native imagefilm output image layers
-/*			for(auto &output : outputs_)
-			{
-				if(output.second) output.second->putPixel(i, j, color_layers);
-			}*/
-			for(const auto &color_layer : color_layers)
-			{
-				//const ColorLayer preprocessed_color_layer = preProcessColor(color_layer.second);
-				//putPixel(x, y, preprocessed_color_layer);
-				exported_image_layers_.setColor(i, j, color_layer.second);
-			}
-
-			if(film_put_pixel_callback_)
-			{
-				for(const auto &color_layer : color_layers)
-				{
-					const Rgba &col = color_layer.second.color_;
-					const Layer::Type &layer_type = color_layer.second.layer_type_;
-					film_put_pixel_callback_(render_view->getName().c_str(), Layer::getTypeName(layer_type).c_str(), i, j, col.r_, col.g_, col.b_, col.a_, film_put_pixel_callback_user_data_);
+					if(film_put_pixel_callback_)
+					{
+						film_put_pixel_callback_(render_view->getName().c_str(), Layer::getTypeName(layer_type).c_str(), i, j, color.r_, color.g_, color.b_, color.a_, film_put_pixel_callback_user_data_);
+					}
 				}
 			}
 		}

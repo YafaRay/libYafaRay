@@ -25,6 +25,8 @@
 #include "common/param.h"
 #include "scene/scene.h"
 #include "color/color.h"
+#include "image/image_layers.h"
+#include "color/color_layers.h"
 
 #if defined(_WIN32)
 #include "common/string.h"
@@ -37,7 +39,7 @@ namespace libtiff
 
 BEGIN_YAFARAY
 
-bool TifFormat::saveToFile(const std::string &name, const Image *image)
+bool TifFormat::saveToFile(const std::string &name, const ImageLayer &image_layer, ColorSpace color_space, float gamma, bool alpha_premultiply)
 {
 #if defined(_WIN32)
 	std::wstring wname = utf8ToWutf16Le_global(name);
@@ -50,10 +52,10 @@ bool TifFormat::saveToFile(const std::string &name, const Image *image)
 		logger_.logError(getFormatName(), ": Cannot open file ", name);
 		return false;
 	}
-	const int h = image->getHeight();
-	const int w = image->getWidth();
+	const int h = image_layer.getHeight();
+	const int w = image_layer.getWidth();
 	int channels;
-	if(image->hasAlpha()) channels = 4;
+	if(image_layer.image_->hasAlpha()) channels = 4;
 	else channels = 3;
 
 	libtiff::TIFFSetField(out, TIFFTAG_IMAGEWIDTH, w);
@@ -73,12 +75,12 @@ bool TifFormat::saveToFile(const std::string &name, const Image *image)
 		for(int x = 0; x < w; x++)
 		{
 			const int ix = x * channels;
-			Rgba col = image->getColor(x, y);
+			Rgba col = ColorLayer::postProcess(image_layer.image_->getColor(x, y), image_layer.layer_.getType(), color_space, gamma, alpha_premultiply);
 			col.clampRgba01();
 			scanline[ix] = (uint8_t)(col.getR() * 255.f);
 			scanline[ix + 1] = (uint8_t)(col.getG() * 255.f);
 			scanline[ix + 2] = (uint8_t)(col.getB() * 255.f);
-			if(image->hasAlpha()) scanline[ix + 3] = (uint8_t)(col.getA() * 255.f);
+			if(image_layer.image_->hasAlpha()) scanline[ix + 3] = (uint8_t)(col.getA() * 255.f);
 		}
 		if(TIFFWriteScanline(out, scanline, y, 0) < 0)
 		{

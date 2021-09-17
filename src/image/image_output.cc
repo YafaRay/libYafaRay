@@ -43,32 +43,6 @@ ImageOutput::ImageOutput(Logger &logger, const std::string &image_path, const De
 	}
 }
 
-/*
-bool ImageOutput::putPixel(int x, int y, const ColorLayers &color_layers)
-{
-	for(const auto &color_layer : color_layers)
-	{
-		const ColorLayer preprocessed_color_layer = preProcessColor(color_layer.second);
-		putPixel(x, y, preprocessed_color_layer);
-	}
-	return true;
-}
-*/
-
-ColorLayer ImageOutput::preProcessColor(const ColorLayer &color_layer)
-{
-	ColorLayer result = color_layer;
-	result.color_.clampRgb0();
-	if(Layer::applyColorSpace(result.layer_type_)) result.color_.colorSpaceFromLinearRgb(color_space_, gamma_);
-	if(alpha_premultiply_) result.color_.alphaPremultiply();
-
-	//To make sure we don't have any weird Alpha values outside the range [0.f, +1.f]
-	if(result.color_.a_ < 0.f) result.color_.a_ = 0.f;
-	else if(result.color_.a_ > 1.f) result.color_.a_ = 1.f;
-
-	return result;
-}
-
 std::string ImageOutput::printBadge(const RenderControl &render_control) const
 {
 	return badge_.print(printDenoiseParams(), render_control);
@@ -134,16 +108,6 @@ void ImageOutput::init(const ImageLayers *exported_image_layers, const std::map<
 	badge_.setImageWidth(image_layers_->getWidth());
 	badge_.setImageHeight(image_layers_->getHeight());
 }
-
-/*bool ImageOutput::putPixel(int x, int y, const ColorLayer &color_layer)
-{
-	if(image_layers_)
-	{
-		image_layers_->setColor(x, y, color_layer);
-		return true;
-	}
-	else return false;
-}*/
 
 void ImageOutput::flush(const RenderControl &render_control)
 {
@@ -220,7 +184,6 @@ void ImageOutput::saveImageFile(const std::string &filename, const Layer::Type &
 	else logger_.logInfo(name_, ": Saving file as \"", filename, "\"...  ", printDenoiseParams());
 
 	std::shared_ptr<Image> image = (*image_layers_)(layer_type).image_;
-
 	if(!image)
 	{
 		logger_.logWarning(name_, ": Image does not exist (it is null) and could not be saved.");
@@ -240,41 +203,21 @@ void ImageOutput::saveImageFile(const std::string &filename, const Layer::Type &
 		}
 	}
 
+	ImageLayer image_layer { image, layer_type };
 	if(denoiseEnabled())
 	{
 		std::unique_ptr<Image> image_denoised = Image::getDenoisedLdrImage(logger_, image.get(), denoise_params_);
-		if(image_denoised)
-		{
-			format->saveToFile(filename, image_denoised.get());
-		}
-		else
-		{
-			if(logger_.isVerbose()) logger_.logVerbose(name_, ": Denoise was not possible, saving image without denoise postprocessing.");
-			format->saveToFile(filename, image.get());
-		}
+		if(image_denoised) image_layer.image_ = std::move(image_denoised);
+		else if(logger_.isVerbose()) logger_.logVerbose(name_, ": Denoise was not possible, saving image without denoise postprocessing.");
 	}
-	else format->saveToFile(filename, image.get());
+	format->saveToFile(filename, image_layer, color_space_, gamma_, alpha_premultiply_);
 
 	if(with_alpha_ && !format->supportsAlpha())
 	{
 		Path file_path(filename);
 		std::string file_name_alpha = file_path.getBaseName() + "_alpha." + file_path.getExtension();
 		logger_.logInfo(name_, ": Saving separate alpha channel file as \"", file_name_alpha, "\"...  ", printDenoiseParams());
-
-		if(denoiseEnabled())
-		{
-			std::unique_ptr<Image> image_denoised = Image::getDenoisedLdrImage(logger_, image.get(), denoise_params_);
-			if(image_denoised)
-			{
-				format->saveAlphaChannelOnlyToFile(file_name_alpha, image_denoised.get());
-			}
-			else
-			{
-				if(logger_.isVerbose()) logger_.logVerbose(name_, ": Denoise was not possible, saving image without denoise postprocessing.");
-				format->saveAlphaChannelOnlyToFile(file_name_alpha, image.get());
-			}
-		}
-		else format->saveAlphaChannelOnlyToFile(file_name_alpha, image.get());
+		format->saveAlphaChannelOnlyToFile(file_name_alpha, image_layer);
 	}
 }
 
@@ -291,9 +234,9 @@ void ImageOutput::saveImageFileMultiChannel(const std::string &filename, Format 
 			std::unique_ptr<Image> image_layer_badge = Image::getComposedImage(logger_, image_layer.second.image_.get(), badge_image.get(), badge_image_position);
 			image_layers_badge.set(image_layer.first, {std::move(image_layer_badge), image_layer.second.layer_});
 		}
-		format->saveToFileMultiChannel(filename, &image_layers_badge);
+		format->saveToFileMultiChannel(filename, image_layers_badge, color_space_, gamma_, alpha_premultiply_);
 	}
-	else format->saveToFileMultiChannel(filename, image_layers_);
+	else format->saveToFileMultiChannel(filename, *image_layers_, color_space_, gamma_, alpha_premultiply_);
 }
 
 std::string ImageOutput::printDenoiseParams() const

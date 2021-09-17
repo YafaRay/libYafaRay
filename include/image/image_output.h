@@ -49,11 +49,7 @@ class ImageOutput final
 
 	private:
 		ImageOutput(Logger &logger, const std::string &image_path, const DenoiseParams denoise_params, const std::string &name = "out", const ColorSpace color_space = ColorSpace::RawManualGamma, float gamma = 1.f, bool with_alpha = true, bool alpha_premultiply = false, bool multi_layer = false);
-		ColorLayer preProcessColor(const ColorLayer &color_layer);
 		std::string printDenoiseParams() const;
-		ColorSpace getColorSpace() const { return color_space_; }
-		float getGamma() const { return gamma_; }
-		bool getAlphaPremultiply() const { return alpha_premultiply_; }
 		bool denoiseEnabled() const { return denoise_params_.enabled_; }
 		void saveImageFile(const std::string &filename, const Layer::Type &layer_type, Format *format, const RenderControl &render_control);
 		void saveImageFileMultiChannel(const std::string &filename, Format *format, const RenderControl &render_control);

@@ -26,6 +26,8 @@
 #include "common/file.h"
 #include "scene/scene.h"
 #include "color/color.h"
+#include "image/image_layers.h"
+#include "color/color_layers.h"
 
 extern "C"
 {
@@ -61,7 +63,7 @@ void jpgExitOnError_global(j_common_ptr info)
 	longjmp(myerr->setjmp_buffer_, 1);
 }
 
-bool JpgFormat::saveToFile(const std::string &name, const Image *image)
+bool JpgFormat::saveToFile(const std::string &name, const ImageLayer &image_layer, ColorSpace color_space, float gamma, bool alpha_premultiply)
 {
 	std::FILE *fp = File::open(name, "wb");
 	if(!fp)
@@ -70,8 +72,8 @@ bool JpgFormat::saveToFile(const std::string &name, const Image *image)
 		return false;
 	}
 
-	const int height = image->getHeight();
-	const int width = image->getWidth();
+	const int height = image_layer.image_->getHeight();
+	const int width = image_layer.image_->getWidth();
 	struct ::jpeg_compress_struct info;
 	struct JpgErrorManager jerr;
 
@@ -98,7 +100,7 @@ bool JpgFormat::saveToFile(const std::string &name, const Image *image)
 		for(int x = 0; x < width; x++)
 		{
 			const int ix = x * 3;
-			Rgba col = image->getColor(x, y);
+			Rgba col = ColorLayer::postProcess(image_layer.image_->getColor(x, y), image_layer.layer_.getType(), color_space, gamma, alpha_premultiply);
 			col.clampRgba01();
 			scanline[ix] = static_cast<uint8_t>(col.getR() * 255);
 			scanline[ix + 1] = static_cast<uint8_t>(col.getG() * 255);
@@ -115,7 +117,7 @@ bool JpgFormat::saveToFile(const std::string &name, const Image *image)
 	return true;
 }
 
-bool JpgFormat::saveAlphaChannelOnlyToFile(const std::string &name, const Image *image)
+bool JpgFormat::saveAlphaChannelOnlyToFile(const std::string &name, const ImageLayer &image_layer)
 {
 	std::FILE *fp = File::open(name, "wb");
 	if(!fp)
@@ -123,8 +125,8 @@ bool JpgFormat::saveAlphaChannelOnlyToFile(const std::string &name, const Image 
 		logger_.logError(getFormatName(), ": Cannot open file for writing ", name);
 		return false;
 	}
-	const int height = image->getHeight();
-	const int width = image->getWidth();
+	const int height = image_layer.image_->getHeight();
+	const int width = image_layer.image_->getWidth();
 	struct ::jpeg_compress_struct info;
 	struct JpgErrorManager jerr;
 	info.err = jpeg_std_error(&jerr.pub_);
@@ -146,7 +148,7 @@ bool JpgFormat::saveAlphaChannelOnlyToFile(const std::string &name, const Image 
 	{
 		for(int x = 0; x < width; x++)
 		{
-			const float col = std::max(0.f, std::min(1.f, image->getColor(x, y).getA()));
+			const float col = std::max(0.f, std::min(1.f, image_layer.image_->getColor(x, y).getA()));
 			scanline[x] = (uint8_t)(col * 255);
 		}
 		jpeg_write_scanlines(&info, &scanline, 1);

@@ -37,6 +37,9 @@ class ImageLayer
 	public:
 		ImageLayer() = default;
 		ImageLayer(std::unique_ptr<Image> image, const Layer &layer) : image_(std::move(image)), layer_(layer) { }
+		ImageLayer(std::shared_ptr<Image> image, const Layer &layer) : image_(std::move(image)), layer_(layer) { }
+		int getWidth() const;
+		int getHeight() const;
 
 		std::shared_ptr<Image> image_;
 		Layer layer_;
@@ -46,7 +49,7 @@ class ImageLayers final : public Collection<Layer::Type, ImageLayer>  //Actual b
 {
 	public:
 		void setColor(int x, int y, const ColorLayer &color_layer);
-		Rgba getColor(int x, int y, const Layer &layer);
+		Rgba getColor(int x, int y, const Layer &layer) const;
 		int getWidth() const;
 		int getHeight() const;
 };

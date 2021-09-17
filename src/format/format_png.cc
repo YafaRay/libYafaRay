@@ -26,6 +26,8 @@
 #include "common/param.h"
 #include "common/file.h"
 #include "scene/scene.h"
+#include "image/image_layers.h"
+#include "color/color_layers.h"
 
 #include <png.h>
 #include "format/format_png_util.h"
@@ -46,7 +48,7 @@ struct PngStructs
 	png_infop &info_ptr_;
 };
 
-bool PngFormat::saveToFile(const std::string &name, const Image *image)
+bool PngFormat::saveToFile(const std::string &name, const ImageLayer &image_layer, ColorSpace color_space, float gamma, bool alpha_premultiply)
 {
 	std::FILE *fp = File::open(name, "wb");
 	if(!fp)
@@ -54,33 +56,33 @@ bool PngFormat::saveToFile(const std::string &name, const Image *image)
 		logger_.logError(getFormatName(), ": Cannot open file ", name);
 		return false;
 	}
-	const int h = image->getHeight();
-	const int w = image->getWidth();
+	const int h = image_layer.getHeight();
+	const int w = image_layer.getWidth();
 	png_structp png_ptr;
 	png_infop info_ptr;
 	PngStructs png_structs(png_ptr, info_ptr);
 	int channels;
-	if(!fillWriteStructs(fp, (image->hasAlpha()) ? PNG_COLOR_TYPE_RGB_ALPHA : PNG_COLOR_TYPE_RGB, png_structs, image))
+	if(!fillWriteStructs(fp, (image_layer.image_->hasAlpha()) ? PNG_COLOR_TYPE_RGB_ALPHA : PNG_COLOR_TYPE_RGB, png_structs, image_layer.image_.get()))
 	{
 		File::close(fp);
 		return false;
 	}
 	auto row_pointers = std::unique_ptr<png_bytep[]>(new png_bytep[h]);
 	channels = 3;
-	if(image->hasAlpha()) channels++;
+	if(image_layer.image_->hasAlpha()) channels++;
 	for(int i = 0; i < h; i++) row_pointers[i] = new uint8_t[w * channels];
 
 	for(int y = 0; y < h; y++)
 	{
 		for(int x = 0; x < w; x++)
 		{
-			Rgba color = image->getColor(x, y);
+			Rgba color = ColorLayer::postProcess(image_layer.image_->getColor(x, y), image_layer.layer_.getType(), color_space, gamma, alpha_premultiply);
 			color.clampRgba01();
 			const int i = x * channels;
 			row_pointers[y][i] = (uint8_t)(color.getR() * 255.f);
 			row_pointers[y][i + 1] = (uint8_t)(color.getG() * 255.f);
 			row_pointers[y][i + 2] = (uint8_t)(color.getB() * 255.f);
-			if(image->hasAlpha()) row_pointers[y][i + 3] = (uint8_t)(color.getA() * 255.f);
+			if(image_layer.image_->hasAlpha()) row_pointers[y][i + 3] = (uint8_t)(color.getA() * 255.f);
 		}
 	}
 

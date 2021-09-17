@@ -26,6 +26,7 @@
 #include "common/file.h"
 #include "image/image_buffers.h"
 #include "image/image_layers.h"
+#include "color/color_layers.h"
 #include "scene/scene.h"
 
 #include <ImfOutputFile.h>
@@ -163,10 +164,10 @@ CoStream::~CoStream()
 	close();
 }
 
-bool ExrFormat::saveToFile(const std::string &name, const Image *image)
+bool ExrFormat::saveToFile(const std::string &name, const ImageLayer &image_layer, ColorSpace color_space, float gamma, bool alpha_premultiply)
 {
-	const int h = image->getHeight();
-	const int w = image->getWidth();
+	const int h = image_layer.getHeight();
+	const int w = image_layer.getWidth();
 	const int chan_size = sizeof(half);
 	const int num_colchan = 4;
 	const int totchan_size = num_colchan * chan_size;
@@ -188,7 +189,7 @@ bool ExrFormat::saveToFile(const std::string &name, const Image *image)
 	{
 		for(int j = 0; j < h; ++j)
 		{
-			Rgba col = image->getColor(i, j);
+			const Rgba col = ColorLayer::postProcess(image_layer.image_->getColor(i, j), image_layer.layer_.getType(), color_space, gamma, alpha_premultiply);
 			pixels[j][i].r = col.r_;
 			pixels[j][i].g = col.g_;
 			pixels[j][i].b = col.b_;
@@ -221,13 +222,13 @@ bool ExrFormat::saveToFile(const std::string &name, const Image *image)
 	return result;
 }
 
-bool ExrFormat::saveToFileMultiChannel(const std::string &name, const ImageLayers *image_layers)
+bool ExrFormat::saveToFileMultiChannel(const std::string &name, const ImageLayers &image_layers, ColorSpace color_space, float gamma, bool alpha_premultiply)
 {
-	const int h_0 = (*image_layers)(Layer::Combined).image_->getHeight();
-	const int w_0 = (*image_layers)(Layer::Combined).image_->getWidth();
+	const int h_0 = image_layers(Layer::Combined).image_->getHeight();
+	const int w_0 = image_layers(Layer::Combined).image_->getWidth();
 
 	bool all_image_buffers_same_size = true;
-	for(const auto &image_layer : *image_layers)
+	for(const auto &image_layer : image_layers)
 	{
 		if(image_layer.second.image_->getHeight() != h_0) all_image_buffers_same_size = false;
 		if(image_layer.second.image_->getWidth() != w_0) all_image_buffers_same_size = false;
@@ -250,7 +251,7 @@ bool ExrFormat::saveToFileMultiChannel(const std::string &name, const ImageLayer
 
 	std::vector<std::unique_ptr<Imf::Array2D<Imf::Rgba>>> pixels;
 
-	for(const auto &image_layer : *image_layers)
+	for(const auto &image_layer : image_layers)
 	{
 		std::string layer_name = image_layer.second.layer_.getTypeName();
 		const std::string exported_image_name = image_layer.second.layer_.getExportedImageName();
@@ -280,7 +281,7 @@ bool ExrFormat::saveToFileMultiChannel(const std::string &name, const ImageLayer
 		{
 			for(int j = 0; j < h_0; ++j)
 			{
-				const Rgba col = image_layer.second.image_->getColor(i, j);
+				const Rgba col = ColorLayer::postProcess(image_layer.second.image_->getColor(i, j), image_layer.second.layer_.getType(), color_space, gamma, alpha_premultiply);
 				(*pixels.back())[j][i].r = col.r_;
 				(*pixels.back())[j][i].g = col.g_;
 				(*pixels.back())[j][i].b = col.b_;

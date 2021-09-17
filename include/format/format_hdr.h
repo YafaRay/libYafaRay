@@ -39,7 +39,7 @@ class HdrFormat final : public Format
 		HdrFormat(Logger &logger) : Format(logger) { }
 		virtual std::string getFormatName() const override { return "HdrFormat"; }
 		virtual std::unique_ptr<Image> loadFromFile(const std::string &name, const Image::Optimization &optimization, const ColorSpace &color_space, float gamma) override;
-		virtual bool saveToFile(const std::string &name, const Image *image) override;
+		virtual bool saveToFile(const std::string &name, const ImageLayer &image_layer, ColorSpace color_space, float gamma, bool alpha_premultiply) override;
 		virtual bool isHdr() const override { return true; }
 		bool writeHeader(std::ofstream &file, const Image *image);
 		bool writeScanline(std::ofstream &file, RgbePixel *scanline, const Image *image);

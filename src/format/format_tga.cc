@@ -26,17 +26,19 @@
 #include "common/param.h"
 #include "common/file.h"
 #include "image/image_buffers.h"
+#include "image/image_layers.h"
+#include "color/color_layers.h"
 #include "scene/scene.h"
 
 BEGIN_YAFARAY
 
-bool TgaFormat::saveToFile(const std::string &name, const Image *image)
+bool TgaFormat::saveToFile(const std::string &name, const ImageLayer &image_layer, ColorSpace color_space, float gamma, bool alpha_premultiply)
 {
 	std::FILE *fp = File::open(name, "wb");
 	if(fp == nullptr) return false;
 
-	const int h = image->getHeight();
-	const int w = image->getWidth();
+	const int h = image_layer.getHeight();
+	const int w = image_layer.getWidth();
 	const std::string image_id = "Image rendered with YafaRay";
 	TgaHeader header;
 	TgaFooter footer;
@@ -45,8 +47,8 @@ bool TgaFormat::saveToFile(const std::string &name, const Image *image)
 	header.image_type_ = UncTrueColor;
 	header.width_ = w;
 	header.height_ = h;
-	header.bit_depth_ = ((image->hasAlpha()) ? 32 : 24);
-	header.desc_ = tl_global | ((image->hasAlpha()) ? alpha_8_global : no_alpha_global);
+	header.bit_depth_ = ((image_layer.image_->hasAlpha()) ? 32 : 24);
+	header.desc_ = tl_global | ((image_layer.image_->hasAlpha()) ? alpha_8_global : no_alpha_global);
 
 	std::fwrite(&header, sizeof(TgaHeader), 1, fp);
 	std::fwrite(image_id.c_str(), static_cast<size_t>(header.id_length_), 1, fp);
@@ -55,9 +57,9 @@ bool TgaFormat::saveToFile(const std::string &name, const Image *image)
 	{
 		for(int x = 0; x < w; x++)
 		{
-			Rgba col = image->getColor(x, y);
+			Rgba col = ColorLayer::postProcess(image_layer.image_->getColor(x, y), image_layer.layer_.getType(), color_space, gamma, alpha_premultiply);
 			col.clampRgba01();
-			if(!image->hasAlpha())
+			if(!image_layer.image_->hasAlpha())
 			{
 				TgaPixelRgb rgb;
 				rgb = static_cast<Rgb>(col);

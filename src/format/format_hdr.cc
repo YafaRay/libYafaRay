@@ -26,6 +26,8 @@
 #include "common/param.h"
 #include "common/file.h"
 #include "scene/scene.h"
+#include "image/image_layers.h"
+#include "color/color_layers.h"
 
 #include <fstream>
 
@@ -308,15 +310,15 @@ bool HdrFormat::readArle(std::FILE *fp, int y, int scan_width, Image *image, con
 	return true;
 }
 
-bool HdrFormat::saveToFile(const std::string &name, const Image *image)
+bool HdrFormat::saveToFile(const std::string &name, const ImageLayer &image_layer, ColorSpace color_space, float gamma, bool alpha_premultiply)
 {
-	const int h = image->getHeight();
-	const int w = image->getWidth();
+	const int h = image_layer.getHeight();
+	const int w = image_layer.getWidth();
 	std::ofstream file(name.c_str(), std::ios::out | std::ios::binary);
 	if(!file.is_open()) return false;
 	else
 	{
-		writeHeader(file, image);
+		writeHeader(file, image_layer.image_.get());
 		RgbePixel signature; //scanline start signature for adaptative RLE
 		signature.setScanlineStart(w); //setup the signature
 		auto scanline = std::unique_ptr<RgbePixel[]>(new RgbePixel[w]);
@@ -326,9 +328,9 @@ bool HdrFormat::saveToFile(const std::string &name, const Image *image)
 			// write scanline start signature
 			file.write((char *)&signature, sizeof(RgbePixel));
 			// fill the scanline buffer
-			for(int x = 0; x < w; x++) scanline[x] = image->getColor(x, y);
+			for(int x = 0; x < w; x++) scanline[x] = ColorLayer::postProcess(image_layer.image_->getColor(x, y), image_layer.layer_.getType(), color_space, gamma, alpha_premultiply);
 			// write the scanline RLE compressed by channel in 4 separated blocks not as contigous pixels pixel blocks
-			if(!writeScanline(file, scanline.get(), image))
+			if(!writeScanline(file, scanline.get(), image_layer.image_.get()))
 			{
 				logger_.logError(getFormatName(), ": An error has occurred during scanline saving...");
 				return false;

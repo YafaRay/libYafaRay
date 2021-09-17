@@ -37,8 +37,8 @@ class ExrFormat final : public Format
 		ExrFormat(Logger &logger) : Format(logger) { }
 		virtual std::string getFormatName() const override { return "ExrFormat"; }
 		virtual std::unique_ptr<Image> loadFromFile(const std::string &name, const Image::Optimization &optimization, const ColorSpace &color_space, float gamma) override;
-		virtual bool saveToFile(const std::string &name, const Image *image) override;
-		virtual bool saveToFileMultiChannel(const std::string &name, const ImageLayers *image_layers) override;
+		virtual bool saveToFile(const std::string &name, const ImageLayer &image_layer, ColorSpace color_space, float gamma, bool alpha_premultiply) override;
+		virtual bool saveToFileMultiChannel(const std::string &name, const ImageLayers &image_layers, ColorSpace color_space, float gamma, bool alpha_premultiply) override;
 		virtual bool isHdr() const override { return true; }
 		virtual bool supportsMultiLayer() const override { return true; }
 };

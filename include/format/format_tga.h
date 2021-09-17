@@ -43,7 +43,7 @@ class TgaFormat final : public Format
 		TgaFormat(Logger &logger) : Format(logger) { }
 		virtual std::string getFormatName() const override { return "TgaFormat"; }
 		virtual std::unique_ptr<Image> loadFromFile(const std::string &name, const Image::Optimization &optimization, const ColorSpace &color_space, float gamma) override;
-		virtual bool saveToFile(const std::string &name, const Image *image) override;
+		virtual bool saveToFile(const std::string &name, const ImageLayer &image_layer, ColorSpace color_space, float gamma, bool alpha_premultiply) override;
 
 		/*! Image data reading template functions */
 		template <class ColorType> void readColorMap(std::FILE *fp, TgaHeader &header, ColorProcessor_t cp);
