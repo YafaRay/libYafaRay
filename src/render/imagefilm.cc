@@ -31,6 +31,7 @@
 #include "common/timer.h"
 #include "color/color_layers.h"
 #include "math/filter.h"
+#include "common/version_build_info.h"
 
 #ifdef HAVE_OPENCV
 #include <opencv2/photo/photo.hpp>
@@ -673,21 +674,31 @@ void ImageFilm::flush(const RenderView *render_view, const RenderControl &render
 
 	if(film_flush_callback_) film_flush_callback_(render_view->getName().c_str(), film_flush_callback_user_data_);
 
+	if(render_control.finished())
+	{
+		std::stringstream ss;
+		ss << printRenderStats(render_control, width_, height_);
+		ss << render_control.getAaNoiseInfo();
+		logger_.logParams("--------------------------------------------------------------------------------");
+		for(std::string line; std::getline(ss, line, '\n');) if(line != "" && line != "\n") logger_.logParams(line);
+		logger_.logParams("--------------------------------------------------------------------------------");
+	}
+
 	for(auto &output : outputs_)
 	{
 		if(output.second)
 		{
 			std::stringstream pass_string;
 			pass_string << "Flushing output '" << output.second->getName() << "' and saving image files.";
+			logger_.logInfo(pass_string.str());
 			if(render_control.finished())
 			{
 				std::stringstream ss;
 				ss << output.second->printBadge(render_control);
-				logger_.logParams("--------------------------------------------------------------------------------");
+				//logger_.logParams("--------------------------------------------------------------------------------");
 				for(std::string line; std::getline(ss, line, '\n');) if(line != "" && line != "\n") logger_.logParams(line);
-				logger_.logParams("--------------------------------------------------------------------------------");
+				//logger_.logParams("--------------------------------------------------------------------------------");
 			}
-			logger_.logInfo(pass_string.str());
 			std::string old_tag;
 			if(progress_bar_)
 			{
@@ -1211,6 +1222,41 @@ void ImageFilm::setFilmHighlightCallback(yafaray_FilmHighlightCallback_t highlig
 	film_highlight_callback_ = highlight_callback;
 	film_highlight_callback_user_data_ = callback_user_data;
 }
+
+std::string ImageFilm::printRenderStats(const RenderControl &render_control, int width, int height)
+{
+	std::stringstream ss;
+	ss << "\nYafaRay (" << buildinfo::getVersionString() << buildinfo::getBuildTypeSuffix() << ")" << " " << buildinfo::getBuildOs() << " " << buildinfo::getBuildArchitectureBits() << "bit (" << buildinfo::getBuildCompiler() << ")";
+	ss << std::setprecision(2);
+	double times = g_timer_global.getTimeNotStopping("rendert");
+	if(render_control.finished()) times = g_timer_global.getTime("rendert");
+	int timem, timeh;
+	g_timer_global.splitTime(times, &times, &timem, &timeh);
+	ss << " | " << width << "x" << height;
+	if(render_control.inProgress()) ss << " | " << (render_control.resumed() ? "film loaded + " : "") << "in progress " << std::fixed << std::setprecision(1) << render_control.currentPassPercent() << "% of pass: " << render_control.currentPass() << " / " << render_control.totalPasses();
+	else if(render_control.canceled()) ss << " | " << (render_control.resumed() ? "film loaded + " : "") << "stopped at " << std::fixed << std::setprecision(1) << render_control.currentPassPercent() << "% of pass: " << render_control.currentPass() << " / " << render_control.totalPasses();
+	else
+	{
+		if(render_control.resumed()) ss << " | film loaded + " << render_control.totalPasses() - 1 << " passes";
+		else ss << " | " << render_control.totalPasses() << " passes";
+	}
+	//if(cx0 != 0) ssBadge << ", xstart=" << cx0;
+	//if(cy0 != 0) ssBadge << ", ystart=" << cy0;
+	ss << " | Render time:";
+	if(timeh > 0) ss << " " << timeh << "h";
+	if(timem > 0) ss << " " << timem << "m";
+	ss << " " << times << "s";
+
+	times = g_timer_global.getTimeNotStopping("rendert") + g_timer_global.getTime("prepass");
+	if(render_control.finished()) times = g_timer_global.getTime("rendert") + g_timer_global.getTime("prepass");
+	g_timer_global.splitTime(times, &times, &timem, &timeh);
+	ss << " | Total time:";
+	if(timeh > 0) ss << " " << timeh << "h";
+	if(timem > 0) ss << " " << timem << "m";
+	ss << " " << times << "s";
+	return ss.str();
+}
+
 
 //The next edge detection, debug faces/object edges and toon functions will only work if YafaRay is built with OpenCV support
 #ifdef HAVE_OPENCV

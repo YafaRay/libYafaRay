@@ -157,6 +157,8 @@ class ImageFilm final
 		void setFilmFlushCallback(yafaray_FilmFlushCallback_t flush_callback, void *callback_user_data);
 		void setFilmHighlightCallback(yafaray_FilmHighlightCallback_t highlight_callback, void *callback_user_data);
 
+		static std::string printRenderStats(const RenderControl &render_control, int width, int height);
+
 	private:
 		int width_, height_, cx_0_, cx_1_, cy_0_, cy_1_;
 		bool show_mask_;

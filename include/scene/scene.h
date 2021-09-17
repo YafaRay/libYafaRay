@@ -162,8 +162,7 @@ class Scene
 		VolumeRegion *createVolumeRegion(const std::string &name, ParamMap &params);
 		RenderView *createRenderView(const std::string &name, ParamMap &params);
 		std::shared_ptr<Image> createImage(const std::string &name, ParamMap &params);
-		ImageOutput *createOutput(const std::string &name, ParamMap &params, void *callback_user_data = nullptr, yafaray_FilmPutpixelCallback_t output_putpixel_callback = nullptr, yafaray_FilmFlushAreaCallback_t output_flush_area_callback = nullptr, yafaray_FilmFlushCallback_t output_flush_callback = nullptr);
-		ImageOutput *createOutput(const std::string &name, std::unique_ptr<ImageOutput> output);
+		ImageOutput *createOutput(const std::string &name, ParamMap &params);
 		bool removeOutput(const std::string &name);
 		void clearOutputs();
 		std::map<std::string, std::unique_ptr<ImageOutput>> &getOutputs() { return outputs_; }

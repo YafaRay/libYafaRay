@@ -235,15 +235,9 @@ VolumeRegion *Interface::createVolumeRegion(const char *name) noexcept { return 
 RenderView *Interface::createRenderView(const char *name) noexcept { return scene_->createRenderView(name, *params_); }
 Image *Interface::createImage(const char *name) noexcept { return scene_->createImage(name, *params_).get(); }
 
-ImageOutput *Interface::createOutput(const char *name, void *callback_user_data, yafaray_FilmPutpixelCallback_t output_putpixel_callback, yafaray_FilmFlushAreaCallback_t output_flush_area_callback, yafaray_FilmFlushCallback_t output_flush_callback) noexcept
+ImageOutput *Interface::createOutput(const char *name) noexcept
 {
-	return scene_->createOutput(name, *params_, callback_user_data, output_putpixel_callback, output_flush_area_callback, output_flush_callback);
-}
-
-ImageOutput *Interface::createOutput(const char *name, ImageOutput *output) noexcept
-{
-	auto output_unique = std::unique_ptr<ImageOutput>(output);
-	return scene_->createOutput(name, std::move(output_unique));
+	return scene_->createOutput(name, *params_);
 }
 
 void Interface::setFilmInitCallback(yafaray_FilmInitCallback_t init_callback, void *init_callback_user_data) noexcept

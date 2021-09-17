@@ -110,8 +110,9 @@ std::string Badge::print(const std::string &denoise_params, const RenderControl 
 {
 	std::stringstream ss_badge;
 	ss_badge << getFields() << "\n";
-	ss_badge << getRenderInfo(render_control) << " | " << render_control.getRenderInfo() << "\n";
-	ss_badge << render_control.getAaNoiseInfo() << " " << denoise_params;
+	//ss_badge << getRenderInfo(render_control) << " | " << render_control.getRenderInfo() << "\n";
+	//ss_badge << render_control.getAaNoiseInfo() << " " << denoise_params;
+	ss_badge << denoise_params;
 	return ss_badge.str();
 }
 
@@ -153,7 +154,7 @@ std::unique_ptr<Image> Badge::generateImage(const std::string &denoise_params, c
 	ss_badge << getRenderInfo(render_control);
 	if(drawRenderSettings()) ss_badge << " | " << render_control.getRenderInfo();
 	if(drawAaNoiseSettings()) ss_badge << "\n" << render_control.getAaNoiseInfo();
-	ss_badge << " " << denoise_params;
+	if(!denoise_params.empty()) ss_badge << " | " << denoise_params;
 
 	int badge_line_count = 0;
 	constexpr float line_height = 13.f; //Pixels-measured baseline line height for automatic badge height calculation

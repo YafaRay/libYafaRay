@@ -221,10 +221,16 @@ int main()
 	yafaray_createRenderView(yi, "view_1");
 	yafaray_paramsClearAll(yi);
 
-	/* Creating image output */
-	yafaray_paramsSetString(yi, "type", "image_output");
+	/* Creating image outputs */
 	yafaray_paramsSetString(yi, "image_path", "./test01-output1.tga");
 	yafaray_createOutput(yi, "output1_tga");
+	yafaray_paramsClearAll(yi);
+
+	yafaray_paramsSetString(yi, "image_path", "./test01-output2.tga");
+	yafaray_paramsSetString(yi, "color_space", "Raw_Manual_Gamma");
+	yafaray_paramsSetFloat(yi, "gamma", 4.0);
+	yafaray_paramsSetBool(yi, "denoise_enabled", YAFARAY_BOOL_TRUE);
+	yafaray_createOutput(yi, "output2_tga");
 	yafaray_paramsClearAll(yi);
 
 	/* Creating surface integrator */

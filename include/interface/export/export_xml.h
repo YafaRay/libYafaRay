@@ -56,7 +56,7 @@ class XmlExport: public Interface
 		virtual VolumeRegion *createVolumeRegion(const char *name) noexcept override;
 		virtual RenderView *createRenderView(const char *name) noexcept override;
 		virtual Image *createImage(const char *name) noexcept override;
-		virtual ImageOutput *createOutput(const char *name, void *callback_user_data = nullptr, yafaray_FilmPutpixelCallback_t output_putpixel_callback = nullptr, yafaray_FilmFlushAreaCallback_t output_flush_area_callback = nullptr, yafaray_FilmFlushCallback_t output_flush_callback = nullptr) noexcept override;
+		virtual ImageOutput *createOutput(const char *name) noexcept override;
 		virtual void clearAll() noexcept override; //!< clear the whole environment + scene, i.e. free (hopefully) all memory.
 		virtual void clearOutputs() noexcept override { }
 		virtual void setupRender() noexcept override;

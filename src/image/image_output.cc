@@ -244,7 +244,7 @@ std::string ImageOutput::printDenoiseParams() const
 #ifdef HAVE_OPENCV	//Denoise only works if YafaRay is built with OpenCV support
 	if(!denoiseEnabled()) return "";
 	std::stringstream param_string;
-	param_string << "| Image file denoise enabled [mix=" << denoise_params_.mix_ << ", h(Luminance)=" << denoise_params_.hlum_ <<  ", h(Chrominance)=" << denoise_params_.hcol_ << "]";
+	param_string << "Image file denoise enabled [mix=" << denoise_params_.mix_ << ", h(Luminance)=" << denoise_params_.hlum_ <<  ", h(Chrominance)=" << denoise_params_.hcol_ << "]";
 	return param_string.str();
 #else
 	return "";

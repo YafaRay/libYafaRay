@@ -449,11 +449,6 @@ Material *Scene::createMaterial(const std::string &name, ParamMap &params, std::
 	return nullptr;
 }
 
-ImageOutput *Scene::createOutput(const std::string &name, std::unique_ptr<ImageOutput> output)
-{
-	return createMapItem<ImageOutput>(logger_, name, "ImageOutput", std::move(output), outputs_);
-}
-
 template <typename T>
 T *Scene::createMapItem(Logger &logger, const std::string &name, const std::string &class_name, std::unique_ptr<T> item, std::map<std::string, std::unique_ptr<T>> &map)
 {
@@ -530,7 +525,7 @@ std::shared_ptr<T> Scene::createMapItem(Logger &logger, const std::string &name,
 	return nullptr;
 }
 
-ImageOutput *Scene::createOutput(const std::string &name, ParamMap &params, void *callback_user_data, yafaray_FilmPutpixelCallback_t output_putpixel_callback, yafaray_FilmFlushAreaCallback_t output_flush_area_callback, yafaray_FilmFlushCallback_t output_flush_callback)
+ImageOutput *Scene::createOutput(const std::string &name, ParamMap &params)
 {
 	std::string pname = "ColorOutput";
 	params["name"] = std::string(name);
@@ -538,23 +533,14 @@ ImageOutput *Scene::createOutput(const std::string &name, ParamMap &params, void
 	{
 		logWarnExist(logger_, pname, name); return nullptr;
 	}
-	std::string type;
-	if(! params.getParam("type", type))
-	{
-		if(true)//check_type_exists)
-		{
-			logErrNoType(logger_, pname, name, type);
-			return nullptr;
-		}
-	}
 	std::unique_ptr<ImageOutput> item = ImageOutput::factory(logger_, params, *this);
 	if(item)
 	{
 		outputs_[name] = std::move(item);
-		if(logger_.isVerbose()) logInfoVerboseSuccess(logger_, pname, name, type);
+		if(logger_.isVerbose()) logInfoVerboseSuccess(logger_, pname, name, "");
 		return outputs_[name].get();
 	}
-	logErrOnCreate(logger_, pname, name, type);
+	logErrOnCreate(logger_, pname, name, "");
 	return nullptr;
 }
 

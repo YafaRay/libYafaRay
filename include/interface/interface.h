@@ -99,8 +99,7 @@ class Interface
 		virtual VolumeRegion *createVolumeRegion(const char *name) noexcept;
 		virtual RenderView *createRenderView(const char *name) noexcept;
 		virtual Image *createImage(const char *name) noexcept;
-		virtual ImageOutput *createOutput(const char *name, void *callback_user_data = nullptr, yafaray_FilmPutpixelCallback_t output_putpixel_callback = nullptr, yafaray_FilmFlushAreaCallback_t output_flush_area_callback = nullptr, yafaray_FilmFlushCallback_t output_flush_callback = nullptr) noexcept;
-		virtual ImageOutput *createOutput(const char *name, ImageOutput *output) noexcept;
+		virtual ImageOutput *createOutput(const char *name) noexcept;
 		void setFilmInitCallback(yafaray_FilmInitCallback_t init_callback, void *init_callback_user_data) noexcept;
 		void setFilmPutPixelCallback(yafaray_FilmPutpixelCallback_t putpixel_callback, void *putpixel_callback_user_data) noexcept;
 		void setFilmFlushAreaCallback(yafaray_FilmFlushAreaCallback_t flush_area_callback, void *flush_area_callback_user_data) noexcept;
