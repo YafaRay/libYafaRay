@@ -87,7 +87,7 @@ extern "C" {
 	YAFARAY_C_API_EXPORT yafaray_bool_t yafaray_createVolumeRegion(yafaray_Interface_t *interface, const char *name);
 	YAFARAY_C_API_EXPORT yafaray_bool_t yafaray_createRenderView(yafaray_Interface_t *interface, const char *name);
 	YAFARAY_C_API_EXPORT yafaray_bool_t yafaray_createOutput(yafaray_Interface_t *interface, const char *name);
-	YAFARAY_C_API_EXPORT void yafaray_setFilmInitCallback(yafaray_Interface_t *interface, yafaray_FilmInitCallback_t init_callback, void *putpixel_callback_user_data);
+	YAFARAY_C_API_EXPORT void yafaray_setFilmInitCallback(yafaray_Interface_t *interface, yafaray_FilmInitCallback_t init_callback, void *init_callback_user_data);
 	YAFARAY_C_API_EXPORT void yafaray_setFilmPutPixelCallback(yafaray_Interface_t *interface, yafaray_FilmPutpixelCallback_t putpixel_callback, void *putpixel_callback_user_data);
 	YAFARAY_C_API_EXPORT void yafaray_setFilmFlushAreaCallback(yafaray_Interface_t *interface, yafaray_FilmFlushAreaCallback_t flush_area_callback, void *flush_area_callback_user_data);
 	YAFARAY_C_API_EXPORT void yafaray_setFilmFlushCallback(yafaray_Interface_t *interface, yafaray_FilmFlushCallback_t flush_callback, void *flush_callback_user_data);
