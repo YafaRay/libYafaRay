@@ -32,6 +32,8 @@ class XmlExport: public Interface
 	public:
 		XmlExport(const char *fname, const ::yafaray_LoggerCallback_t logger_callback = nullptr, void *callback_user_data = nullptr, ::yafaray_DisplayConsole_t logger_display_console = YAFARAY_DISPLAY_CONSOLE_NORMAL);
 		virtual void createScene() noexcept override;
+		virtual int getSceneFilmWidth() const noexcept override { return 0; }
+		virtual int getSceneFilmHeight() const noexcept override { return 0; }
 		virtual void defineLayer() noexcept override;
 		virtual bool startGeometry() noexcept override;
 		virtual bool endGeometry() noexcept override;

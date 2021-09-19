@@ -56,8 +56,8 @@ class Interface
 		virtual ~Interface() noexcept;
 		void setLoggingCallback(const ::yafaray_LoggerCallback_t logger_callback, void *callback_user_data);
 		virtual void createScene() noexcept;
-		int getSceneFilmWidth() const noexcept;
-		int getSceneFilmHeight() const noexcept;
+		virtual int getSceneFilmWidth() const noexcept;
+		virtual int getSceneFilmHeight() const noexcept;
 		std::string printLayersTable() const noexcept;
 		std::string printViewsTable() const noexcept;
 		virtual bool startGeometry() noexcept; //!< call before creating geometry; only meshes and vmaps can be created in this state
