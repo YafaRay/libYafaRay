@@ -33,7 +33,7 @@ struct ResultImage
     char *data_;
 };
 
-void initCallback(const char *view_name, const char *layer_name, int weight, int height, int layer_exported_channels, void *callback_user_data);
+void initCallback(const char *view_name, const char *internal_layer_name, const char *exported_layer_name, int weight, int height, int layer_exported_channels, void *callback_user_data);
 void putPixelCallback(const char *view_name, const char *layer_name, int x, int y, float r, float g, float b, float a, void *callback_user_data);
 void flushAreaCallback(const char *view_name, int area_id, int x_0, int y_0, int x_1, int y_1, void *callback_user_data);
 void flushCallback(const char *view_name, void *callback_user_data);
@@ -295,9 +295,9 @@ float forceRange01(float value)
 	else return value;
 }
 
-void initCallback(const char *view_name, const char *layer_name, int weight, int height, int layer_exported_channels, void *callback_user_data)
+void initCallback(const char *view_name, const char *internal_layer_name, const char *exported_layer_name, int weight, int height, int layer_exported_channels, void *callback_user_data)
 {
-	printf("**** InitCallback view_name='%s', layer_name='%s', weight=%d, height=%d, layer_exported_channels=%d, callback_user_data=%p\n", view_name, layer_name, weight, height, layer_exported_channels, callback_user_data);
+	printf("**** InitCallback view_name='%s', internal_layer_name='%s', exported_layer_name='%s', weight=%d, height=%d, layer_exported_channels=%d, callback_user_data=%p\n", view_name, internal_layer_name, exported_layer_name, weight, height, layer_exported_channels, callback_user_data);
 }
 
 void putPixelCallback(const char *view_name, const char *layer_name, int x, int y, float r, float g, float b, float a, void *callback_user_data)

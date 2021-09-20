@@ -244,12 +244,12 @@ void ImageFilm::init(RenderControl &render_control, int num_passes)
 	{
 		for(const auto &render_view : *render_views_)
 		{
-			film_init_callback_(render_view.second->getName().c_str(), "", width_, height_, 0, film_init_callback_user_data_);
+			film_init_callback_(render_view.second->getName().c_str(), nullptr, nullptr, width_, height_, 0, film_init_callback_user_data_);
 		}
 		const Layers &layers = layers_.getLayersWithExportedImages();
 		for(const auto &layer : layers)
 		{
-			film_init_callback_("", layer.second.getExportedImageName().c_str(), width_, height_, layer.second.getNumExportedChannels(), film_init_callback_user_data_);
+			film_init_callback_(nullptr, Layer::getTypeName(layer.second.getType()).c_str(), layer.second.getExportedImageName().c_str(), width_, height_, layer.second.getNumExportedChannels(), film_init_callback_user_data_);
 		}
 	}
 }
