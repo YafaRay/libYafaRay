@@ -245,9 +245,14 @@ void Interface::setFilmInitCallback(yafaray_FilmInitCallback_t init_callback, vo
 	if(scene_) scene_->setFilmInitCallback(init_callback, init_callback_user_data);
 }
 
-void Interface::setFilmPutPixelCallback(yafaray_FilmPutpixelCallback_t putpixel_callback, void *putpixel_callback_user_data) noexcept
+void Interface::setFilmPutPixelCallback(yafaray_FilmPutPixelCallback_t putpixel_callback, void *putpixel_callback_user_data) noexcept
 {
 	if(scene_) scene_->setFilmPutPixelCallback(putpixel_callback, putpixel_callback_user_data);
+}
+
+void Interface::setFilmHighlightPixelCallback(yafaray_FilmHighlightPixelCallback_t highlight_pixel_callback, void *highlight_pixel_callback_user_data) noexcept
+{
+	if(scene_) scene_->setFilmHighlightPixelCallback(highlight_pixel_callback, highlight_pixel_callback_user_data);
 }
 
 void Interface::setFilmFlushAreaCallback(yafaray_FilmFlushAreaCallback_t flush_area_callback, void *flush_area_callback_user_data) noexcept
@@ -260,9 +265,9 @@ void Interface::setFilmFlushCallback(yafaray_FilmFlushCallback_t flush_callback,
 	if(scene_) scene_->setFilmFlushCallback(flush_callback, flush_callback_user_data);
 }
 
-void Interface::setFilmHighlightCallback(yafaray_FilmHighlightCallback_t highlight_callback, void *highlight_callback_user_data) noexcept
+void Interface::setFilmHighlightAreaCallback(yafaray_FilmHighlightAreaCallback_t highlight_callback, void *highlight_callback_user_data) noexcept
 {
-	if(scene_) scene_->setFilmHighlightCallback(highlight_callback, highlight_callback_user_data);
+	if(scene_) scene_->setFilmHighlightAreaCallback(highlight_callback, highlight_callback_user_data);
 }
 
 int Interface::getSceneFilmWidth() const noexcept

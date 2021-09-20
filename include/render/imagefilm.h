@@ -152,10 +152,11 @@ class ImageFilm final
 		void setRenderViews(const std::map<std::string, std::unique_ptr<RenderView>> *render_views) { render_views_ = render_views; }
 
 		void setFilmInitCallback(yafaray_FilmInitCallback_t init_callback, void *callback_user_data);
-		void setFilmPutPixelCallback(yafaray_FilmPutpixelCallback_t put_pixel_callback, void *callback_user_data);
+		void setFilmPutPixelCallback(yafaray_FilmPutPixelCallback_t put_pixel_callback, void *callback_user_data);
+		void setFilmHighlightPixelCallback(yafaray_FilmHighlightPixelCallback_t highlight_pixel_callback, void *callback_user_data);
 		void setFilmFlushAreaCallback(yafaray_FilmFlushAreaCallback_t flush_area_callback, void *callback_user_data);
 		void setFilmFlushCallback(yafaray_FilmFlushCallback_t flush_callback, void *callback_user_data);
-		void setFilmHighlightCallback(yafaray_FilmHighlightCallback_t highlight_callback, void *callback_user_data);
+		void setFilmHighlightAreaCallback(yafaray_FilmHighlightAreaCallback_t highlight_callback, void *callback_user_data);
 
 		static std::string printRenderStats(const RenderControl &render_control, int width, int height);
 
@@ -202,14 +203,16 @@ class ImageFilm final
 
 		yafaray_FilmInitCallback_t film_init_callback_ = nullptr;
 		void *film_init_callback_user_data_ = nullptr;
-		yafaray_FilmPutpixelCallback_t film_put_pixel_callback_ = nullptr;
+		yafaray_FilmPutPixelCallback_t film_put_pixel_callback_ = nullptr;
 		void *film_put_pixel_callback_user_data_ = nullptr;
+		yafaray_FilmHighlightPixelCallback_t film_highlight_pixel_callback_ = nullptr;
+		void *film_highlight_pixel_callback_user_data_ = nullptr;
 		yafaray_FilmFlushAreaCallback_t film_flush_area_callback_ = nullptr;
 		void *film_flush_area_callback_user_data_ = nullptr;
 		yafaray_FilmFlushCallback_t film_flush_callback_ = nullptr;
 		void *film_flush_callback_user_data_ = nullptr;
-		yafaray_FilmHighlightCallback_t film_highlight_callback_ = nullptr;
-		void *film_highlight_callback_user_data_ = nullptr;
+		yafaray_FilmHighlightAreaCallback_t film_highlight_area_callback_ = nullptr;
+		void *film_highlight_area_callback_user_data_ = nullptr;
 };
 
 END_YAFARAY

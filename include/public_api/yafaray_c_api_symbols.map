@@ -43,9 +43,10 @@ LIBYAFARAY_4.0.0 {
         yafaray_createOutput;
         yafaray_setFilmInitCallback;
         yafaray_setFilmPutPixelCallback;
+        yafaray_setFilmHighlightPixelCallback;
         yafaray_setFilmFlushAreaCallback;
         yafaray_setFilmFlushCallback;
-        yafaray_setFilmHighlightCallback;
+        yafaray_setFilmHighlightAreaCallback;
         yafaray_removeOutput;
         yafaray_clearOutputs;
         yafaray_clearAll;

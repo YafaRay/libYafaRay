@@ -249,7 +249,7 @@ int main()
 	yafaray_setFilmPutPixelCallback(yi, putPixelCallback, (void *) &result_image);
 	yafaray_setFilmFlushAreaCallback(yi, flushAreaCallback, (void *) &result_image);
 	yafaray_setFilmFlushCallback(yi, flushCallback, (void *) &result_image);
-	yafaray_setFilmHighlightCallback(yi, highlightCallback, (void *) &result_image);
+	yafaray_setFilmHighlightAreaCallback(yi, highlightCallback, (void *) &result_image);
 
 	/* Setting up render parameters */
 	yafaray_paramsSetString(yi, "integrator_name", "surfintegr");

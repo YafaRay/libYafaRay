@@ -190,10 +190,11 @@ class Scene
 		void setEdgeToonParams(const EdgeToonParams &edge_toon_params) { edge_toon_params_ = edge_toon_params; }
 
 		void setFilmInitCallback(yafaray_FilmInitCallback_t init_callback, void *callback_user_data);
-		void setFilmPutPixelCallback(yafaray_FilmPutpixelCallback_t put_pixel_callback, void *callback_user_data);
+		void setFilmPutPixelCallback(yafaray_FilmPutPixelCallback_t put_pixel_callback, void *callback_user_data);
+		void setFilmHighlightPixelCallback(yafaray_FilmHighlightPixelCallback_t highlight_pixel_callback, void *callback_user_data);
 		void setFilmFlushAreaCallback(yafaray_FilmFlushAreaCallback_t flush_area_callback, void *callback_user_data);
 		void setFilmFlushCallback(yafaray_FilmFlushCallback_t flush_callback, void *callback_user_data);
-		void setFilmHighlightCallback(yafaray_FilmHighlightCallback_t highlight_callback, void *callback_user_data);
+		void setFilmHighlightAreaCallback(yafaray_FilmHighlightAreaCallback_t highlight_callback, void *callback_user_data);
 
 		VolumeIntegrator *vol_integrator_ = nullptr;
 		float shadow_bias_ = 1.0e-4f;  //shadow bias to apply to shadows to avoid self-shadow artifacts
@@ -252,14 +253,16 @@ class Scene
 
 		yafaray_FilmInitCallback_t film_init_callback_ = nullptr;
 		void *film_init_callback_user_data_ = nullptr;
-		yafaray_FilmPutpixelCallback_t film_put_pixel_callback_ = nullptr;
+		yafaray_FilmPutPixelCallback_t film_put_pixel_callback_ = nullptr;
 		void *film_put_pixel_callback_user_data_ = nullptr;
+		yafaray_FilmHighlightPixelCallback_t film_highlight_pixel_callback_ = nullptr;
+		void *film_highlight_pixel_callback_user_data_ = nullptr;
 		yafaray_FilmFlushAreaCallback_t film_flush_area_callback_ = nullptr;
 		void *film_flush_area_callback_user_data_ = nullptr;
 		yafaray_FilmFlushCallback_t film_flush_callback_ = nullptr;
 		void *film_flush_callback_user_data_ = nullptr;
-		yafaray_FilmHighlightCallback_t film_highlight_callback_ = nullptr;
-		void *film_highlight_callback_user_data_ = nullptr;
+		yafaray_FilmHighlightAreaCallback_t film_highlight_area_callback_ = nullptr;
+		void *film_highlight_area_callback_user_data_ = nullptr;
 };
 
 END_YAFARAY

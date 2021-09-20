@@ -101,10 +101,11 @@ class Interface
 		virtual Image *createImage(const char *name) noexcept;
 		virtual ImageOutput *createOutput(const char *name) noexcept;
 		void setFilmInitCallback(yafaray_FilmInitCallback_t init_callback, void *init_callback_user_data) noexcept;
-		void setFilmPutPixelCallback(yafaray_FilmPutpixelCallback_t putpixel_callback, void *putpixel_callback_user_data) noexcept;
+		void setFilmPutPixelCallback(yafaray_FilmPutPixelCallback_t putpixel_callback, void *putpixel_callback_user_data) noexcept;
+		void setFilmHighlightPixelCallback(yafaray_FilmHighlightPixelCallback_t highlight_pixel_callback, void *highlight_pixel_callback_user_data) noexcept;
 		void setFilmFlushAreaCallback(yafaray_FilmFlushAreaCallback_t flush_area_callback, void *flush_area_callback_user_data) noexcept;
 		void setFilmFlushCallback(yafaray_FilmFlushCallback_t flush_callback, void *flush_callback_user_data) noexcept;
-		void setFilmHighlightCallback(yafaray_FilmHighlightCallback_t highlight_callback, void *highlight_callback_user_data) noexcept;
+		void setFilmHighlightAreaCallback(yafaray_FilmHighlightAreaCallback_t highlight_callback, void *highlight_callback_user_data) noexcept;
 		bool removeOutput(const char *name) noexcept;
 		virtual void clearOutputs() noexcept;
 		virtual void clearAll() noexcept;

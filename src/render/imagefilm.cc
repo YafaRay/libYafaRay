@@ -292,6 +292,7 @@ int ImageFilm::nextPass(const RenderView *render_view, RenderControl &render_con
 	else flags_.fill(false);
 	ColorLayers color_layers(layers_);
 	int variance_half_edge = aa_noise_params_.variance_edge_size_ / 2;
+	std::shared_ptr<Image> combined_image = film_image_layers_(Layer::Combined).image_;
 
 	float aa_thresh_scaled = aa_noise_params_.threshold_;
 
@@ -322,7 +323,7 @@ int ImageFilm::nextPass(const RenderView *render_view, RenderControl &render_con
 					if(!background_resampling_ && mat_sample_factor == 0.f) continue;
 				}
 
-				Rgba pix_col = film_image_layers_(Layer::Combined).image_->getColor(x, y).normalized(weight);
+				Rgba pix_col = combined_image->getColor(x, y).normalized(weight);
 				float pix_col_bri = pix_col.abscol2Bri();
 
 				if(aa_noise_params_.dark_detection_type_ == AaNoiseParams::DarkDetectionType::Linear && aa_noise_params_.dark_threshold_factor_ > 0.f)
@@ -334,19 +335,19 @@ int ImageFilm::nextPass(const RenderView *render_view, RenderControl &render_con
 					aa_thresh_scaled = darkThresholdCurveInterpolate(pix_col_bri);
 				}
 
-				if(pix_col.colorDifference(film_image_layers_(Layer::Combined).image_->getColor(x + 1, y).normalized(weights_(x + 1, y).getFloat()), aa_noise_params_.detect_color_noise_) >= aa_thresh_scaled)
+				if(pix_col.colorDifference(combined_image->getColor(x + 1, y).normalized(weights_(x + 1, y).getFloat()), aa_noise_params_.detect_color_noise_) >= aa_thresh_scaled)
 				{
 					flags_.set(x, y, true); flags_.set(x + 1, y, true);
 				}
-				if(pix_col.colorDifference(film_image_layers_(Layer::Combined).image_->getColor(x, y + 1).normalized(weights_(x, y + 1).getFloat()), aa_noise_params_.detect_color_noise_) >= aa_thresh_scaled)
+				if(pix_col.colorDifference(combined_image->getColor(x, y + 1).normalized(weights_(x, y + 1).getFloat()), aa_noise_params_.detect_color_noise_) >= aa_thresh_scaled)
 				{
 					flags_.set(x, y, true); flags_.set(x, y + 1, true);
 				}
-				if(pix_col.colorDifference(film_image_layers_(Layer::Combined).image_->getColor(x + 1, y + 1).normalized(weights_(x + 1, y + 1).getFloat()), aa_noise_params_.detect_color_noise_) >= aa_thresh_scaled)
+				if(pix_col.colorDifference(combined_image->getColor(x + 1, y + 1).normalized(weights_(x + 1, y + 1).getFloat()), aa_noise_params_.detect_color_noise_) >= aa_thresh_scaled)
 				{
 					flags_.set(x, y, true); flags_.set(x + 1, y + 1, true);
 				}
-				if(x > 0 && pix_col.colorDifference(film_image_layers_(Layer::Combined).image_->getColor(x - 1, y + 1).normalized(weights_(x - 1, y + 1).getFloat()), aa_noise_params_.detect_color_noise_) >= aa_thresh_scaled)
+				if(x > 0 && pix_col.colorDifference(combined_image->getColor(x - 1, y + 1).normalized(weights_(x - 1, y + 1).getFloat()), aa_noise_params_.detect_color_noise_) >= aa_thresh_scaled)
 				{
 					flags_.set(x, y, true); flags_.set(x - 1, y + 1, true);
 				}
@@ -363,8 +364,8 @@ int ImageFilm::nextPass(const RenderView *render_view, RenderControl &render_con
 						if(xi < 0) xi = 0;
 						else if(xi >= width_ - 1) xi = width_ - 2;
 
-						Rgba cx_0 = film_image_layers_(Layer::Combined).image_->getColor(xi, y).normalized(weights_(xi, y).getFloat());
-						Rgba cx_1 = film_image_layers_(Layer::Combined).image_->getColor(xi + 1, y).normalized(weights_(xi + 1, y).getFloat());
+						Rgba cx_0 = combined_image->getColor(xi, y).normalized(weights_(xi, y).getFloat());
+						Rgba cx_1 = combined_image->getColor(xi + 1, y).normalized(weights_(xi + 1, y).getFloat());
 
 						if(cx_0.colorDifference(cx_1, aa_noise_params_.detect_color_noise_) >= aa_thresh_scaled) ++variance_x;
 					}
@@ -375,8 +376,8 @@ int ImageFilm::nextPass(const RenderView *render_view, RenderControl &render_con
 						if(yi < 0) yi = 0;
 						else if(yi >= height_ - 1) yi = height_ - 2;
 
-						Rgba cy_0 = film_image_layers_(Layer::Combined).image_->getColor(x, yi).normalized(weights_(x, yi).getFloat());
-						Rgba cy_1 = film_image_layers_(Layer::Combined).image_->getColor(x, yi + 1).normalized(weights_(x, yi + 1).getFloat());
+						Rgba cy_0 = combined_image->getColor(x, yi).normalized(weights_(x, yi).getFloat());
+						Rgba cy_1 = combined_image->getColor(x, yi + 1).normalized(weights_(x, yi + 1).getFloat());
 
 						if(cy_0.colorDifference(cy_1, aa_noise_params_.detect_color_noise_) >= aa_thresh_scaled) ++variance_y;
 					}
@@ -410,37 +411,11 @@ int ImageFilm::nextPass(const RenderView *render_view, RenderControl &render_con
 				if(flags_.get(x, y))
 				{
 					++n_resample;
-
-					if(render_control.isInteractive() && show_mask_)
+					if(film_highlight_pixel_callback_)
 					{
-						float mat_sample_factor = 1.f;
 						const float weight = weights_(x, y).getFloat();
-						if(sampling_factor_image_pass)
-						{
-							mat_sample_factor = (weight == 0.f) ? 0.f : sampling_factor_image_pass->getFloat(x, y) / weight;
-							if(!background_resampling_ && mat_sample_factor == 0.f) continue;
-						}
-
-						for(const auto &it : film_image_layers_)
-						{
-							Rgb pix = it.second.image_->getColor(x, y).normalized(weight);
-							float pix_col_bri = pix.abscol2Bri();
-
-							if(pix.r_ < pix.g_ && pix.r_ < pix.b_)
-								color_layers(it.first).color_.set(0.7f, pix_col_bri, mat_sample_factor > 1.f ? 0.7f : pix_col_bri, 1.f);
-							else
-								color_layers(it.first).color_.set(pix_col_bri, 0.7f, mat_sample_factor > 1.f ? 0.7f : pix_col_bri, 1.f);
-						}
-
-						if(film_put_pixel_callback_)
-						{
-							for(const auto &color_layer : color_layers)
-							{
-								const Rgba &col = color_layer.second.color_;
-								const Layer::Type &layer_type = color_layer.second.layer_type_;
-								film_put_pixel_callback_(render_view->getName().c_str(), Layer::getTypeName(layer_type).c_str(), x, y, col.r_, col.g_, col.b_, col.a_, film_put_pixel_callback_user_data_);
-							}
-						}
+						const Rgba col = combined_image->getColor(x, y).normalized(weight);
+						film_highlight_pixel_callback_(render_view->getName().c_str(), x, y, col.r_, col.g_, col.b_, col.a_, film_highlight_pixel_callback_user_data_);
 					}
 				}
 			}
@@ -490,11 +465,11 @@ bool ImageFilm::nextArea(const RenderView *render_view, const RenderControl &ren
 			a.sy_0_ = a.y_ + ifilterw;
 			a.sy_1_ = a.y_ + a.h_ - ifilterw;
 
-			if(film_highlight_callback_)
+			if(film_highlight_area_callback_)
 			{
 				const int end_x = a.x_ + a.w_;
 				const int end_y = a.y_ + a.h_;
-				film_highlight_callback_(render_view->getName().c_str(), a.id_, a.x_, a.y_, end_x, end_y, film_highlight_callback_user_data_);
+				film_highlight_area_callback_(render_view->getName().c_str(), a.id_, a.x_, a.y_, end_x, end_y, film_highlight_area_callback_user_data_);
 			}
 			return true;
 		}
@@ -1199,10 +1174,16 @@ void ImageFilm::setFilmInitCallback(yafaray_FilmInitCallback_t init_callback, vo
 
 }
 
-void ImageFilm::setFilmPutPixelCallback(yafaray_FilmPutpixelCallback_t put_pixel_callback, void *callback_user_data)
+void ImageFilm::setFilmPutPixelCallback(yafaray_FilmPutPixelCallback_t put_pixel_callback, void *callback_user_data)
 {
 	film_put_pixel_callback_ = put_pixel_callback;
 	film_put_pixel_callback_user_data_ = callback_user_data;
+}
+
+void ImageFilm::setFilmHighlightPixelCallback(yafaray_FilmHighlightPixelCallback_t highlight_pixel_callback, void *callback_user_data)
+{
+	film_highlight_pixel_callback_ = highlight_pixel_callback;
+	film_highlight_pixel_callback_user_data_ = callback_user_data;
 }
 
 void ImageFilm::setFilmFlushAreaCallback(yafaray_FilmFlushAreaCallback_t flush_area_callback, void *callback_user_data)
@@ -1217,10 +1198,10 @@ void ImageFilm::setFilmFlushCallback(yafaray_FilmFlushCallback_t flush_callback,
 	film_flush_callback_user_data_ = callback_user_data;
 }
 
-void ImageFilm::setFilmHighlightCallback(yafaray_FilmHighlightCallback_t highlight_callback, void *callback_user_data)
+void ImageFilm::setFilmHighlightAreaCallback(yafaray_FilmHighlightAreaCallback_t highlight_callback, void *callback_user_data)
 {
-	film_highlight_callback_ = highlight_callback;
-	film_highlight_callback_user_data_ = callback_user_data;
+	film_highlight_area_callback_ = highlight_callback;
+	film_highlight_area_callback_user_data_ = callback_user_data;
 }
 
 std::string ImageFilm::printRenderStats(const RenderControl &render_control, int width, int height)

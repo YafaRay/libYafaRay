@@ -716,7 +716,8 @@ bool Scene::setupSceneRenderParams(Scene &scene, const ParamMap &params)
 	image_film_->setBackgroundResampling(background_resampling);
 	image_film_->setFilmInitCallback(film_init_callback_, film_init_callback_user_data_);
 	image_film_->setFilmPutPixelCallback(film_put_pixel_callback_, film_put_pixel_callback_user_data_);
-	image_film_->setFilmHighlightCallback(film_highlight_callback_, film_highlight_callback_user_data_);
+	image_film_->setFilmHighlightPixelCallback(film_highlight_pixel_callback_, film_highlight_pixel_callback_user_data_);
+	image_film_->setFilmHighlightAreaCallback(film_highlight_area_callback_, film_highlight_area_callback_user_data_);
 	image_film_->setFilmFlushAreaCallback(film_flush_area_callback_, film_flush_area_callback_user_data_);
 	image_film_->setFilmFlushCallback(film_flush_callback_, film_flush_callback_user_data_);
 	image_film_->setRenderViews(&render_views_);
@@ -946,10 +947,16 @@ void Scene::setFilmInitCallback(yafaray_FilmInitCallback_t init_callback, void *
 
 }
 
-void Scene::setFilmPutPixelCallback(yafaray_FilmPutpixelCallback_t put_pixel_callback, void *callback_user_data)
+void Scene::setFilmPutPixelCallback(yafaray_FilmPutPixelCallback_t put_pixel_callback, void *callback_user_data)
 {
 	film_put_pixel_callback_ = put_pixel_callback;
 	film_put_pixel_callback_user_data_ = callback_user_data;
+}
+
+void Scene::setFilmHighlightPixelCallback(yafaray_FilmHighlightPixelCallback_t highlight_pixel_callback, void *callback_user_data)
+{
+	film_highlight_pixel_callback_ = highlight_pixel_callback;
+	film_highlight_pixel_callback_user_data_ = callback_user_data;
 }
 
 void Scene::setFilmFlushAreaCallback(yafaray_FilmFlushAreaCallback_t flush_area_callback, void *callback_user_data)
@@ -964,10 +971,10 @@ void Scene::setFilmFlushCallback(yafaray_FilmFlushCallback_t flush_callback, voi
 	film_flush_callback_user_data_ = callback_user_data;
 }
 
-void Scene::setFilmHighlightCallback(yafaray_FilmHighlightCallback_t highlight_callback, void *callback_user_data)
+void Scene::setFilmHighlightAreaCallback(yafaray_FilmHighlightAreaCallback_t highlight_callback, void *callback_user_data)
 {
-	film_highlight_callback_ = highlight_callback;
-	film_highlight_callback_user_data_ = callback_user_data;
+	film_highlight_area_callback_ = highlight_callback;
+	film_highlight_area_callback_user_data_ = callback_user_data;
 }
 
 END_YAFARAY

@@ -221,9 +221,14 @@ void yafaray_setFilmInitCallback(yafaray_Interface_t *interface, yafaray_FilmIni
 	reinterpret_cast<yafaray::Interface *>(interface)->setFilmInitCallback(init_callback, init_callback_user_data);
 }
 
-void yafaray_setFilmPutPixelCallback(yafaray_Interface_t *interface, yafaray_FilmPutpixelCallback_t putpixel_callback, void *putpixel_callback_user_data)
+void yafaray_setFilmPutPixelCallback(yafaray_Interface_t *interface, yafaray_FilmPutPixelCallback_t putpixel_callback, void *putpixel_callback_user_data)
 {
 	reinterpret_cast<yafaray::Interface *>(interface)->setFilmPutPixelCallback(putpixel_callback, putpixel_callback_user_data);
+}
+
+void yafaray_setFilmHighlightPixelCallback(yafaray_Interface_t *interface, yafaray_FilmHighlightPixelCallback_t highlight_pixel_callback, void *highlight_pixel_callback_user_data)
+{
+	reinterpret_cast<yafaray::Interface *>(interface)->setFilmHighlightPixelCallback(highlight_pixel_callback, highlight_pixel_callback_user_data);
 }
 
 void yafaray_setFilmFlushAreaCallback(yafaray_Interface_t *interface, yafaray_FilmFlushAreaCallback_t flush_area_callback, void *flush_area_callback_user_data)
@@ -236,9 +241,9 @@ void yafaray_setFilmFlushCallback(yafaray_Interface_t *interface, yafaray_FilmFl
 	reinterpret_cast<yafaray::Interface *>(interface)->setFilmFlushCallback(flush_callback, flush_callback_user_data);
 }
 
-void yafaray_setFilmHighlightCallback(yafaray_Interface_t *interface, yafaray_FilmHighlightCallback_t highlight_callback, void *highlight_callback_user_data)
+void yafaray_setFilmHighlightAreaCallback(yafaray_Interface_t *interface, yafaray_FilmHighlightAreaCallback_t highlight_callback, void *highlight_callback_user_data)
 {
-	reinterpret_cast<yafaray::Interface *>(interface)->setFilmHighlightCallback(highlight_callback, highlight_callback_user_data);
+	reinterpret_cast<yafaray::Interface *>(interface)->setFilmHighlightAreaCallback(highlight_callback, highlight_callback_user_data);
 }
 
 int yafaray_getSceneFilmWidth(const yafaray_Interface_t *interface)
