@@ -241,7 +241,7 @@ void ImageFilm::init(RenderControl &render_control, int num_passes)
 	{
 		for(const auto &render_view: *render_views_)
 		{
-			render_callbacks_.notify_view_(render_view.second->getName().c_str(), width_, height_, render_callbacks_.notify_view_data_);
+			render_callbacks_.notify_view_(render_view.second->getName().c_str(), render_callbacks_.notify_view_data_);
 		}
 	}
 	if(render_callbacks_.notify_layer_)

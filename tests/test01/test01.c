@@ -33,7 +33,7 @@ struct ResultImage
     char *data_;
 };
 
-void notifyViewCallback(const char *view_name, int weight, int height, void *callback_data);
+void notifyViewCallback(const char *view_name, void *callback_data);
 void notifyLayerCallback(const char *internal_layer_name, const char *exported_layer_name, int weight, int height, int layer_exported_channels, void *callback_data);
 void putPixelCallback(const char *view_name, const char *layer_name, int x, int y, float r, float g, float b, float a, void *callback_data);
 void flushAreaCallback(const char *view_name, int area_id, int x_0, int y_0, int x_1, int y_1, void *callback_data);
@@ -297,9 +297,9 @@ float forceRange01(float value)
 	else return value;
 }
 
-void notifyViewCallback(const char *view_name, int weight, int height, void *callback_data)
+void notifyViewCallback(const char *view_name, void *callback_data)
 {
-	printf("**** notifyViewCallback view_name='%s', weight=%d, height=%d, callback_data=%p\n", view_name, weight, height, callback_data);
+	printf("**** notifyViewCallback view_name='%s', callback_data=%p\n", view_name, callback_data);
 }
 
 void notifyLayerCallback(const char *internal_layer_name, const char *exported_layer_name, int weight, int height, int layer_exported_channels, void *callback_data)

@@ -38,7 +38,7 @@ extern "C" {
 	typedef enum { YAFARAY_BOOL_FALSE = 0, YAFARAY_BOOL_TRUE = 1 } yafaray_bool_t;
 
 	/* Callback definitions for the C API - FIXME: Should we care about the function call convention being the same for libYafaRay and its client(s)? */
-	typedef void (*yafaray_RenderNotifyViewCallback_t)(const char *view_name, int weight, int height, void *callback_data);
+	typedef void (*yafaray_RenderNotifyViewCallback_t)(const char *view_name, void *callback_data);
 	typedef void (*yafaray_RenderNotifyLayerCallback_t)(const char *internal_layer_name, const char *exported_layer_name, int weight, int height, int exported_channels, void *callback_data);
 	typedef void (*yafaray_RenderPutPixelCallback_t)(const char *view_name, const char *layer_name, int x, int y, float r, float g, float b, float a, void *callback_data);
 	typedef void (*yafaray_RenderFlushAreaCallback_t)(const char *view_name, int area_id, int x_0, int y_0, int x_1, int y_1, void *callback_data);
