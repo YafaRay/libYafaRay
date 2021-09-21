@@ -84,16 +84,6 @@ struct EdgeToonParams //Options for Edge detection and Toon Render Layers
 	float face_smoothness_ = 0.5f; //!Smoothness (blur) of the edges used in the Faces Edge Render Layers
 };
 
-/*! describes an instance of a scene, including all data and functionality to
-	create and render a whole scene on the lowest "layer".
-	Allocating, configuring and deallocating scene elements etc. however has
-	to be performed on the next layer, scene_t only knows the base classes.
-	Exception are triangle meshes, which are created by scene_t.
-	This implementation currently only supports triangle meshes as geometry,
-	for general geometric primitives there will most likely be a separate class
-	to keep this one as optimized as possible;
-*/
-
 class Scene
 {
 	public:

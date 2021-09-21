@@ -290,8 +290,6 @@ ObjId_t Scene::getNextFreeId()
 
 void Scene::clearNonObjects()
 {
-	//Do *NOT* delete or free the outputs, we do not have ownership!
-
 	lights_.clear();
 	textures_.clear();
 	materials_.clear();
@@ -301,7 +299,6 @@ void Scene::clearNonObjects()
 	volume_regions_.clear();
 	outputs_.clear();
 	render_views_.clear();
-
 	clearLayers();
 }
 
