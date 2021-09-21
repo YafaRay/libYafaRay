@@ -90,7 +90,7 @@ class ImageFilm final
 			\return false if no area is left to be handed out, true otherwise */
 		bool nextArea(const RenderView *render_view, const RenderControl &render_control, RenderArea &a);
 		/*! Indicate that all pixels inside the area have been sampled for this pass */
-		void finishArea(const RenderView *render_view, RenderControl &render_control, RenderArea &a, const EdgeToonParams &edge_params);
+		void finishArea(const RenderView *render_view, RenderControl &render_control, const RenderArea &a, const EdgeToonParams &edge_params);
 		/*! Output all pixels to the color output */
 		void flush(const RenderView *render_view, const RenderControl &render_control, const EdgeToonParams &edge_params, int flags = All);
 		void cleanup() { weights_.clear(); }
@@ -102,7 +102,7 @@ class ImageFilm final
 			IMPORTANT: when a is given, all samples within a are assumed to come from the same thread!
 			use a=0 for contributions outside the area associated with current thread!
 		*/
-		void addSample(int x, int y, float dx, float dy, const RenderArea *a = nullptr, int num_sample = 0, int aa_pass_number = 0, float inv_aa_max_possible_samples = 0.1f, ColorLayers *color_layers = nullptr);
+		void addSample(int x, int y, float dx, float dy, const RenderArea *a = nullptr, int num_sample = 0, int aa_pass_number = 0, float inv_aa_max_possible_samples = 0.1f, const ColorLayers *color_layers = nullptr);
 		/*!	Add light density sample; dx and dy describe the position in the pixel (x,y).
 			IMPORTANT: when a is given, all samples within a are assumed to come from the same thread!
 			use a=0 for contributions outside the area associated with current thread!

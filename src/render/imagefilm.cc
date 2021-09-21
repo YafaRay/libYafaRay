@@ -290,7 +290,7 @@ int ImageFilm::nextPass(const RenderView *render_view, RenderControl &render_con
 
 	if(n_pass_ == 0) flags_.fill(true);
 	else flags_.fill(false);
-	int variance_half_edge = aa_noise_params_.variance_edge_size_ / 2;
+	const int variance_half_edge = aa_noise_params_.variance_edge_size_ / 2;
 	std::shared_ptr<Image> combined_image = film_image_layers_(Layer::Combined).image_;
 
 	float aa_thresh_scaled = aa_noise_params_.threshold_;
@@ -322,7 +322,7 @@ int ImageFilm::nextPass(const RenderView *render_view, RenderControl &render_con
 					if(!background_resampling_ && mat_sample_factor == 0.f) continue;
 				}
 
-				Rgba pix_col = combined_image->getColor(x, y).normalized(weight);
+				const Rgba pix_col = combined_image->getColor(x, y).normalized(weight);
 				float pix_col_bri = pix_col.abscol2Bri();
 
 				if(aa_noise_params_.dark_detection_type_ == AaNoiseParams::DarkDetectionType::Linear && aa_noise_params_.dark_threshold_factor_ > 0.f)
@@ -363,8 +363,8 @@ int ImageFilm::nextPass(const RenderView *render_view, RenderControl &render_con
 						if(xi < 0) xi = 0;
 						else if(xi >= width_ - 1) xi = width_ - 2;
 
-						Rgba cx_0 = combined_image->getColor(xi, y).normalized(weights_(xi, y).getFloat());
-						Rgba cx_1 = combined_image->getColor(xi + 1, y).normalized(weights_(xi + 1, y).getFloat());
+						const Rgba cx_0 = combined_image->getColor(xi, y).normalized(weights_(xi, y).getFloat());
+						const Rgba cx_1 = combined_image->getColor(xi + 1, y).normalized(weights_(xi + 1, y).getFloat());
 
 						if(cx_0.colorDifference(cx_1, aa_noise_params_.detect_color_noise_) >= aa_thresh_scaled) ++variance_x;
 					}
@@ -375,8 +375,8 @@ int ImageFilm::nextPass(const RenderView *render_view, RenderControl &render_con
 						if(yi < 0) yi = 0;
 						else if(yi >= height_ - 1) yi = height_ - 2;
 
-						Rgba cy_0 = combined_image->getColor(x, yi).normalized(weights_(x, yi).getFloat());
-						Rgba cy_1 = combined_image->getColor(x, yi + 1).normalized(weights_(x, yi + 1).getFloat());
+						const Rgba cy_0 = combined_image->getColor(x, yi).normalized(weights_(x, yi).getFloat());
+						const Rgba cy_1 = combined_image->getColor(x, yi + 1).normalized(weights_(x, yi + 1).getFloat());
 
 						if(cy_0.colorDifference(cy_1, aa_noise_params_.detect_color_noise_) >= aa_thresh_scaled) ++variance_y;
 					}
@@ -448,7 +448,7 @@ bool ImageFilm::nextArea(const RenderView *render_view, const RenderControl &ren
 {
 	if(cancel_) return false;
 
-	int ifilterw = (int) ceil(filterw_);
+	const int ifilterw = (int) ceil(filterw_);
 
 	if(split_)
 	{
@@ -486,10 +486,11 @@ bool ImageFilm::nextArea(const RenderView *render_view, const RenderControl &ren
 	return false;
 }
 
-void ImageFilm::finishArea(const RenderView *render_view, RenderControl &render_control, RenderArea &a, const EdgeToonParams &edge_params)
+void ImageFilm::finishArea(const RenderView *render_view, RenderControl &render_control, const RenderArea &a, const EdgeToonParams &edge_params)
 {
 	std::lock_guard<std::mutex> lock_guard(out_mutex_);
-	int end_x = a.x_ + a.w_ - cx_0_, end_y = a.y_ + a.h_ - cy_0_;
+	const int end_x = a.x_ + a.w_ - cx_0_;
+	const int end_y = a.y_ + a.h_ - cy_0_;
 
 	if(layers_.isDefined(Layer::DebugFacesEdges))
 	{
@@ -681,38 +682,39 @@ bool ImageFilm::doMoreSamples(int x, int y) const
 /* CAUTION! Implemantation of this function needs to be thread safe for samples that
 	contribute to pixels outside the area a AND pixels that might get
 	contributions from outside area a! (yes, really!) */
-void ImageFilm::addSample(int x, int y, float dx, float dy, const RenderArea *a, int num_sample, int aa_pass_number, float inv_aa_max_possible_samples, ColorLayers *color_layers)
+void ImageFilm::addSample(int x, int y, float dx, float dy, const RenderArea *a, int num_sample, int aa_pass_number, float inv_aa_max_possible_samples, const ColorLayers *color_layers)
 {
-	int dx_0, dx_1, dy_0, dy_1, x_0, x_1, y_0, y_1;
-
 	// get filter extent and make sure we don't leave image area:
 
-	dx_0 = std::max(cx_0_ - x, math::roundToInt((double) dx - filterw_));
-	dx_1 = std::min(cx_1_ - x - 1, math::roundToInt((double) dx + filterw_ - 1.0));
-	dy_0 = std::max(cy_0_ - y, math::roundToInt((double) dy - filterw_));
-	dy_1 = std::min(cy_1_ - y - 1, math::roundToInt((double) dy + filterw_ - 1.0));
+	const int dx_0 = std::max(cx_0_ - x, math::roundToInt(static_cast<double>(dx) - filterw_));
+	const int dx_1 = std::min(cx_1_ - x - 1, math::roundToInt(static_cast<double>(dx) + filterw_ - 1.0));
+	const int dy_0 = std::max(cy_0_ - y, math::roundToInt(static_cast<double>(dy) - filterw_));
+	const int dy_1 = std::min(cy_1_ - y - 1, math::roundToInt(static_cast<double>(dy) + filterw_ - 1.0));
 
 	// get indizes in filter table
-	double x_offs = dx - 0.5;
+	const double x_offs = dx - 0.5;
 
-	int x_index[max_filter_size_global + 1], y_index[max_filter_size_global + 1];
+	int x_index[max_filter_size_global + 1];
+	int y_index[max_filter_size_global + 1];
 
 	for(int i = dx_0, n = 0; i <= dx_1; ++i, ++n)
 	{
-		double d = std::abs((double(i) - x_offs) * table_scale_);
+		const double d = std::abs((static_cast<double>(i) - x_offs) * table_scale_);
 		x_index[n] = math::floorToInt(d);
 	}
 
-	double y_offs = dy - 0.5;
+	const double y_offs = dy - 0.5;
 
 	for(int i = dy_0, n = 0; i <= dy_1; ++i, ++n)
 	{
-		double d = std::abs((double(i) - y_offs) * table_scale_);
+		const double d = std::abs((static_cast<double>(i) - y_offs) * table_scale_);
 		y_index[n] = math::floorToInt(d);
 	}
 
-	x_0 = x + dx_0; x_1 = x + dx_1;
-	y_0 = y + dy_0; y_1 = y + dy_1;
+	const int x_0 = x + dx_0;
+	const int x_1 = x + dx_1;
+	const int y_0 = y + dy_0;
+	const int y_1 = y + dy_1;
 
 	std::lock_guard<std::mutex> lock_guard(image_mutex_);
 	for(int j = y_0; j <= y_1; ++j)
@@ -739,42 +741,40 @@ void ImageFilm::addDensitySample(const Rgb &c, int x, int y, float dx, float dy,
 {
 	if(!estimate_density_) return;
 
-	int dx_0, dx_1, dy_0, dy_1, x_0, x_1, y_0, y_1;
-
 	// get filter extent and make sure we don't leave image area:
+	const int dx_0 = std::max(cx_0_ - x, math::roundToInt(static_cast<double>(dx) - filterw_));
+	const int dx_1 = std::min(cx_1_ - x - 1, math::roundToInt(static_cast<double>(dx) + filterw_ - 1.0));
+	const int dy_0 = std::max(cy_0_ - y, math::roundToInt(static_cast<double>(dy) - filterw_));
+	const int dy_1 = std::min(cy_1_ - y - 1, math::roundToInt(static_cast<double>(dy) + filterw_ - 1.0));
 
-	dx_0 = std::max(cx_0_ - x, math::roundToInt((double) dx - filterw_));
-	dx_1 = std::min(cx_1_ - x - 1, math::roundToInt((double) dx + filterw_ - 1.0));
-	dy_0 = std::max(cy_0_ - y, math::roundToInt((double) dy - filterw_));
-	dy_1 = std::min(cy_1_ - y - 1, math::roundToInt((double) dy + filterw_ - 1.0));
+	int x_index[max_filter_size_global + 1];
+	int y_index[max_filter_size_global + 1];
 
-
-	int x_index[max_filter_size_global + 1], y_index[max_filter_size_global + 1];
-
-	double x_offs = dx - 0.5;
+	const double x_offs = dx - 0.5;
 	for(int i = dx_0, n = 0; i <= dx_1; ++i, ++n)
 	{
-		double d = std::abs((double(i) - x_offs) * table_scale_);
+		const double d = std::abs((static_cast<double>(i) - x_offs) * table_scale_);
 		x_index[n] = math::floorToInt(d);
 	}
 
-	double y_offs = dy - 0.5;
+	const double y_offs = dy - 0.5;
 	for(int i = dy_0, n = 0; i <= dy_1; ++i, ++n)
 	{
-		float d = std::abs((float)((double(i) - y_offs) * table_scale_));
+		const float d = std::abs(static_cast<float>((static_cast<double>(i) - y_offs) * table_scale_));
 		y_index[n] = math::floorToInt(d);
 	}
 
-	x_0 = x + dx_0; x_1 = x + dx_1;
-	y_0 = y + dy_0; y_1 = y + dy_1;
+	const int x_0 = x + dx_0;
+	const int x_1 = x + dx_1;
+	const int y_0 = y + dy_0;
+	const int y_1 = y + dy_1;
 
 	std::lock_guard<std::mutex> lock_guard(density_image_mutex_);
 	for(int j = y_0; j <= y_1; ++j)
 	{
 		for(int i = x_0; i <= x_1; ++i)
 		{
-			int offset = y_index[j - y_0] * filter_table_size_global + x_index[i - x_0];
-
+			const int offset = y_index[j - y_0] * filter_table_size_global + x_index[i - x_0];
 			Rgb &pixel = (*density_image_)(i - cx_0_, j - cy_0_);
 			pixel += c * filter_table_[offset];
 		}
@@ -1214,8 +1214,8 @@ void ImageFilm::generateDebugFacesEdges(int xstart, int width, int ystart, int h
 			for(int i = xstart; i < width; ++i)
 			{
 				const float weight = weights_(i, j).getFloat();
-				Rgb col_normal = (*normal_image).getColor(i, j).normalized(weight);
-				float z_depth = (*z_depth_image).getColor(i, j).normalized(weight).a_; //FIXME: can be further optimized
+				const Rgb col_normal = (*normal_image).getColor(i, j).normalized(weight);
+				const float z_depth = (*z_depth_image).getColor(i, j).normalized(weight).a_; //FIXME: can be further optimized
 
 				image_mat.at(0).at<float>(j, i) = col_normal.getR();
 				image_mat.at(1).at<float>(j, i) = col_normal.getG();
@@ -1231,9 +1231,7 @@ void ImageFilm::generateDebugFacesEdges(int xstart, int width, int ystart, int h
 			for(int i = xstart; i < width; ++i)
 			{
 				Rgb col_edge = Rgb(image_mat.at(0).at<float>(j, i));
-
 				if(drawborder && (i <= xstart + 1 || j <= ystart + 1 || i >= width - 1 - 1 || j >= height - 1 - 1)) col_edge = Rgba(0.5f, 0.f, 0.f, 1.f);
-
 				debug_faces_edges_image->setColor(i, j, col_edge);
 			}
 		}
@@ -1313,7 +1311,7 @@ void ImageFilm::generateToonAndDebugObjectEdges(int xstart, int width, int ystar
 		{
 			for(int i = xstart; i < width; ++i)
 			{
-				float edge_value = image_mat.at(0).at<float>(j, i);
+				const float edge_value = image_mat.at(0).at<float>(j, i);
 				Rgb col_edge = Rgb(edge_value);
 
 				if(drawborder && (i <= xstart + 1 || j <= ystart + 1 || i >= width - 1 - 1 || j >= height - 1 - 1)) col_edge = Rgba(0.5f, 0.f, 0.f, 1.f);
@@ -1333,9 +1331,9 @@ void ImageFilm::generateToonAndDebugObjectEdges(int xstart, int width, int ystar
 
 #else   //If not built with OpenCV, these functions will do nothing
 
-void ImageFilm::generateToonAndDebugObjectEdges(int xstart, int width, int ystart, int height, bool drawborder) { }
+void ImageFilm::generateToonAndDebugObjectEdges(int xstart, int width, int ystart, int height, bool drawborder, const EdgeToonParams &edge_params) { }
 
-void ImageFilm::generateDebugFacesEdges(int xstart, int width, int ystart, int height, bool drawborder) { }
+void ImageFilm::generateDebugFacesEdges(int xstart, int width, int ystart, int height, bool drawborder, const EdgeToonParams &edge_params) { }
 
 #endif
 

@@ -188,7 +188,7 @@ class Rgba final : public Rgb
 			a_ = ceilf(a_);
 		}
 
-		float colorDifference(Rgba color_2, bool use_rg_bcomponents = false);
+		float colorDifference(Rgba color_2, bool use_rg_bcomponents = false) const;
 		Rgba normalized(float weight) const;
 
 		float a_ = 1.f;
@@ -446,7 +446,7 @@ inline void Rgb::clampProportionalRgb(float max_value)	//Function to clamp the c
 	}
 }
 
-inline float Rgba::colorDifference(Rgba color_2, bool use_rg_bcomponents)
+inline float Rgba::colorDifference(Rgba color_2, bool use_rg_bcomponents) const
 {
 	float color_difference = std::abs(color_2.col2Bri() - col2Bri());
 
