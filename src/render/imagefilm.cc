@@ -258,9 +258,7 @@ void ImageFilm::init(RenderControl &render_control, int num_passes)
 
 int ImageFilm::nextPass(const RenderView *render_view, RenderControl &render_control, bool adaptive_aa, std::string integrator_name, const EdgeToonParams &edge_params, bool skip_nrender_layer)
 {
-	splitter_mutex_.lock();
 	next_area_ = 0;
-	splitter_mutex_.unlock();
 	n_pass_++;
 	images_auto_save_params_.pass_counter_++;
 	film_load_save_.auto_save_.pass_counter_++;
@@ -454,11 +452,7 @@ bool ImageFilm::nextArea(const RenderView *render_view, const RenderControl &ren
 
 	if(split_)
 	{
-		int n;
-		splitter_mutex_.lock();
-		n = next_area_++;
-		splitter_mutex_.unlock();
-
+		const int n = next_area_++;
 		if(splitter_->getArea(n, a))
 		{
 			a.sx_0_ = a.x_ + ifilterw;
@@ -494,7 +488,7 @@ bool ImageFilm::nextArea(const RenderView *render_view, const RenderControl &ren
 
 void ImageFilm::finishArea(const RenderView *render_view, RenderControl &render_control, RenderArea &a, const EdgeToonParams &edge_params)
 {
-	out_mutex_.lock();
+	std::lock_guard<std::mutex> lock_guard(out_mutex_);
 	int end_x = a.x_ + a.w_ - cx_0_, end_y = a.y_ + a.h_ - cy_0_;
 
 	if(layers_.isDefined(Layer::DebugFacesEdges))
@@ -572,15 +566,12 @@ void ImageFilm::finishArea(const RenderView *render_view, RenderControl &render_
 		else progress_bar_->update(a.w_ * a.h_);
 		render_control.setCurrentPassPercent(progress_bar_->getPercent());
 	}
-
-	out_mutex_.unlock();
 }
 
 void ImageFilm::flush(const RenderView *render_view, const RenderControl &render_control, const EdgeToonParams &edge_params, int flags)
 {
 	if(render_control.finished())
 	{
-		out_mutex_.lock();
 		logger_.logInfo("imageFilm: Flushing buffer (View '", render_view->getName(), "')...");
 	}
 
@@ -678,7 +669,6 @@ void ImageFilm::flush(const RenderView *render_view, const RenderControl &render
 		g_timer_global.stop("filmAutoSaveTimer");
 
 		logger_.clearMemoryLog();
-		out_mutex_.unlock();
 		if(logger_.isVerbose()) logger_.logVerbose("imageFilm: Done.");
 	}
 }
@@ -724,8 +714,7 @@ void ImageFilm::addSample(int x, int y, float dx, float dy, const RenderArea *a,
 	x_0 = x + dx_0; x_1 = x + dx_1;
 	y_0 = y + dy_0; y_1 = y + dy_1;
 
-	image_mutex_.lock();
-
+	std::lock_guard<std::mutex> lock_guard(image_mutex_);
 	for(int j = y_0; j <= y_1; ++j)
 	{
 		for(int i = x_0; i <= x_1; ++i)
@@ -739,15 +728,11 @@ void ImageFilm::addSample(int x, int y, float dx, float dy, const RenderArea *a,
 			for(auto &it : film_image_layers_)
 			{
 				Rgba col = color_layers ? (*color_layers)(it.first).color_ : 0.f;
-
 				col.clampProportionalRgb(aa_noise_params_.clamp_samples_);
-
 				it.second.image_->setColor(i - cx_0_, j - cy_0_, it.second.image_->getColor(i - cx_0_, j - cy_0_) + (col * filter_wt));
 			}
 		}
 	}
-
-	image_mutex_.unlock();
 }
 
 void ImageFilm::addDensitySample(const Rgb &c, int x, int y, float dx, float dy, const RenderArea *a)
@@ -783,8 +768,7 @@ void ImageFilm::addDensitySample(const Rgb &c, int x, int y, float dx, float dy,
 	x_0 = x + dx_0; x_1 = x + dx_1;
 	y_0 = y + dy_0; y_1 = y + dy_1;
 
-	density_image_mutex_.lock();
-
+	std::lock_guard<std::mutex> lock_guard(density_image_mutex_);
 	for(int j = y_0; j <= y_1; ++j)
 	{
 		for(int i = x_0; i <= x_1; ++i)
@@ -795,10 +779,7 @@ void ImageFilm::addDensitySample(const Rgb &c, int x, int y, float dx, float dy,
 			pixel += c * filter_table_[offset];
 		}
 	}
-
 	++num_density_samples_;
-
-	density_image_mutex_.unlock();
 }
 
 void ImageFilm::setDensityEstimation(bool enable)

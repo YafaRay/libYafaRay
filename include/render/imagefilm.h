@@ -33,6 +33,7 @@
 #include "image/image_layers.h"
 #include "render_callbacks.h"
 #include <mutex>
+#include <atomic>
 
 BEGIN_YAFARAY
 
@@ -165,7 +166,7 @@ class ImageFilm final
 		int n_passes_;
 		unsigned int computer_node_ = 0;	//Computer node in multi-computer render environments/render farms
 		int n_pass_;
-		volatile int next_area_;
+		std::atomic<int> next_area_;
 		int area_cnt_, completed_cnt_;
 		bool split_ = true;
 		bool cancel_ = false;
@@ -187,7 +188,7 @@ class ImageFilm final
 		float filterw_, table_scale_;
 		std::unique_ptr<float[]> filter_table_;
 		// Thread mutes for shared access
-		std::mutex image_mutex_, splitter_mutex_, out_mutex_, density_image_mutex_;
+		std::mutex image_mutex_, out_mutex_, density_image_mutex_;
 
 		ImageBuffer2D<bool> flags_; //!< flags for adaptive AA sampling;
 		ImageBuffer2D<Gray> weights_;
