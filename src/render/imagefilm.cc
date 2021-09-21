@@ -56,7 +56,6 @@ std::unique_ptr<ImageFilm> ImageFilm::factory(Logger &logger, const ParamMap &pa
 	std::string tiles_order;
 	int width = 320, height = 240, xstart = 0, ystart = 0;
 	float filt_sz = 1.5;
-	bool show_sampled_pixels = false;
 	int tile_size = 32;
 	std::string images_autosave_interval_type_string = "none";
 	ImageFilm::AutoSaveParams images_autosave_params;
@@ -70,7 +69,6 @@ std::unique_ptr<ImageFilm> ImageFilm::factory(Logger &logger, const ParamMap &pa
 	params.getParam("xstart", xstart); // x-offset (for cropped rendering)
 	params.getParam("ystart", ystart); // y-offset (for cropped rendering)
 	params.getParam("filter_type", name); // AA filter type
-	params.getParam("show_sam_pix", show_sampled_pixels); // Show pixels marked to be resampled on adaptative sampling
 	params.getParam("tile_size", tile_size); // Size of the render buckets or tiles
 	params.getParam("tiles_order", tiles_order); // Order of the render buckets or tiles
 	params.getParam("images_autosave_interval_type", images_autosave_interval_type_string);
@@ -110,7 +108,7 @@ std::unique_ptr<ImageFilm> ImageFilm::factory(Logger &logger, const ParamMap &pa
 	else if(tiles_order == "random") tiles_order_type = ImageSplitter::Random;
 	else if(tiles_order != "centre" && logger.isVerbose()) logger.logVerbose("ImageFilm: ", "Defaulting to Centre tiles order."); // this is info imho not a warning
 
-	auto film = std::unique_ptr<ImageFilm>(new ImageFilm(logger, width, height, xstart, ystart, scene->getNumThreads(), scene->getRenderControl(), scene->getLayers(), scene->getOutputs(), filt_sz, type, show_sampled_pixels, tile_size, tiles_order_type));
+	auto film = std::unique_ptr<ImageFilm>(new ImageFilm(logger, width, height, xstart, ystart, scene->getNumThreads(), scene->getRenderControl(), scene->getLayers(), scene->getOutputs(), filt_sz, type, tile_size, tiles_order_type));
 
 	film->setImagesAutoSaveParams(images_autosave_params);
 	film->setFilmLoadSaveParams(film_load_save);
@@ -129,7 +127,7 @@ std::unique_ptr<ImageFilm> ImageFilm::factory(Logger &logger, const ParamMap &pa
 	return film;
 }
 
-ImageFilm::ImageFilm(Logger &logger, int width, int height, int xstart, int ystart, int num_threads, RenderControl &render_control, const Layers &layers, const std::map<std::string, std::unique_ptr<ImageOutput>> &outputs, float filter_size, FilterType filt, bool show_sam_mask, int t_size, ImageSplitter::TilesOrderType tiles_order_type) : width_(width), height_(height), cx_0_(xstart), cy_0_(ystart), show_mask_(show_sam_mask), tile_size_(t_size), tiles_order_(tiles_order_type), num_threads_(num_threads), layers_(layers), outputs_(outputs), filterw_(filter_size * 0.5), flags_(width, height), weights_(width, height), logger_(logger)
+ImageFilm::ImageFilm(Logger &logger, int width, int height, int xstart, int ystart, int num_threads, RenderControl &render_control, const Layers &layers, const std::map<std::string, std::unique_ptr<ImageOutput>> &outputs, float filter_size, FilterType filt, int t_size, ImageSplitter::TilesOrderType tiles_order_type) : width_(width), height_(height), cx_0_(xstart), cy_0_(ystart), tile_size_(t_size), tiles_order_(tiles_order_type), num_threads_(num_threads), layers_(layers), outputs_(outputs), filterw_(filter_size * 0.5), flags_(width, height), weights_(width, height), logger_(logger)
 {
 	cx_1_ = xstart + width;
 	cy_1_ = ystart + height;
