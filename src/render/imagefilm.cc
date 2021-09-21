@@ -192,7 +192,6 @@ void ImageFilm::init(RenderControl &render_control, int num_passes)
 	if(!outputs_.empty())
 	{
 		//If there are any ImageOutputs, creation of the image buffers for the image outputs exported images
-		exported_image_layers_.clear();
 		for(const auto &l: layers_.getLayersWithExportedImages())
 		{
 			Image::Type image_type = l.second.getImageType();
@@ -293,7 +292,6 @@ int ImageFilm::nextPass(const RenderView *render_view, RenderControl &render_con
 
 	if(n_pass_ == 0) flags_.fill(true);
 	else flags_.fill(false);
-	ColorLayers color_layers(layers_);
 	int variance_half_edge = aa_noise_params_.variance_edge_size_ / 2;
 	std::shared_ptr<Image> combined_image = film_image_layers_(Layer::Combined).image_;
 
@@ -499,8 +497,6 @@ void ImageFilm::finishArea(const RenderView *render_view, RenderControl &render_
 	out_mutex_.lock();
 	int end_x = a.x_ + a.w_ - cx_0_, end_y = a.y_ + a.h_ - cy_0_;
 
-	ColorLayers color_layers(layers_);
-
 	if(layers_.isDefined(Layer::DebugFacesEdges))
 	{
 		generateDebugFacesEdges(a.x_ - cx_0_, end_x, a.y_ - cy_0_, end_y, true, edge_params);
@@ -511,40 +507,31 @@ void ImageFilm::finishArea(const RenderView *render_view, RenderControl &render_
 		generateToonAndDebugObjectEdges(a.x_ - cx_0_, end_x, a.y_ - cy_0_, end_y, true, edge_params);
 	}
 
-	for(int j = a.y_ - cy_0_; j < end_y; ++j)
+	for(const auto &it : film_image_layers_)
 	{
-		for(int i = a.x_ - cx_0_; i < end_x; ++i)
-		{
-			const float weight = weights_(i, j).getFloat();
-			for(const auto &it : film_image_layers_)
-			{
-				const Layer::Type layer_type = it.first;
-				if(layer_type == Layer::AaSamples)
-				{
-					color_layers(layer_type).color_ = weight;
-				}
-				else if(layer_type == Layer::ObjIndexAbs ||
-						layer_type == Layer::ObjIndexAutoAbs ||
-						layer_type == Layer::MatIndexAbs ||
-						layer_type == Layer::MatIndexAutoAbs
-						)
-				{
-					color_layers(layer_type).color_ = it.second.image_->getColor(i, j).normalized(weight);
-					color_layers(layer_type).color_.ceil(); //To correct the antialiasing and ceil the "mixed" values to the upper integer
-				}
-				else
-				{
-					color_layers(layer_type).color_ = it.second.image_->getColor(i, j).normalized(weight);
-				}
-			}
+		if(!it.second.layer_.isExported()) continue;
 
-			if(render_callbacks_.put_pixel_)
+		const Layer::Type &layer_type = it.first;
+		const std::shared_ptr<Image> &image = it.second.image_;
+		for(int j = a.y_ - cy_0_; j < end_y; ++j)
+		{
+			for(int i = a.x_ - cx_0_; i < end_x; ++i)
 			{
-				for(const auto &color_layer : color_layers)
+				const float weight = weights_(i, j).getFloat();
+				Rgba color = (layer_type == Layer::AaSamples ? weight : image->getColor(i, j).normalized(weight));
+				switch(layer_type)
 				{
-					const Rgba &col = color_layer.second.color_;
-					const Layer::Type &layer_type = color_layer.second.layer_type_;
-					render_callbacks_.put_pixel_(render_view->getName().c_str(), Layer::getTypeName(layer_type).c_str(), i, j, col.r_, col.g_, col.b_, col.a_, render_callbacks_.put_pixel_data_);
+					//To correct the antialiasing and ceil the "mixed" values to the upper integer in the Object/Material Index layers
+					case Layer::ObjIndexAbs:
+					case Layer::ObjIndexAutoAbs:
+					case Layer::MatIndexAbs:
+					case Layer::MatIndexAutoAbs: color.ceil(); break;
+					default: break;
+				}
+				exported_image_layers_.setColor(i, j, {color, layer_type});
+				if(render_callbacks_.put_pixel_)
+				{
+					render_callbacks_.put_pixel_(render_view->getName().c_str(), Layer::getTypeName(layer_type).c_str(), i, j, color.r_, color.g_, color.b_, color.a_, render_callbacks_.put_pixel_data_);
 				}
 			}
 		}
@@ -613,38 +600,30 @@ void ImageFilm::flush(const RenderView *render_view, const RenderControl &render
 
 	for(const auto &it : film_image_layers_)
 	{
+		if(!it.second.layer_.isExported()) continue;
+
+		const Layer::Type &layer_type = it.first;
+		const std::shared_ptr<Image> &image = it.second.image_;
 		for(int j = 0; j < height_; j++)
 		{
 			for(int i = 0; i < width_; i++)
 			{
-				Rgba color{0.f};
 				const float weight = weights_(i, j).getFloat();
-				const Layer::Type layer_type = it.first;
-				if(layer_type == Layer::AaSamples)
+				Rgba color = (layer_type == Layer::AaSamples ? weight : image->getColor(i, j).normalized(weight));
+				switch(layer_type)
 				{
-					color = it.second.image_->getColor(i, j).normalized(weight);
+					//To correct the antialiasing and ceil the "mixed" values to the upper integer in the Object/Material Index layers
+					case Layer::ObjIndexAbs:
+					case Layer::ObjIndexAutoAbs:
+					case Layer::MatIndexAbs:
+					case Layer::MatIndexAutoAbs: color.ceil(); break;
+					default: break;
 				}
-				else if(layer_type == Layer::ObjIndexAbs ||
-						layer_type == Layer::ObjIndexAutoAbs ||
-						layer_type == Layer::MatIndexAbs ||
-						layer_type == Layer::MatIndexAutoAbs
-						)
-				{
-					color = it.second.image_->getColor(i, j).normalized(weight);
-					color.ceil(); //To correct the antialiasing and ceil the "mixed" values to the upper integer
-				}
-				else if(flags & RegularImage) color = it.second.image_->getColor(i, j).normalized(weight);
-
 				if(estimate_density_ && (flags & Densityimage) && layer_type == Layer::Combined && density_factor > 0.f) color += Rgba((*density_image_)(i, j) * density_factor, 0.f);
-
-				if(it.second.layer_.isExported())
+				exported_image_layers_.setColor(i, j, {color, layer_type});
+				if(render_callbacks_.put_pixel_)
 				{
-					exported_image_layers_.setColor(i, j, {color, layer_type});
-
-					if(render_callbacks_.put_pixel_)
-					{
-						render_callbacks_.put_pixel_(render_view->getName().c_str(), Layer::getTypeName(layer_type).c_str(), i, j, color.r_, color.g_, color.b_, color.a_, render_callbacks_.put_pixel_data_);
-					}
+					render_callbacks_.put_pixel_(render_view->getName().c_str(), Layer::getTypeName(layer_type).c_str(), i, j, color.r_, color.g_, color.b_, color.a_, render_callbacks_.put_pixel_data_);
 				}
 			}
 		}
