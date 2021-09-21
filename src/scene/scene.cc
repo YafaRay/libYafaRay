@@ -239,6 +239,8 @@ bool Scene::render()
 
 	//if(creation_state_.changes_ != CreationState::Flags::CNone) //FIXME: handle better subsequent scene renders differently if previous render already complete
 	{
+		if(creation_state_.changes_ & CreationState::Flags::CGeom) updateObjects();
+
 		for(auto &l : getLights()) l.second->init(*this);
 
 		for(auto &output : outputs_)
@@ -246,7 +248,6 @@ bool Scene::render()
 			output.second->init(image_film_->getWidth(), image_film_->getHeight(), image_film_->getExportedImageLayers(), &render_views_);
 		}
 
-		if(creation_state_.changes_ & CreationState::Flags::CGeom) updateObjects();
 		for(auto &it : render_views_)
 		{
 			for(auto &o : outputs_) o.second->setRenderView(it.second.get());
