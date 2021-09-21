@@ -24,7 +24,7 @@
 
 BEGIN_YAFARAY
 
-XmlExport::XmlExport(const char *fname, const ::yafaray_LoggerCallback_t logger_callback, void *callback_user_data, ::yafaray_DisplayConsole_t logger_display_console) : Interface(logger_callback, callback_user_data, logger_display_console), xml_name_(std::string(fname))
+XmlExport::XmlExport(const char *fname, const ::yafaray_LoggerCallback_t logger_callback, void *callback_data, ::yafaray_DisplayConsole_t logger_display_console) : Interface(logger_callback, callback_data, logger_display_console), xml_name_(std::string(fname))
 {
 	xml_file_.open(xml_name_.c_str());
 	if(!xml_file_.is_open())

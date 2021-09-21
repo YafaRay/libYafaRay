@@ -240,16 +240,19 @@ void ImageFilm::init(RenderControl &render_control, int num_passes)
 		if(film_load_save_.mode_ == FilmLoadSave::LoadAndSave || film_load_save_.mode_ == FilmLoadSave::Save) imageFilmFileBackup(); //If the imageFilm is set to Save, at the start rename the previous film file as a "backup" just in case the user has made a mistake and wants to get the previous film back.
 	}
 
-	if(film_init_callback_)
+	if(render_callbacks_.notify_view_)
 	{
-		for(const auto &render_view : *render_views_)
+		for(const auto &render_view: *render_views_)
 		{
-			film_init_callback_(render_view.second->getName().c_str(), nullptr, nullptr, width_, height_, 0, film_init_callback_user_data_);
+			render_callbacks_.notify_view_(render_view.second->getName().c_str(), width_, height_, render_callbacks_.notify_view_data_);
 		}
+	}
+	if(render_callbacks_.notify_layer_)
+	{
 		const Layers &layers = layers_.getLayersWithExportedImages();
 		for(const auto &layer : layers)
 		{
-			film_init_callback_(nullptr, Layer::getTypeName(layer.second.getType()).c_str(), layer.second.getExportedImageName().c_str(), width_, height_, layer.second.getNumExportedChannels(), film_init_callback_user_data_);
+			render_callbacks_.notify_layer_(Layer::getTypeName(layer.second.getType()).c_str(), layer.second.getExportedImageName().c_str(), width_, height_, layer.second.getNumExportedChannels(), render_callbacks_.notify_layer_data_);
 		}
 	}
 }
@@ -411,11 +414,11 @@ int ImageFilm::nextPass(const RenderView *render_view, RenderControl &render_con
 				if(flags_.get(x, y))
 				{
 					++n_resample;
-					if(film_highlight_pixel_callback_)
+					if(render_callbacks_.highlight_pixel_)
 					{
 						const float weight = weights_(x, y).getFloat();
 						const Rgba col = combined_image->getColor(x, y).normalized(weight);
-						film_highlight_pixel_callback_(render_view->getName().c_str(), x, y, col.r_, col.g_, col.b_, col.a_, film_highlight_pixel_callback_user_data_);
+						render_callbacks_.highlight_pixel_(render_view->getName().c_str(), x, y, col.r_, col.g_, col.b_, col.a_, render_callbacks_.highlight_pixel_data_);
 					}
 				}
 			}
@@ -426,7 +429,7 @@ int ImageFilm::nextPass(const RenderView *render_view, RenderControl &render_con
 		n_resample = height_ * width_;
 	}
 
-	if(film_flush_callback_) film_flush_callback_(render_view->getName().c_str(), film_flush_callback_user_data_);
+	if(render_callbacks_.flush_) render_callbacks_.flush_(render_view->getName().c_str(), render_callbacks_.flush_data_);
 
 	if(render_control.resumed()) pass_string << "Film loaded + ";
 
@@ -465,11 +468,11 @@ bool ImageFilm::nextArea(const RenderView *render_view, const RenderControl &ren
 			a.sy_0_ = a.y_ + ifilterw;
 			a.sy_1_ = a.y_ + a.h_ - ifilterw;
 
-			if(film_highlight_area_callback_)
+			if(render_callbacks_.highlight_area_)
 			{
 				const int end_x = a.x_ + a.w_;
 				const int end_y = a.y_ + a.h_;
-				film_highlight_area_callback_(render_view->getName().c_str(), a.id_, a.x_, a.y_, end_x, end_y, film_highlight_area_callback_user_data_);
+				render_callbacks_.highlight_area_(render_view->getName().c_str(), a.id_, a.x_, a.y_, end_x, end_y, render_callbacks_.highlight_area_data_);
 			}
 			return true;
 		}
@@ -535,19 +538,19 @@ void ImageFilm::finishArea(const RenderView *render_view, RenderControl &render_
 				}
 			}
 
-			if(film_put_pixel_callback_)
+			if(render_callbacks_.put_pixel_)
 			{
 				for(const auto &color_layer : color_layers)
 				{
 					const Rgba &col = color_layer.second.color_;
 					const Layer::Type &layer_type = color_layer.second.layer_type_;
-					film_put_pixel_callback_(render_view->getName().c_str(), Layer::getTypeName(layer_type).c_str(), i, j, col.r_, col.g_, col.b_, col.a_, film_put_pixel_callback_user_data_);
+					render_callbacks_.put_pixel_(render_view->getName().c_str(), Layer::getTypeName(layer_type).c_str(), i, j, col.r_, col.g_, col.b_, col.a_, render_callbacks_.put_pixel_data_);
 				}
 			}
 		}
 	}
 
-	if(film_flush_area_callback_) film_flush_area_callback_(render_view->getName().c_str(), a.id_, a.x_, a.y_, end_x + cx_0_, end_y + cy_0_, film_flush_area_callback_user_data_);
+	if(render_callbacks_.flush_area_) render_callbacks_.flush_area_(render_view->getName().c_str(), a.id_, a.x_, a.y_, end_x + cx_0_, end_y + cy_0_, render_callbacks_.flush_area_data_);
 
 	if(render_control.inProgress() && !render_control.isPreview())	//avoid saving images/film if we are just rendering material/world/lights preview windows, etc
 	{
@@ -638,16 +641,16 @@ void ImageFilm::flush(const RenderView *render_view, const RenderControl &render
 				{
 					exported_image_layers_.setColor(i, j, {color, layer_type});
 
-					if(film_put_pixel_callback_)
+					if(render_callbacks_.put_pixel_)
 					{
-						film_put_pixel_callback_(render_view->getName().c_str(), Layer::getTypeName(layer_type).c_str(), i, j, color.r_, color.g_, color.b_, color.a_, film_put_pixel_callback_user_data_);
+						render_callbacks_.put_pixel_(render_view->getName().c_str(), Layer::getTypeName(layer_type).c_str(), i, j, color.r_, color.g_, color.b_, color.a_, render_callbacks_.put_pixel_data_);
 					}
 				}
 			}
 		}
 	}
 
-	if(film_flush_callback_) film_flush_callback_(render_view->getName().c_str(), film_flush_callback_user_data_);
+	if(render_callbacks_.flush_) render_callbacks_.flush_(render_view->getName().c_str(), render_callbacks_.flush_data_);
 
 	if(render_control.finished())
 	{
@@ -1167,41 +1170,9 @@ void ImageFilm::imageFilmFileBackup() const
 	if(progress_bar_) progress_bar_->setTag(old_tag);
 }
 
-void ImageFilm::setFilmInitCallback(yafaray_FilmInitCallback_t init_callback, void *callback_user_data)
+void ImageFilm::setRenderCallbacks(RenderCallbacks &render_callbacks)
 {
-	film_init_callback_ = init_callback;
-	film_init_callback_user_data_ = callback_user_data;
-
-}
-
-void ImageFilm::setFilmPutPixelCallback(yafaray_FilmPutPixelCallback_t put_pixel_callback, void *callback_user_data)
-{
-	film_put_pixel_callback_ = put_pixel_callback;
-	film_put_pixel_callback_user_data_ = callback_user_data;
-}
-
-void ImageFilm::setFilmHighlightPixelCallback(yafaray_FilmHighlightPixelCallback_t highlight_pixel_callback, void *callback_user_data)
-{
-	film_highlight_pixel_callback_ = highlight_pixel_callback;
-	film_highlight_pixel_callback_user_data_ = callback_user_data;
-}
-
-void ImageFilm::setFilmFlushAreaCallback(yafaray_FilmFlushAreaCallback_t flush_area_callback, void *callback_user_data)
-{
-	film_flush_area_callback_ = flush_area_callback;
-	film_flush_area_callback_user_data_ = callback_user_data;
-}
-
-void ImageFilm::setFilmFlushCallback(yafaray_FilmFlushCallback_t flush_callback, void *callback_user_data)
-{
-	film_flush_callback_ = flush_callback;
-	film_flush_callback_user_data_ = callback_user_data;
-}
-
-void ImageFilm::setFilmHighlightAreaCallback(yafaray_FilmHighlightAreaCallback_t highlight_callback, void *callback_user_data)
-{
-	film_highlight_area_callback_ = highlight_callback;
-	film_highlight_area_callback_user_data_ = callback_user_data;
+	render_callbacks_ = render_callbacks;
 }
 
 std::string ImageFilm::printRenderStats(const RenderControl &render_control, int width, int height)

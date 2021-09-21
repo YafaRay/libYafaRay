@@ -52,9 +52,9 @@ class Logger;
 class Interface
 {
 	public:
-		Interface(const ::yafaray_LoggerCallback_t logger_callback = nullptr, void *callback_user_data = nullptr, ::yafaray_DisplayConsole_t logger_display_console = YAFARAY_DISPLAY_CONSOLE_NORMAL);
+		Interface(const ::yafaray_LoggerCallback_t logger_callback = nullptr, void *callback_data = nullptr, ::yafaray_DisplayConsole_t logger_display_console = YAFARAY_DISPLAY_CONSOLE_NORMAL);
 		virtual ~Interface() noexcept;
-		void setLoggingCallback(const ::yafaray_LoggerCallback_t logger_callback, void *callback_user_data);
+		void setLoggingCallback(const ::yafaray_LoggerCallback_t logger_callback, void *callback_data);
 		virtual void createScene() noexcept;
 		virtual int getSceneFilmWidth() const noexcept;
 		virtual int getSceneFilmHeight() const noexcept;
@@ -100,12 +100,13 @@ class Interface
 		virtual RenderView *createRenderView(const char *name) noexcept;
 		virtual Image *createImage(const char *name) noexcept;
 		virtual ImageOutput *createOutput(const char *name) noexcept;
-		void setFilmInitCallback(yafaray_FilmInitCallback_t init_callback, void *init_callback_user_data) noexcept;
-		void setFilmPutPixelCallback(yafaray_FilmPutPixelCallback_t putpixel_callback, void *putpixel_callback_user_data) noexcept;
-		void setFilmHighlightPixelCallback(yafaray_FilmHighlightPixelCallback_t highlight_pixel_callback, void *highlight_pixel_callback_user_data) noexcept;
-		void setFilmFlushAreaCallback(yafaray_FilmFlushAreaCallback_t flush_area_callback, void *flush_area_callback_user_data) noexcept;
-		void setFilmFlushCallback(yafaray_FilmFlushCallback_t flush_callback, void *flush_callback_user_data) noexcept;
-		void setFilmHighlightAreaCallback(yafaray_FilmHighlightAreaCallback_t highlight_callback, void *highlight_callback_user_data) noexcept;
+		void setRenderNotifyViewCallback(yafaray_RenderNotifyViewCallback_t callback, void *callback_data) noexcept;
+		void setRenderNotifyLayerCallback(yafaray_RenderNotifyLayerCallback_t callback, void *callback_data) noexcept;
+		void setRenderPutPixelCallback(yafaray_RenderPutPixelCallback_t callback, void *callback_data) noexcept;
+		void setRenderHighlightPixelCallback(yafaray_RenderHighlightPixelCallback_t callback, void *callback_data) noexcept;
+		void setRenderFlushAreaCallback(yafaray_RenderFlushAreaCallback_t callback, void *callback_data) noexcept;
+		void setRenderFlushCallback(yafaray_RenderFlushCallback_t callback, void *callback_data) noexcept;
+		void setRenderHighlightAreaCallback(yafaray_RenderHighlightAreaCallback_t callback, void *callback_data) noexcept;
 		bool removeOutput(const char *name) noexcept;
 		virtual void clearOutputs() noexcept;
 		virtual void clearAll() noexcept;

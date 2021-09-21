@@ -61,10 +61,10 @@ class LogEntry final
 class Logger final
 {
 	public:
-		Logger(const ::yafaray_LoggerCallback_t logger_callback = nullptr, void *callback_user_data = nullptr, ::yafaray_DisplayConsole_t logger_display_console = YAFARAY_DISPLAY_CONSOLE_NORMAL) : logger_callback_(logger_callback), callback_user_data_(callback_user_data), logger_display_console_(logger_display_console) { }
+		Logger(const ::yafaray_LoggerCallback_t logger_callback = nullptr, void *callback_data = nullptr, ::yafaray_DisplayConsole_t logger_display_console = YAFARAY_DISPLAY_CONSOLE_NORMAL) : logger_callback_(logger_callback), callback_data_(callback_data), logger_display_console_(logger_display_console) { }
 		Logger(const Logger &) = delete; //deleting copy constructor so we can use a std::mutex as a class member (not copiable)
 
-		void setCallback(const ::yafaray_LoggerCallback_t logger_callback, void *callback_user_data) { logger_callback_ = logger_callback; callback_user_data_ = callback_user_data; }
+		void setCallback(const ::yafaray_LoggerCallback_t logger_callback, void *callback_data) { logger_callback_ = logger_callback; callback_data_ = callback_data; }
 
 		::yafaray_LogLevel_t getMaxLogLevel() const;
 		bool isVerbose() const { return getMaxLogLevel() >= ::YAFARAY_LOG_LEVEL_VERBOSE; }
@@ -128,7 +128,7 @@ class Logger final
 		std::time_t previous_console_event_date_time_ = 0;
 		std::time_t previous_log_event_date_time_ = 0;
 		yafaray_LoggerCallback_t logger_callback_ = nullptr;
-		void *callback_user_data_ = nullptr;
+		void *callback_data_ = nullptr;
 		::yafaray_DisplayConsole_t logger_display_console_;
 		std::unordered_map <std::string, double> diagnostics_stats_;
 		std::mutex mutx_;  //To try to avoid garbled output when there are several threads trying to output data to the log
@@ -162,7 +162,7 @@ template <class ...Args> void Logger::log(int verbosity_level, const Args &...ar
 
 	if(logger_callback_)
 	{
-		logger_callback_(static_cast<yafaray_LogLevel_t>(verbosity_level), current_datetime, time_of_day.c_str(), description.c_str(), callback_user_data_);
+		logger_callback_(static_cast<yafaray_LogLevel_t>(verbosity_level), current_datetime, time_of_day.c_str(), description.c_str(), callback_data_);
 	}
 
 	if(logger_display_console_ == YAFARAY_DISPLAY_CONSOLE_NORMAL && verbosity_level <= console_master_verbosity_level_)

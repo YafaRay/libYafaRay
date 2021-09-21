@@ -24,13 +24,14 @@
 #ifndef YAFARAY_IMAGEFILM_H
 #define YAFARAY_IMAGEFILM_H
 
-#include "yafaray_c_api.h"
+#include "public_api/yafaray_c_api.h"
 #include "common/yafaray_common.h"
 #include "imagesplitter.h"
 #include "common/aa_noise_params.h"
 #include "common/layers.h"
 #include "image/image_buffers.h"
 #include "image/image_layers.h"
+#include "render_callbacks.h"
 #include <mutex>
 
 BEGIN_YAFARAY
@@ -151,12 +152,7 @@ class ImageFilm final
 		const ImageLayers *getExportedImageLayers() const { return &exported_image_layers_; }
 		void setRenderViews(const std::map<std::string, std::unique_ptr<RenderView>> *render_views) { render_views_ = render_views; }
 
-		void setFilmInitCallback(yafaray_FilmInitCallback_t init_callback, void *callback_user_data);
-		void setFilmPutPixelCallback(yafaray_FilmPutPixelCallback_t put_pixel_callback, void *callback_user_data);
-		void setFilmHighlightPixelCallback(yafaray_FilmHighlightPixelCallback_t highlight_pixel_callback, void *callback_user_data);
-		void setFilmFlushAreaCallback(yafaray_FilmFlushAreaCallback_t flush_area_callback, void *callback_user_data);
-		void setFilmFlushCallback(yafaray_FilmFlushCallback_t flush_callback, void *callback_user_data);
-		void setFilmHighlightAreaCallback(yafaray_FilmHighlightAreaCallback_t highlight_callback, void *callback_user_data);
+		void setRenderCallbacks(RenderCallbacks &render_callbacks);
 
 		static std::string printRenderStats(const RenderControl &render_control, int width, int height);
 
@@ -201,18 +197,7 @@ class ImageFilm final
 		Logger &logger_;
 		const std::map<std::string, std::unique_ptr<RenderView>> *render_views_ = nullptr;
 
-		yafaray_FilmInitCallback_t film_init_callback_ = nullptr;
-		void *film_init_callback_user_data_ = nullptr;
-		yafaray_FilmPutPixelCallback_t film_put_pixel_callback_ = nullptr;
-		void *film_put_pixel_callback_user_data_ = nullptr;
-		yafaray_FilmHighlightPixelCallback_t film_highlight_pixel_callback_ = nullptr;
-		void *film_highlight_pixel_callback_user_data_ = nullptr;
-		yafaray_FilmFlushAreaCallback_t film_flush_area_callback_ = nullptr;
-		void *film_flush_area_callback_user_data_ = nullptr;
-		yafaray_FilmFlushCallback_t film_flush_callback_ = nullptr;
-		void *film_flush_callback_user_data_ = nullptr;
-		yafaray_FilmHighlightAreaCallback_t film_highlight_area_callback_ = nullptr;
-		void *film_highlight_area_callback_user_data_ = nullptr;
+		RenderCallbacks render_callbacks_;
 };
 
 END_YAFARAY

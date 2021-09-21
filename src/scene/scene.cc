@@ -714,13 +714,8 @@ bool Scene::setupSceneRenderParams(Scene &scene, const ParamMap &params)
 	image_film_->setBaseSamplingOffset(adv_base_sampling_offset);
 	image_film_->setComputerNode(adv_computer_node);
 	image_film_->setBackgroundResampling(background_resampling);
-	image_film_->setFilmInitCallback(film_init_callback_, film_init_callback_user_data_);
-	image_film_->setFilmPutPixelCallback(film_put_pixel_callback_, film_put_pixel_callback_user_data_);
-	image_film_->setFilmHighlightPixelCallback(film_highlight_pixel_callback_, film_highlight_pixel_callback_user_data_);
-	image_film_->setFilmHighlightAreaCallback(film_highlight_area_callback_, film_highlight_area_callback_user_data_);
-	image_film_->setFilmFlushAreaCallback(film_flush_area_callback_, film_flush_area_callback_user_data_);
-	image_film_->setFilmFlushCallback(film_flush_callback_, film_flush_callback_user_data_);
 	image_film_->setRenderViews(&render_views_);
+	image_film_->setRenderCallbacks(render_callbacks_);
 
 	return true;
 }
@@ -940,41 +935,46 @@ void Scene::setEdgeToonParams(const ParamMap &params)
 	setEdgeToonParams(edge_params);
 }
 
-void Scene::setFilmInitCallback(yafaray_FilmInitCallback_t init_callback, void *callback_user_data)
+void Scene::setRenderNotifyViewCallback(yafaray_RenderNotifyViewCallback_t callback, void *callback_data)
 {
-	film_init_callback_ = init_callback;
-	film_init_callback_user_data_ = callback_user_data;
-
+	render_callbacks_.notify_view_ = callback;
+	render_callbacks_.notify_view_data_ = callback_data;
 }
 
-void Scene::setFilmPutPixelCallback(yafaray_FilmPutPixelCallback_t put_pixel_callback, void *callback_user_data)
+void Scene::setRenderNotifyLayerCallback(yafaray_RenderNotifyLayerCallback_t callback, void *callback_data)
 {
-	film_put_pixel_callback_ = put_pixel_callback;
-	film_put_pixel_callback_user_data_ = callback_user_data;
+	render_callbacks_.notify_layer_ = callback;
+	render_callbacks_.notify_layer_data_ = callback_data;
 }
 
-void Scene::setFilmHighlightPixelCallback(yafaray_FilmHighlightPixelCallback_t highlight_pixel_callback, void *callback_user_data)
+void Scene::setRenderPutPixelCallback(yafaray_RenderPutPixelCallback_t callback, void *callback_data)
 {
-	film_highlight_pixel_callback_ = highlight_pixel_callback;
-	film_highlight_pixel_callback_user_data_ = callback_user_data;
+	render_callbacks_.put_pixel_ = callback;
+	render_callbacks_.put_pixel_data_ = callback_data;
 }
 
-void Scene::setFilmFlushAreaCallback(yafaray_FilmFlushAreaCallback_t flush_area_callback, void *callback_user_data)
+void Scene::setRenderHighlightPixelCallback(yafaray_RenderHighlightPixelCallback_t callback, void *callback_data)
 {
-	film_flush_area_callback_ = flush_area_callback;
-	film_flush_area_callback_user_data_ = callback_user_data;
+	render_callbacks_.highlight_pixel_ = callback;
+	render_callbacks_.highlight_pixel_data_ = callback_data;
 }
 
-void Scene::setFilmFlushCallback(yafaray_FilmFlushCallback_t flush_callback, void *callback_user_data)
+void Scene::setRenderFlushAreaCallback(yafaray_RenderFlushAreaCallback_t callback, void *callback_data)
 {
-	film_flush_callback_ = flush_callback;
-	film_flush_callback_user_data_ = callback_user_data;
+	render_callbacks_.flush_area_ = callback;
+	render_callbacks_.flush_area_data_ = callback_data;
 }
 
-void Scene::setFilmHighlightAreaCallback(yafaray_FilmHighlightAreaCallback_t highlight_callback, void *callback_user_data)
+void Scene::setRenderFlushCallback(yafaray_RenderFlushCallback_t callback, void *callback_data)
 {
-	film_highlight_area_callback_ = highlight_callback;
-	film_highlight_area_callback_user_data_ = callback_user_data;
+	render_callbacks_.flush_ = callback;
+	render_callbacks_.flush_data_ = callback_data;
+}
+
+void Scene::setRenderHighlightAreaCallback(yafaray_RenderHighlightAreaCallback_t callback, void *callback_data)
+{
+	render_callbacks_.highlight_area_ = callback;
+	render_callbacks_.highlight_area_data_ = callback_data;
 }
 
 END_YAFARAY

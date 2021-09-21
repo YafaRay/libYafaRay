@@ -27,6 +27,7 @@
 #include "image/image.h"
 #include "common/aa_noise_params.h"
 #include "geometry/bound.h"
+#include "render/render_callbacks.h"
 #include <vector>
 #include <map>
 #include <list>
@@ -189,12 +190,13 @@ class Scene
 		const EdgeToonParams &getEdgeToonParams() const { return edge_toon_params_; }
 		void setEdgeToonParams(const EdgeToonParams &edge_toon_params) { edge_toon_params_ = edge_toon_params; }
 
-		void setFilmInitCallback(yafaray_FilmInitCallback_t init_callback, void *callback_user_data);
-		void setFilmPutPixelCallback(yafaray_FilmPutPixelCallback_t put_pixel_callback, void *callback_user_data);
-		void setFilmHighlightPixelCallback(yafaray_FilmHighlightPixelCallback_t highlight_pixel_callback, void *callback_user_data);
-		void setFilmFlushAreaCallback(yafaray_FilmFlushAreaCallback_t flush_area_callback, void *callback_user_data);
-		void setFilmFlushCallback(yafaray_FilmFlushCallback_t flush_callback, void *callback_user_data);
-		void setFilmHighlightAreaCallback(yafaray_FilmHighlightAreaCallback_t highlight_callback, void *callback_user_data);
+		void setRenderNotifyViewCallback(yafaray_RenderNotifyViewCallback_t callback, void *callback_data);
+		void setRenderNotifyLayerCallback(yafaray_RenderNotifyLayerCallback_t callback, void *callback_data);
+		void setRenderPutPixelCallback(yafaray_RenderPutPixelCallback_t callback, void *callback_data);
+		void setRenderHighlightPixelCallback(yafaray_RenderHighlightPixelCallback_t callback, void *callback_data);
+		void setRenderFlushAreaCallback(yafaray_RenderFlushAreaCallback_t callback, void *callback_data);
+		void setRenderFlushCallback(yafaray_RenderFlushCallback_t callback, void *callback_data);
+		void setRenderHighlightAreaCallback(yafaray_RenderHighlightAreaCallback_t callback, void *callback_data);
 
 		VolumeIntegrator *vol_integrator_ = nullptr;
 		float shadow_bias_ = 1.0e-4f;  //shadow bias to apply to shadows to avoid self-shadow artifacts
@@ -250,19 +252,7 @@ class Scene
 		Layers layers_;
 		MaskParams mask_params_;
 		EdgeToonParams edge_toon_params_;
-
-		yafaray_FilmInitCallback_t film_init_callback_ = nullptr;
-		void *film_init_callback_user_data_ = nullptr;
-		yafaray_FilmPutPixelCallback_t film_put_pixel_callback_ = nullptr;
-		void *film_put_pixel_callback_user_data_ = nullptr;
-		yafaray_FilmHighlightPixelCallback_t film_highlight_pixel_callback_ = nullptr;
-		void *film_highlight_pixel_callback_user_data_ = nullptr;
-		yafaray_FilmFlushAreaCallback_t film_flush_area_callback_ = nullptr;
-		void *film_flush_area_callback_user_data_ = nullptr;
-		yafaray_FilmFlushCallback_t film_flush_callback_ = nullptr;
-		void *film_flush_callback_user_data_ = nullptr;
-		yafaray_FilmHighlightAreaCallback_t film_highlight_area_callback_ = nullptr;
-		void *film_highlight_area_callback_user_data_ = nullptr;
+		RenderCallbacks render_callbacks_;
 };
 
 END_YAFARAY

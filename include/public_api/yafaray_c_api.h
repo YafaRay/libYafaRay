@@ -38,20 +38,21 @@ extern "C" {
 	typedef enum { YAFARAY_BOOL_FALSE = 0, YAFARAY_BOOL_TRUE = 1 } yafaray_bool_t;
 
 	/* Callback definitions for the C API - FIXME: Should we care about the function call convention being the same for libYafaRay and its client(s)? */
-	typedef void (*yafaray_FilmInitCallback_t)(const char *view_name, const char *internal_layer_name, const char *exported_layer_name, int weight, int height, int layer_exported_channels, void *callback_user_data);
-	typedef void (*yafaray_FilmPutPixelCallback_t)(const char *view_name, const char *layer_name, int x, int y, float r, float g, float b, float a, void *callback_user_data);
-	typedef void (*yafaray_FilmFlushAreaCallback_t)(const char *view_name, int area_id, int x_0, int y_0, int x_1, int y_1, void *callback_user_data);
-	typedef void (*yafaray_FilmFlushCallback_t)(const char *view_name, void *callback_user_data);
-	typedef void (*yafaray_FilmHighlightAreaCallback_t)(const char *view_name, int area_id, int x_0, int y_0, int x_1, int y_1, void *callback_user_data);
-	typedef void (*yafaray_FilmHighlightPixelCallback_t)(const char *view_name, int x, int y, float r, float g, float b, float a, void *callback_user_data);
-	typedef void (*yafaray_ProgressBarCallback_t)(int steps_total, int steps_done, const char *tag, void *callback_user_data);
-	typedef void (*yafaray_LoggerCallback_t)(yafaray_LogLevel_t log_level, long datetime, const char *time_of_day, const char *description, void *callback_user_data);
+	typedef void (*yafaray_RenderNotifyViewCallback_t)(const char *view_name, int weight, int height, void *callback_data);
+	typedef void (*yafaray_RenderNotifyLayerCallback_t)(const char *internal_layer_name, const char *exported_layer_name, int weight, int height, int exported_channels, void *callback_data);
+	typedef void (*yafaray_RenderPutPixelCallback_t)(const char *view_name, const char *layer_name, int x, int y, float r, float g, float b, float a, void *callback_data);
+	typedef void (*yafaray_RenderFlushAreaCallback_t)(const char *view_name, int area_id, int x_0, int y_0, int x_1, int y_1, void *callback_data);
+	typedef void (*yafaray_RenderFlushCallback_t)(const char *view_name, void *callback_data);
+	typedef void (*yafaray_RenderHighlightAreaCallback_t)(const char *view_name, int area_id, int x_0, int y_0, int x_1, int y_1, void *callback_data);
+	typedef void (*yafaray_RenderHighlightPixelCallback_t)(const char *view_name, int x, int y, float r, float g, float b, float a, void *callback_data);
+	typedef void (*yafaray_ProgressBarCallback_t)(int steps_total, int steps_done, const char *tag, void *callback_data);
+	typedef void (*yafaray_LoggerCallback_t)(yafaray_LogLevel_t log_level, long datetime, const char *time_of_day, const char *description, void *callback_data);
 
 	/* C API Public functions.
 	 * In the source code the YafaRay developers *MUST* ensure that each of them appears in the Exported Symbols Map file with the correct annotated version */
-	YAFARAY_C_API_EXPORT yafaray_Interface_t *yafaray_createInterface(yafaray_Interface_Type_t interface_type, const char *exported_file_path, const yafaray_LoggerCallback_t logger_callback, void *callback_user_data, yafaray_DisplayConsole_t display_console);
+	YAFARAY_C_API_EXPORT yafaray_Interface_t *yafaray_createInterface(yafaray_Interface_Type_t interface_type, const char *exported_file_path, const yafaray_LoggerCallback_t logger_callback, void *callback_data, yafaray_DisplayConsole_t display_console);
 	YAFARAY_C_API_EXPORT void yafaray_destroyInterface(yafaray_Interface_t *interface);
-	YAFARAY_C_API_EXPORT void yafaray_setLoggingCallback(yafaray_Interface_t *interface, const yafaray_LoggerCallback_t logger_callback, void *callback_user_data);
+	YAFARAY_C_API_EXPORT void yafaray_setLoggingCallback(yafaray_Interface_t *interface, const yafaray_LoggerCallback_t logger_callback, void *callback_data);
 	YAFARAY_C_API_EXPORT void yafaray_createScene(yafaray_Interface_t *interface);
 	YAFARAY_C_API_EXPORT int yafaray_getSceneFilmWidth(const yafaray_Interface_t *interface);
 	YAFARAY_C_API_EXPORT int yafaray_getSceneFilmHeight(const yafaray_Interface_t *interface);
@@ -88,17 +89,18 @@ extern "C" {
 	YAFARAY_C_API_EXPORT yafaray_bool_t yafaray_createVolumeRegion(yafaray_Interface_t *interface, const char *name);
 	YAFARAY_C_API_EXPORT yafaray_bool_t yafaray_createRenderView(yafaray_Interface_t *interface, const char *name);
 	YAFARAY_C_API_EXPORT yafaray_bool_t yafaray_createOutput(yafaray_Interface_t *interface, const char *name);
-	YAFARAY_C_API_EXPORT void yafaray_setFilmInitCallback(yafaray_Interface_t *interface, yafaray_FilmInitCallback_t init_callback, void *init_callback_user_data);
-	YAFARAY_C_API_EXPORT void yafaray_setFilmPutPixelCallback(yafaray_Interface_t *interface, yafaray_FilmPutPixelCallback_t putpixel_callback, void *putpixel_callback_user_data);
-	YAFARAY_C_API_EXPORT void yafaray_setFilmHighlightPixelCallback(yafaray_Interface_t *interface, yafaray_FilmHighlightPixelCallback_t highlight_pixel_callback, void *highlight_pixel_callback_user_data);
-	YAFARAY_C_API_EXPORT void yafaray_setFilmFlushAreaCallback(yafaray_Interface_t *interface, yafaray_FilmFlushAreaCallback_t flush_area_callback, void *flush_area_callback_user_data);
-	YAFARAY_C_API_EXPORT void yafaray_setFilmFlushCallback(yafaray_Interface_t *interface, yafaray_FilmFlushCallback_t flush_callback, void *flush_callback_user_data);
-	YAFARAY_C_API_EXPORT void yafaray_setFilmHighlightAreaCallback(yafaray_Interface_t *interface, yafaray_FilmHighlightAreaCallback_t highlight_callback, void *highlight_callback_user_data);
+	YAFARAY_C_API_EXPORT void yafaray_setRenderNotifyViewCallback(yafaray_Interface_t *interface, yafaray_RenderNotifyViewCallback_t callback, void *callback_data);
+	YAFARAY_C_API_EXPORT void yafaray_setRenderNotifyLayerCallback(yafaray_Interface_t *interface, yafaray_RenderNotifyLayerCallback_t callback, void *callback_data);
+	YAFARAY_C_API_EXPORT void yafaray_setRenderPutPixelCallback(yafaray_Interface_t *interface, yafaray_RenderPutPixelCallback_t callback, void *callback_data);
+	YAFARAY_C_API_EXPORT void yafaray_setRenderHighlightPixelCallback(yafaray_Interface_t *interface, yafaray_RenderHighlightPixelCallback_t callback, void *callback_data);
+	YAFARAY_C_API_EXPORT void yafaray_setRenderFlushAreaCallback(yafaray_Interface_t *interface, yafaray_RenderFlushAreaCallback_t callback, void *callback_data);
+	YAFARAY_C_API_EXPORT void yafaray_setRenderFlushCallback(yafaray_Interface_t *interface, yafaray_RenderFlushCallback_t callback, void *callback_data);
+	YAFARAY_C_API_EXPORT void yafaray_setRenderHighlightAreaCallback(yafaray_Interface_t *interface, yafaray_RenderHighlightAreaCallback_t callback, void *callback_data);
 	YAFARAY_C_API_EXPORT yafaray_bool_t yafaray_removeOutput(yafaray_Interface_t *interface, const char *name);
 	YAFARAY_C_API_EXPORT void yafaray_clearOutputs(yafaray_Interface_t *interface);
 	YAFARAY_C_API_EXPORT void yafaray_clearAll(yafaray_Interface_t *interface);
 	YAFARAY_C_API_EXPORT void yafaray_setupRender(yafaray_Interface_t *interface);
-	YAFARAY_C_API_EXPORT void yafaray_render(yafaray_Interface_t *interface, yafaray_ProgressBarCallback_t monitor_callback, void *callback_user_data, yafaray_DisplayConsole_t progress_bar_display_console);
+	YAFARAY_C_API_EXPORT void yafaray_render(yafaray_Interface_t *interface, yafaray_ProgressBarCallback_t monitor_callback, void *callback_data, yafaray_DisplayConsole_t progress_bar_display_console);
 	YAFARAY_C_API_EXPORT void yafaray_defineLayer(yafaray_Interface_t *interface);
 	YAFARAY_C_API_EXPORT yafaray_bool_t yafaray_setInteractive(yafaray_Interface_t *interface, yafaray_bool_t interactive);
 	YAFARAY_C_API_EXPORT void yafaray_enablePrintDateTime(yafaray_Interface_t *interface, yafaray_bool_t value);

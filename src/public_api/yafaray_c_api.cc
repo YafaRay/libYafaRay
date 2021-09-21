@@ -27,11 +27,11 @@
 #include "common/version_build_info.h"
 #include <cstring>
 
-yafaray_Interface_t *yafaray_createInterface(yafaray_Interface_Type_t interface_type, const char *exported_file_path, const yafaray_LoggerCallback_t logger_callback, void *callback_user_data, yafaray_DisplayConsole_t display_console)
+yafaray_Interface_t *yafaray_createInterface(yafaray_Interface_Type_t interface_type, const char *exported_file_path, const yafaray_LoggerCallback_t logger_callback, void *callback_data, yafaray_DisplayConsole_t display_console)
 {
 	yafaray::Interface *interface;
-	if(interface_type == YAFARAY_INTERFACE_EXPORT_XML) interface = new yafaray::XmlExport(exported_file_path, logger_callback, callback_user_data, display_console);
-	else interface = new yafaray::Interface(logger_callback, callback_user_data, display_console);
+	if(interface_type == YAFARAY_INTERFACE_EXPORT_XML) interface = new yafaray::XmlExport(exported_file_path, logger_callback, callback_data, display_console);
+	else interface = new yafaray::Interface(logger_callback, callback_data, display_console);
 	return reinterpret_cast<yafaray_Interface *>(interface);
 }
 
@@ -40,9 +40,9 @@ void yafaray_destroyInterface(yafaray_Interface_t *interface)
 	delete reinterpret_cast<yafaray::Interface *>(interface);
 }
 
-void yafaray_setLoggingCallback(yafaray_Interface_t *interface, const yafaray_LoggerCallback_t logger_callback, void *callback_user_data)
+void yafaray_setLoggingCallback(yafaray_Interface_t *interface, const yafaray_LoggerCallback_t logger_callback, void *callback_data)
 {
-	reinterpret_cast<yafaray::Interface *>(interface)->setLoggingCallback(logger_callback, callback_user_data);
+	reinterpret_cast<yafaray::Interface *>(interface)->setLoggingCallback(logger_callback, callback_data);
 }
 
 void yafaray_createScene(yafaray_Interface_t *interface)
@@ -216,34 +216,39 @@ yafaray_bool_t yafaray_createOutput(yafaray_Interface_t *interface, const char *
 	return static_cast<yafaray_bool_t>(reinterpret_cast<yafaray::Interface *>(interface)->createOutput(name) != nullptr);
 }
 
-void yafaray_setFilmInitCallback(yafaray_Interface_t *interface, yafaray_FilmInitCallback_t init_callback, void *init_callback_user_data)
+void yafaray_setRenderNotifyViewCallback(yafaray_Interface_t *interface, yafaray_RenderNotifyViewCallback_t callback, void *callback_data)
 {
-	reinterpret_cast<yafaray::Interface *>(interface)->setFilmInitCallback(init_callback, init_callback_user_data);
+	reinterpret_cast<yafaray::Interface *>(interface)->setRenderNotifyViewCallback(callback, callback_data);
 }
 
-void yafaray_setFilmPutPixelCallback(yafaray_Interface_t *interface, yafaray_FilmPutPixelCallback_t putpixel_callback, void *putpixel_callback_user_data)
+void yafaray_setRenderNotifyLayerCallback(yafaray_Interface_t *interface, yafaray_RenderNotifyLayerCallback_t callback, void *callback_data)
 {
-	reinterpret_cast<yafaray::Interface *>(interface)->setFilmPutPixelCallback(putpixel_callback, putpixel_callback_user_data);
+	reinterpret_cast<yafaray::Interface *>(interface)->setRenderNotifyLayerCallback(callback, callback_data);
 }
 
-void yafaray_setFilmHighlightPixelCallback(yafaray_Interface_t *interface, yafaray_FilmHighlightPixelCallback_t highlight_pixel_callback, void *highlight_pixel_callback_user_data)
+void yafaray_setRenderPutPixelCallback(yafaray_Interface_t *interface, yafaray_RenderPutPixelCallback_t callback, void *callback_data)
 {
-	reinterpret_cast<yafaray::Interface *>(interface)->setFilmHighlightPixelCallback(highlight_pixel_callback, highlight_pixel_callback_user_data);
+	reinterpret_cast<yafaray::Interface *>(interface)->setRenderPutPixelCallback(callback, callback_data);
 }
 
-void yafaray_setFilmFlushAreaCallback(yafaray_Interface_t *interface, yafaray_FilmFlushAreaCallback_t flush_area_callback, void *flush_area_callback_user_data)
+void yafaray_setRenderHighlightPixelCallback(yafaray_Interface_t *interface, yafaray_RenderHighlightPixelCallback_t callback, void *callback_data)
 {
-	reinterpret_cast<yafaray::Interface *>(interface)->setFilmFlushAreaCallback(flush_area_callback, flush_area_callback_user_data);
+	reinterpret_cast<yafaray::Interface *>(interface)->setRenderHighlightPixelCallback(callback, callback_data);
 }
 
-void yafaray_setFilmFlushCallback(yafaray_Interface_t *interface, yafaray_FilmFlushCallback_t flush_callback, void *flush_callback_user_data)
+void yafaray_setRenderFlushAreaCallback(yafaray_Interface_t *interface, yafaray_RenderFlushAreaCallback_t callback, void *callback_data)
 {
-	reinterpret_cast<yafaray::Interface *>(interface)->setFilmFlushCallback(flush_callback, flush_callback_user_data);
+	reinterpret_cast<yafaray::Interface *>(interface)->setRenderFlushAreaCallback(callback, callback_data);
 }
 
-void yafaray_setFilmHighlightAreaCallback(yafaray_Interface_t *interface, yafaray_FilmHighlightAreaCallback_t highlight_callback, void *highlight_callback_user_data)
+void yafaray_setRenderFlushCallback(yafaray_Interface_t *interface, yafaray_RenderFlushCallback_t callback, void *callback_data)
 {
-	reinterpret_cast<yafaray::Interface *>(interface)->setFilmHighlightAreaCallback(highlight_callback, highlight_callback_user_data);
+	reinterpret_cast<yafaray::Interface *>(interface)->setRenderFlushCallback(callback, callback_data);
+}
+
+void yafaray_setRenderHighlightAreaCallback(yafaray_Interface_t *interface, yafaray_RenderHighlightAreaCallback_t callback, void *callback_data)
+{
+	reinterpret_cast<yafaray::Interface *>(interface)->setRenderHighlightAreaCallback(callback, callback_data);
 }
 
 int yafaray_getSceneFilmWidth(const yafaray_Interface_t *interface)
@@ -276,11 +281,11 @@ void yafaray_setupRender(yafaray_Interface_t *interface)
 	reinterpret_cast<yafaray::Interface *>(interface)->setupRender();
 }
 
-void yafaray_render(yafaray_Interface_t *interface, yafaray_ProgressBarCallback_t monitor_callback, void *callback_user_data, yafaray_DisplayConsole_t progress_bar_display_console)
+void yafaray_render(yafaray_Interface_t *interface, yafaray_ProgressBarCallback_t monitor_callback, void *callback_data, yafaray_DisplayConsole_t progress_bar_display_console)
 {
 	std::shared_ptr<yafaray::ProgressBar> progress_bar;
-	if(progress_bar_display_console == YAFARAY_DISPLAY_CONSOLE_NORMAL) progress_bar = std::make_shared<yafaray::ConsoleProgressBar>(80, monitor_callback, callback_user_data);
-	else progress_bar = std::make_shared<yafaray::ProgressBar>(monitor_callback, callback_user_data);
+	if(progress_bar_display_console == YAFARAY_DISPLAY_CONSOLE_NORMAL) progress_bar = std::make_shared<yafaray::ConsoleProgressBar>(80, monitor_callback, callback_data);
+	else progress_bar = std::make_shared<yafaray::ProgressBar>(monitor_callback, callback_data);
 	reinterpret_cast<yafaray::Interface *>(interface)->render(progress_bar);
 }
 

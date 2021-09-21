@@ -31,9 +31,9 @@
 
 BEGIN_YAFARAY
 
-Interface::Interface(const ::yafaray_LoggerCallback_t logger_callback, void *callback_user_data, ::yafaray_DisplayConsole_t logger_display_console)
+Interface::Interface(const ::yafaray_LoggerCallback_t logger_callback, void *callback_data, ::yafaray_DisplayConsole_t logger_display_console)
 {
-	logger_ = std::unique_ptr<Logger>(new Logger(logger_callback, callback_user_data, logger_display_console));
+	logger_ = std::unique_ptr<Logger>(new Logger(logger_callback, callback_data, logger_display_console));
 	params_ = std::unique_ptr<ParamMap>(new ParamMap);
 	eparams_ = std::unique_ptr<std::list<ParamMap>>(new std::list<ParamMap>);
 	cparams_ = params_.get();
@@ -42,9 +42,9 @@ Interface::Interface(const ::yafaray_LoggerCallback_t logger_callback, void *cal
 #endif
 }
 
-void Interface::setLoggingCallback(const ::yafaray_LoggerCallback_t logger_callback, void *callback_user_data)
+void Interface::setLoggingCallback(const ::yafaray_LoggerCallback_t logger_callback, void *callback_data)
 {
-	logger_->setCallback(logger_callback, callback_user_data);
+	logger_->setCallback(logger_callback, callback_data);
 }
 
 void Interface::createScene() noexcept
@@ -240,34 +240,39 @@ ImageOutput *Interface::createOutput(const char *name) noexcept
 	return scene_->createOutput(name, *params_);
 }
 
-void Interface::setFilmInitCallback(yafaray_FilmInitCallback_t init_callback, void *init_callback_user_data) noexcept
+void Interface::setRenderNotifyViewCallback(yafaray_RenderNotifyViewCallback_t callback, void *callback_data) noexcept
 {
-	if(scene_) scene_->setFilmInitCallback(init_callback, init_callback_user_data);
+	if(scene_) scene_->setRenderNotifyViewCallback(callback, callback_data);
 }
 
-void Interface::setFilmPutPixelCallback(yafaray_FilmPutPixelCallback_t putpixel_callback, void *putpixel_callback_user_data) noexcept
+void Interface::setRenderNotifyLayerCallback(yafaray_RenderNotifyLayerCallback_t callback, void *callback_data) noexcept
 {
-	if(scene_) scene_->setFilmPutPixelCallback(putpixel_callback, putpixel_callback_user_data);
+	if(scene_) scene_->setRenderNotifyLayerCallback(callback, callback_data);
 }
 
-void Interface::setFilmHighlightPixelCallback(yafaray_FilmHighlightPixelCallback_t highlight_pixel_callback, void *highlight_pixel_callback_user_data) noexcept
+void Interface::setRenderPutPixelCallback(yafaray_RenderPutPixelCallback_t callback, void *callback_data) noexcept
 {
-	if(scene_) scene_->setFilmHighlightPixelCallback(highlight_pixel_callback, highlight_pixel_callback_user_data);
+	if(scene_) scene_->setRenderPutPixelCallback(callback, callback_data);
 }
 
-void Interface::setFilmFlushAreaCallback(yafaray_FilmFlushAreaCallback_t flush_area_callback, void *flush_area_callback_user_data) noexcept
+void Interface::setRenderHighlightPixelCallback(yafaray_RenderHighlightPixelCallback_t callback, void *callback_data) noexcept
 {
-	if(scene_) scene_->setFilmFlushAreaCallback(flush_area_callback, flush_area_callback_user_data);
+	if(scene_) scene_->setRenderHighlightPixelCallback(callback, callback_data);
 }
 
-void Interface::setFilmFlushCallback(yafaray_FilmFlushCallback_t flush_callback, void *flush_callback_user_data) noexcept
+void Interface::setRenderFlushAreaCallback(yafaray_RenderFlushAreaCallback_t callback, void *callback_data) noexcept
 {
-	if(scene_) scene_->setFilmFlushCallback(flush_callback, flush_callback_user_data);
+	if(scene_) scene_->setRenderFlushAreaCallback(callback, callback_data);
 }
 
-void Interface::setFilmHighlightAreaCallback(yafaray_FilmHighlightAreaCallback_t highlight_callback, void *highlight_callback_user_data) noexcept
+void Interface::setRenderFlushCallback(yafaray_RenderFlushCallback_t callback, void *callback_data) noexcept
 {
-	if(scene_) scene_->setFilmHighlightAreaCallback(highlight_callback, highlight_callback_user_data);
+	if(scene_) scene_->setRenderFlushCallback(callback, callback_data);
+}
+
+void Interface::setRenderHighlightAreaCallback(yafaray_RenderHighlightAreaCallback_t callback, void *callback_data) noexcept
+{
+	if(scene_) scene_->setRenderHighlightAreaCallback(callback, callback_data);
 }
 
 int Interface::getSceneFilmWidth() const noexcept

@@ -31,7 +31,7 @@ BEGIN_YAFARAY
 class ProgressBar
 {
 	public:
-		ProgressBar(yafaray_ProgressBarCallback_t monitor_callback = nullptr, void *callback_user_data = nullptr) : progress_bar_callback_(monitor_callback), callback_user_data_(callback_user_data) { }
+		ProgressBar(yafaray_ProgressBarCallback_t monitor_callback = nullptr, void *callback_data = nullptr) : progress_bar_callback_(monitor_callback), callback_data_(callback_data) { }
 		virtual ~ProgressBar() = default;
 		//! initialize (or reset) the monitor, give the total number of steps that can occur
 		virtual void init(int steps_total, bool colors_enabled) { std::lock_guard<std::mutex> lock_guard(mutx_); steps_total_ = steps_total; steps_done_ = 0; colors_enabled_ = colors_enabled; }
@@ -56,7 +56,7 @@ class ProgressBar
 	private:
 		void updateCallback();
 		yafaray_ProgressBarCallback_t progress_bar_callback_ = nullptr;
-		void *callback_user_data_ = nullptr;
+		void *callback_data_ = nullptr;
 };
 
 /*! the default console progress bar (implemented in console.cc)
@@ -64,7 +64,7 @@ class ProgressBar
 class ConsoleProgressBar : public ProgressBar
 {
 	public:
-		ConsoleProgressBar(int cwidth = 80, yafaray_ProgressBarCallback_t monitor_callback = nullptr, void *callback_user_data = nullptr);
+		ConsoleProgressBar(int cwidth = 80, yafaray_ProgressBarCallback_t monitor_callback = nullptr, void *callback_data = nullptr);
 		virtual void init(int total_steps, bool colors_enabled) override;
 		virtual void update(int steps_increment = 1) override;
 		virtual void done() override;
