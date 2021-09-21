@@ -113,6 +113,9 @@ PhotonIntegrator::PhotonIntegrator(Logger &logger, unsigned int d_photons, unsig
 
 void PhotonIntegrator::diffuseWorker(PhotonMap *diffuse_map, int thread_id, const Scene *scene, const RenderView *render_view, const RenderControl &render_control, unsigned int n_diffuse_photons, const Pdf1D *light_power_d, int num_d_lights, const std::vector<const Light *> &tmplights, ProgressBar *pb, int pb_step, unsigned int &total_photons_shot, int max_bounces, bool final_gather, PreGatherData &pgdat)
 {
+	const Accelerator *accelerator = scene_->getAccelerator();
+	if(!accelerator) return;
+
 	Ray ray;
 	float light_num_pdf, light_pdf, s_1, s_2, s_3, s_4, s_5, s_6, s_7, s_l;
 	Rgb pcol;
@@ -177,7 +180,7 @@ void PhotonIntegrator::diffuseWorker(PhotonMap *diffuse_map, int thread_id, cons
 		const Material *material = nullptr;
 		BsdfFlags bsdfs;
 
-		while(scene_->getAccelerator()->intersect(ray, sp))
+		while(accelerator->intersect(ray, sp))
 		{
 			if(std::isnan(pcol.r_) || std::isnan(pcol.g_) || std::isnan(pcol.b_))
 			{
@@ -723,6 +726,9 @@ bool PhotonIntegrator::preprocess(const RenderControl &render_control, const Ren
 // precondition: initBSDF of current spot has been called!
 Rgb PhotonIntegrator::finalGathering(RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo) const
 {
+	const Accelerator *accelerator = scene_->getAccelerator();
+	if(!accelerator) return {0.f};
+
 	Rgb path_col(0.0);
 	void *first_udat = render_data.arena_;
 	alignas (16) unsigned char userdata[user_data_size_];
@@ -764,7 +770,7 @@ Rgb PhotonIntegrator::finalGathering(RenderData &render_data, const SurfacePoint
 		pRay.from_ = hit.p_;
 		throughput = scol;
 
-		if(!(did_hit = scene_->getAccelerator()->intersect(pRay, hit))) continue;   //hit background
+		if(!(did_hit = accelerator->intersect(pRay, hit))) continue;   //hit background
 
 		p_mat = hit.material_;
 		length = pRay.tmax_;
@@ -830,7 +836,7 @@ Rgb PhotonIntegrator::finalGathering(RenderData &render_data, const SurfacePoint
 			pRay.tmax_ = -1.0;
 			pRay.from_ = hit.p_;
 			throughput *= scol;
-			did_hit = scene_->getAccelerator()->intersect(pRay, hit);
+			did_hit = accelerator->intersect(pRay, hit);
 
 			if(!did_hit) //hit background
 			{
@@ -883,7 +889,8 @@ Rgba PhotonIntegrator::integrate(RenderData &render_data, const DiffRay &ray, in
 	if(transp_background_) alpha = 0.0;
 	else alpha = 1.0;
 
-	if(scene_->getAccelerator()->intersect(ray, sp))
+	const Accelerator *accelerator = scene_->getAccelerator();
+	if(accelerator && accelerator->intersect(ray, sp))
 	{
 		alignas (16) unsigned char userdata[user_data_size_];
 		render_data.arena_ = static_cast<void *>(userdata);

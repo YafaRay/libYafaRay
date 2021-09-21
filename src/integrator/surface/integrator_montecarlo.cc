@@ -90,6 +90,9 @@ Rgb MonteCarloIntegrator::estimateOneDirectLight(RenderData &render_data, const 
 
 Rgb MonteCarloIntegrator::doLightEstimation(RenderData &render_data, const Light *light, const SurfacePoint &sp, const Vec3 &wo, const unsigned int  &loffs, ColorLayers *color_layers) const
 {
+	const Accelerator *accelerator = scene_->getAccelerator();
+	if(!accelerator) return {0.f};
+
 	const bool layers_used = render_data.raylevel_ == 0 && color_layers && color_layers->getFlags() != Layer::Flags::None;
 
 	Rgb col(0.f);
@@ -115,7 +118,7 @@ Rgb MonteCarloIntegrator::doLightEstimation(RenderData &render_data, const Light
 			if(scene_->shadow_bias_auto_) light_ray.tmin_ = scene_->shadow_bias_ * std::max(1.f, Vec3(sp.p_).length());
 			else light_ray.tmin_ = scene_->shadow_bias_;
 
-			if(cast_shadows) shadowed = (tr_shad_) ? scene_->getAccelerator()->isShadowed(render_data, light_ray, s_depth_, scol, mask_obj_index, mask_mat_index, scene_->getShadowBias()) : scene_->getAccelerator()->isShadowed(render_data, light_ray, mask_obj_index, mask_mat_index, scene_->getShadowBias());
+			if(cast_shadows) shadowed = (tr_shad_) ? accelerator->isShadowed(render_data, light_ray, s_depth_, scol, mask_obj_index, mask_mat_index, scene_->getShadowBias()) : accelerator->isShadowed(render_data, light_ray, mask_obj_index, mask_mat_index, scene_->getShadowBias());
 			else shadowed = false;
 
 			const float angle_light_normal = (material->isFlat() ? 1.f : std::abs(sp.n_ * light_ray.dir_));	//If the material has the special attribute "isFlat()" then we will not multiply the surface reflection by the cosine of the angle between light and normal
@@ -191,7 +194,7 @@ Rgb MonteCarloIntegrator::doLightEstimation(RenderData &render_data, const Light
 				if(scene_->shadow_bias_auto_) light_ray.tmin_ = scene_->shadow_bias_ * std::max(1.f, Vec3(sp.p_).length());
 				else light_ray.tmin_ = scene_->shadow_bias_;
 
-				if(cast_shadows) shadowed = (tr_shad_) ? scene_->getAccelerator()->isShadowed(render_data, light_ray, s_depth_, scol, mask_obj_index, mask_mat_index, scene_->getShadowBias()) : scene_->getAccelerator()->isShadowed(render_data, light_ray, mask_obj_index, mask_mat_index, scene_->getShadowBias());
+				if(cast_shadows) shadowed = (tr_shad_) ? accelerator->isShadowed(render_data, light_ray, s_depth_, scol, mask_obj_index, mask_mat_index, scene_->getShadowBias()) : accelerator->isShadowed(render_data, light_ray, mask_obj_index, mask_mat_index, scene_->getShadowBias());
 				else shadowed = false;
 
 				if((!shadowed && ls.pdf_ > 1e-6f)  || (layers_used && color_layers->find(Layer::DiffuseNoShadow)))
@@ -330,7 +333,7 @@ Rgb MonteCarloIntegrator::doLightEstimation(RenderData &render_data, const Light
 				const Rgb surf_col = material->sample(render_data, sp, wo, b_ray.dir_, s, W);
 				if(s.pdf_ > 1e-6f && light->intersect(b_ray, b_ray.tmax_, lcol, light_pdf))
 				{
-					if(cast_shadows) shadowed = (tr_shad_) ? scene_->getAccelerator()->isShadowed(render_data, b_ray, s_depth_, scol, mask_obj_index, mask_mat_index, scene_->getShadowBias()) : scene_->getAccelerator()->isShadowed(render_data, b_ray, mask_obj_index, mask_mat_index, scene_->getShadowBias());
+					if(cast_shadows) shadowed = (tr_shad_) ? accelerator->isShadowed(render_data, b_ray, s_depth_, scol, mask_obj_index, mask_mat_index, scene_->getShadowBias()) : accelerator->isShadowed(render_data, b_ray, mask_obj_index, mask_mat_index, scene_->getShadowBias());
 					else shadowed = false;
 
 					if((!shadowed && light_pdf > 1e-6f) || (layers_used && color_layers->find(Layer::DiffuseNoShadow)))
@@ -381,6 +384,9 @@ Rgb MonteCarloIntegrator::doLightEstimation(RenderData &render_data, const Light
 
 void MonteCarloIntegrator::causticWorker(PhotonMap *caustic_map, int thread_id, const Scene *scene, const RenderView *render_view, const RenderControl &render_control, unsigned int n_caus_photons, Pdf1D *light_power_d, int num_lights, const std::vector<const Light *> &caus_lights, int caus_depth, ProgressBar *pb, int pb_step, unsigned int &total_photons_shot)
 {
+	const Accelerator *accelerator = scene_->getAccelerator();
+	if(!accelerator) return;
+
 	bool done = false;
 	float s_1, s_2, s_3, s_4, s_5, s_6, s_7, s_l;
 	const float f_num_lights = (float)num_lights;
@@ -444,7 +450,7 @@ void MonteCarloIntegrator::causticWorker(PhotonMap *caustic_map, int thread_id, 
 		const Material *material = nullptr;
 		const VolumeHandler *vol = nullptr;
 
-		while(scene_->getAccelerator()->intersect(ray, *hit_2))
+		while(accelerator->intersect(ray, *hit_2))
 		{
 			if(std::isnan(pcol.r_) || std::isnan(pcol.g_) || std::isnan(pcol.b_))
 			{
@@ -939,6 +945,9 @@ void MonteCarloIntegrator::recursiveRaytrace(RenderData &render_data, const Diff
 
 Rgb MonteCarloIntegrator::sampleAmbientOcclusion(RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo) const
 {
+	const Accelerator *accelerator = scene_->getAccelerator();
+	if(!accelerator) return {0.f};
+
 	Rgb col(0.f);
 	const Material *material = sp.material_;
 	Ray light_ray;
@@ -970,7 +979,7 @@ Rgb MonteCarloIntegrator::sampleAmbientOcclusion(RenderData &render_data, const 
 			col += material->emit(render_data, sp, wo) * s.pdf_;
 		}
 		Rgb scol;
-		const bool shadowed = (tr_shad_) ? scene_->getAccelerator()->isShadowed(render_data, light_ray, s_depth_, scol, mask_obj_index, mask_mat_index, scene_->getShadowBias()) : scene_->getAccelerator()->isShadowed(render_data, light_ray, mask_obj_index, mask_mat_index, scene_->getShadowBias());
+		const bool shadowed = (tr_shad_) ? accelerator->isShadowed(render_data, light_ray, s_depth_, scol, mask_obj_index, mask_mat_index, scene_->getShadowBias()) : accelerator->isShadowed(render_data, light_ray, mask_obj_index, mask_mat_index, scene_->getShadowBias());
 		if(!shadowed)
 		{
 			const float cos = std::abs(sp.n_ * light_ray.dir_);
@@ -983,6 +992,9 @@ Rgb MonteCarloIntegrator::sampleAmbientOcclusion(RenderData &render_data, const 
 
 Rgb MonteCarloIntegrator::sampleAmbientOcclusionLayer(RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo) const
 {
+	const Accelerator *accelerator = scene_->getAccelerator();
+	if(!accelerator) return {0.f};
+
 	Rgb col(0.f);
 	const Material *material = sp.material_;
 	Ray light_ray;
@@ -1013,7 +1025,7 @@ Rgb MonteCarloIntegrator::sampleAmbientOcclusionLayer(RenderData &render_data, c
 		{
 			col += material->emit(render_data, sp, wo) * s.pdf_;
 		}
-		const bool shadowed = scene_->getAccelerator()->isShadowed(render_data, light_ray, mask_obj_index, mask_mat_index, scene_->getShadowBias());
+		const bool shadowed = accelerator->isShadowed(render_data, light_ray, mask_obj_index, mask_mat_index, scene_->getShadowBias());
 		if(!shadowed)
 		{
 			float cos = std::abs(sp.n_ * light_ray.dir_);
@@ -1026,6 +1038,9 @@ Rgb MonteCarloIntegrator::sampleAmbientOcclusionLayer(RenderData &render_data, c
 
 Rgb MonteCarloIntegrator::sampleAmbientOcclusionClayLayer(RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo) const
 {
+	const Accelerator *accelerator = scene_->getAccelerator();
+	if(!accelerator) return {0.f};
+
 	Rgb col(0.f);
 	const Material *material = sp.material_;
 	Ray light_ray;
@@ -1057,7 +1072,7 @@ Rgb MonteCarloIntegrator::sampleAmbientOcclusionClayLayer(RenderData &render_dat
 		{
 			col += material->emit(render_data, sp, wo) * s.pdf_;
 		}
-		const bool shadowed = scene_->getAccelerator()->isShadowed(render_data, light_ray, mask_obj_index, mask_mat_index, scene_->getShadowBias());
+		const bool shadowed = accelerator->isShadowed(render_data, light_ray, mask_obj_index, mask_mat_index, scene_->getShadowBias());
 		if(!shadowed)
 		{
 			float cos = std::abs(sp.n_ * light_ray.dir_);

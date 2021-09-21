@@ -27,7 +27,6 @@
 #include "common/param.h"
 #include "render/render_data.h"
 #include "accelerator/accelerator.h"
-#include "photon/photon.h"
 
 BEGIN_YAFARAY
 
@@ -148,7 +147,11 @@ bool SingleScatterIntegrator::preprocess(const RenderControl &render_control, co
 	return true;
 }
 
-Rgb SingleScatterIntegrator::getInScatter(RenderData &render_data, Ray &step_ray, float current_step) const {
+Rgb SingleScatterIntegrator::getInScatter(RenderData &render_data, Ray &step_ray, float current_step) const
+{
+	const Accelerator *accelerator = scene_->getAccelerator();
+	if(!accelerator) return {0.f};
+
 	Rgb in_scatter(0.f);
 	SurfacePoint sp;
 	sp.p_ = step_ray.from_;
@@ -169,7 +172,7 @@ Rgb SingleScatterIntegrator::getInScatter(RenderData &render_data, Ray &step_ray
 			{
 				// ...shadowed...
 				if(light_ray.tmax_ < 0.f) light_ray.tmax_ = 1e10;  // infinitely distant light
-				bool shadowed = scene_->getAccelerator()->isShadowed(render_data, light_ray, mask_obj_index, mask_mat_index, scene_->getShadowBias());
+				bool shadowed = accelerator->isShadowed(render_data, light_ray, mask_obj_index, mask_mat_index, scene_->getShadowBias());
 				if(!shadowed)
 				{
 					float light_tr = 0.0f;
@@ -218,7 +221,7 @@ Rgb SingleScatterIntegrator::getInScatter(RenderData &render_data, Ray &step_ray
 				{
 					// ...shadowed...
 					if(light_ray.tmax_ < 0.f) light_ray.tmax_ = 1e10;  // infinitely distant light
-					bool shadowed = scene_->getAccelerator()->isShadowed(render_data, light_ray, mask_obj_index, mask_mat_index, scene_->getShadowBias());
+					bool shadowed = accelerator->isShadowed(render_data, light_ray, mask_obj_index, mask_mat_index, scene_->getShadowBias());
 					if(!shadowed)
 					{
 						ccol += ls.col_ / ls.pdf_;

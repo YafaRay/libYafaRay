@@ -75,7 +75,8 @@ Rgba DebugIntegrator::integrate(RenderData &render_data, const DiffRay &ray, int
 	void *o_udat = render_data.arena_;
 	const bool old_lights_geometry_material_emit = render_data.lights_geometry_material_emit_;
 	//shoot ray into scene
-	if(scene_->getAccelerator()->intersect(ray, sp))
+	const Accelerator *accelerator = scene_->getAccelerator();
+	if(accelerator && accelerator->intersect(ray, sp))
 	{
 		if(show_pn_)
 		{

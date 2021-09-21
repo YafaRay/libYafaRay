@@ -67,6 +67,9 @@ void TiledIntegrator::renderWorker(TiledIntegrator *integrator, const Scene *sce
 
 void TiledIntegrator::precalcDepths(const RenderView *render_view)
 {
+	const Accelerator *accelerator = scene_->getAccelerator();
+	if(!accelerator) return;
+
 	const Camera *camera = render_view->getCamera();
 
 	if(camera->getFarClip() > -1)
@@ -88,7 +91,7 @@ void TiledIntegrator::precalcDepths(const RenderView *render_view)
 			{
 				ray.tmax_ = -1.f;
 				ray = camera->shootRay(i, j, 0.5f, 0.5f, wt);
-				scene_->getAccelerator()->intersect(ray, sp);
+				accelerator->intersect(ray, sp);
 				if(ray.tmax_ > max_depth_) max_depth_ = ray.tmax_;
 				if(ray.tmax_ < min_depth_ && ray.tmax_ >= 0.f) min_depth_ = ray.tmax_;
 			}

@@ -354,6 +354,9 @@ bool SppmIntegrator::renderTile(RenderArea &a, const RenderView *render_view, co
 
 void SppmIntegrator::photonWorker(PhotonMap *diffuse_map, PhotonMap *caustic_map, int thread_id, const Scene *scene, const RenderView *render_view, const RenderControl &render_control, unsigned int n_photons, const Pdf1D *light_power_d, int num_d_lights, const std::vector<const Light *> &tmplights, ProgressBar *pb, int pb_step, unsigned int &total_photons_shot, int max_bounces, Random &prng)
 {
+	const Accelerator *accelerator = scene_->getAccelerator();
+	if(!accelerator) return;
+
 	Ray ray;
 	float light_num_pdf, light_pdf, s_1, s_2, s_3, s_4, s_5, s_6, s_7, s_l;
 	Rgb pcol;
@@ -430,7 +433,7 @@ void SppmIntegrator::photonWorker(PhotonMap *diffuse_map, PhotonMap *caustic_map
 		const Material *material = nullptr;
 		BsdfFlags bsdfs;
 
-		while(scene_->getAccelerator()->intersect(ray, sp))   //scatter photons.
+		while(accelerator->intersect(ray, sp))   //scatter photons.
 		{
 			if(std::isnan(pcol.r_) || std::isnan(pcol.g_) || std::isnan(pcol.b_))
 			{
@@ -690,6 +693,9 @@ Rgba SppmIntegrator::integrate(RenderData &render_data, const DiffRay &ray, int 
 
 GatherInfo SppmIntegrator::traceGatherRay(RenderData &render_data, DiffRay &ray, HitPoint &hp, ColorLayers *color_layers)
 {
+	const Accelerator *accelerator = scene_->getAccelerator();
+	if(!accelerator) return {};
+
 	const bool layers_used = render_data.raylevel_ == 1 && color_layers && color_layers->getFlags() != Layer::Flags::None;
 
 	static int n_max_global = 0;
@@ -706,7 +712,7 @@ GatherInfo SppmIntegrator::traceGatherRay(RenderData &render_data, DiffRay &ray,
 	if(transp_background_) alpha = 0.0;
 	else alpha = 1.0;
 
-	if(scene_->getAccelerator()->intersect(ray, sp))
+	if(accelerator->intersect(ray, sp))
 	{
 		alignas (16) unsigned char userdata[user_data_size_];
 		render_data.arena_ = static_cast<void *>(userdata);
