@@ -172,7 +172,7 @@ std::unique_ptr<Image> Badge::generateImage(const std::string &denoise_params, c
 	FT_Vector pen; // untransformed origin
 
 	const std::string text_utf_8 = ss_badge.str();
-	const std::u32string wtext_utf_32 = utf8ToWutf32_global(text_utf_8);
+	const std::u32string wtext_utf_32 = string::utf8ToWutf32(text_utf_8);
 
 	// set font size at default dpi
 	float fontsize = 12.5f * getFontSizeFactor();

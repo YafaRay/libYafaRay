@@ -40,36 +40,40 @@ enum TgaImageDataType
 	RleGray
 };
 
+namespace tga_constants
+{
 // TGA image origin corner descriptions
 // B = bottom, T =top, L = left, R = right
-static constexpr uint8_t bl_global = 0x00;
-static constexpr uint8_t br_global = 0x10;
-static constexpr uint8_t tl_global = 0x20;
-static constexpr uint8_t tr_global = 0x30;
+static constexpr uint8_t bottom_left = 0x00;
+static constexpr uint8_t bottom_right = 0x10;
+static constexpr uint8_t top_left = 0x20;
+static constexpr uint8_t top_right = 0x30;
 
-static constexpr uint8_t no_alpha_global = 0x00;
-static constexpr uint8_t alpha_8_global = 0x08;
+static constexpr uint8_t no_alpha = 0x00;
+static constexpr uint8_t alpha = 0x08;
 
 // Mask defines
 //15/16 bit color masking for BGRA color order on tga files
 // B    |G    |R    |A
 // 11111|11111|11111|1
-static constexpr uint16_t blue_mask_global = 0xF800;   // 11111|00000|00000|0
-static constexpr uint16_t green_mask_global = 0x07C0;  // 00000|11111|00000|0
-static constexpr uint16_t red_mask_global = 0x003E;    // 00000|00000|11111|0
-static constexpr uint16_t alpha_mask_global = 0x0001;  // 00000|00000|00000|1
+static constexpr uint16_t blue_mask = 0xF800;   // 11111|00000|00000|0
+static constexpr uint16_t green_mask = 0x07C0;  // 00000|11111|00000|0
+static constexpr uint16_t red_mask = 0x003E;    // 00000|00000|11111|0
+static constexpr uint16_t alpha_mask = 0x0001;  // 00000|00000|00000|1
 
 // 8Bit gray + 8Bit alpha in 16Bit packets
-static constexpr uint16_t alpha_gray_mask_8_bit_global = 0xFF00; // 11111111|00000000
-static constexpr uint16_t gray_mask_8_bit_global = 0x00FF;       // 00000000|11111111
+static constexpr uint16_t alpha_gray_mask = 0xFF00; // 11111111|00000000
+static constexpr uint16_t gray_mask = 0x00FF;       // 00000000|11111111
 
 // Image description bit masks
-static constexpr uint8_t alpha_bit_depth_mask_global = 0x0F;   // 00|00|1111
-static constexpr uint8_t top_mask_global = 0x20;               // 00|10|0000
-static constexpr uint8_t left_mask_global = 0x10;              // 00|01|0000
+static constexpr uint8_t alpha_bit_depth_mask = 0x0F;   // 00|00|1111
+static constexpr uint8_t top_mask = 0x20;               // 00|10|0000
+static constexpr uint8_t left_mask = 0x10;              // 00|01|0000
 
-static constexpr uint8_t rle_pack_mask_global = 0x80;   // 1|0000000
-static constexpr uint8_t rle_rep_mask_global = 0x7F;    // 0|1111111
+static constexpr uint8_t rle_pack_mask = 0x80;   // 1|0000000
+static constexpr uint8_t rle_rep_mask = 0x7F;    // 0|1111111
+
+} //namespace tga_constants
 
 #pragma pack(push, 1)
 

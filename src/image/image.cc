@@ -72,7 +72,7 @@ std::unique_ptr<Image> Image::factory(Logger &logger, ParamMap &params, const Sc
 	{
 		const Path path(filename);
 		ParamMap format_params;
-		format_params["type"] = toLower_global(path.getExtension());
+		format_params["type"] = string::toLower(path.getExtension());
 		std::unique_ptr<Format> format = std::unique_ptr<Format>(Format::factory(logger, format_params));
 		if(format)
 		{

@@ -47,7 +47,7 @@ std::unique_ptr<Format> Format::factory(Logger &logger, ParamMap &params)
 
 	std::string type;
 	params.getParam("type", type);
-	type = toLower_global(type);
+	type = string::toLower(type);
 
 	if(type == "tga" || type == "tpic") return TgaFormat::factory(logger, params);
 	else if(type == "hdr" || type == "pic") return HdrFormat::factory(logger, params);

@@ -78,6 +78,9 @@ class BidirectionalIntegrator final : public TiledIntegrator
 		Rgb ao_col_; //! Ambient occlusion color
 		bool transp_background_; //! Render background as transparent
 		bool transp_refracted_background_; //! Render refractions of background as transparent
+
+		static constexpr int max_path_length_ = 32;
+		static constexpr int min_path_length_ = 3;
 };
 
 END_YAFARAY

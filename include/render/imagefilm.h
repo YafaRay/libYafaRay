@@ -198,6 +198,9 @@ class ImageFilm final
 		const std::map<std::string, std::unique_ptr<RenderView>> *render_views_ = nullptr;
 
 		RenderCallbacks render_callbacks_;
+
+		static constexpr int filter_table_size_ = 16;
+		static constexpr int max_filter_size_ = 8;
 };
 
 END_YAFARAY

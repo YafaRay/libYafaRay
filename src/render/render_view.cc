@@ -56,7 +56,7 @@ bool RenderView::init(Logger &logger, const Scene &scene)
 	}
 
 	lights_.clear();
-	const std::vector<std::string> selected_lights_names = tokenize_global(light_names_, ";");
+	const std::vector<std::string> selected_lights_names = string::tokenize(light_names_, ";");
 
 	if(selected_lights_names.empty())
 	{

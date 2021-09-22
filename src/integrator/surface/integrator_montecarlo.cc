@@ -43,7 +43,7 @@
 
 BEGIN_YAFARAY
 
-static constexpr int loffs_delta_global = 4567; //just some number to have different sequences per light...and it's a prime even...
+constexpr int MonteCarloIntegrator::loffs_delta_;
 
 //Constructor and destructor defined here to avoid issues with std::unique_ptr<Pdf1D> being Pdf1D incomplete in the header (forward declaration)
 MonteCarloIntegrator::MonteCarloIntegrator(Logger &logger) : TiledIntegrator(logger)
@@ -97,7 +97,7 @@ Rgb MonteCarloIntegrator::doLightEstimation(RenderData &render_data, const Light
 
 	Rgb col(0.f);
 	bool shadowed;
-	unsigned int l_offs = loffs * loffs_delta_global;
+	unsigned int l_offs = loffs * loffs_delta_;
 	const Material *material = sp.material_;
 	Ray light_ray;
 	light_ray.from_ = sp.p_;

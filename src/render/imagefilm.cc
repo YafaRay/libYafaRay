@@ -39,8 +39,8 @@
 
 BEGIN_YAFARAY
 
-static constexpr int filter_table_size_global = 16;
-static constexpr int max_filter_size_global = 8;
+constexpr int ImageFilm::filter_table_size_;
+constexpr int ImageFilm::max_filter_size_;
 
 typedef float FilterFunc_t(float dx, float dy);
 
@@ -131,13 +131,13 @@ ImageFilm::ImageFilm(Logger &logger, int width, int height, int xstart, int ysta
 {
 	cx_1_ = xstart + width;
 	cy_1_ = ystart + height;
-	filter_table_ = std::unique_ptr<float[]>(new float[filter_table_size_global * filter_table_size_global]);
+	filter_table_ = std::unique_ptr<float[]>(new float[filter_table_size_ * filter_table_size_]);
 
 	estimate_density_ = false;
 
 	// fill filter table:
 	float *f_tp = filter_table_.get();
-	const float scale = 1.f / static_cast<float>(filter_table_size_global);
+	const float scale = 1.f / static_cast<float>(filter_table_size_);
 
 	FilterFunc_t *ffunc = nullptr;
 	switch(filt)
@@ -149,18 +149,18 @@ ImageFilm::ImageFilm(Logger &logger, int width, int height, int xstart, int ysta
 		case ImageFilm::FilterType::Box: ffunc = math::filter::box; break;
 	}
 
-	filterw_ = std::min(std::max(0.501f, filterw_), 0.5f * max_filter_size_global); // filter needs to cover at least the area of one pixel and no more than MAX_FILTER_SIZE/2
+	filterw_ = std::min(std::max(0.501f, filterw_), 0.5f * max_filter_size_); // filter needs to cover at least the area of one pixel and no more than MAX_FILTER_SIZE/2
 
-	for(int y = 0; y < filter_table_size_global; ++y)
+	for(int y = 0; y < filter_table_size_; ++y)
 	{
-		for(int x = 0; x < filter_table_size_global; ++x)
+		for(int x = 0; x < filter_table_size_; ++x)
 		{
 			*f_tp = ffunc((x + .5f) * scale, (y + .5f) * scale);
 			++f_tp;
 		}
 	}
 
-	table_scale_ = 0.9999 * filter_table_size_global / filterw_;
+	table_scale_ = 0.9999 * filter_table_size_ / filterw_;
 	area_cnt_ = 0;
 
 	progress_bar_ = std::unique_ptr<ProgressBar>(new ConsoleProgressBar(80));
@@ -697,8 +697,8 @@ void ImageFilm::addSample(int x, int y, float dx, float dy, const RenderArea *a,
 	// get indizes in filter table
 	const double x_offs = dx - 0.5;
 
-	int x_index[max_filter_size_global + 1];
-	int y_index[max_filter_size_global + 1];
+	int x_index[max_filter_size_ + 1];
+	int y_index[max_filter_size_ + 1];
 
 	for(int i = dx_0, n = 0; i <= dx_1; ++i, ++n)
 	{
@@ -725,7 +725,7 @@ void ImageFilm::addSample(int x, int y, float dx, float dy, const RenderArea *a,
 		for(int i = x_0; i <= x_1; ++i)
 		{
 			// get filter value at pixel (x,y)
-			const int offset = y_index[j - y_0] * filter_table_size_global + x_index[i - x_0];
+			const int offset = y_index[j - y_0] * filter_table_size_ + x_index[i - x_0];
 			const float filter_wt = filter_table_[offset];
 			weights_(i - cx_0_, j - cy_0_).setFloat(weights_(i - cx_0_, j - cy_0_).getFloat() + filter_wt);
 
@@ -750,8 +750,8 @@ void ImageFilm::addDensitySample(const Rgb &c, int x, int y, float dx, float dy,
 	const int dy_0 = std::max(cy_0_ - y, math::roundToInt(static_cast<double>(dy) - filterw_));
 	const int dy_1 = std::min(cy_1_ - y - 1, math::roundToInt(static_cast<double>(dy) + filterw_ - 1.0));
 
-	int x_index[max_filter_size_global + 1];
-	int y_index[max_filter_size_global + 1];
+	int x_index[max_filter_size_ + 1];
+	int y_index[max_filter_size_ + 1];
 
 	const double x_offs = dx - 0.5;
 	for(int i = dx_0, n = 0; i <= dx_1; ++i, ++n)
@@ -777,7 +777,7 @@ void ImageFilm::addDensitySample(const Rgb &c, int x, int y, float dx, float dy,
 	{
 		for(int i = x_0; i <= x_1; ++i)
 		{
-			const int offset = y_index[j - y_0] * filter_table_size_global + x_index[i - x_0];
+			const int offset = y_index[j - y_0] * filter_table_size_ + x_index[i - x_0];
 			Rgb &pixel = (*density_image_)(i - cx_0_, j - cy_0_);
 			pixel += c * filter_table_[offset];
 		}

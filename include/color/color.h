@@ -133,6 +133,8 @@ class Rgb
 		static std::string colorSpaceName(const ColorSpace &color_space);
 		static ColorSpace colorSpaceFromName(const std::string &color_space_name, const ColorSpace &default_color_space = ColorSpace::RawManualGamma);
 
+		static Rgb mix(const Rgb &a, const Rgb &b, float point);
+
 		float r_ = 0.f;
 		float g_ = 0.f;
 		float b_ = 0.f;
@@ -191,6 +193,8 @@ class Rgba final : public Rgb
 		float colorDifference(Rgba color_2, bool use_rg_bcomponents = false) const;
 		Rgba normalized(float weight) const;
 
+		static Rgba mix(const Rgba &a, const Rgba &b, float point);
+
 		float a_ = 1.f;
 };
 
@@ -245,14 +249,12 @@ void operator << (unsigned char *data, const Rgb &c);
 void operator >> (float *data, Rgb &c);
 void operator << (float *data, const Rgb &c);
 std::ostream &operator << (std::ostream &out, const Rgb c);
-Rgb mix_global(const Rgb &a, const Rgb &b, float point);
 
 void operator >> (unsigned char *data, Rgba &c);
 void operator << (unsigned char *data, const Rgba &c);
 void operator >> (float *data, Rgba &c);
 void operator << (float *data, const Rgba &c);
 std::ostream &operator << (std::ostream &out, const Rgba c);
-Rgba mix_global(const Rgba &a, const Rgba &b, float point);
 
 
 inline Rgb operator * (const Rgb &a, const Rgb &b)

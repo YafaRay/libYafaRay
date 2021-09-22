@@ -150,14 +150,14 @@ bool HdrFormat::readHeader(FILE *fp, int &width, int &height)
 		else if((found_pos = line.find("EXPOSURE=")) != std::string::npos)
 		{
 			float exp = 0.f;
-			converter_global(line.substr(found_pos + 9), exp);
+			string::converter(line.substr(found_pos + 9), exp);
 			header_.exposure_ *= exp; // Exposure is cumulative if several EXPOSURE tags exist on the file
 		}
 	}
 	// check image size and orientation
 	std::fgets(linebuf, line_size, fp);
 	line = std::string(linebuf);
-	const std::vector<std::string> size_orient = tokenize_global(line);
+	const std::vector<std::string> size_orient = string::tokenize(line);
 	header_.y_first_ = (size_orient[0].find("Y") != std::string::npos);
 	int w = 3, h = 1;
 	int x = 2, y = 0;
@@ -168,8 +168,8 @@ bool HdrFormat::readHeader(FILE *fp, int &width, int &height)
 		x = 0; y = 2;
 		f = 1; s = 0;
 	}
-	converter_global(size_orient[w], width);
-	converter_global(size_orient[h], height);
+	string::converter(size_orient[w], width);
+	string::converter(size_orient[h], height);
 
 	// Set the reading order to fit yafaray's image coordinates
 	const bool from_left = (size_orient[x].find("+") != std::string::npos);
