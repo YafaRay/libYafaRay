@@ -46,7 +46,7 @@ void SphereLight::init(Scene &scene)
 	{
 		Object *obj = scene.getObject(object_name_);
 		if(obj) obj->setLight(this);
-		else logger_.logError("SphereLight: Invalid object ID given!");
+		else logger_.logError("SphereLight: '" + name_ + "': associated object '" + object_name_ + "' could not be found!");
 	}
 }
 

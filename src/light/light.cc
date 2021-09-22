@@ -41,18 +41,23 @@ std::unique_ptr<Light> Light::factory(Logger &logger, ParamMap &params, const Sc
 		params.logContents(logger);
 	}
 	std::string type;
+	std::string name;
 	params.getParam("type", type);
-	if(type == "arealight") return AreaLight::factory(logger, params, scene);
-	else if(type == "bgPortalLight") return BackgroundPortalLight::factory(logger, params, scene);
-	else if(type == "meshlight") return MeshLight::factory(logger, params, scene);
-	else if(type == "bglight") return BackgroundLight::factory(logger, params, scene);
-	else if(type == "directional") return DirectionalLight::factory(logger, params, scene);
-	else if(type == "ieslight") return IesLight::factory(logger, params, scene);
-	else if(type == "pointlight") return PointLight::factory(logger, params, scene);
-	else if(type == "spherelight") return SphereLight::factory(logger, params, scene);
-	else if(type == "spotlight") return SpotLight::factory(logger, params, scene);
-	else if(type == "sunlight") return SunLight::factory(logger, params, scene);
-	else return nullptr;
+	params.getParam("name", name);
+	std::unique_ptr<Light> light;
+	if(type == "arealight") light = AreaLight::factory(logger, params, scene);
+	else if(type == "bgPortalLight") light = BackgroundPortalLight::factory(logger, params, scene);
+	else if(type == "meshlight") light = MeshLight::factory(logger, params, scene);
+	else if(type == "bglight") light = BackgroundLight::factory(logger, params, scene);
+	else if(type == "directional") light = DirectionalLight::factory(logger, params, scene);
+	else if(type == "ieslight") light = IesLight::factory(logger, params, scene);
+	else if(type == "pointlight") light = PointLight::factory(logger, params, scene);
+	else if(type == "spherelight") light = SphereLight::factory(logger, params, scene);
+	else if(type == "spotlight") light = SpotLight::factory(logger, params, scene);
+	else if(type == "sunlight") light = SunLight::factory(logger, params, scene);
+	
+	light->setName(name);
+	return light;
 }
 
 END_YAFARAY

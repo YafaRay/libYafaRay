@@ -95,8 +95,11 @@ class Light
 		//! sets clampIntersect value to reduce noise at the expense of realism and inexact overall lighting
 		void setClampIntersect(float clamp) { clamp_intersect_ = clamp; }
 		Flags getFlags() const { return flags_; }
+		std::string getName() const { return name_; }
+		void setName(const std::string &name) { name_ = name; }
 
 	protected:
+		std::string name_;
 		Flags flags_;
 		std::shared_ptr<Background> background_;
 		bool light_enabled_; //!< enable/disable light
