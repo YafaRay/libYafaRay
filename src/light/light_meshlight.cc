@@ -59,7 +59,7 @@ void MeshLight::initIs()
 	accelerator_ = nullptr;
 
 	ParamMap params;
-	params["type"] = std::string("kdtree"); //Do not remove the std::string(), entering directly a string literal can be confused with bool until C++17 new string literals
+	params["type"] = std::string("yafaray-kdtree-original"); //Do not remove the std::string(), entering directly a string literal can be confused with bool until C++17 new string literals
 	params["num_primitives"] = num_primitives_;
 	params["depth"] = -1;
 	params["leaf_size"] = 1;
