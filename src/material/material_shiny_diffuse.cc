@@ -567,7 +567,7 @@ std::unique_ptr<Material> ShinyDiffuseMaterial::factory(Logger &logger, ParamMap
 	params.getParam("wireframe_exponent", wire_frame_exponent);
 	params.getParam("wireframe_color", wire_frame_color);
 
-	const Visibility visibility = visibilityFromString_global(s_visibility);
+	const Visibility visibility = visibility::fromString(s_visibility);
 
 	// !!remember to put diffuse multiplier in material itself!
 	auto mat = std::unique_ptr<ShinyDiffuseMaterial>(new ShinyDiffuseMaterial(logger, diffuse_color, mirror_color, diffuse_strength, transparency_strength, translucency_strength, mirror_strength, emit_strength, transmit_filter_strength, visibility));

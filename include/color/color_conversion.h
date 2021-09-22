@@ -35,34 +35,6 @@
 
 BEGIN_YAFARAY
 
-constexpr float cie_rgb_e_global[9] =
-{
-	2.3706743f, -0.9000405f, -0.4706338f,
-	-0.5138850f,  1.4253036f,  0.0885814f,
-	0.0052982f, -0.0146949f,  1.0093968f
-};
-
-constexpr float cie_rgb_d_50_global[9] =
-{
-	2.3638081f, -0.8676030f, -0.4988161f,
-	-0.5005940f,  1.3962369f,  0.1047562f,
-	0.0141712f, -0.0306400f,  1.2323842f
-};
-
-constexpr float s_rgb_d_65_global[9] =
-{
-	3.2404542f, -1.5371385f, -0.4985314f,
-	-0.9692660f,  1.8760108f,  0.0415560f,
-	0.0556434f, -0.2040259f,  1.0572252f
-};
-
-constexpr float s_rgb_d_50_global[9] =
-{
-	3.1338561f, -1.6168667f, -0.4906146f,
-	-0.9787684f,  1.9161415f,  0.0334540f,
-	0.0719453f, -0.2289914f,  1.4052427f
-};
-
 class ColorConv final
 {
 	public:
@@ -82,55 +54,76 @@ class ColorConv final
 		ColorSpace color_space_;
 		const float *mat_ = nullptr;
 		bool encode_gamma_;
+
+		static constexpr std::array<float, 9> cie_rgb_e_
+		{
+			2.3706743f, -0.9000405f, -0.4706338f,
+			-0.5138850f,  1.4253036f,  0.0885814f,
+			0.0052982f, -0.0146949f,  1.0093968f
+		};
+		static constexpr std::array<float, 9> cie_rgb_d_50_
+		{
+				2.3638081f, -0.8676030f, -0.4988161f,
+				-0.5005940f,  1.3962369f,  0.1047562f,
+				0.0141712f, -0.0306400f,  1.2323842f
+		};
+		static constexpr std::array<float, 9> s_rgb_d_65_
+		{
+			3.2404542f, -1.5371385f, -0.4985314f,
+			-0.9692660f,  1.8760108f,  0.0415560f,
+			0.0556434f, -0.2040259f,  1.0572252f
+		};
+		static constexpr std::array<float, 9> s_rgb_d_50_
+		{
+			3.1338561f, -1.6168667f, -0.4906146f,
+			-0.9787684f,  1.9161415f,  0.0334540f,
+			0.0719453f, -0.2289914f,  1.4052427f
+		};
 };
 
-
 inline ColorConv::ColorConv(bool cl, bool g_enc, ColorSpace cs, float exposure) :
-		simple_g_enc_(1.0 / 2.2), clamp_(cl), exp_(exposure), color_space_(cs), encode_gamma_(g_enc)
+		simple_g_enc_(1.f / 2.2f), clamp_(cl), exp_(exposure), color_space_(cs), encode_gamma_(g_enc)
 {
 	switch(color_space_)
 	{
 		case CieRgbECs:
-			mat_ = cie_rgb_e_global;
+			mat_ = cie_rgb_e_.data();
 			break;
 
 		case CieRgbD50Cs:
-			mat_ = cie_rgb_d_50_global;
+			mat_ = cie_rgb_d_50_.data();
 			break;
 
 		case SRgbD50Cs:
-			mat_ = s_rgb_d_50_global;
+			mat_ = s_rgb_d_50_.data();
 			break;
 
 		case SRgbD65Cs:
-			mat_ = s_rgb_d_65_global;
+			mat_ = s_rgb_d_65_.data();
 			break;
 	}
 }
 
 inline Rgb ColorConv::fromXyz(float x, float y, float z, bool force_gamma) const
 {
-	Rgb ret(0.f);
-
+	Rgb ret;
 	if(encode_gamma_ || force_gamma)
 	{
 		ret.set(
-		    sGammaEnc((mat_[0] * x) + (mat_[1] * y) + (mat_[2] * z)),
-		    sGammaEnc((mat_[3] * x) + (mat_[4] * y) + (mat_[5] * z)),
-		    sGammaEnc((mat_[6] * x) + (mat_[7] * y) + (mat_[8] * z))
+			sGammaEnc((mat_[0] * x) + (mat_[1] * y) + (mat_[2] * z)),
+			sGammaEnc((mat_[3] * x) + (mat_[4] * y) + (mat_[5] * z)),
+			sGammaEnc((mat_[6] * x) + (mat_[7] * y) + (mat_[8] * z))
 		);
 	}
 	else
 	{
 		ret.set(
-		    ((mat_[0] * x) + (mat_[1] * y) + (mat_[2] * z)),
-		    ((mat_[3] * x) + (mat_[4] * y) + (mat_[5] * z)),
-		    ((mat_[6] * x) + (mat_[7] * y) + (mat_[8] * z))
+			((mat_[0] * x) + (mat_[1] * y) + (mat_[2] * z)),
+			((mat_[3] * x) + (mat_[4] * y) + (mat_[5] * z)),
+			((mat_[6] * x) + (mat_[7] * y) + (mat_[8] * z))
 		);
 	}
-
 	if(clamp_) ret.clampRgb01();
-
 	return ret;
 }
 
@@ -147,12 +140,12 @@ inline Rgb ColorConv::fromxyY(float x, float y, float Y) const
 
 inline Rgb ColorConv::fromxyY2Xyz(float x, float y, float Y) const
 {
-	Rgb ret(0.0);
+	Rgb ret(0.f);
 	float ratio, X, z;
 
 	if(exp_ > 0.f) Y = math::exp(Y * exp_) - 1.f;
 
-	if(y != 0.0)
+	if(y != 0.f)
 	{
 		ratio = (Y / y);
 	}
@@ -162,7 +155,7 @@ inline Rgb ColorConv::fromxyY2Xyz(float x, float y, float Y) const
 	}
 
 	X = x * ratio;
-	z = (1.0 - x - y) * ratio;
+	z = (1.f - x - y) * ratio;
 
 	ret.set(X, Y, z);
 

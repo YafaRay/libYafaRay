@@ -147,7 +147,7 @@ std::unique_ptr<Material> MaskMaterial::factory(Logger &logger, ParamMap &params
 	params.getParam("receive_shadows", receive_shadows);
 	params.getParam("visibility", s_visibility);
 
-	const Visibility visibility = visibilityFromString_global(s_visibility);
+	const Visibility visibility = visibility::fromString(s_visibility);
 	auto mat = std::unique_ptr<MaskMaterial>(new MaskMaterial(logger, m_1, m_2, thresh, visibility));
 	mat->receive_shadows_ = receive_shadows;
 

@@ -430,7 +430,7 @@ std::unique_ptr<Material> BlendMaterial::factory(Logger &logger, ParamMap &param
 	params.getParam("wireframe_exponent", wire_frame_exponent);
 	params.getParam("wireframe_color", wire_frame_color);
 
-	const Visibility visibility = visibilityFromString_global(s_visibility);
+	const Visibility visibility = visibility::fromString(s_visibility);
 
 	auto mat = std::unique_ptr<BlendMaterial>(new BlendMaterial(logger, m_1, m_2, blend_val, visibility));
 

@@ -51,7 +51,7 @@ std::unique_ptr<Object> CurveObject::factory(Logger &logger, ParamMap &params, c
 	auto object = std::unique_ptr<CurveObject>(new CurveObject(num_vertices, strand_start, strand_end, strand_shape, has_uv, has_orco));
 	object->setName(name);
 	object->setLight(scene.getLight(light_name));
-	object->setVisibility(visibilityFromString_global(visibility));
+	object->setVisibility(visibility::fromString(visibility));
 	object->useAsBaseObject(is_base_object);
 	object->setObjectIndex(object_index);
 	return object;

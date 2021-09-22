@@ -406,7 +406,7 @@ std::unique_ptr<Material> GlossyMaterial::factory(Logger &logger, ParamMap &para
 	params.getParam("wireframe_exponent", wire_frame_exponent);
 	params.getParam("wireframe_color", wire_frame_color);
 
-	const Visibility visibility = visibilityFromString_global(s_visibility);
+	const Visibility visibility = visibility::fromString(s_visibility);
 
 	auto mat = std::unique_ptr<GlossyMaterial>(new GlossyMaterial(logger, col, dcol, refl, diff, exponent, as_diff, visibility));
 

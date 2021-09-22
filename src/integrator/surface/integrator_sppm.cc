@@ -698,9 +698,6 @@ GatherInfo SppmIntegrator::traceGatherRay(RenderData &render_data, DiffRay &ray,
 
 	const bool layers_used = render_data.raylevel_ == 1 && color_layers && color_layers->getFlags() != Layer::Flags::None;
 
-	static int n_max_global = 0;
-	static int calls_global = 0;
-	++calls_global;
 	GatherInfo g_info;
 
 	float alpha;
@@ -782,15 +779,15 @@ GatherInfo SppmIntegrator::traceGatherRay(RenderData &render_data, DiffRay &ray,
 				n_gathered = diffuse_map_->gather(sp.p_, gathered.get(), n_max_gather_, radius_2); //we always collected all the photon inside the radius
 			}
 
-			if(n_gathered > 0)
+			if(n_gathered > 0 && logger_.isDebug())
 			{
-				if(n_gathered > n_max_global)
+				if(n_gathered > n_max_gathered_)
 				{
-					n_max_global = n_gathered;
+					n_max_gathered_ = n_gathered;
 					if(logger_.isDebug())
 					{
-						logger_.logDebug("maximum Photons: ", n_max_global, ", radius2: ", radius_2);
-						if(n_max_global == 10)
+						logger_.logDebug("maximum Photons: ", n_max_gathered_, ", radius2: ", radius_2);
+						if(n_max_gathered_ == 10)
 						{
 							for(int j = 0; j < n_gathered; ++j)
 							{

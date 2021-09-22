@@ -307,7 +307,7 @@ std::unique_ptr<Material> RoughGlassMaterial::factory(Logger &logger, ParamMap &
 	params.getParam("wireframe_exponent", wire_frame_exponent);
 	params.getParam("wireframe_color", wire_frame_color);
 
-	const Visibility visibility = visibilityFromString_global(s_visibility);
+	const Visibility visibility = visibility::fromString(s_visibility);
 
 	alpha = std::max(1e-4f, std::min(alpha * 0.5f, 1.f));
 

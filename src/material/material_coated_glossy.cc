@@ -492,7 +492,7 @@ std::unique_ptr<Material> CoatedGlossyMaterial::factory(Logger &logger, ParamMap
 	params.getParam("wireframe_exponent", wire_frame_exponent);
 	params.getParam("wireframe_color", wire_frame_color);
 
-	const Visibility visibility = visibilityFromString_global(s_visibility);
+	const Visibility visibility = visibility::fromString(s_visibility);
 
 	if(ior == 1.f) ior = 1.0000001f;
 

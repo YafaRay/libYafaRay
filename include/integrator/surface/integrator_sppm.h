@@ -93,6 +93,7 @@ class SppmIntegrator final : public MonteCarloIntegrator
 		Halton hal_1_{2, 0}, hal_2_{3, 0}, hal_3_{5, 0}, hal_4_{7, 0}; // halton sequence to do
 		std::vector<HitPoint>hit_points_; // per-pixel refine data
 		unsigned int n_refined_; // Debug info: Refined pixel per pass
+		int n_max_gathered_ = 0; //Just for statistical information about max number of gathered photons
 		std::unique_ptr<PhotonMap> diffuse_map_;
 		static constexpr int n_max_gather_ = 1000; //used to gather all the photon in the radius. seems could get a better way to do that
 		std::mutex mutex_;
