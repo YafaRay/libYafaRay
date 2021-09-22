@@ -26,8 +26,13 @@
 
 BEGIN_YAFARAY
 
-static constexpr float chroma_match_2_deg_global[95][3] = //[Lambda][chromacord] Wavelength range 360-830 @ 5nm interval
+#include <array>
+
+namespace spectral_data
 {
+
+static constexpr std::array<std::array<float, 3>, 95> chroma_match_2_deg //[Lambda][chromacord] Wavelength range 360-830 @ 5nm interval
+{{
 	{0.000129900000f, 0.000003917000f, 0.000606100000f}, {0.000232100000f, 0.000006965000f, 0.001086000000f},
 	{0.000414900000f, 0.000012390000f, 0.001946000000f}, {0.000741600000f, 0.000022020000f, 0.003486000000f},
 	{0.001368000000f, 0.000039000000f, 0.006450001000f}, {0.002236000000f, 0.000064000000f, 0.010549990000f},
@@ -85,8 +90,9 @@ static constexpr float chroma_match_2_deg_global[95][3] = //[Lambda][chromacord]
 	{0.000005085868f, 0.000001836600f, 0.000000000000f}, {0.000003581652f, 0.000001293400f, 0.000000000000f},
 	{0.000002522525f, 0.000000910930f, 0.000000000000f}, {0.000001776509f, 0.000000641530f, 0.000000000000f},
 	{0.000001251141f, 0.000000451810f, 0.000000000000f}
-};
-static constexpr float ko_wavelengths_global[64] =
+}};
+
+static constexpr std::array<float, 64> ko_wavelengths
 {
 	300.f, 305.f, 310.f, 315.f, 320.f, 325.f, 330.f, 335.f, 340.f, 345.f, 350.f, 355.f, 445.f, 450.f, 455.f, 460.f,
 	465.f, 470.f, 475.f, 480.f, 485.f, 490.f, 495.f, 500.f, 505.f, 510.f, 515.f, 520.f,	525.f, 530.f, 535.f, 540.f,
@@ -94,7 +100,7 @@ static constexpr float ko_wavelengths_global[64] =
 	640.f, 650.f, 660.f, 670.f, 680.f, 690.f, 700.f, 710.f, 720.f, 730.f, 740.f, 750.f, 760.f, 770.f, 780.f, 790.f
 };
 
-static constexpr float ko_amplitudes_global[64] =
+static constexpr std::array<float, 64> ko_amplitudes
 {
 	10.0f,  4.8f,  2.7f, 1.35f,   .8f, .380f, .160f, .075f,  .04f, .019f, .007f,   .0f, .003f, .003f, .004f, .006f,
 	.008f, .009f, .012f, .014f,	.017f, .021f,	.025f,  .03f, .035f,  .04f, .045f, .048f,	.057f, .063f,  .07f, .075f,
@@ -102,31 +108,30 @@ static constexpr float ko_amplitudes_global[64] =
 	.079f, .067f, .057f, .048f, .036f, .028f,	.023f, .018f, .014f, .011f, .010f, .009f,	.007f, .004f,   .0f,   .0f
 };
 
-
-static constexpr float kg_wavelengths_global[4] =
+static constexpr std::array<float, 4> kg_wavelengths
 {
 	759.f,  760.f,  770.f,  771.f
 };
 
-static constexpr float kg_amplitudes_global[4] =
+static constexpr std::array<float, 4> kg_amplitudes
 {
 	0.f,  3.0f,  0.210f,  0.f
 };
 
-static constexpr float kwa_wavelengths_global[13] =
+static constexpr std::array<float, 13> kwa_wavelengths
 {
 	689.f,  690.f,  700.f,  710.f,  720.f,  730.f,  740.f,
 	750.f,  760.f,  770.f,  780.f,  790.f,  800.f
 };
 
-static constexpr float kwa_amplitudes_global[13] =
+static constexpr std::array<float, 13> kwa_amplitudes
 {
 	0.00000f, 0.01600f, 0.02400f, 0.01250f, 1.0000f, 0.8700f, 0.06100f,
 	0.00100f, 0.00001f, 0.00001f, 0.00060f, 0.0175f, 0.0360f
 };
 
 //Sun Spectral Radiance [W / (m^2 sr nm)]
-static constexpr float sun_radiance_global[38] =
+static constexpr std::array<float, 38> sun_radiance
 {
 	1.65590e+2f,
 	1.62337e+2f,
@@ -168,14 +173,14 @@ static constexpr float sun_radiance_global[38] =
 	1.82592e+2
 };
 
-Rgb chromaMatch_global(float wl)
+Rgb chromaMatch(float wl)
 {
-	Rgb r(0.0);
-	if(wl < 360 || wl > 830) return r;
-	int i = (int)((wl - 360) / 5);
-	r.set(chroma_match_2_deg_global[i][0], chroma_match_2_deg_global[i][1], chroma_match_2_deg_global[i][2]);
-	return r;
+	if(wl < 360 || wl > 830) return {0.f};
+	const int i = static_cast<int>((wl - 360) / 5);
+	return { chroma_match_2_deg[i][0], chroma_match_2_deg[i][1], chroma_match_2_deg[i][2] };
 }
+
+} //namespace spectral_data
 
 END_YAFARAY
 

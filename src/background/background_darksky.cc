@@ -123,10 +123,10 @@ Rgb DarkSkyBackground::getSunColorFromSunRad()
 	const double l = 0.35;
 	const double w = 2.0;
 
-	const IrregularCurve ko(ko_amplitudes_global, ko_wavelengths_global, 64);
-	const IrregularCurve kg(kg_amplitudes_global, kg_wavelengths_global, 4);
-	const IrregularCurve kwa(kwa_amplitudes_global, kwa_wavelengths_global, 13);
-	const RegularCurve sun_radiance_curve(sun_radiance_global, 380, 750, 38);
+	const IrregularCurve ko(spectral_data::ko_amplitudes.data(), spectral_data::ko_wavelengths.data(), spectral_data::ko_amplitudes.size());
+	const IrregularCurve kg(spectral_data::kg_amplitudes.data(), spectral_data::kg_wavelengths.data(), spectral_data::kg_amplitudes.size());
+	const IrregularCurve kwa(spectral_data::kwa_amplitudes.data(), spectral_data::kwa_wavelengths.data(), spectral_data::kwa_amplitudes.size());
+	const RegularCurve sun_radiance_curve(spectral_data::sun_radiance.data(), 380, 750, spectral_data::sun_radiance.size());
 
 	const double m = 1.0 / (cos_theta_s_ + 0.15 * std::pow(93.885f - math::radToDeg(theta_s_), -1.253f));
 	const double mw = m * w;
@@ -151,7 +151,7 @@ Rgb DarkSkyBackground::getSunColorFromSunRad()
 		const double gas = std::exp((-1.41 * kg_lm) / std::pow(1 + 118.93 * kg_lm, 0.45));
 		const double water = std::exp((-0.2385 * kwa_lmw) / std::pow(1 + 20.07 * kwa_lmw, 0.45));
 		spdf = sun_radiance_curve(wavelength) * rayleigh * angstrom * ozone * gas * water;
-		s_xyz += chromaMatch_global(wavelength) * spdf * 0.013513514;
+		s_xyz += spectral_data::chromaMatch(wavelength) * spdf * 0.013513514;
 	}
 	return color_conv_.fromXyz(s_xyz, true);
 }
