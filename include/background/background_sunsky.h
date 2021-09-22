@@ -47,6 +47,7 @@ class SunSkyBackground final : public Background
 		virtual Rgb operator()(const Ray &ray, RenderData &render_data, bool from_postprocessed = false) const override;
 		virtual Rgb eval(const Ray &ray, bool from_postprocessed = false) const override;
 		Rgb getSkyCol(const Ray &ray) const;
+		static Rgb computeAttenuatedSunlight(float theta, int turbidity);
 
 		Vec3 sun_dir_;
 		double theta_s_, phi_s_;	// sun coords

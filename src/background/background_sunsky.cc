@@ -179,6 +179,59 @@ Rgb SunSkyBackground::eval(const Ray &ray, bool from_postprocessed) const
 	return power_ * getSkyCol(ray);
 }
 
+Rgb SunSkyBackground::computeAttenuatedSunlight(float theta, int turbidity)
+{
+	IrregularSpectrum k_o_curve(spectrum_sun::k_o_amplitudes.data(), spectrum_sun::k_o_wavelengths.data(), spectrum_sun::k_o_amplitudes.size());
+	IrregularSpectrum k_g_curve(spectrum_sun::k_g_amplitudes.data(), spectrum_sun::k_g_wavelengths.data(), spectrum_sun::k_g_amplitudes.size());
+	IrregularSpectrum k_wa_curve(spectrum_sun::k_wa_amplitudes.data(), spectrum_sun::k_wa_wavelengths.data(), spectrum_sun::k_wa_amplitudes.size());
+	//RiRegularSpectralCurve   solCurve(solAmplitudes, 380, 750, 38);  // every 10 nm  IN WRONG UNITS
+	// Need a factor of 100 (done below)
+	std::array<float, spectrum_sun::sol_amplitudes.size()> data;  // (750 - 380) / 10  + 1
+
+	const float beta = 0.04608365822050f * turbidity - 0.04586025928522f;
+	const float alpha = 1.3f, l_ozone = .35f, w = 2.0f;
+
+	Rgb sun_xyz(0.f);
+	const float m = 1.f / (math::cos(theta) + 0.000940f * math::pow(1.6386f - theta, -1.253f)); // Relative Optical Mass
+
+	int i;
+	float lambda;
+	for(i = 0, lambda = 380.f; i < spectrum_sun::sol_amplitudes.size(); i++, lambda += 10.f)
+	{
+		const float u_l = lambda * 0.001f;
+		// Rayleigh Scattering
+		// Results agree with the graph (pg 115, MI) */
+		const float tau_r = math::exp(-m * 0.008735f * math::pow(u_l, -4.08f));
+		// Aerosal (water + dust) attenuation
+		// beta - amount of aerosols present
+		// alpha - ratio of small to large particle sizes. (0:4,usually 1.3)
+		// Results agree with the graph (pg 121, MI)
+		const float tau_a = math::exp(-m * beta * math::pow(u_l, -alpha));  // lambda should be in um
+		// Attenuation due to ozone absorption
+		// lOzone - amount of ozone in cm(NTP)
+		// Results agree with the graph (pg 128, MI)
+		const float tau_o = math::exp(-m * k_o_curve.sample(lambda) * l_ozone);
+		// Attenuation due to mixed gases absorption
+		// Results agree with the graph (pg 131, MI)
+		const float tau_g = math::exp(-1.41f * k_g_curve.sample(lambda) * m / math::pow(1.f + 118.93f * k_g_curve.sample(lambda) * m, 0.45f));
+		// Attenuation due to water vapor absorbtion
+		// w - precipitable water vapor in centimeters (standard = 2)
+		// Results agree with the graph (pg 132, MI)
+		const float tau_wa = math::exp(-0.2385f * k_wa_curve.sample(lambda) * w * m /
+									   math::pow(1.f + 20.07f * k_wa_curve.sample(lambda) * w * m, 0.45f));
+
+		data[i] = 100.f * spectrum_sun::sol_amplitudes[i] * tau_r * tau_a * tau_o * tau_g * tau_wa; // 100 comes from solCurve being
+		// in wrong units.
+		sun_xyz += spectrum::wl2Xyz(lambda) * data[i];
+	}
+	sun_xyz *= 0.02631578947368421053f;
+	return {
+			3.240479f * sun_xyz.r_ - 1.537150f * sun_xyz.g_ - 0.498535f * sun_xyz.b_,
+			-0.969256f * sun_xyz.r_ + 1.875992f * sun_xyz.g_ + 0.041556f * sun_xyz.b_,
+			0.055648f * sun_xyz.r_ - 0.204043f * sun_xyz.g_ + 1.057311f * sun_xyz.b_
+	};
+}
+
 std::shared_ptr<Background> SunSkyBackground::factory(Logger &logger, ParamMap &params, Scene &scene)
 {
 	Point3 dir(1, 1, 1);	// same as sunlight, position interpreted as direction
@@ -235,7 +288,7 @@ std::shared_ptr<Background> SunSkyBackground::factory(Logger &logger, ParamMap &
 
 	if(add_sun)
 	{
-		Rgb suncol = computeAttenuatedSunlight_global(math::acos(std::abs(dir.z_)), turb);//(*new_sunsky)(vector3d_t(dir.x, dir.y, dir.z));
+		Rgb suncol = computeAttenuatedSunlight(math::acos(std::abs(dir.z_)), turb);//(*new_sunsky)(vector3d_t(dir.x, dir.y, dir.z));
 		double angle = 0.27;
 		double cos_angle = math::cos(math::degToRad(angle));
 		float invpdf = (2.f * math::num_pi * (1.f - cos_angle));

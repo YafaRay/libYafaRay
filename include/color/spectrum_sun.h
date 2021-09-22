@@ -27,9 +27,11 @@
 
 BEGIN_YAFARAY
 
+namespace spectrum_sun
+{
 
 // k_o Spectrum table from pg 127, MI.
-static constexpr float k_o_wavelengths_global[64] =
+static constexpr std::array<float, 64> k_o_wavelengths
 {
 	300, 305, 310, 315, 320,
 	325, 330, 335, 340, 345,
@@ -52,10 +54,7 @@ static constexpr float k_o_wavelengths_global[64] =
 	750, 760, 770, 780, 790,
 };
 
-
-
-
-static constexpr float k_o_amplitudes_global[64] =
+static constexpr std::array<float, 64> k_o_amplitudes
 {
 	10.0,  4.8,  2.7,   1.35,  .8,
 	.380,  .160,  .075,  .04,  .019,
@@ -80,24 +79,24 @@ static constexpr float k_o_amplitudes_global[64] =
 
 
 // k_g Spectrum table from pg 130, MI.
-static constexpr float k_g_wavelengths_global[4] =
+static constexpr std::array<float, 4> k_g_wavelengths
 {
 	759,  760,  770,  771
 };
 
-static constexpr float k_g_amplitudes_global[4] =
+static constexpr std::array<float, 4> k_g_amplitudes
 {
 	0,  3.0,  0.210,  0
 };
 
 // k_wa Spectrum table from pg 130, MI.
-static constexpr float k_wa_wavelengths_global[13] =
+static constexpr std::array<float, 13> k_wa_wavelengths
 {
 	689,  690,  700,  710,  720,  730,  740,
 	750,  760,  770,  780,  790,  800
 };
 
-static constexpr float k_wa_amplitudes_global[13] =
+static constexpr std::array<float, 13> k_wa_amplitudes
 {
 	0,
 	0.160e-1,
@@ -114,9 +113,8 @@ static constexpr float k_wa_amplitudes_global[13] =
 	0.360e-1
 };
 
-
 // 380-750 by 10nm
-static constexpr float sol_amplitudes_global[38] =
+static constexpr std::array<float, 38> sol_amplitudes
 {
 	165.5, 162.3, 211.2, 258.8, 258.2,
 	242.3, 267.6, 296.6, 305.4, 300.6,
@@ -128,6 +126,7 @@ static constexpr float sol_amplitudes_global[38] =
 	190.7, 186.3, 182.6
 };
 
+} //namespace spectrum_sun
 
 struct IrregularSpectrum final
 {
@@ -142,65 +141,11 @@ struct IrregularSpectrum final
 
 inline float IrregularSpectrum::sample(float wl)
 {
-	auto i = lower_bound(wavelen_.begin(), wavelen_.end(), wl);
+	const auto i = lower_bound(wavelen_.begin(), wavelen_.end(), wl);
 	if(i == wavelen_.begin() || i == wavelen_.end()) return 0.f;
 	int index = (i - wavelen_.begin()) - 1;
 	float delta = (wl - wavelen_[index]) / (wavelen_[index + 1] - wavelen_[index]);
 	return (1.f - delta) * amplitude_[index] + delta * amplitude_[index + 1];
-}
-
-inline Rgb computeAttenuatedSunlight_global(float theta, int turbidity)
-{
-	IrregularSpectrum k_o_curve(k_o_amplitudes_global, k_o_wavelengths_global, 64);
-	IrregularSpectrum k_g_curve(k_g_amplitudes_global, k_g_wavelengths_global, 4);
-	IrregularSpectrum k_wa_curve(k_wa_amplitudes_global, k_wa_wavelengths_global, 13);
-	//RiRegularSpectralCurve   solCurve(solAmplitudes, 380, 750, 38);  // every 10 nm  IN WRONG UNITS
-	// Need a factor of 100 (done below)
-	float data[38];  // (750 - 380) / 10  + 1
-
-	float beta = 0.04608365822050f * turbidity - 0.04586025928522f;
-	float tau_r, tau_a, tau_o, tau_g, tau_wa;
-	const float alpha = 1.3f, l_ozone = .35f, w = 2.0f;
-
-	Rgb sun_xyz(0.f);
-	float m = 1.f / (math::cos(theta) + 0.000940f * math::pow(1.6386f - theta, -1.253f)); // Relative Optical Mass
-
-	int i;
-	float lambda;
-	for(i = 0, lambda = 380.f; i < 38; i++, lambda += 10.f)
-	{
-		const float u_l = lambda * 0.001f;
-		// Rayleigh Scattering
-		// Results agree with the graph (pg 115, MI) */
-		tau_r = math::exp(-m * 0.008735f * math::pow(u_l, -4.08f));
-		// Aerosal (water + dust) attenuation
-		// beta - amount of aerosols present
-		// alpha - ratio of small to large particle sizes. (0:4,usually 1.3)
-		// Results agree with the graph (pg 121, MI)
-		tau_a = math::exp(-m * beta * math::pow(u_l, -alpha));  // lambda should be in um
-		// Attenuation due to ozone absorption
-		// lOzone - amount of ozone in cm(NTP)
-		// Results agree with the graph (pg 128, MI)
-		tau_o = math::exp(-m * k_o_curve.sample(lambda) * l_ozone);
-		// Attenuation due to mixed gases absorption
-		// Results agree with the graph (pg 131, MI)
-		tau_g = math::exp(-1.41f * k_g_curve.sample(lambda) * m / math::pow(1.f + 118.93f * k_g_curve.sample(lambda) * m, 0.45f));
-		// Attenuation due to water vapor absorbtion
-		// w - precipitable water vapor in centimeters (standard = 2)
-		// Results agree with the graph (pg 132, MI)
-		tau_wa = math::exp(-0.2385f * k_wa_curve.sample(lambda) * w * m /
-						math::pow(1.f + 20.07f * k_wa_curve.sample(lambda) * w * m, 0.45f));
-
-		data[i] = 100.f * sol_amplitudes_global[i] * tau_r * tau_a * tau_o * tau_g * tau_wa; // 100 comes from solCurve being
-		// in wrong units.
-		sun_xyz += spectrum::wl2Xyz(lambda) * data[i];
-	}
-	sun_xyz *= 0.02631578947368421053f;
-	Rgb sun_col;
-	sun_col.set((3.240479f * sun_xyz.r_ - 1.537150f * sun_xyz.g_ - 0.498535f * sun_xyz.b_),
-	            (-0.969256f * sun_xyz.r_ + 1.875992f * sun_xyz.g_ + 0.041556f * sun_xyz.b_),
-	            (0.055648f * sun_xyz.r_ - 0.204043f * sun_xyz.g_ + 1.057311f * sun_xyz.b_));
-	return sun_col;
 }
 
 END_YAFARAY
