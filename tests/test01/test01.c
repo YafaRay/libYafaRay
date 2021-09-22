@@ -260,8 +260,10 @@ int main()
 	yafaray_paramsSetString(yi, "background_name", "world_background");
 	yafaray_paramsSetInt(yi, "width", result_image.width_);
 	yafaray_paramsSetInt(yi, "height", result_image.height_);
-/*	yafaray_paramsSetInt(yi, "AA_minsamples",  50);*/
-/*	yafaray_paramsSetInt(yi, "AA_passes",  100);*/
+	yafaray_paramsSetString(yi, "film_load_save_mode", "load-save");
+	/*yafaray_paramsSetString(yi, "film_load_save_path", "???");*/
+	yafaray_paramsSetInt(yi, "AA_minsamples",  50);
+	yafaray_paramsSetInt(yi, "AA_passes",  2);
 	yafaray_paramsSetInt(yi, "threads", -1);
 	yafaray_paramsSetInt(yi, "threads_photons", -1);
 	yafaray_setupRender(yi);

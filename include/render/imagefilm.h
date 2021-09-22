@@ -156,6 +156,8 @@ class ImageFilm final
 		static std::string printRenderStats(const RenderControl &render_control, int width, int height);
 
 	private:
+		void initLayersImages();
+		void initLayersExportedImages();
 		int width_, height_, cx_0_, cx_1_, cy_0_, cy_1_;
 		int tile_size_;
 		ImageSplitter::TilesOrderType tiles_order_;

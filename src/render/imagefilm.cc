@@ -173,10 +173,8 @@ ImageFilm::ImageFilm(Logger &logger, int width, int height, int xstart, int ysta
 	aa_noise_params_.clamp_samples_ = 0.f;
 }
 
-void ImageFilm::init(RenderControl &render_control, int num_passes)
+void ImageFilm::initLayersImages()
 {
-	//Creation of the image buffers for the render passes
-	film_image_layers_.clear();
 	for(const auto &l : layers_.getLayersWithImages())
 	{
 		Image::Type image_type = l.second.getImageType();
@@ -184,20 +182,27 @@ void ImageFilm::init(RenderControl &render_control, int num_passes)
 		std::unique_ptr<Image> image = Image::factory(logger_, width_, height_, image_type, Image::Optimization::None);
 		film_image_layers_.set(l.first, {std::move(image), l.second});
 	}
+}
 
-	exported_image_layers_.clear();
-
-	if(!outputs_.empty())
+void ImageFilm::initLayersExportedImages()
+{
+	for(const auto &l: layers_.getLayersWithExportedImages())
 	{
-		//If there are any ImageOutputs, creation of the image buffers for the image outputs exported images
-		for(const auto &l: layers_.getLayersWithExportedImages())
-		{
-			Image::Type image_type = l.second.getImageType();
-			image_type = Image::imageTypeWithAlpha(image_type); //Alpha channel is needed in all images of the weight normalization process will cause problems
-			std::unique_ptr<Image> image = Image::factory(logger_, width_, height_, image_type, Image::Optimization::None);
-			exported_image_layers_.set(l.first, {std::move(image), l.second});
-		}
+		Image::Type image_type = l.second.getImageType();
+		image_type = Image::imageTypeWithAlpha(image_type); //Alpha channel is needed in all images of the weight normalization process will cause problems
+		std::unique_ptr<Image> image = Image::factory(logger_, width_, height_, image_type, Image::Optimization::None);
+		exported_image_layers_.set(l.first, {std::move(image), l.second});
 	}
+}
+
+void ImageFilm::init(RenderControl &render_control, int num_passes)
+{
+	//Creation of the image buffers for the render passes
+	film_image_layers_.clear();
+	exported_image_layers_.clear();
+	initLayersImages();
+	//If there are any ImageOutputs, creation of the image buffers for the image outputs exported images
+	if(!outputs_.empty()) initLayersExportedImages();
 
 	// Clear density image
 	if(estimate_density_)
@@ -297,11 +302,13 @@ int ImageFilm::nextPass(const RenderView *render_view, RenderControl &render_con
 
 	if(adaptive_aa && aa_noise_params_.threshold_ > 0.f)
 	{
-		for(int y = 0; y < height_ - 1; ++y)
+		for(int y = 0; y < height_; ++y)
 		{
-			for(int x = 0; x < width_ - 1; ++x)
+			for(int x = 0; x < width_; ++x)
 			{
-				flags_.set(x, y, false);
+				const float weight = weights_(x, y).getFloat();
+				if(weight > 0.f) flags_.set(x, y, false);
+				else flags_.set(x, y, true); //If after reloading ImageFiles there are pixels that were not yet rendered at all, make sure they are marked to be rendered in the next AA pass
 			}
 		}
 
@@ -311,17 +318,15 @@ int ImageFilm::nextPass(const RenderView *render_view, RenderControl &render_con
 			{
 				//We will only consider the Combined Pass (pass 0) for the AA additional sampling calculations.
 				const float weight = weights_(x, y).getFloat();
-				if(weight <= 0.f) flags_.set(x, y, true);	//If after reloading ImageFiles there are pixels that were not yet rendered at all, make sure they are marked to be rendered in the next AA pass
-
 				float mat_sample_factor = 1.f;
 				if(sampling_factor_image_pass)
 				{
-					mat_sample_factor = (weight == 0.f) ? 0.f : sampling_factor_image_pass->getFloat(x, y) / weight;
+					mat_sample_factor = weight > 0.f ? sampling_factor_image_pass->getFloat(x, y) / weight : 1.f;
 					if(!background_resampling_ && mat_sample_factor == 0.f) continue;
 				}
 
 				const Rgba pix_col = combined_image->getColor(x, y).normalized(weight);
-				float pix_col_bri = pix_col.abscol2Bri();
+				const float pix_col_bri = pix_col.abscol2Bri();
 
 				if(aa_noise_params_.dark_detection_type_ == AaNoiseParams::DarkDetectionType::Linear && aa_noise_params_.dark_threshold_factor_ > 0.f)
 				{
@@ -898,11 +903,15 @@ bool ImageFilm::imageFilmLoad(const std::string &filename)
 		return false;
 	}
 
-	int loaded_image_layers_size;
-	file.read<int>(loaded_image_layers_size);
-	if(loaded_image_layers_size != static_cast<int>(film_image_layers_.size()))
+	int loaded_image_num_layers;
+	file.read<int>(loaded_image_num_layers);
+	initLayersImages();
+	//If there are any ImageOutputs, creation of the image buffers for the image outputs exported images
+	if(!outputs_.empty()) initLayersExportedImages();
+	const int num_layers = film_image_layers_.size();
+	if(loaded_image_num_layers != num_layers)
 	{
-		logger_.logWarning("imageFilm: loading/reusing film check failed. Number of image layers, expected=", film_image_layers_.size(), ", in reused/loaded film=", loaded_image_layers_size);
+		logger_.logWarning("imageFilm: loading/reusing film check failed. Number of image layers, expected=", num_layers, ", in reused/loaded film=", loaded_image_num_layers);
 		return false;
 	}
 

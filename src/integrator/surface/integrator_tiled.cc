@@ -181,6 +181,7 @@ bool TiledIntegrator::render(RenderControl &render_control, const RenderView *re
 	correlative_sample_number_.resize(scene_->getNumThreads());
 	std::fill(correlative_sample_number_.begin(), correlative_sample_number_.end(), 0);
 
+	int resampled_pixels = 0;
 	if(render_control.resumed())
 	{
 		renderPass(render_view, 0, image_film_->getSamplingOffset(), false, 0, render_control);
@@ -188,7 +189,6 @@ bool TiledIntegrator::render(RenderControl &render_control, const RenderView *re
 	else renderPass(render_view, aa_noise_params_.samples_, 0, false, 0, render_control);
 
 	bool aa_threshold_changed = true;
-	int resampled_pixels = 0;
 	int acum_aa_samples = aa_noise_params_.samples_;
 
 	for(int i = 1; i < aa_noise_params_.passes_; ++i)
@@ -333,7 +333,7 @@ bool TiledIntegrator::renderTile(RenderArea &a, const RenderView *render_view, c
 				if(sampling_factor_image_pass)
 				{
 					const float weight = image_film_->getWeight(j - film_cx_0, i - film_cy_0);
-					mat_sample_factor = sampling_factor_image_pass->getColor(j - film_cx_0, i - film_cy_0).normalized(weight).r_;
+					mat_sample_factor = weight > 0.f ? sampling_factor_image_pass->getColor(j - film_cx_0, i - film_cy_0).normalized(weight).r_ : 1.f;
 
 					if(image_film_->getBackgroundResampling()) mat_sample_factor = std::max(mat_sample_factor, 1.f); //If the background is set to be resampled, make sure the matSampleFactor is always >= 1.f
 
