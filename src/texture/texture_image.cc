@@ -526,7 +526,7 @@ void ImageTexture::generateMipMaps()
 #endif
 }
 
-ImageTexture::ClipMode string2Cliptype_global(const std::string &clipname)
+ImageTexture::ClipMode ImageTexture::string2Cliptype(const std::string &clipname)
 {
 	// default "repeat"
 	ImageTexture::ClipMode	tex_clipmode = ImageTexture::ClipMode::Repeat;
@@ -644,7 +644,7 @@ std::unique_ptr<Texture> ImageTexture::factory(Logger &logger, ParamMap &params,
 	tex->setCrop(minx, miny, maxx, maxy);
 	tex->calc_alpha_ = calc_alpha;
 	tex->normalmap_ = normalmap;
-	tex->tex_clip_mode_ = string2Cliptype_global(clipmode);
+	tex->tex_clip_mode_ = string2Cliptype(clipmode);
 	tex->checker_even_ = even_tiles;
 	tex->checker_odd_ = odd_tiles;
 	tex->checker_dist_ = cdist;

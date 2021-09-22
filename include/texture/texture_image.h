@@ -70,6 +70,7 @@ class ImageTexture final : public Texture
 		void generateEwaLookupTable();
 		bool doMapping(Point3 &texp) const;
 		Rgba interpolateImage(const Point3 &p, const MipMapParams *mipmap_params) const;
+		static ImageTexture::ClipMode string2Cliptype(const std::string &clipname);
 
 		const int ewa_weight_lut_size_ = 128;
 		bool calc_alpha_, normalmap_;

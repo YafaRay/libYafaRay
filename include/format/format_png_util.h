@@ -31,6 +31,7 @@ class PngDataReader
 	public:
 		PngDataReader(const uint8_t *d, size_t s);
 		size_t read(uint8_t *buf, size_t s);
+		static void readFromMem(png_structp png_ptr, png_bytep buffer, png_size_t bytes_to_read);
 
 	private:
 		std::unique_ptr<uint8_t[]> data_;
@@ -52,7 +53,7 @@ inline size_t PngDataReader::read(uint8_t *buf, size_t s)
 	return i;
 }
 
-void readFromMem_global(png_structp png_ptr, png_bytep buffer, png_size_t bytes_to_read)
+inline void PngDataReader::readFromMem(png_structp png_ptr, png_bytep buffer, png_size_t bytes_to_read)
 {
 	PngDataReader *img = (PngDataReader *) png_get_io_ptr(png_ptr);
 	if(!img) png_error(png_ptr, "The image data pointer is null!!");

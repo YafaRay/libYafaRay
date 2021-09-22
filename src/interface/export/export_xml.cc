@@ -136,7 +136,7 @@ bool XmlExport::smoothMesh(const char *name, double angle) noexcept
 	return true;
 }
 
-void writeMatrix_global(const std::string &name, const Matrix4 &m, std::ofstream &xml_file) noexcept
+void XmlExport::writeMatrix(const std::string &name, const Matrix4 &m, std::ofstream &xml_file) noexcept
 {
 	xml_file << "<" << name << " m00=\"" << m[0][0] << "\" m01=\"" << m[0][1] << "\" m02=\"" << m[0][2] << "\" m03=\"" << m[0][3] << "\""
 			 << " m10=\"" << m[1][0] << "\" m11=\"" << m[1][1] << "\" m12=\"" << m[1][2] << "\" m13=\"" << m[1][3] << "\""
@@ -144,7 +144,7 @@ void writeMatrix_global(const std::string &name, const Matrix4 &m, std::ofstream
 			 << " m30=\"" << m[3][0] << "\" m31=\"" << m[3][1] << "\" m32=\"" << m[3][2] << "\" m33=\"" << m[3][3] << "\"/>";
 }
 
-inline void writeParam_global(const std::string &name, const Parameter &param, std::ofstream &xml_file, ColorSpace xml_color_space, float xml_gamma) noexcept
+void XmlExport::writeParam(const std::string &name, const Parameter &param, std::ofstream &xml_file, ColorSpace xml_color_space, float xml_gamma) noexcept
 {
 	const Parameter::Type type = param.type();
 	if(type == Parameter::Int)
@@ -188,7 +188,7 @@ inline void writeParam_global(const std::string &name, const Parameter &param, s
 	{
 		Matrix4 m;
 		param.getVal(m);
-		writeMatrix_global(name, m, xml_file);
+		writeMatrix(name, m, xml_file);
 	}
 	else
 	{
@@ -199,7 +199,7 @@ inline void writeParam_global(const std::string &name, const Parameter &param, s
 bool XmlExport::addInstance(const char *base_object_name, const Matrix4 &obj_to_world) noexcept
 {
 	xml_file_ << "\n<instance base_object_name=\"" << base_object_name << "\" >\n\t";
-	writeMatrix_global("transform", obj_to_world, xml_file_);
+	writeMatrix("transform", obj_to_world, xml_file_);
 	xml_file_ << "\n</instance>\n";
 	return true;
 }
@@ -210,7 +210,7 @@ void XmlExport::writeParamMap(const ParamMap &param_map, int indent) noexcept
 	for(const auto &param : param_map)
 	{
 		xml_file_ << tabs;
-		writeParam_global(param.first, param.second, xml_file_, xml_color_space_, xml_gamma_);
+		writeParam(param.first, param.second, xml_file_, xml_color_space_, xml_gamma_);
 	}
 }
 

@@ -98,7 +98,10 @@ union BitTwiddler
 	float f_;
 };
 
-inline constexpr float polyexp(float x) { return (x * (x * (x * (x * (x * 1.8775767e-3f + 8.9893397e-3f) + 5.5826318e-2f) + 2.4015361e-1f) + 6.9315308e-1f) + 9.9999994e-1f); }
+inline constexpr float polyexp(float x)
+{
+	return x * (x * (x * (x * (x * 1.8775767e-3f + 8.9893397e-3f) + 5.5826318e-2f) + 2.4015361e-1f) + 6.9315308e-1f) + 9.9999994e-1f;
+}
 
 inline float exp2(float x)
 {
@@ -118,7 +121,10 @@ inline float exp2(float x)
 	return (expipart.f_ * math::polyexp(fpart.f_));
 }
 
-inline constexpr float polylog_global(float x) { return (x * (x * (x * (x * (x * -3.4436006e-2f + 3.1821337e-1f) + -1.2315303f) + 2.5988452f) + -3.3241990f) + 3.1157899f); }
+inline constexpr float polylog(float x)
+{
+	return x * (x * (x * (x * (x * -3.4436006e-2f + 3.1821337e-1f) + -1.2315303f) + 2.5988452f) + -3.3241990f) + 3.1157899f;
+}
 
 inline float log2(float x)
 {
@@ -129,8 +135,8 @@ inline float log2(float x)
 	one.f_ = 1.0f;
 	i.f_ = x;
 	e.f_ = static_cast<float>(((i.i_ & log_exp) >> 23) - 127);
-	m.i_ = ((i.i_ & log_mant) | one.i_);
-	return (polylog_global(m.f_) * (m.f_ - one.f_) + e.f_);
+	m.i_ = (i.i_ & log_mant) | one.i_;
+	return polylog(m.f_) * (m.f_ - one.f_) + e.f_;
 }
 
 #ifdef FAST_MATH

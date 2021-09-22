@@ -114,7 +114,7 @@ Rgb AreaLight::emitSample(Vec3 &wo, LSample &s) const
 	return color_; // still not 100% sure this is correct without cosine...
 }
 
-inline bool triIntersect_global(const Point3 &a, const Point3 &b, const Point3 &c, const Ray &ray, float &t)
+bool AreaLight::triIntersect(const Point3 &a, const Point3 &b, const Point3 &c, const Ray &ray, float &t)
 {
 	Vec3 edge_1, edge_2, tvec, pvec, qvec;
 	float det, inv_det, u, v;
@@ -141,9 +141,9 @@ bool AreaLight::intersect(const Ray &ray, float &t, Rgb &col, float &ipdf) const
 	//no light if point is behind area light (single sided!)
 	if(cos_angle <= 0) return false;
 
-	if(!triIntersect_global(corner_, c_2_, c_3_, ray, t))
+	if(!triIntersect(corner_, c_2_, c_3_, ray, t))
 	{
-		if(!triIntersect_global(corner_, c_3_, c_4_, ray, t)) return false;
+		if(!triIntersect(corner_, c_3_, c_4_, ray, t)) return false;
 	}
 	if(!(t > 1.0e-10f)) return false;
 

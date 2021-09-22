@@ -27,6 +27,8 @@
 
 BEGIN_YAFARAY
 
+class Parameter;
+
 class XmlExport: public Interface
 {
 	public:
@@ -68,6 +70,8 @@ class XmlExport: public Interface
 	protected:
 		void writeParamMap(const ParamMap &param_map, int indent = 1) noexcept;
 		void writeParamList(int indent) noexcept;
+		static void writeMatrix(const std::string &name, const Matrix4 &m, std::ofstream &xml_file) noexcept;
+		static void writeParam(const std::string &name, const Parameter &param, std::ofstream &xml_file, ColorSpace xml_color_space, float xml_gamma) noexcept;
 		std::ofstream xml_file_;
 		std::string xml_name_;
 		std::string current_material_;

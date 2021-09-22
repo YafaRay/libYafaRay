@@ -144,7 +144,7 @@ std::unique_ptr<Image> PngFormat::loadFromMemory(const uint8_t *data, size_t siz
 	{
 		return nullptr;
 	}
-	png_set_read_fn(png_ptr, static_cast<void *>(reader.get()), readFromMem_global);
+	png_set_read_fn(png_ptr, static_cast<void *>(reader.get()), PngDataReader::readFromMem);
 	png_set_sig_bytes(png_ptr, 8);
 	std::unique_ptr<Image> image = readFromStructs(png_structs, optimization, color_space, gamma);
 	return image;

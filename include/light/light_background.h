@@ -57,8 +57,8 @@ class BackgroundLight final : public Light
 		float calcFromDir(const Vec3 &dir, float &u, float &v, bool inv = false) const;
 		static constexpr float addOff(float v);
 		static int clampSample(int s, int m);
-		static float clampZero_global(float val);
-		static float sinSample_global(float s);
+		static float clampZero(float val);
+		static float sinSample(float s);
 
 		std::unique_ptr<std::unique_ptr<Pdf1D>[]> u_dist_;
 		std::unique_ptr<Pdf1D> v_dist_;

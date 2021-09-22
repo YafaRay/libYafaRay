@@ -55,7 +55,7 @@ void TextureMapperNode::setup()
 }
 
 // Map the texture to a cylinder
-inline Point3 tubemap_global(const Point3 &p)
+Point3 TextureMapperNode::tubeMap(const Point3 &p)
 {
 	Point3 res;
 	res.y_ = p.z_;
@@ -70,7 +70,7 @@ inline Point3 tubemap_global(const Point3 &p)
 }
 
 // Map the texture to a sphere
-inline Point3 spheremap_global(const Point3 &p)
+Point3 TextureMapperNode::sphereMap(const Point3 &p)
 {
 	Point3 res(0.f);
 	const float d = p.x_ * p.x_ + p.y_ * p.y_ + p.z_ * p.z_;
@@ -84,7 +84,7 @@ inline Point3 spheremap_global(const Point3 &p)
 }
 
 // Map the texture to a cube
-inline Point3 cubemap_global(const Point3 &p, const Vec3 &n)
+Point3 TextureMapperNode::cubeMap(const Point3 &p, const Vec3 &n)
 {
 	const int ma[3][3] = { {1, 2, 0}, {0, 2, 1}, {0, 1, 2} };
 	// int axis = std::abs(n.x) > std::abs(n.y) ? (std::abs(n.x) > std::abs(n.z) ? 0 : 2) : (std::abs(n.y) > std::abs(n.z) ? 1 : 2);
@@ -97,7 +97,7 @@ inline Point3 cubemap_global(const Point3 &p, const Vec3 &n)
 }
 
 // Map the texture to a plane but it should not be used by now as it does nothing, it's just for completeness sake
-inline Point3 flatmap_global(const Point3 &p)
+Point3 TextureMapperNode::flatMap(const Point3 &p)
 {
 	return p;
 }
@@ -119,9 +119,9 @@ Point3 TextureMapperNode::doMapping(const Point3 &p, const Vec3 &n) const
 	// Texture coordinates mapping
 	switch(projection_)
 	{
-		case Tube: texpt = tubemap_global(texpt); break;
-		case Sphere: texpt = spheremap_global(texpt); break;
-		case Cube: texpt = cubemap_global(texpt, n); break;
+		case Tube: texpt = tubeMap(texpt); break;
+		case Sphere: texpt = sphereMap(texpt); break;
+		case Cube: texpt = cubeMap(texpt, n); break;
 		case Plain: // texpt = flatmap(texpt); break;
 		default: break;
 	}
@@ -130,7 +130,7 @@ Point3 TextureMapperNode::doMapping(const Point3 &p, const Vec3 &n) const
 	return texpt;
 }
 
-Point3 evalUv_global(const SurfacePoint &sp)
+Point3 TextureMapperNode::evalUv(const SurfacePoint &sp)
 {
 	return { sp.u_, sp.v_, 0.f };
 }
@@ -139,7 +139,7 @@ void TextureMapperNode::getCoords(Point3 &texpt, Vec3 &ng, const SurfacePoint &s
 {
 	switch(coords_)
 	{
-		case Uv: texpt = evalUv_global(sp); ng = sp.ng_; break;
+		case Uv: texpt = evalUv(sp); ng = sp.ng_; break;
 		case Orco: texpt = sp.orco_p_; ng = sp.orco_ng_; break;
 		case Transformed: texpt = mtx_ * sp.p_; ng = mtx_ * sp.ng_; break;  // apply 4x4 matrix of object for mapping also to true surface normals
 		case Window: texpt = render_data.cam_->screenproject(sp.p_); ng = sp.ng_; break;

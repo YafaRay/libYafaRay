@@ -48,6 +48,7 @@ class AreaLight final : public Light
 		virtual float illumPdf(const SurfacePoint &sp, const SurfacePoint &sp_light) const override;
 		virtual void emitPdf(const SurfacePoint &sp, const Vec3 &wi, float &area_pdf, float &dir_pdf, float &cos_wo) const override;
 		virtual int nSamples() const override { return samples_; }
+		static bool triIntersect(const Point3 &a, const Point3 &b, const Point3 &c, const Ray &ray, float &t);
 
 		Point3 corner_, c_2_, c_3_, c_4_;
 		Vec3 to_x_, to_y_, normal_, fnormal_;

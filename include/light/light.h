@@ -69,12 +69,12 @@ class Light
 		//! illuminate a given surfance point; Set ray to test visibility by integrator. Only for dirac lights.
 		/*!	return false only if no light is emitted towards sp, e.g. outside cone angle of spot light	*/
 		virtual bool illuminate(const SurfacePoint &sp, Rgb &col, Ray &wi) const = 0;
-		//! indicate whether the light can intersect with a ray (by the intersect function)
+		//! indicate whether the light can intersect with a ray (by the sphereIntersect function)
 		virtual bool canIntersect() const { return false; }
-		//! intersect the light source with a ray, giving back distance, energy and 1/PDF
+		//! sphereIntersect the light source with a ray, giving back distance, energy and 1/PDF
 		virtual bool intersect(const Ray &ray, float &t, Rgb &col, float &ipdf) const { return false; }
 		//! get the pdf for sampling the incoming direction wi at surface point sp (illumSample!)
-		/*! this method requires an intersection point with the light (sp_light). Otherwise, use intersect() */
+		/*! this method requires an intersection point with the light (sp_light). Otherwise, use sphereIntersect() */
 		virtual float illumPdf(const SurfacePoint &sp, const SurfacePoint &sp_light) const { return 0.f; }
 		//! get the pdf values for sampling point sp on the light and outgoing direction wo when emitting energy (emitSample, NOT illumSample)
 		/*! sp should've been generated from illumSample or emitSample, and may only be complete enough to call light functions! */

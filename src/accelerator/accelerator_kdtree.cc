@@ -628,7 +628,7 @@ int AcceleratorKdTree::buildTree(uint32_t n_prims, const std::vector<const Primi
 }
 
 //============================
-/*! The standard intersect function,
+/*! The standard sphereIntersect function,
 	returns the closest hit within dist
 */
 AcceleratorIntersectData AcceleratorKdTree::intersect(const Ray &ray, float t_max) const

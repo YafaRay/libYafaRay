@@ -37,8 +37,8 @@ constexpr float BackgroundLight::smpl_off_;
 constexpr float BackgroundLight::sigma_;
 
 #define MULT_PDF(p0, p1) (p0 * p1)
-#define CALC_PDF(p0, p1, s) std::max( sigma_, MULT_PDF(p0, p1) * (float)math::div_1_by_2pi * clampZero_global(sinSample_global(s)) )
-#define CALC_INV_PDF(p0, p1, s) std::max( sigma_, (float)math::mult_pi_by_2 * sinSample_global(s) * clampZero_global(MULT_PDF(p0, p1)) )
+#define CALC_PDF(p0, p1, s) std::max( sigma_, MULT_PDF(p0, p1) * (float)math::div_1_by_2pi * clampZero(sinSample(s)) )
+#define CALC_INV_PDF(p0, p1, s) std::max( sigma_, (float)math::mult_pi_by_2 * sinSample(s) * clampZero(MULT_PDF(p0, p1)) )
 
 BackgroundLight::BackgroundLight(Logger &logger, int sampl, bool invert_intersect, bool light_enabled, bool cast_shadows):
 		Light(logger, Light::Flags::None), samples_(sampl), abs_inter_(invert_intersect)
@@ -61,7 +61,7 @@ void BackgroundLight::init(Scene &scene)
 	for(int y = 0; y < nv; y++)
 	{
 		const float fy = ((float)y + 0.5f) * inv;
-		const float sintheta = sinSample_global(fy);
+		const float sintheta = sinSample(fy);
 		const int nu = min_samples_ + (int)(sintheta * (max_usamples_ - min_samples_));
 		const float inu = 1.f / (float)nu;
 
@@ -244,13 +244,13 @@ int BackgroundLight::clampSample(int s, int m)
 	return std::max(0, std::min(s, m - 1));
 }
 
-float BackgroundLight::clampZero_global(float val)
+float BackgroundLight::clampZero(float val)
 {
 	if(val > 0.f) return 1.f / val;
 	else return 0.f;
 }
 
-float BackgroundLight::sinSample_global(float s)
+float BackgroundLight::sinSample(float s)
 {
 	return math::sin(s * math::num_pi);
 }

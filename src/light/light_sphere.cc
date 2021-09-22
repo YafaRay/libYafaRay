@@ -52,7 +52,7 @@ void SphereLight::init(Scene &scene)
 
 Rgb SphereLight::totalEnergy() const { return color_ * area_ /* * num_pi */; }
 
-inline bool sphereIntersect_global(const Ray &ray, const Point3 &c, float r_2, float &d_1, float &d_2)
+bool SphereLight::sphereIntersect(const Ray &ray, const Point3 &c, float r_2, float &d_1, float &d_2)
 {
 	Vec3 vf = ray.from_ - c;
 	float ea = ray.dir_ * ray.dir_;
@@ -83,7 +83,7 @@ bool SphereLight::illumSample(const SurfacePoint &sp, LSample &s, Ray &wi) const
 
 	wi.dir_ = sample::cone(cdir, du, dv, cos_alpha, s.s_1_, s.s_2_);
 	float d_1, d_2;
-	if(!sphereIntersect_global(wi, center_, square_radius_epsilon_, d_1, d_2))
+	if(!sphereIntersect(wi, center_, square_radius_epsilon_, d_1, d_2))
 	{
 		return false;
 	}
@@ -103,7 +103,7 @@ bool SphereLight::illumSample(const SurfacePoint &sp, LSample &s, Ray &wi) const
 bool SphereLight::intersect(const Ray &ray, float &t, Rgb &col, float &ipdf) const
 {
 	float d_1, d_2;
-	if(sphereIntersect_global(ray, center_, square_radius_, d_1, d_2))
+	if(sphereIntersect(ray, center_, square_radius_, d_1, d_2))
 	{
 		Vec3 cdir = center_ - ray.from_;
 		float dist_sqr = cdir.lengthSqr();

@@ -655,7 +655,7 @@ void AcceleratorKdTreeMultiThread::buildTreeWorker(const std::vector<const Primi
 }
 
 //============================
-/*! The standard intersect function,
+/*! The standard sphereIntersect function,
 	returns the closest hit within dist
 */
 AcceleratorIntersectData AcceleratorKdTreeMultiThread::intersect(const Ray &ray, float t_max) const

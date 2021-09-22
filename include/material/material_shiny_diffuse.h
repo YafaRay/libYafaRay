@@ -72,6 +72,7 @@ class ShinyDiffuseMaterial final : public NodeMaterial
 
 		void initOrenNayar(double sigma);
 		float orenNayar(const Vec3 &wi, const Vec3 &wo, const Vec3 &n, bool use_texture_sigma, double texture_sigma) const;
+		static void accumulate(const float *component, float *accum, float kr);
 
 		bool is_transparent_ = false;                  //!< Boolean value which is true if you have transparent component
 		bool is_translucent_ = false;                  //!< Boolean value which is true if you have translucent component

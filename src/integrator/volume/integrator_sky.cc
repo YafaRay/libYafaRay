@@ -27,27 +27,6 @@
 
 BEGIN_YAFARAY
 
-float mieScatter_global(float theta)
-{
-	theta *= 360 / math::mult_pi_by_2;
-	if(theta < 1.f)
-		return 4.192;
-	if(theta < 4.f)
-		return (1.f - ((theta - 1.f) / 3.f)) * 4.192 + ((theta - 1.f) / 3.f) * 3.311;
-	if(theta < 7.f)
-		return (1.f - ((theta - 4.f) / 3.f)) * 3.311 + ((theta - 4.f) / 3.f) * 2.860;
-	if(theta < 10.f)
-		return (1.f - ((theta - 7.f) / 3.f)) * 2.860 + ((theta - 7.f) / 3.f) * 2.518;
-	if(theta < 30.f)
-		return (1.f - ((theta - 10.f) / 20.f)) * 2.518 + ((theta - 10.f) / 20.f) * 1.122;
-	if(theta < 60.f)
-		return (1.f - ((theta - 30.f) / 30.f)) * 1.122 + ((theta - 30.f) / 30.f) * 0.3324;
-	if(theta < 80.f)
-		return (1.f - ((theta - 60.f) / 20.f)) * 0.3324 + ((theta - 60.f) / 20.f) * 0.1644;
-
-	return (1.f - ((theta - 80.f) / 100.f)) * 0.1644f + ((theta - 80.f) / 100.f) * 0.1;
-}
-
 SkyIntegrator::SkyIntegrator(Logger &logger, float s_size, float a, float ss, float t) : VolumeIntegrator(logger)
 {
 	step_size_ = s_size;
@@ -185,7 +164,7 @@ Rgba SkyIntegrator::integrate(RenderData &render_data, const Ray &ray, int addit
 			float b_r_angular = b_r_ * 3 / (2 * math::num_pi * 8) * (1.0f + (w * (-ray.dir_)) * (w * (-ray.dir_)));
 			float k = 0.67f;
 			float angle = math::acos(w * (ray.dir_));
-			float b_m_angular = b_m_ / (2 * k * math::num_pi) * mieScatter_global(angle);
+			float b_m_angular = b_m_ / (2 * k * math::num_pi) * mieScatter(angle);
 			//std::cout << "w: " << w << " theta: " << theta << " -ray.dir: " << -ray.dir << " angle: " << angle << " mie ang " << b_m_angular << std::endl;
 			s_0_m = s_0_m + Rgba(l_s) * b_m_angular;
 			s_0_r = s_0_r + Rgba(l_s) * b_r_angular;
@@ -232,6 +211,27 @@ Rgba SkyIntegrator::integrate(RenderData &render_data, const Ray &ray, int addit
 
 	//std::cout << "result: " << S0_m * I_m << " " << I_m.energy() << " " << S0_m.energy() << std::endl;
 	return s_0_r * i_r + s_0_m * i_m;
+}
+
+float SkyIntegrator::mieScatter(float theta)
+{
+	theta *= 360 / math::mult_pi_by_2;
+	if(theta < 1.f)
+		return 4.192;
+	if(theta < 4.f)
+		return (1.f - ((theta - 1.f) / 3.f)) * 4.192 + ((theta - 1.f) / 3.f) * 3.311;
+	if(theta < 7.f)
+		return (1.f - ((theta - 4.f) / 3.f)) * 3.311 + ((theta - 4.f) / 3.f) * 2.860;
+	if(theta < 10.f)
+		return (1.f - ((theta - 7.f) / 3.f)) * 2.860 + ((theta - 7.f) / 3.f) * 2.518;
+	if(theta < 30.f)
+		return (1.f - ((theta - 10.f) / 20.f)) * 2.518 + ((theta - 10.f) / 20.f) * 1.122;
+	if(theta < 60.f)
+		return (1.f - ((theta - 30.f) / 30.f)) * 1.122 + ((theta - 30.f) / 30.f) * 0.3324;
+	if(theta < 80.f)
+		return (1.f - ((theta - 60.f) / 20.f)) * 0.3324 + ((theta - 60.f) / 20.f) * 0.1644;
+
+	return (1.f - ((theta - 80.f) / 100.f)) * 0.1644f + ((theta - 80.f) / 100.f) * 0.1;
 }
 
 std::unique_ptr<Integrator> SkyIntegrator::factory(Logger &logger, ParamMap &params, const Scene &scene)

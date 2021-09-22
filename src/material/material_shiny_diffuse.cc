@@ -122,7 +122,7 @@ float ShinyDiffuseMaterial::getFresnelKr(const Vec3 &wo, const Vec3 &n, float cu
 // calculate the absolute value of scattering components from the "normalized"
 // fractions which are between 0 (no scattering) and 1 (scatter all remaining light)
 // Kr is an optional reflection multiplier (e.g. from Fresnel)
-static inline void accumulate_global(const float *component, float *accum, float kr)
+void ShinyDiffuseMaterial::accumulate(const float *component, float *accum, float kr)
 {
 	accum[0] = component[0] * kr;
 	float acc = 1.f - accum[0];
@@ -278,7 +278,7 @@ Rgb ShinyDiffuseMaterial::sample(const RenderData &render_data, const SurfacePoi
 	else cur_ior_squared = ior_squared_;
 
 	const float kr = getFresnelKr(wo, n, cur_ior_squared);
-	accumulate_global(dat->component_, accum_c, kr);
+	accumulate(dat->component_, accum_c, kr);
 
 	float sum = 0.f, val[4], width[4];
 	BsdfFlags choice[4];
@@ -377,7 +377,7 @@ float ShinyDiffuseMaterial::pdf(const RenderData &render_data, const SurfacePoin
 
 	const float kr = getFresnelKr(wo, n, cur_ior_squared);
 
-	accumulate_global(dat->component_, accum_c, kr);
+	accumulate(dat->component_, accum_c, kr);
 	float sum = 0.f, width;
 	int n_match = 0;
 	for(int i = 0; i < n_bsdf_; ++i)

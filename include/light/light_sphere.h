@@ -57,6 +57,7 @@ class SphereLight final : public Light
 		virtual float illumPdf(const SurfacePoint &sp, const SurfacePoint &sp_light) const override;
 		virtual void emitPdf(const SurfacePoint &sp, const Vec3 &wo, float &area_pdf, float &dir_pdf, float &cos_wo) const override;
 		virtual int nSamples() const override { return samples_; }
+		static bool sphereIntersect(const Ray &ray, const Point3 &c, float r_2, float &d_1, float &d_2);
 
 		Point3 center_;
 		float radius_, square_radius_, square_radius_epsilon_;

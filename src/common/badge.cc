@@ -293,7 +293,7 @@ std::unique_ptr<Image> Badge::generateImage(const std::string &denoise_params, c
 		ParamMap logo_image_params;
 		logo_image_params["type"] = std::string("png");
 		std::unique_ptr<Format> logo_format = std::unique_ptr<Format>(Format::factory(logger_, logo_image_params));
-		if(logo_format) logo = logo_format->loadFromMemory(yaf_logo_tiny_global, yaf_logo_tiny_size_global, Image::Optimization::None, ColorSpace::Srgb, 1.f);
+		if(logo_format) logo = logo_format->loadFromMemory(logo::yafaray_tiny.data(), logo::yafaray_tiny.size(), Image::Optimization::None, ColorSpace::Srgb, 1.f);
 	}
 
 	if(logo)

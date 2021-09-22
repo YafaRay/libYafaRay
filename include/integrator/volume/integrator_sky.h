@@ -42,6 +42,7 @@ class SkyIntegrator : public VolumeIntegrator
 		virtual Rgba integrate(RenderData &render_data, const Ray &ray, int additional_depth = 0) const override;
 		Rgba skyTau(const Ray &ray) const;
 		Rgba skyTau(const Ray &ray, float beta, float alpha) const;
+		static float mieScatter(float theta);
 
 		float step_size_;
 		float alpha_; // steepness of the exponential density

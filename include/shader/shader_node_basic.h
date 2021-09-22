@@ -43,7 +43,12 @@ class TextureMapperNode final : public ShaderNode
 
 		void setup();
 		void getCoords(Point3 &texpt, Vec3 &ng, const SurfacePoint &sp, const RenderData &render_data) const;
-		Point3 doMapping(const Point3 &p, const Vec3 &n) const ;
+		Point3 doMapping(const Point3 &p, const Vec3 &n) const;
+		static Point3 tubeMap(const Point3 &p);
+		static Point3 sphereMap(const Point3 &p);
+		static Point3 cubeMap(const Point3 &p, const Vec3 &n);
+		static Point3 flatMap(const Point3 &p);
+		static Point3 evalUv(const SurfacePoint &sp);
 
 		Coords coords_;
 		Projection projection_;
