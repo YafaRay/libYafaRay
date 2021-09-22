@@ -508,7 +508,7 @@ void MonteCarloIntegrator::causticWorker(PhotonMap *caustic_map, int thread_id, 
 			{
 				render_data.chromatic_ = false;
 				Rgb wl_col;
-				wl2Rgb_global(render_data.wavelength_, wl_col);
+				spectrum::wl2Rgb(render_data.wavelength_, wl_col);
 				pcol *= wl_col;
 			}
 			ray.from_ = hit->p_;
@@ -726,7 +726,7 @@ void MonteCarloIntegrator::recursiveRaytrace(RenderData &render_data, const Diff
 				{
 					render_data.chromatic_ = false;
 					Rgb wl_col;
-					wl2Rgb_global(render_data.wavelength_, wl_col);
+					spectrum::wl2Rgb(render_data.wavelength_, wl_col);
 					const DiffRay ref_ray(sp.p_, wi, scene_->ray_min_dist_);
 					const Rgb dcol_trans = static_cast<Rgb>(integrate(render_data, ref_ray, additional_depth, nullptr, nullptr)) * mcol * wl_col * w;
 					dcol += dcol_trans;

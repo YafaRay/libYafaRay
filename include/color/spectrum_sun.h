@@ -193,7 +193,7 @@ inline Rgb computeAttenuatedSunlight_global(float theta, int turbidity)
 
 		data[i] = 100.f * sol_amplitudes_global[i] * tau_r * tau_a * tau_o * tau_g * tau_wa; // 100 comes from solCurve being
 		// in wrong units.
-		sun_xyz += wl2Xyz_global(lambda) * data[i];
+		sun_xyz += spectrum::wl2Xyz(lambda) * data[i];
 	}
 	sun_xyz *= 0.02631578947368421053f;
 	Rgb sun_col;

@@ -155,11 +155,11 @@ Rgb CoatedGlossyMaterial::eval(const RenderData &render_data, const SurfacePoint
 		if(anisotropic_)
 		{
 			const Vec3 hs(h * sp.nu_, h * sp.nv_, h * n);
-			glossy = kt * asAnisoD_global(hs, exp_u_, exp_v_) * schlickFresnel_global(cos_wi_h, dat->glossy_) / asDivisor_global(cos_wi_h, wo_n, wi_n);
+			glossy = kt * microfacet::asAnisoD(hs, exp_u_, exp_v_) * microfacet::schlickFresnel(cos_wi_h, dat->glossy_) / microfacet::asDivisor(cos_wi_h, wo_n, wi_n);
 		}
 		else
 		{
-			glossy = kt * blinnD_global(h * n, (exponent_shader_ ? exponent_shader_->getScalar(stack) : exponent_)) * schlickFresnel_global(cos_wi_h, dat->glossy_) / asDivisor_global(cos_wi_h, wo_n, wi_n);
+			glossy = kt * microfacet::blinnD(h * n, (exponent_shader_ ? exponent_shader_->getScalar(stack) : exponent_)) * microfacet::schlickFresnel(cos_wi_h, dat->glossy_) / microfacet::asDivisor(cos_wi_h, wo_n, wi_n);
 		}
 		col = glossy * (glossy_shader_ ? glossy_shader_->getColor(stack) : gloss_color_);
 	}
@@ -263,8 +263,8 @@ Rgb CoatedGlossyMaterial::sample(const RenderData &render_data, const SurfacePoi
 			}
 			break;
 		case C_GLOSSY: // glossy
-			if(anisotropic_) asAnisoSample_global(hs, s_1, s.s_2_, exp_u_, exp_v_);
-			else blinnSample_global(hs, s_1, s.s_2_, (exponent_shader_ ? exponent_shader_->getScalar(stack) : exponent_));
+			if(anisotropic_) microfacet::asAnisoSample(hs, s_1, s.s_2_, exp_u_, exp_v_);
+			else microfacet::blinnSample(hs, s_1, s.s_2_, (exponent_shader_ ? exponent_shader_->getScalar(stack) : exponent_));
 			break;
 		case C_DIFFUSE: // lambertian
 		default:
@@ -321,21 +321,21 @@ Rgb CoatedGlossyMaterial::sample(const RenderData &render_data, const SurfacePoi
 
 			if(anisotropic_)
 			{
-				s.pdf_ += asAnisoPdf_global(hs, cos_wo_h, exp_u_, exp_v_) * width[rc_index[C_GLOSSY]];
-				glossy = asAnisoD_global(hs, exp_u_, exp_v_) * schlickFresnel_global(cos_wo_h, dat->glossy_) / asDivisor_global(cos_wo_h, wo_n, wi_n);
+				s.pdf_ += microfacet::asAnisoPdf(hs, cos_wo_h, exp_u_, exp_v_) * width[rc_index[C_GLOSSY]];
+				glossy = microfacet::asAnisoD(hs, exp_u_, exp_v_) * microfacet::schlickFresnel(cos_wo_h, dat->glossy_) / microfacet::asDivisor(cos_wo_h, wo_n, wi_n);
 			}
 			else
 			{
 				float cos_hn = h * n;
-				s.pdf_ += blinnPdf_global(cos_hn, cos_wo_h, (exponent_shader_ ? exponent_shader_->getScalar(stack) : exponent_)) * width[rc_index[C_GLOSSY]];
-				glossy = blinnD_global(cos_hn, (exponent_shader_ ? exponent_shader_->getScalar(stack) : exponent_)) * schlickFresnel_global(cos_wo_h, dat->glossy_) / asDivisor_global(cos_wo_h, wo_n, wi_n);
+				s.pdf_ += microfacet::blinnPdf(cos_hn, cos_wo_h, (exponent_shader_ ? exponent_shader_->getScalar(stack) : exponent_)) * width[rc_index[C_GLOSSY]];
+				glossy = microfacet::blinnD(cos_hn, (exponent_shader_ ? exponent_shader_->getScalar(stack) : exponent_)) * microfacet::schlickFresnel(cos_wo_h, dat->glossy_) / microfacet::asDivisor(cos_wo_h, wo_n, wi_n);
 			}
 			scolor = glossy * kt * (glossy_shader_ ? glossy_shader_->getColor(stack) : gloss_color_);
 		}
 
 		if(use[C_DIFFUSE])
 		{
-			Rgb add_col = diffuseReflectFresnel_global(wi_n, wo_n, dat->glossy_, dat->diffuse_, (diffuse_shader_ ? diffuse_shader_->getColor(stack) : diff_color_), kt);
+			Rgb add_col = microfacet::diffuseReflectFresnel(wi_n, wo_n, dat->glossy_, dat->diffuse_, (diffuse_shader_ ? diffuse_shader_->getColor(stack) : diff_color_), kt);
 
 			if(diffuse_reflection_shader_) add_col *= diffuse_reflection_shader_->getScalar(stack);
 
@@ -396,9 +396,9 @@ float CoatedGlossyMaterial::pdf(const RenderData &render_data, const SurfacePoin
 				if(anisotropic_)
 				{
 					Vec3 hs(h * sp.nu_, h * sp.nv_, cos_n_h);
-					pdf += asAnisoPdf_global(hs, cos_wo_h, exp_u_, exp_v_) * width;
+					pdf += microfacet::asAnisoPdf(hs, cos_wo_h, exp_u_, exp_v_) * width;
 				}
-				else pdf += blinnPdf_global(cos_n_h, cos_wo_h, (exponent_shader_ ? exponent_shader_->getScalar(stack) : exponent_)) * width;
+				else pdf += microfacet::blinnPdf(cos_n_h, cos_wo_h, (exponent_shader_ ? exponent_shader_->getScalar(stack) : exponent_)) * width;
 			}
 			else if(i == C_DIFFUSE)
 			{

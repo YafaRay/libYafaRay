@@ -34,7 +34,6 @@ class NodeMaterial: public Material
 {
 	public:
 		NodeMaterial(Logger &logger) : Material(logger) { }
-		virtual ~NodeMaterial() override;
 
 	protected:
 		/*! load nodes from parameter map list */
@@ -47,6 +46,8 @@ class NodeMaterial: public Material
 		void getNodeList(const ShaderNode *root, std::vector<ShaderNode *> &nodes);
 		void evalNodes(const RenderData &render_data, const SurfacePoint &sp, const std::vector<ShaderNode *> &nodes, NodeStack &stack) const;
 		void evalBump(NodeStack &stack, const RenderData &render_data, SurfacePoint &sp, const ShaderNode *bump_shader_node) const;
+		static void recursiveSolver(ShaderNode *node, std::vector<ShaderNode *> &sorted);
+		static void recursiveFinder(const ShaderNode *node, std::set<const ShaderNode *> &tree);
 
 		std::vector<ShaderNode *> color_nodes_, color_nodes_sorted_, bump_nodes_;
 		std::map<std::string, std::unique_ptr<ShaderNode>> shaders_table_;

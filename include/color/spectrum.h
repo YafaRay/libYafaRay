@@ -25,25 +25,30 @@
 
 BEGIN_YAFARAY
 
-void wl2RgbFromCie_global(float wl, Rgb &col);
-//void approxSpectrumRGB(float wl, Rgb &col);
-//void fakeSpectrum(float p, Rgb &col);
-void cauchyCoefficients_global(float ior, float disp_pw, float &cauchy_a, float &cauchy_b);
-float getIoRcolor_global(float w, float cauchy_a, float cauchy_b, Rgb &col);
-Rgb wl2Xyz_global(float wl);
-
-static inline float getIor_global(float w, float cauchy_a, float cauchy_b)
+namespace spectrum
 {
-	float wl = 300.f * w + 400.f;
+
+void wl2RgbFromCie(float wl, Rgb &col);
+void approxSpectrumRGB(float wl, Rgb &col);
+void fakeSpectrum(float p, Rgb &col);
+void cauchyCoefficients(float ior, float disp_pw, float &cauchy_a, float &cauchy_b);
+float getIoRcolor(float w, float cauchy_a, float cauchy_b, Rgb &col);
+Rgb wl2Xyz(float wl);
+
+inline float getIor(float w, float cauchy_a, float cauchy_b)
+{
+	const float wl = 300.f * w + 400.f;
 	return cauchy_a + cauchy_b / (wl * wl);
 }
 
-static inline void wl2Rgb_global(float w, Rgb &wl_col)
+inline void wl2Rgb(float w, Rgb &wl_col)
 {
-	float wl = 300.f * w + 400.f;
-	wl2RgbFromCie_global(wl, wl_col);
+	const float wl = 300.f * w + 400.f;
+	wl2RgbFromCie(wl, wl_col);
 	wl_col *= 2.214032659670777114f;
 }
+
+} //namespace spectrum
 
 END_YAFARAY
 

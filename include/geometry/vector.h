@@ -84,6 +84,7 @@ class Point3 final : public Vec3
 		Point3(float ix, float iy, float iz = 0) : Vec3(ix, iy, iz) { }
 		Point3(const Point3 &s) : Vec3(s.x_, s.y_, s.z_) { }
 		Point3(const Vec3 &v): Vec3(v) { }
+		static Point3 mult(const Point3 &a, const Vec3 &b);
 };
 
 #if defined(__GNUC__) && !defined(__clang__)
@@ -183,7 +184,7 @@ inline bool  operator == (const Point3 &a, const Point3 &b)
 bool  operator == (const Vec3 &a, const Vec3 &b);
 bool  operator != (const Vec3 &a, const Vec3 &b);
 
-inline Point3 mult_global(const Point3 &a, const Vec3 &b)
+inline Point3 Point3::mult(const Point3 &a, const Vec3 &b)
 {
 	return Point3(a.x_ * b.x_, a.y_ * b.y_, a.z_ * b.z_);
 }

@@ -126,7 +126,7 @@ Point3 TextureMapperNode::doMapping(const Point3 &p, const Vec3 &n) const
 		default: break;
 	}
 	// Texture scale and offset
-	texpt = mult_global(texpt, scale_) + offset_;
+	texpt = Point3::mult(texpt, scale_) + offset_;
 	return texpt;
 }
 

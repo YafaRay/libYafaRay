@@ -55,6 +55,10 @@ class BackgroundLight final : public Light
 		float dirPdf(const Vec3 dir) const;
 		float calcFromSample(float s_1, float s_2, float &u, float &v, bool inv = false) const;
 		float calcFromDir(const Vec3 &dir, float &u, float &v, bool inv = false) const;
+		static constexpr float addOff(float v);
+		static int clampSample(int s, int m);
+		static float clampZero_global(float val);
+		static float sinSample_global(float s);
 
 		std::unique_ptr<std::unique_ptr<Pdf1D>[]> u_dist_;
 		std::unique_ptr<Pdf1D> v_dist_;
@@ -64,6 +68,13 @@ class BackgroundLight final : public Light
 		float a_pdf_;
 		float world_pi_factor_;
 		bool abs_inter_;
+
+		static constexpr int max_vsamples_ = 360;
+		static constexpr int max_usamples_ = 720;
+		static constexpr int min_samples_ = 16;
+
+		static constexpr float smpl_off_ = 0.4999f;
+		static constexpr float sigma_ = 0.000001f;
 };
 
 END_YAFARAY

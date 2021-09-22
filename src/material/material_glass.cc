@@ -41,7 +41,7 @@ GlassMaterial::GlassMaterial(Logger &logger, float ior, Rgb filt_c, const Rgb &s
 	if(disp_pow > 0.0)
 	{
 		disperse_ = true;
-		cauchyCoefficients_global(ior, disp_pow, cauchy_a_, cauchy_b_);
+		spectrum::cauchyCoefficients(ior, disp_pow, cauchy_a_, cauchy_b_);
 		bsdf_flags_ |= BsdfFlags::Dispersive;
 	}
 
@@ -84,8 +84,8 @@ Rgb GlassMaterial::sample(const RenderData &render_data, const SurfacePoint &sp,
 		float cur_cauchy_a = cauchy_a_;
 		float cur_cauchy_b = cauchy_b_;
 
-		if(ior_shader_) cauchyCoefficients_global(cur_ior, dispersion_power_, cur_cauchy_a, cur_cauchy_b);
-		cur_ior = getIor_global(render_data.wavelength_, cur_cauchy_a, cur_cauchy_b);
+		if(ior_shader_) spectrum::cauchyCoefficients(cur_ior, dispersion_power_, cur_cauchy_a, cur_cauchy_b);
+		cur_ior = spectrum::getIor(render_data.wavelength_, cur_cauchy_a, cur_cauchy_b);
 
 		if(Vec3::refract(n, wo, refdir, cur_ior))
 		{
@@ -136,8 +136,8 @@ Rgb GlassMaterial::sample(const RenderData &render_data, const SurfacePoint &sp,
 		{
 			float cur_cauchy_a = cauchy_a_;
 			float cur_cauchy_b = cauchy_b_;
-			if(ior_shader_) cauchyCoefficients_global(cur_ior, dispersion_power_, cur_cauchy_a, cur_cauchy_b);
-			cur_ior = getIor_global(render_data.wavelength_, cur_cauchy_a, cur_cauchy_b);
+			if(ior_shader_) spectrum::cauchyCoefficients(cur_ior, dispersion_power_, cur_cauchy_a, cur_cauchy_b);
+			cur_ior = spectrum::getIor(render_data.wavelength_, cur_cauchy_a, cur_cauchy_b);
 		}
 
 		if(Vec3::refract(n, wo, refdir, cur_ior))
@@ -248,8 +248,8 @@ Material::Specular GlassMaterial::getSpecular(const RenderData &render_data, con
 	{
 		float cur_cauchy_a = cauchy_a_;
 		float cur_cauchy_b = cauchy_b_;
-		if(ior_shader_) cauchyCoefficients_global(cur_ior, dispersion_power_, cur_cauchy_a, cur_cauchy_b);
-		cur_ior = getIor_global(render_data.wavelength_, cur_cauchy_a, cur_cauchy_b);
+		if(ior_shader_) spectrum::cauchyCoefficients(cur_ior, dispersion_power_, cur_cauchy_a, cur_cauchy_b);
+		cur_ior = spectrum::getIor(render_data.wavelength_, cur_cauchy_a, cur_cauchy_b);
 	}
 
 	if(Vec3::refract(n, wo, refdir, cur_ior))
