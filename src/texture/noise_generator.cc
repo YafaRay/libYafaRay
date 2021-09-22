@@ -660,12 +660,12 @@ float FBmMusgrave::operator()(const Point3 &pt) const
 	Point3 tp(pt);
 	for(int i = 0; i < (int)octaves_; i++)
 	{
-		value += getSignedNoise_global(n_gen_, tp) * pwr;
+		value += NoiseGenerator::getSignedNoise(n_gen_, tp) * pwr;
 		pwr *= pw_hl;
 		tp *= lacunarity_;
 	}
 	float rmd = octaves_ - floor(octaves_);
-	if(rmd != 0.f) value += rmd * getSignedNoise_global(n_gen_, tp) * pwr;
+	if(rmd != 0.f) value += rmd * NoiseGenerator::getSignedNoise(n_gen_, tp) * pwr;
 	return value;
 }
 
@@ -689,12 +689,12 @@ float MFractalMusgrave::operator()(const Point3 &pt) const
 	Point3 tp(pt);
 	for(int i = 0; i < (int)octaves_; i++)
 	{
-		value *= (pwr * getSignedNoise_global(n_gen_, tp) + (float)1.0);
+		value *= (pwr * NoiseGenerator::getSignedNoise(n_gen_, tp) + (float)1.0);
 		pwr *= pw_hl;
 		tp *= lacunarity_;
 	}
 	float rmd = octaves_ - floor(octaves_);
-	if(rmd != (float)0.0) value *= (rmd * getSignedNoise_global(n_gen_, tp) * pwr + (float)1.0);
+	if(rmd != (float)0.0) value *= (rmd * NoiseGenerator::getSignedNoise(n_gen_, tp) * pwr + (float)1.0);
 	return value;
 }
 
@@ -716,12 +716,12 @@ float HeteroTerrainMusgrave::operator()(const Point3 &pt) const
 	Point3 tp(pt);
 
 	// first unscaled octave of function; later octaves are scaled
-	float value = offset_ + getSignedNoise_global(n_gen_, tp);
+	float value = offset_ + NoiseGenerator::getSignedNoise(n_gen_, tp);
 	tp *= lacunarity_;
 	float increment;
 	for(int i = 1; i < (int)octaves_; i++)
 	{
-		increment = (getSignedNoise_global(n_gen_, tp) + offset_) * pwr * value;
+		increment = (NoiseGenerator::getSignedNoise(n_gen_, tp) + offset_) * pwr * value;
 		value += increment;
 		pwr *= pw_hl;
 		tp *= lacunarity_;
@@ -730,7 +730,7 @@ float HeteroTerrainMusgrave::operator()(const Point3 &pt) const
 	float rmd = octaves_ - floor(octaves_);
 	if(rmd != (float)0.0)
 	{
-		increment = (getSignedNoise_global(n_gen_, tp) + offset_) * pwr * value;
+		increment = (NoiseGenerator::getSignedNoise(n_gen_, tp) + offset_) * pwr * value;
 		value += rmd * increment;
 	}
 
@@ -751,14 +751,14 @@ float HybridMFractalMusgrave::operator()(const Point3 &pt) const
 	float pwr = pw_hl;	// starts with i=1 instead of 0
 	Point3 tp(pt);
 
-	float result = getSignedNoise_global(n_gen_, tp) + offset_;
+	float result = NoiseGenerator::getSignedNoise(n_gen_, tp) + offset_;
 	float weight = gain_ * result;
 	tp *= lacunarity_;
 
 	for(int i = 1; (weight > (float)0.001) && (i < (int)octaves_); i++)
 	{
 		if(weight > (float)1.0)  weight = (float)1.0;
-		float signal = (getSignedNoise_global(n_gen_, tp) + offset_) * pwr;
+		float signal = (NoiseGenerator::getSignedNoise(n_gen_, tp) + offset_) * pwr;
 		pwr *= pw_hl;
 		result += weight * signal;
 		weight *= gain_ * signal;
@@ -766,7 +766,7 @@ float HybridMFractalMusgrave::operator()(const Point3 &pt) const
 	}
 
 	float rmd = octaves_ - floor(octaves_);
-	if(rmd != (float)0.0) result += rmd * ((getSignedNoise_global(n_gen_, tp) + offset_) * pwr);
+	if(rmd != (float)0.0) result += rmd * ((NoiseGenerator::getSignedNoise(n_gen_, tp) + offset_) * pwr);
 
 	return result;
 
@@ -787,7 +787,7 @@ float RidgedMFractalMusgrave::operator()(const Point3 &pt) const
 	float pwr = pw_hl;	// starts with i=1 instead of 0
 	Point3 tp(pt);
 
-	float signal = offset_ - std::abs(getSignedNoise_global(n_gen_, tp));
+	float signal = offset_ - std::abs(NoiseGenerator::getSignedNoise(n_gen_, tp));
 	signal *= signal;
 	float result = signal;
 	float weight = 1.0;
@@ -797,7 +797,7 @@ float RidgedMFractalMusgrave::operator()(const Point3 &pt) const
 		tp *= lacunarity_;
 		weight = signal * gain_;
 		if(weight > (float)1.0) weight = (float)1.0; else if(weight < (float)0.0) weight = (float)0.0;
-		signal = offset_ - std::abs(getSignedNoise_global(n_gen_, tp));
+		signal = offset_ - std::abs(NoiseGenerator::getSignedNoise(n_gen_, tp));
 		signal *= signal;
 		signal *= weight;
 		result += signal * pwr;
@@ -812,7 +812,7 @@ float RidgedMFractalMusgrave::operator()(const Point3 &pt) const
 
 
 // color cell noise, used by voronoi shader block
-Rgba cellNoiseColor_global(const Point3 &pt)
+Rgba NoiseGenerator::cellNoiseColor(const Point3 &pt)
 {
 	int xi = (int)(floor(pt.x_));
 	int yi = (int)(floor(pt.y_));
@@ -822,7 +822,7 @@ Rgba cellNoiseColor_global(const Point3 &pt)
 }
 
 // turbulence function used by basic blocks
-float turbulence_global(const NoiseGenerator *ngen, const Point3 &pt, int oct, float size, bool hard)
+float NoiseGenerator::turbulence(const NoiseGenerator *ngen, const Point3 &pt, int oct, float size, bool hard)
 {
 	float val, amp = 1, sum = 0;
 	Point3 tp = ngen->offset(pt) * size;	// only blendernoise adds offset

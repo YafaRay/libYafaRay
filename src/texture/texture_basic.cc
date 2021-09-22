@@ -108,7 +108,7 @@ CloudsTexture::CloudsTexture(Logger &logger, int dep, float sz, bool hd,
 
 float CloudsTexture::getFloat(const Point3 &p, const MipMapParams *mipmap_params) const
 {
-	float v = turbulence_global(n_gen_.get(), p, depth_, size_, hard_);
+	float v = NoiseGenerator::turbulence(n_gen_.get(), p, depth_, size_, hard_);
 	if(bias_ != BiasType::None)
 	{
 		v *= v;
@@ -179,7 +179,7 @@ MarbleTexture::MarbleTexture(Logger &logger, int oct, float sz, const Rgb &c_1, 
 
 float MarbleTexture::getFloat(const Point3 &p, const MipMapParams *mipmap_params) const
 {
-	float w = (p.x_ + p.y_ + p.z_) * 5.f + ((turb_ == 0.f) ? 0.f : turb_ * turbulence_global(n_gen_.get(), p, octaves_, size_, hard_));
+	float w = (p.x_ + p.y_ + p.z_) * 5.f + ((turb_ == 0.f) ? 0.f : turb_ * NoiseGenerator::turbulence(n_gen_.get(), p, octaves_, size_, hard_));
 	switch(wshape_)
 	{
 		case Shape::Saw:
@@ -264,7 +264,7 @@ float WoodTexture::getFloat(const Point3 &p, const MipMapParams *mipmap_params) 
 		w = math::sqrt(p.x_ * p.x_ + p.y_ * p.y_ + p.z_ * p.z_) * 20.f;
 	else
 		w = (p.x_ + p.y_ + p.z_) * 10.f;
-	w += (turb_ == 0.0) ? 0.0 : turb_ * turbulence_global(n_gen_.get(), p, octaves_, size_, hard_);
+	w += (turb_ == 0.0) ? 0.0 : turb_ * NoiseGenerator::turbulence(n_gen_.get(), p, octaves_, size_, hard_);
 	switch(wshape_)
 	{
 		case Shape::Saw:
@@ -425,10 +425,10 @@ Rgba VoronoiTexture::getColor(const Point3 &p, const MipMapParams *mipmap_params
 	if(color_ramp_) return applyColorAdjustments(color_ramp_->getColorInterpolated(inte));
 	else if(color_mode_ != ColorMode::IntensityWithoutColor)
 	{
-		col += aw_1_ * cellNoiseColor_global(v_gen_.getPoint(0, pa));
-		col += aw_2_ * cellNoiseColor_global(v_gen_.getPoint(1, pa));
-		col += aw_3_ * cellNoiseColor_global(v_gen_.getPoint(2, pa));
-		col += aw_4_ * cellNoiseColor_global(v_gen_.getPoint(3, pa));
+		col += aw_1_ * NoiseGenerator::cellNoiseColor(v_gen_.getPoint(0, pa));
+		col += aw_2_ * NoiseGenerator::cellNoiseColor(v_gen_.getPoint(1, pa));
+		col += aw_3_ * NoiseGenerator::cellNoiseColor(v_gen_.getPoint(2, pa));
+		col += aw_4_ * NoiseGenerator::cellNoiseColor(v_gen_.getPoint(3, pa));
 		if(color_mode_ == ColorMode::PositionOutline || color_mode_ == ColorMode::PositionOutlineIntensity)
 		{
 			float t_1 = (v_gen_.getDistance(1, da) - v_gen_.getDistance(0, da)) * 10.f;
@@ -587,8 +587,8 @@ float DistortedNoiseTexture::getFloat(const Point3 &p, const MipMapParams *mipma
 	// get a random vector and scale the randomization
 	const Point3 ofs(13.5, 13.5, 13.5);
 	const Point3 tp(p * size_);
-	const Point3 rv(getSignedNoise_global(n_gen_1_.get(), tp + ofs), getSignedNoise_global(n_gen_1_.get(), tp), getSignedNoise_global(n_gen_1_.get(), tp - ofs));
-	return applyIntensityContrastAdjustments(getSignedNoise_global(n_gen_2_.get(), tp + rv * distort_));	// distorted-domain noise
+	const Point3 rv(NoiseGenerator::getSignedNoise(n_gen_1_.get(), tp + ofs), NoiseGenerator::getSignedNoise(n_gen_1_.get(), tp), NoiseGenerator::getSignedNoise(n_gen_1_.get(), tp - ofs));
+	return applyIntensityContrastAdjustments(NoiseGenerator::getSignedNoise(n_gen_2_.get(), tp + rv * distort_));	// distorted-domain noise
 }
 
 Rgba DistortedNoiseTexture::getColor(const Point3 &p, const MipMapParams *mipmap_params) const

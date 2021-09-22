@@ -89,7 +89,7 @@ struct PathEvalVertex
 };
 
 
-void clearPath_global(std::vector<PathEvalVertex> &p, int s, int t)
+void BidirectionalIntegrator::clearPath(std::vector<PathEvalVertex> &p, int s, int t)
 {
 #if BIDIR_DEBUG
 	for(int i = 0; i < s + t; ++i)
@@ -103,7 +103,7 @@ void clearPath_global(std::vector<PathEvalVertex> &p, int s, int t)
 #endif
 }
 
-void checkPath_global(std::vector<PathEvalVertex> &p, int s, int t)
+void BidirectionalIntegrator::checkPath(std::vector<PathEvalVertex> &p, int s, int t)
 {
 #if BIDIR_DEBUG
 	if(logger_.isDebug())
@@ -333,9 +333,9 @@ Rgba BidirectionalIntegrator::integrate(RenderData &render_data, const DiffRay &
 		// TEST! create a light image (t == 1)
 		for(int s = 2; s <= n_light; ++s)
 		{
-			clearPath_global(path_data.path_, s, 1);
+			clearPath(path_data.path_, s, 1);
 			if(!connectPathE(render_view, render_data, s, path_data)) continue;
-			checkPath_global(path_data.path_, s, 1);
+			checkPath(path_data.path_, s, 1);
 			float wt = pathWeight(render_data, s, 1, path_data);
 			if(wt > 0.f)
 			{
@@ -356,7 +356,7 @@ Rgba BidirectionalIntegrator::integrate(RenderData &render_data, const DiffRay &
 			if(path_data.eye_path_[t - 1].sp_.light_)
 			{
 				// pathWeight_0t computes required probabilities, since no connection is required
-				clearPath_global(path_data.path_, 0, t);
+				clearPath(path_data.path_, 0, t);
 				// unless someone proves the necessity, directly visible lights (s+t==2) will never be connected via light vertices
 				wt = (t == 2) ? 1.f : pathWeight0T(render_data, t, path_data);
 				if(wt > 0.f)
@@ -371,13 +371,13 @@ Rgba BidirectionalIntegrator::integrate(RenderData &render_data, const DiffRay &
 			// direct lighting strategy (desperately needs adaption...):
 			Ray d_ray;
 			Rgb dcol;
-			clearPath_global(path_data.path_, 1, t);
+			clearPath(path_data.path_, 1, t);
 			bool o_singular_l = path_data.singular_l_;  // will be overwritten from connectLPath...
 			float o_pdf_illum = path_data.pdf_illum_; // will be overwritten from connectLPath...
 			float o_pdf_emit = path_data.pdf_emit_;   // will be overwritten from connectLPath...
 			if(connectLPath(render_data, t, path_data, d_ray, dcol))
 			{
-				checkPath_global(path_data.path_, 1, t);
+				checkPath(path_data.path_, 1, t);
 				wt = pathWeight(render_data, 1, t, path_data);
 				if(wt > 0.f)
 				{
@@ -392,9 +392,9 @@ Rgba BidirectionalIntegrator::integrate(RenderData &render_data, const DiffRay &
 			path_data.light_ = lights_.size() > 0 ? lights_[light_num] : 0;
 			for(int s = 2; s <= n_light; ++s)
 			{
-				clearPath_global(path_data.path_, s, t);
+				clearPath(path_data.path_, s, t);
 				if(!connectPaths(render_data, s, t, path_data)) continue;
-				checkPath_global(path_data.path_, s, t);
+				checkPath(path_data.path_, s, t);
 				wt = pathWeight(render_data, s, t, path_data);
 				if(wt > 0.f)
 				{
@@ -524,7 +524,7 @@ int BidirectionalIntegrator::createPath(RenderData &render_data, const Ray &star
 }
 
 // small utilities to make code easier (well...less impossible) to read...
-inline void copyLightSubpath_global(PathData &pd, int s, int t)
+void BidirectionalIntegrator::copyLightSubpath(PathData &pd, int s, int t)
 {
 	for(int i = 0; i < s - 1; ++i)
 	{
@@ -537,7 +537,7 @@ inline void copyLightSubpath_global(PathData &pd, int s, int t)
 	pd.path_[s - 1].g_ = pd.light_path_[s - 1].g_;
 }
 
-inline void copyEyeSubpath_global(PathData &pd, int s, int t)
+void BidirectionalIntegrator::copyEyeSubpath(PathData &pd, int s, int t)
 {
 	for(int i = s + 1, j = t - 2; j >= 0; ++i, --j)
 	{
@@ -556,7 +556,7 @@ inline void copyEyeSubpath_global(PathData &pd, int s, int t)
 
 
 //===  connect paths with s and t > 1  ===//
-inline bool BidirectionalIntegrator::connectPaths(RenderData &render_data, int s, int t, PathData &pd) const
+bool BidirectionalIntegrator::connectPaths(RenderData &render_data, int s, int t, PathData &pd) const
 {
 	const PathVertex &y = pd.light_path_[s - 1];
 	const PathVertex &z = pd.eye_path_[t - 1];
@@ -593,8 +593,8 @@ inline bool BidirectionalIntegrator::connectPaths(RenderData &render_data, int s
 	x_l.specular_ = false;
 
 	//copy values required
-	copyLightSubpath_global(pd, s, t);
-	copyEyeSubpath_global(pd, s, t);
+	copyLightSubpath(pd, s, t);
+	copyEyeSubpath(pd, s, t);
 
 	// calculate qi's...
 	if(s > min_path_length_) x_l.pdf_f_ *= std::min(0.98f, pd.f_y_.col2Bri()/* *cos_y */ / x_l.pdf_f_);
@@ -620,7 +620,7 @@ inline bool BidirectionalIntegrator::connectPaths(RenderData &render_data, int s
 }
 
 // connect path with s==1 (eye path with single light vertex)
-inline bool BidirectionalIntegrator::connectLPath(RenderData &render_data, int t, PathData &pd, Ray &l_ray, Rgb &lcol) const
+bool BidirectionalIntegrator::connectLPath(RenderData &render_data, int t, PathData &pd, Ray &l_ray, Rgb &lcol) const
 {
 	// create light sample with direct lighting strategy:
 	const PathVertex &z = pd.eye_path_[t - 1];
@@ -684,7 +684,7 @@ inline bool BidirectionalIntegrator::connectLPath(RenderData &render_data, int t
 
 	//copy values required
 	pd.path_[0].g_ = 0.f;
-	copyEyeSubpath_global(pd, 1, t);
+	copyEyeSubpath(pd, 1, t);
 
 	// calculate qi's...
 	// backward:
@@ -704,7 +704,7 @@ inline bool BidirectionalIntegrator::connectLPath(RenderData &render_data, int t
 }
 
 // connect path with t==1 (s>1)
-inline bool BidirectionalIntegrator::connectPathE(const RenderView *render_view, RenderData &render_data, int s, PathData &pd) const
+bool BidirectionalIntegrator::connectPathE(const RenderView *render_view, RenderData &render_data, int s, PathData &pd) const
 {
 	const PathVertex &y = pd.light_path_[s - 1];
 	const PathVertex &z = pd.eye_path_[0];
@@ -735,7 +735,7 @@ inline bool BidirectionalIntegrator::connectPathE(const RenderView *render_view,
 	x_e.g_ = cos_y / dist_2; // or use Ng??
 	x_e.pdf_f_ = 1.f; // unused...
 
-	copyLightSubpath_global(pd, s, 1);
+	copyLightSubpath(pd, s, 1);
 
 	// calculate qi's...
 	if(s > min_path_length_) x_l.pdf_f_ *= std::min(0.98f, pd.f_y_.col2Bri()/* *cos_y */ / x_l.pdf_f_);
@@ -826,8 +826,8 @@ float BidirectionalIntegrator::pathWeight0T(RenderData &render_data, int t, Path
 	float pdf_emit = pd.path_[0].pdf_a_0_ * vl.ds_ / cos_wo;
 	pd.path_[0].g_ = 0.f; // unused...
 	pd.path_[0].specular_ = false;
-	copyEyeSubpath_global(pd, 0, t);
-	checkPath_global(pd.path_, 0, t);
+	copyEyeSubpath(pd, 0, t);
+	checkPath(pd.path_, 0, t);
 
 	// == standard weighting procedure now == //
 
@@ -937,7 +937,7 @@ Rgb BidirectionalIntegrator::evalPathE(RenderData &render_data, int s, PathData 
 
 ////
 
-/* inline Rgb biDirIntegrator_t::estimateOneDirect(renderState_t &state, const surfacePoint_t &sp, vector3d_t wo, pathCon_t &pc) const
+/* Rgb biDirIntegrator_t::estimateOneDirect(renderState_t &state, const surfacePoint_t &sp, vector3d_t wo, pathCon_t &pc) const
 {
     Rgb lcol(0.0), scol, col(0.0);
     ray_t lightRay;

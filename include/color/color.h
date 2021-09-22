@@ -26,7 +26,7 @@
 
 #include "common/yafaray_common.h"
 #include "math/math.h"
-#include <iostream>
+#include <array>
 
 BEGIN_YAFARAY
 
@@ -337,22 +337,6 @@ inline float maxAbsDiff_global(const Rgb &a, const Rgb &b)
 	return (a - b).absmax();
 }
 
-//Matrix information from: http://www.color.org/chardata/rgb/sRGB.pdf
-static float linear_rgb_from_xyz_d_65_global[3][3] =
-{
-	{ 3.2406255f, -1.537208f,  -0.4986286f },
-	{-0.9689307f,  1.8757561f,  0.0415175f },
-	{ 0.0557101f, -0.2040211f,  1.0569959f }
-};
-
-//Inverse matrices
-static float xyz_d_65_from_linear_rgb_global[3][3] =
-{
-	{ 0.412400f,   0.357600f,   0.180500f },
-	{ 0.212600f,   0.715200f,   0.072200f },
-	{ 0.019300f,   0.119200f,   0.950500f }
-};
-
 inline float Rgb::linearRgbFromSRgb(float value_s_rgb)
 {
 	//Calculations from http://www.color.org/chardata/rgb/sRGB.pdf
@@ -369,6 +353,14 @@ inline float Rgb::sRgbFromLinearRgb(float value_linear_rgb)
 
 inline void Rgb::linearRgbFromColorSpace(ColorSpace color_space, float gamma)
 {
+	//Matrix information from: http://www.color.org/chardata/rgb/sRGB.pdf
+	static constexpr std::array<std::array<float, 3>, 3> linear_rgb_from_xyz_d_65
+	{{
+		{3.2406255f, -1.537208f, -0.4986286f},
+		{-0.9689307f, 1.8757561f, 0.0415175f},
+		{0.0557101f, -0.2040211f, 1.0569959f}
+	 }};
+
 	//NOTE: Alpha value is not converted from linear to color space and vice versa. Should it be converted?
 	if(color_space == Srgb)
 	{
@@ -379,9 +371,9 @@ inline void Rgb::linearRgbFromColorSpace(ColorSpace color_space, float gamma)
 	else if(color_space == XyzD65)
 	{
 		float old_r = r_, old_g = g_, old_b = b_;
-		r_ = linear_rgb_from_xyz_d_65_global[0][0] * old_r + linear_rgb_from_xyz_d_65_global[0][1] * old_g + linear_rgb_from_xyz_d_65_global[0][2] * old_b;
-		g_ = linear_rgb_from_xyz_d_65_global[1][0] * old_r + linear_rgb_from_xyz_d_65_global[1][1] * old_g + linear_rgb_from_xyz_d_65_global[1][2] * old_b;
-		b_ = linear_rgb_from_xyz_d_65_global[2][0] * old_r + linear_rgb_from_xyz_d_65_global[2][1] * old_g + linear_rgb_from_xyz_d_65_global[2][2] * old_b;
+		r_ = linear_rgb_from_xyz_d_65[0][0] * old_r + linear_rgb_from_xyz_d_65[0][1] * old_g + linear_rgb_from_xyz_d_65[0][2] * old_b;
+		g_ = linear_rgb_from_xyz_d_65[1][0] * old_r + linear_rgb_from_xyz_d_65[1][1] * old_g + linear_rgb_from_xyz_d_65[1][2] * old_b;
+		b_ = linear_rgb_from_xyz_d_65[2][0] * old_r + linear_rgb_from_xyz_d_65[2][1] * old_g + linear_rgb_from_xyz_d_65[2][2] * old_b;
 	}
 	else if(color_space == RawManualGamma && gamma != 1.f)
 	{
@@ -391,6 +383,15 @@ inline void Rgb::linearRgbFromColorSpace(ColorSpace color_space, float gamma)
 
 inline void Rgb::colorSpaceFromLinearRgb(ColorSpace color_space, float gamma)
 {
+	//Matrix information from: http://www.color.org/chardata/rgb/sRGB.pdf
+	//Inverse matrices
+	static constexpr std::array<std::array<float, 3>, 3> xyz_d_65_from_linear_rgb =
+	{{
+		{ 0.412400f,   0.357600f,   0.180500f },
+		{ 0.212600f,   0.715200f,   0.072200f },
+		{ 0.019300f,   0.119200f,   0.950500f }
+	}};
+
 	//NOTE: Alpha value is not converted from linear to color space and vice versa. Should it be converted?
 	if(color_space == Srgb)
 	{
@@ -401,9 +402,9 @@ inline void Rgb::colorSpaceFromLinearRgb(ColorSpace color_space, float gamma)
 	else if(color_space == XyzD65)
 	{
 		float old_r = r_, old_g = g_, old_b = b_;
-		r_ = xyz_d_65_from_linear_rgb_global[0][0] * old_r + xyz_d_65_from_linear_rgb_global[0][1] * old_g + xyz_d_65_from_linear_rgb_global[0][2] * old_b;
-		g_ = xyz_d_65_from_linear_rgb_global[1][0] * old_r + xyz_d_65_from_linear_rgb_global[1][1] * old_g + xyz_d_65_from_linear_rgb_global[1][2] * old_b;
-		b_ = xyz_d_65_from_linear_rgb_global[2][0] * old_r + xyz_d_65_from_linear_rgb_global[2][1] * old_g + xyz_d_65_from_linear_rgb_global[2][2] * old_b;
+		r_ = xyz_d_65_from_linear_rgb[0][0] * old_r + xyz_d_65_from_linear_rgb[0][1] * old_g + xyz_d_65_from_linear_rgb[0][2] * old_b;
+		g_ = xyz_d_65_from_linear_rgb[1][0] * old_r + xyz_d_65_from_linear_rgb[1][1] * old_g + xyz_d_65_from_linear_rgb[1][2] * old_b;
+		b_ = xyz_d_65_from_linear_rgb[2][0] * old_r + xyz_d_65_from_linear_rgb[2][1] * old_g + xyz_d_65_from_linear_rgb[2][2] * old_b;
 	}
 	else if(color_space == RawManualGamma && gamma != 1.f)
 	{

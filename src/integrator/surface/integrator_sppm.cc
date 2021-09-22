@@ -40,7 +40,7 @@
 
 BEGIN_YAFARAY
 
-static constexpr int n_max_gather_global = 1000; //used to gather all the photon in the radius. seems could get a better way to do that
+constexpr int SppmIntegrator::n_max_gather_;
 
 SppmIntegrator::SppmIntegrator(Logger &logger, unsigned int d_photons, int passnum, bool transp_shad, int shadow_depth) : MonteCarloIntegrator(logger)
 {
@@ -746,7 +746,7 @@ GatherInfo SppmIntegrator::traceGatherRay(RenderData &render_data, DiffRay &ray,
 		}
 
 		// estimate radiance using photon map
-		auto gathered = std::unique_ptr<FoundPhoton[]>(new FoundPhoton[n_max_gather_global]);
+		auto gathered = std::unique_ptr<FoundPhoton[]>(new FoundPhoton[n_max_gather_]);
 
 		//if PM_IRE is on. we should estimate the initial radius using the photonMaps. (PM_IRE is only for the first pass, so not consume much time)
 		if(pm_ire_ && !hp.radius_setted_) // "waste" two gather here as it has two maps now. This make the logic simple.
@@ -774,12 +774,12 @@ GatherInfo SppmIntegrator::traceGatherRay(RenderData &render_data, DiffRay &ray,
 		float radius_2 = hp.radius_2_;
 
 		if(b_hashgrid_)
-			n_gathered = photon_grid_.gather(sp.p_, gathered.get(), n_max_gather_global, radius_2); // disable now
+			n_gathered = photon_grid_.gather(sp.p_, gathered.get(), n_max_gather_, radius_2); // disable now
 		else
 		{
 			if(diffuse_map_->nPhotons() > 0) // this is needed to avoid a runtime error.
 			{
-				n_gathered = diffuse_map_->gather(sp.p_, gathered.get(), n_max_gather_global, radius_2); //we always collected all the photon inside the radius
+				n_gathered = diffuse_map_->gather(sp.p_, gathered.get(), n_max_gather_, radius_2); //we always collected all the photon inside the radius
 			}
 
 			if(n_gathered > 0)
@@ -832,7 +832,7 @@ GatherInfo SppmIntegrator::traceGatherRay(RenderData &render_data, DiffRay &ray,
 			{
 
 				radius_2 = hp.radius_2_; //reset radius2 & nGathered
-				n_gathered = caustic_map_->gather(sp.p_, gathered.get(), n_max_gather_global, radius_2);
+				n_gathered = caustic_map_->gather(sp.p_, gathered.get(), n_max_gather_, radius_2);
 				if(n_gathered > 0)
 				{
 					Rgb surf_col(0.f);

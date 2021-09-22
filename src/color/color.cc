@@ -21,6 +21,7 @@
  */
 #include "color/color.h"
 #include "math/interpolation.h"
+#include <iostream>
 
 BEGIN_YAFARAY
 

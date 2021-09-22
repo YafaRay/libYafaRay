@@ -20,10 +20,9 @@
 #ifndef YAFARAY_NOISE_GENERATOR_H
 #define YAFARAY_NOISE_GENERATOR_H
 
+#include "common/yafaray_common.h"
 #include "geometry/vector.h"
 #include "color/color.h"
-
-#include "common/yafaray_common.h"
 
 BEGIN_YAFARAY
 
@@ -33,8 +32,10 @@ class NoiseGenerator
 		NoiseGenerator() = default;
 		virtual ~NoiseGenerator() = default;
 		virtual float operator()(const Point3 &pt) const = 0;
-		// offset only added by blendernoise
-		virtual Point3 offset(const Point3 &pt) const { return pt; }
+		virtual Point3 offset(const Point3 &pt) const { return pt; } // offset only added by blendernoise
+		static float turbulence(const NoiseGenerator *ngen, const Point3 &pt, int oct, float size, bool hard); // basic turbulence, half amplitude, double frequency defaults. returns value in range (0,1)
+		static Rgba cellNoiseColor(const Point3 &pt); // noise cell color (used with voronoi)
+		static float getSignedNoise(const NoiseGenerator *n_gen, const Point3 &pt) { return 2.f * (*n_gen)(pt) - 1.f; }
 };
 
 //---------------------------------------------------------------------------
@@ -259,19 +260,6 @@ class RidgedMFractalMusgrave final : public Musgrave
 		const NoiseGenerator *n_gen_;
 };
 
-
-// basic turbulence, half amplitude, double frequency defaults
-// returns value in range (0,1)
-float turbulence_global(const NoiseGenerator *ngen, const Point3 &pt, int oct, float size, bool hard);
-// noise cell color (used with voronoi)
-Rgba cellNoiseColor_global(const Point3 &pt);
-
-static inline float getSignedNoise_global(const NoiseGenerator *n_gen, const Point3 &pt)
-{
-	return 2.f * (*n_gen)(pt) - 1.f;
-}
-
-
 END_YAFARAY
-//---------------------------------------------------------------------------
+
 #endif  //YAFARAY_NOISE_GENERATOR_H

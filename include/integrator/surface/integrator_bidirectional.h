@@ -36,6 +36,7 @@ class PathData;
 class PathVertex;
 class ImageFilm;
 class Pdf1D;
+struct PathEvalVertex;
 
 class BidirectionalIntegrator final : public TiledIntegrator
 {
@@ -60,6 +61,10 @@ class BidirectionalIntegrator final : public TiledIntegrator
 		bool connectPathE(const RenderView *render_view, RenderData &render_data, int s, PathData &pd) const;
 		float pathWeight(RenderData &render_data, int s, int t, PathData &pd) const;
 		float pathWeight0T(RenderData &render_data, int t, PathData &pd) const;
+		static void clearPath(std::vector<PathEvalVertex> &p, int s, int t);
+		static void checkPath(std::vector<PathEvalVertex> &p, int s, int t);
+		static void copyLightSubpath(PathData &pd, int s, int t);
+		static void copyEyeSubpath(PathData &pd, int s, int t);
 
 		bool tr_shad_;        //!< calculate transparent shadows for transparent objects
 		int s_depth_;
