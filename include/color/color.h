@@ -27,6 +27,8 @@
 #include "common/yafaray_common.h"
 #include "math/math.h"
 #include <array>
+#include <ostream>
+#include <string>
 
 BEGIN_YAFARAY
 
