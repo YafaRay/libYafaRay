@@ -260,4 +260,43 @@ float Texture::applyIntensityContrastAdjustments(float tex_float) const
 	return ret;
 }
 
+void Texture::textureReadColorRamp(const ParamMap &params, Texture *tex)
+{
+	std::string mode_str, interpolation_str, hue_interpolation_str;
+	int ramp_num_items = 0;
+	params.getParam("ramp_color_mode", mode_str);
+	params.getParam("ramp_hue_interpolation", hue_interpolation_str);
+	params.getParam("ramp_interpolation", interpolation_str);
+	params.getParam("ramp_num_items", ramp_num_items);
+
+	if(ramp_num_items > 0)
+	{
+		tex->colorRampCreate(mode_str, interpolation_str, hue_interpolation_str);
+
+		for(int i = 0; i < ramp_num_items; ++i)
+		{
+			std::stringstream param_name;
+			Rgba color(0.f, 0.f, 0.f, 1.f);
+			float alpha = 1.f;
+			float position = 0.f;
+			param_name << "ramp_item_" << i << "_color";
+			params.getParam(param_name.str(), color);
+			param_name.str("");
+			param_name.clear();
+
+			param_name << "ramp_item_" << i << "_alpha";
+			params.getParam(param_name.str(), alpha);
+			param_name.str("");
+			param_name.clear();
+			color.a_ = alpha;
+
+			param_name << "ramp_item_" << i << "_position";
+			params.getParam(param_name.str(), position);
+			param_name.str("");
+			param_name.clear();
+			tex->colorRampAddItem(color, position);
+		}
+	}
+}
+
 END_YAFARAY

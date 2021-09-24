@@ -22,7 +22,7 @@
 
 BEGIN_YAFARAY
 
-std::unique_ptr<NoiseGenerator> newNoise_global(const std::string &ntype)
+std::unique_ptr<NoiseGenerator> NoiseGenerator::newNoise(const std::string &ntype)
 {
 	if(ntype == "blender")
 		return std::unique_ptr<NoiseGenerator>(new BlenderNoiseGenerator());
@@ -51,46 +51,6 @@ std::unique_ptr<NoiseGenerator> newNoise_global(const std::string &ntype)
 	return std::unique_ptr<NoiseGenerator>(new NewPerlinNoiseGenerator());
 }
 
-void textureReadColorRamp_global(const ParamMap &params, Texture *tex)
-{
-	std::string mode_str, interpolation_str, hue_interpolation_str;
-	int ramp_num_items = 0;
-	params.getParam("ramp_color_mode", mode_str);
-	params.getParam("ramp_hue_interpolation", hue_interpolation_str);
-	params.getParam("ramp_interpolation", interpolation_str);
-	params.getParam("ramp_num_items", ramp_num_items);
-
-	if(ramp_num_items > 0)
-	{
-		tex->colorRampCreate(mode_str, interpolation_str, hue_interpolation_str);
-
-		for(int i = 0; i < ramp_num_items; ++i)
-		{
-			std::stringstream param_name;
-			Rgba color(0.f, 0.f, 0.f, 1.f);
-			float alpha = 1.f;
-			float position = 0.f;
-			param_name << "ramp_item_" << i << "_color";
-			params.getParam(param_name.str(), color);
-			param_name.str("");
-			param_name.clear();
-
-			param_name << "ramp_item_" << i << "_alpha";
-			params.getParam(param_name.str(), alpha);
-			param_name.str("");
-			param_name.clear();
-			color.a_ = alpha;
-
-			param_name << "ramp_item_" << i << "_position";
-			params.getParam(param_name.str(), position);
-			param_name.str("");
-			param_name.clear();
-			tex->colorRampAddItem(color, position);
-		}
-	}
-}
-
-
 //-----------------------------------------------------------------------------------------
 // Clouds Texture
 //-----------------------------------------------------------------------------------------
@@ -103,7 +63,7 @@ CloudsTexture::CloudsTexture(Logger &logger, int dep, float sz, bool hd,
 	bias_ = BiasType::None;
 	if(btype == "positive") bias_ = BiasType::Positive;
 	else if(btype == "negative") bias_ = BiasType::Negative;
-	n_gen_ = newNoise_global(ntype);
+	n_gen_ = NoiseGenerator::newNoise(ntype);
 }
 
 float CloudsTexture::getFloat(const Point3 &p, const MipMapParams *mipmap_params) const
@@ -156,7 +116,7 @@ std::unique_ptr<Texture> CloudsTexture::factory(Logger &logger, ParamMap &params
 	auto tex = std::unique_ptr<Texture>(new CloudsTexture(logger, depth, size, hard, color_1, color_2, ntype, btype));
 	tex->setAdjustments(intensity, contrast, saturation, hue, clamp, factor_red, factor_green, factor_blue);
 
-	if(use_color_ramp) textureReadColorRamp_global(params, tex.get());
+	if(use_color_ramp) textureReadColorRamp(params, tex.get());
 
 	return tex;
 }
@@ -171,7 +131,7 @@ MarbleTexture::MarbleTexture(Logger &logger, int oct, float sz, const Rgb &c_1, 
 {
 	sharpness_ = 1.f;
 	if(shp > 1) sharpness_ = 1.f / shp;
-	n_gen_ = newNoise_global(ntype);
+	n_gen_ = NoiseGenerator::newNoise(ntype);
 	if(shape == "saw") wshape_ = Shape::Saw;
 	else if(shape == "tri") wshape_ = Shape::Tri;
 	else wshape_ = Shape::Sin;
@@ -236,7 +196,7 @@ std::unique_ptr<Texture> MarbleTexture::factory(Logger &logger, ParamMap &params
 
 	auto tex = std::unique_ptr<Texture>(new MarbleTexture(logger, oct, sz, col_1, col_2, turb, shp, hrd, ntype, shape));
 	tex->setAdjustments(intensity, contrast, saturation, hue, clamp, factor_red, factor_green, factor_blue);
-	if(use_color_ramp) textureReadColorRamp_global(params, tex.get());
+	if(use_color_ramp) textureReadColorRamp(params, tex.get());
 
 	return tex;
 }
@@ -251,7 +211,7 @@ WoodTexture::WoodTexture(Logger &logger, int oct, float sz, const Rgb &c_1, cons
 	: Texture(logger), octaves_(oct), color_1_(c_1), color_2_(c_2), turb_(turb), size_(sz), hard_(hrd)
 {
 	rings_ = (wtype == "rings");
-	n_gen_ = newNoise_global(ntype);
+	n_gen_ = NoiseGenerator::newNoise(ntype);
 	if(shape == "saw") wshape_ = Shape::Saw;
 	else if(shape == "tri") wshape_ = Shape::Tri;
 	else wshape_ = Shape::Sin;
@@ -325,7 +285,7 @@ std::unique_ptr<Texture> WoodTexture::factory(Logger &logger, ParamMap &params, 
 
 	auto tex = std::unique_ptr<Texture>(new WoodTexture(logger, oct, sz, col_1, col_2, turb, hrd, ntype, wtype, shape));
 	tex->setAdjustments(intensity, contrast, saturation, hue, clamp, factor_red, factor_green, factor_blue);
-	if(use_color_ramp) textureReadColorRamp_global(params, tex.get());
+	if(use_color_ramp) textureReadColorRamp(params, tex.get());
 
 	return tex;
 }
@@ -368,7 +328,7 @@ std::unique_ptr<Texture> RgbCubeTexture::factory(Logger &logger, ParamMap &param
 
 	auto tex = std::unique_ptr<Texture>(new RgbCubeTexture(logger));
 	tex->setAdjustments(intensity, contrast, saturation, hue, clamp, factor_red, factor_green, factor_blue);
-	if(use_color_ramp) textureReadColorRamp_global(params, tex.get());
+	if(use_color_ramp) textureReadColorRamp(params, tex.get());
 
 	return tex;
 }
@@ -488,7 +448,7 @@ std::unique_ptr<Texture> VoronoiTexture::factory(Logger &logger, ParamMap &param
 
 	auto tex = std::unique_ptr<Texture>(new VoronoiTexture(logger, col_1, col_2, color_mode, fw_1, fw_2, fw_3, fw_4, mex, sz, isc, dname));
 	tex->setAdjustments(intensity, contrast, saturation, hue, clamp, factor_red, factor_green, factor_blue);
-	if(use_color_ramp) textureReadColorRamp_global(params, tex.get());
+	if(use_color_ramp) textureReadColorRamp(params, tex.get());
 
 	return tex;
 }
@@ -503,7 +463,7 @@ MusgraveTexture::MusgraveTexture(Logger &logger, const Rgb &c_1, const Rgb &c_2,
 								 const std::string &ntype, const std::string &mtype)
 	: Texture(logger), color_1_(c_1), color_2_(c_2), size_(size), iscale_(iscale)
 {
-	n_gen_ = newNoise_global(ntype);
+	n_gen_ = NoiseGenerator::newNoise(ntype);
 	if(mtype == "multifractal")
 		m_gen_ = std::unique_ptr<Musgrave>(new MFractalMusgrave(h, lacu, octs, n_gen_.get()));
 	else if(mtype == "heteroterrain")
@@ -563,7 +523,7 @@ std::unique_ptr<Texture> MusgraveTexture::factory(Logger &logger, ParamMap &para
 
 	auto tex = std::unique_ptr<Texture>(new MusgraveTexture(logger, col_1, col_2, h, lacu, octs, offs, gain, size, iscale, ntype, mtype));
 	tex->setAdjustments(intensity, contrast, saturation, hue, clamp, factor_red, factor_green, factor_blue);
-	if(use_color_ramp) textureReadColorRamp_global(params, tex.get());
+	if(use_color_ramp) textureReadColorRamp(params, tex.get());
 
 	return tex;
 }
@@ -577,8 +537,8 @@ DistortedNoiseTexture::DistortedNoiseTexture(Logger &logger, const Rgb &c_1, con
 											 const std::string &noiseb_1, const std::string noiseb_2)
 	: Texture(logger), color_1_(c_1), color_2_(c_2), distort_(distort), size_(size)
 {
-	n_gen_1_ = newNoise_global(noiseb_1);
-	n_gen_2_ = newNoise_global(noiseb_2);
+	n_gen_1_ = NoiseGenerator::newNoise(noiseb_1);
+	n_gen_2_ = NoiseGenerator::newNoise(noiseb_2);
 }
 
 
@@ -628,7 +588,7 @@ std::unique_ptr<Texture> DistortedNoiseTexture::factory(Logger &logger, ParamMap
 
 	auto tex = std::unique_ptr<Texture>(new DistortedNoiseTexture(logger, col_1, col_2, dist, size, ntype_1, ntype_2));
 	tex->setAdjustments(intensity, contrast, saturation, hue, clamp, factor_red, factor_green, factor_blue);
-	if(use_color_ramp) textureReadColorRamp_global(params, tex.get());
+	if(use_color_ramp) textureReadColorRamp(params, tex.get());
 
 	return tex;
 }
@@ -724,7 +684,7 @@ std::unique_ptr<Texture> BlendTexture::factory(Logger &logger, ParamMap &params,
 
 	auto tex = std::unique_ptr<Texture>(new BlendTexture(logger, stype, use_flip_axis));
 	tex->setAdjustments(intensity, contrast, saturation, hue, clamp, factor_red, factor_green, factor_blue);
-	if(use_color_ramp) textureReadColorRamp_global(params, tex.get());
+	if(use_color_ramp) textureReadColorRamp(params, tex.get());
 
 	return tex;
 }

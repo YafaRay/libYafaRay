@@ -73,6 +73,7 @@ class Texture
 		static void invSphereMap(float u, float v, Vec3 &p);
 
 	protected:
+		static void textureReadColorRamp(const ParamMap &params, Texture *tex);
 		float adj_intensity_ = 1.f;
 		float adj_contrast_ = 1.f;
 		float adj_saturation_ = 1.f;

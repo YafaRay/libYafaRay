@@ -264,30 +264,32 @@ MinMax MinMax::find(const Vec3Double values)
 	return min_max;
 }
 
-int planeBoxOverlap_global(const Vec3Double &normal, const Vec3Double &vert, const Vec3Double &maxbox)	// -NJMP-
+namespace triangle_overlap
+{
+int planeBoxOverlap(const Vec3Double &normal, const Vec3Double &vert, const Vec3Double &maxbox)    // -NJMP-
 {
 	Vec3Double vmin, vmax;
 	for(int axis = 0; axis < 3; ++axis)
 	{
-		const double v = vert[axis];					// -NJMP-
+		const double v = vert[axis];                    // -NJMP-
 		if(normal[axis] > 0)
 		{
-			vmin[axis] = -maxbox[axis] - v;	// -NJMP-
-			vmax[axis] = maxbox[axis] - v;	// -NJMP-
+			vmin[axis] = -maxbox[axis] - v;    // -NJMP-
+			vmax[axis] = maxbox[axis] - v;    // -NJMP-
 		}
 		else
 		{
-			vmin[axis] = maxbox[axis] - v;	// -NJMP-
-			vmax[axis] = -maxbox[axis] - v;	// -NJMP-
+			vmin[axis] = maxbox[axis] - v;    // -NJMP-
+			vmax[axis] = -maxbox[axis] - v;    // -NJMP-
 		}
 	}
-	if(Vec3Double::dot(normal, vmin) > 0) return 0;	// -NJMP-
-	if(Vec3Double::dot(normal, vmax) >= 0) return 1;	// -NJMP-
+	if(Vec3Double::dot(normal, vmin) > 0) return 0;    // -NJMP-
+	if(Vec3Double::dot(normal, vmax) >= 0) return 1;    // -NJMP-
 
 	return 0;
 }
 
-bool axisTest_global(double a, double b, double f_a, double f_b, const Vec3Double &v_a, const Vec3Double &v_b, const Vec3Double &boxhalfsize, int axis)
+bool axisTest(double a, double b, double f_a, double f_b, const Vec3Double &v_a, const Vec3Double &v_b, const Vec3Double &boxhalfsize, int axis)
 {
 	const int axis_a = (axis == Axis::X ? Axis::Y : Axis::X);
 	const int axis_b = (axis == Axis::Z ? Axis::Y : Axis::Z);
@@ -309,6 +311,8 @@ bool axisTest_global(double a, double b, double f_a, double f_b, const Vec3Doubl
 	if(min > rad || max < -rad) return false;
 	else return true;
 }
+
+} //namespace triangle_overlap
 
 bool TrianglePrimitive::triBoxOverlap(const Vec3Double &boxcenter, const Vec3Double &boxhalfsize, const std::array<Vec3Double, 3> &triverts)
 {
@@ -339,17 +343,17 @@ bool TrianglePrimitive::triBoxOverlap(const Vec3Double &boxcenter, const Vec3Dou
 		{std::abs(tri_edges[1][Axis::X]), std::abs(tri_edges[1][Axis::Y]), std::abs(tri_edges[1][Axis::Z])},
 		{std::abs(tri_edges[2][Axis::X]), std::abs(tri_edges[2][Axis::Y]), std::abs(tri_edges[2][Axis::Z])}
 	}};
-	if(!axisTest_global(tri_edges[0][Axis::Z], tri_edges[0][Axis::Y], fe[0][Axis::Z], fe[0][Axis::Y], tri_verts[0], tri_verts[2], boxhalfsize, Axis::X)) return false;
-	if(!axisTest_global(tri_edges[0][Axis::Z], tri_edges[0][Axis::X], fe[0][Axis::Z], fe[0][Axis::X], tri_verts[0], tri_verts[2], boxhalfsize, Axis::Y)) return false;
-	if(!axisTest_global(tri_edges[0][Axis::Y], tri_edges[0][Axis::X], fe[0][Axis::Y], fe[0][Axis::X], tri_verts[1], tri_verts[2], boxhalfsize, Axis::Z)) return false;
+	if(!triangle_overlap::axisTest(tri_edges[0][Axis::Z], tri_edges[0][Axis::Y], fe[0][Axis::Z], fe[0][Axis::Y], tri_verts[0], tri_verts[2], boxhalfsize, Axis::X)) return false;
+	if(!triangle_overlap::axisTest(tri_edges[0][Axis::Z], tri_edges[0][Axis::X], fe[0][Axis::Z], fe[0][Axis::X], tri_verts[0], tri_verts[2], boxhalfsize, Axis::Y)) return false;
+	if(!triangle_overlap::axisTest(tri_edges[0][Axis::Y], tri_edges[0][Axis::X], fe[0][Axis::Y], fe[0][Axis::X], tri_verts[1], tri_verts[2], boxhalfsize, Axis::Z)) return false;
 
-	if(!axisTest_global(tri_edges[1][Axis::Z], tri_edges[1][Axis::Y], fe[1][Axis::Z], fe[1][Axis::Y], tri_verts[0], tri_verts[2], boxhalfsize, Axis::X)) return false;
-	if(!axisTest_global(tri_edges[1][Axis::Z], tri_edges[1][Axis::X], fe[1][Axis::Z], fe[1][Axis::X], tri_verts[0], tri_verts[2], boxhalfsize, Axis::Y)) return false;
-	if(!axisTest_global(tri_edges[1][Axis::Y], tri_edges[1][Axis::X], fe[1][Axis::Y], fe[1][Axis::X], tri_verts[0], tri_verts[1], boxhalfsize, Axis::Z)) return false;
+	if(!triangle_overlap::axisTest(tri_edges[1][Axis::Z], tri_edges[1][Axis::Y], fe[1][Axis::Z], fe[1][Axis::Y], tri_verts[0], tri_verts[2], boxhalfsize, Axis::X)) return false;
+	if(!triangle_overlap::axisTest(tri_edges[1][Axis::Z], tri_edges[1][Axis::X], fe[1][Axis::Z], fe[1][Axis::X], tri_verts[0], tri_verts[2], boxhalfsize, Axis::Y)) return false;
+	if(!triangle_overlap::axisTest(tri_edges[1][Axis::Y], tri_edges[1][Axis::X], fe[1][Axis::Y], fe[1][Axis::X], tri_verts[0], tri_verts[1], boxhalfsize, Axis::Z)) return false;
 
-	if(!axisTest_global(tri_edges[2][Axis::Z], tri_edges[2][Axis::Y], fe[2][Axis::Z], fe[2][Axis::Y], tri_verts[0], tri_verts[1], boxhalfsize, Axis::X)) return false;
-	if(!axisTest_global(tri_edges[2][Axis::Z], tri_edges[2][Axis::X], fe[2][Axis::Z], fe[2][Axis::X], tri_verts[0], tri_verts[1], boxhalfsize, Axis::Y)) return false;
-	if(!axisTest_global(tri_edges[2][Axis::Y], tri_edges[2][Axis::X], fe[2][Axis::Y], fe[2][Axis::X], tri_verts[1], tri_verts[2], boxhalfsize, Axis::Z)) return false;
+	if(!triangle_overlap::axisTest(tri_edges[2][Axis::Z], tri_edges[2][Axis::Y], fe[2][Axis::Z], fe[2][Axis::Y], tri_verts[0], tri_verts[1], boxhalfsize, Axis::X)) return false;
+	if(!triangle_overlap::axisTest(tri_edges[2][Axis::Z], tri_edges[2][Axis::X], fe[2][Axis::Z], fe[2][Axis::X], tri_verts[0], tri_verts[1], boxhalfsize, Axis::Y)) return false;
+	if(!triangle_overlap::axisTest(tri_edges[2][Axis::Y], tri_edges[2][Axis::X], fe[2][Axis::Y], fe[2][Axis::X], tri_verts[1], tri_verts[2], boxhalfsize, Axis::Z)) return false;
 
 	/* Bullet 1: */
 	/*  first test overlap in the {x,y,z}-directions */
@@ -369,7 +373,7 @@ bool TrianglePrimitive::triBoxOverlap(const Vec3Double &boxcenter, const Vec3Dou
 	/*  compute plane equation of triangle: normal*x+d=0 */
 	const Vec3Double normal = Vec3Double::cross(tri_edges[0], tri_edges[1]);
 	// -NJMP- (line removed here)
-	if(!planeBoxOverlap_global(normal, tri_verts[0], boxhalfsize)) return false;	// -NJMP-
+	if(!triangle_overlap::planeBoxOverlap(normal, tri_verts[0], boxhalfsize)) return false;	// -NJMP-
 
 	return true;   /* box and triangle overlaps */
 }

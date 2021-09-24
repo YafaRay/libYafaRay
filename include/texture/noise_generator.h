@@ -23,6 +23,7 @@
 #include "common/yafaray_common.h"
 #include "geometry/vector.h"
 #include "color/color.h"
+#include <memory>
 
 BEGIN_YAFARAY
 
@@ -31,6 +32,7 @@ class NoiseGenerator
 	public:
 		NoiseGenerator() = default;
 		virtual ~NoiseGenerator() = default;
+		static std::unique_ptr<NoiseGenerator> newNoise(const std::string &ntype);
 		virtual float operator()(const Point3 &pt) const = 0;
 		virtual Point3 offset(const Point3 &pt) const { return pt; } // offset only added by blendernoise
 		static float turbulence(const NoiseGenerator *ngen, const Point3 &pt, int oct, float size, bool hard); // basic turbulence, half amplitude, double frequency defaults. returns value in range (0,1)
