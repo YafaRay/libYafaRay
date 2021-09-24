@@ -149,9 +149,6 @@ class ImageFilm final
 		void generateToonAndDebugObjectEdges(int xstart, int width, int ystart, int height, bool drawborder, const EdgeToonParams &edge_params);
 		const ImageLayers *getImageLayers() const { return &film_image_layers_; }
 		const ImageLayers *getExportedImageLayers() const { return &exported_image_layers_; }
-		void setRenderViews(const std::map<std::string, std::unique_ptr<RenderView>> *render_views) { render_views_ = render_views; }
-
-		void setRenderCallbacks(RenderCallbacks &render_callbacks);
 
 		static std::string printRenderStats(const RenderControl &render_control, int width, int height);
 
@@ -196,8 +193,7 @@ class ImageFilm final
 		std::unique_ptr<ImageBuffer2D<Rgb>> density_image_; //!< storage for z-buffer channel
 		Logger &logger_;
 		const std::map<std::string, std::unique_ptr<RenderView>> *render_views_ = nullptr;
-
-		RenderCallbacks render_callbacks_;
+		const RenderCallbacks *render_callbacks_ = nullptr;
 
 		static constexpr int filter_table_size_ = 16;
 		static constexpr int max_filter_size_ = 8;

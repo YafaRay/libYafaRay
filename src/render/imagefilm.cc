@@ -124,6 +124,8 @@ std::unique_ptr<ImageFilm> ImageFilm::factory(Logger &logger, const ParamMap &pa
 
 	if(film_load_save.auto_save_.interval_type_ == ImageFilm::AutoSaveParams::IntervalType::Time) logger.logInfo("ImageFilm: ", "AutoSave internal imageFilm image every ", film_load_save.auto_save_.interval_seconds_, " seconds");
 
+	film->render_views_ = &scene->getRenderViews();
+	film->render_callbacks_ = &scene->getRenderCallbacks();
 	return film;
 }
 
@@ -242,19 +244,19 @@ void ImageFilm::init(RenderControl &render_control, int num_passes)
 		if(film_load_save_.mode_ == FilmLoadSave::LoadAndSave || film_load_save_.mode_ == FilmLoadSave::Save) imageFilmFileBackup(); //If the imageFilm is set to Save, at the start rename the previous film file as a "backup" just in case the user has made a mistake and wants to get the previous film back.
 	}
 
-	if(render_callbacks_.notify_view_)
+	if(render_callbacks_ && render_callbacks_->notify_view_)
 	{
 		for(const auto &render_view: *render_views_)
 		{
-			render_callbacks_.notify_view_(render_view.second->getName().c_str(), render_callbacks_.notify_view_data_);
+			render_callbacks_->notify_view_(render_view.second->getName().c_str(), render_callbacks_->notify_view_data_);
 		}
 	}
-	if(render_callbacks_.notify_layer_)
+	if(render_callbacks_ && render_callbacks_->notify_layer_)
 	{
 		const Layers &layers = layers_.getLayersWithExportedImages();
 		for(const auto &layer : layers)
 		{
-			render_callbacks_.notify_layer_(Layer::getTypeName(layer.second.getType()).c_str(), layer.second.getExportedImageName().c_str(), width_, height_, layer.second.getNumExportedChannels(), render_callbacks_.notify_layer_data_);
+			render_callbacks_->notify_layer_(Layer::getTypeName(layer.second.getType()).c_str(), layer.second.getExportedImageName().c_str(), width_, height_, layer.second.getNumExportedChannels(), render_callbacks_->notify_layer_data_);
 		}
 	}
 }
@@ -413,11 +415,11 @@ int ImageFilm::nextPass(const RenderView *render_view, RenderControl &render_con
 				if(flags_.get(x, y))
 				{
 					++n_resample;
-					if(render_callbacks_.highlight_pixel_)
+					if(render_callbacks_ && render_callbacks_->highlight_pixel_)
 					{
 						const float weight = weights_(x, y).getFloat();
 						const Rgba col = combined_image->getColor(x, y).normalized(weight);
-						render_callbacks_.highlight_pixel_(render_view->getName().c_str(), x, y, col.r_, col.g_, col.b_, col.a_, render_callbacks_.highlight_pixel_data_);
+						render_callbacks_->highlight_pixel_(render_view->getName().c_str(), x, y, col.r_, col.g_, col.b_, col.a_, render_callbacks_->highlight_pixel_data_);
 					}
 				}
 			}
@@ -428,7 +430,7 @@ int ImageFilm::nextPass(const RenderView *render_view, RenderControl &render_con
 		n_resample = height_ * width_;
 	}
 
-	if(render_callbacks_.flush_) render_callbacks_.flush_(render_view->getName().c_str(), render_callbacks_.flush_data_);
+	if(render_callbacks_ && render_callbacks_->flush_) render_callbacks_->flush_(render_view->getName().c_str(), render_callbacks_->flush_data_);
 
 	if(render_control.resumed()) pass_string << "Film loaded + ";
 
@@ -463,11 +465,11 @@ bool ImageFilm::nextArea(const RenderView *render_view, const RenderControl &ren
 			a.sy_0_ = a.y_ + ifilterw;
 			a.sy_1_ = a.y_ + a.h_ - ifilterw;
 
-			if(render_callbacks_.highlight_area_)
+			if(render_callbacks_ && render_callbacks_->highlight_area_)
 			{
 				const int end_x = a.x_ + a.w_;
 				const int end_y = a.y_ + a.h_;
-				render_callbacks_.highlight_area_(render_view->getName().c_str(), a.id_, a.x_, a.y_, end_x, end_y, render_callbacks_.highlight_area_data_);
+				render_callbacks_->highlight_area_(render_view->getName().c_str(), a.id_, a.x_, a.y_, end_x, end_y, render_callbacks_->highlight_area_data_);
 			}
 			return true;
 		}
@@ -527,15 +529,15 @@ void ImageFilm::finishArea(const RenderView *render_view, RenderControl &render_
 					default: break;
 				}
 				exported_image_layers_.setColor(i, j, {color, layer_type});
-				if(render_callbacks_.put_pixel_)
+				if(render_callbacks_ && render_callbacks_->put_pixel_)
 				{
-					render_callbacks_.put_pixel_(render_view->getName().c_str(), Layer::getTypeName(layer_type).c_str(), i, j, color.r_, color.g_, color.b_, color.a_, render_callbacks_.put_pixel_data_);
+					render_callbacks_->put_pixel_(render_view->getName().c_str(), Layer::getTypeName(layer_type).c_str(), i, j, color.r_, color.g_, color.b_, color.a_, render_callbacks_->put_pixel_data_);
 				}
 			}
 		}
 	}
 
-	if(render_callbacks_.flush_area_) render_callbacks_.flush_area_(render_view->getName().c_str(), a.id_, a.x_, a.y_, end_x + cx_0_, end_y + cy_0_, render_callbacks_.flush_area_data_);
+	if(render_callbacks_ && render_callbacks_->flush_area_) render_callbacks_->flush_area_(render_view->getName().c_str(), a.id_, a.x_, a.y_, end_x + cx_0_, end_y + cy_0_, render_callbacks_->flush_area_data_);
 
 	if(render_control.inProgress() && !render_control.isPreview())	//avoid saving images/film if we are just rendering material/world/lights preview windows, etc
 	{
@@ -616,15 +618,15 @@ void ImageFilm::flush(const RenderView *render_view, const RenderControl &render
 				}
 				if(estimate_density_ && (flags & Densityimage) && layer_type == Layer::Combined && density_factor > 0.f) color += Rgba((*density_image_)(i, j) * density_factor, 0.f);
 				exported_image_layers_.setColor(i, j, {color, layer_type});
-				if(render_callbacks_.put_pixel_)
+				if(render_callbacks_ && render_callbacks_->put_pixel_)
 				{
-					render_callbacks_.put_pixel_(render_view->getName().c_str(), Layer::getTypeName(layer_type).c_str(), i, j, color.r_, color.g_, color.b_, color.a_, render_callbacks_.put_pixel_data_);
+					render_callbacks_->put_pixel_(render_view->getName().c_str(), Layer::getTypeName(layer_type).c_str(), i, j, color.r_, color.g_, color.b_, color.a_, render_callbacks_->put_pixel_data_);
 				}
 			}
 		}
 	}
 
-	if(render_callbacks_.flush_) render_callbacks_.flush_(render_view->getName().c_str(), render_callbacks_.flush_data_);
+	if(render_callbacks_ && render_callbacks_->flush_) render_callbacks_->flush_(render_view->getName().c_str(), render_callbacks_->flush_data_);
 
 	if(render_control.finished())
 	{
@@ -1135,11 +1137,6 @@ void ImageFilm::imageFilmFileBackup() const
 	}
 
 	if(progress_bar_) progress_bar_->setTag(old_tag);
-}
-
-void ImageFilm::setRenderCallbacks(RenderCallbacks &render_callbacks)
-{
-	render_callbacks_ = render_callbacks;
 }
 
 std::string ImageFilm::printRenderStats(const RenderControl &render_control, int width, int height)

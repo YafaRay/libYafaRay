@@ -187,6 +187,7 @@ class Scene
 		void setRenderFlushAreaCallback(yafaray_RenderFlushAreaCallback_t callback, void *callback_data);
 		void setRenderFlushCallback(yafaray_RenderFlushCallback_t callback, void *callback_data);
 		void setRenderHighlightAreaCallback(yafaray_RenderHighlightAreaCallback_t callback, void *callback_data);
+		const RenderCallbacks &getRenderCallbacks() const { return render_callbacks_; }
 
 		VolumeIntegrator *vol_integrator_ = nullptr;
 		float shadow_bias_ = 1.0e-4f;  //shadow bias to apply to shadows to avoid self-shadow artifacts

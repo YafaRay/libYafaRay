@@ -712,8 +712,6 @@ bool Scene::setupSceneRenderParams(Scene &scene, const ParamMap &params)
 	image_film_->setBaseSamplingOffset(adv_base_sampling_offset);
 	image_film_->setComputerNode(adv_computer_node);
 	image_film_->setBackgroundResampling(background_resampling);
-	image_film_->setRenderViews(&render_views_);
-	image_film_->setRenderCallbacks(render_callbacks_);
 
 	return true;
 }
