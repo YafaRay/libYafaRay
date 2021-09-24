@@ -36,6 +36,11 @@ class NoiseGenerator
 		static float turbulence(const NoiseGenerator *ngen, const Point3 &pt, int oct, float size, bool hard); // basic turbulence, half amplitude, double frequency defaults. returns value in range (0,1)
 		static Rgba cellNoiseColor(const Point3 &pt); // noise cell color (used with voronoi)
 		static float getSignedNoise(const NoiseGenerator *n_gen, const Point3 &pt) { return 2.f * (*n_gen)(pt) - 1.f; }
+
+	protected:
+		static const float *hashPnt(int x, int y, int z);
+		static const std::array<unsigned char, 512> hash_;
+		static const float hashpntf_[768];
 };
 
 //---------------------------------------------------------------------------
@@ -48,14 +53,16 @@ class NewPerlinNoiseGenerator final : public NoiseGenerator
 	private:
 		virtual float operator()(const Point3 &pt) const override;
 		float fade(float t) const { return t * t * t * (t * (t * 6 - 15) + 10); }
-		float grad(int hash, float x, float y, float z) const
-		{
-			int h = hash & 15;                     // CONVERT LO 4 BITS OF HASH CODE
-			float u = h < 8 ? x : y,              // INTO 12 GRADIENT DIRECTIONS.
-			      v = h < 4 ? y : h == 12 || h == 14 ? x : z;
-			return ((h & 1) == 0 ? u : -u) + ((h & 2) == 0 ? v : -v);
-		}
+		float grad(int hash, float x, float y, float z) const;
 };
+
+inline float NewPerlinNoiseGenerator::grad(int hash, float x, float y, float z) const
+{
+	int h = hash & 15;                     // CONVERT LO 4 BITS OF HASH CODE
+	float u = h < 8 ? x : y,              // INTO 12 GRADIENT DIRECTIONS.
+	v = h < 4 ? y : h == 12 || h == 14 ? x : z;
+	return ((h & 1) == 0 ? u : -u) + ((h & 2) == 0 ? v : -v);
+}
 
 //---------------------------------------------------------------------------
 // Standard Perlin noise.
@@ -66,6 +73,11 @@ class StdPerlinNoiseGenerator final : public NoiseGenerator
 
 	private:
 		virtual float operator()(const Point3 &pt) const override;
+		static void setup(int i, int &b_0, int &b_1, float &r_0, float &r_1, const std::array<float, 3> &vec);
+		static constexpr float stdpAt(float rx, float ry, float rz, const float *q);
+		static constexpr float surve(float t);
+		static const std::array<unsigned char, 512 + 2> stdp_p_;
+		static const float stdp_g_[512 + 2][3];
 };
 
 // Blender noise, similar to Perlin's
@@ -77,6 +89,7 @@ class BlenderNoiseGenerator final : public NoiseGenerator
 		virtual float operator()(const Point3 &pt) const override;
 		// offset texture point coordinates by one
 		virtual Point3 offset(const Point3 &pt) const override { return pt + Point3(1.0, 1.0, 1.0); }
+		static const float hashvectf_[768];
 };
 
 //---------------------------------------
@@ -164,6 +177,13 @@ class VoronoiNoiseGenerator final : public NoiseGenerator
 
 	private:
 		virtual float operator()(const Point3 &pt) const override;
+		static float distRealF(float x, float y, float z, float e);
+		static float distSquaredF(float x, float y, float z, float e);
+		static float distManhattanF(float x, float y, float z, float e);
+		static float distChebychevF(float x, float y, float z, float e);
+		static float distMinkovskyHf(float x, float y, float z, float e);
+		static float distMinkovsky4F(float x, float y, float z, float e);
+		static float distMinkovskyF(float x, float y, float z, float e);
 
 		VoronoiType v_type_;
 		DMetricType dm_type_;
