@@ -188,7 +188,7 @@ std::unique_ptr<Image> Badge::generateImage(const std::string &denoise_params, c
 	const std::string font_path = getFontPath();
 	if(font_path.empty())
 	{
-		if(FT_New_Memory_Face(library, (const FT_Byte *)guifont_global, guifont_size_global, 0, &face))
+		if(FT_New_Memory_Face(library, (const FT_Byte *)font::gui.data(), font::gui.size(), 0, &face))
 		{
 			logger_.logError("Badge: FreeType couldn't load the default font!");
 			return nullptr;
@@ -198,7 +198,7 @@ std::unique_ptr<Image> Badge::generateImage(const std::string &denoise_params, c
 	{
 		logger_.logWarning("Badge: FreeType couldn't load the font '", font_path, "', loading default font.");
 
-		if(FT_New_Memory_Face(library, (const FT_Byte *)guifont_global, guifont_size_global, 0, &face))
+		if(FT_New_Memory_Face(library, (const FT_Byte *)font::gui.data(), font::gui.size(), 0, &face))
 		{
 			logger_.logError("Badge: FreeType couldn't load the default font!");
 			return nullptr;

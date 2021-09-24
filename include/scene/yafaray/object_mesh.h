@@ -69,6 +69,7 @@ class MeshObject : public ObjectYafaRay
 		static MeshObject *getMeshFromObject(Logger &logger, Object *object);
 
 	protected:
+		static float getAngleSine(const std::array<int, 3> &triangle_indices, const std::vector<Point3> &vertices);
 		std::vector<std::unique_ptr<FacePrimitive>> faces_;
 		std::vector<Point3> points_;
 		std::vector<Point3> orco_points_;

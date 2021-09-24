@@ -136,6 +136,7 @@ class Rgb
 		static ColorSpace colorSpaceFromName(const std::string &color_space_name, const ColorSpace &default_color_space = ColorSpace::RawManualGamma);
 
 		static Rgb mix(const Rgb &a, const Rgb &b, float point);
+		static float maxAbsDiff(const Rgb &a, const Rgb &b);
 
 		float r_ = 0.f;
 		float g_ = 0.f;
@@ -334,7 +335,7 @@ inline Rgba &Rgba::operator *=(const Rgba &c) { r_ *= c.r_; g_ *= c.g_; b_ *= c.
 inline Rgba &Rgba::operator *=(float f) { r_ *= f; g_ *= f; b_ *= f; a_ *= f;  return *this; }
 inline Rgba &Rgba::operator -=(const Rgba &c) { r_ -= c.r_; g_ -= c.g_; b_ -= c.b_; a_ -= c.a_;  return *this; }
 
-inline float maxAbsDiff_global(const Rgb &a, const Rgb &b)
+inline float Rgb::maxAbsDiff(const Rgb &a, const Rgb &b)
 {
 	return (a - b).absmax();
 }

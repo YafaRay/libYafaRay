@@ -31,10 +31,15 @@ BEGIN_YAFARAY
 class Vec3Double
 {
 	public:
+		Vec3Double() = default;
+		Vec3Double(double x, double y, double z) : x_(x), y_(y), z_(z) { }
 		Vec3Double &operator = (const Vec3Double &v) { x_ = v.x_, y_ = v.y_, z_ = v.z_; return *this; }
 		double operator[](int i) const { return (&x_)[i]; }
 		double &operator[](int i) { return (&x_)[i]; }
 		std::string print() const;
+		static Vec3Double cross(const Vec3Double &v_1, const Vec3Double &v_2);
+		static double dot(const Vec3Double &v_1, const Vec3Double &v_2);
+		static Vec3Double sub(const Vec3Double &v_1, const Vec3Double &v_2);
 		double x_, y_, z_;
 };
 
@@ -44,6 +49,27 @@ inline std::string Vec3Double::print() const
 	ss << std::setprecision(std::numeric_limits<double>::digits10 + 1);
 	ss << "<x=" <<  x_ << ",y=" << y_ << ",z=" << z_ << ">";
 	return ss.str();
+}
+
+inline Vec3Double Vec3Double::cross(const Vec3Double &v_1, const Vec3Double &v_2)
+{
+	return {
+			v_1[1] * v_2[2] - v_1[2] * v_2[1],
+			v_1[2] * v_2[0] - v_1[0] * v_2[2],
+			v_1[0] * v_2[1] - v_1[1] * v_2[0]
+	};
+}
+
+inline double Vec3Double::dot(const Vec3Double &v_1, const Vec3Double &v_2)
+{
+	return v_1[0] * v_2[0] + v_1[1] * v_2[1] + v_1[2] * v_2[2];
+}
+
+inline Vec3Double Vec3Double::sub(const Vec3Double &v_1, const Vec3Double &v_2)
+{
+	Vec3Double result;
+	for(int i = 0; i < 3; ++i) result[i] = v_1[i] - v_2[i];
+	return result;
 }
 
 END_YAFARAY

@@ -249,34 +249,14 @@ void TrianglePrimitive::sample(float s_1, float s_2, Point3 &p, const std::array
 /* Thanks to David Hunt for finding a ">="-bug!         */
 /********************************************************/
 
-Vec3Double cross_global(const Vec3Double &v_1, const Vec3Double &v_2)
-{
-	Vec3Double result;
-	result[0] = v_1[1] * v_2[2] - v_1[2] * v_2[1];
-	result[1] = v_1[2] * v_2[0] - v_1[0] * v_2[2];
-	result[2] = v_1[0] * v_2[1] - v_1[1] * v_2[0];
-	return result;
-}
-
-double dot_global(const Vec3Double &v_1, const Vec3Double &v_2)
-{
-	return v_1[0] * v_2[0] + v_1[1] * v_2[1] + v_1[2] * v_2[2];
-}
-
-Vec3Double sub_global(const Vec3Double &v_1, const Vec3Double &v_2)
-{
-	Vec3Double result;
-	for(int i = 0; i < 3; ++i) result[i] = v_1[i] - v_2[i];
-	return result;
-}
-
 struct MinMax
 {
 	double min_;
 	double max_;
+	static MinMax find(const Vec3Double values);
 };
 
-MinMax findMinMax_global(const Vec3Double values)
+MinMax MinMax::find(const Vec3Double values)
 {
 	MinMax min_max;
 	min_max.min_ = math::min(values[0], values[1], values[2]);
@@ -301,8 +281,8 @@ int planeBoxOverlap_global(const Vec3Double &normal, const Vec3Double &vert, con
 			vmax[axis] = -maxbox[axis] - v;	// -NJMP-
 		}
 	}
-	if(dot_global(normal, vmin) > 0) return 0;	// -NJMP-
-	if(dot_global(normal, vmax) >= 0) return 1;	// -NJMP-
+	if(Vec3Double::dot(normal, vmin) > 0) return 0;	// -NJMP-
+	if(Vec3Double::dot(normal, vmax) >= 0) return 1;	// -NJMP-
 
 	return 0;
 }
@@ -343,14 +323,14 @@ bool TrianglePrimitive::triBoxOverlap(const Vec3Double &boxcenter, const Vec3Dou
 	/* This is the fastest branch on Sun */
 	/* move everything so that the boxcenter is in (0,0,0) */
 	const std::array<Vec3Double, 3> tri_verts {
-		sub_global(triverts[0], boxcenter),
-		sub_global(triverts[1], boxcenter),
-		sub_global(triverts[2], boxcenter)
+			Vec3Double::sub(triverts[0], boxcenter),
+			Vec3Double::sub(triverts[1], boxcenter),
+			Vec3Double::sub(triverts[2], boxcenter)
 	};
 	const std::array<Vec3Double, 3> tri_edges {
-		sub_global(tri_verts[1], tri_verts[0]),
-		sub_global(tri_verts[2], tri_verts[1]),
-		sub_global(tri_verts[0], tri_verts[2])
+			Vec3Double::sub(tri_verts[1], tri_verts[0]),
+			Vec3Double::sub(tri_verts[2], tri_verts[1]),
+			Vec3Double::sub(tri_verts[0], tri_verts[2])
 	};
 	/* Bullet 3:  */
 	/*  test the 9 tests first (this was faster) */
@@ -380,14 +360,14 @@ bool TrianglePrimitive::triBoxOverlap(const Vec3Double &boxcenter, const Vec3Dou
 	/* test in the 3 directions */
 	for(int axis = 0; axis < 3; ++axis)
 	{
-		const MinMax min_max = findMinMax_global(tri_verts[axis]);
+		const MinMax min_max = MinMax::find(tri_verts[axis]);
 		if(min_max.min_ > boxhalfsize[axis] || min_max.max_ < -boxhalfsize[axis]) return false;
 	}
 
 	/* Bullet 2: */
 	/*  test if the box intersects the plane of the triangle */
 	/*  compute plane equation of triangle: normal*x+d=0 */
-	const Vec3Double normal = cross_global(tri_edges[0], tri_edges[1]);
+	const Vec3Double normal = Vec3Double::cross(tri_edges[0], tri_edges[1]);
 	// -NJMP- (line removed here)
 	if(!planeBoxOverlap_global(normal, tri_verts[0], boxhalfsize)) return false;	// -NJMP-
 
