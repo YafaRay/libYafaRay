@@ -46,14 +46,14 @@ BEGIN_YAFARAY
 
 std::vector<int> TiledIntegrator::correlative_sample_number_(0);
 
-void TiledIntegrator::renderWorker(TiledIntegrator *integrator, const Scene *scene, const RenderView *render_view, const RenderControl &render_control, ThreadControl *control, int thread_id, int samples, int offset, bool adaptive, int aa_pass)
+void TiledIntegrator::renderWorker(TiledIntegrator *integrator, const Scene *scene, const RenderView *render_view, const RenderControl &render_control, const Timer &timer, ThreadControl *control, int thread_id, int samples, int offset, bool adaptive, int aa_pass)
 {
 	RenderArea a;
 
 	while(image_film_->nextArea(render_view, render_control, a))
 	{
 		if(render_control.canceled()) break;
-		integrator->renderTile(a, render_view, render_control, samples, offset, adaptive, thread_id, aa_pass);
+		integrator->renderTile(a, render_view, render_control, timer, samples, offset, adaptive, thread_id, aa_pass);
 
 		std::unique_lock<std::mutex> lk(control->m_);
 		control->areas_.push_back(a);
@@ -101,7 +101,7 @@ void TiledIntegrator::precalcDepths(const RenderView *render_view)
 	if(max_depth_ > 0.f) max_depth_ = 1.f / (max_depth_ - min_depth_);
 }
 
-bool TiledIntegrator::render(RenderControl &render_control, const RenderView *render_view)
+bool TiledIntegrator::render(RenderControl &render_control, Timer &timer, const RenderView *render_view)
 {
 	std::stringstream pass_string;
 	aa_noise_params_ = scene_->getAaParameters();
@@ -155,8 +155,8 @@ bool TiledIntegrator::render(RenderControl &render_control, const RenderView *re
 	logger_.logInfo(pass_string.str());
 	if(intpb_) intpb_->setTag(pass_string.str().c_str());
 
-	g_timer_global.addEvent("rendert");
-	g_timer_global.start("rendert");
+	timer.addEvent("rendert");
+	timer.start("rendert");
 
 	image_film_->init(render_control, aa_noise_params_.passes_);
 	image_film_->setAaNoiseParams(aa_noise_params_);
@@ -184,9 +184,9 @@ bool TiledIntegrator::render(RenderControl &render_control, const RenderView *re
 	int resampled_pixels = 0;
 	if(render_control.resumed())
 	{
-		renderPass(render_view, 0, image_film_->getSamplingOffset(), false, 0, render_control);
+		renderPass(render_view, 0, image_film_->getSamplingOffset(), false, 0, render_control, timer);
 	}
-	else renderPass(render_view, aa_noise_params_.samples_, 0, false, 0, render_control);
+	else renderPass(render_view, aa_noise_params_.samples_, 0, false, 0, render_control, timer);
 
 	bool aa_threshold_changed = true;
 	int acum_aa_samples = aa_noise_params_.samples_;
@@ -221,7 +221,7 @@ bool TiledIntegrator::render(RenderControl &render_control, const RenderView *re
 
 		if(logger_.isDebug())logger_.logDebug("acumAASamples=", acum_aa_samples, " AA_samples=", aa_noise_params_.samples_, " AA_samples_mult=", aa_samples_mult);
 
-		if(resampled_pixels > 0) renderPass(render_view, aa_samples_mult, acum_aa_samples, true, i, render_control);
+		if(resampled_pixels > 0) renderPass(render_view, aa_samples_mult, acum_aa_samples, true, i, render_control, timer);
 
 		acum_aa_samples += aa_samples_mult;
 
@@ -236,19 +236,19 @@ bool TiledIntegrator::render(RenderControl &render_control, const RenderView *re
 		}
 	}
 	max_depth_ = 0.f;
-	g_timer_global.stop("rendert");
+	timer.stop("rendert");
 	render_control.setFinished();
-	logger_.logInfo(getName(), ": Overall rendertime: ", g_timer_global.getTime("rendert"), "s");
+	logger_.logInfo(getName(), ": Overall rendertime: ", timer.getTime("rendert"), "s");
 
 	return true;
 }
 
 
-bool TiledIntegrator::renderPass(const RenderView *render_view, int samples, int offset, bool adaptive, int aa_pass_number, RenderControl &render_control)
+bool TiledIntegrator::renderPass(const RenderView *render_view, int samples, int offset, bool adaptive, int aa_pass_number, RenderControl &render_control, Timer &timer)
 {
 	if(logger_.isDebug())logger_.logDebug("Sampling: samples=", samples, " Offset=", offset, " Base Offset=", + image_film_->getBaseSamplingOffset(), "  AA_pass_number=", aa_pass_number);
 
-	prePass(samples, (offset + image_film_->getBaseSamplingOffset()), adaptive, render_control, render_view);
+	prePass(samples, (offset + image_film_->getBaseSamplingOffset()), adaptive, render_control, timer, render_view);
 
 	int nthreads = scene_->getNumThreads();
 
@@ -260,7 +260,7 @@ bool TiledIntegrator::renderPass(const RenderView *render_view, int samples, int
 	std::vector<std::thread> threads;
 	for(int i = 0; i < nthreads; ++i)
 	{
-		threads.push_back(std::thread(&TiledIntegrator::renderWorker, this, this, scene_, render_view, std::ref(render_control), &tc, i, samples, (offset + image_film_->getBaseSamplingOffset()), adaptive, aa_pass_number));
+		threads.push_back(std::thread(&TiledIntegrator::renderWorker, this, this, scene_, render_view, std::ref(render_control), std::ref(timer), &tc, i, samples, (offset + image_film_->getBaseSamplingOffset()), adaptive, aa_pass_number));
 	}
 
 	std::unique_lock<std::mutex> lk(tc.m_);
@@ -279,7 +279,7 @@ bool TiledIntegrator::renderPass(const RenderView *render_view, int samples, int
 	return true; //hm...quite useless the return value :)
 }
 
-bool TiledIntegrator::renderTile(RenderArea &a, const RenderView *render_view, const RenderControl &render_control, int n_samples, int offset, bool adaptive, int thread_id, int aa_pass_number)
+bool TiledIntegrator::renderTile(RenderArea &a, const RenderView *render_view, const RenderControl &render_control, const Timer &timer, int n_samples, int offset, bool adaptive, int thread_id, int aa_pass_number)
 {
 	int x;
 	const Camera *camera = render_view->getCamera();

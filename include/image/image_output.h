@@ -40,19 +40,19 @@ class ImageOutput final
 		static std::unique_ptr<ImageOutput> factory(Logger &logger, const ParamMap &params, const Scene &scene);
 		void setLoggingParams(const ParamMap &params);
 		void setBadgeParams(const ParamMap &params);
-		void flush(const RenderControl &render_control);
+		void flush(const RenderControl &render_control, const Timer &timer);
 		void init(int width, int height, const ImageLayers *exported_image_layers, const std::map<std::string, std::unique_ptr<RenderView>> *render_views);
 		void setRenderView(const RenderView *render_view) { current_render_view_ = render_view; }
 		std::string getName() const { return name_; }
-		std::string printBadge(const RenderControl &render_control) const;
-		std::unique_ptr<Image> generateBadgeImage(const RenderControl &render_control) const;
+		std::string printBadge(const RenderControl &render_control, const Timer &timer) const;
+		std::unique_ptr<Image> generateBadgeImage(const RenderControl &render_control, const Timer &timer) const;
 
 	private:
 		ImageOutput(Logger &logger, const std::string &image_path, const DenoiseParams denoise_params, const std::string &name = "out", const ColorSpace color_space = ColorSpace::RawManualGamma, float gamma = 1.f, bool with_alpha = true, bool alpha_premultiply = false, bool multi_layer = false);
 		std::string printDenoiseParams() const;
 		bool denoiseEnabled() const { return denoise_params_.enabled_; }
-		void saveImageFile(const std::string &filename, const Layer::Type &layer_type, Format *format, const RenderControl &render_control);
-		void saveImageFileMultiChannel(const std::string &filename, Format *format, const RenderControl &render_control);
+		void saveImageFile(const std::string &filename, const Layer::Type &layer_type, Format *format, const RenderControl &render_control, const Timer &timer);
+		void saveImageFileMultiChannel(const std::string &filename, Format *format, const RenderControl &render_control, const Timer &timer);
 
 		std::string name_ = "out";
 		std::string image_path_;

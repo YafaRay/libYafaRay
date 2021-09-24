@@ -59,13 +59,13 @@ SppmIntegrator::SppmIntegrator(Logger &logger, unsigned int d_photons, int passn
 	diffuse_map_->setName("Diffuse Photon Map");
 }
 
-bool SppmIntegrator::preprocess(const RenderControl &render_control, const RenderView *render_view, ImageFilm *image_film)
+bool SppmIntegrator::preprocess(const RenderControl &render_control, Timer &timer, const RenderView *render_view, ImageFilm *image_film)
 {
 	image_film_ = image_film;
 	return true;
 }
 
-bool SppmIntegrator::render(RenderControl &render_control, const RenderView *render_view)
+bool SppmIntegrator::render(RenderControl &render_control, Timer &timer, const RenderView *render_view)
 {
 	std::stringstream pass_string;
 	aa_noise_params_ = scene_->getAaParameters();
@@ -103,14 +103,14 @@ bool SppmIntegrator::render(RenderControl &render_control, const RenderView *ren
 	logger_.logInfo(getName(), ": ", pass_string.str());
 	if(intpb_) intpb_->setTag(pass_string.str().c_str());
 
-	g_timer_global.addEvent("rendert");
-	g_timer_global.start("rendert");
+	timer.addEvent("rendert");
+	timer.start("rendert");
 
 	image_film_->resetImagesAutoSaveTimer();
-	g_timer_global.addEvent("imagesAutoSaveTimer");
+	timer.addEvent("imagesAutoSaveTimer");
 
 	image_film_->resetFilmAutoSaveTimer();
-	g_timer_global.addEvent("filmAutoSaveTimer");
+	timer.addEvent("filmAutoSaveTimer");
 
 	image_film_->init(render_control, pass_num_);
 	image_film_->setAaNoiseParams(aa_noise_params_);
@@ -139,9 +139,9 @@ bool SppmIntegrator::render(RenderControl &render_control, const RenderView *ren
 	if(render_control.resumed())
 	{
 		acum_aa_samples = image_film_->getSamplingOffset();
-		renderPass(render_view, 0, acum_aa_samples, false, 0, render_control);
+		renderPass(render_view, 0, acum_aa_samples, false, 0, render_control, timer);
 	}
-	else renderPass(render_view, 1, 0, false, 0, render_control);
+	else renderPass(render_view, 1, 0, false, 0, render_control, timer);
 
 	std::string initial_estimate = "no";
 	if(pm_ire_) initial_estimate = "yes";
@@ -156,16 +156,16 @@ bool SppmIntegrator::render(RenderControl &render_control, const RenderView *ren
 		pass_info = i + 1;
 		image_film_->nextPass(render_view, render_control, false, getName(), scene_->getEdgeToonParams());
 		n_refined_ = 0;
-		renderPass(render_view, 1, acum_aa_samples, false, i, render_control); // offset are only related to the passNum, since we alway have only one sample.
+		renderPass(render_view, 1, acum_aa_samples, false, i, render_control, timer); // offset are only related to the passNum, since we alway have only one sample.
 		acum_aa_samples += 1;
 		logger_.logInfo(getName(), ": This pass refined ", n_refined_, " of ", hp_num, " pixels.");
 	}
 	max_depth_ = 0.f;
-	g_timer_global.stop("rendert");
-	g_timer_global.stop("imagesAutoSaveTimer");
-	g_timer_global.stop("filmAutoSaveTimer");
+	timer.stop("rendert");
+	timer.stop("imagesAutoSaveTimer");
+	timer.stop("filmAutoSaveTimer");
 	render_control.setFinished();
-	logger_.logInfo(getName(), ": Overall rendertime: ", g_timer_global.getTime("rendert"), "s.");
+	logger_.logInfo(getName(), ": Overall rendertime: ", timer.getTime("rendert"), "s.");
 
 	// Integrator Settings for "drawRenderSettings()" in imageFilm, SPPM has own render method, so "getSettings()"
 	// in integrator.h has no effect and Integrator settings won't be printed to the parameter badge.
@@ -183,7 +183,7 @@ bool SppmIntegrator::render(RenderControl &render_control, const RenderView *ren
 }
 
 
-bool SppmIntegrator::renderTile(RenderArea &a, const RenderView *render_view, const RenderControl &render_control, int n_samples, int offset, bool adaptive, int thread_id, int aa_pass_number)
+bool SppmIntegrator::renderTile(RenderArea &a, const RenderView *render_view, const RenderControl &render_control, const Timer &timer, int n_samples, int offset, bool adaptive, int thread_id, int aa_pass_number)
 {
 	int x;
 	const Camera *camera = render_view->getCamera();
@@ -352,7 +352,7 @@ bool SppmIntegrator::renderTile(RenderArea &a, const RenderView *render_view, co
 	return true;
 }
 
-void SppmIntegrator::photonWorker(PhotonMap *diffuse_map, PhotonMap *caustic_map, int thread_id, const Scene *scene, const RenderView *render_view, const RenderControl &render_control, unsigned int n_photons, const Pdf1D *light_power_d, int num_d_lights, const std::vector<const Light *> &tmplights, ProgressBar *pb, int pb_step, unsigned int &total_photons_shot, int max_bounces, Random &prng)
+void SppmIntegrator::photonWorker(PhotonMap *diffuse_map, PhotonMap *caustic_map, int thread_id, const Scene *scene, const RenderView *render_view, const RenderControl &render_control, const Timer &timer, unsigned int n_photons, const Pdf1D *light_power_d, int num_d_lights, const std::vector<const Light *> &tmplights, ProgressBar *pb, int pb_step, unsigned int &total_photons_shot, int max_bounces, Random &prng)
 {
 	const Accelerator *accelerator = scene_->getAccelerator();
 	if(!accelerator) return;
@@ -536,10 +536,10 @@ void SppmIntegrator::photonWorker(PhotonMap *diffuse_map, PhotonMap *caustic_map
 
 
 //photon pass, scatter photon
-void SppmIntegrator::prePass(int samples, int offset, bool adaptive, const RenderControl &render_control, const RenderView *render_view)
+void SppmIntegrator::prePass(int samples, int offset, bool adaptive, const RenderControl &render_control, Timer &timer, const RenderView *render_view)
 {
-	g_timer_global.addEvent("prepass");
-	g_timer_global.start("prepass");
+	timer.addEvent("prepass");
+	timer.start("prepass");
 
 	logger_.logInfo(getName(), ": Starting Photon tracing pass...");
 
@@ -628,7 +628,7 @@ void SppmIntegrator::prePass(int samples, int offset, bool adaptive, const Rende
 	logger_.logParams(getName(), ": Shooting ", n_photons_, " photons across ", n_threads, " threads (", (n_photons_ / n_threads), " photons/thread)");
 
 	std::vector<std::thread> threads;
-	for(int i = 0; i < n_threads; ++i) threads.push_back(std::thread(&SppmIntegrator::photonWorker, this, diffuse_map_.get(), caustic_map_.get(), i, scene_, render_view, std::ref(render_control), n_photons_, light_power_d_.get(), num_d_lights, tmplights, pb.get(), pb_step, std::ref(curr), max_bounces_, std::ref(prng)));
+	for(int i = 0; i < n_threads; ++i) threads.push_back(std::thread(&SppmIntegrator::photonWorker, this, diffuse_map_.get(), caustic_map_.get(), i, scene_, render_view, std::ref(render_control), std::ref(timer), n_photons_, light_power_d_.get(), num_d_lights, tmplights, pb.get(), pb_step, std::ref(curr), max_bounces_, std::ref(prng)));
 	for(auto &t : threads) t.join();
 
 	pb->done();
@@ -669,12 +669,12 @@ void SppmIntegrator::prePass(int samples, int offset, bool adaptive, const Rende
 
 	tmplights.clear();
 
-	g_timer_global.stop("prepass");
+	timer.stop("prepass");
 
 	if(b_hashgrid_)
-		logger_.logInfo(getName(), ": PhotonGrid building time: ", g_timer_global.getTime("prepass"));
+		logger_.logInfo(getName(), ": PhotonGrid building time: ", timer.getTime("prepass"));
 	else
-		logger_.logInfo(getName(), ": PhotonMap building time: ", g_timer_global.getTime("prepass"));
+		logger_.logInfo(getName(), ": PhotonMap building time: ", timer.getTime("prepass"));
 
 	if(intpb_)
 	{

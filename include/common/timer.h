@@ -39,8 +39,8 @@ class Timer
 		bool start(const std::string &name);
 		bool stop(const std::string &name);
 		bool reset(const std::string &name);
-		double getTime(const std::string &name);
-		double getTimeNotStopping(const std::string &name);
+		double getTime(const std::string &name) const;
+		double getTimeNotStopping(const std::string &name) const;
 
 		static void splitTime(double t, double *secs, int *mins = nullptr, int *hours = nullptr, int *days = nullptr);
 
@@ -58,9 +58,6 @@ class Timer
 		};
 		std::map<std::string, Tdata> events_;
 };
-
-// global timer object, defined in timer.cc
-extern Timer g_timer_global;
 
 END_YAFARAY
 

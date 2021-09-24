@@ -258,14 +258,14 @@ bool Scene::render()
 				logger_.logWarning("Scene: No cameras or lights found at RenderView ", it.second->getName(), "', skipping this RenderView...");
 				continue;
 			}
-			success = (surf_integrator_->preprocess(render_control_, it.second.get(), image_film_.get()) && vol_integrator_->preprocess(render_control_, it.second.get(), image_film_.get()));
+			success = (surf_integrator_->preprocess(render_control_, image_film_->getTimer(), it.second.get(), image_film_.get()) && vol_integrator_->preprocess(render_control_, image_film_->getTimer(), it.second.get(), image_film_.get()));
 			if(!success)
 			{
 				logger_.logError("Scene: Preprocessing process failed, exiting...");
 				return false;
 			}
 			render_control_.setStarted();
-			success = surf_integrator_->render(render_control_, it.second.get());
+			success = surf_integrator_->render(render_control_, image_film_->getTimer(), it.second.get());
 			if(!success)
 			{
 				logger_.logError("Scene: Rendering process failed, exiting...");

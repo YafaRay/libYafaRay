@@ -233,10 +233,11 @@ void ImageFilm::init(RenderControl &render_control, int num_passes)
 	film_load_save_.auto_save_.pass_counter_ = 0;
 	resetImagesAutoSaveTimer();
 	resetFilmAutoSaveTimer();
-	g_timer_global.addEvent("imagesAutoSaveTimer");
-	g_timer_global.addEvent("filmAutoSaveTimer");
-	g_timer_global.start("imagesAutoSaveTimer");
-	g_timer_global.start("filmAutoSaveTimer");
+
+	timer_.addEvent("imagesAutoSaveTimer");
+	timer_.addEvent("filmAutoSaveTimer");
+	timer_.start("imagesAutoSaveTimer");
+	timer_.start("filmAutoSaveTimer");
 
 	if(!render_control.isPreview())	// Avoid doing the Film Load & Save operations and updating the film check values when we are just rendering a preview!
 	{
@@ -541,15 +542,15 @@ void ImageFilm::finishArea(const RenderView *render_view, RenderControl &render_
 
 	if(render_control.inProgress() && !render_control.isPreview())	//avoid saving images/film if we are just rendering material/world/lights preview windows, etc
 	{
-		g_timer_global.stop("imagesAutoSaveTimer");
-		images_auto_save_params_.timer_ += g_timer_global.getTime("imagesAutoSaveTimer");
+		timer_.stop("imagesAutoSaveTimer");
+		images_auto_save_params_.timer_ += timer_.getTime("imagesAutoSaveTimer");
 		if(images_auto_save_params_.timer_ < 0.f) resetImagesAutoSaveTimer(); //to solve some strange very negative value when using yafaray-xml, race condition somewhere?
-		g_timer_global.start("imagesAutoSaveTimer");
+		timer_.start("imagesAutoSaveTimer");
 
-		g_timer_global.stop("filmAutoSaveTimer");
-		film_load_save_.auto_save_.timer_ += g_timer_global.getTime("filmAutoSaveTimer");
+		timer_.stop("filmAutoSaveTimer");
+		film_load_save_.auto_save_.timer_ += timer_.getTime("filmAutoSaveTimer");
 		if(film_load_save_.auto_save_.timer_ < 0.f) resetFilmAutoSaveTimer(); //to solve some strange very negative value when using yafaray-xml, race condition somewhere?
-		g_timer_global.start("filmAutoSaveTimer");
+		timer_.start("filmAutoSaveTimer");
 
 		if((images_auto_save_params_.interval_type_ == ImageFilm::AutoSaveParams::IntervalType::Time) && (images_auto_save_params_.timer_ > images_auto_save_params_.interval_seconds_))
 		{
@@ -631,7 +632,7 @@ void ImageFilm::flush(const RenderView *render_view, const RenderControl &render
 	if(render_control.finished())
 	{
 		std::stringstream ss;
-		ss << printRenderStats(render_control, width_, height_);
+		ss << printRenderStats(render_control, timer_, width_, height_);
 		ss << render_control.getAaNoiseInfo();
 		logger_.logParams("--------------------------------------------------------------------------------");
 		for(std::string line; std::getline(ss, line, '\n');) if(line != "" && line != "\n") logger_.logParams(line);
@@ -648,7 +649,7 @@ void ImageFilm::flush(const RenderView *render_view, const RenderControl &render
 			if(render_control.finished())
 			{
 				std::stringstream ss;
-				ss << output.second->printBadge(render_control);
+				ss << output.second->printBadge(render_control, timer_);
 				//logger_.logParams("--------------------------------------------------------------------------------");
 				for(std::string line; std::getline(ss, line, '\n');) if(line != "" && line != "\n") logger_.logParams(line);
 				//logger_.logParams("--------------------------------------------------------------------------------");
@@ -659,7 +660,7 @@ void ImageFilm::flush(const RenderView *render_view, const RenderControl &render
 				old_tag = progress_bar_->getTag();
 				progress_bar_->setTag(pass_string.str().c_str());
 			}
-			output.second->flush(render_control);
+			output.second->flush(render_control, timer_);
 			if(progress_bar_) progress_bar_->setTag(old_tag);
 		}
 	}
@@ -671,8 +672,8 @@ void ImageFilm::flush(const RenderView *render_view, const RenderControl &render
 			imageFilmSave();
 		}
 
-		g_timer_global.stop("imagesAutoSaveTimer");
-		g_timer_global.stop("filmAutoSaveTimer");
+		timer_.stop("imagesAutoSaveTimer");
+		timer_.stop("filmAutoSaveTimer");
 
 		logger_.clearMemoryLog();
 		if(logger_.isVerbose()) logger_.logVerbose("imageFilm: Done.");
@@ -1139,15 +1140,16 @@ void ImageFilm::imageFilmFileBackup() const
 	if(progress_bar_) progress_bar_->setTag(old_tag);
 }
 
-std::string ImageFilm::printRenderStats(const RenderControl &render_control, int width, int height)
+std::string ImageFilm::printRenderStats(const RenderControl &render_control, const Timer &timer, int width, int height)
 {
 	std::stringstream ss;
 	ss << "\nYafaRay (" << buildinfo::getVersionString() << buildinfo::getBuildTypeSuffix() << ")" << " " << buildinfo::getBuildOs() << " " << buildinfo::getBuildArchitectureBits() << "bit (" << buildinfo::getBuildCompiler() << ")";
 	ss << std::setprecision(2);
-	double times = g_timer_global.getTimeNotStopping("rendert");
-	if(render_control.finished()) times = g_timer_global.getTime("rendert");
+
+	double times = timer.getTimeNotStopping("rendert");
+	if(render_control.finished()) times = timer.getTime("rendert");
 	int timem, timeh;
-	g_timer_global.splitTime(times, &times, &timem, &timeh);
+	timer.splitTime(times, &times, &timem, &timeh);
 	ss << " | " << width << "x" << height;
 	if(render_control.inProgress()) ss << " | " << (render_control.resumed() ? "film loaded + " : "") << "in progress " << std::fixed << std::setprecision(1) << render_control.currentPassPercent() << "% of pass: " << render_control.currentPass() << " / " << render_control.totalPasses();
 	else if(render_control.canceled()) ss << " | " << (render_control.resumed() ? "film loaded + " : "") << "stopped at " << std::fixed << std::setprecision(1) << render_control.currentPassPercent() << "% of pass: " << render_control.currentPass() << " / " << render_control.totalPasses();
@@ -1163,9 +1165,9 @@ std::string ImageFilm::printRenderStats(const RenderControl &render_control, int
 	if(timem > 0) ss << " " << timem << "m";
 	ss << " " << times << "s";
 
-	times = g_timer_global.getTimeNotStopping("rendert") + g_timer_global.getTime("prepass");
-	if(render_control.finished()) times = g_timer_global.getTime("rendert") + g_timer_global.getTime("prepass");
-	g_timer_global.splitTime(times, &times, &timem, &timeh);
+	times = timer.getTimeNotStopping("rendert") + timer.getTime("prepass");
+	if(render_control.finished()) times = timer.getTime("rendert") + timer.getTime("prepass");
+	timer.splitTime(times, &times, &timem, &timeh);
 	ss << " | Total time:";
 	if(timeh > 0) ss << " " << timeh << "h";
 	if(timem > 0) ss << " " << timem << "m";

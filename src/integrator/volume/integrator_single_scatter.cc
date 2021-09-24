@@ -40,7 +40,7 @@ SingleScatterIntegrator::SingleScatterIntegrator(Logger &logger, float s_size, b
 	logger_.logParams("SingleScatter: stepSize: ", step_size_, " adaptive: ", adaptive_, " optimize: ", optimize_);
 }
 
-bool SingleScatterIntegrator::preprocess(const RenderControl &render_control, const RenderView *render_view, ImageFilm *)
+bool SingleScatterIntegrator::preprocess(const RenderControl &render_control, Timer &timer, const RenderView *render_view, ImageFilm *image_film)
 {
 	logger_.logInfo("SingleScatter: Preprocessing...");
 

@@ -33,7 +33,7 @@ class DirectLightIntegrator final : public MonteCarloIntegrator
 		DirectLightIntegrator(Logger &logger, bool transp_shad = false, int shadow_depth = 4, int ray_depth = 6);
 		virtual std::string getShortName() const override { return "DL"; }
 		virtual std::string getName() const override { return "DirectLight"; }
-		virtual bool preprocess(const RenderControl &render_control, const RenderView *render_view, ImageFilm *image_film) override;
+		virtual bool preprocess(const RenderControl &render_control, Timer &timer, const RenderView *render_view, ImageFilm *image_film) override;
 		virtual Rgba integrate(RenderData &render_data, const DiffRay &ray, int additional_depth, ColorLayers *color_layers, const RenderView *render_view) const override;
 };
 

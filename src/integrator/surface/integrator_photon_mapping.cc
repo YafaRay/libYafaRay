@@ -111,7 +111,7 @@ PhotonIntegrator::PhotonIntegrator(Logger &logger, unsigned int d_photons, unsig
 	radiance_map_->setName("FG Radiance Photon Map");
 }
 
-void PhotonIntegrator::diffuseWorker(PhotonMap *diffuse_map, int thread_id, const Scene *scene, const RenderView *render_view, const RenderControl &render_control, unsigned int n_diffuse_photons, const Pdf1D *light_power_d, int num_d_lights, const std::vector<const Light *> &tmplights, ProgressBar *pb, int pb_step, unsigned int &total_photons_shot, int max_bounces, bool final_gather, PreGatherData &pgdat)
+void PhotonIntegrator::diffuseWorker(PhotonMap *diffuse_map, int thread_id, const Scene *scene, const RenderView *render_view, const RenderControl &render_control, const Timer &timer, unsigned int n_diffuse_photons, const Pdf1D *light_power_d, int num_d_lights, const std::vector<const Light *> &tmplights, ProgressBar *pb, int pb_step, unsigned int &total_photons_shot, int max_bounces, bool final_gather, PreGatherData &pgdat)
 {
 	const Accelerator *accelerator = scene_->getAccelerator();
 	if(!accelerator) return;
@@ -274,7 +274,7 @@ void PhotonIntegrator::photonMapKdTreeWorker(PhotonMap *photon_map)
 	photon_map->updateTree();
 }
 
-bool PhotonIntegrator::preprocess(const RenderControl &render_control, const RenderView *render_view, ImageFilm *image_film)
+bool PhotonIntegrator::preprocess(const RenderControl &render_control, Timer &timer, const RenderView *render_view, ImageFilm *image_film)
 {
 	image_film_ = image_film;
 	std::shared_ptr<ProgressBar> pb;
@@ -284,8 +284,9 @@ bool PhotonIntegrator::preprocess(const RenderControl &render_control, const Ren
 	lookup_rad_ = 4 * ds_radius_ * ds_radius_;
 
 	std::stringstream set;
-	g_timer_global.addEvent("prepass");
-	g_timer_global.start("prepass");
+
+	timer.addEvent("prepass");
+	timer.start("prepass");
 
 	logger_.logInfo(getName(), ": Starting preprocess...");
 
@@ -409,10 +410,10 @@ bool PhotonIntegrator::preprocess(const RenderControl &render_control, const Ren
 
 	if(photon_map_processing_ == PhotonsLoad || photon_map_processing_ == PhotonsReuse)
 	{
-		g_timer_global.stop("prepass");
-		logger_.logInfo(getName(), ": Photonmap building time: ", std::fixed, std::setprecision(1), g_timer_global.getTime("prepass"), "s");
+		timer.stop("prepass");
+		logger_.logInfo(getName(), ": Photonmap building time: ", std::fixed, std::setprecision(1), timer.getTime("prepass"), "s");
 
-		set << " [" << std::fixed << std::setprecision(1) << g_timer_global.getTime("prepass") << "s" << "]";
+		set << " [" << std::fixed << std::setprecision(1) << timer.getTime("prepass") << "s" << "]";
 
 		render_info_ += set.str();
 
@@ -507,7 +508,7 @@ bool PhotonIntegrator::preprocess(const RenderControl &render_control, const Ren
 		logger_.logParams(getName(), ": Shooting ", n_diffuse_photons_, " photons across ", n_threads, " threads (", (n_diffuse_photons_ / n_threads), " photons/thread)");
 
 		std::vector<std::thread> threads;
-		for(int i = 0; i < n_threads; ++i) threads.push_back(std::thread(&PhotonIntegrator::diffuseWorker, this, diffuse_map_.get(), i, scene_, render_view, std::ref(render_control), n_diffuse_photons_, light_power_d_.get(), num_d_lights, tmplights, pb.get(), pb_step, std::ref(curr), max_bounces_, final_gather_, std::ref(pgdat)));
+		for(int i = 0; i < n_threads; ++i) threads.push_back(std::thread(&PhotonIntegrator::diffuseWorker, this, diffuse_map_.get(), i, scene_, render_view, std::ref(render_control), std::ref(timer), n_diffuse_photons_, light_power_d_.get(), num_d_lights, tmplights, pb.get(), pb_step, std::ref(curr), max_bounces_, final_gather_, std::ref(pgdat)));
 		for(auto &t : threads) t.join();
 
 		pb->done();
@@ -597,7 +598,7 @@ bool PhotonIntegrator::preprocess(const RenderControl &render_control, const Ren
 		logger_.logParams(getName(), ": Shooting ", n_caus_photons_, " photons across ", n_threads, " threads (", (n_caus_photons_ / n_threads), " photons/thread)");
 
 		std::vector<std::thread> threads;
-		for(int i = 0; i < n_threads; ++i) threads.push_back(std::thread(&PhotonIntegrator::causticWorker, this, caustic_map_.get(), i, scene_, render_view, std::ref(render_control), n_caus_photons_, light_power_d_.get(), num_c_lights, tmplights, caus_depth_, pb.get(), pb_step, std::ref(curr)));
+		for(int i = 0; i < n_threads; ++i) threads.push_back(std::thread(&PhotonIntegrator::causticWorker, this, caustic_map_.get(), i, scene_, render_view, std::ref(render_control), std::ref(timer), n_caus_photons_, light_power_d_.get(), num_c_lights, tmplights, caus_depth_, pb.get(), pb_step, std::ref(curr)));
 		for(auto &t : threads) t.join();
 
 		pb->done();
@@ -707,10 +708,10 @@ bool PhotonIntegrator::preprocess(const RenderControl &render_control, const Ren
 		}
 	}
 
-	g_timer_global.stop("prepass");
-	logger_.logInfo(getName(), ": Photonmap building time: ", std::fixed, std::setprecision(1), g_timer_global.getTime("prepass"), "s", " (", scene_->getNumThreadsPhotons(), " thread(s))");
+	timer.stop("prepass");
+	logger_.logInfo(getName(), ": Photonmap building time: ", std::fixed, std::setprecision(1), timer.getTime("prepass"), "s", " (", scene_->getNumThreadsPhotons(), " thread(s))");
 
-	set << "| photon maps: " << std::fixed << std::setprecision(1) << g_timer_global.getTime("prepass") << "s" << " [" << scene_->getNumThreadsPhotons() << " thread(s)]";
+	set << "| photon maps: " << std::fixed << std::setprecision(1) << timer.getTime("prepass") << "s" << " [" << scene_->getNumThreadsPhotons() << " thread(s)]";
 
 	render_info_ += set.str();
 

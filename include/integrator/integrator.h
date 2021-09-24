@@ -53,13 +53,13 @@ class Integrator
 		Integrator(Logger &logger) : logger_(logger) { }
 		virtual ~Integrator() = default;
 		//! this MUST be called before any other member function!
-		virtual bool render(RenderControl &render_control, const RenderView *render_view) { return false; }
+		virtual bool render(RenderControl &render_control, Timer &timer, const RenderView *render_view) { return false; }
 		void setScene(const Scene *s) { scene_ = s; }
 		/*! do whatever is required to render the image, if suitable for integrating whole image */
 		void setProgressBar(std::shared_ptr<ProgressBar> pb) { intpb_ = std::move(pb); }
 		/*! gets called before the scene rendering (i.e. before first call to integrate)
 			\return false when preprocessing could not be done properly, true otherwise */
-		virtual bool preprocess(const RenderControl &render_control, const RenderView *render_view, ImageFilm *image_film) = 0;
+		virtual bool preprocess(const RenderControl &render_control, Timer &timer, const RenderView *render_view, ImageFilm *image_film) = 0;
 		/*! allow the integrator to do some cleanup when an image is done
 		(possibly also important for multiframe rendering in the future)	*/
 		virtual void cleanup() { render_info_.clear(); aa_noise_info_.clear(); }
@@ -98,7 +98,7 @@ class VolumeIntegrator: public Integrator
 	public:
 		virtual Rgba transmittance(RenderData &render_data, const Ray &ray) const = 0;
 		virtual Rgba integrate(RenderData &render_data, const Ray &ray, int additional_depth = 0) const = 0;
-		virtual bool preprocess(const RenderControl &render_control, const RenderView *render_view, ImageFilm *image_film) override { return true; };
+		virtual bool preprocess(const RenderControl &render_control, Timer &timer, const RenderView *render_view, ImageFilm *image_film) override { return true; };
 	protected:
 		VolumeIntegrator(Logger &logger) : Integrator(logger) { }
 		virtual Type getType() const override { return Volume; }

@@ -48,10 +48,10 @@ class PhotonIntegrator final : public MonteCarloIntegrator
 		PhotonIntegrator(Logger &logger, unsigned int d_photons, unsigned int c_photons, bool transp_shad = false, int shadow_depth = 4, float ds_rad = 0.1f, float c_rad = 0.01f);
 		virtual std::string getShortName() const override { return "PM"; }
 		virtual std::string getName() const override { return "PhotonMap"; }
-		virtual bool preprocess(const RenderControl &render_control, const RenderView *render_view, ImageFilm *image_film) override;
+		virtual bool preprocess(const RenderControl &render_control, Timer &timer, const RenderView *render_view, ImageFilm *image_film) override;
 		virtual Rgba integrate(RenderData &render_data, const DiffRay &ray, int additional_depth, ColorLayers *color_layers, const RenderView *render_view) const override;
 		void preGatherWorker(PreGatherData *gdata, float ds_rad, int n_search);
-		void diffuseWorker(PhotonMap *diffuse_map, int thread_id, const Scene *scene, const RenderView *render_view, const RenderControl &render_control, unsigned int n_diffuse_photons, const Pdf1D *light_power_d, int num_d_lights, const std::vector<const Light *> &tmplights, ProgressBar *pb, int pb_step, unsigned int &total_photons_shot, int max_bounces, bool final_gather, PreGatherData &pgdat);
+		void diffuseWorker(PhotonMap *diffuse_map, int thread_id, const Scene *scene, const RenderView *render_view, const RenderControl &render_control, const Timer &timer, unsigned int n_diffuse_photons, const Pdf1D *light_power_d, int num_d_lights, const std::vector<const Light *> &tmplights, ProgressBar *pb, int pb_step, unsigned int &total_photons_shot, int max_bounces, bool final_gather, PreGatherData &pgdat);
 		void photonMapKdTreeWorker(PhotonMap *photon_map);
 		Rgb finalGathering(RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo) const;
 		void enableCaustics(const bool caustics) { use_photon_caustics_ = caustics; }

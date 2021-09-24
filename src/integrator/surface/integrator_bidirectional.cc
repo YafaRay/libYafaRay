@@ -144,7 +144,7 @@ BidirectionalIntegrator::BidirectionalIntegrator(Logger &logger, bool transp_sha
 	//Empty
 }
 
-bool BidirectionalIntegrator::preprocess(const RenderControl &render_control, const RenderView *render_view, ImageFilm *image_film)
+bool BidirectionalIntegrator::preprocess(const RenderControl &render_control, Timer &timer, const RenderView *render_view, ImageFilm *image_film)
 {
 	image_film_ = image_film;
 	thread_data_.resize(scene_->getNumThreads());

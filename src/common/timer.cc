@@ -24,8 +24,6 @@
 
 BEGIN_YAFARAY
 
-Timer g_timer_global;
-
 bool Timer::addEvent(const std::string &name)
 {
 	if(includes(name)) return false;
@@ -71,7 +69,7 @@ bool Timer::reset(const std::string &name)
 	return true;
 }
 
-double Timer::getTime(const std::string &name)
+double Timer::getTime(const std::string &name) const
 {
 	auto i = events_.find(name);
 	if(i == events_.end()) return -1;
@@ -86,7 +84,7 @@ double Timer::getTime(const std::string &name)
 #endif
 }
 
-double Timer::getTimeNotStopping(const std::string &name)
+double Timer::getTimeNotStopping(const std::string &name) const
 {
 	auto i = events_.find(name);
 	if(i == events_.end()) return -1;

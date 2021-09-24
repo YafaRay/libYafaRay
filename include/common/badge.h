@@ -53,7 +53,7 @@ class Badge
 		std::string getFontPath() const { return font_path_; }
 		float getFontSizeFactor() const { return font_size_factor_; }
 		std::string getFields() const;
-		std::string getRenderInfo(const RenderControl &render_control) const;
+		std::string getRenderInfo(const RenderControl &render_control, const Timer &timer) const;
 		bool drawAaNoiseSettings() const { return draw_aa_; }
 		bool drawRenderSettings() const { return draw_render_settings_; }
 
@@ -70,8 +70,8 @@ class Badge
 		void setFontSizeFactor(float font_size_factor) { font_size_factor_ = font_size_factor; }
 		void setIconPath(const std::string &icon_path) { icon_path_ = icon_path; }
 
-		std::string print(const std::string &denoise_params, const RenderControl &render_control) const;
-		std::unique_ptr<Image> generateImage(const std::string &denoise_params, const RenderControl &render_control) const;
+		std::string print(const std::string &denoise_params, const RenderControl &render_control, const Timer &timer) const;
+		std::unique_ptr<Image> generateImage(const std::string &denoise_params, const RenderControl &render_control, const Timer &timer) const;
 
 	protected:
 #if HAVE_FREETYPE

@@ -31,7 +31,8 @@
 #include "common/layers.h"
 #include "image/image_buffers.h"
 #include "image/image_layers.h"
-#include "render_callbacks.h"
+#include "render/render_callbacks.h"
+#include "common/timer.h"
 #include <mutex>
 #include <atomic>
 
@@ -49,6 +50,7 @@ class Rgb;
 class ColorLayers;
 class ParamMap;
 class RenderControl;
+class Timer;
 class RenderView;
 struct EdgeToonParams;
 
@@ -149,8 +151,10 @@ class ImageFilm final
 		void generateToonAndDebugObjectEdges(int xstart, int width, int ystart, int height, bool drawborder, const EdgeToonParams &edge_params);
 		const ImageLayers *getImageLayers() const { return &film_image_layers_; }
 		const ImageLayers *getExportedImageLayers() const { return &exported_image_layers_; }
+		const Timer &getTimer() const { return timer_; }
+		Timer &getTimer() { return timer_; }
 
-		static std::string printRenderStats(const RenderControl &render_control, int width, int height);
+		static std::string printRenderStats(const RenderControl &render_control, const Timer &timer, int width, int height);
 
 	private:
 		void initLayersImages();
@@ -194,6 +198,7 @@ class ImageFilm final
 		Logger &logger_;
 		const std::map<std::string, std::unique_ptr<RenderView>> *render_views_ = nullptr;
 		const RenderCallbacks *render_callbacks_ = nullptr;
+		Timer timer_;
 
 		static constexpr int filter_table_size_ = 16;
 		static constexpr int max_filter_size_ = 8;

@@ -62,7 +62,7 @@ DebugIntegrator::DebugIntegrator(Logger &logger, SurfaceProperties dt) : TiledIn
 	render_info_ += "' | ";
 }
 
-bool DebugIntegrator::preprocess(const RenderControl &render_control, const RenderView *render_view, ImageFilm *image_film)
+bool DebugIntegrator::preprocess(const RenderControl &render_control, Timer &timer, const RenderView *render_view, ImageFilm *image_film)
 {
 	image_film_ = image_film;
 	return true;

@@ -382,7 +382,7 @@ Rgb MonteCarloIntegrator::doLightEstimation(RenderData &render_data, const Light
 	return col;
 }
 
-void MonteCarloIntegrator::causticWorker(PhotonMap *caustic_map, int thread_id, const Scene *scene, const RenderView *render_view, const RenderControl &render_control, unsigned int n_caus_photons, Pdf1D *light_power_d, int num_lights, const std::vector<const Light *> &caus_lights, int caus_depth, ProgressBar *pb, int pb_step, unsigned int &total_photons_shot)
+void MonteCarloIntegrator::causticWorker(PhotonMap *caustic_map, int thread_id, const Scene *scene, const RenderView *render_view, const RenderControl &render_control, const Timer &timer, unsigned int n_caus_photons, Pdf1D *light_power_d, int num_lights, const std::vector<const Light *> &caus_lights, int caus_depth, ProgressBar *pb, int pb_step, unsigned int &total_photons_shot)
 {
 	const Accelerator *accelerator = scene_->getAccelerator();
 	if(!accelerator) return;
@@ -531,7 +531,7 @@ void MonteCarloIntegrator::causticWorker(PhotonMap *caustic_map, int thread_id, 
 	caustic_map->mutx_.unlock();
 }
 
-bool MonteCarloIntegrator::createCausticMap(const RenderView *render_view, const RenderControl &render_control)
+bool MonteCarloIntegrator::createCausticMap(const RenderView *render_view, const RenderControl &render_control, const Timer &timer)
 {
 	std::shared_ptr<ProgressBar> pb;
 	if(intpb_) pb = intpb_;
@@ -617,7 +617,7 @@ bool MonteCarloIntegrator::createCausticMap(const RenderView *render_view, const
 		logger_.logParams(getName(), ": Shooting ", n_caus_photons_, " photons across ", n_threads, " threads (", (n_caus_photons_ / n_threads), " photons/thread)");
 
 		std::vector<std::thread> threads;
-		for(int i = 0; i < n_threads; ++i) threads.push_back(std::thread(&MonteCarloIntegrator::causticWorker, this, caustic_map_.get(), i, scene_, render_view, std::ref(render_control), n_caus_photons_, light_power_d.get(), num_lights, caus_lights, caus_depth_, pb.get(), pb_step, std::ref(curr)));
+		for(int i = 0; i < n_threads; ++i) threads.push_back(std::thread(&MonteCarloIntegrator::causticWorker, this, caustic_map_.get(), i, scene_, render_view, std::ref(render_control), std::ref(timer), n_caus_photons_, light_power_d.get(), num_lights, caus_lights, caus_depth_, pb.get(), pb_step, std::ref(curr)));
 		for(auto &t : threads) t.join();
 
 		pb->done();

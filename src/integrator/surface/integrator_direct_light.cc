@@ -47,13 +47,14 @@ DirectLightIntegrator::DirectLightIntegrator(Logger &logger, bool transp_shad, i
 	r_depth_ = ray_depth;
 }
 
-bool DirectLightIntegrator::preprocess(const RenderControl &render_control, const RenderView *render_view, ImageFilm *image_film)
+bool DirectLightIntegrator::preprocess(const RenderControl &render_control, Timer &timer, const RenderView *render_view, ImageFilm *image_film)
 {
 	image_film_ = image_film;
 	bool success = true;
 	std::stringstream set;
-	g_timer_global.addEvent("prepass");
-	g_timer_global.start("prepass");
+
+	timer.addEvent("prepass");
+	timer.start("prepass");
 
 	set << "Direct Light  ";
 
@@ -72,7 +73,7 @@ bool DirectLightIntegrator::preprocess(const RenderControl &render_control, cons
 
 	if(use_photon_caustics_)
 	{
-		success = createCausticMap(render_view, render_control);
+		success = createCausticMap(render_view, render_control, timer);
 		set << "\nCaustic photons=" << n_caus_photons_ << " search=" << n_caus_search_ << " radius=" << caus_radius_ << " depth=" << caus_depth_ << "  ";
 
 		if(photon_map_processing_ == PhotonsLoad)
@@ -86,10 +87,10 @@ bool DirectLightIntegrator::preprocess(const RenderControl &render_control, cons
 		else if(photon_map_processing_ == PhotonsGenerateAndSave) set << " (saving photon maps to file)";
 	}
 
-	g_timer_global.stop("prepass");
-	logger_.logInfo(getName(), ": Photonmap building time: ", std::fixed, std::setprecision(1), g_timer_global.getTime("prepass"), "s", " (", scene_->getNumThreadsPhotons(), " thread(s))");
+	timer.stop("prepass");
+	logger_.logInfo(getName(), ": Photonmap building time: ", std::fixed, std::setprecision(1), timer.getTime("prepass"), "s", " (", scene_->getNumThreadsPhotons(), " thread(s))");
 
-	set << "| photon maps: " << std::fixed << std::setprecision(1) << g_timer_global.getTime("prepass") << "s" << " [" << scene_->getNumThreadsPhotons() << " thread(s)]";
+	set << "| photon maps: " << std::fixed << std::setprecision(1) << timer.getTime("prepass") << "s" << " [" << scene_->getNumThreadsPhotons() << " thread(s)]";
 
 	render_info_ += set.str();
 

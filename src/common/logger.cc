@@ -29,7 +29,7 @@
 
 BEGIN_YAFARAY
 
-void Logger::saveTxtLog(const std::string &name, const Badge &badge, const RenderControl &render_control)
+void Logger::saveTxtLog(const std::string &name, const Badge &badge, const RenderControl &render_control, const Timer &timer)
 {
 	std::stringstream ss;
 
@@ -42,7 +42,7 @@ void Logger::saveTxtLog(const std::string &name, const Badge &badge, const Rende
 	if(!badge.getContact().empty()) ss << "Contact: \"" << badge.getContact() << "\"" << std::endl;
 	if(!badge.getComments().empty()) ss << "Comments: \"" << badge.getComments() << "\"" << std::endl;
 
-	ss << std::endl << "Render Information:" << std::endl << "  " << badge.getRenderInfo(render_control) << std::endl << "  " << render_control.getRenderInfo() << std::endl;
+	ss << std::endl << "Render Information:" << std::endl << "  " << badge.getRenderInfo(render_control, timer) << std::endl << "  " << render_control.getRenderInfo() << std::endl;
 	ss << std::endl << "AA/Noise Control Settings:" << std::endl << "  " << render_control.getAaNoiseInfo() << std::endl;
 
 	if(!memory_log_.empty())
@@ -63,7 +63,7 @@ void Logger::saveTxtLog(const std::string &name, const Badge &badge, const Rende
 	log_file.save(ss.str(), true);
 }
 
-void Logger::saveHtmlLog(const std::string &name, const Badge &badge, const RenderControl &render_control)
+void Logger::saveHtmlLog(const std::string &name, const Badge &badge, const RenderControl &render_control, const Timer &timer)
 {
 	const Path image_path(image_path_);
 	const std::string base_img_path = image_path.getDirectory();
@@ -128,7 +128,7 @@ void Logger::saveHtmlLog(const std::string &name, const Badge &badge, const Rend
 	ss << "</table>" << std::endl;
 
 	ss << "<p /><table id=\"yafalog\">" << std::endl;
-	ss << "<tr><th>Render Information:</th><td><p>" << badge.getRenderInfo(render_control) << "</p><p>" << render_control.getRenderInfo() << "</p></td></tr>" << std::endl;
+	ss << "<tr><th>Render Information:</th><td><p>" << badge.getRenderInfo(render_control, timer) << "</p><p>" << render_control.getRenderInfo() << "</p></td></tr>" << std::endl;
 	ss << "<tr><th>AA/Noise Control Settings:</th><td>" << render_control.getAaNoiseInfo() << "</td></tr>" << std::endl;
 	ss << "</table>" << std::endl;
 

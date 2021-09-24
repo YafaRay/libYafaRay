@@ -53,12 +53,13 @@ PathIntegrator::PathIntegrator(Logger &logger, bool transp_shad, int shadow_dept
 	no_recursive_ = false;
 }
 
-bool PathIntegrator::preprocess(const RenderControl &render_control, const RenderView *render_view, ImageFilm *image_film)
+bool PathIntegrator::preprocess(const RenderControl &render_control, Timer &timer, const RenderView *render_view, ImageFilm *image_film)
 {
 	image_film_ = image_film;
 	std::stringstream set;
-	g_timer_global.addEvent("prepass");
-	g_timer_global.start("prepass");
+
+	timer.addEvent("prepass");
+	timer.start("prepass");
 
 	lights_ = render_view->getLightsVisible();
 
@@ -75,7 +76,7 @@ bool PathIntegrator::preprocess(const RenderControl &render_control, const Rende
 
 	if(caustic_type_ == CausticType::Photon || caustic_type_ == CausticType::Both)
 	{
-		success = createCausticMap(render_view, render_control);
+		success = createCausticMap(render_view, render_control, timer);
 	}
 
 	if(caustic_type_ == CausticType::Path)
@@ -106,10 +107,10 @@ bool PathIntegrator::preprocess(const RenderControl &render_control, const Rende
 		else if(photon_map_processing_ == PhotonsGenerateAndSave) set << " (saving photon maps to file)";
 	}
 
-	g_timer_global.stop("prepass");
-	logger_.logInfo(getName(), ": Photonmap building time: ", std::fixed, std::setprecision(1), g_timer_global.getTime("prepass"), "s", " (", scene_->getNumThreadsPhotons(), " thread(s))");
+	timer.stop("prepass");
+	logger_.logInfo(getName(), ": Photonmap building time: ", std::fixed, std::setprecision(1), timer.getTime("prepass"), "s", " (", scene_->getNumThreadsPhotons(), " thread(s))");
 
-	set << "| photon maps: " << std::fixed << std::setprecision(1) << g_timer_global.getTime("prepass") << "s" << " [" << scene_->getNumThreadsPhotons() << " thread(s)]";
+	set << "| photon maps: " << std::fixed << std::setprecision(1) << timer.getTime("prepass") << "s" << " [" << scene_->getNumThreadsPhotons() << " thread(s)]";
 
 	render_info_ += set.str();
 

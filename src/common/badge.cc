@@ -72,15 +72,15 @@ std::string Badge::getFields() const
 	return ss_badge.str();
 }
 
-std::string Badge::getRenderInfo(const RenderControl &render_control) const
+std::string Badge::getRenderInfo(const RenderControl &render_control, const Timer &timer) const
 {
 	std::stringstream ss_badge;
 	ss_badge << "\nYafaRay (" << buildinfo::getVersionString() << buildinfo::getBuildTypeSuffix() << ")" << " " << buildinfo::getBuildOs() << " " << buildinfo::getBuildArchitectureBits() << "bit (" << buildinfo::getBuildCompiler() << ")";
 	ss_badge << std::setprecision(2);
-	double times = g_timer_global.getTimeNotStopping("rendert");
-	if(render_control.finished()) times = g_timer_global.getTime("rendert");
+	double times = timer.getTimeNotStopping("rendert");
+	if(render_control.finished()) times = timer.getTime("rendert");
 	int timem, timeh;
-	g_timer_global.splitTime(times, &times, &timem, &timeh);
+	timer.splitTime(times, &times, &timem, &timeh);
 	ss_badge << " | " << image_width_ << "x" << image_height_;
 	if(render_control.inProgress()) ss_badge << " | " << (render_control.resumed() ? "film loaded + " : "") << "in progress " << std::fixed << std::setprecision(1) << render_control.currentPassPercent() << "% of pass: " << render_control.currentPass() << " / " << render_control.totalPasses();
 	else if(render_control.canceled()) ss_badge << " | " << (render_control.resumed() ? "film loaded + " : "") << "stopped at " << std::fixed << std::setprecision(1) << render_control.currentPassPercent() << "% of pass: " << render_control.currentPass() << " / " << render_control.totalPasses();
@@ -96,9 +96,9 @@ std::string Badge::getRenderInfo(const RenderControl &render_control) const
 	if(timem > 0) ss_badge << " " << timem << "m";
 	ss_badge << " " << times << "s";
 
-	times = g_timer_global.getTimeNotStopping("rendert") + g_timer_global.getTime("prepass");
-	if(render_control.finished()) times = g_timer_global.getTime("rendert") + g_timer_global.getTime("prepass");
-	g_timer_global.splitTime(times, &times, &timem, &timeh);
+	times = timer.getTimeNotStopping("rendert") + timer.getTime("prepass");
+	if(render_control.finished()) times = timer.getTime("rendert") + timer.getTime("prepass");
+	timer.splitTime(times, &times, &timem, &timeh);
 	ss_badge << " | Total time:";
 	if(timeh > 0) ss_badge << " " << timeh << "h";
 	if(timem > 0) ss_badge << " " << timem << "m";
@@ -106,7 +106,7 @@ std::string Badge::getRenderInfo(const RenderControl &render_control) const
 	return ss_badge.str();
 }
 
-std::string Badge::print(const std::string &denoise_params, const RenderControl &render_control) const
+std::string Badge::print(const std::string &denoise_params, const RenderControl &render_control, const Timer &timer) const
 {
 	std::stringstream ss_badge;
 	ss_badge << getFields() << "\n";
@@ -146,12 +146,12 @@ void Badge::drawFontBitmap(FT_Bitmap_ *bitmap, Image *badge_image, int x, int y)
 
 #endif
 
-std::unique_ptr<Image> Badge::generateImage(const std::string &denoise_params, const RenderControl &render_control) const
+std::unique_ptr<Image> Badge::generateImage(const std::string &denoise_params, const RenderControl &render_control, const Timer &timer) const
 {
 	if(position_ == Badge::Position::None) return nullptr;
 	std::stringstream ss_badge;
 	ss_badge << getFields();
-	ss_badge << getRenderInfo(render_control);
+	ss_badge << getRenderInfo(render_control, timer);
 	if(drawRenderSettings()) ss_badge << " | " << render_control.getRenderInfo();
 	if(drawAaNoiseSettings()) ss_badge << "\n" << render_control.getAaNoiseInfo();
 	if(!denoise_params.empty()) ss_badge << " | " << denoise_params;
