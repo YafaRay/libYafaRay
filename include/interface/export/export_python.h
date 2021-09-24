@@ -17,8 +17,8 @@
  *      Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-#ifndef YAFARAY_EXPORT_XML_H
-#define YAFARAY_EXPORT_XML_H
+#ifndef YAFARAY_EXPORT_PYTHON_H
+#define YAFARAY_EXPORT_PYTHON_H
 
 #include "interface/interface.h"
 #include <map>
@@ -29,10 +29,10 @@ BEGIN_YAFARAY
 
 class Parameter;
 
-class ExportXml: public Interface
+class ExportPython: public Interface
 {
 	public:
-		ExportXml(const char *fname, const ::yafaray_LoggerCallback_t logger_callback = nullptr, void *callback_data = nullptr, ::yafaray_DisplayConsole_t logger_display_console = YAFARAY_DISPLAY_CONSOLE_NORMAL);
+		ExportPython(const char *fname, const ::yafaray_LoggerCallback_t logger_callback = nullptr, void *callback_data = nullptr, ::yafaray_DisplayConsole_t logger_display_console = YAFARAY_DISPLAY_CONSOLE_NORMAL);
 		virtual void createScene() noexcept override;
 		virtual int getSceneFilmWidth() const noexcept override { return 0; }
 		virtual int getSceneFilmHeight() const noexcept override { return 0; }
@@ -83,4 +83,4 @@ class ExportXml: public Interface
 
 END_YAFARAY
 
-#endif // YAFARAY_EXPORT_XML_H
+#endif // YAFARAY_EXPORT_PYTHON_H

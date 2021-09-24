@@ -19,6 +19,8 @@
 #include "public_api/yafaray_c_api.h"
 #include "interface/interface.h"
 #include "interface/export/export_xml.h"
+#include "interface/export/export_c.h"
+#include "interface/export/export_python.h"
 #include "geometry/matrix4.h"
 #include "render/progress_bar.h"
 #include "image/image.h"
@@ -30,7 +32,9 @@
 yafaray_Interface_t *yafaray_createInterface(yafaray_Interface_Type_t interface_type, const char *exported_file_path, const yafaray_LoggerCallback_t logger_callback, void *callback_data, yafaray_DisplayConsole_t display_console)
 {
 	yafaray::Interface *interface;
-	if(interface_type == YAFARAY_INTERFACE_EXPORT_XML) interface = new yafaray::XmlExport(exported_file_path, logger_callback, callback_data, display_console);
+	if(interface_type == YAFARAY_INTERFACE_EXPORT_XML) interface = new yafaray::ExportXml(exported_file_path, logger_callback, callback_data, display_console);
+	else if(interface_type == YAFARAY_INTERFACE_EXPORT_C) interface = new yafaray::ExportC(exported_file_path, logger_callback, callback_data, display_console);
+	else if(interface_type == YAFARAY_INTERFACE_EXPORT_PYTHON) interface = new yafaray::ExportPython(exported_file_path, logger_callback, callback_data, display_console);
 	else interface = new yafaray::Interface(logger_callback, callback_data, display_console);
 	return reinterpret_cast<yafaray_Interface *>(interface);
 }

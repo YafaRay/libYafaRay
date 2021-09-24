@@ -19,4 +19,6 @@
 target_sources(libyafaray4
 	PRIVATE
 		export_xml.cc
+		export_c.cc
+		export_python.cc
 )

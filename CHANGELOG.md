@@ -262,7 +262,7 @@ node/763 that caused either crashes or incorrect render results.
     As requested in http://www.yafaray.org/community/forum/viewtopic.php?f=23&t=5180
     Any "Intermediate" values will be "rounded up" (ceiled). This is one of the many possible criteria to do this, but it gives similar results to Blender Internal, so I will use it.
 
-* Image output denoise: denoise parameters added to the XmlExport, they didn't work in the XML interface in v3.0.2
+* Image output denoise: denoise parameters added to the ExportXml, they didn't work in the XML interface in v3.0.2
 
 * Fixed Rgba class initialization inconsistencies. We need to keep an eye on this, could cause changes in the Alpha in some scenes (hopefully not)
 
