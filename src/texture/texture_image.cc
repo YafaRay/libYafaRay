@@ -33,7 +33,7 @@
 
 BEGIN_YAFARAY
 
-float *ImageTexture::ewa_weight_lut_ = nullptr;
+const EwaWeightLut ImageTexture::ewa_weight_lut_;
 
 ImageTexture::ImageTexture(Logger &logger, std::shared_ptr<Image> image) : Texture(logger)
 {
@@ -426,6 +426,7 @@ Rgba ImageTexture::ewaEllipticCalculation(const Point3 &p, float ds_0, float dt_
 
 	Rgba sum_col(0.f);
 
+	constexpr int ewa_weight_lut_size = ewa_weight_lut_.size();
 	float sum_wts = 0.f;
 	for(int it = t_0; it <= t_1; ++it)
 	{
@@ -436,7 +437,7 @@ Rgba ImageTexture::ewaEllipticCalculation(const Point3 &p, float ds_0, float dt_
 			const float r_2 = a * ss * ss + b * ss * tt + c * tt * tt;
 			if(r_2 < 1.f)
 			{
-				const float weight = ewa_weight_lut_[std::min(static_cast<int>(floorf(r_2 * ewa_weight_lut_size_)), ewa_weight_lut_size_ - 1)];
+				const float weight = ewa_weight_lut_.get(std::min(static_cast<int>(floorf(r_2 * ewa_weight_lut_size)), ewa_weight_lut_size - 1));
 				const int ismod = math::mod(is, resx);
 				const int itmod = math::mod(it, resy);
 				sum_col += images_.at(mipmap_level)->getColor(ismod, itmod) * weight;
@@ -449,18 +450,13 @@ Rgba ImageTexture::ewaEllipticCalculation(const Point3 &p, float ds_0, float dt_
 	return sum_col;
 }
 
-void ImageTexture::generateEwaLookupTable()
+EwaWeightLut::EwaWeightLut()
 {
-	if(!ewa_weight_lut_)
+	for(int i = 0; i < num_items_; ++i)
 	{
-		if(logger_.isDebug())logger_.logDebug("** GENERATING EWA LOOKUP **");
-		ewa_weight_lut_ = static_cast<float *>(malloc(sizeof(float) * ewa_weight_lut_size_));
-		for(int i = 0; i < ewa_weight_lut_size_; ++i)
-		{
-			const float alpha = 2.f;
-			const float r_2 = float(i) / float(ewa_weight_lut_size_ - 1);
-			ewa_weight_lut_[i] = expf(-alpha * r_2) - expf(-alpha);
-		}
+		constexpr float alpha = 2.f;
+		const float r_2 = static_cast<float>(i) / float(num_items_ - 1);
+		items_[i] = expf(-alpha * r_2) - expf(-alpha);
 	}
 }
 
@@ -655,8 +651,6 @@ std::unique_ptr<Texture> ImageTexture::factory(Logger &logger, ParamMap &params,
 
 	tex->trilinear_level_bias_ = trilinear_level_bias;
 	tex->ewa_max_anisotropy_ = ewa_max_anisotropy;
-
-	if(interpolation_type == InterpolationType::Ewa) tex->generateEwaLookupTable();
 
 	return tex;
 }

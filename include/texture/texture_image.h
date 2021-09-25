@@ -44,6 +44,18 @@ class MipMapParams final
 		float dt_dy_ = 0.f;
 };
 
+class EwaWeightLut final
+{
+	public:
+		EwaWeightLut();
+		float get(int index) const { return items_[index]; };
+		static constexpr int size() { return num_items_; }
+
+	private:
+		static constexpr int num_items_ = 128;
+		std::array<float, num_items_> items_;
+};
+
 class ImageTexture final : public Texture
 {
 	public:
@@ -67,12 +79,10 @@ class ImageTexture final : public Texture
 		Rgba mipMapsTrilinearInterpolation(const Point3 &p, const MipMapParams *mipmap_params) const;
 		Rgba mipMapsEwaInterpolation(const Point3 &p, float max_anisotropy, const MipMapParams *mipmap_params) const;
 		Rgba ewaEllipticCalculation(const Point3 &p, float ds_0, float dt_0, float ds_1, float dt_1, int mipmap_level = 0) const;
-		void generateEwaLookupTable();
 		bool doMapping(Point3 &texp) const;
 		Rgba interpolateImage(const Point3 &p, const MipMapParams *mipmap_params) const;
 		static ImageTexture::ClipMode string2Cliptype(const std::string &clipname);
 
-		const int ewa_weight_lut_size_ = 128;
 		bool calc_alpha_, normalmap_;
 		bool grayscale_ = false;	//!< Converts the information loaded from the texture RGB to grayscale to reduce memory usage for bump or mask textures, for example. Alpha is ignored in this case.
 		bool cropx_, cropy_, checker_odd_, checker_even_, rot_90_;
@@ -87,7 +97,7 @@ class ImageTexture final : public Texture
 		bool mirror_y_;
 		float trilinear_level_bias_ = 0.f; //!< manually specified delta to be added/subtracted from the calculated mipmap level. Negative values will choose higher resolution mipmaps than calculated, reducing the blurry artifacts at the cost of increasing texture noise. Positive values will choose lower resolution mipmaps than calculated. Default (and recommended) is 0.0 to use the calculated mipmaps as-is.
 		float ewa_max_anisotropy_ = 8.f; //!< Maximum anisotropy allowed for mipmap EWA algorithm. Higher values give better quality in textures seen from an angle, but render will be slower. Lower values will give more speed but lower quality in textures seen in an angle.
-		static float *ewa_weight_lut_;
+		static const EwaWeightLut ewa_weight_lut_;
 };
 
 
