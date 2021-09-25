@@ -37,6 +37,7 @@ SunLight::SunLight(Logger &logger, Vec3 dir, const Rgb &col, float inte, float a
 	cos_angle_ = math::cos(math::degToRad(angle));
 	invpdf_ = (math::mult_pi_by_2 * (1.f - cos_angle_));
 	pdf_ = 1.0 / invpdf_;
+	pdf_ = std::min(pdf_, math::sqrt(std::numeric_limits<float>::max())); //Using the square root of the maximum possible float value when the invpdf_ is zero, because there are calculations in the integrators squaring the pdf value and it could be overflowing (NaN) in that case.
 	col_pdf_ = color_ * pdf_;
 }
 
