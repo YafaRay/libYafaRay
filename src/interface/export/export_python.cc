@@ -353,7 +353,7 @@ void ExportPython::render(std::shared_ptr<ProgressBar> progress_bar) noexcept
 	file_ << "yi.createOutput(\"output1_tga\")\n";
 	file_ << "yi.paramsClearAll()\n\n";
 
-	file_ << "yi.render()\n";
+	file_ << "yi.render(0, 0)\n";
 	file_ << "del yi\n";
 	params_->clear();
 	eparams_->clear();
