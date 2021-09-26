@@ -34,7 +34,7 @@ struct ResultImage
 };
 
 void notifyViewCallback(const char *view_name, void *callback_data);
-void notifyLayerCallback(const char *internal_layer_name, const char *exported_layer_name, int weight, int height, int layer_exported_channels, void *callback_data);
+void notifyLayerCallback(const char *internal_layer_name, const char *exported_layer_name, int width, int height, int layer_exported_channels, void *callback_data);
 void putPixelCallback(const char *view_name, const char *layer_name, int x, int y, float r, float g, float b, float a, void *callback_data);
 void flushAreaCallback(const char *view_name, int area_id, int x_0, int y_0, int x_1, int y_1, void *callback_data);
 void flushCallback(const char *view_name, void *callback_data);
@@ -304,9 +304,9 @@ void notifyViewCallback(const char *view_name, void *callback_data)
 	printf("**** notifyViewCallback view_name='%s', callback_data=%p\n", view_name, callback_data);
 }
 
-void notifyLayerCallback(const char *internal_layer_name, const char *exported_layer_name, int weight, int height, int layer_exported_channels, void *callback_data)
+void notifyLayerCallback(const char *internal_layer_name, const char *exported_layer_name, int width, int height, int layer_exported_channels, void *callback_data)
 {
-	printf("**** notifyLayerCallback internal_layer_name='%s', exported_layer_name='%s', weight=%d, height=%d, layer_exported_channels=%d, callback_data=%p\n", internal_layer_name, exported_layer_name, weight, height, layer_exported_channels, callback_data);
+	printf("**** notifyLayerCallback internal_layer_name='%s', exported_layer_name='%s', width=%d, height=%d, layer_exported_channels=%d, callback_data=%p\n", internal_layer_name, exported_layer_name, width, height, layer_exported_channels, callback_data);
 }
 
 void putPixelCallback(const char *view_name, const char *layer_name, int x, int y, float r, float g, float b, float a, void *callback_data)

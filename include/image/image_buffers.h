@@ -299,7 +299,7 @@ template <class T>
 class ImageBuffer2D final : public Buffer<T, 2>
 {
 	public:
-		ImageBuffer2D(int weight, int height) : Buffer<T, 2>{{ static_cast<size_t>(weight), static_cast<size_t>(height) }} { }
+		ImageBuffer2D(int width, int height) : Buffer<T, 2>{{static_cast<size_t>(width), static_cast<size_t>(height) }} { }
 		void set(int x, int y, const T &val) { Buffer<T, 2>::set({ static_cast<size_t>(x), static_cast<size_t>(y) }, val); }
 		T get(int x, int y) const { return Buffer<T, 2>::get({ static_cast<size_t>(x), static_cast<size_t>(y) }); }
 		T &operator()(int x, int y) { return Buffer<T, 2>::operator()({ static_cast<size_t>(x), static_cast<size_t>(y) }); }
