@@ -115,7 +115,6 @@ class Scene
 		void setNumThreads(int threads);
 		void setNumThreadsPhotons(int threads_photons);
 		void setCurrentMaterial(const Material *material);
-		const Material *getCurrentMaterial() const { return creation_state_.current_material_; }
 		void createDefaultMaterial();
 		void clearNonObjects();
 		void clearAll();

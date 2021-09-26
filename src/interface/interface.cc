@@ -337,12 +337,6 @@ void Interface::setCurrentMaterial(const char *name) noexcept
 	if(scene_) scene_->setCurrentMaterial(scene_->getMaterial(std::string(name)));
 }
 
-const Material *Interface::getCurrentMaterial() const noexcept
-{
-	if(scene_) return scene_->getCurrentMaterial();
-	else return nullptr;
-}
-
 void Interface::printDebug(const std::string &msg) const noexcept
 {
 	if(logger_->isDebug())logger_->logDebug(msg);

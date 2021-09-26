@@ -133,7 +133,6 @@ class Interface
 
 	protected:
 		virtual void setCurrentMaterial(const Material *material) noexcept;
-		virtual const Material *getCurrentMaterial() const noexcept;
 		std::unique_ptr<Logger> logger_;
 		std::unique_ptr<ParamMap> params_;
 		std::unique_ptr<std::list<ParamMap>> eparams_; //! for materials that need to define a whole shader tree etc.

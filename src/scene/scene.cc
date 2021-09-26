@@ -42,6 +42,8 @@
 
 BEGIN_YAFARAY
 
+Scene::~Scene() = default; //Defining the destructor here instead of the header to avoid a compilation error about missing Material class definition
+
 void Scene::logWarnExist(Logger &logger, const std::string &pname, const std::string &name)
 {
 	logger.logWarning("Scene: Sorry, ", pname, " \"", name, "\" already exists!");
@@ -106,11 +108,6 @@ Scene::Scene(Logger &logger) : logger_(logger)
 #ifndef HAVE_OPENCV
 	logger_.logWarning("libYafaRay built without OpenCV support. The following functionality will not work: image output denoise, background IBL blur, object/face edge render layers, toon render layer.");
 #endif
-}
-
-Scene::~Scene()
-{
-	clearAll();
 }
 
 void Scene::createDefaultMaterial()
