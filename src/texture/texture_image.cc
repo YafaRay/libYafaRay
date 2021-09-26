@@ -574,6 +574,7 @@ std::unique_ptr<Texture> ImageTexture::factory(Logger &logger, ParamMap &params,
 	tex->original_image_file_color_space_ = image->getColorSpace();
 	tex->original_image_file_gamma_ = image->getGamma();
 
+	tex->interpolation_type_ = interpolation_type;
 	if(interpolation_type == InterpolationType::Trilinear || interpolation_type == InterpolationType::Ewa)
 	{
 		tex->generateMipMaps();
