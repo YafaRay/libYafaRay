@@ -35,7 +35,9 @@
 
 BEGIN_YAFARAY
 
-int SysInfo::getNumSystemThreads() const
+namespace sys_info
+{
+int getNumSystemThreads()
 {
 	int nthreads = 1;
 
@@ -55,11 +57,13 @@ int SysInfo::getNumSystemThreads() const
 #	elif defined(__sgi)
 	nthreads = sysconf(_SC_NPROC_ONLN);
 #	else
-	nthreads = (int)sysconf(_SC_NPROCESSORS_ONLN);
+	nthreads = (int) sysconf(_SC_NPROCESSORS_ONLN);
 #	endif
 #endif
 
 	return nthreads;
 }
+
+} //namespace sys_info
 
 END_YAFARAY

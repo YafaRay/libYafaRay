@@ -26,11 +26,12 @@
 
 BEGIN_YAFARAY
 
-class SysInfo
+namespace sys_info
 {
-	public:
-		int getNumSystemThreads() const;
-};
+
+int getNumSystemThreads();
+
+} //namespace sys_info
 
 END_YAFARAY
 
