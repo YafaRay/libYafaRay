@@ -33,9 +33,8 @@ class YafaRayScene final : public Scene
 		static std::unique_ptr<Scene> factory(Logger &logger, ParamMap &params);
 
 	private:
-		YafaRayScene(Logger &logger);
+		YafaRayScene(Logger &logger) : Scene(logger) { }
 		YafaRayScene(const YafaRayScene &s) = delete;
-		virtual ~YafaRayScene() override;
 		virtual int  addVertex(const Point3 &p) override;
 		virtual int  addVertex(const Point3 &p, const Point3 &orco) override;
 		virtual void addNormal(const Vec3 &n) override;
@@ -47,7 +46,6 @@ class YafaRayScene final : public Scene
 		virtual bool addInstance(const std::string &base_object_name, const Matrix4 &obj_to_world) override;
 		virtual bool updateObjects() override;
 		virtual Object *getObject(const std::string &name) const override;
-		void clearObjects();
 		virtual const Accelerator *getAccelerator() const override { return accelerator_.get(); }
 
 		Object *current_object_ = nullptr;

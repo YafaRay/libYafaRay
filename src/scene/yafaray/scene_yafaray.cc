@@ -47,22 +47,6 @@ std::unique_ptr<Scene> YafaRayScene::factory(Logger &logger, ParamMap &params)
 	return scene;
 }
 
-YafaRayScene::YafaRayScene(Logger &logger) : Scene(logger)
-{
-	current_object_ = nullptr;
-}
-
-YafaRayScene::~YafaRayScene()
-{
-	clearObjects();
-}
-
-void YafaRayScene::clearObjects()
-{
-	accelerator_ = nullptr;
-	objects_.clear();
-}
-
 bool YafaRayScene::endObject()
 {
 	if(logger_.isDebug()) logger_.logDebug("YafaRayScene::endObject");

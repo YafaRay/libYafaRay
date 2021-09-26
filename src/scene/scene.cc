@@ -315,11 +315,6 @@ void Scene::clearLayers()
 	layers_.clear();
 }
 
-void Scene::clearRenderViews()
-{
-	render_views_.clear();
-}
-
 template <typename T>
 T *Scene::findMapItem(const std::string &name, const std::map<std::string, std::unique_ptr<T>> &map)
 {
@@ -578,16 +573,6 @@ RenderView *Scene::createRenderView(const std::string &name, ParamMap &params)
 std::shared_ptr<Image> Scene::createImage(const std::string &name, ParamMap &params)
 {
 	return createMapItem<Image>(logger_, name, "Image", params, images_, this);
-}
-
-const Layers Scene::getLayersWithImages() const
-{
-	return layers_.getLayersWithImages();
-}
-
-const Layers Scene::getLayersWithExportedImages() const
-{
-	return layers_.getLayersWithExportedImages();
 }
 
 /*! setup the scene for rendering (set camera, background, integrator, create image film,

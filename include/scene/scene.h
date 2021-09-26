@@ -164,10 +164,8 @@ class Scene
 		void defineLayer(const std::string &layer_type_name, const std::string &image_type_name, const std::string &exported_image_type_name, const std::string &exported_image_name);
 		void defineLayer(const Layer::Type &layer_type, const Image::Type &image_type = Image::Type::None, const Image::Type &exported_image_type = Image::Type::None, const std::string &exported_image_name = "");
 		void clearLayers();
-		void clearRenderViews();
 		const Layers &getLayers() const { return layers_; }
 		float getShadowBias() const { return shadow_bias_; }
-		float getRayMinDist() const { return ray_min_dist_; }
 
 		static void logWarnExist(Logger &logger, const std::string &pname, const std::string &name);
 		static void logErrNoType(Logger &logger, const std::string &pname, const std::string &name, const std::string &type);
@@ -213,8 +211,6 @@ class Scene
 		Logger &logger_;
 
 	private:
-		const Layers getLayersWithImages() const;
-		const Layers getLayersWithExportedImages() const;
 		template <typename T> static T *findMapItem(const std::string &name, const std::map<std::string, std::unique_ptr<T>> &map);
 		template <typename T> static std::shared_ptr<T> findMapItem(const std::string &name, const std::map<std::string, std::shared_ptr<T>> &map);
 		void setMaskParams(const ParamMap &params);
