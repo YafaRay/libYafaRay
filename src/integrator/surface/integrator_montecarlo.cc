@@ -706,10 +706,12 @@ void MonteCarloIntegrator::recursiveRaytrace(RenderData &render_data, const Diff
 			int branch = render_data.ray_division_ * old_offset;
 			const float d_1 = 1.f / (float)dsam;
 			const float ss_1 = sample::riS(render_data.pixel_sample_ + render_data.sampling_offs_);
-			Rgb dcol(0.f), vcol(1.f);
+			Rgb dcol(0.f);
 			float w = 0.f;
 
 			Rgb dcol_trans_accum;
+			DiffRay ref_ray_chromatic_volume; //Reference ray used for chromatic/dispersive volume color calculation only. FIXME: it only uses one of the sampled reference rays for volume calculations, not sure if this is ok??
+			bool ref_ray_chromatic_volume_obtained = false; //To track if we already have obtained a valid ref_ray for chromatic/dispersive volume color calculations.
 			for(int ns = 0; ns < dsam; ++ns)
 			{
 				render_data.wavelength_ = (ns + ss_1) * d_1;
@@ -731,15 +733,20 @@ void MonteCarloIntegrator::recursiveRaytrace(RenderData &render_data, const Diff
 					const Rgb dcol_trans = static_cast<Rgb>(integrate(render_data, ref_ray, additional_depth, nullptr, nullptr)) * mcol * wl_col * w;
 					dcol += dcol_trans;
 					if(layers_used) dcol_trans_accum += dcol_trans;
-
-					const VolumeHandler *vol;
-					if(bsdfs.hasAny(BsdfFlags::Volumetric) && (vol = material->getVolumeHandler(sp.ng_ * ref_ray.dir_ < 0)))
+					if(!ref_ray_chromatic_volume_obtained)
 					{
-						vol->transmittance(render_data, ref_ray, vcol);
-						dcol *= vcol;
+						ref_ray_chromatic_volume = ref_ray;
+						ref_ray_chromatic_volume_obtained = true;
 					}
 					render_data.chromatic_ = true;
 				}
+			}
+			const VolumeHandler *vol;
+			if(ref_ray_chromatic_volume_obtained && bsdfs.hasAny(BsdfFlags::Volumetric) && (vol = material->getVolumeHandler(sp.ng_ * ref_ray_chromatic_volume.dir_ < 0)))
+			{
+				Rgb vcol(1.f);
+				vol->transmittance(render_data, ref_ray_chromatic_volume, vcol);
+				dcol *= vcol;
 			}
 			col += dcol * d_1;
 			if(layers_used)
