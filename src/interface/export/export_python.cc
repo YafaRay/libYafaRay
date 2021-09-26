@@ -139,7 +139,7 @@ int ExportPython::addUv(float u, float v) noexcept
 
 bool ExportPython::smoothMesh(const char *name, double angle) noexcept
 {
-	file_ << "yi.smoothMesh(" << name << ", " << angle << ")\n";
+	file_ << "yi.smoothMesh(\"" << name << "\", " << angle << ")\n";
 	return true;
 }
 
@@ -147,9 +147,9 @@ void ExportPython::writeMatrix(const std::string &name, const Matrix4 &m, std::o
 {
 
 	file << "\"" << name << "\", " <<
-			m[0][0] << ", " << m[0][1] << ", " << m[0][2] << ", " << m[0][3] <<
-			m[1][0] << ", " << m[1][1] << ", " << m[1][2] << ", " << m[1][3] <<
-			m[2][0] << ", " << m[2][1] << ", " << m[2][2] << ", " << m[2][3] <<
+			m[0][0] << ", " << m[0][1] << ", " << m[0][2] << ", " << m[0][3] << ", " <<
+			m[1][0] << ", " << m[1][1] << ", " << m[1][2] << ", " << m[1][3] << ", " <<
+			m[2][0] << ", " << m[2][1] << ", " << m[2][2] << ", " << m[2][3] << ", " <<
 			m[3][0] << ", " << m[3][1] << ", " << m[3][2] << ", " << m[3][3];
 }
 
@@ -209,7 +209,7 @@ void ExportPython::writeParam(const std::string &name, const Parameter &param, s
 
 bool ExportPython::addInstance(const char *base_object_name, const Matrix4 &obj_to_world) noexcept
 {
-	file_ << "yi.Interface_t(";
+	file_ << "yi.addInstance(";
 	writeMatrix(base_object_name, obj_to_world, file_);
 	file_ << ")\n";
 	return true;
