@@ -46,15 +46,19 @@ class Matrix4
 		void rotateY(float degrees);
 		void rotateZ(float degrees);
 		void scale(float sx, float sy, float sz);
-		int invalid() const { return invalid_; }
+		bool invalid() const { return invalid_; }
 		const float *operator [](int i) const { return matrix_[i]; }
 		float *operator [](int i) { return matrix_[i]; }
 		void setVal(int row, int col, float val) { matrix_[row][col] = val; };
 		float getVal(int row, int col) { return matrix_[row][col]; }
 
 	private:
+		template<typename T> static void swapRows(T& matrix, int row_a, int row_b);
+		template<typename T> static void subtractScaledRow(T& matrix, int row_a, int row_b, float factor);
+		template<typename T> static void divideRow(T& matrix, int row, float divisor);
+
 		float matrix_[4][4];
-		int invalid_;
+		bool invalid_ = false;
 };
 
 inline Matrix4 operator * (const Matrix4 &a, const Matrix4 &b)

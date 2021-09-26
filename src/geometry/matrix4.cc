@@ -25,7 +25,7 @@
 
 BEGIN_YAFARAY
 
-Matrix4::Matrix4(const float init): invalid_(0)
+Matrix4::Matrix4(const float init)
 {
 	for(int i = 0; i < 4; i++)
 		for(int j = 0; j < 4; ++j)
@@ -33,7 +33,7 @@ Matrix4::Matrix4(const float init): invalid_(0)
 			if(i == j)
 				matrix_[i][j] = init;
 			else
-				matrix_[i][j] = 0;
+				matrix_[i][j] = 0.f;
 		}
 }
 
@@ -51,21 +51,39 @@ Matrix4::Matrix4(const float source[4][4])
 			matrix_[i][j] = source[i][j];
 }
 
-#define SWAP(m,i,b)\
-for(int j=0; j<4; ++j) std::swap(m[i][j], m[b][j])
+template<typename T>
+void Matrix4::swapRows(T& matrix, int row_a, int row_b)
+{
+	for(int j = 0; j < 4; ++j)
+	{
+		std::swap(matrix[row_a][j], matrix[row_b][j]);
+	}
+}
 
-#define RES(m,i,b,f)\
-for(int j=0; j<4; ++j) m[i][j] -= m[b][j]*f
+template<typename T>
+void Matrix4::subtractScaledRow(T& matrix, int row_a, int row_b, float factor)
+{
+	for(int j = 0; j < 4; ++j)
+	{
+		matrix[row_a][j] -= matrix[row_b][j] * factor;
+	}
+}
 
-#define DIV(m,i,f)\
-for(int j=0; j<4; ++j) m[i][j] /= f
+template<typename T>
+void Matrix4::divideRow(T& matrix, int row, float divisor)
+{
+	for(int j = 0; j < 4; ++j)
+	{
+		matrix[row][j] /= divisor;
+	}
+}
 
 Matrix4 &Matrix4::inverse()
 {
 	Matrix4 iden(1);
 	for(int i = 0; i < 4; ++i)
 	{
-		float max = 0;
+		float max = 0.f;
 		int ci = 0;
 		for(int k = i; k < 4; ++k)
 		{
@@ -75,21 +93,19 @@ Matrix4 &Matrix4::inverse()
 				ci = k;
 			}
 		}
-		if(max == 0)
-		{
-			/*logger_.logError("Serious error inverting matrix");
-			logger_.logError(i);*/
-			invalid_ = 1;
-		}
-		SWAP(matrix_, i, ci); SWAP(iden, i, ci);
+		if(max == 0.f) invalid_ = true;
+		swapRows(matrix_, i, ci);
+		swapRows(iden, i, ci);
 		float factor = matrix_[i][i];
-		DIV(matrix_, i, factor); DIV(iden, i, factor);
+		divideRow(matrix_, i, factor);
+		divideRow(iden, i, factor);
 		for(int k = 0; k < 4; ++k)
 		{
 			if(k != i)
 			{
 				factor = matrix_[k][i];
-				RES(matrix_, k, i, factor); RES(iden, k, i, factor);
+				subtractScaledRow(matrix_, k, i, factor);
+				subtractScaledRow(iden, k, i, factor);
 			}
 		}
 	}
@@ -181,9 +197,9 @@ void Matrix4::identity()
 		for(int j = 0; j < 4; ++j)
 		{
 			if(i == j)
-				matrix_[i][j] = 1.0;
+				matrix_[i][j] = 1.f;
 			else
-				matrix_[i][j] = 0;
+				matrix_[i][j] = 0.f;
 		}
 }
 
