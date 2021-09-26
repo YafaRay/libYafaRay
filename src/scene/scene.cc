@@ -438,24 +438,6 @@ Material *Scene::createMaterial(const std::string &name, ParamMap &params, std::
 }
 
 template <typename T>
-T *Scene::createMapItem(Logger &logger, const std::string &name, const std::string &class_name, std::unique_ptr<T> item, std::map<std::string, std::unique_ptr<T>> &map)
-{
-	std::string pname = class_name;
-	if(map.find(name) != map.end())
-	{
-		logWarnExist(logger, pname, name); return nullptr;
-	}
-	if(item)
-	{
-		map[name] = std::move(item);
-		if(logger.isVerbose()) logInfoVerboseSuccess(logger, pname, name, class_name);
-		return map[name].get();
-	}
-	logErrOnCreate(logger, pname, name, class_name);
-	return nullptr;
-}
-
-template <typename T>
 T *Scene::createMapItem(Logger &logger, const std::string &name, const std::string &class_name, ParamMap &params, std::map<std::string, std::unique_ptr<T>> &map, Scene *scene, bool check_type_exists)
 {
 	std::string pname = class_name;
