@@ -19,6 +19,7 @@
 #include "accelerator/accelerator_simple_test.h"
 #include "geometry/primitive.h"
 #include "geometry/object.h"
+#include "material/material.h"
 #include "common/logger.h"
 
 BEGIN_YAFARAY
@@ -69,9 +70,17 @@ AcceleratorIntersectData AcceleratorSimpleTest::intersect(const Ray &ray, float 
 			const IntersectData intersect_data = primitive->intersect(ray);
 			if(intersect_data.hit_ && intersect_data.t_hit_ >= ray.tmin_ && intersect_data.t_hit_ < accelerator_intersect_data.t_max_)
 			{
-				accelerator_intersect_data.setIntersectData(intersect_data);
-				accelerator_intersect_data.t_max_ = intersect_data.t_hit_;
-				accelerator_intersect_data.hit_primitive_ = primitive;
+				const Visibility prim_visibility = primitive->getVisibility();
+				if(prim_visibility == Visibility::NormalVisible || prim_visibility == Visibility::VisibleNoShadows)
+				{
+					const Visibility mat_visibility = primitive->getMaterial()->getVisibility();
+					if(mat_visibility == Visibility::NormalVisible || mat_visibility == Visibility::VisibleNoShadows)
+					{
+						accelerator_intersect_data.setIntersectData(intersect_data);
+						accelerator_intersect_data.t_max_ = intersect_data.t_hit_;
+						accelerator_intersect_data.hit_primitive_ = primitive;
+					}
+				}
 			}
 		}
 	}
@@ -89,9 +98,17 @@ AcceleratorIntersectData AcceleratorSimpleTest::intersectS(const Ray &ray, float
 			const IntersectData intersect_data = primitive->intersect(ray);
 			if(intersect_data.hit_ && intersect_data.t_hit_ >= (ray.tmin_ + shadow_bias) && intersect_data.t_hit_ < t_max)
 			{
-				AcceleratorIntersectData accelerator_intersect_data;
-				accelerator_intersect_data.hit_ = true;
-				return accelerator_intersect_data;
+				const Visibility prim_visibility = primitive->getVisibility();
+				if(prim_visibility == Visibility::NormalVisible || prim_visibility == Visibility::InvisibleShadowsOnly)
+				{
+					const Visibility mat_visibility = primitive->getMaterial()->getVisibility();
+					if(mat_visibility == Visibility::NormalVisible || mat_visibility == Visibility::InvisibleShadowsOnly)
+					{
+						AcceleratorIntersectData accelerator_intersect_data;
+						accelerator_intersect_data.hit_ = true;
+						return accelerator_intersect_data;
+					}
+				}
 			}
 		}
 	}

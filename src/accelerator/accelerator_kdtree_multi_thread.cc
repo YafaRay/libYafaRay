@@ -758,19 +758,16 @@ AcceleratorIntersectData AcceleratorKdTreeMultiThread::intersect(const Ray &ray,
 			{
 				if(intersect_data.t_hit_ < accelerator_intersect_data.t_max_ && intersect_data.t_hit_ >= ray.tmin_)
 				{
-					bool check_instersection = false;
-					Visibility visibility = primitive->getVisibility();
-					if(visibility != Visibility::InvisibleShadowsOnly)
+					const Visibility prim_visibility = primitive->getVisibility();
+					if(prim_visibility == Visibility::NormalVisible || prim_visibility == Visibility::VisibleNoShadows)
 					{
-						const Material *mat = primitive->getMaterial();
-						visibility = mat->getVisibility();
-						if(visibility != Visibility::InvisibleShadowsOnly) check_instersection = true;
-					}
-					if(check_instersection)
-					{
-						accelerator_intersect_data.setIntersectData(intersect_data);
-						accelerator_intersect_data.t_max_ = intersect_data.t_hit_;
-						accelerator_intersect_data.hit_primitive_ = primitive;
+						const Visibility mat_visibility = primitive->getMaterial()->getVisibility();
+						if(mat_visibility == Visibility::NormalVisible || mat_visibility == Visibility::VisibleNoShadows)
+						{
+							accelerator_intersect_data.setIntersectData(intersect_data);
+							accelerator_intersect_data.t_max_ = intersect_data.t_hit_;
+							accelerator_intersect_data.hit_primitive_ = primitive;
+						}
 					}
 				}
 			}
@@ -885,19 +882,16 @@ AcceleratorIntersectData AcceleratorKdTreeMultiThread::intersectS(const Ray &ray
 			{
 				if(intersect_data.t_hit_ < t_max && intersect_data.t_hit_ >= 0.f)  // '>=' ?
 				{
-					bool check_instersection = false;
-					Visibility visibility = primitive->getVisibility();
-					if(visibility != Visibility::VisibleNoShadows)
+					const Visibility prim_visibility = primitive->getVisibility();
+					if(prim_visibility == Visibility::NormalVisible || prim_visibility == Visibility::InvisibleShadowsOnly)
 					{
-						const Material *mat = primitive->getMaterial();
-						visibility = mat->getVisibility();
-						if(visibility != Visibility::VisibleNoShadows) check_instersection = true;
-					}
-					if(check_instersection)
-					{
-						accelerator_intersect_data.setIntersectData(intersect_data);
-						accelerator_intersect_data.hit_primitive_ = primitive;
-						return true;
+						const Visibility mat_visibility = primitive->getMaterial()->getVisibility();
+						if(mat_visibility == Visibility::NormalVisible || mat_visibility == Visibility::InvisibleShadowsOnly)
+						{
+							accelerator_intersect_data.setIntersectData(intersect_data);
+							accelerator_intersect_data.hit_primitive_ = primitive;
+							return true;
+						}
 					}
 				}
 			}
