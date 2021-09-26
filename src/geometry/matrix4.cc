@@ -51,13 +51,6 @@ Matrix4::Matrix4(const float source[4][4])
 			matrix_[i][j] = source[i][j];
 }
 
-Matrix4::Matrix4(const double source[4][4])
-{
-	for(int i = 0; i < 4; i++)
-		for(int j = 0; j < 4; j++)
-			matrix_[i][j] = source[i][j];
-}
-
 #define SWAP(m,i,b)\
 for(int j=0; j<4; ++j) std::swap(m[i][j], m[b][j])
 

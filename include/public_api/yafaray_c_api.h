@@ -74,7 +74,7 @@ extern "C" {
 	YAFARAY_C_API_EXPORT void yafaray_paramsSetInt(yafaray_Interface_t *interface, const char *name, int i);
 	YAFARAY_C_API_EXPORT void yafaray_paramsSetFloat(yafaray_Interface_t *interface, const char *name, double f);
 	YAFARAY_C_API_EXPORT void yafaray_paramsSetColor(yafaray_Interface_t *interface, const char *name, float r, float g, float b, float a);
-	YAFARAY_C_API_EXPORT void yafaray_paramsSetMatrix(yafaray_Interface_t *interface, const char *name, const float *m, yafaray_bool_t transpose);
+	YAFARAY_C_API_EXPORT void yafaray_paramsSetMatrix(yafaray_Interface_t *interface, const char *name, const float matrix[4][4], yafaray_bool_t transpose);
 	YAFARAY_C_API_EXPORT void yafaray_paramsClearAll(yafaray_Interface_t *interface);
 	YAFARAY_C_API_EXPORT void yafaray_paramsPushList(yafaray_Interface_t *interface);
 	YAFARAY_C_API_EXPORT void yafaray_paramsEndList(yafaray_Interface_t *interface);

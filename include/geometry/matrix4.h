@@ -36,7 +36,6 @@ class Matrix4
 		Matrix4(const float init);
 		Matrix4(const Matrix4 &source);
 		Matrix4(const float source[4][4]);
-		Matrix4(const double source[4][4]);
 		/*! attention, this function can cause the matrix to become invalid!
 			unless you are sure the matrix is invertible, check invalid() afterwards! */
 		Matrix4 &inverse();

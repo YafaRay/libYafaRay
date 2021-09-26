@@ -161,43 +161,13 @@ void Interface::paramsSetColor(const char *name, float r, float g, float b, floa
 	(*cparams_)[std::string(name)] = Parameter(col);
 }
 
-void Interface::paramsSetColor(const char *name, const float *rgb, bool with_alpha) noexcept
+void Interface::paramsSetMatrix(const char *name, const Matrix4 &matrix, bool transpose) noexcept
 {
-	Rgba col(rgb[0], rgb[1], rgb[2], (with_alpha ? rgb[3] : 1.f));
-	col.linearRgbFromColorSpace(input_color_space_, input_gamma_);
-	(*cparams_)[std::string(name)] = Parameter(col);
-}
-
-void Interface::paramsSetMatrix(const char *name, const float m[4][4], bool transpose) noexcept
-{
-	if(transpose)	(*cparams_)[std::string(name)] = Matrix4(m).transpose();
-	else		(*cparams_)[std::string(name)] = Matrix4(m);
-}
-
-void Interface::paramsSetMatrix(const char *name, const double m[4][4], bool transpose) noexcept
-{
-	if(transpose)	(*cparams_)[std::string(name)] = Matrix4(m).transpose();
-	else		(*cparams_)[std::string(name)] = Matrix4(m);
-}
-
-void Interface::paramsSetMemMatrix(const char *name, const float *matrix, bool transpose) noexcept
-{
-	float mat[4][4];
-	int i, j;
-	for(i = 0; i < 4; i++)
-		for(j = 0; j < 4; j++)
-			mat[i][j] = *(matrix + i * 4 + j);
-	paramsSetMatrix(name, mat, transpose);
-}
-
-void Interface::paramsSetMemMatrix(const char *name, const double *matrix, bool transpose) noexcept
-{
-	double mat[4][4];
-	int i, j;
-	for(i = 0; i < 4; i++)
-		for(j = 0; j < 4; j++)
-			mat[i][j] = *(matrix + i * 4 + j);
-	paramsSetMatrix(name, mat, transpose);
+	if(transpose)
+	{
+		(*cparams_)[std::string(name)] = Matrix4{matrix}.transpose();
+	}
+	else (*cparams_)[std::string(name)] = matrix;
 }
 
 void Interface::setInputColorSpace(const std::string &color_space_string, float gamma_val) noexcept
