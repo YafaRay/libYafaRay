@@ -72,6 +72,10 @@ class ExportC: public Interface
 		void writeParamList(int indent) noexcept;
 		static void writeMatrix(const std::string &name, const Matrix4 &m, std::ofstream &file) noexcept;
 		static void writeParam(const std::string &name, const Parameter &param, std::ofstream &file, ColorSpace color_space, float gamma) noexcept;
+		static std::string generateHeader();
+		std::string sectionSplit();
+		std::string generateSectionsCalls() const;
+		std::string generateMain() const;
 		std::ofstream file_;
 		std::string file_name_;
 		std::string current_material_;
@@ -79,6 +83,9 @@ class ExportC: public Interface
 		unsigned int next_obj_ = 0;
 		float gamma_ = 1.f;
 		ColorSpace color_space_ = RawManualGamma;
+		int section_num_lines_ = 0;
+		int num_sections_ = 1;
+		static constexpr int section_max_lines_ = 50000; //To divide the exported C code in sections of this maximum amount of lines, so the C compilers do not crash due to out of memory errors in large C scenes.
 };
 
 END_YAFARAY
