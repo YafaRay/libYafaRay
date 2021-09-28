@@ -256,7 +256,7 @@ void ExportC::writeParam(const std::string &name, const Parameter &param, std::o
 		param.getVal(m);
 		file << "yafaray_paramsSetMatrix(yi, ";
 		writeMatrix(name, m, file);
-		file << ");\n";
+		file << ", YAFARAY_BOOL_FALSE);\n";
 	}
 	else
 	{
