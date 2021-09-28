@@ -20,6 +20,7 @@ LIBYAFARAY_4.0.0 {
         yafaray_addUv;
         yafaray_smoothMesh;
         yafaray_addInstance;
+        yafaray_addInstanceArray;
         yafaray_paramsSetVector;
         yafaray_paramsSetString;
         yafaray_paramsSetBool;
@@ -27,6 +28,7 @@ LIBYAFARAY_4.0.0 {
         yafaray_paramsSetFloat;
         yafaray_paramsSetColor;
         yafaray_paramsSetMatrix;
+        yafaray_paramsSetMatrixArray;
         yafaray_paramsClearAll;
         yafaray_paramsPushList;
         yafaray_paramsEndList;

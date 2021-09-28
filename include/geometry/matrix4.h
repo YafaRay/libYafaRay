@@ -35,6 +35,7 @@ class Matrix4
 		Matrix4() = default;
 		Matrix4(const float init);
 		Matrix4(const Matrix4 &source);
+		Matrix4(float m_00, float m_01, float m_02, float m_03, float m_10, float m_11, float m_12, float m_13, float m_20, float m_21, float m_22, float m_23, float m_30, float m_31, float m_32, float m_33);
 		Matrix4(const float source[4][4]);
 		/*! attention, this function can cause the matrix to become invalid!
 			unless you are sure the matrix is invertible, check invalid() afterwards! */

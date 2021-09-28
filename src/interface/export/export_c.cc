@@ -210,7 +210,7 @@ void ExportC::writeParam(const std::string &name, const Parameter &param, std::o
 
 bool ExportC::addInstance(const char *base_object_name, const Matrix4 &obj_to_world) noexcept
 {
-	file_ << "\t" << "addInstance(yi, ";
+	file_ << "\t" << "yafaray_addInstance(yi, ";
 	writeMatrix(base_object_name, obj_to_world, file_);
 	file_ << ");\n";
 	return true;

@@ -108,9 +108,12 @@ yafaray_bool_t yafaray_smoothMesh(yafaray_Interface_t *interface, const char *na
 	return static_cast<yafaray_bool_t>(reinterpret_cast<yafaray::Interface *>(interface)->smoothMesh(name, angle));
 }
 
-yafaray_bool_t yafaray_addInstance(yafaray_Interface_t *interface, const char *base_object_name, const float obj_to_world[4][4])
-// functions to build paramMaps instead of passing them from Blender
-// (decouling implementation details of STL containers, paraMap_t etc. as much as possible)
+yafaray_bool_t yafaray_addInstance(yafaray_Interface_t *interface, const char *base_object_name, float m_00, float m_01, float m_02, float m_03, float m_10, float m_11, float m_12, float m_13, float m_20, float m_21, float m_22, float m_23, float m_30, float m_31, float m_32, float m_33)
+{
+	return static_cast<yafaray_bool_t>(reinterpret_cast<yafaray::Interface *>(interface)->addInstance(base_object_name, {m_00, m_01, m_02, m_03, m_10, m_11, m_12, m_13, m_20, m_21, m_22, m_23, m_30, m_31, m_32, m_33}));
+}
+
+yafaray_bool_t yafaray_addInstanceArray(yafaray_Interface_t *interface, const char *base_object_name, const float obj_to_world[4][4])
 {
 	return static_cast<yafaray_bool_t>(reinterpret_cast<yafaray::Interface *>(interface)->addInstance(base_object_name, obj_to_world));
 }
@@ -145,7 +148,12 @@ void yafaray_paramsSetColor(yafaray_Interface_t *interface, const char *name, fl
 	reinterpret_cast<yafaray::Interface *>(interface)->paramsSetColor(name, r, g, b, a);
 }
 
-void yafaray_paramsSetMatrix(yafaray_Interface_t *interface, const char *name, const float matrix[4][4], yafaray_bool_t transpose)
+void yafaray_paramsSetMatrix(yafaray_Interface_t *interface, const char *name, float m_00, float m_01, float m_02, float m_03, float m_10, float m_11, float m_12, float m_13, float m_20, float m_21, float m_22, float m_23, float m_30, float m_31, float m_32, float m_33, yafaray_bool_t transpose)
+{
+	reinterpret_cast<yafaray::Interface *>(interface)->paramsSetMatrix(name, {m_00, m_01, m_02, m_03, m_10, m_11, m_12, m_13, m_20, m_21, m_22, m_23, m_30, m_31, m_32, m_33}, transpose);
+}
+
+void yafaray_paramsSetMatrixArray(yafaray_Interface_t *interface, const char *name, const float matrix[4][4], yafaray_bool_t transpose)
 {
 	reinterpret_cast<yafaray::Interface *>(interface)->paramsSetMatrix(name, matrix, transpose);
 }
