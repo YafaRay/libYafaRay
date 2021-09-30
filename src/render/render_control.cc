@@ -122,16 +122,5 @@ float RenderControl::currentPassPercent() const
 	return current_pass_percent_;
 }
 
-void RenderControl::setInteractive(bool interactive)
-{
-	std::lock_guard<std::mutex> lock_guard(mutx_);
-	interactive_ = interactive;
-}
-
-bool RenderControl::isInteractive() const
-{
-	return interactive_;
-}
-
 END_YAFARAY
 

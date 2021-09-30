@@ -107,8 +107,6 @@ int main()
 	yafaray_paramsSetString(yi, "type", "yafaray");
 	yafaray_createScene(yi);
 	yafaray_paramsClearAll(yi);
-	yafaray_setInteractive(yi, YAFARAY_BOOL_TRUE);
-
 	{
 		/* Creating image from RAM or file */
 		const int tex_width = 200;

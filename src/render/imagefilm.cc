@@ -239,11 +239,8 @@ void ImageFilm::init(RenderControl &render_control, int num_passes)
 	timer_.start("imagesAutoSaveTimer");
 	timer_.start("filmAutoSaveTimer");
 
-	if(!render_control.isPreview())	// Avoid doing the Film Load & Save operations and updating the film check values when we are just rendering a preview!
-	{
-		if(film_load_save_.mode_ == FilmLoadSave::LoadAndSave) imageFilmLoadAllInFolder(render_control);	//Load all the existing Film in the images output folder, combining them together. It will load only the Film files with the same "base name" as the output image film (including file name, computer node name and frame) to allow adding samples to animations.
-		if(film_load_save_.mode_ == FilmLoadSave::LoadAndSave || film_load_save_.mode_ == FilmLoadSave::Save) imageFilmFileBackup(); //If the imageFilm is set to Save, at the start rename the previous film file as a "backup" just in case the user has made a mistake and wants to get the previous film back.
-	}
+	if(film_load_save_.mode_ == FilmLoadSave::LoadAndSave) imageFilmLoadAllInFolder(render_control);	//Load all the existing Film in the images output folder, combining them together. It will load only the Film files with the same "base name" as the output image film (including file name, computer node name and frame) to allow adding samples to animations.
+	if(film_load_save_.mode_ == FilmLoadSave::LoadAndSave || film_load_save_.mode_ == FilmLoadSave::Save) imageFilmFileBackup(); //If the imageFilm is set to Save, at the start rename the previous film file as a "backup" just in case the user has made a mistake and wants to get the previous film back.
 
 	if(render_callbacks_ && render_callbacks_->notify_view_)
 	{
@@ -275,7 +272,7 @@ int ImageFilm::nextPass(const RenderView *render_view, RenderControl &render_con
 
 	if(logger_.isDebug())logger_.logDebug("nPass=", n_pass_, " imagesAutoSavePassCounter=", images_auto_save_params_.pass_counter_, " filmAutoSavePassCounter=", film_load_save_.auto_save_.pass_counter_);
 
-	if(render_control.inProgress() && !render_control.isPreview())	//avoid saving images/film if we are just rendering material/world/lights preview windows, etc
+	if(render_control.inProgress())
 	{
 		if((images_auto_save_params_.interval_type_ == ImageFilm::AutoSaveParams::IntervalType::Pass) && (images_auto_save_params_.pass_counter_ >= images_auto_save_params_.interval_passes_))
 		{
@@ -540,7 +537,7 @@ void ImageFilm::finishArea(const RenderView *render_view, RenderControl &render_
 
 	if(render_callbacks_ && render_callbacks_->flush_area_) render_callbacks_->flush_area_(render_view->getName().c_str(), a.id_, a.x_, a.y_, end_x + cx_0_, end_y + cy_0_, render_callbacks_->flush_area_data_);
 
-	if(render_control.inProgress() && !render_control.isPreview())	//avoid saving images/film if we are just rendering material/world/lights preview windows, etc
+	if(render_control.inProgress())
 	{
 		timer_.stop("imagesAutoSaveTimer");
 		images_auto_save_params_.timer_ += timer_.getTime("imagesAutoSaveTimer");
@@ -667,7 +664,7 @@ void ImageFilm::flush(const RenderView *render_view, const RenderControl &render
 
 	if(render_control.finished())
 	{
-		if(!render_control.isPreview() && (film_load_save_.mode_ == FilmLoadSave::LoadAndSave || film_load_save_.mode_ == FilmLoadSave::Save))
+		if(film_load_save_.mode_ == FilmLoadSave::LoadAndSave || film_load_save_.mode_ == FilmLoadSave::Save)
 		{
 			imageFilmSave();
 		}

@@ -75,16 +75,6 @@ void Interface::defineLayer() noexcept
 	scene_->defineLayer(*params_);
 }
 
-bool Interface::setInteractive(bool interactive) noexcept
-{
-	if(scene_)
-	{
-		scene_->getRenderControl().setInteractive(interactive);
-		return true;
-	}
-	else return false;
-}
-
 bool Interface::startGeometry() noexcept { return scene_->startObjects(); }
 
 bool Interface::endGeometry() noexcept { return scene_->endObjects(); }

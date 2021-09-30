@@ -111,7 +111,6 @@ class Interface
 		virtual void defineLayer() noexcept;
 		virtual void cancel() noexcept;
 
-		bool setInteractive(bool interactive) noexcept;
 		void enablePrintDateTime(bool value) noexcept;
 		void setConsoleVerbosityLevel(const ::yafaray_LogLevel_t &log_level) noexcept;
 		void setLogVerbosityLevel(const ::yafaray_LogLevel_t &log_level) noexcept;
@@ -124,7 +123,6 @@ class Interface
 		void printWarning(const std::string &msg) const noexcept;
 		void printError(const std::string &msg) const noexcept;
 		void setConsoleLogColorsEnabled(bool console_log_colors_enabled) const noexcept;
-
 		void setInputColorSpace(const std::string &color_space_string, float gamma_val) noexcept;
 
 	protected:

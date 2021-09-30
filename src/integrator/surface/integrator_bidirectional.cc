@@ -176,7 +176,6 @@ bool BidirectionalIntegrator::preprocess(const RenderControl &render_control, Ti
 
 	//nPaths = 0;
 	image_film_->setDensityEstimation(true);
-	//lightImage->setInteractive(false);
 	//lightImage->init();
 
 	// test...
