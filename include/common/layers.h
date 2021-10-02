@@ -45,7 +45,7 @@ class Layers final : public Collection<Layer::Type, Layer>
 		const Layers getLayersWithExportedImages() const;
 		std::string printExportedTable() const;
 
-		static const std::map<Layer::Type, std::string> &listAvailable() { return Layer::getMapTypeTypeName(); }
+		static const std::map<Layer::Type, std::string> &listAvailable() { return Layer::getDictTypeTypeName(); }
 };
 
 inline bool Layers::isDefined(const Layer::Type &type) const

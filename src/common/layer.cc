@@ -24,8 +24,8 @@
 
 BEGIN_YAFARAY
 
-std::map<std::string, Layer::Type> Layer::map_typename_type_ = initMapTypeNamesTypes();
-std::map<Layer::Type, std::string> Layer::map_type_typename_ = initMapTypeTypeNames(map_typename_type_);
+const std::map<std::string, Layer::Type> Layer::dict_typename_type_ = initDictTypeNamesTypes();
+const std::map<Layer::Type, std::string> Layer::dict_type_typename_ = initDictTypeTypeNames(dict_typename_type_);
 
 Layer::Layer(const std::string &type_name, const std::string &image_type_name, const std::string &exported_image_type_name, const std::string &exported_image_name) : Layer(getType(type_name), Image::getTypeFromName(image_type_name), Image::getTypeFromName(exported_image_type_name), exported_image_name)
 {
@@ -37,95 +37,95 @@ Layer::Layer(const Type &type, const Image::Type &image_type, const Image::Type 
 	//EMPTY
 }
 
-std::map<std::string, Layer::Type> Layer::initMapTypeNamesTypes()
+std::map<std::string, Layer::Type> Layer::initDictTypeNamesTypes()
 {
-	std::map<std::string, Layer::Type> map_typename_type;
+	std::map<std::string, Layer::Type> dict_typename_type;
 
-	map_typename_type["combined"] = Layer::Combined;
-	map_typename_type["z-depth-norm"] = Layer::ZDepthNorm;
-	map_typename_type["z-depth-abs"] = Layer::ZDepthAbs;
-	map_typename_type["debug-normal-smooth"] = Layer::NormalSmooth;
-	map_typename_type["debug-normal-geom"] = Layer::NormalGeom;
-	map_typename_type["adv-radiance"] = Layer::Radiance;
-	map_typename_type["debug-uv"] = Layer::Uv;
-	map_typename_type["debug-barycentric-uvw"] = Layer::BarycentricUvw;
-	map_typename_type["emit"] = Layer::Emit;
-	map_typename_type["mist"] = Layer::Mist;
-	map_typename_type["diffuse"] = Layer::Diffuse;
-	map_typename_type["diffuse-noshadow"] = Layer::DiffuseNoShadow;
-	map_typename_type["ao"] = Layer::Ao;
-	map_typename_type["ao-clay"] = Layer::AoClay;
-	map_typename_type["env"] = Layer::Env;
-	map_typename_type["indirect"] = Layer::IndirectAll;
-	map_typename_type["adv-indirect"] = Layer::Indirect;
-	map_typename_type["shadow"] = Layer::Shadow;
-	map_typename_type["reflect"] = Layer::ReflectAll;
-	map_typename_type["refract"] = Layer::RefractAll;
-	map_typename_type["adv-reflect"] = Layer::ReflectPerfect;
-	map_typename_type["adv-refract"] = Layer::RefractPerfect;
-	map_typename_type["obj-index-abs"] = Layer::ObjIndexAbs;
-	map_typename_type["obj-index-norm"] = Layer::ObjIndexNorm;
-	map_typename_type["obj-index-auto"] = Layer::ObjIndexAuto;
-	map_typename_type["obj-index-auto-abs"] = Layer::ObjIndexAutoAbs;
-	map_typename_type["obj-index-mask"] = Layer::ObjIndexMask;
-	map_typename_type["obj-index-mask-shadow"] = Layer::ObjIndexMaskShadow;
-	map_typename_type["obj-index-mask-all"] = Layer::ObjIndexMaskAll;
-	map_typename_type["mat-index-abs"] = Layer::MatIndexAbs;
-	map_typename_type["mat-index-norm"] = Layer::MatIndexNorm;
-	map_typename_type["mat-index-auto"] = Layer::MatIndexAuto;
-	map_typename_type["mat-index-auto-abs"] = Layer::MatIndexAutoAbs;
-	map_typename_type["mat-index-mask"] = Layer::MatIndexMask;
-	map_typename_type["mat-index-mask-shadow"] = Layer::MatIndexMaskShadow;
-	map_typename_type["mat-index-mask-all"] = Layer::MatIndexMaskAll;
-	map_typename_type["adv-diffuse-indirect"] = Layer::DiffuseIndirect;
-	map_typename_type["adv-diffuse-color"] = Layer::DiffuseColor;
-	map_typename_type["adv-glossy"] = Layer::Glossy;
-	map_typename_type["adv-glossy-indirect"] = Layer::GlossyIndirect;
-	map_typename_type["adv-glossy-color"] = Layer::GlossyColor;
-	map_typename_type["adv-trans"] = Layer::Trans;
-	map_typename_type["adv-trans-indirect"] = Layer::TransIndirect;
-	map_typename_type["adv-trans-color"] = Layer::TransColor;
-	map_typename_type["adv-subsurface"] = Layer::Subsurface;
-	map_typename_type["adv-subsurface-indirect"] = Layer::SubsurfaceIndirect;
-	map_typename_type["adv-subsurface-color"] = Layer::SubsurfaceColor;
-	map_typename_type["debug-normal-smooth"] = Layer::NormalSmooth;
-	map_typename_type["debug-normal-geom"] = Layer::NormalGeom;
-	map_typename_type["debug-nu"] = Layer::DebugNu;
-	map_typename_type["debug-nv"] = Layer::DebugNv;
-	map_typename_type["debug-dpdu"] = Layer::DebugDpdu;
-	map_typename_type["debug-dpdv"] = Layer::DebugDpdv;
-	map_typename_type["debug-dsdu"] = Layer::DebugDsdu;
-	map_typename_type["debug-dsdv"] = Layer::DebugDsdv;
-	map_typename_type["adv-surface-integration"] = Layer::SurfaceIntegration;
-	map_typename_type["adv-volume-integration"] = Layer::VolumeIntegration;
-	map_typename_type["adv-volume-transmittance"] = Layer::VolumeTransmittance;
-	map_typename_type["debug-aa-samples"] = Layer::AaSamples;
-	map_typename_type["debug-light-estimation-light-dirac"] = Layer::DebugLightEstimationLightDirac;
-	map_typename_type["debug-light-estimation-light-sampling"] = Layer::DebugLightEstimationLightSampling;
-	map_typename_type["debug-light-estimation-mat-sampling"] = Layer::DebugLightEstimationMatSampling;
-	map_typename_type["debug-wireframe"] = Layer::DebugWireframe;
-	map_typename_type["debug-faces-edges"] = Layer::DebugFacesEdges;
-	map_typename_type["debug-objects-edges"] = Layer::DebugObjectsEdges;
-	map_typename_type["toon"] = Layer::Toon;
-	map_typename_type["debug-sampling-factor"] = Layer::DebugSamplingFactor;
-	map_typename_type["debug-dp-lengths"] = Layer::DebugDpLengths;
-	map_typename_type["debug-dpdx"] = Layer::DebugDpdx;
-	map_typename_type["debug-dpdy"] = Layer::DebugDpdy;
-	map_typename_type["debug-dpdxy"] = Layer::DebugDpdxy;
-	map_typename_type["debug-dudx-dvdx"] = Layer::DebugDudxDvdx;
-	map_typename_type["debug-dudy-dvdy"] = Layer::DebugDudyDvdy;
-	map_typename_type["debug-dudxy-dvdxy"] = Layer::DebugDudxyDvdxy;
-	return map_typename_type;
+	dict_typename_type["combined"] = Layer::Combined;
+	dict_typename_type["z-depth-norm"] = Layer::ZDepthNorm;
+	dict_typename_type["z-depth-abs"] = Layer::ZDepthAbs;
+	dict_typename_type["debug-normal-smooth"] = Layer::NormalSmooth;
+	dict_typename_type["debug-normal-geom"] = Layer::NormalGeom;
+	dict_typename_type["adv-radiance"] = Layer::Radiance;
+	dict_typename_type["debug-uv"] = Layer::Uv;
+	dict_typename_type["debug-barycentric-uvw"] = Layer::BarycentricUvw;
+	dict_typename_type["emit"] = Layer::Emit;
+	dict_typename_type["mist"] = Layer::Mist;
+	dict_typename_type["diffuse"] = Layer::Diffuse;
+	dict_typename_type["diffuse-noshadow"] = Layer::DiffuseNoShadow;
+	dict_typename_type["ao"] = Layer::Ao;
+	dict_typename_type["ao-clay"] = Layer::AoClay;
+	dict_typename_type["env"] = Layer::Env;
+	dict_typename_type["indirect"] = Layer::IndirectAll;
+	dict_typename_type["adv-indirect"] = Layer::Indirect;
+	dict_typename_type["shadow"] = Layer::Shadow;
+	dict_typename_type["reflect"] = Layer::ReflectAll;
+	dict_typename_type["refract"] = Layer::RefractAll;
+	dict_typename_type["adv-reflect"] = Layer::ReflectPerfect;
+	dict_typename_type["adv-refract"] = Layer::RefractPerfect;
+	dict_typename_type["obj-index-abs"] = Layer::ObjIndexAbs;
+	dict_typename_type["obj-index-norm"] = Layer::ObjIndexNorm;
+	dict_typename_type["obj-index-auto"] = Layer::ObjIndexAuto;
+	dict_typename_type["obj-index-auto-abs"] = Layer::ObjIndexAutoAbs;
+	dict_typename_type["obj-index-mask"] = Layer::ObjIndexMask;
+	dict_typename_type["obj-index-mask-shadow"] = Layer::ObjIndexMaskShadow;
+	dict_typename_type["obj-index-mask-all"] = Layer::ObjIndexMaskAll;
+	dict_typename_type["mat-index-abs"] = Layer::MatIndexAbs;
+	dict_typename_type["mat-index-norm"] = Layer::MatIndexNorm;
+	dict_typename_type["mat-index-auto"] = Layer::MatIndexAuto;
+	dict_typename_type["mat-index-auto-abs"] = Layer::MatIndexAutoAbs;
+	dict_typename_type["mat-index-mask"] = Layer::MatIndexMask;
+	dict_typename_type["mat-index-mask-shadow"] = Layer::MatIndexMaskShadow;
+	dict_typename_type["mat-index-mask-all"] = Layer::MatIndexMaskAll;
+	dict_typename_type["adv-diffuse-indirect"] = Layer::DiffuseIndirect;
+	dict_typename_type["adv-diffuse-color"] = Layer::DiffuseColor;
+	dict_typename_type["adv-glossy"] = Layer::Glossy;
+	dict_typename_type["adv-glossy-indirect"] = Layer::GlossyIndirect;
+	dict_typename_type["adv-glossy-color"] = Layer::GlossyColor;
+	dict_typename_type["adv-trans"] = Layer::Trans;
+	dict_typename_type["adv-trans-indirect"] = Layer::TransIndirect;
+	dict_typename_type["adv-trans-color"] = Layer::TransColor;
+	dict_typename_type["adv-subsurface"] = Layer::Subsurface;
+	dict_typename_type["adv-subsurface-indirect"] = Layer::SubsurfaceIndirect;
+	dict_typename_type["adv-subsurface-color"] = Layer::SubsurfaceColor;
+	dict_typename_type["debug-normal-smooth"] = Layer::NormalSmooth;
+	dict_typename_type["debug-normal-geom"] = Layer::NormalGeom;
+	dict_typename_type["debug-nu"] = Layer::DebugNu;
+	dict_typename_type["debug-nv"] = Layer::DebugNv;
+	dict_typename_type["debug-dpdu"] = Layer::DebugDpdu;
+	dict_typename_type["debug-dpdv"] = Layer::DebugDpdv;
+	dict_typename_type["debug-dsdu"] = Layer::DebugDsdu;
+	dict_typename_type["debug-dsdv"] = Layer::DebugDsdv;
+	dict_typename_type["adv-surface-integration"] = Layer::SurfaceIntegration;
+	dict_typename_type["adv-volume-integration"] = Layer::VolumeIntegration;
+	dict_typename_type["adv-volume-transmittance"] = Layer::VolumeTransmittance;
+	dict_typename_type["debug-aa-samples"] = Layer::AaSamples;
+	dict_typename_type["debug-light-estimation-light-dirac"] = Layer::DebugLightEstimationLightDirac;
+	dict_typename_type["debug-light-estimation-light-sampling"] = Layer::DebugLightEstimationLightSampling;
+	dict_typename_type["debug-light-estimation-mat-sampling"] = Layer::DebugLightEstimationMatSampling;
+	dict_typename_type["debug-wireframe"] = Layer::DebugWireframe;
+	dict_typename_type["debug-faces-edges"] = Layer::DebugFacesEdges;
+	dict_typename_type["debug-objects-edges"] = Layer::DebugObjectsEdges;
+	dict_typename_type["toon"] = Layer::Toon;
+	dict_typename_type["debug-sampling-factor"] = Layer::DebugSamplingFactor;
+	dict_typename_type["debug-dp-lengths"] = Layer::DebugDpLengths;
+	dict_typename_type["debug-dpdx"] = Layer::DebugDpdx;
+	dict_typename_type["debug-dpdy"] = Layer::DebugDpdy;
+	dict_typename_type["debug-dpdxy"] = Layer::DebugDpdxy;
+	dict_typename_type["debug-dudx-dvdx"] = Layer::DebugDudxDvdx;
+	dict_typename_type["debug-dudy-dvdy"] = Layer::DebugDudyDvdy;
+	dict_typename_type["debug-dudxy-dvdxy"] = Layer::DebugDudxyDvdxy;
+	return dict_typename_type;
 }
 
-std::map<Layer::Type, std::string> Layer::initMapTypeTypeNames(const std::map<std::string, Layer::Type> &map_typename_type)
+std::map<Layer::Type, std::string> Layer::initDictTypeTypeNames(const std::map<std::string, Layer::Type> &dict_typename_type)
 {
-	std::map<Layer::Type, std::string> map_type_typename;
-	for(const auto &it : map_typename_type)
+	std::map<Layer::Type, std::string> dict_type_typename;
+	for(const auto &it : dict_typename_type)
 	{
-		map_type_typename[it.second] = it.first;
+		dict_type_typename[it.second] = it.first;
 	}
-	return map_type_typename;
+	return dict_type_typename;
 }
 
 Rgba Layer::getDefaultColor(const Type &type)
@@ -176,16 +176,16 @@ Image::Type Layer::getDefaultImageType(const Type &type)
 std::string Layer::getTypeName(const Type &type)
 {
 	if(type == Disabled) return "disabled";
-	const auto it = map_type_typename_.find(type);
-	if(it == map_type_typename_.end()) return "unknown";
+	const auto it = dict_type_typename_.find(type);
+	if(it == dict_type_typename_.end()) return "unknown";
 	else return it->second;
 }
 
 Layer::Type Layer::getType(const std::string &name)
 {
 	if(name == "disabled" || name == "unknown" || name.empty()) return Disabled;
-	const auto it = map_typename_type_.find(name);
-	if(it == map_typename_type_.end()) return Disabled;
+	const auto it = dict_typename_type_.find(name);
+	if(it == dict_typename_type_.end()) return Disabled;
 	else return it->second;
 }
 

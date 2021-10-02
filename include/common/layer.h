@@ -146,19 +146,19 @@ class Layer final
 		static Rgba getDefaultColor(const Type &type);
 		static Image::Type getDefaultImageType(const Type &type);
 		static Flags getFlags(const Type &type);
-		static const std::map<Type, std::string> &getMapTypeTypeName() { return map_type_typename_; }
+		static const std::map<Type, std::string> &getDictTypeTypeName() { return dict_type_typename_; }
 
 	private:
-		static std::map<std::string, Type> initMapTypeNamesTypes();
-		static std::map<Type, std::string> initMapTypeTypeNames(const std::map<std::string, Type> &map_typename_type);
+		static std::map<std::string, Type> initDictTypeNamesTypes();
+		static std::map<Type, std::string> initDictTypeTypeNames(const std::map<std::string, Type> &dict_typename_type);
 
 		Type type_ = Disabled;
 		Image::Type image_type_ = Image::Type::None;
 		Image::Type exported_image_type_ = Image::Type::None;
 		std::string exported_image_name_;
 
-		static std::map<std::string, Type> map_typename_type_; //!Dictionary name->layer
-		static std::map<Type, std::string> map_type_typename_; //!Dictionary layer->name
+		static const std::map<std::string, Type> dict_typename_type_; //!Dictionary name->layer
+		static const std::map<Type, std::string> dict_type_typename_; //!Dictionary layer->name
 };
 
 END_YAFARAY
