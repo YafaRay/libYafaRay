@@ -57,7 +57,6 @@ Interface::~Interface() noexcept
 {
 	if(logger_->isVerbose()) logger_->logVerbose("Interface: Deleting scene...");
 	logger_->logInfo("Interface: Done.");
-	logger_->clearAll();
 }
 
 void Interface::clearAll() noexcept
@@ -81,9 +80,7 @@ bool Interface::endGeometry() noexcept { return scene_->endObjects(); }
 
 unsigned int Interface::getNextFreeId() noexcept
 {
-	ObjId_t id;
-	id = scene_->getNextFreeId();
-	return id;
+	return scene_->getNextFreeId();
 }
 
 bool Interface::endObject() noexcept { return scene_->endObject(); }

@@ -72,8 +72,6 @@ class Interface
 		virtual int  addUv(float u, float v) noexcept; //!< add a UV coordinate pair; returns index to be used for addTriangle
 		virtual bool smoothMesh(const char *name, double angle) noexcept; //!< smooth vertex normals of mesh with given ID and angle (in degrees)
 		virtual bool addInstance(const char *base_object_name, const Matrix4 &obj_to_world) noexcept;
-		// functions to build paramMaps instead of passing them from Blender
-		// (decouling implementation details of STL containers, paraMap_t etc. as much as possible)
 		virtual void paramsSetVector(const char *name, double x, double y, double z) noexcept;
 		virtual void paramsSetString(const char *name, const char *s) noexcept;
 		virtual void paramsSetBool(const char *name, bool b) noexcept;
@@ -114,8 +112,6 @@ class Interface
 		void enablePrintDateTime(bool value) noexcept;
 		void setConsoleVerbosityLevel(const ::yafaray_LogLevel_t &log_level) noexcept;
 		void setLogVerbosityLevel(const ::yafaray_LogLevel_t &log_level) noexcept;
-
-		/*! Console Printing wrappers to report in color with yafaray's own console coloring */
 		void printDebug(const std::string &msg) const noexcept;
 		void printVerbose(const std::string &msg) const noexcept;
 		void printInfo(const std::string &msg) const noexcept;
