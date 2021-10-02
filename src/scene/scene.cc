@@ -358,19 +358,9 @@ Integrator *Scene::getIntegrator(const std::string &name) const
 	return Scene::findMapItem<Integrator>(name, integrators_);
 }
 
-ShaderNode *Scene::getShaderNode(const std::string &name) const
-{
-	return Scene::findMapItem<ShaderNode>(name, shaders_);
-}
-
 ImageOutput *Scene::getOutput(const std::string &name) const
 {
 	return Scene::findMapItem<ImageOutput>(name, outputs_);
-}
-
-RenderView *Scene::getRenderView(const std::string &name) const
-{
-	return Scene::findMapItem<RenderView>(name, render_views_);
 }
 
 std::shared_ptr<Image> Scene::getImage(const std::string &name) const
@@ -517,11 +507,6 @@ ImageOutput *Scene::createOutput(const std::string &name, ParamMap &params)
 Texture *Scene::createTexture(const std::string &name, ParamMap &params)
 {
 	return createMapItem<Texture>(logger_, name, "Texture", params, textures_, this);
-}
-
-ShaderNode *Scene::createShaderNode(const std::string &name, ParamMap &params)
-{
-	return createMapItem<ShaderNode>(logger_, name, "ShaderNode", params, shaders_, this);
 }
 
 std::shared_ptr<Background> Scene::createBackground(const std::string &name, ParamMap &params)

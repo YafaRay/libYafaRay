@@ -126,17 +126,14 @@ class Scene
 		int getNumThreads() const { return nthreads_; }
 		int getNumThreadsPhotons() const { return nthreads_photons_; }
 		AaNoiseParams getAaParameters() const { return aa_noise_params_; }
-		const RenderControl &getRenderControl() const { return render_control_; }
 		RenderControl &getRenderControl() { return render_control_; }
 		Material *getMaterial(const std::string &name) const;
 		Texture *getTexture(const std::string &name) const;
-		ShaderNode *getShaderNode(const std::string &name) const;
 		Camera *getCamera(const std::string &name) const;
 		Light *getLight(const std::string &name) const;
 		std::shared_ptr<Background> getBackground(const std::string &name) const;
 		Integrator *getIntegrator(const std::string &name) const;
 		ImageOutput *getOutput(const std::string &name) const;
-		RenderView *getRenderView(const std::string &name) const;
 		std::shared_ptr<Image> getImage(const std::string &name) const;
 		const std::map<std::string, std::unique_ptr<RenderView>> &getRenderViews() const { return render_views_; }
 		const std::map<std::string, std::unique_ptr<VolumeRegion>> &getVolumeRegions() const { return volume_regions_; }
@@ -148,7 +145,6 @@ class Scene
 		Camera *createCamera(const std::string &name, ParamMap &params);
 		std::shared_ptr<Background> createBackground(const std::string &name, ParamMap &params);
 		Integrator *createIntegrator(const std::string &name, ParamMap &params);
-		ShaderNode *createShaderNode(const std::string &name, ParamMap &params);
 		VolumeRegion *createVolumeRegion(const std::string &name, ParamMap &params);
 		RenderView *createRenderView(const std::string &name, ParamMap &params);
 		std::shared_ptr<Image> createImage(const std::string &name, ParamMap &params);
@@ -229,7 +225,6 @@ class Scene
 		std::map<std::string, std::unique_ptr<Camera>> cameras_;
 		std::map<std::string, std::shared_ptr<Background>> backgrounds_;
 		std::map<std::string, std::unique_ptr<Integrator>> integrators_;
-		std::map<std::string, std::unique_ptr<ShaderNode>> shaders_;
 		std::map<std::string, std::unique_ptr<VolumeRegion>> volume_regions_;
 		std::map<std::string, std::unique_ptr<ImageOutput>> outputs_;
 		std::map<std::string, std::unique_ptr<RenderView>> render_views_;
