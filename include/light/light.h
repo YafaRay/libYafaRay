@@ -82,7 +82,7 @@ class Light
 		//! (preferred) number of samples for direct lighting
 		virtual int nSamples() const { return 8; }
 		//! This method must be called right after the factory is called on a background light or the light will fail
-		virtual void setBackground(std::shared_ptr<Background> bg) { background_ = std::move(bg); }
+		virtual void setBackground(const Background *bg) { background_ = bg; }
 		//! Enable/disable entire light source
 		bool lightEnabled() const { return light_enabled_;}
 		bool castShadows() const { return cast_shadows_; }
@@ -101,7 +101,7 @@ class Light
 	protected:
 		std::string name_;
 		Flags flags_;
-		std::shared_ptr<Background> background_;
+		const Background* background_ = nullptr;
 		bool light_enabled_; //!< enable/disable light
 		bool cast_shadows_; //!< enable/disable if the light should cast direct shadows
 		bool shoot_caustic_; //!<enable/disable if the light can shoot caustic photons (photonmap integrator)

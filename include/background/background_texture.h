@@ -35,7 +35,7 @@ class Texture;
 class TextureBackground final : public Background
 {
 	public:
-		static std::shared_ptr<Background> factory(Logger &logger, ParamMap &params, Scene &scene);
+		static std::unique_ptr<Background> factory(Logger &logger, ParamMap &params, Scene &scene);
 
 	private:
 		enum Projection { Spherical = 0, Angular };

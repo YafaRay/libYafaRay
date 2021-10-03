@@ -52,7 +52,7 @@ Rgb GradientBackground::eval(const Ray &ray, bool from_postprocessed) const
 	return color;
 }
 
-std::shared_ptr<Background> GradientBackground::factory(Logger &logger, ParamMap &params, Scene &scene)
+std::unique_ptr<Background> GradientBackground::factory(Logger &logger, ParamMap &params, Scene &scene)
 {
 	Rgb gzenith, ghoriz, szenith(0.4f, 0.5f, 1.f), shoriz(1.f);
 	float p = 1.0;
@@ -75,7 +75,7 @@ std::shared_ptr<Background> GradientBackground::factory(Logger &logger, ParamMap
 	params.getParam("with_caustic", caus);
 	params.getParam("with_diffuse", diff);
 
-	auto grad_bg = std::make_shared<GradientBackground>(GradientBackground(logger, gzenith * p, ghoriz * p, szenith * p, shoriz * p, bgl, true));
+	auto grad_bg = std::unique_ptr<GradientBackground>(new GradientBackground(logger, gzenith * p, ghoriz * p, szenith * p, shoriz * p, bgl, true));
 
 	if(bgl)
 	{
@@ -87,7 +87,7 @@ std::shared_ptr<Background> GradientBackground::factory(Logger &logger, ParamMap
 		bgp["cast_shadows"] = cast_shadows;
 
 		Light *bglight = scene.createLight("GradientBackground_bgLight", bgp);
-		bglight->setBackground(grad_bg);
+		bglight->setBackground(grad_bg.get());
 	}
 
 	return grad_bg;

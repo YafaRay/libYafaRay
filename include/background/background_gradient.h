@@ -34,7 +34,7 @@ class ParamMap;
 class GradientBackground final : public Background
 {
 	public:
-		static std::shared_ptr<Background> factory(Logger &logger, ParamMap &params, Scene &scene);
+		static std::unique_ptr<Background> factory(Logger &logger, ParamMap &params, Scene &scene);
 
 	private:
 		GradientBackground(Logger &logger, Rgb gzcol, Rgb ghcol, Rgb szcol, Rgb shcol, bool ibl, bool with_caustic);

@@ -68,7 +68,7 @@ class BackgroundPortalLight final : public Light
 		float power_;
 		MeshObject *mesh_object_ = nullptr;
 		std::unique_ptr<Accelerator> accelerator_;
-		Background *bg_ = nullptr;
+		const Background *bg_ = nullptr;
 		Point3 world_center_;
 		float a_pdf_;
 };

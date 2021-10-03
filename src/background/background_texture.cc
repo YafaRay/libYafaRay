@@ -78,7 +78,7 @@ Rgb TextureBackground::eval(const Ray &ray, bool use_ibl_blur) const
 	return power_ * ret;
 }
 
-std::shared_ptr<Background> TextureBackground::factory(Logger &logger, ParamMap &params, Scene &scene)
+std::unique_ptr<Background> TextureBackground::factory(Logger &logger, ParamMap &params, Scene &scene)
 {
 	Texture *tex = nullptr;
 	std::string texname;
@@ -118,7 +118,7 @@ std::shared_ptr<Background> TextureBackground::factory(Logger &logger, ParamMap 
 	params.getParam("with_diffuse", diffuse);
 	params.getParam("cast_shadows", cast_shadows);
 
-	auto tex_bg = std::make_shared<TextureBackground>(TextureBackground(logger, tex, pr, power, rot, ibl, ibl_blur, caust));
+	auto tex_bg = std::unique_ptr<TextureBackground>(new TextureBackground(logger, tex, pr, power, rot, ibl, ibl_blur, caust));
 
 	if(ibl)
 	{
@@ -139,7 +139,7 @@ std::shared_ptr<Background> TextureBackground::factory(Logger &logger, ParamMap 
 
 		Light *bglight = scene.createLight("textureBackground_bgLight", bgp);
 
-		bglight->setBackground(tex_bg);
+		bglight->setBackground(tex_bg.get());
 
 		if(ibl_clamp_sampling > 0.f)
 		{

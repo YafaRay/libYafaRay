@@ -48,7 +48,7 @@ class SkyIntegrator : public VolumeIntegrator
 		float alpha_; // steepness of the exponential density
 		float sigma_t_; // beta in the paper, more or less the thickness coefficient
 		float turbidity_;
-		Background *background_;
+		const Background *background_ = nullptr;
 		float b_m_, b_r_;
 		float alpha_r_; // rayleigh, molecules
 		float alpha_m_; // mie, haze

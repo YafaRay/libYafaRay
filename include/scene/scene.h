@@ -107,7 +107,7 @@ class Scene
 		ObjId_t getNextFreeId();
 		bool startObjects();
 		bool endObjects();
-		void setBackground(std::shared_ptr<Background> bg);
+		void setBackground(const Background *bg);
 		void setSurfIntegrator(SurfaceIntegrator *s);
 		SurfaceIntegrator *getSurfIntegrator() const { return surf_integrator_; }
 		void setVolIntegrator(VolumeIntegrator *v);
@@ -120,7 +120,7 @@ class Scene
 		void clearAll();
 		bool render();
 
-		Background *getBackground() const;
+		const Background *getBackground() const;
 		const ImageFilm *getImageFilm() const { return image_film_.get(); }
 		Bound getSceneBound() const;
 		int getNumThreads() const { return nthreads_; }
@@ -131,7 +131,7 @@ class Scene
 		Texture *getTexture(const std::string &name) const;
 		Camera *getCamera(const std::string &name) const;
 		Light *getLight(const std::string &name) const;
-		std::shared_ptr<Background> getBackground(const std::string &name) const;
+		Background* getBackground(const std::string &name) const;
 		Integrator *getIntegrator(const std::string &name) const;
 		ImageOutput *getOutput(const std::string &name) const;
 		std::shared_ptr<Image> getImage(const std::string &name) const;
@@ -143,7 +143,7 @@ class Scene
 		Texture *createTexture(const std::string &name, ParamMap &params);
 		Material *createMaterial(const std::string &name, ParamMap &params, std::list<ParamMap> &eparams);
 		Camera *createCamera(const std::string &name, ParamMap &params);
-		std::shared_ptr<Background> createBackground(const std::string &name, ParamMap &params);
+		Background* createBackground(const std::string &name, ParamMap &params);
 		Integrator *createIntegrator(const std::string &name, ParamMap &params);
 		VolumeRegion *createVolumeRegion(const std::string &name, ParamMap &params);
 		RenderView *createRenderView(const std::string &name, ParamMap &params);
@@ -219,11 +219,11 @@ class Scene
 		int nthreads_ = 1;
 		int nthreads_photons_ = 1;
 		std::unique_ptr<ImageFilm> image_film_;
-		std::shared_ptr<Background> background_;
+		const Background* background_ = nullptr;
 		SurfaceIntegrator *surf_integrator_ = nullptr;
 		std::map<std::string, std::unique_ptr<Texture>> textures_;
 		std::map<std::string, std::unique_ptr<Camera>> cameras_;
-		std::map<std::string, std::shared_ptr<Background>> backgrounds_;
+		std::map<std::string, std::unique_ptr<Background>> backgrounds_;
 		std::map<std::string, std::unique_ptr<Integrator>> integrators_;
 		std::map<std::string, std::unique_ptr<VolumeRegion>> volume_regions_;
 		std::map<std::string, std::unique_ptr<ImageOutput>> outputs_;

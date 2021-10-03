@@ -39,7 +39,7 @@ class ParamMap;
 class SunSkyBackground final : public Background
 {
 	public:
-		static std::shared_ptr<Background> factory(Logger &logger, ParamMap &params, Scene &scene);
+		static std::unique_ptr<Background> factory(Logger &logger, ParamMap &params, Scene &scene);
 		virtual ~SunSkyBackground() override;
 
 	private:

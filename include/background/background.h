@@ -36,7 +36,7 @@ class Logger;
 class Background
 {
 	public:
-		static std::shared_ptr<Background> factory(Logger &logger, ParamMap &params, Scene &scene);
+		static std::unique_ptr<Background> factory(Logger &logger, ParamMap &params, Scene &scene);
 		Background(Logger &logger) : logger_(logger) { }
 		virtual ~Background() = default;
 		//! get the background color for a given ray

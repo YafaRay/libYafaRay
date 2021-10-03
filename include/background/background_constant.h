@@ -34,7 +34,7 @@ class ParamMap;
 class ConstantBackground final : public Background
 {
 	public:
-		static std::shared_ptr<Background> factory(Logger &logger, ParamMap &params, Scene &scene);
+		static std::unique_ptr<Background> factory(Logger &logger, ParamMap &params, Scene &scene);
 
 	private:
 		ConstantBackground(Logger &logger, Rgb col, bool ibl, bool with_caustic);

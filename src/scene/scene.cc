@@ -32,7 +32,6 @@
 #include "texture/texture.h"
 #include "background/background.h"
 #include "camera/camera.h"
-#include "shader/shader_node.h"
 #include "render/imagefilm.h"
 #include "format/format.h"
 #include "volume/volume.h"
@@ -190,9 +189,9 @@ void Scene::setNumThreadsPhotons(int threads_photons)
 	logger_.logParams("Using for Photon Mapping [", nthreads_photons_, "] Threads.");
 }
 
-void Scene::setBackground(std::shared_ptr<Background> bg)
+void Scene::setBackground(const Background *bg)
 {
-	background_ = std::move(bg);
+	background_ = bg;
 }
 
 void Scene::setSurfIntegrator(SurfaceIntegrator *s)
@@ -209,9 +208,9 @@ void Scene::setVolIntegrator(VolumeIntegrator *v)
 	creation_state_.changes_ |= CreationState::Flags::COther;
 }
 
-Background *Scene::getBackground() const
+const Background *Scene::getBackground() const
 {
-	return background_.get();
+	return background_;
 }
 
 Bound Scene::getSceneBound() const
@@ -348,7 +347,7 @@ Light *Scene::getLight(const std::string &name) const
 	return Scene::findMapItem<Light>(name, lights_);
 }
 
-std::shared_ptr<Background> Scene::getBackground(const std::string &name) const
+Background* Scene::getBackground(const std::string &name) const
 {
 	return Scene::findMapItem<Background>(name, backgrounds_);
 }
@@ -509,7 +508,7 @@ Texture *Scene::createTexture(const std::string &name, ParamMap &params)
 	return createMapItem<Texture>(logger_, name, "Texture", params, textures_, this);
 }
 
-std::shared_ptr<Background> Scene::createBackground(const std::string &name, ParamMap &params)
+Background *Scene::createBackground(const std::string &name, ParamMap &params)
 {
 	return createMapItem<Background>(logger_, name, "Background", params, backgrounds_, this);
 }
@@ -592,7 +591,7 @@ bool Scene::setupSceneRenderParams(Scene &scene, const ParamMap &params)
 		return false;
 	}
 
-	std::shared_ptr<Background> background;
+	const Background *background = nullptr;
 	if(params.getParam("background_name", name))
 	{
 		background = getBackground(name);

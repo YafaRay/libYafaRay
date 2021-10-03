@@ -42,7 +42,7 @@ Rgb ConstantBackground::eval(const Ray &ray, bool use_ibl_blur) const
 	return color_;
 }
 
-std::shared_ptr<Background> ConstantBackground::factory(Logger &logger, ParamMap &params, Scene &scene)
+std::unique_ptr<Background> ConstantBackground::factory(Logger &logger, ParamMap &params, Scene &scene)
 {
 	Rgb col(0.f);
 	float power = 1.0;
@@ -60,7 +60,7 @@ std::shared_ptr<Background> ConstantBackground::factory(Logger &logger, ParamMap
 	params.getParam("with_caustic", caus);
 	params.getParam("with_diffuse", diff);
 
-	auto const_bg = std::make_shared<ConstantBackground>(ConstantBackground(logger, col * power, ibl, true));
+	auto const_bg = std::unique_ptr<ConstantBackground>(new ConstantBackground(logger, col * power, ibl, true));
 
 	if(ibl)
 	{
@@ -72,7 +72,7 @@ std::shared_ptr<Background> ConstantBackground::factory(Logger &logger, ParamMap
 		bgp["cast_shadows"] = cast_shadows;
 
 		Light *bglight = scene.createLight("constantBackground_bgLight", bgp);
-		bglight->setBackground(const_bg);
+		bglight->setBackground(const_bg.get());
 	}
 
 	return const_bg;
