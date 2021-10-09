@@ -28,7 +28,7 @@
 
 BEGIN_YAFARAY
 
-class MeshObject;
+class Object;
 class Primitive;
 class Pdf1D;
 class ParamMap;
@@ -66,7 +66,7 @@ class BackgroundPortalLight final : public Light
 		int num_primitives_; //!< gives the array size of uDist
 		float area_, inv_area_;
 		float power_;
-		MeshObject *mesh_object_ = nullptr;
+		Object *base_object_ = nullptr;
 		std::unique_ptr<Accelerator> accelerator_;
 		const Background *bg_ = nullptr;
 		Point3 world_center_;

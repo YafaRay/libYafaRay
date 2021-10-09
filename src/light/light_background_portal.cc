@@ -42,13 +42,13 @@ BackgroundPortalLight::BackgroundPortalLight(Logger &logger, const std::string &
 
 void BackgroundPortalLight::initIs()
 {
-	num_primitives_ = mesh_object_->numPrimitives();
-	primitives_ = mesh_object_->getPrimitives();
-	auto areas = std::unique_ptr<float[]>(new float[num_primitives_]);
+	num_primitives_ = base_object_->numPrimitives();
+	primitives_ = base_object_->getPrimitives();
+	const auto areas = std::unique_ptr<float[]>(new float[num_primitives_]);
 	double total_area = 0.0;
 	for(int i = 0; i < num_primitives_; ++i)
 	{
-		areas[i] = static_cast<const FacePrimitive *>(primitives_[i])->surfaceArea();
+		areas[i] = primitives_[i]->surfaceArea();
 		total_area += areas[i];
 	}
 	area_dist_ = std::unique_ptr<Pdf1D>(new Pdf1D(areas.get(), num_primitives_));
@@ -70,25 +70,25 @@ void BackgroundPortalLight::initIs()
 void BackgroundPortalLight::init(Scene &scene)
 {
 	bg_ = scene.getBackground();
-	Bound w = scene.getSceneBound();
-	float world_radius = 0.5 * (w.g_ - w.a_).length();
+	const Bound w = scene.getSceneBound();
+	const float world_radius = 0.5 * (w.g_ - w.a_).length();
 	a_pdf_ = world_radius * world_radius;
 
 	world_center_ = 0.5 * (w.a_ + w.g_);
-	mesh_object_ = static_cast<MeshObject *>(scene.getObject(object_name_));
-	if(mesh_object_)
+	base_object_ = scene.getObject(object_name_);
+	if(base_object_)
 	{
-		mesh_object_->setVisibility(Visibility::Invisible);
+		base_object_->setVisibility(Visibility::Invisible);
 		initIs();
 		if(logger_.isVerbose()) logger_.logVerbose("bgPortalLight: Triangles:", num_primitives_, ", Area:", area_);
-		mesh_object_->setLight(this);
+		base_object_->setLight(this);
 	}
 }
 
 void BackgroundPortalLight::sampleSurface(Point3 &p, Vec3 &n, float s_1, float s_2) const
 {
 	float prim_pdf;
-	int prim_num = area_dist_->dSample(logger_, s_1, &prim_pdf);
+	const int prim_num = area_dist_->dSample(logger_, s_1, &prim_pdf);
 	if(prim_num >= area_dist_->count_)
 	{
 		logger_.logWarning("bgPortalLight: Sampling error!");
@@ -101,25 +101,24 @@ void BackgroundPortalLight::sampleSurface(Point3 &p, Vec3 &n, float s_1, float s
 		ss_1 = (s_1 - area_dist_->cdf_[prim_num]) / delta;
 	}
 	else ss_1 = s_1 / delta;
-	static_cast<const FacePrimitive *>(primitives_[prim_num])->sample(ss_1, s_2, p, n);
+	primitives_[prim_num]->sample(ss_1, s_2, p, n);
 }
 
 Rgb BackgroundPortalLight::totalEnergy() const
 {
 	Ray wo;
 	wo.from_ = world_center_;
-	Rgb energy, col;
+	Rgb energy{0.f};
 	for(int i = 0; i < 1000; ++i) //exaggerated?
 	{
 		wo.dir_ = sample::sphere(((float) i + 0.5f) / 1000.f, sample::riVdC(i));
-		col = bg_->eval(wo, true);
+		const Rgb col = bg_->eval(wo, true);
 		for(int j = 0; j < num_primitives_; j++)
 		{
-			float cos_n = -wo.dir_ * static_cast<const FacePrimitive *>(primitives_[j])->getGeometricNormal(); //not 100% sure about sign yet...
-			if(cos_n > 0) energy += col * cos_n * static_cast<const FacePrimitive *>(primitives_[j])->surfaceArea();
+			float cos_n = -wo.dir_ * primitives_[j]->getGeometricNormal(); //not 100% sure about sign yet...
+			if(cos_n > 0) energy += col * cos_n * primitives_[j]->surfaceArea();
 		}
 	}
-
 	return energy * math::div_1_by_pi * 0.001f;
 }
 
@@ -133,11 +132,11 @@ bool BackgroundPortalLight::illumSample(const SurfacePoint &sp, LSample &s, Ray 
 
 	Vec3 ldir = p - sp.p_;
 	//normalize vec and compute inverse square distance
-	float dist_sqr = ldir.lengthSqr();
-	float dist = math::sqrt(dist_sqr);
+	const float dist_sqr = ldir.lengthSqr();
+	const float dist = math::sqrt(dist_sqr);
 	if(dist <= 0.0) return false;
 	ldir *= 1.f / dist;
-	float cos_angle = -(ldir * n);
+	const float cos_angle = -(ldir * n);
 	//no light if point is behind area light (single sided!)
 	if(cos_angle <= 0) return false;
 
@@ -159,13 +158,12 @@ bool BackgroundPortalLight::illumSample(const SurfacePoint &sp, LSample &s, Ray 
 
 Rgb BackgroundPortalLight::emitPhoton(float s_1, float s_2, float s_3, float s_4, Ray &ray, float &ipdf) const
 {
-	Vec3 normal, du, dv;
 	ipdf = area_;
+	Vec3 normal, du, dv;
 	sampleSurface(ray.from_, normal, s_3, s_4);
 	Vec3::createCs(normal, du, dv);
-
 	ray.dir_ = sample::cosHemisphere(normal, du, dv, s_1, s_2);
-	Ray r_2(ray.from_, -ray.dir_);
+	const Ray r_2(ray.from_, -ray.dir_);
 	return bg_->eval(r_2, true);
 }
 
@@ -181,7 +179,7 @@ Rgb BackgroundPortalLight::emitSample(Vec3 &wo, LSample &s) const
 	s.dir_pdf_ = std::abs(s.sp_->ng_ * wo);
 
 	s.flags_ = flags_;
-	Ray r_2(s.sp_->p_, -wo);
+	const Ray r_2(s.sp_->p_, -wo);
 	return bg_->eval(r_2, true);
 }
 
@@ -193,7 +191,7 @@ bool BackgroundPortalLight::intersect(const Ray &ray, float &t, Rgb &col, float 
 	const AcceleratorIntersectData accelerator_intersect_data = accelerator_->intersect(ray, t_max);
 	if(!accelerator_intersect_data.hit_) { return false; }
 	const Vec3 n = accelerator_intersect_data.hit_primitive_->getGeometricNormal();
-	float cos_angle = ray.dir_ * (-n);
+	const float cos_angle = ray.dir_ * (-n);
 	if(cos_angle <= 0.f) return false;
 	const float idist_sqr = 1.f / (t * t);
 	ipdf = idist_sqr * area_ * cos_angle * math::div_1_by_pi;
@@ -205,8 +203,8 @@ bool BackgroundPortalLight::intersect(const Ray &ray, float &t, Rgb &col, float 
 float BackgroundPortalLight::illumPdf(const SurfacePoint &sp, const SurfacePoint &sp_light) const
 {
 	Vec3 wo = sp.p_ - sp_light.p_;
-	float r_2 = wo.normLenSqr();
-	float cos_n = wo * sp_light.ng_;
+	const float r_2 = wo.normLenSqr();
+	const float cos_n = wo * sp_light.ng_;
 	return cos_n > 0 ? (r_2 * math::num_pi / (area_ * cos_n)) : 0.f;
 }
 
