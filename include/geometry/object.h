@@ -38,6 +38,7 @@ class ParamMap;
 class Scene;
 class Matrix4;
 class Material;
+class Uv;
 
 class Object
 {
@@ -46,9 +47,6 @@ class Object
 		virtual ~Object() = default;
 		virtual std::string getName() const = 0;
 		virtual void setName(const std::string &name) = 0;
-		/*! To check if we can use the MeshObject interface or not for a certain object. It's a "hack" but
-		 * the only way to handle MeshObjects without cluttering the basic Object interface */
-		virtual bool isMesh() const { return false; }
 		/*! the number of primitives the object holds. Primitive is an element
 			that by definition can perform ray-triangle intersection */
 		virtual int numPrimitives() const = 0;
@@ -77,6 +75,17 @@ class Object
 		/*! set a light source to be associated with this object */
 		virtual void setLight(const Light *light) = 0;
 		virtual bool calculateObject(const Material *material = nullptr) = 0;
+		virtual int lastVertexId() const { return -1; }
+		virtual void addPoint(const Point3 &p) { }
+		virtual void addOrcoPoint(const Point3 &p) { }
+		virtual void addNormal(const Vec3 &n) { }
+		virtual void addFace(const std::vector<int> &vertices, const std::vector<int> &vertices_uv, const Material *mat) { }
+		virtual int addUvValue(const Uv &uv) { return -1; }
+		virtual bool hasNormalsExported() const { return false; }
+		virtual int numNormals() const { return 0; }
+		virtual int numVertices() const { return 0; }
+		virtual void setSmooth(bool smooth) { }
+		virtual bool smoothNormals(Logger &logger, float angle) { return false; }
 };
 
 END_YAFARAY

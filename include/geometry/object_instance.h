@@ -34,7 +34,6 @@ class ObjectInstance : public Object
 		virtual const std::vector<const Primitive *> getPrimitives() const override;
 		virtual std::string getName() const override { return base_object_.getName(); }
 		virtual void setName(const std::string &name) override { }
-		virtual bool isMesh() const override { return base_object_.isMesh(); }
 		/*! sample object surface */
 		//virtual void sample(float s_1, float s_2, Point3 &p, Vec3 &n) const override;
 		/*! Sets the object visibility to the renderer (is added or not to the kdtree) */

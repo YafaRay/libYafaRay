@@ -72,27 +72,21 @@ bool YafaRayScene::smoothNormals(const std::string &name, float angle)
 		object = current_object_;
 		if(!object) return false;
 	}
-	MeshObject *mesh_object = MeshObject::getMeshFromObject(logger_, object);
-	if(!mesh_object) return false;
-	else if(mesh_object->hasNormalsExported() && mesh_object->numNormals() == mesh_object->numVertices())
+
+	if(object->hasNormalsExported() && object->numNormals() == object->numVertices())
 	{
-		mesh_object->setSmooth(true);
+		object->setSmooth(true);
 		return true;
 	}
-	else return mesh_object->smoothNormals(logger_, angle);
+	else return object->smoothNormals(logger_, angle);
 }
 
 int YafaRayScene::addVertex(const Point3 &p)
 {
 	//if(logger_.isDebug()) logger.logDebug("YafaRayScene::addVertex) PR(p");
 	if(creation_state_.stack_.front() != CreationState::Object) return -1;
-	MeshObject *mesh_object = MeshObject::getMeshFromObject(logger_, current_object_);
-	if(!mesh_object) return -1;
-	else
-	{
-		mesh_object->addPoint(p);
-		return mesh_object->lastVertexId();
-	}
+	current_object_->addPoint(p);
+	return current_object_->lastVertexId();
 /*FIXME BsTriangle handling? if(geometry_creation_state_.cur_obj_->type_ == mtrim_global)
 	{
 		geometry_creation_state_.cur_obj_->mobj_->addPoint(p);
@@ -104,14 +98,9 @@ int YafaRayScene::addVertex(const Point3 &p)
 int YafaRayScene::addVertex(const Point3 &p, const Point3 &orco)
 {
 	if(creation_state_.stack_.front() != CreationState::Object) return -1;
-	MeshObject *mesh_object = MeshObject::getMeshFromObject(logger_, current_object_);
-	if(!mesh_object) return -1;
-	else
-	{
-		mesh_object->addPoint(p);
-		mesh_object->addOrcoPoint(orco);
-	}
-	return mesh_object->lastVertexId();
+	current_object_->addPoint(p);
+	current_object_->addOrcoPoint(orco);
+	return current_object_->lastVertexId();
 
 	//	FIXME BsTriangle handling? if(object_creation_state_.cur_obj_->type_ == mtrim_global) return addVertex(p);
 }
@@ -119,26 +108,20 @@ int YafaRayScene::addVertex(const Point3 &p, const Point3 &orco)
 void YafaRayScene::addNormal(const Vec3 &n)
 {
 	if(creation_state_.stack_.front() != CreationState::Object) return;
-	MeshObject *mesh_object = MeshObject::getMeshFromObject(logger_, current_object_);
-	if(!mesh_object) return;
-	mesh_object->addNormal(n);
+	current_object_->addNormal(n);
 }
 
 bool YafaRayScene::addFace(const std::vector<int> &vert_indices, const std::vector<int> &uv_indices)
 {
 	if(creation_state_.stack_.front() != CreationState::Object) return false;
-	MeshObject *mesh_object = MeshObject::getMeshFromObject(logger_, current_object_);
-	if(!mesh_object) return false;
-	mesh_object->addFace(vert_indices, uv_indices, creation_state_.current_material_);
+	current_object_->addFace(vert_indices, uv_indices, creation_state_.current_material_);
 	return true;
 }
 
 int YafaRayScene::addUv(float u, float v)
 {
 	if(creation_state_.stack_.front() != CreationState::Object) return false;
-	MeshObject *mesh_object = MeshObject::getMeshFromObject(logger_, current_object_);
-	if(!mesh_object) return -1;
-	return mesh_object->addUvValue({u, v});
+	return current_object_->addUvValue({u, v});
 }
 
 Object *YafaRayScene::createObject(const std::string &name, ParamMap &params)

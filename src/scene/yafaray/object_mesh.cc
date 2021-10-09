@@ -240,16 +240,6 @@ bool MeshObject::smoothNormals(Logger &logger, float angle)
 	return true;
 }
 
-MeshObject *MeshObject::getMeshFromObject(Logger &logger, Object *object)
-{
-	if(!object->isMesh())
-	{
-		logger.logError("Scene: the object '", object->getName(), "' is not a mesh object");
-		return nullptr;
-	}
-	else return static_cast<MeshObject *>(object);
-}
-
 /*int MeshObject::convertToBezierControlPoints()
 {
 	const int n = points_.size();
