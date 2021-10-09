@@ -20,11 +20,12 @@
 
 #include "scene/scene.h"
 #include "common/version_build_info.h"
-#include "scene/yafaray/scene_yafaray.h"
 #include "common/logger.h"
 #include "common/sysinfo.h"
 #include "accelerator/accelerator.h"
 #include "geometry/object.h"
+#include "geometry/object_instance.h"
+#include "geometry/uv.h"
 #include "common/param.h"
 #include "light/light.h"
 #include "material/material.h"
@@ -40,8 +41,6 @@
 #include "render/progress_bar.h"
 
 BEGIN_YAFARAY
-
-Scene::~Scene() = default; //Defining the destructor here instead of the header to avoid a compilation error about missing Material class definition
 
 void Scene::logWarnExist(Logger &logger, const std::string &pname, const std::string &name)
 {
@@ -68,24 +67,6 @@ void Scene::logInfoVerboseSuccessDisabled(Logger &logger, const std::string &pna
 	logger.logVerbose("Scene: ", "Added ", pname, " '", name, "' (", t, ")! [DISABLED]");
 }
 
-std::unique_ptr<Scene> Scene::factory(Logger &logger, ParamMap &params)
-{
-	if(logger.isDebug())
-	{
-		logger.logDebug("**Scene::factory");
-		params.logContents(logger);
-	}
-	std::string type;
-	params.getParam("type", type);
-	std::unique_ptr<Scene> scene;
-	if(type == "yafaray") scene = YafaRayScene::factory(logger, params);
-	else scene = YafaRayScene::factory(logger, params);
-
-	if(scene) logger.logInfo("Interface: created scene of type '", type, "'");
-	else logger.logError("Interface: could not create scene of type '", type, "'");
-	return scene;
-}
-
 Scene::Scene(Logger &logger) : logger_(logger)
 {
 	creation_state_.changes_ = CreationState::Flags::CAll;
@@ -107,6 +88,11 @@ Scene::Scene(Logger &logger) : logger_(logger)
 #ifndef HAVE_OPENCV
 	logger_.logWarning("libYafaRay built without OpenCV support. The following functionality will not work: image output denoise, background IBL blur, object/face edge render layers, toon render layer.");
 #endif
+}
+
+Scene::~Scene()
+{
+	//This is just to avoid compilation error "error: invalid application of ‘sizeof’ to incomplete type ‘yafaray::Accelerator’" because the destructor needs to know the type of any shared_ptr or unique_ptr objects
 }
 
 void Scene::createDefaultMaterial()
@@ -917,6 +903,169 @@ void Scene::setRenderHighlightAreaCallback(yafaray_RenderHighlightAreaCallback_t
 {
 	render_callbacks_.highlight_area_ = callback;
 	render_callbacks_.highlight_area_data_ = callback_data;
+}
+
+bool Scene::endObject()
+{
+	if(logger_.isDebug()) logger_.logDebug("Scene::endObject");
+	if(creation_state_.stack_.front() != CreationState::Object) return false;
+	const bool result = current_object_->calculateObject(creation_state_.current_material_);
+	creation_state_.stack_.pop_front();
+	return result;
+}
+
+bool Scene::smoothNormals(const std::string &name, float angle)
+{
+	if(logger_.isDebug()) logger_.logDebug("Scene::startObject) PR(name) PR(angle");
+	if(creation_state_.stack_.front() != CreationState::Geometry) return false;
+	Object *object;
+	if(!name.empty())
+	{
+		auto it = objects_.find(name);
+		if(it == objects_.end()) return false;
+		object = it->second.get();
+	}
+	else
+	{
+		object = current_object_;
+		if(!object) return false;
+	}
+
+	if(object->hasNormalsExported() && object->numNormals() == object->numVertices())
+	{
+		object->setSmooth(true);
+		return true;
+	}
+	else return object->smoothNormals(logger_, angle);
+}
+
+int Scene::addVertex(const Point3 &p)
+{
+	//if(logger_.isDebug()) logger.logDebug("Scene::addVertex) PR(p");
+	if(creation_state_.stack_.front() != CreationState::Object) return -1;
+	current_object_->addPoint(p);
+	return current_object_->lastVertexId();
+/*FIXME BsTriangle handling? if(geometry_creation_state_.cur_obj_->type_ == mtrim_global)
+	{
+		geometry_creation_state_.cur_obj_->mobj_->addPoint(p);
+		geometry_creation_state_.cur_obj_->last_vert_id_ = geometry_creation_state_.cur_obj_->mobj_->getPoints().size() - 1;
+		return geometry_creation_state_.cur_obj_->mobj_->convertToBezierControlPoints();
+	}*/
+}
+
+int Scene::addVertex(const Point3 &p, const Point3 &orco)
+{
+	if(creation_state_.stack_.front() != CreationState::Object) return -1;
+	current_object_->addPoint(p);
+	current_object_->addOrcoPoint(orco);
+	return current_object_->lastVertexId();
+
+	//	FIXME BsTriangle handling? if(object_creation_state_.cur_obj_->type_ == mtrim_global) return addVertex(p);
+}
+
+void Scene::addNormal(const Vec3 &n)
+{
+	if(creation_state_.stack_.front() != CreationState::Object) return;
+	current_object_->addNormal(n);
+}
+
+bool Scene::addFace(const std::vector<int> &vert_indices, const std::vector<int> &uv_indices)
+{
+	if(creation_state_.stack_.front() != CreationState::Object) return false;
+	current_object_->addFace(vert_indices, uv_indices, creation_state_.current_material_);
+	return true;
+}
+
+int Scene::addUv(float u, float v)
+{
+	if(creation_state_.stack_.front() != CreationState::Object) return false;
+	return current_object_->addUvValue({u, v});
+}
+
+Object *Scene::createObject(const std::string &name, ParamMap &params)
+{
+	std::string pname = "Object";
+	if(objects_.find(name) != objects_.end())
+	{
+		logWarnExist(logger_, pname, name);
+		return nullptr;
+	}
+	std::string type;
+	if(!params.getParam("type", type))
+	{
+		logErrNoType(logger_, pname, name, type);
+		return nullptr;
+	}
+	std::unique_ptr<Object> object = Object::factory(logger_, params, *this);
+	if(object)
+	{
+		object->setName(name);
+		objects_[name] = std::move(object);
+		if(logger_.isVerbose()) logInfoVerboseSuccess(logger_, pname, name, type);
+		creation_state_.stack_.push_front(CreationState::Object);
+		creation_state_.changes_ |= CreationState::Flags::CGeom;
+		current_object_ = objects_[name].get();
+		return objects_[name].get();
+	}
+	logErrOnCreate(logger_, pname, name, type);
+	return nullptr;
+}
+
+Object *Scene::getObject(const std::string &name) const
+{
+	auto oi = objects_.find(name);
+	if(oi != objects_.end()) return oi->second.get();
+	else return nullptr;
+}
+
+bool Scene::addInstance(const std::string &base_object_name, const Matrix4 &obj_to_world)
+{
+	const Object *base_object = objects_.find(base_object_name)->second.get();
+	if(objects_.find(base_object_name) == objects_.end())
+	{
+		logger_.logError("Base mesh for instance doesn't exist ", base_object_name);
+		return false;
+	}
+	int id = getNextFreeId();
+	if(id > 0)
+	{
+		const std::string instance_name = base_object_name + "-" + std::to_string(id);
+		if(logger_.isDebug())logger_.logDebug("  Instance: ", instance_name, " base_object_name=", base_object_name);
+		objects_[instance_name] = std::unique_ptr<Object>(new ObjectInstance(*base_object, obj_to_world));
+		return true;
+	}
+	else return false;
+}
+
+bool Scene::updateObjects()
+{
+	std::vector<const Primitive *> primitives;
+	for(const auto &o : objects_)
+	{
+		if(o.second->getVisibility() == Visibility::Invisible) continue;
+		if(o.second->isBaseObject()) continue;
+		const auto prims = o.second->getPrimitives();
+		primitives.insert(primitives.end(), prims.begin(), prims.end());
+	}
+	if(primitives.empty())
+	{
+		logger_.logError("Scene: Scene is empty...");
+		return false;
+	}
+	ParamMap params;
+	params["type"] = scene_accelerator_;
+	params["num_primitives"] = static_cast<int>(primitives.size());
+	params["accelerator_threads"] = getNumThreads();
+
+	accelerator_ = Accelerator::factory(logger_, primitives, params);
+	scene_bound_ = accelerator_->getBound();
+	if(logger_.isVerbose()) logger_.logVerbose("Scene: New scene bound is: ", "(", scene_bound_.a_.x_, ", ", scene_bound_.a_.y_, ", ", scene_bound_.a_.z_, "), (", scene_bound_.g_.x_, ", ", scene_bound_.g_.y_, ", ", scene_bound_.g_.z_, ")");
+
+	if(shadow_bias_auto_) shadow_bias_ = shadow_bias_global;
+	if(ray_min_dist_auto_) ray_min_dist_ = min_raydist_global;
+
+	logger_.logInfo("Scene: total scene dimensions: X=", scene_bound_.longX(), ", Y=", scene_bound_.longY(), ", Z=", scene_bound_.longZ(), ", volume=", scene_bound_.vol(), ", Shadow Bias=", shadow_bias_, (shadow_bias_auto_ ? " (auto)" : ""), ", Ray Min Dist=", ray_min_dist_, (ray_min_dist_auto_ ? " (auto)" : ""));
+	return true;
 }
 
 END_YAFARAY

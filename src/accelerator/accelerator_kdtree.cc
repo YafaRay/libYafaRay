@@ -31,9 +31,9 @@ BEGIN_YAFARAY
 std::unique_ptr<Accelerator> AcceleratorKdTree::factory(Logger &logger, const std::vector<const Primitive *> &primitives, ParamMap &params)
 {
 	int depth = -1;
-	int leaf_size = 2;
-	float cost_ratio = 0.35;
-	float empty_bonus = 0.33;
+	int leaf_size = 1;
+	float cost_ratio = 0.8f;
+	float empty_bonus = 0.33f;
 
 	params.getParam("depth", depth);
 	params.getParam("leaf_size", leaf_size);

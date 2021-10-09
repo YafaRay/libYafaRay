@@ -63,8 +63,8 @@ typedef unsigned int ObjId_t;
 
 struct MaskParams
 {
-	unsigned int obj_index_ = 0; //!Object Index used for masking in/out in the Mask Render Layers
-	unsigned int mat_index_ = 0; //!Material Index used for masking in/out in the Mask Render Layers
+	unsigned int obj_index_; //!Object Index used for masking in/out in the Mask Render Layers
+	unsigned int mat_index_; //!Material Index used for masking in/out in the Mask Render Layers
 	bool invert_ = false; //!False=mask in, True=mask out
 	bool only_ = false; //!False=rendered image is masked, True=only the mask is shown without rendered image
 };
@@ -84,25 +84,24 @@ struct EdgeToonParams //Options for Edge detection and Toon Render Layers
 	float face_smoothness_ = 0.5f; //!Smoothness (blur) of the edges used in the Faces Edge Render Layers
 };
 
-class Scene
+class Scene final
 {
 	public:
-		static std::unique_ptr<Scene> factory(Logger &logger, ParamMap &params);
 		Scene(Logger &logger);
 		Scene(const Scene &s) = delete;
-		virtual ~Scene();
-		virtual int addVertex(const Point3 &p) = 0;
-		virtual int addVertex(const Point3 &p, const Point3 &orco) = 0;
-		virtual void addNormal(const Vec3 &n) = 0;
-		virtual bool addFace(const std::vector<int> &vert_indices, const std::vector<int> &uv_indices = {}) = 0;
-		virtual int addUv(float u, float v) = 0;
-		virtual bool smoothNormals(const std::string &name, float angle) = 0;
-		virtual Object *createObject(const std::string &name, ParamMap &params) = 0;
-		virtual bool endObject() = 0;
-		virtual bool addInstance(const std::string &base_object_name, const Matrix4 &obj_to_world) = 0;
-		virtual bool updateObjects() = 0;
-		virtual Object *getObject(const std::string &name) const = 0;
-		virtual const Accelerator *getAccelerator() const = 0;
+		~Scene();
+		int addVertex(const Point3 &p);
+		int addVertex(const Point3 &p, const Point3 &orco);
+		void addNormal(const Vec3 &n);
+		bool addFace(const std::vector<int> &vert_indices, const std::vector<int> &uv_indices = {});
+		int addUv(float u, float v);
+		bool smoothNormals(const std::string &name, float angle);
+		Object *createObject(const std::string &name, ParamMap &params);
+		bool endObject();
+		bool addInstance(const std::string &base_object_name, const Matrix4 &obj_to_world);
+		bool updateObjects();
+		Object *getObject(const std::string &name) const;
+		const Accelerator *getAccelerator() const { return accelerator_.get(); }
 
 		ObjId_t getNextFreeId();
 		bool startObjects();
@@ -188,7 +187,16 @@ class Scene
 		float ray_min_dist_ = 1.0e-5f;  //ray minimum distance
 		bool ray_min_dist_auto_ = true;  //enable automatic ray minimum distance calculation
 
-	protected:
+	private:
+		template <typename T> static T *findMapItem(const std::string &name, const std::map<std::string, std::unique_ptr<T>> &map);
+		template <typename T> static std::shared_ptr<T> findMapItem(const std::string &name, const std::map<std::string, std::shared_ptr<T>> &map);
+		void setMaskParams(const ParamMap &params);
+		void setEdgeToonParams(const ParamMap &params);
+		template <typename T> static T *createMapItem(Logger &logger, const std::string &name, const std::string &class_name, ParamMap &params, std::map<std::string, std::unique_ptr<T>> &map, Scene *scene, bool check_type_exists = true);
+		template <typename T> static std::shared_ptr<T> createMapItem(Logger &logger, const std::string &name, const std::string &class_name, ParamMap &params, std::map<std::string, std::shared_ptr<T>> &map, Scene *scene, bool check_type_exists = true);
+		void defineBasicLayers();
+		void defineDependentLayers(); //!< This function generates the basic/auxiliary layers. Must be called *after* defining all render layers with the defineLayer function.
+
 		struct CreationState
 		{
 			enum State { Ready, Geometry, Object };
@@ -200,20 +208,13 @@ class Scene
 		} creation_state_;
 		Bound scene_bound_; //!< bounding box of all (finite) scene geometry
 		std::string scene_accelerator_;
+		std::unique_ptr<Accelerator> accelerator_;
+		Object *current_object_ = nullptr;
+		std::map<std::string, std::unique_ptr<Object>> objects_;
 		std::map<std::string, std::unique_ptr<Light>> lights_;
 		std::map<std::string, std::unique_ptr<Material>> materials_;
 		RenderControl render_control_;
 		Logger &logger_;
-
-	private:
-		template <typename T> static T *findMapItem(const std::string &name, const std::map<std::string, std::unique_ptr<T>> &map);
-		template <typename T> static std::shared_ptr<T> findMapItem(const std::string &name, const std::map<std::string, std::shared_ptr<T>> &map);
-		void setMaskParams(const ParamMap &params);
-		void setEdgeToonParams(const ParamMap &params);
-		template <typename T> static T *createMapItem(Logger &logger, const std::string &name, const std::string &class_name, ParamMap &params, std::map<std::string, std::unique_ptr<T>> &map, Scene *scene, bool check_type_exists = true);
-		template <typename T> static std::shared_ptr<T> createMapItem(Logger &logger, const std::string &name, const std::string &class_name, ParamMap &params, std::map<std::string, std::shared_ptr<T>> &map, Scene *scene, bool check_type_exists = true);
-		void defineBasicLayers();
-		void defineDependentLayers(); //!< This function generates the basic/auxiliary layers. Must be called *after* defining all render layers with the defineLayer function.
 
 		AaNoiseParams aa_noise_params_;
 		int nthreads_ = 1;

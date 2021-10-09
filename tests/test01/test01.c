@@ -30,7 +30,6 @@ int main()
 	yafaray_setConsoleLogColorsEnabled(yi, YAFARAY_BOOL_TRUE);
 	yafaray_setConsoleVerbosityLevel(yi, YAFARAY_LOG_LEVEL_DEBUG);
 
-	yafaray_paramsSetString(yi, "type", "yafaray");
 	yafaray_createScene(yi);
 	yafaray_paramsClearAll(yi);
 	yafaray_paramsSetBool(yi, "adj_clamp", YAFARAY_BOOL_TRUE);

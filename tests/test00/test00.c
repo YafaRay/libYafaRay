@@ -104,7 +104,6 @@ int main()
 	yafaray_setConsoleVerbosityLevel(yi, YAFARAY_LOG_LEVEL_DEBUG);
 
 	/* Creating scene */
-	yafaray_paramsSetString(yi, "type", "yafaray");
 	yafaray_createScene(yi);
 	yafaray_paramsClearAll(yi);
 	{

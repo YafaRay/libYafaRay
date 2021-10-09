@@ -25,5 +25,4 @@ target_sources(libyafaray4
 		primitive_sphere.cc
 		primitive_triangle.cc
 		primitive_triangle_bspline.cc
-		scene_yafaray.cc
 )

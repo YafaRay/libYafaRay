@@ -75,9 +75,9 @@ class AcceleratorKdTreeMultiThread final : public Accelerator
 struct AcceleratorKdTreeMultiThread::Parameters
 {
 	int max_depth_ = -1;
-	int max_leaf_size_ = 2;
-	float cost_ratio_ = 0.35; //!< node traversal cost divided by primitive intersection cost
-	float empty_bonus_ = 0.33;
+	int max_leaf_size_ = 1;
+	float cost_ratio_ = 0.8f; //!< node traversal cost divided by primitive intersection cost
+	float empty_bonus_ = 0.33f;
 	int num_threads_ = 1;
 	int min_indices_to_spawn_threads_ = 10000; //Only spawn threaded subtree building when the number of indices in the subtree is higher than this value to prevent slowdown due to very small subtree left indices
 };

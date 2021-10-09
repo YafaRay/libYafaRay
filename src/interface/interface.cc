@@ -49,7 +49,7 @@ void Interface::setLoggingCallback(const ::yafaray_LoggerCallback_t logger_callb
 
 void Interface::createScene() noexcept
 {
-	scene_ = Scene::factory(*logger_, *params_);
+	scene_ = std::unique_ptr<Scene>(new Scene(*logger_));
 	params_->clear();
 }
 

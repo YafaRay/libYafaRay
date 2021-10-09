@@ -68,11 +68,11 @@ class AcceleratorKdTree final : public Accelerator
 		static AcceleratorIntersectData intersectS(const Ray &ray, float t_max, float shadow_bias, const Node *nodes, const Bound &tree_bound);
 		static AcceleratorTsIntersectData intersectTs(RenderData &render_data, const Ray &ray, int max_depth, float t_max, float shadow_bias, const Node *nodes, const Bound &tree_bound);
 
-		float cost_ratio_; 	//!< node traversal cost divided by primitive intersection cost
-		float e_bonus_; 	//!< empty bonus
+		float cost_ratio_ = 0.8f; //!< node traversal cost divided by primitive intersection cost
+		float e_bonus_ = 0.33f; //!< empty bonus
 		uint32_t next_free_node_, allocated_nodes_count_, total_prims_;
-		int max_depth_;
-		unsigned int max_leaf_size_;
+		int max_depth_ = -1;
+		unsigned int max_leaf_size_ = 1;
 		Bound tree_bound_; 	//!< overall space the tree encloses
 		MemoryArena prims_arena_;
 		std::unique_ptr<Node[]> nodes_;
