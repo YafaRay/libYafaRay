@@ -24,7 +24,7 @@ target_sources(libyafaray4
 		light_background_portal.cc
 		light_directional.cc
 		light_ies.cc
-		light_meshlight.cc
+		light_object_light.cc
 		light_point.cc
 		light_sphere.cc
 		light_spot.cc

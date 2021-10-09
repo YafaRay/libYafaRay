@@ -20,7 +20,7 @@
 
 #include <limits>
 
-#include "light/light_meshlight.h"
+#include "light/light_object_light.h"
 #include "background/background.h"
 #include "texture/texture.h"
 #include "common/param.h"
@@ -34,7 +34,7 @@
 
 BEGIN_YAFARAY
 
-MeshLight::MeshLight(Logger &logger, const std::string &object_name, const Rgb &col, int sampl, bool dbl_s, bool light_enabled, bool cast_shadows):
+ObjectLight::ObjectLight(Logger &logger, const std::string &object_name, const Rgb &col, int sampl, bool dbl_s, bool light_enabled, bool cast_shadows):
 		Light(logger), object_name_(object_name), double_sided_(dbl_s), color_(col), samples_(sampl)
 {
 	light_enabled_ = light_enabled;
@@ -42,15 +42,15 @@ MeshLight::MeshLight(Logger &logger, const std::string &object_name, const Rgb &
 	//initIs();
 }
 
-void MeshLight::initIs()
+void ObjectLight::initIs()
 {
-	num_primitives_ = mesh_object_->numPrimitives();
-	primitives_ = mesh_object_->getPrimitives();
-	auto areas = std::unique_ptr<float[]>(new float[num_primitives_]);
+	num_primitives_ = base_object_->numPrimitives();
+	primitives_ = base_object_->getPrimitives();
+	const auto areas = std::unique_ptr<float[]>(new float[num_primitives_]);
 	double total_area = 0.0;
 	for(int i = 0; i < num_primitives_; ++i)
 	{
-		areas[i] = static_cast<const FacePrimitive *>(primitives_[i])->surfaceArea();
+		areas[i] = primitives_[i]->surfaceArea();
 		total_area += areas[i];
 	}
 	area_dist_ = std::unique_ptr<Pdf1D>(new Pdf1D(areas.get(), num_primitives_));
@@ -69,26 +69,26 @@ void MeshLight::initIs()
 	accelerator_ = Accelerator::factory(logger_, primitives_, params);
 }
 
-void MeshLight::init(Scene &scene)
+void ObjectLight::init(Scene &scene)
 {
-	mesh_object_ = static_cast<MeshObject *>(scene.getObject(object_name_));
-	if(mesh_object_)
+	base_object_ = scene.getObject(object_name_);
+	if(base_object_)
 	{
 		initIs();
 		// tell the mesh that a meshlight is associated with it (not sure if this is the best place though):
-		mesh_object_->setLight(this);
+		base_object_->setLight(this);
 
-		if(logger_.isVerbose()) logger_.logVerbose("MeshLight: triangles:", num_primitives_, ", double sided:", double_sided_, ", area:", area_, " color:", color_);
+		if(logger_.isVerbose()) logger_.logVerbose("ObjectLight: primitives:", num_primitives_, ", double sided:", double_sided_, ", area:", area_, " color:", color_);
 	}
 }
 
-void MeshLight::sampleSurface(Point3 &p, Vec3 &n, float s_1, float s_2) const
+void ObjectLight::sampleSurface(Point3 &p, Vec3 &n, float s_1, float s_2) const
 {
 	float prim_pdf;
-	int prim_num = area_dist_->dSample(logger_, s_1, &prim_pdf);
+	const int prim_num = area_dist_->dSample(logger_, s_1, &prim_pdf);
 	if(prim_num >= area_dist_->count_)
 	{
-		logger_.logWarning("MeshLight: Sampling error!");
+		logger_.logWarning("ObjectLight: Sampling error!");
 		return;
 	}
 	float ss_1, delta = area_dist_->cdf_[prim_num + 1];
@@ -98,13 +98,13 @@ void MeshLight::sampleSurface(Point3 &p, Vec3 &n, float s_1, float s_2) const
 		ss_1 = (s_1 - area_dist_->cdf_[prim_num]) / delta;
 	}
 	else ss_1 = s_1 / delta;
-	static_cast<const FacePrimitive *>(primitives_[prim_num])->sample(ss_1, s_2, p, n);
+	primitives_[prim_num]->sample(ss_1, s_2, p, n);
 	//	++stats[primNum];
 }
 
-Rgb MeshLight::totalEnergy() const { return (double_sided_ ? 2.f * color_ * area_ : color_ * area_); }
+Rgb ObjectLight::totalEnergy() const { return (double_sided_ ? 2.f * color_ * area_ : color_ * area_); }
 
-bool MeshLight::illumSample(const SurfacePoint &sp, LSample &s, Ray &wi) const
+bool ObjectLight::illumSample(const SurfacePoint &sp, LSample &s, Ray &wi) const
 {
 	if(photonOnly()) return false;
 
@@ -114,8 +114,8 @@ bool MeshLight::illumSample(const SurfacePoint &sp, LSample &s, Ray &wi) const
 
 	Vec3 ldir = p - sp.p_;
 	//normalize vec and compute inverse square distance
-	float dist_sqr = ldir.lengthSqr();
-	float dist = math::sqrt(dist_sqr);
+	const float dist_sqr = ldir.lengthSqr();
+	const float dist = math::sqrt(dist_sqr);
 	if(dist <= 0.0) return false;
 	ldir *= 1.f / dist;
 	float cos_angle = -(ldir * n);
@@ -132,7 +132,7 @@ bool MeshLight::illumSample(const SurfacePoint &sp, LSample &s, Ray &wi) const
 
 	s.col_ = color_;
 	// pdf = distance^2 / area * cos(norm, ldir);
-	float area_mul_cosangle = area_ * cos_angle;
+	const float area_mul_cosangle = area_ * cos_angle;
 	//TODO: replace the hardcoded value (1e-8f) by a macro for min/max values: here used, to avoid dividing by zero
 	s.pdf_ = dist_sqr * math::num_pi / ((area_mul_cosangle == 0.f) ? 1e-8f : area_mul_cosangle);
 	s.flags_ = flags_;
@@ -144,13 +144,12 @@ bool MeshLight::illumSample(const SurfacePoint &sp, LSample &s, Ray &wi) const
 	return true;
 }
 
-Rgb MeshLight::emitPhoton(float s_1, float s_2, float s_3, float s_4, Ray &ray, float &ipdf) const
+Rgb ObjectLight::emitPhoton(float s_1, float s_2, float s_3, float s_4, Ray &ray, float &ipdf) const
 {
-	Vec3 normal, du, dv;
 	ipdf = area_;
+	Vec3 normal, du, dv;
 	sampleSurface(ray.from_, normal, s_3, s_4);
 	Vec3::createCs(normal, du, dv);
-
 	if(double_sided_)
 	{
 		ipdf *= 2.f;
@@ -161,14 +160,13 @@ Rgb MeshLight::emitPhoton(float s_1, float s_2, float s_3, float s_4, Ray &ray, 
 	return color_;
 }
 
-Rgb MeshLight::emitSample(Vec3 &wo, LSample &s) const
+Rgb ObjectLight::emitSample(Vec3 &wo, LSample &s) const
 {
 	s.area_pdf_ = inv_area_ * math::num_pi;
 	sampleSurface(s.sp_->p_, s.sp_->ng_, s.s_3_, s.s_4_);
 	s.sp_->n_ = s.sp_->ng_;
 	Vec3 du, dv;
 	Vec3::createCs(s.sp_->ng_, du, dv);
-
 	if(double_sided_)
 	{
 		if(s.s_1_ > 0.5f) wo = sample::cosHemisphere(-s.sp_->ng_, du, dv, (s.s_1_ - 0.5f) * 2.f, s.s_2_);
@@ -184,7 +182,7 @@ Rgb MeshLight::emitSample(Vec3 &wo, LSample &s) const
 	return color_;
 }
 
-bool MeshLight::intersect(const Ray &ray, float &t, Rgb &col, float &ipdf) const
+bool ObjectLight::intersect(const Ray &ray, float &t, Rgb &col, float &ipdf) const
 {
 	if(!accelerator_) return false;
 	const float t_max = (ray.tmax_ >= 0.f) ? ray.tmax_ : std::numeric_limits<float>::infinity();
@@ -204,15 +202,15 @@ bool MeshLight::intersect(const Ray &ray, float &t, Rgb &col, float &ipdf) const
 	return true;
 }
 
-float MeshLight::illumPdf(const SurfacePoint &sp, const SurfacePoint &sp_light) const
+float ObjectLight::illumPdf(const SurfacePoint &sp, const SurfacePoint &sp_light) const
 {
 	Vec3 wo = sp.p_ - sp_light.p_;
-	float r_2 = wo.normLenSqr();
-	float cos_n = wo * sp_light.ng_;
+	const float r_2 = wo.normLenSqr();
+	const float cos_n = wo * sp_light.ng_;
 	return cos_n > 0 ? r_2 * math::num_pi / (area_ * cos_n) : (double_sided_ ? r_2 * math::num_pi / (area_ * -cos_n) : 0.f);
 }
 
-void MeshLight::emitPdf(const SurfacePoint &sp, const Vec3 &wo, float &area_pdf, float &dir_pdf, float &cos_wo) const
+void ObjectLight::emitPdf(const SurfacePoint &sp, const Vec3 &wo, float &area_pdf, float &dir_pdf, float &cos_wo) const
 {
 	area_pdf = inv_area_ * math::num_pi;
 	cos_wo = wo * sp.n_;
@@ -220,7 +218,7 @@ void MeshLight::emitPdf(const SurfacePoint &sp, const Vec3 &wo, float &area_pdf,
 }
 
 
-std::unique_ptr<Light> MeshLight::factory(Logger &logger, ParamMap &params, const Scene &scene)
+std::unique_ptr<Light> ObjectLight::factory(Logger &logger, ParamMap &params, const Scene &scene)
 {
 	bool double_s = false;
 	Rgb color(1.0);
@@ -244,7 +242,7 @@ std::unique_ptr<Light> MeshLight::factory(Logger &logger, ParamMap &params, cons
 	params.getParam("with_diffuse", shoot_d);
 	params.getParam("photon_only", p_only);
 
-	auto light = std::unique_ptr<MeshLight>(new MeshLight(logger, object_name, color * (float)power * math::num_pi, samples, double_s, light_enabled, cast_shadows));
+	auto light = std::unique_ptr<ObjectLight>(new ObjectLight(logger, object_name, color * (float)power * math::num_pi, samples, double_s, light_enabled, cast_shadows));
 
 	light->shoot_caustic_ = shoot_c;
 	light->shoot_diffuse_ = shoot_d;

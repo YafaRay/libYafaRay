@@ -29,20 +29,20 @@
 
 BEGIN_YAFARAY
 
-class MeshObject;
+class Object;
 class Primitive;
 class Accelerator;
 class Pdf1D;
 class ParamMap;
 class Scene;
 
-class MeshLight final : public Light
+class ObjectLight final : public Light
 {
 	public:
 		static std::unique_ptr<Light> factory(Logger &logger, ParamMap &params, const Scene &scene);
 
 	private:
-		MeshLight(Logger &logger, const std::string &object_name, const Rgb &col, int sampl, bool dbl_s = false, bool light_enabled = true, bool cast_shadows = true);
+		ObjectLight(Logger &logger, const std::string &object_name, const Rgb &col, int sampl, bool dbl_s = false, bool light_enabled = true, bool cast_shadows = true);
 		virtual void init(Scene &scene) override;
 		virtual Rgb totalEnergy() const override;
 		virtual Rgb emitPhoton(float s_1, float s_2, float s_3, float s_4, Ray &ray, float &ipdf) const override;
@@ -66,7 +66,7 @@ class MeshLight final : public Light
 		int samples_;
 		int num_primitives_; //!< gives the array size of uDist
 		float area_, inv_area_;
-		MeshObject *mesh_object_ = nullptr;
+		Object *base_object_ = nullptr;
 		std::unique_ptr<Accelerator> accelerator_;
 };
 

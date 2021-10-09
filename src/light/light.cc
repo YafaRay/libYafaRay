@@ -27,7 +27,7 @@
 #include "light/light_background_portal.h"
 #include "light/light_directional.h"
 #include "light/light_ies.h"
-#include "light/light_meshlight.h"
+#include "light/light_object_light.h"
 #include "common/param.h"
 #include "common/logger.h"
 
@@ -47,7 +47,7 @@ std::unique_ptr<Light> Light::factory(Logger &logger, ParamMap &params, const Sc
 	std::unique_ptr<Light> light;
 	if(type == "arealight") light = AreaLight::factory(logger, params, scene);
 	else if(type == "bgPortalLight") light = BackgroundPortalLight::factory(logger, params, scene);
-	else if(type == "meshlight") light = MeshLight::factory(logger, params, scene);
+	else if(type == "meshlight" || type == "objectlight") light = ObjectLight::factory(logger, params, scene);
 	else if(type == "bglight") light = BackgroundLight::factory(logger, params, scene);
 	else if(type == "directional") light = DirectionalLight::factory(logger, params, scene);
 	else if(type == "ieslight") light = IesLight::factory(logger, params, scene);
