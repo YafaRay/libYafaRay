@@ -20,7 +20,7 @@
 
 #include "light/light_area.h"
 #include "geometry/surface.h"
-#include "scene/yafaray/object_yafaray.h"
+#include "geometry/object/object_basic.h"
 #include "common/param.h"
 #include "scene/scene.h"
 #include "sampler/sample.h"

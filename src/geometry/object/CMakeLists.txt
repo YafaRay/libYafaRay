@@ -18,11 +18,9 @@
 
 target_sources(libyafaray4
 	PRIVATE
+		object.cc
+		object_instance.cc
+		object_basic.cc
 		object_curve.cc
 		object_mesh.cc
-		object_yafaray.cc
-		primitive_face.cc
-		primitive_sphere.cc
-		primitive_triangle.cc
-		primitive_triangle_bspline.cc
 )

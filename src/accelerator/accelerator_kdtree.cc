@@ -21,7 +21,7 @@
 #include "scene/scene.h"
 #include "common/logger.h"
 #include "geometry/surface.h"
-#include "geometry/primitive.h"
+#include "geometry/primitive/primitive.h"
 #include "common/param.h"
 #include "image/image_output.h"
 #include <cstring>

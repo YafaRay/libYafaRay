@@ -21,8 +21,8 @@
 #define YAFARAY_PRIMITIVE_INSTANCE_H
 
 #include <array>
-#include "geometry/primitive.h"
-#include "geometry/object_instance.h"
+#include "primitive.h"
+#include "geometry/object/object_instance.h"
 
 BEGIN_YAFARAY
 

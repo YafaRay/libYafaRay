@@ -16,30 +16,30 @@
  *      Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-#include "geometry/object_instance.h"
-#include "geometry/primitive_instance.h"
-#include "geometry/matrix4.h"
+#include "geometry/primitive/primitive.h"
+#include "geometry/object/object.h"
+#include "geometry/surface.h"
+#include "geometry/primitive/primitive_triangle.h"
+#include "geometry/primitive/primitive_sphere.h"
+#include "geometry/bound.h"
+#include "common/logger.h"
+#include "common/param.h"
 
 BEGIN_YAFARAY
 
-ObjectInstance::ObjectInstance(const Object &base_object, const Matrix4 &obj_to_world) : base_object_(base_object), obj_to_world_(new Matrix4(obj_to_world))
+SurfacePoint Primitive::getSurface(const Point3 &hit, const IntersectData &data, const Matrix4 *obj_to_world) const
 {
+	return {};
 }
 
-const std::vector<const Primitive *> ObjectInstance::getPrimitives() const
+IntersectData Primitive::intersect(const Ray &ray, const Matrix4 *obj_to_world) const
 {
-	std::vector<const Primitive *> result;
-	const std::vector<const Primitive *> primitives = base_object_.getPrimitives();
-	for(const auto &primitive : primitives)
-	{
-		result.emplace_back(new PrimitiveInstance(primitive, *this));
-	}
-	return result;
+	return {};
 }
 
-/*void ObjectInstance::sample(float s_1, float s_2, Point3 &p, Vec3 &n) const
+PolyDouble::ClipResultWithBound Primitive::clipToBound(Logger &logger, const std::array<Vec3Double, 2> &bound, const ClipPlane &clip_plane, const PolyDouble &poly, const Matrix4 *obj_to_world) const
 {
-	base_->sample(s_1, s_2, p, n);
-}*/
+	return { PolyDouble::ClipResultWithBound::Code::FatalError };
+}
 
 END_YAFARAY

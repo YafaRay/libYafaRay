@@ -1,3 +1,4 @@
+#pragma once
 /****************************************************************************
  *      This is part of the libYafaRay package
  *
@@ -16,30 +17,31 @@
  *      Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-#include "geometry/primitive.h"
-#include "geometry/object.h"
-#include "geometry/surface.h"
-#include "scene/yafaray/primitive_triangle.h"
-#include "scene/yafaray/primitive_sphere.h"
-#include "geometry/bound.h"
+#ifndef YAFARAY_OBJECT_CURVE_H
+#define YAFARAY_OBJECT_CURVE_H
+
 #include "common/logger.h"
-#include "common/param.h"
+#include "object_mesh.h"
 
 BEGIN_YAFARAY
 
-SurfacePoint Primitive::getSurface(const Point3 &hit, const IntersectData &data, const Matrix4 *obj_to_world) const
-{
-	return {};
-}
+struct Uv;
+class FacePrimitive;
+class Material;
 
-IntersectData Primitive::intersect(const Ray &ray, const Matrix4 *obj_to_world) const
+class CurveObject final : public MeshObject
 {
-	return {};
-}
+	public:
+		static std::unique_ptr<Object> factory(Logger &logger, ParamMap &params, const Scene &scene);
+		CurveObject(int num_vertices, float strand_start, float strand_end, float strand_shape, bool has_uv = false, bool has_orco = false);
+		virtual bool calculateObject(const Material *material) override;
 
-PolyDouble::ClipResultWithBound Primitive::clipToBound(Logger &logger, const std::array<Vec3Double, 2> &bound, const ClipPlane &clip_plane, const PolyDouble &poly, const Matrix4 *obj_to_world) const
-{
-	return { PolyDouble::ClipResultWithBound::Code::FatalError };
-}
+	private:
+		float strand_start_ = 0.01f;
+		float strand_end_ = 0.01f;
+		float strand_shape_ = 0.f;
+};
 
 END_YAFARAY
+
+#endif //YAFARAY_OBJECT_CURVE_H

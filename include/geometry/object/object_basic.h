@@ -17,17 +17,18 @@
  *      Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-#ifndef YAFARAY_OBJECT_YAFARAY_H
-#define YAFARAY_OBJECT_YAFARAY_H
+#ifndef YAFARAY_OBJECT_BASIC_H
+#define YAFARAY_OBJECT_BASIC_H
 
-#include "geometry/object.h"
+#include "object.h"
 
 BEGIN_YAFARAY
 
-class ObjectYafaRay : public Object
+//Basic (non-instance) object interface
+class ObjectBasic : public Object
 {
 	public:
-		virtual ~ObjectYafaRay() override { resetObjectIndex(); }
+		virtual ~ObjectBasic() override { resetObjectIndex(); }
 		virtual std::string getName() const override { return name_; }
 		virtual void setName(const std::string &name) override { name_ = name; }
 		/*! sample object surface */
@@ -53,7 +54,7 @@ class ObjectYafaRay : public Object
 		virtual void setLight(const Light *light) override { light_ = light; }
 
 	protected:
-		ObjectYafaRay();
+		ObjectBasic();
 		std::string name_;
 		const Light *light_ = nullptr;
 		Visibility visibility_ = Visibility::NormalVisible;
@@ -66,4 +67,4 @@ class ObjectYafaRay : public Object
 
 END_YAFARAY
 
-#endif // YAFARAY_OBJECT_YAFARAY_H
+#endif // YAFARAY_OBJECT_BASIC_H

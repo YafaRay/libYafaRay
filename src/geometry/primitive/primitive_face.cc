@@ -16,9 +16,9 @@
  *      Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-#include "scene/yafaray/primitive_face.h"
+#include "geometry/primitive/primitive_face.h"
 #include "geometry/uv.h"
-#include "scene/yafaray/object_mesh.h"
+#include "geometry/object/object_mesh.h"
 #include "geometry/bound.h"
 #include "geometry/matrix4.h"
 

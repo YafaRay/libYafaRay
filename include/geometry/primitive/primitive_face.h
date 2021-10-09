@@ -20,10 +20,10 @@
 #ifndef YAFARAY_PRIMITIVE_FACE_H
 #define YAFARAY_PRIMITIVE_FACE_H
 
-#include "geometry/primitive.h"
+#include "primitive.h"
 #include "geometry/vector.h"
-#include "scene/yafaray/object_mesh.h"
-#include <vector>
+#include "geometry/object/object_mesh.h"
+#include <c++/9/vector>
 
 BEGIN_YAFARAY
 

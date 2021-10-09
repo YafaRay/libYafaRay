@@ -24,9 +24,9 @@
 #include "common/param.h"
 #include "geometry/surface.h"
 #include "render/render_data.h"
-#include "scene/yafaray/primitive_face.h"
+#include "geometry/primitive/primitive_face.h"
 #include "integrator/integrator.h"
-#include "geometry/object.h"
+#include "geometry/object/object.h"
 #include "material/material.h"
 #include "photon/photon.h"
 

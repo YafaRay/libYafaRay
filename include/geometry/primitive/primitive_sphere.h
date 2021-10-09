@@ -20,9 +20,9 @@
 #ifndef YAFARAY_PRIMITIVE_SPHERE_H
 #define YAFARAY_PRIMITIVE_SPHERE_H
 
-#include "geometry/primitive.h"
+#include "primitive.h"
 #include "geometry/vector.h"
-#include "geometry/object.h"
+#include "geometry/object/object.h"
 
 BEGIN_YAFARAY
 

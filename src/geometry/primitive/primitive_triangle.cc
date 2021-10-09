@@ -17,8 +17,8 @@
  */
 
 //#include "yafaray_config.h"
-#include "scene/yafaray/primitive_triangle.h"
-#include "scene/yafaray/object_mesh.h"
+#include "geometry/primitive/primitive_triangle.h"
+#include "geometry/object/object_mesh.h"
 #include "geometry/axis.h"
 #include "geometry/ray.h"
 #include "geometry/bound.h"

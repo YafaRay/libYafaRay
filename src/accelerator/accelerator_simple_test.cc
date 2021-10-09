@@ -17,8 +17,8 @@
  */
 
 #include "accelerator/accelerator_simple_test.h"
-#include "geometry/primitive.h"
-#include "geometry/object.h"
+#include "geometry/primitive/primitive.h"
+#include "geometry/object/object.h"
 #include "material/material.h"
 #include "common/logger.h"
 

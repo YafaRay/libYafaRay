@@ -21,11 +21,10 @@ target_sources(libyafaray4
 		axis.cc
 		bound.cc
 		matrix4.cc
-		object.cc
-		object_instance.cc
 		poly_double.cc
-		primitive.cc
-		primitive_instance.cc
 		surface.cc
 		vector.cc
 )
+
+add_subdirectory(object)
+add_subdirectory(primitive)

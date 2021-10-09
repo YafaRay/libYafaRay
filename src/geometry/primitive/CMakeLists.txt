@@ -18,5 +18,10 @@
 
 target_sources(libyafaray4
 	PRIVATE
-		scene.cc
+		primitive.cc
+		primitive_instance.cc
+		primitive_face.cc
+		primitive_sphere.cc
+		primitive_triangle.cc
+		primitive_triangle_bspline.cc
 )

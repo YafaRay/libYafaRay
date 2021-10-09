@@ -22,7 +22,7 @@
 
 #include "accelerator/accelerator.h"
 #include "geometry/bound.h"
-#include "geometry/primitive.h"
+#include "geometry/primitive/primitive.h"
 #include <array>
 #include <atomic>
 

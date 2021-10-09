@@ -23,7 +23,7 @@
 #include "accelerator/accelerator.h"
 #include "common/memory_arena.h"
 #include "geometry/bound.h"
-#include "geometry/primitive.h"
+#include "geometry/primitive/primitive.h"
 #include <array>
 
 BEGIN_YAFARAY

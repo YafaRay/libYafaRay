@@ -1,4 +1,3 @@
-#pragma once
 /****************************************************************************
  *      This is part of the libYafaRay package
  *
@@ -17,27 +16,30 @@
  *      Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-#ifndef YAFARAY_OBJECT_PRIMITIVE_H
-#define YAFARAY_OBJECT_PRIMITIVE_H
-
-#include "scene/yafaray/object_yafaray.h"
+#include "geometry/object/object_instance.h"
+#include "geometry/primitive/primitive_instance.h"
+#include "geometry/matrix4.h"
 
 BEGIN_YAFARAY
 
-/*! simple "container" to handle primitives as objects, for objects that
-	consist of just one primitive like spheres etc. */
-class PrimitiveObject : public ObjectYafaRay
+ObjectInstance::ObjectInstance(const Object &base_object, const Matrix4 &obj_to_world) : base_object_(base_object), obj_to_world_(new Matrix4(obj_to_world))
 {
-	public:
-		void setPrimitive(const Primitive *primitive) { primitive_ = primitive; }
-		virtual int numPrimitives() const override { return 1; }
-		virtual const std::vector<const Primitive *> getPrimitives() const override { return {primitive_}; }
-		virtual bool calculateObject(const Material *material) override { return true; }
+}
 
-	private:
-		const Primitive *primitive_ = nullptr;
-};
+const std::vector<const Primitive *> ObjectInstance::getPrimitives() const
+{
+	std::vector<const Primitive *> result;
+	const std::vector<const Primitive *> primitives = base_object_.getPrimitives();
+	for(const auto &primitive : primitives)
+	{
+		result.emplace_back(new PrimitiveInstance(primitive, *this));
+	}
+	return result;
+}
+
+/*void ObjectInstance::sample(float s_1, float s_2, Point3 &p, Vec3 &n) const
+{
+	base_->sample(s_1, s_2, p, n);
+}*/
 
 END_YAFARAY
-
-#endif //YAFARAY_OBJECT_PRIMITIVE_H

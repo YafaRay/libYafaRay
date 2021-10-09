@@ -27,7 +27,7 @@
 #include "common/layers.h"
 #include "material/material.h"
 #include "geometry/surface.h"
-#include "geometry/object.h"
+#include "geometry/object/object.h"
 #include "common/timer.h"
 #include "sampler/halton.h"
 #include "render/imagefilm.h"

@@ -18,8 +18,8 @@
  *      Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-#include "scene/yafaray/primitive_sphere.h"
-#include "scene/yafaray/object_yafaray.h"
+#include "geometry/primitive/primitive_sphere.h"
+#include "geometry/object/object_basic.h"
 #include "common/param.h"
 #include "geometry/bound.h"
 #include "geometry/surface.h"

@@ -1,4 +1,3 @@
-#pragma once
 /****************************************************************************
  *      This is part of the libYafaRay package
  *
@@ -17,22 +16,34 @@
  *      Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-#ifndef YAFARAY_VECTOR_DOUBLE_H
-#define YAFARAY_VECTOR_DOUBLE_H
-
-#include "public_api/yafaray_conf.h"
+#include "geometry/object/object.h"
+#include "geometry/object/object_mesh.h"
+#include "geometry/object/object_curve.h"
+#include "geometry/object/object_primitive.h"
+#include "geometry/primitive/primitive_sphere.h"
+#include "common/param.h"
+#include "common/logger.h"
 
 BEGIN_YAFARAY
 
-class Vec3Double
+std::unique_ptr<Object> Object::factory(Logger &logger, ParamMap &params, const Scene &scene)
 {
-	public:
-		Vec3Double &operator = (const Vec3Double &v) { x_ = v.x_, y_ = v.y_, z_ = v.z_; return *this; }
-		double   operator[](int i) const { return (&x_)[i]; }
-		double  &operator[](int i) { return (&x_)[i]; }
-		double x_, y_, z_;
-};
+	if(logger.isDebug())
+	{
+		logger.logDebug("Object::factory");
+		params.logContents(logger);
+	}
+	std::string type;
+	params.getParam("type", type);
+	if(type == "mesh") return MeshObject::factory(logger, params, scene);
+	else if(type == "curve") return CurveObject::factory(logger, params, scene);
+	else if(type == "sphere")
+	{
+		auto object = std::unique_ptr<PrimitiveObject>(new PrimitiveObject);
+		object->setPrimitive(SpherePrimitive::factory(params, scene, *object));
+		return object;
+	}
+	else return nullptr;
+}
 
 END_YAFARAY
-
-#endif //YAFARAY_VECTOR_DOUBLE_H

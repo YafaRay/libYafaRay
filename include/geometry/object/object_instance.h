@@ -20,7 +20,7 @@
 #ifndef YAFARAY_OBJECT_INSTANCE_H
 #define YAFARAY_OBJECT_INSTANCE_H
 
-#include "geometry/object.h"
+#include "object.h"
 
 BEGIN_YAFARAY
 

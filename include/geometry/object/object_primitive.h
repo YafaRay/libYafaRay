@@ -17,31 +17,27 @@
  *      Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-#ifndef YAFARAY_OBJECT_CURVE_H
-#define YAFARAY_OBJECT_CURVE_H
+#ifndef YAFARAY_OBJECT_PRIMITIVE_H
+#define YAFARAY_OBJECT_PRIMITIVE_H
 
-#include <common/logger.h>
-#include "scene/yafaray/object_mesh.h"
+#include "object_basic.h"
 
 BEGIN_YAFARAY
 
-struct Uv;
-class FacePrimitive;
-class Material;
-
-class CurveObject final : public MeshObject
+/*! simple "container" to handle primitives as objects, for objects that
+	consist of just one primitive like spheres etc. */
+class PrimitiveObject : public ObjectBasic
 {
 	public:
-		static std::unique_ptr<Object> factory(Logger &logger, ParamMap &params, const Scene &scene);
-		CurveObject(int num_vertices, float strand_start, float strand_end, float strand_shape, bool has_uv = false, bool has_orco = false);
-		virtual bool calculateObject(const Material *material) override;
+		void setPrimitive(const Primitive *primitive) { primitive_ = primitive; }
+		virtual int numPrimitives() const override { return 1; }
+		virtual const std::vector<const Primitive *> getPrimitives() const override { return {primitive_}; }
+		virtual bool calculateObject(const Material *material) override { return true; }
 
 	private:
-		float strand_start_ = 0.01f;
-		float strand_end_ = 0.01f;
-		float strand_shape_ = 0.f;
+		const Primitive *primitive_ = nullptr;
 };
 
 END_YAFARAY
 
-#endif //YAFARAY_OBJECT_CURVE_H
+#endif //YAFARAY_OBJECT_PRIMITIVE_H

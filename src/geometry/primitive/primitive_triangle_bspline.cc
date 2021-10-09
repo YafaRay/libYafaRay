@@ -16,11 +16,11 @@
  *      Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-#include "scene/yafaray/primitive_triangle_bspline.h"
+#include "geometry/primitive/primitive_triangle_bspline.h"
 #include "geometry/ray.h"
 #include "geometry/bound.h"
 #include "geometry/surface.h"
-#include "scene/yafaray/object_mesh.h"
+#include "geometry/object/object_mesh.h"
 #include "geometry/uv.h"
 
 BEGIN_YAFARAY

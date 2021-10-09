@@ -16,7 +16,7 @@
  *      Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-#include "scene/yafaray/object_curve.h"
+#include "geometry/object/object_curve.h"
 #include "common/logger.h"
 #include "common/param.h"
 #include "scene/scene.h"

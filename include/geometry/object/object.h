@@ -75,6 +75,8 @@ class Object
 		/*! set a light source to be associated with this object */
 		virtual void setLight(const Light *light) = 0;
 		virtual bool calculateObject(const Material *material = nullptr) = 0;
+
+		/* Mesh-related interface functions below, only for Mesh objects */
 		virtual int lastVertexId() const { return -1; }
 		virtual void addPoint(const Point3 &p) { }
 		virtual void addOrcoPoint(const Point3 &p) { }

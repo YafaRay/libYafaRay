@@ -26,8 +26,8 @@
 #include "accelerator/accelerator.h"
 #include "geometry/surface.h"
 #include "sampler/sample_pdf1d.h"
-#include "scene/yafaray/object_mesh.h"
-#include "scene/yafaray/primitive_face.h"
+#include "geometry/object/object_mesh.h"
+#include "geometry/primitive/primitive_face.h"
 #include <limits>
 
 BEGIN_YAFARAY
