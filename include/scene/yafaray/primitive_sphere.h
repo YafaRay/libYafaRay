@@ -22,12 +22,12 @@
 
 #include "geometry/primitive.h"
 #include "geometry/vector.h"
+#include "geometry/object.h"
 
 BEGIN_YAFARAY
 
 class Scene;
 class ParamMap;
-class ObjectYafaRay;
 class Bound;
 class ExBound;
 class Ray;
@@ -37,7 +37,7 @@ class SpherePrimitive final : public Primitive
 {
 	public:
 		static Primitive *factory(ParamMap &params, const Scene &scene, const Object &object);
-		SpherePrimitive(const Point3 &centr, float rad, const Material *m, const Object &base_object): Primitive(base_object), center_(centr), radius_(rad), material_(m) {}
+		SpherePrimitive(const Point3 &centr, float rad, const Material *m, const Object &base_object): base_object_(base_object), center_(centr), radius_(rad), material_(m) {}
 
 	private:
 		virtual Bound getBound(const Matrix4 *obj_to_world) const override;
@@ -48,9 +48,12 @@ class SpherePrimitive final : public Primitive
 		virtual float surfaceArea(const Matrix4 *obj_to_world) const override;
 		virtual Vec3 getGeometricNormal(const Matrix4 *obj_to_world, float u, float v) const override;
 		virtual void sample(float s_1, float s_2, Point3 &p, Vec3 &n, const Matrix4 *obj_to_world) const override;
+		virtual const Object *getObject() const override { return &base_object_; }
+		virtual Visibility getVisibility() const override { return base_object_.getVisibility(); }
 
 		Point3 center_;
 		float radius_;
+		const Object &base_object_;
 		const Material *material_ = nullptr;
 };
 

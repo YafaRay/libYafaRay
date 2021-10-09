@@ -27,11 +27,6 @@
 
 BEGIN_YAFARAY
 
-Visibility Primitive::getVisibility() const
-{
-	return base_object_.getVisibility();
-}
-
 SurfacePoint Primitive::getSurface(const Point3 &hit, const IntersectData &data, const Matrix4 *obj_to_world) const
 {
 	return {};

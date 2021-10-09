@@ -26,12 +26,12 @@
 
 BEGIN_YAFARAY
 
-class MeshObject;
-
-class TrianglePrimitive: public FacePrimitive
+class TrianglePrimitive final : public FacePrimitive
 {
 	public:
 		TrianglePrimitive(const std::vector<int> &vertices_indices, const std::vector<int> &vertices_uv_indices, const MeshObject &mesh_object);
+
+	private:
 		virtual IntersectData intersect(const Ray &ray, const Matrix4 *obj_to_world) const override;
 		virtual bool intersectsBound(const ExBound &eb, const Matrix4 *obj_to_world) const override;
 		virtual bool clippingSupport() const override { return true; }

@@ -24,13 +24,13 @@
 
 BEGIN_YAFARAY
 
-class MeshObject;
-
 /*! a triangle supporting time based deformation described by a quadratic bezier spline */
-class BsTrianglePrimitive: public FacePrimitive
+class BsTrianglePrimitive final : public FacePrimitive
 {
 	public:
 		BsTrianglePrimitive(const std::vector<int> &vertices_indices, const std::vector<int> &vertices_uv_indices, const MeshObject &mesh_object);
+
+	private:
 		virtual IntersectData intersect(const Ray &ray, const Matrix4 *obj_to_world) const override;
 		virtual Bound getBound(const Matrix4 *obj_to_world) const override;
 		virtual SurfacePoint getSurface(const Point3 &hit, const IntersectData &intersect_data, const Matrix4 *obj_to_world) const override;

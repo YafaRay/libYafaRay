@@ -100,8 +100,7 @@ SurfacePoint TrianglePrimitive::getSurface(const Point3 &hit_point, const Inters
 	sp.intersect_data_ = intersect_data;
 	sp.ng_ = getGeometricNormal(obj_to_world);
 	const float barycentric_u = intersect_data.barycentric_u_, barycentric_v = intersect_data.barycentric_v_, barycentric_w = intersect_data.barycentric_w_;
-	const MeshObject &base_mesh_object = static_cast<const MeshObject &>(base_object_);
-	if(base_mesh_object.isSmooth() || base_mesh_object.hasNormalsExported())
+	if(base_mesh_object_.isSmooth() || base_mesh_object_.hasNormalsExported())
 	{
 		const std::array<Vec3, 3> v {
 			getVertexNormal(0, sp.ng_, obj_to_world),
@@ -112,7 +111,7 @@ SurfacePoint TrianglePrimitive::getSurface(const Point3 &hit_point, const Inters
 		sp.n_.normalize();
 	}
 	else sp.n_ = sp.ng_;
-	if(base_mesh_object.hasOrco())
+	if(base_mesh_object_.hasOrco())
 	{
 		const std::array<Point3, 3> orco_p { getOrcoVertex(0), getOrcoVertex(1), getOrcoVertex(2) };
 
@@ -128,7 +127,7 @@ SurfacePoint TrianglePrimitive::getSurface(const Point3 &hit_point, const Inters
 	}
 	bool implicit_uv = true;
 	const std::array<Point3, 3> p { getVertex(0, obj_to_world), getVertex(1, obj_to_world), getVertex(2, obj_to_world) };
-	if(base_mesh_object.hasUv())
+	if(base_mesh_object_.hasUv())
 	{
 		const std::array<Uv, 3> uv { getVertexUv(0), getVertexUv(1), getVertexUv(2) };
 		sp.u_ = barycentric_u * uv[0].u_ + barycentric_v * uv[1].u_ + barycentric_w * uv[2].u_;
@@ -163,9 +162,9 @@ SurfacePoint TrianglePrimitive::getSurface(const Point3 &hit_point, const Inters
 	sp.dp_dv_abs_ = sp.dp_dv_;
 	sp.dp_du_.normalize();
 	sp.dp_dv_.normalize();
-	sp.object_ = &base_object_;
-	sp.light_ = base_mesh_object.getLight();
-	sp.has_uv_ = base_mesh_object.hasUv();
+	sp.object_ = &base_mesh_object_;
+	sp.light_ = base_mesh_object_.getLight();
+	sp.has_uv_ = base_mesh_object_.hasUv();
 	sp.prim_num_ = getSelfIndex();
 	sp.material_ = getMaterial();
 	sp.p_ = hit_point;

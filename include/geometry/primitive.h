@@ -45,7 +45,7 @@ class Object;
 class Primitive
 {
 	public:
-		Primitive(const Object &base_object) : base_object_(base_object) { }
+		Primitive() = default;
 		virtual ~Primitive() = default;
 		/*! return the object bound in global ("world") coordinates */
 		virtual Bound getBound(const Matrix4 *obj_to_world = nullptr) const = 0;
@@ -71,14 +71,11 @@ class Primitive
 		virtual Vec3 getGeometricNormal(const Matrix4 *obj_to_world = nullptr, float u = 0.f, float v = 0.f) const = 0;
 		/* surface sampling */
 		virtual void sample(float s_1, float s_2, Point3 &p, Vec3 &n, const Matrix4 *obj_to_world = nullptr) const = 0;
-		const Object *getObject() const { return &base_object_; }
-		Visibility getVisibility() const;
+		virtual const Object *getObject() const = 0;
+		virtual Visibility getVisibility() const = 0;
 		/*! calculate the overlapping box of given bound and primitive
 			\return: false:=doesn't overlap bound; true:=valid clip exists */
 		virtual PolyDouble::ClipResultWithBound clipToBound(Logger &logger, const std::array<Vec3Double, 2> &bound, const ClipPlane &clip_plane, const PolyDouble &poly, const Matrix4 *obj_to_world) const;
-
-	protected:
-		const Object &base_object_;
 };
 
 END_YAFARAY

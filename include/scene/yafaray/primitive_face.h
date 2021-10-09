@@ -22,11 +22,11 @@
 
 #include "geometry/primitive.h"
 #include "geometry/vector.h"
+#include "scene/yafaray/object_mesh.h"
 #include <vector>
 
 BEGIN_YAFARAY
 
-class MeshObject;
 struct Uv;
 
 class FacePrimitive: public Primitive
@@ -55,10 +55,13 @@ class FacePrimitive: public Primitive
 		size_t getSelfIndex() const { return self_index_; }
 		void setSelfIndex(size_t index) { self_index_ = index; }
 		static Bound getBound(const std::vector<Point3> &vertices);
+		virtual const Object *getObject() const override { return &base_mesh_object_; }
+		virtual Visibility getVisibility() const override { return base_mesh_object_.getVisibility(); }
 
 	protected:
 		size_t self_index_ = 0;
 		Vec3 normal_geometric_;
+		const MeshObject &base_mesh_object_;
 		const Material *material_ = nullptr;
 		std::vector<int> vertices_; //!< indices in point array, referenced in mesh.
 		std::vector<int> vertex_normals_; //!< indices in normal array, if mesh is smoothed.
