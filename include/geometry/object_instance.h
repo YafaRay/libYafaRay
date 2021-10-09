@@ -30,7 +30,7 @@ class ObjectInstance : public Object
 {
 	public:
 		ObjectInstance(const Object &base_object, const Matrix4 &obj_to_world);
-		virtual int numPrimitives() const override { return primitive_instances_.size(); }
+		virtual int numPrimitives() const override { return base_object_.numPrimitives(); }
 		virtual const std::vector<const Primitive *> getPrimitives() const override;
 		virtual std::string getName() const override { return base_object_.getName(); }
 		virtual void setName(const std::string &name) override { }
@@ -62,7 +62,6 @@ class ObjectInstance : public Object
 	protected:
 		const Object &base_object_;
 		std::unique_ptr<const Matrix4> obj_to_world_;
-		std::vector<std::unique_ptr<const Primitive>> primitive_instances_;
 };
 
 END_YAFARAY
