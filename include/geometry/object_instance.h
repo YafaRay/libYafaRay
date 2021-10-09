@@ -56,7 +56,7 @@ class ObjectInstance : public Object
 		virtual const Light *getLight() const override { return base_object_.getLight(); }
 		/*! set a light source to be associated with this object */
 		virtual void setLight(const Light *light) override { }
-		virtual const Matrix4 *getObjToWorldMatrix() const override { return obj_to_world_.get(); }
+		const Matrix4 *getObjToWorldMatrix() const { return obj_to_world_.get(); }
 		virtual bool calculateObject(const Material *material = nullptr) override { return true; }
 
 	protected:

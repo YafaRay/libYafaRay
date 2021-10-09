@@ -77,7 +77,6 @@ class Object
 		/*! set a light source to be associated with this object */
 		virtual void setLight(const Light *light) = 0;
 		virtual bool calculateObject(const Material *material = nullptr) = 0;
-		virtual const Matrix4 *getObjToWorldMatrix() const { return nullptr; }
 };
 
 END_YAFARAY
