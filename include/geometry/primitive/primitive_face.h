@@ -23,7 +23,7 @@
 #include "primitive.h"
 #include "geometry/vector.h"
 #include "geometry/object/object_mesh.h"
-#include <c++/9/vector>
+#include <vector>
 
 BEGIN_YAFARAY
 

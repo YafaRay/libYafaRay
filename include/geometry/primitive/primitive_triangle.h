@@ -22,7 +22,7 @@
 
 #include "primitive_face.h"
 #include "geometry/vector.h"
-#include <c++/9/array>
+#include <array>
 
 BEGIN_YAFARAY
 

@@ -23,7 +23,7 @@
 #include "object_basic.h"
 #include "geometry/vector.h"
 #include "geometry/uv.h"
-#include <c++/9/vector>
+#include <vector>
 #include "common/logger.h"
 
 BEGIN_YAFARAY
