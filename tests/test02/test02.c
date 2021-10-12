@@ -5170,7 +5170,7 @@ int main()
 	yafaray_paramsSetFloat(yi, "layer_toon_post_smooth", 3);
 	yafaray_paramsSetFloat(yi, "layer_toon_pre_smooth", 3);
 	yafaray_paramsSetFloat(yi, "layer_toon_quantization", 0.1);
-	yafaray_paramsSetString(yi, "scene_accelerator", "yafaray-kdtree-original");
+	yafaray_paramsSetString(yi, "scene_accelerator", "yafaray-kdtree-multi-thread");
 	yafaray_paramsSetBool(yi, "show_sam_pix", YAFARAY_BOOL_TRUE);
 	yafaray_paramsSetInt(yi, "threads", -1);
 	yafaray_paramsSetInt(yi, "threads_photons", -1);

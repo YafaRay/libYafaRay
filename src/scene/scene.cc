@@ -90,10 +90,8 @@ Scene::Scene(Logger &logger) : logger_(logger)
 #endif
 }
 
-Scene::~Scene()
-{
-	//This is just to avoid compilation error "error: invalid application of ‘sizeof’ to incomplete type ‘yafaray::Accelerator’" because the destructor needs to know the type of any shared_ptr or unique_ptr objects
-}
+//This is just to avoid compilation error "error: invalid application of ‘sizeof’ to incomplete type ‘yafaray::Accelerator’" because the destructor needs to know the type of any shared_ptr or unique_ptr objects
+Scene::~Scene() = default;
 
 void Scene::createDefaultMaterial()
 {
