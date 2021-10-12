@@ -16,6 +16,14 @@
 #      Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 #
 
-add_subdirectory(test00)
-add_subdirectory(test01)
-add_subdirectory(test02)
+add_executable(yafaray_test02 test02.c)
+set_target_properties(yafaray_test02 PROPERTIES C_STANDARD 90 C_STANDARD_REQUIRED ON C_EXTENSIONS OFF)
+target_link_libraries(yafaray_test02 PRIVATE libyafaray4)
+target_include_directories(yafaray_test02 PRIVATE ${PROJECT_BINARY_DIR}/include)
+
+install(TARGETS yafaray_test02
+		RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+		LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+		ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+		)
+#set_target_properties(yafaray_test02 PROPERTIES BUILD_WITH_INSTALL_RPATH TRUE INSTALL_RPATH "@executable_path/;@executable_path/../../src")
