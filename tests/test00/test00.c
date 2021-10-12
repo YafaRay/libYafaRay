@@ -77,7 +77,7 @@ int main()
 	char *layers_string = NULL;
 	char *views_string = NULL;
 
-	printf("***** Test client 'test01' for libYafaRay *****\n");
+	printf("***** Test client 'test00' for libYafaRay *****\n");
 	printf("Using libYafaRay version (%d.%d.%d)\n", yafaray_getVersionMajor(), yafaray_getVersionMinor(), yafaray_getVersionPatch());
 	version_string = yafaray_getVersionString();
 	printf("    libYafaRay version details: '%s'\n\n", version_string);
@@ -99,7 +99,7 @@ int main()
 	/* Basic libYafaRay C API usage example, rendering a cube with a TGA texture */
 
 	/* YafaRay standard rendering interface */
-	yi = yafaray_createInterface(YAFARAY_INTERFACE_FOR_RENDERING, "test01.xml", loggerCallback, &result_image, YAFARAY_DISPLAY_CONSOLE_NORMAL);
+	yi = yafaray_createInterface(YAFARAY_INTERFACE_FOR_RENDERING, "test00.xml", loggerCallback, &result_image, YAFARAY_DISPLAY_CONSOLE_NORMAL);
 	yafaray_setConsoleLogColorsEnabled(yi, YAFARAY_BOOL_TRUE);
 	yafaray_setConsoleVerbosityLevel(yi, YAFARAY_LOG_LEVEL_DEBUG);
 
@@ -224,11 +224,11 @@ int main()
 	yafaray_paramsClearAll(yi);
 
 	/* Creating image outputs */
-	yafaray_paramsSetString(yi, "image_path", "./test01-output1.tga");
+	yafaray_paramsSetString(yi, "image_path", "./test00-output1.tga");
 	yafaray_createOutput(yi, "output1_tga");
 	yafaray_paramsClearAll(yi);
 
-	yafaray_paramsSetString(yi, "image_path", "./test01-output2.tga");
+	yafaray_paramsSetString(yi, "image_path", "./test00-output2.tga");
 	yafaray_paramsSetString(yi, "color_space", "Raw_Manual_Gamma");
 	yafaray_paramsSetFloat(yi, "gamma", 4.0);
 	yafaray_paramsSetBool(yi, "denoise_enabled", YAFARAY_BOOL_TRUE);
