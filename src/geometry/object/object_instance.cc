@@ -24,16 +24,18 @@ BEGIN_YAFARAY
 
 ObjectInstance::ObjectInstance(const Object &base_object, const Matrix4 &obj_to_world) : base_object_(base_object), obj_to_world_(new Matrix4(obj_to_world))
 {
+	const std::vector<const Primitive *> primitives = base_object_.getPrimitives();
+	primitive_instances_.reserve(base_object.numPrimitives());
+	for(const auto &primitive : primitives)
+	{
+		primitive_instances_.emplace_back(new PrimitiveInstance(primitive, *this));
+	}
 }
 
 const std::vector<const Primitive *> ObjectInstance::getPrimitives() const
 {
 	std::vector<const Primitive *> result;
-	const std::vector<const Primitive *> primitives = base_object_.getPrimitives();
-	for(const auto &primitive : primitives)
-	{
-		result.emplace_back(new PrimitiveInstance(primitive, *this));
-	}
+	for(const auto &primitive_instance : primitive_instances_) result.emplace_back(primitive_instance.get());
 	return result;
 }
 
