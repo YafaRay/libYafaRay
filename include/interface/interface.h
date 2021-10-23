@@ -125,7 +125,7 @@ class Interface
 		virtual void setCurrentMaterial(const Material *material) noexcept;
 		std::unique_ptr<Logger> logger_;
 		std::unique_ptr<ParamMap> params_;
-		std::unique_ptr<std::list<ParamMap>> eparams_; //! for materials that need to define a whole shader tree etc.
+		std::list<ParamMap> eparams_; //! for materials that need to define a whole shader tree etc.
 		ParamMap *cparams_ = nullptr; //! just a pointer to the current paramMap, either params or a eparams element
 		std::unique_ptr<Scene> scene_;
 		float input_gamma_ = 1.f;

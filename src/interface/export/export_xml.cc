@@ -55,7 +55,7 @@ void ExportXml::clearAll() noexcept
 		file_.close();
 	}
 	params_->clear();
-	eparams_->clear();
+	eparams_.clear();
 	cparams_ = params_.get();
 	next_obj_ = 0;
 }
@@ -217,7 +217,7 @@ void ExportXml::writeParamMap(const ParamMap &param_map, int indent) noexcept
 void ExportXml::writeParamList(int indent) noexcept
 {
 	const std::string tabs(indent, '\t');
-	for(const auto &param : *eparams_)
+	for(const auto &param : eparams_)
 	{
 		file_ << tabs << "<list_element>\n";
 		writeParamMap(param, indent + 1);

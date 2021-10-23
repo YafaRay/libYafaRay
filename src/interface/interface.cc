@@ -35,7 +35,6 @@ Interface::Interface(const ::yafaray_LoggerCallback_t logger_callback, void *cal
 {
 	logger_ = std::unique_ptr<Logger>(new Logger(logger_callback, callback_data, logger_display_console));
 	params_ = std::unique_ptr<ParamMap>(new ParamMap);
-	eparams_ = std::unique_ptr<std::list<ParamMap>>(new std::list<ParamMap>);
 	cparams_ = params_.get();
 #if defined(_WIN32)
 	if(logger_display_console == YAFARAY_DISPLAY_CONSOLE_NORMAL) SetConsoleOutputCP(65001);	//set Windows Console to UTF8 so the image path can be displayed correctly
@@ -64,7 +63,7 @@ void Interface::clearAll() noexcept
 	if(logger_->isVerbose()) logger_->logVerbose("Interface: Cleaning scene...");
 	scene_->clearAll();
 	params_->clear();
-	eparams_->clear();
+	eparams_.clear();
 	cparams_ = params_.get();
 	if(logger_->isVerbose()) logger_->logVerbose("Interface: Cleanup done.");
 }
@@ -166,14 +165,14 @@ void Interface::setInputColorSpace(const std::string &color_space_string, float 
 void Interface::paramsClearAll() noexcept
 {
 	params_->clear();
-	eparams_->clear();
+	eparams_.clear();
 	cparams_ = params_.get();
 }
 
 void Interface::paramsPushList() noexcept
 {
-	eparams_->push_back(ParamMap());
-	cparams_ = &eparams_->back();
+	eparams_.push_back({});
+	cparams_ = &eparams_.back();
 }
 
 void Interface::paramsEndList() noexcept
@@ -184,7 +183,7 @@ void Interface::paramsEndList() noexcept
 Object *Interface::createObject(const char *name) noexcept { return scene_->createObject(name, *params_); }
 Light *Interface::createLight(const char *name) noexcept { return scene_->createLight(name, *params_); }
 Texture *Interface::createTexture(const char *name) noexcept { return scene_->createTexture(name, *params_); }
-Material *Interface::createMaterial(const char *name) noexcept { return scene_->createMaterial(name, *params_, *eparams_); }
+Material *Interface::createMaterial(const char *name) noexcept { return scene_->createMaterial(name, *params_, eparams_); }
 Camera *Interface::createCamera(const char *name) noexcept { return scene_->createCamera(name, *params_); }
 Background *Interface::createBackground(const char *name) noexcept { return scene_->createBackground(name, *params_); }
 Integrator *Interface::createIntegrator(const char *name) noexcept { return scene_->createIntegrator(name, *params_); }

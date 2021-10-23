@@ -63,7 +63,7 @@ void ExportPython::clearAll() noexcept
 		file_.close();
 	}
 	params_->clear();
-	eparams_->clear();
+	eparams_.clear();
 	cparams_ = params_.get();
 	next_obj_ = 0;
 }
@@ -228,7 +228,7 @@ void ExportPython::writeParamMap(const ParamMap &param_map, int indent) noexcept
 void ExportPython::writeParamList(int indent) noexcept
 {
 	//const std::string tabs(indent, '\t');
-	for(const auto &param : *eparams_)
+	for(const auto &param : eparams_)
 	{
 		file_ << "yi.paramsPushList()\n";
 		writeParamMap(param, 0);
@@ -259,7 +259,7 @@ Material *ExportPython::createMaterial(const char *name) noexcept
 	writeParamMap(*params_);
 	writeParamList(1);
 	params_->clear();
-	eparams_->clear();
+	eparams_.clear();
 	file_ << "yi.createMaterial(\"" << name << "\")\n";
 	file_ << "yi.paramsClearAll()\n\n";
 	return nullptr;
@@ -356,7 +356,7 @@ void ExportPython::render(std::shared_ptr<ProgressBar> progress_bar) noexcept
 	file_ << "yi.render(0, 0)\n";
 	file_ << "del yi\n";
 	params_->clear();
-	eparams_->clear();
+	eparams_.clear();
 	file_.flush();
 	file_.close();
 }

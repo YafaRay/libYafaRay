@@ -107,7 +107,7 @@ void ExportC::clearAll() noexcept
 		file_.close();
 	}
 	params_->clear();
-	eparams_->clear();
+	eparams_.clear();
 	cparams_ = params_.get();
 	next_obj_ = 0;
 }
@@ -291,7 +291,7 @@ void ExportC::writeParamMap(const ParamMap &param_map, int indent) noexcept
 void ExportC::writeParamList(int indent) noexcept
 {
 	const std::string tabs(indent, '\t');
-	for(const auto &param : *eparams_)
+	for(const auto &param : eparams_)
 	{
 		file_ << tabs << "yafaray_paramsPushList(yi);\n";
 		writeParamMap(param, indent + 1);
@@ -327,7 +327,7 @@ Material *ExportC::createMaterial(const char *name) noexcept
 	writeParamMap(*params_);
 	writeParamList(1);
 	params_->clear();
-	eparams_->clear();
+	eparams_.clear();
 	file_ << "\t" << "yafaray_createMaterial(yi, \"" << name << "\");\n";
 	file_ << "\t" << "yafaray_paramsClearAll(yi);\n\n";
 	section_num_lines_ += 2;
@@ -441,7 +441,7 @@ void ExportC::render(std::shared_ptr<ProgressBar> progress_bar) noexcept
 	file_ << "\t" << "yafaray_paramsClearAll(yi);\n";
 	file_ << "}\n\n";
 	params_->clear();
-	eparams_->clear();
+	eparams_.clear();
 	file_ << generateMain();
 	file_.flush();
 	file_.close();
