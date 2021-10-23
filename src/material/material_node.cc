@@ -88,9 +88,8 @@ void NodeMaterial::getNodeList(const ShaderNode *root, std::vector<ShaderNode *>
 void NodeMaterial::evalBump(NodeStack &stack, const RenderData &render_data, SurfacePoint &sp, const ShaderNode *bump_shader_node) const
 {
 	for(const auto &node : bump_nodes_) node->evalDerivative(stack, render_data, sp);
-	float du, dv;
-	bump_shader_node->getDerivative(stack, du, dv);
-	applyBump(sp, du, dv);
+	const DuDv du_dv = bump_shader_node->getDuDv(stack);
+	applyBump(sp, du_dv);
 }
 
 bool NodeMaterial::loadNodes(const std::list<ParamMap> &params_list, const Scene &scene)

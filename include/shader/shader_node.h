@@ -57,6 +57,18 @@ class NodeFinder final : public Collection<std::string, ShaderNode *>
 		NodeFinder(const std::map<std::string, std::unique_ptr<ShaderNode>> &table) { for(const auto &s : table) items_[s.first] = s.second.get(); }
 };
 
+class DuDv final
+{
+	public:
+		DuDv(float du, float dv) : du_(du), dv_(dv) { }
+		float getDu() const { return du_; }
+		float getDv() const { return dv_; }
+
+	private:
+		float du_ = 0.f;
+		float dv_ = 0.f;
+};
+
 /*!	shader nodes are as the name implies elements of a node based shading tree.
 	Note that a "shader" only associates a color or scalar with a surface point,
 	nothing more and nothing less. The material behaviour is implemented in the
@@ -93,8 +105,7 @@ class ShaderNode
 		/*! where f is the shader function, and NU/NV/N build the shading coordinate system
 			\param du df/dNU
 			\param dv df/dNV	*/
-		void getDerivative(const NodeStack &stack, float &du, float &dv) const
-		{ du = stack(id_).col_.r_; dv = stack(id_).col_.g_; }
+		DuDv getDuDv(const NodeStack &stack) const { return {stack(id_).col_.r_, stack(id_).col_.g_}; }
 		/* virtual void getDerivative(const surfacePoint_t &sp, float &du, float &dv) const {du=0.f, dv=0.f;} */
 
 	private:

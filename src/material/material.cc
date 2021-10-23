@@ -180,10 +180,10 @@ Rgb Material::getReflectivity(const RenderData &render_data, const SurfacePoint 
 	return total * 0.0625f; //total / 16.f
 }
 
-void Material::applyBump(SurfacePoint &sp, float df_dnu, float df_dnv) const
+void Material::applyBump(SurfacePoint &sp, const DuDv &du_dv) const
 {
-	sp.nu_ += df_dnu * sp.n_;
-	sp.nv_ += df_dnv * sp.n_;
+	sp.nu_ += du_dv.getDu() * sp.n_;
+	sp.nv_ += du_dv.getDv() * sp.n_;
 	sp.n_ = (sp.nu_ ^ sp.nv_).normalize();
 	sp.nu_.normalize();
 	sp.nv_ = (sp.n_ ^ sp.nu_).normalize();

@@ -187,7 +187,7 @@ class Material
 	protected:
 		/* small function to apply bump mapping to a surface point
 			you need to determine the partial derivatives for NU and NV first, e.g. from a shader node */
-		void applyBump(SurfacePoint &sp, float df_dnu, float df_dnv) const;
+		void applyBump(SurfacePoint &sp, const DuDv &du_dv) const;
 
 		BsdfFlags bsdf_flags_ = BsdfFlags::None;
 
