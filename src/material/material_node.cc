@@ -23,7 +23,7 @@
 
 BEGIN_YAFARAY
 
-void NodeMaterial::recursiveSolver(ShaderNode *node, std::vector<ShaderNode *> &sorted)
+void NodeMaterial::recursiveSolver(const ShaderNode *node, std::vector<const ShaderNode *> &sorted)
 {
 	if(node->getId() != 0) return;
 	node->setId(1);
@@ -31,8 +31,9 @@ void NodeMaterial::recursiveSolver(ShaderNode *node, std::vector<ShaderNode *> &
 	if(node->getDependencies(dependency_nodes))
 	{
 		for(const auto &dependency_node : dependency_nodes)
-			// FIXME someone tell me a smarter way than casting away a const...
-			if(dependency_node->getId() == 0) recursiveSolver((ShaderNode *) dependency_node, sorted);
+		{
+			if(dependency_node->getId() == 0) recursiveSolver(dependency_node, sorted);
+		}
 	}
 	sorted.push_back(node);
 }
@@ -51,15 +52,15 @@ void NodeMaterial::recursiveFinder(const ShaderNode *node, std::set<const Shader
 	tree.insert(node);
 }
 
-void NodeMaterial::evalNodes(const RenderData &render_data, const SurfacePoint &sp, const std::vector<ShaderNode *> &nodes, NodeStack &stack) const {
+void NodeMaterial::evalNodes(const RenderData &render_data, const SurfacePoint &sp, const std::vector<const ShaderNode *> &nodes, NodeStack &stack) const {
 	for(const auto &node : nodes) node->eval(stack, render_data, sp);
 }
 
 void NodeMaterial::solveNodesOrder(const std::vector<ShaderNode *> &roots)
 {
-	for(auto &color_node : color_nodes_) color_node->setId(0); //set all IDs = 0 to indicate "not tested yet"
+	for(const auto &color_node : color_nodes_initial_) color_node->setId(0); //set all IDs = 0 to indicate "not tested yet"
 	for(const auto &root : roots) recursiveSolver(root, color_nodes_sorted_);
-	if(color_nodes_.size() != color_nodes_sorted_.size()) logger_.logWarning("NodeMaterial: Unreachable nodes!");
+	if(color_nodes_initial_.size() != color_nodes_sorted_.size()) logger_.logWarning("NodeMaterial: Unreachable nodes!");
 	//give the nodes an index to be used as the "stack"-index.
 	//using the order of evaluation can't hurt, can it?
 	for(unsigned int i = 0; i < color_nodes_sorted_.size(); ++i) color_nodes_sorted_[i]->setId(i);
@@ -71,13 +72,16 @@ void NodeMaterial::solveNodesOrder(const std::vector<ShaderNode *> &roots)
 	since "solveNodesOrder" sorts allNodes, calling getNodeList afterwards gives
 	a list in evaluation order. multiple calls are merged in "nodes" */
 
-void NodeMaterial::getNodeList(const ShaderNode *root, std::vector<ShaderNode *> &nodes)
+void NodeMaterial::getNodeList(const ShaderNode *root, std::vector<const ShaderNode *> &nodes)
 {
 	std::set<const ShaderNode *> in_tree;
 	for(const auto &node : nodes) in_tree.insert(node);
 	recursiveFinder(root, in_tree);
 	nodes.clear();
-	for(const auto &node : color_nodes_sorted_) if(in_tree.find(node) != in_tree.end()) nodes.push_back(node);
+	for(const auto &node : color_nodes_sorted_)
+	{
+		if(in_tree.find(node) != in_tree.end()) nodes.push_back(node);
+	}
 }
 
 void NodeMaterial::evalBump(NodeStack &stack, const RenderData &render_data, SurfacePoint &sp, const ShaderNode *bump_shader_node) const
@@ -127,13 +131,13 @@ bool NodeMaterial::loadNodes(const std::list<ParamMap> &params_list, const Scene
 		if(shader)
 		{
 			shaders_table_[name] = std::move(shader);
-			color_nodes_.push_back(shaders_table_[name].get());
+			color_nodes_initial_.push_back(shaders_table_[name].get());
 			if(logger_.isVerbose()) logger_.logVerbose("NodeMaterial: Added ShaderNode '", name, "'! (", (void *)shaders_table_[name].get(), ")");
 		}
 		else
 		{
 			logger_.logError("NodeMaterial: No shader node could be constructed.'", type, "'!");
-			color_nodes_.clear(); //Empty the nodes table, to prevent further crashes later in rendering, when any of the nodes cannot be created
+			color_nodes_initial_.clear(); //Empty the nodes table, to prevent further crashes later in rendering, when any of the nodes cannot be created
 			error = true;
 			break;
 		}
@@ -145,7 +149,7 @@ bool NodeMaterial::loadNodes(const std::list<ParamMap> &params_list, const Scene
 		int n = 0;
 		for(const auto &param_map : params_list)
 		{
-			if(!color_nodes_[n]->configInputs(logger_, param_map, finder))
+			if(!color_nodes_initial_[n]->configInputs(logger_, param_map, finder))
 			{
 				logger_.logError("NodeMaterial: Shader node configuration failed! (n=", n, ")");
 				error = true; break;

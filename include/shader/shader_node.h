@@ -80,7 +80,7 @@ class ShaderNode
 		static std::unique_ptr<ShaderNode> factory(Logger &logger, const ParamMap &params, const Scene &scene);
 		virtual ~ShaderNode() = default;
 		unsigned int getId() const { return id_; }
-		void setId(unsigned int id) { id_ = id; }
+		void setId(unsigned int id) const { id_ = id; } //It is set as "const" but it actually modifies the (mutable) id_
 		/*! evaluate the shader for given surface point; result has to be put on stack (using stack[ID]).
 			i know, could've passed const stack and have nodeResult_t return val, but this should be marginally
 			more efficient, so do me the favour and just don't mess up other stack elements ;) */
@@ -109,7 +109,7 @@ class ShaderNode
 		/* virtual void getDerivative(const surfacePoint_t &sp, float &du, float &dv) const {du=0.f, dv=0.f;} */
 
 	private:
-		unsigned int id_;
+		mutable unsigned int id_;
 };
 
 END_YAFARAY
