@@ -96,18 +96,17 @@ void NodeMaterial::evalBump(NodeStack &stack, const RenderData &render_data, Sur
 bool NodeMaterial::loadNodes(const std::list<ParamMap> &params_list, const Scene &scene)
 {
 	bool error = false;
-	std::string type;
-	std::string name;
-	std::string element;
 
 	for(const auto &param_map : params_list)
 	{
+		std::string element;
 		if(param_map.getParam("element", element))
 		{
 			if(element != "shader_node") continue;
 		}
 		else logger_.logWarning("NodeMaterial: No element type given; assuming shader node");
 
+		std::string name;
 		if(!param_map.getParam("name", name))
 		{
 			logger_.logError("NodeMaterial: Name of shader node not specified!");
@@ -122,6 +121,7 @@ bool NodeMaterial::loadNodes(const std::list<ParamMap> &params_list, const Scene
 			break;
 		}
 
+		std::string type;
 		if(!param_map.getParam("type", type))
 		{
 			logger_.logError("NodeMaterial: Type of shader node not specified!");
@@ -165,10 +165,9 @@ bool NodeMaterial::loadNodes(const std::list<ParamMap> &params_list, const Scene
 
 void NodeMaterial::parseNodes(const ParamMap &params, std::vector<ShaderNode *> &roots, std::map<std::string, ShaderNode *> &node_list)
 {
-	std::string name;
-
 	for(auto &current_node : node_list)
 	{
+		std::string name;
 		if(params.getParam(current_node.first, name))
 		{
 			const auto node_found = shaders_table_.find(name);

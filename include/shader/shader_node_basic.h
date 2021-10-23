@@ -69,7 +69,7 @@ class ValueNode final : public ShaderNode
 		static std::unique_ptr<ShaderNode> factory(Logger &logger, const ParamMap &params, const Scene &scene);
 
 	private:
-		ValueNode(Rgba col, float val): color_(col), value_(val) {}
+		ValueNode(Rgba col, float val): color_(col), value_(val) { }
 		virtual void eval(NodeStack &stack, const RenderData &render_data, const SurfacePoint &sp) const override;
 		virtual bool configInputs(Logger &logger, const ParamMap &params, const NodeFinder &find) override { return true; };
 
@@ -83,17 +83,18 @@ class MixNode : public ShaderNode
 		static std::unique_ptr<ShaderNode> factory(Logger &logger, const ParamMap &params, const Scene &scene);
 
 	protected:
-		MixNode();
+		MixNode() = default;
 		void getInputs(NodeStack &stack, Rgba &cin_1, Rgba &cin_2, float &fin_1, float &fin_2, float &f_2) const;
 
 	private:
-		MixNode(float val);
+		MixNode(float val) : cfactor_(val) { }
 		virtual void eval(NodeStack &stack, const RenderData &render_data, const SurfacePoint &sp) const override;
 		virtual bool configInputs(Logger &logger, const ParamMap &params, const NodeFinder &find) override;
 		virtual bool getDependencies(std::vector<const ShaderNode *> &dep) const override;
 
 		Rgba col_1_, col_2_;
-		float val_1_, val_2_, cfactor_;
+		float val_1_, val_2_;
+		float cfactor_ = 0.f;
 		const ShaderNode *input_1_ = nullptr;
 		const ShaderNode *input_2_ = nullptr;
 		const ShaderNode *factor_ = nullptr;

@@ -23,7 +23,6 @@
 #include "geometry/surface.h"
 #include "texture/texture_image.h"
 #include "render/render_data.h"
-#include "photon/photon.h"
 
 BEGIN_YAFARAY
 
@@ -33,9 +32,9 @@ void TextureMapperNode::setup()
 	{
 		int u, v, w;
 		tex_->resolution(u, v, w);
-		d_u_ = 1.f / (float)u;
-		d_v_ = 1.f / (float)v;
-		if(tex_->isThreeD()) d_w_ = 1.f / (float)w;
+		d_u_ = 1.f / static_cast<float>(u);
+		d_v_ = 1.f / static_cast<float>(v);
+		if(tex_->isThreeD()) d_w_ = 1.f / static_cast<float>(w);
 		else d_w_ = 0.f;
 	}
 	else
@@ -86,7 +85,7 @@ Point3 TextureMapperNode::sphereMap(const Point3 &p)
 // Map the texture to a cube
 Point3 TextureMapperNode::cubeMap(const Point3 &p, const Vec3 &n)
 {
-	const int ma[3][3] = { {1, 2, 0}, {0, 2, 1}, {0, 1, 2} };
+	const std::array<std::array<int, 3>, 3> ma {{ {1, 2, 0}, {0, 2, 1}, {0, 1, 2} }};
 	// int axis = std::abs(n.x) > std::abs(n.y) ? (std::abs(n.x) > std::abs(n.z) ? 0 : 2) : (std::abs(n.y) > std::abs(n.z) ? 1 : 2);
 	// no functionality changes, just more readable code
 	int axis;
@@ -112,7 +111,7 @@ Point3 TextureMapperNode::doMapping(const Point3 &p, const Vec3 &n) const
 		default: break;
 	}
 	// Texture axis mapping
-	const float texmap[4] = { 0.f, texpt.x_, texpt.y_, texpt.z_ };
+	const std::array<float, 4> texmap { 0.f, texpt.x_, texpt.y_, texpt.z_ };
 	texpt.x_ = texmap[map_x_];
 	texpt.y_ = texmap[map_y_];
 	texpt.z_ = texmap[map_z_];
@@ -206,13 +205,12 @@ void TextureMapperNode::evalDerivative(NodeStack &stack, const RenderData &rende
 	if(tex_->discrete() && sp.has_uv_ && coords_ == Uv)
 	{
 		texpt = doMapping(texpt, ng);
-		Rgba color(0.f);
 		Vec3 norm(0.f);
 
 		if(tex_->isNormalmap())
 		{
 			// Get color from normal map texture
-			color = tex_->getRawColor(texpt);
+			const Rgba color = tex_->getRawColor(texpt);
 
 			// Assign normal map RGB colors to vector norm
 			norm.x_ = color.getR();
@@ -226,10 +224,10 @@ void TextureMapperNode::evalDerivative(NodeStack &stack, const RenderData &rende
 		}
 		else
 		{
-			const Point3 i_0 = (texpt - p_du_);
-			const Point3 i_1 = (texpt + p_du_);
-			const Point3 j_0 = (texpt - p_dv_);
-			const Point3 j_1 = (texpt + p_dv_);
+			const Point3 i_0 = texpt - p_du_;
+			const Point3 i_1 = texpt + p_du_;
+			const Point3 j_0 = texpt - p_dv_;
+			const Point3 j_1 = texpt + p_dv_;
 			const float dfdu = (tex_->getFloat(i_0) - tex_->getFloat(i_1)) / d_u_;
 			const float dfdv = (tex_->getFloat(j_0) - tex_->getFloat(j_1)) / d_v_;
 
@@ -246,7 +244,7 @@ void TextureMapperNode::evalDerivative(NodeStack &stack, const RenderData &rende
 
 		if(std::abs(norm.z_) > 1e-30f)
 		{
-			const float nf = 1.0 / norm.z_ * bump_str_; // normalizes z to 1, why?
+			const float nf = 1.f / norm.z_ * bump_str_; // normalizes z to 1, why?
 			du = norm.x_ * nf;
 			dv = norm.y_ * nf;
 		}
@@ -257,16 +255,12 @@ void TextureMapperNode::evalDerivative(NodeStack &stack, const RenderData &rende
 		if(tex_->isNormalmap())
 		{
 			texpt = doMapping(texpt, ng);
-			Rgba color(0.f);
-			Vec3 norm(0.f);
 
 			// Get color from normal map texture
-			color = tex_->getRawColor(texpt);
+			const Rgba color = tex_->getRawColor(texpt);
 
 			// Assign normal map RGB colors to vector norm
-			norm.x_ = color.getR();
-			norm.y_ = color.getG();
-			norm.z_ = color.getB();
+			Vec3 norm { color.getR(), color.getG(), color.getB() };
 			norm = (2.f * norm) - 1.f;
 
 			// Convert norm into shading space
@@ -398,15 +392,9 @@ std::unique_ptr<ShaderNode> ValueNode::factory(Logger &logger, const ParamMap &p
 /  A simple mix node, could be used to derive other math nodes
 / ========================================== */
 
-MixNode::MixNode(): cfactor_(0.f), input_1_(0), input_2_(0), factor_(0)
-{}
-
-MixNode::MixNode(float val): cfactor_(val), input_1_(0), input_2_(0), factor_(0)
-{}
-
 void MixNode::eval(NodeStack &stack, const RenderData &render_data, const SurfacePoint &sp) const
 {
-	const float f_2 = (factor_) ? factor_->getScalar(stack) : cfactor_;
+	const float f_2 = factor_ ? factor_->getScalar(stack) : cfactor_;
 	const float f_1 = 1.f - f_2;
 	float fin_1, fin_2;
 	Rgba cin_1, cin_2;
@@ -431,8 +419,8 @@ void MixNode::eval(NodeStack &stack, const RenderData &render_data, const Surfac
 		fin_2 = val_2_;
 	}
 
-	const Rgba color = f_1 * cin_1 + f_2 * cin_2;
-	const float scalar = f_1 * fin_1 + f_2 * fin_2;
+	const Rgba color { f_1 * cin_1 + f_2 * cin_2 };
+	const float scalar { f_1 * fin_1 + f_2 * fin_2 };
 	stack[getId()] = NodeResult(color, scalar);
 }
 
@@ -497,7 +485,7 @@ bool MixNode::getDependencies(std::vector<const ShaderNode *> &dep) const
 
 void MixNode::getInputs(NodeStack &stack, Rgba &cin_1, Rgba &cin_2, float &fin_1, float &fin_2, float &f_2) const
 {
-	f_2 = (factor_) ? factor_->getScalar(stack) : cfactor_;
+	f_2 = factor_ ? factor_->getScalar(stack) : cfactor_;
 	if(input_1_)
 	{
 		cin_1 = input_1_->getColor(stack);
@@ -576,8 +564,8 @@ class ScreenNode: public MixNode
 			getInputs(stack, cin_1, cin_2, fin_1, fin_2, f_2);
 			f_1 = 1.f - f_2;
 
-			const Rgba color = Rgba(1.f) - (Rgba(f_1) + f_2 * (1.f - cin_2)) * (1.f - cin_1);
-			const float scalar   = 1.0 - (f_1 + f_2 * (1.f - fin_2)) * (1.f - fin_1);
+			const Rgba color { Rgba(1.f) - (Rgba(f_1) + f_2 * (1.f - cin_2)) * (1.f - cin_1) };
+			const float scalar = 1.f - (f_1 + f_2 * (1.f - fin_2)) * (1.f - fin_1);
 			stack[getId()] = NodeResult(color, scalar);
 		}
 };
@@ -651,12 +639,13 @@ class OverlayNode: public MixNode
 			getInputs(stack, cin_1, cin_2, fin_1, fin_2, f_2);
 			f_1 = 1.f - f_2;
 
-			Rgba color;
-			color.r_ = (cin_1.r_ < 0.5f) ? cin_1.r_ * (f_1 + 2.0f * f_2 * cin_2.r_) : 1.0 - (f_1 + 2.0f * f_2 * (1.0 - cin_2.r_)) * (1.0 - cin_1.r_);
-			color.g_ = (cin_1.g_ < 0.5f) ? cin_1.g_ * (f_1 + 2.0f * f_2 * cin_2.g_) : 1.0 - (f_1 + 2.0f * f_2 * (1.0 - cin_2.g_)) * (1.0 - cin_1.g_);
-			color.b_ = (cin_1.b_ < 0.5f) ? cin_1.b_ * (f_1 + 2.0f * f_2 * cin_2.b_) : 1.0 - (f_1 + 2.0f * f_2 * (1.0 - cin_2.b_)) * (1.0 - cin_1.b_);
-			color.a_ = (cin_1.a_ < 0.5f) ? cin_1.a_ * (f_1 + 2.0f * f_2 * cin_2.a_) : 1.0 - (f_1 + 2.0f * f_2 * (1.0 - cin_2.a_)) * (1.0 - cin_1.a_);
-			const float scalar = (fin_1 < 0.5f) ? fin_1 * (f_1 + 2.0f * f_2 * fin_2) : 1.0 - (f_1 + 2.0f * f_2 * (1.0 - fin_2)) * (1.0 - fin_1);
+			const Rgba color {
+				(cin_1.r_ < 0.5f) ? cin_1.r_ * (f_1 + 2.f * f_2 * cin_2.r_) : 1.f - (f_1 + 2.f * f_2 * (1.f - cin_2.r_)) * (1.f - cin_1.r_),
+				(cin_1.g_ < 0.5f) ? cin_1.g_ * (f_1 + 2.f * f_2 * cin_2.g_) : 1.f - (f_1 + 2.f * f_2 * (1.f - cin_2.g_)) * (1.f - cin_1.g_),
+				(cin_1.b_ < 0.5f) ? cin_1.b_ * (f_1 + 2.f * f_2 * cin_2.b_) : 1.f - (f_1 + 2.f * f_2 * (1.f - cin_2.b_)) * (1.f - cin_1.b_),
+				(cin_1.a_ < 0.5f) ? cin_1.a_ * (f_1 + 2.f * f_2 * cin_2.a_) : 1.f - (f_1 + 2.f * f_2 * (1.f - cin_2.a_)) * (1.f - cin_1.a_)
+			};
+			const float scalar = (fin_1 < 0.5f) ? fin_1 * (f_1 + 2.f * f_2 * fin_2) : 1.f - (f_1 + 2.f * f_2 * (1.f - fin_2)) * (1.f - fin_1);
 			stack[getId()] = NodeResult(color, scalar);
 		}
 };
