@@ -51,7 +51,7 @@ class NodeStack final
 		NodeResult *dat_ = nullptr;
 };
 
-class NodeFinder final : public Collection<std::string, ShaderNode *>
+class NodeFinder final : public Collection<std::string, const ShaderNode *>
 {
 	public:
 		NodeFinder(const std::map<std::string, std::unique_ptr<ShaderNode>> &table) { for(const auto &s : table) items_[s.first] = s.second.get(); }
