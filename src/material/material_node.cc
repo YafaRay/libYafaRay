@@ -57,17 +57,12 @@ void NodeMaterial::evalNodes(const RenderData &render_data, const SurfacePoint &
 
 void NodeMaterial::solveNodesOrder(const std::vector<ShaderNode *> &roots)
 {
-	//set all IDs = 0 to indicate "not tested yet"
-	for(unsigned int i = 0; i < color_nodes_.size(); ++i) color_nodes_[i]->setId(0);
-	for(unsigned int i = 0; i < roots.size(); ++i) recursiveSolver(roots[i], color_nodes_sorted_);
+	for(auto &color_node : color_nodes_) color_node->setId(0); //set all IDs = 0 to indicate "not tested yet"
+	for(const auto &root : roots) recursiveSolver(root, color_nodes_sorted_);
 	if(color_nodes_.size() != color_nodes_sorted_.size()) logger_.logWarning("NodeMaterial: Unreachable nodes!");
 	//give the nodes an index to be used as the "stack"-index.
 	//using the order of evaluation can't hurt, can it?
-	for(unsigned int i = 0; i < color_nodes_sorted_.size(); ++i)
-	{
-		ShaderNode *n = color_nodes_sorted_[i];
-		n->setId(i);
-	}
+	for(unsigned int i = 0; i < color_nodes_sorted_.size(); ++i) color_nodes_sorted_[i]->setId(i);
 	req_node_mem_ = color_nodes_sorted_.size() * sizeof(NodeResult);
 }
 
