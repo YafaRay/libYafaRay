@@ -551,7 +551,7 @@ bool Scene::setupSceneRenderParams(Scene &scene, const ParamMap &params)
 		logger_.logError("Scene: ", "Specify an Integrator!!");
 		return false;
 	}
-	Integrator *integrator = this->getIntegrator(name);
+	Integrator *integrator = getIntegrator(name);
 	if(!integrator)
 	{
 		logger_.logError("Scene: ", "Specify an _existing_ Integrator!!");
@@ -568,7 +568,7 @@ bool Scene::setupSceneRenderParams(Scene &scene, const ParamMap &params)
 		logger_.logError("Scene: ", "Specify a Volume Integrator!");
 		return false;
 	}
-	Integrator *volume_integrator = this->getIntegrator(name);
+	Integrator *volume_integrator = getIntegrator(name);
 	if(volume_integrator->getType() != Integrator::Volume)
 	{
 		logger_.logError("Scene: ", "Integrator '", name, "' is not a volume integrator!");

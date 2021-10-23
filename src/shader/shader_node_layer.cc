@@ -110,7 +110,7 @@ void LayerNode::eval(NodeStack &stack, const RenderData &render_data, const Surf
 		if(rval < 0.f) rval = 0.f;
 	}
 	rcol.a_ = stencil_tin;
-	stack[this->getId()] = NodeResult(rcol, rval);
+	stack[getId()] = NodeResult(rcol, rval);
 }
 
 void LayerNode::evalDerivative(NodeStack &stack, const RenderData &render_data, const SurfacePoint &sp) const
@@ -141,7 +141,7 @@ void LayerNode::evalDerivative(NodeStack &stack, const RenderData &render_data, 
 	rdu += tdu;
 	rdv += tdv;
 
-	stack[this->getId()] = NodeResult(Rgba(rdu, rdv, 0.f, stencil_tin), 0.f);
+	stack[getId()] = NodeResult(Rgba(rdu, rdv, 0.f, stencil_tin), 0.f);
 }
 
 bool LayerNode::configInputs(Logger &logger, const ParamMap &params, const NodeFinder &find)

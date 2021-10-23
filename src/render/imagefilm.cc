@@ -278,7 +278,7 @@ int ImageFilm::nextPass(const RenderView *render_view, RenderControl &render_con
 		{
 			for(auto &output : outputs_)
 			{
-				if(output.second) this->flush(render_view, render_control, edge_params, All);
+				if(output.second) flush(render_view, render_control, edge_params, All);
 			}
 		}
 

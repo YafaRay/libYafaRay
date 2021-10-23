@@ -190,7 +190,7 @@ void TextureMapperNode::eval(NodeStack &stack, const RenderData &render_data, co
 		texpt = doMapping(texpt, ng);
 	}
 
-	stack[this->getId()] = NodeResult(tex_->getColor(texpt, mip_map_params.get()), (do_scalar_) ? tex_->getFloat(texpt, mip_map_params.get()) : 0.f);
+	stack[getId()] = NodeResult(tex_->getColor(texpt, mip_map_params.get()), (do_scalar_) ? tex_->getFloat(texpt, mip_map_params.get()) : 0.f);
 }
 
 // Normal perturbation
@@ -305,7 +305,7 @@ void TextureMapperNode::evalDerivative(NodeStack &stack, const RenderData &rende
 		}
 	}
 
-	stack[this->getId()] = NodeResult(Rgba(du, dv, 0.f, 0.f), 0.f);
+	stack[getId()] = NodeResult(Rgba(du, dv, 0.f, 0.f), 0.f);
 }
 
 std::unique_ptr<ShaderNode> TextureMapperNode::factory(Logger &logger, const ParamMap &params, const Scene &scene)
@@ -380,7 +380,7 @@ std::unique_ptr<ShaderNode> TextureMapperNode::factory(Logger &logger, const Par
 
 void ValueNode::eval(NodeStack &stack, const RenderData &render_data, const SurfacePoint &sp) const
 {
-	stack[this->getId()] = NodeResult(color_, value_);
+	stack[getId()] = NodeResult(color_, value_);
 }
 
 std::unique_ptr<ShaderNode> ValueNode::factory(Logger &logger, const ParamMap &params, const Scene &scene)
@@ -433,7 +433,7 @@ void MixNode::eval(NodeStack &stack, const RenderData &render_data, const Surfac
 
 	const Rgba color = f_1 * cin_1 + f_2 * cin_2;
 	const float scalar = f_1 * fin_1 + f_2 * fin_2;
-	stack[this->getId()] = NodeResult(color, scalar);
+	stack[getId()] = NodeResult(color, scalar);
 }
 
 bool MixNode::configInputs(Logger &logger, const ParamMap &params, const NodeFinder &find)
@@ -531,7 +531,7 @@ class AddNode: public MixNode
 
 			cin_1 += f_2 * cin_2;
 			fin_1 += f_2 * fin_2;
-			stack[this->getId()] = NodeResult(cin_1, fin_1);
+			stack[getId()] = NodeResult(cin_1, fin_1);
 		}
 };
 
@@ -547,7 +547,7 @@ class MultNode: public MixNode
 
 			cin_1 *= Rgba(f_1) + f_2 * cin_2;
 			fin_2 *= f_1 + f_2 * fin_2;
-			stack[this->getId()] = NodeResult(cin_1, fin_1);
+			stack[getId()] = NodeResult(cin_1, fin_1);
 		}
 };
 
@@ -562,7 +562,7 @@ class SubNode: public MixNode
 
 			cin_1 -= f_2 * cin_2;
 			fin_1 -= f_2 * fin_2;
-			stack[this->getId()] = NodeResult(cin_1, fin_1);
+			stack[getId()] = NodeResult(cin_1, fin_1);
 		}
 };
 
@@ -578,7 +578,7 @@ class ScreenNode: public MixNode
 
 			const Rgba color = Rgba(1.f) - (Rgba(f_1) + f_2 * (1.f - cin_2)) * (1.f - cin_1);
 			const float scalar   = 1.0 - (f_1 + f_2 * (1.f - fin_2)) * (1.f - fin_1);
-			stack[this->getId()] = NodeResult(color, scalar);
+			stack[getId()] = NodeResult(color, scalar);
 		}
 };
 
@@ -597,7 +597,7 @@ class DiffNode: public MixNode
 			cin_1.b_ = f_1 * cin_1.b_ + f_2 * std::abs(cin_1.b_ - cin_2.b_);
 			cin_1.a_ = f_1 * cin_1.a_ + f_2 * std::abs(cin_1.a_ - cin_2.a_);
 			fin_1   = f_1 * fin_1 + f_2 * std::abs(fin_1 - fin_2);
-			stack[this->getId()] = NodeResult(cin_1, fin_1);
+			stack[getId()] = NodeResult(cin_1, fin_1);
 		}
 };
 
@@ -617,7 +617,7 @@ class DarkNode: public MixNode
 			if(cin_2.a_ < cin_1.a_) cin_1.a_ = cin_2.a_;
 			fin_2 *= f_2;
 			if(fin_2 < fin_1) fin_1 = fin_2;
-			stack[this->getId()] = NodeResult(cin_1, fin_1);
+			stack[getId()] = NodeResult(cin_1, fin_1);
 		}
 };
 
@@ -637,7 +637,7 @@ class LightNode: public MixNode
 			if(cin_2.a_ > cin_1.a_) cin_1.a_ = cin_2.a_;
 			fin_2 *= f_2;
 			if(fin_2 > fin_1) fin_1 = fin_2;
-			stack[this->getId()] = NodeResult(cin_1, fin_1);
+			stack[getId()] = NodeResult(cin_1, fin_1);
 		}
 };
 
@@ -657,7 +657,7 @@ class OverlayNode: public MixNode
 			color.b_ = (cin_1.b_ < 0.5f) ? cin_1.b_ * (f_1 + 2.0f * f_2 * cin_2.b_) : 1.0 - (f_1 + 2.0f * f_2 * (1.0 - cin_2.b_)) * (1.0 - cin_1.b_);
 			color.a_ = (cin_1.a_ < 0.5f) ? cin_1.a_ * (f_1 + 2.0f * f_2 * cin_2.a_) : 1.0 - (f_1 + 2.0f * f_2 * (1.0 - cin_2.a_)) * (1.0 - cin_1.a_);
 			const float scalar = (fin_1 < 0.5f) ? fin_1 * (f_1 + 2.0f * f_2 * fin_2) : 1.0 - (f_1 + 2.0f * f_2 * (1.0 - fin_2)) * (1.0 - fin_1);
-			stack[this->getId()] = NodeResult(color, scalar);
+			stack[getId()] = NodeResult(color, scalar);
 		}
 };
 

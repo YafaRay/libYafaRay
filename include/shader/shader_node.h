@@ -76,7 +76,7 @@ class ShaderNode
 		/*! evaluate the shader partial derivatives for given surface point (e.g. for bump mapping);
 			attention: uses color component of node stack to store result, so only use a stack for either eval or evalDeriv! */
 		virtual void evalDerivative(NodeStack &stack, const RenderData &render_data, const SurfacePoint &sp) const
-		{ stack[this->id_] = NodeResult(Rgba(0.f), 0.f); }
+		{ stack[id_] = NodeResult(Rgba(0.f), 0.f); }
 		/*! configure the inputs. gets the same paramMap the factory functions get, but shader nodes
 			may be created in any order and linked afterwards, so inputs may not exist yet on instantiation */
 		virtual bool configInputs(Logger &logger, const ParamMap &params, const NodeFinder &find) = 0;
@@ -86,15 +86,15 @@ class ShaderNode
 			\return true if there exist dependencies, false if it does not depend on any other nodes */
 		virtual bool getDependencies(std::vector<const ShaderNode *> &dep) const { return false; }
 		/*! get the color value calculated on eval */
-		Rgba getColor(const NodeStack &stack) const { return stack(this->id_).col_; }
+		Rgba getColor(const NodeStack &stack) const { return stack(id_).col_; }
 		/*! get the scalar value calculated on eval */
-		float getScalar(const NodeStack &stack) const { return stack(this->id_).f_; }
+		float getScalar(const NodeStack &stack) const { return stack(id_).f_; }
 		//! get the (approximate) partial derivatives df/dNU and df/dNV
 		/*! where f is the shader function, and NU/NV/N build the shading coordinate system
 			\param du df/dNU
 			\param dv df/dNV	*/
 		void getDerivative(const NodeStack &stack, float &du, float &dv) const
-		{ du = stack(this->id_).col_.r_; dv = stack(this->id_).col_.g_; }
+		{ du = stack(id_).col_.r_; dv = stack(id_).col_.g_; }
 		/* virtual void getDerivative(const surfacePoint_t &sp, float &du, float &dv) const {du=0.f, dv=0.f;} */
 
 	private:
