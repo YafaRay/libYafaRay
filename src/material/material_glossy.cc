@@ -88,12 +88,12 @@ float GlossyMaterial::orenNayar(const Vec3 &wi, const Vec3 &wo, const Vec3 &n, b
 	if(cos_to >= cos_ti)
 	{
 		sin_alpha = math::sqrt(1.f - cos_ti * cos_ti);
-		tan_beta = math::sqrt(1.f - cos_to * cos_to) / ((cos_to == 0.f) ? 1e-8f : cos_to); // white (black on windows) dots fix for oren-nayar, could happen with bad normals
+		tan_beta = math::sqrt(1.f - cos_to * cos_to) / ((cos_to == 0.f) ? 1e-8f : cos_to); // white (black on Windows) dots fix for oren-nayar, could happen with bad normals
 	}
 	else
 	{
 		sin_alpha = math::sqrt(1.f - cos_to * cos_to);
-		tan_beta = math::sqrt(1.f - cos_ti * cos_ti) / ((cos_ti == 0.f) ? 1e-8f : cos_ti); // white (black on windows) dots fix for oren-nayar, could happen with bad normals
+		tan_beta = math::sqrt(1.f - cos_ti * cos_ti) / ((cos_ti == 0.f) ? 1e-8f : cos_ti); // white (black on Windows) dots fix for oren-nayar, could happen with bad normals
 	}
 
 	if(use_texture_sigma)
@@ -167,7 +167,6 @@ Rgb GlossyMaterial::sample(const RenderData &render_data, const SurfacePoint &sp
 	const MDat *dat = (MDat *)render_data.arena_;
 	const float cos_ng_wo = sp.ng_ * wo;
 	const Vec3 n = SurfacePoint::normalFaceForward(sp.ng_, sp.n_, wo);//(cos_Ng_wo < 0) ? -sp.N : sp.N;
-	Vec3 Hs;
 	s.pdf_ = 0.f;
 	float wi_n = 0.f;
 	const float wo_n = std::abs(wo * n);
@@ -251,8 +250,8 @@ Rgb GlossyMaterial::sample(const RenderData &render_data, const SurfacePoint &sp
 		float glossy = 0.f;
 		if(anisotropic_)
 		{
-			microfacet::asAnisoSample(Hs, s_1, s.s_2_, exp_u_, exp_v_);
-			Vec3 h = Hs.x_ * sp.nu_ + Hs.y_ * sp.nv_ + Hs.z_ * n;
+			const Vec3 hs = microfacet::asAnisoSample(s_1, s.s_2_, exp_u_, exp_v_);
+			Vec3 h = hs.x_ * sp.nu_ + hs.y_ * sp.nv_ + hs.z_ * n;
 			float cos_wo_h = wo * h;
 			if(cos_wo_h < 0.f)
 			{
@@ -271,13 +270,13 @@ Rgb GlossyMaterial::sample(const RenderData &render_data, const SurfacePoint &sp
 				return scolor;
 			}
 			wi_n = std::abs(wi * n);
-			s.pdf_ = microfacet::asAnisoPdf(Hs, cos_wo_h, exp_u_, exp_v_);
-			glossy = microfacet::asAnisoD(Hs, exp_u_, exp_v_) * microfacet::schlickFresnel(cos_wo_h, dat->m_glossy_) / microfacet::asDivisor(cos_wo_h, wo_n, wi_n);
+			s.pdf_ = microfacet::asAnisoPdf(hs, cos_wo_h, exp_u_, exp_v_);
+			glossy = microfacet::asAnisoD(hs, exp_u_, exp_v_) * microfacet::schlickFresnel(cos_wo_h, dat->m_glossy_) / microfacet::asDivisor(cos_wo_h, wo_n, wi_n);
 		}
 		else
 		{
-			microfacet::blinnSample(Hs, s_1, s.s_2_, (exponent_shader_ ? exponent_shader_->getScalar(stack) : exponent_));
-			Vec3 h = Hs.x_ * sp.nu_ + Hs.y_ * sp.nv_ + Hs.z_ * n;
+			const Vec3 hs = microfacet::blinnSample(s_1, s.s_2_, (exponent_shader_ ? exponent_shader_->getScalar(stack) : exponent_));
+			Vec3 h = hs.x_ * sp.nu_ + hs.y_ * sp.nv_ + hs.z_ * n;
 			float cos_wo_h = wo * h;
 			if(cos_wo_h < 0.f)
 			{

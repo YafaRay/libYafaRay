@@ -105,12 +105,12 @@ float CoatedGlossyMaterial::orenNayar(const Vec3 &wi, const Vec3 &wo, const Vec3
 	if(cos_to >= cos_ti)
 	{
 		sin_alpha = math::sqrt(1.f - cos_ti * cos_ti);
-		tan_beta = math::sqrt(1.f - cos_to * cos_to) / ((cos_to == 0.f) ? 1e-8f : cos_to); // white (black on windows) dots fix for oren-nayar, could happen with bad normals
+		tan_beta = math::sqrt(1.f - cos_to * cos_to) / ((cos_to == 0.f) ? 1e-8f : cos_to); // white (black on Windows) dots fix for oren-nayar, could happen with bad normals
 	}
 	else
 	{
 		sin_alpha = math::sqrt(1.f - cos_to * cos_to);
-		tan_beta = math::sqrt(1.f - cos_ti * cos_ti) / ((cos_ti == 0.f) ? 1e-8f : cos_ti); // white (black on windows) dots fix for oren-nayar, could happen with bad normals
+		tan_beta = math::sqrt(1.f - cos_ti * cos_ti) / ((cos_ti == 0.f) ? 1e-8f : cos_ti); // white (black on Windows) dots fix for oren-nayar, could happen with bad normals
 	}
 
 	if(use_texture_sigma)
@@ -219,7 +219,7 @@ Rgb CoatedGlossyMaterial::sample(const RenderData &render_data, const SurfacePoi
 	}
 	if(!n_match || sum < 0.00001)
 	{
-		wi = Vec3::reflectDir(n, wo);	//If the sampling is prematurely ended for some reason, we need to give wi a value or it will be undefinded causing unexpected problems as black dots. By default I've chosen wi to be the reflection of wo, but it's an arbitrary choice.
+		wi = Vec3::reflectDir(n, wo);	//If the sampling is prematurely ended for some reason we need to give wi a value, or it will be undefinded causing unexpected problems as black dots. By default, I've chosen wi to be the reflection of wo, but it's an arbitrary choice.
 		return Rgb(0.f);
 	}
 
@@ -262,8 +262,8 @@ Rgb CoatedGlossyMaterial::sample(const RenderData &render_data, const SurfacePoi
 			}
 			break;
 		case C_GLOSSY: // glossy
-			if(anisotropic_) microfacet::asAnisoSample(hs, s_1, s.s_2_, exp_u_, exp_v_);
-			else microfacet::blinnSample(hs, s_1, s.s_2_, (exponent_shader_ ? exponent_shader_->getScalar(stack) : exponent_));
+			if(anisotropic_) hs = microfacet::asAnisoSample(s_1, s.s_2_, exp_u_, exp_v_);
+			else hs = microfacet::blinnSample(s_1, s.s_2_, exponent_shader_ ? exponent_shader_->getScalar(stack) : exponent_);
 			break;
 		case C_DIFFUSE: // lambertian
 		default:
