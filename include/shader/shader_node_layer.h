@@ -46,7 +46,7 @@ class LayerNode final : public ShaderNode
 		virtual void evalDerivative(NodeStack &stack, const RenderData &render_data, const SurfacePoint &sp) const override;
 		virtual bool configInputs(Logger &logger, const ParamMap &params, const NodeFinder &find) override;
 		//virtual void getDerivative(const surfacePoint_t &sp, float &du, float &dv) const;
-		virtual bool getDependencies(std::vector<const ShaderNode *> &dep) const override;
+		virtual std::vector<const ShaderNode *> getDependencies() const override;
 
 		const ShaderNode *input_ = nullptr, *upper_layer_ = nullptr;
 		Flags flags_;

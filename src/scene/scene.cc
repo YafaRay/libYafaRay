@@ -96,10 +96,10 @@ Scene::~Scene() = default;
 void Scene::createDefaultMaterial()
 {
 	ParamMap param_map;
-	std::list<ParamMap> eparams;
+	std::list<ParamMap> nodes_params;
 	//Note: keep the std::string or the parameter will be created incorrectly as a bool. This should improve with the new C++17 string literals, but for now with C++11 this should be done.
 	param_map["type"] = std::string("shinydiffusemat");
-	const Material *material = createMaterial("YafaRay_Default_Material", param_map, eparams);
+	const Material *material = createMaterial("YafaRay_Default_Material", param_map, nodes_params);
 	setCurrentMaterial(material);
 }
 
@@ -385,7 +385,7 @@ Light *Scene::createLight(const std::string &name, ParamMap &params)
 	return nullptr;
 }
 
-Material *Scene::createMaterial(const std::string &name, ParamMap &params, std::list<ParamMap> &eparams)
+Material *Scene::createMaterial(const std::string &name, ParamMap &params, std::list<ParamMap> &nodes_params)
 {
 	std::string pname = "Material";
 	params["name"] = std::string(name);
@@ -399,7 +399,7 @@ Material *Scene::createMaterial(const std::string &name, ParamMap &params, std::
 		logErrNoType(logger_, pname, name, type); return nullptr;
 	}
 	params["name"] = name;
-	auto material = Material::factory(logger_, params, eparams, *this);
+	auto material = Material::factory(logger_, params, nodes_params, *this);
 	if(material)
 	{
 		materials_[name] = std::move(material);

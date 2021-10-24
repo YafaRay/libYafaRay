@@ -23,7 +23,6 @@
 #include "texture/texture.h"
 #include "common/param.h"
 #include "render/render_data.h"
-#include "photon/photon.h"
 
 BEGIN_YAFARAY
 
@@ -129,7 +128,7 @@ float MaskMaterial::getAlpha(const RenderData &render_data, const SurfacePoint &
 	return alpha;
 }
 
-std::unique_ptr<Material> MaskMaterial::factory(Logger &logger, ParamMap &params, std::list<ParamMap> &eparams, const Scene &scene)
+std::unique_ptr<Material> MaskMaterial::factory(Logger &logger, ParamMap &params, std::list<ParamMap> &nodes_params, const Scene &scene)
 {
 	std::string name;
 	if(!params.getParam("material1", name)) return nullptr;
@@ -151,13 +150,18 @@ std::unique_ptr<Material> MaskMaterial::factory(Logger &logger, ParamMap &params
 	auto mat = std::unique_ptr<MaskMaterial>(new MaskMaterial(logger, m_1, m_2, thresh, visibility));
 	mat->receive_shadows_ = receive_shadows;
 
-	std::vector<ShaderNode *> roots;
-	if(mat->loadNodes(eparams, scene))
+	std::vector<const ShaderNode *> root_nodes_list;
+	mat->nodes_map_ = mat->loadNodes(nodes_params, scene, logger);
+	if(mat->nodes_map_.empty())
+	{
+		return nullptr;
+	}
+	else
 	{
 		if(params.getParam("mask", name))
 		{
-			auto i = mat->shaders_table_.find(name);
-			if(i != mat->shaders_table_.end()) { mat->mask_ = i->second.get(); roots.push_back(mat->mask_); }
+			const auto &i = mat->nodes_map_.find(name);
+			if(i != mat->nodes_map_.end()) { mat->mask_ = i->second.get(); root_nodes_list.push_back(mat->mask_); }
 			else
 			{
 				logger.logError("MaskMat: Mask shader node '", name, "' does not exist!");
@@ -165,14 +169,9 @@ std::unique_ptr<Material> MaskMaterial::factory(Logger &logger, ParamMap &params
 			}
 		}
 	}
-	else
-	{
-		logger.logError("MaskMat: loadNodes() failed!");
-		return nullptr;
-	}
-	mat->solveNodesOrder(roots);
-	size_t input_req = std::max(m_1->getReqMem(), m_2->getReqMem());
-	mat->req_mem_ = std::max(mat->req_node_mem_, sizeof(bool) + input_req);
+	mat->color_nodes_ = mat->solveNodesOrder(root_nodes_list, mat->nodes_map_, logger);
+	const size_t input_req = std::max(m_1->getReqMem(), m_2->getReqMem());
+	mat->req_mem_ = std::max(mat->sizeBytes(), sizeof(bool) + input_req);
 	return mat;
 }
 

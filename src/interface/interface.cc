@@ -63,7 +63,7 @@ void Interface::clearAll() noexcept
 	if(logger_->isVerbose()) logger_->logVerbose("Interface: Cleaning scene...");
 	scene_->clearAll();
 	params_->clear();
-	eparams_.clear();
+	nodes_params_.clear();
 	cparams_ = params_.get();
 	if(logger_->isVerbose()) logger_->logVerbose("Interface: Cleanup done.");
 }
@@ -165,14 +165,14 @@ void Interface::setInputColorSpace(const std::string &color_space_string, float 
 void Interface::paramsClearAll() noexcept
 {
 	params_->clear();
-	eparams_.clear();
+	nodes_params_.clear();
 	cparams_ = params_.get();
 }
 
 void Interface::paramsPushList() noexcept
 {
-	eparams_.push_back({});
-	cparams_ = &eparams_.back();
+	nodes_params_.push_back({});
+	cparams_ = &nodes_params_.back();
 }
 
 void Interface::paramsEndList() noexcept
@@ -183,7 +183,7 @@ void Interface::paramsEndList() noexcept
 Object *Interface::createObject(const char *name) noexcept { return scene_->createObject(name, *params_); }
 Light *Interface::createLight(const char *name) noexcept { return scene_->createLight(name, *params_); }
 Texture *Interface::createTexture(const char *name) noexcept { return scene_->createTexture(name, *params_); }
-Material *Interface::createMaterial(const char *name) noexcept { return scene_->createMaterial(name, *params_, eparams_); }
+Material *Interface::createMaterial(const char *name) noexcept { return scene_->createMaterial(name, *params_, nodes_params_); }
 Camera *Interface::createCamera(const char *name) noexcept { return scene_->createCamera(name, *params_); }
 Background *Interface::createBackground(const char *name) noexcept { return scene_->createBackground(name, *params_); }
 Integrator *Interface::createIntegrator(const char *name) noexcept { return scene_->createIntegrator(name, *params_); }

@@ -90,7 +90,7 @@ class MixNode : public ShaderNode
 		MixNode(float val) : cfactor_(val) { }
 		virtual void eval(NodeStack &stack, const RenderData &render_data, const SurfacePoint &sp) const override;
 		virtual bool configInputs(Logger &logger, const ParamMap &params, const NodeFinder &find) override;
-		virtual bool getDependencies(std::vector<const ShaderNode *> &dep) const override;
+		virtual std::vector<const ShaderNode *> getDependencies() const override;
 
 		Rgba col_1_, col_2_;
 		float val_1_, val_2_;

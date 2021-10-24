@@ -25,7 +25,6 @@
 #include "common/logger.h"
 #include "math/interpolation.h"
 #include "render/render_data.h"
-#include "photon/photon.h"
 
 BEGIN_YAFARAY
 
@@ -54,7 +53,7 @@ inline float BlendMaterial::getBlendVal(const RenderData &render_data, const Sur
 	{
 		void *old_dat = render_data.arena_;
 		NodeStack stack(render_data.arena_);
-		evalNodes(render_data, sp, color_nodes_sorted_, stack);
+		evalNodes(render_data, sp, color_nodes_, stack);
 		const float blend_val = blend_shader_->getScalar(stack);
 		render_data.arena_ = old_dat;
 		return blend_val;
@@ -400,7 +399,7 @@ const VolumeHandler *BlendMaterial::getVolumeHandler(bool inside) const
 	else return vol_2;
 }
 
-std::unique_ptr<Material> BlendMaterial::factory(Logger &logger, ParamMap &params, std::list<ParamMap> &eparams, const Scene &scene)
+std::unique_ptr<Material> BlendMaterial::factory(Logger &logger, ParamMap &params, std::list<ParamMap> &nodes_params, const Scene &scene)
 {
 	std::string name;
 	double blend_val = 0.5;
@@ -442,17 +441,22 @@ std::unique_ptr<Material> BlendMaterial::factory(Logger &logger, ParamMap &param
 	mat->wireframe_color_ = wire_frame_color;
 	mat->setSamplingFactor(samplingfactor);
 
-	std::vector<ShaderNode *> roots;
-	if(mat->loadNodes(eparams, scene))
+	std::vector<const ShaderNode *> root_nodes_list;
+	mat->nodes_map_ = mat->loadNodes(nodes_params, scene, logger);
+	if(mat->nodes_map_.empty())
+	{
+		return nullptr;
+	}
+	else
 	{
 		if(params.getParam("mask", name))
 		{
-			auto i = mat->shaders_table_.find(name);
-			if(i != mat->shaders_table_.end())
+			const auto i = mat->nodes_map_.find(name);
+			if(i != mat->nodes_map_.end())
 			{
 				mat->blend_shader_ = i->second.get();
 				mat->recalc_blend_ = true;
-				roots.push_back(mat->blend_shader_);
+				root_nodes_list.push_back(mat->blend_shader_);
 			}
 			else
 			{
@@ -461,13 +465,8 @@ std::unique_ptr<Material> BlendMaterial::factory(Logger &logger, ParamMap &param
 			}
 		}
 	}
-	else
-	{
-		logger.logError("Blend: loadNodes() failed!");
-		return nullptr;
-	}
-	mat->solveNodesOrder(roots);
-	mat->req_mem_ = sizeof(bool) + mat->req_node_mem_;
+	mat->color_nodes_ = mat->solveNodesOrder(root_nodes_list, mat->nodes_map_, logger);
+	mat->req_mem_ = sizeof(bool) + mat->sizeBytes();
 	return mat;
 }
 

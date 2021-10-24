@@ -78,7 +78,7 @@ class Material
 				Rgb col_;
 			} reflect_, refract_;
 		};
-		static std::unique_ptr<Material> factory(Logger &logger, ParamMap &params, std::list<ParamMap> &eparams, const Scene &scene);
+		static std::unique_ptr<Material> factory(Logger &logger, ParamMap &params, std::list<ParamMap> &nodes_params, const Scene &scene);
 		Material(Logger &logger);
 		virtual ~Material();
 

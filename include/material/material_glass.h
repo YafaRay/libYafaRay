@@ -46,11 +46,11 @@ class GlassMaterial final : public NodeMaterial
 		virtual Rgb getTransColor(const RenderData &render_data) const;
 		virtual Rgb getMirrorColor(const RenderData &render_data) const;
 
-		ShaderNode *bump_shader_ = nullptr;
-		ShaderNode *mirror_color_shader_ = nullptr;
-		ShaderNode *filter_color_shader_ = nullptr;
-		ShaderNode *ior_shader_ = nullptr;
-		ShaderNode *wireframe_shader_ = nullptr;     //!< Shader node for wireframe shading (float)
+		const ShaderNode *bump_shader_ = nullptr;
+		const ShaderNode *mirror_color_shader_ = nullptr;
+		const ShaderNode *filter_color_shader_ = nullptr;
+		const ShaderNode *ior_shader_ = nullptr;
+		const ShaderNode *wireframe_shader_ = nullptr;     //!< Shader node for wireframe shading (float)
 		Rgb filter_color_, specular_reflection_color_;
 		Rgb beer_sigma_a_;
 		float ior_;

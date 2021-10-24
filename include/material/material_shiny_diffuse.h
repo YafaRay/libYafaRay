@@ -41,7 +41,7 @@ BEGIN_YAFARAY
 class ShinyDiffuseMaterial final : public NodeMaterial
 {
 	public:
-		static std::unique_ptr<Material> factory(Logger &logger, ParamMap &params, std::list<ParamMap> &params_list, const Scene &scene);
+		static std::unique_ptr<Material> factory(Logger &logger, ParamMap &params, std::list<ParamMap> &nodes_params, const Scene &scene);
 
 	private:
 		ShinyDiffuseMaterial(Logger &logger, const Rgb &diffuse_color, const Rgb &mirror_color, float diffuse_strength, float transparency_strength = 0.0, float translucency_strength = 0.0, float mirror_strength = 0.0, float emit_strength = 0.0, float transmit_filter_strength = 1.0, Visibility visibility = Visibility::NormalVisible);
@@ -84,16 +84,16 @@ class ShinyDiffuseMaterial final : public NodeMaterial
 		float ior_squared_ = 1.f;                     //!< Squared IOR
 
 		bool vi_nodes_[4], vd_nodes_[4];                  //!< describes if the nodes are viewdependant or not (if available)
-		ShaderNode *diffuse_shader_ = nullptr;       //!< Shader node for diffuse color
-		ShaderNode *bump_shader_ = nullptr;          //!< Shader node for bump
-		ShaderNode *transparency_shader_ = nullptr;  //!< Shader node for transparency strength (float)
-		ShaderNode *translucency_shader_ = nullptr;  //!< Shader node for translucency strength (float)
-		ShaderNode *mirror_shader_ = nullptr;        //!< Shader node for specular reflection strength (float)
-		ShaderNode *mirror_color_shader_ = nullptr;   //!< Shader node for specular reflection color
-		ShaderNode *sigma_oren_shader_ = nullptr;     //!< Shader node for sigma in Oren Nayar material
-		ShaderNode *diffuse_refl_shader_ = nullptr;   //!< Shader node for diffuse reflection strength (float)
-		ShaderNode *ior_shader_ = nullptr;                 //!< Shader node for IOR value (float)
-		ShaderNode *wireframe_shader_ = nullptr;     //!< Shader node for wireframe shading (float)
+		const ShaderNode *diffuse_shader_ = nullptr;       //!< Shader node for diffuse color
+		const ShaderNode *bump_shader_ = nullptr;          //!< Shader node for bump
+		const ShaderNode *transparency_shader_ = nullptr;  //!< Shader node for transparency strength (float)
+		const ShaderNode *translucency_shader_ = nullptr;  //!< Shader node for translucency strength (float)
+		const ShaderNode *mirror_shader_ = nullptr;        //!< Shader node for specular reflection strength (float)
+		const ShaderNode *mirror_color_shader_ = nullptr;   //!< Shader node for specular reflection color
+		const ShaderNode *sigma_oren_shader_ = nullptr;     //!< Shader node for sigma in Oren Nayar material
+		const ShaderNode *diffuse_refl_shader_ = nullptr;   //!< Shader node for diffuse reflection strength (float)
+		const ShaderNode *ior_shader_ = nullptr;                 //!< Shader node for IOR value (float)
+		const ShaderNode *wireframe_shader_ = nullptr;     //!< Shader node for wireframe shading (float)
 
 		Rgb diffuse_color_;              //!< BSDF Diffuse component color
 		Rgb emit_color_;                 //!< Emit color

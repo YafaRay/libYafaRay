@@ -36,23 +36,22 @@ class NodeMaterial: public Material
 		NodeMaterial(Logger &logger) : Material(logger) { }
 
 	protected:
-		/*! load nodes from parameter map list */
-		bool loadNodes(const std::list<ParamMap> &params_list, const Scene &scene);
 		/** parse node shaders to fill nodeList */
-		void parseNodes(const ParamMap &params, std::vector<ShaderNode *> &roots, std::map<std::string, ShaderNode *> &node_list);
+		static void parseNodes(const ParamMap &params, std::vector<const ShaderNode *> &root_nodes_list, std::map<std::string, const ShaderNode *> &root_nodes_map, const std::map<std::string, std::unique_ptr<ShaderNode>> &shaders_table, Logger &logger);
 		/* put nodes in evaluation order in "allSorted" given all root nodes;
 		   sets reqNodeMem to the amount of memory the node stack requires for evaluation of all nodes */
-		void solveNodesOrder(const std::vector<ShaderNode *> &roots);
-		void getNodeList(const ShaderNode *root, std::vector<const ShaderNode *> &nodes);
 		void evalNodes(const RenderData &render_data, const SurfacePoint &sp, const std::vector<const ShaderNode *> &nodes, NodeStack &stack) const;
 		void evalBump(NodeStack &stack, const RenderData &render_data, SurfacePoint &sp, const ShaderNode *bump_shader_node) const;
-		static void recursiveSolver(const ShaderNode *node, std::vector<const ShaderNode *> &sorted);
-		static void recursiveFinder(const ShaderNode *node, std::set<const ShaderNode *> &tree);
+		size_t sizeBytes() const { return (color_nodes_.size() + bump_nodes_.size()) * sizeof(NodeResult); }
+		static std::vector<const ShaderNode *> recursiveSolver(const ShaderNode *node);
+		static std::set<const ShaderNode *> recursiveFinder(const ShaderNode *node);
+		static std::vector<const ShaderNode *> solveNodesOrder(const std::vector<const ShaderNode *> &roots, const std::map<std::string, std::unique_ptr<ShaderNode>> &shaders_table, Logger &logger);
+		static std::vector<const ShaderNode *> getNodeList(const ShaderNode *root, const std::vector<const ShaderNode *> &nodes_sorted);
+		/*! load nodes from parameter map list */
+		static std::map<std::string, std::unique_ptr<ShaderNode>> loadNodes(const std::list<ParamMap> &params_list, const Scene &scene, Logger &logger);
 
-		std::vector<ShaderNode *> color_nodes_initial_;
-		std::vector<const ShaderNode *> color_nodes_, color_nodes_sorted_, bump_nodes_;
-		std::map<std::string, std::unique_ptr<ShaderNode>> shaders_table_;
-		size_t req_node_mem_ = 0;
+		std::map<std::string, std::unique_ptr<ShaderNode>> nodes_map_;
+		std::vector<const ShaderNode *> color_nodes_, bump_nodes_;
 };
 
 END_YAFARAY

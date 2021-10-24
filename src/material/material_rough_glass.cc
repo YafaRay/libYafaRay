@@ -26,10 +26,8 @@
 #include "geometry/surface.h"
 #include "render/render_data.h"
 #include "volume/volume.h"
-#include "photon/photon.h"
 
 BEGIN_YAFARAY
-
 
 RoughGlassMaterial::RoughGlassMaterial(Logger &logger, float ior, Rgb filt_c, const Rgb &srcol, bool fake_s, float alpha, float disp_pow, Visibility e_visibility):
 		NodeMaterial(logger), filter_color_(filt_c), specular_reflection_color_(srcol), ior_(ior), a_2_(alpha * alpha), fake_shadow_(fake_s), dispersion_power_(disp_pow)
@@ -269,7 +267,7 @@ float RoughGlassMaterial::getMatIor() const
 	return ior_;
 }
 
-std::unique_ptr<Material> RoughGlassMaterial::factory(Logger &logger, ParamMap &params, std::list<ParamMap> &param_list, const Scene &scene)
+std::unique_ptr<Material> RoughGlassMaterial::factory(Logger &logger, ParamMap &params, std::list<ParamMap> &nodes_params, const Scene &scene)
 {
 	float ior = 1.4;
 	float filt = 0.f;
@@ -355,60 +353,74 @@ std::unique_ptr<Material> RoughGlassMaterial::factory(Logger &logger, ParamMap &
 		}
 	}
 
-	std::vector<ShaderNode *> roots;
-	std::map<std::string, ShaderNode *> node_list;
-
+	std::map<std::string, const ShaderNode *> root_nodes_map;
 	// Prepare our node list
-	node_list["mirror_color_shader"] = nullptr;
-	node_list["bump_shader"] = nullptr;
-	node_list["filter_color_shader"] = nullptr;
-	node_list["IOR_shader"] = nullptr;
-	node_list["wireframe_shader"] = nullptr;
-	node_list["roughness_shader"] = nullptr;
+	root_nodes_map["mirror_color_shader"] = nullptr;
+	root_nodes_map["bump_shader"] = nullptr;
+	root_nodes_map["filter_color_shader"] = nullptr;
+	root_nodes_map["IOR_shader"] = nullptr;
+	root_nodes_map["wireframe_shader"] = nullptr;
+	root_nodes_map["roughness_shader"] = nullptr;
 
-	if(mat->loadNodes(param_list, scene))
-	{
-		mat->parseNodes(params, roots, node_list);
-	}
-	else
-		logger.logError("RoughGlass: loadNodes() failed!");
+	std::vector<const ShaderNode *> root_nodes_list;
+	mat->nodes_map_ = mat->loadNodes(nodes_params, scene, logger);
+	if(!mat->nodes_map_.empty()) mat->parseNodes(params, root_nodes_list, root_nodes_map, mat->nodes_map_, logger);
 
-	mat->mirror_color_shader_ = node_list["mirror_color_shader"];
-	mat->bump_shader_ = node_list["bump_shader"];
-	mat->filter_col_shader_ = node_list["filter_color_shader"];
-	mat->ior_shader_ = node_list["IOR_shader"];
-	mat->wireframe_shader_ = node_list["wireframe_shader"];
-	mat->roughness_shader_ = node_list["roughness_shader"];
+	mat->mirror_color_shader_ = root_nodes_map["mirror_color_shader"];
+	mat->bump_shader_ = root_nodes_map["bump_shader"];
+	mat->filter_col_shader_ = root_nodes_map["filter_color_shader"];
+	mat->ior_shader_ = root_nodes_map["IOR_shader"];
+	mat->wireframe_shader_ = root_nodes_map["wireframe_shader"];
+	mat->roughness_shader_ = root_nodes_map["roughness_shader"];
 
 	// solve nodes order
-	if(!roots.empty())
+	if(!root_nodes_list.empty())
 	{
-		mat->solveNodesOrder(roots);
-		if(mat->mirror_color_shader_) mat->getNodeList(mat->mirror_color_shader_, mat->color_nodes_);
-		if(mat->roughness_shader_) mat->getNodeList(mat->roughness_shader_, mat->color_nodes_);
-		if(mat->ior_shader_) mat->getNodeList(mat->ior_shader_, mat->color_nodes_);
-		if(mat->wireframe_shader_) mat->getNodeList(mat->wireframe_shader_, mat->color_nodes_);
-		if(mat->filter_col_shader_) mat->getNodeList(mat->filter_col_shader_, mat->color_nodes_);
-		if(mat->bump_shader_) mat->getNodeList(mat->bump_shader_, mat->bump_nodes_);
+		const std::vector<const ShaderNode *> nodes_sorted = mat->solveNodesOrder(root_nodes_list, mat->nodes_map_, logger);
+		if(mat->mirror_color_shader_)
+		{
+			const std::vector<const ShaderNode *> shader_nodes_list = mat->getNodeList(mat->mirror_color_shader_, nodes_sorted);
+			mat->color_nodes_.insert(mat->color_nodes_.end(), shader_nodes_list.begin(), shader_nodes_list.end());
+		}
+		if(mat->roughness_shader_)
+		{
+			const std::vector<const ShaderNode *> shader_nodes_list = mat->getNodeList(mat->roughness_shader_, nodes_sorted);
+			mat->color_nodes_.insert(mat->color_nodes_.end(), shader_nodes_list.begin(), shader_nodes_list.end());
+		}
+		if(mat->ior_shader_)
+		{
+			const std::vector<const ShaderNode *> shader_nodes_list = mat->getNodeList(mat->ior_shader_, nodes_sorted);
+			mat->color_nodes_.insert(mat->color_nodes_.end(), shader_nodes_list.begin(), shader_nodes_list.end());
+		}
+		if(mat->wireframe_shader_)
+		{
+			const std::vector<const ShaderNode *> shader_nodes_list = mat->getNodeList(mat->wireframe_shader_, nodes_sorted);
+			mat->color_nodes_.insert(mat->color_nodes_.end(), shader_nodes_list.begin(), shader_nodes_list.end());
+		}
+		if(mat->filter_col_shader_)
+		{
+			const std::vector<const ShaderNode *> shader_nodes_list = mat->getNodeList(mat->filter_col_shader_, nodes_sorted);
+			mat->color_nodes_.insert(mat->color_nodes_.end(), shader_nodes_list.begin(), shader_nodes_list.end());
+		}
+		if(mat->bump_shader_) mat->bump_nodes_ = mat->getNodeList(mat->bump_shader_, nodes_sorted);
 	}
-	mat->req_mem_ = mat->req_node_mem_;
-
+	mat->req_mem_ = mat->sizeBytes();
 	return mat;
 }
 
 Rgb RoughGlassMaterial::getGlossyColor(const RenderData &render_data) const {
 	NodeStack stack(render_data.arena_);
-	return (mirror_color_shader_ ? mirror_color_shader_->getColor(stack) : specular_reflection_color_);
+	return mirror_color_shader_ ? mirror_color_shader_->getColor(stack) : specular_reflection_color_;
 }
 
 Rgb RoughGlassMaterial::getTransColor(const RenderData &render_data) const {
 	NodeStack stack(render_data.arena_);
-	return (filter_col_shader_ ? filter_col_shader_->getColor(stack) : filter_color_);
+	return filter_col_shader_ ? filter_col_shader_->getColor(stack) : filter_color_;
 }
 
 Rgb RoughGlassMaterial::getMirrorColor(const RenderData &render_data) const {
 	NodeStack stack(render_data.arena_);
-	return (mirror_color_shader_ ? mirror_color_shader_->getColor(stack) : specular_reflection_color_);
+	return mirror_color_shader_ ? mirror_color_shader_->getColor(stack) : specular_reflection_color_;
 }
 
 END_YAFARAY

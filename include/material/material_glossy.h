@@ -52,14 +52,14 @@ class GlossyMaterial final : public NodeMaterial
 
 		float orenNayar(const Vec3 &wi, const Vec3 &wo, const Vec3 &n, bool use_texture_sigma, double texture_sigma) const;
 
-		ShaderNode *diffuse_shader_ = nullptr;
-		ShaderNode *glossy_shader_ = nullptr;
-		ShaderNode *glossy_reflection_shader_ = nullptr;
-		ShaderNode *bump_shader_ = nullptr;
-		ShaderNode *exponent_shader_ = nullptr;
-		ShaderNode *wireframe_shader_ = nullptr;     //!< Shader node for wireframe shading (float)
-		ShaderNode *sigma_oren_shader_ = nullptr;     //!< Shader node for sigma in Oren Nayar material
-		ShaderNode *diffuse_reflection_shader_ = nullptr;   //!< Shader node for diffuse reflection strength (float)
+		const ShaderNode *diffuse_shader_ = nullptr;
+		const ShaderNode *glossy_shader_ = nullptr;
+		const ShaderNode *glossy_reflection_shader_ = nullptr;
+		const ShaderNode *bump_shader_ = nullptr;
+		const ShaderNode *exponent_shader_ = nullptr;
+		const ShaderNode *wireframe_shader_ = nullptr;     //!< Shader node for wireframe shading (float)
+		const ShaderNode *sigma_oren_shader_ = nullptr;     //!< Shader node for sigma in Oren Nayar material
+		const ShaderNode *diffuse_reflection_shader_ = nullptr;   //!< Shader node for diffuse reflection strength (float)
 		Rgb gloss_color_, diff_color_;
 		float exponent_, exp_u_, exp_v_;
 		float reflectivity_;

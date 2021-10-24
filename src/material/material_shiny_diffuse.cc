@@ -23,7 +23,6 @@
 #include "geometry/surface.h"
 #include "common/logger.h"
 #include "render/render_data.h"
-#include "photon/photon.h"
 #include <cstring>
 
 BEGIN_YAFARAY
@@ -88,11 +87,11 @@ void ShinyDiffuseMaterial::config()
 		c_index_[n_bsdf_] = 3;
 		++n_bsdf_;
 	}
-	req_mem_ = req_node_mem_ + sizeof(SdDat);
+	req_mem_ = sizeBytes() + sizeof(SdDat);
 }
 
 // component should be initialized with mMirrorStrength, mTransparencyStrength, mTranslucencyStrength, mDiffuseStrength
-// since values for which useNode is false do not get touched so it can be applied
+// since values for which useNode is false do not get touched, so it can be applied
 // twice, for view-independent (initBSDF) and view-dependent (sample/eval) nodes
 
 void ShinyDiffuseMaterial::getComponents(const bool *use_node, NodeStack &stack, float *component) const
@@ -184,12 +183,12 @@ float ShinyDiffuseMaterial::orenNayar(const Vec3 &wi, const Vec3 &wo, const Vec3
 	if(cos_to >= cos_ti)
 	{
 		sin_alpha = math::sqrt(1.f - cos_ti * cos_ti);
-		tan_beta = math::sqrt(1.f - cos_to * cos_to) / ((cos_to == 0.f) ? 1e-8f : cos_to); // white (black on windows) dots fix for oren-nayar, could happen with bad normals
+		tan_beta = math::sqrt(1.f - cos_to * cos_to) / ((cos_to == 0.f) ? 1e-8f : cos_to); // white (black on Windows) dots fix for oren-nayar, could happen with bad normals
 	}
 	else
 	{
 		sin_alpha = math::sqrt(1.f - cos_to * cos_to);
-		tan_beta = math::sqrt(1.f - cos_ti * cos_ti) / ((cos_ti == 0.f) ? 1e-8f : cos_ti); // white (black on windows) dots fix for oren-nayar, could happen with bad normals
+		tan_beta = math::sqrt(1.f - cos_ti * cos_ti) / ((cos_ti == 0.f) ? 1e-8f : cos_ti); // white (black on Windows) dots fix for oren-nayar, could happen with bad normals
 	}
 
 	if(use_texture_sigma)
@@ -465,7 +464,7 @@ Rgb ShinyDiffuseMaterial::getTransparency(const RenderData &render_data, const S
 	if(!is_transparent_) return Rgb(0.f);
 
 	NodeStack stack(render_data.arena_);
-	for(const auto &node : color_nodes_sorted_) node->eval(stack, render_data, sp);
+	for(const auto &node : color_nodes_) node->eval(stack, render_data, sp);
 	float accum = 1.f;
 	const Vec3 n = SurfacePoint::normalFaceForward(sp.ng_, sp.n_, wo);
 
@@ -516,7 +515,7 @@ float ShinyDiffuseMaterial::getAlpha(const RenderData &render_data, const Surfac
 	return 1.f;
 }
 
-std::unique_ptr<Material> ShinyDiffuseMaterial::factory(Logger &logger, ParamMap &params, std::list<ParamMap> &params_list, const Scene &scene)
+std::unique_ptr<Material> ShinyDiffuseMaterial::factory(Logger &logger, ParamMap &params, std::list<ParamMap> &nodes_params, const Scene &scene)
 {
 	/// Material Parameters
 	Rgb diffuse_color = 1.f;
@@ -605,53 +604,84 @@ std::unique_ptr<Material> ShinyDiffuseMaterial::factory(Logger &logger, ParamMap
 	}
 
 	/// Material Shader Nodes
-	std::vector<ShaderNode *> roots;
-	std::map<std::string, ShaderNode *> node_list;
-
+	std::map<std::string, const ShaderNode *> root_nodes_map;
 	// prepare shader nodes list
-	node_list["diffuse_shader"]      = nullptr;
-	node_list["mirror_color_shader"] = nullptr;
-	node_list["bump_shader"]         = nullptr;
-	node_list["mirror_shader"]       = nullptr;
-	node_list["transparency_shader"] = nullptr;
-	node_list["translucency_shader"] = nullptr;
-	node_list["sigma_oren_shader"]   = nullptr;
-	node_list["diffuse_refl_shader"] = nullptr;
-	node_list["IOR_shader"]          = nullptr;
-	node_list["wireframe_shader"]    = nullptr;
+	root_nodes_map["diffuse_shader"] = nullptr;
+	root_nodes_map["mirror_color_shader"] = nullptr;
+	root_nodes_map["bump_shader"] = nullptr;
+	root_nodes_map["mirror_shader"] = nullptr;
+	root_nodes_map["transparency_shader"] = nullptr;
+	root_nodes_map["translucency_shader"] = nullptr;
+	root_nodes_map["sigma_oren_shader"] = nullptr;
+	root_nodes_map["diffuse_refl_shader"] = nullptr;
+	root_nodes_map["IOR_shader"] = nullptr;
+	root_nodes_map["wireframe_shader"] = nullptr;
 
-	// load shader nodes:
-	if(mat->loadNodes(params_list, scene))
-	{
-		mat->parseNodes(params, roots, node_list);
-	}
-	else logger.logError("ShinyDiffuse: Loading shader nodes failed!");
+	std::vector<const ShaderNode *> root_nodes_list;
+	mat->nodes_map_ = mat->loadNodes(nodes_params, scene, logger);
+	if(!mat->nodes_map_.empty()) mat->parseNodes(params, root_nodes_list, root_nodes_map, mat->nodes_map_, logger);
 
-	mat->diffuse_shader_      = node_list["diffuse_shader"];
-	mat->mirror_color_shader_  = node_list["mirror_color_shader"];
-	mat->bump_shader_         = node_list["bump_shader"];
-	mat->mirror_shader_       = node_list["mirror_shader"];
-	mat->transparency_shader_ = node_list["transparency_shader"];
-	mat->translucency_shader_ = node_list["translucency_shader"];
-	mat->sigma_oren_shader_    = node_list["sigma_oren_shader"];
-	mat->diffuse_refl_shader_  = node_list["diffuse_refl_shader"];
-	mat->ior_shader_                = node_list["IOR_shader"];
-	mat->wireframe_shader_    = node_list["wireframe_shader"];
+	mat->diffuse_shader_ = root_nodes_map["diffuse_shader"];
+	mat->mirror_color_shader_ = root_nodes_map["mirror_color_shader"];
+	mat->bump_shader_ = root_nodes_map["bump_shader"];
+	mat->mirror_shader_ = root_nodes_map["mirror_shader"];
+	mat->transparency_shader_ = root_nodes_map["transparency_shader"];
+	mat->translucency_shader_ = root_nodes_map["translucency_shader"];
+	mat->sigma_oren_shader_ = root_nodes_map["sigma_oren_shader"];
+	mat->diffuse_refl_shader_ = root_nodes_map["diffuse_refl_shader"];
+	mat->ior_shader_ = root_nodes_map["IOR_shader"];
+	mat->wireframe_shader_ = root_nodes_map["wireframe_shader"];
 
 	// solve nodes order
-	if(!roots.empty())
+	if(!root_nodes_list.empty())
 	{
-		mat->solveNodesOrder(roots);
-		if(mat->diffuse_shader_)      mat->getNodeList(mat->diffuse_shader_, mat->color_nodes_);
-		if(mat->mirror_color_shader_)  mat->getNodeList(mat->mirror_color_shader_, mat->color_nodes_);
-		if(mat->mirror_shader_)       mat->getNodeList(mat->mirror_shader_, mat->color_nodes_);
-		if(mat->transparency_shader_) mat->getNodeList(mat->transparency_shader_, mat->color_nodes_);
-		if(mat->translucency_shader_) mat->getNodeList(mat->translucency_shader_, mat->color_nodes_);
-		if(mat->sigma_oren_shader_)    mat->getNodeList(mat->sigma_oren_shader_, mat->color_nodes_);
-		if(mat->diffuse_refl_shader_)  mat->getNodeList(mat->diffuse_refl_shader_, mat->color_nodes_);
-		if(mat->ior_shader_)                mat->getNodeList(mat->ior_shader_, mat->color_nodes_);
-		if(mat->wireframe_shader_)    mat->getNodeList(mat->wireframe_shader_, mat->color_nodes_);
-		if(mat->bump_shader_)         mat->getNodeList(mat->bump_shader_, mat->bump_nodes_);
+		const std::vector<const ShaderNode *> nodes_sorted = mat->solveNodesOrder(root_nodes_list, mat->nodes_map_, logger);
+		if(mat->diffuse_shader_)
+		{
+			const std::vector<const ShaderNode *> shader_nodes_list = mat->getNodeList(mat->diffuse_shader_, nodes_sorted);
+			mat->color_nodes_.insert(mat->color_nodes_.end(), shader_nodes_list.begin(), shader_nodes_list.end());
+		}
+		if(mat->mirror_color_shader_)
+		{
+			const std::vector<const ShaderNode *> shader_nodes_list = mat->getNodeList(mat->mirror_color_shader_, nodes_sorted);
+			mat->color_nodes_.insert(mat->color_nodes_.end(), shader_nodes_list.begin(), shader_nodes_list.end());
+		}
+		if(mat->mirror_shader_)
+		{
+			const std::vector<const ShaderNode *> shader_nodes_list = mat->getNodeList(mat->mirror_shader_, nodes_sorted);
+			mat->color_nodes_.insert(mat->color_nodes_.end(), shader_nodes_list.begin(), shader_nodes_list.end());
+		}
+		if(mat->transparency_shader_)
+		{
+			const std::vector<const ShaderNode *> shader_nodes_list = mat->getNodeList(mat->transparency_shader_, nodes_sorted);
+			mat->color_nodes_.insert(mat->color_nodes_.end(), shader_nodes_list.begin(), shader_nodes_list.end());
+		}
+		if(mat->translucency_shader_)
+		{
+			const std::vector<const ShaderNode *> shader_nodes_list = mat->getNodeList(mat->translucency_shader_, nodes_sorted);
+			mat->color_nodes_.insert(mat->color_nodes_.end(), shader_nodes_list.begin(), shader_nodes_list.end());
+		}
+		if(mat->sigma_oren_shader_)
+		{
+			const std::vector<const ShaderNode *> shader_nodes_list = mat->getNodeList(mat->sigma_oren_shader_, nodes_sorted);
+			mat->color_nodes_.insert(mat->color_nodes_.end(), shader_nodes_list.begin(), shader_nodes_list.end());
+		}
+		if(mat->diffuse_refl_shader_)
+		{
+			const std::vector<const ShaderNode *> shader_nodes_list = mat->getNodeList(mat->diffuse_refl_shader_, nodes_sorted);
+			mat->color_nodes_.insert(mat->color_nodes_.end(), shader_nodes_list.begin(), shader_nodes_list.end());
+		}
+		if(mat->ior_shader_)
+		{
+			const std::vector<const ShaderNode *> shader_nodes_list = mat->getNodeList(mat->ior_shader_, nodes_sorted);
+			mat->color_nodes_.insert(mat->color_nodes_.end(), shader_nodes_list.begin(), shader_nodes_list.end());
+		}
+		if(mat->wireframe_shader_)
+		{
+			const std::vector<const ShaderNode *> shader_nodes_list = mat->getNodeList(mat->wireframe_shader_, nodes_sorted);
+			mat->color_nodes_.insert(mat->color_nodes_.end(), shader_nodes_list.begin(), shader_nodes_list.end());
+		}
+		if(mat->bump_shader_) mat->bump_nodes_ = mat->getNodeList(mat->bump_shader_, nodes_sorted);
 	}
 	mat->config();
 	return mat;

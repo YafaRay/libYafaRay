@@ -96,7 +96,7 @@ class ShaderNode
 		/*! you may only call this after successfully calling configInputs!
 			\param dep empty (!) vector to return the dependencies
 			\return true if there exist dependencies, false if it does not depend on any other nodes */
-		virtual bool getDependencies(std::vector<const ShaderNode *> &dep) const { return false; }
+		virtual std::vector<const ShaderNode *> getDependencies() const { return {}; }
 		/*! get the color value calculated on eval */
 		Rgba getColor(const NodeStack &stack) const { return stack(id_).col_; }
 		/*! get the scalar value calculated on eval */

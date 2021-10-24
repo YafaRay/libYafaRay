@@ -57,17 +57,17 @@ class CoatedGlossyMaterial final : public NodeMaterial
 		void initOrenNayar(double sigma);
 		float orenNayar(const Vec3 &wi, const Vec3 &wo, const Vec3 &n, bool use_texture_sigma, double texture_sigma) const;
 
-		ShaderNode *diffuse_shader_ = nullptr;
-		ShaderNode *glossy_shader_ = nullptr;
-		ShaderNode *glossy_reflection_shader_ = nullptr;
-		ShaderNode *bump_shader_ = nullptr;
-		ShaderNode *ior_shader_ = nullptr;
-		ShaderNode *exponent_shader_ = nullptr;
-		ShaderNode *wireframe_shader_ = nullptr;     //!< Shader node for wireframe shading (float)
-		ShaderNode *mirror_shader_ = nullptr;        //!< Shader node for specular reflection strength (float)
-		ShaderNode *mirror_color_shader_ = nullptr;   //!< Shader node for specular reflection color
-		ShaderNode *sigma_oren_shader_ = nullptr;     //!< Shader node for sigma in Oren Nayar material
-		ShaderNode *diffuse_reflection_shader_ = nullptr;   //!< Shader node for diffuse reflection strength (float)
+		const ShaderNode *diffuse_shader_ = nullptr;
+		const ShaderNode *glossy_shader_ = nullptr;
+		const ShaderNode *glossy_reflection_shader_ = nullptr;
+		const ShaderNode *bump_shader_ = nullptr;
+		const ShaderNode *ior_shader_ = nullptr;
+		const ShaderNode *exponent_shader_ = nullptr;
+		const ShaderNode *wireframe_shader_ = nullptr;     //!< Shader node for wireframe shading (float)
+		const ShaderNode *mirror_shader_ = nullptr;        //!< Shader node for specular reflection strength (float)
+		const ShaderNode *mirror_color_shader_ = nullptr;   //!< Shader node for specular reflection color
+		const ShaderNode *sigma_oren_shader_ = nullptr;     //!< Shader node for sigma in Oren Nayar material
+		const ShaderNode *diffuse_reflection_shader_ = nullptr;   //!< Shader node for diffuse reflection strength (float)
 		Rgb gloss_color_, diff_color_, mirror_color_; //!< color of glossy base
 		float mirror_strength_;              //!< BSDF Specular reflection component strength when not textured
 		float ior_;
@@ -75,7 +75,6 @@ class CoatedGlossyMaterial final : public NodeMaterial
 		float reflectivity_;
 		float diffuse_;
 		bool as_diffuse_, with_diffuse_ = false, anisotropic_ = false;
-		BsdfFlags spec_flags_;
 		BsdfFlags c_flags_[3];
 		int n_bsdf_;
 		bool oren_nayar_;

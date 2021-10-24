@@ -185,12 +185,12 @@ bool LayerNode::configInputs(Logger &logger, const ParamMap &params, const NodeF
 	return true;
 }
 
-bool LayerNode::getDependencies(std::vector<const ShaderNode *> &dep) const
+std::vector<const ShaderNode *> LayerNode::getDependencies() const
 {
-	// input actually needs to exist, but well...
-	if(input_) dep.push_back(input_);
-	if(upper_layer_) dep.push_back(upper_layer_);
-	return !dep.empty();
+	std::vector<const ShaderNode *> dependencies;
+	if(input_) dependencies.push_back(input_);
+	if(upper_layer_) dependencies.push_back(upper_layer_);
+	return dependencies;
 }
 
 Rgb LayerNode::textureRgbBlend(const Rgb &tex, const Rgb &out, float fact, float facg, const BlendMode &blend_mode)
