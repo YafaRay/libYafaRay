@@ -126,8 +126,8 @@ void PhotonIntegrator::diffuseWorker(PhotonMap *diffuse_map, int thread_id, cons
 
 	SurfacePoint sp;
 	RenderData render_data;
-	alignas (16) unsigned char userdata[user_data_size_];
-	render_data.arena_ = static_cast<void *>(userdata);
+	alignas (16) unsigned char arena[arena_size_];
+	render_data.arena_.push(static_cast<void *>(arena));
 	render_data.cam_ = render_view->getCamera();
 
 	float f_num_lights = (float)num_d_lights;
@@ -259,6 +259,8 @@ void PhotonIntegrator::diffuseWorker(PhotonMap *diffuse_map, int thread_id, cons
 		}
 		done = (curr >= n_diffuse_photons_thread);
 	}
+	render_data.arena_.pop();
+
 	diffuse_map->mutx_.lock();
 	diffuse_map->appendVector(local_diffuse_photons, curr);
 	total_photons_shot += curr;
@@ -451,8 +453,8 @@ bool PhotonIntegrator::preprocess(const RenderControl &render_control, Timer &ti
 	// for radiance map:
 	PreGatherData pgdat(diffuse_map_.get());
 	RenderData render_data;
-	alignas (16) unsigned char userdata[user_data_size_];
-	render_data.arena_ = static_cast<void *>(userdata);
+	alignas (16) unsigned char arena[arena_size_];
+	render_data.arena_.push(static_cast<void *>(arena));
 	render_data.cam_ = render_view->getCamera();
 	int pb_step;
 
@@ -719,6 +721,7 @@ bool PhotonIntegrator::preprocess(const RenderControl &render_control, Timer &ti
 	{
 		for(std::string line; std::getline(set, line, '\n');) logger_.logVerbose(line);
 	}
+	render_data.arena_.pop();
 	return true;
 }
 
@@ -731,9 +734,8 @@ Rgb PhotonIntegrator::finalGathering(RenderData &render_data, const SurfacePoint
 	if(!accelerator) return {0.f};
 
 	Rgb path_col(0.0);
-	void *first_udat = render_data.arena_;
-	alignas (16) unsigned char userdata[user_data_size_];
-	void *n_udat = static_cast<void *>(userdata);
+	alignas (16) unsigned char arena[arena_size_];
+	render_data.arena_.push(arena);
 	const VolumeHandler *vol;
 	Rgb vcol(0.f);
 	float w = 0.f;
@@ -775,7 +777,6 @@ Rgb PhotonIntegrator::finalGathering(RenderData &render_data, const SurfacePoint
 
 		p_mat = hit.material_;
 		length = pRay.tmax_;
-		render_data.arena_ = n_udat;
 		mat_bsd_fs = p_mat->getFlags();
 		bool has_spec = mat_bsd_fs.hasAny(BsdfFlags::Specular);
 		bool caustic = false;
@@ -868,8 +869,8 @@ Rgb PhotonIntegrator::finalGathering(RenderData &render_data, const SurfacePoint
 				path_col += lcol * throughput;
 			}
 		}
-		render_data.arena_ = first_udat;
 	}
+	render_data.arena_.pop();
 	return path_col / (float)n_sampl;
 }
 
@@ -884,7 +885,6 @@ Rgba PhotonIntegrator::integrate(RenderData &render_data, const DiffRay &ray, in
 	float alpha;
 	SurfacePoint sp;
 
-	void *o_udat = render_data.arena_;
 	const bool old_lights_geometry_material_emit = render_data.lights_geometry_material_emit_;
 
 	if(transp_background_) alpha = 0.0;
@@ -893,8 +893,8 @@ Rgba PhotonIntegrator::integrate(RenderData &render_data, const DiffRay &ray, in
 	const Accelerator *accelerator = scene_->getAccelerator();
 	if(accelerator && accelerator->intersect(ray, sp))
 	{
-		alignas (16) unsigned char userdata[user_data_size_];
-		render_data.arena_ = static_cast<void *>(userdata);
+		alignas (16) unsigned char arena[arena_size_];
+		render_data.arena_.push(static_cast<void *>(arena));
 
 		if(render_data.raylevel_ == 0)
 		{
@@ -1059,6 +1059,7 @@ Rgba PhotonIntegrator::integrate(RenderData &render_data, const DiffRay &ray, in
 			alpha = m_alpha + (1.f - m_alpha) * alpha;
 		}
 		else alpha = 1.0;
+		render_data.arena_.pop();
 	}
 	else //nothing hit, return background
 	{
@@ -1073,7 +1074,6 @@ Rgba PhotonIntegrator::integrate(RenderData &render_data, const DiffRay &ray, in
 		}
 	}
 
-	render_data.arena_ = o_udat;
 	render_data.lights_geometry_material_emit_ = old_lights_geometry_material_emit;
 
 	Rgb col_vol_transmittance = scene_->vol_integrator_->transmittance(render_data, ray);

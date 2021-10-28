@@ -69,10 +69,10 @@ class Integrator
 		virtual Type getType() const = 0;
 		std::string getRenderInfo() const { return render_info_; }
 		std::string getAaNoiseInfo() const { return aa_noise_info_; }
-		static constexpr unsigned int getUserDataSize() { return user_data_size_; } //Total number of bytes used for the "arena"-style "userdata" memory
+		static constexpr unsigned int getUserDataSize() { return arena_size_; } //Total number of bytes used for the "arena"-style "userdata" memory
 
 	protected:
-		static constexpr unsigned int user_data_size_ = 1024; //Total number of bytes used for the "arena"-style "userdata" memory
+		static constexpr unsigned int arena_size_ = 1024; //Total number of bytes used for the "arena"-style "userdata" memory
 		std::string render_info_;
 		std::string aa_noise_info_;
 		const Scene *scene_ = nullptr;

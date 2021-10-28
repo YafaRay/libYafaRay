@@ -66,7 +66,7 @@ class PathVertex
 		float qi_wi_;        //!< russian roulette probability for terminating path when generating path in opposite direction
 		float cos_wi_, cos_wo_; //!< (absolute) cosine of the incoming (wi) and sampled (wo) path direction
 		float pdf_wi_, pdf_wo_; //!< the pdf for sampling wi from wo and wo from wi respectively
-		void *userdata_;     //!< user data of the material at sp (required for sampling and evaluating)
+		void *arena_;     //!< user data of the material at sp (required for sampling and evaluating)
 };
 
 /*! vertices of a connected path going forward from light to eye;
@@ -154,8 +154,8 @@ bool BidirectionalIntegrator::preprocess(const RenderControl &render_control, Ti
 		path_data.eye_path_.resize(max_path_length_);
 		path_data.light_path_.resize(max_path_length_);
 		path_data.path_.resize(max_path_length_ * 2 + 1);
-		for(int i = 0; i < max_path_length_; ++i) path_data.light_path_[i].userdata_ = malloc(user_data_size_);
-		for(int i = 0; i < max_path_length_; ++i) path_data.eye_path_[i].userdata_ = malloc(user_data_size_);
+		for(int i = 0; i < max_path_length_; ++i) path_data.light_path_[i].arena_ = malloc(arena_size_);
+		for(int i = 0; i < max_path_length_; ++i) path_data.eye_path_[i].arena_ = malloc(arena_size_);
 		path_data.n_paths_ = 0;
 	}
 	// initialize userdata (todo!)
@@ -237,8 +237,8 @@ void BidirectionalIntegrator::cleanup()
 	{
 		PathData &path_data = thread_data_[i];
 		n_paths += path_data.n_paths_;
-		for(int i = 0; i < max_path_length_; ++i) free(path_data.light_path_[i].userdata_);
-		for(int i = 0; i < max_path_length_; ++i) free(path_data.eye_path_[i].userdata_);
+		for(int i = 0; i < max_path_length_; ++i) free(path_data.light_path_[i].arena_);
+		for(int i = 0; i < max_path_length_; ++i) free(path_data.eye_path_[i].arena_);
 	}
 	if(image_film_) image_film_->setNumDensitySamples(n_paths); //dirty hack...
 }
@@ -258,6 +258,7 @@ Rgba BidirectionalIntegrator::integrate(RenderData &render_data, const DiffRay &
 	const Accelerator *accelerator = scene_->getAccelerator();
 	if(accelerator && accelerator->intersect(testray, sp))
 	{
+		render_data.arena_.push(nullptr);
 		Vec3 wo = -ray.dir_;
 		static int dbg = 0;
 		render_data.lights_geometry_material_emit_ = true;
@@ -362,7 +363,7 @@ Rgba BidirectionalIntegrator::integrate(RenderData &render_data, const DiffRay &
 				{
 					//eval is done in place here...
 					PathVertex v = path_data.eye_path_[t - 1];
-					render_data.arena_ = v.userdata_;
+					render_data.arena_.top() = v.arena_;
 					Rgb emit = v.sp_.material_->emit(render_data, v.sp_, v.wi_);
 					col += wt * v.alpha_ * emit;
 				}
@@ -418,6 +419,7 @@ Rgba BidirectionalIntegrator::integrate(RenderData &render_data, const DiffRay &
 				color_layer->color_ += sampleAmbientOcclusionClayLayer(render_data, sp, wo);
 			}
 		}
+		render_data.arena_.pop();
 	}
 	else
 	{
@@ -477,7 +479,7 @@ int BidirectionalIntegrator::createPath(RenderData &render_data, const Ray &star
 		v.ds_ = (v.sp_.p_ - v_prev.sp_.p_).lengthSqr();
 		v.g_ = v_prev.cos_wo_ * v.cos_wi_ / v.ds_;
 		++n_vert;
-		render_data.arena_ = v.userdata_;
+		render_data.arena_.top() = v.arena_;
 		//if(dbg<10) if(logger_.isDebug())logger_.logDebug(integratorName << ": " << nVert << "  mat: " << (void*) mat << " alpha:" << v.alpha << " p_f_s:" << v_prev.f_s << " qi:"<< v_prev.qi);
 		mat->initBsdf(render_data, v.sp_, m_bsdf);
 		// create tentative sample for next path segment
@@ -567,7 +569,7 @@ bool BidirectionalIntegrator::connectPaths(RenderData &render_data, int s, int t
 	float cos_y = std::abs(y.sp_.n_ * vec);
 	float cos_z = std::abs(z.sp_.n_ * vec);
 
-	render_data.arena_ = y.userdata_;
+	render_data.arena_.top() = y.arena_;
 	x_l.pdf_f_ = y.sp_.material_->pdf(render_data, y.sp_, y.wi_, vec, BsdfFlags::All); // light vert to eye vert
 	x_l.pdf_b_ = y.sp_.material_->pdf(render_data, y.sp_, vec, y.wi_, BsdfFlags::All); // light vert to prev. light vert
 	if(x_l.pdf_f_ < 1e-6f) return false;
@@ -576,7 +578,7 @@ bool BidirectionalIntegrator::connectPaths(RenderData &render_data, int s, int t
 	pd.f_y_ = y.sp_.material_->eval(render_data, y.sp_, y.wi_, vec, BsdfFlags::All);
 	pd.f_y_ += y.sp_.material_->emit(render_data, y.sp_, vec);
 
-	render_data.arena_ = z.userdata_;
+	render_data.arena_.top() = z.arena_;
 	x_e.pdf_b_ = z.sp_.material_->pdf(render_data, z.sp_, z.wi_, -vec, BsdfFlags::All); // eye vert to light vert
 	x_e.pdf_f_ = z.sp_.material_->pdf(render_data, z.sp_, -vec, z.wi_, BsdfFlags::All); // eye vert to prev eye vert
 	if(x_e.pdf_b_ < 1e-6f) return false;
@@ -670,7 +672,7 @@ bool BidirectionalIntegrator::connectLPath(RenderData &render_data, int t, PathD
 	x_e.g_ = std::abs(cos_wo * cos_z) / (l_ray.tmax_ * l_ray.tmax_); // or use Ng??
 	pd.w_l_e_ = vec;
 	pd.d_yz_ = l_ray.tmax_;
-	render_data.arena_ = z.userdata_;
+	render_data.arena_.top() = z.arena_;
 	x_e.pdf_b_ = z.sp_.material_->pdf(render_data, z.sp_, z.wi_, l_ray.dir_, BsdfFlags::All); //eye to light
 	if(x_e.pdf_b_ < 1e-6f) return false;
 	x_e.pdf_f_ = z.sp_.material_->pdf(render_data, z.sp_, l_ray.dir_, z.wi_, BsdfFlags::All); // eye to prev eye
@@ -719,7 +721,7 @@ bool BidirectionalIntegrator::connectPathE(const RenderView *render_view, Render
 
 	x_e.specular_ = false; // cannot query yet...
 
-	render_data.arena_ = y.userdata_;
+	render_data.arena_.top() = y.arena_;
 	x_l.pdf_f_ = y.sp_.material_->pdf(render_data, y.sp_, y.wi_, vec, BsdfFlags::All); // light vert to eye vert
 	if(x_l.pdf_f_ < 1e-6f) return false;
 	x_l.pdf_b_ = y.sp_.material_->pdf(render_data, y.sp_, vec, y.wi_, BsdfFlags::All); // light vert to prev. light vert
@@ -926,7 +928,7 @@ Rgb BidirectionalIntegrator::evalPathE(RenderData &render_data, int s, PathData 
 	if(shadowed) return Rgb(0.f);
 
 	//eval material
-	render_data.arena_ = y.userdata_;
+	render_data.arena_.top() = y.arena_;
 	//Rgb f_y = y.sp.material->eval(state, y.sp, y.wi, pd.w_l_e, BSDF_ALL);
 	//TODO:
 	Rgb c_uw = y.alpha_ * math::num_pi * pd.f_y_ * pd.path_[s].g_;

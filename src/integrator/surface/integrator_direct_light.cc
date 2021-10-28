@@ -109,7 +109,6 @@ Rgba DirectLightIntegrator::integrate(RenderData &render_data, const DiffRay &ra
 	Rgb col(0.0);
 	float alpha;
 	SurfacePoint sp;
-	void *o_udat = render_data.arena_;
 	const bool old_lights_geometry_material_emit = render_data.lights_geometry_material_emit_;
 
 	if(transp_background_) alpha = 0.0;
@@ -119,10 +118,10 @@ Rgba DirectLightIntegrator::integrate(RenderData &render_data, const DiffRay &ra
 	const Accelerator *accelerator = scene_->getAccelerator();
 	if(accelerator && accelerator->intersect(ray, sp)) // If it hits
 	{
-		alignas (16) unsigned char userdata[user_data_size_];
-		render_data.arena_ = static_cast<void *>(userdata);
-
 		const Material *material = sp.material_;
+		//void *arena = malloc(material->getReqMem() + 16);
+		alignas (16) unsigned char arena[arena_size_];
+		render_data.arena_.push(static_cast<void *>(arena));
 		BsdfFlags bsdfs;
 
 		const Vec3 wo = -ray.dir_;
@@ -184,6 +183,7 @@ Rgba DirectLightIntegrator::integrate(RenderData &render_data, const DiffRay &ra
 			alpha = m_alpha + (1.f - m_alpha) * alpha;
 		}
 		else alpha = 1.0;
+		render_data.arena_.pop();
 	}
 	else // Nothing hit, return background if any
 	{
@@ -198,7 +198,6 @@ Rgba DirectLightIntegrator::integrate(RenderData &render_data, const DiffRay &ra
 		}
 	}
 
-	render_data.arena_ = o_udat;
 	render_data.lights_geometry_material_emit_ = old_lights_geometry_material_emit;
 
 	Rgb col_vol_transmittance = scene_->vol_integrator_->transmittance(render_data, ray);

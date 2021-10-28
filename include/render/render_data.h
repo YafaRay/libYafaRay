@@ -21,6 +21,7 @@
 #define YAFARAY_RENDER_DATA_H
 
 #include "common/yafaray_common.h"
+#include <stack>
 
 BEGIN_YAFARAY
 
@@ -53,7 +54,7 @@ class RenderData final
 		float time_ = 0.f; //!< the current (normalized) frame time
 		const Camera *cam_ = nullptr;
 		Random *prng_ = nullptr; //!< a pseudorandom number generator
-		mutable void *arena_ = nullptr; //!< a fixed amount of memory where materials may keep data to avoid recalculations...really need better memory management :(
+		mutable std::stack<void *> arena_; //!< a fixed amount of memory where materials may keep data to avoid recalculations...really need better memory management :(
 };
 
 inline void RenderData::setDefaults()

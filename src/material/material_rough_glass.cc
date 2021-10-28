@@ -45,7 +45,7 @@ RoughGlassMaterial::RoughGlassMaterial(Logger &logger, float ior, Rgb filt_c, co
 
 void RoughGlassMaterial::initBsdf(const RenderData &render_data, SurfacePoint &sp, BsdfFlags &bsdf_types) const
 {
-	NodeStack stack(render_data.arena_);
+	NodeStack stack(render_data.arena_.top());
 	if(bump_shader_) evalBump(stack, render_data, sp, bump_shader_);
 	for(const auto &node : color_nodes_) node->eval(stack, render_data, sp);
 	bsdf_types = bsdf_flags_;
@@ -53,7 +53,7 @@ void RoughGlassMaterial::initBsdf(const RenderData &render_data, SurfacePoint &s
 
 Rgb RoughGlassMaterial::sample(const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo, Vec3 &wi, Sample &s, float &w) const
 {
-	const NodeStack stack(render_data.arena_);
+	const NodeStack stack(render_data.arena_.top());
 	const Vec3 n = SurfacePoint::normalFaceForward(sp.ng_, sp.n_, wo);
 	const bool outside = sp.ng_ * wo > 0.f;
 	s.pdf_ = 1.f;
@@ -144,7 +144,7 @@ Rgb RoughGlassMaterial::sample(const RenderData &render_data, const SurfacePoint
 
 Rgb RoughGlassMaterial::sample(const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo, Vec3 *const dir, Rgb &tcol, Sample &s, float *const w) const
 {
-	const NodeStack stack(render_data.arena_);
+	const NodeStack stack(render_data.arena_.top());
 	const Vec3 n = SurfacePoint::normalFaceForward(sp.ng_, sp.n_, wo);
 	const bool outside = sp.ng_ * wo > 0.f;
 	s.pdf_ = 1.f;
@@ -241,7 +241,7 @@ Rgb RoughGlassMaterial::sample(const RenderData &render_data, const SurfacePoint
 
 Rgb RoughGlassMaterial::getTransparency(const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo) const
 {
-	const NodeStack stack(render_data.arena_);
+	const NodeStack stack(render_data.arena_.top());
 	const Vec3 n = SurfacePoint::normalFaceForward(sp.ng_, sp.n_, wo);
 	float kr, kt;
 	Vec3::fresnel(wo, n, (ior_shader_ ? ior_shader_->getScalar(stack) : ior_), kr, kt);
@@ -253,7 +253,7 @@ Rgb RoughGlassMaterial::getTransparency(const RenderData &render_data, const Sur
 
 float RoughGlassMaterial::getAlpha(const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo) const
 {
-	const NodeStack stack(render_data.arena_);
+	const NodeStack stack(render_data.arena_.top());
 	float alpha = std::max(0.f, std::min(1.f, 1.f - getTransparency(render_data, sp, wo).energy()));
 	const float wire_frame_amount = (wireframe_shader_ ? wireframe_shader_->getScalar(stack) * wireframe_amount_ : wireframe_amount_);
 	applyWireFrame(alpha, wire_frame_amount, sp);
@@ -407,17 +407,17 @@ std::unique_ptr<Material> RoughGlassMaterial::factory(Logger &logger, ParamMap &
 }
 
 Rgb RoughGlassMaterial::getGlossyColor(const RenderData &render_data) const {
-	NodeStack stack(render_data.arena_);
+	NodeStack stack(render_data.arena_.top());
 	return mirror_color_shader_ ? mirror_color_shader_->getColor(stack) : specular_reflection_color_;
 }
 
 Rgb RoughGlassMaterial::getTransColor(const RenderData &render_data) const {
-	NodeStack stack(render_data.arena_);
+	NodeStack stack(render_data.arena_.top());
 	return filter_col_shader_ ? filter_col_shader_->getColor(stack) : filter_color_;
 }
 
 Rgb RoughGlassMaterial::getMirrorColor(const RenderData &render_data) const {
-	NodeStack stack(render_data.arena_);
+	NodeStack stack(render_data.arena_.top());
 	return mirror_color_shader_ ? mirror_color_shader_->getColor(stack) : specular_reflection_color_;
 }
 

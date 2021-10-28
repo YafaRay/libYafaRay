@@ -33,50 +33,49 @@ MaskMaterial::MaskMaterial(Logger &logger, const Material *m_1, const Material *
 	bsdf_flags_ = mat_1_->getFlags() | mat_2_->getFlags();
 }
 
-#define PTR_ADD(ptr,sz) ((char*)ptr+(sz))
 void MaskMaterial::initBsdf(const RenderData &render_data, SurfacePoint &sp, BsdfFlags &bsdf_types) const
 {
-	NodeStack stack(render_data.arena_);
+	NodeStack stack(render_data.arena_.top());
 	evalNodes(render_data, sp, color_nodes_, stack);
 	const float val = mask_->getScalar(stack); //mask->getFloat(sp.P);
 	const bool mv = val > threshold_;
-	*(bool *)render_data.arena_ = mv;
-	render_data.arena_ = PTR_ADD(render_data.arena_, sizeof(bool));
+	*(static_cast<bool *>(render_data.arena_.top())) = mv;
+	render_data.arena_.push(static_cast<char *>(render_data.arena_.top()) + sizeof(bool));
 	if(mv) mat_2_->initBsdf(render_data, sp, bsdf_types);
 	else mat_1_->initBsdf(render_data, sp, bsdf_types);
-	render_data.arena_ = PTR_ADD(render_data.arena_, -sizeof(bool));
+	render_data.arena_.pop();
 }
 
 Rgb MaskMaterial::eval(const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wi, const BsdfFlags &bsdfs, bool force_eval) const
 {
-	const bool mv = *(bool *)render_data.arena_;
+	const bool mv = *(static_cast<bool *>(render_data.arena_.top()));
 	Rgb col;
-	render_data.arena_ = PTR_ADD(render_data.arena_, sizeof(bool));
+	render_data.arena_.push(static_cast<char *>(render_data.arena_.top()) + sizeof(bool));
 	if(mv) col = mat_2_->eval(render_data, sp, wo, wi, bsdfs);
 	else   col = mat_1_->eval(render_data, sp, wo, wi, bsdfs);
-	render_data.arena_ = PTR_ADD(render_data.arena_, -sizeof(bool));
+	render_data.arena_.pop();
 	return col;
 }
 
 Rgb MaskMaterial::sample(const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo, Vec3 &wi, Sample &s, float &w) const
 {
-	const bool mv = *(bool *)render_data.arena_;
+	const bool mv = *(static_cast<bool *>(render_data.arena_.top()));
 	Rgb col;
-	render_data.arena_ = PTR_ADD(render_data.arena_, sizeof(bool));
+	render_data.arena_.push(static_cast<char *>(render_data.arena_.top()) + sizeof(bool));
 	if(mv) col = mat_2_->sample(render_data, sp, wo, wi, s, w);
 	else   col = mat_1_->sample(render_data, sp, wo, wi, s, w);
-	render_data.arena_ = PTR_ADD(render_data.arena_, -sizeof(bool));
+	render_data.arena_.pop();
 	return col;
 }
 
 float MaskMaterial::pdf(const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wi, const BsdfFlags &bsdfs) const
 {
-	const bool mv = *(bool *)render_data.arena_;
+	const bool mv = *(static_cast<bool *>(render_data.arena_.top()));
 	float pdf;
-	render_data.arena_ = PTR_ADD(render_data.arena_, sizeof(bool));
+	render_data.arena_.push(static_cast<char *>(render_data.arena_.top()) + sizeof(bool));
 	if(mv) pdf = mat_2_->pdf(render_data, sp, wo, wi, bsdfs);
 	else   pdf = mat_1_->pdf(render_data, sp, wo, wi, bsdfs);
-	render_data.arena_ = PTR_ADD(render_data.arena_, -sizeof(bool));
+	render_data.arena_.pop();
 	return pdf;
 }
 
@@ -87,7 +86,7 @@ bool MaskMaterial::isTransparent() const
 
 Rgb MaskMaterial::getTransparency(const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo) const
 {
-	NodeStack stack(render_data.arena_);
+	NodeStack stack(render_data.arena_.top());
 	evalNodes(render_data, sp, color_nodes_, stack);
 	float val = mask_->getScalar(stack);
 	bool mv = val > 0.5;
@@ -98,33 +97,33 @@ Rgb MaskMaterial::getTransparency(const RenderData &render_data, const SurfacePo
 Material::Specular MaskMaterial::getSpecular(const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo) const
 {
 	Specular specular;
-	const bool mv = *(bool *)render_data.arena_;
-	render_data.arena_ = PTR_ADD(render_data.arena_, sizeof(bool));
+	const bool mv = *(static_cast<bool *>(render_data.arena_.top()));
+	render_data.arena_.push(static_cast<char *>(render_data.arena_.top()) + sizeof(bool));
 	if(mv) specular = mat_2_->getSpecular(render_data, sp, wo);
 	else specular = mat_1_->getSpecular(render_data, sp, wo);
-	render_data.arena_ = PTR_ADD(render_data.arena_, -sizeof(bool));
+	render_data.arena_.pop();
 	return specular;
 }
 
 Rgb MaskMaterial::emit(const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo) const
 {
-	const bool mv = *(bool *)render_data.arena_;
+	const bool mv = *(static_cast<bool *>(render_data.arena_.top()));
 	Rgb col;
-	render_data.arena_ = PTR_ADD(render_data.arena_, sizeof(bool));
+	render_data.arena_.push(static_cast<char *>(render_data.arena_.top()) + sizeof(bool));
 	if(mv) col = mat_2_->emit(render_data, sp, wo);
 	else   col = mat_1_->emit(render_data, sp, wo);
-	render_data.arena_ = PTR_ADD(render_data.arena_, -sizeof(bool));
+	render_data.arena_.pop();
 	return col;
 }
 
 float MaskMaterial::getAlpha(const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo) const
 {
-	const bool mv = *(bool *)render_data.arena_;
+	const bool mv = *(static_cast<bool *>(render_data.arena_.top()));
 	float alpha;
-	render_data.arena_ = PTR_ADD(render_data.arena_, sizeof(bool));
+	render_data.arena_.push(static_cast<char *>(render_data.arena_.top()) + sizeof(bool));
 	if(mv) alpha = mat_2_->getAlpha(render_data, sp, wo);
 	else   alpha = mat_1_->getAlpha(render_data, sp, wo);
-	render_data.arena_ = PTR_ADD(render_data.arena_, -sizeof(bool));
+	render_data.arena_.pop();
 	return alpha;
 }
 

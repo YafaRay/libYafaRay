@@ -50,8 +50,8 @@ GlossyMaterial::GlossyMaterial(Logger &logger, const Rgb &col, const Rgb &dcol, 
 
 void GlossyMaterial::initBsdf(const RenderData &render_data, SurfacePoint &sp, BsdfFlags &bsdf_types) const
 {
-	MDat *dat = (MDat *)render_data.arena_;
-	dat->stack_ = (char *)render_data.arena_ + sizeof(MDat);
+	MDat *dat = (MDat *)render_data.arena_.top();
+	dat->stack_ = (char *)render_data.arena_.top() + sizeof(MDat);
 	NodeStack stack(dat->stack_);
 	if(bump_shader_) evalBump(stack, render_data, sp, bump_shader_);
 
@@ -116,7 +116,7 @@ Rgb GlossyMaterial::eval(const RenderData &render_data, const SurfacePoint &sp, 
 		if(!bsdfs.hasAny(BsdfFlags::Diffuse) || ((sp.ng_ * wi) * (sp.ng_ * wo)) < 0.f) return Rgb(0.f);
 	}
 
-	MDat *dat = (MDat *)render_data.arena_;
+	MDat *dat = (MDat *)render_data.arena_.top();
 	Rgb col(0.f);
 	const bool diffuse_flag = bsdfs.hasAny(BsdfFlags::Diffuse);
 
@@ -164,7 +164,7 @@ Rgb GlossyMaterial::eval(const RenderData &render_data, const SurfacePoint &sp, 
 
 Rgb GlossyMaterial::sample(const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo, Vec3 &wi, Sample &s, float &w) const
 {
-	const MDat *dat = (MDat *)render_data.arena_;
+	const MDat *dat = (MDat *)render_data.arena_.top();
 	const float cos_ng_wo = sp.ng_ * wo;
 	const Vec3 n = SurfacePoint::normalFaceForward(sp.ng_, sp.n_, wo);//(cos_Ng_wo < 0) ? -sp.N : sp.N;
 	s.pdf_ = 0.f;
@@ -324,7 +324,7 @@ Rgb GlossyMaterial::sample(const RenderData &render_data, const SurfacePoint &sp
 
 float GlossyMaterial::pdf(const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wi, const BsdfFlags &flags) const
 {
-	const MDat *dat = (MDat *)render_data.arena_;
+	const MDat *dat = (MDat *)render_data.arena_.top();
 	const NodeStack stack(dat->stack_);
 	if((sp.ng_ * wo) * (sp.ng_ * wi) < 0.f) return 0.f;
 	const Vec3 n = SurfacePoint::normalFaceForward(sp.ng_, sp.n_, wo);
@@ -509,7 +509,7 @@ std::unique_ptr<Material> GlossyMaterial::factory(Logger &logger, ParamMap &para
 }
 
 Rgb GlossyMaterial::getDiffuseColor(const RenderData &render_data) const {
-	MDat *dat = (MDat *)render_data.arena_;
+	MDat *dat = (MDat *)render_data.arena_.top();
 	NodeStack stack(dat->stack_);
 
 	if(as_diffuse_ || with_diffuse_) return (diffuse_reflection_shader_ ? diffuse_reflection_shader_->getScalar(stack) : 1.f) * (diffuse_shader_ ? diffuse_shader_->getColor(stack) : diff_color_);
@@ -517,7 +517,7 @@ Rgb GlossyMaterial::getDiffuseColor(const RenderData &render_data) const {
 }
 
 Rgb GlossyMaterial::getGlossyColor(const RenderData &render_data) const {
-	MDat *dat = (MDat *)render_data.arena_;
+	MDat *dat = (MDat *)render_data.arena_.top();
 	NodeStack stack(dat->stack_);
 
 	return (glossy_reflection_shader_ ? glossy_reflection_shader_->getScalar(stack) : reflectivity_) * (glossy_shader_ ? glossy_shader_->getColor(stack) : gloss_color_);

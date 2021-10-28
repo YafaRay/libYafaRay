@@ -131,7 +131,6 @@ Rgba PathIntegrator::integrate(RenderData &render_data, const DiffRay &ray, int 
 	Rgb col(0.0);
 	float alpha;
 	SurfacePoint sp;
-	void *o_udat = render_data.arena_;
 	float w = 0.f;
 
 	if(transp_background_) alpha = 0.0;
@@ -147,8 +146,8 @@ Rgba PathIntegrator::integrate(RenderData &render_data, const DiffRay &ray, int 
 			render_data.lights_geometry_material_emit_ = true;
 			//...
 		}
-		alignas (16) unsigned char userdata[user_data_size_];
-		render_data.arena_ = static_cast<void *>(userdata);
+		alignas (16) unsigned char arena[arena_size_];
+		render_data.arena_.push(static_cast<void *>(arena));
 		BsdfFlags bsdfs;
 
 		const Material *material = sp.material_;
@@ -203,9 +202,6 @@ Rgba PathIntegrator::integrate(RenderData &render_data, const DiffRay &ray, int 
 			int n_samples = std::max(1, n_paths_ / render_data.ray_division_);
 			for(int i = 0; i < n_samples; ++i)
 			{
-				void *first_udat = render_data.arena_;
-				alignas (16) unsigned char n_userdata[user_data_size_];
-				void *n_udat = static_cast<void *>(n_userdata);
 				unsigned int offs = n_paths_ * render_data.pixel_sample_ + render_data.sampling_offs_ + i; // some redunancy here...
 				Rgb throughput(1.0);
 				Rgb lcol, scol;
@@ -238,7 +234,8 @@ Rgba PathIntegrator::integrate(RenderData &render_data, const DiffRay &ray, int 
 
 				if(!accelerator->intersect(p_ray, *hit)) continue; //hit background
 
-				render_data.arena_ = n_udat;
+				alignas (16) unsigned char arena_2[arena_size_];
+				render_data.arena_.push(static_cast<void *>(arena_2));
 				const Material *p_mat = hit->material_;
 				BsdfFlags mat_bsd_fs;
 				p_mat->initBsdf(render_data, *hit, mat_bsd_fs);
@@ -329,8 +326,7 @@ Rgba PathIntegrator::integrate(RenderData &render_data, const DiffRay &ray, int 
 
 					path_col += lcol * throughput;
 				}
-				render_data.arena_ = first_udat;
-
+				render_data.arena_.pop();
 			}
 			col += path_col / n_samples;
 		}
@@ -360,6 +356,7 @@ Rgba PathIntegrator::integrate(RenderData &render_data, const DiffRay &ray, int 
 			alpha = m_alpha + (1.f - m_alpha) * alpha;
 		}
 		else alpha = 1.0;
+		render_data.arena_.pop();
 	}
 	else //nothing hit, return background
 	{
@@ -373,8 +370,6 @@ Rgba PathIntegrator::integrate(RenderData &render_data, const DiffRay &ray, int 
 			}
 		}
 	}
-
-	render_data.arena_ = o_udat;
 
 	const Rgb col_vol_transmittance = scene_->vol_integrator_->transmittance(render_data, ray);
 	const Rgb col_vol_integration = scene_->vol_integrator_->integrate(render_data, ray);

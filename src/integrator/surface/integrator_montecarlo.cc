@@ -403,8 +403,8 @@ void MonteCarloIntegrator::causticWorker(PhotonMap *caustic_map, int thread_id, 
 
 	RenderData render_data;
 	render_data.cam_ = render_view->getCamera();
-	alignas (16) unsigned char userdata[user_data_size_];
-	render_data.arena_ = static_cast<void *>(userdata);
+	alignas (16) unsigned char arena[arena_size_];
+	render_data.arena_.push(static_cast<void *>(arena));
 
 	local_caustic_photons.clear();
 	local_caustic_photons.reserve(n_caus_photons_thread);
@@ -525,6 +525,7 @@ void MonteCarloIntegrator::causticWorker(PhotonMap *caustic_map, int thread_id, 
 		}
 		done = (curr >= n_caus_photons_thread);
 	}
+	render_data.arena_.pop();
 	caustic_map->mutx_.lock();
 	caustic_map->appendVector(local_caustic_photons, curr);
 	total_photons_shot += curr;

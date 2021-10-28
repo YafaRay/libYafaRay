@@ -103,9 +103,8 @@ bool Accelerator::isShadowed(RenderData &render_data, const Ray &ray, int max_de
 	Ray sray(ray);
 	sray.from_ += sray.dir_ * sray.tmin_;
 	const float t_max = (ray.tmax_ >= 0.f) ? sray.tmax_ - 2 * sray.tmin_ : std::numeric_limits<float>::infinity();
-	void *odat = render_data.arena_;
-	alignas (16) unsigned char userdata[Integrator::getUserDataSize()];
-	render_data.arena_ = static_cast<void *>(userdata);
+	alignas (16) unsigned char arena[Integrator::getUserDataSize()];
+	render_data.arena_.push(static_cast<void *>(arena));
 	bool intersect = false;
 	const AcceleratorTsIntersectData accelerator_intersect_data = intersectTs(render_data, sray, max_depth, t_max, shadow_bias);
 	filt = accelerator_intersect_data.transparent_color_;
@@ -118,7 +117,7 @@ bool Accelerator::isShadowed(RenderData &render_data, const Ray &ray, int max_de
 			if(accelerator_intersect_data.hit_primitive_->getMaterial()) mat_index = accelerator_intersect_data.hit_primitive_->getMaterial()->getAbsMaterialIndex();    //Material index of the object casting the shadow
 		}
 	}
-	render_data.arena_ = odat;
+	render_data.arena_.pop();
 	return intersect;
 }
 

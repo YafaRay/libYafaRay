@@ -367,8 +367,8 @@ void SppmIntegrator::photonWorker(PhotonMap *diffuse_map, PhotonMap *caustic_map
 
 	SurfacePoint sp;
 	RenderData render_data(&prng);
-	alignas (16) unsigned char userdata[user_data_size_];
-	render_data.arena_ = static_cast<void *>(userdata);
+	alignas (16) unsigned char arena[arena_size_];
+	render_data.arena_.push(static_cast<void *>(arena));
 	render_data.cam_ = render_view->getCamera();
 
 	float f_num_lights = (float)num_d_lights;
@@ -525,6 +525,8 @@ void SppmIntegrator::photonWorker(PhotonMap *diffuse_map, PhotonMap *caustic_map
 		}
 		done = (curr >= n_photons_thread);
 	}
+	render_data.arena_.pop();
+
 	diffuse_map->mutx_.lock();
 	caustic_map->mutx_.lock();
 	diffuse_map->appendVector(local_diffuse_photons, curr);
@@ -598,8 +600,8 @@ void SppmIntegrator::prePass(int samples, int offset, bool adaptive, const Rende
 	unsigned int curr = 0;
 	Random prng(rand() + offset * (4517) + 123);
 	RenderData render_data(&prng);
-	alignas (16) unsigned char userdata[user_data_size_];
-	render_data.arena_ = static_cast<void *>(userdata);
+	alignas (16) unsigned char arena[arena_size_];
+	render_data.arena_.push(static_cast<void *>(arena));
 	render_data.cam_ = render_view->getCamera();
 
 	std::shared_ptr<ProgressBar> pb;
@@ -681,6 +683,7 @@ void SppmIntegrator::prePass(int samples, int offset, bool adaptive, const Rende
 		intpb_->setTag(previous_progress_tag);
 		intpb_->init(previous_progress_total_steps, logger_.getConsoleLogColorsEnabled());
 	}
+	render_data.arena_.pop();
 	return;
 }
 
@@ -703,7 +706,6 @@ GatherInfo SppmIntegrator::traceGatherRay(RenderData &render_data, DiffRay &ray,
 	float alpha;
 	SurfacePoint sp;
 
-	void *o_udat = render_data.arena_;
 	const bool old_lights_geometry_material_emit = render_data.lights_geometry_material_emit_;
 
 	if(transp_background_) alpha = 0.0;
@@ -711,8 +713,8 @@ GatherInfo SppmIntegrator::traceGatherRay(RenderData &render_data, DiffRay &ray,
 
 	if(accelerator->intersect(ray, sp))
 	{
-		alignas (16) unsigned char userdata[user_data_size_];
-		render_data.arena_ = static_cast<void *>(userdata);
+		alignas (16) unsigned char arena[arena_size_];
+		render_data.arena_.push(static_cast<void *>(arena));
 		if(render_data.raylevel_ == 0)
 		{
 			render_data.chromatic_ = true;
@@ -1193,8 +1195,8 @@ GatherInfo SppmIntegrator::traceGatherRay(RenderData &render_data, DiffRay &ray,
 			alpha = m_alpha + (1.f - m_alpha) * alpha;
 		}
 		else alpha = 1.0;
+		render_data.arena_.pop();
 	}
-
 	else //nothing hit, return background
 	{
 		if(scene_->getBackground() && !transp_refracted_background_)
@@ -1207,8 +1209,6 @@ GatherInfo SppmIntegrator::traceGatherRay(RenderData &render_data, DiffRay &ray,
 			}
 		}
 	}
-
-	render_data.arena_ = o_udat;
 	render_data.lights_geometry_material_emit_ = old_lights_geometry_material_emit;
 
 	Rgba col_vol_transmittance = scene_->vol_integrator_->transmittance(render_data, ray);

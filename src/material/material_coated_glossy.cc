@@ -67,8 +67,8 @@ CoatedGlossyMaterial::CoatedGlossyMaterial(Logger &logger, const Rgb &col, const
 
 void CoatedGlossyMaterial::initBsdf(const RenderData &render_data, SurfacePoint &sp, BsdfFlags &bsdf_types) const
 {
-	MDat *dat = (MDat *)render_data.arena_;
-	dat->stack_ = (char *)render_data.arena_ + sizeof(MDat);
+	MDat *dat = (MDat *)render_data.arena_.top();
+	dat->stack_ = (char *)render_data.arena_.top() + sizeof(MDat);
 	NodeStack stack(dat->stack_);
 	if(bump_shader_) evalBump(stack, render_data, sp, bump_shader_);
 
@@ -129,7 +129,7 @@ float CoatedGlossyMaterial::orenNayar(const Vec3 &wi, const Vec3 &wo, const Vec3
 
 Rgb CoatedGlossyMaterial::eval(const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wi, const BsdfFlags &bsdfs, bool force_eval) const
 {
-	MDat *dat = (MDat *)render_data.arena_;
+	MDat *dat = (MDat *)render_data.arena_.top();
 	Rgb col(0.f);
 	const bool diffuse_flag = bsdfs.hasAny(BsdfFlags::Diffuse);
 
@@ -183,7 +183,7 @@ Rgb CoatedGlossyMaterial::eval(const RenderData &render_data, const SurfacePoint
 
 Rgb CoatedGlossyMaterial::sample(const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo, Vec3 &wi, Sample &s, float &w) const
 {
-	const MDat *dat = (MDat *)render_data.arena_;
+	const MDat *dat = (MDat *)render_data.arena_.top();
 	const NodeStack stack(dat->stack_);
 
 	const float cos_ng_wo = sp.ng_ * wo;
@@ -365,7 +365,7 @@ Rgb CoatedGlossyMaterial::sample(const RenderData &render_data, const SurfacePoi
 
 float CoatedGlossyMaterial::pdf(const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wi, const BsdfFlags &flags) const
 {
-	const MDat *dat = (MDat *)render_data.arena_;
+	const MDat *dat = (MDat *)render_data.arena_.top();
 	const NodeStack stack(dat->stack_);
 	const bool transmit = ((sp.ng_ * wo) * (sp.ng_ * wi)) < 0.f;
 	if(transmit) return 0.f;
@@ -413,7 +413,7 @@ float CoatedGlossyMaterial::pdf(const RenderData &render_data, const SurfacePoin
 Material::Specular CoatedGlossyMaterial::getSpecular(const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo) const
 {
 	Specular specular;
-	const MDat *dat = (MDat *)render_data.arena_;
+	const MDat *dat = (MDat *)render_data.arena_.top();
 	const NodeStack stack(dat->stack_);
 	const bool outside = sp.ng_ * wo >= 0;
 	Vec3 n, ng;
@@ -619,7 +619,7 @@ std::unique_ptr<Material> CoatedGlossyMaterial::factory(Logger &logger, ParamMap
 }
 
 Rgb CoatedGlossyMaterial::getDiffuseColor(const RenderData &render_data) const {
-	MDat *dat = (MDat *)render_data.arena_;
+	MDat *dat = (MDat *)render_data.arena_.top();
 	NodeStack stack(dat->stack_);
 
 	if(as_diffuse_ || with_diffuse_) return (diffuse_reflection_shader_ ? diffuse_reflection_shader_->getScalar(stack) : 1.f) * (diffuse_shader_ ? diffuse_shader_->getColor(stack) : diff_color_);
@@ -627,14 +627,14 @@ Rgb CoatedGlossyMaterial::getDiffuseColor(const RenderData &render_data) const {
 }
 
 Rgb CoatedGlossyMaterial::getGlossyColor(const RenderData &render_data) const {
-	MDat *dat = (MDat *)render_data.arena_;
+	MDat *dat = (MDat *)render_data.arena_.top();
 	NodeStack stack(dat->stack_);
 
 	return (glossy_reflection_shader_ ? glossy_reflection_shader_->getScalar(stack) : reflectivity_) * (glossy_shader_ ? glossy_shader_->getColor(stack) : gloss_color_);
 }
 
 Rgb CoatedGlossyMaterial::getMirrorColor(const RenderData &render_data) const {
-	MDat *dat = (MDat *)render_data.arena_;
+	MDat *dat = (MDat *)render_data.arena_.top();
 	NodeStack stack(dat->stack_);
 
 	return (mirror_shader_ ? mirror_shader_->getScalar(stack) : mirror_strength_) * (mirror_color_shader_ ? mirror_color_shader_->getColor(stack) : mirror_color_);

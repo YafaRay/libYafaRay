@@ -49,7 +49,7 @@ GlassMaterial::GlassMaterial(Logger &logger, float ior, Rgb filt_c, const Rgb &s
 
 void GlassMaterial::initBsdf(const RenderData &render_data, SurfacePoint &sp, BsdfFlags &bsdf_types) const
 {
-	NodeStack stack(render_data.arena_);
+	NodeStack stack(render_data.arena_.top());
 	if(bump_shader_) evalBump(stack, render_data, sp, bump_shader_);
 	for(const auto &node : color_nodes_) node->eval(stack, render_data, sp);
 	bsdf_types = bsdf_flags_;
@@ -59,7 +59,7 @@ void GlassMaterial::initBsdf(const RenderData &render_data, SurfacePoint &sp, Bs
 
 Rgb GlassMaterial::sample(const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo, Vec3 &wi, Sample &s, float &w) const
 {
-	const NodeStack stack(render_data.arena_);
+	const NodeStack stack(render_data.arena_.top());
 	if(!s.flags_.hasAny(BsdfFlags::Specular) && !(s.flags_.hasAny(bsdf_flags_ & BsdfFlags::Dispersive) && render_data.chromatic_))
 	{
 		s.pdf_ = 0.f;
@@ -202,7 +202,7 @@ Rgb GlassMaterial::sample(const RenderData &render_data, const SurfacePoint &sp,
 
 Rgb GlassMaterial::getTransparency(const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo) const
 {
-	const NodeStack stack(render_data.arena_);
+	const NodeStack stack(render_data.arena_.top());
 	const Vec3 n = SurfacePoint::normalFaceForward(sp.ng_, sp.n_, wo);
 	float kr, kt;
 	Vec3::fresnel(wo, n, (ior_shader_ ? ior_shader_->getScalar(stack) : ior_), kr, kt);
@@ -214,7 +214,7 @@ Rgb GlassMaterial::getTransparency(const RenderData &render_data, const SurfaceP
 
 float GlassMaterial::getAlpha(const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo) const
 {
-	const NodeStack stack(render_data.arena_);
+	const NodeStack stack(render_data.arena_.top());
 	float alpha = 1.0 - getTransparency(render_data, sp, wo).energy();
 	if(alpha < 0.0f) alpha = 0.0f;
 	const float wire_frame_amount = (wireframe_shader_ ? wireframe_shader_->getScalar(stack) * wireframe_amount_ : wireframe_amount_);
@@ -225,7 +225,7 @@ float GlassMaterial::getAlpha(const RenderData &render_data, const SurfacePoint 
 Material::Specular GlassMaterial::getSpecular(const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo) const
 {
 	Material::Specular specular;
-	const NodeStack stack(render_data.arena_);
+	const NodeStack stack(render_data.arena_.top());
 	const bool outside = sp.ng_ * wo > 0;
 	Vec3 n;
 	const float cos_wo_n = sp.n_ * wo;
@@ -423,12 +423,12 @@ std::unique_ptr<Material> GlassMaterial::factory(Logger &logger, ParamMap &param
 }
 
 Rgb GlassMaterial::getGlossyColor(const RenderData &render_data) const {
-	NodeStack stack(render_data.arena_);
+	NodeStack stack(render_data.arena_.top());
 	return mirror_color_shader_ ? mirror_color_shader_->getColor(stack) : specular_reflection_color_;
 }
 
 Rgb GlassMaterial::getTransColor(const RenderData &render_data) const {
-	NodeStack stack(render_data.arena_);
+	NodeStack stack(render_data.arena_.top());
 	if(filter_color_shader_ || filter_color_.minimum() < .99f)	return (filter_color_shader_ ? filter_color_shader_->getColor(stack) : filter_color_);
 	else
 	{
@@ -439,7 +439,7 @@ Rgb GlassMaterial::getTransColor(const RenderData &render_data) const {
 }
 
 Rgb GlassMaterial::getMirrorColor(const RenderData &render_data) const {
-	NodeStack stack(render_data.arena_);
+	NodeStack stack(render_data.arena_.top());
 	return mirror_color_shader_ ? mirror_color_shader_->getColor(stack) : specular_reflection_color_;
 }
 
