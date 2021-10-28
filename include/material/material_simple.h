@@ -32,6 +32,12 @@ surface light sources (area, sphere, mesh lights...)
 
 BEGIN_YAFARAY
 
+class LightMaterialData final : public MaterialData
+{
+	public:
+		virtual size_t getSizeBytes() const override { return sizeof(LightMaterialData); }
+};
+
 class LightMaterial final : public Material
 {
 	public:
@@ -39,6 +45,7 @@ class LightMaterial final : public Material
 
 	private:
 		LightMaterial(Logger &logger, Rgb light_c, bool ds = false);
+		virtual std::unique_ptr<MaterialData> createMaterialData() const override { return std::unique_ptr<LightMaterialData>(new LightMaterialData()); };
 		virtual void initBsdf(const RenderData &render_data, SurfacePoint &sp, BsdfFlags &bsdf_types) const { bsdf_types = bsdf_flags_; }
 		virtual Rgb eval(const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wl, const BsdfFlags &bsdfs, bool force_eval = false) const {return Rgb(0.0);}
 		virtual Rgb sample(const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo, Vec3 &wi, Sample &s, float &w) const;

@@ -66,6 +66,12 @@ struct BsdfFlags : public Flags
 	};
 };
 
+class MaterialData
+{
+	public:
+		virtual size_t getSizeBytes() const = 0;
+};
+
 class Material
 {
 	public:
@@ -81,6 +87,8 @@ class Material
 		static std::unique_ptr<Material> factory(Logger &logger, ParamMap &params, std::list<ParamMap> &nodes_params, const Scene &scene);
 		Material(Logger &logger);
 		virtual ~Material();
+
+		virtual std::unique_ptr<MaterialData> createMaterialData() const = 0;
 
 		/*! Initialize the BSDF of a material. You must call this with the current surface point
 			first before any other methods (except isTransparent/getTransparency)! The renderstate

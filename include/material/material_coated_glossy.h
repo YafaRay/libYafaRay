@@ -32,6 +32,16 @@ BEGIN_YAFARAY
 	(dielectric) perfectly specular coating. This is to simulate surfaces like
 	metallic paint */
 
+class CoatedGlossyMaterialData final : public MaterialData
+{
+	public:
+		virtual size_t getSizeBytes() const override { return sizeof(CoatedGlossyMaterialData); }
+
+	private:
+		float diffuse_, glossy_, p_diffuse_;
+		void *stack_;
+};
+
 class CoatedGlossyMaterial final : public NodeMaterial
 {
 	public:
@@ -39,6 +49,7 @@ class CoatedGlossyMaterial final : public NodeMaterial
 
 	private:
 		CoatedGlossyMaterial(Logger &logger, const Rgb &col, const Rgb &dcol, const Rgb &mir_col, float mirror_strength, float reflect, float diff, float ior, float expo, bool as_diff, Visibility e_visibility = Visibility::NormalVisible);
+		virtual std::unique_ptr<MaterialData> createMaterialData() const override { return std::unique_ptr<CoatedGlossyMaterialData>(new CoatedGlossyMaterialData()); };
 		virtual void initBsdf(const RenderData &render_data, SurfacePoint &sp, BsdfFlags &bsdf_types) const override;
 		virtual Rgb eval(const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wi, const BsdfFlags &bsdfs, bool force_eval = false) const override;
 		virtual Rgb sample(const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo, Vec3 &wi, Sample &s, float &w) const override;

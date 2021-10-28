@@ -31,6 +31,12 @@ BEGIN_YAFARAY
 	Outdated info... DarkTide
 */
 
+class BlendMaterialData final : public MaterialData
+{
+	public:
+		virtual size_t getSizeBytes() const override { return sizeof(BlendMaterialData); }
+};
+
 class BlendMaterial final : public NodeMaterial
 {
 	public:
@@ -39,6 +45,7 @@ class BlendMaterial final : public NodeMaterial
 
 	private:
 		BlendMaterial(Logger &logger, const Material *m_1, const Material *m_2, float blendv, Visibility visibility = Visibility::NormalVisible);
+		virtual std::unique_ptr<MaterialData> createMaterialData() const override { return std::unique_ptr<BlendMaterialData>(new BlendMaterialData()); };
 		virtual void initBsdf(const RenderData &render_data, SurfacePoint &sp, BsdfFlags &bsdf_types) const override;
 		virtual Rgb eval(const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wl, const BsdfFlags &bsdfs, bool force_eval = false) const override;
 		virtual Rgb sample(const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo, Vec3 &wi, Sample &s, float &w) const override;

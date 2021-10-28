@@ -38,6 +38,15 @@ BEGIN_YAFARAY
     The remaining (l"') light is either reflected diffuse or absorbed.
 */
 
+class ShinyDiffuseMaterialData final : public MaterialData
+{
+	public:
+		virtual size_t getSizeBytes() const override { return sizeof(ShinyDiffuseMaterialData); }
+	private:
+		float component_[4];
+		void *node_stack_;
+};
+
 class ShinyDiffuseMaterial final : public NodeMaterial
 {
 	public:
@@ -45,6 +54,7 @@ class ShinyDiffuseMaterial final : public NodeMaterial
 
 	private:
 		ShinyDiffuseMaterial(Logger &logger, const Rgb &diffuse_color, const Rgb &mirror_color, float diffuse_strength, float transparency_strength = 0.0, float translucency_strength = 0.0, float mirror_strength = 0.0, float emit_strength = 0.0, float transmit_filter_strength = 1.0, Visibility visibility = Visibility::NormalVisible);
+		virtual std::unique_ptr<MaterialData> createMaterialData() const override { return std::unique_ptr<ShinyDiffuseMaterialData>(new ShinyDiffuseMaterialData()); };
 		virtual void initBsdf(const RenderData &render_data, SurfacePoint &sp, BsdfFlags &bsdf_types) const override;
 		virtual Rgb eval(const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wl, const BsdfFlags &bsdfs, bool force_eval = false) const override;
 		virtual Rgb sample(const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo, Vec3 &wi, Sample &s, float &w) const override;

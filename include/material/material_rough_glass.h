@@ -24,6 +24,12 @@
 
 BEGIN_YAFARAY
 
+class RoughGlassMaterialData final : public MaterialData
+{
+	public:
+		virtual size_t getSizeBytes() const override { return sizeof(RoughGlassMaterialData); }
+};
+
 class RoughGlassMaterial final : public NodeMaterial
 {
 	public:
@@ -31,6 +37,7 @@ class RoughGlassMaterial final : public NodeMaterial
 
 	private:
 		RoughGlassMaterial(Logger &logger, float ior, Rgb filt_c, const Rgb &srcol, bool fake_s, float alpha, float disp_pow, Visibility e_visibility = Visibility::NormalVisible);
+		virtual std::unique_ptr<MaterialData> createMaterialData() const override { return std::unique_ptr<RoughGlassMaterialData>(new RoughGlassMaterialData()); };
 		virtual void initBsdf(const RenderData &render_data, SurfacePoint &sp, BsdfFlags &bsdf_types) const override;
 		virtual Rgb sample(const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo, Vec3 &wi, Sample &s, float &w) const override;
 		virtual Rgb sample(const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo, Vec3 *const dir, Rgb &tcol, Sample &s, float *const w) const override;
