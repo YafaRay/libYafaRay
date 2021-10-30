@@ -456,7 +456,7 @@ std::unique_ptr<Material> BlendMaterial::factory(Logger &logger, ParamMap &param
 		}
 	}
 	mat->color_nodes_ = mat->solveNodesOrder(root_nodes_list, mat->nodes_map_, logger);
-	mat->material_data_size_ = sizeof(bool) + mat->sizeNodesBytes();
+	mat->material_data_size_ = mat->sizeNodesBytes();
 	return mat;
 }
 
