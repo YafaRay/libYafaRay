@@ -42,7 +42,6 @@ class ShinyDiffuseMaterialData final : public MaterialData
 {
 	public:
 		virtual size_t getSizeBytes() const override { return sizeof(ShinyDiffuseMaterialData); }
-	private:
 		float component_[4];
 		void *node_stack_;
 };
@@ -70,16 +69,9 @@ class ShinyDiffuseMaterial final : public NodeMaterial
 		virtual Rgb getMirrorColor(const RenderData &render_data) const override;
 		virtual Rgb getSubSurfaceColor(const RenderData &render_data) const override;
 
-		struct SdDat
-		{
-			float component_[4];
-			void *node_stack_;
-		};
-
 		void config();
 		void getComponents(const bool *use_node, NodeStack &stack, float *component) const;
 		float getFresnelKr(const Vec3 &wo, const Vec3 &n, float current_ior_squared) const;
-
 		void initOrenNayar(double sigma);
 		float orenNayar(const Vec3 &wi, const Vec3 &wo, const Vec3 &n, bool use_texture_sigma, double texture_sigma) const;
 		static void accumulate(const float *component, float *accum, float kr);

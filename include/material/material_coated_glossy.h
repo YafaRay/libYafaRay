@@ -36,8 +36,6 @@ class CoatedGlossyMaterialData final : public MaterialData
 {
 	public:
 		virtual size_t getSizeBytes() const override { return sizeof(CoatedGlossyMaterialData); }
-
-	private:
 		float diffuse_, glossy_, p_diffuse_;
 		void *stack_;
 };
@@ -58,12 +56,6 @@ class CoatedGlossyMaterial final : public NodeMaterial
 		virtual Rgb getDiffuseColor(const RenderData &render_data) const override;
 		virtual Rgb getGlossyColor(const RenderData &render_data) const override;
 		virtual Rgb getMirrorColor(const RenderData &render_data) const override;
-
-		struct MDat
-		{
-			float diffuse_, glossy_, p_diffuse_;
-			void *stack_;
-		};
 
 		void initOrenNayar(double sigma);
 		float orenNayar(const Vec3 &wi, const Vec3 &wo, const Vec3 &n, bool use_texture_sigma, double texture_sigma) const;

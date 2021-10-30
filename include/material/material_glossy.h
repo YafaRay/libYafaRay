@@ -31,6 +31,8 @@ class GlossyMaterialData final : public MaterialData
 {
 	public:
 		virtual size_t getSizeBytes() const override { return sizeof(GlossyMaterialData); }
+		float m_diffuse_, m_glossy_, p_diffuse_;
+		void *stack_;
 };
 
 class GlossyMaterial final : public NodeMaterial
@@ -45,18 +47,10 @@ class GlossyMaterial final : public NodeMaterial
 		virtual Rgb eval(const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wi, const BsdfFlags &bsdfs, bool force_eval = false) const override;
 		virtual Rgb sample(const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo, Vec3 &wi, Sample &s, float &w) const override;
 		virtual float pdf(const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wi, const BsdfFlags &bsdfs) const override;
-
-		struct MDat
-		{
-			float m_diffuse_, m_glossy_, p_diffuse_;
-			void *stack_;
-		};
-
-		void initOrenNayar(double sigma);
-
 		virtual Rgb getDiffuseColor(const RenderData &render_data) const override;
 		virtual Rgb getGlossyColor(const RenderData &render_data) const override;
 
+		void initOrenNayar(double sigma);
 		float orenNayar(const Vec3 &wi, const Vec3 &wo, const Vec3 &n, bool use_texture_sigma, double texture_sigma) const;
 
 		const ShaderNode *diffuse_shader_ = nullptr;

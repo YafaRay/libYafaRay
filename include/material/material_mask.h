@@ -32,6 +32,8 @@ class MaskMaterialData final : public MaterialData
 {
 	public:
 		virtual size_t getSizeBytes() const override { return sizeof(MaskMaterialData); }
+		bool select_mat2_;
+		void *stack_;
 };
 
 class MaskMaterial final : public NodeMaterial

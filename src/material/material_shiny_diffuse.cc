@@ -23,7 +23,6 @@
 #include "geometry/surface.h"
 #include "common/logger.h"
 #include "render/render_data.h"
-#include <cstring>
 
 BEGIN_YAFARAY
 
@@ -87,7 +86,7 @@ void ShinyDiffuseMaterial::config()
 		c_index_[n_bsdf_] = 3;
 		++n_bsdf_;
 	}
-	material_data_size_ = sizeNodesBytes() + sizeof(SdDat);
+	material_data_size_ = sizeNodesBytes() + sizeof(ShinyDiffuseMaterialData);
 }
 
 // component should be initialized with mMirrorStrength, mTransparencyStrength, mTranslucencyStrength, mDiffuseStrength
@@ -134,17 +133,16 @@ void ShinyDiffuseMaterial::accumulate(const float *component, float *accum, floa
 
 void ShinyDiffuseMaterial::initBsdf(const RenderData &render_data, SurfacePoint &sp, BsdfFlags &bsdf_types) const
 {
-	SdDat *dat = (SdDat *)render_data.arena_.top();
-	memset(dat, 0, 8 * sizeof(float));
-	dat->node_stack_ = (char *)render_data.arena_.top() + sizeof(SdDat);
+	ShinyDiffuseMaterialData *mat_data = static_cast<ShinyDiffuseMaterialData *>(render_data.arena_.top());
+	mat_data->node_stack_ = static_cast<char *>(render_data.arena_.top()) + sizeof(ShinyDiffuseMaterialData);
 	//create our "stack" to save node results
-	NodeStack stack(dat->node_stack_);
+	NodeStack stack(mat_data->node_stack_);
 
 	//bump mapping (extremely experimental)
 	if(bump_shader_) evalBump(stack, render_data, sp, bump_shader_);
 	for(const auto &node : color_nodes_) node->eval(stack, render_data, sp);
 	bsdf_types = bsdf_flags_;
-	getComponents(vi_nodes_, stack, dat->component_);
+	getComponents(vi_nodes_, stack, mat_data->component_);
 }
 
 /** Initialize Oren Nayar reflectance.
@@ -201,7 +199,6 @@ float ShinyDiffuseMaterial::orenNayar(const Vec3 &wi, const Vec3 &wo, const Vec3
 	else return std::min(1.f, std::max(0.f, oren_nayar_a_ + oren_nayar_b_ * maxcos_f * sin_alpha * tan_beta));
 }
 
-
 Rgb ShinyDiffuseMaterial::eval(const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wl, const BsdfFlags &bsdfs, bool force_eval) const
 {
 	const float cos_ng_wo = sp.ng_ * wo;
@@ -210,8 +207,8 @@ Rgb ShinyDiffuseMaterial::eval(const RenderData &render_data, const SurfacePoint
 	const Vec3 n = SurfacePoint::normalFaceForward(sp.ng_, sp.n_, wo);
 	if(!bsdfs.hasAny(bsdf_flags_ & BsdfFlags::Diffuse)) return Rgb(0.f);
 
-	const SdDat *dat = (SdDat *)render_data.arena_.top();
-	const NodeStack stack(dat->node_stack_);
+	const ShinyDiffuseMaterialData *mat_data = static_cast<ShinyDiffuseMaterialData *>(render_data.arena_.top());
+	const NodeStack stack(mat_data->node_stack_);
 
 	float cur_ior_squared;
 	if(ior_shader_)
@@ -222,17 +219,17 @@ Rgb ShinyDiffuseMaterial::eval(const RenderData &render_data, const SurfacePoint
 	else cur_ior_squared = ior_squared_;
 
 	const float kr = getFresnelKr(wo, n, cur_ior_squared);
-	const float m_t = (1.f - kr * dat->component_[0]) * (1.f - dat->component_[1]);
+	const float m_t = (1.f - kr * mat_data->component_[0]) * (1.f - mat_data->component_[1]);
 
 	const bool transmit = (cos_ng_wo * cos_ng_wl) < 0.f;
 
 	if(transmit) // light comes from opposite side of surface
 	{
-		if(is_translucent_) return dat->component_[2] * m_t * (diffuse_shader_ ? diffuse_shader_->getColor(stack) : diffuse_color_);
+		if(is_translucent_) return mat_data->component_[2] * m_t * (diffuse_shader_ ? diffuse_shader_->getColor(stack) : diffuse_color_);
 	}
 
 	if(n * wl < 0.0 && !flat_material_) return Rgb(0.f);
-	float m_d = m_t * (1.f - dat->component_[2]) * dat->component_[3];
+	float m_d = m_t * (1.f - mat_data->component_[2]) * mat_data->component_[3];
 
 	if(use_oren_nayar_)
 	{
@@ -252,8 +249,8 @@ Rgb ShinyDiffuseMaterial::eval(const RenderData &render_data, const SurfacePoint
 
 Rgb ShinyDiffuseMaterial::emit(const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo) const
 {
-	const SdDat *dat = (SdDat *)render_data.arena_.top();
-	const NodeStack stack(dat->node_stack_);
+	const ShinyDiffuseMaterialData *mat_data = static_cast<ShinyDiffuseMaterialData *>(render_data.arena_.top());
+	const NodeStack stack(mat_data->node_stack_);
 	Rgb result = (diffuse_shader_ ? diffuse_shader_->getColor(stack) * emit_strength_ : emit_color_);
 	const float wire_frame_amount = (wireframe_shader_ ? wireframe_shader_->getScalar(stack) * wireframe_amount_ : wireframe_amount_);
 	applyWireFrame(result, wire_frame_amount, sp);
@@ -265,8 +262,8 @@ Rgb ShinyDiffuseMaterial::sample(const RenderData &render_data, const SurfacePoi
 	float accum_c[4];
 	const float cos_ng_wo = sp.ng_ * wo;
 	const Vec3 n = SurfacePoint::normalFaceForward(sp.ng_, sp.n_, wo);
-	const SdDat *dat = (SdDat *)render_data.arena_.top();
-	const NodeStack stack(dat->node_stack_);
+	const ShinyDiffuseMaterialData *mat_data = static_cast<ShinyDiffuseMaterialData *>(render_data.arena_.top());
+	const NodeStack stack(mat_data->node_stack_);
 
 	float cur_ior_squared;
 	if(ior_shader_)
@@ -277,7 +274,7 @@ Rgb ShinyDiffuseMaterial::sample(const RenderData &render_data, const SurfacePoi
 	else cur_ior_squared = ior_squared_;
 
 	const float kr = getFresnelKr(wo, n, cur_ior_squared);
-	accumulate(dat->component_, accum_c, kr);
+	accumulate(mat_data->component_, accum_c, kr);
 
 	float sum = 0.f, val[4], width[4];
 	BsdfFlags choice[4];
@@ -358,8 +355,8 @@ float ShinyDiffuseMaterial::pdf(const RenderData &render_data, const SurfacePoin
 {
 	if(!bsdfs.hasAny(BsdfFlags::Diffuse)) return 0.f;
 
-	const SdDat *dat = (SdDat *)render_data.arena_.top();
-	const NodeStack stack(dat->node_stack_);
+	const ShinyDiffuseMaterialData *mat_data = static_cast<ShinyDiffuseMaterialData *>(render_data.arena_.top());
+	const NodeStack stack(mat_data->node_stack_);
 
 	float pdf = 0.f;
 	float accum_c[4];
@@ -376,7 +373,7 @@ float ShinyDiffuseMaterial::pdf(const RenderData &render_data, const SurfacePoin
 
 	const float kr = getFresnelKr(wo, n, cur_ior_squared);
 
-	accumulate(dat->component_, accum_c, kr);
+	accumulate(mat_data->component_, accum_c, kr);
 	float sum = 0.f, width;
 	int n_match = 0;
 	for(int i = 0; i < n_bsdf_; ++i)
@@ -418,8 +415,8 @@ float ShinyDiffuseMaterial::pdf(const RenderData &render_data, const SurfacePoin
 Material::Specular ShinyDiffuseMaterial::getSpecular(const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo) const
 {
 	Specular specular;
-	const SdDat *dat = (SdDat *)render_data.arena_.top();
-	const NodeStack stack(dat->node_stack_);
+	const ShinyDiffuseMaterialData *mat_data = static_cast<ShinyDiffuseMaterialData *>(render_data.arena_.top());
+	const NodeStack stack(mat_data->node_stack_);
 	const bool backface = wo * sp.ng_ < 0.f;
 	const Vec3 n  = backface ? -sp.n_ : sp.n_;
 	const Vec3 ng = backface ? -sp.ng_ : sp.ng_;
@@ -436,7 +433,7 @@ Material::Specular ShinyDiffuseMaterial::getSpecular(const RenderData &render_da
 		specular.refract_.enabled_ = true;
 		specular.refract_.dir_ = -wo;
 		const Rgb tcol = transmit_filter_strength_ * (diffuse_shader_ ? diffuse_shader_->getColor(stack) : diffuse_color_) + Rgb(1.f - transmit_filter_strength_);
-		specular.refract_.col_ = (1.f - dat->component_[0] * kr) * dat->component_[1] * tcol;
+		specular.refract_.col_ = (1.f - mat_data->component_[0] * kr) * mat_data->component_[1] * tcol;
 		const float wire_frame_amount = (wireframe_shader_ ? wireframe_shader_->getScalar(stack) * wireframe_amount_ : wireframe_amount_);
 		applyWireFrame(specular.refract_.col_, wire_frame_amount, sp);
 	}
@@ -452,7 +449,7 @@ Material::Specular ShinyDiffuseMaterial::getSpecular(const RenderData &render_da
 			specular.reflect_.dir_ += (0.01 - cos_wi_ng) * ng;
 			specular.reflect_.dir_.normalize();
 		}
-		specular.reflect_.col_ = (mirror_color_shader_ ? mirror_color_shader_->getColor(stack) : mirror_color_) * (dat->component_[0] * kr);
+		specular.reflect_.col_ = (mirror_color_shader_ ? mirror_color_shader_->getColor(stack) : mirror_color_) * (mat_data->component_[0] * kr);
 		const float wire_frame_amount = (wireframe_shader_ ? wireframe_shader_->getScalar(stack) * wireframe_amount_ : wireframe_amount_);
 		applyWireFrame(specular.reflect_.col_, wire_frame_amount, sp);
 	}
@@ -492,8 +489,8 @@ Rgb ShinyDiffuseMaterial::getTransparency(const RenderData &render_data, const S
 
 float ShinyDiffuseMaterial::getAlpha(const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo) const
 {
-	const SdDat *dat = (SdDat *)render_data.arena_.top();
-	const NodeStack stack(dat->node_stack_);
+	const ShinyDiffuseMaterialData *mat_data = static_cast<ShinyDiffuseMaterialData *>(render_data.arena_.top());
+	const NodeStack stack(mat_data->node_stack_);
 
 	if(is_transparent_)
 	{
@@ -506,7 +503,7 @@ float ShinyDiffuseMaterial::getAlpha(const RenderData &render_data, const Surfac
 		}
 		else cur_ior_squared = ior_squared_;
 		const float kr = getFresnelKr(wo, n, cur_ior_squared);
-		const float refl = (1.f - dat->component_[0] * kr) * dat->component_[1];
+		const float refl = (1.f - mat_data->component_[0] * kr) * mat_data->component_[1];
 		float result = 1.f - refl;
 		const float wire_frame_amount = (wireframe_shader_ ? wireframe_shader_->getScalar(stack) * wireframe_amount_ : wireframe_amount_);
 		applyWireFrame(result, wire_frame_amount, sp);
@@ -688,36 +685,36 @@ std::unique_ptr<Material> ShinyDiffuseMaterial::factory(Logger &logger, ParamMap
 }
 
 Rgb ShinyDiffuseMaterial::getDiffuseColor(const RenderData &render_data) const {
-	const SdDat *dat = (SdDat *)render_data.arena_.top();
-	const NodeStack stack(dat->node_stack_);
+	const ShinyDiffuseMaterialData *mat_data = static_cast<ShinyDiffuseMaterialData *>(render_data.arena_.top());
+	const NodeStack stack(mat_data->node_stack_);
 	if(is_diffuse_) return (diffuse_refl_shader_ ? diffuse_refl_shader_->getScalar(stack) : diffuse_strength_) * (diffuse_shader_ ? diffuse_shader_->getColor(stack) : diffuse_color_);
 	else return Rgb(0.f);
 }
 
 Rgb ShinyDiffuseMaterial::getGlossyColor(const RenderData &render_data) const {
-	const SdDat *dat = (SdDat *)render_data.arena_.top();
-	const NodeStack stack(dat->node_stack_);
+	const ShinyDiffuseMaterialData *mat_data = static_cast<ShinyDiffuseMaterialData *>(render_data.arena_.top());
+	const NodeStack stack(mat_data->node_stack_);
 	if(is_mirror_) return (mirror_shader_ ? mirror_shader_->getScalar(stack) : mirror_strength_) * (mirror_color_shader_ ? mirror_color_shader_->getColor(stack) : mirror_color_);
 	else return Rgb(0.f);
 }
 
 Rgb ShinyDiffuseMaterial::getTransColor(const RenderData &render_data) const {
-	const SdDat *dat = (SdDat *)render_data.arena_.top();
-	const NodeStack stack(dat->node_stack_);
+	const ShinyDiffuseMaterialData *mat_data = static_cast<ShinyDiffuseMaterialData *>(render_data.arena_.top());
+	const NodeStack stack(mat_data->node_stack_);
 	if(is_transparent_) return (transparency_shader_ ? transparency_shader_->getScalar(stack) : transparency_strength_) * (diffuse_shader_ ? diffuse_shader_->getColor(stack) : diffuse_color_);
 	else return Rgb(0.f);
 }
 
 Rgb ShinyDiffuseMaterial::getMirrorColor(const RenderData &render_data) const {
-	const SdDat *dat = (SdDat *)render_data.arena_.top();
-	const NodeStack stack(dat->node_stack_);
+	const ShinyDiffuseMaterialData *mat_data = static_cast<ShinyDiffuseMaterialData *>(render_data.arena_.top());
+	const NodeStack stack(mat_data->node_stack_);
 	if(is_mirror_) return (mirror_shader_ ? mirror_shader_->getScalar(stack) : mirror_strength_) * (mirror_color_shader_ ? mirror_color_shader_->getColor(stack) : mirror_color_);
 	else return Rgb(0.f);
 }
 
 Rgb ShinyDiffuseMaterial::getSubSurfaceColor(const RenderData &render_data) const {
-	const SdDat *dat = (SdDat *)render_data.arena_.top();
-	const NodeStack stack(dat->node_stack_);
+	const ShinyDiffuseMaterialData *mat_data = static_cast<ShinyDiffuseMaterialData *>(render_data.arena_.top());
+	const NodeStack stack(mat_data->node_stack_);
 	if(is_translucent_) return (translucency_shader_ ? translucency_shader_->getScalar(stack) : translucency_strength_) * (diffuse_shader_ ? diffuse_shader_->getColor(stack) : diffuse_color_);
 	else return Rgb(0.f);
 }
