@@ -41,9 +41,7 @@ BEGIN_YAFARAY
 class ShinyDiffuseMaterialData final : public MaterialData
 {
 	public:
-		virtual size_t getSizeBytes() const override { return sizeof(ShinyDiffuseMaterialData); }
 		float component_[4];
-		void *node_stack_;
 };
 
 class ShinyDiffuseMaterial final : public NodeMaterial
@@ -54,23 +52,23 @@ class ShinyDiffuseMaterial final : public NodeMaterial
 	private:
 		ShinyDiffuseMaterial(Logger &logger, const Rgb &diffuse_color, const Rgb &mirror_color, float diffuse_strength, float transparency_strength = 0.0, float translucency_strength = 0.0, float mirror_strength = 0.0, float emit_strength = 0.0, float transmit_filter_strength = 1.0, Visibility visibility = Visibility::NormalVisible);
 		virtual std::unique_ptr<MaterialData> createMaterialData() const override { return std::unique_ptr<ShinyDiffuseMaterialData>(new ShinyDiffuseMaterialData()); };
-		virtual void initBsdf(const RenderData &render_data, SurfacePoint &sp, BsdfFlags &bsdf_types) const override;
-		virtual Rgb eval(const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wl, const BsdfFlags &bsdfs, bool force_eval = false) const override;
-		virtual Rgb sample(const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo, Vec3 &wi, Sample &s, float &w) const override;
-		virtual float pdf(const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wi, const BsdfFlags &bsdfs) const override;
+		virtual std::unique_ptr<MaterialData> initBsdf(SurfacePoint &sp, BsdfFlags &bsdf_types, const Camera *camera) const override;
+		virtual Rgb eval(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wl, const BsdfFlags &bsdfs, bool force_eval = false) const override;
+		virtual Rgb sample(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, Vec3 &wi, Sample &s, float &w, bool chromatic, float wavelength, const Camera *camera) const override;
+		virtual float pdf(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wi, const BsdfFlags &bsdfs) const override;
 		virtual bool isTransparent() const override { return is_transparent_; }
-		virtual Rgb getTransparency(const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo) const override;
-		virtual Rgb emit(const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo) const override; // { return emitCol; }
-		virtual Specular getSpecular(const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo) const override;
-		virtual float getAlpha(const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo) const override;
-		virtual Rgb getDiffuseColor(const RenderData &render_data) const override;
-		virtual Rgb getGlossyColor(const RenderData &render_data) const override;
-		virtual Rgb getTransColor(const RenderData &render_data) const override;
-		virtual Rgb getMirrorColor(const RenderData &render_data) const override;
-		virtual Rgb getSubSurfaceColor(const RenderData &render_data) const override;
+		virtual Rgb getTransparency(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, const Camera *camera) const override;
+		virtual Rgb emit(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, bool lights_geometry_material_emit) const override; // { return emitCol; }
+		virtual Material::Specular getSpecular(int raylevel, const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, bool chromatic, float wavelength) const override;
+		virtual float getAlpha(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, const Camera *camera) const override;
+		virtual Rgb getDiffuseColor(const MaterialData *mat_data) const override;
+		virtual Rgb getGlossyColor(const MaterialData *mat_data) const override;
+		virtual Rgb getTransColor(const MaterialData *mat_data) const override;
+		virtual Rgb getMirrorColor(const MaterialData *mat_data) const override;
+		virtual Rgb getSubSurfaceColor(const MaterialData *mat_data) const override;
 
 		void config();
-		void getComponents(const bool *use_node, NodeStack &stack, float *component) const;
+		void getComponents(const bool *use_node, const NodeStack *stack, float *component) const;
 		float getFresnelKr(const Vec3 &wo, const Vec3 &n, float current_ior_squared) const;
 		void initOrenNayar(double sigma);
 		float orenNayar(const Vec3 &wi, const Vec3 &wo, const Vec3 &n, bool use_texture_sigma, double texture_sigma) const;

@@ -26,6 +26,7 @@
 #include "common/yafaray_common.h"
 #include <string>
 #include <common/logger.h>
+#include <math/random.h>
 #include "render/render_control.h"
 #include "render/render_view.h"
 
@@ -44,6 +45,7 @@ class Ray;
 class DiffRay;
 class ColorLayers;
 class ImageFilm;
+class MaterialData;
 
 class Integrator
 {
@@ -96,7 +98,7 @@ class SurfaceIntegrator: public Integrator
 class VolumeIntegrator: public Integrator
 {
 	public:
-		virtual Rgba transmittance(RenderData &render_data, const Ray &ray) const = 0;
+		virtual Rgba transmittance(Random *random, const Ray &ray) const = 0;
 		virtual Rgba integrate(RenderData &render_data, const Ray &ray, int additional_depth = 0) const = 0;
 		virtual bool preprocess(const RenderControl &render_control, Timer &timer, const RenderView *render_view, ImageFilm *image_film) override { return true; };
 	protected:

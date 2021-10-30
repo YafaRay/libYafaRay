@@ -23,7 +23,7 @@
 
 BEGIN_YAFARAY
 
-Rgba EmptyVolumeIntegrator::transmittance(RenderData &render_data, const Ray &ray) const {
+Rgba EmptyVolumeIntegrator::transmittance(Random *random, const Ray &ray) const {
 	return Rgb(1.f);
 }
 

@@ -94,7 +94,7 @@ Vec3 TrianglePrimitive::calculateNormal(const std::array<Point3, 3> &vertices)
 	return ((vertices[1] - vertices[0]) ^ (vertices[2] - vertices[0])).normalize();
 }
 
-SurfacePoint TrianglePrimitive::getSurface(const Point3 &hit_point, const IntersectData &intersect_data, const Matrix4 *obj_to_world) const
+SurfacePoint TrianglePrimitive::getSurface(const Point3 &hit_point, const IntersectData &intersect_data, const Matrix4 *obj_to_world, const Camera *camera) const
 {
 	SurfacePoint sp;
 	sp.intersect_data_ = intersect_data;
@@ -166,10 +166,11 @@ SurfacePoint TrianglePrimitive::getSurface(const Point3 &hit_point, const Inters
 	sp.light_ = base_mesh_object_.getLight();
 	sp.has_uv_ = base_mesh_object_.hasUv();
 	sp.prim_num_ = getSelfIndex();
-	sp.material_ = getMaterial();
 	sp.p_ = hit_point;
 	Vec3::createCs(sp.n_, sp.nu_, sp.nv_);
 	calculateShadingSpace(sp);
+	sp.material_ = getMaterial();
+	sp.mat_data_ = sp.material_->initBsdf(sp, sp.bsdf_flags_, camera);
 	return sp;
 }
 
@@ -237,7 +238,7 @@ void TrianglePrimitive::sample(float s_1, float s_2, Point3 &p, const std::array
  ************************************************************/
 /* AABB-triangle overlap test code                      */
 /* by Tomas Akenine-Möller                              */
-/* Function: int triBoxOverlap(float boxcenter[3],      */
+/* Function: int triBoxOverlap(float boxcenter[3],    */
 /*          float boxhalfsize[3],float triverts[3][3]); */
 /* History:                                             */
 /*   2001-03-05: released the code in its first version */

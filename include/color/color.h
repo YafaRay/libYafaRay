@@ -390,9 +390,9 @@ inline void Rgb::colorSpaceFromLinearRgb(ColorSpace color_space, float gamma)
 	//Inverse matrices
 	static constexpr std::array<std::array<float, 3>, 3> xyz_d_65_from_linear_rgb =
 	{{
-		{ 0.412400f,   0.357600f,   0.180500f },
-		{ 0.212600f,   0.715200f,   0.072200f },
-		{ 0.019300f,   0.119200f,   0.950500f }
+		{ 0.412400f, 0.357600f, 0.180500f },
+		{ 0.212600f, 0.715200f, 0.072200f },
+		{ 0.019300f, 0.119200f, 0.950500f }
 	}};
 
 	//NOTE: Alpha value is not converted from linear to color space and vice versa. Should it be converted?

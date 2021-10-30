@@ -30,9 +30,7 @@ BEGIN_YAFARAY
 class GlossyMaterialData final : public MaterialData
 {
 	public:
-		virtual size_t getSizeBytes() const override { return sizeof(GlossyMaterialData); }
 		float m_diffuse_, m_glossy_, p_diffuse_;
-		void *stack_;
 };
 
 class GlossyMaterial final : public NodeMaterial
@@ -43,12 +41,12 @@ class GlossyMaterial final : public NodeMaterial
 	private:
 		GlossyMaterial(Logger &logger, const Rgb &col, const Rgb &dcol, float reflect, float diff, float expo, bool as_diffuse, Visibility e_visibility = Visibility::NormalVisible);
 		virtual std::unique_ptr<MaterialData> createMaterialData() const override { return std::unique_ptr<GlossyMaterialData>(new GlossyMaterialData()); };
-		virtual void initBsdf(const RenderData &render_data, SurfacePoint &sp, BsdfFlags &bsdf_types) const override;
-		virtual Rgb eval(const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wi, const BsdfFlags &bsdfs, bool force_eval = false) const override;
-		virtual Rgb sample(const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo, Vec3 &wi, Sample &s, float &w) const override;
-		virtual float pdf(const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wi, const BsdfFlags &bsdfs) const override;
-		virtual Rgb getDiffuseColor(const RenderData &render_data) const override;
-		virtual Rgb getGlossyColor(const RenderData &render_data) const override;
+		virtual std::unique_ptr<MaterialData> initBsdf(SurfacePoint &sp, BsdfFlags &bsdf_types, const Camera *camera) const override;
+		virtual Rgb eval(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wi, const BsdfFlags &bsdfs, bool force_eval = false) const override;
+		virtual Rgb sample(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, Vec3 &wi, Sample &s, float &w, bool chromatic, float wavelength, const Camera *camera) const override;
+		virtual float pdf(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wi, const BsdfFlags &bsdfs) const override;
+		virtual Rgb getDiffuseColor(const MaterialData *mat_data) const override;
+		virtual Rgb getGlossyColor(const MaterialData *mat_data) const override;
 
 		void initOrenNayar(double sigma);
 		float orenNayar(const Vec3 &wi, const Vec3 &wo, const Vec3 &n, bool use_texture_sigma, double texture_sigma) const;

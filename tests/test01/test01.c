@@ -290,7 +290,7 @@ int main()
 	yafaray_paramsSetFloat(yi, "transparency", 0);
 	yafaray_paramsSetFloat(yi, "transparentbias_factor", 0);
 	yafaray_paramsSetBool(yi, "transparentbias_multiply_raydepth", YAFARAY_BOOL_FALSE);
-	yafaray_paramsSetString(yi, "type", "glossy");
+	yafaray_paramsSetString(yi, "type", "shinydiffusemat");
 	yafaray_paramsSetString(yi, "visibility", "normal");
 	yafaray_paramsSetFloat(yi, "wireframe_amount", 0);
 	yafaray_paramsSetColor(yi, "wireframe_color", 1, 1, 1, 1);
@@ -896,8 +896,8 @@ int main()
 	yafaray_paramsSetFloat(yi, "dof_distance", 0);
 	yafaray_paramsSetFloat(yi, "focal", 1.09375);
 	yafaray_paramsSetVector(yi, "from", 8.64791, -7.22615, 8.1295);
-	yafaray_paramsSetInt(yi, "resx", 48);
-	yafaray_paramsSetInt(yi, "resy", 27);
+	yafaray_paramsSetInt(yi, "resx", 480);
+	yafaray_paramsSetInt(yi, "resy", 270);
 	yafaray_paramsSetVector(yi, "to", 8.03447, -6.65603, 7.58301);
 	yafaray_paramsSetString(yi, "type", "perspective");
 	yafaray_paramsSetVector(yi, "up", 8.25644, -6.8447, 8.9669);
@@ -928,8 +928,8 @@ int main()
 	yafaray_paramsSetBool(yi, "caustics", YAFARAY_BOOL_FALSE);
 	yafaray_paramsSetBool(yi, "do_AO", YAFARAY_BOOL_FALSE);
 	yafaray_paramsSetString(yi, "photon_maps_processing", "generate-only");
-	yafaray_paramsSetInt(yi, "raydepth", 0);
-	yafaray_paramsSetInt(yi, "shadowDepth", 0);
+	yafaray_paramsSetInt(yi, "raydepth", 2);
+	yafaray_paramsSetInt(yi, "shadowDepth", 2);
 	yafaray_paramsSetBool(yi, "transpShad", YAFARAY_BOOL_FALSE);
 	yafaray_paramsSetString(yi, "type", "directlighting");
 	yafaray_createIntegrator(yi, "default");
@@ -954,7 +954,7 @@ int main()
 	yafaray_paramsSetInt(yi, "AA_inc_samples", 1);
 	yafaray_paramsSetFloat(yi, "AA_indirect_sample_multiplier_factor", 1);
 	yafaray_paramsSetFloat(yi, "AA_light_sample_multiplier_factor", 1);
-	yafaray_paramsSetInt(yi, "AA_minsamples", 1);
+	yafaray_paramsSetInt(yi, "AA_minsamples", 50);
 	yafaray_paramsSetInt(yi, "AA_passes", 1);
 	yafaray_paramsSetFloat(yi, "AA_pixelwidth", 1.5);
 	yafaray_paramsSetFloat(yi, "AA_resampled_floor", 0);
@@ -976,7 +976,7 @@ int main()
 	yafaray_paramsSetString(yi, "film_load_save_mode", "none");
 	yafaray_paramsSetString(yi, "film_load_save_path", ".");
 	yafaray_paramsSetString(yi, "filter_type", "gauss");
-	yafaray_paramsSetInt(yi, "height", 27);
+	yafaray_paramsSetInt(yi, "height", 270);
 	yafaray_paramsSetInt(yi, "images_autosave_interval_passes", 1);
 	yafaray_paramsSetFloat(yi, "images_autosave_interval_seconds", 300);
 	yafaray_paramsSetString(yi, "images_autosave_interval_type", "none");
@@ -997,12 +997,12 @@ int main()
 	yafaray_paramsSetFloat(yi, "layer_toon_quantization", 0.1);
 	yafaray_paramsSetString(yi, "scene_accelerator", "yafaray-kdtree-original");
 	yafaray_paramsSetBool(yi, "show_sam_pix", YAFARAY_BOOL_TRUE);
-	yafaray_paramsSetInt(yi, "threads", 1);
-	yafaray_paramsSetInt(yi, "threads_photons", 1);
-	yafaray_paramsSetInt(yi, "tile_size", 1);
+	yafaray_paramsSetInt(yi, "threads", -1);
+	yafaray_paramsSetInt(yi, "threads_photons", -1);
+	yafaray_paramsSetInt(yi, "tile_size", 32);
 	yafaray_paramsSetString(yi, "tiles_order", "centre");
 	yafaray_paramsSetString(yi, "volintegrator_name", "volintegr");
-	yafaray_paramsSetInt(yi, "width", 48);
+	yafaray_paramsSetInt(yi, "width", 480);
 	yafaray_paramsSetInt(yi, "xstart", 0);
 	yafaray_paramsSetInt(yi, "ystart", 0);
 	yafaray_setupRender(yi);
@@ -1011,7 +1011,7 @@ int main()
 	/* Creating image output */
 	yafaray_paramsSetString(yi, "image_path", "./test01-output1.tga");
 	yafaray_paramsSetString(yi, "color_space", "sRGB");
-	yafaray_paramsSetString(yi, "badge_position", "none");
+	yafaray_paramsSetString(yi, "badge_position", "top");
 	yafaray_createOutput(yi, "output1_tga");
 	yafaray_paramsClearAll(yi);
 

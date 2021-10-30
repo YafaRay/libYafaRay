@@ -28,7 +28,7 @@ LayerNode::LayerNode(const Flags &flags, float col_fac, float var_fac, float def
 		default_col_(def_col), blend_mode_(blend_mode)
 {}
 
-void LayerNode::eval(NodeStack &stack, const RenderData &render_data, const SurfacePoint &sp) const
+void LayerNode::eval(NodeStack *stack, const SurfacePoint &sp, const Camera *camera) const
 {
 	Rgba texcolor;
 	float tin = 0.f, ta = 1.f;
@@ -110,10 +110,10 @@ void LayerNode::eval(NodeStack &stack, const RenderData &render_data, const Surf
 		if(rval < 0.f) rval = 0.f;
 	}
 	rcol.a_ = stencil_tin;
-	stack[getId()] = NodeResult(rcol, rval);
+	(*stack)[getId()] = NodeResult(rcol, rval);
 }
 
-void LayerNode::evalDerivative(NodeStack &stack, const RenderData &render_data, const SurfacePoint &sp) const
+void LayerNode::evalDerivative(NodeStack *stack, const SurfacePoint &sp, const Camera *camera) const
 {
 	float rdu = 0.f, rdv = 0.f;
 	float stencil_tin = 1.f;
@@ -141,7 +141,7 @@ void LayerNode::evalDerivative(NodeStack &stack, const RenderData &render_data, 
 	rdu += tdu;
 	rdv += tdv;
 
-	stack[getId()] = NodeResult(Rgba(rdu, rdv, 0.f, stencil_tin), 0.f);
+	(*stack)[getId()] = NodeResult(Rgba(rdu, rdv, 0.f, stencil_tin), 0.f);
 }
 
 bool LayerNode::configInputs(Logger &logger, const ParamMap &params, const NodeFinder &find)

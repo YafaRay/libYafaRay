@@ -36,7 +36,7 @@ class AngularCamera final : public Camera
 		enum class Projection : int  //Fish Eye Projections as defined in https://en.wikipedia.org/wiki/Fisheye_lens
 		{
 				Equidistant = 0, //Default and used traditionally in YafaRay
-				Orthographic,  //Orthographic projection where the centre of the image is enlarged/more defined at the cost of much more distorted edges
+				Orthographic, //Orthographic projection where the centre of the image is enlarged/more defined at the cost of much more distorted edges
 				Stereographic,
 				EquisolidAngle,
 				Rectilinear,

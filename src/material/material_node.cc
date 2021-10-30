@@ -54,9 +54,9 @@ std::set<const ShaderNode *> NodeMaterial::recursiveFinder(const ShaderNode *nod
 	return tree;
 }
 
-void NodeMaterial::evalNodes(const RenderData &render_data, const SurfacePoint &sp, const std::vector<const ShaderNode *> &nodes, NodeStack &stack) const
+void NodeMaterial::evalNodes(const SurfacePoint &sp, const std::vector<const ShaderNode *> &nodes, NodeStack *stack, const Camera *camera) const
 {
-	for(const auto &node : nodes) node->eval(stack, render_data, sp);
+	for(const auto &node : nodes) node->eval(stack, sp, camera);
 }
 
 std::vector<const ShaderNode *> NodeMaterial::solveNodesOrder(const std::vector<const ShaderNode *> &roots, const std::map<std::string, std::unique_ptr<ShaderNode>> &shaders_table, Logger &logger)
@@ -91,9 +91,9 @@ std::vector<const ShaderNode *> NodeMaterial::getNodeList(const ShaderNode *root
 	return nodes;
 }
 
-void NodeMaterial::evalBump(NodeStack &stack, const RenderData &render_data, SurfacePoint &sp, const ShaderNode *bump_shader_node) const
+void NodeMaterial::evalBump(NodeStack *stack, SurfacePoint &sp, const ShaderNode *bump_shader_node, const Camera *camera) const
 {
-	for(const auto &node : bump_nodes_) node->evalDerivative(stack, render_data, sp);
+	for(const auto &node : bump_nodes_) node->evalDerivative(stack, sp, camera);
 	const DuDv du_dv = bump_shader_node->getDuDv(stack);
 	applyBump(sp, du_dv);
 }

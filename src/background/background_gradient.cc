@@ -33,7 +33,7 @@ GradientBackground::GradientBackground(Logger &logger, Rgb gzcol, Rgb ghcol, Rgb
 	shoot_caustic_ = with_caustic;
 }
 
-Rgb GradientBackground::operator()(const Ray &ray, RenderData &render_data, bool from_postprocessed) const
+Rgb GradientBackground::operator()(const Ray &ray, bool from_postprocessed) const
 {
 	return eval(ray);
 }

@@ -34,6 +34,7 @@ class Vec3;
 class Light;
 struct BsdfFlags;
 class Pdf1D;
+class MaterialData;
 
 enum PhotonMapProcessing
 {
@@ -51,21 +52,21 @@ class MonteCarloIntegrator: public TiledIntegrator
 	protected:
 		virtual ~MonteCarloIntegrator() override;
 		/*! Estimates direct light from all sources in a mc fashion and completing MIS (Multiple Importance Sampling) for a given surface point */
-		Rgb estimateAllDirectLight(RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo, ColorLayers *color_layers = nullptr) const;
+		Rgb estimateAllDirectLight(RenderData &render_data, const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, ColorLayers *color_layers = nullptr) const;
 		/*! Like previous but for only one random light source for a given surface point */
-		Rgb estimateOneDirectLight(RenderData &render_data, const SurfacePoint &sp, Vec3 wo, int n) const;
+		Rgb estimateOneDirectLight(RenderData &render_data, const MaterialData *mat_data, const SurfacePoint &sp, Vec3 wo, int n) const;
 		/*! Does the actual light estimation on a specific light for the given surface point */
-		Rgb doLightEstimation(RenderData &render_data, const Light *light, const SurfacePoint &sp, const Vec3 &wo, const unsigned int &loffs, ColorLayers *color_layers = nullptr) const;
+		Rgb doLightEstimation(RenderData &render_data, const MaterialData *mat_data, const Light *light, const SurfacePoint &sp, const Vec3 &wo, const unsigned int &loffs, ColorLayers *color_layers = nullptr) const;
 		/*! Does recursive mc raytracing with MIS (Multiple Importance Sampling) for a given surface point */
-		void recursiveRaytrace(RenderData &render_data, const DiffRay &ray, const BsdfFlags &bsdfs, SurfacePoint &sp, const Vec3 &wo, Rgb &col, float &alpha, int additional_depth, ColorLayers *color_layers = nullptr) const;
+		void recursiveRaytrace(RenderData &render_data, const DiffRay &ray, const BsdfFlags &bsdfs, SurfacePoint &sp, const Vec3 &wo, Rgb &col, float &alpha, int additional_depth, ColorLayers *color_layers) const;
 		/*! Creates and prepares the caustic photon map */
 		bool createCausticMap(const RenderView *render_view, const RenderControl &render_control, const Timer &timer);
 		/*! Estimates caustic photons for a given surface point */
-		Rgb estimateCausticPhotons(RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo) const;
+		Rgb estimateCausticPhotons(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo) const;
 		/*! Samples ambient occlusion for a given surface point */
-		Rgb sampleAmbientOcclusion(RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo) const;
+		Rgb sampleAmbientOcclusion(RenderData &render_data, const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo) const;
 		Rgb sampleAmbientOcclusionLayer(RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo) const;
-		Rgb sampleAmbientOcclusionClayLayer(RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo) const;
+		Rgb sampleAmbientOcclusionClayLayer(RenderData &render_data, const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo) const;
 
 		int r_depth_; //! Ray depth
 		bool tr_shad_; //! Use transparent shadows

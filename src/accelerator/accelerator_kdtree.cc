@@ -18,7 +18,6 @@
 
 #include "accelerator/accelerator_kdtree.h"
 #include "material/material.h"
-#include "scene/scene.h"
 #include "common/logger.h"
 #include "geometry/surface.h"
 #include "geometry/primitive/primitive.h"
@@ -908,13 +907,13 @@ AcceleratorIntersectData AcceleratorKdTree::intersectS(const Ray &ray, float t_m
 =============================================================*/
 
 
-AcceleratorTsIntersectData AcceleratorKdTree::intersectTs(RenderData &render_data, const Ray &ray, int max_depth, float t_max, float shadow_bias) const
+AcceleratorTsIntersectData AcceleratorKdTree::intersectTs(const Ray &ray, int max_depth, float t_max, float shadow_bias, const Camera *camera) const
 {
-	return intersectTs(render_data, ray, max_depth, t_max, shadow_bias, nodes_.get(), tree_bound_);
+	return intersectTs(ray, max_depth, t_max, shadow_bias, nodes_.get(), tree_bound_, camera);
 }
 
-AcceleratorTsIntersectData AcceleratorKdTree::intersectTs(RenderData &render_data, const Ray &ray, int max_depth, float t_max, float shadow_bias, const Node *nodes, const Bound &tree_bound)
-	{
+AcceleratorTsIntersectData AcceleratorKdTree::intersectTs(const Ray &ray, int max_depth, float t_max, float shadow_bias, const Node *nodes, const Bound &tree_bound, const Camera *camera)
+{
 	AcceleratorTsIntersectData accelerator_intersect_data;
 	const Bound::Cross cross = tree_bound.cross(ray, t_max);
 	if(!cross.crossed_) { return {}; }
@@ -1011,7 +1010,7 @@ AcceleratorTsIntersectData AcceleratorKdTree::intersectTs(RenderData &render_dat
 		}
 
 		// Check for intersections inside leaf node
-		const auto &primitive_intersection = [](AcceleratorTsIntersectData &accelerator_intersect_data, std::set<const Primitive *> &filtered, RenderData &render_data, int &depth, int max_depth, const Primitive *primitive, const Ray &ray, float t_max) -> bool
+		const auto &primitive_intersection = [](AcceleratorTsIntersectData &accelerator_intersect_data, std::set<const Primitive *> &filtered, int &depth, int max_depth, const Primitive *primitive, const Ray &ray, float t_max, const Camera *camera) -> bool
 		{
 			const IntersectData intersect_data = primitive->intersect(ray);
 			if(intersect_data.hit_)
@@ -1028,8 +1027,8 @@ AcceleratorTsIntersectData AcceleratorKdTree::intersectTs(RenderData &render_dat
 						{
 							if(depth >= max_depth) return true;
 							const Point3 hit_point = ray.from_ + accelerator_intersect_data.t_hit_ * ray.dir_;
-							const SurfacePoint sp = primitive->getSurface(hit_point, accelerator_intersect_data);
-							accelerator_intersect_data.transparent_color_ *= mat->getTransparency(render_data, sp, ray.dir_);
+							const SurfacePoint sp = primitive->getSurface(hit_point, accelerator_intersect_data, nullptr, camera);
+							accelerator_intersect_data.transparent_color_ *= mat->getTransparency(sp.mat_data_.get(), sp, ray.dir_, camera);
 							++depth;
 						}
 					}
@@ -1041,7 +1040,7 @@ AcceleratorTsIntersectData AcceleratorKdTree::intersectTs(RenderData &render_dat
 		if(n_primitives == 1)
 		{
 			const Primitive *primitive = curr_node->one_primitive_;
-			if(primitive_intersection(accelerator_intersect_data, filtered, render_data, depth, max_depth, primitive, ray, t_max)) return accelerator_intersect_data;
+			if(primitive_intersection(accelerator_intersect_data, filtered, depth, max_depth, primitive, ray, t_max, camera)) return accelerator_intersect_data;
 		}
 		else
 		{
@@ -1049,7 +1048,7 @@ AcceleratorTsIntersectData AcceleratorKdTree::intersectTs(RenderData &render_dat
 			for(uint32_t i = 0; i < n_primitives; ++i)
 			{
 				const Primitive *primitive = prims[i];
-				if(primitive_intersection(accelerator_intersect_data, filtered, render_data, depth, max_depth, primitive, ray, t_max)) return accelerator_intersect_data;
+				if(primitive_intersection(accelerator_intersect_data, filtered, depth, max_depth, primitive, ray, t_max, camera)) return accelerator_intersect_data;
 			}
 		}
 		entry_idx = exit_idx;

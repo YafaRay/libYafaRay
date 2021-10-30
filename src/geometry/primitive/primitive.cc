@@ -27,7 +27,7 @@
 
 BEGIN_YAFARAY
 
-SurfacePoint Primitive::getSurface(const Point3 &hit, const IntersectData &data, const Matrix4 *obj_to_world) const
+SurfacePoint Primitive::getSurface(const Point3 &hit, const IntersectData &data, const Matrix4 *obj_to_world, const Camera *camera) const
 {
 	return {};
 }

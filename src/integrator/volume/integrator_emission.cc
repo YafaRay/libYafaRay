@@ -25,7 +25,7 @@
 
 BEGIN_YAFARAY
 
-Rgba EmissionIntegrator::transmittance(RenderData &render_data, const Ray &ray) const
+Rgba EmissionIntegrator::transmittance(Random *random, const Ray &ray) const
 {
 	Rgba result(1.f);
 	auto &volumes = scene_->getVolumeRegions();

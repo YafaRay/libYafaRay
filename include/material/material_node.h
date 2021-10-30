@@ -40,8 +40,8 @@ class NodeMaterial: public Material
 		static void parseNodes(const ParamMap &params, std::vector<const ShaderNode *> &root_nodes_list, std::map<std::string, const ShaderNode *> &root_nodes_map, const std::map<std::string, std::unique_ptr<ShaderNode>> &shaders_table, Logger &logger);
 		/* put nodes in evaluation order in "allSorted" given all root nodes;
 		   sets reqNodeMem to the amount of memory the node stack requires for evaluation of all nodes */
-		void evalNodes(const RenderData &render_data, const SurfacePoint &sp, const std::vector<const ShaderNode *> &nodes, NodeStack &stack) const;
-		void evalBump(NodeStack &stack, const RenderData &render_data, SurfacePoint &sp, const ShaderNode *bump_shader_node) const;
+		void evalNodes(const SurfacePoint &sp, const std::vector<const ShaderNode *> &nodes, NodeStack *stack, const Camera *camera) const;
+		void evalBump(NodeStack *stack, SurfacePoint &sp, const ShaderNode *bump_shader_node, const Camera *camera) const;
 		size_t sizeNodesBytes() const { return (color_nodes_.size() + bump_nodes_.size()) * sizeof(NodeResult); }
 		static std::vector<const ShaderNode *> recursiveSolver(const ShaderNode *node);
 		static std::set<const ShaderNode *> recursiveFinder(const ShaderNode *node);

@@ -33,50 +33,43 @@ MaskMaterial::MaskMaterial(Logger &logger, const Material *m_1, const Material *
 	bsdf_flags_ = mat_1_->getFlags() | mat_2_->getFlags();
 }
 
-void MaskMaterial::initBsdf(const RenderData &render_data, SurfacePoint &sp, BsdfFlags &bsdf_types) const
+std::unique_ptr<MaterialData> MaskMaterial::initBsdf(SurfacePoint &sp, BsdfFlags &bsdf_types, const Camera *camera) const
 {
-	MaskMaterialData *mat_data = static_cast<MaskMaterialData *>(render_data.arena_.top());
-	mat_data->stack_ = static_cast<char *>(render_data.arena_.top()) + sizeof(MaskMaterialData);
-	NodeStack stack(mat_data->stack_);
-	evalNodes(render_data, sp, color_nodes_, stack);
-	const float val = mask_->getScalar(stack); //mask->getFloat(sp.P);
-	mat_data->select_mat2_ = val > threshold_;
-	render_data.arena_.push(mat_data->stack_);
-	if(mat_data->select_mat2_) mat_2_->initBsdf(render_data, sp, bsdf_types);
-	else mat_1_->initBsdf(render_data, sp, bsdf_types);
-	render_data.arena_.pop();
+	std::unique_ptr<MaterialData> mat_data = createMaterialData();
+	mat_data->stack_ = std::unique_ptr<NodeStack>(new NodeStack());
+	evalNodes(sp, color_nodes_, mat_data->stack_.get(), camera);
+	const float val = mask_->getScalar(mat_data->stack_.get()); //mask->getFloat(sp.P);
+	MaskMaterialData *mat_data_specific = static_cast<MaskMaterialData *>(mat_data.get());
+	mat_data_specific->select_mat_2_ = val > threshold_;
+	if(mat_data_specific->select_mat_2_) mat_data_specific->mat_2_data_ = mat_2_->initBsdf(sp, bsdf_types, camera);
+	else mat_data_specific->mat_1_data_ = mat_1_->initBsdf(sp, bsdf_types, camera);
+	return mat_data;
 }
 
-Rgb MaskMaterial::eval(const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wi, const BsdfFlags &bsdfs, bool force_eval) const
+Rgb MaskMaterial::eval(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wl, const BsdfFlags &bsdfs, bool force_eval) const
 {
-	const MaskMaterialData *mat_data = static_cast<MaskMaterialData *>(render_data.arena_.top());
-	render_data.arena_.push(mat_data->stack_);
+	const MaskMaterialData *mat_data_specific = static_cast<const MaskMaterialData *>(mat_data);
 	Rgb col;
-	if(mat_data->select_mat2_) col = mat_2_->eval(render_data, sp, wo, wi, bsdfs);
-	else   col = mat_1_->eval(render_data, sp, wo, wi, bsdfs);
-	render_data.arena_.pop();
+	if(mat_data_specific->select_mat_2_) col = mat_2_->eval(mat_data_specific->mat_2_data_.get(), sp, wo, wl, bsdfs);
+	else col = mat_1_->eval(mat_data_specific->mat_1_data_.get(), sp, wo, wl, bsdfs);
 	return col;
 }
 
-Rgb MaskMaterial::sample(const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo, Vec3 &wi, Sample &s, float &w) const
+Rgb MaskMaterial::sample(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, Vec3 &wi, Sample &s, float &w, bool chromatic, float wavelength, const Camera *camera) const
 {
-	const MaskMaterialData *mat_data = static_cast<MaskMaterialData *>(render_data.arena_.top());
-	render_data.arena_.push(mat_data->stack_);
+	const MaskMaterialData *mat_data_specific = static_cast<const MaskMaterialData *>(mat_data);
 	Rgb col;
-	if(mat_data->select_mat2_) col = mat_2_->sample(render_data, sp, wo, wi, s, w);
-	else   col = mat_1_->sample(render_data, sp, wo, wi, s, w);
-	render_data.arena_.pop();
+	if(mat_data_specific->select_mat_2_) col = mat_2_->sample(mat_data_specific->mat_2_data_.get(), sp, wo, wi, s, w, chromatic, wavelength, camera);
+	else col = mat_1_->sample(mat_data_specific->mat_1_data_.get(), sp, wo, wi, s, w, chromatic, wavelength, camera);
 	return col;
 }
 
-float MaskMaterial::pdf(const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wi, const BsdfFlags &bsdfs) const
+float MaskMaterial::pdf(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wi, const BsdfFlags &bsdfs) const
 {
-	const MaskMaterialData *mat_data = static_cast<MaskMaterialData *>(render_data.arena_.top());
-	render_data.arena_.push(mat_data->stack_);
 	float pdf;
-	if(mat_data->select_mat2_) pdf = mat_2_->pdf(render_data, sp, wo, wi, bsdfs);
-	else   pdf = mat_1_->pdf(render_data, sp, wo, wi, bsdfs);
-	render_data.arena_.pop();
+	const MaskMaterialData *mat_data_specific = static_cast<const MaskMaterialData *>(mat_data);
+	if(mat_data_specific->select_mat_2_) pdf = mat_2_->pdf(mat_data_specific->mat_2_data_.get(), sp, wo, wi, bsdfs);
+	else pdf = mat_1_->pdf(mat_data_specific->mat_1_data_.get(), sp, wo, wi, bsdfs);
 	return pdf;
 }
 
@@ -85,44 +78,37 @@ bool MaskMaterial::isTransparent() const
 	return mat_1_->isTransparent() || mat_2_->isTransparent();
 }
 
-Rgb MaskMaterial::getTransparency(const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo) const
+Rgb MaskMaterial::getTransparency(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, const Camera *camera) const
 {
-	const MaskMaterialData *mat_data = static_cast<MaskMaterialData *>(render_data.arena_.top());
-	NodeStack stack(mat_data->stack_);
-	if(mat_data->select_mat2_) return mat_2_->getTransparency(render_data, sp, wo);
-	else   return mat_1_->getTransparency(render_data, sp, wo);
+	const MaskMaterialData *mat_data_specific = static_cast<const MaskMaterialData *>(mat_data);
+	if(mat_data_specific->select_mat_2_) return mat_2_->getTransparency(mat_data_specific->mat_2_data_.get(), sp, wo, camera);
+	else   return mat_1_->getTransparency(mat_data_specific->mat_1_data_.get(), sp, wo, camera);
 }
 
-Material::Specular MaskMaterial::getSpecular(const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo) const
+Material::Specular MaskMaterial::getSpecular(int raylevel, const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, bool chromatic, float wavelength) const
 {
-	const MaskMaterialData *mat_data = static_cast<MaskMaterialData *>(render_data.arena_.top());
-	render_data.arena_.push(mat_data->stack_);
+	const MaskMaterialData *mat_data_specific = static_cast<const MaskMaterialData *>(mat_data);
 	Specular specular;
-	if(mat_data->select_mat2_) specular = mat_2_->getSpecular(render_data, sp, wo);
-	else specular = mat_1_->getSpecular(render_data, sp, wo);
-	render_data.arena_.pop();
+	if(mat_data_specific->select_mat_2_) specular = mat_2_->getSpecular(raylevel, mat_data_specific->mat_2_data_.get(), sp, wo, chromatic, wavelength);
+	else specular = mat_1_->getSpecular(raylevel, mat_data_specific->mat_1_data_.get(), sp, wo, chromatic, wavelength);
 	return specular;
 }
 
-Rgb MaskMaterial::emit(const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo) const
+Rgb MaskMaterial::emit(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, bool lights_geometry_material_emit) const
 {
-	const MaskMaterialData *mat_data = static_cast<MaskMaterialData *>(render_data.arena_.top());
-	render_data.arena_.push(mat_data->stack_);
+	const MaskMaterialData *mat_data_specific = static_cast<const MaskMaterialData *>(mat_data);
 	Rgb col;
-	if(mat_data->select_mat2_) col = mat_2_->emit(render_data, sp, wo);
-	else   col = mat_1_->emit(render_data, sp, wo);
-	render_data.arena_.pop();
+	if(mat_data_specific->select_mat_2_) col = mat_2_->emit(mat_data_specific->mat_2_data_.get(), sp, wo, lights_geometry_material_emit);
+	else col = mat_1_->emit(mat_data_specific->mat_1_data_.get(), sp, wo, lights_geometry_material_emit);
 	return col;
 }
 
-float MaskMaterial::getAlpha(const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo) const
+float MaskMaterial::getAlpha(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, const Camera *camera) const
 {
-	const MaskMaterialData *mat_data = static_cast<MaskMaterialData *>(render_data.arena_.top());
-	render_data.arena_.push(mat_data->stack_);
+	const MaskMaterialData *mat_data_specific = static_cast<const MaskMaterialData *>(mat_data);
 	float alpha;
-	if(mat_data->select_mat2_) alpha = mat_2_->getAlpha(render_data, sp, wo);
-	else   alpha = mat_1_->getAlpha(render_data, sp, wo);
-	render_data.arena_.pop();
+	if(mat_data_specific->select_mat_2_) alpha = mat_2_->getAlpha(mat_data_specific->mat_2_data_.get(), sp, wo, camera);
+	else alpha = mat_1_->getAlpha(mat_data_specific->mat_1_data_.get(), sp, wo, camera);
 	return alpha;
 }
 
@@ -168,8 +154,6 @@ std::unique_ptr<Material> MaskMaterial::factory(Logger &logger, ParamMap &params
 		}
 	}
 	mat->color_nodes_ = mat->solveNodesOrder(root_nodes_list, mat->nodes_map_, logger);
-	const size_t input_req = std::max(m_1->sizeBytes(), m_2->sizeBytes());
-	mat->material_data_size_ = mat->sizeNodesBytes() + sizeof(MaterialData) + input_req;
 	return mat;
 }
 

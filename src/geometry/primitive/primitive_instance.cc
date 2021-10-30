@@ -45,9 +45,9 @@ IntersectData PrimitiveInstance::intersect(const Ray &ray, const Matrix4 *) cons
 	return base_primitive_->intersect(ray, base_instance_.getObjToWorldMatrix());
 }
 
-SurfacePoint PrimitiveInstance::getSurface(const Point3 &hit_point, const IntersectData &intersect_data, const Matrix4 *) const
+SurfacePoint PrimitiveInstance::getSurface(const Point3 &hit_point, const IntersectData &intersect_data, const Matrix4 *, const Camera *camera) const
 {
-	return base_primitive_->getSurface(hit_point, intersect_data, base_instance_.getObjToWorldMatrix());
+	return base_primitive_->getSurface(hit_point, intersect_data, base_instance_.getObjToWorldMatrix(), camera);
 }
 
 float PrimitiveInstance::surfaceArea(const Matrix4 *) const

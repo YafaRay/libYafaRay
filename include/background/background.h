@@ -40,7 +40,7 @@ class Background
 		Background(Logger &logger) : logger_(logger) { }
 		virtual ~Background() = default;
 		//! get the background color for a given ray
-		virtual Rgb operator()(const Ray &ray, RenderData &render_data, bool from_postprocessed = false) const = 0;
+		virtual Rgb operator()(const Ray &ray, bool from_postprocessed = false) const = 0;
 		virtual Rgb eval(const Ray &ray, bool from_postprocessed = false) const = 0;
 		/*! get the light source representing background lighting.
 			\return the light source that reproduces background lighting, or nullptr if background

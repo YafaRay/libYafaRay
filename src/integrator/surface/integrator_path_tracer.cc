@@ -138,20 +138,17 @@ Rgba PathIntegrator::integrate(RenderData &render_data, const DiffRay &ray, int 
 
 	//shoot ray into scene
 	const Accelerator *accelerator = scene_->getAccelerator();
-	if(accelerator && accelerator->intersect(ray, sp))
+	if(accelerator && accelerator->intersect(ray, sp, render_data.cam_))
 	{
 		// if camera ray initialize sampling offset:
 		if(render_data.raylevel_ == 0)
 		{
-			render_data.lights_geometry_material_emit_ = true;
+			//FIXME render_data.lights_geometry_material_emit_ = true;
 			//...
 		}
-		alignas (16) unsigned char arena[arena_size_];
-		render_data.arena_.push(static_cast<void *>(arena));
-		BsdfFlags bsdfs;
 
 		const Material *material = sp.material_;
-		material->initBsdf(render_data, sp, bsdfs);
+		const BsdfFlags &bsdfs = sp.bsdf_flags_;
 		Vec3 wo = -ray.dir_;
 		const VolumeHandler *vol;
 		Rgb vcol(0.f);
@@ -163,7 +160,7 @@ Rgba PathIntegrator::integrate(RenderData &render_data, const DiffRay &ray, int 
 		// contribution of light emitting surfaces
 		if(bsdfs.hasAny(BsdfFlags::Emit))
 		{
-			const Rgb col_tmp = material->emit(render_data, sp, wo);
+			const Rgb col_tmp = material->emit(sp.mat_data_.get(), sp, wo, render_data.lights_geometry_material_emit_);
 			col += col_tmp;
 			if(layers_used)
 			{
@@ -173,11 +170,11 @@ Rgba PathIntegrator::integrate(RenderData &render_data, const DiffRay &ray, int 
 
 		if(bsdfs.hasAny(BsdfFlags::Diffuse))
 		{
-			col += estimateAllDirectLight(render_data, sp, wo, color_layers);
+			col += estimateAllDirectLight(render_data, sp.mat_data_.get(), sp, wo, color_layers);
 
 			if(caustic_type_ == CausticType::Photon || caustic_type_ == CausticType::Both)
 			{
-				Rgb col_tmp = estimateCausticPhotons(render_data, sp, wo);
+				Rgb col_tmp = estimateCausticPhotons(sp.mat_data_.get(), sp, wo);
 				if(aa_noise_params_.clamp_indirect_ > 0.f) col_tmp.clampProportionalRgb(aa_noise_params_.clamp_indirect_);
 				col += col_tmp;
 				if(layers_used)
@@ -222,7 +219,7 @@ Rgba PathIntegrator::integrate(RenderData &render_data, const DiffRay &ray, int 
 				}
 				// do proper sampling now...
 				Sample s(s_1, s_2, path_flags);
-				scol = material->sample(render_data, sp, pwo, p_ray.dir_, s, w);
+				scol = material->sample(sp.mat_data_.get(), sp, pwo, p_ray.dir_, s, w, render_data.chromatic_, render_data.wavelength_, render_data.cam_);
 
 				scol *= w;
 				throughput = scol;
@@ -232,18 +229,16 @@ Rgba PathIntegrator::integrate(RenderData &render_data, const DiffRay &ray, int 
 				p_ray.tmax_ = -1.0;
 				p_ray.from_ = sp.p_;
 
-				if(!accelerator->intersect(p_ray, *hit)) continue; //hit background
+				if(!accelerator->intersect(p_ray, *hit, render_data.cam_)) continue; //hit background
 
-				alignas (16) unsigned char arena_2[arena_size_];
-				render_data.arena_.push(static_cast<void *>(arena_2));
 				const Material *p_mat = hit->material_;
 				BsdfFlags mat_bsd_fs;
-				p_mat->initBsdf(render_data, *hit, mat_bsd_fs);
+				std::unique_ptr<MaterialData> p_mat_data_specific = p_mat->initBsdf(*hit, mat_bsd_fs, render_data.cam_);
 				if(s.sampled_flags_ != BsdfFlags::None) pwo = -p_ray.dir_; //Fix for white dots in path tracing with shiny diffuse with transparent PNG texture and transparent shadows, especially in Win32, (precision?). Sometimes the first sampling does not take place and pRay.dir is not initialized, so before this change when that happened pwo = -pRay.dir was getting a random non-initialized value! This fix makes that, if the first sample fails for some reason, pwo is not modified and the rest of the sampling continues with the same pwo value. FIXME: Question: if the first sample fails, should we continue as now or should we exit the loop with the "continue" command?
-				lcol = estimateOneDirectLight(render_data, *hit, pwo, offs);
+				lcol = estimateOneDirectLight(render_data, p_mat_data_specific.get(), *hit, pwo, offs);
 				if(mat_bsd_fs.hasAny(BsdfFlags::Emit))
 				{
-					const Rgb col_tmp = p_mat->emit(render_data, *hit, pwo);
+					const Rgb col_tmp = p_mat->emit(p_mat_data_specific.get(), *hit, pwo, render_data.lights_geometry_material_emit_);
 					lcol += col_tmp;
 					if(layers_used)
 					{
@@ -269,7 +264,7 @@ Rgba PathIntegrator::integrate(RenderData &render_data, const DiffRay &ray, int 
 
 					s.flags_ = BsdfFlags::All;
 
-					scol = p_mat->sample(render_data, *hit, pwo, p_ray.dir_, s, w);
+					scol = p_mat->sample(p_mat_data_specific.get(), *hit, pwo, p_ray.dir_, s, w, render_data.chromatic_, render_data.wavelength_, render_data.cam_);
 					scol *= w;
 
 					if(scol.isBlack()) break;
@@ -282,27 +277,26 @@ Rgba PathIntegrator::integrate(RenderData &render_data, const DiffRay &ray, int 
 					p_ray.tmax_ = -1.0;
 					p_ray.from_ = hit->p_;
 
-					if(!accelerator->intersect(p_ray, *hit_2)) //hit background
+					if(!accelerator->intersect(p_ray, *hit_2, render_data.cam_)) //hit background
 					{
-						const auto &background = scene_->getBackground();
+						const Background *background = scene_->getBackground();
 						if((caustic && background && background->hasIbl() && background->shootsCaustic()))
 						{
-							path_col += throughput * (*background)(p_ray, render_data, true);
+							path_col += throughput * (*background)(p_ray, true);
 						}
 						break;
 					}
 
 					std::swap(hit, hit_2);
 					p_mat = hit->material_;
-					p_mat->initBsdf(render_data, *hit, mat_bsd_fs);
 					pwo = -p_ray.dir_;
 
-					if(mat_bsd_fs.hasAny(BsdfFlags::Diffuse)) lcol = estimateOneDirectLight(render_data, *hit, pwo, offs);
+					if(mat_bsd_fs.hasAny(BsdfFlags::Diffuse)) lcol = estimateOneDirectLight(render_data, p_mat_data_specific.get(), *hit, pwo, offs);
 					else lcol = Rgb(0.f);
 
 					if(mat_bsd_fs.hasAny(BsdfFlags::Volumetric) && (vol = p_mat->getVolumeHandler(hit->n_ * pwo < 0)))
 					{
-						if(vol->transmittance(render_data, p_ray, vcol)) throughput *= vcol;
+						if(vol->transmittance(p_ray, vcol)) throughput *= vcol;
 					}
 
 					// Russian roulette for terminating paths with low probability
@@ -316,7 +310,7 @@ Rgba PathIntegrator::integrate(RenderData &render_data, const DiffRay &ray, int 
 
 					if(mat_bsd_fs.hasAny(BsdfFlags::Emit) && caustic)
 					{
-						const Rgb col_tmp = p_mat->emit(render_data, *hit, pwo);
+						const Rgb col_tmp = p_mat->emit(p_mat_data_specific.get(), *hit, pwo, render_data.lights_geometry_material_emit_);
 						lcol += col_tmp;
 						if(layers_used)
 						{
@@ -326,7 +320,6 @@ Rgba PathIntegrator::integrate(RenderData &render_data, const DiffRay &ray, int 
 
 					path_col += lcol * throughput;
 				}
-				render_data.arena_.pop();
 			}
 			col += path_col / n_samples;
 		}
@@ -337,7 +330,7 @@ Rgba PathIntegrator::integrate(RenderData &render_data, const DiffRay &ray, int 
 
 		if(layers_used)
 		{
-			generateCommonLayers(render_data, sp, ray, scene_->getMaskParams(), color_layers);
+			generateCommonLayers(render_data.raylevel_, sp.mat_data_.get(), sp, ray, scene_->getMaskParams(), color_layers);
 
 			if(ColorLayer *color_layer = color_layers->find(Layer::Ao))
 			{
@@ -346,23 +339,23 @@ Rgba PathIntegrator::integrate(RenderData &render_data, const DiffRay &ray, int 
 
 			if(ColorLayer *color_layer = color_layers->find(Layer::AoClay))
 			{
-				color_layer->color_ = sampleAmbientOcclusionClayLayer(render_data, sp, wo);
+				color_layer->color_ = sampleAmbientOcclusionClayLayer(render_data, sp.mat_data_.get(), sp, wo);
 			}
 		}
 
 		if(transp_refracted_background_)
 		{
-			float m_alpha = material->getAlpha(render_data, sp, wo);
+			float m_alpha = material->getAlpha(sp.mat_data_.get(), sp, wo, render_data.cam_);
 			alpha = m_alpha + (1.f - m_alpha) * alpha;
 		}
 		else alpha = 1.0;
-		render_data.arena_.pop();
 	}
 	else //nothing hit, return background
 	{
-		if(scene_->getBackground() && !transp_refracted_background_)
+		const Background *background = scene_->getBackground();
+		if(background && !transp_refracted_background_)
 		{
-			const Rgb col_tmp = (*scene_->getBackground())(ray, render_data);
+			const Rgb col_tmp = (*background)(ray);
 			col += col_tmp;
 			if(layers_used)
 			{
@@ -371,7 +364,7 @@ Rgba PathIntegrator::integrate(RenderData &render_data, const DiffRay &ray, int 
 		}
 	}
 
-	const Rgb col_vol_transmittance = scene_->vol_integrator_->transmittance(render_data, ray);
+	const Rgb col_vol_transmittance = scene_->vol_integrator_->transmittance(render_data.prng_, ray);
 	const Rgb col_vol_integration = scene_->vol_integrator_->integrate(render_data, ray);
 
 	if(transp_background_) alpha = std::max(alpha, 1.f - col_vol_transmittance.r_);

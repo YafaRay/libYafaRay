@@ -102,26 +102,26 @@ static constexpr std::array<float, 64> ko_wavelengths
 
 static constexpr std::array<float, 64> ko_amplitudes
 {
-	10.0f,  4.8f,  2.7f, 1.35f,   .8f, .380f, .160f, .075f,  .04f, .019f, .007f,   .0f, .003f, .003f, .004f, .006f,
-	.008f, .009f, .012f, .014f,	.017f, .021f,	.025f,  .03f, .035f,  .04f, .045f, .048f,	.057f, .063f,  .07f, .075f,
-	.08f, .085f, .095f, .103f, .110f,  .12f,	.122f,  .12f, .118f, .115f,  .12f, .125f, .130f,  .12f, .105f,  .09f,
-	.079f, .067f, .057f, .048f, .036f, .028f,	.023f, .018f, .014f, .011f, .010f, .009f,	.007f, .004f,   .0f,   .0f
+	10.0f, 4.8f, 2.7f, 1.35f, .8f, .380f, .160f, .075f, .04f, .019f, .007f, .0f, .003f, .003f, .004f, .006f,
+	.008f, .009f, .012f, .014f,	.017f, .021f,	.025f, .03f, .035f, .04f, .045f, .048f,	.057f, .063f, .07f, .075f,
+	.08f, .085f, .095f, .103f, .110f, .12f,	.122f, .12f, .118f, .115f, .12f, .125f, .130f, .12f, .105f, .09f,
+	.079f, .067f, .057f, .048f, .036f, .028f,	.023f, .018f, .014f, .011f, .010f, .009f,	.007f, .004f, .0f, .0f
 };
 
 static constexpr std::array<float, 4> kg_wavelengths
 {
-	759.f,  760.f,  770.f,  771.f
+	759.f, 760.f, 770.f, 771.f
 };
 
 static constexpr std::array<float, 4> kg_amplitudes
 {
-	0.f,  3.0f,  0.210f,  0.f
+	0.f, 3.0f, 0.210f, 0.f
 };
 
 static constexpr std::array<float, 13> kwa_wavelengths
 {
-	689.f,  690.f,  700.f,  710.f,  720.f,  730.f,  740.f,
-	750.f,  760.f,  770.f,  780.f,  790.f,  800.f
+	689.f, 690.f, 700.f, 710.f, 720.f, 730.f, 740.f,
+	750.f, 760.f, 770.f, 780.f, 790.f, 800.f
 };
 
 static constexpr std::array<float, 13> kwa_amplitudes

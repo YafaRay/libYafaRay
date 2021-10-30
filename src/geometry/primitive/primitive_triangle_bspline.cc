@@ -83,7 +83,7 @@ Bound BsTrianglePrimitive::getBound(const Matrix4 *obj_to_world) const
 	return Bound(l, h);
 }
 
-SurfacePoint BsTrianglePrimitive::getSurface(const Point3 &hit, const IntersectData &intersect_data, const Matrix4 *obj_to_world) const
+SurfacePoint BsTrianglePrimitive::getSurface(const Point3 &hit, const IntersectData &intersect_data, const Matrix4 *obj_to_world, const Camera *camera) const
 {
 	// recalculating the points is not really the nicest solution...
 	const std::vector<int> vertices_indices = getVerticesIndices();

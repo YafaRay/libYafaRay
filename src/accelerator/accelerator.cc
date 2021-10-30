@@ -26,9 +26,6 @@
 #include "render/render_data.h"
 #include "geometry/primitive/primitive_face.h"
 #include "integrator/integrator.h"
-#include "geometry/object/object.h"
-#include "material/material.h"
-#include "photon/photon.h"
 
 BEGIN_YAFARAY
 
@@ -55,7 +52,7 @@ std::unique_ptr<Accelerator> Accelerator::factory(Logger &logger, const std::vec
 	return accelerator;
 }
 
-bool Accelerator::intersect(const Ray &ray, SurfacePoint &sp) const
+bool Accelerator::intersect(const Ray &ray, SurfacePoint &sp, const Camera *camera) const
 {
 	const float t_max = (ray.tmax_ >= 0.f) ? ray.tmax_ : std::numeric_limits<float>::infinity();
 	// intersect with tree:
@@ -63,7 +60,7 @@ bool Accelerator::intersect(const Ray &ray, SurfacePoint &sp) const
 	if(accelerator_intersect_data.hit_ && accelerator_intersect_data.hit_primitive_)
 	{
 		const Point3 hit_point = ray.from_ + accelerator_intersect_data.t_max_ * ray.dir_;
-		sp = accelerator_intersect_data.hit_primitive_->getSurface(hit_point, accelerator_intersect_data);
+		sp = accelerator_intersect_data.hit_primitive_->getSurface(hit_point, accelerator_intersect_data, nullptr, camera);
 		sp.hit_primitive_ = accelerator_intersect_data.hit_primitive_;
 		sp.ray_ = nullptr;
 		ray.tmax_ = accelerator_intersect_data.t_max_;
@@ -72,18 +69,18 @@ bool Accelerator::intersect(const Ray &ray, SurfacePoint &sp) const
 	return false;
 }
 
-bool Accelerator::intersect(const DiffRay &ray, SurfacePoint &sp) const
+bool Accelerator::intersect(const DiffRay &ray, SurfacePoint &sp, const Camera *camera) const
 {
-	if(!intersect(static_cast<const Ray&>(ray), sp)) return false;
+	if(!intersect(static_cast<const Ray &>(ray), sp, camera)) return false;
 	sp.ray_ = &ray;
 	return true;
 }
 
-bool Accelerator::isShadowed(const RenderData &render_data, const Ray &ray, float &obj_index, float &mat_index, float shadow_bias) const
+bool Accelerator::isShadowed(const Ray &ray, float &obj_index, float &mat_index, float shadow_bias) const
 {
 	Ray sray(ray);
 	sray.from_ += sray.dir_ * sray.tmin_;
-	sray.time_ = render_data.time_;
+	sray.time_ = ray.time_;
 	const float t_max = (ray.tmax_ >= 0.f) ? sray.tmax_ - 2 * sray.tmin_ : std::numeric_limits<float>::infinity();
 	const AcceleratorIntersectData accelerator_intersect_data = intersectS(sray, t_max, shadow_bias);
 	if(accelerator_intersect_data.hit_)
@@ -98,15 +95,13 @@ bool Accelerator::isShadowed(const RenderData &render_data, const Ray &ray, floa
 	return false;
 }
 
-bool Accelerator::isShadowed(RenderData &render_data, const Ray &ray, int max_depth, Rgb &filt, float &obj_index, float &mat_index, float shadow_bias) const
+bool Accelerator::isShadowed(const Ray &ray, int max_depth, Rgb &filt, float &obj_index, float &mat_index, float shadow_bias, const Camera *camera) const
 {
 	Ray sray(ray);
 	sray.from_ += sray.dir_ * sray.tmin_;
 	const float t_max = (ray.tmax_ >= 0.f) ? sray.tmax_ - 2 * sray.tmin_ : std::numeric_limits<float>::infinity();
-	alignas (16) unsigned char arena[Integrator::getUserDataSize()];
-	render_data.arena_.push(static_cast<void *>(arena));
 	bool intersect = false;
-	const AcceleratorTsIntersectData accelerator_intersect_data = intersectTs(render_data, sray, max_depth, t_max, shadow_bias);
+	const AcceleratorTsIntersectData accelerator_intersect_data = intersectTs(sray, max_depth, t_max, shadow_bias, camera);
 	filt = accelerator_intersect_data.transparent_color_;
 	if(accelerator_intersect_data.hit_)
 	{
@@ -117,7 +112,6 @@ bool Accelerator::isShadowed(RenderData &render_data, const Ray &ray, int max_de
 			if(accelerator_intersect_data.hit_primitive_->getMaterial()) mat_index = accelerator_intersect_data.hit_primitive_->getMaterial()->getAbsMaterialIndex();    //Material index of the object casting the shadow
 		}
 	}
-	render_data.arena_.pop();
 	return intersect;
 }
 

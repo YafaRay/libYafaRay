@@ -18,7 +18,6 @@
 
 #include "accelerator/accelerator_kdtree_multi_thread.h"
 #include "material/material.h"
-#include "scene/scene.h"
 #include "common/logger.h"
 #include "geometry/surface.h"
 #include "geometry/primitive/primitive.h"
@@ -732,7 +731,7 @@ AcceleratorIntersectData AcceleratorKdTreeMultiThread::intersect(const Ray &ray,
 
 			const float t = (split_val - ray.from_[axis]) * inv_dir[axis]; //splitting plane signed distance
 
-			// setup the new exit point
+			// set up the new exit point
 			const int tmp_id = exit_id;
 			exit_id++;
 
@@ -856,7 +855,7 @@ AcceleratorIntersectData AcceleratorKdTreeMultiThread::intersectS(const Ray &ray
 
 			const float t = (split_val - ray.from_[axis]) * inv_dir[axis]; //splitting plane signed distance
 
-			// setup the new exit point
+			// set up the new exit point
 			const int tmp_id = exit_id;
 			exit_id++;
 
@@ -913,12 +912,12 @@ AcceleratorIntersectData AcceleratorKdTreeMultiThread::intersectS(const Ray &ray
 =============================================================*/
 
 
-AcceleratorTsIntersectData AcceleratorKdTreeMultiThread::intersectTs(RenderData &render_data, const Ray &ray, int max_depth, float t_max, float shadow_bias) const
+AcceleratorTsIntersectData AcceleratorKdTreeMultiThread::intersectTs(const Ray &ray, int max_depth, float t_max, float shadow_bias, const Camera *camera) const
 {
-	return intersectTs(render_data, ray, max_depth, t_max, shadow_bias, nodes_, tree_bound_);
+	return intersectTs(ray, max_depth, t_max, shadow_bias, nodes_, tree_bound_, camera);
 }
 
-AcceleratorTsIntersectData AcceleratorKdTreeMultiThread::intersectTs(RenderData &render_data, const Ray &ray, int max_depth, float t_max, float, const std::vector<Node> &nodes, const Bound &tree_bound)
+AcceleratorTsIntersectData AcceleratorKdTreeMultiThread::intersectTs(const Ray &ray, int max_depth, float t_max, float, const std::vector<Node> &nodes, const Bound &tree_bound, const Camera *camera)
 {
 	AcceleratorTsIntersectData accelerator_intersect_data;
 	const Bound::Cross cross = tree_bound.cross(ray, t_max);
@@ -997,7 +996,7 @@ AcceleratorTsIntersectData AcceleratorKdTreeMultiThread::intersectTs(RenderData 
 			// traverse both children
 			const float t = (split_val - ray.from_[axis]) * inv_dir[axis]; //splitting plane signed distance
 
-			// setup the new exit point
+			// set up the new exit point
 			const int tmp_id = exit_id;
 			exit_id++;
 
@@ -1016,7 +1015,7 @@ AcceleratorTsIntersectData AcceleratorKdTreeMultiThread::intersectTs(RenderData 
 		}
 
 		// Check for intersections inside leaf node
-		const auto &primitive_intersection = [](AcceleratorTsIntersectData &accelerator_intersect_data, std::set<const Primitive *> &filtered, RenderData &render_data, int &depth, int max_depth, const Primitive *primitive, const Ray &ray, float t_max) -> bool
+		const auto &primitive_intersection = [](AcceleratorTsIntersectData &accelerator_intersect_data, std::set<const Primitive *> &filtered, int &depth, int max_depth, const Primitive *primitive, const Ray &ray, float t_max, const Camera *camera) -> bool
 		{
 			const IntersectData intersect_data = primitive->intersect(ray);
 			if(intersect_data.hit_)
@@ -1033,8 +1032,8 @@ AcceleratorTsIntersectData AcceleratorKdTreeMultiThread::intersectTs(RenderData 
 						{
 							if(depth >= max_depth) return true;
 							const Point3 hit_point = ray.from_ + accelerator_intersect_data.t_hit_ * ray.dir_;
-							const SurfacePoint sp = primitive->getSurface(hit_point, accelerator_intersect_data);
-							accelerator_intersect_data.transparent_color_ *= mat->getTransparency(render_data, sp, ray.dir_);
+							const SurfacePoint sp = primitive->getSurface(hit_point, accelerator_intersect_data, nullptr, camera);
+							accelerator_intersect_data.transparent_color_ *= mat->getTransparency(sp.mat_data_.get(), sp, ray.dir_, camera);
 							++depth;
 						}
 					}
@@ -1046,7 +1045,7 @@ AcceleratorTsIntersectData AcceleratorKdTreeMultiThread::intersectTs(RenderData 
 
 		for(const auto &prim : curr_node->primitives_)
 		{
-				if(primitive_intersection(accelerator_intersect_data, filtered, render_data, depth, max_depth, prim, ray, t_max)) return accelerator_intersect_data;
+				if(primitive_intersection(accelerator_intersect_data, filtered, depth, max_depth, prim, ray, t_max, camera)) return accelerator_intersect_data;
 		}
 		entry_id = exit_id;
 		curr_node = stack[exit_id].node_;

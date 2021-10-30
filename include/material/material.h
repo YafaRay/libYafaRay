@@ -69,7 +69,8 @@ struct BsdfFlags : public Flags
 class MaterialData
 {
 	public:
-		virtual size_t getSizeBytes() const = 0;
+		virtual ~MaterialData() = default;
+		std::unique_ptr<NodeStack> stack_;
 };
 
 class Material
@@ -96,23 +97,23 @@ class Material
 			like texture lookups etc.
 			\param bsdf_types returns flags for all bsdf components the material has
 		 */
-		virtual void initBsdf(const RenderData &render_data, SurfacePoint &sp, BsdfFlags &bsdf_types) const = 0;
+		virtual std::unique_ptr<MaterialData> initBsdf(SurfacePoint &sp, BsdfFlags &bsdf_types, const Camera *camera) const = 0;
 
 		/*! evaluate the BSDF for the given components.
 				@param types the types of BSDFs to be evaluated (e.g. diffuse only, or diffuse and glossy) */
-		virtual Rgb eval(const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wl, const BsdfFlags &types, bool force_eval = false) const = 0;
+		virtual Rgb eval(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wl, const BsdfFlags &types, bool force_eval = false) const = 0;
 
 		/*! take a sample from the BSDF, given a 2-dimensional sample value and the BSDF types to be sampled from
 			\param s s1, s2 and flags members give necessary information for creating the sample, pdf and sampledFlags need to be returned
 			\param w returns the weight for importance sampling
 		*/
-		virtual Rgb sample(const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo, Vec3 &wi, Sample &s, float &w) const = 0;// {return Rgb(0.f);}
-		virtual Rgb sample(const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo, Vec3 *const dir, Rgb &tcol, Sample &s, float *const w) const {return Rgb(0.f);}
+		virtual Rgb sample(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, Vec3 &wi, Sample &s, float &w, bool chromatic, float wavelength, const Camera *camera) const = 0;// {return Rgb(0.f);}
+		virtual Rgb sample(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, Vec3 *const dir, Rgb &tcol, Sample &s, float *const w, bool chromatic, float wavelength) const {return Rgb(0.f);}
 
-		virtual Rgb sampleClay(const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo, Vec3 &wi, Sample &s, float &w) const;
+		virtual Rgb sampleClay(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, Vec3 &wi, Sample &s, float &w) const;
 		/*! return the pdf for sampling the BSDF with wi and wo
 		*/
-		virtual float pdf(const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wi, const BsdfFlags &bsdfs) const {return 0.f;}
+		virtual float pdf(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wi, const BsdfFlags &bsdfs) const {return 0.f;}
 
 
 		/*! indicate whether light can (partially) pass the material without getting refracted,
@@ -123,43 +124,42 @@ class Material
 
 		/*!	used for computing transparent shadows.	Default implementation returns black (i.e. solid shadow).
 			This is only used for shadow calculations and may only be called when isTransparent returned true.	*/
-		virtual Rgb getTransparency(const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo) const { return Rgb(0.0); }
+		virtual Rgb getTransparency(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, const Camera *camera) const { return Rgb(0.0); }
 		/*! evaluate the specular components for given direction. Somewhat a specialization of sample(),
 			because neither sample values nor pdf values are necessary for this.
 			Typical use: recursive raytracing of integrators. */
-		virtual Specular getSpecular(const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo) const { return {}; }
+		virtual Material::Specular getSpecular(int raylevel, const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, bool chromatic, float wavelength) const { return {}; }
 
 		/*! get the overall reflectivity of the material (used to compute radiance map for example) */
-		virtual Rgb getReflectivity(const RenderData &render_data, const SurfacePoint &sp, BsdfFlags flags) const;
+		virtual Rgb getReflectivity(const MaterialData *mat_data, const SurfacePoint &sp, BsdfFlags flags, bool chromatic, float wavelength, const Camera *camera) const;
 
 		/*!	allow light emitting materials, for realizing correctly visible area lights.
 			default implementation returns black obviously.	*/
-		virtual Rgb emit(const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo) const { return Rgb(0.0); }
+		virtual Rgb emit(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, bool lights_geometry_material_emit) const { return Rgb(0.0); }
 
 		/*! get the volumetric handler for space at specified side of the surface
 			\param inside true means space opposite of surface normal, which is considered "inside" */
 		virtual const VolumeHandler *getVolumeHandler(bool inside) const { return inside ? vol_i_.get() : vol_o_.get(); }
 
 		/*! special function, get the alpha-value of a material, used to calculate the alpha-channel */
-		virtual float getAlpha(const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo) const { return 1.f; }
+		virtual float getAlpha(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, const Camera *camera) const { return 1.f; }
 
 		/*! specialized function for photon mapping. Default function uses the sample function, which will do fine for
 			most materials unless there's a less expensive way or smarter scattering approach */
-		virtual bool scatterPhoton(const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wi, Vec3 &wo, PSample &s) const;
+		virtual bool scatterPhoton(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wi, Vec3 &wo, PSample &s, bool chromatic, float wavelength, const Camera *camera) const;
 
 		BsdfFlags getFlags() const { return bsdf_flags_; }
 		/*! Materials may have to do surface point specific (pre-)calculation that need extra storage.
 			returns the required amount of "arena/userdata" memory for all the functions that require a RenderData */
-		size_t sizeBytes() const { return material_data_size_; }
 
 		/*! Get materials IOR (for refracted photons) */
 
 		virtual float getMatIor() const { return 1.5f; }
-		virtual Rgb getDiffuseColor(const RenderData &render_data) const { return Rgb(0.f); }
-		virtual Rgb getGlossyColor(const RenderData &render_data) const { return Rgb(0.f); }
-		virtual Rgb getTransColor(const RenderData &render_data) const { return Rgb(0.f); }
-		virtual Rgb getMirrorColor(const RenderData &render_data) const { return Rgb(0.f); }
-		virtual Rgb getSubSurfaceColor(const RenderData &render_data) const { return Rgb(0.f); }
+		virtual Rgb getDiffuseColor(const MaterialData *mat_data) const { return Rgb(0.f); }
+		virtual Rgb getGlossyColor(const MaterialData *mat_data) const { return Rgb(0.f); }
+		virtual Rgb getTransColor(const MaterialData *mat_data) const { return Rgb(0.f); }
+		virtual Rgb getMirrorColor(const MaterialData *mat_data) const { return Rgb(0.f); }
+		virtual Rgb getSubSurfaceColor(const MaterialData *mat_data) const { return Rgb(0.f); }
 		void setMaterialIndex(unsigned int new_mat_index)
 		{
 			material_index_ = new_mat_index;
@@ -202,8 +202,6 @@ class Material
 		Visibility visibility_ = Visibility::NormalVisible; //!< sets material visibility (Normal:visible, visible without shadows, invisible (shadows only) or totally invisible.
 
 		bool receive_shadows_ = true; //!< enables/disables material reception of shadows.
-
-		size_t material_data_size_ = 0; //!< the amount of "temporary" memory required to compute/store surface point specific data
 		std::unique_ptr<VolumeHandler> vol_i_; //!< volumetric handler for space inside material (opposed to surface normal)
 		std::unique_ptr<VolumeHandler> vol_o_; //!< volumetric handler for space outside ofmaterial (where surface normal points to)
 		unsigned int material_index_ = 0;	//!< Material Index for the material-index render pass

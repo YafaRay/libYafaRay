@@ -115,16 +115,16 @@ AcceleratorIntersectData AcceleratorSimpleTest::intersectS(const Ray &ray, float
 	return {};
 }
 
-AcceleratorTsIntersectData AcceleratorSimpleTest::intersectTs(RenderData &render_data, const Ray &ray, int max_depth, float dist, float shadow_bias) const
+AcceleratorTsIntersectData AcceleratorSimpleTest::intersectTs(const Ray &ray, int max_depth, float t_max, float shadow_bias, const Camera *camera) const
 {
 	for(const auto &object_data : objects_data_)
 	{
-		const Bound::Cross cross = object_data.second.bound_.cross(ray, dist);
+		const Bound::Cross cross = object_data.second.bound_.cross(ray, t_max);
 		if(!cross.crossed_) continue;
 		for(const auto &primitive : object_data.second.primitives_)
 		{
 			const IntersectData intersect_data = primitive->intersect(ray);
-			if(intersect_data.hit_ && intersect_data.t_hit_ >= ray.tmin_ && intersect_data.t_hit_ < dist)
+			if(intersect_data.hit_ && intersect_data.t_hit_ >= ray.tmin_ && intersect_data.t_hit_ < t_max)
 			{
 				AcceleratorTsIntersectData accelerator_intersect_data;
 				accelerator_intersect_data.setIntersectData(intersect_data);

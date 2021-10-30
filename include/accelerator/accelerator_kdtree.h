@@ -55,7 +55,7 @@ class AcceleratorKdTree final : public Accelerator
 		virtual AcceleratorIntersectData intersect(const Ray &ray, float t_max) const override;
 		//	bool IntersectDBG(const ray_t &ray, float dist, triangle_t **tr, float &Z) const;
 		virtual AcceleratorIntersectData intersectS(const Ray &ray, float t_max, float shadow_bias) const override;
-		virtual AcceleratorTsIntersectData intersectTs(RenderData &render_data, const Ray &ray, int max_depth, float t_max, float shadow_bias) const override;
+		virtual AcceleratorTsIntersectData intersectTs(const Ray &ray, int max_depth, float t_max, float shadow_bias, const Camera *camera) const override;
 		//	bool IntersectO(const point3d_t &from, const vector3d_t &ray, float dist, Primitive **tr, float &Z) const;
 		virtual Bound getBound() const override { return tree_bound_; }
 
@@ -66,7 +66,7 @@ class AcceleratorKdTree final : public Accelerator
 
 		static AcceleratorIntersectData intersect(const Ray &ray, float t_max, const Node *nodes, const Bound &tree_bound);
 		static AcceleratorIntersectData intersectS(const Ray &ray, float t_max, float shadow_bias, const Node *nodes, const Bound &tree_bound);
-		static AcceleratorTsIntersectData intersectTs(RenderData &render_data, const Ray &ray, int max_depth, float t_max, float shadow_bias, const Node *nodes, const Bound &tree_bound);
+		static AcceleratorTsIntersectData intersectTs(const Ray &ray, int max_depth, float t_max, float shadow_bias, const Node *nodes, const Bound &tree_bound, const Camera *camera);
 
 		float cost_ratio_ = 0.8f; //!< node traversal cost divided by primitive intersection cost
 		float e_bonus_ = 0.33f; //!< empty bonus

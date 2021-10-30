@@ -37,7 +37,7 @@ class TrianglePrimitive final : public FacePrimitive
 		virtual bool clippingSupport() const override { return true; }
 		// return: false:=doesn't overlap bound; true:=valid clip exists
 		virtual PolyDouble::ClipResultWithBound clipToBound(Logger &logger, const std::array<Vec3Double, 2> &bound, const ClipPlane &clip_plane, const PolyDouble &poly, const Matrix4 *obj_to_world) const override;
-		virtual SurfacePoint getSurface(const Point3 &hit_point, const IntersectData &intersect_data, const Matrix4 *obj_to_world) const override;
+		virtual SurfacePoint getSurface(const Point3 &hit_point, const IntersectData &intersect_data, const Matrix4 *obj_to_world, const yafaray::Camera *camera) const override;
 		virtual float surfaceArea(const Matrix4 *obj_to_world) const override;
 		virtual void sample(float s_1, float s_2, Point3 &p, Vec3 &n, const Matrix4 *obj_to_world) const override;
 		virtual void calculateGeometricNormal() override;

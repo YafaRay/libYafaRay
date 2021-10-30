@@ -30,6 +30,7 @@ BEGIN_YAFARAY
 class VolumeRegion;
 class Light;
 class Rgb;
+class Random;
 
 class SingleScatterIntegrator final : public VolumeIntegrator
 {
@@ -42,10 +43,10 @@ class SingleScatterIntegrator final : public VolumeIntegrator
 		virtual std::string getName() const override { return "SingleScatter"; }
 		virtual bool preprocess(const RenderControl &render_control, Timer &timer, const RenderView *render_view, ImageFilm *image_film) override;
 		// optical thickness, absorption, attenuation, extinction
-		virtual Rgba transmittance(RenderData &render_data, const Ray &ray) const override;
+		virtual Rgba transmittance(Random *random, const Ray &ray) const override;
 		// emission and in-scattering
 		virtual Rgba integrate(RenderData &render_data, const Ray &ray, int additional_depth = 0) const override;
-		Rgb getInScatter(RenderData &render_data, Ray &step_ray, float current_step) const;
+		Rgb getInScatter(Random *random, Ray &step_ray, float current_step) const;
 
 		bool adaptive_;
 		bool optimize_;

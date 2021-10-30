@@ -81,7 +81,7 @@ Material::~Material()
 	resetMaterialIndex();
 }
 
-Rgb Material::sampleClay(const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo, Vec3 &wi, Sample &s, float &w) const {
+Rgb Material::sampleClay(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, Vec3 &wi, Sample &s, float &w) const {
 	const Vec3 n = SurfacePoint::normalFaceForward(sp.ng_, sp.n_, wo);
 	wi = sample::cosHemisphere(n, sp.nu_, sp.nv_, s.s_1_, s.s_2_);
 	s.pdf_ = std::abs(wi * n);
@@ -141,10 +141,10 @@ void Material::applyWireFrame(Rgba &col, float wire_frame_amount, const SurfaceP
 	}
 }
 
-bool Material::scatterPhoton(const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wi, Vec3 &wo, PSample &s) const
+bool Material::scatterPhoton(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wi, Vec3 &wo, PSample &s, bool chromatic, float wavelength, const Camera *camera) const
 {
 	float w = 0.f;
-	const Rgb scol = sample(render_data, sp, wi, wo, s, w);
+	const Rgb scol = sample(mat_data, sp, wi, wo, s, w, chromatic, wavelength, camera);
 	if(s.pdf_ > 1.0e-6f)
 	{
 		const Rgb cnew = s.lcol_ * s.alpha_ * scol * w;
@@ -160,7 +160,7 @@ bool Material::scatterPhoton(const RenderData &render_data, const SurfacePoint &
 	return false;
 }
 
-Rgb Material::getReflectivity(const RenderData &render_data, const SurfacePoint &sp, BsdfFlags flags) const
+Rgb Material::getReflectivity(const MaterialData *mat_data, const SurfacePoint &sp, BsdfFlags flags, bool chromatic, float wavelength, const Camera *camera) const
 {
 	if(!flags.hasAny((BsdfFlags::Transmit | BsdfFlags::Reflect) & bsdf_flags_)) return Rgb(0.f);
 	Rgb total(0.f);
@@ -174,7 +174,7 @@ Rgb Material::getReflectivity(const RenderData &render_data, const SurfacePoint 
 		Vec3 wi;
 		Sample s(s_3, s_4, flags);
 		float w = 0.f;
-		const Rgb col = sample(render_data, sp, wo, wi, s, w);
+		const Rgb col = sample(mat_data, sp, wo, wi, s, w, chromatic, wavelength, camera);
 		total += col * w;
 	}
 	return total * 0.0625f; //total / 16.f

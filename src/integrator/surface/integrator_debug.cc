@@ -75,18 +75,8 @@ Rgba DebugIntegrator::integrate(RenderData &render_data, const DiffRay &ray, int
 	const bool old_lights_geometry_material_emit = render_data.lights_geometry_material_emit_;
 	//shoot ray into scene
 	const Accelerator *accelerator = scene_->getAccelerator();
-	if(accelerator && accelerator->intersect(ray, sp))
+	if(accelerator && accelerator->intersect(ray, sp, render_data.cam_))
 	{
-		if(show_pn_)
-		{
-			// Normals perturbed by materials
-			alignas (16) unsigned char arena[arena_size_];
-			render_data.arena_.push(static_cast<void *>(arena));
-			BsdfFlags bsdfs;
-			const Material *material = sp.material_;
-			material->initBsdf(render_data, sp, bsdfs);
-			render_data.arena_.pop();
-		}
 		if(debug_type_ == N)
 			col = Rgb((sp.n_.x_ + 1.f) * .5f, (sp.n_.y_ + 1.f) * .5f, (sp.n_.z_ + 1.f) * .5f);
 		else if(debug_type_ == DPdU)
@@ -101,7 +91,6 @@ Rgba DebugIntegrator::integrate(RenderData &render_data, const DiffRay &ray, int
 			col = Rgb((sp.ds_du_.x_ + 1.f) * .5f, (sp.ds_du_.y_ + 1.f) * .5f, (sp.ds_du_.z_ + 1.f) * .5f);
 		else if(debug_type_ == DSdV)
 			col = Rgb((sp.ds_dv_.x_ + 1.f) * .5f, (sp.ds_dv_.y_ + 1.f) * .5f, (sp.ds_dv_.z_ + 1.f) * .5f);
-
 	}
 	render_data.lights_geometry_material_emit_ = old_lights_geometry_material_emit;
 	return Rgba(col, 1.f);

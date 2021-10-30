@@ -41,6 +41,7 @@ class Scene;
 class Matrix4;
 class Vec3;
 class Object;
+class Camera;
 
 class Primitive
 {
@@ -62,7 +63,7 @@ class Primitive
 			\param t set this to raydepth where hit occurs */
 		virtual IntersectData intersect(const Ray &ray, const Matrix4 *obj_to_world = nullptr) const;
 		/* fill in surfacePoint_t */
-		virtual SurfacePoint getSurface(const Point3 &hit, const IntersectData &data, const Matrix4 *obj_to_world = nullptr) const;
+		virtual SurfacePoint getSurface(const Point3 &hit, const IntersectData &data, const Matrix4 *obj_to_world, const Camera *camera) const;
 		/* return the material */
 		virtual const Material *getMaterial() const { return nullptr; }
 		/* calculate surface area */

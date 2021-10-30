@@ -32,7 +32,7 @@ BeerVolumeHandler::BeerVolumeHandler(Logger &logger, const Rgb &acol, double dis
 	if(dist != 0.f) sigma_a_ *= 1.f / dist;
 }
 
-bool BeerVolumeHandler::transmittance(const RenderData &render_data, const Ray &ray, Rgb &col) const
+bool BeerVolumeHandler::transmittance(const Ray &ray, Rgb &col) const
 {
 	if(ray.tmax_ < 0.f || ray.tmax_ > 1e30f) //infinity check...
 	{
@@ -45,7 +45,7 @@ bool BeerVolumeHandler::transmittance(const RenderData &render_data, const Ray &
 	return true;
 }
 
-bool BeerVolumeHandler::scatter(const RenderData &render_data, const Ray &ray, Ray &s_ray, PSample &s) const
+bool BeerVolumeHandler::scatter(const Ray &ray, Ray &s_ray, PSample &s) const
 {
 	return false;
 }

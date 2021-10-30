@@ -147,7 +147,7 @@ bool SingleScatterIntegrator::preprocess(const RenderControl &render_control, Ti
 	return true;
 }
 
-Rgb SingleScatterIntegrator::getInScatter(RenderData &render_data, Ray &step_ray, float current_step) const
+Rgb SingleScatterIntegrator::getInScatter(Random *random, Ray &step_ray, float current_step) const
 {
 	const Accelerator *accelerator = scene_->getAccelerator();
 	if(!accelerator) return {0.f};
@@ -172,7 +172,7 @@ Rgb SingleScatterIntegrator::getInScatter(RenderData &render_data, Ray &step_ray
 			{
 				// ...shadowed...
 				if(light_ray.tmax_ < 0.f) light_ray.tmax_ = 1e10;  // infinitely distant light
-				bool shadowed = accelerator->isShadowed(render_data, light_ray, mask_obj_index, mask_mat_index, scene_->getShadowBias());
+				bool shadowed = accelerator->isShadowed(light_ray, mask_obj_index, mask_mat_index, scene_->getShadowBias());
 				if(!shadowed)
 				{
 					float light_tr = 0.0f;
@@ -214,14 +214,14 @@ Rgb SingleScatterIntegrator::getInScatter(RenderData &render_data, Ray &step_ray
 			for(int i = 0; i < n; ++i)
 			{
 				// ...get sample val...
-				ls.s_1_ = (*render_data.prng_)();
-				ls.s_2_ = (*render_data.prng_)();
+				ls.s_1_ = (*random)();
+				ls.s_2_ = (*random)();
 
 				if((*l)->illumSample(sp, ls, light_ray))
 				{
 					// ...shadowed...
 					if(light_ray.tmax_ < 0.f) light_ray.tmax_ = 1e10;  // infinitely distant light
-					bool shadowed = accelerator->isShadowed(render_data, light_ray, mask_obj_index, mask_mat_index, scene_->getShadowBias());
+					bool shadowed = accelerator->isShadowed(light_ray, mask_obj_index, mask_mat_index, scene_->getShadowBias());
 					if(!shadowed)
 					{
 						ccol += ls.col_ / ls.pdf_;
@@ -270,7 +270,7 @@ Rgb SingleScatterIntegrator::getInScatter(RenderData &render_data, Ray &step_ray
 	return in_scatter;
 }
 
-Rgba SingleScatterIntegrator::transmittance(RenderData &render_data, const Ray &ray) const {
+Rgba SingleScatterIntegrator::transmittance(Random *random, const Ray &ray) const {
 	if(vr_size_ == 0) return {1.f};
 	Rgba tr(1.f);
 	const auto &volumes = scene_->getVolumeRegions();
@@ -279,8 +279,8 @@ Rgba SingleScatterIntegrator::transmittance(RenderData &render_data, const Ray &
 		const Bound::Cross cross = v.second->crossBound(ray);
 		if(cross.crossed_)
 		{
-			const float random = (*render_data.prng_)();
-			const Rgb optical_thickness = v.second->tau(ray, step_size_, random);
+			const float random_value = (*random)();
+			const Rgb optical_thickness = v.second->tau(ray, step_size_, random_value);
 			tr *= Rgba(math::exp(-optical_thickness.energy()));
 		}
 	}
@@ -288,7 +288,8 @@ Rgba SingleScatterIntegrator::transmittance(RenderData &render_data, const Ray &
 	return tr;
 }
 
-Rgba SingleScatterIntegrator::integrate(RenderData &render_data, const Ray &ray, int additional_depth) const {
+Rgba SingleScatterIntegrator::integrate(RenderData &render_data, const Ray &ray, int additional_depth) const
+{
 	float t_0 = 1e10f, t_1 = -1e10f;
 
 	Rgba result(0.f);
@@ -434,7 +435,7 @@ Rgba SingleScatterIntegrator::integrate(RenderData &render_data, const Ray &ray,
 			sigma_s = sigma_s / random;
 		}
 
-		result += tr_tmp * getInScatter(render_data, step_ray, current_step) * sigma_s * current_step;
+		result += tr_tmp * getInScatter(render_data.prng_, step_ray, current_step) * sigma_s * current_step;
 
 		if(adaptive_)
 		{

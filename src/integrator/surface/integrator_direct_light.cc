@@ -116,25 +116,20 @@ Rgba DirectLightIntegrator::integrate(RenderData &render_data, const DiffRay &ra
 
 	// Shoot ray into scene
 	const Accelerator *accelerator = scene_->getAccelerator();
-	if(accelerator && accelerator->intersect(ray, sp)) // If it hits
+	if(accelerator && accelerator->intersect(ray, sp, render_data.cam_)) // If it hits
 	{
 		const Material *material = sp.material_;
-		//void *arena = malloc(material->getReqMem() + 16);
-		alignas (16) unsigned char arena[arena_size_];
-		render_data.arena_.push(static_cast<void *>(arena));
-		BsdfFlags bsdfs;
+		const BsdfFlags &bsdfs = sp.bsdf_flags_;
 
 		const Vec3 wo = -ray.dir_;
 		if(render_data.raylevel_ == 0) render_data.lights_geometry_material_emit_ = true;
-
-		material->initBsdf(render_data, sp, bsdfs);
 
 		if(additional_depth < material->getAdditionalDepth()) additional_depth = material->getAdditionalDepth();
 
 
 		if(bsdfs.hasAny(BsdfFlags::Emit))
 		{
-			const Rgb col_tmp = material->emit(render_data, sp, wo);
+			const Rgb col_tmp = material->emit(sp.mat_data_.get(), sp, wo, render_data.lights_geometry_material_emit_);
 			col += col_tmp;
 			if(layers_used)
 			{
@@ -144,11 +139,11 @@ Rgba DirectLightIntegrator::integrate(RenderData &render_data, const DiffRay &ra
 
 		if(bsdfs.hasAny(BsdfFlags::Diffuse))
 		{
-			col += estimateAllDirectLight(render_data, sp, wo, color_layers);
+			col += estimateAllDirectLight(render_data, sp.mat_data_.get(), sp, wo, color_layers);
 
 			if(use_photon_caustics_)
 			{
-				Rgb col_tmp = estimateCausticPhotons(render_data, sp, wo);
+				Rgb col_tmp = estimateCausticPhotons(sp.mat_data_.get(), sp, wo);
 				if(aa_noise_params_.clamp_indirect_ > 0) col_tmp.clampProportionalRgb(aa_noise_params_.clamp_indirect_);
 				col += col_tmp;
 				if(layers_used)
@@ -157,14 +152,14 @@ Rgba DirectLightIntegrator::integrate(RenderData &render_data, const DiffRay &ra
 				}
 			}
 
-			if(use_ambient_occlusion_) col += sampleAmbientOcclusion(render_data, sp, wo);
+			if(use_ambient_occlusion_) col += sampleAmbientOcclusion(render_data, sp.mat_data_.get(), sp, wo);
 		}
 
 		recursiveRaytrace(render_data, ray, bsdfs, sp, wo, col, alpha, additional_depth, color_layers);
 
 		if(layers_used)
 		{
-			generateCommonLayers(render_data, sp, ray, scene_->getMaskParams(), color_layers);
+			generateCommonLayers(render_data.raylevel_, sp.mat_data_.get(), sp, ray, scene_->getMaskParams(), color_layers);
 
 			if(ColorLayer *color_layer = color_layers->find(Layer::Ao))
 			{
@@ -173,23 +168,23 @@ Rgba DirectLightIntegrator::integrate(RenderData &render_data, const DiffRay &ra
 
 			if(ColorLayer *color_layer = color_layers->find(Layer::AoClay))
 			{
-				color_layer->color_ = sampleAmbientOcclusionClayLayer(render_data, sp, wo);
+				color_layer->color_ = sampleAmbientOcclusionClayLayer(render_data, sp.mat_data_.get(), sp, wo);
 			}
 		}
 
 		if(transp_refracted_background_)
 		{
-			float m_alpha = material->getAlpha(render_data, sp, wo);
+			float m_alpha = material->getAlpha(sp.mat_data_.get(), sp, wo, render_data.cam_);
 			alpha = m_alpha + (1.f - m_alpha) * alpha;
 		}
-		else alpha = 1.0;
-		render_data.arena_.pop();
+		else alpha = 1.f;
 	}
 	else // Nothing hit, return background if any
 	{
-		if(scene_->getBackground() && !transp_refracted_background_)
+		const Background *background = scene_->getBackground();
+		if(background && !transp_refracted_background_)
 		{
-			const Rgb col_tmp = (*scene_->getBackground())(ray, render_data);
+			const Rgb col_tmp = (*background)(ray);
 			col += col_tmp;
 			if(layers_used)
 			{
@@ -200,7 +195,7 @@ Rgba DirectLightIntegrator::integrate(RenderData &render_data, const DiffRay &ra
 
 	render_data.lights_geometry_material_emit_ = old_lights_geometry_material_emit;
 
-	Rgb col_vol_transmittance = scene_->vol_integrator_->transmittance(render_data, ray);
+	Rgb col_vol_transmittance = scene_->vol_integrator_->transmittance(render_data.prng_, ray);
 	Rgb col_vol_integration = scene_->vol_integrator_->integrate(render_data, ray);
 
 	if(transp_background_) alpha = std::max(alpha, 1.f - col_vol_transmittance.r_);

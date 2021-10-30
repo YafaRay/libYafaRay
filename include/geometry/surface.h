@@ -27,9 +27,9 @@
 #include "geometry/vector.h"
 #include "geometry/intersect_data.h"
 #include "color/color.h"
+#include "material/material.h"
 
 BEGIN_YAFARAY
-class Material;
 class Light;
 class Object;
 class DiffRay;
@@ -42,7 +42,7 @@ struct IntersectData;
 	It contains data about normal, position, assigned material and other
 	things.
  */
-class SurfacePoint
+class SurfacePoint final
 {
 	public:
 		static Vec3 normalFaceForward(const Vec3 &normal_geometry, const Vec3 &normal, const Vec3 &incoming_vector);
@@ -51,6 +51,8 @@ class SurfacePoint
 
 		//int object; //!< the object owner of the point.
 		const Material *material_; //!< the surface material
+		BsdfFlags bsdf_flags_;
+		std::shared_ptr<MaterialData> mat_data_;
 		const Light *light_; //!< light source if surface point is on a light
 		const Object *object_; //!< object the prim belongs to
 		//	point2d_t screenpos; // only used with 'win' texture coord. mode

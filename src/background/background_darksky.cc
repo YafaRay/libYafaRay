@@ -190,7 +190,7 @@ inline Rgb DarkSkyBackground::getSkyCol(const Ray &ray) const
 	return sky_col * sky_brightness_;
 }
 
-Rgb DarkSkyBackground::operator()(const Ray &ray, RenderData &render_data, bool from_postprocessed) const
+Rgb DarkSkyBackground::operator()(const Ray &ray, bool from_postprocessed) const
 {
 	return getSkyCol(ray);
 }

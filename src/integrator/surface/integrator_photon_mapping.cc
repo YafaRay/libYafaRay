@@ -126,8 +126,6 @@ void PhotonIntegrator::diffuseWorker(PhotonMap *diffuse_map, int thread_id, cons
 
 	SurfacePoint sp;
 	RenderData render_data;
-	alignas (16) unsigned char arena[arena_size_];
-	render_data.arena_.push(static_cast<void *>(arena));
 	render_data.cam_ = render_view->getCamera();
 
 	float f_num_lights = (float)num_d_lights;
@@ -178,9 +176,9 @@ void PhotonIntegrator::diffuseWorker(PhotonMap *diffuse_map, int thread_id, cons
 		bool caustic_photon = false;
 		bool direct_photon = true;
 		const Material *material = nullptr;
-		BsdfFlags bsdfs;
+		const BsdfFlags &bsdfs = sp.bsdf_flags_;
 
-		while(accelerator->intersect(ray, sp))
+		while(accelerator->intersect(ray, sp, render_data.cam_))
 		{
 			if(std::isnan(pcol.r_) || std::isnan(pcol.g_) || std::isnan(pcol.b_))
 			{
@@ -198,13 +196,12 @@ void PhotonIntegrator::diffuseWorker(PhotonMap *diffuse_map, int thread_id, cons
 			{
 				if(bsdfs.hasAny(BsdfFlags::Volumetric) && (vol = material->getVolumeHandler(sp.ng_ * -ray.dir_ < 0)))
 				{
-					if(vol->transmittance(render_data, ray, vcol)) transm = vcol;
+					if(vol->transmittance(ray, vcol)) transm = vcol;
 				}
 			}
 
 			Vec3 wi = -ray.dir_, wo;
 			material = sp.material_;
-			material->initBsdf(render_data, sp, bsdfs);
 
 			if(bsdfs.hasAny(BsdfFlags::Diffuse))
 			{
@@ -220,8 +217,8 @@ void PhotonIntegrator::diffuseWorker(PhotonMap *diffuse_map, int thread_id, cons
 				{
 					Vec3 n = SurfacePoint::normalFaceForward(sp.ng_, sp.n_, wi);
 					RadData rd(sp.p_, n);
-					rd.refl_ = material->getReflectivity(render_data, sp, BsdfFlags::Diffuse | BsdfFlags::Glossy | BsdfFlags::Reflect);
-					rd.transm_ = material->getReflectivity(render_data, sp, BsdfFlags::Diffuse | BsdfFlags::Glossy | BsdfFlags::Transmit);
+					rd.refl_ = material->getReflectivity(sp.mat_data_.get(), sp, BsdfFlags::Diffuse | BsdfFlags::Glossy | BsdfFlags::Reflect, render_data.chromatic_, render_data.wavelength_, render_data.cam_);
+					rd.transm_ = material->getReflectivity(sp.mat_data_.get(), sp, BsdfFlags::Diffuse | BsdfFlags::Glossy | BsdfFlags::Transmit, render_data.chromatic_, render_data.wavelength_, render_data.cam_);
 					local_rad_points.push_back(rd);
 				}
 			}
@@ -236,7 +233,7 @@ void PhotonIntegrator::diffuseWorker(PhotonMap *diffuse_map, int thread_id, cons
 
 			PSample sample(s_5, s_6, s_7, BsdfFlags::All, pcol, transm);
 
-			bool scattered = material->scatterPhoton(render_data, sp, wi, wo, sample);
+			bool scattered = material->scatterPhoton(sp.mat_data_.get(), sp, wi, wo, sample, render_data.chromatic_, render_data.wavelength_, render_data.cam_);
 			if(!scattered) break; //photon was absorped.
 
 			pcol = sample.color_;
@@ -259,8 +256,6 @@ void PhotonIntegrator::diffuseWorker(PhotonMap *diffuse_map, int thread_id, cons
 		}
 		done = (curr >= n_diffuse_photons_thread);
 	}
-	render_data.arena_.pop();
-
 	diffuse_map->mutx_.lock();
 	diffuse_map->appendVector(local_diffuse_photons, curr);
 	total_photons_shot += curr;
@@ -453,8 +448,6 @@ bool PhotonIntegrator::preprocess(const RenderControl &render_control, Timer &ti
 	// for radiance map:
 	PreGatherData pgdat(diffuse_map_.get());
 	RenderData render_data;
-	alignas (16) unsigned char arena[arena_size_];
-	render_data.arena_.push(static_cast<void *>(arena));
 	render_data.cam_ = render_view->getCamera();
 	int pb_step;
 
@@ -721,7 +714,6 @@ bool PhotonIntegrator::preprocess(const RenderControl &render_control, Timer &ti
 	{
 		for(std::string line; std::getline(set, line, '\n');) logger_.logVerbose(line);
 	}
-	render_data.arena_.pop();
 	return true;
 }
 
@@ -734,7 +726,6 @@ Rgb PhotonIntegrator::finalGathering(RenderData &render_data, const SurfacePoint
 	if(!accelerator) return {0.f};
 
 	Rgb path_col(0.0);
-	alignas (16) unsigned char arena_local[arena_size_];
 	const VolumeHandler *vol;
 	Rgb vcol(0.f);
 	float w = 0.f;
@@ -746,7 +737,7 @@ Rgb PhotonIntegrator::finalGathering(RenderData &render_data, const SurfacePoint
 		float length = 0;
 		SurfacePoint hit = sp;
 		Vec3 pwo = wo;
-		Ray pRay;
+		Ray p_ray;
 		BsdfFlags mat_bsd_fs;
 		bool did_hit;
 		const Material *p_mat = sp.material_;
@@ -762,21 +753,20 @@ Rgb PhotonIntegrator::finalGathering(RenderData &render_data, const SurfacePoint
 		}
 
 		Sample s(s_1, s_2, BsdfFlags::Diffuse | BsdfFlags::Reflect | BsdfFlags::Transmit); // glossy/dispersion/specular done via recursive raytracing
-		scol = p_mat->sample(render_data, hit, pwo, pRay.dir_, s, w);
+		scol = p_mat->sample(hit.mat_data_.get(), hit, pwo, p_ray.dir_, s, w, render_data.chromatic_, render_data.wavelength_, render_data.cam_);
 
 		scol *= w;
 		if(scol.isBlack()) continue;
 
-		pRay.tmin_ = scene_->ray_min_dist_;
-		pRay.tmax_ = -1.0;
-		pRay.from_ = hit.p_;
+		p_ray.tmin_ = scene_->ray_min_dist_;
+		p_ray.tmax_ = -1.0;
+		p_ray.from_ = hit.p_;
 		throughput = scol;
 
-		if(!(did_hit = accelerator->intersect(pRay, hit))) continue;   //hit background
+		if(!(did_hit = accelerator->intersect(p_ray, hit, render_data.cam_))) continue;   //hit background
 
 		p_mat = hit.material_;
-		length = pRay.tmax_;
-		render_data.arena_.push(arena_local);
+		length = p_ray.tmax_;
 		mat_bsd_fs = p_mat->getFlags();
 		bool has_spec = mat_bsd_fs.hasAny(BsdfFlags::Specular);
 		bool caustic = false;
@@ -786,19 +776,18 @@ Rgb PhotonIntegrator::finalGathering(RenderData &render_data, const SurfacePoint
 		for(int depth = 0; depth < gather_bounces_ && do_bounce; ++depth)
 		{
 			int d_4 = 4 * depth;
-			pwo = -pRay.dir_;
-			p_mat->initBsdf(render_data, hit, mat_bsd_fs);
+			pwo = -p_ray.dir_;
 
 			if(mat_bsd_fs.hasAny(BsdfFlags::Volumetric) && (vol = p_mat->getVolumeHandler(hit.n_ * pwo < 0)))
 			{
-				if(vol->transmittance(render_data, pRay, vcol)) throughput *= vcol;
+				if(vol->transmittance(p_ray, vcol)) throughput *= vcol;
 			}
 
 			if(mat_bsd_fs.hasAny(BsdfFlags::Diffuse))
 			{
 				if(close)
 				{
-					lcol = estimateOneDirectLight(render_data, hit, pwo, offs);
+					lcol = estimateOneDirectLight(render_data, hit.mat_data_.get(), hit, pwo, offs);
 				}
 				else if(caustic)
 				{
@@ -809,7 +798,7 @@ Rgb PhotonIntegrator::finalGathering(RenderData &render_data, const SurfacePoint
 
 				if(close || caustic)
 				{
-					if(mat_bsd_fs.hasAny(BsdfFlags::Emit)) lcol += p_mat->emit(render_data, hit, pwo);
+					if(mat_bsd_fs.hasAny(BsdfFlags::Emit)) lcol += p_mat->emit(hit.mat_data_.get(), hit, pwo, render_data.lights_geometry_material_emit_);
 					path_col += lcol * throughput;
 				}
 			}
@@ -824,7 +813,7 @@ Rgb PhotonIntegrator::finalGathering(RenderData &render_data, const SurfacePoint
 			}
 
 			Sample sb(s_1, s_2, (close) ? BsdfFlags::All : BsdfFlags::AllSpecular | BsdfFlags::Filter);
-			scol = p_mat->sample(render_data, hit, pwo, pRay.dir_, sb, w);
+			scol = p_mat->sample(hit.mat_data_.get(), hit, pwo, p_ray.dir_, sb, w, render_data.chromatic_, render_data.wavelength_, render_data.cam_);
 
 			if(sb.pdf_ <= 1.0e-6f)
 			{
@@ -834,24 +823,24 @@ Rgb PhotonIntegrator::finalGathering(RenderData &render_data, const SurfacePoint
 
 			scol *= w;
 
-			pRay.tmin_ = scene_->ray_min_dist_;
-			pRay.tmax_ = -1.0;
-			pRay.from_ = hit.p_;
+			p_ray.tmin_ = scene_->ray_min_dist_;
+			p_ray.tmax_ = -1.0;
+			p_ray.from_ = hit.p_;
 			throughput *= scol;
-			did_hit = accelerator->intersect(pRay, hit);
+			did_hit = accelerator->intersect(p_ray, hit, render_data.cam_);
 
 			if(!did_hit) //hit background
 			{
 				const auto &background = scene_->getBackground();
 				if(caustic && background && background->hasIbl() && background->shootsCaustic())
 				{
-					path_col += throughput * (*background)(pRay, render_data, true);
+					path_col += throughput * (*background)(p_ray, true);
 				}
 				break;
 			}
 
 			p_mat = hit.material_;
-			length += pRay.tmax_;
+			length += p_ray.tmax_;
 			caustic = (caustic || !depth) && sb.sampled_flags_.hasAny(BsdfFlags::Specular | BsdfFlags::Filter);
 			close = length < gather_dist_;
 			do_bounce = caustic || close;
@@ -859,17 +848,15 @@ Rgb PhotonIntegrator::finalGathering(RenderData &render_data, const SurfacePoint
 
 		if(did_hit)
 		{
-			p_mat->initBsdf(render_data, hit, mat_bsd_fs);
 			if(mat_bsd_fs.hasAny(BsdfFlags::Diffuse | BsdfFlags::Glossy))
 			{
-				Vec3 sf = SurfacePoint::normalFaceForward(hit.ng_, hit.n_, -pRay.dir_);
+				Vec3 sf = SurfacePoint::normalFaceForward(hit.ng_, hit.n_, -p_ray.dir_);
 				const Photon *nearest = radiance_map_->findNearest(hit.p_, sf, lookup_rad_);
 				if(nearest) lcol = nearest->color();
-				if(mat_bsd_fs.hasAny(BsdfFlags::Emit)) lcol += p_mat->emit(render_data, hit, -pRay.dir_);
+				if(mat_bsd_fs.hasAny(BsdfFlags::Emit)) lcol += p_mat->emit(hit.mat_data_.get(), hit, -p_ray.dir_, render_data.lights_geometry_material_emit_);
 				path_col += lcol * throughput;
 			}
 		}
-		render_data.arena_.pop();
 	}
 	return path_col / (float)n_sampl;
 }
@@ -891,25 +878,21 @@ Rgba PhotonIntegrator::integrate(RenderData &render_data, const DiffRay &ray, in
 	else alpha = 1.0;
 
 	const Accelerator *accelerator = scene_->getAccelerator();
-	if(accelerator && accelerator->intersect(ray, sp))
+	if(accelerator && accelerator->intersect(ray, sp, render_data.cam_))
 	{
-		alignas (16) unsigned char arena[arena_size_];
-		render_data.arena_.push(static_cast<void *>(arena));
-
 		if(render_data.raylevel_ == 0)
 		{
 			render_data.chromatic_ = true;
 			render_data.lights_geometry_material_emit_ = true;
 		}
-		BsdfFlags bsdfs;
 
 		Vec3 wo = -ray.dir_;
 		const Material *material = sp.material_;
-		material->initBsdf(render_data, sp, bsdfs);
+		const BsdfFlags &bsdfs = sp.bsdf_flags_;
 
 		if(additional_depth < material->getAdditionalDepth()) additional_depth = material->getAdditionalDepth();
 
-		const Rgb col_emit = material->emit(render_data, sp, wo);
+		const Rgb col_emit = material->emit(sp.mat_data_.get(), sp, wo, render_data.lights_geometry_material_emit_);
 		col += col_emit;
 		if(layers_used)
 		{
@@ -941,7 +924,7 @@ Rgba PhotonIntegrator::integrate(RenderData &render_data, const DiffRay &ray, in
 				// contribution of light emitting surfaces
 				if(bsdfs.hasAny(BsdfFlags::Emit))
 				{
-					const Rgb col_tmp = material->emit(render_data, sp, wo);
+					const Rgb col_tmp = material->emit(sp.mat_data_.get(), sp, wo, render_data.lights_geometry_material_emit_);
 					col += col_tmp;
 					if(layers_used)
 					{
@@ -951,7 +934,7 @@ Rgba PhotonIntegrator::integrate(RenderData &render_data, const DiffRay &ray, in
 
 				if(bsdfs.hasAny(BsdfFlags::Diffuse))
 				{
-					col += estimateAllDirectLight(render_data, sp, wo, color_layers);
+					col += estimateAllDirectLight(render_data, sp.mat_data_.get(), sp, wo, color_layers);
 					Rgb col_tmp = finalGathering(render_data, sp, wo);
 					if(aa_noise_params_.clamp_indirect_ > 0.f) col_tmp.clampProportionalRgb(aa_noise_params_.clamp_indirect_);
 					col += col_tmp;
@@ -984,7 +967,7 @@ Rgba PhotonIntegrator::integrate(RenderData &render_data, const DiffRay &ray, in
 
 				if(bsdfs.hasAny(BsdfFlags::Emit))
 				{
-					const Rgb col_tmp = material->emit(render_data, sp, wo);
+					const Rgb col_tmp = material->emit(sp.mat_data_.get(), sp, wo, render_data.lights_geometry_material_emit_);
 					col += col_tmp;
 					if(layers_used)
 					{
@@ -994,7 +977,7 @@ Rgba PhotonIntegrator::integrate(RenderData &render_data, const DiffRay &ray, in
 
 				if(bsdfs.hasAny(BsdfFlags::Diffuse))
 				{
-					col += estimateAllDirectLight(render_data, sp, wo, color_layers);
+					col += estimateAllDirectLight(render_data, sp.mat_data_.get(), sp, wo, color_layers);
 				}
 
 				FoundPhoton *gathered = (FoundPhoton *)alloca(n_diffuse_search_ * sizeof(FoundPhoton));
@@ -1011,7 +994,7 @@ Rgba PhotonIntegrator::integrate(RenderData &render_data, const DiffRay &ray, in
 					for(int i = 0; i < n_gathered; ++i)
 					{
 						const Vec3 pdir = gathered[i].photon_->direction();
-						const Rgb surf_col = material->eval(render_data, sp, wo, pdir, BsdfFlags::Diffuse);
+						const Rgb surf_col = material->eval(sp.mat_data_.get(), sp, wo, pdir, BsdfFlags::Diffuse);
 
 						const Rgb col_tmp = surf_col * scale * gathered[i].photon_->color();
 						col += col_tmp;
@@ -1027,7 +1010,7 @@ Rgba PhotonIntegrator::integrate(RenderData &render_data, const DiffRay &ray, in
 		// add caustics
 		if(use_photon_caustics_ && bsdfs.hasAny(BsdfFlags::Diffuse))
 		{
-			Rgb col_tmp = estimateCausticPhotons(render_data, sp, wo);
+			Rgb col_tmp = estimateCausticPhotons(sp.mat_data_.get(), sp, wo);
 			if(aa_noise_params_.clamp_indirect_ > 0.f) col_tmp.clampProportionalRgb(aa_noise_params_.clamp_indirect_);
 			col += col_tmp;
 			if(layers_used)
@@ -1040,7 +1023,7 @@ Rgba PhotonIntegrator::integrate(RenderData &render_data, const DiffRay &ray, in
 
 		if(layers_used)
 		{
-			generateCommonLayers(render_data, sp, ray, scene_->getMaskParams(), color_layers);
+			generateCommonLayers(render_data.raylevel_, sp.mat_data_.get(), sp, ray, scene_->getMaskParams(), color_layers);
 
 			if(ColorLayer *color_layer = color_layers->find(Layer::Ao))
 			{
@@ -1049,23 +1032,22 @@ Rgba PhotonIntegrator::integrate(RenderData &render_data, const DiffRay &ray, in
 
 			if(ColorLayer *color_layer = color_layers->find(Layer::AoClay))
 			{
-				color_layer->color_ = sampleAmbientOcclusionClayLayer(render_data, sp, wo);
+				color_layer->color_ = sampleAmbientOcclusionClayLayer(render_data, sp.mat_data_.get(), sp, wo);
 			}
 		}
 
 		if(transp_refracted_background_)
 		{
-			float m_alpha = material->getAlpha(render_data, sp, wo);
+			float m_alpha = material->getAlpha(sp.mat_data_.get(), sp, wo, render_data.cam_);
 			alpha = m_alpha + (1.f - m_alpha) * alpha;
 		}
 		else alpha = 1.0;
-		render_data.arena_.pop();
 	}
 	else //nothing hit, return background
 	{
 		if(scene_->getBackground() && !transp_refracted_background_)
 		{
-			const Rgb col_tmp = (*scene_->getBackground())(ray, render_data);
+			const Rgb col_tmp = (*scene_->getBackground())(ray);
 			col += col_tmp;
 			if(layers_used)
 			{
@@ -1076,7 +1058,7 @@ Rgba PhotonIntegrator::integrate(RenderData &render_data, const DiffRay &ray, in
 
 	render_data.lights_geometry_material_emit_ = old_lights_geometry_material_emit;
 
-	Rgb col_vol_transmittance = scene_->vol_integrator_->transmittance(render_data, ray);
+	Rgb col_vol_transmittance = scene_->vol_integrator_->transmittance(render_data.prng_, ray);
 	Rgb col_vol_integration = scene_->vol_integrator_->integrate(render_data, ray);
 
 	if(transp_background_) alpha = std::max(alpha, 1.f - col_vol_transmittance.r_);

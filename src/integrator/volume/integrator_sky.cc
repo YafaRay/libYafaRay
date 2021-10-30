@@ -127,7 +127,7 @@ Rgba SkyIntegrator::skyTau(const Ray &ray, float beta, float alpha) const {
 	return tau_val;
 }
 
-Rgba SkyIntegrator::transmittance(RenderData &render_data, const Ray &ray) const {
+Rgba SkyIntegrator::transmittance(Random *random, const Ray &ray) const {
 	//return Rgba(0.f);
 	Rgba result;
 

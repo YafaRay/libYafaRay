@@ -38,23 +38,23 @@ LightMaterial::LightMaterial(Logger &logger, Rgb light_c, bool ds): Material(log
 	bsdf_flags_ = BsdfFlags::Emit;
 }
 
-Rgb LightMaterial::sample(const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo, Vec3 &wi, Sample &s, float &w) const
+Rgb LightMaterial::sample(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, Vec3 &wi, Sample &s, float &w, bool chromatic, float wavelength, const Camera *camera) const
 {
 	s.pdf_ = 0.f;
 	w = 0.f;
 	return Rgb(0.f);
 }
 
-Rgb LightMaterial::emit(const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo) const
+Rgb LightMaterial::emit(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, bool lights_geometry_material_emit) const
 {
-	if(!render_data.lights_geometry_material_emit_) return Rgb(0.f);
+	if(!lights_geometry_material_emit) return Rgb(0.f);
 	if(double_sided_) return light_col_;
 
 	const float angle = wo * sp.n_;
 	return (angle > 0) ? light_col_ : Rgb(0.f);
 }
 
-float LightMaterial::pdf(const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wi, const BsdfFlags &bsdfs) const
+float LightMaterial::pdf(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wi, const BsdfFlags &bsdfs) const
 {
 	return 0.f;
 }

@@ -39,7 +39,7 @@ TextureBackground::TextureBackground(Logger &logger, const Texture *texture, Pro
 	cos_r_ = math::cos(math::num_pi * rotation_);
 }
 
-Rgb TextureBackground::operator()(const Ray &ray, RenderData &render_data, bool use_ibl_blur) const
+Rgb TextureBackground::operator()(const Ray &ray, bool use_ibl_blur) const
 {
 	return eval(ray, use_ibl_blur);
 }

@@ -34,7 +34,8 @@ BEGIN_YAFARAY
 class BlendMaterialData final : public MaterialData
 {
 	public:
-		virtual size_t getSizeBytes() const override { return sizeof(BlendMaterialData); }
+		std::unique_ptr<MaterialData> mat_1_data_;
+		std::unique_ptr<MaterialData> mat_2_data_;
 };
 
 class BlendMaterial final : public NodeMaterial
@@ -46,26 +47,25 @@ class BlendMaterial final : public NodeMaterial
 	private:
 		BlendMaterial(Logger &logger, const Material *m_1, const Material *m_2, float blendv, Visibility visibility = Visibility::NormalVisible);
 		virtual std::unique_ptr<MaterialData> createMaterialData() const override { return std::unique_ptr<BlendMaterialData>(new BlendMaterialData()); };
-		virtual void initBsdf(const RenderData &render_data, SurfacePoint &sp, BsdfFlags &bsdf_types) const override;
-		virtual Rgb eval(const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wl, const BsdfFlags &bsdfs, bool force_eval = false) const override;
-		virtual Rgb sample(const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo, Vec3 &wi, Sample &s, float &w) const override;
-		virtual Rgb sample(const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo, Vec3 *const dir, Rgb &tcol, Sample &s, float *const w) const override;
-		virtual float pdf(const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wi, const BsdfFlags &bsdfs) const override;
+		virtual std::unique_ptr<MaterialData> initBsdf(SurfacePoint &sp, BsdfFlags &bsdf_types, const Camera *camera) const override;
+		virtual Rgb eval(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wl, const BsdfFlags &bsdfs, bool force_eval = false) const override;
+		virtual Rgb sample(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, Vec3 &wi, Sample &s, float &w, bool chromatic, float wavelength, const Camera *camera) const override;
+		virtual Rgb sample(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, Vec3 *const dir, Rgb &tcol, Sample &s, float *const w, bool chromatic, float wavelength) const override;
+		virtual float pdf(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wi, const BsdfFlags &bsdfs) const override;
 		virtual float getMatIor() const override;
 		virtual bool isTransparent() const override;
-		virtual Rgb getTransparency(const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo) const override;
-		virtual Rgb emit(const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo) const override;
-		virtual Specular getSpecular(const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo) const override;
-		virtual float getAlpha(const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo) const override;
-		virtual bool scatterPhoton(const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wi, Vec3 &wo, PSample &s) const override;
+		virtual Rgb getTransparency(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, const Camera *camera) const override;
+		virtual Rgb emit(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, bool lights_geometry_material_emit) const override;
+		virtual Material::Specular getSpecular(int raylevel, const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, bool chromatic, float wavelength) const override;
+		virtual float getAlpha(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, const Camera *camera) const override;
+		virtual bool scatterPhoton(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wi, Vec3 &wo, PSample &s, bool chromatic, float wavelength, const Camera *camera) const override;
 		virtual const VolumeHandler *getVolumeHandler(bool inside) const override;
-		float getBlendVal(const RenderData &render_data, const SurfacePoint &sp) const;
+		float getBlendVal(const MaterialData *mat_data, const SurfacePoint &sp) const;
 
 		const Material *mat_1_ = nullptr, *mat_2_ = nullptr;
 		ShaderNode *blend_shader_ = nullptr; //!< the shader node used for blending the materials
 		ShaderNode *wireframe_shader_ = nullptr;     //!< Shader node for wireframe shading (float)
 		float blend_val_;
-		size_t mat_1_size_;
 		bool recalc_blend_;
 		float blended_ior_;
 		mutable BsdfFlags mat_1_flags_, mat_2_flags_;

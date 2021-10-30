@@ -79,7 +79,7 @@ template<typename FloatingPointType> inline constexpr FloatingPointType radToDeg
 static constexpr double doublemagicroundeps = .5 - 1.4e-11;
 //almost .5f = .5f - 1e^(number of exp bit)
 static constexpr double doublemagic = 6755399441055744.0;
-//2^52 * 1.5,  uses limited precision to floor
+//2^52 * 1.5, uses limited precision to floor
 //#endif
 
 // fast base-2 van der Corput, Sobel, and Larcher & Pillichshammer sequences,

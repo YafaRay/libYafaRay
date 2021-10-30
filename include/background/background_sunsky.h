@@ -44,7 +44,7 @@ class SunSkyBackground final : public Background
 
 	private:
 		SunSkyBackground(Logger &logger, const Point3 dir, float turb, float a_var, float b_var, float c_var, float d_var, float e_var, float pwr, bool ibl, bool with_caustic);
-		virtual Rgb operator()(const Ray &ray, RenderData &render_data, bool from_postprocessed = false) const override;
+		virtual Rgb operator()(const Ray &ray, bool from_postprocessed = false) const override;
 		virtual Rgb eval(const Ray &ray, bool from_postprocessed = false) const override;
 		Rgb getSkyCol(const Ray &ray) const;
 		static Rgb computeAttenuatedSunlight(float theta, int turbidity);

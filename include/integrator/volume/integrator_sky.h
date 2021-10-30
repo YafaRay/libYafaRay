@@ -20,6 +20,7 @@
 #ifndef YAFARAY_INTEGRATOR_SKY_H
 #define YAFARAY_INTEGRATOR_SKY_H
 
+#include <math/random.h>
 #include "integrator/integrator.h"
 
 BEGIN_YAFARAY
@@ -37,7 +38,7 @@ class SkyIntegrator : public VolumeIntegrator
 		virtual std::string getName() const override { return "Sky"; }
 		virtual bool preprocess(const RenderControl &render_control, Timer &timer, const RenderView *render_view, ImageFilm *image_film) override;
 		// optical thickness, absorption, attenuation, extinction
-		virtual Rgba transmittance(RenderData &render_data, const Ray &ray) const override;
+		virtual Rgba transmittance(Random *random, const Ray &ray) const override;
 		// emission and in-scattering
 		virtual Rgba integrate(RenderData &render_data, const Ray &ray, int additional_depth = 0) const override;
 		Rgba skyTau(const Ray &ray) const;

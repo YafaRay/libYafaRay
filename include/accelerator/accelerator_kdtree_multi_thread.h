@@ -55,7 +55,7 @@ class AcceleratorKdTreeMultiThread final : public Accelerator
 		virtual ~AcceleratorKdTreeMultiThread() override;
 		virtual AcceleratorIntersectData intersect(const Ray &ray, float t_max) const override;
 		virtual AcceleratorIntersectData intersectS(const Ray &ray, float t_max, float shadow_bias) const override;
-		virtual AcceleratorTsIntersectData intersectTs(RenderData &render_data, const Ray &ray, int max_depth, float t_max, float shadow_bias) const override;
+		virtual AcceleratorTsIntersectData intersectTs(const Ray &ray, int max_depth, float t_max, float shadow_bias, const Camera *camera) const override;
 		virtual Bound getBound() const override { return tree_bound_; }
 
 		Result buildTree(const std::vector<const Primitive *> &primitives, const Bound &node_bound, const std::vector<uint32_t> &indices, int depth, uint32_t next_node_id, int bad_refines, const std::vector<Bound> &bounds, const Parameters &parameters, const ClipPlane &clip_plane, const std::vector<PolyDouble> &polygons, const std::vector<uint32_t> &primitive_indices) const;
@@ -64,7 +64,7 @@ class AcceleratorKdTreeMultiThread final : public Accelerator
 		static SplitCost minimalCost(Logger &logger, float e_bonus, float cost_ratio, const Bound &node_bound, const std::vector<uint32_t> &indices, const std::vector<Bound> &bounds);
 		static AcceleratorIntersectData intersect(const Ray &ray, float t_max, const std::vector<Node> &nodes, const Bound &tree_bound);
 		static AcceleratorIntersectData intersectS(const Ray &ray, float t_max, float shadow_bias, const std::vector<Node> &nodes, const Bound &tree_bound);
-		static AcceleratorTsIntersectData intersectTs(RenderData &render_data, const Ray &ray, int max_depth, float t_max, float shadow_bias, const std::vector<Node> &nodes, const Bound &tree_bound);
+		static AcceleratorTsIntersectData intersectTs(const Ray &ray, int max_depth, float t_max, float, const std::vector<Node> &nodes, const Bound &tree_bound, const Camera *camera);
 
 		Bound tree_bound_; 	//!< overall space the tree encloses
 		std::vector<Node> nodes_;

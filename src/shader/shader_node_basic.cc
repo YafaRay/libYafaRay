@@ -95,7 +95,7 @@ Point3 TextureMapperNode::cubeMap(const Point3 &p, const Vec3 &n)
 	return { p[ma[axis][0]], p[ma[axis][1]], p[ma[axis][2]] };
 }
 
-// Map the texture to a plane but it should not be used by now as it does nothing, it's just for completeness sake
+// Map the texture to a plane, but it should not be used by now as it does nothing, it's just for completeness' sake
 Point3 TextureMapperNode::flatMap(const Point3 &p)
 {
 	return p;
@@ -134,18 +134,18 @@ Point3 TextureMapperNode::evalUv(const SurfacePoint &sp)
 	return { sp.u_, sp.v_, 0.f };
 }
 
-void TextureMapperNode::getCoords(Point3 &texpt, Vec3 &ng, const SurfacePoint &sp, const RenderData &render_data) const
+void TextureMapperNode::getCoords(Point3 &texpt, Vec3 &ng, const SurfacePoint &sp, const Camera *camera) const
 {
 	switch(coords_)
 	{
 		case Uv: texpt = evalUv(sp); ng = sp.ng_; break;
 		case Orco: texpt = sp.orco_p_; ng = sp.orco_ng_; break;
 		case Transformed: texpt = mtx_ * sp.p_; ng = mtx_ * sp.ng_; break;  // apply 4x4 matrix of object for mapping also to true surface normals
-		case Window: texpt = render_data.cam_->screenproject(sp.p_); ng = sp.ng_; break;
+		case Window: texpt = camera->screenproject(sp.p_); ng = sp.ng_; break;
 		case Normal:
 			{
 				Vec3 camx, camy, camz;
-				render_data.cam_->getAxis(camx, camy, camz);
+				camera->getAxis(camx, camy, camz);
 				texpt = Point3(sp.n_ * camx, -sp.n_ * camy, 0);
 				ng = sp.ng_;
 			}
@@ -161,7 +161,7 @@ void TextureMapperNode::getCoords(Point3 &texpt, Vec3 &ng, const SurfacePoint &s
 	}
 }
 
-void TextureMapperNode::eval(NodeStack &stack, const RenderData &render_data, const SurfacePoint &sp) const
+void TextureMapperNode::eval(NodeStack *stack, const SurfacePoint &sp, const Camera *camera) const
 {
 	Point3 texpt(0.f);
 	Vec3 ng(0.f);
@@ -170,7 +170,7 @@ void TextureMapperNode::eval(NodeStack &stack, const RenderData &render_data, co
 	if((tex_->getInterpolationType() == InterpolationType::Trilinear || tex_->getInterpolationType() == InterpolationType::Ewa) && sp.ray_ && sp.ray_->has_differentials_)
 	{
 		const SpDifferentials sp_diff(sp, *(sp.ray_));
-		getCoords(texpt, ng, sp, render_data);
+		getCoords(texpt, ng, sp, camera);
 		const Point3 texptorig = texpt;
 		texpt = doMapping(texptorig, ng);
 		if(coords_ == Uv && sp.has_uv_)
@@ -185,22 +185,22 @@ void TextureMapperNode::eval(NodeStack &stack, const RenderData &render_data, co
 	}
 	else
 	{
-		getCoords(texpt, ng, sp, render_data);
+		getCoords(texpt, ng, sp, camera);
 		texpt = doMapping(texpt, ng);
 	}
 
-	stack[getId()] = NodeResult(tex_->getColor(texpt, mip_map_params.get()), (do_scalar_) ? tex_->getFloat(texpt, mip_map_params.get()) : 0.f);
+	(*stack)[getId()] = NodeResult(tex_->getColor(texpt, mip_map_params.get()), (do_scalar_) ? tex_->getFloat(texpt, mip_map_params.get()) : 0.f);
 }
 
 // Normal perturbation
 
-void TextureMapperNode::evalDerivative(NodeStack &stack, const RenderData &render_data, const SurfacePoint &sp) const
+void TextureMapperNode::evalDerivative(NodeStack *stack, const SurfacePoint &sp, const Camera *camera) const
 {
 	Point3 texpt(0.f);
 	Vec3 ng(0.f);
 	float du = 0.0f, dv = 0.0f;
 
-	getCoords(texpt, ng, sp, render_data);
+	getCoords(texpt, ng, sp, camera);
 
 	if(tex_->discrete() && sp.has_uv_ && coords_ == Uv)
 	{
@@ -299,7 +299,7 @@ void TextureMapperNode::evalDerivative(NodeStack &stack, const RenderData &rende
 		}
 	}
 
-	stack[getId()] = NodeResult(Rgba(du, dv, 0.f, 0.f), 0.f);
+	(*stack)[getId()] = NodeResult(Rgba(du, dv, 0.f, 0.f), 0.f);
 }
 
 std::unique_ptr<ShaderNode> TextureMapperNode::factory(Logger &logger, const ParamMap &params, const Scene &scene)
@@ -372,9 +372,9 @@ std::unique_ptr<ShaderNode> TextureMapperNode::factory(Logger &logger, const Par
 /  The most simple node you could imagine...
 /  ========================================== */
 
-void ValueNode::eval(NodeStack &stack, const RenderData &render_data, const SurfacePoint &sp) const
+void ValueNode::eval(NodeStack *stack, const SurfacePoint &sp, const Camera *camera) const
 {
-	stack[getId()] = NodeResult(color_, value_);
+	(*stack)[getId()] = NodeResult(color_, value_);
 }
 
 std::unique_ptr<ShaderNode> ValueNode::factory(Logger &logger, const ParamMap &params, const Scene &scene)
@@ -392,7 +392,7 @@ std::unique_ptr<ShaderNode> ValueNode::factory(Logger &logger, const ParamMap &p
 /  A simple mix node, could be used to derive other math nodes
 / ========================================== */
 
-void MixNode::eval(NodeStack &stack, const RenderData &render_data, const SurfacePoint &sp) const
+void MixNode::eval(NodeStack *stack, const SurfacePoint &sp, const Camera *camera) const
 {
 	const float f_2 = factor_ ? factor_->getScalar(stack) : cfactor_;
 	const float f_1 = 1.f - f_2;
@@ -421,7 +421,7 @@ void MixNode::eval(NodeStack &stack, const RenderData &render_data, const Surfac
 
 	const Rgba color { f_1 * cin_1 + f_2 * cin_2 };
 	const float scalar { f_1 * fin_1 + f_2 * fin_2 };
-	stack[getId()] = NodeResult(color, scalar);
+	(*stack)[getId()] = NodeResult(color, scalar);
 }
 
 bool MixNode::configInputs(Logger &logger, const ParamMap &params, const NodeFinder &find)
@@ -484,7 +484,7 @@ std::vector<const ShaderNode *> MixNode::getDependencies() const
 	return dependencies;
 }
 
-void MixNode::getInputs(NodeStack &stack, Rgba &cin_1, Rgba &cin_2, float &fin_1, float &fin_2, float &f_2) const
+void MixNode::getInputs(const NodeStack *stack, Rgba &cin_1, Rgba &cin_2, float &fin_1, float &fin_2, float &f_2) const
 {
 	f_2 = factor_ ? factor_->getScalar(stack) : cfactor_;
 	if(input_1_)
@@ -512,7 +512,7 @@ void MixNode::getInputs(NodeStack &stack, Rgba &cin_1, Rgba &cin_2, float &fin_1
 class AddNode: public MixNode
 {
 	public:
-		virtual void eval(NodeStack &stack, const RenderData &render_data, const SurfacePoint &sp) const
+		virtual void eval(NodeStack *stack, const SurfacePoint &sp, const Camera *camera) const
 		{
 			float f_2, fin_1, fin_2;
 			Rgba cin_1, cin_2;
@@ -520,14 +520,14 @@ class AddNode: public MixNode
 
 			cin_1 += f_2 * cin_2;
 			fin_1 += f_2 * fin_2;
-			stack[getId()] = NodeResult(cin_1, fin_1);
+			(*stack)[getId()] = NodeResult(cin_1, fin_1);
 		}
 };
 
 class MultNode: public MixNode
 {
 	public:
-		virtual void eval(NodeStack &stack, const RenderData &render_data, const SurfacePoint &sp) const
+		virtual void eval(NodeStack *stack, const SurfacePoint &sp, const Camera *camera) const
 		{
 			float f_1, f_2, fin_1, fin_2;
 			Rgba cin_1, cin_2;
@@ -536,14 +536,14 @@ class MultNode: public MixNode
 
 			cin_1 *= Rgba(f_1) + f_2 * cin_2;
 			fin_2 *= f_1 + f_2 * fin_2;
-			stack[getId()] = NodeResult(cin_1, fin_1);
+			(*stack)[getId()] = NodeResult(cin_1, fin_1);
 		}
 };
 
 class SubNode: public MixNode
 {
 	public:
-		virtual void eval(NodeStack &stack, const RenderData &render_data, const SurfacePoint &sp) const
+		virtual void eval(NodeStack *stack, const SurfacePoint &sp, const Camera *camera) const
 		{
 			float f_2, fin_1, fin_2;
 			Rgba cin_1, cin_2;
@@ -551,14 +551,14 @@ class SubNode: public MixNode
 
 			cin_1 -= f_2 * cin_2;
 			fin_1 -= f_2 * fin_2;
-			stack[getId()] = NodeResult(cin_1, fin_1);
+			(*stack)[getId()] = NodeResult(cin_1, fin_1);
 		}
 };
 
 class ScreenNode: public MixNode
 {
 	public:
-		virtual void eval(NodeStack &stack, const RenderData &render_data, const SurfacePoint &sp) const
+		virtual void eval(NodeStack *stack, const SurfacePoint &sp, const Camera *camera) const
 		{
 			float f_1, f_2, fin_1, fin_2;
 			Rgba cin_1, cin_2;
@@ -567,14 +567,14 @@ class ScreenNode: public MixNode
 
 			const Rgba color { Rgba(1.f) - (Rgba(f_1) + f_2 * (1.f - cin_2)) * (1.f - cin_1) };
 			const float scalar = 1.f - (f_1 + f_2 * (1.f - fin_2)) * (1.f - fin_1);
-			stack[getId()] = NodeResult(color, scalar);
+			(*stack)[getId()] = NodeResult(color, scalar);
 		}
 };
 
 class DiffNode: public MixNode
 {
 	public:
-		virtual void eval(NodeStack &stack, const RenderData &render_data, const SurfacePoint &sp) const
+		virtual void eval(NodeStack *stack, const SurfacePoint &sp, const Camera *camera) const
 		{
 			float f_1, f_2, fin_1, fin_2;
 			Rgba cin_1, cin_2;
@@ -586,14 +586,14 @@ class DiffNode: public MixNode
 			cin_1.b_ = f_1 * cin_1.b_ + f_2 * std::abs(cin_1.b_ - cin_2.b_);
 			cin_1.a_ = f_1 * cin_1.a_ + f_2 * std::abs(cin_1.a_ - cin_2.a_);
 			fin_1   = f_1 * fin_1 + f_2 * std::abs(fin_1 - fin_2);
-			stack[getId()] = NodeResult(cin_1, fin_1);
+			(*stack)[getId()] = NodeResult(cin_1, fin_1);
 		}
 };
 
 class DarkNode: public MixNode
 {
 	public:
-		virtual void eval(NodeStack &stack, const RenderData &render_data, const SurfacePoint &sp) const
+		virtual void eval(NodeStack *stack, const SurfacePoint &sp, const Camera *camera) const
 		{
 			float f_2, fin_1, fin_2;
 			Rgba cin_1, cin_2;
@@ -606,14 +606,14 @@ class DarkNode: public MixNode
 			if(cin_2.a_ < cin_1.a_) cin_1.a_ = cin_2.a_;
 			fin_2 *= f_2;
 			if(fin_2 < fin_1) fin_1 = fin_2;
-			stack[getId()] = NodeResult(cin_1, fin_1);
+			(*stack)[getId()] = NodeResult(cin_1, fin_1);
 		}
 };
 
 class LightNode: public MixNode
 {
 	public:
-		virtual void eval(NodeStack &stack, const RenderData &render_data, const SurfacePoint &sp) const
+		virtual void eval(NodeStack *stack, const SurfacePoint &sp, const Camera *camera) const
 		{
 			float f_2, fin_1, fin_2;
 			Rgba cin_1, cin_2;
@@ -626,14 +626,14 @@ class LightNode: public MixNode
 			if(cin_2.a_ > cin_1.a_) cin_1.a_ = cin_2.a_;
 			fin_2 *= f_2;
 			if(fin_2 > fin_1) fin_1 = fin_2;
-			stack[getId()] = NodeResult(cin_1, fin_1);
+			(*stack)[getId()] = NodeResult(cin_1, fin_1);
 		}
 };
 
 class OverlayNode: public MixNode
 {
 	public:
-		virtual void eval(NodeStack &stack, const RenderData &render_data, const SurfacePoint &sp) const
+		virtual void eval(NodeStack *stack, const SurfacePoint &sp, const Camera *camera) const
 		{
 			float f_1, f_2, fin_1, fin_2;
 			Rgba cin_1, cin_2;
@@ -647,7 +647,7 @@ class OverlayNode: public MixNode
 				(cin_1.a_ < 0.5f) ? cin_1.a_ * (f_1 + 2.f * f_2 * cin_2.a_) : 1.f - (f_1 + 2.f * f_2 * (1.f - cin_2.a_)) * (1.f - cin_1.a_)
 			};
 			const float scalar = (fin_1 < 0.5f) ? fin_1 * (f_1 + 2.f * f_2 * fin_2) : 1.f - (f_1 + 2.f * f_2 * (1.f - fin_2)) * (1.f - fin_1);
-			stack[getId()] = NodeResult(color, scalar);
+			(*stack)[getId()] = NodeResult(color, scalar);
 		}
 };
 

@@ -36,13 +36,13 @@ class TextureMapperNode final : public ShaderNode
 		enum Projection : int { Plain = 0, Cube, Tube, Sphere };
 
 		TextureMapperNode(const Texture *texture) : tex_(texture) { }
-		virtual void eval(NodeStack &stack, const RenderData &render_data, const SurfacePoint &sp) const override;
-		virtual void evalDerivative(NodeStack &stack, const RenderData &render_data, const SurfacePoint &sp) const override;
+		virtual void eval(NodeStack *stack, const SurfacePoint &sp, const Camera *camera) const override;
+		virtual void evalDerivative(NodeStack *stack, const SurfacePoint &sp, const Camera *camera) const override;
 		virtual bool configInputs(Logger &logger, const ParamMap &params, const NodeFinder &find) override { return true; };
 		//virtual void getDerivative(const surfacePoint_t &sp, float &du, float &dv) const;
 
 		void setup();
-		void getCoords(Point3 &texpt, Vec3 &ng, const SurfacePoint &sp, const RenderData &render_data) const;
+		void getCoords(Point3 &texpt, Vec3 &ng, const SurfacePoint &sp, const Camera *camera) const;
 		Point3 doMapping(const Point3 &p, const Vec3 &n) const;
 		static Point3 tubeMap(const Point3 &p);
 		static Point3 sphereMap(const Point3 &p);
@@ -70,7 +70,7 @@ class ValueNode final : public ShaderNode
 
 	private:
 		ValueNode(Rgba col, float val): color_(col), value_(val) { }
-		virtual void eval(NodeStack &stack, const RenderData &render_data, const SurfacePoint &sp) const override;
+		virtual void eval(NodeStack *stack, const SurfacePoint &sp, const Camera *camera) const override;
 		virtual bool configInputs(Logger &logger, const ParamMap &params, const NodeFinder &find) override { return true; };
 
 		Rgba color_;
@@ -84,11 +84,11 @@ class MixNode : public ShaderNode
 
 	protected:
 		MixNode() = default;
-		void getInputs(NodeStack &stack, Rgba &cin_1, Rgba &cin_2, float &fin_1, float &fin_2, float &f_2) const;
+		void getInputs(const NodeStack *stack, Rgba &cin_1, Rgba &cin_2, float &fin_1, float &fin_2, float &f_2) const;
 
 	private:
 		MixNode(float val) : cfactor_(val) { }
-		virtual void eval(NodeStack &stack, const RenderData &render_data, const SurfacePoint &sp) const override;
+		virtual void eval(NodeStack *stack, const SurfacePoint &sp, const Camera *camera) const override;
 		virtual bool configInputs(Logger &logger, const ParamMap &params, const NodeFinder &find) override;
 		virtual std::vector<const ShaderNode *> getDependencies() const override;
 

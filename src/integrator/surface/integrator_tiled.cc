@@ -91,7 +91,7 @@ void TiledIntegrator::precalcDepths(const RenderView *render_view)
 			{
 				ray.tmax_ = -1.f;
 				ray = camera->shootRay(i, j, 0.5f, 0.5f, wt);
-				accelerator->intersect(ray, sp);
+				accelerator->intersect(ray, sp, camera);
 				if(ray.tmax_ > max_depth_) max_depth_ = ray.tmax_;
 				if(ray.tmax_ < min_depth_ && ray.tmax_ >= 0.f) min_depth_ = ray.tmax_;
 			}
@@ -337,7 +337,7 @@ bool TiledIntegrator::renderTile(RenderArea &a, const RenderView *render_view, c
 
 					if(image_film_->getBackgroundResampling()) mat_sample_factor = std::max(mat_sample_factor, 1.f); //If the background is set to be resampled, make sure the matSampleFactor is always >= 1.f
 
-					if(mat_sample_factor > 0.f && mat_sample_factor < 1.f) mat_sample_factor = 1.f;	//This is to ensure in the edges between objects and background we always shoot samples. Otherwise we might not shoot enough samples at the boundaries with the background where they are needed for antialiasing. However if the factor is equal to 0.f (as in the background) then no more samples will be shot
+					if(mat_sample_factor > 0.f && mat_sample_factor < 1.f) mat_sample_factor = 1.f;	//This is to ensure in the edges between objects and background we always shoot samples, otherwise we might not shoot enough samples at the boundaries with the background where they are needed for antialiasing, however if the factor is equal to 0.f (as in the background) then no more samples will be shot
 				}
 
 				if(mat_sample_factor != 1.f)
@@ -460,9 +460,9 @@ bool TiledIntegrator::renderTile(RenderArea &a, const RenderView *render_view, c
 	return true;
 }
 
-void TiledIntegrator::generateCommonLayers(RenderData &render_data, const SurfacePoint &sp, const DiffRay &ray, const MaskParams &mask_params, ColorLayers *color_layers)
+void TiledIntegrator::generateCommonLayers(int raylevel, const MaterialData *mat_data, const SurfacePoint &sp, const DiffRay &ray, const MaskParams &mask_params, ColorLayers *color_layers)
 {
-	const bool layers_used = render_data.raylevel_ == 0 && color_layers && color_layers->getFlags() != Layer::Flags::None;
+	const bool layers_used = raylevel == 0 && color_layers && color_layers->getFlags() != Layer::Flags::None;
 
 	if(layers_used)
 	{
@@ -612,19 +612,19 @@ void TiledIntegrator::generateCommonLayers(RenderData &render_data, const Surfac
 
 			if((color_layer = color_layers->find(Layer::DiffuseColor)))
 			{
-				color_layer->color_ = sp.material_->getDiffuseColor(render_data);
+				color_layer->color_ = sp.material_->getDiffuseColor(mat_data);
 			}
 			if((color_layer = color_layers->find(Layer::GlossyColor)))
 			{
-				color_layer->color_ = sp.material_->getGlossyColor(render_data);
+				color_layer->color_ = sp.material_->getGlossyColor(mat_data);
 			}
 			if((color_layer = color_layers->find(Layer::TransColor)))
 			{
-				color_layer->color_ = sp.material_->getTransColor(render_data);
+				color_layer->color_ = sp.material_->getTransColor(mat_data);
 			}
 			if((color_layer = color_layers->find(Layer::SubsurfaceColor)))
 			{
-				color_layer->color_ = sp.material_->getSubSurfaceColor(render_data);
+				color_layer->color_ = sp.material_->getSubSurfaceColor(mat_data);
 			}
 		}
 

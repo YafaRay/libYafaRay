@@ -25,6 +25,7 @@
 #include "color/color.h"
 #include <vector>
 #include <memory>
+#include <camera/camera.h>
 
 BEGIN_YAFARAY
 
@@ -36,6 +37,7 @@ class DiffRay;
 class Primitive;
 class SurfacePoint;
 class Logger;
+class MaterialData;
 
 struct AcceleratorIntersectData : IntersectData
 {
@@ -56,12 +58,12 @@ class Accelerator
 		virtual ~Accelerator() = default;
 		virtual AcceleratorIntersectData intersect(const Ray &ray, float t_max) const = 0;
 		virtual AcceleratorIntersectData intersectS(const Ray &ray, float t_max, float shadow_bias) const = 0;
-		virtual AcceleratorTsIntersectData intersectTs(RenderData &render_data, const Ray &ray, int max_depth, float dist, float shadow_bias) const = 0;
+		virtual AcceleratorTsIntersectData intersectTs(const Ray &ray, int max_depth, float dist, float shadow_bias, const Camera *camera) const = 0;
 		virtual Bound getBound() const = 0;
-		bool intersect(const Ray &ray, SurfacePoint &sp) const;
-		bool intersect(const DiffRay &ray, SurfacePoint &sp) const;
-		bool isShadowed(const RenderData &render_data, const Ray &ray, float &obj_index, float &mat_index, float shadow_bias) const;
-		bool isShadowed(RenderData &render_data, const Ray &ray, int max_depth, Rgb &filt, float &obj_index, float &mat_index, float shadow_bias) const;
+		bool intersect(const Ray &ray, SurfacePoint &sp, const Camera *camera) const;
+		bool intersect(const DiffRay &ray, SurfacePoint &sp, const Camera *camera) const;
+		bool isShadowed(const Ray &ray, float &obj_index, float &mat_index, float shadow_bias) const;
+		bool isShadowed(const Ray &ray, int max_depth, Rgb &filt, float &obj_index, float &mat_index, float shadow_bias, const Camera *camera) const;
 
 	protected:
 		Logger &logger_;

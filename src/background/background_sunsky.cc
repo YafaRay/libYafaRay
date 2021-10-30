@@ -169,7 +169,7 @@ inline Rgb SunSkyBackground::getSkyCol(const Ray &ray) const
 	return skycolor;
 }
 
-Rgb SunSkyBackground::operator()(const Ray &ray, RenderData &render_data, bool from_postprocessed) const
+Rgb SunSkyBackground::operator()(const Ray &ray, bool from_postprocessed) const
 {
 	return power_ * getSkyCol(ray);
 }
