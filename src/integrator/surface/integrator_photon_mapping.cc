@@ -734,8 +734,7 @@ Rgb PhotonIntegrator::finalGathering(RenderData &render_data, const SurfacePoint
 	if(!accelerator) return {0.f};
 
 	Rgb path_col(0.0);
-	alignas (16) unsigned char arena[arena_size_];
-	render_data.arena_.push(arena);
+	alignas (16) unsigned char arena_local[arena_size_];
 	const VolumeHandler *vol;
 	Rgb vcol(0.f);
 	float w = 0.f;
@@ -777,6 +776,7 @@ Rgb PhotonIntegrator::finalGathering(RenderData &render_data, const SurfacePoint
 
 		p_mat = hit.material_;
 		length = pRay.tmax_;
+		render_data.arena_.push(arena_local);
 		mat_bsd_fs = p_mat->getFlags();
 		bool has_spec = mat_bsd_fs.hasAny(BsdfFlags::Specular);
 		bool caustic = false;
@@ -869,8 +869,8 @@ Rgb PhotonIntegrator::finalGathering(RenderData &render_data, const SurfacePoint
 				path_col += lcol * throughput;
 			}
 		}
+		render_data.arena_.pop();
 	}
-	render_data.arena_.pop();
 	return path_col / (float)n_sampl;
 }
 
