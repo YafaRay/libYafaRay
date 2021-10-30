@@ -290,7 +290,7 @@ int main()
 	yafaray_paramsSetFloat(yi, "transparency", 0);
 	yafaray_paramsSetFloat(yi, "transparentbias_factor", 0);
 	yafaray_paramsSetBool(yi, "transparentbias_multiply_raydepth", YAFARAY_BOOL_FALSE);
-	yafaray_paramsSetString(yi, "type", "shinydiffusemat");
+	yafaray_paramsSetString(yi, "type", "coated_glossy");
 	yafaray_paramsSetString(yi, "visibility", "normal");
 	yafaray_paramsSetFloat(yi, "wireframe_amount", 0);
 	yafaray_paramsSetColor(yi, "wireframe_color", 1, 1, 1, 1);
@@ -931,7 +931,7 @@ int main()
 	yafaray_paramsSetInt(yi, "raydepth", 2);
 	yafaray_paramsSetInt(yi, "shadowDepth", 2);
 	yafaray_paramsSetBool(yi, "transpShad", YAFARAY_BOOL_FALSE);
-	yafaray_paramsSetString(yi, "type", "directlighting");
+	yafaray_paramsSetString(yi, "type", "photonmapping");
 	yafaray_createIntegrator(yi, "default");
 	yafaray_paramsClearAll(yi);
 
