@@ -504,7 +504,7 @@ std::unique_ptr<Material> GlossyMaterial::factory(Logger &logger, ParamMap &para
 		}
 		if(mat->bump_shader_) mat->bump_nodes_ = mat->getNodeList(mat->bump_shader_, nodes_sorted);
 	}
-	mat->req_mem_ = mat->sizeBytes() + sizeof(MDat);
+	mat->material_data_size_ = mat->sizeNodesBytes() + sizeof(MDat);
 	return mat;
 }
 

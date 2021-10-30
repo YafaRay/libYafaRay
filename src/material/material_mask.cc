@@ -169,8 +169,8 @@ std::unique_ptr<Material> MaskMaterial::factory(Logger &logger, ParamMap &params
 		}
 	}
 	mat->color_nodes_ = mat->solveNodesOrder(root_nodes_list, mat->nodes_map_, logger);
-	const size_t input_req = std::max(m_1->getReqMem(), m_2->getReqMem());
-	mat->req_mem_ = std::max(mat->sizeBytes(), sizeof(bool) + input_req);
+	const size_t input_req = std::max(m_1->sizeBytes(), m_2->sizeBytes());
+	mat->material_data_size_ = std::max(mat->sizeNodesBytes(), sizeof(bool) + input_req);
 	return mat;
 }
 

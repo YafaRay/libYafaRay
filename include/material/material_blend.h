@@ -65,7 +65,7 @@ class BlendMaterial final : public NodeMaterial
 		ShaderNode *blend_shader_ = nullptr; //!< the shader node used for blending the materials
 		ShaderNode *wireframe_shader_ = nullptr;     //!< Shader node for wireframe shading (float)
 		float blend_val_;
-		size_t mmem_1_;
+		size_t mat_1_size_;
 		bool recalc_blend_;
 		float blended_ior_;
 		mutable BsdfFlags mat_1_flags_, mat_2_flags_;

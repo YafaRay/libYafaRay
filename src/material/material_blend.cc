@@ -33,7 +33,7 @@ BlendMaterial::BlendMaterial(Logger &logger, const Material *m_1, const Material
 {
 	visibility_ = visibility;
 	bsdf_flags_ = mat_1_->getFlags() | mat_2_->getFlags();
-	mmem_1_ = mat_1_->getReqMem();
+	mat_1_size_ = mat_1_->sizeBytes();
 	recalc_blend_ = false;
 	blend_val_ = bval;
 	blended_ior_ = (mat_1_->getMatIor() + mat_2_->getMatIor()) * 0.5f;
@@ -68,13 +68,13 @@ void BlendMaterial::initBsdf(const RenderData &render_data, SurfacePoint &sp, Bs
 
 	SurfacePoint sp_0 = sp;
 
-	render_data.arena_.push(static_cast<char *>(render_data.arena_.top()) + req_mem_);
+	render_data.arena_.push(static_cast<char *>(render_data.arena_.top()) + material_data_size_);
 	mat_1_->initBsdf(render_data, sp_0, mat_1_flags_);
 	render_data.arena_.pop();
 
 	SurfacePoint sp_1 = sp;
 
-	render_data.arena_.push(static_cast<char *>(render_data.arena_.top()) + mmem_1_);
+	render_data.arena_.push(static_cast<char *>(render_data.arena_.top()) + mat_1_size_);
 	mat_2_->initBsdf(render_data, sp_1, mat_2_flags_);
 	render_data.arena_.pop();
 
@@ -90,11 +90,11 @@ Rgb BlendMaterial::eval(const RenderData &render_data, const SurfacePoint &sp, c
 	NodeStack stack(render_data.arena_.top());
 	const float blend_val = getBlendVal(render_data, sp);
 
-	render_data.arena_.push(static_cast<char *>(render_data.arena_.top()) + req_mem_);
+	render_data.arena_.push(static_cast<char *>(render_data.arena_.top()) + material_data_size_);
 	Rgb col_1 = mat_1_->eval(render_data, sp, wo, wl, bsdfs);
 	render_data.arena_.pop();
 
-	render_data.arena_.push(static_cast<char *>(render_data.arena_.top()) + mmem_1_);
+	render_data.arena_.push(static_cast<char *>(render_data.arena_.top()) + mat_1_size_);
 	const Rgb col_2 = mat_2_->eval(render_data, sp, wo, wl, bsdfs);
 	render_data.arena_.pop();
 
@@ -120,7 +120,7 @@ Rgb BlendMaterial::sample(const RenderData &render_data, const SurfacePoint &sp,
 
 	s_2.pdf_ = s_1.pdf_ = s.pdf_ = 0.f;
 
-	render_data.arena_.push(static_cast<char *>(render_data.arena_.top()) + req_mem_);
+	render_data.arena_.push(static_cast<char *>(render_data.arena_.top()) + material_data_size_);
 	if(s.flags_.hasAny(mat_1_flags_))
 	{
 		col_1 = mat_1_->sample(render_data, sp, wo, wi_1, s_1, w_1);
@@ -128,7 +128,7 @@ Rgb BlendMaterial::sample(const RenderData &render_data, const SurfacePoint &sp,
 	}
 	render_data.arena_.pop();
 
-	render_data.arena_.push(static_cast<char *>(render_data.arena_.top()) + mmem_1_);
+	render_data.arena_.push(static_cast<char *>(render_data.arena_.top()) + mat_1_size_);
 	if(s.flags_.hasAny(mat_2_flags_))
 	{
 		col_2 = mat_2_->sample(render_data, sp, wo, wi_2, s_2, w_2);
@@ -208,11 +208,11 @@ float BlendMaterial::pdf(const RenderData &render_data, const SurfacePoint &sp, 
 {
 	const float blend_val = getBlendVal(render_data, sp);
 
-	render_data.arena_.push(static_cast<char *>(render_data.arena_.top()) + req_mem_);
+	render_data.arena_.push(static_cast<char *>(render_data.arena_.top()) + material_data_size_);
 	float pdf_1 = mat_1_->pdf(render_data, sp, wo, wi, bsdfs);
 	render_data.arena_.pop();
 
-	render_data.arena_.push(static_cast<char *>(render_data.arena_.top()) + mmem_1_);
+	render_data.arena_.push(static_cast<char *>(render_data.arena_.top()) + mat_1_size_);
 	const float pdf_2 = mat_2_->pdf(render_data, sp, wo, wi, bsdfs);
 	render_data.arena_.pop();
 
@@ -225,10 +225,10 @@ Material::Specular BlendMaterial::getSpecular(const RenderData &render_data, con
 	Specular specular, specular_1, specular_2;
 	NodeStack stack(render_data.arena_.top());
 	const float blend_val = getBlendVal(render_data, sp);
-	render_data.arena_.push(static_cast<char *>(render_data.arena_.top()) + req_mem_);
+	render_data.arena_.push(static_cast<char *>(render_data.arena_.top()) + material_data_size_);
 	specular_1 = mat_1_->getSpecular(render_data, sp, wo);
 	render_data.arena_.pop();
-	render_data.arena_.push(static_cast<char *>(render_data.arena_.top()) + mmem_1_);
+	render_data.arena_.push(static_cast<char *>(render_data.arena_.top()) + mat_1_size_);
 	specular_2 = mat_2_->getSpecular(render_data, sp, wo);
 	render_data.arena_.pop();
 	specular.reflect_.enabled_ = specular_1.reflect_.enabled_ | specular_2.reflect_.enabled_;
@@ -291,11 +291,11 @@ Rgb BlendMaterial::getTransparency(const RenderData &render_data, const SurfaceP
 	NodeStack stack(render_data.arena_.top());
 	const float blend_val = getBlendVal(render_data, sp);
 
-	render_data.arena_.push(static_cast<char *>(render_data.arena_.top()) + req_mem_);
+	render_data.arena_.push(static_cast<char *>(render_data.arena_.top()) + material_data_size_);
 	Rgb col_1 = mat_1_->getTransparency(render_data, sp, wo);
 	render_data.arena_.pop();
 
-	render_data.arena_.push(static_cast<char *>(render_data.arena_.top()) + mmem_1_);
+	render_data.arena_.push(static_cast<char *>(render_data.arena_.top()) + mat_1_size_);
 	const Rgb col_2 = mat_2_->getTransparency(render_data, sp, wo);
 	render_data.arena_.pop();
 
@@ -312,11 +312,11 @@ float BlendMaterial::getAlpha(const RenderData &render_data, const SurfacePoint 
 
 	if(isTransparent())
 	{
-		render_data.arena_.push(static_cast<char *>(render_data.arena_.top()) + req_mem_);
+		render_data.arena_.push(static_cast<char *>(render_data.arena_.top()) + material_data_size_);
 		float al_1 = mat_1_->getAlpha(render_data, sp, wo);
 		render_data.arena_.pop();
 
-		render_data.arena_.push(static_cast<char *>(render_data.arena_.top()) + mmem_1_);
+		render_data.arena_.push(static_cast<char *>(render_data.arena_.top()) + mat_1_size_);
 		const float al_2 = mat_2_->getAlpha(render_data, sp, wo);
 		render_data.arena_.pop();
 
@@ -338,11 +338,11 @@ Rgb BlendMaterial::emit(const RenderData &render_data, const SurfacePoint &sp, c
 	NodeStack stack(render_data.arena_.top());
 	const float blend_val = getBlendVal(render_data, sp);
 
-	render_data.arena_.push(static_cast<char *>(render_data.arena_.top()) + req_mem_);
+	render_data.arena_.push(static_cast<char *>(render_data.arena_.top()) + material_data_size_);
 	Rgb col_1 = mat_1_->emit(render_data, sp, wo);
 	render_data.arena_.pop();
 
-	render_data.arena_.push(static_cast<char *>(render_data.arena_.top()) + mmem_1_);
+	render_data.arena_.push(static_cast<char *>(render_data.arena_.top()) + mat_1_size_);
 	const Rgb col_2 = mat_2_->emit(render_data, sp, wo);
 	render_data.arena_.pop();
 
@@ -357,13 +357,13 @@ bool BlendMaterial::scatterPhoton(const RenderData &render_data, const SurfacePo
 {
 	const float blend_val = getBlendVal(render_data, sp);
 
-	render_data.arena_.push(static_cast<char *>(render_data.arena_.top()) + req_mem_);
+	render_data.arena_.push(static_cast<char *>(render_data.arena_.top()) + material_data_size_);
 	bool ret = mat_1_->scatterPhoton(render_data, sp, wi, wo, s);
 	render_data.arena_.pop();
 	const Rgb col_1 = s.color_;
 	const float pdf_1 = s.pdf_;
 
-	render_data.arena_.push(static_cast<char *>(render_data.arena_.top()) + mmem_1_);
+	render_data.arena_.push(static_cast<char *>(render_data.arena_.top()) + mat_1_size_);
 	ret = ret || mat_2_->scatterPhoton(render_data, sp, wi, wo, s);
 	render_data.arena_.pop();
 	const Rgb col_2 = s.color_;
@@ -456,7 +456,7 @@ std::unique_ptr<Material> BlendMaterial::factory(Logger &logger, ParamMap &param
 		}
 	}
 	mat->color_nodes_ = mat->solveNodesOrder(root_nodes_list, mat->nodes_map_, logger);
-	mat->req_mem_ = sizeof(bool) + mat->sizeBytes();
+	mat->material_data_size_ = sizeof(bool) + mat->sizeNodesBytes();
 	return mat;
 }
 

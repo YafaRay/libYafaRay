@@ -150,7 +150,7 @@ class Material
 		BsdfFlags getFlags() const { return bsdf_flags_; }
 		/*! Materials may have to do surface point specific (pre-)calculation that need extra storage.
 			returns the required amount of "arena/userdata" memory for all the functions that require a RenderData */
-		size_t getReqMem() const { return req_mem_; }
+		size_t sizeBytes() const { return material_data_size_; }
 
 		/*! Get materials IOR (for refracted photons) */
 
@@ -203,7 +203,7 @@ class Material
 
 		bool receive_shadows_ = true; //!< enables/disables material reception of shadows.
 
-		size_t req_mem_ = 0; //!< the amount of "temporary" memory required to compute/store surface point specific data
+		size_t material_data_size_ = 0; //!< the amount of "temporary" memory required to compute/store surface point specific data
 		std::unique_ptr<VolumeHandler> vol_i_; //!< volumetric handler for space inside material (opposed to surface normal)
 		std::unique_ptr<VolumeHandler> vol_o_; //!< volumetric handler for space outside ofmaterial (where surface normal points to)
 		unsigned int material_index_ = 0;	//!< Material Index for the material-index render pass

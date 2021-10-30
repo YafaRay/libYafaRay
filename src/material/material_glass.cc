@@ -418,7 +418,7 @@ std::unique_ptr<Material> GlassMaterial::factory(Logger &logger, ParamMap &param
 		}
 		if(mat->bump_shader_) mat->bump_nodes_ = mat->getNodeList(mat->bump_shader_, nodes_sorted);
 	}
-	mat->req_mem_ = mat->sizeBytes();
+	mat->material_data_size_ = mat->sizeNodesBytes();
 	return mat;
 }
 

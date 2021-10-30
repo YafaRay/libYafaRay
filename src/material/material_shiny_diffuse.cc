@@ -87,7 +87,7 @@ void ShinyDiffuseMaterial::config()
 		c_index_[n_bsdf_] = 3;
 		++n_bsdf_;
 	}
-	req_mem_ = sizeBytes() + sizeof(SdDat);
+	material_data_size_ = sizeNodesBytes() + sizeof(SdDat);
 }
 
 // component should be initialized with mMirrorStrength, mTransparencyStrength, mTranslucencyStrength, mDiffuseStrength
