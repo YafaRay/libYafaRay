@@ -997,8 +997,8 @@ int main()
 	yafaray_paramsSetFloat(yi, "layer_toon_quantization", 0.1);
 	yafaray_paramsSetString(yi, "scene_accelerator", "yafaray-kdtree-original");
 	yafaray_paramsSetBool(yi, "show_sam_pix", YAFARAY_BOOL_TRUE);
-	yafaray_paramsSetInt(yi, "threads", -1);
-	yafaray_paramsSetInt(yi, "threads_photons", -1);
+	yafaray_paramsSetInt(yi, "threads", 1);
+	yafaray_paramsSetInt(yi, "threads_photons", 1);
 	yafaray_paramsSetInt(yi, "tile_size", 32);
 	yafaray_paramsSetString(yi, "tiles_order", "centre");
 	yafaray_paramsSetString(yi, "volintegrator_name", "volintegr");
