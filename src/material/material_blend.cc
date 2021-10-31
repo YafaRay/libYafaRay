@@ -41,15 +41,9 @@ BlendMaterial::BlendMaterial(Logger &logger, const Material *m_1, const Material
 	additional_depth_ = std::max(mat_1_->getAdditionalDepth(), mat_2_->getAdditionalDepth());
 }
 
-BlendMaterial::~BlendMaterial()
-{
-	mat_1_flags_ = BsdfFlags::None;
-	mat_2_flags_ = BsdfFlags::None;
-}
-
 inline float BlendMaterial::getBlendVal(const MaterialData *mat_data, const SurfacePoint &sp) const
 {
-	const float blend_val = blend_shader_->getScalar(mat_data->stack_.get());
+	const float blend_val = blend_shader_ ? blend_shader_->getScalar(mat_data->stack_.get()) : blend_val_;
 	return blend_val;
 }
 
@@ -63,12 +57,12 @@ std::unique_ptr<MaterialData> BlendMaterial::initBsdf(SurfacePoint &sp, BsdfFlag
 	evalNodes(sp, color_nodes_, mat_data->stack_.get(), camera);
 	const float blend_val = getBlendVal(mat_data_specific, sp);
 
-	SurfacePoint sp_0 = sp;
-	mat_data_specific->mat_1_data_ = mat_1_->initBsdf(sp_0, mat_1_flags_, camera);
 	SurfacePoint sp_1 = sp;
-	mat_data_specific->mat_2_data_ = mat_2_->initBsdf(sp_1, mat_2_flags_, camera);
-	sp = SurfacePoint::blendSurfacePoints(sp_0, sp_1, blend_val);
-	bsdf_types = mat_1_flags_ | mat_2_flags_;
+	mat_data_specific->mat_1_data_ = mat_1_->initBsdf(sp_1, mat_data_specific->mat_1_flags_, camera);
+	SurfacePoint sp_2 = sp;
+	mat_data_specific->mat_2_data_ = mat_2_->initBsdf(sp_2, mat_data_specific->mat_2_flags_, camera);
+	sp = SurfacePoint::blendSurfacePoints(sp_1, sp_2, blend_val);
+	bsdf_types = mat_data_specific->mat_1_flags_ | mat_data_specific->mat_2_flags_;
 
 	//todo: bump mapping blending
 	return mat_data;
@@ -77,16 +71,16 @@ std::unique_ptr<MaterialData> BlendMaterial::initBsdf(SurfacePoint &sp, BsdfFlag
 Rgb BlendMaterial::eval(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wl, const BsdfFlags &bsdfs, bool force_eval) const
 {
 	const BlendMaterialData *mat_data_specific = static_cast<const BlendMaterialData *>(mat_data);
-	const float blend_val = getBlendVal(mat_data, sp);
 
-	Rgb col_1 = mat_1_->eval(mat_data_specific->mat_1_data_.get(), sp, wo, wl, bsdfs);
+	const Rgb col_1 = mat_1_->eval(mat_data_specific->mat_1_data_.get(), sp, wo, wl, bsdfs);
 	const Rgb col_2 = mat_2_->eval(mat_data_specific->mat_2_data_.get(), sp, wo, wl, bsdfs);
 
-	col_1 = math::lerp(col_1, col_2, blend_val);
+	const float blend_val = getBlendVal(mat_data, sp);
+	Rgb col_blend = math::lerp(col_1, col_2, blend_val);
 
-	const float wire_frame_amount = (wireframe_shader_ ? wireframe_shader_->getScalar(mat_data->stack_.get()) * wireframe_amount_ : wireframe_amount_);
-	applyWireFrame(col_1, wire_frame_amount, sp);
-	return col_1;
+	const float wire_frame_amount = wireframe_shader_ ? wireframe_shader_->getScalar(mat_data->stack_.get()) * wireframe_amount_ : wireframe_amount_;
+	applyWireFrame(col_blend, wire_frame_amount, sp);
+	return col_blend;
 }
 
 Rgb BlendMaterial::sample(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, Vec3 &wi, Sample &s, float &w, bool chromatic, float wavelength, const Camera *camera) const
@@ -104,13 +98,13 @@ Rgb BlendMaterial::sample(const MaterialData *mat_data, const SurfacePoint &sp, 
 
 	s_2.pdf_ = s_1.pdf_ = s.pdf_ = 0.f;
 
-	if(s.flags_.hasAny(mat_1_flags_))
+	if(s.flags_.hasAny(mat_data_specific->mat_1_flags_))
 	{
 		col_1 = mat_1_->sample(mat_data_specific->mat_1_data_.get(), sp, wo, wi_1, s_1, w_1, chromatic, wavelength, camera);
 		mat_1_sampled = true;
 	}
 
-	if(s.flags_.hasAny(mat_2_flags_))
+	if(s.flags_.hasAny(mat_data_specific->mat_2_flags_))
 	{
 		col_2 = mat_2_->sample(mat_data_specific->mat_2_data_.get(), sp, wo, wi_2, s_2, w_2, chromatic, wavelength, camera);
 		mat_2_sampled = true;
@@ -161,7 +155,7 @@ Rgb BlendMaterial::sample(const MaterialData *mat_data, const SurfacePoint &sp, 
 		col_1 = col_2;
 		w = w_2;
 	}
-	const float wire_frame_amount = (wireframe_shader_ ? wireframe_shader_->getScalar(mat_data->stack_.get()) * wireframe_amount_ : wireframe_amount_);
+	const float wire_frame_amount = wireframe_shader_ ? wireframe_shader_->getScalar(mat_data->stack_.get()) * wireframe_amount_ : wireframe_amount_;
 	applyWireFrame(col_1, wire_frame_amount, sp);
 	return col_1;
 }
@@ -173,74 +167,79 @@ Rgb BlendMaterial::sample(const MaterialData *mat_data, const SurfacePoint &sp, 
 	Rgb col;
 	if(blend_val <= 0.f) col = mat_1_->sample(mat_data_specific->mat_1_data_.get(), sp, wo, dir, tcol, s, w, chromatic, wavelength);
 	else if(blend_val >= 1.f) col = mat_2_->sample(mat_data_specific->mat_2_data_.get(), sp, wo, dir, tcol, s, w, chromatic, wavelength);
-	else col = math::lerp(mat_1_->sample(mat_data_specific->mat_1_data_.get(), sp, wo, dir, tcol, s, w, false, 0), mat_2_->sample(mat_data, sp, wo, dir, tcol, s, w, false, 0), blend_val);
+	else
+	{
+		const Rgb col_1 = mat_1_->sample(mat_data_specific->mat_1_data_.get(), sp, wo, dir, tcol, s, w, chromatic, wavelength);
+		const Rgb col_2 = mat_2_->sample(mat_data_specific->mat_2_data_.get(), sp, wo, dir, tcol, s, w, chromatic, wavelength);
+		col = math::lerp(col_1, col_2, blend_val);
+	}
 
-	const float wire_frame_amount = (wireframe_shader_ ? wireframe_shader_->getScalar(mat_data->stack_.get()) * wireframe_amount_ : wireframe_amount_);
+	const float wire_frame_amount = wireframe_shader_ ? wireframe_shader_->getScalar(mat_data->stack_.get()) * wireframe_amount_ : wireframe_amount_;
 	applyWireFrame(col, wire_frame_amount, sp);
 	return col;
 }
 
-
 float BlendMaterial::pdf(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wi, const BsdfFlags &bsdfs) const
 {
 	const BlendMaterialData *mat_data_specific = static_cast<const BlendMaterialData *>(mat_data);
-	const float blend_val = getBlendVal(mat_data, sp);
-	float pdf_1 = mat_1_->pdf(mat_data_specific->mat_1_data_.get(), sp, wo, wi, bsdfs);
+	const float pdf_1 = mat_1_->pdf(mat_data_specific->mat_1_data_.get(), sp, wo, wi, bsdfs);
 	const float pdf_2 = mat_2_->pdf(mat_data_specific->mat_2_data_.get(), sp, wo, wi, bsdfs);
-	pdf_1 = math::lerp(pdf_1, pdf_2, blend_val);
-	return pdf_1;
+
+	const float blend_val = getBlendVal(mat_data, sp);
+	const float pdf_blend = math::lerp(pdf_1, pdf_2, blend_val);
+	return pdf_blend;
 }
 
 Material::Specular BlendMaterial::getSpecular(int raylevel, const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, bool chromatic, float wavelength) const
 {
-	Specular specular, specular_1, specular_2;
 	const BlendMaterialData *mat_data_specific = static_cast<const BlendMaterialData *>(mat_data);
 	const float blend_val = getBlendVal(mat_data, sp);
-	specular_1 = mat_1_->getSpecular(raylevel, mat_data_specific->mat_1_data_.get(), sp, wo, chromatic, wavelength);
-	specular_2 = mat_2_->getSpecular(raylevel, mat_data_specific->mat_2_data_.get(), sp, wo, chromatic, wavelength);
-	specular.reflect_.enabled_ = specular_1.reflect_.enabled_ | specular_2.reflect_.enabled_;
-	if(specular.reflect_.enabled_)
+	const Specular specular_1 = mat_1_->getSpecular(raylevel, mat_data_specific->mat_1_data_.get(), sp, wo, chromatic, wavelength);
+	const Specular specular_2 = mat_2_->getSpecular(raylevel, mat_data_specific->mat_2_data_.get(), sp, wo, chromatic, wavelength);
+	Specular specular_blend;
+	specular_blend.reflect_.enabled_ = specular_1.reflect_.enabled_ | specular_2.reflect_.enabled_;
+	if(specular_blend.reflect_.enabled_)
 	{
 		if(specular_1.reflect_.enabled_ && specular_2.reflect_.enabled_)
 		{
-			specular.reflect_.col_ = math::lerp(specular_2.reflect_.col_, specular_1.reflect_.col_, blend_val);
-			specular.reflect_.dir_ = (specular_1.reflect_.dir_ + specular_2.reflect_.dir_).normalize();
+			specular_blend.reflect_.col_ = math::lerp(specular_2.reflect_.col_, specular_1.reflect_.col_, blend_val);
+			specular_blend.reflect_.dir_ = (specular_1.reflect_.dir_ + specular_2.reflect_.dir_).normalize();
 		}
 		else if(specular_1.reflect_.enabled_)
 		{
-			specular.reflect_.col_ = specular_1.reflect_.col_ * blend_val;
-			specular.reflect_.dir_ = specular_1.reflect_.dir_;
+			specular_blend.reflect_.col_ = specular_1.reflect_.col_ * blend_val;
+			specular_blend.reflect_.dir_ = specular_1.reflect_.dir_;
 		}
 		else if(specular_2.reflect_.enabled_)
 		{
-			specular.reflect_.col_ = specular_2.reflect_.col_ * (1.f - blend_val);
-			specular.reflect_.dir_ = specular_2.reflect_.dir_;
+			specular_blend.reflect_.col_ = specular_2.reflect_.col_ * (1.f - blend_val);
+			specular_blend.reflect_.dir_ = specular_2.reflect_.dir_;
 		}
-		const float wire_frame_amount = (wireframe_shader_ ? wireframe_shader_->getScalar(mat_data->stack_.get()) * wireframe_amount_ : wireframe_amount_);
-		applyWireFrame(specular.reflect_.col_, wire_frame_amount, sp);
+		const float wire_frame_amount = wireframe_shader_ ? wireframe_shader_->getScalar(mat_data->stack_.get()) * wireframe_amount_ : wireframe_amount_;
+		applyWireFrame(specular_blend.reflect_.col_, wire_frame_amount, sp);
 	}
-	specular.refract_.enabled_ = specular_1.refract_.enabled_ | specular_2.refract_.enabled_;
-	if(specular.refract_.enabled_)
+	specular_blend.refract_.enabled_ = specular_1.refract_.enabled_ | specular_2.refract_.enabled_;
+	if(specular_blend.refract_.enabled_)
 	{
 		if(specular_1.refract_.enabled_ && specular_2.refract_.enabled_)
 		{
-			specular.refract_.col_ = math::lerp(specular_2.refract_.col_, specular_1.refract_.col_, blend_val);
-			specular.refract_.dir_ = (specular_1.refract_.dir_ + specular_2.refract_.dir_).normalize();
+			specular_blend.refract_.col_ = math::lerp(specular_2.refract_.col_, specular_1.refract_.col_, blend_val);
+			specular_blend.refract_.dir_ = (specular_1.refract_.dir_ + specular_2.refract_.dir_).normalize();
 		}
 		else if(specular_1.refract_.enabled_)
 		{
-			specular.refract_.col_ = specular_1.refract_.col_ * blend_val;
-			specular.refract_.dir_ = specular_1.refract_.dir_;
+			specular_blend.refract_.col_ = specular_1.refract_.col_ * blend_val;
+			specular_blend.refract_.dir_ = specular_1.refract_.dir_;
 		}
 		else if(specular_2.refract_.enabled_)
 		{
-			specular.refract_.col_ = specular_2.refract_.col_ * (1.f - blend_val);
-			specular.refract_.dir_ = specular_2.refract_.dir_;
+			specular_blend.refract_.col_ = specular_2.refract_.col_ * (1.f - blend_val);
+			specular_blend.refract_.dir_ = specular_2.refract_.dir_;
 		}
-		const float wire_frame_amount = (wireframe_shader_ ? wireframe_shader_->getScalar(mat_data->stack_.get()) * wireframe_amount_ : wireframe_amount_);
-		applyWireFrame(specular.refract_.col_, wire_frame_amount, sp);
+		const float wire_frame_amount = wireframe_shader_ ? wireframe_shader_->getScalar(mat_data->stack_.get()) * wireframe_amount_ : wireframe_amount_;
+		applyWireFrame(specular_blend.refract_.col_, wire_frame_amount, sp);
 	}
-	return specular;
+	return specular_blend;
 }
 
 float BlendMaterial::getMatIor() const
@@ -256,31 +255,28 @@ bool BlendMaterial::isTransparent() const
 Rgb BlendMaterial::getTransparency(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, const Camera *camera) const
 {
 	const BlendMaterialData *mat_data_specific = static_cast<const BlendMaterialData *>(mat_data);
-	const float blend_val = getBlendVal(mat_data, sp);
-
-	Rgb col_1 = mat_1_->getTransparency(mat_data_specific->mat_1_data_.get(), sp, wo, camera);
+	const Rgb col_1 = mat_1_->getTransparency(mat_data_specific->mat_1_data_.get(), sp, wo, camera);
 	const Rgb col_2 = mat_2_->getTransparency(mat_data_specific->mat_2_data_.get(), sp, wo, camera);
-	col_1 = math::lerp(col_1, col_2, blend_val);
 
-	const float wire_frame_amount = (wireframe_shader_ ? wireframe_shader_->getScalar(mat_data->stack_.get()) * wireframe_amount_ : wireframe_amount_);
-	applyWireFrame(col_1, wire_frame_amount, sp);
-	return col_1;
+	const float blend_val = getBlendVal(mat_data, sp);
+	Rgb col_blend = math::lerp(col_1, col_2, blend_val);
+
+	const float wire_frame_amount = wireframe_shader_ ? wireframe_shader_->getScalar(mat_data->stack_.get()) * wireframe_amount_ : wireframe_amount_;
+	applyWireFrame(col_blend, wire_frame_amount, sp);
+	return col_blend;
 }
 
 float BlendMaterial::getAlpha(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, const Camera *camera) const
 {
 	const BlendMaterialData *mat_data_specific = static_cast<const BlendMaterialData *>(mat_data);
+	float result = 1.f;
 	if(isTransparent())
 	{
-		float al_1 = mat_1_->getAlpha(mat_data_specific->mat_1_data_.get(), sp, wo, camera);
+		const float al_1 = mat_1_->getAlpha(mat_data_specific->mat_1_data_.get(), sp, wo, camera);
 		const float al_2 = mat_2_->getAlpha(mat_data_specific->mat_2_data_.get(), sp, wo, camera);
-		al_1 = std::min(al_1, al_2);
-		const float wire_frame_amount = (wireframe_shader_ ? wireframe_shader_->getScalar(mat_data->stack_.get()) * wireframe_amount_ : wireframe_amount_);
-		applyWireFrame(al_1, wire_frame_amount, sp);
-		return al_1;
+		result = std::min(al_1, al_2);
 	}
-	float result = 1.0;
-	const float wire_frame_amount = (wireframe_shader_ ? wireframe_shader_->getScalar(mat_data->stack_.get()) * wireframe_amount_ : wireframe_amount_);
+	const float wire_frame_amount = wireframe_shader_ ? wireframe_shader_->getScalar(mat_data->stack_.get()) * wireframe_amount_ : wireframe_amount_;
 	applyWireFrame(result, wire_frame_amount, sp);
 	return result;
 }
@@ -288,28 +284,29 @@ float BlendMaterial::getAlpha(const MaterialData *mat_data, const SurfacePoint &
 Rgb BlendMaterial::emit(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, bool lights_geometry_material_emit) const
 {
 	const BlendMaterialData *mat_data_specific = static_cast<const BlendMaterialData *>(mat_data);
-	const float blend_val = getBlendVal(mat_data, sp);
-	Rgb col_1 = mat_1_->emit(mat_data_specific->mat_1_data_.get(), sp, wo, lights_geometry_material_emit);
+	const Rgb col_1 = mat_1_->emit(mat_data_specific->mat_1_data_.get(), sp, wo, lights_geometry_material_emit);
 	const Rgb col_2 = mat_2_->emit(mat_data_specific->mat_2_data_.get(), sp, wo, lights_geometry_material_emit);
-	col_1 = math::lerp(col_1, col_2, blend_val);
-	const float wire_frame_amount = (wireframe_shader_ ? wireframe_shader_->getScalar(mat_data->stack_.get()) * wireframe_amount_ : wireframe_amount_);
-	applyWireFrame(col_1, wire_frame_amount, sp);
-	return col_1;
+
+	const float blend_val = getBlendVal(mat_data, sp);
+	Rgb col_blend = math::lerp(col_1, col_2, blend_val);
+	const float wire_frame_amount = wireframe_shader_ ? wireframe_shader_->getScalar(mat_data->stack_.get()) * wireframe_amount_ : wireframe_amount_;
+	applyWireFrame(col_blend, wire_frame_amount, sp);
+	return col_blend;
 }
 
 bool BlendMaterial::scatterPhoton(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wi, Vec3 &wo, PSample &s, bool chromatic, float wavelength, const Camera *camera) const
 {
 	const BlendMaterialData *mat_data_specific = static_cast<const BlendMaterialData *>(mat_data);
 	const float blend_val = getBlendVal(mat_data, sp);
-	bool ret = mat_1_->scatterPhoton(mat_data_specific->mat_1_data_.get(), sp, wi, wo, s, chromatic, wavelength, camera);
+	const bool scattered_1 = mat_1_->scatterPhoton(mat_data_specific->mat_1_data_.get(), sp, wi, wo, s, chromatic, wavelength, camera);
 	const Rgb col_1 = s.color_;
 	const float pdf_1 = s.pdf_;
-	ret = ret || mat_2_->scatterPhoton(mat_data_specific->mat_2_data_.get(), sp, wi, wo, s, chromatic, wavelength, camera);
+	const bool scattered_2 = mat_2_->scatterPhoton(mat_data_specific->mat_2_data_.get(), sp, wi, wo, s, chromatic, wavelength, camera);
 	const Rgb col_2 = s.color_;
 	const float pdf_2 = s.pdf_;
 	s.color_ = math::lerp(col_1, col_2, blend_val);
 	s.pdf_ = math::lerp(pdf_1, pdf_2, blend_val);
-	return ret;
+	return scattered_1 | scattered_2;
 }
 
 const VolumeHandler *BlendMaterial::getVolumeHandler(bool inside) const
@@ -369,11 +366,7 @@ std::unique_ptr<Material> BlendMaterial::factory(Logger &logger, ParamMap &param
 
 	std::vector<const ShaderNode *> root_nodes_list;
 	mat->nodes_map_ = mat->loadNodes(nodes_params, scene, logger);
-	if(mat->nodes_map_.empty())
-	{
-		return nullptr;
-	}
-	else
+	if(!mat->nodes_map_.empty())
 	{
 		if(params.getParam("mask", name))
 		{
@@ -390,8 +383,8 @@ std::unique_ptr<Material> BlendMaterial::factory(Logger &logger, ParamMap &param
 				return nullptr;
 			}
 		}
+		mat->color_nodes_ = mat->solveNodesOrder(root_nodes_list, mat->nodes_map_, logger);
 	}
-	mat->color_nodes_ = mat->solveNodesOrder(root_nodes_list, mat->nodes_map_, logger);
 	return mat;
 }
 

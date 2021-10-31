@@ -336,7 +336,7 @@ int main()
 	yafaray_paramsSetInt(yi, "additionaldepth", 0);
 	yafaray_paramsSetFloat(yi, "blend_value", 1);
 	yafaray_paramsSetBool(yi, "flat_material", YAFARAY_BOOL_FALSE);
-	yafaray_paramsSetString(yi, "material1", "diffuse2");
+	yafaray_paramsSetString(yi, "material1", "Mat1");
 	yafaray_paramsSetString(yi, "material2", "Mat2");
 	yafaray_paramsSetBool(yi, "receive_shadows", YAFARAY_BOOL_TRUE);
 	yafaray_paramsSetFloat(yi, "samplingfactor", 1);
@@ -633,8 +633,8 @@ int main()
 	yafaray_paramsSetFloat(yi, "layer_toon_quantization", 0.1);
 	yafaray_paramsSetString(yi, "scene_accelerator", "yafaray-kdtree-original");
 	yafaray_paramsSetBool(yi, "show_sam_pix", YAFARAY_BOOL_TRUE);
-	yafaray_paramsSetInt(yi, "threads", -1);
-	yafaray_paramsSetInt(yi, "threads_photons", -1);
+	yafaray_paramsSetInt(yi, "threads", 1);
+	yafaray_paramsSetInt(yi, "threads_photons", 1);
 	yafaray_paramsSetInt(yi, "tile_size", 32);
 	yafaray_paramsSetString(yi, "tiles_order", "centre");
 	yafaray_paramsSetString(yi, "volintegrator_name", "volintegr");

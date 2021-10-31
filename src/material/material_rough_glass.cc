@@ -138,7 +138,7 @@ Rgb RoughGlassMaterial::sample(const MaterialData *mat_data, const SurfacePoint 
 		ret = 1.f;
 		w = 1.f;
 	}
-	const float wire_frame_amount = (wireframe_shader_ ? wireframe_shader_->getScalar(mat_data->stack_.get()) * wireframe_amount_ : wireframe_amount_);
+	const float wire_frame_amount = wireframe_shader_ ? wireframe_shader_->getScalar(mat_data->stack_.get()) * wireframe_amount_ : wireframe_amount_;
 	applyWireFrame(ret, wire_frame_amount, sp);
 	return ret;
 }
@@ -234,7 +234,7 @@ Rgb RoughGlassMaterial::sample(const MaterialData *mat_data, const SurfacePoint 
 		ret = 1.f;
 		w[0] = 1.f;
 	}
-	const float wire_frame_amount = (wireframe_shader_ ? wireframe_shader_->getScalar(mat_data->stack_.get()) * wireframe_amount_ : wireframe_amount_);
+	const float wire_frame_amount = wireframe_shader_ ? wireframe_shader_->getScalar(mat_data->stack_.get()) * wireframe_amount_ : wireframe_amount_;
 	applyWireFrame(ret, wire_frame_amount, sp);
 	return ret;
 }
@@ -245,7 +245,7 @@ Rgb RoughGlassMaterial::getTransparency(const MaterialData *mat_data, const Surf
 	float kr, kt;
 	Vec3::fresnel(wo, n, (ior_shader_ ? ior_shader_->getScalar(mat_data->stack_.get()) : ior_), kr, kt);
 	Rgb result = kt * (filter_col_shader_ ? filter_col_shader_->getColor(mat_data->stack_.get()) : filter_color_);
-	const float wire_frame_amount = (wireframe_shader_ ? wireframe_shader_->getScalar(mat_data->stack_.get()) * wireframe_amount_ : wireframe_amount_);
+	const float wire_frame_amount = wireframe_shader_ ? wireframe_shader_->getScalar(mat_data->stack_.get()) * wireframe_amount_ : wireframe_amount_;
 	applyWireFrame(result, wire_frame_amount, sp);
 	return result;
 }
@@ -253,7 +253,7 @@ Rgb RoughGlassMaterial::getTransparency(const MaterialData *mat_data, const Surf
 float RoughGlassMaterial::getAlpha(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, const Camera *camera) const
 {
 	float alpha = std::max(0.f, std::min(1.f, 1.f - getTransparency(mat_data, sp, wo, camera).energy()));
-	const float wire_frame_amount = (wireframe_shader_ ? wireframe_shader_->getScalar(mat_data->stack_.get()) * wireframe_amount_ : wireframe_amount_);
+	const float wire_frame_amount = wireframe_shader_ ? wireframe_shader_->getScalar(mat_data->stack_.get()) * wireframe_amount_ : wireframe_amount_;
 	applyWireFrame(alpha, wire_frame_amount, sp);
 	return alpha;
 }

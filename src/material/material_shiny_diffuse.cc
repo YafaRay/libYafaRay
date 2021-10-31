@@ -237,7 +237,7 @@ Rgb ShinyDiffuseMaterial::eval(const MaterialData *mat_data, const SurfacePoint 
 
 	Rgb result = m_d * (diffuse_shader_ ? diffuse_shader_->getColor(mat_data->stack_.get()) : diffuse_color_);
 
-	const float wire_frame_amount = (wireframe_shader_ ? wireframe_shader_->getScalar(mat_data->stack_.get()) * wireframe_amount_ : wireframe_amount_);
+	const float wire_frame_amount = wireframe_shader_ ? wireframe_shader_->getScalar(mat_data->stack_.get()) * wireframe_amount_ : wireframe_amount_;
 	applyWireFrame(result, wire_frame_amount, sp);
 	return result;
 }
@@ -245,7 +245,7 @@ Rgb ShinyDiffuseMaterial::eval(const MaterialData *mat_data, const SurfacePoint 
 Rgb ShinyDiffuseMaterial::emit(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, bool lights_geometry_material_emit) const
 {
 	Rgb result = (diffuse_shader_ ? diffuse_shader_->getColor(mat_data->stack_.get()) * emit_strength_ : emit_color_);
-	const float wire_frame_amount = (wireframe_shader_ ? wireframe_shader_->getScalar(mat_data->stack_.get()) * wireframe_amount_ : wireframe_amount_);
+	const float wire_frame_amount = wireframe_shader_ ? wireframe_shader_->getScalar(mat_data->stack_.get()) * wireframe_amount_ : wireframe_amount_;
 	applyWireFrame(result, wire_frame_amount, sp);
 	return result;
 }
@@ -338,7 +338,7 @@ Rgb ShinyDiffuseMaterial::sample(const MaterialData *mat_data, const SurfacePoin
 	const float alpha = getAlpha(sp.mat_data_.get(), sp, wo, camera);
 	w = w * (alpha) + 1.f * (1.f - alpha);
 
-	const float wire_frame_amount = (wireframe_shader_ ? wireframe_shader_->getScalar(mat_data->stack_.get()) * wireframe_amount_ : wireframe_amount_);
+	const float wire_frame_amount = wireframe_shader_ ? wireframe_shader_->getScalar(mat_data->stack_.get()) * wireframe_amount_ : wireframe_amount_;
 	applyWireFrame(scolor, wire_frame_amount, sp);
 	return scolor;
 }
@@ -423,7 +423,7 @@ Material::Specular ShinyDiffuseMaterial::getSpecular(int raylevel, const Materia
 		const Rgb tcol = transmit_filter_strength_ * (diffuse_shader_ ? diffuse_shader_->getColor(mat_data->stack_.get()) : diffuse_color_) + Rgb(1.f - transmit_filter_strength_);
 		const ShinyDiffuseMaterialData *mat_data_specific = static_cast<const ShinyDiffuseMaterialData *>(mat_data);
 		specular.refract_.col_ = (1.f - mat_data_specific->component_[0] * kr) * mat_data_specific->component_[1] * tcol;
-		const float wire_frame_amount = (wireframe_shader_ ? wireframe_shader_->getScalar(mat_data->stack_.get()) * wireframe_amount_ : wireframe_amount_);
+		const float wire_frame_amount = wireframe_shader_ ? wireframe_shader_->getScalar(mat_data->stack_.get()) * wireframe_amount_ : wireframe_amount_;
 		applyWireFrame(specular.refract_.col_, wire_frame_amount, sp);
 	}
 	if(is_mirror_)
@@ -440,7 +440,7 @@ Material::Specular ShinyDiffuseMaterial::getSpecular(int raylevel, const Materia
 		}
 		const ShinyDiffuseMaterialData *mat_data_specific = static_cast<const ShinyDiffuseMaterialData *>(mat_data);
 		specular.reflect_.col_ = (mirror_color_shader_ ? mirror_color_shader_->getColor(mat_data->stack_.get()) : mirror_color_) * (mat_data_specific->component_[0] * kr);
-		const float wire_frame_amount = (wireframe_shader_ ? wireframe_shader_->getScalar(mat_data->stack_.get()) * wireframe_amount_ : wireframe_amount_);
+		const float wire_frame_amount = wireframe_shader_ ? wireframe_shader_->getScalar(mat_data->stack_.get()) * wireframe_amount_ : wireframe_amount_;
 		applyWireFrame(specular.reflect_.col_, wire_frame_amount, sp);
 	}
 	return specular;
@@ -470,7 +470,7 @@ Rgb ShinyDiffuseMaterial::getTransparency(const MaterialData *mat_data, const Su
 	}
 	const Rgb tcol = transmit_filter_strength_ * (diffuse_shader_ ? diffuse_shader_->getColor(mat_data->stack_.get()) : diffuse_color_) + Rgb(1.f - transmit_filter_strength_);
 	Rgb result = accum * tcol;
-	const float wire_frame_amount = (wireframe_shader_ ? wireframe_shader_->getScalar(mat_data->stack_.get()) * wireframe_amount_ : wireframe_amount_);
+	const float wire_frame_amount = wireframe_shader_ ? wireframe_shader_->getScalar(mat_data->stack_.get()) * wireframe_amount_ : wireframe_amount_;
 	applyWireFrame(result, wire_frame_amount, sp);
 	return result;
 }
@@ -490,7 +490,7 @@ float ShinyDiffuseMaterial::getAlpha(const MaterialData *mat_data, const Surface
 		const ShinyDiffuseMaterialData *mat_data_specific = static_cast<const ShinyDiffuseMaterialData *>(mat_data);
 		const float refl = (1.f - mat_data_specific->component_[0] * kr) * mat_data_specific->component_[1];
 		float result = 1.f - refl;
-		const float wire_frame_amount = (wireframe_shader_ ? wireframe_shader_->getScalar(mat_data->stack_.get()) * wireframe_amount_ : wireframe_amount_);
+		const float wire_frame_amount = wireframe_shader_ ? wireframe_shader_->getScalar(mat_data->stack_.get()) * wireframe_amount_ : wireframe_amount_;
 		applyWireFrame(result, wire_frame_amount, sp);
 		return result;
 	}

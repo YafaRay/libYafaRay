@@ -27,17 +27,15 @@ std::vector<const ShaderNode *> NodeMaterial::recursiveSolver(const ShaderNode *
 {
 	if(node->getId() != 0) return {};
 	node->setId(1);
-	std::vector<const ShaderNode *> nodes_sorted = node->getDependencies();
-	for(const auto &dependency_node : nodes_sorted)
+	std::vector<const ShaderNode *> sorted_nodes;
+	const std::vector<const ShaderNode *> dependencies = node->getDependencies();
+	for(const auto &dependency_node : dependencies)
 	{
-		if(dependency_node->getId() == 0)
-		{
-			const std::vector<const ShaderNode *> dependencies_sorted = recursiveSolver(dependency_node);
-			nodes_sorted.insert(nodes_sorted.end(), dependencies_sorted.begin(), dependencies_sorted.end());
-		}
+		const std::vector<const ShaderNode *> dependencies_sorted = recursiveSolver(dependency_node);
+		sorted_nodes.insert(sorted_nodes.end(), dependencies_sorted.begin(), dependencies_sorted.end());
 	}
-	nodes_sorted.push_back(node);
-	return nodes_sorted;
+	sorted_nodes.push_back(node);
+	return sorted_nodes;
 }
 
 std::set<const ShaderNode *> NodeMaterial::recursiveFinder(const ShaderNode *node)
@@ -68,7 +66,10 @@ std::vector<const ShaderNode *> NodeMaterial::solveNodesOrder(const std::vector<
 		const std::vector<const ShaderNode *> root_nodes = recursiveSolver(root);
 		color_nodes_sorted.insert(color_nodes_sorted.end(), root_nodes.begin(), root_nodes.end());
 	}
-	//FIXME?? if(shaders_table.size() != color_nodes_sorted.size()) logger.logWarning("NodeMaterial: Unreachable nodes!");
+	if(shaders_table.size() != color_nodes_sorted.size())
+	{
+		logger.logWarning("NodeMaterial: Unreachable nodes!");
+	}
 	//give the nodes an index to be used as the "stack"-index.
 	//using the order of evaluation can't hurt, can it?
 	for(unsigned int i = 0; i < color_nodes_sorted.size(); ++i) color_nodes_sorted[i]->setId(i);

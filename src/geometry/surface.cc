@@ -22,16 +22,17 @@
 
 BEGIN_YAFARAY
 
-SurfacePoint SurfacePoint::blendSurfacePoints(SurfacePoint const &sp_0, SurfacePoint const &sp_1, float alpha)
+SurfacePoint SurfacePoint::blendSurfacePoints(SurfacePoint const &sp_1, SurfacePoint const &sp_2, float alpha)
 {
-	SurfacePoint result(sp_0);
-	result.n_ = math::lerp(sp_0.n_, sp_1.n_, alpha);
-	result.nu_ = math::lerp(sp_0.nu_, sp_1.nu_, alpha);
-	result.nv_ = math::lerp(sp_0.nv_, sp_1.nv_, alpha);
-	result.dp_du_ = math::lerp(sp_0.dp_du_, sp_1.dp_du_, alpha);
-	result.dp_dv_ = math::lerp(sp_0.dp_dv_, sp_1.dp_dv_, alpha);
-	result.ds_du_ = math::lerp(sp_0.ds_du_, sp_1.ds_du_, alpha);
-	result.ds_dv_ = math::lerp(sp_0.ds_dv_, sp_1.ds_dv_, alpha);
+	SurfacePoint result(sp_1);
+	result.n_ = math::lerp(sp_1.n_, sp_2.n_, alpha);
+	result.nu_ = math::lerp(sp_1.nu_, sp_2.nu_, alpha);
+	result.nv_ = math::lerp(sp_1.nv_, sp_2.nv_, alpha);
+	result.dp_du_ = math::lerp(sp_1.dp_du_, sp_2.dp_du_, alpha);
+	result.dp_dv_ = math::lerp(sp_1.dp_dv_, sp_2.dp_dv_, alpha);
+	result.ds_du_ = math::lerp(sp_1.ds_du_, sp_2.ds_du_, alpha);
+	result.ds_dv_ = math::lerp(sp_1.ds_dv_, sp_2.ds_dv_, alpha);
+	result.mat_data_ = nullptr;
 	return result;
 }
 

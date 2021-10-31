@@ -82,7 +82,7 @@ Rgb MaskMaterial::getTransparency(const MaterialData *mat_data, const SurfacePoi
 {
 	const MaskMaterialData *mat_data_specific = static_cast<const MaskMaterialData *>(mat_data);
 	if(mat_data_specific->select_mat_2_) return mat_2_->getTransparency(mat_data_specific->mat_2_data_.get(), sp, wo, camera);
-	else   return mat_1_->getTransparency(mat_data_specific->mat_1_data_.get(), sp, wo, camera);
+	else return mat_1_->getTransparency(mat_data_specific->mat_1_data_.get(), sp, wo, camera);
 }
 
 Material::Specular MaskMaterial::getSpecular(int raylevel, const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, bool chromatic, float wavelength) const

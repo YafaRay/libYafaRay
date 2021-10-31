@@ -46,7 +46,7 @@ class SurfacePoint final
 {
 	public:
 		static Vec3 normalFaceForward(const Vec3 &normal_geometry, const Vec3 &normal, const Vec3 &incoming_vector);
-		static SurfacePoint blendSurfacePoints(SurfacePoint const &sp_0, SurfacePoint const &sp_1, float alpha);
+		static SurfacePoint blendSurfacePoints(SurfacePoint const &sp_1, SurfacePoint const &sp_2, float alpha);
 		float getDistToNearestEdge() const;
 
 		//int object; //!< the object owner of the point.

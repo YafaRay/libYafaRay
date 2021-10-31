@@ -36,13 +36,13 @@ class BlendMaterialData final : public MaterialData
 	public:
 		std::unique_ptr<MaterialData> mat_1_data_;
 		std::unique_ptr<MaterialData> mat_2_data_;
+		BsdfFlags mat_1_flags_, mat_2_flags_;
 };
 
 class BlendMaterial final : public NodeMaterial
 {
 	public:
 		static std::unique_ptr<Material> factory(Logger &logger, ParamMap &params, std::list<ParamMap> &nodes_params, const Scene &scene);
-		virtual ~BlendMaterial() override;
 
 	private:
 		BlendMaterial(Logger &logger, const Material *m_1, const Material *m_2, float blendv, Visibility visibility = Visibility::NormalVisible);
@@ -68,7 +68,6 @@ class BlendMaterial final : public NodeMaterial
 		float blend_val_;
 		bool recalc_blend_;
 		float blended_ior_;
-		mutable BsdfFlags mat_1_flags_, mat_2_flags_;
 };
 
 
