@@ -438,6 +438,11 @@ void MonteCarloIntegrator::causticWorker(PhotonMap *caustic_map, int thread_id, 
 			done = (curr >= n_caus_photons_thread);
 			continue;
 		}
+		else if(std::isnan(pcol.r_) || std::isnan(pcol.g_) || std::isnan(pcol.b_))
+		{
+			logger_.logWarning(getName(), ": NaN (photon color)");
+			continue;
+		}
 		int n_bounces = 0;
 		bool caustic_photon = false;
 		bool direct_photon = true;
@@ -446,11 +451,6 @@ void MonteCarloIntegrator::causticWorker(PhotonMap *caustic_map, int thread_id, 
 
 		while(accelerator->intersect(ray, hit_curr, render_data.cam_))
 		{
-			if(std::isnan(pcol.r_) || std::isnan(pcol.g_) || std::isnan(pcol.b_))
-			{
-				logger_.logWarning(getName(), ": NaN (photon color)");
-				break;
-			}
 			// check for volumetric effects, based on the material from the previous photon bounce
 			Rgb transm(1.f);
 			if(material_prev)

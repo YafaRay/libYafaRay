@@ -169,6 +169,11 @@ void PhotonIntegrator::diffuseWorker(PhotonMap *diffuse_map, int thread_id, cons
 			done = (curr >= n_diffuse_photons_thread);
 			continue;
 		}
+		else if(std::isnan(pcol.r_) || std::isnan(pcol.g_) || std::isnan(pcol.b_))
+		{
+			logger_.logWarning(getName(), ": NaN  on photon color for light", light_num + 1, ".");
+			continue;
+		}
 
 		int n_bounces = 0;
 		bool caustic_photon = false;
@@ -178,12 +183,6 @@ void PhotonIntegrator::diffuseWorker(PhotonMap *diffuse_map, int thread_id, cons
 
 		while(accelerator->intersect(ray, hit_curr, render_data.cam_))
 		{
-			if(std::isnan(pcol.r_) || std::isnan(pcol.g_) || std::isnan(pcol.b_))
-			{
-				logger_.logWarning(getName(), ": NaN  on photon color for light", light_num + 1, ".");
-				continue;
-			}
-
 			Rgb transm(1.f);
 
 			if(material_prev)

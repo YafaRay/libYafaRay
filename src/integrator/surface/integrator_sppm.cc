@@ -407,9 +407,7 @@ void SppmIntegrator::photonWorker(PhotonMap *diffuse_map, PhotonMap *caustic_map
 		int light_num = light_power_d->dSample(logger_, s_l, &light_num_pdf);
 		if(light_num >= num_d_lights)
 		{
-			diffuse_map->mutx_.lock();
 			logger_.logError(getName(), ": lightPDF sample error! ", s_l, "/", light_num);
-			diffuse_map->mutx_.unlock();
 			return;
 		}
 
@@ -424,6 +422,11 @@ void SppmIntegrator::photonWorker(PhotonMap *diffuse_map, PhotonMap *caustic_map
 			done = (curr >= n_photons);
 			continue;
 		}
+		else if(std::isnan(pcol.r_) || std::isnan(pcol.g_) || std::isnan(pcol.b_))
+		{
+			logger_.logWarning(getName(), ": NaN  on photon color for light", light_num + 1, ".");
+			continue;
+		}
 
 		int n_bounces = 0;
 		bool caustic_photon = false;
@@ -433,14 +436,6 @@ void SppmIntegrator::photonWorker(PhotonMap *diffuse_map, PhotonMap *caustic_map
 
 		while(accelerator->intersect(ray, hit_curr, render_data.cam_))   //scatter photons.
 		{
-			if(std::isnan(pcol.r_) || std::isnan(pcol.g_) || std::isnan(pcol.b_))
-			{
-				diffuse_map->mutx_.lock();
-				logger_.logWarning(getName(), ": NaN  on photon color for light", light_num + 1, ".");
-				diffuse_map->mutx_.unlock();
-				continue;
-			}
-
 			Rgb transm(1.f);
 
 			if(material_prev)
