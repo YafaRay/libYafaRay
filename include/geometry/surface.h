@@ -56,7 +56,6 @@ class SurfacePoint final
 		const Light *light_; //!< light source if surface point is on a light
 		const Object *object_; //!< object the prim belongs to
 		//	point2d_t screenpos; // only used with 'win' texture coord. mode
-		const Primitive *hit_primitive_;
 		IntersectData intersect_data_;
 
 		// Geometry related
@@ -111,7 +110,6 @@ inline void SurfacePoint::initializeAllZero()
 	material_ = nullptr;
 	light_ = nullptr;
 	object_ = nullptr;
-	hit_primitive_ = nullptr;
 	n_ = {0.f};
 	ng_ = {0.f};
 	orco_ng_ = {0.f};

@@ -61,8 +61,6 @@ bool Accelerator::intersect(const Ray &ray, SurfacePoint &sp, const Camera *came
 	{
 		const Point3 hit_point = ray.from_ + accelerator_intersect_data.t_max_ * ray.dir_;
 		sp = accelerator_intersect_data.hit_primitive_->getSurface(hit_point, accelerator_intersect_data, nullptr, camera);
-		sp.hit_primitive_ = accelerator_intersect_data.hit_primitive_;
-		sp.ray_ = nullptr;
 		ray.tmax_ = accelerator_intersect_data.t_max_;
 		return true;
 	}
