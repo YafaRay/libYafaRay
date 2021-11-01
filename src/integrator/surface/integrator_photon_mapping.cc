@@ -125,6 +125,8 @@ void PhotonIntegrator::diffuseWorker(PhotonMap *diffuse_map, int thread_id, cons
 	unsigned int curr = 0;
 
 	SurfacePoint hit_curr, hit_prev;
+	hit_prev.initializeAllZero(); //Just to avoid compiler warnings
+
 	RenderData render_data;
 	render_data.cam_ = render_view->getCamera();
 
@@ -160,7 +162,7 @@ void PhotonIntegrator::diffuseWorker(PhotonMap *diffuse_map, int thread_id, cons
 
 		pcol = tmplights[light_num]->emitPhoton(s_1, s_2, s_3, s_4, ray, light_pdf);
 		ray.tmin_ = scene->ray_min_dist_;
-		ray.tmax_ = -1.0;
+		ray.tmax_ = -1.f;
 		pcol *= f_num_lights * light_pdf / light_num_pdf; //remember that lightPdf is the inverse of th pdf, hence *=...
 
 		if(pcol.isBlack())
@@ -757,7 +759,7 @@ Rgb PhotonIntegrator::finalGathering(RenderData &render_data, const SurfacePoint
 		if(scol.isBlack()) continue;
 
 		p_ray.tmin_ = scene_->ray_min_dist_;
-		p_ray.tmax_ = -1.0;
+		p_ray.tmax_ = -1.f;
 		p_ray.from_ = hit.p_;
 		throughput = scol;
 
@@ -822,7 +824,7 @@ Rgb PhotonIntegrator::finalGathering(RenderData &render_data, const SurfacePoint
 			scol *= w;
 
 			p_ray.tmin_ = scene_->ray_min_dist_;
-			p_ray.tmax_ = -1.0;
+			p_ray.tmax_ = -1.f;
 			p_ray.from_ = hit.p_;
 			throughput *= scol;
 			did_hit = accelerator->intersect(p_ray, hit, render_data.cam_);

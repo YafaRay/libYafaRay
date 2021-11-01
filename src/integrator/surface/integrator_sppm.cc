@@ -366,6 +366,8 @@ void SppmIntegrator::photonWorker(PhotonMap *diffuse_map, PhotonMap *caustic_map
 	unsigned int curr = 0;
 
 	SurfacePoint hit_curr, hit_prev;
+	hit_prev.initializeAllZero(); //Just to avoid compiler warnings
+
 	RenderData render_data(&prng);
 	render_data.cam_ = render_view->getCamera();
 
@@ -413,7 +415,7 @@ void SppmIntegrator::photonWorker(PhotonMap *diffuse_map, PhotonMap *caustic_map
 
 		pcol = tmplights[light_num]->emitPhoton(s_1, s_2, s_3, s_4, ray, light_pdf);
 		ray.tmin_ = scene->ray_min_dist_;
-		ray.tmax_ = -1.0;
+		ray.tmax_ = -1.f;
 		pcol *= f_num_lights * light_pdf / light_num_pdf; //remember that lightPdf is the inverse of th pdf, hence *=...
 
 		if(pcol.isBlack())

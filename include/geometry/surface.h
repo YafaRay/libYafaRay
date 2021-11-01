@@ -48,6 +48,7 @@ class SurfacePoint final
 		static Vec3 normalFaceForward(const Vec3 &normal_geometry, const Vec3 &normal, const Vec3 &incoming_vector);
 		static SurfacePoint blendSurfacePoints(SurfacePoint const &sp_1, SurfacePoint const &sp_2, float alpha);
 		float getDistToNearestEdge() const;
+		void initializeAllZero();
 
 		//int object; //!< the object owner of the point.
 		const Material *material_; //!< the surface material
@@ -103,6 +104,34 @@ inline float SurfacePoint::getDistToNearestEdge() const
 inline Vec3 SurfacePoint::normalFaceForward(const Vec3 &normal_geometry, const Vec3 &normal, const Vec3 &incoming_vector)
 {
 	return (normal_geometry * incoming_vector) < 0 ? -normal : normal;
+}
+
+inline void SurfacePoint::initializeAllZero()
+{
+	material_ = nullptr;
+	light_ = nullptr;
+	object_ = nullptr;
+	hit_primitive_ = nullptr;
+	n_ = {0.f};
+	ng_ = {0.f};
+	orco_ng_ = {0.f};
+	p_ = {0.f};
+	orco_p_ = {0.f};
+	has_uv_ = false;
+	has_orco_ = false;
+	available_ = false;
+	prim_num_ = 0;
+	u_ = 0.f;
+	v_ = 0.f;
+	nu_ = {0.f};
+	nv_ = {0.f};
+	dp_du_ = {0.f};
+	dp_dv_ = {0.f};
+	ds_du_ = {0.f};
+	ds_dv_ = {0.f};
+	dp_du_abs_ = {0.f};
+	dp_dv_abs_ = {0.f};
+	ray_ = nullptr;
 }
 
 /*! computes and stores the additional data for surface intersections for

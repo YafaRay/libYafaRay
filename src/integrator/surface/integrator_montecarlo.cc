@@ -398,6 +398,8 @@ void MonteCarloIntegrator::causticWorker(PhotonMap *caustic_map, int thread_id, 
 	std::vector<Photon> local_caustic_photons;
 
 	SurfacePoint hit_curr, hit_prev;
+	hit_prev.initializeAllZero(); //Just to avoid compiler warnings
+
 	Ray ray;
 
 	RenderData render_data;
@@ -430,7 +432,7 @@ void MonteCarloIntegrator::causticWorker(PhotonMap *caustic_map, int thread_id, 
 
 		Rgb pcol = caus_lights[light_num]->emitPhoton(s_1, s_2, s_3, s_4, ray, light_pdf);
 		ray.tmin_ = scene->ray_min_dist_;
-		ray.tmax_ = -1.0;
+		ray.tmax_ = -1.f;
 		pcol *= f_num_lights * light_pdf / light_num_pdf; //remember that lightPdf is the inverse of th pdf, hence *=...
 		if(pcol.isBlack())
 		{

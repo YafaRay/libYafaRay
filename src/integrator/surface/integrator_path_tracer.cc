@@ -224,7 +224,7 @@ Rgba PathIntegrator::integrate(RenderData &render_data, const DiffRay &ray, int 
 				render_data.lights_geometry_material_emit_ = false;
 
 				p_ray.tmin_ = scene_->ray_min_dist_;
-				p_ray.tmax_ = -1.0;
+				p_ray.tmax_ = -1.f;
 				p_ray.from_ = sp.p_;
 
 				if(!accelerator->intersect(p_ray, *hit, render_data.cam_)) continue; //hit background
@@ -271,7 +271,7 @@ Rgba PathIntegrator::integrate(RenderData &render_data, const DiffRay &ray, int 
 					render_data.lights_geometry_material_emit_ = caustic;
 
 					p_ray.tmin_ = scene_->ray_min_dist_;
-					p_ray.tmax_ = -1.0;
+					p_ray.tmax_ = -1.f;
 					p_ray.from_ = hit->p_;
 
 					if(!accelerator->intersect(p_ray, *hit_2, render_data.cam_)) //hit background
