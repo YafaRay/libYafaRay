@@ -26,16 +26,11 @@
 
 BEGIN_YAFARAY
 
-ShinyDiffuseMaterial::ShinyDiffuseMaterial(Logger &logger, const Rgb &diffuse_color, const Rgb &mirror_color, float diffuse_strength, float transparency_strength, float translucency_strength, float mirror_strength, float emit_strength, float transmit_filter_strength, Visibility visibility):
-		NodeMaterial(logger), diffuse_color_(diffuse_color), mirror_color_(mirror_color),
-		mirror_strength_(mirror_strength), transparency_strength_(transparency_strength), translucency_strength_(translucency_strength), diffuse_strength_(diffuse_strength), transmit_filter_strength_(transmit_filter_strength)
+ShinyDiffuseMaterial::ShinyDiffuseMaterial(Logger &logger, const Rgb &diffuse_color, const Rgb &mirror_color, float diffuse_strength, float transparency_strength, float translucency_strength, float mirror_strength, float emit_strength, float transmit_filter_strength, Visibility visibility): NodeMaterial(logger), diffuse_color_(diffuse_color), emit_color_(emit_strength * diffuse_color), mirror_color_(mirror_color),
+mirror_strength_(mirror_strength), transparency_strength_(transparency_strength), translucency_strength_(translucency_strength), diffuse_strength_(diffuse_strength), emit_strength_(emit_strength), transmit_filter_strength_(transmit_filter_strength)
 {
 	visibility_ = visibility;
-	emit_color_ = emit_strength * diffuse_color;
-	emit_strength_ = emit_strength;
-	bsdf_flags_ = BsdfFlags::None;
-	if(emit_strength_ > 0.f) bsdf_flags_ |= BsdfFlags::Emit;
-	visibility_ = visibility;
+	if(emit_strength > 0.f) bsdf_flags_ |= BsdfFlags::Emit;
 }
 
 /*! ATTENTION! You *MUST* call this function before using the material, no matter
@@ -511,7 +506,7 @@ std::unique_ptr<Material> ShinyDiffuseMaterial::factory(Logger &logger, ParamMap
 	bool receive_shadows = true;
 	bool flat_material = false;
 	float ior = 1.33f;
-	double transmit_filter_strength = 1.0;
+	float transmit_filter_strength = 1.f;
 	int mat_pass_index = 0;
 	int additionaldepth = 0;
 	float transparentbias_factor = 0.f;
