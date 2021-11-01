@@ -232,13 +232,12 @@ Rgba PathIntegrator::integrate(RenderData &render_data, const DiffRay &ray, int 
 				if(!accelerator->intersect(p_ray, *hit, render_data.cam_)) continue; //hit background
 
 				const Material *p_mat = hit->material_;
-				const std::unique_ptr<MaterialData> p_mat_data = p_mat->initBsdf(*hit, render_data.cam_);
 				if(s.sampled_flags_ != BsdfFlags::None) pwo = -p_ray.dir_; //Fix for white dots in path tracing with shiny diffuse with transparent PNG texture and transparent shadows, especially in Win32, (precision?). Sometimes the first sampling does not take place and pRay.dir is not initialized, so before this change when that happened pwo = -pRay.dir was getting a random non-initialized value! This fix makes that, if the first sample fails for some reason, pwo is not modified and the rest of the sampling continues with the same pwo value. FIXME: Question: if the first sample fails, should we continue as now or should we exit the loop with the "continue" command?
 				lcol = estimateOneDirectLight(render_data, *hit, pwo, offs);
-				const BsdfFlags mat_bsd_fs = p_mat_data->bsdf_flags_;
+				const BsdfFlags mat_bsd_fs = hit->mat_data_->bsdf_flags_;
 				if(mat_bsd_fs.hasAny(BsdfFlags::Emit))
 				{
-					const Rgb col_tmp = p_mat->emit(p_mat_data.get(), *hit, pwo, render_data.lights_geometry_material_emit_);
+					const Rgb col_tmp = p_mat->emit(hit->mat_data_.get(), *hit, pwo, render_data.lights_geometry_material_emit_);
 					lcol += col_tmp;
 					if(layers_used)
 					{
@@ -264,7 +263,7 @@ Rgba PathIntegrator::integrate(RenderData &render_data, const DiffRay &ray, int 
 
 					s.flags_ = BsdfFlags::All;
 
-					scol = p_mat->sample(p_mat_data.get(), *hit, pwo, p_ray.dir_, s, w, render_data.chromatic_, render_data.wavelength_, render_data.cam_);
+					scol = p_mat->sample(hit->mat_data_.get(), *hit, pwo, p_ray.dir_, s, w, render_data.chromatic_, render_data.wavelength_, render_data.cam_);
 					scol *= w;
 
 					if(scol.isBlack()) break;
@@ -310,7 +309,7 @@ Rgba PathIntegrator::integrate(RenderData &render_data, const DiffRay &ray, int 
 
 					if(mat_bsd_fs.hasAny(BsdfFlags::Emit) && caustic)
 					{
-						const Rgb col_tmp = p_mat->emit(p_mat_data.get(), *hit, pwo, render_data.lights_geometry_material_emit_);
+						const Rgb col_tmp = p_mat->emit(hit->mat_data_.get(), *hit, pwo, render_data.lights_geometry_material_emit_);
 						lcol += col_tmp;
 						if(layers_used)
 						{
