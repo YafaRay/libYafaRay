@@ -443,7 +443,7 @@ void SppmIntegrator::photonWorker(PhotonMap *diffuse_map, PhotonMap *caustic_map
 			if(material_prev)
 			{
 				const VolumeHandler *vol;
-				if(mat_bsdfs_prev.hasAny(BsdfFlags::Volumetric) && (vol = material_prev->getVolumeHandler(hit_prev.ng_ * -ray.dir_ < 0)))
+				if(mat_bsdfs_prev.hasAny(BsdfFlags::Volumetric) && (vol = material_prev->getVolumeHandler(hit_prev.ng_ * ray.dir_ < 0)))
 				{
 					transm = vol->transmittance(ray);
 				}
