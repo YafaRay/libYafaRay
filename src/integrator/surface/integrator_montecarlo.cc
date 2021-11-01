@@ -397,9 +397,7 @@ void MonteCarloIntegrator::causticWorker(PhotonMap *caustic_map, int thread_id, 
 
 	std::vector<Photon> local_caustic_photons;
 
-	SurfacePoint sp_1, sp_2;
-	SurfacePoint *hit_prev = &sp_1;
-	SurfacePoint *hit_curr = &sp_2;
+	SurfacePoint hit_curr, hit_prev;
 	Ray ray;
 
 	RenderData render_data;
@@ -446,7 +444,7 @@ void MonteCarloIntegrator::causticWorker(PhotonMap *caustic_map, int thread_id, 
 		const Material *material_prev = nullptr;
 		BsdfFlags mat_bsdfs_prev = BsdfFlags::None;
 
-		while(accelerator->intersect(ray, *hit_curr, render_data.cam_))
+		while(accelerator->intersect(ray, hit_curr, render_data.cam_))
 		{
 			if(std::isnan(pcol.r_) || std::isnan(pcol.g_) || std::isnan(pcol.b_))
 			{
@@ -458,20 +456,20 @@ void MonteCarloIntegrator::causticWorker(PhotonMap *caustic_map, int thread_id, 
 			if(material_prev)
 			{
 				const VolumeHandler *vol;
-				if(mat_bsdfs_prev.hasAny(BsdfFlags::Volumetric) && (vol = material_prev->getVolumeHandler(hit_prev->ng_ * ray.dir_ < 0)))
+				if(mat_bsdfs_prev.hasAny(BsdfFlags::Volumetric) && (vol = material_prev->getVolumeHandler(hit_prev.ng_ * ray.dir_ < 0)))
 				{
 					vol->transmittance(ray, transm);
 				}
 			}
 			Vec3 wi = -ray.dir_, wo;
-			const Material *material = hit_curr->material_;
-			const BsdfFlags &mat_bsdfs = hit_curr->mat_data_->bsdf_flags_;
+			const Material *material = hit_curr.material_;
+			const BsdfFlags &mat_bsdfs = hit_curr.mat_data_->bsdf_flags_;
 			if(mat_bsdfs.hasAny((BsdfFlags::Diffuse | BsdfFlags::Glossy)))
 			{
 				//deposit caustic photon on surface
 				if(caustic_photon)
 				{
-					Photon np(wi, hit_curr->p_, pcol);
+					Photon np(wi, hit_curr.p_, pcol);
 					local_caustic_photons.push_back(np);
 				}
 			}
@@ -486,7 +484,7 @@ void MonteCarloIntegrator::causticWorker(PhotonMap *caustic_map, int thread_id, 
 			s_7 = Halton::lowDiscrepancySampling(d_5 + 2, haltoncurr);
 
 			PSample sample(s_5, s_6, s_7, BsdfFlags::AllSpecular | BsdfFlags::Glossy | BsdfFlags::Filter | BsdfFlags::Dispersive, pcol, transm);
-			bool scattered = material->scatterPhoton(hit_curr->mat_data_.get(), *hit_curr, wi, wo, sample, render_data.chromatic_, render_data.wavelength_, render_data.cam_);
+			bool scattered = material->scatterPhoton(hit_curr.mat_data_.get(), hit_curr, wi, wo, sample, render_data.chromatic_, render_data.wavelength_, render_data.cam_);
 			if(!scattered) break; //photon was absorped.
 			pcol = sample.color_;
 			// hm...dispersive is not really a scattering qualifier like specular/glossy/diffuse or the special case filter...
@@ -504,7 +502,7 @@ void MonteCarloIntegrator::causticWorker(PhotonMap *caustic_map, int thread_id, 
 				spectrum::wl2Rgb(render_data.wavelength_, wl_col);
 				pcol *= wl_col;
 			}
-			ray.from_ = hit_curr->p_;
+			ray.from_ = hit_curr.p_;
 			ray.dir_ = wo;
 			ray.tmin_ = scene->ray_min_dist_;
 			ray.tmax_ = -1.f;
