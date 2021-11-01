@@ -533,8 +533,8 @@ int main()
 	yafaray_paramsSetFloat(yi, "dof_distance", 0);
 	yafaray_paramsSetFloat(yi, "focal", 1.09375);
 	yafaray_paramsSetVector(yi, "from", 7.48113, -6.50764, 5.34367);
-	yafaray_paramsSetInt(yi, "resx", 768);
-	yafaray_paramsSetInt(yi, "resy", 432);
+	yafaray_paramsSetInt(yi, "resx", 75);
+	yafaray_paramsSetInt(yi, "resy", 50);
 	yafaray_paramsSetVector(yi, "to", 6.82627, -5.89697, 4.89842);
 	yafaray_paramsSetString(yi, "type", "perspective");
 	yafaray_paramsSetVector(yi, "up", 7.16376, -6.19517, 6.23901);
@@ -612,7 +612,7 @@ int main()
 	yafaray_paramsSetString(yi, "film_autosave_interval_type", "none");
 	yafaray_paramsSetString(yi, "film_load_save_mode", "none");
 	yafaray_paramsSetString(yi, "filter_type", "gauss");
-	yafaray_paramsSetInt(yi, "height", 432);
+	yafaray_paramsSetInt(yi, "height", 50);
 	yafaray_paramsSetInt(yi, "images_autosave_interval_passes", 1);
 	yafaray_paramsSetFloat(yi, "images_autosave_interval_seconds", 300);
 	yafaray_paramsSetString(yi, "images_autosave_interval_type", "none");
@@ -638,7 +638,7 @@ int main()
 	yafaray_paramsSetInt(yi, "tile_size", 32);
 	yafaray_paramsSetString(yi, "tiles_order", "centre");
 	yafaray_paramsSetString(yi, "volintegrator_name", "volintegr");
-	yafaray_paramsSetInt(yi, "width", 768);
+	yafaray_paramsSetInt(yi, "width", 75);
 	yafaray_paramsSetInt(yi, "xstart", 0);
 	yafaray_paramsSetInt(yi, "ystart", 0);
 	yafaray_setupRender(yi);
@@ -647,7 +647,7 @@ int main()
 	/* Creating image output */
 	yafaray_paramsSetString(yi, "image_path", "./test03-output1.tga");
 	yafaray_paramsSetString(yi, "color_space", "sRGB");
-	yafaray_paramsSetString(yi, "badge_position", "top");
+	yafaray_paramsSetString(yi, "badge_position", "none");
 	yafaray_createOutput(yi, "output1_tga");
 	yafaray_paramsClearAll(yi);
 
