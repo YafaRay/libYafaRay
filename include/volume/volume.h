@@ -41,7 +41,7 @@ class VolumeHandler
 	public:
 		static std::unique_ptr<VolumeHandler> factory(Logger &logger, const ParamMap &params, const Scene &scene);
 		VolumeHandler(Logger &logger) : logger_(logger) { }
-		virtual bool transmittance(const Ray &ray, Rgb &col) const = 0;
+		virtual Rgb transmittance(const Ray &ray) const = 0;
 		virtual bool scatter(const Ray &ray, Ray &s_ray, PSample &s) const = 0;
 		virtual ~VolumeHandler() = default;
 

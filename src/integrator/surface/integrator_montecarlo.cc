@@ -458,7 +458,7 @@ void MonteCarloIntegrator::causticWorker(PhotonMap *caustic_map, int thread_id, 
 				const VolumeHandler *vol;
 				if(mat_bsdfs_prev.hasAny(BsdfFlags::Volumetric) && (vol = material_prev->getVolumeHandler(hit_prev.ng_ * ray.dir_ < 0)))
 				{
-					vol->transmittance(ray, transm);
+					transm = vol->transmittance(ray);
 				}
 			}
 			Vec3 wi = -ray.dir_, wo;
@@ -740,9 +740,7 @@ void MonteCarloIntegrator::recursiveRaytrace(RenderData &render_data, const Diff
 			const VolumeHandler *vol;
 			if(ref_ray_chromatic_volume_obtained && bsdfs.hasAny(BsdfFlags::Volumetric) && (vol = material->getVolumeHandler(sp.ng_ * ref_ray_chromatic_volume.dir_ < 0)))
 			{
-				Rgb vcol(1.f);
-				vol->transmittance(ref_ray_chromatic_volume, vcol);
-				dcol *= vcol;
+				dcol *= vol->transmittance(ref_ray_chromatic_volume);
 			}
 			col += dcol * d_1;
 			if(layers_used)
@@ -773,7 +771,7 @@ void MonteCarloIntegrator::recursiveRaytrace(RenderData &render_data, const Diff
 			int branch = render_data.ray_division_ * old_offset;
 			unsigned int offs = gsam * render_data.pixel_sample_ + render_data.sampling_offs_;
 			const float d_1 = 1.f / (float)gsam;
-			Rgb gcol(0.f), vcol(1.f);
+			Rgb gcol(0.f);
 
 			hal_2.setStart(offs);
 			hal_3.setStart(offs);
@@ -811,7 +809,7 @@ void MonteCarloIntegrator::recursiveRaytrace(RenderData &render_data, const Diff
 						const VolumeHandler *vol;
 						if(bsdfs.hasAny(BsdfFlags::Volumetric) && (vol = material->getVolumeHandler(sp.ng_ * ref_ray.dir_ < 0)))
 						{
-							if(vol->transmittance(ref_ray, vcol)) integ *= vcol;
+							integ *= vol->transmittance(ref_ray);
 						}
 						const Rgb g_ind_col = static_cast<Rgb>(integ) * mcol * w;
 						gcol += g_ind_col;
@@ -834,7 +832,7 @@ void MonteCarloIntegrator::recursiveRaytrace(RenderData &render_data, const Diff
 							const VolumeHandler *vol;
 							if(bsdfs.hasAny(BsdfFlags::Volumetric) && (vol = material->getVolumeHandler(sp.ng_ * ref_ray.dir_ < 0)))
 							{
-								if(vol->transmittance(ref_ray, vcol)) integ *= vcol;
+								integ *= vol->transmittance(ref_ray);
 							}
 							const Rgb col_reflect_factor = mcol[0] * w[0];
 							const Rgb g_ind_col = static_cast<Rgb>(integ) * col_reflect_factor;
@@ -850,7 +848,7 @@ void MonteCarloIntegrator::recursiveRaytrace(RenderData &render_data, const Diff
 							const VolumeHandler *vol;
 							if(bsdfs.hasAny(BsdfFlags::Volumetric) && (vol = material->getVolumeHandler(sp.ng_ * ref_ray.dir_ < 0)))
 							{
-								if(vol->transmittance(ref_ray, vcol)) integ *= vcol;
+								integ *= vol->transmittance(ref_ray);
 							}
 							const Rgb col_transmit_factor = mcol[1] * w[1];
 							const Rgb g_ind_col = static_cast<Rgb>(integ) * col_transmit_factor;
@@ -903,7 +901,7 @@ void MonteCarloIntegrator::recursiveRaytrace(RenderData &render_data, const Diff
 				Rgb vcol;
 				if(bsdfs.hasAny(BsdfFlags::Volumetric) && (vol = material->getVolumeHandler(sp.ng_ * ref_ray.dir_ < 0)))
 				{
-					if(vol->transmittance(ref_ray, vcol)) integ *= vcol;
+					integ *= vol->transmittance(ref_ray);
 				}
 				const Rgb col_ind = static_cast<Rgb>(integ) * specular.reflect_.col_;
 				col += col_ind;
@@ -931,7 +929,7 @@ void MonteCarloIntegrator::recursiveRaytrace(RenderData &render_data, const Diff
 				Rgb vcol;
 				if(bsdfs.hasAny(BsdfFlags::Volumetric) && (vol = material->getVolumeHandler(sp.ng_ * ref_ray.dir_ < 0)))
 				{
-					if(vol->transmittance(ref_ray, vcol)) integ *= vcol;
+					integ *= vol->transmittance(ref_ray);
 				}
 				const Rgb col_ind = static_cast<Rgb>(integ) * specular.refract_.col_;
 				col += col_ind;

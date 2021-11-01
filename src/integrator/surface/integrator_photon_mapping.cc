@@ -188,16 +188,15 @@ void PhotonIntegrator::diffuseWorker(PhotonMap *diffuse_map, int thread_id, cons
 			}
 
 			Rgb transm(1.f);
-			Rgb vcol(0.f);
-			const VolumeHandler *vol = nullptr;
 
 			const BsdfFlags &mat_bsdfs = sp.mat_data_->bsdf_flags_;
 			if(material)
 			{
 				//FIXME??? HOW DOES THIS WORK, WITH PREVIOUS MATERIAL AND FLAGS?? Then this needs to be properly written to account for both previous material and previous mat_data!
+				const VolumeHandler *vol;
 				if(mat_bsdfs.hasAny(BsdfFlags::Volumetric) && (vol = material->getVolumeHandler(sp.ng_ * -ray.dir_ < 0)))
 				{
-					if(vol->transmittance(ray, vcol)) transm = vcol;
+					transm = vol->transmittance(ray);
 				}
 			}
 
@@ -780,7 +779,7 @@ Rgb PhotonIntegrator::finalGathering(RenderData &render_data, const SurfacePoint
 
 			if(mat_bsd_fs.hasAny(BsdfFlags::Volumetric) && (vol = p_mat->getVolumeHandler(hit.n_ * pwo < 0)))
 			{
-				if(vol->transmittance(p_ray, vcol)) throughput *= vcol;
+				throughput *= vol->transmittance(p_ray);
 			}
 
 			if(mat_bsd_fs.hasAny(BsdfFlags::Diffuse))

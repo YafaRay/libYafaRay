@@ -37,7 +37,7 @@ class BeerVolumeHandler : public VolumeHandler
 		BeerVolumeHandler(Logger &logger, const Rgb &acol, double dist);
 
 	private:
-		virtual bool transmittance(const Ray &ray, Rgb &col) const override;
+		virtual Rgb transmittance(const Ray &ray) const override;
 		virtual bool scatter(const Ray &ray, Ray &s_ray, PSample &s) const override;
 		Rgb getSubSurfaceColor(const MaterialData &mat_data) const { return sigma_a_; }
 		Rgb sigma_a_;

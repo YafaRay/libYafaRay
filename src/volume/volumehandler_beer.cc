@@ -32,17 +32,13 @@ BeerVolumeHandler::BeerVolumeHandler(Logger &logger, const Rgb &acol, double dis
 	if(dist != 0.f) sigma_a_ *= 1.f / dist;
 }
 
-bool BeerVolumeHandler::transmittance(const Ray &ray, Rgb &col) const
+Rgb BeerVolumeHandler::transmittance(const Ray &ray) const
 {
-	if(ray.tmax_ < 0.f || ray.tmax_ > 1e30f) //infinity check...
-	{
-		col = Rgb(0.f, 0.f, 0.f);
-		return true;
-	}
-	float dist = ray.tmax_; // maybe substract ray.tmin...
-	Rgb be(-dist * sigma_a_);
-	col = Rgb(math::exp(be.getR()), math::exp(be.getG()), math::exp(be.getB()));
-	return true;
+	if(ray.tmax_ < 0.f || ray.tmax_ > 1e30f) return {0.f}; //infinity check...
+	const float dist = ray.tmax_; // maybe substract ray.tmin...
+	const Rgb be(-dist * sigma_a_);
+	const Rgb col = Rgb(math::exp(be.getR()), math::exp(be.getG()), math::exp(be.getB()));
+	return col;
 }
 
 bool BeerVolumeHandler::scatter(const Ray &ray, Ray &s_ray, PSample &s) const

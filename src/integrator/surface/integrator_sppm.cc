@@ -441,16 +441,15 @@ void SppmIntegrator::photonWorker(PhotonMap *diffuse_map, PhotonMap *caustic_map
 			}
 
 			Rgb transm(1.f);
-			Rgb vcol(0.f);
-			const VolumeHandler *vol;
 
 			const BsdfFlags &mat_bsdfs = sp.mat_data_->bsdf_flags_;
 			if(material)
 			{
 				//FIXME??? HOW DOES THIS WORK, WITH PREVIOUS MATERIAL AND FLAGS?? Then this needs to be properly written to account for both previous material and previous mat_data!
+				const VolumeHandler *vol;
 				if(mat_bsdfs.hasAny(BsdfFlags::Volumetric) && (vol = material->getVolumeHandler(sp.ng_ * -ray.dir_ < 0)))
 				{
-					if(vol->transmittance(ray, vcol)) transm = vcol;
+					transm = vol->transmittance(ray);
 				}
 			}
 
@@ -861,7 +860,6 @@ GatherInfo SppmIntegrator::traceGatherRay(RenderData &render_data, DiffRay &ray,
 				int branch = render_data.ray_division_ * old_offset;
 				float d_1 = 1.f / (float)dsam;
 				float ss_1 = sample::riS(render_data.pixel_sample_ + render_data.sampling_offs_);
-				Rgb vcol(1.f);
 				Vec3 wi;
 				const VolumeHandler *vol;
 				DiffRay ref_ray;
@@ -901,7 +899,7 @@ GatherInfo SppmIntegrator::traceGatherRay(RenderData &render_data, DiffRay &ray,
 				}
 				if(mat_bsdfs.hasAny(BsdfFlags::Volumetric) && (vol = material->getVolumeHandler(sp.ng_ * ref_ray.dir_ < 0)))
 				{
-					vol->transmittance(ref_ray, vcol);
+					const Rgb vcol = vol->transmittance(ref_ray);
 					cing.photon_flux_ *= vcol;
 					cing.constant_randiance_ *= vcol;
 				}
@@ -938,7 +936,6 @@ GatherInfo SppmIntegrator::traceGatherRay(RenderData &render_data, DiffRay &ray,
 				int branch = render_data.ray_division_ * old_offset;
 				unsigned int offs = gsam * render_data.pixel_sample_ + render_data.sampling_offs_;
 				float d_1 = 1.f / (float)gsam;
-				Rgb vcol(1.f);
 				Vec3 wi;
 				const VolumeHandler *vol;
 				DiffRay ref_ray;
@@ -982,7 +979,7 @@ GatherInfo SppmIntegrator::traceGatherRay(RenderData &render_data, DiffRay &ray,
 
 						if(mat_bsdfs.hasAny(BsdfFlags::Volumetric) && (vol = material->getVolumeHandler(sp.ng_ * ref_ray.dir_ < 0)))
 						{
-							if(vol->transmittance(ref_ray, vcol)) integ *= vcol;
+							integ *= vol->transmittance(ref_ray);
 						}
 
 						//gcol += tmpColorPasses.probe_add(PASS_INT_GLOSSY_INDIRECT, (Rgb)integ * mcol * W, state.raylevel == 1);
@@ -1008,7 +1005,7 @@ GatherInfo SppmIntegrator::traceGatherRay(RenderData &render_data, DiffRay &ray,
 							integ = integrate(render_data, ref_ray, additional_depth, nullptr, nullptr);
 							if(mat_bsdfs.hasAny(BsdfFlags::Volumetric) && (vol = material->getVolumeHandler(sp.ng_ * ref_ray.dir_ < 0)))
 							{
-								if(vol->transmittance(ref_ray, vcol)) integ *= vcol;
+								integ *= vol->transmittance(ref_ray);
 							}
 							Rgb col_reflect_factor = mcol[0] * w[0];
 
@@ -1030,7 +1027,7 @@ GatherInfo SppmIntegrator::traceGatherRay(RenderData &render_data, DiffRay &ray,
 							integ = integrate(render_data, ref_ray, additional_depth, nullptr, nullptr);
 							if(mat_bsdfs.hasAny(BsdfFlags::Volumetric) && (vol = material->getVolumeHandler(sp.ng_ * ref_ray.dir_ < 0)))
 							{
-								if(vol->transmittance(ref_ray, vcol)) integ *= vcol;
+								integ *= vol->transmittance(ref_ray);
 							}
 
 							Rgb col_transmit_factor = mcol[1] * w[1];
@@ -1067,11 +1064,9 @@ GatherInfo SppmIntegrator::traceGatherRay(RenderData &render_data, DiffRay &ray,
 
 					if(mat_bsdfs.hasAny(BsdfFlags::Volumetric) && (vol = material->getVolumeHandler(sp.ng_ * ref_ray.dir_ < 0)))
 					{
-						if(vol->transmittance(ref_ray, vcol))
-						{
-							ging.photon_flux_ *= vcol;
-							ging.constant_randiance_ *= vcol;
-						}
+						const Rgb vcol = vol->transmittance(ref_ray);
+						ging.photon_flux_ *= vcol;
+						ging.constant_randiance_ *= vcol;
 					}
 
 				}
@@ -1118,12 +1113,9 @@ GatherInfo SppmIntegrator::traceGatherRay(RenderData &render_data, DiffRay &ray,
 					const VolumeHandler *vol;
 					if(mat_bsdfs.hasAny(BsdfFlags::Volumetric) && (vol = material->getVolumeHandler(sp.ng_ * ref_ray.dir_ < 0)))
 					{
-						Rgb vcol;
-						if(vol->transmittance(ref_ray, vcol))
-						{
-							refg.constant_randiance_ *= vcol;
-							refg.photon_flux_ *= vcol;
-						}
+						const Rgb vcol = vol->transmittance(ref_ray);
+						refg.constant_randiance_ *= vcol;
+						refg.photon_flux_ *= vcol;
 					}
 					const Rgba col_radiance_reflect = refg.constant_randiance_ * Rgba(specular.reflect_.col_);
 					g_info.constant_randiance_ += col_radiance_reflect;
@@ -1142,12 +1134,9 @@ GatherInfo SppmIntegrator::traceGatherRay(RenderData &render_data, DiffRay &ray,
 					const VolumeHandler *vol;
 					if(mat_bsdfs.hasAny(BsdfFlags::Volumetric) && (vol = material->getVolumeHandler(sp.ng_ * ref_ray.dir_ < 0)))
 					{
-						Rgb vcol;
-						if(vol->transmittance(ref_ray, vcol))
-						{
-							refg.constant_randiance_ *= vcol;
-							refg.photon_flux_ *= vcol;
-						}
+						const Rgb vcol = vol->transmittance(ref_ray);
+						refg.constant_randiance_ *= vcol;
+						refg.photon_flux_ *= vcol;
 					}
 					const Rgba col_radiance_refract = refg.constant_randiance_ * Rgba(specular.refract_.col_);
 					g_info.constant_randiance_ += col_radiance_refract;
