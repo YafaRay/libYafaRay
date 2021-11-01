@@ -60,7 +60,7 @@ class BlendMaterial final : public NodeMaterial
 		virtual float getAlpha(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, const Camera *camera) const override;
 		virtual bool scatterPhoton(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wi, Vec3 &wo, PSample &s, bool chromatic, float wavelength, const Camera *camera) const override;
 		virtual const VolumeHandler *getVolumeHandler(bool inside) const override;
-		float getBlendVal(const MaterialData *mat_data, const SurfacePoint &sp) const;
+		float getBlendVal(const SurfacePoint &sp) const;
 
 		const Material *mat_1_ = nullptr, *mat_2_ = nullptr;
 		ShaderNode *blend_shader_ = nullptr; //!< the shader node used for blending the materials

@@ -54,7 +54,7 @@ MonteCarloIntegrator::MonteCarloIntegrator(Logger &logger) : TiledIntegrator(log
 
 MonteCarloIntegrator::~MonteCarloIntegrator() = default;
 
-Rgb MonteCarloIntegrator::estimateAllDirectLight(RenderData &render_data, const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, ColorLayers *color_layers) const
+Rgb MonteCarloIntegrator::estimateAllDirectLight(RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo, ColorLayers *color_layers) const
 {
 	const bool layers_used = render_data.raylevel_ == 0 && color_layers && color_layers->getFlags() != Layer::Flags::None;
 
@@ -62,7 +62,7 @@ Rgb MonteCarloIntegrator::estimateAllDirectLight(RenderData &render_data, const 
 	unsigned int loffs = 0;
 	for(auto l = lights_.begin(); l != lights_.end(); ++l)
 	{
-		col += doLightEstimation(render_data, mat_data, (*l), sp, wo, loffs, color_layers);
+		col += doLightEstimation(render_data, (*l), sp, wo, loffs, color_layers);
 		loffs++;
 	}
 
@@ -74,7 +74,7 @@ Rgb MonteCarloIntegrator::estimateAllDirectLight(RenderData &render_data, const 
 	return col;
 }
 
-Rgb MonteCarloIntegrator::estimateOneDirectLight(RenderData &render_data, const MaterialData *mat_data, const SurfacePoint &sp, Vec3 wo, int n) const
+Rgb MonteCarloIntegrator::estimateOneDirectLight(RenderData &render_data, const SurfacePoint &sp, Vec3 wo, int n) const
 {
 	const int light_num = lights_.size();
 
@@ -85,10 +85,10 @@ Rgb MonteCarloIntegrator::estimateOneDirectLight(RenderData &render_data, const 
 
 	++correlative_sample_number_[render_data.thread_id_];
 
-	return doLightEstimation(render_data, mat_data, lights_[lnum], sp, wo, lnum) * light_num;
+	return doLightEstimation(render_data, lights_[lnum], sp, wo, lnum) * light_num;
 }
 
-Rgb MonteCarloIntegrator::doLightEstimation(RenderData &render_data, const MaterialData *mat_data, const Light *light, const SurfacePoint &sp, const Vec3 &wo, const unsigned int  &loffs, ColorLayers *color_layers) const
+Rgb MonteCarloIntegrator::doLightEstimation(RenderData &render_data, const Light *light, const SurfacePoint &sp, const Vec3 &wo, const unsigned int  &loffs, ColorLayers *color_layers) const
 {
 	const Accelerator *accelerator = scene_->getAccelerator();
 	if(!accelerator) return {0.f};
@@ -127,7 +127,7 @@ Rgb MonteCarloIntegrator::doLightEstimation(RenderData &render_data, const Mater
 			{
 				if(!shadowed && layers_used && color_layers->find(Layer::Shadow)) col_shadow += Rgb(1.f);
 
-				const Rgb surf_col = material->eval(mat_data, sp, wo, light_ray.dir_, BsdfFlags::All);
+				const Rgb surf_col = material->eval(sp.mat_data_.get(), sp, wo, light_ray.dir_, BsdfFlags::All);
 				const Rgb transmit_col = scene_->vol_integrator_->transmittance(render_data.prng_, light_ray);
 				const Rgba tmp_col_no_shadow = surf_col * lcol * angle_light_normal * transmit_col;
 				if(tr_shad_ && cast_shadows) lcol *= scol;
@@ -137,12 +137,12 @@ Rgb MonteCarloIntegrator::doLightEstimation(RenderData &render_data, const Mater
 					if(color_layers->isDefinedAny({Layer::Diffuse, Layer::DiffuseNoShadow}))
 					{
 						col_diff_no_shadow += tmp_col_no_shadow;
-						if(!shadowed) col_diff_dir += material->eval(mat_data, sp, wo, light_ray.dir_, BsdfFlags::Diffuse) * lcol * angle_light_normal * transmit_col;
+						if(!shadowed) col_diff_dir += material->eval(sp.mat_data_.get(), sp, wo, light_ray.dir_, BsdfFlags::Diffuse) * lcol * angle_light_normal * transmit_col;
 					}
 
 					if(color_layers->find(Layer::Glossy))
 					{
-						if(!shadowed) col_glossy_dir += material->eval(mat_data, sp, wo, light_ray.dir_, BsdfFlags::Glossy, true) * lcol * angle_light_normal * transmit_col;
+						if(!shadowed) col_glossy_dir += material->eval(sp.mat_data_.get(), sp, wo, light_ray.dir_, BsdfFlags::Glossy, true) * lcol * angle_light_normal * transmit_col;
 					}
 				}
 
@@ -203,7 +203,7 @@ Rgb MonteCarloIntegrator::doLightEstimation(RenderData &render_data, const Mater
 					if(tr_shad_ && cast_shadows) ls.col_ *= scol;
 					const Rgb transmit_col = scene_->vol_integrator_->transmittance(render_data.prng_, light_ray);
 					ls.col_ *= transmit_col;
-					const Rgb surf_col = material->eval(mat_data, sp, wo, light_ray.dir_, BsdfFlags::All);
+					const Rgb surf_col = material->eval(sp.mat_data_.get(), sp, wo, light_ray.dir_, BsdfFlags::All);
 
 					if(layers_used && (!shadowed && ls.pdf_ > 1e-6f) && color_layers->find(Layer::Shadow)) col_shadow += Rgb(1.f);
 
@@ -211,7 +211,7 @@ Rgb MonteCarloIntegrator::doLightEstimation(RenderData &render_data, const Mater
 
 					if(can_intersect)
 					{
-						const float m_pdf = material->pdf(mat_data, sp, wo, light_ray.dir_, BsdfFlags::Glossy | BsdfFlags::Diffuse | BsdfFlags::Dispersive | BsdfFlags::Reflect | BsdfFlags::Transmit);
+						const float m_pdf = material->pdf(sp.mat_data_.get(), sp, wo, light_ray.dir_, BsdfFlags::Glossy | BsdfFlags::Diffuse | BsdfFlags::Dispersive | BsdfFlags::Reflect | BsdfFlags::Transmit);
 						if(m_pdf > 1e-6f)
 						{
 							const float l_2 = ls.pdf_ * ls.pdf_;
@@ -222,13 +222,13 @@ Rgb MonteCarloIntegrator::doLightEstimation(RenderData &render_data, const Mater
 							{
 								if(color_layers->isDefinedAny({Layer::Diffuse, Layer::DiffuseNoShadow}))
 								{
-									const Rgb tmp_col_no_light_color = material->eval(mat_data, sp, wo, light_ray.dir_, BsdfFlags::Diffuse) * angle_light_normal * w / ls.pdf_;
+									const Rgb tmp_col_no_light_color = material->eval(sp.mat_data_.get(), sp, wo, light_ray.dir_, BsdfFlags::Diffuse) * angle_light_normal * w / ls.pdf_;
 									col_diff_no_shadow += tmp_col_no_light_color * ls_col_no_shadow;
 									if((!shadowed && ls.pdf_ > 1e-6f)) col_diff_dir += tmp_col_no_light_color * ls.col_;
 								}
 								if(color_layers->find(Layer::Glossy))
 								{
-									const Rgb tmp_col = material->eval(mat_data, sp, wo, light_ray.dir_, BsdfFlags::Glossy, true) * ls.col_ * angle_light_normal * w / ls.pdf_;
+									const Rgb tmp_col = material->eval(sp.mat_data_.get(), sp, wo, light_ray.dir_, BsdfFlags::Glossy, true) * ls.col_ * angle_light_normal * w / ls.pdf_;
 									if((!shadowed && ls.pdf_ > 1e-6f)) col_glossy_dir += tmp_col;
 								}
 							}
@@ -241,14 +241,14 @@ Rgb MonteCarloIntegrator::doLightEstimation(RenderData &render_data, const Mater
 							{
 								if(color_layers->isDefinedAny({Layer::Diffuse, Layer::DiffuseNoShadow}))
 								{
-									const Rgb tmp_col_no_light_color = material->eval(mat_data, sp, wo, light_ray.dir_, BsdfFlags::Diffuse) * angle_light_normal / ls.pdf_;
+									const Rgb tmp_col_no_light_color = material->eval(sp.mat_data_.get(), sp, wo, light_ray.dir_, BsdfFlags::Diffuse) * angle_light_normal / ls.pdf_;
 									col_diff_no_shadow += tmp_col_no_light_color * ls_col_no_shadow;
 									if((!shadowed && ls.pdf_ > 1e-6f)) col_diff_dir += tmp_col_no_light_color * ls.col_;
 								}
 
 								if(color_layers->find(Layer::Glossy))
 								{
-									const Rgb tmp_col = material->eval(mat_data, sp, wo, light_ray.dir_, BsdfFlags::Glossy, true) * ls.col_ * angle_light_normal / ls.pdf_;
+									const Rgb tmp_col = material->eval(sp.mat_data_.get(), sp, wo, light_ray.dir_, BsdfFlags::Glossy, true) * ls.col_ * angle_light_normal / ls.pdf_;
 									if((!shadowed && ls.pdf_ > 1e-6f)) col_glossy_dir += tmp_col;
 								}
 							}
@@ -262,14 +262,14 @@ Rgb MonteCarloIntegrator::doLightEstimation(RenderData &render_data, const Mater
 						{
 							if(color_layers->isDefinedAny({Layer::Diffuse, Layer::DiffuseNoShadow}))
 							{
-								const Rgb tmp_col_no_light_color = material->eval(mat_data, sp, wo, light_ray.dir_, BsdfFlags::Diffuse) * angle_light_normal / ls.pdf_;
+								const Rgb tmp_col_no_light_color = material->eval(sp.mat_data_.get(), sp, wo, light_ray.dir_, BsdfFlags::Diffuse) * angle_light_normal / ls.pdf_;
 								col_diff_no_shadow += tmp_col_no_light_color * ls_col_no_shadow;
 								if((!shadowed && ls.pdf_ > 1e-6f)) col_diff_dir += tmp_col_no_light_color * ls.col_;
 							}
 
 							if(color_layers->find(Layer::Glossy))
 							{
-								const Rgb tmp_col = material->eval(mat_data, sp, wo, light_ray.dir_, BsdfFlags::Glossy, true) * ls.col_ * angle_light_normal / ls.pdf_;
+								const Rgb tmp_col = material->eval(sp.mat_data_.get(), sp, wo, light_ray.dir_, BsdfFlags::Glossy, true) * ls.col_ * angle_light_normal / ls.pdf_;
 								if((!shadowed && ls.pdf_ > 1e-6f)) col_glossy_dir += tmp_col;
 							}
 						}
@@ -330,7 +330,7 @@ Rgb MonteCarloIntegrator::doLightEstimation(RenderData &render_data, const Mater
 				float W = 0.f;
 
 				Sample s(s_1, s_2, BsdfFlags::Glossy | BsdfFlags::Diffuse | BsdfFlags::Dispersive | BsdfFlags::Reflect | BsdfFlags::Transmit);
-				const Rgb surf_col = material->sample(mat_data, sp, wo, b_ray.dir_, s, W, render_data.chromatic_, render_data.wavelength_, render_data.cam_);
+				const Rgb surf_col = material->sample(sp.mat_data_.get(), sp, wo, b_ray.dir_, s, W, render_data.chromatic_, render_data.wavelength_, render_data.cam_);
 				if(s.pdf_ > 1e-6f && light->intersect(b_ray, b_ray.tmax_, lcol, light_pdf))
 				{
 					if(cast_shadows) shadowed = (tr_shad_) ? accelerator->isShadowed(b_ray, s_depth_, scol, mask_obj_index, mask_mat_index, scene_->getShadowBias(), render_data.cam_) : accelerator->isShadowed(b_ray, mask_obj_index, mask_mat_index, scene_->getShadowBias());
@@ -350,14 +350,14 @@ Rgb MonteCarloIntegrator::doLightEstimation(RenderData &render_data, const Mater
 						{
 							if(color_layers->isDefinedAny({Layer::Diffuse, Layer::DiffuseNoShadow}))
 							{
-								const Rgb tmp_col = material->sample(mat_data, sp, wo, b_ray.dir_, s, W, render_data.chromatic_, render_data.wavelength_, render_data.cam_) * lcol * w * W;
+								const Rgb tmp_col = material->sample(sp.mat_data_.get(), sp, wo, b_ray.dir_, s, W, render_data.chromatic_, render_data.wavelength_, render_data.cam_) * lcol * w * W;
 								col_diff_no_shadow += tmp_col;
 								if((!shadowed && light_pdf > 1e-6f) && s.sampled_flags_.hasAny(BsdfFlags::Diffuse)) col_diff_dir += tmp_col;
 							}
 
 							if(color_layers->find(Layer::Glossy))
 							{
-								const Rgb tmp_col = material->sample(mat_data, sp, wo, b_ray.dir_, s, W, render_data.chromatic_, render_data.wavelength_, render_data.cam_) * lcol * w * W;
+								const Rgb tmp_col = material->sample(sp.mat_data_.get(), sp, wo, b_ray.dir_, s, W, render_data.chromatic_, render_data.wavelength_, render_data.cam_) * lcol * w * W;
 								if((!shadowed && light_pdf > 1e-6f) && s.sampled_flags_.hasAny(BsdfFlags::Glossy)) col_glossy_dir += tmp_col;
 							}
 						}
@@ -445,8 +445,6 @@ void MonteCarloIntegrator::causticWorker(PhotonMap *caustic_map, int thread_id, 
 		bool caustic_photon = false;
 		bool direct_photon = true;
 		const Material *material = nullptr;
-		std::unique_ptr<MaterialData> mat_data;
-		const BsdfFlags &bsdfs = mat_data->bsdf_flags_;
 		const VolumeHandler *vol = nullptr;
 
 		while(accelerator->intersect(ray, *hit_2, render_data.cam_))
@@ -460,9 +458,11 @@ void MonteCarloIntegrator::causticWorker(PhotonMap *caustic_map, int thread_id, 
 			}
 			Rgb transm(1.f), vcol;
 			// check for volumetric effects
+			const BsdfFlags &mat_bsdfs = hit_2->mat_data_->bsdf_flags_;
 			if(material)
 			{
-				if(bsdfs.hasAny(BsdfFlags::Volumetric) && (vol = material->getVolumeHandler(hit->ng_ * ray.dir_ < 0)))
+				//FIXME??? HOW DOES THIS WORK, WITH PREVIOUS MATERIAL AND FLAGS?? Then this needs to be properly written to account for both previous material and previous mat_data!
+				if(mat_bsdfs.hasAny(BsdfFlags::Volumetric) && (vol = material->getVolumeHandler(hit->ng_ * ray.dir_ < 0)))
 				{
 					vol->transmittance(ray, vcol);
 					transm = vcol;
@@ -471,7 +471,7 @@ void MonteCarloIntegrator::causticWorker(PhotonMap *caustic_map, int thread_id, 
 			std::swap(hit, hit_2);
 			Vec3 wi = -ray.dir_, wo;
 			material = hit->material_;
-			if(bsdfs.hasAny((BsdfFlags::Diffuse | BsdfFlags::Glossy)))
+			if(mat_bsdfs.hasAny((BsdfFlags::Diffuse | BsdfFlags::Glossy)))
 			{
 				//deposit caustic photon on surface
 				if(caustic_photon)
@@ -643,7 +643,7 @@ bool MonteCarloIntegrator::createCausticMap(const RenderView *render_view, const
 	return true;
 }
 
-Rgb MonteCarloIntegrator::estimateCausticPhotons(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo) const
+Rgb MonteCarloIntegrator::estimateCausticPhotons(const SurfacePoint &sp, const Vec3 &wo) const
 {
 	if(!caustic_map_->ready()) return Rgb(0.f);
 
@@ -668,7 +668,7 @@ Rgb MonteCarloIntegrator::estimateCausticPhotons(const MaterialData *mat_data, c
 		for(int i = 0; i < n_gathered; ++i)
 		{
 			photon = gathered[i].photon_;
-			surf_col = material->eval(mat_data, sp, wo, photon->direction(), BsdfFlags::All);
+			surf_col = material->eval(sp.mat_data_.get(), sp, wo, photon->direction(), BsdfFlags::All);
 			k = sample::kernel(gathered[i].dist_square_, g_radius_square);
 			sum += surf_col * k * photon->color();
 		}
@@ -950,7 +950,7 @@ void MonteCarloIntegrator::recursiveRaytrace(RenderData &render_data, const Diff
 	--render_data.raylevel_;
 }
 
-Rgb MonteCarloIntegrator::sampleAmbientOcclusion(RenderData &render_data, const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo) const
+Rgb MonteCarloIntegrator::sampleAmbientOcclusion(RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo) const
 {
 	const Accelerator *accelerator = scene_->getAccelerator();
 	if(!accelerator) return {0.f};
@@ -981,10 +981,10 @@ Rgb MonteCarloIntegrator::sampleAmbientOcclusion(RenderData &render_data, const 
 		light_ray.tmax_ = ao_dist_;
 		float w = 0.f;
 		Sample s(s_1, s_2, BsdfFlags::Glossy | BsdfFlags::Diffuse | BsdfFlags::Reflect);
-		const Rgb surf_col = material->sample(mat_data, sp, wo, light_ray.dir_, s, w, render_data.chromatic_, render_data.wavelength_, render_data.cam_);
+		const Rgb surf_col = material->sample(sp.mat_data_.get(), sp, wo, light_ray.dir_, s, w, render_data.chromatic_, render_data.wavelength_, render_data.cam_);
 		if(mat_bsdfs.hasAny(BsdfFlags::Emit))
 		{
-			col += material->emit(mat_data, sp, wo, render_data.lights_geometry_material_emit_) * s.pdf_;
+			col += material->emit(sp.mat_data_.get(), sp, wo, render_data.lights_geometry_material_emit_) * s.pdf_;
 		}
 		Rgb scol;
 		const bool shadowed = (tr_shad_) ? accelerator->isShadowed(light_ray, s_depth_, scol, mask_obj_index, mask_mat_index, scene_->getShadowBias(), nullptr) : accelerator->isShadowed(light_ray, mask_obj_index, mask_mat_index, scene_->getShadowBias());
@@ -1005,7 +1005,7 @@ Rgb MonteCarloIntegrator::sampleAmbientOcclusionLayer(RenderData &render_data, c
 
 	Rgb col(0.f);
 	const Material *material = sp.material_;
-	const BsdfFlags &bsdfs = sp.mat_data_->bsdf_flags_;
+	const BsdfFlags &mat_bsdfs = sp.mat_data_->bsdf_flags_;
 	Ray light_ray;
 	light_ray.from_ = sp.p_;
 	light_ray.dir_ = Vec3(0.f);
@@ -1030,7 +1030,7 @@ Rgb MonteCarloIntegrator::sampleAmbientOcclusionLayer(RenderData &render_data, c
 		float w = 0.f;
 		Sample s(s_1, s_2, BsdfFlags::Glossy | BsdfFlags::Diffuse | BsdfFlags::Reflect);
 		const Rgb surf_col = material->sample(sp.mat_data_.get(), sp, wo, light_ray.dir_, s, w, render_data.chromatic_, render_data.wavelength_, render_data.cam_);
-		if(bsdfs.hasAny(BsdfFlags::Emit))
+		if(mat_bsdfs.hasAny(BsdfFlags::Emit))
 		{
 			col += material->emit(sp.mat_data_.get(), sp, wo, render_data.lights_geometry_material_emit_) * s.pdf_;
 		}
@@ -1045,14 +1045,14 @@ Rgb MonteCarloIntegrator::sampleAmbientOcclusionLayer(RenderData &render_data, c
 	return col / static_cast<float>(n);
 }
 
-Rgb MonteCarloIntegrator::sampleAmbientOcclusionClayLayer(RenderData &render_data, const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo) const
+Rgb MonteCarloIntegrator::sampleAmbientOcclusionClayLayer(RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo) const
 {
 	const Accelerator *accelerator = scene_->getAccelerator();
 	if(!accelerator) return {0.f};
 
 	Rgb col(0.f);
 	const Material *material = sp.material_;
-	const BsdfFlags &bsdfs = sp.mat_data_->bsdf_flags_;
+	const BsdfFlags &mat_bsdfs = sp.mat_data_->bsdf_flags_;
 	Ray light_ray;
 	light_ray.from_ = sp.p_;
 	light_ray.dir_ = Vec3(0.f);
@@ -1078,9 +1078,9 @@ Rgb MonteCarloIntegrator::sampleAmbientOcclusionClayLayer(RenderData &render_dat
 		Sample s(s_1, s_2, BsdfFlags::All);
 		const Rgb surf_col = material->sampleClay(sp, wo, light_ray.dir_, s, w);
 		s.pdf_ = 1.f;
-		if(bsdfs.hasAny(BsdfFlags::Emit))
+		if(mat_bsdfs.hasAny(BsdfFlags::Emit))
 		{
-			col += material->emit(mat_data, sp, wo, render_data.lights_geometry_material_emit_) * s.pdf_;
+			col += material->emit(sp.mat_data_.get(), sp, wo, render_data.lights_geometry_material_emit_) * s.pdf_;
 		}
 		const bool shadowed = accelerator->isShadowed(light_ray, mask_obj_index, mask_mat_index, scene_->getShadowBias());
 		if(!shadowed)

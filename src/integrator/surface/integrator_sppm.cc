@@ -429,7 +429,6 @@ void SppmIntegrator::photonWorker(PhotonMap *diffuse_map, PhotonMap *caustic_map
 		bool caustic_photon = false;
 		bool direct_photon = true;
 		const Material *material = nullptr;
-		const BsdfFlags &bsdfs = sp.mat_data_->bsdf_flags_;
 
 		while(accelerator->intersect(ray, sp, render_data.cam_))   //scatter photons.
 		{
@@ -445,9 +444,11 @@ void SppmIntegrator::photonWorker(PhotonMap *diffuse_map, PhotonMap *caustic_map
 			Rgb vcol(0.f);
 			const VolumeHandler *vol;
 
+			const BsdfFlags &mat_bsdfs = sp.mat_data_->bsdf_flags_;
 			if(material)
 			{
-				if(bsdfs.hasAny(BsdfFlags::Volumetric) && (vol = material->getVolumeHandler(sp.ng_ * -ray.dir_ < 0)))
+				//FIXME??? HOW DOES THIS WORK, WITH PREVIOUS MATERIAL AND FLAGS?? Then this needs to be properly written to account for both previous material and previous mat_data!
+				if(mat_bsdfs.hasAny(BsdfFlags::Volumetric) && (vol = material->getVolumeHandler(sp.ng_ * -ray.dir_ < 0)))
 				{
 					if(vol->transmittance(ray, vcol)) transm = vcol;
 				}
@@ -457,7 +458,7 @@ void SppmIntegrator::photonWorker(PhotonMap *diffuse_map, PhotonMap *caustic_map
 			material = sp.material_;
 
 			//deposit photon on diffuse surface, now we only have one map for all, elimate directPhoton for we estimate it directly
-			if(!direct_photon && !caustic_photon && bsdfs.hasAny(BsdfFlags::Diffuse))
+			if(!direct_photon && !caustic_photon && mat_bsdfs.hasAny(BsdfFlags::Diffuse))
 			{
 				Photon np(wi, sp.p_, pcol);// pcol used here
 
@@ -469,7 +470,7 @@ void SppmIntegrator::photonWorker(PhotonMap *diffuse_map, PhotonMap *caustic_map
 				nd_photon_stored++;
 			}
 			// add caustic photon
-			if(!direct_photon && caustic_photon && bsdfs.hasAny(BsdfFlags::Diffuse | BsdfFlags::Glossy))
+			if(!direct_photon && caustic_photon && mat_bsdfs.hasAny(BsdfFlags::Diffuse | BsdfFlags::Glossy))
 			{
 				Photon np(wi, sp.p_, pcol);// pcol used here
 
@@ -729,7 +730,7 @@ GatherInfo SppmIntegrator::traceGatherRay(RenderData &render_data, DiffRay &ray,
 
 		if(mat_bsdfs.hasAny(BsdfFlags::Diffuse))
 		{
-			g_info.constant_randiance_ += estimateAllDirectLight(render_data, sp.mat_data_.get(), sp, wo, color_layers);
+			g_info.constant_randiance_ += estimateAllDirectLight(render_data, sp, wo, color_layers);
 		}
 
 		// estimate radiance using photon map
@@ -1173,7 +1174,7 @@ GatherInfo SppmIntegrator::traceGatherRay(RenderData &render_data, DiffRay &ray,
 
 			if(ColorLayer *color_layer = color_layers->find(Layer::AoClay))
 			{
-				color_layer->color_ = sampleAmbientOcclusionClayLayer(render_data, sp.mat_data_.get(), sp, wo);
+				color_layer->color_ = sampleAmbientOcclusionClayLayer(render_data, sp, wo);
 			}
 		}
 

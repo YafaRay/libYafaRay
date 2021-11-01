@@ -148,7 +148,7 @@ Rgba PathIntegrator::integrate(RenderData &render_data, const DiffRay &ray, int 
 		}
 
 		const Material *material = sp.material_;
-		const BsdfFlags &bsdfs = sp.mat_data_->bsdf_flags_;
+		const BsdfFlags &mat_bsdfs = sp.mat_data_->bsdf_flags_;
 		Vec3 wo = -ray.dir_;
 		const VolumeHandler *vol;
 		Rgb vcol(0.f);
@@ -158,7 +158,7 @@ Rgba PathIntegrator::integrate(RenderData &render_data, const DiffRay &ray, int 
 		if(additional_depth < material->getAdditionalDepth()) additional_depth = material->getAdditionalDepth();
 
 		// contribution of light emitting surfaces
-		if(bsdfs.hasAny(BsdfFlags::Emit))
+		if(mat_bsdfs.hasAny(BsdfFlags::Emit))
 		{
 			const Rgb col_tmp = material->emit(sp.mat_data_.get(), sp, wo, render_data.lights_geometry_material_emit_);
 			col += col_tmp;
@@ -168,13 +168,13 @@ Rgba PathIntegrator::integrate(RenderData &render_data, const DiffRay &ray, int 
 			}
 		}
 
-		if(bsdfs.hasAny(BsdfFlags::Diffuse))
+		if(mat_bsdfs.hasAny(BsdfFlags::Diffuse))
 		{
-			col += estimateAllDirectLight(render_data, sp.mat_data_.get(), sp, wo, color_layers);
+			col += estimateAllDirectLight(render_data, sp, wo, color_layers);
 
 			if(caustic_type_ == CausticType::Photon || caustic_type_ == CausticType::Both)
 			{
-				Rgb col_tmp = estimateCausticPhotons(sp.mat_data_.get(), sp, wo);
+				Rgb col_tmp = estimateCausticPhotons(sp, wo);
 				if(aa_noise_params_.clamp_indirect_ > 0.f) col_tmp.clampProportionalRgb(aa_noise_params_.clamp_indirect_);
 				col += col_tmp;
 				if(layers_used)
@@ -192,7 +192,7 @@ Rgba PathIntegrator::integrate(RenderData &render_data, const DiffRay &ray, int 
 		bool was_chromatic = render_data.chromatic_;
 		BsdfFlags path_flags = no_recursive_ ? BsdfFlags::All : (BsdfFlags::Diffuse);
 
-		if(bsdfs.hasAny(path_flags))
+		if(mat_bsdfs.hasAny(path_flags))
 		{
 			Rgb path_col(0.0);
 			path_flags |= (BsdfFlags::Diffuse | BsdfFlags::Reflect | BsdfFlags::Transmit);
@@ -234,7 +234,7 @@ Rgba PathIntegrator::integrate(RenderData &render_data, const DiffRay &ray, int 
 				const Material *p_mat = hit->material_;
 				const std::unique_ptr<MaterialData> p_mat_data = p_mat->initBsdf(*hit, render_data.cam_);
 				if(s.sampled_flags_ != BsdfFlags::None) pwo = -p_ray.dir_; //Fix for white dots in path tracing with shiny diffuse with transparent PNG texture and transparent shadows, especially in Win32, (precision?). Sometimes the first sampling does not take place and pRay.dir is not initialized, so before this change when that happened pwo = -pRay.dir was getting a random non-initialized value! This fix makes that, if the first sample fails for some reason, pwo is not modified and the rest of the sampling continues with the same pwo value. FIXME: Question: if the first sample fails, should we continue as now or should we exit the loop with the "continue" command?
-				lcol = estimateOneDirectLight(render_data, p_mat_data.get(), *hit, pwo, offs);
+				lcol = estimateOneDirectLight(render_data, *hit, pwo, offs);
 				const BsdfFlags mat_bsd_fs = p_mat_data->bsdf_flags_;
 				if(mat_bsd_fs.hasAny(BsdfFlags::Emit))
 				{
@@ -291,7 +291,7 @@ Rgba PathIntegrator::integrate(RenderData &render_data, const DiffRay &ray, int 
 					p_mat = hit->material_;
 					pwo = -p_ray.dir_;
 
-					if(mat_bsd_fs.hasAny(BsdfFlags::Diffuse)) lcol = estimateOneDirectLight(render_data, p_mat_data.get(), *hit, pwo, offs);
+					if(mat_bsd_fs.hasAny(BsdfFlags::Diffuse)) lcol = estimateOneDirectLight(render_data, *hit, pwo, offs);
 					else lcol = Rgb(0.f);
 
 					if(mat_bsd_fs.hasAny(BsdfFlags::Volumetric) && (vol = p_mat->getVolumeHandler(hit->n_ * pwo < 0)))
@@ -326,7 +326,7 @@ Rgba PathIntegrator::integrate(RenderData &render_data, const DiffRay &ray, int 
 		//reset chromatic state:
 		render_data.chromatic_ = was_chromatic;
 
-		recursiveRaytrace(render_data, ray, bsdfs, sp, wo, col, alpha, additional_depth, color_layers);
+		recursiveRaytrace(render_data, ray, mat_bsdfs, sp, wo, col, alpha, additional_depth, color_layers);
 
 		if(layers_used)
 		{
@@ -339,7 +339,7 @@ Rgba PathIntegrator::integrate(RenderData &render_data, const DiffRay &ray, int 
 
 			if(ColorLayer *color_layer = color_layers->find(Layer::AoClay))
 			{
-				color_layer->color_ = sampleAmbientOcclusionClayLayer(render_data, sp.mat_data_.get(), sp, wo);
+				color_layer->color_ = sampleAmbientOcclusionClayLayer(render_data, sp, wo);
 			}
 		}
 

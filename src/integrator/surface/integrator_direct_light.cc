@@ -119,14 +119,14 @@ Rgba DirectLightIntegrator::integrate(RenderData &render_data, const DiffRay &ra
 	if(accelerator && accelerator->intersect(ray, sp, render_data.cam_)) // If it hits
 	{
 		const Material *material = sp.material_;
-		const BsdfFlags &bsdfs = sp.mat_data_->bsdf_flags_;
+		const BsdfFlags &mat_bsdfs = sp.mat_data_->bsdf_flags_;
 
 		const Vec3 wo = -ray.dir_;
 		if(render_data.raylevel_ == 0) render_data.lights_geometry_material_emit_ = true;
 
 		if(additional_depth < material->getAdditionalDepth()) additional_depth = material->getAdditionalDepth();
 
-		if(bsdfs.hasAny(BsdfFlags::Emit))
+		if(mat_bsdfs.hasAny(BsdfFlags::Emit))
 		{
 			const Rgb col_tmp = material->emit(sp.mat_data_.get(), sp, wo, render_data.lights_geometry_material_emit_);
 			col += col_tmp;
@@ -136,13 +136,13 @@ Rgba DirectLightIntegrator::integrate(RenderData &render_data, const DiffRay &ra
 			}
 		}
 
-		if(bsdfs.hasAny(BsdfFlags::Diffuse))
+		if(mat_bsdfs.hasAny(BsdfFlags::Diffuse))
 		{
-			col += estimateAllDirectLight(render_data, sp.mat_data_.get(), sp, wo, color_layers);
+			col += estimateAllDirectLight(render_data, sp, wo, color_layers);
 
 			if(use_photon_caustics_)
 			{
-				Rgb col_tmp = estimateCausticPhotons(sp.mat_data_.get(), sp, wo);
+				Rgb col_tmp = estimateCausticPhotons(sp, wo);
 				if(aa_noise_params_.clamp_indirect_ > 0) col_tmp.clampProportionalRgb(aa_noise_params_.clamp_indirect_);
 				col += col_tmp;
 				if(layers_used)
@@ -151,10 +151,10 @@ Rgba DirectLightIntegrator::integrate(RenderData &render_data, const DiffRay &ra
 				}
 			}
 
-			if(use_ambient_occlusion_) col += sampleAmbientOcclusion(render_data, sp.mat_data_.get(), sp, wo);
+			if(use_ambient_occlusion_) col += sampleAmbientOcclusion(render_data, sp, wo);
 		}
 
-		recursiveRaytrace(render_data, ray, bsdfs, sp, wo, col, alpha, additional_depth, color_layers);
+		recursiveRaytrace(render_data, ray, mat_bsdfs, sp, wo, col, alpha, additional_depth, color_layers);
 
 		if(layers_used)
 		{
@@ -167,7 +167,7 @@ Rgba DirectLightIntegrator::integrate(RenderData &render_data, const DiffRay &ra
 
 			if(ColorLayer *color_layer = color_layers->find(Layer::AoClay))
 			{
-				color_layer->color_ = sampleAmbientOcclusionClayLayer(render_data, sp.mat_data_.get(), sp, wo);
+				color_layer->color_ = sampleAmbientOcclusionClayLayer(render_data, sp, wo);
 			}
 		}
 

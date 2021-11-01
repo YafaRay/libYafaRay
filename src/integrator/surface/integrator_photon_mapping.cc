@@ -176,7 +176,6 @@ void PhotonIntegrator::diffuseWorker(PhotonMap *diffuse_map, int thread_id, cons
 		bool caustic_photon = false;
 		bool direct_photon = true;
 		const Material *material = nullptr;
-		const BsdfFlags &bsdfs = sp.mat_data_->bsdf_flags_;
 
 		while(accelerator->intersect(ray, sp, render_data.cam_))
 		{
@@ -192,9 +191,11 @@ void PhotonIntegrator::diffuseWorker(PhotonMap *diffuse_map, int thread_id, cons
 			Rgb vcol(0.f);
 			const VolumeHandler *vol = nullptr;
 
+			const BsdfFlags &mat_bsdfs = sp.mat_data_->bsdf_flags_;
 			if(material)
 			{
-				if(bsdfs.hasAny(BsdfFlags::Volumetric) && (vol = material->getVolumeHandler(sp.ng_ * -ray.dir_ < 0)))
+				//FIXME??? HOW DOES THIS WORK, WITH PREVIOUS MATERIAL AND FLAGS?? Then this needs to be properly written to account for both previous material and previous mat_data!
+				if(mat_bsdfs.hasAny(BsdfFlags::Volumetric) && (vol = material->getVolumeHandler(sp.ng_ * -ray.dir_ < 0)))
 				{
 					if(vol->transmittance(ray, vcol)) transm = vcol;
 				}
@@ -203,7 +204,7 @@ void PhotonIntegrator::diffuseWorker(PhotonMap *diffuse_map, int thread_id, cons
 			Vec3 wi = -ray.dir_, wo;
 			material = sp.material_;
 
-			if(bsdfs.hasAny(BsdfFlags::Diffuse))
+			if(mat_bsdfs.hasAny(BsdfFlags::Diffuse))
 			{
 				//deposit photon on surface
 				if(!caustic_photon)
@@ -786,7 +787,7 @@ Rgb PhotonIntegrator::finalGathering(RenderData &render_data, const SurfacePoint
 			{
 				if(close)
 				{
-					lcol = estimateOneDirectLight(render_data, hit.mat_data_.get(), hit, pwo, offs);
+					lcol = estimateOneDirectLight(render_data, hit, pwo, offs);
 				}
 				else if(caustic)
 				{
@@ -887,7 +888,7 @@ Rgba PhotonIntegrator::integrate(RenderData &render_data, const DiffRay &ray, in
 
 		Vec3 wo = -ray.dir_;
 		const Material *material = sp.material_;
-		const BsdfFlags &bsdfs = sp.mat_data_->bsdf_flags_;
+		const BsdfFlags &mat_bsdfs = sp.mat_data_->bsdf_flags_;
 
 		if(additional_depth < material->getAdditionalDepth()) additional_depth = material->getAdditionalDepth();
 
@@ -921,7 +922,7 @@ Rgba PhotonIntegrator::integrate(RenderData &render_data, const DiffRay &ray, in
 				}
 
 				// contribution of light emitting surfaces
-				if(bsdfs.hasAny(BsdfFlags::Emit))
+				if(mat_bsdfs.hasAny(BsdfFlags::Emit))
 				{
 					const Rgb col_tmp = material->emit(sp.mat_data_.get(), sp, wo, render_data.lights_geometry_material_emit_);
 					col += col_tmp;
@@ -931,9 +932,9 @@ Rgba PhotonIntegrator::integrate(RenderData &render_data, const DiffRay &ray, in
 					}
 				}
 
-				if(bsdfs.hasAny(BsdfFlags::Diffuse))
+				if(mat_bsdfs.hasAny(BsdfFlags::Diffuse))
 				{
-					col += estimateAllDirectLight(render_data, sp.mat_data_.get(), sp, wo, color_layers);
+					col += estimateAllDirectLight(render_data, sp, wo, color_layers);
 					Rgb col_tmp = finalGathering(render_data, sp, wo);
 					if(aa_noise_params_.clamp_indirect_ > 0.f) col_tmp.clampProportionalRgb(aa_noise_params_.clamp_indirect_);
 					col += col_tmp;
@@ -964,7 +965,7 @@ Rgba PhotonIntegrator::integrate(RenderData &render_data, const DiffRay &ray, in
 					}
 				}
 
-				if(bsdfs.hasAny(BsdfFlags::Emit))
+				if(mat_bsdfs.hasAny(BsdfFlags::Emit))
 				{
 					const Rgb col_tmp = material->emit(sp.mat_data_.get(), sp, wo, render_data.lights_geometry_material_emit_);
 					col += col_tmp;
@@ -974,9 +975,9 @@ Rgba PhotonIntegrator::integrate(RenderData &render_data, const DiffRay &ray, in
 					}
 				}
 
-				if(bsdfs.hasAny(BsdfFlags::Diffuse))
+				if(mat_bsdfs.hasAny(BsdfFlags::Diffuse))
 				{
-					col += estimateAllDirectLight(render_data, sp.mat_data_.get(), sp, wo, color_layers);
+					col += estimateAllDirectLight(render_data, sp, wo, color_layers);
 				}
 
 				FoundPhoton *gathered = (FoundPhoton *)alloca(n_diffuse_search_ * sizeof(FoundPhoton));
@@ -1007,9 +1008,9 @@ Rgba PhotonIntegrator::integrate(RenderData &render_data, const DiffRay &ray, in
 		}
 
 		// add caustics
-		if(use_photon_caustics_ && bsdfs.hasAny(BsdfFlags::Diffuse))
+		if(use_photon_caustics_ && mat_bsdfs.hasAny(BsdfFlags::Diffuse))
 		{
-			Rgb col_tmp = estimateCausticPhotons(sp.mat_data_.get(), sp, wo);
+			Rgb col_tmp = estimateCausticPhotons(sp, wo);
 			if(aa_noise_params_.clamp_indirect_ > 0.f) col_tmp.clampProportionalRgb(aa_noise_params_.clamp_indirect_);
 			col += col_tmp;
 			if(layers_used)
@@ -1018,7 +1019,7 @@ Rgba PhotonIntegrator::integrate(RenderData &render_data, const DiffRay &ray, in
 			}
 		}
 
-		recursiveRaytrace(render_data, ray, bsdfs, sp, wo, col, alpha, additional_depth, color_layers);
+		recursiveRaytrace(render_data, ray, mat_bsdfs, sp, wo, col, alpha, additional_depth, color_layers);
 
 		if(layers_used)
 		{
@@ -1031,7 +1032,7 @@ Rgba PhotonIntegrator::integrate(RenderData &render_data, const DiffRay &ray, in
 
 			if(ColorLayer *color_layer = color_layers->find(Layer::AoClay))
 			{
-				color_layer->color_ = sampleAmbientOcclusionClayLayer(render_data, sp.mat_data_.get(), sp, wo);
+				color_layer->color_ = sampleAmbientOcclusionClayLayer(render_data, sp, wo);
 			}
 		}
 
