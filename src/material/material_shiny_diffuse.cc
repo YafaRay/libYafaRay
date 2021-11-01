@@ -39,13 +39,11 @@ mirror_strength_(mirror_strength), transparency_strength_(transparency_strength)
 void ShinyDiffuseMaterial::config()
 {
 	n_bsdf_ = 0;
-	vi_nodes_[0] = vi_nodes_[1] = vi_nodes_[2] = vi_nodes_[3] = false;
-	vd_nodes_[0] = vd_nodes_[1] = vd_nodes_[2] = vd_nodes_[3] = false;
 	float acc = 1.f;
 	if(mirror_strength_ > 0.00001f || mirror_shader_)
 	{
 		is_mirror_ = true;
-		if(mirror_shader_) vi_nodes_[0] = true;
+		if(mirror_shader_) components_view_independent_[0] = true;
 		else if(!has_fresnel_effect_) acc = 1.f - mirror_strength_;
 		bsdf_flags_ |= BsdfFlags::Specular | BsdfFlags::Reflect;
 		c_flags_[n_bsdf_] = BsdfFlags::Specular | BsdfFlags::Reflect;
@@ -55,7 +53,7 @@ void ShinyDiffuseMaterial::config()
 	if(transparency_strength_ * acc > 0.00001f || transparency_shader_)
 	{
 		is_transparent_ = true;
-		if(transparency_shader_) vi_nodes_[1] = true;
+		if(transparency_shader_) components_view_independent_[1] = true;
 		else acc *= 1.f - transparency_strength_;
 		bsdf_flags_ |= BsdfFlags::Transmit | BsdfFlags::Filter;
 		c_flags_[n_bsdf_] = BsdfFlags::Transmit | BsdfFlags::Filter;
@@ -65,7 +63,7 @@ void ShinyDiffuseMaterial::config()
 	if(translucency_strength_ * acc > 0.00001f || translucency_shader_)
 	{
 		is_translucent_ = true;
-		if(translucency_shader_) vi_nodes_[2] = true;
+		if(translucency_shader_) components_view_independent_[2] = true;
 		else acc *= 1.f - transparency_strength_;
 		bsdf_flags_ |= BsdfFlags::Diffuse | BsdfFlags::Transmit;
 		c_flags_[n_bsdf_] = BsdfFlags::Diffuse | BsdfFlags::Transmit;
@@ -75,7 +73,7 @@ void ShinyDiffuseMaterial::config()
 	if(diffuse_strength_ * acc > 0.00001f)
 	{
 		is_diffuse_ = true;
-		if(diffuse_shader_) vi_nodes_[3] = true;
+		if(diffuse_shader_) components_view_independent_[3] = true;
 		bsdf_flags_ |= BsdfFlags::Diffuse | BsdfFlags::Reflect;
 		c_flags_[n_bsdf_] = BsdfFlags::Diffuse | BsdfFlags::Reflect;
 		c_index_[n_bsdf_] = 3;
@@ -87,12 +85,12 @@ void ShinyDiffuseMaterial::config()
 // since values for which useNode is false do not get touched, so it can be applied
 // twice, for view-independent (initBSDF) and view-dependent (sample/eval) nodes
 
-void ShinyDiffuseMaterial::getComponents(const bool *use_node, const NodeStack *stack, float *component) const
+void ShinyDiffuseMaterial::getComponents(const std::array<bool, 4> &use_nodes, const NodeStack *stack, std::array<float, 4> &components) const
 {
-	if(is_mirror_) component[0] = use_node[0] ? mirror_shader_->getScalar(stack) : mirror_strength_;
-	if(is_transparent_) component[1] = use_node[1] ? transparency_shader_->getScalar(stack) : transparency_strength_;
-	if(is_translucent_) component[2] = use_node[2] ? translucency_shader_->getScalar(stack) : translucency_strength_;
-	if(is_diffuse_) component[3] = diffuse_strength_;
+	if(is_mirror_) components[0] = use_nodes[0] ? mirror_shader_->getScalar(stack) : mirror_strength_;
+	if(is_transparent_) components[1] = use_nodes[1] ? transparency_shader_->getScalar(stack) : transparency_strength_;
+	if(is_translucent_) components[2] = use_nodes[2] ? translucency_shader_->getScalar(stack) : translucency_strength_;
+	if(is_diffuse_) components[3] = diffuse_strength_;
 }
 
 float ShinyDiffuseMaterial::getFresnelKr(const Vec3 &wo, const Vec3 &n, float current_ior_squared) const
@@ -113,15 +111,15 @@ float ShinyDiffuseMaterial::getFresnelKr(const Vec3 &wo, const Vec3 &n, float cu
 // calculate the absolute value of scattering components from the "normalized"
 // fractions which are between 0 (no scattering) and 1 (scatter all remaining light)
 // Kr is an optional reflection multiplier (e.g. from Fresnel)
-void ShinyDiffuseMaterial::accumulate(const float *component, float *accum, float kr)
+void ShinyDiffuseMaterial::accumulate(const std::array<float, 4> &components, std::array<float, 4> &accum, float kr)
 {
-	accum[0] = component[0] * kr;
+	accum[0] = components[0] * kr;
 	float acc = 1.f - accum[0];
-	accum[1] = component[1] * acc;
-	acc *= 1.f - component[1];
-	accum[2] = component[2] * acc;
-	acc *= 1.f - component[2];
-	accum[3] = component[3] * acc;
+	accum[1] = components[1] * acc;
+	acc *= 1.f - components[1];
+	accum[2] = components[2] * acc;
+	acc *= 1.f - components[2];
+	accum[3] = components[3] * acc;
 }
 
 std::unique_ptr<MaterialData> ShinyDiffuseMaterial::initBsdf(SurfacePoint &sp, const Camera *camera) const
@@ -131,7 +129,7 @@ std::unique_ptr<MaterialData> ShinyDiffuseMaterial::initBsdf(SurfacePoint &sp, c
 	if(bump_shader_) evalBump(mat_data->stack_.get(), sp, bump_shader_, camera);
 	for(const auto &node : color_nodes_) node->eval(mat_data->stack_.get(), sp, camera);
 	ShinyDiffuseMaterialData *mat_data_specific = static_cast<ShinyDiffuseMaterialData *>(mat_data.get());
-	getComponents(vi_nodes_, mat_data->stack_.get(), mat_data_specific->component_);
+	getComponents(components_view_independent_, mat_data->stack_.get(), mat_data_specific->components_);
 	return mat_data;
 }
 
@@ -208,17 +206,17 @@ Rgb ShinyDiffuseMaterial::eval(const MaterialData *mat_data, const SurfacePoint 
 	const float kr = getFresnelKr(wo, n, cur_ior_squared);
 
 	const ShinyDiffuseMaterialData *mat_data_specific = static_cast<const ShinyDiffuseMaterialData *>(mat_data);
-	const float m_t = (1.f - kr * mat_data_specific->component_[0]) * (1.f - mat_data_specific->component_[1]);
+	const float m_t = (1.f - kr * mat_data_specific->components_[0]) * (1.f - mat_data_specific->components_[1]);
 
 	const bool transmit = (cos_ng_wo * cos_ng_wl) < 0.f;
 
 	if(transmit) // light comes from opposite side of surface
 	{
-		if(is_translucent_) return mat_data_specific->component_[2] * m_t * (diffuse_shader_ ? diffuse_shader_->getColor(mat_data->stack_.get()) : diffuse_color_);
+		if(is_translucent_) return mat_data_specific->components_[2] * m_t * (diffuse_shader_ ? diffuse_shader_->getColor(mat_data->stack_.get()) : diffuse_color_);
 	}
 
 	if(n * wl < 0.0 && !flat_material_) return Rgb(0.f);
-	float m_d = m_t * (1.f - mat_data_specific->component_[2]) * mat_data_specific->component_[3];
+	float m_d = m_t * (1.f - mat_data_specific->components_[2]) * mat_data_specific->components_[3];
 
 	if(use_oren_nayar_)
 	{
@@ -246,7 +244,7 @@ Rgb ShinyDiffuseMaterial::emit(const MaterialData *mat_data, const SurfacePoint 
 
 Rgb ShinyDiffuseMaterial::sample(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, Vec3 &wi, Sample &s, float &w, bool chromatic, float wavelength, const Camera *camera) const
 {
-	float accum_c[4];
+	std::array<float, 4> accum_c;
 	const float cos_ng_wo = sp.ng_ * wo;
 	const Vec3 n = SurfacePoint::normalFaceForward(sp.ng_, sp.n_, wo);
 
@@ -260,7 +258,7 @@ Rgb ShinyDiffuseMaterial::sample(const MaterialData *mat_data, const SurfacePoin
 
 	const float kr = getFresnelKr(wo, n, cur_ior_squared);
 	const ShinyDiffuseMaterialData *mat_data_specific = static_cast<const ShinyDiffuseMaterialData *>(mat_data);
-	accumulate(mat_data_specific->component_, accum_c, kr);
+	accumulate(mat_data_specific->components_, accum_c, kr);
 
 	float sum = 0.f, val[4], width[4];
 	BsdfFlags choice[4];
@@ -342,7 +340,7 @@ float ShinyDiffuseMaterial::pdf(const MaterialData *mat_data, const SurfacePoint
 	if(!bsdfs.hasAny(BsdfFlags::Diffuse)) return 0.f;
 
 	float pdf = 0.f;
-	float accum_c[4];
+	std::array<float, 4> accum_c;
 	const float cos_ng_wo = sp.ng_ * wo;
 	const Vec3 n = SurfacePoint::normalFaceForward(sp.ng_, sp.n_, wo);
 
@@ -357,7 +355,7 @@ float ShinyDiffuseMaterial::pdf(const MaterialData *mat_data, const SurfacePoint
 	const float kr = getFresnelKr(wo, n, cur_ior_squared);
 
 	const ShinyDiffuseMaterialData *mat_data_specific = static_cast<const ShinyDiffuseMaterialData *>(mat_data);
-	accumulate(mat_data_specific->component_, accum_c, kr);
+	accumulate(mat_data_specific->components_, accum_c, kr);
 	float sum = 0.f, width;
 	int n_match = 0;
 	for(int i = 0; i < n_bsdf_; ++i)
@@ -416,7 +414,7 @@ Material::Specular ShinyDiffuseMaterial::getSpecular(int raylevel, const Materia
 		specular.refract_.dir_ = -wo;
 		const Rgb tcol = transmit_filter_strength_ * (diffuse_shader_ ? diffuse_shader_->getColor(mat_data->stack_.get()) : diffuse_color_) + Rgb(1.f - transmit_filter_strength_);
 		const ShinyDiffuseMaterialData *mat_data_specific = static_cast<const ShinyDiffuseMaterialData *>(mat_data);
-		specular.refract_.col_ = (1.f - mat_data_specific->component_[0] * kr) * mat_data_specific->component_[1] * tcol;
+		specular.refract_.col_ = (1.f - mat_data_specific->components_[0] * kr) * mat_data_specific->components_[1] * tcol;
 		const float wire_frame_amount = wireframe_shader_ ? wireframe_shader_->getScalar(mat_data->stack_.get()) * wireframe_amount_ : wireframe_amount_;
 		applyWireFrame(specular.refract_.col_, wire_frame_amount, sp);
 	}
@@ -433,7 +431,7 @@ Material::Specular ShinyDiffuseMaterial::getSpecular(int raylevel, const Materia
 			specular.reflect_.dir_.normalize();
 		}
 		const ShinyDiffuseMaterialData *mat_data_specific = static_cast<const ShinyDiffuseMaterialData *>(mat_data);
-		specular.reflect_.col_ = (mirror_color_shader_ ? mirror_color_shader_->getColor(mat_data->stack_.get()) : mirror_color_) * (mat_data_specific->component_[0] * kr);
+		specular.reflect_.col_ = (mirror_color_shader_ ? mirror_color_shader_->getColor(mat_data->stack_.get()) : mirror_color_) * (mat_data_specific->components_[0] * kr);
 		const float wire_frame_amount = wireframe_shader_ ? wireframe_shader_->getScalar(mat_data->stack_.get()) * wireframe_amount_ : wireframe_amount_;
 		applyWireFrame(specular.reflect_.col_, wire_frame_amount, sp);
 	}
@@ -482,7 +480,7 @@ float ShinyDiffuseMaterial::getAlpha(const MaterialData *mat_data, const Surface
 		else cur_ior_squared = ior_squared_;
 		const float kr = getFresnelKr(wo, n, cur_ior_squared);
 		const ShinyDiffuseMaterialData *mat_data_specific = static_cast<const ShinyDiffuseMaterialData *>(mat_data);
-		const float refl = (1.f - mat_data_specific->component_[0] * kr) * mat_data_specific->component_[1];
+		const float refl = (1.f - mat_data_specific->components_[0] * kr) * mat_data_specific->components_[1];
 		float result = 1.f - refl;
 		const float wire_frame_amount = wireframe_shader_ ? wireframe_shader_->getScalar(mat_data->stack_.get()) * wireframe_amount_ : wireframe_amount_;
 		applyWireFrame(result, wire_frame_amount, sp);

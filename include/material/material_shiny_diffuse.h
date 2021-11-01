@@ -42,7 +42,7 @@ class ShinyDiffuseMaterialData final : public MaterialData
 {
 	public:
 		ShinyDiffuseMaterialData(BsdfFlags bsdf_flags) : MaterialData(bsdf_flags) { }
-		float component_[4];
+		std::array<float, 4> components_{0.f, 0.f, 0.f, 0.f};
 };
 
 class ShinyDiffuseMaterial final : public NodeMaterial
@@ -69,11 +69,11 @@ class ShinyDiffuseMaterial final : public NodeMaterial
 		virtual Rgb getSubSurfaceColor(const MaterialData *mat_data) const override;
 
 		void config();
-		void getComponents(const bool *use_node, const NodeStack *stack, float *component) const;
+		void getComponents(const std::array<bool, 4> &use_nodes, const NodeStack *stack, std::array<float, 4> &components) const;
 		float getFresnelKr(const Vec3 &wo, const Vec3 &n, float current_ior_squared) const;
 		void initOrenNayar(double sigma);
 		float orenNayar(const Vec3 &wi, const Vec3 &wo, const Vec3 &n, bool use_texture_sigma, double texture_sigma) const;
-		static void accumulate(const float *component, float *accum, float kr);
+		static void accumulate(const std::array<float, 4> &components, std::array<float, 4> &accum, float kr);
 
 		bool is_transparent_ = false;                  //!< Boolean value which is true if you have transparent component
 		bool is_translucent_ = false;                  //!< Boolean value which is true if you have translucent component
@@ -84,7 +84,7 @@ class ShinyDiffuseMaterial final : public NodeMaterial
 		float ior_ = 1.f;                              //!< IOR
 		float ior_squared_ = 1.f;                     //!< Squared IOR
 
-		bool vi_nodes_[4], vd_nodes_[4];                  //!< describes if the nodes are viewdependant or not (if available)
+		std::array<bool, 4> components_view_independent_{false, false, false, false};
 		const ShaderNode *diffuse_shader_ = nullptr;       //!< Shader node for diffuse color
 		const ShaderNode *bump_shader_ = nullptr;          //!< Shader node for bump
 		const ShaderNode *transparency_shader_ = nullptr;  //!< Shader node for transparency strength (float)
