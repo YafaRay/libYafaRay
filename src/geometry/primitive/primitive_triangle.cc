@@ -170,7 +170,7 @@ SurfacePoint TrianglePrimitive::getSurface(const Point3 &hit_point, const Inters
 	Vec3::createCs(sp.n_, sp.nu_, sp.nv_);
 	calculateShadingSpace(sp);
 	sp.material_ = getMaterial();
-	sp.mat_data_ = sp.material_->initBsdf(sp, sp.bsdf_flags_, camera);
+	sp.mat_data_ = sp.material_->initBsdf(sp, camera);
 	return sp;
 }
 

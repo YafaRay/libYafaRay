@@ -176,7 +176,7 @@ void PhotonIntegrator::diffuseWorker(PhotonMap *diffuse_map, int thread_id, cons
 		bool caustic_photon = false;
 		bool direct_photon = true;
 		const Material *material = nullptr;
-		const BsdfFlags &bsdfs = sp.bsdf_flags_;
+		const BsdfFlags &bsdfs = sp.mat_data_->bsdf_flags_;
 
 		while(accelerator->intersect(ray, sp, render_data.cam_))
 		{
@@ -738,7 +738,6 @@ Rgb PhotonIntegrator::finalGathering(RenderData &render_data, const SurfacePoint
 		SurfacePoint hit = sp;
 		Vec3 pwo = wo;
 		Ray p_ray;
-		BsdfFlags mat_bsd_fs;
 		bool did_hit;
 		const Material *p_mat = sp.material_;
 		unsigned int offs = n_paths_ * render_data.pixel_sample_ + render_data.sampling_offs_ + i; // some redundancy here...
@@ -767,7 +766,7 @@ Rgb PhotonIntegrator::finalGathering(RenderData &render_data, const SurfacePoint
 
 		p_mat = hit.material_;
 		length = p_ray.tmax_;
-		mat_bsd_fs = p_mat->getFlags();
+		const BsdfFlags &mat_bsd_fs = hit.mat_data_->bsdf_flags_;
 		bool has_spec = mat_bsd_fs.hasAny(BsdfFlags::Specular);
 		bool caustic = false;
 		bool close = length < gather_dist_;
@@ -888,7 +887,7 @@ Rgba PhotonIntegrator::integrate(RenderData &render_data, const DiffRay &ray, in
 
 		Vec3 wo = -ray.dir_;
 		const Material *material = sp.material_;
-		const BsdfFlags &bsdfs = sp.bsdf_flags_;
+		const BsdfFlags &bsdfs = sp.mat_data_->bsdf_flags_;
 
 		if(additional_depth < material->getAdditionalDepth()) additional_depth = material->getAdditionalDepth();
 

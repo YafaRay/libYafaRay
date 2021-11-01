@@ -95,7 +95,7 @@ SurfacePoint SpherePrimitive::getSurface(const Point3 &hit, const IntersectData 
 	sp.u_ = atan2(normal.y_, normal.x_) * math::div_1_by_pi + 1;
 	sp.v_ = 1.f - math::acos(normal.z_) * math::div_1_by_pi;
 	sp.light_ = nullptr;
-	sp.mat_data_ = sp.material_->initBsdf(sp, sp.bsdf_flags_, camera);
+	sp.mat_data_ = sp.material_->initBsdf(sp, camera);
 	return sp;
 }
 

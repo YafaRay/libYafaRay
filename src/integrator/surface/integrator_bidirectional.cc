@@ -982,6 +982,7 @@ Rgb BidirectionalIntegrator::sampleAmbientOcclusionLayer(RenderData &render_data
 	Rgb col(0.f), surf_col(0.f), scol(0.f);
 	bool shadowed;
 	const Material *material = sp.material_;
+	const BsdfFlags &bsdfs = sp.mat_data_->bsdf_flags_;
 	Ray light_ray;
 	light_ray.from_ = sp.p_;
 	float mask_obj_index = 0.f, mask_mat_index = 0.f;
@@ -1012,7 +1013,7 @@ Rgb BidirectionalIntegrator::sampleAmbientOcclusionLayer(RenderData &render_data
 		Sample s(s_1, s_2, BsdfFlags::Glossy | BsdfFlags::Diffuse | BsdfFlags::Reflect);
 		surf_col = material->sample(sp.mat_data_.get(), sp, wo, light_ray.dir_, s, w, render_data.chromatic_, render_data.wavelength_, render_data.cam_);
 
-		if(material->getFlags().hasAny(BsdfFlags::Emit))
+		if(bsdfs.hasAny(BsdfFlags::Emit))
 		{
 			col += material->emit(mat_data, sp, wo, render_data.lights_geometry_material_emit_) * s.pdf_;
 		}

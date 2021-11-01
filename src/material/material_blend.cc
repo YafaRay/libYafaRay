@@ -47,9 +47,8 @@ inline float BlendMaterial::getBlendVal(const MaterialData *mat_data, const Surf
 	return blend_val;
 }
 
-std::unique_ptr<MaterialData> BlendMaterial::initBsdf(SurfacePoint &sp, BsdfFlags &bsdf_types, const Camera *camera) const
+std::unique_ptr<MaterialData> BlendMaterial::initBsdf(SurfacePoint &sp, const Camera *camera) const
 {
-	bsdf_types = BsdfFlags::None;
 	std::unique_ptr<MaterialData> mat_data = createMaterialData();
 	BlendMaterialData *mat_data_specific = static_cast<BlendMaterialData *>(mat_data.get());
 	mat_data->stack_ = std::unique_ptr<NodeStack>(new NodeStack());
@@ -58,11 +57,11 @@ std::unique_ptr<MaterialData> BlendMaterial::initBsdf(SurfacePoint &sp, BsdfFlag
 	const float blend_val = getBlendVal(mat_data_specific, sp);
 
 	SurfacePoint sp_1 = sp;
-	mat_data_specific->mat_1_data_ = mat_1_->initBsdf(sp_1, mat_data_specific->mat_1_flags_, camera);
+	mat_data_specific->mat_1_data_ = mat_1_->initBsdf(sp_1, camera);
 	SurfacePoint sp_2 = sp;
-	mat_data_specific->mat_2_data_ = mat_2_->initBsdf(sp_2, mat_data_specific->mat_2_flags_, camera);
+	mat_data_specific->mat_2_data_ = mat_2_->initBsdf(sp_2, camera);
 	sp = SurfacePoint::blendSurfacePoints(sp_1, sp_2, blend_val);
-	bsdf_types = mat_data_specific->mat_1_flags_ | mat_data_specific->mat_2_flags_;
+	mat_data->bsdf_flags_ = mat_data_specific->mat_1_data_->bsdf_flags_ | mat_data_specific->mat_2_data_->bsdf_flags_;
 
 	//todo: bump mapping blending
 	return mat_data;
@@ -98,13 +97,13 @@ Rgb BlendMaterial::sample(const MaterialData *mat_data, const SurfacePoint &sp, 
 
 	s_2.pdf_ = s_1.pdf_ = s.pdf_ = 0.f;
 
-	if(s.flags_.hasAny(mat_data_specific->mat_1_flags_))
+	if(s.flags_.hasAny(mat_data_specific->mat_1_data_->bsdf_flags_))
 	{
 		col_1 = mat_1_->sample(mat_data_specific->mat_1_data_.get(), sp, wo, wi_1, s_1, w_1, chromatic, wavelength, camera);
 		mat_1_sampled = true;
 	}
 
-	if(s.flags_.hasAny(mat_data_specific->mat_2_flags_))
+	if(s.flags_.hasAny(mat_data_specific->mat_2_data_->bsdf_flags_))
 	{
 		col_2 = mat_2_->sample(mat_data_specific->mat_2_data_.get(), sp, wo, wi_2, s_2, w_2, chromatic, wavelength, camera);
 		mat_2_sampled = true;

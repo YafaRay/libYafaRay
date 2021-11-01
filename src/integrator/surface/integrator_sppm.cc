@@ -429,7 +429,7 @@ void SppmIntegrator::photonWorker(PhotonMap *diffuse_map, PhotonMap *caustic_map
 		bool caustic_photon = false;
 		bool direct_photon = true;
 		const Material *material = nullptr;
-		const BsdfFlags &bsdfs = sp.bsdf_flags_;
+		const BsdfFlags &bsdfs = sp.mat_data_->bsdf_flags_;
 
 		while(accelerator->intersect(ray, sp, render_data.cam_))   //scatter photons.
 		{
@@ -715,7 +715,7 @@ GatherInfo SppmIntegrator::traceGatherRay(RenderData &render_data, DiffRay &ray,
 
 		Vec3 wo = -ray.dir_;
 		const Material *material = sp.material_;
-		const BsdfFlags &bsdfs = sp.bsdf_flags_;
+		const BsdfFlags &bsdfs = sp.mat_data_->bsdf_flags_;
 		if(additional_depth < material->getAdditionalDepth()) additional_depth = material->getAdditionalDepth();
 
 		const Rgb col_emit = material->emit(sp.mat_data_.get(), sp, wo, render_data.lights_geometry_material_emit_);

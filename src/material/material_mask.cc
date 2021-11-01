@@ -33,7 +33,7 @@ MaskMaterial::MaskMaterial(Logger &logger, const Material *m_1, const Material *
 	bsdf_flags_ = mat_1_->getFlags() | mat_2_->getFlags();
 }
 
-std::unique_ptr<MaterialData> MaskMaterial::initBsdf(SurfacePoint &sp, BsdfFlags &bsdf_types, const Camera *camera) const
+std::unique_ptr<MaterialData> MaskMaterial::initBsdf(SurfacePoint &sp, const Camera *camera) const
 {
 	std::unique_ptr<MaterialData> mat_data = createMaterialData();
 	mat_data->stack_ = std::unique_ptr<NodeStack>(new NodeStack());
@@ -41,8 +41,8 @@ std::unique_ptr<MaterialData> MaskMaterial::initBsdf(SurfacePoint &sp, BsdfFlags
 	const float val = mask_->getScalar(mat_data->stack_.get()); //mask->getFloat(sp.P);
 	MaskMaterialData *mat_data_specific = static_cast<MaskMaterialData *>(mat_data.get());
 	mat_data_specific->select_mat_2_ = val > threshold_;
-	if(mat_data_specific->select_mat_2_) mat_data_specific->mat_2_data_ = mat_2_->initBsdf(sp, bsdf_types, camera);
-	else mat_data_specific->mat_1_data_ = mat_1_->initBsdf(sp, bsdf_types, camera);
+	if(mat_data_specific->select_mat_2_) mat_data_specific->mat_2_data_ = mat_2_->initBsdf(sp, camera);
+	else mat_data_specific->mat_1_data_ = mat_1_->initBsdf(sp, camera);
 	return mat_data;
 }
 

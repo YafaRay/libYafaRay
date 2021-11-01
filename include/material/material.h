@@ -69,7 +69,9 @@ struct BsdfFlags : public Flags
 class MaterialData
 {
 	public:
+		MaterialData(BsdfFlags bsdf_flags) : bsdf_flags_(bsdf_flags) { }
 		virtual ~MaterialData() = default;
+		BsdfFlags bsdf_flags_;
 		std::unique_ptr<NodeStack> stack_;
 };
 
@@ -97,7 +99,7 @@ class Material
 			like texture lookups etc.
 			\param bsdf_types returns flags for all bsdf components the material has
 		 */
-		virtual std::unique_ptr<MaterialData> initBsdf(SurfacePoint &sp, BsdfFlags &bsdf_types, const Camera *camera) const = 0;
+		virtual std::unique_ptr<MaterialData> initBsdf(SurfacePoint &sp, const Camera *camera) const = 0;
 
 		/*! evaluate the BSDF for the given components.
 				@param types the types of BSDFs to be evaluated (e.g. diffuse only, or diffuse and glossy) */

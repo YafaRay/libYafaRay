@@ -129,13 +129,12 @@ void ShinyDiffuseMaterial::accumulate(const float *component, float *accum, floa
 	accum[3] = component[3] * acc;
 }
 
-std::unique_ptr<MaterialData> ShinyDiffuseMaterial::initBsdf(SurfacePoint &sp, BsdfFlags &bsdf_types, const Camera *camera) const
+std::unique_ptr<MaterialData> ShinyDiffuseMaterial::initBsdf(SurfacePoint &sp, const Camera *camera) const
 {
 	std::unique_ptr<MaterialData> mat_data = createMaterialData();
 	mat_data->stack_ = std::unique_ptr<NodeStack>(new NodeStack());
 	if(bump_shader_) evalBump(mat_data->stack_.get(), sp, bump_shader_, nullptr);
 	for(const auto &node : color_nodes_) node->eval(mat_data->stack_.get(), sp, camera);
-	bsdf_types = bsdf_flags_;
 	ShinyDiffuseMaterialData *mat_data_specific = static_cast<ShinyDiffuseMaterialData *>(mat_data.get());
 	getComponents(vi_nodes_, mat_data->stack_.get(), mat_data_specific->component_);
 	return mat_data;

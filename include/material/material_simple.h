@@ -35,6 +35,7 @@ BEGIN_YAFARAY
 class LightMaterialData final : public MaterialData
 {
 	public:
+		LightMaterialData(BsdfFlags bsdf_flags) : MaterialData(bsdf_flags) { }
 };
 
 class LightMaterial final : public Material
@@ -44,8 +45,8 @@ class LightMaterial final : public Material
 
 	private:
 		LightMaterial(Logger &logger, Rgb light_c, bool ds = false);
-		virtual std::unique_ptr<MaterialData> createMaterialData() const override { return std::unique_ptr<LightMaterialData>(new LightMaterialData()); };
-		virtual std::unique_ptr<MaterialData> initBsdf(SurfacePoint &sp, BsdfFlags &bsdf_types, const Camera *camera) const override { bsdf_types = bsdf_flags_; return createMaterialData(); }
+		virtual std::unique_ptr<MaterialData> createMaterialData() const override { return std::unique_ptr<LightMaterialData>(new LightMaterialData(bsdf_flags_)); };
+		virtual std::unique_ptr<MaterialData> initBsdf(SurfacePoint &sp, const Camera *camera) const override { return createMaterialData(); }
 		virtual Rgb eval(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wl, const BsdfFlags &bsdfs, bool force_eval = false) const override { return Rgb(0.0); }
 		virtual Rgb sample(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, Vec3 &wi, Sample &s, float &w, bool chromatic, float wavelength, const Camera *camera) const override;
 		virtual Rgb emit(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, bool lights_geometry_material_emit) const override;

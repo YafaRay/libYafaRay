@@ -48,14 +48,13 @@ GlossyMaterial::GlossyMaterial(Logger &logger, const Rgb &col, const Rgb &dcol, 
 	visibility_ = e_visibility;
 }
 
-std::unique_ptr<MaterialData> GlossyMaterial::initBsdf(SurfacePoint &sp, BsdfFlags &bsdf_types, const Camera *camera) const
+std::unique_ptr<MaterialData> GlossyMaterial::initBsdf(SurfacePoint &sp, const Camera *camera) const
 {
 	std::unique_ptr<MaterialData> mat_data = createMaterialData();
 	mat_data->stack_ = std::unique_ptr<NodeStack>(new NodeStack());
 	if(bump_shader_) evalBump(mat_data->stack_.get(), sp, bump_shader_, nullptr);
 
 	for(const auto &node : color_nodes_) node->eval(mat_data->stack_.get(), sp, camera);
-	bsdf_types = bsdf_flags_;
 	GlossyMaterialData *mat_data_specific = static_cast<GlossyMaterialData *>(mat_data.get());
 	mat_data_specific->m_diffuse_ = diffuse_;
 	mat_data_specific->m_glossy_ = glossy_reflection_shader_ ? glossy_reflection_shader_->getScalar(mat_data->stack_.get()) : reflectivity_;

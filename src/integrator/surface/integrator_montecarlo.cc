@@ -441,12 +441,12 @@ void MonteCarloIntegrator::causticWorker(PhotonMap *caustic_map, int thread_id, 
 			done = (curr >= n_caus_photons_thread);
 			continue;
 		}
-		BsdfFlags bsdfs = BsdfFlags::None;
 		int n_bounces = 0;
 		bool caustic_photon = false;
 		bool direct_photon = true;
 		const Material *material = nullptr;
 		std::unique_ptr<MaterialData> mat_data;
+		const BsdfFlags &bsdfs = mat_data->bsdf_flags_;
 		const VolumeHandler *vol = nullptr;
 
 		while(accelerator->intersect(ray, *hit_2, render_data.cam_))
@@ -1002,8 +1002,7 @@ Rgb MonteCarloIntegrator::sampleAmbientOcclusionLayer(RenderData &render_data, c
 
 	Rgb col(0.f);
 	const Material *material = sp.material_;
-	BsdfFlags bsdf_flags;
-	std::unique_ptr<MaterialData> mat_data;//FIXME = sp.material_->initBsdf(sp, bsdf_flags);
+	const BsdfFlags &bsdfs = sp.mat_data_->bsdf_flags_;
 	Ray light_ray;
 	light_ray.from_ = sp.p_;
 	light_ray.dir_ = Vec3(0.f);
@@ -1028,7 +1027,7 @@ Rgb MonteCarloIntegrator::sampleAmbientOcclusionLayer(RenderData &render_data, c
 		float w = 0.f;
 		Sample s(s_1, s_2, BsdfFlags::Glossy | BsdfFlags::Diffuse | BsdfFlags::Reflect);
 		const Rgb surf_col = material->sample(sp.mat_data_.get(), sp, wo, light_ray.dir_, s, w, render_data.chromatic_, render_data.wavelength_, render_data.cam_);
-		if(material->getFlags().hasAny(BsdfFlags::Emit))
+		if(bsdfs.hasAny(BsdfFlags::Emit))
 		{
 			col += material->emit(sp.mat_data_.get(), sp, wo, render_data.lights_geometry_material_emit_) * s.pdf_;
 		}
@@ -1050,6 +1049,7 @@ Rgb MonteCarloIntegrator::sampleAmbientOcclusionClayLayer(RenderData &render_dat
 
 	Rgb col(0.f);
 	const Material *material = sp.material_;
+	const BsdfFlags &bsdfs = sp.mat_data_->bsdf_flags_;
 	Ray light_ray;
 	light_ray.from_ = sp.p_;
 	light_ray.dir_ = Vec3(0.f);
@@ -1075,7 +1075,7 @@ Rgb MonteCarloIntegrator::sampleAmbientOcclusionClayLayer(RenderData &render_dat
 		Sample s(s_1, s_2, BsdfFlags::All);
 		const Rgb surf_col = material->sampleClay(mat_data, sp, wo, light_ray.dir_, s, w);
 		s.pdf_ = 1.f;
-		if(material->getFlags().hasAny(BsdfFlags::Emit))
+		if(bsdfs.hasAny(BsdfFlags::Emit))
 		{
 			col += material->emit(mat_data, sp, wo, render_data.lights_geometry_material_emit_) * s.pdf_;
 		}

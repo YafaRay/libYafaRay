@@ -119,13 +119,12 @@ Rgba DirectLightIntegrator::integrate(RenderData &render_data, const DiffRay &ra
 	if(accelerator && accelerator->intersect(ray, sp, render_data.cam_)) // If it hits
 	{
 		const Material *material = sp.material_;
-		const BsdfFlags &bsdfs = sp.bsdf_flags_;
+		const BsdfFlags &bsdfs = sp.mat_data_->bsdf_flags_;
 
 		const Vec3 wo = -ray.dir_;
 		if(render_data.raylevel_ == 0) render_data.lights_geometry_material_emit_ = true;
 
 		if(additional_depth < material->getAdditionalDepth()) additional_depth = material->getAdditionalDepth();
-
 
 		if(bsdfs.hasAny(BsdfFlags::Emit))
 		{
