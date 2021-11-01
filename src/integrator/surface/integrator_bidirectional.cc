@@ -332,7 +332,7 @@ Rgba BidirectionalIntegrator::integrate(RenderData &render_data, const DiffRay &
 			float wt = pathWeight(s, 1, path_data);
 			if(wt > 0.f)
 			{
-				Rgb li_col = evalPathE(s, path_data, nullptr);
+				Rgb li_col = evalPathE(s, path_data, render_data.cam_);
 				if(li_col.isBlack()) continue;
 				float ix, idx, iy, idy;
 				idx = std::modf(path_data.u_, &ix);
@@ -373,7 +373,7 @@ Rgba BidirectionalIntegrator::integrate(RenderData &render_data, const DiffRay &
 				wt = pathWeight(1, t, path_data);
 				if(wt > 0.f)
 				{
-					col += wt * evalLPath(t, path_data, d_ray, dcol, nullptr);
+					col += wt * evalLPath(t, path_data, d_ray, dcol, render_data.cam_);
 				}
 			}
 			path_data.singular_l_ = o_singular_l;
@@ -390,7 +390,7 @@ Rgba BidirectionalIntegrator::integrate(RenderData &render_data, const DiffRay &
 				wt = pathWeight(s, t, path_data);
 				if(wt > 0.f)
 				{
-					col += wt * evalPath(s, t, path_data, nullptr);
+					col += wt * evalPath(s, t, path_data, render_data.cam_);
 				}
 			}
 		}
