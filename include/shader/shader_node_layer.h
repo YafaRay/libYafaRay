@@ -42,8 +42,8 @@ class LayerNode final : public ShaderNode
 		static float textureValueBlend(float tex, float out, float fact, float facg, const BlendMode &blend_mode, bool flip = false);
 
 		LayerNode(const Flags &flags, float col_fac, float var_fac, float def_val, const Rgba &def_col, const BlendMode &blend_mode);
-		virtual void eval(NodeTreeData *node_tree_data, const SurfacePoint &sp, const Camera *camera) const override;
-		virtual void evalDerivative(NodeTreeData *node_tree_data, const SurfacePoint &sp, const Camera *camera) const override;
+		virtual void eval(NodeTreeData &node_tree_data, const SurfacePoint &sp, const Camera *camera) const override;
+		virtual void evalDerivative(NodeTreeData &node_tree_data, const SurfacePoint &sp, const Camera *camera) const override;
 		virtual bool configInputs(Logger &logger, const ParamMap &params, const NodeFinder &find) override;
 		//virtual void getDerivative(const surfacePoint_t &sp, float &du, float &dv) const;
 		virtual std::vector<const ShaderNode *> getDependencies() const override;

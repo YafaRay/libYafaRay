@@ -84,11 +84,11 @@ class ShaderNode
 		/*! evaluate the shader for given surface point; result has to be put on node_tree_data (using node_tree_data[ID]).
 			i know, could've passed const node_tree_data and have nodeResult_t return val, but this should be marginally
 			more efficient, so do me the favour and just don't mess up other node_tree_data elements ;) */
-		virtual void eval(NodeTreeData *node_tree_data, const SurfacePoint &sp, const Camera *camera) const = 0;
+		virtual void eval(NodeTreeData &node_tree_data, const SurfacePoint &sp, const Camera *camera) const = 0;
 		/*! evaluate the shader partial derivatives for given surface point (e.g. for bump mapping);
 			attention: uses color component of node node_tree_data to store result, so only use a node_tree_data for either eval or evalDeriv! */
-		virtual void evalDerivative(NodeTreeData *node_tree_data, const SurfacePoint &sp, const Camera *camera) const
-		{ (*node_tree_data)[id_] = NodeResult(Rgba(0.f), 0.f); }
+		virtual void evalDerivative(NodeTreeData &node_tree_data, const SurfacePoint &sp, const Camera *camera) const
+		{ node_tree_data[id_] = NodeResult(Rgba(0.f), 0.f); }
 		/*! configure the inputs. gets the same paramMap the factory functions get, but shader nodes
 			may be created in any order and linked afterwards, so inputs may not exist yet on instantiation */
 		virtual bool configInputs(Logger &logger, const ParamMap &params, const NodeFinder &find) = 0;
@@ -98,14 +98,14 @@ class ShaderNode
 			\return true if there exist dependencies, false if it does not depend on any other nodes */
 		virtual std::vector<const ShaderNode *> getDependencies() const { return {}; }
 		/*! get the color value calculated on eval */
-		Rgba getColor(const NodeTreeData *node_tree_data) const { return (*node_tree_data)(id_).col_; }
+		Rgba getColor(const NodeTreeData &node_tree_data) const { return node_tree_data(id_).col_; }
 		/*! get the scalar value calculated on eval */
-		float getScalar(const NodeTreeData *node_tree_data) const { return (*node_tree_data)(id_).f_; }
+		float getScalar(const NodeTreeData &node_tree_data) const { return node_tree_data(id_).f_; }
 		//! get the (approximate) partial derivatives df/dNU and df/dNV
 		/*! where f is the shader function, and NU/NV/N build the shading coordinate system
 			\param du df/dNU
 			\param dv df/dNV	*/
-		DuDv getDuDv(const NodeTreeData *node_tree_data) const { return { (*node_tree_data)(id_).col_.r_, (*node_tree_data)(id_).col_.g_}; }
+		DuDv getDuDv(const NodeTreeData &node_tree_data) const { return { node_tree_data(id_).col_.r_, node_tree_data(id_).col_.g_}; }
 		/* virtual void getDerivative(const surfacePoint_t &sp, float &du, float &dv) const {du=0.f, dv=0.f;} */
 
 	private:

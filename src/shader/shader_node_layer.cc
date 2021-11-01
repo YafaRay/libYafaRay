@@ -28,7 +28,7 @@ LayerNode::LayerNode(const Flags &flags, float col_fac, float var_fac, float def
 		default_col_(def_col), blend_mode_(blend_mode)
 {}
 
-void LayerNode::eval(NodeTreeData *node_tree_data, const SurfacePoint &sp, const Camera *camera) const
+void LayerNode::eval(NodeTreeData &node_tree_data, const SurfacePoint &sp, const Camera *camera) const
 {
 	Rgba texcolor;
 	float tin = 0.f, ta = 1.f;
@@ -110,10 +110,10 @@ void LayerNode::eval(NodeTreeData *node_tree_data, const SurfacePoint &sp, const
 		if(rval < 0.f) rval = 0.f;
 	}
 	rcol.a_ = stencil_tin;
-	(*node_tree_data)[getId()] = NodeResult(rcol, rval);
+	node_tree_data[getId()] = NodeResult(rcol, rval);
 }
 
-void LayerNode::evalDerivative(NodeTreeData *node_tree_data, const SurfacePoint &sp, const Camera *camera) const
+void LayerNode::evalDerivative(NodeTreeData &node_tree_data, const SurfacePoint &sp, const Camera *camera) const
 {
 	float rdu = 0.f, rdv = 0.f;
 	float stencil_tin = 1.f;
@@ -141,7 +141,7 @@ void LayerNode::evalDerivative(NodeTreeData *node_tree_data, const SurfacePoint 
 	rdu += tdu;
 	rdv += tdv;
 
-	(*node_tree_data)[getId()] = NodeResult(Rgba(rdu, rdv, 0.f, stencil_tin), 0.f);
+	node_tree_data[getId()] = NodeResult(Rgba(rdu, rdv, 0.f, stencil_tin), 0.f);
 }
 
 bool LayerNode::configInputs(Logger &logger, const ParamMap &params, const NodeFinder &find)

@@ -36,8 +36,8 @@ class TextureMapperNode final : public ShaderNode
 		enum Projection : int { Plain = 0, Cube, Tube, Sphere };
 
 		TextureMapperNode(const Texture *texture) : tex_(texture) { }
-		virtual void eval(NodeTreeData *node_tree_data, const SurfacePoint &sp, const Camera *camera) const override;
-		virtual void evalDerivative(NodeTreeData *node_tree_data, const SurfacePoint &sp, const Camera *camera) const override;
+		virtual void eval(NodeTreeData &node_tree_data, const SurfacePoint &sp, const Camera *camera) const override;
+		virtual void evalDerivative(NodeTreeData &node_tree_data, const SurfacePoint &sp, const Camera *camera) const override;
 		virtual bool configInputs(Logger &logger, const ParamMap &params, const NodeFinder &find) override { return true; };
 		//virtual void getDerivative(const surfacePoint_t &sp, float &du, float &dv) const;
 
@@ -70,7 +70,7 @@ class ValueNode final : public ShaderNode
 
 	private:
 		ValueNode(Rgba col, float val): color_(col), value_(val) { }
-		virtual void eval(NodeTreeData *node_tree_data, const SurfacePoint &sp, const Camera *camera) const override;
+		virtual void eval(NodeTreeData &node_tree_data, const SurfacePoint &sp, const Camera *camera) const override;
 		virtual bool configInputs(Logger &logger, const ParamMap &params, const NodeFinder &find) override { return true; };
 
 		Rgba color_;
@@ -84,11 +84,11 @@ class MixNode : public ShaderNode
 
 	protected:
 		MixNode() = default;
-		void getInputs(const NodeTreeData *node_tree_data, Rgba &cin_1, Rgba &cin_2, float &fin_1, float &fin_2, float &f_2) const;
+		void getInputs(const NodeTreeData &node_tree_data, Rgba &cin_1, Rgba &cin_2, float &fin_1, float &fin_2, float &f_2) const;
 
 	private:
 		MixNode(float val) : cfactor_(val) { }
-		virtual void eval(NodeTreeData *node_tree_data, const SurfacePoint &sp, const Camera *camera) const override;
+		virtual void eval(NodeTreeData &node_tree_data, const SurfacePoint &sp, const Camera *camera) const override;
 		virtual bool configInputs(Logger &logger, const ParamMap &params, const NodeFinder &find) override;
 		virtual std::vector<const ShaderNode *> getDependencies() const override;
 

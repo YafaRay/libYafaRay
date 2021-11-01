@@ -52,7 +52,7 @@ std::set<const ShaderNode *> NodeMaterial::recursiveFinder(const ShaderNode *nod
 	return tree;
 }
 
-void NodeMaterial::evalNodes(const SurfacePoint &sp, const std::vector<const ShaderNode *> &nodes, NodeTreeData *node_tree_data, const Camera *camera) const
+void NodeMaterial::evalNodes(const SurfacePoint &sp, const std::vector<const ShaderNode *> &nodes, NodeTreeData &node_tree_data, const Camera *camera) const
 {
 	for(const auto &node : nodes) node->eval(node_tree_data, sp, camera);
 }
@@ -92,7 +92,7 @@ std::vector<const ShaderNode *> NodeMaterial::getNodeList(const ShaderNode *root
 	return nodes;
 }
 
-void NodeMaterial::evalBump(NodeTreeData *node_tree_data, SurfacePoint &sp, const ShaderNode *bump_shader_node, const Camera *camera) const
+void NodeMaterial::evalBump(NodeTreeData &node_tree_data, SurfacePoint &sp, const ShaderNode *bump_shader_node, const Camera *camera) const
 {
 	for(const auto &node : bump_nodes_) node->evalDerivative(node_tree_data, sp, camera);
 	const DuDv du_dv = bump_shader_node->getDuDv(node_tree_data);

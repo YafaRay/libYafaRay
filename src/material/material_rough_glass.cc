@@ -46,9 +46,8 @@ RoughGlassMaterial::RoughGlassMaterial(Logger &logger, float ior, Rgb filt_c, co
 std::unique_ptr<MaterialData> RoughGlassMaterial::initBsdf(SurfacePoint &sp, const Camera *camera) const
 {
 	std::unique_ptr<MaterialData> mat_data = createMaterialData();
-	mat_data->stack_ = std::unique_ptr<NodeTreeData>(new NodeTreeData());
-	if(bump_shader_) evalBump(mat_data->stack_.get(), sp, bump_shader_, camera);
-	for(const auto &node : color_nodes_) node->eval(mat_data->stack_.get(), sp, camera);
+	if(bump_shader_) evalBump(mat_data->node_tree_data_, sp, bump_shader_, camera);
+	for(const auto &node : color_nodes_) node->eval(mat_data->node_tree_data_, sp, camera);
 	return mat_data;
 }
 
@@ -57,13 +56,13 @@ Rgb RoughGlassMaterial::sample(const MaterialData *mat_data, const SurfacePoint 
 	const Vec3 n = SurfacePoint::normalFaceForward(sp.ng_, sp.n_, wo);
 	const bool outside = sp.ng_ * wo > 0.f;
 	s.pdf_ = 1.f;
-	const float alpha_texture = roughness_shader_ ? roughness_shader_->getScalar(mat_data->stack_.get()) + 0.001f : 0.001f;
+	const float alpha_texture = roughness_shader_ ? roughness_shader_->getScalar(mat_data->node_tree_data_) + 0.001f : 0.001f;
 	const float alpha_2 = roughness_shader_ ? alpha_texture * alpha_texture : a_2_;
 	Vec3 h = microfacet::ggxSample(alpha_2, s.s_1_, s.s_2_);
 	h = h.x_ * sp.nu_ + h.y_ * sp.nv_ + h.z_ * n;
 	h.normalize();
 	float cur_ior = ior_;
-	if(ior_shader_) cur_ior += ior_shader_->getScalar(mat_data->stack_.get());
+	if(ior_shader_) cur_ior += ior_shader_->getScalar(mat_data->node_tree_data_);
 
 	if(disperse_ && chromatic)
 	{
@@ -106,7 +105,7 @@ Rgb RoughGlassMaterial::sample(const MaterialData *mat_data, const SurfacePoint 
 			s.pdf_ = microfacet::ggxPdf(glossy_d, cos_theta, jacobian * std::abs(wi_h));
 			s.sampled_flags_ = ((disperse_ && chromatic) ? BsdfFlags::Dispersive : BsdfFlags::Glossy) | BsdfFlags::Transmit;
 
-			ret = (glossy * (filter_col_shader_ ? filter_col_shader_->getColor(mat_data->stack_.get()) : filter_color_));
+			ret = (glossy * (filter_col_shader_ ? filter_col_shader_->getColor(mat_data->node_tree_data_) : filter_color_));
 			w = std::abs(wi_n) / std::max(0.1f, s.pdf_); //FIXME: I have to put a lower limit to s.pdf to avoid white dots (high values) piling up in the recursive render stage. Why is this needed?
 		}
 		else if(s.flags_.hasAny(BsdfFlags::Reflect))
@@ -124,7 +123,7 @@ Rgb RoughGlassMaterial::sample(const MaterialData *mat_data, const SurfacePoint 
 			s.pdf_ = microfacet::ggxPdf(glossy_d, cos_theta, jacobian);
 			s.sampled_flags_ = BsdfFlags::Glossy | BsdfFlags::Reflect;
 
-			ret = (glossy * (mirror_color_shader_ ? mirror_color_shader_->getColor(mat_data->stack_.get()) : specular_reflection_color_));
+			ret = (glossy * (mirror_color_shader_ ? mirror_color_shader_->getColor(mat_data->node_tree_data_) : specular_reflection_color_));
 
 			w = std::abs(wi_n) / std::max(0.1f, s.pdf_); //FIXME: I have to put a lower limit to s.pdf to avoid white dots (high values) piling up in the recursive render stage. Why is this needed?
 		}
@@ -137,7 +136,7 @@ Rgb RoughGlassMaterial::sample(const MaterialData *mat_data, const SurfacePoint 
 		ret = 1.f;
 		w = 1.f;
 	}
-	const float wire_frame_amount = wireframe_shader_ ? wireframe_shader_->getScalar(mat_data->stack_.get()) * wireframe_amount_ : wireframe_amount_;
+	const float wire_frame_amount = wireframe_shader_ ? wireframe_shader_->getScalar(mat_data->node_tree_data_) * wireframe_amount_ : wireframe_amount_;
 	applyWireFrame(ret, wire_frame_amount, sp);
 	return ret;
 }
@@ -147,7 +146,7 @@ Rgb RoughGlassMaterial::sample(const MaterialData *mat_data, const SurfacePoint 
 	const Vec3 n = SurfacePoint::normalFaceForward(sp.ng_, sp.n_, wo);
 	const bool outside = sp.ng_ * wo > 0.f;
 	s.pdf_ = 1.f;
-	const float alpha_texture = roughness_shader_ ? roughness_shader_->getScalar(mat_data->stack_.get()) + 0.001f : 0.001f;
+	const float alpha_texture = roughness_shader_ ? roughness_shader_->getScalar(mat_data->node_tree_data_) + 0.001f : 0.001f;
 	const float alpha_2 = roughness_shader_ ? alpha_texture * alpha_texture : a_2_;
 
 	Vec3 h = microfacet::ggxSample(alpha_2, s.s_1_, s.s_2_);
@@ -155,7 +154,7 @@ Rgb RoughGlassMaterial::sample(const MaterialData *mat_data, const SurfacePoint 
 	h.normalize();
 
 	float cur_ior = ior_;
-	if(ior_shader_) cur_ior += ior_shader_->getScalar(mat_data->stack_.get());
+	if(ior_shader_) cur_ior += ior_shader_->getScalar(mat_data->node_tree_data_);
 
 	if(disperse_ && chromatic)
 	{
@@ -204,7 +203,7 @@ Rgb RoughGlassMaterial::sample(const MaterialData *mat_data, const SurfacePoint 
 			s.pdf_ = microfacet::ggxPdf(glossy_d, cos_theta, jacobian * std::abs(wi_h));
 			s.sampled_flags_ = ((disperse_ && chromatic) ? BsdfFlags::Dispersive : BsdfFlags::Glossy) | BsdfFlags::Transmit;
 
-			ret = (glossy * (filter_col_shader_ ? filter_col_shader_->getColor(mat_data->stack_.get()) : filter_color_));
+			ret = (glossy * (filter_col_shader_ ? filter_col_shader_->getColor(mat_data->node_tree_data_) : filter_color_));
 			w[0] = std::abs(wi_n) / std::max(0.1f, s.pdf_); //FIXME: I have to put a lower limit to s.pdf to avoid white dots (high values) piling up in the recursive render stage. Why is this needed?
 			dir[0] = wi;
 
@@ -219,7 +218,7 @@ Rgb RoughGlassMaterial::sample(const MaterialData *mat_data, const SurfacePoint 
 			const float glossy = (kr * glossy_g * glossy_d) / std::max(1.0e-8f, (4.f * std::abs(wo_n * wi_n)));
 			s.pdf_ = microfacet::ggxPdf(glossy_d, cos_theta, jacobian);
 			s.sampled_flags_ |= BsdfFlags::Glossy | BsdfFlags::Reflect;
-			tcol = (glossy * (mirror_color_shader_ ? mirror_color_shader_->getColor(mat_data->stack_.get()) : specular_reflection_color_));
+			tcol = (glossy * (mirror_color_shader_ ? mirror_color_shader_->getColor(mat_data->node_tree_data_) : specular_reflection_color_));
 			w[1] = std::abs(wi_n) / std::max(0.1f, s.pdf_); //FIXME: I have to put a lower limit to s.pdf to avoid white dots (high values) piling up in the recursive render stage. Why is this needed?
 			dir[1] = wi;
 		}
@@ -233,7 +232,7 @@ Rgb RoughGlassMaterial::sample(const MaterialData *mat_data, const SurfacePoint 
 		ret = 1.f;
 		w[0] = 1.f;
 	}
-	const float wire_frame_amount = wireframe_shader_ ? wireframe_shader_->getScalar(mat_data->stack_.get()) * wireframe_amount_ : wireframe_amount_;
+	const float wire_frame_amount = wireframe_shader_ ? wireframe_shader_->getScalar(mat_data->node_tree_data_) * wireframe_amount_ : wireframe_amount_;
 	applyWireFrame(ret, wire_frame_amount, sp);
 	return ret;
 }
@@ -242,9 +241,9 @@ Rgb RoughGlassMaterial::getTransparency(const MaterialData *mat_data, const Surf
 {
 	const Vec3 n = SurfacePoint::normalFaceForward(sp.ng_, sp.n_, wo);
 	float kr, kt;
-	Vec3::fresnel(wo, n, (ior_shader_ ? ior_shader_->getScalar(mat_data->stack_.get()) : ior_), kr, kt);
-	Rgb result = kt * (filter_col_shader_ ? filter_col_shader_->getColor(mat_data->stack_.get()) : filter_color_);
-	const float wire_frame_amount = wireframe_shader_ ? wireframe_shader_->getScalar(mat_data->stack_.get()) * wireframe_amount_ : wireframe_amount_;
+	Vec3::fresnel(wo, n, (ior_shader_ ? ior_shader_->getScalar(mat_data->node_tree_data_) : ior_), kr, kt);
+	Rgb result = kt * (filter_col_shader_ ? filter_col_shader_->getColor(mat_data->node_tree_data_) : filter_color_);
+	const float wire_frame_amount = wireframe_shader_ ? wireframe_shader_->getScalar(mat_data->node_tree_data_) * wireframe_amount_ : wireframe_amount_;
 	applyWireFrame(result, wire_frame_amount, sp);
 	return result;
 }
@@ -252,7 +251,7 @@ Rgb RoughGlassMaterial::getTransparency(const MaterialData *mat_data, const Surf
 float RoughGlassMaterial::getAlpha(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, const Camera *camera) const
 {
 	float alpha = std::max(0.f, std::min(1.f, 1.f - getTransparency(mat_data, sp, wo, camera).energy()));
-	const float wire_frame_amount = wireframe_shader_ ? wireframe_shader_->getScalar(mat_data->stack_.get()) * wireframe_amount_ : wireframe_amount_;
+	const float wire_frame_amount = wireframe_shader_ ? wireframe_shader_->getScalar(mat_data->node_tree_data_) * wireframe_amount_ : wireframe_amount_;
 	applyWireFrame(alpha, wire_frame_amount, sp);
 	return alpha;
 }
@@ -403,15 +402,15 @@ std::unique_ptr<Material> RoughGlassMaterial::factory(Logger &logger, ParamMap &
 }
 
 Rgb RoughGlassMaterial::getGlossyColor(const MaterialData *mat_data) const {
-	return mirror_color_shader_ ? mirror_color_shader_->getColor(mat_data->stack_.get()) : specular_reflection_color_;
+	return mirror_color_shader_ ? mirror_color_shader_->getColor(mat_data->node_tree_data_) : specular_reflection_color_;
 }
 
 Rgb RoughGlassMaterial::getTransColor(const MaterialData *mat_data) const {
-	return filter_col_shader_ ? filter_col_shader_->getColor(mat_data->stack_.get()) : filter_color_;
+	return filter_col_shader_ ? filter_col_shader_->getColor(mat_data->node_tree_data_) : filter_color_;
 }
 
 Rgb RoughGlassMaterial::getMirrorColor(const MaterialData *mat_data) const {
-	return mirror_color_shader_ ? mirror_color_shader_->getColor(mat_data->stack_.get()) : specular_reflection_color_;
+	return mirror_color_shader_ ? mirror_color_shader_->getColor(mat_data->node_tree_data_) : specular_reflection_color_;
 }
 
 END_YAFARAY
