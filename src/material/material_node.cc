@@ -52,9 +52,9 @@ std::set<const ShaderNode *> NodeMaterial::recursiveFinder(const ShaderNode *nod
 	return tree;
 }
 
-void NodeMaterial::evalNodes(const SurfacePoint &sp, const std::vector<const ShaderNode *> &nodes, NodeStack *stack, const Camera *camera) const
+void NodeMaterial::evalNodes(const SurfacePoint &sp, const std::vector<const ShaderNode *> &nodes, NodeTreeData *node_tree_data, const Camera *camera) const
 {
-	for(const auto &node : nodes) node->eval(stack, sp, camera);
+	for(const auto &node : nodes) node->eval(node_tree_data, sp, camera);
 }
 
 std::vector<const ShaderNode *> NodeMaterial::solveNodesOrder(const std::vector<const ShaderNode *> &roots, const std::map<std::string, std::unique_ptr<ShaderNode>> &shaders_table, Logger &logger)
@@ -70,7 +70,7 @@ std::vector<const ShaderNode *> NodeMaterial::solveNodesOrder(const std::vector<
 	{
 		logger.logWarning("NodeMaterial: Unreachable nodes!");
 	}
-	//give the nodes an index to be used as the "stack"-index.
+	//give the nodes an index to be used as the "node_tree_data"-index.
 	//using the order of evaluation can't hurt, can it?
 	for(unsigned int i = 0; i < color_nodes_sorted.size(); ++i) color_nodes_sorted[i]->setId(i);
 	return color_nodes_sorted;
@@ -92,10 +92,10 @@ std::vector<const ShaderNode *> NodeMaterial::getNodeList(const ShaderNode *root
 	return nodes;
 }
 
-void NodeMaterial::evalBump(NodeStack *stack, SurfacePoint &sp, const ShaderNode *bump_shader_node, const Camera *camera) const
+void NodeMaterial::evalBump(NodeTreeData *node_tree_data, SurfacePoint &sp, const ShaderNode *bump_shader_node, const Camera *camera) const
 {
-	for(const auto &node : bump_nodes_) node->evalDerivative(stack, sp, camera);
-	const DuDv du_dv = bump_shader_node->getDuDv(stack);
+	for(const auto &node : bump_nodes_) node->evalDerivative(node_tree_data, sp, camera);
+	const DuDv du_dv = bump_shader_node->getDuDv(node_tree_data);
 	applyBump(sp, du_dv);
 }
 

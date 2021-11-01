@@ -72,7 +72,7 @@ class MaterialData
 		MaterialData(BsdfFlags bsdf_flags) : bsdf_flags_(bsdf_flags) { }
 		virtual ~MaterialData() = default;
 		BsdfFlags bsdf_flags_;
-		std::unique_ptr<NodeStack> stack_;
+		std::unique_ptr<NodeTreeData> stack_;
 };
 
 class Material

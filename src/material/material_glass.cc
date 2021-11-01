@@ -50,7 +50,7 @@ GlassMaterial::GlassMaterial(Logger &logger, float ior, Rgb filt_c, const Rgb &s
 std::unique_ptr<MaterialData> GlassMaterial::initBsdf(SurfacePoint &sp, const Camera *camera) const
 {
 	std::unique_ptr<MaterialData> mat_data = createMaterialData();
-	mat_data->stack_ = std::unique_ptr<NodeStack>(new NodeStack());
+	mat_data->stack_ = std::unique_ptr<NodeTreeData>(new NodeTreeData());
 	if(bump_shader_) evalBump(mat_data->stack_.get(), sp, bump_shader_, camera);
 	for(const auto &node : color_nodes_) node->eval(mat_data->stack_.get(), sp, camera);
 	return mat_data;

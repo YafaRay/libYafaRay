@@ -85,11 +85,11 @@ void ShinyDiffuseMaterial::config()
 // since values for which useNode is false do not get touched, so it can be applied
 // twice, for view-independent (initBSDF) and view-dependent (sample/eval) nodes
 
-void ShinyDiffuseMaterial::getComponents(const std::array<bool, 4> &use_nodes, const NodeStack *stack, std::array<float, 4> &components) const
+void ShinyDiffuseMaterial::getComponents(const std::array<bool, 4> &use_nodes, const NodeTreeData *node_tree_data, std::array<float, 4> &components) const
 {
-	if(is_mirror_) components[0] = use_nodes[0] ? mirror_shader_->getScalar(stack) : mirror_strength_;
-	if(is_transparent_) components[1] = use_nodes[1] ? transparency_shader_->getScalar(stack) : transparency_strength_;
-	if(is_translucent_) components[2] = use_nodes[2] ? translucency_shader_->getScalar(stack) : translucency_strength_;
+	if(is_mirror_) components[0] = use_nodes[0] ? mirror_shader_->getScalar(node_tree_data) : mirror_strength_;
+	if(is_transparent_) components[1] = use_nodes[1] ? transparency_shader_->getScalar(node_tree_data) : transparency_strength_;
+	if(is_translucent_) components[2] = use_nodes[2] ? translucency_shader_->getScalar(node_tree_data) : translucency_strength_;
 	if(is_diffuse_) components[3] = diffuse_strength_;
 }
 
@@ -125,7 +125,7 @@ void ShinyDiffuseMaterial::accumulate(const std::array<float, 4> &components, st
 std::unique_ptr<MaterialData> ShinyDiffuseMaterial::initBsdf(SurfacePoint &sp, const Camera *camera) const
 {
 	std::unique_ptr<MaterialData> mat_data = createMaterialData();
-	mat_data->stack_ = std::unique_ptr<NodeStack>(new NodeStack());
+	mat_data->stack_ = std::unique_ptr<NodeTreeData>(new NodeTreeData());
 	if(bump_shader_) evalBump(mat_data->stack_.get(), sp, bump_shader_, camera);
 	for(const auto &node : color_nodes_) node->eval(mat_data->stack_.get(), sp, camera);
 	ShinyDiffuseMaterialData *mat_data_specific = static_cast<ShinyDiffuseMaterialData *>(mat_data.get());

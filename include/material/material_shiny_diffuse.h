@@ -69,7 +69,7 @@ class ShinyDiffuseMaterial final : public NodeMaterial
 		virtual Rgb getSubSurfaceColor(const MaterialData *mat_data) const override;
 
 		void config();
-		void getComponents(const std::array<bool, 4> &use_nodes, const NodeStack *stack, std::array<float, 4> &components) const;
+		void getComponents(const std::array<bool, 4> &use_nodes, const NodeTreeData *node_tree_data, std::array<float, 4> &components) const;
 		float getFresnelKr(const Vec3 &wo, const Vec3 &n, float current_ior_squared) const;
 		void initOrenNayar(double sigma);
 		float orenNayar(const Vec3 &wi, const Vec3 &wo, const Vec3 &n, bool use_texture_sigma, double texture_sigma) const;

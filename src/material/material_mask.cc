@@ -35,7 +35,7 @@ MaskMaterial::MaskMaterial(Logger &logger, const Material *m_1, const Material *
 std::unique_ptr<MaterialData> MaskMaterial::initBsdf(SurfacePoint &sp, const Camera *camera) const
 {
 	std::unique_ptr<MaterialData> mat_data = createMaterialData();
-	mat_data->stack_ = std::unique_ptr<NodeStack>(new NodeStack());
+	mat_data->stack_ = std::unique_ptr<NodeTreeData>(new NodeTreeData());
 	evalNodes(sp, color_nodes_, mat_data->stack_.get(), camera);
 	const float val = mask_->getScalar(mat_data->stack_.get()); //mask->getFloat(sp.P);
 	MaskMaterialData *mat_data_specific = static_cast<MaskMaterialData *>(mat_data.get());

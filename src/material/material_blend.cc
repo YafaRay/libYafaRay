@@ -50,7 +50,7 @@ std::unique_ptr<MaterialData> BlendMaterial::initBsdf(SurfacePoint &sp, const Ca
 {
 	std::unique_ptr<MaterialData> mat_data = createMaterialData();
 	BlendMaterialData *mat_data_specific = static_cast<BlendMaterialData *>(mat_data.get());
-	mat_data->stack_ = std::unique_ptr<NodeStack>(new NodeStack());
+	mat_data->stack_ = std::unique_ptr<NodeTreeData>(new NodeTreeData());
 
 	evalNodes(sp, color_nodes_, mat_data->stack_.get(), camera);
 	const float blend_val = getBlendVal(sp);

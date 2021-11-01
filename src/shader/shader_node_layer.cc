@@ -28,13 +28,13 @@ LayerNode::LayerNode(const Flags &flags, float col_fac, float var_fac, float def
 		default_col_(def_col), blend_mode_(blend_mode)
 {}
 
-void LayerNode::eval(NodeStack *stack, const SurfacePoint &sp, const Camera *camera) const
+void LayerNode::eval(NodeTreeData *node_tree_data, const SurfacePoint &sp, const Camera *camera) const
 {
 	Rgba texcolor;
 	float tin = 0.f, ta = 1.f;
 	// == get result of upper layer (or base values) ==
-	Rgba rcol = (upper_layer_) ? upper_layer_->getColor(stack) : upper_col_;
-	float rval = (upper_layer_) ? upper_layer_->getScalar(stack) : upper_val_;
+	Rgba rcol = (upper_layer_) ? upper_layer_->getColor(node_tree_data) : upper_col_;
+	float rval = (upper_layer_) ? upper_layer_->getScalar(node_tree_data) : upper_val_;
 	float stencil_tin = rcol.a_;
 
 	// == get texture input color ==
@@ -42,10 +42,10 @@ void LayerNode::eval(NodeStack *stack, const SurfacePoint &sp, const Camera *cam
 
 	if(color_input_)
 	{
-		texcolor = input_->getColor(stack);
+		texcolor = input_->getColor(node_tree_data);
 		ta = texcolor.a_;
 	}
-	else tin = input_->getScalar(stack);
+	else tin = input_->getScalar(node_tree_data);
 
 	if(flags_.hasAny(Flags::RgbToInt))
 	{
@@ -110,10 +110,10 @@ void LayerNode::eval(NodeStack *stack, const SurfacePoint &sp, const Camera *cam
 		if(rval < 0.f) rval = 0.f;
 	}
 	rcol.a_ = stencil_tin;
-	(*stack)[getId()] = NodeResult(rcol, rval);
+	(*node_tree_data)[getId()] = NodeResult(rcol, rval);
 }
 
-void LayerNode::evalDerivative(NodeStack *stack, const SurfacePoint &sp, const Camera *camera) const
+void LayerNode::evalDerivative(NodeTreeData *node_tree_data, const SurfacePoint &sp, const Camera *camera) const
 {
 	float rdu = 0.f, rdv = 0.f;
 	float stencil_tin = 1.f;
@@ -121,13 +121,13 @@ void LayerNode::evalDerivative(NodeStack *stack, const SurfacePoint &sp, const C
 	// == get result of upper layer (or base values) ==
 	if(upper_layer_)
 	{
-		const Rgba ucol = upper_layer_->getColor(stack);
+		const Rgba ucol = upper_layer_->getColor(node_tree_data);
 		rdu = ucol.r_, rdv = ucol.g_;
 		stencil_tin = ucol.a_;
 	}
 
 	// == get texture input derivative ==
-	const Rgba texcolor = input_->getColor(stack);
+	const Rgba texcolor = input_->getColor(node_tree_data);
 	float tdu = texcolor.r_;
 	float tdv = texcolor.g_;
 
@@ -141,7 +141,7 @@ void LayerNode::evalDerivative(NodeStack *stack, const SurfacePoint &sp, const C
 	rdu += tdu;
 	rdv += tdv;
 
-	(*stack)[getId()] = NodeResult(Rgba(rdu, rdv, 0.f, stencil_tin), 0.f);
+	(*node_tree_data)[getId()] = NodeResult(Rgba(rdu, rdv, 0.f, stencil_tin), 0.f);
 }
 
 bool LayerNode::configInputs(Logger &logger, const ParamMap &params, const NodeFinder &find)
