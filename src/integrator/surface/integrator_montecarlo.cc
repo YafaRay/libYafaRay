@@ -682,6 +682,8 @@ void MonteCarloIntegrator::recursiveRaytrace(RenderData &render_data, const Diff
 	const bool layers_used = render_data.raylevel_ == 0 && color_layers && color_layers->getFlags() != Layer::Flags::None;
 
 	const Material *material = sp.material_;
+	const BsdfFlags &mat_bsdfs = sp.mat_data_->bsdf_flags_;
+
 	const SpDifferentials sp_diff(sp, ray);
 
 	render_data.raylevel_++;
@@ -795,9 +797,9 @@ void MonteCarloIntegrator::recursiveRaytrace(RenderData &render_data, const Diff
 				const float s_1 = hal_2.getNext();
 				const float s_2 = hal_3.getNext();
 
-				if(material->getFlags().hasAny(BsdfFlags::Glossy))
+				if(mat_bsdfs.hasAny(BsdfFlags::Glossy))
 				{
-					if(material->getFlags().hasAny(BsdfFlags::Reflect) && !material->getFlags().hasAny(BsdfFlags::Transmit))
+					if(mat_bsdfs.hasAny(BsdfFlags::Reflect) && !mat_bsdfs.hasAny(BsdfFlags::Transmit))
 					{
 						float w = 0.f;
 						Sample s(s_1, s_2, BsdfFlags::Glossy | BsdfFlags::Reflect);
@@ -819,7 +821,7 @@ void MonteCarloIntegrator::recursiveRaytrace(RenderData &render_data, const Diff
 						gcol += g_ind_col;
 						if(layers_used) gcol_indirect_accum += g_ind_col;
 					}
-					else if(material->getFlags().hasAny(BsdfFlags::Reflect) && material->getFlags().hasAny(BsdfFlags::Transmit))
+					else if(mat_bsdfs.hasAny(BsdfFlags::Reflect) && mat_bsdfs.hasAny(BsdfFlags::Transmit))
 					{
 						Sample s(s_1, s_2, BsdfFlags::Glossy | BsdfFlags::AllGlossy);
 						Rgb mcol[2];
@@ -955,6 +957,7 @@ Rgb MonteCarloIntegrator::sampleAmbientOcclusion(RenderData &render_data, const 
 
 	Rgb col(0.f);
 	const Material *material = sp.material_;
+	const BsdfFlags &mat_bsdfs = sp.mat_data_->bsdf_flags_;
 	Ray light_ray;
 	light_ray.from_ = sp.p_;
 	light_ray.dir_ = Vec3(0.f);
@@ -979,7 +982,7 @@ Rgb MonteCarloIntegrator::sampleAmbientOcclusion(RenderData &render_data, const 
 		float w = 0.f;
 		Sample s(s_1, s_2, BsdfFlags::Glossy | BsdfFlags::Diffuse | BsdfFlags::Reflect);
 		const Rgb surf_col = material->sample(mat_data, sp, wo, light_ray.dir_, s, w, render_data.chromatic_, render_data.wavelength_, render_data.cam_);
-		if(material->getFlags().hasAny(BsdfFlags::Emit))
+		if(mat_bsdfs.hasAny(BsdfFlags::Emit))
 		{
 			col += material->emit(mat_data, sp, wo, render_data.lights_geometry_material_emit_) * s.pdf_;
 		}
@@ -1073,7 +1076,7 @@ Rgb MonteCarloIntegrator::sampleAmbientOcclusionClayLayer(RenderData &render_dat
 		light_ray.tmax_ = ao_dist_;
 		float w = 0.f;
 		Sample s(s_1, s_2, BsdfFlags::All);
-		const Rgb surf_col = material->sampleClay(mat_data, sp, wo, light_ray.dir_, s, w);
+		const Rgb surf_col = material->sampleClay(sp, wo, light_ray.dir_, s, w);
 		s.pdf_ = 1.f;
 		if(bsdfs.hasAny(BsdfFlags::Emit))
 		{

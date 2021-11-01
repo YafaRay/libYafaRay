@@ -50,8 +50,8 @@ class BidirectionalIntegrator final : public TiledIntegrator
 		virtual bool preprocess(const RenderControl &render_control, Timer &timer, const RenderView *render_view, ImageFilm *image_film) override;
 		virtual void cleanup() override;
 		virtual Rgba integrate(RenderData &render_data, const DiffRay &ray, int additional_depth, ColorLayers *color_layers, const RenderView *render_view) const override;
-		Rgb sampleAmbientOcclusionLayer(RenderData &render_data, const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo) const;
-		Rgb sampleAmbientOcclusionClayLayer(RenderData &render_data, const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo) const;
+		Rgb sampleAmbientOcclusionLayer(RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo) const;
+		Rgb sampleAmbientOcclusionClayLayer(RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo) const;
 		int createPath(RenderData &render_data, const Ray &start, std::vector<PathVertex> &path, int max_len, const Camera *camera) const;
 		Rgb evalPath(int s, int t, PathData &pd, const Camera *camera) const;
 		Rgb evalLPath(int t, PathData &pd, Ray &l_ray, const Rgb &lcol, const Camera *camera) const;

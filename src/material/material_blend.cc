@@ -33,7 +33,6 @@ BlendMaterial::BlendMaterial(Logger &logger, const Material *m_1, const Material
 		NodeMaterial(logger), mat_1_(m_1), mat_2_(m_2)
 {
 	visibility_ = visibility;
-	bsdf_flags_ = mat_1_->getFlags() | mat_2_->getFlags();
 	recalc_blend_ = false;
 	blend_val_ = bval;
 	blended_ior_ = (mat_1_->getMatIor() + mat_2_->getMatIor()) * 0.5f;

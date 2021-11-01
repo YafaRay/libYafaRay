@@ -460,7 +460,7 @@ bool TiledIntegrator::renderTile(RenderArea &a, const RenderView *render_view, c
 	return true;
 }
 
-void TiledIntegrator::generateCommonLayers(int raylevel, const MaterialData *mat_data, const SurfacePoint &sp, const DiffRay &ray, const MaskParams &mask_params, ColorLayers *color_layers)
+void TiledIntegrator::generateCommonLayers(int raylevel, const SurfacePoint &sp, const DiffRay &ray, const MaskParams &mask_params, ColorLayers *color_layers)
 {
 	const bool layers_used = raylevel == 0 && color_layers && color_layers->getFlags() != Layer::Flags::None;
 
@@ -612,19 +612,19 @@ void TiledIntegrator::generateCommonLayers(int raylevel, const MaterialData *mat
 
 			if((color_layer = color_layers->find(Layer::DiffuseColor)))
 			{
-				color_layer->color_ = sp.material_->getDiffuseColor(mat_data);
+				color_layer->color_ = sp.material_->getDiffuseColor(sp.mat_data_.get());
 			}
 			if((color_layer = color_layers->find(Layer::GlossyColor)))
 			{
-				color_layer->color_ = sp.material_->getGlossyColor(mat_data);
+				color_layer->color_ = sp.material_->getGlossyColor(sp.mat_data_.get());
 			}
 			if((color_layer = color_layers->find(Layer::TransColor)))
 			{
-				color_layer->color_ = sp.material_->getTransColor(mat_data);
+				color_layer->color_ = sp.material_->getTransColor(sp.mat_data_.get());
 			}
 			if((color_layer = color_layers->find(Layer::SubsurfaceColor)))
 			{
-				color_layer->color_ = sp.material_->getSubSurfaceColor(mat_data);
+				color_layer->color_ = sp.material_->getSubSurfaceColor(sp.mat_data_.get());
 			}
 		}
 

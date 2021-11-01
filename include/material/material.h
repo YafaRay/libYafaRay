@@ -112,7 +112,7 @@ class Material
 		virtual Rgb sample(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, Vec3 &wi, Sample &s, float &w, bool chromatic, float wavelength, const Camera *camera) const = 0;// {return Rgb(0.f);}
 		virtual Rgb sample(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, Vec3 *const dir, Rgb &tcol, Sample &s, float *const w, bool chromatic, float wavelength) const {return Rgb(0.f);}
 
-		virtual Rgb sampleClay(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, Vec3 &wi, Sample &s, float &w) const;
+		virtual Rgb sampleClay(const SurfacePoint &sp, const Vec3 &wo, Vec3 &wi, Sample &s, float &w) const;
 		/*! return the pdf for sampling the BSDF with wi and wo
 		*/
 		virtual float pdf(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wi, const BsdfFlags &bsdfs) const {return 0.f;}
@@ -149,12 +149,6 @@ class Material
 		/*! specialized function for photon mapping. Default function uses the sample function, which will do fine for
 			most materials unless there's a less expensive way or smarter scattering approach */
 		virtual bool scatterPhoton(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wi, Vec3 &wo, PSample &s, bool chromatic, float wavelength, const Camera *camera) const;
-
-		BsdfFlags getFlags() const { return bsdf_flags_; }
-		/*! Materials may have to do surface point specific (pre-)calculation that need extra storage.
-			returns the required amount of "arena/userdata" memory for all the functions that require a RenderData */
-
-		/*! Get materials IOR (for refracted photons) */
 
 		virtual float getMatIor() const { return 1.5f; }
 		virtual Rgb getDiffuseColor(const MaterialData *mat_data) const { return Rgb(0.f); }

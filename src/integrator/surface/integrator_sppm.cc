@@ -700,8 +700,8 @@ GatherInfo SppmIntegrator::traceGatherRay(RenderData &render_data, DiffRay &ray,
 
 	const bool old_lights_geometry_material_emit = render_data.lights_geometry_material_emit_;
 
-	if(transp_background_) alpha = 0.0;
-	else alpha = 1.0;
+	if(transp_background_) alpha = 0.f;
+	else alpha = 1.f;
 
 	if(accelerator->intersect(ray, sp, render_data.cam_))
 	{
@@ -715,7 +715,7 @@ GatherInfo SppmIntegrator::traceGatherRay(RenderData &render_data, DiffRay &ray,
 
 		Vec3 wo = -ray.dir_;
 		const Material *material = sp.material_;
-		const BsdfFlags &bsdfs = sp.mat_data_->bsdf_flags_;
+		const BsdfFlags &mat_bsdfs = sp.mat_data_->bsdf_flags_;
 		if(additional_depth < material->getAdditionalDepth()) additional_depth = material->getAdditionalDepth();
 
 		const Rgb col_emit = material->emit(sp.mat_data_.get(), sp, wo, render_data.lights_geometry_material_emit_);
@@ -727,7 +727,7 @@ GatherInfo SppmIntegrator::traceGatherRay(RenderData &render_data, DiffRay &ray,
 		render_data.lights_geometry_material_emit_ = false;
 		SpDifferentials sp_diff(sp, ray);
 
-		if(bsdfs.hasAny(BsdfFlags::Diffuse))
+		if(mat_bsdfs.hasAny(BsdfFlags::Diffuse))
 		{
 			g_info.constant_randiance_ += estimateAllDirectLight(render_data, sp.mat_data_.get(), sp, wo, color_layers);
 		}
@@ -815,7 +815,7 @@ GatherInfo SppmIntegrator::traceGatherRay(RenderData &render_data, DiffRay &ray,
 			}
 
 			// gather caustics photons
-			if(bsdfs.hasAny(BsdfFlags::Diffuse) && caustic_map_->ready())
+			if(mat_bsdfs.hasAny(BsdfFlags::Diffuse) && caustic_map_->ready())
 			{
 
 				radius_2 = hp.radius_2_; //reset radius2 & nGathered
@@ -848,7 +848,7 @@ GatherInfo SppmIntegrator::traceGatherRay(RenderData &render_data, DiffRay &ray,
 			Halton hal_2(2);
 			Halton hal_3(3);
 			// dispersive effects with recursive raytracing:
-			if(bsdfs.hasAny(BsdfFlags::Dispersive) && render_data.chromatic_)
+			if(mat_bsdfs.hasAny(BsdfFlags::Dispersive) && render_data.chromatic_)
 			{
 				render_data.lights_geometry_material_emit_ = false; //debatable...
 				int dsam = 8;
@@ -898,7 +898,7 @@ GatherInfo SppmIntegrator::traceGatherRay(RenderData &render_data, DiffRay &ray,
 					}
 					cing += t_cing;
 				}
-				if(bsdfs.hasAny(BsdfFlags::Volumetric) && (vol = material->getVolumeHandler(sp.ng_ * ref_ray.dir_ < 0)))
+				if(mat_bsdfs.hasAny(BsdfFlags::Volumetric) && (vol = material->getVolumeHandler(sp.ng_ * ref_ray.dir_ < 0)))
 				{
 					vol->transmittance(ref_ray, vcol);
 					cing.photon_flux_ *= vcol;
@@ -925,7 +925,7 @@ GatherInfo SppmIntegrator::traceGatherRay(RenderData &render_data, DiffRay &ray,
 
 			// glossy reflection with recursive raytracing:  Pure GLOSSY material doesn't hold photons?
 
-			if(bsdfs.hasAny(BsdfFlags::Glossy))
+			if(mat_bsdfs.hasAny(BsdfFlags::Glossy))
 			{
 				render_data.lights_geometry_material_emit_ = false;
 				int gsam = 8;
@@ -967,7 +967,7 @@ GatherInfo SppmIntegrator::traceGatherRay(RenderData &render_data, DiffRay &ray,
 					Sample s(s_1, s_2, BsdfFlags::AllGlossy);
 					Rgb mcol = material->sample(sp.mat_data_.get(), sp, wo, wi, s, W, render_data.chromatic_, render_data.wavelength_, render_data.cam_);
 
-					if(material->getFlags().hasAny(BsdfFlags::Reflect) && !material->getFlags().hasAny(BsdfFlags::Transmit))
+					if(mat_bsdfs.hasAny(BsdfFlags::Reflect) && !mat_bsdfs.hasAny(BsdfFlags::Transmit))
 					{
 						float w = 0.f;
 
@@ -979,7 +979,7 @@ GatherInfo SppmIntegrator::traceGatherRay(RenderData &render_data, DiffRay &ray,
 						else if(s.sampled_flags_.hasAny(BsdfFlags::Transmit)) sp_diff.refractedRay(ray, ref_ray, material->getMatIor());
 						integ = (Rgb) integrate(render_data, ref_ray, additional_depth, nullptr, nullptr);
 
-						if(bsdfs.hasAny(BsdfFlags::Volumetric) && (vol = material->getVolumeHandler(sp.ng_ * ref_ray.dir_ < 0)))
+						if(mat_bsdfs.hasAny(BsdfFlags::Volumetric) && (vol = material->getVolumeHandler(sp.ng_ * ref_ray.dir_ < 0)))
 						{
 							if(vol->transmittance(ref_ray, vcol)) integ *= vcol;
 						}
@@ -990,7 +990,7 @@ GatherInfo SppmIntegrator::traceGatherRay(RenderData &render_data, DiffRay &ray,
 						t_ging.constant_randiance_ *= mcol * w;
 						ging += t_ging;
 					}
-					else if(material->getFlags().hasAny(BsdfFlags::Reflect) && material->getFlags().hasAny(BsdfFlags::Transmit))
+					else if(mat_bsdfs.hasAny(BsdfFlags::Reflect) && mat_bsdfs.hasAny(BsdfFlags::Transmit))
 					{
 						Sample s(s_1, s_2, BsdfFlags::Glossy | BsdfFlags::AllGlossy);
 						Rgb mcol[2];
@@ -1005,7 +1005,7 @@ GatherInfo SppmIntegrator::traceGatherRay(RenderData &render_data, DiffRay &ray,
 							ref_ray = DiffRay(sp.p_, dir[0], scene_->ray_min_dist_);
 							sp_diff.reflectedRay(ray, ref_ray);
 							integ = integrate(render_data, ref_ray, additional_depth, nullptr, nullptr);
-							if(bsdfs.hasAny(BsdfFlags::Volumetric) && (vol = material->getVolumeHandler(sp.ng_ * ref_ray.dir_ < 0)))
+							if(mat_bsdfs.hasAny(BsdfFlags::Volumetric) && (vol = material->getVolumeHandler(sp.ng_ * ref_ray.dir_ < 0)))
 							{
 								if(vol->transmittance(ref_ray, vcol)) integ *= vcol;
 							}
@@ -1027,7 +1027,7 @@ GatherInfo SppmIntegrator::traceGatherRay(RenderData &render_data, DiffRay &ray,
 							ref_ray = DiffRay(sp.p_, dir[1], scene_->ray_min_dist_);
 							sp_diff.refractedRay(ray, ref_ray, material->getMatIor());
 							integ = integrate(render_data, ref_ray, additional_depth, nullptr, nullptr);
-							if(bsdfs.hasAny(BsdfFlags::Volumetric) && (vol = material->getVolumeHandler(sp.ng_ * ref_ray.dir_ < 0)))
+							if(mat_bsdfs.hasAny(BsdfFlags::Volumetric) && (vol = material->getVolumeHandler(sp.ng_ * ref_ray.dir_ < 0)))
 							{
 								if(vol->transmittance(ref_ray, vcol)) integ *= vcol;
 							}
@@ -1064,7 +1064,7 @@ GatherInfo SppmIntegrator::traceGatherRay(RenderData &render_data, DiffRay &ray,
 						ging += t_ging;
 					}
 
-					if(bsdfs.hasAny(BsdfFlags::Volumetric) && (vol = material->getVolumeHandler(sp.ng_ * ref_ray.dir_ < 0)))
+					if(mat_bsdfs.hasAny(BsdfFlags::Volumetric) && (vol = material->getVolumeHandler(sp.ng_ * ref_ray.dir_ < 0)))
 					{
 						if(vol->transmittance(ref_ray, vcol))
 						{
@@ -1105,7 +1105,7 @@ GatherInfo SppmIntegrator::traceGatherRay(RenderData &render_data, DiffRay &ray,
 			}
 
 			//...perfect specular reflection/refraction with recursive raytracing...
-			if(bsdfs.hasAny(BsdfFlags::Specular | BsdfFlags::Filter))
+			if(mat_bsdfs.hasAny(BsdfFlags::Specular | BsdfFlags::Filter))
 			{
 				render_data.lights_geometry_material_emit_ = true;
 				const Material::Specular specular = material->getSpecular(render_data.raylevel_, sp.mat_data_.get(), sp, wo, render_data.chromatic_, render_data.wavelength_);
@@ -1115,7 +1115,7 @@ GatherInfo SppmIntegrator::traceGatherRay(RenderData &render_data, DiffRay &ray,
 					if(diff_rays_enabled_) sp_diff.reflectedRay(ray, ref_ray); // compute the ray differentaitl
 					GatherInfo refg = traceGatherRay(render_data, ref_ray, hp, nullptr);
 					const VolumeHandler *vol;
-					if(bsdfs.hasAny(BsdfFlags::Volumetric) && (vol = material->getVolumeHandler(sp.ng_ * ref_ray.dir_ < 0)))
+					if(mat_bsdfs.hasAny(BsdfFlags::Volumetric) && (vol = material->getVolumeHandler(sp.ng_ * ref_ray.dir_ < 0)))
 					{
 						Rgb vcol;
 						if(vol->transmittance(ref_ray, vcol))
@@ -1139,7 +1139,7 @@ GatherInfo SppmIntegrator::traceGatherRay(RenderData &render_data, DiffRay &ray,
 					if(diff_rays_enabled_) sp_diff.refractedRay(ray, ref_ray, material->getMatIor());
 					GatherInfo refg = traceGatherRay(render_data, ref_ray, hp, nullptr);
 					const VolumeHandler *vol;
-					if(bsdfs.hasAny(BsdfFlags::Volumetric) && (vol = material->getVolumeHandler(sp.ng_ * ref_ray.dir_ < 0)))
+					if(mat_bsdfs.hasAny(BsdfFlags::Volumetric) && (vol = material->getVolumeHandler(sp.ng_ * ref_ray.dir_ < 0)))
 					{
 						Rgb vcol;
 						if(vol->transmittance(ref_ray, vcol))
@@ -1164,7 +1164,7 @@ GatherInfo SppmIntegrator::traceGatherRay(RenderData &render_data, DiffRay &ray,
 
 		if(layers_used)
 		{
-			generateCommonLayers(render_data.raylevel_, sp.mat_data_.get(), sp, ray, scene_->getMaskParams(), color_layers);
+			generateCommonLayers(render_data.raylevel_, sp, ray, scene_->getMaskParams(), color_layers);
 
 			if(ColorLayer *color_layer = color_layers->find(Layer::Ao))
 			{

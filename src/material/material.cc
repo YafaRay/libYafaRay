@@ -81,7 +81,7 @@ Material::~Material()
 	resetMaterialIndex();
 }
 
-Rgb Material::sampleClay(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, Vec3 &wi, Sample &s, float &w) const {
+Rgb Material::sampleClay(const SurfacePoint &sp, const Vec3 &wo, Vec3 &wi, Sample &s, float &w) const {
 	const Vec3 n = SurfacePoint::normalFaceForward(sp.ng_, sp.n_, wo);
 	wi = sample::cosHemisphere(n, sp.nu_, sp.nv_, s.s_1_, s.s_2_);
 	s.pdf_ = std::abs(wi * n);

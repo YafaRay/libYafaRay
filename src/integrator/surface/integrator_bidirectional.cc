@@ -397,16 +397,16 @@ Rgba BidirectionalIntegrator::integrate(RenderData &render_data, const DiffRay &
 
 		if(layers_used)
 		{
-			generateCommonLayers(render_data.raylevel_, sp.mat_data_.get(), sp, ray, scene_->getMaskParams(), color_layers);
+			generateCommonLayers(render_data.raylevel_, sp, ray, scene_->getMaskParams(), color_layers);
 
 			if(ColorLayer *color_layer = color_layers->find(Layer::Ao))
 			{
-				color_layer->color_ += sampleAmbientOcclusionLayer(render_data, sp.mat_data_.get(), sp, wo);
+				color_layer->color_ += sampleAmbientOcclusionLayer(render_data, sp, wo);
 			}
 
 			if(ColorLayer *color_layer = color_layers->find(Layer::AoClay))
 			{
-				color_layer->color_ += sampleAmbientOcclusionClayLayer(render_data, sp.mat_data_.get(), sp, wo);
+				color_layer->color_ += sampleAmbientOcclusionClayLayer(render_data, sp, wo);
 			}
 		}
 	}
@@ -974,7 +974,7 @@ Rgb BidirectionalIntegrator::evalPathE(int s, PathData &pd, const Camera *camera
     return col/lightNumPdf;
 } */
 
-Rgb BidirectionalIntegrator::sampleAmbientOcclusionLayer(RenderData &render_data, const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo) const
+Rgb BidirectionalIntegrator::sampleAmbientOcclusionLayer(RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo) const
 {
 	const Accelerator *accelerator = scene_->getAccelerator();
 	if(!accelerator) return {0.f};
@@ -1015,7 +1015,7 @@ Rgb BidirectionalIntegrator::sampleAmbientOcclusionLayer(RenderData &render_data
 
 		if(bsdfs.hasAny(BsdfFlags::Emit))
 		{
-			col += material->emit(mat_data, sp, wo, render_data.lights_geometry_material_emit_) * s.pdf_;
+			col += material->emit(sp.mat_data_.get(), sp, wo, render_data.lights_geometry_material_emit_) * s.pdf_;
 		}
 
 		shadowed = tr_shad_ ? accelerator->isShadowed(light_ray, s_depth_, scol, mask_obj_index, mask_mat_index, scene_->getShadowBias(), render_data.cam_) : accelerator->isShadowed(light_ray, mask_obj_index, mask_mat_index, scene_->getShadowBias());
@@ -1032,7 +1032,7 @@ Rgb BidirectionalIntegrator::sampleAmbientOcclusionLayer(RenderData &render_data
 }
 
 
-Rgb BidirectionalIntegrator::sampleAmbientOcclusionClayLayer(RenderData &render_data, const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo) const
+Rgb BidirectionalIntegrator::sampleAmbientOcclusionClayLayer(RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo) const
 {
 	const Accelerator *accelerator = scene_->getAccelerator();
 	if(!accelerator) return {0.f};
@@ -1040,6 +1040,7 @@ Rgb BidirectionalIntegrator::sampleAmbientOcclusionClayLayer(RenderData &render_
 	Rgb col(0.f), surf_col(0.f);
 	bool shadowed;
 	const Material *material = sp.material_;
+	const BsdfFlags &mat_bsdfs = sp.mat_data_->bsdf_flags_;
 	Ray light_ray;
 	light_ray.from_ = sp.p_;
 	float mask_obj_index = 0.f, mask_mat_index = 0.f;
@@ -1067,12 +1068,12 @@ Rgb BidirectionalIntegrator::sampleAmbientOcclusionClayLayer(RenderData &render_
 		float w = 0.f;
 
 		Sample s(s_1, s_2, BsdfFlags::All);
-		surf_col = material->sampleClay(mat_data, sp, wo, light_ray.dir_, s, w);
+		surf_col = material->sampleClay(sp, wo, light_ray.dir_, s, w);
 		s.pdf_ = 1.f;
 
-		if(material->getFlags().hasAny(BsdfFlags::Emit))
+		if(mat_bsdfs.hasAny(BsdfFlags::Emit))
 		{
-			col += material->emit(mat_data, sp, wo, render_data.lights_geometry_material_emit_) * s.pdf_;
+			col += material->emit(sp.mat_data_.get(), sp, wo, render_data.lights_geometry_material_emit_) * s.pdf_;
 		}
 
 		shadowed = accelerator->isShadowed(light_ray, mask_obj_index, mask_mat_index, scene_->getShadowBias());

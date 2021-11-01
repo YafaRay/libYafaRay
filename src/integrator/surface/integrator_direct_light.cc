@@ -158,7 +158,7 @@ Rgba DirectLightIntegrator::integrate(RenderData &render_data, const DiffRay &ra
 
 		if(layers_used)
 		{
-			generateCommonLayers(render_data.raylevel_, sp.mat_data_.get(), sp, ray, scene_->getMaskParams(), color_layers);
+			generateCommonLayers(render_data.raylevel_, sp, ray, scene_->getMaskParams(), color_layers);
 
 			if(ColorLayer *color_layer = color_layers->find(Layer::Ao))
 			{
