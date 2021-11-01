@@ -365,7 +365,7 @@ void SppmIntegrator::photonWorker(PhotonMap *diffuse_map, PhotonMap *caustic_map
 	bool done = false;
 	unsigned int curr = 0;
 
-	SurfacePoint sp;
+	SurfacePoint hit_curr, hit_prev;
 	RenderData render_data(&prng);
 	render_data.cam_ = render_view->getCamera();
 
@@ -428,9 +428,10 @@ void SppmIntegrator::photonWorker(PhotonMap *diffuse_map, PhotonMap *caustic_map
 		int n_bounces = 0;
 		bool caustic_photon = false;
 		bool direct_photon = true;
-		const Material *material = nullptr;
+		const Material *material_prev = nullptr;
+		BsdfFlags mat_bsdfs_prev = BsdfFlags::None;
 
-		while(accelerator->intersect(ray, sp, render_data.cam_))   //scatter photons.
+		while(accelerator->intersect(ray, hit_curr, render_data.cam_))   //scatter photons.
 		{
 			if(std::isnan(pcol.r_) || std::isnan(pcol.g_) || std::isnan(pcol.b_))
 			{
@@ -442,24 +443,23 @@ void SppmIntegrator::photonWorker(PhotonMap *diffuse_map, PhotonMap *caustic_map
 
 			Rgb transm(1.f);
 
-			const BsdfFlags &mat_bsdfs = sp.mat_data_->bsdf_flags_;
-			if(material)
+			if(material_prev)
 			{
-				//FIXME??? HOW DOES THIS WORK, WITH PREVIOUS MATERIAL AND FLAGS?? Then this needs to be properly written to account for both previous material and previous mat_data!
 				const VolumeHandler *vol;
-				if(mat_bsdfs.hasAny(BsdfFlags::Volumetric) && (vol = material->getVolumeHandler(sp.ng_ * -ray.dir_ < 0)))
+				if(mat_bsdfs_prev.hasAny(BsdfFlags::Volumetric) && (vol = material_prev->getVolumeHandler(hit_prev.ng_ * -ray.dir_ < 0)))
 				{
 					transm = vol->transmittance(ray);
 				}
 			}
 
 			Vec3 wi = -ray.dir_, wo;
-			material = sp.material_;
+			const Material *material = hit_curr.material_;
+			const BsdfFlags &mat_bsdfs = hit_curr.mat_data_->bsdf_flags_;
 
 			//deposit photon on diffuse surface, now we only have one map for all, elimate directPhoton for we estimate it directly
 			if(!direct_photon && !caustic_photon && mat_bsdfs.hasAny(BsdfFlags::Diffuse))
 			{
-				Photon np(wi, sp.p_, pcol);// pcol used here
+				Photon np(wi, hit_curr.p_, pcol);// pcol used here
 
 				if(b_hashgrid_) photon_grid_.pushPhoton(np);
 				else
@@ -471,7 +471,7 @@ void SppmIntegrator::photonWorker(PhotonMap *diffuse_map, PhotonMap *caustic_map
 			// add caustic photon
 			if(!direct_photon && caustic_photon && mat_bsdfs.hasAny(BsdfFlags::Diffuse | BsdfFlags::Glossy))
 			{
-				Photon np(wi, sp.p_, pcol);// pcol used here
+				Photon np(wi, hit_curr.p_, pcol);// pcol used here
 
 				if(b_hashgrid_) photon_grid_.pushPhoton(np);
 				else
@@ -491,7 +491,7 @@ void SppmIntegrator::photonWorker(PhotonMap *diffuse_map, PhotonMap *caustic_map
 
 			PSample sample(s_5, s_6, s_7, BsdfFlags::All, pcol, transm);
 
-			bool scattered = material->scatterPhoton(sp.mat_data_.get(), sp, wi, wo, sample, render_data.chromatic_, render_data.wavelength_, render_data.cam_);
+			bool scattered = material->scatterPhoton(hit_curr.mat_data_.get(), hit_curr, wi, wo, sample, render_data.chromatic_, render_data.wavelength_, render_data.cam_);
 			if(!scattered) break; //photon was absorped.  actually based on russian roulette
 
 			pcol = sample.color_;
@@ -508,10 +508,13 @@ void SppmIntegrator::photonWorker(PhotonMap *diffuse_map, PhotonMap *caustic_map
 				pcol *= wl_col;
 			}
 
-			ray.from_ = sp.p_;
+			ray.from_ = hit_curr.p_;
 			ray.dir_ = wo;
 			ray.tmin_ = scene->ray_min_dist_;
 			ray.tmax_ = -1.0;
+			material_prev = material;
+			mat_bsdfs_prev = mat_bsdfs;
+			std::swap(hit_prev, hit_curr);
 			++n_bounces;
 		}
 		++curr;

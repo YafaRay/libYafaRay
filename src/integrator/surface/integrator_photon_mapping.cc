@@ -124,7 +124,7 @@ void PhotonIntegrator::diffuseWorker(PhotonMap *diffuse_map, int thread_id, cons
 	bool done = false;
 	unsigned int curr = 0;
 
-	SurfacePoint sp;
+	SurfacePoint hit_curr, hit_prev;
 	RenderData render_data;
 	render_data.cam_ = render_view->getCamera();
 
@@ -154,9 +154,7 @@ void PhotonIntegrator::diffuseWorker(PhotonMap *diffuse_map, int thread_id, cons
 		int light_num = light_power_d->dSample(logger_, s_l, &light_num_pdf);
 		if(light_num >= num_d_lights)
 		{
-			diffuse_map->mutx_.lock();
 			logger_.logError(getName(), ": lightPDF sample error! ", s_l, "/", light_num);
-			diffuse_map->mutx_.unlock();
 			return;
 		}
 
@@ -175,50 +173,48 @@ void PhotonIntegrator::diffuseWorker(PhotonMap *diffuse_map, int thread_id, cons
 		int n_bounces = 0;
 		bool caustic_photon = false;
 		bool direct_photon = true;
-		const Material *material = nullptr;
+		const Material *material_prev = nullptr;
+		BsdfFlags mat_bsdfs_prev = BsdfFlags::None;
 
-		while(accelerator->intersect(ray, sp, render_data.cam_))
+		while(accelerator->intersect(ray, hit_curr, render_data.cam_))
 		{
 			if(std::isnan(pcol.r_) || std::isnan(pcol.g_) || std::isnan(pcol.b_))
 			{
-				diffuse_map->mutx_.lock();
 				logger_.logWarning(getName(), ": NaN  on photon color for light", light_num + 1, ".");
-				diffuse_map->mutx_.unlock();
 				continue;
 			}
 
 			Rgb transm(1.f);
 
-			const BsdfFlags &mat_bsdfs = sp.mat_data_->bsdf_flags_;
-			if(material)
+			if(material_prev)
 			{
-				//FIXME??? HOW DOES THIS WORK, WITH PREVIOUS MATERIAL AND FLAGS?? Then this needs to be properly written to account for both previous material and previous mat_data!
 				const VolumeHandler *vol;
-				if(mat_bsdfs.hasAny(BsdfFlags::Volumetric) && (vol = material->getVolumeHandler(sp.ng_ * -ray.dir_ < 0)))
+				if(mat_bsdfs_prev.hasAny(BsdfFlags::Volumetric) && (vol = material_prev->getVolumeHandler(hit_prev.ng_ * -ray.dir_ < 0)))
 				{
 					transm = vol->transmittance(ray);
 				}
 			}
 
 			Vec3 wi = -ray.dir_, wo;
-			material = sp.material_;
+			const Material *material = hit_curr.material_;
+			const BsdfFlags &mat_bsdfs = hit_curr.mat_data_->bsdf_flags_;
 
 			if(mat_bsdfs.hasAny(BsdfFlags::Diffuse))
 			{
 				//deposit photon on surface
 				if(!caustic_photon)
 				{
-					Photon np(wi, sp.p_, pcol);
+					Photon np(wi, hit_curr.p_, pcol);
 					local_diffuse_photons.push_back(np);
 				}
 				// create entry for radiance photon:
 				// don't forget to choose subset only, face normal forward; geometric vs. smooth normal?
 				if(final_gather && FastRandom::getNextFloatNormalized() < 0.125 && !caustic_photon)
 				{
-					Vec3 n = SurfacePoint::normalFaceForward(sp.ng_, sp.n_, wi);
-					RadData rd(sp.p_, n);
-					rd.refl_ = material->getReflectivity(sp.mat_data_.get(), sp, BsdfFlags::Diffuse | BsdfFlags::Glossy | BsdfFlags::Reflect, render_data.chromatic_, render_data.wavelength_, render_data.cam_);
-					rd.transm_ = material->getReflectivity(sp.mat_data_.get(), sp, BsdfFlags::Diffuse | BsdfFlags::Glossy | BsdfFlags::Transmit, render_data.chromatic_, render_data.wavelength_, render_data.cam_);
+					Vec3 n = SurfacePoint::normalFaceForward(hit_curr.ng_, hit_curr.n_, wi);
+					RadData rd(hit_curr.p_, n);
+					rd.refl_ = material->getReflectivity(hit_curr.mat_data_.get(), hit_curr, BsdfFlags::Diffuse | BsdfFlags::Glossy | BsdfFlags::Reflect, render_data.chromatic_, render_data.wavelength_, render_data.cam_);
+					rd.transm_ = material->getReflectivity(hit_curr.mat_data_.get(), hit_curr, BsdfFlags::Diffuse | BsdfFlags::Glossy | BsdfFlags::Transmit, render_data.chromatic_, render_data.wavelength_, render_data.cam_);
 					local_rad_points.push_back(rd);
 				}
 			}
@@ -233,7 +229,7 @@ void PhotonIntegrator::diffuseWorker(PhotonMap *diffuse_map, int thread_id, cons
 
 			PSample sample(s_5, s_6, s_7, BsdfFlags::All, pcol, transm);
 
-			bool scattered = material->scatterPhoton(sp.mat_data_.get(), sp, wi, wo, sample, render_data.chromatic_, render_data.wavelength_, render_data.cam_);
+			bool scattered = material->scatterPhoton(hit_curr.mat_data_.get(), hit_curr, wi, wo, sample, render_data.chromatic_, render_data.wavelength_, render_data.cam_);
 			if(!scattered) break; //photon was absorped.
 
 			pcol = sample.color_;
@@ -242,10 +238,13 @@ void PhotonIntegrator::diffuseWorker(PhotonMap *diffuse_map, int thread_id, cons
 							 (sample.sampled_flags_.hasAny((BsdfFlags::Glossy | BsdfFlags::Specular | BsdfFlags::Filter | BsdfFlags::Dispersive)) && caustic_photon);
 			direct_photon = sample.sampled_flags_.hasAny(BsdfFlags::Filter) && direct_photon;
 
-			ray.from_ = sp.p_;
+			ray.from_ = hit_curr.p_;
 			ray.dir_ = wo;
 			ray.tmin_ = scene->ray_min_dist_;
 			ray.tmax_ = -1.0;
+			material_prev = material;
+			mat_bsdfs_prev = mat_bsdfs;
+			std::swap(hit_prev, hit_curr);
 			++n_bounces;
 		}
 		++curr;
