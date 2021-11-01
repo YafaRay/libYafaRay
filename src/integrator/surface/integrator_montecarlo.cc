@@ -398,7 +398,8 @@ void MonteCarloIntegrator::causticWorker(PhotonMap *caustic_map, int thread_id, 
 	std::vector<Photon> local_caustic_photons;
 
 	SurfacePoint sp_1, sp_2;
-	SurfacePoint *hit = &sp_1, *hit_2 = &sp_2;
+	SurfacePoint *hit_prev = &sp_1;
+	SurfacePoint *hit_curr = &sp_2;
 	Ray ray;
 
 	RenderData render_data;
@@ -425,9 +426,7 @@ void MonteCarloIntegrator::causticWorker(PhotonMap *caustic_map, int thread_id, 
 
 		if(light_num >= num_lights)
 		{
-			caustic_map->mutx_.lock();
 			logger_.logError(getName(), ": lightPDF sample error! ", s_l, "/", light_num);
-			caustic_map->mutx_.unlock();
 			return;
 		}
 
@@ -444,39 +443,35 @@ void MonteCarloIntegrator::causticWorker(PhotonMap *caustic_map, int thread_id, 
 		int n_bounces = 0;
 		bool caustic_photon = false;
 		bool direct_photon = true;
-		const Material *material = nullptr;
-		const VolumeHandler *vol = nullptr;
+		const Material *material_prev = nullptr;
+		BsdfFlags mat_bsdfs_prev = BsdfFlags::None;
 
-		while(accelerator->intersect(ray, *hit_2, render_data.cam_))
+		while(accelerator->intersect(ray, *hit_curr, render_data.cam_))
 		{
 			if(std::isnan(pcol.r_) || std::isnan(pcol.g_) || std::isnan(pcol.b_))
 			{
-				caustic_map->mutx_.lock();
 				logger_.logWarning(getName(), ": NaN (photon color)");
-				caustic_map->mutx_.unlock();
 				break;
 			}
-			Rgb transm(1.f), vcol;
-			// check for volumetric effects
-			const BsdfFlags &mat_bsdfs = hit_2->mat_data_->bsdf_flags_;
-			if(material)
+			// check for volumetric effects, based on the material from the previous photon bounce
+			Rgb transm(1.f);
+			if(material_prev)
 			{
-				//FIXME??? HOW DOES THIS WORK, WITH PREVIOUS MATERIAL AND FLAGS?? Then this needs to be properly written to account for both previous material and previous mat_data!
-				if(mat_bsdfs.hasAny(BsdfFlags::Volumetric) && (vol = material->getVolumeHandler(hit->ng_ * ray.dir_ < 0)))
+				const VolumeHandler *vol;
+				if(mat_bsdfs_prev.hasAny(BsdfFlags::Volumetric) && (vol = material_prev->getVolumeHandler(hit_prev->ng_ * ray.dir_ < 0)))
 				{
-					vol->transmittance(ray, vcol);
-					transm = vcol;
+					vol->transmittance(ray, transm);
 				}
 			}
-			std::swap(hit, hit_2);
 			Vec3 wi = -ray.dir_, wo;
-			material = hit->material_;
+			const Material *material = hit_curr->material_;
+			const BsdfFlags &mat_bsdfs = hit_curr->mat_data_->bsdf_flags_;
 			if(mat_bsdfs.hasAny((BsdfFlags::Diffuse | BsdfFlags::Glossy)))
 			{
 				//deposit caustic photon on surface
 				if(caustic_photon)
 				{
-					Photon np(wi, hit->p_, pcol);
+					Photon np(wi, hit_curr->p_, pcol);
 					local_caustic_photons.push_back(np);
 				}
 			}
@@ -491,7 +486,7 @@ void MonteCarloIntegrator::causticWorker(PhotonMap *caustic_map, int thread_id, 
 			s_7 = Halton::lowDiscrepancySampling(d_5 + 2, haltoncurr);
 
 			PSample sample(s_5, s_6, s_7, BsdfFlags::AllSpecular | BsdfFlags::Glossy | BsdfFlags::Filter | BsdfFlags::Dispersive, pcol, transm);
-			bool scattered = material->scatterPhoton(hit->mat_data_.get(), *hit, wi, wo, sample, render_data.chromatic_, render_data.wavelength_, render_data.cam_);
+			bool scattered = material->scatterPhoton(hit_curr->mat_data_.get(), *hit_curr, wi, wo, sample, render_data.chromatic_, render_data.wavelength_, render_data.cam_);
 			if(!scattered) break; //photon was absorped.
 			pcol = sample.color_;
 			// hm...dispersive is not really a scattering qualifier like specular/glossy/diffuse or the special case filter...
@@ -509,10 +504,13 @@ void MonteCarloIntegrator::causticWorker(PhotonMap *caustic_map, int thread_id, 
 				spectrum::wl2Rgb(render_data.wavelength_, wl_col);
 				pcol *= wl_col;
 			}
-			ray.from_ = hit->p_;
+			ray.from_ = hit_curr->p_;
 			ray.dir_ = wo;
 			ray.tmin_ = scene->ray_min_dist_;
-			ray.tmax_ = -1.0;
+			ray.tmax_ = -1.f;
+			material_prev = material;
+			mat_bsdfs_prev = mat_bsdfs;
+			std::swap(hit_prev, hit_curr);
 			++n_bounces;
 		}
 		++curr;
