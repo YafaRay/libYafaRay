@@ -194,7 +194,7 @@ void PhotonIntegrator::diffuseWorker(PhotonMap *diffuse_map, int thread_id, cons
 				}
 			}
 
-			Vec3 wi = -ray.dir_, wo;
+			const Vec3 wi = -ray.dir_;
 			const Material *material = hit_curr.material_;
 			const BsdfFlags &mat_bsdfs = hit_curr.mat_data_->bsdf_flags_;
 
@@ -220,7 +220,7 @@ void PhotonIntegrator::diffuseWorker(PhotonMap *diffuse_map, int thread_id, cons
 			// need to break in the middle otherwise we scatter the photon and then discard it => redundant
 			if(n_bounces == max_bounces) break;
 			// scatter photon
-			int d_5 = 3 * n_bounces + 5;
+			const int d_5 = 3 * n_bounces + 5;
 
 			s_5 = Halton::lowDiscrepancySampling(d_5, haltoncurr);
 			s_6 = Halton::lowDiscrepancySampling(d_5 + 1, haltoncurr);
@@ -228,6 +228,7 @@ void PhotonIntegrator::diffuseWorker(PhotonMap *diffuse_map, int thread_id, cons
 
 			PSample sample(s_5, s_6, s_7, BsdfFlags::All, pcol, transm);
 
+			Vec3 wo;
 			bool scattered = material->scatterPhoton(hit_curr.mat_data_.get(), hit_curr, wi, wo, sample, render_data.chromatic_, render_data.wavelength_, render_data.cam_);
 			if(!scattered) break; //photon was absorped.
 
@@ -240,7 +241,7 @@ void PhotonIntegrator::diffuseWorker(PhotonMap *diffuse_map, int thread_id, cons
 			ray.from_ = hit_curr.p_;
 			ray.dir_ = wo;
 			ray.tmin_ = scene->ray_min_dist_;
-			ray.tmax_ = -1.0;
+			ray.tmax_ = -1.f;
 			material_prev = material;
 			mat_bsdfs_prev = mat_bsdfs;
 			std::swap(hit_prev, hit_curr);

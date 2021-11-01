@@ -447,7 +447,7 @@ void SppmIntegrator::photonWorker(PhotonMap *diffuse_map, PhotonMap *caustic_map
 				}
 			}
 
-			Vec3 wi = -ray.dir_, wo;
+			const Vec3 wi = -ray.dir_;
 			const Material *material = hit_curr.material_;
 			const BsdfFlags &mat_bsdfs = hit_curr.mat_data_->bsdf_flags_;
 
@@ -486,6 +486,7 @@ void SppmIntegrator::photonWorker(PhotonMap *diffuse_map, PhotonMap *caustic_map
 
 			PSample sample(s_5, s_6, s_7, BsdfFlags::All, pcol, transm);
 
+			Vec3 wo;
 			bool scattered = material->scatterPhoton(hit_curr.mat_data_.get(), hit_curr, wi, wo, sample, render_data.chromatic_, render_data.wavelength_, render_data.cam_);
 			if(!scattered) break; //photon was absorped.  actually based on russian roulette
 
@@ -506,7 +507,7 @@ void SppmIntegrator::photonWorker(PhotonMap *diffuse_map, PhotonMap *caustic_map
 			ray.from_ = hit_curr.p_;
 			ray.dir_ = wo;
 			ray.tmin_ = scene->ray_min_dist_;
-			ray.tmax_ = -1.0;
+			ray.tmax_ = -1.f;
 			material_prev = material;
 			mat_bsdfs_prev = mat_bsdfs;
 			std::swap(hit_prev, hit_curr);

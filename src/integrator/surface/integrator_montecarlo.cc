@@ -461,7 +461,7 @@ void MonteCarloIntegrator::causticWorker(PhotonMap *caustic_map, int thread_id, 
 					transm = vol->transmittance(ray);
 				}
 			}
-			Vec3 wi = -ray.dir_, wo;
+			const Vec3 wi = -ray.dir_;
 			const Material *material = hit_curr.material_;
 			const BsdfFlags &mat_bsdfs = hit_curr.mat_data_->bsdf_flags_;
 			if(mat_bsdfs.hasAny((BsdfFlags::Diffuse | BsdfFlags::Glossy)))
@@ -484,6 +484,7 @@ void MonteCarloIntegrator::causticWorker(PhotonMap *caustic_map, int thread_id, 
 			s_7 = Halton::lowDiscrepancySampling(d_5 + 2, haltoncurr);
 
 			PSample sample(s_5, s_6, s_7, BsdfFlags::AllSpecular | BsdfFlags::Glossy | BsdfFlags::Filter | BsdfFlags::Dispersive, pcol, transm);
+			Vec3 wo;
 			bool scattered = material->scatterPhoton(hit_curr.mat_data_.get(), hit_curr, wi, wo, sample, render_data.chromatic_, render_data.wavelength_, render_data.cam_);
 			if(!scattered) break; //photon was absorped.
 			pcol = sample.color_;
