@@ -334,7 +334,7 @@ int main()
 	yafaray_paramsClearAll(yi);
 
 	yafaray_paramsSetInt(yi, "additionaldepth", 0);
-	yafaray_paramsSetFloat(yi, "blend_value", 1);
+	yafaray_paramsSetFloat(yi, "blend_value", 0);
 	yafaray_paramsSetBool(yi, "flat_material", YAFARAY_BOOL_FALSE);
 	yafaray_paramsSetString(yi, "material1", "Mat1");
 	yafaray_paramsSetString(yi, "material2", "Mat2");
@@ -638,9 +638,10 @@ int main()
 	yafaray_paramsSetInt(yi, "tile_size", 32);
 	yafaray_paramsSetString(yi, "tiles_order", "centre");
 	yafaray_paramsSetString(yi, "volintegrator_name", "volintegr");
-	yafaray_paramsSetInt(yi, "width", 768);
-	yafaray_paramsSetInt(yi, "xstart", 0);
-	yafaray_paramsSetInt(yi, "ystart", 0);
+	yafaray_paramsSetInt(yi, "width", 10);
+	yafaray_paramsSetInt(yi, "height", 10);
+	yafaray_paramsSetInt(yi, "xstart", 80);
+	yafaray_paramsSetInt(yi, "ystart", 220);
 	yafaray_setupRender(yi);
 	yafaray_paramsClearAll(yi);
 
