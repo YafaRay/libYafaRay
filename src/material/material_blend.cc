@@ -42,7 +42,7 @@ BlendMaterial::BlendMaterial(Logger &logger, const Material *m_1, const Material
 
 inline float BlendMaterial::getBlendVal(const NodeTreeData &node_tree_data) const
 {
-	const float blend_val = blend_shader_ ? blend_shader_->getScalar(node_tree_data) : blend_val_;
+	const float blend_val = getShaderScalar(blend_shader_, node_tree_data, blend_val_);
 	return blend_val;
 }
 

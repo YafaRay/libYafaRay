@@ -219,7 +219,7 @@ Rgb ShinyDiffuseMaterial::eval(const MaterialData *mat_data, const SurfacePoint 
 
 	if(transmit) // light comes from opposite side of surface
 	{
-		if(is_translucent_) return mat_data_specific->components_[2] * m_t * (diffuse_shader_ ? diffuse_shader_->getColor(mat_data->node_tree_data_) : diffuse_color_);
+		if(is_translucent_) return mat_data_specific->components_[2] * m_t * getShaderColor(diffuse_shader_, mat_data->node_tree_data_, diffuse_color_);
 	}
 
 	if(n * wl < 0.0 && !flat_material_) return Rgb(0.f);
@@ -227,14 +227,14 @@ Rgb ShinyDiffuseMaterial::eval(const MaterialData *mat_data, const SurfacePoint 
 
 	if(use_oren_nayar_)
 	{
-		const double texture_sigma = (sigma_oren_shader_ ? sigma_oren_shader_->getScalar(mat_data->node_tree_data_) : 0.f);
+		const double texture_sigma = getShaderScalar(sigma_oren_shader_, mat_data->node_tree_data_, 0.f);
 		const bool use_texture_sigma = (sigma_oren_shader_ ? true : false);
 		if(use_oren_nayar_) m_d *= orenNayar(wo, wl, n, use_texture_sigma, texture_sigma);
 	}
 
 	if(diffuse_refl_shader_) m_d *= diffuse_refl_shader_->getScalar(mat_data->node_tree_data_);
 
-	Rgb result = m_d * (diffuse_shader_ ? diffuse_shader_->getColor(mat_data->node_tree_data_) : diffuse_color_);
+	Rgb result = m_d * getShaderColor(diffuse_shader_, mat_data->node_tree_data_, diffuse_color_);
 	if(wireframe_thickness_ > 0.f) applyWireFrame(result, wireframe_shader_, mat_data->node_tree_data_, sp);
 	return result;
 }
@@ -297,7 +297,7 @@ Rgb ShinyDiffuseMaterial::sample(const MaterialData *mat_data, const SurfacePoin
 		case(BsdfFlags::SpecularReflect):
 			wi = Vec3::reflectDir(n, wo);
 			s.pdf_ = width[pick];
-			scolor = (mirror_color_shader_ ? mirror_color_shader_->getColor(mat_data->node_tree_data_) : mirror_color_) * (accum_c[0]);
+			scolor = getShaderColor(mirror_color_shader_, mat_data->node_tree_data_, mirror_color_) * (accum_c[0]);
 			if(s.reverse_)
 			{
 				s.pdf_back_ = s.pdf_;
@@ -307,22 +307,22 @@ Rgb ShinyDiffuseMaterial::sample(const MaterialData *mat_data, const SurfacePoin
 			break;
 		case(BsdfFlags::SpecularTransmit):
 			wi = -wo;
-			scolor = accum_c[1] * (transmit_filter_strength_ * (diffuse_shader_ ? diffuse_shader_->getColor(mat_data->node_tree_data_) : diffuse_color_) + Rgb(1.f - transmit_filter_strength_));
+			scolor = accum_c[1] * (transmit_filter_strength_ * getShaderColor(diffuse_shader_, mat_data->node_tree_data_, diffuse_color_) + Rgb(1.f - transmit_filter_strength_));
 			if(std::abs(wi * n) /*cos_n*/ < 1e-6) s.pdf_ = 0.f;
 			else s.pdf_ = width[pick];
 			break;
 		case(BsdfFlags::Translucency):
 			wi = sample::cosHemisphere(-n, sp.nu_, sp.nv_, s_1, s.s_2_);
-			if(cos_ng_wo * (sp.ng_ * wi) /* cos_ng_wi */ < 0) scolor = accum_c[2] * (diffuse_shader_ ? diffuse_shader_->getColor(mat_data->node_tree_data_) : diffuse_color_);
+			if(cos_ng_wo * (sp.ng_ * wi) /* cos_ng_wi */ < 0) scolor = accum_c[2] * getShaderColor(diffuse_shader_, mat_data->node_tree_data_, diffuse_color_);
 			s.pdf_ = std::abs(wi * n) * width[pick]; break;
 		case(BsdfFlags::DiffuseReflect):
 		default:
 			wi = sample::cosHemisphere(n, sp.nu_, sp.nv_, s_1, s.s_2_);
-			if(cos_ng_wo * (sp.ng_ * wi) /* cos_ng_wi */ > 0) scolor = accum_c[3] * (diffuse_shader_ ? diffuse_shader_->getColor(mat_data->node_tree_data_) : diffuse_color_);
+			if(cos_ng_wo * (sp.ng_ * wi) /* cos_ng_wi */ > 0) scolor = accum_c[3] * getShaderColor(diffuse_shader_, mat_data->node_tree_data_, diffuse_color_);
 
 			if(use_oren_nayar_)
 			{
-				const double texture_sigma = (sigma_oren_shader_ ? sigma_oren_shader_->getScalar(mat_data->node_tree_data_) : 0.f);
+				const double texture_sigma = getShaderScalar(sigma_oren_shader_, mat_data->node_tree_data_, 0.f);
 				const bool use_texture_sigma = (sigma_oren_shader_ ? true : false);
 				scolor *= orenNayar(wo, wi, n, use_texture_sigma, texture_sigma);
 			}
@@ -414,7 +414,7 @@ Material::Specular ShinyDiffuseMaterial::getSpecular(int raylevel, const Materia
 	{
 		specular.refract_.enabled_ = true;
 		specular.refract_.dir_ = -wo;
-		const Rgb tcol = transmit_filter_strength_ * (diffuse_shader_ ? diffuse_shader_->getColor(mat_data->node_tree_data_) : diffuse_color_) + Rgb(1.f - transmit_filter_strength_);
+		const Rgb tcol = transmit_filter_strength_ * getShaderColor(diffuse_shader_, mat_data->node_tree_data_, diffuse_color_) + Rgb(1.f - transmit_filter_strength_);
 		const ShinyDiffuseMaterialData *mat_data_specific = static_cast<const ShinyDiffuseMaterialData *>(mat_data);
 		specular.refract_.col_ = (1.f - mat_data_specific->components_[0] * kr) * mat_data_specific->components_[1] * tcol;
 		if(wireframe_thickness_ > 0.f) applyWireFrame(specular.refract_.col_, wireframe_shader_, mat_data->node_tree_data_, sp);
@@ -432,7 +432,7 @@ Material::Specular ShinyDiffuseMaterial::getSpecular(int raylevel, const Materia
 			specular.reflect_.dir_.normalize();
 		}
 		const ShinyDiffuseMaterialData *mat_data_specific = static_cast<const ShinyDiffuseMaterialData *>(mat_data);
-		specular.reflect_.col_ = (mirror_color_shader_ ? mirror_color_shader_->getColor(mat_data->node_tree_data_) : mirror_color_) * (mat_data_specific->components_[0] * kr);
+		specular.reflect_.col_ = getShaderColor(mirror_color_shader_, mat_data->node_tree_data_, mirror_color_) * (mat_data_specific->components_[0] * kr);
 		if(wireframe_thickness_ > 0.f) applyWireFrame(specular.reflect_.col_, wireframe_shader_, mat_data->node_tree_data_, sp);
 	}
 	return specular;
@@ -454,12 +454,12 @@ Rgb ShinyDiffuseMaterial::getTransparency(const MaterialData *mat_data, const Su
 
 	const float kr = getFresnelKr(wo, n, cur_ior_squared);
 
-	if(is_mirror_) accum = 1.f - kr * (mirror_shader_ ? mirror_shader_->getScalar(mat_data->node_tree_data_) : mirror_strength_);
+	if(is_mirror_) accum = 1.f - kr * getShaderScalar(mirror_shader_, mat_data->node_tree_data_, mirror_strength_);
 	if(is_transparent_) //uhm...should actually be true if this function gets called anyway...
 	{
 		accum *= transparency_shader_ ? transparency_shader_->getScalar(mat_data->node_tree_data_) * accum : transparency_strength_ * accum;
 	}
-	const Rgb tcol = transmit_filter_strength_ * (diffuse_shader_ ? diffuse_shader_->getColor(mat_data->node_tree_data_) : diffuse_color_) + Rgb(1.f - transmit_filter_strength_);
+	const Rgb tcol = transmit_filter_strength_ * getShaderColor(diffuse_shader_, mat_data->node_tree_data_, diffuse_color_) + Rgb(1.f - transmit_filter_strength_);
 	Rgb result = accum * tcol;
 	if(wireframe_thickness_ > 0.f) applyWireFrame(result, wireframe_shader_, mat_data->node_tree_data_, sp);
 	return result;

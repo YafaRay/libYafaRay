@@ -181,13 +181,24 @@ class Material
 		void applyWireFrame(float &value, float wire_frame_amount, const SurfacePoint &sp) const;
 		void applyWireFrame(Rgb &col, float wire_frame_amount, const SurfacePoint &sp) const;
 		void applyWireFrame(Rgba &col, float wire_frame_amount, const SurfacePoint &sp) const;
-
 		void setSamplingFactor(const float &new_sampling_factor)
 		{
 			sampling_factor_ = new_sampling_factor;
 			if(highest_sampling_factor_ < sampling_factor_) highest_sampling_factor_ = sampling_factor_;
 		}
 		float getSamplingFactor() const { return sampling_factor_; }
+		static Rgb getShaderColor(const ShaderNode *shader_node, const NodeTreeData &node_tree_data, const Rgb &color_without_shader)
+		{
+			return shader_node ? shader_node->getColor(node_tree_data) : color_without_shader;
+		}
+		static Rgba getShaderColor(const ShaderNode *shader_node, const NodeTreeData &node_tree_data, const Rgba &color_without_shader)
+		{
+			return shader_node ? shader_node->getColor(node_tree_data) : color_without_shader;
+		}
+		static float getShaderScalar(const ShaderNode *shader_node, const NodeTreeData &node_tree_data, float value_without_shader)
+		{
+			return shader_node ? shader_node->getScalar(node_tree_data) : value_without_shader;
+		}
 
 	protected:
 		/* small function to apply bump mapping to a surface point

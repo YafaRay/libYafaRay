@@ -105,7 +105,7 @@ Rgb RoughGlassMaterial::sample(const MaterialData *mat_data, const SurfacePoint 
 			s.pdf_ = microfacet::ggxPdf(glossy_d, cos_theta, jacobian * std::abs(wi_h));
 			s.sampled_flags_ = ((disperse_ && chromatic) ? BsdfFlags::Dispersive : BsdfFlags::Glossy) | BsdfFlags::Transmit;
 
-			ret = (glossy * (filter_col_shader_ ? filter_col_shader_->getColor(mat_data->node_tree_data_) : filter_color_));
+			ret = glossy * getShaderColor(filter_col_shader_, mat_data->node_tree_data_, filter_color_);
 			w = std::abs(wi_n) / std::max(0.1f, s.pdf_); //FIXME: I have to put a lower limit to s.pdf to avoid white dots (high values) piling up in the recursive render stage. Why is this needed?
 		}
 		else if(s.flags_.hasAny(BsdfFlags::Reflect))
@@ -123,7 +123,7 @@ Rgb RoughGlassMaterial::sample(const MaterialData *mat_data, const SurfacePoint 
 			s.pdf_ = microfacet::ggxPdf(glossy_d, cos_theta, jacobian);
 			s.sampled_flags_ = BsdfFlags::Glossy | BsdfFlags::Reflect;
 
-			ret = (glossy * (mirror_color_shader_ ? mirror_color_shader_->getColor(mat_data->node_tree_data_) : specular_reflection_color_));
+			ret = glossy * getShaderColor(mirror_color_shader_, mat_data->node_tree_data_, specular_reflection_color_);
 
 			w = std::abs(wi_n) / std::max(0.1f, s.pdf_); //FIXME: I have to put a lower limit to s.pdf to avoid white dots (high values) piling up in the recursive render stage. Why is this needed?
 		}
@@ -202,7 +202,7 @@ Rgb RoughGlassMaterial::sample(const MaterialData *mat_data, const SurfacePoint 
 			s.pdf_ = microfacet::ggxPdf(glossy_d, cos_theta, jacobian * std::abs(wi_h));
 			s.sampled_flags_ = ((disperse_ && chromatic) ? BsdfFlags::Dispersive : BsdfFlags::Glossy) | BsdfFlags::Transmit;
 
-			ret = (glossy * (filter_col_shader_ ? filter_col_shader_->getColor(mat_data->node_tree_data_) : filter_color_));
+			ret = glossy * getShaderColor(filter_col_shader_, mat_data->node_tree_data_, filter_color_);
 			w[0] = std::abs(wi_n) / std::max(0.1f, s.pdf_); //FIXME: I have to put a lower limit to s.pdf to avoid white dots (high values) piling up in the recursive render stage. Why is this needed?
 			dir[0] = wi;
 
@@ -217,7 +217,7 @@ Rgb RoughGlassMaterial::sample(const MaterialData *mat_data, const SurfacePoint 
 			const float glossy = (kr * glossy_g * glossy_d) / std::max(1.0e-8f, (4.f * std::abs(wo_n * wi_n)));
 			s.pdf_ = microfacet::ggxPdf(glossy_d, cos_theta, jacobian);
 			s.sampled_flags_ |= BsdfFlags::Glossy | BsdfFlags::Reflect;
-			tcol = (glossy * (mirror_color_shader_ ? mirror_color_shader_->getColor(mat_data->node_tree_data_) : specular_reflection_color_));
+			tcol = glossy * getShaderColor(mirror_color_shader_, mat_data->node_tree_data_, specular_reflection_color_);
 			w[1] = std::abs(wi_n) / std::max(0.1f, s.pdf_); //FIXME: I have to put a lower limit to s.pdf to avoid white dots (high values) piling up in the recursive render stage. Why is this needed?
 			dir[1] = wi;
 		}
@@ -239,8 +239,8 @@ Rgb RoughGlassMaterial::getTransparency(const MaterialData *mat_data, const Surf
 {
 	const Vec3 n = SurfacePoint::normalFaceForward(sp.ng_, sp.n_, wo);
 	float kr, kt;
-	Vec3::fresnel(wo, n, (ior_shader_ ? ior_shader_->getScalar(mat_data->node_tree_data_) : ior_), kr, kt);
-	Rgb result = kt * (filter_col_shader_ ? filter_col_shader_->getColor(mat_data->node_tree_data_) : filter_color_);
+	Vec3::fresnel(wo, n, getShaderScalar(ior_shader_, mat_data->node_tree_data_, ior_), kr, kt);
+	Rgb result = kt * getShaderColor(filter_col_shader_, mat_data->node_tree_data_, filter_color_);
 	if(wireframe_thickness_ > 0.f) applyWireFrame(result, wireframe_shader_, mat_data->node_tree_data_, sp);
 	return result;
 }

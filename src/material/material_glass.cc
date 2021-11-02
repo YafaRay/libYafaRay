@@ -95,7 +95,7 @@ Rgb GlassMaterial::sample(const MaterialData *mat_data, const SurfacePoint &sp, 
 				s.pdf_ = (MATCHES(s.flags_, BsdfFlags::Specular | BsdfFlags::Reflect)) ? p_kt : 1.f;
 				s.sampled_flags_ = BsdfFlags::Dispersive | BsdfFlags::Transmit;
 				w = 1.f;
-				Rgb scolor = (filter_color_shader_ ? filter_color_shader_->getColor(mat_data->node_tree_data_) : filter_color_); // * (Kt/std::abs(sp.N*wi));
+				Rgb scolor = getShaderColor(filter_color_shader_, mat_data->node_tree_data_, filter_color_); // * (Kt/std::abs(sp.N*wi));
 				if(wireframe_thickness_ > 0.f) applyWireFrame(scolor, wireframe_shader_, mat_data->node_tree_data_, sp);
 				return scolor;
 			}
@@ -106,7 +106,7 @@ Rgb GlassMaterial::sample(const MaterialData *mat_data, const SurfacePoint &sp, 
 				s.pdf_ = p_kr;
 				s.sampled_flags_ = BsdfFlags::Specular | BsdfFlags::Reflect;
 				w = 1.f;
-				Rgb scolor = (mirror_color_shader_ ? mirror_color_shader_->getColor(mat_data->node_tree_data_) : specular_reflection_color_); // * (Kr/std::abs(sp.N*wi));
+				Rgb scolor = getShaderColor(mirror_color_shader_, mat_data->node_tree_data_, specular_reflection_color_); // * (Kr/std::abs(sp.N*wi));
 				if(wireframe_thickness_ > 0.f) applyWireFrame(scolor, wireframe_shader_, mat_data->node_tree_data_, sp);
 				return scolor;
 			}
@@ -147,10 +147,10 @@ Rgb GlassMaterial::sample(const MaterialData *mat_data, const SurfacePoint &sp, 
 				if(s.reverse_)
 				{
 					s.pdf_back_ = s.pdf_; //wrong...need to calc fresnel explicitly!
-					s.col_back_ = (filter_color_shader_ ? filter_color_shader_->getColor(mat_data->node_tree_data_) : filter_color_);//*(Kt/std::abs(sp.N*wo));
+					s.col_back_ = getShaderColor(filter_color_shader_, mat_data->node_tree_data_, filter_color_);//*(Kt/std::abs(sp.N*wo));
 				}
 				w = 1.f;
-				Rgb scolor = (filter_color_shader_ ? filter_color_shader_->getColor(mat_data->node_tree_data_) : filter_color_);//*(Kt/std::abs(sp.N*wi));
+				Rgb scolor = getShaderColor(filter_color_shader_, mat_data->node_tree_data_, filter_color_);//*(Kt/std::abs(sp.N*wi));
 				if(wireframe_thickness_ > 0.f) applyWireFrame(scolor, wireframe_shader_, mat_data->node_tree_data_, sp);
 				return scolor;
 			}
@@ -163,10 +163,10 @@ Rgb GlassMaterial::sample(const MaterialData *mat_data, const SurfacePoint &sp, 
 				if(s.reverse_)
 				{
 					s.pdf_back_ = s.pdf_; //wrong...need to calc fresnel explicitly!
-					s.col_back_ = (mirror_color_shader_ ? mirror_color_shader_->getColor(mat_data->node_tree_data_) : specular_reflection_color_);// * (Kr/std::abs(sp.N*wo));
+					s.col_back_ = getShaderColor(mirror_color_shader_, mat_data->node_tree_data_, specular_reflection_color_);// * (Kr/std::abs(sp.N*wo));
 				}
 				w = 1.f;
-				Rgb scolor = (mirror_color_shader_ ? mirror_color_shader_->getColor(mat_data->node_tree_data_) : specular_reflection_color_);// * (Kr/std::abs(sp.N*wi));
+				Rgb scolor = getShaderColor(mirror_color_shader_, mat_data->node_tree_data_, specular_reflection_color_);// * (Kr/std::abs(sp.N*wi));
 				if(wireframe_thickness_ > 0.f) applyWireFrame(scolor, wireframe_shader_, mat_data->node_tree_data_, sp);
 				return scolor;
 			}
@@ -196,8 +196,8 @@ Rgb GlassMaterial::getTransparency(const MaterialData *mat_data, const SurfacePo
 {
 	const Vec3 n = SurfacePoint::normalFaceForward(sp.ng_, sp.n_, wo);
 	float kr, kt;
-	Vec3::fresnel(wo, n, (ior_shader_ ? ior_shader_->getScalar(mat_data->node_tree_data_) : ior_), kr, kt);
-	Rgb result = kt * (filter_color_shader_ ? filter_color_shader_->getColor(mat_data->node_tree_data_) : filter_color_);
+	Vec3::fresnel(wo, n, getShaderScalar(ior_shader_, mat_data->node_tree_data_, ior_), kr, kt);
+	Rgb result = kt * getShaderColor(filter_color_shader_, mat_data->node_tree_data_, filter_color_);
 	if(wireframe_thickness_ > 0.f) applyWireFrame(result, wireframe_shader_, mat_data->node_tree_data_, sp);
 	return result;
 }
@@ -244,7 +244,7 @@ Material::Specular GlassMaterial::getSpecular(int raylevel, const MaterialData *
 		Vec3::fresnel(wo, n, cur_ior, kr, kt);
 		if(!chromatic || !disperse_)
 		{
-			specular.refract_.col_ = kt * (filter_color_shader_ ? filter_color_shader_->getColor(mat_data->node_tree_data_) : filter_color_);
+			specular.refract_.col_ = kt * getShaderColor(filter_color_shader_, mat_data->node_tree_data_, filter_color_);
 			specular.refract_.dir_ = refdir;
 			specular.refract_.enabled_ = true;
 		}
@@ -256,13 +256,13 @@ Material::Specular GlassMaterial::getSpecular(int raylevel, const MaterialData *
 		{
 			specular.reflect_.dir_ = wo;
 			specular.reflect_.dir_.reflect(n);
-			specular.reflect_.col_ = (mirror_color_shader_ ? mirror_color_shader_->getColor(mat_data->node_tree_data_) : specular_reflection_color_) * kr;
+			specular.reflect_.col_ = getShaderColor(mirror_color_shader_, mat_data->node_tree_data_, specular_reflection_color_) * kr;
 			specular.reflect_.enabled_ = true;
 		}
 	}
 	else //total inner reflection
 	{
-		specular.reflect_.col_ = mirror_color_shader_ ? mirror_color_shader_->getColor(mat_data->node_tree_data_) : specular_reflection_color_;
+		specular.reflect_.col_ = getShaderColor(mirror_color_shader_, mat_data->node_tree_data_, specular_reflection_color_);
 		specular.reflect_.dir_ = wo;
 		specular.reflect_.dir_.reflect(n);
 		specular.reflect_.enabled_ = true;
