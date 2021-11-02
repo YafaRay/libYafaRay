@@ -401,16 +401,16 @@ std::unique_ptr<Material> RoughGlassMaterial::factory(Logger &logger, ParamMap &
 	return mat;
 }
 
-Rgb RoughGlassMaterial::getGlossyColor(const MaterialData *mat_data) const {
-	return mirror_color_shader_ ? mirror_color_shader_->getColor(mat_data->node_tree_data_) : specular_reflection_color_;
+Rgb RoughGlassMaterial::getGlossyColor(const NodeTreeData &node_tree_data) const {
+	return mirror_color_shader_ ? mirror_color_shader_->getColor(node_tree_data) : specular_reflection_color_;
 }
 
-Rgb RoughGlassMaterial::getTransColor(const MaterialData *mat_data) const {
-	return filter_col_shader_ ? filter_col_shader_->getColor(mat_data->node_tree_data_) : filter_color_;
+Rgb RoughGlassMaterial::getTransColor(const NodeTreeData &node_tree_data) const {
+	return filter_col_shader_ ? filter_col_shader_->getColor(node_tree_data) : filter_color_;
 }
 
-Rgb RoughGlassMaterial::getMirrorColor(const MaterialData *mat_data) const {
-	return mirror_color_shader_ ? mirror_color_shader_->getColor(mat_data->node_tree_data_) : specular_reflection_color_;
+Rgb RoughGlassMaterial::getMirrorColor(const NodeTreeData &node_tree_data) const {
+	return mirror_color_shader_ ? mirror_color_shader_->getColor(node_tree_data) : specular_reflection_color_;
 }
 
 END_YAFARAY

@@ -62,11 +62,11 @@ class ShinyDiffuseMaterial final : public NodeMaterial
 		virtual Rgb emit(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, bool lights_geometry_material_emit) const override; // { return emitCol; }
 		virtual Material::Specular getSpecular(int raylevel, const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, bool chromatic, float wavelength) const override;
 		virtual float getAlpha(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, const Camera *camera) const override;
-		virtual Rgb getDiffuseColor(const MaterialData *mat_data) const override;
-		virtual Rgb getGlossyColor(const MaterialData *mat_data) const override;
-		virtual Rgb getTransColor(const MaterialData *mat_data) const override;
-		virtual Rgb getMirrorColor(const MaterialData *mat_data) const override;
-		virtual Rgb getSubSurfaceColor(const MaterialData *mat_data) const override;
+		virtual Rgb getDiffuseColor(const NodeTreeData &node_tree_data) const override;
+		virtual Rgb getGlossyColor(const NodeTreeData &node_tree_data) const override;
+		virtual Rgb getTransColor(const NodeTreeData &node_tree_data) const override;
+		virtual Rgb getMirrorColor(const NodeTreeData &node_tree_data) const override;
+		virtual Rgb getSubSurfaceColor(const NodeTreeData &node_tree_data) const override;
 
 		void config();
 		void getComponents(const std::array<bool, 4> &use_nodes, const NodeTreeData &node_tree_data, std::array<float, 4> &components) const;

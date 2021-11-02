@@ -40,9 +40,9 @@ BlendMaterial::BlendMaterial(Logger &logger, const Material *m_1, const Material
 	additional_depth_ = std::max(mat_1_->getAdditionalDepth(), mat_2_->getAdditionalDepth());
 }
 
-inline float BlendMaterial::getBlendVal(const SurfacePoint &sp) const
+inline float BlendMaterial::getBlendVal(const NodeTreeData &node_tree_data) const
 {
-	const float blend_val = blend_shader_ ? blend_shader_->getScalar(sp.mat_data_->node_tree_data_) : blend_val_;
+	const float blend_val = blend_shader_ ? blend_shader_->getScalar(node_tree_data) : blend_val_;
 	return blend_val;
 }
 
@@ -50,7 +50,7 @@ std::unique_ptr<MaterialData> BlendMaterial::initBsdf(SurfacePoint &sp, const Ca
 {
 	std::unique_ptr<MaterialData> mat_data = createMaterialData(color_nodes_.size() + bump_nodes_.size());
 	evalNodes(sp, color_nodes_, mat_data->node_tree_data_, camera);
-	const float blend_val = getBlendVal(sp);
+	const float blend_val = getBlendVal(mat_data->node_tree_data_);
 
 	BlendMaterialData *mat_data_specific = static_cast<BlendMaterialData *>(mat_data.get());
 	SurfacePoint sp_1 = sp;
@@ -66,12 +66,10 @@ std::unique_ptr<MaterialData> BlendMaterial::initBsdf(SurfacePoint &sp, const Ca
 
 Rgb BlendMaterial::eval(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wl, const BsdfFlags &bsdfs, bool force_eval) const
 {
+	const float blend_val = getBlendVal(mat_data->node_tree_data_);
 	const BlendMaterialData *mat_data_specific = static_cast<const BlendMaterialData *>(mat_data);
-
 	const Rgb col_1 = mat_1_->eval(mat_data_specific->mat_1_data_.get(), sp, wo, wl, bsdfs);
 	const Rgb col_2 = mat_2_->eval(mat_data_specific->mat_2_data_.get(), sp, wo, wl, bsdfs);
-
-	const float blend_val = getBlendVal(sp);
 	Rgb col_blend = math::lerp(col_1, col_2, blend_val);
 
 	const float wire_frame_amount = wireframe_shader_ ? wireframe_shader_->getScalar(mat_data->node_tree_data_) * wireframe_amount_ : wireframe_amount_;
@@ -81,9 +79,7 @@ Rgb BlendMaterial::eval(const MaterialData *mat_data, const SurfacePoint &sp, co
 
 Rgb BlendMaterial::sample(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, Vec3 &wi, Sample &s, float &w, bool chromatic, float wavelength, const Camera *camera) const
 {
-	const BlendMaterialData *mat_data_specific = static_cast<const BlendMaterialData *>(mat_data);
-	const float blend_val = getBlendVal(sp);
-
+	const float blend_val = getBlendVal(mat_data->node_tree_data_);
 	bool mat_1_sampled = false;
 	bool mat_2_sampled = false;
 
@@ -93,7 +89,7 @@ Rgb BlendMaterial::sample(const MaterialData *mat_data, const SurfacePoint &sp, 
 	float w_1 = 0.f, w_2 = 0.f;
 
 	s_2.pdf_ = s_1.pdf_ = s.pdf_ = 0.f;
-
+	const BlendMaterialData *mat_data_specific = static_cast<const BlendMaterialData *>(mat_data);
 	if(s.flags_.hasAny(mat_data_specific->mat_1_data_->bsdf_flags_))
 	{
 		col_1 = mat_1_->sample(mat_data_specific->mat_1_data_.get(), sp, wo, wi_1, s_1, w_1, chromatic, wavelength, camera);
@@ -158,8 +154,8 @@ Rgb BlendMaterial::sample(const MaterialData *mat_data, const SurfacePoint &sp, 
 
 Rgb BlendMaterial::sample(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, Vec3 *const dir, Rgb &tcol, Sample &s, float *const w, bool chromatic, float wavelength) const
 {
+	const float blend_val = getBlendVal(mat_data->node_tree_data_);
 	const BlendMaterialData *mat_data_specific = static_cast<const BlendMaterialData *>(mat_data);
-	const float blend_val = getBlendVal(sp);
 	Rgb col;
 	if(blend_val <= 0.f) col = mat_1_->sample(mat_data_specific->mat_1_data_.get(), sp, wo, dir, tcol, s, w, chromatic, wavelength);
 	else if(blend_val >= 1.f) col = mat_2_->sample(mat_data_specific->mat_2_data_.get(), sp, wo, dir, tcol, s, w, chromatic, wavelength);
@@ -177,19 +173,18 @@ Rgb BlendMaterial::sample(const MaterialData *mat_data, const SurfacePoint &sp, 
 
 float BlendMaterial::pdf(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wi, const BsdfFlags &bsdfs) const
 {
+	const float blend_val = getBlendVal(mat_data->node_tree_data_);
 	const BlendMaterialData *mat_data_specific = static_cast<const BlendMaterialData *>(mat_data);
 	const float pdf_1 = mat_1_->pdf(mat_data_specific->mat_1_data_.get(), sp, wo, wi, bsdfs);
 	const float pdf_2 = mat_2_->pdf(mat_data_specific->mat_2_data_.get(), sp, wo, wi, bsdfs);
-
-	const float blend_val = getBlendVal(sp);
 	const float pdf_blend = math::lerp(pdf_1, pdf_2, blend_val);
 	return pdf_blend;
 }
 
 Material::Specular BlendMaterial::getSpecular(int raylevel, const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, bool chromatic, float wavelength) const
 {
+	const float blend_val = getBlendVal(mat_data->node_tree_data_);
 	const BlendMaterialData *mat_data_specific = static_cast<const BlendMaterialData *>(mat_data);
-	const float blend_val = getBlendVal(sp);
 	const Specular specular_1 = mat_1_->getSpecular(raylevel, mat_data_specific->mat_1_data_.get(), sp, wo, chromatic, wavelength);
 	const Specular specular_2 = mat_2_->getSpecular(raylevel, mat_data_specific->mat_2_data_.get(), sp, wo, chromatic, wavelength);
 	Specular specular_blend;
@@ -250,11 +245,10 @@ bool BlendMaterial::isTransparent() const
 
 Rgb BlendMaterial::getTransparency(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, const Camera *camera) const
 {
+	const float blend_val = getBlendVal(mat_data->node_tree_data_);
 	const BlendMaterialData *mat_data_specific = static_cast<const BlendMaterialData *>(mat_data);
 	const Rgb col_1 = mat_1_->getTransparency(mat_data_specific->mat_1_data_.get(), sp, wo, camera);
 	const Rgb col_2 = mat_2_->getTransparency(mat_data_specific->mat_2_data_.get(), sp, wo, camera);
-
-	const float blend_val = getBlendVal(sp);
 	Rgb col_blend = math::lerp(col_1, col_2, blend_val);
 
 	const float wire_frame_amount = wireframe_shader_ ? wireframe_shader_->getScalar(mat_data->node_tree_data_) * wireframe_amount_ : wireframe_amount_;
@@ -279,11 +273,10 @@ float BlendMaterial::getAlpha(const MaterialData *mat_data, const SurfacePoint &
 
 Rgb BlendMaterial::emit(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, bool lights_geometry_material_emit) const
 {
+	const float blend_val = getBlendVal(mat_data->node_tree_data_);
 	const BlendMaterialData *mat_data_specific = static_cast<const BlendMaterialData *>(mat_data);
 	const Rgb col_1 = mat_1_->emit(mat_data_specific->mat_1_data_.get(), sp, wo, lights_geometry_material_emit);
 	const Rgb col_2 = mat_2_->emit(mat_data_specific->mat_2_data_.get(), sp, wo, lights_geometry_material_emit);
-
-	const float blend_val = getBlendVal(sp);
 	Rgb col_blend = math::lerp(col_1, col_2, blend_val);
 	const float wire_frame_amount = wireframe_shader_ ? wireframe_shader_->getScalar(mat_data->node_tree_data_) * wireframe_amount_ : wireframe_amount_;
 	applyWireFrame(col_blend, wire_frame_amount, sp);
@@ -292,8 +285,8 @@ Rgb BlendMaterial::emit(const MaterialData *mat_data, const SurfacePoint &sp, co
 
 bool BlendMaterial::scatterPhoton(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wi, Vec3 &wo, PSample &s, bool chromatic, float wavelength, const Camera *camera) const
 {
+	const float blend_val = getBlendVal(mat_data->node_tree_data_);
 	const BlendMaterialData *mat_data_specific = static_cast<const BlendMaterialData *>(mat_data);
-	const float blend_val = getBlendVal(sp);
 	const bool scattered_1 = mat_1_->scatterPhoton(mat_data_specific->mat_1_data_.get(), sp, wi, wo, s, chromatic, wavelength, camera);
 	const Rgb col_1 = s.color_;
 	const float pdf_1 = s.pdf_;

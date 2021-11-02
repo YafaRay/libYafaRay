@@ -659,33 +659,33 @@ std::unique_ptr<Material> ShinyDiffuseMaterial::factory(Logger &logger, ParamMap
 	return mat;
 }
 
-Rgb ShinyDiffuseMaterial::getDiffuseColor(const MaterialData *mat_data) const
+Rgb ShinyDiffuseMaterial::getDiffuseColor(const NodeTreeData &node_tree_data) const
 {
-	if(is_diffuse_) return (diffuse_refl_shader_ ? diffuse_refl_shader_->getScalar(mat_data->node_tree_data_) : diffuse_strength_) * (diffuse_shader_ ? diffuse_shader_->getColor(mat_data->node_tree_data_) : diffuse_color_);
+	if(is_diffuse_) return (diffuse_refl_shader_ ? diffuse_refl_shader_->getScalar(node_tree_data) : diffuse_strength_) * (diffuse_shader_ ? diffuse_shader_->getColor(node_tree_data) : diffuse_color_);
 	else return Rgb(0.f);
 }
 
-Rgb ShinyDiffuseMaterial::getGlossyColor(const MaterialData *mat_data) const
+Rgb ShinyDiffuseMaterial::getGlossyColor(const NodeTreeData &node_tree_data) const
 {
-	if(is_mirror_) return (mirror_shader_ ? mirror_shader_->getScalar(mat_data->node_tree_data_) : mirror_strength_) * (mirror_color_shader_ ? mirror_color_shader_->getColor(mat_data->node_tree_data_) : mirror_color_);
+	if(is_mirror_) return (mirror_shader_ ? mirror_shader_->getScalar(node_tree_data) : mirror_strength_) * (mirror_color_shader_ ? mirror_color_shader_->getColor(node_tree_data) : mirror_color_);
 	else return Rgb(0.f);
 }
 
-Rgb ShinyDiffuseMaterial::getTransColor(const MaterialData *mat_data) const
+Rgb ShinyDiffuseMaterial::getTransColor(const NodeTreeData &node_tree_data) const
 {
-	if(is_transparent_) return (transparency_shader_ ? transparency_shader_->getScalar(mat_data->node_tree_data_) : transparency_strength_) * (diffuse_shader_ ? diffuse_shader_->getColor(mat_data->node_tree_data_) : diffuse_color_);
+	if(is_transparent_) return (transparency_shader_ ? transparency_shader_->getScalar(node_tree_data) : transparency_strength_) * (diffuse_shader_ ? diffuse_shader_->getColor(node_tree_data) : diffuse_color_);
 	else return Rgb(0.f);
 }
 
-Rgb ShinyDiffuseMaterial::getMirrorColor(const MaterialData *mat_data) const
+Rgb ShinyDiffuseMaterial::getMirrorColor(const NodeTreeData &node_tree_data) const
 {
-	if(is_mirror_) return (mirror_shader_ ? mirror_shader_->getScalar(mat_data->node_tree_data_) : mirror_strength_) * (mirror_color_shader_ ? mirror_color_shader_->getColor(mat_data->node_tree_data_) : mirror_color_);
+	if(is_mirror_) return (mirror_shader_ ? mirror_shader_->getScalar(node_tree_data) : mirror_strength_) * (mirror_color_shader_ ? mirror_color_shader_->getColor(node_tree_data) : mirror_color_);
 	else return Rgb(0.f);
 }
 
-Rgb ShinyDiffuseMaterial::getSubSurfaceColor(const MaterialData *mat_data) const
+Rgb ShinyDiffuseMaterial::getSubSurfaceColor(const NodeTreeData &node_tree_data) const
 {
-	if(is_translucent_) return (translucency_shader_ ? translucency_shader_->getScalar(mat_data->node_tree_data_) : translucency_strength_) * (diffuse_shader_ ? diffuse_shader_->getColor(mat_data->node_tree_data_) : diffuse_color_);
+	if(is_translucent_) return (translucency_shader_ ? translucency_shader_->getScalar(node_tree_data) : translucency_strength_) * (diffuse_shader_ ? diffuse_shader_->getColor(node_tree_data) : diffuse_color_);
 	else return Rgb(0.f);
 }
 

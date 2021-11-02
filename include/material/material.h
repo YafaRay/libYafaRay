@@ -151,11 +151,11 @@ class Material
 		virtual bool scatterPhoton(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wi, Vec3 &wo, PSample &s, bool chromatic, float wavelength, const Camera *camera) const;
 
 		virtual float getMatIor() const { return 1.5f; }
-		virtual Rgb getDiffuseColor(const MaterialData *mat_data) const { return Rgb(0.f); }
-		virtual Rgb getGlossyColor(const MaterialData *mat_data) const { return Rgb(0.f); }
-		virtual Rgb getTransColor(const MaterialData *mat_data) const { return Rgb(0.f); }
-		virtual Rgb getMirrorColor(const MaterialData *mat_data) const { return Rgb(0.f); }
-		virtual Rgb getSubSurfaceColor(const MaterialData *mat_data) const { return Rgb(0.f); }
+		virtual Rgb getDiffuseColor(const NodeTreeData &node_tree_data) const { return Rgb(0.f); }
+		virtual Rgb getGlossyColor(const NodeTreeData &node_tree_data) const { return Rgb(0.f); }
+		virtual Rgb getTransColor(const NodeTreeData &node_tree_data) const { return Rgb(0.f); }
+		virtual Rgb getMirrorColor(const NodeTreeData &node_tree_data) const { return Rgb(0.f); }
+		virtual Rgb getSubSurfaceColor(const NodeTreeData &node_tree_data) const { return Rgb(0.f); }
 		void setMaterialIndex(unsigned int new_mat_index)
 		{
 			material_index_ = new_mat_index;

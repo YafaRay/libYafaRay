@@ -605,20 +605,20 @@ std::unique_ptr<Material> CoatedGlossyMaterial::factory(Logger &logger, ParamMap
 	return mat;
 }
 
-Rgb CoatedGlossyMaterial::getDiffuseColor(const MaterialData *mat_data) const
+Rgb CoatedGlossyMaterial::getDiffuseColor(const NodeTreeData &node_tree_data) const
 {
-	if(as_diffuse_ || with_diffuse_) return (diffuse_reflection_shader_ ? diffuse_reflection_shader_->getScalar(mat_data->node_tree_data_) : 1.f) * (diffuse_shader_ ? diffuse_shader_->getColor(mat_data->node_tree_data_) : diff_color_);
+	if(as_diffuse_ || with_diffuse_) return (diffuse_reflection_shader_ ? diffuse_reflection_shader_->getScalar(node_tree_data) : 1.f) * (diffuse_shader_ ? diffuse_shader_->getColor(node_tree_data) : diff_color_);
 	else return Rgb(0.f);
 }
 
-Rgb CoatedGlossyMaterial::getGlossyColor(const MaterialData *mat_data) const
+Rgb CoatedGlossyMaterial::getGlossyColor(const NodeTreeData &node_tree_data) const
 {
-	return (glossy_reflection_shader_ ? glossy_reflection_shader_->getScalar(mat_data->node_tree_data_) : reflectivity_) * (glossy_shader_ ? glossy_shader_->getColor(mat_data->node_tree_data_) : gloss_color_);
+	return (glossy_reflection_shader_ ? glossy_reflection_shader_->getScalar(node_tree_data) : reflectivity_) * (glossy_shader_ ? glossy_shader_->getColor(node_tree_data) : gloss_color_);
 }
 
-Rgb CoatedGlossyMaterial::getMirrorColor(const MaterialData *mat_data) const
+Rgb CoatedGlossyMaterial::getMirrorColor(const NodeTreeData &node_tree_data) const
 {
-	return (mirror_shader_ ? mirror_shader_->getScalar(mat_data->node_tree_data_) : mirror_strength_) * (mirror_color_shader_ ? mirror_color_shader_->getColor(mat_data->node_tree_data_) : mirror_color_);
+	return (mirror_shader_ ? mirror_shader_->getScalar(node_tree_data) : mirror_strength_) * (mirror_color_shader_ ? mirror_color_shader_->getColor(node_tree_data) : mirror_color_);
 }
 
 END_YAFARAY

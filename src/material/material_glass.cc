@@ -417,14 +417,14 @@ std::unique_ptr<Material> GlassMaterial::factory(Logger &logger, ParamMap &param
 	return mat;
 }
 
-Rgb GlassMaterial::getGlossyColor(const MaterialData *mat_data) const
+Rgb GlassMaterial::getGlossyColor(const NodeTreeData &node_tree_data) const
 {
-	return mirror_color_shader_ ? mirror_color_shader_->getColor(mat_data->node_tree_data_) : specular_reflection_color_;
+	return mirror_color_shader_ ? mirror_color_shader_->getColor(node_tree_data) : specular_reflection_color_;
 }
 
-Rgb GlassMaterial::getTransColor(const MaterialData *mat_data) const
+Rgb GlassMaterial::getTransColor(const NodeTreeData &node_tree_data) const
 {
-	if(filter_color_shader_ || filter_color_.minimum() < .99f)	return (filter_color_shader_ ? filter_color_shader_->getColor(mat_data->node_tree_data_) : filter_color_);
+	if(filter_color_shader_ || filter_color_.minimum() < .99f)	return (filter_color_shader_ ? filter_color_shader_->getColor(node_tree_data) : filter_color_);
 	else
 	{
 		Rgb tmp_col = beer_sigma_a_;
@@ -433,9 +433,9 @@ Rgb GlassMaterial::getTransColor(const MaterialData *mat_data) const
 	}
 }
 
-Rgb GlassMaterial::getMirrorColor(const MaterialData *mat_data) const
+Rgb GlassMaterial::getMirrorColor(const NodeTreeData &node_tree_data) const
 {
-	return mirror_color_shader_ ? mirror_color_shader_->getColor(mat_data->node_tree_data_) : specular_reflection_color_;
+	return mirror_color_shader_ ? mirror_color_shader_->getColor(node_tree_data) : specular_reflection_color_;
 }
 
 Rgb MirrorMaterial::sample(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, Vec3 &wi, Sample &s, float &w, bool chromatic, float wavelength, const Camera *camera) const

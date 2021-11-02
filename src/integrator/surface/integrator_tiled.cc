@@ -612,19 +612,19 @@ void TiledIntegrator::generateCommonLayers(int raylevel, const SurfacePoint &sp,
 
 			if((color_layer = color_layers->find(Layer::DiffuseColor)))
 			{
-				color_layer->color_ = sp.material_->getDiffuseColor(sp.mat_data_.get());
+				color_layer->color_ = sp.material_->getDiffuseColor(sp.mat_data_->node_tree_data_);
 			}
 			if((color_layer = color_layers->find(Layer::GlossyColor)))
 			{
-				color_layer->color_ = sp.material_->getGlossyColor(sp.mat_data_.get());
+				color_layer->color_ = sp.material_->getGlossyColor(sp.mat_data_->node_tree_data_);
 			}
 			if((color_layer = color_layers->find(Layer::TransColor)))
 			{
-				color_layer->color_ = sp.material_->getTransColor(sp.mat_data_.get());
+				color_layer->color_ = sp.material_->getTransColor(sp.mat_data_->node_tree_data_);
 			}
 			if((color_layer = color_layers->find(Layer::SubsurfaceColor)))
 			{
-				color_layer->color_ = sp.material_->getSubSurfaceColor(sp.mat_data_.get());
+				color_layer->color_ = sp.material_->getSubSurfaceColor(sp.mat_data_->node_tree_data_);
 			}
 		}
 

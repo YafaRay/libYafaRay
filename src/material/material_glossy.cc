@@ -502,15 +502,15 @@ std::unique_ptr<Material> GlossyMaterial::factory(Logger &logger, ParamMap &para
 	return mat;
 }
 
-Rgb GlossyMaterial::getDiffuseColor(const MaterialData *mat_data) const
+Rgb GlossyMaterial::getDiffuseColor(const NodeTreeData &node_tree_data) const
 {
-	if(as_diffuse_ || with_diffuse_) return (diffuse_reflection_shader_ ? diffuse_reflection_shader_->getScalar(mat_data->node_tree_data_) : 1.f) * (diffuse_shader_ ? diffuse_shader_->getColor(mat_data->node_tree_data_) : diff_color_);
+	if(as_diffuse_ || with_diffuse_) return (diffuse_reflection_shader_ ? diffuse_reflection_shader_->getScalar(node_tree_data) : 1.f) * (diffuse_shader_ ? diffuse_shader_->getColor(node_tree_data) : diff_color_);
 	else return Rgb(0.f);
 }
 
-Rgb GlossyMaterial::getGlossyColor(const MaterialData *mat_data) const
+Rgb GlossyMaterial::getGlossyColor(const NodeTreeData &node_tree_data) const
 {
-	return (glossy_reflection_shader_ ? glossy_reflection_shader_->getScalar(mat_data->node_tree_data_) : reflectivity_) * (glossy_shader_ ? glossy_shader_->getColor(mat_data->node_tree_data_) : gloss_color_);
+	return (glossy_reflection_shader_ ? glossy_reflection_shader_->getScalar(node_tree_data) : reflectivity_) * (glossy_shader_ ? glossy_shader_->getColor(node_tree_data) : gloss_color_);
 }
 
 END_YAFARAY

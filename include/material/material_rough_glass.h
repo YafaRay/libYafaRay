@@ -47,9 +47,9 @@ class RoughGlassMaterial final : public NodeMaterial
 		virtual Rgb getTransparency(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, const Camera *camera) const override;
 		virtual float getAlpha(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, const Camera *camera) const override;
 		virtual float getMatIor() const override;
-		virtual Rgb getGlossyColor(const MaterialData *mat_data) const override;
-		virtual Rgb getTransColor(const MaterialData *mat_data) const override;
-		virtual Rgb getMirrorColor(const MaterialData *mat_data) const override;
+		virtual Rgb getGlossyColor(const NodeTreeData &node_tree_data) const override;
+		virtual Rgb getTransColor(const NodeTreeData &node_tree_data) const override;
+		virtual Rgb getMirrorColor(const NodeTreeData &node_tree_data) const override;
 
 		const ShaderNode *bump_shader_ = nullptr;
 		const ShaderNode *mirror_color_shader_ = nullptr;
