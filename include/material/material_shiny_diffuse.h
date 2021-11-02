@@ -69,11 +69,11 @@ class ShinyDiffuseMaterial final : public NodeMaterial
 		virtual Rgb getSubSurfaceColor(const NodeTreeData &node_tree_data) const override;
 
 		void config();
-		void getComponents(const std::array<bool, 4> &use_nodes, const NodeTreeData &node_tree_data, std::array<float, 4> &components) const;
+		std::array<float, 4> getComponents(const std::array<bool, 4> &use_nodes, const NodeTreeData &node_tree_data) const;
 		float getFresnelKr(const Vec3 &wo, const Vec3 &n, float current_ior_squared) const;
 		void initOrenNayar(double sigma);
 		float orenNayar(const Vec3 &wi, const Vec3 &wo, const Vec3 &n, bool use_texture_sigma, double texture_sigma) const;
-		static void accumulate(const std::array<float, 4> &components, std::array<float, 4> &accum, float kr);
+		static std::array<float, 4> accumulate(const std::array<float, 4> &components, float kr);
 
 		bool is_transparent_ = false;                  //!< Boolean value which is true if you have transparent component
 		bool is_translucent_ = false;                  //!< Boolean value which is true if you have translucent component

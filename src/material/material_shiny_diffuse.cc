@@ -85,12 +85,18 @@ void ShinyDiffuseMaterial::config()
 // since values for which useNode is false do not get touched, so it can be applied
 // twice, for view-independent (initBSDF) and view-dependent (sample/eval) nodes
 
-void ShinyDiffuseMaterial::getComponents(const std::array<bool, 4> &use_nodes, const NodeTreeData &node_tree_data, std::array<float, 4> &components) const
+std::array<float, 4> ShinyDiffuseMaterial::getComponents(const std::array<bool, 4> &use_nodes, const NodeTreeData &node_tree_data) const
 {
+	std::array<float, 4> components;
 	if(is_mirror_) components[0] = use_nodes[0] ? mirror_shader_->getScalar(node_tree_data) : mirror_strength_;
+	else components[0] = 0.f;
 	if(is_transparent_) components[1] = use_nodes[1] ? transparency_shader_->getScalar(node_tree_data) : transparency_strength_;
+	else components[1] = 0.f;
 	if(is_translucent_) components[2] = use_nodes[2] ? translucency_shader_->getScalar(node_tree_data) : translucency_strength_;
+	else components[2] = 0.f;
 	if(is_diffuse_) components[3] = diffuse_strength_;
+	else components[3] = 0.f;
+	return components;
 }
 
 float ShinyDiffuseMaterial::getFresnelKr(const Vec3 &wo, const Vec3 &n, float current_ior_squared) const
@@ -111,8 +117,9 @@ float ShinyDiffuseMaterial::getFresnelKr(const Vec3 &wo, const Vec3 &n, float cu
 // calculate the absolute value of scattering components from the "normalized"
 // fractions which are between 0 (no scattering) and 1 (scatter all remaining light)
 // Kr is an optional reflection multiplier (e.g. from Fresnel)
-void ShinyDiffuseMaterial::accumulate(const std::array<float, 4> &components, std::array<float, 4> &accum, float kr)
+std::array<float, 4> ShinyDiffuseMaterial::accumulate(const std::array<float, 4> &components, float kr)
 {
+	std::array<float, 4> accum;
 	accum[0] = components[0] * kr;
 	float acc = 1.f - accum[0];
 	accum[1] = components[1] * acc;
@@ -120,6 +127,7 @@ void ShinyDiffuseMaterial::accumulate(const std::array<float, 4> &components, st
 	accum[2] = components[2] * acc;
 	acc *= 1.f - components[2];
 	accum[3] = components[3] * acc;
+	return accum;
 }
 
 std::unique_ptr<MaterialData> ShinyDiffuseMaterial::initBsdf(SurfacePoint &sp, const Camera *camera) const
@@ -128,7 +136,7 @@ std::unique_ptr<MaterialData> ShinyDiffuseMaterial::initBsdf(SurfacePoint &sp, c
 	if(bump_shader_) evalBump(mat_data->node_tree_data_, sp, bump_shader_, camera);
 	for(const auto &node : color_nodes_) node->eval(mat_data->node_tree_data_, sp, camera);
 	ShinyDiffuseMaterialData *mat_data_specific = static_cast<ShinyDiffuseMaterialData *>(mat_data.get());
-	getComponents(components_view_independent_, mat_data->node_tree_data_, mat_data_specific->components_);
+	mat_data_specific->components_ = getComponents(components_view_independent_, mat_data->node_tree_data_);
 	return mat_data;
 }
 
@@ -243,7 +251,6 @@ Rgb ShinyDiffuseMaterial::emit(const MaterialData *mat_data, const SurfacePoint 
 
 Rgb ShinyDiffuseMaterial::sample(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, Vec3 &wi, Sample &s, float &w, bool chromatic, float wavelength, const Camera *camera) const
 {
-	std::array<float, 4> accum_c;
 	const float cos_ng_wo = sp.ng_ * wo;
 	const Vec3 n = SurfacePoint::normalFaceForward(sp.ng_, sp.n_, wo);
 
@@ -257,10 +264,11 @@ Rgb ShinyDiffuseMaterial::sample(const MaterialData *mat_data, const SurfacePoin
 
 	const float kr = getFresnelKr(wo, n, cur_ior_squared);
 	const ShinyDiffuseMaterialData *mat_data_specific = static_cast<const ShinyDiffuseMaterialData *>(mat_data);
-	accumulate(mat_data_specific->components_, accum_c, kr);
+	const std::array<float, 4> accum_c = accumulate(mat_data_specific->components_, kr);
 
-	float sum = 0.f, val[4], width[4];
-	BsdfFlags choice[4];
+	float sum = 0.f;
+	std::array<float, 4> val, width;
+	std::array<BsdfFlags, 4> choice;
 	int n_match = 0, pick = -1;
 	for(int i = 0; i < n_bsdf_; ++i)
 	{
@@ -339,7 +347,6 @@ float ShinyDiffuseMaterial::pdf(const MaterialData *mat_data, const SurfacePoint
 	if(!bsdfs.hasAny(BsdfFlags::Diffuse)) return 0.f;
 
 	float pdf = 0.f;
-	std::array<float, 4> accum_c;
 	const float cos_ng_wo = sp.ng_ * wo;
 	const Vec3 n = SurfacePoint::normalFaceForward(sp.ng_, sp.n_, wo);
 
@@ -354,7 +361,7 @@ float ShinyDiffuseMaterial::pdf(const MaterialData *mat_data, const SurfacePoint
 	const float kr = getFresnelKr(wo, n, cur_ior_squared);
 
 	const ShinyDiffuseMaterialData *mat_data_specific = static_cast<const ShinyDiffuseMaterialData *>(mat_data);
-	accumulate(mat_data_specific->components_, accum_c, kr);
+	const std::array<float, 4> accum_c = accumulate(mat_data_specific->components_, kr);
 	float sum = 0.f, width;
 	int n_match = 0;
 	for(int i = 0; i < n_bsdf_; ++i)
