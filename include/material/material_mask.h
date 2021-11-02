@@ -31,7 +31,7 @@ class Scene;
 class MaskMaterialData final : public MaterialData
 {
 	public:
-		MaskMaterialData(BsdfFlags bsdf_flags) : MaterialData(bsdf_flags) { }
+		MaskMaterialData(BsdfFlags bsdf_flags, size_t number_of_nodes) : MaterialData(bsdf_flags, number_of_nodes) { }
 		bool select_mat_2_;
 		std::unique_ptr<MaterialData> mat_1_data_;
 		std::unique_ptr<MaterialData> mat_2_data_;
@@ -44,7 +44,7 @@ class MaskMaterial final : public NodeMaterial
 
 	private:
 		MaskMaterial(Logger &logger, const Material *m_1, const Material *m_2, float thresh, Visibility visibility = Visibility::NormalVisible);
-		virtual std::unique_ptr<MaterialData> createMaterialData() const override { return std::unique_ptr<MaskMaterialData>(new MaskMaterialData(bsdf_flags_)); };
+		virtual std::unique_ptr<MaterialData> createMaterialData(size_t number_of_nodes) const override { return std::unique_ptr<MaskMaterialData>(new MaskMaterialData(bsdf_flags_, number_of_nodes)); };
 		virtual std::unique_ptr<MaterialData> initBsdf(SurfacePoint &sp, const Camera *camera) const override;
 		virtual Rgb eval(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wi, const BsdfFlags &bsdfs, bool force_eval = false) const override;
 		virtual Rgb sample(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, Vec3 &wi, Sample &s, float &w, bool chromatic, float wavelength, const Camera *camera) const override;

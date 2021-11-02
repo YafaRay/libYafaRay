@@ -41,7 +41,7 @@ BEGIN_YAFARAY
 class ShinyDiffuseMaterialData final : public MaterialData
 {
 	public:
-		ShinyDiffuseMaterialData(BsdfFlags bsdf_flags) : MaterialData(bsdf_flags) { }
+		ShinyDiffuseMaterialData(BsdfFlags bsdf_flags, size_t number_of_nodes) : MaterialData(bsdf_flags, number_of_nodes) { }
 		std::array<float, 4> components_{0.f, 0.f, 0.f, 0.f};
 };
 
@@ -52,7 +52,7 @@ class ShinyDiffuseMaterial final : public NodeMaterial
 
 	private:
 		ShinyDiffuseMaterial(Logger &logger, const Rgb &diffuse_color, const Rgb &mirror_color, float diffuse_strength, float transparency_strength = 0.0, float translucency_strength = 0.0, float mirror_strength = 0.0, float emit_strength = 0.0, float transmit_filter_strength = 1.0, Visibility visibility = Visibility::NormalVisible);
-		virtual std::unique_ptr<MaterialData> createMaterialData() const override { return std::unique_ptr<ShinyDiffuseMaterialData>(new ShinyDiffuseMaterialData(bsdf_flags_)); };
+		virtual std::unique_ptr<MaterialData> createMaterialData(size_t number_of_nodes) const override { return std::unique_ptr<ShinyDiffuseMaterialData>(new ShinyDiffuseMaterialData(bsdf_flags_, number_of_nodes)); };
 		virtual std::unique_ptr<MaterialData> initBsdf(SurfacePoint &sp, const Camera *camera) const override;
 		virtual Rgb eval(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wl, const BsdfFlags &bsdfs, bool force_eval = false) const override;
 		virtual Rgb sample(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, Vec3 &wi, Sample &s, float &w, bool chromatic, float wavelength, const Camera *camera) const override;

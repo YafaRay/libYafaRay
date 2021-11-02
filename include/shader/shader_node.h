@@ -44,11 +44,11 @@ struct NodeResult final
 class NodeTreeData final
 {
 	public:
-		NodeTreeData() = default;
-		const NodeResult &operator()(unsigned int id) const { return dat_.at(id); }
-		NodeResult &operator[](unsigned int id) { return dat_[id]; }
+		NodeTreeData(size_t number_of_nodes) : node_results_(number_of_nodes) { }
+		const NodeResult &operator()(unsigned int id) const { return node_results_[id]; }
+		NodeResult &operator[](unsigned int id) { return node_results_[id]; }
 	private:
-		std::map<int, NodeResult> dat_;
+		std::vector<NodeResult> node_results_;
 };
 
 class NodeFinder final : public Collection<std::string, const ShaderNode *>

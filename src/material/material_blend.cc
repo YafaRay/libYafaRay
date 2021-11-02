@@ -48,12 +48,11 @@ inline float BlendMaterial::getBlendVal(const SurfacePoint &sp) const
 
 std::unique_ptr<MaterialData> BlendMaterial::initBsdf(SurfacePoint &sp, const Camera *camera) const
 {
-	std::unique_ptr<MaterialData> mat_data = createMaterialData();
-	BlendMaterialData *mat_data_specific = static_cast<BlendMaterialData *>(mat_data.get());
-
+	std::unique_ptr<MaterialData> mat_data = createMaterialData(color_nodes_.size() + bump_nodes_.size());
 	evalNodes(sp, color_nodes_, mat_data->node_tree_data_, camera);
 	const float blend_val = getBlendVal(sp);
 
+	BlendMaterialData *mat_data_specific = static_cast<BlendMaterialData *>(mat_data.get());
 	SurfacePoint sp_1 = sp;
 	mat_data_specific->mat_1_data_ = mat_1_->initBsdf(sp_1, camera);
 	SurfacePoint sp_2 = sp;

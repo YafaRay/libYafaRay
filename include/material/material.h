@@ -69,7 +69,7 @@ struct BsdfFlags : public Flags
 class MaterialData
 {
 	public:
-		MaterialData(BsdfFlags bsdf_flags) : bsdf_flags_(bsdf_flags) { }
+		MaterialData(BsdfFlags bsdf_flags, size_t number_of_nodes) : bsdf_flags_(bsdf_flags), node_tree_data_(number_of_nodes) { }
 		virtual ~MaterialData() = default;
 		BsdfFlags bsdf_flags_;
 		NodeTreeData node_tree_data_;
@@ -91,7 +91,7 @@ class Material
 		Material(Logger &logger);
 		virtual ~Material();
 
-		virtual std::unique_ptr<MaterialData> createMaterialData() const = 0;
+		virtual std::unique_ptr<MaterialData> createMaterialData(size_t number_of_nodes) const = 0;
 
 		/*! Initialize the BSDF of a material. You must call this with the current surface point
 			first before any other methods (except isTransparent/getTransparency)! The renderstate
