@@ -171,8 +171,7 @@ Rgb CoatedGlossyMaterial::eval(const MaterialData *mat_data, const SurfacePoint 
 		}
 		col += add_col;//diffuseReflectFresnel(wiN, woN, mat_data_specific->mGlossy, mat_data_specific->mDiffuse, (diffuseS ? diffuseS->getColor(mat_data->node_tree_data_) : diff_color), Kt) * ((orenNayar)?OrenNayar(wi, wo, N):1.f);
 	}
-	const float wire_frame_amount = wireframe_shader_ ? wireframe_shader_->getScalar(mat_data->node_tree_data_) * wireframe_amount_ : wireframe_amount_;
-	applyWireFrame(col, wire_frame_amount, sp);
+	if(wireframe_thickness_ > 0.f) applyWireFrame(col, wireframe_shader_, mat_data->node_tree_data_, sp);
 	return col;
 }
 
@@ -263,8 +262,7 @@ Rgb CoatedGlossyMaterial::sample(const MaterialData *mat_data, const SurfacePoin
 			if(cos_ng_wo * cos_ng_wi < 0)
 			{
 				scolor = Rgb(0.f);
-				float wire_frame_amount = (wireframe_shader_ ? wireframe_shader_->getScalar(mat_data->node_tree_data_) * wireframe_amount_ : wireframe_amount_);
-				applyWireFrame(scolor, wire_frame_amount, sp);
+				if(wireframe_thickness_ > 0.f) applyWireFrame(scolor, wireframe_shader_, mat_data->node_tree_data_, sp);
 				return scolor;
 			}
 	}
@@ -301,8 +299,7 @@ Rgb CoatedGlossyMaterial::sample(const MaterialData *mat_data, const SurfacePoin
 				if(cos_ng_wo * cos_ng_wi < 0)
 				{
 					scolor = Rgb(0.f);
-					const float wire_frame_amount = wireframe_shader_ ? wireframe_shader_->getScalar(mat_data->node_tree_data_) * wireframe_amount_ : wireframe_amount_;
-					applyWireFrame(scolor, wire_frame_amount, sp);
+					if(wireframe_thickness_ > 0.f) applyWireFrame(scolor, wireframe_shader_, mat_data->node_tree_data_, sp);
 					return scolor;
 				}
 			}
@@ -348,9 +345,7 @@ Rgb CoatedGlossyMaterial::sample(const MaterialData *mat_data, const SurfacePoin
 	}
 
 	s.sampled_flags_ = c_flags_[c_index[pick]];
-
-	const float wire_frame_amount = wireframe_shader_ ? wireframe_shader_->getScalar(mat_data->node_tree_data_) * wireframe_amount_ : wireframe_amount_;
-	applyWireFrame(scolor, wire_frame_amount, sp);
+	if(wireframe_thickness_ > 0.f) applyWireFrame(scolor, wireframe_shader_, mat_data->node_tree_data_, sp);
 	return scolor;
 }
 
@@ -431,8 +426,7 @@ Material::Specular CoatedGlossyMaterial::getSpecular(int raylevel, const Materia
 		specular.reflect_.dir_.normalize();
 	}
 	specular.reflect_.enabled_ = true;
-	const float wire_frame_amount = wireframe_shader_ ? wireframe_shader_->getScalar(mat_data->node_tree_data_) * wireframe_amount_ : wireframe_amount_;
-	applyWireFrame(specular.reflect_.col_, wire_frame_amount, sp);
+	if(wireframe_thickness_ > 0.f) applyWireFrame(specular.reflect_.col_, wireframe_shader_, mat_data->node_tree_data_, sp);
 	return specular;
 }
 

@@ -235,17 +235,14 @@ Rgb ShinyDiffuseMaterial::eval(const MaterialData *mat_data, const SurfacePoint 
 	if(diffuse_refl_shader_) m_d *= diffuse_refl_shader_->getScalar(mat_data->node_tree_data_);
 
 	Rgb result = m_d * (diffuse_shader_ ? diffuse_shader_->getColor(mat_data->node_tree_data_) : diffuse_color_);
-
-	const float wire_frame_amount = wireframe_shader_ ? wireframe_shader_->getScalar(mat_data->node_tree_data_) * wireframe_amount_ : wireframe_amount_;
-	applyWireFrame(result, wire_frame_amount, sp);
+	if(wireframe_thickness_ > 0.f) applyWireFrame(result, wireframe_shader_, mat_data->node_tree_data_, sp);
 	return result;
 }
 
 Rgb ShinyDiffuseMaterial::emit(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, bool lights_geometry_material_emit) const
 {
 	Rgb result = (diffuse_shader_ ? diffuse_shader_->getColor(mat_data->node_tree_data_) * emit_strength_ : emit_color_);
-	const float wire_frame_amount = wireframe_shader_ ? wireframe_shader_->getScalar(mat_data->node_tree_data_) * wireframe_amount_ : wireframe_amount_;
-	applyWireFrame(result, wire_frame_amount, sp);
+	if(wireframe_thickness_ > 0.f) applyWireFrame(result, wireframe_shader_, mat_data->node_tree_data_, sp);
 	return result;
 }
 
@@ -337,8 +334,7 @@ Rgb ShinyDiffuseMaterial::sample(const MaterialData *mat_data, const SurfacePoin
 	const float alpha = getAlpha(sp.mat_data_.get(), sp, wo, camera);
 	w = w * (alpha) + 1.f * (1.f - alpha);
 
-	const float wire_frame_amount = wireframe_shader_ ? wireframe_shader_->getScalar(mat_data->node_tree_data_) * wireframe_amount_ : wireframe_amount_;
-	applyWireFrame(scolor, wire_frame_amount, sp);
+	if(wireframe_thickness_ > 0.f) applyWireFrame(scolor, wireframe_shader_, mat_data->node_tree_data_, sp);
 	return scolor;
 }
 
@@ -421,8 +417,7 @@ Material::Specular ShinyDiffuseMaterial::getSpecular(int raylevel, const Materia
 		const Rgb tcol = transmit_filter_strength_ * (diffuse_shader_ ? diffuse_shader_->getColor(mat_data->node_tree_data_) : diffuse_color_) + Rgb(1.f - transmit_filter_strength_);
 		const ShinyDiffuseMaterialData *mat_data_specific = static_cast<const ShinyDiffuseMaterialData *>(mat_data);
 		specular.refract_.col_ = (1.f - mat_data_specific->components_[0] * kr) * mat_data_specific->components_[1] * tcol;
-		const float wire_frame_amount = wireframe_shader_ ? wireframe_shader_->getScalar(mat_data->node_tree_data_) * wireframe_amount_ : wireframe_amount_;
-		applyWireFrame(specular.refract_.col_, wire_frame_amount, sp);
+		if(wireframe_thickness_ > 0.f) applyWireFrame(specular.refract_.col_, wireframe_shader_, mat_data->node_tree_data_, sp);
 	}
 	if(is_mirror_)
 	{
@@ -438,8 +433,7 @@ Material::Specular ShinyDiffuseMaterial::getSpecular(int raylevel, const Materia
 		}
 		const ShinyDiffuseMaterialData *mat_data_specific = static_cast<const ShinyDiffuseMaterialData *>(mat_data);
 		specular.reflect_.col_ = (mirror_color_shader_ ? mirror_color_shader_->getColor(mat_data->node_tree_data_) : mirror_color_) * (mat_data_specific->components_[0] * kr);
-		const float wire_frame_amount = wireframe_shader_ ? wireframe_shader_->getScalar(mat_data->node_tree_data_) * wireframe_amount_ : wireframe_amount_;
-		applyWireFrame(specular.reflect_.col_, wire_frame_amount, sp);
+		if(wireframe_thickness_ > 0.f) applyWireFrame(specular.reflect_.col_, wireframe_shader_, mat_data->node_tree_data_, sp);
 	}
 	return specular;
 }
@@ -467,13 +461,13 @@ Rgb ShinyDiffuseMaterial::getTransparency(const MaterialData *mat_data, const Su
 	}
 	const Rgb tcol = transmit_filter_strength_ * (diffuse_shader_ ? diffuse_shader_->getColor(mat_data->node_tree_data_) : diffuse_color_) + Rgb(1.f - transmit_filter_strength_);
 	Rgb result = accum * tcol;
-	const float wire_frame_amount = wireframe_shader_ ? wireframe_shader_->getScalar(mat_data->node_tree_data_) * wireframe_amount_ : wireframe_amount_;
-	applyWireFrame(result, wire_frame_amount, sp);
+	if(wireframe_thickness_ > 0.f) applyWireFrame(result, wireframe_shader_, mat_data->node_tree_data_, sp);
 	return result;
 }
 
 float ShinyDiffuseMaterial::getAlpha(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, const Camera *camera) const
-{	if(is_transparent_)
+{
+	if(is_transparent_)
 	{
 		const Vec3 n = SurfacePoint::normalFaceForward(sp.ng_, sp.n_, wo);
 		float cur_ior_squared;
@@ -487,11 +481,10 @@ float ShinyDiffuseMaterial::getAlpha(const MaterialData *mat_data, const Surface
 		const ShinyDiffuseMaterialData *mat_data_specific = static_cast<const ShinyDiffuseMaterialData *>(mat_data);
 		const float refl = (1.f - mat_data_specific->components_[0] * kr) * mat_data_specific->components_[1];
 		float result = 1.f - refl;
-		const float wire_frame_amount = wireframe_shader_ ? wireframe_shader_->getScalar(mat_data->node_tree_data_) * wireframe_amount_ : wireframe_amount_;
-		applyWireFrame(result, wire_frame_amount, sp);
+		if(wireframe_thickness_ > 0.f) applyWireFrame(result, wireframe_shader_, mat_data->node_tree_data_, sp);
 		return result;
 	}
-	return 1.f;
+	else return 1.f;
 }
 
 std::unique_ptr<Material> ShinyDiffuseMaterial::factory(Logger &logger, ParamMap &params, std::list<ParamMap> &nodes_params, const Scene &scene)

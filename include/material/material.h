@@ -177,6 +177,7 @@ class Material
 		float getTransparentBiasFactor() const { return transparent_bias_factor_; }
 		bool getTransparentBiasMultiplyRayDepth() const { return transparent_bias_multiply_ray_depth_; }
 
+		template<typename T> void applyWireFrame(T &value, const ShaderNode *wireframe_shader, const NodeTreeData &node_tree_data, const SurfacePoint &sp) const;
 		void applyWireFrame(float &value, float wire_frame_amount, const SurfacePoint &sp) const;
 		void applyWireFrame(Rgb &col, float wire_frame_amount, const SurfacePoint &sp) const;
 		void applyWireFrame(Rgba &col, float wire_frame_amount, const SurfacePoint &sp) const;

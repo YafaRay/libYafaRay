@@ -63,8 +63,7 @@ Rgb GlassMaterial::sample(const MaterialData *mat_data, const SurfacePoint &sp, 
 	{
 		s.pdf_ = 0.f;
 		Rgb scolor = Rgb(0.f);
-		const float wire_frame_amount = wireframe_shader_ ? wireframe_shader_->getScalar(mat_data->node_tree_data_) * wireframe_amount_ : wireframe_amount_;
-		applyWireFrame(scolor, wire_frame_amount, sp);
+		if(wireframe_thickness_ > 0.f) applyWireFrame(scolor, wireframe_shader_, mat_data->node_tree_data_, sp);
 		return scolor;
 	}
 	Vec3 refdir, n;
@@ -97,8 +96,7 @@ Rgb GlassMaterial::sample(const MaterialData *mat_data, const SurfacePoint &sp, 
 				s.sampled_flags_ = BsdfFlags::Dispersive | BsdfFlags::Transmit;
 				w = 1.f;
 				Rgb scolor = (filter_color_shader_ ? filter_color_shader_->getColor(mat_data->node_tree_data_) : filter_color_); // * (Kt/std::abs(sp.N*wi));
-				const float wire_frame_amount = wireframe_shader_ ? wireframe_shader_->getScalar(mat_data->node_tree_data_) * wireframe_amount_ : wireframe_amount_;
-				applyWireFrame(scolor, wire_frame_amount, sp);
+				if(wireframe_thickness_ > 0.f) applyWireFrame(scolor, wireframe_shader_, mat_data->node_tree_data_, sp);
 				return scolor;
 			}
 			else if(MATCHES(s.flags_, BsdfFlags::Specular | BsdfFlags::Reflect))
@@ -109,8 +107,7 @@ Rgb GlassMaterial::sample(const MaterialData *mat_data, const SurfacePoint &sp, 
 				s.sampled_flags_ = BsdfFlags::Specular | BsdfFlags::Reflect;
 				w = 1.f;
 				Rgb scolor = (mirror_color_shader_ ? mirror_color_shader_->getColor(mat_data->node_tree_data_) : specular_reflection_color_); // * (Kr/std::abs(sp.N*wi));
-				const float wire_frame_amount = wireframe_shader_ ? wireframe_shader_->getScalar(mat_data->node_tree_data_) * wireframe_amount_ : wireframe_amount_;
-				applyWireFrame(scolor, wire_frame_amount, sp);
+				if(wireframe_thickness_ > 0.f) applyWireFrame(scolor, wireframe_shader_, mat_data->node_tree_data_, sp);
 				return scolor;
 			}
 		}
@@ -121,8 +118,7 @@ Rgb GlassMaterial::sample(const MaterialData *mat_data, const SurfacePoint &sp, 
 			s.sampled_flags_ = BsdfFlags::Specular | BsdfFlags::Reflect;
 			w = 1.f;
 			Rgb scolor = 1.f; //Rgb(1.f/std::abs(sp.N*wi));
-			const float wire_frame_amount = wireframe_shader_ ? wireframe_shader_->getScalar(mat_data->node_tree_data_) * wireframe_amount_ : wireframe_amount_;
-			applyWireFrame(scolor, wire_frame_amount, sp);
+			if(wireframe_thickness_ > 0.f) applyWireFrame(scolor, wireframe_shader_, mat_data->node_tree_data_, sp);
 			return scolor;
 		}
 	}
@@ -155,8 +151,7 @@ Rgb GlassMaterial::sample(const MaterialData *mat_data, const SurfacePoint &sp, 
 				}
 				w = 1.f;
 				Rgb scolor = (filter_color_shader_ ? filter_color_shader_->getColor(mat_data->node_tree_data_) : filter_color_);//*(Kt/std::abs(sp.N*wi));
-				const float wire_frame_amount = wireframe_shader_ ? wireframe_shader_->getScalar(mat_data->node_tree_data_) * wireframe_amount_ : wireframe_amount_;
-				applyWireFrame(scolor, wire_frame_amount, sp);
+				if(wireframe_thickness_ > 0.f) applyWireFrame(scolor, wireframe_shader_, mat_data->node_tree_data_, sp);
 				return scolor;
 			}
 			else if(MATCHES(s.flags_, BsdfFlags::Specular | BsdfFlags::Reflect)) //total inner reflection
@@ -172,8 +167,7 @@ Rgb GlassMaterial::sample(const MaterialData *mat_data, const SurfacePoint &sp, 
 				}
 				w = 1.f;
 				Rgb scolor = (mirror_color_shader_ ? mirror_color_shader_->getColor(mat_data->node_tree_data_) : specular_reflection_color_);// * (Kr/std::abs(sp.N*wi));
-				const float wire_frame_amount = wireframe_shader_ ? wireframe_shader_->getScalar(mat_data->node_tree_data_) * wireframe_amount_ : wireframe_amount_;
-				applyWireFrame(scolor, wire_frame_amount, sp);
+				if(wireframe_thickness_ > 0.f) applyWireFrame(scolor, wireframe_shader_, mat_data->node_tree_data_, sp);
 				return scolor;
 			}
 		}
@@ -190,8 +184,7 @@ Rgb GlassMaterial::sample(const MaterialData *mat_data, const SurfacePoint &sp, 
 			}
 			w = 1.f;
 			Rgb scolor = 1.f;//tir_col;
-			const float wire_frame_amount = wireframe_shader_ ? wireframe_shader_->getScalar(mat_data->node_tree_data_) * wireframe_amount_ : wireframe_amount_;
-			applyWireFrame(scolor, wire_frame_amount, sp);
+			if(wireframe_thickness_ > 0.f) applyWireFrame(scolor, wireframe_shader_, mat_data->node_tree_data_, sp);
 			return scolor;
 		}
 	}
@@ -205,8 +198,7 @@ Rgb GlassMaterial::getTransparency(const MaterialData *mat_data, const SurfacePo
 	float kr, kt;
 	Vec3::fresnel(wo, n, (ior_shader_ ? ior_shader_->getScalar(mat_data->node_tree_data_) : ior_), kr, kt);
 	Rgb result = kt * (filter_color_shader_ ? filter_color_shader_->getColor(mat_data->node_tree_data_) : filter_color_);
-	const float wire_frame_amount = wireframe_shader_ ? wireframe_shader_->getScalar(mat_data->node_tree_data_) * wireframe_amount_ : wireframe_amount_;
-	applyWireFrame(result, wire_frame_amount, sp);
+	if(wireframe_thickness_ > 0.f) applyWireFrame(result, wireframe_shader_, mat_data->node_tree_data_, sp);
 	return result;
 }
 
@@ -214,8 +206,7 @@ float GlassMaterial::getAlpha(const MaterialData *mat_data, const SurfacePoint &
 {
 	float alpha = 1.f - getTransparency(mat_data, sp, wo, camera).energy();
 	if(alpha < 0.f) alpha = 0.f;
-	const float wire_frame_amount = wireframe_shader_ ? wireframe_shader_->getScalar(mat_data->node_tree_data_) * wireframe_amount_ : wireframe_amount_;
-	applyWireFrame(alpha, wire_frame_amount, sp);
+	if(wireframe_thickness_ > 0.f) applyWireFrame(alpha, wireframe_shader_, mat_data->node_tree_data_, sp);
 	return alpha;
 }
 
@@ -276,10 +267,15 @@ Material::Specular GlassMaterial::getSpecular(int raylevel, const MaterialData *
 		specular.reflect_.dir_.reflect(n);
 		specular.reflect_.enabled_ = true;
 	}
-
-	const float wire_frame_amount = wireframe_shader_ ? wireframe_shader_->getScalar(mat_data->node_tree_data_) * wireframe_amount_ : wireframe_amount_;
-	applyWireFrame(specular.reflect_.col_, wire_frame_amount, sp);
-	applyWireFrame(specular.refract_.col_, wire_frame_amount, sp);
+	if(wireframe_thickness_ > 0.f)
+	{
+		const float wire_frame_amount = wireframe_shader_ ? wireframe_shader_->getScalar(mat_data->node_tree_data_) * wireframe_amount_ : wireframe_amount_;
+		if(wire_frame_amount > 0.f)
+		{
+			applyWireFrame(specular.reflect_.col_, wire_frame_amount, sp);
+			applyWireFrame(specular.refract_.col_, wire_frame_amount, sp);
+		}
+	}
 	return specular;
 }
 

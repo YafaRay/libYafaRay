@@ -155,8 +155,7 @@ Rgb GlossyMaterial::eval(const MaterialData *mat_data, const SurfacePoint &sp, c
 		col += add_col;
 		//diffuseReflect(wiN, woN, mat_data_specific->mGlossy, mat_data_specific->mDiffuse, (diffuseS ? diffuseS->getColor(mat_data->node_tree_data_) : diff_color)) * ((orenNayar)?OrenNayar(wi, wo, N):1.f);
 	}
-	const float wire_frame_amount = wireframe_shader_ ? wireframe_shader_->getScalar(mat_data->node_tree_data_) * wireframe_amount_ : wireframe_amount_;
-	applyWireFrame(col, wire_frame_amount, sp);
+	if(wireframe_thickness_ > 0.f) applyWireFrame(col, wireframe_shader_, mat_data->node_tree_data_, sp);
 	return col;
 }
 
@@ -184,8 +183,7 @@ Rgb GlossyMaterial::sample(const MaterialData *mat_data, const SurfacePoint &sp,
 			const float cos_ng_wi = sp.ng_ * wi;
 			if(cos_ng_wi * cos_ng_wo < 0.f)
 			{
-				const float wire_frame_amount = wireframe_shader_ ? wireframe_shader_->getScalar(mat_data->node_tree_data_) * wireframe_amount_ : wireframe_amount_;
-				applyWireFrame(scolor, wire_frame_amount, sp);
+				if(wireframe_thickness_ > 0.f) applyWireFrame(scolor, wireframe_shader_, mat_data->node_tree_data_, sp);
 				return scolor;
 			}
 			wi_n = std::abs(wi * n);
@@ -214,8 +212,7 @@ Rgb GlossyMaterial::sample(const MaterialData *mat_data, const SurfacePoint &sp,
 			if(!s.flags_.hasAny(BsdfFlags::Reflect))
 			{
 				scolor = Rgb(0.f);
-				const float wire_frame_amount = wireframe_shader_ ? wireframe_shader_->getScalar(mat_data->node_tree_data_) * wireframe_amount_ : wireframe_amount_;
-				applyWireFrame(scolor, wire_frame_amount, sp);
+				if(wireframe_thickness_ > 0.f) applyWireFrame(scolor, wireframe_shader_, mat_data->node_tree_data_, sp);
 				return scolor;
 			}
 
@@ -234,8 +231,7 @@ Rgb GlossyMaterial::sample(const MaterialData *mat_data, const SurfacePoint &sp,
 				scolor += add_col;
 			}
 			w = wi_n / (s.pdf_ * 0.99f + 0.01f);
-			const float wire_frame_amount = wireframe_shader_ ? wireframe_shader_->getScalar(mat_data->node_tree_data_) * wireframe_amount_ : wireframe_amount_;
-			applyWireFrame(scolor, wire_frame_amount, sp);
+			if(wireframe_thickness_ > 0.f) applyWireFrame(scolor, wireframe_shader_, mat_data->node_tree_data_, sp);
 			return scolor;
 		}
 		s_1 -= cur_p_diffuse;
@@ -262,8 +258,7 @@ Rgb GlossyMaterial::sample(const MaterialData *mat_data, const SurfacePoint &sp,
 			if(cos_ng_wo * cos_ng_wi < 0.f)
 			{
 				scolor = Rgb(0.f);
-				const float wire_frame_amount = wireframe_shader_ ? wireframe_shader_->getScalar(mat_data->node_tree_data_) * wireframe_amount_ : wireframe_amount_;
-				applyWireFrame(scolor, wire_frame_amount, sp);
+				if(wireframe_thickness_ > 0.f) applyWireFrame(scolor, wireframe_shader_, mat_data->node_tree_data_, sp);
 				return scolor;
 			}
 			wi_n = std::abs(wi * n);
@@ -287,8 +282,7 @@ Rgb GlossyMaterial::sample(const MaterialData *mat_data, const SurfacePoint &sp,
 			if(cos_ng_wo * cos_ng_wi < 0.f)
 			{
 				scolor = Rgb(0.f);
-				const float wire_frame_amount = wireframe_shader_ ? wireframe_shader_->getScalar(mat_data->node_tree_data_) * wireframe_amount_ : wireframe_amount_;
-				applyWireFrame(scolor, wire_frame_amount, sp);
+				if(wireframe_thickness_ > 0.f) applyWireFrame(scolor, wireframe_shader_, mat_data->node_tree_data_, sp);
 				return scolor;
 			}
 			wi_n = std::abs(wi * n);
@@ -314,8 +308,7 @@ Rgb GlossyMaterial::sample(const MaterialData *mat_data, const SurfacePoint &sp,
 		scolor += add_col;
 	}
 	w = wi_n / (s.pdf_ * 0.99f + 0.01f);
-	const float wire_frame_amount = wireframe_shader_ ? wireframe_shader_->getScalar(mat_data->node_tree_data_) * wireframe_amount_ : wireframe_amount_;
-	applyWireFrame(scolor, wire_frame_amount, sp);
+	if(wireframe_thickness_ > 0.f) applyWireFrame(scolor, wireframe_shader_, mat_data->node_tree_data_, sp);
 	return scolor;
 }
 

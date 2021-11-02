@@ -92,54 +92,56 @@ Rgb Material::sampleClay(const SurfacePoint &sp, const Vec3 &wo, Vec3 &wi, Sampl
 
 void Material::applyWireFrame(float &value, float wire_frame_amount, const SurfacePoint &sp) const
 {
-	if(wire_frame_amount > 0.f && wireframe_thickness_ > 0.f)
+	const float dist = sp.getDistToNearestEdge();
+	if(dist <= wireframe_thickness_)
 	{
-		const float dist = sp.getDistToNearestEdge();
-		if(dist <= wireframe_thickness_)
+		if(wireframe_exponent_ > 0.f)
 		{
-			if(wireframe_exponent_ > 0.f)
-			{
-				wire_frame_amount *= math::pow((wireframe_thickness_ - dist) / wireframe_thickness_, wireframe_exponent_);
-			}
-			value = value * (1.f - wire_frame_amount);
+			wire_frame_amount *= math::pow((wireframe_thickness_ - dist) / wireframe_thickness_, wireframe_exponent_);
 		}
+		value = value * (1.f - wire_frame_amount);
 	}
 }
 
 void Material::applyWireFrame(Rgb &col, float wire_frame_amount, const SurfacePoint &sp) const
 {
-	if(wire_frame_amount > 0.f && wireframe_thickness_ > 0.f)
+	const float dist = sp.getDistToNearestEdge();
+	if(dist <= wireframe_thickness_)
 	{
-		const float dist = sp.getDistToNearestEdge();
-		if(dist <= wireframe_thickness_)
+		const Rgb wire_frame_col = wireframe_color_ * wire_frame_amount;
+		if(wireframe_exponent_ > 0.f)
 		{
-			const Rgb wire_frame_col = wireframe_color_ * wire_frame_amount;
-			if(wireframe_exponent_ > 0.f)
-			{
-				wire_frame_amount *= math::pow((wireframe_thickness_ - dist) / wireframe_thickness_, wireframe_exponent_);
-			}
-			col.blend(wire_frame_col, wire_frame_amount);
+			wire_frame_amount *= math::pow((wireframe_thickness_ - dist) / wireframe_thickness_, wireframe_exponent_);
 		}
+		col.blend(wire_frame_col, wire_frame_amount);
 	}
 }
 
 void Material::applyWireFrame(Rgba &col, float wire_frame_amount, const SurfacePoint &sp) const
 {
-	if(wire_frame_amount > 0.f && wireframe_thickness_ > 0.f)
+	const float dist = sp.getDistToNearestEdge();
+	if(dist <= wireframe_thickness_)
 	{
-		const float dist = sp.getDistToNearestEdge();
-		if(dist <= wireframe_thickness_)
+		const Rgb wire_frame_col = wireframe_color_ * wire_frame_amount;
+		if(wireframe_exponent_ > 0.f)
 		{
-			const Rgb wire_frame_col = wireframe_color_ * wire_frame_amount;
-			if(wireframe_exponent_ > 0.f)
-			{
-				wire_frame_amount *= math::pow((wireframe_thickness_ - dist) / wireframe_thickness_, wireframe_exponent_);
-			}
-			col.blend(wire_frame_col, wire_frame_amount);
-			col.a_ = wire_frame_amount;
+			wire_frame_amount *= math::pow((wireframe_thickness_ - dist) / wireframe_thickness_, wireframe_exponent_);
 		}
+		col.blend(wire_frame_col, wire_frame_amount);
+		col.a_ = wire_frame_amount;
 	}
 }
+
+template<typename T> void Material::applyWireFrame(T &value, const ShaderNode *wireframe_shader, const NodeTreeData &node_tree_data, const SurfacePoint &sp) const
+{
+	const float wire_frame_amount = wireframe_shader ? wireframe_shader->getScalar(node_tree_data) * wireframe_amount_ : wireframe_amount_;
+	if(wire_frame_amount > 0.f) applyWireFrame(value, wire_frame_amount, sp);
+}
+
+template void Material::applyWireFrame<float>(float &value, const ShaderNode *wireframe_shader, const NodeTreeData &node_tree_data, const SurfacePoint &sp) const;
+template void Material::applyWireFrame<Rgb>(Rgb &value, const ShaderNode *wireframe_shader, const NodeTreeData &node_tree_data, const SurfacePoint &sp) const;
+template void Material::applyWireFrame<Rgba>(Rgba &value, const ShaderNode *wireframe_shader, const NodeTreeData &node_tree_data, const SurfacePoint &sp) const;
+
 
 bool Material::scatterPhoton(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wi, Vec3 &wo, PSample &s, bool chromatic, float wavelength, const Camera *camera) const
 {
