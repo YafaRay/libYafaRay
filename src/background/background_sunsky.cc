@@ -194,9 +194,9 @@ Rgb SunSkyBackground::computeAttenuatedSunlight(float theta, int turbidity)
 	Rgb sun_xyz(0.f);
 	const float m = 1.f / (math::cos(theta) + 0.000940f * math::pow(1.6386f - theta, -1.253f)); // Relative Optical Mass
 
-	int i;
-	float lambda;
-	for(i = 0, lambda = 380.f; i < spectrum_sun::sol_amplitudes.size(); i++, lambda += 10.f)
+	size_t i = 0;
+	float lambda = 380.f;
+	for(const float sol_amplitude : spectrum_sun::sol_amplitudes)
 	{
 		const float u_l = lambda * 0.001f;
 		// Rayleigh Scattering
@@ -220,9 +220,12 @@ Rgb SunSkyBackground::computeAttenuatedSunlight(float theta, int turbidity)
 		const float tau_wa = math::exp(-0.2385f * k_wa_curve.sample(lambda) * w * m /
 									   math::pow(1.f + 20.07f * k_wa_curve.sample(lambda) * w * m, 0.45f));
 
-		data[i] = 100.f * spectrum_sun::sol_amplitudes[i] * tau_r * tau_a * tau_o * tau_g * tau_wa; // 100 comes from solCurve being
+		data[i] = 100.f * sol_amplitude * tau_r * tau_a * tau_o * tau_g * tau_wa; // 100 comes from solCurve being
 		// in wrong units.
 		sun_xyz += spectrum::wl2Xyz(lambda) * data[i];
+
+		lambda += 10.f;
+		++i;
 	}
 	sun_xyz *= 0.02631578947368421053f;
 	return {
