@@ -454,7 +454,7 @@ void AcceleratorKdTreeMultiThread::buildTreeWorker(const std::vector<const Primi
 				{
 					++result.stats_.clip_;
 					new_polygons.emplace_back(clip_result.poly_);
-					poly_bounds.emplace_back(clip_result.box_);
+					poly_bounds.emplace_back(*clip_result.box_);
 					poly_indices.emplace_back(static_cast<uint32_t>(poly_indices.size()));
 					prim_indices.emplace_back(prim_id);
 				}

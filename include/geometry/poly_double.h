@@ -21,7 +21,6 @@
 #define YAFARAY_POLY_DOUBLE_H
 
 #include "geometry/vector_double.h"
-#include "geometry/bound.h"
 #include <vector>
 #include <array>
 #include <common/logger.h>
@@ -29,6 +28,7 @@
 BEGIN_YAFARAY
 
 struct ClipPlane;
+class Bound;
 
 class PolyDouble
 {
@@ -66,9 +66,11 @@ struct PolyDouble::ClipResult
 
 struct PolyDouble::ClipResultWithBound : PolyDouble::ClipResult
 {
-	ClipResultWithBound(Code clip_result_code = Correct) : PolyDouble::ClipResult(clip_result_code) { }
-	ClipResultWithBound(const ClipResult &clip_result) : PolyDouble::ClipResult(clip_result) { }
-	Bound box_;
+	ClipResultWithBound(Code clip_result_code = Correct);
+	ClipResultWithBound(ClipResultWithBound &&clip_result_with_bound) = default;
+	ClipResultWithBound& operator=(ClipResultWithBound&&) = default;
+	ClipResultWithBound(ClipResult &&clip_result);
+	std::unique_ptr<Bound> box_;
 };
 
 

@@ -18,10 +18,14 @@
 
 #include "geometry/poly_double.h"
 #include "geometry/axis.h"
+#include "geometry/bound.h"
 #include "common/logger.h"
 #include <array>
 
 BEGIN_YAFARAY
+
+PolyDouble::ClipResultWithBound::ClipResultWithBound(Code clip_result_code) : PolyDouble::ClipResult(clip_result_code) { }
+PolyDouble::ClipResultWithBound::ClipResultWithBound(ClipResult &&clip_result) : PolyDouble::ClipResult(std::move(clip_result)) { }
 
 PolyDouble::ClipResult PolyDouble::planeClip(Logger &logger, double pos, const ClipPlane &clip_plane, const PolyDouble &poly)
 {
@@ -126,8 +130,11 @@ Bound PolyDouble::getBound(const PolyDouble &poly)
 PolyDouble::ClipResultWithBound PolyDouble::planeClipWithBound(Logger &logger, double pos, const ClipPlane &clip_plane, const PolyDouble &poly)
 {
 	ClipResultWithBound clip_result = planeClip(logger, pos, clip_plane, poly);
-	clip_result.box_ = getBound(clip_result.poly_);
-	clip_result.clip_result_code_ = ClipResult::Correct;
+	if(clip_result.clip_result_code_ == ClipResult::Correct)
+	{
+		clip_result.box_ = std::unique_ptr<Bound>(new Bound);
+		*clip_result.box_ = getBound(clip_result.poly_);
+	}
 	return clip_result;
 }
 
@@ -150,7 +157,11 @@ PolyDouble::ClipResultWithBound PolyDouble::boxClip(Logger &logger, const Vec3Do
 		clip_result = planeClip(logger, b_max[axis], {axis, ClipPlane::Pos::Upper}, clip_result.poly_);
 		if(clip_result.clip_result_code_ != ClipResult::Correct) return {clip_result.clip_result_code_ };
 	}
-	clip_result.box_ = getBound(clip_result.poly_);
+	if(clip_result.clip_result_code_ == ClipResult::Correct)
+	{
+		clip_result.box_ = std::unique_ptr<Bound>(new Bound);
+		*clip_result.box_ = getBound(clip_result.poly_);
+	}
 	return clip_result;
 }
 

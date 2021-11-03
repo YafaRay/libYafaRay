@@ -190,7 +190,7 @@ PolyDouble::ClipResultWithBound TrianglePrimitive::clipToBound(Logger &logger, c
 	if(clip_plane.pos_ != ClipPlane::Pos::None) // re-clip
 	{
 		const double split = (clip_plane.pos_ == ClipPlane::Pos::Lower) ? bound[0][clip_plane.axis_] : bound[1][clip_plane.axis_];
-		const PolyDouble::ClipResultWithBound clip_result = PolyDouble::planeClipWithBound(logger, split, clip_plane, poly);
+		PolyDouble::ClipResultWithBound clip_result = PolyDouble::planeClipWithBound(logger, split, clip_plane, poly);
 		if(clip_result.clip_result_code_ == PolyDouble::ClipResultWithBound::Correct) return clip_result;
 		else if(clip_result.clip_result_code_ == PolyDouble::ClipResultWithBound::NoOverlapDisappeared) return {PolyDouble::ClipResultWithBound::NoOverlapDisappeared};
 		//else: do initial clipping below, if there are any other PolyDouble::ClipResult results (errors)

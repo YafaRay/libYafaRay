@@ -457,7 +457,7 @@ int AcceleratorKdTree::buildTree(uint32_t n_prims, const std::vector<const Primi
 				{
 					++kd_stats_.clip_;
 					cdata_[prim_clip_thresh_ * (depth + 1) + n_overl] = clip_result.poly_;
-					all_bounds_[total_prims_ + n_overl] = clip_result.box_;
+					all_bounds_[total_prims_ + n_overl] = *clip_result.box_;
 					o_prims[n_overl] = prim_nums[i]; n_overl++;
 				}
 				else ++kd_stats_.null_clip_;
