@@ -38,7 +38,7 @@ class SpherePrimitive final : public Primitive
 {
 	public:
 		static Primitive *factory(ParamMap &params, const Scene &scene, const Object &object);
-		SpherePrimitive(const Point3 &centr, float rad, const Material *m, const Object &base_object): base_object_(base_object), center_(centr), radius_(rad), material_(m) {}
+		SpherePrimitive(const Point3 &centr, float rad, const Material *m, const Object &base_object): center_(centr), radius_(rad), base_object_(base_object), material_(m) {}
 
 	private:
 		virtual Bound getBound(const Matrix4 *obj_to_world) const override;
