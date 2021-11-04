@@ -422,7 +422,7 @@ void AcceleratorKdTreeMultiThread::buildTreeWorker(const std::vector<const Primi
 	std::vector<uint32_t> prim_indices;
 	std::vector<Bound> poly_bounds;
 	const uint32_t num_indices = static_cast<uint32_t>(indices.size());
-	const bool do_poly_clipping = (num_indices <= poly_clipping_threshold);
+	const bool do_poly_clipping = (!primitive_indices.empty() && num_indices <= poly_clipping_threshold);
 	if(do_poly_clipping)
 	{
 		poly_indices.reserve(poly_clipping_threshold);
