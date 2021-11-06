@@ -124,8 +124,6 @@ bool PathIntegrator::preprocess(const RenderControl &render_control, Timer &time
 
 Rgba PathIntegrator::integrate(RenderData &render_data, const DiffRay &ray, int additional_depth, ColorLayers *color_layers, const RenderView *render_view) const
 {
-	const bool layers_used = render_data.raylevel_ == 0 && color_layers && color_layers->getFlags() != Layer::Flags::None;
-
 	static int calls = 0;
 	++calls;
 	Rgb col(0.f);
@@ -160,7 +158,7 @@ Rgba PathIntegrator::integrate(RenderData &render_data, const DiffRay &ray, int 
 		{
 			const Rgb col_tmp = material->emit(sp.mat_data_.get(), sp, wo, render_data.lights_geometry_material_emit_);
 			col += col_tmp;
-			if(layers_used)
+			if(color_layers)
 			{
 				if(ColorLayer *color_layer = color_layers->find(Layer::Emit)) color_layer->color_ += col_tmp;
 			}
@@ -175,7 +173,7 @@ Rgba PathIntegrator::integrate(RenderData &render_data, const DiffRay &ray, int 
 				Rgb col_tmp = estimateCausticPhotons(sp, wo);
 				if(aa_noise_params_.clamp_indirect_ > 0.f) col_tmp.clampProportionalRgb(aa_noise_params_.clamp_indirect_);
 				col += col_tmp;
-				if(layers_used)
+				if(color_layers)
 				{
 					if(ColorLayer *color_layer = color_layers->find(Layer::Indirect)) color_layer->color_ = col_tmp;
 				}
@@ -237,7 +235,7 @@ Rgba PathIntegrator::integrate(RenderData &render_data, const DiffRay &ray, int 
 				{
 					const Rgb col_tmp = p_mat->emit(hit->mat_data_.get(), *hit, pwo, render_data.lights_geometry_material_emit_);
 					lcol += col_tmp;
-					if(layers_used)
+					if(color_layers)
 					{
 						if(ColorLayer *color_layer = color_layers->find(Layer::Emit)) color_layer->color_ += col_tmp;
 					}
@@ -311,7 +309,7 @@ Rgba PathIntegrator::integrate(RenderData &render_data, const DiffRay &ray, int 
 					{
 						const Rgb col_tmp = p_mat->emit(hit->mat_data_.get(), *hit, pwo, render_data.lights_geometry_material_emit_);
 						lcol += col_tmp;
-						if(layers_used)
+						if(color_layers)
 						{
 							if(ColorLayer *color_layer = color_layers->find(Layer::Emit)) color_layer->color_ += col_tmp;
 						}
@@ -327,7 +325,7 @@ Rgba PathIntegrator::integrate(RenderData &render_data, const DiffRay &ray, int 
 
 		recursiveRaytrace(render_data, ray, mat_bsdfs, sp, wo, col, alpha, additional_depth, color_layers);
 
-		if(layers_used)
+		if(color_layers)
 		{
 			generateCommonLayers(render_data.raylevel_, sp, ray, scene_->getMaskParams(), color_layers);
 
@@ -356,7 +354,7 @@ Rgba PathIntegrator::integrate(RenderData &render_data, const DiffRay &ray, int 
 		{
 			const Rgb col_tmp = (*background)(ray);
 			col += col_tmp;
-			if(layers_used)
+			if(color_layers)
 			{
 				if(ColorLayer *color_layer = color_layers->find(Layer::Env)) color_layer->color_ = col_tmp;
 			}
@@ -368,7 +366,7 @@ Rgba PathIntegrator::integrate(RenderData &render_data, const DiffRay &ray, int 
 		const Rgb col_vol_transmittance = scene_->vol_integrator_->transmittance(render_data.prng_, ray);
 		const Rgb col_vol_integration = scene_->vol_integrator_->integrate(render_data, ray);
 		if(transp_background_) alpha = std::max(alpha, 1.f - col_vol_transmittance.r_);
-		if(layers_used)
+		if(color_layers)
 		{
 			if(ColorLayer *color_layer = color_layers->find(Layer::VolumeTransmittance)) color_layer->color_ = col_vol_transmittance;
 			if(ColorLayer *color_layer = color_layers->find(Layer::VolumeIntegration)) color_layer->color_ = col_vol_integration;

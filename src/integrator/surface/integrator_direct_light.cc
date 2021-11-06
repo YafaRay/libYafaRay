@@ -104,73 +104,58 @@ bool DirectLightIntegrator::preprocess(const RenderControl &render_control, Time
 
 Rgba DirectLightIntegrator::integrate(RenderData &render_data, const DiffRay &ray, int additional_depth, ColorLayers *color_layers, const RenderView *render_view) const
 {
-	const bool layers_used = render_data.raylevel_ == 0 && color_layers && color_layers->getFlags() != Layer::Flags::None;
-
 	Rgb col(0.f);
 	float alpha;
 	SurfacePoint sp;
 	const bool old_lights_geometry_material_emit = render_data.lights_geometry_material_emit_;
-
 	if(transp_background_) alpha = 0.f;
 	else alpha = 1.f;
-
 	// Shoot ray into scene
 	const Accelerator *accelerator = scene_->getAccelerator();
 	if(accelerator && accelerator->intersect(ray, sp, render_data.cam_)) // If it hits
 	{
 		const Material *material = sp.material_;
 		const BsdfFlags &mat_bsdfs = sp.mat_data_->bsdf_flags_;
-
 		const Vec3 wo = -ray.dir_;
 		if(render_data.raylevel_ == 0) render_data.lights_geometry_material_emit_ = true;
-
 		if(additional_depth < material->getAdditionalDepth()) additional_depth = material->getAdditionalDepth();
-
 		if(mat_bsdfs.hasAny(BsdfFlags::Emit))
 		{
 			const Rgb col_tmp = material->emit(sp.mat_data_.get(), sp, wo, render_data.lights_geometry_material_emit_);
 			col += col_tmp;
-			if(layers_used)
+			if(color_layers)
 			{
 				if(ColorLayer *color_layer = color_layers->find(Layer::Emit)) color_layer->color_ = col_tmp;
 			}
 		}
-
 		if(mat_bsdfs.hasAny(BsdfFlags::Diffuse))
 		{
 			col += estimateAllDirectLight(render_data, sp, wo, color_layers);
-
 			if(use_photon_caustics_)
 			{
 				Rgb col_tmp = estimateCausticPhotons(sp, wo);
 				if(aa_noise_params_.clamp_indirect_ > 0) col_tmp.clampProportionalRgb(aa_noise_params_.clamp_indirect_);
 				col += col_tmp;
-				if(layers_used)
+				if(color_layers)
 				{
 					if(ColorLayer *color_layer = color_layers->find(Layer::Indirect)) color_layer->color_ = col_tmp;
 				}
 			}
-
 			if(use_ambient_occlusion_) col += sampleAmbientOcclusion(render_data, sp, wo);
 		}
-
 		recursiveRaytrace(render_data, ray, mat_bsdfs, sp, wo, col, alpha, additional_depth, color_layers);
-
-		if(layers_used)
+		if(color_layers)
 		{
 			generateCommonLayers(render_data.raylevel_, sp, ray, scene_->getMaskParams(), color_layers);
-
 			if(ColorLayer *color_layer = color_layers->find(Layer::Ao))
 			{
 				color_layer->color_ = sampleAmbientOcclusionLayer(render_data, sp, wo);
 			}
-
 			if(ColorLayer *color_layer = color_layers->find(Layer::AoClay))
 			{
 				color_layer->color_ = sampleAmbientOcclusionClayLayer(render_data, sp, wo);
 			}
 		}
-
 		if(transp_refracted_background_)
 		{
 			const float mat_alpha = material->getAlpha(sp.mat_data_.get(), sp, wo, render_data.cam_);
@@ -185,21 +170,19 @@ Rgba DirectLightIntegrator::integrate(RenderData &render_data, const DiffRay &ra
 		{
 			const Rgb col_tmp = (*background)(ray);
 			col += col_tmp;
-			if(layers_used)
+			if(color_layers)
 			{
 				if(ColorLayer *color_layer = color_layers->find(Layer::Env)) color_layer->color_ = col_tmp;
 			}
 		}
 	}
-
 	render_data.lights_geometry_material_emit_ = old_lights_geometry_material_emit;
-
 	if(scene_->vol_integrator_)
 	{
 		const Rgb col_vol_transmittance = scene_->vol_integrator_->transmittance(render_data.prng_, ray);
 		const Rgb col_vol_integration = scene_->vol_integrator_->integrate(render_data, ray);
 		if(transp_background_) alpha = std::max(alpha, 1.f - col_vol_transmittance.r_);
-		if(layers_used)
+		if(color_layers)
 		{
 			if(ColorLayer *color_layer = color_layers->find(Layer::VolumeTransmittance)) color_layer->color_ = col_vol_transmittance;
 			if(ColorLayer *color_layer = color_layers->find(Layer::VolumeIntegration)) color_layer->color_ = col_vol_integration;

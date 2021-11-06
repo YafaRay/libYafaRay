@@ -242,8 +242,6 @@ void BidirectionalIntegrator::cleanup()
  ============================================================ */
 Rgba BidirectionalIntegrator::integrate(RenderData &render_data, const DiffRay &ray, int additional_depth, ColorLayers *color_layers, const RenderView *render_view) const
 {
-	const bool layers_used = render_data.raylevel_ == 0 && color_layers && color_layers->getFlags() != Layer::Flags::None;
-
 	Rgb col(0.f);
 	SurfacePoint sp;
 	Ray testray = ray;
@@ -395,7 +393,7 @@ Rgba BidirectionalIntegrator::integrate(RenderData &render_data, const DiffRay &
 			}
 		}
 
-		if(layers_used)
+		if(color_layers)
 		{
 			generateCommonLayers(render_data.raylevel_, sp, ray, scene_->getMaskParams(), color_layers);
 
@@ -419,7 +417,7 @@ Rgba BidirectionalIntegrator::integrate(RenderData &render_data, const DiffRay &
 		{
 			const Rgb col_tmp = (*background)(ray);
 			col += col_tmp;
-			if(layers_used)
+			if(color_layers)
 			{
 				if(ColorLayer *color_layer = color_layers->find(Layer::Env)) color_layer->color_ += col_tmp;
 			}
@@ -431,7 +429,7 @@ Rgba BidirectionalIntegrator::integrate(RenderData &render_data, const DiffRay &
 		const Rgb col_vol_transmittance = scene_->vol_integrator_->transmittance(render_data.prng_, ray);
 		const Rgb col_vol_integration = scene_->vol_integrator_->integrate(render_data, ray);
 		if(transp_background_) alpha = std::max(alpha, 1.f - col_vol_transmittance.r_);
-		if(layers_used)
+		if(color_layers)
 		{
 			if(ColorLayer *color_layer = color_layers->find(Layer::VolumeTransmittance)) color_layer->color_ = col_vol_transmittance;
 			if(ColorLayer *color_layer = color_layers->find(Layer::VolumeIntegration)) color_layer->color_ = col_vol_integration;

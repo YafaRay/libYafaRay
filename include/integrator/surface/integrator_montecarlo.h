@@ -62,10 +62,10 @@ class MonteCarloIntegrator: public TiledIntegrator
 		Rgb doLightEstimation(RenderData &render_data, const Light *light, const SurfacePoint &sp, const Vec3 &wo, const unsigned int &loffs, ColorLayers *color_layers = nullptr) const;
 		/*! Does recursive mc raytracing with MIS (Multiple Importance Sampling) for a given surface point */
 		void recursiveRaytrace(RenderData &render_data, const DiffRay &ray, const BsdfFlags &bsdfs, SurfacePoint &sp, const Vec3 &wo, Rgb &col, float &alpha, int additional_depth, ColorLayers *color_layers) const;
-		Rgb dispersive(RenderData &render_data, const SurfacePoint &sp, const Material *material, const BsdfFlags &bsdfs, const Vec3 &wo, float ray_min_dist, int additional_depth, bool layers_used, ColorLayers *color_layers) const;
-		Rgb glossy(RenderData &render_data, float &alpha, const DiffRay &ray, const SpDifferentials &sp_differentials, const Material *material, const BsdfFlags &mat_bsdfs, const BsdfFlags &bsdfs, const Vec3 &wo, float ray_min_dist, int additional_depth, bool layers_used, ColorLayers *color_layers) const;
-		Rgb specularReflect(RenderData &render_data, float &alpha, const DiffRay &ray, const SpDifferentials &sp_differentials, const Material *material, const BsdfFlags &bsdfs, const DirectionColor *reflect_data, float ray_min_dist, int additional_depth, bool layers_used, ColorLayers *color_layers) const;
-		Rgb specularRefract(RenderData &render_data, float &alpha, const DiffRay &ray, const SpDifferentials &sp_differentials, const Material *material, const BsdfFlags &bsdfs, const DirectionColor *refract_data, float ray_min_dist, int additional_depth, bool layers_used, ColorLayers *color_layers) const;
+		Rgb dispersive(RenderData &render_data, const SurfacePoint &sp, const Material *material, const BsdfFlags &bsdfs, const Vec3 &wo, float ray_min_dist, int additional_depth, ColorLayers *color_layers) const;
+		Rgb glossy(RenderData &render_data, float &alpha, const DiffRay &ray, const SpDifferentials &sp_differentials, const Material *material, const BsdfFlags &mat_bsdfs, const BsdfFlags &bsdfs, const Vec3 &wo, float ray_min_dist, int additional_depth, ColorLayers *color_layers) const;
+		Rgb specularReflect(RenderData &render_data, float &alpha, const DiffRay &ray, const SpDifferentials &sp_differentials, const Material *material, const BsdfFlags &bsdfs, const DirectionColor *reflect_data, float ray_min_dist, int additional_depth, ColorLayers *color_layers) const;
+		Rgb specularRefract(RenderData &render_data, float &alpha, const DiffRay &ray, const SpDifferentials &sp_differentials, const Material *material, const BsdfFlags &bsdfs, const DirectionColor *refract_data, float ray_min_dist, int additional_depth, ColorLayers *color_layers) const;
 		/*! Creates and prepares the caustic photon map */
 		bool createCausticMap(const RenderView *render_view, const RenderControl &render_control, const Timer &timer);
 		/*! Estimates caustic photons for a given surface point */

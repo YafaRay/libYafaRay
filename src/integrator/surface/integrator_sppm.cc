@@ -666,8 +666,6 @@ GatherInfo SppmIntegrator::traceGatherRay(RenderData &render_data, const DiffRay
 	const Accelerator *accelerator = scene_->getAccelerator();
 	if(!accelerator) return {};
 
-	const bool layers_used = render_data.raylevel_ == 1 && color_layers && color_layers->getFlags() != Layer::Flags::None;
-
 	GatherInfo g_info;
 
 	float alpha;
@@ -695,7 +693,7 @@ GatherInfo SppmIntegrator::traceGatherRay(RenderData &render_data, const DiffRay
 
 		const Rgb col_emit = material->emit(sp.mat_data_.get(), sp, wo, render_data.lights_geometry_material_emit_);
 		g_info.constant_randiance_ += col_emit; //add only once, but FG seems add twice?
-		if(layers_used)
+		if(color_layers)
 		{
 			if(ColorLayer *color_layer = color_layers->find(Layer::Emit)) color_layer->color_ += col_emit;
 		}
@@ -862,7 +860,7 @@ GatherInfo SppmIntegrator::traceGatherRay(RenderData &render_data, const DiffRay
 						t_cing.photon_flux_ *= mcol * wl_col * w;
 						t_cing.constant_randiance_ *= mcol * wl_col * w;
 
-						if(layers_used)
+						if(color_layers)
 						{
 							if(color_layers->find(Layer::Trans)) dcol_trans_accum += t_cing.constant_randiance_;
 						}
@@ -884,7 +882,7 @@ GatherInfo SppmIntegrator::traceGatherRay(RenderData &render_data, const DiffRay
 				g_info.photon_flux_ += cing.photon_flux_ * d_1;
 				g_info.photon_count_ += cing.photon_count_ * d_1;
 
-				if(layers_used)
+				if(color_layers)
 				{
 					if(ColorLayer *color_layer = color_layers->find(Layer::Trans))
 					{
@@ -950,7 +948,7 @@ GatherInfo SppmIntegrator::traceGatherRay(RenderData &render_data, const DiffRay
 						ref_ray = DiffRay(sp.p_, wi, scene_->ray_min_dist_);
 						if(s.sampled_flags_.hasAny(BsdfFlags::Reflect)) sp_diff.reflectedRay(ray, ref_ray);
 						else if(s.sampled_flags_.hasAny(BsdfFlags::Transmit)) sp_diff.refractedRay(ray, ref_ray, material->getMatIor());
-						integ = (Rgb) integrate(render_data, ref_ray, additional_depth, nullptr, nullptr);
+						integ = static_cast<Rgb>(integrate(render_data, ref_ray, additional_depth));
 
 						if(mat_bsdfs.hasAny(BsdfFlags::Volumetric))
 						{
@@ -979,7 +977,7 @@ GatherInfo SppmIntegrator::traceGatherRay(RenderData &render_data, const DiffRay
 						{
 							ref_ray = DiffRay(sp.p_, dir[0], scene_->ray_min_dist_);
 							sp_diff.reflectedRay(ray, ref_ray);
-							integ = integrate(render_data, ref_ray, additional_depth, nullptr, nullptr);
+							integ = integrate(render_data, ref_ray, additional_depth);
 							if(mat_bsdfs.hasAny(BsdfFlags::Volumetric))
 							{
 								if(const VolumeHandler *vol = material->getVolumeHandler(sp.ng_ * ref_ray.dir_ < 0))
@@ -993,7 +991,7 @@ GatherInfo SppmIntegrator::traceGatherRay(RenderData &render_data, const DiffRay
 							t_ging.photon_flux_ *= col_reflect_factor;
 							t_ging.constant_randiance_ *= col_reflect_factor;
 
-							if(layers_used)
+							if(color_layers)
 							{
 								if(color_layers->find(Layer::GlossyIndirect)) gcol_indirect_accum += (Rgb) t_ging.constant_randiance_;
 							}
@@ -1004,7 +1002,7 @@ GatherInfo SppmIntegrator::traceGatherRay(RenderData &render_data, const DiffRay
 						{
 							ref_ray = DiffRay(sp.p_, dir[1], scene_->ray_min_dist_);
 							sp_diff.refractedRay(ray, ref_ray, material->getMatIor());
-							integ = integrate(render_data, ref_ray, additional_depth, nullptr, nullptr);
+							integ = integrate(render_data, ref_ray, additional_depth);
 							if(mat_bsdfs.hasAny(BsdfFlags::Volumetric))
 							{
 								if(const VolumeHandler *vol = material->getVolumeHandler(sp.ng_ * ref_ray.dir_ < 0))
@@ -1017,7 +1015,7 @@ GatherInfo SppmIntegrator::traceGatherRay(RenderData &render_data, const DiffRay
 							t_ging = traceGatherRay(render_data, ref_ray, hp, nullptr);
 							t_ging.photon_flux_ *= col_transmit_factor;
 							t_ging.constant_randiance_ *= col_transmit_factor;
-							if(layers_used)
+							if(color_layers)
 							{
 								if(color_layers->find(Layer::GlossyIndirect)) gcol_transmit_accum += (Rgb) t_ging.constant_randiance_;
 							}
@@ -1037,7 +1035,7 @@ GatherInfo SppmIntegrator::traceGatherRay(RenderData &render_data, const DiffRay
 						t_ging = traceGatherRay(render_data, ref_ray, hp, nullptr);
 						t_ging.photon_flux_ *= mcol * W;
 						t_ging.constant_randiance_ *= mcol * W;
-						if(layers_used)
+						if(color_layers)
 						{
 							if(color_layers->find(Layer::Trans)) gcol_reflect_accum += t_ging.constant_randiance_;
 						}
@@ -1058,7 +1056,7 @@ GatherInfo SppmIntegrator::traceGatherRay(RenderData &render_data, const DiffRay
 				g_info.photon_flux_ += ging.photon_flux_ * d_1;
 				g_info.photon_count_ += ging.photon_count_ * d_1;
 
-				if(layers_used)
+				if(color_layers)
 				{
 					if(ColorLayer *color_layer = color_layers->find(Layer::GlossyIndirect))
 					{
@@ -1104,7 +1102,7 @@ GatherInfo SppmIntegrator::traceGatherRay(RenderData &render_data, const DiffRay
 					}
 					const Rgba col_radiance_reflect = refg.constant_randiance_ * Rgba(specular.reflect_->col_);
 					g_info.constant_randiance_ += col_radiance_reflect;
-					if(layers_used)
+					if(color_layers)
 					{
 						if(ColorLayer *color_layer = color_layers->find(Layer::ReflectPerfect)) color_layer->color_ += col_radiance_reflect;
 					}
@@ -1127,7 +1125,7 @@ GatherInfo SppmIntegrator::traceGatherRay(RenderData &render_data, const DiffRay
 					}
 					const Rgba col_radiance_refract = refg.constant_randiance_ * Rgba(specular.refract_->col_);
 					g_info.constant_randiance_ += col_radiance_refract;
-					if(layers_used)
+					if(color_layers)
 					{
 						if(ColorLayer *color_layer = color_layers->find(Layer::RefractPerfect)) color_layer->color_ += col_radiance_refract;
 					}
@@ -1139,7 +1137,7 @@ GatherInfo SppmIntegrator::traceGatherRay(RenderData &render_data, const DiffRay
 		}
 		--render_data.raylevel_;
 
-		if(layers_used)
+		if(color_layers)
 		{
 			generateCommonLayers(render_data.raylevel_, sp, ray, scene_->getMaskParams(), color_layers);
 
@@ -1168,7 +1166,7 @@ GatherInfo SppmIntegrator::traceGatherRay(RenderData &render_data, const DiffRay
 		{
 			const Rgb col_tmp = (*background)(ray);
 			g_info.constant_randiance_ += col_tmp;
-			if(layers_used)
+			if(color_layers)
 			{
 				if(ColorLayer *color_layer = color_layers->find(Layer::Env)) color_layer->color_ = col_tmp;
 			}
@@ -1181,7 +1179,7 @@ GatherInfo SppmIntegrator::traceGatherRay(RenderData &render_data, const DiffRay
 		const Rgba col_vol_transmittance = scene_->vol_integrator_->transmittance(render_data.prng_, ray);
 		const Rgba col_vol_integration = scene_->vol_integrator_->integrate(render_data, ray);
 		if(transp_background_) alpha = std::max(alpha, 1.f - col_vol_transmittance.r_);
-		if(layers_used)
+		if(color_layers)
 		{
 			if(ColorLayer *color_layer = color_layers->find(Layer::VolumeTransmittance)) color_layer->color_ = col_vol_transmittance;
 			if(ColorLayer *color_layer = color_layers->find(Layer::VolumeIntegration)) color_layer->color_ = col_vol_integration;

@@ -85,7 +85,7 @@ class Integrator
 class SurfaceIntegrator: public Integrator
 {
 	public:
-		virtual Rgba integrate(RenderData &render_data, const DiffRay &ray, int additional_depth, ColorLayers *color_layers, const RenderView *render_view) const = 0;
+		virtual Rgba integrate(RenderData &render_data, const DiffRay &ray, int additional_depth, ColorLayers *color_layers = nullptr, const RenderView *render_view = nullptr) const = 0;
 
 	protected:
 		SurfaceIntegrator(Logger &logger) : Integrator(logger) { }

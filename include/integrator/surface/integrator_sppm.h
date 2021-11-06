@@ -70,7 +70,7 @@ class SppmIntegrator final : public MonteCarloIntegrator
 		virtual bool render(RenderControl &render_control, Timer &timer, const RenderView *render_view) override;
 		/*! render a tile; only required by default implementation of render() */
 		virtual bool renderTile(RenderArea &a, const RenderView *render_view, const RenderControl &render_control, const Timer &timer, int n_samples, int offset, bool adaptive, int thread_id, int aa_pass_number = 0) override;
-		virtual Rgba integrate(RenderData &render_data, const DiffRay &ray, int additional_depth, ColorLayers *color_layers, const RenderView *render_view) const override;
+		virtual Rgba integrate(RenderData &render_data, const DiffRay &ray, int additional_depth, ColorLayers *color_layers = nullptr, const RenderView *render_view = nullptr) const override;
 		virtual bool preprocess(const RenderControl &render_control, Timer &timer, const RenderView *render_view, ImageFilm *image_film) override; //not used for now
 		// not used now
 		virtual void prePass(int samples, int offset, bool adaptive, const RenderControl &render_control, Timer &timer, const RenderView *render_view) override;

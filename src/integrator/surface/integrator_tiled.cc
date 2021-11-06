@@ -421,8 +421,7 @@ bool TiledIntegrator::renderTile(RenderArea &a, const RenderView *render_view, c
 
 void TiledIntegrator::generateCommonLayers(int raylevel, const SurfacePoint &sp, const DiffRay &ray, const MaskParams &mask_params, ColorLayers *color_layers)
 {
-	const bool layers_used = raylevel == 0 && color_layers && color_layers->getFlags() != Layer::Flags::None;
-	if(layers_used)
+	if(color_layers)
 	{
 		if(color_layers->getFlags().hasAny(Layer::Flags::DebugLayers))
 		{

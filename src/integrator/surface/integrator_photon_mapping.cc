@@ -859,8 +859,6 @@ Rgb PhotonIntegrator::finalGathering(RenderData &render_data, const SurfacePoint
 
 Rgba PhotonIntegrator::integrate(RenderData &render_data, const DiffRay &ray, int additional_depth, ColorLayers *color_layers, const RenderView *render_view) const
 {
-	const bool layers_used = render_data.raylevel_ == 0 && color_layers && color_layers->getFlags() != Layer::Flags::None;
-
 	static int n_max = 0;
 	static int calls = 0;
 	++calls;
@@ -890,7 +888,7 @@ Rgba PhotonIntegrator::integrate(RenderData &render_data, const DiffRay &ray, in
 
 		const Rgb col_emit = material->emit(sp.mat_data_.get(), sp, wo, render_data.lights_geometry_material_emit_);
 		col += col_emit;
-		if(layers_used)
+		if(color_layers)
 		{
 			if(ColorLayer *color_layer = color_layers->find(Layer::Emit)) color_layer->color_ += col_emit;
 		}
@@ -907,7 +905,7 @@ Rgba PhotonIntegrator::integrate(RenderData &render_data, const DiffRay &ray, in
 			}
 			else
 			{
-				if(layers_used)
+				if(color_layers)
 				{
 					if(ColorLayer *color_layer = color_layers->find(Layer::Radiance))
 					{
@@ -922,7 +920,7 @@ Rgba PhotonIntegrator::integrate(RenderData &render_data, const DiffRay &ray, in
 				{
 					const Rgb col_tmp = material->emit(sp.mat_data_.get(), sp, wo, render_data.lights_geometry_material_emit_);
 					col += col_tmp;
-					if(layers_used)
+					if(color_layers)
 					{
 						if(ColorLayer *color_layer = color_layers->find(Layer::Emit)) color_layer->color_ += col_tmp;
 					}
@@ -934,7 +932,7 @@ Rgba PhotonIntegrator::integrate(RenderData &render_data, const DiffRay &ray, in
 					Rgb col_tmp = finalGathering(render_data, sp, wo);
 					if(aa_noise_params_.clamp_indirect_ > 0.f) col_tmp.clampProportionalRgb(aa_noise_params_.clamp_indirect_);
 					col += col_tmp;
-					if(layers_used)
+					if(color_layers)
 					{
 						if(ColorLayer *color_layer = color_layers->find(Layer::DiffuseIndirect)) color_layer->color_ = col_tmp;
 					}
@@ -951,7 +949,7 @@ Rgba PhotonIntegrator::integrate(RenderData &render_data, const DiffRay &ray, in
 			}
 			else
 			{
-				if(use_photon_diffuse_ && layers_used)
+				if(use_photon_diffuse_ && color_layers)
 				{
 					if(ColorLayer *color_layer = color_layers->find(Layer::Radiance))
 					{
@@ -965,7 +963,7 @@ Rgba PhotonIntegrator::integrate(RenderData &render_data, const DiffRay &ray, in
 				{
 					const Rgb col_tmp = material->emit(sp.mat_data_.get(), sp, wo, render_data.lights_geometry_material_emit_);
 					col += col_tmp;
-					if(layers_used)
+					if(color_layers)
 					{
 						if(ColorLayer *color_layer = color_layers->find(Layer::Emit)) color_layer->color_ += col_tmp;
 					}
@@ -994,7 +992,7 @@ Rgba PhotonIntegrator::integrate(RenderData &render_data, const DiffRay &ray, in
 
 						const Rgb col_tmp = surf_col * scale * gathered[i].photon_->color();
 						col += col_tmp;
-						if(layers_used)
+						if(color_layers)
 						{
 							if(ColorLayer *color_layer = color_layers->find(Layer::DiffuseIndirect)) color_layer->color_ += col_tmp;
 						}
@@ -1009,7 +1007,7 @@ Rgba PhotonIntegrator::integrate(RenderData &render_data, const DiffRay &ray, in
 			Rgb col_tmp = estimateCausticPhotons(sp, wo);
 			if(aa_noise_params_.clamp_indirect_ > 0.f) col_tmp.clampProportionalRgb(aa_noise_params_.clamp_indirect_);
 			col += col_tmp;
-			if(layers_used)
+			if(color_layers)
 			{
 				if(ColorLayer *color_layer = color_layers->find(Layer::Indirect)) color_layer->color_ = col_tmp;
 			}
@@ -1017,7 +1015,7 @@ Rgba PhotonIntegrator::integrate(RenderData &render_data, const DiffRay &ray, in
 
 		recursiveRaytrace(render_data, ray, mat_bsdfs, sp, wo, col, alpha, additional_depth, color_layers);
 
-		if(layers_used)
+		if(color_layers)
 		{
 			generateCommonLayers(render_data.raylevel_, sp, ray, scene_->getMaskParams(), color_layers);
 
@@ -1045,7 +1043,7 @@ Rgba PhotonIntegrator::integrate(RenderData &render_data, const DiffRay &ray, in
 		{
 			const Rgb col_tmp = (*scene_->getBackground())(ray);
 			col += col_tmp;
-			if(layers_used)
+			if(color_layers)
 			{
 				if(ColorLayer *color_layer = color_layers->find(Layer::Env)) color_layer->color_ = col_tmp;
 			}
@@ -1059,7 +1057,7 @@ Rgba PhotonIntegrator::integrate(RenderData &render_data, const DiffRay &ray, in
 		const Rgb col_vol_transmittance = scene_->vol_integrator_->transmittance(render_data.prng_, ray);
 		const Rgb col_vol_integration = scene_->vol_integrator_->integrate(render_data, ray);
 		if(transp_background_) alpha = std::max(alpha, 1.f - col_vol_transmittance.r_);
-		if(layers_used)
+		if(color_layers)
 		{
 			if(ColorLayer *color_layer = color_layers->find(Layer::VolumeTransmittance)) color_layer->color_ = col_vol_transmittance;
 			if(ColorLayer *color_layer = color_layers->find(Layer::VolumeIntegration)) color_layer->color_ = col_vol_integration;
