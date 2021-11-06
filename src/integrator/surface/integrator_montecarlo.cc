@@ -955,26 +955,28 @@ void MonteCarloIntegrator::recursiveRaytrace(RenderData &render_data, const Diff
 			col += dispersive(render_data, sp, material, bsdfs, wo, scene_->ray_min_dist_, additional_depth, layers_used, color_layers);
 		}
 
-		// glossy reflection with recursive raytracing:
-		if(bsdfs.hasAny(BsdfFlags::Glossy) && render_data.raylevel_ < 20)
+		if(render_data.raylevel_ < 20 && bsdfs.hasAny(BsdfFlags::Glossy | BsdfFlags::Specular | BsdfFlags::Filter))
 		{
-			const SpDifferentials sp_differentials(sp, ray); //FIXME, perhaps we can calculate this only once for both glossy and Specular?
-			col += glossy(render_data, alpha, ray, sp_differentials, material, mat_bsdfs, bsdfs, wo, scene_->ray_min_dist_, additional_depth, layers_used, color_layers);
-		}
-
-		//...perfect specular reflection/refraction with recursive raytracing...
-		if(bsdfs.hasAny((BsdfFlags::Specular | BsdfFlags::Filter)) && render_data.raylevel_ < 20)
-		{
-			render_data.lights_geometry_material_emit_ = true;
-			const Specular specular = material->getSpecular(render_data.raylevel_, sp.mat_data_.get(), sp, wo, render_data.chromatic_, render_data.wavelength_);
-			const SpDifferentials sp_differentials(sp, ray); //FIXME, perhaps we can calculate this only once for both glossy and Specular?
-			if(specular.reflect_)
+			const SpDifferentials sp_differentials(sp, ray);
+			// glossy reflection with recursive raytracing:
+			if(bsdfs.hasAny(BsdfFlags::Glossy))
 			{
-				col += specularReflect(render_data, alpha, ray, sp_differentials, material, bsdfs, specular.reflect_.get(), scene_->ray_min_dist_, additional_depth, layers_used, color_layers);
+				col += glossy(render_data, alpha, ray, sp_differentials, material, mat_bsdfs, bsdfs, wo, scene_->ray_min_dist_, additional_depth, layers_used, color_layers);
 			}
-			if(specular.refract_)
+
+			//...perfect specular reflection/refraction with recursive raytracing...
+			if(bsdfs.hasAny((BsdfFlags::Specular | BsdfFlags::Filter)))
 			{
-				col += specularRefract(render_data, alpha, ray, sp_differentials, material, bsdfs, specular.refract_.get(), scene_->ray_min_dist_, additional_depth, layers_used, color_layers);
+				render_data.lights_geometry_material_emit_ = true;
+				const Specular specular = material->getSpecular(render_data.raylevel_, sp.mat_data_.get(), sp, wo, render_data.chromatic_, render_data.wavelength_);
+				if(specular.reflect_)
+				{
+					col += specularReflect(render_data, alpha, ray, sp_differentials, material, bsdfs, specular.reflect_.get(), scene_->ray_min_dist_, additional_depth, layers_used, color_layers);
+				}
+				if(specular.refract_)
+				{
+					col += specularRefract(render_data, alpha, ray, sp_differentials, material, bsdfs, specular.refract_.get(), scene_->ray_min_dist_, additional_depth, layers_used, color_layers);
+				}
 			}
 		}
 	}
