@@ -186,20 +186,40 @@ Specular BlendMaterial::getSpecular(int raylevel, const MaterialData *mat_data, 
 	if(specular_1.reflect_ && specular_2.reflect_)
 	{
 		specular_blend.reflect_ = std::unique_ptr<DirectionColor>(new DirectionColor());
-		specular_blend.reflect_->col_ = math::lerp(specular_2.reflect_->col_, specular_1.reflect_->col_, blend_val);
+		specular_blend.reflect_->col_ = math::lerp(specular_1.reflect_->col_, specular_2.reflect_->col_, blend_val);
 		specular_blend.reflect_->dir_ = (specular_1.reflect_->dir_ + specular_2.reflect_->dir_).normalize();
 	}
-	else if(specular_1.reflect_) specular_blend.reflect_ = std::move(specular_1.reflect_);
-	else if(specular_2.reflect_) specular_blend.reflect_ = std::move(specular_2.reflect_);
+	else if(specular_1.reflect_)
+	{
+		specular_blend.reflect_ = std::unique_ptr<DirectionColor>(new DirectionColor());
+		specular_blend.reflect_->col_ = math::lerp(specular_1.reflect_->col_, {0.f}, blend_val);
+		specular_blend.reflect_->dir_ = specular_1.reflect_->dir_.normalize();
+	}
+	else if(specular_2.reflect_)
+	{
+		specular_blend.reflect_ = std::unique_ptr<DirectionColor>(new DirectionColor());
+		specular_blend.reflect_->col_ = math::lerp({0.f}, specular_2.reflect_->col_, blend_val);
+		specular_blend.reflect_->dir_ = specular_2.reflect_->dir_.normalize();
+	}
 
 	if(specular_1.refract_ && specular_2.refract_)
 	{
 		specular_blend.refract_ = std::unique_ptr<DirectionColor>(new DirectionColor());
-		specular_blend.refract_->col_ = math::lerp(specular_2.refract_->col_, specular_1.refract_->col_, blend_val);
+		specular_blend.refract_->col_ = math::lerp(specular_1.refract_->col_, specular_2.refract_->col_, blend_val);
 		specular_blend.refract_->dir_ = (specular_1.refract_->dir_ + specular_2.refract_->dir_).normalize();
 	}
-	else if(specular_1.refract_) specular_blend.refract_ = std::move(specular_1.refract_);
-	else if(specular_2.refract_) specular_blend.refract_ = std::move(specular_2.refract_);
+	else if(specular_1.refract_)
+	{
+		specular_blend.refract_ = std::unique_ptr<DirectionColor>(new DirectionColor());
+		specular_blend.refract_->col_ = math::lerp(specular_1.refract_->col_, {0.f}, blend_val);
+		specular_blend.refract_->dir_ = specular_1.refract_->dir_.normalize();
+	}
+	else if(specular_2.refract_)
+	{
+		specular_blend.refract_ = std::unique_ptr<DirectionColor>(new DirectionColor());
+		specular_blend.refract_->col_ = math::lerp({0.f}, specular_2.refract_->col_, blend_val);
+		specular_blend.refract_->dir_ = specular_2.refract_->dir_.normalize();
+	}
 
 	if(wireframe_thickness_ > 0.f && (specular_blend.reflect_ || specular_blend.refract_))
 	{
