@@ -32,6 +32,7 @@
 #include "sampler/halton.h"
 #include "common/logger.h"
 #include "volume/volume.h"
+#include "math/interpolation.h"
 
 BEGIN_YAFARAY
 
@@ -189,6 +190,34 @@ void Material::applyBump(SurfacePoint &sp, const DuDv &du_dv) const
 	sp.n_ = (sp.nu_ ^ sp.nv_).normalize();
 	sp.nu_.normalize();
 	sp.nv_ = (sp.n_ ^ sp.nu_).normalize();
+}
+
+std::unique_ptr<DirectionColor> DirectionColor::blend(std::unique_ptr<DirectionColor> direction_color_1, std::unique_ptr<DirectionColor> direction_color_2, float blend_val)
+{
+	if(blend_val <= 0.f) return direction_color_1;
+	else if(blend_val >= 1.f) return direction_color_2;
+	if(direction_color_1 && direction_color_2)
+	{
+		std::unique_ptr<DirectionColor> direction_color_blend = std::unique_ptr<DirectionColor>(new DirectionColor());
+		direction_color_blend->col_ = math::lerp(direction_color_1->col_, direction_color_2->col_, blend_val);
+		direction_color_blend->dir_ = (direction_color_1->dir_ + direction_color_2->dir_).normalize();
+		return direction_color_blend;
+	}
+	else if(direction_color_1)
+	{
+		std::unique_ptr<DirectionColor> direction_color_blend = std::unique_ptr<DirectionColor>(new DirectionColor());
+		direction_color_blend->col_ = math::lerp(direction_color_1->col_, {0.f}, blend_val);
+		direction_color_blend->dir_ = direction_color_1->dir_.normalize();
+		return direction_color_blend;
+	}
+	else if(direction_color_2)
+	{
+		std::unique_ptr<DirectionColor> direction_color_blend = std::unique_ptr<DirectionColor>(new DirectionColor());
+		direction_color_blend->col_ = math::lerp({0.f}, direction_color_2->col_, blend_val);
+		direction_color_blend->dir_ = direction_color_2->dir_.normalize();
+		return direction_color_blend;
+	}
+	return nullptr;
 }
 
 END_YAFARAY

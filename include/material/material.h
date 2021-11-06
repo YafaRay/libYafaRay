@@ -77,6 +77,7 @@ class MaterialData
 
 struct DirectionColor
 {
+	static std::unique_ptr<DirectionColor> blend(std::unique_ptr<DirectionColor> direction_color_1, std::unique_ptr<DirectionColor> direction_color_2, float blend_val);
 	Vec3 dir_;
 	Rgb col_;
 };
