@@ -188,7 +188,7 @@ void Scene::setSurfIntegrator(SurfaceIntegrator *s)
 void Scene::setVolIntegrator(VolumeIntegrator *v)
 {
 	vol_integrator_ = v;
-	vol_integrator_->setScene(this);
+	if(vol_integrator_) vol_integrator_->setScene(this);
 	creation_state_.changes_ |= CreationState::Flags::COther;
 }
 
@@ -236,7 +236,10 @@ bool Scene::render()
 				logger_.logWarning("Scene: No cameras or lights found at RenderView ", it.second->getName(), "', skipping this RenderView...");
 				continue;
 			}
-			success = (surf_integrator_->preprocess(render_control_, image_film_->getTimer(), it.second.get(), image_film_.get()) && vol_integrator_->preprocess(render_control_, image_film_->getTimer(), it.second.get(), image_film_.get()));
+
+			success = surf_integrator_->preprocess(render_control_, image_film_->getTimer(), it.second.get(), image_film_.get());
+			if(vol_integrator_) success = success && vol_integrator_->preprocess(render_control_, image_film_->getTimer(), it.second.get(), image_film_.get());
+
 			if(!success)
 			{
 				logger_.logError("Scene: Preprocessing process failed, exiting...");
@@ -563,16 +566,15 @@ bool Scene::setupSceneRenderParams(Scene &scene, const ParamMap &params)
 		return false;
 	}
 
-	if(!params.getParam("volintegrator_name", name))
+	Integrator *volume_integrator = nullptr;
+	if(params.getParam("volintegrator_name", name))
 	{
-		logger_.logError("Scene: ", "Specify a Volume Integrator!");
-		return false;
-	}
-	Integrator *volume_integrator = getIntegrator(name);
-	if(volume_integrator->getType() != Integrator::Volume)
-	{
-		logger_.logError("Scene: ", "Integrator '", name, "' is not a volume integrator!");
-		return false;
+		volume_integrator = getIntegrator(name);
+		if(volume_integrator && volume_integrator->getType() != Integrator::Volume)
+		{
+			logger_.logError("Scene: ", "Integrator '", name, "' is not a volume integrator!");
+			return false;
+		}
 	}
 
 	const Background *background = nullptr;

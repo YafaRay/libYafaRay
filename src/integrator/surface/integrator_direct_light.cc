@@ -194,20 +194,19 @@ Rgba DirectLightIntegrator::integrate(RenderData &render_data, const DiffRay &ra
 
 	render_data.lights_geometry_material_emit_ = old_lights_geometry_material_emit;
 
-	const Rgb col_vol_transmittance = scene_->vol_integrator_->transmittance(render_data.prng_, ray);
-	const Rgb col_vol_integration = scene_->vol_integrator_->integrate(render_data, ray);
-
-	if(transp_background_) alpha = std::max(alpha, 1.f - col_vol_transmittance.r_);
-
-	if(layers_used)
+	if(scene_->vol_integrator_)
 	{
-		if(ColorLayer *color_layer = color_layers->find(Layer::VolumeTransmittance)) color_layer->color_ = col_vol_transmittance;
-		if(ColorLayer *color_layer = color_layers->find(Layer::VolumeIntegration)) color_layer->color_ = col_vol_integration;
+		const Rgb col_vol_transmittance = scene_->vol_integrator_->transmittance(render_data.prng_, ray);
+		const Rgb col_vol_integration = scene_->vol_integrator_->integrate(render_data, ray);
+		if(transp_background_) alpha = std::max(alpha, 1.f - col_vol_transmittance.r_);
+		if(layers_used)
+		{
+			if(ColorLayer *color_layer = color_layers->find(Layer::VolumeTransmittance)) color_layer->color_ = col_vol_transmittance;
+			if(ColorLayer *color_layer = color_layers->find(Layer::VolumeIntegration)) color_layer->color_ = col_vol_integration;
+		}
+		col = (col * col_vol_transmittance) + col_vol_integration;
 	}
-
-	col = (col * col_vol_transmittance) + col_vol_integration;
-
-	return Rgba(col, alpha);
+	return {col, alpha};
 }
 
 std::unique_ptr<Integrator> DirectLightIntegrator::factory(Logger &logger, ParamMap &params, const Scene &scene)

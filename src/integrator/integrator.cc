@@ -24,7 +24,6 @@
 #include "integrator/surface/integrator_photon_mapping.h"
 #include "integrator/surface/integrator_sppm.h"
 #include "integrator/surface/integrator_debug.h"
-#include "integrator/volume/integrator_empty_volume.h"
 #include "integrator/volume/integrator_sky.h"
 #include "integrator/volume/integrator_single_scatter.h"
 #include "integrator/volume/integrator_emission.h"
@@ -51,7 +50,6 @@ std::unique_ptr<Integrator> Integrator::factory(Logger &logger, ParamMap &params
 	else if(type == "pathtracing") return PathIntegrator::factory(logger, params, scene);
 	else if(type == "photonmapping") return PhotonIntegrator::factory(logger, params, scene);
 	else if(type == "SPPM") return SppmIntegrator::factory(logger, params, scene);
-	else if(type == "none") return EmptyVolumeIntegrator::factory(logger, params, scene);
 	else if(type == "EmissionIntegrator") return EmissionIntegrator::factory(logger, params, scene);
 	else if(type == "SingleScatterIntegrator") return SingleScatterIntegrator::factory(logger, params, scene);
 	else if(type == "SkyIntegrator") return SkyIntegrator::factory(logger, params, scene);

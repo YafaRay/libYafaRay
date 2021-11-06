@@ -128,7 +128,7 @@ Rgb MonteCarloIntegrator::doLightEstimation(RenderData &render_data, const Light
 				if(!shadowed && layers_used && color_layers->find(Layer::Shadow)) col_shadow += Rgb(1.f);
 
 				const Rgb surf_col = material->eval(sp.mat_data_.get(), sp, wo, light_ray.dir_, BsdfFlags::All);
-				const Rgb transmit_col = scene_->vol_integrator_->transmittance(render_data.prng_, light_ray);
+				const Rgb transmit_col = scene_->vol_integrator_ ? scene_->vol_integrator_->transmittance(render_data.prng_, light_ray) : 1.f;
 				const Rgba tmp_col_no_shadow = surf_col * lcol * angle_light_normal * transmit_col;
 				if(tr_shad_ && cast_shadows) lcol *= scol;
 
@@ -201,8 +201,11 @@ Rgb MonteCarloIntegrator::doLightEstimation(RenderData &render_data, const Light
 				{
 					const Rgb ls_col_no_shadow = ls.col_;
 					if(tr_shad_ && cast_shadows) ls.col_ *= scol;
-					const Rgb transmit_col = scene_->vol_integrator_->transmittance(render_data.prng_, light_ray);
-					ls.col_ *= transmit_col;
+					if(scene_->vol_integrator_)
+					{
+						const Rgb transmit_col = scene_->vol_integrator_->transmittance(render_data.prng_, light_ray);
+						ls.col_ *= transmit_col;
+					}
 					const Rgb surf_col = material->eval(sp.mat_data_.get(), sp, wo, light_ray.dir_, BsdfFlags::All);
 
 					if(layers_used && (!shadowed && ls.pdf_ > 1e-6f) && color_layers->find(Layer::Shadow)) col_shadow += Rgb(1.f);
@@ -339,8 +342,11 @@ Rgb MonteCarloIntegrator::doLightEstimation(RenderData &render_data, const Light
 					if((!shadowed && light_pdf > 1e-6f) || (layers_used && color_layers->find(Layer::DiffuseNoShadow)))
 					{
 						if(tr_shad_ && cast_shadows) lcol *= scol;
-						const Rgb transmit_col = scene_->vol_integrator_->transmittance(render_data.prng_, b_ray);
-						lcol *= transmit_col;
+						if(scene_->vol_integrator_)
+						{
+							const Rgb transmit_col = scene_->vol_integrator_->transmittance(render_data.prng_, b_ray);
+							lcol *= transmit_col;
+						}
 						const float l_pdf = 1.f / light_pdf;
 						const float l_2 = l_pdf * l_pdf;
 						const float m_2 = s.pdf_ * s.pdf_;

@@ -19,7 +19,6 @@
 target_sources(libyafaray4
 	PRIVATE
 		integrator_emission.cc
-		integrator_empty_volume.cc
 		integrator_single_scatter.cc
 		integrator_sky.cc
 )

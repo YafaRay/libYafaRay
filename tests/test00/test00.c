@@ -241,11 +241,6 @@ int main()
 	yafaray_createIntegrator(yi, "surfintegr");
 	yafaray_paramsClearAll(yi);
 
-	/* Creating volume integrator */
-	yafaray_paramsSetString(yi, "type", "none");
-	yafaray_createIntegrator(yi, "volintegr");
-	yafaray_paramsClearAll(yi);
-
 	/* Setting up Film callbacks, must be done before yafaray_setupRender() */
 	yafaray_setRenderNotifyViewCallback(yi, notifyViewCallback, (void *) &result_image);
 	yafaray_setRenderNotifyLayerCallback(yi, notifyLayerCallback, (void *) &result_image);
@@ -256,7 +251,6 @@ int main()
 
 	/* Setting up render parameters */
 	yafaray_paramsSetString(yi, "integrator_name", "surfintegr");
-	yafaray_paramsSetString(yi, "volintegrator_name", "volintegr");
 	yafaray_paramsSetString(yi, "scene_accelerator", "yafaray-kdtree-original");
 	yafaray_paramsSetString(yi, "background_name", "world_background");
 	yafaray_paramsSetInt(yi, "width", result_image.width_);

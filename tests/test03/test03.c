@@ -572,10 +572,6 @@ int main()
 	yafaray_createIntegrator(yi, "default");
 	yafaray_paramsClearAll(yi);
 
-	yafaray_paramsSetString(yi, "type", "none");
-	yafaray_createIntegrator(yi, "volintegr");
-	yafaray_paramsClearAll(yi);
-
 	yafaray_paramsSetString(yi, "exported_image_name", "Combined");
 	yafaray_paramsSetString(yi, "exported_image_type", "ColorAlpha");
 	yafaray_paramsSetString(yi, "image_type", "ColorAlpha");
@@ -637,7 +633,6 @@ int main()
 	yafaray_paramsSetInt(yi, "threads_photons", 1);
 	yafaray_paramsSetInt(yi, "tile_size", 32);
 	yafaray_paramsSetString(yi, "tiles_order", "centre");
-	yafaray_paramsSetString(yi, "volintegrator_name", "volintegr");
 	yafaray_paramsSetInt(yi, "width", 10);
 	yafaray_paramsSetInt(yi, "height", 10);
 	yafaray_paramsSetInt(yi, "xstart", 80);

@@ -935,10 +935,6 @@ int main()
 	yafaray_createIntegrator(yi, "default");
 	yafaray_paramsClearAll(yi);
 
-	yafaray_paramsSetString(yi, "type", "none");
-	yafaray_createIntegrator(yi, "volintegr");
-	yafaray_paramsClearAll(yi);
-
 	yafaray_paramsSetString(yi, "exported_image_name", "Combined");
 	yafaray_paramsSetString(yi, "exported_image_type", "ColorAlpha");
 	yafaray_paramsSetString(yi, "image_type", "ColorAlpha");
@@ -997,11 +993,10 @@ int main()
 	yafaray_paramsSetFloat(yi, "layer_toon_quantization", 0.1);
 	yafaray_paramsSetString(yi, "scene_accelerator", "yafaray-kdtree-original");
 	yafaray_paramsSetBool(yi, "show_sam_pix", YAFARAY_BOOL_TRUE);
-	yafaray_paramsSetInt(yi, "threads", 1);
-	yafaray_paramsSetInt(yi, "threads_photons", 1);
+	yafaray_paramsSetInt(yi, "threads", -1);
+	yafaray_paramsSetInt(yi, "threads_photons", -1);
 	yafaray_paramsSetInt(yi, "tile_size", 32);
 	yafaray_paramsSetString(yi, "tiles_order", "centre");
-	yafaray_paramsSetString(yi, "volintegrator_name", "volintegr");
 	yafaray_paramsSetInt(yi, "width", 480);
 	yafaray_paramsSetInt(yi, "xstart", 0);
 	yafaray_paramsSetInt(yi, "ystart", 0);
