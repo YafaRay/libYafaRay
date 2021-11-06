@@ -186,16 +186,13 @@ void PhotonIntegrator::diffuseWorker(PhotonMap *diffuse_map, int thread_id, cons
 		while(accelerator->intersect(ray, hit_curr, render_data.cam_))
 		{
 			Rgb transm(1.f);
-
-			if(material_prev)
+			if(material_prev && mat_bsdfs_prev.hasAny(BsdfFlags::Volumetric))
 			{
-				const VolumeHandler *vol;
-				if(mat_bsdfs_prev.hasAny(BsdfFlags::Volumetric) && (vol = material_prev->getVolumeHandler(hit_prev.ng_ * -ray.dir_ < 0)))
+				if(const VolumeHandler *vol = material_prev->getVolumeHandler(hit_prev.ng_ * -ray.dir_ < 0))
 				{
 					transm = vol->transmittance(ray);
 				}
 			}
-
 			const Vec3 wi = -ray.dir_;
 			const Material *material = hit_curr.material_;
 			const BsdfFlags &mat_bsdfs = hit_curr.mat_data_->bsdf_flags_;
@@ -727,8 +724,6 @@ Rgb PhotonIntegrator::finalGathering(RenderData &render_data, const SurfacePoint
 	if(!accelerator) return {0.f};
 
 	Rgb path_col(0.0);
-	const VolumeHandler *vol;
-	Rgb vcol(0.f);
 	float w = 0.f;
 
 	int n_sampl = (int) ceilf(std::max(1, n_paths_ / render_data.ray_division_) * aa_indirect_sample_multiplier_);
@@ -777,12 +772,13 @@ Rgb PhotonIntegrator::finalGathering(RenderData &render_data, const SurfacePoint
 		{
 			int d_4 = 4 * depth;
 			pwo = -p_ray.dir_;
-
-			if(mat_bsd_fs.hasAny(BsdfFlags::Volumetric) && (vol = p_mat->getVolumeHandler(hit.n_ * pwo < 0)))
+			if(mat_bsd_fs.hasAny(BsdfFlags::Volumetric))
 			{
-				throughput *= vol->transmittance(p_ray);
+				if(const VolumeHandler *vol = p_mat->getVolumeHandler(hit.n_ * pwo < 0))
+				{
+					throughput *= vol->transmittance(p_ray);
+				}
 			}
-
 			if(mat_bsd_fs.hasAny(BsdfFlags::Diffuse))
 			{
 				if(close)

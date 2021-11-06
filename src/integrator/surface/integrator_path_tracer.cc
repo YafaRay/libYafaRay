@@ -291,12 +291,13 @@ Rgba PathIntegrator::integrate(RenderData &render_data, const DiffRay &ray, int 
 					if(mat_bsd_fs.hasAny(BsdfFlags::Diffuse)) lcol = estimateOneDirectLight(render_data, *hit, pwo, offs);
 					else lcol = Rgb(0.f);
 
-					const VolumeHandler *vol;
-					if(mat_bsd_fs.hasAny(BsdfFlags::Volumetric) && (vol = p_mat->getVolumeHandler(hit->n_ * pwo < 0)))
+					if(mat_bsd_fs.hasAny(BsdfFlags::Volumetric))
 					{
-						throughput *= vol->transmittance(p_ray);
+						if(const VolumeHandler *vol = p_mat->getVolumeHandler(hit->n_ * pwo < 0))
+						{
+							throughput *= vol->transmittance(p_ray);
+						}
 					}
-
 					// Russian roulette for terminating paths with low probability
 					if(depth > russian_roulette_min_bounces_)
 					{
