@@ -711,7 +711,7 @@ Rgb MonteCarloIntegrator::dispersive(RenderData &render_data, const SurfacePoint
 			Rgb wl_col;
 			spectrum::wl2Rgb(render_data.wavelength_, wl_col);
 			const DiffRay ref_ray(sp.p_, wi, ray_min_dist);
-			const Rgb dcol_trans = static_cast<Rgb>(integrate(render_data, ref_ray, additional_depth, nullptr, nullptr)) * mcol * wl_col * w;
+			const Rgb dcol_trans = static_cast<Rgb>(integrate(render_data, ref_ray, additional_depth)) * mcol * wl_col * w;
 			dcol += dcol_trans;
 			if(color_layers) dcol_trans_accum += dcol_trans;
 			if(!ref_ray_chromatic_volume_obtained)
@@ -792,7 +792,7 @@ Rgb MonteCarloIntegrator::glossy(RenderData &render_data, float &alpha, const Di
 					if(s.sampled_flags_.hasAny(BsdfFlags::Reflect)) sp_differentials.reflectedRay(ray, ref_ray);
 					else if(s.sampled_flags_.hasAny(BsdfFlags::Transmit)) sp_differentials.refractedRay(ray, ref_ray, material->getMatIor());
 				}
-				Rgba integ = static_cast<Rgb>(integrate(render_data, ref_ray, additional_depth, nullptr, nullptr));
+				Rgba integ = static_cast<Rgb>(integrate(render_data, ref_ray, additional_depth));
 				if(bsdfs.hasAny(BsdfFlags::Volumetric))
 				{
 					if(const VolumeHandler *vol = material->getVolumeHandler(sp_differentials.sp_.ng_ * ref_ray.dir_ < 0))
@@ -1011,7 +1011,7 @@ Rgb MonteCarloIntegrator::sampleAmbientOcclusion(RenderData &render_data, const 
 			col += material->emit(sp.mat_data_.get(), sp, wo, render_data.lights_geometry_material_emit_) * s.pdf_;
 		}
 		Rgb scol;
-		const bool shadowed = (tr_shad_) ? accelerator->isShadowed(light_ray, s_depth_, scol, mask_obj_index, mask_mat_index, scene_->getShadowBias(), nullptr) : accelerator->isShadowed(light_ray, mask_obj_index, mask_mat_index, scene_->getShadowBias());
+		const bool shadowed = (tr_shad_) ? accelerator->isShadowed(light_ray, s_depth_, scol, mask_obj_index, mask_mat_index, scene_->getShadowBias(), render_data.cam_) : accelerator->isShadowed(light_ray, mask_obj_index, mask_mat_index, scene_->getShadowBias());
 		if(!shadowed)
 		{
 			const float cos = std::abs(sp.n_ * light_ray.dir_);
