@@ -54,7 +54,7 @@ class BidirectionalIntegrator final : public TiledIntegrator
 		Rgb sampleAmbientOcclusionClayLayer(RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo) const;
 		int createPath(RenderData &render_data, const Ray &start, std::vector<PathVertex> &path, int max_len, const Camera *camera) const;
 		Rgb evalPath(int s, int t, PathData &pd, const Camera *camera) const;
-		Rgb evalLPath(int t, PathData &pd, Ray &l_ray, const Rgb &lcol, const Camera *camera) const;
+		Rgb evalLPath(int t, PathData &pd, const Ray &l_ray, const Rgb &lcol, const Camera *camera) const;
 		Rgb evalPathE(int s, PathData &pd, const Camera *camera) const;
 		bool connectPaths(int s, int t, PathData &pd) const;
 		bool connectLPath(RenderData &render_data, int t, PathData &pd, Ray &l_ray, Rgb &lcol) const;

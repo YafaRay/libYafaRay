@@ -147,7 +147,7 @@ bool SingleScatterIntegrator::preprocess(const RenderControl &render_control, Ti
 	return true;
 }
 
-Rgb SingleScatterIntegrator::getInScatter(Random *random, Ray &step_ray, float current_step) const
+Rgb SingleScatterIntegrator::getInScatter(Random *random, const Ray &step_ray, float current_step) const
 {
 	const Accelerator *accelerator = scene_->getAccelerator();
 	if(!accelerator) return {0.f};

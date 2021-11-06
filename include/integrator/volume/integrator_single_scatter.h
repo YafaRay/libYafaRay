@@ -46,7 +46,7 @@ class SingleScatterIntegrator final : public VolumeIntegrator
 		virtual Rgba transmittance(Random *random, const Ray &ray) const override;
 		// emission and in-scattering
 		virtual Rgba integrate(RenderData &render_data, const Ray &ray, int additional_depth = 0) const override;
-		Rgb getInScatter(Random *random, Ray &step_ray, float current_step) const;
+		Rgb getInScatter(Random *random, const Ray &step_ray, float current_step) const;
 
 		bool adaptive_;
 		bool optimize_;

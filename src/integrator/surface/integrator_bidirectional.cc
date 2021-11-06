@@ -875,7 +875,7 @@ Rgb BidirectionalIntegrator::evalPath(int s, int t, PathData &pd, const Camera *
 }
 
 //===  eval paths with s==1 (direct lighting strategy)  ===//
-Rgb BidirectionalIntegrator::evalLPath(int t, PathData &pd, Ray &l_ray, const Rgb &lcol, const Camera *camera) const
+Rgb BidirectionalIntegrator::evalLPath(int t, PathData &pd, const Ray &l_ray, const Rgb &lcol, const Camera *camera) const
 {
 	const Accelerator *accelerator = scene_->getAccelerator();
 	if(!accelerator) return {0.f};
