@@ -396,7 +396,7 @@ float ShinyDiffuseMaterial::pdf(const MaterialData *mat_data, const SurfacePoint
  *  @param  wi Array of two vectors to record reflected ray direction (wi[0]) and refracted ray direction (wi[1])
  *  @param  col Array of two colors to record reflected ray color (col[0]) and refracted ray color (col[1])
  */
-Material::Specular ShinyDiffuseMaterial::getSpecular(int raylevel, const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, bool chromatic, float wavelength) const
+Specular ShinyDiffuseMaterial::getSpecular(int raylevel, const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, bool chromatic, float wavelength) const
 {
 	Specular specular;
 	const bool backface = wo * sp.ng_ < 0.f;
@@ -412,28 +412,28 @@ Material::Specular ShinyDiffuseMaterial::getSpecular(int raylevel, const Materia
 	const float kr = getFresnelKr(wo, n, cur_ior_squared);
 	if(is_transparent_)
 	{
-		specular.refract_.enabled_ = true;
-		specular.refract_.dir_ = -wo;
+		specular.refract_ = std::unique_ptr<DirectionColor>(new DirectionColor());
+		specular.refract_->dir_ = -wo;
 		const Rgb tcol = transmit_filter_strength_ * getShaderColor(diffuse_shader_, mat_data->node_tree_data_, diffuse_color_) + Rgb(1.f - transmit_filter_strength_);
 		const ShinyDiffuseMaterialData *mat_data_specific = static_cast<const ShinyDiffuseMaterialData *>(mat_data);
-		specular.refract_.col_ = (1.f - mat_data_specific->components_[0] * kr) * mat_data_specific->components_[1] * tcol;
-		if(wireframe_thickness_ > 0.f) applyWireFrame(specular.refract_.col_, wireframe_shader_, mat_data->node_tree_data_, sp);
+		specular.refract_->col_ = (1.f - mat_data_specific->components_[0] * kr) * mat_data_specific->components_[1] * tcol;
+		if(wireframe_thickness_ > 0.f) applyWireFrame(specular.refract_->col_, wireframe_shader_, mat_data->node_tree_data_, sp);
 	}
 	if(is_mirror_)
 	{
-		specular.reflect_.enabled_ = true;
+		specular.reflect_ = std::unique_ptr<DirectionColor>(new DirectionColor());
 		//logger_.logWarning(sp.N << " | " << N);
-		specular.reflect_.dir_ = wo;
-		specular.reflect_.dir_.reflect(n);
-		const float cos_wi_ng = specular.reflect_.dir_ * ng;
+		specular.reflect_->dir_ = wo;
+		specular.reflect_->dir_.reflect(n);
+		const float cos_wi_ng = specular.reflect_->dir_ * ng;
 		if(cos_wi_ng < 0.01)
 		{
-			specular.reflect_.dir_ += (0.01 - cos_wi_ng) * ng;
-			specular.reflect_.dir_.normalize();
+			specular.reflect_->dir_ += (0.01 - cos_wi_ng) * ng;
+			specular.reflect_->dir_.normalize();
 		}
 		const ShinyDiffuseMaterialData *mat_data_specific = static_cast<const ShinyDiffuseMaterialData *>(mat_data);
-		specular.reflect_.col_ = getShaderColor(mirror_color_shader_, mat_data->node_tree_data_, mirror_color_) * (mat_data_specific->components_[0] * kr);
-		if(wireframe_thickness_ > 0.f) applyWireFrame(specular.reflect_.col_, wireframe_shader_, mat_data->node_tree_data_, sp);
+		specular.reflect_->col_ = getShaderColor(mirror_color_shader_, mat_data->node_tree_data_, mirror_color_) * (mat_data_specific->components_[0] * kr);
+		if(wireframe_thickness_ > 0.f) applyWireFrame(specular.reflect_->col_, wireframe_shader_, mat_data->node_tree_data_, sp);
 	}
 	return specular;
 }

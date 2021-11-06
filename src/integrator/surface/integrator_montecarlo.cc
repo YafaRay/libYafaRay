@@ -681,6 +681,263 @@ Rgb MonteCarloIntegrator::estimateCausticPhotons(const SurfacePoint &sp, const V
 	return sum;
 }
 
+Rgb MonteCarloIntegrator::dispersive(RenderData &render_data, const SurfacePoint &sp, const Material *material, const BsdfFlags &bsdfs, const Vec3 &wo, float ray_min_dist, int additional_depth, bool layers_used, ColorLayers *color_layers) const
+{
+	Rgb col;
+	render_data.lights_geometry_material_emit_ = false; //debatable...
+	int dsam = 8;
+	const int old_division = render_data.ray_division_;
+	const int old_offset = render_data.ray_offset_;
+	const float old_dc_1 = render_data.dc_1_, old_dc_2 = render_data.dc_2_;
+	if(render_data.ray_division_ > 1) dsam = std::max(1, dsam / old_division);
+	render_data.ray_division_ *= dsam;
+	int branch = render_data.ray_division_ * old_offset;
+	const float d_1 = 1.f / (float)dsam;
+	const float ss_1 = sample::riS(render_data.pixel_sample_ + render_data.sampling_offs_);
+	Rgb dcol(0.f);
+	float w = 0.f;
+
+	Rgb dcol_trans_accum;
+	DiffRay ref_ray_chromatic_volume; //Reference ray used for chromatic/dispersive volume color calculation only. FIXME: it only uses one of the sampled reference rays for volume calculations, not sure if this is ok??
+	bool ref_ray_chromatic_volume_obtained = false; //To track if we already have obtained a valid ref_ray for chromatic/dispersive volume color calculations.
+	for(int ns = 0; ns < dsam; ++ns)
+	{
+		render_data.wavelength_ = (ns + ss_1) * d_1;
+		render_data.dc_1_ = Halton::lowDiscrepancySampling(2 * render_data.raylevel_ + 1, branch + render_data.sampling_offs_);
+		render_data.dc_2_ = Halton::lowDiscrepancySampling(2 * render_data.raylevel_ + 2, branch + render_data.sampling_offs_);
+		if(old_division > 1) render_data.wavelength_ = math::addMod1(render_data.wavelength_, old_dc_1);
+		render_data.ray_offset_ = branch;
+		++branch;
+		Sample s(0.5f, 0.5f, BsdfFlags::Reflect | BsdfFlags::Transmit | BsdfFlags::Dispersive);
+		Vec3 wi;
+		const Rgb mcol = material->sample(sp.mat_data_.get(), sp, wo, wi, s, w, render_data.chromatic_, render_data.wavelength_, render_data.cam_);
+
+		if(s.pdf_ > 1.0e-6f && s.sampled_flags_.hasAny(BsdfFlags::Dispersive))
+		{
+			render_data.chromatic_ = false;
+			Rgb wl_col;
+			spectrum::wl2Rgb(render_data.wavelength_, wl_col);
+			const DiffRay ref_ray(sp.p_, wi, ray_min_dist);
+			const Rgb dcol_trans = static_cast<Rgb>(integrate(render_data, ref_ray, additional_depth, nullptr, nullptr)) * mcol * wl_col * w;
+			dcol += dcol_trans;
+			if(layers_used) dcol_trans_accum += dcol_trans;
+			if(!ref_ray_chromatic_volume_obtained)
+			{
+				ref_ray_chromatic_volume = ref_ray;
+				ref_ray_chromatic_volume_obtained = true;
+			}
+			render_data.chromatic_ = true;
+		}
+	}
+	if(ref_ray_chromatic_volume_obtained && bsdfs.hasAny(BsdfFlags::Volumetric))
+	{
+		if(const VolumeHandler *vol = material->getVolumeHandler(sp.ng_ * ref_ray_chromatic_volume.dir_ < 0))
+		{
+			dcol *= vol->transmittance(ref_ray_chromatic_volume);
+		}
+	}
+	if(layers_used)
+	{
+		if(ColorLayer *color_layer = color_layers->find(Layer::Trans))
+		{
+			dcol_trans_accum *= d_1;
+			color_layer->color_ += dcol_trans_accum;
+		}
+	}
+
+	render_data.ray_division_ = old_division;
+	render_data.ray_offset_ = old_offset;
+	render_data.dc_1_ = old_dc_1;
+	render_data.dc_2_ = old_dc_2;
+
+	return dcol * d_1;
+}
+
+Rgb MonteCarloIntegrator::glossy(RenderData &render_data, float &alpha, const DiffRay &ray, const SpDifferentials &sp_differentials, const Material *material, const BsdfFlags &mat_bsdfs, const BsdfFlags &bsdfs, const Vec3 &wo, float ray_min_dist, int additional_depth, bool layers_used, ColorLayers *color_layers) const
+{
+	render_data.lights_geometry_material_emit_ = true;
+	int gsam = 8;
+	const int old_division = render_data.ray_division_;
+	const int old_offset = render_data.ray_offset_;
+	const float old_dc_1 = render_data.dc_1_, old_dc_2 = render_data.dc_2_;
+	if(render_data.ray_division_ > 1) gsam = std::max(1, gsam / old_division);
+	render_data.ray_division_ *= gsam;
+	int branch = render_data.ray_division_ * old_offset;
+	unsigned int offs = gsam * render_data.pixel_sample_ + render_data.sampling_offs_;
+	const float d_1 = 1.f / (float)gsam;
+	Rgb gcol(0.f);
+
+	Halton hal_2(2, offs);
+	Halton hal_3(3, offs);
+
+	Rgb gcol_indirect_accum;
+	Rgb gcol_reflect_accum;
+	Rgb gcol_transmit_accum;
+
+	for(int ns = 0; ns < gsam; ++ns)
+	{
+		render_data.dc_1_ = Halton::lowDiscrepancySampling(2 * render_data.raylevel_ + 1, branch + render_data.sampling_offs_);
+		render_data.dc_2_ = Halton::lowDiscrepancySampling(2 * render_data.raylevel_ + 2, branch + render_data.sampling_offs_);
+		render_data.ray_offset_ = branch;
+		++offs;
+		++branch;
+
+		const float s_1 = hal_2.getNext();
+		const float s_2 = hal_3.getNext();
+
+		if(mat_bsdfs.hasAny(BsdfFlags::Glossy))
+		{
+			if(mat_bsdfs.hasAny(BsdfFlags::Reflect) && !mat_bsdfs.hasAny(BsdfFlags::Transmit))
+			{
+				float w = 0.f;
+				Sample s(s_1, s_2, BsdfFlags::Glossy | BsdfFlags::Reflect);
+				Vec3 wi;
+				const Rgb mcol = material->sample(sp_differentials.sp_.mat_data_.get(), sp_differentials.sp_, wo, wi, s, w, render_data.chromatic_, render_data.wavelength_, render_data.cam_);
+				DiffRay ref_ray(sp_differentials.sp_.p_, wi, scene_->ray_min_dist_);
+				if(diff_rays_enabled_)
+				{
+					if(s.sampled_flags_.hasAny(BsdfFlags::Reflect)) sp_differentials.reflectedRay(ray, ref_ray);
+					else if(s.sampled_flags_.hasAny(BsdfFlags::Transmit)) sp_differentials.refractedRay(ray, ref_ray, material->getMatIor());
+				}
+				Rgba integ = static_cast<Rgb>(integrate(render_data, ref_ray, additional_depth, nullptr, nullptr));
+				if(bsdfs.hasAny(BsdfFlags::Volumetric))
+				{
+					if(const VolumeHandler *vol = material->getVolumeHandler(sp_differentials.sp_.ng_ * ref_ray.dir_ < 0))
+					{
+						integ *= vol->transmittance(ref_ray);
+					}
+				}
+				const Rgb g_ind_col = static_cast<Rgb>(integ) * mcol * w;
+				gcol += g_ind_col;
+				if(layers_used) gcol_indirect_accum += g_ind_col;
+			}
+			else if(mat_bsdfs.hasAny(BsdfFlags::Reflect) && mat_bsdfs.hasAny(BsdfFlags::Transmit))
+			{
+				Sample s(s_1, s_2, BsdfFlags::Glossy | BsdfFlags::AllGlossy);
+				Rgb mcol[2];
+				float w[2];
+				Vec3 dir[2];
+
+				mcol[0] = material->sample(sp_differentials.sp_.mat_data_.get(), sp_differentials.sp_, wo, dir, mcol[1], s, w, render_data.chromatic_, render_data.wavelength_);
+
+				if(s.sampled_flags_.hasAny(BsdfFlags::Reflect) && !s.sampled_flags_.hasAny(BsdfFlags::Dispersive))
+				{
+					DiffRay ref_ray = DiffRay(sp_differentials.sp_.p_, dir[0], scene_->ray_min_dist_);
+					if(diff_rays_enabled_) sp_differentials.reflectedRay(ray, ref_ray);
+					Rgba integ = integrate(render_data, ref_ray, additional_depth, nullptr, nullptr);
+					if(bsdfs.hasAny(BsdfFlags::Volumetric))
+					{
+						if(const VolumeHandler *vol = material->getVolumeHandler(sp_differentials.sp_.ng_ * ref_ray.dir_ < 0))
+						{
+							integ *= vol->transmittance(ref_ray);
+						}
+					}
+					const Rgb col_reflect_factor = mcol[0] * w[0];
+					const Rgb g_ind_col = static_cast<Rgb>(integ) * col_reflect_factor;
+					gcol += g_ind_col;
+					if(layers_used) gcol_reflect_accum += g_ind_col;
+				}
+
+				if(s.sampled_flags_.hasAny(BsdfFlags::Transmit))
+				{
+					DiffRay ref_ray = DiffRay(sp_differentials.sp_.p_, dir[1], scene_->ray_min_dist_);
+					if(diff_rays_enabled_) sp_differentials.refractedRay(ray, ref_ray, material->getMatIor());
+					Rgba integ = integrate(render_data, ref_ray, additional_depth, nullptr, nullptr);
+					if(bsdfs.hasAny(BsdfFlags::Volumetric))
+					{
+						if(const VolumeHandler *vol = material->getVolumeHandler(sp_differentials.sp_.ng_ * ref_ray.dir_ < 0))
+						{
+							integ *= vol->transmittance(ref_ray);
+						}
+					}
+					const Rgb col_transmit_factor = mcol[1] * w[1];
+					const Rgb g_ind_col = static_cast<Rgb>(integ) * col_transmit_factor;
+					gcol += g_ind_col;
+					if(layers_used) gcol_transmit_accum += g_ind_col;
+					alpha = integ.a_;
+				}
+			}
+		}
+	}
+
+	if(layers_used)
+	{
+		if(ColorLayer *color_layer = color_layers->find(Layer::GlossyIndirect))
+		{
+			gcol_indirect_accum *= d_1;
+			color_layer->color_ += gcol_indirect_accum;
+		}
+		if(ColorLayer *color_layer = color_layers->find(Layer::Trans))
+		{
+			gcol_reflect_accum *= d_1;
+			color_layer->color_ += gcol_reflect_accum;
+		}
+		if(ColorLayer *color_layer = color_layers->find(Layer::GlossyIndirect))
+		{
+			gcol_transmit_accum *= d_1;
+			color_layer->color_ += gcol_transmit_accum;
+		}
+	}
+
+	render_data.ray_division_ = old_division;
+	render_data.ray_offset_ = old_offset;
+	render_data.dc_1_ = old_dc_1;
+	render_data.dc_2_ = old_dc_2;
+
+	return gcol * d_1;
+}
+
+Rgb MonteCarloIntegrator::specularReflect(RenderData &render_data, float &alpha, const DiffRay &ray, const SpDifferentials &sp_differentials, const Material *material, const BsdfFlags &bsdfs, const DirectionColor *reflect_data, float ray_min_dist, int additional_depth, bool layers_used, ColorLayers *color_layers) const
+{
+	DiffRay ref_ray(sp_differentials.sp_.p_, reflect_data->dir_, ray_min_dist);
+	if(diff_rays_enabled_) sp_differentials.reflectedRay(ray, ref_ray);
+	Rgb integ = integrate(render_data, ref_ray, additional_depth, nullptr, nullptr);
+	if(bsdfs.hasAny(BsdfFlags::Volumetric))
+	{
+		if(const VolumeHandler *vol = material->getVolumeHandler(sp_differentials.sp_.ng_ * ref_ray.dir_ < 0))
+		{
+			integ *= vol->transmittance(ref_ray);
+		}
+	}
+	const Rgb col_ind = static_cast<Rgb>(integ) * reflect_data->col_;
+	if(layers_used)
+	{
+		if(ColorLayer *color_layer = color_layers->find(Layer::ReflectPerfect)) color_layer->color_ += col_ind;
+	}
+	return col_ind;
+}
+
+Rgb MonteCarloIntegrator::specularRefract(RenderData &render_data, float &alpha, const DiffRay &ray, const SpDifferentials &sp_differentials, const Material *material, const BsdfFlags &bsdfs, const DirectionColor *refract_data, float ray_min_dist, int additional_depth, bool layers_used, ColorLayers *color_layers) const
+{
+	DiffRay ref_ray;
+	float transp_bias_factor = material->getTransparentBiasFactor();
+	if(transp_bias_factor > 0.f)
+	{
+		const bool transpbias_multiply_raydepth = material->getTransparentBiasMultiplyRayDepth();
+		if(transpbias_multiply_raydepth) transp_bias_factor *= render_data.raylevel_;
+		ref_ray = DiffRay(sp_differentials.sp_.p_ + refract_data->dir_ * transp_bias_factor, refract_data->dir_, ray_min_dist);
+	}
+	else ref_ray = DiffRay(sp_differentials.sp_.p_, refract_data->dir_, ray_min_dist);
+
+	if(diff_rays_enabled_) sp_differentials.refractedRay(ray, ref_ray, material->getMatIor());
+	Rgba integ = integrate(render_data, ref_ray, additional_depth, nullptr, nullptr);
+
+	if(bsdfs.hasAny(BsdfFlags::Volumetric))
+	{
+		if(const VolumeHandler *vol = material->getVolumeHandler(sp_differentials.sp_.ng_ * ref_ray.dir_ < 0))
+		{
+			integ *= vol->transmittance(ref_ray);
+		}
+	}
+	const Rgb col_ind = static_cast<Rgb>(integ) * refract_data->col_;
+	if(layers_used)
+	{
+		if(ColorLayer *color_layer = color_layers->find(Layer::RefractPerfect)) color_layer->color_ += col_ind;
+	}
+	alpha = integ.a_;
+	return col_ind;
+}
+
 void MonteCarloIntegrator::recursiveRaytrace(RenderData &render_data, const DiffRay &ray, const BsdfFlags &bsdfs, SurfacePoint &sp, const Vec3 &wo, Rgb &col, float &alpha, int additional_depth, ColorLayers *color_layers) const
 {
 	const bool layers_used = render_data.raylevel_ == 0 && color_layers && color_layers->getFlags() != Layer::Flags::None;
@@ -688,274 +945,36 @@ void MonteCarloIntegrator::recursiveRaytrace(RenderData &render_data, const Diff
 	const Material *material = sp.material_;
 	const BsdfFlags &mat_bsdfs = sp.mat_data_->bsdf_flags_;
 
-	const SpDifferentials sp_diff(sp, ray);
-
 	render_data.raylevel_++;
 
 	if(render_data.raylevel_ <= (r_depth_ + additional_depth))
 	{
-		Halton hal_2(2);
-		Halton hal_3(3);
-
 		// dispersive effects with recursive raytracing:
 		if(bsdfs.hasAny(BsdfFlags::Dispersive) && render_data.chromatic_)
 		{
-			render_data.lights_geometry_material_emit_ = false; //debatable...
-			int dsam = 8;
-			const int old_division = render_data.ray_division_;
-			const int old_offset = render_data.ray_offset_;
-			const float old_dc_1 = render_data.dc_1_, old_dc_2 = render_data.dc_2_;
-			if(render_data.ray_division_ > 1) dsam = std::max(1, dsam / old_division);
-			render_data.ray_division_ *= dsam;
-			int branch = render_data.ray_division_ * old_offset;
-			const float d_1 = 1.f / (float)dsam;
-			const float ss_1 = sample::riS(render_data.pixel_sample_ + render_data.sampling_offs_);
-			Rgb dcol(0.f);
-			float w = 0.f;
-
-			Rgb dcol_trans_accum;
-			DiffRay ref_ray_chromatic_volume; //Reference ray used for chromatic/dispersive volume color calculation only. FIXME: it only uses one of the sampled reference rays for volume calculations, not sure if this is ok??
-			bool ref_ray_chromatic_volume_obtained = false; //To track if we already have obtained a valid ref_ray for chromatic/dispersive volume color calculations.
-			for(int ns = 0; ns < dsam; ++ns)
-			{
-				render_data.wavelength_ = (ns + ss_1) * d_1;
-				render_data.dc_1_ = Halton::lowDiscrepancySampling(2 * render_data.raylevel_ + 1, branch + render_data.sampling_offs_);
-				render_data.dc_2_ = Halton::lowDiscrepancySampling(2 * render_data.raylevel_ + 2, branch + render_data.sampling_offs_);
-				if(old_division > 1) render_data.wavelength_ = math::addMod1(render_data.wavelength_, old_dc_1);
-				render_data.ray_offset_ = branch;
-				++branch;
-				Sample s(0.5f, 0.5f, BsdfFlags::Reflect | BsdfFlags::Transmit | BsdfFlags::Dispersive);
-				Vec3 wi;
-				const Rgb mcol = material->sample(sp.mat_data_.get(), sp, wo, wi, s, w, render_data.chromatic_, render_data.wavelength_, render_data.cam_);
-
-				if(s.pdf_ > 1.0e-6f && s.sampled_flags_.hasAny(BsdfFlags::Dispersive))
-				{
-					render_data.chromatic_ = false;
-					Rgb wl_col;
-					spectrum::wl2Rgb(render_data.wavelength_, wl_col);
-					const DiffRay ref_ray(sp.p_, wi, scene_->ray_min_dist_);
-					const Rgb dcol_trans = static_cast<Rgb>(integrate(render_data, ref_ray, additional_depth, nullptr, nullptr)) * mcol * wl_col * w;
-					dcol += dcol_trans;
-					if(layers_used) dcol_trans_accum += dcol_trans;
-					if(!ref_ray_chromatic_volume_obtained)
-					{
-						ref_ray_chromatic_volume = ref_ray;
-						ref_ray_chromatic_volume_obtained = true;
-					}
-					render_data.chromatic_ = true;
-				}
-			}
-			if(ref_ray_chromatic_volume_obtained && bsdfs.hasAny(BsdfFlags::Volumetric))
-			{
-				if(const VolumeHandler *vol = material->getVolumeHandler(sp.ng_ * ref_ray_chromatic_volume.dir_ < 0))
-				{
-					dcol *= vol->transmittance(ref_ray_chromatic_volume);
-				}
-			}
-			col += dcol * d_1;
-			if(layers_used)
-			{
-				if(ColorLayer *color_layer = color_layers->find(Layer::Trans))
-				{
-					dcol_trans_accum *= d_1;
-					color_layer->color_ += dcol_trans_accum;
-				}
-			}
-
-			render_data.ray_division_ = old_division;
-			render_data.ray_offset_ = old_offset;
-			render_data.dc_1_ = old_dc_1;
-			render_data.dc_2_ = old_dc_2;
+			col += dispersive(render_data, sp, material, bsdfs, wo, scene_->ray_min_dist_, additional_depth, layers_used, color_layers);
 		}
 
 		// glossy reflection with recursive raytracing:
 		if(bsdfs.hasAny(BsdfFlags::Glossy) && render_data.raylevel_ < 20)
 		{
-			render_data.lights_geometry_material_emit_ = true;
-			int gsam = 8;
-			const int old_division = render_data.ray_division_;
-			const int old_offset = render_data.ray_offset_;
-			const float old_dc_1 = render_data.dc_1_, old_dc_2 = render_data.dc_2_;
-			if(render_data.ray_division_ > 1) gsam = std::max(1, gsam / old_division);
-			render_data.ray_division_ *= gsam;
-			int branch = render_data.ray_division_ * old_offset;
-			unsigned int offs = gsam * render_data.pixel_sample_ + render_data.sampling_offs_;
-			const float d_1 = 1.f / (float)gsam;
-			Rgb gcol(0.f);
-
-			hal_2.setStart(offs);
-			hal_3.setStart(offs);
-
-			Rgb gcol_indirect_accum;
-			Rgb gcol_reflect_accum;
-			Rgb gcol_transmit_accum;
-
-			for(int ns = 0; ns < gsam; ++ns)
-			{
-				render_data.dc_1_ = Halton::lowDiscrepancySampling(2 * render_data.raylevel_ + 1, branch + render_data.sampling_offs_);
-				render_data.dc_2_ = Halton::lowDiscrepancySampling(2 * render_data.raylevel_ + 2, branch + render_data.sampling_offs_);
-				render_data.ray_offset_ = branch;
-				++offs;
-				++branch;
-
-				const float s_1 = hal_2.getNext();
-				const float s_2 = hal_3.getNext();
-
-				if(mat_bsdfs.hasAny(BsdfFlags::Glossy))
-				{
-					if(mat_bsdfs.hasAny(BsdfFlags::Reflect) && !mat_bsdfs.hasAny(BsdfFlags::Transmit))
-					{
-						float w = 0.f;
-						Sample s(s_1, s_2, BsdfFlags::Glossy | BsdfFlags::Reflect);
-						Vec3 wi;
-						const Rgb mcol = material->sample(sp.mat_data_.get(), sp, wo, wi, s, w, render_data.chromatic_, render_data.wavelength_, render_data.cam_);
-						DiffRay ref_ray(sp.p_, wi, scene_->ray_min_dist_);
-						if(diff_rays_enabled_)
-						{
-							if(s.sampled_flags_.hasAny(BsdfFlags::Reflect)) sp_diff.reflectedRay(ray, ref_ray);
-							else if(s.sampled_flags_.hasAny(BsdfFlags::Transmit)) sp_diff.refractedRay(ray, ref_ray, material->getMatIor());
-						}
-						Rgba integ = static_cast<Rgb>(integrate(render_data, ref_ray, additional_depth, nullptr, nullptr));
-						if(bsdfs.hasAny(BsdfFlags::Volumetric))
-						{
-							if(const VolumeHandler *vol = material->getVolumeHandler(sp.ng_ * ref_ray.dir_ < 0))
-							{
-								integ *= vol->transmittance(ref_ray);
-							}
-						}
-						const Rgb g_ind_col = static_cast<Rgb>(integ) * mcol * w;
-						gcol += g_ind_col;
-						if(layers_used) gcol_indirect_accum += g_ind_col;
-					}
-					else if(mat_bsdfs.hasAny(BsdfFlags::Reflect) && mat_bsdfs.hasAny(BsdfFlags::Transmit))
-					{
-						Sample s(s_1, s_2, BsdfFlags::Glossy | BsdfFlags::AllGlossy);
-						Rgb mcol[2];
-						float w[2];
-						Vec3 dir[2];
-
-						mcol[0] = material->sample(sp.mat_data_.get(), sp, wo, dir, mcol[1], s, w, render_data.chromatic_, render_data.wavelength_);
-
-						if(s.sampled_flags_.hasAny(BsdfFlags::Reflect) && !s.sampled_flags_.hasAny(BsdfFlags::Dispersive))
-						{
-							DiffRay ref_ray = DiffRay(sp.p_, dir[0], scene_->ray_min_dist_);
-							if(diff_rays_enabled_) sp_diff.reflectedRay(ray, ref_ray);
-							Rgba integ = integrate(render_data, ref_ray, additional_depth, nullptr, nullptr);
-							if(bsdfs.hasAny(BsdfFlags::Volumetric))
-							{
-								if(const VolumeHandler *vol = material->getVolumeHandler(sp.ng_ * ref_ray.dir_ < 0))
-								{
-									integ *= vol->transmittance(ref_ray);
-								}
-							}
-							const Rgb col_reflect_factor = mcol[0] * w[0];
-							const Rgb g_ind_col = static_cast<Rgb>(integ) * col_reflect_factor;
-							gcol += g_ind_col;
-							if(layers_used) gcol_reflect_accum += g_ind_col;
-						}
-
-						if(s.sampled_flags_.hasAny(BsdfFlags::Transmit))
-						{
-							DiffRay ref_ray = DiffRay(sp.p_, dir[1], scene_->ray_min_dist_);
-							if(diff_rays_enabled_) sp_diff.refractedRay(ray, ref_ray, material->getMatIor());
-							Rgba integ = integrate(render_data, ref_ray, additional_depth, nullptr, nullptr);
-							if(bsdfs.hasAny(BsdfFlags::Volumetric))
-							{
-								if(const VolumeHandler *vol = material->getVolumeHandler(sp.ng_ * ref_ray.dir_ < 0))
-								{
-									integ *= vol->transmittance(ref_ray);
-								}
-							}
-							const Rgb col_transmit_factor = mcol[1] * w[1];
-							const Rgb g_ind_col = static_cast<Rgb>(integ) * col_transmit_factor;
-							gcol += g_ind_col;
-							if(layers_used) gcol_transmit_accum += g_ind_col;
-							alpha = integ.a_;
-						}
-					}
-				}
-			}
-
-			col += gcol * d_1;
-
-			if(layers_used)
-			{
-				if(ColorLayer *color_layer = color_layers->find(Layer::GlossyIndirect))
-				{
-					gcol_indirect_accum *= d_1;
-					color_layer->color_ += gcol_indirect_accum;
-				}
-				if(ColorLayer *color_layer = color_layers->find(Layer::Trans))
-				{
-					gcol_reflect_accum *= d_1;
-					color_layer->color_ += gcol_reflect_accum;
-				}
-				if(ColorLayer *color_layer = color_layers->find(Layer::GlossyIndirect))
-				{
-					gcol_transmit_accum *= d_1;
-					color_layer->color_ += gcol_transmit_accum;
-				}
-			}
-
-			render_data.ray_division_ = old_division;
-			render_data.ray_offset_ = old_offset;
-			render_data.dc_1_ = old_dc_1;
-			render_data.dc_2_ = old_dc_2;
+			const SpDifferentials sp_differentials(sp, ray); //FIXME, perhaps we can calculate this only once for both glossy and Specular?
+			col += glossy(render_data, alpha, ray, sp_differentials, material, mat_bsdfs, bsdfs, wo, scene_->ray_min_dist_, additional_depth, layers_used, color_layers);
 		}
 
 		//...perfect specular reflection/refraction with recursive raytracing...
 		if(bsdfs.hasAny((BsdfFlags::Specular | BsdfFlags::Filter)) && render_data.raylevel_ < 20)
 		{
 			render_data.lights_geometry_material_emit_ = true;
-			const Material::Specular specular = material->getSpecular(render_data.raylevel_, sp.mat_data_.get(), sp, wo, render_data.chromatic_, render_data.wavelength_);
-			if(specular.reflect_.enabled_)
+			const Specular specular = material->getSpecular(render_data.raylevel_, sp.mat_data_.get(), sp, wo, render_data.chromatic_, render_data.wavelength_);
+			const SpDifferentials sp_differentials(sp, ray); //FIXME, perhaps we can calculate this only once for both glossy and Specular?
+			if(specular.reflect_)
 			{
-				DiffRay ref_ray(sp.p_, specular.reflect_.dir_, scene_->ray_min_dist_);
-				if(diff_rays_enabled_) sp_diff.reflectedRay(ray, ref_ray);
-				Rgb integ = integrate(render_data, ref_ray, additional_depth, nullptr, nullptr);
-				if(bsdfs.hasAny(BsdfFlags::Volumetric))
-				{
-					if(const VolumeHandler *vol = material->getVolumeHandler(sp.ng_ * ref_ray.dir_ < 0))
-					{
-						integ *= vol->transmittance(ref_ray);
-					}
-				}
-				const Rgb col_ind = static_cast<Rgb>(integ) * specular.reflect_.col_;
-				col += col_ind;
-				if(layers_used)
-				{
-					if(ColorLayer *color_layer = color_layers->find(Layer::ReflectPerfect)) color_layer->color_ += col_ind;
-				}
+				col += specularReflect(render_data, alpha, ray, sp_differentials, material, bsdfs, specular.reflect_.get(), scene_->ray_min_dist_, additional_depth, layers_used, color_layers);
 			}
-			if(specular.refract_.enabled_)
+			if(specular.refract_)
 			{
-				DiffRay ref_ray;
-				float transp_bias_factor = material->getTransparentBiasFactor();
-				if(transp_bias_factor > 0.f)
-				{
-					const bool transpbias_multiply_raydepth = material->getTransparentBiasMultiplyRayDepth();
-					if(transpbias_multiply_raydepth) transp_bias_factor *= render_data.raylevel_;
-					ref_ray = DiffRay(sp.p_ + specular.refract_.dir_ * transp_bias_factor, specular.refract_.dir_, scene_->ray_min_dist_);
-				}
-				else ref_ray = DiffRay(sp.p_, specular.refract_.dir_, scene_->ray_min_dist_);
-
-				if(diff_rays_enabled_) sp_diff.refractedRay(ray, ref_ray, material->getMatIor());
-				Rgba integ = integrate(render_data, ref_ray, additional_depth, nullptr, nullptr);
-
-				if(bsdfs.hasAny(BsdfFlags::Volumetric))
-				{
-					if(const VolumeHandler *vol = material->getVolumeHandler(sp.ng_ * ref_ray.dir_ < 0))
-					{
-						integ *= vol->transmittance(ref_ray);
-					}
-				}
-				const Rgb col_ind = static_cast<Rgb>(integ) * specular.refract_.col_;
-				col += col_ind;
-				if(layers_used)
-				{
-					if(ColorLayer *color_layer = color_layers->find(Layer::RefractPerfect)) color_layer->color_ += col_ind;
-				}
-				alpha = integ.a_;
+				col += specularRefract(render_data, alpha, ray, sp_differentials, material, bsdfs, specular.refract_.get(), scene_->ray_min_dist_, additional_depth, layers_used, color_layers);
 			}
 		}
 	}

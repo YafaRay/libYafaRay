@@ -395,7 +395,7 @@ float CoatedGlossyMaterial::pdf(const MaterialData *mat_data, const SurfacePoint
 	return pdf / sum;
 }
 
-Material::Specular CoatedGlossyMaterial::getSpecular(int raylevel, const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, bool chromatic, float wavelength) const
+Specular CoatedGlossyMaterial::getSpecular(int raylevel, const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, bool chromatic, float wavelength) const
 {
 	const bool outside = sp.ng_ * wo >= 0;
 	Vec3 n, ng;
@@ -414,19 +414,19 @@ Material::Specular CoatedGlossyMaterial::getSpecular(int raylevel, const Materia
 	Vec3::fresnel(wo, n, getShaderScalar(ior_shader_, mat_data->node_tree_data_, ior_), kr, kt);
 	Specular specular;
 	if(raylevel > 5) return specular;
-	specular.reflect_.dir_ = wo;
-	specular.reflect_.dir_.reflect(n);
-	if(mirror_color_shader_) specular.reflect_.col_ = mirror_color_shader_->getColor(mat_data->node_tree_data_) * kr;
-	else specular.reflect_.col_ = mirror_color_ * kr;//)/std::abs(N*wi);
-	specular.reflect_.col_ *= getShaderScalar(mirror_shader_, mat_data->node_tree_data_, mirror_strength_);
-	const float cos_wi_ng = specular.reflect_.dir_ * ng;
+	specular.reflect_ = std::unique_ptr<DirectionColor>(new DirectionColor());
+	specular.reflect_->dir_ = wo;
+	specular.reflect_->dir_.reflect(n);
+	if(mirror_color_shader_) specular.reflect_->col_ = mirror_color_shader_->getColor(mat_data->node_tree_data_) * kr;
+	else specular.reflect_->col_ = mirror_color_ * kr;//)/std::abs(N*wi);
+	specular.reflect_->col_ *= getShaderScalar(mirror_shader_, mat_data->node_tree_data_, mirror_strength_);
+	const float cos_wi_ng = specular.reflect_->dir_ * ng;
 	if(cos_wi_ng < 0.01)
 	{
-		specular.reflect_.dir_ += (0.01 - cos_wi_ng) * ng;
-		specular.reflect_.dir_.normalize();
+		specular.reflect_->dir_ += (0.01 - cos_wi_ng) * ng;
+		specular.reflect_->dir_.normalize();
 	}
-	specular.reflect_.enabled_ = true;
-	if(wireframe_thickness_ > 0.f) applyWireFrame(specular.reflect_.col_, wireframe_shader_, mat_data->node_tree_data_, sp);
+	if(wireframe_thickness_ > 0.f) applyWireFrame(specular.reflect_->col_, wireframe_shader_, mat_data->node_tree_data_, sp);
 	return specular;
 }
 

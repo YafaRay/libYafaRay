@@ -75,18 +75,20 @@ class MaterialData
 		NodeTreeData node_tree_data_;
 };
 
+struct DirectionColor
+{
+	Vec3 dir_;
+	Rgb col_;
+};
+
+struct Specular
+{
+	std::unique_ptr<DirectionColor> reflect_, refract_;
+};
+
 class Material
 {
 	public:
-		struct Specular
-		{
-			struct
-			{
-				bool enabled_ = false;
-				Vec3 dir_;
-				Rgb col_;
-			} reflect_, refract_;
-		};
 		static std::unique_ptr<Material> factory(Logger &logger, ParamMap &params, std::list<ParamMap> &nodes_params, const Scene &scene);
 		Material(Logger &logger);
 		virtual ~Material();
@@ -130,7 +132,7 @@ class Material
 		/*! evaluate the specular components for given direction. Somewhat a specialization of sample(),
 			because neither sample values nor pdf values are necessary for this.
 			Typical use: recursive raytracing of integrators. */
-		virtual Material::Specular getSpecular(int raylevel, const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, bool chromatic, float wavelength) const { return {}; }
+		virtual Specular getSpecular(int raylevel, const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, bool chromatic, float wavelength) const { return {}; }
 
 		/*! get the overall reflectivity of the material (used to compute radiance map for example) */
 		virtual Rgb getReflectivity(const MaterialData *mat_data, const SurfacePoint &sp, BsdfFlags flags, bool chromatic, float wavelength, const Camera *camera) const;

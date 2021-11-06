@@ -210,7 +210,7 @@ float GlassMaterial::getAlpha(const MaterialData *mat_data, const SurfacePoint &
 	return alpha;
 }
 
-Material::Specular GlassMaterial::getSpecular(int raylevel, const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, bool chromatic, float wavelength) const
+Specular GlassMaterial::getSpecular(int raylevel, const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, bool chromatic, float wavelength) const
 {
 	const bool outside = sp.ng_ * wo > 0;
 	Vec3 n;
@@ -244,9 +244,9 @@ Material::Specular GlassMaterial::getSpecular(int raylevel, const MaterialData *
 		Vec3::fresnel(wo, n, cur_ior, kr, kt);
 		if(!chromatic || !disperse_)
 		{
-			specular.refract_.col_ = kt * getShaderColor(filter_color_shader_, mat_data->node_tree_data_, filter_color_);
-			specular.refract_.dir_ = refdir;
-			specular.refract_.enabled_ = true;
+			specular.refract_ = std::unique_ptr<DirectionColor>(new DirectionColor());
+			specular.refract_->col_ = kt * getShaderColor(filter_color_shader_, mat_data->node_tree_data_, filter_color_);
+			specular.refract_->dir_ = refdir;
 		}
 		//FIXME? If the above does not happen, in this case, we need to sample dispersion, i.e. not considered specular
 
@@ -254,26 +254,26 @@ Material::Specular GlassMaterial::getSpecular(int raylevel, const MaterialData *
 		// killer as rays keep bouncing inside objects and contribute little after few bounces, so limit we it:
 		if(outside || raylevel < 3)
 		{
-			specular.reflect_.dir_ = wo;
-			specular.reflect_.dir_.reflect(n);
-			specular.reflect_.col_ = getShaderColor(mirror_color_shader_, mat_data->node_tree_data_, specular_reflection_color_) * kr;
-			specular.reflect_.enabled_ = true;
+			specular.reflect_ = std::unique_ptr<DirectionColor>(new DirectionColor());
+			specular.reflect_->dir_ = wo;
+			specular.reflect_->dir_.reflect(n);
+			specular.reflect_->col_ = getShaderColor(mirror_color_shader_, mat_data->node_tree_data_, specular_reflection_color_) * kr;
 		}
 	}
 	else //total inner reflection
 	{
-		specular.reflect_.col_ = getShaderColor(mirror_color_shader_, mat_data->node_tree_data_, specular_reflection_color_);
-		specular.reflect_.dir_ = wo;
-		specular.reflect_.dir_.reflect(n);
-		specular.reflect_.enabled_ = true;
+		specular.reflect_ = std::unique_ptr<DirectionColor>(new DirectionColor());
+		specular.reflect_->col_ = getShaderColor(mirror_color_shader_, mat_data->node_tree_data_, specular_reflection_color_);
+		specular.reflect_->dir_ = wo;
+		specular.reflect_->dir_.reflect(n);
 	}
-	if(wireframe_thickness_ > 0.f)
+	if(wireframe_thickness_ > 0.f && (specular.reflect_ || specular.refract_))
 	{
 		const float wire_frame_amount = wireframe_shader_ ? wireframe_shader_->getScalar(mat_data->node_tree_data_) * wireframe_amount_ : wireframe_amount_;
 		if(wire_frame_amount > 0.f)
 		{
-			applyWireFrame(specular.reflect_.col_, wire_frame_amount, sp);
-			applyWireFrame(specular.refract_.col_, wire_frame_amount, sp);
+			if(specular.reflect_) applyWireFrame(specular.reflect_->col_, wire_frame_amount, sp);
+			if(specular.refract_) applyWireFrame(specular.refract_->col_, wire_frame_amount, sp);
 		}
 	}
 	return specular;
@@ -442,13 +442,13 @@ Rgb MirrorMaterial::sample(const MaterialData *mat_data, const SurfacePoint &sp,
 	return ref_col_ * (1.f / std::abs(sp.n_ * wi));
 }
 
-Material::Specular MirrorMaterial::getSpecular(int raylevel, const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, bool chromatic, float wavelength) const
+Specular MirrorMaterial::getSpecular(int raylevel, const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, bool chromatic, float wavelength) const
 {
 	Specular specular;
-	specular.reflect_.col_ = ref_col_;
-	Vec3 n = SurfacePoint::normalFaceForward(sp.ng_, sp.n_, wo);
-	specular.reflect_.dir_ = Vec3::reflectDir(n, wo);
-	specular.reflect_.enabled_ = true;
+	specular.reflect_ = std::unique_ptr<DirectionColor>(new DirectionColor());
+	specular.reflect_->col_ = ref_col_;
+	const Vec3 n = SurfacePoint::normalFaceForward(sp.ng_, sp.n_, wo);
+	specular.reflect_->dir_ = Vec3::reflectDir(n, wo);
 	return specular;
 }
 

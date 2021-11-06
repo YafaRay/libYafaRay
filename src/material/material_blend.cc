@@ -176,52 +176,39 @@ float BlendMaterial::pdf(const MaterialData *mat_data, const SurfacePoint &sp, c
 	return pdf_blend;
 }
 
-Material::Specular BlendMaterial::getSpecular(int raylevel, const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, bool chromatic, float wavelength) const
+Specular BlendMaterial::getSpecular(int raylevel, const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, bool chromatic, float wavelength) const
 {
 	const float blend_val = getBlendVal(mat_data->node_tree_data_);
 	const BlendMaterialData *mat_data_specific = static_cast<const BlendMaterialData *>(mat_data);
-	const Specular specular_1 = mat_1_->getSpecular(raylevel, mat_data_specific->mat_1_data_.get(), sp, wo, chromatic, wavelength);
-	const Specular specular_2 = mat_2_->getSpecular(raylevel, mat_data_specific->mat_2_data_.get(), sp, wo, chromatic, wavelength);
+	Specular specular_1 = mat_1_->getSpecular(raylevel, mat_data_specific->mat_1_data_.get(), sp, wo, chromatic, wavelength);
+	Specular specular_2 = mat_2_->getSpecular(raylevel, mat_data_specific->mat_2_data_.get(), sp, wo, chromatic, wavelength);
 	Specular specular_blend;
-	specular_blend.reflect_.enabled_ = specular_1.reflect_.enabled_ | specular_2.reflect_.enabled_;
-	if(specular_blend.reflect_.enabled_)
+	if(specular_1.reflect_ && specular_2.reflect_)
 	{
-		if(specular_1.reflect_.enabled_ && specular_2.reflect_.enabled_)
-		{
-			specular_blend.reflect_.col_ = math::lerp(specular_2.reflect_.col_, specular_1.reflect_.col_, blend_val);
-			specular_blend.reflect_.dir_ = (specular_1.reflect_.dir_ + specular_2.reflect_.dir_).normalize();
-		}
-		else if(specular_1.reflect_.enabled_)
-		{
-			specular_blend.reflect_.col_ = specular_1.reflect_.col_ * blend_val;
-			specular_blend.reflect_.dir_ = specular_1.reflect_.dir_;
-		}
-		else if(specular_2.reflect_.enabled_)
-		{
-			specular_blend.reflect_.col_ = specular_2.reflect_.col_ * (1.f - blend_val);
-			specular_blend.reflect_.dir_ = specular_2.reflect_.dir_;
-		}
-		if(wireframe_thickness_ > 0.f) applyWireFrame(specular_blend.reflect_.col_, wireframe_shader_, mat_data->node_tree_data_, sp);
+		specular_blend.reflect_ = std::unique_ptr<DirectionColor>(new DirectionColor());
+		specular_blend.reflect_->col_ = math::lerp(specular_2.reflect_->col_, specular_1.reflect_->col_, blend_val);
+		specular_blend.reflect_->dir_ = (specular_1.reflect_->dir_ + specular_2.reflect_->dir_).normalize();
 	}
-	specular_blend.refract_.enabled_ = specular_1.refract_.enabled_ | specular_2.refract_.enabled_;
-	if(specular_blend.refract_.enabled_)
+	else if(specular_1.reflect_) specular_blend.reflect_ = std::move(specular_1.reflect_);
+	else if(specular_2.reflect_) specular_blend.reflect_ = std::move(specular_2.reflect_);
+
+	if(specular_1.refract_ && specular_2.refract_)
 	{
-		if(specular_1.refract_.enabled_ && specular_2.refract_.enabled_)
+		specular_blend.refract_ = std::unique_ptr<DirectionColor>(new DirectionColor());
+		specular_blend.refract_->col_ = math::lerp(specular_2.refract_->col_, specular_1.refract_->col_, blend_val);
+		specular_blend.refract_->dir_ = (specular_1.refract_->dir_ + specular_2.refract_->dir_).normalize();
+	}
+	else if(specular_1.refract_) specular_blend.refract_ = std::move(specular_1.refract_);
+	else if(specular_2.refract_) specular_blend.refract_ = std::move(specular_2.refract_);
+
+	if(wireframe_thickness_ > 0.f && (specular_blend.reflect_ || specular_blend.refract_))
+	{
+		const float wire_frame_amount = wireframe_shader_ ? wireframe_shader_->getScalar(mat_data->node_tree_data_) * wireframe_amount_ : wireframe_amount_;
+		if(wire_frame_amount > 0.f)
 		{
-			specular_blend.refract_.col_ = math::lerp(specular_2.refract_.col_, specular_1.refract_.col_, blend_val);
-			specular_blend.refract_.dir_ = (specular_1.refract_.dir_ + specular_2.refract_.dir_).normalize();
+			if(specular_blend.reflect_) applyWireFrame(specular_blend.reflect_->col_, wire_frame_amount, sp);
+			if(specular_blend.refract_) applyWireFrame(specular_blend.refract_->col_, wire_frame_amount, sp);
 		}
-		else if(specular_1.refract_.enabled_)
-		{
-			specular_blend.refract_.col_ = specular_1.refract_.col_ * blend_val;
-			specular_blend.refract_.dir_ = specular_1.refract_.dir_;
-		}
-		else if(specular_2.refract_.enabled_)
-		{
-			specular_blend.refract_.col_ = specular_2.refract_.col_ * (1.f - blend_val);
-			specular_blend.refract_.dir_ = specular_2.refract_.dir_;
-		}
-		if(wireframe_thickness_ > 0.f) applyWireFrame(specular_blend.refract_.col_, wireframe_shader_, mat_data->node_tree_data_, sp);
 	}
 	return specular_blend;
 }
