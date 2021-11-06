@@ -125,10 +125,9 @@ void PerspectiveCamera::getLensUv(float r_1, float r_2, float &u, float &v) cons
 
 
 
-Ray PerspectiveCamera::shootRay(float px, float py, float lu, float lv, float &wt) const
+CameraRay PerspectiveCamera::shootRay(float px, float py, float lu, float lv) const
 {
-	wt = 1; // for now always 1, except 0 for probe when outside sphere
-	Ray ray;
+	DiffRay ray;
 	ray.from_ = position_;
 	ray.dir_ = vright_ * px + vup_ * py + vto_;
 	ray.dir_.normalize();
@@ -143,7 +142,7 @@ Ray PerspectiveCamera::shootRay(float px, float py, float lu, float lv, float &w
 		ray.dir_ = (ray.dir_ * dof_distance_) - li;
 		ray.dir_.normalize();
 	}
-	return ray;
+	return {ray, true};
 }
 
 Point3 PerspectiveCamera::screenproject(const Point3 &p) const

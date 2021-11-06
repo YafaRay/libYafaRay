@@ -48,17 +48,14 @@ void OrthographicCamera::setAxis(const Vec3 &vx, const Vec3 &vy, const Vec3 &vz)
 }
 
 
-Ray OrthographicCamera::shootRay(float px, float py, float lu, float lv, float &wt) const
+CameraRay OrthographicCamera::shootRay(float px, float py, float lu, float lv) const
 {
-	Ray ray;
-	wt = 1;	// for now always 1, except 0 for probe when outside sphere
+	DiffRay ray;
 	ray.from_ = pos_ + vright_ * px + vup_ * py;
 	ray.dir_ = vto_;
-
 	ray.tmin_ = near_plane_.rayIntersection(ray);
 	ray.tmax_ = far_plane_.rayIntersection(ray);
-
-	return ray;
+	return {ray, true};
 }
 
 Point3 OrthographicCamera::screenproject(const Point3 &p) const

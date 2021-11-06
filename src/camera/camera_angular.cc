@@ -51,19 +51,18 @@ void AngularCamera::setAxis(const Vec3 &vx, const Vec3 &vy, const Vec3 &vz)
 	vto_ = cam_z_;
 }
 
-Ray AngularCamera::shootRay(float px, float py, float lu, float lv, float &wt) const
+CameraRay AngularCamera::shootRay(float px, float py, float lu, float lv) const
 {
-	wt = 1.f; // for now always 1, or 0 when circular and outside angle
-	Ray ray;
-	ray.from_ = position_;
-	const float u = 1.f - 2.f * (px / (float)resx_);
-	float v = 2.f * (py / (float)resy_) - 1.f;
+	const float u = 1.f - 2.f * (px / static_cast<float>(resx_));
+	float v = 2.f * (py / static_cast<float>(resy_)) - 1.f;
 	v *= aspect_ratio_;
 	const float radius = math::sqrt(u * u + v * v);
-	if(circular_ && radius > max_radius_) { wt = 0; return ray; }
-	float theta = 0;
-	if(!((u == 0) && (v == 0))) theta = atan2(v, u);
-	float phi = 0.f;
+	DiffRay ray;
+	ray.from_ = position_;
+	if(circular_ && radius > max_radius_) { return {ray, false}; }
+	float theta = 0.f;
+	if(!((u == 0.f) && (v == 0.f))) theta = atan2(v, u);
+	float phi;
 	if(projection_ == Projection::Orthographic) phi = math::asin(radius / focal_length_);
 	else if(projection_ == Projection::Stereographic) phi = 2.f * std::atan(radius / (2.f * focal_length_));
 	else if(projection_ == Projection::EquisolidAngle) phi = 2.f * math::asin(radius / (2.f * focal_length_));
@@ -73,7 +72,7 @@ Ray AngularCamera::shootRay(float px, float py, float lu, float lv, float &wt) c
 	ray.dir_ = math::sin(phi) * (math::cos(theta) * vright_ + math::sin(theta) * vup_) + math::cos(phi) * vto_;
 	ray.tmin_ = near_plane_.rayIntersection(ray);
 	ray.tmax_ = far_plane_.rayIntersection(ray);
-	return ray;
+	return {ray, true};
 }
 
 std::unique_ptr<Camera> AngularCamera::factory(Logger &logger, ParamMap &params, const Scene &scene)

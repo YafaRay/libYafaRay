@@ -45,7 +45,7 @@ class AngularCamera final : public Camera
 					  int resx, int resy, float aspect, float angle, float max_angle, bool circ, const Projection &projection,
 					  float const near_clip_distance = 0.0f, float const far_clip_distance = 1e6f);
 		virtual void setAxis(const Vec3 &vx, const Vec3 &vy, const Vec3 &vz) override;
-		virtual Ray shootRay(float px, float py, float lu, float lv, float &wt) const override;
+		virtual CameraRay shootRay(float px, float py, float lu, float lv) const override;
 		virtual Point3 screenproject(const Point3 &p) const override;
 
 		float focal_length_;

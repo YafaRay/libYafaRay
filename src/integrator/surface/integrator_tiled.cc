@@ -25,7 +25,6 @@
 
 #include "integrator/surface/integrator_tiled.h"
 #include "common/layers.h"
-#include "material/material.h"
 #include "geometry/surface.h"
 #include "geometry/object/object.h"
 #include "common/timer.h"
@@ -79,21 +78,18 @@ void TiledIntegrator::precalcDepths(const RenderView *render_view)
 	}
 	else
 	{
-		DiffRay ray;
 		// We sample the scene at render resolution to get the precision required for AA
-		int w = camera->resX();
-		int h = camera->resY();
-		float wt = 0.f; // Dummy variable
-		SurfacePoint sp;
+		const int w = camera->resX();
+		const int h = camera->resY();
 		for(int i = 0; i < h; ++i)
 		{
 			for(int j = 0; j < w; ++j)
 			{
-				ray.tmax_ = -1.f;
-				ray = camera->shootRay(i, j, 0.5f, 0.5f, wt);
-				accelerator->intersect(ray, sp, camera);
-				if(ray.tmax_ > max_depth_) max_depth_ = ray.tmax_;
-				if(ray.tmax_ < min_depth_ && ray.tmax_ >= 0.f) min_depth_ = ray.tmax_;
+				const CameraRay camera_ray = camera->shootRay(i, j, 0.5f, 0.5f);
+				SurfacePoint sp;
+				accelerator->intersect(camera_ray.ray_, sp, camera);
+				if(camera_ray.ray_.tmax_ > max_depth_) max_depth_ = camera_ray.ray_.tmax_;
+				if(camera_ray.ray_.tmax_ < min_depth_ && camera_ray.ray_.tmax_ >= 0.f) min_depth_ = camera_ray.ray_.tmax_;
 			}
 		}
 	}
@@ -281,90 +277,66 @@ bool TiledIntegrator::renderPass(const RenderView *render_view, int samples, int
 
 bool TiledIntegrator::renderTile(RenderArea &a, const RenderView *render_view, const RenderControl &render_control, const Timer &timer, int n_samples, int offset, bool adaptive, int thread_id, int aa_pass_number)
 {
-	int x;
 	const Camera *camera = render_view->getCamera();
-	x = camera->resX();
-	DiffRay c_ray;
-	Ray d_ray;
-	float dx = 0.5, dy = 0.5, d_1 = 1.0 / (float)n_samples;
-	float lens_u = 0.5f, lens_v = 0.5f;
-	float wt, wt_dummy;
-	Random prng(rand() + offset * (x * a.y_ + a.x_) + 123);
+	const int camera_res_x = camera->resX();
+	Random prng(rand() + offset * (camera_res_x * a.y_ + a.x_) + 123);
 	RenderData rstate(&prng);
 	rstate.thread_id_ = thread_id;
 	rstate.cam_ = camera;
-	bool sample_lns = camera->sampleLense();
-	int pass_offs = offset, end_x = a.x_ + a.w_, end_y = a.y_ + a.h_;
-
+	const bool sample_lns = camera->sampleLense();
+	const int pass_offs = offset, end_x = a.x_ + a.w_, end_y = a.y_ + a.h_;
 	int aa_max_possible_samples = aa_noise_params_.samples_;
-
 	for(int i = 1; i < aa_noise_params_.passes_; ++i)
 	{
 		aa_max_possible_samples += ceilf(aa_noise_params_.inc_samples_ * pow(aa_noise_params_.sample_multiplier_factor_, i));	//DAVID FIXME: if the per-material sampling factor is used, values higher than 1.f will appear in the Sample Count render pass. Is that acceptable or not?
 	}
-
-	float inv_aa_max_possible_samples = 1.f / ((float) aa_max_possible_samples);
-
+	const float inv_aa_max_possible_samples = 1.f / static_cast<float>(aa_max_possible_samples);
 	Halton hal_u(3);
 	Halton hal_v(5);
-
 	const Layers &layers = scene_->getLayers();
 	const MaskParams &mask_params = scene_->getMaskParams();
 	ColorLayers color_layers(layers);
-
 	const Image *sampling_factor_image_pass = (*image_film_->getImageLayers())(Layer::DebugSamplingFactor).image_.get();
-
-	int film_cx_0 = image_film_->getCx0();
-	int film_cy_0 = image_film_->getCy0();
-
+	const int film_cx_0 = image_film_->getCx0();
+	const int film_cy_0 = image_film_->getCy0();
+	float d_1 = 1.f / static_cast<float>(n_samples);
 	for(int i = a.y_; i < end_y; ++i)
 	{
 		for(int j = a.x_; j < end_x; ++j)
 		{
 			if(render_control.canceled()) break;
-
 			float mat_sample_factor = 1.f;
 			int n_samples_adjusted = n_samples;
-
 			if(adaptive)
 			{
 				if(!image_film_->doMoreSamples(j, i)) continue;
-
 				if(sampling_factor_image_pass)
 				{
 					const float weight = image_film_->getWeight(j - film_cx_0, i - film_cy_0);
 					mat_sample_factor = weight > 0.f ? sampling_factor_image_pass->getColor(j - film_cx_0, i - film_cy_0).normalized(weight).r_ : 1.f;
-
 					if(image_film_->getBackgroundResampling()) mat_sample_factor = std::max(mat_sample_factor, 1.f); //If the background is set to be resampled, make sure the matSampleFactor is always >= 1.f
-
 					if(mat_sample_factor > 0.f && mat_sample_factor < 1.f) mat_sample_factor = 1.f;	//This is to ensure in the edges between objects and background we always shoot samples, otherwise we might not shoot enough samples at the boundaries with the background where they are needed for antialiasing, however if the factor is equal to 0.f (as in the background) then no more samples will be shot
 				}
-
 				if(mat_sample_factor != 1.f)
 				{
-					n_samples_adjusted = (int) round((float) n_samples * mat_sample_factor);
-					d_1 = 1.0 / (float)n_samples_adjusted;	//DAVID FIXME: is this correct???
+					n_samples_adjusted = static_cast<int>(round(static_cast<float>(n_samples) * mat_sample_factor));
+					d_1 = 1.f / static_cast<float>(n_samples_adjusted);	//DAVID FIXME: is this correct???
 				}
 			}
-
-			//if(logger_.isDebug())logger_.logDebug("idxSamplingFactorExtPass="<<idxSamplingFactorExtPass<<" idxSamplingFactorAuxPass="<<idxSamplingFactorAuxPass<<" matSampleFactor="<<matSampleFactor<<" n_samples_adjusted="<<n_samples_adjusted<<" n_samples="<<n_samples<<YENDL;
-
-			rstate.pixel_number_ = x * i + j;
+			rstate.pixel_number_ = camera_res_x * i + j;
 			rstate.sampling_offs_ = sample::fnv32ABuf(i * sample::fnv32ABuf(j)); //fnv_32a_buf(rstate.pixelNumber);
-			float toff = Halton::lowDiscrepancySampling(5, pass_offs + rstate.sampling_offs_); // **shall be just the pass number...**
-
+			const float toff = Halton::lowDiscrepancySampling(5, pass_offs + rstate.sampling_offs_); // **shall be just the pass number...**
 			hal_u.setStart(pass_offs + rstate.sampling_offs_);
 			hal_v.setStart(pass_offs + rstate.sampling_offs_);
-
 			for(int sample = 0; sample < n_samples_adjusted; ++sample)
 			{
 				color_layers.setDefaultColors();
 				rstate.setDefaults();
 				rstate.pixel_sample_ = pass_offs + sample;
-				rstate.time_ = math::addMod1((float) sample * d_1, toff); //(0.5+(float)sample)*d1;
-
+				rstate.time_ = math::addMod1(static_cast<float>(sample) * d_1, toff); //(0.5+(float)sample)*d1;
 				// the (1/n, Larcher&Pillichshammer-Seq.) only gives good coverage when total sample count is known
 				// hence we use scrambled (Sobol, van-der-Corput) for multipass AA
+				float dx = 0.5f, dy = 0.5f;
 				if(aa_noise_params_.passes_ > 1)
 				{
 					dx = sample::riVdC(rstate.pixel_sample_, rstate.sampling_offs_);
@@ -372,18 +344,17 @@ bool TiledIntegrator::renderTile(RenderArea &a, const RenderView *render_view, c
 				}
 				else if(n_samples_adjusted > 1)
 				{
-					dx = (0.5 + (float)sample) * d_1;
+					dx = (0.5f + static_cast<float>(sample)) * d_1;
 					dy = sample::riLp(sample + rstate.sampling_offs_);
 				}
-
+				float lens_u = 0.5f, lens_v = 0.5f;
 				if(sample_lns)
 				{
 					lens_u = hal_u.getNext();
 					lens_v = hal_v.getNext();
 				}
-				c_ray = camera->shootRay(j + dx, i + dy, lens_u, lens_v, wt);
-
-				if(wt == 0.0)
+				CameraRay camera_ray = camera->shootRay(j + dx, i + dy, lens_u, lens_v);
+				if(!camera_ray.valid_)
 				{
 					image_film_->addSample(j, i, dx, dy, &a, sample, aa_pass_number, inv_aa_max_possible_samples, &color_layers);
 					continue;
@@ -391,19 +362,16 @@ bool TiledIntegrator::renderTile(RenderArea &a, const RenderView *render_view, c
 				if(diff_rays_enabled_)
 				{
 					//setup ray differentials
-					d_ray = camera->shootRay(j + 1 + dx, i + dy, lens_u, lens_v, wt_dummy);
-					c_ray.xfrom_ = d_ray.from_;
-					c_ray.xdir_ = d_ray.dir_;
-					d_ray = camera->shootRay(j + dx, i + 1 + dy, lens_u, lens_v, wt_dummy);
-					c_ray.yfrom_ = d_ray.from_;
-					c_ray.ydir_ = d_ray.dir_;
-					c_ray.has_differentials_ = true;
+					const CameraRay camera_diff_ray_x = camera->shootRay(j + 1 + dx, i + dy, lens_u, lens_v);
+					camera_ray.ray_.xfrom_ = camera_diff_ray_x.ray_.from_;
+					camera_ray.ray_.xdir_ = camera_diff_ray_x.ray_.dir_;
+					const CameraRay camera_diff_ray_y = camera->shootRay(j + dx, i + 1 + dy, lens_u, lens_v);
+					camera_ray.ray_.yfrom_ = camera_diff_ray_y.ray_.from_;
+					camera_ray.ray_.ydir_ = camera_diff_ray_y.ray_.dir_;
+					camera_ray.ray_.has_differentials_ = true;
 				}
-
-				c_ray.time_ = rstate.time_;
-
-				color_layers(Layer::Combined).color_ = integrate(rstate, c_ray, 0, &color_layers, render_view);
-
+				camera_ray.ray_.time_ = rstate.time_;
+				color_layers(Layer::Combined).color_ = integrate(rstate, camera_ray.ray_, 0, &color_layers, render_view);
 				for(auto &it : color_layers)
 				{
 					switch(it.first)
@@ -414,13 +382,9 @@ bool TiledIntegrator::renderTile(RenderArea &a, const RenderView *render_view, c
 						case Layer::MatIndexMask:
 						case Layer::MatIndexMaskShadow:
 						case Layer::MatIndexMaskAll:
-							it.second.color_ *= wt;
 							if(it.second.color_.a_ > 1.f) it.second.color_.a_ = 1.f;
 							it.second.color_.clampRgb01();
-							if(mask_params.invert_)
-							{
-								it.second.color_ = Rgba(1.f) - it.second.color_;
-							}
+							if(mask_params.invert_) it.second.color_ = Rgba(1.f) - it.second.color_;
 							if(!mask_params.only_)
 							{
 								Rgba col_combined = color_layers(Layer::Combined).color_;
@@ -429,30 +393,25 @@ bool TiledIntegrator::renderTile(RenderArea &a, const RenderView *render_view, c
 							}
 							break;
 						case Layer::ZDepthAbs:
-							if(c_ray.tmax_ < 0.f) it.second.color_ = Rgba(0.f, 0.f); // Show background as fully transparent
-							else it.second.color_ = Rgb(c_ray.tmax_);
-							it.second.color_ *= wt;
+							if(camera_ray.ray_.tmax_ < 0.f) it.second.color_ = Rgba(0.f, 0.f); // Show background as fully transparent
+							else it.second.color_ = Rgb(camera_ray.ray_.tmax_);
 							if(it.second.color_.a_ > 1.f) it.second.color_.a_ = 1.f;
 							break;
 						case Layer::ZDepthNorm:
-							if(c_ray.tmax_ < 0.f) it.second.color_ = Rgba(0.f, 0.f); // Show background as fully transparent
-							else it.second.color_ = Rgb(1.f - (c_ray.tmax_ - min_depth_) * max_depth_); // Distance normalization
-							it.second.color_ *= wt;
+							if(camera_ray.ray_.tmax_ < 0.f) it.second.color_ = Rgba(0.f, 0.f); // Show background as fully transparent
+							else it.second.color_ = Rgb(1.f - (camera_ray.ray_.tmax_ - min_depth_) * max_depth_); // Distance normalization
 							if(it.second.color_.a_ > 1.f) it.second.color_.a_ = 1.f;
 							break;
 						case Layer::Mist:
-							if(c_ray.tmax_ < 0.f) it.second.color_ = Rgba(0.f, 0.f); // Show background as fully transparent
-							else it.second.color_ = Rgb((c_ray.tmax_ - min_depth_) * max_depth_); // Distance normalization
-							it.second.color_ *= wt;
+							if(camera_ray.ray_.tmax_ < 0.f) it.second.color_ = Rgba(0.f, 0.f); // Show background as fully transparent
+							else it.second.color_ = Rgb((camera_ray.ray_.tmax_ - min_depth_) * max_depth_); // Distance normalization
 							if(it.second.color_.a_ > 1.f) it.second.color_.a_ = 1.f;
 							break;
 						default:
-							it.second.color_ *= wt;
 							if(it.second.color_.a_ > 1.f) it.second.color_.a_ = 1.f;
 							break;
 					}
 				}
-
 				image_film_->addSample(j, i, dx, dy, &a, sample, aa_pass_number, inv_aa_max_possible_samples, &color_layers);
 			}
 		}

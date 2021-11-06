@@ -35,7 +35,7 @@ class OrthographicCamera final: public Camera
 						   int resx, int resy, float aspect, float scale,
 						   float const near_clip_distance = 0.0f, float const far_clip_distance = 1e6f);
 		virtual void setAxis(const Vec3 &vx, const Vec3 &vy, const Vec3 &vz);
-		virtual Ray shootRay(float px, float py, float lu, float lv, float &wt) const;
+		virtual CameraRay shootRay(float px, float py, float lu, float lv) const;
 		virtual Point3 screenproject(const Point3 &p) const;
 
 		static std::unique_ptr<Camera> factory(Logger &logger, ParamMap &params, const Scene &scene);

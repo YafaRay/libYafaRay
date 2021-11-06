@@ -45,22 +45,18 @@ void EquirectangularCamera::setAxis(const Vec3 &vx, const Vec3 &vy, const Vec3 &
 	vto_ = cam_z_;
 }
 
-Ray EquirectangularCamera::shootRay(float px, float py, float lu, float lv, float &wt) const
+CameraRay EquirectangularCamera::shootRay(float px, float py, float lu, float lv) const
 {
-	Ray ray;
-
-	wt = 1;	// for now always 1, or 0 when circular and outside angle
+	DiffRay ray;
 	ray.from_ = position_;
 	float u = 2.f * px / (float)resx_ - 1.f;
 	float v = 2.f * py / (float)resy_ - 1.f;
 	const float phi = math::num_pi * u;
 	const float theta = math::div_pi_by_2 * v;
 	ray.dir_ = math::cos(theta) * (math::cos(phi) * vto_ + math::sin(phi) * vright_) + math::sin(theta) * vup_;
-
 	ray.tmin_ = near_plane_.rayIntersection(ray);
 	ray.tmax_ = far_plane_.rayIntersection(ray);
-
-	return ray;
+	return {ray, true};
 }
 
 std::unique_ptr<Camera> EquirectangularCamera::factory(Logger &logger, ParamMap &params, const Scene &scene)
