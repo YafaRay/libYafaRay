@@ -212,7 +212,7 @@ void PhotonIntegrator::diffuseWorker(PhotonMap *diffuse_map, int thread_id, cons
 				// don't forget to choose subset only, face normal forward; geometric vs. smooth normal?
 				if(final_gather && FastRandom::getNextFloatNormalized() < 0.125 && !caustic_photon)
 				{
-					Vec3 n = SurfacePoint::normalFaceForward(hit_curr.ng_, hit_curr.n_, wi);
+					const Vec3 n = SurfacePoint::normalFaceForward(hit_curr.ng_, hit_curr.n_, wi);
 					RadData rd(hit_curr.p_, n);
 					rd.refl_ = material->getReflectivity(hit_curr.mat_data_.get(), hit_curr, BsdfFlags::Diffuse | BsdfFlags::Glossy | BsdfFlags::Reflect, render_data.chromatic_, render_data.wavelength_, render_data.cam_);
 					rd.transm_ = material->getReflectivity(hit_curr.mat_data_.get(), hit_curr, BsdfFlags::Diffuse | BsdfFlags::Glossy | BsdfFlags::Transmit, render_data.chromatic_, render_data.wavelength_, render_data.cam_);
@@ -868,14 +868,14 @@ Rgba PhotonIntegrator::integrate(RenderData &render_data, const DiffRay &ray, in
 	static int n_max = 0;
 	static int calls = 0;
 	++calls;
-	Rgb col(0.0);
+	Rgb col(0.f);
 	float alpha;
 	SurfacePoint sp;
 
 	const bool old_lights_geometry_material_emit = render_data.lights_geometry_material_emit_;
 
-	if(transp_background_) alpha = 0.0;
-	else alpha = 1.0;
+	if(transp_background_) alpha = 0.f;
+	else alpha = 1.f;
 
 	const Accelerator *accelerator = scene_->getAccelerator();
 	if(accelerator && accelerator->intersect(ray, sp, render_data.cam_))
@@ -886,7 +886,7 @@ Rgba PhotonIntegrator::integrate(RenderData &render_data, const DiffRay &ray, in
 			render_data.lights_geometry_material_emit_ = true;
 		}
 
-		Vec3 wo = -ray.dir_;
+		const Vec3 wo = -ray.dir_;
 		const Material *material = sp.material_;
 		const BsdfFlags &mat_bsdfs = sp.mat_data_->bsdf_flags_;
 
@@ -905,7 +905,7 @@ Rgba PhotonIntegrator::integrate(RenderData &render_data, const DiffRay &ray, in
 		{
 			if(show_map_)
 			{
-				Vec3 n = SurfacePoint::normalFaceForward(sp.ng_, sp.n_, wo);
+				const Vec3 n = SurfacePoint::normalFaceForward(sp.ng_, sp.n_, wo);
 				const Photon *nearest = radiance_map_->findNearest(sp.p_, n, lookup_rad_);
 				if(nearest) col += nearest->color();
 			}
@@ -915,7 +915,7 @@ Rgba PhotonIntegrator::integrate(RenderData &render_data, const DiffRay &ray, in
 				{
 					if(ColorLayer *color_layer = color_layers->find(Layer::Radiance))
 					{
-						Vec3 n = SurfacePoint::normalFaceForward(sp.ng_, sp.n_, wo);
+						const Vec3 n = SurfacePoint::normalFaceForward(sp.ng_, sp.n_, wo);
 						const Photon *nearest = radiance_map_->findNearest(sp.p_, n, lookup_rad_);
 						if(nearest) color_layer->color_ = nearest->color();
 					}
@@ -949,7 +949,7 @@ Rgba PhotonIntegrator::integrate(RenderData &render_data, const DiffRay &ray, in
 		{
 			if(use_photon_diffuse_ && show_map_)
 			{
-				Vec3 n = SurfacePoint::normalFaceForward(sp.ng_, sp.n_, wo);
+				const Vec3 n = SurfacePoint::normalFaceForward(sp.ng_, sp.n_, wo);
 				const Photon *nearest = diffuse_map_->findNearest(sp.p_, n, ds_radius_);
 				if(nearest) col += nearest->color();
 			}
@@ -959,7 +959,7 @@ Rgba PhotonIntegrator::integrate(RenderData &render_data, const DiffRay &ray, in
 				{
 					if(ColorLayer *color_layer = color_layers->find(Layer::Radiance))
 					{
-						Vec3 n = SurfacePoint::normalFaceForward(sp.ng_, sp.n_, wo);
+						const Vec3 n = SurfacePoint::normalFaceForward(sp.ng_, sp.n_, wo);
 						const Photon *nearest = radiance_map_->findNearest(sp.p_, n, lookup_rad_);
 						if(nearest) color_layer->color_ = nearest->color();
 					}
@@ -1038,10 +1038,10 @@ Rgba PhotonIntegrator::integrate(RenderData &render_data, const DiffRay &ray, in
 
 		if(transp_refracted_background_)
 		{
-			float m_alpha = material->getAlpha(sp.mat_data_.get(), sp, wo, render_data.cam_);
-			alpha = m_alpha + (1.f - m_alpha) * alpha;
+			const float mat_alpha = material->getAlpha(sp.mat_data_.get(), sp, wo, render_data.cam_);
+			alpha = mat_alpha + (1.f - mat_alpha) * alpha;
 		}
-		else alpha = 1.0;
+		else alpha = 1.f;
 	}
 	else //nothing hit, return background
 	{
@@ -1058,8 +1058,8 @@ Rgba PhotonIntegrator::integrate(RenderData &render_data, const DiffRay &ray, in
 
 	render_data.lights_geometry_material_emit_ = old_lights_geometry_material_emit;
 
-	Rgb col_vol_transmittance = scene_->vol_integrator_->transmittance(render_data.prng_, ray);
-	Rgb col_vol_integration = scene_->vol_integrator_->integrate(render_data, ray);
+	const Rgb col_vol_transmittance = scene_->vol_integrator_->transmittance(render_data.prng_, ray);
+	const Rgb col_vol_integration = scene_->vol_integrator_->integrate(render_data, ray);
 
 	if(transp_background_) alpha = std::max(alpha, 1.f - col_vol_transmittance.r_);
 

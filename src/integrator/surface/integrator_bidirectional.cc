@@ -252,7 +252,7 @@ Rgba BidirectionalIntegrator::integrate(RenderData &render_data, const DiffRay &
 	const Accelerator *accelerator = scene_->getAccelerator();
 	if(accelerator && accelerator->intersect(testray, sp, render_data.cam_))
 	{
-		Vec3 wo = -ray.dir_;
+		const Vec3 wo = -ray.dir_;
 		static int dbg = 0;
 		render_data.lights_geometry_material_emit_ = true;
 		PathData &path_data = thread_data_[render_data.thread_id_];
@@ -426,8 +426,8 @@ Rgba BidirectionalIntegrator::integrate(RenderData &render_data, const DiffRay &
 		}
 	}
 
-	Rgb col_vol_transmittance = scene_->vol_integrator_->transmittance(render_data.prng_, ray);
-	Rgb col_vol_integration = scene_->vol_integrator_->integrate(render_data, ray);
+	const Rgb col_vol_transmittance = scene_->vol_integrator_->transmittance(render_data.prng_, ray);
+	const Rgb col_vol_integration = scene_->vol_integrator_->integrate(render_data, ray);
 
 	if(transp_background_) alpha = std::max(alpha, 1.f - col_vol_transmittance.r_);
 

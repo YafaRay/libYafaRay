@@ -70,7 +70,7 @@ bool DebugIntegrator::preprocess(const RenderControl &render_control, Timer &tim
 
 Rgba DebugIntegrator::integrate(RenderData &render_data, const DiffRay &ray, int additional_depth, ColorLayers *color_layers, const RenderView *render_view) const
 {
-	Rgb col(0.0);
+	Rgb col(0.f);
 	SurfacePoint sp;
 	const bool old_lights_geometry_material_emit = render_data.lights_geometry_material_emit_;
 	//shoot ray into scene

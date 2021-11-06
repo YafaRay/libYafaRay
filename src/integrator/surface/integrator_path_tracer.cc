@@ -128,13 +128,13 @@ Rgba PathIntegrator::integrate(RenderData &render_data, const DiffRay &ray, int 
 
 	static int calls = 0;
 	++calls;
-	Rgb col(0.0);
+	Rgb col(0.f);
 	float alpha;
 	SurfacePoint sp;
 	float w = 0.f;
 
-	if(transp_background_) alpha = 0.0;
-	else alpha = 1.0;
+	if(transp_background_) alpha = 0.f;
+	else alpha = 1.f;
 
 	//shoot ray into scene
 	const Accelerator *accelerator = scene_->getAccelerator();
@@ -149,7 +149,7 @@ Rgba PathIntegrator::integrate(RenderData &render_data, const DiffRay &ray, int 
 
 		const Material *material = sp.material_;
 		const BsdfFlags &mat_bsdfs = sp.mat_data_->bsdf_flags_;
-		Vec3 wo = -ray.dir_;
+		const Vec3 wo = -ray.dir_;
 
 		Random &prng = *(render_data.prng_);
 
@@ -343,10 +343,10 @@ Rgba PathIntegrator::integrate(RenderData &render_data, const DiffRay &ray, int 
 
 		if(transp_refracted_background_)
 		{
-			float m_alpha = material->getAlpha(sp.mat_data_.get(), sp, wo, render_data.cam_);
-			alpha = m_alpha + (1.f - m_alpha) * alpha;
+			const float mat_alpha = material->getAlpha(sp.mat_data_.get(), sp, wo, render_data.cam_);
+			alpha = mat_alpha + (1.f - mat_alpha) * alpha;
 		}
-		else alpha = 1.0;
+		else alpha = 1.f;
 	}
 	else //nothing hit, return background
 	{

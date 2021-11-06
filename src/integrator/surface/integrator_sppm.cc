@@ -686,8 +686,7 @@ Rgba SppmIntegrator::integrate(RenderData &render_data, const DiffRay &ray, int 
 	return Rgba(0.f);
 }
 
-
-GatherInfo SppmIntegrator::traceGatherRay(RenderData &render_data, DiffRay &ray, HitPoint &hp, ColorLayers *color_layers)
+GatherInfo SppmIntegrator::traceGatherRay(RenderData &render_data, const DiffRay &ray, HitPoint &hp, ColorLayers *color_layers)
 {
 	const Accelerator *accelerator = scene_->getAccelerator();
 	if(!accelerator) return {};
@@ -714,7 +713,7 @@ GatherInfo SppmIntegrator::traceGatherRay(RenderData &render_data, DiffRay &ray,
 
 		int additional_depth = 0;
 
-		Vec3 wo = -ray.dir_;
+		const Vec3 wo = -ray.dir_;
 		const Material *material = sp.material_;
 		const BsdfFlags &mat_bsdfs = sp.mat_data_->bsdf_flags_;
 		if(additional_depth < material->getAdditionalDepth()) additional_depth = material->getAdditionalDepth();
@@ -1170,10 +1169,10 @@ GatherInfo SppmIntegrator::traceGatherRay(RenderData &render_data, DiffRay &ray,
 
 		if(transp_refracted_background_)
 		{
-			float m_alpha = material->getAlpha(sp.mat_data_.get(), sp, wo, render_data.cam_);
-			alpha = m_alpha + (1.f - m_alpha) * alpha;
+			const float mat_alpha = material->getAlpha(sp.mat_data_.get(), sp, wo, render_data.cam_);
+			alpha = mat_alpha + (1.f - mat_alpha) * alpha;
 		}
-		else alpha = 1.0;
+		else alpha = 1.f;
 	}
 	else //nothing hit, return background
 	{
