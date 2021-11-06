@@ -476,11 +476,8 @@ void SppmIntegrator::photonWorker(PhotonMap *diffuse_map, PhotonMap *caustic_map
 			if(render_data.chromatic_ && sample.sampled_flags_.hasAny(BsdfFlags::Dispersive))
 			{
 				render_data.chromatic_ = false;
-				Rgb wl_col;
-				spectrum::wl2Rgb(render_data.wavelength_, wl_col);
-				pcol *= wl_col;
+				pcol *= spectrum::wl2Rgb(render_data.wavelength_);
 			}
-
 			ray.from_ = hit_curr.p_;
 			ray.dir_ = wo;
 			ray.tmin_ = scene->ray_min_dist_;
@@ -853,8 +850,7 @@ GatherInfo SppmIntegrator::traceGatherRay(RenderData &render_data, const DiffRay
 					if(s.pdf_ > 1.0e-6f && s.sampled_flags_.hasAny(BsdfFlags::Dispersive))
 					{
 						render_data.chromatic_ = false;
-						Rgb wl_col;
-						spectrum::wl2Rgb(render_data.wavelength_, wl_col);
+						const Rgb wl_col = spectrum::wl2Rgb(render_data.wavelength_);
 						ref_ray = DiffRay(sp.p_, wi, scene_->ray_min_dist_);
 						t_cing = traceGatherRay(render_data, ref_ray, hp, nullptr);
 						t_cing.photon_flux_ *= mcol * wl_col * w;

@@ -499,9 +499,7 @@ void MonteCarloIntegrator::causticWorker(PhotonMap *caustic_map, int thread_id, 
 			if(render_data.chromatic_ && sample.sampled_flags_.hasAny(BsdfFlags::Dispersive))
 			{
 				render_data.chromatic_ = false;
-				Rgb wl_col;
-				spectrum::wl2Rgb(render_data.wavelength_, wl_col);
-				pcol *= wl_col;
+				pcol *= spectrum::wl2Rgb(render_data.wavelength_);
 			}
 			ray.from_ = hit_curr.p_;
 			ray.dir_ = wo;
@@ -708,8 +706,7 @@ Rgb MonteCarloIntegrator::dispersive(RenderData &render_data, const SurfacePoint
 		if(s.pdf_ > 1.0e-6f && s.sampled_flags_.hasAny(BsdfFlags::Dispersive))
 		{
 			render_data.chromatic_ = false;
-			Rgb wl_col;
-			spectrum::wl2Rgb(render_data.wavelength_, wl_col);
+			const Rgb wl_col = spectrum::wl2Rgb(render_data.wavelength_);
 			const DiffRay ref_ray(sp.p_, wi, ray_min_dist);
 			const Rgb dcol_trans = static_cast<Rgb>(integrate(render_data, ref_ray, additional_depth)) * mcol * wl_col * w;
 			dcol += dcol_trans;

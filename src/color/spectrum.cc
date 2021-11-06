@@ -499,77 +499,69 @@ constexpr float cie_xy_zcolmat[471][4] =
 				{830.f, 0.000001251141f, 0.000000451810f, 0.000000000000f}
 		};
 
-void xyzToRgb(float x, float y, float z, Rgb &col)
+Rgb xyzToRgb(float x, float y, float z)
 {
 	// xyz->RGB using CIE RGB colsys. (Illuminant E w.point)
-	col.set(2.28783848734076f * x - 0.833367677835217f * y - 0.454470795871421f * z,
+	Rgb col{2.28783848734076f * x - 0.833367677835217f * y - 0.454470795871421f * z,
 			-0.511651380743862f * x + 1.42275837632178f * y + 0.0888930017552939f * z,
-			0.00572040983140966f * x - 0.0159068485104036f * y + 1.0101864083734f * z);
+			0.00572040983140966f * x - 0.0159068485104036f * y + 1.0101864083734f * z};
 	// correct if outside gamut
 	const float wt = col.minimum();
 	if(wt < 0.f) col -= Rgb(wt);
+	return col;
 }
 
 // spectrum color using CIE tables
-void wl2RgbFromCie(float wl, Rgb &col)
+Rgb wl2RgbFromCie(float wl)
 {
 	float fr = wl - 360.f;
 	const int p_1 = int(fr);
-	if(p_1 < 0)
-	{
-		col.black();
-		return;
-	}
+	if(p_1 < 0) return {0.f};
 	const int p_2 = p_1 + 1;
-	if(p_2 > 470)
-	{
-		col.black();
-		return;
-	}
+	if(p_2 > 470) return {0.f};
 	fr -= std::floor(fr);
 	const float fr_2 = 1.f - fr;
 	const float x = fr_2 * cie_xy_zcolmat[p_1][1] + fr * cie_xy_zcolmat[p_2][1];
 	const float y = fr_2 * cie_xy_zcolmat[p_1][2] + fr * cie_xy_zcolmat[p_2][2];
 	const float z = fr_2 * cie_xy_zcolmat[p_1][3] + fr * cie_xy_zcolmat[p_2][3];
-	xyzToRgb(x, y, z, col);
+	return xyzToRgb(x, y, z);
 }
 
 Rgb wl2Xyz(float wl)
 {
 	float fr = wl - 360.f;
 	const int p_1 = int(fr);
-	if(p_1 < 0)
-	{ return Rgb(0.f); }
+	if(p_1 < 0) return {0.f};
 	const int p_2 = p_1 + 1;
-	if(p_2 > 470)
-	{ return Rgb(0.f); }
+	if(p_2 > 470) return {0.f};
 	fr -= std::floor(fr);
 	const float fr_2 = 1.f - fr;
 	const float x = fr_2 * cie_xy_zcolmat[p_1][1] + fr * cie_xy_zcolmat[p_2][1];
 	const float y = fr_2 * cie_xy_zcolmat[p_1][2] + fr * cie_xy_zcolmat[p_2][2];
 	const float z = fr_2 * cie_xy_zcolmat[p_1][3] + fr * cie_xy_zcolmat[p_2][3];
-	return Rgb(x, y, z);
+	return {x, y, z};
 }
 
 // from various 'spectral composite model..' papers by Sun et al
 // approximation of CIE matching function by gaussians (only used for analysis in paper, not actual model)
 // slow but might be useful sometime
-void approxSpectrum(float wl, Rgb &col)
+Rgb approxSpectrum(float wl)
 {
 	const float t_1 = wl - 445.f, t_2 = wl - 595.f, t_3 = wl - 560.f, t_4 = wl - 451.f;
 	const float x = 0.38f * math::exp(-t_1 * t_1 * 1.3691796159e-3f) + 1.06f * math::exp(-t_2 * t_2 * 4.3321698785e-4f);
 	const float y = math::exp(-t_3 * t_3 * 2.7725887222e-4f), z = 1.8f * math::exp(-t_4 * t_4 * 9.1655825529e-4f);
-	xyzToRgb(x, y, z, col);
+	return xyzToRgb(x, y, z);
 }
 
 // just a simple rainbow gradient, but perfect 1/3 sum,
 // could be useful for some things as a fast rough spectrum color approximation
 // p in range 0 to 1
-void fakeSpectrum(float p, Rgb &col)
+Rgb fakeSpectrum(float p)
 {
 	const float r = 4.f * (p - 0.75f), g = 4.f * (p - 0.5f), b = 4.f * (p - 0.25f);
-	col.set(1.f - r * r, 1.f - g * g, 1.f - b * b);
+	Rgb col {1.f - r * r, 1.f - g * g, 1.f - b * b};
 	col.clampRgb0();
+	return col;
 }
 
 // returns Cauchy coefficients for the reduced form equation n = A + B/lambda^2
@@ -596,7 +588,7 @@ float getIoRcolor(float w, float cauchy_a, float cauchy_b, Rgb &col)
 {
 	//float wl = 400.0*w + 380.0;
 	const float wl = 300.f * w + 400.f;
-	wl2RgbFromCie(wl, col);
+	col = wl2RgbFromCie(wl);
 	col *= 2.214032659670777114f;    // scale for CIE sys. equal energy, range 400-700
 	return cauchy_a + cauchy_b / (wl * wl);
 }

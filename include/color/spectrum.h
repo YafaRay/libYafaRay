@@ -28,11 +28,8 @@ BEGIN_YAFARAY
 namespace spectrum
 {
 
-void wl2RgbFromCie(float wl, Rgb &col);
-void approxSpectrumRGB(float wl, Rgb &col);
-void fakeSpectrum(float p, Rgb &col);
+Rgb wl2RgbFromCie(float wl);
 void cauchyCoefficients(float ior, float disp_pw, float &cauchy_a, float &cauchy_b);
-float getIoRcolor(float w, float cauchy_a, float cauchy_b, Rgb &col);
 Rgb wl2Xyz(float wl);
 
 inline float getIor(float w, float cauchy_a, float cauchy_b)
@@ -41,11 +38,12 @@ inline float getIor(float w, float cauchy_a, float cauchy_b)
 	return cauchy_a + cauchy_b / (wl * wl);
 }
 
-inline void wl2Rgb(float w, Rgb &wl_col)
+inline Rgb wl2Rgb(float w)
 {
 	const float wl = 300.f * w + 400.f;
-	wl2RgbFromCie(wl, wl_col);
+	Rgb wl_col = wl2RgbFromCie(wl);
 	wl_col *= 2.214032659670777114f;
+	return wl_col;
 }
 
 } //namespace spectrum
