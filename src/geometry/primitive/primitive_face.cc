@@ -38,7 +38,7 @@ Point3 FacePrimitive::getVertex(size_t vertex_number, const Matrix4 *obj_to_worl
 Point3 FacePrimitive::getOrcoVertex(size_t vertex_number) const
 {
 	if(base_mesh_object_.hasOrco()) return base_mesh_object_.getOrcoVertex(vertices_[vertex_number]);
-	else return getVertex(vertex_number, nullptr);
+	else return getVertex(vertex_number);
 }
 
 Vec3 FacePrimitive::getVertexNormal(size_t vertex_number, const Vec3 &surface_normal_world, const Matrix4 *obj_to_world) const

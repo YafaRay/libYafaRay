@@ -86,7 +86,7 @@ bool TrianglePrimitive::intersectsBound(const ExBound &ex_bound, const std::arra
 
 void TrianglePrimitive::calculateGeometricNormal()
 {
-	normal_geometric_ = calculateNormal({ getVertex(0, nullptr), getVertex(1, nullptr), getVertex(2, nullptr) });
+	normal_geometric_ = calculateNormal({ getVertex(0), getVertex(1), getVertex(2) });
 }
 
 Vec3 TrianglePrimitive::calculateNormal(const std::array<Point3, 3> &vertices)

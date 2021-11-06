@@ -38,7 +38,7 @@ class FacePrimitive: public Primitive
 		virtual const Material *getMaterial() const override { return material_; }
 		virtual Bound getBound(const Matrix4 *obj_to_world) const override;
 		virtual void calculateGeometricNormal() = 0;
-		Point3 getVertex(size_t vertex_number, const Matrix4 *obj_to_world) const; //!< Get face vertex
+		Point3 getVertex(size_t vertex_number, const Matrix4 *obj_to_world = nullptr) const; //!< Get face vertex
 		Point3 getOrcoVertex(size_t vertex_number) const; //!< Get face original coordinates (orco) vertex in instance objects
 		Vec3 getVertexNormal(size_t vertex_number, const Vec3 &surface_normal_world, const Matrix4 *obj_to_world) const; //!< Get face vertex normal
 		Uv getVertexUv(size_t vertex_number) const; //!< Get face vertex Uv
