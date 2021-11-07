@@ -22,8 +22,15 @@
 
 #include "common/yafaray_common.h"
 #include "geometry/vector.h"
+#include <memory>
 
 BEGIN_YAFARAY
+
+struct Differentials
+{
+	Point3 xfrom_, yfrom_;
+	Vec3 xdir_, ydir_;
+};
 
 class Ray
 {
@@ -36,9 +43,7 @@ class Ray
 		Vec3 dir_;
 		mutable float tmin_ = 0.f, tmax_ = -1.f;
 		float time_ = 0.f; //!< relative frame time (values between [0;1]) at which ray was generated
-		bool has_differentials_ = false;
-		Point3 xfrom_, yfrom_;
-		Vec3 xdir_, ydir_;
+		std::shared_ptr<Differentials> differentials_;
 };
 
 END_YAFARAY

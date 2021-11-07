@@ -240,13 +240,13 @@ bool SppmIntegrator::renderTile(RenderArea &a, const RenderView *render_view, co
 				if(diff_rays_enabled_)
 				{
 					//setup ray differentials
+					camera_ray.ray_.differentials_ = std::make_shared<Differentials>();
 					const CameraRay camera_diff_ray_x = camera->shootRay(j + 1 + dx, i + dy, lens_u, lens_v);
-					camera_ray.ray_.xfrom_ = camera_diff_ray_x.ray_.from_;
-					camera_ray.ray_.xdir_ = camera_diff_ray_x.ray_.dir_;
+					camera_ray.ray_.differentials_->xfrom_ = camera_diff_ray_x.ray_.from_;
+					camera_ray.ray_.differentials_->xdir_ = camera_diff_ray_x.ray_.dir_;
 					const CameraRay camera_diff_ray_y = camera->shootRay(j + dx, i + 1 + dy, lens_u, lens_v);
-					camera_ray.ray_.yfrom_ = camera_diff_ray_y.ray_.from_;
-					camera_ray.ray_.ydir_ = camera_diff_ray_y.ray_.dir_;
-					camera_ray.ray_.has_differentials_ = true;
+					camera_ray.ray_.differentials_->yfrom_ = camera_diff_ray_y.ray_.from_;
+					camera_ray.ray_.differentials_->ydir_ = camera_diff_ray_y.ray_.dir_;
 					// col = T * L_o + L_v
 				}
 				camera_ray.ray_.time_ = rstate.time_;

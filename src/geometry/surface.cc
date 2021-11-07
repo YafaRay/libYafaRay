@@ -38,17 +38,17 @@ SurfacePoint SurfacePoint::blendSurfacePoints(SurfacePoint const &sp_1, SurfaceP
 
 SpDifferentials::SpDifferentials(const SurfacePoint &spoint, const Ray &ray): sp_(spoint)
 {
-	if(ray.has_differentials_)
+	if(ray.differentials_)
 	{
 		// Estimate screen-space change in \pt and $(u,v)$
 		// Compute auxiliary intersection points with plane
 		const float d = -(sp_.n_ * Vec3(sp_.p_));
-		const Vec3 rxv(ray.xfrom_);
-		const float tx = -((sp_.n_ * rxv) + d) / (sp_.n_ * ray.xdir_);
-		const Point3 px = ray.xfrom_ + tx * ray.xdir_;
-		const Vec3 ryv(ray.yfrom_);
-		const float ty = -((sp_.n_ * ryv) + d) / (sp_.n_ * ray.ydir_);
-		const Point3 py = ray.yfrom_ + ty * ray.ydir_;
+		const Vec3 rxv(ray.differentials_->xfrom_);
+		const float tx = -((sp_.n_ * rxv) + d) / (sp_.n_ * ray.differentials_->xdir_);
+		const Point3 px = ray.differentials_->xfrom_ + tx * ray.differentials_->xdir_;
+		const Vec3 ryv(ray.differentials_->yfrom_);
+		const float ty = -((sp_.n_ * ryv) + d) / (sp_.n_ * ray.differentials_->ydir_);
+		const Point3 py = ray.differentials_->yfrom_ + ty * ray.differentials_->ydir_;
 		dp_dx_ = px - sp_.p_;
 		dp_dy_ = py - sp_.p_;
 	}
@@ -62,44 +62,44 @@ SpDifferentials::SpDifferentials(const SurfacePoint &spoint, const Ray &ray): sp
 
 void SpDifferentials::reflectedRay(const Ray &in, Ray &out) const
 {
-	if(!in.has_differentials_)
+	if(!in.differentials_)
 	{
-		out.has_differentials_ = false;
+		out.differentials_ = nullptr;
 		return;
 	}
 	// Compute ray differential _rd_ for specular reflection
-	out.has_differentials_ = true;
-	out.xfrom_ = sp_.p_ + dp_dx_;
-	out.yfrom_ = sp_.p_ + dp_dy_;
+	out.differentials_ = in.differentials_;
+	out.differentials_->xfrom_ = sp_.p_ + dp_dx_;
+	out.differentials_->yfrom_ = sp_.p_ + dp_dy_;
 	// Compute differential reflected directions
 	//	Normal dndx = bsdf->dgShading.dndu * bsdf->dgShading.dudx +
 	//				  bsdf->dgShading.dndv * bsdf->dgShading.dvdx;
 	//	Normal dndy = bsdf->dgShading.dndu * bsdf->dgShading.dudy +
 	//				  bsdf->dgShading.dndv * bsdf->dgShading.dvdy;
-	const Vec3 dwodx = in.dir_ - in.xdir_, dwody = in.dir_ - in.ydir_;
+	const Vec3 dwodx = in.dir_ - in.differentials_->xdir_, dwody = in.dir_ - in.differentials_->ydir_;
 	const float d_d_ndx = (dwodx * sp_.n_); // + (out.dir * dndx);
 	const float d_d_ndy = (dwody * sp_.n_); // + (out.dir * dndy);
-	out.xdir_ = out.dir_ - dwodx + 2 * (/* (out.dir * sp.N) * dndx + */ d_d_ndx * sp_.n_);
-	out.ydir_ = out.dir_ - dwody + 2 * (/* (out.dir * sp.N) * dndy + */ d_d_ndy * sp_.n_);
+	out.differentials_->xdir_ = out.dir_ - dwodx + 2 * (/* (out.dir * sp.N) * dndx + */ d_d_ndx * sp_.n_);
+	out.differentials_->ydir_ = out.dir_ - dwody + 2 * (/* (out.dir * sp.N) * dndy + */ d_d_ndy * sp_.n_);
 }
 
 void SpDifferentials::refractedRay(const Ray &in, Ray &out, float ior) const
 {
-	if(!in.has_differentials_)
+	if(!in.differentials_)
 	{
-		out.has_differentials_ = false;
+		out.differentials_ = nullptr;
 		return;
 	}
 	//RayDifferential rd(p, wi);
-	out.has_differentials_ = true;
-	out.xfrom_ = sp_.p_ + dp_dx_;
-	out.yfrom_ = sp_.p_ + dp_dy_;
+	out.differentials_ = in.differentials_;
+	out.differentials_->xfrom_ = sp_.p_ + dp_dx_;
+	out.differentials_->yfrom_ = sp_.p_ + dp_dy_;
 	//if (Dot(wo, n) < 0) eta = 1.f / eta;
 
 	//Normal dndx = bsdf->dgShading.dndu * bsdf->dgShading.dudx + bsdf->dgShading.dndv * bsdf->dgShading.dvdx;
 	//Normal dndy = bsdf->dgShading.dndu * bsdf->dgShading.dudy + bsdf->dgShading.dndv * bsdf->dgShading.dvdy;
 
-	const Vec3 dwodx = in.dir_ - in.xdir_, dwody = in.dir_ - in.ydir_;
+	const Vec3 dwodx = in.dir_ - in.differentials_->xdir_, dwody = in.dir_ - in.differentials_->ydir_;
 	const float d_d_ndx = (dwodx * sp_.n_); // + Dot(wo, dndx);
 	const float d_d_ndy = (dwody * sp_.n_); // + Dot(wo, dndy);
 
@@ -107,8 +107,8 @@ void SpDifferentials::refractedRay(const Ray &in, Ray &out, float ior) const
 	const float dmudx = (ior - (ior * ior * (in.dir_ * sp_.n_)) / (out.dir_ * sp_.n_)) * d_d_ndx;
 	const float dmudy = (ior - (ior * ior * (in.dir_ * sp_.n_)) / (out.dir_ * sp_.n_)) * d_d_ndy;
 
-	out.xdir_ = out.dir_ + ior * dwodx - (/* mu * dndx + */ dmudx * sp_.n_);
-	out.ydir_ = out.dir_ + ior * dwody - (/* mu * dndy + */ dmudy * sp_.n_);
+	out.differentials_->xdir_ = out.dir_ + ior * dwodx - (/* mu * dndx + */ dmudx * sp_.n_);
+	out.differentials_->ydir_ = out.dir_ + ior * dwody - (/* mu * dndy + */ dmudy * sp_.n_);
 }
 
 float SpDifferentials::projectedPixelArea()
