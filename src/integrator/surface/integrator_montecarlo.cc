@@ -143,35 +143,25 @@ Rgb MonteCarloIntegrator::diracLight(const Accelerator *accelerator, const Light
 	return col;
 }
 
-Rgb MonteCarloIntegrator::areaLight1(const RenderData &render_data, const Accelerator *accelerator, const Light *light, const Vec3 &wo, const SurfacePoint &sp, bool cast_shadows, unsigned int l_offs, ColorLayers *color_layers) const
+Rgb MonteCarloIntegrator::areaLight1(const RenderData &render_data, const Accelerator *accelerator, const Light *light, const Vec3 &wo, const SurfacePoint &sp, bool cast_shadows, unsigned int num_samples, float inv_num_samples, Halton &hal_2, Halton &hal_3, ColorLayers *color_layers) const
 {
 	const Material *material = sp.material_;
 	Ray light_ray;
 	light_ray.from_ = sp.p_;
-	int n = static_cast<int>(ceilf(light->nSamples() * aa_light_sample_multiplier_));
-	if(render_data.ray_division_ > 1) n = std::max(1, n / render_data.ray_division_);
-	const float inv_ns = 1.f / static_cast<float>(n);
-	const unsigned int offs = n * render_data.pixel_sample_ + render_data.sampling_offs_ + l_offs;
-	const bool can_intersect = light->canIntersect();
-	Rgb ccol{0.f};
-
-	Halton hal_2(2, offs - 1);
-	Halton hal_3(3, offs - 1);
-
+	Rgb col{0.f};
 	Rgba col_shadow{0.f}, col_shadow_obj_mask{0.f}, col_shadow_mat_mask{0.f}, col_diff_dir{0.f}, col_diff_no_shadow{0.f}, col_glossy_dir{0.f};
-
-	for(int i = 0; i < n; ++i)
+	LSample ls;
+	Rgb scol{0.f};
+	for(unsigned int i = 0; i < num_samples; ++i)
 	{
 		// ...get sample val...
-		LSample ls;
 		ls.s_1_ = hal_2.getNext();
 		ls.s_2_ = hal_3.getNext();
 		if(light->illumSample(sp, ls, light_ray))
 		{
-			if(scene_->shadow_bias_auto_) light_ray.tmin_ = scene_->shadow_bias_ * std::max(1.f, Vec3(sp.p_).length());
+			if(scene_->shadow_bias_auto_) light_ray.tmin_ = scene_->shadow_bias_ * std::max(1.f, sp.p_.length());
 			else light_ray.tmin_ = scene_->shadow_bias_;
 			float mask_obj_index = 0.f, mask_mat_index = 0.f;
-			Rgb scol{0.f};
 			bool shadowed = false;
 			if(cast_shadows)
 			{
@@ -190,7 +180,7 @@ Rgb MonteCarloIntegrator::areaLight1(const RenderData &render_data, const Accele
 				const Rgb surf_col = material->eval(sp.mat_data_.get(), sp, wo, light_ray.dir_, BsdfFlags::All);
 				if(color_layers && (!shadowed && ls.pdf_ > 1e-6f) && color_layers->find(Layer::Shadow)) col_shadow += Rgb(1.f);
 				const float angle_light_normal = (material->isFlat() ? 1.f : std::abs(sp.n_ * light_ray.dir_));	//If the material has the special attribute "isFlat()" then we will not multiply the surface reflection by the cosine of the angle between light and normal
-				if(can_intersect)
+				if(light->canIntersect())
 				{
 					const float m_pdf = material->pdf(sp.mat_data_.get(), sp, wo, light_ray.dir_, BsdfFlags::Glossy | BsdfFlags::Diffuse | BsdfFlags::Dispersive | BsdfFlags::Reflect | BsdfFlags::Transmit);
 					if(m_pdf > 1e-6f)
@@ -212,7 +202,7 @@ Rgb MonteCarloIntegrator::areaLight1(const RenderData &render_data, const Accele
 								if((!shadowed && ls.pdf_ > 1e-6f)) col_glossy_dir += tmp_col;
 							}
 						}
-						if((!shadowed && ls.pdf_ > 1e-6f)) ccol += surf_col * ls.col_ * angle_light_normal * w / ls.pdf_;
+						if((!shadowed && ls.pdf_ > 1e-6f)) col += surf_col * ls.col_ * angle_light_normal * w / ls.pdf_;
 					}
 					else
 					{
@@ -230,7 +220,7 @@ Rgb MonteCarloIntegrator::areaLight1(const RenderData &render_data, const Accele
 								if((!shadowed && ls.pdf_ > 1e-6f)) col_glossy_dir += tmp_col;
 							}
 						}
-						if((!shadowed && ls.pdf_ > 1e-6f)) ccol += surf_col * ls.col_ * angle_light_normal / ls.pdf_;
+						if((!shadowed && ls.pdf_ > 1e-6f)) col += surf_col * ls.col_ * angle_light_normal / ls.pdf_;
 					}
 				}
 				else
@@ -249,7 +239,7 @@ Rgb MonteCarloIntegrator::areaLight1(const RenderData &render_data, const Accele
 							if((!shadowed && ls.pdf_ > 1e-6f)) col_glossy_dir += tmp_col;
 						}
 					}
-					if((!shadowed && ls.pdf_ > 1e-6f)) ccol += surf_col * ls.col_ * angle_light_normal / ls.pdf_;
+					if((!shadowed && ls.pdf_ > 1e-6f)) col += surf_col * ls.col_ * angle_light_normal / ls.pdf_;
 				}
 			}
 			if(color_layers && (shadowed || ls.pdf_ <= 1e-6f))
@@ -260,21 +250,21 @@ Rgb MonteCarloIntegrator::areaLight1(const RenderData &render_data, const Accele
 			}
 		}
 	}
-	const Rgb col_result = ccol * inv_ns;
+	const Rgb col_result = col * inv_num_samples;
 	if(color_layers)
 	{
 		if(ColorLayer *color_layer = color_layers->find(Layer::DebugLightEstimationLightSampling)) color_layer->color_ += col_result;
-		if(ColorLayer *color_layer = color_layers->find(Layer::Shadow)) color_layer->color_ += col_shadow * inv_ns;
-		if(ColorLayer *color_layer = color_layers->find(Layer::MatIndexMaskShadow)) color_layer->color_ += col_shadow_mat_mask * inv_ns;
-		if(ColorLayer *color_layer = color_layers->find(Layer::ObjIndexMaskShadow)) color_layer->color_ += col_shadow_obj_mask * inv_ns;
-		if(ColorLayer *color_layer = color_layers->find(Layer::Diffuse)) color_layer->color_ += col_diff_dir * inv_ns;
-		if(ColorLayer *color_layer = color_layers->find(Layer::DiffuseNoShadow)) color_layer->color_ += col_diff_no_shadow * inv_ns;
-		if(ColorLayer *color_layer = color_layers->find(Layer::Glossy)) color_layer->color_ += col_glossy_dir * inv_ns;
+		if(ColorLayer *color_layer = color_layers->find(Layer::Shadow)) color_layer->color_ += col_shadow * inv_num_samples;
+		if(ColorLayer *color_layer = color_layers->find(Layer::MatIndexMaskShadow)) color_layer->color_ += col_shadow_mat_mask * inv_num_samples;
+		if(ColorLayer *color_layer = color_layers->find(Layer::ObjIndexMaskShadow)) color_layer->color_ += col_shadow_obj_mask * inv_num_samples;
+		if(ColorLayer *color_layer = color_layers->find(Layer::Diffuse)) color_layer->color_ += col_diff_dir * inv_num_samples;
+		if(ColorLayer *color_layer = color_layers->find(Layer::DiffuseNoShadow)) color_layer->color_ += col_diff_no_shadow * inv_num_samples;
+		if(ColorLayer *color_layer = color_layers->find(Layer::Glossy)) color_layer->color_ += col_glossy_dir * inv_num_samples;
 	}
 	return col_result;
 }
 
-Rgb MonteCarloIntegrator::areaLight2(const RenderData &render_data, const Accelerator *accelerator, const Light *light, const Vec3 &wo, const SurfacePoint &sp, bool cast_shadows, unsigned int l_offs, ColorLayers *color_layers) const
+Rgb MonteCarloIntegrator::areaLight2(const RenderData &render_data, const Accelerator *accelerator, const Light *light, const Vec3 &wo, const SurfacePoint &sp, bool cast_shadows, unsigned int num_samples, float inv_num_samples, Halton &hal_2, Halton &hal_3, ColorLayers *color_layers) const
 {
 	Rgb col_result{0.f};
 	if(light->canIntersect()) // sample from BSDF to complete MIS
@@ -282,39 +272,21 @@ Rgb MonteCarloIntegrator::areaLight2(const RenderData &render_data, const Accele
 		const Material *material = sp.material_;
 		Ray light_ray;
 		light_ray.from_ = sp.p_;
-		float light_pdf;
-		int n = static_cast<int>(ceilf(light->nSamples() * aa_light_sample_multiplier_));
-		if(render_data.ray_division_ > 1) n = std::max(1, n / render_data.ray_division_);
-		const float inv_ns = 1.f / static_cast<float>(n);
-		const unsigned int offs = n * render_data.pixel_sample_ + render_data.sampling_offs_ + l_offs;
-		Rgb ccol_2{0.f};
 		Rgba col_shadow{0.f}, col_shadow_obj_mask{0.f}, col_shadow_mat_mask{0.f}, col_diff_dir{0.f}, col_diff_no_shadow{0.f}, col_glossy_dir{0.f};
-		if(color_layers)
+		Rgb col{0.f};
+		Rgb lcol;
+		Ray b_ray;
+		for(unsigned int i = 0; i < num_samples; ++i)
 		{
-			if(color_layers->isDefinedAny({Layer::Diffuse, Layer::DiffuseNoShadow}))
-			{
-				col_diff_no_shadow = Rgba(0.f);
-				col_diff_dir = Rgba(0.f);
-			}
-			if(color_layers->find(Layer::Glossy)) col_glossy_dir = Rgba(0.f);
-		}
-		Halton hal_2(2, offs - 1);
-		Halton hal_3(3, offs - 1);
-		for(int i = 0; i < n; ++i)
-		{
-			Ray b_ray;
 			if(scene_->ray_min_dist_auto_) b_ray.tmin_ = scene_->ray_min_dist_ * std::max(1.f, sp.p_.length());
 			else b_ray.tmin_ = scene_->ray_min_dist_;
-
 			b_ray.from_ = sp.p_;
-
 			const float s_1 = hal_2.getNext();
 			const float s_2 = hal_3.getNext();
 			float W = 0.f;
-
 			Sample s(s_1, s_2, BsdfFlags::Glossy | BsdfFlags::Diffuse | BsdfFlags::Dispersive | BsdfFlags::Reflect | BsdfFlags::Transmit);
 			const Rgb surf_col = material->sample(sp.mat_data_.get(), sp, wo, b_ray.dir_, s, W, render_data.chromatic_, render_data.wavelength_, render_data.cam_);
-			Rgb lcol;
+			float light_pdf;
 			if(s.pdf_ > 1e-6f && light->intersect(b_ray, b_ray.tmax_, lcol, light_pdf))
 			{
 				float mask_obj_index = 0.f, mask_mat_index = 0.f;
@@ -325,7 +297,6 @@ Rgb MonteCarloIntegrator::areaLight2(const RenderData &render_data, const Accele
 					if(tr_shad_) shadowed = accelerator->isShadowed(b_ray, s_depth_, scol, mask_obj_index, mask_mat_index, scene_->getShadowBias(), render_data.cam_);
 					else accelerator->isShadowed(b_ray, mask_obj_index, mask_mat_index, scene_->getShadowBias());
 				}
-
 				if((!shadowed && light_pdf > 1e-6f) || (color_layers && color_layers->find(Layer::DiffuseNoShadow)))
 				{
 					if(tr_shad_ && cast_shadows) lcol *= scol;
@@ -352,17 +323,17 @@ Rgb MonteCarloIntegrator::areaLight2(const RenderData &render_data, const Accele
 							if((!shadowed && light_pdf > 1e-6f) && s.sampled_flags_.hasAny(BsdfFlags::Glossy)) col_glossy_dir += tmp_col;
 						}
 					}
-					if((!shadowed && light_pdf > 1e-6f)) ccol_2 += surf_col * lcol * w * W;
+					if((!shadowed && light_pdf > 1e-6f)) col += surf_col * lcol * w * W;
 				}
 			}
 		}
-		col_result = ccol_2 * inv_ns;
+		col_result = col * inv_num_samples;
 		if(color_layers)
 		{
 			if(ColorLayer *color_layer = color_layers->find(Layer::DebugLightEstimationMatSampling)) color_layer->color_ += col_result;
-			if(ColorLayer *color_layer = color_layers->find(Layer::Diffuse)) color_layer->color_ += col_diff_dir * inv_ns;
-			if(ColorLayer *color_layer = color_layers->find(Layer::DiffuseNoShadow)) color_layer->color_ += col_diff_no_shadow * inv_ns;
-			if(ColorLayer *color_layer = color_layers->find(Layer::Glossy)) color_layer->color_ += col_glossy_dir * inv_ns;
+			if(ColorLayer *color_layer = color_layers->find(Layer::Diffuse)) color_layer->color_ += col_diff_dir * inv_num_samples;
+			if(ColorLayer *color_layer = color_layers->find(Layer::DiffuseNoShadow)) color_layer->color_ += col_diff_no_shadow * inv_num_samples;
+			if(ColorLayer *color_layer = color_layers->find(Layer::Glossy)) color_layer->color_ += col_glossy_dir * inv_num_samples;
 		}
 	}
 	return col_result;
@@ -380,9 +351,17 @@ Rgb MonteCarloIntegrator::doLightEstimation(RenderData &render_data, const Light
 	}
 	else // area light and suchlike
 	{
-		unsigned int l_offs = loffs * loffs_delta_;
-		col += areaLight1(render_data, accelerator, light, wo, sp, cast_shadows, l_offs, color_layers);
-		col += areaLight2(render_data, accelerator, light, wo, sp, cast_shadows, l_offs, color_layers);
+		const unsigned int l_offs = loffs * loffs_delta_;
+		int num_samples = static_cast<int>(ceilf(light->nSamples() * aa_light_sample_multiplier_));
+		if(render_data.ray_division_ > 1) num_samples = std::max(1, num_samples / render_data.ray_division_);
+		const float inv_num_samples = 1.f / static_cast<float>(num_samples);
+		const unsigned int offs = num_samples * render_data.pixel_sample_ + render_data.sampling_offs_ + l_offs;
+		Halton hal_2(2, offs - 1);
+		Halton hal_3(3, offs - 1);
+		col += areaLight1(render_data, accelerator, light, wo, sp, cast_shadows, num_samples, inv_num_samples, hal_2, hal_3, color_layers);
+		hal_2.setStart(offs - 1);
+		hal_3.setStart(offs - 1);
+		col += areaLight2(render_data, accelerator, light, wo, sp, cast_shadows, num_samples, inv_num_samples, hal_2, hal_3, color_layers);
 	}
 	return col;
 }

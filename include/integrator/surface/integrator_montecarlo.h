@@ -39,6 +39,7 @@ class MaterialData;
 class SpDifferentials;
 struct DirectionColor;
 class Accelerator;
+class Halton;
 
 enum PhotonMapProcessing
 {
@@ -68,8 +69,8 @@ class MonteCarloIntegrator: public TiledIntegrator
 		Rgb specularReflect(RenderData &render_data, float &alpha, const DiffRay &ray, const SpDifferentials &sp_differentials, const Material *material, const BsdfFlags &bsdfs, const DirectionColor *reflect_data, float ray_min_dist, int additional_depth, ColorLayers *color_layers) const;
 		Rgb specularRefract(RenderData &render_data, float &alpha, const DiffRay &ray, const SpDifferentials &sp_differentials, const Material *material, const BsdfFlags &bsdfs, const DirectionColor *refract_data, float ray_min_dist, int additional_depth, ColorLayers *color_layers) const;
 		Rgb diracLight(const Accelerator *accelerator, const Light *light, const Vec3 &wo, const SurfacePoint &sp, Random *prng, bool cast_shadows, const Camera *camera, ColorLayers *color_layers) const;
-		Rgb areaLight1(const RenderData &render_data, const Accelerator *accelerator, const Light *light, const Vec3 &wo, const SurfacePoint &sp, bool cast_shadows, unsigned int l_offs, ColorLayers *color_layers) const;
-		Rgb areaLight2(const RenderData &render_data, const Accelerator *accelerator, const Light *light, const Vec3 &wo, const SurfacePoint &sp, bool cast_shadows, unsigned int l_offs, ColorLayers *color_layers) const;
+		Rgb areaLight1(const RenderData &render_data, const Accelerator *accelerator, const Light *light, const Vec3 &wo, const SurfacePoint &sp, bool cast_shadows, unsigned int num_samples, float inv_num_samples, Halton &hal_2, Halton &hal_3, ColorLayers *color_layers) const;
+		Rgb areaLight2(const RenderData &render_data, const Accelerator *accelerator, const Light *light, const Vec3 &wo, const SurfacePoint &sp, bool cast_shadows, unsigned int num_samples, float inv_num_samples, Halton &hal_2, Halton &hal_3, ColorLayers *color_layers) const;
 		/*! Creates and prepares the caustic photon map */
 		bool createCausticMap(const RenderView *render_view, const RenderControl &render_control, const Timer &timer);
 		/*! Estimates caustic photons for a given surface point */
