@@ -56,98 +56,78 @@ MonteCarloIntegrator::~MonteCarloIntegrator() = default;
 
 Rgb MonteCarloIntegrator::estimateAllDirectLight(RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo, ColorLayers *color_layers) const
 {
-	Rgb col;
+	Rgb col{0.f};
 	unsigned int loffs = 0;
-	for(auto l = lights_.begin(); l != lights_.end(); ++l)
+	for(const auto &l : lights_)
 	{
-		col += doLightEstimation(render_data, (*l), sp, wo, loffs, color_layers);
+		col += doLightEstimation(render_data, l, sp, wo, loffs, color_layers);
 		loffs++;
 	}
 	if(color_layers)
 	{
-		if(ColorLayer *color_layer = color_layers->find(Layer::Shadow)) color_layer->color_ *= (1.f / (float) loffs);
+		if(ColorLayer *color_layer = color_layers->find(Layer::Shadow)) color_layer->color_ *= 1.f / static_cast<float>(loffs);
 	}
 	return col;
 }
 
-Rgb MonteCarloIntegrator::estimateOneDirectLight(RenderData &render_data, const SurfacePoint &sp, Vec3 wo, int n) const
+Rgb MonteCarloIntegrator::estimateOneDirectLight(RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo, int n) const
 {
 	const int light_num = lights_.size();
-
-	if(light_num == 0) return Rgb(0.f); //??? if you get this far the lights must be >= 1 but, what the hell... :)
-
+	if(light_num == 0) return {0.f}; //??? if you get this far the lights must be >= 1 but, what the hell... :)
 	Halton hal_2(2, scene_->getImageFilm()->getBaseSamplingOffset() + correlative_sample_number_[render_data.thread_id_] - 1); //Probably with this change the parameter "n" is no longer necessary, but I will keep it just in case I have to revert this change!
 	const int lnum = std::min(static_cast<int>(hal_2.getNext() * static_cast<float>(light_num)), light_num - 1);
-
 	++correlative_sample_number_[render_data.thread_id_];
-
 	return doLightEstimation(render_data, lights_[lnum], sp, wo, lnum) * light_num;
 }
 
-Rgb MonteCarloIntegrator::doLightEstimation(RenderData &render_data, const Light *light, const SurfacePoint &sp, const Vec3 &wo, const unsigned int  &loffs, ColorLayers *color_layers) const
+
+Rgb MonteCarloIntegrator::diracLight(const Accelerator *accelerator, const Light *light, const Vec3 &wo, const SurfacePoint &sp, Random *prng, bool cast_shadows, const Camera *camera, ColorLayers *color_layers) const
 {
-	const Accelerator *accelerator = scene_->getAccelerator();
-	if(!accelerator) return {0.f};
-	Rgb col(0.f);
-	bool shadowed;
-	unsigned int l_offs = loffs * loffs_delta_;
-	const Material *material = sp.material_;
+	Rgb col{0.f};
 	Ray light_ray;
-	light_ray.from_ = sp.p_;
-	Rgb lcol(0.f), scol;
-	float light_pdf;
-	float mask_obj_index = 0.f, mask_mat_index = 0.f;
-
-	bool cast_shadows = light->castShadows() && material->getReceiveShadows();
-
-	// handle lights with delta distribution, e.g. point and directional lights
-	if(light->diracLight())
+	Rgb lcol;
+	if(light->illuminate(sp, lcol, light_ray))
 	{
-		Rgba col_shadow(0.f), col_shadow_obj_mask(0.f), col_shadow_mat_mask(0.f), col_diff_dir(0.f), col_diff_no_shadow(0.f), col_glossy_dir(0.f);
-
-		if(light->illuminate(sp, lcol, light_ray))
+		const Material *material = sp.material_;
+		light_ray.from_ = sp.p_;
+		Rgba col_shadow{0.f}, col_shadow_obj_mask{0.f}, col_shadow_mat_mask{0.f}, col_diff_dir{0.f}, col_diff_no_shadow{0.f}, col_glossy_dir{0.f};
+		if(scene_->shadow_bias_auto_) light_ray.tmin_ = scene_->shadow_bias_ * std::max(1.f, Vec3(sp.p_).length());
+		else light_ray.tmin_ = scene_->shadow_bias_;
+		float mask_obj_index = 0.f, mask_mat_index = 0.f;
+		Rgb scol{0.f};
+		bool shadowed = false;
+		if(cast_shadows)
 		{
-			// ...shadowed...
-			if(scene_->shadow_bias_auto_) light_ray.tmin_ = scene_->shadow_bias_ * std::max(1.f, Vec3(sp.p_).length());
-			else light_ray.tmin_ = scene_->shadow_bias_;
-
-			if(cast_shadows) shadowed = (tr_shad_) ? accelerator->isShadowed(light_ray, s_depth_, scol, mask_obj_index, mask_mat_index, scene_->getShadowBias(), render_data.cam_) : accelerator->isShadowed(light_ray, mask_obj_index, mask_mat_index, scene_->getShadowBias());
-			else shadowed = false;
-
-			const float angle_light_normal = (material->isFlat() ? 1.f : std::abs(sp.n_ * light_ray.dir_));	//If the material has the special attribute "isFlat()" then we will not multiply the surface reflection by the cosine of the angle between light and normal
-
-			if(!shadowed || (color_layers && color_layers->find(Layer::DiffuseNoShadow)))
+			if(tr_shad_) shadowed = accelerator->isShadowed(light_ray, s_depth_, scol, mask_obj_index, mask_mat_index, scene_->getShadowBias(), camera);
+			else shadowed = accelerator->isShadowed(light_ray, mask_obj_index, mask_mat_index, scene_->getShadowBias());
+		}
+		const float angle_light_normal = material->isFlat() ? 1.f : std::abs(sp.n_ * light_ray.dir_);	//If the material has the special attribute "isFlat()" then we will not multiply the surface reflection by the cosine of the angle between light and normal
+		if(!shadowed || (color_layers && color_layers->find(Layer::DiffuseNoShadow)))
+		{
+			if(!shadowed && color_layers && color_layers->find(Layer::Shadow)) col_shadow += Rgb(1.f);
+			const Rgb surf_col = material->eval(sp.mat_data_.get(), sp, wo, light_ray.dir_, BsdfFlags::All);
+			const Rgb transmit_col = scene_->vol_integrator_ ? scene_->vol_integrator_->transmittance(prng, light_ray) : 1.f;
+			const Rgba tmp_col_no_shadow = surf_col * lcol * angle_light_normal * transmit_col;
+			if(tr_shad_ && cast_shadows) lcol *= scol;
+			if(color_layers)
 			{
-				if(!shadowed && color_layers && color_layers->find(Layer::Shadow)) col_shadow += Rgb(1.f);
-
-				const Rgb surf_col = material->eval(sp.mat_data_.get(), sp, wo, light_ray.dir_, BsdfFlags::All);
-				const Rgb transmit_col = scene_->vol_integrator_ ? scene_->vol_integrator_->transmittance(render_data.prng_, light_ray) : 1.f;
-				const Rgba tmp_col_no_shadow = surf_col * lcol * angle_light_normal * transmit_col;
-				if(tr_shad_ && cast_shadows) lcol *= scol;
-
-				if(color_layers)
+				if(color_layers->isDefinedAny({Layer::Diffuse, Layer::DiffuseNoShadow}))
 				{
-					if(color_layers->isDefinedAny({Layer::Diffuse, Layer::DiffuseNoShadow}))
-					{
-						col_diff_no_shadow += tmp_col_no_shadow;
-						if(!shadowed) col_diff_dir += material->eval(sp.mat_data_.get(), sp, wo, light_ray.dir_, BsdfFlags::Diffuse) * lcol * angle_light_normal * transmit_col;
-					}
-
-					if(color_layers->find(Layer::Glossy))
-					{
-						if(!shadowed) col_glossy_dir += material->eval(sp.mat_data_.get(), sp, wo, light_ray.dir_, BsdfFlags::Glossy, true) * lcol * angle_light_normal * transmit_col;
-					}
+					col_diff_no_shadow += tmp_col_no_shadow;
+					if(!shadowed) col_diff_dir += material->eval(sp.mat_data_.get(), sp, wo, light_ray.dir_, BsdfFlags::Diffuse) * lcol * angle_light_normal * transmit_col;
 				}
-
-				if(!shadowed) col += surf_col * lcol * angle_light_normal * transmit_col;
+				if(color_layers->find(Layer::Glossy))
+				{
+					if(!shadowed) col_glossy_dir += material->eval(sp.mat_data_.get(), sp, wo, light_ray.dir_, BsdfFlags::Glossy, true) * lcol * angle_light_normal * transmit_col;
+				}
 			}
-
-			if(shadowed && color_layers)
-			{
-				const MaskParams &mask_params = scene_->getMaskParams();
-				if(color_layers->find(Layer::MatIndexMaskShadow) && mask_mat_index == mask_params.mat_index_) col_shadow_mat_mask += Rgb(1.f);
-				if(color_layers->find(Layer::ObjIndexMaskShadow) && mask_obj_index == mask_params.obj_index_) col_shadow_obj_mask += Rgb(1.f);
-			}
+			if(!shadowed) col += surf_col * lcol * angle_light_normal * transmit_col;
+		}
+		if(shadowed && color_layers)
+		{
+			const MaskParams &mask_params = scene_->getMaskParams();
+			if(color_layers->find(Layer::MatIndexMaskShadow) && mask_mat_index == mask_params.mat_index_) col_shadow_mat_mask += Rgb(1.f);
+			if(color_layers->find(Layer::ObjIndexMaskShadow) && mask_obj_index == mask_params.obj_index_) col_shadow_obj_mask += Rgb(1.f);
 		}
 		if(color_layers)
 		{
@@ -160,97 +140,79 @@ Rgb MonteCarloIntegrator::doLightEstimation(RenderData &render_data, const Light
 			if(ColorLayer *color_layer = color_layers->find(Layer::DebugLightEstimationLightDirac)) color_layer->color_ += col;
 		}
 	}
-	else // area light and suchlike
+	return col;
+}
+
+Rgb MonteCarloIntegrator::areaLight1(const RenderData &render_data, const Accelerator *accelerator, const Light *light, const Vec3 &wo, const SurfacePoint &sp, bool cast_shadows, unsigned int l_offs, ColorLayers *color_layers) const
+{
+	const Material *material = sp.material_;
+	Ray light_ray;
+	light_ray.from_ = sp.p_;
+	int n = static_cast<int>(ceilf(light->nSamples() * aa_light_sample_multiplier_));
+	if(render_data.ray_division_ > 1) n = std::max(1, n / render_data.ray_division_);
+	const float inv_ns = 1.f / static_cast<float>(n);
+	const unsigned int offs = n * render_data.pixel_sample_ + render_data.sampling_offs_ + l_offs;
+	const bool can_intersect = light->canIntersect();
+	Rgb ccol{0.f};
+
+	Halton hal_2(2, offs - 1);
+	Halton hal_3(3, offs - 1);
+
+	Rgba col_shadow{0.f}, col_shadow_obj_mask{0.f}, col_shadow_mat_mask{0.f}, col_diff_dir{0.f}, col_diff_no_shadow{0.f}, col_glossy_dir{0.f};
+
+	for(int i = 0; i < n; ++i)
 	{
-		int n = (int) ceilf(light->nSamples() * aa_light_sample_multiplier_);
-		if(render_data.ray_division_ > 1) n = std::max(1, n / render_data.ray_division_);
-		const float inv_ns = 1.f / (float)n;
-		const unsigned int offs = n * render_data.pixel_sample_ + render_data.sampling_offs_ + l_offs;
-		const bool can_intersect = light->canIntersect();
-		Rgb ccol(0.0);
+		// ...get sample val...
 		LSample ls;
-
-		Halton hal_2(2, offs - 1);
-		Halton hal_3(3, offs - 1);
-
-		Rgba col_shadow(0.f), col_shadow_obj_mask(0.f), col_shadow_mat_mask(0.f), col_diff_dir(0.f), col_diff_no_shadow(0.f), col_glossy_dir(0.f);
-
-		for(int i = 0; i < n; ++i)
+		ls.s_1_ = hal_2.getNext();
+		ls.s_2_ = hal_3.getNext();
+		if(light->illumSample(sp, ls, light_ray))
 		{
-			// ...get sample val...
-			ls.s_1_ = hal_2.getNext();
-			ls.s_2_ = hal_3.getNext();
-
-			if(light->illumSample(sp, ls, light_ray))
+			if(scene_->shadow_bias_auto_) light_ray.tmin_ = scene_->shadow_bias_ * std::max(1.f, Vec3(sp.p_).length());
+			else light_ray.tmin_ = scene_->shadow_bias_;
+			float mask_obj_index = 0.f, mask_mat_index = 0.f;
+			Rgb scol{0.f};
+			bool shadowed = false;
+			if(cast_shadows)
 			{
-				// ...shadowed...
-				if(scene_->shadow_bias_auto_) light_ray.tmin_ = scene_->shadow_bias_ * std::max(1.f, Vec3(sp.p_).length());
-				else light_ray.tmin_ = scene_->shadow_bias_;
-
-				if(cast_shadows) shadowed = (tr_shad_) ? accelerator->isShadowed(light_ray, s_depth_, scol, mask_obj_index, mask_mat_index, scene_->getShadowBias(), render_data.cam_) : accelerator->isShadowed(light_ray, mask_obj_index, mask_mat_index, scene_->getShadowBias());
-				else shadowed = false;
-
-				if((!shadowed && ls.pdf_ > 1e-6f)  || (color_layers && color_layers->find(Layer::DiffuseNoShadow)))
+				if(tr_shad_) shadowed = accelerator->isShadowed(light_ray, s_depth_, scol, mask_obj_index, mask_mat_index, scene_->getShadowBias(), render_data.cam_);
+				else accelerator->isShadowed(light_ray, mask_obj_index, mask_mat_index, scene_->getShadowBias());
+			}
+			if((!shadowed && ls.pdf_ > 1e-6f)  || (color_layers && color_layers->find(Layer::DiffuseNoShadow)))
+			{
+				const Rgb ls_col_no_shadow = ls.col_;
+				if(tr_shad_ && cast_shadows) ls.col_ *= scol;
+				if(scene_->vol_integrator_)
 				{
-					const Rgb ls_col_no_shadow = ls.col_;
-					if(tr_shad_ && cast_shadows) ls.col_ *= scol;
-					if(scene_->vol_integrator_)
+					const Rgb transmit_col = scene_->vol_integrator_->transmittance(render_data.prng_, light_ray);
+					ls.col_ *= transmit_col;
+				}
+				const Rgb surf_col = material->eval(sp.mat_data_.get(), sp, wo, light_ray.dir_, BsdfFlags::All);
+				if(color_layers && (!shadowed && ls.pdf_ > 1e-6f) && color_layers->find(Layer::Shadow)) col_shadow += Rgb(1.f);
+				const float angle_light_normal = (material->isFlat() ? 1.f : std::abs(sp.n_ * light_ray.dir_));	//If the material has the special attribute "isFlat()" then we will not multiply the surface reflection by the cosine of the angle between light and normal
+				if(can_intersect)
+				{
+					const float m_pdf = material->pdf(sp.mat_data_.get(), sp, wo, light_ray.dir_, BsdfFlags::Glossy | BsdfFlags::Diffuse | BsdfFlags::Dispersive | BsdfFlags::Reflect | BsdfFlags::Transmit);
+					if(m_pdf > 1e-6f)
 					{
-						const Rgb transmit_col = scene_->vol_integrator_->transmittance(render_data.prng_, light_ray);
-						ls.col_ *= transmit_col;
-					}
-					const Rgb surf_col = material->eval(sp.mat_data_.get(), sp, wo, light_ray.dir_, BsdfFlags::All);
-
-					if(color_layers && (!shadowed && ls.pdf_ > 1e-6f) && color_layers->find(Layer::Shadow)) col_shadow += Rgb(1.f);
-
-					const float angle_light_normal = (material->isFlat() ? 1.f : std::abs(sp.n_ * light_ray.dir_));	//If the material has the special attribute "isFlat()" then we will not multiply the surface reflection by the cosine of the angle between light and normal
-
-					if(can_intersect)
-					{
-						const float m_pdf = material->pdf(sp.mat_data_.get(), sp, wo, light_ray.dir_, BsdfFlags::Glossy | BsdfFlags::Diffuse | BsdfFlags::Dispersive | BsdfFlags::Reflect | BsdfFlags::Transmit);
-						if(m_pdf > 1e-6f)
+						const float l_2 = ls.pdf_ * ls.pdf_;
+						const float m_2 = m_pdf * m_pdf;
+						const float w = l_2 / (l_2 + m_2);
+						if(color_layers)
 						{
-							const float l_2 = ls.pdf_ * ls.pdf_;
-							const float m_2 = m_pdf * m_pdf;
-							const float w = l_2 / (l_2 + m_2);
-
-							if(color_layers)
+							if(color_layers->isDefinedAny({Layer::Diffuse, Layer::DiffuseNoShadow}))
 							{
-								if(color_layers->isDefinedAny({Layer::Diffuse, Layer::DiffuseNoShadow}))
-								{
-									const Rgb tmp_col_no_light_color = material->eval(sp.mat_data_.get(), sp, wo, light_ray.dir_, BsdfFlags::Diffuse) * angle_light_normal * w / ls.pdf_;
-									col_diff_no_shadow += tmp_col_no_light_color * ls_col_no_shadow;
-									if((!shadowed && ls.pdf_ > 1e-6f)) col_diff_dir += tmp_col_no_light_color * ls.col_;
-								}
-								if(color_layers->find(Layer::Glossy))
-								{
-									const Rgb tmp_col = material->eval(sp.mat_data_.get(), sp, wo, light_ray.dir_, BsdfFlags::Glossy, true) * ls.col_ * angle_light_normal * w / ls.pdf_;
-									if((!shadowed && ls.pdf_ > 1e-6f)) col_glossy_dir += tmp_col;
-								}
+								const Rgb tmp_col_no_light_color = material->eval(sp.mat_data_.get(), sp, wo, light_ray.dir_, BsdfFlags::Diffuse) * angle_light_normal * w / ls.pdf_;
+								col_diff_no_shadow += tmp_col_no_light_color * ls_col_no_shadow;
+								if((!shadowed && ls.pdf_ > 1e-6f)) col_diff_dir += tmp_col_no_light_color * ls.col_;
 							}
-
-							if((!shadowed && ls.pdf_ > 1e-6f)) ccol += surf_col * ls.col_ * angle_light_normal * w / ls.pdf_;
-						}
-						else
-						{
-							if(color_layers)
+							if(color_layers->find(Layer::Glossy))
 							{
-								if(color_layers->isDefinedAny({Layer::Diffuse, Layer::DiffuseNoShadow}))
-								{
-									const Rgb tmp_col_no_light_color = material->eval(sp.mat_data_.get(), sp, wo, light_ray.dir_, BsdfFlags::Diffuse) * angle_light_normal / ls.pdf_;
-									col_diff_no_shadow += tmp_col_no_light_color * ls_col_no_shadow;
-									if((!shadowed && ls.pdf_ > 1e-6f)) col_diff_dir += tmp_col_no_light_color * ls.col_;
-								}
-
-								if(color_layers->find(Layer::Glossy))
-								{
-									const Rgb tmp_col = material->eval(sp.mat_data_.get(), sp, wo, light_ray.dir_, BsdfFlags::Glossy, true) * ls.col_ * angle_light_normal / ls.pdf_;
-									if((!shadowed && ls.pdf_ > 1e-6f)) col_glossy_dir += tmp_col;
-								}
+								const Rgb tmp_col = material->eval(sp.mat_data_.get(), sp, wo, light_ray.dir_, BsdfFlags::Glossy, true) * ls.col_ * angle_light_normal * w / ls.pdf_;
+								if((!shadowed && ls.pdf_ > 1e-6f)) col_glossy_dir += tmp_col;
 							}
-
-							if((!shadowed && ls.pdf_ > 1e-6f)) ccol += surf_col * ls.col_ * angle_light_normal / ls.pdf_;
 						}
+						if((!shadowed && ls.pdf_ > 1e-6f)) ccol += surf_col * ls.col_ * angle_light_normal * w / ls.pdf_;
 					}
 					else
 					{
@@ -262,122 +224,166 @@ Rgb MonteCarloIntegrator::doLightEstimation(RenderData &render_data, const Light
 								col_diff_no_shadow += tmp_col_no_light_color * ls_col_no_shadow;
 								if((!shadowed && ls.pdf_ > 1e-6f)) col_diff_dir += tmp_col_no_light_color * ls.col_;
 							}
-
 							if(color_layers->find(Layer::Glossy))
 							{
 								const Rgb tmp_col = material->eval(sp.mat_data_.get(), sp, wo, light_ray.dir_, BsdfFlags::Glossy, true) * ls.col_ * angle_light_normal / ls.pdf_;
 								if((!shadowed && ls.pdf_ > 1e-6f)) col_glossy_dir += tmp_col;
 							}
 						}
-
 						if((!shadowed && ls.pdf_ > 1e-6f)) ccol += surf_col * ls.col_ * angle_light_normal / ls.pdf_;
 					}
 				}
-
-				if(color_layers && (shadowed || ls.pdf_ <= 1e-6f))
+				else
 				{
-					const MaskParams &mask_params = scene_->getMaskParams();
-					if(color_layers->find(Layer::MatIndexMaskShadow) && mask_mat_index == mask_params.mat_index_) col_shadow_mat_mask += Rgb(1.f);
-					if(color_layers->find(Layer::ObjIndexMaskShadow) && mask_obj_index == mask_params.obj_index_) col_shadow_obj_mask += Rgb(1.f);
+					if(color_layers)
+					{
+						if(color_layers->isDefinedAny({Layer::Diffuse, Layer::DiffuseNoShadow}))
+						{
+							const Rgb tmp_col_no_light_color = material->eval(sp.mat_data_.get(), sp, wo, light_ray.dir_, BsdfFlags::Diffuse) * angle_light_normal / ls.pdf_;
+							col_diff_no_shadow += tmp_col_no_light_color * ls_col_no_shadow;
+							if((!shadowed && ls.pdf_ > 1e-6f)) col_diff_dir += tmp_col_no_light_color * ls.col_;
+						}
+						if(color_layers->find(Layer::Glossy))
+						{
+							const Rgb tmp_col = material->eval(sp.mat_data_.get(), sp, wo, light_ray.dir_, BsdfFlags::Glossy, true) * ls.col_ * angle_light_normal / ls.pdf_;
+							if((!shadowed && ls.pdf_ > 1e-6f)) col_glossy_dir += tmp_col;
+						}
+					}
+					if((!shadowed && ls.pdf_ > 1e-6f)) ccol += surf_col * ls.col_ * angle_light_normal / ls.pdf_;
+				}
+			}
+			if(color_layers && (shadowed || ls.pdf_ <= 1e-6f))
+			{
+				const MaskParams &mask_params = scene_->getMaskParams();
+				if(color_layers->find(Layer::MatIndexMaskShadow) && mask_mat_index == mask_params.mat_index_) col_shadow_mat_mask += Rgb(1.f);
+				if(color_layers->find(Layer::ObjIndexMaskShadow) && mask_obj_index == mask_params.obj_index_) col_shadow_obj_mask += Rgb(1.f);
+			}
+		}
+	}
+	const Rgb col_result = ccol * inv_ns;
+	if(color_layers)
+	{
+		if(ColorLayer *color_layer = color_layers->find(Layer::DebugLightEstimationLightSampling)) color_layer->color_ += col_result;
+		if(ColorLayer *color_layer = color_layers->find(Layer::Shadow)) color_layer->color_ += col_shadow * inv_ns;
+		if(ColorLayer *color_layer = color_layers->find(Layer::MatIndexMaskShadow)) color_layer->color_ += col_shadow_mat_mask * inv_ns;
+		if(ColorLayer *color_layer = color_layers->find(Layer::ObjIndexMaskShadow)) color_layer->color_ += col_shadow_obj_mask * inv_ns;
+		if(ColorLayer *color_layer = color_layers->find(Layer::Diffuse)) color_layer->color_ += col_diff_dir * inv_ns;
+		if(ColorLayer *color_layer = color_layers->find(Layer::DiffuseNoShadow)) color_layer->color_ += col_diff_no_shadow * inv_ns;
+		if(ColorLayer *color_layer = color_layers->find(Layer::Glossy)) color_layer->color_ += col_glossy_dir * inv_ns;
+	}
+	return col_result;
+}
+
+Rgb MonteCarloIntegrator::areaLight2(const RenderData &render_data, const Accelerator *accelerator, const Light *light, const Vec3 &wo, const SurfacePoint &sp, bool cast_shadows, unsigned int l_offs, ColorLayers *color_layers) const
+{
+	Rgb col_result{0.f};
+	if(light->canIntersect()) // sample from BSDF to complete MIS
+	{
+		const Material *material = sp.material_;
+		Ray light_ray;
+		light_ray.from_ = sp.p_;
+		float light_pdf;
+		int n = static_cast<int>(ceilf(light->nSamples() * aa_light_sample_multiplier_));
+		if(render_data.ray_division_ > 1) n = std::max(1, n / render_data.ray_division_);
+		const float inv_ns = 1.f / static_cast<float>(n);
+		const unsigned int offs = n * render_data.pixel_sample_ + render_data.sampling_offs_ + l_offs;
+		Rgb ccol_2{0.f};
+		Rgba col_shadow{0.f}, col_shadow_obj_mask{0.f}, col_shadow_mat_mask{0.f}, col_diff_dir{0.f}, col_diff_no_shadow{0.f}, col_glossy_dir{0.f};
+		if(color_layers)
+		{
+			if(color_layers->isDefinedAny({Layer::Diffuse, Layer::DiffuseNoShadow}))
+			{
+				col_diff_no_shadow = Rgba(0.f);
+				col_diff_dir = Rgba(0.f);
+			}
+			if(color_layers->find(Layer::Glossy)) col_glossy_dir = Rgba(0.f);
+		}
+		Halton hal_2(2, offs - 1);
+		Halton hal_3(3, offs - 1);
+		for(int i = 0; i < n; ++i)
+		{
+			Ray b_ray;
+			if(scene_->ray_min_dist_auto_) b_ray.tmin_ = scene_->ray_min_dist_ * std::max(1.f, sp.p_.length());
+			else b_ray.tmin_ = scene_->ray_min_dist_;
+
+			b_ray.from_ = sp.p_;
+
+			const float s_1 = hal_2.getNext();
+			const float s_2 = hal_3.getNext();
+			float W = 0.f;
+
+			Sample s(s_1, s_2, BsdfFlags::Glossy | BsdfFlags::Diffuse | BsdfFlags::Dispersive | BsdfFlags::Reflect | BsdfFlags::Transmit);
+			const Rgb surf_col = material->sample(sp.mat_data_.get(), sp, wo, b_ray.dir_, s, W, render_data.chromatic_, render_data.wavelength_, render_data.cam_);
+			Rgb lcol;
+			if(s.pdf_ > 1e-6f && light->intersect(b_ray, b_ray.tmax_, lcol, light_pdf))
+			{
+				float mask_obj_index = 0.f, mask_mat_index = 0.f;
+				Rgb scol{0.f};
+				bool shadowed = false;
+				if(cast_shadows)
+				{
+					if(tr_shad_) shadowed = accelerator->isShadowed(b_ray, s_depth_, scol, mask_obj_index, mask_mat_index, scene_->getShadowBias(), render_data.cam_);
+					else accelerator->isShadowed(b_ray, mask_obj_index, mask_mat_index, scene_->getShadowBias());
+				}
+
+				if((!shadowed && light_pdf > 1e-6f) || (color_layers && color_layers->find(Layer::DiffuseNoShadow)))
+				{
+					if(tr_shad_ && cast_shadows) lcol *= scol;
+					if(scene_->vol_integrator_)
+					{
+						const Rgb transmit_col = scene_->vol_integrator_->transmittance(render_data.prng_, b_ray);
+						lcol *= transmit_col;
+					}
+					const float l_pdf = 1.f / light_pdf;
+					const float l_2 = l_pdf * l_pdf;
+					const float m_2 = s.pdf_ * s.pdf_;
+					const float w = m_2 / (l_2 + m_2);
+					if(color_layers)
+					{
+						if(color_layers->isDefinedAny({Layer::Diffuse, Layer::DiffuseNoShadow}))
+						{
+							const Rgb tmp_col = material->sample(sp.mat_data_.get(), sp, wo, b_ray.dir_, s, W, render_data.chromatic_, render_data.wavelength_, render_data.cam_) * lcol * w * W;
+							col_diff_no_shadow += tmp_col;
+							if((!shadowed && light_pdf > 1e-6f) && s.sampled_flags_.hasAny(BsdfFlags::Diffuse)) col_diff_dir += tmp_col;
+						}
+						if(color_layers->find(Layer::Glossy))
+						{
+							const Rgb tmp_col = material->sample(sp.mat_data_.get(), sp, wo, b_ray.dir_, s, W, render_data.chromatic_, render_data.wavelength_, render_data.cam_) * lcol * w * W;
+							if((!shadowed && light_pdf > 1e-6f) && s.sampled_flags_.hasAny(BsdfFlags::Glossy)) col_glossy_dir += tmp_col;
+						}
+					}
+					if((!shadowed && light_pdf > 1e-6f)) ccol_2 += surf_col * lcol * w * W;
 				}
 			}
 		}
-
-		col += ccol * inv_ns;
-
+		col_result = ccol_2 * inv_ns;
 		if(color_layers)
 		{
-			if(ColorLayer *color_layer = color_layers->find(Layer::DebugLightEstimationLightSampling)) color_layer->color_ += ccol * inv_ns;
-			if(ColorLayer *color_layer = color_layers->find(Layer::Shadow)) color_layer->color_ += col_shadow * inv_ns;
-			if(ColorLayer *color_layer = color_layers->find(Layer::MatIndexMaskShadow)) color_layer->color_ += col_shadow_mat_mask * inv_ns;
-			if(ColorLayer *color_layer = color_layers->find(Layer::ObjIndexMaskShadow)) color_layer->color_ += col_shadow_obj_mask * inv_ns;
+			if(ColorLayer *color_layer = color_layers->find(Layer::DebugLightEstimationMatSampling)) color_layer->color_ += col_result;
 			if(ColorLayer *color_layer = color_layers->find(Layer::Diffuse)) color_layer->color_ += col_diff_dir * inv_ns;
 			if(ColorLayer *color_layer = color_layers->find(Layer::DiffuseNoShadow)) color_layer->color_ += col_diff_no_shadow * inv_ns;
 			if(ColorLayer *color_layer = color_layers->find(Layer::Glossy)) color_layer->color_ += col_glossy_dir * inv_ns;
 		}
-
-		if(can_intersect) // sample from BSDF to complete MIS
-		{
-			Rgb ccol_2(0.f);
-
-			if(color_layers)
-			{
-				if(color_layers->isDefinedAny({Layer::Diffuse, Layer::DiffuseNoShadow}))
-				{
-					col_diff_no_shadow = Rgba(0.f);
-					col_diff_dir = Rgba(0.f);
-				}
-				if(color_layers->find(Layer::Glossy)) col_glossy_dir = Rgba(0.f);
-			}
-
-			hal_2.setStart(offs - 1);
-			hal_3.setStart(offs - 1);
-
-			for(int i = 0; i < n; ++i)
-			{
-				Ray b_ray;
-				if(scene_->ray_min_dist_auto_) b_ray.tmin_ = scene_->ray_min_dist_ * std::max(1.f, Vec3(sp.p_).length());
-				else b_ray.tmin_ = scene_->ray_min_dist_;
-
-				b_ray.from_ = sp.p_;
-
-				const float s_1 = hal_2.getNext();
-				const float s_2 = hal_3.getNext();
-				float W = 0.f;
-
-				Sample s(s_1, s_2, BsdfFlags::Glossy | BsdfFlags::Diffuse | BsdfFlags::Dispersive | BsdfFlags::Reflect | BsdfFlags::Transmit);
-				const Rgb surf_col = material->sample(sp.mat_data_.get(), sp, wo, b_ray.dir_, s, W, render_data.chromatic_, render_data.wavelength_, render_data.cam_);
-				if(s.pdf_ > 1e-6f && light->intersect(b_ray, b_ray.tmax_, lcol, light_pdf))
-				{
-					if(cast_shadows) shadowed = (tr_shad_) ? accelerator->isShadowed(b_ray, s_depth_, scol, mask_obj_index, mask_mat_index, scene_->getShadowBias(), render_data.cam_) : accelerator->isShadowed(b_ray, mask_obj_index, mask_mat_index, scene_->getShadowBias());
-					else shadowed = false;
-
-					if((!shadowed && light_pdf > 1e-6f) || (color_layers && color_layers->find(Layer::DiffuseNoShadow)))
-					{
-						if(tr_shad_ && cast_shadows) lcol *= scol;
-						if(scene_->vol_integrator_)
-						{
-							const Rgb transmit_col = scene_->vol_integrator_->transmittance(render_data.prng_, b_ray);
-							lcol *= transmit_col;
-						}
-						const float l_pdf = 1.f / light_pdf;
-						const float l_2 = l_pdf * l_pdf;
-						const float m_2 = s.pdf_ * s.pdf_;
-						const float w = m_2 / (l_2 + m_2);
-
-						if(color_layers)
-						{
-							if(color_layers->isDefinedAny({Layer::Diffuse, Layer::DiffuseNoShadow}))
-							{
-								const Rgb tmp_col = material->sample(sp.mat_data_.get(), sp, wo, b_ray.dir_, s, W, render_data.chromatic_, render_data.wavelength_, render_data.cam_) * lcol * w * W;
-								col_diff_no_shadow += tmp_col;
-								if((!shadowed && light_pdf > 1e-6f) && s.sampled_flags_.hasAny(BsdfFlags::Diffuse)) col_diff_dir += tmp_col;
-							}
-
-							if(color_layers->find(Layer::Glossy))
-							{
-								const Rgb tmp_col = material->sample(sp.mat_data_.get(), sp, wo, b_ray.dir_, s, W, render_data.chromatic_, render_data.wavelength_, render_data.cam_) * lcol * w * W;
-								if((!shadowed && light_pdf > 1e-6f) && s.sampled_flags_.hasAny(BsdfFlags::Glossy)) col_glossy_dir += tmp_col;
-							}
-						}
-
-						if((!shadowed && light_pdf > 1e-6f)) ccol_2 += surf_col * lcol * w * W;
-					}
-				}
-			}
-
-			col += ccol_2 * inv_ns;
-
-			if(color_layers)
-			{
-				if(ColorLayer *color_layer = color_layers->find(Layer::DebugLightEstimationMatSampling)) color_layer->color_ += ccol_2 * inv_ns;
-				if(ColorLayer *color_layer = color_layers->find(Layer::Diffuse)) color_layer->color_ += col_diff_dir * inv_ns;
-				if(ColorLayer *color_layer = color_layers->find(Layer::DiffuseNoShadow)) color_layer->color_ += col_diff_no_shadow * inv_ns;
-				if(ColorLayer *color_layer = color_layers->find(Layer::Glossy)) color_layer->color_ += col_glossy_dir * inv_ns;
-			}
-		}
 	}
+	return col_result;
+}
 
+Rgb MonteCarloIntegrator::doLightEstimation(RenderData &render_data, const Light *light, const SurfacePoint &sp, const Vec3 &wo, unsigned int loffs, ColorLayers *color_layers) const
+{
+	const Accelerator *accelerator = scene_->getAccelerator();
+	if(!accelerator) return {0.f};
+	Rgb col{0.f};
+	const bool cast_shadows = light->castShadows() && sp.material_->getReceiveShadows();
+	if(light->diracLight()) // handle lights with delta distribution, e.g. point and directional lights
+	{
+		col += diracLight(accelerator, light, wo, sp, render_data.prng_, cast_shadows, render_data.cam_, color_layers);
+	}
+	else // area light and suchlike
+	{
+		unsigned int l_offs = loffs * loffs_delta_;
+		col += areaLight1(render_data, accelerator, light, wo, sp, cast_shadows, l_offs, color_layers);
+		col += areaLight2(render_data, accelerator, light, wo, sp, cast_shadows, l_offs, color_layers);
+	}
 	return col;
 }
 
