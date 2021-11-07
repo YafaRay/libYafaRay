@@ -80,12 +80,20 @@ target_compile_definitions(libyafaray4
 		"YAFARAY_BUILD_FLAGS=\"${CMAKE_CXX_FLAGS} $<$<CONFIG:Debug>:${CMAKE_CXX_FLAGS_DEBUG}>$<$<CONFIG:Release>:${CMAKE_CXX_FLAGS_RELEASE}>$<$<CONFIG:RelWithDebInfo>:${CMAKE_CXX_FLAGS_RELWITHDEBINFO}>$<$<CONFIG:MinSizeRel>:${CMAKE_CXX_FLAGS_MINSIZEREL}>\"")
 
 # Custom linker options
-if(CMAKE_SYSTEM_NAME MATCHES "Linux" AND (CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID STREQUAL "Clang"))
-	target_link_options(libyafaray4 PRIVATE
-			"LINKER:SHELL:--no-undefined"
-			"LINKER:SHELL:--version-script=${PROJECT_SOURCE_DIR}/include/public_api/yafaray_c_api_symbols.map" # Custom symbols export and versioning map
-			"$<$<CONFIG:RELEASE>:LINKER:SHELL:-s>" # Strip in release builds
-			)
+if(CMAKE_SYSTEM_NAME MATCHES "Linux")
+	if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+		target_link_options(libyafaray4 PRIVATE
+				"LINKER:SHELL:--no-undefined"
+				"LINKER:SHELL:--version-script=${PROJECT_SOURCE_DIR}/include/public_api/yafaray_c_api_symbols.map" # Custom symbols export and versioning map
+				"$<$<CONFIG:RELEASE>:LINKER:SHELL:-s>" # Strip in release builds
+				)
+	elseif(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+		target_link_options(libyafaray4 PRIVATE
+				"LINKER:SHELL:-undefined,error"
+				"LINKER:SHELL:--version-script=${PROJECT_SOURCE_DIR}/include/public_api/yafaray_c_api_symbols.map" # Custom symbols export and versioning map
+				"$<$<CONFIG:RELEASE>:LINKER:SHELL:-s>" # Strip in release builds
+				)
+	endif()
 endif()
 
 # Copy C API include files to binary directory for other targets to use
