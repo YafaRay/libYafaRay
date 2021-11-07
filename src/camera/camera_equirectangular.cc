@@ -47,7 +47,7 @@ void EquirectangularCamera::setAxis(const Vec3 &vx, const Vec3 &vy, const Vec3 &
 
 CameraRay EquirectangularCamera::shootRay(float px, float py, float lu, float lv) const
 {
-	DiffRay ray;
+	Ray ray;
 	ray.from_ = position_;
 	float u = 2.f * px / (float)resx_ - 1.f;
 	float v = 2.f * py / (float)resy_ - 1.f;

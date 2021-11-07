@@ -57,7 +57,7 @@ CameraRay AngularCamera::shootRay(float px, float py, float lu, float lv) const
 	float v = 2.f * (py / static_cast<float>(resy_)) - 1.f;
 	v *= aspect_ratio_;
 	const float radius = math::sqrt(u * u + v * v);
-	DiffRay ray;
+	Ray ray;
 	ray.from_ = position_;
 	if(circular_ && radius > max_radius_) { return {ray, false}; }
 	float theta = 0.f;

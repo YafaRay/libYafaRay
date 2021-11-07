@@ -127,7 +127,7 @@ void PerspectiveCamera::getLensUv(float r_1, float r_2, float &u, float &v) cons
 
 CameraRay PerspectiveCamera::shootRay(float px, float py, float lu, float lv) const
 {
-	DiffRay ray;
+	Ray ray;
 	ray.from_ = position_;
 	ray.dir_ = vright_ * px + vup_ * py + vto_;
 	ray.dir_.normalize();

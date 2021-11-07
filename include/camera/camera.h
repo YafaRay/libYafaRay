@@ -44,7 +44,7 @@ class Logger;
 
 struct CameraRay
 {
-	CameraRay(const DiffRay &ray, bool valid) : ray_(ray), valid_(valid) { }
+	CameraRay(const Ray &ray, bool valid) : ray_(ray), valid_(valid) { }
 	DiffRay ray_;
 	bool valid_;
 };
