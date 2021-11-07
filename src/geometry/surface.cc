@@ -36,7 +36,7 @@ SurfacePoint SurfacePoint::blendSurfacePoints(SurfacePoint const &sp_1, SurfaceP
 	return result;
 }
 
-SpDifferentials::SpDifferentials(const SurfacePoint &spoint, const DiffRay &ray): sp_(spoint)
+SpDifferentials::SpDifferentials(const SurfacePoint &spoint, const Ray &ray): sp_(spoint)
 {
 	if(ray.has_differentials_)
 	{
@@ -60,7 +60,7 @@ SpDifferentials::SpDifferentials(const SurfacePoint &spoint, const DiffRay &ray)
 	}
 }
 
-void SpDifferentials::reflectedRay(const DiffRay &in, DiffRay &out) const
+void SpDifferentials::reflectedRay(const Ray &in, Ray &out) const
 {
 	if(!in.has_differentials_)
 	{
@@ -83,7 +83,7 @@ void SpDifferentials::reflectedRay(const DiffRay &in, DiffRay &out) const
 	out.ydir_ = out.dir_ - dwody + 2 * (/* (out.dir * sp.N) * dndy + */ d_d_ndy * sp_.n_);
 }
 
-void SpDifferentials::refractedRay(const DiffRay &in, DiffRay &out, float ior) const
+void SpDifferentials::refractedRay(const Ray &in, Ray &out, float ior) const
 {
 	if(!in.has_differentials_)
 	{

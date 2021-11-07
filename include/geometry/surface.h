@@ -32,7 +32,7 @@
 BEGIN_YAFARAY
 class Light;
 class Object;
-class DiffRay;
+class Ray;
 class Vec3;
 class Primitive;
 struct IntersectData;
@@ -86,7 +86,7 @@ class SurfacePoint final
 		//float dvdNV;
 
 		// Differential ray for mipmaps calculations
-		const DiffRay *ray_ = nullptr;
+		const Ray *ray_ = nullptr;
 };
 
 inline float SurfacePoint::getDistToNearestEdge() const
@@ -137,11 +137,11 @@ inline void SurfacePoint::initializeAllZero()
 class SpDifferentials
 {
 	public:
-		SpDifferentials(const SurfacePoint &spoint, const DiffRay &ray);
+		SpDifferentials(const SurfacePoint &spoint, const Ray &ray);
 		//! compute differentials for a scattered ray
-		void reflectedRay(const DiffRay &in, DiffRay &out) const;
+		void reflectedRay(const Ray &in, Ray &out) const;
 		//! compute differentials for a refracted ray
-		void refractedRay(const DiffRay &in, DiffRay &out, float ior) const;
+		void refractedRay(const Ray &in, Ray &out, float ior) const;
 		float projectedPixelArea();
 		void getUVdifferentials(float &du_dx, float &dv_dx, float &du_dy, float &dv_dy) const;
 		Vec3 dp_dx_;

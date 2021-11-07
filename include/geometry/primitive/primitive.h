@@ -26,6 +26,7 @@
 #include <vector>
 #include <array>
 #include <common/logger.h>
+#include <geometry/ray.h>
 
 BEGIN_YAFARAY
 
@@ -63,7 +64,7 @@ class Primitive
 			\param t set this to raydepth where hit occurs */
 		virtual IntersectData intersect(const Ray &ray, const Matrix4 *obj_to_world = nullptr) const;
 		/* fill in surfacePoint_t */
-		virtual SurfacePoint getSurface(const Point3 &hit, const IntersectData &data, const Matrix4 *obj_to_world, const Camera *camera) const;
+		virtual SurfacePoint getSurface(const Ray &ray, const Point3 &hit, const IntersectData &data, const Matrix4 *obj_to_world, const Camera *camera) const;
 		/* return the material */
 		virtual const Material *getMaterial() const { return nullptr; }
 		/* calculate surface area */

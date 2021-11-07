@@ -33,7 +33,7 @@ class RenderData;
 class Bound;
 class ParamMap;
 class Ray;
-class DiffRay;
+class Ray;
 class Primitive;
 class SurfacePoint;
 class Logger;
@@ -61,7 +61,6 @@ class Accelerator
 		virtual AcceleratorTsIntersectData intersectTs(const Ray &ray, int max_depth, float dist, float shadow_bias, const Camera *camera) const = 0;
 		virtual Bound getBound() const = 0;
 		bool intersect(const Ray &ray, SurfacePoint &sp, const Camera *camera) const;
-		bool intersect(const DiffRay &ray, SurfacePoint &sp, const Camera *camera) const;
 		bool isShadowed(const Ray &ray, float &obj_index, float &mat_index, float shadow_bias) const;
 		bool isShadowed(const Ray &ray, int max_depth, Rgb &filt, float &obj_index, float &mat_index, float shadow_bias, const Camera *camera) const;
 

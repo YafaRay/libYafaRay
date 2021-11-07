@@ -60,18 +60,11 @@ bool Accelerator::intersect(const Ray &ray, SurfacePoint &sp, const Camera *came
 	if(accelerator_intersect_data.hit_ && accelerator_intersect_data.hit_primitive_)
 	{
 		const Point3 hit_point = ray.from_ + accelerator_intersect_data.t_max_ * ray.dir_;
-		sp = accelerator_intersect_data.hit_primitive_->getSurface(hit_point, accelerator_intersect_data, nullptr, camera);
+		sp = accelerator_intersect_data.hit_primitive_->getSurface(ray, hit_point, accelerator_intersect_data, nullptr, camera);
 		ray.tmax_ = accelerator_intersect_data.t_max_;
 		return true;
 	}
 	return false;
-}
-
-bool Accelerator::intersect(const DiffRay &ray, SurfacePoint &sp, const Camera *camera) const
-{
-	if(!intersect(static_cast<const Ray &>(ray), sp, camera)) return false;
-	sp.ray_ = &ray;
-	return true;
 }
 
 bool Accelerator::isShadowed(const Ray &ray, float &obj_index, float &mat_index, float shadow_bias) const

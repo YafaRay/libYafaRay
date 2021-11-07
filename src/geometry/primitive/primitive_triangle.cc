@@ -94,7 +94,7 @@ Vec3 TrianglePrimitive::calculateNormal(const std::array<Point3, 3> &vertices)
 	return ((vertices[1] - vertices[0]) ^ (vertices[2] - vertices[0])).normalize();
 }
 
-SurfacePoint TrianglePrimitive::getSurface(const Point3 &hit_point, const IntersectData &intersect_data, const Matrix4 *obj_to_world, const Camera *camera) const
+SurfacePoint TrianglePrimitive::getSurface(const Ray &ray, const Point3 &hit_point, const IntersectData &intersect_data, const Matrix4 *obj_to_world, const Camera *camera) const
 {
 	SurfacePoint sp;
 	sp.intersect_data_ = intersect_data;
@@ -169,6 +169,7 @@ SurfacePoint TrianglePrimitive::getSurface(const Point3 &hit_point, const Inters
 	sp.p_ = hit_point;
 	Vec3::createCs(sp.n_, sp.nu_, sp.nv_);
 	calculateShadingSpace(sp);
+	sp.ray_ = &ray;
 	sp.material_ = getMaterial();
 	sp.mat_data_ = sp.material_->initBsdf(sp, camera);
 	return sp;

@@ -60,7 +60,7 @@ class TiledIntegrator : public SurfaceIntegrator
 
 		//		virtual void recursiveRaytrace(renderState_t &state, diffRay_t &ray, int rDepth, BSDF_t bsdfs, surfacePoint_t &sp, vector3d_t &wo, Rgb &col, float &alpha) const;
 		virtual void precalcDepths(const RenderView *render_view);
-		static void generateCommonLayers(int raylevel, const SurfacePoint &sp, const DiffRay &ray, const MaskParams &mask_params, ColorLayers *color_layers = nullptr); //!< Generates render passes common to all integrators
+		static void generateCommonLayers(int raylevel, const SurfacePoint &sp, const Ray &ray, const MaskParams &mask_params, ColorLayers *color_layers = nullptr); //!< Generates render passes common to all integrators
 
 	protected:
 		float i_aa_passes_; //!< Inverse of AA_passes used for depth map

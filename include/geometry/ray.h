@@ -36,14 +36,6 @@ class Ray
 		Vec3 dir_;
 		mutable float tmin_ = 0.f, tmax_ = -1.f;
 		float time_ = 0.f; //!< relative frame time (values between [0;1]) at which ray was generated
-};
-
-class DiffRay: public Ray
-{
-	public:
-		DiffRay() = default;
-		DiffRay(const Ray &r): Ray(r) { }
-		DiffRay(const Point3 &f, const Vec3 &d, float start = 0.f, float end = -1.f, float ftime = 0.f) : Ray(f, d, start, end, ftime) { }
 		bool has_differentials_ = false;
 		Point3 xfrom_, yfrom_;
 		Vec3 xdir_, ydir_;

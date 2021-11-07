@@ -44,7 +44,7 @@ class SpherePrimitive final : public Primitive
 		virtual Bound getBound(const Matrix4 *obj_to_world) const override;
 		virtual bool intersectsBound(const ExBound &b, const Matrix4 *obj_to_world) const override { return true; };
 		virtual IntersectData intersect(const Ray &ray, const Matrix4 *obj_to_world) const override;
-		virtual SurfacePoint getSurface(const Point3 &hit, const IntersectData &intersect_data, const Matrix4 *obj_to_world, const Camera *camera) const override;
+		virtual SurfacePoint getSurface(const Ray &ray, const Point3 &hit, const IntersectData &intersect_data, const Matrix4 *obj_to_world, const Camera *camera) const override;
 		virtual const Material *getMaterial() const override { return material_; }
 		virtual float surfaceArea(const Matrix4 *obj_to_world) const override;
 		virtual Vec3 getGeometricNormal(const Matrix4 *obj_to_world, float u, float v) const override;
