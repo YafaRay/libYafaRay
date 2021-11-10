@@ -22,9 +22,38 @@
 
 BEGIN_YAFARAY
 
+SurfacePoint::SurfacePoint(const SurfacePoint &sp, DifferentialsAssignment differentials_assignment) :
+material_(sp.material_), mat_data_(sp.mat_data_), light_(sp.light_), object_(sp.object_), intersect_data_(sp.intersect_data_),
+n_(sp.n_), ng_(sp.ng_), orco_ng_(sp.orco_ng_), p_(sp.p_), orco_p_(sp.orco_p_), has_uv_(sp.has_uv_), has_orco_(sp.has_orco_),
+available_(sp.available_), prim_num_(sp.prim_num_), u_(sp.u_), v_(sp.v_), nu_(sp.nu_), nv_(sp.nv_),
+dp_du_(sp.dp_du_), dp_dv_(sp.dp_dv_), ds_du_(sp.ds_du_), ds_dv_(sp.ds_dv_), dp_du_abs_(sp.dp_du_abs_), dp_dv_abs_(sp.dp_dv_abs_)
+{
+	if(differentials_assignment == DifferentialsAssignment::Copy && sp.surface_differentials_)
+	{
+		surface_differentials_ = std::unique_ptr<SurfaceDifferentials>(new SurfaceDifferentials(sp.surface_differentials_->dp_dx_, sp.surface_differentials_->dp_dy_));
+	}
+}
+
+void SurfacePoint::setRayDifferentials(const RayDifferentials *ray_differentials)
+{
+	if(ray_differentials)
+	{
+		// Estimate screen-space change in \pt and $(u,v)$
+		// Compute auxiliary intersection points with plane
+		const float d = -(n_ * p_);
+		const Vec3 rxv(ray_differentials->xfrom_);
+		const float tx = -((n_ * rxv) + d) / (n_ * ray_differentials->xdir_);
+		const Point3 px = ray_differentials->xfrom_ + tx * ray_differentials->xdir_;
+		const Vec3 ryv(ray_differentials->yfrom_);
+		const float ty = -((n_ * ryv) + d) / (n_ * ray_differentials->ydir_);
+		const Point3 py = ray_differentials->yfrom_ + ty * ray_differentials->ydir_;
+		surface_differentials_ = std::unique_ptr<SurfaceDifferentials>(new SurfaceDifferentials{px - p_, py - p_});
+	}
+}
+
 SurfacePoint SurfacePoint::blendSurfacePoints(SurfacePoint const &sp_1, SurfacePoint const &sp_2, float alpha)
 {
-	SurfacePoint result(sp_1);
+	SurfacePoint result(sp_1, DifferentialsAssignment::Ignore);
 	result.n_ = math::lerp(sp_1.n_, sp_2.n_, alpha);
 	result.nu_ = math::lerp(sp_1.nu_, sp_2.nu_, alpha);
 	result.nv_ = math::lerp(sp_1.nv_, sp_2.nv_, alpha);
@@ -33,80 +62,72 @@ SurfacePoint SurfacePoint::blendSurfacePoints(SurfacePoint const &sp_1, SurfaceP
 	result.ds_du_ = math::lerp(sp_1.ds_du_, sp_2.ds_du_, alpha);
 	result.ds_dv_ = math::lerp(sp_1.ds_dv_, sp_2.ds_dv_, alpha);
 	result.mat_data_ = nullptr;
+	if(sp_1.surface_differentials_ && sp_2.surface_differentials_)
+	{
+		result.surface_differentials_ = std::unique_ptr<SurfaceDifferentials>(new SurfaceDifferentials{
+				math::lerp(sp_1.surface_differentials_->dp_dx_, sp_2.surface_differentials_->dp_dx_, alpha),
+				math::lerp(sp_1.surface_differentials_->dp_dy_, sp_2.surface_differentials_->dp_dy_, alpha)
+		}); //FIXME: should this std::max or std::min instead of lerp?
+	}
+	else if(sp_1.surface_differentials_)
+	{
+		result.surface_differentials_ = std::unique_ptr<SurfaceDifferentials>(new SurfaceDifferentials{sp_1.surface_differentials_->dp_dx_, sp_1.surface_differentials_->dp_dy_});
+	}
+	else if(sp_2.surface_differentials_)
+	{
+		result.surface_differentials_ = std::unique_ptr<SurfaceDifferentials>(new SurfaceDifferentials{sp_2.surface_differentials_->dp_dx_, sp_2.surface_differentials_->dp_dy_});
+	}
 	return result;
 }
 
-SpDifferentials::SpDifferentials(const SurfacePoint &sp, const RayDifferentials *ray_differentials): sp_(sp)
+std::unique_ptr<RayDifferentials> SurfacePoint::reflectedRay(const RayDifferentials *in_differentials, const Vec3 &in_dir, const Vec3 &out_dir) const
 {
-	if(ray_differentials)
-	{
-		// Estimate screen-space change in \pt and $(u,v)$
-		// Compute auxiliary intersection points with plane
-		const float d = -(sp_.n_ * sp_.p_);
-		const Vec3 rxv(ray_differentials->xfrom_);
-		const float tx = -((sp_.n_ * rxv) + d) / (sp_.n_ * ray_differentials->xdir_);
-		const Point3 px = ray_differentials->xfrom_ + tx * ray_differentials->xdir_;
-		const Vec3 ryv(ray_differentials->yfrom_);
-		const float ty = -((sp_.n_ * ryv) + d) / (sp_.n_ * ray_differentials->ydir_);
-		const Point3 py = ray_differentials->yfrom_ + ty * ray_differentials->ydir_;
-		dp_dx_ = px - sp_.p_;
-		dp_dy_ = py - sp_.p_;
-	}
-	else
-	{
-		//dudx = dvdx = 0.;
-		//dudy = dvdy = 0.;
-		dp_dx_ = dp_dy_ = {0, 0, 0};
-	}
-}
-
-std::unique_ptr<RayDifferentials> SpDifferentials::reflectedRay(const RayDifferentials *in_differentials, const Vec3 &in_dir, const Vec3 &out_dir) const
-{
-	if(!in_differentials) return nullptr;
+	if(!surface_differentials_ || !in_differentials) return nullptr;
 	auto out_differentials = std::unique_ptr<RayDifferentials>(new RayDifferentials());
 	// Compute ray differential _rd_ for specular reflection
-	out_differentials->xfrom_ = sp_.p_ + dp_dx_;
-	out_differentials->yfrom_ = sp_.p_ + dp_dy_;
+	out_differentials->xfrom_ = p_ + surface_differentials_->dp_dx_;
+	out_differentials->yfrom_ = p_ + surface_differentials_->dp_dy_;
 	// Compute differential reflected directions
 	//	Normal dndx = bsdf->dgShading.dndu * bsdf->dgShading.dudx +
 	//				  bsdf->dgShading.dndv * bsdf->dgShading.dvdx;
 	//	Normal dndy = bsdf->dgShading.dndu * bsdf->dgShading.dudy +
 	//				  bsdf->dgShading.dndv * bsdf->dgShading.dvdy;
 	const Vec3 dwodx = in_dir - in_differentials->xdir_, dwody = in_dir - in_differentials->ydir_;
-	const float d_d_ndx = (dwodx * sp_.n_); // + (out.dir * dndx);
-	const float d_d_ndy = (dwody * sp_.n_); // + (out.dir * dndy);
-	out_differentials->xdir_ = out_dir - dwodx + 2 * (/* (out.dir * sp.N) * dndx + */ d_d_ndx * sp_.n_);
-	out_differentials->ydir_ = out_dir - dwody + 2 * (/* (out.dir * sp.N) * dndy + */ d_d_ndy * sp_.n_);
+	const float d_d_ndx = (dwodx * n_); // + (out.dir * dndx);
+	const float d_d_ndy = (dwody * n_); // + (out.dir * dndy);
+	out_differentials->xdir_ = out_dir - dwodx + 2 * (/* (out.dir * sp.N) * dndx + */ d_d_ndx * n_);
+	out_differentials->ydir_ = out_dir - dwody + 2 * (/* (out.dir * sp.N) * dndy + */ d_d_ndy * n_);
 	return out_differentials;
 }
 
-std::unique_ptr<RayDifferentials> SpDifferentials::refractedRay(const RayDifferentials *in_differentials, const Vec3 &in_dir, const Vec3 &out_dir, float ior) const
+std::unique_ptr<RayDifferentials> SurfacePoint::refractedRay(const RayDifferentials *in_differentials, const Vec3 &in_dir, const Vec3 &out_dir, float ior) const
 {
-	if(!in_differentials) return nullptr;
+	if(!surface_differentials_ || !in_differentials) return nullptr;
 	auto out_differentials = std::unique_ptr<RayDifferentials>(new RayDifferentials());
 	//RayDifferential rd(p, wi);
-	out_differentials->xfrom_ = sp_.p_ + dp_dx_;
-	out_differentials->yfrom_ = sp_.p_ + dp_dy_;
+	out_differentials->xfrom_ = p_ + surface_differentials_->dp_dx_;
+	out_differentials->yfrom_ = p_ + surface_differentials_->dp_dy_;
 	//if (Dot(wo, n) < 0) eta = 1.f / eta;
 	//Normal dndx = bsdf->dgShading.dndu * bsdf->dgShading.dudx + bsdf->dgShading.dndv * bsdf->dgShading.dvdx;
 	//Normal dndy = bsdf->dgShading.dndu * bsdf->dgShading.dudy + bsdf->dgShading.dndv * bsdf->dgShading.dvdy;
 	const Vec3 dwodx = in_dir - in_differentials->xdir_, dwody = in_dir - in_differentials->ydir_;
-	const float d_d_ndx = (dwodx * sp_.n_); // + Dot(wo, dndx);
-	const float d_d_ndy = (dwody * sp_.n_); // + Dot(wo, dndy);
+	const float d_d_ndx = (dwodx * n_); // + Dot(wo, dndx);
+	const float d_d_ndy = (dwody * n_); // + Dot(wo, dndy);
 	//	float mu = IOR * (in.dir * sp.N) - (out.dir * sp.N);
-	const float dmudx = (ior - (ior * ior * (in_dir * sp_.n_)) / (out_dir * sp_.n_)) * d_d_ndx;
-	const float dmudy = (ior - (ior * ior * (in_dir * sp_.n_)) / (out_dir * sp_.n_)) * d_d_ndy;
-	out_differentials->xdir_ = out_dir + ior * dwodx - (/* mu * dndx + */ dmudx * sp_.n_);
-	out_differentials->ydir_ = out_dir + ior * dwody - (/* mu * dndy + */ dmudy * sp_.n_);
+	const float dmudx = (ior - (ior * ior * (in_dir * n_)) / (out_dir * n_)) * d_d_ndx;
+	const float dmudy = (ior - (ior * ior * (in_dir * n_)) / (out_dir * n_)) * d_d_ndy;
+	out_differentials->xdir_ = out_dir + ior * dwodx - (/* mu * dndx + */ dmudx * n_);
+	out_differentials->ydir_ = out_dir + ior * dwody - (/* mu * dndy + */ dmudy * n_);
 	return out_differentials;
 }
 
-float SpDifferentials::projectedPixelArea()
+float SurfacePoint::projectedPixelArea()
 {
-	return (dp_dx_ ^ dp_dy_).length();
+	if(surface_differentials_) return (surface_differentials_->dp_dx_ ^ surface_differentials_->dp_dy_).length();
+	else return 0.f;
 }
 
-void SpDifferentials::dUdvFromDpdPdUdPdV(float &du, float &dv, const Point3 &dp, const Vec3 &dp_du, const Vec3 &dp_dv) const
+void SurfacePoint::dUdvFromDpdPdUdPdV(float &du, float &dv, const Point3 &dp, const Vec3 &dp_du, const Vec3 &dp_dv) const
 {
 	const float det_xy = (dp_du.x_ * dp_dv.y_) - (dp_dv.x_ * dp_du.y_);
 	const float det_xz = (dp_du.x_ * dp_dv.z_) - (dp_dv.x_ * dp_du.z_);
@@ -131,10 +152,13 @@ void SpDifferentials::dUdvFromDpdPdUdPdV(float &du, float &dv, const Point3 &dp,
 	}
 }
 
-void SpDifferentials::getUVdifferentials(float &du_dx, float &dv_dx, float &du_dy, float &dv_dy) const
+void SurfacePoint::getUVdifferentials(float &du_dx, float &dv_dx, float &du_dy, float &dv_dy) const
 {
-	dUdvFromDpdPdUdPdV(du_dx, dv_dx, dp_dx_, sp_.dp_du_abs_, sp_.dp_dv_abs_);
-	dUdvFromDpdPdUdPdV(du_dy, dv_dy, dp_dy_, sp_.dp_du_abs_, sp_.dp_dv_abs_);
+	if(surface_differentials_)
+	{
+		dUdvFromDpdPdUdPdV(du_dx, dv_dx, surface_differentials_->dp_dx_, dp_du_abs_, dp_dv_abs_);
+		dUdvFromDpdPdUdPdV(du_dy, dv_dy, surface_differentials_->dp_dy_, dp_du_abs_, dp_dv_abs_);
+	}
 }
 
 END_YAFARAY

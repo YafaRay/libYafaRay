@@ -29,7 +29,7 @@ BEGIN_YAFARAY
 struct RayDifferentials
 {
 	RayDifferentials() = default;
-	RayDifferentials(const Point3 &xfrom, const Vec3 &xdir, const Point3 &yfrom, const Vec3 &ydir) : xfrom_(xfrom), xdir_(xdir), yfrom_(yfrom), ydir_(ydir) { }
+	RayDifferentials(const Point3 &xfrom, const Vec3 &xdir, const Point3 &yfrom, const Vec3 &ydir) : xfrom_(xfrom), yfrom_(yfrom), xdir_(xdir), ydir_(ydir) { }
 	Point3 xfrom_, yfrom_;
 	Vec3 xdir_, ydir_;
 };

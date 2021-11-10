@@ -731,7 +731,7 @@ Rgb PhotonIntegrator::finalGathering(RenderData &render_data, const SurfacePoint
 	{
 		Rgb throughput(1.0);
 		float length = 0;
-		SurfacePoint hit = sp;
+		SurfacePoint hit {sp, SurfacePoint::DifferentialsAssignment::Ignore}; //FIXME: should this be Copy?
 		Vec3 pwo = wo;
 		Ray p_ray;
 		bool did_hit;

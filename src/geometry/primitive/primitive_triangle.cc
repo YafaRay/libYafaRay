@@ -169,8 +169,8 @@ SurfacePoint TrianglePrimitive::getSurface(const RayDifferentials *ray_different
 	sp.p_ = hit_point;
 	Vec3::createCs(sp.n_, sp.nu_, sp.nv_);
 	calculateShadingSpace(sp);
-	sp.ray_differentials_ = ray_differentials;
 	sp.material_ = getMaterial();
+	sp.setRayDifferentials(ray_differentials);
 	sp.mat_data_ = sp.material_->initBsdf(sp, camera);
 	return sp;
 }

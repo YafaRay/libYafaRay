@@ -167,9 +167,8 @@ void TextureMapperNode::eval(NodeTreeData &node_tree_data, const SurfacePoint &s
 	Vec3 ng(0.f);
 	std::unique_ptr<const MipMapParams> mip_map_params;
 
-	if((tex_->getInterpolationType() == InterpolationType::Trilinear || tex_->getInterpolationType() == InterpolationType::Ewa) && sp.ray_differentials_ && sp.ray_differentials_)
+	if((tex_->getInterpolationType() == InterpolationType::Trilinear || tex_->getInterpolationType() == InterpolationType::Ewa) && sp.surface_differentials_)
 	{
-		const SpDifferentials sp_diff(sp, sp.ray_differentials_);
 		getCoords(texpt, ng, sp, camera);
 		const Point3 texptorig = texpt;
 		texpt = doMapping(texptorig, ng);
@@ -177,7 +176,7 @@ void TextureMapperNode::eval(NodeTreeData &node_tree_data, const SurfacePoint &s
 		{
 			float du_dx = 0.f, dv_dx = 0.f;
 			float du_dy = 0.f, dv_dy = 0.f;
-			sp_diff.getUVdifferentials(du_dx, dv_dx, du_dy, dv_dy);
+			sp.getUVdifferentials(du_dx, dv_dx, du_dy, dv_dy);
 			const Point3 texpt_diffx = 1.0e+2f * (doMapping(texptorig + 1.0e-2f * Point3(du_dx, dv_dx, 0.f), ng) - texpt);
 			const Point3 texpt_diffy = 1.0e+2f * (doMapping(texptorig + 1.0e-2f * Point3(du_dy, dv_dy, 0.f), ng) - texpt);
 			mip_map_params = std::unique_ptr<const MipMapParams>(new MipMapParams(texpt_diffx.x_, texpt_diffx.y_, texpt_diffy.x_, texpt_diffy.y_));

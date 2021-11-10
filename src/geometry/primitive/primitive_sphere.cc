@@ -95,7 +95,7 @@ SurfacePoint SpherePrimitive::getSurface(const RayDifferentials *ray_differentia
 	sp.u_ = atan2(normal.y_, normal.x_) * math::div_1_by_pi + 1;
 	sp.v_ = 1.f - math::acos(normal.z_) * math::div_1_by_pi;
 	sp.light_ = nullptr;
-	sp.ray_differentials_ = ray_differentials;
+	sp.setRayDifferentials(ray_differentials);
 	sp.mat_data_ = sp.material_->initBsdf(sp, camera);
 	return sp;
 }

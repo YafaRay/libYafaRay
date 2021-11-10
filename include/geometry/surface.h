@@ -37,6 +37,14 @@ class Vec3;
 class Primitive;
 struct IntersectData;
 
+struct SurfaceDifferentials
+{
+	SurfaceDifferentials() = default;
+	SurfaceDifferentials(const Vec3 &dp_dx, const Vec3 &dp_dy) : dp_dx_(dp_dx), dp_dy_(dp_dy) { }
+	Vec3 dp_dx_;
+	Vec3 dp_dy_;
+};
+
 /*! This holds a sampled surface point's data
 	When a ray intersects an object, a surfacePoint_t is computed.
 	It contains data about normal, position, assigned material and other
@@ -45,10 +53,22 @@ struct IntersectData;
 class SurfacePoint final
 {
 	public:
+		enum class DifferentialsAssignment : int { Ignore, Copy };
+		SurfacePoint() = default;
+		SurfacePoint(const SurfacePoint &sp, DifferentialsAssignment differentials_assignment);
+		SurfacePoint(SurfacePoint &&surface_point) = default;
+		SurfacePoint& operator=(SurfacePoint&& surface_point) = default;
 		static Vec3 normalFaceForward(const Vec3 &normal_geometry, const Vec3 &normal, const Vec3 &incoming_vector);
 		static SurfacePoint blendSurfacePoints(SurfacePoint const &sp_1, SurfacePoint const &sp_2, float alpha);
 		float getDistToNearestEdge() const;
 		void initializeAllZero();
+		//! compute differentials for a scattered ray
+		std::unique_ptr<RayDifferentials> reflectedRay(const RayDifferentials *in_differentials, const Vec3 &in_dir, const Vec3 &out_dir) const;
+		//! compute differentials for a refracted ray
+		std::unique_ptr<RayDifferentials> refractedRay(const RayDifferentials *in_differentials, const Vec3 &in_dir, const Vec3 &out_dir, float ior) const;
+		float projectedPixelArea();
+		void getUVdifferentials(float &du_dx, float &dv_dx, float &du_dy, float &dv_dy) const;
+		void setRayDifferentials(const RayDifferentials *ray_differentials);
 
 		//int object; //!< the object owner of the point.
 		const Material *material_; //!< the surface material
@@ -84,9 +104,11 @@ class SurfacePoint final
 		//float dudNV;
 		//float dvdNU;
 		//float dvdNV;
+		// Surface Differentials for mipmaps calculations
+		std::unique_ptr<SurfaceDifferentials> surface_differentials_;
 
-		// Differential ray for mipmaps calculations
-		const RayDifferentials *ray_differentials_ = nullptr;
+	private:
+		void dUdvFromDpdPdUdPdV(float &du, float &dv, const Point3 &dp, const Vec3 &dp_du, const Vec3 &dp_dv) const;
 };
 
 inline float SurfacePoint::getDistToNearestEdge() const
@@ -129,27 +151,8 @@ inline void SurfacePoint::initializeAllZero()
 	ds_dv_ = {0.f};
 	dp_du_abs_ = {0.f};
 	dp_dv_abs_ = {0.f};
-	ray_differentials_ = nullptr;
+	surface_differentials_ = nullptr;
 }
-
-/*! computes and stores the additional data for surface intersections for
-	differential rays */
-class SpDifferentials
-{
-	public:
-		SpDifferentials(const SurfacePoint &sp, const RayDifferentials *ray_differentials);
-		//! compute differentials for a scattered ray
-		std::unique_ptr<RayDifferentials> reflectedRay(const RayDifferentials *in_differentials, const Vec3 &in_dir, const Vec3 &out_dir) const;
-		//! compute differentials for a refracted ray
-		std::unique_ptr<RayDifferentials> refractedRay(const RayDifferentials *in_differentials, const Vec3 &in_dir, const Vec3 &out_dir, float ior) const;
-		float projectedPixelArea();
-		void getUVdifferentials(float &du_dx, float &dv_dx, float &du_dy, float &dv_dy) const;
-		Vec3 dp_dx_;
-		Vec3 dp_dy_;
-		const SurfacePoint &sp_;
-	protected:
-		void dUdvFromDpdPdUdPdV(float &du, float &dv, const Point3 &dp, const Vec3 &dp_du, const Vec3 &dp_dv) const;
-};
 
 END_YAFARAY
 

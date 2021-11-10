@@ -189,8 +189,8 @@ SurfacePoint BsTrianglePrimitive::getSurface(const RayDifferentials *ray_differe
 	sp.has_uv_ = base_mesh_object_.hasUv();
 	sp.prim_num_ = getSelfIndex();
 	Vec3::createCs(sp.n_, sp.nu_, sp.nv_);
-	sp.ray_differentials_ = ray_differentials;
 	sp.material_ = getMaterial();
+	sp.setRayDifferentials(ray_differentials);
 	sp.mat_data_ = sp.material_->initBsdf(sp, camera);
 	return sp;
 }
