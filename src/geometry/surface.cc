@@ -42,7 +42,7 @@ SpDifferentials::SpDifferentials(const SurfacePoint &sp, const RayDifferentials 
 	{
 		// Estimate screen-space change in \pt and $(u,v)$
 		// Compute auxiliary intersection points with plane
-		const float d = -(sp_.n_ * Vec3(sp_.p_));
+		const float d = -(sp_.n_ * sp_.p_);
 		const Vec3 rxv(ray_differentials->xfrom_);
 		const float tx = -((sp_.n_ * rxv) + d) / (sp_.n_ * ray_differentials->xdir_);
 		const Point3 px = ray_differentials->xfrom_ + tx * ray_differentials->xdir_;
@@ -56,48 +56,48 @@ SpDifferentials::SpDifferentials(const SurfacePoint &sp, const RayDifferentials 
 	{
 		//dudx = dvdx = 0.;
 		//dudy = dvdy = 0.;
-		dp_dx_ = dp_dy_ = Vec3(0, 0, 0);
+		dp_dx_ = dp_dy_ = {0, 0, 0};
 	}
 }
 
-std::unique_ptr<RayDifferentials> SpDifferentials::reflectedRay(const SpDifferentials &sp_differentials, const RayDifferentials *in_differentials, const Vec3 &in_dir, const Vec3 &out_dir)
+std::unique_ptr<RayDifferentials> SpDifferentials::reflectedRay(const RayDifferentials *in_differentials, const Vec3 &in_dir, const Vec3 &out_dir) const
 {
 	if(!in_differentials) return nullptr;
 	auto out_differentials = std::unique_ptr<RayDifferentials>(new RayDifferentials());
 	// Compute ray differential _rd_ for specular reflection
-	out_differentials->xfrom_ = sp_differentials.sp_.p_ + sp_differentials.dp_dx_;
-	out_differentials->yfrom_ = sp_differentials.sp_.p_ + sp_differentials.dp_dy_;
+	out_differentials->xfrom_ = sp_.p_ + dp_dx_;
+	out_differentials->yfrom_ = sp_.p_ + dp_dy_;
 	// Compute differential reflected directions
 	//	Normal dndx = bsdf->dgShading.dndu * bsdf->dgShading.dudx +
 	//				  bsdf->dgShading.dndv * bsdf->dgShading.dvdx;
 	//	Normal dndy = bsdf->dgShading.dndu * bsdf->dgShading.dudy +
 	//				  bsdf->dgShading.dndv * bsdf->dgShading.dvdy;
 	const Vec3 dwodx = in_dir - in_differentials->xdir_, dwody = in_dir - in_differentials->ydir_;
-	const float d_d_ndx = (dwodx * sp_differentials.sp_.n_); // + (out.dir * dndx);
-	const float d_d_ndy = (dwody * sp_differentials.sp_.n_); // + (out.dir * dndy);
-	out_differentials->xdir_ = out_dir - dwodx + 2 * (/* (out.dir * sp.N) * dndx + */ d_d_ndx * sp_differentials.sp_.n_);
-	out_differentials->ydir_ = out_dir - dwody + 2 * (/* (out.dir * sp.N) * dndy + */ d_d_ndy * sp_differentials.sp_.n_);
+	const float d_d_ndx = (dwodx * sp_.n_); // + (out.dir * dndx);
+	const float d_d_ndy = (dwody * sp_.n_); // + (out.dir * dndy);
+	out_differentials->xdir_ = out_dir - dwodx + 2 * (/* (out.dir * sp.N) * dndx + */ d_d_ndx * sp_.n_);
+	out_differentials->ydir_ = out_dir - dwody + 2 * (/* (out.dir * sp.N) * dndy + */ d_d_ndy * sp_.n_);
 	return out_differentials;
 }
 
-std::unique_ptr<RayDifferentials> SpDifferentials::refractedRay(const SpDifferentials &sp_differentials, const RayDifferentials *in_differentials, const Vec3 &in_dir, const Vec3 &out_dir, float ior)
+std::unique_ptr<RayDifferentials> SpDifferentials::refractedRay(const RayDifferentials *in_differentials, const Vec3 &in_dir, const Vec3 &out_dir, float ior) const
 {
 	if(!in_differentials) return nullptr;
 	auto out_differentials = std::unique_ptr<RayDifferentials>(new RayDifferentials());
 	//RayDifferential rd(p, wi);
-	out_differentials->xfrom_ = sp_differentials.sp_.p_ + sp_differentials.dp_dx_;
-	out_differentials->yfrom_ = sp_differentials.sp_.p_ + sp_differentials.dp_dy_;
+	out_differentials->xfrom_ = sp_.p_ + dp_dx_;
+	out_differentials->yfrom_ = sp_.p_ + dp_dy_;
 	//if (Dot(wo, n) < 0) eta = 1.f / eta;
 	//Normal dndx = bsdf->dgShading.dndu * bsdf->dgShading.dudx + bsdf->dgShading.dndv * bsdf->dgShading.dvdx;
 	//Normal dndy = bsdf->dgShading.dndu * bsdf->dgShading.dudy + bsdf->dgShading.dndv * bsdf->dgShading.dvdy;
 	const Vec3 dwodx = in_dir - in_differentials->xdir_, dwody = in_dir - in_differentials->ydir_;
-	const float d_d_ndx = (dwodx * sp_differentials.sp_.n_); // + Dot(wo, dndx);
-	const float d_d_ndy = (dwody * sp_differentials.sp_.n_); // + Dot(wo, dndy);
+	const float d_d_ndx = (dwodx * sp_.n_); // + Dot(wo, dndx);
+	const float d_d_ndy = (dwody * sp_.n_); // + Dot(wo, dndy);
 	//	float mu = IOR * (in.dir * sp.N) - (out.dir * sp.N);
-	const float dmudx = (ior - (ior * ior * (in_dir * sp_differentials.sp_.n_)) / (out_dir * sp_differentials.sp_.n_)) * d_d_ndx;
-	const float dmudy = (ior - (ior * ior * (in_dir * sp_differentials.sp_.n_)) / (out_dir * sp_differentials.sp_.n_)) * d_d_ndy;
-	out_differentials->xdir_ = out_dir + ior * dwodx - (/* mu * dndx + */ dmudx * sp_differentials.sp_.n_);
-	out_differentials->ydir_ = out_dir + ior * dwody - (/* mu * dndy + */ dmudy * sp_differentials.sp_.n_);
+	const float dmudx = (ior - (ior * ior * (in_dir * sp_.n_)) / (out_dir * sp_.n_)) * d_d_ndx;
+	const float dmudy = (ior - (ior * ior * (in_dir * sp_.n_)) / (out_dir * sp_.n_)) * d_d_ndy;
+	out_differentials->xdir_ = out_dir + ior * dwodx - (/* mu * dndx + */ dmudx * sp_.n_);
+	out_differentials->ydir_ = out_dir + ior * dwody - (/* mu * dndy + */ dmudy * sp_.n_);
 	return out_differentials;
 }
 

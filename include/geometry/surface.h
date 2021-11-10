@@ -139,9 +139,9 @@ class SpDifferentials
 	public:
 		SpDifferentials(const SurfacePoint &sp, const RayDifferentials *ray_differentials);
 		//! compute differentials for a scattered ray
-		static std::unique_ptr<RayDifferentials> reflectedRay(const SpDifferentials &sp_differentials, const RayDifferentials *in_differentials, const Vec3 &in_dir, const Vec3 &out_dir);
+		std::unique_ptr<RayDifferentials> reflectedRay(const RayDifferentials *in_differentials, const Vec3 &in_dir, const Vec3 &out_dir) const;
 		//! compute differentials for a refracted ray
-		static std::unique_ptr<RayDifferentials> refractedRay(const SpDifferentials &sp_differentials, const RayDifferentials *in_differentials, const Vec3 &in_dir, const Vec3 &out_dir, float ior);
+		std::unique_ptr<RayDifferentials> refractedRay(const RayDifferentials *in_differentials, const Vec3 &in_dir, const Vec3 &out_dir, float ior) const;
 		float projectedPixelArea();
 		void getUVdifferentials(float &du_dx, float &dv_dx, float &du_dy, float &dv_dy) const;
 		Vec3 dp_dx_;
