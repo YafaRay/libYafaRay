@@ -362,7 +362,7 @@ bool TiledIntegrator::renderTile(RenderArea &a, const RenderView *render_view, c
 				if(diff_rays_enabled_)
 				{
 					//setup ray differentials
-					camera_ray.ray_.differentials_ = std::make_shared<Differentials>();
+					camera_ray.ray_.differentials_ = std::unique_ptr<RayDifferentials>(new RayDifferentials());
 					const CameraRay camera_diff_ray_x = camera->shootRay(j + 1 + dx, i + dy, lens_u, lens_v);
 					camera_ray.ray_.differentials_->xfrom_ = camera_diff_ray_x.ray_.from_;
 					camera_ray.ray_.differentials_->xdir_ = camera_diff_ray_x.ray_.dir_;
@@ -477,7 +477,7 @@ void TiledIntegrator::generateCommonLayers(int raylevel, const SurfacePoint &sp,
 			}
 			if(color_layers->isDefinedAny({Layer::DebugDpLengths, Layer::DebugDpdx, Layer::DebugDpdy, Layer::DebugDpdxy, Layer::DebugDudxDvdx, Layer::DebugDudyDvdy, Layer::DebugDudxyDvdxy}))
 			{
-				SpDifferentials sp_diff(sp, ray);
+				SpDifferentials sp_diff(sp, ray.differentials_.get());
 				if(ColorLayer *color_layer = color_layers->find(Layer::DebugDpLengths))
 				{
 					color_layer->color_ = Rgba(sp_diff.dp_dx_.length(), sp_diff.dp_dy_.length(), 0.f, 1.f);

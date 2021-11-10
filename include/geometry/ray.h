@@ -26,8 +26,10 @@
 
 BEGIN_YAFARAY
 
-struct Differentials
+struct RayDifferentials
 {
+	RayDifferentials() = default;
+	RayDifferentials(const Point3 &xfrom, const Vec3 &xdir, const Point3 &yfrom, const Vec3 &ydir) : xfrom_(xfrom), xdir_(xdir), yfrom_(yfrom), ydir_(ydir) { }
 	Point3 xfrom_, yfrom_;
 	Vec3 xdir_, ydir_;
 };
@@ -35,16 +37,27 @@ struct Differentials
 class Ray
 {
 	public:
+		enum class DifferentialsAssignment : int { Ignore, Copy };
 		Ray() = default;
+		Ray(const Ray &ray, DifferentialsAssignment differentials_assignment);
+		Ray(Ray &&ray) = default;
 		Ray(const Point3 &f, const Vec3 &d, float start = 0.f, float end = -1.f, float ftime = 0.f):
 				from_(f), dir_(d), tmin_(start), tmax_(end), time_(ftime) { }
-
+		Ray& operator=(Ray&& ray) = default;
 		Point3 from_;
 		Vec3 dir_;
 		mutable float tmin_ = 0.f, tmax_ = -1.f;
 		float time_ = 0.f; //!< relative frame time (values between [0;1]) at which ray was generated
-		std::shared_ptr<Differentials> differentials_;
+		std::unique_ptr<RayDifferentials> differentials_;
 };
+
+inline Ray::Ray(const Ray &ray, DifferentialsAssignment differentials_assignment) : Ray{ray.from_, ray.dir_, ray.tmin_, ray.tmax_, ray.time_}
+{
+	if(differentials_assignment == DifferentialsAssignment::Copy && ray.differentials_)
+	{
+		differentials_ = std::unique_ptr<RayDifferentials>(new RayDifferentials(ray.differentials_->xfrom_, ray.differentials_->xdir_, ray.differentials_->yfrom_, ray.differentials_->ydir_));
+	}
+}
 
 END_YAFARAY
 

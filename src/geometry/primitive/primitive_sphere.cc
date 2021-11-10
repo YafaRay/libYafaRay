@@ -78,7 +78,7 @@ IntersectData SpherePrimitive::intersect(const Ray &ray, const Matrix4 *obj_to_w
 	return intersect_data;
 }
 
-SurfacePoint SpherePrimitive::getSurface(const Ray &ray, const Point3 &hit, const IntersectData &intersect_data, const Matrix4 *obj_to_world, const Camera *camera) const
+SurfacePoint SpherePrimitive::getSurface(const RayDifferentials *ray_differentials, const Point3 &hit, const IntersectData &intersect_data, const Matrix4 *obj_to_world, const Camera *camera) const
 {
 	SurfacePoint sp;
 	sp.intersect_data_ = intersect_data;
@@ -95,7 +95,7 @@ SurfacePoint SpherePrimitive::getSurface(const Ray &ray, const Point3 &hit, cons
 	sp.u_ = atan2(normal.y_, normal.x_) * math::div_1_by_pi + 1;
 	sp.v_ = 1.f - math::acos(normal.z_) * math::div_1_by_pi;
 	sp.light_ = nullptr;
-	sp.ray_ = &ray;
+	sp.ray_differentials_ = ray_differentials;
 	sp.mat_data_ = sp.material_->initBsdf(sp, camera);
 	return sp;
 }

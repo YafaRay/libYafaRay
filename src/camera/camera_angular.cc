@@ -59,7 +59,7 @@ CameraRay AngularCamera::shootRay(float px, float py, float lu, float lv) const
 	const float radius = math::sqrt(u * u + v * v);
 	Ray ray;
 	ray.from_ = position_;
-	if(circular_ && radius > max_radius_) { return {ray, false}; }
+	if(circular_ && radius > max_radius_) { return {std::move(ray), false}; }
 	float theta = 0.f;
 	if(!((u == 0.f) && (v == 0.f))) theta = atan2(v, u);
 	float phi;
@@ -72,7 +72,7 @@ CameraRay AngularCamera::shootRay(float px, float py, float lu, float lv) const
 	ray.dir_ = math::sin(phi) * (math::cos(theta) * vright_ + math::sin(theta) * vup_) + math::cos(phi) * vto_;
 	ray.tmin_ = near_plane_.rayIntersection(ray);
 	ray.tmax_ = far_plane_.rayIntersection(ray);
-	return {ray, true};
+	return {std::move(ray), true};
 }
 
 std::unique_ptr<Camera> AngularCamera::factory(Logger &logger, ParamMap &params, const Scene &scene)

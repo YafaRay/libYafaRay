@@ -44,7 +44,7 @@ class Logger;
 
 struct CameraRay
 {
-	CameraRay(const Ray &ray, bool valid) : ray_(ray), valid_(valid) { }
+	CameraRay(Ray &&ray, bool valid) : ray_(std::move(ray)), valid_(valid) { }
 	Ray ray_;
 	bool valid_;
 };

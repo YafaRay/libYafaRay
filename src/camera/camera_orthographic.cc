@@ -55,7 +55,7 @@ CameraRay OrthographicCamera::shootRay(float px, float py, float lu, float lv) c
 	ray.dir_ = vto_;
 	ray.tmin_ = near_plane_.rayIntersection(ray);
 	ray.tmax_ = far_plane_.rayIntersection(ray);
-	return {ray, true};
+	return {std::move(ray), true};
 }
 
 Point3 OrthographicCamera::screenproject(const Point3 &p) const

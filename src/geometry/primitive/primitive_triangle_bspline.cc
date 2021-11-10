@@ -83,7 +83,7 @@ Bound BsTrianglePrimitive::getBound(const Matrix4 *obj_to_world) const
 	return Bound(l, h);
 }
 
-SurfacePoint BsTrianglePrimitive::getSurface(const Ray &ray, const Point3 &hit, const IntersectData &intersect_data, const Matrix4 *obj_to_world, const Camera *camera) const
+SurfacePoint BsTrianglePrimitive::getSurface(const RayDifferentials *ray_differentials, const Point3 &hit, const IntersectData &intersect_data, const Matrix4 *obj_to_world, const Camera *camera) const
 {
 	// recalculating the points is not really the nicest solution...
 	const std::vector<int> vertices_indices = getVerticesIndices();
@@ -189,7 +189,7 @@ SurfacePoint BsTrianglePrimitive::getSurface(const Ray &ray, const Point3 &hit, 
 	sp.has_uv_ = base_mesh_object_.hasUv();
 	sp.prim_num_ = getSelfIndex();
 	Vec3::createCs(sp.n_, sp.nu_, sp.nv_);
-	sp.ray_ = &ray;
+	sp.ray_differentials_ = ray_differentials;
 	sp.material_ = getMaterial();
 	sp.mat_data_ = sp.material_->initBsdf(sp, camera);
 	return sp;

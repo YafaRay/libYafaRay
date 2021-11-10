@@ -167,9 +167,9 @@ void TextureMapperNode::eval(NodeTreeData &node_tree_data, const SurfacePoint &s
 	Vec3 ng(0.f);
 	std::unique_ptr<const MipMapParams> mip_map_params;
 
-	if((tex_->getInterpolationType() == InterpolationType::Trilinear || tex_->getInterpolationType() == InterpolationType::Ewa) && sp.ray_ && sp.ray_->differentials_)
+	if((tex_->getInterpolationType() == InterpolationType::Trilinear || tex_->getInterpolationType() == InterpolationType::Ewa) && sp.ray_differentials_ && sp.ray_differentials_)
 	{
-		const SpDifferentials sp_diff(sp, *(sp.ray_));
+		const SpDifferentials sp_diff(sp, sp.ray_differentials_);
 		getCoords(texpt, ng, sp, camera);
 		const Point3 texptorig = texpt;
 		texpt = doMapping(texptorig, ng);

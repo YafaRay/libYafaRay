@@ -142,7 +142,7 @@ CameraRay PerspectiveCamera::shootRay(float px, float py, float lu, float lv) co
 		ray.dir_ = (ray.dir_ * dof_distance_) - li;
 		ray.dir_.normalize();
 	}
-	return {ray, true};
+	return {std::move(ray), true};
 }
 
 Point3 PerspectiveCamera::screenproject(const Point3 &p) const

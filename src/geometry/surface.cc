@@ -36,19 +36,19 @@ SurfacePoint SurfacePoint::blendSurfacePoints(SurfacePoint const &sp_1, SurfaceP
 	return result;
 }
 
-SpDifferentials::SpDifferentials(const SurfacePoint &spoint, const Ray &ray): sp_(spoint)
+SpDifferentials::SpDifferentials(const SurfacePoint &sp, const RayDifferentials *ray_differentials): sp_(sp)
 {
-	if(ray.differentials_)
+	if(ray_differentials)
 	{
 		// Estimate screen-space change in \pt and $(u,v)$
 		// Compute auxiliary intersection points with plane
 		const float d = -(sp_.n_ * Vec3(sp_.p_));
-		const Vec3 rxv(ray.differentials_->xfrom_);
-		const float tx = -((sp_.n_ * rxv) + d) / (sp_.n_ * ray.differentials_->xdir_);
-		const Point3 px = ray.differentials_->xfrom_ + tx * ray.differentials_->xdir_;
-		const Vec3 ryv(ray.differentials_->yfrom_);
-		const float ty = -((sp_.n_ * ryv) + d) / (sp_.n_ * ray.differentials_->ydir_);
-		const Point3 py = ray.differentials_->yfrom_ + ty * ray.differentials_->ydir_;
+		const Vec3 rxv(ray_differentials->xfrom_);
+		const float tx = -((sp_.n_ * rxv) + d) / (sp_.n_ * ray_differentials->xdir_);
+		const Point3 px = ray_differentials->xfrom_ + tx * ray_differentials->xdir_;
+		const Vec3 ryv(ray_differentials->yfrom_);
+		const float ty = -((sp_.n_ * ryv) + d) / (sp_.n_ * ray_differentials->ydir_);
+		const Point3 py = ray_differentials->yfrom_ + ty * ray_differentials->ydir_;
 		dp_dx_ = px - sp_.p_;
 		dp_dy_ = py - sp_.p_;
 	}
@@ -60,55 +60,45 @@ SpDifferentials::SpDifferentials(const SurfacePoint &spoint, const Ray &ray): sp
 	}
 }
 
-void SpDifferentials::reflectedRay(const Ray &in, Ray &out) const
+std::unique_ptr<RayDifferentials> SpDifferentials::reflectedRay(const SpDifferentials &sp_differentials, const RayDifferentials *in_differentials, const Vec3 &in_dir, const Vec3 &out_dir)
 {
-	if(!in.differentials_)
-	{
-		out.differentials_ = nullptr;
-		return;
-	}
+	if(!in_differentials) return nullptr;
+	auto out_differentials = std::unique_ptr<RayDifferentials>(new RayDifferentials());
 	// Compute ray differential _rd_ for specular reflection
-	out.differentials_ = in.differentials_;
-	out.differentials_->xfrom_ = sp_.p_ + dp_dx_;
-	out.differentials_->yfrom_ = sp_.p_ + dp_dy_;
+	out_differentials->xfrom_ = sp_differentials.sp_.p_ + sp_differentials.dp_dx_;
+	out_differentials->yfrom_ = sp_differentials.sp_.p_ + sp_differentials.dp_dy_;
 	// Compute differential reflected directions
 	//	Normal dndx = bsdf->dgShading.dndu * bsdf->dgShading.dudx +
 	//				  bsdf->dgShading.dndv * bsdf->dgShading.dvdx;
 	//	Normal dndy = bsdf->dgShading.dndu * bsdf->dgShading.dudy +
 	//				  bsdf->dgShading.dndv * bsdf->dgShading.dvdy;
-	const Vec3 dwodx = in.dir_ - in.differentials_->xdir_, dwody = in.dir_ - in.differentials_->ydir_;
-	const float d_d_ndx = (dwodx * sp_.n_); // + (out.dir * dndx);
-	const float d_d_ndy = (dwody * sp_.n_); // + (out.dir * dndy);
-	out.differentials_->xdir_ = out.dir_ - dwodx + 2 * (/* (out.dir * sp.N) * dndx + */ d_d_ndx * sp_.n_);
-	out.differentials_->ydir_ = out.dir_ - dwody + 2 * (/* (out.dir * sp.N) * dndy + */ d_d_ndy * sp_.n_);
+	const Vec3 dwodx = in_dir - in_differentials->xdir_, dwody = in_dir - in_differentials->ydir_;
+	const float d_d_ndx = (dwodx * sp_differentials.sp_.n_); // + (out.dir * dndx);
+	const float d_d_ndy = (dwody * sp_differentials.sp_.n_); // + (out.dir * dndy);
+	out_differentials->xdir_ = out_dir - dwodx + 2 * (/* (out.dir * sp.N) * dndx + */ d_d_ndx * sp_differentials.sp_.n_);
+	out_differentials->ydir_ = out_dir - dwody + 2 * (/* (out.dir * sp.N) * dndy + */ d_d_ndy * sp_differentials.sp_.n_);
+	return out_differentials;
 }
 
-void SpDifferentials::refractedRay(const Ray &in, Ray &out, float ior) const
+std::unique_ptr<RayDifferentials> SpDifferentials::refractedRay(const SpDifferentials &sp_differentials, const RayDifferentials *in_differentials, const Vec3 &in_dir, const Vec3 &out_dir, float ior)
 {
-	if(!in.differentials_)
-	{
-		out.differentials_ = nullptr;
-		return;
-	}
+	if(!in_differentials) return nullptr;
+	auto out_differentials = std::unique_ptr<RayDifferentials>(new RayDifferentials());
 	//RayDifferential rd(p, wi);
-	out.differentials_ = in.differentials_;
-	out.differentials_->xfrom_ = sp_.p_ + dp_dx_;
-	out.differentials_->yfrom_ = sp_.p_ + dp_dy_;
+	out_differentials->xfrom_ = sp_differentials.sp_.p_ + sp_differentials.dp_dx_;
+	out_differentials->yfrom_ = sp_differentials.sp_.p_ + sp_differentials.dp_dy_;
 	//if (Dot(wo, n) < 0) eta = 1.f / eta;
-
 	//Normal dndx = bsdf->dgShading.dndu * bsdf->dgShading.dudx + bsdf->dgShading.dndv * bsdf->dgShading.dvdx;
 	//Normal dndy = bsdf->dgShading.dndu * bsdf->dgShading.dudy + bsdf->dgShading.dndv * bsdf->dgShading.dvdy;
-
-	const Vec3 dwodx = in.dir_ - in.differentials_->xdir_, dwody = in.dir_ - in.differentials_->ydir_;
-	const float d_d_ndx = (dwodx * sp_.n_); // + Dot(wo, dndx);
-	const float d_d_ndy = (dwody * sp_.n_); // + Dot(wo, dndy);
-
+	const Vec3 dwodx = in_dir - in_differentials->xdir_, dwody = in_dir - in_differentials->ydir_;
+	const float d_d_ndx = (dwodx * sp_differentials.sp_.n_); // + Dot(wo, dndx);
+	const float d_d_ndy = (dwody * sp_differentials.sp_.n_); // + Dot(wo, dndy);
 	//	float mu = IOR * (in.dir * sp.N) - (out.dir * sp.N);
-	const float dmudx = (ior - (ior * ior * (in.dir_ * sp_.n_)) / (out.dir_ * sp_.n_)) * d_d_ndx;
-	const float dmudy = (ior - (ior * ior * (in.dir_ * sp_.n_)) / (out.dir_ * sp_.n_)) * d_d_ndy;
-
-	out.differentials_->xdir_ = out.dir_ + ior * dwodx - (/* mu * dndx + */ dmudx * sp_.n_);
-	out.differentials_->ydir_ = out.dir_ + ior * dwody - (/* mu * dndy + */ dmudy * sp_.n_);
+	const float dmudx = (ior - (ior * ior * (in_dir * sp_differentials.sp_.n_)) / (out_dir * sp_differentials.sp_.n_)) * d_d_ndx;
+	const float dmudy = (ior - (ior * ior * (in_dir * sp_differentials.sp_.n_)) / (out_dir * sp_differentials.sp_.n_)) * d_d_ndy;
+	out_differentials->xdir_ = out_dir + ior * dwodx - (/* mu * dndx + */ dmudx * sp_differentials.sp_.n_);
+	out_differentials->ydir_ = out_dir + ior * dwody - (/* mu * dndy + */ dmudy * sp_differentials.sp_.n_);
+	return out_differentials;
 }
 
 float SpDifferentials::projectedPixelArea()

@@ -679,8 +679,7 @@ Rgb MonteCarloIntegrator::dispersive(RenderData &render_data, const SurfacePoint
 	float w = 0.f;
 
 	Rgb dcol_trans_accum;
-	Ray ref_ray_chromatic_volume; //Reference ray used for chromatic/dispersive volume color calculation only. FIXME: it only uses one of the sampled reference rays for volume calculations, not sure if this is ok??
-	bool ref_ray_chromatic_volume_obtained = false; //To track if we already have obtained a valid ref_ray for chromatic/dispersive volume color calculations.
+	std::unique_ptr<Ray> ref_ray_chromatic_volume; //Reference ray used for chromatic/dispersive volume color calculation only. FIXME: it only uses one of the sampled reference rays for volume calculations, not sure if this is ok??
 	for(int ns = 0; ns < dsam; ++ns)
 	{
 		render_data.wavelength_ = (ns + ss_1) * d_1;
@@ -701,19 +700,15 @@ Rgb MonteCarloIntegrator::dispersive(RenderData &render_data, const SurfacePoint
 			const Rgb dcol_trans = static_cast<Rgb>(integrate(render_data, ref_ray, additional_depth)) * mcol * wl_col * w;
 			dcol += dcol_trans;
 			if(color_layers) dcol_trans_accum += dcol_trans;
-			if(!ref_ray_chromatic_volume_obtained)
-			{
-				ref_ray_chromatic_volume = ref_ray;
-				ref_ray_chromatic_volume_obtained = true;
-			}
+			if(!ref_ray_chromatic_volume) ref_ray_chromatic_volume = std::unique_ptr<Ray>(new Ray(ref_ray, Ray::DifferentialsAssignment::Ignore));
 			render_data.chromatic_ = true;
 		}
 	}
-	if(ref_ray_chromatic_volume_obtained && bsdfs.hasAny(BsdfFlags::Volumetric))
+	if(ref_ray_chromatic_volume && bsdfs.hasAny(BsdfFlags::Volumetric))
 	{
-		if(const VolumeHandler *vol = material->getVolumeHandler(sp.ng_ * ref_ray_chromatic_volume.dir_ < 0))
+		if(const VolumeHandler *vol = material->getVolumeHandler(sp.ng_ * ref_ray_chromatic_volume->dir_ < 0))
 		{
-			dcol *= vol->transmittance(ref_ray_chromatic_volume);
+			dcol *= vol->transmittance(*ref_ray_chromatic_volume);
 		}
 	}
 	if(color_layers)
@@ -776,8 +771,8 @@ Rgb MonteCarloIntegrator::glossy(RenderData &render_data, float &alpha, const Ra
 				Ray ref_ray(sp_differentials.sp_.p_, wi, scene_->ray_min_dist_);
 				if(diff_rays_enabled_)
 				{
-					if(s.sampled_flags_.hasAny(BsdfFlags::Reflect)) sp_differentials.reflectedRay(ray, ref_ray);
-					else if(s.sampled_flags_.hasAny(BsdfFlags::Transmit)) sp_differentials.refractedRay(ray, ref_ray, material->getMatIor());
+					if(s.sampled_flags_.hasAny(BsdfFlags::Reflect)) ref_ray.differentials_ = SpDifferentials::reflectedRay(sp_differentials, ray.differentials_.get(), ray.dir_, ref_ray.dir_);
+					else if(s.sampled_flags_.hasAny(BsdfFlags::Transmit)) ref_ray.differentials_ = SpDifferentials::refractedRay(sp_differentials, ray.differentials_.get(), ray.dir_, ref_ray.dir_, material->getMatIor());
 				}
 				Rgba integ = static_cast<Rgb>(integrate(render_data, ref_ray, additional_depth));
 				if(bsdfs.hasAny(BsdfFlags::Volumetric))
@@ -803,7 +798,7 @@ Rgb MonteCarloIntegrator::glossy(RenderData &render_data, float &alpha, const Ra
 				if(s.sampled_flags_.hasAny(BsdfFlags::Reflect) && !s.sampled_flags_.hasAny(BsdfFlags::Dispersive))
 				{
 					Ray ref_ray = Ray(sp_differentials.sp_.p_, dir[0], scene_->ray_min_dist_);
-					if(diff_rays_enabled_) sp_differentials.reflectedRay(ray, ref_ray);
+					if(diff_rays_enabled_) ref_ray.differentials_ = SpDifferentials::reflectedRay(sp_differentials, ray.differentials_.get(), ray.dir_, ref_ray.dir_);
 					Rgba integ = integrate(render_data, ref_ray, additional_depth);
 					if(bsdfs.hasAny(BsdfFlags::Volumetric))
 					{
@@ -821,7 +816,7 @@ Rgb MonteCarloIntegrator::glossy(RenderData &render_data, float &alpha, const Ra
 				if(s.sampled_flags_.hasAny(BsdfFlags::Transmit))
 				{
 					Ray ref_ray = Ray(sp_differentials.sp_.p_, dir[1], scene_->ray_min_dist_);
-					if(diff_rays_enabled_) sp_differentials.refractedRay(ray, ref_ray, material->getMatIor());
+					if(diff_rays_enabled_) ref_ray.differentials_ = SpDifferentials::refractedRay(sp_differentials, ray.differentials_.get(), ray.dir_, ref_ray.dir_, material->getMatIor());
 					Rgba integ = integrate(render_data, ref_ray, additional_depth);
 					if(bsdfs.hasAny(BsdfFlags::Volumetric))
 					{
@@ -870,7 +865,7 @@ Rgb MonteCarloIntegrator::glossy(RenderData &render_data, float &alpha, const Ra
 Rgb MonteCarloIntegrator::specularReflect(RenderData &render_data, float &alpha, const Ray &ray, const SpDifferentials &sp_differentials, const Material *material, const BsdfFlags &bsdfs, const DirectionColor *reflect_data, float ray_min_dist, int additional_depth, ColorLayers *color_layers) const
 {
 	Ray ref_ray(sp_differentials.sp_.p_, reflect_data->dir_, ray_min_dist);
-	if(diff_rays_enabled_) sp_differentials.reflectedRay(ray, ref_ray);
+	if(diff_rays_enabled_) ref_ray.differentials_ = SpDifferentials::reflectedRay(sp_differentials, ray.differentials_.get(), ray.dir_, ref_ray.dir_);
 	Rgb integ = integrate(render_data, ref_ray, additional_depth);
 	if(bsdfs.hasAny(BsdfFlags::Volumetric))
 	{
@@ -899,7 +894,7 @@ Rgb MonteCarloIntegrator::specularRefract(RenderData &render_data, float &alpha,
 	}
 	else ref_ray = Ray(sp_differentials.sp_.p_, refract_data->dir_, ray_min_dist);
 
-	if(diff_rays_enabled_) sp_differentials.refractedRay(ray, ref_ray, material->getMatIor());
+	if(diff_rays_enabled_) ref_ray.differentials_ = SpDifferentials::refractedRay(sp_differentials, ray.differentials_.get(), ray.dir_, ref_ray.dir_, material->getMatIor());
 	Rgba integ = integrate(render_data, ref_ray, additional_depth);
 
 	if(bsdfs.hasAny(BsdfFlags::Volumetric))
@@ -935,7 +930,7 @@ void MonteCarloIntegrator::recursiveRaytrace(RenderData &render_data, const Ray 
 
 		if(render_data.raylevel_ < 20 && bsdfs.hasAny(BsdfFlags::Glossy | BsdfFlags::Specular | BsdfFlags::Filter))
 		{
-			const SpDifferentials sp_differentials(sp, ray);
+			const SpDifferentials sp_differentials(sp, ray.differentials_.get());
 			// glossy reflection with recursive raytracing:
 			if(bsdfs.hasAny(BsdfFlags::Glossy))
 			{

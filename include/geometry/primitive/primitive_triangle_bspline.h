@@ -33,7 +33,7 @@ class BsTrianglePrimitive final : public FacePrimitive
 	private:
 		virtual IntersectData intersect(const Ray &ray, const Matrix4 *obj_to_world) const override;
 		virtual Bound getBound(const Matrix4 *obj_to_world) const override;
-		virtual SurfacePoint getSurface(const Ray &ray, const Point3 &hit, const IntersectData &intersect_data, const Matrix4 *obj_to_world, const Camera *camera) const override;
+		virtual SurfacePoint getSurface(const RayDifferentials *ray_differentials, const Point3 &hit, const IntersectData &intersect_data, const Matrix4 *obj_to_world, const Camera *camera) const override;
 };
 
 END_YAFARAY

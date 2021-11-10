@@ -244,7 +244,7 @@ Rgba BidirectionalIntegrator::integrate(RenderData &render_data, const Ray &ray,
 {
 	Rgb col(0.f);
 	SurfacePoint sp;
-	Ray testray = ray;
+	const Ray testray {ray, Ray::DifferentialsAssignment::Ignore};
 	float alpha = 1.f;
 
 	const Accelerator *accelerator = scene_->getAccelerator();
@@ -450,7 +450,7 @@ int BidirectionalIntegrator::createPath(RenderData &render_data, const Ray &star
 	if(!accelerator) return 0;
 	static int dbg = 0;
 	Random &prng = *render_data.prng_;
-	Ray ray(start);
+	Ray ray {start, Ray::DifferentialsAssignment::Copy};
 	BsdfFlags m_bsdf;
 	// the 0th vertex has already been generated, which is ray.pos obviously
 	int n_vert = 1;
