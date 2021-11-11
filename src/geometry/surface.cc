@@ -87,11 +87,11 @@ SurfacePoint SurfacePoint::blendSurfacePoints(SurfacePoint const &sp_1, SurfaceP
 	}
 	else if(sp_1.differentials_)
 	{
-		result.differentials_ = std::unique_ptr<SurfaceDifferentials>(new SurfaceDifferentials{sp_1.differentials_->dp_dx_, sp_1.differentials_->dp_dy_});
+		result.differentials_ = std::unique_ptr<SurfaceDifferentials>(new SurfaceDifferentials{*sp_1.differentials_});
 	}
 	else if(sp_2.differentials_)
 	{
-		result.differentials_ = std::unique_ptr<SurfaceDifferentials>(new SurfaceDifferentials{sp_2.differentials_->dp_dx_, sp_2.differentials_->dp_dy_});
+		result.differentials_ = std::unique_ptr<SurfaceDifferentials>(new SurfaceDifferentials{*sp_2.differentials_});
 	}
 	return result;
 }

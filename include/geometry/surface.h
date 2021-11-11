@@ -40,6 +40,7 @@ struct IntersectData;
 struct SurfaceDifferentials
 {
 	SurfaceDifferentials() = default;
+	SurfaceDifferentials(const SurfaceDifferentials &surface_differentials) = default;
 	SurfaceDifferentials(const Vec3 &dp_dx, const Vec3 &dp_dy) : dp_dx_(dp_dx), dp_dy_(dp_dy) { }
 	Vec3 dp_dx_;
 	Vec3 dp_dy_;
@@ -106,7 +107,7 @@ class SurfacePoint final
 		//float dvdNU;
 		//float dvdNV;
 		// Surface Differentials for mipmaps calculations
-		std::unique_ptr<SurfaceDifferentials> differentials_;
+		std::unique_ptr<const SurfaceDifferentials> differentials_;
 
 	private:
 		void dUdvFromDpdPdUdPdV(float &du, float &dv, const Point3 &dp, const Vec3 &dp_du, const Vec3 &dp_dv) const;
