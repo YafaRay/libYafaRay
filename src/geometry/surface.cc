@@ -39,9 +39,11 @@ dp_du_(sp.dp_du_), dp_dv_(sp.dp_dv_), ds_du_(sp.ds_du_), ds_dv_(sp.ds_dv_), dp_d
 			case MaterialDataCopy::SharedReference:
 				mat_data_ = std::move(sp.mat_data_);
 				break;
+/* No need for this in this case, leaving this snippet here for future reference if full copies are needed of shared pointers
 			case MaterialDataCopy::FullCopy:
 				mat_data_ = std::make_shared<MaterialData>(*sp.mat_data_);
 				break;
+*/
 			case MaterialDataCopy::No:
 			default:
 				break;

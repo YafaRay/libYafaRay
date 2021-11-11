@@ -54,7 +54,7 @@ class SurfacePoint final
 {
 	public:
 		enum class DifferentialsCopy : int { No, FullCopy };
-		enum class MaterialDataCopy : int { No, SharedReference, FullCopy };
+		enum class MaterialDataCopy : int { No, SharedReference, /*FullCopy*/ };
 		SurfacePoint() = default;
 		SurfacePoint(const SurfacePoint &sp, DifferentialsCopy differentials_copy, MaterialDataCopy material_data_copy);
 		SurfacePoint(SurfacePoint &&surface_point) = default;
