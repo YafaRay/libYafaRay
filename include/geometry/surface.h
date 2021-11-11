@@ -54,8 +54,9 @@ class SurfacePoint final
 {
 	public:
 		enum class DifferentialsCopy : int { No, FullCopy };
+		enum class MaterialDataCopy : int { No, SharedReference, FullCopy };
 		SurfacePoint() = default;
-		SurfacePoint(const SurfacePoint &sp, DifferentialsCopy differentials_copy);
+		SurfacePoint(const SurfacePoint &sp, DifferentialsCopy differentials_copy, MaterialDataCopy material_data_copy);
 		SurfacePoint(SurfacePoint &&surface_point) = default;
 		SurfacePoint& operator=(SurfacePoint&& surface_point) = default;
 		static Vec3 normalFaceForward(const Vec3 &normal_geometry, const Vec3 &normal, const Vec3 &incoming_vector);

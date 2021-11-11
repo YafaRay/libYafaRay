@@ -70,7 +70,7 @@ class PathVertex
 		float pdf_wi_, pdf_wo_; //!< the pdf for sampling wi from wo and wo from wi respectively
 };
 
-PathVertex::PathVertex(const PathVertex &path_vertex) : sp_{path_vertex.sp_, SurfacePoint::DifferentialsCopy::FullCopy}, flags_(path_vertex.flags_), alpha_(path_vertex.alpha_), f_s_(path_vertex.f_s_), wi_(path_vertex.wi_), wo_(path_vertex.wo_), ds_(path_vertex.ds_), g_(path_vertex.g_), qi_wo_(path_vertex.qi_wo_), qi_wi_(path_vertex.qi_wi_), cos_wi_(path_vertex.cos_wi_), cos_wo_(path_vertex.cos_wo_), pdf_wi_(path_vertex.pdf_wi_), pdf_wo_(path_vertex.pdf_wo_)
+PathVertex::PathVertex(const PathVertex &path_vertex) : sp_{path_vertex.sp_, SurfacePoint::DifferentialsCopy::FullCopy, SurfacePoint::MaterialDataCopy::SharedReference}, flags_(path_vertex.flags_), alpha_(path_vertex.alpha_), f_s_(path_vertex.f_s_), wi_(path_vertex.wi_), wo_(path_vertex.wo_), ds_(path_vertex.ds_), g_(path_vertex.g_), qi_wo_(path_vertex.qi_wo_), qi_wi_(path_vertex.qi_wi_), cos_wi_(path_vertex.cos_wi_), cos_wo_(path_vertex.cos_wo_), pdf_wi_(path_vertex.pdf_wi_), pdf_wo_(path_vertex.pdf_wo_)
 {
 }
 
