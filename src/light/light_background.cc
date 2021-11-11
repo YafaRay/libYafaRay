@@ -137,7 +137,7 @@ bool BackgroundLight::illumSample(const SurfacePoint &sp, LSample &s, Ray &wi) c
 
 bool BackgroundLight::intersect(const Ray &ray, float &t, Rgb &col, float &ipdf) const
 {
-	Ray tr {ray, Ray::DifferentialsAssignment::Ignore};
+	Ray tr {ray, Ray::DifferentialsCopy::No};
 	Vec3 abs_dir = tr.dir_;
 	if(abs_inter_) abs_dir = -abs_dir;
 	float u = 0.f, v = 0.f;

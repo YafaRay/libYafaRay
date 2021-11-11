@@ -53,9 +53,9 @@ struct SurfaceDifferentials
 class SurfacePoint final
 {
 	public:
-		enum class DifferentialsAssignment : int { Ignore, Copy };
+		enum class DifferentialsCopy : int { No, FullCopy };
 		SurfacePoint() = default;
-		SurfacePoint(const SurfacePoint &sp, DifferentialsAssignment differentials_assignment);
+		SurfacePoint(const SurfacePoint &sp, DifferentialsCopy differentials_copy);
 		SurfacePoint(SurfacePoint &&surface_point) = default;
 		SurfacePoint& operator=(SurfacePoint&& surface_point) = default;
 		static Vec3 normalFaceForward(const Vec3 &normal_geometry, const Vec3 &normal, const Vec3 &incoming_vector);
@@ -105,7 +105,7 @@ class SurfacePoint final
 		//float dvdNU;
 		//float dvdNV;
 		// Surface Differentials for mipmaps calculations
-		std::unique_ptr<SurfaceDifferentials> surface_differentials_;
+		std::unique_ptr<SurfaceDifferentials> differentials_;
 
 	private:
 		void dUdvFromDpdPdUdPdV(float &du, float &dv, const Point3 &dp, const Vec3 &dp_du, const Vec3 &dp_dv) const;
@@ -151,7 +151,7 @@ inline void SurfacePoint::initializeAllZero()
 	ds_dv_ = {0.f};
 	dp_du_abs_ = {0.f};
 	dp_dv_abs_ = {0.f};
-	surface_differentials_ = nullptr;
+	differentials_ = nullptr;
 }
 
 END_YAFARAY

@@ -479,19 +479,19 @@ void TiledIntegrator::generateCommonLayers(int raylevel, const SurfacePoint &sp,
 			{
 				if(ColorLayer *color_layer = color_layers->find(Layer::DebugDpLengths))
 				{
-					if(sp.surface_differentials_) color_layer->color_ = Rgba(sp.surface_differentials_->dp_dx_.length(), sp.surface_differentials_->dp_dy_.length(), 0.f, 1.f);
+					if(sp.differentials_) color_layer->color_ = Rgba(sp.differentials_->dp_dx_.length(), sp.differentials_->dp_dy_.length(), 0.f, 1.f);
 				}
 				if(ColorLayer *color_layer = color_layers->find(Layer::DebugDpdx))
 				{
-					if(sp.surface_differentials_) color_layer->color_ = Rgba((sp.surface_differentials_->dp_dx_.x_ + 1.f) * .5f, (sp.surface_differentials_->dp_dx_.y_ + 1.f) * .5f, (sp.surface_differentials_->dp_dx_.z_ + 1.f) * .5f, 1.f);
+					if(sp.differentials_) color_layer->color_ = Rgba((sp.differentials_->dp_dx_.x_ + 1.f) * .5f, (sp.differentials_->dp_dx_.y_ + 1.f) * .5f, (sp.differentials_->dp_dx_.z_ + 1.f) * .5f, 1.f);
 				}
 				if(ColorLayer *color_layer = color_layers->find(Layer::DebugDpdy))
 				{
-					if(sp.surface_differentials_) color_layer->color_ = Rgba((sp.surface_differentials_->dp_dy_.x_ + 1.f) * .5f, (sp.surface_differentials_->dp_dy_.y_ + 1.f) * .5f, (sp.surface_differentials_->dp_dy_.z_ + 1.f) * .5f, 1.f);
+					if(sp.differentials_) color_layer->color_ = Rgba((sp.differentials_->dp_dy_.x_ + 1.f) * .5f, (sp.differentials_->dp_dy_.y_ + 1.f) * .5f, (sp.differentials_->dp_dy_.z_ + 1.f) * .5f, 1.f);
 				}
 				if(ColorLayer *color_layer = color_layers->find(Layer::DebugDpdxy))
 				{
-					if(sp.surface_differentials_) color_layer->color_ = Rgba((sp.surface_differentials_->dp_dx_.x_ + sp.surface_differentials_->dp_dy_.x_ + 1.f) * .5f, (sp.surface_differentials_->dp_dx_.y_ + sp.surface_differentials_->dp_dy_.y_ + 1.f) * .5f, (sp.surface_differentials_->dp_dx_.z_ + sp.surface_differentials_->dp_dy_.z_ + 1.f) * .5f, 1.f);
+					if(sp.differentials_) color_layer->color_ = Rgba((sp.differentials_->dp_dx_.x_ + sp.differentials_->dp_dy_.x_ + 1.f) * .5f, (sp.differentials_->dp_dx_.y_ + sp.differentials_->dp_dy_.y_ + 1.f) * .5f, (sp.differentials_->dp_dx_.z_ + sp.differentials_->dp_dy_.z_ + 1.f) * .5f, 1.f);
 				}
 				if(color_layers->isDefinedAny({Layer::DebugDudxDvdx, Layer::DebugDudyDvdy, Layer::DebugDudxyDvdxy}))
 				{

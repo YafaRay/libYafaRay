@@ -37,9 +37,9 @@ struct RayDifferentials
 class Ray
 {
 	public:
-		enum class DifferentialsAssignment : int { Ignore, Copy };
+		enum class DifferentialsCopy : int { No, FullCopy };
 		Ray() = default;
-		Ray(const Ray &ray, DifferentialsAssignment differentials_assignment);
+		Ray(const Ray &ray, DifferentialsCopy differentials_copy);
 		Ray(Ray &&ray) = default;
 		Ray(const Point3 &f, const Vec3 &d, float start = 0.f, float end = -1.f, float ftime = 0.f):
 				from_(f), dir_(d), tmin_(start), tmax_(end), time_(ftime) { }
@@ -51,11 +51,11 @@ class Ray
 		std::unique_ptr<RayDifferentials> differentials_;
 };
 
-inline Ray::Ray(const Ray &ray, DifferentialsAssignment differentials_assignment) : Ray{ray.from_, ray.dir_, ray.tmin_, ray.tmax_, ray.time_}
+inline Ray::Ray(const Ray &ray, DifferentialsCopy differentials_copy) : Ray{ray.from_, ray.dir_, ray.tmin_, ray.tmax_, ray.time_}
 {
-	if(differentials_assignment == DifferentialsAssignment::Copy && ray.differentials_)
+	if(differentials_copy == DifferentialsCopy::FullCopy && ray.differentials_)
 	{
-		differentials_ = std::unique_ptr<RayDifferentials>(new RayDifferentials(ray.differentials_->xfrom_, ray.differentials_->xdir_, ray.differentials_->yfrom_, ray.differentials_->ydir_));
+		differentials_ = std::unique_ptr<RayDifferentials>(new RayDifferentials(*ray.differentials_));
 	}
 }
 

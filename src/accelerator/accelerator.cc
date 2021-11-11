@@ -69,7 +69,7 @@ bool Accelerator::intersect(const Ray &ray, SurfacePoint &sp, const Camera *came
 
 bool Accelerator::isShadowed(const Ray &ray, float &obj_index, float &mat_index, float shadow_bias) const
 {
-	Ray sray(ray, Ray::DifferentialsAssignment::Ignore);
+	Ray sray(ray, Ray::DifferentialsCopy::No);
 	sray.from_ += sray.dir_ * sray.tmin_;
 	sray.time_ = ray.time_;
 	const float t_max = (ray.tmax_ >= 0.f) ? sray.tmax_ - 2 * sray.tmin_ : std::numeric_limits<float>::infinity();
@@ -88,7 +88,7 @@ bool Accelerator::isShadowed(const Ray &ray, float &obj_index, float &mat_index,
 
 bool Accelerator::isShadowed(const Ray &ray, int max_depth, Rgb &filt, float &obj_index, float &mat_index, float shadow_bias, const Camera *camera) const
 {
-	Ray sray(ray, Ray::DifferentialsAssignment::Ignore); //Should this function use Ray::DifferentialsAssignment::Copy ? If using copy it would be slower but would take into account texture mipmaps, although that's probably irrelevant for transparent shadows?
+	Ray sray(ray, Ray::DifferentialsCopy::No); //Should this function use Ray::DifferentialsAssignment::Copy ? If using copy it would be slower but would take into account texture mipmaps, although that's probably irrelevant for transparent shadows?
 	sray.from_ += sray.dir_ * sray.tmin_;
 	const float t_max = (ray.tmax_ >= 0.f) ? sray.tmax_ - 2 * sray.tmin_ : std::numeric_limits<float>::infinity();
 	bool intersect = false;

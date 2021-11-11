@@ -700,7 +700,7 @@ Rgb MonteCarloIntegrator::dispersive(RenderData &render_data, const SurfacePoint
 			const Rgb dcol_trans = static_cast<Rgb>(integrate(render_data, ref_ray, additional_depth)) * mcol * wl_col * w;
 			dcol += dcol_trans;
 			if(color_layers) dcol_trans_accum += dcol_trans;
-			if(!ref_ray_chromatic_volume) ref_ray_chromatic_volume = std::unique_ptr<Ray>(new Ray(ref_ray, Ray::DifferentialsAssignment::Ignore));
+			if(!ref_ray_chromatic_volume) ref_ray_chromatic_volume = std::unique_ptr<Ray>(new Ray(ref_ray, Ray::DifferentialsCopy::No));
 			render_data.chromatic_ = true;
 		}
 	}
