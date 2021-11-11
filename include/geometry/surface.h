@@ -73,7 +73,7 @@ class SurfacePoint final
 
 		//int object; //!< the object owner of the point.
 		const Material *material_; //!< the surface material
-		std::shared_ptr<MaterialData> mat_data_;
+		std::shared_ptr<const MaterialData> mat_data_;
 		const Light *light_; //!< light source if surface point is on a light
 		const Object *object_; //!< object the prim belongs to
 		//	point2d_t screenpos; // only used with 'win' texture coord. mode

@@ -62,7 +62,7 @@ CoatedGlossyMaterial::CoatedGlossyMaterial(Logger &logger, const Rgb &col, const
 	visibility_ = e_visibility;
 }
 
-std::unique_ptr<MaterialData> CoatedGlossyMaterial::initBsdf(SurfacePoint &sp, const Camera *camera) const
+std::unique_ptr<const MaterialData> CoatedGlossyMaterial::initBsdf(SurfacePoint &sp, const Camera *camera) const
 {
 	std::unique_ptr<MaterialData> mat_data = createMaterialData(color_nodes_.size() + bump_nodes_.size());
 	if(bump_shader_) evalBump(mat_data->node_tree_data_, sp, bump_shader_, camera);

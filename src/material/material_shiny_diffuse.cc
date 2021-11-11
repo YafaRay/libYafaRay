@@ -130,7 +130,7 @@ std::array<float, 4> ShinyDiffuseMaterial::accumulate(const std::array<float, 4>
 	return accum;
 }
 
-std::unique_ptr<MaterialData> ShinyDiffuseMaterial::initBsdf(SurfacePoint &sp, const Camera *camera) const
+std::unique_ptr<const MaterialData> ShinyDiffuseMaterial::initBsdf(SurfacePoint &sp, const Camera *camera) const
 {
 	std::unique_ptr<MaterialData> mat_data = createMaterialData(color_nodes_.size() + bump_nodes_.size());
 	if(bump_shader_) evalBump(mat_data->node_tree_data_, sp, bump_shader_, camera);

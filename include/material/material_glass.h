@@ -40,7 +40,7 @@ class GlassMaterial final : public NodeMaterial
 	private:
 		GlassMaterial(Logger &logger, float ior, Rgb filt_c, const Rgb &srcol, double disp_pow, bool fake_s, Visibility e_visibility = Visibility::NormalVisible);
 		virtual std::unique_ptr<MaterialData> createMaterialData(size_t number_of_nodes) const override { return std::unique_ptr<GlassMaterialData>(new GlassMaterialData(bsdf_flags_, number_of_nodes)); };
-		virtual std::unique_ptr<MaterialData> initBsdf(SurfacePoint &sp, const Camera *camera) const override;
+		virtual std::unique_ptr<const MaterialData> initBsdf(SurfacePoint &sp, const Camera *camera) const override;
 		virtual Rgb eval(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wl, const BsdfFlags &bsdfs, bool force_eval = false) const override {return Rgb(0.0);}
 		virtual Rgb sample(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, Vec3 &wi, Sample &s, float &w, bool chromatic, float wavelength, const Camera *camera) const override;
 		virtual float pdf(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wi, const BsdfFlags &bsdfs) const override {return 0.f;}
@@ -90,7 +90,7 @@ class MirrorMaterial final : public Material
 			bsdf_flags_ = BsdfFlags::Specular;
 		}
 		virtual std::unique_ptr<MaterialData> createMaterialData(size_t number_of_nodes) const override { return std::unique_ptr<MirrorMaterialData>(new MirrorMaterialData(bsdf_flags_, number_of_nodes)); };
-		virtual std::unique_ptr<MaterialData> initBsdf(SurfacePoint &sp, const Camera *camera) const override { return createMaterialData(0); }
+		virtual std::unique_ptr<const MaterialData> initBsdf(SurfacePoint &sp, const Camera *camera) const override { return createMaterialData(0); }
 		virtual Rgb eval(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wl, const BsdfFlags &bsdfs, bool force_eval = false) const override {return Rgb(0.0);}
 		virtual Rgb sample(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, Vec3 &wi, Sample &s, float &w, bool chromatic, float wavelength, const Camera *camera) const override;
 		virtual Specular getSpecular(int raylevel, const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, bool chromatic, float wavelength) const override;
@@ -117,7 +117,7 @@ class NullMaterial final : public Material
 	private:
 		NullMaterial(Logger &logger) : Material(logger) { }
 		virtual std::unique_ptr<MaterialData> createMaterialData(size_t number_of_nodes) const override { return std::unique_ptr<NullMaterialData>(new NullMaterialData(bsdf_flags_, number_of_nodes)); };
-		virtual std::unique_ptr<MaterialData> initBsdf(SurfacePoint &sp, const Camera *camera) const override { return createMaterialData(0); }
+		virtual std::unique_ptr<const MaterialData> initBsdf(SurfacePoint &sp, const Camera *camera) const override { return createMaterialData(0); }
 		virtual Rgb eval(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wl, const BsdfFlags &bsdfs, bool force_eval = false) const override {return Rgb(0.0);}
 		virtual Rgb sample(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, Vec3 &wi, Sample &s, float &w, bool chromatic, float wavelength, const Camera *camera) const override;
 };

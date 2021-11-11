@@ -46,7 +46,7 @@ inline float BlendMaterial::getBlendVal(const NodeTreeData &node_tree_data) cons
 	return blend_val;
 }
 
-std::unique_ptr<MaterialData> BlendMaterial::initBsdf(SurfacePoint &sp, const Camera *camera) const
+std::unique_ptr<const MaterialData> BlendMaterial::initBsdf(SurfacePoint &sp, const Camera *camera) const
 {
 	std::unique_ptr<MaterialData> mat_data = createMaterialData(color_nodes_.size() + bump_nodes_.size());
 	evalNodes(sp, color_nodes_, mat_data->node_tree_data_, camera);

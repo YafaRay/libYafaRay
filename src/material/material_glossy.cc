@@ -48,7 +48,7 @@ GlossyMaterial::GlossyMaterial(Logger &logger, const Rgb &col, const Rgb &dcol, 
 	visibility_ = e_visibility;
 }
 
-std::unique_ptr<MaterialData> GlossyMaterial::initBsdf(SurfacePoint &sp, const Camera *camera) const
+std::unique_ptr<const MaterialData> GlossyMaterial::initBsdf(SurfacePoint &sp, const Camera *camera) const
 {
 	std::unique_ptr<MaterialData> mat_data = createMaterialData(color_nodes_.size() + bump_nodes_.size());
 	if(bump_shader_) evalBump(mat_data->node_tree_data_, sp, bump_shader_, camera);
