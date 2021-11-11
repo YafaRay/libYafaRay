@@ -769,7 +769,7 @@ Rgb MonteCarloIntegrator::glossy(RenderData &render_data, float &alpha, const Ra
 				Vec3 wi;
 				const Rgb mcol = material->sample(sp.mat_data_.get(), sp, wo, wi, s, w, render_data.chromatic_, render_data.wavelength_, render_data.cam_);
 				Ray ref_ray(sp.p_, wi, scene_->ray_min_dist_);
-				if(diff_rays_enabled_)
+				if(ray.differentials_)
 				{
 					if(s.sampled_flags_.hasAny(BsdfFlags::Reflect)) ref_ray.differentials_ = sp.reflectedRay(ray.differentials_.get(), ray.dir_, ref_ray.dir_);
 					else if(s.sampled_flags_.hasAny(BsdfFlags::Transmit)) ref_ray.differentials_ = sp.refractedRay(ray.differentials_.get(), ray.dir_, ref_ray.dir_, material->getMatIor());
@@ -798,7 +798,7 @@ Rgb MonteCarloIntegrator::glossy(RenderData &render_data, float &alpha, const Ra
 				if(s.sampled_flags_.hasAny(BsdfFlags::Reflect) && !s.sampled_flags_.hasAny(BsdfFlags::Dispersive))
 				{
 					Ray ref_ray = Ray(sp.p_, dir[0], scene_->ray_min_dist_);
-					if(diff_rays_enabled_) ref_ray.differentials_ = sp.reflectedRay(ray.differentials_.get(), ray.dir_, ref_ray.dir_);
+					if(ray.differentials_) ref_ray.differentials_ = sp.reflectedRay(ray.differentials_.get(), ray.dir_, ref_ray.dir_);
 					Rgba integ = integrate(render_data, ref_ray, additional_depth);
 					if(bsdfs.hasAny(BsdfFlags::Volumetric))
 					{
@@ -816,7 +816,7 @@ Rgb MonteCarloIntegrator::glossy(RenderData &render_data, float &alpha, const Ra
 				if(s.sampled_flags_.hasAny(BsdfFlags::Transmit))
 				{
 					Ray ref_ray = Ray(sp.p_, dir[1], scene_->ray_min_dist_);
-					if(diff_rays_enabled_) ref_ray.differentials_ = sp.refractedRay(ray.differentials_.get(), ray.dir_, ref_ray.dir_, material->getMatIor());
+					if(ray.differentials_) ref_ray.differentials_ = sp.refractedRay(ray.differentials_.get(), ray.dir_, ref_ray.dir_, material->getMatIor());
 					Rgba integ = integrate(render_data, ref_ray, additional_depth);
 					if(bsdfs.hasAny(BsdfFlags::Volumetric))
 					{
@@ -865,7 +865,7 @@ Rgb MonteCarloIntegrator::glossy(RenderData &render_data, float &alpha, const Ra
 Rgb MonteCarloIntegrator::specularReflect(RenderData &render_data, float &alpha, const Ray &ray, const SurfacePoint &sp, const Material *material, const BsdfFlags &bsdfs, const DirectionColor *reflect_data, float ray_min_dist, int additional_depth, ColorLayers *color_layers) const
 {
 	Ray ref_ray(sp.p_, reflect_data->dir_, ray_min_dist);
-	if(diff_rays_enabled_) ref_ray.differentials_ = sp.reflectedRay(ray.differentials_.get(), ray.dir_, ref_ray.dir_);
+	if(ray.differentials_) ref_ray.differentials_ = sp.reflectedRay(ray.differentials_.get(), ray.dir_, ref_ray.dir_);
 	Rgb integ = integrate(render_data, ref_ray, additional_depth);
 	if(bsdfs.hasAny(BsdfFlags::Volumetric))
 	{
@@ -894,7 +894,7 @@ Rgb MonteCarloIntegrator::specularRefract(RenderData &render_data, float &alpha,
 	}
 	else ref_ray = Ray(sp.p_, refract_data->dir_, ray_min_dist);
 
-	if(diff_rays_enabled_) ref_ray.differentials_ = sp.refractedRay(ray.differentials_.get(), ray.dir_, ref_ray.dir_, material->getMatIor());
+	if(ray.differentials_) ref_ray.differentials_ = sp.refractedRay(ray.differentials_.get(), ray.dir_, ref_ray.dir_, material->getMatIor());
 	Rgba integ = integrate(render_data, ref_ray, additional_depth);
 
 	if(bsdfs.hasAny(BsdfFlags::Volumetric))

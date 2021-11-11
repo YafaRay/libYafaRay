@@ -1021,7 +1021,7 @@ GatherInfo SppmIntegrator::traceGatherRay(RenderData &render_data, const Ray &ra
 					else if(s.sampled_flags_.hasAny(BsdfFlags::Glossy))
 					{
 						ref_ray = Ray(sp.p_, wi, scene_->ray_min_dist_);
-						if(diff_rays_enabled_)
+						if(ray.differentials_)
 						{
 							if(s.sampled_flags_.hasAny(BsdfFlags::Reflect)) ref_ray.differentials_ = sp.reflectedRay(ray.differentials_.get(), ray.dir_, ref_ray.dir_);
 							else if(s.sampled_flags_.hasAny(BsdfFlags::Transmit)) ref_ray.differentials_ = sp.refractedRay(ray.differentials_.get(), ray.dir_, ref_ray.dir_, material->getMatIor());
@@ -1084,7 +1084,7 @@ GatherInfo SppmIntegrator::traceGatherRay(RenderData &render_data, const Ray &ra
 				if(specular.reflect_)
 				{
 					Ray ref_ray(sp.p_, specular.reflect_->dir_, scene_->ray_min_dist_);
-					if(diff_rays_enabled_) ref_ray.differentials_ = sp.reflectedRay(ray.differentials_.get(), ray.dir_, ref_ray.dir_); // compute the ray differentaitl
+					if(ray.differentials_) ref_ray.differentials_ = sp.reflectedRay(ray.differentials_.get(), ray.dir_, ref_ray.dir_); // compute the ray differentaitl
 					GatherInfo refg = traceGatherRay(render_data, ref_ray, hp, nullptr);
 					if(mat_bsdfs.hasAny(BsdfFlags::Volumetric))
 					{
@@ -1107,7 +1107,7 @@ GatherInfo SppmIntegrator::traceGatherRay(RenderData &render_data, const Ray &ra
 				if(specular.refract_)
 				{
 					Ray ref_ray(sp.p_, specular.refract_->dir_, scene_->ray_min_dist_);
-					if(diff_rays_enabled_) ref_ray.differentials_ = sp.refractedRay(ray.differentials_.get(), ray.dir_, ref_ray.dir_, material->getMatIor());
+					if(ray.differentials_) ref_ray.differentials_ = sp.refractedRay(ray.differentials_.get(), ray.dir_, ref_ray.dir_, material->getMatIor());
 					GatherInfo refg = traceGatherRay(render_data, ref_ray, hp, nullptr);
 					if(mat_bsdfs.hasAny(BsdfFlags::Volumetric))
 					{
