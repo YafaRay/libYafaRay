@@ -22,35 +22,6 @@
 
 BEGIN_YAFARAY
 
-SurfacePoint::SurfacePoint(const SurfacePoint &sp, DifferentialsCopy differentials_copy, MaterialDataCopy material_data_copy) :
-material_(sp.material_), light_(sp.light_), object_(sp.object_), intersect_data_(sp.intersect_data_),
-n_(sp.n_), ng_(sp.ng_), orco_ng_(sp.orco_ng_), p_(sp.p_), orco_p_(sp.orco_p_), has_uv_(sp.has_uv_), has_orco_(sp.has_orco_),
-available_(sp.available_), prim_num_(sp.prim_num_), u_(sp.u_), v_(sp.v_), nu_(sp.nu_), nv_(sp.nv_),
-dp_du_(sp.dp_du_), dp_dv_(sp.dp_dv_), ds_du_(sp.ds_du_), ds_dv_(sp.ds_dv_), dp_du_abs_(sp.dp_du_abs_), dp_dv_abs_(sp.dp_dv_abs_)
-{
-	if(sp.differentials_ && differentials_copy == DifferentialsCopy::FullCopy)
-	{
-		differentials_ = std::unique_ptr<SurfaceDifferentials>(new SurfaceDifferentials(*sp.differentials_));
-	}
-	if(sp.mat_data_)
-	{
-		switch(material_data_copy)
-		{
-			case MaterialDataCopy::SharedReference:
-				mat_data_ = std::move(sp.mat_data_);
-				break;
-/* No need for this in this case, leaving this snippet here for future reference if full copies are needed of shared pointers
-			case MaterialDataCopy::FullCopy:
-				mat_data_ = std::make_shared<MaterialData>(*sp.mat_data_);
-				break;
-*/
-			case MaterialDataCopy::No:
-			default:
-				break;
-		}
-	}
-}
-
 void SurfacePoint::setRayDifferentials(const RayDifferentials *ray_differentials)
 {
 	if(ray_differentials)
@@ -70,7 +41,7 @@ void SurfacePoint::setRayDifferentials(const RayDifferentials *ray_differentials
 
 SurfacePoint SurfacePoint::blendSurfacePoints(SurfacePoint const &sp_1, SurfacePoint const &sp_2, float alpha)
 {
-	SurfacePoint result(sp_1, DifferentialsCopy::No, MaterialDataCopy::No);
+	SurfacePoint result(sp_1);
 	result.n_ = math::lerp(sp_1.n_, sp_2.n_, alpha);
 	result.nu_ = math::lerp(sp_1.nu_, sp_2.nu_, alpha);
 	result.nv_ = math::lerp(sp_1.nv_, sp_2.nv_, alpha);

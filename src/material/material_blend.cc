@@ -53,9 +53,9 @@ std::unique_ptr<const MaterialData> BlendMaterial::initBsdf(SurfacePoint &sp, co
 	const float blend_val = getBlendVal(mat_data->node_tree_data_);
 
 	BlendMaterialData *mat_data_specific = static_cast<BlendMaterialData *>(mat_data.get());
-	SurfacePoint sp_1 {sp, SurfacePoint::DifferentialsCopy::FullCopy, SurfacePoint::MaterialDataCopy::No};
+	SurfacePoint sp_1 {sp};
 	mat_data_specific->mat_1_data_ = mat_1_->initBsdf(sp_1, camera);
-	SurfacePoint sp_2 {sp, SurfacePoint::DifferentialsCopy::FullCopy, SurfacePoint::MaterialDataCopy::No};
+	SurfacePoint sp_2 {sp};
 	mat_data_specific->mat_2_data_ = mat_2_->initBsdf(sp_2, camera);
 	sp = SurfacePoint::blendSurfacePoints(sp_1, sp_2, blend_val);
 	mat_data->bsdf_flags_ = mat_data_specific->mat_1_data_->bsdf_flags_ | mat_data_specific->mat_2_data_->bsdf_flags_;

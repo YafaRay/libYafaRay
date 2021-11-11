@@ -55,7 +55,7 @@ class PathVertex
 {
 	public:
 		PathVertex() = default;
-		PathVertex(const PathVertex &path_vertex);
+		PathVertex(const PathVertex &path_vertex) = default;
 		PathVertex(PathVertex &&path_vertex) = default;
 		SurfacePoint sp_;  //!< surface point at which the path vertex lies
 		BsdfFlags flags_;       //!< flags of the sampled BSDF component (not all components of the sp!)
@@ -69,10 +69,6 @@ class PathVertex
 		float cos_wi_, cos_wo_; //!< (absolute) cosine of the incoming (wi) and sampled (wo) path direction
 		float pdf_wi_, pdf_wo_; //!< the pdf for sampling wi from wo and wo from wi respectively
 };
-
-PathVertex::PathVertex(const PathVertex &path_vertex) : sp_{path_vertex.sp_, SurfacePoint::DifferentialsCopy::FullCopy, SurfacePoint::MaterialDataCopy::SharedReference}, flags_(path_vertex.flags_), alpha_(path_vertex.alpha_), f_s_(path_vertex.f_s_), wi_(path_vertex.wi_), wo_(path_vertex.wo_), ds_(path_vertex.ds_), g_(path_vertex.g_), qi_wo_(path_vertex.qi_wo_), qi_wi_(path_vertex.qi_wi_), cos_wi_(path_vertex.cos_wi_), cos_wo_(path_vertex.cos_wo_), pdf_wi_(path_vertex.pdf_wi_), pdf_wo_(path_vertex.pdf_wo_)
-{
-}
 
 /*! vertices of a connected path going forward from light to eye;
     conventions: path vertices are named x_0...x_k, with k=s+t-1 again.

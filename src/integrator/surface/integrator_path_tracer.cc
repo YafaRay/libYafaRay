@@ -198,7 +198,7 @@ Rgba PathIntegrator::integrate(RenderData &render_data, const Ray &ray, int addi
 				unsigned int offs = n_paths_ * render_data.pixel_sample_ + render_data.sampling_offs_ + i; // some redunancy here...
 				Rgb throughput(1.0);
 				Rgb lcol, scol;
-				SurfacePoint sp_1 {sp, SurfacePoint::DifferentialsCopy::No, SurfacePoint::MaterialDataCopy::SharedReference};
+				SurfacePoint sp_1 {sp};
 				SurfacePoint sp_2;
 				SurfacePoint *hit = &sp_1, *hit_2 = &sp_2;
 				Vec3 pwo = wo;
