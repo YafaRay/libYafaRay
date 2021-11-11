@@ -70,7 +70,6 @@ class TiledIntegrator : public SurfaceIntegrator
 		float aa_indirect_sample_multiplier_ = 1.f;
 		float max_depth_; //!< Inverse of max depth from camera within the scene boundaries
 		float min_depth_; //!< Distance between camera and the closest object on the scene
-		bool diff_rays_enabled_;	//!< Differential rays enabled/disabled - for future motion blur / interference features
 		static std::vector<int> correlative_sample_number_;  //!< Used to sample lights more uniformly when using estimateOneDirectLight
 };
 

@@ -129,8 +129,6 @@ bool SppmIntegrator::render(RenderControl &render_control, Timer &timer, const R
 	max_depth_ = 0.f;
 	min_depth_ = 1e38f;
 
-	diff_rays_enabled_ = render_control.getDifferentialRaysEnabled();	//enable ray differentials for mipmap calculation if there is at least one image texture using Mipmap interpolation
-
 	if(scene_->getLayers().isDefinedAny({Layer::ZDepthNorm, Layer::Mist})) precalcDepths(render_view);
 
 	int acum_aa_samples = 1;
@@ -237,7 +235,7 @@ bool SppmIntegrator::renderTile(RenderArea &a, const RenderView *render_view, co
 					image_film_->addSample(j, i, dx, dy, &a, sample, aa_pass_number, inv_aa_max_possible_samples, &color_layers); //maybe not need
 					continue;
 				}
-				if(diff_rays_enabled_)
+				if(render_control.getDifferentialRaysEnabled())
 				{
 					//setup ray differentials
 					camera_ray.ray_.differentials_ = std::unique_ptr<RayDifferentials>(new RayDifferentials());
