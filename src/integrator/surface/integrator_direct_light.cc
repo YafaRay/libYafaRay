@@ -102,7 +102,7 @@ bool DirectLightIntegrator::preprocess(const RenderControl &render_control, Time
 	return success;
 }
 
-Rgba DirectLightIntegrator::integrate(int thread_id, int ray_level, RenderData &render_data, const Ray &ray, int additional_depth, const RayDivision &ray_division, ColorLayers *color_layers, const RenderView *render_view) const
+Rgba DirectLightIntegrator::integrate(int thread_id, int ray_level, RenderData &render_data, const Ray &ray, int additional_depth, const RayDivision &ray_division, ColorLayers *color_layers, const Camera *camera) const
 {
 	Rgb col(0.f);
 	float alpha;
@@ -112,7 +112,7 @@ Rgba DirectLightIntegrator::integrate(int thread_id, int ray_level, RenderData &
 	else alpha = 1.f;
 	// Shoot ray into scene
 	const Accelerator *accelerator = scene_->getAccelerator();
-	if(accelerator && accelerator->intersect(ray, sp, render_data.cam_)) // If it hits
+	if(accelerator && accelerator->intersect(ray, sp, camera)) // If it hits
 	{
 		const Material *material = sp.material_;
 		const BsdfFlags &mat_bsdfs = sp.mat_data_->bsdf_flags_;
@@ -130,7 +130,7 @@ Rgba DirectLightIntegrator::integrate(int thread_id, int ray_level, RenderData &
 		}
 		if(mat_bsdfs.hasAny(BsdfFlags::Diffuse))
 		{
-			col += estimateAllDirectLight(render_data, sp, wo, ray_division, color_layers);
+			col += estimateAllDirectLight(render_data, sp, wo, ray_division, color_layers, camera);
 			if(use_photon_caustics_)
 			{
 				Rgb col_tmp = estimateCausticPhotons(sp, wo);
@@ -141,15 +141,15 @@ Rgba DirectLightIntegrator::integrate(int thread_id, int ray_level, RenderData &
 					if(ColorLayer *color_layer = color_layers->find(Layer::Indirect)) color_layer->color_ = col_tmp;
 				}
 			}
-			if(use_ambient_occlusion_) col += sampleAmbientOcclusion(render_data, sp, wo, ray_division);
+			if(use_ambient_occlusion_) col += sampleAmbientOcclusion(render_data, sp, wo, ray_division, camera);
 		}
-		recursiveRaytrace(thread_id, ray_level + 1, render_data, ray, mat_bsdfs, sp, wo, col, alpha, additional_depth, ray_division, color_layers);
+		recursiveRaytrace(thread_id, ray_level + 1, render_data, ray, mat_bsdfs, sp, wo, col, alpha, additional_depth, ray_division, color_layers, camera);
 		if(color_layers)
 		{
 			generateCommonLayers(sp, ray, scene_->getMaskParams(), color_layers);
 			if(ColorLayer *color_layer = color_layers->find(Layer::Ao))
 			{
-				color_layer->color_ = sampleAmbientOcclusionLayer(render_data, sp, wo, ray_division);
+				color_layer->color_ = sampleAmbientOcclusionLayer(render_data, sp, wo, ray_division, nullptr);
 			}
 			if(ColorLayer *color_layer = color_layers->find(Layer::AoClay))
 			{
@@ -158,7 +158,7 @@ Rgba DirectLightIntegrator::integrate(int thread_id, int ray_level, RenderData &
 		}
 		if(transp_refracted_background_)
 		{
-			const float mat_alpha = material->getAlpha(sp.mat_data_.get(), sp, wo, render_data.cam_);
+			const float mat_alpha = material->getAlpha(sp.mat_data_.get(), sp, wo, camera);
 			alpha = mat_alpha + (1.f - mat_alpha) * alpha;
 		}
 		else alpha = 1.f;

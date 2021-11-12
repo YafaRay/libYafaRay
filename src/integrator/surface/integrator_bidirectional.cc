@@ -243,7 +243,7 @@ void BidirectionalIntegrator::cleanup()
 /* ============================================================
     integrate
  ============================================================ */
-Rgba BidirectionalIntegrator::integrate(int thread_id, int ray_level, RenderData &render_data, const Ray &ray, int additional_depth, const RayDivision &ray_division, ColorLayers *color_layers, const RenderView *render_view) const
+Rgba BidirectionalIntegrator::integrate(int thread_id, int ray_level, RenderData &render_data, const Ray &ray, int additional_depth, const RayDivision &ray_division, ColorLayers *color_layers, const Camera *camera) const
 {
 	Rgb col(0.f);
 	SurfacePoint sp;
@@ -251,7 +251,7 @@ Rgba BidirectionalIntegrator::integrate(int thread_id, int ray_level, RenderData
 	float alpha = 1.f;
 
 	const Accelerator *accelerator = scene_->getAccelerator();
-	if(accelerator && accelerator->intersect(testray, sp, render_data.cam_))
+	if(accelerator && accelerator->intersect(testray, sp, camera))
 	{
 		const Vec3 wo = -ray.dir_;
 		static int dbg = 0;
@@ -270,7 +270,7 @@ Rgba BidirectionalIntegrator::integrate(int thread_id, int ray_level, RenderData
 		// temporary!
 		float cu, cv;
 		float cam_pdf = 0.0;
-		render_view->getCamera()->project(ray, 0, 0, cu, cv, cam_pdf);
+		camera->project(ray, 0, 0, cu, cv, cam_pdf);
 		if(cam_pdf == 0.f) cam_pdf = 1.f; //FIXME: this is a horrible hack to fix the -nan problems when using bidirectional integrator with Architecture, Angular or Orto cameras. The fundamental problem is that the code for those 3 cameras LACK the member function project() and therefore leave the camPdf=0.f causing -nan results. So, for now I'm forcing camPdf = 1.f if such 0.f result comes from the non-existing member function. This is BAD, but at least will allow people to work with the different cameras in bidirectional, and bidirectional integrator still needs a LOT of work to make it a decent integrator anyway.
 		ve.pdf_wo_ = cam_pdf;
 		ve.f_s_ = Rgb(cam_pdf);
@@ -281,7 +281,7 @@ Rgba BidirectionalIntegrator::integrate(int thread_id, int ray_level, RenderData
 		ve.flags_ = BsdfFlags::Diffuse; //place holder! not applicable for e.g. orthogonal camera!
 
 		// create eyePath
-		n_eye = createPath(render_data, ray, path_data.eye_path_, max_path_length_, render_data.cam_);
+		n_eye = createPath(render_data, ray, path_data.eye_path_, max_path_length_, camera);
 
 		// sample light (todo!)
 		Ray lray;
@@ -314,7 +314,7 @@ Rgba BidirectionalIntegrator::integrate(int thread_id, int ray_level, RenderData
 		path_data.singular_l_ = ls.flags_.hasAny(Light::Flags::Singular);
 
 		// create lightPath
-		n_light = createPath(render_data, lray, path_data.light_path_, max_path_length_, render_data.cam_);
+		n_light = createPath(render_data, lray, path_data.light_path_, max_path_length_, camera);
 		if(n_light > 1)
 		{
 			path_data.pdf_illum_ = lights_[light_num]->illumPdf(path_data.light_path_[1].sp_, vl.sp_) * light_num_pdf;
@@ -328,12 +328,12 @@ Rgba BidirectionalIntegrator::integrate(int thread_id, int ray_level, RenderData
 		for(int s = 2; s <= n_light; ++s)
 		{
 			clearPath(path_data.path_, s, 1);
-			if(!connectPathE(render_view, s, path_data)) continue;
+			if(!connectPathE(camera, s, path_data)) continue;
 			checkPath(path_data.path_, s, 1);
 			float wt = pathWeight(s, 1, path_data);
 			if(wt > 0.f)
 			{
-				Rgb li_col = evalPathE(s, path_data, render_data.cam_);
+				Rgb li_col = evalPathE(s, path_data, camera);
 				if(li_col.isBlack()) continue;
 				float ix, idx, iy, idy;
 				idx = std::modf(path_data.u_, &ix);
@@ -374,7 +374,7 @@ Rgba BidirectionalIntegrator::integrate(int thread_id, int ray_level, RenderData
 				wt = pathWeight(1, t, path_data);
 				if(wt > 0.f)
 				{
-					col += wt * evalLPath(t, path_data, d_ray, dcol, render_data.cam_);
+					col += wt * evalLPath(t, path_data, d_ray, dcol, camera);
 				}
 			}
 			path_data.singular_l_ = o_singular_l;
@@ -391,7 +391,7 @@ Rgba BidirectionalIntegrator::integrate(int thread_id, int ray_level, RenderData
 				wt = pathWeight(s, t, path_data);
 				if(wt > 0.f)
 				{
-					col += wt * evalPath(s, t, path_data, render_data.cam_);
+					col += wt * evalPath(s, t, path_data, camera);
 				}
 			}
 		}
@@ -402,7 +402,7 @@ Rgba BidirectionalIntegrator::integrate(int thread_id, int ray_level, RenderData
 
 			if(ColorLayer *color_layer = color_layers->find(Layer::Ao))
 			{
-				color_layer->color_ += sampleAmbientOcclusionLayer(render_data, sp, wo, ray_division);
+				color_layer->color_ += sampleAmbientOcclusionLayer(render_data, sp, wo, ray_division, camera);
 			}
 
 			if(ColorLayer *color_layer = color_layers->find(Layer::AoClay))
@@ -474,7 +474,7 @@ int BidirectionalIntegrator::createPath(RenderData &render_data, const Ray &star
 		// create tentative sample for next path segment
 		Sample s(prng(), prng(), BsdfFlags::All, true);
 		float w = 0.f;
-		v.f_s_ = mat->sample(v.sp_.mat_data_.get(), v.sp_, v.wi_, ray.dir_, s, w, render_data.chromatic_, render_data.wavelength_, render_data.cam_);
+		v.f_s_ = mat->sample(v.sp_.mat_data_.get(), v.sp_, v.wi_, ray.dir_, s, w, render_data.chromatic_, render_data.wavelength_, camera);
 		if(v.f_s_.isBlack()) break;
 		v.pdf_wo_ = s.pdf_;
 		v.cos_wo_ = w * s.pdf_;
@@ -691,7 +691,7 @@ bool BidirectionalIntegrator::connectLPath(RenderData &render_data, int t, PathD
 }
 
 // connect path with t==1 (s>1)
-bool BidirectionalIntegrator::connectPathE(const RenderView *render_view, int s, PathData &pd) const
+bool BidirectionalIntegrator::connectPathE(const Camera *camera, int s, PathData &pd) const
 {
 	const PathVertex &y = pd.light_path_[s - 1];
 	const PathVertex &z = pd.eye_path_[0];
@@ -703,7 +703,7 @@ bool BidirectionalIntegrator::connectPathE(const RenderView *render_view, int s,
 	float cos_y = std::abs(y.sp_.n_ * vec);
 
 	Ray wo(z.sp_.p_, -vec);
-	if(!render_view->getCamera()->project(wo, 0, 0, pd.u_, pd.v_, x_e.pdf_b_)) return false;
+	if(!camera->project(wo, 0, 0, pd.u_, pd.v_, x_e.pdf_b_)) return false;
 
 	x_e.specular_ = false; // cannot query yet...
 
@@ -975,7 +975,7 @@ Rgb BidirectionalIntegrator::evalPathE(int s, PathData &pd, const Camera *camera
     return col/lightNumPdf;
 } */
 
-Rgb BidirectionalIntegrator::sampleAmbientOcclusionLayer(RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo, const RayDivision &ray_division) const
+Rgb BidirectionalIntegrator::sampleAmbientOcclusionLayer(RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo, const RayDivision &ray_division, const Camera *camera) const
 {
 	const Accelerator *accelerator = scene_->getAccelerator();
 	if(!accelerator) return {0.f};
@@ -1012,14 +1012,14 @@ Rgb BidirectionalIntegrator::sampleAmbientOcclusionLayer(RenderData &render_data
 		float w = 0.f;
 
 		Sample s(s_1, s_2, BsdfFlags::Glossy | BsdfFlags::Diffuse | BsdfFlags::Reflect);
-		surf_col = material->sample(sp.mat_data_.get(), sp, wo, light_ray.dir_, s, w, render_data.chromatic_, render_data.wavelength_, render_data.cam_);
+		surf_col = material->sample(sp.mat_data_.get(), sp, wo, light_ray.dir_, s, w, render_data.chromatic_, render_data.wavelength_, camera);
 
 		if(mat_bsdfs.hasAny(BsdfFlags::Emit))
 		{
 			col += material->emit(sp.mat_data_.get(), sp, wo, render_data.lights_geometry_material_emit_) * s.pdf_;
 		}
 
-		shadowed = tr_shad_ ? accelerator->isShadowed(light_ray, s_depth_, scol, mask_obj_index, mask_mat_index, scene_->getShadowBias(), render_data.cam_) : accelerator->isShadowed(light_ray, mask_obj_index, mask_mat_index, scene_->getShadowBias());
+		shadowed = tr_shad_ ? accelerator->isShadowed(light_ray, s_depth_, scol, mask_obj_index, mask_mat_index, scene_->getShadowBias(), camera) : accelerator->isShadowed(light_ray, mask_obj_index, mask_mat_index, scene_->getShadowBias());
 
 		if(!shadowed)
 		{

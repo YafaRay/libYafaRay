@@ -68,14 +68,14 @@ bool DebugIntegrator::preprocess(const RenderControl &render_control, Timer &tim
 	return true;
 }
 
-Rgba DebugIntegrator::integrate(int thread_id, int ray_level, RenderData &render_data, const Ray &ray, int additional_depth, const RayDivision &ray_division, ColorLayers *color_layers, const RenderView *render_view) const
+Rgba DebugIntegrator::integrate(int thread_id, int ray_level, RenderData &render_data, const Ray &ray, int additional_depth, const RayDivision &ray_division, ColorLayers *color_layers, const Camera *camera) const
 {
 	Rgb col(0.f);
 	SurfacePoint sp;
 	const bool old_lights_geometry_material_emit = render_data.lights_geometry_material_emit_;
 	//shoot ray into scene
 	const Accelerator *accelerator = scene_->getAccelerator();
-	if(accelerator && accelerator->intersect(ray, sp, render_data.cam_))
+	if(accelerator && accelerator->intersect(ray, sp, camera))
 	{
 		if(debug_type_ == N)
 			col = Rgb((sp.n_.x_ + 1.f) * .5f, (sp.n_.y_ + 1.f) * .5f, (sp.n_.z_ + 1.f) * .5f);

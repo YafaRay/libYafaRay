@@ -52,7 +52,7 @@ void TiledIntegrator::renderWorker(TiledIntegrator *integrator, const Scene *sce
 	while(image_film_->nextArea(render_view, render_control, a))
 	{
 		if(render_control.canceled()) break;
-		integrator->renderTile(a, render_view, render_control, timer, samples, offset, adaptive, thread_id, aa_pass);
+		integrator->renderTile(a, render_view->getCamera(), render_control, timer, samples, offset, adaptive, thread_id, aa_pass);
 
 		std::unique_lock<std::mutex> lk(control->m_);
 		control->areas_.push_back(a);
@@ -64,12 +64,10 @@ void TiledIntegrator::renderWorker(TiledIntegrator *integrator, const Scene *sce
 	control->c_.notify_one();
 }
 
-void TiledIntegrator::precalcDepths(const RenderView *render_view)
+void TiledIntegrator::precalcDepths(const Camera *camera)
 {
 	const Accelerator *accelerator = scene_->getAccelerator();
 	if(!accelerator) return;
-
-	const Camera *camera = render_view->getCamera();
 
 	if(camera->getFarClip() > -1)
 	{
@@ -169,7 +167,7 @@ bool TiledIntegrator::render(RenderControl &render_control, Timer &timer, const 
 	max_depth_ = 0.f;
 	min_depth_ = 1e38f;
 
-	if(scene_->getLayers().isDefinedAny({Layer::ZDepthNorm, Layer::Mist})) precalcDepths(render_view);
+	if(scene_->getLayers().isDefinedAny({Layer::ZDepthNorm, Layer::Mist})) precalcDepths(render_view->getCamera());
 
 	correlative_sample_number_.clear();
 	correlative_sample_number_.resize(scene_->getNumThreads());
@@ -273,13 +271,11 @@ bool TiledIntegrator::renderPass(const RenderView *render_view, int samples, int
 	return true; //hm...quite useless the return value :)
 }
 
-bool TiledIntegrator::renderTile(RenderArea &a, const RenderView *render_view, const RenderControl &render_control, const Timer &timer, int n_samples, int offset, bool adaptive, int thread_id, int aa_pass_number)
+bool TiledIntegrator::renderTile(RenderArea &a, const Camera *camera, const RenderControl &render_control, const Timer &timer, int n_samples, int offset, bool adaptive, int thread_id, int aa_pass_number)
 {
-	const Camera *camera = render_view->getCamera();
 	const int camera_res_x = camera->resX();
 	Random prng(rand() + offset * (camera_res_x * a.y_ + a.x_) + 123);
 	RenderData rstate(&prng);
-	rstate.cam_ = camera;
 	const bool sample_lns = camera->sampleLense();
 	const int pass_offs = offset, end_x = a.x_ + a.w_, end_y = a.y_ + a.h_;
 	int aa_max_possible_samples = aa_noise_params_.samples_;
@@ -369,7 +365,7 @@ bool TiledIntegrator::renderTile(RenderArea &a, const RenderView *render_view, c
 				}
 				camera_ray.ray_.time_ = rstate.time_;
 				RayDivision ray_division;
-				color_layers(Layer::Combined).color_ = integrate(thread_id, 0, rstate, camera_ray.ray_, 0, ray_division, &color_layers, render_view);
+				color_layers(Layer::Combined).color_ = integrate(thread_id, 0, rstate, camera_ray.ray_, 0, ray_division, &color_layers, camera);
 				for(auto &it : color_layers)
 				{
 					switch(it.first)

@@ -129,11 +129,11 @@ bool SppmIntegrator::render(RenderControl &render_control, Timer &timer, const R
 	max_depth_ = 0.f;
 	min_depth_ = 1e38f;
 
-	if(scene_->getLayers().isDefinedAny({Layer::ZDepthNorm, Layer::Mist})) precalcDepths(render_view);
+	if(scene_->getLayers().isDefinedAny({Layer::ZDepthNorm, Layer::Mist})) precalcDepths(camera);
 
 	int acum_aa_samples = 1;
 
-	initializePpm(render_view); // seems could integrate into the preRender
+	initializePpm(camera); // seems could integrate into the preRender
 	if(render_control.resumed())
 	{
 		acum_aa_samples = image_film_->getSamplingOffset();
@@ -181,13 +181,11 @@ bool SppmIntegrator::render(RenderControl &render_control, Timer &timer, const R
 }
 
 
-bool SppmIntegrator::renderTile(RenderArea &a, const RenderView *render_view, const RenderControl &render_control, const Timer &timer, int n_samples, int offset, bool adaptive, int thread_id, int aa_pass_number)
+bool SppmIntegrator::renderTile(RenderArea &a, const Camera *camera, const RenderControl &render_control, const Timer &timer, int n_samples, int offset, bool adaptive, int thread_id, int aa_pass_number)
 {
-	const Camera *camera = render_view->getCamera();
 	const int camera_res_x = camera->resX();
 	Random prng(rand() + offset * (camera_res_x * a.y_ + a.x_) + 123);
 	RenderData rstate(&prng);
-	rstate.cam_ = camera;
 	const bool sample_lns = camera->sampleLense();
 	const int pass_offs = offset, end_x = a.x_ + a.w_, end_y = a.y_ + a.h_;
 	int aa_max_possible_samples = aa_noise_params_.samples_;
@@ -251,7 +249,7 @@ bool SppmIntegrator::renderTile(RenderArea &a, const RenderView *render_view, co
 				int index = ((i - y_start_film) * camera->resX()) + (j - x_start_film);
 				HitPoint &hp = hit_points_[index];
 				RayDivision ray_division;
-				GatherInfo g_info = traceGatherRay(thread_id, 0, rstate, camera_ray.ray_, hp, ray_division, nullptr);
+				GatherInfo g_info = traceGatherRay(thread_id, 0, rstate, camera_ray.ray_, hp, ray_division, nullptr, camera);
 				hp.constant_randiance_ += g_info.constant_randiance_; // accumulate the constant radiance for later usage.
 				// progressive refinement
 				const float alpha = 0.7f; // another common choice is 0.8, seems not changed much.
@@ -345,8 +343,6 @@ void SppmIntegrator::photonWorker(PhotonMap *diffuse_map, PhotonMap *caustic_map
 	hit_prev.initializeAllZero(); //Just to avoid compiler warnings
 
 	RenderData render_data(&prng);
-	render_data.cam_ = render_view->getCamera();
-
 	float f_num_lights = (float)num_d_lights;
 
 	unsigned int n_photons_thread = 1 + ((n_photons - 1) / scene->getNumThreadsPhotons());
@@ -412,7 +408,7 @@ void SppmIntegrator::photonWorker(PhotonMap *diffuse_map, PhotonMap *caustic_map
 		const Material *material_prev = nullptr;
 		BsdfFlags mat_bsdfs_prev = BsdfFlags::None;
 
-		while(accelerator->intersect(ray, hit_curr, render_data.cam_))   //scatter photons.
+		while(accelerator->intersect(ray, hit_curr, render_view->getCamera()))   //scatter photons.
 		{
 			Rgb transm(1.f);
 			if(material_prev && mat_bsdfs_prev.hasAny(BsdfFlags::Volumetric))
@@ -462,7 +458,7 @@ void SppmIntegrator::photonWorker(PhotonMap *diffuse_map, PhotonMap *caustic_map
 			PSample sample(s_5, s_6, s_7, BsdfFlags::All, pcol, transm);
 
 			Vec3 wo;
-			bool scattered = material->scatterPhoton(hit_curr.mat_data_.get(), hit_curr, wi, wo, sample, render_data.chromatic_, render_data.wavelength_, render_data.cam_);
+			bool scattered = material->scatterPhoton(hit_curr.mat_data_.get(), hit_curr, wi, wo, sample, render_data.chromatic_, render_data.wavelength_, render_view->getCamera());
 			if(!scattered) break; //photon was absorped.  actually based on russian roulette
 
 			pcol = sample.color_;
@@ -566,8 +562,6 @@ void SppmIntegrator::prePass(int samples, int offset, bool adaptive, const Rende
 	unsigned int curr = 0;
 	Random prng(rand() + offset * (4517) + 123);
 	RenderData render_data(&prng);
-	render_data.cam_ = render_view->getCamera();
-
 	std::shared_ptr<ProgressBar> pb;
 	std::string previous_progress_tag;
 	int previous_progress_total_steps = 0;
@@ -651,12 +645,12 @@ void SppmIntegrator::prePass(int samples, int offset, bool adaptive, const Rende
 }
 
 //now it's a dummy function
-Rgba SppmIntegrator::integrate(int thread_id, int ray_level, RenderData &render_data, const Ray &ray, int additional_depth, const RayDivision &ray_division, ColorLayers *color_layers, const RenderView *render_view) const
+Rgba SppmIntegrator::integrate(int thread_id, int ray_level, RenderData &render_data, const Ray &ray, int additional_depth, const RayDivision &ray_division, ColorLayers *color_layers, const Camera *camera) const
 {
 	return Rgba(0.f);
 }
 
-GatherInfo SppmIntegrator::traceGatherRay(int thread_id, int ray_level, RenderData &render_data, const Ray &ray, HitPoint &hp, const RayDivision &ray_division, ColorLayers *color_layers)
+GatherInfo SppmIntegrator::traceGatherRay(int thread_id, int ray_level, RenderData &render_data, const Ray &ray, HitPoint &hp, const RayDivision &ray_division, ColorLayers *color_layers, const Camera *camera)
 {
 	const Accelerator *accelerator = scene_->getAccelerator();
 	if(!accelerator) return {};
@@ -671,7 +665,7 @@ GatherInfo SppmIntegrator::traceGatherRay(int thread_id, int ray_level, RenderDa
 	if(transp_background_) alpha = 0.f;
 	else alpha = 1.f;
 
-	if(accelerator->intersect(ray, sp, render_data.cam_))
+	if(accelerator->intersect(ray, sp, camera))
 	{
 		if(ray_level == 0)
 		{
@@ -696,7 +690,7 @@ GatherInfo SppmIntegrator::traceGatherRay(int thread_id, int ray_level, RenderDa
 
 		if(mat_bsdfs.hasAny(BsdfFlags::Diffuse))
 		{
-			g_info.constant_randiance_ += estimateAllDirectLight(render_data, sp, wo, ray_division, color_layers);
+			g_info.constant_randiance_ += estimateAllDirectLight(render_data, sp, wo, ray_division, color_layers, camera);
 		}
 
 		// estimate radiance using photon map
@@ -840,14 +834,14 @@ GatherInfo SppmIntegrator::traceGatherRay(int thread_id, int ray_level, RenderDa
 					++branch;
 					Sample s(0.5f, 0.5f, BsdfFlags::Reflect | BsdfFlags::Transmit | BsdfFlags::Dispersive);
 					Vec3 wi;
-					Rgb mcol = material->sample(sp.mat_data_.get(), sp, wo, wi, s, w, render_data.chromatic_, render_data.wavelength_, render_data.cam_);
+					Rgb mcol = material->sample(sp.mat_data_.get(), sp, wo, wi, s, w, render_data.chromatic_, render_data.wavelength_, camera);
 
 					if(s.pdf_ > 1.0e-6f && s.sampled_flags_.hasAny(BsdfFlags::Dispersive))
 					{
 						render_data.chromatic_ = false;
 						const Rgb wl_col = spectrum::wl2Rgb(render_data.wavelength_);
 						ref_ray = Ray(sp.p_, wi, scene_->ray_min_dist_);
-						t_cing = traceGatherRay(thread_id, ray_level, render_data, ref_ray, hp, ray_division_new, nullptr);
+						t_cing = traceGatherRay(thread_id, ray_level, render_data, ref_ray, hp, ray_division_new, nullptr, camera);
 						t_cing.photon_flux_ *= mcol * wl_col * w;
 						t_cing.constant_randiance_ *= mcol * wl_col * w;
 
@@ -919,14 +913,14 @@ GatherInfo SppmIntegrator::traceGatherRay(int thread_id, int ray_level, RenderDa
 
 					Sample s(s_1, s_2, BsdfFlags::AllGlossy);
 					Vec3 wi;
-					Rgb mcol = material->sample(sp.mat_data_.get(), sp, wo, wi, s, W, render_data.chromatic_, render_data.wavelength_, render_data.cam_);
+					Rgb mcol = material->sample(sp.mat_data_.get(), sp, wo, wi, s, W, render_data.chromatic_, render_data.wavelength_, camera);
 
 					if(mat_bsdfs.hasAny(BsdfFlags::Reflect) && !mat_bsdfs.hasAny(BsdfFlags::Transmit))
 					{
 						float w = 0.f;
 
 						Sample s(s_1, s_2, BsdfFlags::Glossy | BsdfFlags::Reflect);
-						Rgb mcol = material->sample(sp.mat_data_.get(), sp, wo, wi, s, w, render_data.chromatic_, render_data.wavelength_, render_data.cam_);
+						Rgb mcol = material->sample(sp.mat_data_.get(), sp, wo, wi, s, w, render_data.chromatic_, render_data.wavelength_, camera);
 						Rgba integ = 0.f;
 						ref_ray = Ray(sp.p_, wi, scene_->ray_min_dist_);
 						if(s.sampled_flags_.hasAny(BsdfFlags::Reflect)) ref_ray.differentials_ = sp.reflectedRay(ray.differentials_.get(), ray.dir_, ref_ray.dir_);
@@ -941,7 +935,7 @@ GatherInfo SppmIntegrator::traceGatherRay(int thread_id, int ray_level, RenderDa
 							}
 						}
 						//gcol += tmpColorPasses.probe_add(PASS_INT_GLOSSY_INDIRECT, (Rgb)integ * mcol * W, state.ray_level == 1);
-						t_ging = traceGatherRay(thread_id, ray_level, render_data, ref_ray, hp, ray_division_new, nullptr);
+						t_ging = traceGatherRay(thread_id, ray_level, render_data, ref_ray, hp, ray_division_new, nullptr, camera);
 						t_ging.photon_flux_ *= mcol * w;
 						t_ging.constant_randiance_ *= mcol * w;
 						ging += t_ging;
@@ -970,7 +964,7 @@ GatherInfo SppmIntegrator::traceGatherRay(int thread_id, int ray_level, RenderDa
 							}
 							Rgb col_reflect_factor = mcol[0] * w[0];
 
-							t_ging = traceGatherRay(thread_id, ray_level, render_data, ref_ray, hp, ray_division_new, nullptr);
+							t_ging = traceGatherRay(thread_id, ray_level, render_data, ref_ray, hp, ray_division_new, nullptr, camera);
 							t_ging.photon_flux_ *= col_reflect_factor;
 							t_ging.constant_randiance_ *= col_reflect_factor;
 
@@ -995,7 +989,7 @@ GatherInfo SppmIntegrator::traceGatherRay(int thread_id, int ray_level, RenderDa
 							}
 							Rgb col_transmit_factor = mcol[1] * w[1];
 							alpha = integ.a_;
-							t_ging = traceGatherRay(thread_id, ray_level, render_data, ref_ray, hp, ray_division_new, nullptr);
+							t_ging = traceGatherRay(thread_id, ray_level, render_data, ref_ray, hp, ray_division_new, nullptr, camera);
 							t_ging.photon_flux_ *= col_transmit_factor;
 							t_ging.constant_randiance_ *= col_transmit_factor;
 							if(color_layers)
@@ -1015,7 +1009,7 @@ GatherInfo SppmIntegrator::traceGatherRay(int thread_id, int ray_level, RenderDa
 							else if(s.sampled_flags_.hasAny(BsdfFlags::Transmit)) ref_ray.differentials_ = sp.refractedRay(ray.differentials_.get(), ray.dir_, ref_ray.dir_, material->getMatIor());
 						}
 
-						t_ging = traceGatherRay(thread_id, ray_level, render_data, ref_ray, hp, ray_division_new, nullptr);
+						t_ging = traceGatherRay(thread_id, ray_level, render_data, ref_ray, hp, ray_division_new, nullptr, camera);
 						t_ging.photon_flux_ *= mcol * W;
 						t_ging.constant_randiance_ *= mcol * W;
 						if(color_layers)
@@ -1073,7 +1067,7 @@ GatherInfo SppmIntegrator::traceGatherRay(int thread_id, int ray_level, RenderDa
 				{
 					Ray ref_ray(sp.p_, specular.reflect_->dir_, scene_->ray_min_dist_);
 					if(ray.differentials_) ref_ray.differentials_ = sp.reflectedRay(ray.differentials_.get(), ray.dir_, ref_ray.dir_); // compute the ray differentaitl
-					GatherInfo refg = traceGatherRay(thread_id, ray_level, render_data, ref_ray, hp, ray_division, nullptr);
+					GatherInfo refg = traceGatherRay(thread_id, ray_level, render_data, ref_ray, hp, ray_division, nullptr, camera);
 					if(mat_bsdfs.hasAny(BsdfFlags::Volumetric))
 					{
 						if(const VolumeHandler *vol = material->getVolumeHandler(sp.ng_ * ref_ray.dir_ < 0))
@@ -1096,7 +1090,7 @@ GatherInfo SppmIntegrator::traceGatherRay(int thread_id, int ray_level, RenderDa
 				{
 					Ray ref_ray(sp.p_, specular.refract_->dir_, scene_->ray_min_dist_);
 					if(ray.differentials_) ref_ray.differentials_ = sp.refractedRay(ray.differentials_.get(), ray.dir_, ref_ray.dir_, material->getMatIor());
-					GatherInfo refg = traceGatherRay(thread_id, ray_level, render_data, ref_ray, hp, ray_division, nullptr);
+					GatherInfo refg = traceGatherRay(thread_id, ray_level, render_data, ref_ray, hp, ray_division, nullptr, camera);
 					if(mat_bsdfs.hasAny(BsdfFlags::Volumetric))
 					{
 						if(const VolumeHandler *vol = material->getVolumeHandler(sp.ng_ * ref_ray.dir_ < 0))
@@ -1124,7 +1118,7 @@ GatherInfo SppmIntegrator::traceGatherRay(int thread_id, int ray_level, RenderDa
 
 			if(ColorLayer *color_layer = color_layers->find(Layer::Ao))
 			{
-				color_layer->color_ = sampleAmbientOcclusionLayer(render_data, sp, wo, ray_division);
+				color_layer->color_ = sampleAmbientOcclusionLayer(render_data, sp, wo, ray_division, nullptr);
 			}
 
 			if(ColorLayer *color_layer = color_layers->find(Layer::AoClay))
@@ -1134,7 +1128,7 @@ GatherInfo SppmIntegrator::traceGatherRay(int thread_id, int ray_level, RenderDa
 		}
 		if(transp_refracted_background_)
 		{
-			const float mat_alpha = material->getAlpha(sp.mat_data_.get(), sp, wo, render_data.cam_);
+			const float mat_alpha = material->getAlpha(sp.mat_data_.get(), sp, wo, camera);
 			alpha = mat_alpha + (1.f - mat_alpha) * alpha;
 		}
 		else alpha = 1.f;
@@ -1169,9 +1163,8 @@ GatherInfo SppmIntegrator::traceGatherRay(int thread_id, int ray_level, RenderDa
 	return g_info;
 }
 
-void SppmIntegrator::initializePpm(const RenderView *render_view)
+void SppmIntegrator::initializePpm(const Camera *camera)
 {
-	const Camera *camera = render_view->getCamera();
 	unsigned int resolution = camera->resX() * camera->resY();
 
 	hit_points_.reserve(resolution);

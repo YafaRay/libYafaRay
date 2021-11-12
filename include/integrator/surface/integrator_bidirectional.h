@@ -49,8 +49,8 @@ class BidirectionalIntegrator final : public TiledIntegrator
 		virtual std::string getName() const override { return "BidirectionalPathTracer"; }
 		virtual bool preprocess(const RenderControl &render_control, Timer &timer, const RenderView *render_view, ImageFilm *image_film) override;
 		virtual void cleanup() override;
-		virtual Rgba integrate(int thread_id, int ray_level, RenderData &render_data, const Ray &ray, int additional_depth, const RayDivision &ray_division, ColorLayers *color_layers, const RenderView *render_view) const override;
-		Rgb sampleAmbientOcclusionLayer(RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo, const RayDivision &ray_division) const;
+		virtual Rgba integrate(int thread_id, int ray_level, RenderData &render_data, const Ray &ray, int additional_depth, const RayDivision &ray_division, ColorLayers *color_layers, const Camera *camera) const override;
+		Rgb sampleAmbientOcclusionLayer(RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo, const RayDivision &ray_division, const Camera *camera) const;
 		Rgb sampleAmbientOcclusionClayLayer(RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo, const RayDivision &ray_division) const;
 		int createPath(RenderData &render_data, const Ray &start, std::vector<PathVertex> &path, int max_len, const Camera *camera) const;
 		Rgb evalPath(int s, int t, PathData &pd, const Camera *camera) const;
@@ -58,7 +58,7 @@ class BidirectionalIntegrator final : public TiledIntegrator
 		Rgb evalPathE(int s, PathData &pd, const Camera *camera) const;
 		bool connectPaths(int s, int t, PathData &pd) const;
 		bool connectLPath(RenderData &render_data, int t, PathData &pd, Ray &l_ray, Rgb &lcol) const;
-		bool connectPathE(const RenderView *render_view, int s, PathData &pd) const;
+		bool connectPathE(const Camera *camera, int s, PathData &pd) const;
 		float pathWeight(int s, int t, PathData &pd) const;
 		float pathWeight0T(int t, PathData &pd) const;
 		static void clearPath(std::vector<PathEvalVertex> &p, int s, int t);

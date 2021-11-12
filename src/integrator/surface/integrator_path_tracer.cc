@@ -122,7 +122,7 @@ bool PathIntegrator::preprocess(const RenderControl &render_control, Timer &time
 	return success;
 }
 
-Rgba PathIntegrator::integrate(int thread_id, int ray_level, RenderData &render_data, const Ray &ray, int additional_depth, const RayDivision &ray_division, ColorLayers *color_layers, const RenderView *render_view) const
+Rgba PathIntegrator::integrate(int thread_id, int ray_level, RenderData &render_data, const Ray &ray, int additional_depth, const RayDivision &ray_division, ColorLayers *color_layers, const Camera *camera) const
 {
 	static int calls = 0;
 	++calls;
@@ -136,7 +136,7 @@ Rgba PathIntegrator::integrate(int thread_id, int ray_level, RenderData &render_
 
 	//shoot ray into scene
 	const Accelerator *accelerator = scene_->getAccelerator();
-	if(accelerator && accelerator->intersect(ray, sp, render_data.cam_))
+	if(accelerator && accelerator->intersect(ray, sp, camera))
 	{
 		// if camera ray initialize sampling offset:
 		if(ray_level == 0)
@@ -166,7 +166,7 @@ Rgba PathIntegrator::integrate(int thread_id, int ray_level, RenderData &render_
 
 		if(mat_bsdfs.hasAny(BsdfFlags::Diffuse))
 		{
-			col += estimateAllDirectLight(render_data, sp, wo, ray_division, color_layers);
+			col += estimateAllDirectLight(render_data, sp, wo, ray_division, color_layers, camera);
 
 			if(caustic_type_ == CausticType::Photon || caustic_type_ == CausticType::Both)
 			{
@@ -216,7 +216,7 @@ Rgba PathIntegrator::integrate(int thread_id, int ray_level, RenderData &render_
 				}
 				// do proper sampling now...
 				Sample s(s_1, s_2, path_flags);
-				scol = material->sample(sp.mat_data_.get(), sp, pwo, p_ray.dir_, s, w, render_data.chromatic_, render_data.wavelength_, render_data.cam_);
+				scol = material->sample(sp.mat_data_.get(), sp, pwo, p_ray.dir_, s, w, render_data.chromatic_, render_data.wavelength_, camera);
 
 				scol *= w;
 				throughput = scol;
@@ -226,11 +226,11 @@ Rgba PathIntegrator::integrate(int thread_id, int ray_level, RenderData &render_
 				p_ray.tmax_ = -1.f;
 				p_ray.from_ = sp.p_;
 
-				if(!accelerator->intersect(p_ray, *hit, render_data.cam_)) continue; //hit background
+				if(!accelerator->intersect(p_ray, *hit, camera)) continue; //hit background
 
 				const Material *p_mat = hit->material_;
 				if(s.sampled_flags_ != BsdfFlags::None) pwo = -p_ray.dir_; //Fix for white dots in path tracing with shiny diffuse with transparent PNG texture and transparent shadows, especially in Win32, (precision?). Sometimes the first sampling does not take place and pRay.dir is not initialized, so before this change when that happened pwo = -pRay.dir was getting a random non-initialized value! This fix makes that, if the first sample fails for some reason, pwo is not modified and the rest of the sampling continues with the same pwo value. FIXME: Question: if the first sample fails, should we continue as now or should we exit the loop with the "continue" command?
-				lcol = estimateOneDirectLight(thread_id, render_data, *hit, pwo, offs, ray_division);
+				lcol = estimateOneDirectLight(thread_id, render_data, *hit, pwo, offs, ray_division, camera);
 				const BsdfFlags mat_bsd_fs = hit->mat_data_->bsdf_flags_;
 				if(mat_bsd_fs.hasAny(BsdfFlags::Emit))
 				{
@@ -260,7 +260,7 @@ Rgba PathIntegrator::integrate(int thread_id, int ray_level, RenderData &render_
 
 					s.flags_ = BsdfFlags::All;
 
-					scol = p_mat->sample(hit->mat_data_.get(), *hit, pwo, p_ray.dir_, s, w, render_data.chromatic_, render_data.wavelength_, render_data.cam_);
+					scol = p_mat->sample(hit->mat_data_.get(), *hit, pwo, p_ray.dir_, s, w, render_data.chromatic_, render_data.wavelength_, camera);
 					scol *= w;
 
 					if(scol.isBlack()) break;
@@ -273,7 +273,7 @@ Rgba PathIntegrator::integrate(int thread_id, int ray_level, RenderData &render_
 					p_ray.tmax_ = -1.f;
 					p_ray.from_ = hit->p_;
 
-					if(!accelerator->intersect(p_ray, *hit_2, render_data.cam_)) //hit background
+					if(!accelerator->intersect(p_ray, *hit_2, camera)) //hit background
 					{
 						const Background *background = scene_->getBackground();
 						if((caustic && background && background->hasIbl() && background->shootsCaustic()))
@@ -287,7 +287,7 @@ Rgba PathIntegrator::integrate(int thread_id, int ray_level, RenderData &render_
 					p_mat = hit->material_;
 					pwo = -p_ray.dir_;
 
-					if(mat_bsd_fs.hasAny(BsdfFlags::Diffuse)) lcol = estimateOneDirectLight(thread_id, render_data, *hit, pwo, offs, ray_division);
+					if(mat_bsd_fs.hasAny(BsdfFlags::Diffuse)) lcol = estimateOneDirectLight(thread_id, render_data, *hit, pwo, offs, ray_division, camera);
 					else lcol = Rgb(0.f);
 
 					if(mat_bsd_fs.hasAny(BsdfFlags::Volumetric))
@@ -324,7 +324,7 @@ Rgba PathIntegrator::integrate(int thread_id, int ray_level, RenderData &render_
 		//reset chromatic state:
 		render_data.chromatic_ = was_chromatic;
 
-		recursiveRaytrace(thread_id, ray_level + 1, render_data, ray, mat_bsdfs, sp, wo, col, alpha, additional_depth, ray_division, color_layers);
+		recursiveRaytrace(thread_id, ray_level + 1, render_data, ray, mat_bsdfs, sp, wo, col, alpha, additional_depth, ray_division, color_layers, camera);
 
 		if(color_layers)
 		{
@@ -332,7 +332,7 @@ Rgba PathIntegrator::integrate(int thread_id, int ray_level, RenderData &render_
 
 			if(ColorLayer *color_layer = color_layers->find(Layer::Ao))
 			{
-				color_layer->color_ = sampleAmbientOcclusionLayer(render_data, sp, wo, ray_division);
+				color_layer->color_ = sampleAmbientOcclusionLayer(render_data, sp, wo, ray_division, nullptr);
 			}
 
 			if(ColorLayer *color_layer = color_layers->find(Layer::AoClay))
@@ -343,7 +343,7 @@ Rgba PathIntegrator::integrate(int thread_id, int ray_level, RenderData &render_
 
 		if(transp_refracted_background_)
 		{
-			const float mat_alpha = material->getAlpha(sp.mat_data_.get(), sp, wo, render_data.cam_);
+			const float mat_alpha = material->getAlpha(sp.mat_data_.get(), sp, wo, camera);
 			alpha = mat_alpha + (1.f - mat_alpha) * alpha;
 		}
 		else alpha = 1.f;

@@ -128,10 +128,7 @@ void PhotonIntegrator::diffuseWorker(PhotonMap *diffuse_map, int thread_id, cons
 	hit_prev.initializeAllZero(); //Just to avoid compiler warnings
 
 	RenderData render_data;
-	render_data.cam_ = render_view->getCamera();
-
 	float f_num_lights = (float)num_d_lights;
-
 	unsigned int n_diffuse_photons_thread = 1 + ((n_diffuse_photons - 1) / scene->getNumThreadsPhotons());
 
 	std::vector<Photon> local_diffuse_photons;
@@ -183,7 +180,7 @@ void PhotonIntegrator::diffuseWorker(PhotonMap *diffuse_map, int thread_id, cons
 		const Material *material_prev = nullptr;
 		BsdfFlags mat_bsdfs_prev = BsdfFlags::None;
 
-		while(accelerator->intersect(ray, hit_curr, render_data.cam_))
+		while(accelerator->intersect(ray, hit_curr, render_view->getCamera()))
 		{
 			Rgb transm(1.f);
 			if(material_prev && mat_bsdfs_prev.hasAny(BsdfFlags::Volumetric))
@@ -211,8 +208,8 @@ void PhotonIntegrator::diffuseWorker(PhotonMap *diffuse_map, int thread_id, cons
 				{
 					const Vec3 n = SurfacePoint::normalFaceForward(hit_curr.ng_, hit_curr.n_, wi);
 					RadData rd(hit_curr.p_, n);
-					rd.refl_ = material->getReflectivity(hit_curr.mat_data_.get(), hit_curr, BsdfFlags::Diffuse | BsdfFlags::Glossy | BsdfFlags::Reflect, render_data.chromatic_, render_data.wavelength_, render_data.cam_);
-					rd.transm_ = material->getReflectivity(hit_curr.mat_data_.get(), hit_curr, BsdfFlags::Diffuse | BsdfFlags::Glossy | BsdfFlags::Transmit, render_data.chromatic_, render_data.wavelength_, render_data.cam_);
+					rd.refl_ = material->getReflectivity(hit_curr.mat_data_.get(), hit_curr, BsdfFlags::Diffuse | BsdfFlags::Glossy | BsdfFlags::Reflect, render_data.chromatic_, render_data.wavelength_, render_view->getCamera());
+					rd.transm_ = material->getReflectivity(hit_curr.mat_data_.get(), hit_curr, BsdfFlags::Diffuse | BsdfFlags::Glossy | BsdfFlags::Transmit, render_data.chromatic_, render_data.wavelength_, render_view->getCamera());
 					local_rad_points.push_back(rd);
 				}
 			}
@@ -228,7 +225,7 @@ void PhotonIntegrator::diffuseWorker(PhotonMap *diffuse_map, int thread_id, cons
 			PSample sample(s_5, s_6, s_7, BsdfFlags::All, pcol, transm);
 
 			Vec3 wo;
-			bool scattered = material->scatterPhoton(hit_curr.mat_data_.get(), hit_curr, wi, wo, sample, render_data.chromatic_, render_data.wavelength_, render_data.cam_);
+			bool scattered = material->scatterPhoton(hit_curr.mat_data_.get(), hit_curr, wi, wo, sample, render_data.chromatic_, render_data.wavelength_, render_view->getCamera());
 			if(!scattered) break; //photon was absorped.
 
 			pcol = sample.color_;
@@ -446,7 +443,6 @@ bool PhotonIntegrator::preprocess(const RenderControl &render_control, Timer &ti
 	// for radiance map:
 	PreGatherData pgdat(diffuse_map_.get());
 	RenderData render_data;
-	render_data.cam_ = render_view->getCamera();
 	int pb_step;
 
 	tmplights.clear();
@@ -718,7 +714,7 @@ bool PhotonIntegrator::preprocess(const RenderControl &render_control, Timer &ti
 // final gathering: this is basically a full path tracer only that it uses the radiance map only
 // at the path end. I.e. paths longer than 1 are only generated to overcome lack of local radiance detail.
 // precondition: initBSDF of current spot has been called!
-Rgb PhotonIntegrator::finalGathering(int thread_id, RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo, const RayDivision &ray_division) const
+Rgb PhotonIntegrator::finalGathering(int thread_id, RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo, const RayDivision &ray_division, const Camera *camera) const
 {
 	const Accelerator *accelerator = scene_->getAccelerator();
 	if(!accelerator) return {0.f};
@@ -748,7 +744,7 @@ Rgb PhotonIntegrator::finalGathering(int thread_id, RenderData &render_data, con
 		}
 
 		Sample s(s_1, s_2, BsdfFlags::Diffuse | BsdfFlags::Reflect | BsdfFlags::Transmit); // glossy/dispersion/specular done via recursive raytracing
-		scol = p_mat->sample(hit.mat_data_.get(), hit, pwo, p_ray.dir_, s, w, render_data.chromatic_, render_data.wavelength_, render_data.cam_);
+		scol = p_mat->sample(hit.mat_data_.get(), hit, pwo, p_ray.dir_, s, w, render_data.chromatic_, render_data.wavelength_, camera);
 
 		scol *= w;
 		if(scol.isBlack()) continue;
@@ -758,7 +754,7 @@ Rgb PhotonIntegrator::finalGathering(int thread_id, RenderData &render_data, con
 		p_ray.from_ = hit.p_;
 		throughput = scol;
 
-		if(!(did_hit = accelerator->intersect(p_ray, hit, render_data.cam_))) continue;   //hit background
+		if(!(did_hit = accelerator->intersect(p_ray, hit, camera))) continue;   //hit background
 
 		p_mat = hit.material_;
 		length = p_ray.tmax_;
@@ -783,7 +779,7 @@ Rgb PhotonIntegrator::finalGathering(int thread_id, RenderData &render_data, con
 			{
 				if(close)
 				{
-					lcol = estimateOneDirectLight(thread_id, render_data, hit, pwo, offs, ray_division);
+					lcol = estimateOneDirectLight(thread_id, render_data, hit, pwo, offs, ray_division, camera);
 				}
 				else if(caustic)
 				{
@@ -809,7 +805,7 @@ Rgb PhotonIntegrator::finalGathering(int thread_id, RenderData &render_data, con
 			}
 
 			Sample sb(s_1, s_2, (close) ? BsdfFlags::All : BsdfFlags::AllSpecular | BsdfFlags::Filter);
-			scol = p_mat->sample(hit.mat_data_.get(), hit, pwo, p_ray.dir_, sb, w, render_data.chromatic_, render_data.wavelength_, render_data.cam_);
+			scol = p_mat->sample(hit.mat_data_.get(), hit, pwo, p_ray.dir_, sb, w, render_data.chromatic_, render_data.wavelength_, camera);
 
 			if(sb.pdf_ <= 1.0e-6f)
 			{
@@ -823,7 +819,7 @@ Rgb PhotonIntegrator::finalGathering(int thread_id, RenderData &render_data, con
 			p_ray.tmax_ = -1.f;
 			p_ray.from_ = hit.p_;
 			throughput *= scol;
-			did_hit = accelerator->intersect(p_ray, hit, render_data.cam_);
+			did_hit = accelerator->intersect(p_ray, hit, camera);
 
 			if(!did_hit) //hit background
 			{
@@ -944,7 +940,7 @@ std::unique_ptr<Integrator> PhotonIntegrator::factory(Logger &logger, ParamMap &
 	return inte;
 }
 
-Rgba PhotonIntegrator::integrate(int thread_id, int ray_level, RenderData &render_data, const Ray &ray, int additional_depth, const RayDivision &ray_division, ColorLayers *color_layers, const RenderView *render_view) const
+Rgba PhotonIntegrator::integrate(int thread_id, int ray_level, RenderData &render_data, const Ray &ray, int additional_depth, const RayDivision &ray_division, ColorLayers *color_layers, const Camera *camera) const
 {
 	static int n_max = 0;
 	static int calls = 0;
@@ -959,7 +955,7 @@ Rgba PhotonIntegrator::integrate(int thread_id, int ray_level, RenderData &rende
 	else alpha = 1.f;
 
 	const Accelerator *accelerator = scene_->getAccelerator();
-	if(accelerator && accelerator->intersect(ray, sp, render_data.cam_))
+	if(accelerator && accelerator->intersect(ray, sp, camera))
 	{
 		if(ray_level == 0)
 		{
@@ -1015,8 +1011,8 @@ Rgba PhotonIntegrator::integrate(int thread_id, int ray_level, RenderData &rende
 
 				if(mat_bsdfs.hasAny(BsdfFlags::Diffuse))
 				{
-					col += estimateAllDirectLight(render_data, sp, wo, ray_division, color_layers);
-					Rgb col_tmp = finalGathering(thread_id, render_data, sp, wo, ray_division);
+					col += estimateAllDirectLight(render_data, sp, wo, ray_division, color_layers, camera);
+					Rgb col_tmp = finalGathering(thread_id, render_data, sp, wo, ray_division, camera);
 					if(aa_noise_params_.clamp_indirect_ > 0.f) col_tmp.clampProportionalRgb(aa_noise_params_.clamp_indirect_);
 					col += col_tmp;
 					if(color_layers)
@@ -1058,7 +1054,7 @@ Rgba PhotonIntegrator::integrate(int thread_id, int ray_level, RenderData &rende
 
 				if(mat_bsdfs.hasAny(BsdfFlags::Diffuse))
 				{
-					col += estimateAllDirectLight(render_data, sp, wo, ray_division, color_layers);
+					col += estimateAllDirectLight(render_data, sp, wo, ray_division, color_layers, camera);
 				}
 
 				FoundPhoton *gathered = (FoundPhoton *)alloca(n_diffuse_search_ * sizeof(FoundPhoton));
@@ -1100,7 +1096,7 @@ Rgba PhotonIntegrator::integrate(int thread_id, int ray_level, RenderData &rende
 			}
 		}
 
-		recursiveRaytrace(thread_id, ray_level + 1, render_data, ray, mat_bsdfs, sp, wo, col, alpha, additional_depth, ray_division, color_layers);
+		recursiveRaytrace(thread_id, ray_level + 1, render_data, ray, mat_bsdfs, sp, wo, col, alpha, additional_depth, ray_division, color_layers, camera);
 
 		if(color_layers)
 		{
@@ -1108,7 +1104,7 @@ Rgba PhotonIntegrator::integrate(int thread_id, int ray_level, RenderData &rende
 
 			if(ColorLayer *color_layer = color_layers->find(Layer::Ao))
 			{
-				color_layer->color_ = sampleAmbientOcclusionLayer(render_data, sp, wo, ray_division);
+				color_layer->color_ = sampleAmbientOcclusionLayer(render_data, sp, wo, ray_division, camera);
 			}
 
 			if(ColorLayer *color_layer = color_layers->find(Layer::AoClay))
@@ -1119,7 +1115,7 @@ Rgba PhotonIntegrator::integrate(int thread_id, int ray_level, RenderData &rende
 
 		if(transp_refracted_background_)
 		{
-			const float mat_alpha = material->getAlpha(sp.mat_data_.get(), sp, wo, render_data.cam_);
+			const float mat_alpha = material->getAlpha(sp.mat_data_.get(), sp, wo, camera);
 			alpha = mat_alpha + (1.f - mat_alpha) * alpha;
 		}
 		else alpha = 1.f;
