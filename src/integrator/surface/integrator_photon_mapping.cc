@@ -718,7 +718,7 @@ bool PhotonIntegrator::preprocess(const RenderControl &render_control, Timer &ti
 // final gathering: this is basically a full path tracer only that it uses the radiance map only
 // at the path end. I.e. paths longer than 1 are only generated to overcome lack of local radiance detail.
 // precondition: initBSDF of current spot has been called!
-Rgb PhotonIntegrator::finalGathering(RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo, const RayDivision &ray_division) const
+Rgb PhotonIntegrator::finalGathering(int thread_id, RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo, const RayDivision &ray_division) const
 {
 	const Accelerator *accelerator = scene_->getAccelerator();
 	if(!accelerator) return {0.f};
@@ -783,7 +783,7 @@ Rgb PhotonIntegrator::finalGathering(RenderData &render_data, const SurfacePoint
 			{
 				if(close)
 				{
-					lcol = estimateOneDirectLight(render_data, hit, pwo, offs, ray_division);
+					lcol = estimateOneDirectLight(thread_id, render_data, hit, pwo, offs, ray_division);
 				}
 				else if(caustic)
 				{
@@ -855,216 +855,6 @@ Rgb PhotonIntegrator::finalGathering(RenderData &render_data, const SurfacePoint
 		}
 	}
 	return path_col / (float)n_sampl;
-}
-
-Rgba PhotonIntegrator::integrate(RenderData &render_data, const Ray &ray, int additional_depth, const RayDivision &ray_division, ColorLayers *color_layers, const RenderView *render_view) const
-{
-	static int n_max = 0;
-	static int calls = 0;
-	++calls;
-	Rgb col(0.f);
-	float alpha;
-	SurfacePoint sp;
-
-	const bool old_lights_geometry_material_emit = render_data.lights_geometry_material_emit_;
-
-	if(transp_background_) alpha = 0.f;
-	else alpha = 1.f;
-
-	const Accelerator *accelerator = scene_->getAccelerator();
-	if(accelerator && accelerator->intersect(ray, sp, render_data.cam_))
-	{
-		if(render_data.raylevel_ == 0)
-		{
-			render_data.chromatic_ = true;
-			render_data.lights_geometry_material_emit_ = true;
-		}
-
-		const Vec3 wo = -ray.dir_;
-		const Material *material = sp.material_;
-		const BsdfFlags &mat_bsdfs = sp.mat_data_->bsdf_flags_;
-
-		if(additional_depth < material->getAdditionalDepth()) additional_depth = material->getAdditionalDepth();
-
-		const Rgb col_emit = material->emit(sp.mat_data_.get(), sp, wo, render_data.lights_geometry_material_emit_);
-		col += col_emit;
-		if(color_layers)
-		{
-			if(ColorLayer *color_layer = color_layers->find(Layer::Emit)) color_layer->color_ += col_emit;
-		}
-
-		render_data.lights_geometry_material_emit_ = false;
-
-		if(use_photon_diffuse_ && final_gather_)
-		{
-			if(show_map_)
-			{
-				const Vec3 n = SurfacePoint::normalFaceForward(sp.ng_, sp.n_, wo);
-				const Photon *nearest = radiance_map_->findNearest(sp.p_, n, lookup_rad_);
-				if(nearest) col += nearest->color();
-			}
-			else
-			{
-				if(color_layers)
-				{
-					if(ColorLayer *color_layer = color_layers->find(Layer::Radiance))
-					{
-						const Vec3 n = SurfacePoint::normalFaceForward(sp.ng_, sp.n_, wo);
-						const Photon *nearest = radiance_map_->findNearest(sp.p_, n, lookup_rad_);
-						if(nearest) color_layer->color_ = nearest->color();
-					}
-				}
-
-				// contribution of light emitting surfaces
-				if(mat_bsdfs.hasAny(BsdfFlags::Emit))
-				{
-					const Rgb col_tmp = material->emit(sp.mat_data_.get(), sp, wo, render_data.lights_geometry_material_emit_);
-					col += col_tmp;
-					if(color_layers)
-					{
-						if(ColorLayer *color_layer = color_layers->find(Layer::Emit)) color_layer->color_ += col_tmp;
-					}
-				}
-
-				if(mat_bsdfs.hasAny(BsdfFlags::Diffuse))
-				{
-					col += estimateAllDirectLight(render_data, sp, wo, ray_division, color_layers);
-					Rgb col_tmp = finalGathering(render_data, sp, wo, ray_division);
-					if(aa_noise_params_.clamp_indirect_ > 0.f) col_tmp.clampProportionalRgb(aa_noise_params_.clamp_indirect_);
-					col += col_tmp;
-					if(color_layers)
-					{
-						if(ColorLayer *color_layer = color_layers->find(Layer::DiffuseIndirect)) color_layer->color_ = col_tmp;
-					}
-				}
-			}
-		}
-		else
-		{
-			if(use_photon_diffuse_ && show_map_)
-			{
-				const Vec3 n = SurfacePoint::normalFaceForward(sp.ng_, sp.n_, wo);
-				const Photon *nearest = diffuse_map_->findNearest(sp.p_, n, ds_radius_);
-				if(nearest) col += nearest->color();
-			}
-			else
-			{
-				if(use_photon_diffuse_ && color_layers)
-				{
-					if(ColorLayer *color_layer = color_layers->find(Layer::Radiance))
-					{
-						const Vec3 n = SurfacePoint::normalFaceForward(sp.ng_, sp.n_, wo);
-						const Photon *nearest = radiance_map_->findNearest(sp.p_, n, lookup_rad_);
-						if(nearest) color_layer->color_ = nearest->color();
-					}
-				}
-
-				if(mat_bsdfs.hasAny(BsdfFlags::Emit))
-				{
-					const Rgb col_tmp = material->emit(sp.mat_data_.get(), sp, wo, render_data.lights_geometry_material_emit_);
-					col += col_tmp;
-					if(color_layers)
-					{
-						if(ColorLayer *color_layer = color_layers->find(Layer::Emit)) color_layer->color_ += col_tmp;
-					}
-				}
-
-				if(mat_bsdfs.hasAny(BsdfFlags::Diffuse))
-				{
-					col += estimateAllDirectLight(render_data, sp, wo, ray_division, color_layers);
-				}
-
-				FoundPhoton *gathered = (FoundPhoton *)alloca(n_diffuse_search_ * sizeof(FoundPhoton));
-				float radius = ds_radius_; //actually the square radius...
-
-				int n_gathered = 0;
-
-				if(use_photon_diffuse_ && diffuse_map_->nPhotons() > 0) n_gathered = diffuse_map_->gather(sp.p_, gathered, n_diffuse_search_, radius);
-				if(use_photon_diffuse_ && n_gathered > 0)
-				{
-					if(n_gathered > n_max) n_max = n_gathered;
-
-					float scale = 1.f / ((float)diffuse_map_->nPaths() * radius * math::num_pi);
-					for(int i = 0; i < n_gathered; ++i)
-					{
-						const Vec3 pdir = gathered[i].photon_->direction();
-						const Rgb surf_col = material->eval(sp.mat_data_.get(), sp, wo, pdir, BsdfFlags::Diffuse);
-
-						const Rgb col_tmp = surf_col * scale * gathered[i].photon_->color();
-						col += col_tmp;
-						if(color_layers)
-						{
-							if(ColorLayer *color_layer = color_layers->find(Layer::DiffuseIndirect)) color_layer->color_ += col_tmp;
-						}
-					}
-				}
-			}
-		}
-
-		// add caustics
-		if(use_photon_caustics_ && mat_bsdfs.hasAny(BsdfFlags::Diffuse))
-		{
-			Rgb col_tmp = estimateCausticPhotons(sp, wo);
-			if(aa_noise_params_.clamp_indirect_ > 0.f) col_tmp.clampProportionalRgb(aa_noise_params_.clamp_indirect_);
-			col += col_tmp;
-			if(color_layers)
-			{
-				if(ColorLayer *color_layer = color_layers->find(Layer::Indirect)) color_layer->color_ = col_tmp;
-			}
-		}
-
-		recursiveRaytrace(render_data, ray, mat_bsdfs, sp, wo, col, alpha, additional_depth, ray_division, color_layers);
-
-		if(color_layers)
-		{
-			generateCommonLayers(render_data.raylevel_, sp, ray, scene_->getMaskParams(), color_layers);
-
-			if(ColorLayer *color_layer = color_layers->find(Layer::Ao))
-			{
-				color_layer->color_ = sampleAmbientOcclusionLayer(render_data, sp, wo, ray_division);
-			}
-
-			if(ColorLayer *color_layer = color_layers->find(Layer::AoClay))
-			{
-				color_layer->color_ = sampleAmbientOcclusionClayLayer(render_data, sp, wo, ray_division);
-			}
-		}
-
-		if(transp_refracted_background_)
-		{
-			const float mat_alpha = material->getAlpha(sp.mat_data_.get(), sp, wo, render_data.cam_);
-			alpha = mat_alpha + (1.f - mat_alpha) * alpha;
-		}
-		else alpha = 1.f;
-	}
-	else //nothing hit, return background
-	{
-		if(scene_->getBackground() && !transp_refracted_background_)
-		{
-			const Rgb col_tmp = (*scene_->getBackground())(ray);
-			col += col_tmp;
-			if(color_layers)
-			{
-				if(ColorLayer *color_layer = color_layers->find(Layer::Env)) color_layer->color_ = col_tmp;
-			}
-		}
-	}
-
-	render_data.lights_geometry_material_emit_ = old_lights_geometry_material_emit;
-
-	if(scene_->vol_integrator_)
-	{
-		const Rgb col_vol_transmittance = scene_->vol_integrator_->transmittance(render_data.prng_, ray);
-		const Rgb col_vol_integration = scene_->vol_integrator_->integrate(render_data, ray);
-		if(transp_background_) alpha = std::max(alpha, 1.f - col_vol_transmittance.r_);
-		if(color_layers)
-		{
-			if(ColorLayer *color_layer = color_layers->find(Layer::VolumeTransmittance)) color_layer->color_ = col_vol_transmittance;
-			if(ColorLayer *color_layer = color_layers->find(Layer::VolumeIntegration)) color_layer->color_ = col_vol_integration;
-		}
-		col = (col * col_vol_transmittance) + col_vol_integration;
-	}
-	return {col, alpha};
 }
 
 std::unique_ptr<Integrator> PhotonIntegrator::factory(Logger &logger, ParamMap &params, const Scene &scene)
@@ -1152,6 +942,216 @@ std::unique_ptr<Integrator> PhotonIntegrator::factory(Logger &logger, ParamMap &
 	else inte->photon_map_processing_ = PhotonsGenerateOnly;
 
 	return inte;
+}
+
+Rgba PhotonIntegrator::integrate(int thread_id, RenderData &render_data, const Ray &ray, int additional_depth, const RayDivision &ray_division, ColorLayers *color_layers, const RenderView *render_view) const
+{
+	static int n_max = 0;
+	static int calls = 0;
+	++calls;
+	Rgb col(0.f);
+	float alpha;
+	SurfacePoint sp;
+
+	const bool old_lights_geometry_material_emit = render_data.lights_geometry_material_emit_;
+
+	if(transp_background_) alpha = 0.f;
+	else alpha = 1.f;
+
+	const Accelerator *accelerator = scene_->getAccelerator();
+	if(accelerator && accelerator->intersect(ray, sp, render_data.cam_))
+	{
+		if(render_data.raylevel_ == 0)
+		{
+			render_data.chromatic_ = true;
+			render_data.lights_geometry_material_emit_ = true;
+		}
+
+		const Vec3 wo = -ray.dir_;
+		const Material *material = sp.material_;
+		const BsdfFlags &mat_bsdfs = sp.mat_data_->bsdf_flags_;
+
+		if(additional_depth < material->getAdditionalDepth()) additional_depth = material->getAdditionalDepth();
+
+		const Rgb col_emit = material->emit(sp.mat_data_.get(), sp, wo, render_data.lights_geometry_material_emit_);
+		col += col_emit;
+		if(color_layers)
+		{
+			if(ColorLayer *color_layer = color_layers->find(Layer::Emit)) color_layer->color_ += col_emit;
+		}
+
+		render_data.lights_geometry_material_emit_ = false;
+
+		if(use_photon_diffuse_ && final_gather_)
+		{
+			if(show_map_)
+			{
+				const Vec3 n = SurfacePoint::normalFaceForward(sp.ng_, sp.n_, wo);
+				const Photon *nearest = radiance_map_->findNearest(sp.p_, n, lookup_rad_);
+				if(nearest) col += nearest->color();
+			}
+			else
+			{
+				if(color_layers)
+				{
+					if(ColorLayer *color_layer = color_layers->find(Layer::Radiance))
+					{
+						const Vec3 n = SurfacePoint::normalFaceForward(sp.ng_, sp.n_, wo);
+						const Photon *nearest = radiance_map_->findNearest(sp.p_, n, lookup_rad_);
+						if(nearest) color_layer->color_ = nearest->color();
+					}
+				}
+
+				// contribution of light emitting surfaces
+				if(mat_bsdfs.hasAny(BsdfFlags::Emit))
+				{
+					const Rgb col_tmp = material->emit(sp.mat_data_.get(), sp, wo, render_data.lights_geometry_material_emit_);
+					col += col_tmp;
+					if(color_layers)
+					{
+						if(ColorLayer *color_layer = color_layers->find(Layer::Emit)) color_layer->color_ += col_tmp;
+					}
+				}
+
+				if(mat_bsdfs.hasAny(BsdfFlags::Diffuse))
+				{
+					col += estimateAllDirectLight(render_data, sp, wo, ray_division, color_layers);
+					Rgb col_tmp = finalGathering(thread_id, render_data, sp, wo, ray_division);
+					if(aa_noise_params_.clamp_indirect_ > 0.f) col_tmp.clampProportionalRgb(aa_noise_params_.clamp_indirect_);
+					col += col_tmp;
+					if(color_layers)
+					{
+						if(ColorLayer *color_layer = color_layers->find(Layer::DiffuseIndirect)) color_layer->color_ = col_tmp;
+					}
+				}
+			}
+		}
+		else
+		{
+			if(use_photon_diffuse_ && show_map_)
+			{
+				const Vec3 n = SurfacePoint::normalFaceForward(sp.ng_, sp.n_, wo);
+				const Photon *nearest = diffuse_map_->findNearest(sp.p_, n, ds_radius_);
+				if(nearest) col += nearest->color();
+			}
+			else
+			{
+				if(use_photon_diffuse_ && color_layers)
+				{
+					if(ColorLayer *color_layer = color_layers->find(Layer::Radiance))
+					{
+						const Vec3 n = SurfacePoint::normalFaceForward(sp.ng_, sp.n_, wo);
+						const Photon *nearest = radiance_map_->findNearest(sp.p_, n, lookup_rad_);
+						if(nearest) color_layer->color_ = nearest->color();
+					}
+				}
+
+				if(mat_bsdfs.hasAny(BsdfFlags::Emit))
+				{
+					const Rgb col_tmp = material->emit(sp.mat_data_.get(), sp, wo, render_data.lights_geometry_material_emit_);
+					col += col_tmp;
+					if(color_layers)
+					{
+						if(ColorLayer *color_layer = color_layers->find(Layer::Emit)) color_layer->color_ += col_tmp;
+					}
+				}
+
+				if(mat_bsdfs.hasAny(BsdfFlags::Diffuse))
+				{
+					col += estimateAllDirectLight(render_data, sp, wo, ray_division, color_layers);
+				}
+
+				FoundPhoton *gathered = (FoundPhoton *)alloca(n_diffuse_search_ * sizeof(FoundPhoton));
+				float radius = ds_radius_; //actually the square radius...
+
+				int n_gathered = 0;
+
+				if(use_photon_diffuse_ && diffuse_map_->nPhotons() > 0) n_gathered = diffuse_map_->gather(sp.p_, gathered, n_diffuse_search_, radius);
+				if(use_photon_diffuse_ && n_gathered > 0)
+				{
+					if(n_gathered > n_max) n_max = n_gathered;
+
+					float scale = 1.f / ((float)diffuse_map_->nPaths() * radius * math::num_pi);
+					for(int i = 0; i < n_gathered; ++i)
+					{
+						const Vec3 pdir = gathered[i].photon_->direction();
+						const Rgb surf_col = material->eval(sp.mat_data_.get(), sp, wo, pdir, BsdfFlags::Diffuse);
+
+						const Rgb col_tmp = surf_col * scale * gathered[i].photon_->color();
+						col += col_tmp;
+						if(color_layers)
+						{
+							if(ColorLayer *color_layer = color_layers->find(Layer::DiffuseIndirect)) color_layer->color_ += col_tmp;
+						}
+					}
+				}
+			}
+		}
+
+		// add caustics
+		if(use_photon_caustics_ && mat_bsdfs.hasAny(BsdfFlags::Diffuse))
+		{
+			Rgb col_tmp = estimateCausticPhotons(sp, wo);
+			if(aa_noise_params_.clamp_indirect_ > 0.f) col_tmp.clampProportionalRgb(aa_noise_params_.clamp_indirect_);
+			col += col_tmp;
+			if(color_layers)
+			{
+				if(ColorLayer *color_layer = color_layers->find(Layer::Indirect)) color_layer->color_ = col_tmp;
+			}
+		}
+
+		recursiveRaytrace(thread_id, render_data, ray, mat_bsdfs, sp, wo, col, alpha, additional_depth, ray_division, color_layers);
+
+		if(color_layers)
+		{
+			generateCommonLayers(render_data.raylevel_, sp, ray, scene_->getMaskParams(), color_layers);
+
+			if(ColorLayer *color_layer = color_layers->find(Layer::Ao))
+			{
+				color_layer->color_ = sampleAmbientOcclusionLayer(render_data, sp, wo, ray_division);
+			}
+
+			if(ColorLayer *color_layer = color_layers->find(Layer::AoClay))
+			{
+				color_layer->color_ = sampleAmbientOcclusionClayLayer(render_data, sp, wo, ray_division);
+			}
+		}
+
+		if(transp_refracted_background_)
+		{
+			const float mat_alpha = material->getAlpha(sp.mat_data_.get(), sp, wo, render_data.cam_);
+			alpha = mat_alpha + (1.f - mat_alpha) * alpha;
+		}
+		else alpha = 1.f;
+	}
+	else //nothing hit, return background
+	{
+		if(scene_->getBackground() && !transp_refracted_background_)
+		{
+			const Rgb col_tmp = (*scene_->getBackground())(ray);
+			col += col_tmp;
+			if(color_layers)
+			{
+				if(ColorLayer *color_layer = color_layers->find(Layer::Env)) color_layer->color_ = col_tmp;
+			}
+		}
+	}
+
+	render_data.lights_geometry_material_emit_ = old_lights_geometry_material_emit;
+
+	if(scene_->vol_integrator_)
+	{
+		const Rgb col_vol_transmittance = scene_->vol_integrator_->transmittance(render_data.prng_, ray);
+		const Rgb col_vol_integration = scene_->vol_integrator_->integrate(render_data, ray);
+		if(transp_background_) alpha = std::max(alpha, 1.f - col_vol_transmittance.r_);
+		if(color_layers)
+		{
+			if(ColorLayer *color_layer = color_layers->find(Layer::VolumeTransmittance)) color_layer->color_ = col_vol_transmittance;
+			if(ColorLayer *color_layer = color_layers->find(Layer::VolumeIntegration)) color_layer->color_ = col_vol_integration;
+		}
+		col = (col * col_vol_transmittance) + col_vol_integration;
+	}
+	return {col, alpha};
 }
 
 END_YAFARAY

@@ -70,7 +70,7 @@ class SppmIntegrator final : public MonteCarloIntegrator
 		virtual bool render(RenderControl &render_control, Timer &timer, const RenderView *render_view) override;
 		/*! render a tile; only required by default implementation of render() */
 		virtual bool renderTile(RenderArea &a, const RenderView *render_view, const RenderControl &render_control, const Timer &timer, int n_samples, int offset, bool adaptive, int thread_id, int aa_pass_number = 0) override;
-		virtual Rgba integrate(RenderData &render_data, const Ray &ray, int additional_depth, const RayDivision &ray_division, ColorLayers *color_layers, const RenderView *render_view) const override;
+		virtual Rgba integrate(int thread_id, RenderData &render_data, const Ray &ray, int additional_depth, const RayDivision &ray_division, ColorLayers *color_layers, const RenderView *render_view) const override;
 		virtual bool preprocess(const RenderControl &render_control, Timer &timer, const RenderView *render_view, ImageFilm *image_film) override; //not used for now
 		// not used now
 		virtual void prePass(int samples, int offset, bool adaptive, const RenderControl &render_control, Timer &timer, const RenderView *render_view) override;
@@ -78,7 +78,7 @@ class SppmIntegrator final : public MonteCarloIntegrator
 		/*! initializing the things that PPM uses such as initial radius */
 		void initializePpm(const RenderView *render_view);
 		/*! based on integrate method to do the gatering trace, need double-check deadly. */
-		GatherInfo traceGatherRay(RenderData &render_data, const Ray &ray, HitPoint &hp, const RayDivision &ray_division, ColorLayers *color_layers);
+		GatherInfo traceGatherRay(int thread_id, RenderData &render_data, const Ray &ray, HitPoint &hp, const RayDivision &ray_division, ColorLayers *color_layers);
 		void photonWorker(PhotonMap *diffuse_map, PhotonMap *caustic_map, int thread_id, const Scene *scene, const RenderView *render_view, const RenderControl &render_control, const Timer &timer, unsigned int n_photons, const Pdf1D *light_power_d, int num_d_lights, const std::vector<const Light *> &tmplights, ProgressBar *pb, int pb_step, unsigned int &total_photons_shot, int max_bounces, Random &prng);
 
 		HashGrid  photon_grid_; // the hashgrid for holding photons

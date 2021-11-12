@@ -49,7 +49,6 @@ class RenderData final
 		int raylevel_ = 0;
 		int pixel_sample_ = 0; //!< number of samples inside this pixels so far
 		int pixel_number_ = 0;
-		int thread_id_ = 0; //!< identify the current render thread; shall range from 0 to scene_t::getNumThreads() - 1
 		unsigned int sampling_offs_ = 0; //!< a "noise-like" pixel offset you may use to decorelate sampling of adjacent pixel.
 		bool chromatic_ = true; //!< indicates wether the full spectrum is calculated (true) or only a single wavelength (false).
 		bool lights_geometry_material_emit_ = false; //!< indicate that emission of materials assiciated to lights shall be included, for correctly visible lights etc.

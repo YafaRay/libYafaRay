@@ -187,7 +187,6 @@ bool SppmIntegrator::renderTile(RenderArea &a, const RenderView *render_view, co
 	const int camera_res_x = camera->resX();
 	Random prng(rand() + offset * (camera_res_x * a.y_ + a.x_) + 123);
 	RenderData rstate(&prng);
-	rstate.thread_id_ = thread_id;
 	rstate.cam_ = camera;
 	const bool sample_lns = camera->sampleLense();
 	const int pass_offs = offset, end_x = a.x_ + a.w_, end_y = a.y_ + a.h_;
@@ -252,7 +251,7 @@ bool SppmIntegrator::renderTile(RenderArea &a, const RenderView *render_view, co
 				int index = ((i - y_start_film) * camera->resX()) + (j - x_start_film);
 				HitPoint &hp = hit_points_[index];
 				RayDivision ray_division;
-				GatherInfo g_info = traceGatherRay(rstate, camera_ray.ray_, hp, ray_division, nullptr);
+				GatherInfo g_info = traceGatherRay(thread_id, rstate, camera_ray.ray_, hp, ray_division, nullptr);
 				hp.constant_randiance_ += g_info.constant_randiance_; // accumulate the constant radiance for later usage.
 				// progressive refinement
 				const float alpha = 0.7f; // another common choice is 0.8, seems not changed much.
@@ -652,12 +651,12 @@ void SppmIntegrator::prePass(int samples, int offset, bool adaptive, const Rende
 }
 
 //now it's a dummy function
-Rgba SppmIntegrator::integrate(RenderData &render_data, const Ray &ray, int additional_depth, const RayDivision &ray_division, ColorLayers *color_layers, const RenderView *render_view) const
+Rgba SppmIntegrator::integrate(int thread_id, RenderData &render_data, const Ray &ray, int additional_depth, const RayDivision &ray_division, ColorLayers *color_layers, const RenderView *render_view) const
 {
 	return Rgba(0.f);
 }
 
-GatherInfo SppmIntegrator::traceGatherRay(RenderData &render_data, const Ray &ray, HitPoint &hp, const RayDivision &ray_division, ColorLayers *color_layers)
+GatherInfo SppmIntegrator::traceGatherRay(int thread_id, RenderData &render_data, const Ray &ray, HitPoint &hp, const RayDivision &ray_division, ColorLayers *color_layers)
 {
 	const Accelerator *accelerator = scene_->getAccelerator();
 	if(!accelerator) return {};
@@ -848,7 +847,7 @@ GatherInfo SppmIntegrator::traceGatherRay(RenderData &render_data, const Ray &ra
 						render_data.chromatic_ = false;
 						const Rgb wl_col = spectrum::wl2Rgb(render_data.wavelength_);
 						ref_ray = Ray(sp.p_, wi, scene_->ray_min_dist_);
-						t_cing = traceGatherRay(render_data, ref_ray, hp, ray_division_new, nullptr);
+						t_cing = traceGatherRay(thread_id, render_data, ref_ray, hp, ray_division_new, nullptr);
 						t_cing.photon_flux_ *= mcol * wl_col * w;
 						t_cing.constant_randiance_ *= mcol * wl_col * w;
 
@@ -932,7 +931,7 @@ GatherInfo SppmIntegrator::traceGatherRay(RenderData &render_data, const Ray &ra
 						ref_ray = Ray(sp.p_, wi, scene_->ray_min_dist_);
 						if(s.sampled_flags_.hasAny(BsdfFlags::Reflect)) ref_ray.differentials_ = sp.reflectedRay(ray.differentials_.get(), ray.dir_, ref_ray.dir_);
 						else if(s.sampled_flags_.hasAny(BsdfFlags::Transmit)) ref_ray.differentials_ = sp.refractedRay(ray.differentials_.get(), ray.dir_, ref_ray.dir_, material->getMatIor());
-						integ = static_cast<Rgb>(integrate(render_data, ref_ray, additional_depth, ray_division_new, nullptr, nullptr));
+						integ = static_cast<Rgb>(integrate(thread_id, render_data, ref_ray, additional_depth, ray_division_new, nullptr, nullptr));
 
 						if(mat_bsdfs.hasAny(BsdfFlags::Volumetric))
 						{
@@ -942,7 +941,7 @@ GatherInfo SppmIntegrator::traceGatherRay(RenderData &render_data, const Ray &ra
 							}
 						}
 						//gcol += tmpColorPasses.probe_add(PASS_INT_GLOSSY_INDIRECT, (Rgb)integ * mcol * W, state.raylevel == 1);
-						t_ging = traceGatherRay(render_data, ref_ray, hp, ray_division_new, nullptr);
+						t_ging = traceGatherRay(thread_id, render_data, ref_ray, hp, ray_division_new, nullptr);
 						t_ging.photon_flux_ *= mcol * w;
 						t_ging.constant_randiance_ *= mcol * w;
 						ging += t_ging;
@@ -961,7 +960,7 @@ GatherInfo SppmIntegrator::traceGatherRay(RenderData &render_data, const Ray &ra
 						{
 							ref_ray = Ray(sp.p_, dir[0], scene_->ray_min_dist_);
 							ref_ray.differentials_ = sp.reflectedRay(ray.differentials_.get(), ray.dir_, ref_ray.dir_);
-							integ = integrate(render_data, ref_ray, additional_depth, ray_division_new, nullptr, nullptr);
+							integ = integrate(thread_id, render_data, ref_ray, additional_depth, ray_division_new, nullptr, nullptr);
 							if(mat_bsdfs.hasAny(BsdfFlags::Volumetric))
 							{
 								if(const VolumeHandler *vol = material->getVolumeHandler(sp.ng_ * ref_ray.dir_ < 0))
@@ -971,7 +970,7 @@ GatherInfo SppmIntegrator::traceGatherRay(RenderData &render_data, const Ray &ra
 							}
 							Rgb col_reflect_factor = mcol[0] * w[0];
 
-							t_ging = traceGatherRay(render_data, ref_ray, hp, ray_division_new, nullptr);
+							t_ging = traceGatherRay(thread_id, render_data, ref_ray, hp, ray_division_new, nullptr);
 							t_ging.photon_flux_ *= col_reflect_factor;
 							t_ging.constant_randiance_ *= col_reflect_factor;
 
@@ -986,7 +985,7 @@ GatherInfo SppmIntegrator::traceGatherRay(RenderData &render_data, const Ray &ra
 						{
 							ref_ray = Ray(sp.p_, dir[1], scene_->ray_min_dist_);
 							ref_ray.differentials_ = sp.refractedRay(ray.differentials_.get(), ray.dir_, ref_ray.dir_, material->getMatIor());
-							integ = integrate(render_data, ref_ray, additional_depth, ray_division_new, nullptr, nullptr);
+							integ = integrate(thread_id, render_data, ref_ray, additional_depth, ray_division_new, nullptr, nullptr);
 							if(mat_bsdfs.hasAny(BsdfFlags::Volumetric))
 							{
 								if(const VolumeHandler *vol = material->getVolumeHandler(sp.ng_ * ref_ray.dir_ < 0))
@@ -996,7 +995,7 @@ GatherInfo SppmIntegrator::traceGatherRay(RenderData &render_data, const Ray &ra
 							}
 							Rgb col_transmit_factor = mcol[1] * w[1];
 							alpha = integ.a_;
-							t_ging = traceGatherRay(render_data, ref_ray, hp, ray_division_new, nullptr);
+							t_ging = traceGatherRay(thread_id, render_data, ref_ray, hp, ray_division_new, nullptr);
 							t_ging.photon_flux_ *= col_transmit_factor;
 							t_ging.constant_randiance_ *= col_transmit_factor;
 							if(color_layers)
@@ -1016,7 +1015,7 @@ GatherInfo SppmIntegrator::traceGatherRay(RenderData &render_data, const Ray &ra
 							else if(s.sampled_flags_.hasAny(BsdfFlags::Transmit)) ref_ray.differentials_ = sp.refractedRay(ray.differentials_.get(), ray.dir_, ref_ray.dir_, material->getMatIor());
 						}
 
-						t_ging = traceGatherRay(render_data, ref_ray, hp, ray_division_new, nullptr);
+						t_ging = traceGatherRay(thread_id, render_data, ref_ray, hp, ray_division_new, nullptr);
 						t_ging.photon_flux_ *= mcol * W;
 						t_ging.constant_randiance_ *= mcol * W;
 						if(color_layers)
@@ -1074,7 +1073,7 @@ GatherInfo SppmIntegrator::traceGatherRay(RenderData &render_data, const Ray &ra
 				{
 					Ray ref_ray(sp.p_, specular.reflect_->dir_, scene_->ray_min_dist_);
 					if(ray.differentials_) ref_ray.differentials_ = sp.reflectedRay(ray.differentials_.get(), ray.dir_, ref_ray.dir_); // compute the ray differentaitl
-					GatherInfo refg = traceGatherRay(render_data, ref_ray, hp, ray_division, nullptr);
+					GatherInfo refg = traceGatherRay(thread_id, render_data, ref_ray, hp, ray_division, nullptr);
 					if(mat_bsdfs.hasAny(BsdfFlags::Volumetric))
 					{
 						if(const VolumeHandler *vol = material->getVolumeHandler(sp.ng_ * ref_ray.dir_ < 0))
@@ -1097,7 +1096,7 @@ GatherInfo SppmIntegrator::traceGatherRay(RenderData &render_data, const Ray &ra
 				{
 					Ray ref_ray(sp.p_, specular.refract_->dir_, scene_->ray_min_dist_);
 					if(ray.differentials_) ref_ray.differentials_ = sp.refractedRay(ray.differentials_.get(), ray.dir_, ref_ray.dir_, material->getMatIor());
-					GatherInfo refg = traceGatherRay(render_data, ref_ray, hp, ray_division, nullptr);
+					GatherInfo refg = traceGatherRay(thread_id, render_data, ref_ray, hp, ray_division, nullptr);
 					if(mat_bsdfs.hasAny(BsdfFlags::Volumetric))
 					{
 						if(const VolumeHandler *vol = material->getVolumeHandler(sp.ng_ * ref_ray.dir_ < 0))

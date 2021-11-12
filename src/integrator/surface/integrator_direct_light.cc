@@ -102,7 +102,7 @@ bool DirectLightIntegrator::preprocess(const RenderControl &render_control, Time
 	return success;
 }
 
-Rgba DirectLightIntegrator::integrate(RenderData &render_data, const Ray &ray, int additional_depth, const RayDivision &ray_division, ColorLayers *color_layers, const RenderView *render_view) const
+Rgba DirectLightIntegrator::integrate(int thread_id, RenderData &render_data, const Ray &ray, int additional_depth, const RayDivision &ray_division, ColorLayers *color_layers, const RenderView *render_view) const
 {
 	Rgb col(0.f);
 	float alpha;
@@ -143,7 +143,7 @@ Rgba DirectLightIntegrator::integrate(RenderData &render_data, const Ray &ray, i
 			}
 			if(use_ambient_occlusion_) col += sampleAmbientOcclusion(render_data, sp, wo, ray_division);
 		}
-		recursiveRaytrace(render_data, ray, mat_bsdfs, sp, wo, col, alpha, additional_depth, ray_division, color_layers);
+		recursiveRaytrace(thread_id, render_data, ray, mat_bsdfs, sp, wo, col, alpha, additional_depth, ray_division, color_layers);
 		if(color_layers)
 		{
 			generateCommonLayers(render_data.raylevel_, sp, ray, scene_->getMaskParams(), color_layers);

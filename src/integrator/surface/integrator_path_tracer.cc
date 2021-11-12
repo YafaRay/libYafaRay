@@ -122,7 +122,7 @@ bool PathIntegrator::preprocess(const RenderControl &render_control, Timer &time
 	return success;
 }
 
-Rgba PathIntegrator::integrate(RenderData &render_data, const Ray &ray, int additional_depth, const RayDivision &ray_division, ColorLayers *color_layers, const RenderView *render_view) const
+Rgba PathIntegrator::integrate(int thread_id, RenderData &render_data, const Ray &ray, int additional_depth, const RayDivision &ray_division, ColorLayers *color_layers, const RenderView *render_view) const
 {
 	static int calls = 0;
 	++calls;
@@ -230,7 +230,7 @@ Rgba PathIntegrator::integrate(RenderData &render_data, const Ray &ray, int addi
 
 				const Material *p_mat = hit->material_;
 				if(s.sampled_flags_ != BsdfFlags::None) pwo = -p_ray.dir_; //Fix for white dots in path tracing with shiny diffuse with transparent PNG texture and transparent shadows, especially in Win32, (precision?). Sometimes the first sampling does not take place and pRay.dir is not initialized, so before this change when that happened pwo = -pRay.dir was getting a random non-initialized value! This fix makes that, if the first sample fails for some reason, pwo is not modified and the rest of the sampling continues with the same pwo value. FIXME: Question: if the first sample fails, should we continue as now or should we exit the loop with the "continue" command?
-				lcol = estimateOneDirectLight(render_data, *hit, pwo, offs, ray_division);
+				lcol = estimateOneDirectLight(thread_id, render_data, *hit, pwo, offs, ray_division);
 				const BsdfFlags mat_bsd_fs = hit->mat_data_->bsdf_flags_;
 				if(mat_bsd_fs.hasAny(BsdfFlags::Emit))
 				{
@@ -287,7 +287,7 @@ Rgba PathIntegrator::integrate(RenderData &render_data, const Ray &ray, int addi
 					p_mat = hit->material_;
 					pwo = -p_ray.dir_;
 
-					if(mat_bsd_fs.hasAny(BsdfFlags::Diffuse)) lcol = estimateOneDirectLight(render_data, *hit, pwo, offs, ray_division);
+					if(mat_bsd_fs.hasAny(BsdfFlags::Diffuse)) lcol = estimateOneDirectLight(thread_id, render_data, *hit, pwo, offs, ray_division);
 					else lcol = Rgb(0.f);
 
 					if(mat_bsd_fs.hasAny(BsdfFlags::Volumetric))
@@ -324,7 +324,7 @@ Rgba PathIntegrator::integrate(RenderData &render_data, const Ray &ray, int addi
 		//reset chromatic state:
 		render_data.chromatic_ = was_chromatic;
 
-		recursiveRaytrace(render_data, ray, mat_bsdfs, sp, wo, col, alpha, additional_depth, ray_division, color_layers);
+		recursiveRaytrace(thread_id, render_data, ray, mat_bsdfs, sp, wo, col, alpha, additional_depth, ray_division, color_layers);
 
 		if(color_layers)
 		{

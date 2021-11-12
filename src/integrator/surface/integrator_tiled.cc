@@ -279,7 +279,6 @@ bool TiledIntegrator::renderTile(RenderArea &a, const RenderView *render_view, c
 	const int camera_res_x = camera->resX();
 	Random prng(rand() + offset * (camera_res_x * a.y_ + a.x_) + 123);
 	RenderData rstate(&prng);
-	rstate.thread_id_ = thread_id;
 	rstate.cam_ = camera;
 	const bool sample_lns = camera->sampleLense();
 	const int pass_offs = offset, end_x = a.x_ + a.w_, end_y = a.y_ + a.h_;
@@ -370,7 +369,7 @@ bool TiledIntegrator::renderTile(RenderArea &a, const RenderView *render_view, c
 				}
 				camera_ray.ray_.time_ = rstate.time_;
 				RayDivision ray_division;
-				color_layers(Layer::Combined).color_ = integrate(rstate, camera_ray.ray_, 0, ray_division, &color_layers, render_view);
+				color_layers(Layer::Combined).color_ = integrate(thread_id, rstate, camera_ray.ray_, 0, ray_division, &color_layers, render_view);
 				for(auto &it : color_layers)
 				{
 					switch(it.first)

@@ -243,7 +243,7 @@ void BidirectionalIntegrator::cleanup()
 /* ============================================================
     integrate
  ============================================================ */
-Rgba BidirectionalIntegrator::integrate(RenderData &render_data, const Ray &ray, int additional_depth, const RayDivision &ray_division, ColorLayers *color_layers, const RenderView *render_view) const
+Rgba BidirectionalIntegrator::integrate(int thread_id, RenderData &render_data, const Ray &ray, int additional_depth, const RayDivision &ray_division, ColorLayers *color_layers, const RenderView *render_view) const
 {
 	Rgb col(0.f);
 	SurfacePoint sp;
@@ -256,7 +256,7 @@ Rgba BidirectionalIntegrator::integrate(RenderData &render_data, const Ray &ray,
 		const Vec3 wo = -ray.dir_;
 		static int dbg = 0;
 		render_data.lights_geometry_material_emit_ = true;
-		PathData &path_data = thread_data_[render_data.thread_id_];
+		PathData &path_data = thread_data_[thread_id];
 		++path_data.n_paths_;
 		Random &prng = *(render_data.prng_);
 		PathVertex &ve = path_data.eye_path_.front();
