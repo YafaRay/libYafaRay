@@ -53,11 +53,11 @@ class FastRandom final
    2051013963 1075433238 1557985959 1781943330 1893513180
    1631296680 2131995753 2083801278 1873196400 1554115554
 */
-class Random final
+class RandomGenerator final
 {
 	public:
-		Random() = default;
-		Random(unsigned int seed): c_(seed) { }
+		RandomGenerator() = default;
+		RandomGenerator(unsigned int seed): c_(seed) { }
 		double operator()();
 	protected:
 		unsigned int x_ = 30903, c_ = 0;
@@ -94,7 +94,7 @@ inline float FastRandom::getNextFloatNormalized(int &seed)
 	return static_cast<float>(getNextInt(seed)) / static_cast<float>(m_);
 }
 
-inline double Random::operator()()
+inline double RandomGenerator::operator()()
 {
 	const unsigned int xh = x_ >> 16, xl = x_ & 65535;
 	x_ = x_ * y_a_ + c_;

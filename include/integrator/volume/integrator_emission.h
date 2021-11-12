@@ -34,9 +34,9 @@ class EmissionIntegrator final : public VolumeIntegrator
 		virtual std::string getShortName() const override { return "Em"; }
 		virtual std::string getName() const override { return "Emission"; }
 		// optical thickness, absorption, attenuation, extinction
-		virtual Rgba transmittance(Random *random, const Ray &ray) const override;
+		virtual Rgba transmittance(RandomGenerator *random_generator, const Ray &ray) const override;
 		// emission part
-		virtual Rgba integrate(RenderData &render_data, const Ray &ray, int additional_depth = 0) const override;
+		virtual Rgba integrate(RandomGenerator *random_generator, const Ray &ray, int additional_depth = 0) const override;
 };
 
 END_YAFARAY

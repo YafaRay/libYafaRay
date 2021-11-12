@@ -25,7 +25,7 @@
 
 BEGIN_YAFARAY
 
-class Random;
+class RandomGenerator;
 class Camera;
 class PhotonMap;
 class Logger;
@@ -42,10 +42,6 @@ class RenderData final
 {
 	public:
 		RenderData() = default;
-		RenderData(Random *rand) : prng_(rand) { }
-		RenderData(const RenderData &r) = delete;
-		void setDefaults();
-
 		int pixel_sample_ = 0; //!< number of samples inside this pixels so far
 		int pixel_number_ = 0;
 		unsigned int sampling_offs_ = 0; //!< a "noise-like" pixel offset you may use to decorelate sampling of adjacent pixel.
@@ -53,13 +49,7 @@ class RenderData final
 		bool lights_geometry_material_emit_ = false; //!< indicate that emission of materials assiciated to lights shall be included, for correctly visible lights etc.
 		float wavelength_ = 0.f; //!< the (normalized) wavelength being used when chromatic is false. The range is defined going from 400nm (0.0) to 700nm (1.0), although the widest range humans can perceive is ofteb given 380-780nm.
 		float time_ = 0.f; //!< the current (normalized) frame time
-		Random *prng_ = nullptr; //!< a pseudorandom number generator
 };
-
-inline void RenderData::setDefaults()
-{
-	chromatic_ = true;
-}
 
 END_YAFARAY
 

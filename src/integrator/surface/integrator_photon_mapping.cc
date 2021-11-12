@@ -714,7 +714,7 @@ bool PhotonIntegrator::preprocess(const RenderControl &render_control, Timer &ti
 // final gathering: this is basically a full path tracer only that it uses the radiance map only
 // at the path end. I.e. paths longer than 1 are only generated to overcome lack of local radiance detail.
 // precondition: initBSDF of current spot has been called!
-Rgb PhotonIntegrator::finalGathering(int thread_id, RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo, const RayDivision &ray_division, const Camera *camera) const
+Rgb PhotonIntegrator::finalGathering(int thread_id, RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo, const RayDivision &ray_division, const Camera *camera, RandomGenerator *random_generator) const
 {
 	const Accelerator *accelerator = scene_->getAccelerator();
 	if(!accelerator) return {0.f};
@@ -779,7 +779,7 @@ Rgb PhotonIntegrator::finalGathering(int thread_id, RenderData &render_data, con
 			{
 				if(close)
 				{
-					lcol = estimateOneDirectLight(thread_id, render_data, hit, pwo, offs, ray_division, camera);
+					lcol = estimateOneDirectLight(thread_id, render_data, hit, pwo, offs, ray_division, camera, random_generator);
 				}
 				else if(caustic)
 				{
@@ -940,7 +940,7 @@ std::unique_ptr<Integrator> PhotonIntegrator::factory(Logger &logger, ParamMap &
 	return inte;
 }
 
-Rgba PhotonIntegrator::integrate(int thread_id, int ray_level, RenderData &render_data, const Ray &ray, int additional_depth, const RayDivision &ray_division, ColorLayers *color_layers, const Camera *camera) const
+Rgba PhotonIntegrator::integrate(int thread_id, int ray_level, RenderData &render_data, const Ray &ray, int additional_depth, const RayDivision &ray_division, ColorLayers *color_layers, const Camera *camera, RandomGenerator *random_generator) const
 {
 	static int n_max = 0;
 	static int calls = 0;
@@ -1011,8 +1011,8 @@ Rgba PhotonIntegrator::integrate(int thread_id, int ray_level, RenderData &rende
 
 				if(mat_bsdfs.hasAny(BsdfFlags::Diffuse))
 				{
-					col += estimateAllDirectLight(render_data, sp, wo, ray_division, color_layers, camera);
-					Rgb col_tmp = finalGathering(thread_id, render_data, sp, wo, ray_division, camera);
+					col += estimateAllDirectLight(render_data, sp, wo, ray_division, color_layers, camera, random_generator);
+					Rgb col_tmp = finalGathering(thread_id, render_data, sp, wo, ray_division, camera, random_generator);
 					if(aa_noise_params_.clamp_indirect_ > 0.f) col_tmp.clampProportionalRgb(aa_noise_params_.clamp_indirect_);
 					col += col_tmp;
 					if(color_layers)
@@ -1054,7 +1054,7 @@ Rgba PhotonIntegrator::integrate(int thread_id, int ray_level, RenderData &rende
 
 				if(mat_bsdfs.hasAny(BsdfFlags::Diffuse))
 				{
-					col += estimateAllDirectLight(render_data, sp, wo, ray_division, color_layers, camera);
+					col += estimateAllDirectLight(render_data, sp, wo, ray_division, color_layers, camera, random_generator);
 				}
 
 				FoundPhoton *gathered = (FoundPhoton *)alloca(n_diffuse_search_ * sizeof(FoundPhoton));
@@ -1096,7 +1096,7 @@ Rgba PhotonIntegrator::integrate(int thread_id, int ray_level, RenderData &rende
 			}
 		}
 
-		recursiveRaytrace(thread_id, ray_level + 1, render_data, ray, mat_bsdfs, sp, wo, col, alpha, additional_depth, ray_division, color_layers, camera);
+		recursiveRaytrace(thread_id, ray_level + 1, render_data, ray, mat_bsdfs, sp, wo, col, alpha, additional_depth, ray_division, color_layers, camera, random_generator);
 
 		if(color_layers)
 		{
@@ -1137,8 +1137,8 @@ Rgba PhotonIntegrator::integrate(int thread_id, int ray_level, RenderData &rende
 
 	if(scene_->vol_integrator_)
 	{
-		const Rgb col_vol_transmittance = scene_->vol_integrator_->transmittance(render_data.prng_, ray);
-		const Rgb col_vol_integration = scene_->vol_integrator_->integrate(render_data, ray);
+		const Rgb col_vol_transmittance = scene_->vol_integrator_->transmittance(random_generator, ray);
+		const Rgb col_vol_integration = scene_->vol_integrator_->integrate(random_generator, ray);
 		if(transp_background_) alpha = std::max(alpha, 1.f - col_vol_transmittance.r_);
 		if(color_layers)
 		{

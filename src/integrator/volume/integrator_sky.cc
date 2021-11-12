@@ -127,7 +127,7 @@ Rgba SkyIntegrator::skyTau(const Ray &ray, float beta, float alpha) const {
 	return tau_val;
 }
 
-Rgba SkyIntegrator::transmittance(Random *random, const Ray &ray) const {
+Rgba SkyIntegrator::transmittance(RandomGenerator *random_generator, const Ray &ray) const {
 	//return Rgba(0.f);
 	Rgba result;
 
@@ -136,7 +136,7 @@ Rgba SkyIntegrator::transmittance(Random *random, const Ray &ray) const {
 	return Rgba(math::exp(-result.energy()));
 }
 
-Rgba SkyIntegrator::integrate(RenderData &render_data, const Ray &ray, int additional_depth) const {
+Rgba SkyIntegrator::integrate(RandomGenerator *random_generator, const Ray &ray, int additional_depth) const {
 	//return Rgba(0.f);
 	Rgba i_r(0.f);
 	Rgba i_m(0.f);
@@ -154,7 +154,7 @@ Rgba SkyIntegrator::integrate(RenderData &render_data, const Ray &ray, int addit
 		float theta = (v * 0.3f + 0.2f) * 0.5f * math::num_pi;
 		for(int u = 0; u < u_vec; u++)
 		{
-			float phi = (u /* + (*render_data.prng)() */) * 2.0f * math::num_pi / (float)u_vec;
+			float phi = (u /* + (*render_data.random_generator)() */) * 2.0f * math::num_pi / (float)u_vec;
 			float z = math::cos(theta);
 			float x = math::sin(theta) * math::cos(phi);
 			float y = math::sin(theta) * math::sin(phi);
@@ -183,7 +183,7 @@ Rgba SkyIntegrator::integrate(RenderData &render_data, const Ray &ray, int addit
 
 	float step = step_size_ * scale_;
 
-	float pos = 0.f + (*render_data.prng_)() * step;
+	float pos = 0.f + (*random_generator)() * step;
 
 	while(pos < s)
 	{

@@ -243,7 +243,7 @@ void BidirectionalIntegrator::cleanup()
 /* ============================================================
     integrate
  ============================================================ */
-Rgba BidirectionalIntegrator::integrate(int thread_id, int ray_level, RenderData &render_data, const Ray &ray, int additional_depth, const RayDivision &ray_division, ColorLayers *color_layers, const Camera *camera) const
+Rgba BidirectionalIntegrator::integrate(int thread_id, int ray_level, RenderData &render_data, const Ray &ray, int additional_depth, const RayDivision &ray_division, ColorLayers *color_layers, const Camera *camera, RandomGenerator *random_generator) const
 {
 	Rgb col(0.f);
 	SurfacePoint sp;
@@ -258,12 +258,11 @@ Rgba BidirectionalIntegrator::integrate(int thread_id, int ray_level, RenderData
 		render_data.lights_geometry_material_emit_ = true;
 		PathData &path_data = thread_data_[thread_id];
 		++path_data.n_paths_;
-		Random &prng = *(render_data.prng_);
 		PathVertex &ve = path_data.eye_path_.front();
 		PathVertex &vl = path_data.light_path_.front();
 		int n_eye = 1, n_light = 1;
 		// setup ve
-		ve.f_s_ = Rgb(1.f); // some random guess...need to read up on importance paths
+		ve.f_s_ = Rgb(1.f); // some random_generator guess...need to read up on importance paths
 		ve.alpha_ = Rgb(1.f);
 		ve.sp_.p_ = ray.from_;
 		ve.qi_wo_ = ve.qi_wi_ = 1.f; // definitely no russian roulette here...
@@ -281,17 +280,17 @@ Rgba BidirectionalIntegrator::integrate(int thread_id, int ray_level, RenderData
 		ve.flags_ = BsdfFlags::Diffuse; //place holder! not applicable for e.g. orthogonal camera!
 
 		// create eyePath
-		n_eye = createPath(render_data, ray, path_data.eye_path_, max_path_length_, camera);
+		n_eye = createPath(render_data, ray, path_data.eye_path_, max_path_length_, camera, random_generator);
 
 		// sample light (todo!)
 		Ray lray;
 		lray.tmin_ = scene_->ray_min_dist_;
 		lray.tmax_ = -1.f;
 		float light_num_pdf;
-		int light_num = light_power_d_->dSample(logger_, prng(), &light_num_pdf);
+		int light_num = light_power_d_->dSample(logger_, (*random_generator)(), &light_num_pdf);
 		light_num_pdf *= f_num_lights_;
 		LSample ls;
-		ls.s_1_ = prng(), ls.s_2_ = prng(), ls.s_3_ = prng(), ls.s_4_ = prng();
+		ls.s_1_ = (*random_generator)(), ls.s_2_ = (*random_generator)(), ls.s_3_ = (*random_generator)(), ls.s_4_ = (*random_generator)();
 		ls.sp_ = &vl.sp_;
 		Rgb pcol = lights_.size() > 0 ? lights_[light_num]->emitSample(lray.dir_, ls) : Rgb(0.f);
 		lray.from_ = vl.sp_.p_;
@@ -314,7 +313,7 @@ Rgba BidirectionalIntegrator::integrate(int thread_id, int ray_level, RenderData
 		path_data.singular_l_ = ls.flags_.hasAny(Light::Flags::Singular);
 
 		// create lightPath
-		n_light = createPath(render_data, lray, path_data.light_path_, max_path_length_, camera);
+		n_light = createPath(render_data, lray, path_data.light_path_, max_path_length_, camera, random_generator);
 		if(n_light > 1)
 		{
 			path_data.pdf_illum_ = lights_[light_num]->illumPdf(path_data.light_path_[1].sp_, vl.sp_) * light_num_pdf;
@@ -368,7 +367,7 @@ Rgba BidirectionalIntegrator::integrate(int thread_id, int ray_level, RenderData
 			bool o_singular_l = path_data.singular_l_;  // will be overwritten from connectLPath...
 			float o_pdf_illum = path_data.pdf_illum_; // will be overwritten from connectLPath...
 			float o_pdf_emit = path_data.pdf_emit_;   // will be overwritten from connectLPath...
-			if(connectLPath(render_data, t, path_data, d_ray, dcol))
+			if(connectLPath(render_data, t, path_data, d_ray, dcol, random_generator))
 			{
 				checkPath(path_data.path_, 1, t);
 				wt = pathWeight(1, t, path_data);
@@ -429,8 +428,8 @@ Rgba BidirectionalIntegrator::integrate(int thread_id, int ray_level, RenderData
 
 	if(scene_->vol_integrator_)
 	{
-		const Rgb col_vol_transmittance = scene_->vol_integrator_->transmittance(render_data.prng_, ray);
-		const Rgb col_vol_integration = scene_->vol_integrator_->integrate(render_data, ray);
+		const Rgb col_vol_transmittance = scene_->vol_integrator_->transmittance(random_generator, ray);
+		const Rgb col_vol_integration = scene_->vol_integrator_->integrate(random_generator, ray);
 		if(transp_background_) alpha = std::max(alpha, 1.f - col_vol_transmittance.r_);
 		if(color_layers)
 		{
@@ -447,12 +446,11 @@ Rgba BidirectionalIntegrator::integrate(int thread_id, int ray_level, RenderData
     important: resize path to maxLen *before* calling this function!
  ============================================================ */
 
-int BidirectionalIntegrator::createPath(RenderData &render_data, const Ray &start, std::vector<PathVertex> &path, int max_len, const Camera *camera) const
+int BidirectionalIntegrator::createPath(RenderData &render_data, const Ray &start, std::vector<PathVertex> &path, int max_len, const Camera *camera, RandomGenerator *random_generator) const
 {
 	const Accelerator *accelerator = scene_->getAccelerator();
 	if(!accelerator) return 0;
 	static int dbg = 0;
-	Random &prng = *render_data.prng_;
 	Ray ray {start, Ray::DifferentialsCopy::FullCopy};
 	BsdfFlags m_bsdf;
 	// the 0th vertex has already been generated, which is ray.pos obviously
@@ -472,7 +470,7 @@ int BidirectionalIntegrator::createPath(RenderData &render_data, const Ray &star
 		++n_vert;
 		//if(dbg<10) if(logger_.isDebug())logger_.logDebug(integratorName << ": " << nVert << "  mat: " << (void*) mat << " alpha:" << v.alpha << " p_f_s:" << v_prev.f_s << " qi:"<< v_prev.qi);
 		// create tentative sample for next path segment
-		Sample s(prng(), prng(), BsdfFlags::All, true);
+		Sample s((*random_generator)(), (*random_generator)(), BsdfFlags::All, true);
 		float w = 0.f;
 		v.f_s_ = mat->sample(v.sp_.mat_data_.get(), v.sp_, v.wi_, ray.dir_, s, w, render_data.chromatic_, render_data.wavelength_, camera);
 		if(v.f_s_.isBlack()) break;
@@ -482,7 +480,7 @@ int BidirectionalIntegrator::createPath(RenderData &render_data, const Ray &star
 		if(n_vert > min_path_length_)
 		{
 			v.qi_wo_ = std::min(0.98f, v.f_s_.col2Bri() * v.cos_wo_ / v.pdf_wo_);
-			if(prng() > v.qi_wo_) break; // terminate path with russian roulette
+			if((*random_generator)() > v.qi_wo_) break; // terminate path with russian roulette
 		}
 		else v.qi_wo_ = 1.f;
 
@@ -608,7 +606,7 @@ bool BidirectionalIntegrator::connectPaths(int s, int t, PathData &pd) const
 }
 
 // connect path with s==1 (eye path with single light vertex)
-bool BidirectionalIntegrator::connectLPath(RenderData &render_data, int t, PathData &pd, Ray &l_ray, Rgb &lcol) const
+bool BidirectionalIntegrator::connectLPath(RenderData &render_data, int t, PathData &pd, Ray &l_ray, Rgb &lcol, RandomGenerator *random_generator) const
 {
 	// create light sample with direct lighting strategy:
 	const PathVertex &z = pd.eye_path_[t - 1];
@@ -617,7 +615,7 @@ bool BidirectionalIntegrator::connectLPath(RenderData &render_data, int t, PathD
 	int n_lights_i = lights_.size();
 	if(n_lights_i == 0) return false;
 	float light_num_pdf, cos_wo;
-	int lnum = light_power_d_->dSample(logger_, (*render_data.prng_)(), &light_num_pdf);
+	int lnum = light_power_d_->dSample(logger_, (*random_generator)(), &light_num_pdf);
 	light_num_pdf *= f_num_lights_;
 	if(lnum > n_lights_i - 1) lnum = n_lights_i - 1;
 	const Light *light = lights_[lnum];
@@ -627,8 +625,8 @@ bool BidirectionalIntegrator::connectLPath(RenderData &render_data, int t, PathD
 	LSample ls;
 	if(!light->getFlags()) //only lights with non-specular components need sample values
 	{
-		ls.s_1_ = (*render_data.prng_)();
-		ls.s_2_ = (*render_data.prng_)();
+		ls.s_1_ = (*random_generator)();
+		ls.s_2_ = (*random_generator)();
 	}
 	ls.sp_ = &sp_light;
 	// generate light sample, cancel when none could be created:
@@ -932,7 +930,7 @@ Rgb BidirectionalIntegrator::evalPathE(int s, PathData &pd, const Camera *camera
     int nLightsI = lights.size();
     if(nLightsI == 0) return Rgb(0.f);
     float s1, s2, lightPdf, lightNumPdf;
-    int lnum = lightPowerD->DSample((*state.prng)(), &lightNumPdf);
+    int lnum = lightPowerD->DSample((*state.random_generator)(), &lightNumPdf);
     if(lnum > nLightsI-1) lnum = nLightsI-1;
     const light_t *light = lights[lnum];
     // handle lights with delta distribution, e.g. point and directional lights
@@ -954,8 +952,8 @@ Rgb BidirectionalIntegrator::evalPathE(int s, PathData &pd, const Camera *camera
     else // area light and suchlike
     {
         Rgb ccol(0.0);
-        s1 = (*state.prng)();
-        s2 = (*state.prng)();
+        s1 = (*state.random_generator)();
+        s2 = (*state.random_generator)();
 
         if( light->illumSample (sp, s1, s2, lcol, lightPdf, lightRay) )
         {
