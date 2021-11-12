@@ -40,12 +40,11 @@ class ParamMap;
 class Scene;
 class ProgressBar;
 class Rgba;
-class RenderData;
-class Ray;
 class Ray;
 class ColorLayers;
 class ImageFilm;
-class MaterialData;
+class RenderData;
+struct RayDivision;
 
 class Integrator
 {
@@ -85,7 +84,7 @@ class Integrator
 class SurfaceIntegrator: public Integrator
 {
 	public:
-		virtual Rgba integrate(RenderData &render_data, const Ray &ray, int additional_depth, ColorLayers *color_layers = nullptr, const RenderView *render_view = nullptr) const = 0;
+		virtual Rgba integrate(RenderData &render_data, const Ray &ray, int additional_depth, const RayDivision &ray_division, ColorLayers *color_layers, const RenderView *render_view) const = 0;
 
 	protected:
 		SurfaceIntegrator(Logger &logger) : Integrator(logger) { }

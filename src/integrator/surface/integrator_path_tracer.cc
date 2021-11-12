@@ -122,7 +122,7 @@ bool PathIntegrator::preprocess(const RenderControl &render_control, Timer &time
 	return success;
 }
 
-Rgba PathIntegrator::integrate(RenderData &render_data, const Ray &ray, int additional_depth, ColorLayers *color_layers, const RenderView *render_view) const
+Rgba PathIntegrator::integrate(RenderData &render_data, const Ray &ray, int additional_depth, const RayDivision &ray_division, ColorLayers *color_layers, const RenderView *render_view) const
 {
 	static int calls = 0;
 	++calls;
@@ -166,7 +166,7 @@ Rgba PathIntegrator::integrate(RenderData &render_data, const Ray &ray, int addi
 
 		if(mat_bsdfs.hasAny(BsdfFlags::Diffuse))
 		{
-			col += estimateAllDirectLight(render_data, sp, wo, color_layers);
+			col += estimateAllDirectLight(render_data, sp, wo, ray_division, color_layers);
 
 			if(caustic_type_ == CausticType::Photon || caustic_type_ == CausticType::Both)
 			{
@@ -192,7 +192,7 @@ Rgba PathIntegrator::integrate(RenderData &render_data, const Ray &ray, int addi
 		{
 			Rgb path_col(0.0);
 			path_flags |= (BsdfFlags::Diffuse | BsdfFlags::Reflect | BsdfFlags::Transmit);
-			int n_samples = std::max(1, n_paths_ / render_data.ray_division_);
+			int n_samples = std::max(1, n_paths_ / ray_division.division_);
 			for(int i = 0; i < n_samples; ++i)
 			{
 				unsigned int offs = n_paths_ * render_data.pixel_sample_ + render_data.sampling_offs_ + i; // some redunancy here...
@@ -209,10 +209,10 @@ Rgba PathIntegrator::integrate(RenderData &render_data, const Ray &ray, int addi
 				//this mat already is initialized, just sample (diffuse...non-specular?)
 				float s_1 = sample::riVdC(offs);
 				float s_2 = Halton::lowDiscrepancySampling(2, offs);
-				if(render_data.ray_division_ > 1)
+				if(ray_division.division_ > 1)
 				{
-					s_1 = math::addMod1(s_1, render_data.dc_1_);
-					s_2 = math::addMod1(s_2, render_data.dc_2_);
+					s_1 = math::addMod1(s_1, ray_division.decorrelation_1_);
+					s_2 = math::addMod1(s_2, ray_division.decorrelation_2_);
 				}
 				// do proper sampling now...
 				Sample s(s_1, s_2, path_flags);
@@ -230,7 +230,7 @@ Rgba PathIntegrator::integrate(RenderData &render_data, const Ray &ray, int addi
 
 				const Material *p_mat = hit->material_;
 				if(s.sampled_flags_ != BsdfFlags::None) pwo = -p_ray.dir_; //Fix for white dots in path tracing with shiny diffuse with transparent PNG texture and transparent shadows, especially in Win32, (precision?). Sometimes the first sampling does not take place and pRay.dir is not initialized, so before this change when that happened pwo = -pRay.dir was getting a random non-initialized value! This fix makes that, if the first sample fails for some reason, pwo is not modified and the rest of the sampling continues with the same pwo value. FIXME: Question: if the first sample fails, should we continue as now or should we exit the loop with the "continue" command?
-				lcol = estimateOneDirectLight(render_data, *hit, pwo, offs);
+				lcol = estimateOneDirectLight(render_data, *hit, pwo, offs, ray_division);
 				const BsdfFlags mat_bsd_fs = hit->mat_data_->bsdf_flags_;
 				if(mat_bsd_fs.hasAny(BsdfFlags::Emit))
 				{
@@ -252,10 +252,10 @@ Rgba PathIntegrator::integrate(RenderData &render_data, const Ray &ray, int addi
 					s.s_1_ = Halton::lowDiscrepancySampling(d_4 + 3, offs); //ourRandom();//
 					s.s_2_ = Halton::lowDiscrepancySampling(d_4 + 4, offs); //ourRandom();//
 
-					if(render_data.ray_division_ > 1)
+					if(ray_division.division_ > 1)
 					{
-						s_1 = math::addMod1(s_1, render_data.dc_1_);
-						s_2 = math::addMod1(s_2, render_data.dc_2_);
+						s_1 = math::addMod1(s_1, ray_division.decorrelation_1_);
+						s_2 = math::addMod1(s_2, ray_division.decorrelation_2_);
 					}
 
 					s.flags_ = BsdfFlags::All;
@@ -287,7 +287,7 @@ Rgba PathIntegrator::integrate(RenderData &render_data, const Ray &ray, int addi
 					p_mat = hit->material_;
 					pwo = -p_ray.dir_;
 
-					if(mat_bsd_fs.hasAny(BsdfFlags::Diffuse)) lcol = estimateOneDirectLight(render_data, *hit, pwo, offs);
+					if(mat_bsd_fs.hasAny(BsdfFlags::Diffuse)) lcol = estimateOneDirectLight(render_data, *hit, pwo, offs, ray_division);
 					else lcol = Rgb(0.f);
 
 					if(mat_bsd_fs.hasAny(BsdfFlags::Volumetric))
@@ -324,7 +324,7 @@ Rgba PathIntegrator::integrate(RenderData &render_data, const Ray &ray, int addi
 		//reset chromatic state:
 		render_data.chromatic_ = was_chromatic;
 
-		recursiveRaytrace(render_data, ray, mat_bsdfs, sp, wo, col, alpha, additional_depth, color_layers);
+		recursiveRaytrace(render_data, ray, mat_bsdfs, sp, wo, col, alpha, additional_depth, ray_division, color_layers);
 
 		if(color_layers)
 		{
@@ -332,12 +332,12 @@ Rgba PathIntegrator::integrate(RenderData &render_data, const Ray &ray, int addi
 
 			if(ColorLayer *color_layer = color_layers->find(Layer::Ao))
 			{
-				color_layer->color_ = sampleAmbientOcclusionLayer(render_data, sp, wo);
+				color_layer->color_ = sampleAmbientOcclusionLayer(render_data, sp, wo, ray_division);
 			}
 
 			if(ColorLayer *color_layer = color_layers->find(Layer::AoClay))
 			{
-				color_layer->color_ = sampleAmbientOcclusionClayLayer(render_data, sp, wo);
+				color_layer->color_ = sampleAmbientOcclusionClayLayer(render_data, sp, wo, ray_division);
 			}
 		}
 

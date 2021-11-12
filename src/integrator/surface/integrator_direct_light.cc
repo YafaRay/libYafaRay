@@ -102,7 +102,7 @@ bool DirectLightIntegrator::preprocess(const RenderControl &render_control, Time
 	return success;
 }
 
-Rgba DirectLightIntegrator::integrate(RenderData &render_data, const Ray &ray, int additional_depth, ColorLayers *color_layers, const RenderView *render_view) const
+Rgba DirectLightIntegrator::integrate(RenderData &render_data, const Ray &ray, int additional_depth, const RayDivision &ray_division, ColorLayers *color_layers, const RenderView *render_view) const
 {
 	Rgb col(0.f);
 	float alpha;
@@ -130,7 +130,7 @@ Rgba DirectLightIntegrator::integrate(RenderData &render_data, const Ray &ray, i
 		}
 		if(mat_bsdfs.hasAny(BsdfFlags::Diffuse))
 		{
-			col += estimateAllDirectLight(render_data, sp, wo, color_layers);
+			col += estimateAllDirectLight(render_data, sp, wo, ray_division, color_layers);
 			if(use_photon_caustics_)
 			{
 				Rgb col_tmp = estimateCausticPhotons(sp, wo);
@@ -141,19 +141,19 @@ Rgba DirectLightIntegrator::integrate(RenderData &render_data, const Ray &ray, i
 					if(ColorLayer *color_layer = color_layers->find(Layer::Indirect)) color_layer->color_ = col_tmp;
 				}
 			}
-			if(use_ambient_occlusion_) col += sampleAmbientOcclusion(render_data, sp, wo);
+			if(use_ambient_occlusion_) col += sampleAmbientOcclusion(render_data, sp, wo, ray_division);
 		}
-		recursiveRaytrace(render_data, ray, mat_bsdfs, sp, wo, col, alpha, additional_depth, color_layers);
+		recursiveRaytrace(render_data, ray, mat_bsdfs, sp, wo, col, alpha, additional_depth, ray_division, color_layers);
 		if(color_layers)
 		{
 			generateCommonLayers(render_data.raylevel_, sp, ray, scene_->getMaskParams(), color_layers);
 			if(ColorLayer *color_layer = color_layers->find(Layer::Ao))
 			{
-				color_layer->color_ = sampleAmbientOcclusionLayer(render_data, sp, wo);
+				color_layer->color_ = sampleAmbientOcclusionLayer(render_data, sp, wo, ray_division);
 			}
 			if(ColorLayer *color_layer = color_layers->find(Layer::AoClay))
 			{
-				color_layer->color_ = sampleAmbientOcclusionClayLayer(render_data, sp, wo);
+				color_layer->color_ = sampleAmbientOcclusionClayLayer(render_data, sp, wo, ray_division);
 			}
 		}
 		if(transp_refracted_background_)

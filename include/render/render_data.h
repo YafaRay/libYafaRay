@@ -30,6 +30,14 @@ class Camera;
 class PhotonMap;
 class Logger;
 
+struct RayDivision final
+{
+	int division_ = 1; //!< keep track of trajectory splitting
+	int offset_ = 0; //!< keep track of trajectory splitting
+	float decorrelation_1_ = 0.f; //!< used to decorrelate samples from trajectory splitting*/
+	float decorrelation_2_ = 0.f; //!< used to decorrelate samples from trajectory splitting*/
+};
+
 class RenderData final
 {
 	public:
@@ -39,12 +47,7 @@ class RenderData final
 		void setDefaults();
 
 		int raylevel_ = 0;
-		float depth_ = 0;
-		int current_pass_ = 0;
 		int pixel_sample_ = 0; //!< number of samples inside this pixels so far
-		int ray_division_ = 1; //!< keep track of trajectory splitting
-		int ray_offset_ = 0; //!< keep track of trajectory splitting
-		float dc_1_ = 0.f, dc_2_ = 0.f; //!< used to decorrelate samples from trajectory splitting
 		int pixel_number_ = 0;
 		int thread_id_ = 0; //!< identify the current render thread; shall range from 0 to scene_t::getNumThreads() - 1
 		unsigned int sampling_offs_ = 0; //!< a "noise-like" pixel offset you may use to decorelate sampling of adjacent pixel.
@@ -60,9 +63,6 @@ inline void RenderData::setDefaults()
 {
 	raylevel_ = 0;
 	chromatic_ = true;
-	ray_division_ = 1;
-	ray_offset_ = 0;
-	dc_1_ = dc_2_ = 0.f;
 }
 
 END_YAFARAY

@@ -243,7 +243,7 @@ void BidirectionalIntegrator::cleanup()
 /* ============================================================
     integrate
  ============================================================ */
-Rgba BidirectionalIntegrator::integrate(RenderData &render_data, const Ray &ray, int additional_depth, ColorLayers *color_layers, const RenderView *render_view) const
+Rgba BidirectionalIntegrator::integrate(RenderData &render_data, const Ray &ray, int additional_depth, const RayDivision &ray_division, ColorLayers *color_layers, const RenderView *render_view) const
 {
 	Rgb col(0.f);
 	SurfacePoint sp;
@@ -402,12 +402,12 @@ Rgba BidirectionalIntegrator::integrate(RenderData &render_data, const Ray &ray,
 
 			if(ColorLayer *color_layer = color_layers->find(Layer::Ao))
 			{
-				color_layer->color_ += sampleAmbientOcclusionLayer(render_data, sp, wo);
+				color_layer->color_ += sampleAmbientOcclusionLayer(render_data, sp, wo, ray_division);
 			}
 
 			if(ColorLayer *color_layer = color_layers->find(Layer::AoClay))
 			{
-				color_layer->color_ += sampleAmbientOcclusionClayLayer(render_data, sp, wo);
+				color_layer->color_ += sampleAmbientOcclusionClayLayer(render_data, sp, wo, ray_division);
 			}
 		}
 	}
@@ -975,7 +975,7 @@ Rgb BidirectionalIntegrator::evalPathE(int s, PathData &pd, const Camera *camera
     return col/lightNumPdf;
 } */
 
-Rgb BidirectionalIntegrator::sampleAmbientOcclusionLayer(RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo) const
+Rgb BidirectionalIntegrator::sampleAmbientOcclusionLayer(RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo, const RayDivision &ray_division) const
 {
 	const Accelerator *accelerator = scene_->getAccelerator();
 	if(!accelerator) return {0.f};
@@ -989,7 +989,7 @@ Rgb BidirectionalIntegrator::sampleAmbientOcclusionLayer(RenderData &render_data
 	float mask_obj_index = 0.f, mask_mat_index = 0.f;
 
 	int n = ao_samples_;//(int) ceilf(aoSamples*getSampleMultiplier());
-	if(render_data.ray_division_ > 1) n = std::max(1, n / render_data.ray_division_);
+	if(ray_division.division_ > 1) n = std::max(1, n / ray_division.division_);
 
 	unsigned int offs = n * render_data.pixel_sample_ + render_data.sampling_offs_;
 
@@ -1001,10 +1001,10 @@ Rgb BidirectionalIntegrator::sampleAmbientOcclusionLayer(RenderData &render_data
 		float s_1 = hal_2.getNext();
 		float s_2 = hal_3.getNext();
 
-		if(render_data.ray_division_ > 1)
+		if(ray_division.division_ > 1)
 		{
-			s_1 = math::addMod1(s_1, render_data.dc_1_);
-			s_2 = math::addMod1(s_2, render_data.dc_2_);
+			s_1 = math::addMod1(s_1, ray_division.decorrelation_1_);
+			s_2 = math::addMod1(s_2, ray_division.decorrelation_2_);
 		}
 
 		light_ray.tmax_ = ao_dist_;
@@ -1033,7 +1033,7 @@ Rgb BidirectionalIntegrator::sampleAmbientOcclusionLayer(RenderData &render_data
 }
 
 
-Rgb BidirectionalIntegrator::sampleAmbientOcclusionClayLayer(RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo) const
+Rgb BidirectionalIntegrator::sampleAmbientOcclusionClayLayer(RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo, const RayDivision &ray_division) const
 {
 	const Accelerator *accelerator = scene_->getAccelerator();
 	if(!accelerator) return {0.f};
@@ -1047,7 +1047,7 @@ Rgb BidirectionalIntegrator::sampleAmbientOcclusionClayLayer(RenderData &render_
 	float mask_obj_index = 0.f, mask_mat_index = 0.f;
 
 	int n = ao_samples_;
-	if(render_data.ray_division_ > 1) n = std::max(1, n / render_data.ray_division_);
+	if(ray_division.division_ > 1) n = std::max(1, n / ray_division.division_);
 
 	const unsigned int offs = n * render_data.pixel_sample_ + render_data.sampling_offs_;
 	Halton hal_2(2, offs - 1);
@@ -1058,10 +1058,10 @@ Rgb BidirectionalIntegrator::sampleAmbientOcclusionClayLayer(RenderData &render_
 		float s_1 = hal_2.getNext();
 		float s_2 = hal_3.getNext();
 
-		if(render_data.ray_division_ > 1)
+		if(ray_division.division_ > 1)
 		{
-			s_1 = math::addMod1(s_1, render_data.dc_1_);
-			s_2 = math::addMod1(s_2, render_data.dc_2_);
+			s_1 = math::addMod1(s_1, ray_division.decorrelation_1_);
+			s_2 = math::addMod1(s_2, ray_division.decorrelation_2_);
 		}
 
 		light_ray.tmax_ = ao_dist_;

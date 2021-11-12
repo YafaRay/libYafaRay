@@ -369,7 +369,8 @@ bool TiledIntegrator::renderTile(RenderArea &a, const RenderView *render_view, c
 					camera_ray.ray_.differentials_->ydir_ = camera_diff_ray_y.ray_.dir_;
 				}
 				camera_ray.ray_.time_ = rstate.time_;
-				color_layers(Layer::Combined).color_ = integrate(rstate, camera_ray.ray_, 0, &color_layers, render_view);
+				RayDivision ray_division;
+				color_layers(Layer::Combined).color_ = integrate(rstate, camera_ray.ray_, 0, ray_division, &color_layers, render_view);
 				for(auto &it : color_layers)
 				{
 					switch(it.first)

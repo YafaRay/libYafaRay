@@ -718,7 +718,7 @@ bool PhotonIntegrator::preprocess(const RenderControl &render_control, Timer &ti
 // final gathering: this is basically a full path tracer only that it uses the radiance map only
 // at the path end. I.e. paths longer than 1 are only generated to overcome lack of local radiance detail.
 // precondition: initBSDF of current spot has been called!
-Rgb PhotonIntegrator::finalGathering(RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo) const
+Rgb PhotonIntegrator::finalGathering(RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo, const RayDivision &ray_division) const
 {
 	const Accelerator *accelerator = scene_->getAccelerator();
 	if(!accelerator) return {0.f};
@@ -726,7 +726,7 @@ Rgb PhotonIntegrator::finalGathering(RenderData &render_data, const SurfacePoint
 	Rgb path_col(0.0);
 	float w = 0.f;
 
-	int n_sampl = (int) ceilf(std::max(1, n_paths_ / render_data.ray_division_) * aa_indirect_sample_multiplier_);
+	int n_sampl = (int) ceilf(std::max(1, n_paths_ / ray_division.division_) * aa_indirect_sample_multiplier_);
 	for(int i = 0; i < n_sampl; ++i)
 	{
 		Rgb throughput(1.0);
@@ -741,10 +741,10 @@ Rgb PhotonIntegrator::finalGathering(RenderData &render_data, const SurfacePoint
 		// "zero'th" FG bounce:
 		float s_1 = sample::riVdC(offs);
 		float s_2 = Halton::lowDiscrepancySampling(2, offs);
-		if(render_data.ray_division_ > 1)
+		if(ray_division.division_ > 1)
 		{
-			s_1 = math::addMod1(s_1, render_data.dc_1_);
-			s_2 = math::addMod1(s_2, render_data.dc_2_);
+			s_1 = math::addMod1(s_1, ray_division.decorrelation_1_);
+			s_2 = math::addMod1(s_2, ray_division.decorrelation_2_);
 		}
 
 		Sample s(s_1, s_2, BsdfFlags::Diffuse | BsdfFlags::Reflect | BsdfFlags::Transmit); // glossy/dispersion/specular done via recursive raytracing
@@ -783,7 +783,7 @@ Rgb PhotonIntegrator::finalGathering(RenderData &render_data, const SurfacePoint
 			{
 				if(close)
 				{
-					lcol = estimateOneDirectLight(render_data, hit, pwo, offs);
+					lcol = estimateOneDirectLight(render_data, hit, pwo, offs, ray_division);
 				}
 				else if(caustic)
 				{
@@ -802,10 +802,10 @@ Rgb PhotonIntegrator::finalGathering(RenderData &render_data, const SurfacePoint
 			s_1 = Halton::lowDiscrepancySampling(d_4 + 3, offs);
 			s_2 = Halton::lowDiscrepancySampling(d_4 + 4, offs);
 
-			if(render_data.ray_division_ > 1)
+			if(ray_division.division_ > 1)
 			{
-				s_1 = math::addMod1(s_1, render_data.dc_1_);
-				s_2 = math::addMod1(s_2, render_data.dc_2_);
+				s_1 = math::addMod1(s_1, ray_division.decorrelation_1_);
+				s_2 = math::addMod1(s_2, ray_division.decorrelation_2_);
 			}
 
 			Sample sb(s_1, s_2, (close) ? BsdfFlags::All : BsdfFlags::AllSpecular | BsdfFlags::Filter);
@@ -857,7 +857,7 @@ Rgb PhotonIntegrator::finalGathering(RenderData &render_data, const SurfacePoint
 	return path_col / (float)n_sampl;
 }
 
-Rgba PhotonIntegrator::integrate(RenderData &render_data, const Ray &ray, int additional_depth, ColorLayers *color_layers, const RenderView *render_view) const
+Rgba PhotonIntegrator::integrate(RenderData &render_data, const Ray &ray, int additional_depth, const RayDivision &ray_division, ColorLayers *color_layers, const RenderView *render_view) const
 {
 	static int n_max = 0;
 	static int calls = 0;
@@ -928,8 +928,8 @@ Rgba PhotonIntegrator::integrate(RenderData &render_data, const Ray &ray, int ad
 
 				if(mat_bsdfs.hasAny(BsdfFlags::Diffuse))
 				{
-					col += estimateAllDirectLight(render_data, sp, wo, color_layers);
-					Rgb col_tmp = finalGathering(render_data, sp, wo);
+					col += estimateAllDirectLight(render_data, sp, wo, ray_division, color_layers);
+					Rgb col_tmp = finalGathering(render_data, sp, wo, ray_division);
 					if(aa_noise_params_.clamp_indirect_ > 0.f) col_tmp.clampProportionalRgb(aa_noise_params_.clamp_indirect_);
 					col += col_tmp;
 					if(color_layers)
@@ -971,7 +971,7 @@ Rgba PhotonIntegrator::integrate(RenderData &render_data, const Ray &ray, int ad
 
 				if(mat_bsdfs.hasAny(BsdfFlags::Diffuse))
 				{
-					col += estimateAllDirectLight(render_data, sp, wo, color_layers);
+					col += estimateAllDirectLight(render_data, sp, wo, ray_division, color_layers);
 				}
 
 				FoundPhoton *gathered = (FoundPhoton *)alloca(n_diffuse_search_ * sizeof(FoundPhoton));
@@ -1013,7 +1013,7 @@ Rgba PhotonIntegrator::integrate(RenderData &render_data, const Ray &ray, int ad
 			}
 		}
 
-		recursiveRaytrace(render_data, ray, mat_bsdfs, sp, wo, col, alpha, additional_depth, color_layers);
+		recursiveRaytrace(render_data, ray, mat_bsdfs, sp, wo, col, alpha, additional_depth, ray_division, color_layers);
 
 		if(color_layers)
 		{
@@ -1021,12 +1021,12 @@ Rgba PhotonIntegrator::integrate(RenderData &render_data, const Ray &ray, int ad
 
 			if(ColorLayer *color_layer = color_layers->find(Layer::Ao))
 			{
-				color_layer->color_ = sampleAmbientOcclusionLayer(render_data, sp, wo);
+				color_layer->color_ = sampleAmbientOcclusionLayer(render_data, sp, wo, ray_division);
 			}
 
 			if(ColorLayer *color_layer = color_layers->find(Layer::AoClay))
 			{
-				color_layer->color_ = sampleAmbientOcclusionClayLayer(render_data, sp, wo);
+				color_layer->color_ = sampleAmbientOcclusionClayLayer(render_data, sp, wo, ray_division);
 			}
 		}
 

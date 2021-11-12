@@ -56,17 +56,17 @@ class MonteCarloIntegrator: public TiledIntegrator
 	protected:
 		virtual ~MonteCarloIntegrator() override;
 		/*! Estimates direct light from all sources in a mc fashion and completing MIS (Multiple Importance Sampling) for a given surface point */
-		Rgb estimateAllDirectLight(RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo, ColorLayers *color_layers = nullptr) const;
+		Rgb estimateAllDirectLight(RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo, const RayDivision &ray_division, ColorLayers *color_layers = nullptr) const;
 		/*! Like previous but for only one random light source for a given surface point */
-		Rgb estimateOneDirectLight(RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo, int n) const;
+		Rgb estimateOneDirectLight(RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo, int n, const RayDivision &ray_division) const;
 		/*! Does the actual light estimation on a specific light for the given surface point */
-		Rgb doLightEstimation(RenderData &render_data, const Light *light, const SurfacePoint &sp, const Vec3 &wo, unsigned int loffs, ColorLayers *color_layers = nullptr) const;
+		Rgb doLightEstimation(RenderData &render_data, const Light *light, const SurfacePoint &sp, const Vec3 &wo, unsigned int loffs, const RayDivision &ray_division, ColorLayers *color_layers = nullptr) const;
 		/*! Does recursive mc raytracing with MIS (Multiple Importance Sampling) for a given surface point */
-		void recursiveRaytrace(RenderData &render_data, const Ray &ray, const BsdfFlags &bsdfs, SurfacePoint &sp, const Vec3 &wo, Rgb &col, float &alpha, int additional_depth, ColorLayers *color_layers) const;
-		Rgb dispersive(RenderData &render_data, const SurfacePoint &sp, const Material *material, const BsdfFlags &bsdfs, const Vec3 &wo, float ray_min_dist, int additional_depth, ColorLayers *color_layers) const;
-		Rgb glossy(RenderData &render_data, float &alpha, const Ray &ray, const SurfacePoint &sp, const Material *material, const BsdfFlags &mat_bsdfs, const BsdfFlags &bsdfs, const Vec3 &wo, float ray_min_dist, int additional_depth, ColorLayers *color_layers) const;
-		Rgb specularReflect(RenderData &render_data, float &alpha, const Ray &ray, const SurfacePoint &sp, const Material *material, const BsdfFlags &bsdfs, const DirectionColor *reflect_data, float ray_min_dist, int additional_depth, ColorLayers *color_layers) const;
-		Rgb specularRefract(RenderData &render_data, float &alpha, const Ray &ray, const SurfacePoint &sp, const Material *material, const BsdfFlags &bsdfs, const DirectionColor *refract_data, float ray_min_dist, int additional_depth, ColorLayers *color_layers) const;
+		void recursiveRaytrace(RenderData &render_data, const Ray &ray, const BsdfFlags &bsdfs, SurfacePoint &sp, const Vec3 &wo, Rgb &col, float &alpha, int additional_depth, const RayDivision &ray_division, ColorLayers *color_layers) const;
+		Rgb dispersive(RenderData &render_data, const SurfacePoint &sp, const Material *material, const BsdfFlags &bsdfs, const Vec3 &wo, float ray_min_dist, int additional_depth, const RayDivision &ray_division, ColorLayers *color_layers) const;
+		Rgb glossy(RenderData &render_data, float &alpha, const Ray &ray, const SurfacePoint &sp, const Material *material, const BsdfFlags &mat_bsdfs, const BsdfFlags &bsdfs, const Vec3 &wo, float ray_min_dist, int additional_depth, const RayDivision &ray_division, ColorLayers *color_layers) const;
+		Rgb specularReflect(RenderData &render_data, float &alpha, const Ray &ray, const SurfacePoint &sp, const Material *material, const BsdfFlags &bsdfs, const DirectionColor *reflect_data, float ray_min_dist, int additional_depth, const RayDivision &ray_division, ColorLayers *color_layers) const;
+		Rgb specularRefract(RenderData &render_data, float &alpha, const Ray &ray, const SurfacePoint &sp, const Material *material, const BsdfFlags &bsdfs, const DirectionColor *refract_data, float ray_min_dist, int additional_depth, const RayDivision &ray_division, ColorLayers *color_layers) const;
 		Rgb diracLight(const Accelerator *accelerator, const Light *light, const Vec3 &wo, const SurfacePoint &sp, Random *prng, bool cast_shadows, const Camera *camera, ColorLayers *color_layers) const;
 		Rgb areaLightSampleLight(const RenderData &render_data, const Accelerator *accelerator, const Light *light, const Vec3 &wo, const SurfacePoint &sp, bool cast_shadows, unsigned int num_samples, float inv_num_samples, Halton &hal_2, Halton &hal_3, ColorLayers *color_layers) const;
 		Rgb areaLightSampleMaterial(const RenderData &render_data, const Accelerator *accelerator, const Light *light, const Vec3 &wo, const SurfacePoint &sp, bool cast_shadows, unsigned int num_samples, float inv_num_samples, Halton &hal_2, Halton &hal_3, ColorLayers *color_layers) const;
@@ -75,9 +75,9 @@ class MonteCarloIntegrator: public TiledIntegrator
 		/*! Estimates caustic photons for a given surface point */
 		Rgb estimateCausticPhotons(const SurfacePoint &sp, const Vec3 &wo) const;
 		/*! Samples ambient occlusion for a given surface point */
-		Rgb sampleAmbientOcclusion(RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo) const;
-		Rgb sampleAmbientOcclusionLayer(RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo) const;
-		Rgb sampleAmbientOcclusionClayLayer(RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo) const;
+		Rgb sampleAmbientOcclusion(RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo, const RayDivision &ray_division) const;
+		Rgb sampleAmbientOcclusionLayer(RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo, const RayDivision &ray_division) const;
+		Rgb sampleAmbientOcclusionClayLayer(RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo, const RayDivision &ray_division) const;
 
 		int r_depth_; //! Ray depth
 		bool tr_shad_; //! Use transparent shadows
