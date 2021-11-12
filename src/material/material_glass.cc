@@ -210,7 +210,7 @@ float GlassMaterial::getAlpha(const MaterialData *mat_data, const SurfacePoint &
 	return alpha;
 }
 
-Specular GlassMaterial::getSpecular(int raylevel, const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, bool chromatic, float wavelength) const
+Specular GlassMaterial::getSpecular(int ray_level, const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, bool chromatic, float wavelength) const
 {
 	const bool outside = sp.ng_ * wo > 0;
 	Vec3 n;
@@ -252,7 +252,7 @@ Specular GlassMaterial::getSpecular(int raylevel, const MaterialData *mat_data, 
 
 		// accounting for fresnel reflection when leaving refractive material is a real performance
 		// killer as rays keep bouncing inside objects and contribute little after few bounces, so limit we it:
-		if(outside || raylevel < 3)
+		if(outside || ray_level < 3)
 		{
 			specular.reflect_ = std::unique_ptr<DirectionColor>(new DirectionColor());
 			specular.reflect_->dir_ = wo;
@@ -442,7 +442,7 @@ Rgb MirrorMaterial::sample(const MaterialData *mat_data, const SurfacePoint &sp,
 	return ref_col_ * (1.f / std::abs(sp.n_ * wi));
 }
 
-Specular MirrorMaterial::getSpecular(int raylevel, const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, bool chromatic, float wavelength) const
+Specular MirrorMaterial::getSpecular(int ray_level, const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, bool chromatic, float wavelength) const
 {
 	Specular specular;
 	specular.reflect_ = std::unique_ptr<DirectionColor>(new DirectionColor());

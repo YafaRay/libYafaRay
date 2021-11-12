@@ -91,12 +91,12 @@ Rgb MaskMaterial::getTransparency(const MaterialData *mat_data, const SurfacePoi
 	else return mat_1_->getTransparency(mat_data_specific->mat_1_data_.get(), sp, wo, camera);
 }
 
-Specular MaskMaterial::getSpecular(int raylevel, const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, bool chromatic, float wavelength) const
+Specular MaskMaterial::getSpecular(int ray_level, const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, bool chromatic, float wavelength) const
 {
 	const MaskMaterialData *mat_data_specific = static_cast<const MaskMaterialData *>(mat_data);
 	Specular specular;
-	if(mat_data_specific->select_mat_2_) specular = mat_2_->getSpecular(raylevel, mat_data_specific->mat_2_data_.get(), sp, wo, chromatic, wavelength);
-	else specular = mat_1_->getSpecular(raylevel, mat_data_specific->mat_1_data_.get(), sp, wo, chromatic, wavelength);
+	if(mat_data_specific->select_mat_2_) specular = mat_2_->getSpecular(ray_level, mat_data_specific->mat_2_data_.get(), sp, wo, chromatic, wavelength);
+	else specular = mat_1_->getSpecular(ray_level, mat_data_specific->mat_1_data_.get(), sp, wo, chromatic, wavelength);
 	return specular;
 }
 

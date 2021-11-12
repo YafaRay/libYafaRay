@@ -122,7 +122,7 @@ bool PathIntegrator::preprocess(const RenderControl &render_control, Timer &time
 	return success;
 }
 
-Rgba PathIntegrator::integrate(int thread_id, RenderData &render_data, const Ray &ray, int additional_depth, const RayDivision &ray_division, ColorLayers *color_layers, const RenderView *render_view) const
+Rgba PathIntegrator::integrate(int thread_id, int ray_level, RenderData &render_data, const Ray &ray, int additional_depth, const RayDivision &ray_division, ColorLayers *color_layers, const RenderView *render_view) const
 {
 	static int calls = 0;
 	++calls;
@@ -139,7 +139,7 @@ Rgba PathIntegrator::integrate(int thread_id, RenderData &render_data, const Ray
 	if(accelerator && accelerator->intersect(ray, sp, render_data.cam_))
 	{
 		// if camera ray initialize sampling offset:
-		if(render_data.raylevel_ == 0)
+		if(ray_level == 0)
 		{
 			//FIXME render_data.lights_geometry_material_emit_ = true;
 			//...
@@ -324,11 +324,11 @@ Rgba PathIntegrator::integrate(int thread_id, RenderData &render_data, const Ray
 		//reset chromatic state:
 		render_data.chromatic_ = was_chromatic;
 
-		recursiveRaytrace(thread_id, render_data, ray, mat_bsdfs, sp, wo, col, alpha, additional_depth, ray_division, color_layers);
+		recursiveRaytrace(thread_id, ray_level + 1, render_data, ray, mat_bsdfs, sp, wo, col, alpha, additional_depth, ray_division, color_layers);
 
 		if(color_layers)
 		{
-			generateCommonLayers(render_data.raylevel_, sp, ray, scene_->getMaskParams(), color_layers);
+			generateCommonLayers(sp, ray, scene_->getMaskParams(), color_layers);
 
 			if(ColorLayer *color_layer = color_layers->find(Layer::Ao))
 			{

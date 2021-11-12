@@ -662,7 +662,7 @@ Rgb MonteCarloIntegrator::estimateCausticPhotons(const SurfacePoint &sp, const V
 	return sum;
 }
 
-Rgb MonteCarloIntegrator::dispersive(int thread_id, RenderData &render_data, const SurfacePoint &sp, const Material *material, const BsdfFlags &bsdfs, const Vec3 &wo, float ray_min_dist, int additional_depth, const RayDivision &ray_division, ColorLayers *color_layers) const
+Rgb MonteCarloIntegrator::dispersive(int thread_id, int ray_level, RenderData &render_data, const SurfacePoint &sp, const Material *material, const BsdfFlags &bsdfs, const Vec3 &wo, float ray_min_dist, int additional_depth, const RayDivision &ray_division, ColorLayers *color_layers) const
 {
 	Rgb col;
 	render_data.lights_geometry_material_emit_ = false; //debatable...
@@ -681,8 +681,8 @@ Rgb MonteCarloIntegrator::dispersive(int thread_id, RenderData &render_data, con
 	for(int ns = 0; ns < dsam; ++ns)
 	{
 		render_data.wavelength_ = (ns + ss_1) * d_1;
-		ray_division_new.decorrelation_1_ = Halton::lowDiscrepancySampling(2 * render_data.raylevel_ + 1, branch + render_data.sampling_offs_);
-		ray_division_new.decorrelation_2_ = Halton::lowDiscrepancySampling(2 * render_data.raylevel_ + 2, branch + render_data.sampling_offs_);
+		ray_division_new.decorrelation_1_ = Halton::lowDiscrepancySampling(2 * ray_level + 1, branch + render_data.sampling_offs_);
+		ray_division_new.decorrelation_2_ = Halton::lowDiscrepancySampling(2 * ray_level + 2, branch + render_data.sampling_offs_);
 		if(ray_division.division_ > 1) render_data.wavelength_ = math::addMod1(render_data.wavelength_, ray_division.decorrelation_1_);
 		ray_division_new.offset_ = branch;
 		++branch;
@@ -695,7 +695,7 @@ Rgb MonteCarloIntegrator::dispersive(int thread_id, RenderData &render_data, con
 			render_data.chromatic_ = false;
 			const Rgb wl_col = spectrum::wl2Rgb(render_data.wavelength_);
 			const Ray ref_ray(sp.p_, wi, ray_min_dist);
-			const Rgb dcol_trans = static_cast<Rgb>(integrate(thread_id, render_data, ref_ray, additional_depth, ray_division_new, nullptr, nullptr)) * mcol * wl_col * w;
+			const Rgb dcol_trans = static_cast<Rgb>(integrate(thread_id, ray_level, render_data, ref_ray, additional_depth, ray_division_new, nullptr, nullptr)) * mcol * wl_col * w;
 			dcol += dcol_trans;
 			if(color_layers) dcol_trans_accum += dcol_trans;
 			if(!ref_ray_chromatic_volume) ref_ray_chromatic_volume = std::unique_ptr<Ray>(new Ray(ref_ray, Ray::DifferentialsCopy::No));
@@ -720,7 +720,7 @@ Rgb MonteCarloIntegrator::dispersive(int thread_id, RenderData &render_data, con
 	return dcol * d_1;
 }
 
-Rgb MonteCarloIntegrator::glossy(int thread_id, RenderData &render_data, float &alpha, const Ray &ray, const SurfacePoint &sp, const Material *material, const BsdfFlags &mat_bsdfs, const BsdfFlags &bsdfs, const Vec3 &wo, float ray_min_dist, int additional_depth, const RayDivision &ray_division, ColorLayers *color_layers) const
+Rgb MonteCarloIntegrator::glossy(int thread_id, int ray_level, RenderData &render_data, float &alpha, const Ray &ray, const SurfacePoint &sp, const Material *material, const BsdfFlags &mat_bsdfs, const BsdfFlags &bsdfs, const Vec3 &wo, float ray_min_dist, int additional_depth, const RayDivision &ray_division, ColorLayers *color_layers) const
 {
 	render_data.lights_geometry_material_emit_ = true;
 	int gsam = 8;
@@ -741,8 +741,8 @@ Rgb MonteCarloIntegrator::glossy(int thread_id, RenderData &render_data, float &
 
 	for(int ns = 0; ns < gsam; ++ns)
 	{
-		ray_division_new.decorrelation_1_ = Halton::lowDiscrepancySampling(2 * render_data.raylevel_ + 1, branch + render_data.sampling_offs_);
-		ray_division_new.decorrelation_2_ = Halton::lowDiscrepancySampling(2 * render_data.raylevel_ + 2, branch + render_data.sampling_offs_);
+		ray_division_new.decorrelation_1_ = Halton::lowDiscrepancySampling(2 * ray_level + 1, branch + render_data.sampling_offs_);
+		ray_division_new.decorrelation_2_ = Halton::lowDiscrepancySampling(2 * ray_level + 2, branch + render_data.sampling_offs_);
 		ray_division_new.offset_ = branch;
 		++offs;
 		++branch;
@@ -764,7 +764,7 @@ Rgb MonteCarloIntegrator::glossy(int thread_id, RenderData &render_data, float &
 					if(s.sampled_flags_.hasAny(BsdfFlags::Reflect)) ref_ray.differentials_ = sp.reflectedRay(ray.differentials_.get(), ray.dir_, ref_ray.dir_);
 					else if(s.sampled_flags_.hasAny(BsdfFlags::Transmit)) ref_ray.differentials_ = sp.refractedRay(ray.differentials_.get(), ray.dir_, ref_ray.dir_, material->getMatIor());
 				}
-				Rgba integ = static_cast<Rgb>(integrate(thread_id, render_data, ref_ray, additional_depth, ray_division_new, nullptr, nullptr));
+				Rgba integ = static_cast<Rgb>(integrate(thread_id, ray_level, render_data, ref_ray, additional_depth, ray_division_new, nullptr, nullptr));
 				if(bsdfs.hasAny(BsdfFlags::Volumetric))
 				{
 					if(const VolumeHandler *vol = material->getVolumeHandler(sp.ng_ * ref_ray.dir_ < 0))
@@ -789,7 +789,7 @@ Rgb MonteCarloIntegrator::glossy(int thread_id, RenderData &render_data, float &
 				{
 					Ray ref_ray = Ray(sp.p_, dir[0], scene_->ray_min_dist_);
 					if(ray.differentials_) ref_ray.differentials_ = sp.reflectedRay(ray.differentials_.get(), ray.dir_, ref_ray.dir_);
-					Rgba integ = integrate(thread_id, render_data, ref_ray, additional_depth, ray_division_new, nullptr, nullptr);
+					Rgba integ = integrate(thread_id, ray_level, render_data, ref_ray, additional_depth, ray_division_new, nullptr, nullptr);
 					if(bsdfs.hasAny(BsdfFlags::Volumetric))
 					{
 						if(const VolumeHandler *vol = material->getVolumeHandler(sp.ng_ * ref_ray.dir_ < 0))
@@ -807,7 +807,7 @@ Rgb MonteCarloIntegrator::glossy(int thread_id, RenderData &render_data, float &
 				{
 					Ray ref_ray = Ray(sp.p_, dir[1], scene_->ray_min_dist_);
 					if(ray.differentials_) ref_ray.differentials_ = sp.refractedRay(ray.differentials_.get(), ray.dir_, ref_ray.dir_, material->getMatIor());
-					Rgba integ = integrate(thread_id, render_data, ref_ray, additional_depth, ray_division_new, nullptr, nullptr);
+					Rgba integ = integrate(thread_id, ray_level, render_data, ref_ray, additional_depth, ray_division_new, nullptr, nullptr);
 					if(bsdfs.hasAny(BsdfFlags::Volumetric))
 					{
 						if(const VolumeHandler *vol = material->getVolumeHandler(sp.ng_ * ref_ray.dir_ < 0))
@@ -846,11 +846,11 @@ Rgb MonteCarloIntegrator::glossy(int thread_id, RenderData &render_data, float &
 	return gcol * d_1;
 }
 
-Rgb MonteCarloIntegrator::specularReflect(int thread_id, RenderData &render_data, float &alpha, const Ray &ray, const SurfacePoint &sp, const Material *material, const BsdfFlags &bsdfs, const DirectionColor *reflect_data, float ray_min_dist, int additional_depth, const RayDivision &ray_division, ColorLayers *color_layers) const
+Rgb MonteCarloIntegrator::specularReflect(int thread_id, int ray_level, RenderData &render_data, float &alpha, const Ray &ray, const SurfacePoint &sp, const Material *material, const BsdfFlags &bsdfs, const DirectionColor *reflect_data, float ray_min_dist, int additional_depth, const RayDivision &ray_division, ColorLayers *color_layers) const
 {
 	Ray ref_ray(sp.p_, reflect_data->dir_, ray_min_dist);
 	if(ray.differentials_) ref_ray.differentials_ = sp.reflectedRay(ray.differentials_.get(), ray.dir_, ref_ray.dir_);
-	Rgb integ = integrate(thread_id, render_data, ref_ray, additional_depth, ray_division, nullptr, nullptr);
+	Rgb integ = integrate(thread_id, ray_level, render_data, ref_ray, additional_depth, ray_division, nullptr, nullptr);
 	if(bsdfs.hasAny(BsdfFlags::Volumetric))
 	{
 		if(const VolumeHandler *vol = material->getVolumeHandler(sp.ng_ * ref_ray.dir_ < 0))
@@ -866,20 +866,20 @@ Rgb MonteCarloIntegrator::specularReflect(int thread_id, RenderData &render_data
 	return col_ind;
 }
 
-Rgb MonteCarloIntegrator::specularRefract(int thread_id, RenderData &render_data, float &alpha, const Ray &ray, const SurfacePoint &sp, const Material *material, const BsdfFlags &bsdfs, const DirectionColor *refract_data, float ray_min_dist, int additional_depth, const RayDivision &ray_division, ColorLayers *color_layers) const
+Rgb MonteCarloIntegrator::specularRefract(int thread_id, int ray_level, RenderData &render_data, float &alpha, const Ray &ray, const SurfacePoint &sp, const Material *material, const BsdfFlags &bsdfs, const DirectionColor *refract_data, float ray_min_dist, int additional_depth, const RayDivision &ray_division, ColorLayers *color_layers) const
 {
 	Ray ref_ray;
 	float transp_bias_factor = material->getTransparentBiasFactor();
 	if(transp_bias_factor > 0.f)
 	{
 		const bool transpbias_multiply_raydepth = material->getTransparentBiasMultiplyRayDepth();
-		if(transpbias_multiply_raydepth) transp_bias_factor *= render_data.raylevel_;
+		if(transpbias_multiply_raydepth) transp_bias_factor *= ray_level;
 		ref_ray = Ray(sp.p_ + refract_data->dir_ * transp_bias_factor, refract_data->dir_, ray_min_dist);
 	}
 	else ref_ray = Ray(sp.p_, refract_data->dir_, ray_min_dist);
 
 	if(ray.differentials_) ref_ray.differentials_ = sp.refractedRay(ray.differentials_.get(), ray.dir_, ref_ray.dir_, material->getMatIor());
-	Rgba integ = integrate(thread_id, render_data, ref_ray, additional_depth, ray_division, nullptr, nullptr);
+	Rgba integ = integrate(thread_id, ray_level, render_data, ref_ray, additional_depth, ray_division, nullptr, nullptr);
 
 	if(bsdfs.hasAny(BsdfFlags::Volumetric))
 	{
@@ -897,46 +897,40 @@ Rgb MonteCarloIntegrator::specularRefract(int thread_id, RenderData &render_data
 	return col_ind;
 }
 
-void MonteCarloIntegrator::recursiveRaytrace(int thread_id, RenderData &render_data, const Ray &ray, const BsdfFlags &bsdfs, SurfacePoint &sp, const Vec3 &wo, Rgb &col, float &alpha, int additional_depth, const RayDivision &ray_division, ColorLayers *color_layers) const
+void MonteCarloIntegrator::recursiveRaytrace(int thread_id, int ray_level, RenderData &render_data, const Ray &ray, const BsdfFlags &bsdfs, SurfacePoint &sp, const Vec3 &wo, Rgb &col, float &alpha, int additional_depth, const RayDivision &ray_division, ColorLayers *color_layers) const
 {
-	const Material *material = sp.material_;
-	const BsdfFlags &mat_bsdfs = sp.mat_data_->bsdf_flags_;
-
-	render_data.raylevel_++;
-
-	if(render_data.raylevel_ <= (r_depth_ + additional_depth))
+	if(ray_level <= (r_depth_ + additional_depth))
 	{
+		const Material *material = sp.material_;
+		const BsdfFlags &mat_bsdfs = sp.mat_data_->bsdf_flags_;
 		// dispersive effects with recursive raytracing:
 		if(bsdfs.hasAny(BsdfFlags::Dispersive) && render_data.chromatic_)
 		{
-			col += dispersive(thread_id, render_data, sp, material, bsdfs, wo, scene_->ray_min_dist_, additional_depth, ray_division, color_layers);
+			col += dispersive(thread_id, ray_level, render_data, sp, material, bsdfs, wo, scene_->ray_min_dist_, additional_depth, ray_division, color_layers);
 		}
-
-		if(render_data.raylevel_ < 20 && bsdfs.hasAny(BsdfFlags::Glossy | BsdfFlags::Specular | BsdfFlags::Filter))
+		if(ray_level < 20 && bsdfs.hasAny(BsdfFlags::Glossy | BsdfFlags::Specular | BsdfFlags::Filter))
 		{
 			// glossy reflection with recursive raytracing:
 			if(bsdfs.hasAny(BsdfFlags::Glossy))
 			{
-				col += glossy(thread_id, render_data, alpha, ray, sp, material, mat_bsdfs, bsdfs, wo, scene_->ray_min_dist_, additional_depth ,ray_division, color_layers);
+				col += glossy(thread_id, ray_level, render_data, alpha, ray, sp, material, mat_bsdfs, bsdfs, wo, scene_->ray_min_dist_, additional_depth, ray_division, color_layers);
 			}
-
 			//...perfect specular reflection/refraction with recursive raytracing...
 			if(bsdfs.hasAny((BsdfFlags::Specular | BsdfFlags::Filter)))
 			{
 				render_data.lights_geometry_material_emit_ = true;
-				const Specular specular = material->getSpecular(render_data.raylevel_, sp.mat_data_.get(), sp, wo, render_data.chromatic_, render_data.wavelength_);
+				const Specular specular = material->getSpecular(ray_level, sp.mat_data_.get(), sp, wo, render_data.chromatic_, render_data.wavelength_);
 				if(specular.reflect_)
 				{
-					col += specularReflect(thread_id, render_data, alpha, ray, sp, material, bsdfs, specular.reflect_.get(), scene_->ray_min_dist_, additional_depth, ray_division, color_layers);
+					col += specularReflect(thread_id, ray_level, render_data, alpha, ray, sp, material, bsdfs, specular.reflect_.get(), scene_->ray_min_dist_, additional_depth, ray_division, color_layers);
 				}
 				if(specular.refract_)
 				{
-					col += specularRefract(thread_id, render_data, alpha, ray, sp, material, bsdfs, specular.refract_.get(), scene_->ray_min_dist_, additional_depth, ray_division, color_layers);
+					col += specularRefract(thread_id, ray_level, render_data, alpha, ray, sp, material, bsdfs, specular.refract_.get(), scene_->ray_min_dist_, additional_depth, ray_division, color_layers);
 				}
 			}
 		}
 	}
-	--render_data.raylevel_;
 }
 
 Rgb MonteCarloIntegrator::sampleAmbientOcclusion(RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo, const RayDivision &ray_division) const

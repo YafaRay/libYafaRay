@@ -369,7 +369,7 @@ bool TiledIntegrator::renderTile(RenderArea &a, const RenderView *render_view, c
 				}
 				camera_ray.ray_.time_ = rstate.time_;
 				RayDivision ray_division;
-				color_layers(Layer::Combined).color_ = integrate(thread_id, rstate, camera_ray.ray_, 0, ray_division, &color_layers, render_view);
+				color_layers(Layer::Combined).color_ = integrate(thread_id, 0, rstate, camera_ray.ray_, 0, ray_division, &color_layers, render_view);
 				for(auto &it : color_layers)
 				{
 					switch(it.first)
@@ -417,7 +417,7 @@ bool TiledIntegrator::renderTile(RenderArea &a, const RenderView *render_view, c
 	return true;
 }
 
-void TiledIntegrator::generateCommonLayers(int raylevel, const SurfacePoint &sp, const Ray &ray, const MaskParams &mask_params, ColorLayers *color_layers)
+void TiledIntegrator::generateCommonLayers(const SurfacePoint &sp, const Ray &ray, const MaskParams &mask_params, ColorLayers *color_layers)
 {
 	if(color_layers)
 	{

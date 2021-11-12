@@ -944,7 +944,7 @@ std::unique_ptr<Integrator> PhotonIntegrator::factory(Logger &logger, ParamMap &
 	return inte;
 }
 
-Rgba PhotonIntegrator::integrate(int thread_id, RenderData &render_data, const Ray &ray, int additional_depth, const RayDivision &ray_division, ColorLayers *color_layers, const RenderView *render_view) const
+Rgba PhotonIntegrator::integrate(int thread_id, int ray_level, RenderData &render_data, const Ray &ray, int additional_depth, const RayDivision &ray_division, ColorLayers *color_layers, const RenderView *render_view) const
 {
 	static int n_max = 0;
 	static int calls = 0;
@@ -961,7 +961,7 @@ Rgba PhotonIntegrator::integrate(int thread_id, RenderData &render_data, const R
 	const Accelerator *accelerator = scene_->getAccelerator();
 	if(accelerator && accelerator->intersect(ray, sp, render_data.cam_))
 	{
-		if(render_data.raylevel_ == 0)
+		if(ray_level == 0)
 		{
 			render_data.chromatic_ = true;
 			render_data.lights_geometry_material_emit_ = true;
@@ -1100,11 +1100,11 @@ Rgba PhotonIntegrator::integrate(int thread_id, RenderData &render_data, const R
 			}
 		}
 
-		recursiveRaytrace(thread_id, render_data, ray, mat_bsdfs, sp, wo, col, alpha, additional_depth, ray_division, color_layers);
+		recursiveRaytrace(thread_id, ray_level + 1, render_data, ray, mat_bsdfs, sp, wo, col, alpha, additional_depth, ray_division, color_layers);
 
 		if(color_layers)
 		{
-			generateCommonLayers(render_data.raylevel_, sp, ray, scene_->getMaskParams(), color_layers);
+			generateCommonLayers(sp, ray, scene_->getMaskParams(), color_layers);
 
 			if(ColorLayer *color_layer = color_layers->find(Layer::Ao))
 			{

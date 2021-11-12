@@ -243,7 +243,7 @@ void BidirectionalIntegrator::cleanup()
 /* ============================================================
     integrate
  ============================================================ */
-Rgba BidirectionalIntegrator::integrate(int thread_id, RenderData &render_data, const Ray &ray, int additional_depth, const RayDivision &ray_division, ColorLayers *color_layers, const RenderView *render_view) const
+Rgba BidirectionalIntegrator::integrate(int thread_id, int ray_level, RenderData &render_data, const Ray &ray, int additional_depth, const RayDivision &ray_division, ColorLayers *color_layers, const RenderView *render_view) const
 {
 	Rgb col(0.f);
 	SurfacePoint sp;
@@ -398,7 +398,7 @@ Rgba BidirectionalIntegrator::integrate(int thread_id, RenderData &render_data, 
 
 		if(color_layers)
 		{
-			generateCommonLayers(render_data.raylevel_, sp, ray, scene_->getMaskParams(), color_layers);
+			generateCommonLayers(sp, ray, scene_->getMaskParams(), color_layers);
 
 			if(ColorLayer *color_layer = color_layers->find(Layer::Ao))
 			{

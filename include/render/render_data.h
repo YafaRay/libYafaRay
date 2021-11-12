@@ -46,7 +46,6 @@ class RenderData final
 		RenderData(const RenderData &r) = delete;
 		void setDefaults();
 
-		int raylevel_ = 0;
 		int pixel_sample_ = 0; //!< number of samples inside this pixels so far
 		int pixel_number_ = 0;
 		unsigned int sampling_offs_ = 0; //!< a "noise-like" pixel offset you may use to decorelate sampling of adjacent pixel.
@@ -60,7 +59,6 @@ class RenderData final
 
 inline void RenderData::setDefaults()
 {
-	raylevel_ = 0;
 	chromatic_ = true;
 }
 

@@ -395,7 +395,7 @@ float CoatedGlossyMaterial::pdf(const MaterialData *mat_data, const SurfacePoint
 	return pdf / sum;
 }
 
-Specular CoatedGlossyMaterial::getSpecular(int raylevel, const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, bool chromatic, float wavelength) const
+Specular CoatedGlossyMaterial::getSpecular(int ray_level, const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, bool chromatic, float wavelength) const
 {
 	const bool outside = sp.ng_ * wo >= 0;
 	Vec3 n, ng;
@@ -413,7 +413,7 @@ Specular CoatedGlossyMaterial::getSpecular(int raylevel, const MaterialData *mat
 	float kr, kt;
 	Vec3::fresnel(wo, n, getShaderScalar(ior_shader_, mat_data->node_tree_data_, ior_), kr, kt);
 	Specular specular;
-	if(raylevel > 5) return specular;
+	if(ray_level > 5) return specular;
 	specular.reflect_ = std::unique_ptr<DirectionColor>(new DirectionColor());
 	specular.reflect_->dir_ = wo;
 	specular.reflect_->dir_.reflect(n);

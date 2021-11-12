@@ -102,7 +102,7 @@ bool DirectLightIntegrator::preprocess(const RenderControl &render_control, Time
 	return success;
 }
 
-Rgba DirectLightIntegrator::integrate(int thread_id, RenderData &render_data, const Ray &ray, int additional_depth, const RayDivision &ray_division, ColorLayers *color_layers, const RenderView *render_view) const
+Rgba DirectLightIntegrator::integrate(int thread_id, int ray_level, RenderData &render_data, const Ray &ray, int additional_depth, const RayDivision &ray_division, ColorLayers *color_layers, const RenderView *render_view) const
 {
 	Rgb col(0.f);
 	float alpha;
@@ -117,7 +117,7 @@ Rgba DirectLightIntegrator::integrate(int thread_id, RenderData &render_data, co
 		const Material *material = sp.material_;
 		const BsdfFlags &mat_bsdfs = sp.mat_data_->bsdf_flags_;
 		const Vec3 wo = -ray.dir_;
-		if(render_data.raylevel_ == 0) render_data.lights_geometry_material_emit_ = true;
+		if(ray_level == 0) render_data.lights_geometry_material_emit_ = true;
 		if(additional_depth < material->getAdditionalDepth()) additional_depth = material->getAdditionalDepth();
 		if(mat_bsdfs.hasAny(BsdfFlags::Emit))
 		{
@@ -143,10 +143,10 @@ Rgba DirectLightIntegrator::integrate(int thread_id, RenderData &render_data, co
 			}
 			if(use_ambient_occlusion_) col += sampleAmbientOcclusion(render_data, sp, wo, ray_division);
 		}
-		recursiveRaytrace(thread_id, render_data, ray, mat_bsdfs, sp, wo, col, alpha, additional_depth, ray_division, color_layers);
+		recursiveRaytrace(thread_id, ray_level + 1, render_data, ray, mat_bsdfs, sp, wo, col, alpha, additional_depth, ray_division, color_layers);
 		if(color_layers)
 		{
-			generateCommonLayers(render_data.raylevel_, sp, ray, scene_->getMaskParams(), color_layers);
+			generateCommonLayers(sp, ray, scene_->getMaskParams(), color_layers);
 			if(ColorLayer *color_layer = color_layers->find(Layer::Ao))
 			{
 				color_layer->color_ = sampleAmbientOcclusionLayer(render_data, sp, wo, ray_division);
