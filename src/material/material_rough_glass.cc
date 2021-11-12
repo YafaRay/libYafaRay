@@ -136,7 +136,7 @@ Rgb RoughGlassMaterial::sample(const MaterialData *mat_data, const SurfacePoint 
 		ret = 1.f;
 		w = 1.f;
 	}
-	if(wireframe_thickness_ > 0.f) applyWireFrame(ret, wireframe_shader_, mat_data->node_tree_data_, sp);
+	applyWireFrame(ret, wireframe_shader_, mat_data->node_tree_data_, sp);
 	return ret;
 }
 
@@ -231,7 +231,7 @@ Rgb RoughGlassMaterial::sample(const MaterialData *mat_data, const SurfacePoint 
 		ret = 1.f;
 		w[0] = 1.f;
 	}
-	if(wireframe_thickness_ > 0.f) applyWireFrame(ret, wireframe_shader_, mat_data->node_tree_data_, sp);
+	applyWireFrame(ret, wireframe_shader_, mat_data->node_tree_data_, sp);
 	return ret;
 }
 
@@ -241,14 +241,14 @@ Rgb RoughGlassMaterial::getTransparency(const MaterialData *mat_data, const Surf
 	float kr, kt;
 	Vec3::fresnel(wo, n, getShaderScalar(ior_shader_, mat_data->node_tree_data_, ior_), kr, kt);
 	Rgb result = kt * getShaderColor(filter_col_shader_, mat_data->node_tree_data_, filter_color_);
-	if(wireframe_thickness_ > 0.f) applyWireFrame(result, wireframe_shader_, mat_data->node_tree_data_, sp);
+	applyWireFrame(result, wireframe_shader_, mat_data->node_tree_data_, sp);
 	return result;
 }
 
 float RoughGlassMaterial::getAlpha(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, const Camera *camera) const
 {
 	float alpha = std::max(0.f, std::min(1.f, 1.f - getTransparency(mat_data, sp, wo, camera).energy()));
-	if(wireframe_thickness_ > 0.f) applyWireFrame(alpha, wireframe_shader_, mat_data->node_tree_data_, sp);
+	applyWireFrame(alpha, wireframe_shader_, mat_data->node_tree_data_, sp);
 	return alpha;
 }
 

@@ -236,6 +236,21 @@ class Material
 		Logger &logger_;
 };
 
+template<typename T>
+inline void Material::applyWireFrame(T &value, const ShaderNode *wireframe_shader, const NodeTreeData &node_tree_data, const SurfacePoint &sp) const
+{
+	if(wireframe_thickness_ > 0.f)
+	{
+		const float wire_frame_amount = wireframe_shader ? wireframe_shader->getScalar(node_tree_data) * wireframe_amount_ : wireframe_amount_;
+		if(wire_frame_amount > 0.f) applyWireFrame(value, wire_frame_amount, sp);
+	}
+}
+
+template void Material::applyWireFrame<float>(float &value, const ShaderNode *wireframe_shader, const NodeTreeData &node_tree_data, const SurfacePoint &sp) const;
+template void Material::applyWireFrame<Rgb>(Rgb &value, const ShaderNode *wireframe_shader, const NodeTreeData &node_tree_data, const SurfacePoint &sp) const;
+template void Material::applyWireFrame<Rgba>(Rgba &value, const ShaderNode *wireframe_shader, const NodeTreeData &node_tree_data, const SurfacePoint &sp) const;
+
+
 struct Sample
 {
 	Sample(float s_1, float s_2, BsdfFlags sflags = BsdfFlags::All, bool revrs = false):

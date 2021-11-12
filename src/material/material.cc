@@ -133,17 +133,6 @@ void Material::applyWireFrame(Rgba &col, float wire_frame_amount, const SurfaceP
 	}
 }
 
-template<typename T> void Material::applyWireFrame(T &value, const ShaderNode *wireframe_shader, const NodeTreeData &node_tree_data, const SurfacePoint &sp) const
-{
-	const float wire_frame_amount = wireframe_shader ? wireframe_shader->getScalar(node_tree_data) * wireframe_amount_ : wireframe_amount_;
-	if(wire_frame_amount > 0.f) applyWireFrame(value, wire_frame_amount, sp);
-}
-
-template void Material::applyWireFrame<float>(float &value, const ShaderNode *wireframe_shader, const NodeTreeData &node_tree_data, const SurfacePoint &sp) const;
-template void Material::applyWireFrame<Rgb>(Rgb &value, const ShaderNode *wireframe_shader, const NodeTreeData &node_tree_data, const SurfacePoint &sp) const;
-template void Material::applyWireFrame<Rgba>(Rgba &value, const ShaderNode *wireframe_shader, const NodeTreeData &node_tree_data, const SurfacePoint &sp) const;
-
-
 bool Material::scatterPhoton(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wi, Vec3 &wo, PSample &s, bool chromatic, float wavelength, const Camera *camera) const
 {
 	float w = 0.f;

@@ -171,7 +171,7 @@ Rgb CoatedGlossyMaterial::eval(const MaterialData *mat_data, const SurfacePoint 
 		}
 		col += add_col;//diffuseReflectFresnel(wiN, woN, mat_data_specific->mGlossy, mat_data_specific->mDiffuse, (diffuseS ? diffuseS->getColor(mat_data->node_tree_data_) : diff_color), Kt) * ((orenNayar)?OrenNayar(wi, wo, N):1.f);
 	}
-	if(wireframe_thickness_ > 0.f) applyWireFrame(col, wireframe_shader_, mat_data->node_tree_data_, sp);
+	applyWireFrame(col, wireframe_shader_, mat_data->node_tree_data_, sp);
 	return col;
 }
 
@@ -262,7 +262,7 @@ Rgb CoatedGlossyMaterial::sample(const MaterialData *mat_data, const SurfacePoin
 			if(cos_ng_wo * cos_ng_wi < 0)
 			{
 				scolor = Rgb(0.f);
-				if(wireframe_thickness_ > 0.f) applyWireFrame(scolor, wireframe_shader_, mat_data->node_tree_data_, sp);
+				applyWireFrame(scolor, wireframe_shader_, mat_data->node_tree_data_, sp);
 				return scolor;
 			}
 	}
@@ -299,7 +299,7 @@ Rgb CoatedGlossyMaterial::sample(const MaterialData *mat_data, const SurfacePoin
 				if(cos_ng_wo * cos_ng_wi < 0)
 				{
 					scolor = Rgb(0.f);
-					if(wireframe_thickness_ > 0.f) applyWireFrame(scolor, wireframe_shader_, mat_data->node_tree_data_, sp);
+					applyWireFrame(scolor, wireframe_shader_, mat_data->node_tree_data_, sp);
 					return scolor;
 				}
 			}
@@ -345,7 +345,7 @@ Rgb CoatedGlossyMaterial::sample(const MaterialData *mat_data, const SurfacePoin
 	}
 
 	s.sampled_flags_ = c_flags_[c_index[pick]];
-	if(wireframe_thickness_ > 0.f) applyWireFrame(scolor, wireframe_shader_, mat_data->node_tree_data_, sp);
+	applyWireFrame(scolor, wireframe_shader_, mat_data->node_tree_data_, sp);
 	return scolor;
 }
 
@@ -426,7 +426,7 @@ Specular CoatedGlossyMaterial::getSpecular(int raylevel, const MaterialData *mat
 		specular.reflect_->dir_ += (0.01 - cos_wi_ng) * ng;
 		specular.reflect_->dir_.normalize();
 	}
-	if(wireframe_thickness_ > 0.f) applyWireFrame(specular.reflect_->col_, wireframe_shader_, mat_data->node_tree_data_, sp);
+	applyWireFrame(specular.reflect_->col_, wireframe_shader_, mat_data->node_tree_data_, sp);
 	return specular;
 }
 

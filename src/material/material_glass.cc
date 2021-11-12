@@ -63,7 +63,7 @@ Rgb GlassMaterial::sample(const MaterialData *mat_data, const SurfacePoint &sp, 
 	{
 		s.pdf_ = 0.f;
 		Rgb scolor = Rgb(0.f);
-		if(wireframe_thickness_ > 0.f) applyWireFrame(scolor, wireframe_shader_, mat_data->node_tree_data_, sp);
+		applyWireFrame(scolor, wireframe_shader_, mat_data->node_tree_data_, sp);
 		return scolor;
 	}
 	Vec3 refdir, n;
@@ -96,7 +96,7 @@ Rgb GlassMaterial::sample(const MaterialData *mat_data, const SurfacePoint &sp, 
 				s.sampled_flags_ = BsdfFlags::Dispersive | BsdfFlags::Transmit;
 				w = 1.f;
 				Rgb scolor = getShaderColor(filter_color_shader_, mat_data->node_tree_data_, filter_color_); // * (Kt/std::abs(sp.N*wi));
-				if(wireframe_thickness_ > 0.f) applyWireFrame(scolor, wireframe_shader_, mat_data->node_tree_data_, sp);
+				applyWireFrame(scolor, wireframe_shader_, mat_data->node_tree_data_, sp);
 				return scolor;
 			}
 			else if(MATCHES(s.flags_, BsdfFlags::Specular | BsdfFlags::Reflect))
@@ -107,7 +107,7 @@ Rgb GlassMaterial::sample(const MaterialData *mat_data, const SurfacePoint &sp, 
 				s.sampled_flags_ = BsdfFlags::Specular | BsdfFlags::Reflect;
 				w = 1.f;
 				Rgb scolor = getShaderColor(mirror_color_shader_, mat_data->node_tree_data_, specular_reflection_color_); // * (Kr/std::abs(sp.N*wi));
-				if(wireframe_thickness_ > 0.f) applyWireFrame(scolor, wireframe_shader_, mat_data->node_tree_data_, sp);
+				applyWireFrame(scolor, wireframe_shader_, mat_data->node_tree_data_, sp);
 				return scolor;
 			}
 		}
@@ -118,7 +118,7 @@ Rgb GlassMaterial::sample(const MaterialData *mat_data, const SurfacePoint &sp, 
 			s.sampled_flags_ = BsdfFlags::Specular | BsdfFlags::Reflect;
 			w = 1.f;
 			Rgb scolor = 1.f; //Rgb(1.f/std::abs(sp.N*wi));
-			if(wireframe_thickness_ > 0.f) applyWireFrame(scolor, wireframe_shader_, mat_data->node_tree_data_, sp);
+			applyWireFrame(scolor, wireframe_shader_, mat_data->node_tree_data_, sp);
 			return scolor;
 		}
 	}
@@ -151,7 +151,7 @@ Rgb GlassMaterial::sample(const MaterialData *mat_data, const SurfacePoint &sp, 
 				}
 				w = 1.f;
 				Rgb scolor = getShaderColor(filter_color_shader_, mat_data->node_tree_data_, filter_color_);//*(Kt/std::abs(sp.N*wi));
-				if(wireframe_thickness_ > 0.f) applyWireFrame(scolor, wireframe_shader_, mat_data->node_tree_data_, sp);
+				applyWireFrame(scolor, wireframe_shader_, mat_data->node_tree_data_, sp);
 				return scolor;
 			}
 			else if(MATCHES(s.flags_, BsdfFlags::Specular | BsdfFlags::Reflect)) //total inner reflection
@@ -167,7 +167,7 @@ Rgb GlassMaterial::sample(const MaterialData *mat_data, const SurfacePoint &sp, 
 				}
 				w = 1.f;
 				Rgb scolor = getShaderColor(mirror_color_shader_, mat_data->node_tree_data_, specular_reflection_color_);// * (Kr/std::abs(sp.N*wi));
-				if(wireframe_thickness_ > 0.f) applyWireFrame(scolor, wireframe_shader_, mat_data->node_tree_data_, sp);
+				applyWireFrame(scolor, wireframe_shader_, mat_data->node_tree_data_, sp);
 				return scolor;
 			}
 		}
@@ -184,7 +184,7 @@ Rgb GlassMaterial::sample(const MaterialData *mat_data, const SurfacePoint &sp, 
 			}
 			w = 1.f;
 			Rgb scolor = 1.f;//tir_col;
-			if(wireframe_thickness_ > 0.f) applyWireFrame(scolor, wireframe_shader_, mat_data->node_tree_data_, sp);
+			applyWireFrame(scolor, wireframe_shader_, mat_data->node_tree_data_, sp);
 			return scolor;
 		}
 	}
@@ -198,7 +198,7 @@ Rgb GlassMaterial::getTransparency(const MaterialData *mat_data, const SurfacePo
 	float kr, kt;
 	Vec3::fresnel(wo, n, getShaderScalar(ior_shader_, mat_data->node_tree_data_, ior_), kr, kt);
 	Rgb result = kt * getShaderColor(filter_color_shader_, mat_data->node_tree_data_, filter_color_);
-	if(wireframe_thickness_ > 0.f) applyWireFrame(result, wireframe_shader_, mat_data->node_tree_data_, sp);
+	applyWireFrame(result, wireframe_shader_, mat_data->node_tree_data_, sp);
 	return result;
 }
 
@@ -206,7 +206,7 @@ float GlassMaterial::getAlpha(const MaterialData *mat_data, const SurfacePoint &
 {
 	float alpha = 1.f - getTransparency(mat_data, sp, wo, camera).energy();
 	if(alpha < 0.f) alpha = 0.f;
-	if(wireframe_thickness_ > 0.f) applyWireFrame(alpha, wireframe_shader_, mat_data->node_tree_data_, sp);
+	applyWireFrame(alpha, wireframe_shader_, mat_data->node_tree_data_, sp);
 	return alpha;
 }
 

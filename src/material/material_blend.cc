@@ -71,7 +71,7 @@ Rgb BlendMaterial::eval(const MaterialData *mat_data, const SurfacePoint &sp, co
 	const Rgb col_1 = mat_1_->eval(mat_data_specific->mat_1_data_.get(), sp, wo, wl, bsdfs);
 	const Rgb col_2 = mat_2_->eval(mat_data_specific->mat_2_data_.get(), sp, wo, wl, bsdfs);
 	Rgb col_blend = math::lerp(col_1, col_2, blend_val);
-	if(wireframe_thickness_ > 0.f) applyWireFrame(col_blend, wireframe_shader_, mat_data->node_tree_data_, sp);
+	applyWireFrame(col_blend, wireframe_shader_, mat_data->node_tree_data_, sp);
 	return col_blend;
 }
 
@@ -145,7 +145,7 @@ Rgb BlendMaterial::sample(const MaterialData *mat_data, const SurfacePoint &sp, 
 		col_1 = col_2;
 		w = w_2;
 	}
-	if(wireframe_thickness_ > 0.f) applyWireFrame(col_1, wireframe_shader_, mat_data->node_tree_data_, sp);
+	applyWireFrame(col_1, wireframe_shader_, mat_data->node_tree_data_, sp);
 	return col_1;
 }
 
@@ -162,7 +162,7 @@ Rgb BlendMaterial::sample(const MaterialData *mat_data, const SurfacePoint &sp, 
 		const Rgb col_2 = mat_2_->sample(mat_data_specific->mat_2_data_.get(), sp, wo, dir, tcol, s, w, chromatic, wavelength);
 		col = math::lerp(col_1, col_2, blend_val);
 	}
-	if(wireframe_thickness_ > 0.f) applyWireFrame(col, wireframe_shader_, mat_data->node_tree_data_, sp);
+	applyWireFrame(col, wireframe_shader_, mat_data->node_tree_data_, sp);
 	return col;
 }
 
@@ -214,7 +214,7 @@ Rgb BlendMaterial::getTransparency(const MaterialData *mat_data, const SurfacePo
 	const Rgb col_1 = mat_1_->getTransparency(mat_data_specific->mat_1_data_.get(), sp, wo, camera);
 	const Rgb col_2 = mat_2_->getTransparency(mat_data_specific->mat_2_data_.get(), sp, wo, camera);
 	Rgb col_blend = math::lerp(col_1, col_2, blend_val);
-	if(wireframe_thickness_ > 0.f) applyWireFrame(col_blend, wireframe_shader_, mat_data->node_tree_data_, sp);
+	applyWireFrame(col_blend, wireframe_shader_, mat_data->node_tree_data_, sp);
 	return col_blend;
 }
 
@@ -228,7 +228,7 @@ float BlendMaterial::getAlpha(const MaterialData *mat_data, const SurfacePoint &
 		const float al_2 = mat_2_->getAlpha(mat_data_specific->mat_2_data_.get(), sp, wo, camera);
 		result = std::min(al_1, al_2);
 	}
-	if(wireframe_thickness_ > 0.f) applyWireFrame(result, wireframe_shader_, mat_data->node_tree_data_, sp);
+	applyWireFrame(result, wireframe_shader_, mat_data->node_tree_data_, sp);
 	return result;
 }
 
@@ -239,7 +239,7 @@ Rgb BlendMaterial::emit(const MaterialData *mat_data, const SurfacePoint &sp, co
 	const Rgb col_1 = mat_1_->emit(mat_data_specific->mat_1_data_.get(), sp, wo, lights_geometry_material_emit);
 	const Rgb col_2 = mat_2_->emit(mat_data_specific->mat_2_data_.get(), sp, wo, lights_geometry_material_emit);
 	Rgb col_blend = math::lerp(col_1, col_2, blend_val);
-	if(wireframe_thickness_ > 0.f) applyWireFrame(col_blend, wireframe_shader_, mat_data->node_tree_data_, sp);
+	applyWireFrame(col_blend, wireframe_shader_, mat_data->node_tree_data_, sp);
 	return col_blend;
 }
 
