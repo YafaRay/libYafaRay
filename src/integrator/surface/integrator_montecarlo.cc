@@ -925,7 +925,7 @@ void MonteCarloIntegrator::recursiveRaytrace(int thread_id, int ray_level, bool 
 	}
 }
 
-Rgb MonteCarloIntegrator::sampleAmbientOcclusion(bool chromatic_enabled, float wavelength, const SurfacePoint &sp, const Vec3 &wo, const RayDivision &ray_division, const Camera *camera, const PixelSamplingData &pixel_sampling_data, bool lights_geometry_material_emit) const
+Rgb MonteCarloIntegrator::sampleAmbientOcclusion(bool chromatic_enabled, float wavelength, const SurfacePoint &sp, const Vec3 &wo, const RayDivision &ray_division, const Camera *camera, const PixelSamplingData &pixel_sampling_data, bool lights_geometry_material_emit, bool transparent_shadows) const
 {
 	const Accelerator *accelerator = scene_->getAccelerator();
 	if(!accelerator) return {0.f};
@@ -962,59 +962,12 @@ Rgb MonteCarloIntegrator::sampleAmbientOcclusion(bool chromatic_enabled, float w
 			col += material->emit(sp.mat_data_.get(), sp, wo, lights_geometry_material_emit) * s.pdf_;
 		}
 		Rgb scol;
-		const bool shadowed = (tr_shad_) ? accelerator->isShadowed(light_ray, s_depth_, scol, mask_obj_index, mask_mat_index, scene_->getShadowBias(), camera) : accelerator->isShadowed(light_ray, mask_obj_index, mask_mat_index, scene_->getShadowBias());
+		const bool shadowed = (transparent_shadows) ? accelerator->isShadowed(light_ray, s_depth_, scol, mask_obj_index, mask_mat_index, scene_->getShadowBias(), camera) : accelerator->isShadowed(light_ray, mask_obj_index, mask_mat_index, scene_->getShadowBias());
 		if(!shadowed)
 		{
 			const float cos = std::abs(sp.n_ * light_ray.dir_);
-			if(tr_shad_) col += ao_col_ * scol * surf_col * cos * w;
+			if(transparent_shadows) col += ao_col_ * scol * surf_col * cos * w;
 			else col += ao_col_ * surf_col * cos * w;
-		}
-	}
-	return col / static_cast<float>(n);
-}
-
-Rgb MonteCarloIntegrator::sampleAmbientOcclusionLayer(bool chromatic_enabled, float wavelength, const SurfacePoint &sp, const Vec3 &wo, const RayDivision &ray_division, const Camera *camera, const PixelSamplingData &pixel_sampling_data, bool lights_geometry_material_emit) const
-{
-	const Accelerator *accelerator = scene_->getAccelerator();
-	if(!accelerator) return {0.f};
-
-	Rgb col(0.f);
-	const Material *material = sp.material_;
-	const BsdfFlags &mat_bsdfs = sp.mat_data_->bsdf_flags_;
-	Ray light_ray;
-	light_ray.from_ = sp.p_;
-	light_ray.dir_ = Vec3(0.f);
-	float mask_obj_index = 0.f, mask_mat_index = 0.f;
-	int n = ao_samples_;//(int) ceilf(aoSamples*getSampleMultiplier());
-	if(ray_division.division_ > 1) n = std::max(1, n / ray_division.division_);
-	const unsigned int offs = n * pixel_sampling_data.sample_ + pixel_sampling_data.offset_;
-	Halton hal_2(2, offs - 1);
-	Halton hal_3(3, offs - 1);
-	for(int i = 0; i < n; ++i)
-	{
-		float s_1 = hal_2.getNext();
-		float s_2 = hal_3.getNext();
-		if(ray_division.division_ > 1)
-		{
-			s_1 = math::addMod1(s_1, ray_division.decorrelation_1_);
-			s_2 = math::addMod1(s_2, ray_division.decorrelation_2_);
-		}
-		if(scene_->shadow_bias_auto_) light_ray.tmin_ = scene_->shadow_bias_ * std::max(1.f, Vec3(sp.p_).length());
-		else light_ray.tmin_ = scene_->shadow_bias_;
-		light_ray.tmax_ = ao_dist_;
-		float w = 0.f;
-		Sample s(s_1, s_2, BsdfFlags::Glossy | BsdfFlags::Diffuse | BsdfFlags::Reflect);
-		const Rgb surf_col = material->sample(sp.mat_data_.get(), sp, wo, light_ray.dir_, s, w, chromatic_enabled, wavelength, camera);
-		if(mat_bsdfs.hasAny(BsdfFlags::Emit))
-		{
-			col += material->emit(sp.mat_data_.get(), sp, wo, lights_geometry_material_emit) * s.pdf_;
-		}
-		const bool shadowed = accelerator->isShadowed(light_ray, mask_obj_index, mask_mat_index, scene_->getShadowBias());
-		if(!shadowed)
-		{
-			float cos = std::abs(sp.n_ * light_ray.dir_);
-			//if(trShad) col += aoCol * scol * surfCol * cos * W;
-			col += ao_col_ * surf_col * cos * w;
 		}
 	}
 	return col / static_cast<float>(n);

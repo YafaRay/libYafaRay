@@ -1119,7 +1119,7 @@ GatherInfo SppmIntegrator::traceGatherRay(int thread_id, int ray_level, bool chr
 
 			if(ColorLayer *color_layer = color_layers->find(Layer::Ao))
 			{
-				color_layer->color_ = sampleAmbientOcclusionLayer(chromatic_enabled, wavelength, sp, wo, ray_division, nullptr, pixel_sampling_data, lights_geometry_material_emit);
+				color_layer->color_ = sampleAmbientOcclusion(chromatic_enabled, wavelength, sp, wo, ray_division, nullptr, pixel_sampling_data, lights_geometry_material_emit, false);
 			}
 
 			if(ColorLayer *color_layer = color_layers->find(Layer::AoClay))

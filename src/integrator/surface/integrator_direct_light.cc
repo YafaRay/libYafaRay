@@ -140,7 +140,7 @@ Rgba DirectLightIntegrator::integrate(int thread_id, int ray_level, bool chromat
 					if(ColorLayer *color_layer = color_layers->find(Layer::Indirect)) color_layer->color_ = col_tmp;
 				}
 			}
-			if(use_ambient_occlusion_) col += sampleAmbientOcclusion(chromatic_enabled, wavelength, sp, wo, ray_division, camera, pixel_sampling_data, lights_geometry_material_emit);
+			if(use_ambient_occlusion_) col += sampleAmbientOcclusion(chromatic_enabled, wavelength, sp, wo, ray_division, camera, pixel_sampling_data, lights_geometry_material_emit, tr_shad_);
 		}
 		recursiveRaytrace(thread_id, ray_level + 1, chromatic_enabled, wavelength, ray, mat_bsdfs, sp, wo, col, alpha, additional_depth, ray_division, color_layers, camera, random_generator, pixel_sampling_data);
 		if(color_layers)
@@ -148,7 +148,7 @@ Rgba DirectLightIntegrator::integrate(int thread_id, int ray_level, bool chromat
 			generateCommonLayers(sp, scene_->getMaskParams(), color_layers);
 			if(ColorLayer *color_layer = color_layers->find(Layer::Ao))
 			{
-				color_layer->color_ = sampleAmbientOcclusionLayer(chromatic_enabled, wavelength, sp, wo, ray_division, nullptr, pixel_sampling_data, lights_geometry_material_emit);
+				color_layer->color_ = sampleAmbientOcclusion(chromatic_enabled, wavelength, sp, wo, ray_division, nullptr, pixel_sampling_data, lights_geometry_material_emit, false);
 			}
 			if(ColorLayer *color_layer = color_layers->find(Layer::AoClay))
 			{
