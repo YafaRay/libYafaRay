@@ -80,7 +80,7 @@ class PointKdTree
 		PointKdTree() = default;
 		PointKdTree(Logger &logger, const std::vector<T> &dat, const std::string &map_name, int num_threads = 1);
 		~PointKdTree() { if(nodes_) free(nodes_); }
-		template<class LookupProc> void lookup(const Point3 &p, const LookupProc &proc, float &max_dist_squared) const;
+		template<class LookupProc> void lookup(const Point3 &p, LookupProc &proc, float &max_dist_squared) const;
 	protected:
 		template<class LookupProc> void recursiveLookup(const Point3 &p, const LookupProc &proc, float &max_dist_squared, int node_num) const;
 		struct KdStack
@@ -223,7 +223,7 @@ void PointKdTree<T>::buildTreeWorker(uint32_t start, uint32_t end, Bound &node_b
 
 
 template<class T> template<class LookupProc>
-void PointKdTree<T>::lookup(const Point3 &p, const LookupProc &proc, float &max_dist_squared) const
+void PointKdTree<T>::lookup(const Point3 &p, LookupProc &proc, float &max_dist_squared) const
 {
 #if NON_REC_LOOKUP > 0
 	KdStack stack[kd_max_stack_];

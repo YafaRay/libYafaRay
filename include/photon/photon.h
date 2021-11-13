@@ -158,14 +158,14 @@ struct PhotonGather
 
 struct NearestPhoton
 {
-	NearestPhoton(const Point3 &pos, const Vec3 &norm): p_(pos), n_(norm), nearest_(nullptr) {}
-	void operator()(const Photon *photon, float dist_2, float &max_dist_squared) const
+	NearestPhoton(const Point3 &pos, const Vec3 &norm): p_(pos), n_(norm) {}
+	void operator()(const Photon *photon, float dist_2, float &max_dist_squared)
 	{
 		if(photon->direction() * n_ > 0.f) { nearest_ = photon; max_dist_squared = dist_2; }
 	}
 	const Point3 p_; //wth do i need this for actually??
 	const Vec3 n_;
-	mutable const Photon *nearest_;
+	const Photon *nearest_ = nullptr;
 };
 
 /*! "eliminates" photons within lookup radius (sets use=false) */
