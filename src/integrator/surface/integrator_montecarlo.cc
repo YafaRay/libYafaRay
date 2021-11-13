@@ -689,7 +689,7 @@ Rgb MonteCarloIntegrator::dispersive(int thread_id, int ray_level, bool chromati
 		if(s.pdf_ > 1.0e-6f && s.sampled_flags_.hasAny(BsdfFlags::Dispersive))
 		{
 			const Rgb wl_col = spectrum::wl2Rgb(wavelength_dispersive);
-			const Ray ref_ray(sp.p_, wi, ray_min_dist);
+			Ray ref_ray(sp.p_, wi, ray_min_dist);
 			const Rgb dcol_trans = static_cast<Rgb>(integrate(thread_id, ray_level, false, wavelength_dispersive, ref_ray, additional_depth, ray_division_new, nullptr, nullptr, random_generator, pixel_sampling_data, false)) * mcol * wl_col * w; //FIXME lights_geometry_material_emit = false; //debatable...
 			dcol += dcol_trans;
 			if(color_layers) dcol_trans_accum += dcol_trans;

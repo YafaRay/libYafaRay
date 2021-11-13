@@ -52,7 +52,7 @@ std::unique_ptr<Accelerator> Accelerator::factory(Logger &logger, const std::vec
 	return accelerator;
 }
 
-bool Accelerator::intersect(const Ray &ray, SurfacePoint &sp, const Camera *camera) const
+bool Accelerator::intersect(Ray &ray, SurfacePoint &sp, const Camera *camera) const
 {
 	const float t_max = (ray.tmax_ >= 0.f) ? ray.tmax_ : std::numeric_limits<float>::infinity();
 	// intersect with tree:

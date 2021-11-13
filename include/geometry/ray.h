@@ -46,7 +46,7 @@ class Ray
 		Ray& operator=(Ray&& ray) = default;
 		Point3 from_;
 		Vec3 dir_;
-		mutable float tmin_ = 0.f, tmax_ = -1.f;
+		float tmin_ = 0.f, tmax_ = -1.f;
 		float time_ = 0.f; //!< relative frame time (values between [0;1]) at which ray was generated
 		std::unique_ptr<RayDifferentials> differentials_;
 };
