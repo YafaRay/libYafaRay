@@ -326,9 +326,10 @@ bool TiledIntegrator::renderTile(RenderArea &a, const Camera *camera, const Rend
 				color_layers.setDefaultColors();
 				render_data.chromatic_ = true;
 				render_data.pixel_sample_ = pass_offs + sample;
-				render_data.time_ = math::addMod1(static_cast<float>(sample) * d_1, toff); //(0.5+(float)sample)*d1;
+
+				const float time = math::addMod1(static_cast<float>(sample) * d_1, toff); //(0.5+(float)sample)*d1;
 				// the (1/n, Larcher&Pillichshammer-Seq.) only gives good coverage when total sample count is known
-				// hence we use scrambled (Sobol, van-der-Corput) for multipass AA
+				// hence we use scrambled (Sobol, van-der-Corput) for multipass AA  //!< the current (normalized) frame time  //FIXME, time not currently used in libYafaRay
 				float dx = 0.5f, dy = 0.5f;
 				if(aa_noise_params_.passes_ > 1)
 				{
@@ -363,7 +364,7 @@ bool TiledIntegrator::renderTile(RenderArea &a, const Camera *camera, const Rend
 					camera_ray.ray_.differentials_->yfrom_ = camera_diff_ray_y.ray_.from_;
 					camera_ray.ray_.differentials_->ydir_ = camera_diff_ray_y.ray_.dir_;
 				}
-				camera_ray.ray_.time_ = render_data.time_;
+				camera_ray.ray_.time_ = time;
 				RayDivision ray_division;
 				color_layers(Layer::Combined).color_ = integrate(thread_id, 0, render_data, camera_ray.ray_, 0, ray_division, &color_layers, camera, &random_generator);
 				for(auto &it : color_layers)

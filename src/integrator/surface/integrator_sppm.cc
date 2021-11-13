@@ -212,9 +212,9 @@ bool SppmIntegrator::renderTile(RenderArea &a, const Camera *camera, const Rende
 			{
 				render_data.chromatic_ = true;
 				render_data.pixel_sample_ = pass_offs + sample;
-				render_data.time_ = math::addMod1(static_cast<float>(sample) * d_1, toff); //(0.5+(float)sample)*d1;
+				const float time = math::addMod1(static_cast<float>(sample) * d_1, toff); //(0.5+(float)sample)*d1;
 				// the (1/n, Larcher&Pillichshammer-Seq.) only gives good coverage when total sample count is known
-				// hence we use scrambled (Sobol, van-der-Corput) for multipass AA
+				// hence we use scrambled (Sobol, van-der-Corput) for multipass AA //!< the current (normalized) frame time  //FIXME, time not currently used in libYafaRay
 
 				float dx = 0.5f, dy = 0.5f;
 				dx = sample::riVdC(render_data.pixel_sample_, render_data.sampling_offs_);
@@ -244,7 +244,7 @@ bool SppmIntegrator::renderTile(RenderArea &a, const Camera *camera, const Rende
 					camera_ray.ray_.differentials_->ydir_ = camera_diff_ray_y.ray_.dir_;
 					// col = T * L_o + L_v
 				}
-				camera_ray.ray_.time_ = render_data.time_;
+				camera_ray.ray_.time_ = time;
 				//for sppm progressive
 				int index = ((i - y_start_film) * camera->resX()) + (j - x_start_film);
 				HitPoint &hp = hit_points_[index];
