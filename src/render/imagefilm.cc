@@ -259,7 +259,7 @@ void ImageFilm::init(RenderControl &render_control, int num_passes)
 	}
 }
 
-int ImageFilm::nextPass(const RenderView *render_view, RenderControl &render_control, bool adaptive_aa, std::string integrator_name, const EdgeToonParams &edge_params, bool skip_nrender_layer)
+int ImageFilm::nextPass(const RenderView *render_view, RenderControl &render_control, bool adaptive_aa, const std::string &integrator_name, const EdgeToonParams &edge_params, bool skip_nrender_layer)
 {
 	next_area_ = 0;
 	n_pass_++;

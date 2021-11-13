@@ -84,7 +84,7 @@ class ImageFilm final
 		/*! Prepare for next pass, i.e. reset area_cnt, check if pixels need resample...
 			\param adaptive_aa if true, flag pixels to be resampled
 			\param threshold color threshold for adaptive antialiasing */
-		int nextPass(const RenderView *render_view, RenderControl &render_control, bool adaptive_aa, std::string integrator_name, const EdgeToonParams &edge_params, bool skip_nrender_layer = false);
+		int nextPass(const RenderView *render_view, RenderControl &render_control, bool adaptive_aa, const std::string &integrator_name, const EdgeToonParams &edge_params, bool skip_nrender_layer = false);
 		/*! Return the next area to be rendered
 			CAUTION! This method MUST be threadsafe!
 			\return false if no area is left to be handed out, true otherwise */
