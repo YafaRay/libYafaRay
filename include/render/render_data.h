@@ -38,13 +38,17 @@ struct RayDivision final
 	float decorrelation_2_ = 0.f; //!< used to decorrelate samples from trajectory splitting*/
 };
 
+struct PixelSamplingData final
+{
+	int sample_ = 0; //!< number of samples inside this pixels so far
+	int number_ = 0;
+	unsigned int offset_ = 0; //!< a "noise-like" pixel offset you may use to decorelate sampling of adjacent pixel.
+};
+
 class RenderData final
 {
 	public:
 		RenderData() = default;
-		int pixel_sample_ = 0; //!< number of samples inside this pixels so far
-		int pixel_number_ = 0;
-		unsigned int sampling_offs_ = 0; //!< a "noise-like" pixel offset you may use to decorelate sampling of adjacent pixel.
 		bool chromatic_ = true; //!< indicates wether the full spectrum is calculated (true) or only a single wavelength (false).
 		bool lights_geometry_material_emit_ = false; //!< indicate that emission of materials assiciated to lights shall be included, for correctly visible lights etc.
 		float wavelength_ = 0.f; //!< the (normalized) wavelength being used when chromatic is false. The range is defined going from 400nm (0.0) to 700nm (1.0), although the widest range humans can perceive is ofteb given 380-780nm.

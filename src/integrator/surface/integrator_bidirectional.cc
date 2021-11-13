@@ -243,7 +243,7 @@ void BidirectionalIntegrator::cleanup()
 /* ============================================================
     integrate
  ============================================================ */
-Rgba BidirectionalIntegrator::integrate(int thread_id, int ray_level, RenderData &render_data, const Ray &ray, int additional_depth, const RayDivision &ray_division, ColorLayers *color_layers, const Camera *camera, RandomGenerator *random_generator) const
+Rgba BidirectionalIntegrator::integrate(int thread_id, int ray_level, RenderData &render_data, const Ray &ray, int additional_depth, const RayDivision &ray_division, ColorLayers *color_layers, const Camera *camera, RandomGenerator *random_generator, const PixelSamplingData &pixel_sampling_data) const
 {
 	Rgb col(0.f);
 	SurfacePoint sp;
@@ -401,12 +401,12 @@ Rgba BidirectionalIntegrator::integrate(int thread_id, int ray_level, RenderData
 
 			if(ColorLayer *color_layer = color_layers->find(Layer::Ao))
 			{
-				color_layer->color_ += sampleAmbientOcclusionLayer(render_data, sp, wo, ray_division, camera);
+				color_layer->color_ += sampleAmbientOcclusionLayer(render_data, sp, wo, ray_division, camera, pixel_sampling_data);
 			}
 
 			if(ColorLayer *color_layer = color_layers->find(Layer::AoClay))
 			{
-				color_layer->color_ += sampleAmbientOcclusionClayLayer(render_data, sp, wo, ray_division);
+				color_layer->color_ += sampleAmbientOcclusionClayLayer(render_data, sp, wo, ray_division, pixel_sampling_data);
 			}
 		}
 	}
@@ -973,7 +973,7 @@ Rgb BidirectionalIntegrator::evalPathE(int s, PathData &pd, const Camera *camera
     return col/lightNumPdf;
 } */
 
-Rgb BidirectionalIntegrator::sampleAmbientOcclusionLayer(RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo, const RayDivision &ray_division, const Camera *camera) const
+Rgb BidirectionalIntegrator::sampleAmbientOcclusionLayer(RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo, const RayDivision &ray_division, const Camera *camera, const PixelSamplingData &pixel_sampling_data) const
 {
 	const Accelerator *accelerator = scene_->getAccelerator();
 	if(!accelerator) return {0.f};
@@ -989,7 +989,7 @@ Rgb BidirectionalIntegrator::sampleAmbientOcclusionLayer(RenderData &render_data
 	int n = ao_samples_;//(int) ceilf(aoSamples*getSampleMultiplier());
 	if(ray_division.division_ > 1) n = std::max(1, n / ray_division.division_);
 
-	unsigned int offs = n * render_data.pixel_sample_ + render_data.sampling_offs_;
+	unsigned int offs = n * pixel_sampling_data.sample_ + pixel_sampling_data.offset_;
 
 	Halton hal_2(2, offs - 1);
 	Halton hal_3(3, offs - 1);
@@ -1031,7 +1031,7 @@ Rgb BidirectionalIntegrator::sampleAmbientOcclusionLayer(RenderData &render_data
 }
 
 
-Rgb BidirectionalIntegrator::sampleAmbientOcclusionClayLayer(RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo, const RayDivision &ray_division) const
+Rgb BidirectionalIntegrator::sampleAmbientOcclusionClayLayer(RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo, const RayDivision &ray_division, const PixelSamplingData &pixel_sampling_data) const
 {
 	const Accelerator *accelerator = scene_->getAccelerator();
 	if(!accelerator) return {0.f};
@@ -1047,7 +1047,7 @@ Rgb BidirectionalIntegrator::sampleAmbientOcclusionClayLayer(RenderData &render_
 	int n = ao_samples_;
 	if(ray_division.division_ > 1) n = std::max(1, n / ray_division.division_);
 
-	const unsigned int offs = n * render_data.pixel_sample_ + render_data.sampling_offs_;
+	const unsigned int offs = n * pixel_sampling_data.sample_ + pixel_sampling_data.offset_;
 	Halton hal_2(2, offs - 1);
 	Halton hal_3(3, offs - 1);
 

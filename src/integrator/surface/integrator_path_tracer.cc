@@ -122,7 +122,7 @@ bool PathIntegrator::preprocess(const RenderControl &render_control, Timer &time
 	return success;
 }
 
-Rgba PathIntegrator::integrate(int thread_id, int ray_level, RenderData &render_data, const Ray &ray, int additional_depth, const RayDivision &ray_division, ColorLayers *color_layers, const Camera *camera, RandomGenerator *random_generator) const
+Rgba PathIntegrator::integrate(int thread_id, int ray_level, RenderData &render_data, const Ray &ray, int additional_depth, const RayDivision &ray_division, ColorLayers *color_layers, const Camera *camera, RandomGenerator *random_generator, const PixelSamplingData &pixel_sampling_data) const
 {
 	static int calls = 0;
 	++calls;
@@ -163,7 +163,7 @@ Rgba PathIntegrator::integrate(int thread_id, int ray_level, RenderData &render_
 
 		if(mat_bsdfs.hasAny(BsdfFlags::Diffuse))
 		{
-			col += estimateAllDirectLight(render_data, sp, wo, ray_division, color_layers, camera, random_generator);
+			col += estimateAllDirectLight(render_data, sp, wo, ray_division, color_layers, camera, random_generator, pixel_sampling_data);
 
 			if(caustic_type_ == CausticType::Photon || caustic_type_ == CausticType::Both)
 			{
@@ -192,7 +192,7 @@ Rgba PathIntegrator::integrate(int thread_id, int ray_level, RenderData &render_
 			int n_samples = std::max(1, n_paths_ / ray_division.division_);
 			for(int i = 0; i < n_samples; ++i)
 			{
-				unsigned int offs = n_paths_ * render_data.pixel_sample_ + render_data.sampling_offs_ + i; // some redunancy here...
+				unsigned int offs = n_paths_ * pixel_sampling_data.sample_ + pixel_sampling_data.offset_ + i; // some redunancy here...
 				Rgb throughput(1.0);
 				Rgb lcol, scol;
 				SurfacePoint sp_1 {sp};
@@ -227,7 +227,7 @@ Rgba PathIntegrator::integrate(int thread_id, int ray_level, RenderData &render_
 
 				const Material *p_mat = hit->material_;
 				if(s.sampled_flags_ != BsdfFlags::None) pwo = -p_ray.dir_; //Fix for white dots in path tracing with shiny diffuse with transparent PNG texture and transparent shadows, especially in Win32, (precision?). Sometimes the first sampling does not take place and pRay.dir is not initialized, so before this change when that happened pwo = -pRay.dir was getting a random_generator non-initialized value! This fix makes that, if the first sample fails for some reason, pwo is not modified and the rest of the sampling continues with the same pwo value. FIXME: Question: if the first sample fails, should we continue as now or should we exit the loop with the "continue" command?
-				lcol = estimateOneDirectLight(thread_id, render_data, *hit, pwo, offs, ray_division, camera, random_generator);
+				lcol = estimateOneDirectLight(thread_id, render_data, *hit, pwo, offs, ray_division, camera, random_generator, pixel_sampling_data);
 				const BsdfFlags mat_bsd_fs = hit->mat_data_->bsdf_flags_;
 				if(mat_bsd_fs.hasAny(BsdfFlags::Emit))
 				{
@@ -284,7 +284,7 @@ Rgba PathIntegrator::integrate(int thread_id, int ray_level, RenderData &render_
 					p_mat = hit->material_;
 					pwo = -p_ray.dir_;
 
-					if(mat_bsd_fs.hasAny(BsdfFlags::Diffuse)) lcol = estimateOneDirectLight(thread_id, render_data, *hit, pwo, offs, ray_division, camera, random_generator);
+					if(mat_bsd_fs.hasAny(BsdfFlags::Diffuse)) lcol = estimateOneDirectLight(thread_id, render_data, *hit, pwo, offs, ray_division, camera, random_generator, pixel_sampling_data);
 					else lcol = Rgb(0.f);
 
 					if(mat_bsd_fs.hasAny(BsdfFlags::Volumetric))
@@ -321,7 +321,7 @@ Rgba PathIntegrator::integrate(int thread_id, int ray_level, RenderData &render_
 		//reset chromatic state:
 		render_data.chromatic_ = was_chromatic;
 
-		recursiveRaytrace(thread_id, ray_level + 1, render_data, ray, mat_bsdfs, sp, wo, col, alpha, additional_depth, ray_division, color_layers, camera, random_generator);
+		recursiveRaytrace(thread_id, ray_level + 1, render_data, ray, mat_bsdfs, sp, wo, col, alpha, additional_depth, ray_division, color_layers, camera, random_generator, pixel_sampling_data);
 
 		if(color_layers)
 		{
@@ -329,12 +329,12 @@ Rgba PathIntegrator::integrate(int thread_id, int ray_level, RenderData &render_
 
 			if(ColorLayer *color_layer = color_layers->find(Layer::Ao))
 			{
-				color_layer->color_ = sampleAmbientOcclusionLayer(render_data, sp, wo, ray_division, nullptr);
+				color_layer->color_ = sampleAmbientOcclusionLayer(render_data, sp, wo, ray_division, nullptr, pixel_sampling_data);
 			}
 
 			if(ColorLayer *color_layer = color_layers->find(Layer::AoClay))
 			{
-				color_layer->color_ = sampleAmbientOcclusionClayLayer(render_data, sp, wo, ray_division);
+				color_layer->color_ = sampleAmbientOcclusionClayLayer(render_data, sp, wo, ray_division, pixel_sampling_data);
 			}
 		}
 

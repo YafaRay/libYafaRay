@@ -714,7 +714,7 @@ bool PhotonIntegrator::preprocess(const RenderControl &render_control, Timer &ti
 // final gathering: this is basically a full path tracer only that it uses the radiance map only
 // at the path end. I.e. paths longer than 1 are only generated to overcome lack of local radiance detail.
 // precondition: initBSDF of current spot has been called!
-Rgb PhotonIntegrator::finalGathering(int thread_id, RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo, const RayDivision &ray_division, const Camera *camera, RandomGenerator *random_generator) const
+Rgb PhotonIntegrator::finalGathering(int thread_id, RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo, const RayDivision &ray_division, const Camera *camera, RandomGenerator *random_generator, const PixelSamplingData &pixel_sampling_data) const
 {
 	const Accelerator *accelerator = scene_->getAccelerator();
 	if(!accelerator) return {0.f};
@@ -732,7 +732,7 @@ Rgb PhotonIntegrator::finalGathering(int thread_id, RenderData &render_data, con
 		Ray p_ray;
 		bool did_hit;
 		const Material *p_mat = sp.material_;
-		unsigned int offs = n_paths_ * render_data.pixel_sample_ + render_data.sampling_offs_ + i; // some redundancy here...
+		unsigned int offs = n_paths_ * pixel_sampling_data.sample_ + pixel_sampling_data.offset_ + i; // some redundancy here...
 		Rgb lcol, scol;
 		// "zero'th" FG bounce:
 		float s_1 = sample::riVdC(offs);
@@ -779,7 +779,7 @@ Rgb PhotonIntegrator::finalGathering(int thread_id, RenderData &render_data, con
 			{
 				if(close)
 				{
-					lcol = estimateOneDirectLight(thread_id, render_data, hit, pwo, offs, ray_division, camera, random_generator);
+					lcol = estimateOneDirectLight(thread_id, render_data, hit, pwo, offs, ray_division, camera, random_generator, pixel_sampling_data);
 				}
 				else if(caustic)
 				{
@@ -940,7 +940,7 @@ std::unique_ptr<Integrator> PhotonIntegrator::factory(Logger &logger, ParamMap &
 	return inte;
 }
 
-Rgba PhotonIntegrator::integrate(int thread_id, int ray_level, RenderData &render_data, const Ray &ray, int additional_depth, const RayDivision &ray_division, ColorLayers *color_layers, const Camera *camera, RandomGenerator *random_generator) const
+Rgba PhotonIntegrator::integrate(int thread_id, int ray_level, RenderData &render_data, const Ray &ray, int additional_depth, const RayDivision &ray_division, ColorLayers *color_layers, const Camera *camera, RandomGenerator *random_generator, const PixelSamplingData &pixel_sampling_data) const
 {
 	static int n_max = 0;
 	static int calls = 0;
@@ -1011,8 +1011,8 @@ Rgba PhotonIntegrator::integrate(int thread_id, int ray_level, RenderData &rende
 
 				if(mat_bsdfs.hasAny(BsdfFlags::Diffuse))
 				{
-					col += estimateAllDirectLight(render_data, sp, wo, ray_division, color_layers, camera, random_generator);
-					Rgb col_tmp = finalGathering(thread_id, render_data, sp, wo, ray_division, camera, random_generator);
+					col += estimateAllDirectLight(render_data, sp, wo, ray_division, color_layers, camera, random_generator, pixel_sampling_data);
+					Rgb col_tmp = finalGathering(thread_id, render_data, sp, wo, ray_division, camera, random_generator, pixel_sampling_data);
 					if(aa_noise_params_.clamp_indirect_ > 0.f) col_tmp.clampProportionalRgb(aa_noise_params_.clamp_indirect_);
 					col += col_tmp;
 					if(color_layers)
@@ -1054,7 +1054,7 @@ Rgba PhotonIntegrator::integrate(int thread_id, int ray_level, RenderData &rende
 
 				if(mat_bsdfs.hasAny(BsdfFlags::Diffuse))
 				{
-					col += estimateAllDirectLight(render_data, sp, wo, ray_division, color_layers, camera, random_generator);
+					col += estimateAllDirectLight(render_data, sp, wo, ray_division, color_layers, camera, random_generator, pixel_sampling_data);
 				}
 
 				FoundPhoton *gathered = (FoundPhoton *)alloca(n_diffuse_search_ * sizeof(FoundPhoton));
@@ -1096,7 +1096,7 @@ Rgba PhotonIntegrator::integrate(int thread_id, int ray_level, RenderData &rende
 			}
 		}
 
-		recursiveRaytrace(thread_id, ray_level + 1, render_data, ray, mat_bsdfs, sp, wo, col, alpha, additional_depth, ray_division, color_layers, camera, random_generator);
+		recursiveRaytrace(thread_id, ray_level + 1, render_data, ray, mat_bsdfs, sp, wo, col, alpha, additional_depth, ray_division, color_layers, camera, random_generator, pixel_sampling_data);
 
 		if(color_layers)
 		{
@@ -1104,12 +1104,12 @@ Rgba PhotonIntegrator::integrate(int thread_id, int ray_level, RenderData &rende
 
 			if(ColorLayer *color_layer = color_layers->find(Layer::Ao))
 			{
-				color_layer->color_ = sampleAmbientOcclusionLayer(render_data, sp, wo, ray_division, camera);
+				color_layer->color_ = sampleAmbientOcclusionLayer(render_data, sp, wo, ray_division, camera, pixel_sampling_data);
 			}
 
 			if(ColorLayer *color_layer = color_layers->find(Layer::AoClay))
 			{
-				color_layer->color_ = sampleAmbientOcclusionClayLayer(render_data, sp, wo, ray_division);
+				color_layer->color_ = sampleAmbientOcclusionClayLayer(render_data, sp, wo, ray_division, pixel_sampling_data);
 			}
 		}
 

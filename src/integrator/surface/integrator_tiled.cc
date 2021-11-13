@@ -316,16 +316,17 @@ bool TiledIntegrator::renderTile(RenderArea &a, const Camera *camera, const Rend
 					d_1 = 1.f / static_cast<float>(n_samples_adjusted);	//DAVID FIXME: is this correct???
 				}
 			}
-			render_data.pixel_number_ = camera_res_x * i + j;
-			render_data.sampling_offs_ = sample::fnv32ABuf(i * sample::fnv32ABuf(j)); //fnv_32a_buf(rstate.pixelNumber);
-			const float toff = Halton::lowDiscrepancySampling(5, pass_offs + render_data.sampling_offs_); // **shall be just the pass number...**
-			hal_u.setStart(pass_offs + render_data.sampling_offs_);
-			hal_v.setStart(pass_offs + render_data.sampling_offs_);
+			PixelSamplingData pixel_sampling_data;
+			pixel_sampling_data.number_ = camera_res_x * i + j;
+			pixel_sampling_data.offset_ = sample::fnv32ABuf(i * sample::fnv32ABuf(j)); //fnv_32a_buf(rstate.pixelNumber);
+			const float toff = Halton::lowDiscrepancySampling(5, pass_offs + pixel_sampling_data.offset_); // **shall be just the pass number...**
+			hal_u.setStart(pass_offs + pixel_sampling_data.offset_);
+			hal_v.setStart(pass_offs + pixel_sampling_data.offset_);
 			for(int sample = 0; sample < n_samples_adjusted; ++sample)
 			{
 				color_layers.setDefaultColors();
 				render_data.chromatic_ = true;
-				render_data.pixel_sample_ = pass_offs + sample;
+				pixel_sampling_data.sample_ = pass_offs + sample;
 
 				const float time = math::addMod1(static_cast<float>(sample) * d_1, toff); //(0.5+(float)sample)*d1;
 				// the (1/n, Larcher&Pillichshammer-Seq.) only gives good coverage when total sample count is known
@@ -333,13 +334,13 @@ bool TiledIntegrator::renderTile(RenderArea &a, const Camera *camera, const Rend
 				float dx = 0.5f, dy = 0.5f;
 				if(aa_noise_params_.passes_ > 1)
 				{
-					dx = sample::riVdC(render_data.pixel_sample_, render_data.sampling_offs_);
-					dy = sample::riS(render_data.pixel_sample_, render_data.sampling_offs_);
+					dx = sample::riVdC(pixel_sampling_data.sample_, pixel_sampling_data.offset_);
+					dy = sample::riS(pixel_sampling_data.sample_, pixel_sampling_data.offset_);
 				}
 				else if(n_samples_adjusted > 1)
 				{
 					dx = (0.5f + static_cast<float>(sample)) * d_1;
-					dy = sample::riLp(sample + render_data.sampling_offs_);
+					dy = sample::riLp(sample + pixel_sampling_data.offset_);
 				}
 				float lens_u = 0.5f, lens_v = 0.5f;
 				if(sample_lns)
@@ -366,7 +367,7 @@ bool TiledIntegrator::renderTile(RenderArea &a, const Camera *camera, const Rend
 				}
 				camera_ray.ray_.time_ = time;
 				RayDivision ray_division;
-				color_layers(Layer::Combined).color_ = integrate(thread_id, 0, render_data, camera_ray.ray_, 0, ray_division, &color_layers, camera, &random_generator);
+				color_layers(Layer::Combined).color_ = integrate(thread_id, 0, render_data, camera_ray.ray_, 0, ray_division, &color_layers, camera, &random_generator, pixel_sampling_data);
 				for(auto &it : color_layers)
 				{
 					switch(it.first)

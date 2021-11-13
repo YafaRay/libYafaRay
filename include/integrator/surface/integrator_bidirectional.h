@@ -25,6 +25,7 @@
 #include "color/color.h"
 #include <map>
 #include <common/logger.h>
+#include <render/render_data.h>
 
 BEGIN_YAFARAY
 
@@ -49,9 +50,9 @@ class BidirectionalIntegrator final : public TiledIntegrator
 		virtual std::string getName() const override { return "BidirectionalPathTracer"; }
 		virtual bool preprocess(const RenderControl &render_control, Timer &timer, const RenderView *render_view, ImageFilm *image_film) override;
 		virtual void cleanup() override;
-		virtual Rgba integrate(int thread_id, int ray_level, RenderData &render_data, const Ray &ray, int additional_depth, const RayDivision &ray_division, ColorLayers *color_layers, const Camera *camera, RandomGenerator *random_generator) const override;
-		Rgb sampleAmbientOcclusionLayer(RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo, const RayDivision &ray_division, const Camera *camera) const;
-		Rgb sampleAmbientOcclusionClayLayer(RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo, const RayDivision &ray_division) const;
+		virtual Rgba integrate(int thread_id, int ray_level, RenderData &render_data, const Ray &ray, int additional_depth, const RayDivision &ray_division, ColorLayers *color_layers, const Camera *camera, RandomGenerator *random_generator, const PixelSamplingData &pixel_sampling_data) const override;
+		Rgb sampleAmbientOcclusionLayer(RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo, const RayDivision &ray_division, const Camera *camera, const PixelSamplingData &pixel_sampling_data) const;
+		Rgb sampleAmbientOcclusionClayLayer(RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo, const RayDivision &ray_division, const PixelSamplingData &pixel_sampling_data) const;
 		int createPath(RenderData &render_data, const Ray &start, std::vector<PathVertex> &path, int max_len, const Camera *camera, RandomGenerator *random_generator) const;
 		Rgb evalPath(int s, int t, PathData &pd, const Camera *camera) const;
 		Rgb evalLPath(int t, PathData &pd, const Ray &l_ray, const Rgb &lcol, const Camera *camera) const;

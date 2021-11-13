@@ -68,7 +68,7 @@ bool DebugIntegrator::preprocess(const RenderControl &render_control, Timer &tim
 	return true;
 }
 
-Rgba DebugIntegrator::integrate(int thread_id, int ray_level, RenderData &render_data, const Ray &ray, int additional_depth, const RayDivision &ray_division, ColorLayers *color_layers, const Camera *camera, RandomGenerator *random_generator) const
+Rgba DebugIntegrator::integrate(int thread_id, int ray_level, RenderData &render_data, const Ray &ray, int additional_depth, const RayDivision &ray_division, ColorLayers *color_layers, const Camera *camera, RandomGenerator *random_generator, const PixelSamplingData &pixel_sampling_data) const
 {
 	Rgb col(0.f);
 	SurfacePoint sp;
