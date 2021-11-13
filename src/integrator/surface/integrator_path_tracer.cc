@@ -321,7 +321,7 @@ Rgba PathIntegrator::integrate(int thread_id, int ray_level, bool chromatic_enab
 
 		if(color_layers)
 		{
-			generateCommonLayers(sp, ray, scene_->getMaskParams(), color_layers);
+			generateCommonLayers(sp, scene_->getMaskParams(), color_layers);
 
 			if(ColorLayer *color_layer = color_layers->find(Layer::Ao))
 			{

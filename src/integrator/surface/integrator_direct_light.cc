@@ -145,7 +145,7 @@ Rgba DirectLightIntegrator::integrate(int thread_id, int ray_level, bool chromat
 		recursiveRaytrace(thread_id, ray_level + 1, chromatic_enabled, wavelength, ray, mat_bsdfs, sp, wo, col, alpha, additional_depth, ray_division, color_layers, camera, random_generator, pixel_sampling_data);
 		if(color_layers)
 		{
-			generateCommonLayers(sp, ray, scene_->getMaskParams(), color_layers);
+			generateCommonLayers(sp, scene_->getMaskParams(), color_layers);
 			if(ColorLayer *color_layer = color_layers->find(Layer::Ao))
 			{
 				color_layer->color_ = sampleAmbientOcclusionLayer(chromatic_enabled, wavelength, sp, wo, ray_division, nullptr, pixel_sampling_data, lights_geometry_material_emit);

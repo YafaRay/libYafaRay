@@ -413,7 +413,7 @@ bool TiledIntegrator::renderTile(const RenderArea &a, const Camera *camera, cons
 	return true;
 }
 
-void TiledIntegrator::generateCommonLayers(const SurfacePoint &sp, const Ray &ray, const MaskParams &mask_params, ColorLayers *color_layers)
+void TiledIntegrator::generateCommonLayers(const SurfacePoint &sp, const MaskParams &mask_params, ColorLayers *color_layers)
 {
 	if(color_layers)
 	{
