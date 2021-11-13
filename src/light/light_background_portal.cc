@@ -112,7 +112,7 @@ Rgb BackgroundPortalLight::totalEnergy() const
 	for(int i = 0; i < 1000; ++i) //exaggerated?
 	{
 		wo.dir_ = sample::sphere(((float) i + 0.5f) / 1000.f, sample::riVdC(i));
-		const Rgb col = bg_->eval(wo, true);
+		const Rgb col = bg_->eval(wo.dir_, true);
 		for(int j = 0; j < num_primitives_; j++)
 		{
 			float cos_n = -wo.dir_ * primitives_[j]->getGeometricNormal(); //not 100% sure about sign yet...
@@ -144,7 +144,7 @@ bool BackgroundPortalLight::illumSample(const SurfacePoint &sp, LSample &s, Ray 
 	wi.tmax_ = dist;
 	wi.dir_ = ldir;
 
-	s.col_ = bg_->eval(wi, true) * power_;
+	s.col_ = bg_->eval(wi.dir_, true) * power_;
 	// pdf = distance^2 / area * cos(norm, ldir);
 	s.pdf_ = dist_sqr * math::num_pi / (area_ * cos_angle);
 	s.flags_ = flags_;
@@ -164,7 +164,7 @@ Rgb BackgroundPortalLight::emitPhoton(float s_1, float s_2, float s_3, float s_4
 	Vec3::createCs(normal, du, dv);
 	ray.dir_ = sample::cosHemisphere(normal, du, dv, s_1, s_2);
 	const Ray r_2(ray.from_, -ray.dir_);
-	return bg_->eval(r_2, true);
+	return bg_->eval(r_2.dir_, true);
 }
 
 Rgb BackgroundPortalLight::emitSample(Vec3 &wo, LSample &s) const
@@ -180,7 +180,7 @@ Rgb BackgroundPortalLight::emitSample(Vec3 &wo, LSample &s) const
 
 	s.flags_ = flags_;
 	const Ray r_2(s.sp_->p_, -wo);
-	return bg_->eval(r_2, true);
+	return bg_->eval(r_2.dir_, true);
 }
 
 bool BackgroundPortalLight::intersect(const Ray &ray, float &t, Rgb &col, float &ipdf) const
@@ -195,7 +195,7 @@ bool BackgroundPortalLight::intersect(const Ray &ray, float &t, Rgb &col, float 
 	if(cos_angle <= 0.f) return false;
 	const float idist_sqr = 1.f / (t * t);
 	ipdf = idist_sqr * area_ * cos_angle * math::div_1_by_pi;
-	col = bg_->eval(ray, true) * power_;
+	col = bg_->eval(ray.dir_, true) * power_;
 	col.clampProportionalRgb(clamp_intersect_); //trick to reduce light sampling noise at the expense of realism and inexact overall light. 0.f disables clamping
 	return true;
 }

@@ -169,9 +169,9 @@ double DarkSkyBackground::perezFunction(const double *lam, double cos_theta, dou
 	return lvz * num * lam[5];
 }
 
-inline Rgb DarkSkyBackground::getSkyCol(const Ray &ray) const
+inline Rgb DarkSkyBackground::getSkyCol(const Vec3 &dir) const
 {
-	Vec3 iw = ray.dir_;
+	Vec3 iw {dir};
 	iw.z_ += alt_;
 	iw.normalize();
 
@@ -190,14 +190,14 @@ inline Rgb DarkSkyBackground::getSkyCol(const Ray &ray) const
 	return sky_col * sky_brightness_;
 }
 
-Rgb DarkSkyBackground::operator()(const Ray &ray, bool from_postprocessed) const
+Rgb DarkSkyBackground::operator()(const Vec3 &dir, bool from_postprocessed) const
 {
-	return getSkyCol(ray);
+	return getSkyCol(dir);
 }
 
-Rgb DarkSkyBackground::eval(const Ray &ray, bool from_postprocessed) const
+Rgb DarkSkyBackground::eval(const Vec3 &dir, bool from_postprocessed) const
 {
-	return getSkyCol(ray) * power_;
+	return getSkyCol(dir) * power_;
 }
 
 std::unique_ptr<Background> DarkSkyBackground::factory(Logger &logger, ParamMap &params, Scene &scene)

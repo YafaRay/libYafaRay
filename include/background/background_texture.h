@@ -28,8 +28,6 @@
 
 BEGIN_YAFARAY
 
-class Scene;
-class ParamMap;
 class Texture;
 
 class TextureBackground final : public Background
@@ -40,8 +38,8 @@ class TextureBackground final : public Background
 	private:
 		enum Projection { Spherical = 0, Angular };
 		TextureBackground(Logger &logger, const Texture *texture, Projection proj, float bpower, float rot, bool ibl, float ibl_blur, bool with_caustic);
-		virtual Rgb operator()(const Ray &ray, bool use_ibl_blur = false) const override;
-		virtual Rgb eval(const Ray &ray, bool use_ibl_blur = false) const override;
+		virtual Rgb operator()(const Vec3 &dir, bool use_ibl_blur = false) const override;
+		virtual Rgb eval(const Vec3 &dir, bool use_ibl_blur = false) const override;
 
 		const Texture *tex_;
 		Projection project_;

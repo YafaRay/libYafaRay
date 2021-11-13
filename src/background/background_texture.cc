@@ -39,37 +39,35 @@ TextureBackground::TextureBackground(Logger &logger, const Texture *texture, Pro
 	cos_r_ = math::cos(math::num_pi * rotation_);
 }
 
-Rgb TextureBackground::operator()(const Ray &ray, bool use_ibl_blur) const
+Rgb TextureBackground::operator()(const Vec3 &dir, bool use_ibl_blur) const
 {
-	return eval(ray, use_ibl_blur);
+	return eval(dir, use_ibl_blur);
 }
 
-Rgb TextureBackground::eval(const Ray &ray, bool use_ibl_blur) const
+Rgb TextureBackground::eval(const Vec3 &dir, bool use_ibl_blur) const
 {
 	float u = 0.f, v = 0.f;
 	if(project_ == Angular)
 	{
-		Point3 dir(ray.dir_);
-		dir.x_ = ray.dir_.x_ * cos_r_ + ray.dir_.y_ * sin_r_;
-		dir.y_ = ray.dir_.x_ * -sin_r_ + ray.dir_.y_ * cos_r_;
-		Texture::angMap(dir, u, v);
+		const Point3 p {
+				dir.x_ * cos_r_ + dir.y_ * sin_r_,
+				dir.x_ * -sin_r_ + dir.y_ * cos_r_,
+				dir.z_
+		};
+		Texture::angMap(p, u, v);
 	}
 	else
 	{
-		Texture::sphereMap(ray.dir_, u, v); // This returns u,v in 0,1 range (useful for bgLight_t)
+		Texture::sphereMap(dir, u, v); // This returns u,v in 0,1 range (useful for bgLight_t)
 		// Put u,v in -1,1 range for mapping
 		u = 2.f * u - 1.f;
 		v = 2.f * v - 1.f;
 		u += rotation_;
 		if(u > 1.f) u -= 2.f;
 	}
-
 	Rgb ret;
-	if(use_ibl_blur)
-	{
-		ret = tex_->getColor(Point3(u, v, 0.f)); //FIXME!
-	}
-	else ret = tex_->getColor(Point3(u, v, 0.f));
+	if(use_ibl_blur) ret = tex_->getColor({u, v, 0.f}); //FIXME!
+	else ret = tex_->getColor({u, v, 0.f});
 
 	const float min_component = 1.0e-5f;
 	if(ret.r_ < min_component) ret.r_ = min_component;

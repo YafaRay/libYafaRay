@@ -20,8 +20,8 @@
 #ifndef YAFARAY_BACKGROUND_H
 #define YAFARAY_BACKGROUND_H
 
-#include <memory>
 #include "common/yafaray_common.h"
+#include <memory>
 
 BEGIN_YAFARAY
 
@@ -29,8 +29,8 @@ class ParamMap;
 class Scene;
 class Light;
 class Rgb;
-class Ray;
 class Logger;
+class Vec3;
 
 class Background
 {
@@ -39,8 +39,8 @@ class Background
 		Background(Logger &logger) : logger_(logger) { }
 		virtual ~Background() = default;
 		//! get the background color for a given ray
-		virtual Rgb operator()(const Ray &ray, bool from_postprocessed = false) const = 0;
-		virtual Rgb eval(const Ray &ray, bool from_postprocessed = false) const = 0;
+		virtual Rgb operator()(const Vec3 &dir, bool from_postprocessed = false) const = 0;
+		virtual Rgb eval(const Vec3 &dir, bool from_postprocessed = false) const = 0;
 		/*! get the light source representing background lighting.
 			\return the light source that reproduces background lighting, or nullptr if background
 					shall only be sampled from BSDFs

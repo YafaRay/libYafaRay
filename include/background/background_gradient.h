@@ -22,14 +22,10 @@
 #ifndef YAFARAY_BACKGROUND_GRADIENT_H
 #define YAFARAY_BACKGROUND_GRADIENT_H
 
-#include <memory>
 #include "background.h"
 #include "color/color.h"
 
 BEGIN_YAFARAY
-
-class Scene;
-class ParamMap;
 
 class GradientBackground final : public Background
 {
@@ -38,8 +34,8 @@ class GradientBackground final : public Background
 
 	private:
 		GradientBackground(Logger &logger, Rgb gzcol, Rgb ghcol, Rgb szcol, Rgb shcol, bool ibl, bool with_caustic);
-		virtual Rgb operator()(const Ray &ray, bool from_postprocessed = false) const override;
-		virtual Rgb eval(const Ray &ray, bool from_postprocessed = false) const override;
+		virtual Rgb operator()(const Vec3 &dir, bool from_postprocessed = false) const override;
+		virtual Rgb eval(const Vec3 &dir, bool from_postprocessed = false) const override;
 
 		Rgb gzenith_, ghoriz_, szenith_, shoriz_;
 };

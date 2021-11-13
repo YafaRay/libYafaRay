@@ -69,7 +69,7 @@ void BackgroundLight::init(Scene &scene)
 		{
 			const float fx = ((float)x + 0.5f) * inu;
 			Texture::invSphereMap(fx, fy, ray.dir_);
-			fu[x] = background_->eval(ray, true).energy() * sintheta;
+			fu[x] = background_->eval(ray.dir_, true).energy() * sintheta;
 		}
 
 		u_dist_[y] = std::unique_ptr<Pdf1D>(new Pdf1D(fu.get(), nu));
@@ -131,7 +131,7 @@ bool BackgroundLight::illumSample(const SurfacePoint &sp, LSample &s, Ray &wi) c
 	wi.tmax_ = -1.0;
 	s.pdf_ = calcFromSample(s.s_1_, s.s_2_, u, v, false);
 	Texture::invSphereMap(u, v, wi.dir_);
-	s.col_ = background_->eval(wi, true);
+	s.col_ = background_->eval(wi.dir_, true);
 	return true;
 }
 
@@ -143,21 +143,21 @@ bool BackgroundLight::intersect(const Ray &ray, float &t, Rgb &col, float &ipdf)
 	float u = 0.f, v = 0.f;
 	ipdf = calcFromDir(abs_dir, u, v, true);
 	Texture::invSphereMap(u, v, tr.dir_);
-	col = background_->eval(tr, true);
+	col = background_->eval(tr.dir_, true);
 	col.clampProportionalRgb(clamp_intersect_); //trick to reduce light sampling noise at the expense of realism and inexact overall light. 0.f disables clamping
 	return true;
 }
 
 Rgb BackgroundLight::totalEnergy() const
 {
-	const Rgb energy = background_->eval(Ray(Point3(0, 0, 0), Vec3(0.5, 0.5, 0.5)), true) * world_pi_factor_;
+	const Rgb energy = background_->eval({0.5, 0.5, 0.5}, true) * world_pi_factor_;
 	return energy;
 }
 
 Rgb BackgroundLight::emitPhoton(float s_1, float s_2, float s_3, float s_4, Ray &ray, float &ipdf) const
 {
 	sampleDir(s_3, s_4, ray.dir_, ipdf, true);
-	const Rgb pcol = background_->eval(ray, true);
+	const Rgb pcol = background_->eval(ray.dir_, true);
 	ray.dir_ = -ray.dir_;
 
 	Vec3 u_vec, v_vec;
@@ -173,7 +173,7 @@ Rgb BackgroundLight::emitSample(Vec3 &wo, LSample &s) const
 {
 	sampleDir(s.s_1_, s.s_2_, wo, s.dir_pdf_, true);
 
-	const Rgb pcol = background_->eval(Ray(Point3(0, 0, 0), wo), true);
+	const Rgb pcol = background_->eval(wo, true);
 	wo = -wo;
 
 	Vec3 u_vec, v_vec;

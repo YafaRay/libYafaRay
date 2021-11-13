@@ -33,14 +33,14 @@ GradientBackground::GradientBackground(Logger &logger, Rgb gzcol, Rgb ghcol, Rgb
 	shoot_caustic_ = with_caustic;
 }
 
-Rgb GradientBackground::operator()(const Ray &ray, bool from_postprocessed) const
+Rgb GradientBackground::operator()(const Vec3 &dir, bool from_postprocessed) const
 {
-	return eval(ray);
+	return eval(dir);
 }
 
-Rgb GradientBackground::eval(const Ray &ray, bool from_postprocessed) const
+Rgb GradientBackground::eval(const Vec3 &dir, bool from_postprocessed) const
 {
-	float blend = ray.dir_.z_;
+	float blend = dir.z_;
 	Rgb color;
 	if(blend >= 0.f) color = blend * szenith_ + (1.f - blend) * shoriz_;
 	else

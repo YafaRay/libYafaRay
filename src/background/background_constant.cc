@@ -32,12 +32,12 @@ ConstantBackground::ConstantBackground(Logger &logger, Rgb col, bool ibl, bool w
 	shoot_caustic_ = with_caustic;
 }
 
-Rgb ConstantBackground::operator()(const Ray &ray, bool use_ibl_blur) const
+Rgb ConstantBackground::operator()(const Vec3 &dir, bool use_ibl_blur) const
 {
 	return color_;
 }
 
-Rgb ConstantBackground::eval(const Ray &ray, bool use_ibl_blur) const
+Rgb ConstantBackground::eval(const Vec3 &dir, bool use_ibl_blur) const
 {
 	return color_;
 }

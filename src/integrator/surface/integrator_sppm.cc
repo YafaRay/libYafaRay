@@ -1139,7 +1139,7 @@ GatherInfo SppmIntegrator::traceGatherRay(int thread_id, int ray_level, bool chr
 		const Background *background = scene_->getBackground();
 		if(background && !transp_refracted_background_)
 		{
-			const Rgb col_tmp = (*background)(ray);
+			const Rgb col_tmp = (*background)(ray.dir_);
 			g_info.constant_randiance_ += col_tmp;
 			if(color_layers)
 			{

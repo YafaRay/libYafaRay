@@ -273,7 +273,7 @@ Rgba PathIntegrator::integrate(int thread_id, int ray_level, bool chromatic_enab
 						const Background *background = scene_->getBackground();
 						if((caustic && background && background->hasIbl() && background->shootsCaustic()))
 						{
-							path_col += throughput * (*background)(p_ray, true);
+							path_col += throughput * (*background)(p_ray.dir_, true);
 						}
 						break;
 					}
@@ -346,7 +346,7 @@ Rgba PathIntegrator::integrate(int thread_id, int ray_level, bool chromatic_enab
 		const Background *background = scene_->getBackground();
 		if(background && !transp_refracted_background_)
 		{
-			const Rgb col_tmp = (*background)(ray);
+			const Rgb col_tmp = (*background)(ray.dir_);
 			col += col_tmp;
 			if(color_layers)
 			{

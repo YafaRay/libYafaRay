@@ -116,9 +116,9 @@ double SunSkyBackground::angleBetween(double thetav, double phiv) const
 	return math::acos(cospsi);
 }
 
-inline Rgb SunSkyBackground::getSkyCol(const Ray &ray) const
+inline Rgb SunSkyBackground::getSkyCol(const Vec3 &dir) const
 {
-	Vec3 iw = ray.dir_;
+	Vec3 iw {dir};
 	iw.normalize();
 	double hfade = 1, nfade = 1;
 
@@ -169,14 +169,14 @@ inline Rgb SunSkyBackground::getSkyCol(const Ray &ray) const
 	return skycolor;
 }
 
-Rgb SunSkyBackground::operator()(const Ray &ray, bool from_postprocessed) const
+Rgb SunSkyBackground::operator()(const Vec3 &dir, bool from_postprocessed) const
 {
-	return power_ * getSkyCol(ray);
+	return power_ * getSkyCol(dir);
 }
 
-Rgb SunSkyBackground::eval(const Ray &ray, bool from_postprocessed) const
+Rgb SunSkyBackground::eval(const Vec3 &dir, bool from_postprocessed) const
 {
-	return power_ * getSkyCol(ray);
+	return power_ * getSkyCol(dir);
 }
 
 Rgb SunSkyBackground::computeAttenuatedSunlight(float theta, int turbidity)

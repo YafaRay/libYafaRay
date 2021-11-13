@@ -28,9 +28,6 @@
 
 BEGIN_YAFARAY
 
-class Scene;
-class ParamMap;
-
 // sunsky, from 'A Practical Analytic Model For DayLight" by Preetham, Shirley & Smits.
 // http://www.cs.utah.edu/vissim/papers/sunsky/
 // based on the actual code by Brian Smits
@@ -44,9 +41,9 @@ class SunSkyBackground final : public Background
 
 	private:
 		SunSkyBackground(Logger &logger, const Point3 dir, float turb, float a_var, float b_var, float c_var, float d_var, float e_var, float pwr, bool ibl, bool with_caustic);
-		virtual Rgb operator()(const Ray &ray, bool from_postprocessed = false) const override;
-		virtual Rgb eval(const Ray &ray, bool from_postprocessed = false) const override;
-		Rgb getSkyCol(const Ray &ray) const;
+		virtual Rgb operator()(const Vec3 &dir, bool from_postprocessed = false) const override;
+		virtual Rgb eval(const Vec3 &dir, bool from_postprocessed = false) const override;
+		Rgb getSkyCol(const Vec3 &dir) const;
 		static Rgb computeAttenuatedSunlight(float theta, int turbidity);
 
 		Vec3 sun_dir_;

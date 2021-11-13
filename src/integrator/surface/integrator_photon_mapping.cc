@@ -824,7 +824,7 @@ Rgb PhotonIntegrator::finalGathering(int thread_id, bool chromatic_enabled, floa
 				const auto &background = scene_->getBackground();
 				if(caustic && background && background->hasIbl() && background->shootsCaustic())
 				{
-					path_col += throughput * (*background)(p_ray, true);
+					path_col += throughput * (*background)(p_ray.dir_, true);
 				}
 				break;
 			}
@@ -1122,7 +1122,7 @@ Rgba PhotonIntegrator::integrate(int thread_id, int ray_level, bool chromatic_en
 	{
 		if(scene_->getBackground() && !transp_refracted_background_)
 		{
-			const Rgb col_tmp = (*scene_->getBackground())(ray);
+			const Rgb col_tmp = (*scene_->getBackground())(ray.dir_);
 			col += col_tmp;
 			if(color_layers)
 			{
