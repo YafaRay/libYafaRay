@@ -82,7 +82,7 @@ AcceleratorKdTreeMultiThread::AcceleratorKdTreeMultiThread(Logger &logger, const
 	std::vector<uint32_t> prim_indices(num_primitives);
 	for(uint32_t prim_num = 0; prim_num < num_primitives; prim_num++) prim_indices[prim_num] = prim_num;
 	if(logger_.isVerbose()) logger_.logVerbose("Kd-Tree MultiThread: Starting recursive build...");
-	const Result kd_tree_result = buildTree(primitives, tree_bound_, prim_indices, 0, 0, 0, bounds, tree_build_parameters, ClipPlane::Pos::None, {}, {});
+	const Result kd_tree_result = buildTree(primitives, tree_bound_, prim_indices, 0, 0, 0, bounds, tree_build_parameters, ClipPlane::Pos::None, {}, {}, num_current_threads_);
 	nodes_ = std::move(kd_tree_result.nodes_);
 	//print some stats:
 	const clock_t clock_elapsed = clock() - clock_start;
@@ -396,14 +396,14 @@ AcceleratorKdTreeMultiThread::SplitCost AcceleratorKdTreeMultiThread::minimalCos
 /*!
 	recursively build the Kd-tree
 */
-AcceleratorKdTreeMultiThread::Result AcceleratorKdTreeMultiThread::buildTree(const std::vector<const Primitive *> &primitives, const Bound &node_bound, const std::vector<uint32_t> &indices, int depth, uint32_t next_node_id, int bad_refines, const std::vector<Bound> &bounds, const Parameters &parameters, const ClipPlane &clip_plane, const std::vector<PolyDouble> &polygons, const std::vector<uint32_t> &primitive_indices) const
+AcceleratorKdTreeMultiThread::Result AcceleratorKdTreeMultiThread::buildTree(const std::vector<const Primitive *> &primitives, const Bound &node_bound, const std::vector<uint32_t> &indices, int depth, uint32_t next_node_id, int bad_refines, const std::vector<Bound> &bounds, const Parameters &parameters, const ClipPlane &clip_plane, const std::vector<PolyDouble> &polygons, const std::vector<uint32_t> &primitive_indices, std::atomic<int> &num_current_threads) const
 {
 	Result kd_tree_result;
-	buildTreeWorker(primitives, node_bound, indices, depth, next_node_id, bad_refines, bounds, parameters, clip_plane, polygons, primitive_indices, kd_tree_result);
+	buildTreeWorker(primitives, node_bound, indices, depth, next_node_id, bad_refines, bounds, parameters, clip_plane, polygons, primitive_indices, kd_tree_result, num_current_threads);
 	return kd_tree_result;
 }
 
-void AcceleratorKdTreeMultiThread::buildTreeWorker(const std::vector<const Primitive *> &primitives, const Bound &node_bound, const std::vector<uint32_t> &indices, int depth, uint32_t next_node_id, int bad_refines, const std::vector<Bound> &bounds, const Parameters &parameters, const ClipPlane &clip_plane, const std::vector<PolyDouble> &polygons, const std::vector<uint32_t> &primitive_indices, Result &result) const
+void AcceleratorKdTreeMultiThread::buildTreeWorker(const std::vector<const Primitive *> &primitives, const Bound &node_bound, const std::vector<uint32_t> &indices, int depth, uint32_t next_node_id, int bad_refines, const std::vector<Bound> &bounds, const Parameters &parameters, const ClipPlane &clip_plane, const std::vector<PolyDouble> &polygons, const std::vector<uint32_t> &primitive_indices, Result &result, std::atomic<int> &num_current_threads) const
 {
 	//Note: "indices" are:
 	// * primitive indices when not clipping primitives as polygons. In that case all primitive bounds are present using the same indexing as the complete primitive list
@@ -613,15 +613,15 @@ void AcceleratorKdTreeMultiThread::buildTreeWorker(const std::vector<const Primi
 	{
 		const uint32_t next_free_node_original = static_cast<uint32_t>(next_node_id + result.nodes_.size());
 		Result result_left;
-		auto left_worker = std::thread(&AcceleratorKdTreeMultiThread::buildTreeWorker, this, primitives, bound_left, left_indices, depth + 1, next_free_node_original, bad_refines, new_bounds, parameters, left_clip_plane, new_polygons, left_primitive_indices, std::ref(result_left));
-		num_current_threads_++;
+		auto left_worker = std::thread(&AcceleratorKdTreeMultiThread::buildTreeWorker, this, primitives, bound_left, left_indices, depth + 1, next_free_node_original, bad_refines, new_bounds, parameters, left_clip_plane, new_polygons, left_primitive_indices, std::ref(result_left), std::ref(num_current_threads));
+		num_current_threads++;
 		Result result_right;
-		auto right_worker = std::thread(&AcceleratorKdTreeMultiThread::buildTreeWorker, this, primitives, bound_right, right_indices, depth + 1, 0, bad_refines, new_bounds, parameters, right_clip_plane, new_polygons, right_primitive_indices, std::ref(result_right)); //We don't need to specify next_free_node (set to 0) because all internor node right childs will be modified later adding the left nodes list size once it's known
-		num_current_threads_++;
+		auto right_worker = std::thread(&AcceleratorKdTreeMultiThread::buildTreeWorker, this, primitives, bound_right, right_indices, depth + 1, 0, bad_refines, new_bounds, parameters, right_clip_plane, new_polygons, right_primitive_indices, std::ref(result_right), std::ref(num_current_threads)); //We don't need to specify next_free_node (set to 0) because all internor node right childs will be modified later adding the left nodes list size once it's known
+		num_current_threads++;
 		left_worker.join();
-		num_current_threads_--;
+		num_current_threads--;
 		right_worker.join();
-		num_current_threads_--;
+		num_current_threads--;
 
 		result.stats_ += result_left.stats_;
 		result.stats_ += result_right.stats_;
@@ -641,13 +641,13 @@ void AcceleratorKdTreeMultiThread::buildTreeWorker(const std::vector<const Primi
 	else
 	{
 		//<< recurse left child >>
-		const Result result_left = buildTree(primitives, bound_left, left_indices, depth + 1, next_node_id + result.nodes_.size(), bad_refines, new_bounds, parameters, left_clip_plane, new_polygons, left_primitive_indices);
+		const Result result_left = buildTree(primitives, bound_left, left_indices, depth + 1, next_node_id + result.nodes_.size(), bad_refines, new_bounds, parameters, left_clip_plane, new_polygons, left_primitive_indices, num_current_threads);
 		result.stats_ += result_left.stats_;
 		result.nodes_.back().setRightChild(next_node_id + result.nodes_.size() + result_left.nodes_.size());
 		result.nodes_.insert(result.nodes_.end(), result_left.nodes_.begin(), result_left.nodes_.end());
 
 		//<< recurse right child >>
-		const Result result_right = buildTree(primitives, bound_right, right_indices, depth + 1, next_node_id + result.nodes_.size(), bad_refines, new_bounds, parameters, right_clip_plane, new_polygons, right_primitive_indices);
+		const Result result_right = buildTree(primitives, bound_right, right_indices, depth + 1, next_node_id + result.nodes_.size(), bad_refines, new_bounds, parameters, right_clip_plane, new_polygons, right_primitive_indices, num_current_threads);
 		result.stats_ += result_right.stats_;
 		result.nodes_.insert(result.nodes_.end(), result_right.nodes_.begin(), result_right.nodes_.end());
 	}
