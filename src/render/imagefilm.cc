@@ -505,12 +505,12 @@ void ImageFilm::finishArea(const RenderView *render_view, RenderControl &render_
 		generateToonAndDebugObjectEdges(a.x_ - cx_0_, end_x, a.y_ - cy_0_, end_y, true, edge_params);
 	}
 
-	for(const auto &it : film_image_layers_)
+	for(const auto &film_image_layer : film_image_layers_)
 	{
-		if(!it.second.layer_.isExported()) continue;
+		if(!film_image_layer.second.layer_.isExported()) continue;
 
-		const Layer::Type &layer_type = it.first;
-		const std::shared_ptr<Image> &image = it.second.image_;
+		const Layer::Type &layer_type = film_image_layer.first;
+		const std::shared_ptr<Image> &image = film_image_layer.second.image_;
 		for(int j = a.y_ - cy_0_; j < end_y; ++j)
 		{
 			for(int i = a.x_ - cx_0_; i < end_x; ++i)
@@ -593,12 +593,12 @@ void ImageFilm::flush(const RenderView *render_view, const RenderControl &render
 		generateToonAndDebugObjectEdges(0, width_, 0, height_, false, edge_params);
 	}
 
-	for(const auto &it : film_image_layers_)
+	for(const auto &film_image_layer : film_image_layers_)
 	{
-		if(!it.second.layer_.isExported()) continue;
+		if(!film_image_layer.second.layer_.isExported()) continue;
 
-		const Layer::Type &layer_type = it.first;
-		const std::shared_ptr<Image> &image = it.second.image_;
+		const Layer::Type &layer_type = film_image_layer.first;
+		const std::shared_ptr<Image> &image = film_image_layer.second.image_;
 		for(int j = 0; j < height_; j++)
 		{
 			for(int i = 0; i < width_; i++)
@@ -730,11 +730,11 @@ void ImageFilm::addSample(int x, int y, float dx, float dy, const RenderArea *a,
 			weights_(i - cx_0_, j - cy_0_).setFloat(weights_(i - cx_0_, j - cy_0_).getFloat() + filter_wt);
 
 			// update pixel values with filtered sample contribution
-			for(auto &it : film_image_layers_)
+			for(auto &film_image_layer : film_image_layers_)
 			{
-				Rgba col = color_layers ? (*color_layers)(it.first).color_ : 0.f;
+				Rgba col = color_layers ? (*color_layers)(film_image_layer.first).color_ : 0.f;
 				col.clampProportionalRgb(aa_noise_params_.clamp_samples_);
-				it.second.image_->setColor(i - cx_0_, j - cy_0_, it.second.image_->getColor(i - cx_0_, j - cy_0_) + (col * filter_wt));
+				film_image_layer.second.image_->setColor(i - cx_0_, j - cy_0_, film_image_layer.second.image_->getColor(i - cx_0_, j - cy_0_) + (col * filter_wt));
 			}
 		}
 	}
@@ -925,7 +925,7 @@ bool ImageFilm::imageFilmLoad(const std::string &filename)
 		}
 	}
 
-	for(auto &it : film_image_layers_)
+	for(auto &film_image_layer : film_image_layers_)
 	{
 		for(int y = 0; y < height_; ++y)
 		{
@@ -936,7 +936,7 @@ bool ImageFilm::imageFilmLoad(const std::string &filename)
 				file.read<float>(col.g_);
 				file.read<float>(col.b_);
 				file.read<float>(col.a_);
-				it.second.image_->setColor(x, y, col);
+				film_image_layer.second.image_->setColor(x, y, col);
 			}
 		}
 	}
@@ -1006,14 +1006,14 @@ void ImageFilm::imageFilmLoadAllInFolder(RenderControl &render_control)
 			}
 		}
 
-		for(auto &it : film_image_layers_)
+		for(auto &film_image_layer : film_image_layers_)
 		{
 			const ImageLayers &loaded_image_layers = loaded_film->film_image_layers_;
 			for(int i = 0; i < width_; ++i)
 			{
 				for(int j = 0; j < height_; ++j)
 				{
-					it.second.image_->setColor(i, j, it.second.image_->getColor(i, j) + loaded_image_layers(it.first).image_->getColor(i, j));
+					film_image_layer.second.image_->setColor(i, j, film_image_layer.second.image_->getColor(i, j) + loaded_image_layers(film_image_layer.first).image_->getColor(i, j));
 				}
 			}
 		}

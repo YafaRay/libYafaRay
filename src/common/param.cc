@@ -215,9 +215,9 @@ std::string Parameter::printType() const
 std::string ParamMap::print() const
 {
 	std::string result;
-	for(const auto &it : dicc_)
+	for(const auto &param : param_map_)
 	{
-		result += "'" + it.first + "' (" + it.second.printType() + ") = '" + it.second.print() + "'\n";
+		result += "'" + param.first + "' (" + param.second.printType() + ") = '" + param.second.print() + "'\n";
 	}
 	return result;
 }
@@ -226,18 +226,18 @@ void ParamMap::logContents(Logger &logger) const
 {
 	if(logger.isDebug())
 	{
-		for(const auto &it : dicc_)
+		for(const auto &param : param_map_)
 		{
-			logger.logDebug("'" + it.first + "' (" + it.second.printType() + ") = '" + it.second.print() + "'");
+			logger.logDebug("'" + param.first + "' (" + param.second.printType() + ") = '" + param.second.print() + "'");
 		}
 	}
 }
 
 
-Parameter &ParamMap::operator[](const std::string &key) { return dicc_[key]; }
-void ParamMap::clear() { dicc_.clear(); }
+Parameter &ParamMap::operator[](const std::string &key) { return param_map_[key]; }
+void ParamMap::clear() { param_map_.clear(); }
 
-std::map<std::string, Parameter>::const_iterator ParamMap::begin() const { return dicc_.begin(); }
-std::map<std::string, Parameter>::const_iterator ParamMap::end() const { return dicc_.end(); }
+std::map<std::string, Parameter>::const_iterator ParamMap::begin() const { return param_map_.begin(); }
+std::map<std::string, Parameter>::const_iterator ParamMap::end() const { return param_map_.end(); }
 
 END_YAFARAY

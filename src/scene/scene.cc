@@ -226,19 +226,19 @@ bool Scene::render()
 			output.second->init(image_film_->getWidth(), image_film_->getHeight(), image_film_->getExportedImageLayers(), &render_views_);
 		}
 
-		for(auto &it : render_views_)
+		for(auto &render_view : render_views_)
 		{
-			for(auto &o : outputs_) o.second->setRenderView(it.second.get());
+			for(auto &o : outputs_) o.second->setRenderView(render_view.second.get());
 			std::stringstream inte_settings;
-			bool success = it.second->init(logger_, *this);
+			bool success = render_view.second->init(logger_, *this);
 			if(!success)
 			{
-				logger_.logWarning("Scene: No cameras or lights found at RenderView ", it.second->getName(), "', skipping this RenderView...");
+				logger_.logWarning("Scene: No cameras or lights found at RenderView ", render_view.second->getName(), "', skipping this RenderView...");
 				continue;
 			}
 
-			success = surf_integrator_->preprocess(render_control_, image_film_->getTimer(), it.second.get(), image_film_.get());
-			if(vol_integrator_) success = success && vol_integrator_->preprocess(render_control_, image_film_->getTimer(), it.second.get(), image_film_.get());
+			success = surf_integrator_->preprocess(render_control_, image_film_->getTimer(), render_view.second.get(), image_film_.get());
+			if(vol_integrator_) success = success && vol_integrator_->preprocess(render_control_, image_film_->getTimer(), render_view.second.get(), image_film_.get());
 
 			if(!success)
 			{
@@ -246,7 +246,7 @@ bool Scene::render()
 				return false;
 			}
 			render_control_.setStarted();
-			success = surf_integrator_->render(render_control_, image_film_->getTimer(), it.second.get());
+			success = surf_integrator_->render(render_control_, image_film_->getTimer(), render_view.second.get());
 			if(!success)
 			{
 				logger_.logError("Scene: Rendering process failed, exiting...");
@@ -255,7 +255,7 @@ bool Scene::render()
 			render_control_.setRenderInfo(surf_integrator_->getRenderInfo());
 			render_control_.setAaNoiseInfo(surf_integrator_->getAaNoiseInfo());
 			surf_integrator_->cleanup();
-			image_film_->flush(it.second.get(), render_control_, getEdgeToonParams());
+			image_film_->flush(render_view.second.get(), render_control_, getEdgeToonParams());
 			render_control_.setFinished();
 			image_film_->cleanup();
 		}

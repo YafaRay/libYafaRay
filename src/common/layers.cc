@@ -35,9 +35,9 @@ bool Layers::isDefinedAny(const std::vector<Layer::Type> &types) const
 const Layers Layers::getLayersWithImages() const
 {
 	Layers result;
-	for(const auto &it : items_)
+	for(const auto &item : items_)
 	{
-		if(it.second.hasInternalImage()) result.set(it.first, it.second);
+		if(item.second.hasInternalImage()) result.set(item.first, item.second);
 	}
 	return result;
 }
@@ -45,9 +45,9 @@ const Layers Layers::getLayersWithImages() const
 const Layers Layers::getLayersWithExportedImages() const
 {
 	Layers result;
-	for(const auto &it : items_)
+	for(const auto &item : items_)
 	{
-		if(it.second.isExported()) result.set(it.first, it.second);
+		if(item.second.isExported()) result.set(item.first, item.second);
 	}
 	return result;
 }
@@ -55,9 +55,9 @@ const Layers Layers::getLayersWithExportedImages() const
 std::string Layers::printExportedTable() const
 {
 	std::stringstream ss;
-	for(const auto &it : items_)
+	for(const auto &item : items_)
 	{
-		const Layer &layer = it.second;
+		const Layer &layer = item.second;
 		if(layer.isExported())
 		{
 			ss << layer.getExportedImageName() << '\t' << layer.getTypeName() << '\t' << layer.getExportedImageTypeNameShort() << '\t' << layer.getNumExportedChannels() << '\t' << layer.getExportedImageTypeNameLong() << '\n';

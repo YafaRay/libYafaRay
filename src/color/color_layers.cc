@@ -53,9 +53,9 @@ void ColorLayers::setDefaultColors()
 
 bool ColorLayers::isDefinedAny(const std::vector<Layer::Type> &types) const
 {
-	for(const auto &it : types)
+	for(const auto &type : types)
 	{
-		if(find(it)) return true;
+		if(find(type)) return true;
 	}
 	return false;
 }

@@ -121,9 +121,9 @@ std::map<std::string, Layer::Type> Layer::initDictTypeNamesTypes()
 std::map<Layer::Type, std::string> Layer::initDictTypeTypeNames(const std::map<std::string, Layer::Type> &dict_typename_type)
 {
 	std::map<Layer::Type, std::string> dict_type_typename;
-	for(const auto &it : dict_typename_type)
+	for(const auto &typename_type : dict_typename_type)
 	{
-		dict_type_typename[it.second] = it.first;
+		dict_type_typename[typename_type.second] = typename_type.first;
 	}
 	return dict_type_typename;
 }

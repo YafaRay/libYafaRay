@@ -95,8 +95,8 @@ class ParamMap
 		template <class T>
 		bool getParam(const std::string &name, T &val) const
 		{
-			auto i = dicc_.find(name);
-			if(i != dicc_.end()) return i->second.getVal(val);
+			auto i = param_map_.find(name);
+			if(i != param_map_.end()) return i->second.getVal(val);
 			return false;
 		}
 		Parameter &operator [](const std::string &key);
@@ -108,7 +108,7 @@ class ParamMap
 		std::map<std::string, Parameter>::const_iterator end() const;
 
 	private:
-		std::map<std::string, Parameter> dicc_;
+		std::map<std::string, Parameter> param_map_;
 };
 
 END_YAFARAY

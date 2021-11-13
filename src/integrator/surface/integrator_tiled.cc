@@ -366,9 +366,9 @@ bool TiledIntegrator::renderTile(const RenderArea &a, const Camera *camera, cons
 				camera_ray.ray_.time_ = time;
 				RayDivision ray_division;
 				color_layers(Layer::Combined).color_ = integrate(thread_id, 0, true, 0.f, camera_ray.ray_, 0, ray_division, &color_layers, camera, random_generator, pixel_sampling_data, false);
-				for(auto &it : color_layers)
+				for(auto &color_layer : color_layers)
 				{
-					switch(it.first)
+					switch(color_layer.first)
 					{
 						case Layer::ObjIndexMask:
 						case Layer::ObjIndexMaskShadow:
@@ -376,33 +376,33 @@ bool TiledIntegrator::renderTile(const RenderArea &a, const Camera *camera, cons
 						case Layer::MatIndexMask:
 						case Layer::MatIndexMaskShadow:
 						case Layer::MatIndexMaskAll:
-							if(it.second.color_.a_ > 1.f) it.second.color_.a_ = 1.f;
-							it.second.color_.clampRgb01();
-							if(mask_params.invert_) it.second.color_ = Rgba(1.f) - it.second.color_;
+							if(color_layer.second.color_.a_ > 1.f) color_layer.second.color_.a_ = 1.f;
+							color_layer.second.color_.clampRgb01();
+							if(mask_params.invert_) color_layer.second.color_ = Rgba(1.f) - color_layer.second.color_;
 							if(!mask_params.only_)
 							{
 								Rgba col_combined = color_layers(Layer::Combined).color_;
 								col_combined.a_ = 1.f;
-								it.second.color_ *= col_combined;
+								color_layer.second.color_ *= col_combined;
 							}
 							break;
 						case Layer::ZDepthAbs:
-							if(camera_ray.ray_.tmax_ < 0.f) it.second.color_ = Rgba(0.f, 0.f); // Show background as fully transparent
-							else it.second.color_ = Rgb(camera_ray.ray_.tmax_);
-							if(it.second.color_.a_ > 1.f) it.second.color_.a_ = 1.f;
+							if(camera_ray.ray_.tmax_ < 0.f) color_layer.second.color_ = Rgba(0.f, 0.f); // Show background as fully transparent
+							else color_layer.second.color_ = Rgb(camera_ray.ray_.tmax_);
+							if(color_layer.second.color_.a_ > 1.f) color_layer.second.color_.a_ = 1.f;
 							break;
 						case Layer::ZDepthNorm:
-							if(camera_ray.ray_.tmax_ < 0.f) it.second.color_ = Rgba(0.f, 0.f); // Show background as fully transparent
-							else it.second.color_ = Rgb(1.f - (camera_ray.ray_.tmax_ - min_depth_) * max_depth_); // Distance normalization
-							if(it.second.color_.a_ > 1.f) it.second.color_.a_ = 1.f;
+							if(camera_ray.ray_.tmax_ < 0.f) color_layer.second.color_ = Rgba(0.f, 0.f); // Show background as fully transparent
+							else color_layer.second.color_ = Rgb(1.f - (camera_ray.ray_.tmax_ - min_depth_) * max_depth_); // Distance normalization
+							if(color_layer.second.color_.a_ > 1.f) color_layer.second.color_.a_ = 1.f;
 							break;
 						case Layer::Mist:
-							if(camera_ray.ray_.tmax_ < 0.f) it.second.color_ = Rgba(0.f, 0.f); // Show background as fully transparent
-							else it.second.color_ = Rgb((camera_ray.ray_.tmax_ - min_depth_) * max_depth_); // Distance normalization
-							if(it.second.color_.a_ > 1.f) it.second.color_.a_ = 1.f;
+							if(camera_ray.ray_.tmax_ < 0.f) color_layer.second.color_ = Rgba(0.f, 0.f); // Show background as fully transparent
+							else color_layer.second.color_ = Rgb((camera_ray.ray_.tmax_ - min_depth_) * max_depth_); // Distance normalization
+							if(color_layer.second.color_.a_ > 1.f) color_layer.second.color_.a_ = 1.f;
 							break;
 						default:
-							if(it.second.color_.a_ > 1.f) it.second.color_.a_ = 1.f;
+							if(color_layer.second.color_.a_ > 1.f) color_layer.second.color_.a_ = 1.f;
 							break;
 					}
 				}

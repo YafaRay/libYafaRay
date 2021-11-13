@@ -257,10 +257,9 @@ std::string Interface::printViewsTable() const noexcept
 	{
 		std::stringstream ss;
 		const auto &views = scene_->getRenderViews();
-		for(const auto &it : views)
+		for(const auto &view : views)
 		{
-			const RenderView *view = it.second.get();
-			ss << view->getName() << '\n';
+			ss << view.second->getName() << '\n';
 		}
 		return ss.str();
 	}

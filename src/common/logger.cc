@@ -294,7 +294,7 @@ void Logger::statsPrint(bool sorted) const
 	std::cout << "name, index, value" << std::endl;
 	std::vector<std::pair<std::string, double>> vector_print(diagnostics_stats_.begin(), diagnostics_stats_.end());
 	if(sorted) std::sort(vector_print.begin(), vector_print.end());
-	for(auto &it : vector_print) std::cout << std::setprecision(std::numeric_limits<double>::digits10 + 1) << it.first << it.second << std::endl;
+	for(auto &item : vector_print) std::cout << std::setprecision(std::numeric_limits<double>::digits10 + 1) << item.first << item.second << std::endl;
 }
 
 void Logger::statsSaveToFile(const std::string &file_path, bool sorted) const
@@ -304,7 +304,7 @@ void Logger::statsSaveToFile(const std::string &file_path, bool sorted) const
 	ss << "name, index, value" << std::endl;
 	std::vector<std::pair<std::string, double>> vector_print(diagnostics_stats_.begin(), diagnostics_stats_.end());
 	if(sorted) std::sort(vector_print.begin(), vector_print.end());
-	for(const auto &it : vector_print) ss << std::setprecision(std::numeric_limits<double>::digits10 + 1) << it.first << it.second << std::endl;
+	for(const auto &item : vector_print) ss << std::setprecision(std::numeric_limits<double>::digits10 + 1) << item.first << item.second << std::endl;
 	file.save(ss.str(), true);
 }
 
