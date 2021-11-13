@@ -885,7 +885,7 @@ GatherInfo SppmIntegrator::traceGatherRay(int thread_id, int ray_level, bool chr
 				if(ray_division.division_ > 1) gsam = std::max(1, gsam / ray_division.division_);
 				RayDivision ray_division_new {ray_division};
 				ray_division_new.division_ *= gsam;
-				int branch = ray_division_new.division_ * ray_division.offset_;
+				int branch = ray_division_new.division_ * ray_division_new.offset_;
 				unsigned int offs = gsam * pixel_sampling_data.sample_ + pixel_sampling_data.offset_;
 				float d_1 = 1.f / (float)gsam;
 				Ray ref_ray;
@@ -1052,13 +1052,7 @@ GatherInfo SppmIntegrator::traceGatherRay(int thread_id, int ray_level, bool chr
 						color_layer->color_ += gcol_transmit_accum;
 					}
 				}
-
-				ray_division_new.division_ = ray_division.division_;
-				ray_division_new.offset_ = ray_division.offset_;
-				ray_division_new.decorrelation_1_ = ray_division.decorrelation_1_;
-				ray_division_new.decorrelation_2_ = ray_division.decorrelation_2_;
 			}
-
 			//...perfect specular reflection/refraction with recursive raytracing...
 			if(mat_bsdfs.hasAny(BsdfFlags::Specular | BsdfFlags::Filter))
 			{
