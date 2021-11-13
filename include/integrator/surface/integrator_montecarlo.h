@@ -75,8 +75,7 @@ class MonteCarloIntegrator: public TiledIntegrator
 		/*! Estimates caustic photons for a given surface point */
 		Rgb estimateCausticPhotons(const SurfacePoint &sp, const Vec3 &wo) const;
 		/*! Samples ambient occlusion for a given surface point */
-		Rgb sampleAmbientOcclusion(bool chromatic_enabled, float wavelength, const SurfacePoint &sp, const Vec3 &wo, const RayDivision &ray_division, const Camera *camera, const PixelSamplingData &pixel_sampling_data, bool lights_geometry_material_emit, bool transparent_shadows) const;
-		Rgb sampleAmbientOcclusionClayLayer(bool chromatic_enabled, float wavelength, const SurfacePoint &sp, const Vec3 &wo, const RayDivision &ray_division, const PixelSamplingData &pixel_sampling_data, bool lights_geometry_material_emit) const;
+		Rgb sampleAmbientOcclusion(bool chromatic_enabled, float wavelength, const SurfacePoint &sp, const Vec3 &wo, const RayDivision &ray_division, const Camera *camera, const PixelSamplingData &pixel_sampling_data, bool lights_geometry_material_emit, bool transparent_shadows, bool clay) const;
 
 		int r_depth_; //! Ray depth
 		bool tr_shad_; //! Use transparent shadows

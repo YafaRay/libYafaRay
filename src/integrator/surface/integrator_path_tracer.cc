@@ -325,12 +325,12 @@ Rgba PathIntegrator::integrate(int thread_id, int ray_level, bool chromatic_enab
 
 			if(ColorLayer *color_layer = color_layers->find(Layer::Ao))
 			{
-				color_layer->color_ = sampleAmbientOcclusion(chromatic_enabled, wavelength, sp, wo, ray_division, nullptr, pixel_sampling_data, lights_geometry_material_emit, false);
+				color_layer->color_ = sampleAmbientOcclusion(chromatic_enabled, wavelength, sp, wo, ray_division, camera, pixel_sampling_data, lights_geometry_material_emit, false, false);
 			}
 
 			if(ColorLayer *color_layer = color_layers->find(Layer::AoClay))
 			{
-				color_layer->color_ = sampleAmbientOcclusionClayLayer(chromatic_enabled, wavelength, sp, wo, ray_division, pixel_sampling_data, lights_geometry_material_emit);
+				color_layer->color_ = sampleAmbientOcclusion(chromatic_enabled, wavelength, sp, wo, ray_division, camera, pixel_sampling_data, lights_geometry_material_emit, false, true);
 			}
 		}
 
