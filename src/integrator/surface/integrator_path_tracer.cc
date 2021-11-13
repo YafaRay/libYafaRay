@@ -122,7 +122,7 @@ bool PathIntegrator::preprocess(const RenderControl &render_control, Timer &time
 	return success;
 }
 
-Rgba PathIntegrator::integrate(int thread_id, int ray_level, bool chromatic_enabled, float wavelength, const Ray &ray, int additional_depth, const RayDivision &ray_division, ColorLayers *color_layers, const Camera *camera, RandomGenerator *random_generator, const PixelSamplingData &pixel_sampling_data, bool lights_geometry_material_emit) const
+Rgba PathIntegrator::integrate(int thread_id, int ray_level, bool chromatic_enabled, float wavelength, const Ray &ray, int additional_depth, const RayDivision &ray_division, ColorLayers *color_layers, const Camera *camera, RandomGenerator &random_generator, const PixelSamplingData &pixel_sampling_data, bool lights_geometry_material_emit) const
 {
 	static int calls = 0;
 	++calls;
@@ -295,8 +295,8 @@ Rgba PathIntegrator::integrate(int thread_id, int ray_level, bool chromatic_enab
 					// Russian roulette for terminating paths with low probability
 					if(depth > russian_roulette_min_bounces_)
 					{
-						float random_value = (*random_generator)();
-						float probability = throughput.maximum();
+						const float random_value = random_generator();
+						const float probability = throughput.maximum();
 						if(probability <= 0.f || probability < random_value) break;
 						throughput *= 1.f / probability;
 					}

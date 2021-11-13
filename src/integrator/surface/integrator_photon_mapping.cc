@@ -712,7 +712,7 @@ bool PhotonIntegrator::preprocess(const RenderControl &render_control, Timer &ti
 // final gathering: this is basically a full path tracer only that it uses the radiance map only
 // at the path end. I.e. paths longer than 1 are only generated to overcome lack of local radiance detail.
 // precondition: initBSDF of current spot has been called!
-Rgb PhotonIntegrator::finalGathering(int thread_id, bool chromatic_enabled, float wavelength, const SurfacePoint &sp, const Vec3 &wo, const RayDivision &ray_division, const Camera *camera, RandomGenerator *random_generator, const PixelSamplingData &pixel_sampling_data, bool lights_geometry_material_emit) const
+Rgb PhotonIntegrator::finalGathering(int thread_id, bool chromatic_enabled, float wavelength, const SurfacePoint &sp, const Vec3 &wo, const RayDivision &ray_division, const Camera *camera, RandomGenerator &random_generator, const PixelSamplingData &pixel_sampling_data, bool lights_geometry_material_emit) const
 {
 	const Accelerator *accelerator = scene_->getAccelerator();
 	if(!accelerator) return {0.f};
@@ -938,7 +938,7 @@ std::unique_ptr<Integrator> PhotonIntegrator::factory(Logger &logger, ParamMap &
 	return inte;
 }
 
-Rgba PhotonIntegrator::integrate(int thread_id, int ray_level, bool chromatic_enabled, float wavelength, const Ray &ray, int additional_depth, const RayDivision &ray_division, ColorLayers *color_layers, const Camera *camera, RandomGenerator *random_generator, const PixelSamplingData &pixel_sampling_data, bool lights_geometry_material_emit) const
+Rgba PhotonIntegrator::integrate(int thread_id, int ray_level, bool chromatic_enabled, float wavelength, const Ray &ray, int additional_depth, const RayDivision &ray_division, ColorLayers *color_layers, const Camera *camera, RandomGenerator &random_generator, const PixelSamplingData &pixel_sampling_data, bool lights_geometry_material_emit) const
 {
 	static int n_max = 0;
 	static int calls = 0;

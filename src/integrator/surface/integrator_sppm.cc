@@ -249,7 +249,7 @@ bool SppmIntegrator::renderTile(RenderArea &a, const Camera *camera, const Rende
 				int index = ((i - y_start_film) * camera->resX()) + (j - x_start_film);
 				HitPoint &hp = hit_points_[index];
 				RayDivision ray_division;
-				GatherInfo g_info = traceGatherRay(thread_id, 0, true, 0.f, camera_ray.ray_, hp, ray_division, nullptr, camera, &random_generator, pixel_sampling_data, false);
+				const GatherInfo g_info = traceGatherRay(thread_id, 0, true, 0.f, camera_ray.ray_, hp, ray_division, nullptr, camera, random_generator, pixel_sampling_data, false);
 				hp.constant_randiance_ += g_info.constant_randiance_; // accumulate the constant radiance for later usage.
 				// progressive refinement
 				const float alpha = 0.7f; // another common choice is 0.8, seems not changed much.
@@ -643,12 +643,12 @@ void SppmIntegrator::prePass(int samples, int offset, bool adaptive, const Rende
 }
 
 //now it's a dummy function
-Rgba SppmIntegrator::integrate(int thread_id, int ray_level, bool chromatic_enabled, float wavelength, const Ray &ray, int additional_depth, const RayDivision &ray_division, ColorLayers *color_layers, const Camera *camera, RandomGenerator *random_generator, const PixelSamplingData &pixel_sampling_data, bool lights_geometry_material_emit) const
+Rgba SppmIntegrator::integrate(int thread_id, int ray_level, bool chromatic_enabled, float wavelength, const Ray &ray, int additional_depth, const RayDivision &ray_division, ColorLayers *color_layers, const Camera *camera, RandomGenerator &random_generator, const PixelSamplingData &pixel_sampling_data, bool lights_geometry_material_emit) const
 {
 	return Rgba(0.f);
 }
 
-GatherInfo SppmIntegrator::traceGatherRay(int thread_id, int ray_level, bool chromatic_enabled, float wavelength, const Ray &ray, HitPoint &hp, const RayDivision &ray_division, ColorLayers *color_layers, const Camera *camera, RandomGenerator *random_generator, const PixelSamplingData &pixel_sampling_data, bool lights_geometry_material_emit)
+GatherInfo SppmIntegrator::traceGatherRay(int thread_id, int ray_level, bool chromatic_enabled, float wavelength, const Ray &ray, HitPoint &hp, const RayDivision &ray_division, ColorLayers *color_layers, const Camera *camera, RandomGenerator &random_generator, const PixelSamplingData &pixel_sampling_data, bool lights_geometry_material_emit)
 {
 	const Accelerator *accelerator = scene_->getAccelerator();
 	if(!accelerator) return {};

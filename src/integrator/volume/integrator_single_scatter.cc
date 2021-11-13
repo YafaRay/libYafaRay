@@ -143,7 +143,7 @@ bool SingleScatterIntegrator::preprocess(const RenderControl &render_control, Ti
 	return true;
 }
 
-Rgb SingleScatterIntegrator::getInScatter(RandomGenerator *random_generator, const Ray &step_ray, float current_step) const
+Rgb SingleScatterIntegrator::getInScatter(RandomGenerator &random_generator, const Ray &step_ray, float current_step) const
 {
 	const Accelerator *accelerator = scene_->getAccelerator();
 	if(!accelerator) return {0.f};
@@ -210,8 +210,8 @@ Rgb SingleScatterIntegrator::getInScatter(RandomGenerator *random_generator, con
 			for(int i = 0; i < n; ++i)
 			{
 				// ...get sample val...
-				ls.s_1_ = (*random_generator)();
-				ls.s_2_ = (*random_generator)();
+				ls.s_1_ = random_generator();
+				ls.s_2_ = random_generator();
 
 				if((*l)->illumSample(sp, ls, light_ray))
 				{
@@ -266,7 +266,7 @@ Rgb SingleScatterIntegrator::getInScatter(RandomGenerator *random_generator, con
 	return in_scatter;
 }
 
-Rgba SingleScatterIntegrator::transmittance(RandomGenerator *random_generator, const Ray &ray) const {
+Rgba SingleScatterIntegrator::transmittance(RandomGenerator &random_generator, const Ray &ray) const {
 	if(vr_size_ == 0) return {1.f};
 	Rgba tr(1.f);
 	const auto &volumes = scene_->getVolumeRegions();
@@ -275,7 +275,7 @@ Rgba SingleScatterIntegrator::transmittance(RandomGenerator *random_generator, c
 		const Bound::Cross cross = v.second->crossBound(ray);
 		if(cross.crossed_)
 		{
-			const float random_value = (*random_generator)();
+			const float random_value = random_generator();
 			const Rgb optical_thickness = v.second->tau(ray, step_size_, random_value);
 			tr *= Rgba(math::exp(-optical_thickness.energy()));
 		}
@@ -284,7 +284,7 @@ Rgba SingleScatterIntegrator::transmittance(RandomGenerator *random_generator, c
 	return tr;
 }
 
-Rgba SingleScatterIntegrator::integrate(RandomGenerator *random_generator, const Ray &ray, int additional_depth) const
+Rgba SingleScatterIntegrator::integrate(RandomGenerator &random_generator, const Ray &ray, int additional_depth) const
 {
 	float t_0 = 1e10f, t_1 = -1e10f;
 
@@ -313,7 +313,7 @@ Rgba SingleScatterIntegrator::integrate(RandomGenerator *random_generator, const
 
 	float pos;
 	int samples;
-	pos = t_0 - (*random_generator)() * step_size_; // start position of ray marching
+	pos = t_0 - random_generator() * step_size_; // start position of ray marching
 	dist = t_1 - pos;
 	samples = dist / step_size_ + 1;
 
@@ -400,7 +400,7 @@ Rgba SingleScatterIntegrator::integrate(RandomGenerator *random_generator, const
 
 		if(optimize_ && tr_tmp.energy() < 1e-3f)
 		{
-			float random_val = (*random_generator)();
+			float random_val = random_generator();
 			if(random_val < 0.5f)
 			{
 				break;
@@ -422,7 +422,7 @@ Rgba SingleScatterIntegrator::integrate(RandomGenerator *random_generator, const
 
 		if(optimize_ && sigma_s < 1e-3f)
 		{
-			float random_val = (*random_generator)();
+			float random_val = random_generator();
 			if(random_val < 0.5f)
 			{
 				pos += current_step;

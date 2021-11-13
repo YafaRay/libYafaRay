@@ -243,7 +243,7 @@ void BidirectionalIntegrator::cleanup()
 /* ============================================================
     integrate
  ============================================================ */
-Rgba BidirectionalIntegrator::integrate(int thread_id, int ray_level, bool chromatic_enabled, float wavelength, const Ray &ray, int additional_depth, const RayDivision &ray_division, ColorLayers *color_layers, const Camera *camera, RandomGenerator *random_generator, const PixelSamplingData &pixel_sampling_data, bool lights_geometry_material_emit) const
+Rgba BidirectionalIntegrator::integrate(int thread_id, int ray_level, bool chromatic_enabled, float wavelength, const Ray &ray, int additional_depth, const RayDivision &ray_division, ColorLayers *color_layers, const Camera *camera, RandomGenerator &random_generator, const PixelSamplingData &pixel_sampling_data, bool lights_geometry_material_emit) const
 {
 	Rgb col(0.f);
 	SurfacePoint sp;
@@ -287,10 +287,10 @@ Rgba BidirectionalIntegrator::integrate(int thread_id, int ray_level, bool chrom
 		lray.tmin_ = scene_->ray_min_dist_;
 		lray.tmax_ = -1.f;
 		float light_num_pdf;
-		int light_num = light_power_d_->dSample(logger_, (*random_generator)(), &light_num_pdf);
+		int light_num = light_power_d_->dSample(logger_, random_generator(), &light_num_pdf);
 		light_num_pdf *= f_num_lights_;
 		LSample ls;
-		ls.s_1_ = (*random_generator)(), ls.s_2_ = (*random_generator)(), ls.s_3_ = (*random_generator)(), ls.s_4_ = (*random_generator)();
+		ls.s_1_ = random_generator(), ls.s_2_ = random_generator(), ls.s_3_ = random_generator(), ls.s_4_ = random_generator();
 		ls.sp_ = &vl.sp_;
 		Rgb pcol = lights_.size() > 0 ? lights_[light_num]->emitSample(lray.dir_, ls) : Rgb(0.f);
 		lray.from_ = vl.sp_.p_;
@@ -446,7 +446,7 @@ Rgba BidirectionalIntegrator::integrate(int thread_id, int ray_level, bool chrom
     important: resize path to maxLen *before* calling this function!
  ============================================================ */
 
-int BidirectionalIntegrator::createPath(bool chromatic_enabled, float wavelength, const Ray &start, std::vector<PathVertex> &path, int max_len, const Camera *camera, RandomGenerator *random_generator) const
+int BidirectionalIntegrator::createPath(bool chromatic_enabled, float wavelength, const Ray &start, std::vector<PathVertex> &path, int max_len, const Camera *camera, RandomGenerator &random_generator) const
 {
 	const Accelerator *accelerator = scene_->getAccelerator();
 	if(!accelerator) return 0;
@@ -470,7 +470,7 @@ int BidirectionalIntegrator::createPath(bool chromatic_enabled, float wavelength
 		++n_vert;
 		//if(dbg<10) if(logger_.isDebug())logger_.logDebug(integratorName << ": " << nVert << "  mat: " << (void*) mat << " alpha:" << v.alpha << " p_f_s:" << v_prev.f_s << " qi:"<< v_prev.qi);
 		// create tentative sample for next path segment
-		Sample s((*random_generator)(), (*random_generator)(), BsdfFlags::All, true);
+		Sample s(random_generator(), random_generator(), BsdfFlags::All, true);
 		float w = 0.f;
 		v.f_s_ = mat->sample(v.sp_.mat_data_.get(), v.sp_, v.wi_, ray.dir_, s, w, chromatic_enabled, wavelength, camera);
 		if(v.f_s_.isBlack()) break;
@@ -480,7 +480,7 @@ int BidirectionalIntegrator::createPath(bool chromatic_enabled, float wavelength
 		if(n_vert > min_path_length_)
 		{
 			v.qi_wo_ = std::min(0.98f, v.f_s_.col2Bri() * v.cos_wo_ / v.pdf_wo_);
-			if((*random_generator)() > v.qi_wo_) break; // terminate path with russian roulette
+			if(random_generator() > v.qi_wo_) break; // terminate path with russian roulette
 		}
 		else v.qi_wo_ = 1.f;
 
@@ -606,7 +606,7 @@ bool BidirectionalIntegrator::connectPaths(int s, int t, PathData &pd) const
 }
 
 // connect path with s==1 (eye path with single light vertex)
-bool BidirectionalIntegrator::connectLPath(bool chromatic_enabled, float wavelength, int t, PathData &pd, Ray &l_ray, Rgb &lcol, RandomGenerator *random_generator, bool lights_geometry_material_emit) const
+bool BidirectionalIntegrator::connectLPath(bool chromatic_enabled, float wavelength, int t, PathData &pd, Ray &l_ray, Rgb &lcol, RandomGenerator &random_generator, bool lights_geometry_material_emit) const
 {
 	// create light sample with direct lighting strategy:
 	const PathVertex &z = pd.eye_path_[t - 1];
@@ -615,7 +615,7 @@ bool BidirectionalIntegrator::connectLPath(bool chromatic_enabled, float wavelen
 	int n_lights_i = lights_.size();
 	if(n_lights_i == 0) return false;
 	float light_num_pdf, cos_wo;
-	int lnum = light_power_d_->dSample(logger_, (*random_generator)(), &light_num_pdf);
+	int lnum = light_power_d_->dSample(logger_, random_generator(), &light_num_pdf);
 	light_num_pdf *= f_num_lights_;
 	if(lnum > n_lights_i - 1) lnum = n_lights_i - 1;
 	const Light *light = lights_[lnum];
@@ -625,8 +625,8 @@ bool BidirectionalIntegrator::connectLPath(bool chromatic_enabled, float wavelen
 	LSample ls;
 	if(!light->getFlags()) //only lights with non-specular components need sample values
 	{
-		ls.s_1_ = (*random_generator)();
-		ls.s_2_ = (*random_generator)();
+		ls.s_1_ = random_generator();
+		ls.s_2_ = random_generator();
 	}
 	ls.sp_ = &sp_light;
 	// generate light sample, cancel when none could be created:

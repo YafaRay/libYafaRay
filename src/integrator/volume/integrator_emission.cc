@@ -25,7 +25,7 @@
 
 BEGIN_YAFARAY
 
-Rgba EmissionIntegrator::transmittance(RandomGenerator *random_generator, const Ray &ray) const
+Rgba EmissionIntegrator::transmittance(RandomGenerator &random_generator, const Ray &ray) const
 {
 	Rgba result(1.f);
 	auto &volumes = scene_->getVolumeRegions();
@@ -34,7 +34,7 @@ Rgba EmissionIntegrator::transmittance(RandomGenerator *random_generator, const 
 	return result;
 }
 
-Rgba EmissionIntegrator::integrate(RandomGenerator *random_generator, const Ray &ray, int additional_depth) const {
+Rgba EmissionIntegrator::integrate(RandomGenerator &random_generator, const Ray &ray, int additional_depth) const {
 	int n = 10; // samples + 1 on the ray inside the volume
 	Rgba result(0.f);
 	bool hit = ray.tmax_ > 0.f;
