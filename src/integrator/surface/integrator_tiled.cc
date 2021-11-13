@@ -367,7 +367,7 @@ bool TiledIntegrator::renderTile(RenderArea &a, const Camera *camera, const Rend
 				}
 				camera_ray.ray_.time_ = time;
 				RayDivision ray_division;
-				color_layers(Layer::Combined).color_ = integrate(thread_id, 0, render_data, camera_ray.ray_, 0, ray_division, &color_layers, camera, &random_generator, pixel_sampling_data);
+				color_layers(Layer::Combined).color_ = integrate(thread_id, 0, render_data, camera_ray.ray_, 0, ray_division, &color_layers, camera, &random_generator, pixel_sampling_data, false);
 				for(auto &it : color_layers)
 				{
 					switch(it.first)

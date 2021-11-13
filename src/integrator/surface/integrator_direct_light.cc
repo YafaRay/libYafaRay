@@ -102,12 +102,11 @@ bool DirectLightIntegrator::preprocess(const RenderControl &render_control, Time
 	return success;
 }
 
-Rgba DirectLightIntegrator::integrate(int thread_id, int ray_level, RenderData &render_data, const Ray &ray, int additional_depth, const RayDivision &ray_division, ColorLayers *color_layers, const Camera *camera, RandomGenerator *random_generator, const PixelSamplingData &pixel_sampling_data) const
+Rgba DirectLightIntegrator::integrate(int thread_id, int ray_level, RenderData &render_data, const Ray &ray, int additional_depth, const RayDivision &ray_division, ColorLayers *color_layers, const Camera *camera, RandomGenerator *random_generator, const PixelSamplingData &pixel_sampling_data, bool lights_geometry_material_emit) const
 {
 	Rgb col(0.f);
 	float alpha;
 	SurfacePoint sp;
-	const bool old_lights_geometry_material_emit = render_data.lights_geometry_material_emit_;
 	if(transp_background_) alpha = 0.f;
 	else alpha = 1.f;
 	// Shoot ray into scene
@@ -117,11 +116,11 @@ Rgba DirectLightIntegrator::integrate(int thread_id, int ray_level, RenderData &
 		const Material *material = sp.material_;
 		const BsdfFlags &mat_bsdfs = sp.mat_data_->bsdf_flags_;
 		const Vec3 wo = -ray.dir_;
-		if(ray_level == 0) render_data.lights_geometry_material_emit_ = true;
+		if(ray_level == 0) lights_geometry_material_emit = true;
 		if(additional_depth < material->getAdditionalDepth()) additional_depth = material->getAdditionalDepth();
 		if(mat_bsdfs.hasAny(BsdfFlags::Emit))
 		{
-			const Rgb col_tmp = material->emit(sp.mat_data_.get(), sp, wo, render_data.lights_geometry_material_emit_);
+			const Rgb col_tmp = material->emit(sp.mat_data_.get(), sp, wo, lights_geometry_material_emit);
 			col += col_tmp;
 			if(color_layers)
 			{
@@ -141,7 +140,7 @@ Rgba DirectLightIntegrator::integrate(int thread_id, int ray_level, RenderData &
 					if(ColorLayer *color_layer = color_layers->find(Layer::Indirect)) color_layer->color_ = col_tmp;
 				}
 			}
-			if(use_ambient_occlusion_) col += sampleAmbientOcclusion(render_data, sp, wo, ray_division, camera, pixel_sampling_data);
+			if(use_ambient_occlusion_) col += sampleAmbientOcclusion(render_data, sp, wo, ray_division, camera, pixel_sampling_data, lights_geometry_material_emit);
 		}
 		recursiveRaytrace(thread_id, ray_level + 1, render_data, ray, mat_bsdfs, sp, wo, col, alpha, additional_depth, ray_division, color_layers, camera, random_generator, pixel_sampling_data);
 		if(color_layers)
@@ -149,11 +148,11 @@ Rgba DirectLightIntegrator::integrate(int thread_id, int ray_level, RenderData &
 			generateCommonLayers(sp, ray, scene_->getMaskParams(), color_layers);
 			if(ColorLayer *color_layer = color_layers->find(Layer::Ao))
 			{
-				color_layer->color_ = sampleAmbientOcclusionLayer(render_data, sp, wo, ray_division, nullptr, pixel_sampling_data);
+				color_layer->color_ = sampleAmbientOcclusionLayer(render_data, sp, wo, ray_division, nullptr, pixel_sampling_data, lights_geometry_material_emit);
 			}
 			if(ColorLayer *color_layer = color_layers->find(Layer::AoClay))
 			{
-				color_layer->color_ = sampleAmbientOcclusionClayLayer(render_data, sp, wo, ray_division, pixel_sampling_data);
+				color_layer->color_ = sampleAmbientOcclusionClayLayer(render_data, sp, wo, ray_division, pixel_sampling_data, lights_geometry_material_emit);
 			}
 		}
 		if(transp_refracted_background_)
@@ -176,7 +175,6 @@ Rgba DirectLightIntegrator::integrate(int thread_id, int ray_level, RenderData &
 			}
 		}
 	}
-	render_data.lights_geometry_material_emit_ = old_lights_geometry_material_emit;
 	if(scene_->vol_integrator_)
 	{
 		const Rgb col_vol_transmittance = scene_->vol_integrator_->transmittance(random_generator, ray);

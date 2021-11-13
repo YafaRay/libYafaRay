@@ -714,7 +714,7 @@ bool PhotonIntegrator::preprocess(const RenderControl &render_control, Timer &ti
 // final gathering: this is basically a full path tracer only that it uses the radiance map only
 // at the path end. I.e. paths longer than 1 are only generated to overcome lack of local radiance detail.
 // precondition: initBSDF of current spot has been called!
-Rgb PhotonIntegrator::finalGathering(int thread_id, RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo, const RayDivision &ray_division, const Camera *camera, RandomGenerator *random_generator, const PixelSamplingData &pixel_sampling_data) const
+Rgb PhotonIntegrator::finalGathering(int thread_id, RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo, const RayDivision &ray_division, const Camera *camera, RandomGenerator *random_generator, const PixelSamplingData &pixel_sampling_data, bool lights_geometry_material_emit) const
 {
 	const Accelerator *accelerator = scene_->getAccelerator();
 	if(!accelerator) return {0.f};
@@ -790,7 +790,7 @@ Rgb PhotonIntegrator::finalGathering(int thread_id, RenderData &render_data, con
 
 				if(close || caustic)
 				{
-					if(mat_bsd_fs.hasAny(BsdfFlags::Emit)) lcol += p_mat->emit(hit.mat_data_.get(), hit, pwo, render_data.lights_geometry_material_emit_);
+					if(mat_bsd_fs.hasAny(BsdfFlags::Emit)) lcol += p_mat->emit(hit.mat_data_.get(), hit, pwo, lights_geometry_material_emit);
 					path_col += lcol * throughput;
 				}
 			}
@@ -845,7 +845,7 @@ Rgb PhotonIntegrator::finalGathering(int thread_id, RenderData &render_data, con
 				Vec3 sf = SurfacePoint::normalFaceForward(hit.ng_, hit.n_, -p_ray.dir_);
 				const Photon *nearest = radiance_map_->findNearest(hit.p_, sf, lookup_rad_);
 				if(nearest) lcol = nearest->color();
-				if(mat_bsd_fs.hasAny(BsdfFlags::Emit)) lcol += p_mat->emit(hit.mat_data_.get(), hit, -p_ray.dir_, render_data.lights_geometry_material_emit_);
+				if(mat_bsd_fs.hasAny(BsdfFlags::Emit)) lcol += p_mat->emit(hit.mat_data_.get(), hit, -p_ray.dir_, lights_geometry_material_emit);
 				path_col += lcol * throughput;
 			}
 		}
@@ -940,7 +940,7 @@ std::unique_ptr<Integrator> PhotonIntegrator::factory(Logger &logger, ParamMap &
 	return inte;
 }
 
-Rgba PhotonIntegrator::integrate(int thread_id, int ray_level, RenderData &render_data, const Ray &ray, int additional_depth, const RayDivision &ray_division, ColorLayers *color_layers, const Camera *camera, RandomGenerator *random_generator, const PixelSamplingData &pixel_sampling_data) const
+Rgba PhotonIntegrator::integrate(int thread_id, int ray_level, RenderData &render_data, const Ray &ray, int additional_depth, const RayDivision &ray_division, ColorLayers *color_layers, const Camera *camera, RandomGenerator *random_generator, const PixelSamplingData &pixel_sampling_data, bool lights_geometry_material_emit) const
 {
 	static int n_max = 0;
 	static int calls = 0;
@@ -949,7 +949,7 @@ Rgba PhotonIntegrator::integrate(int thread_id, int ray_level, RenderData &rende
 	float alpha;
 	SurfacePoint sp;
 
-	const bool old_lights_geometry_material_emit = render_data.lights_geometry_material_emit_;
+	const bool old_lights_geometry_material_emit = lights_geometry_material_emit;
 
 	if(transp_background_) alpha = 0.f;
 	else alpha = 1.f;
@@ -960,7 +960,7 @@ Rgba PhotonIntegrator::integrate(int thread_id, int ray_level, RenderData &rende
 		if(ray_level == 0)
 		{
 			render_data.chromatic_ = true;
-			render_data.lights_geometry_material_emit_ = true;
+			lights_geometry_material_emit = true;
 		}
 
 		const Vec3 wo = -ray.dir_;
@@ -969,14 +969,14 @@ Rgba PhotonIntegrator::integrate(int thread_id, int ray_level, RenderData &rende
 
 		if(additional_depth < material->getAdditionalDepth()) additional_depth = material->getAdditionalDepth();
 
-		const Rgb col_emit = material->emit(sp.mat_data_.get(), sp, wo, render_data.lights_geometry_material_emit_);
+		const Rgb col_emit = material->emit(sp.mat_data_.get(), sp, wo, lights_geometry_material_emit);
 		col += col_emit;
 		if(color_layers)
 		{
 			if(ColorLayer *color_layer = color_layers->find(Layer::Emit)) color_layer->color_ += col_emit;
 		}
 
-		render_data.lights_geometry_material_emit_ = false;
+		lights_geometry_material_emit = false;
 
 		if(use_photon_diffuse_ && final_gather_)
 		{
@@ -1001,7 +1001,7 @@ Rgba PhotonIntegrator::integrate(int thread_id, int ray_level, RenderData &rende
 				// contribution of light emitting surfaces
 				if(mat_bsdfs.hasAny(BsdfFlags::Emit))
 				{
-					const Rgb col_tmp = material->emit(sp.mat_data_.get(), sp, wo, render_data.lights_geometry_material_emit_);
+					const Rgb col_tmp = material->emit(sp.mat_data_.get(), sp, wo, lights_geometry_material_emit);
 					col += col_tmp;
 					if(color_layers)
 					{
@@ -1012,7 +1012,7 @@ Rgba PhotonIntegrator::integrate(int thread_id, int ray_level, RenderData &rende
 				if(mat_bsdfs.hasAny(BsdfFlags::Diffuse))
 				{
 					col += estimateAllDirectLight(render_data, sp, wo, ray_division, color_layers, camera, random_generator, pixel_sampling_data);
-					Rgb col_tmp = finalGathering(thread_id, render_data, sp, wo, ray_division, camera, random_generator, pixel_sampling_data);
+					Rgb col_tmp = finalGathering(thread_id, render_data, sp, wo, ray_division, camera, random_generator, pixel_sampling_data, lights_geometry_material_emit);
 					if(aa_noise_params_.clamp_indirect_ > 0.f) col_tmp.clampProportionalRgb(aa_noise_params_.clamp_indirect_);
 					col += col_tmp;
 					if(color_layers)
@@ -1044,7 +1044,7 @@ Rgba PhotonIntegrator::integrate(int thread_id, int ray_level, RenderData &rende
 
 				if(mat_bsdfs.hasAny(BsdfFlags::Emit))
 				{
-					const Rgb col_tmp = material->emit(sp.mat_data_.get(), sp, wo, render_data.lights_geometry_material_emit_);
+					const Rgb col_tmp = material->emit(sp.mat_data_.get(), sp, wo, lights_geometry_material_emit);
 					col += col_tmp;
 					if(color_layers)
 					{
@@ -1104,12 +1104,12 @@ Rgba PhotonIntegrator::integrate(int thread_id, int ray_level, RenderData &rende
 
 			if(ColorLayer *color_layer = color_layers->find(Layer::Ao))
 			{
-				color_layer->color_ = sampleAmbientOcclusionLayer(render_data, sp, wo, ray_division, camera, pixel_sampling_data);
+				color_layer->color_ = sampleAmbientOcclusionLayer(render_data, sp, wo, ray_division, camera, pixel_sampling_data, lights_geometry_material_emit);
 			}
 
 			if(ColorLayer *color_layer = color_layers->find(Layer::AoClay))
 			{
-				color_layer->color_ = sampleAmbientOcclusionClayLayer(render_data, sp, wo, ray_division, pixel_sampling_data);
+				color_layer->color_ = sampleAmbientOcclusionClayLayer(render_data, sp, wo, ray_division, pixel_sampling_data, lights_geometry_material_emit);
 			}
 		}
 
@@ -1133,7 +1133,7 @@ Rgba PhotonIntegrator::integrate(int thread_id, int ray_level, RenderData &rende
 		}
 	}
 
-	render_data.lights_geometry_material_emit_ = old_lights_geometry_material_emit;
+	lights_geometry_material_emit = old_lights_geometry_material_emit;
 
 	if(scene_->vol_integrator_)
 	{

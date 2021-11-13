@@ -35,7 +35,7 @@ class PathIntegrator final : public MonteCarloIntegrator
 		virtual std::string getShortName() const override { return "PT"; }
 		virtual std::string getName() const override { return "PathTracer"; }
 		virtual bool preprocess(const RenderControl &render_control, Timer &timer, const RenderView *render_view, ImageFilm *image_film) override;
-		virtual Rgba integrate(int thread_id, int ray_level, RenderData &render_data, const Ray &ray, int additional_depth, const RayDivision &ray_division, ColorLayers *color_layers, const Camera *camera, RandomGenerator *random_generator, const PixelSamplingData &pixel_sampling_data) const override;
+		virtual Rgba integrate(int thread_id, int ray_level, RenderData &render_data, const Ray &ray, int additional_depth, const RayDivision &ray_division, ColorLayers *color_layers, const Camera *camera, RandomGenerator *random_generator, const PixelSamplingData &pixel_sampling_data, bool lights_geometry_material_emit) const override;
 		enum class CausticType { None, Path, Photon, Both };
 
 		bool trace_caustics_; //!< use path tracing for caustics (determined by causticType)

@@ -68,11 +68,11 @@ bool DebugIntegrator::preprocess(const RenderControl &render_control, Timer &tim
 	return true;
 }
 
-Rgba DebugIntegrator::integrate(int thread_id, int ray_level, RenderData &render_data, const Ray &ray, int additional_depth, const RayDivision &ray_division, ColorLayers *color_layers, const Camera *camera, RandomGenerator *random_generator, const PixelSamplingData &pixel_sampling_data) const
+Rgba DebugIntegrator::integrate(int thread_id, int ray_level, RenderData &render_data, const Ray &ray, int additional_depth, const RayDivision &ray_division, ColorLayers *color_layers, const Camera *camera, RandomGenerator *random_generator, const PixelSamplingData &pixel_sampling_data, bool lights_geometry_material_emit) const
 {
 	Rgb col(0.f);
 	SurfacePoint sp;
-	const bool old_lights_geometry_material_emit = render_data.lights_geometry_material_emit_;
+	const bool old_lights_geometry_material_emit = lights_geometry_material_emit;
 	//shoot ray into scene
 	const Accelerator *accelerator = scene_->getAccelerator();
 	if(accelerator && accelerator->intersect(ray, sp, camera))
@@ -92,7 +92,7 @@ Rgba DebugIntegrator::integrate(int thread_id, int ray_level, RenderData &render
 		else if(debug_type_ == DSdV)
 			col = Rgb((sp.ds_dv_.x_ + 1.f) * .5f, (sp.ds_dv_.y_ + 1.f) * .5f, (sp.ds_dv_.z_ + 1.f) * .5f);
 	}
-	render_data.lights_geometry_material_emit_ = old_lights_geometry_material_emit;
+	lights_geometry_material_emit = old_lights_geometry_material_emit;
 	return Rgba(col, 1.f);
 }
 

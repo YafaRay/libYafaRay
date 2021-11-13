@@ -50,15 +50,15 @@ class BidirectionalIntegrator final : public TiledIntegrator
 		virtual std::string getName() const override { return "BidirectionalPathTracer"; }
 		virtual bool preprocess(const RenderControl &render_control, Timer &timer, const RenderView *render_view, ImageFilm *image_film) override;
 		virtual void cleanup() override;
-		virtual Rgba integrate(int thread_id, int ray_level, RenderData &render_data, const Ray &ray, int additional_depth, const RayDivision &ray_division, ColorLayers *color_layers, const Camera *camera, RandomGenerator *random_generator, const PixelSamplingData &pixel_sampling_data) const override;
-		Rgb sampleAmbientOcclusionLayer(RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo, const RayDivision &ray_division, const Camera *camera, const PixelSamplingData &pixel_sampling_data) const;
-		Rgb sampleAmbientOcclusionClayLayer(RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo, const RayDivision &ray_division, const PixelSamplingData &pixel_sampling_data) const;
+		virtual Rgba integrate(int thread_id, int ray_level, RenderData &render_data, const Ray &ray, int additional_depth, const RayDivision &ray_division, ColorLayers *color_layers, const Camera *camera, RandomGenerator *random_generator, const PixelSamplingData &pixel_sampling_data, bool lights_geometry_material_emit) const override;
+		Rgb sampleAmbientOcclusionLayer(RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo, const RayDivision &ray_division, const Camera *camera, const PixelSamplingData &pixel_sampling_data, bool lights_geometry_material_emit) const;
+		Rgb sampleAmbientOcclusionClayLayer(RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo, const RayDivision &ray_division, const PixelSamplingData &pixel_sampling_data, bool lights_geometry_material_emit) const;
 		int createPath(RenderData &render_data, const Ray &start, std::vector<PathVertex> &path, int max_len, const Camera *camera, RandomGenerator *random_generator) const;
 		Rgb evalPath(int s, int t, PathData &pd, const Camera *camera) const;
 		Rgb evalLPath(int t, PathData &pd, const Ray &l_ray, const Rgb &lcol, const Camera *camera) const;
 		Rgb evalPathE(int s, PathData &pd, const Camera *camera) const;
 		bool connectPaths(int s, int t, PathData &pd) const;
-		bool connectLPath(RenderData &render_data, int t, PathData &pd, Ray &l_ray, Rgb &lcol, RandomGenerator *random_generator) const;
+		bool connectLPath(RenderData &render_data, int t, PathData &pd, Ray &l_ray, Rgb &lcol, RandomGenerator *random_generator, bool lights_geometry_material_emit) const;
 		bool connectPathE(const Camera *camera, int s, PathData &pd) const;
 		float pathWeight(int s, int t, PathData &pd) const;
 		float pathWeight0T(int t, PathData &pd) const;

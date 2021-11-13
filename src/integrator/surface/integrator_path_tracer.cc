@@ -122,7 +122,7 @@ bool PathIntegrator::preprocess(const RenderControl &render_control, Timer &time
 	return success;
 }
 
-Rgba PathIntegrator::integrate(int thread_id, int ray_level, RenderData &render_data, const Ray &ray, int additional_depth, const RayDivision &ray_division, ColorLayers *color_layers, const Camera *camera, RandomGenerator *random_generator, const PixelSamplingData &pixel_sampling_data) const
+Rgba PathIntegrator::integrate(int thread_id, int ray_level, RenderData &render_data, const Ray &ray, int additional_depth, const RayDivision &ray_division, ColorLayers *color_layers, const Camera *camera, RandomGenerator *random_generator, const PixelSamplingData &pixel_sampling_data, bool lights_geometry_material_emit) const
 {
 	static int calls = 0;
 	++calls;
@@ -141,7 +141,7 @@ Rgba PathIntegrator::integrate(int thread_id, int ray_level, RenderData &render_
 		// if camera ray initialize sampling offset:
 		if(ray_level == 0)
 		{
-			//FIXME render_data.lights_geometry_material_emit_ = true;
+			//FIXME lights_geometry_material_emit = true;
 			//...
 		}
 
@@ -153,7 +153,7 @@ Rgba PathIntegrator::integrate(int thread_id, int ray_level, RenderData &render_
 		// contribution of light emitting surfaces
 		if(mat_bsdfs.hasAny(BsdfFlags::Emit))
 		{
-			const Rgb col_tmp = material->emit(sp.mat_data_.get(), sp, wo, render_data.lights_geometry_material_emit_);
+			const Rgb col_tmp = material->emit(sp.mat_data_.get(), sp, wo, lights_geometry_material_emit);
 			col += col_tmp;
 			if(color_layers)
 			{
@@ -217,7 +217,7 @@ Rgba PathIntegrator::integrate(int thread_id, int ray_level, RenderData &render_
 
 				scol *= w;
 				throughput = scol;
-				render_data.lights_geometry_material_emit_ = false;
+				lights_geometry_material_emit = false;
 
 				p_ray.tmin_ = scene_->ray_min_dist_;
 				p_ray.tmax_ = -1.f;
@@ -231,7 +231,7 @@ Rgba PathIntegrator::integrate(int thread_id, int ray_level, RenderData &render_
 				const BsdfFlags mat_bsd_fs = hit->mat_data_->bsdf_flags_;
 				if(mat_bsd_fs.hasAny(BsdfFlags::Emit))
 				{
-					const Rgb col_tmp = p_mat->emit(hit->mat_data_.get(), *hit, pwo, render_data.lights_geometry_material_emit_);
+					const Rgb col_tmp = p_mat->emit(hit->mat_data_.get(), *hit, pwo, lights_geometry_material_emit);
 					lcol += col_tmp;
 					if(color_layers)
 					{
@@ -264,7 +264,7 @@ Rgba PathIntegrator::integrate(int thread_id, int ray_level, RenderData &render_
 
 					throughput *= scol;
 					caustic = trace_caustics_ && s.sampled_flags_.hasAny(BsdfFlags::Specular | BsdfFlags::Glossy | BsdfFlags::Filter);
-					render_data.lights_geometry_material_emit_ = caustic;
+					lights_geometry_material_emit = caustic;
 
 					p_ray.tmin_ = scene_->ray_min_dist_;
 					p_ray.tmax_ = -1.f;
@@ -305,7 +305,7 @@ Rgba PathIntegrator::integrate(int thread_id, int ray_level, RenderData &render_
 
 					if(mat_bsd_fs.hasAny(BsdfFlags::Emit) && caustic)
 					{
-						const Rgb col_tmp = p_mat->emit(hit->mat_data_.get(), *hit, pwo, render_data.lights_geometry_material_emit_);
+						const Rgb col_tmp = p_mat->emit(hit->mat_data_.get(), *hit, pwo, lights_geometry_material_emit);
 						lcol += col_tmp;
 						if(color_layers)
 						{
@@ -329,12 +329,12 @@ Rgba PathIntegrator::integrate(int thread_id, int ray_level, RenderData &render_
 
 			if(ColorLayer *color_layer = color_layers->find(Layer::Ao))
 			{
-				color_layer->color_ = sampleAmbientOcclusionLayer(render_data, sp, wo, ray_division, nullptr, pixel_sampling_data);
+				color_layer->color_ = sampleAmbientOcclusionLayer(render_data, sp, wo, ray_division, nullptr, pixel_sampling_data, lights_geometry_material_emit);
 			}
 
 			if(ColorLayer *color_layer = color_layers->find(Layer::AoClay))
 			{
-				color_layer->color_ = sampleAmbientOcclusionClayLayer(render_data, sp, wo, ray_division, pixel_sampling_data);
+				color_layer->color_ = sampleAmbientOcclusionClayLayer(render_data, sp, wo, ray_division, pixel_sampling_data, lights_geometry_material_emit);
 			}
 		}
 
