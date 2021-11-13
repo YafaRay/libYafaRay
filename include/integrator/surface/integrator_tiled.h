@@ -55,7 +55,7 @@ class TiledIntegrator : public SurfaceIntegrator
 		/*! render a pass; only required by the default implementation of render() */
 		virtual bool renderPass(const RenderView *render_view, int samples, int offset, bool adaptive, int aa_pass_number, RenderControl &render_control, Timer &timer);
 		/*! render a tile; only required by default implementation of render() */
-		virtual bool renderTile(RenderArea &a, const Camera *camera, const RenderControl &render_control, const Timer &timer, int n_samples, int offset, bool adaptive, int thread_id, int aa_pass_number = 0);
+		virtual bool renderTile(const RenderArea &a, const Camera *camera, const RenderControl &render_control, const Timer &timer, int n_samples, int offset, bool adaptive, int thread_id, int aa_pass_number = 0);
 		virtual void renderWorker(TiledIntegrator *integrator, const Scene *scene, const RenderView *render_view, const RenderControl &render_control, const Timer &timer, ThreadControl *control, int thread_id, int samples, int offset = 0, bool adaptive = false, int aa_pass = 0);
 
 		//		virtual void recursiveRaytrace(renderState_t &state, diffRay_t &ray, int rDepth, BSDF_t bsdfs, surfacePoint_t &sp, vector3d_t &wo, Rgb &col, float &alpha) const;

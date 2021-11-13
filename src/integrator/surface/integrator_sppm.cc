@@ -182,7 +182,7 @@ bool SppmIntegrator::render(RenderControl &render_control, Timer &timer, const R
 }
 
 
-bool SppmIntegrator::renderTile(RenderArea &a, const Camera *camera, const RenderControl &render_control, const Timer &timer, int n_samples, int offset, bool adaptive, int thread_id, int aa_pass_number)
+bool SppmIntegrator::renderTile(const RenderArea &a, const Camera *camera, const RenderControl &render_control, const Timer &timer, int n_samples, int offset, bool adaptive, int thread_id, int aa_pass_number)
 {
 	const int camera_res_x = camera->resX();
 	RandomGenerator random_generator(rand() + offset * (camera_res_x * a.y_ + a.x_) + 123);
