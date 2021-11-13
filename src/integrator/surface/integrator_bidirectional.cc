@@ -140,9 +140,10 @@ class PathData
 		int n_paths_;             //!< number of paths that have been sampled (for current thread and image)
 };
 
-BidirectionalIntegrator::BidirectionalIntegrator(Logger &logger, bool transp_shad, int shadow_depth): TiledIntegrator(logger), tr_shad_(transp_shad), s_depth_(shadow_depth)
+BidirectionalIntegrator::BidirectionalIntegrator(Logger &logger, bool transp_shad, int shadow_depth): TiledIntegrator(logger)
 {
-	//Empty
+	tr_shad_ = transp_shad;
+	s_depth_ = shadow_depth;
 }
 
 bool BidirectionalIntegrator::preprocess(const RenderControl &render_control, Timer &timer, const RenderView *render_view, ImageFilm *image_film)
@@ -372,11 +373,11 @@ Rgba BidirectionalIntegrator::integrate(int thread_id, int ray_level, bool chrom
 			generateCommonLayers(sp, scene_->getMaskParams(), color_layers);
 			if(ColorLayer *color_layer = color_layers->find(Layer::Ao))
 			{
-				color_layer->color_ += sampleAmbientOcclusionLayer(chromatic_enabled, wavelength, sp, wo, ray_division, camera, pixel_sampling_data, lights_geometry_material_emit);
+				color_layer->color_ += sampleAmbientOcclusion(chromatic_enabled, wavelength, sp, wo, ray_division, camera, pixel_sampling_data, lights_geometry_material_emit, false, false);
 			}
 			if(ColorLayer *color_layer = color_layers->find(Layer::AoClay))
 			{
-				color_layer->color_ += sampleAmbientOcclusionClayLayer(chromatic_enabled, wavelength, sp, wo, ray_division, pixel_sampling_data, lights_geometry_material_emit);
+				color_layer->color_ += sampleAmbientOcclusion(chromatic_enabled, wavelength, sp, wo, ray_division, camera, pixel_sampling_data, lights_geometry_material_emit, false, true);
 			}
 		}
 	}
@@ -915,100 +916,6 @@ Rgb BidirectionalIntegrator::evalPathE(int s, PathData &pd, const Camera *camera
     }
     return col/lightNumPdf;
 } */
-
-Rgb BidirectionalIntegrator::sampleAmbientOcclusionLayer(bool chromatic_enabled, float wavelength, const SurfacePoint &sp, const Vec3 &wo, const RayDivision &ray_division, const Camera *camera, const PixelSamplingData &pixel_sampling_data, bool lights_geometry_material_emit) const
-{
-	const Accelerator *accelerator = scene_->getAccelerator();
-	if(!accelerator) return {0.f};
-
-	Rgb col(0.f), surf_col(0.f), scol(0.f);
-	const Material *material = sp.material_;
-	const BsdfFlags &mat_bsdfs = sp.mat_data_->bsdf_flags_;
-	Ray light_ray;
-	light_ray.from_ = sp.p_;
-	float mask_obj_index = 0.f, mask_mat_index = 0.f;
-
-	int n = ao_samples_;//(int) ceilf(aoSamples*getSampleMultiplier());
-	if(ray_division.division_ > 1) n = std::max(1, n / ray_division.division_);
-
-	const unsigned int offs = n * pixel_sampling_data.sample_ + pixel_sampling_data.offset_;
-
-	Halton hal_2(2, offs - 1);
-	Halton hal_3(3, offs - 1);
-
-	for(int i = 0; i < n; ++i)
-	{
-		float s_1 = hal_2.getNext();
-		float s_2 = hal_3.getNext();
-
-		if(ray_division.division_ > 1)
-		{
-			s_1 = math::addMod1(s_1, ray_division.decorrelation_1_);
-			s_2 = math::addMod1(s_2, ray_division.decorrelation_2_);
-		}
-		light_ray.tmax_ = ao_dist_;
-		float w = 0.f;
-		Sample s(s_1, s_2, BsdfFlags::Glossy | BsdfFlags::Diffuse | BsdfFlags::Reflect);
-		surf_col = material->sample(sp.mat_data_.get(), sp, wo, light_ray.dir_, s, w, chromatic_enabled, wavelength, camera);
-		if(mat_bsdfs.hasAny(BsdfFlags::Emit))
-		{
-			col += material->emit(sp.mat_data_.get(), sp, wo, lights_geometry_material_emit) * s.pdf_;
-		}
-		const bool shadowed = tr_shad_ ? accelerator->isShadowed(light_ray, s_depth_, scol, mask_obj_index, mask_mat_index, scene_->getShadowBias(), camera) : accelerator->isShadowed(light_ray, mask_obj_index, mask_mat_index, scene_->getShadowBias());
-		if(!shadowed)
-		{
-			const float cos = std::abs(sp.n_ * light_ray.dir_);
-			if(tr_shad_) col += ao_col_ * scol * surf_col * cos * w;
-			else col += ao_col_ * surf_col * cos * w;
-		}
-	}
-	return col / static_cast<float>(n);
-}
-
-
-Rgb BidirectionalIntegrator::sampleAmbientOcclusionClayLayer(bool chromatic_enabled, float wavelength, const SurfacePoint &sp, const Vec3 &wo, const RayDivision &ray_division, const PixelSamplingData &pixel_sampling_data, bool lights_geometry_material_emit) const
-{
-	const Accelerator *accelerator = scene_->getAccelerator();
-	if(!accelerator) return {0.f};
-	Rgb col(0.f), surf_col(0.f);
-	const Material *material = sp.material_;
-	const BsdfFlags &mat_bsdfs = sp.mat_data_->bsdf_flags_;
-	Ray light_ray;
-	light_ray.from_ = sp.p_;
-	float mask_obj_index = 0.f, mask_mat_index = 0.f;
-	int n = ao_samples_;
-	if(ray_division.division_ > 1) n = std::max(1, n / ray_division.division_);
-	const unsigned int offs = n * pixel_sampling_data.sample_ + pixel_sampling_data.offset_;
-	Halton hal_2(2, offs - 1);
-	Halton hal_3(3, offs - 1);
-	for(int i = 0; i < n; ++i)
-	{
-		float s_1 = hal_2.getNext();
-		float s_2 = hal_3.getNext();
-		if(ray_division.division_ > 1)
-		{
-			s_1 = math::addMod1(s_1, ray_division.decorrelation_1_);
-			s_2 = math::addMod1(s_2, ray_division.decorrelation_2_);
-		}
-		light_ray.tmax_ = ao_dist_;
-		float w = 0.f;
-		Sample s(s_1, s_2, BsdfFlags::All);
-		surf_col = material->sampleClay(sp, wo, light_ray.dir_, s, w);
-		s.pdf_ = 1.f;
-		if(mat_bsdfs.hasAny(BsdfFlags::Emit))
-		{
-			col += material->emit(sp.mat_data_.get(), sp, wo, lights_geometry_material_emit) * s.pdf_;
-		}
-		const bool shadowed = accelerator->isShadowed(light_ray, mask_obj_index, mask_mat_index, scene_->getShadowBias());
-		if(!shadowed)
-		{
-			const float cos = std::abs(sp.n_ * light_ray.dir_);
-			//if(trShad) col += aoCol * scol * surfCol * cos * W;
-			col += ao_col_ * surf_col * cos * w;
-		}
-	}
-	return col / static_cast<float>(n);
-}
 
 std::unique_ptr<Integrator> BidirectionalIntegrator::factory(Logger &logger, ParamMap &params, const Scene &scene)
 {

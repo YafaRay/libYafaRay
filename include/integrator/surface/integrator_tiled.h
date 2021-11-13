@@ -22,6 +22,7 @@
 
 #include "integrator/integrator.h"
 #include "common/aa_noise_params.h"
+#include "color/color.h"
 #include <vector>
 #include <condition_variable>
 
@@ -31,6 +32,7 @@ class SurfacePoint;
 class PhotonMap;
 struct RenderArea;
 struct MaskParams;
+class Vec3;
 enum class DarkDetectionType : int;
 
 class ThreadControl final
@@ -61,6 +63,8 @@ class TiledIntegrator : public SurfaceIntegrator
 		//		virtual void recursiveRaytrace(renderState_t &state, diffRay_t &ray, int rDepth, BSDF_t bsdfs, surfacePoint_t &sp, vector3d_t &wo, Rgb &col, float &alpha) const;
 		virtual void precalcDepths(const Camera *camera);
 		static void generateCommonLayers(const SurfacePoint &sp, const MaskParams &mask_params, ColorLayers *color_layers); //!< Generates render passes common to all integrators
+		/*! Samples ambient occlusion for a given surface point */
+		Rgb sampleAmbientOcclusion(bool chromatic_enabled, float wavelength, const SurfacePoint &sp, const Vec3 &wo, const RayDivision &ray_division, const Camera *camera, const PixelSamplingData &pixel_sampling_data, bool lights_geometry_material_emit, bool transparent_shadows, bool clay) const;
 
 	protected:
 		float i_aa_passes_; //!< Inverse of AA_passes used for depth map
@@ -70,6 +74,12 @@ class TiledIntegrator : public SurfaceIntegrator
 		float aa_indirect_sample_multiplier_ = 1.f;
 		float max_depth_; //!< Inverse of max depth from camera within the scene boundaries
 		float min_depth_; //!< Distance between camera and the closest object on the scene
+		bool use_ambient_occlusion_; //! Use ambient occlusion
+		int ao_samples_; //! Ambient occlusion samples
+		float ao_dist_; //! Ambient occlusion distance
+		Rgb ao_col_; //! Ambient occlusion color
+		int s_depth_; //! Shadow depth for transparent shadows
+		bool tr_shad_; //! Use transparent shadows
 		static std::vector<int> correlative_sample_number_;  //!< Used to sample lights more uniformly when using estimateOneDirectLight
 };
 

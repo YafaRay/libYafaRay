@@ -74,12 +74,8 @@ class MonteCarloIntegrator: public TiledIntegrator
 		bool createCausticMap(const RenderView *render_view, const RenderControl &render_control, const Timer &timer);
 		/*! Estimates caustic photons for a given surface point */
 		Rgb estimateCausticPhotons(const SurfacePoint &sp, const Vec3 &wo) const;
-		/*! Samples ambient occlusion for a given surface point */
-		Rgb sampleAmbientOcclusion(bool chromatic_enabled, float wavelength, const SurfacePoint &sp, const Vec3 &wo, const RayDivision &ray_division, const Camera *camera, const PixelSamplingData &pixel_sampling_data, bool lights_geometry_material_emit, bool transparent_shadows, bool clay) const;
 
 		int r_depth_; //! Ray depth
-		bool tr_shad_; //! Use transparent shadows
-		int s_depth_; //! Shadow depth for transparent shadows
 
 		bool use_photon_caustics_; //! Use photon caustics
 		unsigned int n_caus_photons_; //! Number of caustic photons (to be shoot but it should be the target
@@ -87,11 +83,6 @@ class MonteCarloIntegrator: public TiledIntegrator
 		float caus_radius_; //! Caustic search radius for estimation
 		int caus_depth_; //! Caustic photons max path depth
 		std::unique_ptr<Pdf1D> light_power_d_;
-
-		bool use_ambient_occlusion_; //! Use ambient occlusion
-		int ao_samples_; //! Ambient occlusion samples
-		float ao_dist_; //! Ambient occlusion distance
-		Rgb ao_col_; //! Ambient occlusion color
 
 		PhotonMapProcessing photon_map_processing_ = PhotonsGenerateOnly;
 

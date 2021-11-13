@@ -46,8 +46,6 @@ class BidirectionalIntegrator final : public TiledIntegrator
 		virtual bool preprocess(const RenderControl &render_control, Timer &timer, const RenderView *render_view, ImageFilm *image_film) override;
 		virtual void cleanup() override;
 		virtual Rgba integrate(int thread_id, int ray_level, bool chromatic_enabled, float wavelength, Ray &ray, int additional_depth, const RayDivision &ray_division, ColorLayers *color_layers, const Camera *camera, RandomGenerator &random_generator, const PixelSamplingData &pixel_sampling_data, bool lights_geometry_material_emit) const override;
-		Rgb sampleAmbientOcclusionLayer(bool chromatic_enabled, float wavelength, const SurfacePoint &sp, const Vec3 &wo, const RayDivision &ray_division, const Camera *camera, const PixelSamplingData &pixel_sampling_data, bool lights_geometry_material_emit) const;
-		Rgb sampleAmbientOcclusionClayLayer(bool chromatic_enabled, float wavelength, const SurfacePoint &sp, const Vec3 &wo, const RayDivision &ray_division, const PixelSamplingData &pixel_sampling_data, bool lights_geometry_material_emit) const;
 		int createPath(bool chromatic_enabled, float wavelength, const Ray &start, std::vector<PathVertex> &path, int max_len, const Camera *camera, RandomGenerator &random_generator) const;
 		Rgb evalPath(int s, int t, PathData &pd, const Camera *camera) const;
 		Rgb evalLPath(int t, PathData &pd, const Ray &l_ray, const Rgb &lcol, const Camera *camera) const;
@@ -62,8 +60,6 @@ class BidirectionalIntegrator final : public TiledIntegrator
 		static void copyLightSubpath(PathData &pd, int s, int t);
 		static void copyEyeSubpath(PathData &pd, int s, int t);
 
-		bool tr_shad_;        //!< calculate transparent shadows for transparent objects
-		int s_depth_;
 		//mutable std::vector<pathVertex_t> lightPath, eyePath;
 		//mutable int nPaths;
 		//mutable pathData_t pathData;
@@ -73,10 +69,6 @@ class BidirectionalIntegrator final : public TiledIntegrator
 		float f_num_lights_;
 		std::map <const Light *, float> inv_light_power_d_;
 
-		bool use_ambient_occlusion_; //! Use ambient occlusion
-		int ao_samples_; //! Ambient occlusion samples
-		float ao_dist_; //! Ambient occlusion distance
-		Rgb ao_col_; //! Ambient occlusion color
 		bool transp_background_; //! Render background as transparent
 		bool transp_refracted_background_; //! Render refractions of background as transparent
 
