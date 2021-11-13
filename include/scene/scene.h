@@ -55,7 +55,6 @@ class VolumeIntegrator;
 class SurfacePoint;
 class Matrix4;
 class Rgb;
-class RenderData;
 class Accelerator;
 enum class DarkDetectionType : int;
 

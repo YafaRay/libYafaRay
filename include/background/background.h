@@ -27,7 +27,6 @@ BEGIN_YAFARAY
 
 class ParamMap;
 class Scene;
-class RenderData;
 class Light;
 class Rgb;
 class Ray;

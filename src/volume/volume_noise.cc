@@ -24,7 +24,6 @@
 
 BEGIN_YAFARAY
 
-class RenderData;
 struct PSample;
 
 float NoiseVolumeRegion::density(Point3 p) const

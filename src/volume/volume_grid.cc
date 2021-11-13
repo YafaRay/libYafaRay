@@ -23,7 +23,6 @@
 
 BEGIN_YAFARAY
 
-class RenderData;
 struct PSample;
 
 float GridVolumeRegion::density(Point3 p) const

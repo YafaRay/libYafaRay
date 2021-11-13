@@ -29,7 +29,6 @@
 
 BEGIN_YAFARAY
 
-class RenderData;
 class Bound;
 class ParamMap;
 class Ray;

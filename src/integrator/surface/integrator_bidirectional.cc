@@ -243,7 +243,7 @@ void BidirectionalIntegrator::cleanup()
 /* ============================================================
     integrate
  ============================================================ */
-Rgba BidirectionalIntegrator::integrate(int thread_id, int ray_level, RenderData &render_data, const Ray &ray, int additional_depth, const RayDivision &ray_division, ColorLayers *color_layers, const Camera *camera, RandomGenerator *random_generator, const PixelSamplingData &pixel_sampling_data, bool lights_geometry_material_emit) const
+Rgba BidirectionalIntegrator::integrate(int thread_id, int ray_level, bool chromatic_enabled, float wavelength, const Ray &ray, int additional_depth, const RayDivision &ray_division, ColorLayers *color_layers, const Camera *camera, RandomGenerator *random_generator, const PixelSamplingData &pixel_sampling_data, bool lights_geometry_material_emit) const
 {
 	Rgb col(0.f);
 	SurfacePoint sp;
@@ -280,7 +280,7 @@ Rgba BidirectionalIntegrator::integrate(int thread_id, int ray_level, RenderData
 		ve.flags_ = BsdfFlags::Diffuse; //place holder! not applicable for e.g. orthogonal camera!
 
 		// create eyePath
-		n_eye = createPath(render_data, ray, path_data.eye_path_, max_path_length_, camera, random_generator);
+		n_eye = createPath(chromatic_enabled, wavelength, ray, path_data.eye_path_, max_path_length_, camera, random_generator);
 
 		// sample light (todo!)
 		Ray lray;
@@ -313,7 +313,7 @@ Rgba BidirectionalIntegrator::integrate(int thread_id, int ray_level, RenderData
 		path_data.singular_l_ = ls.flags_.hasAny(Light::Flags::Singular);
 
 		// create lightPath
-		n_light = createPath(render_data, lray, path_data.light_path_, max_path_length_, camera, random_generator);
+		n_light = createPath(chromatic_enabled, wavelength, lray, path_data.light_path_, max_path_length_, camera, random_generator);
 		if(n_light > 1)
 		{
 			path_data.pdf_illum_ = lights_[light_num]->illumPdf(path_data.light_path_[1].sp_, vl.sp_) * light_num_pdf;
@@ -367,7 +367,7 @@ Rgba BidirectionalIntegrator::integrate(int thread_id, int ray_level, RenderData
 			bool o_singular_l = path_data.singular_l_;  // will be overwritten from connectLPath...
 			float o_pdf_illum = path_data.pdf_illum_; // will be overwritten from connectLPath...
 			float o_pdf_emit = path_data.pdf_emit_;   // will be overwritten from connectLPath...
-			if(connectLPath(render_data, t, path_data, d_ray, dcol, random_generator, lights_geometry_material_emit))
+			if(connectLPath(chromatic_enabled, wavelength, t, path_data, d_ray, dcol, random_generator, lights_geometry_material_emit))
 			{
 				checkPath(path_data.path_, 1, t);
 				wt = pathWeight(1, t, path_data);
@@ -401,12 +401,12 @@ Rgba BidirectionalIntegrator::integrate(int thread_id, int ray_level, RenderData
 
 			if(ColorLayer *color_layer = color_layers->find(Layer::Ao))
 			{
-				color_layer->color_ += sampleAmbientOcclusionLayer(render_data, sp, wo, ray_division, camera, pixel_sampling_data, lights_geometry_material_emit);
+				color_layer->color_ += sampleAmbientOcclusionLayer(chromatic_enabled, wavelength, sp, wo, ray_division, camera, pixel_sampling_data, lights_geometry_material_emit);
 			}
 
 			if(ColorLayer *color_layer = color_layers->find(Layer::AoClay))
 			{
-				color_layer->color_ += sampleAmbientOcclusionClayLayer(render_data, sp, wo, ray_division, pixel_sampling_data, lights_geometry_material_emit);
+				color_layer->color_ += sampleAmbientOcclusionClayLayer(chromatic_enabled, wavelength, sp, wo, ray_division, pixel_sampling_data, lights_geometry_material_emit);
 			}
 		}
 	}
@@ -446,7 +446,7 @@ Rgba BidirectionalIntegrator::integrate(int thread_id, int ray_level, RenderData
     important: resize path to maxLen *before* calling this function!
  ============================================================ */
 
-int BidirectionalIntegrator::createPath(RenderData &render_data, const Ray &start, std::vector<PathVertex> &path, int max_len, const Camera *camera, RandomGenerator *random_generator) const
+int BidirectionalIntegrator::createPath(bool chromatic_enabled, float wavelength, const Ray &start, std::vector<PathVertex> &path, int max_len, const Camera *camera, RandomGenerator *random_generator) const
 {
 	const Accelerator *accelerator = scene_->getAccelerator();
 	if(!accelerator) return 0;
@@ -472,7 +472,7 @@ int BidirectionalIntegrator::createPath(RenderData &render_data, const Ray &star
 		// create tentative sample for next path segment
 		Sample s((*random_generator)(), (*random_generator)(), BsdfFlags::All, true);
 		float w = 0.f;
-		v.f_s_ = mat->sample(v.sp_.mat_data_.get(), v.sp_, v.wi_, ray.dir_, s, w, render_data.chromatic_, render_data.wavelength_, camera);
+		v.f_s_ = mat->sample(v.sp_.mat_data_.get(), v.sp_, v.wi_, ray.dir_, s, w, chromatic_enabled, wavelength, camera);
 		if(v.f_s_.isBlack()) break;
 		v.pdf_wo_ = s.pdf_;
 		v.cos_wo_ = w * s.pdf_;
@@ -606,7 +606,7 @@ bool BidirectionalIntegrator::connectPaths(int s, int t, PathData &pd) const
 }
 
 // connect path with s==1 (eye path with single light vertex)
-bool BidirectionalIntegrator::connectLPath(RenderData &render_data, int t, PathData &pd, Ray &l_ray, Rgb &lcol, RandomGenerator *random_generator, bool lights_geometry_material_emit) const
+bool BidirectionalIntegrator::connectLPath(bool chromatic_enabled, float wavelength, int t, PathData &pd, Ray &l_ray, Rgb &lcol, RandomGenerator *random_generator, bool lights_geometry_material_emit) const
 {
 	// create light sample with direct lighting strategy:
 	const PathVertex &z = pd.eye_path_[t - 1];
@@ -973,7 +973,7 @@ Rgb BidirectionalIntegrator::evalPathE(int s, PathData &pd, const Camera *camera
     return col/lightNumPdf;
 } */
 
-Rgb BidirectionalIntegrator::sampleAmbientOcclusionLayer(RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo, const RayDivision &ray_division, const Camera *camera, const PixelSamplingData &pixel_sampling_data, bool lights_geometry_material_emit) const
+Rgb BidirectionalIntegrator::sampleAmbientOcclusionLayer(bool chromatic_enabled, float wavelength, const SurfacePoint &sp, const Vec3 &wo, const RayDivision &ray_division, const Camera *camera, const PixelSamplingData &pixel_sampling_data, bool lights_geometry_material_emit) const
 {
 	const Accelerator *accelerator = scene_->getAccelerator();
 	if(!accelerator) return {0.f};
@@ -1010,7 +1010,7 @@ Rgb BidirectionalIntegrator::sampleAmbientOcclusionLayer(RenderData &render_data
 		float w = 0.f;
 
 		Sample s(s_1, s_2, BsdfFlags::Glossy | BsdfFlags::Diffuse | BsdfFlags::Reflect);
-		surf_col = material->sample(sp.mat_data_.get(), sp, wo, light_ray.dir_, s, w, render_data.chromatic_, render_data.wavelength_, camera);
+		surf_col = material->sample(sp.mat_data_.get(), sp, wo, light_ray.dir_, s, w, chromatic_enabled, wavelength, camera);
 
 		if(mat_bsdfs.hasAny(BsdfFlags::Emit))
 		{
@@ -1031,7 +1031,7 @@ Rgb BidirectionalIntegrator::sampleAmbientOcclusionLayer(RenderData &render_data
 }
 
 
-Rgb BidirectionalIntegrator::sampleAmbientOcclusionClayLayer(RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo, const RayDivision &ray_division, const PixelSamplingData &pixel_sampling_data, bool lights_geometry_material_emit) const
+Rgb BidirectionalIntegrator::sampleAmbientOcclusionClayLayer(bool chromatic_enabled, float wavelength, const SurfacePoint &sp, const Vec3 &wo, const RayDivision &ray_division, const PixelSamplingData &pixel_sampling_data, bool lights_geometry_material_emit) const
 {
 	const Accelerator *accelerator = scene_->getAccelerator();
 	if(!accelerator) return {0.f};

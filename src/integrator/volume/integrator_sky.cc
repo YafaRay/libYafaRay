@@ -154,7 +154,7 @@ Rgba SkyIntegrator::integrate(RandomGenerator *random_generator, const Ray &ray,
 		float theta = (v * 0.3f + 0.2f) * 0.5f * math::num_pi;
 		for(int u = 0; u < u_vec; u++)
 		{
-			float phi = (u /* + (*render_data.random_generator)() */) * 2.0f * math::num_pi / (float)u_vec;
+			float phi = (u /* + (*chromatic_data.random_generator)() */) * 2.0f * math::num_pi / (float)u_vec;
 			float z = math::cos(theta);
 			float x = math::sin(theta) * math::cos(phi);
 			float y = math::sin(theta) * math::sin(phi);

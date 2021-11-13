@@ -23,7 +23,6 @@
 
 BEGIN_YAFARAY
 
-class RenderData;
 struct PSample;
 
 Rgb SkyVolumeRegion::sigmaA(const Point3 &p, const Vec3 &v) const

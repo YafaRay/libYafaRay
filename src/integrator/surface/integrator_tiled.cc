@@ -275,7 +275,6 @@ bool TiledIntegrator::renderTile(RenderArea &a, const Camera *camera, const Rend
 {
 	const int camera_res_x = camera->resX();
 	RandomGenerator random_generator(rand() + offset * (camera_res_x * a.y_ + a.x_) + 123);
-	RenderData render_data;
 	const bool sample_lns = camera->sampleLense();
 	const int pass_offs = offset, end_x = a.x_ + a.w_, end_y = a.y_ + a.h_;
 	int aa_max_possible_samples = aa_noise_params_.samples_;
@@ -325,7 +324,6 @@ bool TiledIntegrator::renderTile(RenderArea &a, const Camera *camera, const Rend
 			for(int sample = 0; sample < n_samples_adjusted; ++sample)
 			{
 				color_layers.setDefaultColors();
-				render_data.chromatic_ = true;
 				pixel_sampling_data.sample_ = pass_offs + sample;
 
 				const float time = math::addMod1(static_cast<float>(sample) * d_1, toff); //(0.5+(float)sample)*d1;
@@ -367,7 +365,7 @@ bool TiledIntegrator::renderTile(RenderArea &a, const Camera *camera, const Rend
 				}
 				camera_ray.ray_.time_ = time;
 				RayDivision ray_division;
-				color_layers(Layer::Combined).color_ = integrate(thread_id, 0, render_data, camera_ray.ray_, 0, ray_division, &color_layers, camera, &random_generator, pixel_sampling_data, false);
+				color_layers(Layer::Combined).color_ = integrate(thread_id, 0, true, 0.f, camera_ray.ray_, 0, ray_division, &color_layers, camera, &random_generator, pixel_sampling_data, false);
 				for(auto &it : color_layers)
 				{
 					switch(it.first)

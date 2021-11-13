@@ -27,7 +27,6 @@
 
 BEGIN_YAFARAY
 
-class RenderData;
 struct PSample;
 class Light;
 class Ray;

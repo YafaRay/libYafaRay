@@ -122,7 +122,7 @@ bool PathIntegrator::preprocess(const RenderControl &render_control, Timer &time
 	return success;
 }
 
-Rgba PathIntegrator::integrate(int thread_id, int ray_level, RenderData &render_data, const Ray &ray, int additional_depth, const RayDivision &ray_division, ColorLayers *color_layers, const Camera *camera, RandomGenerator *random_generator, const PixelSamplingData &pixel_sampling_data, bool lights_geometry_material_emit) const
+Rgba PathIntegrator::integrate(int thread_id, int ray_level, bool chromatic_enabled, float wavelength, const Ray &ray, int additional_depth, const RayDivision &ray_division, ColorLayers *color_layers, const Camera *camera, RandomGenerator *random_generator, const PixelSamplingData &pixel_sampling_data, bool lights_geometry_material_emit) const
 {
 	static int calls = 0;
 	++calls;
@@ -163,7 +163,7 @@ Rgba PathIntegrator::integrate(int thread_id, int ray_level, RenderData &render_
 
 		if(mat_bsdfs.hasAny(BsdfFlags::Diffuse))
 		{
-			col += estimateAllDirectLight(render_data, sp, wo, ray_division, color_layers, camera, random_generator, pixel_sampling_data);
+			col += estimateAllDirectLight(chromatic_enabled, wavelength, sp, wo, ray_division, color_layers, camera, random_generator, pixel_sampling_data);
 
 			if(caustic_type_ == CausticType::Photon || caustic_type_ == CausticType::Both)
 			{
@@ -182,7 +182,6 @@ Rgba PathIntegrator::integrate(int thread_id, int ray_level, RenderData &render_
 		// we do things slightly differently (e.g. may not sample specular, need not to init BSDF anymore,
 		// have more efficient ways to compute samples...)
 
-		bool was_chromatic = render_data.chromatic_;
 		BsdfFlags path_flags = no_recursive_ ? BsdfFlags::All : (BsdfFlags::Diffuse);
 
 		if(mat_bsdfs.hasAny(path_flags))
@@ -201,8 +200,7 @@ Rgba PathIntegrator::integrate(int thread_id, int ray_level, RenderData &render_
 				Vec3 pwo = wo;
 				Ray p_ray;
 
-				render_data.chromatic_ = was_chromatic;
-				if(was_chromatic) render_data.wavelength_ = sample::riS(offs);
+				const float wavelength_dispersive = chromatic_enabled ? sample::riS(offs) : 0.f;
 				//this mat already is initialized, just sample (diffuse...non-specular?)
 				float s_1 = sample::riVdC(offs);
 				float s_2 = Halton::lowDiscrepancySampling(2, offs);
@@ -213,7 +211,7 @@ Rgba PathIntegrator::integrate(int thread_id, int ray_level, RenderData &render_
 				}
 				// do proper sampling now...
 				Sample s(s_1, s_2, path_flags);
-				scol = material->sample(sp.mat_data_.get(), sp, pwo, p_ray.dir_, s, w, render_data.chromatic_, render_data.wavelength_, camera);
+				scol = material->sample(sp.mat_data_.get(), sp, pwo, p_ray.dir_, s, w, chromatic_enabled, wavelength_dispersive, camera);
 
 				scol *= w;
 				throughput = scol;
@@ -227,7 +225,7 @@ Rgba PathIntegrator::integrate(int thread_id, int ray_level, RenderData &render_
 
 				const Material *p_mat = hit->material_;
 				if(s.sampled_flags_ != BsdfFlags::None) pwo = -p_ray.dir_; //Fix for white dots in path tracing with shiny diffuse with transparent PNG texture and transparent shadows, especially in Win32, (precision?). Sometimes the first sampling does not take place and pRay.dir is not initialized, so before this change when that happened pwo = -pRay.dir was getting a random_generator non-initialized value! This fix makes that, if the first sample fails for some reason, pwo is not modified and the rest of the sampling continues with the same pwo value. FIXME: Question: if the first sample fails, should we continue as now or should we exit the loop with the "continue" command?
-				lcol = estimateOneDirectLight(thread_id, render_data, *hit, pwo, offs, ray_division, camera, random_generator, pixel_sampling_data);
+				lcol = estimateOneDirectLight(thread_id, chromatic_enabled, wavelength_dispersive, *hit, pwo, offs, ray_division, camera, random_generator, pixel_sampling_data);
 				const BsdfFlags mat_bsd_fs = hit->mat_data_->bsdf_flags_;
 				if(mat_bsd_fs.hasAny(BsdfFlags::Emit))
 				{
@@ -257,7 +255,7 @@ Rgba PathIntegrator::integrate(int thread_id, int ray_level, RenderData &render_
 
 					s.flags_ = BsdfFlags::All;
 
-					scol = p_mat->sample(hit->mat_data_.get(), *hit, pwo, p_ray.dir_, s, w, render_data.chromatic_, render_data.wavelength_, camera);
+					scol = p_mat->sample(hit->mat_data_.get(), *hit, pwo, p_ray.dir_, s, w, chromatic_enabled, wavelength_dispersive, camera);
 					scol *= w;
 
 					if(scol.isBlack()) break;
@@ -284,7 +282,7 @@ Rgba PathIntegrator::integrate(int thread_id, int ray_level, RenderData &render_
 					p_mat = hit->material_;
 					pwo = -p_ray.dir_;
 
-					if(mat_bsd_fs.hasAny(BsdfFlags::Diffuse)) lcol = estimateOneDirectLight(thread_id, render_data, *hit, pwo, offs, ray_division, camera, random_generator, pixel_sampling_data);
+					if(mat_bsd_fs.hasAny(BsdfFlags::Diffuse)) lcol = estimateOneDirectLight(thread_id, chromatic_enabled, wavelength_dispersive, *hit, pwo, offs, ray_division, camera, random_generator, pixel_sampling_data);
 					else lcol = Rgb(0.f);
 
 					if(mat_bsd_fs.hasAny(BsdfFlags::Volumetric))
@@ -318,10 +316,8 @@ Rgba PathIntegrator::integrate(int thread_id, int ray_level, RenderData &render_
 			}
 			col += path_col / n_samples;
 		}
-		//reset chromatic state:
-		render_data.chromatic_ = was_chromatic;
 
-		recursiveRaytrace(thread_id, ray_level + 1, render_data, ray, mat_bsdfs, sp, wo, col, alpha, additional_depth, ray_division, color_layers, camera, random_generator, pixel_sampling_data);
+		recursiveRaytrace(thread_id, ray_level + 1, chromatic_enabled, wavelength, ray, mat_bsdfs, sp, wo, col, alpha, additional_depth, ray_division, color_layers, camera, random_generator, pixel_sampling_data);
 
 		if(color_layers)
 		{
@@ -329,12 +325,12 @@ Rgba PathIntegrator::integrate(int thread_id, int ray_level, RenderData &render_
 
 			if(ColorLayer *color_layer = color_layers->find(Layer::Ao))
 			{
-				color_layer->color_ = sampleAmbientOcclusionLayer(render_data, sp, wo, ray_division, nullptr, pixel_sampling_data, lights_geometry_material_emit);
+				color_layer->color_ = sampleAmbientOcclusionLayer(chromatic_enabled, wavelength, sp, wo, ray_division, nullptr, pixel_sampling_data, lights_geometry_material_emit);
 			}
 
 			if(ColorLayer *color_layer = color_layers->find(Layer::AoClay))
 			{
-				color_layer->color_ = sampleAmbientOcclusionClayLayer(render_data, sp, wo, ray_division, pixel_sampling_data, lights_geometry_material_emit);
+				color_layer->color_ = sampleAmbientOcclusionClayLayer(chromatic_enabled, wavelength, sp, wo, ray_division, pixel_sampling_data, lights_geometry_material_emit);
 			}
 		}
 

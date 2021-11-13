@@ -30,7 +30,6 @@ BEGIN_YAFARAY
 
 #define PRIMITIVE_CLIPPING 1
 
-class RenderData;
 struct IntersectData;
 
 // ============================================================

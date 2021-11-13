@@ -33,7 +33,6 @@ BEGIN_YAFARAY
 class ParamMap;
 class Scene;
 class SurfacePoint;
-class RenderData;
 class VolumeHandler;
 struct Sample;
 struct PSample;

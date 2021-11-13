@@ -21,14 +21,8 @@
 #define YAFARAY_RENDER_DATA_H
 
 #include "common/yafaray_common.h"
-#include <stack>
 
 BEGIN_YAFARAY
-
-class RandomGenerator;
-class Camera;
-class PhotonMap;
-class Logger;
 
 struct RayDivision final
 {
@@ -43,15 +37,6 @@ struct PixelSamplingData final
 	int sample_ = 0; //!< number of samples inside this pixels so far
 	int number_ = 0;
 	unsigned int offset_ = 0; //!< a "noise-like" pixel offset you may use to decorelate sampling of adjacent pixel.
-};
-
-class RenderData final
-{
-	public:
-		RenderData() = default;
-		bool chromatic_ = true; //!< indicates wether the full spectrum is calculated (true) or only a single wavelength (false).
-//		bool lights_geometry_material_emit_ = false; //!< indicate that emission of materials assiciated to lights shall be included, for correctly visible lights etc.
-		float wavelength_ = 0.f; //!< the (normalized) wavelength being used when chromatic is false. The range is defined going from 400nm (0.0) to 700nm (1.0), although the widest range humans can perceive is ofteb given 380-780nm.
 };
 
 END_YAFARAY

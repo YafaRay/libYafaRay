@@ -20,7 +20,6 @@
 #ifndef YAFARAY_INTEGRATOR_DIRECT_LIGHT_H
 #define YAFARAY_INTEGRATOR_DIRECT_LIGHT_H
 
-#include <render/render_data.h>
 #include "integrator_montecarlo.h"
 
 BEGIN_YAFARAY
@@ -35,7 +34,7 @@ class DirectLightIntegrator final : public MonteCarloIntegrator
 		virtual std::string getShortName() const override { return "DL"; }
 		virtual std::string getName() const override { return "DirectLight"; }
 		virtual bool preprocess(const RenderControl &render_control, Timer &timer, const RenderView *render_view, ImageFilm *image_film) override;
-		virtual Rgba integrate(int thread_id, int ray_level, RenderData &render_data, const Ray &ray, int additional_depth, const RayDivision &ray_division, ColorLayers *color_layers, const Camera *camera, RandomGenerator *random_generator, const PixelSamplingData &pixel_sampling_data, bool lights_geometry_material_emit) const override;
+		virtual Rgba integrate(int thread_id, int ray_level, bool chromatic_enabled, float wavelength, const Ray &ray, int additional_depth, const RayDivision &ray_division, ColorLayers *color_layers, const Camera *camera, RandomGenerator *random_generator, const PixelSamplingData &pixel_sampling_data, bool lights_geometry_material_emit) const override;
 };
 
 END_YAFARAY

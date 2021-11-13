@@ -19,7 +19,6 @@
  */
 
 #include "integrator/surface/integrator_debug.h"
-#include "material/material.h"
 #include "geometry/surface.h"
 #include "background/background.h"
 #include "light/light.h"
@@ -27,7 +26,7 @@
 #include "scene/scene.h"
 #include "render/render_data.h"
 #include "accelerator/accelerator.h"
-#include "photon/photon.h"
+#include "render/imagesplitter.h"
 
 BEGIN_YAFARAY
 
@@ -68,7 +67,7 @@ bool DebugIntegrator::preprocess(const RenderControl &render_control, Timer &tim
 	return true;
 }
 
-Rgba DebugIntegrator::integrate(int thread_id, int ray_level, RenderData &render_data, const Ray &ray, int additional_depth, const RayDivision &ray_division, ColorLayers *color_layers, const Camera *camera, RandomGenerator *random_generator, const PixelSamplingData &pixel_sampling_data, bool lights_geometry_material_emit) const
+Rgba DebugIntegrator::integrate(int thread_id, int ray_level, bool chromatic_enabled, float wavelength, const Ray &ray, int additional_depth, const RayDivision &ray_division, ColorLayers *color_layers, const Camera *camera, RandomGenerator *random_generator, const PixelSamplingData &pixel_sampling_data, bool lights_geometry_material_emit) const
 {
 	Rgb col(0.f);
 	SurfacePoint sp;

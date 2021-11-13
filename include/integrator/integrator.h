@@ -24,12 +24,9 @@
 #define YAFARAY_INTEGRATOR_H
 
 #include "common/yafaray_common.h"
+#include "common/logger.h"
 #include <string>
-#include <common/logger.h>
-#include <math/random.h>
-#include <render/render_data.h>
-#include "render/render_control.h"
-#include "render/render_view.h"
+#include <memory>
 
 BEGIN_YAFARAY
 
@@ -44,8 +41,11 @@ class Rgba;
 class Ray;
 class ColorLayers;
 class ImageFilm;
-class RenderData;
+class RenderView;
+class Camera;
+class RandomGenerator;
 struct RayDivision;
+struct PixelSamplingData;
 
 class Integrator
 {
@@ -71,10 +71,8 @@ class Integrator
 		virtual Type getType() const = 0;
 		std::string getRenderInfo() const { return render_info_; }
 		std::string getAaNoiseInfo() const { return aa_noise_info_; }
-		static constexpr unsigned int getUserDataSize() { return arena_size_; } //Total number of bytes used for the "arena"-style "userdata" memory
 
 	protected:
-		static constexpr unsigned int arena_size_ = 1024; //Total number of bytes used for the "arena"-style "userdata" memory
 		std::string render_info_;
 		std::string aa_noise_info_;
 		const Scene *scene_ = nullptr;
@@ -85,7 +83,7 @@ class Integrator
 class SurfaceIntegrator: public Integrator
 {
 	public:
-		virtual Rgba integrate(int thread_id, int ray_level, RenderData &render_data, const Ray &ray, int additional_depth, const RayDivision &ray_division, ColorLayers *color_layers, const Camera *camera, RandomGenerator *random_generator, const PixelSamplingData &pixel_sampling_data, bool lights_geometry_material_emit) const = 0;
+		virtual Rgba integrate(int thread_id, int ray_level, bool chromatic_enabled, float wavelength, const Ray &ray, int additional_depth, const RayDivision &ray_division, ColorLayers *color_layers, const Camera *camera, RandomGenerator *random_generator, const PixelSamplingData &pixel_sampling_data, bool lights_geometry_material_emit) const = 0; 	//!< chromatic_enabled indicates wether the full spectrum is calculated (true) or only a single wavelength (false). wavelength is the (normalized) wavelength being used when chromatic is false. The range is defined going from 400nm (0.0) to 700nm (1.0), although the widest range humans can perceive is ofteb given 380-780nm.
 
 	protected:
 		SurfaceIntegrator(Logger &logger) : Integrator(logger) { }

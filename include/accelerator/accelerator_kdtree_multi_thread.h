@@ -30,7 +30,6 @@ BEGIN_YAFARAY
 
 #define POLY_CLIPPING_MULTITHREAD 1
 
-class RenderData;
 struct IntersectData;
 
 // ============================================================

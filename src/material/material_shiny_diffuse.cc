@@ -388,7 +388,7 @@ float ShinyDiffuseMaterial::pdf(const MaterialData *mat_data, const SurfacePoint
 /** Perfect specular reflection.
  *  Calculate perfect specular reflection and refraction from the material for
  *  a given surface point \a sp and a given incident ray direction \a wo
- *  @param  render_data Render state
+ *  @param  chromatic_data Render state
  *  @param  sp Surface point
  *  @param  wo Incident ray direction
  *  @param  do_reflect Boolean value which is true if you have a reflection, false otherwise
