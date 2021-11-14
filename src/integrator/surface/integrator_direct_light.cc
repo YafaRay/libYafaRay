@@ -127,20 +127,13 @@ Rgba DirectLightIntegrator::integrate(int thread_id, int ray_level, bool chromat
 			{
 				std::tie(col, alpha) = causticPhotons(ray, color_layers, std::move(col), std::move(alpha), sp, wo, aa_noise_params_.clamp_indirect_, caustic_map_.get(), caus_radius_, n_caus_search_);
 			}
-			if(use_ambient_occlusion_) col += sampleAmbientOcclusion(chromatic_enabled, wavelength, sp, wo, ray_division, camera, pixel_sampling_data, lights_geometry_material_emit, tr_shad_, false);
+			if(use_ambient_occlusion_) col += sampleAmbientOcclusion(chromatic_enabled, wavelength, sp, wo, ray_division, camera, pixel_sampling_data, lights_geometry_material_emit, tr_shad_, false, scene_->getAccelerator(), ao_samples_, scene_->shadow_bias_auto_, scene_->shadow_bias_, ao_dist_, ao_col_, s_depth_);
 		}
 		recursiveRaytrace(thread_id, ray_level + 1, chromatic_enabled, wavelength, ray, mat_bsdfs, sp, wo, col, alpha, additional_depth, ray_division, color_layers, camera, random_generator, pixel_sampling_data);
 		if(color_layers)
 		{
 			generateCommonLayers(sp, scene_->getMaskParams(), color_layers);
-			if(ColorLayer *color_layer = color_layers->find(Layer::Ao))
-			{
-				color_layer->color_ = sampleAmbientOcclusion(chromatic_enabled, wavelength, sp, wo, ray_division, camera, pixel_sampling_data, lights_geometry_material_emit, false, false);
-			}
-			if(ColorLayer *color_layer = color_layers->find(Layer::AoClay))
-			{
-				color_layer->color_ = sampleAmbientOcclusion(chromatic_enabled, wavelength, sp, wo, ray_division, camera, pixel_sampling_data, lights_geometry_material_emit, false, true);
-			}
+			generateOcclusionLayers(chromatic_enabled, wavelength, ray_division, color_layers, camera, pixel_sampling_data, lights_geometry_material_emit, sp, wo, scene_->getAccelerator(), ao_samples_, scene_->shadow_bias_auto_, scene_->shadow_bias_, ao_dist_, ao_col_, s_depth_);
 		}
 		if(transp_refracted_background_)
 		{

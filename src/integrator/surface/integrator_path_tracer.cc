@@ -309,18 +309,8 @@ Rgba PathIntegrator::integrate(int thread_id, int ray_level, bool chromatic_enab
 		if(color_layers)
 		{
 			generateCommonLayers(sp, scene_->getMaskParams(), color_layers);
-
-			if(ColorLayer *color_layer = color_layers->find(Layer::Ao))
-			{
-				color_layer->color_ = sampleAmbientOcclusion(chromatic_enabled, wavelength, sp, wo, ray_division, camera, pixel_sampling_data, lights_geometry_material_emit, false, false);
-			}
-
-			if(ColorLayer *color_layer = color_layers->find(Layer::AoClay))
-			{
-				color_layer->color_ = sampleAmbientOcclusion(chromatic_enabled, wavelength, sp, wo, ray_division, camera, pixel_sampling_data, lights_geometry_material_emit, false, true);
-			}
+			generateOcclusionLayers(chromatic_enabled, wavelength, ray_division, color_layers, camera, pixel_sampling_data, lights_geometry_material_emit, sp, wo, scene_->getAccelerator(), ao_samples_, scene_->shadow_bias_auto_, scene_->shadow_bias_, ao_dist_, ao_col_, s_depth_);
 		}
-
 		if(transp_refracted_background_)
 		{
 			const float mat_alpha = material->getAlpha(sp.mat_data_.get(), sp, wo, camera);

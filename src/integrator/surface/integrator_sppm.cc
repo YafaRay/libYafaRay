@@ -1103,16 +1103,7 @@ GatherInfo SppmIntegrator::traceGatherRay(int thread_id, int ray_level, bool chr
 		if(color_layers)
 		{
 			generateCommonLayers(sp, scene_->getMaskParams(), color_layers);
-
-			if(ColorLayer *color_layer = color_layers->find(Layer::Ao))
-			{
-				color_layer->color_ = sampleAmbientOcclusion(chromatic_enabled, wavelength, sp, wo, ray_division, camera, pixel_sampling_data, lights_geometry_material_emit, false, false);
-			}
-
-			if(ColorLayer *color_layer = color_layers->find(Layer::AoClay))
-			{
-				color_layer->color_ = sampleAmbientOcclusion(chromatic_enabled, wavelength, sp, wo, ray_division, camera, pixel_sampling_data, lights_geometry_material_emit, false, true);
-			}
+			generateOcclusionLayers(chromatic_enabled, wavelength, ray_division, color_layers, camera, pixel_sampling_data, lights_geometry_material_emit, sp, wo, scene_->getAccelerator(), ao_samples_, scene_->shadow_bias_auto_, scene_->shadow_bias_, ao_dist_, ao_col_, s_depth_);
 		}
 		if(transp_refracted_background_)
 		{
@@ -1137,10 +1128,8 @@ GatherInfo SppmIntegrator::traceGatherRay(int thread_id, int ray_level, bool chr
 void SppmIntegrator::initializePpm(const Camera *camera)
 {
 	unsigned int resolution = camera->resX() * camera->resY();
-
 	hit_points_.reserve(resolution);
 	Bound b_box = scene_->getSceneBound(); // Now using Scene Bound, this could get a bigger initial radius, and need more tests
-
 	// initialize SPPM statistics
 	float initial_radius = ((b_box.longX() + b_box.longY() + b_box.longZ()) / 3.f) / ((camera->resX() + camera->resY()) / 2.0f) * 2.f ;
 	initial_radius = std::min(initial_radius, 1.f); //Fix the overflow bug
@@ -1152,12 +1141,9 @@ void SppmIntegrator::initializePpm(const Camera *camera)
 		hp.radius_2_ = (initial_radius * initial_factor_) * (initial_radius * initial_factor_);
 		hp.constant_randiance_ = Rgba(0.f);
 		hp.radius_setted_ = false;	   // the flag used for IRE
-
 		hit_points_.push_back(hp);
 	}
-
 	if(b_hashgrid_) photon_grid_.setParm(initial_radius * 2.f, n_photons_, b_box);
-
 }
 
 std::unique_ptr<Integrator> SppmIntegrator::factory(Logger &logger, ParamMap &params, const Scene &scene)

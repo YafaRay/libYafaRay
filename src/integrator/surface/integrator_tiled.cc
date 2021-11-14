@@ -636,16 +636,27 @@ void TiledIntegrator::generateCommonLayers(const SurfacePoint &sp, const MaskPar
 	}
 }
 
-Rgb TiledIntegrator::sampleAmbientOcclusion(bool chromatic_enabled, float wavelength, const SurfacePoint &sp, const Vec3 &wo, const RayDivision &ray_division, const Camera *camera, const PixelSamplingData &pixel_sampling_data, bool lights_geometry_material_emit, bool transparent_shadows, bool clay) const
+void TiledIntegrator::generateOcclusionLayers(bool chromatic_enabled, float wavelength, const RayDivision &ray_division, ColorLayers *color_layers, const Camera *camera, const PixelSamplingData &pixel_sampling_data, bool lights_geometry_material_emit, const SurfacePoint &sp, const Vec3 &wo, const Accelerator *accelerator, int ao_samples, bool shadow_bias_auto, float shadow_bias, float ao_dist, const Rgb &ao_col, int transp_shadows_depth)
 {
-	const Accelerator *accelerator = scene_->getAccelerator();
+	if(ColorLayer *color_layer = color_layers->find(Layer::Ao))
+	{
+		color_layer->color_ += sampleAmbientOcclusion(chromatic_enabled, wavelength, sp, wo, ray_division, camera, pixel_sampling_data, lights_geometry_material_emit, false, false, accelerator, ao_samples, shadow_bias_auto, shadow_bias, ao_dist, ao_col, transp_shadows_depth);
+	}
+	if(ColorLayer *color_layer = color_layers->find(Layer::AoClay))
+	{
+		color_layer->color_ += sampleAmbientOcclusion(chromatic_enabled, wavelength, sp, wo, ray_division, camera, pixel_sampling_data, lights_geometry_material_emit, false, true, accelerator, ao_samples, shadow_bias_auto, shadow_bias, ao_dist, ao_col, transp_shadows_depth);
+	}
+}
+
+Rgb TiledIntegrator::sampleAmbientOcclusion(bool chromatic_enabled, float wavelength, const SurfacePoint &sp, const Vec3 &wo, const RayDivision &ray_division, const Camera *camera, const PixelSamplingData &pixel_sampling_data, bool lights_geometry_material_emit, bool transparent_shadows, bool clay, const Accelerator *accelerator, int ao_samples, bool shadow_bias_auto, float shadow_bias, float ao_dist, const Rgb &ao_col, int transp_shadows_depth)
+{
 	if(!accelerator) return {0.f};
 	Rgb col{0.f};
 	const Material *material = sp.material_;
 	const BsdfFlags &mat_bsdfs = sp.mat_data_->bsdf_flags_;
 	Ray light_ray {sp.p_, {0.f}};
 	float mask_obj_index = 0.f, mask_mat_index = 0.f;
-	int n = ao_samples_;//(int) ceilf(aoSamples*getSampleMultiplier());
+	int n = ao_samples;//(int) ceilf(aoSamples*getSampleMultiplier());
 	if(ray_division.division_ > 1) n = std::max(1, n / ray_division.division_);
 	const unsigned int offs = n * pixel_sampling_data.sample_ + pixel_sampling_data.offset_;
 	Halton hal_2(2, offs - 1);
@@ -659,9 +670,9 @@ Rgb TiledIntegrator::sampleAmbientOcclusion(bool chromatic_enabled, float wavele
 			s_1 = math::addMod1(s_1, ray_division.decorrelation_1_);
 			s_2 = math::addMod1(s_2, ray_division.decorrelation_2_);
 		}
-		if(scene_->shadow_bias_auto_) light_ray.tmin_ = scene_->shadow_bias_ * std::max(1.f, Vec3(sp.p_).length());
-		else light_ray.tmin_ = scene_->shadow_bias_;
-		light_ray.tmax_ = ao_dist_;
+		if(shadow_bias_auto) light_ray.tmin_ = shadow_bias * std::max(1.f, Vec3(sp.p_).length());
+		else light_ray.tmin_ = shadow_bias;
+		light_ray.tmax_ = ao_dist;
 		float w = 0.f;
 		const BsdfFlags sample_flags = clay ?
 									   BsdfFlags::All :
@@ -677,13 +688,13 @@ Rgb TiledIntegrator::sampleAmbientOcclusion(bool chromatic_enabled, float wavele
 		}
 		Rgb scol;
 		const bool shadowed = transparent_shadows ?
-							  accelerator->isShadowed(light_ray, s_depth_, scol, mask_obj_index, mask_mat_index, scene_->getShadowBias(), camera) :
-							  accelerator->isShadowed(light_ray, mask_obj_index, mask_mat_index, scene_->getShadowBias());
+							  accelerator->isShadowed(light_ray, transp_shadows_depth, scol, mask_obj_index, mask_mat_index, shadow_bias, camera) :
+							  accelerator->isShadowed(light_ray, mask_obj_index, mask_mat_index, shadow_bias);
 		if(!shadowed)
 		{
 			const float cos = std::abs(sp.n_ * light_ray.dir_);
-			if(transparent_shadows) col += ao_col_ * scol * surf_col * cos * w;
-			else col += ao_col_ * surf_col * cos * w;
+			if(transparent_shadows) col += ao_col * scol * surf_col * cos * w;
+			else col += ao_col * surf_col * cos * w;
 		}
 	}
 	return col / static_cast<float>(n);
