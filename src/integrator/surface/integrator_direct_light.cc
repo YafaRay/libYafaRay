@@ -21,17 +21,10 @@
 
 #include "integrator/surface/integrator_direct_light.h"
 #include "geometry/surface.h"
-#include "common/logger.h"
 #include "common/param.h"
-#include "scene/scene.h"
-#include "common/timer.h"
-#include "material/material.h"
-#include "background/background.h"
 #include "color/color_layers.h"
-#include "render/render_data.h"
-#include "render/imagesplitter.h"
 #include "accelerator/accelerator.h"
-#include "photon/photon.h"
+#include "render/imagesplitter.h"
 
 BEGIN_YAFARAY
 
@@ -164,16 +157,7 @@ Rgba DirectLightIntegrator::integrate(int thread_id, int ray_level, bool chromat
 	}
 	else // Nothing hit, return background if any
 	{
-		const Background *background = scene_->getBackground();
-		if(background && !transp_refracted_background_)
-		{
-			const Rgb col_tmp = (*background)(ray.dir_);
-			col += col_tmp;
-			if(color_layers)
-			{
-				if(ColorLayer *color_layer = color_layers->find(Layer::Env)) color_layer->color_ = col_tmp;
-			}
-		}
+		std::tie(col, alpha) = TiledIntegrator::background(ray, color_layers, std::move(col), std::move(alpha), transp_background_, transp_refracted_background_, scene_->getBackground());
 	}
 	if(scene_->vol_integrator_)
 	{

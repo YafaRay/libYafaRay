@@ -25,6 +25,7 @@
 
 #include "integrator/surface/integrator_tiled.h"
 #include "common/layers.h"
+#include "background/background.h"
 #include "geometry/surface.h"
 #include "geometry/object/object.h"
 #include "common/timer.h"
@@ -699,6 +700,21 @@ std::pair<Rgb, float> TiledIntegrator::volumetricEffects(const Ray &ray, ColorLa
 		if(ColorLayer *color_layer = color_layers->find(Layer::VolumeIntegration)) color_layer->color_ = col_vol_integration;
 	}
 	col = (col * col_vol_transmittance) + col_vol_integration;
+	return {col, alpha};
+}
+
+std::pair<Rgb, float> TiledIntegrator::background(const Ray &ray, ColorLayers *color_layers, Rgb col, float alpha, bool transparent_background, bool transparent_refracted_background, const Background *background)
+{
+	if(transparent_background) alpha = 0.f;
+	if(background && !transparent_refracted_background)
+	{
+		const Rgb col_tmp = (*background)(ray.dir_);
+		col += col_tmp;
+		if(color_layers)
+		{
+			if(ColorLayer *color_layer = color_layers->find(Layer::Env)) color_layer->color_ += col_tmp;
+		}
+	}
 	return {col, alpha};
 }
 

@@ -20,21 +20,14 @@
 
 #include "integrator/surface/integrator_sppm.h"
 #include "geometry/surface.h"
-#include "common/layers.h"
 #include "volume/volume.h"
 #include "common/param.h"
-#include "scene/scene.h"
 #include "render/progress_bar.h"
-#include "common/timer.h"
 #include "render/imagefilm.h"
-#include "camera/camera.h"
-#include "sampler/sample.h"
 #include "sampler/sample_pdf1d.h"
 #include "light/light.h"
-#include "material/material.h"
 #include "color/spectrum.h"
 #include "color/color_layers.h"
-#include "background/background.h"
 #include "render/render_data.h"
 #include "accelerator/accelerator.h"
 #include "photon/photon.h"
@@ -1130,17 +1123,9 @@ GatherInfo SppmIntegrator::traceGatherRay(int thread_id, int ray_level, bool chr
 	}
 	else //nothing hit, return background
 	{
-		const Background *background = scene_->getBackground();
-		if(background && !transp_refracted_background_)
-		{
-			const Rgb col_tmp = (*background)(ray.dir_);
-			g_info.constant_randiance_ += col_tmp;
-			if(color_layers)
-			{
-				if(ColorLayer *color_layer = color_layers->find(Layer::Env)) color_layer->color_ = col_tmp;
-			}
-		}
+		std::tie(g_info.constant_randiance_, alpha) = TiledIntegrator::background(ray, color_layers, std::move(g_info.constant_randiance_), std::move(alpha), transp_background_, transp_refracted_background_, scene_->getBackground());
 	}
+
 	if(scene_->vol_integrator_)
 	{
 		std::tie(g_info.constant_randiance_, alpha) = TiledIntegrator::volumetricEffects(ray, color_layers, random_generator, std::move(g_info.constant_randiance_), std::move(alpha), scene_->vol_integrator_, transp_background_);

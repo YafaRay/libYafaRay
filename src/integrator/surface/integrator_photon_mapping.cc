@@ -24,19 +24,14 @@
 #include "volume/volume.h"
 #include "color/color_layers.h"
 #include "common/param.h"
-#include "scene/scene.h"
 #include "render/progress_bar.h"
 #include "sampler/halton.h"
-#include "sampler/sample.h"
 #include "sampler/sample_pdf1d.h"
 #include "light/light.h"
-#include "material/material.h"
-#include "common/timer.h"
 #include "background/background.h"
 #include "render/imagefilm.h"
 #include "render/render_data.h"
 #include "accelerator/accelerator.h"
-#include "photon/photon.h"
 
 BEGIN_YAFARAY
 
@@ -947,8 +942,6 @@ Rgba PhotonIntegrator::integrate(int thread_id, int ray_level, bool chromatic_en
 	float alpha;
 	SurfacePoint sp;
 
-	const bool old_lights_geometry_material_emit = lights_geometry_material_emit;
-
 	if(transp_background_) alpha = 0.f;
 	else alpha = 1.f;
 
@@ -1120,18 +1113,8 @@ Rgba PhotonIntegrator::integrate(int thread_id, int ray_level, bool chromatic_en
 	}
 	else //nothing hit, return background
 	{
-		if(scene_->getBackground() && !transp_refracted_background_)
-		{
-			const Rgb col_tmp = (*scene_->getBackground())(ray.dir_);
-			col += col_tmp;
-			if(color_layers)
-			{
-				if(ColorLayer *color_layer = color_layers->find(Layer::Env)) color_layer->color_ = col_tmp;
-			}
-		}
+		std::tie(col, alpha) = TiledIntegrator::background(ray, color_layers, std::move(col), std::move(alpha), transp_background_, transp_refracted_background_, scene_->getBackground());
 	}
-
-	lights_geometry_material_emit = old_lights_geometry_material_emit;
 
 	if(scene_->vol_integrator_)
 	{

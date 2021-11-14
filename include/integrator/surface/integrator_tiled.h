@@ -30,6 +30,7 @@ BEGIN_YAFARAY
 
 class SurfacePoint;
 class PhotonMap;
+class Background;
 struct RenderArea;
 struct MaskParams;
 class Vec3;
@@ -66,6 +67,7 @@ class TiledIntegrator : public SurfaceIntegrator
 		/*! Samples ambient occlusion for a given surface point */
 		Rgb sampleAmbientOcclusion(bool chromatic_enabled, float wavelength, const SurfacePoint &sp, const Vec3 &wo, const RayDivision &ray_division, const Camera *camera, const PixelSamplingData &pixel_sampling_data, bool lights_geometry_material_emit, bool transparent_shadows, bool clay) const;
 		static std::pair<Rgb, float> volumetricEffects(const Ray &ray, ColorLayers *color_layers, RandomGenerator &random_generator, Rgb col, float alpha, const VolumeIntegrator *volume_integrator, bool transparent_background);
+		static std::pair<Rgb, float> background(const Ray &ray, ColorLayers *color_layers, Rgb col, float alpha, bool transparent_background, bool transparent_refracted_background, const Background *background);
 
 	protected:
 		float i_aa_passes_; //!< Inverse of AA_passes used for depth map

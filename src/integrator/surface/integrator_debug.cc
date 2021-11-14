@@ -20,11 +20,7 @@
 
 #include "integrator/surface/integrator_debug.h"
 #include "geometry/surface.h"
-#include "background/background.h"
-#include "light/light.h"
 #include "common/param.h"
-#include "scene/scene.h"
-#include "render/render_data.h"
 #include "accelerator/accelerator.h"
 #include "render/imagesplitter.h"
 
