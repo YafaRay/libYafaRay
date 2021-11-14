@@ -383,12 +383,12 @@ Rgba BidirectionalIntegrator::integrate(int thread_id, int ray_level, bool chrom
 	}
 	else
 	{
-		std::tie(col, alpha) = TiledIntegrator::background(ray, color_layers, std::move(col), std::move(alpha), transp_background_, transp_refracted_background_, scene_->getBackground());
+		std::tie(col, alpha) = background(ray, color_layers, std::move(col), std::move(alpha), transp_background_, transp_refracted_background_, scene_->getBackground());
 	}
 
 	if(scene_->vol_integrator_)
 	{
-		std::tie(col, alpha) = TiledIntegrator::volumetricEffects(ray, color_layers, random_generator, std::move(col), std::move(alpha), scene_->vol_integrator_, transp_background_);
+		std::tie(col, alpha) = volumetricEffects(ray, color_layers, random_generator, std::move(col), std::move(alpha), scene_->vol_integrator_, transp_background_);
 	}
 	return {col, alpha};
 }

@@ -125,13 +125,7 @@ Rgba DirectLightIntegrator::integrate(int thread_id, int ray_level, bool chromat
 			col += estimateAllDirectLight(chromatic_enabled, wavelength, sp, wo, ray_division, color_layers, camera, random_generator, pixel_sampling_data);
 			if(use_photon_caustics_)
 			{
-				Rgb col_tmp = estimateCausticPhotons(sp, wo);
-				if(aa_noise_params_.clamp_indirect_ > 0) col_tmp.clampProportionalRgb(aa_noise_params_.clamp_indirect_);
-				col += col_tmp;
-				if(color_layers)
-				{
-					if(ColorLayer *color_layer = color_layers->find(Layer::Indirect)) color_layer->color_ = col_tmp;
-				}
+				std::tie(col, alpha) = causticPhotons(ray, color_layers, std::move(col), std::move(alpha), sp, wo, aa_noise_params_.clamp_indirect_, caustic_map_.get(), caus_radius_, n_caus_search_);
 			}
 			if(use_ambient_occlusion_) col += sampleAmbientOcclusion(chromatic_enabled, wavelength, sp, wo, ray_division, camera, pixel_sampling_data, lights_geometry_material_emit, tr_shad_, false);
 		}
@@ -157,11 +151,11 @@ Rgba DirectLightIntegrator::integrate(int thread_id, int ray_level, bool chromat
 	}
 	else // Nothing hit, return background if any
 	{
-		std::tie(col, alpha) = TiledIntegrator::background(ray, color_layers, std::move(col), std::move(alpha), transp_background_, transp_refracted_background_, scene_->getBackground());
+		std::tie(col, alpha) = background(ray, color_layers, std::move(col), std::move(alpha), transp_background_, transp_refracted_background_, scene_->getBackground());
 	}
 	if(scene_->vol_integrator_)
 	{
-		std::tie(col, alpha) = TiledIntegrator::volumetricEffects(ray, color_layers, random_generator, std::move(col), std::move(alpha), scene_->vol_integrator_, transp_background_);
+		std::tie(col, alpha) = volumetricEffects(ray, color_layers, random_generator, std::move(col), std::move(alpha), scene_->vol_integrator_, transp_background_);
 	}
 	return {col, alpha};
 }

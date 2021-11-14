@@ -73,7 +73,8 @@ class MonteCarloIntegrator: public TiledIntegrator
 		/*! Creates and prepares the caustic photon map */
 		bool createCausticMap(const RenderView *render_view, const RenderControl &render_control, const Timer &timer);
 		/*! Estimates caustic photons for a given surface point */
-		Rgb estimateCausticPhotons(const SurfacePoint &sp, const Vec3 &wo) const;
+		static Rgb estimateCausticPhotons(const SurfacePoint &sp, const Vec3 &wo, const PhotonMap *caustic_map, float caustic_radius, int n_caus_search);
+		static std::pair<Rgb, float> causticPhotons(const Ray &ray, ColorLayers *color_layers, Rgb col, float alpha, const SurfacePoint &sp, const Vec3 &wo, float clamp_indirect, const PhotonMap *caustic_map, float caustic_radius, int n_caus_search);
 
 		int r_depth_; //! Ray depth
 

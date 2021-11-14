@@ -159,19 +159,11 @@ Rgba PathIntegrator::integrate(int thread_id, int ray_level, bool chromatic_enab
 		if(mat_bsdfs.hasAny(BsdfFlags::Diffuse))
 		{
 			col += estimateAllDirectLight(chromatic_enabled, wavelength, sp, wo, ray_division, color_layers, camera, random_generator, pixel_sampling_data);
-
 			if(caustic_type_ == CausticType::Photon || caustic_type_ == CausticType::Both)
 			{
-				Rgb col_tmp = estimateCausticPhotons(sp, wo);
-				if(aa_noise_params_.clamp_indirect_ > 0.f) col_tmp.clampProportionalRgb(aa_noise_params_.clamp_indirect_);
-				col += col_tmp;
-				if(color_layers)
-				{
-					if(ColorLayer *color_layer = color_layers->find(Layer::Indirect)) color_layer->color_ = col_tmp;
-				}
+				std::tie(col, alpha) = causticPhotons(ray, color_layers, std::move(col), std::move(alpha), sp, wo, aa_noise_params_.clamp_indirect_, caustic_map_.get(), caus_radius_, n_caus_search_);
 			}
 		}
-
 		// path tracing:
 		// the first path segment is "unrolled" from the loop because for the spot the camera hit
 		// we do things slightly differently (e.g. may not sample specular, need not to init BSDF anymore,
@@ -338,12 +330,12 @@ Rgba PathIntegrator::integrate(int thread_id, int ray_level, bool chromatic_enab
 	}
 	else //nothing hit, return background
 	{
-		std::tie(col, alpha) = TiledIntegrator::background(ray, color_layers, std::move(col), std::move(alpha), transp_background_, transp_refracted_background_, scene_->getBackground());
+		std::tie(col, alpha) = background(ray, color_layers, std::move(col), std::move(alpha), transp_background_, transp_refracted_background_, scene_->getBackground());
 	}
 
 	if(scene_->vol_integrator_)
 	{
-		std::tie(col, alpha) = TiledIntegrator::volumetricEffects(ray, color_layers, random_generator, std::move(col), std::move(alpha), scene_->vol_integrator_, transp_background_);
+		std::tie(col, alpha) = volumetricEffects(ray, color_layers, random_generator, std::move(col), std::move(alpha), scene_->vol_integrator_, transp_background_);
 	}
 	return {col, alpha};
 }

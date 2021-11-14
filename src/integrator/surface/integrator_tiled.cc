@@ -718,4 +718,5 @@ std::pair<Rgb, float> TiledIntegrator::background(const Ray &ray, ColorLayers *c
 	return {col, alpha};
 }
 
+
 END_YAFARAY

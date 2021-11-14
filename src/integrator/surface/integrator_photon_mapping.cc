@@ -1078,13 +1078,7 @@ Rgba PhotonIntegrator::integrate(int thread_id, int ray_level, bool chromatic_en
 		// add caustics
 		if(use_photon_caustics_ && mat_bsdfs.hasAny(BsdfFlags::Diffuse))
 		{
-			Rgb col_tmp = estimateCausticPhotons(sp, wo);
-			if(aa_noise_params_.clamp_indirect_ > 0.f) col_tmp.clampProportionalRgb(aa_noise_params_.clamp_indirect_);
-			col += col_tmp;
-			if(color_layers)
-			{
-				if(ColorLayer *color_layer = color_layers->find(Layer::Indirect)) color_layer->color_ = col_tmp;
-			}
+			std::tie(col, alpha) = causticPhotons(ray, color_layers, std::move(col), std::move(alpha), sp, wo, aa_noise_params_.clamp_indirect_, caustic_map_.get(), caus_radius_, n_caus_search_);
 		}
 
 		recursiveRaytrace(thread_id, ray_level + 1, chromatic_enabled, wavelength, ray, mat_bsdfs, sp, wo, col, alpha, additional_depth, ray_division, color_layers, camera, random_generator, pixel_sampling_data);
@@ -1113,12 +1107,12 @@ Rgba PhotonIntegrator::integrate(int thread_id, int ray_level, bool chromatic_en
 	}
 	else //nothing hit, return background
 	{
-		std::tie(col, alpha) = TiledIntegrator::background(ray, color_layers, std::move(col), std::move(alpha), transp_background_, transp_refracted_background_, scene_->getBackground());
+		std::tie(col, alpha) = background(ray, color_layers, std::move(col), std::move(alpha), transp_background_, transp_refracted_background_, scene_->getBackground());
 	}
 
 	if(scene_->vol_integrator_)
 	{
-		std::tie(col, alpha) = TiledIntegrator::volumetricEffects(ray, color_layers, random_generator, std::move(col), std::move(alpha), scene_->vol_integrator_, transp_background_);
+		std::tie(col, alpha) = volumetricEffects(ray, color_layers, random_generator, std::move(col), std::move(alpha), scene_->vol_integrator_, transp_background_);
 	}
 	return {col, alpha};
 }

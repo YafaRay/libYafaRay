@@ -1123,12 +1123,12 @@ GatherInfo SppmIntegrator::traceGatherRay(int thread_id, int ray_level, bool chr
 	}
 	else //nothing hit, return background
 	{
-		std::tie(g_info.constant_randiance_, alpha) = TiledIntegrator::background(ray, color_layers, std::move(g_info.constant_randiance_), std::move(alpha), transp_background_, transp_refracted_background_, scene_->getBackground());
+		std::tie(g_info.constant_randiance_, alpha) = background(ray, color_layers, std::move(g_info.constant_randiance_), std::move(alpha), transp_background_, transp_refracted_background_, scene_->getBackground());
 	}
 
 	if(scene_->vol_integrator_)
 	{
-		std::tie(g_info.constant_randiance_, alpha) = TiledIntegrator::volumetricEffects(ray, color_layers, random_generator, std::move(g_info.constant_randiance_), std::move(alpha), scene_->vol_integrator_, transp_background_);
+		std::tie(g_info.constant_randiance_, alpha) = volumetricEffects(ray, color_layers, random_generator, std::move(g_info.constant_randiance_), std::move(alpha), scene_->vol_integrator_, transp_background_);
 	}
 	g_info.constant_randiance_.a_ = alpha; // a small trick for just hold the alpha value.
 	return g_info;

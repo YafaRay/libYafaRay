@@ -367,6 +367,18 @@ Rgb MonteCarloIntegrator::doLightEstimation(bool chromatic_enabled, float wavele
 	return col;
 }
 
+std::pair<Rgb, float> MonteCarloIntegrator::causticPhotons(const Ray &ray, ColorLayers *color_layers, Rgb col, float alpha, const SurfacePoint &sp, const Vec3 &wo, float clamp_indirect, const PhotonMap *caustic_map, float caustic_radius, int n_caus_search)
+{
+	Rgb col_tmp = MonteCarloIntegrator::estimateCausticPhotons(sp, wo, caustic_map, caustic_radius, n_caus_search);
+	if(clamp_indirect > 0.f) col_tmp.clampProportionalRgb(clamp_indirect);
+	col += col_tmp;
+	if(color_layers)
+	{
+		if(ColorLayer *color_layer = color_layers->find(Layer::Indirect)) color_layer->color_ = col_tmp;
+	}
+	return {col, alpha};
+}
+
 void MonteCarloIntegrator::causticWorker(PhotonMap *caustic_map, int thread_id, const Scene *scene, const RenderView *render_view, const RenderControl &render_control, const Timer &timer, unsigned int n_caus_photons, Pdf1D *light_power_d, int num_lights, const std::vector<const Light *> &caus_lights, int caus_depth, ProgressBar *pb, int pb_step, unsigned int &total_photons_shot)
 {
 	const Accelerator *accelerator = scene_->getAccelerator();
@@ -619,36 +631,25 @@ bool MonteCarloIntegrator::createCausticMap(const RenderView *render_view, const
 	return true;
 }
 
-Rgb MonteCarloIntegrator::estimateCausticPhotons(const SurfacePoint &sp, const Vec3 &wo) const
+Rgb MonteCarloIntegrator::estimateCausticPhotons(const SurfacePoint &sp, const Vec3 &wo, const PhotonMap *caustic_map, float caustic_radius, int n_caus_search)
 {
-	if(!caustic_map_->ready()) return Rgb(0.f);
-
-	auto gathered = std::unique_ptr<FoundPhoton[]>(new FoundPhoton[n_caus_search_]);//(foundPhoton_t *)alloca(nCausSearch * sizeof(foundPhoton_t));
-	int n_gathered = 0;
-
-	float g_radius_square = caus_radius_ * caus_radius_;
-
-	n_gathered = caustic_map_->gather(sp.p_, gathered.get(), n_caus_search_, g_radius_square);
-
+	if(!caustic_map->ready()) return {0.f};
+	const auto gathered = std::unique_ptr<FoundPhoton[]>(new FoundPhoton[n_caus_search]);//(foundPhoton_t *)alloca(nCausSearch * sizeof(foundPhoton_t));
+	float g_radius_square = caustic_radius * caustic_radius;
+	const int n_gathered = caustic_map->gather(sp.p_, gathered.get(), n_caus_search, g_radius_square);
 	g_radius_square = 1.f / g_radius_square;
-
-	Rgb sum(0.f);
-
+	Rgb sum {0.f};
 	if(n_gathered > 0)
 	{
 		const Material *material = sp.material_;
-		Rgb surf_col(0.f);
-		float k = 0.f;
-		const Photon *photon;
-
 		for(int i = 0; i < n_gathered; ++i)
 		{
-			photon = gathered[i].photon_;
-			surf_col = material->eval(sp.mat_data_.get(), sp, wo, photon->direction(), BsdfFlags::All);
-			k = sample::kernel(gathered[i].dist_square_, g_radius_square);
+			const Photon *photon = gathered[i].photon_;
+			const Rgb surf_col = material->eval(sp.mat_data_.get(), sp, wo, photon->direction(), BsdfFlags::All);
+			const float k = sample::kernel(gathered[i].dist_square_, g_radius_square);
 			sum += surf_col * k * photon->color();
 		}
-		sum *= 1.f / (float(caustic_map_->nPaths()));
+		sum *= 1.f / static_cast<float>(caustic_map->nPaths());
 	}
 	return sum;
 }
