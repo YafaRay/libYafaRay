@@ -96,6 +96,9 @@ class MonteCarloIntegrator: public TiledIntegrator
 		static constexpr int initial_ray_samples_dispersive_ = 8;
 		static constexpr int initial_ray_samples_glossy_ = 8;
 		static constexpr int loffs_delta_ = 4567; //just some number to have different sequences per light...and it's a prime even...
+		Rgb glossyReflectNoTransmit(int thread_id, int ray_level, bool chromatic_enabled, float wavelength, const Ray &ray, const SurfacePoint &sp, const Material *material, const BsdfFlags &bsdfs, const Vec3 &wo, int additional_depth, const Camera *camera, const PixelSamplingData &pixel_sampling_data, const RayDivision &ray_division_new, const float s_1, const float s_2, RandomGenerator &random_generator) const;
+		std::pair<Rgb, float> glossyTransmit(int thread_id, int ray_level, bool chromatic_enabled, float wavelength, const Ray &ray, const SurfacePoint &sp, const Material *material, const BsdfFlags &bsdfs, int additional_depth, const ColorLayers *color_layers, const Camera *camera, const PixelSamplingData &pixel_sampling_data, const RayDivision &ray_division_new, const Rgb &transmit_col, float w, const Vec3 &dir, RandomGenerator &random_generator) const;
+		Rgb glossyReflectDispersive(int thread_id, int ray_level, bool chromatic_enabled, float wavelength, const Ray &ray, const SurfacePoint &sp, const Material *material, const BsdfFlags &bsdfs, int additional_depth, const ColorLayers *color_layers, const Camera *camera, const PixelSamplingData &pixel_sampling_data, const RayDivision &ray_division_new, const Rgb &reflect_color, float w, const Vec3 &dir, RandomGenerator &random_generator) const;
 };
 
 END_YAFARAY

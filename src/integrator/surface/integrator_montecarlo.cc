@@ -749,25 +749,7 @@ Rgb MonteCarloIntegrator::glossy(int thread_id, int ray_level, bool chromatic_en
 		{
 			if(mat_bsdfs.hasAny(BsdfFlags::Reflect) && !mat_bsdfs.hasAny(BsdfFlags::Transmit))
 			{
-				float w = 0.f;
-				Sample s(s_1, s_2, BsdfFlags::Glossy | BsdfFlags::Reflect);
-				Vec3 wi;
-				const Rgb mcol = material->sample(sp.mat_data_.get(), sp, wo, wi, s, w, chromatic_enabled, wavelength, camera);
-				Ray ref_ray(sp.p_, wi, scene_->ray_min_dist_);
-				if(ray.differentials_)
-				{
-					if(s.sampled_flags_.hasAny(BsdfFlags::Reflect)) ref_ray.differentials_ = sp.reflectedRay(ray.differentials_.get(), ray.dir_, ref_ray.dir_);
-					else if(s.sampled_flags_.hasAny(BsdfFlags::Transmit)) ref_ray.differentials_ = sp.refractedRay(ray.differentials_.get(), ray.dir_, ref_ray.dir_, material->getMatIor());
-				}
-				Rgba integ = static_cast<Rgb>(integrate(thread_id, ray_level, chromatic_enabled, wavelength, ref_ray, additional_depth, ray_division_new, nullptr, camera, random_generator, pixel_sampling_data, true));
-				if(bsdfs.hasAny(BsdfFlags::Volumetric))
-				{
-					if(const VolumeHandler *vol = material->getVolumeHandler(sp.ng_ * ref_ray.dir_ < 0))
-					{
-						integ *= vol->transmittance(ref_ray);
-					}
-				}
-				const Rgb g_ind_col = static_cast<Rgb>(integ) * mcol * w;
+				const Rgb g_ind_col = glossyReflectNoTransmit(thread_id, ray_level, chromatic_enabled, wavelength, ray, sp, material, bsdfs, wo, additional_depth, camera, pixel_sampling_data, ray_division_new, s_1, s_2, random_generator);
 				gcol += g_ind_col;
 				if(color_layers) gcol_indirect_accum += g_ind_col;
 			}
@@ -782,39 +764,16 @@ Rgb MonteCarloIntegrator::glossy(int thread_id, int ray_level, bool chromatic_en
 
 				if(s.sampled_flags_.hasAny(BsdfFlags::Reflect) && !s.sampled_flags_.hasAny(BsdfFlags::Dispersive))
 				{
-					Ray ref_ray = Ray(sp.p_, dir[0], scene_->ray_min_dist_);
-					if(ray.differentials_) ref_ray.differentials_ = sp.reflectedRay(ray.differentials_.get(), ray.dir_, ref_ray.dir_);
-					Rgba integ = integrate(thread_id, ray_level, chromatic_enabled, wavelength, ref_ray, additional_depth, ray_division_new, nullptr, camera, random_generator, pixel_sampling_data, true);
-					if(bsdfs.hasAny(BsdfFlags::Volumetric))
-					{
-						if(const VolumeHandler *vol = material->getVolumeHandler(sp.ng_ * ref_ray.dir_ < 0))
-						{
-							integ *= vol->transmittance(ref_ray);
-						}
-					}
-					const Rgb col_reflect_factor = mcol[0] * w[0];
-					const Rgb g_ind_col = static_cast<Rgb>(integ) * col_reflect_factor;
+					const Rgb g_ind_col = glossyReflectDispersive(thread_id, ray_level, chromatic_enabled, wavelength, ray, sp, material, bsdfs, additional_depth, color_layers, camera, pixel_sampling_data, ray_division_new, mcol[0], w[0], dir[0], random_generator);
 					gcol += g_ind_col;
 					if(color_layers) gcol_reflect_accum += g_ind_col;
 				}
-
 				if(s.sampled_flags_.hasAny(BsdfFlags::Transmit))
 				{
-					Ray ref_ray = Ray(sp.p_, dir[1], scene_->ray_min_dist_);
-					if(ray.differentials_) ref_ray.differentials_ = sp.refractedRay(ray.differentials_.get(), ray.dir_, ref_ray.dir_, material->getMatIor());
-					Rgba integ = integrate(thread_id, ray_level, chromatic_enabled, wavelength, ref_ray, additional_depth, ray_division_new, nullptr, camera, random_generator, pixel_sampling_data, true);
-					if(bsdfs.hasAny(BsdfFlags::Volumetric))
-					{
-						if(const VolumeHandler *vol = material->getVolumeHandler(sp.ng_ * ref_ray.dir_ < 0))
-						{
-							integ *= vol->transmittance(ref_ray);
-						}
-					}
-					const Rgb col_transmit_factor = mcol[1] * w[1];
-					const Rgb g_ind_col = static_cast<Rgb>(integ) * col_transmit_factor;
+					Rgb g_ind_col;
+					std::tie(g_ind_col, alpha) = glossyTransmit(thread_id, ray_level, chromatic_enabled, wavelength, ray, sp, material, bsdfs, additional_depth, color_layers, camera, pixel_sampling_data, ray_division_new, mcol[1], w[1], dir[1], random_generator);
 					gcol += g_ind_col;
 					if(color_layers) gcol_transmit_accum += g_ind_col;
-					alpha = integ.a_;
 				}
 			}
 		}
@@ -839,6 +798,61 @@ Rgb MonteCarloIntegrator::glossy(int thread_id, int ray_level, bool chromatic_en
 		}
 	}
 	return gcol * d_1;
+}
+
+Rgb MonteCarloIntegrator::glossyReflectDispersive(int thread_id, int ray_level, bool chromatic_enabled, float wavelength, const Ray &ray, const SurfacePoint &sp, const Material *material, const BsdfFlags &bsdfs, int additional_depth, const ColorLayers *color_layers, const Camera *camera, const PixelSamplingData &pixel_sampling_data, const RayDivision &ray_division_new, const Rgb &reflect_color, float w, const Vec3 &dir, RandomGenerator &random_generator) const
+{
+	Ray ref_ray = Ray(sp.p_, dir, scene_->ray_min_dist_);
+	if(ray.differentials_) ref_ray.differentials_ = sp.reflectedRay(ray.differentials_.get(), ray.dir_, ref_ray.dir_);
+	Rgba integ = integrate(thread_id, ray_level, chromatic_enabled, wavelength, ref_ray, additional_depth, ray_division_new, nullptr, camera, random_generator, pixel_sampling_data, true);
+	if(bsdfs.hasAny(BsdfFlags::Volumetric))
+	{
+		if(const VolumeHandler *vol = material->getVolumeHandler(sp.ng_ * ref_ray.dir_ < 0))
+		{
+			integ *= vol->transmittance(ref_ray);
+		}
+	}
+	const Rgb col_reflect_factor = reflect_color * w;
+	return static_cast<Rgb>(integ) * col_reflect_factor;
+}
+
+std::pair<Rgb, float> MonteCarloIntegrator::glossyTransmit(int thread_id, int ray_level, bool chromatic_enabled, float wavelength, const Ray &ray, const SurfacePoint &sp, const Material *material, const BsdfFlags &bsdfs, int additional_depth, const ColorLayers *color_layers, const Camera *camera, const PixelSamplingData &pixel_sampling_data, const RayDivision &ray_division_new, const Rgb &transmit_col, float w, const Vec3 &dir, RandomGenerator &random_generator) const
+{
+	Ray ref_ray = Ray(sp.p_, dir, scene_->ray_min_dist_);
+	if(ray.differentials_) ref_ray.differentials_ = sp.refractedRay(ray.differentials_.get(), ray.dir_, ref_ray.dir_, material->getMatIor());
+	Rgba integ = integrate(thread_id, ray_level, chromatic_enabled, wavelength, ref_ray, additional_depth, ray_division_new, nullptr, camera, random_generator, pixel_sampling_data, true);
+	if(bsdfs.hasAny(BsdfFlags::Volumetric))
+	{
+		if(const VolumeHandler *vol = material->getVolumeHandler(sp.ng_ * ref_ray.dir_ < 0))
+		{
+			integ *= vol->transmittance(ref_ray);
+		}
+	}
+	const Rgb col_transmit_factor = transmit_col * w;
+	return {static_cast<Rgb>(integ) * col_transmit_factor, integ.a_};
+}
+
+Rgb MonteCarloIntegrator::glossyReflectNoTransmit(int thread_id, int ray_level, bool chromatic_enabled, float wavelength, const Ray &ray, const SurfacePoint &sp, const Material *material, const BsdfFlags &bsdfs, const Vec3 &wo, int additional_depth, const Camera *camera, const PixelSamplingData &pixel_sampling_data, const RayDivision &ray_division_new, const float s_1, const float s_2, RandomGenerator &random_generator) const
+{
+	float w = 0.f;
+	Sample s(s_1, s_2, BsdfFlags::Glossy | BsdfFlags::Reflect);
+	Vec3 wi;
+	const Rgb mcol = material->sample(sp.mat_data_.get(), sp, wo, wi, s, w, chromatic_enabled, wavelength, camera);
+	Ray ref_ray(sp.p_, wi, scene_->ray_min_dist_);
+	if(ray.differentials_)
+	{
+		if(s.sampled_flags_.hasAny(BsdfFlags::Reflect)) ref_ray.differentials_ = sp.reflectedRay(ray.differentials_.get(), ray.dir_, ref_ray.dir_);
+		else if(s.sampled_flags_.hasAny(BsdfFlags::Transmit)) ref_ray.differentials_ = sp.refractedRay(ray.differentials_.get(), ray.dir_, ref_ray.dir_, material->getMatIor());
+	}
+	Rgba integ = static_cast<Rgb>(integrate(thread_id, ray_level, chromatic_enabled, wavelength, ref_ray, additional_depth, ray_division_new, nullptr, camera, random_generator, pixel_sampling_data, true));
+	if(bsdfs.hasAny(BsdfFlags::Volumetric))
+	{
+		if(const VolumeHandler *vol = material->getVolumeHandler(sp.ng_ * ref_ray.dir_ < 0))
+		{
+			integ *= vol->transmittance(ref_ray);
+		}
+	}
+	return static_cast<Rgb>(integ) * mcol * w;
 }
 
 Rgb MonteCarloIntegrator::specularReflect(int thread_id, int ray_level, bool chromatic_enabled, float wavelength, float &alpha, const Ray &ray, const SurfacePoint &sp, const Material *material, const BsdfFlags &bsdfs, const DirectionColor *reflect_data, float ray_min_dist, int additional_depth, const RayDivision &ray_division, ColorLayers *color_layers, RandomGenerator &random_generator, const PixelSamplingData &pixel_sampling_data, bool lights_geometry_material_emit, const Camera *camera) const
