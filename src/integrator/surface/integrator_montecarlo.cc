@@ -656,20 +656,20 @@ Rgb MonteCarloIntegrator::estimateCausticPhotons(const SurfacePoint &sp, const V
 
 Rgb MonteCarloIntegrator::dispersive(int thread_id, int ray_level, bool chromatic_enabled, const SurfacePoint &sp, const Material *material, const BsdfFlags &bsdfs, const Vec3 &wo, float ray_min_dist, int additional_depth, const RayDivision &ray_division, ColorLayers *color_layers, const Camera *camera, RandomGenerator &random_generator, const PixelSamplingData &pixel_sampling_data) const
 {
-	Rgb col;
-	int dsam = 8;
-	if(ray_division.division_ > 1) dsam = std::max(1, dsam / ray_division.division_);
+	const int ray_samples_dispersive = ray_division.division_ > 1 ?
+									   std::max(1, initial_ray_samples_dispersive_ / ray_division.division_) :
+									   initial_ray_samples_dispersive_;
 	RayDivision ray_division_new {ray_division};
-	ray_division_new.division_ *= dsam;
+	ray_division_new.division_ *= ray_samples_dispersive;
 	int branch = ray_division_new.division_ * ray_division.offset_;
-	const float d_1 = 1.f / static_cast<float>(dsam);
+	const float d_1 = 1.f / static_cast<float>(ray_samples_dispersive);
 	const float ss_1 = sample::riS(pixel_sampling_data.sample_ + pixel_sampling_data.offset_);
 	Rgb dcol(0.f);
 	float w = 0.f;
 
 	Rgb dcol_trans_accum;
 	std::unique_ptr<Ray> ref_ray_chromatic_volume; //Reference ray used for chromatic/dispersive volume color calculation only. FIXME: it only uses one of the sampled reference rays for volume calculations, not sure if this is ok??
-	for(int ns = 0; ns < dsam; ++ns)
+	for(int ns = 0; ns < ray_samples_dispersive; ++ns)
 	{
 		float wavelength_dispersive;
 		if(chromatic_enabled)
@@ -717,13 +717,14 @@ Rgb MonteCarloIntegrator::dispersive(int thread_id, int ray_level, bool chromati
 
 Rgb MonteCarloIntegrator::glossy(int thread_id, int ray_level, bool chromatic_enabled, float wavelength, float &alpha, const Ray &ray, const SurfacePoint &sp, const Material *material, const BsdfFlags &mat_bsdfs, const BsdfFlags &bsdfs, const Vec3 &wo, float ray_min_dist, int additional_depth, const RayDivision &ray_division, ColorLayers *color_layers, const Camera *camera, RandomGenerator &random_generator, const PixelSamplingData &pixel_sampling_data) const
 {
-	int gsam = 8;
-	if(ray_division.division_ > 1) gsam = std::max(1, gsam / ray_division.division_);
+	const int ray_samples_glossy = ray_division.division_ > 1 ?
+								   std::max(1, initial_ray_samples_glossy_ / ray_division.division_) :
+								   initial_ray_samples_glossy_;
 	RayDivision ray_division_new {ray_division};
-	ray_division_new.division_ *= gsam;
+	ray_division_new.division_ *= ray_samples_glossy;
 	int branch = ray_division_new.division_ * ray_division.offset_;
-	unsigned int offs = gsam * pixel_sampling_data.sample_ + pixel_sampling_data.offset_;
-	const float d_1 = 1.f / static_cast<float>(gsam);
+	unsigned int offs = ray_samples_glossy * pixel_sampling_data.sample_ + pixel_sampling_data.offset_;
+	const float d_1 = 1.f / static_cast<float>(ray_samples_glossy);
 	Rgb gcol(0.f);
 
 	Halton hal_2(2, offs);
@@ -733,7 +734,7 @@ Rgb MonteCarloIntegrator::glossy(int thread_id, int ray_level, bool chromatic_en
 	Rgb gcol_reflect_accum;
 	Rgb gcol_transmit_accum;
 
-	for(int ns = 0; ns < gsam; ++ns)
+	for(int ns = 0; ns < ray_samples_glossy; ++ns)
 	{
 		ray_division_new.decorrelation_1_ = Halton::lowDiscrepancySampling(2 * ray_level + 1, branch + pixel_sampling_data.offset_);
 		ray_division_new.decorrelation_2_ = Halton::lowDiscrepancySampling(2 * ray_level + 2, branch + pixel_sampling_data.offset_);

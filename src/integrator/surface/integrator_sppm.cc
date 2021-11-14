@@ -801,19 +801,20 @@ GatherInfo SppmIntegrator::traceGatherRay(int thread_id, int ray_level, bool chr
 			if(mat_bsdfs.hasAny(BsdfFlags::Dispersive) && chromatic_enabled)
 			{
 				lights_geometry_material_emit = false; //debatable...
-				int dsam = 8;
-				if(ray_division.division_ > 1) dsam = std::max(1, dsam / ray_division.division_);
+				const int ray_samples_dispersive = ray_division.division_ > 1 ?
+												   std::max(1, initial_ray_samples_dispersive_ / ray_division.division_) :
+												   initial_ray_samples_dispersive_;
 				RayDivision ray_division_new {ray_division};
-				ray_division_new.division_ *= dsam;
+				ray_division_new.division_ *= ray_samples_dispersive;
 				int branch = ray_division_new.division_ * ray_division.offset_;
-				const float d_1 = 1.f / static_cast<float>(dsam);
+				const float d_1 = 1.f / static_cast<float>(ray_samples_dispersive);
 				const float ss_1 = sample::riS(pixel_sampling_data.sample_ + pixel_sampling_data.offset_);
 				Ray ref_ray;
 				float w = 0.f;
 				GatherInfo cing, t_cing; //Dispersive is different handled, not same as GLOSSY, at the BSDF_VOLUMETRIC part
 
 				Rgb dcol_trans_accum;
-				for(int ns = 0; ns < dsam; ++ns)
+				for(int ns = 0; ns < ray_samples_dispersive; ++ns)
 				{
 					float wavelength_dispersive;
 					if(chromatic_enabled)
@@ -874,13 +875,14 @@ GatherInfo SppmIntegrator::traceGatherRay(int thread_id, int ray_level, bool chr
 			if(mat_bsdfs.hasAny(BsdfFlags::Glossy))
 			{
 				lights_geometry_material_emit = false;
-				int gsam = 8;
-				if(ray_division.division_ > 1) gsam = std::max(1, gsam / ray_division.division_);
+				const int ray_samples_glossy = ray_division.division_ > 1 ?
+											   std::max(1, initial_ray_samples_glossy_ / ray_division.division_) :
+											   initial_ray_samples_glossy_;
 				RayDivision ray_division_new {ray_division};
-				ray_division_new.division_ *= gsam;
+				ray_division_new.division_ *= ray_samples_glossy;
 				int branch = ray_division_new.division_ * ray_division_new.offset_;
-				unsigned int offs = gsam * pixel_sampling_data.sample_ + pixel_sampling_data.offset_;
-				float d_1 = 1.f / (float)gsam;
+				unsigned int offs = ray_samples_glossy * pixel_sampling_data.sample_ + pixel_sampling_data.offset_;
+				const float d_1 = 1.f / static_cast<float>(ray_samples_glossy);
 				Ray ref_ray;
 
 				GatherInfo ging, t_ging;
@@ -892,7 +894,7 @@ GatherInfo SppmIntegrator::traceGatherRay(int thread_id, int ray_level, bool chr
 				Rgb gcol_reflect_accum;
 				Rgb gcol_transmit_accum;
 
-				for(int ns = 0; ns < gsam; ++ns)
+				for(int ns = 0; ns < ray_samples_glossy; ++ns)
 				{
 					ray_division_new.decorrelation_1_ = Halton::lowDiscrepancySampling(2 * ray_level + 1, branch + pixel_sampling_data.offset_);
 					ray_division_new.decorrelation_2_ = Halton::lowDiscrepancySampling(2 * ray_level + 2, branch + pixel_sampling_data.offset_);
