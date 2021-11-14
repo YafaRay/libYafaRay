@@ -688,4 +688,18 @@ Rgb TiledIntegrator::sampleAmbientOcclusion(bool chromatic_enabled, float wavele
 	return col / static_cast<float>(n);
 }
 
+std::pair<Rgb, float> TiledIntegrator::volumetricEffects(const Ray &ray, ColorLayers *color_layers, RandomGenerator &random_generator, Rgb col, float alpha, const VolumeIntegrator *volume_integrator, bool transparent_background)
+{
+	const Rgb col_vol_transmittance = volume_integrator->transmittance(random_generator, ray);
+	const Rgb col_vol_integration = volume_integrator->integrate(random_generator, ray);
+	if(transparent_background) alpha = std::max(alpha, 1.f - col_vol_transmittance.r_);
+	if(color_layers)
+	{
+		if(ColorLayer *color_layer = color_layers->find(Layer::VolumeTransmittance)) color_layer->color_ = col_vol_transmittance;
+		if(ColorLayer *color_layer = color_layers->find(Layer::VolumeIntegration)) color_layer->color_ = col_vol_integration;
+	}
+	col = (col * col_vol_transmittance) + col_vol_integration;
+	return {col, alpha};
+}
+
 END_YAFARAY

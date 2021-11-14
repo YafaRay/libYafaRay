@@ -65,6 +65,7 @@ class TiledIntegrator : public SurfaceIntegrator
 		static void generateCommonLayers(const SurfacePoint &sp, const MaskParams &mask_params, ColorLayers *color_layers); //!< Generates render passes common to all integrators
 		/*! Samples ambient occlusion for a given surface point */
 		Rgb sampleAmbientOcclusion(bool chromatic_enabled, float wavelength, const SurfacePoint &sp, const Vec3 &wo, const RayDivision &ray_division, const Camera *camera, const PixelSamplingData &pixel_sampling_data, bool lights_geometry_material_emit, bool transparent_shadows, bool clay) const;
+		static std::pair<Rgb, float> volumetricEffects(const Ray &ray, ColorLayers *color_layers, RandomGenerator &random_generator, Rgb col, float alpha, const VolumeIntegrator *volume_integrator, bool transparent_background);
 
 	protected:
 		float i_aa_passes_; //!< Inverse of AA_passes used for depth map
@@ -80,6 +81,8 @@ class TiledIntegrator : public SurfaceIntegrator
 		Rgb ao_col_; //! Ambient occlusion color
 		int s_depth_; //! Shadow depth for transparent shadows
 		bool tr_shad_; //! Use transparent shadows
+		bool transp_background_; //! Render background as transparent
+		bool transp_refracted_background_; //! Render refractions of background as transparent
 		static std::vector<int> correlative_sample_number_;  //!< Used to sample lights more uniformly when using estimateOneDirectLight
 };
 

@@ -68,10 +68,6 @@ class BidirectionalIntegrator final : public TiledIntegrator
 		std::unique_ptr<Pdf1D> light_power_d_;
 		float f_num_lights_;
 		std::map <const Light *, float> inv_light_power_d_;
-
-		bool transp_background_; //! Render background as transparent
-		bool transp_refracted_background_; //! Render refractions of background as transparent
-
 		static constexpr int max_path_length_ = 32;
 		static constexpr int min_path_length_ = 3;
 };

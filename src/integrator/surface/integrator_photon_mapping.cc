@@ -1135,15 +1135,7 @@ Rgba PhotonIntegrator::integrate(int thread_id, int ray_level, bool chromatic_en
 
 	if(scene_->vol_integrator_)
 	{
-		const Rgb col_vol_transmittance = scene_->vol_integrator_->transmittance(random_generator, ray);
-		const Rgb col_vol_integration = scene_->vol_integrator_->integrate(random_generator, ray);
-		if(transp_background_) alpha = std::max(alpha, 1.f - col_vol_transmittance.r_);
-		if(color_layers)
-		{
-			if(ColorLayer *color_layer = color_layers->find(Layer::VolumeTransmittance)) color_layer->color_ = col_vol_transmittance;
-			if(ColorLayer *color_layer = color_layers->find(Layer::VolumeIntegration)) color_layer->color_ = col_vol_integration;
-		}
-		col = (col * col_vol_transmittance) + col_vol_integration;
+		std::tie(col, alpha) = TiledIntegrator::volumetricEffects(ray, color_layers, random_generator, std::move(col), std::move(alpha), scene_->vol_integrator_, transp_background_);
 	}
 	return {col, alpha};
 }

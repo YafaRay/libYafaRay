@@ -89,8 +89,6 @@ class MonteCarloIntegrator: public TiledIntegrator
 		int n_paths_; //! Number of samples for mc raytracing
 		int max_bounces_; //! Max. path depth for mc raytracing
 		std::vector<const Light *> lights_; //! An array containing all the scene lights
-		bool transp_background_; //! Render background as transparent
-		bool transp_refracted_background_; //! Render refractions of background as transparent
 		void causticWorker(PhotonMap *caustic_map, int thread_id, const Scene *scene, const RenderView *render_view, const RenderControl &render_control, const Timer &timer, unsigned int n_caus_photons, Pdf1D *light_power_d, int num_lights, const std::vector<const Light *> &caus_lights, int caus_depth, ProgressBar *pb, int pb_step, unsigned int &total_photons_shot);
 		std::unique_ptr<PhotonMap> caustic_map_;
 
