@@ -69,7 +69,7 @@ class TiledIntegrator : public SurfaceIntegrator
 		/*! Samples ambient occlusion for a given surface point */
 		static Rgb sampleAmbientOcclusion(bool chromatic_enabled, float wavelength, const SurfacePoint &sp, const Vec3 &wo, const RayDivision &ray_division, const Camera *camera, const PixelSamplingData &pixel_sampling_data, bool lights_geometry_material_emit, bool transparent_shadows, bool clay, const Accelerator *accelerator, int ao_samples, bool shadow_bias_auto, float shadow_bias, float ao_dist, const Rgb &ao_col, int transp_shadows_depth);
 		static std::pair<Rgb, float> volumetricEffects(const Ray &ray, ColorLayers *color_layers, RandomGenerator &random_generator, Rgb col, float alpha, const VolumeIntegrator *volume_integrator, bool transparent_background);
-		static std::pair<Rgb, float> background(const Ray &ray, ColorLayers *color_layers, Rgb col, float alpha, bool transparent_background, bool transparent_refracted_background, const Background *background);
+		static std::pair<Rgb, float> background(const Ray &ray, ColorLayers *color_layers, bool transparent_background, bool transparent_refracted_background, const Background *background, int ray_level);
 
 	protected:
 		float i_aa_passes_; //!< Inverse of AA_passes used for depth map

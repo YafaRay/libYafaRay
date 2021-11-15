@@ -228,7 +228,7 @@ void BidirectionalIntegrator::cleanup()
 /* ============================================================
     integrate
  ============================================================ */
-Rgba BidirectionalIntegrator::integrate(int thread_id, int ray_level, bool chromatic_enabled, float wavelength, Ray &ray, int additional_depth, const RayDivision &ray_division, ColorLayers *color_layers, const Camera *camera, RandomGenerator &random_generator, const PixelSamplingData &pixel_sampling_data, bool lights_geometry_material_emit) const
+std::pair<Rgb, float> BidirectionalIntegrator::integrate(int thread_id, int ray_level, bool chromatic_enabled, float wavelength, Ray &ray, int additional_depth, const RayDivision &ray_division, ColorLayers *color_layers, const Camera *camera, RandomGenerator &random_generator, const PixelSamplingData &pixel_sampling_data, bool lights_geometry_material_emit) const
 {
 	Rgb col(0.f);
 	SurfacePoint sp;
@@ -376,7 +376,7 @@ Rgba BidirectionalIntegrator::integrate(int thread_id, int ray_level, bool chrom
 	}
 	else
 	{
-		std::tie(col, alpha) = background(ray, color_layers, std::move(col), std::move(alpha), transp_background_, transp_refracted_background_, scene_->getBackground());
+		std::tie(col, alpha) = background(ray, color_layers, transp_background_, transp_refracted_background_, scene_->getBackground(), ray_level);
 	}
 
 	if(scene_->vol_integrator_)

@@ -367,16 +367,15 @@ Rgb MonteCarloIntegrator::doLightEstimation(bool chromatic_enabled, float wavele
 	return col;
 }
 
-std::pair<Rgb, float> MonteCarloIntegrator::causticPhotons(const Ray &ray, ColorLayers *color_layers, Rgb col, float alpha, const SurfacePoint &sp, const Vec3 &wo, float clamp_indirect, const PhotonMap *caustic_map, float caustic_radius, int n_caus_search)
+Rgb MonteCarloIntegrator::causticPhotons(const Ray &ray, ColorLayers *color_layers, const SurfacePoint &sp, const Vec3 &wo, float clamp_indirect, const PhotonMap *caustic_map, float caustic_radius, int n_caus_search)
 {
-	Rgb col_tmp = MonteCarloIntegrator::estimateCausticPhotons(sp, wo, caustic_map, caustic_radius, n_caus_search);
-	if(clamp_indirect > 0.f) col_tmp.clampProportionalRgb(clamp_indirect);
-	col += col_tmp;
+	Rgb col = MonteCarloIntegrator::estimateCausticPhotons(sp, wo, caustic_map, caustic_radius, n_caus_search);
+	if(clamp_indirect > 0.f) col.clampProportionalRgb(clamp_indirect);
 	if(color_layers)
 	{
-		if(ColorLayer *color_layer = color_layers->find(Layer::Indirect)) color_layer->color_ = col_tmp;
+		if(ColorLayer *color_layer = color_layers->find(Layer::Indirect)) color_layer->color_ += col;
 	}
-	return {col, alpha};
+	return col;
 }
 
 void MonteCarloIntegrator::causticWorker(PhotonMap *caustic_map, int thread_id, const Scene *scene, const RenderView *render_view, const RenderControl &render_control, const Timer &timer, unsigned int n_caus_photons, Pdf1D *light_power_d, int num_lights, const std::vector<const Light *> &caus_lights, int caus_depth, ProgressBar *pb, int pb_step, unsigned int &total_photons_shot)
@@ -654,7 +653,7 @@ Rgb MonteCarloIntegrator::estimateCausticPhotons(const SurfacePoint &sp, const V
 	return sum;
 }
 
-Rgb MonteCarloIntegrator::dispersive(int thread_id, int ray_level, bool chromatic_enabled, const SurfacePoint &sp, const Material *material, const BsdfFlags &bsdfs, const Vec3 &wo, float ray_min_dist, int additional_depth, const RayDivision &ray_division, ColorLayers *color_layers, const Camera *camera, RandomGenerator &random_generator, const PixelSamplingData &pixel_sampling_data) const
+std::pair<Rgb, float> MonteCarloIntegrator::dispersive(int thread_id, int ray_level, bool chromatic_enabled, const SurfacePoint &sp, const Material *material, const BsdfFlags &bsdfs, const Vec3 &wo, float ray_min_dist, int additional_depth, const RayDivision &ray_division, ColorLayers *color_layers, const Camera *camera, RandomGenerator &random_generator, const PixelSamplingData &pixel_sampling_data) const
 {
 	const int ray_samples_dispersive = ray_division.division_ > 1 ?
 									   std::max(1, initial_ray_samples_dispersive_ / ray_division.division_) :
@@ -668,6 +667,7 @@ Rgb MonteCarloIntegrator::dispersive(int thread_id, int ray_level, bool chromati
 	float w = 0.f;
 
 	Rgb dcol_trans_accum;
+	float alpha_accum = 0.f;
 	std::unique_ptr<Ray> ref_ray_chromatic_volume; //Reference ray used for chromatic/dispersive volume color calculation only. FIXME: it only uses one of the sampled reference rays for volume calculations, not sure if this is ok??
 	for(int ns = 0; ns < ray_samples_dispersive; ++ns)
 	{
@@ -691,9 +691,11 @@ Rgb MonteCarloIntegrator::dispersive(int thread_id, int ray_level, bool chromati
 		{
 			const Rgb wl_col = spectrum::wl2Rgb(wavelength_dispersive);
 			Ray ref_ray(sp.p_, wi, ray_min_dist);
-			const Rgb dcol_trans = static_cast<Rgb>(integrate(thread_id, ray_level, false, wavelength_dispersive, ref_ray, additional_depth, ray_division_new, nullptr, camera, random_generator, pixel_sampling_data, false)) * mcol * wl_col * w; //FIXME lights_geometry_material_emit = false; //debatable...
-			dcol += dcol_trans;
-			if(color_layers) dcol_trans_accum += dcol_trans;
+			auto integ = integrate(thread_id, ray_level, false, wavelength_dispersive, ref_ray, additional_depth, ray_division_new, nullptr, camera, random_generator, pixel_sampling_data, false);
+			integ.first *= mcol * wl_col * w; //FIXME lights_geometry_material_emit = false; //debatable...
+			dcol += integ.first;
+			if(color_layers) dcol_trans_accum += integ.first;
+			alpha_accum += integ.second;
 			if(!ref_ray_chromatic_volume) ref_ray_chromatic_volume = std::unique_ptr<Ray>(new Ray(ref_ray, Ray::DifferentialsCopy::No));
 		}
 	}
@@ -712,10 +714,10 @@ Rgb MonteCarloIntegrator::dispersive(int thread_id, int ray_level, bool chromati
 			color_layer->color_ += dcol_trans_accum;
 		}
 	}
-	return dcol * d_1;
+	return {dcol * d_1, alpha_accum * d_1};
 }
 
-Rgb MonteCarloIntegrator::glossy(int thread_id, int ray_level, bool chromatic_enabled, float wavelength, float &alpha, const Ray &ray, const SurfacePoint &sp, const Material *material, const BsdfFlags &mat_bsdfs, const BsdfFlags &bsdfs, const Vec3 &wo, float ray_min_dist, int additional_depth, const RayDivision &ray_division, ColorLayers *color_layers, const Camera *camera, RandomGenerator &random_generator, const PixelSamplingData &pixel_sampling_data) const
+std::pair<Rgb, float> MonteCarloIntegrator::glossy(int thread_id, int ray_level, bool chromatic_enabled, float wavelength, const Ray &ray, const SurfacePoint &sp, const Material *material, const BsdfFlags &mat_bsdfs, const BsdfFlags &bsdfs, const Vec3 &wo, float ray_min_dist, int additional_depth, const RayDivision &ray_division, ColorLayers *color_layers, const Camera *camera, RandomGenerator &random_generator, const PixelSamplingData &pixel_sampling_data) const
 {
 	const int ray_samples_glossy = ray_division.division_ > 1 ?
 								   std::max(1, initial_ray_samples_glossy_ / ray_division.division_) :
@@ -724,7 +726,7 @@ Rgb MonteCarloIntegrator::glossy(int thread_id, int ray_level, bool chromatic_en
 	ray_division_new.division_ *= ray_samples_glossy;
 	int branch = ray_division_new.division_ * ray_division.offset_;
 	unsigned int offs = ray_samples_glossy * pixel_sampling_data.sample_ + pixel_sampling_data.offset_;
-	const float d_1 = 1.f / static_cast<float>(ray_samples_glossy);
+	const float inverse_ray_samples_glossy = 1.f / static_cast<float>(ray_samples_glossy);
 	Rgb gcol(0.f);
 
 	Halton hal_2(2, offs);
@@ -733,6 +735,7 @@ Rgb MonteCarloIntegrator::glossy(int thread_id, int ray_level, bool chromatic_en
 	Rgb gcol_indirect_accum;
 	Rgb gcol_reflect_accum;
 	Rgb gcol_transmit_accum;
+	float alpha_accum = 0.f;
 
 	for(int ns = 0; ns < ray_samples_glossy; ++ns)
 	{
@@ -749,9 +752,10 @@ Rgb MonteCarloIntegrator::glossy(int thread_id, int ray_level, bool chromatic_en
 		{
 			if(mat_bsdfs.hasAny(BsdfFlags::Reflect) && !mat_bsdfs.hasAny(BsdfFlags::Transmit))
 			{
-				const Rgb g_ind_col = glossyReflectNoTransmit(thread_id, ray_level, chromatic_enabled, wavelength, ray, sp, material, bsdfs, wo, additional_depth, camera, pixel_sampling_data, ray_division_new, s_1, s_2, random_generator);
-				gcol += g_ind_col;
-				if(color_layers) gcol_indirect_accum += g_ind_col;
+				const auto result = glossyReflectNoTransmit(thread_id, ray_level, chromatic_enabled, wavelength, ray, sp, material, bsdfs, wo, additional_depth, camera, pixel_sampling_data, ray_division_new, s_1, s_2, random_generator);
+				gcol += result.first;
+				if(color_layers) gcol_indirect_accum += result.first;
+				alpha_accum += result.second;
 			}
 			else if(mat_bsdfs.hasAny(BsdfFlags::Reflect) && mat_bsdfs.hasAny(BsdfFlags::Transmit))
 			{
@@ -764,16 +768,17 @@ Rgb MonteCarloIntegrator::glossy(int thread_id, int ray_level, bool chromatic_en
 
 				if(s.sampled_flags_.hasAny(BsdfFlags::Reflect) && !s.sampled_flags_.hasAny(BsdfFlags::Dispersive))
 				{
-					const Rgb g_ind_col = glossyReflectDispersive(thread_id, ray_level, chromatic_enabled, wavelength, ray, sp, material, bsdfs, additional_depth, color_layers, camera, pixel_sampling_data, ray_division_new, mcol[0], w[0], dir[0], random_generator);
-					gcol += g_ind_col;
-					if(color_layers) gcol_reflect_accum += g_ind_col;
+					const auto result = glossyReflectDispersive(thread_id, ray_level, chromatic_enabled, wavelength, ray, sp, material, bsdfs, additional_depth, color_layers, camera, pixel_sampling_data, ray_division_new, mcol[0], w[0], dir[0], random_generator);
+					gcol += result.first;
+					if(color_layers) gcol_reflect_accum += result.first;
+					alpha_accum += result.second;
 				}
 				if(s.sampled_flags_.hasAny(BsdfFlags::Transmit))
 				{
-					Rgb g_ind_col;
-					std::tie(g_ind_col, alpha) = glossyTransmit(thread_id, ray_level, chromatic_enabled, wavelength, ray, sp, material, bsdfs, additional_depth, color_layers, camera, pixel_sampling_data, ray_division_new, mcol[1], w[1], dir[1], random_generator);
-					gcol += g_ind_col;
-					if(color_layers) gcol_transmit_accum += g_ind_col;
+					const auto result = glossyTransmit(thread_id, ray_level, chromatic_enabled, wavelength, ray, sp, material, bsdfs, additional_depth, color_layers, camera, pixel_sampling_data, ray_division_new, mcol[1], w[1], dir[1], random_generator);
+					gcol += result.first;
+					if(color_layers) gcol_transmit_accum += result.first;
+					alpha_accum += result.second;
 				}
 			}
 		}
@@ -783,56 +788,56 @@ Rgb MonteCarloIntegrator::glossy(int thread_id, int ray_level, bool chromatic_en
 	{
 		if(ColorLayer *color_layer = color_layers->find(Layer::GlossyIndirect))
 		{
-			gcol_indirect_accum *= d_1;
+			gcol_indirect_accum *= inverse_ray_samples_glossy;
 			color_layer->color_ += gcol_indirect_accum;
 		}
 		if(ColorLayer *color_layer = color_layers->find(Layer::Trans))
 		{
-			gcol_reflect_accum *= d_1;
+			gcol_reflect_accum *= inverse_ray_samples_glossy;
 			color_layer->color_ += gcol_reflect_accum;
 		}
 		if(ColorLayer *color_layer = color_layers->find(Layer::GlossyIndirect))
 		{
-			gcol_transmit_accum *= d_1;
+			gcol_transmit_accum *= inverse_ray_samples_glossy;
 			color_layer->color_ += gcol_transmit_accum;
 		}
 	}
-	return gcol * d_1;
+	return {gcol * inverse_ray_samples_glossy, alpha_accum * inverse_ray_samples_glossy};
 }
 
-Rgb MonteCarloIntegrator::glossyReflectDispersive(int thread_id, int ray_level, bool chromatic_enabled, float wavelength, const Ray &ray, const SurfacePoint &sp, const Material *material, const BsdfFlags &bsdfs, int additional_depth, const ColorLayers *color_layers, const Camera *camera, const PixelSamplingData &pixel_sampling_data, const RayDivision &ray_division_new, const Rgb &reflect_color, float w, const Vec3 &dir, RandomGenerator &random_generator) const
+std::pair<Rgb, float> MonteCarloIntegrator::glossyReflectDispersive(int thread_id, int ray_level, bool chromatic_enabled, float wavelength, const Ray &ray, const SurfacePoint &sp, const Material *material, const BsdfFlags &bsdfs, int additional_depth, const ColorLayers *color_layers, const Camera *camera, const PixelSamplingData &pixel_sampling_data, const RayDivision &ray_division_new, const Rgb &reflect_color, float w, const Vec3 &dir, RandomGenerator &random_generator) const
 {
 	Ray ref_ray = Ray(sp.p_, dir, scene_->ray_min_dist_);
 	if(ray.differentials_) ref_ray.differentials_ = sp.reflectedRay(ray.differentials_.get(), ray.dir_, ref_ray.dir_);
-	Rgba integ = integrate(thread_id, ray_level, chromatic_enabled, wavelength, ref_ray, additional_depth, ray_division_new, nullptr, camera, random_generator, pixel_sampling_data, true);
+	auto integ = integrate(thread_id, ray_level, chromatic_enabled, wavelength, ref_ray, additional_depth, ray_division_new, nullptr, camera, random_generator, pixel_sampling_data, true);
 	if(bsdfs.hasAny(BsdfFlags::Volumetric))
 	{
 		if(const VolumeHandler *vol = material->getVolumeHandler(sp.ng_ * ref_ray.dir_ < 0))
 		{
-			integ *= vol->transmittance(ref_ray);
+			integ.first *= vol->transmittance(ref_ray);
 		}
 	}
-	const Rgb col_reflect_factor = reflect_color * w;
-	return static_cast<Rgb>(integ) * col_reflect_factor;
+	integ.first *= reflect_color * w;
+	return {integ.first, integ.second};
 }
 
 std::pair<Rgb, float> MonteCarloIntegrator::glossyTransmit(int thread_id, int ray_level, bool chromatic_enabled, float wavelength, const Ray &ray, const SurfacePoint &sp, const Material *material, const BsdfFlags &bsdfs, int additional_depth, const ColorLayers *color_layers, const Camera *camera, const PixelSamplingData &pixel_sampling_data, const RayDivision &ray_division_new, const Rgb &transmit_col, float w, const Vec3 &dir, RandomGenerator &random_generator) const
 {
 	Ray ref_ray = Ray(sp.p_, dir, scene_->ray_min_dist_);
 	if(ray.differentials_) ref_ray.differentials_ = sp.refractedRay(ray.differentials_.get(), ray.dir_, ref_ray.dir_, material->getMatIor());
-	Rgba integ = integrate(thread_id, ray_level, chromatic_enabled, wavelength, ref_ray, additional_depth, ray_division_new, nullptr, camera, random_generator, pixel_sampling_data, true);
+	auto integ = integrate(thread_id, ray_level, chromatic_enabled, wavelength, ref_ray, additional_depth, ray_division_new, nullptr, camera, random_generator, pixel_sampling_data, true);
 	if(bsdfs.hasAny(BsdfFlags::Volumetric))
 	{
 		if(const VolumeHandler *vol = material->getVolumeHandler(sp.ng_ * ref_ray.dir_ < 0))
 		{
-			integ *= vol->transmittance(ref_ray);
+			integ.first *= vol->transmittance(ref_ray);
 		}
 	}
-	const Rgb col_transmit_factor = transmit_col * w;
-	return {static_cast<Rgb>(integ) * col_transmit_factor, integ.a_};
+	integ.first *= transmit_col * w;
+	return integ;
 }
 
-Rgb MonteCarloIntegrator::glossyReflectNoTransmit(int thread_id, int ray_level, bool chromatic_enabled, float wavelength, const Ray &ray, const SurfacePoint &sp, const Material *material, const BsdfFlags &bsdfs, const Vec3 &wo, int additional_depth, const Camera *camera, const PixelSamplingData &pixel_sampling_data, const RayDivision &ray_division_new, const float s_1, const float s_2, RandomGenerator &random_generator) const
+std::pair<Rgb, float> MonteCarloIntegrator::glossyReflectNoTransmit(int thread_id, int ray_level, bool chromatic_enabled, float wavelength, const Ray &ray, const SurfacePoint &sp, const Material *material, const BsdfFlags &bsdfs, const Vec3 &wo, int additional_depth, const Camera *camera, const PixelSamplingData &pixel_sampling_data, const RayDivision &ray_division_new, const float s_1, const float s_2, RandomGenerator &random_generator) const
 {
 	float w = 0.f;
 	Sample s(s_1, s_2, BsdfFlags::Glossy | BsdfFlags::Reflect);
@@ -844,38 +849,39 @@ Rgb MonteCarloIntegrator::glossyReflectNoTransmit(int thread_id, int ray_level, 
 		if(s.sampled_flags_.hasAny(BsdfFlags::Reflect)) ref_ray.differentials_ = sp.reflectedRay(ray.differentials_.get(), ray.dir_, ref_ray.dir_);
 		else if(s.sampled_flags_.hasAny(BsdfFlags::Transmit)) ref_ray.differentials_ = sp.refractedRay(ray.differentials_.get(), ray.dir_, ref_ray.dir_, material->getMatIor());
 	}
-	Rgba integ = static_cast<Rgb>(integrate(thread_id, ray_level, chromatic_enabled, wavelength, ref_ray, additional_depth, ray_division_new, nullptr, camera, random_generator, pixel_sampling_data, true));
+	auto integ = integrate(thread_id, ray_level, chromatic_enabled, wavelength, ref_ray, additional_depth, ray_division_new, nullptr, camera, random_generator, pixel_sampling_data, true);
 	if(bsdfs.hasAny(BsdfFlags::Volumetric))
 	{
 		if(const VolumeHandler *vol = material->getVolumeHandler(sp.ng_ * ref_ray.dir_ < 0))
 		{
-			integ *= vol->transmittance(ref_ray);
+			integ.first *= vol->transmittance(ref_ray);
 		}
 	}
-	return static_cast<Rgb>(integ) * mcol * w;
+	integ.first *= mcol * w;
+	return integ;
 }
 
-Rgb MonteCarloIntegrator::specularReflect(int thread_id, int ray_level, bool chromatic_enabled, float wavelength, float &alpha, const Ray &ray, const SurfacePoint &sp, const Material *material, const BsdfFlags &bsdfs, const DirectionColor *reflect_data, float ray_min_dist, int additional_depth, const RayDivision &ray_division, ColorLayers *color_layers, RandomGenerator &random_generator, const PixelSamplingData &pixel_sampling_data, bool lights_geometry_material_emit, const Camera *camera) const
+std::pair<Rgb, float> MonteCarloIntegrator::specularReflect(int thread_id, int ray_level, bool chromatic_enabled, float wavelength, const Ray &ray, const SurfacePoint &sp, const Material *material, const BsdfFlags &bsdfs, const DirectionColor *reflect_data, float ray_min_dist, int additional_depth, const RayDivision &ray_division, ColorLayers *color_layers, RandomGenerator &random_generator, const PixelSamplingData &pixel_sampling_data, bool lights_geometry_material_emit, const Camera *camera) const
 {
 	Ray ref_ray(sp.p_, reflect_data->dir_, ray_min_dist);
 	if(ray.differentials_) ref_ray.differentials_ = sp.reflectedRay(ray.differentials_.get(), ray.dir_, ref_ray.dir_);
-	Rgb integ = integrate(thread_id, ray_level, chromatic_enabled, wavelength, ref_ray, additional_depth, ray_division, nullptr, camera, random_generator, pixel_sampling_data, lights_geometry_material_emit);
+	auto integ = integrate(thread_id, ray_level, chromatic_enabled, wavelength, ref_ray, additional_depth, ray_division, nullptr, camera, random_generator, pixel_sampling_data, lights_geometry_material_emit);
 	if(bsdfs.hasAny(BsdfFlags::Volumetric))
 	{
 		if(const VolumeHandler *vol = material->getVolumeHandler(sp.ng_ * ref_ray.dir_ < 0))
 		{
-			integ *= vol->transmittance(ref_ray);
+			integ.first *= vol->transmittance(ref_ray);
 		}
 	}
-	const Rgb col_ind = static_cast<Rgb>(integ) * reflect_data->col_;
+	integ.first *= reflect_data->col_;
 	if(color_layers)
 	{
-		if(ColorLayer *color_layer = color_layers->find(Layer::ReflectPerfect)) color_layer->color_ += col_ind;
+		if(ColorLayer *color_layer = color_layers->find(Layer::ReflectPerfect)) color_layer->color_ += integ.first;
 	}
-	return col_ind;
+	return integ;
 }
 
-Rgb MonteCarloIntegrator::specularRefract(int thread_id, int ray_level, bool chromatic_enabled, float wavelength, float &alpha, const Ray &ray, const SurfacePoint &sp, const Material *material, const BsdfFlags &bsdfs, const DirectionColor *refract_data, float ray_min_dist, int additional_depth, const RayDivision &ray_division, ColorLayers *color_layers, RandomGenerator &random_generator, const PixelSamplingData &pixel_sampling_data, bool lights_geometry_material_emit, const Camera *camera) const
+std::pair<Rgb, float> MonteCarloIntegrator::specularRefract(int thread_id, int ray_level, bool chromatic_enabled, float wavelength, const Ray &ray, const SurfacePoint &sp, const Material *material, const BsdfFlags &bsdfs, const DirectionColor *refract_data, float ray_min_dist, int additional_depth, const RayDivision &ray_division, ColorLayers *color_layers, RandomGenerator &random_generator, const PixelSamplingData &pixel_sampling_data, bool lights_geometry_material_emit, const Camera *camera) const
 {
 	Ray ref_ray;
 	float transp_bias_factor = material->getTransparentBiasFactor();
@@ -888,26 +894,28 @@ Rgb MonteCarloIntegrator::specularRefract(int thread_id, int ray_level, bool chr
 	else ref_ray = Ray(sp.p_, refract_data->dir_, ray_min_dist);
 
 	if(ray.differentials_) ref_ray.differentials_ = sp.refractedRay(ray.differentials_.get(), ray.dir_, ref_ray.dir_, material->getMatIor());
-	Rgba integ = integrate(thread_id, ray_level, chromatic_enabled, wavelength, ref_ray, additional_depth, ray_division, nullptr, camera, random_generator, pixel_sampling_data, lights_geometry_material_emit);
+	auto integ = integrate(thread_id, ray_level, chromatic_enabled, wavelength, ref_ray, additional_depth, ray_division, nullptr, camera, random_generator, pixel_sampling_data, lights_geometry_material_emit);
 
 	if(bsdfs.hasAny(BsdfFlags::Volumetric))
 	{
 		if(const VolumeHandler *vol = material->getVolumeHandler(sp.ng_ * ref_ray.dir_ < 0))
 		{
-			integ *= vol->transmittance(ref_ray);
+			integ.first *= vol->transmittance(ref_ray);
 		}
 	}
-	const Rgb col_ind = static_cast<Rgb>(integ) * refract_data->col_;
+	integ.first *= refract_data->col_;
 	if(color_layers)
 	{
-		if(ColorLayer *color_layer = color_layers->find(Layer::RefractPerfect)) color_layer->color_ += col_ind;
+		if(ColorLayer *color_layer = color_layers->find(Layer::RefractPerfect)) color_layer->color_ += integ.first;
 	}
-	alpha = integ.a_;
-	return col_ind;
+	return integ;
 }
 
-void MonteCarloIntegrator::recursiveRaytrace(int thread_id, int ray_level, bool chromatic_enabled, float wavelength, const Ray &ray, const BsdfFlags &bsdfs, SurfacePoint &sp, const Vec3 &wo, Rgb &col, float &alpha, int additional_depth, const RayDivision &ray_division, ColorLayers *color_layers, const Camera *camera, RandomGenerator &random_generator, const PixelSamplingData &pixel_sampling_data) const
+std::pair<Rgb, float> MonteCarloIntegrator::recursiveRaytrace(int thread_id, int ray_level, bool chromatic_enabled, float wavelength, const Ray &ray, const BsdfFlags &bsdfs, SurfacePoint &sp, const Vec3 &wo, int additional_depth, const RayDivision &ray_division, ColorLayers *color_layers, const Camera *camera, RandomGenerator &random_generator, const PixelSamplingData &pixel_sampling_data) const
 {
+	Rgb col {0.f};
+	float alpha = 0.f;
+	int alpha_count = 0;
 	if(ray_level <= (r_depth_ + additional_depth))
 	{
 		const Material *material = sp.material_;
@@ -915,14 +923,20 @@ void MonteCarloIntegrator::recursiveRaytrace(int thread_id, int ray_level, bool 
 		// dispersive effects with recursive raytracing:
 		if(bsdfs.hasAny(BsdfFlags::Dispersive) && chromatic_enabled)
 		{
-			col += dispersive(thread_id, ray_level, chromatic_enabled, sp, material, bsdfs, wo, scene_->ray_min_dist_, additional_depth, ray_division, color_layers, camera, random_generator, pixel_sampling_data);
+			const auto result = dispersive(thread_id, ray_level, chromatic_enabled, sp, material, bsdfs, wo, scene_->ray_min_dist_, additional_depth, ray_division, color_layers, camera, random_generator, pixel_sampling_data);
+			col += result.first;
+			alpha += result.second;
+			++alpha_count;
 		}
 		if(ray_level < 20 && bsdfs.hasAny(BsdfFlags::Glossy | BsdfFlags::Specular | BsdfFlags::Filter))
 		{
 			// glossy reflection with recursive raytracing:
 			if(bsdfs.hasAny(BsdfFlags::Glossy))
 			{
-				col += glossy(thread_id, ray_level, chromatic_enabled, wavelength, alpha, ray, sp, material, mat_bsdfs, bsdfs, wo, scene_->ray_min_dist_, additional_depth, ray_division, color_layers, camera, random_generator, pixel_sampling_data);
+				const auto result = glossy(thread_id, ray_level, chromatic_enabled, wavelength, ray, sp, material, mat_bsdfs, bsdfs, wo, scene_->ray_min_dist_, additional_depth, ray_division, color_layers, camera, random_generator, pixel_sampling_data);
+				col += result.first;
+				alpha += result.second;
+				++alpha_count;
 			}
 			//...perfect specular reflection/refraction with recursive raytracing...
 			if(bsdfs.hasAny((BsdfFlags::Specular | BsdfFlags::Filter)))
@@ -930,15 +944,22 @@ void MonteCarloIntegrator::recursiveRaytrace(int thread_id, int ray_level, bool 
 				const Specular specular = material->getSpecular(ray_level, sp.mat_data_.get(), sp, wo, chromatic_enabled, wavelength);
 				if(specular.reflect_)
 				{
-					col += specularReflect(thread_id, ray_level, chromatic_enabled, wavelength, alpha, ray, sp, material, bsdfs, specular.reflect_.get(), scene_->ray_min_dist_, additional_depth, ray_division, color_layers, random_generator, pixel_sampling_data, true, camera);
+					const auto result = specularReflect(thread_id, ray_level, chromatic_enabled, wavelength, ray, sp, material, bsdfs, specular.reflect_.get(), scene_->ray_min_dist_, additional_depth, ray_division, color_layers, random_generator, pixel_sampling_data, true, camera);
+					col += result.first;
+					alpha += result.second;
+					++alpha_count;
 				}
 				if(specular.refract_)
 				{
-					col += specularRefract(thread_id, ray_level, chromatic_enabled, wavelength, alpha, ray, sp, material, bsdfs, specular.refract_.get(), scene_->ray_min_dist_, additional_depth, ray_division, color_layers, random_generator, pixel_sampling_data, true, camera);
+					const auto result = specularRefract(thread_id, ray_level, chromatic_enabled, wavelength, ray, sp, material, bsdfs, specular.refract_.get(), scene_->ray_min_dist_, additional_depth, ray_division, color_layers, random_generator, pixel_sampling_data, true, camera);
+					col += result.first;
+					alpha += result.second;
+					++alpha_count;
 				}
 			}
 		}
 	}
+	return {col, (alpha_count > 0 ? alpha / alpha_count : 1.f)};
 }
 
 END_YAFARAY

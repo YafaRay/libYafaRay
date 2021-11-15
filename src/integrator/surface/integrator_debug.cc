@@ -63,7 +63,7 @@ bool DebugIntegrator::preprocess(const RenderControl &render_control, Timer &tim
 	return true;
 }
 
-Rgba DebugIntegrator::integrate(int thread_id, int ray_level, bool chromatic_enabled, float wavelength, Ray &ray, int additional_depth, const RayDivision &ray_division, ColorLayers *color_layers, const Camera *camera, RandomGenerator &random_generator, const PixelSamplingData &pixel_sampling_data, bool lights_geometry_material_emit) const
+std::pair<Rgb, float> DebugIntegrator::integrate(int thread_id, int ray_level, bool chromatic_enabled, float wavelength, Ray &ray, int additional_depth, const RayDivision &ray_division, ColorLayers *color_layers, const Camera *camera, RandomGenerator &random_generator, const PixelSamplingData &pixel_sampling_data, bool lights_geometry_material_emit) const
 {
 	Rgb col(0.f);
 	SurfacePoint sp;
@@ -88,7 +88,7 @@ Rgba DebugIntegrator::integrate(int thread_id, int ray_level, bool chromatic_ena
 			col = Rgb((sp.ds_dv_.x_ + 1.f) * .5f, (sp.ds_dv_.y_ + 1.f) * .5f, (sp.ds_dv_.z_ + 1.f) * .5f);
 	}
 	lights_geometry_material_emit = old_lights_geometry_material_emit;
-	return Rgba(col, 1.f);
+	return {col, 1.f};
 }
 
 std::unique_ptr<Integrator> DebugIntegrator::factory(Logger &logger, ParamMap &params, const Scene &scene)

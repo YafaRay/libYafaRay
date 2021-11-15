@@ -37,7 +37,7 @@ BEGIN_YAFARAY
 class ParamMap;
 class Scene;
 class ProgressBar;
-class Rgba;
+class Rgb;
 class Ray;
 class ColorLayers;
 class ImageFilm;
@@ -83,7 +83,7 @@ class Integrator
 class SurfaceIntegrator: public Integrator
 {
 	public:
-		virtual Rgba integrate(int thread_id, int ray_level, bool chromatic_enabled, float wavelength, Ray &ray, int additional_depth, const RayDivision &ray_division, ColorLayers *color_layers, const Camera *camera, RandomGenerator &random_generator, const PixelSamplingData &pixel_sampling_data, bool lights_geometry_material_emit) const = 0; 	//!< chromatic_enabled indicates wether the full spectrum is calculated (true) or only a single wavelength (false). wavelength is the (normalized) wavelength being used when chromatic is false. The range is defined going from 400nm (0.0) to 700nm (1.0), although the widest range humans can perceive is ofteb given 380-780nm.
+		virtual std::pair<Rgb, float> integrate(int thread_id, int ray_level, bool chromatic_enabled, float wavelength, Ray &ray, int additional_depth, const RayDivision &ray_division, ColorLayers *color_layers, const Camera *camera, RandomGenerator &random_generator, const PixelSamplingData &pixel_sampling_data, bool lights_geometry_material_emit) const = 0; 	//!< chromatic_enabled indicates wether the full spectrum is calculated (true) or only a single wavelength (false). wavelength is the (normalized) wavelength being used when chromatic is false. The range is defined going from 400nm (0.0) to 700nm (1.0), although the widest range humans can perceive is ofteb given 380-780nm.
 
 	protected:
 		SurfaceIntegrator(Logger &logger) : Integrator(logger) { }
@@ -96,8 +96,8 @@ class SurfaceIntegrator: public Integrator
 class VolumeIntegrator: public Integrator
 {
 	public:
-		virtual Rgba transmittance(RandomGenerator &random_generator, const Ray &ray) const = 0;
-		virtual Rgba integrate(RandomGenerator &random_generator, const Ray &ray, int additional_depth = 0) const = 0;
+		virtual Rgb transmittance(RandomGenerator &random_generator, const Ray &ray) const = 0;
+		virtual Rgb integrate(RandomGenerator &random_generator, const Ray &ray, int additional_depth = 0) const = 0;
 		virtual bool preprocess(const RenderControl &render_control, Timer &timer, const RenderView *render_view, ImageFilm *image_film) override { return true; };
 	protected:
 		VolumeIntegrator(Logger &logger) : Integrator(logger) { }

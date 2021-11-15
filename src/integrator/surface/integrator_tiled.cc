@@ -366,7 +366,8 @@ bool TiledIntegrator::renderTile(const RenderArea &a, const Camera *camera, cons
 				}
 				camera_ray.ray_.time_ = time;
 				RayDivision ray_division;
-				color_layers(Layer::Combined).color_ = integrate(thread_id, 0, true, 0.f, camera_ray.ray_, 0, ray_division, &color_layers, camera, random_generator, pixel_sampling_data, false);
+				const auto integ = integrate(thread_id, 0, true, 0.f, camera_ray.ray_, 0, ray_division, &color_layers, camera, random_generator, pixel_sampling_data, false);
+				color_layers(Layer::Combined).color_ = {integ.first, integ.second};
 				for(auto &color_layer : color_layers)
 				{
 					switch(color_layer.first)
@@ -714,19 +715,19 @@ std::pair<Rgb, float> TiledIntegrator::volumetricEffects(const Ray &ray, ColorLa
 	return {col, alpha};
 }
 
-std::pair<Rgb, float> TiledIntegrator::background(const Ray &ray, ColorLayers *color_layers, Rgb col, float alpha, bool transparent_background, bool transparent_refracted_background, const Background *background)
+std::pair<Rgb, float> TiledIntegrator::background(const Ray &ray, ColorLayers *color_layers, bool transparent_background, bool transparent_refracted_background, const Background *background, int ray_level)
 {
-	if(transparent_background) alpha = 0.f;
-	if(background && !transparent_refracted_background)
+	if(transparent_background && (ray_level == 0 || transparent_refracted_background)) return {0.f, 0.f};
+	else if(background)
 	{
-		const Rgb col_tmp = (*background)(ray.dir_);
-		col += col_tmp;
+		const Rgb col = (*background)(ray.dir_);
 		if(color_layers)
 		{
-			if(ColorLayer *color_layer = color_layers->find(Layer::Env)) color_layer->color_ += col_tmp;
+			if(ColorLayer *color_layer = color_layers->find(Layer::Env)) color_layer->color_ = col;
 		}
+		return {col, 1.f};
 	}
-	return {col, alpha};
+	else return {0.f, 1.f};
 }
 
 

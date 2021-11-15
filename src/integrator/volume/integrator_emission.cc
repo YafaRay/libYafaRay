@@ -25,35 +25,35 @@
 
 BEGIN_YAFARAY
 
-Rgba EmissionIntegrator::transmittance(RandomGenerator &random_generator, const Ray &ray) const
+Rgb EmissionIntegrator::transmittance(RandomGenerator &random_generator, const Ray &ray) const
 {
-	Rgba result(1.f);
-	auto &volumes = scene_->getVolumeRegions();
+	Rgb result {1.f};
+	const auto &volumes = scene_->getVolumeRegions();
 	for(const auto &v : volumes) result *= v.second.get()->tau(ray, 0, 0);
-	result = Rgba(math::exp(-result.getR()), math::exp(-result.getG()), math::exp(-result.getB()));
-	return result;
+	return math::exp(-result.getR()), math::exp(-result.getG()), math::exp(-result.getB());
 }
 
-Rgba EmissionIntegrator::integrate(RandomGenerator &random_generator, const Ray &ray, int additional_depth) const {
+Rgb EmissionIntegrator::integrate(RandomGenerator &random_generator, const Ray &ray, int additional_depth) const
+{
 	int n = 10; // samples + 1 on the ray inside the volume
-	Rgba result(0.f);
-	bool hit = ray.tmax_ > 0.f;
-	auto &volumes = scene_->getVolumeRegions();
+	const bool hit = ray.tmax_ > 0.f;
+	const auto &volumes = scene_->getVolumeRegions();
+	Rgb result {0.f};
 	for(const auto &v : volumes)
 	{
 		Bound::Cross cross = v.second.get()->crossBound(ray);
 		if(!cross.crossed_) continue;
 		if(hit && ray.tmax_ < cross.enter_) continue;
 		if(hit && ray.tmax_ < cross.leave_) cross.leave_ = ray.tmax_;
-		float step = (cross.leave_ - cross.enter_) / static_cast<float>(n); // length between two sample points
+		const float step = (cross.leave_ - cross.enter_) / static_cast<float>(n); // length between two sample points
 		--n;
 		float pos = cross.enter_ + 0.5 * step;
 		Rgb tr(1.f);
 		for(int i = 0; i < n; ++i)
 		{
-			Ray step_ray(ray.from_ + (ray.dir_ * pos), ray.dir_, 0, step, 0);
-			Rgb step_tau = v.second->tau(step_ray, 0, 0);
-			tr *= Rgba(math::exp(-step_tau.getR()), math::exp(-step_tau.getG()), math::exp(-step_tau.getB()));
+			const Ray step_ray(ray.from_ + (ray.dir_ * pos), ray.dir_, 0, step, 0);
+			const Rgb step_tau = v.second->tau(step_ray, 0, 0);
+			tr *= Rgb(math::exp(-step_tau.getR()), math::exp(-step_tau.getG()), math::exp(-step_tau.getB()));
 			result += tr * v.second->emission(step_ray.from_, step_ray.dir_);
 			pos += step;
 		}

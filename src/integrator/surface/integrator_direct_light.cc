@@ -25,6 +25,7 @@
 #include "color/color_layers.h"
 #include "accelerator/accelerator.h"
 #include "render/imagesplitter.h"
+#include "math/interpolation.h"
 
 BEGIN_YAFARAY
 
@@ -95,13 +96,11 @@ bool DirectLightIntegrator::preprocess(const RenderControl &render_control, Time
 	return success;
 }
 
-Rgba DirectLightIntegrator::integrate(int thread_id, int ray_level, bool chromatic_enabled, float wavelength, Ray &ray, int additional_depth, const RayDivision &ray_division, ColorLayers *color_layers, const Camera *camera, RandomGenerator &random_generator, const PixelSamplingData &pixel_sampling_data, bool lights_geometry_material_emit) const
+std::pair<Rgb, float> DirectLightIntegrator::integrate(int thread_id, int ray_level, bool chromatic_enabled, float wavelength, Ray &ray, int additional_depth, const RayDivision &ray_division, ColorLayers *color_layers, const Camera *camera, RandomGenerator &random_generator, const PixelSamplingData &pixel_sampling_data, bool lights_geometry_material_emit) const
 {
-	Rgb col(0.f);
-	float alpha;
+	Rgb col {0.f};
+	float alpha = 1.f;
 	SurfacePoint sp;
-	if(transp_background_) alpha = 0.f;
-	else alpha = 1.f;
 	// Shoot ray into scene
 	const Accelerator *accelerator = scene_->getAccelerator();
 	if(accelerator && accelerator->intersect(ray, sp, camera)) // If it hits
@@ -125,26 +124,22 @@ Rgba DirectLightIntegrator::integrate(int thread_id, int ray_level, bool chromat
 			col += estimateAllDirectLight(chromatic_enabled, wavelength, sp, wo, ray_division, color_layers, camera, random_generator, pixel_sampling_data);
 			if(use_photon_caustics_)
 			{
-				std::tie(col, alpha) = causticPhotons(ray, color_layers, std::move(col), std::move(alpha), sp, wo, aa_noise_params_.clamp_indirect_, caustic_map_.get(), caus_radius_, n_caus_search_);
+				col += causticPhotons(ray, color_layers, sp, wo, aa_noise_params_.clamp_indirect_, caustic_map_.get(), caus_radius_, n_caus_search_);
 			}
 			if(use_ambient_occlusion_) col += sampleAmbientOcclusion(chromatic_enabled, wavelength, sp, wo, ray_division, camera, pixel_sampling_data, lights_geometry_material_emit, tr_shad_, false, scene_->getAccelerator(), ao_samples_, scene_->shadow_bias_auto_, scene_->shadow_bias_, ao_dist_, ao_col_, s_depth_);
 		}
-		recursiveRaytrace(thread_id, ray_level + 1, chromatic_enabled, wavelength, ray, mat_bsdfs, sp, wo, col, alpha, additional_depth, ray_division, color_layers, camera, random_generator, pixel_sampling_data);
+		const auto recursive_result = recursiveRaytrace(thread_id, ray_level + 1, chromatic_enabled, wavelength, ray, mat_bsdfs, sp, wo, additional_depth, ray_division, color_layers, camera, random_generator, pixel_sampling_data);
+		col += recursive_result.first;
+		alpha = recursive_result.second;
 		if(color_layers)
 		{
 			generateCommonLayers(sp, scene_->getMaskParams(), color_layers);
 			generateOcclusionLayers(chromatic_enabled, wavelength, ray_division, color_layers, camera, pixel_sampling_data, lights_geometry_material_emit, sp, wo, scene_->getAccelerator(), ao_samples_, scene_->shadow_bias_auto_, scene_->shadow_bias_, ao_dist_, ao_col_, s_depth_);
 		}
-		if(transp_refracted_background_)
-		{
-			const float mat_alpha = material->getAlpha(sp.mat_data_.get(), sp, wo, camera);
-			alpha = mat_alpha + (1.f - mat_alpha) * alpha;
-		}
-		else alpha = 1.f;
 	}
 	else // Nothing hit, return background if any
 	{
-		std::tie(col, alpha) = background(ray, color_layers, std::move(col), std::move(alpha), transp_background_, transp_refracted_background_, scene_->getBackground());
+		std::tie(col, alpha) = background(ray, color_layers, transp_background_, transp_refracted_background_, scene_->getBackground(), ray_level);
 	}
 	if(scene_->vol_integrator_)
 	{

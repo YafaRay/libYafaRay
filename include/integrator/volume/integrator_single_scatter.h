@@ -43,9 +43,9 @@ class SingleScatterIntegrator final : public VolumeIntegrator
 		virtual std::string getName() const override { return "SingleScatter"; }
 		virtual bool preprocess(const RenderControl &render_control, Timer &timer, const RenderView *render_view, ImageFilm *image_film) override;
 		// optical thickness, absorption, attenuation, extinction
-		virtual Rgba transmittance(RandomGenerator &random_generator, const Ray &ray) const override;
+		virtual Rgb transmittance(RandomGenerator &random_generator, const Ray &ray) const override;
 		// emission and in-scattering
-		virtual Rgba integrate(RandomGenerator &random_generator, const Ray &ray, int additional_depth = 0) const override;
+		virtual Rgb integrate(RandomGenerator &random_generator, const Ray &ray, int additional_depth = 0) const override;
 		Rgb getInScatter(RandomGenerator &random_generator, const Ray &step_ray, float current_step) const;
 
 		bool adaptive_;

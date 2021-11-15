@@ -266,7 +266,8 @@ Rgb SingleScatterIntegrator::getInScatter(RandomGenerator &random_generator, con
 	return in_scatter;
 }
 
-Rgba SingleScatterIntegrator::transmittance(RandomGenerator &random_generator, const Ray &ray) const {
+Rgb SingleScatterIntegrator::transmittance(RandomGenerator &random_generator, const Ray &ray) const
+{
 	if(vr_size_ == 0) return {1.f};
 	Rgba tr(1.f);
 	const auto &volumes = scene_->getVolumeRegions();
@@ -277,97 +278,77 @@ Rgba SingleScatterIntegrator::transmittance(RandomGenerator &random_generator, c
 		{
 			const float random_value = random_generator();
 			const Rgb optical_thickness = v.second->tau(ray, step_size_, random_value);
-			tr *= Rgba(math::exp(-optical_thickness.energy()));
+			tr *= Rgb(math::exp(-optical_thickness.energy()));
 		}
 	}
-
 	return tr;
 }
 
-Rgba SingleScatterIntegrator::integrate(RandomGenerator &random_generator, const Ray &ray, int additional_depth) const
+Rgb SingleScatterIntegrator::integrate(RandomGenerator &random_generator, const Ray &ray, int additional_depth) const
 {
-	float t_0 = 1e10f, t_1 = -1e10f;
-
-	Rgba result(0.f);
-	//return result;
-	if(vr_size_ == 0) return result;
-
-	bool hit = (ray.tmax_ > 0.f);
+	if(vr_size_ == 0) return {0.f};
+	const bool hit = (ray.tmax_ > 0.f);
 	const auto &volumes = scene_->getVolumeRegions();
-
+	float t_0 = 1e10f, t_1 = -1e10f;
 	// find min t0 and max t1
 	for(const auto &v : volumes)
 	{
 		Bound::Cross cross = v.second->crossBound(ray);
 		if(!cross.crossed_) continue;
 		if(hit && ray.tmax_ < cross.enter_) continue;
-
 		if(cross.enter_ < 0.f) cross.enter_ = 0.f;
 		if(hit && ray.tmax_ < cross.leave_) cross.leave_ = ray.tmax_;
 		if(cross.leave_ > t_1) t_1 = cross.leave_;
 		if(cross.enter_ < t_0) t_0 = cross.enter_;
 	}
-
 	float dist = t_1 - t_0;
-	if(dist < 1e-3f) return result;
+	if(dist < 1e-3f) return {0.f};
 
-	float pos;
-	int samples;
-	pos = t_0 - random_generator() * step_size_; // start position of ray marching
+	float pos = t_0 - random_generator() * step_size_; // start position of ray marching
 	dist = t_1 - pos;
-	samples = dist / step_size_ + 1;
-
+	const int samples = dist / step_size_ + 1;
 	std::vector<float> density_samples;
 	std::vector<float> accum_density;
 	int adaptive_resolution = 1;
-
 	if(adaptive_)
 	{
 		adaptive_resolution = adaptive_step_size_ / step_size_;
-
 		density_samples.resize(samples);
 		accum_density.resize(samples);
-
 		accum_density.at(0) = 0.f;
 		for(int i = 0; i < samples; ++i)
 		{
-			Point3 p = ray.from_ + (step_size_ * i + pos) * ray.dir_;
-
+			const Point3 p = ray.from_ + (step_size_ * i + pos) * ray.dir_;
 			float density = 0;
 			for(const auto &v : volumes)
 			{
 				density += v.second->sigmaT(p, Vec3()).energy();
 			}
-
 			density_samples.at(i) = density;
-			if(i > 0)
-				accum_density.at(i) = accum_density.at(i - 1) + density * step_size_;
+			if(i > 0) accum_density.at(i) = accum_density.at(i - 1) + density * step_size_;
 		}
 	}
-
-	float adapt_thresh = .01f;
+	constexpr float adapt_thresh = .01f;
 	bool adapt_now = false;
 	float current_step = step_size_;
 	int step_length = 1;
 	int step_to_stop_adapt = -1;
 	Rgb tr_tmp(1.f); // transmissivity during ray marching
-
 	if(adaptive_)
 	{
 		current_step = adaptive_step_size_;
 		step_length = adaptive_resolution;
 	}
-
 	Rgb step_tau(0.f);
-	int lookahead_samples = adaptive_resolution / 10;
-
+	const int lookahead_samples = adaptive_resolution / 10;
+	Rgb col {0.f};
 	for(int step_sample = 0; step_sample < samples; step_sample += step_length)
 	{
 		if(adaptive_)
 		{
 			if(!adapt_now)
 			{
-				int next_sample = (step_sample + adaptive_resolution > samples - 1) ? samples - 1 : step_sample + adaptive_resolution;
+				const int next_sample = (step_sample + adaptive_resolution > samples - 1) ? samples - 1 : step_sample + adaptive_resolution;
 				if(std::abs(accum_density.at(step_sample) - accum_density.at(next_sample)) > adapt_thresh)
 				{
 					adapt_now = true;
@@ -377,9 +358,7 @@ Rgba SingleScatterIntegrator::integrate(RandomGenerator &random_generator, const
 				}
 			}
 		}
-
-		Ray step_ray(ray.from_ + (ray.dir_ * pos), ray.dir_, 0, current_step, 0);
-
+		const Ray step_ray(ray.from_ + (ray.dir_ * pos), ray.dir_, 0, current_step, 0);
 		if(adaptive_)
 		{
 			step_tau = accum_density.at(step_sample);
@@ -395,19 +374,13 @@ Rgba SingleScatterIntegrator::integrate(RandomGenerator &random_generator, const
 				}
 			}
 		}
-
 		tr_tmp = math::exp(-step_tau.energy());
-
 		if(optimize_ && tr_tmp.energy() < 1e-3f)
 		{
-			float random_val = random_generator();
-			if(random_val < 0.5f)
-			{
-				break;
-			}
+			const float random_val = random_generator();
+			if(random_val < 0.5f) break;
 			tr_tmp = tr_tmp / random_val;
 		}
-
 		float sigma_s = 0.0f;
 		for(const auto &v : volumes)
 		{
@@ -417,12 +390,10 @@ Rgba SingleScatterIntegrator::integrate(RandomGenerator &random_generator, const
 				sigma_s += v.second->sigmaS(step_ray.from_, step_ray.dir_).energy();
 			}
 		}
-
 		// with a sigma_s close to 0, no light can be scattered -> computation can be skipped
-
 		if(optimize_ && sigma_s < 1e-3f)
 		{
-			float random_val = random_generator();
+			const float random_val = random_generator();
 			if(random_val < 0.5f)
 			{
 				pos += current_step;
@@ -430,14 +401,12 @@ Rgba SingleScatterIntegrator::integrate(RandomGenerator &random_generator, const
 			}
 			sigma_s = sigma_s / random_val;
 		}
-
-		result += tr_tmp * getInScatter(random_generator, step_ray, current_step) * sigma_s * current_step;
-
+		col += tr_tmp * getInScatter(random_generator, step_ray, current_step) * sigma_s * current_step;
 		if(adaptive_)
 		{
 			if(adapt_now && step_sample >= step_to_stop_adapt)
 			{
-				int next_sample = (step_sample + adaptive_resolution > samples - 1) ? samples - 1 : step_sample + adaptive_resolution;
+				const int next_sample = (step_sample + adaptive_resolution > samples - 1) ? samples - 1 : step_sample + adaptive_resolution;
 				if(std::abs(accum_density.at(step_sample) - accum_density.at(next_sample)) > adapt_thresh)
 				{
 					// continue moving slowly ahead until the discontinuity is found
@@ -451,11 +420,9 @@ Rgba SingleScatterIntegrator::integrate(RandomGenerator &random_generator, const
 				}
 			}
 		}
-
 		pos += current_step;
 	}
-	result.a_ = 1.0f; // FIXME: get correct alpha value, does it even matter?
-	return result;
+	return col;
 }
 
 std::unique_ptr<Integrator> SingleScatterIntegrator::factory(Logger &logger, ParamMap &params, const Scene &scene)

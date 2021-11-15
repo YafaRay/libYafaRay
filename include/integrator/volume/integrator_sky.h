@@ -38,11 +38,11 @@ class SkyIntegrator : public VolumeIntegrator
 		virtual std::string getName() const override { return "Sky"; }
 		virtual bool preprocess(const RenderControl &render_control, Timer &timer, const RenderView *render_view, ImageFilm *image_film) override;
 		// optical thickness, absorption, attenuation, extinction
-		virtual Rgba transmittance(RandomGenerator &random_generator, const Ray &ray) const override;
+		virtual Rgb transmittance(RandomGenerator &random_generator, const Ray &ray) const override;
 		// emission and in-scattering
-		virtual Rgba integrate(RandomGenerator &random_generator, const Ray &ray, int additional_depth = 0) const override;
-		Rgba skyTau(const Ray &ray) const;
-		Rgba skyTau(const Ray &ray, float beta, float alpha) const;
+		Rgb integrate(RandomGenerator &random_generator, const Ray &ray, int additional_depth = 0) const override;
+		Rgb skyTau(const Ray &ray) const;
+		Rgb skyTau(const Ray &ray, float beta, float alpha) const;
 		static float mieScatter(float theta);
 
 		float step_size_;
