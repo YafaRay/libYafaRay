@@ -25,7 +25,6 @@
 #include "color/color_layers.h"
 #include "accelerator/accelerator.h"
 #include "render/imagesplitter.h"
-#include "math/interpolation.h"
 
 BEGIN_YAFARAY
 
@@ -116,7 +115,7 @@ std::pair<Rgb, float> DirectLightIntegrator::integrate(int thread_id, int ray_le
 			col += col_tmp;
 			if(color_layers)
 			{
-				if(ColorLayer *color_layer = color_layers->find(Layer::Emit)) color_layer->color_ = col_tmp;
+				if(Rgba *color_layer = color_layers->find(Layer::Emit)) *color_layer = col_tmp;
 			}
 		}
 		if(mat_bsdfs.hasAny(BsdfFlags::Diffuse))

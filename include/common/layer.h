@@ -113,7 +113,7 @@ class Layer final
 			DebugDudxyDvdxy,
 		};
 		Layer() = default;
-		Layer(const Type &type, const Image::Type &image_type = Image::Type::None, const Image::Type &exported_image_type = Image::Type::None, const std::string &exported_image_name = "");
+		Layer(const Type &type, Image::Type image_type = Image::Type::None, Image::Type exported_image_type = Image::Type::None, const std::string &exported_image_name = "");
 		Layer(const std::string &type_name, const std::string &image_type_name = "", const std::string &exported_image_type_name = "", const std::string &exported_image_name = "");
 		struct Flags : public yafaray::Flags
 		{
@@ -136,8 +136,8 @@ class Layer final
 		std::string print() const;
 
 		void setType(const Type &type) { type_ = type; }
-		void setImageType(const Image::Type &image_type) { image_type_ = image_type; }
-		void setExportedImageType(const Image::Type &exported_image_type) { exported_image_type_ = exported_image_type; }
+		void setImageType(Image::Type image_type) { image_type_ = image_type; }
+		void setExportedImageType(Image::Type exported_image_type) { exported_image_type_ = exported_image_type; }
 		void setExportedImageName(const std::string &exported_image_name) { exported_image_name_ = exported_image_name; }
 
 		static std::string getTypeName(const Type &type);
@@ -147,6 +147,7 @@ class Layer final
 		static Image::Type getDefaultImageType(const Type &type);
 		static Flags getFlags(const Type &type);
 		static const std::map<Type, std::string> &getDictTypeTypeName() { return dict_type_typename_; }
+		static Rgba postProcess(const Rgba &color, Layer::Type layer_type, ColorSpace color_space, float gamma, bool alpha_premultiply);
 
 	private:
 		static std::map<std::string, Type> initDictTypeNamesTypes();

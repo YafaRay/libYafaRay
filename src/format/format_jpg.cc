@@ -100,7 +100,7 @@ bool JpgFormat::saveToFile(const std::string &name, const ImageLayer &image_laye
 		for(int x = 0; x < width; x++)
 		{
 			const int ix = x * 3;
-			Rgba col = ColorLayer::postProcess(image_layer.image_->getColor(x, y), image_layer.layer_.getType(), color_space, gamma, alpha_premultiply);
+			Rgba col = Layer::postProcess(image_layer.image_->getColor(x, y), image_layer.layer_.getType(), color_space, gamma, alpha_premultiply);
 			col.clampRgba01();
 			scanline[ix] = static_cast<uint8_t>(col.getR() * 255);
 			scanline[ix + 1] = static_cast<uint8_t>(col.getG() * 255);

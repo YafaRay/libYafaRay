@@ -20,20 +20,6 @@
 
 BEGIN_YAFARAY
 
-Rgba ColorLayer::postProcess(const Rgba &color, const Layer::Type &layer_type, ColorSpace color_space, float gamma, bool alpha_premultiply)
-{
-	Rgba result{color};
-	result.clampRgb0();
-	if(Layer::applyColorSpace(layer_type)) result.colorSpaceFromLinearRgb(color_space, gamma);
-	if(alpha_premultiply) result.alphaPremultiply();
-
-	//To make sure we don't have any weird Alpha values outside the range [0.f, +1.f]
-	if(result.a_ < 0.f) result.a_ = 0.f;
-	else if(result.a_ > 1.f) result.a_ = 1.f;
-
-	return result;
-}
-
 ColorLayers::ColorLayers(const Layers &layers)
 {
 	for(const auto &layer : layers)
@@ -47,7 +33,7 @@ void ColorLayers::setDefaultColors()
 {
 	for(auto &item : items_)
 	{
-		item.second.color_ = Layer::getDefaultColor(item.first);
+		item.second = Layer::getDefaultColor(item.first);
 	}
 }
 

@@ -76,7 +76,7 @@ bool PngFormat::saveToFile(const std::string &name, const ImageLayer &image_laye
 	{
 		for(int x = 0; x < w; x++)
 		{
-			Rgba color = ColorLayer::postProcess(image_layer.image_->getColor(x, y), image_layer.layer_.getType(), color_space, gamma, alpha_premultiply);
+			Rgba color = Layer::postProcess(image_layer.image_->getColor(x, y), image_layer.layer_.getType(), color_space, gamma, alpha_premultiply);
 			color.clampRgba01();
 			const int i = x * channels;
 			row_pointers[y][i] = (uint8_t)(color.getR() * 255.f);

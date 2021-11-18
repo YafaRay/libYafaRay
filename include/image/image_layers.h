@@ -28,16 +28,9 @@
 
 BEGIN_YAFARAY
 
-struct ColorLayer;
-class Layer;
-class Rgba;
-
 class ImageLayer
 {
 	public:
-		ImageLayer() = default;
-		ImageLayer(std::unique_ptr<Image> image, const Layer &layer) : image_(std::move(image)), layer_(layer) { }
-		ImageLayer(std::shared_ptr<Image> image, const Layer &layer) : image_(std::move(image)), layer_(layer) { }
 		int getWidth() const;
 		int getHeight() const;
 
@@ -48,10 +41,7 @@ class ImageLayer
 class ImageLayers final : public Collection<Layer::Type, ImageLayer>  //Actual buffer of images in the rendering process, one entry for each enabled layer.
 {
 	public:
-		void setColor(int x, int y, const ColorLayer &color_layer);
-		Rgba getColor(int x, int y, const Layer &layer) const;
-		int getWidth() const;
-		int getHeight() const;
+		void setColor(int x, int y, const Rgba &color, Layer::Type layer_type);
 };
 
 END_YAFARAY

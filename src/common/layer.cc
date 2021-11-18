@@ -32,7 +32,7 @@ Layer::Layer(const std::string &type_name, const std::string &image_type_name, c
 	//EMPTY
 }
 
-Layer::Layer(const Type &type, const Image::Type &image_type, const Image::Type &exported_image_type, const std::string &exported_image_name) : type_(type), image_type_(image_type), exported_image_type_(exported_image_type), exported_image_name_(exported_image_name)
+Layer::Layer(const Type &type, Image::Type image_type, Image::Type exported_image_type, const std::string &exported_image_name) : type_(type), image_type_(image_type), exported_image_type_(exported_image_type), exported_image_name_(exported_image_name)
 {
 	//EMPTY
 }
@@ -264,6 +264,20 @@ Layer::Flags Layer::getFlags(const Type &type)
 
 		default: return Layer::Flags::BasicLayers;
 	}
+}
+
+Rgba Layer::postProcess(const Rgba &color, Layer::Type layer_type, ColorSpace color_space, float gamma, bool alpha_premultiply)
+{
+	Rgba result{color};
+	result.clampRgb0();
+	if(Layer::applyColorSpace(layer_type)) result.colorSpaceFromLinearRgb(color_space, gamma);
+	if(alpha_premultiply) result.alphaPremultiply();
+
+	//To make sure we don't have any weird Alpha values outside the range [0.f, +1.f]
+	if(result.a_ < 0.f) result.a_ = 0.f;
+	else if(result.a_ > 1.f) result.a_ = 1.f;
+
+	return result;
 }
 
 std::string Layer::print() const

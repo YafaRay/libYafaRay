@@ -57,7 +57,7 @@ bool TgaFormat::saveToFile(const std::string &name, const ImageLayer &image_laye
 	{
 		for(int x = 0; x < w; x++)
 		{
-			Rgba col = ColorLayer::postProcess(image_layer.image_->getColor(x, y), image_layer.layer_.getType(), color_space, gamma, alpha_premultiply);
+			Rgba col = Layer::postProcess(image_layer.image_->getColor(x, y), image_layer.layer_.getType(), color_space, gamma, alpha_premultiply);
 			col.clampRgba01();
 			if(!image_layer.image_->hasAlpha())
 			{

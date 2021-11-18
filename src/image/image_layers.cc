@@ -33,41 +33,10 @@ int ImageLayer::getHeight() const
 	else return image_->getHeight();
 }
 
-void ImageLayers::setColor(int x, int y, const ColorLayer &color_layer)
+void ImageLayers::setColor(int x, int y, const Rgba &color, Layer::Type layer_type)
 {
-	ImageLayer *image_layer = find(color_layer.layer_type_);
-	if(image_layer) image_layer->image_->setColor(x, y, color_layer.color_);
-}
-
-Rgba ImageLayers::getColor(int x, int y, const Layer &layer) const
-{
-	const ImageLayer *image_layer = find(layer.getType());
-	if(image_layer) return image_layer->image_->getColor(x, y);
-	else return {0.f};
-}
-
-int ImageLayers::getWidth() const
-{
-	int width = 0;
-	//Obtain the maximum dimension across all images in the image layers
-	for(const auto &image_layer : items_)
-	{
-		const int image_width = image_layer.second.getWidth();
-		if(width < image_width) width = image_width;
-	}
-	return width;
-}
-
-int ImageLayers::getHeight() const
-{
-	int height = 0;
-	//Obtain the maximum dimension across all images in the image layers
-	for(const auto &image_layer : items_)
-	{
-		const int image_width = image_layer.second.getWidth();
-		if(height < image_width) height = image_width;
-	}
-	return height;
+	ImageLayer *image_layer = find(layer_type);
+	if(image_layer) image_layer->image_->setColor(x, y, color);
 }
 
 END_YAFARAY

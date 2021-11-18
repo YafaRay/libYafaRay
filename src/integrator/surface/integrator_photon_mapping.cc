@@ -962,7 +962,7 @@ std::pair<Rgb, float> PhotonIntegrator::integrate(int thread_id, int ray_level, 
 		col += col_emit;
 		if(color_layers)
 		{
-			if(ColorLayer *color_layer = color_layers->find(Layer::Emit)) color_layer->color_ += col_emit;
+			if(Rgba *color_layer = color_layers->find(Layer::Emit)) *color_layer += col_emit;
 		}
 
 		lights_geometry_material_emit = false;
@@ -979,11 +979,11 @@ std::pair<Rgb, float> PhotonIntegrator::integrate(int thread_id, int ray_level, 
 			{
 				if(color_layers)
 				{
-					if(ColorLayer *color_layer = color_layers->find(Layer::Radiance))
+					if(Rgba *color_layer = color_layers->find(Layer::Radiance))
 					{
 						const Vec3 n = SurfacePoint::normalFaceForward(sp.ng_, sp.n_, wo);
 						const Photon *nearest = radiance_map_->findNearest(sp.p_, n, lookup_rad_);
-						if(nearest) color_layer->color_ = nearest->color();
+						if(nearest) *color_layer = nearest->color();
 					}
 				}
 
@@ -994,7 +994,7 @@ std::pair<Rgb, float> PhotonIntegrator::integrate(int thread_id, int ray_level, 
 					col += col_tmp;
 					if(color_layers)
 					{
-						if(ColorLayer *color_layer = color_layers->find(Layer::Emit)) color_layer->color_ += col_tmp;
+						if(Rgba *color_layer = color_layers->find(Layer::Emit)) *color_layer += col_tmp;
 					}
 				}
 
@@ -1006,7 +1006,7 @@ std::pair<Rgb, float> PhotonIntegrator::integrate(int thread_id, int ray_level, 
 					col += col_tmp;
 					if(color_layers)
 					{
-						if(ColorLayer *color_layer = color_layers->find(Layer::DiffuseIndirect)) color_layer->color_ = col_tmp;
+						if(Rgba *color_layer = color_layers->find(Layer::DiffuseIndirect)) *color_layer = col_tmp;
 					}
 				}
 			}
@@ -1023,11 +1023,11 @@ std::pair<Rgb, float> PhotonIntegrator::integrate(int thread_id, int ray_level, 
 			{
 				if(use_photon_diffuse_ && color_layers)
 				{
-					if(ColorLayer *color_layer = color_layers->find(Layer::Radiance))
+					if(Rgba *color_layer = color_layers->find(Layer::Radiance))
 					{
 						const Vec3 n = SurfacePoint::normalFaceForward(sp.ng_, sp.n_, wo);
 						const Photon *nearest = radiance_map_->findNearest(sp.p_, n, lookup_rad_);
-						if(nearest) color_layer->color_ = nearest->color();
+						if(nearest) *color_layer = nearest->color();
 					}
 				}
 
@@ -1037,7 +1037,7 @@ std::pair<Rgb, float> PhotonIntegrator::integrate(int thread_id, int ray_level, 
 					col += col_tmp;
 					if(color_layers)
 					{
-						if(ColorLayer *color_layer = color_layers->find(Layer::Emit)) color_layer->color_ += col_tmp;
+						if(Rgba *color_layer = color_layers->find(Layer::Emit)) *color_layer += col_tmp;
 					}
 				}
 
@@ -1066,7 +1066,7 @@ std::pair<Rgb, float> PhotonIntegrator::integrate(int thread_id, int ray_level, 
 						col += col_tmp;
 						if(color_layers)
 						{
-							if(ColorLayer *color_layer = color_layers->find(Layer::DiffuseIndirect)) color_layer->color_ += col_tmp;
+							if(Rgba *color_layer = color_layers->find(Layer::DiffuseIndirect)) *color_layer += col_tmp;
 						}
 					}
 				}

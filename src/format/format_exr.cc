@@ -189,7 +189,7 @@ bool ExrFormat::saveToFile(const std::string &name, const ImageLayer &image_laye
 	{
 		for(int j = 0; j < h; ++j)
 		{
-			const Rgba col = ColorLayer::postProcess(image_layer.image_->getColor(i, j), image_layer.layer_.getType(), color_space, gamma, alpha_premultiply);
+			const Rgba col = Layer::postProcess(image_layer.image_->getColor(i, j), image_layer.layer_.getType(), color_space, gamma, alpha_premultiply);
 			pixels[j][i].r = col.r_;
 			pixels[j][i].g = col.g_;
 			pixels[j][i].b = col.b_;
@@ -281,7 +281,7 @@ bool ExrFormat::saveToFileMultiChannel(const std::string &name, const ImageLayer
 		{
 			for(int j = 0; j < h_0; ++j)
 			{
-				const Rgba col = ColorLayer::postProcess(image_layer.second.image_->getColor(i, j), image_layer.second.layer_.getType(), color_space, gamma, alpha_premultiply);
+				const Rgba col = Layer::postProcess(image_layer.second.image_->getColor(i, j), image_layer.second.layer_.getType(), color_space, gamma, alpha_premultiply);
 				(*pixels.back())[j][i].r = col.r_;
 				(*pixels.back())[j][i].g = col.g_;
 				(*pixels.back())[j][i].b = col.b_;

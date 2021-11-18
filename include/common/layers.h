@@ -34,21 +34,17 @@
 
 BEGIN_YAFARAY
 
-class Rgba;
-
 class Layers final : public Collection<Layer::Type, Layer>
 {
 	public:
-		bool isDefined(const Layer::Type &type) const;
+		bool isDefined(Layer::Type type) const;
 		bool isDefinedAny(const std::vector<Layer::Type> &types) const;
 		const Layers getLayersWithImages() const;
 		const Layers getLayersWithExportedImages() const;
 		std::string printExportedTable() const;
-
-		static const std::map<Layer::Type, std::string> &listAvailable() { return Layer::getDictTypeTypeName(); }
 };
 
-inline bool Layers::isDefined(const Layer::Type &type) const
+inline bool Layers::isDefined(Layer::Type type) const
 {
 	if(type == Layer::Disabled) return false;
 	else return find(type);

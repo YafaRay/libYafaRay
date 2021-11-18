@@ -508,16 +508,14 @@ void ImageFilm::finishArea(const RenderView *render_view, RenderControl &render_
 	for(const auto &film_image_layer : film_image_layers_)
 	{
 		if(!film_image_layer.second.layer_.isExported()) continue;
-
-		const Layer::Type &layer_type = film_image_layer.first;
 		const std::shared_ptr<Image> &image = film_image_layer.second.image_;
 		for(int j = a.y_ - cy_0_; j < end_y; ++j)
 		{
 			for(int i = a.x_ - cx_0_; i < end_x; ++i)
 			{
 				const float weight = weights_(i, j).getFloat();
-				Rgba color = (layer_type == Layer::AaSamples ? weight : image->getColor(i, j).normalized(weight));
-				switch(layer_type)
+				Rgba color = (film_image_layer.first == Layer::AaSamples ? weight : image->getColor(i, j).normalized(weight));
+				switch(film_image_layer.first)
 				{
 					//To correct the antialiasing and ceil the "mixed" values to the upper integer in the Object/Material Index layers
 					case Layer::ObjIndexAbs:
@@ -526,10 +524,10 @@ void ImageFilm::finishArea(const RenderView *render_view, RenderControl &render_
 					case Layer::MatIndexAutoAbs: color.ceil(); break;
 					default: break;
 				}
-				exported_image_layers_.setColor(i, j, {color, layer_type});
+				exported_image_layers_.setColor(i, j, color, film_image_layer.first);
 				if(render_callbacks_ && render_callbacks_->put_pixel_)
 				{
-					render_callbacks_->put_pixel_(render_view->getName().c_str(), Layer::getTypeName(layer_type).c_str(), i, j, color.r_, color.g_, color.b_, color.a_, render_callbacks_->put_pixel_data_);
+					render_callbacks_->put_pixel_(render_view->getName().c_str(), Layer::getTypeName(film_image_layer.first).c_str(), i, j, color.r_, color.g_, color.b_, color.a_, render_callbacks_->put_pixel_data_);
 				}
 			}
 		}
@@ -592,20 +590,17 @@ void ImageFilm::flush(const RenderView *render_view, const RenderControl &render
 	{
 		generateToonAndDebugObjectEdges(0, width_, 0, height_, false, edge_params);
 	}
-
 	for(const auto &film_image_layer : film_image_layers_)
 	{
 		if(!film_image_layer.second.layer_.isExported()) continue;
-
-		const Layer::Type &layer_type = film_image_layer.first;
 		const std::shared_ptr<Image> &image = film_image_layer.second.image_;
 		for(int j = 0; j < height_; j++)
 		{
 			for(int i = 0; i < width_; i++)
 			{
 				const float weight = weights_(i, j).getFloat();
-				Rgba color = (layer_type == Layer::AaSamples ? weight : image->getColor(i, j).normalized(weight));
-				switch(layer_type)
+				Rgba color = (film_image_layer.first == Layer::AaSamples ? weight : image->getColor(i, j).normalized(weight));
+				switch(film_image_layer.first)
 				{
 					//To correct the antialiasing and ceil the "mixed" values to the upper integer in the Object/Material Index layers
 					case Layer::ObjIndexAbs:
@@ -614,11 +609,11 @@ void ImageFilm::flush(const RenderView *render_view, const RenderControl &render
 					case Layer::MatIndexAutoAbs: color.ceil(); break;
 					default: break;
 				}
-				if(estimate_density_ && (flags & Densityimage) && layer_type == Layer::Combined && density_factor > 0.f) color += Rgba((*density_image_)(i, j) * density_factor, 0.f);
-				exported_image_layers_.setColor(i, j, {color, layer_type});
+				if(estimate_density_ && (flags & Densityimage) && film_image_layer.first == Layer::Combined && density_factor > 0.f) color += Rgba((*density_image_)(i, j) * density_factor, 0.f);
+				exported_image_layers_.setColor(i, j, color, film_image_layer.first);
 				if(render_callbacks_ && render_callbacks_->put_pixel_)
 				{
-					render_callbacks_->put_pixel_(render_view->getName().c_str(), Layer::getTypeName(layer_type).c_str(), i, j, color.r_, color.g_, color.b_, color.a_, render_callbacks_->put_pixel_data_);
+					render_callbacks_->put_pixel_(render_view->getName().c_str(), Layer::getTypeName(film_image_layer.first).c_str(), i, j, color.r_, color.g_, color.b_, color.a_, render_callbacks_->put_pixel_data_);
 				}
 			}
 		}
@@ -732,7 +727,7 @@ void ImageFilm::addSample(int x, int y, float dx, float dy, const RenderArea *a,
 			// update pixel values with filtered sample contribution
 			for(auto &film_image_layer : film_image_layers_)
 			{
-				Rgba col = color_layers ? (*color_layers)(film_image_layer.first).color_ : 0.f;
+				Rgba col = color_layers ? (*color_layers)(film_image_layer.first) : 0.f;
 				col.clampProportionalRgb(aa_noise_params_.clamp_samples_);
 				film_image_layer.second.image_->setColor(i - cx_0_, j - cy_0_, film_image_layer.second.image_->getColor(i - cx_0_, j - cy_0_) + (col * filter_wt));
 			}

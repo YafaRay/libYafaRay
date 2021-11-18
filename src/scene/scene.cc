@@ -690,7 +690,7 @@ void Scene::defineLayer(const std::string &layer_type_name, const std::string &i
 	defineLayer(layer_type, image_type, exported_image_type, exported_image_name);
 }
 
-void Scene::defineLayer(const Layer::Type &layer_type, const Image::Type &image_type, const Image::Type &exported_image_type, const std::string &exported_image_name)
+void Scene::defineLayer(Layer::Type layer_type, Image::Type image_type, Image::Type exported_image_type, const std::string &exported_image_name)
 {
 	if(layer_type == Layer::Disabled)
 	{

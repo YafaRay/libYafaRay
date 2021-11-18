@@ -27,18 +27,7 @@
 
 BEGIN_YAFARAY
 
-struct ColorLayer final
-{
-	ColorLayer() = default;
-	ColorLayer(const Layer::Type &layer_type) : color_(Layer::getDefaultColor(layer_type)), layer_type_(layer_type) { }
-	ColorLayer(const Rgba &color, const Layer::Type &layer_type) : color_(color), layer_type_(layer_type) { }
-	static Rgba postProcess(const Rgba &color, const Layer::Type &layer_type, ColorSpace color_space, float gamma, bool alpha_premultiply);
-
-	Rgba color_;
-	Layer::Type layer_type_;
-};
-
-class ColorLayers final : public Collection<Layer::Type, ColorLayer>  //Actual buffer of colors in the rendering process, one entry for each enabled layer.
+class ColorLayers final : public Collection<Layer::Type, Rgba>  //Actual buffer of colors in the rendering process, one entry for each enabled layer.
 {
 	public:
 		ColorLayers(const Layers &layers);

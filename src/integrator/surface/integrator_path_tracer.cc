@@ -150,7 +150,7 @@ std::pair<Rgb, float> PathIntegrator::integrate(int thread_id, int ray_level, bo
 			col += col_tmp;
 			if(color_layers)
 			{
-				if(ColorLayer *color_layer = color_layers->find(Layer::Emit)) color_layer->color_ += col_tmp;
+				if(Rgba *color_layer = color_layers->find(Layer::Emit)) *color_layer += col_tmp;
 			}
 		}
 
@@ -218,7 +218,7 @@ std::pair<Rgb, float> PathIntegrator::integrate(int thread_id, int ray_level, bo
 					lcol += col_tmp;
 					if(color_layers)
 					{
-						if(ColorLayer *color_layer = color_layers->find(Layer::Emit)) color_layer->color_ += col_tmp;
+						if(Rgba *color_layer = color_layers->find(Layer::Emit)) *color_layer += col_tmp;
 					}
 				}
 
@@ -292,7 +292,7 @@ std::pair<Rgb, float> PathIntegrator::integrate(int thread_id, int ray_level, bo
 						lcol += col_tmp;
 						if(color_layers)
 						{
-							if(ColorLayer *color_layer = color_layers->find(Layer::Emit)) color_layer->color_ += col_tmp;
+							if(Rgba *color_layer = color_layers->find(Layer::Emit)) *color_layer += col_tmp;
 						}
 					}
 					path_col += lcol * throughput;

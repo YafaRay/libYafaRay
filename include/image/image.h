@@ -29,8 +29,6 @@
 
 BEGIN_YAFARAY
 
-class Rgba;
-class Layer;
 class ParamMap;
 class Scene;
 class Logger;

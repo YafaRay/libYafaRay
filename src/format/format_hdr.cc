@@ -328,7 +328,7 @@ bool HdrFormat::saveToFile(const std::string &name, const ImageLayer &image_laye
 			// write scanline start signature
 			file.write((char *)&signature, sizeof(RgbePixel));
 			// fill the scanline buffer
-			for(int x = 0; x < w; x++) scanline[x] = ColorLayer::postProcess(image_layer.image_->getColor(x, y), image_layer.layer_.getType(), color_space, gamma, alpha_premultiply);
+			for(int x = 0; x < w; x++) scanline[x] = Layer::postProcess(image_layer.image_->getColor(x, y), image_layer.layer_.getType(), color_space, gamma, alpha_premultiply);
 			// write the scanline RLE compressed by channel in 4 separated blocks not as contigous pixels pixel blocks
 			if(!writeScanline(file, scanline.get(), image_layer.image_.get()))
 			{
