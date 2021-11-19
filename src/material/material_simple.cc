@@ -45,19 +45,18 @@ Rgb LightMaterial::sample(const MaterialData *mat_data, const SurfacePoint &sp, 
 	return Rgb(0.f);
 }
 
-Rgb LightMaterial::emit(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, bool lights_geometry_material_emit) const
+Rgb LightMaterial::emit(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo) const
 {
-	if(!lights_geometry_material_emit) return Rgb(0.f);
 	if(double_sided_) return light_col_;
-
 	const float angle = wo * sp.n_;
-	return (angle > 0) ? light_col_ : Rgb(0.f);
+	return angle > 0 ? light_col_ : Rgb(0.f);
 }
 
 float LightMaterial::pdf(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wi, const BsdfFlags &bsdfs) const
 {
 	return 0.f;
 }
+
 std::unique_ptr<Material> LightMaterial::factory(Logger &logger, ParamMap &params, std::list<ParamMap> &eparans, const Scene &scene)
 {
 	Rgb col(1.0);

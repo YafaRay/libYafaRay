@@ -232,12 +232,12 @@ float BlendMaterial::getAlpha(const MaterialData *mat_data, const SurfacePoint &
 	return result;
 }
 
-Rgb BlendMaterial::emit(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, bool lights_geometry_material_emit) const
+Rgb BlendMaterial::emit(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo) const
 {
 	const float blend_val = getBlendVal(mat_data->node_tree_data_);
 	const BlendMaterialData *mat_data_specific = static_cast<const BlendMaterialData *>(mat_data);
-	const Rgb col_1 = mat_1_->emit(mat_data_specific->mat_1_data_.get(), sp, wo, lights_geometry_material_emit);
-	const Rgb col_2 = mat_2_->emit(mat_data_specific->mat_2_data_.get(), sp, wo, lights_geometry_material_emit);
+	const Rgb col_1 = mat_1_->emit(mat_data_specific->mat_1_data_.get(), sp, wo);
+	const Rgb col_2 = mat_2_->emit(mat_data_specific->mat_2_data_.get(), sp, wo);
 	Rgb col_blend = math::lerp(col_1, col_2, blend_val);
 	applyWireFrame(col_blend, wireframe_shader_, mat_data->node_tree_data_, sp);
 	return col_blend;

@@ -708,7 +708,7 @@ bool PhotonIntegrator::preprocess(const RenderControl &render_control, Timer &ti
 // final gathering: this is basically a full path tracer only that it uses the radiance map only
 // at the path end. I.e. paths longer than 1 are only generated to overcome lack of local radiance detail.
 // precondition: initBSDF of current spot has been called!
-Rgb PhotonIntegrator::finalGathering(int thread_id, bool chromatic_enabled, float wavelength, const SurfacePoint &sp, const Vec3 &wo, const RayDivision &ray_division, const Camera *camera, RandomGenerator &random_generator, const PixelSamplingData &pixel_sampling_data, bool lights_geometry_material_emit) const
+Rgb PhotonIntegrator::finalGathering(int thread_id, bool chromatic_enabled, float wavelength, const SurfacePoint &sp, const Vec3 &wo, const RayDivision &ray_division, const Camera *camera, RandomGenerator &random_generator, const PixelSamplingData &pixel_sampling_data) const
 {
 	const Accelerator *accelerator = scene_->getAccelerator();
 	if(!accelerator) return {0.f};
@@ -784,7 +784,7 @@ Rgb PhotonIntegrator::finalGathering(int thread_id, bool chromatic_enabled, floa
 
 				if(close || caustic)
 				{
-					if(mat_bsd_fs.hasAny(BsdfFlags::Emit)) lcol += p_mat->emit(hit.mat_data_.get(), hit, pwo, lights_geometry_material_emit);
+					if(mat_bsd_fs.hasAny(BsdfFlags::Emit)) lcol += p_mat->emit(hit.mat_data_.get(), hit, pwo);
 					path_col += lcol * throughput;
 				}
 			}
@@ -839,7 +839,7 @@ Rgb PhotonIntegrator::finalGathering(int thread_id, bool chromatic_enabled, floa
 				Vec3 sf = SurfacePoint::normalFaceForward(hit.ng_, hit.n_, -p_ray.dir_);
 				const Photon *nearest = radiance_map_->findNearest(hit.p_, sf, lookup_rad_);
 				if(nearest) lcol = nearest->color();
-				if(mat_bsd_fs.hasAny(BsdfFlags::Emit)) lcol += p_mat->emit(hit.mat_data_.get(), hit, -p_ray.dir_, lights_geometry_material_emit);
+				if(mat_bsd_fs.hasAny(BsdfFlags::Emit)) lcol += p_mat->emit(hit.mat_data_.get(), hit, -p_ray.dir_);
 				path_col += lcol * throughput;
 			}
 		}
@@ -934,7 +934,7 @@ std::unique_ptr<Integrator> PhotonIntegrator::factory(Logger &logger, ParamMap &
 	return inte;
 }
 
-std::pair<Rgb, float> PhotonIntegrator::integrate(int thread_id, int ray_level, bool chromatic_enabled, float wavelength, Ray &ray, int additional_depth, const RayDivision &ray_division, ColorLayers *color_layers, const Camera *camera, RandomGenerator &random_generator, const PixelSamplingData &pixel_sampling_data, bool lights_geometry_material_emit) const
+std::pair<Rgb, float> PhotonIntegrator::integrate(int thread_id, int ray_level, bool chromatic_enabled, float wavelength, Ray &ray, int additional_depth, const RayDivision &ray_division, ColorLayers *color_layers, const Camera *camera, RandomGenerator &random_generator, const PixelSamplingData &pixel_sampling_data) const
 {
 	static int n_max = 0;
 	static int calls = 0;
@@ -946,27 +946,18 @@ std::pair<Rgb, float> PhotonIntegrator::integrate(int thread_id, int ray_level, 
 	const Accelerator *accelerator = scene_->getAccelerator();
 	if(accelerator && accelerator->intersect(ray, sp, camera))
 	{
-		if(ray_level == 0)
-		{
-			chromatic_enabled = true;
-			lights_geometry_material_emit = true;
-		}
-
 		const Vec3 wo = -ray.dir_;
 		const Material *material = sp.material_;
 		const BsdfFlags &mat_bsdfs = sp.mat_data_->bsdf_flags_;
 
-		if(additional_depth < material->getAdditionalDepth()) additional_depth = material->getAdditionalDepth();
+		additional_depth = std::max(additional_depth, material->getAdditionalDepth());
 
-		const Rgb col_emit = material->emit(sp.mat_data_.get(), sp, wo, lights_geometry_material_emit);
+		const Rgb col_emit = material->emit(sp.mat_data_.get(), sp, wo);
 		col += col_emit;
 		if(color_layers)
 		{
 			if(Rgba *color_layer = color_layers->find(Layer::Emit)) *color_layer += col_emit;
 		}
-
-		lights_geometry_material_emit = false;
-
 		if(use_photon_diffuse_ && final_gather_)
 		{
 			if(show_map_)
@@ -990,7 +981,7 @@ std::pair<Rgb, float> PhotonIntegrator::integrate(int thread_id, int ray_level, 
 				// contribution of light emitting surfaces
 				if(mat_bsdfs.hasAny(BsdfFlags::Emit))
 				{
-					const Rgb col_tmp = material->emit(sp.mat_data_.get(), sp, wo, lights_geometry_material_emit);
+					const Rgb col_tmp = material->emit(sp.mat_data_.get(), sp, wo);
 					col += col_tmp;
 					if(color_layers)
 					{
@@ -1001,7 +992,7 @@ std::pair<Rgb, float> PhotonIntegrator::integrate(int thread_id, int ray_level, 
 				if(mat_bsdfs.hasAny(BsdfFlags::Diffuse))
 				{
 					col += estimateAllDirectLight(chromatic_enabled, wavelength, sp, wo, ray_division, color_layers, camera, random_generator, pixel_sampling_data);
-					Rgb col_tmp = finalGathering(thread_id, chromatic_enabled, wavelength, sp, wo, ray_division, camera, random_generator, pixel_sampling_data, lights_geometry_material_emit);
+					Rgb col_tmp = finalGathering(thread_id, chromatic_enabled, wavelength, sp, wo, ray_division, camera, random_generator, pixel_sampling_data);
 					if(aa_noise_params_.clamp_indirect_ > 0.f) col_tmp.clampProportionalRgb(aa_noise_params_.clamp_indirect_);
 					col += col_tmp;
 					if(color_layers)
@@ -1033,7 +1024,7 @@ std::pair<Rgb, float> PhotonIntegrator::integrate(int thread_id, int ray_level, 
 
 				if(mat_bsdfs.hasAny(BsdfFlags::Emit))
 				{
-					const Rgb col_tmp = material->emit(sp.mat_data_.get(), sp, wo, lights_geometry_material_emit);
+					const Rgb col_tmp = material->emit(sp.mat_data_.get(), sp, wo);
 					col += col_tmp;
 					if(color_layers)
 					{
@@ -1085,7 +1076,7 @@ std::pair<Rgb, float> PhotonIntegrator::integrate(int thread_id, int ray_level, 
 		if(color_layers)
 		{
 			generateCommonLayers(sp, scene_->getMaskParams(), color_layers);
-			generateOcclusionLayers(chromatic_enabled, wavelength, ray_division, color_layers, camera, pixel_sampling_data, lights_geometry_material_emit, sp, wo, scene_->getAccelerator(), ao_samples_, scene_->shadow_bias_auto_, scene_->shadow_bias_, ao_dist_, ao_col_, s_depth_);
+			generateOcclusionLayers(chromatic_enabled, wavelength, ray_division, color_layers, camera, pixel_sampling_data, sp, wo, scene_->getAccelerator(), ao_samples_, scene_->shadow_bias_auto_, scene_->shadow_bias_, ao_dist_, ao_col_, s_depth_);
 		}
 	}
 	else //nothing hit, return background

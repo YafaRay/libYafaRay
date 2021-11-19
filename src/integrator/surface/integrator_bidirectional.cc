@@ -228,7 +228,7 @@ void BidirectionalIntegrator::cleanup()
 /* ============================================================
     integrate
  ============================================================ */
-std::pair<Rgb, float> BidirectionalIntegrator::integrate(int thread_id, int ray_level, bool chromatic_enabled, float wavelength, Ray &ray, int additional_depth, const RayDivision &ray_division, ColorLayers *color_layers, const Camera *camera, RandomGenerator &random_generator, const PixelSamplingData &pixel_sampling_data, bool lights_geometry_material_emit) const
+std::pair<Rgb, float> BidirectionalIntegrator::integrate(int thread_id, int ray_level, bool chromatic_enabled, float wavelength, Ray &ray, int additional_depth, const RayDivision &ray_division, ColorLayers *color_layers, const Camera *camera, RandomGenerator &random_generator, const PixelSamplingData &pixel_sampling_data) const
 {
 	Rgb col(0.f);
 	SurfacePoint sp;
@@ -238,7 +238,6 @@ std::pair<Rgb, float> BidirectionalIntegrator::integrate(int thread_id, int ray_
 	if(accelerator && accelerator->intersect(testray, sp, camera))
 	{
 		const Vec3 wo = -ray.dir_;
-		lights_geometry_material_emit = true;
 		PathData &path_data = thread_data_[thread_id];
 		++path_data.n_paths_;
 		PathVertex &ve = path_data.eye_path_.front();
@@ -336,7 +335,7 @@ std::pair<Rgb, float> BidirectionalIntegrator::integrate(int thread_id, int ray_
 				{
 					//eval is done in place here...
 					const PathVertex &v = path_data.eye_path_[t - 1];
-					const Rgb emit = v.sp_.material_->emit(v.sp_.mat_data_.get(), v.sp_, v.wi_, lights_geometry_material_emit);
+					const Rgb emit = v.sp_.material_->emit(v.sp_.mat_data_.get(), v.sp_, v.wi_);
 					col += wt * v.alpha_ * emit;
 				}
 			}
@@ -347,7 +346,7 @@ std::pair<Rgb, float> BidirectionalIntegrator::integrate(int thread_id, int ray_
 			const bool o_singular_l = path_data.singular_l_;  // will be overwritten from connectLPath...
 			const float o_pdf_illum = path_data.pdf_illum_; // will be overwritten from connectLPath...
 			const float o_pdf_emit = path_data.pdf_emit_;   // will be overwritten from connectLPath...
-			if(connectLPath(chromatic_enabled, wavelength, t, path_data, d_ray, dcol, random_generator, lights_geometry_material_emit))
+			if(connectLPath(chromatic_enabled, wavelength, t, path_data, d_ray, dcol, random_generator))
 			{
 				checkPath(path_data.path_, 1, t);
 				wt = pathWeight(1, t, path_data);
@@ -371,7 +370,7 @@ std::pair<Rgb, float> BidirectionalIntegrator::integrate(int thread_id, int ray_
 		if(color_layers)
 		{
 			generateCommonLayers(sp, scene_->getMaskParams(), color_layers);
-			generateOcclusionLayers(chromatic_enabled, wavelength, ray_division, color_layers, camera, pixel_sampling_data, lights_geometry_material_emit, sp, wo, scene_->getAccelerator(), ao_samples_, scene_->shadow_bias_auto_, scene_->shadow_bias_, ao_dist_, ao_col_, s_depth_);
+			generateOcclusionLayers(chromatic_enabled, wavelength, ray_division, color_layers, camera, pixel_sampling_data, sp, wo, scene_->getAccelerator(), ao_samples_, scene_->shadow_bias_auto_, scene_->shadow_bias_, ao_dist_, ao_col_, s_depth_);
 		}
 	}
 	else
@@ -503,7 +502,7 @@ bool BidirectionalIntegrator::connectPaths(int s, int t, PathData &pd) const
 	x_l.pdf_f_ /= cos_y;
 	x_l.pdf_b_ /= y.cos_wi_;
 	pd.f_y_ = y.sp_.material_->eval(y.sp_.mat_data_.get(), y.sp_, y.wi_, vec, BsdfFlags::All);
-	pd.f_y_ += y.sp_.material_->emit(y.sp_.mat_data_.get(), y.sp_, vec, false); //FIXME lights_geometry_material_emit
+	pd.f_y_ += y.sp_.material_->emit(y.sp_.mat_data_.get(), y.sp_, vec);
 
 	x_e.pdf_b_ = z.sp_.material_->pdf(z.sp_.mat_data_.get(), z.sp_, z.wi_, -vec, BsdfFlags::All); // eye vert to light vert
 	x_e.pdf_f_ = z.sp_.material_->pdf(z.sp_.mat_data_.get(), z.sp_, -vec, z.wi_, BsdfFlags::All); // eye vert to prev eye vert
@@ -511,7 +510,7 @@ bool BidirectionalIntegrator::connectPaths(int s, int t, PathData &pd) const
 	x_e.pdf_b_ /= cos_z;
 	x_e.pdf_f_ /= z.cos_wi_;
 	pd.f_z_ = z.sp_.material_->eval(z.sp_.mat_data_.get(), z.sp_, z.wi_, -vec, BsdfFlags::All);
-	pd.f_z_ += z.sp_.material_->emit(z.sp_.mat_data_.get(), z.sp_, -vec, false); //FIXME lights_geometry_material_emit
+	pd.f_z_ += z.sp_.material_->emit(z.sp_.mat_data_.get(), z.sp_, -vec);
 
 	pd.w_l_e_ = vec;
 	pd.d_yz_ = math::sqrt(dist_2);
@@ -547,7 +546,7 @@ bool BidirectionalIntegrator::connectPaths(int s, int t, PathData &pd) const
 }
 
 // connect path with s==1 (eye path with single light vertex)
-bool BidirectionalIntegrator::connectLPath(bool chromatic_enabled, float wavelength, int t, PathData &pd, Ray &l_ray, Rgb &lcol, RandomGenerator &random_generator, bool lights_geometry_material_emit) const
+bool BidirectionalIntegrator::connectLPath(bool chromatic_enabled, float wavelength, int t, PathData &pd, Ray &l_ray, Rgb &lcol, RandomGenerator &random_generator) const
 {
 	// create light sample with direct lighting strategy:
 	const PathVertex &z = pd.eye_path_[t - 1];
@@ -603,7 +602,7 @@ bool BidirectionalIntegrator::connectLPath(bool chromatic_enabled, float wavelen
 	x_e.pdf_f_ /= z.cos_wi_;
 	x_e.specular_ = false;
 	pd.f_z_ = z.sp_.material_->eval(z.sp_.mat_data_.get(), z.sp_, z.wi_, l_ray.dir_, BsdfFlags::All);
-	pd.f_z_ += z.sp_.material_->emit(z.sp_.mat_data_.get(), z.sp_, l_ray.dir_, lights_geometry_material_emit);
+	pd.f_z_ += z.sp_.material_->emit(z.sp_.mat_data_.get(), z.sp_, l_ray.dir_);
 	pd.light_ = light;
 	//copy values required
 	pd.path_[0].g_ = 0.f;
@@ -642,7 +641,7 @@ bool BidirectionalIntegrator::connectPathE(const Camera *camera, int s, PathData
 	x_l.pdf_f_ /= cos_y;
 	x_l.pdf_b_ /= y.cos_wi_;
 	pd.f_y_ = y.sp_.material_->eval(y.sp_.mat_data_.get(), y.sp_, y.wi_, vec, BsdfFlags::All);
-	pd.f_y_ += y.sp_.material_->emit(y.sp_.mat_data_.get(), y.sp_, vec, false); //FIXME lights_geometry_material_emit
+	pd.f_y_ += y.sp_.material_->emit(y.sp_.mat_data_.get(), y.sp_, vec);
 	x_l.specular_ = false;
 	pd.w_l_e_ = vec;
 	pd.d_yz_ = math::sqrt(dist_2);

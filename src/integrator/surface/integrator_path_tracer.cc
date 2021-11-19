@@ -118,7 +118,7 @@ bool PathIntegrator::preprocess(const RenderControl &render_control, Timer &time
 	return success;
 }
 
-std::pair<Rgb, float> PathIntegrator::integrate(int thread_id, int ray_level, bool chromatic_enabled, float wavelength, Ray &ray, int additional_depth, const RayDivision &ray_division, ColorLayers *color_layers, const Camera *camera, RandomGenerator &random_generator, const PixelSamplingData &pixel_sampling_data, bool lights_geometry_material_emit) const
+std::pair<Rgb, float> PathIntegrator::integrate(int thread_id, int ray_level, bool chromatic_enabled, float wavelength, Ray &ray, int additional_depth, const RayDivision &ray_division, ColorLayers *color_layers, const Camera *camera, RandomGenerator &random_generator, const PixelSamplingData &pixel_sampling_data) const
 {
 	static int calls = 0;
 	++calls;
@@ -131,22 +131,15 @@ std::pair<Rgb, float> PathIntegrator::integrate(int thread_id, int ray_level, bo
 	const Accelerator *accelerator = scene_->getAccelerator();
 	if(accelerator && accelerator->intersect(ray, sp, camera))
 	{
-		// if camera ray initialize sampling offset:
-		if(ray_level == 0)
-		{
-			//FIXME lights_geometry_material_emit = true;
-			//...
-		}
-
 		const Material *material = sp.material_;
 		const BsdfFlags &mat_bsdfs = sp.mat_data_->bsdf_flags_;
 		const Vec3 wo = -ray.dir_;
-		if(additional_depth < material->getAdditionalDepth()) additional_depth = material->getAdditionalDepth();
+		additional_depth = std::max(additional_depth, material->getAdditionalDepth());
 
 		// contribution of light emitting surfaces
 		if(mat_bsdfs.hasAny(BsdfFlags::Emit))
 		{
-			const Rgb col_tmp = material->emit(sp.mat_data_.get(), sp, wo, lights_geometry_material_emit);
+			const Rgb col_tmp = material->emit(sp.mat_data_.get(), sp, wo);
 			col += col_tmp;
 			if(color_layers)
 			{
@@ -197,24 +190,19 @@ std::pair<Rgb, float> PathIntegrator::integrate(int thread_id, int ray_level, bo
 				// do proper sampling now...
 				Sample s(s_1, s_2, path_flags);
 				scol = material->sample(sp.mat_data_.get(), sp, pwo, p_ray.dir_, s, w, chromatic_enabled, wavelength_dispersive, camera);
-
 				scol *= w;
 				throughput = scol;
-				lights_geometry_material_emit = false;
-
 				p_ray.tmin_ = scene_->ray_min_dist_;
 				p_ray.tmax_ = -1.f;
 				p_ray.from_ = sp.p_;
-
 				if(!accelerator->intersect(p_ray, *hit, camera)) continue; //hit background
-
 				const Material *p_mat = hit->material_;
 				if(s.sampled_flags_ != BsdfFlags::None) pwo = -p_ray.dir_; //Fix for white dots in path tracing with shiny diffuse with transparent PNG texture and transparent shadows, especially in Win32, (precision?). Sometimes the first sampling does not take place and pRay.dir is not initialized, so before this change when that happened pwo = -pRay.dir was getting a random_generator non-initialized value! This fix makes that, if the first sample fails for some reason, pwo is not modified and the rest of the sampling continues with the same pwo value. FIXME: Question: if the first sample fails, should we continue as now or should we exit the loop with the "continue" command?
 				lcol = estimateOneDirectLight(thread_id, chromatic_enabled, wavelength_dispersive, *hit, pwo, offs, ray_division, camera, random_generator, pixel_sampling_data);
 				const BsdfFlags mat_bsd_fs = hit->mat_data_->bsdf_flags_;
 				if(mat_bsd_fs.hasAny(BsdfFlags::Emit))
 				{
-					const Rgb col_tmp = p_mat->emit(hit->mat_data_.get(), *hit, pwo, lights_geometry_material_emit);
+					const Rgb col_tmp = p_mat->emit(hit->mat_data_.get(), *hit, pwo);
 					lcol += col_tmp;
 					if(color_layers)
 					{
@@ -242,17 +230,12 @@ std::pair<Rgb, float> PathIntegrator::integrate(int thread_id, int ray_level, bo
 
 					scol = p_mat->sample(hit->mat_data_.get(), *hit, pwo, p_ray.dir_, s, w, chromatic_enabled, wavelength_dispersive, camera);
 					scol *= w;
-
 					if(scol.isBlack()) break;
-
 					throughput *= scol;
 					caustic = trace_caustics_ && s.sampled_flags_.hasAny(BsdfFlags::Specular | BsdfFlags::Glossy | BsdfFlags::Filter);
-					lights_geometry_material_emit = caustic;
-
 					p_ray.tmin_ = scene_->ray_min_dist_;
 					p_ray.tmax_ = -1.f;
 					p_ray.from_ = hit->p_;
-
 					if(!accelerator->intersect(p_ray, *hit_2, camera)) //hit background
 					{
 						const Background *background = scene_->getBackground();
@@ -262,7 +245,6 @@ std::pair<Rgb, float> PathIntegrator::integrate(int thread_id, int ray_level, bo
 						}
 						break;
 					}
-
 					std::swap(hit, hit_2);
 					p_mat = hit->material_;
 					pwo = -p_ray.dir_;
@@ -288,7 +270,7 @@ std::pair<Rgb, float> PathIntegrator::integrate(int thread_id, int ray_level, bo
 
 					if(mat_bsd_fs.hasAny(BsdfFlags::Emit) && caustic)
 					{
-						const Rgb col_tmp = p_mat->emit(hit->mat_data_.get(), *hit, pwo, lights_geometry_material_emit);
+						const Rgb col_tmp = p_mat->emit(hit->mat_data_.get(), *hit, pwo);
 						lcol += col_tmp;
 						if(color_layers)
 						{
@@ -306,7 +288,7 @@ std::pair<Rgb, float> PathIntegrator::integrate(int thread_id, int ray_level, bo
 		if(color_layers)
 		{
 			generateCommonLayers(sp, scene_->getMaskParams(), color_layers);
-			generateOcclusionLayers(chromatic_enabled, wavelength, ray_division, color_layers, camera, pixel_sampling_data, lights_geometry_material_emit, sp, wo, scene_->getAccelerator(), ao_samples_, scene_->shadow_bias_auto_, scene_->shadow_bias_, ao_dist_, ao_col_, s_depth_);
+			generateOcclusionLayers(chromatic_enabled, wavelength, ray_division, color_layers, camera, pixel_sampling_data, sp, wo, scene_->getAccelerator(), ao_samples_, scene_->shadow_bias_auto_, scene_->shadow_bias_, ao_dist_, ao_col_, s_depth_);
 		}
 	}
 	else //nothing hit, return background
