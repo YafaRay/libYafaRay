@@ -140,7 +140,7 @@ std::pair<Rgb, float> PathIntegrator::integrate(const Accelerator &accelerator, 
 		{
 			const Rgb col_tmp = material->emit(sp.mat_data_.get(), sp, wo);
 			col += col_tmp;
-			if(color_layers)
+			if(color_layers && color_layers->getFlags().hasAny(Layer::Flags::BasicLayers))
 			{
 				if(Rgba *color_layer = color_layers->find(Layer::Emit)) *color_layer += col_tmp;
 			}
@@ -203,7 +203,7 @@ std::pair<Rgb, float> PathIntegrator::integrate(const Accelerator &accelerator, 
 				{
 					const Rgb col_tmp = p_mat->emit(hit->mat_data_.get(), *hit, pwo);
 					lcol += col_tmp;
-					if(color_layers)
+					if(color_layers && color_layers->getFlags().hasAny(Layer::Flags::BasicLayers))
 					{
 						if(Rgba *color_layer = color_layers->find(Layer::Emit)) *color_layer += col_tmp;
 					}
@@ -271,7 +271,7 @@ std::pair<Rgb, float> PathIntegrator::integrate(const Accelerator &accelerator, 
 					{
 						const Rgb col_tmp = p_mat->emit(hit->mat_data_.get(), *hit, pwo);
 						lcol += col_tmp;
-						if(color_layers)
+						if(color_layers && color_layers->getFlags().hasAny(Layer::Flags::BasicLayers))
 						{
 							if(Rgba *color_layer = color_layers->find(Layer::Emit)) *color_layer += col_tmp;
 						}

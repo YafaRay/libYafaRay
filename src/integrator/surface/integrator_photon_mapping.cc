@@ -948,7 +948,7 @@ std::pair<Rgb, float> PhotonIntegrator::integrate(const Accelerator &accelerator
 
 		const Rgb col_emit = material->emit(sp.mat_data_.get(), sp, wo);
 		col += col_emit;
-		if(color_layers)
+		if(color_layers && color_layers->getFlags().hasAny(Layer::Flags::BasicLayers))
 		{
 			if(Rgba *color_layer = color_layers->find(Layer::Emit)) *color_layer += col_emit;
 		}
@@ -962,7 +962,7 @@ std::pair<Rgb, float> PhotonIntegrator::integrate(const Accelerator &accelerator
 			}
 			else
 			{
-				if(color_layers)
+				if(color_layers && color_layers->getFlags().hasAny(Layer::Flags::BasicLayers))
 				{
 					if(Rgba *color_layer = color_layers->find(Layer::Radiance))
 					{
@@ -977,7 +977,7 @@ std::pair<Rgb, float> PhotonIntegrator::integrate(const Accelerator &accelerator
 				{
 					const Rgb col_tmp = material->emit(sp.mat_data_.get(), sp, wo);
 					col += col_tmp;
-					if(color_layers)
+					if(color_layers && color_layers->getFlags().hasAny(Layer::Flags::BasicLayers))
 					{
 						if(Rgba *color_layer = color_layers->find(Layer::Emit)) *color_layer += col_tmp;
 					}
@@ -989,7 +989,7 @@ std::pair<Rgb, float> PhotonIntegrator::integrate(const Accelerator &accelerator
 					Rgb col_tmp = finalGathering(accelerator, thread_id, chromatic_enabled, wavelength, sp, wo, ray_division, camera, random_generator, pixel_sampling_data);
 					if(aa_noise_params_.clamp_indirect_ > 0.f) col_tmp.clampProportionalRgb(aa_noise_params_.clamp_indirect_);
 					col += col_tmp;
-					if(color_layers)
+					if(color_layers && color_layers->getFlags().hasAny(Layer::Flags::DiffuseLayers))
 					{
 						if(Rgba *color_layer = color_layers->find(Layer::DiffuseIndirect)) *color_layer = col_tmp;
 					}
@@ -1006,7 +1006,7 @@ std::pair<Rgb, float> PhotonIntegrator::integrate(const Accelerator &accelerator
 			}
 			else
 			{
-				if(use_photon_diffuse_ && color_layers)
+				if(use_photon_diffuse_ && color_layers && color_layers->getFlags().hasAny(Layer::Flags::BasicLayers))
 				{
 					if(Rgba *color_layer = color_layers->find(Layer::Radiance))
 					{
@@ -1020,7 +1020,7 @@ std::pair<Rgb, float> PhotonIntegrator::integrate(const Accelerator &accelerator
 				{
 					const Rgb col_tmp = material->emit(sp.mat_data_.get(), sp, wo);
 					col += col_tmp;
-					if(color_layers)
+					if(color_layers && color_layers->getFlags().hasAny(Layer::Flags::BasicLayers))
 					{
 						if(Rgba *color_layer = color_layers->find(Layer::Emit)) *color_layer += col_tmp;
 					}
@@ -1049,7 +1049,7 @@ std::pair<Rgb, float> PhotonIntegrator::integrate(const Accelerator &accelerator
 
 						const Rgb col_tmp = surf_col * scale * gathered[i].photon_->color();
 						col += col_tmp;
-						if(color_layers)
+						if(color_layers && color_layers->getFlags().hasAny(Layer::Flags::BasicLayers))
 						{
 							if(Rgba *color_layer = color_layers->find(Layer::DiffuseIndirect)) *color_layer += col_tmp;
 						}

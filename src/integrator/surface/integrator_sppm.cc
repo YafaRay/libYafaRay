@@ -657,7 +657,7 @@ GatherInfo SppmIntegrator::traceGatherRay(const Accelerator &accelerator, int th
 
 		const Rgb col_emit = material->emit(sp.mat_data_.get(), sp, wo);
 		g_info.constant_randiance_ += col_emit; //add only once, but FG seems add twice?
-		if(color_layers)
+		if(color_layers && color_layers->getFlags().hasAny(Layer::Flags::BasicLayers))
 		{
 			if(Rgba *color_layer = color_layers->find(Layer::Emit)) *color_layer += col_emit;
 		}
@@ -841,7 +841,7 @@ GatherInfo SppmIntegrator::traceGatherRay(const Accelerator &accelerator, int th
 				g_info.photon_flux_ += cing.photon_flux_ * d_1;
 				g_info.photon_count_ += cing.photon_count_ * d_1;
 
-				if(color_layers)
+				if(color_layers && color_layers->getFlags().hasAny(Layer::Flags::BasicLayers))
 				{
 					if(Rgba *color_layer = color_layers->find(Layer::Trans))
 					{
@@ -970,7 +970,7 @@ GatherInfo SppmIntegrator::traceGatherRay(const Accelerator &accelerator, int th
 				g_info.constant_randiance_ += gather_info.constant_randiance_ * d_1;
 				g_info.photon_flux_ += gather_info.photon_flux_ * d_1;
 				g_info.photon_count_ += gather_info.photon_count_ * d_1;
-				if(color_layers)
+				if(color_layers && color_layers->getFlags().hasAny(Layer::Flags::BasicLayers))
 				{
 					if(Rgba *color_layer = color_layers->find(Layer::GlossyIndirect))
 					{
@@ -1009,7 +1009,7 @@ GatherInfo SppmIntegrator::traceGatherRay(const Accelerator &accelerator, int th
 					}
 					const Rgba col_radiance_reflect = refg.constant_randiance_ * Rgba(specular.reflect_->col_);
 					g_info.constant_randiance_ += col_radiance_reflect;
-					if(color_layers)
+					if(color_layers && color_layers->getFlags().hasAny(Layer::Flags::BasicLayers))
 					{
 						if(Rgba *color_layer = color_layers->find(Layer::ReflectPerfect)) *color_layer += col_radiance_reflect;
 					}
@@ -1032,7 +1032,7 @@ GatherInfo SppmIntegrator::traceGatherRay(const Accelerator &accelerator, int th
 					}
 					const Rgba col_radiance_refract = refg.constant_randiance_ * Rgba(specular.refract_->col_);
 					g_info.constant_randiance_ += col_radiance_refract;
-					if(color_layers)
+					if(color_layers && color_layers->getFlags().hasAny(Layer::Flags::BasicLayers))
 					{
 						if(Rgba *color_layer = color_layers->find(Layer::RefractPerfect)) *color_layer += col_radiance_refract;
 					}
