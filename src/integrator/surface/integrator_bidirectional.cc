@@ -228,14 +228,13 @@ void BidirectionalIntegrator::cleanup()
 /* ============================================================
     integrate
  ============================================================ */
-std::pair<Rgb, float> BidirectionalIntegrator::integrate(int thread_id, int ray_level, bool chromatic_enabled, float wavelength, Ray &ray, int additional_depth, const RayDivision &ray_division, ColorLayers *color_layers, const Camera *camera, RandomGenerator &random_generator, const PixelSamplingData &pixel_sampling_data) const
+std::pair<Rgb, float> BidirectionalIntegrator::integrate(const Accelerator &accelerator, int thread_id, int ray_level, bool chromatic_enabled, float wavelength, Ray &ray, int additional_depth, const RayDivision &ray_division, ColorLayers *color_layers, const Camera *camera, RandomGenerator &random_generator, const PixelSamplingData &pixel_sampling_data) const
 {
-	Rgb col(0.f);
+	Rgb col {0.f};
 	SurfacePoint sp;
 	Ray testray {ray, Ray::DifferentialsCopy::No};
 	float alpha = 1.f;
-	const Accelerator *accelerator = scene_->getAccelerator();
-	if(accelerator && accelerator->intersect(testray, sp, camera))
+	if(accelerator.intersect(testray, sp, camera))
 	{
 		const Vec3 wo = -ray.dir_;
 		PathData &path_data = thread_data_[thread_id];
@@ -260,7 +259,7 @@ std::pair<Rgb, float> BidirectionalIntegrator::integrate(int thread_id, int ray_
 		ve.pdf_wi_ = 1.f;
 		ve.flags_ = BsdfFlags::Diffuse; //place holder! not applicable for e.g. orthogonal camera!
 		// create eyePath
-		const int n_eye = createPath(chromatic_enabled, wavelength, ray, path_data.eye_path_, max_path_length_, camera, random_generator);
+		const int n_eye = createPath(accelerator, chromatic_enabled, wavelength, ray, path_data.eye_path_, max_path_length_, camera, random_generator);
 		// sample light (todo!)
 		Ray lray;
 		lray.tmin_ = scene_->ray_min_dist_;
@@ -292,7 +291,7 @@ std::pair<Rgb, float> BidirectionalIntegrator::integrate(int thread_id, int ray_
 		//FIXME: this does not make any sense: vl.flags_ = ls.flags_; //store light flags in BSDF flags...same purpose though, check if delta function are involved
 		path_data.singular_l_ = ls.flags_.hasAny(Light::Flags::Singular);
 		// create lightPath
-		const int n_light = createPath(chromatic_enabled, wavelength, lray, path_data.light_path_, max_path_length_, camera, random_generator);
+		const int n_light = createPath(accelerator, chromatic_enabled, wavelength, lray, path_data.light_path_, max_path_length_, camera, random_generator);
 		if(n_light > 1)
 		{
 			path_data.pdf_illum_ = lights_[light_num]->illumPdf(path_data.light_path_[1].sp_, vl.sp_) * light_num_pdf;
@@ -311,7 +310,7 @@ std::pair<Rgb, float> BidirectionalIntegrator::integrate(int thread_id, int ray_
 			float wt = pathWeight(s, 1, path_data);
 			if(wt > 0.f)
 			{
-				const Rgb li_col = evalPathE(s, path_data, camera);
+				const Rgb li_col = evalPathE(accelerator, s, path_data, camera);
 				if(li_col.isBlack()) continue;
 				float ix, idx, iy, idy;
 				idx = std::modf(path_data.u_, &ix);
@@ -350,7 +349,7 @@ std::pair<Rgb, float> BidirectionalIntegrator::integrate(int thread_id, int ray_
 			{
 				checkPath(path_data.path_, 1, t);
 				wt = pathWeight(1, t, path_data);
-				if(wt > 0.f) col += wt * evalLPath(t, path_data, d_ray, dcol, camera);
+				if(wt > 0.f) col += wt * evalLPath(accelerator, t, path_data, d_ray, dcol, camera);
 			}
 			path_data.singular_l_ = o_singular_l;
 			path_data.pdf_illum_ = o_pdf_illum;
@@ -364,13 +363,13 @@ std::pair<Rgb, float> BidirectionalIntegrator::integrate(int thread_id, int ray_
 				if(!connectPaths(s, t, path_data)) continue;
 				checkPath(path_data.path_, s, t);
 				wt = pathWeight(s, t, path_data);
-				if(wt > 0.f) col += wt * evalPath(s, t, path_data, camera);
+				if(wt > 0.f) col += wt * evalPath(accelerator, s, t, path_data, camera);
 			}
 		}
 		if(color_layers)
 		{
 			generateCommonLayers(sp, scene_->getMaskParams(), color_layers);
-			generateOcclusionLayers(chromatic_enabled, wavelength, ray_division, color_layers, camera, pixel_sampling_data, sp, wo, scene_->getAccelerator(), ao_samples_, scene_->shadow_bias_auto_, scene_->shadow_bias_, ao_dist_, ao_col_, s_depth_);
+			generateOcclusionLayers(accelerator, chromatic_enabled, wavelength, ray_division, color_layers, camera, pixel_sampling_data, sp, wo, ao_samples_, scene_->shadow_bias_auto_, scene_->shadow_bias_, ao_dist_, ao_col_, s_depth_);
 		}
 	}
 	else
@@ -390,10 +389,8 @@ std::pair<Rgb, float> BidirectionalIntegrator::integrate(int thread_id, int ray_
     important: resize path to maxLen *before* calling this function!
  ============================================================ */
 
-int BidirectionalIntegrator::createPath(bool chromatic_enabled, float wavelength, const Ray &start, std::vector<PathVertex> &path, int max_len, const Camera *camera, RandomGenerator &random_generator) const
+int BidirectionalIntegrator::createPath(const Accelerator &accelerator, bool chromatic_enabled, float wavelength, const Ray &start, std::vector<PathVertex> &path, int max_len, const Camera *camera, RandomGenerator &random_generator) const
 {
-	const Accelerator *accelerator = scene_->getAccelerator();
-	if(!accelerator) return 0;
 	Ray ray {start, Ray::DifferentialsCopy::FullCopy};
 	BsdfFlags m_bsdf;
 	// the 0th vertex has already been generated, which is ray.pos obviously
@@ -401,7 +398,7 @@ int BidirectionalIntegrator::createPath(bool chromatic_enabled, float wavelength
 	while(n_vert < max_len)
 	{
 		PathVertex &v = path[n_vert];
-		if(!accelerator->intersect(ray, v.sp_, camera)) break;
+		if(!accelerator.intersect(ray, v.sp_, camera)) break;
 		const PathVertex &v_prev = path[n_vert - 1];
 		const Material *mat = v.sp_.material_;
 		// compute alpha_i+1 = alpha_i * fs(wi, wo) / P_proj(wo), where P_proj = bsdf_pdf(wo) / cos(wo*N)
@@ -775,11 +772,8 @@ float BidirectionalIntegrator::pathWeight0T(int t, PathData &pd) const
  ============================================================ */
 
 
-Rgb BidirectionalIntegrator::evalPath(int s, int t, PathData &pd, const Camera *camera) const
+Rgb BidirectionalIntegrator::evalPath(const Accelerator &accelerator, int s, int t, PathData &pd, const Camera *camera) const
 {
-	const Accelerator *accelerator = scene_->getAccelerator();
-	if(!accelerator) return {0.f};
-
 	const PathVertex &y = pd.light_path_[s - 1];
 	const PathVertex &z = pd.eye_path_[t - 1];
 	float mask_obj_index = 0.f, mask_mat_index = 0.f;
@@ -789,20 +783,18 @@ Rgb BidirectionalIntegrator::evalPath(int s, int t, PathData &pd, const Camera *
 	Rgb c_uw = y.alpha_ * c_st * z.alpha_;
 	Ray con_ray(y.sp_.p_, pd.w_l_e_, 0.0005, pd.d_yz_);
 	Rgb scol = Rgb(0.f);
-	const bool shadowed = (tr_shad_) ? accelerator->isShadowed(con_ray, s_depth_, scol, mask_obj_index, mask_mat_index, scene_->getShadowBias(), camera) : accelerator->isShadowed(con_ray, mask_obj_index, mask_mat_index, scene_->getShadowBias());
+	const bool shadowed = (tr_shad_) ? accelerator.isShadowed(con_ray, s_depth_, scol, mask_obj_index, mask_mat_index, scene_->getShadowBias(), camera) : accelerator.isShadowed(con_ray, mask_obj_index, mask_mat_index, scene_->getShadowBias());
 	if(shadowed) return Rgb(0.f);
 	if(tr_shad_) c_uw *= scol;
 	return c_uw;
 }
 
 //===  eval paths with s==1 (direct lighting strategy)  ===//
-Rgb BidirectionalIntegrator::evalLPath(int t, PathData &pd, const Ray &l_ray, const Rgb &lcol, const Camera *camera) const
+Rgb BidirectionalIntegrator::evalLPath(const Accelerator &accelerator, int t, PathData &pd, const Ray &l_ray, const Rgb &lcol, const Camera *camera) const
 {
-	const Accelerator *accelerator = scene_->getAccelerator();
-	if(!accelerator) return {0.f};
 	float mask_obj_index = 0.f, mask_mat_index = 0.f;
 	Rgb scol = Rgb(0.f);
-	const bool shadowed = (tr_shad_) ? accelerator->isShadowed(l_ray, s_depth_, scol, mask_obj_index, mask_mat_index, scene_->getShadowBias(), camera) : accelerator->isShadowed(l_ray, mask_obj_index, mask_mat_index, scene_->getShadowBias());
+	const bool shadowed = (tr_shad_) ? accelerator.isShadowed(l_ray, s_depth_, scol, mask_obj_index, mask_mat_index, scene_->getShadowBias(), camera) : accelerator.isShadowed(l_ray, mask_obj_index, mask_mat_index, scene_->getShadowBias());
 	if(shadowed) return Rgb(0.f);
 	const PathVertex &z = pd.eye_path_[t - 1];
 	Rgb c_uw = lcol * pd.f_z_ * z.alpha_ * std::abs(z.sp_.n_ * l_ray.dir_); // f_y, cos_x0_f and r^2 computed in connectLPath...(light pdf)
@@ -818,16 +810,13 @@ Rgb BidirectionalIntegrator::evalLPath(int t, PathData &pd, const Ray &l_ray, co
 
 //=== eval path with t==1 (light path directly connected to eve vertex)
 //almost same as evalPath, just that there is no material on one end but a camera sensor function (soon...)
-Rgb BidirectionalIntegrator::evalPathE(int s, PathData &pd, const Camera *camera) const
+Rgb BidirectionalIntegrator::evalPathE(const Accelerator &accelerator, int s, PathData &pd, const Camera *camera) const
 {
-	const Accelerator *accelerator = scene_->getAccelerator();
-	if(!accelerator) return {0.f};
-
 	const PathVertex &y = pd.light_path_[s - 1];
 	float mask_obj_index = 0.f, mask_mat_index = 0.f;
 	const Ray con_ray(y.sp_.p_, pd.w_l_e_, 0.0005, pd.d_yz_);
 	Rgb scol = Rgb(0.f);
-	const bool shadowed = (tr_shad_) ? accelerator->isShadowed(con_ray, s_depth_, scol, mask_obj_index, mask_mat_index, scene_->getShadowBias(), camera) : accelerator->isShadowed(con_ray, mask_obj_index, mask_mat_index, scene_->getShadowBias());
+	const bool shadowed = (tr_shad_) ? accelerator.isShadowed(con_ray, s_depth_, scol, mask_obj_index, mask_mat_index, scene_->getShadowBias(), camera) : accelerator.isShadowed(con_ray, mask_obj_index, mask_mat_index, scene_->getShadowBias());
 	if(shadowed) return Rgb(0.f);
 	//eval material
 	//Rgb f_y = y.sp.material->eval(state, y.sp, y.wi, pd.w_l_e, BSDF_ALL);

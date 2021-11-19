@@ -45,11 +45,11 @@ class BidirectionalIntegrator final : public TiledIntegrator
 		virtual std::string getName() const override { return "BidirectionalPathTracer"; }
 		virtual bool preprocess(const RenderControl &render_control, Timer &timer, const RenderView *render_view, ImageFilm *image_film) override;
 		virtual void cleanup() override;
-		virtual std::pair<Rgb, float> integrate(int thread_id, int ray_level, bool chromatic_enabled, float wavelength, Ray &ray, int additional_depth, const RayDivision &ray_division, ColorLayers *color_layers, const Camera *camera, RandomGenerator &random_generator, const PixelSamplingData &pixel_sampling_data) const override;
-		int createPath(bool chromatic_enabled, float wavelength, const Ray &start, std::vector<PathVertex> &path, int max_len, const Camera *camera, RandomGenerator &random_generator) const;
-		Rgb evalPath(int s, int t, PathData &pd, const Camera *camera) const;
-		Rgb evalLPath(int t, PathData &pd, const Ray &l_ray, const Rgb &lcol, const Camera *camera) const;
-		Rgb evalPathE(int s, PathData &pd, const Camera *camera) const;
+		virtual std::pair<Rgb, float> integrate(const Accelerator &accelerator, int thread_id, int ray_level, bool chromatic_enabled, float wavelength, Ray &ray, int additional_depth, const RayDivision &ray_division, ColorLayers *color_layers, const Camera *camera, RandomGenerator &random_generator, const PixelSamplingData &pixel_sampling_data) const override;
+		int createPath(const Accelerator &accelerator, bool chromatic_enabled, float wavelength, const Ray &start, std::vector<PathVertex> &path, int max_len, const Camera *camera, RandomGenerator &random_generator) const;
+		Rgb evalPath(const Accelerator &accelerator, int s, int t, PathData &pd, const Camera *camera) const;
+		Rgb evalLPath(const Accelerator &accelerator, int t, PathData &pd, const Ray &l_ray, const Rgb &lcol, const Camera *camera) const;
+		Rgb evalPathE(const Accelerator &accelerator, int s, PathData &pd, const Camera *camera) const;
 		bool connectPaths(int s, int t, PathData &pd) const;
 		bool connectLPath(bool chromatic_enabled, float wavelength, int t, PathData &pd, Ray &l_ray, Rgb &lcol, RandomGenerator &random_generator) const;
 		bool connectPathE(const Camera *camera, int s, PathData &pd) const;

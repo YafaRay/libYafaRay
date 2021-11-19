@@ -107,11 +107,8 @@ PhotonIntegrator::PhotonIntegrator(Logger &logger, unsigned int d_photons, unsig
 	radiance_map_->setName("FG Radiance Photon Map");
 }
 
-void PhotonIntegrator::diffuseWorker(PhotonMap *diffuse_map, int thread_id, const Scene *scene, const RenderView *render_view, const RenderControl &render_control, const Timer &timer, unsigned int n_diffuse_photons, const Pdf1D *light_power_d, int num_d_lights, const std::vector<const Light *> &tmplights, ProgressBar *pb, int pb_step, unsigned int &total_photons_shot, int max_bounces, bool final_gather, PreGatherData &pgdat)
+void PhotonIntegrator::diffuseWorker(const Accelerator &accelerator, PhotonMap *diffuse_map, int thread_id, const Scene *scene, const RenderView *render_view, const RenderControl &render_control, const Timer &timer, unsigned int n_diffuse_photons, const Pdf1D *light_power_d, int num_d_lights, const std::vector<const Light *> &tmplights, ProgressBar *pb, int pb_step, unsigned int &total_photons_shot, int max_bounces, bool final_gather, PreGatherData &pgdat)
 {
-	const Accelerator *accelerator = scene_->getAccelerator();
-	if(!accelerator) return;
-
 	Ray ray;
 	float light_num_pdf, light_pdf, s_1, s_2, s_3, s_4, s_5, s_6, s_7, s_l;
 	Rgb pcol;
@@ -175,7 +172,7 @@ void PhotonIntegrator::diffuseWorker(PhotonMap *diffuse_map, int thread_id, cons
 		const Material *material_prev = nullptr;
 		BsdfFlags mat_bsdfs_prev = BsdfFlags::None;
 
-		while(accelerator->intersect(ray, hit_curr, render_view->getCamera()))
+		while(accelerator.intersect(ray, hit_curr, render_view->getCamera()))
 		{
 			Rgb transm(1.f);
 			if(material_prev && mat_bsdfs_prev.hasAny(BsdfFlags::Volumetric))
@@ -263,6 +260,8 @@ void PhotonIntegrator::photonMapKdTreeWorker(PhotonMap *photon_map)
 
 bool PhotonIntegrator::preprocess(const RenderControl &render_control, Timer &timer, const RenderView *render_view, ImageFilm *image_film)
 {
+	const Accelerator *accelerator = scene_->getAccelerator();
+	if(!accelerator) return false;
 	image_film_ = image_film;
 	std::shared_ptr<ProgressBar> pb;
 	if(intpb_) pb = intpb_;
@@ -491,7 +490,7 @@ bool PhotonIntegrator::preprocess(const RenderControl &render_control, Timer &ti
 		logger_.logParams(getName(), ": Shooting ", n_diffuse_photons_, " photons across ", n_threads, " threads (", (n_diffuse_photons_ / n_threads), " photons/thread)");
 
 		std::vector<std::thread> threads;
-		for(int i = 0; i < n_threads; ++i) threads.push_back(std::thread(&PhotonIntegrator::diffuseWorker, this, diffuse_map_.get(), i, scene_, render_view, std::ref(render_control), std::ref(timer), n_diffuse_photons_, light_power_d_.get(), num_d_lights, tmplights, pb.get(), pb_step, std::ref(curr), max_bounces_, final_gather_, std::ref(pgdat)));
+		for(int i = 0; i < n_threads; ++i) threads.push_back(std::thread(&PhotonIntegrator::diffuseWorker, this, std::ref(*accelerator), diffuse_map_.get(), i, scene_, render_view, std::ref(render_control), std::ref(timer), n_diffuse_photons_, light_power_d_.get(), num_d_lights, tmplights, pb.get(), pb_step, std::ref(curr), max_bounces_, final_gather_, std::ref(pgdat)));
 		for(auto &t : threads) t.join();
 
 		pb->done();
@@ -581,7 +580,7 @@ bool PhotonIntegrator::preprocess(const RenderControl &render_control, Timer &ti
 		logger_.logParams(getName(), ": Shooting ", n_caus_photons_, " photons across ", n_threads, " threads (", (n_caus_photons_ / n_threads), " photons/thread)");
 
 		std::vector<std::thread> threads;
-		for(int i = 0; i < n_threads; ++i) threads.push_back(std::thread(&PhotonIntegrator::causticWorker, this, caustic_map_.get(), i, scene_, render_view, std::ref(render_control), std::ref(timer), n_caus_photons_, light_power_d_.get(), num_c_lights, tmplights, caus_depth_, pb.get(), pb_step, std::ref(curr)));
+		for(int i = 0; i < n_threads; ++i) threads.push_back(std::thread(&PhotonIntegrator::causticWorker, this, std::ref(*accelerator), caustic_map_.get(), i, scene_, render_view, std::ref(render_control), std::ref(timer), n_caus_photons_, light_power_d_.get(), num_c_lights, tmplights, caus_depth_, pb.get(), pb_step, std::ref(curr)));
 		for(auto &t : threads) t.join();
 
 		pb->done();
@@ -708,11 +707,8 @@ bool PhotonIntegrator::preprocess(const RenderControl &render_control, Timer &ti
 // final gathering: this is basically a full path tracer only that it uses the radiance map only
 // at the path end. I.e. paths longer than 1 are only generated to overcome lack of local radiance detail.
 // precondition: initBSDF of current spot has been called!
-Rgb PhotonIntegrator::finalGathering(int thread_id, bool chromatic_enabled, float wavelength, const SurfacePoint &sp, const Vec3 &wo, const RayDivision &ray_division, const Camera *camera, RandomGenerator &random_generator, const PixelSamplingData &pixel_sampling_data) const
+Rgb PhotonIntegrator::finalGathering(const Accelerator &accelerator, int thread_id, bool chromatic_enabled, float wavelength, const SurfacePoint &sp, const Vec3 &wo, const RayDivision &ray_division, const Camera *camera, RandomGenerator &random_generator, const PixelSamplingData &pixel_sampling_data) const
 {
-	const Accelerator *accelerator = scene_->getAccelerator();
-	if(!accelerator) return {0.f};
-
 	Rgb path_col(0.0);
 	float w = 0.f;
 
@@ -748,7 +744,7 @@ Rgb PhotonIntegrator::finalGathering(int thread_id, bool chromatic_enabled, floa
 		p_ray.from_ = hit.p_;
 		throughput = scol;
 
-		if(!(did_hit = accelerator->intersect(p_ray, hit, camera))) continue;   //hit background
+		if(!(did_hit = accelerator.intersect(p_ray, hit, camera))) continue;   //hit background
 
 		p_mat = hit.material_;
 		length = p_ray.tmax_;
@@ -773,7 +769,7 @@ Rgb PhotonIntegrator::finalGathering(int thread_id, bool chromatic_enabled, floa
 			{
 				if(close)
 				{
-					lcol = estimateOneDirectLight(thread_id, chromatic_enabled, wavelength, hit, pwo, offs, ray_division, camera, random_generator, pixel_sampling_data);
+					lcol = estimateOneDirectLight(accelerator, thread_id, chromatic_enabled, wavelength, hit, pwo, offs, ray_division, camera, random_generator, pixel_sampling_data);
 				}
 				else if(caustic)
 				{
@@ -813,7 +809,7 @@ Rgb PhotonIntegrator::finalGathering(int thread_id, bool chromatic_enabled, floa
 			p_ray.tmax_ = -1.f;
 			p_ray.from_ = hit.p_;
 			throughput *= scol;
-			did_hit = accelerator->intersect(p_ray, hit, camera);
+			did_hit = accelerator.intersect(p_ray, hit, camera);
 
 			if(!did_hit) //hit background
 			{
@@ -934,7 +930,7 @@ std::unique_ptr<Integrator> PhotonIntegrator::factory(Logger &logger, ParamMap &
 	return inte;
 }
 
-std::pair<Rgb, float> PhotonIntegrator::integrate(int thread_id, int ray_level, bool chromatic_enabled, float wavelength, Ray &ray, int additional_depth, const RayDivision &ray_division, ColorLayers *color_layers, const Camera *camera, RandomGenerator &random_generator, const PixelSamplingData &pixel_sampling_data) const
+std::pair<Rgb, float> PhotonIntegrator::integrate(const Accelerator &accelerator, int thread_id, int ray_level, bool chromatic_enabled, float wavelength, Ray &ray, int additional_depth, const RayDivision &ray_division, ColorLayers *color_layers, const Camera *camera, RandomGenerator &random_generator, const PixelSamplingData &pixel_sampling_data) const
 {
 	static int n_max = 0;
 	static int calls = 0;
@@ -942,9 +938,7 @@ std::pair<Rgb, float> PhotonIntegrator::integrate(int thread_id, int ray_level, 
 	Rgb col {0.f};
 	float alpha = 1.f;
 	SurfacePoint sp;
-
-	const Accelerator *accelerator = scene_->getAccelerator();
-	if(accelerator && accelerator->intersect(ray, sp, camera))
+	if(accelerator.intersect(ray, sp, camera))
 	{
 		const Vec3 wo = -ray.dir_;
 		const Material *material = sp.material_;
@@ -991,8 +985,8 @@ std::pair<Rgb, float> PhotonIntegrator::integrate(int thread_id, int ray_level, 
 
 				if(mat_bsdfs.hasAny(BsdfFlags::Diffuse))
 				{
-					col += estimateAllDirectLight(chromatic_enabled, wavelength, sp, wo, ray_division, color_layers, camera, random_generator, pixel_sampling_data);
-					Rgb col_tmp = finalGathering(thread_id, chromatic_enabled, wavelength, sp, wo, ray_division, camera, random_generator, pixel_sampling_data);
+					col += estimateAllDirectLight(accelerator, chromatic_enabled, wavelength, sp, wo, ray_division, color_layers, camera, random_generator, pixel_sampling_data);
+					Rgb col_tmp = finalGathering(accelerator, thread_id, chromatic_enabled, wavelength, sp, wo, ray_division, camera, random_generator, pixel_sampling_data);
 					if(aa_noise_params_.clamp_indirect_ > 0.f) col_tmp.clampProportionalRgb(aa_noise_params_.clamp_indirect_);
 					col += col_tmp;
 					if(color_layers)
@@ -1034,7 +1028,7 @@ std::pair<Rgb, float> PhotonIntegrator::integrate(int thread_id, int ray_level, 
 
 				if(mat_bsdfs.hasAny(BsdfFlags::Diffuse))
 				{
-					col += estimateAllDirectLight(chromatic_enabled, wavelength, sp, wo, ray_division, color_layers, camera, random_generator, pixel_sampling_data);
+					col += estimateAllDirectLight(accelerator, chromatic_enabled, wavelength, sp, wo, ray_division, color_layers, camera, random_generator, pixel_sampling_data);
 				}
 
 				FoundPhoton *gathered = (FoundPhoton *)alloca(n_diffuse_search_ * sizeof(FoundPhoton));
@@ -1070,13 +1064,13 @@ std::pair<Rgb, float> PhotonIntegrator::integrate(int thread_id, int ray_level, 
 			col += causticPhotons(ray, color_layers, sp, wo, aa_noise_params_.clamp_indirect_, caustic_map_.get(), caus_radius_, n_caus_search_);
 		}
 
-		const auto recursive_result = recursiveRaytrace(thread_id, ray_level + 1, chromatic_enabled, wavelength, ray, mat_bsdfs, sp, wo, additional_depth, ray_division, color_layers, camera, random_generator, pixel_sampling_data);
+		const auto recursive_result = recursiveRaytrace(accelerator, thread_id, ray_level + 1, chromatic_enabled, wavelength, ray, mat_bsdfs, sp, wo, additional_depth, ray_division, color_layers, camera, random_generator, pixel_sampling_data);
 		col += recursive_result.first;
 		alpha = recursive_result.second;
 		if(color_layers)
 		{
 			generateCommonLayers(sp, scene_->getMaskParams(), color_layers);
-			generateOcclusionLayers(chromatic_enabled, wavelength, ray_division, color_layers, camera, pixel_sampling_data, sp, wo, scene_->getAccelerator(), ao_samples_, scene_->shadow_bias_auto_, scene_->shadow_bias_, ao_dist_, ao_col_, s_depth_);
+			generateOcclusionLayers(accelerator, chromatic_enabled, wavelength, ray_division, color_layers, camera, pixel_sampling_data, sp, wo, ao_samples_, scene_->shadow_bias_auto_, scene_->shadow_bias_, ao_dist_, ao_col_, s_depth_);
 		}
 	}
 	else //nothing hit, return background

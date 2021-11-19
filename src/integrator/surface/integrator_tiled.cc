@@ -274,6 +274,8 @@ bool TiledIntegrator::renderPass(const RenderView *render_view, int samples, int
 
 bool TiledIntegrator::renderTile(const RenderArea &a, const Camera *camera, const RenderControl &render_control, const Timer &timer, int n_samples, int offset, bool adaptive, int thread_id, int aa_pass_number)
 {
+	const Accelerator *accelerator = scene_->getAccelerator();
+	if(!accelerator) return false;
 	const int camera_res_x = camera->resX();
 	RandomGenerator random_generator(rand() + offset * (camera_res_x * a.y_ + a.x_) + 123);
 	const bool sample_lns = camera->sampleLense();
@@ -366,7 +368,7 @@ bool TiledIntegrator::renderTile(const RenderArea &a, const Camera *camera, cons
 				}
 				camera_ray.ray_.time_ = time;
 				RayDivision ray_division;
-				const auto integ = integrate(thread_id, 0, true, 0.f, camera_ray.ray_, 0, ray_division, &color_layers, camera, random_generator, pixel_sampling_data);
+				const auto integ = integrate(*accelerator, thread_id, 0, true, 0.f, camera_ray.ray_, 0, ray_division, &color_layers, camera, random_generator, pixel_sampling_data);
 				color_layers(Layer::Combined) = {integ.first, integ.second};
 				for(auto &color_layer : color_layers)
 				{
@@ -637,21 +639,20 @@ void TiledIntegrator::generateCommonLayers(const SurfacePoint &sp, const MaskPar
 	}
 }
 
-void TiledIntegrator::generateOcclusionLayers(bool chromatic_enabled, float wavelength, const RayDivision &ray_division, ColorLayers *color_layers, const Camera *camera, const PixelSamplingData &pixel_sampling_data, const SurfacePoint &sp, const Vec3 &wo, const Accelerator *accelerator, int ao_samples, bool shadow_bias_auto, float shadow_bias, float ao_dist, const Rgb &ao_col, int transp_shadows_depth)
+void TiledIntegrator::generateOcclusionLayers(const Accelerator &accelerator, bool chromatic_enabled, float wavelength, const RayDivision &ray_division, ColorLayers *color_layers, const Camera *camera, const PixelSamplingData &pixel_sampling_data, const SurfacePoint &sp, const Vec3 &wo, int ao_samples, bool shadow_bias_auto, float shadow_bias, float ao_dist, const Rgb &ao_col, int transp_shadows_depth)
 {
 	if(Rgba *color_layer = color_layers->find(Layer::Ao))
 	{
-		*color_layer += sampleAmbientOcclusion(chromatic_enabled, wavelength, sp, wo, ray_division, camera, pixel_sampling_data, false, false, accelerator, ao_samples, shadow_bias_auto, shadow_bias, ao_dist, ao_col, transp_shadows_depth);
+		*color_layer += sampleAmbientOcclusion(accelerator, chromatic_enabled, wavelength, sp, wo, ray_division, camera, pixel_sampling_data, false, false, ao_samples, shadow_bias_auto, shadow_bias, ao_dist, ao_col, transp_shadows_depth);
 	}
 	if(Rgba *color_layer = color_layers->find(Layer::AoClay))
 	{
-		*color_layer += sampleAmbientOcclusion(chromatic_enabled, wavelength, sp, wo, ray_division, camera, pixel_sampling_data, false, true, accelerator, ao_samples, shadow_bias_auto, shadow_bias, ao_dist, ao_col, transp_shadows_depth);
+		*color_layer += sampleAmbientOcclusion(accelerator, chromatic_enabled, wavelength, sp, wo, ray_division, camera, pixel_sampling_data, false, true, ao_samples, shadow_bias_auto, shadow_bias, ao_dist, ao_col, transp_shadows_depth);
 	}
 }
 
-Rgb TiledIntegrator::sampleAmbientOcclusion(bool chromatic_enabled, float wavelength, const SurfacePoint &sp, const Vec3 &wo, const RayDivision &ray_division, const Camera *camera, const PixelSamplingData &pixel_sampling_data, bool transparent_shadows, bool clay, const Accelerator *accelerator, int ao_samples, bool shadow_bias_auto, float shadow_bias, float ao_dist, const Rgb &ao_col, int transp_shadows_depth)
+Rgb TiledIntegrator::sampleAmbientOcclusion(const Accelerator &accelerator, bool chromatic_enabled, float wavelength, const SurfacePoint &sp, const Vec3 &wo, const RayDivision &ray_division, const Camera *camera, const PixelSamplingData &pixel_sampling_data, bool transparent_shadows, bool clay, int ao_samples, bool shadow_bias_auto, float shadow_bias, float ao_dist, const Rgb &ao_col, int transp_shadows_depth)
 {
-	if(!accelerator) return {0.f};
 	Rgb col{0.f};
 	const Material *material = sp.material_;
 	const BsdfFlags &mat_bsdfs = sp.mat_data_->bsdf_flags_;
@@ -689,8 +690,8 @@ Rgb TiledIntegrator::sampleAmbientOcclusion(bool chromatic_enabled, float wavele
 		}
 		Rgb scol;
 		const bool shadowed = transparent_shadows ?
-							  accelerator->isShadowed(light_ray, transp_shadows_depth, scol, mask_obj_index, mask_mat_index, shadow_bias, camera) :
-							  accelerator->isShadowed(light_ray, mask_obj_index, mask_mat_index, shadow_bias);
+							  accelerator.isShadowed(light_ray, transp_shadows_depth, scol, mask_obj_index, mask_mat_index, shadow_bias, camera) :
+							  accelerator.isShadowed(light_ray, mask_obj_index, mask_mat_index, shadow_bias);
 		if(!shadowed)
 		{
 			const float cos = std::abs(sp.n_ * light_ray.dir_);
