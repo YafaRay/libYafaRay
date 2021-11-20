@@ -783,7 +783,7 @@ void Scene::defineDependentLayers()
 
 			case Layer::DebugFacesEdges:
 				if(!layers_.isDefined(Layer::NormalGeom)) defineLayer(Layer::NormalGeom, Image::Type::ColorAlpha);
-				if(!layers_.isDefined(Layer::NormalGeom)) defineLayer(Layer::ZDepthNorm, Image::Type::GrayAlpha);
+				if(!layers_.isDefined(Layer::ZDepthNorm)) defineLayer(Layer::ZDepthNorm, Image::Type::GrayAlpha);
 				break;
 
 			case Layer::DebugObjectsEdges:
