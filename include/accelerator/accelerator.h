@@ -60,8 +60,8 @@ class Accelerator
 		virtual AcceleratorTsIntersectData intersectTs(const Ray &ray, int max_depth, float dist, float shadow_bias, const Camera *camera) const = 0;
 		virtual Bound getBound() const = 0;
 		bool intersect(Ray &ray, SurfacePoint &sp, const Camera *camera) const;
-		bool isShadowed(const Ray &ray, float &obj_index, float &mat_index, float shadow_bias) const;
-		bool isShadowed(const Ray &ray, int max_depth, Rgb &filt, float &obj_index, float &mat_index, float shadow_bias, const Camera *camera) const;
+		std::pair<bool, const Primitive *> isShadowed(const Ray &ray, float shadow_bias) const;
+		std::tuple<bool, Rgb, const Primitive *> isShadowed(const Ray &ray, int max_depth, float shadow_bias, const Camera *camera) const;
 
 	protected:
 		Logger &logger_;

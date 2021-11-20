@@ -776,14 +776,15 @@ Rgb BidirectionalIntegrator::evalPath(const Accelerator &accelerator, int s, int
 {
 	const PathVertex &y = pd.light_path_[s - 1];
 	const PathVertex &z = pd.eye_path_[t - 1];
-	float mask_obj_index = 0.f, mask_mat_index = 0.f;
-
 	const Rgb c_st = pd.f_y_ * pd.path_[s].g_ * pd.f_z_;
 	//unweighted contronution C*:
 	Rgb c_uw = y.alpha_ * c_st * z.alpha_;
-	Ray con_ray(y.sp_.p_, pd.w_l_e_, 0.0005, pd.d_yz_);
-	Rgb scol = Rgb(0.f);
-	const bool shadowed = (tr_shad_) ? accelerator.isShadowed(con_ray, s_depth_, scol, mask_obj_index, mask_mat_index, scene_->getShadowBias(), camera) : accelerator.isShadowed(con_ray, mask_obj_index, mask_mat_index, scene_->getShadowBias());
+	Ray con_ray(y.sp_.p_, pd.w_l_e_, 0.0005f, pd.d_yz_);
+	bool shadowed = false;
+	Rgb scol {0.f};
+	const Primitive *shadow_casting_primitive = nullptr;
+	if(tr_shad_) std::tie(shadowed, scol, shadow_casting_primitive) = accelerator.isShadowed(con_ray, s_depth_, scene_->getShadowBias(), camera);
+	else std::tie(shadowed, shadow_casting_primitive) = accelerator.isShadowed(con_ray, scene_->getShadowBias());
 	if(shadowed) return Rgb(0.f);
 	if(tr_shad_) c_uw *= scol;
 	return c_uw;
@@ -792,9 +793,11 @@ Rgb BidirectionalIntegrator::evalPath(const Accelerator &accelerator, int s, int
 //===  eval paths with s==1 (direct lighting strategy)  ===//
 Rgb BidirectionalIntegrator::evalLPath(const Accelerator &accelerator, int t, PathData &pd, const Ray &l_ray, const Rgb &lcol, const Camera *camera) const
 {
-	float mask_obj_index = 0.f, mask_mat_index = 0.f;
-	Rgb scol = Rgb(0.f);
-	const bool shadowed = (tr_shad_) ? accelerator.isShadowed(l_ray, s_depth_, scol, mask_obj_index, mask_mat_index, scene_->getShadowBias(), camera) : accelerator.isShadowed(l_ray, mask_obj_index, mask_mat_index, scene_->getShadowBias());
+	bool shadowed = false;
+	Rgb scol {0.f};
+	const Primitive *shadow_casting_primitive = nullptr;
+	if(tr_shad_) std::tie(shadowed, scol, shadow_casting_primitive) = accelerator.isShadowed(l_ray, s_depth_, scene_->getShadowBias(), camera);
+	else std::tie(shadowed, shadow_casting_primitive) = accelerator.isShadowed(l_ray, scene_->getShadowBias());
 	if(shadowed) return Rgb(0.f);
 	const PathVertex &z = pd.eye_path_[t - 1];
 	Rgb c_uw = lcol * pd.f_z_ * z.alpha_ * std::abs(z.sp_.n_ * l_ray.dir_); // f_y, cos_x0_f and r^2 computed in connectLPath...(light pdf)
@@ -813,10 +816,12 @@ Rgb BidirectionalIntegrator::evalLPath(const Accelerator &accelerator, int t, Pa
 Rgb BidirectionalIntegrator::evalPathE(const Accelerator &accelerator, int s, PathData &pd, const Camera *camera) const
 {
 	const PathVertex &y = pd.light_path_[s - 1];
-	float mask_obj_index = 0.f, mask_mat_index = 0.f;
-	const Ray con_ray(y.sp_.p_, pd.w_l_e_, 0.0005, pd.d_yz_);
-	Rgb scol = Rgb(0.f);
-	const bool shadowed = (tr_shad_) ? accelerator.isShadowed(con_ray, s_depth_, scol, mask_obj_index, mask_mat_index, scene_->getShadowBias(), camera) : accelerator.isShadowed(con_ray, mask_obj_index, mask_mat_index, scene_->getShadowBias());
+	const Ray con_ray(y.sp_.p_, pd.w_l_e_, 0.0005f, pd.d_yz_);
+	bool shadowed = false;
+	Rgb scol {0.f};
+	const Primitive *shadow_casting_primitive = nullptr;
+	if(tr_shad_) std::tie(shadowed, scol, shadow_casting_primitive) = accelerator.isShadowed(con_ray, s_depth_, scene_->getShadowBias(), camera);
+	else std::tie(shadowed, shadow_casting_primitive) = accelerator.isShadowed(con_ray, scene_->getShadowBias());
 	if(shadowed) return Rgb(0.f);
 	//eval material
 	//Rgb f_y = y.sp.material->eval(state, y.sp, y.wi, pd.w_l_e, BSDF_ALL);

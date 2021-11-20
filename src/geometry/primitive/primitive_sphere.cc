@@ -86,6 +86,7 @@ SurfacePoint SpherePrimitive::getSurface(const RayDifferentials *ray_differentia
 	sp.orco_p_ = normal;
 	normal.normalize();
 	sp.material_ = material_;
+	sp.object_ = &base_object_;
 	sp.n_ = normal;
 	sp.ng_ = normal;
 	//sp.origin = (void*)this;

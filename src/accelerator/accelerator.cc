@@ -67,43 +67,31 @@ bool Accelerator::intersect(Ray &ray, SurfacePoint &sp, const Camera *camera) co
 	return false;
 }
 
-bool Accelerator::isShadowed(const Ray &ray, float &obj_index, float &mat_index, float shadow_bias) const
+std::pair<bool, const Primitive *> Accelerator::isShadowed(const Ray &ray, float shadow_bias) const
 {
 	Ray sray(ray, Ray::DifferentialsCopy::No);
 	sray.from_ += sray.dir_ * sray.tmin_;
 	sray.time_ = ray.time_;
 	const float t_max = (ray.tmax_ >= 0.f) ? sray.tmax_ - 2 * sray.tmin_ : std::numeric_limits<float>::infinity();
 	const AcceleratorIntersectData accelerator_intersect_data = intersectS(sray, t_max, shadow_bias);
-	if(accelerator_intersect_data.hit_)
-	{
-		if(accelerator_intersect_data.hit_primitive_)
-		{
-			if(accelerator_intersect_data.hit_primitive_->getObject()) obj_index = accelerator_intersect_data.hit_primitive_->getObject()->getAbsObjectIndex();    //Object index of the object casting the shadow
-			if(accelerator_intersect_data.hit_primitive_->getMaterial()) mat_index = accelerator_intersect_data.hit_primitive_->getMaterial()->getAbsMaterialIndex();    //Material index of the object casting the shadow
-		}
-		return true;
-	}
-	return false;
+	if(accelerator_intersect_data.hit_) return {true, accelerator_intersect_data.hit_primitive_};
+	else return {false, nullptr};
 }
 
-bool Accelerator::isShadowed(const Ray &ray, int max_depth, Rgb &filt, float &obj_index, float &mat_index, float shadow_bias, const Camera *camera) const
+std::tuple<bool, Rgb, const Primitive *> Accelerator::isShadowed(const Ray &ray, int max_depth, float shadow_bias, const Camera *camera) const
 {
 	Ray sray(ray, Ray::DifferentialsCopy::No); //Should this function use Ray::DifferentialsAssignment::Copy ? If using copy it would be slower but would take into account texture mipmaps, although that's probably irrelevant for transparent shadows?
 	sray.from_ += sray.dir_ * sray.tmin_;
 	const float t_max = (ray.tmax_ >= 0.f) ? sray.tmax_ - 2 * sray.tmin_ : std::numeric_limits<float>::infinity();
-	bool intersect = false;
 	const AcceleratorTsIntersectData accelerator_intersect_data = intersectTs(sray, max_depth, t_max, shadow_bias, camera);
-	filt = accelerator_intersect_data.transparent_color_;
+	std::tuple<bool, Rgb, const Primitive *> result {false, {0.f}, nullptr};
+	std::get<1>(result) = accelerator_intersect_data.transparent_color_;
 	if(accelerator_intersect_data.hit_)
 	{
-		intersect = true;
-		if(accelerator_intersect_data.hit_primitive_)
-		{
-			if(accelerator_intersect_data.hit_primitive_->getObject()) obj_index = accelerator_intersect_data.hit_primitive_->getObject()->getAbsObjectIndex();    //Object index of the object casting the shadow
-			if(accelerator_intersect_data.hit_primitive_->getMaterial()) mat_index = accelerator_intersect_data.hit_primitive_->getMaterial()->getAbsMaterialIndex();    //Material index of the object casting the shadow
-		}
+		std::get<0>(result) = true;
+		std::get<2>(result) = accelerator_intersect_data.hit_primitive_;
 	}
-	return intersect;
+	return result;
 }
 
 END_YAFARAY

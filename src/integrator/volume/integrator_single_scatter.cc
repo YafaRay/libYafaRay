@@ -151,8 +151,6 @@ Rgb SingleScatterIntegrator::getInScatter(RandomGenerator &random_generator, con
 	Rgb in_scatter(0.f);
 	SurfacePoint sp;
 	sp.p_ = step_ray.from_;
-	float mask_obj_index = 0.f, mask_mat_index = 0.f;
-
 	Ray light_ray;
 	light_ray.from_ = sp.p_;
 	const auto &volumes = scene_->getVolumeRegions();
@@ -168,8 +166,8 @@ Rgb SingleScatterIntegrator::getInScatter(RandomGenerator &random_generator, con
 			{
 				// ...shadowed...
 				if(light_ray.tmax_ < 0.f) light_ray.tmax_ = 1e10;  // infinitely distant light
-				bool shadowed = accelerator->isShadowed(light_ray, mask_obj_index, mask_mat_index, scene_->getShadowBias());
-				if(!shadowed)
+				const auto shadow_result = accelerator->isShadowed(light_ray, scene_->getShadowBias());
+				if(!shadow_result.first)
 				{
 					float light_tr = 0.0f;
 					// replace lightTr with precalculated attenuation
@@ -217,8 +215,8 @@ Rgb SingleScatterIntegrator::getInScatter(RandomGenerator &random_generator, con
 				{
 					// ...shadowed...
 					if(light_ray.tmax_ < 0.f) light_ray.tmax_ = 1e10;  // infinitely distant light
-					bool shadowed = accelerator->isShadowed(light_ray, mask_obj_index, mask_mat_index, scene_->getShadowBias());
-					if(!shadowed)
+					const auto shadow_result = accelerator->isShadowed(light_ray, scene_->getShadowBias());
+					if(!shadow_result.first)
 					{
 						ccol += ls.col_ / ls.pdf_;
 

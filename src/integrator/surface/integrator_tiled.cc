@@ -657,7 +657,6 @@ Rgb TiledIntegrator::sampleAmbientOcclusion(const Accelerator &accelerator, bool
 	const Material *material = sp.material_;
 	const BsdfFlags &mat_bsdfs = sp.mat_data_->bsdf_flags_;
 	Ray light_ray {sp.p_, {0.f}};
-	float mask_obj_index = 0.f, mask_mat_index = 0.f;
 	int n = ao_samples;//(int) ceilf(aoSamples*getSampleMultiplier());
 	if(ray_division.division_ > 1) n = std::max(1, n / ray_division.division_);
 	const unsigned int offs = n * pixel_sampling_data.sample_ + pixel_sampling_data.offset_;
@@ -688,10 +687,11 @@ Rgb TiledIntegrator::sampleAmbientOcclusion(const Accelerator &accelerator, bool
 		{
 			col += material->emit(sp.mat_data_.get(), sp, wo) * s.pdf_;
 		}
-		Rgb scol;
-		const bool shadowed = transparent_shadows ?
-							  accelerator.isShadowed(light_ray, transp_shadows_depth, scol, mask_obj_index, mask_mat_index, shadow_bias, camera) :
-							  accelerator.isShadowed(light_ray, mask_obj_index, mask_mat_index, shadow_bias);
+		bool shadowed = false;
+		Rgb scol {0.f};
+		const Primitive *shadow_casting_primitive = nullptr;
+		if(transparent_shadows) std::tie(shadowed, scol, shadow_casting_primitive) = accelerator.isShadowed(light_ray, transp_shadows_depth, shadow_bias, camera);
+		else std::tie(shadowed, shadow_casting_primitive) = accelerator.isShadowed(light_ray, shadow_bias);
 		if(!shadowed)
 		{
 			const float cos = std::abs(sp.n_ * light_ray.dir_);

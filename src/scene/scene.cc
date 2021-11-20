@@ -773,7 +773,7 @@ void Scene::defineDependentLayers()
 
 			case Layer::ObjIndexMaskAll:
 				if(!layers_.isDefined(Layer::ObjIndexMask)) defineLayer(Layer::ObjIndexMask);
-				if(!layers_.isDefined(Layer::ObjIndexMask)) defineLayer(Layer::ObjIndexMaskShadow);
+				if(!layers_.isDefined(Layer::ObjIndexMaskShadow)) defineLayer(Layer::ObjIndexMaskShadow);
 				break;
 
 			case Layer::MatIndexMaskAll:
@@ -808,14 +808,14 @@ void Scene::setMaskParams(const ParamMap &params)
 	bool mask_invert = false;
 	bool mask_only = false;
 
-	params.getParam("mask_obj_index", mask_obj_index);
-	params.getParam("mask_mat_index", mask_mat_index);
-	params.getParam("mask_invert", mask_invert);
-	params.getParam("mask_only", mask_only);
+	params.getParam("layer_mask_obj_index", mask_obj_index);
+	params.getParam("layer_mask_mat_index", mask_mat_index);
+	params.getParam("layer_mask_invert", mask_invert);
+	params.getParam("layer_mask_only", mask_only);
 
 	MaskParams mask_params;
-	mask_params.obj_index_ = (float) mask_obj_index;
-	mask_params.mat_index_ = (float) mask_mat_index;
+	mask_params.obj_index_ = static_cast<float>(mask_obj_index);
+	mask_params.mat_index_ = static_cast<float>(mask_mat_index);
 	mask_params.invert_ = mask_invert;
 	mask_params.only_ = mask_only;
 

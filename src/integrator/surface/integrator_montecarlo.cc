@@ -36,6 +36,8 @@
 #include "sampler/sample_pdf1d.h"
 #include "render/render_data.h"
 #include "accelerator/accelerator.h"
+#include "geometry/primitive/primitive.h"
+#include "geometry/object/object.h"
 
 BEGIN_YAFARAY
 
@@ -104,13 +106,13 @@ Rgb MonteCarloIntegrator::diracLight(const Accelerator &accelerator, const Light
 		}
 		if(scene_->shadow_bias_auto_) light_ray.tmin_ = scene_->shadow_bias_ * std::max(1.f, sp.p_.length());
 		else light_ray.tmin_ = scene_->shadow_bias_;
-		float mask_obj_index = 0.f, mask_mat_index = 0.f;
 		Rgb scol{0.f};
 		bool shadowed = false;
+		const Primitive *shadow_casting_primitive = nullptr;
 		if(cast_shadows)
 		{
-			if(tr_shad_) shadowed = accelerator.isShadowed(light_ray, s_depth_, scol, mask_obj_index, mask_mat_index, scene_->getShadowBias(), camera);
-			else shadowed = accelerator.isShadowed(light_ray, mask_obj_index, mask_mat_index, scene_->getShadowBias());
+			if(tr_shad_) std::tie(shadowed, scol, shadow_casting_primitive) = accelerator.isShadowed(light_ray, s_depth_, scene_->getShadowBias(), camera);
+			else std::tie(shadowed, shadow_casting_primitive) = accelerator.isShadowed(light_ray, scene_->getShadowBias());
 		}
 		const float angle_light_normal = material->isFlat() ? 1.f : std::abs(sp.n_ * light_ray.dir_);	//If the material has the special attribute "isFlat()" then we will not multiply the surface reflection by the cosine of the angle between light and normal
 		if(!shadowed || color_layer_diffuse_no_shadow)
@@ -133,16 +135,16 @@ Rgb MonteCarloIntegrator::diracLight(const Accelerator &accelerator, const Light
 		}
 		if(color_layers)
 		{
-			if(color_layers->getFlags().hasAny(Layer::Flags::IndexLayers))
+			if(shadowed && color_layers->getFlags().hasAny(Layer::Flags::IndexLayers) && shadow_casting_primitive)
 			{
-				if(shadowed)
-				{
-					const MaskParams &mask_params = scene_->getMaskParams();
-					Rgba *color_layer_mat_index_mask_shadow = color_layers->find(Layer::MatIndexMaskShadow);
-					Rgba *color_layer_obj_index_mask_shadow = color_layers->find(Layer::ObjIndexMaskShadow);
-					if(color_layer_mat_index_mask_shadow && mask_mat_index == mask_params.mat_index_) *color_layer_mat_index_mask_shadow += Rgb(1.f);
-					if(color_layer_obj_index_mask_shadow && mask_obj_index == mask_params.obj_index_) *color_layer_obj_index_mask_shadow += Rgb(1.f);
-				}
+				const MaskParams &mask_params = scene_->getMaskParams();
+				Rgba *color_layer_mat_index_mask_shadow = color_layers->find(Layer::MatIndexMaskShadow);
+				Rgba *color_layer_obj_index_mask_shadow = color_layers->find(Layer::ObjIndexMaskShadow);
+				float mask_obj_index = 0.f, mask_mat_index = 0.f;
+				if(const Object *casting_object = shadow_casting_primitive->getObject()) mask_obj_index = casting_object->getAbsObjectIndex();    //Object index of the object casting the shadow
+				if(const Material *casting_material = shadow_casting_primitive->getMaterial()) mask_mat_index = casting_material->getAbsMaterialIndex();    //Material index of the object casting the shadow
+				if(color_layer_mat_index_mask_shadow && mask_mat_index == mask_params.mat_index_) *color_layer_mat_index_mask_shadow += Rgb(1.f);
+				if(color_layer_obj_index_mask_shadow && mask_obj_index == mask_params.obj_index_) *color_layer_obj_index_mask_shadow += Rgb(1.f);
 			}
 			if(color_layers->getFlags().hasAny(Layer::Flags::DebugLayers))
 			{
@@ -196,12 +198,12 @@ Rgb MonteCarloIntegrator::areaLightSampleLight(const Accelerator &accelerator, c
 		{
 			if(scene_->shadow_bias_auto_) light_ray.tmin_ = scene_->shadow_bias_ * std::max(1.f, sp.p_.length());
 			else light_ray.tmin_ = scene_->shadow_bias_;
-			float mask_obj_index = 0.f, mask_mat_index = 0.f;
 			bool shadowed = false;
+			const Primitive *shadow_casting_primitive = nullptr;
 			if(cast_shadows)
 			{
-				if(tr_shad_) shadowed = accelerator.isShadowed(light_ray, s_depth_, scol, mask_obj_index, mask_mat_index, scene_->getShadowBias(), camera);
-				else accelerator.isShadowed(light_ray, mask_obj_index, mask_mat_index, scene_->getShadowBias());
+				if(tr_shad_) std::tie(shadowed, scol, shadow_casting_primitive) = accelerator.isShadowed(light_ray, s_depth_, scene_->getShadowBias(), camera);
+				else std::tie(shadowed, shadow_casting_primitive) = accelerator.isShadowed(light_ray, scene_->getShadowBias());
 			}
 			if((!shadowed && ls.pdf_ > 1e-6f) || color_layer_diffuse_no_shadow)
 			{
@@ -214,7 +216,7 @@ Rgb MonteCarloIntegrator::areaLightSampleLight(const Accelerator &accelerator, c
 				}
 				const Rgb surf_col = material->eval(sp.mat_data_.get(), sp, wo, light_ray.dir_, BsdfFlags::All);
 				if(color_layer_shadow && !shadowed && ls.pdf_ > 1e-6f) col_shadow += Rgb(1.f);
-				const float angle_light_normal = material->isFlat() ? 1.f : std::abs(sp.n_ * light_ray.dir_);	//If the material has the special attribute "isFlat()" then we will not multiply the surface reflection by the cosine of the angle between light and normal
+				const float angle_light_normal = material->isFlat() ? 1.f : std::abs(sp.n_ * light_ray.dir_);    //If the material has the special attribute "isFlat()" then we will not multiply the surface reflection by the cosine of the angle between light and normal
 				float w = 1.f;
 				if(light->canIntersect())
 				{
@@ -242,9 +244,12 @@ Rgb MonteCarloIntegrator::areaLightSampleLight(const Accelerator &accelerator, c
 				}
 				if(!shadowed && ls.pdf_ > 1e-6f) col += surf_col * ls.col_ * angle_light_normal * w / ls.pdf_;
 			}
-			if(color_layers && (shadowed || ls.pdf_ <= 1e-6f))
+			if(color_layers && (shadowed || ls.pdf_ <= 1e-6f) && color_layers->getFlags().hasAny(Layer::Flags::IndexLayers) && shadow_casting_primitive)
 			{
 				const MaskParams &mask_params = scene_->getMaskParams();
+				float mask_obj_index = 0.f, mask_mat_index = 0.f;
+				if(const Object *casting_object = shadow_casting_primitive->getObject()) mask_obj_index = casting_object->getAbsObjectIndex();    //Object index of the object casting the shadow
+				if(const Material *casting_material = shadow_casting_primitive->getMaterial()) mask_mat_index = casting_material->getAbsMaterialIndex();    //Material index of the object casting the shadow
 				if(color_layer_mat_index_mask_shadow && mask_mat_index == mask_params.mat_index_) col_shadow_mat_mask += Rgb(1.f);
 				if(color_layer_obj_index_mask_shadow && mask_obj_index == mask_params.obj_index_) col_shadow_obj_mask += Rgb(1.f);
 			}
@@ -316,13 +321,13 @@ Rgb MonteCarloIntegrator::areaLightSampleMaterial(const Accelerator &accelerator
 			float light_pdf;
 			if(s.pdf_ > 1e-6f && light->intersect(b_ray, b_ray.tmax_, lcol, light_pdf))
 			{
-				float mask_obj_index = 0.f, mask_mat_index = 0.f;
 				Rgb scol{0.f};
 				bool shadowed = false;
+				const Primitive *shadow_casting_primitive = nullptr;
 				if(cast_shadows)
 				{
-					if(tr_shad_) shadowed = accelerator.isShadowed(b_ray, s_depth_, scol, mask_obj_index, mask_mat_index, scene_->getShadowBias(), camera);
-					else accelerator.isShadowed(b_ray, mask_obj_index, mask_mat_index, scene_->getShadowBias());
+					if(tr_shad_) std::tie(shadowed, scol, shadow_casting_primitive) = accelerator.isShadowed(b_ray, s_depth_, scene_->getShadowBias(), camera);
+					else std::tie(shadowed, shadow_casting_primitive) = accelerator.isShadowed(b_ray, scene_->getShadowBias());
 				}
 				if((!shadowed && light_pdf > 1e-6f) || color_layer_diffuse_no_shadow)
 				{

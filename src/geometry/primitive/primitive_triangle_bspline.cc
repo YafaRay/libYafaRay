@@ -176,6 +176,7 @@ SurfacePoint BsTrianglePrimitive::getSurface(const RayDifferentials *ray_differe
 	sp.dp_dv_.normalize();
 
 	sp.material_ = material_;
+	sp.object_ = &base_mesh_object_;
 	sp.p_ = hit;
 	Vec3::createCs(sp.n_, sp.nu_, sp.nv_);
 	// transform dPdU and dPdV in shading space
