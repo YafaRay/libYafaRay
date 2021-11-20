@@ -37,6 +37,7 @@
 BEGIN_YAFARAY
 
 constexpr int BidirectionalIntegrator::max_path_length_;
+constexpr int BidirectionalIntegrator::max_path_eval_length_;
 constexpr int BidirectionalIntegrator::min_path_length_;
 
 /*  conventions:
@@ -51,29 +52,25 @@ constexpr int BidirectionalIntegrator::min_path_length_;
 
 /*! class that holds some vertex y_i/z_i (depending on wether it is a light or camera path)
 */
-class PathVertex
+struct BidirectionalIntegrator::PathVertex
 {
-	public:
-		PathVertex() = default;
-		PathVertex(const PathVertex &path_vertex) = default;
-		PathVertex(PathVertex &&path_vertex) = default;
-		SurfacePoint sp_;  //!< surface point at which the path vertex lies
-		BsdfFlags flags_;       //!< flags of the sampled BSDF component (not all components of the sp!)
-		Rgb alpha_;      //!< cumulative subpath weight; note that y_i/z_i stores alpha_i+1 !
-		Rgb f_s_;        //!< f(x_i-1, x_i, x_i+1), i.e. throughput from last to next path vertex
-		Vec3 wi_, wo_;  //!< sampled direction for next vertex (if available)
-		float ds_;           //!< squared distance between x_i-1 and x_i
-		float g_;            //!< geometric factor G(x_i-1, x_i), required for MIS
-		float qi_wo_;        //!< russian roulette probability for terminating path
-		float qi_wi_;        //!< russian roulette probability for terminating path when generating path in opposite direction
-		float cos_wi_, cos_wo_; //!< (absolute) cosine of the incoming (wi) and sampled (wo) path direction
-		float pdf_wi_, pdf_wo_; //!< the pdf for sampling wi from wo and wo from wi respectively
+	SurfacePoint sp_;  //!< surface point at which the path vertex lies
+	BsdfFlags flags_;       //!< flags of the sampled BSDF component (not all components of the sp!)
+	Rgb alpha_;      //!< cumulative subpath weight; note that y_i/z_i stores alpha_i+1 !
+	Rgb f_s_;        //!< f(x_i-1, x_i, x_i+1), i.e. throughput from last to next path vertex
+	Vec3 wi_, wo_;  //!< sampled direction for next vertex (if available)
+	float ds_;           //!< squared distance between x_i-1 and x_i
+	float g_;            //!< geometric factor G(x_i-1, x_i), required for MIS
+	float qi_wo_;        //!< russian roulette probability for terminating path
+	float qi_wi_;        //!< russian roulette probability for terminating path when generating path in opposite direction
+	float cos_wi_, cos_wo_; //!< (absolute) cosine of the incoming (wi) and sampled (wo) path direction
+	float pdf_wi_, pdf_wo_; //!< the pdf for sampling wi from wo and wo from wi respectively
 };
 
 /*! vertices of a connected path going forward from light to eye;
     conventions: path vertices are named x_0...x_k, with k=s+t-1 again.
     x_0 lies on the light source, x_k on the camera */
-struct PathEvalVertex
+struct BidirectionalIntegrator::PathEvalVertex
 {
 	bool specular_; //!< indicate that the ingoing direction determines the outgoing one (and vice versa)
 	union
@@ -122,23 +119,32 @@ void BidirectionalIntegrator::checkPath(std::vector<PathEvalVertex> &p, int s, i
 
 /*! holds eye and light path, aswell as data for connection (s,t),
     i.e. connection of light vertex y_s with eye vertex z_t */
-class PathData
+struct BidirectionalIntegrator::PathData
 {
-	public:
-		std::vector<PathVertex> light_path_, eye_path_;
-		std::vector<PathEvalVertex> path_;
-		//pathCon_t pc;
-		// additional information for current path connection:
-		Vec3 w_l_e_;       //!< direction of edge from light to eye vertex, i.e. y_s to z_t
-		Rgb f_y_, f_z_;       //!< f for light and eye vertex that are connected
-		float u_, v_;            //!< current position on image plane
-		float d_yz_;             //!< distance between y_s to z_t
-		const Light *light_;   //!< the light source to which the current path is connected
-		//float pdf_Ad_0;       //!< pdf for direct lighting strategy
-		float pdf_emit_, pdf_illum_;  //!< light pdfs required to calculate p1 for direct lighting strategy
-		bool singular_l_;         //!< true if light has zero area (point lights for example)
-		int n_paths_;             //!< number of paths that have been sampled (for current thread and image)
+	PathData();
+	std::vector<PathVertex> light_path_, eye_path_;
+	std::vector<PathEvalVertex> path_;
+	//pathCon_t pc;
+	// additional information for current path connection:
+	Vec3 w_l_e_;       //!< direction of edge from light to eye vertex, i.e. y_s to z_t
+	Rgb f_y_, f_z_;       //!< f for light and eye vertex that are connected
+	float u_, v_;            //!< current position on image plane
+	float d_yz_;             //!< distance between y_s to z_t
+	const Light *light_;   //!< the light source to which the current path is connected
+	//float pdf_Ad_0;       //!< pdf for direct lighting strategy
+	float pdf_emit_, pdf_illum_;  //!< light pdfs required to calculate p1 for direct lighting strategy
+	bool singular_l_;         //!< true if light has zero area (point lights for example)
 };
+
+BidirectionalIntegrator::PathData::PathData()
+{
+	light_path_.reserve(max_path_length_);
+	light_path_.resize(1);
+	eye_path_.reserve(max_path_length_);
+	eye_path_.resize(1);
+	path_.reserve(max_path_eval_length_);
+	path_.resize(1);
+}
 
 BidirectionalIntegrator::BidirectionalIntegrator(Logger &logger, bool transp_shad, int shadow_depth): TiledIntegrator(logger)
 {
@@ -148,20 +154,12 @@ BidirectionalIntegrator::BidirectionalIntegrator(Logger &logger, bool transp_sha
 
 bool BidirectionalIntegrator::preprocess(const RenderControl &render_control, Timer &timer, const RenderView *render_view, ImageFilm *image_film)
 {
+	n_paths_ = 0;
 	image_film_ = image_film;
-	thread_data_.resize(scene_->getNumThreads());
-	for(int t = 0; t < scene_->getNumThreads(); ++t)
-	{
-		PathData &path_data = thread_data_[t];
-		path_data.eye_path_.resize(max_path_length_);
-		path_data.light_path_.resize(max_path_length_);
-		path_data.path_.resize(max_path_length_ * 2 + 1);
-		path_data.n_paths_ = 0;
-	}
 	// initialize userdata (todo!)
 	lights_ = render_view->getLightsVisible();
 	const int num_lights = lights_.size();
-	f_num_lights_ = 1.f / (float) num_lights;
+	f_num_lights_ = 1.f / static_cast<float>(num_lights);
 	const auto energies = std::unique_ptr<float[]>(new float[num_lights]);
 	for(int i = 0; i < num_lights; ++i) energies[i] = lights_[i]->totalEnergy().energy();
 	light_power_d_ = std::unique_ptr<Pdf1D>(new Pdf1D(energies.get(), num_lights));
@@ -216,13 +214,7 @@ bool BidirectionalIntegrator::preprocess(const RenderControl &render_control, Ti
 void BidirectionalIntegrator::cleanup()
 {
 	//	if(logger_.isDebug())logger_.logDebug(integratorName << ": " << "cleanup: flushing light image");
-	int n_paths = 0;
-	for(int i = 0; i < (int)thread_data_.size(); ++i)
-	{
-		const PathData &path_data = thread_data_[i];
-		n_paths += path_data.n_paths_;
-	}
-	if(image_film_) image_film_->setNumDensitySamples(n_paths); //dirty hack...
+	if(image_film_) image_film_->setNumDensitySamples(n_paths_); //dirty hack...
 }
 
 /* ============================================================
@@ -238,8 +230,8 @@ std::pair<Rgb, float> BidirectionalIntegrator::integrate(const Accelerator &acce
 	if(sp)
 	{
 		const Vec3 wo = -ray.dir_;
-		PathData &path_data = thread_data_[thread_id];
-		++path_data.n_paths_;
+		PathData path_data;
+		++n_paths_;
 		PathVertex &ve = path_data.eye_path_.front();
 		PathVertex &vl = path_data.light_path_.front();
 		// setup ve
@@ -298,7 +290,7 @@ std::pair<Rgb, float> BidirectionalIntegrator::integrate(const Accelerator &acce
 			path_data.pdf_illum_ = lights_[light_num]->illumPdf(path_data.light_path_[1].sp_, vl.sp_) * light_num_pdf;
 			path_data.pdf_emit_ = ls.area_pdf_ * path_data.light_path_[1].ds_ / vl.cos_wo_;
 		}
-
+		path_data.path_.resize(n_eye + n_light + 1); //FIXME why +1?
 		// do bidir evalulation
 
 #if BIDIR_DO_LIGHTIMAGE
@@ -398,6 +390,7 @@ int BidirectionalIntegrator::createPath(const Accelerator &accelerator, bool chr
 	int n_vert = 1;
 	while(n_vert < max_len)
 	{
+		path.push_back({});
 		PathVertex &v = path[n_vert];
 		std::unique_ptr<const SurfacePoint> sp;
 		std::tie(sp, ray.tmax_) = accelerator.intersect(ray, camera);
@@ -449,6 +442,7 @@ int BidirectionalIntegrator::createPath(const Accelerator &accelerator, bool chr
 		ray.tmin_ = scene_->ray_min_dist_;
 		ray.tmax_ = -1.f;
 	}
+	path.resize(n_vert);
 	return n_vert;
 }
 
@@ -584,7 +578,7 @@ bool BidirectionalIntegrator::connectLPath(bool chromatic_enabled, float wavelen
 	light->emitPdf(sp_light, vec, pd.path_[0].pdf_a_0_, pd.path_[0].pdf_f_, cos_wo);
 	pd.path_[0].pdf_a_0_ *= light_num_pdf;
 	pd.path_[0].pdf_f_ /= cos_wo;
-	pd.path_[0].specular_ = ls.flags_.hasAny(Light::Flags::DiracDir);
+	pd.path_[0].specular_ = ls.flags_.hasAny(Light::Flags::DiracDir); //FIXME this has to be clarified
 	pd.singular_l_ = ls.flags_.hasAny(Light::Flags::Singular);
 	pd.pdf_illum_ = ls.pdf_ * light_num_pdf;
 	pd.pdf_emit_ = pd.path_[0].pdf_a_0_ * (sp_light.p_ - z.sp_.p_).lengthSqr() / cos_wo;
@@ -668,10 +662,12 @@ bool BidirectionalIntegrator::connectPathE(const Camera *camera, int s, PathData
  ============================================================ */
 
 // compute path densities and weight path
-float BidirectionalIntegrator::pathWeight(int s, int t, PathData &pd) const
+float BidirectionalIntegrator::pathWeight(int s, int t, const PathData &pd) const
 {
 	const std::vector<PathEvalVertex> &path = pd.path_;
-	float pr[2 * max_path_length_ + 1], p[2 * max_path_length_ + 1];
+	std::vector<float> p, pr;
+	p.resize(path.size());
+	pr.resize(path.size());
 	p[s] = 1.f;
 	// "forward" weights (towards eye), ratio pr_i here is p_i+1 / p_i
 	int k = s + t - 1;
@@ -706,12 +702,18 @@ float BidirectionalIntegrator::pathWeight(int s, int t, PathData &pd) const
 	}
 	if(pd.singular_l_) p[0] = 0.f;
 	// correct p1 with direct lighting strategy:
-	else if(pd.pdf_emit_ < -1.0e-12 || pd.pdf_emit_ > +1.0e-12) p[1] *= pd.pdf_illum_ / pd.pdf_emit_; //test! workaround for incomplete pdf funcs of lights
-	else return 1.f;	//FIXME: horrible workaround for the problem of Bidir render black randomly (depending on whether you compiled with debug or -O3, depending on whether you started Blender directly or using gdb, etc), when using Sky Sun. All this part of the Bidir integrator is horrible anyway, so for now I'm just trying to make it work.
+	else if(std::abs(pd.pdf_emit_) < 1.0e-12f) p[1] *= pd.pdf_illum_ / pd.pdf_emit_; //test! workaround for incomplete pdf funcs of lights
+	//else return 1.f;	//FIXME: horrible workaround for the problem of Bidir render black randomly (depending on whether you compiled with debug or -O3, depending on whether you started Blender directly or using gdb, etc), when using Sky Sun. All this part of the Bidir integrator is horrible anyway, so for now I'm just trying to make it work.
 	// do MIS...maximum heuristic, particularly simple, if there's a more likely sample method, weight is zero, otherwise 1
 	float weight = 1.f;
-	for(int i = s - 1; i >= 0; --i) if(p[i] > p[s] && !(p[i] < -1.0e36) && !(p[i] > 1.0e36) && !(p[s] < -1.0e36) && !(p[s] > 1.0e36)) weight = 0.f;	//FIXME: manual check for very big positive/negative values (horrible fix) for for the problem of Bidir render black when compiling with -O3 --fast-math.
-	for(int i = s + 1; i <= k + 1; ++i) if(p[i] > p[s] && !(p[i] < -1.0e36) && !(p[i] > 1.0e36) && !(p[s] < -1.0e36) && !(p[s] > 1.0e36)) weight = 0.f; //FIXME: manual check for very big positive/negative values (horrible fix) for for the problem of Bidir render black when compiling with -O3 --fast-math.
+	for(int i = s - 1; i >= 0; --i)
+	{
+		if(p[i] > p[s] && std::abs(p[i]) < 1.0e36f && std::abs(p[s]) < 1.0e36f) weight = 0.f;    //FIXME: manual check for very big positive/negative values (horrible fix) for for the problem of Bidir render black when compiling with -O3 --fast-math.
+	}
+	for(int i = s + 1; i <= k + 1; ++i)
+	{
+		if(p[i] > p[s] && std::abs(p[i]) < 1.0e36f && std::abs(p[s]) < 1.0e36f) weight = 0.f; //FIXME: manual check for very big positive/negative values (horrible fix) for for the problem of Bidir render black when compiling with -O3 --fast-math.
+	}
 	return weight;
 }
 
@@ -738,7 +740,8 @@ float BidirectionalIntegrator::pathWeight0T(int t, PathData &pd) const
 
 	// == standard weighting procedure now == //
 
-	float pr, p[2 * max_path_length_ + 1];
+	float pr;
+	std::array<float, max_path_eval_length_> p;
 	p[0] = 1;
 	p[1] = path[0].pdf_a_0_ / (path[1].pdf_b_ * path[1].g_);
 	const int k = t - 1;
@@ -776,7 +779,7 @@ float BidirectionalIntegrator::pathWeight0T(int t, PathData &pd) const
  ============================================================ */
 
 
-Rgb BidirectionalIntegrator::evalPath(const Accelerator &accelerator, int s, int t, PathData &pd, const Camera *camera) const
+Rgb BidirectionalIntegrator::evalPath(const Accelerator &accelerator, int s, int t, const PathData &pd, const Camera *camera) const
 {
 	const PathVertex &y = pd.light_path_[s - 1];
 	const PathVertex &z = pd.eye_path_[t - 1];
@@ -795,7 +798,7 @@ Rgb BidirectionalIntegrator::evalPath(const Accelerator &accelerator, int s, int
 }
 
 //===  eval paths with s==1 (direct lighting strategy)  ===//
-Rgb BidirectionalIntegrator::evalLPath(const Accelerator &accelerator, int t, PathData &pd, const Ray &l_ray, const Rgb &lcol, const Camera *camera) const
+Rgb BidirectionalIntegrator::evalLPath(const Accelerator &accelerator, int t, const PathData &pd, const Ray &l_ray, const Rgb &lcol, const Camera *camera) const
 {
 	bool shadowed = false;
 	Rgb scol {0.f};
@@ -817,7 +820,7 @@ Rgb BidirectionalIntegrator::evalLPath(const Accelerator &accelerator, int t, Pa
 
 //=== eval path with t==1 (light path directly connected to eve vertex)
 //almost same as evalPath, just that there is no material on one end but a camera sensor function (soon...)
-Rgb BidirectionalIntegrator::evalPathE(const Accelerator &accelerator, int s, PathData &pd, const Camera *camera) const
+Rgb BidirectionalIntegrator::evalPathE(const Accelerator &accelerator, int s, const PathData &pd, const Camera *camera) const
 {
 	const PathVertex &y = pd.light_path_[s - 1];
 	const Ray con_ray(y.sp_.p_, pd.w_l_e_, 0.0005f, pd.d_yz_);
