@@ -232,10 +232,10 @@ std::pair<Rgb, float> BidirectionalIntegrator::integrate(const Accelerator &acce
 {
 	Rgb col {0.f};
 	float alpha = 1.f;
-	SurfacePoint sp;
-	bool intersects;
-	std::tie(intersects, ray, sp) = accelerator.intersect({ray, Ray::DifferentialsCopy::No}, camera);
-	if(intersects)
+	std::unique_ptr<const SurfacePoint> sp;
+	float intersect_tmax;
+	std::tie(sp, intersect_tmax) = accelerator.intersect(ray, camera); //FIXME: should we change directly ray.tmax_ here or not?
+	if(sp)
 	{
 		const Vec3 wo = -ray.dir_;
 		PathData &path_data = thread_data_[thread_id];
@@ -369,8 +369,8 @@ std::pair<Rgb, float> BidirectionalIntegrator::integrate(const Accelerator &acce
 		}
 		if(color_layers)
 		{
-			generateCommonLayers(sp, scene_->getMaskParams(), color_layers);
-			generateOcclusionLayers(accelerator, chromatic_enabled, wavelength, ray_division, color_layers, camera, pixel_sampling_data, sp, wo, ao_samples_, scene_->shadow_bias_auto_, scene_->shadow_bias_, ao_dist_, ao_col_, s_depth_);
+			generateCommonLayers(*sp, scene_->getMaskParams(), color_layers);
+			generateOcclusionLayers(accelerator, chromatic_enabled, wavelength, ray_division, color_layers, camera, pixel_sampling_data, *sp, wo, ao_samples_, scene_->shadow_bias_auto_, scene_->shadow_bias_, ao_dist_, ao_col_, s_depth_);
 		}
 	}
 	else
@@ -399,9 +399,10 @@ int BidirectionalIntegrator::createPath(const Accelerator &accelerator, bool chr
 	while(n_vert < max_len)
 	{
 		PathVertex &v = path[n_vert];
-		bool intersects;
-		std::tie(intersects, ray, v.sp_) = accelerator.intersect(std::move(ray), camera);
-		if(!intersects) break;
+		std::unique_ptr<const SurfacePoint> sp;
+		std::tie(sp, ray.tmax_) = accelerator.intersect(ray, camera);
+		if(!sp) break;
+		v.sp_ = *sp;
 		const PathVertex &v_prev = path[n_vert - 1];
 		const Material *mat = v.sp_.material_;
 		// compute alpha_i+1 = alpha_i * fs(wi, wo) / P_proj(wo), where P_proj = bsdf_pdf(wo) / cos(wo*N)

@@ -117,8 +117,7 @@ void PhotonIntegrator::diffuseWorker(const Accelerator &accelerator, PhotonMap *
 	bool done = false;
 	unsigned int curr = 0;
 
-	SurfacePoint hit_curr, hit_prev;
-	hit_prev.initializeAllZero(); //Just to avoid compiler warnings
+	std::unique_ptr<const SurfacePoint> hit_prev, hit_curr;
 
 	float f_num_lights = (float)num_d_lights;
 	unsigned int n_diffuse_photons_thread = 1 + ((n_diffuse_photons - 1) / scene->getNumThreadsPhotons());
@@ -173,37 +172,36 @@ void PhotonIntegrator::diffuseWorker(const Accelerator &accelerator, PhotonMap *
 		BsdfFlags mat_bsdfs_prev = BsdfFlags::None;
 		while(true)
 		{
-			bool intersects;
-			std::tie(intersects, ray, hit_curr) = accelerator.intersect(std::move(ray), render_view->getCamera());
-			if(!intersects) break;
+			std::tie(hit_curr, ray.tmax_) = accelerator.intersect(ray, render_view->getCamera());
+			if(!hit_curr) break;
 			Rgb transm(1.f);
-			if(material_prev && mat_bsdfs_prev.hasAny(BsdfFlags::Volumetric))
+			if(material_prev && hit_prev && mat_bsdfs_prev.hasAny(BsdfFlags::Volumetric))
 			{
-				if(const VolumeHandler *vol = material_prev->getVolumeHandler(hit_prev.ng_ * -ray.dir_ < 0))
+				if(const VolumeHandler *vol = material_prev->getVolumeHandler(hit_prev->ng_ * -ray.dir_ < 0))
 				{
 					transm = vol->transmittance(ray);
 				}
 			}
 			const Vec3 wi = -ray.dir_;
-			const Material *material = hit_curr.material_;
-			const BsdfFlags &mat_bsdfs = hit_curr.mat_data_->bsdf_flags_;
+			const Material *material = hit_curr->material_;
+			const BsdfFlags &mat_bsdfs = hit_curr->mat_data_->bsdf_flags_;
 
 			if(mat_bsdfs.hasAny(BsdfFlags::Diffuse))
 			{
 				//deposit photon on surface
 				if(!caustic_photon)
 				{
-					Photon np(wi, hit_curr.p_, pcol);
+					Photon np(wi, hit_curr->p_, pcol);
 					local_diffuse_photons.push_back(np);
 				}
 				// create entry for radiance photon:
 				// don't forget to choose subset only, face normal forward; geometric vs. smooth normal?
 				if(final_gather && FastRandom::getNextFloatNormalized() < 0.125 && !caustic_photon)
 				{
-					const Vec3 n = SurfacePoint::normalFaceForward(hit_curr.ng_, hit_curr.n_, wi);
-					RadData rd(hit_curr.p_, n);
-					rd.refl_ = material->getReflectivity(hit_curr.mat_data_.get(), hit_curr, BsdfFlags::Diffuse | BsdfFlags::Glossy | BsdfFlags::Reflect, true, 0.f, render_view->getCamera());
-					rd.transm_ = material->getReflectivity(hit_curr.mat_data_.get(), hit_curr, BsdfFlags::Diffuse | BsdfFlags::Glossy | BsdfFlags::Transmit, true, 0.f, render_view->getCamera());
+					const Vec3 n = SurfacePoint::normalFaceForward(hit_curr->ng_, hit_curr->n_, wi);
+					RadData rd(hit_curr->p_, n);
+					rd.refl_ = material->getReflectivity(hit_curr->mat_data_.get(), *hit_curr, BsdfFlags::Diffuse | BsdfFlags::Glossy | BsdfFlags::Reflect, true, 0.f, render_view->getCamera());
+					rd.transm_ = material->getReflectivity(hit_curr->mat_data_.get(), *hit_curr, BsdfFlags::Diffuse | BsdfFlags::Glossy | BsdfFlags::Transmit, true, 0.f, render_view->getCamera());
 					local_rad_points.push_back(rd);
 				}
 			}
@@ -219,7 +217,7 @@ void PhotonIntegrator::diffuseWorker(const Accelerator &accelerator, PhotonMap *
 			PSample sample(s_5, s_6, s_7, BsdfFlags::All, pcol, transm);
 
 			Vec3 wo;
-			bool scattered = material->scatterPhoton(hit_curr.mat_data_.get(), hit_curr, wi, wo, sample, true, 0.f, render_view->getCamera());
+			bool scattered = material->scatterPhoton(hit_curr->mat_data_.get(), *hit_curr, wi, wo, sample, true, 0.f, render_view->getCamera());
 			if(!scattered) break; //photon was absorped.
 
 			pcol = sample.color_;
@@ -228,7 +226,7 @@ void PhotonIntegrator::diffuseWorker(const Accelerator &accelerator, PhotonMap *
 							 (sample.sampled_flags_.hasAny((BsdfFlags::Glossy | BsdfFlags::Specular | BsdfFlags::Filter | BsdfFlags::Dispersive)) && caustic_photon);
 			direct_photon = sample.sampled_flags_.hasAny(BsdfFlags::Filter) && direct_photon;
 
-			ray.from_ = hit_curr.p_;
+			ray.from_ = hit_curr->p_;
 			ray.dir_ = wo;
 			ray.tmin_ = scene->ray_min_dist_;
 			ray.tmax_ = -1.f;
@@ -719,7 +717,7 @@ Rgb PhotonIntegrator::finalGathering(const Accelerator &accelerator, int thread_
 	{
 		Rgb throughput(1.0);
 		float length = 0;
-		SurfacePoint hit {sp};
+		auto hit = std::unique_ptr<const SurfacePoint>(new SurfacePoint(sp));
 		Vec3 pwo = wo;
 		Ray p_ray;
 		bool did_hit;
@@ -736,20 +734,20 @@ Rgb PhotonIntegrator::finalGathering(const Accelerator &accelerator, int thread_
 		}
 
 		Sample s(s_1, s_2, BsdfFlags::Diffuse | BsdfFlags::Reflect | BsdfFlags::Transmit); // glossy/dispersion/specular done via recursive raytracing
-		scol = p_mat->sample(hit.mat_data_.get(), hit, pwo, p_ray.dir_, s, w, chromatic_enabled, wavelength, camera);
+		scol = p_mat->sample(hit->mat_data_.get(), *hit, pwo, p_ray.dir_, s, w, chromatic_enabled, wavelength, camera);
 
 		scol *= w;
 		if(scol.isBlack()) continue;
 
 		p_ray.tmin_ = scene_->ray_min_dist_;
 		p_ray.tmax_ = -1.f;
-		p_ray.from_ = hit.p_;
+		p_ray.from_ = hit->p_;
 		throughput = scol;
-		std::tie(did_hit, p_ray, hit) = accelerator.intersect(std::move(p_ray), camera);
-		if(!did_hit) continue;   //hit background
-		p_mat = hit.material_;
+		std::tie(hit, p_ray.tmax_) = accelerator.intersect(p_ray, camera);
+		if(!hit) continue;   //hit background
+		p_mat = hit->material_;
 		length = p_ray.tmax_;
-		const BsdfFlags &mat_bsd_fs = hit.mat_data_->bsdf_flags_;
+		const BsdfFlags &mat_bsd_fs = hit->mat_data_->bsdf_flags_;
 		bool has_spec = mat_bsd_fs.hasAny(BsdfFlags::Specular);
 		bool caustic = false;
 		bool close = length < gather_dist_;
@@ -761,7 +759,7 @@ Rgb PhotonIntegrator::finalGathering(const Accelerator &accelerator, int thread_
 			pwo = -p_ray.dir_;
 			if(mat_bsd_fs.hasAny(BsdfFlags::Volumetric))
 			{
-				if(const VolumeHandler *vol = p_mat->getVolumeHandler(hit.n_ * pwo < 0))
+				if(const VolumeHandler *vol = p_mat->getVolumeHandler(hit->n_ * pwo < 0))
 				{
 					throughput *= vol->transmittance(p_ray);
 				}
@@ -770,18 +768,18 @@ Rgb PhotonIntegrator::finalGathering(const Accelerator &accelerator, int thread_
 			{
 				if(close)
 				{
-					lcol = estimateOneDirectLight(accelerator, thread_id, chromatic_enabled, wavelength, hit, pwo, offs, ray_division, camera, random_generator, pixel_sampling_data);
+					lcol = estimateOneDirectLight(accelerator, thread_id, chromatic_enabled, wavelength, *hit, pwo, offs, ray_division, camera, random_generator, pixel_sampling_data);
 				}
 				else if(caustic)
 				{
-					Vec3 sf = SurfacePoint::normalFaceForward(hit.ng_, hit.n_, pwo);
-					const Photon *nearest = radiance_map_->findNearest(hit.p_, sf, lookup_rad_);
+					Vec3 sf = SurfacePoint::normalFaceForward(hit->ng_, hit->n_, pwo);
+					const Photon *nearest = radiance_map_->findNearest(hit->p_, sf, lookup_rad_);
 					if(nearest) lcol = nearest->color();
 				}
 
 				if(close || caustic)
 				{
-					if(mat_bsd_fs.hasAny(BsdfFlags::Emit)) lcol += p_mat->emit(hit.mat_data_.get(), hit, pwo);
+					if(mat_bsd_fs.hasAny(BsdfFlags::Emit)) lcol += p_mat->emit(hit->mat_data_.get(), *hit, pwo);
 					path_col += lcol * throughput;
 				}
 			}
@@ -796,7 +794,7 @@ Rgb PhotonIntegrator::finalGathering(const Accelerator &accelerator, int thread_
 			}
 
 			Sample sb(s_1, s_2, (close) ? BsdfFlags::All : BsdfFlags::AllSpecular | BsdfFlags::Filter);
-			scol = p_mat->sample(hit.mat_data_.get(), hit, pwo, p_ray.dir_, sb, w, chromatic_enabled, wavelength, camera);
+			scol = p_mat->sample(hit->mat_data_.get(), *hit, pwo, p_ray.dir_, sb, w, chromatic_enabled, wavelength, camera);
 
 			if(sb.pdf_ <= 1.0e-6f)
 			{
@@ -806,10 +804,11 @@ Rgb PhotonIntegrator::finalGathering(const Accelerator &accelerator, int thread_
 			scol *= w;
 			p_ray.tmin_ = scene_->ray_min_dist_;
 			p_ray.tmax_ = -1.f;
-			p_ray.from_ = hit.p_;
+			p_ray.from_ = hit->p_;
 			throughput *= scol;
-			std::tie(did_hit, p_ray, hit) = accelerator.intersect(std::move(p_ray), camera);
-			if(!did_hit) //hit background
+			std::tie(hit, p_ray.tmax_) = accelerator.intersect(p_ray, camera);
+			did_hit = hit ? true : false;
+			if(!hit) //hit background
 			{
 				const auto &background = scene_->getBackground();
 				if(caustic && background && background->hasIbl() && background->shootsCaustic())
@@ -818,7 +817,7 @@ Rgb PhotonIntegrator::finalGathering(const Accelerator &accelerator, int thread_
 				}
 				break;
 			}
-			p_mat = hit.material_;
+			p_mat = hit->material_;
 			length += p_ray.tmax_;
 			caustic = (caustic || !depth) && sb.sampled_flags_.hasAny(BsdfFlags::Specular | BsdfFlags::Filter);
 			close = length < gather_dist_;
@@ -829,10 +828,10 @@ Rgb PhotonIntegrator::finalGathering(const Accelerator &accelerator, int thread_
 		{
 			if(mat_bsd_fs.hasAny(BsdfFlags::Diffuse | BsdfFlags::Glossy))
 			{
-				Vec3 sf = SurfacePoint::normalFaceForward(hit.ng_, hit.n_, -p_ray.dir_);
-				const Photon *nearest = radiance_map_->findNearest(hit.p_, sf, lookup_rad_);
+				Vec3 sf = SurfacePoint::normalFaceForward(hit->ng_, hit->n_, -p_ray.dir_);
+				const Photon *nearest = radiance_map_->findNearest(hit->p_, sf, lookup_rad_);
 				if(nearest) lcol = nearest->color(); //FIXME should lcol be a local variable? Is it getting its value from previous functions or not??
-				if(mat_bsd_fs.hasAny(BsdfFlags::Emit)) lcol += p_mat->emit(hit.mat_data_.get(), hit, -p_ray.dir_);
+				if(mat_bsd_fs.hasAny(BsdfFlags::Emit)) lcol += p_mat->emit(hit->mat_data_.get(), *hit, -p_ray.dir_);
 				path_col += lcol * throughput;
 			}
 		}
@@ -934,18 +933,17 @@ std::pair<Rgb, float> PhotonIntegrator::integrate(const Accelerator &accelerator
 	++calls;
 	Rgb col {0.f};
 	float alpha = 1.f;
-	SurfacePoint sp;
-	bool intersects;
-	std::tie(intersects, ray, sp) = accelerator.intersect(std::move(ray), camera);
-	if(intersects)
+	std::unique_ptr<const SurfacePoint> sp;
+	std::tie(sp, ray.tmax_) = accelerator.intersect(ray, camera);
+	if(sp)
 	{
 		const Vec3 wo = -ray.dir_;
-		const Material *material = sp.material_;
-		const BsdfFlags &mat_bsdfs = sp.mat_data_->bsdf_flags_;
+		const Material *material = sp->material_;
+		const BsdfFlags &mat_bsdfs = sp->mat_data_->bsdf_flags_;
 
 		additional_depth = std::max(additional_depth, material->getAdditionalDepth());
 
-		const Rgb col_emit = material->emit(sp.mat_data_.get(), sp, wo);
+		const Rgb col_emit = material->emit(sp->mat_data_.get(), *sp, wo);
 		col += col_emit;
 		if(color_layers && color_layers->getFlags().hasAny(Layer::Flags::BasicLayers))
 		{
@@ -955,8 +953,8 @@ std::pair<Rgb, float> PhotonIntegrator::integrate(const Accelerator &accelerator
 		{
 			if(show_map_)
 			{
-				const Vec3 n = SurfacePoint::normalFaceForward(sp.ng_, sp.n_, wo);
-				const Photon *nearest = radiance_map_->findNearest(sp.p_, n, lookup_rad_);
+				const Vec3 n = SurfacePoint::normalFaceForward(sp->ng_, sp->n_, wo);
+				const Photon *nearest = radiance_map_->findNearest(sp->p_, n, lookup_rad_);
 				if(nearest) col += nearest->color();
 			}
 			else
@@ -965,8 +963,8 @@ std::pair<Rgb, float> PhotonIntegrator::integrate(const Accelerator &accelerator
 				{
 					if(Rgba *color_layer = color_layers->find(Layer::Radiance))
 					{
-						const Vec3 n = SurfacePoint::normalFaceForward(sp.ng_, sp.n_, wo);
-						const Photon *nearest = radiance_map_->findNearest(sp.p_, n, lookup_rad_);
+						const Vec3 n = SurfacePoint::normalFaceForward(sp->ng_, sp->n_, wo);
+						const Photon *nearest = radiance_map_->findNearest(sp->p_, n, lookup_rad_);
 						if(nearest) *color_layer = nearest->color();
 					}
 				}
@@ -974,7 +972,7 @@ std::pair<Rgb, float> PhotonIntegrator::integrate(const Accelerator &accelerator
 				// contribution of light emitting surfaces
 				if(mat_bsdfs.hasAny(BsdfFlags::Emit))
 				{
-					const Rgb col_tmp = material->emit(sp.mat_data_.get(), sp, wo);
+					const Rgb col_tmp = material->emit(sp->mat_data_.get(), *sp, wo);
 					col += col_tmp;
 					if(color_layers && color_layers->getFlags().hasAny(Layer::Flags::BasicLayers))
 					{
@@ -984,8 +982,8 @@ std::pair<Rgb, float> PhotonIntegrator::integrate(const Accelerator &accelerator
 
 				if(mat_bsdfs.hasAny(BsdfFlags::Diffuse))
 				{
-					col += estimateAllDirectLight(accelerator, chromatic_enabled, wavelength, sp, wo, ray_division, color_layers, camera, random_generator, pixel_sampling_data);
-					Rgb col_tmp = finalGathering(accelerator, thread_id, chromatic_enabled, wavelength, sp, wo, ray_division, camera, random_generator, pixel_sampling_data);
+					col += estimateAllDirectLight(accelerator, chromatic_enabled, wavelength, *sp, wo, ray_division, color_layers, camera, random_generator, pixel_sampling_data);
+					Rgb col_tmp = finalGathering(accelerator, thread_id, chromatic_enabled, wavelength, *sp, wo, ray_division, camera, random_generator, pixel_sampling_data);
 					if(aa_noise_params_.clamp_indirect_ > 0.f) col_tmp.clampProportionalRgb(aa_noise_params_.clamp_indirect_);
 					col += col_tmp;
 					if(color_layers && color_layers->getFlags().hasAny(Layer::Flags::DiffuseLayers))
@@ -999,8 +997,8 @@ std::pair<Rgb, float> PhotonIntegrator::integrate(const Accelerator &accelerator
 		{
 			if(use_photon_diffuse_ && show_map_)
 			{
-				const Vec3 n = SurfacePoint::normalFaceForward(sp.ng_, sp.n_, wo);
-				const Photon *nearest = diffuse_map_->findNearest(sp.p_, n, ds_radius_);
+				const Vec3 n = SurfacePoint::normalFaceForward(sp->ng_, sp->n_, wo);
+				const Photon *nearest = diffuse_map_->findNearest(sp->p_, n, ds_radius_);
 				if(nearest) col += nearest->color();
 			}
 			else
@@ -1009,15 +1007,15 @@ std::pair<Rgb, float> PhotonIntegrator::integrate(const Accelerator &accelerator
 				{
 					if(Rgba *color_layer = color_layers->find(Layer::Radiance))
 					{
-						const Vec3 n = SurfacePoint::normalFaceForward(sp.ng_, sp.n_, wo);
-						const Photon *nearest = radiance_map_->findNearest(sp.p_, n, lookup_rad_);
+						const Vec3 n = SurfacePoint::normalFaceForward(sp->ng_, sp->n_, wo);
+						const Photon *nearest = radiance_map_->findNearest(sp->p_, n, lookup_rad_);
 						if(nearest) *color_layer = nearest->color();
 					}
 				}
 
 				if(mat_bsdfs.hasAny(BsdfFlags::Emit))
 				{
-					const Rgb col_tmp = material->emit(sp.mat_data_.get(), sp, wo);
+					const Rgb col_tmp = material->emit(sp->mat_data_.get(), *sp, wo);
 					col += col_tmp;
 					if(color_layers && color_layers->getFlags().hasAny(Layer::Flags::BasicLayers))
 					{
@@ -1027,7 +1025,7 @@ std::pair<Rgb, float> PhotonIntegrator::integrate(const Accelerator &accelerator
 
 				if(mat_bsdfs.hasAny(BsdfFlags::Diffuse))
 				{
-					col += estimateAllDirectLight(accelerator, chromatic_enabled, wavelength, sp, wo, ray_division, color_layers, camera, random_generator, pixel_sampling_data);
+					col += estimateAllDirectLight(accelerator, chromatic_enabled, wavelength, *sp, wo, ray_division, color_layers, camera, random_generator, pixel_sampling_data);
 				}
 
 				FoundPhoton *gathered = (FoundPhoton *)alloca(n_diffuse_search_ * sizeof(FoundPhoton));
@@ -1035,7 +1033,7 @@ std::pair<Rgb, float> PhotonIntegrator::integrate(const Accelerator &accelerator
 
 				int n_gathered = 0;
 
-				if(use_photon_diffuse_ && diffuse_map_->nPhotons() > 0) n_gathered = diffuse_map_->gather(sp.p_, gathered, n_diffuse_search_, radius);
+				if(use_photon_diffuse_ && diffuse_map_->nPhotons() > 0) n_gathered = diffuse_map_->gather(sp->p_, gathered, n_diffuse_search_, radius);
 				if(use_photon_diffuse_ && n_gathered > 0)
 				{
 					if(n_gathered > n_max) n_max = n_gathered;
@@ -1044,7 +1042,7 @@ std::pair<Rgb, float> PhotonIntegrator::integrate(const Accelerator &accelerator
 					for(int i = 0; i < n_gathered; ++i)
 					{
 						const Vec3 pdir = gathered[i].photon_->direction();
-						const Rgb surf_col = material->eval(sp.mat_data_.get(), sp, wo, pdir, BsdfFlags::Diffuse);
+						const Rgb surf_col = material->eval(sp->mat_data_.get(), *sp, wo, pdir, BsdfFlags::Diffuse);
 
 						const Rgb col_tmp = surf_col * scale * gathered[i].photon_->color();
 						col += col_tmp;
@@ -1060,16 +1058,16 @@ std::pair<Rgb, float> PhotonIntegrator::integrate(const Accelerator &accelerator
 		// add caustics
 		if(use_photon_caustics_ && mat_bsdfs.hasAny(BsdfFlags::Diffuse))
 		{
-			col += causticPhotons(ray, color_layers, sp, wo, aa_noise_params_.clamp_indirect_, caustic_map_.get(), caus_radius_, n_caus_search_);
+			col += causticPhotons(ray, color_layers, *sp, wo, aa_noise_params_.clamp_indirect_, caustic_map_.get(), caus_radius_, n_caus_search_);
 		}
 
-		const auto recursive_result = recursiveRaytrace(accelerator, thread_id, ray_level + 1, chromatic_enabled, wavelength, ray, mat_bsdfs, sp, wo, additional_depth, ray_division, color_layers, camera, random_generator, pixel_sampling_data);
+		const auto recursive_result = recursiveRaytrace(accelerator, thread_id, ray_level + 1, chromatic_enabled, wavelength, ray, mat_bsdfs, *sp, wo, additional_depth, ray_division, color_layers, camera, random_generator, pixel_sampling_data);
 		col += recursive_result.first;
 		alpha = recursive_result.second;
 		if(color_layers)
 		{
-			generateCommonLayers(sp, scene_->getMaskParams(), color_layers);
-			generateOcclusionLayers(accelerator, chromatic_enabled, wavelength, ray_division, color_layers, camera, pixel_sampling_data, sp, wo, ao_samples_, scene_->shadow_bias_auto_, scene_->shadow_bias_, ao_dist_, ao_col_, s_depth_);
+			generateCommonLayers(*sp, scene_->getMaskParams(), color_layers);
+			generateOcclusionLayers(accelerator, chromatic_enabled, wavelength, ray_division, color_layers, camera, pixel_sampling_data, *sp, wo, ao_samples_, scene_->shadow_bias_auto_, scene_->shadow_bias_, ao_dist_, ao_col_, s_depth_);
 		}
 	}
 	else //nothing hit, return background

@@ -99,18 +99,17 @@ std::pair<Rgb, float> DirectLightIntegrator::integrate(const Accelerator &accele
 {
 	Rgb col {0.f};
 	float alpha = 1.f;
-	SurfacePoint sp;
-	bool intersects;
-	std::tie(intersects, ray, sp) = accelerator.intersect(std::move(ray), camera);
-	if(intersects)
+	std::unique_ptr<const SurfacePoint> sp;
+	std::tie(sp, ray.tmax_) = accelerator.intersect(ray, camera);
+	if(sp)
 	{
-		const Material *material = sp.material_;
-		const BsdfFlags &mat_bsdfs = sp.mat_data_->bsdf_flags_;
+		const Material *material = sp->material_;
+		const BsdfFlags &mat_bsdfs = sp->mat_data_->bsdf_flags_;
 		const Vec3 wo = -ray.dir_;
 		additional_depth = std::max(additional_depth, material->getAdditionalDepth());
 		if(mat_bsdfs.hasAny(BsdfFlags::Emit))
 		{
-			const Rgb col_tmp = material->emit(sp.mat_data_.get(), sp, wo);
+			const Rgb col_tmp = material->emit(sp->mat_data_.get(), *sp, wo);
 			col += col_tmp;
 			if(color_layers && color_layers->getFlags().hasAny(Layer::Flags::BasicLayers))
 			{
@@ -119,20 +118,20 @@ std::pair<Rgb, float> DirectLightIntegrator::integrate(const Accelerator &accele
 		}
 		if(mat_bsdfs.hasAny(BsdfFlags::Diffuse))
 		{
-			col += estimateAllDirectLight(accelerator, chromatic_enabled, wavelength, sp, wo, ray_division, color_layers, camera, random_generator, pixel_sampling_data);
+			col += estimateAllDirectLight(accelerator, chromatic_enabled, wavelength, *sp, wo, ray_division, color_layers, camera, random_generator, pixel_sampling_data);
 			if(use_photon_caustics_)
 			{
-				col += causticPhotons(ray, color_layers, sp, wo, aa_noise_params_.clamp_indirect_, caustic_map_.get(), caus_radius_, n_caus_search_);
+				col += causticPhotons(ray, color_layers, *sp, wo, aa_noise_params_.clamp_indirect_, caustic_map_.get(), caus_radius_, n_caus_search_);
 			}
-			if(use_ambient_occlusion_) col += sampleAmbientOcclusion(accelerator, chromatic_enabled, wavelength, sp, wo, ray_division, camera, pixel_sampling_data, tr_shad_, false, ao_samples_, scene_->shadow_bias_auto_, scene_->shadow_bias_, ao_dist_, ao_col_, s_depth_);
+			if(use_ambient_occlusion_) col += sampleAmbientOcclusion(accelerator, chromatic_enabled, wavelength, *sp, wo, ray_division, camera, pixel_sampling_data, tr_shad_, false, ao_samples_, scene_->shadow_bias_auto_, scene_->shadow_bias_, ao_dist_, ao_col_, s_depth_);
 		}
-		const auto recursive_result = recursiveRaytrace(accelerator, thread_id, ray_level + 1, chromatic_enabled, wavelength, ray, mat_bsdfs, sp, wo, additional_depth, ray_division, color_layers, camera, random_generator, pixel_sampling_data);
+		const auto recursive_result = recursiveRaytrace(accelerator, thread_id, ray_level + 1, chromatic_enabled, wavelength, ray, mat_bsdfs, *sp, wo, additional_depth, ray_division, color_layers, camera, random_generator, pixel_sampling_data);
 		col += recursive_result.first;
 		alpha = recursive_result.second;
 		if(color_layers)
 		{
-			generateCommonLayers(sp, scene_->getMaskParams(), color_layers);
-			generateOcclusionLayers(accelerator, chromatic_enabled, wavelength, ray_division, color_layers, camera, pixel_sampling_data, sp, wo, ao_samples_, scene_->shadow_bias_auto_, scene_->shadow_bias_, ao_dist_, ao_col_, s_depth_);
+			generateCommonLayers(*sp, scene_->getMaskParams(), color_layers);
+			generateOcclusionLayers(accelerator, chromatic_enabled, wavelength, ray_division, color_layers, camera, pixel_sampling_data, *sp, wo, ao_samples_, scene_->shadow_bias_auto_, scene_->shadow_bias_, ao_dist_, ao_col_, s_depth_);
 		}
 	}
 	else // Nothing hit, return background if any

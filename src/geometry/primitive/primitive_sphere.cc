@@ -78,26 +78,26 @@ IntersectData SpherePrimitive::intersect(const Ray &ray, const Matrix4 *obj_to_w
 	return intersect_data;
 }
 
-SurfacePoint SpherePrimitive::getSurface(const RayDifferentials *ray_differentials, const Point3 &hit, const IntersectData &intersect_data, const Matrix4 *obj_to_world, const Camera *camera) const
+std::unique_ptr<const SurfacePoint> SpherePrimitive::getSurface(const RayDifferentials *ray_differentials, const Point3 &hit, const IntersectData &intersect_data, const Matrix4 *obj_to_world, const Camera *camera) const
 {
-	SurfacePoint sp;
-	sp.intersect_data_ = intersect_data;
+	auto sp = std::unique_ptr<SurfacePoint>(new SurfacePoint);
+	sp->intersect_data_ = intersect_data;
 	Vec3 normal = hit - center_;
-	sp.orco_p_ = normal;
+	sp->orco_p_ = normal;
 	normal.normalize();
-	sp.material_ = material_;
-	sp.object_ = &base_object_;
-	sp.n_ = normal;
-	sp.ng_ = normal;
-	//sp.origin = (void*)this;
-	sp.has_orco_ = true;
-	sp.p_ = hit;
-	Vec3::createCs(sp.n_, sp.nu_, sp.nv_);
-	sp.u_ = atan2(normal.y_, normal.x_) * math::div_1_by_pi + 1;
-	sp.v_ = 1.f - math::acos(normal.z_) * math::div_1_by_pi;
-	sp.light_ = nullptr;
-	sp.setRayDifferentials(ray_differentials);
-	sp.mat_data_ = sp.material_->initBsdf(sp, camera);
+	sp->material_ = material_;
+	sp->object_ = &base_object_;
+	sp->n_ = normal;
+	sp->ng_ = normal;
+	//sp->origin = (void*)this;
+	sp->has_orco_ = true;
+	sp->p_ = hit;
+	Vec3::createCs(sp->n_, sp->nu_, sp->nv_);
+	sp->u_ = atan2(normal.y_, normal.x_) * math::div_1_by_pi + 1;
+	sp->v_ = 1.f - math::acos(normal.z_) * math::div_1_by_pi;
+	sp->light_ = nullptr;
+	sp->setRayDifferentials(ray_differentials);
+	sp->mat_data_ = sp->material_->initBsdf(*sp, camera);
 	return sp;
 }
 

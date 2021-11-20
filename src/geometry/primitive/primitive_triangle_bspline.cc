@@ -83,7 +83,7 @@ Bound BsTrianglePrimitive::getBound(const Matrix4 *obj_to_world) const
 	return Bound(l, h);
 }
 
-SurfacePoint BsTrianglePrimitive::getSurface(const RayDifferentials *ray_differentials, const Point3 &hit, const IntersectData &intersect_data, const Matrix4 *obj_to_world, const Camera *camera) const
+std::unique_ptr<const SurfacePoint> BsTrianglePrimitive::getSurface(const RayDifferentials *ray_differentials, const Point3 &hit, const IntersectData &intersect_data, const Matrix4 *obj_to_world, const Camera *camera) const
 {
 	// recalculating the points is not really the nicest solution...
 	const std::vector<int> vertices_indices = getVerticesIndices();
@@ -98,9 +98,9 @@ SurfacePoint BsTrianglePrimitive::getSurface(const RayDifferentials *ray_differe
 	const Point3 b = b_1 * bn[0] + b_2 * bn[1] + b_3 * bn[2];
 	const Point3 c = b_1 * cn[0] + b_2 * cn[1] + b_3 * cn[2];
 
-	SurfacePoint sp;
-	sp.intersect_data_ = intersect_data;
-	sp.ng_ = ((b - a) ^ (c - a)).normalize();
+	auto sp = std::unique_ptr<SurfacePoint>(new SurfacePoint);
+	sp->intersect_data_ = intersect_data;
+	sp->ng_ = ((b - a) ^ (c - a)).normalize();
 	// the "u" and "v" in triangle intersection code are actually "v" and "w" when u=>p1, v=>p2, w=>p3
 	const float barycentric_u = intersect_data.barycentric_u_, barycentric_v = intersect_data.barycentric_v_, barycentric_w = intersect_data.barycentric_w_;
 
@@ -108,30 +108,30 @@ SurfacePoint BsTrianglePrimitive::getSurface(const RayDifferentials *ray_differe
 	/* if(mesh->is_smooth || mesh->normals_exported)
 	{
 		vector3d_t va(na>0? mesh->normals[na] : normal), vb(nb>0? mesh->normals[nb] : normal), vc(nc>0? mesh->normals[nc] : normal);
-		sp.N = u*va + v*vb + w*vc;
-		sp.N.normalize();
+		sp->N = u*va + v*vb + w*vc;
+		sp->N.normalize();
 	}
-	else  */sp.n_ = sp.ng_;
+	else  */sp->n_ = sp->ng_;
 
 	if(base_mesh_object_.hasOrco())
 	{
 		const std::vector<Point3> orco = getOrcoVertices();
-		sp.orco_p_ = barycentric_u * orco[0] + barycentric_v * orco[1] + barycentric_w * orco[2];
-		sp.orco_ng_ = ((orco[1] - orco[0]) ^ (orco[2] - orco[0])).normalize();
-		sp.has_orco_ = true;
+		sp->orco_p_ = barycentric_u * orco[0] + barycentric_v * orco[1] + barycentric_w * orco[2];
+		sp->orco_ng_ = ((orco[1] - orco[0]) ^ (orco[2] - orco[0])).normalize();
+		sp->has_orco_ = true;
 	}
 	else
 	{
-		sp.orco_p_ = hit;
-		sp.orco_ng_ = sp.ng_;
-		sp.has_orco_ = false;
+		sp->orco_p_ = hit;
+		sp->orco_ng_ = sp->ng_;
+		sp->has_orco_ = false;
 	}
 	if(base_mesh_object_.hasUv())
 	{
 		const int uvi_1 = vertex_uvs_[0], uvi_2 = vertex_uvs_[1], uvi_3 = vertex_uvs_[2];
 		const auto &it = base_mesh_object_.getUvValues().begin();
-		sp.u_ = barycentric_u * it[uvi_1].u_ + barycentric_v * it[uvi_2].u_ + barycentric_w * it[uvi_3].u_;
-		sp.v_ = barycentric_u * it[uvi_1].v_ + barycentric_v * it[uvi_2].v_ + barycentric_w * it[uvi_3].v_;
+		sp->u_ = barycentric_u * it[uvi_1].u_ + barycentric_v * it[uvi_2].u_ + barycentric_w * it[uvi_3].u_;
+		sp->v_ = barycentric_u * it[uvi_1].v_ + barycentric_v * it[uvi_2].v_ + barycentric_w * it[uvi_3].v_;
 
 		// calculate dPdU and dPdV
 		const float du_1 = it[uvi_1].u_ - it[uvi_3].u_;
@@ -146,53 +146,53 @@ SurfacePoint BsTrianglePrimitive::getSurface(const RayDifferentials *ray_differe
 			const float invdet = 1.f / det;
 			const Vec3 dp_1 = vert[0] - vert[2];
 			const Vec3 dp_2 = vert[1] - vert[2];
-			sp.dp_du_ = (dv_2 * invdet) * dp_1 - (dv_1 * invdet) * dp_2;
-			sp.dp_dv_ = (du_1 * invdet) * dp_2 - (du_2 * invdet) * dp_1;
+			sp->dp_du_ = (dv_2 * invdet) * dp_1 - (dv_1 * invdet) * dp_2;
+			sp->dp_dv_ = (du_1 * invdet) * dp_2 - (du_2 * invdet) * dp_1;
 		}
 		else
 		{
-			// implicit mapping, p0 = 0/0, p1 = 1/0, p2 = 0/1 => sp.u_ = barycentric_u, sp.v_ = barycentric_v; (arbitrary choice)
-			sp.dp_du_ = vert[1] - vert[0];
-			sp.dp_dv_ = vert[2] - vert[0];
-			sp.u_ = barycentric_u;
-			sp.v_ = barycentric_v;
+			// implicit mapping, p0 = 0/0, p1 = 1/0, p2 = 0/1 => sp->u_ = barycentric_u, sp->v_ = barycentric_v; (arbitrary choice)
+			sp->dp_du_ = vert[1] - vert[0];
+			sp->dp_dv_ = vert[2] - vert[0];
+			sp->u_ = barycentric_u;
+			sp->v_ = barycentric_v;
 		}
 	}
 	else
 	{
-		// implicit mapping, p0 = 0/0, p1 = 1/0, p2 = 0/1 => sp.u_ = barycentric_u, sp.v_ = barycentric_v; (arbitrary choice)
+		// implicit mapping, p0 = 0/0, p1 = 1/0, p2 = 0/1 => sp->u_ = barycentric_u, sp->v_ = barycentric_v; (arbitrary choice)
 		const std::vector<Point3> vert = getVertices();
-		sp.dp_du_ = vert[1] - vert[0];
-		sp.dp_dv_ = vert[2] - vert[0];
-		sp.u_ = barycentric_u;
-		sp.v_ = barycentric_v;
+		sp->dp_du_ = vert[1] - vert[0];
+		sp->dp_dv_ = vert[2] - vert[0];
+		sp->u_ = barycentric_u;
+		sp->v_ = barycentric_v;
 	}
 
 	//Copy original dPdU and dPdV before normalization to the "absolute" dPdU and dPdV (for mipmap calculations)
-	sp.dp_du_abs_ = sp.dp_du_;
-	sp.dp_dv_abs_ = sp.dp_dv_;
+	sp->dp_du_abs_ = sp->dp_du_;
+	sp->dp_dv_abs_ = sp->dp_dv_;
 
-	sp.dp_du_.normalize();
-	sp.dp_dv_.normalize();
+	sp->dp_du_.normalize();
+	sp->dp_dv_.normalize();
 
-	sp.material_ = material_;
-	sp.object_ = &base_mesh_object_;
-	sp.p_ = hit;
-	Vec3::createCs(sp.n_, sp.nu_, sp.nv_);
+	sp->material_ = material_;
+	sp->object_ = &base_mesh_object_;
+	sp->p_ = hit;
+	Vec3::createCs(sp->n_, sp->nu_, sp->nv_);
 	// transform dPdU and dPdV in shading space
-	sp.ds_du_.x_ = sp.nu_ * sp.dp_du_;
-	sp.ds_du_.y_ = sp.nv_ * sp.dp_du_;
-	sp.ds_du_.z_ = sp.n_ * sp.dp_du_;
-	sp.ds_dv_.x_ = sp.nu_ * sp.dp_dv_;
-	sp.ds_dv_.y_ = sp.nv_ * sp.dp_dv_;
-	sp.ds_dv_.z_ = sp.n_ * sp.dp_dv_;
-	sp.light_ = base_mesh_object_.getLight();
-	sp.has_uv_ = base_mesh_object_.hasUv();
-	sp.prim_num_ = getSelfIndex();
-	Vec3::createCs(sp.n_, sp.nu_, sp.nv_);
-	sp.material_ = getMaterial();
-	sp.setRayDifferentials(ray_differentials);
-	sp.mat_data_ = sp.material_->initBsdf(sp, camera);
+	sp->ds_du_.x_ = sp->nu_ * sp->dp_du_;
+	sp->ds_du_.y_ = sp->nv_ * sp->dp_du_;
+	sp->ds_du_.z_ = sp->n_ * sp->dp_du_;
+	sp->ds_dv_.x_ = sp->nu_ * sp->dp_dv_;
+	sp->ds_dv_.y_ = sp->nv_ * sp->dp_dv_;
+	sp->ds_dv_.z_ = sp->n_ * sp->dp_dv_;
+	sp->light_ = base_mesh_object_.getLight();
+	sp->has_uv_ = base_mesh_object_.hasUv();
+	sp->prim_num_ = getSelfIndex();
+	Vec3::createCs(sp->n_, sp->nu_, sp->nv_);
+	sp->material_ = getMaterial();
+	sp->setRayDifferentials(ray_differentials);
+	sp->mat_data_ = sp->material_->initBsdf(*sp, camera);
 	return sp;
 }
 

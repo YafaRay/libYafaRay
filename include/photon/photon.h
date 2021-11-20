@@ -90,7 +90,7 @@ class Photon
 
 struct RadData
 {
-	RadData(Point3 &p, Vec3 n): pos_(p), normal_(n), use_(true) {}
+	RadData(const Point3 &p, Vec3 n): pos_(p), normal_(n), use_(true) {}
 	Point3 pos_;
 	Vec3 normal_;
 	Rgb refl_;

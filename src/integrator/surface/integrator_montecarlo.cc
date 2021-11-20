@@ -429,8 +429,7 @@ void MonteCarloIntegrator::causticWorker(const Accelerator &accelerator, PhotonM
 
 	std::vector<Photon> local_caustic_photons;
 
-	SurfacePoint hit_curr, hit_prev;
-	hit_prev.initializeAllZero(); //Just to avoid compiler warnings
+	std::unique_ptr<const SurfacePoint> hit_prev, hit_curr;
 
 	Ray ray;
 	local_caustic_photons.clear();
@@ -479,27 +478,26 @@ void MonteCarloIntegrator::causticWorker(const Accelerator &accelerator, PhotonM
 		bool chromatic_enabled = true;
 		while(true)
 		{
-			bool intersects;
-			std::tie(intersects, ray, hit_curr) = accelerator.intersect(std::move(ray), render_view->getCamera());
-			if(!intersects) break;
+			std::tie(hit_curr, ray.tmax_) = accelerator.intersect(ray, render_view->getCamera());
+			if(!hit_curr) break;
 			// check for volumetric effects, based on the material from the previous photon bounce
 			Rgb transm(1.f);
-			if(material_prev && mat_bsdfs_prev.hasAny(BsdfFlags::Volumetric))
+			if(material_prev && hit_prev && mat_bsdfs_prev.hasAny(BsdfFlags::Volumetric))
 			{
-				if(const VolumeHandler *vol = material_prev->getVolumeHandler(hit_prev.ng_ * ray.dir_ < 0))
+				if(const VolumeHandler *vol = material_prev->getVolumeHandler(hit_prev->ng_ * ray.dir_ < 0))
 				{
 					transm = vol->transmittance(ray);
 				}
 			}
 			const Vec3 wi = -ray.dir_;
-			const Material *material = hit_curr.material_;
-			const BsdfFlags &mat_bsdfs = hit_curr.mat_data_->bsdf_flags_;
+			const Material *material = hit_curr->material_;
+			const BsdfFlags &mat_bsdfs = hit_curr->mat_data_->bsdf_flags_;
 			if(mat_bsdfs.hasAny((BsdfFlags::Diffuse | BsdfFlags::Glossy)))
 			{
 				//deposit caustic photon on surface
 				if(caustic_photon)
 				{
-					Photon np(wi, hit_curr.p_, pcol);
+					Photon np(wi, hit_curr->p_, pcol);
 					local_caustic_photons.push_back(np);
 				}
 			}
@@ -515,7 +513,7 @@ void MonteCarloIntegrator::causticWorker(const Accelerator &accelerator, PhotonM
 
 			PSample sample(s_5, s_6, s_7, BsdfFlags::AllSpecular | BsdfFlags::Glossy | BsdfFlags::Filter | BsdfFlags::Dispersive, pcol, transm);
 			Vec3 wo;
-			bool scattered = material->scatterPhoton(hit_curr.mat_data_.get(), hit_curr, wi, wo, sample, chromatic_enabled, wavelength, render_view->getCamera());
+			bool scattered = material->scatterPhoton(hit_curr->mat_data_.get(), *hit_curr, wi, wo, sample, chromatic_enabled, wavelength, render_view->getCamera());
 			if(!scattered) break; //photon was absorped.
 			pcol = sample.color_;
 			// hm...dispersive is not really a scattering qualifier like specular/glossy/diffuse or the special case filter...
@@ -531,7 +529,7 @@ void MonteCarloIntegrator::causticWorker(const Accelerator &accelerator, PhotonM
 				chromatic_enabled = false;
 				pcol *= spectrum::wl2Rgb(wavelength);
 			}
-			ray.from_ = hit_curr.p_;
+			ray.from_ = hit_curr->p_;
 			ray.dir_ = wo;
 			ray.tmin_ = scene->ray_min_dist_;
 			ray.tmax_ = -1.f;
@@ -951,7 +949,7 @@ std::pair<Rgb, float> MonteCarloIntegrator::specularRefract(const Accelerator &a
 	return integ;
 }
 
-std::pair<Rgb, float> MonteCarloIntegrator::recursiveRaytrace(const Accelerator &accelerator, int thread_id, int ray_level, bool chromatic_enabled, float wavelength, const Ray &ray, const BsdfFlags &bsdfs, SurfacePoint &sp, const Vec3 &wo, int additional_depth, const RayDivision &ray_division, ColorLayers *color_layers, const Camera *camera, RandomGenerator &random_generator, const PixelSamplingData &pixel_sampling_data) const
+std::pair<Rgb, float> MonteCarloIntegrator::recursiveRaytrace(const Accelerator &accelerator, int thread_id, int ray_level, bool chromatic_enabled, float wavelength, const Ray &ray, const BsdfFlags &bsdfs, const SurfacePoint &sp, const Vec3 &wo, int additional_depth, const RayDivision &ray_division, ColorLayers *color_layers, const Camera *camera, RandomGenerator &random_generator, const PixelSamplingData &pixel_sampling_data) const
 {
 	Rgb col {0.f};
 	float alpha = 0.f;

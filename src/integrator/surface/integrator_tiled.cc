@@ -85,9 +85,8 @@ void TiledIntegrator::precalcDepths(const Camera *camera)
 			for(int j = 0; j < w; ++j)
 			{
 				CameraRay camera_ray = camera->shootRay(i, j, 0.5f, 0.5f);
-				SurfacePoint sp;
-				bool intersects;
-				std::tie(intersects, camera_ray.ray_, sp) = accelerator->intersect(std::move(camera_ray.ray_), camera);
+				std::unique_ptr<const SurfacePoint> sp;
+				std::tie(sp, camera_ray.ray_.tmax_) = accelerator->intersect(camera_ray.ray_, camera);
 				if(camera_ray.ray_.tmax_ > max_depth_) max_depth_ = camera_ray.ray_.tmax_;
 				if(camera_ray.ray_.tmax_ < min_depth_ && camera_ray.ray_.tmax_ >= 0.f) min_depth_ = camera_ray.ray_.tmax_;
 			}

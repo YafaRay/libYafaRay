@@ -59,7 +59,7 @@ class Accelerator
 		virtual AcceleratorIntersectData intersectS(const Ray &ray, float t_max, float shadow_bias) const = 0;
 		virtual AcceleratorTsIntersectData intersectTs(const Ray &ray, int max_depth, float dist, float shadow_bias, const Camera *camera) const = 0;
 		virtual Bound getBound() const = 0;
-		std::tuple<bool, Ray, SurfacePoint> intersect(Ray ray, const Camera *camera) const;
+		std::pair<std::unique_ptr<const SurfacePoint>, float> intersect(const Ray &ray, const Camera *camera) const;
 		std::pair<bool, const Primitive *> isShadowed(const Ray &ray, float shadow_bias) const;
 		std::tuple<bool, Rgb, const Primitive *> isShadowed(const Ray &ray, int max_depth, float shadow_bias, const Camera *camera) const;
 
