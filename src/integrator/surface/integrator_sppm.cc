@@ -200,6 +200,7 @@ bool SppmIntegrator::renderTile(const RenderArea &a, const Camera *camera, const
 		for(int j = a.x_; j < end_x; ++j)
 		{
 			if(render_control.canceled()) break;
+			color_layers.setDefaultColors();
 			PixelSamplingData pixel_sampling_data;
 			pixel_sampling_data.number_ = camera_res_x * i + j;
 			pixel_sampling_data.offset_ = sample::fnv32ABuf(i * sample::fnv32ABuf(j)); //fnv_32a_buf(rstate.pixelNumber);
@@ -244,7 +245,7 @@ bool SppmIntegrator::renderTile(const RenderArea &a, const Camera *camera, const
 				int index = ((i - y_start_film) * camera->resX()) + (j - x_start_film);
 				HitPoint &hp = hit_points_[index];
 				RayDivision ray_division;
-				const GatherInfo g_info = traceGatherRay(*accelerator, thread_id, 0, true, 0.f, camera_ray.ray_, hp, ray_division, nullptr, camera, random_generator, pixel_sampling_data);
+				const GatherInfo g_info = traceGatherRay(*accelerator, thread_id, 0, true, 0.f, camera_ray.ray_, hp, ray_division, &color_layers, camera, random_generator, pixel_sampling_data);
 				hp.constant_randiance_ += g_info.constant_randiance_; // accumulate the constant radiance for later usage.
 				// progressive refinement
 				const float alpha = 0.7f; // another common choice is 0.8, seems not changed much.
