@@ -322,11 +322,8 @@ bool SppmIntegrator::renderTile(const RenderArea &a, const Camera *camera, const
 	return true;
 }
 
-void SppmIntegrator::photonWorker(PhotonMap *diffuse_map, PhotonMap *caustic_map, int thread_id, const Scene *scene, const RenderView *render_view, const RenderControl &render_control, const Timer &timer, unsigned int n_photons, const Pdf1D *light_power_d, int num_d_lights, const std::vector<const Light *> &tmplights, ProgressBar *pb, int pb_step, unsigned int &total_photons_shot, int max_bounces, RandomGenerator &random_generator)
+void SppmIntegrator::photonWorker(const Accelerator &accelerator, PhotonMap *diffuse_map, PhotonMap *caustic_map, int thread_id, const Scene *scene, const RenderView *render_view, const RenderControl &render_control, const Timer &timer, unsigned int n_photons, const Pdf1D *light_power_d, int num_d_lights, const std::vector<const Light *> &tmplights, ProgressBar *pb, int pb_step, unsigned int &total_photons_shot, int max_bounces, RandomGenerator &random_generator)
 {
-	const Accelerator *accelerator = scene_->getAccelerator();
-	if(!accelerator) return;
-
 	Ray ray;
 	float light_num_pdf, light_pdf, s_1, s_2, s_3, s_4, s_5, s_6, s_7, s_l;
 	Rgb pcol;
@@ -401,8 +398,11 @@ void SppmIntegrator::photonWorker(PhotonMap *diffuse_map, PhotonMap *caustic_map
 		const Material *material_prev = nullptr;
 		BsdfFlags mat_bsdfs_prev = BsdfFlags::None;
 		bool chromatic_enabled = true;
-		while(accelerator->intersect(ray, hit_curr, render_view->getCamera()))   //scatter photons.
+		while(true)   //scatter photons.
 		{
+			bool intersects;
+			std::tie(intersects, ray, hit_curr) = accelerator.intersect(std::move(ray), render_view->getCamera());
+			if(!intersects) break;
 			Rgb transm(1.f);
 			if(material_prev && mat_bsdfs_prev.hasAny(BsdfFlags::Volumetric))
 			{
@@ -580,7 +580,7 @@ void SppmIntegrator::prePass(int samples, int offset, bool adaptive, const Rende
 	logger_.logParams(getName(), ": Shooting ", n_photons_, " photons across ", n_threads, " threads (", (n_photons_ / n_threads), " photons/thread)");
 
 	std::vector<std::thread> threads;
-	for(int i = 0; i < n_threads; ++i) threads.push_back(std::thread(&SppmIntegrator::photonWorker, this, diffuse_map_.get(), caustic_map_.get(), i, scene_, render_view, std::ref(render_control), std::ref(timer), n_photons_, light_power_d_.get(), num_d_lights, tmplights, pb.get(), pb_step, std::ref(curr), max_bounces_, std::ref(random_generator)));
+	for(int i = 0; i < n_threads; ++i) threads.push_back(std::thread(&SppmIntegrator::photonWorker, this, std::ref(*scene_->getAccelerator()), diffuse_map_.get(), caustic_map_.get(), i, scene_, render_view, std::ref(render_control), std::ref(timer), n_photons_, light_power_d_.get(), num_d_lights, tmplights, pb.get(), pb_step, std::ref(curr), max_bounces_, std::ref(random_generator)));
 	for(auto &t : threads) t.join();
 
 	pb->done();
@@ -647,7 +647,9 @@ GatherInfo SppmIntegrator::traceGatherRay(const Accelerator &accelerator, int th
 	GatherInfo g_info;
 	SurfacePoint sp;
 	float alpha = transp_background_ ? 0.f : 1.f;
-	if(accelerator.intersect(ray, sp, camera))
+	bool intersects;
+	std::tie(intersects, ray, sp) = accelerator.intersect(std::move(ray), camera);
+	if(intersects)
 	{
 		int additional_depth = 0;
 

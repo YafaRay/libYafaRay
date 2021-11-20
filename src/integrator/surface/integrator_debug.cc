@@ -65,10 +65,12 @@ bool DebugIntegrator::preprocess(const RenderControl &render_control, Timer &tim
 
 std::pair<Rgb, float> DebugIntegrator::integrate(const Accelerator &accelerator, int thread_id, int ray_level, bool chromatic_enabled, float wavelength, Ray &ray, int additional_depth, const RayDivision &ray_division, ColorLayers *color_layers, const Camera *camera, RandomGenerator &random_generator, const PixelSamplingData &pixel_sampling_data) const
 {
-	Rgb col {0.f};
 	SurfacePoint sp;
-	if(accelerator.intersect(ray, sp, camera))
+	bool intersects;
+	std::tie(intersects, ray, sp) = accelerator.intersect(std::move(ray), camera);
+	if(intersects)
 	{
+		Rgb col {0.f};
 		if(debug_type_ == N)
 			col = Rgb((sp.n_.x_ + 1.f) * .5f, (sp.n_.y_ + 1.f) * .5f, (sp.n_.z_ + 1.f) * .5f);
 		else if(debug_type_ == DPdU)
@@ -84,7 +86,7 @@ std::pair<Rgb, float> DebugIntegrator::integrate(const Accelerator &accelerator,
 		else if(debug_type_ == DSdV)
 			col = Rgb((sp.ds_dv_.x_ + 1.f) * .5f, (sp.ds_dv_.y_ + 1.f) * .5f, (sp.ds_dv_.z_ + 1.f) * .5f);
 	}
-	return {col, 1.f};
+	return {{0.f}, 1.f};
 }
 
 std::unique_ptr<Integrator> DebugIntegrator::factory(Logger &logger, ParamMap &params, const Scene &scene)

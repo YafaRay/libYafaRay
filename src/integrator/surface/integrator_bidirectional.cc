@@ -231,10 +231,11 @@ void BidirectionalIntegrator::cleanup()
 std::pair<Rgb, float> BidirectionalIntegrator::integrate(const Accelerator &accelerator, int thread_id, int ray_level, bool chromatic_enabled, float wavelength, Ray &ray, int additional_depth, const RayDivision &ray_division, ColorLayers *color_layers, const Camera *camera, RandomGenerator &random_generator, const PixelSamplingData &pixel_sampling_data) const
 {
 	Rgb col {0.f};
-	SurfacePoint sp;
-	Ray testray {ray, Ray::DifferentialsCopy::No};
 	float alpha = 1.f;
-	if(accelerator.intersect(testray, sp, camera))
+	SurfacePoint sp;
+	bool intersects;
+	std::tie(intersects, ray, sp) = accelerator.intersect({ray, Ray::DifferentialsCopy::No}, camera);
+	if(intersects)
 	{
 		const Vec3 wo = -ray.dir_;
 		PathData &path_data = thread_data_[thread_id];
@@ -398,7 +399,9 @@ int BidirectionalIntegrator::createPath(const Accelerator &accelerator, bool chr
 	while(n_vert < max_len)
 	{
 		PathVertex &v = path[n_vert];
-		if(!accelerator.intersect(ray, v.sp_, camera)) break;
+		bool intersects;
+		std::tie(intersects, ray, v.sp_) = accelerator.intersect(std::move(ray), camera);
+		if(!intersects) break;
 		const PathVertex &v_prev = path[n_vert - 1];
 		const Material *mat = v.sp_.material_;
 		// compute alpha_i+1 = alpha_i * fs(wi, wo) / P_proj(wo), where P_proj = bsdf_pdf(wo) / cos(wo*N)

@@ -171,9 +171,11 @@ void PhotonIntegrator::diffuseWorker(const Accelerator &accelerator, PhotonMap *
 		bool direct_photon = true;
 		const Material *material_prev = nullptr;
 		BsdfFlags mat_bsdfs_prev = BsdfFlags::None;
-
-		while(accelerator.intersect(ray, hit_curr, render_view->getCamera()))
+		while(true)
 		{
+			bool intersects;
+			std::tie(intersects, ray, hit_curr) = accelerator.intersect(std::move(ray), render_view->getCamera());
+			if(!intersects) break;
 			Rgb transm(1.f);
 			if(material_prev && mat_bsdfs_prev.hasAny(BsdfFlags::Volumetric))
 			{
@@ -743,9 +745,8 @@ Rgb PhotonIntegrator::finalGathering(const Accelerator &accelerator, int thread_
 		p_ray.tmax_ = -1.f;
 		p_ray.from_ = hit.p_;
 		throughput = scol;
-
-		if(!(did_hit = accelerator.intersect(p_ray, hit, camera))) continue;   //hit background
-
+		std::tie(did_hit, p_ray, hit) = accelerator.intersect(std::move(p_ray), camera);
+		if(!did_hit) continue;   //hit background
 		p_mat = hit.material_;
 		length = p_ray.tmax_;
 		const BsdfFlags &mat_bsd_fs = hit.mat_data_->bsdf_flags_;
@@ -802,15 +803,12 @@ Rgb PhotonIntegrator::finalGathering(const Accelerator &accelerator, int thread_
 				did_hit = false;
 				break;
 			}
-
 			scol *= w;
-
 			p_ray.tmin_ = scene_->ray_min_dist_;
 			p_ray.tmax_ = -1.f;
 			p_ray.from_ = hit.p_;
 			throughput *= scol;
-			did_hit = accelerator.intersect(p_ray, hit, camera);
-
+			std::tie(did_hit, p_ray, hit) = accelerator.intersect(std::move(p_ray), camera);
 			if(!did_hit) //hit background
 			{
 				const auto &background = scene_->getBackground();
@@ -820,7 +818,6 @@ Rgb PhotonIntegrator::finalGathering(const Accelerator &accelerator, int thread_
 				}
 				break;
 			}
-
 			p_mat = hit.material_;
 			length += p_ray.tmax_;
 			caustic = (caustic || !depth) && sb.sampled_flags_.hasAny(BsdfFlags::Specular | BsdfFlags::Filter);
@@ -834,7 +831,7 @@ Rgb PhotonIntegrator::finalGathering(const Accelerator &accelerator, int thread_
 			{
 				Vec3 sf = SurfacePoint::normalFaceForward(hit.ng_, hit.n_, -p_ray.dir_);
 				const Photon *nearest = radiance_map_->findNearest(hit.p_, sf, lookup_rad_);
-				if(nearest) lcol = nearest->color();
+				if(nearest) lcol = nearest->color(); //FIXME should lcol be a local variable? Is it getting its value from previous functions or not??
 				if(mat_bsd_fs.hasAny(BsdfFlags::Emit)) lcol += p_mat->emit(hit.mat_data_.get(), hit, -p_ray.dir_);
 				path_col += lcol * throughput;
 			}
@@ -938,7 +935,9 @@ std::pair<Rgb, float> PhotonIntegrator::integrate(const Accelerator &accelerator
 	Rgb col {0.f};
 	float alpha = 1.f;
 	SurfacePoint sp;
-	if(accelerator.intersect(ray, sp, camera))
+	bool intersects;
+	std::tie(intersects, ray, sp) = accelerator.intersect(std::move(ray), camera);
+	if(intersects)
 	{
 		const Vec3 wo = -ray.dir_;
 		const Material *material = sp.material_;

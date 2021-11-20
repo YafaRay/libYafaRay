@@ -100,8 +100,9 @@ std::pair<Rgb, float> DirectLightIntegrator::integrate(const Accelerator &accele
 	Rgb col {0.f};
 	float alpha = 1.f;
 	SurfacePoint sp;
-	// Shoot ray into scene
-	if(accelerator.intersect(ray, sp, camera)) // If it hits
+	bool intersects;
+	std::tie(intersects, ray, sp) = accelerator.intersect(std::move(ray), camera);
+	if(intersects)
 	{
 		const Material *material = sp.material_;
 		const BsdfFlags &mat_bsdfs = sp.mat_data_->bsdf_flags_;

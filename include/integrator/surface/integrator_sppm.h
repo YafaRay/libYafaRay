@@ -78,7 +78,7 @@ class SppmIntegrator final : public MonteCarloIntegrator
 		void initializePpm(const Camera *camera);
 		/*! based on integrate method to do the gatering trace, need double-check deadly. */
 		GatherInfo traceGatherRay(const Accelerator &accelerator, int thread_id, int ray_level, bool chromatic_enabled, float wavelength, Ray &ray, HitPoint &hp, const RayDivision &ray_division, ColorLayers *color_layers, const Camera *camera, RandomGenerator &random_generator, const PixelSamplingData &pixel_sampling_data);
-		void photonWorker(PhotonMap *diffuse_map, PhotonMap *caustic_map, int thread_id, const Scene *scene, const RenderView *render_view, const RenderControl &render_control, const Timer &timer, unsigned int n_photons, const Pdf1D *light_power_d, int num_d_lights, const std::vector<const Light *> &tmplights, ProgressBar *pb, int pb_step, unsigned int &total_photons_shot, int max_bounces, RandomGenerator &random_generator);
+		void photonWorker(const Accelerator &accelerator, PhotonMap *diffuse_map, PhotonMap *caustic_map, int thread_id, const Scene *scene, const RenderView *render_view, const RenderControl &render_control, const Timer &timer, unsigned int n_photons, const Pdf1D *light_power_d, int num_d_lights, const std::vector<const Light *> &tmplights, ProgressBar *pb, int pb_step, unsigned int &total_photons_shot, int max_bounces, RandomGenerator &random_generator);
 
 		HashGrid  photon_grid_; // the hashgrid for holding photons
 		unsigned int n_photons_; //photon number to scatter

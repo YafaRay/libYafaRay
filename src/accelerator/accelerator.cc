@@ -52,7 +52,7 @@ std::unique_ptr<Accelerator> Accelerator::factory(Logger &logger, const std::vec
 	return accelerator;
 }
 
-bool Accelerator::intersect(Ray &ray, SurfacePoint &sp, const Camera *camera) const
+std::tuple<bool, Ray, SurfacePoint> Accelerator::intersect(Ray ray, const Camera *camera) const
 {
 	const float t_max = (ray.tmax_ >= 0.f) ? ray.tmax_ : std::numeric_limits<float>::infinity();
 	// intersect with tree:
@@ -60,11 +60,11 @@ bool Accelerator::intersect(Ray &ray, SurfacePoint &sp, const Camera *camera) co
 	if(accelerator_intersect_data.hit_ && accelerator_intersect_data.hit_primitive_)
 	{
 		const Point3 hit_point = ray.from_ + accelerator_intersect_data.t_max_ * ray.dir_;
-		sp = accelerator_intersect_data.hit_primitive_->getSurface(ray.differentials_.get(), hit_point, accelerator_intersect_data, nullptr, camera);
+		const SurfacePoint sp = accelerator_intersect_data.hit_primitive_->getSurface(ray.differentials_.get(), hit_point, accelerator_intersect_data, nullptr, camera);
 		ray.tmax_ = accelerator_intersect_data.t_max_;
-		return true;
+		return {true, std::move(ray), std::move(sp)};
 	}
-	return false;
+	return {false, std::move(ray), SurfacePoint()};
 }
 
 std::pair<bool, const Primitive *> Accelerator::isShadowed(const Ray &ray, float shadow_bias) const

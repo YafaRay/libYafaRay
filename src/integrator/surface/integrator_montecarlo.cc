@@ -477,8 +477,11 @@ void MonteCarloIntegrator::causticWorker(const Accelerator &accelerator, PhotonM
 		const Material *material_prev = nullptr;
 		BsdfFlags mat_bsdfs_prev = BsdfFlags::None;
 		bool chromatic_enabled = true;
-		while(accelerator.intersect(ray, hit_curr, render_view->getCamera()))
+		while(true)
 		{
+			bool intersects;
+			std::tie(intersects, ray, hit_curr) = accelerator.intersect(std::move(ray), render_view->getCamera());
+			if(!intersects) break;
 			// check for volumetric effects, based on the material from the previous photon bounce
 			Rgb transm(1.f);
 			if(material_prev && mat_bsdfs_prev.hasAny(BsdfFlags::Volumetric))

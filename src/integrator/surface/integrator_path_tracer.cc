@@ -124,11 +124,11 @@ std::pair<Rgb, float> PathIntegrator::integrate(const Accelerator &accelerator, 
 	++calls;
 	Rgb col {0.f};
 	float alpha = 1.f;
-	SurfacePoint sp;
 	float w = 0.f;
-
-	//shoot ray into scene
-	if(accelerator.intersect(ray, sp, camera))
+	SurfacePoint sp;
+	bool intersects;
+	std::tie(intersects, ray, sp) = accelerator.intersect(std::move(ray), camera);
+	if(intersects)
 	{
 		const Material *material = sp.material_;
 		const BsdfFlags &mat_bsdfs = sp.mat_data_->bsdf_flags_;
@@ -194,7 +194,9 @@ std::pair<Rgb, float> PathIntegrator::integrate(const Accelerator &accelerator, 
 				p_ray.tmin_ = scene_->ray_min_dist_;
 				p_ray.tmax_ = -1.f;
 				p_ray.from_ = sp.p_;
-				if(!accelerator.intersect(p_ray, *hit, camera)) continue; //hit background
+				bool p_intersects;
+				std::tie(p_intersects, p_ray, *hit) = accelerator.intersect(std::move(p_ray), camera);
+				if(!p_intersects) continue; //hit background
 				const Material *p_mat = hit->material_;
 				if(s.sampled_flags_ != BsdfFlags::None) pwo = -p_ray.dir_; //Fix for white dots in path tracing with shiny diffuse with transparent PNG texture and transparent shadows, especially in Win32, (precision?). Sometimes the first sampling does not take place and pRay.dir is not initialized, so before this change when that happened pwo = -pRay.dir was getting a random_generator non-initialized value! This fix makes that, if the first sample fails for some reason, pwo is not modified and the rest of the sampling continues with the same pwo value. FIXME: Question: if the first sample fails, should we continue as now or should we exit the loop with the "continue" command?
 				lcol = estimateOneDirectLight(accelerator, thread_id, chromatic_enabled, wavelength_dispersive, *hit, pwo, offs, ray_division, camera, random_generator, pixel_sampling_data);
@@ -235,7 +237,9 @@ std::pair<Rgb, float> PathIntegrator::integrate(const Accelerator &accelerator, 
 					p_ray.tmin_ = scene_->ray_min_dist_;
 					p_ray.tmax_ = -1.f;
 					p_ray.from_ = hit->p_;
-					if(!accelerator.intersect(p_ray, *hit_2, camera)) //hit background
+					bool p_intersects_2;
+					std::tie(p_intersects_2, p_ray, *hit_2) = accelerator.intersect(std::move(p_ray), camera);
+					if(!p_intersects_2) //hit background
 					{
 						const Background *background = scene_->getBackground();
 						if((caustic && background && background->hasIbl() && background->shootsCaustic()))
