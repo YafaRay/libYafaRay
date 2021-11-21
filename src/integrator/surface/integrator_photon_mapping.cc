@@ -743,6 +743,7 @@ Rgb PhotonIntegrator::finalGathering(const Accelerator &accelerator, int thread_
 		p_ray.from_ = hit->p_;
 		throughput = scol;
 		std::tie(hit, p_ray.tmax_) = accelerator.intersect(p_ray, camera);
+		did_hit = hit ? true : false;
 		if(!hit) continue;   //hit background
 		p_mat = hit->material_;
 		length = p_ray.tmax_;
