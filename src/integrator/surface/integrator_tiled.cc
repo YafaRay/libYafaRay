@@ -702,7 +702,7 @@ Rgb TiledIntegrator::sampleAmbientOcclusion(const Accelerator &accelerator, bool
 	return col / static_cast<float>(n);
 }
 
-std::pair<Rgb, float> TiledIntegrator::volumetricEffects(const Ray &ray, ColorLayers *color_layers, RandomGenerator &random_generator, Rgb col, float alpha, const VolumeIntegrator *volume_integrator, bool transparent_background)
+std::pair<Rgb, float> TiledIntegrator::volumetricEffects(const Ray &ray, ColorLayers *color_layers, RandomGenerator &random_generator, Rgb &&col, float &&alpha, const VolumeIntegrator *volume_integrator, bool transparent_background)
 {
 	const Rgb col_vol_transmittance = volume_integrator->transmittance(random_generator, ray);
 	const Rgb col_vol_integration = volume_integrator->integrate(random_generator, ray);

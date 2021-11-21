@@ -68,7 +68,7 @@ class TiledIntegrator : public SurfaceIntegrator
 		static void generateOcclusionLayers(const Accelerator &accelerator, bool chromatic_enabled, float wavelength, const RayDivision &ray_division, ColorLayers *color_layers, const Camera *camera, const PixelSamplingData &pixel_sampling_data, const SurfacePoint &sp, const Vec3 &wo, int ao_samples, bool shadow_bias_auto, float shadow_bias, float ao_dist, const Rgb &ao_col, int transp_shadows_depth);
 		/*! Samples ambient occlusion for a given surface point */
 		static Rgb sampleAmbientOcclusion(const Accelerator &accelerator, bool chromatic_enabled, float wavelength, const SurfacePoint &sp, const Vec3 &wo, const RayDivision &ray_division, const Camera *camera, const PixelSamplingData &pixel_sampling_data, bool transparent_shadows, bool clay, int ao_samples, bool shadow_bias_auto, float shadow_bias, float ao_dist, const Rgb &ao_col, int transp_shadows_depth);
-		static std::pair<Rgb, float> volumetricEffects(const Ray &ray, ColorLayers *color_layers, RandomGenerator &random_generator, Rgb col, float alpha, const VolumeIntegrator *volume_integrator, bool transparent_background);
+		static std::pair<Rgb, float> volumetricEffects(const Ray &ray, ColorLayers *color_layers, RandomGenerator &random_generator, Rgb &&col, float &&alpha, const VolumeIntegrator *volume_integrator, bool transparent_background);
 		static std::pair<Rgb, float> background(const Ray &ray, ColorLayers *color_layers, bool transparent_background, bool transparent_refracted_background, const Background *background, int ray_level);
 
 	protected:
