@@ -447,7 +447,7 @@ void MonteCarloIntegrator::causticWorker(const Accelerator &accelerator, PhotonM
 
 		s_l = float(haltoncurr) / float(n_caus_photons);
 
-		const int light_num = light_power_d->dSample(logger_, s_l, &light_num_pdf);
+		const int light_num = light_power_d->dSample(logger_, s_l, light_num_pdf);
 
 		if(light_num >= num_lights)
 		{
@@ -609,10 +609,10 @@ bool MonteCarloIntegrator::createCausticMap(const RenderView *render_view, const
 	if(num_lights > 0)
 	{
 		float light_num_pdf, light_pdf;
-		const float f_num_lights = (float)num_lights;
-		auto energies = std::unique_ptr<float[]>(new float[num_lights]);
+		const float f_num_lights = static_cast<float>(num_lights);
+		std::vector<float> energies(num_lights);
 		for(int i = 0; i < num_lights; ++i) energies[i] = caus_lights[i]->totalEnergy().energy();
-		auto light_power_d = std::unique_ptr<Pdf1D>(new Pdf1D(energies.get(), num_lights));
+		auto light_power_d = std::unique_ptr<Pdf1D>(new Pdf1D(energies));
 
 		if(logger_.isVerbose()) logger_.logVerbose(getName(), ": Light(s) photon color testing for caustics map:");
 
@@ -620,7 +620,7 @@ bool MonteCarloIntegrator::createCausticMap(const RenderView *render_view, const
 		{
 			Rgb pcol(0.f);
 			pcol = caus_lights[i]->emitPhoton(.5, .5, .5, .5, ray, light_pdf);
-			light_num_pdf = light_power_d->func_[i] * light_power_d->inv_integral_;
+			light_num_pdf = light_power_d->function(i) * light_power_d->invIntegral();
 			pcol *= f_num_lights * light_pdf / light_num_pdf; //remember that lightPdf is the inverse of the pdf, hence *=...
 			if(logger_.isVerbose()) logger_.logVerbose(getName(), ": Light [", i + 1, "] Photon col:", pcol, " | lnpdf: ", light_num_pdf);
 		}

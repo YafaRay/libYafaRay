@@ -52,15 +52,17 @@ class BackgroundLight final : public Light
 		virtual bool canIntersect() const override { return true; }
 		virtual bool intersect(const Ray &ray, float &t, Rgb &col, float &ipdf) const override;
 		void sampleDir(float s_1, float s_2, Vec3 &dir, float &pdf, bool inv = false) const;
-		float dirPdf(const Vec3 dir) const;
+		float dirPdf(const Vec3 &dir) const;
 		float calcFromSample(float s_1, float s_2, float &u, float &v, bool inv = false) const;
 		float calcFromDir(const Vec3 &dir, float &u, float &v, bool inv = false) const;
+		float calcPdf(float p_0, float p_1, float s) const;
+		float calcInvPdf(float p_0, float p_1, float s) const;
 		static constexpr float addOff(float v);
 		static int clampSample(int s, int m);
 		static float clampZero(float val);
 		static float sinSample(float s);
 
-		std::unique_ptr<std::unique_ptr<Pdf1D>[]> u_dist_;
+		std::vector<std::unique_ptr<Pdf1D>> u_dist_;
 		std::unique_ptr<Pdf1D> v_dist_;
 		int samples_;
 		Point3 world_center_;

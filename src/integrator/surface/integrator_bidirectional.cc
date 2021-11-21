@@ -160,14 +160,14 @@ bool BidirectionalIntegrator::preprocess(const RenderControl &render_control, Ti
 	lights_ = render_view->getLightsVisible();
 	const int num_lights = lights_.size();
 	f_num_lights_ = 1.f / static_cast<float>(num_lights);
-	const auto energies = std::unique_ptr<float[]>(new float[num_lights]);
+	std::vector<float> energies(num_lights);
 	for(int i = 0; i < num_lights; ++i) energies[i] = lights_[i]->totalEnergy().energy();
-	light_power_d_ = std::unique_ptr<Pdf1D>(new Pdf1D(energies.get(), num_lights));
-	for(int i = 0; i < num_lights; ++i) inv_light_power_d_[lights_[i]] = light_power_d_->func_[i] * light_power_d_->inv_integral_;
+	light_power_d_ = std::unique_ptr<Pdf1D>(new Pdf1D(energies));
+	for(int i = 0; i < num_lights; ++i) inv_light_power_d_[lights_[i]] = light_power_d_->function(i) * light_power_d_->invIntegral();
 	if(logger_.isDebug())
 	{
-		for(int i = 0; i < num_lights; ++i)logger_.logDebug(getName(), ": ", energies[i], " (", light_power_d_->func_[i], ") ");
-		logger_.logDebug(getName(), ": preprocess(): lights: ", num_lights, " invIntegral:", light_power_d_->inv_integral_);
+		for(int i = 0; i < num_lights; ++i)logger_.logDebug(getName(), ": ", energies[i], " (", light_power_d_->function(i), ") ");
+		logger_.logDebug(getName(), ": preprocess(): lights: ", num_lights, " invIntegral:", light_power_d_->invIntegral());
 	}
 	//nPaths = 0;
 	image_film_->setDensityEstimation(true);
@@ -258,7 +258,7 @@ std::pair<Rgb, float> BidirectionalIntegrator::integrate(const Accelerator &acce
 		lray.tmin_ = scene_->ray_min_dist_;
 		lray.tmax_ = -1.f;
 		float light_num_pdf;
-		const int light_num = light_power_d_->dSample(logger_, random_generator(), &light_num_pdf);
+		const int light_num = light_power_d_->dSample(logger_, random_generator(), light_num_pdf);
 		light_num_pdf *= f_num_lights_;
 		LSample ls;
 		ls.s_1_ = random_generator(), ls.s_2_ = random_generator(), ls.s_3_ = random_generator(), ls.s_4_ = random_generator();
@@ -546,11 +546,11 @@ bool BidirectionalIntegrator::connectLPath(bool chromatic_enabled, float wavelen
 	// create light sample with direct lighting strategy:
 	const PathVertex &z = pd.eye_path_[t - 1];
 	l_ray.from_ = z.sp_.p_;
-	l_ray.tmin_ = 0.0005;
+	l_ray.tmin_ = 0.0005f;
 	const int n_lights_i = lights_.size();
 	if(n_lights_i == 0) return false;
 	float light_num_pdf, cos_wo;
-	int lnum = light_power_d_->dSample(logger_, random_generator(), &light_num_pdf);
+	int lnum = light_power_d_->dSample(logger_, random_generator(), light_num_pdf);
 	light_num_pdf *= f_num_lights_;
 	if(lnum > n_lights_i - 1) lnum = n_lights_i - 1;
 	const Light *light = lights_[lnum];

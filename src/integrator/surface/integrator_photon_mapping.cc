@@ -141,7 +141,7 @@ void PhotonIntegrator::diffuseWorker(const Accelerator &accelerator, PhotonMap *
 		s_4 = Halton::lowDiscrepancySampling(4, haltoncurr);
 
 		s_l = float(haltoncurr) * inv_diff_photons;
-		int light_num = light_power_d->dSample(logger_, s_l, &light_num_pdf);
+		int light_num = light_power_d->dSample(logger_, s_l, light_num_pdf);
 		if(light_num >= num_d_lights)
 		{
 			logger_.logError(getName(), ": lightPDF sample error! ", s_l, "/", light_num);
@@ -429,7 +429,6 @@ bool PhotonIntegrator::preprocess(const RenderControl &render_control, Timer &ti
 	int num_c_lights = 0;
 	int num_d_lights = 0;
 	float f_num_lights = 0.f;
-	std::unique_ptr<float[]> energies;
 	Rgb pcol;
 
 	//shoot photons
@@ -457,18 +456,18 @@ bool PhotonIntegrator::preprocess(const RenderControl &render_control, Timer &ti
 
 	if(use_photon_diffuse_)
 	{
-		f_num_lights = (float)num_d_lights;
-		energies = std::unique_ptr<float[]>(new float[num_d_lights]);
+		f_num_lights = static_cast<float>(num_d_lights);
+		std::vector<float> energies(num_d_lights);
 
 		for(int i = 0; i < num_d_lights; ++i) energies[i] = tmplights[i]->totalEnergy().energy();
 
-		light_power_d_ = std::unique_ptr<Pdf1D>(new Pdf1D(energies.get(), num_d_lights));
+		light_power_d_ = std::unique_ptr<Pdf1D>(new Pdf1D(energies));
 
 		if(logger_.isVerbose()) logger_.logVerbose(getName(), ": Light(s) photon color testing for diffuse map:");
 		for(int i = 0; i < num_d_lights; ++i)
 		{
 			pcol = tmplights[i]->emitPhoton(.5, .5, .5, .5, ray, light_pdf);
-			light_num_pdf = light_power_d_->func_[i] * light_power_d_->inv_integral_;
+			light_num_pdf = light_power_d_->function(i) * light_power_d_->invIntegral();
 			pcol *= f_num_lights * light_pdf / light_num_pdf; //remember that lightPdf is the inverse of the pdf, hence *=...
 			if(logger_.isVerbose()) logger_.logVerbose(getName(), ": Light [", i + 1, "] Photon col:", pcol, " | lnpdf: ", light_num_pdf);
 		}
@@ -552,17 +551,17 @@ bool PhotonIntegrator::preprocess(const RenderControl &render_control, Timer &ti
 		curr = 0;
 
 		f_num_lights = (float)num_c_lights;
-		energies = std::unique_ptr<float[]>(new float[num_c_lights]);
+		std::vector<float> energies(num_c_lights);
 
 		for(int i = 0; i < num_c_lights; ++i) energies[i] = tmplights[i]->totalEnergy().energy();
 
-		light_power_d_ = std::unique_ptr<Pdf1D>(new Pdf1D(energies.get(), num_c_lights));
+		light_power_d_ = std::unique_ptr<Pdf1D>(new Pdf1D(energies));
 
 		if(logger_.isVerbose()) logger_.logVerbose(getName(), ": Light(s) photon color testing for caustics map:");
 		for(int i = 0; i < num_c_lights; ++i)
 		{
 			pcol = tmplights[i]->emitPhoton(.5, .5, .5, .5, ray, light_pdf);
-			light_num_pdf = light_power_d_->func_[i] * light_power_d_->inv_integral_;
+			light_num_pdf = light_power_d_->function(i) * light_power_d_->invIntegral();
 			pcol *= f_num_lights * light_pdf / light_num_pdf; //remember that lightPdf is the inverse of the pdf, hence *=...
 			if(logger_.isVerbose()) logger_.logVerbose(getName(), ": Light [", i + 1, "] Photon col:", pcol, " | lnpdf: ", light_num_pdf);
 		}

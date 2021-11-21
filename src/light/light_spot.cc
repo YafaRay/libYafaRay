@@ -40,15 +40,15 @@ SpotLight::SpotLight(Logger &logger, const Point3 &from, const Point3 &to, const
 	double rad_inner_angle = rad_angle * (1.f - falloff);
 	cos_start_ = math::cos(rad_inner_angle);
 	cos_end_ = math::cos(rad_angle);
-	icos_diff_ = 1.0 / (cos_start_ - cos_end_);
+	icos_diff_ = 1.f / (cos_start_ - cos_end_);
 
-	auto f = std::unique_ptr<float[]>(new float[65]);
+	std::vector<float> f(65);
 	for(int i = 0; i < 65; i++)
 	{
-		float v = (float)i / 64.f;
+		const float v = static_cast<float>(i) / 64.f;
 		f[i] = v * v * (3.f - 2.f * v);
 	}
-	pdf_ = std::unique_ptr<Pdf1D>(new Pdf1D(f.get(), 65));
+	pdf_ = std::unique_ptr<Pdf1D>(new Pdf1D(f));
 
 	/* the integral of the smoothstep is 0.5, and since it gets applied to the cos, and each delta cos
 		corresponds to a constant surface are of the (partial) emitting sphere, we can actually simply
@@ -57,10 +57,10 @@ SpotLight::SpotLight(Logger &logger, const Point3 &from, const Point3 &to, const
 		|------|--------|-----------------|
 	*/
 
-	interv_1_ = (1.0 - cos_start_);
-	interv_2_ = 0.5 * (cos_start_ - cos_end_); // as said, energy linear to delta cos, integral is 0.5;
+	interv_1_ = 1.f - cos_start_;
+	interv_2_ = 0.5f * (cos_start_ - cos_end_); // as said, energy linear to delta cos, integral is 0.5;
 	float sum = std::abs(interv_1_) + std::abs(interv_2_);
-	if(sum > 0.f) sum = 1.0 / sum;
+	if(sum > 0.f) sum = 1.f / sum;
 	interv_1_ *= sum;
 	interv_2_ *= sum;
 }
@@ -79,7 +79,7 @@ bool SpotLight::illuminate(const SurfacePoint &sp, Rgb &col, Ray &wi) const
 	float dist = math::sqrt(dist_sqr);
 	if(dist == 0.0) return false;
 
-	float idist_sqr = 1.f / (dist_sqr);
+	float idist_sqr = 1.f / dist_sqr;
 	ldir *= 1.f / dist; //normalize
 
 	float cosa = ndir_ * ldir;
@@ -154,13 +154,13 @@ Rgb SpotLight::emitPhoton(float s_1, float s_2, float s_3, float s_4, Ray &ray, 
 	else // sample in the falloff area
 	{
 		float spdf;
-		float sm_2 = pdf_->sample(logger_, s_2, &spdf) * pdf_->inv_count_;
+		float sm_2 = pdf_->sample(logger_, s_2, spdf) * pdf_->invSize();
 		ipdf = math::mult_pi_by_2 * (cos_start_ - cos_end_) / (interv_2_ * spdf);
 		double cos_ang = cos_end_ + (cos_start_ - cos_end_) * (double)sm_2;
 		double sin_ang = math::sqrt(1.0 - cos_ang * cos_ang);
 		float t_1 = math::mult_pi_by_2 * s_1;
 		ray.dir_ = (du_ * math::cos(t_1) + dv_ * math::sin(t_1)) * (float)sin_ang + dir_ * (float)cos_ang;
-		return color_ * spdf * pdf_->integral_; // scale is just the actual falloff function, since spdf is func * invIntegral...
+		return color_ * spdf * pdf_->integral(); // scale is just the actual falloff function, since spdf is func * invIntegral...
 	}
 	return color_;
 }
@@ -178,7 +178,7 @@ Rgb SpotLight::emitSample(Vec3 &wo, LSample &s) const
 	else // sample in the falloff area
 	{
 		float spdf;
-		float sm_2 = pdf_->sample(logger_, s.s_2_, &spdf) * pdf_->inv_count_;
+		float sm_2 = pdf_->sample(logger_, s.s_2_, spdf) * pdf_->invSize();
 		s.dir_pdf_ = (interv_2_ * spdf) / (math::mult_pi_by_2 * (cos_start_ - cos_end_));
 		double cos_ang = cos_end_ + (cos_start_ - cos_end_) * (double)sm_2;
 		double sin_ang = math::sqrt(1.0 - cos_ang * cos_ang);

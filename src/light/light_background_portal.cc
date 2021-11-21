@@ -44,14 +44,14 @@ void BackgroundPortalLight::initIs()
 {
 	num_primitives_ = base_object_->numPrimitives();
 	primitives_ = base_object_->getPrimitives();
-	const auto areas = std::unique_ptr<float[]>(new float[num_primitives_]);
+	std::vector<float> areas(num_primitives_);
 	double total_area = 0.0;
 	for(int i = 0; i < num_primitives_; ++i)
 	{
 		areas[i] = primitives_[i]->surfaceArea();
 		total_area += areas[i];
 	}
-	area_dist_ = std::unique_ptr<Pdf1D>(new Pdf1D(areas.get(), num_primitives_));
+	area_dist_ = std::unique_ptr<Pdf1D>(new Pdf1D(areas));
 	area_ = static_cast<float>(total_area);
 	inv_area_ = static_cast<float>(1.0 / total_area);
 	accelerator_ = nullptr;
@@ -88,17 +88,17 @@ void BackgroundPortalLight::init(Scene &scene)
 void BackgroundPortalLight::sampleSurface(Point3 &p, Vec3 &n, float s_1, float s_2) const
 {
 	float prim_pdf;
-	const int prim_num = area_dist_->dSample(logger_, s_1, &prim_pdf);
-	if(prim_num >= area_dist_->count_)
+	const size_t prim_num = area_dist_->dSample(logger_, s_1, prim_pdf);
+	if(prim_num >= area_dist_->size())
 	{
 		logger_.logWarning("bgPortalLight: Sampling error!");
 		return;
 	}
-	float ss_1, delta = area_dist_->cdf_[prim_num + 1];
+	float ss_1, delta = area_dist_->cdf(prim_num + 1);
 	if(prim_num > 0)
 	{
-		delta -= area_dist_->cdf_[prim_num];
-		ss_1 = (s_1 - area_dist_->cdf_[prim_num]) / delta;
+		delta -= area_dist_->cdf(prim_num);
+		ss_1 = (s_1 - area_dist_->cdf(prim_num)) / delta;
 	}
 	else ss_1 = s_1 / delta;
 	primitives_[prim_num]->sample(ss_1, s_2, p, n);
