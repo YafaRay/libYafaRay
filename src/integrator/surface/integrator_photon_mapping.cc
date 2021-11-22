@@ -709,8 +709,8 @@ Rgb PhotonIntegrator::finalGathering(int thread_id, bool chromatic_enabled, floa
 		p_ray.from_ = hit->p_;
 		throughput = scol;
 		std::tie(hit, p_ray.tmax_) = accelerator_->intersect(p_ray, camera_);
-		did_hit = hit ? true : false;
-		if(!hit) continue;   //hit background
+		did_hit = static_cast<bool>(hit);
+		if(!did_hit) continue;   //hit background
 		p_mat = hit->material_;
 		length = p_ray.tmax_;
 		const BsdfFlags &mat_bsd_fs = hit->mat_data_->bsdf_flags_;
@@ -773,8 +773,8 @@ Rgb PhotonIntegrator::finalGathering(int thread_id, bool chromatic_enabled, floa
 			p_ray.from_ = hit->p_;
 			throughput *= scol;
 			std::tie(hit, p_ray.tmax_) = accelerator_->intersect(p_ray, camera_);
-			did_hit = hit ? true : false;
-			if(!hit) //hit background
+			did_hit = static_cast<bool>(hit);
+			if(!did_hit) //hit background
 			{
 				const auto &background = background_;
 				if(caustic && background && background->hasIbl() && background->shootsCaustic())

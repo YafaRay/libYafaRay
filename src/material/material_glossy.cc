@@ -149,7 +149,7 @@ Rgb GlossyMaterial::eval(const MaterialData *mat_data, const SurfacePoint &sp, c
 		if(oren_nayar_)
 		{
 			const double texture_sigma = getShaderScalar(sigma_oren_shader_, mat_data->node_tree_data_, 0.f);
-			const bool use_texture_sigma = (sigma_oren_shader_ ? true : false);
+			const bool use_texture_sigma = static_cast<bool>(sigma_oren_shader_);
 			add_col *= orenNayar(wl, wo, n, use_texture_sigma, texture_sigma);
 		}
 		col += add_col;
@@ -225,7 +225,7 @@ Rgb GlossyMaterial::sample(const MaterialData *mat_data, const SurfacePoint &sp,
 				if(oren_nayar_)
 				{
 					const double texture_sigma = getShaderScalar(sigma_oren_shader_, mat_data->node_tree_data_, 0.f);
-					const bool use_texture_sigma = (sigma_oren_shader_ ? true : false);
+					const bool use_texture_sigma = static_cast<bool>(sigma_oren_shader_);
 					add_col *= orenNayar(wi, wo, n, use_texture_sigma, texture_sigma);
 				}
 				scolor += add_col;
@@ -301,7 +301,7 @@ Rgb GlossyMaterial::sample(const MaterialData *mat_data, const SurfacePoint &sp,
 		if(oren_nayar_)
 		{
 			const double texture_sigma = getShaderScalar(sigma_oren_shader_, mat_data->node_tree_data_, 0.f);
-			const bool use_texture_sigma = (sigma_oren_shader_ ? true : false);
+			const bool use_texture_sigma = static_cast<bool>(sigma_oren_shader_);
 			add_col *= orenNayar(wi, wo, n, use_texture_sigma, texture_sigma);
 		}
 		s.pdf_ = wi_n * cur_p_diffuse + s.pdf_ * (1.f - cur_p_diffuse);

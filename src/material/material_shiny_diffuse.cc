@@ -228,7 +228,7 @@ Rgb ShinyDiffuseMaterial::eval(const MaterialData *mat_data, const SurfacePoint 
 	if(use_oren_nayar_)
 	{
 		const double texture_sigma = getShaderScalar(sigma_oren_shader_, mat_data->node_tree_data_, 0.f);
-		const bool use_texture_sigma = (sigma_oren_shader_ ? true : false);
+		const bool use_texture_sigma = static_cast<bool>(sigma_oren_shader_);
 		if(use_oren_nayar_) m_d *= orenNayar(wo, wl, n, use_texture_sigma, texture_sigma);
 	}
 
@@ -323,7 +323,7 @@ Rgb ShinyDiffuseMaterial::sample(const MaterialData *mat_data, const SurfacePoin
 			if(use_oren_nayar_)
 			{
 				const double texture_sigma = getShaderScalar(sigma_oren_shader_, mat_data->node_tree_data_, 0.f);
-				const bool use_texture_sigma = (sigma_oren_shader_ ? true : false);
+				const bool use_texture_sigma = static_cast<bool>(sigma_oren_shader_);
 				scolor *= orenNayar(wo, wi, n, use_texture_sigma, texture_sigma);
 			}
 			s.pdf_ = std::abs(wi * n) * width[pick]; break;

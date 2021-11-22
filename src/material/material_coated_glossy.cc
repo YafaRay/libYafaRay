@@ -166,7 +166,7 @@ Rgb CoatedGlossyMaterial::eval(const MaterialData *mat_data, const SurfacePoint 
 		if(oren_nayar_)
 		{
 			const double texture_sigma = getShaderScalar(sigma_oren_shader_, mat_data->node_tree_data_, 0.f);
-			const bool use_texture_sigma = (sigma_oren_shader_ ? true : false);
+			const bool use_texture_sigma = static_cast<bool>(sigma_oren_shader_);
 			add_col *= orenNayar(wl, wo, n, use_texture_sigma, texture_sigma);
 		}
 		col += add_col;//diffuseReflectFresnel(wiN, woN, mat_data_specific->mGlossy, mat_data_specific->mDiffuse, (diffuseS ? diffuseS->getColor(mat_data->node_tree_data_) : diff_color), Kt) * ((orenNayar)?OrenNayar(wi, wo, N):1.f);
@@ -329,7 +329,7 @@ Rgb CoatedGlossyMaterial::sample(const MaterialData *mat_data, const SurfacePoin
 			if(oren_nayar_)
 			{
 				const double texture_sigma = getShaderScalar(sigma_oren_shader_, mat_data->node_tree_data_, 0.f);
-				const bool use_texture_sigma = (sigma_oren_shader_ ? true : false);
+				const bool use_texture_sigma = static_cast<bool>(sigma_oren_shader_);
 
 				add_col *= orenNayar(wi, wo, n, use_texture_sigma, texture_sigma);
 			}
