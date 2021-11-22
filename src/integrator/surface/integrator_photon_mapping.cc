@@ -107,52 +107,41 @@ PhotonIntegrator::PhotonIntegrator(RenderControl &render_control, Logger &logger
 	radiance_map_->setName("FG Radiance Photon Map");
 }
 
-void PhotonIntegrator::diffuseWorker(PhotonMap *diffuse_map, int thread_id, unsigned int n_diffuse_photons, const Pdf1D *light_power_d, int num_d_lights, const std::vector<const Light *> &tmplights, int pb_step, unsigned int &total_photons_shot, int max_bounces, bool final_gather, PreGatherData &pgdat)
+void PhotonIntegrator::diffuseWorker(int thread_id, int num_d_lights, const std::vector<const Light *> &tmplights, int pb_step, unsigned int &total_photons_shot, PreGatherData &pgdat)
 {
-	Ray ray;
-	float light_num_pdf, light_pdf, s_1, s_2, s_3, s_4, s_5, s_6, s_7, s_l;
-	Rgb pcol;
-
 	//shoot photons
 	bool done = false;
 	unsigned int curr = 0;
-
 	std::unique_ptr<const SurfacePoint> hit_prev, hit_curr;
-
-	float f_num_lights = (float)num_d_lights;
-	unsigned int n_diffuse_photons_thread = 1 + ((n_diffuse_photons - 1) / num_threads_photons_);
-
+	const float f_num_lights = static_cast<float>(num_d_lights);
+	unsigned int n_diffuse_photons_thread = 1 + ((n_diffuse_photons_ - 1) / num_threads_photons_);
 	std::vector<Photon> local_diffuse_photons;
 	std::vector<RadData> local_rad_points;
-
 	local_diffuse_photons.clear();
 	local_diffuse_photons.reserve(n_diffuse_photons_thread);
 	local_rad_points.clear();
-
-	float inv_diff_photons = 1.f / (float)n_diffuse_photons;
-
+	const float inv_diff_photons = 1.f / static_cast<float>(n_diffuse_photons_);
 	while(!done)
 	{
 		unsigned int haltoncurr = curr + n_diffuse_photons_thread * thread_id;
-
-		s_1 = sample::riVdC(haltoncurr);
-		s_2 = Halton::lowDiscrepancySampling(2, haltoncurr);
-		s_3 = Halton::lowDiscrepancySampling(3, haltoncurr);
-		s_4 = Halton::lowDiscrepancySampling(4, haltoncurr);
-
-		s_l = float(haltoncurr) * inv_diff_photons;
-		int light_num = light_power_d->dSample(logger_, s_l, light_num_pdf);
+		const float s_1 = sample::riVdC(haltoncurr);
+		const float s_2 = Halton::lowDiscrepancySampling(2, haltoncurr);
+		const float s_3 = Halton::lowDiscrepancySampling(3, haltoncurr);
+		const float s_4 = Halton::lowDiscrepancySampling(4, haltoncurr);
+		const float s_l = float(haltoncurr) * inv_diff_photons;
+		float light_num_pdf;
+		const int light_num = light_power_d_->dSample(logger_, s_l, light_num_pdf);
 		if(light_num >= num_d_lights)
 		{
 			logger_.logError(getName(), ": lightPDF sample error! ", s_l, "/", light_num);
 			return;
 		}
-
-		pcol = tmplights[light_num]->emitPhoton(s_1, s_2, s_3, s_4, ray, light_pdf);
+		Ray ray;
+		float light_pdf;
+		Rgb pcol = tmplights[light_num]->emitPhoton(s_1, s_2, s_3, s_4, ray, light_pdf);
 		ray.tmin_ = ray_min_dist_;
 		ray.tmax_ = -1.f;
 		pcol *= f_num_lights * light_pdf / light_num_pdf; //remember that lightPdf is the inverse of th pdf, hence *=...
-
 		if(pcol.isBlack())
 		{
 			++curr;
@@ -164,7 +153,6 @@ void PhotonIntegrator::diffuseWorker(PhotonMap *diffuse_map, int thread_id, unsi
 			logger_.logWarning(getName(), ": NaN  on photon color for light", light_num + 1, ".");
 			continue;
 		}
-
 		int n_bounces = 0;
 		bool caustic_photon = false;
 		bool direct_photon = true;
@@ -185,7 +173,6 @@ void PhotonIntegrator::diffuseWorker(PhotonMap *diffuse_map, int thread_id, unsi
 			const Vec3 wi = -ray.dir_;
 			const Material *material = hit_curr->material_;
 			const BsdfFlags &mat_bsdfs = hit_curr->mat_data_->bsdf_flags_;
-
 			if(mat_bsdfs.hasAny(BsdfFlags::Diffuse))
 			{
 				//deposit photon on surface
@@ -196,7 +183,7 @@ void PhotonIntegrator::diffuseWorker(PhotonMap *diffuse_map, int thread_id, unsi
 				}
 				// create entry for radiance photon:
 				// don't forget to choose subset only, face normal forward; geometric vs. smooth normal?
-				if(final_gather && FastRandom::getNextFloatNormalized() < 0.125 && !caustic_photon)
+				if(final_gather_ && FastRandom::getNextFloatNormalized() < 0.125 && !caustic_photon)
 				{
 					const Vec3 n = SurfacePoint::normalFaceForward(hit_curr->ng_, hit_curr->n_, wi);
 					RadData rd(hit_curr->p_, n);
@@ -206,26 +193,21 @@ void PhotonIntegrator::diffuseWorker(PhotonMap *diffuse_map, int thread_id, unsi
 				}
 			}
 			// need to break in the middle otherwise we scatter the photon and then discard it => redundant
-			if(n_bounces == max_bounces) break;
+			if(n_bounces == max_bounces_) break;
 			// scatter photon
 			const int d_5 = 3 * n_bounces + 5;
-
-			s_5 = Halton::lowDiscrepancySampling(d_5, haltoncurr);
-			s_6 = Halton::lowDiscrepancySampling(d_5 + 1, haltoncurr);
-			s_7 = Halton::lowDiscrepancySampling(d_5 + 2, haltoncurr);
-
+			const float s_5 = Halton::lowDiscrepancySampling(d_5, haltoncurr);
+			const float s_6 = Halton::lowDiscrepancySampling(d_5 + 1, haltoncurr);
+			const float s_7 = Halton::lowDiscrepancySampling(d_5 + 2, haltoncurr);
 			PSample sample(s_5, s_6, s_7, BsdfFlags::All, pcol, transm);
-
 			Vec3 wo;
 			bool scattered = material->scatterPhoton(hit_curr->mat_data_.get(), *hit_curr, wi, wo, sample, true, 0.f, camera_);
 			if(!scattered) break; //photon was absorped.
-
 			pcol = sample.color_;
-
 			caustic_photon = (sample.sampled_flags_.hasAny((BsdfFlags::Glossy | BsdfFlags::Specular | BsdfFlags::Dispersive)) && direct_photon) ||
-							 (sample.sampled_flags_.hasAny((BsdfFlags::Glossy | BsdfFlags::Specular | BsdfFlags::Filter | BsdfFlags::Dispersive)) && caustic_photon);
+							 (sample.sampled_flags_.hasAny((BsdfFlags::Glossy | BsdfFlags::Specular | BsdfFlags::Filter | BsdfFlags::Dispersive)) &&
+							 caustic_photon);
 			direct_photon = sample.sampled_flags_.hasAny(BsdfFlags::Filter) && direct_photon;
-
 			ray.from_ = hit_curr->p_;
 			ray.dir_ = wo;
 			ray.tmin_ = ray_min_dist_;
@@ -243,11 +225,10 @@ void PhotonIntegrator::diffuseWorker(PhotonMap *diffuse_map, int thread_id, unsi
 		}
 		done = (curr >= n_diffuse_photons_thread);
 	}
-	diffuse_map->mutx_.lock();
-	diffuse_map->appendVector(local_diffuse_photons, curr);
+	diffuse_map_->mutx_.lock();
+	diffuse_map_->appendVector(local_diffuse_photons, curr);
 	total_photons_shot += curr;
-	diffuse_map->mutx_.unlock();
-
+	diffuse_map_->mutx_.unlock();
 	pgdat.mutx_.lock();
 	pgdat.rad_points_.insert(std::end(pgdat.rad_points_), std::begin(local_rad_points), std::end(local_rad_points));
 	pgdat.mutx_.unlock();
@@ -418,12 +399,8 @@ bool PhotonIntegrator::preprocess(const RenderView *render_view, ImageFilm *imag
 	radiance_map_->setNumPaths(0);
 	radiance_map_->setNumThreadsPkDtree(num_threads_photons_);
 
-	Ray ray;
-	float light_num_pdf, light_pdf;
 	int num_c_lights = 0;
 	int num_d_lights = 0;
-	float f_num_lights = 0.f;
-	Rgb pcol;
 
 	//shoot photons
 	unsigned int curr = 0;
@@ -432,12 +409,12 @@ bool PhotonIntegrator::preprocess(const RenderView *render_view, ImageFilm *imag
 
 	tmplights.clear();
 
-	for(int i = 0; i < (int)lights_.size(); ++i)
+	for(const auto &light : lights_)
 	{
-		if(lights_[i]->shootsDiffuseP())
+		if(light->shootsDiffuseP())
 		{
 			num_d_lights++;
-			tmplights.push_back(lights_[i]);
+			tmplights.push_back(light);
 		}
 	}
 
@@ -449,7 +426,7 @@ bool PhotonIntegrator::preprocess(const RenderView *render_view, ImageFilm *imag
 
 	if(use_photon_diffuse_)
 	{
-		f_num_lights = static_cast<float>(num_d_lights);
+		const float f_num_lights = static_cast<float>(num_d_lights);
 		std::vector<float> energies(num_d_lights);
 
 		for(int i = 0; i < num_d_lights; ++i) energies[i] = tmplights[i]->totalEnergy().energy();
@@ -459,8 +436,10 @@ bool PhotonIntegrator::preprocess(const RenderView *render_view, ImageFilm *imag
 		if(logger_.isVerbose()) logger_.logVerbose(getName(), ": Light(s) photon color testing for diffuse map:");
 		for(int i = 0; i < num_d_lights; ++i)
 		{
-			pcol = tmplights[i]->emitPhoton(.5, .5, .5, .5, ray, light_pdf);
-			light_num_pdf = light_power_d_->function(i) * light_power_d_->invIntegral();
+			Ray ray;
+			float light_pdf;
+			Rgb pcol = tmplights[i]->emitPhoton(.5, .5, .5, .5, ray, light_pdf);
+			const float light_num_pdf = light_power_d_->function(i) * light_power_d_->invIntegral();
 			pcol *= f_num_lights * light_pdf / light_num_pdf; //remember that lightPdf is the inverse of the pdf, hence *=...
 			if(logger_.isVerbose()) logger_.logVerbose(getName(), ": Light [", i + 1, "] Photon col:", pcol, " | lnpdf: ", light_num_pdf);
 		}
@@ -480,7 +459,7 @@ bool PhotonIntegrator::preprocess(const RenderView *render_view, ImageFilm *imag
 		logger_.logParams(getName(), ": Shooting ", n_diffuse_photons_, " photons across ", num_threads_photons_, " threads (", (n_diffuse_photons_ / num_threads_photons_), " photons/thread)");
 
 		std::vector<std::thread> threads;
-		for(int i = 0; i < num_threads_photons_; ++i) threads.push_back(std::thread(&PhotonIntegrator::diffuseWorker, this, diffuse_map_.get(), i, n_diffuse_photons_, light_power_d_.get(), num_d_lights, tmplights, pb_step, std::ref(curr), max_bounces_, final_gather_, std::ref(pgdat)));
+		for(int i = 0; i < num_threads_photons_; ++i) threads.push_back(std::thread(&PhotonIntegrator::diffuseWorker, this, i, num_d_lights, tmplights, pb_step, std::ref(curr), std::ref(pgdat)));
 		for(auto &t : threads) t.join();
 
 		intpb_->done();
@@ -505,29 +484,29 @@ bool PhotonIntegrator::preprocess(const RenderView *render_view, ImageFilm *imag
 
 	std::thread diffuse_map_build_kd_tree_thread;
 
-	if(use_photon_diffuse_ && diffuse_map_->nPhotons() > 0 && num_threads_photons_ >= 2)
+	if(use_photon_diffuse_ && diffuse_map_->nPhotons() > 0)
 	{
-		logger_.logInfo(getName(), ": Building diffuse photons kd-tree:");
-		intpb_->setTag("Building diffuse photons kd-tree...");
-
-		diffuse_map_build_kd_tree_thread = std::thread(&PhotonIntegrator::photonMapKdTreeWorker, this, diffuse_map_.get());
-	}
-	else
-
-		if(use_photon_diffuse_ && diffuse_map_->nPhotons() > 0)
+		if(num_threads_photons_ >= 2)
+		{
+			logger_.logInfo(getName(), ": Building diffuse photons kd-tree:");
+			intpb_->setTag("Building diffuse photons kd-tree...");
+			diffuse_map_build_kd_tree_thread = std::thread(&PhotonIntegrator::photonMapKdTreeWorker, this, diffuse_map_.get());
+		}
+		else
 		{
 			logger_.logInfo(getName(), ": Building diffuse photons kd-tree:");
 			intpb_->setTag("Building diffuse photons kd-tree...");
 			diffuse_map_->updateTree();
 			if(logger_.isVerbose()) logger_.logVerbose(getName(), ": Done.");
 		}
+	}
 
-	for(int i = 0; i < (int)lights_.size(); ++i)
+	for(const auto &light : lights_)
 	{
-		if(lights_[i]->shootsCausticP())
+		if(light->shootsCausticP())
 		{
 			num_c_lights++;
-			tmplights.push_back(lights_[i]);
+			tmplights.push_back(light);
 		}
 	}
 
@@ -540,8 +519,7 @@ bool PhotonIntegrator::preprocess(const RenderView *render_view, ImageFilm *imag
 	if(use_photon_caustics_)
 	{
 		curr = 0;
-
-		f_num_lights = (float)num_c_lights;
+		const float f_num_lights = static_cast<float>(num_c_lights);
 		std::vector<float> energies(num_c_lights);
 
 		for(int i = 0; i < num_c_lights; ++i) energies[i] = tmplights[i]->totalEnergy().energy();
@@ -551,8 +529,10 @@ bool PhotonIntegrator::preprocess(const RenderView *render_view, ImageFilm *imag
 		if(logger_.isVerbose()) logger_.logVerbose(getName(), ": Light(s) photon color testing for caustics map:");
 		for(int i = 0; i < num_c_lights; ++i)
 		{
-			pcol = tmplights[i]->emitPhoton(.5, .5, .5, .5, ray, light_pdf);
-			light_num_pdf = light_power_d_->function(i) * light_power_d_->invIntegral();
+			Ray ray;
+			float light_pdf;
+			Rgb pcol = tmplights[i]->emitPhoton(.5, .5, .5, .5, ray, light_pdf);
+			const float light_num_pdf = light_power_d_->function(i) * light_power_d_->invIntegral();
 			pcol *= f_num_lights * light_pdf / light_num_pdf; //remember that lightPdf is the inverse of the pdf, hence *=...
 			if(logger_.isVerbose()) logger_.logVerbose(getName(), ": Light [", i + 1, "] Photon col:", pcol, " | lnpdf: ", light_num_pdf);
 		}
@@ -563,14 +543,12 @@ bool PhotonIntegrator::preprocess(const RenderView *render_view, ImageFilm *imag
 		intpb_->setTag("Building caustics photon map...");
 		//Pregather caustic photons
 
-		int n_threads = num_threads_photons_;
+		n_caus_photons_ = std::max((unsigned int) num_threads_photons_, (n_caus_photons_ / num_threads_photons_) * num_threads_photons_); //rounding the number of diffuse photons so it's a number divisible by the number of threads (distribute uniformly among the threads). At least 1 photon per thread
 
-		n_caus_photons_ = std::max((unsigned int) n_threads, (n_caus_photons_ / n_threads) * n_threads); //rounding the number of diffuse photons so it's a number divisible by the number of threads (distribute uniformly among the threads). At least 1 photon per thread
-
-		logger_.logParams(getName(), ": Shooting ", n_caus_photons_, " photons across ", n_threads, " threads (", (n_caus_photons_ / n_threads), " photons/thread)");
+		logger_.logParams(getName(), ": Shooting ", n_caus_photons_, " photons across ", num_threads_photons_, " threads (", (n_caus_photons_ / num_threads_photons_), " photons/thread)");
 
 		std::vector<std::thread> threads;
-		for(int i = 0; i < n_threads; ++i) threads.push_back(std::thread(&PhotonIntegrator::causticWorker, this, caustic_map_.get(), i, n_caus_photons_, light_power_d_.get(), num_c_lights, tmplights, caus_depth_, pb_step, std::ref(curr)));
+		for(int i = 0; i < num_threads_photons_; ++i) threads.push_back(std::thread(&PhotonIntegrator::causticWorker, this, i, num_c_lights, tmplights, pb_step, std::ref(curr)));
 		for(auto &t : threads) t.join();
 
 		intpb_->done();
@@ -584,19 +562,16 @@ bool PhotonIntegrator::preprocess(const RenderView *render_view, ImageFilm *imag
 	}
 
 	tmplights.clear();
-
 	std::thread caustic_map_build_kd_tree_thread;
-
-	if(use_photon_caustics_ && caustic_map_->nPhotons() > 0 && num_threads_photons_ >= 2)
+	if(use_photon_caustics_ && caustic_map_->nPhotons() > 0)
 	{
-		logger_.logInfo(getName(), ": Building caustic photons kd-tree:");
-		intpb_->setTag("Building caustic photons kd-tree...");
-
-		caustic_map_build_kd_tree_thread = std::thread(&PhotonIntegrator::photonMapKdTreeWorker, this, caustic_map_.get());
-	}
-	else
-	{
-		if(use_photon_caustics_ && caustic_map_->nPhotons() > 0)
+		if(num_threads_photons_ >= 2)
+		{
+			logger_.logInfo(getName(), ": Building caustic photons kd-tree:");
+			intpb_->setTag("Building caustic photons kd-tree...");
+			caustic_map_build_kd_tree_thread = std::thread(&PhotonIntegrator::photonMapKdTreeWorker, this, caustic_map_.get());
+		}
+		else
 		{
 			logger_.logInfo(getName(), ": Building caustic photons kd-tree:");
 			intpb_->setTag("Building caustic photons kd-tree...");

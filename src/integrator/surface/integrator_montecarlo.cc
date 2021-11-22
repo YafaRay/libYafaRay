@@ -415,44 +415,34 @@ Rgb MonteCarloIntegrator::causticPhotons(const Ray &ray, ColorLayers *color_laye
 	return col;
 }
 
-void MonteCarloIntegrator::causticWorker(PhotonMap *caustic_map, int thread_id, unsigned int n_caus_photons, Pdf1D *light_power_d, int num_lights, const std::vector<const Light *> &caus_lights, int caus_depth, int pb_step, unsigned int &total_photons_shot)
+void MonteCarloIntegrator::causticWorker(int thread_id, int num_lights, const std::vector<const Light *> &caus_lights, int pb_step, unsigned int &total_photons_shot)
 {
 	bool done = false;
-	float s_1, s_2, s_3, s_4, s_5, s_6, s_7, s_l;
-	const float f_num_lights = (float)num_lights;
-	float light_num_pdf, light_pdf;
-
+	const float f_num_lights = static_cast<float>(num_lights);
 	unsigned int curr = 0;
-	const unsigned int n_caus_photons_thread = 1 + ((n_caus_photons - 1) / num_threads_photons_);
-
+	const unsigned int n_caus_photons_thread = 1 + ((n_caus_photons_ - 1) / num_threads_photons_);
 	std::vector<Photon> local_caustic_photons;
-
 	std::unique_ptr<const SurfacePoint> hit_prev, hit_curr;
-
-	Ray ray;
 	local_caustic_photons.clear();
 	local_caustic_photons.reserve(n_caus_photons_thread);
-
 	while(!done)
 	{
 		const unsigned int haltoncurr = curr + n_caus_photons_thread * thread_id;
 		const float wavelength = sample::riS(haltoncurr);
-
-		s_1 = sample::riVdC(haltoncurr);
-		s_2 = Halton::lowDiscrepancySampling(2, haltoncurr);
-		s_3 = Halton::lowDiscrepancySampling(3, haltoncurr);
-		s_4 = Halton::lowDiscrepancySampling(4, haltoncurr);
-
-		s_l = float(haltoncurr) / float(n_caus_photons);
-
-		const int light_num = light_power_d->dSample(logger_, s_l, light_num_pdf);
-
+		const float s_1 = sample::riVdC(haltoncurr);
+		const float s_2 = Halton::lowDiscrepancySampling(2, haltoncurr);
+		const float s_3 = Halton::lowDiscrepancySampling(3, haltoncurr);
+		const float s_4 = Halton::lowDiscrepancySampling(4, haltoncurr);
+		const float s_l = static_cast<float>(haltoncurr) / static_cast<float>(n_caus_photons_);
+		float light_num_pdf;
+		const int light_num = light_power_d_->dSample(logger_, s_l, light_num_pdf);
 		if(light_num >= num_lights)
 		{
 			logger_.logError(getName(), ": lightPDF sample error! ", s_l, "/", light_num);
 			return;
 		}
-
+		Ray ray;
+		float light_pdf;
 		Rgb pcol = caus_lights[light_num]->emitPhoton(s_1, s_2, s_3, s_4, ray, light_pdf);
 		ray.tmin_ = ray_min_dist_;
 		ray.tmax_ = -1.f;
@@ -500,14 +490,14 @@ void MonteCarloIntegrator::causticWorker(PhotonMap *caustic_map, int thread_id, 
 				}
 			}
 			// need to break in the middle otherwise we scatter the photon and then discard it => redundant
-			if(n_bounces == caus_depth) break;
+			if(n_bounces == caus_depth_) break;
 			// scatter photon
 			const int d_5 = 3 * n_bounces + 5;
 			//int d6 = d5 + 1;
 
-			s_5 = Halton::lowDiscrepancySampling(d_5, haltoncurr);
-			s_6 = Halton::lowDiscrepancySampling(d_5 + 1, haltoncurr);
-			s_7 = Halton::lowDiscrepancySampling(d_5 + 2, haltoncurr);
+			const float s_5 = Halton::lowDiscrepancySampling(d_5, haltoncurr);
+			const float s_6 = Halton::lowDiscrepancySampling(d_5 + 1, haltoncurr);
+			const float s_7 = Halton::lowDiscrepancySampling(d_5 + 2, haltoncurr);
 
 			PSample sample(s_5, s_6, s_7, BsdfFlags::AllSpecular | BsdfFlags::Glossy | BsdfFlags::Filter | BsdfFlags::Dispersive, pcol, transm);
 			Vec3 wo;
@@ -544,10 +534,10 @@ void MonteCarloIntegrator::causticWorker(PhotonMap *caustic_map, int thread_id, 
 		}
 		done = (curr >= n_caus_photons_thread);
 	}
-	caustic_map->mutx_.lock();
-	caustic_map->appendVector(local_caustic_photons, curr);
+	caustic_map_->mutx_.lock();
+	caustic_map_->appendVector(local_caustic_photons, curr);
 	total_photons_shot += curr;
-	caustic_map->mutx_.unlock();
+	caustic_map_->mutx_.unlock();
 }
 
 bool MonteCarloIntegrator::createCausticMap()
@@ -585,22 +575,14 @@ bool MonteCarloIntegrator::createCausticMap()
 	caustic_map_->reserveMemory(n_caus_photons_);
 	caustic_map_->setNumThreadsPkDtree(num_threads_photons_);
 
-	Ray ray;
 	std::vector<const Light *> caus_lights;
-
-	for(unsigned int i = 0; i < lights_.size(); ++i)
+	for(const auto &light : lights_)
 	{
-		if(lights_[i]->shootsCausticP())
-		{
-			caus_lights.push_back(lights_[i]);
-		}
+		if(light->shootsCausticP()) caus_lights.push_back(light);
 	}
-
 	const int num_lights = caus_lights.size();
-
 	if(num_lights > 0)
 	{
-		float light_num_pdf, light_pdf;
 		const float f_num_lights = static_cast<float>(num_lights);
 		std::vector<float> energies(num_lights);
 		for(int i = 0; i < num_lights; ++i) energies[i] = caus_lights[i]->totalEnergy().energy();
@@ -610,9 +592,10 @@ bool MonteCarloIntegrator::createCausticMap()
 
 		for(int i = 0; i < num_lights; ++i)
 		{
-			Rgb pcol(0.f);
-			pcol = caus_lights[i]->emitPhoton(.5, .5, .5, .5, ray, light_pdf);
-			light_num_pdf = light_power_d->function(i) * light_power_d->invIntegral();
+			Ray ray;
+			float light_pdf;
+			Rgb pcol = caus_lights[i]->emitPhoton(.5, .5, .5, .5, ray, light_pdf);
+			const float light_num_pdf = light_power_d->function(i) * light_power_d->invIntegral();
 			pcol *= f_num_lights * light_pdf / light_num_pdf; //remember that lightPdf is the inverse of the pdf, hence *=...
 			if(logger_.isVerbose()) logger_.logVerbose(getName(), ": Light [", i + 1, "] Photon col:", pcol, " | lnpdf: ", light_num_pdf);
 		}
@@ -629,7 +612,7 @@ bool MonteCarloIntegrator::createCausticMap()
 		logger_.logParams(getName(), ": Shooting ", n_caus_photons_, " photons across ", num_threads_photons_, " threads (", (n_caus_photons_ / num_threads_photons_), " photons/thread)");
 
 		std::vector<std::thread> threads;
-		for(int i = 0; i < num_threads_photons_; ++i) threads.push_back(std::thread(&MonteCarloIntegrator::causticWorker, this, caustic_map_.get(), i, n_caus_photons_, light_power_d.get(), num_lights, caus_lights, caus_depth_, pb_step, std::ref(curr)));
+		for(int i = 0; i < num_threads_photons_; ++i) threads.push_back(std::thread(&MonteCarloIntegrator::causticWorker, this, i, num_lights, caus_lights, pb_step, std::ref(curr)));
 		for(auto &t : threads) t.join();
 
 		intpb_->done();

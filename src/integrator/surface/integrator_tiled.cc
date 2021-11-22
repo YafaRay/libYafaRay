@@ -238,21 +238,19 @@ bool TiledIntegrator::renderPass(int samples, int offset, bool adaptive, int aa_
 
 	prePass(samples, (offset + image_film_->getBaseSamplingOffset()), adaptive);
 
-	int nthreads = num_threads_;
-
 	render_control_.setCurrentPass(aa_pass_number + 1);
 
 	image_film_->setSamplingOffset(offset + samples);
 
 	ThreadControl tc;
 	std::vector<std::thread> threads;
-	for(int i = 0; i < nthreads; ++i)
+	for(int i = 0; i < num_threads_; ++i)
 	{
 		threads.push_back(std::thread(&TiledIntegrator::renderWorker, this, &tc, i, samples, (offset + image_film_->getBaseSamplingOffset()), adaptive, aa_pass_number));
 	}
 
 	std::unique_lock<std::mutex> lk(tc.m_);
-	while(tc.finished_threads_ < nthreads)
+	while(tc.finished_threads_ < num_threads_)
 	{
 		tc.c_.wait(lk);
 		for(size_t i = 0; i < tc.areas_.size(); ++i)

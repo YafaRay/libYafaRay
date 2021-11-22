@@ -509,33 +509,28 @@ void SppmIntegrator::prePass(int samples, int offset, bool adaptive)
 
 	//background do not emit photons, or it is merged into normal light?
 
-	Ray ray;
-	float light_num_pdf, light_pdf;
 	int num_d_lights = 0;
 	float f_num_lights = 0.f;
-	Rgb pcol;
-
 	tmplights.clear();
 
-	for(int i = 0; i < (int)lights_.size(); ++i)
+	for(const auto &light : lights_)
 	{
 		num_d_lights++;
-		tmplights.push_back(lights_[i]);
+		tmplights.push_back(light);
 	}
 
 	f_num_lights = static_cast<float>(num_d_lights);
 	std::vector<float> energies(num_d_lights);
-
 	for(int i = 0; i < num_d_lights; ++i) energies[i] = tmplights[i]->totalEnergy().energy();
-
 	light_power_d_ = std::unique_ptr<Pdf1D>(new Pdf1D(energies));
-
 	if(logger_.isVerbose()) logger_.logVerbose(getName(), ": Light(s) photon color testing for photon map:");
 
 	for(int i = 0; i < num_d_lights; ++i)
 	{
-		pcol = tmplights[i]->emitPhoton(.5, .5, .5, .5, ray, light_pdf);
-		light_num_pdf = light_power_d_->function(i) * light_power_d_->invIntegral();
+		Ray ray;
+		float light_pdf;
+		Rgb pcol = tmplights[i]->emitPhoton(.5, .5, .5, .5, ray, light_pdf);
+		const float light_num_pdf = light_power_d_->function(i) * light_power_d_->invIntegral();
 		pcol *= f_num_lights * light_pdf / light_num_pdf; //remember that lightPdf is the inverse of the pdf, hence *=...
 		if(logger_.isVerbose()) logger_.logVerbose(getName(), ": Light [", i + 1, "] Photon col:", pcol, " | lnpdf: ", light_num_pdf);
 	}
