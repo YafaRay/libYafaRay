@@ -26,6 +26,7 @@
 #include "render/render_control.h"
 #include "image/image.h"
 #include "common/aa_noise_params.h"
+#include "common/mask_edge_toon_params.h"
 #include "geometry/bound.h"
 #include "render/render_callbacks.h"
 #include <vector>
@@ -59,29 +60,6 @@ class Accelerator;
 enum class DarkDetectionType : int;
 
 typedef unsigned int ObjId_t;
-
-struct MaskParams
-{
-	unsigned int obj_index_; //!Object Index used for masking in/out in the Mask Render Layers
-	unsigned int mat_index_; //!Material Index used for masking in/out in the Mask Render Layers
-	bool invert_ = false; //!False=mask in, True=mask out
-	bool only_ = false; //!False=rendered image is masked, True=only the mask is shown without rendered image
-};
-
-struct EdgeToonParams //Options for Edge detection and Toon Render Layers
-{
-	int thickness_ = 2; //!Thickness of the edges used in the Object Edge and Toon Render Layers
-	float threshold_ = 0.3f; //!Threshold for the edge detection process used in the Object Edge and Toon Render Layers
-	float smoothness_ = 0.75f; //!Smoothness (blur) of the edges used in the Object Edge and Toon Render Layers
-	std::array<float, 3> toon_color_ {{0.f, 0.f, 0.f}}; //!Color of the edges used in the Toon Render Layers.
-	//Using array<float, 3> to avoid including color.h header dependency
-	float toon_pre_smooth_ = 3.f; //!Toon effect: smoothness applied to the original image
-	float toon_quantization_ = 0.1f; //!Toon effect: color Quantization applied to the original image
-	float toon_post_smooth_ = 3.f; //!Toon effect: smoothness applied after Quantization
-	int face_thickness_ = 1; //!Thickness of the edges used in the Faces Edge Render Layers
-	float face_threshold_ = 0.01f; //!Threshold for the edge detection process used in the Faces Edge Render Layers
-	float face_smoothness_ = 0.5f; //!Smoothness (blur) of the edges used in the Faces Edge Render Layers
-};
 
 class Scene final
 {
@@ -134,7 +112,7 @@ class Scene final
 		ImageOutput *getOutput(const std::string &name) const;
 		std::shared_ptr<Image> getImage(const std::string &name) const;
 		const std::map<std::string, std::unique_ptr<RenderView>> &getRenderViews() const { return render_views_; }
-		const std::map<std::string, std::unique_ptr<VolumeRegion>> &getVolumeRegions() const { return volume_regions_; }
+		const std::map<std::string, std::unique_ptr<VolumeRegion>> * getVolumeRegions() const { return &volume_regions_; }
 		const std::map<std::string, std::unique_ptr<Light>> &getLights() const { return lights_; }
 
 		Light *createLight(const std::string &name, ParamMap &params);
@@ -157,8 +135,12 @@ class Scene final
 		void defineLayer(const std::string &layer_type_name, const std::string &image_type_name, const std::string &exported_image_type_name, const std::string &exported_image_name);
 		void defineLayer(Layer::Type layer_type, Image::Type image_type = Image::Type::None, Image::Type exported_image_type = Image::Type::None, const std::string &exported_image_name = "");
 		void clearLayers();
-		const Layers &getLayers() const { return layers_; }
+		const Layers * getLayers() const { return &layers_; }
 		float getShadowBias() const { return shadow_bias_; }
+		bool isShadowBiasAuto() const { return shadow_bias_auto_; }
+		float getRayMinDist() const { return ray_min_dist_; }
+		bool isRayMinDistAuto() const { return ray_min_dist_auto_; }
+		const VolumeIntegrator *getVolIntegrator() const { return vol_integrator_; }
 
 		static void logWarnExist(Logger &logger, const std::string &pname, const std::string &name);
 		static void logErrNoType(Logger &logger, const std::string &pname, const std::string &name, const std::string &type);
@@ -179,12 +161,6 @@ class Scene final
 		void setRenderFlushCallback(yafaray_RenderFlushCallback_t callback, void *callback_data);
 		void setRenderHighlightAreaCallback(yafaray_RenderHighlightAreaCallback_t callback, void *callback_data);
 		const RenderCallbacks &getRenderCallbacks() const { return render_callbacks_; }
-
-		VolumeIntegrator *vol_integrator_ = nullptr;
-		float shadow_bias_ = 1.0e-4f;  //shadow bias to apply to shadows to avoid self-shadow artifacts
-		bool shadow_bias_auto_ = true;  //enable automatic shadow bias calculation
-		float ray_min_dist_ = 1.0e-5f;  //ray minimum distance
-		bool ray_min_dist_auto_ = true;  //enable automatic ray minimum distance calculation
 
 	private:
 		template <typename T> static T *findMapItem(const std::string &name, const std::map<std::string, std::unique_ptr<T>> &map);
@@ -218,9 +194,16 @@ class Scene final
 		AaNoiseParams aa_noise_params_;
 		int nthreads_ = 1;
 		int nthreads_photons_ = 1;
+		float shadow_bias_ = 1.0e-4f;  //shadow bias to apply to shadows to avoid self-shadow artifacts
+		bool shadow_bias_auto_ = true;
+	private:
+		//enable automatic shadow bias calculation
+		float ray_min_dist_ = 1.0e-5f;  //ray minimum distance
+		bool ray_min_dist_auto_ = true;  //enable automatic ray minimum distance calculation
 		std::unique_ptr<ImageFilm> image_film_;
 		const Background* background_ = nullptr;
 		SurfaceIntegrator *surf_integrator_ = nullptr;
+		VolumeIntegrator *vol_integrator_ = nullptr;
 		std::map<std::string, std::unique_ptr<Texture>> textures_;
 		std::map<std::string, std::unique_ptr<Camera>> cameras_;
 		std::map<std::string, std::unique_ptr<Background>> backgrounds_;

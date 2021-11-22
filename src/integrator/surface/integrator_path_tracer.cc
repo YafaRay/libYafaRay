@@ -36,7 +36,7 @@ BEGIN_YAFARAY
 
 class Pdf1D;
 
-PathIntegrator::PathIntegrator(Logger &logger, bool transp_shad, int shadow_depth) : MonteCarloIntegrator(logger)
+PathIntegrator::PathIntegrator(RenderControl &render_control, Logger &logger, bool transp_shad, int shadow_depth) : MonteCarloIntegrator(render_control, logger)
 {
 	tr_shad_ = transp_shad;
 	s_depth_ = shadow_depth;
@@ -49,13 +49,13 @@ PathIntegrator::PathIntegrator(Logger &logger, bool transp_shad, int shadow_dept
 	no_recursive_ = false;
 }
 
-bool PathIntegrator::preprocess(const RenderControl &render_control, Timer &timer, const RenderView *render_view, ImageFilm *image_film)
+bool PathIntegrator::preprocess(const RenderView *render_view, ImageFilm *image_film, const Scene &scene)
 {
-	image_film_ = image_film;
+	bool success = SurfaceIntegrator::preprocess(render_view, image_film, scene);
 	std::stringstream set;
 
-	timer.addEvent("prepass");
-	timer.start("prepass");
+	timer_->addEvent("prepass");
+	timer_->start("prepass");
 
 	lights_ = render_view->getLightsVisible();
 
@@ -67,12 +67,11 @@ bool PathIntegrator::preprocess(const RenderControl &render_control, Timer &time
 	}
 	set << "RayDepth=" << r_depth_ << " npaths=" << n_paths_ << " bounces=" << max_bounces_ << " min_bounces=" << russian_roulette_min_bounces_ << " ";
 
-	bool success = true;
 	trace_caustics_ = false;
 
 	if(caustic_type_ == CausticType::Photon || caustic_type_ == CausticType::Both)
 	{
-		success = createCausticMap(render_view, render_control, timer);
+		success = success && createCausticMap();
 	}
 
 	if(caustic_type_ == CausticType::Path)
@@ -103,10 +102,10 @@ bool PathIntegrator::preprocess(const RenderControl &render_control, Timer &time
 		else if(photon_map_processing_ == PhotonsGenerateAndSave) set << " (saving photon maps to file)";
 	}
 
-	timer.stop("prepass");
-	logger_.logInfo(getName(), ": Photonmap building time: ", std::fixed, std::setprecision(1), timer.getTime("prepass"), "s", " (", scene_->getNumThreadsPhotons(), " thread(s))");
+	timer_->stop("prepass");
+	logger_.logInfo(getName(), ": Photonmap building time: ", std::fixed, std::setprecision(1), timer_->getTime("prepass"), "s", " (", num_threads_photons_, " thread(s))");
 
-	set << "| photon maps: " << std::fixed << std::setprecision(1) << timer.getTime("prepass") << "s" << " [" << scene_->getNumThreadsPhotons() << " thread(s)]";
+	set << "| photon maps: " << std::fixed << std::setprecision(1) << timer_->getTime("prepass") << "s" << " [" << num_threads_photons_ << " thread(s)]";
 
 	render_info_ += set.str();
 
@@ -118,7 +117,7 @@ bool PathIntegrator::preprocess(const RenderControl &render_control, Timer &time
 	return success;
 }
 
-std::pair<Rgb, float> PathIntegrator::integrate(const Accelerator &accelerator, int thread_id, int ray_level, bool chromatic_enabled, float wavelength, Ray &ray, int additional_depth, const RayDivision &ray_division, ColorLayers *color_layers, const Camera *camera, RandomGenerator &random_generator, const PixelSamplingData &pixel_sampling_data) const
+std::pair<Rgb, float> PathIntegrator::integrate(int thread_id, int ray_level, bool chromatic_enabled, float wavelength, Ray &ray, int additional_depth, const RayDivision &ray_division, ColorLayers *color_layers, RandomGenerator &random_generator, const PixelSamplingData &pixel_sampling_data) const
 {
 	static int calls = 0;
 	++calls;
@@ -126,7 +125,7 @@ std::pair<Rgb, float> PathIntegrator::integrate(const Accelerator &accelerator, 
 	float alpha = 1.f;
 	float w = 0.f;
 	std::unique_ptr<const SurfacePoint> sp;
-	std::tie(sp, ray.tmax_) = accelerator.intersect(ray, camera);
+	std::tie(sp, ray.tmax_) = accelerator_->intersect(ray, camera_);
 	if(sp)
 	{
 		const Material *material = sp->material_;
@@ -147,7 +146,7 @@ std::pair<Rgb, float> PathIntegrator::integrate(const Accelerator &accelerator, 
 
 		if(mat_bsdfs.hasAny(BsdfFlags::Diffuse))
 		{
-			col += estimateAllDirectLight(accelerator, chromatic_enabled, wavelength, *sp, wo, ray_division, color_layers, camera, random_generator, pixel_sampling_data);
+			col += estimateAllDirectLight(chromatic_enabled, wavelength, *sp, wo, ray_division, color_layers, random_generator, pixel_sampling_data);
 			if(caustic_type_ == CausticType::Photon || caustic_type_ == CausticType::Both)
 			{
 				col += causticPhotons(ray, color_layers, *sp, wo, aa_noise_params_.clamp_indirect_, caustic_map_.get(), caus_radius_, n_caus_search_);
@@ -185,17 +184,17 @@ std::pair<Rgb, float> PathIntegrator::integrate(const Accelerator &accelerator, 
 				}
 				// do proper sampling now...
 				Sample s(s_1, s_2, path_flags);
-				scol = material->sample(sp->mat_data_.get(), *sp, pwo, p_ray.dir_, s, w, chromatic_enabled, wavelength_dispersive, camera);
+				scol = material->sample(sp->mat_data_.get(), *sp, pwo, p_ray.dir_, s, w, chromatic_enabled, wavelength_dispersive, camera_);
 				scol *= w;
 				throughput = scol;
-				p_ray.tmin_ = scene_->ray_min_dist_;
+				p_ray.tmin_ = ray_min_dist_;
 				p_ray.tmax_ = -1.f;
 				p_ray.from_ = sp->p_;
-				std::tie(hit, p_ray.tmax_) = accelerator.intersect(p_ray, camera);
+				std::tie(hit, p_ray.tmax_) = accelerator_->intersect(p_ray, camera_);
 				if(!hit) continue; //hit background
 				const Material *p_mat = hit->material_;
 				if(s.sampled_flags_ != BsdfFlags::None) pwo = -p_ray.dir_; //Fix for white dots in path tracing with shiny diffuse with transparent PNG texture and transparent shadows, especially in Win32, (precision?). Sometimes the first sampling does not take place and pRay.dir is not initialized, so before this change when that happened pwo = -pRay.dir was getting a random_generator non-initialized value! This fix makes that, if the first sample fails for some reason, pwo is not modified and the rest of the sampling continues with the same pwo value. FIXME: Question: if the first sample fails, should we continue as now or should we exit the loop with the "continue" command?
-				lcol = estimateOneDirectLight(accelerator, thread_id, chromatic_enabled, wavelength_dispersive, *hit, pwo, offs, ray_division, camera, random_generator, pixel_sampling_data);
+				lcol = estimateOneDirectLight(thread_id, chromatic_enabled, wavelength_dispersive, *hit, pwo, offs, ray_division, random_generator, pixel_sampling_data);
 				const BsdfFlags mat_bsd_fs = hit->mat_data_->bsdf_flags_;
 				if(mat_bsd_fs.hasAny(BsdfFlags::Emit))
 				{
@@ -225,21 +224,20 @@ std::pair<Rgb, float> PathIntegrator::integrate(const Accelerator &accelerator, 
 
 					s.flags_ = BsdfFlags::All;
 
-					scol = p_mat->sample(hit->mat_data_.get(), *hit, pwo, p_ray.dir_, s, w, chromatic_enabled, wavelength_dispersive, camera);
+					scol = p_mat->sample(hit->mat_data_.get(), *hit, pwo, p_ray.dir_, s, w, chromatic_enabled, wavelength_dispersive, camera_);
 					scol *= w;
 					if(scol.isBlack()) break;
 					throughput *= scol;
 					caustic = trace_caustics_ && s.sampled_flags_.hasAny(BsdfFlags::Specular | BsdfFlags::Glossy | BsdfFlags::Filter);
-					p_ray.tmin_ = scene_->ray_min_dist_;
+					p_ray.tmin_ = ray_min_dist_;
 					p_ray.tmax_ = -1.f;
 					p_ray.from_ = hit->p_;
-					auto intersect_result = accelerator.intersect(p_ray, camera);
+					auto intersect_result = accelerator_->intersect(p_ray, camera_);
 					if(!intersect_result.first) //hit background
 					{
-						const Background *background = scene_->getBackground();
-						if((caustic && background && background->hasIbl() && background->shootsCaustic()))
+						if((caustic && background_->hasIbl() && background_->shootsCaustic()))
 						{
-							path_col += throughput * (*background)(p_ray.dir_, true);
+							path_col += throughput * (*background_)(p_ray.dir_, true);
 						}
 						break;
 					}
@@ -247,7 +245,7 @@ std::pair<Rgb, float> PathIntegrator::integrate(const Accelerator &accelerator, 
 					p_mat = hit->material_;
 					pwo = -p_ray.dir_;
 
-					if(mat_bsd_fs.hasAny(BsdfFlags::Diffuse)) lcol = estimateOneDirectLight(accelerator, thread_id, chromatic_enabled, wavelength_dispersive, *hit, pwo, offs, ray_division, camera, random_generator, pixel_sampling_data);
+					if(mat_bsd_fs.hasAny(BsdfFlags::Diffuse)) lcol = estimateOneDirectLight(thread_id, chromatic_enabled, wavelength_dispersive, *hit, pwo, offs, ray_division, random_generator, pixel_sampling_data);
 					else lcol = Rgb(0.f);
 
 					if(mat_bsd_fs.hasAny(BsdfFlags::Volumetric))
@@ -280,28 +278,28 @@ std::pair<Rgb, float> PathIntegrator::integrate(const Accelerator &accelerator, 
 			}
 			col += path_col / n_samples;
 		}
-		const auto recursive_result = recursiveRaytrace(accelerator, thread_id, ray_level + 1, chromatic_enabled, wavelength, ray, mat_bsdfs, *sp, wo, additional_depth, ray_division, color_layers, camera, random_generator, pixel_sampling_data);
+		const auto recursive_result = recursiveRaytrace(thread_id, ray_level + 1, chromatic_enabled, wavelength, ray, mat_bsdfs, *sp, wo, additional_depth, ray_division, color_layers, random_generator, pixel_sampling_data);
 		col += recursive_result.first;
 		alpha = recursive_result.second;
 		if(color_layers)
 		{
-			generateCommonLayers(*sp, scene_->getMaskParams(), color_layers);
-			generateOcclusionLayers(accelerator, chromatic_enabled, wavelength, ray_division, color_layers, camera, pixel_sampling_data, *sp, wo, ao_samples_, scene_->shadow_bias_auto_, scene_->shadow_bias_, ao_dist_, ao_col_, s_depth_);
+			generateCommonLayers(*sp, mask_params_, color_layers);
+			generateOcclusionLayers(*accelerator_, chromatic_enabled, wavelength, ray_division, color_layers, camera_, pixel_sampling_data, *sp, wo, ao_samples_, shadow_bias_auto_, shadow_bias_, ao_dist_, ao_col_, s_depth_);
 		}
 	}
 	else //nothing hit, return background
 	{
-		std::tie(col, alpha) = background(ray, color_layers, transp_background_, transp_refracted_background_, scene_->getBackground(), ray_level);
+		std::tie(col, alpha) = background(ray, color_layers, transp_background_, transp_refracted_background_, background_, ray_level);
 	}
 
-	if(scene_->vol_integrator_)
+	if(vol_integrator_)
 	{
-		std::tie(col, alpha) = volumetricEffects(ray, color_layers, random_generator, std::move(col), std::move(alpha), scene_->vol_integrator_, transp_background_);
+		std::tie(col, alpha) = volumetricEffects(ray, color_layers, random_generator, std::move(col), std::move(alpha), vol_integrator_, transp_background_);
 	}
 	return {col, alpha};
 }
 
-std::unique_ptr<Integrator> PathIntegrator::factory(Logger &logger, ParamMap &params, const Scene &scene)
+std::unique_ptr<Integrator> PathIntegrator::factory(Logger &logger, ParamMap &params, const Scene &scene, RenderControl &render_control)
 {
 	bool transp_shad = false, no_rec = false;
 	int shadow_depth = 5;
@@ -333,7 +331,7 @@ std::unique_ptr<Integrator> PathIntegrator::factory(Logger &logger, ParamMap &pa
 	params.getParam("AO_color", ao_col);
 	params.getParam("photon_maps_processing", photon_maps_processing_str);
 
-	auto inte = std::unique_ptr<PathIntegrator>(new PathIntegrator(logger, transp_shad, shadow_depth));
+	auto inte = std::unique_ptr<PathIntegrator>(new PathIntegrator(render_control, logger, transp_shad, shadow_depth));
 	if(params.getParam("caustic_type", c_method))
 	{
 		bool use_photons = false;

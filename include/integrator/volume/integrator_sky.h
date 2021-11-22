@@ -30,13 +30,13 @@ class Background;
 class SkyIntegrator : public VolumeIntegrator
 {
 	public:
-		static std::unique_ptr<Integrator> factory(Logger &logger, ParamMap &params, const Scene &scene);
+		static std::unique_ptr<Integrator> factory(Logger &logger, ParamMap &params, const Scene &scene, RenderControl &render_control);
 
 	private:
 		SkyIntegrator(Logger &logger, float s_size, float a, float ss, float t);
 		virtual std::string getShortName() const override { return "Sky"; }
 		virtual std::string getName() const override { return "Sky"; }
-		virtual bool preprocess(const RenderControl &render_control, Timer &timer, const RenderView *render_view, ImageFilm *image_film) override;
+		virtual bool preprocess(const RenderView *render_view, ImageFilm *image_film, const Scene &scene) override;
 		// optical thickness, absorption, attenuation, extinction
 		virtual Rgb transmittance(RandomGenerator &random_generator, const Ray &ray) const override;
 		// emission and in-scattering

@@ -31,15 +31,15 @@ class Light;
 class DebugIntegrator final : public TiledIntegrator
 {
 	public:
-		static std::unique_ptr<Integrator> factory(Logger &logger, ParamMap &params, const Scene &scene);
+		static std::unique_ptr<Integrator> factory(Logger &logger, ParamMap &params, const Scene &scene, RenderControl &render_control);
 
 	private:
 		enum SurfaceProperties {N = 1, DPdU = 2, DPdV = 3, Nu = 4, Nv = 5, DSdU = 6, DSdV = 7};
-		DebugIntegrator(Logger &logger, SurfaceProperties dt);
+		DebugIntegrator(RenderControl &render_control, Logger &logger, SurfaceProperties dt);
 		virtual std::string getShortName() const override { return "DBG"; }
 		virtual std::string getName() const override { return "DebugIntegrator"; }
-		virtual bool preprocess(const RenderControl &render_control, Timer &timer, const RenderView *render_view, ImageFilm *image_film) override;
-		virtual std::pair<Rgb, float> integrate(const Accelerator &accelerator, int thread_id, int ray_level, bool chromatic_enabled, float wavelength, Ray &ray, int additional_depth, const RayDivision &ray_division, ColorLayers *color_layers, const Camera *camera, RandomGenerator &random_generator, const PixelSamplingData &pixel_sampling_data) const override;
+		virtual bool preprocess(const RenderView *render_view, ImageFilm *image_film, const Scene &scene) override;
+		virtual std::pair<Rgb, float> integrate(int thread_id, int ray_level, bool chromatic_enabled, float wavelength, Ray &ray, int additional_depth, const RayDivision &ray_division, ColorLayers *color_layers, RandomGenerator &random_generator, const PixelSamplingData &pixel_sampling_data) const override;
 
 		std::vector<const Light *> lights_;
 		SurfaceProperties debug_type_;

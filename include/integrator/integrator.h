@@ -25,9 +25,12 @@
 
 #include "common/yafaray_common.h"
 #include "common/logger.h"
+#include "common/aa_noise_params.h"
+#include "common/mask_edge_toon_params.h"
+#include "geometry/bound.h"
 #include <string>
 #include <memory>
-#include <accelerator/accelerator.h>
+#include <map>
 
 BEGIN_YAFARAY
 
@@ -47,22 +50,26 @@ class Camera;
 class RandomGenerator;
 struct RayDivision;
 struct PixelSamplingData;
+class VolumeRegion;
+class Accelerator;
+class Layers;
+class VolumeIntegrator;
+class Background;
 
 class Integrator
 {
 	public:
-		static std::unique_ptr<Integrator> factory(Logger &logger, ParamMap &params, const Scene &scene);
+		static std::unique_ptr<Integrator> factory(Logger &logger, ParamMap &params, Scene &scene);
 
 		Integrator(Logger &logger) : logger_(logger) { }
 		virtual ~Integrator() = default;
 		//! this MUST be called before any other member function!
-		virtual bool render(RenderControl &render_control, Timer &timer, const RenderView *render_view) { return false; }
-		void setScene(const Scene *s) { scene_ = s; }
+		virtual bool render() { return false; }
 		/*! do whatever is required to render the image, if suitable for integrating whole image */
 		void setProgressBar(std::shared_ptr<ProgressBar> pb) { intpb_ = std::move(pb); }
 		/*! gets called before the scene rendering (i.e. before first call to integrate)
 			\return false when preprocessing could not be done properly, true otherwise */
-		virtual bool preprocess(const RenderControl &render_control, Timer &timer, const RenderView *render_view, ImageFilm *image_film) = 0;
+		virtual bool preprocess(const RenderView *render_view, ImageFilm *image_film, const Scene &scene);
 		/*! allow the integrator to do some cleanup when an image is done
 		(possibly also important for multiframe rendering in the future)	*/
 		virtual void cleanup() { render_info_.clear(); aa_noise_info_.clear(); }
@@ -74,9 +81,11 @@ class Integrator
 		std::string getAaNoiseInfo() const { return aa_noise_info_; }
 
 	protected:
+		float ray_min_dist_ = 1.0e-5f;  //ray minimum distance
+		float shadow_bias_ = 1.0e-4f;  //shadow bias to apply to shadows to avoid self-shadow artifacts
 		std::string render_info_;
 		std::string aa_noise_info_;
-		const Scene *scene_ = nullptr;
+		const Accelerator *accelerator_;
 		std::shared_ptr<ProgressBar> intpb_;
 		Logger &logger_;
 };
@@ -84,14 +93,30 @@ class Integrator
 class SurfaceIntegrator: public Integrator
 {
 	public:
-		virtual std::pair<Rgb, float> integrate(const Accelerator &accelerator, int thread_id, int ray_level, bool chromatic_enabled, float wavelength, Ray &ray, int additional_depth, const RayDivision &ray_division, ColorLayers *color_layers, const Camera *camera, RandomGenerator &random_generator, const PixelSamplingData &pixel_sampling_data) const = 0; 	//!< chromatic_enabled indicates wether the full spectrum is calculated (true) or only a single wavelength (false). wavelength is the (normalized) wavelength being used when chromatic is false. The range is defined going from 400nm (0.0) to 700nm (1.0), although the widest range humans can perceive is ofteb given 380-780nm.
+		virtual std::pair<Rgb, float> integrate(int thread_id, int ray_level, bool chromatic_enabled, float wavelength, Ray &ray, int additional_depth, const RayDivision &ray_division, ColorLayers *color_layers, RandomGenerator &random_generator, const PixelSamplingData &pixel_sampling_data) const = 0; 	//!< chromatic_enabled indicates wether the full spectrum is calculated (true) or only a single wavelength (false). wavelength is the (normalized) wavelength being used when chromatic is false. The range is defined going from 400nm (0.0) to 700nm (1.0), although the widest range humans can perceive is ofteb given 380-780nm.
+		virtual bool preprocess(const RenderView *render_view, ImageFilm *image_film, const Scene &scene) override;
 
 	protected:
-		SurfaceIntegrator(Logger &logger) : Integrator(logger) { }
+		SurfaceIntegrator(RenderControl &render_control, Logger &logger) : Integrator(logger), render_control_(render_control) { }
 		virtual Type getType() const override { return Surface; }
 
 	protected:
+		RenderControl &render_control_;
+		int num_threads_ = 1;
+		int num_threads_photons_ = 1;
+		bool shadow_bias_auto_ = true;  //enable automatic shadow bias calculation
+		bool ray_min_dist_auto_ = true;  //enable automatic ray minimum distance calculation
+		AaNoiseParams aa_noise_params_;
+		EdgeToonParams edge_toon_params_;
+		MaskParams mask_params_;
+		Bound scene_bound_;
+		const RenderView *render_view_ = nullptr;
+		const VolumeIntegrator *vol_integrator_ = nullptr;
+		const Camera *camera_ = nullptr;
+		const Background *background_ = nullptr;
+		Timer *timer_ = nullptr;
 		ImageFilm *image_film_ = nullptr;
+		const Layers *layers_ = nullptr;
 };
 
 class VolumeIntegrator: public Integrator
@@ -99,10 +124,12 @@ class VolumeIntegrator: public Integrator
 	public:
 		virtual Rgb transmittance(RandomGenerator &random_generator, const Ray &ray) const = 0;
 		virtual Rgb integrate(RandomGenerator &random_generator, const Ray &ray, int additional_depth = 0) const = 0;
-		virtual bool preprocess(const RenderControl &render_control, Timer &timer, const RenderView *render_view, ImageFilm *image_film) override { return true; };
+		virtual bool preprocess(const RenderView *render_view, ImageFilm *image_film, const Scene &scene) override;
+
 	protected:
 		VolumeIntegrator(Logger &logger) : Integrator(logger) { }
 		virtual Type getType() const override { return Volume; }
+		const std::map<std::string, std::unique_ptr<VolumeRegion>> *volume_regions_ = nullptr;
 };
 
 END_YAFARAY

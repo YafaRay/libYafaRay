@@ -20,6 +20,10 @@
 #ifndef YAFARAY_AA_NOISE_PARAMS_H
 #define YAFARAY_AA_NOISE_PARAMS_H
 
+#include "common/yafaray_common.h"
+
+BEGIN_YAFARAY
+
 struct AaNoiseParams
 {
 	enum class DarkDetectionType : int { None, Linear, Curve };
@@ -40,5 +44,7 @@ struct AaNoiseParams
 	float clamp_samples_ = 0.f;
 	float clamp_indirect_ = 0.f;
 };
+
+END_YAFARAY
 
 #endif //YAFARAY_AA_NOISE_PARAMS_H

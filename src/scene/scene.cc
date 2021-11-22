@@ -181,14 +181,12 @@ void Scene::setBackground(const Background *bg)
 void Scene::setSurfIntegrator(SurfaceIntegrator *s)
 {
 	surf_integrator_ = s;
-	surf_integrator_->setScene(this);
 	creation_state_.changes_ |= CreationState::Flags::COther;
 }
 
 void Scene::setVolIntegrator(VolumeIntegrator *v)
 {
 	vol_integrator_ = v;
-	if(vol_integrator_) vol_integrator_->setScene(this);
 	creation_state_.changes_ |= CreationState::Flags::COther;
 }
 
@@ -237,8 +235,8 @@ bool Scene::render()
 				continue;
 			}
 
-			success = surf_integrator_->preprocess(render_control_, image_film_->getTimer(), render_view.second.get(), image_film_.get());
-			if(vol_integrator_) success = success && vol_integrator_->preprocess(render_control_, image_film_->getTimer(), render_view.second.get(), image_film_.get());
+			success = surf_integrator_->preprocess(render_view.second.get(), image_film_.get(), *this);
+			if(vol_integrator_) success = success && vol_integrator_->preprocess(render_view.second.get(), image_film_.get(), *this);
 
 			if(!success)
 			{
@@ -246,7 +244,7 @@ bool Scene::render()
 				return false;
 			}
 			render_control_.setStarted();
-			success = surf_integrator_->render(render_control_, image_film_->getTimer(), render_view.second.get());
+			success = surf_integrator_->render();
 			if(!success)
 			{
 				logger_.logError("Scene: Rendering process failed, exiting...");

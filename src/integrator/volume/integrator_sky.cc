@@ -59,10 +59,12 @@ SkyIntegrator::SkyIntegrator(Logger &logger, float s_size, float a, float ss, fl
 	std::cout << "SkyIntegrator: b_m: " << b_m_ << " b_r: " << b_r_ << std::endl;
 }
 
-bool SkyIntegrator::preprocess(const RenderControl &render_control, Timer &timer, const RenderView *render_view, ImageFilm *image_film)
+bool SkyIntegrator::preprocess(const RenderView *render_view, ImageFilm *image_film, const Scene &scene)
 {
-	background_ = scene_->getBackground();
-	return true;
+	bool success = VolumeIntegrator::preprocess(render_view, image_film, scene);
+	background_ = scene.getBackground();
+	success = success && static_cast<bool>(background_);
+	return success;
 }
 
 Rgb SkyIntegrator::skyTau(const Ray &ray) const
@@ -190,7 +192,7 @@ float SkyIntegrator::mieScatter(float theta)
 	return (1.f - ((theta - 80.f) / 100.f)) * 0.1644f + ((theta - 80.f) / 100.f) * 0.1;
 }
 
-std::unique_ptr<Integrator> SkyIntegrator::factory(Logger &logger, ParamMap &params, const Scene &scene)
+std::unique_ptr<Integrator> SkyIntegrator::factory(Logger &logger, ParamMap &params, const Scene &scene, RenderControl &render_control)
 {
 	float s_size = 1.f;
 	float a = .5f;

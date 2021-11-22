@@ -108,7 +108,7 @@ std::unique_ptr<ImageFilm> ImageFilm::factory(Logger &logger, const ParamMap &pa
 	else if(tiles_order == "random") tiles_order_type = ImageSplitter::Random;
 	else if(tiles_order != "centre" && logger.isVerbose()) logger.logVerbose("ImageFilm: ", "Defaulting to Centre tiles order."); // this is info imho not a warning
 
-	auto film = std::unique_ptr<ImageFilm>(new ImageFilm(logger, width, height, xstart, ystart, scene->getNumThreads(), scene->getRenderControl(), scene->getLayers(), scene->getOutputs(), filt_sz, type, tile_size, tiles_order_type));
+	auto film = std::unique_ptr<ImageFilm>(new ImageFilm(logger, width, height, xstart, ystart, scene->getNumThreads(), scene->getRenderControl(), *scene->getLayers(), scene->getOutputs(), filt_sz, type, tile_size, tiles_order_type));
 
 	film->setImagesAutoSaveParams(images_autosave_params);
 	film->setFilmLoadSaveParams(film_load_save);

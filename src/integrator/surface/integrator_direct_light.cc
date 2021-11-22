@@ -28,7 +28,7 @@
 
 BEGIN_YAFARAY
 
-DirectLightIntegrator::DirectLightIntegrator(Logger &logger, bool transp_shad, int shadow_depth, int ray_depth) : MonteCarloIntegrator(logger)
+DirectLightIntegrator::DirectLightIntegrator(RenderControl &render_control, Logger &logger, bool transp_shad, int shadow_depth, int ray_depth) : MonteCarloIntegrator(render_control, logger)
 {
 	caus_radius_ = 0.25;
 	caus_depth_ = 10;
@@ -40,14 +40,13 @@ DirectLightIntegrator::DirectLightIntegrator(Logger &logger, bool transp_shad, i
 	r_depth_ = ray_depth;
 }
 
-bool DirectLightIntegrator::preprocess(const RenderControl &render_control, Timer &timer, const RenderView *render_view, ImageFilm *image_film)
+bool DirectLightIntegrator::preprocess(const RenderView *render_view, ImageFilm *image_film, const Scene &scene)
 {
-	image_film_ = image_film;
-	bool success = true;
+	bool success = SurfaceIntegrator::preprocess(render_view, image_film, scene);
 	std::stringstream set;
 
-	timer.addEvent("prepass");
-	timer.start("prepass");
+	timer_->addEvent("prepass");
+	timer_->start("prepass");
 
 	set << "Direct Light  ";
 
@@ -66,7 +65,7 @@ bool DirectLightIntegrator::preprocess(const RenderControl &render_control, Time
 
 	if(use_photon_caustics_)
 	{
-		success = createCausticMap(render_view, render_control, timer);
+		success = success && createCausticMap();
 		set << "\nCaustic photons=" << n_caus_photons_ << " search=" << n_caus_search_ << " radius=" << caus_radius_ << " depth=" << caus_depth_ << "  ";
 
 		if(photon_map_processing_ == PhotonsLoad)
@@ -80,10 +79,10 @@ bool DirectLightIntegrator::preprocess(const RenderControl &render_control, Time
 		else if(photon_map_processing_ == PhotonsGenerateAndSave) set << " (saving photon maps to file)";
 	}
 
-	timer.stop("prepass");
-	logger_.logInfo(getName(), ": Photonmap building time: ", std::fixed, std::setprecision(1), timer.getTime("prepass"), "s", " (", scene_->getNumThreadsPhotons(), " thread(s))");
+	timer_->stop("prepass");
+	logger_.logInfo(getName(), ": Photonmap building time: ", std::fixed, std::setprecision(1), timer_->getTime("prepass"), "s", " (", num_threads_photons_, " thread(s))");
 
-	set << "| photon maps: " << std::fixed << std::setprecision(1) << timer.getTime("prepass") << "s" << " [" << scene_->getNumThreadsPhotons() << " thread(s)]";
+	set << "| photon maps: " << std::fixed << std::setprecision(1) << timer_->getTime("prepass") << "s" << " [" << num_threads_photons_ << " thread(s)]";
 
 	render_info_ += set.str();
 
@@ -95,12 +94,12 @@ bool DirectLightIntegrator::preprocess(const RenderControl &render_control, Time
 	return success;
 }
 
-std::pair<Rgb, float> DirectLightIntegrator::integrate(const Accelerator &accelerator, int thread_id, int ray_level, bool chromatic_enabled, float wavelength, Ray &ray, int additional_depth, const RayDivision &ray_division, ColorLayers *color_layers, const Camera *camera, RandomGenerator &random_generator, const PixelSamplingData &pixel_sampling_data) const
+std::pair<Rgb, float> DirectLightIntegrator::integrate(int thread_id, int ray_level, bool chromatic_enabled, float wavelength, Ray &ray, int additional_depth, const RayDivision &ray_division, ColorLayers *color_layers, RandomGenerator &random_generator, const PixelSamplingData &pixel_sampling_data) const
 {
 	Rgb col {0.f};
 	float alpha = 1.f;
 	std::unique_ptr<const SurfacePoint> sp;
-	std::tie(sp, ray.tmax_) = accelerator.intersect(ray, camera);
+	std::tie(sp, ray.tmax_) = accelerator_->intersect(ray, camera_);
 	if(sp)
 	{
 		const Material *material = sp->material_;
@@ -118,34 +117,34 @@ std::pair<Rgb, float> DirectLightIntegrator::integrate(const Accelerator &accele
 		}
 		if(mat_bsdfs.hasAny(BsdfFlags::Diffuse))
 		{
-			col += estimateAllDirectLight(accelerator, chromatic_enabled, wavelength, *sp, wo, ray_division, color_layers, camera, random_generator, pixel_sampling_data);
+			col += estimateAllDirectLight(chromatic_enabled, wavelength, *sp, wo, ray_division, color_layers, random_generator, pixel_sampling_data);
 			if(use_photon_caustics_)
 			{
 				col += causticPhotons(ray, color_layers, *sp, wo, aa_noise_params_.clamp_indirect_, caustic_map_.get(), caus_radius_, n_caus_search_);
 			}
-			if(use_ambient_occlusion_) col += sampleAmbientOcclusion(accelerator, chromatic_enabled, wavelength, *sp, wo, ray_division, camera, pixel_sampling_data, tr_shad_, false, ao_samples_, scene_->shadow_bias_auto_, scene_->shadow_bias_, ao_dist_, ao_col_, s_depth_);
+			if(use_ambient_occlusion_) col += sampleAmbientOcclusion(*accelerator_, chromatic_enabled, wavelength, *sp, wo, ray_division, camera_, pixel_sampling_data, tr_shad_, false, ao_samples_, shadow_bias_auto_, shadow_bias_, ao_dist_, ao_col_, s_depth_);
 		}
-		const auto recursive_result = recursiveRaytrace(accelerator, thread_id, ray_level + 1, chromatic_enabled, wavelength, ray, mat_bsdfs, *sp, wo, additional_depth, ray_division, color_layers, camera, random_generator, pixel_sampling_data);
+		const auto recursive_result = recursiveRaytrace(thread_id, ray_level + 1, chromatic_enabled, wavelength, ray, mat_bsdfs, *sp, wo, additional_depth, ray_division, color_layers, random_generator, pixel_sampling_data);
 		col += recursive_result.first;
 		alpha = recursive_result.second;
 		if(color_layers)
 		{
-			generateCommonLayers(*sp, scene_->getMaskParams(), color_layers);
-			generateOcclusionLayers(accelerator, chromatic_enabled, wavelength, ray_division, color_layers, camera, pixel_sampling_data, *sp, wo, ao_samples_, scene_->shadow_bias_auto_, scene_->shadow_bias_, ao_dist_, ao_col_, s_depth_);
+			generateCommonLayers(*sp, mask_params_, color_layers);
+			generateOcclusionLayers(*accelerator_, chromatic_enabled, wavelength, ray_division, color_layers, camera_, pixel_sampling_data, *sp, wo, ao_samples_, shadow_bias_auto_, shadow_bias_, ao_dist_, ao_col_, s_depth_);
 		}
 	}
 	else // Nothing hit, return background if any
 	{
-		std::tie(col, alpha) = background(ray, color_layers, transp_background_, transp_refracted_background_, scene_->getBackground(), ray_level);
+		std::tie(col, alpha) = background(ray, color_layers, transp_background_, transp_refracted_background_, background_, ray_level);
 	}
-	if(scene_->vol_integrator_)
+	if(vol_integrator_)
 	{
-		std::tie(col, alpha) = volumetricEffects(ray, color_layers, random_generator, std::move(col), std::move(alpha), scene_->vol_integrator_, transp_background_);
+		std::tie(col, alpha) = volumetricEffects(ray, color_layers, random_generator, std::move(col), std::move(alpha), vol_integrator_, transp_background_);
 	}
 	return {col, alpha};
 }
 
-std::unique_ptr<Integrator> DirectLightIntegrator::factory(Logger &logger, ParamMap &params, const Scene &scene)
+std::unique_ptr<Integrator> DirectLightIntegrator::factory(Logger &logger, ParamMap &params, const Scene &scene, RenderControl &render_control)
 {
 	bool transp_shad = false;
 	bool caustics = false;
@@ -177,7 +176,7 @@ std::unique_ptr<Integrator> DirectLightIntegrator::factory(Logger &logger, Param
 	params.getParam("bg_transp_refract", bg_transp_refract);
 	params.getParam("photon_maps_processing", photon_maps_processing_str);
 
-	auto inte = std::unique_ptr<DirectLightIntegrator>(new DirectLightIntegrator(logger, transp_shad, shadow_depth, raydepth));
+	auto inte = std::unique_ptr<DirectLightIntegrator>(new DirectLightIntegrator(render_control, logger, transp_shad, shadow_depth, raydepth));
 	// caustic settings
 	inte->use_photon_caustics_ = caustics;
 	inte->n_caus_photons_ = photons;

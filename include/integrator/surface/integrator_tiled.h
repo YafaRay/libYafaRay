@@ -50,20 +50,20 @@ class ThreadControl final
 class TiledIntegrator : public SurfaceIntegrator
 {
 	public:
-		TiledIntegrator(Logger &logger) : SurfaceIntegrator(logger) { }
+		TiledIntegrator(RenderControl &render_control, Logger &logger) : SurfaceIntegrator(render_control, logger) { }
 		/*! Rendering prepasses to precalc suff in case needed */
-		virtual void prePass(int samples, int offset, bool adaptive, const RenderControl &render_control, Timer &timer, const RenderView *render_view) { } //!< Called before the proper rendering of all the tiles starts
+		virtual void prePass(int samples, int offset, bool adaptive) { } //!< Called before the proper rendering of all the tiles starts
 		/*! do whatever is required to render the image; default implementation renders image in passes
 		dividing each pass into tiles for multithreading. */
-		virtual bool render(RenderControl &render_control, Timer &timer, const RenderView *render_view) override;
+		virtual bool render() override;
 		/*! render a pass; only required by the default implementation of render() */
-		virtual bool renderPass(const RenderView *render_view, int samples, int offset, bool adaptive, int aa_pass_number, RenderControl &render_control, Timer &timer);
+		virtual bool renderPass(int samples, int offset, bool adaptive, int aa_pass_number);
 		/*! render a tile; only required by default implementation of render() */
-		virtual bool renderTile(const RenderArea &a, const Camera *camera, const RenderControl &render_control, const Timer &timer, int n_samples, int offset, bool adaptive, int thread_id, int aa_pass_number = 0);
-		virtual void renderWorker(TiledIntegrator *integrator, const Scene *scene, const RenderView *render_view, const RenderControl &render_control, const Timer &timer, ThreadControl *control, int thread_id, int samples, int offset = 0, bool adaptive = false, int aa_pass = 0);
+		virtual bool renderTile(const RenderArea &a, int n_samples, int offset, bool adaptive, int thread_id, int aa_pass_number = 0);
+		virtual void renderWorker(ThreadControl *control, int thread_id, int samples, int offset, bool adaptive, int aa_pass);
 
 		//		virtual void recursiveRaytrace(renderState_t &state, diffRay_t &ray, int rDepth, BSDF_t bsdfs, surfacePoint_t &sp, vector3d_t &wo, Rgb &col, float &alpha) const;
-		virtual void precalcDepths(const Camera *camera);
+		virtual void precalcDepths();
 		static void generateCommonLayers(const SurfacePoint &sp, const MaskParams &mask_params, ColorLayers *color_layers); //!< Generates render passes common to all integrators
 		static void generateOcclusionLayers(const Accelerator &accelerator, bool chromatic_enabled, float wavelength, const RayDivision &ray_division, ColorLayers *color_layers, const Camera *camera, const PixelSamplingData &pixel_sampling_data, const SurfacePoint &sp, const Vec3 &wo, int ao_samples, bool shadow_bias_auto, float shadow_bias, float ao_dist, const Rgb &ao_col, int transp_shadows_depth);
 		/*! Samples ambient occlusion for a given surface point */
@@ -73,7 +73,6 @@ class TiledIntegrator : public SurfaceIntegrator
 
 	protected:
 		float i_aa_passes_; //!< Inverse of AA_passes used for depth map
-		AaNoiseParams aa_noise_params_;
 		float aa_sample_multiplier_ = 1.f;
 		float aa_light_sample_multiplier_ = 1.f;
 		float aa_indirect_sample_multiplier_ = 1.f;

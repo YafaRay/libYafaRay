@@ -247,7 +247,7 @@ int Interface::getSceneFilmHeight() const noexcept
 
 std::string Interface::printLayersTable() const noexcept
 {
-	if(scene_) return scene_->getLayers().printExportedTable();
+	if(scene_) return scene_->getLayers()->printExportedTable();
 	else return "";
 }
 

@@ -60,25 +60,25 @@ struct GatherInfo final
 class SppmIntegrator final : public MonteCarloIntegrator
 {
 	public:
-		static std::unique_ptr<Integrator> factory(Logger &logger, ParamMap &params, const Scene &scene);
+		static std::unique_ptr<Integrator> factory(Logger &logger, ParamMap &params, const Scene &scene, RenderControl &render_control);
 
 	private:
-		SppmIntegrator(Logger &logger, unsigned int d_photons, int passnum, bool transp_shad, int shadow_depth);
+		SppmIntegrator(RenderControl &render_control, Logger &logger, unsigned int d_photons, int passnum, bool transp_shad, int shadow_depth);
 		virtual std::string getShortName() const override { return "SPPM"; }
 		virtual std::string getName() const override { return "SPPM"; }
-		virtual bool render(RenderControl &render_control, Timer &timer, const RenderView *render_view) override;
+		virtual bool render() override;
 		/*! render a tile; only required by default implementation of render() */
-		virtual bool renderTile(const RenderArea &a, const Camera *camera, const RenderControl &render_control, const Timer &timer, int n_samples, int offset, bool adaptive, int thread_id, int aa_pass_number = 0) override;
-		virtual std::pair<Rgb, float> integrate(const Accelerator &accelerator, int thread_id, int ray_level, bool chromatic_enabled, float wavelength, Ray &ray, int additional_depth, const RayDivision &ray_division, ColorLayers *color_layers, const Camera *camera, RandomGenerator &random_generator, const PixelSamplingData &pixel_sampling_data) const override;
-		virtual bool preprocess(const RenderControl &render_control, Timer &timer, const RenderView *render_view, ImageFilm *image_film) override; //not used for now
+		virtual bool renderTile(const RenderArea &a, int n_samples, int offset, bool adaptive, int thread_id, int aa_pass_number) override;
+		virtual std::pair<Rgb, float> integrate(int thread_id, int ray_level, bool chromatic_enabled, float wavelength, Ray &ray, int additional_depth, const RayDivision &ray_division, ColorLayers *color_layers, RandomGenerator &random_generator, const PixelSamplingData &pixel_sampling_data) const override;
+		virtual bool preprocess(const RenderView *render_view, ImageFilm *image_film, const Scene &scene) override; //not used for now
 		// not used now
-		virtual void prePass(int samples, int offset, bool adaptive, const RenderControl &render_control, Timer &timer, const RenderView *render_view) override;
+		virtual void prePass(int samples, int offset, bool adaptive) override;
 		/*! not used now, use traceGatherRay instead*/
 		/*! initializing the things that PPM uses such as initial radius */
-		void initializePpm(const Camera *camera);
+		void initializePpm();
 		/*! based on integrate method to do the gatering trace, need double-check deadly. */
-		GatherInfo traceGatherRay(const Accelerator &accelerator, int thread_id, int ray_level, bool chromatic_enabled, float wavelength, Ray &ray, HitPoint &hp, const RayDivision &ray_division, ColorLayers *color_layers, const Camera *camera, RandomGenerator &random_generator, const PixelSamplingData &pixel_sampling_data);
-		void photonWorker(const Accelerator &accelerator, PhotonMap *diffuse_map, PhotonMap *caustic_map, int thread_id, const Scene *scene, const RenderView *render_view, const RenderControl &render_control, const Timer &timer, unsigned int n_photons, const Pdf1D *light_power_d, int num_d_lights, const std::vector<const Light *> &tmplights, ProgressBar *pb, int pb_step, unsigned int &total_photons_shot, int max_bounces, RandomGenerator &random_generator);
+		GatherInfo traceGatherRay(int thread_id, int ray_level, bool chromatic_enabled, float wavelength, Ray &ray, HitPoint &hp, const RayDivision &ray_division, ColorLayers *color_layers, RandomGenerator &random_generator, const PixelSamplingData &pixel_sampling_data);
+		void photonWorker(PhotonMap *diffuse_map, PhotonMap *caustic_map, int thread_id, unsigned int n_photons, const Pdf1D *light_power_d, int num_d_lights, const std::vector<const Light *> &tmplights, int pb_step, unsigned int &total_photons_shot, int max_bounces, RandomGenerator &random_generator);
 
 		HashGrid  photon_grid_; // the hashgrid for holding photons
 		unsigned int n_photons_; //photon number to scatter

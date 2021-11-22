@@ -151,8 +151,7 @@ class ImageFilm final
 		void generateToonAndDebugObjectEdges(int xstart, int width, int ystart, int height, bool drawborder, const EdgeToonParams &edge_params);
 		const ImageLayers *getImageLayers() const { return &film_image_layers_; }
 		const ImageLayers *getExportedImageLayers() const { return &exported_image_layers_; }
-		const Timer &getTimer() const { return timer_; }
-		Timer &getTimer() { return timer_; }
+		Timer * getTimer() { return &timer_; }
 
 		static std::string printRenderStats(const RenderControl &render_control, const Timer &timer, int width, int height);
 

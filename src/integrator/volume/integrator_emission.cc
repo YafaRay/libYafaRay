@@ -28,8 +28,7 @@ BEGIN_YAFARAY
 Rgb EmissionIntegrator::transmittance(RandomGenerator &random_generator, const Ray &ray) const
 {
 	Rgb result {1.f};
-	const auto &volumes = scene_->getVolumeRegions();
-	for(const auto &v : volumes) result *= v.second.get()->tau(ray, 0, 0);
+	for(const auto &v : *volume_regions_) result *= v.second.get()->tau(ray, 0, 0);
 	return math::exp(-result.getR()), math::exp(-result.getG()), math::exp(-result.getB());
 }
 
@@ -37,9 +36,8 @@ Rgb EmissionIntegrator::integrate(RandomGenerator &random_generator, const Ray &
 {
 	int n = 10; // samples + 1 on the ray inside the volume
 	const bool hit = ray.tmax_ > 0.f;
-	const auto &volumes = scene_->getVolumeRegions();
 	Rgb result {0.f};
-	for(const auto &v : volumes)
+	for(const auto &v : *volume_regions_)
 	{
 		Bound::Cross cross = v.second.get()->crossBound(ray);
 		if(!cross.crossed_) continue;
@@ -47,7 +45,7 @@ Rgb EmissionIntegrator::integrate(RandomGenerator &random_generator, const Ray &
 		if(hit && ray.tmax_ < cross.leave_) cross.leave_ = ray.tmax_;
 		const float step = (cross.leave_ - cross.enter_) / static_cast<float>(n); // length between two sample points
 		--n;
-		float pos = cross.enter_ + 0.5 * step;
+		float pos = cross.enter_ + 0.5f * step;
 		Rgb tr(1.f);
 		for(int i = 0; i < n; ++i)
 		{
@@ -62,7 +60,7 @@ Rgb EmissionIntegrator::integrate(RandomGenerator &random_generator, const Ray &
 	return result;
 }
 
-std::unique_ptr<Integrator> EmissionIntegrator::factory(Logger &logger, ParamMap &params, const Scene &scene)
+std::unique_ptr<Integrator> EmissionIntegrator::factory(Logger &logger, ParamMap &params, const Scene &scene, RenderControl &render_control)
 {
 	return std::unique_ptr<Integrator>(new EmissionIntegrator(logger));
 }

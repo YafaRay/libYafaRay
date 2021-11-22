@@ -26,7 +26,7 @@
 
 BEGIN_YAFARAY
 
-DebugIntegrator::DebugIntegrator(Logger &logger, SurfaceProperties dt) : TiledIntegrator(logger), debug_type_(dt)
+DebugIntegrator::DebugIntegrator(RenderControl &render_control, Logger &logger, SurfaceProperties dt) : TiledIntegrator(render_control, logger), debug_type_(dt)
 {
 	render_info_ += "Debug integrator: '";
 	switch(dt)
@@ -57,17 +57,17 @@ DebugIntegrator::DebugIntegrator(Logger &logger, SurfaceProperties dt) : TiledIn
 	render_info_ += "' | ";
 }
 
-bool DebugIntegrator::preprocess(const RenderControl &render_control, Timer &timer, const RenderView *render_view, ImageFilm *image_film)
+bool DebugIntegrator::preprocess(const RenderView *render_view, ImageFilm *image_film, const Scene &scene)
 {
-	image_film_ = image_film;
-	return true;
+	bool success = SurfaceIntegrator::preprocess(render_view, image_film, scene);
+	return success;
 }
 
-std::pair<Rgb, float> DebugIntegrator::integrate(const Accelerator &accelerator, int thread_id, int ray_level, bool chromatic_enabled, float wavelength, Ray &ray, int additional_depth, const RayDivision &ray_division, ColorLayers *color_layers, const Camera *camera, RandomGenerator &random_generator, const PixelSamplingData &pixel_sampling_data) const
+std::pair<Rgb, float> DebugIntegrator::integrate(int thread_id, int ray_level, bool chromatic_enabled, float wavelength, Ray &ray, int additional_depth, const RayDivision &ray_division, ColorLayers *color_layers, RandomGenerator &random_generator, const PixelSamplingData &pixel_sampling_data) const
 {
 	std::unique_ptr<const SurfacePoint> sp;
 	float intersect_tmax;
-	std::tie(sp, intersect_tmax) = accelerator.intersect(ray, camera);
+	std::tie(sp, intersect_tmax) = accelerator_->intersect(ray, camera_);
 	if(sp)
 	{
 		Rgb col {0.f};
@@ -90,14 +90,14 @@ std::pair<Rgb, float> DebugIntegrator::integrate(const Accelerator &accelerator,
 	return {{0.f}, 1.f};
 }
 
-std::unique_ptr<Integrator> DebugIntegrator::factory(Logger &logger, ParamMap &params, const Scene &scene)
+std::unique_ptr<Integrator> DebugIntegrator::factory(Logger &logger, ParamMap &params, const Scene &scene, RenderControl &render_control)
 {
 	int dt = 1;
 	bool pn = false;
 	params.getParam("debugType", dt);
 	params.getParam("showPN", pn);
 	std::cout << "debugType " << dt << std::endl;
-	auto inte = std::unique_ptr<DebugIntegrator>(new DebugIntegrator(logger, static_cast<SurfaceProperties>(dt)));
+	auto inte = std::unique_ptr<DebugIntegrator>(new DebugIntegrator(render_control, logger, static_cast<SurfaceProperties>(dt)));
 	inte->show_pn_ = pn;
 
 	return inte;
