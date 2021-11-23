@@ -28,6 +28,7 @@
 #include "common/aa_noise_params.h"
 #include "common/mask_edge_toon_params.h"
 #include "geometry/bound.h"
+#include "color/color.h"
 #include <string>
 #include <memory>
 #include <map>
@@ -41,7 +42,6 @@ BEGIN_YAFARAY
 class ParamMap;
 class Scene;
 class ProgressBar;
-class Rgb;
 class Ray;
 class ColorLayers;
 class ImageFilm;
@@ -55,6 +55,13 @@ class Accelerator;
 class Layers;
 class VolumeIntegrator;
 class Background;
+
+struct ColorLayerAccum
+{
+	ColorLayerAccum(Rgba *color) : color_(color) { }
+	Rgba *color_;
+	Rgba accum_{0.f};
+};
 
 class Integrator
 {
