@@ -87,7 +87,7 @@ class MonteCarloIntegrator: public TiledIntegrator
 		int n_caus_search_; //! Amount of caustic photons to be gathered in estimation
 		float caus_radius_; //! Caustic search radius for estimation
 		int caus_depth_; //! Caustic photons max path depth
-		std::unique_ptr<Pdf1D> light_power_d_;
+		std::unique_ptr<Pdf1D> light_power_caustics_;
 
 		PhotonMapProcessing photon_map_processing_ = PhotonsGenerateOnly;
 

@@ -130,7 +130,7 @@ void PhotonIntegrator::diffuseWorker(int thread_id, int num_d_lights, const std:
 		const float s_4 = Halton::lowDiscrepancySampling(4, haltoncurr);
 		const float s_l = float(haltoncurr) * inv_diff_photons;
 		float light_num_pdf;
-		const int light_num = light_power_d_->dSample(s_l, light_num_pdf);
+		const int light_num = light_power_diffuse_->dSample(s_l, light_num_pdf);
 		if(light_num >= num_d_lights)
 		{
 			logger_.logError(getName(), ": lightPDF sample error! ", s_l, "/", light_num);
@@ -431,7 +431,7 @@ bool PhotonIntegrator::preprocess(const RenderView *render_view, ImageFilm *imag
 
 		for(int i = 0; i < num_d_lights; ++i) energies[i] = tmplights[i]->totalEnergy().energy();
 
-		light_power_d_ = std::unique_ptr<Pdf1D>(new Pdf1D(energies));
+		light_power_diffuse_ = std::unique_ptr<Pdf1D>(new Pdf1D(energies));
 
 		if(logger_.isVerbose()) logger_.logVerbose(getName(), ": Light(s) photon color testing for diffuse map:");
 		for(int i = 0; i < num_d_lights; ++i)
@@ -439,7 +439,7 @@ bool PhotonIntegrator::preprocess(const RenderView *render_view, ImageFilm *imag
 			Ray ray;
 			float light_pdf;
 			Rgb pcol = tmplights[i]->emitPhoton(.5, .5, .5, .5, ray, light_pdf);
-			const float light_num_pdf = light_power_d_->function(i) * light_power_d_->invIntegral();
+			const float light_num_pdf = light_power_diffuse_->function(i) * light_power_diffuse_->invIntegral();
 			pcol *= f_num_lights * light_pdf / light_num_pdf; //remember that lightPdf is the inverse of the pdf, hence *=...
 			if(logger_.isVerbose()) logger_.logVerbose(getName(), ": Light [", i + 1, "] Photon col:", pcol, " | lnpdf: ", light_num_pdf);
 		}
@@ -524,7 +524,7 @@ bool PhotonIntegrator::preprocess(const RenderView *render_view, ImageFilm *imag
 
 		for(int i = 0; i < num_c_lights; ++i) energies[i] = tmplights[i]->totalEnergy().energy();
 
-		light_power_d_ = std::unique_ptr<Pdf1D>(new Pdf1D(energies));
+		light_power_caustics_ = std::unique_ptr<Pdf1D>(new Pdf1D(energies));
 
 		if(logger_.isVerbose()) logger_.logVerbose(getName(), ": Light(s) photon color testing for caustics map:");
 		for(int i = 0; i < num_c_lights; ++i)
@@ -532,7 +532,7 @@ bool PhotonIntegrator::preprocess(const RenderView *render_view, ImageFilm *imag
 			Ray ray;
 			float light_pdf;
 			Rgb pcol = tmplights[i]->emitPhoton(.5, .5, .5, .5, ray, light_pdf);
-			const float light_num_pdf = light_power_d_->function(i) * light_power_d_->invIntegral();
+			const float light_num_pdf = light_power_caustics_->function(i) * light_power_caustics_->invIntegral();
 			pcol *= f_num_lights * light_pdf / light_num_pdf; //remember that lightPdf is the inverse of the pdf, hence *=...
 			if(logger_.isVerbose()) logger_.logVerbose(getName(), ": Light [", i + 1, "] Photon col:", pcol, " | lnpdf: ", light_num_pdf);
 		}

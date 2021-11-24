@@ -31,6 +31,8 @@
 #include "accelerator/accelerator.h"
 #include "render/imagesplitter.h"
 #include "math/interpolation.h"
+#include "light/light.h"
+#include "sampler/sample_pdf1d.h"
 
 BEGIN_YAFARAY
 
@@ -71,6 +73,23 @@ bool PathIntegrator::preprocess(const RenderView *render_view, ImageFilm *image_
 
 	if(caustic_type_ == CausticType::Photon || caustic_type_ == CausticType::Both)
 	{
+		std::vector<const Light *> tmplights;
+		int num_c_lights = 0;
+		for(const auto &light : lights_)
+		{
+			if(light->shootsCausticP())
+			{
+				num_c_lights++;
+				tmplights.push_back(light);
+			}
+		}
+		if(num_c_lights == 0)
+		{
+			logger_.logWarning(getName(), ": No lights found that can shoot caustic photons, disabling Caustic photon processing");
+		}
+		std::vector<float> energies(num_c_lights);
+		for(int i = 0; i < num_c_lights; ++i) energies[i] = tmplights[i]->totalEnergy().energy();
+		light_power_caustics_ = std::unique_ptr<Pdf1D>(new Pdf1D(energies));
 		success = success && createCausticMap();
 	}
 

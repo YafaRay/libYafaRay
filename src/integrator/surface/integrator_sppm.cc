@@ -522,7 +522,7 @@ void SppmIntegrator::prePass(int samples, int offset, bool adaptive)
 	f_num_lights = static_cast<float>(num_d_lights);
 	std::vector<float> energies(num_d_lights);
 	for(int i = 0; i < num_d_lights; ++i) energies[i] = tmplights[i]->totalEnergy().energy();
-	light_power_d_ = std::unique_ptr<Pdf1D>(new Pdf1D(energies));
+	light_power_caustics_ = std::unique_ptr<Pdf1D>(new Pdf1D(energies));
 	if(logger_.isVerbose()) logger_.logVerbose(getName(), ": Light(s) photon color testing for photon map:");
 
 	for(int i = 0; i < num_d_lights; ++i)
@@ -530,7 +530,7 @@ void SppmIntegrator::prePass(int samples, int offset, bool adaptive)
 		Ray ray;
 		float light_pdf;
 		Rgb pcol = tmplights[i]->emitPhoton(.5, .5, .5, .5, ray, light_pdf);
-		const float light_num_pdf = light_power_d_->function(i) * light_power_d_->invIntegral();
+		const float light_num_pdf = light_power_caustics_->function(i) * light_power_caustics_->invIntegral();
 		pcol *= f_num_lights * light_pdf / light_num_pdf; //remember that lightPdf is the inverse of the pdf, hence *=...
 		if(logger_.isVerbose()) logger_.logVerbose(getName(), ": Light [", i + 1, "] Photon col:", pcol, " | lnpdf: ", light_num_pdf);
 	}
@@ -556,7 +556,7 @@ void SppmIntegrator::prePass(int samples, int offset, bool adaptive)
 	logger_.logParams(getName(), ": Shooting ", n_photons_, " photons across ", n_threads, " threads (", (n_photons_ / n_threads), " photons/thread)");
 
 	std::vector<std::thread> threads;
-	for(int i = 0; i < n_threads; ++i) threads.push_back(std::thread(&SppmIntegrator::photonWorker, this, diffuse_map_.get(), caustic_map_.get(), i, n_photons_, light_power_d_.get(), num_d_lights, tmplights, pb_step, std::ref(curr), max_bounces_, std::ref(random_generator)));
+	for(int i = 0; i < n_threads; ++i) threads.push_back(std::thread(&SppmIntegrator::photonWorker, this, diffuse_map_.get(), caustic_map_.get(), i, n_photons_, light_power_caustics_.get(), num_d_lights, tmplights, pb_step, std::ref(curr), max_bounces_, std::ref(random_generator)));
 	for(auto &t : threads) t.join();
 
 	intpb_->done();
