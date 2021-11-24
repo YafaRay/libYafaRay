@@ -41,8 +41,8 @@ class Pdf1D final
 		float invSize() const { return inv_size_; }
 		float integral() const { return integral_; }
 		float invIntegral() const { return inv_integral_; }
-		float function(size_t index) const { return function_.at(index); }
-		float cdf(size_t index) const { return cdf_.at(index); }
+		float function(size_t index) const { return function_[index]; }
+		float cdf(size_t index) const { return cdf_[index]; }
 		float sample(float u, float &pdf) const;
 		// take a discrete sample.
 		// determines an index in the array from which the CDF was taked from, rather than a sample in [0;1]
@@ -92,7 +92,7 @@ inline int Pdf1D::dSample(float u, float &pdf) const
 		const auto &it = std::lower_bound(cdf_.begin(), cdf_.end(), u);
 		index = static_cast<int>(it - cdf_.begin());
 	}
-	pdf = function_.at(index) * inv_integral_;
+	pdf = function_[index] * inv_integral_;
 	return index;
 }
 
@@ -101,13 +101,13 @@ inline float Pdf1D::sample(float u, float &pdf) const
 	if(u <= 0.f)
 	{
 		constexpr int index = 0;
-		pdf = function_.at(index) * inv_integral_;
+		pdf = function_[index] * inv_integral_;
 		return static_cast<float>(index);
 	}
 	else if(u >= 1.f)
 	{
 		const int index = cdf_.size() - 1;
-		pdf = function_.at(index) * inv_integral_;
+		pdf = function_[index] * inv_integral_;
 		return static_cast<float>(index) + 1.f;
 	}
 	else
