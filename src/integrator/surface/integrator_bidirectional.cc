@@ -258,7 +258,7 @@ std::pair<Rgb, float> BidirectionalIntegrator::integrate(int thread_id, int ray_
 		lray.tmin_ = ray_min_dist_;
 		lray.tmax_ = -1.f;
 		float light_num_pdf;
-		const int light_num = light_power_d_->dSample(logger_, random_generator(), light_num_pdf);
+		const int light_num = light_power_d_->dSample(random_generator(), light_num_pdf);
 		light_num_pdf *= f_num_lights_;
 		LSample ls;
 		ls.s_1_ = random_generator(), ls.s_2_ = random_generator(), ls.s_3_ = random_generator(), ls.s_4_ = random_generator();
@@ -550,7 +550,7 @@ bool BidirectionalIntegrator::connectLPath(bool chromatic_enabled, float wavelen
 	const int n_lights_i = lights_.size();
 	if(n_lights_i == 0) return false;
 	float light_num_pdf, cos_wo;
-	int lnum = light_power_d_->dSample(logger_, random_generator(), light_num_pdf);
+	int lnum = light_power_d_->dSample(random_generator(), light_num_pdf);
 	light_num_pdf *= f_num_lights_;
 	if(lnum > n_lights_i - 1) lnum = n_lights_i - 1;
 	const Light *light = lights_[lnum];

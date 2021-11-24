@@ -77,9 +77,9 @@ void BackgroundLight::init(Scene &scene)
 inline float BackgroundLight::calcFromSample(float s_1, float s_2, float &u, float &v, bool inv) const
 {
 	float pdf_1 = 0.f, pdf_2 = 0.f;
-	v = v_dist_->sample(logger_, s_2, pdf_2);
+	v = v_dist_->sample(s_2, pdf_2);
 	const int iv = clampSample(addOff(v), v_dist_->size());
-	u = u_dist_[iv]->sample(logger_, s_1, pdf_1);
+	u = u_dist_[iv]->sample(s_1, pdf_1);
 	u *= u_dist_[iv]->invSize();
 	v *= v_dist_->invSize();
 	if(inv) return calcInvPdf(pdf_1, pdf_2, v);

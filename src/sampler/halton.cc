@@ -437,7 +437,7 @@ double Halton::lowDiscrepancySampling(int dim, unsigned int n)
 		}
 	}
 	else value = static_cast<double>(FastRandom::getNextFloatNormalized());
-	return std::max(1.0e-36, std::min(1.0, value));	//FIXME: A minimum value very small 1.0e-36 is set to avoid issues with pdf1D sampling in the Sample function with s2=0.f Hopefully in practice the numerical difference between 0.f and 1.0e-36 will not be significant enough to cause other issues.
+	return value;
 }
 
 END_YAFARAY

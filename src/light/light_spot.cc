@@ -154,7 +154,7 @@ Rgb SpotLight::emitPhoton(float s_1, float s_2, float s_3, float s_4, Ray &ray, 
 	else // sample in the falloff area
 	{
 		float spdf;
-		float sm_2 = pdf_->sample(logger_, s_2, spdf) * pdf_->invSize();
+		float sm_2 = pdf_->sample(s_2, spdf) * pdf_->invSize();
 		ipdf = math::mult_pi_by_2 * (cos_start_ - cos_end_) / (interv_2_ * spdf);
 		double cos_ang = cos_end_ + (cos_start_ - cos_end_) * (double)sm_2;
 		double sin_ang = math::sqrt(1.0 - cos_ang * cos_ang);
@@ -178,7 +178,7 @@ Rgb SpotLight::emitSample(Vec3 &wo, LSample &s) const
 	else // sample in the falloff area
 	{
 		float spdf;
-		float sm_2 = pdf_->sample(logger_, s.s_2_, spdf) * pdf_->invSize();
+		float sm_2 = pdf_->sample(s.s_2_, spdf) * pdf_->invSize();
 		s.dir_pdf_ = (interv_2_ * spdf) / (math::mult_pi_by_2 * (cos_start_ - cos_end_));
 		double cos_ang = cos_end_ + (cos_start_ - cos_end_) * (double)sm_2;
 		double sin_ang = math::sqrt(1.0 - cos_ang * cos_ang);

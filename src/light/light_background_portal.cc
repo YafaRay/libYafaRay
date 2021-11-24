@@ -88,17 +88,17 @@ void BackgroundPortalLight::init(Scene &scene)
 void BackgroundPortalLight::sampleSurface(Point3 &p, Vec3 &n, float s_1, float s_2) const
 {
 	float prim_pdf;
-	const size_t prim_num = area_dist_->dSample(logger_, s_1, prim_pdf);
+	const size_t prim_num = area_dist_->dSample(s_1, prim_pdf);
 	if(prim_num >= area_dist_->size())
 	{
 		logger_.logWarning("bgPortalLight: Sampling error!");
 		return;
 	}
-	float ss_1, delta = area_dist_->cdf(prim_num + 1);
+	float ss_1, delta = area_dist_->cdf(prim_num);
 	if(prim_num > 0)
 	{
-		delta -= area_dist_->cdf(prim_num);
-		ss_1 = (s_1 - area_dist_->cdf(prim_num)) / delta;
+		delta -= area_dist_->cdf(prim_num - 1);
+		ss_1 = (s_1 - area_dist_->cdf(prim_num - 1)) / delta;
 	}
 	else ss_1 = s_1 / delta;
 	primitives_[prim_num]->sample(ss_1, s_2, p, n);

@@ -359,7 +359,7 @@ void SppmIntegrator::photonWorker(PhotonMap *diffuse_map, PhotonMap *caustic_map
 		}
 
 		s_l = float(haltoncurr) * inv_diff_photons; // Does sL also need more random_generator for each pass?
-		int light_num = light_power_d->dSample(logger_, s_l, light_num_pdf);
+		int light_num = light_power_d->dSample(s_l, light_num_pdf);
 		if(light_num >= num_d_lights)
 		{
 			logger_.logError(getName(), ": lightPDF sample error! ", s_l, "/", light_num);

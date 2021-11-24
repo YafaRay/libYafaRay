@@ -41,12 +41,12 @@ class Pdf1D final
 		float invSize() const { return inv_size_; }
 		float integral() const { return integral_; }
 		float invIntegral() const { return inv_integral_; }
-		float function(size_t index) const { return function_[index]; }
-		float cdf(size_t index) const { return cdf_[index]; }
-		float sample(Logger &logger, float u, float &pdf) const;
+		float function(size_t index) const { return function_.at(index); }
+		float cdf(size_t index) const { return cdf_.at(index); }
+		float sample(float u, float &pdf) const;
 		// take a discrete sample.
 		// determines an index in the array from which the CDF was taked from, rather than a sample in [0;1]
-		int dSample(Logger &logger, float u, float &pdf) const;
+		int dSample(float u, float &pdf) const;
 		// Distribution1D Data
 
 	private:
@@ -67,52 +67,58 @@ inline void Pdf1D::init()
 inline std::pair<float, std::vector<float>> Pdf1D::cumulateStep1DDf(const std::vector<float> &function)
 {
 	const size_t n_steps = function.size();
-	std::vector<float> cdf(n_steps + 1);
+	std::vector<float> cdf(n_steps);
 	const double delta = 1.0 / static_cast<double>(n_steps);
-	cdf[0] = 0.f;
 	double c = 0.0;
-	for(size_t i = 1; i < n_steps + 1; ++i)
+	for(size_t i = 0; i < n_steps; ++i)
 	{
-		c += static_cast<double>(function[i - 1]) * delta;
+		c += static_cast<double>(function[i]) * delta;
 		cdf[i] = static_cast<float>(c);
 	}
 	const float integral = static_cast<float>(c);// * delta;
-	for(size_t i = 1; i < n_steps + 1; ++i) cdf[i] /= integral;
+	for(auto &cdf_entry : cdf) cdf_entry /= integral;
 	return {integral, cdf};
 }
 
-inline float Pdf1D::sample(Logger &logger, float u, float &pdf) const
+inline int Pdf1D::dSample(float u, float &pdf) const
 {
-	// Find surrounding cdf segments
-	const auto it = std::lower_bound(cdf_.begin(), cdf_.end(), u);
-	int index = static_cast<int>(it - cdf_.begin() - 1);
-	if(index < 0) //Hopefully this should no longer be necessary from now on, as a minimum value slightly over 0.f has been set to the scrHalton function to avoid ptr and cdf to coincide (which caused index = -1)
+	int index;
+	if(u <= 0.f)
+		index = 0;
+	else if(u >= 1.f)
+		index = cdf_.size() - 1;
+	else
 	{
-		logger.logError("Index out of bounds in pdf1D_t::Sample: index, u, cdf = ", index, ", ", u, ", ", cdf_.data());
-		index = 0; //FIXME!
+		const auto &it = std::lower_bound(cdf_.begin(), cdf_.end(), u);
+		index = static_cast<int>(it - cdf_.begin());
 	}
-	// Return offset along current cdf segment
-	const float delta = (u - cdf_[index]) / (cdf_[index + 1] - cdf_[index]);
-	pdf = function_[index] * inv_integral_;
-	return index + delta;
+	pdf = function_.at(index) * inv_integral_;
+	return index;
 }
 
-inline int Pdf1D::dSample(Logger &logger, float u, float &pdf) const
+inline float Pdf1D::sample(float u, float &pdf) const
 {
-	if(u == 0.f)
+	if(u <= 0.f)
 	{
-		pdf = function_[0] * inv_integral_;
-		return 0;
+		constexpr int index = 0;
+		pdf = function_.at(index) * inv_integral_;
+		return static_cast<float>(index);
 	}
-	const auto it = std::lower_bound(cdf_.begin(), cdf_.end(), u);
-	int index = static_cast<int>(it - cdf_.begin() - 1);
-	if(index < 0)
+	else if(u >= 1.f)
 	{
-		logger.logError("Index out of bounds in pdf1D_t::Sample: index, u, cdf = ", index, ", ", u, ", ", cdf_.data());
-		index = 0; //FIXME!
+		const int index = cdf_.size() - 1;
+		pdf = function_.at(index) * inv_integral_;
+		return static_cast<float>(index) + 1.f;
 	}
-	pdf = function_[index] * inv_integral_;
-	return index;
+	else
+	{
+		const auto &it = std::lower_bound(cdf_.begin(), cdf_.end(), u);
+		const int index = static_cast<int>(it - cdf_.begin());
+		pdf = function_[index] * inv_integral_;
+		// Return offset along current cdf segment
+		const float delta = index > 0 ? (u - cdf_[index - 1]) / (cdf_[index] - cdf_[index - 1]) : u / cdf_[index];
+		return static_cast<float>(index) + delta;
+	}
 }
 
 END_YAFARAY
