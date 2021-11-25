@@ -86,8 +86,7 @@ bool SurfaceIntegrator::preprocess(const RenderView *render_view, ImageFilm *ima
 	timer_ = image_film->getTimer();
 	vol_integrator_ = scene.getVolIntegrator();
 	scene_bound_ = scene.getSceneBound();
-	return success && static_cast<bool>(layers_) && static_cast<bool>(image_film) && static_cast<bool>(render_view_) && static_cast<bool>(camera_) &&
-			static_cast<bool>(background_) && static_cast<bool>(timer_);
+	return success && static_cast<bool>(layers_) && static_cast<bool>(image_film) && static_cast<bool>(render_view_) && static_cast<bool>(camera_) && static_cast<bool>(timer_);
 }
 
 bool VolumeIntegrator::preprocess(const RenderView *render_view, ImageFilm *image_film, const Scene &scene)

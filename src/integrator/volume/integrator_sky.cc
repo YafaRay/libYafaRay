@@ -129,7 +129,7 @@ Rgb SkyIntegrator::integrate(RandomGenerator &random_generator, const Ray &ray, 
 			const float y = math::sin(theta) * math::sin(phi);
 			const Vec3 w(x, y, z);
 			const Ray bgray(Point3(0, 0, 0), w, 0, 1, 0);
-			const Rgb l_s = background_->eval(bgray.dir_);
+			const Rgb l_s = background_ ? background_->eval(bgray.dir_) : Rgb(0.f);
 			const float b_r_angular = b_r_ * 3 / (2 * math::num_pi * 8) * (1.0f + (w * (-ray.dir_)) * (w * (-ray.dir_)));
 			const float k = 0.67f;
 			const float angle = math::acos(w * (ray.dir_));

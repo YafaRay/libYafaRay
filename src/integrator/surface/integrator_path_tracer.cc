@@ -254,7 +254,7 @@ std::pair<Rgb, float> PathIntegrator::integrate(int thread_id, int ray_level, bo
 					auto intersect_result = accelerator_->intersect(p_ray, camera_);
 					if(!intersect_result.first) //hit background
 					{
-						if((caustic && background_->hasIbl() && background_->shootsCaustic()))
+						if((caustic && background_ && background_->hasIbl() && background_->shootsCaustic()))
 						{
 							path_col += throughput * (*background_)(p_ray.dir_, true);
 						}
