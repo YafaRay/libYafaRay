@@ -44,7 +44,7 @@ class AcceleratorSimpleTest final : Accelerator
 		virtual AcceleratorIntersectData intersectS(const Ray &ray, float t_max, float shadow_bias) const override;
 		virtual AcceleratorTsIntersectData intersectTs(const Ray &ray, int max_depth, float dist, float shadow_bias, const Camera *camera) const override;
 		virtual Bound getBound() const override { return bound_; }
-		const std::vector<const Primitive *> primitives_;
+		const std::vector<const Primitive *> &primitives_;
 		std::map<const Object *, ObjectData> objects_data_;
 		Bound bound_;
 };

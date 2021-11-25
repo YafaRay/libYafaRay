@@ -63,7 +63,8 @@ AcceleratorKdTreeMultiThread::AcceleratorKdTreeMultiThread(Logger &logger, const
 	if(log_leaves > 16.0) tree_build_parameters.cost_ratio_ += 0.25 * (log_leaves - 16.0);
 	std::vector<Bound> bounds;
 	bounds.reserve(num_primitives);
-	tree_bound_ = primitives.front()->getBound();
+	if(num_primitives > 0) tree_bound_ = primitives.front()->getBound();
+	else tree_bound_ = {{0.f, 0.f, 0.f}, {0.f, 0.f, 0.f}};
 	if(logger_.isVerbose()) logger_.logVerbose("Kd-Tree MultiThread: Getting primitive bounds...");
 	for(const auto &primitive : primitives)
 	{

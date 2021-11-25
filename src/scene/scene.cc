@@ -1047,8 +1047,7 @@ bool Scene::updateObjects()
 	}
 	if(primitives.empty())
 	{
-		logger_.logError("Scene: Scene is empty...");
-		return false;
+		logger_.logWarning("Scene: Scene is empty...");
 	}
 	ParamMap params;
 	params["type"] = scene_accelerator_;

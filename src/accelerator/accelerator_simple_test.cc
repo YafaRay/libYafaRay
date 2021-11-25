@@ -30,9 +30,11 @@ std::unique_ptr<Accelerator> AcceleratorSimpleTest::factory(Logger &logger, cons
 	return accelerator;
 }
 
-AcceleratorSimpleTest::AcceleratorSimpleTest(Logger &logger, const std::vector<const Primitive *> &primitives) : Accelerator(logger), primitives_(primitives), bound_(primitives.front()->getBound())
+AcceleratorSimpleTest::AcceleratorSimpleTest(Logger &logger, const std::vector<const Primitive *> &primitives) : Accelerator(logger), primitives_(primitives)
 {
 	const size_t num_primitives = primitives_.size();
+	if(num_primitives > 0) bound_ = primitives.front()->getBound();
+	else bound_ = {{0.f, 0.f, 0.f}, {0.f, 0.f, 0.f}};
 	for(const auto &primitive : primitives)
 	{
 		const Bound primitive_bound = primitive->getBound();

@@ -48,7 +48,7 @@ class AcceleratorKdTree final : public Accelerator
 		class BoundEdge;
 		struct SplitCost;
 		class TreeBin;
-		AcceleratorKdTree(Logger &logger, const std::vector<const Primitive *> &primitives, int depth = -1, int leaf_size = 2,
+		AcceleratorKdTree(Logger &logger, const std::vector<const Primitive *> &primitives, int depth = 0, int leaf_size = 2,
 						  float cost_ratio = 0.35, float empty_bonus = 0.33);
 		virtual ~AcceleratorKdTree() override;
 		virtual AcceleratorIntersectData intersect(const Ray &ray, float t_max) const override;
@@ -70,7 +70,7 @@ class AcceleratorKdTree final : public Accelerator
 		float cost_ratio_ = 0.8f; //!< node traversal cost divided by primitive intersection cost
 		float e_bonus_ = 0.33f; //!< empty bonus
 		uint32_t next_free_node_, allocated_nodes_count_, total_prims_;
-		int max_depth_ = -1;
+		int max_depth_ = 0;
 		unsigned int max_leaf_size_ = 1;
 		Bound tree_bound_; 	//!< overall space the tree encloses
 		MemoryArena prims_arena_;

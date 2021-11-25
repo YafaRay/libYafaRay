@@ -73,7 +73,7 @@ class AcceleratorKdTreeMultiThread final : public Accelerator
 
 struct AcceleratorKdTreeMultiThread::Parameters
 {
-	int max_depth_ = -1;
+	int max_depth_ = 0;
 	int max_leaf_size_ = 1;
 	float cost_ratio_ = 0.8f; //!< node traversal cost divided by primitive intersection cost
 	float empty_bonus_ = 0.33f;
