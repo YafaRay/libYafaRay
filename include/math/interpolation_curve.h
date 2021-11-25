@@ -103,25 +103,23 @@ class RegularCurve final
 		void addSample(float data);
 
 	private:
-		std::unique_ptr<float[]> c_;
+		std::vector<float> c_;
 		float end_r_;
 		float begin_r_;
-		float step_;
-		int size_;
-		int index_;
+		float step_ = 0.f;
+		size_t index_ = 0;
 };
 
-RegularCurve::RegularCurve(const float *data, float begin_r, float end_r, int n):
-		end_r_(begin_r), begin_r_(end_r), step_(0.0), size_(n), index_(0)
+RegularCurve::RegularCurve(const float *data, float begin_r, float end_r, int n): end_r_(begin_r), begin_r_(end_r)
 {
-	c_ = std::unique_ptr<float[]>(new float[n]);
+	c_ = std::vector<float>(n);
 	for(int i = 0; i < n; i++) c_[i] = data[i];
 	step_ = n / (begin_r_ - end_r_);
 }
 
-RegularCurve::RegularCurve(float begin_r, float end_r, int n) : c_(nullptr), end_r_(begin_r), begin_r_(end_r), step_(0.0), size_(n), index_(0)
+RegularCurve::RegularCurve(float begin_r, float end_r, int n) : end_r_(begin_r), begin_r_(end_r)
 {
-	c_ = std::unique_ptr<float[]>(new float[n]);
+	c_ = std::vector<float>(n);
 	step_ = n / (begin_r_ - end_r_);
 }
 
@@ -133,13 +131,13 @@ float RegularCurve::getSample(float x) const
 	const int y_0 = static_cast<int>(floor(med));
 	const int y_1 = static_cast<int>(ceil(med));
 
-	if(y_0 == y_1) return c_[y_0];
+	if(y_0 == y_1 || y_1 >= static_cast<int>(c_.size())) return c_[y_0];
 
 	const float x_0 = (y_0 / step_) + end_r_;
 	const float x_1 = (y_1 / step_) + end_r_;
 
 	float y = x - x_0;
-	y *= (c_[y_1] - c_[y_0]) / (x_1 - x_0);
+	y *= c_[y_1] - c_[y_0] / (x_1 - x_0);
 	y += c_[y_0];
 
 	return y;
@@ -147,7 +145,7 @@ float RegularCurve::getSample(float x) const
 
 void RegularCurve::addSample(float data)
 {
-	if(index_ < size_) c_[index_++] = data;
+	if(index_ < c_.size()) c_[index_++] = data;
 }
 
 END_YAFARAY
