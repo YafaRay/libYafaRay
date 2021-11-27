@@ -32,7 +32,6 @@
 #include "sampler/halton.h"
 #include "render/imagefilm.h"
 #include "camera/camera.h"
-#include "scene/scene.h"
 #include "render/progress_bar.h"
 #include "sampler/sample.h"
 #include "color/color_layers.h"
@@ -643,7 +642,6 @@ void TiledIntegrator::generateOcclusionLayers(const Accelerator &accelerator, bo
 Rgb TiledIntegrator::sampleAmbientOcclusion(const Accelerator &accelerator, bool chromatic_enabled, float wavelength, const SurfacePoint &sp, const Vec3 &wo, const RayDivision &ray_division, const Camera *camera, const PixelSamplingData &pixel_sampling_data, bool transparent_shadows, bool clay, int ao_samples, bool shadow_bias_auto, float shadow_bias, float ao_dist, const Rgb &ao_col, int transp_shadows_depth)
 {
 	Rgb col{0.f};
-	const Material *material = sp.material_;
 	const BsdfFlags &mat_bsdfs = sp.mat_data_->bsdf_flags_;
 	Ray light_ray {sp.p_, {0.f}};
 	int n = ao_samples;//(int) ceilf(aoSamples*getSampleMultiplier());
@@ -669,12 +667,12 @@ Rgb TiledIntegrator::sampleAmbientOcclusion(const Accelerator &accelerator, bool
 									   BsdfFlags::Glossy | BsdfFlags::Diffuse | BsdfFlags::Reflect;
 		Sample s(s_1, s_2, sample_flags);
 		const Rgb surf_col = clay ?
-							 material->sampleClay(sp, wo, light_ray.dir_, s, w) :
-							 material->sample(sp.mat_data_.get(), sp, wo, light_ray.dir_, s, w, chromatic_enabled, wavelength, camera);
+							 sp.material_->sampleClay(sp, wo, light_ray.dir_, s, w) :
+							 sp.material_->sample(sp.mat_data_.get(), sp, wo, light_ray.dir_, s, w, chromatic_enabled, wavelength, camera);
 		if(clay) s.pdf_ = 1.f;
 		if(mat_bsdfs.hasAny(BsdfFlags::Emit))
 		{
-			col += material->emit(sp.mat_data_.get(), sp, wo) * s.pdf_;
+			col += sp.material_->emit(sp.mat_data_.get(), sp, wo) * s.pdf_;
 		}
 		bool shadowed = false;
 		Rgb scol {0.f};

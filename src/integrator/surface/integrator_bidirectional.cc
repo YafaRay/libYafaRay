@@ -25,7 +25,6 @@
 #include "camera/camera.h"
 #include "render/imagefilm.h"
 #include "common/param.h"
-#include "scene/scene.h"
 #include "light/light.h"
 #include "material/material.h"
 #include "background/background.h"
