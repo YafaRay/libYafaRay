@@ -731,6 +731,7 @@ std::pair<Rgb, float> MonteCarloIntegrator::dispersive(RandomGenerator &random_g
 
 std::pair<Rgb, float> MonteCarloIntegrator::glossy(RandomGenerator &random_generator, ColorLayers *color_layers, int thread_id, int ray_level, bool chromatic_enabled, float wavelength, const Ray &ray, const SurfacePoint &sp, const Material *material, const BsdfFlags &mat_bsdfs, const BsdfFlags &bsdfs, const Vec3 &wo, int additional_depth, const RayDivision &ray_division, const PixelSamplingData &pixel_sampling_data) const
 {
+	if(!mat_bsdfs.hasAny(BsdfFlags::Reflect)) return {{0.f}, -1.f}; //If alpha is -1.f we consider the result invalid and do not use it to accumulate alpha
 	const int ray_samples_glossy = ray_division.division_ > 1 ?
 								   std::max(1, initial_ray_samples_glossy_ / ray_division.division_) :
 								   initial_ray_samples_glossy_;
@@ -756,43 +757,38 @@ std::pair<Rgb, float> MonteCarloIntegrator::glossy(RandomGenerator &random_gener
 		ray_division_new.offset_ = branch;
 		++offs;
 		++branch;
-
 		const float s_1 = hal_2.getNext();
 		const float s_2 = hal_3.getNext();
-
-		if(mat_bsdfs.hasAny(BsdfFlags::Glossy))
+		if(mat_bsdfs.hasAny(BsdfFlags::Transmit))
 		{
-			if(mat_bsdfs.hasAny(BsdfFlags::Reflect) && !mat_bsdfs.hasAny(BsdfFlags::Transmit))
+			Sample s(s_1, s_2, BsdfFlags::Glossy | BsdfFlags::AllGlossy);
+			Rgb mcol[2];
+			float w[2];
+			Vec3 dir[2];
+
+			mcol[0] = material->sample(sp, wo, dir, mcol[1], s, w, chromatic_enabled, wavelength);
+
+			if(!s.sampled_flags_.hasAny(BsdfFlags::Dispersive))
 			{
-				const auto result = glossyReflectNoTransmit(random_generator, thread_id, ray_level, chromatic_enabled, wavelength, ray, sp, material, bsdfs, wo, additional_depth, pixel_sampling_data, ray_division_new, s_1, s_2);
+				const auto result = glossyReflect(random_generator, thread_id, ray_level, chromatic_enabled, wavelength, ray, sp, material, bsdfs, additional_depth, pixel_sampling_data, ray_division_new, mcol[0], w[0], dir[0]);
 				gcol += result.first;
-				if(color_layers) gcol_indirect_accum += result.first;
+				if(color_layers) gcol_reflect_accum += result.first;
 				alpha_accum += result.second;
 			}
-			else if(mat_bsdfs.hasAny(BsdfFlags::Reflect) && mat_bsdfs.hasAny(BsdfFlags::Transmit))
+			if(s.sampled_flags_.hasAny(BsdfFlags::Transmit))
 			{
-				Sample s(s_1, s_2, BsdfFlags::Glossy | BsdfFlags::AllGlossy);
-				Rgb mcol[2];
-				float w[2];
-				Vec3 dir[2];
-
-				mcol[0] = material->sample(sp, wo, dir, mcol[1], s, w, chromatic_enabled, wavelength);
-
-				if(s.sampled_flags_.hasAny(BsdfFlags::Reflect) && !s.sampled_flags_.hasAny(BsdfFlags::Dispersive))
-				{
-					const auto result = glossyReflectDispersive(random_generator, thread_id, ray_level, chromatic_enabled, wavelength, ray, sp, material, bsdfs, additional_depth, pixel_sampling_data, ray_division_new, mcol[0], w[0], dir[0]);
-					gcol += result.first;
-					if(color_layers) gcol_reflect_accum += result.first;
-					alpha_accum += result.second;
-				}
-				if(s.sampled_flags_.hasAny(BsdfFlags::Transmit))
-				{
-					const auto result = glossyTransmit(random_generator, thread_id, ray_level, chromatic_enabled, wavelength, ray, sp, material, bsdfs, additional_depth, pixel_sampling_data, ray_division_new, mcol[1], w[1], dir[1]);
-					gcol += result.first;
-					if(color_layers) gcol_transmit_accum += result.first;
-					alpha_accum += result.second;
-				}
+				const auto result = glossyTransmit(random_generator, thread_id, ray_level, chromatic_enabled, wavelength, ray, sp, material, bsdfs, additional_depth, pixel_sampling_data, ray_division_new, mcol[1], w[1], dir[1]);
+				gcol += result.first;
+				if(color_layers) gcol_transmit_accum += result.first;
+				alpha_accum += result.second;
 			}
+		}
+		else
+		{
+			const auto result = glossyReflectNoTransmit(random_generator, thread_id, ray_level, chromatic_enabled, wavelength, ray, sp, material, bsdfs, wo, additional_depth, pixel_sampling_data, ray_division_new, s_1, s_2);
+			gcol += result.first;
+			if(color_layers) gcol_indirect_accum += result.first;
+			alpha_accum += result.second;
 		}
 	}
 
@@ -817,7 +813,7 @@ std::pair<Rgb, float> MonteCarloIntegrator::glossy(RandomGenerator &random_gener
 	return {gcol * inverse_ray_samples_glossy, alpha_accum * inverse_ray_samples_glossy};
 }
 
-std::pair<Rgb, float> MonteCarloIntegrator::glossyReflectDispersive(RandomGenerator &random_generator, int thread_id, int ray_level, bool chromatic_enabled, float wavelength, const Ray &ray, const SurfacePoint &sp, const Material *material, const BsdfFlags &bsdfs, int additional_depth, const PixelSamplingData &pixel_sampling_data, const RayDivision &ray_division_new, const Rgb &reflect_color, float w, const Vec3 &dir) const
+std::pair<Rgb, float> MonteCarloIntegrator::glossyReflect(RandomGenerator &random_generator, int thread_id, int ray_level, bool chromatic_enabled, float wavelength, const Ray &ray, const SurfacePoint &sp, const Material *material, const BsdfFlags &bsdfs, int additional_depth, const PixelSamplingData &pixel_sampling_data, const RayDivision &ray_division_new, const Rgb &reflect_color, float w, const Vec3 &dir) const
 {
 	Ray ref_ray = Ray(sp.p_, dir, ray_min_dist_);
 	if(ray.differentials_) ref_ray.differentials_ = sp.reflectedRay(ray.differentials_.get(), ray.dir_, ref_ray.dir_);
@@ -945,9 +941,12 @@ std::pair<Rgb, float> MonteCarloIntegrator::recursiveRaytrace(RandomGenerator &r
 			if(bsdfs.hasAny(BsdfFlags::Glossy))
 			{
 				const auto result = glossy(random_generator, color_layers, thread_id, ray_level, chromatic_enabled, wavelength, ray, sp, sp.material_, mat_bsdfs, bsdfs, wo, additional_depth, ray_division, pixel_sampling_data);
-				col += result.first;
-				alpha += result.second;
-				++alpha_count;
+				if(alpha != -1.f) //If alpha is -1.f we consider the result invalid and do not use it to accumulate alpha
+				{
+					col += result.first;
+					alpha += result.second;
+					++alpha_count;
+				}
 			}
 			//...perfect specular reflection/refraction with recursive raytracing...
 			if(bsdfs.hasAny((BsdfFlags::Specular | BsdfFlags::Filter)))
