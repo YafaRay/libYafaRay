@@ -107,7 +107,7 @@ PhotonIntegrator::PhotonIntegrator(RenderControl &render_control, Logger &logger
 	radiance_map_->setName("FG Radiance Photon Map");
 }
 
-void PhotonIntegrator::diffuseWorker(PreGatherData &pgdat, unsigned int &total_photons_shot, int thread_id, int num_d_lights, const std::vector<const Light *> &tmplights, int pb_step)
+void PhotonIntegrator::diffuseWorker(PreGatherData &pgdat, unsigned int &total_photons_shot, int thread_id, int num_d_lights, const Pdf1D *light_power_d, const std::vector<const Light *> &tmplights, int pb_step)
 {
 	//shoot photons
 	bool done = false;
@@ -130,7 +130,7 @@ void PhotonIntegrator::diffuseWorker(PreGatherData &pgdat, unsigned int &total_p
 		const float s_4 = Halton::lowDiscrepancySampling(4, haltoncurr);
 		const float s_l = float(haltoncurr) * inv_diff_photons;
 		float light_num_pdf;
-		const int light_num = light_power_diffuse_->dSample(s_l, light_num_pdf);
+		const int light_num = light_power_d->dSample(s_l, light_num_pdf);
 		if(light_num >= num_d_lights)
 		{
 			logger_.logError(getName(), ": lightPDF sample error! ", s_l, "/", light_num);
@@ -430,7 +430,7 @@ bool PhotonIntegrator::preprocess(ImageFilm *image_film, const RenderView *rende
 
 		for(int i = 0; i < num_d_lights; ++i) energies[i] = tmplights[i]->totalEnergy().energy();
 
-		light_power_diffuse_ = std::unique_ptr<Pdf1D>(new Pdf1D(energies));
+		auto light_power_d = std::unique_ptr<Pdf1D>(new Pdf1D(energies));
 
 		if(logger_.isVerbose()) logger_.logVerbose(getName(), ": Light(s) photon color testing for diffuse map:");
 		for(int i = 0; i < num_d_lights; ++i)
@@ -438,7 +438,7 @@ bool PhotonIntegrator::preprocess(ImageFilm *image_film, const RenderView *rende
 			Ray ray;
 			float light_pdf;
 			Rgb pcol = tmplights[i]->emitPhoton(.5, .5, .5, .5, ray, light_pdf);
-			const float light_num_pdf = light_power_diffuse_->function(i) * light_power_diffuse_->invIntegral();
+			const float light_num_pdf = light_power_d->function(i) * light_power_d->invIntegral();
 			pcol *= f_num_lights * light_pdf / light_num_pdf; //remember that lightPdf is the inverse of the pdf, hence *=...
 			if(logger_.isVerbose()) logger_.logVerbose(getName(), ": Light [", i + 1, "] Photon col:", pcol, " | lnpdf: ", light_num_pdf);
 		}
@@ -458,7 +458,7 @@ bool PhotonIntegrator::preprocess(ImageFilm *image_film, const RenderView *rende
 		logger_.logParams(getName(), ": Shooting ", n_diffuse_photons_, " photons across ", num_threads_photons_, " threads (", (n_diffuse_photons_ / num_threads_photons_), " photons/thread)");
 
 		std::vector<std::thread> threads;
-		for(int i = 0; i < num_threads_photons_; ++i) threads.push_back(std::thread(&PhotonIntegrator::diffuseWorker, this, std::ref(pgdat), std::ref(curr), i, num_d_lights, tmplights, pb_step));
+		for(int i = 0; i < num_threads_photons_; ++i) threads.push_back(std::thread(&PhotonIntegrator::diffuseWorker, this, std::ref(pgdat), std::ref(curr), i, num_d_lights, light_power_d.get(), tmplights, pb_step));
 		for(auto &t : threads) t.join();
 
 		intpb_->done();
@@ -523,7 +523,7 @@ bool PhotonIntegrator::preprocess(ImageFilm *image_film, const RenderView *rende
 
 		for(int i = 0; i < num_c_lights; ++i) energies[i] = tmplights[i]->totalEnergy().energy();
 
-		light_power_caustics_ = std::unique_ptr<Pdf1D>(new Pdf1D(energies));
+		auto light_power_d = std::unique_ptr<Pdf1D>(new Pdf1D(energies));
 
 		if(logger_.isVerbose()) logger_.logVerbose(getName(), ": Light(s) photon color testing for caustics map:");
 		for(int i = 0; i < num_c_lights; ++i)
@@ -531,7 +531,7 @@ bool PhotonIntegrator::preprocess(ImageFilm *image_film, const RenderView *rende
 			Ray ray;
 			float light_pdf;
 			Rgb pcol = tmplights[i]->emitPhoton(.5, .5, .5, .5, ray, light_pdf);
-			const float light_num_pdf = light_power_caustics_->function(i) * light_power_caustics_->invIntegral();
+			const float light_num_pdf = light_power_d->function(i) * light_power_d->invIntegral();
 			pcol *= f_num_lights * light_pdf / light_num_pdf; //remember that lightPdf is the inverse of the pdf, hence *=...
 			if(logger_.isVerbose()) logger_.logVerbose(getName(), ": Light [", i + 1, "] Photon col:", pcol, " | lnpdf: ", light_num_pdf);
 		}
@@ -547,7 +547,7 @@ bool PhotonIntegrator::preprocess(ImageFilm *image_film, const RenderView *rende
 		logger_.logParams(getName(), ": Shooting ", n_caus_photons_, " photons across ", num_threads_photons_, " threads (", (n_caus_photons_ / num_threads_photons_), " photons/thread)");
 
 		std::vector<std::thread> threads;
-		for(int i = 0; i < num_threads_photons_; ++i) threads.push_back(std::thread(&PhotonIntegrator::causticWorker, this, std::ref(curr), i, num_c_lights, tmplights, pb_step));
+		for(int i = 0; i < num_threads_photons_; ++i) threads.push_back(std::thread(&PhotonIntegrator::causticWorker, this, std::ref(curr), i, num_c_lights, light_power_d.get(), tmplights, pb_step));
 		for(auto &t : threads) t.join();
 
 		intpb_->done();

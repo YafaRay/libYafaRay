@@ -72,7 +72,7 @@ class MonteCarloIntegrator: public TiledIntegrator
 		Rgb areaLightSampleMaterial(Halton &hal_2, Halton &hal_3, RandomGenerator &random_generator, ColorLayers *color_layers, bool chromatic_enabled, float wavelength, const Light *light, const Vec3 &wo, const SurfacePoint &sp, bool cast_shadows, unsigned int num_samples, float inv_num_samples) const;
 		/*! Creates and prepares the caustic photon map */
 		bool createCausticMap();
-		void causticWorker(unsigned int &total_photons_shot, int thread_id, int num_lights, const std::vector<const Light *> &caus_lights, int pb_step);
+		void causticWorker(unsigned int &total_photons_shot, int thread_id, int num_lights, const Pdf1D *light_power_d, const std::vector<const Light *> &caus_lights, int pb_step);
 		std::pair<Rgb, float> glossyReflectNoTransmit(RandomGenerator &random_generator, int thread_id, int ray_level, bool chromatic_enabled, float wavelength, const Ray &ray, const SurfacePoint &sp, const BsdfFlags &bsdfs, const Vec3 &wo, int additional_depth, const PixelSamplingData &pixel_sampling_data, const RayDivision &ray_division_new, const float s_1, const float s_2) const;
 		std::pair<Rgb, float> glossyTransmit(RandomGenerator &random_generator, int thread_id, int ray_level, bool chromatic_enabled, float wavelength, const Ray &ray, const SurfacePoint &sp, const BsdfFlags &bsdfs, int additional_depth, const PixelSamplingData &pixel_sampling_data, const RayDivision &ray_division_new, const Rgb &transmit_col, float w, const Vec3 &dir) const;
 		std::pair<Rgb, float> glossyReflect(RandomGenerator &random_generator, int thread_id, int ray_level, bool chromatic_enabled, float wavelength, const Ray &ray, const SurfacePoint &sp, const BsdfFlags &bsdfs, int additional_depth, const PixelSamplingData &pixel_sampling_data, const RayDivision &ray_division_new, const Rgb &reflect_color, float w, const Vec3 &dir) const;
@@ -87,7 +87,6 @@ class MonteCarloIntegrator: public TiledIntegrator
 		int n_caus_search_; //! Amount of caustic photons to be gathered in estimation
 		float caus_radius_; //! Caustic search radius for estimation
 		int caus_depth_; //! Caustic photons max path depth
-		std::unique_ptr<Pdf1D> light_power_caustics_;
 
 		PhotonMapProcessing photon_map_processing_ = PhotonsGenerateOnly;
 

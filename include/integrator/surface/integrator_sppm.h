@@ -78,7 +78,7 @@ class SppmIntegrator final : public MonteCarloIntegrator
 		void initializePpm();
 		/*! based on integrate method to do the gatering trace, need double-check deadly. */
 		GatherInfo traceGatherRay(Ray &ray, HitPoint &hp, RandomGenerator &random_generator, ColorLayers *color_layers, int thread_id, int ray_level, bool chromatic_enabled, float wavelength, const RayDivision &ray_division, const PixelSamplingData &pixel_sampling_data);
-		void photonWorker(unsigned int &total_photons_shot, int thread_id, int num_d_lights, const std::vector<const Light *> &tmplights, int pb_step);
+		void photonWorker(unsigned int &total_photons_shot, int thread_id, int num_d_lights, const Pdf1D *light_power_d, const std::vector<const Light *> &tmplights, int pb_step);
 
 		HashGrid  photon_grid_; // the hashgrid for holding photons
 		unsigned int n_photons_; //photon number to scatter
