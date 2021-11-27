@@ -38,9 +38,9 @@ SingleScatterIntegrator::SingleScatterIntegrator(Logger &logger, float s_size, b
 	logger_.logParams("SingleScatter: stepSize: ", step_size_, " adaptive: ", adaptive_, " optimize: ", optimize_);
 }
 
-bool SingleScatterIntegrator::preprocess(const RenderView *render_view, ImageFilm *image_film, const Scene &scene)
+bool SingleScatterIntegrator::preprocess(ImageFilm *image_film, const RenderView *render_view, const Scene &scene)
 {
-	bool success = VolumeIntegrator::preprocess(render_view, image_film, scene);
+	bool success = VolumeIntegrator::preprocess(image_film, render_view, scene);
 	logger_.logInfo("SingleScatter: Preprocessing...");
 	lights_ = render_view->getLightsVisible();
 	vr_size_ = volume_regions_->size();

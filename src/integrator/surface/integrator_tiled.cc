@@ -356,7 +356,7 @@ bool TiledIntegrator::renderTile(const RenderArea &a, int n_samples, int offset,
 				}
 				camera_ray.ray_.time_ = time;
 				RayDivision ray_division;
-				const auto integ = integrate(thread_id, 0, true, 0.f, camera_ray.ray_, 0, ray_division, &color_layers, random_generator, pixel_sampling_data);
+				const auto integ = integrate(camera_ray.ray_, random_generator, &color_layers, thread_id, 0, true, 0.f, 0, ray_division, pixel_sampling_data);
 				color_layers(LayerDef::Combined) = {integ.first, integ.second};
 				for(auto &color_layer : color_layers)
 				{
@@ -405,7 +405,7 @@ bool TiledIntegrator::renderTile(const RenderArea &a, int n_samples, int offset,
 	return true;
 }
 
-void TiledIntegrator::generateCommonLayers(const SurfacePoint &sp, const MaskParams &mask_params, ColorLayers *color_layers)
+void TiledIntegrator::generateCommonLayers(ColorLayers *color_layers, const SurfacePoint &sp, const MaskParams &mask_params)
 {
 	if(color_layers)
 	{
@@ -627,7 +627,7 @@ void TiledIntegrator::generateCommonLayers(const SurfacePoint &sp, const MaskPar
 	}
 }
 
-void TiledIntegrator::generateOcclusionLayers(const Accelerator &accelerator, bool chromatic_enabled, float wavelength, const RayDivision &ray_division, ColorLayers *color_layers, const Camera *camera, const PixelSamplingData &pixel_sampling_data, const SurfacePoint &sp, const Vec3 &wo, int ao_samples, bool shadow_bias_auto, float shadow_bias, float ao_dist, const Rgb &ao_col, int transp_shadows_depth)
+void TiledIntegrator::generateOcclusionLayers(ColorLayers *color_layers, const Accelerator &accelerator, bool chromatic_enabled, float wavelength, const RayDivision &ray_division, const Camera *camera, const PixelSamplingData &pixel_sampling_data, const SurfacePoint &sp, const Vec3 &wo, int ao_samples, bool shadow_bias_auto, float shadow_bias, float ao_dist, const Rgb &ao_col, int transp_shadows_depth)
 {
 	if(Rgba *color_layer = color_layers->find(LayerDef::Ao))
 	{
@@ -689,7 +689,7 @@ Rgb TiledIntegrator::sampleAmbientOcclusion(const Accelerator &accelerator, bool
 	return col / static_cast<float>(n);
 }
 
-std::pair<Rgb, float> TiledIntegrator::volumetricEffects(const Ray &ray, ColorLayers *color_layers, RandomGenerator &random_generator, Rgb &&col, float &&alpha, const VolumeIntegrator *volume_integrator, bool transparent_background)
+void TiledIntegrator::applyVolumetricEffects(Rgb &col, float &alpha, ColorLayers *color_layers, const Ray &ray, RandomGenerator &random_generator, const VolumeIntegrator *volume_integrator, bool transparent_background)
 {
 	const Rgb col_vol_transmittance = volume_integrator->transmittance(random_generator, ray);
 	const Rgb col_vol_integration = volume_integrator->integrate(random_generator, ray);
@@ -700,7 +700,6 @@ std::pair<Rgb, float> TiledIntegrator::volumetricEffects(const Ray &ray, ColorLa
 		if(Rgba *color_layer = color_layers->find(LayerDef::VolumeIntegration)) *color_layer = col_vol_integration;
 	}
 	col = (col * col_vol_transmittance) + col_vol_integration;
-	return {col, alpha};
 }
 
 std::pair<Rgb, float> TiledIntegrator::background(const Ray &ray, ColorLayers *color_layers, bool transparent_background, bool transparent_refracted_background, const Background *background, int ray_level)

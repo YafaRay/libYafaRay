@@ -41,7 +41,7 @@ class SingleScatterIntegrator final : public VolumeIntegrator
 		SingleScatterIntegrator(Logger &logger, float s_size, bool adapt, bool opt);
 		virtual std::string getShortName() const override { return "SSc"; }
 		virtual std::string getName() const override { return "SingleScatter"; }
-		virtual bool preprocess(const RenderView *render_view, ImageFilm *image_film, const Scene &scene) override;
+		virtual bool preprocess(ImageFilm *image_film, const RenderView *render_view, const Scene &scene) override;
 		// optical thickness, absorption, attenuation, extinction
 		virtual Rgb transmittance(RandomGenerator &random_generator, const Ray &ray) const override;
 		// emission and in-scattering

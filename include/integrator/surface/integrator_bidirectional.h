@@ -47,18 +47,18 @@ class BidirectionalIntegrator final : public TiledIntegrator
 		BidirectionalIntegrator(RenderControl &render_control, Logger &logger, bool transp_shad = false, int shadow_depth = 4);
 		virtual std::string getShortName() const override { return "BdPT"; }
 		virtual std::string getName() const override { return "BidirectionalPathTracer"; }
-		virtual bool preprocess(const RenderView *render_view, ImageFilm *image_film, const Scene &scene) override;
+		virtual bool preprocess(ImageFilm *image_film, const RenderView *render_view, const Scene &scene) override;
 		virtual void cleanup() override;
-		virtual std::pair<Rgb, float> integrate(int thread_id, int ray_level, bool chromatic_enabled, float wavelength, Ray &ray, int additional_depth, const RayDivision &ray_division, ColorLayers *color_layers, RandomGenerator &random_generator, const PixelSamplingData &pixel_sampling_data) const override;
-		int createPath(const Accelerator &accelerator, bool chromatic_enabled, float wavelength, const Ray &start, std::vector<PathVertex> &path, int max_len, const Camera *camera, RandomGenerator &random_generator) const;
+		virtual std::pair<Rgb, float> integrate(Ray &ray, RandomGenerator &random_generator, ColorLayers *color_layers, int thread_id, int ray_level, bool chromatic_enabled, float wavelength, int additional_depth, const RayDivision &ray_division, const PixelSamplingData &pixel_sampling_data) const override;
+		int createPath(RandomGenerator &random_generator, const Accelerator &accelerator, bool chromatic_enabled, float wavelength, const Ray &start, std::vector<PathVertex> &path, int max_len, const Camera *camera) const;
 		Rgb evalPath(const Accelerator &accelerator, int s, int t, const PathData &pd, const Camera *camera) const;
 		Rgb evalLPath(const Accelerator &accelerator, int t, const PathData &pd, const Ray &l_ray, const Rgb &lcol, const Camera *camera) const;
 		Rgb evalPathE(const Accelerator &accelerator, int s, const PathData &pd, const Camera *camera) const;
-		bool connectPaths(int s, int t, PathData &pd) const;
-		bool connectLPath(bool chromatic_enabled, float wavelength, int t, PathData &pd, Ray &l_ray, Rgb &lcol, RandomGenerator &random_generator) const;
-		bool connectPathE(int s, PathData &pd) const;
+		bool connectPaths(PathData &pd, int s, int t) const;
+		bool connectLPath(PathData &pd, Ray &l_ray, Rgb &lcol, RandomGenerator &random_generator, bool chromatic_enabled, float wavelength, int t) const;
+		bool connectPathE(PathData &pd, int s) const;
 		float pathWeight(int s, int t, const PathData &pd) const;
-		float pathWeight0T(int t, PathData &pd) const;
+		float pathWeight0T(PathData &pd, int t) const;
 		static void clearPath(std::vector<PathEvalVertex> &p, int s, int t);
 		static void checkPath(std::vector<PathEvalVertex> &p, int s, int t);
 		static void copyLightSubpath(PathData &pd, int s, int t);

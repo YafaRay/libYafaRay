@@ -107,7 +107,7 @@ PhotonIntegrator::PhotonIntegrator(RenderControl &render_control, Logger &logger
 	radiance_map_->setName("FG Radiance Photon Map");
 }
 
-void PhotonIntegrator::diffuseWorker(int thread_id, int num_d_lights, const std::vector<const Light *> &tmplights, int pb_step, unsigned int &total_photons_shot, PreGatherData &pgdat)
+void PhotonIntegrator::diffuseWorker(PreGatherData &pgdat, unsigned int &total_photons_shot, int thread_id, int num_d_lights, const std::vector<const Light *> &tmplights, int pb_step)
 {
 	//shoot photons
 	bool done = false;
@@ -239,9 +239,9 @@ void PhotonIntegrator::photonMapKdTreeWorker(PhotonMap *photon_map)
 	photon_map->updateTree();
 }
 
-bool PhotonIntegrator::preprocess(const RenderView *render_view, ImageFilm *image_film, const Scene &scene)
+bool PhotonIntegrator::preprocess(ImageFilm *image_film, const RenderView *render_view, const Scene &scene)
 {
-	bool success = SurfaceIntegrator::preprocess(render_view, image_film, scene);
+	bool success = SurfaceIntegrator::preprocess(image_film, render_view, scene);
 	lookup_rad_ = 4 * ds_radius_ * ds_radius_;
 
 	std::stringstream set;
@@ -459,7 +459,7 @@ bool PhotonIntegrator::preprocess(const RenderView *render_view, ImageFilm *imag
 		logger_.logParams(getName(), ": Shooting ", n_diffuse_photons_, " photons across ", num_threads_photons_, " threads (", (n_diffuse_photons_ / num_threads_photons_), " photons/thread)");
 
 		std::vector<std::thread> threads;
-		for(int i = 0; i < num_threads_photons_; ++i) threads.push_back(std::thread(&PhotonIntegrator::diffuseWorker, this, i, num_d_lights, tmplights, pb_step, std::ref(curr), std::ref(pgdat)));
+		for(int i = 0; i < num_threads_photons_; ++i) threads.push_back(std::thread(&PhotonIntegrator::diffuseWorker, this, std::ref(pgdat), std::ref(curr), i, num_d_lights, tmplights, pb_step));
 		for(auto &t : threads) t.join();
 
 		intpb_->done();
@@ -548,7 +548,7 @@ bool PhotonIntegrator::preprocess(const RenderView *render_view, ImageFilm *imag
 		logger_.logParams(getName(), ": Shooting ", n_caus_photons_, " photons across ", num_threads_photons_, " threads (", (n_caus_photons_ / num_threads_photons_), " photons/thread)");
 
 		std::vector<std::thread> threads;
-		for(int i = 0; i < num_threads_photons_; ++i) threads.push_back(std::thread(&PhotonIntegrator::causticWorker, this, i, num_c_lights, tmplights, pb_step, std::ref(curr)));
+		for(int i = 0; i < num_threads_photons_; ++i) threads.push_back(std::thread(&PhotonIntegrator::causticWorker, this, std::ref(curr), i, num_c_lights, tmplights, pb_step));
 		for(auto &t : threads) t.join();
 
 		intpb_->done();
@@ -672,7 +672,7 @@ bool PhotonIntegrator::preprocess(const RenderView *render_view, ImageFilm *imag
 // final gathering: this is basically a full path tracer only that it uses the radiance map only
 // at the path end. I.e. paths longer than 1 are only generated to overcome lack of local radiance detail.
 // precondition: initBSDF of current spot has been called!
-Rgb PhotonIntegrator::finalGathering(int thread_id, bool chromatic_enabled, float wavelength, const SurfacePoint &sp, const Vec3 &wo, const RayDivision &ray_division, RandomGenerator &random_generator, const PixelSamplingData &pixel_sampling_data) const
+Rgb PhotonIntegrator::finalGathering(RandomGenerator &random_generator, int thread_id, bool chromatic_enabled, float wavelength, const SurfacePoint &sp, const Vec3 &wo, const RayDivision &ray_division, const PixelSamplingData &pixel_sampling_data) const
 {
 	Rgb path_col(0.0);
 	float w = 0.f;
@@ -734,7 +734,7 @@ Rgb PhotonIntegrator::finalGathering(int thread_id, bool chromatic_enabled, floa
 			{
 				if(close)
 				{
-					lcol = estimateOneDirectLight(thread_id, chromatic_enabled, wavelength, *hit, pwo, offs, ray_division, random_generator, pixel_sampling_data);
+					lcol = estimateOneDirectLight(random_generator, thread_id, chromatic_enabled, wavelength, *hit, pwo, offs, ray_division, pixel_sampling_data);
 				}
 				else if(caustic)
 				{
@@ -892,7 +892,7 @@ std::unique_ptr<Integrator> PhotonIntegrator::factory(Logger &logger, ParamMap &
 	return inte;
 }
 
-std::pair<Rgb, float> PhotonIntegrator::integrate(int thread_id, int ray_level, bool chromatic_enabled, float wavelength, Ray &ray, int additional_depth, const RayDivision &ray_division, ColorLayers *color_layers, RandomGenerator &random_generator, const PixelSamplingData &pixel_sampling_data) const
+std::pair<Rgb, float> PhotonIntegrator::integrate(Ray &ray, RandomGenerator &random_generator, ColorLayers *color_layers, int thread_id, int ray_level, bool chromatic_enabled, float wavelength, int additional_depth, const RayDivision &ray_division, const PixelSamplingData &pixel_sampling_data) const
 {
 	static int n_max = 0;
 	static int calls = 0;
@@ -948,8 +948,8 @@ std::pair<Rgb, float> PhotonIntegrator::integrate(int thread_id, int ray_level, 
 
 				if(mat_bsdfs.hasAny(BsdfFlags::Diffuse))
 				{
-					col += estimateAllDirectLight(chromatic_enabled, wavelength, *sp, wo, ray_division, color_layers, random_generator, pixel_sampling_data);
-					Rgb col_tmp = finalGathering(thread_id, chromatic_enabled, wavelength, *sp, wo, ray_division, random_generator, pixel_sampling_data);
+					col += estimateAllDirectLight(random_generator, color_layers, chromatic_enabled, wavelength, *sp, wo, ray_division, pixel_sampling_data);
+					Rgb col_tmp = finalGathering(random_generator, thread_id, chromatic_enabled, wavelength, *sp, wo, ray_division, pixel_sampling_data);
 					if(aa_noise_params_.clamp_indirect_ > 0.f) col_tmp.clampProportionalRgb(aa_noise_params_.clamp_indirect_);
 					col += col_tmp;
 					if(color_layers && color_layers->getFlags().hasAny(LayerDef::Flags::DiffuseLayers))
@@ -991,7 +991,7 @@ std::pair<Rgb, float> PhotonIntegrator::integrate(int thread_id, int ray_level, 
 
 				if(mat_bsdfs.hasAny(BsdfFlags::Diffuse))
 				{
-					col += estimateAllDirectLight(chromatic_enabled, wavelength, *sp, wo, ray_division, color_layers, random_generator, pixel_sampling_data);
+					col += estimateAllDirectLight(random_generator, color_layers, chromatic_enabled, wavelength, *sp, wo, ray_division, pixel_sampling_data);
 				}
 
 				FoundPhoton *gathered = (FoundPhoton *)alloca(n_diffuse_search_ * sizeof(FoundPhoton));
@@ -1024,16 +1024,16 @@ std::pair<Rgb, float> PhotonIntegrator::integrate(int thread_id, int ray_level, 
 		// add caustics
 		if(use_photon_caustics_ && mat_bsdfs.hasAny(BsdfFlags::Diffuse))
 		{
-			col += causticPhotons(ray, color_layers, *sp, wo, aa_noise_params_.clamp_indirect_, caustic_map_.get(), caus_radius_, n_caus_search_);
+			col += causticPhotons(color_layers, ray, *sp, wo, aa_noise_params_.clamp_indirect_, caustic_map_.get(), caus_radius_, n_caus_search_);
 		}
 
-		const auto recursive_result = recursiveRaytrace(thread_id, ray_level + 1, chromatic_enabled, wavelength, ray, mat_bsdfs, *sp, wo, additional_depth, ray_division, color_layers, random_generator, pixel_sampling_data);
+		const auto recursive_result = recursiveRaytrace(random_generator, color_layers, thread_id, ray_level + 1, chromatic_enabled, wavelength, ray, mat_bsdfs, *sp, wo, additional_depth, ray_division, pixel_sampling_data);
 		col += recursive_result.first;
 		alpha = recursive_result.second;
 		if(color_layers)
 		{
-			generateCommonLayers(*sp, mask_params_, color_layers);
-			generateOcclusionLayers(*accelerator_, chromatic_enabled, wavelength, ray_division, color_layers, camera_, pixel_sampling_data, *sp, wo, ao_samples_, shadow_bias_auto_, shadow_bias_, ao_dist_, ao_col_, s_depth_);
+			generateCommonLayers(color_layers, *sp, mask_params_);
+			generateOcclusionLayers(color_layers, *accelerator_, chromatic_enabled, wavelength, ray_division, camera_, pixel_sampling_data, *sp, wo, ao_samples_, shadow_bias_auto_, shadow_bias_, ao_dist_, ao_col_, s_depth_);
 		}
 	}
 	else //nothing hit, return background
@@ -1042,7 +1042,7 @@ std::pair<Rgb, float> PhotonIntegrator::integrate(int thread_id, int ray_level, 
 	}
 	if(vol_integrator_)
 	{
-		std::tie(col, alpha) = volumetricEffects(ray, color_layers, random_generator, std::move(col), std::move(alpha), vol_integrator_, transp_background_);
+		applyVolumetricEffects(col, alpha, color_layers, ray, random_generator, vol_integrator_, transp_background_);
 	}
 	return {col, alpha};
 }

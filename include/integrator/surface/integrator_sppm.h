@@ -69,16 +69,16 @@ class SppmIntegrator final : public MonteCarloIntegrator
 		virtual bool render() override;
 		/*! render a tile; only required by default implementation of render() */
 		virtual bool renderTile(const RenderArea &a, int n_samples, int offset, bool adaptive, int thread_id, int aa_pass_number) override;
-		virtual std::pair<Rgb, float> integrate(int thread_id, int ray_level, bool chromatic_enabled, float wavelength, Ray &ray, int additional_depth, const RayDivision &ray_division, ColorLayers *color_layers, RandomGenerator &random_generator, const PixelSamplingData &pixel_sampling_data) const override;
-		virtual bool preprocess(const RenderView *render_view, ImageFilm *image_film, const Scene &scene) override; //not used for now
+		virtual std::pair<Rgb, float> integrate(Ray &ray, RandomGenerator &random_generator, ColorLayers *color_layers, int thread_id, int ray_level, bool chromatic_enabled, float wavelength, int additional_depth, const RayDivision &ray_division, const PixelSamplingData &pixel_sampling_data) const override;
+		virtual bool preprocess(ImageFilm *image_film, const RenderView *render_view, const Scene &scene) override; //not used for now
 		// not used now
 		virtual void prePass(int samples, int offset, bool adaptive) override;
 		/*! not used now, use traceGatherRay instead*/
 		/*! initializing the things that PPM uses such as initial radius */
 		void initializePpm();
 		/*! based on integrate method to do the gatering trace, need double-check deadly. */
-		GatherInfo traceGatherRay(int thread_id, int ray_level, bool chromatic_enabled, float wavelength, Ray &ray, HitPoint &hp, const RayDivision &ray_division, ColorLayers *color_layers, RandomGenerator &random_generator, const PixelSamplingData &pixel_sampling_data);
-		void photonWorker(PhotonMap *diffuse_map, PhotonMap *caustic_map, int thread_id, unsigned int n_photons, const Pdf1D *light_power_d, int num_d_lights, const std::vector<const Light *> &tmplights, int pb_step, unsigned int &total_photons_shot, int max_bounces, RandomGenerator &random_generator);
+		GatherInfo traceGatherRay(Ray &ray, HitPoint &hp, RandomGenerator &random_generator, ColorLayers *color_layers, int thread_id, int ray_level, bool chromatic_enabled, float wavelength, const RayDivision &ray_division, const PixelSamplingData &pixel_sampling_data);
+		void photonWorker(unsigned int &total_photons_shot, int thread_id, int num_d_lights, const std::vector<const Light *> &tmplights, int pb_step);
 
 		HashGrid  photon_grid_; // the hashgrid for holding photons
 		unsigned int n_photons_; //photon number to scatter

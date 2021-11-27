@@ -36,7 +36,7 @@ class SkyIntegrator : public VolumeIntegrator
 		SkyIntegrator(Logger &logger, float s_size, float a, float ss, float t);
 		virtual std::string getShortName() const override { return "Sky"; }
 		virtual std::string getName() const override { return "Sky"; }
-		virtual bool preprocess(const RenderView *render_view, ImageFilm *image_film, const Scene &scene) override;
+		virtual bool preprocess(ImageFilm *image_film, const RenderView *render_view, const Scene &scene) override;
 		// optical thickness, absorption, attenuation, extinction
 		virtual Rgb transmittance(RandomGenerator &random_generator, const Ray &ray) const override;
 		// emission and in-scattering

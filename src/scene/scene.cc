@@ -235,8 +235,8 @@ bool Scene::render()
 				continue;
 			}
 
-			success = surf_integrator_->preprocess(render_view.second.get(), image_film_.get(), *this);
-			if(vol_integrator_) success = success && vol_integrator_->preprocess(render_view.second.get(), image_film_.get(), *this);
+			success = surf_integrator_->preprocess(image_film_.get(), render_view.second.get(), *this);
+			if(vol_integrator_) success = success && vol_integrator_->preprocess(image_film_.get(), render_view.second.get(), *this);
 
 			if(!success)
 			{

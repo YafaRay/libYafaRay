@@ -57,13 +57,13 @@ DebugIntegrator::DebugIntegrator(RenderControl &render_control, Logger &logger, 
 	render_info_ += "' | ";
 }
 
-bool DebugIntegrator::preprocess(const RenderView *render_view, ImageFilm *image_film, const Scene &scene)
+bool DebugIntegrator::preprocess(ImageFilm *image_film, const RenderView *render_view, const Scene &scene)
 {
-	bool success = SurfaceIntegrator::preprocess(render_view, image_film, scene);
+	bool success = SurfaceIntegrator::preprocess(image_film, render_view, scene);
 	return success;
 }
 
-std::pair<Rgb, float> DebugIntegrator::integrate(int thread_id, int ray_level, bool chromatic_enabled, float wavelength, Ray &ray, int additional_depth, const RayDivision &ray_division, ColorLayers *color_layers, RandomGenerator &random_generator, const PixelSamplingData &pixel_sampling_data) const
+std::pair<Rgb, float> DebugIntegrator::integrate(Ray &ray, RandomGenerator &random_generator, ColorLayers *color_layers, int thread_id, int ray_level, bool chromatic_enabled, float wavelength, int additional_depth, const RayDivision &ray_division, const PixelSamplingData &pixel_sampling_data) const
 {
 	std::unique_ptr<const SurfacePoint> sp;
 	float intersect_tmax;

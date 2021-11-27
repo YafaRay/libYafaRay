@@ -53,9 +53,9 @@ SppmIntegrator::SppmIntegrator(RenderControl &render_control, Logger &logger, un
 	diffuse_map_->setName("Diffuse Photon Map");
 }
 
-bool SppmIntegrator::preprocess(const RenderView *render_view, ImageFilm *image_film, const Scene &scene)
+bool SppmIntegrator::preprocess(ImageFilm *image_film, const RenderView *render_view, const Scene &scene)
 {
-	bool success = SurfaceIntegrator::preprocess(render_view, image_film, scene);
+	bool success = SurfaceIntegrator::preprocess(image_film, render_view, scene);
 	return success;
 }
 
@@ -237,7 +237,7 @@ bool SppmIntegrator::renderTile(const RenderArea &a, int n_samples, int offset, 
 				int index = ((i - y_start_film) * camera_->resX()) + (j - x_start_film);
 				HitPoint &hp = hit_points_[index];
 				RayDivision ray_division;
-				const GatherInfo g_info = traceGatherRay(thread_id, 0, true, 0.f, camera_ray.ray_, hp, ray_division, &color_layers, random_generator, pixel_sampling_data);
+				const GatherInfo g_info = traceGatherRay(camera_ray.ray_, hp, random_generator, &color_layers, thread_id, 0, true, 0.f, ray_division, pixel_sampling_data);
 				hp.constant_randiance_ += g_info.constant_randiance_; // accumulate the constant radiance for later usage.
 				// progressive refinement
 				const float alpha = 0.7f; // another common choice is 0.8, seems not changed much.
@@ -314,7 +314,7 @@ bool SppmIntegrator::renderTile(const RenderArea &a, int n_samples, int offset, 
 	return true;
 }
 
-void SppmIntegrator::photonWorker(PhotonMap *diffuse_map, PhotonMap *caustic_map, int thread_id, unsigned int n_photons, const Pdf1D *light_power_d, int num_d_lights, const std::vector<const Light *> &tmplights, int pb_step, unsigned int &total_photons_shot, int max_bounces, RandomGenerator &random_generator)
+void SppmIntegrator::photonWorker(unsigned int &total_photons_shot, int thread_id, int num_d_lights, const std::vector<const Light *> &tmplights, int pb_step)
 {
 	Ray ray;
 	float light_num_pdf, light_pdf, s_1, s_2, s_3, s_4, s_5, s_6, s_7, s_l;
@@ -328,7 +328,7 @@ void SppmIntegrator::photonWorker(PhotonMap *diffuse_map, PhotonMap *caustic_map
 
 	float f_num_lights = (float)num_d_lights;
 
-	unsigned int n_photons_thread = 1 + ((n_photons - 1) / num_threads_photons_);
+	unsigned int n_photons_thread = 1 + ((n_photons_ - 1) / num_threads_photons_);
 
 	std::vector<Photon> local_caustic_photons;
 	local_caustic_photons.clear();
@@ -339,7 +339,7 @@ void SppmIntegrator::photonWorker(PhotonMap *diffuse_map, PhotonMap *caustic_map
 	local_diffuse_photons.reserve(n_photons_thread);
 
 	//Pregather  photons
-	float inv_diff_photons = 1.f / (float)n_photons;
+	const float inv_diff_photons = 1.f / static_cast<float>(n_photons_);
 
 	unsigned int nd_photon_stored = 0;
 	//	unsigned int ncPhotonStored = 0;
@@ -359,7 +359,7 @@ void SppmIntegrator::photonWorker(PhotonMap *diffuse_map, PhotonMap *caustic_map
 		}
 
 		s_l = float(haltoncurr) * inv_diff_photons; // Does sL also need more random_generator for each pass?
-		int light_num = light_power_d->dSample(s_l, light_num_pdf);
+		const int light_num = light_power_caustics_->dSample(s_l, light_num_pdf);
 		if(light_num >= num_d_lights)
 		{
 			logger_.logError(getName(), ": lightPDF sample error! ", s_l, "/", light_num);
@@ -374,7 +374,7 @@ void SppmIntegrator::photonWorker(PhotonMap *diffuse_map, PhotonMap *caustic_map
 		if(pcol.isBlack())
 		{
 			++curr;
-			done = (curr >= n_photons);
+			done = (curr >= n_photons_);
 			continue;
 		}
 		else if(std::isnan(pcol.r_) || std::isnan(pcol.g_) || std::isnan(pcol.b_))
@@ -431,7 +431,7 @@ void SppmIntegrator::photonWorker(PhotonMap *diffuse_map, PhotonMap *caustic_map
 			}
 
 			// need to break in the middle otherwise we scatter the photon and then discard it => redundant
-			if(n_bounces == max_bounces) break;
+			if(n_bounces == max_bounces_) break;
 
 			// scatter photon
 			s_5 = FastRandom::getNextFloatNormalized(); // now should use this to see correctness
@@ -472,13 +472,13 @@ void SppmIntegrator::photonWorker(PhotonMap *diffuse_map, PhotonMap *caustic_map
 		}
 		done = (curr >= n_photons_thread);
 	}
-	diffuse_map->mutx_.lock();
-	caustic_map->mutx_.lock();
-	diffuse_map->appendVector(local_diffuse_photons, curr);
-	caustic_map->appendVector(local_caustic_photons, curr);
+	diffuse_map_->mutx_.lock();
+	caustic_map_->mutx_.lock();
+	diffuse_map_->appendVector(local_diffuse_photons, curr);
+	caustic_map_->appendVector(local_caustic_photons, curr);
 	total_photons_shot += curr;
-	caustic_map->mutx_.unlock();
-	diffuse_map->mutx_.unlock();
+	caustic_map_->mutx_.unlock();
+	diffuse_map_->mutx_.unlock();
 }
 
 
@@ -509,23 +509,23 @@ void SppmIntegrator::prePass(int samples, int offset, bool adaptive)
 
 	//background do not emit photons, or it is merged into normal light?
 
-	int num_d_lights = 0;
+	int num_lights = 0;
 	float f_num_lights = 0.f;
 	tmplights.clear();
 
 	for(const auto &light : lights_)
 	{
-		num_d_lights++;
+		num_lights++;
 		tmplights.push_back(light);
 	}
 
-	f_num_lights = static_cast<float>(num_d_lights);
-	std::vector<float> energies(num_d_lights);
-	for(int i = 0; i < num_d_lights; ++i) energies[i] = tmplights[i]->totalEnergy().energy();
+	f_num_lights = static_cast<float>(num_lights);
+	std::vector<float> energies(num_lights);
+	for(int i = 0; i < num_lights; ++i) energies[i] = tmplights[i]->totalEnergy().energy();
 	light_power_caustics_ = std::unique_ptr<Pdf1D>(new Pdf1D(energies));
 	if(logger_.isVerbose()) logger_.logVerbose(getName(), ": Light(s) photon color testing for photon map:");
 
-	for(int i = 0; i < num_d_lights; ++i)
+	for(int i = 0; i < num_lights; ++i)
 	{
 		Ray ray;
 		float light_pdf;
@@ -549,20 +549,18 @@ void SppmIntegrator::prePass(int samples, int offset, bool adaptive)
 	const int pb_step = std::max(1U, n_photons_ / 128);
 	intpb_->setTag(previous_progress_tag + " - building photon map...");
 
-	int n_threads = num_threads_photons_;
+	n_photons_ = std::max((unsigned int) num_threads_photons_, (n_photons_ / num_threads_photons_) * num_threads_photons_); //rounding the number of diffuse photons so it's a number divisible by the number of threads (distribute uniformly among the threads). At least 1 photon per thread
 
-	n_photons_ = std::max((unsigned int) n_threads, (n_photons_ / n_threads) * n_threads); //rounding the number of diffuse photons so it's a number divisible by the number of threads (distribute uniformly among the threads). At least 1 photon per thread
-
-	logger_.logParams(getName(), ": Shooting ", n_photons_, " photons across ", n_threads, " threads (", (n_photons_ / n_threads), " photons/thread)");
+	logger_.logParams(getName(), ": Shooting ", n_photons_, " photons across ", num_threads_photons_, " threads (", (n_photons_ / num_threads_photons_), " photons/thread)");
 
 	std::vector<std::thread> threads;
-	for(int i = 0; i < n_threads; ++i) threads.push_back(std::thread(&SppmIntegrator::photonWorker, this, diffuse_map_.get(), caustic_map_.get(), i, n_photons_, light_power_caustics_.get(), num_d_lights, tmplights, pb_step, std::ref(curr), max_bounces_, std::ref(random_generator)));
+	for(int i = 0; i < num_threads_photons_; ++i) threads.push_back(std::thread(&SppmIntegrator::photonWorker, this, std::ref(curr), i, num_lights, tmplights, pb_step));
 	for(auto &t : threads) t.join();
 
 	intpb_->done();
 	intpb_->setTag(previous_progress_tag + " - photon map built.");
 	if(logger_.isVerbose()) logger_.logVerbose(getName(), ":Photon map built.");
-	logger_.logInfo(getName(), ": Shot ", curr, " photons from ", num_d_lights, " light(s)");
+	logger_.logInfo(getName(), ": Shot ", curr, " photons from ", num_lights, " light(s)");
 
 	totaln_photons_ +=  n_photons_;	// accumulate the total photon number, not using nPath for the case of hashgrid.
 
@@ -613,12 +611,12 @@ void SppmIntegrator::prePass(int samples, int offset, bool adaptive)
 }
 
 //now it's a dummy function
-std::pair<Rgb, float> SppmIntegrator::integrate(int thread_id, int ray_level, bool chromatic_enabled, float wavelength, Ray &ray, int additional_depth, const RayDivision &ray_division, ColorLayers *color_layers, RandomGenerator &random_generator, const PixelSamplingData &pixel_sampling_data) const
+std::pair<Rgb, float> SppmIntegrator::integrate(Ray &ray, RandomGenerator &random_generator, ColorLayers *color_layers, int thread_id, int ray_level, bool chromatic_enabled, float wavelength, int additional_depth, const RayDivision &ray_division, const PixelSamplingData &pixel_sampling_data) const
 {
 	return {0.f, 0.f};
 }
 
-GatherInfo SppmIntegrator::traceGatherRay(int thread_id, int ray_level, bool chromatic_enabled, float wavelength, Ray &ray, HitPoint &hp, const RayDivision &ray_division, ColorLayers *color_layers, RandomGenerator &random_generator, const PixelSamplingData &pixel_sampling_data)
+GatherInfo SppmIntegrator::traceGatherRay(Ray &ray, HitPoint &hp, RandomGenerator &random_generator, ColorLayers *color_layers, int thread_id, int ray_level, bool chromatic_enabled, float wavelength, const RayDivision &ray_division, const PixelSamplingData &pixel_sampling_data)
 {
 	GatherInfo g_info;
 	std::unique_ptr<const SurfacePoint> sp;
@@ -641,7 +639,7 @@ GatherInfo SppmIntegrator::traceGatherRay(int thread_id, int ray_level, bool chr
 		}
 		if(mat_bsdfs.hasAny(BsdfFlags::Diffuse))
 		{
-			g_info.constant_randiance_ += estimateAllDirectLight(chromatic_enabled, wavelength, *sp, wo, ray_division, color_layers, random_generator, pixel_sampling_data);
+			g_info.constant_randiance_ += estimateAllDirectLight(random_generator, color_layers, chromatic_enabled, wavelength, *sp, wo, ray_division, pixel_sampling_data);
 		}
 
 		// estimate radiance using photon map
@@ -796,7 +794,7 @@ GatherInfo SppmIntegrator::traceGatherRay(int thread_id, int ray_level, bool chr
 					{
 						const Rgb wl_col = spectrum::wl2Rgb(wavelength_dispersive);
 						ref_ray = Ray(sp->p_, wi, ray_min_dist_);
-						t_cing = traceGatherRay(thread_id, ray_level, false, wavelength_dispersive, ref_ray, hp, ray_division_new, nullptr, random_generator, pixel_sampling_data);
+						t_cing = traceGatherRay(ref_ray, hp, random_generator, nullptr, thread_id, ray_level, false, wavelength_dispersive, ray_division_new, pixel_sampling_data);
 						t_cing.photon_flux_ *= mcol * wl_col * w;
 						t_cing.constant_randiance_ *= mcol * wl_col * w;
 						if(color_layers)
@@ -873,7 +871,7 @@ GatherInfo SppmIntegrator::traceGatherRay(int thread_id, int ray_level, bool chr
 						if(s.sampled_flags_.hasAny(BsdfFlags::Reflect)) ref_ray.differentials_ = sp->reflectedRay(ray.differentials_.get(), ray.dir_, ref_ray.dir_);
 						else if(s.sampled_flags_.hasAny(BsdfFlags::Transmit)) ref_ray.differentials_ = sp->refractedRay(ray.differentials_.get(), ray.dir_, ref_ray.dir_, material->getMatIor());
 						//gcol += tmpColorPasses.probe_add(PASS_INT_GLOSSY_INDIRECT, (Rgb)integ * mcol * W, state.ray_level == 1);
-						GatherInfo trace_gather_ray = traceGatherRay(thread_id, ray_level, chromatic_enabled, wavelength, ref_ray, hp, ray_division_new, nullptr, random_generator, pixel_sampling_data);
+						GatherInfo trace_gather_ray = traceGatherRay(ref_ray, hp, random_generator, nullptr, thread_id, ray_level, chromatic_enabled, wavelength, ray_division_new, pixel_sampling_data);
 						trace_gather_ray.photon_flux_ *= mcol * w;
 						trace_gather_ray.constant_randiance_ *= mcol * w;
 						gather_info += trace_gather_ray;
@@ -890,7 +888,7 @@ GatherInfo SppmIntegrator::traceGatherRay(int thread_id, int ray_level, bool chr
 							Ray ref_ray = Ray(sp->p_, dir[0], ray_min_dist_);
 							ref_ray.differentials_ = sp->reflectedRay(ray.differentials_.get(), ray.dir_, ref_ray.dir_);
 							const Rgb col_reflect_factor = mcol[0] * w[0];
-							GatherInfo trace_gather_ray = traceGatherRay(thread_id, ray_level, chromatic_enabled, wavelength, ref_ray, hp, ray_division_new, nullptr, random_generator, pixel_sampling_data);
+							GatherInfo trace_gather_ray = traceGatherRay(ref_ray, hp, random_generator, nullptr, thread_id, ray_level, chromatic_enabled, wavelength, ray_division_new, pixel_sampling_data);
 							trace_gather_ray.photon_flux_ *= col_reflect_factor;
 							trace_gather_ray.constant_randiance_ *= col_reflect_factor;
 							if(color_layers)
@@ -905,7 +903,7 @@ GatherInfo SppmIntegrator::traceGatherRay(int thread_id, int ray_level, bool chr
 							Ray ref_ray = Ray(sp->p_, dir[1], ray_min_dist_);
 							ref_ray.differentials_ = sp->refractedRay(ray.differentials_.get(), ray.dir_, ref_ray.dir_, material->getMatIor());
 							const Rgb col_transmit_factor = mcol[1] * w[1];
-							GatherInfo trace_gather_ray = traceGatherRay(thread_id, ray_level, chromatic_enabled, wavelength, ref_ray, hp, ray_division_new, nullptr, random_generator, pixel_sampling_data);
+							GatherInfo trace_gather_ray = traceGatherRay(ref_ray, hp, random_generator, nullptr, thread_id, ray_level, chromatic_enabled, wavelength, ray_division_new, pixel_sampling_data);
 							trace_gather_ray.photon_flux_ *= col_transmit_factor;
 							trace_gather_ray.constant_randiance_ *= col_transmit_factor;
 							if(color_layers)
@@ -925,7 +923,7 @@ GatherInfo SppmIntegrator::traceGatherRay(int thread_id, int ray_level, bool chr
 							else if(s.sampled_flags_.hasAny(BsdfFlags::Transmit)) ref_ray.differentials_ = sp->refractedRay(ray.differentials_.get(), ray.dir_, ref_ray.dir_, material->getMatIor());
 						}
 
-						GatherInfo trace_gather_ray = traceGatherRay(thread_id, ray_level, chromatic_enabled, wavelength, ref_ray, hp, ray_division_new, nullptr, random_generator, pixel_sampling_data);
+						GatherInfo trace_gather_ray = traceGatherRay(ref_ray, hp, random_generator, nullptr, thread_id, ray_level, chromatic_enabled, wavelength, ray_division_new, pixel_sampling_data);
 						trace_gather_ray.photon_flux_ *= mcol * W;
 						trace_gather_ray.constant_randiance_ *= mcol * W;
 						if(color_layers)
@@ -975,7 +973,7 @@ GatherInfo SppmIntegrator::traceGatherRay(int thread_id, int ray_level, bool chr
 				{
 					Ray ref_ray(sp->p_, specular.reflect_->dir_, ray_min_dist_);
 					if(ray.differentials_) ref_ray.differentials_ = sp->reflectedRay(ray.differentials_.get(), ray.dir_, ref_ray.dir_); // compute the ray differentaitl
-					GatherInfo refg = traceGatherRay(thread_id, ray_level, chromatic_enabled, wavelength, ref_ray, hp, ray_division, nullptr, random_generator, pixel_sampling_data);
+					GatherInfo refg = traceGatherRay(ref_ray, hp, random_generator, nullptr, thread_id, ray_level, chromatic_enabled, wavelength, ray_division, pixel_sampling_data);
 					if(mat_bsdfs.hasAny(BsdfFlags::Volumetric))
 					{
 						if(const VolumeHandler *vol = material->getVolumeHandler(sp->ng_ * ref_ray.dir_ < 0))
@@ -998,7 +996,7 @@ GatherInfo SppmIntegrator::traceGatherRay(int thread_id, int ray_level, bool chr
 				{
 					Ray ref_ray(sp->p_, specular.refract_->dir_, ray_min_dist_);
 					if(ray.differentials_) ref_ray.differentials_ = sp->refractedRay(ray.differentials_.get(), ray.dir_, ref_ray.dir_, material->getMatIor());
-					GatherInfo refg = traceGatherRay(thread_id, ray_level, chromatic_enabled, wavelength, ref_ray, hp, ray_division, nullptr, random_generator, pixel_sampling_data);
+					GatherInfo refg = traceGatherRay(ref_ray, hp, random_generator, nullptr, thread_id, ray_level, chromatic_enabled, wavelength, ray_division, pixel_sampling_data);
 					if(mat_bsdfs.hasAny(BsdfFlags::Volumetric))
 					{
 						if(const VolumeHandler *vol = material->getVolumeHandler(sp->ng_ * ref_ray.dir_ < 0))
@@ -1022,8 +1020,8 @@ GatherInfo SppmIntegrator::traceGatherRay(int thread_id, int ray_level, bool chr
 		}
 		if(color_layers)
 		{
-			generateCommonLayers(*sp, mask_params_, color_layers);
-			generateOcclusionLayers(*accelerator_, chromatic_enabled, wavelength, ray_division, color_layers, camera_, pixel_sampling_data, *sp, wo, ao_samples_, shadow_bias_auto_, shadow_bias_, ao_dist_, ao_col_, s_depth_);
+			generateCommonLayers(color_layers, *sp, mask_params_);
+			generateOcclusionLayers(color_layers, *accelerator_, chromatic_enabled, wavelength, ray_division, camera_, pixel_sampling_data, *sp, wo, ao_samples_, shadow_bias_auto_, shadow_bias_, ao_dist_, ao_col_, s_depth_);
 		}
 		if(transp_refracted_background_)
 		{
@@ -1039,7 +1037,7 @@ GatherInfo SppmIntegrator::traceGatherRay(int thread_id, int ray_level, bool chr
 
 	if(vol_integrator_)
 	{
-		std::tie(g_info.constant_randiance_, alpha) = volumetricEffects(ray, color_layers, random_generator, std::move(g_info.constant_randiance_), std::move(alpha), vol_integrator_, transp_background_);
+		applyVolumetricEffects(g_info.constant_randiance_, alpha, color_layers, ray, random_generator, vol_integrator_, transp_background_);
 	}
 	g_info.constant_randiance_.a_ = alpha; // a small trick for just hold the alpha value.
 	return g_info;
