@@ -155,7 +155,7 @@ std::pair<Rgb, float> PathIntegrator::integrate(Ray &ray, RandomGenerator &rando
 		// contribution of light emitting surfaces
 		if(mat_bsdfs.hasAny(BsdfFlags::Emit))
 		{
-			const Rgb col_tmp = material->emit(sp->mat_data_.get(), *sp, wo);
+			const Rgb col_tmp = material->emit(*sp, wo);
 			col += col_tmp;
 			if(color_layers && color_layers->getFlags().hasAny(LayerDef::Flags::BasicLayers))
 			{
@@ -203,7 +203,7 @@ std::pair<Rgb, float> PathIntegrator::integrate(Ray &ray, RandomGenerator &rando
 				}
 				// do proper sampling now...
 				Sample s(s_1, s_2, path_flags);
-				scol = material->sample(sp->mat_data_.get(), *sp, pwo, p_ray.dir_, s, w, chromatic_enabled, wavelength_dispersive, camera_);
+				scol = material->sample(*sp, pwo, p_ray.dir_, s, w, chromatic_enabled, wavelength_dispersive, camera_);
 				scol *= w;
 				throughput = scol;
 				p_ray.tmin_ = ray_min_dist_;
@@ -217,7 +217,7 @@ std::pair<Rgb, float> PathIntegrator::integrate(Ray &ray, RandomGenerator &rando
 				const BsdfFlags mat_bsd_fs = hit->mat_data_->bsdf_flags_;
 				if(mat_bsd_fs.hasAny(BsdfFlags::Emit))
 				{
-					const Rgb col_tmp = p_mat->emit(hit->mat_data_.get(), *hit, pwo);
+					const Rgb col_tmp = p_mat->emit(*hit, pwo);
 					lcol += col_tmp;
 					if(color_layers && color_layers->getFlags().hasAny(LayerDef::Flags::BasicLayers))
 					{
@@ -243,7 +243,7 @@ std::pair<Rgb, float> PathIntegrator::integrate(Ray &ray, RandomGenerator &rando
 
 					s.flags_ = BsdfFlags::All;
 
-					scol = p_mat->sample(hit->mat_data_.get(), *hit, pwo, p_ray.dir_, s, w, chromatic_enabled, wavelength_dispersive, camera_);
+					scol = p_mat->sample(*hit, pwo, p_ray.dir_, s, w, chromatic_enabled, wavelength_dispersive, camera_);
 					scol *= w;
 					if(scol.isBlack()) break;
 					throughput *= scol;
@@ -285,7 +285,7 @@ std::pair<Rgb, float> PathIntegrator::integrate(Ray &ray, RandomGenerator &rando
 
 					if(mat_bsd_fs.hasAny(BsdfFlags::Emit) && caustic)
 					{
-						const Rgb col_tmp = p_mat->emit(hit->mat_data_.get(), *hit, pwo);
+						const Rgb col_tmp = p_mat->emit(*hit, pwo);
 						lcol += col_tmp;
 						if(color_layers && color_layers->getFlags().hasAny(LayerDef::Flags::BasicLayers))
 						{

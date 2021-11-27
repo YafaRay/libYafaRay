@@ -116,7 +116,7 @@ Rgb MonteCarloIntegrator::diracLight(RandomGenerator &random_generator, ColorLay
 		if(!shadowed || color_layer_diffuse_no_shadow)
 		{
 			if(!shadowed && color_layer_shadow) *color_layer_shadow += Rgb(1.f);
-			const Rgb surf_col = sp.material_->eval(sp.mat_data_.get(), sp, wo, light_ray.dir_, BsdfFlags::All);
+			const Rgb surf_col = sp.material_->eval(sp, wo, light_ray.dir_, BsdfFlags::All);
 			const Rgb transmit_col = vol_integrator_ ? vol_integrator_->transmittance(random_generator, light_ray) : 1.f;
 			const Rgba tmp_col_no_shadow = surf_col * lcol * angle_light_normal * transmit_col;
 			if(tr_shad_ && cast_shadows) lcol *= scol;
@@ -125,8 +125,8 @@ Rgb MonteCarloIntegrator::diracLight(RandomGenerator &random_generator, ColorLay
 				if(color_layer_diffuse_no_shadow) *color_layer_diffuse_no_shadow += tmp_col_no_shadow;
 				if(!shadowed)
 				{
-					if(color_layer_diffuse) *color_layer_diffuse += sp.material_->eval(sp.mat_data_.get(), sp, wo, light_ray.dir_, BsdfFlags::Diffuse) * lcol * angle_light_normal * transmit_col;
-					if(color_layer_glossy) *color_layer_glossy += sp.material_->eval(sp.mat_data_.get(), sp, wo, light_ray.dir_, BsdfFlags::Glossy, true) * lcol * angle_light_normal * transmit_col;
+					if(color_layer_diffuse) *color_layer_diffuse += sp.material_->eval(sp, wo, light_ray.dir_, BsdfFlags::Diffuse) * lcol * angle_light_normal * transmit_col;
+					if(color_layer_glossy) *color_layer_glossy += sp.material_->eval(sp, wo, light_ray.dir_, BsdfFlags::Glossy, true) * lcol * angle_light_normal * transmit_col;
 				}
 			}
 			if(!shadowed) col += surf_col * lcol * angle_light_normal * transmit_col;
@@ -215,13 +215,13 @@ Rgb MonteCarloIntegrator::areaLightSampleLight(Halton &hal_2, Halton &hal_3, Ran
 					const Rgb transmit_col = vol_integrator_->transmittance(random_generator, light_ray);
 					ls.col_ *= transmit_col;
 				}
-				const Rgb surf_col = sp.material_->eval(sp.mat_data_.get(), sp, wo, light_ray.dir_, BsdfFlags::All);
+				const Rgb surf_col = sp.material_->eval(sp, wo, light_ray.dir_, BsdfFlags::All);
 				if(layer_shadow && !shadowed && ls.pdf_ > 1e-6f) layer_shadow->accum_ += Rgb(1.f);
 				const float angle_light_normal = sp.material_->isFlat() ? 1.f : std::abs(sp.n_ * light_ray.dir_);    //If the material has the special attribute "isFlat()" then we will not multiply the surface reflection by the cosine of the angle between light and normal
 				float w = 1.f;
 				if(light->canIntersect())
 				{
-					const float m_pdf = sp.material_->pdf(sp.mat_data_.get(), sp, wo, light_ray.dir_, BsdfFlags::Glossy | BsdfFlags::Diffuse | BsdfFlags::Dispersive | BsdfFlags::Reflect | BsdfFlags::Transmit);
+					const float m_pdf = sp.material_->pdf(sp, wo, light_ray.dir_, BsdfFlags::Glossy | BsdfFlags::Diffuse | BsdfFlags::Dispersive | BsdfFlags::Reflect | BsdfFlags::Transmit);
 					if(m_pdf > 1e-6f)
 					{
 						const float l_2 = ls.pdf_ * ls.pdf_;
@@ -233,13 +233,13 @@ Rgb MonteCarloIntegrator::areaLightSampleLight(Halton &hal_2, Halton &hal_3, Ran
 				{
 					if(layer_diffuse || layer_diffuse_no_shadow)
 					{
-						const Rgb tmp_col_no_light_color = sp.material_->eval(sp.mat_data_.get(), sp, wo, light_ray.dir_, BsdfFlags::Diffuse) * angle_light_normal * w / ls.pdf_;
+						const Rgb tmp_col_no_light_color = sp.material_->eval(sp, wo, light_ray.dir_, BsdfFlags::Diffuse) * angle_light_normal * w / ls.pdf_;
 						if(layer_diffuse_no_shadow) layer_diffuse_no_shadow->accum_ += tmp_col_no_light_color * ls_col_no_shadow;
 						if(layer_diffuse && !shadowed && ls.pdf_ > 1e-6f) layer_diffuse->accum_ += tmp_col_no_light_color * ls.col_;
 					}
 					if(layer_glossy)
 					{
-						const Rgb tmp_col = sp.material_->eval(sp.mat_data_.get(), sp, wo, light_ray.dir_, BsdfFlags::Glossy, true) * ls.col_ * angle_light_normal * w / ls.pdf_;
+						const Rgb tmp_col = sp.material_->eval(sp, wo, light_ray.dir_, BsdfFlags::Glossy, true) * ls.col_ * angle_light_normal * w / ls.pdf_;
 						if(!shadowed && ls.pdf_ > 1e-6f) layer_glossy->accum_ += tmp_col;
 					}
 				}
@@ -318,7 +318,7 @@ Rgb MonteCarloIntegrator::areaLightSampleMaterial(Halton &hal_2, Halton &hal_3, 
 			const float s_2 = hal_3.getNext();
 			float W = 0.f;
 			Sample s(s_1, s_2, BsdfFlags::Glossy | BsdfFlags::Diffuse | BsdfFlags::Dispersive | BsdfFlags::Reflect | BsdfFlags::Transmit);
-			const Rgb surf_col = sp.material_->sample(sp.mat_data_.get(), sp, wo, b_ray.dir_, s, W, chromatic_enabled, wavelength, camera_);
+			const Rgb surf_col = sp.material_->sample(sp, wo, b_ray.dir_, s, W, chromatic_enabled, wavelength, camera_);
 			float light_pdf;
 			if(s.pdf_ > 1e-6f && light->intersect(b_ray, b_ray.tmax_, lcol, light_pdf))
 			{
@@ -346,13 +346,13 @@ Rgb MonteCarloIntegrator::areaLightSampleMaterial(Halton &hal_2, Halton &hal_3, 
 					{
 						if(layer_diffuse || layer_diffuse_no_shadow)
 						{
-							const Rgb tmp_col = sp.material_->sample(sp.mat_data_.get(), sp, wo, b_ray.dir_, s, W, chromatic_enabled, wavelength, camera_) * lcol * w * W;
+							const Rgb tmp_col = sp.material_->sample(sp, wo, b_ray.dir_, s, W, chromatic_enabled, wavelength, camera_) * lcol * w * W;
 							if(layer_diffuse_no_shadow) layer_diffuse_no_shadow->accum_ += tmp_col;
 							if(layer_diffuse && !shadowed && light_pdf > 1e-6f && s.sampled_flags_.hasAny(BsdfFlags::Diffuse)) layer_diffuse->accum_ += tmp_col;
 						}
 						if(layer_glossy)
 						{
-							const Rgb tmp_col = sp.material_->sample(sp.mat_data_.get(), sp, wo, b_ray.dir_, s, W, chromatic_enabled, wavelength, camera_) * lcol * w * W;
+							const Rgb tmp_col = sp.material_->sample(sp, wo, b_ray.dir_, s, W, chromatic_enabled, wavelength, camera_) * lcol * w * W;
 							if(!shadowed && light_pdf > 1e-6f && s.sampled_flags_.hasAny(BsdfFlags::Glossy)) layer_glossy->accum_ += tmp_col;
 						}
 					}
@@ -504,7 +504,7 @@ void MonteCarloIntegrator::causticWorker(unsigned int &total_photons_shot, int t
 
 			PSample sample(s_5, s_6, s_7, BsdfFlags::AllSpecular | BsdfFlags::Glossy | BsdfFlags::Filter | BsdfFlags::Dispersive, pcol, transm);
 			Vec3 wo;
-			bool scattered = material->scatterPhoton(hit_curr->mat_data_.get(), *hit_curr, wi, wo, sample, chromatic_enabled, wavelength, camera_);
+			bool scattered = material->scatterPhoton(*hit_curr, wi, wo, sample, chromatic_enabled, wavelength, camera_);
 			if(!scattered) break; //photon was absorped.
 			pcol = sample.color_;
 			// hm...dispersive is not really a scattering qualifier like specular/glossy/diffuse or the special case filter...
@@ -656,7 +656,7 @@ Rgb MonteCarloIntegrator::estimateCausticPhotons(const SurfacePoint &sp, const V
 		for(int i = 0; i < n_gathered; ++i)
 		{
 			const Photon *photon = gathered[i].photon_;
-			const Rgb surf_col = sp.material_->eval(sp.mat_data_.get(), sp, wo, photon->direction(), BsdfFlags::All);
+			const Rgb surf_col = sp.material_->eval(sp, wo, photon->direction(), BsdfFlags::All);
 			const float k = sample::kernel(gathered[i].dist_square_, g_radius_square);
 			sum += surf_col * k * photon->color();
 		}
@@ -697,7 +697,7 @@ std::pair<Rgb, float> MonteCarloIntegrator::dispersive(RandomGenerator &random_g
 		++branch;
 		Sample s(0.5f, 0.5f, BsdfFlags::Reflect | BsdfFlags::Transmit | BsdfFlags::Dispersive);
 		Vec3 wi;
-		const Rgb mcol = material->sample(sp.mat_data_.get(), sp, wo, wi, s, w, chromatic_enabled, wavelength_dispersive, camera_);
+		const Rgb mcol = material->sample(sp, wo, wi, s, w, chromatic_enabled, wavelength_dispersive, camera_);
 
 		if(s.pdf_ > 1.0e-6f && s.sampled_flags_.hasAny(BsdfFlags::Dispersive))
 		{
@@ -776,7 +776,7 @@ std::pair<Rgb, float> MonteCarloIntegrator::glossy(RandomGenerator &random_gener
 				float w[2];
 				Vec3 dir[2];
 
-				mcol[0] = material->sample(sp.mat_data_.get(), sp, wo, dir, mcol[1], s, w, chromatic_enabled, wavelength);
+				mcol[0] = material->sample(sp, wo, dir, mcol[1], s, w, chromatic_enabled, wavelength);
 
 				if(s.sampled_flags_.hasAny(BsdfFlags::Reflect) && !s.sampled_flags_.hasAny(BsdfFlags::Dispersive))
 				{
@@ -854,7 +854,7 @@ std::pair<Rgb, float> MonteCarloIntegrator::glossyReflectNoTransmit(RandomGenera
 	float w = 0.f;
 	Sample s(s_1, s_2, BsdfFlags::Glossy | BsdfFlags::Reflect);
 	Vec3 wi;
-	const Rgb mcol = material->sample(sp.mat_data_.get(), sp, wo, wi, s, w, chromatic_enabled, wavelength, camera_);
+	const Rgb mcol = material->sample(sp, wo, wi, s, w, chromatic_enabled, wavelength, camera_);
 	Ray ref_ray(sp.p_, wi, ray_min_dist_);
 	if(ray.differentials_)
 	{
@@ -952,7 +952,7 @@ std::pair<Rgb, float> MonteCarloIntegrator::recursiveRaytrace(RandomGenerator &r
 			//...perfect specular reflection/refraction with recursive raytracing...
 			if(bsdfs.hasAny((BsdfFlags::Specular | BsdfFlags::Filter)))
 			{
-				const Specular specular = sp.material_->getSpecular(ray_level, sp.mat_data_.get(), sp, wo, chromatic_enabled, wavelength);
+				const Specular specular = sp.material_->getSpecular(ray_level, sp, wo, chromatic_enabled, wavelength);
 				if(specular.reflect_)
 				{
 					const auto result = specularReflect(random_generator, color_layers, thread_id, ray_level, chromatic_enabled, wavelength, ray, sp, sp.material_, bsdfs, specular.reflect_.get(), additional_depth, ray_division, pixel_sampling_data);

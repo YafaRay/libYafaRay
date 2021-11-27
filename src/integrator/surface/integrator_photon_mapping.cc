@@ -187,8 +187,8 @@ void PhotonIntegrator::diffuseWorker(PreGatherData &pgdat, unsigned int &total_p
 				{
 					const Vec3 n = SurfacePoint::normalFaceForward(hit_curr->ng_, hit_curr->n_, wi);
 					RadData rd(hit_curr->p_, n);
-					rd.refl_ = material->getReflectivity(hit_curr->mat_data_.get(), *hit_curr, BsdfFlags::Diffuse | BsdfFlags::Glossy | BsdfFlags::Reflect, true, 0.f, camera_);
-					rd.transm_ = material->getReflectivity(hit_curr->mat_data_.get(), *hit_curr, BsdfFlags::Diffuse | BsdfFlags::Glossy | BsdfFlags::Transmit, true, 0.f, camera_);
+					rd.refl_ = material->getReflectivity(*hit_curr, BsdfFlags::Diffuse | BsdfFlags::Glossy | BsdfFlags::Reflect, true, 0.f, camera_);
+					rd.transm_ = material->getReflectivity(*hit_curr, BsdfFlags::Diffuse | BsdfFlags::Glossy | BsdfFlags::Transmit, true, 0.f, camera_);
 					local_rad_points.push_back(rd);
 				}
 			}
@@ -201,7 +201,7 @@ void PhotonIntegrator::diffuseWorker(PreGatherData &pgdat, unsigned int &total_p
 			const float s_7 = Halton::lowDiscrepancySampling(d_5 + 2, haltoncurr);
 			PSample sample(s_5, s_6, s_7, BsdfFlags::All, pcol, transm);
 			Vec3 wo;
-			bool scattered = material->scatterPhoton(hit_curr->mat_data_.get(), *hit_curr, wi, wo, sample, true, 0.f, camera_);
+			bool scattered = material->scatterPhoton(*hit_curr, wi, wo, sample, true, 0.f, camera_);
 			if(!scattered) break; //photon was absorped.
 			pcol = sample.color_;
 			caustic_photon = (sample.sampled_flags_.hasAny((BsdfFlags::Glossy | BsdfFlags::Specular | BsdfFlags::Dispersive)) && direct_photon) ||
@@ -699,7 +699,7 @@ Rgb PhotonIntegrator::finalGathering(RandomGenerator &random_generator, int thre
 		}
 
 		Sample s(s_1, s_2, BsdfFlags::Diffuse | BsdfFlags::Reflect | BsdfFlags::Transmit); // glossy/dispersion/specular done via recursive raytracing
-		scol = p_mat->sample(hit->mat_data_.get(), *hit, pwo, p_ray.dir_, s, w, chromatic_enabled, wavelength, camera_);
+		scol = p_mat->sample(*hit, pwo, p_ray.dir_, s, w, chromatic_enabled, wavelength, camera_);
 
 		scol *= w;
 		if(scol.isBlack()) continue;
@@ -745,7 +745,7 @@ Rgb PhotonIntegrator::finalGathering(RandomGenerator &random_generator, int thre
 
 				if(close || caustic)
 				{
-					if(mat_bsd_fs.hasAny(BsdfFlags::Emit)) lcol += p_mat->emit(hit->mat_data_.get(), *hit, pwo);
+					if(mat_bsd_fs.hasAny(BsdfFlags::Emit)) lcol += p_mat->emit(*hit, pwo);
 					path_col += lcol * throughput;
 				}
 			}
@@ -760,7 +760,7 @@ Rgb PhotonIntegrator::finalGathering(RandomGenerator &random_generator, int thre
 			}
 
 			Sample sb(s_1, s_2, (close) ? BsdfFlags::All : BsdfFlags::AllSpecular | BsdfFlags::Filter);
-			scol = p_mat->sample(hit->mat_data_.get(), *hit, pwo, p_ray.dir_, sb, w, chromatic_enabled, wavelength, camera_);
+			scol = p_mat->sample(*hit, pwo, p_ray.dir_, sb, w, chromatic_enabled, wavelength, camera_);
 
 			if(sb.pdf_ <= 1.0e-6f)
 			{
@@ -797,7 +797,7 @@ Rgb PhotonIntegrator::finalGathering(RandomGenerator &random_generator, int thre
 				Vec3 sf = SurfacePoint::normalFaceForward(hit->ng_, hit->n_, -p_ray.dir_);
 				const Photon *nearest = radiance_map_->findNearest(hit->p_, sf, lookup_rad_);
 				if(nearest) lcol = nearest->color(); //FIXME should lcol be a local variable? Is it getting its value from previous functions or not??
-				if(mat_bsd_fs.hasAny(BsdfFlags::Emit)) lcol += p_mat->emit(hit->mat_data_.get(), *hit, -p_ray.dir_);
+				if(mat_bsd_fs.hasAny(BsdfFlags::Emit)) lcol += p_mat->emit(*hit, -p_ray.dir_);
 				path_col += lcol * throughput;
 			}
 		}
@@ -909,7 +909,7 @@ std::pair<Rgb, float> PhotonIntegrator::integrate(Ray &ray, RandomGenerator &ran
 
 		additional_depth = std::max(additional_depth, material->getAdditionalDepth());
 
-		const Rgb col_emit = material->emit(sp->mat_data_.get(), *sp, wo);
+		const Rgb col_emit = material->emit(*sp, wo);
 		col += col_emit;
 		if(color_layers && color_layers->getFlags().hasAny(LayerDef::Flags::BasicLayers))
 		{
@@ -938,7 +938,7 @@ std::pair<Rgb, float> PhotonIntegrator::integrate(Ray &ray, RandomGenerator &ran
 				// contribution of light emitting surfaces
 				if(mat_bsdfs.hasAny(BsdfFlags::Emit))
 				{
-					const Rgb col_tmp = material->emit(sp->mat_data_.get(), *sp, wo);
+					const Rgb col_tmp = material->emit(*sp, wo);
 					col += col_tmp;
 					if(color_layers && color_layers->getFlags().hasAny(LayerDef::Flags::BasicLayers))
 					{
@@ -981,7 +981,7 @@ std::pair<Rgb, float> PhotonIntegrator::integrate(Ray &ray, RandomGenerator &ran
 
 				if(mat_bsdfs.hasAny(BsdfFlags::Emit))
 				{
-					const Rgb col_tmp = material->emit(sp->mat_data_.get(), *sp, wo);
+					const Rgb col_tmp = material->emit(*sp, wo);
 					col += col_tmp;
 					if(color_layers && color_layers->getFlags().hasAny(LayerDef::Flags::BasicLayers))
 					{
@@ -1008,7 +1008,7 @@ std::pair<Rgb, float> PhotonIntegrator::integrate(Ray &ray, RandomGenerator &ran
 					for(int i = 0; i < n_gathered; ++i)
 					{
 						const Vec3 pdir = gathered[i].photon_->direction();
-						const Rgb surf_col = material->eval(sp->mat_data_.get(), *sp, wo, pdir, BsdfFlags::Diffuse);
+						const Rgb surf_col = material->eval(*sp, wo, pdir, BsdfFlags::Diffuse);
 
 						const Rgb col_tmp = surf_col * scale * gathered[i].photon_->color();
 						col += col_tmp;

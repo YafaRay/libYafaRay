@@ -331,7 +331,7 @@ Rgb ShinyDiffuseMaterial::sample(const MaterialData *mat_data, const SurfacePoin
 	s.sampled_flags_ = choice[pick];
 	w = std::abs(wi * sp.n_) / (s.pdf_ * 0.99f + 0.01f);
 
-	const float alpha = getAlpha(sp.mat_data_.get(), sp, wo, camera);
+	const float alpha = getAlpha(mat_data, sp, wo, camera);
 	w = w * (alpha) + 1.f * (1.f - alpha);
 
 	applyWireFrame(scolor, wireframe_shader_, mat_data->node_tree_data_, sp);

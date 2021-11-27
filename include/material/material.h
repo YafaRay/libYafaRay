@@ -22,9 +22,7 @@
 
 #include "common/yafaray_common.h"
 #include "common/flags.h"
-#include "color/color.h"
 #include "common/visibility.h"
-#include "geometry/vector.h"
 #include "shader/shader_node.h"
 #include <list>
 
@@ -37,6 +35,8 @@ class VolumeHandler;
 struct Sample;
 struct PSample;
 class Logger;
+class BlendMaterial;
+class MaskMaterial;
 
 struct BsdfFlags : public Flags
 {
@@ -88,6 +88,9 @@ struct Specular
 
 class Material
 {
+	friend class BlendMaterial;
+	friend class MaskMaterial;
+
 	public:
 		static std::unique_ptr<Material> factory(Logger &logger, ParamMap &params, std::list<ParamMap> &nodes_params, const Scene &scene);
 		Material(Logger &logger);
@@ -105,52 +108,48 @@ class Material
 
 		/*! evaluate the BSDF for the given components.
 				@param types the types of BSDFs to be evaluated (e.g. diffuse only, or diffuse and glossy) */
-		virtual Rgb eval(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wl, const BsdfFlags &types, bool force_eval = false) const = 0;
+		Rgb eval(const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wl, const BsdfFlags &types, bool force_eval = false) const;
 
 		/*! take a sample from the BSDF, given a 2-dimensional sample value and the BSDF types to be sampled from
 			\param s s1, s2 and flags members give necessary information for creating the sample, pdf and sampledFlags need to be returned
 			\param w returns the weight for importance sampling
 		*/
-		virtual Rgb sample(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, Vec3 &wi, Sample &s, float &w, bool chromatic, float wavelength, const Camera *camera) const = 0;// {return Rgb(0.f);}
-		virtual Rgb sample(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, Vec3 *const dir, Rgb &tcol, Sample &s, float *const w, bool chromatic, float wavelength) const {return Rgb(0.f);}
-
-		virtual Rgb sampleClay(const SurfacePoint &sp, const Vec3 &wo, Vec3 &wi, Sample &s, float &w) const;
+		Rgb sample(const SurfacePoint &sp, const Vec3 &wo, Vec3 &wi, Sample &s, float &w, bool chromatic, float wavelength, const Camera *camera) const;
+		Rgb sample(const SurfacePoint &sp, const Vec3 &wo, Vec3 *const dir, Rgb &tcol, Sample &s, float *const w, bool chromatic, float wavelength) const;
+		Rgb sampleClay(const SurfacePoint &sp, const Vec3 &wo, Vec3 &wi, Sample &s, float &w) const;
 		/*! return the pdf for sampling the BSDF with wi and wo
 		*/
-		virtual float pdf(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wi, const BsdfFlags &bsdfs) const {return 0.f;}
-
-
+		float pdf(const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wi, const BsdfFlags &bsdfs) const;
 		/*! indicate whether light can (partially) pass the material without getting refracted,
 			e.g. a curtain or even very thin foils approximated as single non-refractive layer.
 			used to trace transparent shadows. Note that in this case, initBSDF was NOT called before!
 		*/
 		virtual bool isTransparent() const { return false; }
-
 		/*!	used for computing transparent shadows.	Default implementation returns black (i.e. solid shadow).
 			This is only used for shadow calculations and may only be called when isTransparent returned true.	*/
-		virtual Rgb getTransparency(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, const Camera *camera) const { return Rgb(0.0); }
+		Rgb getTransparency(const SurfacePoint &sp, const Vec3 &wo, const Camera *camera) const;
 		/*! evaluate the specular components for given direction. Somewhat a specialization of sample(),
 			because neither sample values nor pdf values are necessary for this.
 			Typical use: recursive raytracing of integrators. */
-		virtual Specular getSpecular(int ray_level, const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, bool chromatic, float wavelength) const { return {}; }
+		Specular getSpecular(int ray_level, const SurfacePoint &sp, const Vec3 &wo, bool chromatic, float wavelength) const;
 
 		/*! get the overall reflectivity of the material (used to compute radiance map for example) */
-		virtual Rgb getReflectivity(const MaterialData *mat_data, const SurfacePoint &sp, BsdfFlags flags, bool chromatic, float wavelength, const Camera *camera) const;
+		Rgb getReflectivity(const SurfacePoint &sp, BsdfFlags flags, bool chromatic, float wavelength, const Camera *camera) const;
 
 		/*!	allow light emitting materials, for realizing correctly visible area lights.
 			default implementation returns black obviously.	*/
-		virtual Rgb emit(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo) const { return Rgb(0.0); }
+		Rgb emit(const SurfacePoint &sp, const Vec3 &wo) const;
 
 		/*! get the volumetric handler for space at specified side of the surface
 			\param inside true means space opposite of surface normal, which is considered "inside" */
 		virtual const VolumeHandler *getVolumeHandler(bool inside) const { return inside ? vol_i_.get() : vol_o_.get(); }
 
 		/*! special function, get the alpha-value of a material, used to calculate the alpha-channel */
-		virtual float getAlpha(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, const Camera *camera) const { return 1.f; }
+		float getAlpha(const SurfacePoint &sp, const Vec3 &wo, const Camera *camera) const;
 
 		/*! specialized function for photon mapping. Default function uses the sample function, which will do fine for
 			most materials unless there's a less expensive way or smarter scattering approach */
-		virtual bool scatterPhoton(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wi, Vec3 &wo, PSample &s, bool chromatic, float wavelength, const Camera *camera) const;
+		bool scatterPhoton(const SurfacePoint &sp, const Vec3 &wi, Vec3 &wo, PSample &s, bool chromatic, float wavelength, const Camera *camera) const;
 
 		virtual float getMatIor() const { return 1.5f; }
 		virtual Rgb getDiffuseColor(const NodeTreeData &node_tree_data) const { return Rgb(0.f); }
@@ -203,6 +202,18 @@ class Material
 		}
 
 	protected:
+		virtual Rgb eval(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wl, const BsdfFlags &types, bool force_eval = false) const = 0;
+		virtual Rgb sample(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, Vec3 &wi, Sample &s, float &w, bool chromatic, float wavelength, const Camera *camera) const = 0;// {return Rgb(0.f);}
+		virtual Rgb sample(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, Vec3 *const dir, Rgb &tcol, Sample &s, float *const w, bool chromatic, float wavelength) const {return Rgb(0.f);}
+		virtual float pdf(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wi, const BsdfFlags &bsdfs) const {return 0.f;}
+		virtual Rgb getTransparency(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, const Camera *camera) const { return {0.f}; }
+		virtual Specular getSpecular(int ray_level, const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, bool chromatic, float wavelength) const { return {}; }
+		virtual Rgb getReflectivity(const MaterialData *mat_data, const SurfacePoint &sp, BsdfFlags flags, bool chromatic, float wavelength, const Camera *camera) const;
+		virtual Rgb emit(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo) const { return {0.f}; }
+		virtual bool scatterPhoton(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wi, Vec3 &wo, PSample &s, bool chromatic, float wavelength, const Camera *camera) const;
+		virtual float getAlpha(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, const Camera *camera) const { return 1.f; }
+		static const MaterialData *getMatData(const SurfacePoint &sp);
+
 		/* small function to apply bump mapping to a surface point
 			you need to determine the partial derivatives for NU and NV first, e.g. from a shader node */
 		void applyBump(SurfacePoint &sp, const DuDv &du_dv) const;
@@ -271,6 +282,56 @@ struct PSample final : public Sample // << whats with the public?? structs inher
 	const Rgb alpha_; //!< the filter color between last scattering and this hit (not pre-applied to lcol!)
 	Rgb color_; //!< the new color after scattering, i.e. what will be lcol for next scatter.
 };
+
+inline Rgb Material::eval(const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wl, const BsdfFlags &types, bool force_eval) const
+{
+	return eval(getMatData(sp), sp, wo, wl, types, force_eval);
+}
+
+inline Rgb Material::sample(const SurfacePoint &sp, const Vec3 &wo, Vec3 &wi, Sample &s, float &w, bool chromatic, float wavelength, const Camera *camera) const
+{
+	return sample(getMatData(sp), sp, wo, wi, s, w, chromatic, wavelength, camera);
+}
+
+inline Rgb Material::sample(const SurfacePoint &sp, const Vec3 &wo, Vec3 *const dir, Rgb &tcol, Sample &s, float *const w, bool chromatic, float wavelength) const
+{
+	return sample(getMatData(sp), sp, wo, dir, tcol, s, w, chromatic, wavelength);
+}
+
+inline float Material::pdf(const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wi, const BsdfFlags &bsdfs) const
+{
+	return pdf(getMatData(sp), sp, wo, wi, bsdfs);
+}
+
+inline Rgb Material::getTransparency(const SurfacePoint &sp, const Vec3 &wo, const Camera *camera) const
+{
+	return getTransparency(getMatData(sp), sp, wo, camera);
+}
+
+inline Specular Material::getSpecular(int ray_level, const SurfacePoint &sp, const Vec3 &wo, bool chromatic, float wavelength) const
+{
+	return getSpecular(ray_level, getMatData(sp), sp, wo, chromatic, wavelength);
+}
+
+inline Rgb Material::getReflectivity(const SurfacePoint &sp, BsdfFlags flags, bool chromatic, float wavelength, const Camera *camera) const
+{
+	return getReflectivity(getMatData(sp), sp, flags, chromatic, wavelength, camera);
+}
+
+inline Rgb Material::emit(const SurfacePoint &sp, const Vec3 &wo) const
+{
+	return emit(getMatData(sp), sp, wo);
+}
+
+inline float Material::getAlpha(const SurfacePoint &sp, const Vec3 &wo, const Camera *camera) const
+{
+	return getAlpha(getMatData(sp), sp, wo, camera);
+}
+
+inline bool Material::scatterPhoton(const SurfacePoint &sp, const Vec3 &wi, Vec3 &wo, PSample &s, bool chromatic, float wavelength, const Camera *camera) const
+{
+	return scatterPhoton(getMatData(sp), sp, wi, wo, s, chromatic, wavelength, camera);
+}
 
 END_YAFARAY
 

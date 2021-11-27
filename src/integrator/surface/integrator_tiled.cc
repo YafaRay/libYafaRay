@@ -668,11 +668,11 @@ Rgb TiledIntegrator::sampleAmbientOcclusion(const Accelerator &accelerator, bool
 		Sample s(s_1, s_2, sample_flags);
 		const Rgb surf_col = clay ?
 							 sp.material_->sampleClay(sp, wo, light_ray.dir_, s, w) :
-							 sp.material_->sample(sp.mat_data_.get(), sp, wo, light_ray.dir_, s, w, chromatic_enabled, wavelength, camera);
+							 sp.material_->sample(sp, wo, light_ray.dir_, s, w, chromatic_enabled, wavelength, camera);
 		if(clay) s.pdf_ = 1.f;
 		if(mat_bsdfs.hasAny(BsdfFlags::Emit))
 		{
-			col += sp.material_->emit(sp.mat_data_.get(), sp, wo) * s.pdf_;
+			col += sp.material_->emit(sp, wo) * s.pdf_;
 		}
 		bool shadowed = false;
 		Rgb scol {0.f};

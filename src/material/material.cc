@@ -82,12 +82,18 @@ Material::~Material()
 	resetMaterialIndex();
 }
 
-Rgb Material::sampleClay(const SurfacePoint &sp, const Vec3 &wo, Vec3 &wi, Sample &s, float &w) const {
+const MaterialData *Material::getMatData(const SurfacePoint &sp)
+{
+	return sp.mat_data_.get();
+}
+
+Rgb Material::sampleClay(const SurfacePoint &sp, const Vec3 &wo, Vec3 &wi, Sample &s, float &w) const
+{
 	const Vec3 n = SurfacePoint::normalFaceForward(sp.ng_, sp.n_, wo);
 	wi = sample::cosHemisphere(n, sp.nu_, sp.nv_, s.s_1_, s.s_2_);
 	s.pdf_ = std::abs(wi * n);
 	w = (std::abs(wi * sp.n_)) / (s.pdf_ * 0.99f + 0.01f);
-	return Rgb(1.0f);	//Clay color White 100%
+	return {1.f};	//Clay color White 100%
 }
 
 
