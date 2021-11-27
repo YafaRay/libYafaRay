@@ -82,11 +82,6 @@ Material::~Material()
 	resetMaterialIndex();
 }
 
-const MaterialData *Material::getMatData(const SurfacePoint &sp)
-{
-	return sp.mat_data_.get();
-}
-
 Rgb Material::sampleClay(const SurfacePoint &sp, const Vec3 &wo, Vec3 &wi, Sample &s, float &w) const
 {
 	const Vec3 n = SurfacePoint::normalFaceForward(sp.ng_, sp.n_, wo);

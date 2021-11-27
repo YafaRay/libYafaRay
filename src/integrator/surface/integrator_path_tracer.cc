@@ -147,19 +147,18 @@ std::pair<Rgb, float> PathIntegrator::integrate(Ray &ray, RandomGenerator &rando
 	std::tie(sp, ray.tmax_) = accelerator_->intersect(ray, camera_);
 	if(sp)
 	{
-		const Material *material = sp->material_;
 		const BsdfFlags &mat_bsdfs = sp->mat_data_->bsdf_flags_;
 		const Vec3 wo = -ray.dir_;
-		additional_depth = std::max(additional_depth, material->getAdditionalDepth());
+		additional_depth = std::max(additional_depth, sp->material_->getAdditionalDepth());
 
 		// contribution of light emitting surfaces
 		if(mat_bsdfs.hasAny(BsdfFlags::Emit))
 		{
-			const Rgb col_tmp = material->emit(*sp, wo);
-			col += col_tmp;
+			const Rgb col_emit = sp->emit(wo);
+			col += col_emit;
 			if(color_layers && color_layers->getFlags().hasAny(LayerDef::Flags::BasicLayers))
 			{
-				if(Rgba *color_layer = color_layers->find(LayerDef::Emit)) *color_layer += col_tmp;
+				if(Rgba *color_layer = color_layers->find(LayerDef::Emit)) *color_layer += col_emit;
 			}
 		}
 
@@ -203,7 +202,7 @@ std::pair<Rgb, float> PathIntegrator::integrate(Ray &ray, RandomGenerator &rando
 				}
 				// do proper sampling now...
 				Sample s(s_1, s_2, path_flags);
-				scol = material->sample(*sp, pwo, p_ray.dir_, s, w, chromatic_enabled, wavelength_dispersive, camera_);
+				scol = sp->sample(pwo, p_ray.dir_, s, w, chromatic_enabled, wavelength_dispersive, camera_);
 				scol *= w;
 				throughput = scol;
 				p_ray.tmin_ = ray_min_dist_;
@@ -211,17 +210,16 @@ std::pair<Rgb, float> PathIntegrator::integrate(Ray &ray, RandomGenerator &rando
 				p_ray.from_ = sp->p_;
 				std::tie(hit, p_ray.tmax_) = accelerator_->intersect(p_ray, camera_);
 				if(!hit) continue; //hit background
-				const Material *p_mat = hit->material_;
 				if(s.sampled_flags_ != BsdfFlags::None) pwo = -p_ray.dir_; //Fix for white dots in path tracing with shiny diffuse with transparent PNG texture and transparent shadows, especially in Win32, (precision?). Sometimes the first sampling does not take place and pRay.dir is not initialized, so before this change when that happened pwo = -pRay.dir was getting a random_generator non-initialized value! This fix makes that, if the first sample fails for some reason, pwo is not modified and the rest of the sampling continues with the same pwo value. FIXME: Question: if the first sample fails, should we continue as now or should we exit the loop with the "continue" command?
 				lcol = estimateOneDirectLight(random_generator, thread_id, chromatic_enabled, wavelength_dispersive, *hit, pwo, offs, ray_division, pixel_sampling_data);
 				const BsdfFlags mat_bsd_fs = hit->mat_data_->bsdf_flags_;
 				if(mat_bsd_fs.hasAny(BsdfFlags::Emit))
 				{
-					const Rgb col_tmp = p_mat->emit(*hit, pwo);
-					lcol += col_tmp;
+					const Rgb col_emit = hit->emit(pwo);
+					lcol += col_emit;
 					if(color_layers && color_layers->getFlags().hasAny(LayerDef::Flags::BasicLayers))
 					{
-						if(Rgba *color_layer = color_layers->find(LayerDef::Emit)) *color_layer += col_tmp;
+						if(Rgba *color_layer = color_layers->find(LayerDef::Emit)) *color_layer += col_emit;
 					}
 				}
 
@@ -243,7 +241,7 @@ std::pair<Rgb, float> PathIntegrator::integrate(Ray &ray, RandomGenerator &rando
 
 					s.flags_ = BsdfFlags::All;
 
-					scol = p_mat->sample(*hit, pwo, p_ray.dir_, s, w, chromatic_enabled, wavelength_dispersive, camera_);
+					scol = hit->sample(pwo, p_ray.dir_, s, w, chromatic_enabled, wavelength_dispersive, camera_);
 					scol *= w;
 					if(scol.isBlack()) break;
 					throughput *= scol;
@@ -261,7 +259,6 @@ std::pair<Rgb, float> PathIntegrator::integrate(Ray &ray, RandomGenerator &rando
 						break;
 					}
 					std::swap(hit, intersect_result.first);
-					p_mat = hit->material_;
 					pwo = -p_ray.dir_;
 
 					if(mat_bsd_fs.hasAny(BsdfFlags::Diffuse)) lcol = estimateOneDirectLight(random_generator, thread_id, chromatic_enabled, wavelength_dispersive, *hit, pwo, offs, ray_division, pixel_sampling_data);
@@ -269,7 +266,7 @@ std::pair<Rgb, float> PathIntegrator::integrate(Ray &ray, RandomGenerator &rando
 
 					if(mat_bsd_fs.hasAny(BsdfFlags::Volumetric))
 					{
-						if(const VolumeHandler *vol = p_mat->getVolumeHandler(hit->n_ * pwo < 0))
+						if(const VolumeHandler *vol = hit->material_->getVolumeHandler(hit->n_ * pwo < 0))
 						{
 							throughput *= vol->transmittance(p_ray);
 						}
@@ -285,7 +282,7 @@ std::pair<Rgb, float> PathIntegrator::integrate(Ray &ray, RandomGenerator &rando
 
 					if(mat_bsd_fs.hasAny(BsdfFlags::Emit) && caustic)
 					{
-						const Rgb col_tmp = p_mat->emit(*hit, pwo);
+						const Rgb col_tmp = hit->emit(pwo);
 						lcol += col_tmp;
 						if(color_layers && color_layers->getFlags().hasAny(LayerDef::Flags::BasicLayers))
 						{

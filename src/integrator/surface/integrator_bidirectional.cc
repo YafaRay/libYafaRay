@@ -326,7 +326,7 @@ std::pair<Rgb, float> BidirectionalIntegrator::integrate(Ray &ray, RandomGenerat
 				{
 					//eval is done in place here...
 					const PathVertex &v = path_data.eye_path_[t - 1];
-					const Rgb emit = v.sp_.material_->emit(v.sp_, v.wi_);
+					const Rgb emit = v.sp_.emit(v.wi_);
 					col += wt * v.alpha_ * emit;
 				}
 			}
@@ -396,7 +396,6 @@ int BidirectionalIntegrator::createPath(RandomGenerator &random_generator, const
 		if(!sp) break;
 		v.sp_ = *sp;
 		const PathVertex &v_prev = path[n_vert - 1];
-		const Material *mat = v.sp_.material_;
 		// compute alpha_i+1 = alpha_i * fs(wi, wo) / P_proj(wo), where P_proj = bsdf_pdf(wo) / cos(wo*N)
 		v.alpha_ = v_prev.alpha_ * v_prev.f_s_ * v_prev.cos_wo_ / (v_prev.pdf_wo_ * v_prev.qi_wo_);
 		v.wi_ = -ray.dir_;
@@ -408,7 +407,7 @@ int BidirectionalIntegrator::createPath(RandomGenerator &random_generator, const
 		// create tentative sample for next path segment
 		Sample s(random_generator(), random_generator(), BsdfFlags::All, true);
 		float w = 0.f;
-		v.f_s_ = mat->sample(v.sp_, v.wi_, ray.dir_, s, w, chromatic_enabled, wavelength, camera_);
+		v.f_s_ = v.sp_.sample(v.wi_, ray.dir_, s, w, chromatic_enabled, wavelength, camera_);
 		if(v.f_s_.isBlack()) break;
 		v.pdf_wo_ = s.pdf_;
 		v.cos_wo_ = w * s.pdf_;
@@ -428,7 +427,7 @@ int BidirectionalIntegrator::createPath(RandomGenerator &random_generator, const
 		}
 		else
 		{
-			v.pdf_wi_ = mat->pdf(v.sp_, ray.dir_, v.wi_, BsdfFlags::All); // all BSDFs? think so...
+			v.pdf_wi_ = v.sp_.pdf(ray.dir_, v.wi_, BsdfFlags::All); // all BSDFs? think so...
 			v.qi_wi_ = std::min(0.98f, v.f_s_.col2Bri() * v.cos_wi_ / v.pdf_wi_);
 		}
 		if(v.qi_wi_ < 0 && logger_.isDebug())
@@ -490,21 +489,21 @@ bool BidirectionalIntegrator::connectPaths(PathData &pd, int s, int t) const
 	const float cos_y = std::abs(y.sp_.n_ * vec);
 	const float cos_z = std::abs(z.sp_.n_ * vec);
 
-	x_l.pdf_f_ = y.sp_.material_->pdf(y.sp_, y.wi_, vec, BsdfFlags::All); // light vert to eye vert
-	x_l.pdf_b_ = y.sp_.material_->pdf(y.sp_, vec, y.wi_, BsdfFlags::All); // light vert to prev. light vert
+	x_l.pdf_f_ = y.sp_.pdf(y.wi_, vec, BsdfFlags::All); // light vert to eye vert
+	x_l.pdf_b_ = y.sp_.pdf(vec, y.wi_, BsdfFlags::All); // light vert to prev. light vert
 	if(x_l.pdf_f_ < 1e-6f) return false;
 	x_l.pdf_f_ /= cos_y;
 	x_l.pdf_b_ /= y.cos_wi_;
-	pd.f_y_ = y.sp_.material_->eval(y.sp_, y.wi_, vec, BsdfFlags::All);
-	pd.f_y_ += y.sp_.material_->emit(y.sp_, vec);
+	pd.f_y_ = y.sp_.eval(y.wi_, vec, BsdfFlags::All);
+	pd.f_y_ += y.sp_.emit(vec);
 
-	x_e.pdf_b_ = z.sp_.material_->pdf(z.sp_, z.wi_, -vec, BsdfFlags::All); // eye vert to light vert
-	x_e.pdf_f_ = z.sp_.material_->pdf(z.sp_, -vec, z.wi_, BsdfFlags::All); // eye vert to prev eye vert
+	x_e.pdf_b_ = z.sp_.pdf(z.wi_, -vec, BsdfFlags::All); // eye vert to light vert
+	x_e.pdf_f_ = z.sp_.pdf(-vec, z.wi_, BsdfFlags::All); // eye vert to prev eye vert
 	if(x_e.pdf_b_ < 1e-6f) return false;
 	x_e.pdf_b_ /= cos_z;
 	x_e.pdf_f_ /= z.cos_wi_;
-	pd.f_z_ = z.sp_.material_->eval(z.sp_, z.wi_, -vec, BsdfFlags::All);
-	pd.f_z_ += z.sp_.material_->emit(z.sp_, -vec);
+	pd.f_z_ = z.sp_.eval(z.wi_, -vec, BsdfFlags::All);
+	pd.f_z_ += z.sp_.emit(-vec);
 
 	pd.w_l_e_ = vec;
 	pd.d_yz_ = math::sqrt(dist_2);
@@ -589,14 +588,14 @@ bool BidirectionalIntegrator::connectLPath(PathData &pd, Ray &l_ray, Rgb &lcol, 
 	x_e.g_ = std::abs(cos_wo * cos_z) / (l_ray.tmax_ * l_ray.tmax_); // or use Ng??
 	pd.w_l_e_ = vec;
 	pd.d_yz_ = l_ray.tmax_;
-	x_e.pdf_b_ = z.sp_.material_->pdf(z.sp_, z.wi_, l_ray.dir_, BsdfFlags::All); //eye to light
+	x_e.pdf_b_ = z.sp_.pdf(z.wi_, l_ray.dir_, BsdfFlags::All); //eye to light
 	if(x_e.pdf_b_ < 1e-6f) return false;
-	x_e.pdf_f_ = z.sp_.material_->pdf(z.sp_, l_ray.dir_, z.wi_, BsdfFlags::All); // eye to prev eye
+	x_e.pdf_f_ = z.sp_.pdf(l_ray.dir_, z.wi_, BsdfFlags::All); // eye to prev eye
 	x_e.pdf_b_ /= cos_z;
 	x_e.pdf_f_ /= z.cos_wi_;
 	x_e.specular_ = false;
-	pd.f_z_ = z.sp_.material_->eval(z.sp_, z.wi_, l_ray.dir_, BsdfFlags::All);
-	pd.f_z_ += z.sp_.material_->emit(z.sp_, l_ray.dir_);
+	pd.f_z_ = z.sp_.eval(z.wi_, l_ray.dir_, BsdfFlags::All);
+	pd.f_z_ += z.sp_.emit(l_ray.dir_);
 	pd.light_ = light;
 	//copy values required
 	pd.path_[0].g_ = 0.f;
@@ -629,13 +628,13 @@ bool BidirectionalIntegrator::connectPathE(PathData &pd, int s) const
 	const Ray wo(z.sp_.p_, -vec);
 	if(!camera_->project(wo, 0, 0, pd.u_, pd.v_, x_e.pdf_b_)) return false;
 	x_e.specular_ = false; // cannot query yet...
-	x_l.pdf_f_ = y.sp_.material_->pdf(y.sp_, y.wi_, vec, BsdfFlags::All); // light vert to eye vert
+	x_l.pdf_f_ = y.sp_.pdf(y.wi_, vec, BsdfFlags::All); // light vert to eye vert
 	if(x_l.pdf_f_ < 1e-6f) return false;
-	x_l.pdf_b_ = y.sp_.material_->pdf(y.sp_, vec, y.wi_, BsdfFlags::All); // light vert to prev. light vert
+	x_l.pdf_b_ = y.sp_.pdf(vec, y.wi_, BsdfFlags::All); // light vert to prev. light vert
 	x_l.pdf_f_ /= cos_y;
 	x_l.pdf_b_ /= y.cos_wi_;
-	pd.f_y_ = y.sp_.material_->eval(y.sp_, y.wi_, vec, BsdfFlags::All);
-	pd.f_y_ += y.sp_.material_->emit(y.sp_, vec);
+	pd.f_y_ = y.sp_.eval(y.wi_, vec, BsdfFlags::All);
+	pd.f_y_ += y.sp_.emit(vec);
 	x_l.specular_ = false;
 	pd.w_l_e_ = vec;
 	pd.d_yz_ = math::sqrt(dist_2);

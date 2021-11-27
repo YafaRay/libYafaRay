@@ -102,17 +102,16 @@ std::pair<Rgb, float> DirectLightIntegrator::integrate(Ray &ray, RandomGenerator
 	std::tie(sp, ray.tmax_) = accelerator_->intersect(ray, camera_);
 	if(sp)
 	{
-		const Material *material = sp->material_;
 		const BsdfFlags &mat_bsdfs = sp->mat_data_->bsdf_flags_;
 		const Vec3 wo = -ray.dir_;
-		additional_depth = std::max(additional_depth, material->getAdditionalDepth());
+		additional_depth = std::max(additional_depth, sp->material_->getAdditionalDepth());
 		if(mat_bsdfs.hasAny(BsdfFlags::Emit))
 		{
-			const Rgb col_tmp = material->emit(*sp, wo);
-			col += col_tmp;
+			const Rgb col_emit = sp->emit(wo);
+			col += col_emit;
 			if(color_layers && color_layers->getFlags().hasAny(LayerDef::Flags::BasicLayers))
 			{
-				if(Rgba *color_layer = color_layers->find(LayerDef::Emit)) *color_layer = col_tmp;
+				if(Rgba *color_layer = color_layers->find(LayerDef::Emit)) *color_layer = col_emit;
 			}
 		}
 		if(mat_bsdfs.hasAny(BsdfFlags::Diffuse))
