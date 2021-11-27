@@ -33,11 +33,11 @@ void ColorLayers::setDefaultColors()
 {
 	for(auto &item : items_)
 	{
-		item.second = Layer::getDefaultColor(item.first);
+		item.second = LayerDef::getDefaultColor(item.first);
 	}
 }
 
-bool ColorLayers::isDefinedAny(const std::vector<Layer::Type> &types) const
+bool ColorLayers::isDefinedAny(const std::vector<LayerDef::Type> &types) const
 {
 	for(const auto &type : types)
 	{

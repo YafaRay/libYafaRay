@@ -254,7 +254,7 @@ void ImageFilm::init(RenderControl &render_control, int num_passes)
 		const Layers &layers = layers_.getLayersWithExportedImages();
 		for(const auto &layer : layers)
 		{
-			render_callbacks_->notify_layer_(Layer::getTypeName(layer.second.getType()).c_str(), layer.second.getExportedImageName().c_str(), width_, height_, layer.second.getNumExportedChannels(), render_callbacks_->notify_layer_data_);
+			render_callbacks_->notify_layer_(LayerDef::getName(layer.second.getType()).c_str(), layer.second.getExportedImageName().c_str(), width_, height_, layer.second.getNumExportedChannels(), render_callbacks_->notify_layer_data_);
 		}
 	}
 }
@@ -289,12 +289,12 @@ int ImageFilm::nextPass(const RenderView *render_view, RenderControl &render_con
 		}
 	}
 
-	const Image *sampling_factor_image_pass = film_image_layers_(Layer::DebugSamplingFactor).image_.get();
+	const Image *sampling_factor_image_pass = film_image_layers_(LayerDef::DebugSamplingFactor).image_.get();
 
 	if(n_pass_ == 0) flags_.fill(true);
 	else flags_.fill(false);
 	const int variance_half_edge = aa_noise_params_.variance_edge_size_ / 2;
-	std::shared_ptr<Image> combined_image = film_image_layers_(Layer::Combined).image_;
+	std::shared_ptr<Image> combined_image = film_image_layers_(LayerDef::Combined).image_;
 
 	float aa_thresh_scaled = aa_noise_params_.threshold_;
 
@@ -495,12 +495,12 @@ void ImageFilm::finishArea(const RenderView *render_view, RenderControl &render_
 	const int end_x = a.x_ + a.w_ - cx_0_;
 	const int end_y = a.y_ + a.h_ - cy_0_;
 
-	if(layers_.isDefined(Layer::DebugFacesEdges))
+	if(layers_.isDefined(LayerDef::DebugFacesEdges))
 	{
 		generateDebugFacesEdges(a.x_ - cx_0_, end_x, a.y_ - cy_0_, end_y, true, edge_params);
 	}
 
-	if(layers_.isDefinedAny({Layer::DebugObjectsEdges, Layer::Toon}))
+	if(layers_.isDefinedAny({LayerDef::DebugObjectsEdges, LayerDef::Toon}))
 	{
 		generateToonAndDebugObjectEdges(a.x_ - cx_0_, end_x, a.y_ - cy_0_, end_y, true, edge_params);
 	}
@@ -514,20 +514,20 @@ void ImageFilm::finishArea(const RenderView *render_view, RenderControl &render_
 			for(int i = a.x_ - cx_0_; i < end_x; ++i)
 			{
 				const float weight = weights_(i, j).getFloat();
-				Rgba color = (film_image_layer.first == Layer::AaSamples ? weight : image->getColor(i, j).normalized(weight));
+				Rgba color = (film_image_layer.first == LayerDef::AaSamples ? weight : image->getColor(i, j).normalized(weight));
 				switch(film_image_layer.first)
 				{
 					//To correct the antialiasing and ceil the "mixed" values to the upper integer in the Object/Material Index layers
-					case Layer::ObjIndexAbs:
-					case Layer::ObjIndexAutoAbs:
-					case Layer::MatIndexAbs:
-					case Layer::MatIndexAutoAbs: color.ceil(); break;
+					case LayerDef::ObjIndexAbs:
+					case LayerDef::ObjIndexAutoAbs:
+					case LayerDef::MatIndexAbs:
+					case LayerDef::MatIndexAutoAbs: color.ceil(); break;
 					default: break;
 				}
 				exported_image_layers_.setColor(i, j, color, film_image_layer.first);
 				if(render_callbacks_ && render_callbacks_->put_pixel_)
 				{
-					render_callbacks_->put_pixel_(render_view->getName().c_str(), Layer::getTypeName(film_image_layer.first).c_str(), i, j, color.r_, color.g_, color.b_, color.a_, render_callbacks_->put_pixel_data_);
+					render_callbacks_->put_pixel_(render_view->getName().c_str(), LayerDef::getName(film_image_layer.first).c_str(), i, j, color.r_, color.g_, color.b_, color.a_, render_callbacks_->put_pixel_data_);
 				}
 			}
 		}
@@ -582,11 +582,11 @@ void ImageFilm::flush(const RenderView *render_view, const RenderControl &render
 	if(estimate_density_ && num_density_samples_ > 0) density_factor = (float) (width_ * height_) / (float) num_density_samples_;
 
 	const Layers layers = layers_.getLayersWithImages();
-	if(layers.isDefined(Layer::DebugFacesEdges))
+	if(layers.isDefined(LayerDef::DebugFacesEdges))
 	{
 		generateDebugFacesEdges(0, width_, 0, height_, false, edge_params);
 	}
-	if(layers.isDefinedAny({Layer::DebugObjectsEdges, Layer::Toon}))
+	if(layers.isDefinedAny({LayerDef::DebugObjectsEdges, LayerDef::Toon}))
 	{
 		generateToonAndDebugObjectEdges(0, width_, 0, height_, false, edge_params);
 	}
@@ -599,21 +599,21 @@ void ImageFilm::flush(const RenderView *render_view, const RenderControl &render
 			for(int i = 0; i < width_; i++)
 			{
 				const float weight = weights_(i, j).getFloat();
-				Rgba color = (film_image_layer.first == Layer::AaSamples ? weight : image->getColor(i, j).normalized(weight));
+				Rgba color = (film_image_layer.first == LayerDef::AaSamples ? weight : image->getColor(i, j).normalized(weight));
 				switch(film_image_layer.first)
 				{
 					//To correct the antialiasing and ceil the "mixed" values to the upper integer in the Object/Material Index layers
-					case Layer::ObjIndexAbs:
-					case Layer::ObjIndexAutoAbs:
-					case Layer::MatIndexAbs:
-					case Layer::MatIndexAutoAbs: color.ceil(); break;
+					case LayerDef::ObjIndexAbs:
+					case LayerDef::ObjIndexAutoAbs:
+					case LayerDef::MatIndexAbs:
+					case LayerDef::MatIndexAutoAbs: color.ceil(); break;
 					default: break;
 				}
-				if(estimate_density_ && (flags & Densityimage) && film_image_layer.first == Layer::Combined && density_factor > 0.f) color += Rgba((*density_image_)(i, j) * density_factor, 0.f);
+				if(estimate_density_ && (flags & Densityimage) && film_image_layer.first == LayerDef::Combined && density_factor > 0.f) color += Rgba((*density_image_)(i, j) * density_factor, 0.f);
 				exported_image_layers_.setColor(i, j, color, film_image_layer.first);
 				if(render_callbacks_ && render_callbacks_->put_pixel_)
 				{
-					render_callbacks_->put_pixel_(render_view->getName().c_str(), Layer::getTypeName(film_image_layer.first).c_str(), i, j, color.r_, color.g_, color.b_, color.a_, render_callbacks_->put_pixel_data_);
+					render_callbacks_->put_pixel_(render_view->getName().c_str(), LayerDef::getName(film_image_layer.first).c_str(), i, j, color.r_, color.g_, color.b_, color.a_, render_callbacks_->put_pixel_data_);
 				}
 			}
 		}
@@ -1199,9 +1199,9 @@ void edgeImageDetection_global(std::vector<cv::Mat> &image_mat, float edge_thres
 
 void ImageFilm::generateDebugFacesEdges(int xstart, int width, int ystart, int height, bool drawborder, const EdgeToonParams &edge_params)
 {
-	const Image *normal_image = film_image_layers_(Layer::NormalGeom).image_.get();
-	const Image *z_depth_image = film_image_layers_(Layer::ZDepthNorm).image_.get();
-	Image *debug_faces_edges_image = film_image_layers_(Layer::DebugFacesEdges).image_.get();
+	const Image *normal_image = film_image_layers_(LayerDef::NormalGeom).image_.get();
+	const Image *z_depth_image = film_image_layers_(LayerDef::ZDepthNorm).image_.get();
+	Image *debug_faces_edges_image = film_image_layers_(LayerDef::DebugFacesEdges).image_.get();
 
 	if(normal_image && z_depth_image)
 	{
@@ -1238,10 +1238,10 @@ void ImageFilm::generateDebugFacesEdges(int xstart, int width, int ystart, int h
 
 void ImageFilm::generateToonAndDebugObjectEdges(int xstart, int width, int ystart, int height, bool drawborder, const EdgeToonParams &edge_params)
 {
-	const Image *normal_image = film_image_layers_(Layer::NormalSmooth).image_.get();
-	const Image *z_depth_image = film_image_layers_(Layer::ZDepthNorm).image_.get();
-	Image *debug_objects_edges_image = film_image_layers_(Layer::DebugObjectsEdges).image_.get();
-	Image *toon_image = film_image_layers_(Layer::Toon).image_.get();
+	const Image *normal_image = film_image_layers_(LayerDef::NormalSmooth).image_.get();
+	const Image *z_depth_image = film_image_layers_(LayerDef::ZDepthNorm).image_.get();
+	Image *debug_objects_edges_image = film_image_layers_(LayerDef::DebugObjectsEdges).image_.get();
+	Image *toon_image = film_image_layers_(LayerDef::Toon).image_.get();
 
 	const float toon_pre_smooth = edge_params.toon_pre_smooth_;
 	const float toon_quantization = edge_params.toon_quantization_;
@@ -1267,9 +1267,9 @@ void ImageFilm::generateToonAndDebugObjectEdges(int xstart, int width, int ystar
 				col_normal = (*normal_image).getColor(i, j).normalized(weight);
 				z_depth = (*z_depth_image).getColor(i, j).normalized(weight).a_; //FIXME: can be further optimized
 
-				image_mat_combined_vec(j, i)[0] = film_image_layers_(Layer::Combined).image_->getColor(i, j).normalized(weight).b_;
-				image_mat_combined_vec(j, i)[1] = film_image_layers_(Layer::Combined).image_->getColor(i, j).normalized(weight).g_;
-				image_mat_combined_vec(j, i)[2] = film_image_layers_(Layer::Combined).image_->getColor(i, j).normalized(weight).r_;
+				image_mat_combined_vec(j, i)[0] = film_image_layers_(LayerDef::Combined).image_->getColor(i, j).normalized(weight).b_;
+				image_mat_combined_vec(j, i)[1] = film_image_layers_(LayerDef::Combined).image_->getColor(i, j).normalized(weight).g_;
+				image_mat_combined_vec(j, i)[2] = film_image_layers_(LayerDef::Combined).image_->getColor(i, j).normalized(weight).r_;
 
 				image_mat.at(0).at<float>(j, i) = col_normal.getR();
 				image_mat.at(1).at<float>(j, i) = col_normal.getG();

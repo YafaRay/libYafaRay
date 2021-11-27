@@ -110,9 +110,9 @@ std::pair<Rgb, float> DirectLightIntegrator::integrate(int thread_id, int ray_le
 		{
 			const Rgb col_tmp = material->emit(sp->mat_data_.get(), *sp, wo);
 			col += col_tmp;
-			if(color_layers && color_layers->getFlags().hasAny(Layer::Flags::BasicLayers))
+			if(color_layers && color_layers->getFlags().hasAny(LayerDef::Flags::BasicLayers))
 			{
-				if(Rgba *color_layer = color_layers->find(Layer::Emit)) *color_layer = col_tmp;
+				if(Rgba *color_layer = color_layers->find(LayerDef::Emit)) *color_layer = col_tmp;
 			}
 		}
 		if(mat_bsdfs.hasAny(BsdfFlags::Diffuse))

@@ -38,10 +38,10 @@ class ImageLayer
 		Layer layer_;
 };
 
-class ImageLayers final : public Collection<Layer::Type, ImageLayer>  //Actual buffer of images in the rendering process, one entry for each enabled layer.
+class ImageLayers final : public Collection<LayerDef::Type, ImageLayer>  //Actual buffer of images in the rendering process, one entry for each enabled layer.
 {
 	public:
-		void setColor(int x, int y, const Rgba &color, Layer::Type layer_type);
+		void setColor(int x, int y, const Rgba &color, LayerDef::Type layer_type);
 };
 
 END_YAFARAY

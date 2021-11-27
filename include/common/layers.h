@@ -34,19 +34,19 @@
 
 BEGIN_YAFARAY
 
-class Layers final : public Collection<Layer::Type, Layer>
+class Layers final : public Collection<LayerDef::Type, Layer>
 {
 	public:
-		bool isDefined(Layer::Type type) const;
-		bool isDefinedAny(const std::vector<Layer::Type> &types) const;
+		bool isDefined(LayerDef::Type type) const;
+		bool isDefinedAny(const std::vector<LayerDef::Type> &types) const;
 		const Layers getLayersWithImages() const;
 		const Layers getLayersWithExportedImages() const;
 		std::string printExportedTable() const;
 };
 
-inline bool Layers::isDefined(Layer::Type type) const
+inline bool Layers::isDefined(LayerDef::Type type) const
 {
-	if(type == Layer::Disabled) return false;
+	if(type == LayerDef::Disabled) return false;
 	else return find(type);
 }
 

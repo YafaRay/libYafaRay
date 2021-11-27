@@ -128,7 +128,7 @@ void ImageOutput::flush(const RenderControl &render_control, const Timer &timer)
 		{
 			if(view_name == current_render_view_->getName())
 			{
-				saveImageFile(image_path_, Layer::Combined, format.get(), render_control, timer); //This should not be necessary but Blender API seems to be limited and the API "load_from_file" function does not work (yet) with multilayered images, so I have to generate this extra combined pass file so it's displayed in the Blender window.
+				saveImageFile(image_path_, LayerDef::Combined, format.get(), render_control, timer); //This should not be necessary but Blender API seems to be limited and the API "load_from_file" function does not work (yet) with multilayered images, so I have to generate this extra combined pass file so it's displayed in the Blender window.
 			}
 
 			if(!directory.empty()) directory += "/";
@@ -143,15 +143,15 @@ void ImageOutput::flush(const RenderControl &render_control, const Timer &timer)
 			for(const auto &image_layer : *image_layers_)
 			{
 				const std::string exported_image_name = image_layer.second.layer_.getExportedImageName();
-				if(image_layer.first == Layer::Combined)
+				if(image_layer.first == LayerDef::Combined)
 				{
 					saveImageFile(image_path_, image_layer.first, format.get(), render_control, timer); //default imagehandler filename, when not using views nor passes and for reloading into Blender
 					logger_.setImagePath(image_path_); //to show the image in the HTML log output
 				}
 
-				if(image_layer.first != Layer::Disabled && (image_layers_->size() > 1 || render_views_->size() > 1))
+				if(image_layer.first != LayerDef::Disabled && (image_layers_->size() > 1 || render_views_->size() > 1))
 				{
-					const std::string layer_type_name = Layer::getTypeName(image_layer.first);
+					const std::string layer_type_name = LayerDef::getName(image_layer.first);
 					std::string fname_pass = directory + base_name + " [" + layer_type_name;
 					if(!exported_image_name.empty()) fname_pass += " - " + exported_image_name;
 					fname_pass += "]." + ext;
@@ -177,7 +177,7 @@ void ImageOutput::flush(const RenderControl &render_control, const Timer &timer)
 	}
 }
 
-void ImageOutput::saveImageFile(const std::string &filename, Layer::Type layer_type, Format *format, const RenderControl &render_control, const Timer &timer)
+void ImageOutput::saveImageFile(const std::string &filename, LayerDef::Type layer_type, Format *format, const RenderControl &render_control, const Timer &timer)
 {
 	if(render_control.inProgress()) logger_.logInfo(name_, ": Autosaving partial render (", math::roundFloatPrecision(render_control.currentPassPercent(), 0.01), "% of pass ", render_control.currentPass(), " of ", render_control.totalPasses(), ") file as \"", filename, "\"...  ", printDenoiseParams());
 	else logger_.logInfo(name_, ": Saving file as \"", filename, "\"...  ", printDenoiseParams());

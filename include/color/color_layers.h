@@ -27,16 +27,16 @@
 
 BEGIN_YAFARAY
 
-class ColorLayers final : public Collection<Layer::Type, Rgba>  //Actual buffer of colors in the rendering process, one entry for each enabled layer.
+class ColorLayers final : public Collection<LayerDef::Type, Rgba>  //Actual buffer of colors in the rendering process, one entry for each enabled layer.
 {
 	public:
 		ColorLayers(const Layers &layers);
 		void setDefaultColors();
-		bool isDefinedAny(const std::vector<Layer::Type> &types) const;
-		Layer::Flags getFlags() const { return flags_; }
+		bool isDefinedAny(const std::vector<LayerDef::Type> &types) const;
+		LayerDef::Flags getFlags() const { return flags_; }
 
 	private:
-		Layer::Flags flags_ = Layer::Flags::None;
+		LayerDef::Flags flags_ = LayerDef::Flags::None;
 };
 
 END_YAFARAY

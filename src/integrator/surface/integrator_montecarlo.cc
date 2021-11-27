@@ -60,9 +60,9 @@ Rgb MonteCarloIntegrator::estimateAllDirectLight(bool chromatic_enabled, float w
 		col += doLightEstimation(chromatic_enabled, wavelength, l, sp, wo, loffs, ray_division, color_layers, random_generator, pixel_sampling_data);
 		++loffs;
 	}
-	if(color_layers && color_layers->getFlags().hasAny(Layer::Flags::BasicLayers))
+	if(color_layers && color_layers->getFlags().hasAny(LayerDef::Flags::BasicLayers))
 	{
-		if(Rgba *color_layer = color_layers->find(Layer::Shadow)) *color_layer *= 1.f / static_cast<float>(loffs);
+		if(Rgba *color_layer = color_layers->find(LayerDef::Shadow)) *color_layer *= 1.f / static_cast<float>(loffs);
 	}
 	return col;
 }
@@ -91,15 +91,15 @@ Rgb MonteCarloIntegrator::diracLight(const Light *light, const Vec3 &wo, const S
 		Rgba *color_layer_glossy = nullptr;
 		if(color_layers)
 		{
-			if(color_layers->getFlags().hasAny(Layer::Flags::DiffuseLayers))
+			if(color_layers->getFlags().hasAny(LayerDef::Flags::DiffuseLayers))
 			{
-				color_layer_diffuse = color_layers->find(Layer::Diffuse);
-				color_layer_diffuse_no_shadow = color_layers->find(Layer::DiffuseNoShadow);
+				color_layer_diffuse = color_layers->find(LayerDef::Diffuse);
+				color_layer_diffuse_no_shadow = color_layers->find(LayerDef::DiffuseNoShadow);
 			}
-			if(color_layers->getFlags().hasAny(Layer::Flags::BasicLayers))
+			if(color_layers->getFlags().hasAny(LayerDef::Flags::BasicLayers))
 			{
-				color_layer_glossy = color_layers->find(Layer::Glossy);
-				color_layer_shadow = color_layers->find(Layer::Shadow);
+				color_layer_glossy = color_layers->find(LayerDef::Glossy);
+				color_layer_shadow = color_layers->find(LayerDef::Shadow);
 			}
 		}
 		if(shadow_bias_auto_) light_ray.tmin_ = shadow_bias_ * std::max(1.f, sp.p_.length());
@@ -133,19 +133,19 @@ Rgb MonteCarloIntegrator::diracLight(const Light *light, const Vec3 &wo, const S
 		}
 		if(color_layers)
 		{
-			if(shadowed && color_layers->getFlags().hasAny(Layer::Flags::IndexLayers) && shadow_casting_primitive)
+			if(shadowed && color_layers->getFlags().hasAny(LayerDef::Flags::IndexLayers) && shadow_casting_primitive)
 			{
-				Rgba *color_layer_mat_index_mask_shadow = color_layers->find(Layer::MatIndexMaskShadow);
-				Rgba *color_layer_obj_index_mask_shadow = color_layers->find(Layer::ObjIndexMaskShadow);
+				Rgba *color_layer_mat_index_mask_shadow = color_layers->find(LayerDef::MatIndexMaskShadow);
+				Rgba *color_layer_obj_index_mask_shadow = color_layers->find(LayerDef::ObjIndexMaskShadow);
 				float mask_obj_index = 0.f, mask_mat_index = 0.f;
 				if(const Object *casting_object = shadow_casting_primitive->getObject()) mask_obj_index = casting_object->getAbsObjectIndex();    //Object index of the object casting the shadow
 				if(const Material *casting_material = shadow_casting_primitive->getMaterial()) mask_mat_index = casting_material->getAbsMaterialIndex();    //Material index of the object casting the shadow
 				if(color_layer_mat_index_mask_shadow && mask_mat_index == mask_params_.mat_index_) *color_layer_mat_index_mask_shadow += Rgb(1.f);
 				if(color_layer_obj_index_mask_shadow && mask_obj_index == mask_params_.obj_index_) *color_layer_obj_index_mask_shadow += Rgb(1.f);
 			}
-			if(color_layers->getFlags().hasAny(Layer::Flags::DebugLayers))
+			if(color_layers->getFlags().hasAny(LayerDef::Flags::DebugLayers))
 			{
-				if(Rgba *color_layer = color_layers->find(Layer::DebugLightEstimationLightDirac)) *color_layer += col;
+				if(Rgba *color_layer = color_layers->find(LayerDef::DebugLightEstimationLightDirac)) *color_layer += col;
 			}
 		}
 		return col;
@@ -166,25 +166,25 @@ Rgb MonteCarloIntegrator::areaLightSampleLight(const Light *light, const Vec3 &w
 	std::unique_ptr<ColorLayerAccum> layer_glossy;
 	if(color_layers)
 	{
-		if(color_layers->getFlags().hasAny(Layer::Flags::IndexLayers))
+		if(color_layers->getFlags().hasAny(LayerDef::Flags::IndexLayers))
 		{
-			if(Rgba *color_layer = color_layers->find(Layer::MatIndexMaskShadow))
+			if(Rgba *color_layer = color_layers->find(LayerDef::MatIndexMaskShadow))
 				layer_mat_index_mask_shadow = std::unique_ptr<ColorLayerAccum>(new ColorLayerAccum(color_layer));
-			if(Rgba *color_layer = color_layers->find(Layer::ObjIndexMaskShadow))
+			if(Rgba *color_layer = color_layers->find(LayerDef::ObjIndexMaskShadow))
 				layer_obj_index_mask_shadow = std::unique_ptr<ColorLayerAccum>(new ColorLayerAccum(color_layer));
 		}
-		if(color_layers->getFlags().hasAny(Layer::Flags::DiffuseLayers))
+		if(color_layers->getFlags().hasAny(LayerDef::Flags::DiffuseLayers))
 		{
-			if(Rgba *color_layer = color_layers->find(Layer::Diffuse))
+			if(Rgba *color_layer = color_layers->find(LayerDef::Diffuse))
 				layer_diffuse = std::unique_ptr<ColorLayerAccum>(new ColorLayerAccum(color_layer));
-			if(Rgba *color_layer = color_layers->find(Layer::DiffuseNoShadow))
+			if(Rgba *color_layer = color_layers->find(LayerDef::DiffuseNoShadow))
 				layer_diffuse_no_shadow = std::unique_ptr<ColorLayerAccum>(new ColorLayerAccum(color_layer));
 		}
-		if(color_layers->getFlags().hasAny(Layer::Flags::BasicLayers))
+		if(color_layers->getFlags().hasAny(LayerDef::Flags::BasicLayers))
 		{
-			if(Rgba *color_layer = color_layers->find(Layer::Shadow))
+			if(Rgba *color_layer = color_layers->find(LayerDef::Shadow))
 				layer_shadow = std::unique_ptr<ColorLayerAccum>(new ColorLayerAccum(color_layer));
-			if(Rgba *color_layer = color_layers->find(Layer::Glossy))
+			if(Rgba *color_layer = color_layers->find(LayerDef::Glossy))
 				layer_glossy = std::unique_ptr<ColorLayerAccum>(new ColorLayerAccum(color_layer));
 		}
 	}
@@ -245,7 +245,7 @@ Rgb MonteCarloIntegrator::areaLightSampleLight(const Light *light, const Vec3 &w
 				}
 				if(!shadowed && ls.pdf_ > 1e-6f) col += surf_col * ls.col_ * angle_light_normal * w / ls.pdf_;
 			}
-			if(color_layers && (shadowed || ls.pdf_ <= 1e-6f) && color_layers->getFlags().hasAny(Layer::Flags::IndexLayers) && shadow_casting_primitive)
+			if(color_layers && (shadowed || ls.pdf_ <= 1e-6f) && color_layers->getFlags().hasAny(LayerDef::Flags::IndexLayers) && shadow_casting_primitive)
 			{
 				float mask_obj_index = 0.f, mask_mat_index = 0.f;
 				if(const Object *casting_object = shadow_casting_primitive->getObject()) mask_obj_index = casting_object->getAbsObjectIndex();    //Object index of the object casting the shadow
@@ -258,24 +258,24 @@ Rgb MonteCarloIntegrator::areaLightSampleLight(const Light *light, const Vec3 &w
 	const Rgb col_result = col * inv_num_samples;
 	if(color_layers)
 	{
-		if(color_layers->getFlags().hasAny(Layer::Flags::IndexLayers))
+		if(color_layers->getFlags().hasAny(LayerDef::Flags::IndexLayers))
 		{
 			if(layer_mat_index_mask_shadow) *layer_mat_index_mask_shadow->color_ += layer_mat_index_mask_shadow->accum_ * inv_num_samples;
 			if(layer_obj_index_mask_shadow) *layer_obj_index_mask_shadow->color_ += layer_obj_index_mask_shadow->accum_ * inv_num_samples;
 		}
-		if(color_layers->getFlags().hasAny(Layer::Flags::DiffuseLayers))
+		if(color_layers->getFlags().hasAny(LayerDef::Flags::DiffuseLayers))
 		{
 			if(layer_diffuse) *layer_diffuse->color_ += layer_diffuse->accum_ * inv_num_samples;
 			if(layer_diffuse_no_shadow) *layer_diffuse_no_shadow->color_ += layer_diffuse_no_shadow->accum_ * inv_num_samples;
 		}
-		if(color_layers->getFlags().hasAny(Layer::Flags::BasicLayers))
+		if(color_layers->getFlags().hasAny(LayerDef::Flags::BasicLayers))
 		{
 			if(layer_shadow) *layer_shadow->color_ += layer_shadow->accum_ * inv_num_samples;
 			if(layer_glossy) *layer_glossy->color_ += layer_glossy->accum_ * inv_num_samples;
 		}
-		if(color_layers->getFlags().hasAny(Layer::Flags::DebugLayers))
+		if(color_layers->getFlags().hasAny(LayerDef::Flags::DebugLayers))
 		{
-			if(Rgba *color_layer = color_layers->find(Layer::DebugLightEstimationLightSampling)) *color_layer += col_result;
+			if(Rgba *color_layer = color_layers->find(LayerDef::DebugLightEstimationLightSampling)) *color_layer += col_result;
 		}
 	}
 	return col_result;
@@ -291,16 +291,16 @@ Rgb MonteCarloIntegrator::areaLightSampleMaterial(bool chromatic_enabled, float 
 		std::unique_ptr<ColorLayerAccum> layer_glossy;
 		if(color_layers)
 		{
-			if(color_layers->getFlags().hasAny(Layer::Flags::DiffuseLayers))
+			if(color_layers->getFlags().hasAny(LayerDef::Flags::DiffuseLayers))
 			{
-				if(Rgba *color_layer = color_layers->find(Layer::Diffuse))
+				if(Rgba *color_layer = color_layers->find(LayerDef::Diffuse))
 					layer_diffuse = std::unique_ptr<ColorLayerAccum>(new ColorLayerAccum(color_layer));
-				if(Rgba *color_layer = color_layers->find(Layer::DiffuseNoShadow))
+				if(Rgba *color_layer = color_layers->find(LayerDef::DiffuseNoShadow))
 					layer_diffuse_no_shadow = std::unique_ptr<ColorLayerAccum>(new ColorLayerAccum(color_layer));
 			}
-			if(color_layers->getFlags().hasAny(Layer::Flags::BasicLayers))
+			if(color_layers->getFlags().hasAny(LayerDef::Flags::BasicLayers))
 			{
-				if(Rgba *color_layer = color_layers->find(Layer::Glossy))
+				if(Rgba *color_layer = color_layers->find(LayerDef::Glossy))
 					layer_glossy = std::unique_ptr<ColorLayerAccum>(new ColorLayerAccum(color_layer));
 			}
 		}
@@ -363,18 +363,18 @@ Rgb MonteCarloIntegrator::areaLightSampleMaterial(bool chromatic_enabled, float 
 		col_result = col * inv_num_samples;
 		if(color_layers)
 		{
-			if(color_layers->getFlags().hasAny(Layer::Flags::DiffuseLayers))
+			if(color_layers->getFlags().hasAny(LayerDef::Flags::DiffuseLayers))
 			{
 				if(layer_diffuse) *layer_diffuse->color_ += layer_diffuse->accum_ * inv_num_samples;
 				if(layer_diffuse_no_shadow) *layer_diffuse_no_shadow->color_ += layer_diffuse_no_shadow->accum_ * inv_num_samples;
 			}
-			if(color_layers->getFlags().hasAny(Layer::Flags::BasicLayers))
+			if(color_layers->getFlags().hasAny(LayerDef::Flags::BasicLayers))
 			{
 				if(layer_glossy) *layer_glossy->color_ += layer_glossy->accum_ * inv_num_samples;
 			}
-			if(color_layers->getFlags().hasAny(Layer::Flags::DebugLayers))
+			if(color_layers->getFlags().hasAny(LayerDef::Flags::DebugLayers))
 			{
-				if(Rgba *color_layer = color_layers->find(Layer::DebugLightEstimationMatSampling)) *color_layer += col_result;
+				if(Rgba *color_layer = color_layers->find(LayerDef::DebugLightEstimationMatSampling)) *color_layer += col_result;
 			}
 		}
 		return col_result;
@@ -411,9 +411,9 @@ Rgb MonteCarloIntegrator::causticPhotons(const Ray &ray, ColorLayers *color_laye
 {
 	Rgb col = MonteCarloIntegrator::estimateCausticPhotons(sp, wo, caustic_map, caustic_radius, n_caus_search);
 	if(clamp_indirect > 0.f) col.clampProportionalRgb(clamp_indirect);
-	if(color_layers && color_layers->getFlags().hasAny(Layer::Flags::BasicLayers))
+	if(color_layers && color_layers->getFlags().hasAny(LayerDef::Flags::BasicLayers))
 	{
-		if(Rgba *color_layer = color_layers->find(Layer::Indirect)) *color_layer += col;
+		if(Rgba *color_layer = color_layers->find(LayerDef::Indirect)) *color_layer += col;
 	}
 	return col;
 }
@@ -718,9 +718,9 @@ std::pair<Rgb, float> MonteCarloIntegrator::dispersive(int thread_id, int ray_le
 			dcol *= vol->transmittance(*ref_ray_chromatic_volume);
 		}
 	}
-	if(color_layers && color_layers->getFlags().hasAny(Layer::Flags::BasicLayers))
+	if(color_layers && color_layers->getFlags().hasAny(LayerDef::Flags::BasicLayers))
 	{
-		if(Rgba *color_layer = color_layers->find(Layer::Trans))
+		if(Rgba *color_layer = color_layers->find(LayerDef::Trans))
 		{
 			dcol_trans_accum *= d_1;
 			*color_layer += dcol_trans_accum;
@@ -796,19 +796,19 @@ std::pair<Rgb, float> MonteCarloIntegrator::glossy(int thread_id, int ray_level,
 		}
 	}
 
-	if(color_layers && color_layers->getFlags().hasAny(Layer::Flags::BasicLayers))
+	if(color_layers && color_layers->getFlags().hasAny(LayerDef::Flags::BasicLayers))
 	{
-		if(Rgba *color_layer = color_layers->find(Layer::GlossyIndirect))
+		if(Rgba *color_layer = color_layers->find(LayerDef::GlossyIndirect))
 		{
 			gcol_indirect_accum *= inverse_ray_samples_glossy;
 			*color_layer += gcol_indirect_accum;
 		}
-		if(Rgba *color_layer = color_layers->find(Layer::Trans))
+		if(Rgba *color_layer = color_layers->find(LayerDef::Trans))
 		{
 			gcol_reflect_accum *= inverse_ray_samples_glossy;
 			*color_layer += gcol_reflect_accum;
 		}
-		if(Rgba *color_layer = color_layers->find(Layer::GlossyIndirect))
+		if(Rgba *color_layer = color_layers->find(LayerDef::GlossyIndirect))
 		{
 			gcol_transmit_accum *= inverse_ray_samples_glossy;
 			*color_layer += gcol_transmit_accum;
@@ -886,9 +886,9 @@ std::pair<Rgb, float> MonteCarloIntegrator::specularReflect(int thread_id, int r
 		}
 	}
 	integ.first *= reflect_data->col_;
-	if(color_layers && color_layers->getFlags().hasAny(Layer::Flags::BasicLayers))
+	if(color_layers && color_layers->getFlags().hasAny(LayerDef::Flags::BasicLayers))
 	{
-		if(Rgba *color_layer = color_layers->find(Layer::ReflectPerfect)) *color_layer += integ.first;
+		if(Rgba *color_layer = color_layers->find(LayerDef::ReflectPerfect)) *color_layer += integ.first;
 	}
 	return integ;
 }
@@ -916,9 +916,9 @@ std::pair<Rgb, float> MonteCarloIntegrator::specularRefract(int thread_id, int r
 		}
 	}
 	integ.first *= refract_data->col_;
-	if(color_layers && color_layers->getFlags().hasAny(Layer::Flags::BasicLayers))
+	if(color_layers && color_layers->getFlags().hasAny(LayerDef::Flags::BasicLayers))
 	{
-		if(Rgba *color_layer = color_layers->find(Layer::RefractPerfect)) *color_layer += integ.first;
+		if(Rgba *color_layer = color_layers->find(LayerDef::RefractPerfect)) *color_layer += integ.first;
 	}
 	return integ;
 }

@@ -224,8 +224,8 @@ bool ExrFormat::saveToFile(const std::string &name, const ImageLayer &image_laye
 
 bool ExrFormat::saveToFileMultiChannel(const std::string &name, const ImageLayers &image_layers, ColorSpace color_space, float gamma, bool alpha_premultiply)
 {
-	const int h_0 = image_layers(Layer::Combined).image_->getHeight();
-	const int w_0 = image_layers(Layer::Combined).image_->getWidth();
+	const int h_0 = image_layers(LayerDef::Combined).image_->getHeight();
+	const int w_0 = image_layers(LayerDef::Combined).image_->getWidth();
 
 	bool all_image_buffers_same_size = true;
 	for(const auto &image_layer : image_layers)

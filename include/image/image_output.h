@@ -51,7 +51,7 @@ class ImageOutput final
 		ImageOutput(Logger &logger, const std::string &image_path, const DenoiseParams denoise_params, const std::string &name = "out", const ColorSpace color_space = ColorSpace::RawManualGamma, float gamma = 1.f, bool with_alpha = true, bool alpha_premultiply = false, bool multi_layer = false);
 		std::string printDenoiseParams() const;
 		bool denoiseEnabled() const { return denoise_params_.enabled_; }
-		void saveImageFile(const std::string &filename, Layer::Type layer_type, Format *format, const RenderControl &render_control, const Timer &timer);
+		void saveImageFile(const std::string &filename, LayerDef::Type layer_type, Format *format, const RenderControl &render_control, const Timer &timer);
 		void saveImageFileMultiChannel(const std::string &filename, Format *format, const RenderControl &render_control, const Timer &timer);
 
 		std::string name_ = "out";

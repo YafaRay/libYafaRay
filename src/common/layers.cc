@@ -23,7 +23,7 @@
 
 BEGIN_YAFARAY
 
-bool Layers::isDefinedAny(const std::vector<Layer::Type> &types) const
+bool Layers::isDefinedAny(const std::vector<LayerDef::Type> &types) const
 {
 	for(const auto &type : types)
 	{

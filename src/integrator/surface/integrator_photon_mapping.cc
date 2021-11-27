@@ -911,9 +911,9 @@ std::pair<Rgb, float> PhotonIntegrator::integrate(int thread_id, int ray_level, 
 
 		const Rgb col_emit = material->emit(sp->mat_data_.get(), *sp, wo);
 		col += col_emit;
-		if(color_layers && color_layers->getFlags().hasAny(Layer::Flags::BasicLayers))
+		if(color_layers && color_layers->getFlags().hasAny(LayerDef::Flags::BasicLayers))
 		{
-			if(Rgba *color_layer = color_layers->find(Layer::Emit)) *color_layer += col_emit;
+			if(Rgba *color_layer = color_layers->find(LayerDef::Emit)) *color_layer += col_emit;
 		}
 		if(use_photon_diffuse_ && final_gather_)
 		{
@@ -925,9 +925,9 @@ std::pair<Rgb, float> PhotonIntegrator::integrate(int thread_id, int ray_level, 
 			}
 			else
 			{
-				if(color_layers && color_layers->getFlags().hasAny(Layer::Flags::BasicLayers))
+				if(color_layers && color_layers->getFlags().hasAny(LayerDef::Flags::BasicLayers))
 				{
-					if(Rgba *color_layer = color_layers->find(Layer::Radiance))
+					if(Rgba *color_layer = color_layers->find(LayerDef::Radiance))
 					{
 						const Vec3 n = SurfacePoint::normalFaceForward(sp->ng_, sp->n_, wo);
 						const Photon *nearest = radiance_map_->findNearest(sp->p_, n, lookup_rad_);
@@ -940,9 +940,9 @@ std::pair<Rgb, float> PhotonIntegrator::integrate(int thread_id, int ray_level, 
 				{
 					const Rgb col_tmp = material->emit(sp->mat_data_.get(), *sp, wo);
 					col += col_tmp;
-					if(color_layers && color_layers->getFlags().hasAny(Layer::Flags::BasicLayers))
+					if(color_layers && color_layers->getFlags().hasAny(LayerDef::Flags::BasicLayers))
 					{
-						if(Rgba *color_layer = color_layers->find(Layer::Emit)) *color_layer += col_tmp;
+						if(Rgba *color_layer = color_layers->find(LayerDef::Emit)) *color_layer += col_tmp;
 					}
 				}
 
@@ -952,9 +952,9 @@ std::pair<Rgb, float> PhotonIntegrator::integrate(int thread_id, int ray_level, 
 					Rgb col_tmp = finalGathering(thread_id, chromatic_enabled, wavelength, *sp, wo, ray_division, random_generator, pixel_sampling_data);
 					if(aa_noise_params_.clamp_indirect_ > 0.f) col_tmp.clampProportionalRgb(aa_noise_params_.clamp_indirect_);
 					col += col_tmp;
-					if(color_layers && color_layers->getFlags().hasAny(Layer::Flags::DiffuseLayers))
+					if(color_layers && color_layers->getFlags().hasAny(LayerDef::Flags::DiffuseLayers))
 					{
-						if(Rgba *color_layer = color_layers->find(Layer::DiffuseIndirect)) *color_layer = col_tmp;
+						if(Rgba *color_layer = color_layers->find(LayerDef::DiffuseIndirect)) *color_layer = col_tmp;
 					}
 				}
 			}
@@ -969,9 +969,9 @@ std::pair<Rgb, float> PhotonIntegrator::integrate(int thread_id, int ray_level, 
 			}
 			else
 			{
-				if(use_photon_diffuse_ && color_layers && color_layers->getFlags().hasAny(Layer::Flags::BasicLayers))
+				if(use_photon_diffuse_ && color_layers && color_layers->getFlags().hasAny(LayerDef::Flags::BasicLayers))
 				{
-					if(Rgba *color_layer = color_layers->find(Layer::Radiance))
+					if(Rgba *color_layer = color_layers->find(LayerDef::Radiance))
 					{
 						const Vec3 n = SurfacePoint::normalFaceForward(sp->ng_, sp->n_, wo);
 						const Photon *nearest = radiance_map_->findNearest(sp->p_, n, lookup_rad_);
@@ -983,9 +983,9 @@ std::pair<Rgb, float> PhotonIntegrator::integrate(int thread_id, int ray_level, 
 				{
 					const Rgb col_tmp = material->emit(sp->mat_data_.get(), *sp, wo);
 					col += col_tmp;
-					if(color_layers && color_layers->getFlags().hasAny(Layer::Flags::BasicLayers))
+					if(color_layers && color_layers->getFlags().hasAny(LayerDef::Flags::BasicLayers))
 					{
-						if(Rgba *color_layer = color_layers->find(Layer::Emit)) *color_layer += col_tmp;
+						if(Rgba *color_layer = color_layers->find(LayerDef::Emit)) *color_layer += col_tmp;
 					}
 				}
 
@@ -1012,9 +1012,9 @@ std::pair<Rgb, float> PhotonIntegrator::integrate(int thread_id, int ray_level, 
 
 						const Rgb col_tmp = surf_col * scale * gathered[i].photon_->color();
 						col += col_tmp;
-						if(color_layers && color_layers->getFlags().hasAny(Layer::Flags::BasicLayers))
+						if(color_layers && color_layers->getFlags().hasAny(LayerDef::Flags::BasicLayers))
 						{
-							if(Rgba *color_layer = color_layers->find(Layer::DiffuseIndirect)) *color_layer += col_tmp;
+							if(Rgba *color_layer = color_layers->find(LayerDef::DiffuseIndirect)) *color_layer += col_tmp;
 						}
 					}
 				}

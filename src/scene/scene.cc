@@ -682,17 +682,17 @@ void Scene::defineLayer(const ParamMap &params)
 
 void Scene::defineLayer(const std::string &layer_type_name, const std::string &image_type_name, const std::string &exported_image_type_name, const std::string &exported_image_name)
 {
-	const Layer::Type layer_type = Layer::getType(layer_type_name);
-	const Image::Type image_type = image_type_name.empty() ? Layer::getDefaultImageType(layer_type) : Image::getTypeFromName(image_type_name);
+	const LayerDef::Type layer_type = LayerDef::getType(layer_type_name);
+	const Image::Type image_type = image_type_name.empty() ? LayerDef::getDefaultImageType(layer_type) : Image::getTypeFromName(image_type_name);
 	const Image::Type exported_image_type = Image::getTypeFromName(exported_image_type_name);
 	defineLayer(layer_type, image_type, exported_image_type, exported_image_name);
 }
 
-void Scene::defineLayer(Layer::Type layer_type, Image::Type image_type, Image::Type exported_image_type, const std::string &exported_image_name)
+void Scene::defineLayer(LayerDef::Type layer_type, Image::Type image_type, Image::Type exported_image_type, const std::string &exported_image_name)
 {
-	if(layer_type == Layer::Disabled)
+	if(layer_type == LayerDef::Disabled)
 	{
-		logger_.logWarning("Scene: cannot create layer '", Layer::getTypeName(layer_type), "' of unknown or disabled layer type");
+		logger_.logWarning("Scene: cannot create layer '", LayerDef::getName(layer_type), "' of unknown or disabled layer type");
 		return;
 	}
 
@@ -705,13 +705,13 @@ void Scene::defineLayer(Layer::Type layer_type, Image::Type image_type, Image::T
 		if(logger_.isDebug())logger_.logDebug("Scene: had previously defined: ", existing_layer->print());
 		if(image_type == Image::Type::None && existing_layer->getImageType() != Image::Type::None)
 		{
-			if(logger_.isDebug())logger_.logDebug("Scene: the layer '", Layer::getTypeName(layer_type), "' had previously a defined internal image which cannot be removed.");
+			if(logger_.isDebug())logger_.logDebug("Scene: the layer '", LayerDef::getName(layer_type), "' had previously a defined internal image which cannot be removed.");
 		}
 		else existing_layer->setImageType(image_type);
 
 		if(exported_image_type == Image::Type::None && existing_layer->getExportedImageType() != Image::Type::None)
 		{
-			if(logger_.isDebug())logger_.logDebug("Scene: the layer '", Layer::getTypeName(layer_type), "' was previously an exported layer and cannot be changed into an internal layer now.");
+			if(logger_.isDebug())logger_.logDebug("Scene: the layer '", LayerDef::getName(layer_type), "' was previously an exported layer and cannot be changed into an internal layer now.");
 		}
 		else
 		{
@@ -732,10 +732,10 @@ void Scene::defineLayer(Layer::Type layer_type, Image::Type image_type, Image::T
 void Scene::defineBasicLayers()
 {
 	//by default we will have an external/internal Combined layer
-	if(!layers_.isDefined(Layer::Combined)) defineLayer(Layer::Combined, Image::Type::ColorAlpha, Image::Type::ColorAlpha);
+	if(!layers_.isDefined(LayerDef::Combined)) defineLayer(LayerDef::Combined, Image::Type::ColorAlpha, Image::Type::ColorAlpha);
 
 	//This auxiliary layer will always be needed for material-specific number of samples calculation
-	if(!layers_.isDefined(Layer::DebugSamplingFactor)) defineLayer(Layer::DebugSamplingFactor, Image::Type::Gray);
+	if(!layers_.isDefined(LayerDef::DebugSamplingFactor)) defineLayer(LayerDef::DebugSamplingFactor, Image::Type::Gray);
 }
 
 void Scene::defineDependentLayers()
@@ -744,53 +744,53 @@ void Scene::defineDependentLayers()
 	{
 		switch(layer.first)
 		{
-			case Layer::ZDepthNorm:
-				if(!layers_.isDefined(Layer::Mist)) defineLayer(Layer::Mist);
+			case LayerDef::ZDepthNorm:
+				if(!layers_.isDefined(LayerDef::Mist)) defineLayer(LayerDef::Mist);
 				break;
 
-			case Layer::Mist:
-				if(!layers_.isDefined(Layer::ZDepthNorm)) defineLayer(Layer::ZDepthNorm);
+			case LayerDef::Mist:
+				if(!layers_.isDefined(LayerDef::ZDepthNorm)) defineLayer(LayerDef::ZDepthNorm);
 				break;
 
-			case Layer::ReflectAll:
-				if(!layers_.isDefined(Layer::ReflectPerfect)) defineLayer(Layer::ReflectPerfect);
-				if(!layers_.isDefined(Layer::Glossy)) defineLayer(Layer::Glossy);
-				if(!layers_.isDefined(Layer::GlossyIndirect)) defineLayer(Layer::GlossyIndirect);
+			case LayerDef::ReflectAll:
+				if(!layers_.isDefined(LayerDef::ReflectPerfect)) defineLayer(LayerDef::ReflectPerfect);
+				if(!layers_.isDefined(LayerDef::Glossy)) defineLayer(LayerDef::Glossy);
+				if(!layers_.isDefined(LayerDef::GlossyIndirect)) defineLayer(LayerDef::GlossyIndirect);
 				break;
 
-			case Layer::RefractAll:
-				if(!layers_.isDefined(Layer::RefractPerfect)) defineLayer(Layer::RefractPerfect);
-				if(!layers_.isDefined(Layer::Trans)) defineLayer(Layer::Trans);
-				if(!layers_.isDefined(Layer::TransIndirect)) defineLayer(Layer::TransIndirect);
+			case LayerDef::RefractAll:
+				if(!layers_.isDefined(LayerDef::RefractPerfect)) defineLayer(LayerDef::RefractPerfect);
+				if(!layers_.isDefined(LayerDef::Trans)) defineLayer(LayerDef::Trans);
+				if(!layers_.isDefined(LayerDef::TransIndirect)) defineLayer(LayerDef::TransIndirect);
 				break;
 
-			case Layer::IndirectAll:
-				if(!layers_.isDefined(Layer::Indirect)) defineLayer(Layer::Indirect);
-				if(!layers_.isDefined(Layer::DiffuseIndirect)) defineLayer(Layer::DiffuseIndirect);
+			case LayerDef::IndirectAll:
+				if(!layers_.isDefined(LayerDef::Indirect)) defineLayer(LayerDef::Indirect);
+				if(!layers_.isDefined(LayerDef::DiffuseIndirect)) defineLayer(LayerDef::DiffuseIndirect);
 				break;
 
-			case Layer::ObjIndexMaskAll:
-				if(!layers_.isDefined(Layer::ObjIndexMask)) defineLayer(Layer::ObjIndexMask);
-				if(!layers_.isDefined(Layer::ObjIndexMaskShadow)) defineLayer(Layer::ObjIndexMaskShadow);
+			case LayerDef::ObjIndexMaskAll:
+				if(!layers_.isDefined(LayerDef::ObjIndexMask)) defineLayer(LayerDef::ObjIndexMask);
+				if(!layers_.isDefined(LayerDef::ObjIndexMaskShadow)) defineLayer(LayerDef::ObjIndexMaskShadow);
 				break;
 
-			case Layer::MatIndexMaskAll:
-				if(!layers_.isDefined(Layer::MatIndexMask)) defineLayer(Layer::MatIndexMask);
-				if(!layers_.isDefined(Layer::MatIndexMaskShadow)) defineLayer(Layer::MatIndexMaskShadow);
+			case LayerDef::MatIndexMaskAll:
+				if(!layers_.isDefined(LayerDef::MatIndexMask)) defineLayer(LayerDef::MatIndexMask);
+				if(!layers_.isDefined(LayerDef::MatIndexMaskShadow)) defineLayer(LayerDef::MatIndexMaskShadow);
 				break;
 
-			case Layer::DebugFacesEdges:
-				if(!layers_.isDefined(Layer::NormalGeom)) defineLayer(Layer::NormalGeom, Image::Type::ColorAlpha);
-				if(!layers_.isDefined(Layer::ZDepthNorm)) defineLayer(Layer::ZDepthNorm, Image::Type::GrayAlpha);
+			case LayerDef::DebugFacesEdges:
+				if(!layers_.isDefined(LayerDef::NormalGeom)) defineLayer(LayerDef::NormalGeom, Image::Type::ColorAlpha);
+				if(!layers_.isDefined(LayerDef::ZDepthNorm)) defineLayer(LayerDef::ZDepthNorm, Image::Type::GrayAlpha);
 				break;
 
-			case Layer::DebugObjectsEdges:
-				if(!layers_.isDefined(Layer::NormalSmooth)) defineLayer(Layer::NormalSmooth, Image::Type::ColorAlpha);
-				if(!layers_.isDefined(Layer::ZDepthNorm)) defineLayer(Layer::ZDepthNorm, Image::Type::GrayAlpha);
+			case LayerDef::DebugObjectsEdges:
+				if(!layers_.isDefined(LayerDef::NormalSmooth)) defineLayer(LayerDef::NormalSmooth, Image::Type::ColorAlpha);
+				if(!layers_.isDefined(LayerDef::ZDepthNorm)) defineLayer(LayerDef::ZDepthNorm, Image::Type::GrayAlpha);
 				break;
 
-			case Layer::Toon:
-				if(!layers_.isDefined(Layer::DebugObjectsEdges)) defineLayer(Layer::DebugObjectsEdges, Image::Type::ColorAlpha);
+			case LayerDef::Toon:
+				if(!layers_.isDefined(LayerDef::DebugObjectsEdges)) defineLayer(LayerDef::DebugObjectsEdges, Image::Type::ColorAlpha);
 				break;
 
 			default:

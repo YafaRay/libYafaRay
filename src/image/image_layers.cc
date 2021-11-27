@@ -33,7 +33,7 @@ int ImageLayer::getHeight() const
 	else return image_->getHeight();
 }
 
-void ImageLayers::setColor(int x, int y, const Rgba &color, Layer::Type layer_type)
+void ImageLayers::setColor(int x, int y, const Rgba &color, LayerDef::Type layer_type)
 {
 	ImageLayer *image_layer = find(layer_type);
 	if(image_layer) image_layer->image_->setColor(x, y, color);

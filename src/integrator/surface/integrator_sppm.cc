@@ -119,7 +119,7 @@ bool SppmIntegrator::render()
 	max_depth_ = 0.f;
 	min_depth_ = 1e38f;
 
-	if(layers_->isDefinedAny({Layer::ZDepthNorm, Layer::Mist})) precalcDepths();
+	if(layers_->isDefinedAny({LayerDef::ZDepthNorm, LayerDef::Mist})) precalcDepths();
 
 	int acum_aa_samples = 1;
 
@@ -257,18 +257,18 @@ bool SppmIntegrator::renderTile(const RenderArea &a, int n_samples, int offset, 
 				Rgba color = col_indirect;
 				color += g_info.constant_randiance_;
 				color.a_ = g_info.constant_randiance_.a_; //the alpha value is hold in the constantRadiance variable
-				color_layers(Layer::Combined) = color;
+				color_layers(LayerDef::Combined) = color;
 
 				for(auto &color_layer : color_layers)
 				{
 					switch(color_layer.first)
 					{
-						case Layer::ObjIndexMask:
-						case Layer::ObjIndexMaskShadow:
-						case Layer::ObjIndexMaskAll:
-						case Layer::MatIndexMask:
-						case Layer::MatIndexMaskShadow:
-						case Layer::MatIndexMaskAll:
+						case LayerDef::ObjIndexMask:
+						case LayerDef::ObjIndexMaskShadow:
+						case LayerDef::ObjIndexMaskAll:
+						case LayerDef::MatIndexMask:
+						case LayerDef::MatIndexMaskShadow:
+						case LayerDef::MatIndexMaskAll:
 							if(color_layer.second.a_ > 1.f) color_layer.second.a_ = 1.f;
 							color_layer.second.clampRgb01();
 							if(mask_params_.invert_)
@@ -277,27 +277,27 @@ bool SppmIntegrator::renderTile(const RenderArea &a, int n_samples, int offset, 
 							}
 							if(!mask_params_.only_)
 							{
-								Rgba col_combined = color_layers(Layer::Combined);
+								Rgba col_combined = color_layers(LayerDef::Combined);
 								col_combined.a_ = 1.f;
 								color_layer.second *= col_combined;
 							}
 							break;
-						case Layer::ZDepthAbs:
+						case LayerDef::ZDepthAbs:
 							if(camera_ray.ray_.tmax_ < 0.f) color_layer.second = Rgba(0.f, 0.f); // Show background as fully transparent
 							else color_layer.second = Rgb(camera_ray.ray_.tmax_);
 							if(color_layer.second.a_ > 1.f) color_layer.second.a_ = 1.f;
 							break;
-						case Layer::ZDepthNorm:
+						case LayerDef::ZDepthNorm:
 							if(camera_ray.ray_.tmax_ < 0.f) color_layer.second = Rgba(0.f, 0.f); // Show background as fully transparent
 							else color_layer.second = Rgb(1.f - (camera_ray.ray_.tmax_ - min_depth_) * max_depth_); // Distance normalization
 							if(color_layer.second.a_ > 1.f) color_layer.second.a_ = 1.f;
 							break;
-						case Layer::Mist:
+						case LayerDef::Mist:
 							if(camera_ray.ray_.tmax_ < 0.f) color_layer.second = Rgba(0.f, 0.f); // Show background as fully transparent
 							else color_layer.second = Rgb((camera_ray.ray_.tmax_ - min_depth_) * max_depth_); // Distance normalization
 							if(color_layer.second.a_ > 1.f) color_layer.second.a_ = 1.f;
 							break;
-						case Layer::Indirect:
+						case LayerDef::Indirect:
 							color_layer.second = col_indirect;
 							color_layer.second.a_ = g_info.constant_randiance_.a_;
 							if(color_layer.second.a_ > 1.f) color_layer.second.a_ = 1.f;
@@ -635,9 +635,9 @@ GatherInfo SppmIntegrator::traceGatherRay(int thread_id, int ray_level, bool chr
 
 		const Rgb col_emit = material->emit(sp->mat_data_.get(), *sp, wo);
 		g_info.constant_randiance_ += col_emit; //add only once, but FG seems add twice?
-		if(color_layers && color_layers->getFlags().hasAny(Layer::Flags::BasicLayers))
+		if(color_layers && color_layers->getFlags().hasAny(LayerDef::Flags::BasicLayers))
 		{
-			if(Rgba *color_layer = color_layers->find(Layer::Emit)) *color_layer += col_emit;
+			if(Rgba *color_layer = color_layers->find(LayerDef::Emit)) *color_layer += col_emit;
 		}
 		if(mat_bsdfs.hasAny(BsdfFlags::Diffuse))
 		{
@@ -801,7 +801,7 @@ GatherInfo SppmIntegrator::traceGatherRay(int thread_id, int ray_level, bool chr
 						t_cing.constant_randiance_ *= mcol * wl_col * w;
 						if(color_layers)
 						{
-							if(color_layers->find(Layer::Trans)) dcol_trans_accum += t_cing.constant_randiance_;
+							if(color_layers->find(LayerDef::Trans)) dcol_trans_accum += t_cing.constant_randiance_;
 						}
 					}
 					cing += t_cing;
@@ -819,9 +819,9 @@ GatherInfo SppmIntegrator::traceGatherRay(int thread_id, int ray_level, bool chr
 				g_info.photon_flux_ += cing.photon_flux_ * d_1;
 				g_info.photon_count_ += cing.photon_count_ * d_1;
 
-				if(color_layers && color_layers->getFlags().hasAny(Layer::Flags::BasicLayers))
+				if(color_layers && color_layers->getFlags().hasAny(LayerDef::Flags::BasicLayers))
 				{
-					if(Rgba *color_layer = color_layers->find(Layer::Trans))
+					if(Rgba *color_layer = color_layers->find(LayerDef::Trans))
 					{
 						dcol_trans_accum *= d_1;
 						*color_layer += dcol_trans_accum;
@@ -895,7 +895,7 @@ GatherInfo SppmIntegrator::traceGatherRay(int thread_id, int ray_level, bool chr
 							trace_gather_ray.constant_randiance_ *= col_reflect_factor;
 							if(color_layers)
 							{
-								if(color_layers->find(Layer::GlossyIndirect)) gcol_indirect_accum += (Rgb) trace_gather_ray.constant_randiance_;
+								if(color_layers->find(LayerDef::GlossyIndirect)) gcol_indirect_accum += (Rgb) trace_gather_ray.constant_randiance_;
 							}
 							gather_info += trace_gather_ray;
 						}
@@ -910,7 +910,7 @@ GatherInfo SppmIntegrator::traceGatherRay(int thread_id, int ray_level, bool chr
 							trace_gather_ray.constant_randiance_ *= col_transmit_factor;
 							if(color_layers)
 							{
-								if(color_layers->find(Layer::GlossyIndirect)) gcol_transmit_accum += (Rgb) trace_gather_ray.constant_randiance_;
+								if(color_layers->find(LayerDef::GlossyIndirect)) gcol_transmit_accum += (Rgb) trace_gather_ray.constant_randiance_;
 							}
 							gather_info += trace_gather_ray;
 						}
@@ -930,7 +930,7 @@ GatherInfo SppmIntegrator::traceGatherRay(int thread_id, int ray_level, bool chr
 						trace_gather_ray.constant_randiance_ *= mcol * W;
 						if(color_layers)
 						{
-							if(color_layers->find(Layer::Trans)) gcol_reflect_accum += trace_gather_ray.constant_randiance_;
+							if(color_layers->find(LayerDef::Trans)) gcol_reflect_accum += trace_gather_ray.constant_randiance_;
 						}
 						gather_info += trace_gather_ray;
 					}
@@ -948,19 +948,19 @@ GatherInfo SppmIntegrator::traceGatherRay(int thread_id, int ray_level, bool chr
 				g_info.constant_randiance_ += gather_info.constant_randiance_ * d_1;
 				g_info.photon_flux_ += gather_info.photon_flux_ * d_1;
 				g_info.photon_count_ += gather_info.photon_count_ * d_1;
-				if(color_layers && color_layers->getFlags().hasAny(Layer::Flags::BasicLayers))
+				if(color_layers && color_layers->getFlags().hasAny(LayerDef::Flags::BasicLayers))
 				{
-					if(Rgba *color_layer = color_layers->find(Layer::GlossyIndirect))
+					if(Rgba *color_layer = color_layers->find(LayerDef::GlossyIndirect))
 					{
 						gcol_indirect_accum *= d_1;
 						*color_layer += gcol_indirect_accum;
 					}
-					if(Rgba *color_layer = color_layers->find(Layer::Trans))
+					if(Rgba *color_layer = color_layers->find(LayerDef::Trans))
 					{
 						gcol_reflect_accum *= d_1;
 						*color_layer += gcol_reflect_accum;
 					}
-					if(Rgba *color_layer = color_layers->find(Layer::GlossyIndirect))
+					if(Rgba *color_layer = color_layers->find(LayerDef::GlossyIndirect))
 					{
 						gcol_transmit_accum *= d_1;
 						*color_layer += gcol_transmit_accum;
@@ -987,9 +987,9 @@ GatherInfo SppmIntegrator::traceGatherRay(int thread_id, int ray_level, bool chr
 					}
 					const Rgba col_radiance_reflect = refg.constant_randiance_ * Rgba(specular.reflect_->col_);
 					g_info.constant_randiance_ += col_radiance_reflect;
-					if(color_layers && color_layers->getFlags().hasAny(Layer::Flags::BasicLayers))
+					if(color_layers && color_layers->getFlags().hasAny(LayerDef::Flags::BasicLayers))
 					{
-						if(Rgba *color_layer = color_layers->find(Layer::ReflectPerfect)) *color_layer += col_radiance_reflect;
+						if(Rgba *color_layer = color_layers->find(LayerDef::ReflectPerfect)) *color_layer += col_radiance_reflect;
 					}
 					g_info.photon_flux_ += refg.photon_flux_ * Rgba(specular.reflect_->col_);
 					g_info.photon_count_ += refg.photon_count_;
@@ -1010,9 +1010,9 @@ GatherInfo SppmIntegrator::traceGatherRay(int thread_id, int ray_level, bool chr
 					}
 					const Rgba col_radiance_refract = refg.constant_randiance_ * Rgba(specular.refract_->col_);
 					g_info.constant_randiance_ += col_radiance_refract;
-					if(color_layers && color_layers->getFlags().hasAny(Layer::Flags::BasicLayers))
+					if(color_layers && color_layers->getFlags().hasAny(LayerDef::Flags::BasicLayers))
 					{
-						if(Rgba *color_layer = color_layers->find(Layer::RefractPerfect)) *color_layer += col_radiance_refract;
+						if(Rgba *color_layer = color_layers->find(LayerDef::RefractPerfect)) *color_layer += col_radiance_refract;
 					}
 					g_info.photon_flux_ += refg.photon_flux_ * Rgba(specular.refract_->col_);
 					g_info.photon_count_ += refg.photon_count_;
