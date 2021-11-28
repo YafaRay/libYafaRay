@@ -531,7 +531,7 @@ void SppmIntegrator::prePass(int samples, int offset, bool adaptive)
 		Rgb pcol = tmplights[i]->emitPhoton(.5, .5, .5, .5, ray, light_pdf);
 		const float light_num_pdf = light_power_d->function(i) * light_power_d->invIntegral();
 		pcol *= f_num_lights * light_pdf / light_num_pdf; //remember that lightPdf is the inverse of the pdf, hence *=...
-		if(logger_.isVerbose()) logger_.logVerbose(getName(), ": Light [", i + 1, "] Photon col:", pcol, " | lnpdf: ", light_num_pdf);
+		if(logger_.isVerbose()) logger_.logVerbose(getName(), ": Light [", tmplights[i]->getName(), "] Photon col:", pcol, " | lnpdf: ", light_num_pdf);
 	}
 
 	//shoot photons

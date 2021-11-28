@@ -107,13 +107,14 @@ PhotonIntegrator::PhotonIntegrator(RenderControl &render_control, Logger &logger
 	radiance_map_->setName("FG Radiance Photon Map");
 }
 
-void PhotonIntegrator::diffuseWorker(PreGatherData &pgdat, unsigned int &total_photons_shot, int thread_id, int num_d_lights, const Pdf1D *light_power_d, const std::vector<const Light *> &tmplights, int pb_step)
+void PhotonIntegrator::diffuseWorker(PreGatherData &pgdat, unsigned int &total_photons_shot, int thread_id, const Pdf1D *light_power_d, const std::vector<const Light *> &lights_diffuse, int pb_step)
 {
 	//shoot photons
 	bool done = false;
 	unsigned int curr = 0;
 	std::unique_ptr<const SurfacePoint> hit_prev, hit_curr;
-	const float f_num_lights = static_cast<float>(num_d_lights);
+	const int num_lights_diffuse = lights_diffuse.size();
+	const float f_num_lights = static_cast<float>(num_lights_diffuse);
 	unsigned int n_diffuse_photons_thread = 1 + ((n_diffuse_photons_ - 1) / num_threads_photons_);
 	std::vector<Photon> local_diffuse_photons;
 	std::vector<RadData> local_rad_points;
@@ -131,14 +132,14 @@ void PhotonIntegrator::diffuseWorker(PreGatherData &pgdat, unsigned int &total_p
 		const float s_l = float(haltoncurr) * inv_diff_photons;
 		float light_num_pdf;
 		const int light_num = light_power_d->dSample(s_l, light_num_pdf);
-		if(light_num >= num_d_lights)
+		if(light_num >= num_lights_diffuse)
 		{
 			logger_.logError(getName(), ": lightPDF sample error! ", s_l, "/", light_num);
 			return;
 		}
 		Ray ray;
 		float light_pdf;
-		Rgb pcol = tmplights[light_num]->emitPhoton(s_1, s_2, s_3, s_4, ray, light_pdf);
+		Rgb pcol = lights_diffuse[light_num]->emitPhoton(s_1, s_2, s_3, s_4, ray, light_pdf);
 		ray.tmin_ = ray_min_dist_;
 		ray.tmax_ = -1.f;
 		pcol *= f_num_lights * light_pdf / light_num_pdf; //remember that lightPdf is the inverse of th pdf, hence *=...
@@ -259,7 +260,6 @@ bool PhotonIntegrator::preprocess(ImageFilm *image_film, const RenderView *rende
 	set << "RayDepth=" << r_depth_ << "  ";
 
 	lights_ = render_view_->getLightsVisible();
-	std::vector<const Light *> tmplights;
 
 	if(use_photon_caustics_)
 	{
@@ -398,26 +398,13 @@ bool PhotonIntegrator::preprocess(ImageFilm *image_film, const RenderView *rende
 	radiance_map_->setNumPaths(0);
 	radiance_map_->setNumThreadsPkDtree(num_threads_photons_);
 
-	int num_c_lights = 0;
-	int num_d_lights = 0;
-
 	//shoot photons
 	unsigned int curr = 0;
 	// for radiance map:
 	PreGatherData pgdat(diffuse_map_.get());
 
-	tmplights.clear();
-
-	for(const auto &light : lights_)
-	{
-		if(light->shootsDiffuseP())
-		{
-			num_d_lights++;
-			tmplights.push_back(light);
-		}
-	}
-
-	if(num_d_lights == 0)
+	const std::vector<const Light *> lights_diffuse = render_view_->getLightsEmittingDiffusePhotons();
+	if(lights_diffuse.empty())
 	{
 		logger_.logWarning(getName(), ": No lights found that can shoot diffuse photons, disabling Diffuse photon processing");
 		enableDiffuse(false);
@@ -425,48 +412,38 @@ bool PhotonIntegrator::preprocess(ImageFilm *image_film, const RenderView *rende
 
 	if(use_photon_diffuse_)
 	{
-		const float f_num_lights = static_cast<float>(num_d_lights);
-		std::vector<float> energies(num_d_lights);
-
-		for(int i = 0; i < num_d_lights; ++i) energies[i] = tmplights[i]->totalEnergy().energy();
-
-		auto light_power_d = std::unique_ptr<Pdf1D>(new Pdf1D(energies));
-
+		const int num_lights_diffuse = lights_diffuse.size();
+		const float f_num_lights = static_cast<float>(num_lights_diffuse);
+		std::vector<float> energies_diffuse(num_lights_diffuse);
+		for(int i = 0; i < num_lights_diffuse; ++i) energies_diffuse[i] = lights_diffuse[i]->totalEnergy().energy();
+		auto light_power_d_diffuse = std::unique_ptr<Pdf1D>(new Pdf1D(energies_diffuse));
 		if(logger_.isVerbose()) logger_.logVerbose(getName(), ": Light(s) photon color testing for diffuse map:");
-		for(int i = 0; i < num_d_lights; ++i)
+		for(int i = 0; i < num_lights_diffuse; ++i)
 		{
 			Ray ray;
 			float light_pdf;
-			Rgb pcol = tmplights[i]->emitPhoton(.5, .5, .5, .5, ray, light_pdf);
-			const float light_num_pdf = light_power_d->function(i) * light_power_d->invIntegral();
+			Rgb pcol = lights_diffuse[i]->emitPhoton(.5, .5, .5, .5, ray, light_pdf);
+			const float light_num_pdf = light_power_d_diffuse->function(i) * light_power_d_diffuse->invIntegral();
 			pcol *= f_num_lights * light_pdf / light_num_pdf; //remember that lightPdf is the inverse of the pdf, hence *=...
-			if(logger_.isVerbose()) logger_.logVerbose(getName(), ": Light [", i + 1, "] Photon col:", pcol, " | lnpdf: ", light_num_pdf);
+			if(logger_.isVerbose()) logger_.logVerbose(getName(), ": Light [", lights_diffuse[i]->getName(), "] Photon col:", pcol, " | lnpdf: ", light_num_pdf);
 		}
-
 		//shoot photons
 		curr = 0;
-
 		logger_.logInfo(getName(), ": Building diffuse photon map...");
-
 		intpb_->init(128, logger_.getConsoleLogColorsEnabled());
 		const int pb_step = std::max(1U, n_diffuse_photons_ / 128);
 		intpb_->setTag("Building diffuse photon map...");
 		//Pregather diffuse photons
-
 		n_diffuse_photons_ = std::max((unsigned int) num_threads_photons_, (n_diffuse_photons_ / num_threads_photons_) * num_threads_photons_); //rounding the number of diffuse photons so it's a number divisible by the number of threads (distribute uniformly among the threads). At least 1 photon per thread
-
 		logger_.logParams(getName(), ": Shooting ", n_diffuse_photons_, " photons across ", num_threads_photons_, " threads (", (n_diffuse_photons_ / num_threads_photons_), " photons/thread)");
-
 		std::vector<std::thread> threads;
-		for(int i = 0; i < num_threads_photons_; ++i) threads.push_back(std::thread(&PhotonIntegrator::diffuseWorker, this, std::ref(pgdat), std::ref(curr), i, num_d_lights, light_power_d.get(), tmplights, pb_step));
+		for(int i = 0; i < num_threads_photons_; ++i) threads.push_back(std::thread(&PhotonIntegrator::diffuseWorker, this, std::ref(pgdat), std::ref(curr), i, light_power_d_diffuse.get(), lights_diffuse, pb_step));
 		for(auto &t : threads) t.join();
 
 		intpb_->done();
 		intpb_->setTag("Diffuse photon map built.");
 		if(logger_.isVerbose()) logger_.logVerbose(getName(), ": Diffuse photon map built.");
-		logger_.logInfo(getName(), ": Shot ", curr, " photons from ", num_d_lights, " light(s)");
-
-		tmplights.clear();
+		logger_.logInfo(getName(), ": Shot ", curr, " photons from ", num_lights_diffuse, " light(s)");
 
 		if(diffuse_map_->nPhotons() < 50)
 		{
@@ -500,16 +477,8 @@ bool PhotonIntegrator::preprocess(ImageFilm *image_film, const RenderView *rende
 		}
 	}
 
-	for(const auto &light : lights_)
-	{
-		if(light->shootsCausticP())
-		{
-			num_c_lights++;
-			tmplights.push_back(light);
-		}
-	}
-
-	if(num_c_lights == 0)
+	const std::vector<const Light *> lights_caustic = render_view_->getLightsEmittingCausticPhotons();
+	if(lights_caustic.empty())
 	{
 		logger_.logWarning(getName(), ": No lights found that can shoot caustic photons, disabling Caustic photon processing");
 		enableCaustics(false);
@@ -518,22 +487,23 @@ bool PhotonIntegrator::preprocess(ImageFilm *image_film, const RenderView *rende
 	if(use_photon_caustics_)
 	{
 		curr = 0;
-		const float f_num_lights = static_cast<float>(num_c_lights);
-		std::vector<float> energies(num_c_lights);
+		const int num_lights_caustic = lights_caustic.size();
+		const float f_num_lights = static_cast<float>(num_lights_caustic);
+		std::vector<float> energies_caustic(num_lights_caustic);
 
-		for(int i = 0; i < num_c_lights; ++i) energies[i] = tmplights[i]->totalEnergy().energy();
+		for(int i = 0; i < num_lights_caustic; ++i) energies_caustic[i] = lights_caustic[i]->totalEnergy().energy();
 
-		auto light_power_d = std::unique_ptr<Pdf1D>(new Pdf1D(energies));
+		auto light_power_d_caustic = std::unique_ptr<Pdf1D>(new Pdf1D(energies_caustic));
 
 		if(logger_.isVerbose()) logger_.logVerbose(getName(), ": Light(s) photon color testing for caustics map:");
-		for(int i = 0; i < num_c_lights; ++i)
+		for(int i = 0; i < num_lights_caustic; ++i)
 		{
 			Ray ray;
 			float light_pdf;
-			Rgb pcol = tmplights[i]->emitPhoton(.5, .5, .5, .5, ray, light_pdf);
-			const float light_num_pdf = light_power_d->function(i) * light_power_d->invIntegral();
+			Rgb pcol = lights_caustic[i]->emitPhoton(.5, .5, .5, .5, ray, light_pdf);
+			const float light_num_pdf = light_power_d_caustic->function(i) * light_power_d_caustic->invIntegral();
 			pcol *= f_num_lights * light_pdf / light_num_pdf; //remember that lightPdf is the inverse of the pdf, hence *=...
-			if(logger_.isVerbose()) logger_.logVerbose(getName(), ": Light [", i + 1, "] Photon col:", pcol, " | lnpdf: ", light_num_pdf);
+			if(logger_.isVerbose()) logger_.logVerbose(getName(), ": Light [", lights_caustic[i]->getName(), "] Photon col:", pcol, " | lnpdf: ", light_num_pdf);
 		}
 
 		logger_.logInfo(getName(), ": Building caustics photon map...");
@@ -547,12 +517,12 @@ bool PhotonIntegrator::preprocess(ImageFilm *image_film, const RenderView *rende
 		logger_.logParams(getName(), ": Shooting ", n_caus_photons_, " photons across ", num_threads_photons_, " threads (", (n_caus_photons_ / num_threads_photons_), " photons/thread)");
 
 		std::vector<std::thread> threads;
-		for(int i = 0; i < num_threads_photons_; ++i) threads.push_back(std::thread(&PhotonIntegrator::causticWorker, this, std::ref(curr), i, num_c_lights, light_power_d.get(), tmplights, pb_step));
+		for(int i = 0; i < num_threads_photons_; ++i) threads.push_back(std::thread(&PhotonIntegrator::causticWorker, this, std::ref(curr), i, light_power_d_caustic.get(), lights_caustic, pb_step));
 		for(auto &t : threads) t.join();
 
 		intpb_->done();
 		intpb_->setTag("Caustics photon map built.");
-		logger_.logInfo(getName(), ": Shot ", curr, " caustic photons from ", num_c_lights, " light(s).");
+		logger_.logInfo(getName(), ": Shot ", curr, " caustic photons from ", num_lights_caustic, " light(s).");
 		if(logger_.isVerbose()) logger_.logVerbose(getName(), ": Stored caustic photons: ", caustic_map_->nPhotons());
 	}
 	else
@@ -560,7 +530,6 @@ bool PhotonIntegrator::preprocess(ImageFilm *image_film, const RenderView *rende
 		logger_.logInfo(getName(), ": Caustics photon mapping disabled, skipping...");
 	}
 
-	tmplights.clear();
 	std::thread caustic_map_build_kd_tree_thread;
 	if(use_photon_caustics_ && caustic_map_->nPhotons() > 0)
 	{

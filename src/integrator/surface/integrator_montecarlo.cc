@@ -418,10 +418,11 @@ Rgb MonteCarloIntegrator::causticPhotons(ColorLayers *color_layers, const Ray &r
 	return col;
 }
 
-void MonteCarloIntegrator::causticWorker(unsigned int &total_photons_shot, int thread_id, int num_lights, const Pdf1D *light_power_d, const std::vector<const Light *> &caus_lights, int pb_step)
+void MonteCarloIntegrator::causticWorker(unsigned int &total_photons_shot, int thread_id, const Pdf1D *light_power_d_caustic, const std::vector<const Light *> &lights_caustic, int pb_step)
 {
 	bool done = false;
-	const float f_num_lights = static_cast<float>(num_lights);
+	const int num_lights_caustic = lights_caustic.size();
+	const float f_num_lights = static_cast<float>(num_lights_caustic);
 	unsigned int curr = 0;
 	const unsigned int n_caus_photons_thread = 1 + ((n_caus_photons_ - 1) / num_threads_photons_);
 	std::vector<Photon> local_caustic_photons;
@@ -438,15 +439,15 @@ void MonteCarloIntegrator::causticWorker(unsigned int &total_photons_shot, int t
 		const float s_4 = Halton::lowDiscrepancySampling(4, haltoncurr);
 		const float s_l = static_cast<float>(haltoncurr) / static_cast<float>(n_caus_photons_);
 		float light_num_pdf;
-		const int light_num = light_power_d->dSample(s_l, light_num_pdf);
-		if(light_num >= num_lights)
+		const int light_num = light_power_d_caustic->dSample(s_l, light_num_pdf);
+		if(light_num >= num_lights_caustic)
 		{
 			logger_.logError(getName(), ": lightPDF sample error! ", s_l, "/", light_num);
 			return;
 		}
 		Ray ray;
 		float light_pdf;
-		Rgb pcol = caus_lights[light_num]->emitPhoton(s_1, s_2, s_3, s_4, ray, light_pdf);
+		Rgb pcol = lights_caustic[light_num]->emitPhoton(s_1, s_2, s_3, s_4, ray, light_pdf);
 		ray.tmin_ = ray_min_dist_;
 		ray.tmax_ = -1.f;
 		pcol *= f_num_lights * light_pdf / light_num_pdf; //remember that lightPdf is the inverse of th pdf, hence *=...
@@ -577,29 +578,25 @@ bool MonteCarloIntegrator::createCausticMap()
 	caustic_map_->reserveMemory(n_caus_photons_);
 	caustic_map_->setNumThreadsPkDtree(num_threads_photons_);
 
-	std::vector<const Light *> caus_lights;
-	for(const auto &light : lights_)
+	const std::vector<const Light *> lights_caustic = render_view_->getLightsEmittingCausticPhotons();
+	if(!lights_caustic.empty())
 	{
-		if(light->shootsCausticP()) caus_lights.push_back(light);
-	}
-	const int num_lights = caus_lights.size();
-	if(num_lights > 0)
-	{
-		const float f_num_lights = static_cast<float>(num_lights);
-		std::vector<float> energies(num_lights);
-		for(int i = 0; i < num_lights; ++i) energies[i] = caus_lights[i]->totalEnergy().energy();
-		auto light_power_d = std::unique_ptr<Pdf1D>(new Pdf1D(energies));
+		const int num_lights_caustic = lights_caustic.size();
+		const float f_num_lights_caustic = static_cast<float>(num_lights_caustic);
+		std::vector<float> energies_caustic(num_lights_caustic);
+		for(int i = 0; i < num_lights_caustic; ++i) energies_caustic[i] = lights_caustic[i]->totalEnergy().energy();
+		auto light_power_d_caustic = std::unique_ptr<Pdf1D>(new Pdf1D(energies_caustic));
 
 		if(logger_.isVerbose()) logger_.logVerbose(getName(), ": Light(s) photon color testing for caustics map:");
 
-		for(int i = 0; i < num_lights; ++i)
+		for(int i = 0; i < num_lights_caustic; ++i)
 		{
 			Ray ray;
 			float light_pdf;
-			Rgb pcol = caus_lights[i]->emitPhoton(.5, .5, .5, .5, ray, light_pdf);
-			const float light_num_pdf = light_power_d->function(i) * light_power_d->invIntegral();
-			pcol *= f_num_lights * light_pdf / light_num_pdf; //remember that lightPdf is the inverse of the pdf, hence *=...
-			if(logger_.isVerbose()) logger_.logVerbose(getName(), ": Light [", i + 1, "] Photon col:", pcol, " | lnpdf: ", light_num_pdf);
+			Rgb pcol = lights_caustic[i]->emitPhoton(.5, .5, .5, .5, ray, light_pdf);
+			const float light_num_pdf = light_power_d_caustic->function(i) * light_power_d_caustic->invIntegral();
+			pcol *= f_num_lights_caustic * light_pdf / light_num_pdf; //remember that lightPdf is the inverse of the pdf, hence *=...
+			if(logger_.isVerbose()) logger_.logVerbose(getName(), ": Light [", lights_caustic[i]->getName(), "] Photon col:", pcol, " | lnpdf: ", light_num_pdf);
 		}
 
 		logger_.logInfo(getName(), ": Building caustics photon map...");
@@ -609,18 +606,18 @@ bool MonteCarloIntegrator::createCausticMap()
 
 		unsigned int curr = 0;
 
-		n_caus_photons_ = std::max((unsigned int) num_threads_photons_, (n_caus_photons_ / num_threads_photons_) * num_threads_photons_); //rounding the number of diffuse photons, so it's a number divisible by the number of threads (distribute uniformly among the threads). At least 1 photon per thread
+		n_caus_photons_ = std::max(static_cast<unsigned int>(num_threads_photons_), (n_caus_photons_ / num_threads_photons_) * num_threads_photons_); //rounding the number of diffuse photons, so it's a number divisible by the number of threads (distribute uniformly among the threads). At least 1 photon per thread
 
 		logger_.logParams(getName(), ": Shooting ", n_caus_photons_, " photons across ", num_threads_photons_, " threads (", (n_caus_photons_ / num_threads_photons_), " photons/thread)");
 
 		std::vector<std::thread> threads;
-		for(int i = 0; i < num_threads_photons_; ++i) threads.push_back(std::thread(&MonteCarloIntegrator::causticWorker, this, std::ref(curr), i, num_lights, light_power_d.get(), caus_lights, pb_step));
+		for(int i = 0; i < num_threads_photons_; ++i) threads.push_back(std::thread(&MonteCarloIntegrator::causticWorker, this, std::ref(curr), i, light_power_d_caustic.get(), lights_caustic, pb_step));
 		for(auto &t : threads) t.join();
 
 		intpb_->done();
 		intpb_->setTag("Caustic photon map built.");
 		if(logger_.isVerbose()) logger_.logVerbose(getName(), ": Done.");
-		logger_.logInfo(getName(), ": Shot ", curr, " caustic photons from ", num_lights, " light(s).");
+		logger_.logInfo(getName(), ": Shot ", curr, " caustic photons from ", num_lights_caustic, " light(s).");
 		if(logger_.isVerbose()) logger_.logVerbose(getName(), ": Stored caustic photons: ", caustic_map_->nPhotons());
 
 		if(caustic_map_->nPhotons() > 0)

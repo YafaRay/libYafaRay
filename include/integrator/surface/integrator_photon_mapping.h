@@ -50,7 +50,7 @@ class PhotonIntegrator final : public MonteCarloIntegrator
 		virtual bool preprocess(ImageFilm *image_film, const RenderView *render_view, const Scene &scene) override;
 		virtual std::pair<Rgb, float> integrate(Ray &ray, RandomGenerator &random_generator, ColorLayers *color_layers, int thread_id, int ray_level, bool chromatic_enabled, float wavelength, int additional_depth, const RayDivision &ray_division, const PixelSamplingData &pixel_sampling_data) const override;
 		void preGatherWorker(PreGatherData *gdata, float ds_rad, int n_search);
-		void diffuseWorker(PreGatherData &pgdat, unsigned int &total_photons_shot, int thread_id, int num_d_lights, const Pdf1D *light_power_d, const std::vector<const Light *> &tmplights, int pb_step);
+		void diffuseWorker(PreGatherData &pgdat, unsigned int &total_photons_shot, int thread_id, const Pdf1D *light_power_d, const std::vector<const Light *> &lights_diffuse, int pb_step);
 		void photonMapKdTreeWorker(PhotonMap *photon_map);
 		Rgb finalGathering(RandomGenerator &random_generator, int thread_id, bool chromatic_enabled, float wavelength, const SurfacePoint &sp, const Vec3 &wo, const RayDivision &ray_division, const PixelSamplingData &pixel_sampling_data) const;
 		void enableCaustics(const bool caustics) { use_photon_caustics_ = caustics; }
