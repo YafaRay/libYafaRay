@@ -231,14 +231,7 @@ std::pair<Rgb, float> PathIntegrator::integrate(Ray &ray, RandomGenerator &rando
 					p_ray.tmax_ = -1.f;
 					p_ray.from_ = hit->p_;
 					auto intersect_result = accelerator_->intersect(p_ray, camera_);
-					if(!intersect_result.first) //hit background
-					{
-						if((caustic && background_ && background_->hasIbl() && background_->shootsCaustic()))
-						{
-							path_col += throughput * (*background_)(p_ray.dir_, true);
-						}
-						break;
-					}
+					if(!intersect_result.first) break; //hit background
 					std::swap(hit, intersect_result.first);
 					pwo = -p_ray.dir_;
 

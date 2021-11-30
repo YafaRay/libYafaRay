@@ -740,15 +740,7 @@ Rgb PhotonIntegrator::finalGathering(RandomGenerator &random_generator, int thre
 			throughput *= scol;
 			std::tie(hit, p_ray.tmax_) = accelerator_->intersect(p_ray, camera_);
 			did_hit = static_cast<bool>(hit);
-			if(!did_hit) //hit background
-			{
-				const auto &background = background_;
-				if(caustic && background && background->hasIbl() && background->shootsCaustic())
-				{
-					path_col += throughput * (*background)(p_ray.dir_, true);
-				}
-				break;
-			}
+			if(!did_hit) break; //hit background
 			length += p_ray.tmax_;
 			caustic = (caustic || !depth) && sb.sampled_flags_.hasAny(BsdfFlags::Specular | BsdfFlags::Filter);
 			close = length < gather_dist_;
