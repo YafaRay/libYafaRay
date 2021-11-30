@@ -256,8 +256,8 @@ std::pair<Rgb, float> BidirectionalIntegrator::integrate(Ray &ray, RandomGenerat
 		Ray lray;
 		lray.tmin_ = ray_min_dist_;
 		lray.tmax_ = -1.f;
-		float light_num_pdf;
-		const int light_num = light_power_d_->dSample(random_generator(), light_num_pdf);
+		float light_num_pdf = 0.f;
+		const int light_num = lights_.size() > 0 ? light_power_d_->dSample(random_generator(), light_num_pdf) : -1;
 		light_num_pdf *= f_num_lights_;
 		LSample ls;
 		ls.s_1_ = random_generator(), ls.s_2_ = random_generator(), ls.s_3_ = random_generator(), ls.s_4_ = random_generator();

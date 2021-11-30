@@ -410,7 +410,7 @@ bool PhotonIntegrator::preprocess(ImageFilm *image_film, const RenderView *rende
 		enableDiffuse(false);
 	}
 
-	if(use_photon_diffuse_)
+	if(use_photon_diffuse_ && !lights_diffuse.empty())
 	{
 		const int num_lights_diffuse = lights_diffuse.size();
 		const float f_num_lights = static_cast<float>(num_lights_diffuse);
@@ -484,7 +484,7 @@ bool PhotonIntegrator::preprocess(ImageFilm *image_film, const RenderView *rende
 		enableCaustics(false);
 	}
 
-	if(use_photon_caustics_)
+	if(use_photon_caustics_ && !lights_caustic.empty())
 	{
 		curr = 0;
 		const int num_lights_caustic = lights_caustic.size();

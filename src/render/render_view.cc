@@ -77,8 +77,7 @@ bool RenderView::init(Logger &logger, const Scene &scene)
 	}
 	if(lights_.empty())
 	{
-		logger.logError("RenderView '", name_, "': Lights not found in the scene.");
-		return false;
+		logger.logWarning("RenderView '", name_, "': Lights not found in the scene.");
 	}
 	return true;
 }

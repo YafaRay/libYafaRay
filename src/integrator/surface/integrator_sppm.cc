@@ -484,6 +484,9 @@ void SppmIntegrator::photonWorker(unsigned int &total_photons_shot, int thread_i
 //photon pass, scatter photon
 void SppmIntegrator::prePass(int samples, int offset, bool adaptive)
 {
+	lights_ = render_view_->getLightsVisible();
+	if(lights_.empty()) return;
+
 	timer_->addEvent("prepass");
 	timer_->start("prepass");
 
@@ -503,24 +506,12 @@ void SppmIntegrator::prePass(int samples, int offset, bool adaptive)
 		caustic_map_->setNumThreadsPkDtree(num_threads_photons_);
 	}
 
-	lights_ = render_view_->getLightsVisible();
-	std::vector<const Light *> tmplights;
-
 	//background do not emit photons, or it is merged into normal light?
 
-	int num_lights = 0;
-	float f_num_lights = 0.f;
-	tmplights.clear();
-
-	for(const auto &light : lights_)
-	{
-		num_lights++;
-		tmplights.push_back(light);
-	}
-
-	f_num_lights = static_cast<float>(num_lights);
+	const int num_lights = lights_.size();
+	const float f_num_lights = static_cast<float>(num_lights);
 	std::vector<float> energies(num_lights);
-	for(int i = 0; i < num_lights; ++i) energies[i] = tmplights[i]->totalEnergy().energy();
+	for(int i = 0; i < num_lights; ++i) energies[i] = lights_[i]->totalEnergy().energy();
 	auto light_power_d = std::unique_ptr<Pdf1D>(new Pdf1D(energies));
 	if(logger_.isVerbose()) logger_.logVerbose(getName(), ": Light(s) photon color testing for photon map:");
 
@@ -528,10 +519,10 @@ void SppmIntegrator::prePass(int samples, int offset, bool adaptive)
 	{
 		Ray ray;
 		float light_pdf;
-		Rgb pcol = tmplights[i]->emitPhoton(.5, .5, .5, .5, ray, light_pdf);
+		Rgb pcol = lights_[i]->emitPhoton(.5, .5, .5, .5, ray, light_pdf);
 		const float light_num_pdf = light_power_d->function(i) * light_power_d->invIntegral();
 		pcol *= f_num_lights * light_pdf / light_num_pdf; //remember that lightPdf is the inverse of the pdf, hence *=...
-		if(logger_.isVerbose()) logger_.logVerbose(getName(), ": Light [", tmplights[i]->getName(), "] Photon col:", pcol, " | lnpdf: ", light_num_pdf);
+		if(logger_.isVerbose()) logger_.logVerbose(getName(), ": Light [", lights_[i]->getName(), "] Photon col:", pcol, " | lnpdf: ", light_num_pdf);
 	}
 
 	//shoot photons
@@ -553,7 +544,7 @@ void SppmIntegrator::prePass(int samples, int offset, bool adaptive)
 	logger_.logParams(getName(), ": Shooting ", n_photons_, " photons across ", num_threads_photons_, " threads (", (n_photons_ / num_threads_photons_), " photons/thread)");
 
 	std::vector<std::thread> threads;
-	for(int i = 0; i < num_threads_photons_; ++i) threads.push_back(std::thread(&SppmIntegrator::photonWorker, this, std::ref(curr), i, num_lights, light_power_d.get(), tmplights, pb_step));
+	for(int i = 0; i < num_threads_photons_; ++i) threads.push_back(std::thread(&SppmIntegrator::photonWorker, this, std::ref(curr), i, num_lights, light_power_d.get(), lights_, pb_step));
 	for(auto &t : threads) t.join();
 
 	intpb_->done();
@@ -591,8 +582,6 @@ void SppmIntegrator::prePass(int samples, int offset, bool adaptive)
 			return;
 		}
 	}
-
-	tmplights.clear();
 
 	timer_->stop("prepass");
 
