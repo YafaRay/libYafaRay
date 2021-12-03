@@ -848,16 +848,13 @@ void Scene::setEdgeToonParams(const ParamMap &params)
 	edge_params.thickness_ = object_edge_thickness;
 	edge_params.threshold_ = object_edge_threshold;
 	edge_params.smoothness_ = object_edge_smoothness;
-	edge_params.toon_color_[0] = toon_edge_color.r_;
-	edge_params.toon_color_[1] = toon_edge_color.g_;
-	edge_params.toon_color_[2] = toon_edge_color.b_;
+	edge_params.toon_color_ = toon_edge_color;
 	edge_params.toon_pre_smooth_ = toon_pre_smooth;
 	edge_params.toon_quantization_ = toon_quantization;
 	edge_params.toon_post_smooth_ = toon_post_smooth;
 	edge_params.face_thickness_ = faces_edge_thickness;
 	edge_params.face_threshold_ = faces_edge_threshold;
 	edge_params.face_smoothness_ = faces_edge_smoothness;
-
 	setEdgeToonParams(edge_params);
 }
 

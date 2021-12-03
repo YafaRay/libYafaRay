@@ -1246,7 +1246,7 @@ void ImageFilm::generateToonAndDebugObjectEdges(int xstart, int width, int ystar
 	const float toon_pre_smooth = edge_params.toon_pre_smooth_;
 	const float toon_quantization = edge_params.toon_quantization_;
 	const float toon_post_smooth = edge_params.toon_post_smooth_;
-	const Rgb toon_edge_color = Rgb(edge_params.toon_color_[0], edge_params.toon_color_[1], edge_params.toon_color_[2]);
+	const Rgb toon_edge_color = edge_params.toon_color_;
 	const int object_edge_thickness = edge_params.face_thickness_;
 	const float object_edge_threshold = edge_params.face_threshold_;
 	const float object_edge_smoothness = edge_params.face_smoothness_;
