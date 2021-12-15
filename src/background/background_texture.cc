@@ -19,8 +19,7 @@
  */
 
 #include "background/background_texture.h"
-#include "common/logger.h"
-#include "texture/texture.h"
+#include "texture/texture_image.h"
 #include "common/param.h"
 #include "scene/scene.h"
 #include "light/light.h"
@@ -33,10 +32,14 @@ TextureBackground::TextureBackground(Logger &logger, const Texture *texture, Pro
 {
 	with_ibl_ = ibl;
 	shoot_caustic_ = with_caustic;
-
 	rotation_ = 2.f * rot / 360.f;
 	sin_r_ = math::sin(math::num_pi * rotation_);
 	cos_r_ = math::cos(math::num_pi * rotation_);
+	if(ibl_blur > 0.f)
+	{
+		with_ibl_blur_ = true;
+		ibl_blur_mipmap_level_ = ibl_blur * ibl_blur;
+	}
 }
 
 Rgb TextureBackground::operator()(const Vec3 &dir, bool use_ibl_blur) const
@@ -66,7 +69,11 @@ Rgb TextureBackground::eval(const Vec3 &dir, bool use_ibl_blur) const
 		if(u > 1.f) u -= 2.f;
 	}
 	Rgb ret;
-	if(use_ibl_blur) ret = tex_->getColor({u, v, 0.f}); //FIXME!
+	if(with_ibl_blur_ && use_ibl_blur)
+	{
+		const MipMapParams mip_map_params {ibl_blur_mipmap_level_};
+		ret = tex_->getColor({u, v, 0.f}, &mip_map_params);
+	}
 	else ret = tex_->getColor({u, v, 0.f});
 
 	const float min_component = 1.0e-5f;
