@@ -26,10 +26,8 @@
 
 BEGIN_YAFARAY
 
-ConstantBackground::ConstantBackground(Logger &logger, Rgb col, bool ibl, bool with_caustic) : Background(logger), color_(col)
+ConstantBackground::ConstantBackground(Logger &logger, Rgb col) : Background(logger), color_(col)
 {
-	with_ibl_ = ibl;
-	shoot_caustic_ = with_caustic;
 }
 
 Rgb ConstantBackground::operator()(const Vec3 &dir, bool use_ibl_blur) const
@@ -60,7 +58,7 @@ std::unique_ptr<Background> ConstantBackground::factory(Logger &logger, ParamMap
 	params.getParam("with_caustic", caus);
 	params.getParam("with_diffuse", diff);
 
-	auto const_bg = std::unique_ptr<ConstantBackground>(new ConstantBackground(logger, col * power, ibl, true));
+	auto const_bg = std::unique_ptr<ConstantBackground>(new ConstantBackground(logger, col * power));
 
 	if(ibl)
 	{

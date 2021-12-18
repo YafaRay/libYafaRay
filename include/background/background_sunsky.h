@@ -37,10 +37,9 @@ class SunSkyBackground final : public Background
 {
 	public:
 		static std::unique_ptr<Background> factory(Logger &logger, ParamMap &params, Scene &scene);
-		virtual ~SunSkyBackground() override;
 
 	private:
-		SunSkyBackground(Logger &logger, const Point3 dir, float turb, float a_var, float b_var, float c_var, float d_var, float e_var, float pwr, bool ibl, bool with_caustic);
+		SunSkyBackground(Logger &logger, const Point3 dir, float turb, float a_var, float b_var, float c_var, float d_var, float e_var, float pwr);
 		virtual Rgb operator()(const Vec3 &dir, bool use_ibl_blur = false) const override;
 		virtual Rgb eval(const Vec3 &dir, bool use_ibl_blur = false) const override;
 		Rgb getSkyCol(const Vec3 &dir) const;

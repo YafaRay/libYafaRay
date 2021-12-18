@@ -37,7 +37,7 @@ class TextureBackground final : public Background
 
 	private:
 		enum Projection { Spherical = 0, Angular };
-		TextureBackground(Logger &logger, const Texture *texture, Projection proj, float bpower, float rot, bool ibl, float ibl_blur, bool with_caustic);
+		TextureBackground(Logger &logger, const Texture *texture, Projection proj, float bpower, float rot, float ibl_blur);
 		virtual Rgb operator()(const Vec3 &dir, bool use_ibl_blur = false) const override;
 		virtual Rgb eval(const Vec3 &dir, bool use_ibl_blur = false) const override;
 

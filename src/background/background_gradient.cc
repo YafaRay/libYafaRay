@@ -26,11 +26,9 @@
 
 BEGIN_YAFARAY
 
-GradientBackground::GradientBackground(Logger &logger, Rgb gzcol, Rgb ghcol, Rgb szcol, Rgb shcol, bool ibl, bool with_caustic):
+GradientBackground::GradientBackground(Logger &logger, Rgb gzcol, Rgb ghcol, Rgb szcol, Rgb shcol) :
 		Background(logger), gzenith_(gzcol), ghoriz_(ghcol), szenith_(szcol), shoriz_(shcol)
 {
-	with_ibl_ = ibl;
-	shoot_caustic_ = with_caustic;
 }
 
 Rgb GradientBackground::operator()(const Vec3 &dir, bool use_ibl_blur) const
@@ -75,7 +73,7 @@ std::unique_ptr<Background> GradientBackground::factory(Logger &logger, ParamMap
 	params.getParam("with_caustic", caus);
 	params.getParam("with_diffuse", diff);
 
-	auto grad_bg = std::unique_ptr<GradientBackground>(new GradientBackground(logger, gzenith * p, ghoriz * p, szenith * p, shoriz * p, bgl, true));
+	auto grad_bg = std::unique_ptr<GradientBackground>(new GradientBackground(logger, gzenith * p, ghoriz * p, szenith * p, shoriz * p));
 
 	if(bgl)
 	{

@@ -27,11 +27,9 @@
 
 BEGIN_YAFARAY
 
-TextureBackground::TextureBackground(Logger &logger, const Texture *texture, Projection proj, float bpower, float rot, bool ibl, float ibl_blur, bool with_caustic):
+TextureBackground::TextureBackground(Logger &logger, const Texture *texture, Projection proj, float bpower, float rot, float ibl_blur) :
 		Background(logger), tex_(texture), project_(proj), power_(bpower), ibl_blur_mipmap_level_(math::pow(ibl_blur, 2.f))
 {
-	with_ibl_ = ibl;
-	shoot_caustic_ = with_caustic;
 	rotation_ = 2.f * rot / 360.f;
 	sin_r_ = math::sin(math::num_pi * rotation_);
 	cos_r_ = math::cos(math::num_pi * rotation_);
@@ -123,7 +121,7 @@ std::unique_ptr<Background> TextureBackground::factory(Logger &logger, ParamMap 
 	params.getParam("with_diffuse", diffuse);
 	params.getParam("cast_shadows", cast_shadows);
 
-	auto tex_bg = std::unique_ptr<TextureBackground>(new TextureBackground(logger, tex, pr, power, rot, ibl, ibl_blur, caust));
+	auto tex_bg = std::unique_ptr<TextureBackground>(new TextureBackground(logger, tex, pr, power, rot, ibl_blur));
 
 	if(ibl)
 	{

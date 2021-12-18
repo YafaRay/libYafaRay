@@ -34,11 +34,8 @@ BEGIN_YAFARAY
 // and a thread on gamedev.net on skycolor algorithms
 
 
-SunSkyBackground::SunSkyBackground(Logger &logger, const Point3 dir, float turb, float a_var, float b_var, float c_var, float d_var, float e_var, float pwr, bool ibl, bool with_caustic): Background(logger), power_(pwr)
+SunSkyBackground::SunSkyBackground(Logger &logger, const Point3 dir, float turb, float a_var, float b_var, float c_var, float d_var, float e_var, float pwr) : Background(logger), power_(pwr)
 {
-	with_ibl_ = ibl;
-	shoot_caustic_ = with_caustic;
-
 	sun_dir_.set(dir.x_, dir.y_, dir.z_);
 	sun_dir_.normalize();
 	theta_s_ = math::acos(sun_dir_.z_);
@@ -76,11 +73,6 @@ SunSkyBackground::SunSkyBackground(Logger &logger, const Point3 dir, float turb,
 	perez_y_[2] = (-0.00792 * t_ + 0.21023) * c_var;
 	perez_y_[3] = (-0.04405 * t_ - 1.65369) * d_var;
 	perez_y_[4] = (-0.01092 * t_ + 0.05291) * e_var;
-}
-
-SunSkyBackground::~SunSkyBackground()
-{
-	// Empty
 }
 
 double SunSkyBackground::perezFunction(const double *lam, double theta, double gamma, double lvz) const
@@ -274,7 +266,7 @@ std::unique_ptr<Background> SunSkyBackground::factory(Logger &logger, ParamMap &
 	params.getParam("with_caustic", caus);
 	params.getParam("with_diffuse", diff);
 
-	auto new_sunsky = std::unique_ptr<SunSkyBackground>(new SunSkyBackground(logger, dir, turb, av, bv, cv, dv, ev, power, bgl, true));
+	auto new_sunsky = std::unique_ptr<SunSkyBackground>(new SunSkyBackground(logger, dir, turb, av, bv, cv, dv, ev, power));
 
 	if(bgl)
 	{

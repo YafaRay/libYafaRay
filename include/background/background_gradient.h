@@ -33,7 +33,7 @@ class GradientBackground final : public Background
 		static std::unique_ptr<Background> factory(Logger &logger, ParamMap &params, Scene &scene);
 
 	private:
-		GradientBackground(Logger &logger, Rgb gzcol, Rgb ghcol, Rgb szcol, Rgb shcol, bool ibl, bool with_caustic);
+		GradientBackground(Logger &logger, Rgb gzcol, Rgb ghcol, Rgb szcol, Rgb shcol);
 		virtual Rgb operator()(const Vec3 &dir, bool use_ibl_blur = false) const override;
 		virtual Rgb eval(const Vec3 &dir, bool use_ibl_blur = false) const override;
 

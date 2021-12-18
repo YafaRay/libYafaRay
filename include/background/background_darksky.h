@@ -39,7 +39,7 @@ class DarkSkyBackground final : public Background
 		static std::unique_ptr<Background> factory(Logger &logger, ParamMap &params, Scene &scene);
 
 	private:
-		DarkSkyBackground(Logger &logger, const Point3 dir, float turb, float pwr, float sky_bright, bool clamp, float av, float bv, float cv, float dv, float ev, float altitude, bool night, float exp, bool genc, ColorConv::ColorSpace cs, bool ibl, bool with_caustic);
+		DarkSkyBackground(Logger &logger, const Point3 dir, float turb, float pwr, float sky_bright, bool clamp, float av, float bv, float cv, float dv, float ev, float altitude, bool night, float exp, bool genc, ColorConv::ColorSpace cs);
 		virtual Rgb operator()(const Vec3 &dir, bool use_ibl_blur = false) const override;
 		virtual Rgb eval(const Vec3 &dir, bool use_ibl_blur = false) const override;
 		Rgb getAttenuatedSunColor();

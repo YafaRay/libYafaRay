@@ -34,7 +34,7 @@ class ConstantBackground final : public Background
 		static std::unique_ptr<Background> factory(Logger &logger, ParamMap &params, Scene &scene);
 
 	private:
-		ConstantBackground(Logger &logger, Rgb col, bool ibl, bool with_caustic);
+		ConstantBackground(Logger &logger, Rgb col);
 		virtual Rgb operator()(const Vec3 &dir, bool use_ibl_blur = false) const override;
 		virtual Rgb eval(const Vec3 &dir, bool use_ibl_blur = false) const override;
 

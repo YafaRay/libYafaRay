@@ -38,19 +38,10 @@ class Background
 		static std::unique_ptr<Background> factory(Logger &logger, ParamMap &params, Scene &scene);
 		Background(Logger &logger) : logger_(logger) { }
 		virtual ~Background() = default;
-		//! get the background color for a given ray
 		virtual Rgb operator()(const Vec3 &dir, bool use_ibl_blur = false) const = 0;
 		virtual Rgb eval(const Vec3 &dir, bool use_ibl_blur = false) const = 0;
-		/*! get the light source representing background lighting.
-			\return the light source that reproduces background lighting, or nullptr if background
-					shall only be sampled from BSDFs
-		*/
-		bool hasIbl() const { return with_ibl_; }
-		bool shootsCaustic() const { return shoot_caustic_; }
 
 	protected:
-		bool with_ibl_ = false;
-		bool shoot_caustic_ = false;
 		Logger &logger_;
 };
 

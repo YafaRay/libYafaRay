@@ -37,13 +37,10 @@
 
 BEGIN_YAFARAY
 
-DarkSkyBackground::DarkSkyBackground(Logger &logger, const Point3 dir, float turb, float pwr, float sky_bright, bool clamp, float av, float bv, float cv, float dv, float ev, float altitude, bool night, float exp, bool genc, ColorConv::ColorSpace cs, bool ibl, bool with_caustic):
+DarkSkyBackground::DarkSkyBackground(Logger &logger, const Point3 dir, float turb, float pwr, float sky_bright, bool clamp, float av, float bv, float cv, float dv, float ev, float altitude, bool night, float exp, bool genc, ColorConv::ColorSpace cs) :
 		Background(logger), power_(pwr * sky_bright), sky_brightness_(sky_bright), color_conv_(clamp, genc, cs, exp), alt_(altitude), night_sky_(night)
 {
 	std::string act;
-
-	with_ibl_ = ibl;
-	shoot_caustic_ = with_caustic;
 
 	sun_dir_ = Vec3(dir);
 	sun_dir_.z_ += alt_;
@@ -266,7 +263,7 @@ std::unique_ptr<Background> DarkSkyBackground::factory(Logger &logger, ParamMap 
 		pw *= 0.5;
 	}
 
-	auto dark_sky = std::unique_ptr<DarkSkyBackground>(new DarkSkyBackground(logger, dir, turb, power, bright, clamp, av, bv, cv, dv, ev, altitude, night, exp, gamma_enc, color_s, bgl, caus));
+	auto dark_sky = std::unique_ptr<DarkSkyBackground>(new DarkSkyBackground(logger, dir, turb, power, bright, clamp, av, bv, cv, dv, ev, altitude, night, exp, gamma_enc, color_s));
 
 	if(add_sun && math::radToDeg(math::acos(dir.z_)) < 100.0)
 	{
