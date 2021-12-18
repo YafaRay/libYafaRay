@@ -34,8 +34,8 @@ class GradientBackground final : public Background
 
 	private:
 		GradientBackground(Logger &logger, Rgb gzcol, Rgb ghcol, Rgb szcol, Rgb shcol, bool ibl, bool with_caustic);
-		virtual Rgb operator()(const Vec3 &dir, bool from_postprocessed = false) const override;
-		virtual Rgb eval(const Vec3 &dir, bool from_postprocessed = false) const override;
+		virtual Rgb operator()(const Vec3 &dir, bool use_ibl_blur = false) const override;
+		virtual Rgb eval(const Vec3 &dir, bool use_ibl_blur = false) const override;
 
 		Rgb gzenith_, ghoriz_, szenith_, shoriz_;
 };

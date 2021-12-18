@@ -190,12 +190,12 @@ inline Rgb DarkSkyBackground::getSkyCol(const Vec3 &dir) const
 	return sky_col * sky_brightness_;
 }
 
-Rgb DarkSkyBackground::operator()(const Vec3 &dir, bool from_postprocessed) const
+Rgb DarkSkyBackground::operator()(const Vec3 &dir, bool use_ibl_blur) const
 {
 	return getSkyCol(dir);
 }
 
-Rgb DarkSkyBackground::eval(const Vec3 &dir, bool from_postprocessed) const
+Rgb DarkSkyBackground::eval(const Vec3 &dir, bool use_ibl_blur) const
 {
 	return getSkyCol(dir) * power_;
 }

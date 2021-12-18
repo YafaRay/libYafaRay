@@ -33,12 +33,12 @@ GradientBackground::GradientBackground(Logger &logger, Rgb gzcol, Rgb ghcol, Rgb
 	shoot_caustic_ = with_caustic;
 }
 
-Rgb GradientBackground::operator()(const Vec3 &dir, bool from_postprocessed) const
+Rgb GradientBackground::operator()(const Vec3 &dir, bool use_ibl_blur) const
 {
 	return eval(dir);
 }
 
-Rgb GradientBackground::eval(const Vec3 &dir, bool from_postprocessed) const
+Rgb GradientBackground::eval(const Vec3 &dir, bool use_ibl_blur) const
 {
 	float blend = dir.z_;
 	Rgb color;

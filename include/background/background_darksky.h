@@ -40,8 +40,8 @@ class DarkSkyBackground final : public Background
 
 	private:
 		DarkSkyBackground(Logger &logger, const Point3 dir, float turb, float pwr, float sky_bright, bool clamp, float av, float bv, float cv, float dv, float ev, float altitude, bool night, float exp, bool genc, ColorConv::ColorSpace cs, bool ibl, bool with_caustic);
-		virtual Rgb operator()(const Vec3 &dir, bool from_postprocessed = false) const override;
-		virtual Rgb eval(const Vec3 &dir, bool from_postprocessed = false) const override;
+		virtual Rgb operator()(const Vec3 &dir, bool use_ibl_blur = false) const override;
+		virtual Rgb eval(const Vec3 &dir, bool use_ibl_blur = false) const override;
 		Rgb getAttenuatedSunColor();
 		Rgb getSkyCol(const Vec3 &dir) const;
 		double perezFunction(const double *lam, double cos_theta, double gamma, double cos_gamma, double lvz) const;

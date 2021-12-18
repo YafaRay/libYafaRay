@@ -39,8 +39,8 @@ class Background
 		Background(Logger &logger) : logger_(logger) { }
 		virtual ~Background() = default;
 		//! get the background color for a given ray
-		virtual Rgb operator()(const Vec3 &dir, bool from_postprocessed = false) const = 0;
-		virtual Rgb eval(const Vec3 &dir, bool from_postprocessed = false) const = 0;
+		virtual Rgb operator()(const Vec3 &dir, bool use_ibl_blur = false) const = 0;
+		virtual Rgb eval(const Vec3 &dir, bool use_ibl_blur = false) const = 0;
 		/*! get the light source representing background lighting.
 			\return the light source that reproduces background lighting, or nullptr if background
 					shall only be sampled from BSDFs

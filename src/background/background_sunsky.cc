@@ -169,12 +169,12 @@ inline Rgb SunSkyBackground::getSkyCol(const Vec3 &dir) const
 	return skycolor;
 }
 
-Rgb SunSkyBackground::operator()(const Vec3 &dir, bool from_postprocessed) const
+Rgb SunSkyBackground::operator()(const Vec3 &dir, bool use_ibl_blur) const
 {
 	return power_ * getSkyCol(dir);
 }
 
-Rgb SunSkyBackground::eval(const Vec3 &dir, bool from_postprocessed) const
+Rgb SunSkyBackground::eval(const Vec3 &dir, bool use_ibl_blur) const
 {
 	return power_ * getSkyCol(dir);
 }
