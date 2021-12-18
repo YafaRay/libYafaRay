@@ -60,7 +60,6 @@ DarkSkyBackground::DarkSkyBackground(Logger &logger, const Point3 &dir, float tu
 
 	cos_theta_s_ = math::cos(theta_s_);
 	cos_theta_2_ = cos_theta_s_ * cos_theta_s_;
-	math::sin(theta_s_);
 
 	theta_2_ = theta_s_ * theta_s_;
 	theta_3_ = theta_2_ * theta_s_;
