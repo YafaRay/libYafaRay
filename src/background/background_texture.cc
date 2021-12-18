@@ -40,11 +40,6 @@ TextureBackground::TextureBackground(Logger &logger, const Texture *texture, Pro
 	}
 }
 
-Rgb TextureBackground::operator()(const Vec3 &dir, bool use_ibl_blur) const
-{
-	return eval(dir, use_ibl_blur);
-}
-
 Rgb TextureBackground::eval(const Vec3 &dir, bool use_ibl_blur) const
 {
 	float u = 0.f, v = 0.f;
@@ -83,7 +78,6 @@ Rgb TextureBackground::eval(const Vec3 &dir, bool use_ibl_blur) const
 
 std::unique_ptr<Background> TextureBackground::factory(Logger &logger, ParamMap &params, Scene &scene)
 {
-	Texture *tex = nullptr;
 	std::string texname;
 	std::string mapping;
 	Projection pr = Spherical;
@@ -101,7 +95,8 @@ std::unique_ptr<Background> TextureBackground::factory(Logger &logger, ParamMap 
 		logger.logError("TextureBackground: No texture given for texture background!");
 		return nullptr;
 	}
-	tex = scene.getTexture(texname);
+
+	Texture *tex = scene.getTexture(texname);
 	if(!tex)
 	{
 		logger.logError("TextureBackground: Texture '", texname, "' for textureback not existant!");

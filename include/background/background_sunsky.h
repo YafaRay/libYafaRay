@@ -19,8 +19,8 @@
  *      Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-#ifndef YAFARAY_BACKGROUND_SUNSKY_H
-#define YAFARAY_BACKGROUND_SUNSKY_H
+#ifndef LIBYAFARAY_BACKGROUND_SUNSKY_H
+#define LIBYAFARAY_BACKGROUND_SUNSKY_H
 
 #include "background.h"
 #include "color/color.h"
@@ -28,7 +28,7 @@
 
 BEGIN_YAFARAY
 
-// sunsky, from 'A Practical Analytic Model For DayLight" by Preetham, Shirley & Smits.
+// sunsky, from 'A Practical Analytic Model For DayLight' by Preetham, Shirley & Smits.
 // http://www.cs.utah.edu/vissim/papers/sunsky/
 // based on the actual code by Brian Smits
 // and a thread on gamedev.net on skycolor algorithms
@@ -39,9 +39,8 @@ class SunSkyBackground final : public Background
 		static std::unique_ptr<Background> factory(Logger &logger, ParamMap &params, Scene &scene);
 
 	private:
-		SunSkyBackground(Logger &logger, const Point3 dir, float turb, float a_var, float b_var, float c_var, float d_var, float e_var, float pwr);
-		virtual Rgb operator()(const Vec3 &dir, bool use_ibl_blur = false) const override;
-		virtual Rgb eval(const Vec3 &dir, bool use_ibl_blur = false) const override;
+		SunSkyBackground(Logger &logger, const Point3 &dir, float turb, float a_var, float b_var, float c_var, float d_var, float e_var, float pwr);
+		Rgb eval(const Vec3 &dir, bool use_ibl_blur) const override;
 		Rgb getSkyCol(const Vec3 &dir) const;
 		static Rgb computeAttenuatedSunlight(float theta, int turbidity);
 
@@ -57,4 +56,4 @@ class SunSkyBackground final : public Background
 
 END_YAFARAY
 
-#endif // YAFARAY_BACKGROUND_SUNSKY_H
+#endif // LIBYAFARAY_BACKGROUND_SUNSKY_H

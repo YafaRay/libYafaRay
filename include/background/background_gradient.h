@@ -19,8 +19,8 @@
  *      Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-#ifndef YAFARAY_BACKGROUND_GRADIENT_H
-#define YAFARAY_BACKGROUND_GRADIENT_H
+#ifndef LIBYAFARAY_BACKGROUND_GRADIENT_H
+#define LIBYAFARAY_BACKGROUND_GRADIENT_H
 
 #include "background.h"
 #include "color/color.h"
@@ -33,13 +33,12 @@ class GradientBackground final : public Background
 		static std::unique_ptr<Background> factory(Logger &logger, ParamMap &params, Scene &scene);
 
 	private:
-		GradientBackground(Logger &logger, Rgb gzcol, Rgb ghcol, Rgb szcol, Rgb shcol);
-		virtual Rgb operator()(const Vec3 &dir, bool use_ibl_blur = false) const override;
-		virtual Rgb eval(const Vec3 &dir, bool use_ibl_blur = false) const override;
+		GradientBackground(Logger &logger, const Rgb &gzcol, const Rgb &ghcol, const Rgb &szcol, const Rgb &shcol);
+		Rgb eval(const Vec3 &dir, bool use_ibl_blur) const override;
 
 		Rgb gzenith_, ghoriz_, szenith_, shoriz_;
 };
 
 END_YAFARAY
 
-#endif // YAFARAY_BACKGROUND_GRADIENT_H
+#endif // LIBYAFARAY_BACKGROUND_GRADIENT_H

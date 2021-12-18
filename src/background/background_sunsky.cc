@@ -28,13 +28,13 @@
 
 BEGIN_YAFARAY
 
-// sunsky, from 'A Practical Analytic Model For DayLight" by Preetham, Shirley & Smits.
+// sunsky, from 'A Practical Analytic Model For DayLight' by Preetham, Shirley & Smits.
 // http://www.cs.utah.edu/vissim/papers/sunsky/
 // based on the actual code by Brian Smits
 // and a thread on gamedev.net on skycolor algorithms
 
 
-SunSkyBackground::SunSkyBackground(Logger &logger, const Point3 dir, float turb, float a_var, float b_var, float c_var, float d_var, float e_var, float pwr) : Background(logger), power_(pwr)
+SunSkyBackground::SunSkyBackground(Logger &logger, const Point3 &dir, float turb, float a_var, float b_var, float c_var, float d_var, float e_var, float pwr) : Background(logger), power_(pwr)
 {
 	sun_dir_.set(dir.x_, dir.y_, dir.z_);
 	sun_dir_.normalize();
@@ -159,11 +159,6 @@ inline Rgb SunSkyBackground::getSkyCol(const Vec3 &dir) const
 	             (0.055648 * X - 0.204043 * Y + 1.057311 * z));
 	skycolor.clampRgb01();
 	return skycolor;
-}
-
-Rgb SunSkyBackground::operator()(const Vec3 &dir, bool use_ibl_blur) const
-{
-	return power_ * getSkyCol(dir);
 }
 
 Rgb SunSkyBackground::eval(const Vec3 &dir, bool use_ibl_blur) const

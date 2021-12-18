@@ -17,10 +17,11 @@
  *      Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-#ifndef YAFARAY_BACKGROUND_H
-#define YAFARAY_BACKGROUND_H
+#ifndef LIBYAFARAY_BACKGROUND_H
+#define LIBYAFARAY_BACKGROUND_H
 
 #include "common/yafaray_common.h"
+#include "color/color.h"
 #include <memory>
 
 BEGIN_YAFARAY
@@ -36,10 +37,12 @@ class Background
 {
 	public:
 		static std::unique_ptr<Background> factory(Logger &logger, ParamMap &params, Scene &scene);
-		Background(Logger &logger) : logger_(logger) { }
+		explicit Background(Logger &logger) : logger_(logger) { }
 		virtual ~Background() = default;
-		virtual Rgb operator()(const Vec3 &dir, bool use_ibl_blur = false) const = 0;
-		virtual Rgb eval(const Vec3 &dir, bool use_ibl_blur = false) const = 0;
+		Rgb operator()(const Vec3 &dir) const { return operator()(dir, false); }
+		virtual Rgb operator()(const Vec3 &dir, bool use_ibl_blur) const { return eval(dir, use_ibl_blur); }
+		Rgb eval(const Vec3 &dir) const { return eval(dir, false); }
+		virtual Rgb eval(const Vec3 &dir, bool use_ibl_blur) const = 0;
 
 	protected:
 		Logger &logger_;
@@ -47,4 +50,4 @@ class Background
 
 END_YAFARAY
 
-#endif // YAFARAY_BACKGROUND_H
+#endif // LIBYAFARAY_BACKGROUND_H

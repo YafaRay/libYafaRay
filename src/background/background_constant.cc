@@ -30,11 +30,6 @@ ConstantBackground::ConstantBackground(Logger &logger, Rgb col) : Background(log
 {
 }
 
-Rgb ConstantBackground::operator()(const Vec3 &dir, bool use_ibl_blur) const
-{
-	return color_;
-}
-
 Rgb ConstantBackground::eval(const Vec3 &dir, bool use_ibl_blur) const
 {
 	return color_;

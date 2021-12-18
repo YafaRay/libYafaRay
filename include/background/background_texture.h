@@ -19,8 +19,8 @@
  *      Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-#ifndef YAFARAY_BACKGROUND_TEXTURE_H
-#define YAFARAY_BACKGROUND_TEXTURE_H
+#ifndef LIBYAFARAY_BACKGROUND_TEXTURE_H
+#define LIBYAFARAY_BACKGROUND_TEXTURE_H
 
 #include <memory>
 #include "background.h"
@@ -38,8 +38,7 @@ class TextureBackground final : public Background
 	private:
 		enum Projection { Spherical = 0, Angular };
 		TextureBackground(Logger &logger, const Texture *texture, Projection proj, float bpower, float rot, float ibl_blur);
-		virtual Rgb operator()(const Vec3 &dir, bool use_ibl_blur = false) const override;
-		virtual Rgb eval(const Vec3 &dir, bool use_ibl_blur = false) const override;
+		Rgb eval(const Vec3 &dir, bool use_ibl_blur) const override;
 
 		const Texture *tex_;
 		Projection project_;
@@ -52,4 +51,4 @@ class TextureBackground final : public Background
 
 END_YAFARAY
 
-#endif //YAFARAY_BACKGROUND_TEXTURE_H
+#endif //LIBYAFARAY_BACKGROUND_TEXTURE_H

@@ -26,14 +26,9 @@
 
 BEGIN_YAFARAY
 
-GradientBackground::GradientBackground(Logger &logger, Rgb gzcol, Rgb ghcol, Rgb szcol, Rgb shcol) :
+GradientBackground::GradientBackground(Logger &logger, const Rgb &gzcol, const Rgb &ghcol, const Rgb &szcol, const Rgb &shcol) :
 		Background(logger), gzenith_(gzcol), ghoriz_(ghcol), szenith_(szcol), shoriz_(shcol)
 {
-}
-
-Rgb GradientBackground::operator()(const Vec3 &dir, bool use_ibl_blur) const
-{
-	return eval(dir);
 }
 
 Rgb GradientBackground::eval(const Vec3 &dir, bool use_ibl_blur) const
