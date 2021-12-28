@@ -45,7 +45,7 @@ class BlendMaterial final : public NodeMaterial
 		static std::unique_ptr<Material> factory(Logger &logger, ParamMap &params, std::list<ParamMap> &nodes_params, const Scene &scene);
 
 	private:
-		BlendMaterial(Logger &logger, const Material *m_1, const Material *m_2, float blendv, Visibility visibility = Visibility::NormalVisible);
+		BlendMaterial(Logger &logger, const std::unique_ptr<Material> *m_1, const std::unique_ptr<Material> *m_2, float blendv, Visibility visibility = Visibility::NormalVisible);
 		virtual std::unique_ptr<MaterialData> createMaterialData(size_t number_of_nodes) const override { return std::unique_ptr<BlendMaterialData>(new BlendMaterialData(bsdf_flags_, number_of_nodes)); };
 		virtual std::unique_ptr<const MaterialData> initBsdf(SurfacePoint &sp, const Camera *camera) const override;
 		virtual Rgb eval(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wl, const BsdfFlags &bsdfs, bool force_eval = false) const override;
@@ -62,7 +62,7 @@ class BlendMaterial final : public NodeMaterial
 		virtual const VolumeHandler *getVolumeHandler(bool inside) const override;
 		float getBlendVal(const NodeTreeData &node_tree_data) const;
 
-		const Material *mat_1_ = nullptr, *mat_2_ = nullptr;
+		const std::unique_ptr<Material> *mat_1_ = nullptr, *mat_2_ = nullptr;
 		const ShaderNode *blend_shader_ = nullptr; //!< the shader node used for blending the materials
 		const ShaderNode *wireframe_shader_ = nullptr;     //!< Shader node for wireframe shading (float)
 		float blend_val_;

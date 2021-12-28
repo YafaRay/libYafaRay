@@ -122,7 +122,7 @@ class Interface
 		void setInputColorSpace(const std::string &color_space_string, float gamma_val) noexcept;
 
 	protected:
-		virtual void setCurrentMaterial(const Material *material) noexcept;
+		virtual void setCurrentMaterial(const std::unique_ptr<Material> *material) noexcept;
 		std::unique_ptr<Logger> logger_;
 		std::unique_ptr<ParamMap> params_;
 		std::list<ParamMap> nodes_params_; //! for materials that need to define a whole shader tree etc.

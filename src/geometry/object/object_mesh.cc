@@ -76,7 +76,7 @@ void MeshObject::addFace(std::unique_ptr<FacePrimitive> face)
 	}
 }
 
-void MeshObject::addFace(const std::vector<int> &vertices, const std::vector<int> &vertices_uv, const Material *mat)
+void MeshObject::addFace(const std::vector<int> &vertices, const std::vector<int> &vertices_uv, const std::unique_ptr<Material> *mat)
 {
 	std::unique_ptr<FacePrimitive> face;
 	if(vertices.size() == 3) face = std::unique_ptr<FacePrimitive>(new TrianglePrimitive(vertices, vertices_uv, *this));
@@ -91,7 +91,7 @@ void MeshObject::calculateNormals()
 	for(auto &face : faces_) face->calculateGeometricNormal();
 }
 
-bool MeshObject::calculateObject(const Material *)
+bool MeshObject::calculateObject(const std::unique_ptr<Material> *)
 {
 	faces_.shrink_to_fit();
 	points_.shrink_to_fit();

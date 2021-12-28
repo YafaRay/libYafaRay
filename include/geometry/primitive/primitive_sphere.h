@@ -38,14 +38,14 @@ class SpherePrimitive final : public Primitive
 {
 	public:
 		static Primitive *factory(ParamMap &params, const Scene &scene, const Object &object);
-		SpherePrimitive(const Point3 &centr, float rad, const Material *m, const Object &base_object): center_(centr), radius_(rad), base_object_(base_object), material_(m) {}
+		SpherePrimitive(const Point3 &centr, float rad, const std::unique_ptr<Material> *m, const Object &base_object): center_(centr), radius_(rad), base_object_(base_object), material_(m) {}
 
 	private:
 		virtual Bound getBound(const Matrix4 *obj_to_world) const override;
 		virtual bool intersectsBound(const ExBound &b, const Matrix4 *obj_to_world) const override { return true; };
 		virtual IntersectData intersect(const Ray &ray, const Matrix4 *obj_to_world) const override;
 		virtual std::unique_ptr<const SurfacePoint> getSurface(const RayDifferentials *ray_differentials, const Point3 &hit, const IntersectData &intersect_data, const Matrix4 *obj_to_world, const Camera *camera) const override;
-		virtual const Material *getMaterial() const override { return material_; }
+		virtual const Material *getMaterial() const override { return material_->get(); }
 		virtual float surfaceArea(const Matrix4 *obj_to_world) const override;
 		virtual Vec3 getGeometricNormal(const Matrix4 *obj_to_world, float u, float v) const override;
 		virtual void sample(float s_1, float s_2, Point3 &p, Vec3 &n, const Matrix4 *obj_to_world) const override;
@@ -55,7 +55,7 @@ class SpherePrimitive final : public Primitive
 		Point3 center_;
 		float radius_;
 		const Object &base_object_;
-		const Material *material_ = nullptr;
+		const std::unique_ptr<Material> *material_ = nullptr;
 };
 
 END_YAFARAY

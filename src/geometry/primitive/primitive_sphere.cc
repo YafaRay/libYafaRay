@@ -37,7 +37,7 @@ Primitive *SpherePrimitive::factory(ParamMap &params, const Scene &scene, const 
 	}*/
 	Point3 center(0.f, 0.f, 0.f);
 	double radius(1.f);
-	const Material *mat;
+	const std::unique_ptr<Material> *mat;
 	std::string matname;
 	params.getParam("center", center);
 	params.getParam("radius", radius);
@@ -85,7 +85,7 @@ std::unique_ptr<const SurfacePoint> SpherePrimitive::getSurface(const RayDiffere
 	Vec3 normal = hit - center_;
 	sp->orco_p_ = normal;
 	normal.normalize();
-	sp->material_ = material_;
+	sp->material_ = material_->get();
 	sp->object_ = &base_object_;
 	sp->n_ = normal;
 	sp->ng_ = normal;

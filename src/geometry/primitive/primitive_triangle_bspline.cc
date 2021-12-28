@@ -175,7 +175,7 @@ std::unique_ptr<const SurfacePoint> BsTrianglePrimitive::getSurface(const RayDif
 	sp->dp_du_.normalize();
 	sp->dp_dv_.normalize();
 
-	sp->material_ = material_;
+	sp->material_ = material_->get();
 	sp->object_ = &base_mesh_object_;
 	sp->p_ = hit;
 	Vec3::createCs(sp->n_, sp->nu_, sp->nv_);

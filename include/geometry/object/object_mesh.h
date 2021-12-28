@@ -49,7 +49,7 @@ class MeshObject : public ObjectBasic
 		virtual int numVertices() const override { return points_.size(); }
 		virtual int numNormals() const override { return normals_.size(); }
 		void addFace(std::unique_ptr<FacePrimitive> face);
-		virtual void addFace(const std::vector<int> &vertices, const std::vector<int> &vertices_uv, const Material *mat) override;
+		virtual void addFace(const std::vector<int> &vertices, const std::vector<int> &vertices_uv, const std::unique_ptr<Material> *mat) override;
 		void calculateNormals();
 		const std::vector<Point3> &getPoints() const { return points_; }
 		const std::vector<Uv> &getUvValues() const { return uv_values_; }
@@ -64,7 +64,7 @@ class MeshObject : public ObjectBasic
 		virtual void setSmooth(bool smooth) override { is_smooth_ = smooth; }
 		virtual bool smoothNormals(Logger &logger, float angle) override;
 		//int convertToBezierControlPoints();
-		virtual bool calculateObject(const Material *material) override;
+		virtual bool calculateObject(const std::unique_ptr<Material> *material) override;
 
 	protected:
 		static float getAngleSine(const std::array<int, 3> &triangle_indices, const std::vector<Point3> &vertices);

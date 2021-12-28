@@ -99,11 +99,11 @@ void Scene::createDefaultMaterial()
 	std::list<ParamMap> nodes_params;
 	//Note: keep the std::string or the parameter will be created incorrectly as a bool. This should improve with the new C++17 string literals, but for now with C++11 this should be done.
 	param_map["type"] = std::string("shinydiffusemat");
-	const Material *material = createMaterial("YafaRay_Default_Material", param_map, nodes_params);
+	const std::unique_ptr<Material> *material = createMaterial("YafaRay_Default_Material", param_map, nodes_params);
 	setCurrentMaterial(material);
 }
 
-void Scene::setCurrentMaterial(const Material *material)
+void Scene::setCurrentMaterial(const std::unique_ptr<Material> *material)
 {
 	if(material) creation_state_.current_material_ = material;
 	else creation_state_.current_material_ = getMaterial("YafaRay_Default_Material");
@@ -312,9 +312,9 @@ std::shared_ptr<T> Scene::findMapItem(const std::string &name, const std::map<st
 	else return nullptr;
 }
 
-Material *Scene::getMaterial(const std::string &name) const
+const std::unique_ptr<Material> * Scene::getMaterial(const std::string &name) const
 {
-	return Scene::findMapItem<Material>(name, materials_);
+	return Scene::findMapItem<std::unique_ptr<Material>>(name, materials_);
 }
 
 Texture *Scene::getTexture(const std::string &name) const
@@ -386,13 +386,17 @@ Light *Scene::createLight(const std::string &name, ParamMap &params)
 	return nullptr;
 }
 
-Material *Scene::createMaterial(const std::string &name, ParamMap &params, std::list<ParamMap> &nodes_params)
+std::unique_ptr<Material> * Scene::createMaterial(const std::string &name, ParamMap &params, std::list<ParamMap> &nodes_params)
 {
 	std::string pname = "Material";
 	params["name"] = std::string(name);
 	if(materials_.find(name) != materials_.end())
 	{
-		logWarnExist(logger_, pname, name); return nullptr;
+		logger_.logDebug("Scene: ", pname, " \"", name, "\" already exists, replacing.");
+	}
+	else
+	{
+		materials_[name] = std::unique_ptr<std::unique_ptr<Material>>(new std::unique_ptr<Material>());
 	}
 	std::string type;
 	if(! params.getParam("type", type))
@@ -403,9 +407,10 @@ Material *Scene::createMaterial(const std::string &name, ParamMap &params, std::
 	auto material = Material::factory(logger_, params, nodes_params, *this);
 	if(material)
 	{
-		materials_[name] = std::move(material);
+		*(materials_[name]) = std::move(material);
 		if(logger_.isVerbose()) logInfoVerboseSuccess(logger_, pname, name, type);
 		return materials_[name].get();
+		creation_state_.changes_ |= CreationState::Flags::CMaterial;
 	}
 	logErrOnCreate(logger_, pname, name, type);
 	return nullptr;
