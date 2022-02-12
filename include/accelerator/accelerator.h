@@ -23,9 +23,10 @@
 #include "common/yafaray_common.h"
 #include "geometry/intersect_data.h"
 #include "color/color.h"
+#include "camera/camera.h"
 #include <vector>
 #include <memory>
-#include <camera/camera.h>
+#include <limits>
 
 BEGIN_YAFARAY
 

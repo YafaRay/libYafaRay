@@ -31,6 +31,7 @@
 #include "geometry/surface.h"
 #include "geometry/object/object_mesh.h"
 #include "geometry/primitive/primitive_face.h"
+#include <limits>
 
 BEGIN_YAFARAY
 

@@ -38,7 +38,7 @@ class ParamMap;
 class Scene;
 class Matrix4;
 class Material;
-class Uv;
+struct Uv;
 
 class Object
 {

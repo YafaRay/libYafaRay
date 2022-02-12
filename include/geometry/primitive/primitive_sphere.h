@@ -20,10 +20,10 @@
 #ifndef YAFARAY_PRIMITIVE_SPHERE_H
 #define YAFARAY_PRIMITIVE_SPHERE_H
 
-#include <camera/camera.h>
 #include "primitive.h"
 #include "geometry/vector.h"
 #include "geometry/object/object.h"
+#include "camera/camera.h"
 
 BEGIN_YAFARAY
 

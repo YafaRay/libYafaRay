@@ -384,7 +384,6 @@ std::pair<Rgb, float> BidirectionalIntegrator::integrate(Ray &ray, RandomGenerat
 int BidirectionalIntegrator::createPath(RandomGenerator &random_generator, const Accelerator &accelerator, bool chromatic_enabled, float wavelength, const Ray &start, std::vector<PathVertex> &path, int max_len, const Camera *camera) const
 {
 	Ray ray {start, Ray::DifferentialsCopy::FullCopy};
-	BsdfFlags m_bsdf;
 	// the 0th vertex has already been generated, which is ray.pos obviously
 	int n_vert = 1;
 	while(n_vert < max_len)

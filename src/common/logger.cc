@@ -26,6 +26,7 @@
 #include "common/badge.h"
 #include <algorithm>
 #include <cmath>
+#include <limits>
 
 BEGIN_YAFARAY
 

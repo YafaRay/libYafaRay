@@ -37,6 +37,7 @@
 
 #include <cmath>
 #include <algorithm>
+#include <limits>
 
 BEGIN_YAFARAY
 

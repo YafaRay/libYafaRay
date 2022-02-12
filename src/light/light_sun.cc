@@ -22,6 +22,7 @@
 #include "sampler/sample.h"
 #include "common/param.h"
 #include "scene/scene.h"
+#include <limits>
 
 BEGIN_YAFARAY
 

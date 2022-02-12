@@ -39,6 +39,7 @@
 #include "image/image_output.h"
 #include "render/render_view.h"
 #include "render/progress_bar.h"
+#include <limits>
 
 BEGIN_YAFARAY
 
