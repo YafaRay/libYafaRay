@@ -47,7 +47,7 @@ class Axis
 struct ClipPlane
 {
 	enum class Pos: int { None, Lower, Upper };
-	ClipPlane(Pos pos = Pos::None) : pos_(pos) { }
+	explicit ClipPlane(Pos pos = Pos::None) : pos_(pos) { }
 	ClipPlane(int axis, Pos pos) : axis_(axis), pos_(pos) { }
 	int axis_ = Axis::None;
 	Pos pos_ = Pos::None;
