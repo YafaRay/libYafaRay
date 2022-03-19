@@ -49,19 +49,19 @@ Format * Format::factory(Logger &logger, ParamMap &params)
 	params.getParam("type", type);
 	type = string::toLower(type);
 
-	if(type == "tga" || type == "tpic") return TgaFormat::factory(logger, params);
-	else if(type == "hdr" || type == "pic") return HdrFormat::factory(logger, params);
+	if(type == "tga" || type == "tpic") return new TgaFormat(logger);
+	else if(type == "hdr" || type == "pic") return new HdrFormat(logger);
 #ifdef HAVE_OPENEXR
-	else if(type == "exr") return ExrFormat::factory(logger, params);
+	else if(type == "exr") return new ExrFormat(logger);
 #endif // HAVE_OPENEXR
 #ifdef HAVE_JPEG
-	else if(type == "jpg" || type == "jpeg") return JpgFormat::factory(logger, params);
+	else if(type == "jpg" || type == "jpeg") return new JpgFormat(logger);
 #endif // HAVE_JPEG
 #ifdef HAVE_PNG
-	else if(type == "png") return PngFormat::factory(logger, params);
+	else if(type == "png") return new PngFormat(logger);
 #endif // HAVE_PNG
 #ifdef HAVE_TIFF
-	else if(type == "tif" || type == "tiff") return TifFormat::factory(logger, params);
+	else if(type == "tif" || type == "tiff") return new TifFormat(logger);
 #endif // HAVE_TIFF
 	else
 	{

@@ -373,9 +373,4 @@ Image * ExrFormat::loadFromFile(const std::string &name, const Image::Optimizati
 	return image;
 }
 
-Format * ExrFormat::factory(Logger &logger, ParamMap &params)
-{
-	return new ExrFormat(logger);
-}
-
 END_YAFARAY

@@ -395,9 +395,4 @@ Image * TgaFormat::loadFromFile(const std::string &name, const Image::Optimizati
 	return image;
 }
 
-Format * TgaFormat::factory(Logger &logger, ParamMap &params)
-{
-	return new TgaFormat(logger);
-}
-
 END_YAFARAY

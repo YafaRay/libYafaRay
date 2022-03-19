@@ -142,9 +142,4 @@ Image * TifFormat::loadFromFile(const std::string &name, const Image::Optimizati
 	return image;
 }
 
-Format * TifFormat::factory(Logger &logger, ParamMap &params)
-{
-	return new TifFormat(logger);
-}
-
 END_YAFARAY

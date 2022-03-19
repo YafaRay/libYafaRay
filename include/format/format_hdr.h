@@ -33,10 +33,9 @@ BEGIN_YAFARAY
 class HdrFormat final : public Format
 {
 	public:
-		static Format *factory(Logger &logger, ParamMap &params);
+		HdrFormat(Logger &logger) : Format(logger) { }
 
 	private:
-		HdrFormat(Logger &logger) : Format(logger) { }
 		virtual std::string getFormatName() const override { return "HdrFormat"; }
 		virtual Image * loadFromFile(const std::string &name, const Image::Optimization &optimization, const ColorSpace &color_space, float gamma) override;
 		virtual bool saveToFile(const std::string &name, const ImageLayer &image_layer, ColorSpace color_space, float gamma, bool alpha_premultiply) override;

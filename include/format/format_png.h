@@ -32,10 +32,9 @@ struct PngStructs;
 class PngFormat final : public Format
 {
 	public:
-		static Format *factory(Logger &logger, ParamMap &params);
+		PngFormat(Logger &logger) : Format(logger) { }
 
 	private:
-		PngFormat(Logger &logger) : Format(logger) { }
 		virtual std::string getFormatName() const override { return "PngFormat"; }
 		virtual Image * loadFromFile(const std::string &name, const Image::Optimization &optimization, const ColorSpace &color_space, float gamma) override;
 		virtual Image * loadFromMemory(const uint8_t *data, size_t size, const Image::Optimization &optimization, const ColorSpace &color_space, float gamma) override;

@@ -37,10 +37,9 @@ typedef Rgba (TgaFormat::*ColorProcessor_t)(void *data);
 class TgaFormat final : public Format
 {
 	public:
-		static Format *factory(Logger &logger, ParamMap &params);
+		TgaFormat(Logger &logger) : Format(logger) { }
 
 	private:
-		TgaFormat(Logger &logger) : Format(logger) { }
 		virtual std::string getFormatName() const override { return "TgaFormat"; }
 		virtual Image * loadFromFile(const std::string &name, const Image::Optimization &optimization, const ColorSpace &color_space, float gamma) override;
 		virtual bool saveToFile(const std::string &name, const ImageLayer &image_layer, ColorSpace color_space, float gamma, bool alpha_premultiply) override;

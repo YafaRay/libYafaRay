@@ -328,9 +328,4 @@ Image * PngFormat::readFromStructs(const PngStructs &png_structs, const Image::O
 	return image;
 }
 
-Format * PngFormat::factory(Logger &logger, ParamMap &params)
-{
-	return new PngFormat(logger);
-}
-
 END_YAFARAY

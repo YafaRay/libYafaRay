@@ -259,10 +259,4 @@ Image * JpgFormat::loadFromFile(const std::string &name, const Image::Optimizati
 	return image;
 }
 
-
-Format * JpgFormat::factory(Logger &logger, ParamMap &params)
-{
-	return new JpgFormat(logger);
-}
-
 END_YAFARAY
