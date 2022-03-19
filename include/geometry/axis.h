@@ -29,7 +29,7 @@ class Axis
 {
 	public:
 		enum Code : int { None = -1, X = 0, Y, Z };
-		Axis(int axis) : axis_(axis) { }
+		explicit Axis(int axis) : axis_(axis) { }
 		bool operator == (Code axis_code) const { return axis_ == axis_code; }
 		bool operator != (Code axis_code) const { return axis_ != axis_code; }
 		int get() const { return axis_; }

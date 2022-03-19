@@ -587,7 +587,7 @@ void AcceleratorKdTreeMultiThread::buildTreeWorker(const std::vector<const Primi
 	}
 
 	Node node;
-	const Stats interior_stats = node.createInterior(split.axis_, split_pos);
+	const Stats interior_stats = node.createInterior(Axis(split.axis_), split_pos);
 	result.stats_ += interior_stats;
 	result.nodes_.emplace_back(node);
 	Bound bound_left = node_bound;
