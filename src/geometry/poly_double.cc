@@ -33,12 +33,12 @@ PolyDouble::ClipResult PolyDouble::planeClip(Logger &logger, double pos, const C
 	if(poly_num_vertices < 3)
 	{
 		logger.logWarning("Polygon clip: polygon with only ", poly.numVertices(), " vertices (less than 3), poly is 'degenerated'!");
-		return ClipResult::FatalError;
+		return ClipResult(ClipResult::FatalError);
 	}
 	else if(poly_num_vertices > 10)
 	{
 		logger.logWarning("Polygon clip: polygon with ", poly.numVertices(), " vertices (more than maximum 10), poly is limited to 10 vertices/edges, something is wrong!");
-		return ClipResult::FatalError;
+		return ClipResult(ClipResult::FatalError);
 	}
 	PolyDouble::ClipResult clip_result;
 	const int curr_axis = clip_plane.axis_;
@@ -90,16 +90,16 @@ PolyDouble::ClipResult PolyDouble::planeClip(Logger &logger, double pos, const C
 		//else: both out, do nothing.
 	} //for all edges
 	const int clipped_poly_num_vertices = clip_result.poly_.numVertices();
-	if(clipped_poly_num_vertices == 0) return ClipResult::NoOverlapDisappeared;
+	if(clipped_poly_num_vertices == 0) return ClipResult(ClipResult::NoOverlapDisappeared);
 	else if(clipped_poly_num_vertices > 10)
 	{
 		logger.logWarning("Polygon clip: polygon with ", poly_num_vertices, " vertices, after clipping has ", clipped_poly_num_vertices, " vertices, that cannot happen as PolyDouble class is limited to a maximum of 10 edges/vertices, up to a quad plus up to a maximum 6 extra vertices (one for each clipping plane), something is wrong!");
-		return ClipResult::FatalError;
+		return ClipResult(ClipResult::FatalError);
 	}
 	else if(clipped_poly_num_vertices < 3)
 	{
 		logger.logWarning("Polygon clip: polygon with ", poly_num_vertices, " vertices, after clipping has only ", clipped_poly_num_vertices, " vertices, clip is 'degenerated'!");
-		return ClipResult::DegeneratedLessThan3Edges;
+		return ClipResult(ClipResult::DegeneratedLessThan3Edges);
 	}
 	clip_result.clip_result_code_ = ClipResult::Correct;
 	return clip_result;
@@ -129,7 +129,7 @@ Bound PolyDouble::getBound(const PolyDouble &poly)
 
 PolyDouble::ClipResultWithBound PolyDouble::planeClipWithBound(Logger &logger, double pos, const ClipPlane &clip_plane, const PolyDouble &poly)
 {
-	ClipResultWithBound clip_result = planeClip(logger, pos, clip_plane, poly);
+	ClipResultWithBound clip_result(planeClip(logger, pos, clip_plane, poly));
 	if(clip_result.clip_result_code_ == ClipResult::Correct)
 	{
 		clip_result.box_ = std::unique_ptr<Bound>(new Bound);
@@ -152,10 +152,10 @@ PolyDouble::ClipResultWithBound PolyDouble::boxClip(Logger &logger, const Vec3Do
 	//for each axis
 	for(int axis = 0; axis < 3; ++axis)
 	{
-		clip_result = planeClip(logger, b_min[axis], {axis, ClipPlane::Pos::Lower}, clip_result.poly_);
-		if(clip_result.clip_result_code_ != ClipResult::Correct) return {clip_result.clip_result_code_ };
-		clip_result = planeClip(logger, b_max[axis], {axis, ClipPlane::Pos::Upper}, clip_result.poly_);
-		if(clip_result.clip_result_code_ != ClipResult::Correct) return {clip_result.clip_result_code_ };
+		clip_result = ClipResultWithBound(planeClip(logger, b_min[axis], {axis, ClipPlane::Pos::Lower}, clip_result.poly_));
+		if(clip_result.clip_result_code_ != ClipResult::Correct) return ClipResultWithBound(clip_result.clip_result_code_);
+		clip_result = ClipResultWithBound(planeClip(logger, b_max[axis], {axis, ClipPlane::Pos::Upper}, clip_result.poly_));
+		if(clip_result.clip_result_code_ != ClipResult::Correct) return ClipResultWithBound(clip_result.clip_result_code_);
 	}
 	if(clip_result.clip_result_code_ == ClipResult::Correct)
 	{
