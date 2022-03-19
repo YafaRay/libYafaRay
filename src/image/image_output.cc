@@ -30,7 +30,7 @@
 
 BEGIN_YAFARAY
 
-ImageOutput::ImageOutput(Logger &logger, const std::string &image_path, const DenoiseParams denoise_params, const std::string &name, const ColorSpace color_space, float gamma, bool with_alpha, bool alpha_premultiply, bool multi_layer) : name_(name), image_path_(image_path), color_space_(color_space), gamma_(gamma), with_alpha_(with_alpha), alpha_premultiply_(alpha_premultiply), multi_layer_(multi_layer), denoise_params_(denoise_params), badge_(logger), logger_(logger)
+ImageOutput::ImageOutput(Logger &logger, const std::string &image_path, const DenoiseParams &denoise_params, const std::string &name, ColorSpace color_space, float gamma, bool with_alpha, bool alpha_premultiply, bool multi_layer) : name_(name), image_path_(image_path), color_space_(color_space), gamma_(gamma), with_alpha_(with_alpha), alpha_premultiply_(alpha_premultiply), multi_layer_(multi_layer), denoise_params_(denoise_params), badge_(logger), logger_(logger)
 {
 	if(color_space == RawManualGamma)
 	{

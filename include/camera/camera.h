@@ -54,7 +54,7 @@ class Camera
 	public:
 		static Camera *factory(Logger &logger, ParamMap &params, const Scene &scene);
 		Camera(Logger &logger) : logger_(logger) { }
-		Camera(Logger &logger, const Point3 &pos, const Point3 &look, const Point3 &up, int resx, int resy, float aspect, float const near_clip_distance, float const far_clip_distance);
+		Camera(Logger &logger, const Point3 &pos, const Point3 &look, const Point3 &up, int resx, int resy, float aspect, float near_clip_distance, float far_clip_distance);
 		virtual ~Camera() = default;
 		virtual void setAxis(const Vec3 &vx, const Vec3 &vy, const Vec3 &vz) = 0; //!< Set camera axis
 		/*! Shoot a new ray from the camera gived image pixel coordinates px,py and lense dof effect */

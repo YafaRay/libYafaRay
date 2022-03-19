@@ -534,7 +534,7 @@ Texture * MusgraveTexture::factory(Logger &logger, ParamMap &params, Scene &scen
 
 DistortedNoiseTexture::DistortedNoiseTexture(Logger &logger, const Rgb &c_1, const Rgb &c_2,
 											 float distort, float size,
-											 const std::string &noiseb_1, const std::string noiseb_2)
+											 const std::string &noiseb_1, const std::string &noiseb_2)
 	: Texture(logger), color_1_(c_1), color_2_(c_2), distort_(distort), size_(size)
 {
 	n_gen_1_ = NoiseGenerator::newNoise(noiseb_1);

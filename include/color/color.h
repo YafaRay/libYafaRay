@@ -251,13 +251,13 @@ void operator >> (unsigned char *data, Rgb &c);
 void operator << (unsigned char *data, const Rgb &c);
 void operator >> (float *data, Rgb &c);
 void operator << (float *data, const Rgb &c);
-std::ostream &operator << (std::ostream &out, const Rgb c);
+std::ostream &operator << (std::ostream &out, const Rgb &c);
 
 void operator >> (unsigned char *data, Rgba &c);
 void operator << (unsigned char *data, const Rgba &c);
 void operator >> (float *data, Rgba &c);
 void operator << (float *data, const Rgba &c);
-std::ostream &operator << (std::ostream &out, const Rgba c);
+std::ostream &operator << (std::ostream &out, const Rgba &c);
 
 
 inline Rgb operator * (const Rgb &a, const Rgb &b)

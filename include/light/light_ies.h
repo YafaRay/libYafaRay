@@ -38,7 +38,7 @@ class IesLight final : public Light
 		static Light *factory(Logger &logger, ParamMap &params, const Scene &scene);
 
 	private:
-		IesLight(Logger &logger, const Point3 &from, const Point3 &to, const Rgb &col, float power, const std::string ies_file, int smpls, bool s_sha, float ang, bool b_light_enabled = true, bool b_cast_shadows = true);
+		IesLight(Logger &logger, const Point3 &from, const Point3 &to, const Rgb &col, float power, const std::string &ies_file, int smpls, bool s_sha, float ang, bool b_light_enabled = true, bool b_cast_shadows = true);
 		Rgb totalEnergy() const override{ return color_ * tot_energy_;};
 		int nSamples() const override { return samples_; };
 		bool diracLight() const override { return !soft_shadow_; }

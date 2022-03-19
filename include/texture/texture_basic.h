@@ -136,7 +136,7 @@ class DistortedNoiseTexture final : public Texture
 	private:
 		DistortedNoiseTexture(Logger &logger, const Rgb &c_1, const Rgb &c_2,
 							  float distort, float size,
-							  const std::string &noiseb_1, const std::string noiseb_2);
+							  const std::string &noiseb_1, const std::string &noiseb_2);
 		Rgba getColor(const Point3 &p, const MipMapParams *mipmap_params = nullptr) const override;
 		float getFloat(const Point3 &p, const MipMapParams *mipmap_params = nullptr) const override;
 

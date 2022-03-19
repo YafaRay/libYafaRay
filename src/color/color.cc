@@ -86,13 +86,13 @@ void operator << (float *data, const Rgba &c)
 	data[3] = c.a_;
 }
 
-std::ostream &operator << (std::ostream &out, const Rgb c)
+std::ostream &operator << (std::ostream &out, const Rgb &c)
 {
 	out << "[" << c.r_ << " " << c.g_ << " " << c.b_ << "]";
 	return out;
 }
 
-std::ostream &operator << (std::ostream &out, const Rgba c)
+std::ostream &operator << (std::ostream &out, const Rgba &c)
 {
 	out << "[" << c.r_ << ", " << c.g_ << ", " << c.b_ << ", " << c.a_ << "]";
 	return out;

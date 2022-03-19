@@ -254,10 +254,10 @@ struct MinMax
 {
 	double min_;
 	double max_;
-	static MinMax find(const Vec3Double values);
+	static MinMax find(const Vec3Double &values);
 };
 
-MinMax MinMax::find(const Vec3Double values)
+MinMax MinMax::find(const Vec3Double &values)
 {
 	MinMax min_max;
 	min_max.min_ = math::min(values[0], values[1], values[2]);

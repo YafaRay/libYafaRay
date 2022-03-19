@@ -40,7 +40,7 @@ class RoughGlassMaterial final : public NodeMaterial
 		MaterialData * createMaterialData(size_t number_of_nodes) const override { return new RoughGlassMaterialData(bsdf_flags_, number_of_nodes); };
 		const MaterialData * initBsdf(SurfacePoint &sp, const Camera *camera) const override;
 		Rgb sample(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, Vec3 &wi, Sample &s, float &w, bool chromatic, float wavelength, const Camera *camera) const override;
-		Rgb sample(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, Vec3 *const dir, Rgb &tcol, Sample &s, float *const w, bool chromatic, float wavelength) const override;
+		Rgb sample(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, Vec3 *dir, Rgb &tcol, Sample &s, float *w, bool chromatic, float wavelength) const override;
 		Rgb eval(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wi, const BsdfFlags &bsdfs, bool force_eval = false) const override { return 0.f; }
 		float pdf(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wi, const BsdfFlags &bsdfs) const override { return 0.f; }
 		bool isTransparent() const override { return fake_shadow_; }

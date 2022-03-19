@@ -52,9 +52,9 @@ class Logger;
 class Interface
 {
 	public:
-		Interface(const ::yafaray_LoggerCallback_t logger_callback = nullptr, void *callback_data = nullptr, ::yafaray_DisplayConsole_t logger_display_console = YAFARAY_DISPLAY_CONSOLE_NORMAL);
+		Interface( ::yafaray_LoggerCallback_t logger_callback = nullptr, void *callback_data = nullptr, ::yafaray_DisplayConsole_t logger_display_console = YAFARAY_DISPLAY_CONSOLE_NORMAL);
 		virtual ~Interface() noexcept;
-		void setLoggingCallback(const ::yafaray_LoggerCallback_t logger_callback, void *callback_data);
+		void setLoggingCallback( ::yafaray_LoggerCallback_t logger_callback, void *callback_data);
 		virtual void createScene() noexcept;
 		virtual int getSceneFilmWidth() const noexcept;
 		virtual int getSceneFilmHeight() const noexcept;

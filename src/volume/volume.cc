@@ -126,7 +126,7 @@ Rgb DensityVolumeRegion::tau(const Ray &ray, float step_size, float offset) cons
 	return tau_val;
 }
 
-float VolumeRegion::attenuation(const Point3 p, const Light *l) const
+float VolumeRegion::attenuation(const Point3 &p, const Light *l) const
 {
 	if(attenuation_grid_map_.find(l) == attenuation_grid_map_.end())
 	{

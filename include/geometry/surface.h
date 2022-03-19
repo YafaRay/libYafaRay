@@ -73,7 +73,7 @@ class SurfacePoint final
 		const MaterialData * initBsdf(const Camera *camera);
 		Rgb eval(const Vec3 &wo, const Vec3 &wl, const BsdfFlags &types, bool force_eval = false) const;
 		Rgb sample(const Vec3 &wo, Vec3 &wi, Sample &s, float &w, bool chromatic, float wavelength, const Camera *camera) const;
-		Rgb sample(const Vec3 &wo, Vec3 *const dir, Rgb &tcol, Sample &s, float *const w, bool chromatic, float wavelength) const;
+		Rgb sample(const Vec3 &wo, Vec3 *dir, Rgb &tcol, Sample &s, float *w, bool chromatic, float wavelength) const;
 		float pdf(const Vec3 &wo, const Vec3 &wi, const BsdfFlags &bsdfs) const;
 		Rgb getTransparency(const Vec3 &wo, const Camera *camera) const;
 		Specular getSpecular(int ray_level, const Vec3 &wo, bool chromatic, float wavelength) const;

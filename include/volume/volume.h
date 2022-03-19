@@ -64,7 +64,7 @@ class VolumeRegion
 			return sigmaA(p, v) + sigmaS(p, v);
 		}
 
-		float attenuation(const Point3 p, const Light *l) const;
+		float attenuation(const Point3 &p, const Light *l) const;
 
 		// w_l: dir *from* the light, w_s: direction, into which should be scattered
 		virtual float p(const Vec3 &w_l, const Vec3 &w_s) const

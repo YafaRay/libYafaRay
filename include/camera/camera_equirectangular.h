@@ -36,7 +36,7 @@ class EquirectangularCamera final : public Camera
 	private:
 		EquirectangularCamera(Logger &logger, const Point3 &pos, const Point3 &look, const Point3 &up,
 							  int resx, int resy, float aspect,
-							  float const near_clip_distance = 0.0f, float const far_clip_distance = 1e6f);
+							  float near_clip_distance = 0.0f, float far_clip_distance = 1e6f);
 		void setAxis(const Vec3 &vx, const Vec3 &vy, const Vec3 &vz) override;
 		CameraRay shootRay(float px, float py, float lu, float lv) const override;
 		Point3 screenproject(const Point3 &p) const override;
