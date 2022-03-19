@@ -37,8 +37,8 @@ class Layer final
 {
 	public:
 		Layer() = default;
-		Layer(LayerDef::Type type, Image::Type image_type = Image::Type::None, Image::Type exported_image_type = Image::Type::None, const std::string &exported_image_name = "") : type_(type), image_type_(image_type), exported_image_type_(exported_image_type), exported_image_name_(exported_image_name) { }
-		Layer(const std::string &type_name, const std::string &image_type_name = "", const std::string &exported_image_type_name = "", const std::string &exported_image_name = "") : Layer(LayerDef::getType(type_name), Image::getTypeFromName(image_type_name), Image::getTypeFromName(exported_image_type_name), exported_image_name) { }
+		explicit Layer(LayerDef::Type type, Image::Type image_type = Image::Type::None, Image::Type exported_image_type = Image::Type::None, const std::string &exported_image_name = "") : type_(type), image_type_(image_type), exported_image_type_(exported_image_type), exported_image_name_(exported_image_name) { }
+		explicit Layer(const std::string &type_name, const std::string &image_type_name = "", const std::string &exported_image_type_name = "", const std::string &exported_image_name = "") : Layer(LayerDef::getType(type_name), Image::getTypeFromName(image_type_name), Image::getTypeFromName(exported_image_type_name), exported_image_name) { }
 		LayerDef::Type getType() const { return type_; }
 		std::string getTypeName() const { return LayerDef::getName(type_); }
 		int getNumExportedChannels() const { return Image::getNumChannels(exported_image_type_); }

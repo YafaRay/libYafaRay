@@ -202,7 +202,7 @@ void ImageOutput::saveImageFile(const std::string &filename, LayerDef::Type laye
 		}
 	}
 
-	ImageLayer image_layer { image, layer_type };
+	ImageLayer image_layer { image, Layer(layer_type) };
 	if(denoiseEnabled())
 	{
 		std::unique_ptr<Image> image_denoised(Image::getDenoisedLdrImage(logger_, image.get(), denoise_params_));
