@@ -36,9 +36,9 @@ class TextureMapperNode final : public ShaderNode
 		enum Projection : int { Plain = 0, Cube, Tube, Sphere };
 
 		TextureMapperNode(const Texture *texture) : tex_(texture) { }
-		virtual void eval(NodeTreeData &node_tree_data, const SurfacePoint &sp, const Camera *camera) const override;
-		virtual void evalDerivative(NodeTreeData &node_tree_data, const SurfacePoint &sp, const Camera *camera) const override;
-		virtual bool configInputs(Logger &logger, const ParamMap &params, const NodeFinder &find) override { return true; };
+		void eval(NodeTreeData &node_tree_data, const SurfacePoint &sp, const Camera *camera) const override;
+		void evalDerivative(NodeTreeData &node_tree_data, const SurfacePoint &sp, const Camera *camera) const override;
+		bool configInputs(Logger &logger, const ParamMap &params, const NodeFinder &find) override { return true; };
 		//virtual void getDerivative(const surfacePoint_t &sp, float &du, float &dv) const;
 
 		void setup();
@@ -70,8 +70,8 @@ class ValueNode final : public ShaderNode
 
 	private:
 		ValueNode(Rgba col, float val): color_(col), value_(val) { }
-		virtual void eval(NodeTreeData &node_tree_data, const SurfacePoint &sp, const Camera *camera) const override;
-		virtual bool configInputs(Logger &logger, const ParamMap &params, const NodeFinder &find) override { return true; };
+		void eval(NodeTreeData &node_tree_data, const SurfacePoint &sp, const Camera *camera) const override;
+		bool configInputs(Logger &logger, const ParamMap &params, const NodeFinder &find) override { return true; };
 
 		Rgba color_;
 		float value_;
@@ -88,9 +88,9 @@ class MixNode : public ShaderNode
 
 	private:
 		MixNode(float val) : cfactor_(val) { }
-		virtual void eval(NodeTreeData &node_tree_data, const SurfacePoint &sp, const Camera *camera) const override;
-		virtual bool configInputs(Logger &logger, const ParamMap &params, const NodeFinder &find) override;
-		virtual std::vector<const ShaderNode *> getDependencies() const override;
+		void eval(NodeTreeData &node_tree_data, const SurfacePoint &sp, const Camera *camera) const override;
+		bool configInputs(Logger &logger, const ParamMap &params, const NodeFinder &find) override;
+		std::vector<const ShaderNode *> getDependencies() const override;
 
 		Rgba col_1_, col_2_;
 		float val_1_, val_2_;

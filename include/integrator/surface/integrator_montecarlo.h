@@ -54,7 +54,7 @@ class MonteCarloIntegrator: public TiledIntegrator
 		MonteCarloIntegrator(RenderControl &render_control, Logger &logger);
 
 	protected:
-		virtual ~MonteCarloIntegrator() override;
+		~MonteCarloIntegrator() override;
 		/*! Estimates direct light from all sources in a mc fashion and completing MIS (Multiple Importance Sampling) for a given surface point */
 		Rgb estimateAllDirectLight(RandomGenerator &random_generator, ColorLayers *color_layers, bool chromatic_enabled, float wavelength, const SurfacePoint &sp, const Vec3 &wo, const RayDivision &ray_division, const PixelSamplingData &pixel_sampling_data) const;
 		/*! Like previous but for only one random light source for a given surface point */

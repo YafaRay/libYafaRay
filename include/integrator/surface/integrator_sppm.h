@@ -64,15 +64,15 @@ class SppmIntegrator final : public MonteCarloIntegrator
 
 	private:
 		SppmIntegrator(RenderControl &render_control, Logger &logger, unsigned int d_photons, int passnum, bool transp_shad, int shadow_depth);
-		virtual std::string getShortName() const override { return "SPPM"; }
-		virtual std::string getName() const override { return "SPPM"; }
-		virtual bool render() override;
+		std::string getShortName() const override { return "SPPM"; }
+		std::string getName() const override { return "SPPM"; }
+		bool render() override;
 		/*! render a tile; only required by default implementation of render() */
-		virtual bool renderTile(const RenderArea &a, int n_samples, int offset, bool adaptive, int thread_id, int aa_pass_number) override;
-		virtual std::pair<Rgb, float> integrate(Ray &ray, RandomGenerator &random_generator, ColorLayers *color_layers, int thread_id, int ray_level, bool chromatic_enabled, float wavelength, int additional_depth, const RayDivision &ray_division, const PixelSamplingData &pixel_sampling_data) const override;
-		virtual bool preprocess(ImageFilm *image_film, const RenderView *render_view, const Scene &scene) override; //not used for now
+		bool renderTile(const RenderArea &a, int n_samples, int offset, bool adaptive, int thread_id, int aa_pass_number) override;
+		std::pair<Rgb, float> integrate(Ray &ray, RandomGenerator &random_generator, ColorLayers *color_layers, int thread_id, int ray_level, bool chromatic_enabled, float wavelength, int additional_depth, const RayDivision &ray_division, const PixelSamplingData &pixel_sampling_data) const override;
+		bool preprocess(ImageFilm *image_film, const RenderView *render_view, const Scene &scene) override; //not used for now
 		// not used now
-		virtual void prePass(int samples, int offset, bool adaptive) override;
+		void prePass(int samples, int offset, bool adaptive) override;
 		/*! not used now, use traceGatherRay instead*/
 		/*! initializing the things that PPM uses such as initial radius */
 		void initializePpm();

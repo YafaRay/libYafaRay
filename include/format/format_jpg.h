@@ -34,11 +34,11 @@ class JpgFormat final : public Format
 		JpgFormat(Logger &logger) : Format(logger) { }
 
 	private:
-		virtual std::string getFormatName() const override { return "JpgFormat"; }
-		virtual Image * loadFromFile(const std::string &name, const Image::Optimization &optimization, const ColorSpace &color_space, float gamma) override;
-		virtual bool saveToFile(const std::string &name, const ImageLayer &image_layer, ColorSpace color_space, float gamma, bool alpha_premultiply) override;
-		virtual bool supportsAlpha() const override { return false; }
-		virtual bool saveAlphaChannelOnlyToFile(const std::string &name, const ImageLayer &image_layer) override;
+		std::string getFormatName() const override { return "JpgFormat"; }
+		Image * loadFromFile(const std::string &name, const Image::Optimization &optimization, const ColorSpace &color_space, float gamma) override;
+		bool saveToFile(const std::string &name, const ImageLayer &image_layer, ColorSpace color_space, float gamma, bool alpha_premultiply) override;
+		bool supportsAlpha() const override { return false; }
+		bool saveAlphaChannelOnlyToFile(const std::string &name, const ImageLayer &image_layer) override;
 };
 
 END_YAFARAY

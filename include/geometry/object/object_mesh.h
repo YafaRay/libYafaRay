@@ -37,34 +37,34 @@ class MeshObject : public ObjectBasic
 	public:
 		static Object *factory(Logger &logger, ParamMap &params, const Scene &scene);
 		MeshObject(int num_vertices, int num_faces, bool has_uv = false, bool has_orco = false);
-		virtual ~MeshObject() override;
+		~MeshObject() override;
 		/*! the number of primitives the object holds. Primitive is an element
 			that by definition can perform ray-triangle intersection */
-		virtual int numPrimitives() const override { return faces_.size(); }
-		virtual const std::vector<const Primitive *> getPrimitives() const override;
-		virtual int lastVertexId() const override { return points_.size() - 1; }
+		int numPrimitives() const override { return faces_.size(); }
+		const std::vector<const Primitive *> getPrimitives() const override;
+		int lastVertexId() const override { return points_.size() - 1; }
 		Vec3 getVertexNormal(int index) const { return normals_[index]; }
 		Point3 getVertex(int index) const { return points_[index]; }
 		Point3 getOrcoVertex(int index) const { return orco_points_[index]; }
-		virtual int numVertices() const override { return points_.size(); }
-		virtual int numNormals() const override { return normals_.size(); }
+		int numVertices() const override { return points_.size(); }
+		int numNormals() const override { return normals_.size(); }
 		void addFace(std::unique_ptr<FacePrimitive> face);
-		virtual void addFace(const std::vector<int> &vertices, const std::vector<int> &vertices_uv, const std::unique_ptr<Material> *mat) override;
+		void addFace(const std::vector<int> &vertices, const std::vector<int> &vertices_uv, const std::unique_ptr<Material> *mat) override;
 		void calculateNormals();
 		const std::vector<Point3> &getPoints() const { return points_; }
 		const std::vector<Uv> &getUvValues() const { return uv_values_; }
 		bool hasOrco() const { return !orco_points_.empty(); }
 		bool hasUv() const { return !uv_values_.empty(); }
 		bool isSmooth() const { return is_smooth_; }
-		virtual bool hasNormalsExported() const override { return !normals_.empty(); }
-		virtual void addPoint(const Point3 &p) override { points_.push_back(p); }
-		virtual void addOrcoPoint(const Point3 &p) override { orco_points_.push_back(p); }
-		virtual void addNormal(const Vec3 &n) override;
-		virtual int addUvValue(const Uv &uv) override { uv_values_.push_back(uv); return static_cast<int>(uv_values_.size()) - 1; }
-		virtual void setSmooth(bool smooth) override { is_smooth_ = smooth; }
-		virtual bool smoothNormals(Logger &logger, float angle) override;
+		bool hasNormalsExported() const override { return !normals_.empty(); }
+		void addPoint(const Point3 &p) override { points_.push_back(p); }
+		void addOrcoPoint(const Point3 &p) override { orco_points_.push_back(p); }
+		void addNormal(const Vec3 &n) override;
+		int addUvValue(const Uv &uv) override { uv_values_.push_back(uv); return static_cast<int>(uv_values_.size()) - 1; }
+		void setSmooth(bool smooth) override { is_smooth_ = smooth; }
+		bool smoothNormals(Logger &logger, float angle) override;
 		//int convertToBezierControlPoints();
-		virtual bool calculateObject(const std::unique_ptr<Material> *material) override;
+		bool calculateObject(const std::unique_ptr<Material> *material) override;
 
 	protected:
 		static float getAngleSine(const std::array<int, 3> &triangle_indices, const std::vector<Point3> &vertices);

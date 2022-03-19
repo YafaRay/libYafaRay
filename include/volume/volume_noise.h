@@ -44,7 +44,7 @@ class NoiseVolumeRegion final : public DensityVolumeRegion
 			sharpness_ = sharp * sharp;
 			density_ = dens;
 		}
-		virtual float density(Point3 p) const override;
+		float density(Point3 p) const override;
 
 		Texture *tex_dist_noise_;
 		float cover_;

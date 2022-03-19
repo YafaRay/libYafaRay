@@ -43,19 +43,19 @@ class BackgroundPortalLight final : public Light
 
 	private:
 		BackgroundPortalLight(Logger &logger, const std::string &object_name, int sampl, float pow, bool light_enabled = true, bool cast_shadows = true);
-		virtual void init(Scene &scene) override;
-		virtual Rgb totalEnergy() const override;
-		virtual Rgb emitPhoton(float s_1, float s_2, float s_3, float s_4, Ray &ray, float &ipdf) const override;
-		virtual Rgb emitSample(Vec3 &wo, LSample &s) const override;
-		virtual bool diracLight() const override { return false; }
-		//virtual bool illumSample(const surfacePoint_t &sp, float s1, float s2, Rgb &col, float &ipdf, ray_t &wi) const override;
-		virtual bool illumSample(const SurfacePoint &sp, LSample &s, Ray &wi) const override;
-		virtual bool illuminate(const SurfacePoint &sp, Rgb &col, Ray &wi) const override { return false; }
-		virtual int nSamples() const override { return samples_; }
-		virtual bool canIntersect() const override { return accelerator_ != 0 /* false */ ; }
-		virtual bool intersect(const Ray &ray, float &t, Rgb &col, float &ipdf) const override;
-		virtual float illumPdf(const SurfacePoint &sp, const SurfacePoint &sp_light) const override;
-		virtual void emitPdf(const SurfacePoint &sp, const Vec3 &wi, float &area_pdf, float &dir_pdf, float &cos_wo) const override;
+		void init(Scene &scene) override;
+		Rgb totalEnergy() const override;
+		Rgb emitPhoton(float s_1, float s_2, float s_3, float s_4, Ray &ray, float &ipdf) const override;
+		Rgb emitSample(Vec3 &wo, LSample &s) const override;
+		bool diracLight() const override { return false; }
+		//bool illumSample(const surfacePoint_t &sp, float s1, float s2, Rgb &col, float &ipdf, ray_t &wi) const override;
+		bool illumSample(const SurfacePoint &sp, LSample &s, Ray &wi) const override;
+		bool illuminate(const SurfacePoint &sp, Rgb &col, Ray &wi) const override { return false; }
+		int nSamples() const override { return samples_; }
+		bool canIntersect() const override { return accelerator_ != 0 /* false */ ; }
+		bool intersect(const Ray &ray, float &t, Rgb &col, float &ipdf) const override;
+		float illumPdf(const SurfacePoint &sp, const SurfacePoint &sp_light) const override;
+		void emitPdf(const SurfacePoint &sp, const Vec3 &wi, float &area_pdf, float &dir_pdf, float &cos_wo) const override;
 		void initIs();
 		void sampleSurface(Point3 &p, Vec3 &n, float s_1, float s_2) const;
 

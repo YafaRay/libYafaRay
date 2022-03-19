@@ -35,13 +35,13 @@ class SkyVolumeRegion final : public VolumeRegion
 
 	private:
 		SkyVolumeRegion(Logger &logger, Rgb sa, Rgb ss, Rgb le, Point3 pmin, Point3 pmax);
-		virtual float p(const Vec3 &w_l, const Vec3 &w_s) const override;
+		float p(const Vec3 &w_l, const Vec3 &w_s) const override;
 		float phaseRayleigh(const Vec3 &w_l, const Vec3 &w_s) const;
 		float phaseMie(const Vec3 &w_l, const Vec3 &w_s) const;
-		virtual Rgb sigmaA(const Point3 &p, const Vec3 &v) const override;
-		virtual Rgb sigmaS(const Point3 &p, const Vec3 &v) const override;
-		virtual Rgb emission(const Point3 &p, const Vec3 &v) const override;
-		virtual Rgb tau(const Ray &ray, float step, float offset) const override;
+		Rgb sigmaA(const Point3 &p, const Vec3 &v) const override;
+		Rgb sigmaS(const Point3 &p, const Vec3 &v) const override;
+		Rgb emission(const Point3 &p, const Vec3 &v) const override;
+		Rgb tau(const Ray &ray, float step, float offset) const override;
 
 		Rgb s_ray_;
 		Rgb s_mie_;

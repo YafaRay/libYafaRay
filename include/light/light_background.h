@@ -39,18 +39,18 @@ class BackgroundLight final : public Light
 
 	private:
 		BackgroundLight(Logger &logger, int sampl, bool invert_intersect = false, bool light_enabled = true, bool cast_shadows = true);
-		virtual void init(Scene &scene) override;
-		virtual Rgb totalEnergy() const override;
-		virtual Rgb emitPhoton(float s_1, float s_2, float s_3, float s_4, Ray &ray, float &ipdf) const override;
-		virtual Rgb emitSample(Vec3 &wo, LSample &s) const override;
-		virtual bool diracLight() const override { return false; }
-		virtual bool illumSample(const SurfacePoint &sp, LSample &s, Ray &wi) const override;
-		virtual bool illuminate(const SurfacePoint &sp, Rgb &col, Ray &wi) const override { return false; }
-		virtual float illumPdf(const SurfacePoint &sp, const SurfacePoint &sp_light) const override;
-		virtual void emitPdf(const SurfacePoint &sp, const Vec3 &wo, float &area_pdf, float &dir_pdf, float &cos_wo) const override;
-		virtual int nSamples() const override { return samples_; }
-		virtual bool canIntersect() const override { return true; }
-		virtual bool intersect(const Ray &ray, float &t, Rgb &col, float &ipdf) const override;
+		void init(Scene &scene) override;
+		Rgb totalEnergy() const override;
+		Rgb emitPhoton(float s_1, float s_2, float s_3, float s_4, Ray &ray, float &ipdf) const override;
+		Rgb emitSample(Vec3 &wo, LSample &s) const override;
+		bool diracLight() const override { return false; }
+		bool illumSample(const SurfacePoint &sp, LSample &s, Ray &wi) const override;
+		bool illuminate(const SurfacePoint &sp, Rgb &col, Ray &wi) const override { return false; }
+		float illumPdf(const SurfacePoint &sp, const SurfacePoint &sp_light) const override;
+		void emitPdf(const SurfacePoint &sp, const Vec3 &wo, float &area_pdf, float &dir_pdf, float &cos_wo) const override;
+		int nSamples() const override { return samples_; }
+		bool canIntersect() const override { return true; }
+		bool intersect(const Ray &ray, float &t, Rgb &col, float &ipdf) const override;
 		void sampleDir(float s_1, float s_2, Vec3 &dir, float &pdf, bool inv = false) const;
 		float dirPdf(const Vec3 &dir) const;
 		float calcFromSample(float s_1, float s_2, float &u, float &v, bool inv = false) const;

@@ -34,7 +34,7 @@ class SssVolumeHandler final : public BeerVolumeHandler
 
 	private:
 		SssVolumeHandler(Logger &logger, const Rgb &a_col, const Rgb &s_col, double dist);
-		virtual bool scatter(const Ray &ray, Ray &s_ray, PSample &s) const override;
+		bool scatter(const Ray &ray, Ray &s_ray, PSample &s) const override;
 
 		float dist_s_;
 		Rgb scatter_col_;

@@ -45,18 +45,18 @@ class SphereLight final : public Light
 
 	private:
 		SphereLight(Logger &logger, const Point3 &c, float rad, const Rgb &col, float inte, int nsam, bool b_light_enabled = true, bool b_cast_shadows = true);
-		virtual void init(Scene &scene) override;
-		virtual Rgb totalEnergy() const override;
-		virtual Rgb emitPhoton(float s_1, float s_2, float s_3, float s_4, Ray &ray, float &ipdf) const override;
-		virtual Rgb emitSample(Vec3 &wo, LSample &s) const override;
-		virtual bool diracLight() const override { return false; }
-		virtual bool illumSample(const SurfacePoint &sp, LSample &s, Ray &wi) const override;
-		virtual bool illuminate(const SurfacePoint &sp, Rgb &col, Ray &wi) const override { return false; }
-		virtual bool canIntersect() const override { return false; }
-		virtual bool intersect(const Ray &ray, float &t, Rgb &col, float &ipdf) const override;
-		virtual float illumPdf(const SurfacePoint &sp, const SurfacePoint &sp_light) const override;
-		virtual void emitPdf(const SurfacePoint &sp, const Vec3 &wo, float &area_pdf, float &dir_pdf, float &cos_wo) const override;
-		virtual int nSamples() const override { return samples_; }
+		void init(Scene &scene) override;
+		Rgb totalEnergy() const override;
+		Rgb emitPhoton(float s_1, float s_2, float s_3, float s_4, Ray &ray, float &ipdf) const override;
+		Rgb emitSample(Vec3 &wo, LSample &s) const override;
+		bool diracLight() const override { return false; }
+		bool illumSample(const SurfacePoint &sp, LSample &s, Ray &wi) const override;
+		bool illuminate(const SurfacePoint &sp, Rgb &col, Ray &wi) const override { return false; }
+		bool canIntersect() const override { return false; }
+		bool intersect(const Ray &ray, float &t, Rgb &col, float &ipdf) const override;
+		float illumPdf(const SurfacePoint &sp, const SurfacePoint &sp_light) const override;
+		void emitPdf(const SurfacePoint &sp, const Vec3 &wo, float &area_pdf, float &dir_pdf, float &cos_wo) const override;
+		int nSamples() const override { return samples_; }
 		static bool sphereIntersect(const Ray &ray, const Point3 &c, float r_2, float &d_1, float &d_2);
 
 		Point3 center_;

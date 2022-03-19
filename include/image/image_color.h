@@ -34,13 +34,13 @@ class ImageColor final : public Image
 		ImageColor(int width, int height) : Image(width, height), buffer_{width, height} { }
 
 	private:
-		virtual Type getType() const override { return Type::Color; }
-		virtual Image::Optimization getOptimization() const override { return Image::Optimization::None; }
-		virtual Rgba getColor(int x, int y) const override { return buffer_(x, y); }
-		virtual float getFloat(int x, int y) const override { return getColor(x, y).r_; }
-		virtual void setColor(int x, int y, const Rgba &col) override { buffer_(x, y) = col; }
-		virtual void setFloat(int x, int y, float val) override { setColor(x, y, val); }
-		virtual void clear() override { buffer_.clear(); }
+		Type getType() const override { return Type::Color; }
+		Image::Optimization getOptimization() const override { return Image::Optimization::None; }
+		Rgba getColor(int x, int y) const override { return buffer_(x, y); }
+		float getFloat(int x, int y) const override { return getColor(x, y).r_; }
+		void setColor(int x, int y, const Rgba &col) override { buffer_(x, y) = col; }
+		void setFloat(int x, int y, float val) override { setColor(x, y, val); }
+		void clear() override { buffer_.clear(); }
 
 		ImageBuffer2D<Rgb> buffer_;
 };

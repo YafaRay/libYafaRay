@@ -31,12 +31,12 @@ class EmissionIntegrator final : public VolumeIntegrator
 
 	private:
 		EmissionIntegrator(Logger &logger) : VolumeIntegrator(logger) { }
-		virtual std::string getShortName() const override { return "Em"; }
-		virtual std::string getName() const override { return "Emission"; }
+		std::string getShortName() const override { return "Em"; }
+		std::string getName() const override { return "Emission"; }
 		// optical thickness, absorption, attenuation, extinction
-		virtual Rgb transmittance(RandomGenerator &random_generator, const Ray &ray) const override;
+		Rgb transmittance(RandomGenerator &random_generator, const Ray &ray) const override;
 		// emission part
-		virtual Rgb integrate(RandomGenerator &random_generator, const Ray &ray, int additional_depth = 0) const override;
+		Rgb integrate(RandomGenerator &random_generator, const Ray &ray, int additional_depth = 0) const override;
 };
 
 END_YAFARAY

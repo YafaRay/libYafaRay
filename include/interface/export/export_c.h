@@ -33,38 +33,38 @@ class ExportC: public Interface
 {
 	public:
 		ExportC(const char *fname, const ::yafaray_LoggerCallback_t logger_callback = nullptr, void *callback_data = nullptr, ::yafaray_DisplayConsole_t logger_display_console = YAFARAY_DISPLAY_CONSOLE_NORMAL);
-		virtual void createScene() noexcept override;
-		virtual int getSceneFilmWidth() const noexcept override { return 0; }
-		virtual int getSceneFilmHeight() const noexcept override { return 0; }
-		virtual void defineLayer() noexcept override;
-		virtual bool startGeometry() noexcept override;
-		virtual bool endGeometry() noexcept override;
-		virtual unsigned int getNextFreeId() noexcept override;
-		virtual bool endObject() noexcept override;
-		virtual bool addInstance(const char *base_object_name, const Matrix4 &obj_to_world) noexcept override;
-		virtual int  addVertex(double x, double y, double z) noexcept override; //!< add vertex to mesh; returns index to be used for addTriangle
-		virtual int  addVertex(double x, double y, double z, double ox, double oy, double oz) noexcept override; //!< add vertex with Orco to mesh; returns index to be used for addTriangle
-		virtual void addNormal(double nx, double ny, double nz) noexcept override; //!< add vertex normal to mesh; the vertex that will be attached to is the last one inserted by addVertex method
-		virtual bool addFace(int a, int b, int c) noexcept override;
-		virtual bool addFace(int a, int b, int c, int uv_a, int uv_b, int uv_c) noexcept override;
-		virtual int  addUv(float u, float v) noexcept override;
-		virtual bool smoothMesh(const char *name, double angle) noexcept override;
-		virtual void setCurrentMaterial(const char *name) noexcept override;
-		virtual Object *createObject(const char *name) noexcept override;
-		virtual Light *createLight(const char *name) noexcept override;
-		virtual Texture *createTexture(const char *name) noexcept override;
-		virtual Material *createMaterial(const char *name) noexcept override;
-		virtual Camera *createCamera(const char *name) noexcept override;
-		virtual Background *createBackground(const char *name) noexcept override;
-		virtual Integrator *createIntegrator(const char *name) noexcept override;
-		virtual VolumeRegion *createVolumeRegion(const char *name) noexcept override;
-		virtual RenderView *createRenderView(const char *name) noexcept override;
-		virtual Image *createImage(const char *name) noexcept override;
-		virtual ImageOutput *createOutput(const char *name) noexcept override;
-		virtual void clearAll() noexcept override; //!< clear the whole environment + scene, i.e. free (hopefully) all memory.
-		virtual void clearOutputs() noexcept override { }
-		virtual void setupRender() noexcept override;
-		virtual void render(std::shared_ptr<ProgressBar> progress_bar) noexcept override; //!< render the scene...
+		void createScene() noexcept override;
+		int getSceneFilmWidth() const noexcept override { return 0; }
+		int getSceneFilmHeight() const noexcept override { return 0; }
+		void defineLayer() noexcept override;
+		bool startGeometry() noexcept override;
+		bool endGeometry() noexcept override;
+		unsigned int getNextFreeId() noexcept override;
+		bool endObject() noexcept override;
+		bool addInstance(const char *base_object_name, const Matrix4 &obj_to_world) noexcept override;
+		int  addVertex(double x, double y, double z) noexcept override; //!< add vertex to mesh; returns index to be used for addTriangle
+		int  addVertex(double x, double y, double z, double ox, double oy, double oz) noexcept override; //!< add vertex with Orco to mesh; returns index to be used for addTriangle
+		void addNormal(double nx, double ny, double nz) noexcept override; //!< add vertex normal to mesh; the vertex that will be attached to is the last one inserted by addVertex method
+		bool addFace(int a, int b, int c) noexcept override;
+		bool addFace(int a, int b, int c, int uv_a, int uv_b, int uv_c) noexcept override;
+		int  addUv(float u, float v) noexcept override;
+		bool smoothMesh(const char *name, double angle) noexcept override;
+		void setCurrentMaterial(const char *name) noexcept override;
+		Object *createObject(const char *name) noexcept override;
+		Light *createLight(const char *name) noexcept override;
+		Texture *createTexture(const char *name) noexcept override;
+		Material *createMaterial(const char *name) noexcept override;
+		Camera *createCamera(const char *name) noexcept override;
+		Background *createBackground(const char *name) noexcept override;
+		Integrator *createIntegrator(const char *name) noexcept override;
+		VolumeRegion *createVolumeRegion(const char *name) noexcept override;
+		RenderView *createRenderView(const char *name) noexcept override;
+		Image *createImage(const char *name) noexcept override;
+		ImageOutput *createOutput(const char *name) noexcept override;
+		void clearAll() noexcept override; //!< clear the whole environment + scene, i.e. free (hopefully) all memory.
+		void clearOutputs() noexcept override { }
+		void setupRender() noexcept override;
+		void render(std::shared_ptr<ProgressBar> progress_bar) noexcept override; //!< render the scene...
 		void setColorSpace(std::string color_space_string, float gamma_val) noexcept;
 
 	protected:

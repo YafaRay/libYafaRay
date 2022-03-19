@@ -45,11 +45,11 @@ class CiStream: public Imf::IStream
 {
 	public:
 		CiStream(std::FILE *file, const char file_name[]) : Imf::IStream(file_name), file_(file) { }
-		virtual ~CiStream() override;
-		virtual bool read(char c[], int n) override;
-		virtual Int64 tellg() override;
-		virtual void seekg(Int64 pos) override;
-		virtual void clear() override;
+		~CiStream() override;
+		bool read(char c[], int n) override;
+		Int64 tellg() override;
+		void seekg(Int64 pos) override;
+		void clear() override;
 		void close();
 	private:
 		std::FILE *file_ = nullptr;
@@ -111,10 +111,10 @@ class CoStream: public Imf::OStream
 {
 	public:
 		CoStream(std::FILE *file, const char file_name[]) : Imf::OStream(file_name), file_(file) { }
-		virtual ~CoStream() override;
-		virtual void write(const char c[], int n) override;
-		virtual Int64 tellp() override;
-		virtual void seekp(Int64 pos) override;
+		~CoStream() override;
+		void write(const char c[], int n) override;
+		Int64 tellp() override;
+		void seekp(Int64 pos) override;
 		void close();
 	private:
 		std::FILE *file_ = nullptr;

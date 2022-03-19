@@ -42,11 +42,11 @@ class PerspectiveCamera : public Camera
 						  int resx, int resy, float aspect = 1,
 						  float df = 1, float ap = 0, float dofd = 0, BokehType bt = BkDisk1, BkhBiasType bbt = BbNone, float bro = 0,
 						  float const near_clip_distance = 0.0f, float const far_clip_distance = 1e6f);
-		virtual void setAxis(const Vec3 &vx, const Vec3 &vy, const Vec3 &vz) override;
-		virtual CameraRay shootRay(float px, float py, float lu, float lv) const override;
-		virtual bool sampleLense() const override;
-		virtual Point3 screenproject(const Point3 &p) const override;
-		virtual bool project(const Ray &wo, float lu, float lv, float &u, float &v, float &pdf) const override;
+		void setAxis(const Vec3 &vx, const Vec3 &vy, const Vec3 &vz) override;
+		CameraRay shootRay(float px, float py, float lu, float lv) const override;
+		bool sampleLense() const override;
+		Point3 screenproject(const Point3 &p) const override;
+		bool project(const Ray &wo, float lu, float lv, float &u, float &v, float &pdf) const override;
 		void biasDist(float &r) const;
 		void sampleTsd(float r_1, float r_2, float &u, float &v) const;
 		void getLensUv(float r_1, float r_2, float &u, float &v) const;

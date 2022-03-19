@@ -45,10 +45,10 @@ class PhotonIntegrator final : public MonteCarloIntegrator
 
 	private:
 		PhotonIntegrator(RenderControl &render_control, Logger &logger, unsigned int d_photons, unsigned int c_photons, bool transp_shad = false, int shadow_depth = 4, float ds_rad = 0.1f, float c_rad = 0.01f);
-		virtual std::string getShortName() const override { return "PM"; }
-		virtual std::string getName() const override { return "PhotonMap"; }
-		virtual bool preprocess(ImageFilm *image_film, const RenderView *render_view, const Scene &scene) override;
-		virtual std::pair<Rgb, float> integrate(Ray &ray, RandomGenerator &random_generator, ColorLayers *color_layers, int thread_id, int ray_level, bool chromatic_enabled, float wavelength, int additional_depth, const RayDivision &ray_division, const PixelSamplingData &pixel_sampling_data) const override;
+		std::string getShortName() const override { return "PM"; }
+		std::string getName() const override { return "PhotonMap"; }
+		bool preprocess(ImageFilm *image_film, const RenderView *render_view, const Scene &scene) override;
+		std::pair<Rgb, float> integrate(Ray &ray, RandomGenerator &random_generator, ColorLayers *color_layers, int thread_id, int ray_level, bool chromatic_enabled, float wavelength, int additional_depth, const RayDivision &ray_division, const PixelSamplingData &pixel_sampling_data) const override;
 		void preGatherWorker(PreGatherData *gdata, float ds_rad, int n_search);
 		void diffuseWorker(PreGatherData &pgdat, unsigned int &total_photons_shot, int thread_id, const Pdf1D *light_power_d, const std::vector<const Light *> &lights_diffuse, int pb_step);
 		void photonMapKdTreeWorker(PhotonMap *photon_map);

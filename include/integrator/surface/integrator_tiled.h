@@ -55,7 +55,7 @@ class TiledIntegrator : public SurfaceIntegrator
 		virtual void prePass(int samples, int offset, bool adaptive) { } //!< Called before the proper rendering of all the tiles starts
 		/*! do whatever is required to render the image; default implementation renders image in passes
 		dividing each pass into tiles for multithreading. */
-		virtual bool render() override;
+		bool render() override;
 		/*! render a pass; only required by the default implementation of render() */
 		virtual bool renderPass(int samples, int offset, bool adaptive, int aa_pass_number);
 		/*! render a tile; only required by default implementation of render() */

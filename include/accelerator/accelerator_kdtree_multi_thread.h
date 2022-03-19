@@ -51,11 +51,11 @@ class AcceleratorKdTreeMultiThread final : public Accelerator
 		class BoundEdge;
 		class TreeBin;
 		AcceleratorKdTreeMultiThread(Logger &logger, const std::vector<const Primitive *> &primitives, const Parameters &parameters);
-		virtual ~AcceleratorKdTreeMultiThread() override;
-		virtual AcceleratorIntersectData intersect(const Ray &ray, float t_max) const override;
-		virtual AcceleratorIntersectData intersectS(const Ray &ray, float t_max, float shadow_bias) const override;
-		virtual AcceleratorTsIntersectData intersectTs(const Ray &ray, int max_depth, float t_max, float shadow_bias, const Camera *camera) const override;
-		virtual Bound getBound() const override { return tree_bound_; }
+		~AcceleratorKdTreeMultiThread() override;
+		AcceleratorIntersectData intersect(const Ray &ray, float t_max) const override;
+		AcceleratorIntersectData intersectS(const Ray &ray, float t_max, float shadow_bias) const override;
+		AcceleratorTsIntersectData intersectTs(const Ray &ray, int max_depth, float t_max, float shadow_bias, const Camera *camera) const override;
+		Bound getBound() const override { return tree_bound_; }
 
 		AcceleratorKdTreeMultiThread::Result buildTree(const std::vector<const Primitive *> &primitives, const Bound &node_bound, const std::vector<uint32_t> &indices, int depth, uint32_t next_node_id, int bad_refines, const std::vector<Bound> &bounds, const Parameters &parameters, const ClipPlane &clip_plane, const std::vector<PolyDouble> &polygons, const std::vector<uint32_t> &primitive_indices, std::atomic<int> &num_current_threads) const;
 		void buildTreeWorker(const std::vector<const Primitive *> &primitives, const Bound &node_bound, const std::vector<uint32_t> &indices, int depth, uint32_t next_node_id, int bad_refines, const std::vector<Bound> &bounds, const Parameters &parameters, const ClipPlane &clip_plane, const std::vector<PolyDouble> &polygons, const std::vector<uint32_t> &primitive_indices, Result &result, std::atomic<int> &num_current_threads) const;

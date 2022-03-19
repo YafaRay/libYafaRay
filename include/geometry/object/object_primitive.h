@@ -30,9 +30,9 @@ class PrimitiveObject : public ObjectBasic
 {
 	public:
 		void setPrimitive(const Primitive *primitive) { primitive_ = primitive; }
-		virtual int numPrimitives() const override { return 1; }
-		virtual const std::vector<const Primitive *> getPrimitives() const override { return {primitive_}; }
-		virtual bool calculateObject(const std::unique_ptr<Material> *material) override { return true; }
+		int numPrimitives() const override { return 1; }
+		const std::vector<const Primitive *> getPrimitives() const override { return {primitive_}; }
+		bool calculateObject(const std::unique_ptr<Material> *material) override { return true; }
 
 	private:
 		const Primitive *primitive_ = nullptr;

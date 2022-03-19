@@ -36,16 +36,16 @@ class SpotLight final : public Light
 
 	private:
 		SpotLight(Logger &logger, const Point3 &from, const Point3 &to, const Rgb &col, float power, float angle, float falloff, bool s_sha, int smpl, float ssfuzzy, bool b_light_enabled = true, bool b_cast_shadows = true);
-		virtual Rgb totalEnergy() const override;
-		virtual Rgb emitPhoton(float s_1, float s_2, float s_3, float s_4, Ray &ray, float &ipdf) const override;
-		virtual Rgb emitSample(Vec3 &wo, LSample &s) const override;
-		virtual bool diracLight() const override { return !soft_shadows_; }
-		virtual bool illumSample(const SurfacePoint &sp, LSample &s, Ray &wi) const override;
-		virtual bool illuminate(const SurfacePoint &sp, Rgb &col, Ray &wi) const override;
-		virtual void emitPdf(const SurfacePoint &sp, const Vec3 &wo, float &area_pdf, float &dir_pdf, float &cos_wo) const override;
-		virtual bool canIntersect() const override { return soft_shadows_; }
-		virtual bool intersect(const Ray &ray, float &t, Rgb &col, float &ipdf) const override;
-		virtual int nSamples() const override { return samples_; };
+		Rgb totalEnergy() const override;
+		Rgb emitPhoton(float s_1, float s_2, float s_3, float s_4, Ray &ray, float &ipdf) const override;
+		Rgb emitSample(Vec3 &wo, LSample &s) const override;
+		bool diracLight() const override { return !soft_shadows_; }
+		bool illumSample(const SurfacePoint &sp, LSample &s, Ray &wi) const override;
+		bool illuminate(const SurfacePoint &sp, Rgb &col, Ray &wi) const override;
+		void emitPdf(const SurfacePoint &sp, const Vec3 &wo, float &area_pdf, float &dir_pdf, float &cos_wo) const override;
+		bool canIntersect() const override { return soft_shadows_; }
+		bool intersect(const Ray &ray, float &t, Rgb &col, float &ipdf) const override;
+		int nSamples() const override { return samples_; };
 
 		Point3 position_;
 		Vec3 dir_; //!< orientation of the spot cone

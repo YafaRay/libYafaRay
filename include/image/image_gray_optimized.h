@@ -34,13 +34,13 @@ class ImageGrayOptimized final : public Image
 		ImageGrayOptimized(int width, int height) : Image(width, height), buffer_{width, height} { }
 
 	private:
-		virtual Type getType() const override { return Type::Gray; }
-		virtual Image::Optimization getOptimization() const override { return Image::Optimization::Optimized; }
-		virtual Rgba getColor(int x, int y) const override { return buffer_(x, y).getColor(); }
-		virtual float getFloat(int x, int y) const override { return getColor(x, y).r_; }
-		virtual void setColor(int x, int y, const Rgba &col) override { buffer_(x, y).setColor(col); }
-		virtual void setFloat(int x, int y, float val) override { setColor(x, y, val); }
-		virtual void clear() override { buffer_.clear(); }
+		Type getType() const override { return Type::Gray; }
+		Image::Optimization getOptimization() const override { return Image::Optimization::Optimized; }
+		Rgba getColor(int x, int y) const override { return buffer_(x, y).getColor(); }
+		float getFloat(int x, int y) const override { return getColor(x, y).r_; }
+		void setColor(int x, int y, const Rgba &col) override { buffer_(x, y).setColor(col); }
+		void setFloat(int x, int y, float val) override { setColor(x, y, val); }
+		void clear() override { buffer_.clear(); }
 
 		ImageBuffer2D<Gray8> buffer_;
 };

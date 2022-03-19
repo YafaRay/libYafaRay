@@ -101,11 +101,11 @@ class SurfaceIntegrator: public Integrator
 {
 	public:
 		virtual std::pair<Rgb, float> integrate(Ray &ray, RandomGenerator &random_generator, ColorLayers *color_layers, int thread_id, int ray_level, bool chromatic_enabled, float wavelength, int additional_depth, const RayDivision &ray_division, const PixelSamplingData &pixel_sampling_data) const = 0; 	//!< chromatic_enabled indicates wether the full spectrum is calculated (true) or only a single wavelength (false). wavelength is the (normalized) wavelength being used when chromatic is false. The range is defined going from 400nm (0.0) to 700nm (1.0), although the widest range humans can perceive is ofteb given 380-780nm.
-		virtual bool preprocess(ImageFilm *image_film, const RenderView *render_view, const Scene &scene) override;
+		bool preprocess(ImageFilm *image_film, const RenderView *render_view, const Scene &scene) override;
 
 	protected:
 		SurfaceIntegrator(RenderControl &render_control, Logger &logger) : Integrator(logger), render_control_(render_control) { }
-		virtual Type getType() const override { return Surface; }
+		Type getType() const override { return Surface; }
 
 	protected:
 		RenderControl &render_control_;
@@ -131,11 +131,11 @@ class VolumeIntegrator: public Integrator
 	public:
 		virtual Rgb transmittance(RandomGenerator &random_generator, const Ray &ray) const = 0;
 		virtual Rgb integrate(RandomGenerator &random_generator, const Ray &ray, int additional_depth = 0) const = 0;
-		virtual bool preprocess(ImageFilm *image_film, const RenderView *render_view, const Scene &scene) override;
+		bool preprocess(ImageFilm *image_film, const RenderView *render_view, const Scene &scene) override;
 
 	protected:
 		VolumeIntegrator(Logger &logger) : Integrator(logger) { }
-		virtual Type getType() const override { return Volume; }
+		Type getType() const override { return Volume; }
 		const std::map<std::string, std::unique_ptr<VolumeRegion>> *volume_regions_ = nullptr;
 };
 

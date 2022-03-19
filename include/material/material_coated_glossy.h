@@ -46,15 +46,15 @@ class CoatedGlossyMaterial final : public NodeMaterial
 
 	private:
 		CoatedGlossyMaterial(Logger &logger, const Rgb &col, const Rgb &dcol, const Rgb &mir_col, float mirror_strength, float reflect, float diff, float ior, float expo, bool as_diff, Visibility e_visibility = Visibility::NormalVisible);
-		virtual MaterialData * createMaterialData(size_t number_of_nodes) const override { return new CoatedGlossyMaterialData(bsdf_flags_, number_of_nodes); };
-		virtual const MaterialData * initBsdf(SurfacePoint &sp, const Camera *camera) const override;
-		virtual Rgb eval(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wi, const BsdfFlags &bsdfs, bool force_eval = false) const override;
-		virtual Rgb sample(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, Vec3 &wi, Sample &s, float &w, bool chromatic, float wavelength, const Camera *camera) const override;
-		virtual float pdf(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wi, const BsdfFlags &bsdfs) const override;
-		virtual Specular getSpecular(int ray_level, const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, bool chromatic, float wavelength) const override;
-		virtual Rgb getDiffuseColor(const NodeTreeData &node_tree_data) const override;
-		virtual Rgb getGlossyColor(const NodeTreeData &node_tree_data) const override;
-		virtual Rgb getMirrorColor(const NodeTreeData &node_tree_data) const override;
+		MaterialData * createMaterialData(size_t number_of_nodes) const override { return new CoatedGlossyMaterialData(bsdf_flags_, number_of_nodes); };
+		const MaterialData * initBsdf(SurfacePoint &sp, const Camera *camera) const override;
+		Rgb eval(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wi, const BsdfFlags &bsdfs, bool force_eval = false) const override;
+		Rgb sample(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, Vec3 &wi, Sample &s, float &w, bool chromatic, float wavelength, const Camera *camera) const override;
+		float pdf(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wi, const BsdfFlags &bsdfs) const override;
+		Specular getSpecular(int ray_level, const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, bool chromatic, float wavelength) const override;
+		Rgb getDiffuseColor(const NodeTreeData &node_tree_data) const override;
+		Rgb getGlossyColor(const NodeTreeData &node_tree_data) const override;
+		Rgb getMirrorColor(const NodeTreeData &node_tree_data) const override;
 
 		void initOrenNayar(double sigma);
 		float orenNayar(const Vec3 &wi, const Vec3 &wo, const Vec3 &n, bool use_texture_sigma, double texture_sigma) const;

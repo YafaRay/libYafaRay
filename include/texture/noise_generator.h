@@ -53,7 +53,7 @@ class NewPerlinNoiseGenerator final : public NoiseGenerator
 		NewPerlinNoiseGenerator() = default;
 
 	private:
-		virtual float operator()(const Point3 &pt) const override;
+		float operator()(const Point3 &pt) const override;
 		float fade(float t) const { return t * t * t * (t * (t * 6 - 15) + 10); }
 		float grad(int hash, float x, float y, float z) const;
 };
@@ -74,7 +74,7 @@ class StdPerlinNoiseGenerator final : public NoiseGenerator
 		StdPerlinNoiseGenerator() = default;
 
 	private:
-		virtual float operator()(const Point3 &pt) const override;
+		float operator()(const Point3 &pt) const override;
 		static void setup(int i, int &b_0, int &b_1, float &r_0, float &r_1, const std::array<float, 3> &vec);
 		static constexpr float stdpAt(float rx, float ry, float rz, const float *q);
 		static constexpr float surve(float t);
@@ -88,9 +88,9 @@ class BlenderNoiseGenerator final : public NoiseGenerator
 	public:
 		BlenderNoiseGenerator() = default;
 	private:
-		virtual float operator()(const Point3 &pt) const override;
+		float operator()(const Point3 &pt) const override;
 		// offset texture point coordinates by one
-		virtual Point3 offset(const Point3 &pt) const override { return pt + Point3(1.0, 1.0, 1.0); }
+		Point3 offset(const Point3 &pt) const override { return pt + Point3(1.0, 1.0, 1.0); }
 		static const float hashvectf_[768];
 };
 
@@ -170,7 +170,7 @@ class VoronoiNoiseGenerator final : public NoiseGenerator
 		                  DistMinkovskyHalf, DistMinkovskyFour, DistMinkovsky
 		                 };
 		VoronoiNoiseGenerator(VoronoiType vt = Vf1, DMetricType dm = DistReal, float mex = 2.5);
-		//virtual ~VoronoiNoiseGenerator() override { if (distfunc) { delete distfunc;  distfunc=nullptr; }
+		//~VoronoiNoiseGenerator() override { if (distfunc) { delete distfunc;  distfunc=nullptr; }
 		void setDistM(DMetricType dm);
 		void setMinkovskyExponent(float me) { mk_exp_ = me; }
 		void getFeatures(const Point3 &pt, float da[4], Point3 pa[4]) const;
@@ -178,7 +178,7 @@ class VoronoiNoiseGenerator final : public NoiseGenerator
 		Point3 getPoint(int x, Point3 pa[4]) const { return pa[x & 3]; }
 
 	private:
-		virtual float operator()(const Point3 &pt) const override;
+		float operator()(const Point3 &pt) const override;
 		static float distRealF(float x, float y, float z, float e);
 		static float distSquaredF(float x, float y, float z, float e);
 		static float distManhattanF(float x, float y, float z, float e);
@@ -203,7 +203,7 @@ class CellNoiseGenerator final : public NoiseGenerator
 		CellNoiseGenerator() = default;
 
 	private:
-		virtual float operator()(const Point3 &pt) const override;
+		float operator()(const Point3 &pt) const override;
 };
 
 //------------------
@@ -224,7 +224,7 @@ class FBmMusgrave final : public Musgrave
 			: h_(h), lacunarity_(lacu), octaves_(octs), n_gen_(n_gen) {}
 
 	private:
-		virtual float operator()(const Point3 &pt) const override;
+		float operator()(const Point3 &pt) const override;
 
 		float h_, lacunarity_, octaves_;
 		const NoiseGenerator *n_gen_;
@@ -237,7 +237,7 @@ class MFractalMusgrave final : public Musgrave
 			: h_(h), lacunarity_(lacu), octaves_(octs), n_gen_(n_gen) {}
 
 	private:
-		virtual float operator()(const Point3 &pt) const override;
+		float operator()(const Point3 &pt) const override;
 
 		float h_, lacunarity_, octaves_;
 		const NoiseGenerator *n_gen_;

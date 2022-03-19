@@ -39,7 +39,7 @@ class GridVolumeRegion final : public DensityVolumeRegion
 
 	private:
 		GridVolumeRegion(Logger &logger, Rgb sa, Rgb ss, Rgb le, float gg, Point3 pmin, Point3 pmax);
-		virtual float density(Point3 p) const override;
+		float density(Point3 p) const override;
 
 		float ***grid_ = nullptr;
 		int size_x_, size_y_, size_z_;

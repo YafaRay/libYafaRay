@@ -28,30 +28,30 @@ BEGIN_YAFARAY
 class ObjectBasic : public Object
 {
 	public:
-		virtual ~ObjectBasic() override { resetObjectIndex(); }
-		virtual std::string getName() const override { return name_; }
-		virtual void setName(const std::string &name) override { name_ = name; }
+		~ObjectBasic() override { resetObjectIndex(); }
+		std::string getName() const override { return name_; }
+		void setName(const std::string &name) override { name_ = name; }
 		/*! sample object surface */
-		//virtual void sample(float s_1, float s_2, Point3 &p, Vec3 &n) const override { }
+		//void sample(float s_1, float s_2, Point3 &p, Vec3 &n) const override { }
 		/*! Sets the object visibility to the renderer (is added or not to the kdtree) */
-		virtual void setVisibility(const Visibility &visibility) override { visibility_ = visibility; }
+		void setVisibility(const Visibility &visibility) override { visibility_ = visibility; }
 		/*! Indicates that this object should be used as base object for instances */
-		virtual void useAsBaseObject(bool v) override { is_base_object_ = v; }
+		void useAsBaseObject(bool v) override { is_base_object_ = v; }
 		/*! Returns if this object should be used for rendering and/or shadows. */
-		virtual Visibility getVisibility() const override { return visibility_; }
+		Visibility getVisibility() const override { return visibility_; }
 		/*! Returns if this object is used as base object for instances. */
-		virtual bool isBaseObject() const override { return is_base_object_; }
-		virtual void resetObjectIndex() override { highest_object_index_ = 1; object_index_auto_ = 0; }
-		virtual void setObjectIndex(unsigned int new_obj_index) override;
-		virtual unsigned int getAbsObjectIndex() const override { return object_index_; }
-		virtual float getNormObjectIndex() const override { return static_cast<float>(getAbsObjectIndex()) / static_cast<float>(highest_object_index_); }
-		virtual Rgb getAbsObjectIndexColor() const override { return getAbsObjectIndex(); }
-		virtual Rgb getNormObjectIndexColor() const override { return getNormObjectIndex(); }
-		virtual Rgb getAutoObjectIndexColor() const override { return object_index_auto_color_; }
-		virtual Rgb getAutoObjectIndexNumber() const override { return object_index_auto_; }
-		virtual const Light *getLight() const override { return light_; }
+		bool isBaseObject() const override { return is_base_object_; }
+		void resetObjectIndex() override { highest_object_index_ = 1; object_index_auto_ = 0; }
+		void setObjectIndex(unsigned int new_obj_index) override;
+		unsigned int getAbsObjectIndex() const override { return object_index_; }
+		float getNormObjectIndex() const override { return static_cast<float>(getAbsObjectIndex()) / static_cast<float>(highest_object_index_); }
+		Rgb getAbsObjectIndexColor() const override { return getAbsObjectIndex(); }
+		Rgb getNormObjectIndexColor() const override { return getNormObjectIndex(); }
+		Rgb getAutoObjectIndexColor() const override { return object_index_auto_color_; }
+		Rgb getAutoObjectIndexNumber() const override { return object_index_auto_; }
+		const Light *getLight() const override { return light_; }
 		/*! set a light source to be associated with this object */
-		virtual void setLight(const Light *light) override { light_ = light; }
+		void setLight(const Light *light) override { light_ = light; }
 
 	protected:
 		ObjectBasic();

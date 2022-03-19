@@ -50,13 +50,13 @@ class AcceleratorKdTree final : public Accelerator
 		class TreeBin;
 		AcceleratorKdTree(Logger &logger, const std::vector<const Primitive *> &primitives, int depth = 0, int leaf_size = 2,
 						  float cost_ratio = 0.35, float empty_bonus = 0.33);
-		virtual ~AcceleratorKdTree() override;
-		virtual AcceleratorIntersectData intersect(const Ray &ray, float t_max) const override;
+		~AcceleratorKdTree() override;
+		AcceleratorIntersectData intersect(const Ray &ray, float t_max) const override;
 		//	bool IntersectDBG(const ray_t &ray, float dist, triangle_t **tr, float &Z) const;
-		virtual AcceleratorIntersectData intersectS(const Ray &ray, float t_max, float shadow_bias) const override;
-		virtual AcceleratorTsIntersectData intersectTs(const Ray &ray, int max_depth, float t_max, float shadow_bias, const Camera *camera) const override;
+		AcceleratorIntersectData intersectS(const Ray &ray, float t_max, float shadow_bias) const override;
+		AcceleratorTsIntersectData intersectTs(const Ray &ray, int max_depth, float t_max, float shadow_bias, const Camera *camera) const override;
 		//	bool IntersectO(const point3d_t &from, const vector3d_t &ray, float dist, Primitive **tr, float &Z) const;
-		virtual Bound getBound() const override { return tree_bound_; }
+		Bound getBound() const override { return tree_bound_; }
 
 		int buildTree(uint32_t n_prims, const std::vector<const Primitive *> &original_primitives, const Bound &node_bound, uint32_t *prim_nums, uint32_t *left_prims, uint32_t *right_prims, const std::array<std::unique_ptr<BoundEdge[]>, 3> &edges, uint32_t right_mem_size, int depth, int bad_refines);
 

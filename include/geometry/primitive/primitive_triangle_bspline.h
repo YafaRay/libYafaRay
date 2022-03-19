@@ -31,9 +31,9 @@ class BsTrianglePrimitive final : public FacePrimitive
 		BsTrianglePrimitive(const std::vector<int> &vertices_indices, const std::vector<int> &vertices_uv_indices, const MeshObject &mesh_object);
 
 	private:
-		virtual IntersectData intersect(const Ray &ray, const Matrix4 *obj_to_world) const override;
-		virtual Bound getBound(const Matrix4 *obj_to_world) const override;
-		virtual std::unique_ptr<const SurfacePoint> getSurface(const RayDifferentials *ray_differentials, const Point3 &hit, const IntersectData &intersect_data, const Matrix4 *obj_to_world, const Camera *camera) const override;
+		IntersectData intersect(const Ray &ray, const Matrix4 *obj_to_world) const override;
+		Bound getBound(const Matrix4 *obj_to_world) const override;
+		std::unique_ptr<const SurfacePoint> getSurface(const RayDifferentials *ray_differentials, const Point3 &hit, const IntersectData &intersect_data, const Matrix4 *obj_to_world, const Camera *camera) const override;
 };
 
 END_YAFARAY

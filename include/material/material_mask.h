@@ -44,16 +44,16 @@ class MaskMaterial final : public NodeMaterial
 
 	private:
 		MaskMaterial(Logger &logger, const std::unique_ptr<Material> *m_1, const std::unique_ptr<Material> *m_2, float thresh, Visibility visibility = Visibility::NormalVisible);
-		virtual MaterialData * createMaterialData(size_t number_of_nodes) const override { return new MaskMaterialData(bsdf_flags_, number_of_nodes); };
-		virtual const MaterialData * initBsdf(SurfacePoint &sp, const Camera *camera) const override;
-		virtual Rgb eval(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wi, const BsdfFlags &bsdfs, bool force_eval = false) const override;
-		virtual Rgb sample(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, Vec3 &wi, Sample &s, float &w, bool chromatic, float wavelength, const Camera *camera) const override;
-		virtual float pdf(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wi, const BsdfFlags &bsdfs) const override;
-		virtual bool isTransparent() const override;
-		virtual Rgb getTransparency(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, const Camera *camera) const override;
-		virtual Specular getSpecular(int ray_level, const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, bool chromatic, float wavelength) const override;
-		virtual Rgb emit(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo) const override;
-		virtual float getAlpha(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, const Camera *camera) const override;
+		MaterialData * createMaterialData(size_t number_of_nodes) const override { return new MaskMaterialData(bsdf_flags_, number_of_nodes); };
+		const MaterialData * initBsdf(SurfacePoint &sp, const Camera *camera) const override;
+		Rgb eval(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wi, const BsdfFlags &bsdfs, bool force_eval = false) const override;
+		Rgb sample(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, Vec3 &wi, Sample &s, float &w, bool chromatic, float wavelength, const Camera *camera) const override;
+		float pdf(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wi, const BsdfFlags &bsdfs) const override;
+		bool isTransparent() const override;
+		Rgb getTransparency(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, const Camera *camera) const override;
+		Specular getSpecular(int ray_level, const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, bool chromatic, float wavelength) const override;
+		Rgb emit(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo) const override;
+		float getAlpha(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, const Camera *camera) const override;
 
 		const std::unique_ptr<Material> *mat_1_ = nullptr;
 		const std::unique_ptr<Material> *mat_2_ = nullptr;

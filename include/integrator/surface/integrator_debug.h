@@ -36,10 +36,10 @@ class DebugIntegrator final : public TiledIntegrator
 	private:
 		enum SurfaceProperties {N = 1, DPdU = 2, DPdV = 3, Nu = 4, Nv = 5, DSdU = 6, DSdV = 7};
 		DebugIntegrator(RenderControl &render_control, Logger &logger, SurfaceProperties dt);
-		virtual std::string getShortName() const override { return "DBG"; }
-		virtual std::string getName() const override { return "DebugIntegrator"; }
-		virtual bool preprocess(ImageFilm *image_film, const RenderView *render_view, const Scene &scene) override;
-		virtual std::pair<Rgb, float> integrate(Ray &ray, RandomGenerator &random_generator, ColorLayers *color_layers, int thread_id, int ray_level, bool chromatic_enabled, float wavelength, int additional_depth, const RayDivision &ray_division, const PixelSamplingData &pixel_sampling_data) const override;
+		std::string getShortName() const override { return "DBG"; }
+		std::string getName() const override { return "DebugIntegrator"; }
+		bool preprocess(ImageFilm *image_film, const RenderView *render_view, const Scene &scene) override;
+		std::pair<Rgb, float> integrate(Ray &ray, RandomGenerator &random_generator, ColorLayers *color_layers, int thread_id, int ray_level, bool chromatic_enabled, float wavelength, int additional_depth, const RayDivision &ray_division, const PixelSamplingData &pixel_sampling_data) const override;
 
 		std::vector<const Light *> lights_;
 		SurfaceProperties debug_type_;

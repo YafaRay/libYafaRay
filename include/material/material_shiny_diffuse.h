@@ -52,21 +52,21 @@ class ShinyDiffuseMaterial final : public NodeMaterial
 
 	private:
 		ShinyDiffuseMaterial(Logger &logger, const Rgb &diffuse_color, const Rgb &mirror_color, float diffuse_strength, float transparency_strength = 0.0, float translucency_strength = 0.0, float mirror_strength = 0.0, float emit_strength = 0.0, float transmit_filter_strength = 1.0, Visibility visibility = Visibility::NormalVisible);
-		virtual MaterialData * createMaterialData(size_t number_of_nodes) const override { return new ShinyDiffuseMaterialData(bsdf_flags_, number_of_nodes); };
-		virtual const MaterialData * initBsdf(SurfacePoint &sp, const Camera *camera) const override;
-		virtual Rgb eval(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wl, const BsdfFlags &bsdfs, bool force_eval = false) const override;
-		virtual Rgb sample(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, Vec3 &wi, Sample &s, float &w, bool chromatic, float wavelength, const Camera *camera) const override;
-		virtual float pdf(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wi, const BsdfFlags &bsdfs) const override;
-		virtual bool isTransparent() const override { return is_transparent_; }
-		virtual Rgb getTransparency(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, const Camera *camera) const override;
-		virtual Rgb emit(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo) const override; // { return emitCol; }
-		virtual Specular getSpecular(int ray_level, const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, bool chromatic, float wavelength) const override;
-		virtual float getAlpha(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, const Camera *camera) const override;
-		virtual Rgb getDiffuseColor(const NodeTreeData &node_tree_data) const override;
-		virtual Rgb getGlossyColor(const NodeTreeData &node_tree_data) const override;
-		virtual Rgb getTransColor(const NodeTreeData &node_tree_data) const override;
-		virtual Rgb getMirrorColor(const NodeTreeData &node_tree_data) const override;
-		virtual Rgb getSubSurfaceColor(const NodeTreeData &node_tree_data) const override;
+		MaterialData * createMaterialData(size_t number_of_nodes) const override { return new ShinyDiffuseMaterialData(bsdf_flags_, number_of_nodes); };
+		const MaterialData * initBsdf(SurfacePoint &sp, const Camera *camera) const override;
+		Rgb eval(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wl, const BsdfFlags &bsdfs, bool force_eval = false) const override;
+		Rgb sample(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, Vec3 &wi, Sample &s, float &w, bool chromatic, float wavelength, const Camera *camera) const override;
+		float pdf(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wi, const BsdfFlags &bsdfs) const override;
+		bool isTransparent() const override { return is_transparent_; }
+		Rgb getTransparency(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, const Camera *camera) const override;
+		Rgb emit(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo) const override; // { return emitCol; }
+		Specular getSpecular(int ray_level, const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, bool chromatic, float wavelength) const override;
+		float getAlpha(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, const Camera *camera) const override;
+		Rgb getDiffuseColor(const NodeTreeData &node_tree_data) const override;
+		Rgb getGlossyColor(const NodeTreeData &node_tree_data) const override;
+		Rgb getTransColor(const NodeTreeData &node_tree_data) const override;
+		Rgb getMirrorColor(const NodeTreeData &node_tree_data) const override;
+		Rgb getSubSurfaceColor(const NodeTreeData &node_tree_data) const override;
 
 		void config();
 		std::array<float, 4> getComponents(const std::array<bool, 4> &use_nodes, const NodeTreeData &node_tree_data) const;

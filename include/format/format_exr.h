@@ -34,12 +34,12 @@ class ExrFormat final : public Format
 		ExrFormat(Logger &logger) : Format(logger) { }
 
 	private:
-		virtual std::string getFormatName() const override { return "ExrFormat"; }
-		virtual Image * loadFromFile(const std::string &name, const Image::Optimization &optimization, const ColorSpace &color_space, float gamma) override;
-		virtual bool saveToFile(const std::string &name, const ImageLayer &image_layer, ColorSpace color_space, float gamma, bool alpha_premultiply) override;
-		virtual bool saveToFileMultiChannel(const std::string &name, const ImageLayers &image_layers, ColorSpace color_space, float gamma, bool alpha_premultiply) override;
-		virtual bool isHdr() const override { return true; }
-		virtual bool supportsMultiLayer() const override { return true; }
+		std::string getFormatName() const override { return "ExrFormat"; }
+		Image * loadFromFile(const std::string &name, const Image::Optimization &optimization, const ColorSpace &color_space, float gamma) override;
+		bool saveToFile(const std::string &name, const ImageLayer &image_layer, ColorSpace color_space, float gamma, bool alpha_premultiply) override;
+		bool saveToFileMultiChannel(const std::string &name, const ImageLayers &image_layers, ColorSpace color_space, float gamma, bool alpha_premultiply) override;
+		bool isHdr() const override { return true; }
+		bool supportsMultiLayer() const override { return true; }
 };
 
 END_YAFARAY

@@ -39,16 +39,16 @@ class IesLight final : public Light
 
 	private:
 		IesLight(Logger &logger, const Point3 &from, const Point3 &to, const Rgb &col, float power, const std::string ies_file, int smpls, bool s_sha, float ang, bool b_light_enabled = true, bool b_cast_shadows = true);
-		virtual Rgb totalEnergy() const override{ return color_ * tot_energy_;};
-		virtual int nSamples() const override { return samples_; };
-		virtual bool diracLight() const override { return !soft_shadow_; }
-		virtual bool illuminate(const SurfacePoint &sp, Rgb &col, Ray &wi) const override;
-		virtual bool illumSample(const SurfacePoint &sp, LSample &s, Ray &wi) const override;
-		virtual bool canIntersect() const override;
-		virtual bool intersect(const Ray &ray, float &t, Rgb &col, float &ipdf) const override;
-		virtual Rgb emitPhoton(float s_1, float s_2, float s_3, float s_4, Ray &ray, float &ipdf) const override;
-		virtual Rgb emitSample(Vec3 &wo, LSample &s) const override;
-		virtual void emitPdf(const SurfacePoint &sp, const Vec3 &wo, float &area_pdf, float &dir_pdf, float &cos_wo) const override;
+		Rgb totalEnergy() const override{ return color_ * tot_energy_;};
+		int nSamples() const override { return samples_; };
+		bool diracLight() const override { return !soft_shadow_; }
+		bool illuminate(const SurfacePoint &sp, Rgb &col, Ray &wi) const override;
+		bool illumSample(const SurfacePoint &sp, LSample &s, Ray &wi) const override;
+		bool canIntersect() const override;
+		bool intersect(const Ray &ray, float &t, Rgb &col, float &ipdf) const override;
+		Rgb emitPhoton(float s_1, float s_2, float s_3, float s_4, Ray &ray, float &ipdf) const override;
+		Rgb emitSample(Vec3 &wo, LSample &s) const override;
+		void emitPdf(const SurfacePoint &sp, const Vec3 &wo, float &area_pdf, float &dir_pdf, float &cos_wo) const override;
 		bool isIesOk() { return ies_ok_; };
 		void getAngles(float &u, float &v, const Vec3 &dir, const float &costheta) const;
 

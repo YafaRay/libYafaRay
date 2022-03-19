@@ -65,9 +65,9 @@ class ConsoleProgressBar : public ProgressBar
 {
 	public:
 		ConsoleProgressBar(int cwidth = 80, yafaray_ProgressBarCallback_t monitor_callback = nullptr, void *callback_data = nullptr);
-		virtual void init(int total_steps, bool colors_enabled) override;
-		virtual void update(int steps_increment = 1) override;
-		virtual void done() override;
+		void init(int total_steps, bool colors_enabled) override;
+		void update(int steps_increment = 1) override;
+		void done() override;
 
 	private:
 		static void printBar(bool colors_enabled, int progress_empty, int progress_full, int percent);

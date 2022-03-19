@@ -104,9 +104,9 @@ class DensityVolumeRegion : public VolumeRegion
 
 		virtual float density(Point3 p) const = 0;
 
-		virtual Rgb tau(const Ray &ray, float step_size, float offset) const override;
+		Rgb tau(const Ray &ray, float step_size, float offset) const override;
 
-		virtual Rgb sigmaA(const Point3 &p, const Vec3 &v) const override
+		Rgb sigmaA(const Point3 &p, const Vec3 &v) const override
 		{
 			if(!have_s_a_) return Rgb(0.f);
 			if(b_box_.includes(p))
@@ -118,7 +118,7 @@ class DensityVolumeRegion : public VolumeRegion
 
 		}
 
-		virtual Rgb sigmaS(const Point3 &p, const Vec3 &v) const override
+		Rgb sigmaS(const Point3 &p, const Vec3 &v) const override
 		{
 			if(!have_s_s_) return Rgb(0.f);
 			if(b_box_.includes(p))
@@ -129,7 +129,7 @@ class DensityVolumeRegion : public VolumeRegion
 				return Rgb(0.f);
 		}
 
-		virtual Rgb emission(const Point3 &p, const Vec3 &v) const override
+		Rgb emission(const Point3 &p, const Vec3 &v) const override
 		{
 			if(!have_l_e_) return Rgb(0.f);
 			if(b_box_.includes(p))

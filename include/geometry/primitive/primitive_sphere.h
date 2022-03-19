@@ -41,16 +41,16 @@ class SpherePrimitive final : public Primitive
 		SpherePrimitive(const Point3 &centr, float rad, const std::unique_ptr<Material> *m, const Object &base_object): center_(centr), radius_(rad), base_object_(base_object), material_(m) {}
 
 	private:
-		virtual Bound getBound(const Matrix4 *obj_to_world) const override;
-		virtual bool intersectsBound(const ExBound &b, const Matrix4 *obj_to_world) const override { return true; };
-		virtual IntersectData intersect(const Ray &ray, const Matrix4 *obj_to_world) const override;
-		virtual std::unique_ptr<const SurfacePoint> getSurface(const RayDifferentials *ray_differentials, const Point3 &hit, const IntersectData &intersect_data, const Matrix4 *obj_to_world, const Camera *camera) const override;
-		virtual const Material *getMaterial() const override { return material_->get(); }
-		virtual float surfaceArea(const Matrix4 *obj_to_world) const override;
-		virtual Vec3 getGeometricNormal(const Matrix4 *obj_to_world, float u, float v) const override;
-		virtual void sample(float s_1, float s_2, Point3 &p, Vec3 &n, const Matrix4 *obj_to_world) const override;
-		virtual const Object *getObject() const override { return &base_object_; }
-		virtual Visibility getVisibility() const override { return base_object_.getVisibility(); }
+		Bound getBound(const Matrix4 *obj_to_world) const override;
+		bool intersectsBound(const ExBound &b, const Matrix4 *obj_to_world) const override { return true; };
+		IntersectData intersect(const Ray &ray, const Matrix4 *obj_to_world) const override;
+		std::unique_ptr<const SurfacePoint> getSurface(const RayDifferentials *ray_differentials, const Point3 &hit, const IntersectData &intersect_data, const Matrix4 *obj_to_world, const Camera *camera) const override;
+		const Material *getMaterial() const override { return material_->get(); }
+		float surfaceArea(const Matrix4 *obj_to_world) const override;
+		Vec3 getGeometricNormal(const Matrix4 *obj_to_world, float u, float v) const override;
+		void sample(float s_1, float s_2, Point3 &p, Vec3 &n, const Matrix4 *obj_to_world) const override;
+		const Object *getObject() const override { return &base_object_; }
+		Visibility getVisibility() const override { return base_object_.getVisibility(); }
 
 		Point3 center_;
 		float radius_;

@@ -41,18 +41,18 @@ class PrimitiveInstance : public Primitive
 	public:
 		//static PrimitiveInstance *factory(ParamMap &params, const Scene &scene);
 		PrimitiveInstance(const Primitive *base_primitive, const ObjectInstance &base_instance) : base_instance_(base_instance), base_primitive_(base_primitive) { }
-		virtual Bound getBound(const Matrix4 *) const override;
-		virtual bool intersectsBound(const ExBound &b, const Matrix4 *) const override;
-		virtual bool clippingSupport() const override { return base_primitive_->clippingSupport(); }
-		virtual PolyDouble::ClipResultWithBound clipToBound(Logger &logger, const std::array<Vec3Double, 2> &bound, const ClipPlane &clip_plane, const PolyDouble &poly, const Matrix4 *obj_to_world) const override;
-		virtual IntersectData intersect(const Ray &ray, const Matrix4 *) const override;
-		virtual std::unique_ptr<const SurfacePoint> getSurface(const RayDifferentials *ray_differentials, const Point3 &hit_point, const IntersectData &intersect_data, const Matrix4 *, const Camera *camera) const override;
-		virtual const Material *getMaterial() const override { return base_primitive_->getMaterial(); }
-		virtual float surfaceArea(const Matrix4 *) const override;
-		virtual Vec3 getGeometricNormal(const Matrix4 *, float u, float v) const override;
-		virtual void sample(float s_1, float s_2, Point3 &p, Vec3 &n, const Matrix4 *) const override;
-		virtual const Object *getObject() const override { return &base_instance_; }
-		virtual Visibility getVisibility() const override { return base_primitive_->getVisibility(); }
+		Bound getBound(const Matrix4 *) const override;
+		bool intersectsBound(const ExBound &b, const Matrix4 *) const override;
+		bool clippingSupport() const override { return base_primitive_->clippingSupport(); }
+		PolyDouble::ClipResultWithBound clipToBound(Logger &logger, const std::array<Vec3Double, 2> &bound, const ClipPlane &clip_plane, const PolyDouble &poly, const Matrix4 *obj_to_world) const override;
+		IntersectData intersect(const Ray &ray, const Matrix4 *) const override;
+		std::unique_ptr<const SurfacePoint> getSurface(const RayDifferentials *ray_differentials, const Point3 &hit_point, const IntersectData &intersect_data, const Matrix4 *, const Camera *camera) const override;
+		const Material *getMaterial() const override { return base_primitive_->getMaterial(); }
+		float surfaceArea(const Matrix4 *) const override;
+		Vec3 getGeometricNormal(const Matrix4 *, float u, float v) const override;
+		void sample(float s_1, float s_2, Point3 &p, Vec3 &n, const Matrix4 *) const override;
+		const Object *getObject() const override { return &base_instance_; }
+		Visibility getVisibility() const override { return base_primitive_->getVisibility(); }
 
 	private:
 		const ObjectInstance &base_instance_;
