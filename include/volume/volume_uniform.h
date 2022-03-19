@@ -35,10 +35,10 @@ class UniformVolumeRegion : public VolumeRegion
 
 	private:
 		UniformVolumeRegion(Logger &logger, Rgb sa, Rgb ss, Rgb le, float gg, Point3 pmin, Point3 pmax, int attgrid_scale);
-		virtual Rgb sigmaA(const Point3 &p, const Vec3 &v) const;
-		virtual Rgb sigmaS(const Point3 &p, const Vec3 &v) const;
-		virtual Rgb emission(const Point3 &p, const Vec3 &v) const;
-		virtual Rgb tau(const Ray &ray, float step, float offset) const;
+		Rgb sigmaA(const Point3 &p, const Vec3 &v) const override;
+		Rgb sigmaS(const Point3 &p, const Vec3 &v) const override;
+		Rgb emission(const Point3 &p, const Vec3 &v) const override;
+		Rgb tau(const Ray &ray, float step, float offset) const override;
 };
 
 END_YAFARAY

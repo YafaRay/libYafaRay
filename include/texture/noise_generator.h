@@ -250,7 +250,7 @@ class HeteroTerrainMusgrave final : public Musgrave
 			: h_(h), lacunarity_(lacu), octaves_(octs), offset_(offs), n_gen_(n_gen) {}
 
 	private:
-		virtual float operator()(const Point3 &pt) const;
+		float operator()(const Point3 &pt) const override;
 
 		float h_, lacunarity_, octaves_, offset_;
 		const NoiseGenerator *n_gen_;
@@ -263,7 +263,7 @@ class HybridMFractalMusgrave final : public Musgrave
 			: h_(h), lacunarity_(lacu), octaves_(octs), offset_(offs), gain_(gain), n_gen_(n_gen) {}
 
 	private:
-		virtual float operator()(const Point3 &pt) const;
+		float operator()(const Point3 &pt) const override;
 
 		float h_, lacunarity_, octaves_, offset_, gain_;
 		const NoiseGenerator *n_gen_;
@@ -276,7 +276,7 @@ class RidgedMFractalMusgrave final : public Musgrave
 			: h_(h), lacunarity_(lacu), octaves_(octs), offset_(offs), gain_(gain), n_gen_(n_gen) {}
 
 	private:
-		virtual float operator()(const Point3 &pt) const;
+		float operator()(const Point3 &pt) const override;
 
 		float h_, lacunarity_, octaves_, offset_, gain_;
 		const NoiseGenerator *n_gen_;

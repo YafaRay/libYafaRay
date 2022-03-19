@@ -511,7 +511,7 @@ void MixNode::getInputs(const NodeTreeData &node_tree_data, Rgba &cin_1, Rgba &c
 class AddNode: public MixNode
 {
 	public:
-		virtual void eval(NodeTreeData &node_tree_data, const SurfacePoint &sp, const Camera *camera) const
+		void eval(NodeTreeData &node_tree_data, const SurfacePoint &sp, const Camera *camera) const override
 		{
 			float f_2, fin_1, fin_2;
 			Rgba cin_1, cin_2;
@@ -526,7 +526,7 @@ class AddNode: public MixNode
 class MultNode: public MixNode
 {
 	public:
-		virtual void eval(NodeTreeData &node_tree_data, const SurfacePoint &sp, const Camera *camera) const
+		void eval(NodeTreeData &node_tree_data, const SurfacePoint &sp, const Camera *camera) const override
 		{
 			float f_1, f_2, fin_1, fin_2;
 			Rgba cin_1, cin_2;
@@ -542,7 +542,7 @@ class MultNode: public MixNode
 class SubNode: public MixNode
 {
 	public:
-		virtual void eval(NodeTreeData &node_tree_data, const SurfacePoint &sp, const Camera *camera) const
+		void eval(NodeTreeData &node_tree_data, const SurfacePoint &sp, const Camera *camera) const override
 		{
 			float f_2, fin_1, fin_2;
 			Rgba cin_1, cin_2;
@@ -557,7 +557,7 @@ class SubNode: public MixNode
 class ScreenNode: public MixNode
 {
 	public:
-		virtual void eval(NodeTreeData &node_tree_data, const SurfacePoint &sp, const Camera *camera) const
+		void eval(NodeTreeData &node_tree_data, const SurfacePoint &sp, const Camera *camera) const override
 		{
 			float f_1, f_2, fin_1, fin_2;
 			Rgba cin_1, cin_2;
@@ -573,7 +573,7 @@ class ScreenNode: public MixNode
 class DiffNode: public MixNode
 {
 	public:
-		virtual void eval(NodeTreeData &node_tree_data, const SurfacePoint &sp, const Camera *camera) const
+		void eval(NodeTreeData &node_tree_data, const SurfacePoint &sp, const Camera *camera) const override
 		{
 			float f_1, f_2, fin_1, fin_2;
 			Rgba cin_1, cin_2;
@@ -592,7 +592,7 @@ class DiffNode: public MixNode
 class DarkNode: public MixNode
 {
 	public:
-		virtual void eval(NodeTreeData &node_tree_data, const SurfacePoint &sp, const Camera *camera) const
+		void eval(NodeTreeData &node_tree_data, const SurfacePoint &sp, const Camera *camera) const override
 		{
 			float f_2, fin_1, fin_2;
 			Rgba cin_1, cin_2;
@@ -612,7 +612,7 @@ class DarkNode: public MixNode
 class LightNode: public MixNode
 {
 	public:
-		virtual void eval(NodeTreeData &node_tree_data, const SurfacePoint &sp, const Camera *camera) const
+		void eval(NodeTreeData &node_tree_data, const SurfacePoint &sp, const Camera *camera) const override
 		{
 			float f_2, fin_1, fin_2;
 			Rgba cin_1, cin_2;
@@ -632,7 +632,7 @@ class LightNode: public MixNode
 class OverlayNode: public MixNode
 {
 	public:
-		virtual void eval(NodeTreeData &node_tree_data, const SurfacePoint &sp, const Camera *camera) const
+		void eval(NodeTreeData &node_tree_data, const SurfacePoint &sp, const Camera *camera) const override
 		{
 			float f_1, f_2, fin_1, fin_2;
 			Rgba cin_1, cin_2;

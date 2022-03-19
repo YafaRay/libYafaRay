@@ -38,15 +38,15 @@ class SunLight final : public Light
 
 	private:
 		SunLight(Logger &logger, Vec3 dir, const Rgb &col, float inte, float angle, int n_samples, bool b_light_enabled = true, bool b_cast_shadows = true);
-		virtual void init(Scene &scene);
-		virtual Rgb totalEnergy() const { return color_ * e_pdf_; }
-		virtual Rgb emitPhoton(float s_1, float s_2, float s_3, float s_4, Ray &ray, float &ipdf) const;
-		virtual bool diracLight() const { return false; }
-		virtual bool illumSample(const SurfacePoint &sp, LSample &s, Ray &wi) const;
-		virtual bool illuminate(const SurfacePoint &sp, Rgb &col, Ray &wi) const { return false; }
-		virtual bool canIntersect() const { return true; }
-		virtual bool intersect(const Ray &ray, float &t, Rgb &col, float &ipdf) const;
-		virtual int nSamples() const { return samples_; }
+		void init(Scene &scene) override;
+		Rgb totalEnergy() const override { return color_ * e_pdf_; }
+		Rgb emitPhoton(float s_1, float s_2, float s_3, float s_4, Ray &ray, float &ipdf) const override;
+		bool diracLight() const override { return false; }
+		bool illumSample(const SurfacePoint &sp, LSample &s, Ray &wi) const override;
+		bool illuminate(const SurfacePoint &sp, Rgb &col, Ray &wi) const override { return false; }
+		bool canIntersect() const override { return true; }
+		bool intersect(const Ray &ray, float &t, Rgb &col, float &ipdf) const override;
+		int nSamples() const override { return samples_; }
 
 		Point3 world_center_;
 		Rgb color_, col_pdf_;
