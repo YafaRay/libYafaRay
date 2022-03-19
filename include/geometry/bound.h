@@ -214,7 +214,7 @@ inline Bound::Cross Bound::cross(const Ray &ray, float t_max) const
 class ExBound: public Bound
 {
 	public:
-		ExBound(const Bound &b)
+		explicit ExBound(const Bound &b)
 		{
 			for(int i = 0; i < 3; ++i)
 			{

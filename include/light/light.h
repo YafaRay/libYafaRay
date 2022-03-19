@@ -49,7 +49,7 @@ class Light
 			Flags(unsigned int flags) : yafaray::Flags(flags) { }
 			enum Enum : unsigned int { None = 0, DiracDir = 1, Singular = 1 << 1 };
 		};
-		Light(Logger &logger) : logger_(logger) { }
+		explicit Light(Logger &logger) : logger_(logger) { }
 		Light(Logger &logger, const Flags &flags): flags_(flags), logger_(logger) { }
 		virtual ~Light() = default;
 		//! allow for preprocessing when scene loading has finished
@@ -113,7 +113,7 @@ class Light
 
 struct LSample
 {
-	LSample(SurfacePoint *s_p = nullptr): sp_(s_p) {}
+	explicit LSample(SurfacePoint *s_p = nullptr): sp_(s_p) {}
 	float s_1_, s_2_; //<! 2d sample value for choosing a surface point on the light.
 	float s_3_, s_4_; //<! 2d sample value for choosing an outgoing direction on the light (emitSample)
 	float pdf_; //<! "standard" directional pdf from illuminated surface point for MC integration of direct lighting (illumSample)

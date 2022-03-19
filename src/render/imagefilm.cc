@@ -955,7 +955,7 @@ void ImageFilm::imageFilmLoadAllInFolder(RenderControl &render_control)
 		progress_bar_->setTag(pass_string.str().c_str());
 	}
 
-	const Path path_image_output = film_load_save_.path_;
+	const Path path_image_output(film_load_save_.path_);
 	std::string dir = path_image_output.getDirectory();
 	if(dir.empty()) dir = ".";	//If parent path is empty, set the path to the current folder
 	const std::vector<std::string> files_list = File::listFiles(dir);

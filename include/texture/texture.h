@@ -40,7 +40,7 @@ class Texture
 {
 	public :
 		static Texture *factory(Logger &logger, ParamMap &params, Scene &scene);
-		Texture(Logger &logger) : logger_(logger) { }
+		explicit Texture(Logger &logger) : logger_(logger) { }
 		virtual ~Texture() = default;
 
 		/* indicate wether the the texture is discrete (e.g. image map) or continuous */

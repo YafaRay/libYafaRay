@@ -65,7 +65,7 @@ struct KdNode
 
 template<class NodeData> struct CompareNode
 {
-	CompareNode(int a) { axis_ = a; }
+	explicit CompareNode(int a) { axis_ = a; }
 	int axis_;
 	bool operator()(const NodeData *d_1, const NodeData *d_2) const
 	{

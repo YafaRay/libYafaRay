@@ -33,7 +33,7 @@ class NodeTreeData;
 class NodeMaterial: public Material
 {
 	public:
-		NodeMaterial(Logger &logger) : Material(logger) { }
+		explicit NodeMaterial(Logger &logger) : Material(logger) { }
 
 	protected:
 		/** parse node shaders to fill nodeList */

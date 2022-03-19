@@ -62,7 +62,7 @@ class LogEntry final
 class Logger final
 {
 	public:
-		Logger(const ::yafaray_LoggerCallback_t logger_callback = nullptr, void *callback_data = nullptr, ::yafaray_DisplayConsole_t logger_display_console = YAFARAY_DISPLAY_CONSOLE_NORMAL) : logger_callback_(logger_callback), callback_data_(callback_data), logger_display_console_(logger_display_console) { }
+		explicit Logger(const ::yafaray_LoggerCallback_t logger_callback = nullptr, void *callback_data = nullptr, ::yafaray_DisplayConsole_t logger_display_console = YAFARAY_DISPLAY_CONSOLE_NORMAL) : logger_callback_(logger_callback), callback_data_(callback_data), logger_display_console_(logger_display_console) { }
 		Logger(const Logger &) = delete; //deleting copy constructor so we can use a std::mutex as a class member (not copiable)
 
 		void setCallback(const ::yafaray_LoggerCallback_t logger_callback, void *callback_data) { logger_callback_ = logger_callback; callback_data_ = callback_data; }

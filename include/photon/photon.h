@@ -112,7 +112,7 @@ struct FoundPhoton
 class PhotonMap final
 {
 	public:
-		PhotonMap(Logger &logger) : logger_(logger) { }
+		explicit PhotonMap(Logger &logger) : logger_(logger) { }
 		PhotonMap(Logger &logger, const std::string &mapname, int threads): name_(mapname), threads_pkd_tree_(threads), logger_(logger) { }
 		void setNumPaths(int n) { paths_ = n; }
 		void setName(const std::string &mapname) { name_ = mapname; }
@@ -171,7 +171,7 @@ struct NearestPhoton
 /*! "eliminates" photons within lookup radius (sets use=false) */
 struct EliminatePhoton
 {
-	EliminatePhoton(const Vec3 &norm): n_(norm) {}
+	explicit EliminatePhoton(const Vec3 &norm): n_(norm) {}
 	void operator()(const RadData *rpoint, float dist_2, float &max_dist_squared) const
 	{
 		if(rpoint->normal_ * n_ > 0.f) { rpoint->use_ = false; }

@@ -33,7 +33,7 @@ BEGIN_YAFARAY
 class HdrFormat final : public Format
 {
 	public:
-		HdrFormat(Logger &logger) : Format(logger) { }
+		explicit HdrFormat(Logger &logger) : Format(logger) { }
 
 	private:
 		std::string getFormatName() const override { return "HdrFormat"; }

@@ -35,8 +35,8 @@ BEGIN_YAFARAY
 class Pdf1D final
 {
 	public:
-		Pdf1D(const std::vector<float> &function) : function_(function) { init(); }
-		Pdf1D(std::vector<float> &&function) : function_(std::move(function)) { init(); }
+		explicit Pdf1D(const std::vector<float> &function) : function_(function) { init(); }
+		explicit Pdf1D(std::vector<float> &&function) : function_(std::move(function)) { init(); }
 		size_t size() const { return function_.size(); }
 		float invSize() const { return inv_size_; }
 		float integral() const { return integral_; }

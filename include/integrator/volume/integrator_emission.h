@@ -30,7 +30,7 @@ class EmissionIntegrator final : public VolumeIntegrator
 		static Integrator *factory(Logger &logger, ParamMap &params, const Scene &scene, RenderControl &render_control);
 
 	private:
-		EmissionIntegrator(Logger &logger) : VolumeIntegrator(logger) { }
+		explicit EmissionIntegrator(Logger &logger) : VolumeIntegrator(logger) { }
 		std::string getShortName() const override { return "Em"; }
 		std::string getName() const override { return "Emission"; }
 		// optical thickness, absorption, attenuation, extinction

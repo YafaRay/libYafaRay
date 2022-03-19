@@ -31,7 +31,7 @@ BEGIN_YAFARAY
 class ExrFormat final : public Format
 {
 	public:
-		ExrFormat(Logger &logger) : Format(logger) { }
+		explicit ExrFormat(Logger &logger) : Format(logger) { }
 
 	private:
 		std::string getFormatName() const override { return "ExrFormat"; }

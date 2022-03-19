@@ -155,7 +155,7 @@ class RgbCubeTexture final : public Texture
 		static Texture *factory(Logger &logger, ParamMap &params, Scene &scene);
 
 	private:
-		RgbCubeTexture(Logger &logger) : Texture(logger) { }
+		explicit RgbCubeTexture(Logger &logger) : Texture(logger) { }
 		Rgba getColor(const Point3 &p, const MipMapParams *mipmap_params = nullptr) const override;
 		float getFloat(const Point3 &p, const MipMapParams *mipmap_params = nullptr) const override;
 };

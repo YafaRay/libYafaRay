@@ -28,7 +28,7 @@ BEGIN_YAFARAY
 
 struct PreGatherData final
 {
-	PreGatherData(PhotonMap *dm): diffuse_map_(dm), fetched_(0) {}
+	explicit PreGatherData(PhotonMap *dm): diffuse_map_(dm), fetched_(0) {}
 	PhotonMap *diffuse_map_;
 
 	std::vector<RadData> rad_points_;

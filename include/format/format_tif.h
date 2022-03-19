@@ -30,7 +30,7 @@ BEGIN_YAFARAY
 class TifFormat final : public Format
 {
 	public:
-		TifFormat(Logger &logger) : Format(logger) { }
+		explicit TifFormat(Logger &logger) : Format(logger) { }
 
 	private:
 		std::string getFormatName() const override { return "TifFormat"; }

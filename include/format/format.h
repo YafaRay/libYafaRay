@@ -41,7 +41,7 @@ class Format
 {
 	public:
 		static Format *factory(Logger &logger, ParamMap &params);
-		Format(Logger &logger) : logger_(logger) { }
+		explicit Format(Logger &logger) : logger_(logger) { }
 		virtual ~Format() = default;
 		virtual Image *loadFromFile(const std::string &name, const Image::Optimization &optimization, const ColorSpace &color_space, float gamma) = 0;
 		virtual Image *loadFromMemory(const uint8_t *data, size_t size, const Image::Optimization &optimization, const ColorSpace &color_space, float gamma);

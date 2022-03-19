@@ -30,7 +30,7 @@ BEGIN_YAFARAY
 class Halton final
 {
 	public:
-		Halton(int base) { setBase(base); }
+		explicit Halton(int base) { setBase(base); }
 		Halton(int base, unsigned int start) : Halton(base) { setStart(start); }
 		void setStart(unsigned int start);
 		void reset() { value_ = 0.0; }

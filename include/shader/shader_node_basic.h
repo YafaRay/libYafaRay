@@ -35,7 +35,7 @@ class TextureMapperNode final : public ShaderNode
 		enum Coords : int { Uv, Global, Orco, Transformed, Normal, Reflect, Window, Stick, Stress, Tangent };
 		enum Projection : int { Plain = 0, Cube, Tube, Sphere };
 
-		TextureMapperNode(const Texture *texture) : tex_(texture) { }
+		explicit TextureMapperNode(const Texture *texture) : tex_(texture) { }
 		void eval(NodeTreeData &node_tree_data, const SurfacePoint &sp, const Camera *camera) const override;
 		void evalDerivative(NodeTreeData &node_tree_data, const SurfacePoint &sp, const Camera *camera) const override;
 		bool configInputs(Logger &logger, const ParamMap &params, const NodeFinder &find) override { return true; };
@@ -87,7 +87,7 @@ class MixNode : public ShaderNode
 		void getInputs(const NodeTreeData &node_tree_data, Rgba &cin_1, Rgba &cin_2, float &fin_1, float &fin_2, float &f_2) const;
 
 	private:
-		MixNode(float val) : cfactor_(val) { }
+		explicit MixNode(float val) : cfactor_(val) { }
 		void eval(NodeTreeData &node_tree_data, const SurfacePoint &sp, const Camera *camera) const override;
 		bool configInputs(Logger &logger, const ParamMap &params, const NodeFinder &find) override;
 		std::vector<const ShaderNode *> getDependencies() const override;

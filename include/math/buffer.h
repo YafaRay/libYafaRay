@@ -31,7 +31,7 @@ class Buffer //! Generic n-dimensional buffer. Unrolled starting from the highes
 {
 	public:
 		Buffer() = default;
-		Buffer(const std::array<size_t, n> &dimensions) { resize(dimensions); }
+		explicit Buffer(const std::array<size_t, n> &dimensions) { resize(dimensions); }
 		void zero() { data_.clear(); resize(dimensions_); }
 		void resize(const std::array<size_t, n> &dimensions);
 		void fill(const T &val) { for(size_t i = 0; i < data_.size(); ++i) data_[i] = val; }

@@ -44,7 +44,7 @@ struct NodeResult final
 class NodeTreeData final
 {
 	public:
-		NodeTreeData(size_t number_of_nodes) : node_results_(number_of_nodes) { }
+		explicit NodeTreeData(size_t number_of_nodes) : node_results_(number_of_nodes) { }
 		const NodeResult &operator()(unsigned int id) const { return node_results_[id]; }
 		NodeResult &operator[](unsigned int id) { return node_results_[id]; }
 	private:
@@ -54,7 +54,7 @@ class NodeTreeData final
 class NodeFinder final : public Collection<std::string, const ShaderNode *>
 {
 	public:
-		NodeFinder(const std::map<std::string, std::unique_ptr<ShaderNode>> &table) { for(const auto &s : table) items_[s.first] = s.second.get(); }
+		explicit NodeFinder(const std::map<std::string, std::unique_ptr<ShaderNode>> &table) { for(const auto &s : table) items_[s.first] = s.second.get(); }
 };
 
 class DuDv final

@@ -64,7 +64,7 @@ typedef unsigned int ObjId_t;
 class Scene final
 {
 	public:
-		Scene(Logger &logger);
+		explicit Scene(Logger &logger);
 		Scene(const Scene &s) = delete;
 		~Scene();
 		int addVertex(const Point3 &p);

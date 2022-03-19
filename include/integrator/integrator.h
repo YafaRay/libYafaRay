@@ -58,7 +58,7 @@ class Background;
 
 struct ColorLayerAccum
 {
-	ColorLayerAccum(Rgba *color) : color_(color) { }
+	explicit ColorLayerAccum(Rgba *color) : color_(color) { }
 	Rgba *color_;
 	Rgba accum_{0.f};
 };
@@ -68,7 +68,7 @@ class Integrator
 	public:
 		static Integrator *factory(Logger &logger, ParamMap &params, Scene &scene);
 
-		Integrator(Logger &logger) : logger_(logger) { }
+		explicit Integrator(Logger &logger) : logger_(logger) { }
 		virtual ~Integrator() = default;
 		//! this MUST be called before any other member function!
 		virtual bool render() { return false; }
@@ -134,7 +134,7 @@ class VolumeIntegrator: public Integrator
 		bool preprocess(ImageFilm *image_film, const RenderView *render_view, const Scene &scene) override;
 
 	protected:
-		VolumeIntegrator(Logger &logger) : Integrator(logger) { }
+		explicit VolumeIntegrator(Logger &logger) : Integrator(logger) { }
 		Type getType() const override { return Volume; }
 		const std::map<std::string, std::unique_ptr<VolumeRegion>> *volume_regions_ = nullptr;
 };

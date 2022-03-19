@@ -115,7 +115,7 @@ class NullMaterial final : public Material
 		static Material *factory(Logger &logger, ParamMap &, std::list<ParamMap> &, const Scene &);
 
 	private:
-		NullMaterial(Logger &logger) : Material(logger) { }
+		explicit NullMaterial(Logger &logger) : Material(logger) { }
 		MaterialData * createMaterialData(size_t number_of_nodes) const override { return new NullMaterialData(bsdf_flags_, number_of_nodes); };
 		const MaterialData * initBsdf(SurfacePoint &sp, const Camera *camera) const override { return createMaterialData(0); }
 		Rgb eval(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wl, const BsdfFlags &bsdfs, bool force_eval = false) const override {return Rgb(0.0);}

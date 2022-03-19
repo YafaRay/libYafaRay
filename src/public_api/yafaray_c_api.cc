@@ -115,7 +115,7 @@ yafaray_bool_t yafaray_addInstance(yafaray_Interface_t *interface, const char *b
 
 yafaray_bool_t yafaray_addInstanceArray(yafaray_Interface_t *interface, const char *base_object_name, const float obj_to_world[4][4])
 {
-	return static_cast<yafaray_bool_t>(reinterpret_cast<yafaray::Interface *>(interface)->addInstance(base_object_name, obj_to_world));
+	return static_cast<yafaray_bool_t>(reinterpret_cast<yafaray::Interface *>(interface)->addInstance(base_object_name, yafaray::Matrix4(obj_to_world)));
 }
 
 void yafaray_paramsSetVector(yafaray_Interface_t *interface, const char *name, double x, double y, double z)
@@ -155,7 +155,7 @@ void yafaray_paramsSetMatrix(yafaray_Interface_t *interface, const char *name, f
 
 void yafaray_paramsSetMatrixArray(yafaray_Interface_t *interface, const char *name, const float matrix[4][4], yafaray_bool_t transpose)
 {
-	reinterpret_cast<yafaray::Interface *>(interface)->paramsSetMatrix(name, matrix, transpose);
+	reinterpret_cast<yafaray::Interface *>(interface)->paramsSetMatrix(name, yafaray::Matrix4(matrix), transpose);
 }
 
 void yafaray_paramsClearAll(yafaray_Interface_t *interface) 	//!< clear the paramMap and paramList

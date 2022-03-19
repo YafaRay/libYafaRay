@@ -88,7 +88,7 @@ class Material
 {
 	public:
 		static Material *factory(Logger &logger, ParamMap &params, std::list<ParamMap> &nodes_params, const Scene &scene);
-		Material(Logger &logger);
+		explicit Material(Logger &logger);
 		virtual ~Material();
 
 		virtual MaterialData * createMaterialData(size_t number_of_nodes) const = 0;

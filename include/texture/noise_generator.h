@@ -169,7 +169,7 @@ class VoronoiNoiseGenerator final : public NoiseGenerator
 		enum DMetricType {DistReal, DistSquared, DistManhattan, DistChebychev,
 		                  DistMinkovskyHalf, DistMinkovskyFour, DistMinkovsky
 		                 };
-		VoronoiNoiseGenerator(VoronoiType vt = Vf1, DMetricType dm = DistReal, float mex = 2.5);
+		explicit VoronoiNoiseGenerator(VoronoiType vt = Vf1, DMetricType dm = DistReal, float mex = 2.5);
 		//~VoronoiNoiseGenerator() override { if (distfunc) { delete distfunc;  distfunc=nullptr; }
 		void setDistM(DMetricType dm);
 		void setMinkovskyExponent(float me) { mk_exp_ = me; }

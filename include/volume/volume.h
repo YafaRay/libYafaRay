@@ -39,7 +39,7 @@ class VolumeHandler
 {
 	public:
 		static VolumeHandler *factory(Logger &logger, const ParamMap &params, const Scene &scene);
-		VolumeHandler(Logger &logger) : logger_(logger) { }
+		explicit VolumeHandler(Logger &logger) : logger_(logger) { }
 		virtual Rgb transmittance(const Ray &ray) const = 0;
 		virtual bool scatter(const Ray &ray, Ray &s_ray, PSample &s) const = 0;
 		virtual ~VolumeHandler() = default;
@@ -52,7 +52,7 @@ class VolumeRegion
 {
 	public:
 		static VolumeRegion *factory(Logger &logger, const ParamMap &params, const Scene &scene);
-		VolumeRegion(Logger &logger) : logger_(logger) { }
+		explicit VolumeRegion(Logger &logger) : logger_(logger) { }
 		VolumeRegion(Logger &logger, Rgb sa, Rgb ss, Rgb le, float gg, Point3 pmin, Point3 pmax, int attgrid_scale);
 		virtual ~VolumeRegion() = default;
 
@@ -98,7 +98,7 @@ class VolumeRegion
 class DensityVolumeRegion : public VolumeRegion
 {
 	protected:
-		DensityVolumeRegion(Logger &logger) : VolumeRegion(logger) {}
+		explicit DensityVolumeRegion(Logger &logger) : VolumeRegion(logger) {}
 		DensityVolumeRegion(Logger &logger, Rgb sa, Rgb ss, Rgb le, float gg, Point3 pmin, Point3 pmax, int attgrid_scale) :
 			VolumeRegion(logger, sa, ss, le, gg, pmin, pmax, attgrid_scale) {}
 

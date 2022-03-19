@@ -31,7 +31,7 @@ class MemoryArena
 {
 	public:
 		// MemoryArena Public Methods
-		MemoryArena(uint32_t block_size = 32768)
+		explicit MemoryArena(uint32_t block_size = 32768)
 		{
 			block_size_ = block_size;
 			cur_block_pos_ = 0;

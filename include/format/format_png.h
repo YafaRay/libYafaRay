@@ -32,7 +32,7 @@ struct PngStructs;
 class PngFormat final : public Format
 {
 	public:
-		PngFormat(Logger &logger) : Format(logger) { }
+		explicit PngFormat(Logger &logger) : Format(logger) { }
 
 	private:
 		std::string getFormatName() const override { return "PngFormat"; }

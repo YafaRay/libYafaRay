@@ -34,7 +34,7 @@ class Format;
 class MipMapParams final
 {
 	public:
-		MipMapParams(float force_image_level) : force_image_level_(force_image_level) { }
+		explicit MipMapParams(float force_image_level) : force_image_level_(force_image_level) { }
 		MipMapParams(float dsdx, float dtdx, float dsdy, float dtdy) : ds_dx_(dsdx), dt_dx_(dtdx), ds_dy_(dsdy), dt_dy_(dtdy) { }
 
 		float force_image_level_ = 0.f;

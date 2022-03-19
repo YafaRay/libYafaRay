@@ -31,7 +31,7 @@ BEGIN_YAFARAY
 class JpgFormat final : public Format
 {
 	public:
-		JpgFormat(Logger &logger) : Format(logger) { }
+		explicit JpgFormat(Logger &logger) : Format(logger) { }
 
 	private:
 		std::string getFormatName() const override { return "JpgFormat"; }

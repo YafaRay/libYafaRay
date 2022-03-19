@@ -57,7 +57,7 @@ class RandomGenerator final
 {
 	public:
 		RandomGenerator() = default;
-		RandomGenerator(unsigned int seed): c_(seed) { }
+		explicit RandomGenerator(unsigned int seed): c_(seed) { }
 		double operator()();
 	protected:
 		unsigned int x_ = 30903, c_ = 0;

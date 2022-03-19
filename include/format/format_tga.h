@@ -37,7 +37,7 @@ typedef Rgba (TgaFormat::*ColorProcessor_t)(void *data);
 class TgaFormat final : public Format
 {
 	public:
-		TgaFormat(Logger &logger) : Format(logger) { }
+		explicit TgaFormat(Logger &logger) : Format(logger) { }
 
 	private:
 		std::string getFormatName() const override { return "TgaFormat"; }

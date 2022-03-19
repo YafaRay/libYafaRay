@@ -33,7 +33,7 @@ BEGIN_YAFARAY
 class Path final
 {
 	public:
-		Path(const std::string &full_path);
+		explicit Path(const std::string &full_path);
 		Path(const std::string &directory, const std::string &base_name, const std::string &extension);
 		std::string getDirectory() const { return directory_; }
 		std::string getBaseName() const { return base_name_; }
@@ -55,8 +55,8 @@ class Path final
 class File final
 {
 	public:
-		File(const std::string &path);
-		File(const Path &path);
+		explicit File(const std::string &path);
+		explicit File(const Path &path);
 		~File();
 		bool save(const std::string &str, bool with_tmp);
 		static std::FILE *open(const std::string &path, const std::string &access_mode);

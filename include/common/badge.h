@@ -41,7 +41,7 @@ class Logger;
 class Badge
 {
 	public:
-		Badge(Logger &logger) : logger_(logger) { }
+		explicit Badge(Logger &logger) : logger_(logger) { }
 		void setParams(const ParamMap &params);
 		enum class Position : int { None, Top, Bottom };
 		Position getPosition() const { return position_; }

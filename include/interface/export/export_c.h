@@ -32,7 +32,7 @@ class Parameter;
 class ExportC: public Interface
 {
 	public:
-		ExportC(const char *fname, ::yafaray_LoggerCallback_t logger_callback = nullptr, void *callback_data = nullptr, ::yafaray_DisplayConsole_t logger_display_console = YAFARAY_DISPLAY_CONSOLE_NORMAL);
+		explicit ExportC(const char *fname, ::yafaray_LoggerCallback_t logger_callback = nullptr, void *callback_data = nullptr, ::yafaray_DisplayConsole_t logger_display_console = YAFARAY_DISPLAY_CONSOLE_NORMAL);
 		void createScene() noexcept override;
 		int getSceneFilmWidth() const noexcept override { return 0; }
 		int getSceneFilmHeight() const noexcept override { return 0; }
