@@ -198,7 +198,7 @@ void BackgroundLight::emitPdf(const SurfacePoint &sp, const Vec3 &wo, float &are
 	area_pdf = 1.f;
 }
 
-std::unique_ptr<Light> BackgroundLight::factory(Logger &logger, ParamMap &params, const Scene &scene)
+Light * BackgroundLight::factory(Logger &logger, ParamMap &params, const Scene &scene)
 {
 	int samples = 16;
 	bool shoot_d = true;
@@ -216,7 +216,7 @@ std::unique_ptr<Light> BackgroundLight::factory(Logger &logger, ParamMap &params
 	params.getParam("cast_shadows", cast_shadows);
 	params.getParam("photon_only", p_only);
 
-	auto light = std::unique_ptr<BackgroundLight>(new BackgroundLight(logger, samples, abs_int, light_enabled, cast_shadows));
+	auto light = new BackgroundLight(logger, samples, abs_int, light_enabled, cast_shadows);
 
 	light->shoot_caustic_ = shoot_c;
 	light->shoot_diffuse_ = shoot_d;

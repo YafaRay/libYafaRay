@@ -196,7 +196,7 @@ Rgb DarkSkyBackground::eval(const Vec3 &dir, bool use_ibl_blur) const
 	return getSkyCol(dir) * power_;
 }
 
-std::unique_ptr<Background> DarkSkyBackground::factory(Logger &logger, ParamMap &params, Scene &scene)
+Background * DarkSkyBackground::factory(Logger &logger, ParamMap &params, Scene &scene)
 {
 	Point3 dir(1, 1, 1);
 	float turb = 4.0;
@@ -262,7 +262,7 @@ std::unique_ptr<Background> DarkSkyBackground::factory(Logger &logger, ParamMap 
 		pw *= 0.5;
 	}
 
-	auto dark_sky = std::unique_ptr<DarkSkyBackground>(new DarkSkyBackground(logger, dir, turb, power, bright, clamp, av, bv, cv, dv, ev, altitude, night, exp, gamma_enc, color_s));
+	auto dark_sky = new DarkSkyBackground(logger, dir, turb, power, bright, clamp, av, bv, cv, dv, ev, altitude, night, exp, gamma_enc, color_s);
 
 	if(add_sun && math::radToDeg(math::acos(dir.z_)) < 100.0)
 	{
@@ -303,7 +303,7 @@ std::unique_ptr<Background> DarkSkyBackground::factory(Logger &logger, ParamMap 
 
 		Light *bglight = scene.createLight("DarkSky_bgLight", bgp);
 
-		bglight->setBackground(dark_sky.get());
+		bglight->setBackground(dark_sky);
 	}
 
 	if(logger.isVerbose()) logger.logVerbose("DarkSky: End");

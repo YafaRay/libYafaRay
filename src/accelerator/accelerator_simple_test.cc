@@ -24,10 +24,9 @@
 
 BEGIN_YAFARAY
 
-std::unique_ptr<Accelerator> AcceleratorSimpleTest::factory(Logger &logger, const std::vector<const Primitive *> &primitives, ParamMap &params)
+Accelerator * AcceleratorSimpleTest::factory(Logger &logger, const std::vector<const Primitive *> &primitives, ParamMap &params)
 {
-	auto accelerator = std::unique_ptr<Accelerator>(new AcceleratorSimpleTest(logger, primitives));
-	return accelerator;
+	return new AcceleratorSimpleTest(logger, primitives);
 }
 
 AcceleratorSimpleTest::AcceleratorSimpleTest(Logger &logger, const std::vector<const Primitive *> &primitives) : Accelerator(logger), primitives_(primitives)

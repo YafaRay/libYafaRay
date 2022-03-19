@@ -39,7 +39,7 @@
 
 BEGIN_YAFARAY
 
-std::unique_ptr<Image> Image::factory(Logger &logger, ParamMap &params, const Scene &scene)
+Image * Image::factory(Logger &logger, ParamMap &params, const Scene &scene)
 {
 	if(logger.isDebug()) logger.logDebug("**Image::factory params");
 	int width = 100;
@@ -62,7 +62,7 @@ std::unique_ptr<Image> Image::factory(Logger &logger, ParamMap &params, const Sc
 	const Type type = Image::getTypeFromName(image_type_str);
 	ColorSpace color_space = Rgb::colorSpaceFromName(color_space_str);
 
-	std::unique_ptr<Image> image;
+	Image *image = nullptr;
 
 	if(filename.empty())
 	{
@@ -105,15 +105,9 @@ std::unique_ptr<Image> Image::factory(Logger &logger, ParamMap &params, const Sc
 	return image;
 }
 
-std::unique_ptr<Image> Image::factory(Logger &logger, int width, int height, const Type &type, const Optimization &optimization)
+Image *Image::factory(Logger &logger, int width, int height, const Type &type, const Optimization &optimization)
 {
 	if(logger.isDebug()) logger.logDebug("**Image::factory");
-	return std::unique_ptr<Image>(Image::factoryRawPointer(logger, width, height, type, optimization));
-}
-
-Image *Image::factoryRawPointer(Logger &logger, int width, int height, const Type &type, const Optimization &optimization)
-{
-	if(logger.isDebug()) logger.logDebug("**Image::factoryRawPointer");
 	if(type == Type::ColorAlpha)
 	{
 		switch(optimization)
@@ -255,12 +249,12 @@ std::string Image::getTypeNameShort(const Type &image_type)
 	}
 }
 
-std::unique_ptr<Image> Image::getDenoisedLdrImage(Logger &logger, const Image *image, const DenoiseParams &denoise_params)
+Image * Image::getDenoisedLdrImage(Logger &logger, const Image *image, const DenoiseParams &denoise_params)
 {
 #ifdef HAVE_OPENCV
 	if(!denoise_params.enabled_) return nullptr;
 
-	std::unique_ptr<Image> image_denoised = Image::factory(logger, image->getWidth(), image->getHeight(), image->getType(), image->getOptimization());
+	auto image_denoised = Image::factory(logger, image->getWidth(), image->getHeight(), image->getType(), image->getOptimization());
 	if(!image_denoised) return image_denoised;
 
 	const int width = image_denoised->getWidth();
@@ -304,7 +298,7 @@ std::unique_ptr<Image> Image::getDenoisedLdrImage(Logger &logger, const Image *i
 #endif //HAVE_OPENCV
 }
 
-std::unique_ptr<Image> Image::getComposedImage(Logger &logger, const Image *image_1, const Image *image_2, const Position &position_image_2, int overlay_x, int overlay_y)
+Image * Image::getComposedImage(Logger &logger, const Image *image_1, const Image *image_2, const Position &position_image_2, int overlay_x, int overlay_y)
 {
 	if(!image_1 || !image_2) return nullptr;
 	const int width_1 = image_1->getWidth();
@@ -322,7 +316,7 @@ std::unique_ptr<Image> Image::getComposedImage(Logger &logger, const Image *imag
 		case Position::Overlay: break;
 		default: return nullptr;
 	}
-	std::unique_ptr<Image> result = Image::factory(logger, width, height, image_1->getType(), image_1->getOptimization());
+	auto result = Image::factory(logger, width, height, image_1->getType(), image_1->getOptimization());
 
 	for(int x = 0; x < width; ++x)
 	{

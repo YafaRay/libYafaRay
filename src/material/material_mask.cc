@@ -118,7 +118,7 @@ float MaskMaterial::getAlpha(const MaterialData *mat_data, const SurfacePoint &s
 	return alpha;
 }
 
-std::unique_ptr<Material> MaskMaterial::factory(Logger &logger, ParamMap &params, std::list<ParamMap> &nodes_params, const Scene &scene)
+Material * MaskMaterial::factory(Logger &logger, ParamMap &params, std::list<ParamMap> &nodes_params, const Scene &scene)
 {
 	std::string name;
 	if(!params.getParam("material1", name)) return nullptr;
@@ -137,7 +137,7 @@ std::unique_ptr<Material> MaskMaterial::factory(Logger &logger, ParamMap &params
 	params.getParam("visibility", s_visibility);
 
 	const Visibility visibility = visibility::fromString(s_visibility);
-	auto mat = std::unique_ptr<MaskMaterial>(new MaskMaterial(logger, m_1, m_2, thresh, visibility));
+	auto mat = new MaskMaterial(logger, m_1, m_2, thresh, visibility);
 	mat->receive_shadows_ = receive_shadows;
 
 	std::vector<const ShaderNode *> root_nodes_list;

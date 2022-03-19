@@ -318,7 +318,7 @@ bool ExrFormat::saveToFileMultiChannel(const std::string &name, const ImageLayer
 	return result;
 }
 
-std::unique_ptr<Image> ExrFormat::loadFromFile(const std::string &name, const Image::Optimization &optimization, const ColorSpace &color_space, float gamma)
+Image * ExrFormat::loadFromFile(const std::string &name, const Image::Optimization &optimization, const ColorSpace &color_space, float gamma)
 {
 	std::FILE *fp = File::open(name.c_str(), "rb");
 	logger_.logInfo(getFormatName(), ": Loading image \"", name, "\"...");
@@ -336,7 +336,7 @@ std::unique_ptr<Image> ExrFormat::loadFromFile(const std::string &name, const Im
 		std::fseek(fp, 0, SEEK_SET);
 	}
 
-	std::unique_ptr<Image> image;
+	Image *image = nullptr;
 	try
 	{
 		CiStream istr(fp, name.c_str());
@@ -373,9 +373,9 @@ std::unique_ptr<Image> ExrFormat::loadFromFile(const std::string &name, const Im
 	return image;
 }
 
-std::unique_ptr<Format> ExrFormat::factory(Logger &logger, ParamMap &params)
+Format * ExrFormat::factory(Logger &logger, ParamMap &params)
 {
-	return std::unique_ptr<Format>(new ExrFormat(logger));
+	return new ExrFormat(logger);
 }
 
 END_YAFARAY

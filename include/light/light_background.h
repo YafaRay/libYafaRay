@@ -35,7 +35,7 @@ class ParamMap;
 class BackgroundLight final : public Light
 {
 	public:
-		static std::unique_ptr<Light> factory(Logger &logger, ParamMap &params, const Scene &scene);
+		static Light *factory(Logger &logger, ParamMap &params, const Scene &scene);
 
 	private:
 		BackgroundLight(Logger &logger, int sampl, bool invert_intersect = false, bool light_enabled = true, bool cast_shadows = true);

@@ -762,7 +762,7 @@ Rgb PhotonIntegrator::finalGathering(RandomGenerator &random_generator, int thre
 	return path_col / (float)n_sampl;
 }
 
-std::unique_ptr<Integrator> PhotonIntegrator::factory(Logger &logger, ParamMap &params, const Scene &scene, RenderControl &render_control)
+Integrator * PhotonIntegrator::factory(Logger &logger, ParamMap &params, const Scene &scene, RenderControl &render_control)
 {
 	bool transp_shad = false;
 	bool final_gather = true;
@@ -817,7 +817,7 @@ std::unique_ptr<Integrator> PhotonIntegrator::factory(Logger &logger, ParamMap &
 	params.getParam("AO_color", ao_col);
 	params.getParam("photon_maps_processing", photon_maps_processing_str);
 
-	auto inte = std::unique_ptr<PhotonIntegrator>(new PhotonIntegrator(render_control, logger, num_photons, num_c_photons, transp_shad, shadow_depth, ds_rad, c_rad));
+	auto inte = new PhotonIntegrator(render_control, logger, num_photons, num_c_photons, transp_shad, shadow_depth, ds_rad, c_rad);
 
 	inte->use_photon_caustics_ = caustics;
 	inte->use_photon_diffuse_ = diffuse;

@@ -37,7 +37,7 @@
 
 BEGIN_YAFARAY
 
-std::unique_ptr<Format> Format::factory(Logger &logger, ParamMap &params)
+Format * Format::factory(Logger &logger, ParamMap &params)
 {
 	if(logger.isDebug())
 	{
@@ -72,7 +72,7 @@ std::unique_ptr<Format> Format::factory(Logger &logger, ParamMap &params)
 	}
 }
 
-std::unique_ptr<Image> Format::loadFromMemory(const uint8_t *data, size_t size, const Image::Optimization &optimization, const ColorSpace &color_space, float gamma)
+Image * Format::loadFromMemory(const uint8_t *data, size_t size, const Image::Optimization &optimization, const ColorSpace &color_space, float gamma)
 {
 	return nullptr;
 }

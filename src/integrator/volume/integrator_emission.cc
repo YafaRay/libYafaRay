@@ -60,9 +60,9 @@ Rgb EmissionIntegrator::integrate(RandomGenerator &random_generator, const Ray &
 	return result;
 }
 
-std::unique_ptr<Integrator> EmissionIntegrator::factory(Logger &logger, ParamMap &params, const Scene &scene, RenderControl &render_control)
+Integrator * EmissionIntegrator::factory(Logger &logger, ParamMap &params, const Scene &scene, RenderControl &render_control)
 {
-	return std::unique_ptr<Integrator>(new EmissionIntegrator(logger));
+	return new EmissionIntegrator(logger);
 }
 
 END_YAFARAY

@@ -45,7 +45,7 @@ constexpr int ImageFilm::max_filter_size_;
 typedef float FilterFunc_t(float dx, float dy);
 
 
-std::unique_ptr<ImageFilm> ImageFilm::factory(Logger &logger, const ParamMap &params, Scene *scene)
+ImageFilm * ImageFilm::factory(Logger &logger, const ParamMap &params, Scene *scene)
 {
 	if(logger.isDebug())
 	{
@@ -108,7 +108,7 @@ std::unique_ptr<ImageFilm> ImageFilm::factory(Logger &logger, const ParamMap &pa
 	else if(tiles_order == "random") tiles_order_type = ImageSplitter::Random;
 	else if(tiles_order != "centre" && logger.isVerbose()) logger.logVerbose("ImageFilm: ", "Defaulting to Centre tiles order."); // this is info imho not a warning
 
-	auto film = std::unique_ptr<ImageFilm>(new ImageFilm(logger, width, height, xstart, ystart, scene->getNumThreads(), scene->getRenderControl(), *scene->getLayers(), scene->getOutputs(), filt_sz, type, tile_size, tiles_order_type));
+	auto film = new ImageFilm(logger, width, height, xstart, ystart, scene->getNumThreads(), scene->getRenderControl(), *scene->getLayers(), scene->getOutputs(), filt_sz, type, tile_size, tiles_order_type);
 
 	film->setImagesAutoSaveParams(images_autosave_params);
 	film->setFilmLoadSaveParams(film_load_save);
@@ -181,7 +181,7 @@ void ImageFilm::initLayersImages()
 	{
 		Image::Type image_type = l.second.getImageType();
 		image_type = Image::imageTypeWithAlpha(image_type); //Alpha channel is needed in all images of the weight normalization process will cause problems
-		std::unique_ptr<Image> image = Image::factory(logger_, width_, height_, image_type, Image::Optimization::None);
+		std::unique_ptr<Image> image(Image::factory(logger_, width_, height_, image_type, Image::Optimization::None));
 		film_image_layers_.set(l.first, {std::move(image), l.second});
 	}
 }
@@ -192,7 +192,7 @@ void ImageFilm::initLayersExportedImages()
 	{
 		Image::Type image_type = l.second.getImageType();
 		image_type = Image::imageTypeWithAlpha(image_type); //Alpha channel is needed in all images of the weight normalization process will cause problems
-		std::unique_ptr<Image> image = Image::factory(logger_, width_, height_, image_type, Image::Optimization::None);
+		std::unique_ptr<Image> image(Image::factory(logger_, width_, height_, image_type, Image::Optimization::None));
 		exported_image_layers_.set(l.first, {std::move(image), l.second});
 	}
 }

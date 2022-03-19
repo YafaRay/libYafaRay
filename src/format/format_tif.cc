@@ -96,7 +96,7 @@ bool TifFormat::saveToFile(const std::string &name, const ImageLayer &image_laye
 	return true;
 }
 
-std::unique_ptr<Image> TifFormat::loadFromFile(const std::string &name, const Image::Optimization &optimization, const ColorSpace &color_space, float gamma)
+Image * TifFormat::loadFromFile(const std::string &name, const Image::Optimization &optimization, const ColorSpace &color_space, float gamma)
 {
 #if defined(_WIN32)
 	std::wstring wname = string::utf8ToWutf16Le(name);
@@ -120,7 +120,7 @@ std::unique_ptr<Image> TifFormat::loadFromFile(const std::string &name, const Im
 		return nullptr;
 	}
 	const Image::Type type = Image::getTypeFromSettings(true, grayscale_);
-	std::unique_ptr<Image> image = Image::factory(logger_, w, h, type, optimization);
+	auto image = Image::factory(logger_, w, h, type, optimization);
 	int i = 0;
 	for(int y = static_cast<int>(h) - 1; y >= 0; y--)
 	{
@@ -142,9 +142,9 @@ std::unique_ptr<Image> TifFormat::loadFromFile(const std::string &name, const Im
 	return image;
 }
 
-std::unique_ptr<Format> TifFormat::factory(Logger &logger, ParamMap &params)
+Format * TifFormat::factory(Logger &logger, ParamMap &params)
 {
-	return std::unique_ptr<Format>(new TifFormat(logger));
+	return new TifFormat(logger);
 }
 
 END_YAFARAY

@@ -38,14 +38,14 @@ bool SssVolumeHandler::scatter(const Ray &ray, Ray &s_ray, PSample &s) const
 	return true;
 }
 
-std::unique_ptr<VolumeHandler> SssVolumeHandler::factory(Logger &logger, const ParamMap &params, const Scene &scene)
+VolumeHandler * SssVolumeHandler::factory(Logger &logger, const ParamMap &params, const Scene &scene)
 {
 	Rgb a_col(0.5f), s_col(0.8f);
 	double dist = 1.f;
 	params.getParam("absorption_col", a_col);
 	params.getParam("absorption_dist", dist);
 	params.getParam("scatter_col", s_col);
-	return std::unique_ptr<VolumeHandler>(new SssVolumeHandler(logger, a_col, s_col, dist));
+	return new SssVolumeHandler(logger, a_col, s_col, dist);
 }
 
 END_YAFARAY

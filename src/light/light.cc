@@ -33,7 +33,7 @@
 
 BEGIN_YAFARAY
 
-std::unique_ptr<Light> Light::factory(Logger &logger, ParamMap &params, const Scene &scene)
+Light * Light::factory(Logger &logger, ParamMap &params, const Scene &scene)
 {
 	if(logger.isDebug())
 	{
@@ -44,7 +44,7 @@ std::unique_ptr<Light> Light::factory(Logger &logger, ParamMap &params, const Sc
 	std::string name;
 	params.getParam("type", type);
 	params.getParam("name", name);
-	std::unique_ptr<Light> light;
+	Light *light = nullptr;
 	if(type == "arealight") light = AreaLight::factory(logger, params, scene);
 	else if(type == "bgPortalLight") light = BackgroundPortalLight::factory(logger, params, scene);
 	else if(type == "meshlight" || type == "objectlight") light = ObjectLight::factory(logger, params, scene);

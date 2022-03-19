@@ -27,7 +27,6 @@
 #include "common/file.h"
 #include "scene/scene.h"
 #include "image/image_layers.h"
-#include "color/color_layers.h"
 
 #include <png.h>
 #include "format/format_png_util.h"
@@ -96,7 +95,7 @@ bool PngFormat::saveToFile(const std::string &name, const ImageLayer &image_laye
 	return true;
 }
 
-std::unique_ptr<Image> PngFormat::loadFromFile(const std::string &name, const Image::Optimization &optimization, const ColorSpace &color_space, float gamma)
+Image * PngFormat::loadFromFile(const std::string &name, const Image::Optimization &optimization, const ColorSpace &color_space, float gamma)
 {
 	std::FILE *fp = File::open(name, "rb");
 	logger_.logInfo(getFormatName(), ": Loading image \"", name, "\"...");
@@ -122,13 +121,13 @@ std::unique_ptr<Image> PngFormat::loadFromFile(const std::string &name, const Im
 	}
 	png_init_io(png_ptr, fp);
 	png_set_sig_bytes(png_ptr, 8);
-	std::unique_ptr<Image> image = readFromStructs(png_structs, optimization, color_space, gamma);
+	auto image = readFromStructs(png_structs, optimization, color_space, gamma);
 	File::close(fp);
 	if(logger_.isVerbose()) logger_.logVerbose(getFormatName(), ": Done.");
 	return image;
 }
 
-std::unique_ptr<Image> PngFormat::loadFromMemory(const uint8_t *data, size_t size, const Image::Optimization &optimization, const ColorSpace &color_space, float gamma)
+Image * PngFormat::loadFromMemory(const uint8_t *data, size_t size, const Image::Optimization &optimization, const ColorSpace &color_space, float gamma)
 {
 	auto reader = std::unique_ptr<PngDataReader>(new PngDataReader(data, size));
 	uint8_t signature[8];
@@ -146,7 +145,7 @@ std::unique_ptr<Image> PngFormat::loadFromMemory(const uint8_t *data, size_t siz
 	}
 	png_set_read_fn(png_ptr, static_cast<void *>(reader.get()), PngDataReader::readFromMem);
 	png_set_sig_bytes(png_ptr, 8);
-	std::unique_ptr<Image> image = readFromStructs(png_structs, optimization, color_space, gamma);
+	auto image = readFromStructs(png_structs, optimization, color_space, gamma);
 	return image;
 }
 
@@ -206,7 +205,7 @@ bool PngFormat::fillWriteStructs(std::FILE *fp, unsigned int color_type, const P
 	return true;
 }
 
-std::unique_ptr<Image> PngFormat::readFromStructs(const PngStructs &png_structs, const Image::Optimization &optimization, const ColorSpace &color_space, float gamma)
+Image * PngFormat::readFromStructs(const PngStructs &png_structs, const Image::Optimization &optimization, const ColorSpace &color_space, float gamma)
 {
 	png_read_info(png_structs.png_ptr_, png_structs.info_ptr_);
 	png_uint_32 w, h;
@@ -243,7 +242,7 @@ std::unique_ptr<Image> PngFormat::readFromStructs(const PngStructs &png_structs,
 	// even 2,147,483,647 (max signed int positive value) pixels on one side is purpostrous
 	// at 1 channel, 8 bits per channel and the other side of 1 pixel wide the resulting image uses 2gb of memory
 	const Image::Type type = Image::getTypeFromSettings(has_alpha, (num_chan == 1 || grayscale_));
-	std::unique_ptr<Image> image = Image::factory(logger_, w, h, type, optimization);
+	auto image = Image::factory(logger_, w, h, type, optimization);
 	auto row_pointers = std::unique_ptr<png_bytep[]>(new png_bytep[h]);
 	int bit_mult = 1;
 	if(bit_depth == 16) bit_mult = 2;
@@ -329,9 +328,9 @@ std::unique_ptr<Image> PngFormat::readFromStructs(const PngStructs &png_structs,
 	return image;
 }
 
-std::unique_ptr<Format> PngFormat::factory(Logger &logger, ParamMap &params)
+Format * PngFormat::factory(Logger &logger, ParamMap &params)
 {
-	return std::unique_ptr<Format>(new PngFormat(logger));
+	return new PngFormat(logger);
 }
 
 END_YAFARAY

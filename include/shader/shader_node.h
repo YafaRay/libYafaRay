@@ -77,7 +77,7 @@ class DuDv final
 class ShaderNode
 {
 	public:
-		static std::unique_ptr<ShaderNode> factory(Logger &logger, const ParamMap &params, const Scene &scene);
+		static ShaderNode *factory(Logger &logger, const ParamMap &params, const Scene &scene);
 		virtual ~ShaderNode() = default;
 		unsigned int getId() const { return id_; }
 		void setId(unsigned int id) const { id_ = id; } //It is set as "const" but it actually modifies the (mutable) id_

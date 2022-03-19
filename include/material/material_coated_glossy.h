@@ -42,7 +42,7 @@ class CoatedGlossyMaterialData final : public MaterialData
 class CoatedGlossyMaterial final : public NodeMaterial
 {
 	public:
-		static std::unique_ptr<Material> factory(Logger &logger, ParamMap &, std::list<ParamMap> &, const Scene &);
+		static Material *factory(Logger &logger, ParamMap &, std::list<ParamMap> &, const Scene &);
 
 	private:
 		CoatedGlossyMaterial(Logger &logger, const Rgb &col, const Rgb &dcol, const Rgb &mir_col, float mirror_strength, float reflect, float diff, float ior, float expo, bool as_diff, Visibility e_visibility = Visibility::NormalVisible);

@@ -271,7 +271,7 @@ const VolumeHandler *BlendMaterial::getVolumeHandler(bool inside) const
 	else return vol_2;
 }
 
-std::unique_ptr<Material> BlendMaterial::factory(Logger &logger, ParamMap &params, std::list<ParamMap> &nodes_params, const Scene &scene)
+Material * BlendMaterial::factory(Logger &logger, ParamMap &params, std::list<ParamMap> &nodes_params, const Scene &scene)
 {
 	std::string name;
 	double blend_val = 0.5;
@@ -303,7 +303,7 @@ std::unique_ptr<Material> BlendMaterial::factory(Logger &logger, ParamMap &param
 
 	const Visibility visibility = visibility::fromString(s_visibility);
 
-	auto mat = std::unique_ptr<BlendMaterial>(new BlendMaterial(logger, m_1, m_2, blend_val, visibility));
+	auto mat = new BlendMaterial(logger, m_1, m_2, blend_val, visibility);
 
 	mat->setMaterialIndex(mat_pass_index);
 	mat->receive_shadows_ = receive_shadows;

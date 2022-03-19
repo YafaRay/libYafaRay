@@ -284,7 +284,7 @@ float GlassMaterial::getMatIor() const
 	return ior_;
 }
 
-std::unique_ptr<Material> GlassMaterial::factory(Logger &logger, ParamMap &params, std::list<ParamMap> &nodes_params, const Scene &scene)
+Material * GlassMaterial::factory(Logger &logger, ParamMap &params, std::list<ParamMap> &nodes_params, const Scene &scene)
 {
 	double ior = 1.4;
 	double filt = 0.f;
@@ -322,7 +322,7 @@ std::unique_ptr<Material> GlassMaterial::factory(Logger &logger, ParamMap &param
 
 	const Visibility visibility = visibility::fromString(s_visibility);
 
-	auto mat = std::unique_ptr<GlassMaterial>(new GlassMaterial(logger, ior, filt * filt_col + Rgb(1.f - filt), sr_col, disp_power, fake_shad, visibility));
+	auto mat = new GlassMaterial(logger, ior, filt * filt_col + Rgb(1.f - filt), sr_col, disp_power, fake_shad, visibility);
 
 	mat->setMaterialIndex(mat_pass_index);
 	mat->receive_shadows_ = receive_shadows;
@@ -360,7 +360,7 @@ std::unique_ptr<Material> GlassMaterial::factory(Logger &logger, ParamMap &param
 				map["type"] = std::string("beer");
 				map["absorption_col"] = absorp;
 				map["absorption_dist"] = Parameter(dist);
-				mat->vol_i_ = VolumeHandler::factory(logger, map, scene);
+				mat->vol_i_ = std::unique_ptr<VolumeHandler>(VolumeHandler::factory(logger, map, scene));
 				mat->bsdf_flags_ |= BsdfFlags::Volumetric;
 			}
 		}
@@ -452,13 +452,13 @@ Specular MirrorMaterial::getSpecular(int ray_level, const MaterialData *mat_data
 	return specular;
 }
 
-std::unique_ptr<Material> MirrorMaterial::factory(Logger &logger, ParamMap &params, std::list<ParamMap> &param_list, const Scene &scene)
+Material * MirrorMaterial::factory(Logger &logger, ParamMap &params, std::list<ParamMap> &param_list, const Scene &scene)
 {
 	Rgb col(1.0);
 	float refl = 1.0;
 	params.getParam("color", col);
 	params.getParam("reflect", refl);
-	return std::unique_ptr<Material>(new MirrorMaterial(logger, col, refl));
+	return new MirrorMaterial(logger, col, refl);
 }
 
 
@@ -469,9 +469,9 @@ Rgb NullMaterial::sample(const MaterialData *mat_data, const SurfacePoint &sp, c
 	return Rgb(0.f);
 }
 
-std::unique_ptr<Material> NullMaterial::factory(Logger &logger, ParamMap &, std::list<ParamMap> &, const Scene &)
+Material * NullMaterial::factory(Logger &logger, ParamMap &, std::list<ParamMap> &, const Scene &)
 {
-	return std::unique_ptr<Material>(new NullMaterial(logger));
+	return new NullMaterial(logger);
 }
 
 END_YAFARAY

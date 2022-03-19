@@ -28,7 +28,7 @@
 
 BEGIN_YAFARAY
 
-std::unique_ptr<Accelerator> AcceleratorKdTreeMultiThread::factory(Logger &logger, const std::vector<const Primitive *> &primitives, ParamMap &params)
+Accelerator * AcceleratorKdTreeMultiThread::factory(Logger &logger, const std::vector<const Primitive *> &primitives, ParamMap &params)
 {
 	AcceleratorKdTreeMultiThread::Parameters parameters;
 
@@ -39,8 +39,7 @@ std::unique_ptr<Accelerator> AcceleratorKdTreeMultiThread::factory(Logger &logge
 	params.getParam("accelerator_threads", parameters.num_threads_);
 	params.getParam("accelerator_min_indices_threads", parameters.min_indices_to_spawn_threads_);
 
-	auto accelerator = std::unique_ptr<Accelerator>(new AcceleratorKdTreeMultiThread(logger, primitives, parameters));
-	return accelerator;
+	return new AcceleratorKdTreeMultiThread(logger, primitives, parameters);
 }
 
 AcceleratorKdTreeMultiThread::AcceleratorKdTreeMultiThread(Logger &logger, const std::vector<const Primitive *> &primitives, const Parameters &parameters) : Accelerator(logger)

@@ -40,7 +40,7 @@ class MaskMaterialData final : public MaterialData
 class MaskMaterial final : public NodeMaterial
 {
 	public:
-		static std::unique_ptr<Material> factory(Logger &logger, ParamMap &, std::list<ParamMap> &, const Scene &);
+		static Material *factory(Logger &logger, ParamMap &, std::list<ParamMap> &, const Scene &);
 
 	private:
 		MaskMaterial(Logger &logger, const std::unique_ptr<Material> *m_1, const std::unique_ptr<Material> *m_2, float thresh, Visibility visibility = Visibility::NormalVisible);

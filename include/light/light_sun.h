@@ -34,7 +34,7 @@ class Scene;
 class SunLight final : public Light
 {
 	public:
-		static std::unique_ptr<Light> factory(Logger &logger, ParamMap &params, const Scene &scene);
+		static Light *factory(Logger &logger, ParamMap &params, const Scene &scene);
 
 	private:
 		SunLight(Logger &logger, Vec3 dir, const Rgb &col, float inte, float angle, int n_samples, bool b_light_enabled = true, bool b_cast_shadows = true);

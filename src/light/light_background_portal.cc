@@ -64,7 +64,7 @@ void BackgroundPortalLight::initIs()
 	params["cost_ratio"] = 0.8f;
 	params["empty_bonus"] = 0.33f;
 
-	accelerator_ = Accelerator::factory(logger_, primitives_, params);
+	accelerator_ = std::unique_ptr<Accelerator>(Accelerator::factory(logger_, primitives_, params));
 }
 
 void BackgroundPortalLight::init(Scene &scene)
@@ -216,7 +216,7 @@ void BackgroundPortalLight::emitPdf(const SurfacePoint &sp, const Vec3 &wo, floa
 }
 
 
-std::unique_ptr<Light> BackgroundPortalLight::factory(Logger &logger, ParamMap &params, const Scene &scene)
+Light * BackgroundPortalLight::factory(Logger &logger, ParamMap &params, const Scene &scene)
 {
 	int samples = 4;
 	std::string object_name;
@@ -236,7 +236,7 @@ std::unique_ptr<Light> BackgroundPortalLight::factory(Logger &logger, ParamMap &
 	params.getParam("light_enabled", light_enabled);
 	params.getParam("cast_shadows", cast_shadows);
 
-	auto light = std::unique_ptr<BackgroundPortalLight>(new BackgroundPortalLight(logger, object_name, samples, pow, light_enabled, cast_shadows));
+	auto light = new BackgroundPortalLight(logger, object_name, samples, pow, light_enabled, cast_shadows);
 
 	light->shoot_caustic_ = shoot_c;
 	light->shoot_diffuse_ = shoot_d;

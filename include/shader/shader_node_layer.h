@@ -34,7 +34,7 @@ class LayerNode final : public ShaderNode
 			Flags(unsigned int flags) : yafaray::Flags(flags) { }
 			enum Enum : unsigned int { None = 0, RgbToInt = 1 << 0, Stencil = 1 << 1, Negative = 1 << 2, AlphaMix = 1 << 3 };
 		};
-		static std::unique_ptr<ShaderNode> factory(Logger &logger, const ParamMap &params, const Scene &scene);
+		static ShaderNode *factory(Logger &logger, const ParamMap &params, const Scene &scene);
 
 	private:
 		enum class BlendMode { Mix, Add, Mult, Sub, Screen, Div, Diff, Dark, Light };

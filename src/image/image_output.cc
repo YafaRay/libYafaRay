@@ -64,7 +64,7 @@ void ImageOutput::setBadgeParams(const ParamMap &params)
 	badge_.setParams(params);
 }
 
-std::unique_ptr<ImageOutput> ImageOutput::factory(Logger &logger, const ParamMap &params, const Scene &scene)
+ImageOutput * ImageOutput::factory(Logger &logger, const ParamMap &params, const Scene &scene)
 {
 	if(logger.isDebug())
 	{
@@ -95,7 +95,7 @@ std::unique_ptr<ImageOutput> ImageOutput::factory(Logger &logger, const ParamMap
 	params.getParam("denoise_mix", denoise_params.mix_);
 
 	const ColorSpace color_space = Rgb::colorSpaceFromName(color_space_str);
-	auto output = std::unique_ptr<ImageOutput>(new ImageOutput(logger, image_path, denoise_params, name, color_space, gamma, with_alpha, alpha_premultiply, multi_layer));
+	auto output = new ImageOutput(logger, image_path, denoise_params, name, color_space, gamma, with_alpha, alpha_premultiply, multi_layer);
 	output->setLoggingParams(params);
 	output->setBadgeParams(params);
 	return output;
@@ -120,7 +120,7 @@ void ImageOutput::flush(const RenderControl &render_control, const Timer &timer)
 
 	ParamMap params;
 	params["type"] = ext;
-	std::unique_ptr<Format> format = Format::factory(logger_, params);
+	std::unique_ptr<Format> format(Format::factory(logger_, params));
 
 	if(format)
 	{
@@ -194,7 +194,7 @@ void ImageOutput::saveImageFile(const std::string &filename, LayerDef::Type laye
 		const std::unique_ptr<Image> badge_image = generateBadgeImage(render_control, timer);
 		Image::Position badge_image_position = Image::Position::Bottom;
 		if(badge_.getPosition() == Badge::Position::Top) badge_image_position = Image::Position::Top;
-		image = Image::getComposedImage(logger_, image.get(), badge_image.get(), badge_image_position);
+		image = std::shared_ptr<Image>(Image::getComposedImage(logger_, image.get(), badge_image.get(), badge_image_position));
 		if(!image)
 		{
 			logger_.logWarning(name_, ": Image could not be composed with badge and could not be saved.");
@@ -205,7 +205,7 @@ void ImageOutput::saveImageFile(const std::string &filename, LayerDef::Type laye
 	ImageLayer image_layer { image, layer_type };
 	if(denoiseEnabled())
 	{
-		std::unique_ptr<Image> image_denoised = Image::getDenoisedLdrImage(logger_, image.get(), denoise_params_);
+		std::unique_ptr<Image> image_denoised(Image::getDenoisedLdrImage(logger_, image.get(), denoise_params_));
 		if(image_denoised) image_layer.image_ = std::move(image_denoised);
 		else if(logger_.isVerbose()) logger_.logVerbose(name_, ": Denoise was not possible, saving image without denoise postprocessing.");
 	}
@@ -230,7 +230,7 @@ void ImageOutput::saveImageFileMultiChannel(const std::string &filename, Format 
 		ImageLayers image_layers_badge;
 		for(const auto &image_layer : *image_layers_)
 		{
-			std::unique_ptr<Image> image_layer_badge = Image::getComposedImage(logger_, image_layer.second.image_.get(), badge_image.get(), badge_image_position);
+			std::unique_ptr<Image> image_layer_badge(Image::getComposedImage(logger_, image_layer.second.image_.get(), badge_image.get(), badge_image_position));
 			image_layers_badge.set(image_layer.first, {std::move(image_layer_badge), image_layer.second.layer_});
 		}
 		format->saveToFileMultiChannel(filename, image_layers_badge, color_space_, gamma_, alpha_premultiply_);

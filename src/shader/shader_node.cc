@@ -24,7 +24,7 @@
 
 BEGIN_YAFARAY
 
-std::unique_ptr<ShaderNode> ShaderNode::factory(Logger &logger, const ParamMap &params, const Scene &scene)
+ShaderNode * ShaderNode::factory(Logger &logger, const ParamMap &params, const Scene &scene)
 {
 	if(logger.isDebug())
 	{

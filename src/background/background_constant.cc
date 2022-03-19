@@ -35,7 +35,7 @@ Rgb ConstantBackground::eval(const Vec3 &dir, bool use_ibl_blur) const
 	return color_;
 }
 
-std::unique_ptr<Background> ConstantBackground::factory(Logger &logger, ParamMap &params, Scene &scene)
+Background * ConstantBackground::factory(Logger &logger, ParamMap &params, Scene &scene)
 {
 	Rgb col(0.f);
 	float power = 1.0;
@@ -53,7 +53,7 @@ std::unique_ptr<Background> ConstantBackground::factory(Logger &logger, ParamMap
 	params.getParam("with_caustic", caus);
 	params.getParam("with_diffuse", diff);
 
-	auto const_bg = std::unique_ptr<ConstantBackground>(new ConstantBackground(logger, col * power));
+	auto const_bg = new ConstantBackground(logger, col * power);
 
 	if(ibl)
 	{
@@ -65,7 +65,7 @@ std::unique_ptr<Background> ConstantBackground::factory(Logger &logger, ParamMap
 		bgp["cast_shadows"] = cast_shadows;
 
 		Light *bglight = scene.createLight("constantBackground_bgLight", bgp);
-		bglight->setBackground(const_bg.get());
+		bglight->setBackground(const_bg);
 	}
 
 	return const_bg;

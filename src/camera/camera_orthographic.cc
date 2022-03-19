@@ -75,7 +75,7 @@ Point3 OrthographicCamera::screenproject(const Point3 &p) const
 	return s;
 }
 
-std::unique_ptr<Camera> OrthographicCamera::factory(Logger &logger, ParamMap &params, const Scene &scene)
+Camera * OrthographicCamera::factory(Logger &logger, ParamMap &params, const Scene &scene)
 {
 	Point3 from(0, 1, 0), to(0, 0, 0), up(0, 1, 1);
 	int resx = 320, resy = 200;
@@ -94,7 +94,7 @@ std::unique_ptr<Camera> OrthographicCamera::factory(Logger &logger, ParamMap &pa
 	params.getParam("farClip", far_clip);
 	params.getParam("view_name", view_name);
 
-	return std::unique_ptr<Camera>(new OrthographicCamera(logger, from, to, up, resx, resy, aspect, scale, near_clip, far_clip));
+	return new OrthographicCamera(logger, from, to, up, resx, resy, aspect, scale, near_clip, far_clip);
 }
 
 END_YAFARAY

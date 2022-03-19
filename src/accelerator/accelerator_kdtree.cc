@@ -27,7 +27,7 @@
 
 BEGIN_YAFARAY
 
-std::unique_ptr<Accelerator> AcceleratorKdTree::factory(Logger &logger, const std::vector<const Primitive *> &primitives, ParamMap &params)
+Accelerator * AcceleratorKdTree::factory(Logger &logger, const std::vector<const Primitive *> &primitives, ParamMap &params)
 {
 	int depth = 0;
 	int leaf_size = 1;
@@ -39,7 +39,7 @@ std::unique_ptr<Accelerator> AcceleratorKdTree::factory(Logger &logger, const st
 	params.getParam("cost_ratio", cost_ratio);
 	params.getParam("empty_bonus", empty_bonus);
 
-	auto accelerator = std::unique_ptr<Accelerator>(new AcceleratorKdTree(logger, primitives, depth, leaf_size, cost_ratio, empty_bonus));
+	auto accelerator = new AcceleratorKdTree(logger, primitives, depth, leaf_size, cost_ratio, empty_bonus);
 	return accelerator;
 }
 

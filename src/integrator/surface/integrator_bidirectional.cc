@@ -890,7 +890,7 @@ Rgb BidirectionalIntegrator::evalPathE(const Accelerator &accelerator, int s, co
     return col/lightNumPdf;
 } */
 
-std::unique_ptr<Integrator> BidirectionalIntegrator::factory(Logger &logger, ParamMap &params, const Scene &scene, RenderControl &render_control)
+Integrator * BidirectionalIntegrator::factory(Logger &logger, ParamMap &params, const Scene &scene, RenderControl &render_control)
 {
 	bool do_ao = false;
 	int ao_samples = 32;
@@ -910,7 +910,7 @@ std::unique_ptr<Integrator> BidirectionalIntegrator::factory(Logger &logger, Par
 	params.getParam("bg_transp", bg_transp);
 	params.getParam("bg_transp_refract", bg_transp_refract);
 
-	auto inte = std::unique_ptr<BidirectionalIntegrator>(new BidirectionalIntegrator(render_control, logger, transp_shad, shadow_depth));
+	auto inte = new BidirectionalIntegrator(render_control, logger, transp_shad, shadow_depth);
 
 	// AO settings
 	inte->use_ambient_occlusion_ = do_ao;

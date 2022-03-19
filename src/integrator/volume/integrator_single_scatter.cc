@@ -416,7 +416,7 @@ Rgb SingleScatterIntegrator::integrate(RandomGenerator &random_generator, const 
 	return col;
 }
 
-std::unique_ptr<Integrator> SingleScatterIntegrator::factory(Logger &logger, ParamMap &params, const Scene &scene, RenderControl &render_control)
+Integrator * SingleScatterIntegrator::factory(Logger &logger, ParamMap &params, const Scene &scene, RenderControl &render_control)
 {
 	bool adapt = false;
 	bool opt = false;
@@ -424,7 +424,7 @@ std::unique_ptr<Integrator> SingleScatterIntegrator::factory(Logger &logger, Par
 	params.getParam("stepSize", s_size);
 	params.getParam("adaptive", adapt);
 	params.getParam("optimize", opt);
-	return std::unique_ptr<Integrator>(new SingleScatterIntegrator(logger, s_size, adapt, opt));
+	return new SingleScatterIntegrator(logger, s_size, adapt, opt);
 }
 
 END_YAFARAY

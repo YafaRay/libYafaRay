@@ -23,7 +23,7 @@
 
 BEGIN_YAFARAY
 
-std::unique_ptr<Object> CurveObject::factory(Logger &logger, ParamMap &params, const Scene &scene)
+Object * CurveObject::factory(Logger &logger, ParamMap &params, const Scene &scene)
 {
 	if(logger.isDebug())
 	{
@@ -48,7 +48,7 @@ std::unique_ptr<Object> CurveObject::factory(Logger &logger, ParamMap &params, c
 	params.getParam("strand_shape", strand_shape);
 	params.getParam("has_uv", has_uv);
 	params.getParam("has_orco", has_orco);
-	auto object = std::unique_ptr<CurveObject>(new CurveObject(num_vertices, strand_start, strand_end, strand_shape, has_uv, has_orco));
+	auto object = new CurveObject(num_vertices, strand_start, strand_end, strand_shape, has_uv, has_orco);
 	object->setName(name);
 	object->setLight(scene.getLight(light_name));
 	object->setVisibility(visibility::fromString(visibility));

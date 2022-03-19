@@ -67,7 +67,7 @@ void ObjectLight::initIs()
 	params["cost_ratio"] = 0.8f;
 	params["empty_bonus"] = 0.33f;
 
-	accelerator_ = Accelerator::factory(logger_, primitives_, params);
+	accelerator_ = std::unique_ptr<Accelerator>(Accelerator::factory(logger_, primitives_, params));
 }
 
 void ObjectLight::init(Scene &scene)
@@ -219,7 +219,7 @@ void ObjectLight::emitPdf(const SurfacePoint &sp, const Vec3 &wo, float &area_pd
 }
 
 
-std::unique_ptr<Light> ObjectLight::factory(Logger &logger, ParamMap &params, const Scene &scene)
+Light * ObjectLight::factory(Logger &logger, ParamMap &params, const Scene &scene)
 {
 	bool double_s = false;
 	Rgb color(1.0);
@@ -243,7 +243,7 @@ std::unique_ptr<Light> ObjectLight::factory(Logger &logger, ParamMap &params, co
 	params.getParam("with_diffuse", shoot_d);
 	params.getParam("photon_only", p_only);
 
-	auto light = std::unique_ptr<ObjectLight>(new ObjectLight(logger, object_name, color * (float)power * math::num_pi, samples, double_s, light_enabled, cast_shadows));
+	auto light = new ObjectLight(logger, object_name, color * (float)power * math::num_pi, samples, double_s, light_enabled, cast_shadows);
 
 	light->shoot_caustic_ = shoot_c;
 	light->shoot_diffuse_ = shoot_d;

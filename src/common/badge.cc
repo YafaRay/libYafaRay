@@ -162,7 +162,7 @@ std::unique_ptr<Image> Badge::generateImage(const std::string &denoise_params, c
 	std::string line;
 	while(std::getline(ss_badge, line)) ++badge_line_count;
 	const int badge_height = (badge_line_count + additional_blank_lines) * std::ceil(line_height * font_size_factor_);
-	std::unique_ptr<Image> badge_image = Image::factory(logger_, image_width_, badge_height, Image::Type::Color, Image::Optimization::None);
+	std::unique_ptr<Image> badge_image(Image::factory(logger_, image_width_, badge_height, Image::Type::Color, Image::Optimization::None));
 
 #ifdef HAVE_FREETYPE
 	FT_Library library;
@@ -284,7 +284,7 @@ std::unique_ptr<Image> Badge::generateImage(const std::string &denoise_params, c
 		ParamMap logo_image_params;
 		logo_image_params["type"] = imagehandler_type;
 		std::unique_ptr<Format> logo_format = std::unique_ptr<Format>(Format::factory(logger_, logo_image_params));
-		if(logo_format) logo = logo_format->loadFromFile(getIconPath(), Image::Optimization::None, ColorSpace::Srgb, 1.f);
+		if(logo_format) logo = std::unique_ptr<Image>(logo_format->loadFromFile(getIconPath(), Image::Optimization::None, ColorSpace::Srgb, 1.f));
 		if(!logo_format || !logo) logger_.logWarning("Badge: custom params badge icon '", getIconPath(), "' could not be loaded. Using default YafaRay icon.");
 	}
 
@@ -293,7 +293,7 @@ std::unique_ptr<Image> Badge::generateImage(const std::string &denoise_params, c
 		ParamMap logo_image_params;
 		logo_image_params["type"] = std::string("png");
 		std::unique_ptr<Format> logo_format = std::unique_ptr<Format>(Format::factory(logger_, logo_image_params));
-		if(logo_format) logo = logo_format->loadFromMemory(logo::yafaray_tiny.data(), logo::yafaray_tiny.size(), Image::Optimization::None, ColorSpace::Srgb, 1.f);
+		if(logo_format) logo = std::unique_ptr<Image>(logo_format->loadFromMemory(logo::yafaray_tiny.data(), logo::yafaray_tiny.size(), Image::Optimization::None, ColorSpace::Srgb, 1.f));
 	}
 
 	if(logo)

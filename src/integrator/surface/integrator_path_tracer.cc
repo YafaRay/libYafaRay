@@ -289,7 +289,7 @@ std::pair<Rgb, float> PathIntegrator::integrate(Ray &ray, RandomGenerator &rando
 	return {col, alpha};
 }
 
-std::unique_ptr<Integrator> PathIntegrator::factory(Logger &logger, ParamMap &params, const Scene &scene, RenderControl &render_control)
+Integrator * PathIntegrator::factory(Logger &logger, ParamMap &params, const Scene &scene, RenderControl &render_control)
 {
 	bool transp_shad = false, no_rec = false;
 	int shadow_depth = 5;
@@ -321,7 +321,7 @@ std::unique_ptr<Integrator> PathIntegrator::factory(Logger &logger, ParamMap &pa
 	params.getParam("AO_color", ao_col);
 	params.getParam("photon_maps_processing", photon_maps_processing_str);
 
-	auto inte = std::unique_ptr<PathIntegrator>(new PathIntegrator(render_control, logger, transp_shad, shadow_depth));
+	auto inte = new PathIntegrator(render_control, logger, transp_shad, shadow_depth);
 	if(params.getParam("caustic_type", c_method))
 	{
 		bool use_photons = false;

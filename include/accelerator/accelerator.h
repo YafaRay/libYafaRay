@@ -53,7 +53,7 @@ struct AcceleratorTsIntersectData : AcceleratorIntersectData
 class Accelerator
 {
 	public:
-		static std::unique_ptr<Accelerator> factory(Logger &logger, const std::vector<const Primitive *> &primitives_list, ParamMap &params);
+		static Accelerator *factory(Logger &logger, const std::vector<const Primitive *> &primitives_list, ParamMap &params);
 		Accelerator(Logger &logger) : logger_(logger) { }
 		virtual ~Accelerator() = default;
 		virtual AcceleratorIntersectData intersect(const Ray &ray, float t_max) const = 0;

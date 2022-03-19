@@ -32,7 +32,7 @@ class Pdf1D;
 class SpotLight final : public Light
 {
 	public:
-		static std::unique_ptr<Light> factory(Logger &logger, ParamMap &params, const Scene &scene);
+		static Light *factory(Logger &logger, ParamMap &params, const Scene &scene);
 
 	private:
 		SpotLight(Logger &logger, const Point3 &from, const Point3 &to, const Rgb &col, float power, float angle, float falloff, bool s_sha, int smpl, float ssfuzzy, bool b_light_enabled = true, bool b_cast_shadows = true);

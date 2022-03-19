@@ -1051,7 +1051,7 @@ void SppmIntegrator::initializePpm()
 	if(b_hashgrid_) photon_grid_.setParm(initial_radius * 2.f, n_photons_, scene_bound_);
 }
 
-std::unique_ptr<Integrator> SppmIntegrator::factory(Logger &logger, ParamMap &params, const Scene &scene, RenderControl &render_control)
+Integrator * SppmIntegrator::factory(Logger &logger, ParamMap &params, const Scene &scene, RenderControl &render_control)
 {
 	bool transp_shad = false;
 	bool pm_ire = false;
@@ -1089,7 +1089,7 @@ std::unique_ptr<Integrator> SppmIntegrator::factory(Logger &logger, ParamMap &pa
 	params.getParam("AO_distance", ao_dist);
 	params.getParam("AO_color", ao_col);
 
-	auto inte = std::unique_ptr<SppmIntegrator>(new SppmIntegrator(render_control, logger, num_photons, pass_num, transp_shad, shadow_depth));
+	auto inte = new SppmIntegrator(render_control, logger, num_photons, pass_num, transp_shad, shadow_depth);
 	inte->r_depth_ = raydepth;
 	inte->max_bounces_ = bounces;
 	inte->initial_factor_ = times;

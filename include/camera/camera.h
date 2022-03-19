@@ -52,7 +52,7 @@ struct CameraRay
 class Camera
 {
 	public:
-		static std::unique_ptr<Camera> factory(Logger &logger, ParamMap &params, const Scene &scene);
+		static Camera *factory(Logger &logger, ParamMap &params, const Scene &scene);
 		Camera(Logger &logger) : logger_(logger) { }
 		Camera(Logger &logger, const Point3 &pos, const Point3 &look, const Point3 &up, int resx, int resy, float aspect, float const near_clip_distance, float const far_clip_distance);
 		virtual ~Camera() = default;

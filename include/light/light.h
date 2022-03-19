@@ -42,7 +42,7 @@ struct LSample;
 class Light
 {
 	public:
-		static std::unique_ptr<Light> factory(Logger &logger, ParamMap &params, const Scene &scene);
+		static Light *factory(Logger &logger, ParamMap &params, const Scene &scene);
 		struct Flags : public yafaray::Flags
 		{
 			Flags() = default;

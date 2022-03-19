@@ -43,7 +43,7 @@ struct Uv;
 class Object
 {
 	public:
-		static std::unique_ptr<Object> factory(Logger &logger, ParamMap &params, const Scene &scene);
+		static Object *factory(Logger &logger, ParamMap &params, const Scene &scene);
 		virtual ~Object() = default;
 		virtual std::string getName() const = 0;
 		virtual void setName(const std::string &name) = 0;

@@ -86,7 +86,7 @@ Point3 ArchitectCamera::screenproject(const Point3 &p) const
 	return s;
 }
 
-std::unique_ptr<Camera> ArchitectCamera::factory(Logger &logger, ParamMap &params, const Scene &scene)
+Camera * ArchitectCamera::factory(Logger &logger, ParamMap &params, const Scene &scene)
 {
 	std::string bkhtype = "disk1", bkhbias = "uniform";
 	Point3 from(0, 1, 0), to(0, 0, 0), up(0, 1, 1);
@@ -123,7 +123,7 @@ std::unique_ptr<Camera> ArchitectCamera::factory(Logger &logger, ParamMap &param
 	if(bkhbias == "center") 		bbt = BbCenter;
 	else if(bkhbias == "edge") 		bbt = BbEdge;
 
-	return std::unique_ptr<Camera>(new ArchitectCamera(logger, from, to, up, resx, resy, aspect, dfocal, apt, dofd, bt, bbt, bkhrot, near_clip, far_clip));
+	return new ArchitectCamera(logger, from, to, up, resx, resy, aspect, dfocal, apt, dofd, bt, bbt, bkhrot, near_clip, far_clip);
 }
 
 END_YAFARAY

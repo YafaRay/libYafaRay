@@ -87,7 +87,7 @@ struct Specular
 class Material
 {
 	public:
-		static std::unique_ptr<Material> factory(Logger &logger, ParamMap &params, std::list<ParamMap> &nodes_params, const Scene &scene);
+		static Material *factory(Logger &logger, ParamMap &params, std::list<ParamMap> &nodes_params, const Scene &scene);
 		Material(Logger &logger);
 		virtual ~Material();
 

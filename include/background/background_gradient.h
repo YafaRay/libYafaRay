@@ -30,7 +30,7 @@ BEGIN_YAFARAY
 class GradientBackground final : public Background
 {
 	public:
-		static std::unique_ptr<Background> factory(Logger &logger, ParamMap &params, Scene &scene);
+		static Background *factory(Logger &logger, ParamMap &params, Scene &scene);
 
 	private:
 		GradientBackground(Logger &logger, const Rgb &gzcol, const Rgb &ghcol, const Rgb &szcol, const Rgb &shcol);

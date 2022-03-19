@@ -28,7 +28,7 @@
 
 BEGIN_YAFARAY
 
-std::unique_ptr<Background> Background::factory(Logger &logger, ParamMap &params, Scene &scene)
+Background * Background::factory(Logger &logger, ParamMap &params, Scene &scene)
 {
 	if(logger.isDebug())
 	{

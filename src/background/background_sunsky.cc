@@ -222,7 +222,7 @@ Rgb SunSkyBackground::computeAttenuatedSunlight(float theta, int turbidity)
 	};
 }
 
-std::unique_ptr<Background> SunSkyBackground::factory(Logger &logger, ParamMap &params, Scene &scene)
+Background * SunSkyBackground::factory(Logger &logger, ParamMap &params, Scene &scene)
 {
 	Point3 dir(1, 1, 1);	// same as sunlight, position interpreted as direction
 	float turb = 4.0;	// turbidity of atmosphere
@@ -261,7 +261,7 @@ std::unique_ptr<Background> SunSkyBackground::factory(Logger &logger, ParamMap &
 	params.getParam("with_caustic", caus);
 	params.getParam("with_diffuse", diff);
 
-	auto new_sunsky = std::unique_ptr<SunSkyBackground>(new SunSkyBackground(logger, dir, turb, av, bv, cv, dv, ev, power));
+	auto new_sunsky = new SunSkyBackground(logger, dir, turb, av, bv, cv, dv, ev, power);
 
 	if(bgl)
 	{
@@ -273,7 +273,7 @@ std::unique_ptr<Background> SunSkyBackground::factory(Logger &logger, ParamMap &
 		bgp["with_diffuse"] = diff;
 
 		Light *bglight = scene.createLight("sunsky_bgLight", bgp);
-		bglight->setBackground(new_sunsky.get());
+		bglight->setBackground(new_sunsky);
 	}
 
 	if(add_sun)

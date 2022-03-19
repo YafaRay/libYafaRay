@@ -374,7 +374,7 @@ Light *Scene::createLight(const std::string &name, ParamMap &params)
 	{
 		logErrNoType(logger_, pname, name, type); return nullptr;
 	}
-	auto light = Light::factory(logger_, params, *this);
+	auto light = std::unique_ptr<Light>(Light::factory(logger_, params, *this));
 	if(light)
 	{
 		lights_[name] = std::move(light);
@@ -405,7 +405,7 @@ std::unique_ptr<Material> * Scene::createMaterial(const std::string &name, Param
 		logErrNoType(logger_, pname, name, type); return nullptr;
 	}
 	params["name"] = name;
-	auto material = Material::factory(logger_, params, nodes_params, *this);
+	auto material = std::unique_ptr<Material>(Material::factory(logger_, params, nodes_params, *this));
 	if(material)
 	{
 		*(materials_[name]) = std::move(material);
@@ -435,7 +435,7 @@ T *Scene::createMapItem(Logger &logger, const std::string &name, const std::stri
 			return nullptr;
 		}
 	}
-	std::unique_ptr<T> item = T::factory(logger, params, *scene);
+	std::unique_ptr<T> item(T::factory(logger, params, *scene));
 	if(item)
 	{
 		map[name] = std::move(item);
@@ -464,7 +464,7 @@ std::shared_ptr<T> Scene::createMapItem(Logger &logger, const std::string &name,
 			return nullptr;
 		}
 	}
-	std::shared_ptr<T> item = T::factory(logger, params, *scene);
+	std::shared_ptr<T> item(T::factory(logger, params, *scene));
 	if(item)
 	{
 		map[name] = std::move(item);
@@ -483,7 +483,7 @@ ImageOutput *Scene::createOutput(const std::string &name, ParamMap &params)
 	{
 		logWarnExist(logger_, pname, name); return nullptr;
 	}
-	std::unique_ptr<ImageOutput> item = ImageOutput::factory(logger_, params, *this);
+	std::unique_ptr<ImageOutput> item(ImageOutput::factory(logger_, params, *this));
 	if(item)
 	{
 		outputs_[name] = std::move(item);
@@ -623,7 +623,7 @@ bool Scene::setupSceneRenderParams(Scene &scene, const ParamMap &params)
 	setMaskParams(params);
 	setEdgeToonParams(params);
 
-	image_film_ = ImageFilm::factory(logger_, params, this);
+	image_film_ = std::unique_ptr<ImageFilm>(ImageFilm::factory(logger_, params, this));
 
 	params.getParam("filter_type", name); // AA filter type
 	std::stringstream aa_settings;
@@ -997,7 +997,7 @@ Object *Scene::createObject(const std::string &name, ParamMap &params)
 		logErrNoType(logger_, pname, name, type);
 		return nullptr;
 	}
-	std::unique_ptr<Object> object = Object::factory(logger_, params, *this);
+	std::unique_ptr<Object> object(Object::factory(logger_, params, *this));
 	if(object)
 	{
 		object->setName(name);
@@ -1057,7 +1057,7 @@ bool Scene::updateObjects()
 	params["num_primitives"] = static_cast<int>(primitives.size());
 	params["accelerator_threads"] = getNumThreads();
 
-	accelerator_ = Accelerator::factory(logger_, primitives, params);
+	accelerator_ = std::unique_ptr<Accelerator>(Accelerator::factory(logger_, primitives, params));
 	scene_bound_ = accelerator_->getBound();
 	if(logger_.isVerbose()) logger_.logVerbose("Scene: New scene bound is: ", "(", scene_bound_.a_.x_, ", ", scene_bound_.a_.y_, ", ", scene_bound_.a_.z_, "), (", scene_bound_.g_.x_, ", ", scene_bound_.g_.y_, ", ", scene_bound_.g_.z_, ")");
 

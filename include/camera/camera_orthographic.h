@@ -38,7 +38,7 @@ class OrthographicCamera final: public Camera
 		virtual CameraRay shootRay(float px, float py, float lu, float lv) const;
 		virtual Point3 screenproject(const Point3 &p) const;
 
-		static std::unique_ptr<Camera> factory(Logger &logger, ParamMap &params, const Scene &scene);
+		static Camera *factory(Logger &logger, ParamMap &params, const Scene &scene);
 	protected:
 		float scale_;
 		Point3 pos_;

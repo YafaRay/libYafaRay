@@ -27,7 +27,7 @@
 
 BEGIN_YAFARAY
 
-std::unique_ptr<RenderView> RenderView::factory(Logger &logger, ParamMap &params, const Scene &scene)
+RenderView * RenderView::factory(Logger &logger, ParamMap &params, const Scene &scene)
 {
 	if(logger.isDebug())
 	{
@@ -43,7 +43,7 @@ std::unique_ptr<RenderView> RenderView::factory(Logger &logger, ParamMap &params
 	params.getParam("light_names", light_names);
 	params.getParam("wavelength", wavelength);
 
-	return std::unique_ptr<RenderView>(new RenderView(name, camera_name, light_names, wavelength));
+	return new RenderView(name, camera_name, light_names, wavelength);
 }
 
 bool RenderView::init(Logger &logger, const Scene &scene)

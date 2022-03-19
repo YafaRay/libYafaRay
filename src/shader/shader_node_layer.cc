@@ -302,7 +302,7 @@ float LayerNode::textureValueBlend(float tex, float out, float fact, float facg,
 	}
 }
 
-std::unique_ptr<ShaderNode> LayerNode::factory(Logger &logger, const ParamMap &params, const Scene &scene)
+ShaderNode * LayerNode::factory(Logger &logger, const ParamMap &params, const Scene &scene)
 {
 	Rgb def_col(1.f);
 	bool do_color = true, do_scalar = false, color_input = true, use_alpha = false;
@@ -340,7 +340,7 @@ std::unique_ptr<ShaderNode> LayerNode::factory(Logger &logger, const ParamMap &p
 	else if(blend_mode_str == "lighten") blend_mode = BlendMode::Light;
 	//else if(blend_mode_str == "overlay") blend_mode = BlendMode::Overlay;
 
-	auto node = std::unique_ptr<LayerNode>(new LayerNode(flags, colfac, valfac, def_val, def_col, blend_mode));
+	auto node = new LayerNode(flags, colfac, valfac, def_val, def_col, blend_mode);
 	node->do_color_ = do_color;
 	node->do_scalar_ = do_scalar;
 	node->color_input_ = color_input;

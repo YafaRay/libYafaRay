@@ -31,7 +31,7 @@
 
 BEGIN_YAFARAY
 
-std::unique_ptr<Camera> Camera::factory(Logger &logger, ParamMap &params, const Scene &scene)
+Camera * Camera::factory(Logger &logger, ParamMap &params, const Scene &scene)
 {
 	if(logger.isDebug())
 	{

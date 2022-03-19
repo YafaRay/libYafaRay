@@ -40,7 +40,7 @@ unsigned int Material::material_index_highest_ = 1;
 unsigned int Material::material_index_auto_ = 0;
 float Material::highest_sampling_factor_ = 1.f;
 
-std::unique_ptr<Material> Material::factory(Logger &logger, ParamMap &params, std::list<ParamMap> &nodes_params, const Scene &scene)
+Material * Material::factory(Logger &logger, ParamMap &params, std::list<ParamMap> &nodes_params, const Scene &scene)
 {
 	if(logger.isDebug())
 	{

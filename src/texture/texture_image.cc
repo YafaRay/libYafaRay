@@ -534,7 +534,7 @@ ImageTexture::ClipMode ImageTexture::string2Cliptype(const std::string &clipname
 	return tex_clipmode;
 }
 
-std::unique_ptr<Texture> ImageTexture::factory(Logger &logger, ParamMap &params, Scene &scene)
+Texture * ImageTexture::factory(Logger &logger, ParamMap &params, Scene &scene)
 {
 	std::string name;
 	std::string image_name;
@@ -564,7 +564,7 @@ std::unique_ptr<Texture> ImageTexture::factory(Logger &logger, ParamMap &params,
 		return nullptr;
 	}
 
-	auto tex = std::unique_ptr<ImageTexture>(new ImageTexture(logger, image));
+	auto tex = new ImageTexture(logger, image);
 	if(!tex) //FIXME: this will never be true, replace by exception handling??
 	{
 		logger.logError("ImageTexture: Couldn't create image texture.");

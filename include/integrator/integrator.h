@@ -66,7 +66,7 @@ struct ColorLayerAccum
 class Integrator
 {
 	public:
-		static std::unique_ptr<Integrator> factory(Logger &logger, ParamMap &params, Scene &scene);
+		static Integrator *factory(Logger &logger, ParamMap &params, Scene &scene);
 
 		Integrator(Logger &logger) : logger_(logger) { }
 		virtual ~Integrator() = default;

@@ -46,13 +46,13 @@ bool BeerVolumeHandler::scatter(const Ray &ray, Ray &s_ray, PSample &s) const
 	return false;
 }
 
-std::unique_ptr<VolumeHandler> BeerVolumeHandler::factory(Logger &logger, const ParamMap &params, const Scene &scene)
+VolumeHandler * BeerVolumeHandler::factory(Logger &logger, const ParamMap &params, const Scene &scene)
 {
 	Rgb a_col(0.5f);
 	double dist = 1.f;
 	params.getParam("absorption_col", a_col);
 	params.getParam("absorption_dist", dist);
-	return std::unique_ptr<VolumeHandler>(new BeerVolumeHandler(logger, a_col, dist));
+	return new BeerVolumeHandler(logger, a_col, dist);
 }
 
 END_YAFARAY

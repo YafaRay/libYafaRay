@@ -90,14 +90,14 @@ std::pair<Rgb, float> DebugIntegrator::integrate(Ray &ray, RandomGenerator &rand
 	return {{0.f}, 1.f};
 }
 
-std::unique_ptr<Integrator> DebugIntegrator::factory(Logger &logger, ParamMap &params, const Scene &scene, RenderControl &render_control)
+Integrator * DebugIntegrator::factory(Logger &logger, ParamMap &params, const Scene &scene, RenderControl &render_control)
 {
 	int dt = 1;
 	bool pn = false;
 	params.getParam("debugType", dt);
 	params.getParam("showPN", pn);
 	std::cout << "debugType " << dt << std::endl;
-	auto inte = std::unique_ptr<DebugIntegrator>(new DebugIntegrator(render_control, logger, static_cast<SurfaceProperties>(dt)));
+	auto inte = new DebugIntegrator(render_control, logger, static_cast<SurfaceProperties>(dt));
 	inte->show_pn_ = pn;
 
 	return inte;

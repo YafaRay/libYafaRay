@@ -37,7 +37,7 @@ class Format;
 class ImageOutput final
 {
 	public:
-		static std::unique_ptr<ImageOutput> factory(Logger &logger, const ParamMap &params, const Scene &scene);
+		static ImageOutput *factory(Logger &logger, const ParamMap &params, const Scene &scene);
 		void setLoggingParams(const ParamMap &params);
 		void setBadgeParams(const ParamMap &params);
 		void flush(const RenderControl &render_control, const Timer &timer);

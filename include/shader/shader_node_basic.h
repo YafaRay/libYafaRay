@@ -29,7 +29,7 @@ BEGIN_YAFARAY
 class TextureMapperNode final : public ShaderNode
 {
 	public:
-		static std::unique_ptr<ShaderNode> factory(Logger &logger, const ParamMap &params, const Scene &scene);
+		static ShaderNode *factory(Logger &logger, const ParamMap &params, const Scene &scene);
 
 	private:
 		enum Coords : int { Uv, Global, Orco, Transformed, Normal, Reflect, Window, Stick, Stress, Tangent };
@@ -66,7 +66,7 @@ class TextureMapperNode final : public ShaderNode
 class ValueNode final : public ShaderNode
 {
 	public:
-		static std::unique_ptr<ShaderNode> factory(Logger &logger, const ParamMap &params, const Scene &scene);
+		static ShaderNode *factory(Logger &logger, const ParamMap &params, const Scene &scene);
 
 	private:
 		ValueNode(Rgba col, float val): color_(col), value_(val) { }
@@ -80,7 +80,7 @@ class ValueNode final : public ShaderNode
 class MixNode : public ShaderNode
 {
 	public:
-		static std::unique_ptr<ShaderNode> factory(Logger &logger, const ParamMap &params, const Scene &scene);
+		static ShaderNode *factory(Logger &logger, const ParamMap &params, const Scene &scene);
 
 	protected:
 		MixNode() = default;

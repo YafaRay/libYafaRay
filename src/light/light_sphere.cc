@@ -160,7 +160,7 @@ Rgb SphereLight::emitSample(Vec3 &wo, LSample &s) const
 	return color_;
 }
 
-std::unique_ptr<Light> SphereLight::factory(Logger &logger, ParamMap &params, const Scene &scene)
+Light * SphereLight::factory(Logger &logger, ParamMap &params, const Scene &scene)
 {
 	Point3 from(0.0);
 	Rgb color(1.0);
@@ -186,7 +186,7 @@ std::unique_ptr<Light> SphereLight::factory(Logger &logger, ParamMap &params, co
 	params.getParam("with_diffuse", shoot_d);
 	params.getParam("photon_only", p_only);
 
-	auto light = std::unique_ptr<SphereLight>(new SphereLight(logger, from, radius, color, power, samples, light_enabled, cast_shadows));
+	auto light = new SphereLight(logger, from, radius, color, power, samples, light_enabled, cast_shadows);
 
 	light->object_name_ = object_name;
 	light->shoot_caustic_ = shoot_c;

@@ -192,7 +192,7 @@ float SkyIntegrator::mieScatter(float theta)
 	return (1.f - ((theta - 80.f) / 100.f)) * 0.1644f + ((theta - 80.f) / 100.f) * 0.1;
 }
 
-std::unique_ptr<Integrator> SkyIntegrator::factory(Logger &logger, ParamMap &params, const Scene &scene, RenderControl &render_control)
+Integrator * SkyIntegrator::factory(Logger &logger, ParamMap &params, const Scene &scene, RenderControl &render_control)
 {
 	float s_size = 1.f;
 	float a = .5f;
@@ -202,7 +202,7 @@ std::unique_ptr<Integrator> SkyIntegrator::factory(Logger &logger, ParamMap &par
 	params.getParam("sigma_t", ss);
 	params.getParam("alpha", a);
 	params.getParam("turbidity", t);
-	return std::unique_ptr<Integrator>(new SkyIntegrator(logger, s_size, a, ss, t));
+	return new SkyIntegrator(logger, s_size, a, ss, t);
 }
 
 

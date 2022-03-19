@@ -36,7 +36,7 @@ class AcceleratorSimpleTest final : Accelerator
 			Bound bound_;
 			std::vector<const Primitive *> primitives_;
 		};
-		static std::unique_ptr<Accelerator> factory(Logger &logger, const std::vector<const Primitive *> &primitives, ParamMap &params);
+		static Accelerator *factory(Logger &logger, const std::vector<const Primitive *> &primitives, ParamMap &params);
 
 	private:
 		AcceleratorSimpleTest(Logger &logger, const std::vector<const Primitive *> &primitives);

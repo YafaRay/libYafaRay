@@ -33,7 +33,7 @@ class RoughGlassMaterialData final : public MaterialData
 class RoughGlassMaterial final : public NodeMaterial
 {
 	public:
-		static std::unique_ptr<Material> factory(Logger &logger, ParamMap &, std::list<ParamMap> &, const Scene &);
+		static Material *factory(Logger &logger, ParamMap &, std::list<ParamMap> &, const Scene &);
 
 	private:
 		RoughGlassMaterial(Logger &logger, float ior, Rgb filt_c, const Rgb &srcol, bool fake_s, float alpha, float disp_pow, Visibility e_visibility = Visibility::NormalVisible);
