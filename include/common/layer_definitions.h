@@ -113,7 +113,7 @@ class LayerDef final
 		struct Flags : public yafaray::Flags //!< Flags to group layers and improve runtime performance
 		{
 			Flags() = default;
-			Flags(unsigned int flags) : yafaray::Flags(flags) { }
+			explicit Flags(unsigned int flags) : yafaray::Flags(flags) { }
 			enum Enum : unsigned int { None = 0, BasicLayers = 1 << 0, DepthLayers = 1 << 1, DiffuseLayers = 1 << 2, IndexLayers = 1 << 3, DebugLayers = 1 << 4, AoLayers = 1 << 5, ToonEdgeLayers = 1 << 6};
 		};
 		LayerDef(Type type, const std::string &name, LayerDef::Flags flags, Image::Type default_image_type = Image::Type::Color, const Rgba &default_color = {0.f, 1.f}, bool apply_color_space = true) : type_(type), flags_(flags), name_(name), default_color_(default_color), apply_color_space_(apply_color_space), default_image_type_(default_image_type) { }
@@ -134,7 +134,7 @@ class LayerDef final
 		static const LayerDef &getLayerDefinition(Type type) { return definitions_array_[type]; }
 		static std::map<std::string, Type> initLayerNameMap();
 		Type type_ = Type::Disabled;
-		LayerDef::Flags flags_ = LayerDef::Flags::None;
+		Flags flags_{Flags::None};
 		std::string name_ = "disabled";
 		Rgba default_color_{0.f, 1.f};
 		bool apply_color_space_ = true;

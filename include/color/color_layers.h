@@ -36,7 +36,7 @@ class ColorLayers final : public Collection<LayerDef::Type, Rgba>  //Actual buff
 		LayerDef::Flags getFlags() const { return flags_; }
 
 	private:
-		LayerDef::Flags flags_ = LayerDef::Flags::None;
+		LayerDef::Flags flags_{LayerDef::Flags::None};
 };
 
 END_YAFARAY
