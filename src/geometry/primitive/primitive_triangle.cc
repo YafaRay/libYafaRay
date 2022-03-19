@@ -171,7 +171,7 @@ std::unique_ptr<const SurfacePoint> TrianglePrimitive::getSurface(const RayDiffe
 	calculateShadingSpace(*sp);
 	sp->material_ = getMaterial();
 	sp->setRayDifferentials(ray_differentials);
-	sp->mat_data_ = sp->material_->initBsdf(*sp, camera);
+	sp->mat_data_ = std::shared_ptr<const MaterialData>(sp->material_->initBsdf(*sp, camera));
 	return sp;
 }
 

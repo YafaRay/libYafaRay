@@ -44,8 +44,8 @@ class MaskMaterial final : public NodeMaterial
 
 	private:
 		MaskMaterial(Logger &logger, const std::unique_ptr<Material> *m_1, const std::unique_ptr<Material> *m_2, float thresh, Visibility visibility = Visibility::NormalVisible);
-		virtual std::unique_ptr<MaterialData> createMaterialData(size_t number_of_nodes) const override { return std::unique_ptr<MaskMaterialData>(new MaskMaterialData(bsdf_flags_, number_of_nodes)); };
-		virtual std::unique_ptr<const MaterialData> initBsdf(SurfacePoint &sp, const Camera *camera) const override;
+		virtual MaterialData * createMaterialData(size_t number_of_nodes) const override { return new MaskMaterialData(bsdf_flags_, number_of_nodes); };
+		virtual const MaterialData * initBsdf(SurfacePoint &sp, const Camera *camera) const override;
 		virtual Rgb eval(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wi, const BsdfFlags &bsdfs, bool force_eval = false) const override;
 		virtual Rgb sample(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, Vec3 &wi, Sample &s, float &w, bool chromatic, float wavelength, const Camera *camera) const override;
 		virtual float pdf(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wi, const BsdfFlags &bsdfs) const override;

@@ -950,7 +950,7 @@ int main()
 	yafaray_paramsSetInt(yi, "AA_inc_samples", 1);
 	yafaray_paramsSetFloat(yi, "AA_indirect_sample_multiplier_factor", 1);
 	yafaray_paramsSetFloat(yi, "AA_light_sample_multiplier_factor", 1);
-	yafaray_paramsSetInt(yi, "AA_minsamples", 50);
+	yafaray_paramsSetInt(yi, "AA_minsamples", 3);
 	yafaray_paramsSetInt(yi, "AA_passes", 1);
 	yafaray_paramsSetFloat(yi, "AA_pixelwidth", 1.5);
 	yafaray_paramsSetFloat(yi, "AA_resampled_floor", 0);

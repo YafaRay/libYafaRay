@@ -192,7 +192,7 @@ std::unique_ptr<const SurfacePoint> BsTrianglePrimitive::getSurface(const RayDif
 	Vec3::createCs(sp->n_, sp->nu_, sp->nv_);
 	sp->material_ = getMaterial();
 	sp->setRayDifferentials(ray_differentials);
-	sp->mat_data_ = sp->material_->initBsdf(*sp, camera);
+	sp->mat_data_ = std::shared_ptr<const MaterialData>(sp->material_->initBsdf(*sp, camera));
 	return sp;
 }
 

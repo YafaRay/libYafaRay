@@ -71,7 +71,7 @@ class Badge
 		void setIconPath(const std::string &icon_path) { icon_path_ = icon_path; }
 
 		std::string print(const std::string &denoise_params, const RenderControl &render_control, const Timer &timer) const;
-		std::unique_ptr<Image> generateImage(const std::string &denoise_params, const RenderControl &render_control, const Timer &timer) const;
+		Image *generateImage(const std::string &denoise_params, const RenderControl &render_control, const Timer &timer) const;
 
 	protected:
 #if HAVE_FREETYPE

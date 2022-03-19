@@ -46,17 +46,17 @@ inline float BlendMaterial::getBlendVal(const NodeTreeData &node_tree_data) cons
 	return blend_val;
 }
 
-std::unique_ptr<const MaterialData> BlendMaterial::initBsdf(SurfacePoint &sp, const Camera *camera) const
+const MaterialData * BlendMaterial::initBsdf(SurfacePoint &sp, const Camera *camera) const
 {
-	std::unique_ptr<MaterialData> mat_data = createMaterialData(color_nodes_.size() + bump_nodes_.size());
+	auto mat_data = createMaterialData(color_nodes_.size() + bump_nodes_.size());
 	evalNodes(sp, color_nodes_, mat_data->node_tree_data_, camera);
 	const float blend_val = getBlendVal(mat_data->node_tree_data_);
 
-	BlendMaterialData *mat_data_specific = static_cast<BlendMaterialData *>(mat_data.get());
+	auto mat_data_specific = static_cast<BlendMaterialData *>(mat_data);
 	SurfacePoint sp_1 {sp};
-	mat_data_specific->mat_1_data_ = mat_1_->get()->initBsdf(sp_1, camera);
+	mat_data_specific->mat_1_data_ = std::unique_ptr<const MaterialData>(mat_1_->get()->initBsdf(sp_1, camera));
 	SurfacePoint sp_2 {sp};
-	mat_data_specific->mat_2_data_ = mat_2_->get()->initBsdf(sp_2, camera);
+	mat_data_specific->mat_2_data_ = std::unique_ptr<const MaterialData>(mat_2_->get()->initBsdf(sp_2, camera));
 	sp = SurfacePoint::blendSurfacePoints(sp_1, sp_2, blend_val);
 	mat_data->bsdf_flags_ = mat_data_specific->mat_1_data_->bsdf_flags_ | mat_data_specific->mat_2_data_->bsdf_flags_;
 

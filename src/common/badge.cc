@@ -146,7 +146,7 @@ void Badge::drawFontBitmap(FT_Bitmap_ *bitmap, Image *badge_image, int x, int y)
 
 #endif
 
-std::unique_ptr<Image> Badge::generateImage(const std::string &denoise_params, const RenderControl &render_control, const Timer &timer) const
+Image * Badge::generateImage(const std::string &denoise_params, const RenderControl &render_control, const Timer &timer) const
 {
 	if(position_ == Badge::Position::None) return nullptr;
 	std::stringstream ss_badge;
@@ -162,7 +162,7 @@ std::unique_ptr<Image> Badge::generateImage(const std::string &denoise_params, c
 	std::string line;
 	while(std::getline(ss_badge, line)) ++badge_line_count;
 	const int badge_height = (badge_line_count + additional_blank_lines) * std::ceil(line_height * font_size_factor_);
-	std::unique_ptr<Image> badge_image(Image::factory(logger_, image_width_, badge_height, Image::Type::Color, Image::Optimization::None));
+	auto badge_image= Image::factory(logger_, image_width_, badge_height, Image::Type::Color, Image::Optimization::None);
 
 #ifdef HAVE_FREETYPE
 	FT_Library library;
@@ -257,7 +257,7 @@ std::unique_ptr<Image> Badge::generateImage(const std::string &denoise_params, c
 		FT_Render_Glyph(slot, FT_RENDER_MODE_NORMAL);
 
 		// Now, draw to our target surface (convert position)
-		drawFontBitmap(&slot->bitmap, badge_image.get(), slot->bitmap_left, -slot->bitmap_top);
+		drawFontBitmap(&slot->bitmap, badge_image, slot->bitmap_left, -slot->bitmap_top);
 
 		// increment pen position
 		pen.x += slot->advance.x;

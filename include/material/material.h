@@ -91,7 +91,7 @@ class Material
 		Material(Logger &logger);
 		virtual ~Material();
 
-		virtual std::unique_ptr<MaterialData> createMaterialData(size_t number_of_nodes) const = 0;
+		virtual MaterialData * createMaterialData(size_t number_of_nodes) const = 0;
 
 		/*! Initialize the BSDF of a material. You must call this with the current surface point
 			first before any other methods (except isTransparent/getTransparency)! The renderstate
@@ -99,7 +99,7 @@ class Material
 			like texture lookups etc.
 			\param bsdf_types returns flags for all bsdf components the material has
 		 */
-		virtual std::unique_ptr<const MaterialData> initBsdf(SurfacePoint &sp, const Camera *camera) const = 0;
+		virtual const MaterialData * initBsdf(SurfacePoint &sp, const Camera *camera) const = 0;
 
 		/*! evaluate the BSDF for the given components.
 				@param types the types of BSDFs to be evaluated (e.g. diffuse only, or diffuse and glossy) */

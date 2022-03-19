@@ -32,21 +32,21 @@ MaskMaterial::MaskMaterial(Logger &logger, const std::unique_ptr<Material> *m_1,
 	visibility_ = visibility;
 }
 
-std::unique_ptr<const MaterialData> MaskMaterial::initBsdf(SurfacePoint &sp, const Camera *camera) const
+const MaterialData * MaskMaterial::initBsdf(SurfacePoint &sp, const Camera *camera) const
 {
-	std::unique_ptr<MaterialData> mat_data = createMaterialData(color_nodes_.size() + bump_nodes_.size());
+	auto mat_data = createMaterialData(color_nodes_.size() + bump_nodes_.size());
 	evalNodes(sp, color_nodes_, mat_data->node_tree_data_, camera);
 	const float val = mask_->getScalar(mat_data->node_tree_data_); //mask->getFloat(sp.P);
-	MaskMaterialData *mat_data_specific = static_cast<MaskMaterialData *>(mat_data.get());
+	auto mat_data_specific = static_cast<MaskMaterialData *>(mat_data);
 	mat_data_specific->select_mat_2_ = val > threshold_;
 	if(mat_data_specific->select_mat_2_)
 	{
-		mat_data_specific->mat_2_data_ = mat_2_->get()->initBsdf(sp, camera);
+		mat_data_specific->mat_2_data_ = std::unique_ptr<const MaterialData>(mat_2_->get()->initBsdf(sp, camera));
 		mat_data->bsdf_flags_ = mat_data_specific->mat_2_data_->bsdf_flags_;
 	}
 	else
 	{
-		mat_data_specific->mat_1_data_ = mat_1_->get()->initBsdf(sp, camera);
+		mat_data_specific->mat_1_data_ = std::unique_ptr<const MaterialData>(mat_1_->get()->initBsdf(sp, camera));
 		mat_data->bsdf_flags_ = mat_data_specific->mat_1_data_->bsdf_flags_;
 	}
 	return mat_data;

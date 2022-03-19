@@ -48,7 +48,7 @@ std::string ImageOutput::printBadge(const RenderControl &render_control, const T
 	return badge_.print(printDenoiseParams(), render_control, timer);
 }
 
-std::unique_ptr<Image> ImageOutput::generateBadgeImage(const RenderControl &render_control, const Timer &timer) const
+Image * ImageOutput::generateBadgeImage(const RenderControl &render_control, const Timer &timer) const
 {
 	return badge_.generateImage(printDenoiseParams(), render_control, timer);
 }
@@ -191,7 +191,7 @@ void ImageOutput::saveImageFile(const std::string &filename, LayerDef::Type laye
 
 	if(badge_.getPosition() != Badge::Position::None)
 	{
-		const std::unique_ptr<Image> badge_image = generateBadgeImage(render_control, timer);
+		const std::unique_ptr<Image> badge_image(generateBadgeImage(render_control, timer));
 		Image::Position badge_image_position = Image::Position::Bottom;
 		if(badge_.getPosition() == Badge::Position::Top) badge_image_position = Image::Position::Top;
 		image = std::shared_ptr<Image>(Image::getComposedImage(logger_, image.get(), badge_image.get(), badge_image_position));
@@ -224,7 +224,7 @@ void ImageOutput::saveImageFileMultiChannel(const std::string &filename, Format 
 {
 	if(badge_.getPosition() != Badge::Position::None)
 	{
-		std::unique_ptr<Image> badge_image = generateBadgeImage(render_control, timer);
+		std::unique_ptr<Image> badge_image(generateBadgeImage(render_control, timer));
 		Image::Position badge_image_position = Image::Position::Bottom;
 		if(badge_.getPosition() == Badge::Position::Top) badge_image_position = Image::Position::Top;
 		ImageLayers image_layers_badge;

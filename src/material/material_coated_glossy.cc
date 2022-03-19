@@ -62,13 +62,13 @@ CoatedGlossyMaterial::CoatedGlossyMaterial(Logger &logger, const Rgb &col, const
 	visibility_ = e_visibility;
 }
 
-std::unique_ptr<const MaterialData> CoatedGlossyMaterial::initBsdf(SurfacePoint &sp, const Camera *camera) const
+const MaterialData * CoatedGlossyMaterial::initBsdf(SurfacePoint &sp, const Camera *camera) const
 {
-	std::unique_ptr<MaterialData> mat_data = createMaterialData(color_nodes_.size() + bump_nodes_.size());
+	auto mat_data = createMaterialData(color_nodes_.size() + bump_nodes_.size());
 	if(bump_shader_) evalBump(mat_data->node_tree_data_, sp, bump_shader_, camera);
 
 	for(const auto &node : color_nodes_) node->eval(mat_data->node_tree_data_, sp, camera);
-	CoatedGlossyMaterialData *mat_data_specific = static_cast<CoatedGlossyMaterialData *>(mat_data.get());
+	auto mat_data_specific = static_cast<CoatedGlossyMaterialData *>(mat_data);
 	mat_data_specific->diffuse_ = diffuse_;
 	mat_data_specific->glossy_ = getShaderScalar(glossy_reflection_shader_, mat_data->node_tree_data_, reflectivity_);
 	mat_data_specific->p_diffuse_ = std::min(0.6f, 1.f - (mat_data_specific->glossy_ / (mat_data_specific->glossy_ + (1.f - mat_data_specific->glossy_) * mat_data_specific->diffuse_)));
