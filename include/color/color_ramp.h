@@ -31,9 +31,10 @@ BEGIN_YAFARAY
 class ColorRampItem final
 {
 	public:
-		ColorRampItem(float pos) : position_(pos) { }
+		explicit ColorRampItem(float pos) : position_(pos) { }
 		ColorRampItem(const Rgba &col, float pos) : color_(col), position_(pos) {}
 		bool operator < (const ColorRampItem &item) const { return (position_ < item.position_); }
+		bool operator < (float pos) const { return (position_ < pos); }
 		bool operator > (const ColorRampItem &item) const { return (position_ > item.position_); }
 		const Rgba color() const { return color_; }
 		const float position() const { return position_; }

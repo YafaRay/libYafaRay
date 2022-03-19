@@ -22,7 +22,6 @@
 #include "color/color.h"
 #include "color/color_ramp.h"
 #include "math/interpolation.h"
-#include "common/logger.h"
 
 BEGIN_YAFARAY
 
