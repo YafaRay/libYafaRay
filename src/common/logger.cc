@@ -167,17 +167,15 @@ void Logger::clearAll()
 
 int Logger::vlevelFromString(std::string str_v_level)
 {
-	int vlevel;
-	if(str_v_level == "debug") vlevel = YAFARAY_LOG_LEVEL_DEBUG;
-	else if(str_v_level == "verbose") vlevel = YAFARAY_LOG_LEVEL_VERBOSE;
-	else if(str_v_level == "info") vlevel = YAFARAY_LOG_LEVEL_INFO;
-	else if(str_v_level == "params") vlevel = YAFARAY_LOG_LEVEL_PARAMS;
-	else if(str_v_level == "warning") vlevel = YAFARAY_LOG_LEVEL_WARNING;
-	else if(str_v_level == "error") vlevel = YAFARAY_LOG_LEVEL_ERROR;
-	else if(str_v_level == "mute") vlevel = YAFARAY_LOG_LEVEL_MUTE;
-	else if(str_v_level == "disabled") vlevel = YAFARAY_LOG_LEVEL_MUTE;
-	else vlevel = YAFARAY_LOG_LEVEL_VERBOSE;
-	return vlevel;
+	if(str_v_level == "debug") return YAFARAY_LOG_LEVEL_DEBUG;
+	else if(str_v_level == "verbose") return YAFARAY_LOG_LEVEL_VERBOSE;
+	else if(str_v_level == "info") return YAFARAY_LOG_LEVEL_INFO;
+	else if(str_v_level == "params") return YAFARAY_LOG_LEVEL_PARAMS;
+	else if(str_v_level == "warning") return YAFARAY_LOG_LEVEL_WARNING;
+	else if(str_v_level == "error") return YAFARAY_LOG_LEVEL_ERROR;
+	else if(str_v_level == "mute") return YAFARAY_LOG_LEVEL_MUTE;
+	else if(str_v_level == "disabled") return YAFARAY_LOG_LEVEL_MUTE;
+	else return YAFARAY_LOG_LEVEL_VERBOSE;
 }
 
 std::string Logger::logLevelStringFromLevel(int v_level)
@@ -198,13 +196,13 @@ ConsoleColor Logger::consoleColorFromLevel(int v_level)
 {
 	switch(v_level)
 	{
-	case YAFARAY_LOG_LEVEL_DEBUG: return ConsoleColor::Magenta;
-	case YAFARAY_LOG_LEVEL_VERBOSE: return ConsoleColor::Green;
-	case YAFARAY_LOG_LEVEL_INFO: return ConsoleColor::Green;
-	case YAFARAY_LOG_LEVEL_PARAMS: return ConsoleColor::Cyan;
-	case YAFARAY_LOG_LEVEL_WARNING: return ConsoleColor::Yellow;
-	case YAFARAY_LOG_LEVEL_ERROR: return ConsoleColor::Red;
-	default: return ConsoleColor::White;
+		case YAFARAY_LOG_LEVEL_DEBUG: return ConsoleColor(ConsoleColor::Magenta);
+		case YAFARAY_LOG_LEVEL_VERBOSE: return ConsoleColor(ConsoleColor::Green);
+		case YAFARAY_LOG_LEVEL_INFO: return ConsoleColor(ConsoleColor::Green);
+		case YAFARAY_LOG_LEVEL_PARAMS: return ConsoleColor(ConsoleColor::Cyan);
+		case YAFARAY_LOG_LEVEL_WARNING: return ConsoleColor(ConsoleColor::Yellow);
+		case YAFARAY_LOG_LEVEL_ERROR: return ConsoleColor(ConsoleColor::Red);
+		default: return ConsoleColor(ConsoleColor::White);
 	}
 }
 

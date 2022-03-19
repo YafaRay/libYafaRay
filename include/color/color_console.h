@@ -66,7 +66,7 @@ struct ConsoleColor final
 #endif
 		intense_ = intensecolor;
 	}
-	ConsoleColor(unsigned int fg_color, bool intensecolor = false)
+	explicit ConsoleColor(unsigned int fg_color, bool intensecolor = false)
 	{
 #ifdef _WIN32
 		fg_col_ = (Color)((unsigned int)fg_color);
