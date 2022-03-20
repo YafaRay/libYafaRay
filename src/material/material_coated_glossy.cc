@@ -210,7 +210,7 @@ Rgb CoatedGlossyMaterial::sample(const MaterialData *mat_data, const SurfacePoin
 	if(!n_match || sum < 0.00001)
 	{
 		wi = Vec3::reflectDir(n, wo);	//If the sampling is prematurely ended for some reason we need to give wi a value, or it will be undefinded causing unexpected problems as black dots. By default, I've chosen wi to be the reflection of wo, but it's an arbitrary choice.
-		return Rgb(0.f);
+		return Rgb{0.f};
 	}
 
 	else if(n_match == 1) { pick = 0; width[0] = 1.f; }
@@ -602,7 +602,7 @@ Material * CoatedGlossyMaterial::factory(Logger &logger, ParamMap &params, std::
 Rgb CoatedGlossyMaterial::getDiffuseColor(const NodeTreeData &node_tree_data) const
 {
 	if(as_diffuse_ || with_diffuse_) return (diffuse_reflection_shader_ ? diffuse_reflection_shader_->getScalar(node_tree_data) : 1.f) * (diffuse_shader_ ? diffuse_shader_->getColor(node_tree_data) : diff_color_);
-	else return Rgb(0.f);
+	else return Rgb{0.f};
 }
 
 Rgb CoatedGlossyMaterial::getGlossyColor(const NodeTreeData &node_tree_data) const

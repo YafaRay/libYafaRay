@@ -83,7 +83,7 @@ std::tuple<bool, Rgb, const Primitive *> Accelerator::isShadowed(const Ray &ray,
 	sray.from_ += sray.dir_ * sray.tmin_;
 	const float t_max = (ray.tmax_ >= 0.f) ? sray.tmax_ - 2 * sray.tmin_ : std::numeric_limits<float>::infinity();
 	const AcceleratorTsIntersectData accelerator_intersect_data = intersectTs(sray, max_depth, t_max, shadow_bias, camera);
-	std::tuple<bool, Rgb, const Primitive *> result {false, {0.f}, nullptr};
+	std::tuple<bool, Rgb, const Primitive *> result {false, Rgb{0.f}, nullptr};
 	std::get<1>(result) = accelerator_intersect_data.transparent_color_;
 	if(accelerator_intersect_data.hit_)
 	{

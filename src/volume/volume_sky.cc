@@ -27,7 +27,7 @@ struct PSample;
 
 Rgb SkyVolumeRegion::sigmaA(const Point3 &p, const Vec3 &v) const
 {
-	return Rgb(0.f);
+	return Rgb{0.f};
 }
 
 Rgb SkyVolumeRegion::sigmaS(const Point3 &p, const Vec3 &v) const
@@ -36,15 +36,15 @@ Rgb SkyVolumeRegion::sigmaS(const Point3 &p, const Vec3 &v) const
 	return s_ray_ + s_mie_;
 	//}
 	//else
-	//	return Rgb(0.f);
+	//	return Rgb{0.f};
 }
 
 Rgb SkyVolumeRegion::tau(const Ray &ray, float step, float offset) const
 {
 	Bound::Cross cross = crossBound(ray);
 	// ray doesn't hit the BB
-	if(!cross.crossed_) return {0.f};
-	if(ray.tmax_ < cross.enter_ && ray.tmax_ >= 0) return Rgb(0.f);
+	if(!cross.crossed_) return Rgb{0.f};
+	if(ray.tmax_ < cross.enter_ && ray.tmax_ >= 0) return Rgb{0.f};
 	if(ray.tmax_ < cross.leave_ && ray.tmax_ >= 0) cross.leave_ = ray.tmax_;
 	// t0 < 0 means, ray.from is in the volume
 	if(cross.enter_ < 0.f) cross.enter_ = 0.f;
@@ -60,7 +60,7 @@ Rgb SkyVolumeRegion::emission(const Point3 &p, const Vec3 &v) const
 		return l_e_;
 	}
 	else
-		return Rgb(0.f);
+		return Rgb{0.f};
 }
 
 float SkyVolumeRegion::p(const Vec3 &w_l, const Vec3 &w_s) const

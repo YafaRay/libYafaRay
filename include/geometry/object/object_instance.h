@@ -48,8 +48,8 @@ class ObjectInstance : public Object
 		void setObjectIndex(unsigned int new_obj_index) override { }
 		unsigned int getAbsObjectIndex() const override { return base_object_.getAbsObjectIndex(); }
 		float getNormObjectIndex() const override { return base_object_.getNormObjectIndex(); }
-		Rgb getAbsObjectIndexColor() const override { return base_object_.getAbsObjectIndex(); }
-		Rgb getNormObjectIndexColor() const override { return base_object_.getNormObjectIndex(); }
+		Rgb getAbsObjectIndexColor() const override { return Rgb{static_cast<float>(base_object_.getAbsObjectIndex())}; }
+		Rgb getNormObjectIndexColor() const override { return Rgb{base_object_.getNormObjectIndex()}; }
 		Rgb getAutoObjectIndexColor() const override { return base_object_.getAutoObjectIndexColor(); }
 		Rgb getAutoObjectIndexNumber() const override { return base_object_.getAutoObjectIndexNumber(); }
 		const Light *getLight() const override { return base_object_.getLight(); }

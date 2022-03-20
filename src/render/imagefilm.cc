@@ -514,7 +514,7 @@ void ImageFilm::finishArea(const RenderView *render_view, RenderControl &render_
 			for(int i = a.x_ - cx_0_; i < end_x; ++i)
 			{
 				const float weight = weights_(i, j).getFloat();
-				Rgba color = (film_image_layer.first == LayerDef::AaSamples ? weight : image->getColor(i, j).normalized(weight));
+				Rgba color = (film_image_layer.first == LayerDef::AaSamples ? Rgba{weight} : image->getColor(i, j).normalized(weight));
 				switch(film_image_layer.first)
 				{
 					//To correct the antialiasing and ceil the "mixed" values to the upper integer in the Object/Material Index layers
@@ -599,7 +599,7 @@ void ImageFilm::flush(const RenderView *render_view, const RenderControl &render
 			for(int i = 0; i < width_; i++)
 			{
 				const float weight = weights_(i, j).getFloat();
-				Rgba color = (film_image_layer.first == LayerDef::AaSamples ? weight : image->getColor(i, j).normalized(weight));
+				Rgba color = (film_image_layer.first == LayerDef::AaSamples ? Rgba{weight} : image->getColor(i, j).normalized(weight));
 				switch(film_image_layer.first)
 				{
 					//To correct the antialiasing and ceil the "mixed" values to the upper integer in the Object/Material Index layers
@@ -727,7 +727,7 @@ void ImageFilm::addSample(int x, int y, float dx, float dy, const RenderArea *a,
 			// update pixel values with filtered sample contribution
 			for(auto &film_image_layer : film_image_layers_)
 			{
-				Rgba col = color_layers ? (*color_layers)(film_image_layer.first) : 0.f;
+				Rgba col = color_layers ? (*color_layers)(film_image_layer.first) : Rgba{0.f};
 				col.clampProportionalRgb(aa_noise_params_.clamp_samples_);
 				film_image_layer.second.image_->setColor(i - cx_0_, j - cy_0_, film_image_layer.second.image_->getColor(i - cx_0_, j - cy_0_) + (col * filter_wt));
 			}
@@ -1230,7 +1230,7 @@ void ImageFilm::generateDebugFacesEdges(int xstart, int width, int ystart, int h
 			{
 				Rgb col_edge = Rgb(image_mat.at(0).at<float>(j, i));
 				if(drawborder && (i <= xstart + 1 || j <= ystart + 1 || i >= width - 1 - 1 || j >= height - 1 - 1)) col_edge = Rgba(0.5f, 0.f, 0.f, 1.f);
-				debug_faces_edges_image->setColor(i, j, col_edge);
+				debug_faces_edges_image->setColor(i, j, Rgba{col_edge});
 			}
 		}
 	}
@@ -1314,14 +1314,14 @@ void ImageFilm::generateToonAndDebugObjectEdges(int xstart, int width, int ystar
 
 				if(drawborder && (i <= xstart + 1 || j <= ystart + 1 || i >= width - 1 - 1 || j >= height - 1 - 1)) col_edge = Rgba(0.5f, 0.f, 0.f, 1.f);
 
-				debug_objects_edges_image->setColor(i, j, col_edge);
+				debug_objects_edges_image->setColor(i, j, Rgba{col_edge});
 
 				Rgb col_toon(image_mat_combined_vec(j, i)[2], image_mat_combined_vec(j, i)[1], image_mat_combined_vec(j, i)[0]);
 				col_toon.blend(toon_edge_color, edge_value);
 
 				if(drawborder && (i <= xstart + 1 || j <= ystart + 1 || i >= width - 1 - 1 || j >= height - 1 - 1)) col_toon = Rgba(0.5f, 0.f, 0.f, 1.f);
 
-				toon_image->setColor(i, j, col_toon);
+				toon_image->setColor(i, j, Rgba{col_toon});
 			}
 		}
 	}

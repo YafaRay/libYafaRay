@@ -380,17 +380,17 @@ bool TiledIntegrator::renderTile(const RenderArea &a, int n_samples, int offset,
 							break;
 						case LayerDef::ZDepthAbs:
 							if(camera_ray.ray_.tmax_ < 0.f) color_layer.second = Rgba(0.f, 0.f); // Show background as fully transparent
-							else color_layer.second = Rgb(camera_ray.ray_.tmax_);
+							else color_layer.second = Rgba{camera_ray.ray_.tmax_};
 							if(color_layer.second.a_ > 1.f) color_layer.second.a_ = 1.f;
 							break;
 						case LayerDef::ZDepthNorm:
 							if(camera_ray.ray_.tmax_ < 0.f) color_layer.second = Rgba(0.f, 0.f); // Show background as fully transparent
-							else color_layer.second = Rgb(1.f - (camera_ray.ray_.tmax_ - min_depth_) * max_depth_); // Distance normalization
+							else color_layer.second = Rgba{1.f - (camera_ray.ray_.tmax_ - min_depth_) * max_depth_}; // Distance normalization
 							if(color_layer.second.a_ > 1.f) color_layer.second.a_ = 1.f;
 							break;
 						case LayerDef::Mist:
 							if(camera_ray.ray_.tmax_ < 0.f) color_layer.second = Rgba(0.f, 0.f); // Show background as fully transparent
-							else color_layer.second = Rgb((camera_ray.ray_.tmax_ - min_depth_) * max_depth_); // Distance normalization
+							else color_layer.second = Rgba{(camera_ray.ray_.tmax_ - min_depth_) * max_depth_}; // Distance normalization
 							if(color_layer.second.a_ > 1.f) color_layer.second.a_ = 1.f;
 							break;
 						default:
@@ -544,54 +544,54 @@ void TiledIntegrator::generateCommonLayers(ColorLayers *color_layers, const Surf
 			}
 			if(Rgba *color_layer = color_layers->find(LayerDef::DiffuseColor))
 			{
-				*color_layer = sp.material_->getDiffuseColor(sp.mat_data_->node_tree_data_);
+				*color_layer = Rgba{sp.material_->getDiffuseColor(sp.mat_data_->node_tree_data_)};
 			}
 			if(Rgba *color_layer = color_layers->find(LayerDef::GlossyColor))
 			{
-				*color_layer = sp.material_->getGlossyColor(sp.mat_data_->node_tree_data_);
+				*color_layer = Rgba{sp.material_->getGlossyColor(sp.mat_data_->node_tree_data_)};
 			}
 			if(Rgba *color_layer = color_layers->find(LayerDef::TransColor))
 			{
-				*color_layer = sp.material_->getTransColor(sp.mat_data_->node_tree_data_);
+				*color_layer = Rgba{sp.material_->getTransColor(sp.mat_data_->node_tree_data_)};
 			}
 			if(Rgba *color_layer = color_layers->find(LayerDef::SubsurfaceColor))
 			{
-				*color_layer = sp.material_->getSubSurfaceColor(sp.mat_data_->node_tree_data_);
+				*color_layer = Rgba{sp.material_->getSubSurfaceColor(sp.mat_data_->node_tree_data_)};
 			}
 		}
 		if(color_layers->getFlags().hasAny(LayerDef::Flags::IndexLayers))
 		{
 			if(Rgba *color_layer = color_layers->find(LayerDef::ObjIndexAbs))
 			{
-				*color_layer = sp.object_->getAbsObjectIndexColor();
+				*color_layer = Rgba{sp.object_->getAbsObjectIndexColor()};
 			}
 			if(Rgba *color_layer = color_layers->find(LayerDef::ObjIndexNorm))
 			{
-				*color_layer = sp.object_->getNormObjectIndexColor();
+				*color_layer = Rgba{sp.object_->getNormObjectIndexColor()};
 			}
 			if(Rgba *color_layer = color_layers->find(LayerDef::ObjIndexAuto))
 			{
-				*color_layer = sp.object_->getAutoObjectIndexColor();
+				*color_layer = Rgba{sp.object_->getAutoObjectIndexColor()};
 			}
 			if(Rgba *color_layer = color_layers->find(LayerDef::ObjIndexAutoAbs))
 			{
-				*color_layer = sp.object_->getAutoObjectIndexNumber();
+				*color_layer = Rgba{sp.object_->getAutoObjectIndexNumber()};
 			}
 			if(Rgba *color_layer = color_layers->find(LayerDef::MatIndexAbs))
 			{
-				*color_layer = sp.material_->getAbsMaterialIndexColor();
+				*color_layer = Rgba{sp.material_->getAbsMaterialIndexColor()};
 			}
 			if(Rgba *color_layer = color_layers->find(LayerDef::MatIndexNorm))
 			{
-				*color_layer = sp.material_->getNormMaterialIndexColor();
+				*color_layer = Rgba{sp.material_->getNormMaterialIndexColor()};
 			}
 			if(Rgba *color_layer = color_layers->find(LayerDef::MatIndexAuto))
 			{
-				*color_layer = sp.material_->getAutoMaterialIndexColor();
+				*color_layer = Rgba{sp.material_->getAutoMaterialIndexColor()};
 			}
 			if(Rgba *color_layer = color_layers->find(LayerDef::MatIndexAutoAbs))
 			{
-				*color_layer = sp.material_->getAutoMaterialIndexNumber();
+				*color_layer = Rgba{sp.material_->getAutoMaterialIndexNumber()};
 			}
 			if(Rgba *color_layer = color_layers->find(LayerDef::ObjIndexMask))
 			{
@@ -631,11 +631,11 @@ void TiledIntegrator::generateOcclusionLayers(ColorLayers *color_layers, const A
 {
 	if(Rgba *color_layer = color_layers->find(LayerDef::Ao))
 	{
-		*color_layer += sampleAmbientOcclusion(accelerator, chromatic_enabled, wavelength, sp, wo, ray_division, camera, pixel_sampling_data, false, false, ao_samples, shadow_bias_auto, shadow_bias, ao_dist, ao_col, transp_shadows_depth);
+		*color_layer += Rgba{sampleAmbientOcclusion(accelerator, chromatic_enabled, wavelength, sp, wo, ray_division, camera, pixel_sampling_data, false, false, ao_samples, shadow_bias_auto, shadow_bias, ao_dist, ao_col, transp_shadows_depth)};
 	}
 	if(Rgba *color_layer = color_layers->find(LayerDef::AoClay))
 	{
-		*color_layer += sampleAmbientOcclusion(accelerator, chromatic_enabled, wavelength, sp, wo, ray_division, camera, pixel_sampling_data, false, true, ao_samples, shadow_bias_auto, shadow_bias, ao_dist, ao_col, transp_shadows_depth);
+		*color_layer += Rgba{sampleAmbientOcclusion(accelerator, chromatic_enabled, wavelength, sp, wo, ray_division, camera, pixel_sampling_data, false, true, ao_samples, shadow_bias_auto, shadow_bias, ao_dist, ao_col, transp_shadows_depth)};
 	}
 }
 
@@ -696,25 +696,25 @@ void TiledIntegrator::applyVolumetricEffects(Rgb &col, float &alpha, ColorLayers
 	if(transparent_background) alpha = std::max(alpha, 1.f - col_vol_transmittance.r_);
 	if(color_layers)
 	{
-		if(Rgba *color_layer = color_layers->find(LayerDef::VolumeTransmittance)) *color_layer = col_vol_transmittance;
-		if(Rgba *color_layer = color_layers->find(LayerDef::VolumeIntegration)) *color_layer = col_vol_integration;
+		if(Rgba *color_layer = color_layers->find(LayerDef::VolumeTransmittance)) *color_layer = Rgba{col_vol_transmittance};
+		if(Rgba *color_layer = color_layers->find(LayerDef::VolumeIntegration)) *color_layer = Rgba{col_vol_integration};
 	}
 	col = (col * col_vol_transmittance) + col_vol_integration;
 }
 
 std::pair<Rgb, float> TiledIntegrator::background(const Ray &ray, ColorLayers *color_layers, bool transparent_background, bool transparent_refracted_background, const Background *background, int ray_level)
 {
-	if(transparent_background && (ray_level == 0 || transparent_refracted_background)) return {0.f, 0.f};
+	if(transparent_background && (ray_level == 0 || transparent_refracted_background)) return {Rgb{0.f}, 0.f};
 	else if(background)
 	{
 		const Rgb col = (*background)(ray.dir_);
 		if(color_layers)
 		{
-			if(Rgba *color_layer = color_layers->find(LayerDef::Env)) *color_layer = col;
+			if(Rgba *color_layer = color_layers->find(LayerDef::Env)) *color_layer = Rgba{col};
 		}
 		return {col, 1.f};
 	}
-	else return {0.f, 1.f};
+	else return {Rgb{0.f}, 1.f};
 }
 
 

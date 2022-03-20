@@ -117,7 +117,7 @@ Rgb GlassMaterial::sample(const MaterialData *mat_data, const SurfacePoint &sp, 
 			wi.reflect(n);
 			s.sampled_flags_ = BsdfFlags::Specular | BsdfFlags::Reflect;
 			w = 1.f;
-			Rgb scolor = 1.f; //Rgb(1.f/std::abs(sp.N*wi));
+			Rgb scolor{1.f}; //Rgb(1.f/std::abs(sp.N*wi));
 			applyWireFrame(scolor, wireframe_shader_, mat_data->node_tree_data_, sp);
 			return scolor;
 		}
@@ -180,16 +180,16 @@ Rgb GlassMaterial::sample(const MaterialData *mat_data, const SurfacePoint &sp, 
 			if(s.reverse_)
 			{
 				s.pdf_back_ = s.pdf_;
-				s.col_back_ = 1.f;//tir_col;
+				s.col_back_ = Rgb{1.f};//tir_col;
 			}
 			w = 1.f;
-			Rgb scolor = 1.f;//tir_col;
+			Rgb scolor{1.f};//tir_col;
 			applyWireFrame(scolor, wireframe_shader_, mat_data->node_tree_data_, sp);
 			return scolor;
 		}
 	}
 	s.pdf_ = 0.f;
-	return Rgb(0.f);
+	return Rgb{0.f};
 }
 
 Rgb GlassMaterial::getTransparency(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, const Camera *camera) const
@@ -466,7 +466,7 @@ Rgb NullMaterial::sample(const MaterialData *mat_data, const SurfacePoint &sp, c
 {
 	s.pdf_ = 0.f;
 	w = 0.f;
-	return Rgb(0.f);
+	return Rgb{0.f};
 }
 
 Material * NullMaterial::factory(Logger &logger, ParamMap &, std::list<ParamMap> &, const Scene &)

@@ -284,17 +284,17 @@ bool SppmIntegrator::renderTile(const RenderArea &a, int n_samples, int offset, 
 							break;
 						case LayerDef::ZDepthAbs:
 							if(camera_ray.ray_.tmax_ < 0.f) color_layer.second = Rgba(0.f, 0.f); // Show background as fully transparent
-							else color_layer.second = Rgb(camera_ray.ray_.tmax_);
+							else color_layer.second = Rgba{camera_ray.ray_.tmax_};
 							if(color_layer.second.a_ > 1.f) color_layer.second.a_ = 1.f;
 							break;
 						case LayerDef::ZDepthNorm:
 							if(camera_ray.ray_.tmax_ < 0.f) color_layer.second = Rgba(0.f, 0.f); // Show background as fully transparent
-							else color_layer.second = Rgb(1.f - (camera_ray.ray_.tmax_ - min_depth_) * max_depth_); // Distance normalization
+							else color_layer.second = Rgba{1.f - (camera_ray.ray_.tmax_ - min_depth_) * max_depth_}; // Distance normalization
 							if(color_layer.second.a_ > 1.f) color_layer.second.a_ = 1.f;
 							break;
 						case LayerDef::Mist:
 							if(camera_ray.ray_.tmax_ < 0.f) color_layer.second = Rgba(0.f, 0.f); // Show background as fully transparent
-							else color_layer.second = Rgb((camera_ray.ray_.tmax_ - min_depth_) * max_depth_); // Distance normalization
+							else color_layer.second = Rgba{(camera_ray.ray_.tmax_ - min_depth_) * max_depth_}; // Distance normalization
 							if(color_layer.second.a_ > 1.f) color_layer.second.a_ = 1.f;
 							break;
 						case LayerDef::Indirect:
@@ -601,7 +601,7 @@ void SppmIntegrator::prePass(int samples, int offset, bool adaptive)
 //now it's a dummy function
 std::pair<Rgb, float> SppmIntegrator::integrate(Ray &ray, RandomGenerator &random_generator, ColorLayers *color_layers, int thread_id, int ray_level, bool chromatic_enabled, float wavelength, int additional_depth, const RayDivision &ray_division, const PixelSamplingData &pixel_sampling_data) const
 {
-	return {0.f, 0.f};
+	return {Rgb{0.f}, 0.f};
 }
 
 GatherInfo SppmIntegrator::traceGatherRay(Ray &ray, HitPoint &hp, RandomGenerator &random_generator, ColorLayers *color_layers, int thread_id, int ray_level, bool chromatic_enabled, float wavelength, const RayDivision &ray_division, const PixelSamplingData &pixel_sampling_data)
@@ -619,14 +619,14 @@ GatherInfo SppmIntegrator::traceGatherRay(Ray &ray, HitPoint &hp, RandomGenerato
 		additional_depth = std::max(additional_depth, sp->material_->getAdditionalDepth());
 
 		const Rgb col_emit = sp->emit(wo);
-		g_info.constant_randiance_ += col_emit; //add only once, but FG seems add twice?
+		g_info.constant_randiance_ += Rgba{col_emit}; //add only once, but FG seems add twice?
 		if(color_layers && color_layers->getFlags().hasAny(LayerDef::Flags::BasicLayers))
 		{
-			if(Rgba *color_layer = color_layers->find(LayerDef::Emit)) *color_layer += col_emit;
+			if(Rgba *color_layer = color_layers->find(LayerDef::Emit)) *color_layer += Rgba{col_emit};
 		}
 		if(mat_bsdfs.hasAny(BsdfFlags::Diffuse))
 		{
-			g_info.constant_randiance_ += estimateAllDirectLight(random_generator, color_layers, chromatic_enabled, wavelength, *sp, wo, ray_division, pixel_sampling_data);
+			g_info.constant_randiance_ += Rgba{estimateAllDirectLight(random_generator, color_layers, chromatic_enabled, wavelength, *sp, wo, ray_division, pixel_sampling_data)};
 		}
 
 		// estimate radiance using photon map
@@ -699,7 +699,7 @@ GatherInfo SppmIntegrator::traceGatherRay(Ray &ray, HitPoint &hp, RandomGenerato
 					g_info.photon_count_++;
 					Vec3 pdir{gathered[i].photon_->direction()};
 					Rgb surf_col = sp->eval(wo, pdir, BsdfFlags::Diffuse); // seems could speed up using rho, (something pbrt made)
-					g_info.photon_flux_ += surf_col * gathered[i].photon_->color();// * std::abs(sp->N*pdir); //< wrong!?
+					g_info.photon_flux_ += Rgba{surf_col * gathered[i].photon_->color()};// * std::abs(sp->N*pdir); //< wrong!?
 					//Rgb  flux= surfCol * gathered[i].photon->color();// * std::abs(sp->N*pdir); //< wrong!?
 
 					////start refine here
@@ -725,7 +725,7 @@ GatherInfo SppmIntegrator::traceGatherRay(Ray &ray, HitPoint &hp, RandomGenerato
 						Vec3 pdir{gathered[i].photon_->direction()};
 						g_info.photon_count_++;
 						surf_col = sp->eval(wo, pdir, BsdfFlags::All); // seems could speed up using rho, (something pbrt made)
-						g_info.photon_flux_ += surf_col * gathered[i].photon_->color();// * std::abs(sp->N*pdir); //< wrong!?//gInfo.photonFlux += colorPasses.probe_add(PASS_INT_DIFFUSE_INDIRECT, surfCol * gathered[i].photon->color(), state.ray_level == 0);// * std::abs(sp->N*pdir); //< wrong!?
+						g_info.photon_flux_ += Rgba{surf_col * gathered[i].photon_->color()};// * std::abs(sp->N*pdir); //< wrong!?//gInfo.photonFlux += colorPasses.probe_add(PASS_INT_DIFFUSE_INDIRECT, surfCol * gathered[i].photon->color(), state.ray_level == 0);// * std::abs(sp->N*pdir); //< wrong!?
 						//Rgb  flux= surfCol * gathered[i].photon->color();// * std::abs(sp->N*pdir); //< wrong!?
 
 						////start refine here
@@ -782,8 +782,8 @@ GatherInfo SppmIntegrator::traceGatherRay(Ray &ray, HitPoint &hp, RandomGenerato
 						const Rgb wl_col = spectrum::wl2Rgb(wavelength_dispersive);
 						ref_ray = Ray(sp->p_, wi, ray_min_dist_);
 						t_cing = traceGatherRay(ref_ray, hp, random_generator, nullptr, thread_id, ray_level, false, wavelength_dispersive, ray_division_new, pixel_sampling_data);
-						t_cing.photon_flux_ *= mcol * wl_col * w;
-						t_cing.constant_randiance_ *= mcol * wl_col * w;
+						t_cing.photon_flux_ *= Rgba{mcol * wl_col * w};
+						t_cing.constant_randiance_ *= Rgba{mcol * wl_col * w};
 						if(color_layers)
 						{
 							if(color_layers->find(LayerDef::Trans)) dcol_trans_accum += t_cing.constant_randiance_;
@@ -796,8 +796,8 @@ GatherInfo SppmIntegrator::traceGatherRay(Ray &ray, HitPoint &hp, RandomGenerato
 					if(const VolumeHandler *vol = sp->material_->getVolumeHandler(sp->ng_ * ref_ray.dir_ < 0))
 					{
 						const Rgb vcol = vol->transmittance(ref_ray);
-						cing.photon_flux_ *= vcol;
-						cing.constant_randiance_ *= vcol;
+						cing.photon_flux_ *= Rgba{vcol};
+						cing.constant_randiance_ *= Rgba{vcol};
 					}
 				}
 				g_info.constant_randiance_ += cing.constant_randiance_ * d_1;
@@ -809,7 +809,7 @@ GatherInfo SppmIntegrator::traceGatherRay(Ray &ray, HitPoint &hp, RandomGenerato
 					if(Rgba *color_layer = color_layers->find(LayerDef::Trans))
 					{
 						dcol_trans_accum *= d_1;
-						*color_layer += dcol_trans_accum;
+						*color_layer += Rgba{dcol_trans_accum};
 					}
 				}
 			}
@@ -859,8 +859,8 @@ GatherInfo SppmIntegrator::traceGatherRay(Ray &ray, HitPoint &hp, RandomGenerato
 						else if(s.sampled_flags_.hasAny(BsdfFlags::Transmit)) ref_ray.differentials_ = sp->refractedRay(ray.differentials_.get(), ray.dir_, ref_ray.dir_, sp->material_->getMatIor());
 						//gcol += tmpColorPasses.probe_add(PASS_INT_GLOSSY_INDIRECT, (Rgb)integ * mcol * W, state.ray_level == 1);
 						GatherInfo trace_gather_ray = traceGatherRay(ref_ray, hp, random_generator, nullptr, thread_id, ray_level, chromatic_enabled, wavelength, ray_division_new, pixel_sampling_data);
-						trace_gather_ray.photon_flux_ *= mcol * w;
-						trace_gather_ray.constant_randiance_ *= mcol * w;
+						trace_gather_ray.photon_flux_ *= Rgba{mcol * w};
+						trace_gather_ray.constant_randiance_ *= Rgba{mcol * w};
 						gather_info += trace_gather_ray;
 					}
 					else if(mat_bsdfs.hasAny(BsdfFlags::Reflect) && mat_bsdfs.hasAny(BsdfFlags::Transmit))
@@ -876,8 +876,8 @@ GatherInfo SppmIntegrator::traceGatherRay(Ray &ray, HitPoint &hp, RandomGenerato
 							ref_ray.differentials_ = sp->reflectedRay(ray.differentials_.get(), ray.dir_, ref_ray.dir_);
 							const Rgb col_reflect_factor = mcol[0] * w[0];
 							GatherInfo trace_gather_ray = traceGatherRay(ref_ray, hp, random_generator, nullptr, thread_id, ray_level, chromatic_enabled, wavelength, ray_division_new, pixel_sampling_data);
-							trace_gather_ray.photon_flux_ *= col_reflect_factor;
-							trace_gather_ray.constant_randiance_ *= col_reflect_factor;
+							trace_gather_ray.photon_flux_ *= Rgba{col_reflect_factor};
+							trace_gather_ray.constant_randiance_ *= Rgba{col_reflect_factor};
 							if(color_layers)
 							{
 								if(color_layers->find(LayerDef::GlossyIndirect)) gcol_indirect_accum += (Rgb) trace_gather_ray.constant_randiance_;
@@ -891,8 +891,8 @@ GatherInfo SppmIntegrator::traceGatherRay(Ray &ray, HitPoint &hp, RandomGenerato
 							ref_ray.differentials_ = sp->refractedRay(ray.differentials_.get(), ray.dir_, ref_ray.dir_, sp->material_->getMatIor());
 							const Rgb col_transmit_factor = mcol[1] * w[1];
 							GatherInfo trace_gather_ray = traceGatherRay(ref_ray, hp, random_generator, nullptr, thread_id, ray_level, chromatic_enabled, wavelength, ray_division_new, pixel_sampling_data);
-							trace_gather_ray.photon_flux_ *= col_transmit_factor;
-							trace_gather_ray.constant_randiance_ *= col_transmit_factor;
+							trace_gather_ray.photon_flux_ *= Rgba{col_transmit_factor};
+							trace_gather_ray.constant_randiance_ *= Rgba{col_transmit_factor};
 							if(color_layers)
 							{
 								if(color_layers->find(LayerDef::GlossyIndirect)) gcol_transmit_accum += (Rgb) trace_gather_ray.constant_randiance_;
@@ -911,8 +911,8 @@ GatherInfo SppmIntegrator::traceGatherRay(Ray &ray, HitPoint &hp, RandomGenerato
 						}
 
 						GatherInfo trace_gather_ray = traceGatherRay(ref_ray, hp, random_generator, nullptr, thread_id, ray_level, chromatic_enabled, wavelength, ray_division_new, pixel_sampling_data);
-						trace_gather_ray.photon_flux_ *= mcol * W;
-						trace_gather_ray.constant_randiance_ *= mcol * W;
+						trace_gather_ray.photon_flux_ *= Rgba{mcol * W};
+						trace_gather_ray.constant_randiance_ *= Rgba{mcol * W};
 						if(color_layers)
 						{
 							if(color_layers->find(LayerDef::Trans)) gcol_reflect_accum += trace_gather_ray.constant_randiance_;
@@ -925,8 +925,8 @@ GatherInfo SppmIntegrator::traceGatherRay(Ray &ray, HitPoint &hp, RandomGenerato
 						if(const VolumeHandler *vol = sp->material_->getVolumeHandler(sp->ng_ * ref_ray.dir_ < 0))
 						{
 							const Rgb vcol = vol->transmittance(ref_ray);
-							gather_info.photon_flux_ *= vcol;
-							gather_info.constant_randiance_ *= vcol;
+							gather_info.photon_flux_ *= Rgba{vcol};
+							gather_info.constant_randiance_ *= Rgba{vcol};
 						}
 					}
 				}
@@ -938,17 +938,17 @@ GatherInfo SppmIntegrator::traceGatherRay(Ray &ray, HitPoint &hp, RandomGenerato
 					if(Rgba *color_layer = color_layers->find(LayerDef::GlossyIndirect))
 					{
 						gcol_indirect_accum *= d_1;
-						*color_layer += gcol_indirect_accum;
+						*color_layer += Rgba{gcol_indirect_accum};
 					}
 					if(Rgba *color_layer = color_layers->find(LayerDef::Trans))
 					{
 						gcol_reflect_accum *= d_1;
-						*color_layer += gcol_reflect_accum;
+						*color_layer += Rgba{gcol_reflect_accum};
 					}
 					if(Rgba *color_layer = color_layers->find(LayerDef::GlossyIndirect))
 					{
 						gcol_transmit_accum *= d_1;
-						*color_layer += gcol_transmit_accum;
+						*color_layer += Rgba{gcol_transmit_accum};
 					}
 				}
 			}
@@ -966,15 +966,15 @@ GatherInfo SppmIntegrator::traceGatherRay(Ray &ray, HitPoint &hp, RandomGenerato
 						if(const VolumeHandler *vol = sp->material_->getVolumeHandler(sp->ng_ * ref_ray.dir_ < 0))
 						{
 							const Rgb vcol = vol->transmittance(ref_ray);
-							refg.constant_randiance_ *= vcol;
-							refg.photon_flux_ *= vcol;
+							refg.constant_randiance_ *= Rgba{vcol};
+							refg.photon_flux_ *= Rgba{vcol};
 						}
 					}
 					const Rgba col_radiance_reflect = refg.constant_randiance_ * Rgba(specular.reflect_->col_);
 					g_info.constant_randiance_ += col_radiance_reflect;
 					if(color_layers && color_layers->getFlags().hasAny(LayerDef::Flags::BasicLayers))
 					{
-						if(Rgba *color_layer = color_layers->find(LayerDef::ReflectPerfect)) *color_layer += col_radiance_reflect;
+						if(Rgba *color_layer = color_layers->find(LayerDef::ReflectPerfect)) *color_layer += Rgba{col_radiance_reflect};
 					}
 					g_info.photon_flux_ += refg.photon_flux_ * Rgba(specular.reflect_->col_);
 					g_info.photon_count_ += refg.photon_count_;
@@ -989,15 +989,15 @@ GatherInfo SppmIntegrator::traceGatherRay(Ray &ray, HitPoint &hp, RandomGenerato
 						if(const VolumeHandler *vol = sp->material_->getVolumeHandler(sp->ng_ * ref_ray.dir_ < 0))
 						{
 							const Rgb vcol = vol->transmittance(ref_ray);
-							refg.constant_randiance_ *= vcol;
-							refg.photon_flux_ *= vcol;
+							refg.constant_randiance_ *= Rgba{vcol};
+							refg.photon_flux_ *= Rgba{vcol};
 						}
 					}
 					const Rgba col_radiance_refract = refg.constant_randiance_ * Rgba(specular.refract_->col_);
 					g_info.constant_randiance_ += col_radiance_refract;
 					if(color_layers && color_layers->getFlags().hasAny(LayerDef::Flags::BasicLayers))
 					{
-						if(Rgba *color_layer = color_layers->find(LayerDef::RefractPerfect)) *color_layer += col_radiance_refract;
+						if(Rgba *color_layer = color_layers->find(LayerDef::RefractPerfect)) *color_layer += Rgba{col_radiance_refract};
 					}
 					g_info.photon_flux_ += refg.photon_flux_ * Rgba(specular.refract_->col_);
 					g_info.photon_count_ += refg.photon_count_;
@@ -1019,7 +1019,8 @@ GatherInfo SppmIntegrator::traceGatherRay(Ray &ray, HitPoint &hp, RandomGenerato
 	}
 	else //nothing hit, return background
 	{
-		std::tie(g_info.constant_randiance_, alpha) = background(ray, color_layers, transp_background_, transp_refracted_background_, background_, ray_level);
+		const auto result = background(ray, color_layers, transp_background_, transp_refracted_background_, background_, ray_level);
+		std::tie(g_info.constant_randiance_, alpha) = std::tuple<Rgba, float>{Rgba{result.first}, result.second};
 	}
 
 	if(vol_integrator_)

@@ -72,6 +72,7 @@ class Parameter
 		Parameter &operator = (bool b);
 		Parameter &operator = (float f);
 		Parameter &operator = (const Vec3 &p);
+		Parameter &operator = (const Rgb &c);
 		Parameter &operator = (const Rgba &c);
 		Parameter &operator = (const Matrix4 &m);
 

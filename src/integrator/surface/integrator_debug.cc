@@ -87,7 +87,7 @@ std::pair<Rgb, float> DebugIntegrator::integrate(Ray &ray, RandomGenerator &rand
 			col = Rgb((sp->ds_dv_.x_ + 1.f) * .5f, (sp->ds_dv_.y_ + 1.f) * .5f, (sp->ds_dv_.z_ + 1.f) * .5f);
 		return {col, 1.f};
 	}
-	return {{0.f}, 1.f};
+	return {Rgb{0.f}, 1.f};
 }
 
 Integrator * DebugIntegrator::factory(Logger &logger, ParamMap &params, const Scene &scene, RenderControl &render_control)

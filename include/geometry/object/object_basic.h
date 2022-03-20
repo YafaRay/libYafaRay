@@ -45,10 +45,10 @@ class ObjectBasic : public Object
 		void setObjectIndex(unsigned int new_obj_index) override;
 		unsigned int getAbsObjectIndex() const override { return object_index_; }
 		float getNormObjectIndex() const override { return static_cast<float>(getAbsObjectIndex()) / static_cast<float>(highest_object_index_); }
-		Rgb getAbsObjectIndexColor() const override { return getAbsObjectIndex(); }
-		Rgb getNormObjectIndexColor() const override { return getNormObjectIndex(); }
+		Rgb getAbsObjectIndexColor() const override { return Rgb{static_cast<float>(getAbsObjectIndex())}; }
+		Rgb getNormObjectIndexColor() const override { return Rgb{getNormObjectIndex()}; }
 		Rgb getAutoObjectIndexColor() const override { return object_index_auto_color_; }
-		Rgb getAutoObjectIndexNumber() const override { return object_index_auto_; }
+		Rgb getAutoObjectIndexNumber() const override { return Rgb{static_cast<float>(object_index_auto_)}; }
 		const Light *getLight() const override { return light_; }
 		/*! set a light source to be associated with this object */
 		void setLight(const Light *light) override { light_ = light; }
@@ -60,7 +60,7 @@ class ObjectBasic : public Object
 		Visibility visibility_ = Visibility::NormalVisible;
 		bool is_base_object_ = false;
 		unsigned int object_index_ = 0;	//!< Object Index for the object-index render pass
-		Rgb object_index_auto_color_ = 0.f;	//!< Object Index color automatically generated for the object-index-auto color render pass
+		Rgb object_index_auto_color_{0.f};	//!< Object Index color automatically generated for the object-index-auto color render pass
 		static unsigned int object_index_auto_;	//!< Object Index automatically generated for the object-index-auto render pass
 		static unsigned int highest_object_index_;	//!< Class shared variable containing the highest object index used for the Normalized Object Index pass.
 };

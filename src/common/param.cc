@@ -127,6 +127,15 @@ Parameter &Parameter::operator=(const Vec3 &p)
 	vval_.at(0) = p.x_, vval_.at(1) = p.y_, vval_.at(2) = p.z_;
 	return *this;
 }
+
+Parameter &Parameter::operator=(const Rgb &c)
+{
+	if(type_ != Color) { type_ = Color; sval_.clear(); vval_.resize(4); }
+	const Rgba col{c};
+	vval_.at(0) = col.r_, vval_.at(1) = col.g_, vval_.at(2) = col.b_, vval_.at(3) = col.a_;
+	return *this;
+}
+
 Parameter &Parameter::operator=(const Rgba &c)
 {
 	if(type_ != Color) { type_ = Color; sval_.clear(); vval_.resize(4); }

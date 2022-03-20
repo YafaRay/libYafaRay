@@ -175,7 +175,7 @@ static constexpr std::array<float, 38> sun_radiance
 
 Rgb chromaMatch(float wl)
 {
-	if(wl < 360 || wl > 830) return {0.f};
+	if(wl < 360 || wl > 830) return Rgb{0.f};
 	const int i = static_cast<int>((wl - 360) / 5);
 	return { chroma_match_2_deg[i][0], chroma_match_2_deg[i][1], chroma_match_2_deg[i][2] };
 }

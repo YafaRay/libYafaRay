@@ -200,7 +200,7 @@ Rgb ShinyDiffuseMaterial::eval(const MaterialData *mat_data, const SurfacePoint 
 	const float cos_ng_wl = sp.ng_ * wl;
 	// face forward:
 	const Vec3 n{SurfacePoint::normalFaceForward(sp.ng_, sp.n_, wo)};
-	if(!bsdfs.hasAny(bsdf_flags_ & BsdfFlags::Diffuse)) return Rgb(0.f);
+	if(!bsdfs.hasAny(bsdf_flags_ & BsdfFlags::Diffuse)) return Rgb{0.f};
 
 	float cur_ior_squared;
 	if(ior_shader_)
@@ -222,7 +222,7 @@ Rgb ShinyDiffuseMaterial::eval(const MaterialData *mat_data, const SurfacePoint 
 		if(is_translucent_) return mat_data_specific->components_[2] * m_t * getShaderColor(diffuse_shader_, mat_data->node_tree_data_, diffuse_color_);
 	}
 
-	if(n * wl < 0.0 && !flat_material_) return Rgb(0.f);
+	if(n * wl < 0.0 && !flat_material_) return Rgb{0.f};
 	float m_d = m_t * (1.f - mat_data_specific->components_[2]) * mat_data_specific->components_[3];
 
 	if(use_oren_nayar_)
@@ -278,7 +278,7 @@ Rgb ShinyDiffuseMaterial::sample(const MaterialData *mat_data, const SurfacePoin
 			++n_match;
 		}
 	}
-	if(!n_match || sum < 0.00001) { s.sampled_flags_ = BsdfFlags::None; s.pdf_ = 0.f; return Rgb(1.f); }
+	if(!n_match || sum < 0.00001) { s.sampled_flags_ = BsdfFlags::None; s.pdf_ = 0.f; return Rgb{1.f}; }
 	const float inv_sum = 1.f / sum;
 	for(int i = 0; i < n_match; ++i)
 	{
@@ -440,7 +440,7 @@ Specular ShinyDiffuseMaterial::getSpecular(int ray_level, const MaterialData *ma
 
 Rgb ShinyDiffuseMaterial::getTransparency(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, const Camera *camera) const
 {
-	if(!is_transparent_) return Rgb(0.f);
+	if(!is_transparent_) return Rgb{0.f};
 	float accum = 1.f;
 	const Vec3 n{SurfacePoint::normalFaceForward(sp.ng_, sp.n_, wo)};
 
@@ -490,8 +490,8 @@ float ShinyDiffuseMaterial::getAlpha(const MaterialData *mat_data, const Surface
 Material * ShinyDiffuseMaterial::factory(Logger &logger, ParamMap &params, std::list<ParamMap> &nodes_params, const Scene &scene)
 {
 	/// Material Parameters
-	Rgb diffuse_color = 1.f;
-	Rgb mirror_color = 1.f;
+	Rgb diffuse_color{1.f};
+	Rgb mirror_color{1.f};
 	float diffuse_strength = 1.f;
 	float transparency_strength = 0.f;
 	float translucency_strength = 0.f;
@@ -662,31 +662,31 @@ Material * ShinyDiffuseMaterial::factory(Logger &logger, ParamMap &params, std::
 Rgb ShinyDiffuseMaterial::getDiffuseColor(const NodeTreeData &node_tree_data) const
 {
 	if(is_diffuse_) return (diffuse_refl_shader_ ? diffuse_refl_shader_->getScalar(node_tree_data) : diffuse_strength_) * (diffuse_shader_ ? diffuse_shader_->getColor(node_tree_data) : diffuse_color_);
-	else return Rgb(0.f);
+	else return Rgb{0.f};
 }
 
 Rgb ShinyDiffuseMaterial::getGlossyColor(const NodeTreeData &node_tree_data) const
 {
 	if(is_mirror_) return (mirror_shader_ ? mirror_shader_->getScalar(node_tree_data) : mirror_strength_) * (mirror_color_shader_ ? mirror_color_shader_->getColor(node_tree_data) : mirror_color_);
-	else return Rgb(0.f);
+	else return Rgb{0.f};
 }
 
 Rgb ShinyDiffuseMaterial::getTransColor(const NodeTreeData &node_tree_data) const
 {
 	if(is_transparent_) return (transparency_shader_ ? transparency_shader_->getScalar(node_tree_data) : transparency_strength_) * (diffuse_shader_ ? diffuse_shader_->getColor(node_tree_data) : diffuse_color_);
-	else return Rgb(0.f);
+	else return Rgb{0.f};
 }
 
 Rgb ShinyDiffuseMaterial::getMirrorColor(const NodeTreeData &node_tree_data) const
 {
 	if(is_mirror_) return (mirror_shader_ ? mirror_shader_->getScalar(node_tree_data) : mirror_strength_) * (mirror_color_shader_ ? mirror_color_shader_->getColor(node_tree_data) : mirror_color_);
-	else return Rgb(0.f);
+	else return Rgb{0.f};
 }
 
 Rgb ShinyDiffuseMaterial::getSubSurfaceColor(const NodeTreeData &node_tree_data) const
 {
 	if(is_translucent_) return (translucency_shader_ ? translucency_shader_->getScalar(node_tree_data) : translucency_strength_) * (diffuse_shader_ ? diffuse_shader_->getColor(node_tree_data) : diffuse_color_);
-	else return Rgb(0.f);
+	else return Rgb{0.f};
 }
 
 END_YAFARAY

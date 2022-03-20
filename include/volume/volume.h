@@ -108,36 +108,36 @@ class DensityVolumeRegion : public VolumeRegion
 
 		Rgb sigmaA(const Point3 &p, const Vec3 &v) const override
 		{
-			if(!have_s_a_) return Rgb(0.f);
+			if(!have_s_a_) return Rgb{0.f};
 			if(b_box_.includes(p))
 			{
 				return s_a_ * density(p);
 			}
 			else
-				return Rgb(0.f);
+				return Rgb{0.f};
 
 		}
 
 		Rgb sigmaS(const Point3 &p, const Vec3 &v) const override
 		{
-			if(!have_s_s_) return Rgb(0.f);
+			if(!have_s_s_) return Rgb{0.f};
 			if(b_box_.includes(p))
 			{
 				return s_s_ * density(p);
 			}
 			else
-				return Rgb(0.f);
+				return Rgb{0.f};
 		}
 
 		Rgb emission(const Point3 &p, const Vec3 &v) const override
 		{
-			if(!have_l_e_) return Rgb(0.f);
+			if(!have_l_e_) return Rgb{0.f};
 			if(b_box_.includes(p))
 			{
 				return l_e_ * density(p);
 			}
 			else
-				return Rgb(0.f);
+				return Rgb{0.f};
 		}
 
 };

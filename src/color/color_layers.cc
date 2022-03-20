@@ -24,7 +24,7 @@ ColorLayers::ColorLayers(const Layers &layers)
 {
 	for(const auto &layer : layers)
 	{
-		set(layer.first, layer.first);
+		set(layer.first, LayerDef::getDefaultColor(layer.first));
 		flags_ |= layer.second.getFlags();
 	}
 }

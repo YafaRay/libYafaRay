@@ -42,7 +42,7 @@ Rgb LightMaterial::sample(const MaterialData *mat_data, const SurfacePoint &sp, 
 {
 	s.pdf_ = 0.f;
 	w = 0.f;
-	return Rgb(0.f);
+	return Rgb{0.f};
 }
 
 Rgb LightMaterial::emit(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo) const

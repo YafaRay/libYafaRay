@@ -44,9 +44,9 @@ class Rgb
 {
 	public:
 		Rgb() = default;
-		Rgb(float r, float g, float b) : r_(r), g_(g), b_(b) { }
-		Rgb(float f) : r_(f), g_(f), b_(f) { }
-		Rgb(float af[3]) : r_(af[0]), g_(af[1]), b_(af[2]) { }
+		Rgb(float r, float g, float b) : r_{r}, g_{g}, b_{b} { }
+		explicit Rgb(float f) : r_{f}, g_{f}, b_{f} { }
+		explicit Rgb(float af[3]) : r_{af[0]}, g_{af[1]}, b_{af[2]} { }
 		bool isBlack() const { return ((r_ == 0) && (g_ == 0) && (b_ == 0)); }
 		bool isNaN() const { return (std::isnan(r_) || std::isnan(g_) || std::isnan(b_)); }
 		bool isInf() const { return (std::isinf(r_) || std::isinf(g_) || std::isinf(b_)); }
@@ -147,12 +147,12 @@ class Rgba final : public Rgb
 {
 	public:
 		Rgba() = default;
-		Rgba(const Rgb &c): Rgb(c), a_(1.f) { }
-		Rgba(const Rgb &c, float a): Rgb(c), a_(a) { }
-		Rgba(float r, float g, float b, float a = 1.f): Rgb(r, g, b), a_(a) { }
-		Rgba(float g): Rgb(g), a_(g) { }
-		Rgba(float g, float a): Rgb(g), a_(a) { }
-		Rgba(float af[4]): Rgb(af), a_(af[3]) { }
+		explicit Rgba(const Rgb &c): Rgb{c}, a_{1.f} { }
+		Rgba(const Rgb &c, float a): Rgb{c}, a_{a} { }
+		Rgba(float r, float g, float b, float a = 1.f): Rgb{r, g, b}, a_{a} { }
+		explicit Rgba(float g): Rgb{g}, a_{g} { }
+		Rgba(float g, float a): Rgb{g}, a_{a} { }
+		explicit Rgba(float af[4]): Rgb{af}, a_{af[3]} { }
 
 		void set(float r, float g, float b, float a = 1.f) { Rgb::set(r, g, b); a_ = a; }
 
@@ -205,16 +205,16 @@ class Rgbe final
 {
 	public:
 		Rgbe() { rgbe_[3] = 0;};
-		Rgbe(const Rgb &s);
-		operator Rgb () const
+		explicit Rgbe(const Rgb &s);
+		explicit operator Rgb () const
 		{
 			if(rgbe_[3])
 			{
 				/*nonzero pixel*/
 				const float f = math::ldexp(1.0, rgbe_[3] - (128 + 8));
-				return Rgb(rgbe_[0] * f, rgbe_[1] * f, rgbe_[2] * f);
+				return {rgbe_[0] * f, rgbe_[1] * f, rgbe_[2] * f};
 			}
-			else return Rgb(0, 0, 0);
+			else return {0, 0, 0};
 		}
 		//		unsigned char& operator [] (int i){ return rgbe[i]; }
 
@@ -262,32 +262,32 @@ std::ostream &operator << (std::ostream &out, const Rgba &c);
 
 inline Rgb operator * (const Rgb &a, const Rgb &b)
 {
-	return Rgb(a.r_ * b.r_, a.g_ * b.g_, a.b_ * b.b_);
+	return {a.r_ * b.r_, a.g_ * b.g_, a.b_ * b.b_};
 }
 
 inline Rgb operator * (const float f, const Rgb &b)
 {
-	return Rgb(f * b.r_, f * b.g_, f * b.b_);
+	return {f * b.r_, f * b.g_, f * b.b_};
 }
 
 inline Rgb operator * (const Rgb &b, const float f)
 {
-	return Rgb(f * b.r_, f * b.g_, f * b.b_);
+	return {f * b.r_, f * b.g_, f * b.b_};
 }
 
 inline Rgb operator / (const Rgb &b, float f)
 {
-	return Rgb(b.r_ / f, b.g_ / f, b.b_ / f);
+	return {b.r_ / f, b.g_ / f, b.b_ / f};
 }
 
 inline Rgb operator + (const Rgb &a, const Rgb &b)
 {
-	return Rgb(a.r_ + b.r_, a.g_ + b.g_, a.b_ + b.b_);
+	return {a.r_ + b.r_, a.g_ + b.g_, a.b_ + b.b_};
 }
 
 inline Rgb operator - (const Rgb &a, const Rgb &b)
 {
-	return Rgb(a.r_ - b.r_, a.g_ - b.g_, a.b_ - b.b_);
+	return {a.r_ - b.r_, a.g_ - b.g_, a.b_ - b.b_};
 }
 
 inline Rgb &Rgb::operator +=(const Rgb &c)
@@ -476,9 +476,9 @@ inline void Rgb::rgbToHsv(float &h, float &s, float &v) const
 {
 	//HSV-RGB Based on https://en.wikipedia.org/wiki/HSL_and_HSV#Converting_to_RGB
 
-	float r_1 = std::max(r_, 0.f);
-	float g_1 = std::max(g_, 0.f);
-	float b_1 = std::max(b_, 0.f);
+	const float r_1 = std::max(r_, 0.f);
+	const float g_1 = std::max(g_, 0.f);
+	const float b_1 = std::max(b_, 0.f);
 
 	float max_component = std::max(std::max(r_1, g_1), b_1);
 	float min_component = std::min(std::min(r_1, g_1), b_1);
@@ -497,9 +497,9 @@ inline void Rgb::rgbToHsv(float &h, float &s, float &v) const
 inline void Rgb::hsvToRgb(const float &h, const float &s, const float &v)
 {
 	//RGB-HSV Based on https://en.wikipedia.org/wiki/HSL_and_HSV#Converting_to_RGB
-	float c = v * s;
-	float x = c * (1.f - std::abs(std::fmod(h, 2.f) - 1.f));
-	float m = v - c;
+	const float c = v * s;
+	const float x = c * (1.f - std::abs(std::fmod(h, 2.f) - 1.f));
+	const float m = v - c;
 	float r_1 = 0.f, g_1 = 0.f, b_1 = 0.f;
 
 	if(h >= 0.f && h < 1.f) { r_1 = c; g_1 = x; b_1 = 0.f; }
@@ -518,13 +518,13 @@ inline void Rgb::rgbToHsl(float &h, float &s, float &l) const
 {
 	//hsl-RGB Based on https://en.wikipedia.org/wiki/HSL_and_hsl#Converting_to_RGB
 
-	float r_1 = std::max(r_, 0.f);
-	float g_1 = std::max(g_, 0.f);
-	float b_1 = std::max(b_, 0.f);
+	const float r_1 = std::max(r_, 0.f);
+	const float g_1 = std::max(g_, 0.f);
+	const float b_1 = std::max(b_, 0.f);
 
-	float max_component = std::max(std::max(r_1, g_1), b_1);
-	float min_component = std::min(std::min(r_1, g_1), b_1);
-	float range = max_component - min_component;
+	const float max_component = std::max(std::max(r_1, g_1), b_1);
+	const float min_component = std::min(std::min(r_1, g_1), b_1);
+	const float range = max_component - min_component;
 	l = 0.5f * (max_component + min_component);
 
 	if(std::abs(range) < 1.0e-6f) { h = 0.f; s = 0.f; }
@@ -539,9 +539,9 @@ inline void Rgb::rgbToHsl(float &h, float &s, float &l) const
 inline void Rgb::hslToRgb(const float &h, const float &s, const float &l)
 {
 	//RGB-hsl Based on https://en.wikipedia.org/wiki/HSL_and_hsl#Converting_to_RGB
-	float c = (1.f - std::abs((2.f * l) - 1.f)) * s;
-	float x = c * (1.f - std::abs(std::fmod(h, 2.f) - 1.f));
-	float m = l - 0.5f * c;
+	const float c = (1.f - std::abs((2.f * l) - 1.f)) * s;
+	const float x = c * (1.f - std::abs(std::fmod(h, 2.f) - 1.f));
+	const float m = l - 0.5f * c;
 	float r_1 = 0.f, g_1 = 0.f, b_1 = 0.f;
 
 	if(h >= 0.f && h < 1.f) { r_1 = c; g_1 = x; b_1 = 0.f; }
@@ -559,7 +559,7 @@ inline void Rgb::hslToRgb(const float &h, const float &s, const float &l)
 inline Rgba Rgba::normalized(float weight) const
 {
 	if(weight != 0.f) return *this / weight;	//Changed from if(weight > 0.f) to if(weight != 0.f) because lanczos and mitchell filters, as they have a negative lobe, sometimes generate pixels with all negative values and also negative weight. Having if(weight > 0.f) caused such pixels to be incorrectly set to 0,0,0,0 and were shown as black dots (with alpha=0). Options are: clipping the filter output to values >=0, but they would lose ability to sharpen the image. Other option (applied here) is to allow negative values and normalize them correctly. This solves a problem stated in http://yafaray.org/node/712 but perhaps could cause other artifacts? We have to keep an eye on this to decide the best option.
-	else return {0.f};
+	else return Rgba{0.f};
 }
 
 END_YAFARAY

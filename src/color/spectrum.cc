@@ -516,9 +516,9 @@ Rgb wl2RgbFromCie(float wl)
 {
 	float fr = wl - 360.f;
 	const int p_1 = int(fr);
-	if(p_1 < 0) return {0.f};
+	if(p_1 < 0) return Rgb{0.f};
 	const int p_2 = p_1 + 1;
-	if(p_2 > 470) return {0.f};
+	if(p_2 > 470) return Rgb{0.f};
 	fr -= std::floor(fr);
 	const float fr_2 = 1.f - fr;
 	const float x = fr_2 * cie_xy_zcolmat[p_1][1] + fr * cie_xy_zcolmat[p_2][1];
@@ -531,9 +531,9 @@ Rgb wl2Xyz(float wl)
 {
 	float fr = wl - 360.f;
 	const int p_1 = int(fr);
-	if(p_1 < 0) return {0.f};
+	if(p_1 < 0) return Rgb{0.f};
 	const int p_2 = p_1 + 1;
-	if(p_2 > 470) return {0.f};
+	if(p_2 > 470) return Rgb{0.f};
 	fr -= std::floor(fr);
 	const float fr_2 = 1.f - fr;
 	const float x = fr_2 * cie_xy_zcolmat[p_1][1] + fr * cie_xy_zcolmat[p_2][1];

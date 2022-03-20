@@ -789,7 +789,7 @@ Rgb BidirectionalIntegrator::evalPath(const Accelerator &accelerator, int s, int
 	const Primitive *shadow_casting_primitive = nullptr;
 	if(tr_shad_) std::tie(shadowed, scol, shadow_casting_primitive) = accelerator_->isShadowed(con_ray, s_depth_, shadow_bias_, camera_);
 	else std::tie(shadowed, shadow_casting_primitive) = accelerator_->isShadowed(con_ray, shadow_bias_);
-	if(shadowed) return Rgb(0.f);
+	if(shadowed) return Rgb{0.f};
 	if(tr_shad_) c_uw *= scol;
 	return c_uw;
 }
@@ -802,7 +802,7 @@ Rgb BidirectionalIntegrator::evalLPath(const Accelerator &accelerator, int t, co
 	const Primitive *shadow_casting_primitive = nullptr;
 	if(tr_shad_) std::tie(shadowed, scol, shadow_casting_primitive) = accelerator_->isShadowed(l_ray, s_depth_, shadow_bias_, camera_);
 	else std::tie(shadowed, shadow_casting_primitive) = accelerator_->isShadowed(l_ray, shadow_bias_);
-	if(shadowed) return Rgb(0.f);
+	if(shadowed) return Rgb{0.f};
 	const PathVertex &z = pd.eye_path_[t - 1];
 	Rgb c_uw = lcol * pd.f_z_ * z.alpha_ * std::abs(z.sp_.n_ * l_ray.dir_); // f_y, cos_x0_f and r^2 computed in connectLPath...(light pdf)
 	if(tr_shad_) c_uw *= scol;
@@ -826,7 +826,7 @@ Rgb BidirectionalIntegrator::evalPathE(const Accelerator &accelerator, int s, co
 	const Primitive *shadow_casting_primitive = nullptr;
 	if(tr_shad_) std::tie(shadowed, scol, shadow_casting_primitive) = accelerator_->isShadowed(con_ray, s_depth_, shadow_bias_, camera_);
 	else std::tie(shadowed, shadow_casting_primitive) = accelerator_->isShadowed(con_ray, shadow_bias_);
-	if(shadowed) return Rgb(0.f);
+	if(shadowed) return Rgb{0.f};
 	//eval material
 	//Rgb f_y = y.sp.material->eval(state, y.sp, y.wi, pd.w_l_e, BSDF_ALL);
 	//TODO:
@@ -845,7 +845,7 @@ Rgb BidirectionalIntegrator::evalPathE(const Accelerator &accelerator, int s, co
     const material_t *oneMat = sp.material;
     lightRay.from = sp.P;
     int nLightsI = lights.size();
-    if(nLightsI == 0) return Rgb(0.f);
+    if(nLightsI == 0) return {0.f};
     float s1, s2, lightPdf, lightNumPdf;
     int lnum = lightPowerD->DSample((*state.random_generator)(), &lightNumPdf);
     if(lnum > nLightsI-1) lnum = nLightsI-1;

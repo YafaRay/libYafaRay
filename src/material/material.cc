@@ -88,7 +88,7 @@ Rgb Material::sampleClay(const SurfacePoint &sp, const Vec3 &wo, Vec3 &wi, Sampl
 	wi = sample::cosHemisphere(n, sp.nu_, sp.nv_, s.s_1_, s.s_2_);
 	s.pdf_ = std::abs(wi * n);
 	w = (std::abs(wi * sp.n_)) / (s.pdf_ * 0.99f + 0.01f);
-	return {1.f};	//Clay color White 100%
+	return Rgb{1.f};	//Clay color White 100%
 }
 
 
@@ -129,7 +129,7 @@ void Material::applyWireFrame(Rgba &col, float wire_frame_amount, const SurfaceP
 		{
 			wire_frame_amount *= math::pow((wireframe_thickness_ - dist) / wireframe_thickness_, wireframe_exponent_);
 		}
-		col.blend(wire_frame_col, wire_frame_amount);
+		col.blend(Rgba{wire_frame_col}, wire_frame_amount);
 		col.a_ = wire_frame_amount;
 	}
 }
@@ -155,7 +155,7 @@ bool Material::scatterPhoton(const MaterialData *mat_data, const SurfacePoint &s
 
 Rgb Material::getReflectivity(const MaterialData *mat_data, const SurfacePoint &sp, BsdfFlags flags, bool chromatic, float wavelength, const Camera *camera) const
 {
-	if(!flags.hasAny((BsdfFlags::Transmit | BsdfFlags::Reflect) & bsdf_flags_)) return Rgb(0.f);
+	if(!flags.hasAny((BsdfFlags::Transmit | BsdfFlags::Reflect) & bsdf_flags_)) return Rgb{0.f};
 	Rgb total(0.f);
 	for(int i = 0; i < 16; ++i)
 	{
@@ -196,14 +196,14 @@ std::unique_ptr<DirectionColor> DirectionColor::blend(std::unique_ptr<DirectionC
 	else if(direction_color_1)
 	{
 		std::unique_ptr<DirectionColor> direction_color_blend = std::unique_ptr<DirectionColor>(new DirectionColor());
-		direction_color_blend->col_ = math::lerp(direction_color_1->col_, {0.f}, blend_val);
+		direction_color_blend->col_ = math::lerp(direction_color_1->col_, Rgb{0.f}, blend_val);
 		direction_color_blend->dir_ = direction_color_1->dir_.normalize();
 		return direction_color_blend;
 	}
 	else if(direction_color_2)
 	{
 		std::unique_ptr<DirectionColor> direction_color_blend = std::unique_ptr<DirectionColor>(new DirectionColor());
-		direction_color_blend->col_ = math::lerp({0.f}, direction_color_2->col_, blend_val);
+		direction_color_blend->col_ = math::lerp(Rgb{0.f}, direction_color_2->col_, blend_val);
 		direction_color_blend->dir_ = direction_color_2->dir_.normalize();
 		return direction_color_blend;
 	}

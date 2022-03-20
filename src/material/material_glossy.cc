@@ -112,7 +112,7 @@ Rgb GlossyMaterial::eval(const MaterialData *mat_data, const SurfacePoint &sp, c
 {
 	if(!force_eval)	//If the flag force_eval = true then the next line will be skipped, necessary for the Glossy Direct render pass
 	{
-		if(!bsdfs.hasAny(BsdfFlags::Diffuse) || ((sp.ng_ * wl) * (sp.ng_ * wo)) < 0.f) return Rgb(0.f);
+		if(!bsdfs.hasAny(BsdfFlags::Diffuse) || ((sp.ng_ * wl) * (sp.ng_ * wo)) < 0.f) return Rgb{0.f};
 	}
 
 	Rgb col(0.f);
@@ -498,7 +498,7 @@ Material * GlossyMaterial::factory(Logger &logger, ParamMap &params, std::list<P
 Rgb GlossyMaterial::getDiffuseColor(const NodeTreeData &node_tree_data) const
 {
 	if(as_diffuse_ || with_diffuse_) return (diffuse_reflection_shader_ ? diffuse_reflection_shader_->getScalar(node_tree_data) : 1.f) * (diffuse_shader_ ? diffuse_shader_->getColor(node_tree_data) : diff_color_);
-	else return Rgb(0.f);
+	else return Rgb{0.f};
 }
 
 Rgb GlossyMaterial::getGlossyColor(const NodeTreeData &node_tree_data) const

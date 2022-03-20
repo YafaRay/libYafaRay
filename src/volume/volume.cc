@@ -79,8 +79,8 @@ Rgb DensityVolumeRegion::tau(const Ray &ray, float step_size, float offset) cons
 {
 	Bound::Cross cross = crossBound(ray);
 	// ray doesn't hit the BB
-	if(!cross.crossed_) return {0.f};
-	if(ray.tmax_ < cross.enter_ && ray.tmax_ >= 0.f) return Rgb(0.f);
+	if(!cross.crossed_) return Rgb{0.f};
+	if(ray.tmax_ < cross.enter_ && ray.tmax_ >= 0.f) return Rgb{0.f};
 	if(ray.tmax_ < cross.leave_ && ray.tmax_ >= 0.f) cross.leave_ = ray.tmax_;
 	if(cross.enter_ < 0.f) cross.enter_ = 0.f;
 

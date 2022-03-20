@@ -146,7 +146,7 @@ Rgb DarkSkyBackground::getSunColorFromSunRad()
 		const double ozone = std::exp(ko(wavelength) * lm);
 		const double gas = std::exp((-1.41 * kg_lm) / std::pow(1 + 118.93 * kg_lm, 0.45));
 		const double water = std::exp((-0.2385 * kwa_lmw) / std::pow(1 + 20.07 * kwa_lmw, 0.45));
-		spdf = sun_radiance_curve(wavelength) * rayleigh * angstrom * ozone * gas * water;
+		spdf = Rgb{static_cast<float>(sun_radiance_curve(wavelength) * rayleigh * angstrom * ozone * gas * water)};
 		s_xyz += spectral_data::chromaMatch(wavelength) * spdf * 0.013513514;
 	}
 	return color_conv_.fromXyz(s_xyz, true);

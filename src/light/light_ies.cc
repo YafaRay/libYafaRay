@@ -139,7 +139,7 @@ Rgb IesLight::emitPhoton(float s_1, float s_2, float s_3, float s_4, Ray &ray, f
 
 	float cosa = ray.dir_ * dir_;
 
-	if(cosa < cos_end_) return Rgb(0.f);
+	if(cosa < cos_end_) return Rgb{0.f};
 
 	float u, v;
 	getAngles(u, v, ray.dir_, cosa);

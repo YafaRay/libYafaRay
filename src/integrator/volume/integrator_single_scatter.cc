@@ -261,8 +261,8 @@ Rgb SingleScatterIntegrator::getInScatter(RandomGenerator &random_generator, con
 
 Rgb SingleScatterIntegrator::transmittance(RandomGenerator &random_generator, const Ray &ray) const
 {
-	if(vr_size_ == 0) return {1.f};
-	Rgba tr(1.f);
+	if(vr_size_ == 0) return Rgb{1.f};
+	Rgb tr{1.f};
 	for(const auto &v : *volume_regions_)
 	{
 		const Bound::Cross cross = v.second->crossBound(ray);
@@ -270,7 +270,7 @@ Rgb SingleScatterIntegrator::transmittance(RandomGenerator &random_generator, co
 		{
 			const float random_value = random_generator();
 			const Rgb optical_thickness = v.second->tau(ray, step_size_, random_value);
-			tr *= Rgb(math::exp(-optical_thickness.energy()));
+			tr *= Rgb{math::exp(-optical_thickness.energy())};
 		}
 	}
 	return tr;
@@ -278,7 +278,7 @@ Rgb SingleScatterIntegrator::transmittance(RandomGenerator &random_generator, co
 
 Rgb SingleScatterIntegrator::integrate(RandomGenerator &random_generator, const Ray &ray, int additional_depth) const
 {
-	if(vr_size_ == 0) return {0.f};
+	if(vr_size_ == 0) return Rgb{0.f};
 	const bool hit = (ray.tmax_ > 0.f);
 	float t_0 = 1e10f, t_1 = -1e10f;
 	// find min t0 and max t1
@@ -293,7 +293,7 @@ Rgb SingleScatterIntegrator::integrate(RandomGenerator &random_generator, const 
 		if(cross.enter_ < t_0) t_0 = cross.enter_;
 	}
 	float dist = t_1 - t_0;
-	if(dist < 1e-3f) return {0.f};
+	if(dist < 1e-3f) return Rgb{0.f};
 
 	float pos = t_0 - random_generator() * step_size_; // start position of ray marching
 	dist = t_1 - pos;
@@ -352,7 +352,7 @@ Rgb SingleScatterIntegrator::integrate(RandomGenerator &random_generator, const 
 		const Ray step_ray(ray.from_ + (ray.dir_ * pos), ray.dir_, 0, current_step, 0);
 		if(adaptive_)
 		{
-			step_tau = accum_density.at(step_sample);
+			step_tau = Rgb{accum_density.at(step_sample)};
 		}
 		else
 		{
@@ -365,7 +365,7 @@ Rgb SingleScatterIntegrator::integrate(RandomGenerator &random_generator, const 
 				}
 			}
 		}
-		tr_tmp = math::exp(-step_tau.energy());
+		tr_tmp = Rgb{math::exp(-step_tau.energy())};
 		if(optimize_ && tr_tmp.energy() < 1e-3f)
 		{
 			const float random_val = random_generator();

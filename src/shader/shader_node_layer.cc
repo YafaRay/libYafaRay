@@ -19,7 +19,6 @@
 #include "shader/shader_node_layer.h"
 #include "common/param.h"
 #include "common/logger.h"
-#include "common/string.h"
 
 BEGIN_YAFARAY
 
@@ -86,7 +85,7 @@ void LayerNode::eval(NodeTreeData &node_tree_data, const SurfacePoint &sp, const
 		else if(tin < 0.f) tin_truncated_range = 0.f;
 		else tin_truncated_range = tin;
 
-		rcol = textureRgbBlend(texcolor, rcol, tin_truncated_range, stencil_tin * colfac_, blend_mode_);
+		rcol = Rgba{textureRgbBlend(texcolor, rcol, tin_truncated_range, stencil_tin * colfac_, blend_mode_)};
 		rcol.clampRgb0();
 	}
 
@@ -175,7 +174,7 @@ bool LayerNode::configInputs(Logger &logger, const ParamMap &params, const NodeF
 	{
 		if(!params.getParam("upper_color", upper_col_))
 		{
-			upper_col_ = Rgb(0.f);
+			upper_col_ = Rgba{0.f};
 		}
 		if(!params.getParam("upper_value", upper_val_))
 		{
@@ -340,7 +339,7 @@ ShaderNode * LayerNode::factory(Logger &logger, const ParamMap &params, const Sc
 	else if(blend_mode_str == "lighten") blend_mode = BlendMode::Light;
 	//else if(blend_mode_str == "overlay") blend_mode = BlendMode::Overlay;
 
-	auto node = new LayerNode(flags, colfac, valfac, def_val, def_col, blend_mode);
+	auto node = new LayerNode(flags, colfac, valfac, def_val, Rgba{def_col}, blend_mode);
 	node->do_color_ = do_color;
 	node->do_scalar_ = do_scalar;
 	node->color_input_ = color_input;

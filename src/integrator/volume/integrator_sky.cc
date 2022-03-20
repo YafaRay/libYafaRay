@@ -71,7 +71,7 @@ Rgb SkyIntegrator::skyTau(const Ray &ray) const
 {
 	//std::cout << " ray.from: " << ray.from << " ray.dir: " << ray.dir << " ray.tmax: " << ray.tmax << " t0: " << t0 << " t1: " << t1 << std::endl;
 	/*
-	if (ray.tmax < t0 && ! (ray.tmax < 0)) return Rgb(0.f);
+	if (ray.tmax < t0 && ! (ray.tmax < 0)) return {0.f};
 	if (ray.tmax < t1 && ! (ray.tmax < 0)) t1 = ray.tmax;
 	if (t0 < 0.f) t0 = 0.f;
 	*/
@@ -88,18 +88,18 @@ Rgb SkyIntegrator::skyTau(const Ray &ray) const
 	float u = exp(-alpha * (h0 + s * cos_theta));
 	tauVal = Rgba(K*(H-u));
 	*/
-	return sigma_t_ * math::exp(-alpha_ * h_0) * (1.f - math::exp(-alpha_ * cos_theta * s)) / (alpha_ * cos_theta);
+	return Rgb{sigma_t_ * math::exp(-alpha_ * h_0) * (1.f - math::exp(-alpha_ * cos_theta * s)) / (alpha_ * cos_theta)};
 	//std::cout << tauVal.energy() << " " << cos_theta << " " << dist << " " << ray.tmax << std::endl;
 	//return Rgba(exp(-result.getR()), exp(-result.getG()), exp(-result.getB()));
 }
 
 Rgb SkyIntegrator::skyTau(const Ray &ray, float beta, float alpha) const
 {
-	if(ray.tmax_ < 0.f) return {0.f};
+	if(ray.tmax_ < 0.f) return Rgb{0.f};
 	const float s = ray.tmax_ * scale_;
 	float cos_theta = ray.dir_.z_;
 	float h_0 = ray.from_.z_ * scale_;
-	return beta * math::exp(-alpha * h_0) * (1.f - math::exp(-alpha * cos_theta * s)) / (alpha * cos_theta);
+	return Rgb{beta * math::exp(-alpha * h_0) * (1.f - math::exp(-alpha * cos_theta * s)) / (alpha * cos_theta)};
 	//tauVal = Rgba(-beta / (alpha * cos_theta) * ( exp(-alpha * (h0 + cos_theta * s)) - exp(-alpha*h0) ));
 }
 
@@ -113,7 +113,7 @@ Rgb SkyIntegrator::transmittance(RandomGenerator &random_generator, const Ray &r
 
 Rgb SkyIntegrator::integrate(RandomGenerator &random_generator, const Ray &ray, int additional_depth) const
 {
-	if(ray.tmax_ < 0.f) return {0.f};
+	if(ray.tmax_ < 0.f) return Rgb{0.f};
 	const float s = ray.tmax_ * scale_;
 	const int v_vec = 3;
 	const int u_vec = 8;
@@ -162,8 +162,8 @@ Rgb SkyIntegrator::integrate(RandomGenerator &random_generator, const Ray &ray, 
 		const float tr_m = math::exp(-tau_m.energy());
 		//if (Tr < 1e-3) // || u < 1e-3)
 		//	break;
-		i_r += tr_r * u_r * step;
-		i_m += tr_m * u_m * step;
+		i_r += Rgb{tr_r * u_r * step};
+		i_m += Rgb{tr_m * u_m * step};
 		//std::cout << /* tau_r.energy() << " " << Tr_r << " " <<  */ I_m.energy() << " " << Tr_m << " " << pos << " " << cos_theta << std::endl;
 		pos += step;
 	}

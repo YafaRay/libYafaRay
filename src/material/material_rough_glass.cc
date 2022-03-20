@@ -133,7 +133,7 @@ Rgb RoughGlassMaterial::sample(const MaterialData *mat_data, const SurfacePoint 
 		wi = wo;
 		wi.reflect(h);
 		s.sampled_flags_ = BsdfFlags::Glossy | BsdfFlags::Reflect;
-		ret = 1.f;
+		ret = Rgb{1.f};
 		w = 1.f;
 	}
 	applyWireFrame(ret, wireframe_shader_, mat_data->node_tree_data_, sp);
@@ -228,7 +228,7 @@ Rgb RoughGlassMaterial::sample(const MaterialData *mat_data, const SurfacePoint 
 		wi.reflect(h);
 		s.sampled_flags_ |= BsdfFlags::Glossy | BsdfFlags::Reflect;
 		dir[0] = wi;
-		ret = 1.f;
+		ret = Rgb{1.f};
 		w[0] = 1.f;
 	}
 	applyWireFrame(ret, wireframe_shader_, mat_data->node_tree_data_, sp);

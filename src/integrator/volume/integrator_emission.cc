@@ -29,7 +29,7 @@ Rgb EmissionIntegrator::transmittance(RandomGenerator &random_generator, const R
 {
 	Rgb result {1.f};
 	for(const auto &v : *volume_regions_) result *= v.second.get()->tau(ray, 0, 0);
-	return math::exp(-result.getR()), math::exp(-result.getG()), math::exp(-result.getB());
+	return Rgb{math::exp(-result.getR()), math::exp(-result.getG()), math::exp(-result.getB())};
 }
 
 Rgb EmissionIntegrator::integrate(RandomGenerator &random_generator, const Ray &ray, int additional_depth) const

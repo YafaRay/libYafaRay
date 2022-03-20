@@ -869,7 +869,7 @@ std::pair<Rgb, float> PhotonIntegrator::integrate(Ray &ray, RandomGenerator &ran
 		col += col_emit;
 		if(color_layers && color_layers->getFlags().hasAny(LayerDef::Flags::BasicLayers))
 		{
-			if(Rgba *color_layer = color_layers->find(LayerDef::Emit)) *color_layer += col_emit;
+			if(Rgba *color_layer = color_layers->find(LayerDef::Emit)) *color_layer += Rgba{col_emit};
 		}
 		if(use_photon_diffuse_ && final_gather_)
 		{
@@ -887,7 +887,7 @@ std::pair<Rgb, float> PhotonIntegrator::integrate(Ray &ray, RandomGenerator &ran
 					{
 						const Vec3 n{SurfacePoint::normalFaceForward(sp->ng_, sp->n_, wo)};
 						const Photon *nearest = radiance_map_->findNearest(sp->p_, n, lookup_rad_);
-						if(nearest) *color_layer = nearest->color();
+						if(nearest) *color_layer = Rgba{nearest->color()};
 					}
 				}
 
@@ -898,7 +898,7 @@ std::pair<Rgb, float> PhotonIntegrator::integrate(Ray &ray, RandomGenerator &ran
 					col += col_tmp;
 					if(color_layers && color_layers->getFlags().hasAny(LayerDef::Flags::BasicLayers))
 					{
-						if(Rgba *color_layer = color_layers->find(LayerDef::Emit)) *color_layer += col_tmp;
+						if(Rgba *color_layer = color_layers->find(LayerDef::Emit)) *color_layer += Rgba{col_tmp};
 					}
 				}
 
@@ -910,7 +910,7 @@ std::pair<Rgb, float> PhotonIntegrator::integrate(Ray &ray, RandomGenerator &ran
 					col += col_tmp;
 					if(color_layers && color_layers->getFlags().hasAny(LayerDef::Flags::DiffuseLayers))
 					{
-						if(Rgba *color_layer = color_layers->find(LayerDef::DiffuseIndirect)) *color_layer = col_tmp;
+						if(Rgba *color_layer = color_layers->find(LayerDef::DiffuseIndirect)) *color_layer = Rgba{col_tmp};
 					}
 				}
 			}
@@ -931,7 +931,7 @@ std::pair<Rgb, float> PhotonIntegrator::integrate(Ray &ray, RandomGenerator &ran
 					{
 						const Vec3 n{SurfacePoint::normalFaceForward(sp->ng_, sp->n_, wo)};
 						const Photon *nearest = radiance_map_->findNearest(sp->p_, n, lookup_rad_);
-						if(nearest) *color_layer = nearest->color();
+						if(nearest) *color_layer = Rgba{nearest->color()};
 					}
 				}
 
@@ -941,7 +941,7 @@ std::pair<Rgb, float> PhotonIntegrator::integrate(Ray &ray, RandomGenerator &ran
 					col += col_tmp;
 					if(color_layers && color_layers->getFlags().hasAny(LayerDef::Flags::BasicLayers))
 					{
-						if(Rgba *color_layer = color_layers->find(LayerDef::Emit)) *color_layer += col_tmp;
+						if(Rgba *color_layer = color_layers->find(LayerDef::Emit)) *color_layer += Rgba{col_tmp};
 					}
 				}
 
@@ -970,7 +970,7 @@ std::pair<Rgb, float> PhotonIntegrator::integrate(Ray &ray, RandomGenerator &ran
 						col += col_tmp;
 						if(color_layers && color_layers->getFlags().hasAny(LayerDef::Flags::BasicLayers))
 						{
-							if(Rgba *color_layer = color_layers->find(LayerDef::DiffuseIndirect)) *color_layer += col_tmp;
+							if(Rgba *color_layer = color_layers->find(LayerDef::DiffuseIndirect)) *color_layer += Rgba{col_tmp};
 						}
 					}
 				}

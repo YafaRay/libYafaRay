@@ -27,32 +27,32 @@ struct PSample;
 
 Rgb UniformVolumeRegion::sigmaA(const Point3 &p, const Vec3 &v) const
 {
-	if(!have_s_a_) return Rgb(0.f);
+	if(!have_s_a_) return Rgb{0.f};
 	if(b_box_.includes(p))
 	{
 		return s_a_;
 	}
 	else
-		return Rgb(0.f);
+		return Rgb{0.f};
 
 }
 
 Rgb UniformVolumeRegion::sigmaS(const Point3 &p, const Vec3 &v) const
 {
-	if(!have_s_s_) return Rgb(0.f);
+	if(!have_s_s_) return Rgb{0.f};
 	if(b_box_.includes(p))
 	{
 		return s_s_;
 	}
 	else
-		return Rgb(0.f);
+		return Rgb{0.f};
 }
 
 Rgb UniformVolumeRegion::tau(const Ray &ray, float step, float offset) const
 {
 	Bound::Cross cross = crossBound(ray);
-	if(!cross.crossed_) return {0.f};
-	if(ray.tmax_ < cross.enter_ && ray.tmax_ >= 0) return Rgb(0.f);
+	if(!cross.crossed_) return Rgb{0.f};
+	if(ray.tmax_ < cross.enter_ && ray.tmax_ >= 0) return Rgb{0.f};
 	if(ray.tmax_ < cross.leave_ && ray.tmax_ >= 0) cross.leave_ = ray.tmax_;
 	// t0 < 0 means, ray.from is in the volume
 	if(cross.enter_ < 0.f) cross.enter_ = 0.f;
@@ -63,13 +63,13 @@ Rgb UniformVolumeRegion::tau(const Ray &ray, float step, float offset) const
 
 Rgb UniformVolumeRegion::emission(const Point3 &p, const Vec3 &v) const
 {
-	if(!have_l_e_) return Rgb(0.f);
+	if(!have_l_e_) return Rgb{0.f};
 	if(b_box_.includes(p))
 	{
 		return l_e_;
 	}
 	else
-		return Rgb(0.f);
+		return Rgb{0.f};
 }
 
 VolumeRegion * UniformVolumeRegion::factory(Logger &logger, const ParamMap &params, const Scene &scene)

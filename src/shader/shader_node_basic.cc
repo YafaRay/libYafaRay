@@ -564,7 +564,7 @@ class ScreenNode: public MixNode
 			getInputs(node_tree_data, cin_1, cin_2, fin_1, fin_2, f_2);
 			f_1 = 1.f - f_2;
 
-			const Rgba color { Rgba(1.f) - (Rgba(f_1) + f_2 * (1.f - cin_2)) * (1.f - cin_1) };
+			const Rgba color { Rgba{1.f} - (Rgba{f_1} + f_2 * (Rgba{1.f} - cin_2)) * (Rgba{1.f} - cin_1) };
 			const float scalar = 1.f - (f_1 + f_2 * (1.f - fin_2)) * (1.f - fin_1);
 			node_tree_data[getId()] = NodeResult(color, scalar);
 		}
