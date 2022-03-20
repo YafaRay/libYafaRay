@@ -53,12 +53,12 @@ const MaterialData * RoughGlassMaterial::initBsdf(SurfacePoint &sp, const Camera
 
 Rgb RoughGlassMaterial::sample(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, Vec3 &wi, Sample &s, float &w, bool chromatic, float wavelength, const Camera *camera) const
 {
-	const Vec3 n = SurfacePoint::normalFaceForward(sp.ng_, sp.n_, wo);
+	const Vec3 n{SurfacePoint::normalFaceForward(sp.ng_, sp.n_, wo)};
 	const bool outside = sp.ng_ * wo > 0.f;
 	s.pdf_ = 1.f;
 	const float alpha_texture = roughness_shader_ ? roughness_shader_->getScalar(mat_data->node_tree_data_) + 0.001f : 0.001f;
 	const float alpha_2 = roughness_shader_ ? alpha_texture * alpha_texture : a_2_;
-	Vec3 h = microfacet::ggxSample(alpha_2, s.s_1_, s.s_2_);
+	Vec3 h{microfacet::ggxSample(alpha_2, s.s_1_, s.s_2_)};
 	h = h.x_ * sp.nu_ + h.y_ * sp.nv_ + h.z_ * n;
 	h.normalize();
 	float cur_ior = ior_;
@@ -142,13 +142,13 @@ Rgb RoughGlassMaterial::sample(const MaterialData *mat_data, const SurfacePoint 
 
 Rgb RoughGlassMaterial::sample(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, Vec3 *const dir, Rgb &tcol, Sample &s, float *const w, bool chromatic, float wavelength) const
 {
-	const Vec3 n = SurfacePoint::normalFaceForward(sp.ng_, sp.n_, wo);
+	const Vec3 n{SurfacePoint::normalFaceForward(sp.ng_, sp.n_, wo)};
 	const bool outside = sp.ng_ * wo > 0.f;
 	s.pdf_ = 1.f;
 	const float alpha_texture = roughness_shader_ ? roughness_shader_->getScalar(mat_data->node_tree_data_) + 0.001f : 0.001f;
 	const float alpha_2 = roughness_shader_ ? alpha_texture * alpha_texture : a_2_;
 
-	Vec3 h = microfacet::ggxSample(alpha_2, s.s_1_, s.s_2_);
+	Vec3 h{microfacet::ggxSample(alpha_2, s.s_1_, s.s_2_)};
 	h = h.x_ * sp.nu_ + h.y_ * sp.nv_ + h.z_ * n;
 	h.normalize();
 
@@ -237,7 +237,7 @@ Rgb RoughGlassMaterial::sample(const MaterialData *mat_data, const SurfacePoint 
 
 Rgb RoughGlassMaterial::getTransparency(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, const Camera *camera) const
 {
-	const Vec3 n = SurfacePoint::normalFaceForward(sp.ng_, sp.n_, wo);
+	const Vec3 n{SurfacePoint::normalFaceForward(sp.ng_, sp.n_, wo)};
 	float kr, kt;
 	Vec3::fresnel(wo, n, getShaderScalar(ior_shader_, mat_data->node_tree_data_, ior_), kr, kt);
 	Rgb result = kt * getShaderColor(filter_col_shader_, mat_data->node_tree_data_, filter_color_);

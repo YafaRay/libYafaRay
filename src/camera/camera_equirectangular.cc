@@ -82,8 +82,7 @@ Camera * EquirectangularCamera::factory(Logger &logger, ParamMap &params, const 
 Point3 EquirectangularCamera::screenproject(const Point3 &p) const
 {
 	//FIXME
-	Point3 s;
-	Vec3 dir = Vec3(p) - Vec3(position_);
+	Vec3 dir{p - position_};
 	dir.normalize();
 
 	// project p to pixel plane:
@@ -91,11 +90,7 @@ Point3 EquirectangularCamera::screenproject(const Point3 &p) const
 	float dy = cam_y_ * dir;
 	float dz = cam_z_ * dir;
 
-	s.x_ = -dx / (4.f * math::num_pi * dz);
-	s.y_ = -dy / (4.f * math::num_pi * dz);
-	s.z_ = 0;
-
-	return s;
+	return {static_cast<float>(-dx / (4.f * math::num_pi * dz)), static_cast<float>(dy / (4.f * math::num_pi * dz)), 0.f};
 }
 
 END_YAFARAY

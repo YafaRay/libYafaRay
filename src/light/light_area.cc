@@ -68,8 +68,8 @@ bool AreaLight::illumSample(const SurfacePoint &sp, LSample &s, Ray &wi) const
 	if(photonOnly()) return false;
 
 	//get point on area light and vector to surface point:
-	Point3 p = corner_ + s.s_1_ * to_x_ + s.s_2_ * to_y_;
-	Vec3 ldir = p - sp.p_;
+	Point3 p{corner_ + s.s_1_ * to_x_ + s.s_2_ * to_y_};
+	Vec3 ldir{p - sp.p_};
 	//normalize vec and compute inverse square distance
 	float dist_sqr = ldir.lengthSqr();
 	float dist = math::sqrt(dist_sqr);
@@ -155,7 +155,7 @@ bool AreaLight::intersect(const Ray &ray, float &t, Rgb &col, float &ipdf) const
 
 float AreaLight::illumPdf(const SurfacePoint &sp, const SurfacePoint &sp_light) const
 {
-	Vec3 wi = sp_light.p_ - sp.p_;
+	Vec3 wi{sp_light.p_ - sp.p_};
 	float r_2 = wi.normLenSqr();
 	float cos_n = wi * fnormal_;
 	return cos_n > 0 ? r_2 * math::num_pi / (area_ * cos_n) : 0.f;

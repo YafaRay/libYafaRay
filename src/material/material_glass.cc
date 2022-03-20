@@ -194,7 +194,7 @@ Rgb GlassMaterial::sample(const MaterialData *mat_data, const SurfacePoint &sp, 
 
 Rgb GlassMaterial::getTransparency(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, const Camera *camera) const
 {
-	const Vec3 n = SurfacePoint::normalFaceForward(sp.ng_, sp.n_, wo);
+	const Vec3 n{SurfacePoint::normalFaceForward(sp.ng_, sp.n_, wo)};
 	float kr, kt;
 	Vec3::fresnel(wo, n, getShaderScalar(ior_shader_, mat_data->node_tree_data_, ior_), kr, kt);
 	Rgb result = kt * getShaderColor(filter_color_shader_, mat_data->node_tree_data_, filter_color_);
@@ -447,7 +447,7 @@ Specular MirrorMaterial::getSpecular(int ray_level, const MaterialData *mat_data
 	Specular specular;
 	specular.reflect_ = std::unique_ptr<DirectionColor>(new DirectionColor());
 	specular.reflect_->col_ = ref_col_;
-	const Vec3 n = SurfacePoint::normalFaceForward(sp.ng_, sp.n_, wo);
+	const Vec3 n{SurfacePoint::normalFaceForward(sp.ng_, sp.n_, wo)};
 	specular.reflect_->dir_ = Vec3::reflectDir(n, wo);
 	return specular;
 }

@@ -29,12 +29,12 @@ void SurfacePoint::setRayDifferentials(const RayDifferentials *ray_differentials
 		// Estimate screen-space change in \pt and $(u,v)$
 		// Compute auxiliary intersection points with plane
 		const float d = -(n_ * p_);
-		const Vec3 rxv(ray_differentials->xfrom_);
+		const Vec3 rxv{ray_differentials->xfrom_};
 		const float tx = -((n_ * rxv) + d) / (n_ * ray_differentials->xdir_);
-		const Point3 px = ray_differentials->xfrom_ + tx * ray_differentials->xdir_;
+		const Point3 px{ray_differentials->xfrom_ + tx * ray_differentials->xdir_};
 		const Vec3 ryv(ray_differentials->yfrom_);
 		const float ty = -((n_ * ryv) + d) / (n_ * ray_differentials->ydir_);
-		const Point3 py = ray_differentials->yfrom_ + ty * ray_differentials->ydir_;
+		const Point3 py{ray_differentials->yfrom_ + ty * ray_differentials->ydir_};
 		differentials_ = std::unique_ptr<SurfaceDifferentials>(new SurfaceDifferentials{px - p_, py - p_});
 	}
 }
@@ -79,7 +79,8 @@ std::unique_ptr<RayDifferentials> SurfacePoint::reflectedRay(const RayDifferenti
 	//				  bsdf->dgShading.dndv * bsdf->dgShading.dvdx;
 	//	Normal dndy = bsdf->dgShading.dndu * bsdf->dgShading.dudy +
 	//				  bsdf->dgShading.dndv * bsdf->dgShading.dvdy;
-	const Vec3 dwodx = in_dir - in_differentials->xdir_, dwody = in_dir - in_differentials->ydir_;
+	const Vec3 dwodx{in_dir - in_differentials->xdir_};
+	const Vec3 dwody{in_dir - in_differentials->ydir_};
 	const float d_d_ndx = (dwodx * n_); // + (out.dir * dndx);
 	const float d_d_ndy = (dwody * n_); // + (out.dir * dndy);
 	out_differentials->xdir_ = out_dir - dwodx + 2 * (/* (out.dir * sp.N) * dndx + */ d_d_ndx * n_);
@@ -97,7 +98,8 @@ std::unique_ptr<RayDifferentials> SurfacePoint::refractedRay(const RayDifferenti
 	//if (Dot(wo, n) < 0) eta = 1.f / eta;
 	//Normal dndx = bsdf->dgShading.dndu * bsdf->dgShading.dudx + bsdf->dgShading.dndv * bsdf->dgShading.dvdx;
 	//Normal dndy = bsdf->dgShading.dndu * bsdf->dgShading.dudy + bsdf->dgShading.dndv * bsdf->dgShading.dvdy;
-	const Vec3 dwodx = in_dir - in_differentials->xdir_, dwody = in_dir - in_differentials->ydir_;
+	const Vec3 dwodx{in_dir - in_differentials->xdir_};
+	const Vec3 dwody{in_dir - in_differentials->ydir_};
 	const float d_d_ndx = (dwodx * n_); // + Dot(wo, dndx);
 	const float d_d_ndy = (dwody * n_); // + Dot(wo, dndy);
 	//	float mu = IOR * (in.dir * sp.N) - (out.dir * sp.N);

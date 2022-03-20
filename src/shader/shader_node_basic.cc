@@ -43,9 +43,9 @@ void TextureMapperNode::setup()
 		d_u_ = d_v_ = d_w_ = step;
 	}
 
-	p_du_ = Point3(d_u_, 0, 0);
-	p_dv_ = Point3(0, d_v_, 0);
-	p_dw_ = Point3(0, 0, d_w_);
+	p_du_ = {d_u_, 0.f, 0.f};
+	p_dv_ = {0.f, d_v_, 0.f};
+	p_dw_ = {0.f, 0.f, d_w_};
 
 	bump_str_ /= scale_.length();
 
@@ -103,11 +103,11 @@ Point3 TextureMapperNode::flatMap(const Point3 &p)
 
 Point3 TextureMapperNode::doMapping(const Point3 &p, const Vec3 &n) const
 {
-	Point3 texpt(p);
+	Point3 texpt{p};
 	// Texture coordinates standardized, if needed, to -1..1
 	switch(coords_)
 	{
-		case Uv: texpt = Point3(2.f * texpt.x_ - 1.f, 2.f * texpt.y_ - 1.f, texpt.z_); break;
+		case Uv: texpt = {2.f * texpt.x_ - 1.f, 2.f * texpt.y_ - 1.f, texpt.z_}; break;
 		default: break;
 	}
 	// Texture axis mapping
@@ -146,7 +146,7 @@ void TextureMapperNode::getCoords(Point3 &texpt, Vec3 &ng, const SurfacePoint &s
 			{
 				Vec3 camx, camy, camz;
 				camera->getAxis(camx, camy, camz);
-				texpt = Point3(sp.n_ * camx, -sp.n_ * camy, 0);
+				texpt = {sp.n_ * camx, -sp.n_ * camy, 0.f};
 				ng = sp.ng_;
 			}
 			break;
@@ -170,15 +170,15 @@ void TextureMapperNode::eval(NodeTreeData &node_tree_data, const SurfacePoint &s
 	if((tex_->getInterpolationType() == InterpolationType::Trilinear || tex_->getInterpolationType() == InterpolationType::Ewa) && sp.differentials_)
 	{
 		getCoords(texpt, ng, sp, camera);
-		const Point3 texptorig = texpt;
+		const Point3 texptorig{texpt};
 		texpt = doMapping(texptorig, ng);
 		if(coords_ == Uv && sp.has_uv_)
 		{
 			float du_dx = 0.f, dv_dx = 0.f;
 			float du_dy = 0.f, dv_dy = 0.f;
 			sp.getUVdifferentials(du_dx, dv_dx, du_dy, dv_dy);
-			const Point3 texpt_diffx{1.0e+2f * (doMapping(texptorig + 1.0e-2f * Point3(du_dx, dv_dx, 0.f), ng) - texpt)};
-			const Point3 texpt_diffy{1.0e+2f * (doMapping(texptorig + 1.0e-2f * Point3(du_dy, dv_dy, 0.f), ng) - texpt)};
+			const Point3 texpt_diffx{1.0e+2f * (doMapping(texptorig + 1.0e-2f * Point3{du_dx, dv_dx, 0.f}, ng) - texpt)};
+			const Point3 texpt_diffy{1.0e+2f * (doMapping(texptorig + 1.0e-2f * Point3{du_dy, dv_dy, 0.f}, ng) - texpt)};
 			mip_map_params = std::unique_ptr<const MipMapParams>(new MipMapParams(texpt_diffx.x_, texpt_diffx.y_, texpt_diffy.x_, texpt_diffy.y_));
 		}
 	}
@@ -231,8 +231,8 @@ void TextureMapperNode::evalDerivative(NodeTreeData &node_tree_data, const Surfa
 			const float dfdv = (tex_->getFloat(j_0) - tex_->getFloat(j_1)) / d_v_;
 
 			// now we got the derivative in UV-space, but need it in shading space:
-			Vec3 vec_u = sp.ds_du_;
-			Vec3 vec_v = sp.ds_dv_;
+			Vec3 vec_u{sp.ds_du_};
+			Vec3 vec_v{sp.ds_dv_};
 			vec_u.z_ = dfdu;
 			vec_v.z_ = dfdv;
 			// now we have two vectors NU/NV/df; Solve plane equation to get 1/0/df and 0/1/df (i.e. dNUdf and dNVdf)
@@ -280,10 +280,10 @@ void TextureMapperNode::evalDerivative(NodeTreeData &node_tree_data, const Surfa
 		{
 			// no uv coords -> procedurals usually, this mapping only depends on NU/NV which is fairly arbitrary
 			// weird things may happen when objects are rotated, i.e. incorrect bump change
-			const Point3 i_0 = doMapping(texpt - d_u_ * sp.nu_, ng);
-			const Point3 i_1 = doMapping(texpt + d_u_ * sp.nu_, ng);
-			const Point3 j_0 = doMapping(texpt - d_v_ * sp.nv_, ng);
-			const Point3 j_1 = doMapping(texpt + d_v_ * sp.nv_, ng);
+			const Point3 i_0{doMapping(texpt - d_u_ * sp.nu_, ng)};
+			const Point3 i_1{doMapping(texpt + d_u_ * sp.nu_, ng)};
+			const Point3 j_0{doMapping(texpt - d_v_ * sp.nv_, ng)};
+			const Point3 j_1{doMapping(texpt + d_v_ * sp.nv_, ng)};
 
 			du = (tex_->getFloat(i_0) - tex_->getFloat(i_1)) / d_u_;
 			dv = (tex_->getFloat(j_0) - tex_->getFloat(j_1)) / d_v_;
@@ -358,8 +358,8 @@ ShaderNode * TextureMapperNode::factory(Logger &logger, const ParamMap &params, 
 	tm->map_x_ = map[0];
 	tm->map_y_ = map[1];
 	tm->map_z_ = map[2];
-	tm->scale_ = Vec3(scale);
-	tm->offset_ = Vec3(2 * offset);	// Offset need to be doubled due to -1..1 texture standardized wich results in a 2 wide width/height
+	tm->scale_ = scale;
+	tm->offset_ = 2 * offset;	// Offset need to be doubled due to -1..1 texture standardized wich results in a 2 wide width/height
 	tm->do_scalar_ = scalar;
 	tm->bump_str_ = bump_str;
 	tm->mtx_ = mtx;

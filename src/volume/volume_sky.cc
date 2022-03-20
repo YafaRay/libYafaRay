@@ -101,7 +101,7 @@ VolumeRegion * SkyVolumeRegion::factory(Logger &logger, const ParamMap &params, 
 	params.getParam("maxY", max[1]);
 	params.getParam("maxZ", max[2]);
 
-	return new SkyVolumeRegion(logger, Rgb(sa), Rgb(ss), Rgb(le), Point3(min[0], min[1], min[2]), Point3(max[0], max[1], max[2]));
+	return new SkyVolumeRegion(logger, Rgb(sa), Rgb(ss), Rgb(le), {min[0], min[1], min[2]}, {max[0], max[1], max[2]});
 }
 
 SkyVolumeRegion::SkyVolumeRegion(Logger &logger, Rgb sa, Rgb ss, Rgb le, Point3 pmin, Point3 pmax) : VolumeRegion(logger)

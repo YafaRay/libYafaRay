@@ -44,17 +44,17 @@ IntersectData TrianglePrimitive::intersect(const Ray &ray, const Matrix4 *obj_to
 IntersectData TrianglePrimitive::intersect(const Ray &ray, const std::array<Point3, 3> &vertices)
 {
 	//Tomas Moller and Ben Trumbore ray intersection scheme
-	const Vec3 edge_1 = vertices[1] - vertices[0];
-	const Vec3 edge_2 = vertices[2] - vertices[0];
+	const Vec3 edge_1{vertices[1] - vertices[0]};
+	const Vec3 edge_2{vertices[2] - vertices[0]};
 	const float epsilon = 0.1f * min_raydist_global * std::max(edge_1.length(), edge_2.length());
-	const Vec3 pvec = ray.dir_ ^ edge_2;
+	const Vec3 pvec{ray.dir_ ^ edge_2};
 	const float det = edge_1 * pvec;
 	if(det > -epsilon && det < epsilon) return {};
 	const float inv_det = 1.f / det;
-	const Vec3 tvec = ray.from_ - vertices[0];
+	const Vec3 tvec{ray.from_ - vertices[0]};
 	const float u = (tvec * pvec) * inv_det;
 	if(u < 0.f || u > 1.f) return {};
-	const Vec3 qvec = tvec ^ edge_1;
+	const Vec3 qvec{tvec ^ edge_1};
 	const float v = (ray.dir_ * qvec) * inv_det;
 	if((v < 0.f) || ((u + v) > 1.f)) return {};
 	const float t = edge_2 * qvec * inv_det;
@@ -141,8 +141,8 @@ std::unique_ptr<const SurfacePoint> TrianglePrimitive::getSurface(const RayDiffe
 		if(std::abs(det) > 1e-30f)
 		{
 			const float invdet = 1.f / det;
-			const Vec3 dp_1 = p[1] - p[0];
-			const Vec3 dp_2 = p[2] - p[0];
+			const Vec3 dp_1{p[1] - p[0]};
+			const Vec3 dp_2{p[2] - p[0]};
 			sp->dp_du_ = (dv_2 * dp_1 - dv_1 * dp_2) * invdet;
 			sp->dp_dv_ = (du_1 * dp_2 - du_2 * dp_1) * invdet;
 			implicit_uv = false;
@@ -207,8 +207,8 @@ PolyDouble::ClipResultWithBound TrianglePrimitive::clipToBound(Logger &logger, c
 
 float TrianglePrimitive::surfaceArea(const std::array<Point3, 3> &vertices)
 {
-	const Vec3 vec_0_1 = vertices[1] - vertices[0];
-	const Vec3 vec_0_2 = vertices[2] - vertices[0];
+	const Vec3 vec_0_1{vertices[1] - vertices[0]};
+	const Vec3 vec_0_2{vertices[2] - vertices[0]};
 	return 0.5f * (vec_0_1 ^ vec_0_2).length();
 }
 

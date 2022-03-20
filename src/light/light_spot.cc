@@ -214,15 +214,15 @@ bool SpotLight::intersect(const Ray &ray, float &t, Rgb &col, float &ipdf) const
 
 	if(cos_a == 0.f) return false;
 
-	t = (dir_ * Vec3(position_ - ray.from_)) / cos_a;
+	t = (dir_ * (position_ - ray.from_)) / cos_a;
 
 	if(t < 0.f) return false;
 
-	Point3 p(ray.from_ + Point3(t * ray.dir_));
+	Point3 p{ray.from_ + t * ray.dir_};
 
-	if(dir_ * Vec3(p - position_) == 0)
+	if(dir_ * (p - position_) == 0.f)
 	{
-		if(p * p <= 1e-2)
+		if(p * p <= 1e-2f)
 		{
 			float cosa = dir_ * ray.dir_;
 

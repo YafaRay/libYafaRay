@@ -73,7 +73,7 @@ Rgba ImageTexture::interpolateImage(const Point3 &p, const MipMapParams *mipmap_
 
 Rgba ImageTexture::getColor(const Point3 &p, const MipMapParams *mipmap_params) const
 {
-	Point3 p_1 = Point3(p.x_, -p.y_, p.z_);
+	Point3 p_1{p.x_, -p.y_, p.z_};
 	Rgba ret(0.f);
 	const bool outside = doMapping(p_1);
 	if(outside) return ret;

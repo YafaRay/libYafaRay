@@ -118,8 +118,8 @@ void MeshObject::addNormal(const Vec3 &n)
 
 float MeshObject::getAngleSine(const std::array<int, 3> &triangle_indices, const std::vector<Point3> &vertices)
 {
-	const Vec3 edge_1 = vertices[triangle_indices[1]] - vertices[triangle_indices[0]];
-	const Vec3 edge_2 = vertices[triangle_indices[2]] - vertices[triangle_indices[0]];
+	const Vec3 edge_1{vertices[triangle_indices[1]] - vertices[triangle_indices[0]]};
+	const Vec3 edge_2{vertices[triangle_indices[2]] - vertices[triangle_indices[0]]};
 	return edge_1.sinFromVectors(edge_2);
 }
 
@@ -132,7 +132,7 @@ bool MeshObject::smoothNormals(Logger &logger, float angle)
 	{
 		for(auto &face : faces_)
 		{
-			const Vec3 n = face->getGeometricNormal();
+			const Vec3 n{face->getGeometricNormal()};
 			const std::vector<int> vert_indices = face->getVerticesIndices();
 			const size_t num_indices = vert_indices.size();
 			for(size_t relative_vertex = 0; relative_vertex < num_indices; ++relative_vertex)
@@ -168,8 +168,8 @@ bool MeshObject::smoothNormals(Logger &logger, float angle)
 			{
 				bool smooth = false;
 				// calculate vertex normal for face
-				const Vec3 face_normal = point_face->getGeometricNormal();
-				Vec3 vertex_normal = face_normal * points_angles_sines[point_id][j];
+				const Vec3 face_normal{point_face->getGeometricNormal()};
+				Vec3 vertex_normal{face_normal * points_angles_sines[point_id][j]};
 				int k = 0;
 				for(const auto &point_face_2 : points_faces[point_id])
 				{
@@ -178,7 +178,7 @@ bool MeshObject::smoothNormals(Logger &logger, float angle)
 						k++;
 						continue;
 					}
-					Vec3 face_2_normal = point_face_2->getGeometricNormal();
+					const Vec3 face_2_normal{point_face_2->getGeometricNormal()};
 					if((face_normal * face_2_normal) > angle_threshold)
 					{
 						smooth = true;

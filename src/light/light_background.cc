@@ -135,8 +135,8 @@ bool BackgroundLight::illumSample(const SurfacePoint &sp, LSample &s, Ray &wi) c
 
 bool BackgroundLight::intersect(const Ray &ray, float &t, Rgb &col, float &ipdf) const
 {
-	Vec3 ray_dir = ray.dir_;
-	Vec3 abs_dir = ray.dir_;
+	Vec3 ray_dir{ray.dir_};
+	Vec3 abs_dir{ray.dir_};
 	if(abs_inter_) abs_dir = -abs_dir;
 	float u = 0.f, v = 0.f;
 	ipdf = calcFromDir(abs_dir, u, v, true);
@@ -160,7 +160,7 @@ Rgb BackgroundLight::emitPhoton(float s_1, float s_2, float s_3, float s_4, Ray 
 	Vec3::createCs(ray.dir_, u_vec, v_vec);
 	float u, v;
 	Vec3::shirleyDisk(s_1, s_2, u, v);
-	const Vec3 offs = u * u_vec + v * v_vec;
+	const Vec3 offs{u * u_vec + v * v_vec};
 	ray.from_ = world_center_ + world_radius_ * (offs - ray.dir_);
 	return pcol * a_pdf_;
 }
@@ -174,7 +174,7 @@ Rgb BackgroundLight::emitSample(Vec3 &wo, LSample &s) const
 	Vec3::createCs(wo, u_vec, v_vec);
 	float u, v;
 	Vec3::shirleyDisk(s.s_1_, s.s_2_, u, v);
-	const Vec3 offs = u * u_vec + v * v_vec;
+	const Vec3 offs{u * u_vec + v * v_vec};
 	s.sp_->p_ = world_center_ + world_radius_ * offs - world_radius_ * wo;
 	s.sp_->n_ = s.sp_->ng_ = wo;
 	s.area_pdf_ = 1.f;
@@ -184,13 +184,13 @@ Rgb BackgroundLight::emitSample(Vec3 &wo, LSample &s) const
 
 float BackgroundLight::illumPdf(const SurfacePoint &sp, const SurfacePoint &sp_light) const
 {
-	const Vec3 dir = (sp_light.p_ - sp.p_).normalize();
+	const Vec3 dir{(sp_light.p_ - sp.p_).normalize()};
 	return dirPdf(dir);
 }
 
 void BackgroundLight::emitPdf(const SurfacePoint &sp, const Vec3 &wo, float &area_pdf, float &dir_pdf, float &cos_wo) const
 {
-	Vec3 wi = wo;
+	Vec3 wi{wo};
 	wi.normalize();
 	cos_wo = wi.z_;
 	wi = -wi;

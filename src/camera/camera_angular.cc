@@ -116,7 +116,7 @@ Camera * AngularCamera::factory(Logger &logger, ParamMap &params, const Scene &s
 Point3 AngularCamera::screenproject(const Point3 &p) const
 {
 	//FIXME
-	Vec3 dir = p - position_;
+	Vec3 dir{p - position_};
 	dir.normalize();
 	// project p to pixel plane:
 	const float dx = cam_x_ * dir;

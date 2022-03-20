@@ -42,7 +42,7 @@ DarkSkyBackground::DarkSkyBackground(Logger &logger, const Point3 &dir, float tu
 {
 	std::string act;
 
-	sun_dir_ = Vec3(dir);
+	sun_dir_ = dir;
 	sun_dir_.z_ += alt_;
 	sun_dir_.normalize();
 
@@ -276,7 +276,7 @@ Background * DarkSkyBackground::factory(Logger &logger, ParamMap &params, Scene 
 
 		ParamMap p;
 		p["type"] = std::string("sunlight");
-		p["direction"] = Point3(d);
+		p["direction"] = d;
 		p["color"] = suncol;
 		p["angle"] = Parameter(angle);
 		p["power"] = Parameter(pw);

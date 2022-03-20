@@ -288,7 +288,7 @@ Background * SunSkyBackground::factory(Logger &logger, ParamMap &params, Scene &
 
 		ParamMap p;
 		p["type"] = std::string("sunlight");
-		p["direction"] = Point3(dir[0], dir[1], dir[2]);
+		p["direction"] = dir;
 		p["color"] = suncol;
 		p["angle"] = Parameter(angle);
 		p["power"] = Parameter(pw);

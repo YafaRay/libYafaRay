@@ -103,7 +103,7 @@ float ShinyDiffuseMaterial::getFresnelKr(const Vec3 &wo, const Vec3 &n, float cu
 {
 	if(has_fresnel_effect_)
 	{
-		const Vec3 N = ((wo * n) < 0.f) ? -n : n;
+		const Vec3 N{((wo * n) < 0.f) ? -n : n};
 		const float c = wo * N;
 		float g = current_ior_squared + c * c - 1.f;
 		if(g < 0.f) g = 0.f;
@@ -167,8 +167,8 @@ float ShinyDiffuseMaterial::orenNayar(const Vec3 &wi, const Vec3 &wo, const Vec3
 
 	if(cos_ti < 0.9999f && cos_to < 0.9999f)
 	{
-		const Vec3 v_1 = (wi - n * cos_ti).normalize();
-		const Vec3 v_2 = (wo - n * cos_to).normalize();
+		const Vec3 v_1{(wi - n * cos_ti).normalize()};
+		const Vec3 v_2{(wo - n * cos_to).normalize()};
 		maxcos_f = std::max(0.f, v_1 * v_2);
 	}
 
@@ -199,7 +199,7 @@ Rgb ShinyDiffuseMaterial::eval(const MaterialData *mat_data, const SurfacePoint 
 	const float cos_ng_wo = sp.ng_ * wo;
 	const float cos_ng_wl = sp.ng_ * wl;
 	// face forward:
-	const Vec3 n = SurfacePoint::normalFaceForward(sp.ng_, sp.n_, wo);
+	const Vec3 n{SurfacePoint::normalFaceForward(sp.ng_, sp.n_, wo)};
 	if(!bsdfs.hasAny(bsdf_flags_ & BsdfFlags::Diffuse)) return Rgb(0.f);
 
 	float cur_ior_squared;
@@ -249,7 +249,7 @@ Rgb ShinyDiffuseMaterial::emit(const MaterialData *mat_data, const SurfacePoint 
 Rgb ShinyDiffuseMaterial::sample(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, Vec3 &wi, Sample &s, float &w, bool chromatic, float wavelength, const Camera *camera) const
 {
 	const float cos_ng_wo = sp.ng_ * wo;
-	const Vec3 n = SurfacePoint::normalFaceForward(sp.ng_, sp.n_, wo);
+	const Vec3 n{SurfacePoint::normalFaceForward(sp.ng_, sp.n_, wo)};
 
 	float cur_ior_squared;
 	if(ior_shader_)
@@ -344,7 +344,7 @@ float ShinyDiffuseMaterial::pdf(const MaterialData *mat_data, const SurfacePoint
 
 	float pdf = 0.f;
 	const float cos_ng_wo = sp.ng_ * wo;
-	const Vec3 n = SurfacePoint::normalFaceForward(sp.ng_, sp.n_, wo);
+	const Vec3 n{SurfacePoint::normalFaceForward(sp.ng_, sp.n_, wo)};
 
 	float cur_ior_squared;
 	if(ior_shader_)
@@ -400,8 +400,8 @@ Specular ShinyDiffuseMaterial::getSpecular(int ray_level, const MaterialData *ma
 {
 	Specular specular;
 	const bool backface = wo * sp.ng_ < 0.f;
-	const Vec3 n  = backface ? -sp.n_ : sp.n_;
-	const Vec3 ng = backface ? -sp.ng_ : sp.ng_;
+	const Vec3 n {backface ? -sp.n_ : sp.n_};
+	const Vec3 ng{backface ? -sp.ng_ : sp.ng_};
 	float cur_ior_squared;
 	if(ior_shader_)
 	{
@@ -442,7 +442,7 @@ Rgb ShinyDiffuseMaterial::getTransparency(const MaterialData *mat_data, const Su
 {
 	if(!is_transparent_) return Rgb(0.f);
 	float accum = 1.f;
-	const Vec3 n = SurfacePoint::normalFaceForward(sp.ng_, sp.n_, wo);
+	const Vec3 n{SurfacePoint::normalFaceForward(sp.ng_, sp.n_, wo)};
 
 	float cur_ior_squared;
 	if(ior_shader_)
@@ -469,7 +469,7 @@ float ShinyDiffuseMaterial::getAlpha(const MaterialData *mat_data, const Surface
 {
 	if(is_transparent_)
 	{
-		const Vec3 n = SurfacePoint::normalFaceForward(sp.ng_, sp.n_, wo);
+		const Vec3 n{SurfacePoint::normalFaceForward(sp.ng_, sp.n_, wo)};
 		float cur_ior_squared;
 		if(ior_shader_)
 		{

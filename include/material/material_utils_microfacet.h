@@ -67,20 +67,20 @@ inline Vec3 asAnisoSample(float s_1, float s_2, float e_u, float e_v)
 	}
 	else if(s_1 < 0.5f)
 	{
-		Vec3 vec = sampleQuadrantAniso(1.f - 4.f * (0.5f - s_1), s_2, e_u, e_v);
+		Vec3 vec{sampleQuadrantAniso(1.f - 4.f * (0.5f - s_1), s_2, e_u, e_v)};
 		vec.x_ = -vec.x_;
 		return vec;
 	}
 	else if(s_1 < 0.75f)
 	{
-		Vec3 vec = sampleQuadrantAniso(4.f * (s_1 - 0.5f), s_2, e_u, e_v);
+		Vec3 vec{sampleQuadrantAniso(4.f * (s_1 - 0.5f), s_2, e_u, e_v)};
 		vec.x_ = -vec.x_;
 		vec.y_ = -vec.y_;
 		return vec;
 	}
 	else
 	{
-		Vec3 vec = sampleQuadrantAniso(1.f - 4.f * (1.f - s_1), s_2, e_u, e_v);
+		Vec3 vec{sampleQuadrantAniso(1.f - 4.f * (1.f - s_1), s_2, e_u, e_v)};
 		vec.y_ = -vec.y_;
 		return vec;
 	}
@@ -160,7 +160,7 @@ inline float fresnel(float wo_h, float ior)
 
 inline bool refract(float eta, const Vec3 &wo, Vec3 &wi, const Vec3 &h, float wo_h, float &kr, float &kt)
 {
-	wi = Vec3(0.f);
+	wi = Vec3{0.f};
 	const float c = -wo * h;
 	const float sign = (c > 0.f) ? 1 : -1;
 	const float t_1 = 1 - (eta * eta * (1 - c * c));

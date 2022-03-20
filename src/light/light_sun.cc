@@ -81,7 +81,7 @@ Rgb SunLight::emitPhoton(float s_1, float s_2, float s_3, float s_4, Ray &ray, f
 	float u, v;
 	Vec3::shirleyDisk(s_3, s_4, u, v);
 
-	Vec3 ldir = sample::cone(direction_, du_, dv_, cos_angle_, s_3, s_4);
+	Vec3 ldir{sample::cone(direction_, du_, dv_, cos_angle_, s_3, s_4)};
 	Vec3 du_2, dv_2;
 
 	sample::minRot(direction_, du_, ldir, du_2, dv_2);
@@ -118,7 +118,7 @@ Light * SunLight::factory(Logger &logger, ParamMap &params, const Scene &scene)
 	params.getParam("with_diffuse", shoot_d);
 	params.getParam("photon_only", p_only);
 
-	auto light = new SunLight(logger, Vec3(dir.x_, dir.y_, dir.z_), color, power, angle, samples, light_enabled, cast_shadows);
+	auto light = new SunLight(logger, dir, color, power, angle, samples, light_enabled, cast_shadows);
 
 	light->shoot_caustic_ = shoot_c;
 	light->shoot_diffuse_ = shoot_d;

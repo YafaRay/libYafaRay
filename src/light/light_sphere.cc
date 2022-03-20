@@ -54,7 +54,7 @@ Rgb SphereLight::totalEnergy() const { return color_ * area_ /* * num_pi */; }
 
 bool SphereLight::sphereIntersect(const Ray &ray, const Point3 &c, float r_2, float &d_1, float &d_2)
 {
-	Vec3 vf = ray.from_ - c;
+	Vec3 vf{ray.from_ - c};
 	float ea = ray.dir_ * ray.dir_;
 	float eb = 2.0 * vf * ray.dir_;
 	float ec = vf * vf - r_2;
@@ -70,7 +70,7 @@ bool SphereLight::illumSample(const SurfacePoint &sp, LSample &s, Ray &wi) const
 {
 	if(photonOnly()) return false;
 
-	Vec3 cdir = center_ - sp.p_;
+	Vec3 cdir{center_ - sp.p_};
 	float dist_sqr = cdir.lengthSqr();
 	if(dist_sqr <= square_radius_) return false; //only emit light on the outside!
 
@@ -105,7 +105,7 @@ bool SphereLight::intersect(const Ray &ray, float &t, Rgb &col, float &ipdf) con
 	float d_1, d_2;
 	if(sphereIntersect(ray, center_, square_radius_, d_1, d_2))
 	{
-		Vec3 cdir = center_ - ray.from_;
+		Vec3 cdir{center_ - ray.from_};
 		float dist_sqr = cdir.lengthSqr();
 		if(dist_sqr <= square_radius_) return false; //only emit light on the outside!
 		float idist_sqr = 1.f / (dist_sqr);
@@ -119,7 +119,7 @@ bool SphereLight::intersect(const Ray &ray, float &t, Rgb &col, float &ipdf) con
 
 float SphereLight::illumPdf(const SurfacePoint &sp, const SurfacePoint &sp_light) const
 {
-	Vec3 cdir = center_ - sp.p_;
+	Vec3 cdir{center_ - sp.p_};
 	float dist_sqr = cdir.lengthSqr();
 	if(dist_sqr <= square_radius_) return 0.f; //only emit light on the outside!
 	float idist_sqr = 1.f / (dist_sqr);
@@ -137,7 +137,7 @@ void SphereLight::emitPdf(const SurfacePoint &sp, const Vec3 &wo, float &area_pd
 
 Rgb SphereLight::emitPhoton(float s_1, float s_2, float s_3, float s_4, Ray &ray, float &ipdf) const
 {
-	Vec3 sdir = sample::sphere(s_3, s_4);
+	Vec3 sdir{sample::sphere(s_3, s_4)};
 	ray.from_ = center_ + radius_ * sdir;
 	Vec3 du, dv;
 	Vec3::createCs(sdir, du, dv);
@@ -148,7 +148,7 @@ Rgb SphereLight::emitPhoton(float s_1, float s_2, float s_3, float s_4, Ray &ray
 
 Rgb SphereLight::emitSample(Vec3 &wo, LSample &s) const
 {
-	Vec3 sdir = sample::sphere(s.s_3_, s.s_4_);
+	Vec3 sdir{sample::sphere(s.s_3_, s.s_4_)};
 	s.sp_->p_ = center_ + radius_ * sdir;
 	s.sp_->n_ = s.sp_->ng_ = sdir;
 	Vec3 du, dv;

@@ -56,7 +56,7 @@ Bound SpherePrimitive::getBound(const Matrix4 *obj_to_world) const
 
 IntersectData SpherePrimitive::intersect(const Ray &ray, const Matrix4 *obj_to_world) const
 {
-	const Vec3 vf = ray.from_ - center_;
+	const Vec3 vf{ray.from_ - center_};
 	const float ea = ray.dir_ * ray.dir_;
 	const float eb = 2.0 * (vf * ray.dir_);
 	const float ec = vf * vf - radius_ * radius_;
@@ -82,7 +82,7 @@ std::unique_ptr<const SurfacePoint> SpherePrimitive::getSurface(const RayDiffere
 {
 	auto sp = std::unique_ptr<SurfacePoint>(new SurfacePoint);
 	sp->intersect_data_ = intersect_data;
-	Vec3 normal = hit - center_;
+	Vec3 normal{hit - center_};
 	sp->orco_p_ = static_cast<Point3>(normal);
 	normal.normalize();
 	sp->material_ = material_->get();
@@ -108,7 +108,7 @@ float SpherePrimitive::surfaceArea(const Matrix4 *obj_to_world) const
 
 Vec3 SpherePrimitive::getGeometricNormal(const Matrix4 *obj_to_world, float u, float v) const
 {
-	return Vec3(); //FIXME
+	return {}; //FIXME
 }
 
 void SpherePrimitive::sample(float s_1, float s_2, Point3 &p, Vec3 &n, const Matrix4 *obj_to_world) const

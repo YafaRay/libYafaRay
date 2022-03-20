@@ -61,10 +61,10 @@ Camera::Camera(Logger &logger, const Point3 &pos, const Point3 &look, const Poin
 	cam_z_.normalize();
 
 	near_plane_.n_ = cam_z_;
-	near_plane_.p_ = Vec3(position_) + cam_z_ * near_clip_distance;
+	near_plane_.p_ = position_ + cam_z_ * near_clip_distance;
 
 	far_plane_.n_ = cam_z_;
-	far_plane_.p_ = Vec3(position_) + cam_z_ * far_clip_distance;
+	far_plane_.p_ = position_ + cam_z_ * far_clip_distance;
 
 	near_clip_ = near_clip_distance;
 	far_clip_ = far_clip_distance;

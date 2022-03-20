@@ -60,19 +60,11 @@ CameraRay OrthographicCamera::shootRay(float px, float py, float lu, float lv) c
 
 Point3 OrthographicCamera::screenproject(const Point3 &p) const
 {
-	Point3 s;
-	Vec3 dir = p - pos_;
+	const Vec3 dir{p - pos_};
 	// Project p to pixel plane
-
-	float dz = cam_z_ * dir;
-
-	Vec3 proj = dir - dz * cam_z_;
-
-	s.x_ = 2 * (proj * cam_x_ / scale_) - 1.0f;
-	s.y_ = - 2 * proj * cam_y_ / (aspect_ratio_ * scale_) + 1.0f;
-	s.z_ = 0;
-
-	return s;
+	const float dz = cam_z_ * dir;
+	const Vec3 proj{dir - dz * cam_z_};
+	return { 2.f * (proj * cam_x_ / scale_) - 1.f, -2.f * proj * cam_y_ / (aspect_ratio_ * scale_) + 1.f, 0.f};
 }
 
 Camera * OrthographicCamera::factory(Logger &logger, ParamMap &params, const Scene &scene)

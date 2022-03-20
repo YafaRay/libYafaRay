@@ -59,7 +59,7 @@ std::pair<std::unique_ptr<const SurfacePoint>, float> Accelerator::intersect(con
 	const AcceleratorIntersectData accelerator_intersect_data = intersect(ray, t_max);
 	if(accelerator_intersect_data.hit_ && accelerator_intersect_data.hit_primitive_)
 	{
-		const Point3 hit_point = ray.from_ + accelerator_intersect_data.t_max_ * ray.dir_;
+		const Point3 hit_point{ray.from_ + accelerator_intersect_data.t_max_ * ray.dir_};
 		auto sp = accelerator_intersect_data.hit_primitive_->getSurface(ray.differentials_.get(), hit_point, accelerator_intersect_data, nullptr, camera);
 		return {std::move(sp), accelerator_intersect_data.t_max_};
 	}

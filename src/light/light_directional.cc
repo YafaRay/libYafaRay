@@ -35,7 +35,7 @@ DirectionalLight::DirectionalLight(Logger &logger, const Point3 &pos, Vec3 dir, 
 	intensity_ = color_.energy();
 	direction_.normalize();
 	Vec3::createCs(direction_, du_, dv_);
-	Vec3 &d = direction_;
+	Vec3 &d{direction_};
 	major_axis_ = (d.x_ > d.y_) ? ((d.x_ > d.z_) ? 0 : 2) : ((d.y_ > d.z_) ? 1 : 2);
 }
 
@@ -62,7 +62,7 @@ bool DirectionalLight::illuminate(const SurfacePoint &sp, Rgb &col, Ray &wi) con
 	// check if the point is outside of the illuminated cylinder (non-infinite lights)
 	if(!infinite_)
 	{
-		Vec3 vec = position_ - sp.p_;
+		Vec3 vec{position_ - sp.p_};
 		float dist = (direction_ ^ vec).length();
 		if(dist > radius_) return false;
 		wi.tmax_ = (vec * direction_);
@@ -146,7 +146,7 @@ Light * DirectionalLight::factory(Logger &logger, ParamMap &params, const Scene 
 		params.getParam("radius", rad);
 	}
 
-	auto light = new DirectionalLight(logger, from, Vec3(dir.x_, dir.y_, dir.z_), color, power, inf, rad, light_enabled, cast_shadows);
+	auto light = new DirectionalLight(logger, from, dir, color, power, inf, rad, light_enabled, cast_shadows);
 
 	light->shoot_caustic_ = shoot_c;
 	light->shoot_diffuse_ = shoot_d;

@@ -94,8 +94,8 @@ void inline minRot(const Vec3 &d, const Vec3 &u,
 {
 	const float cos_alpha = d * d_2;
 	const float sin_alpha = math::sqrt(1 - cos_alpha * cos_alpha);
-	const Vec3 v = d ^d_2;
-	u_2 = cos_alpha * u + Vec3((1.f - cos_alpha) * (v * u)) + sin_alpha * (v ^ u); //FIXME DAVID: strange inconsistency detected when made Vec3 explicit, what is the middle part of the equation now surrounded by Vec3()? Does it make sense? To be investigated... does the Vec3 portion make sense?
+	const Vec3 v{d ^d_2};
+	u_2 = cos_alpha * u + Vec3{(1.f - cos_alpha) * (v * u)} + sin_alpha * (v ^ u); //FIXME DAVID: strange inconsistency detected when made Vec3 explicit, what is the middle part of the equation now surrounded by Vec3{}? Does it make sense? To be investigated... does the Vec3 portion make sense?
 	v_2 = d_2 ^ u_2;
 }
 

@@ -77,8 +77,8 @@ float GlossyMaterial::orenNayar(const Vec3 &wi, const Vec3 &wo, const Vec3 &n, b
 
 	if(cos_ti < 0.9999f && cos_to < 0.9999f)
 	{
-		Vec3 v_1 = (wi - n * cos_ti).normalize();
-		Vec3 v_2 = (wo - n * cos_to).normalize();
+		Vec3 v_1{(wi - n * cos_ti).normalize()};
+		Vec3 v_2{(wo - n * cos_to).normalize()};
 		maxcos_f = std::max(0.f, v_1 * v_2);
 	}
 
@@ -117,14 +117,14 @@ Rgb GlossyMaterial::eval(const MaterialData *mat_data, const SurfacePoint &sp, c
 
 	Rgb col(0.f);
 	const bool diffuse_flag = bsdfs.hasAny(BsdfFlags::Diffuse);
-	const Vec3 n = SurfacePoint::normalFaceForward(sp.ng_, sp.n_, wo);
+	const Vec3 n{SurfacePoint::normalFaceForward(sp.ng_, sp.n_, wo)};
 
 	const float wi_n = std::abs(wl * n);
 	const float wo_n = std::abs(wo * n);
 
 	if((as_diffuse_ && diffuse_flag) || (!as_diffuse_ && bsdfs.hasAny(BsdfFlags::Glossy)))
 	{
-		const Vec3 h = (wo + wl).normalize(); // half-angle
+		const Vec3 h{(wo + wl).normalize()}; // half-angle
 		const float cos_wi_h = std::max(0.f, wl * h);
 		float glossy;
 		if(anisotropic_)
@@ -163,7 +163,7 @@ Rgb GlossyMaterial::eval(const MaterialData *mat_data, const SurfacePoint &sp, c
 Rgb GlossyMaterial::sample(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, Vec3 &wi, Sample &s, float &w, bool chromatic, float wavelength, const Camera *camera) const
 {
 	const float cos_ng_wo = sp.ng_ * wo;
-	const Vec3 n = SurfacePoint::normalFaceForward(sp.ng_, sp.n_, wo);//(cos_Ng_wo < 0) ? -sp.N : sp.N;
+	const Vec3 n{SurfacePoint::normalFaceForward(sp.ng_, sp.n_, wo)};//(cos_Ng_wo < 0) ? -sp.N : sp.N;
 	s.pdf_ = 0.f;
 	float wi_n = 0.f;
 	const float wo_n = std::abs(wo * n);
@@ -191,7 +191,7 @@ Rgb GlossyMaterial::sample(const MaterialData *mat_data, const SurfacePoint &sp,
 			float glossy = 0.f;
 			if(use_glossy)
 			{
-				Vec3 h = (wi + wo).normalize();
+				Vec3 h{(wi + wo).normalize()};
 				const float cos_wo_h = wo * h;
 				const float cos_wi_h = std::abs(wi * h);
 				const float cos_n_h = n * h;
@@ -243,8 +243,8 @@ Rgb GlossyMaterial::sample(const MaterialData *mat_data, const SurfacePoint &sp,
 		float glossy = 0.f;
 		if(anisotropic_)
 		{
-			const Vec3 hs = microfacet::asAnisoSample(s_1, s.s_2_, exp_u_, exp_v_);
-			Vec3 h = hs.x_ * sp.nu_ + hs.y_ * sp.nv_ + hs.z_ * n;
+			const Vec3 hs{microfacet::asAnisoSample(s_1, s.s_2_, exp_u_, exp_v_)};
+			Vec3 h{hs.x_ * sp.nu_ + hs.y_ * sp.nv_ + hs.z_ * n};
 			float cos_wo_h = wo * h;
 			if(cos_wo_h < 0.f)
 			{
@@ -267,8 +267,8 @@ Rgb GlossyMaterial::sample(const MaterialData *mat_data, const SurfacePoint &sp,
 		}
 		else
 		{
-			const Vec3 hs = microfacet::blinnSample(s_1, s.s_2_, getShaderScalar(exponent_shader_, mat_data->node_tree_data_, exponent_));
-			Vec3 h = hs.x_ * sp.nu_ + hs.y_ * sp.nv_ + hs.z_ * n;
+			const Vec3 hs{microfacet::blinnSample(s_1, s.s_2_, getShaderScalar(exponent_shader_, mat_data->node_tree_data_, exponent_))};
+			Vec3 h{hs.x_ * sp.nu_ + hs.y_ * sp.nv_ + hs.z_ * n};
 			float cos_wo_h = wo * h;
 			if(cos_wo_h < 0.f)
 			{
@@ -315,7 +315,7 @@ Rgb GlossyMaterial::sample(const MaterialData *mat_data, const SurfacePoint &sp,
 float GlossyMaterial::pdf(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wi, const BsdfFlags &flags) const
 {
 	if((sp.ng_ * wo) * (sp.ng_ * wi) < 0.f) return 0.f;
-	const Vec3 n = SurfacePoint::normalFaceForward(sp.ng_, sp.n_, wo);
+	const Vec3 n{SurfacePoint::normalFaceForward(sp.ng_, sp.n_, wo)};
 	float pdf = 0.f;
 	const GlossyMaterialData *mat_data_specific = static_cast<const GlossyMaterialData *>(mat_data);
 	const float cur_p_diffuse = mat_data_specific->p_diffuse_;
@@ -326,7 +326,7 @@ float GlossyMaterial::pdf(const MaterialData *mat_data, const SurfacePoint &sp, 
 		pdf = std::abs(wi * n);
 		if(use_glossy)
 		{
-			const Vec3 h = (wi + wo).normalize();
+			const Vec3 h{(wi + wo).normalize()};
 			const float cos_wo_h = wo * h;
 			const float cos_n_h = n * h;
 			if(anisotropic_)
@@ -341,7 +341,7 @@ float GlossyMaterial::pdf(const MaterialData *mat_data, const SurfacePoint &sp, 
 
 	if(use_glossy)
 	{
-		const Vec3 h = (wi + wo).normalize();
+		const Vec3 h{(wi + wo).normalize()};
 		const float cos_wo_h = wo * h;
 		const float cos_n_h = n * h;
 		if(anisotropic_)

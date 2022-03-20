@@ -80,7 +80,7 @@ VolumeRegion * NoiseVolumeRegion::factory(Logger &logger, const ParamMap &params
 		return nullptr;
 	}
 
-	return new NoiseVolumeRegion(logger, Rgb(sa), Rgb(ss), Rgb(le), g, cov, sharp, dens, Point3(min[0], min[1], min[2]), Point3(max[0], max[1], max[2]), att_sc, noise);
+	return new NoiseVolumeRegion(logger, Rgb(sa), Rgb(ss), Rgb(le), g, cov, sharp, dens, {min[0], min[1], min[2]}, {max[0], max[1], max[2]}, att_sc, noise);
 }
 
 END_YAFARAY

@@ -838,15 +838,14 @@ Rgba NoiseGenerator::cellNoiseColor(const Point3 &pt)
 // turbulence function used by basic blocks
 float NoiseGenerator::turbulence(const NoiseGenerator *ngen, const Point3 &pt, int oct, float size, bool hard)
 {
-	float val, amp = 1, sum = 0;
-	Point3 tp = ngen->offset(pt) * size;	// only blendernoise adds offset
-	for(int i = 0; i <= oct; i++, amp *= 0.5, tp *= 2.0)
+	float amp = 1.f, sum = 0.f;
+	Point3 tp{ngen->offset(pt) * size};	// only blendernoise adds offset
+	for(int i = 0; i <= oct; i++, amp *= 0.5f, tp *= 2.f)
 	{
-		val = (*ngen)(tp);
-		if(hard) val = std::abs(2.0 * val - 1.0);
+		float val = (*ngen)(tp);
+		if(hard) val = std::abs(2.f * val - 1.f);
 		sum += amp * val;
 	}
-
 	return sum * ((float)(1 << oct) / (float)((1 << (oct + 1)) - 1));
 }
 

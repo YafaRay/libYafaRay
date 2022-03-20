@@ -256,7 +256,7 @@ void PointKdTree<T>::lookup(const Point3 &p, LookupProc &proc, float &max_dist_s
 		}
 
 		// Hand leaf-data kd-tree to processing function
-		Vec3 v = curr_node->data_->pos_ - p;
+		const Vec3 v{curr_node->data_->pos_ - p};
 		float dist_2 = v.lengthSqr();
 
 		if(dist_2 < max_dist_squared)
@@ -297,7 +297,7 @@ void PointKdTree<T>::recursiveLookup(const Point3 &p, const LookupProc &proc, fl
 	const KdNode<T> *curr_node = &nodes_[node_num];
 	if(curr_node->isLeaf())
 	{
-		Vec3 v = curr_node->data_->pos_ - p;
+		const Vec3 v{curr_node->data_->pos_ - p};
 		float dist_2 = v.lengthSqr();
 		if(dist_2 < max_dist_squared)
 		{

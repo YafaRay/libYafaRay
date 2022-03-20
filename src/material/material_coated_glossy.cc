@@ -91,8 +91,8 @@ float CoatedGlossyMaterial::orenNayar(const Vec3 &wi, const Vec3 &wo, const Vec3
 
 	if(cos_ti < 0.9999f && cos_to < 0.9999f)
 	{
-		const Vec3 v_1 = (wi - n * cos_ti).normalize();
-		const Vec3 v_2 = (wo - n * cos_to).normalize();
+		const Vec3 v_1{(wi - n * cos_ti).normalize()};
+		const Vec3 v_2{(wo - n * cos_to).normalize()};
 		maxcos_f = std::max(0.f, v_1 * v_2);
 	}
 
@@ -131,7 +131,7 @@ Rgb CoatedGlossyMaterial::eval(const MaterialData *mat_data, const SurfacePoint 
 	{
 		if(!diffuse_flag || ((sp.ng_ * wl) * (sp.ng_ * wo)) < 0.f) return col;
 	}
-	const Vec3 n = SurfacePoint::normalFaceForward(sp.ng_, sp.n_, wo);
+	const Vec3 n{SurfacePoint::normalFaceForward(sp.ng_, sp.n_, wo)};
 	float kr, kt;
 	const float wi_n = std::abs(wl * n);
 	const float wo_n = std::abs(wo * n);
@@ -140,7 +140,7 @@ Rgb CoatedGlossyMaterial::eval(const MaterialData *mat_data, const SurfacePoint 
 
 	if((as_diffuse_ && diffuse_flag) || (!as_diffuse_ && bsdfs.hasAny(BsdfFlags::Glossy)))
 	{
-		const Vec3 h = (wo + wl).normalize(); // half-angle
+		const Vec3 h{(wo + wl).normalize()}; // half-angle
 		const float cos_wi_h = wl * h;
 		float glossy;
 		if(anisotropic_)
@@ -178,7 +178,7 @@ Rgb CoatedGlossyMaterial::eval(const MaterialData *mat_data, const SurfacePoint 
 Rgb CoatedGlossyMaterial::sample(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, Vec3 &wi, Sample &s, float &w, bool chromatic, float wavelength, const Camera *camera) const
 {
 	const float cos_ng_wo = sp.ng_ * wo;
-	const Vec3 n = SurfacePoint::normalFaceForward(sp.ng_, sp.n_, wo);
+	const Vec3 n{SurfacePoint::normalFaceForward(sp.ng_, sp.n_, wo)};
 	Vec3 hs(0.f);
 	s.pdf_ = 0.f;
 	float kr, kt;
@@ -281,7 +281,7 @@ Rgb CoatedGlossyMaterial::sample(const MaterialData *mat_data, const SurfacePoin
 			if(c_index[pick] != C_GLOSSY)
 			{
 				h = (wi + wo).normalize();
-				hs = Vec3(h * sp.nu_, h * sp.nv_, h * n);
+				hs = Vec3{h * sp.nu_, h * sp.nv_, h * n};
 				cos_wo_h = wo * h;
 			}
 			else
@@ -353,7 +353,7 @@ float CoatedGlossyMaterial::pdf(const MaterialData *mat_data, const SurfacePoint
 {
 	const bool transmit = ((sp.ng_ * wo) * (sp.ng_ * wi)) < 0.f;
 	if(transmit) return 0.f;
-	const Vec3 n = SurfacePoint::normalFaceForward(sp.ng_, sp.n_, wo);
+	const Vec3 n{SurfacePoint::normalFaceForward(sp.ng_, sp.n_, wo)};
 	float pdf = 0.f;
 	float kr, kt;
 
@@ -374,7 +374,7 @@ float CoatedGlossyMaterial::pdf(const MaterialData *mat_data, const SurfacePoint
 			sum += width;
 			if(i == C_GLOSSY)
 			{
-				const Vec3 h = (wi + wo).normalize();
+				const Vec3 h{(wi + wo).normalize()};
 				const float cos_wo_h = wo * h;
 				const float cos_n_h = n * h;
 				if(anisotropic_)

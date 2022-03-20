@@ -84,16 +84,16 @@ unsigned int Interface::getNextFreeId() noexcept
 
 bool Interface::endObject() noexcept { return scene_->endObject(); }
 
-int  Interface::addVertex(double x, double y, double z) noexcept { return scene_->addVertex(Point3(x, y, z)); }
+int  Interface::addVertex(double x, double y, double z) noexcept { return scene_->addVertex({static_cast<float>(x), static_cast<float>(y), static_cast<float>(z)}); }
 
 int  Interface::addVertex(double x, double y, double z, double ox, double oy, double oz) noexcept
 {
-	return scene_->addVertex(Point3(x, y, z), Point3(ox, oy, oz));
+	return scene_->addVertex({static_cast<float>(x), static_cast<float>(y), static_cast<float>(z)}, {static_cast<float>(ox), static_cast<float>(oy), static_cast<float>(oz)});
 }
 
 void Interface::addNormal(double x, double y, double z) noexcept
 {
-	scene_->addNormal(Vec3(x, y, z));
+	scene_->addNormal({static_cast<float>(x), static_cast<float>(y), static_cast<float>(z)});
 }
 
 bool Interface::addFace(int a, int b, int c) noexcept
@@ -117,7 +117,7 @@ bool Interface::addInstance(const char *base_object_name, const Matrix4 &obj_to_
 
 void Interface::paramsSetVector(const char *name, double x, double y, double z) noexcept
 {
-	(*cparams_)[std::string(name)] = Parameter(Vec3(x, y, z));
+	(*cparams_)[std::string(name)] = Parameter{Vec3{static_cast<float>(x), static_cast<float>(y), static_cast<float>(z)}};
 }
 
 void Interface::paramsSetString(const char *name, const char *s) noexcept

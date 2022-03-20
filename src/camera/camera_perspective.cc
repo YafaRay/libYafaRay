@@ -137,8 +137,8 @@ CameraRay PerspectiveCamera::shootRay(float px, float py, float lu, float lv) co
 	{
 		float u, v;
 		getLensUv(lu, lv, u, v);
-		const Vec3 li = dof_rt_ * u + dof_up_ * v;
-		ray.from_ += Point3(li);
+		const Vec3 li{dof_rt_ * u + dof_up_ * v};
+		ray.from_ += li;
 		ray.dir_ = (ray.dir_ * dof_distance_) - li;
 		ray.dir_.normalize();
 	}
@@ -147,7 +147,7 @@ CameraRay PerspectiveCamera::shootRay(float px, float py, float lu, float lv) co
 
 Point3 PerspectiveCamera::screenproject(const Point3 &p) const
 {
-	const Vec3 dir = p - position_;
+	const Vec3 dir{p - position_};
 	// project p to pixel plane:
 	const float dx = dir * cam_x_;
 	const float dy = dir * cam_y_;

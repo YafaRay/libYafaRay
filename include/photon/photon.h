@@ -55,7 +55,7 @@ class Photon
 		Vec3 direction() const
 		{
 #ifdef SMALL_PHOTONS //FIXME: SMALL_PHOTONS not working at the moment because Rgbe members do not include r_, g_ and b_ as needed in the rest of the code
-			if(theta_ == 255) return Vec3(0, 0, 0);
+			if(theta_ == 255) return {0, 0, 0};
 			else return dirconverter_global.convert(theta_, phi_);
 #else //SMALL_PHOTONS
 			return dir_;

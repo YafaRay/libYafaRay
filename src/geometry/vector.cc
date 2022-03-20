@@ -61,9 +61,9 @@ bool  operator != (const Vec3 &a, const Vec3 &b)
 */
 bool Vec3::refract(const Vec3 &n, const Vec3 &wi, Vec3 &wo, float ior)
 {
-	Vec3 N = n;
+	Vec3 N{n};
 	float eta = ior;
-	const Vec3 i = -wi;
+	const Vec3 i{-wi};
 	float cos_v_n = wi * n;
 	if((cos_v_n) < 0)
 	{

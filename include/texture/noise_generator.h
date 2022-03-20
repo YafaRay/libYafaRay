@@ -90,7 +90,7 @@ class BlenderNoiseGenerator final : public NoiseGenerator
 	private:
 		float operator()(const Point3 &pt) const override;
 		// offset texture point coordinates by one
-		Point3 offset(const Point3 &pt) const override { return pt + Point3(1.0, 1.0, 1.0); }
+		Point3 offset(const Point3 &pt) const override { return pt + Point3{1.f, 1.f, 1.f}; }
 		static const float hashvectf_[768];
 };
 

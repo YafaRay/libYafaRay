@@ -658,7 +658,7 @@ Rgb TiledIntegrator::sampleAmbientOcclusion(const Accelerator &accelerator, bool
 			s_1 = math::addMod1(s_1, ray_division.decorrelation_1_);
 			s_2 = math::addMod1(s_2, ray_division.decorrelation_2_);
 		}
-		if(shadow_bias_auto) light_ray.tmin_ = shadow_bias * std::max(1.f, Vec3(sp.p_).length());
+		if(shadow_bias_auto) light_ray.tmin_ = shadow_bias * std::max(1.f, sp.p_.length());
 		else light_ray.tmin_ = shadow_bias;
 		light_ray.tmax_ = ao_dist;
 		float w = 0.f;

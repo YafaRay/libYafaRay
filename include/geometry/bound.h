@@ -110,7 +110,7 @@ class Bound
 		Point3 center() const { return (g_ + a_) * 0.5f; }
 		int largestAxis()
 		{
-			Vec3 d = g_ - a_;
+			const Vec3 d{g_ - a_};
 			return (d.x_ > d.y_) ? ((d.x_ > d.z_) ? 0 : 2) : ((d.y_ > d.z_) ? 1 : 2);
 		}
 		void grow(float d)
@@ -141,7 +141,7 @@ inline void Bound::include(const Point3 &p)
 inline Bound::Cross Bound::cross(const Ray &ray, float t_max) const
 {
 	// Smits method
-	const Point3 &a_0 = a_, &a_1 = g_;
+	const Point3 &a_0{a_}, &a_1{g_};
 	const Point3 p{ray.from_ - a_0};
 
 	float lmin = -1e38f, lmax = 1e38f, ltmin, ltmax; //infinity check initial values

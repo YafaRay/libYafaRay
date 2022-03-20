@@ -401,7 +401,7 @@ void SppmIntegrator::photonWorker(unsigned int &total_photons_shot, int thread_i
 					transm = vol->transmittance(ray);
 				}
 			}
-			const Vec3 wi = -ray.dir_;
+			const Vec3 wi{-ray.dir_};
 			const BsdfFlags &mat_bsdfs = hit_curr->mat_data_->bsdf_flags_;
 
 			//deposit photon on diffuse surface, now we only have one map for all, elimate directPhoton for we estimate it directly
@@ -614,7 +614,7 @@ GatherInfo SppmIntegrator::traceGatherRay(Ray &ray, HitPoint &hp, RandomGenerato
 	{
 		int additional_depth = 0;
 
-		const Vec3 wo = -ray.dir_;
+		const Vec3 wo{-ray.dir_};
 		const BsdfFlags &mat_bsdfs = sp->mat_data_->bsdf_flags_;
 		additional_depth = std::max(additional_depth, sp->material_->getAdditionalDepth());
 
@@ -697,7 +697,7 @@ GatherInfo SppmIntegrator::traceGatherRay(Ray &ray, HitPoint &hp, RandomGenerato
 					//if(temp.lengthSqr() > 1.)continue;
 
 					g_info.photon_count_++;
-					Vec3 pdir = gathered[i].photon_->direction();
+					Vec3 pdir{gathered[i].photon_->direction()};
 					Rgb surf_col = sp->eval(wo, pdir, BsdfFlags::Diffuse); // seems could speed up using rho, (something pbrt made)
 					g_info.photon_flux_ += surf_col * gathered[i].photon_->color();// * std::abs(sp->N*pdir); //< wrong!?
 					//Rgb  flux= surfCol * gathered[i].photon->color();// * std::abs(sp->N*pdir); //< wrong!?
@@ -722,7 +722,7 @@ GatherInfo SppmIntegrator::traceGatherRay(Ray &ray, HitPoint &hp, RandomGenerato
 					Rgb surf_col(0.f);
 					for(int i = 0; i < n_gathered; ++i)
 					{
-						Vec3 pdir = gathered[i].photon_->direction();
+						Vec3 pdir{gathered[i].photon_->direction()};
 						g_info.photon_count_++;
 						surf_col = sp->eval(wo, pdir, BsdfFlags::All); // seems could speed up using rho, (something pbrt made)
 						g_info.photon_flux_ += surf_col * gathered[i].photon_->color();// * std::abs(sp->N*pdir); //< wrong!?//gInfo.photonFlux += colorPasses.probe_add(PASS_INT_DIFFUSE_INDIRECT, surfCol * gathered[i].photon->color(), state.ray_level == 0);// * std::abs(sp->N*pdir); //< wrong!?

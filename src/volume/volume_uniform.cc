@@ -94,7 +94,7 @@ VolumeRegion * UniformVolumeRegion::factory(Logger &logger, const ParamMap &para
 	params.getParam("maxZ", max[2]);
 	params.getParam("attgridScale", att_sc);
 
-	return new UniformVolumeRegion(logger, Rgb(sa), Rgb(ss), Rgb(le), g, Point3(min[0], min[1], min[2]), Point3(max[0], max[1], max[2]), att_sc);
+	return new UniformVolumeRegion(logger, Rgb(sa), Rgb(ss), Rgb(le), g, {min[0], min[1], min[2]}, {max[0], max[1], max[2]}, att_sc);
 }
 
 UniformVolumeRegion::UniformVolumeRegion(Logger &logger, Rgb sa, Rgb ss, Rgb le, float gg, Point3 pmin, Point3 pmax, int attgrid_scale) :

@@ -309,11 +309,11 @@ Rgb SingleScatterIntegrator::integrate(RandomGenerator &random_generator, const 
 		accum_density.at(0) = 0.f;
 		for(int i = 0; i < samples; ++i)
 		{
-			const Point3 p = ray.from_ + (step_size_ * i + pos) * ray.dir_;
+			const Point3 p{ray.from_ + (step_size_ * i + pos) * ray.dir_};
 			float density = 0;
 			for(const auto &v : *volume_regions_)
 			{
-				density += v.second->sigmaT(p, Vec3()).energy();
+				density += v.second->sigmaT(p, {}).energy();
 			}
 			density_samples.at(i) = density;
 			if(i > 0) accum_density.at(i) = accum_density.at(i - 1) + density * step_size_;

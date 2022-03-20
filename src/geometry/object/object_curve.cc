@@ -70,7 +70,7 @@ bool CurveObject::calculateObject(const std::unique_ptr<Material> *material)
 	Vec3 v{0.f};
 	for(int i = 0; i < points_size; i++)
 	{
-		const Point3 o = points[i];
+		const Point3 o{points[i]};
 		float r;	//current radius
 		if(strand_shape_ < 0)
 		{
@@ -83,13 +83,13 @@ bool CurveObject::calculateObject(const std::unique_ptr<Material> *material)
 		// Last point keep previous tangent plane
 		if(i < points_size - 1)
 		{
-			Vec3 normal = points[i + 1] - points[i];
+			Vec3 normal{points[i + 1] - points[i]};
 			normal.normalize();
 			Vec3::createCs(normal, u, v);
 		}
 		// TODO: thikness?
-		const Point3 a = o - (0.5 * r * v) - 1.5 * r / math::sqrt(3.f) * u;
-		const Point3 b = o - (0.5 * r * v) + 1.5 * r / math::sqrt(3.f) * u;
+		const Point3 a{o - (0.5 * r * v) - 1.5 * r / math::sqrt(3.f) * u};
+		const Point3 b{o - (0.5 * r * v) + 1.5 * r / math::sqrt(3.f) * u};
 
 		addPoint(a);
 		addPoint(b);

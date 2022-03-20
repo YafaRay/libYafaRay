@@ -58,7 +58,7 @@ void ArchitectCamera::setAxis(const Vec3 &vx, const Vec3 &vy, const Vec3 &vz)
 	dof_up_ = cam_y_ * aperture_;
 
 	vright_ = cam_x_;
-	vup_ = aspect_ratio_ * Vec3(0, 0, -1);
+	vup_ = aspect_ratio_ * Vec3{0.f, 0.f, -1.f};
 	vto_ = (cam_z_ * focal_distance_) - 0.5 * (vup_ + vright_);
 	vup_ /= (float)resy_;
 	vright_ /= (float)resx_;
@@ -67,11 +67,11 @@ void ArchitectCamera::setAxis(const Vec3 &vx, const Vec3 &vy, const Vec3 &vz)
 Point3 ArchitectCamera::screenproject(const Point3 &p) const
 {
 	// FIXME
-	const Vec3 dir = p - position_;
+	const Vec3 dir{p - position_};
 	// project p to pixel plane:
-	const Vec3 camy = Vec3(0, 0, 1);
-	const Vec3 camz = camy ^cam_x_;
-	const Vec3 camx = camz ^camy;
+	const Vec3 camy{0.f, 0.f, 1.f};
+	const Vec3 camz{camy ^ cam_x_};
+	const Vec3 camx{camz ^camy};
 
 	const float dx = dir * camx;
 	const float dy = dir * cam_y_;

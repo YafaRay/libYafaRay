@@ -75,7 +75,7 @@ VolumeRegion * GridVolumeRegion::factory(Logger &logger, const ParamMap &params,
 	params.getParam("maxY", max[1]);
 	params.getParam("maxZ", max[2]);
 
-	return new GridVolumeRegion(logger, Rgb(sa), Rgb(ss), Rgb(le), g, Point3(min[0], min[1], min[2]), Point3(max[0], max[1], max[2]));
+	return new GridVolumeRegion(logger, Rgb(sa), Rgb(ss), Rgb(le), g, {min[0], min[1], min[2]}, {max[0], max[1], max[2]});
 }
 
 GridVolumeRegion::GridVolumeRegion(Logger &logger, Rgb sa, Rgb ss, Rgb le, float gg, Point3 pmin, Point3 pmax) : DensityVolumeRegion(logger)

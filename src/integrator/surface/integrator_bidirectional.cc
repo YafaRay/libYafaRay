@@ -228,7 +228,7 @@ std::pair<Rgb, float> BidirectionalIntegrator::integrate(Ray &ray, RandomGenerat
 	std::tie(sp, intersect_tmax) = accelerator_->intersect(ray, camera_); //FIXME: should we change directly ray.tmax_ here or not?
 	if(sp)
 	{
-		const Vec3 wo = -ray.dir_;
+		const Vec3 wo{-ray.dir_};
 		PathData path_data;
 		++n_paths_;
 		PathVertex &ve = path_data.eye_path_.front();
@@ -483,7 +483,7 @@ bool BidirectionalIntegrator::connectPaths(PathData &pd, int s, int t) const
 	PathEvalVertex &x_l = pd.path_[s - 1];
 	PathEvalVertex &x_e = pd.path_[s];
 	// precompute stuff in pc that is specific to the current connection of sub-paths
-	Vec3 vec = z.sp_.p_ - y.sp_.p_;
+	Vec3 vec{z.sp_.p_ - y.sp_.p_};
 	const float dist_2 = vec.normLenSqr();
 	const float cos_y = std::abs(y.sp_.n_ * vec);
 	const float cos_z = std::abs(z.sp_.n_ * vec);
@@ -565,13 +565,13 @@ bool BidirectionalIntegrator::connectLPath(PathData &pd, Ray &l_ray, Rgb &lcol, 
 	if(!light->illumSample(z.sp_, ls, l_ray)) return false;
 
 	//FIXME DAVID: another series of horrible hacks to avoid uninitialized values and incorrect renders in bidir. However, this should be properly solved by implementing correctly the functions needed by bidir in the lights and materials, and correcting the bidir integrator itself...
-	ls.sp_->p_ = Point3(0.f, 0.f, 0.f);
-	Vec3 wo = l_ray.dir_;
+	ls.sp_->p_ = {0.f, 0.f, 0.f};
+	Vec3 wo{l_ray.dir_};
 	light->emitSample(wo, ls);
 	ls.flags_ = static_cast<Light::Flags>(0xFFFFFFFF);
 	lcol = ls.col_ / (ls.pdf_ * light_num_pdf); //shouldn't really do that division, better use proper c_st in evalLPath...
 	// get probabilities for generating light sample without a given surface point
-	const Vec3 vec = -l_ray.dir_;
+	const Vec3 vec{-l_ray.dir_};
 	light->emitPdf(sp_light, vec, pd.path_[0].pdf_a_0_, pd.path_[0].pdf_f_, cos_wo);
 	pd.path_[0].pdf_a_0_ *= light_num_pdf;
 	pd.path_[0].pdf_f_ /= cos_wo;
@@ -621,7 +621,7 @@ bool BidirectionalIntegrator::connectPathE(PathData &pd, int s) const
 	const PathVertex &z = pd.eye_path_[0];
 	PathEvalVertex &x_l = pd.path_[s - 1];
 	PathEvalVertex &x_e = pd.path_[s];
-	Vec3 vec = z.sp_.p_ - y.sp_.p_;
+	Vec3 vec{z.sp_.p_ - y.sp_.p_};
 	const float dist_2 = vec.normLenSqr();
 	const float cos_y = std::abs(y.sp_.n_ * vec);
 	const Ray wo(z.sp_.p_, -vec);

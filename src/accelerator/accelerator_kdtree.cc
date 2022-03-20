@@ -1026,7 +1026,7 @@ AcceleratorTsIntersectData AcceleratorKdTree::intersectTs(const Ray &ray, int ma
 						if(filtered.insert(primitive).second)
 						{
 							if(depth >= max_depth) return true;
-							const Point3 hit_point = ray.from_ + accelerator_intersect_data.t_hit_ * ray.dir_;
+							const Point3 hit_point{ray.from_ + accelerator_intersect_data.t_hit_ * ray.dir_};
 							const auto sp = primitive->getSurface(ray.differentials_.get(), hit_point, accelerator_intersect_data, nullptr, camera);
 							accelerator_intersect_data.transparent_color_ *= sp->getTransparency(ray.dir_, camera);
 							++depth;

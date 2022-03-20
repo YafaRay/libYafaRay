@@ -39,21 +39,21 @@ IntersectData BsTrianglePrimitive::intersect(const Ray &ray, const Matrix4 *obj_
 	const Point3 *cn = &points[vertices_indices[2]];
 	const float tc = 1.f - ray.time_;
 	const float b_1 = tc * tc, b_2 = 2.f * ray.time_ * tc, b_3 = ray.time_ * ray.time_;
-	const Point3 a = b_1 * an[0] + b_2 * an[1] + b_3 * an[2];
-	const Point3 b = b_1 * bn[0] + b_2 * bn[1] + b_3 * bn[2];
-	const Point3 c = b_1 * cn[0] + b_2 * cn[1] + b_3 * cn[2];
-	const Vec3 edge_1 = b - a;
-	const Vec3 edge_2 = c - a;
-	const Vec3 pvec = ray.dir_ ^ edge_2;
+	const Point3 a{b_1 * an[0] + b_2 * an[1] + b_3 * an[2]};
+	const Point3 b{b_1 * bn[0] + b_2 * bn[1] + b_3 * bn[2]};
+	const Point3 c{b_1 * cn[0] + b_2 * cn[1] + b_3 * cn[2]};
+	const Vec3 edge_1{b - a};
+	const Vec3 edge_2{c - a};
+	const Vec3 pvec{ray.dir_ ^ edge_2};
 	const float det = edge_1 * pvec;
 	if(/*(det>-0.000001) && (det<0.000001)*/ det == 0.0) return {};
 	const float inv_det = 1.f / det;
-	const Vec3 tvec = ray.from_ - a;
+	const Vec3 tvec{ray.from_ - a};
 	const float u = (tvec * pvec) * inv_det;
-	if(u < 0.0 || u > 1.0) return {};
-	const Vec3 qvec = tvec ^ edge_1;
+	if(u < 0.f || u > 1.f) return {};
+	const Vec3 qvec{tvec ^ edge_1};
 	const float v = (ray.dir_ * qvec) * inv_det;
-	if((v < 0.0) || ((u + v) > 1.0)) return {};
+	if((v < 0.f) || ((u + v) > 1.f)) return {};
 	IntersectData intersect_data;
 	intersect_data.hit_ = true;
 	intersect_data.t_hit_ = edge_2 * qvec * inv_det;
@@ -94,9 +94,9 @@ std::unique_ptr<const SurfacePoint> BsTrianglePrimitive::getSurface(const RayDif
 	const float time = intersect_data.time_;
 	const float tc = 1.f - time;
 	const float b_1 = tc * tc, b_2 = 2.f * time * tc, b_3 = time * time;
-	const Point3 a = b_1 * an[0] + b_2 * an[1] + b_3 * an[2];
-	const Point3 b = b_1 * bn[0] + b_2 * bn[1] + b_3 * bn[2];
-	const Point3 c = b_1 * cn[0] + b_2 * cn[1] + b_3 * cn[2];
+	const Point3 a{b_1 * an[0] + b_2 * an[1] + b_3 * an[2]};
+	const Point3 b{b_1 * bn[0] + b_2 * bn[1] + b_3 * bn[2]};
+	const Point3 c{b_1 * cn[0] + b_2 * cn[1] + b_3 * cn[2]};
 
 	auto sp = std::unique_ptr<SurfacePoint>(new SurfacePoint);
 	sp->intersect_data_ = intersect_data;
@@ -144,8 +144,8 @@ std::unique_ptr<const SurfacePoint> BsTrianglePrimitive::getSurface(const RayDif
 		if(std::abs(det) > 1e-30f)
 		{
 			const float invdet = 1.f / det;
-			const Vec3 dp_1 = vert[0] - vert[2];
-			const Vec3 dp_2 = vert[1] - vert[2];
+			const Vec3 dp_1{vert[0] - vert[2]};
+			const Vec3 dp_2{vert[1] - vert[2]};
 			sp->dp_du_ = (dv_2 * invdet) * dp_1 - (dv_1 * invdet) * dp_2;
 			sp->dp_dv_ = (du_1 * invdet) * dp_2 - (du_2 * invdet) * dp_1;
 		}

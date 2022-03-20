@@ -130,7 +130,7 @@ bool BackgroundPortalLight::illumSample(const SurfacePoint &sp, LSample &s, Ray 
 	Point3 p;
 	sampleSurface(p, n, s.s_1_, s.s_2_);
 
-	Vec3 ldir = p - sp.p_;
+	Vec3 ldir{p - sp.p_};
 	//normalize vec and compute inverse square distance
 	const float dist_sqr = ldir.lengthSqr();
 	const float dist = math::sqrt(dist_sqr);
@@ -190,7 +190,7 @@ bool BackgroundPortalLight::intersect(const Ray &ray, float &t, Rgb &col, float 
 	// intersect with tree:
 	const AcceleratorIntersectData accelerator_intersect_data = accelerator_->intersect(ray, t_max);
 	if(!accelerator_intersect_data.hit_) { return false; }
-	const Vec3 n = accelerator_intersect_data.hit_primitive_->getGeometricNormal();
+	const Vec3 n{accelerator_intersect_data.hit_primitive_->getGeometricNormal()};
 	const float cos_angle = ray.dir_ * (-n);
 	if(cos_angle <= 0.f) return false;
 	const float idist_sqr = 1.f / (t * t);
@@ -202,7 +202,7 @@ bool BackgroundPortalLight::intersect(const Ray &ray, float &t, Rgb &col, float 
 
 float BackgroundPortalLight::illumPdf(const SurfacePoint &sp, const SurfacePoint &sp_light) const
 {
-	Vec3 wo = sp.p_ - sp_light.p_;
+	Vec3 wo{sp.p_ - sp_light.p_};
 	const float r_2 = wo.normLenSqr();
 	const float cos_n = wo * sp_light.ng_;
 	return cos_n > 0 ? (r_2 * math::num_pi / (area_ * cos_n)) : 0.f;

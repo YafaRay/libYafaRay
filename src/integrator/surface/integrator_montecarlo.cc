@@ -481,7 +481,7 @@ void MonteCarloIntegrator::causticWorker(unsigned int &total_photons_shot, int t
 					transm = vol->transmittance(ray);
 				}
 			}
-			const Vec3 wi = -ray.dir_;
+			const Vec3 wi{-ray.dir_};
 			const BsdfFlags &mat_bsdfs = hit_curr->mat_data_->bsdf_flags_;
 			if(mat_bsdfs.hasAny((BsdfFlags::Diffuse | BsdfFlags::Glossy)))
 			{
