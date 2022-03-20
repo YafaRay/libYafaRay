@@ -31,7 +31,7 @@ class LayerNode final : public ShaderNode
 		struct Flags : public yafaray::Flags
 		{
 			Flags() = default;
-			Flags(unsigned int flags) : yafaray::Flags(flags) { }
+			Flags(unsigned int flags) : yafaray::Flags(flags) { } // NOLINT(google-explicit-constructor)
 			enum Enum : unsigned int { None = 0, RgbToInt = 1 << 0, Stencil = 1 << 1, Negative = 1 << 2, AlphaMix = 1 << 3 };
 		};
 		static ShaderNode *factory(Logger &logger, const ParamMap &params, const Scene &scene);

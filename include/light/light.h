@@ -46,7 +46,7 @@ class Light
 		struct Flags : public yafaray::Flags
 		{
 			Flags() = default;
-			Flags(unsigned int flags) : yafaray::Flags(flags) { }
+			Flags(unsigned int flags) : yafaray::Flags(flags) { } // NOLINT(google-explicit-constructor)
 			enum Enum : unsigned int { None = 0, DiracDir = 1, Singular = 1 << 1 };
 		};
 		explicit Light(Logger &logger) : logger_(logger) { }

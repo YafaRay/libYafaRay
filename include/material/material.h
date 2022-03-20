@@ -39,8 +39,8 @@ class Logger;
 struct BsdfFlags : public Flags
 {
 	BsdfFlags() = default;
-	BsdfFlags(const Flags &flags) : Flags(flags) { }
-	BsdfFlags(unsigned int flags) : Flags(flags) { }
+	BsdfFlags(const Flags &flags) : Flags(flags) { } // NOLINT(google-explicit-constructor)
+	BsdfFlags(unsigned int flags) : Flags(flags) { } // NOLINT(google-explicit-constructor)
 	enum Enum : unsigned int
 	{
 			None		= 0,

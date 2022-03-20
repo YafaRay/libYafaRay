@@ -31,7 +31,7 @@ class Flags
 	public:
 		constexpr Flags() = default;
 		constexpr Flags(const Flags &flags) = default;
-		constexpr Flags(unsigned int flags) : data_(flags) { }
+		constexpr Flags(unsigned int flags) : data_(flags) { } // NOLINT(google-explicit-constructor)
 		constexpr explicit operator unsigned int() const { return data_; }
 		constexpr bool hasAny(const Flags &f) const;
 		constexpr bool hasAll(const Flags &f) const;
