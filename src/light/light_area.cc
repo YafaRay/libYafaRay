@@ -170,9 +170,9 @@ void AreaLight::emitPdf(const SurfacePoint &sp, const Vec3 &wo, float &area_pdf,
 
 Light * AreaLight::factory(Logger &logger, ParamMap &params, const Scene &scene)
 {
-	Point3 corner(0.0);
-	Point3 p_1(0.0);
-	Point3 p_2(0.0);
+	Point3 corner{0.f, 0.f, 0.f};
+	Point3 p_1{0.f, 0.f, 0.f};
+	Point3 p_2{0.f, 0.f, 0.f};
 	Rgb color(1.0);
 	float power = 1.0;
 	int samples = 4;

@@ -182,7 +182,7 @@ void ExportPython::writeParam(const std::string &name, const Parameter &param, s
 	}
 	else if(type == Parameter::Vector)
 	{
-		Point3 p(0.f);
+		Point3 p{0.f, 0.f, 0.f};
 		param.getVal(p);
 		file << "yi.paramsSetVector(\"" << name << "\", " << p.x_ << ", " << p.y_ << ", " << p.z_ << ")\n";
 	}

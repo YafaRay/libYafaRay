@@ -71,7 +71,7 @@ Point3 TextureMapperNode::tubeMap(const Point3 &p)
 // Map the texture to a sphere
 Point3 TextureMapperNode::sphereMap(const Point3 &p)
 {
-	Point3 res(0.f);
+	Point3 res{0.f, 0.f, 0.f};
 	const float d = p.x_ * p.x_ + p.y_ * p.y_ + p.z_ * p.z_;
 	if(d > 0.f)
 	{
@@ -163,7 +163,7 @@ void TextureMapperNode::getCoords(Point3 &texpt, Vec3 &ng, const SurfacePoint &s
 
 void TextureMapperNode::eval(NodeTreeData &node_tree_data, const SurfacePoint &sp, const Camera *camera) const
 {
-	Point3 texpt(0.f);
+	Point3 texpt{0.f, 0.f, 0.f};
 	Vec3 ng(0.f);
 	std::unique_ptr<const MipMapParams> mip_map_params;
 
@@ -195,7 +195,7 @@ void TextureMapperNode::eval(NodeTreeData &node_tree_data, const SurfacePoint &s
 
 void TextureMapperNode::evalDerivative(NodeTreeData &node_tree_data, const SurfacePoint &sp, const Camera *camera) const
 {
-	Point3 texpt(0.f);
+	Point3 texpt{0.f, 0.f, 0.f};
 	Vec3 ng(0.f);
 	float du = 0.0f, dv = 0.0f;
 
@@ -215,7 +215,7 @@ void TextureMapperNode::evalDerivative(NodeTreeData &node_tree_data, const Surfa
 			norm.x_ = color.getR();
 			norm.y_ = color.getG();
 			norm.z_ = color.getB();
-			norm = (2.f * norm) - 1.f;
+			norm = (2.f * norm) - Vec3{1.f}; //FIXME DAVID: does the Vec3 portion make sense?
 
 			// Convert norm into shading space
 			du = norm * sp.ds_du_;
@@ -260,7 +260,7 @@ void TextureMapperNode::evalDerivative(NodeTreeData &node_tree_data, const Surfa
 
 			// Assign normal map RGB colors to vector norm
 			Vec3 norm { color.getR(), color.getG(), color.getB() };
-			norm = (2.f * norm) - 1.f;
+			norm = (2.f * norm) - Vec3{1.f}; //FIXME DAVID: does the Vec3 portion make sense?
 
 			// Convert norm into shading space
 			du = norm * sp.ds_du_;
@@ -310,7 +310,7 @@ ShaderNode * TextureMapperNode::factory(Logger &logger, const ParamMap &params, 
 	float bump_str = 1.f;
 	bool scalar = true;
 	int map[3] = { 1, 2, 3 };
-	Point3 offset(0.f), scale(1.f);
+	Point3 offset{0.f, 0.f, 0.f}, scale{1.f, 1.f, 1.f};
 	Matrix4 mtx(1);
 	if(!params.getParam("texture", texname))
 	{

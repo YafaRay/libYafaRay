@@ -162,7 +162,7 @@ Rgb SphereLight::emitSample(Vec3 &wo, LSample &s) const
 
 Light * SphereLight::factory(Logger &logger, ParamMap &params, const Scene &scene)
 {
-	Point3 from(0.0);
+	Point3 from{0.f, 0.f, 0.f};
 	Rgb color(1.0);
 	float power = 1.0;
 	float radius = 1.f;

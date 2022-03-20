@@ -99,7 +99,7 @@ Rgba ImageTexture::getRawColor(const Point3 &p, const MipMapParams *mipmap_param
 bool ImageTexture::doMapping(Point3 &texpt) const
 {
 	bool outside = false;
-	texpt = 0.5f * texpt + 0.5f;
+	texpt = 0.5f * texpt + Vec3{0.5f}; //FIXME DAVID: does the Vec3 portion make sense?
 	// repeat, only valid for REPEAT clipmode
 	if(tex_clip_mode_ == ClipMode::Repeat)
 	{

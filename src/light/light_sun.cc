@@ -96,7 +96,7 @@ Rgb SunLight::emitPhoton(float s_1, float s_2, float s_3, float s_4, Ray &ray, f
 
 Light * SunLight::factory(Logger &logger, ParamMap &params, const Scene &scene)
 {
-	Point3 dir(0.0, 0.0, 1.0);
+	Point3 dir{0.f, 0.f, 1.f};
 	Rgb color(1.0);
 	float power = 1.0;
 	float angle = 0.27; //angular (half-)size of the real sun;

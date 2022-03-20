@@ -242,7 +242,7 @@ void ExportC::writeParam(const std::string &name, const Parameter &param, std::o
 	}
 	else if(type == Parameter::Vector)
 	{
-		Point3 p(0.f);
+		Point3 p{0.f, 0.f, 0.f};
 		param.getVal(p);
 		file << "yafaray_paramsSetVector(yi, \"" << name << "\", " << p.x_ << ", " << p.y_ << ", " << p.z_ << ");\n";
 	}

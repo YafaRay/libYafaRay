@@ -173,7 +173,7 @@ void ExportXml::writeParam(const std::string &name, const Parameter &param, std:
 	}
 	else if(type == Parameter::Vector)
 	{
-		Point3 p(0.f);
+		Point3 p{0.f, 0.f, 0.f};
 		param.getVal(p);
 		file << "<" << name << " x=\"" << p.x_ << "\" y=\"" << p.y_ << "\" z=\"" << p.z_ << "\"/>\n";
 	}

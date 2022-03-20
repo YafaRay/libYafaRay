@@ -40,7 +40,7 @@ class Vec3
 {
 	public:
 		Vec3() = default;
-		Vec3(float v): x_(v), y_(v), z_(v) {  }
+		explicit Vec3(float v): x_(v), y_(v), z_(v) {  }
 		Vec3(float ix, float iy, float iz = 0): x_(ix), y_(iy), z_(iz) { }
 		Vec3(const Vec3 &s): x_(s.x_), y_(s.y_), z_(s.z_) { }
 		explicit Vec3(const Point3 &p);

@@ -249,7 +249,7 @@ bool SpotLight::intersect(const Ray &ray, float &t, Rgb &col, float &ipdf) const
 
 Light * SpotLight::factory(Logger &logger, ParamMap &params, const Scene &scene)
 {
-	Point3 from(0.0);
+	Point3 from{0.f, 0.f, 0.f};
 	Point3 to(0.f, 0.f, -1.f);
 	Rgb color(1.0);
 	float power = 1.0;
