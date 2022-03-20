@@ -89,7 +89,7 @@ inline float BackgroundLight::calcFromSample(float s_1, float s_2, float &u, flo
 inline float BackgroundLight::calcFromDir(const Vec3 &dir, float &u, float &v, bool inv) const
 {
 	float pdf_1 = 0.f, pdf_2 = 0.f;
-	Texture::sphereMap(dir, u, v); // Returns u,v pair in [0,1] range
+	Texture::sphereMap(static_cast<Point3>(dir), u, v); // Returns u,v pair in [0,1] range
 	const int iv = clampSample(addOff(v * v_dist_->size()), v_dist_->size());
 	const int iu = clampSample(addOff(u * u_dist_[iv]->size()), u_dist_[iv]->size());
 	pdf_1 = u_dist_[iv]->function(iu) * u_dist_[iv]->invIntegral();

@@ -54,7 +54,7 @@ Rgb TextureBackground::eval(const Vec3 &dir, bool use_ibl_blur) const
 	}
 	else
 	{
-		Texture::sphereMap(dir, u, v); // This returns u,v in 0,1 range (useful for bgLight_t)
+		Texture::sphereMap(static_cast<Point3>(dir), u, v); // This returns u,v in 0,1 range (useful for bgLight_t)
 		// Put u,v in -1,1 range for mapping
 		u = 2.f * u - 1.f;
 		v = 2.f * v - 1.f;

@@ -142,7 +142,7 @@ inline Bound::Cross Bound::cross(const Ray &ray, float t_max) const
 {
 	// Smits method
 	const Point3 &a_0 = a_, &a_1 = g_;
-	const Point3 &p = ray.from_ - a_0;
+	const Point3 p{ray.from_ - a_0};
 
 	float lmin = -1e38f, lmax = 1e38f, ltmin, ltmax; //infinity check initial values
 

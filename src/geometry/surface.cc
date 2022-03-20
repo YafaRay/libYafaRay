@@ -143,8 +143,8 @@ void SurfacePoint::getUVdifferentials(float &du_dx, float &dv_dx, float &du_dy, 
 {
 	if(differentials_)
 	{
-		dUdvFromDpdPdUdPdV(du_dx, dv_dx, differentials_->dp_dx_, dp_du_abs_, dp_dv_abs_);
-		dUdvFromDpdPdUdPdV(du_dy, dv_dy, differentials_->dp_dy_, dp_du_abs_, dp_dv_abs_);
+		dUdvFromDpdPdUdPdV(du_dx, dv_dx, static_cast<Point3>(differentials_->dp_dx_), dp_du_abs_, dp_dv_abs_);
+		dUdvFromDpdPdUdPdV(du_dy, dv_dy, static_cast<Point3>(differentials_->dp_dy_), dp_du_abs_, dp_dv_abs_);
 	}
 }
 

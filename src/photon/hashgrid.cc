@@ -72,7 +72,7 @@ void HashGrid::updateGrid()
 	//travel the vector to build the Grid
 	for(auto itr = photons_.begin(); itr != photons_.end(); ++itr)
 	{
-		Point3 hashindex  = ((*itr).pos_ - bounding_box_.a_) * inv_cell_size_;
+		Point3 hashindex{((*itr).pos_ - bounding_box_.a_) * inv_cell_size_};
 
 		int ix = abs(int(hashindex.x_));
 		int iy = abs(int(hashindex.y_));
@@ -98,8 +98,8 @@ unsigned int HashGrid::gather(const Point3 &p, FoundPhoton *found, unsigned int 
 	float radius = math::sqrt(sq_radius);
 
 	Point3 rad(radius, radius, radius);
-	Point3 b_min = ((p - rad) - (Vec3) bounding_box_.a_) * inv_cell_size_;
-	Point3 b_max = ((p + rad) - (Vec3) bounding_box_.a_) * inv_cell_size_;
+	Point3 b_min{((p - rad) - bounding_box_.a_) * inv_cell_size_};
+	Point3 b_max{((p + rad) - bounding_box_.a_) * inv_cell_size_};
 
 	for(int iz = abs(int(b_min.z_)); iz <= abs(int(b_max.z_)); iz++)
 	{

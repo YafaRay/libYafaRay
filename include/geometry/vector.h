@@ -83,7 +83,7 @@ class Point3 final : public Vec3
 		Point3() = default;
 		Point3(float ix, float iy, float iz = 0) : Vec3(ix, iy, iz) { }
 		Point3(const Point3 &s) : Vec3(s.x_, s.y_, s.z_) { }
-		Point3(const Vec3 &v): Vec3(v) { }
+		explicit Point3(const Vec3 &v): Vec3(v) { }
 		static Point3 mult(const Point3 &a, const Vec3 &b);
 };
 

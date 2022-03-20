@@ -177,8 +177,8 @@ void TextureMapperNode::eval(NodeTreeData &node_tree_data, const SurfacePoint &s
 			float du_dx = 0.f, dv_dx = 0.f;
 			float du_dy = 0.f, dv_dy = 0.f;
 			sp.getUVdifferentials(du_dx, dv_dx, du_dy, dv_dy);
-			const Point3 texpt_diffx = 1.0e+2f * (doMapping(texptorig + 1.0e-2f * Point3(du_dx, dv_dx, 0.f), ng) - texpt);
-			const Point3 texpt_diffy = 1.0e+2f * (doMapping(texptorig + 1.0e-2f * Point3(du_dy, dv_dy, 0.f), ng) - texpt);
+			const Point3 texpt_diffx{1.0e+2f * (doMapping(texptorig + 1.0e-2f * Point3(du_dx, dv_dx, 0.f), ng) - texpt)};
+			const Point3 texpt_diffy{1.0e+2f * (doMapping(texptorig + 1.0e-2f * Point3(du_dy, dv_dy, 0.f), ng) - texpt)};
 			mip_map_params = std::unique_ptr<const MipMapParams>(new MipMapParams(texpt_diffx.x_, texpt_diffx.y_, texpt_diffy.x_, texpt_diffy.y_));
 		}
 	}
@@ -223,10 +223,10 @@ void TextureMapperNode::evalDerivative(NodeTreeData &node_tree_data, const Surfa
 		}
 		else
 		{
-			const Point3 i_0 = texpt - p_du_;
-			const Point3 i_1 = texpt + p_du_;
-			const Point3 j_0 = texpt - p_dv_;
-			const Point3 j_1 = texpt + p_dv_;
+			const Point3 i_0{texpt - p_du_};
+			const Point3 i_1{texpt + p_du_};
+			const Point3 j_0{texpt - p_dv_};
+			const Point3 j_1{texpt + p_dv_};
 			const float dfdu = (tex_->getFloat(i_0) - tex_->getFloat(i_1)) / d_u_;
 			const float dfdv = (tex_->getFloat(j_0) - tex_->getFloat(j_1)) / d_v_;
 

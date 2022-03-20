@@ -83,7 +83,7 @@ std::unique_ptr<const SurfacePoint> SpherePrimitive::getSurface(const RayDiffere
 	auto sp = std::unique_ptr<SurfacePoint>(new SurfacePoint);
 	sp->intersect_data_ = intersect_data;
 	Vec3 normal = hit - center_;
-	sp->orco_p_ = normal;
+	sp->orco_p_ = static_cast<Point3>(normal);
 	normal.normalize();
 	sp->material_ = material_->get();
 	sp->object_ = &base_object_;

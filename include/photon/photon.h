@@ -58,7 +58,7 @@ class Photon
 			if(theta_ == 255) return Vec3(0, 0, 0);
 			else return dirconverter_global.convert(theta_, phi_);
 #else //SMALL_PHOTONS
-			return (Vec3)dir_;
+			return dir_;
 #endif //SMALL_PHOTONS
 		};
 		void direction(const Vec3 &d)

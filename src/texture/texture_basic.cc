@@ -547,7 +547,7 @@ float DistortedNoiseTexture::getFloat(const Point3 &p, const MipMapParams *mipma
 	// get a random vector and scale the randomization
 	const Point3 ofs(13.5, 13.5, 13.5);
 	const Point3 tp(p * size_);
-	const Point3 rv(NoiseGenerator::getSignedNoise(n_gen_1_.get(), tp + ofs), NoiseGenerator::getSignedNoise(n_gen_1_.get(), tp), NoiseGenerator::getSignedNoise(n_gen_1_.get(), tp - ofs));
+	const Point3 rv(NoiseGenerator::getSignedNoise(n_gen_1_.get(), tp + ofs), NoiseGenerator::getSignedNoise(n_gen_1_.get(), tp), NoiseGenerator::getSignedNoise(n_gen_1_.get(), static_cast<Point3>(tp - ofs)));
 	return applyIntensityContrastAdjustments(NoiseGenerator::getSignedNoise(n_gen_2_.get(), tp + rv * distort_));	// distorted-domain noise
 }
 
