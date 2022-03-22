@@ -98,7 +98,7 @@ std::unique_ptr<const SurfacePoint> TrianglePrimitive::getSurface(const RayDiffe
 {
 	auto sp = std::unique_ptr<SurfacePoint>(new SurfacePoint);
 	sp->intersect_data_ = intersect_data;
-	sp->ng_ = getGeometricNormal(obj_to_world);
+	sp->ng_ = Primitive::getGeometricNormal(obj_to_world);
 	const float barycentric_u = intersect_data.barycentric_u_, barycentric_v = intersect_data.barycentric_v_, barycentric_w = intersect_data.barycentric_w_;
 	if(base_mesh_object_.isSmooth() || base_mesh_object_.hasNormalsExported())
 	{
@@ -123,7 +123,7 @@ std::unique_ptr<const SurfacePoint> TrianglePrimitive::getSurface(const RayDiffe
 	{
 		sp->orco_p_ = hit_point;
 		sp->has_orco_ = false;
-		sp->orco_ng_ = getGeometricNormal();
+		sp->orco_ng_ = Primitive::getGeometricNormal();
 	}
 	bool implicit_uv = true;
 	const std::array<Point3, 3> p { getVertex(0, obj_to_world), getVertex(1, obj_to_world), getVertex(2, obj_to_world) };
@@ -220,7 +220,7 @@ float TrianglePrimitive::surfaceArea(const Matrix4 *obj_to_world) const
 void TrianglePrimitive::sample(float s_1, float s_2, Point3 &p, Vec3 &n, const Matrix4 *obj_to_world) const
 {
 	TrianglePrimitive::sample(s_1, s_2, p, { getVertex(0, obj_to_world), getVertex(1, obj_to_world), getVertex(2, obj_to_world) });
-	n = getGeometricNormal(obj_to_world);
+	n = Primitive::getGeometricNormal(obj_to_world);
 }
 
 void TrianglePrimitive::sample(float s_1, float s_2, Point3 &p, const std::array<Point3, 3> &vertices)

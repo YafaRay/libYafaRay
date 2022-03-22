@@ -36,7 +36,8 @@ class ProgressBar
 		//! initialize (or reset) the monitor, give the total number of steps that can occur
 		virtual void init(int steps_total, bool colors_enabled) { std::lock_guard<std::mutex> lock_guard(mutx_); steps_total_ = steps_total; steps_done_ = 0; colors_enabled_ = colors_enabled; }
 		//! update the montior, increment by given number of steps_increment; init has to be called before the first update.
-		virtual void update(int steps_increment = 1);
+		virtual void update(int steps_increment);
+		void update() { update(1); }
 		//! finish progress bar. It could output some summary, simply disappear from GUI or whatever...
 		virtual void done();
 		//! method to pass some informative text to the progress bar in case needed
@@ -66,7 +67,7 @@ class ConsoleProgressBar : public ProgressBar
 	public:
 		explicit ConsoleProgressBar(int cwidth = 80, yafaray_ProgressBarCallback_t monitor_callback = nullptr, void *callback_data = nullptr);
 		void init(int total_steps, bool colors_enabled) override;
-		void update(int steps_increment = 1) override;
+		void update(int steps_increment) override;
 		void done() override;
 
 	private:

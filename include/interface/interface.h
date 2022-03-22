@@ -77,8 +77,10 @@ class Interface
 		virtual void paramsSetBool(const char *name, bool b) noexcept;
 		virtual void paramsSetInt(const char *name, int i) noexcept;
 		virtual void paramsSetFloat(const char *name, double f) noexcept;
-		virtual void paramsSetColor(const char *name, float r, float g, float b, float a = 1.f) noexcept;
-		virtual void paramsSetMatrix(const char *name, const Matrix4 &matrix, bool transpose = false) noexcept;
+		virtual void paramsSetColor(const char *name, float r, float g, float b, float a) noexcept;
+		void paramsSetColor(const char *name, float r, float g, float b) noexcept { paramsSetColor(name, r, g, b, 1.f); };
+		virtual void paramsSetMatrix(const char *name, const Matrix4 &matrix, bool transpose) noexcept;
+		void paramsSetMatrix(const char *name, const Matrix4 &matrix) noexcept { paramsSetMatrix(name, matrix, false); };
 		virtual void paramsClearAll() noexcept; 	//!< clear the paramMap and paramList
 		virtual void paramsPushList() noexcept; 	//!< push new list item in paramList (e.g. new shader node description)
 		virtual void paramsEndList() noexcept; 	//!< revert to writing to normal paramMap

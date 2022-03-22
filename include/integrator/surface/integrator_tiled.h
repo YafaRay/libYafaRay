@@ -59,7 +59,8 @@ class TiledIntegrator : public SurfaceIntegrator
 		/*! render a pass; only required by the default implementation of render() */
 		virtual bool renderPass(int samples, int offset, bool adaptive, int aa_pass_number);
 		/*! render a tile; only required by default implementation of render() */
-		virtual bool renderTile(const RenderArea &a, int n_samples, int offset, bool adaptive, int thread_id, int aa_pass_number = 0);
+		virtual bool renderTile(const RenderArea &a, int n_samples, int offset, bool adaptive, int thread_id, int aa_pass_number);
+		bool renderTile(const RenderArea &a, int n_samples, int offset, bool adaptive, int thread_id) { return renderTile(a, n_samples, offset, adaptive, thread_id, 0); }
 		virtual void renderWorker(ThreadControl *control, int thread_id, int samples, int offset, bool adaptive, int aa_pass);
 		virtual void precalcDepths();
 		static void generateCommonLayers(ColorLayers *color_layers, const SurfacePoint &sp, const MaskParams &mask_params); //!< Generates render passes common to all integrators

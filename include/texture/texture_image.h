@@ -67,8 +67,8 @@ class ImageTexture final : public Texture
 		bool discrete() const override { return true; }
 		bool isThreeD() const override { return false; }
 		bool isNormalmap() const override { return normalmap_; }
-		Rgba getColor(const Point3 &p, const MipMapParams *mipmap_params = nullptr) const override;
-		Rgba getRawColor(const Point3 &p, const MipMapParams *mipmap_params = nullptr) const override;
+		Rgba getColor(const Point3 &p, const MipMapParams *mipmap_params) const override;
+		Rgba getRawColor(const Point3 &p, const MipMapParams *mipmap_params) const override;
 		void resolution(int &x, int &y, int &z) const override;
 		void generateMipMaps() override;
 		void setCrop(float minx, float miny, float maxx, float maxy);

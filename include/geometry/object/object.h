@@ -74,7 +74,8 @@ class Object
 		virtual const Light *getLight() const = 0;
 		/*! set a light source to be associated with this object */
 		virtual void setLight(const Light *light) = 0;
-		virtual bool calculateObject(const std::unique_ptr<Material> *material = nullptr) = 0;
+		virtual bool calculateObject(const std::unique_ptr<Material> *material) = 0;
+		bool calculateObject() { return calculateObject(nullptr); }
 
 		/* Mesh-related interface functions below, only for Mesh objects */
 		virtual int lastVertexId() const { return -1; }

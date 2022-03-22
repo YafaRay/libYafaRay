@@ -79,8 +79,8 @@ float CloudsTexture::getFloat(const Point3 &p, const MipMapParams *mipmap_params
 
 Rgba CloudsTexture::getColor(const Point3 &p, const MipMapParams *mipmap_params) const
 {
-	if(!color_ramp_) return applyColorAdjustments(Rgba{color_1_} + getFloat(p) * Rgba{color_2_ - color_1_});
-	else return applyColorAdjustments(color_ramp_->getColorInterpolated(getFloat(p)));
+	if(!color_ramp_) return applyColorAdjustments(Rgba{color_1_} + Texture::getFloat(p) * Rgba{color_2_ - color_1_});
+	else return applyColorAdjustments(color_ramp_->getColorInterpolated(Texture::getFloat(p)));
 }
 
 Texture * CloudsTexture::factory(Logger &logger, ParamMap &params, Scene &scene)
@@ -159,8 +159,8 @@ float MarbleTexture::getFloat(const Point3 &p, const MipMapParams *mipmap_params
 
 Rgba MarbleTexture::getColor(const Point3 &p, const MipMapParams *mipmap_params) const
 {
-	if(!color_ramp_) return applyColorAdjustments(Rgba{color_1_} + getFloat(p) * Rgba{color_2_ - color_1_});
-	else return applyColorAdjustments(color_ramp_->getColorInterpolated(getFloat(p)));
+	if(!color_ramp_) return applyColorAdjustments(Rgba{color_1_} + Texture::getFloat(p) * Rgba{color_2_ - color_1_});
+	else return applyColorAdjustments(color_ramp_->getColorInterpolated(Texture::getFloat(p)));
 }
 
 Texture * MarbleTexture::factory(Logger &logger, ParamMap &params, Scene &scene)
@@ -244,8 +244,8 @@ float WoodTexture::getFloat(const Point3 &p, const MipMapParams *mipmap_params) 
 
 Rgba WoodTexture::getColor(const Point3 &p, const MipMapParams *mipmap_params) const
 {
-	if(!color_ramp_) return applyColorAdjustments(Rgba{color_1_} + getFloat(p) * Rgba{color_2_ - color_1_});
-	else return applyColorAdjustments(color_ramp_->getColorInterpolated(getFloat(p)));
+	if(!color_ramp_) return applyColorAdjustments(Rgba{color_1_} + Texture::getFloat(p) * Rgba{color_2_ - color_1_});
+	else return applyColorAdjustments(color_ramp_->getColorInterpolated(Texture::getFloat(p)));
 }
 
 Texture * WoodTexture::factory(Logger &logger, ParamMap &params, Scene &scene)
@@ -483,8 +483,8 @@ float MusgraveTexture::getFloat(const Point3 &p, const MipMapParams *mipmap_para
 
 Rgba MusgraveTexture::getColor(const Point3 &p, const MipMapParams *mipmap_params) const
 {
-	if(!color_ramp_) return applyColorAdjustments(Rgba{color_1_} + getFloat(p) * Rgba{color_2_ - color_1_});
-	else return applyColorAdjustments(color_ramp_->getColorInterpolated(getFloat(p)));
+	if(!color_ramp_) return applyColorAdjustments(Rgba{color_1_} + Texture::getFloat(p) * Rgba{color_2_ - color_1_});
+	else return applyColorAdjustments(color_ramp_->getColorInterpolated(Texture::getFloat(p)));
 }
 
 Texture * MusgraveTexture::factory(Logger &logger, ParamMap &params, Scene &scene)
@@ -553,8 +553,8 @@ float DistortedNoiseTexture::getFloat(const Point3 &p, const MipMapParams *mipma
 
 Rgba DistortedNoiseTexture::getColor(const Point3 &p, const MipMapParams *mipmap_params) const
 {
-	if(!color_ramp_) return applyColorAdjustments(Rgba{color_1_} + getFloat(p) * Rgba{color_2_ - color_1_});
-	else return applyColorAdjustments(color_ramp_->getColorInterpolated(getFloat(p)));
+	if(!color_ramp_) return applyColorAdjustments(Rgba{color_1_} + Texture::getFloat(p) * Rgba{color_2_ - color_1_});
+	else return applyColorAdjustments(color_ramp_->getColorInterpolated(Texture::getFloat(p)));
 }
 
 Texture * DistortedNoiseTexture::factory(Logger &logger, ParamMap &params, Scene &scene)
@@ -666,8 +666,8 @@ float BlendTexture::getFloat(const Point3 &p, const MipMapParams *mipmap_params)
 
 Rgba BlendTexture::getColor(const Point3 &p, const MipMapParams *mipmap_params) const
 {
-	if(!color_ramp_) return applyColorAdjustments(Rgba{getFloat(p)});
-	else return applyColorAdjustments(color_ramp_->getColorInterpolated(getFloat(p)));
+	if(!color_ramp_) return applyColorAdjustments(Rgba{Texture::getFloat(p)});
+	else return applyColorAdjustments(color_ramp_->getColorInterpolated(Texture::getFloat(p)));
 }
 
 Texture * BlendTexture::factory(Logger &logger, ParamMap &params, Scene &scene)

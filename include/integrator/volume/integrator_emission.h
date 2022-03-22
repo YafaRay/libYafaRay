@@ -36,7 +36,7 @@ class EmissionIntegrator final : public VolumeIntegrator
 		// optical thickness, absorption, attenuation, extinction
 		Rgb transmittance(RandomGenerator &random_generator, const Ray &ray) const override;
 		// emission part
-		Rgb integrate(RandomGenerator &random_generator, const Ray &ray, int additional_depth = 0) const override;
+		Rgb integrate(RandomGenerator &random_generator, const Ray &ray, int additional_depth) const override;
 };
 
 END_YAFARAY

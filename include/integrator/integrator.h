@@ -130,7 +130,8 @@ class VolumeIntegrator: public Integrator
 {
 	public:
 		virtual Rgb transmittance(RandomGenerator &random_generator, const Ray &ray) const = 0;
-		virtual Rgb integrate(RandomGenerator &random_generator, const Ray &ray, int additional_depth = 0) const = 0;
+		virtual Rgb integrate(RandomGenerator &random_generator, const Ray &ray, int additional_depth) const = 0;
+		Rgb integrate(RandomGenerator &random_generator, const Ray &ray) const { return integrate(random_generator, ray, 0); };
 		bool preprocess(ImageFilm *image_film, const RenderView *render_view, const Scene &scene) override;
 
 	protected:

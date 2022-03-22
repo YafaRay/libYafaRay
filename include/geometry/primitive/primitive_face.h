@@ -34,7 +34,7 @@ class FacePrimitive: public Primitive
 	public:
 		FacePrimitive(const std::vector<int> &vertices_indices, const std::vector<int> &vertices_uv_indices, const MeshObject &mesh_object);
 		//In the following functions "vertex_number" is the vertex number in the face: 0, 1, 2 in triangles, 0, 1, 2, 3 in quads, etc
-		Vec3 getGeometricNormal(const Matrix4 *obj_to_world = nullptr, float u = 0.f, float v = 0.f) const override;
+		Vec3 getGeometricNormal(const Matrix4 *obj_to_world, float u, float v) const override;
 		const Material *getMaterial() const override { return material_->get(); }
 		Bound getBound(const Matrix4 *obj_to_world) const override;
 		virtual void calculateGeometricNormal() = 0;
