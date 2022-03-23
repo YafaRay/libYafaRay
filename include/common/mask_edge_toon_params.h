@@ -17,8 +17,8 @@
  *      Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-#ifndef LIBYAFARAY_MASK_EDGE_TOON_PARAMS_H
-#define LIBYAFARAY_MASK_EDGE_TOON_PARAMS_H
+#ifndef YAFARAY_MASK_EDGE_TOON_PARAMS_H
+#define YAFARAY_MASK_EDGE_TOON_PARAMS_H
 
 #include "common/yafaray_common.h"
 #include "color/color.h"

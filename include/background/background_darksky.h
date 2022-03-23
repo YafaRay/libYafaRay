@@ -26,6 +26,9 @@
  *      Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
+#ifndef YAFARAY_BACKGROUND_DARKSKY_H
+#define YAFARAY_BACKGROUND_DARKSKY_H
+
 #include <memory>
 #include "background.h"
 #include "geometry/vector.h"
@@ -63,3 +66,5 @@ class DarkSkyBackground final : public Background
 };
 
 END_YAFARAY
+
+#endif // YAFARAY_BACKGROUND_DARKSKY_H

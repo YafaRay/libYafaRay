@@ -18,8 +18,8 @@
  *
  */
 
-#ifndef LIBYAFARAY_LAYER_DEFINITIONS_H
-#define LIBYAFARAY_LAYER_DEFINITIONS_H
+#ifndef YAFARAY_LAYER_DEFINITIONS_H
+#define YAFARAY_LAYER_DEFINITIONS_H
 
 #include "yafaray_common.h"
 #include "image/image.h"

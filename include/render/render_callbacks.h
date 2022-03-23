@@ -18,8 +18,8 @@
  *
  */
 
-#ifndef LIBYAFARAY_RENDER_CALLBACKS_H
-#define LIBYAFARAY_RENDER_CALLBACKS_H
+#ifndef YAFARAY_RENDER_CALLBACKS_H
+#define YAFARAY_RENDER_CALLBACKS_H
 
 struct RenderCallbacks final
 {

@@ -17,8 +17,8 @@
  *      Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-#ifndef LIBYAFARAY_BACKGROUND_H
-#define LIBYAFARAY_BACKGROUND_H
+#ifndef YAFARAY_BACKGROUND_H
+#define YAFARAY_BACKGROUND_H
 
 #include "common/yafaray_common.h"
 #include "color/color.h"
@@ -50,4 +50,4 @@ class Background
 
 END_YAFARAY
 
-#endif // LIBYAFARAY_BACKGROUND_H
+#endif // YAFARAY_BACKGROUND_H

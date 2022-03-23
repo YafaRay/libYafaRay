@@ -19,8 +19,8 @@
  *
  */
 
-#ifndef LIBYAFARAY_VERSION_BUILD_INFO_H
-#define LIBYAFARAY_VERSION_BUILD_INFO_H
+#ifndef YAFARAY_VERSION_BUILD_INFO_H
+#define YAFARAY_VERSION_BUILD_INFO_H
 
 #include "yafaray_common.h"
 #include <string>

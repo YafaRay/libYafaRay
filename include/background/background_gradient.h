@@ -19,8 +19,8 @@
  *      Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-#ifndef LIBYAFARAY_BACKGROUND_GRADIENT_H
-#define LIBYAFARAY_BACKGROUND_GRADIENT_H
+#ifndef YAFARAY_BACKGROUND_GRADIENT_H
+#define YAFARAY_BACKGROUND_GRADIENT_H
 
 #include "background.h"
 #include "color/color.h"
@@ -41,4 +41,4 @@ class GradientBackground final : public Background
 
 END_YAFARAY
 
-#endif // LIBYAFARAY_BACKGROUND_GRADIENT_H
+#endif // YAFARAY_BACKGROUND_GRADIENT_H

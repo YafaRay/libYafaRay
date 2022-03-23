@@ -19,8 +19,8 @@
  *      Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-#ifndef LIBYAFARAY_BACKGROUND_SUNSKY_H
-#define LIBYAFARAY_BACKGROUND_SUNSKY_H
+#ifndef YAFARAY_BACKGROUND_SUNSKY_H
+#define YAFARAY_BACKGROUND_SUNSKY_H
 
 #include "background.h"
 #include "color/color.h"
@@ -56,4 +56,4 @@ class SunSkyBackground final : public Background
 
 END_YAFARAY
 
-#endif // LIBYAFARAY_BACKGROUND_SUNSKY_H
+#endif // YAFARAY_BACKGROUND_SUNSKY_H

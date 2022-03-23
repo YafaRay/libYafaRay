@@ -19,8 +19,8 @@
  *      Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-#ifndef LIBYAFARAY_BACKGROUND_CONSTANT_H
-#define LIBYAFARAY_BACKGROUND_CONSTANT_H
+#ifndef YAFARAY_BACKGROUND_CONSTANT_H
+#define YAFARAY_BACKGROUND_CONSTANT_H
 
 #include <memory>
 #include "background.h"
@@ -42,4 +42,4 @@ class ConstantBackground final : public Background
 
 END_YAFARAY
 
-#endif // LIBYAFARAY_BACKGROUND_CONSTANT_H
+#endif // YAFARAY_BACKGROUND_CONSTANT_H
