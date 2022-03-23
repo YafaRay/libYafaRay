@@ -101,9 +101,9 @@ inline Rgba RgbePixel::getRgba() const
 	{
 		/*nonzero pixel*/
 		const float f = math::ldexp(1.f, e_ - (128 + 8));
-		return Rgba(f * r_, f * g_, f * b_, 1.f);
+		return {f * r_, f * g_, f * b_, 1.f};
 	}
-	return Rgba(0.f, 0.f, 0.f, 1.0f);
+	return {0.f, 0.f, 0.f, 1.0f};
 }
 
 inline void RgbePixel::setScanlineStart(int w)

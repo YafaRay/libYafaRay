@@ -141,7 +141,7 @@ Rgba TgaFormat::processGray8(void *data) // NOLINT(readability-convert-member-fu
 Rgba TgaFormat::processGray16(void *data) // NOLINT(readability-convert-member-functions-to-static)
 {
 	uint16_t color = *(uint16_t *)data;
-	return Rgba(Rgb((color & tga_constants::gray_mask) * inv_max_8_bit_), ((color & tga_constants::alpha_gray_mask) >> 8) * inv_max_8_bit_);
+	return {Rgb((color & tga_constants::gray_mask) * inv_max_8_bit_), static_cast<float>(((color & tga_constants::alpha_gray_mask) >> 8) * inv_max_8_bit_)};
 }
 
 Rgba TgaFormat::processColor8(void *data)
@@ -153,37 +153,37 @@ Rgba TgaFormat::processColor8(void *data)
 Rgba TgaFormat::processColor15(void *data) // NOLINT(readability-convert-member-functions-to-static)
 {
 	const uint16_t color = *(uint16_t *)data;
-	return Rgba(((color & tga_constants::red_mask) >> 11) * inv_31_,
-				((color & tga_constants::green_mask) >> 6) * inv_31_,
-				((color & tga_constants::blue_mask) >> 1) * inv_31_,
-				1.f);
+	return {static_cast<float>(((color & tga_constants::red_mask) >> 11) * inv_31_),
+				static_cast<float>(((color & tga_constants::green_mask) >> 6) * inv_31_),
+				static_cast<float>(((color & tga_constants::blue_mask) >> 1) * inv_31_),
+				1.f};
 }
 
 Rgba TgaFormat::processColor16(void *data) // NOLINT(readability-convert-member-functions-to-static)
 {
 	const uint16_t color = *(uint16_t *)data;
-	return Rgba(((color & tga_constants::red_mask) >> 11) * inv_31_,
-				((color & tga_constants::green_mask) >> 6) * inv_31_,
-				((color & tga_constants::blue_mask) >> 1) * inv_31_,
-				(float)(color & tga_constants::alpha_mask));
+	return {static_cast<float>(((color & tga_constants::red_mask) >> 11) * inv_31_),
+				static_cast<float>(((color & tga_constants::green_mask) >> 6) * inv_31_),
+				static_cast<float>(((color & tga_constants::blue_mask) >> 1) * inv_31_),
+				static_cast<float>(color & tga_constants::alpha_mask)};
 }
 
 Rgba TgaFormat::processColor24(void *data) // NOLINT(readability-convert-member-functions-to-static)
 {
 	const TgaPixelRgb *color = (TgaPixelRgb *)data;
-	return Rgba(color->r_ * inv_max_8_bit_,
-				color->g_ * inv_max_8_bit_,
-				color->b_ * inv_max_8_bit_,
-				1.f);
+	return {static_cast<float>(color->r_ * inv_max_8_bit_),
+				static_cast<float>(color->g_ * inv_max_8_bit_),
+				static_cast<float>(color->b_ * inv_max_8_bit_),
+				1.f};
 }
 
 Rgba TgaFormat::processColor32(void *data) // NOLINT(readability-convert-member-functions-to-static)
 {
 	const TgaPixelRgba *color = (TgaPixelRgba *)data;
-	return Rgba(color->r_ * inv_max_8_bit_,
-				color->g_ * inv_max_8_bit_,
-				color->b_ * inv_max_8_bit_,
-				color->a_ * inv_max_8_bit_);
+	return {static_cast<float>(color->r_ * inv_max_8_bit_),
+				static_cast<float>(color->g_ * inv_max_8_bit_),
+				static_cast<float>(color->b_ * inv_max_8_bit_),
+				static_cast<float>(color->a_ * inv_max_8_bit_)};
 }
 
 bool TgaFormat::precheckFile(TgaHeader &header, const std::string &name, bool &is_gray, bool &is_rle, bool &has_color_map, uint8_t &alpha_bit_depth)

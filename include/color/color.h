@@ -298,33 +298,33 @@ inline Rgb &Rgb::operator -=(const Rgb &c)
 
 inline Rgba operator * (const Rgba &a, const Rgba &b)
 {
-	return Rgba(a.r_ * b.r_, a.g_ * b.g_, a.b_ * b.b_, a.a_ * b.a_);
+	return {a.r_ * b.r_, a.g_ * b.g_, a.b_ * b.b_, a.a_ * b.a_};
 }
 
 inline Rgba operator * (const float f, const Rgba &b)
 {
-	return Rgba(f * b.r_, f * b.g_, f * b.b_, f * b.a_);
+	return {f * b.r_, f * b.g_, f * b.b_, f * b.a_};
 }
 
 inline Rgba operator * (const Rgba &b, const float f)
 {
-	return Rgba(f * b.r_, f * b.g_, f * b.b_, f * b.a_);
+	return {f * b.r_, f * b.g_, f * b.b_, f * b.a_};
 }
 
 inline Rgba operator / (const Rgba &b, float f)
 {
 	if(f != 0) f = 1.f / f;
-	return Rgba(b.r_ * f, b.g_ * f, b.b_ * f, b.a_ * f);
+	return {b.r_ * f, b.g_ * f, b.b_ * f, b.a_ * f};
 }
 
 inline Rgba operator + (const Rgba &a, const Rgba &b)
 {
-	return Rgba(a.r_ + b.r_, a.g_ + b.g_, a.b_ + b.b_, a.a_ + b.a_);
+	return {a.r_ + b.r_, a.g_ + b.g_, a.b_ + b.b_, a.a_ + b.a_};
 }
 
 inline Rgba operator - (const Rgba &a, const Rgba &b)
 {
-	return Rgba(a.r_ - b.r_, a.g_ - b.g_, a.b_ - b.b_, a.a_ - b.a_);
+	return {a.r_ - b.r_, a.g_ - b.g_, a.b_ - b.b_, a.a_ - b.a_};
 }
 
 inline Rgba &Rgba::operator +=(const Rgba &c) { r_ += c.r_; g_ += c.g_; b_ += c.b_; a_ += c.a_;  return *this; }

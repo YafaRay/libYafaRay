@@ -124,7 +124,7 @@ Bound FacePrimitive::getBound(const std::vector<Point3> &vertices)
 		if(vertices[vert_num].y_ > max_point.y_) max_point.y_ = vertices[vert_num].y_;
 		if(vertices[vert_num].z_ > max_point.z_) max_point.z_ = vertices[vert_num].z_;
 	}
-	return Bound(min_point, max_point);
+	return {min_point, max_point};
 }
 
 Vec3 FacePrimitive::getGeometricNormal(const Matrix4 *obj_to_world, float, float) const

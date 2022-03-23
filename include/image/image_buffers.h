@@ -119,7 +119,7 @@ class Rgba8888 final
 	public:
 		void setColor(const Rgba &col) { setR((uint8_t)roundf(col.r_ * 255.f)); setG((uint8_t)roundf(col.g_ * 255.f)); setB((uint8_t)roundf(col.b_ * 255.f)); setA((uint8_t)roundf(col.a_ * 255.f)); }
 
-		Rgba getColor() const { return Rgba((float) getR() / 255.f, (float) getG() / 255.f, (float) getB() / 255.f, (float) getA() / 255.f); }
+		Rgba getColor() const { return {(float) getR() / 255.f, (float) getG() / 255.f, (float) getB() / 255.f, (float) getA() / 255.f}; }
 
 	private:
 		void setR(uint8_t red_8) { r_ = red_8; }
@@ -146,7 +146,7 @@ class Rgba7773 final
 	public:
 		void setColor(const Rgba &col) { setR((uint8_t)roundf(col.r_ * 255.f)); setG((uint8_t)roundf(col.g_ * 255.f)); setB((uint8_t)roundf(col.b_ * 255.f));  setA((uint8_t)roundf(col.a_ * 255.f)); }
 
-		Rgba getColor() const { return Rgba((float) getR() / 254.f, (float) getG() / 254.f, (float) getB() / 254.f, (float) getA() / 224.f); } //maximum range is 7bit 0xFE (254) for colors and 3bit 0xE0 (224) for alpha, so I'm scaling acordingly. Loss of color data is happening and scaling may make it worse, but it's the only way of doing this consistently
+		Rgba getColor() const { return {(float) getR() / 254.f, (float) getG() / 254.f, (float) getB() / 254.f, (float) getA() / 224.f}; } //maximum range is 7bit 0xFE (254) for colors and 3bit 0xE0 (224) for alpha, so I'm scaling acordingly. Loss of color data is happening and scaling may make it worse, but it's the only way of doing this consistently
 
 	private:
 		void setR(uint8_t red_8) { ra_ = (ra_ & 0x01) | (red_8 & 0xFE); }
@@ -174,7 +174,7 @@ class Rgb888 final
 	public:
 		void setColor(const Rgba &col) { setR((uint8_t)roundf(col.r_ * 255.f)); setG((uint8_t)roundf(col.g_ * 255.f)); setB((uint8_t)roundf(col.b_ * 255.f)); }
 
-		Rgba getColor() const { return Rgba((float) getR() / 255.f, (float) getG() / 255.f, (float) getB() / 255.f, 1.f); }
+		Rgba getColor() const { return {(float) getR() / 255.f, (float) getG() / 255.f, (float) getB() / 255.f, 1.f}; }
 
 	private:
 		void setR(uint8_t red_8) { r_ = red_8; }
@@ -202,7 +202,7 @@ class Gray8 final
 		Rgba getColor() const
 		{
 			const float f_value = (float) value_ / 255.f;
-			return Rgba(f_value, 1.f);
+			return {f_value, 1.f};
 		}
 
 		uint8_t getInt() const { return value_; }
@@ -219,7 +219,7 @@ class Rgb565 final
 	public:
 		void setColor(const Rgba &col) { setR((uint8_t)roundf(col.r_ * 255.f)); setG((uint8_t)roundf(col.g_ * 255.f)); setB((uint8_t)roundf(col.b_ * 255.f)); }
 
-		Rgba getColor() const { return Rgba((float) getR() / 248.f, (float) getG() / 252.f, (float) getB() / 248.f, 1.f); } //maximum range is 5bit 0xF8 (248) for r,b colors and 6bit 0xFC (252) for g color, so I'm scaling acordingly. Loss of color data is happening and scaling may make it worse, but it's the only way of doing this consistently
+		Rgba getColor() const { return {(float) getR() / 248.f, (float) getG() / 252.f, (float) getB() / 248.f, 1.f}; } //maximum range is 5bit 0xF8 (248) for r,b colors and 6bit 0xFC (252) for g color, so I'm scaling acordingly. Loss of color data is happening and scaling may make it worse, but it's the only way of doing this consistently
 
 	private:
 		void setR(uint8_t red_8) { rgb_565_ = (rgb_565_ & 0x07FF) | ((red_8 & 0xF8) << 8); }
@@ -245,7 +245,7 @@ class Rgb101010 final
 			setB((uint16_t)roundf(col.b_ * 1023.f));
 		}
 
-		Rgba getColor() const { return Rgba((float) getR() / 1023.f, (float) getG() / 1023.f, (float) getB() / 1023.f, 1.f); }
+		Rgba getColor() const { return {(float) getR() / 1023.f, (float) getG() / 1023.f, (float) getB() / 1023.f, 1.f}; }
 
 	private:
 		void setR(uint16_t red_10) { r_ = (red_10 & 0x00FF); rgb_extra_ = (rgb_extra_ & 0x0F) | ((red_10 & 0x0300) >> 4); }
@@ -275,7 +275,7 @@ class Rgba1010108 final
 			setA((uint8_t)roundf(col.a_ * 255.f));
 		}
 
-		Rgba getColor() const { return Rgba((float) getR() / 1023.f, (float) getG() / 1023.f, (float) getB() / 1023.f, (float) getA() / 255.f); }
+		Rgba getColor() const { return {(float) getR() / 1023.f, (float) getG() / 1023.f, (float) getB() / 1023.f, (float) getA() / 255.f}; }
 
 	private:
 		void setR(uint16_t red_10) { r_ = (red_10 & 0x00FF); rgb_extra_ = (rgb_extra_ & 0x0F) | ((red_10 & 0x0300) >> 4); }

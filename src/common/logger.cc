@@ -234,14 +234,14 @@ std::string Logger::printTime(const std::time_t &datetime)
 {
 	char mbstr[20];
 	std::strftime(mbstr, sizeof(mbstr), "%H:%M:%S", std::localtime(&datetime));
-	return std::string(mbstr);
+	return {mbstr};
 }
 
 std::string Logger::printDate(const std::time_t &datetime)
 {
 	char mbstr[20];
 	std::strftime(mbstr, sizeof(mbstr), "%Y-%m-%d", std::localtime(&datetime));
-	return std::string(mbstr);
+	return {mbstr};
 }
 
 std::string Logger::printDuration(double duration)

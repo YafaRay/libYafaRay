@@ -50,8 +50,8 @@ Primitive *SpherePrimitive::factory(ParamMap &params, const Scene &scene, const 
 
 Bound SpherePrimitive::getBound(const Matrix4 *obj_to_world) const
 {
-	const Vec3 r(radius_ * 1.0001);
-	return Bound(center_ - r, center_ + r);
+	const Vec3 r{radius_ * 1.0001f};
+	return {center_ - r, center_ + r};
 }
 
 IntersectData SpherePrimitive::intersect(const Ray &ray, const Matrix4 *obj_to_world) const

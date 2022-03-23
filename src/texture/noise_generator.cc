@@ -832,7 +832,7 @@ Rgba NoiseGenerator::cellNoiseColor(const Point3 &pt)
 	int yi = (int)(floor(pt.y_));
 	int zi = (int)(floor(pt.z_));
 	const float *cl = hashPnt(xi, yi, zi);
-	return Rgba(cl[0], cl[1], cl[2], 1.0);
+	return {cl[0], cl[1], cl[2], 1.0};
 }
 
 // turbulence function used by basic blocks

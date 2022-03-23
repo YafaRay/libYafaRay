@@ -80,7 +80,7 @@ Bound BsTrianglePrimitive::getBound(const Matrix4 *obj_to_world) const
 	const Point3 cmax { math::max(cn[0].x_, cn[1].x_, cn[2].x_), math::max(cn[0].y_, cn[1].y_, cn[2].y_), math::max(cn[0].z_, cn[1].z_, cn[2].z_) };
 	const Point3 l { math::min(amin.x_, bmin.x_, cmin.x_), math::min(amin.y_, bmin.y_, cmin.y_), math::min(amin.z_, bmin.z_, cmin.z_) };
 	const Point3 h { math::max(amax.x_, bmax.x_, cmax.x_), math::max(amax.y_, bmax.y_, cmax.y_), math::max(amax.z_, bmax.z_, cmax.z_) };
-	return Bound(l, h);
+	return {l, h};
 }
 
 std::unique_ptr<const SurfacePoint> BsTrianglePrimitive::getSurface(const RayDifferentials *ray_differentials, const Point3 &hit, const IntersectData &intersect_data, const Matrix4 *obj_to_world, const Camera *camera) const
