@@ -52,7 +52,7 @@ std::set<const ShaderNode *> NodeMaterial::recursiveFinder(const ShaderNode *nod
 	return tree;
 }
 
-void NodeMaterial::evalNodes(const SurfacePoint &sp, const std::vector<const ShaderNode *> &nodes, NodeTreeData &node_tree_data, const Camera *camera) const
+void NodeMaterial::evalNodes(const SurfacePoint &sp, const std::vector<const ShaderNode *> &nodes, NodeTreeData &node_tree_data, const Camera *camera)
 {
 	for(const auto &node : nodes) node->eval(node_tree_data, sp, camera);
 }

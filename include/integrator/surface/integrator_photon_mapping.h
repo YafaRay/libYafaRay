@@ -49,12 +49,12 @@ class PhotonIntegrator final : public MonteCarloIntegrator
 		std::string getName() const override { return "PhotonMap"; }
 		bool preprocess(ImageFilm *image_film, const RenderView *render_view, const Scene &scene) override;
 		std::pair<Rgb, float> integrate(Ray &ray, RandomGenerator &random_generator, ColorLayers *color_layers, int thread_id, int ray_level, bool chromatic_enabled, float wavelength, int additional_depth, const RayDivision &ray_division, const PixelSamplingData &pixel_sampling_data) const override;
-		void preGatherWorker(PreGatherData *gdata, float ds_rad, int n_search);
 		void diffuseWorker(PreGatherData &pgdat, unsigned int &total_photons_shot, int thread_id, const Pdf1D *light_power_d, const std::vector<const Light *> &lights_diffuse, int pb_step);
-		void photonMapKdTreeWorker(PhotonMap *photon_map);
 		Rgb finalGathering(RandomGenerator &random_generator, int thread_id, bool chromatic_enabled, float wavelength, const SurfacePoint &sp, const Vec3 &wo, const RayDivision &ray_division, const PixelSamplingData &pixel_sampling_data) const;
 		void enableCaustics(const bool caustics) { use_photon_caustics_ = caustics; }
 		void enableDiffuse(const bool diffuse) { use_photon_diffuse_ = diffuse; }
+		static void preGatherWorker(PreGatherData *gdata, float ds_rad, int n_search);
+		static void photonMapKdTreeWorker(PhotonMap *photon_map);
 
 		bool use_photon_diffuse_; //!< enable/disable diffuse photon processing
 		bool final_gather_, show_map_;

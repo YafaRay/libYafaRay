@@ -112,7 +112,6 @@ class Material
 		*/
 		virtual Rgb sample(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, Vec3 &wi, Sample &s, float &w, bool chromatic, float wavelength, const Camera *camera) const = 0;// {return Rgb{0.f};}
 		virtual Rgb sample(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, Vec3 *const dir, Rgb &tcol, Sample &s, float *const w, bool chromatic, float wavelength) const {return Rgb{0.f};}
-		Rgb sampleClay(const SurfacePoint &sp, const Vec3 &wo, Vec3 &wi, Sample &s, float &w) const;
 		/*! return the pdf for sampling the BSDF with wi and wo
 		*/
 		virtual float pdf(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wi, const BsdfFlags &bsdfs) const {return 0.f;}
@@ -158,13 +157,13 @@ class Material
 			material_index_ = new_mat_index;
 			if(material_index_highest_ < material_index_) material_index_highest_ = material_index_;
 		}
-		void resetMaterialIndex() { material_index_highest_ = 1.f; material_index_auto_ = 0; }
+		static void resetMaterialIndex() { material_index_highest_ = 1.f; material_index_auto_ = 0; }
 		unsigned int getAbsMaterialIndex() const { return material_index_; }
 		float getNormMaterialIndex() const { return static_cast<float>(getAbsMaterialIndex()) / static_cast<float>(material_index_highest_); }
 		Rgb getAbsMaterialIndexColor() const { return Rgb{static_cast<float>(getAbsMaterialIndex())}; }
 		Rgb getNormMaterialIndexColor() const { return Rgb{getNormMaterialIndex()}; }
 		Rgb getAutoMaterialIndexColor() const { return material_index_auto_color_; }
-		Rgb getAutoMaterialIndexNumber() const { return Rgb{static_cast<float>(material_index_auto_)}; }
+		static Rgb getAutoMaterialIndexNumber() { return Rgb{static_cast<float>(material_index_auto_)}; }
 		Visibility getVisibility() const { return visibility_; }
 		bool getReceiveShadows() const { return receive_shadows_; }
 
@@ -184,6 +183,7 @@ class Material
 			if(highest_sampling_factor_ < sampling_factor_) highest_sampling_factor_ = sampling_factor_;
 		}
 		float getSamplingFactor() const { return sampling_factor_; }
+		static Rgb sampleClay(const SurfacePoint &sp, const Vec3 &wo, Vec3 &wi, Sample &s, float &w);
 		static Rgb getShaderColor(const ShaderNode *shader_node, const NodeTreeData &node_tree_data, const Rgb &color_without_shader)
 		{
 			return shader_node ? shader_node->getColor(node_tree_data) : color_without_shader;
@@ -200,7 +200,7 @@ class Material
 	protected:
 		/* small function to apply bump mapping to a surface point
 			you need to determine the partial derivatives for NU and NV first, e.g. from a shader node */
-		void applyBump(SurfacePoint &sp, const DuDv &du_dv) const;
+		static void applyBump(SurfacePoint &sp, const DuDv &du_dv);
 
 		BsdfFlags bsdf_flags_ = BsdfFlags::None;
 

@@ -50,7 +50,7 @@ class IesLight final : public Light
 		Rgb emitSample(Vec3 &wo, LSample &s) const override;
 		void emitPdf(const SurfacePoint &sp, const Vec3 &wo, float &area_pdf, float &dir_pdf, float &cos_wo) const override;
 		bool isIesOk() { return ies_ok_; };
-		void getAngles(float &u, float &v, const Vec3 &dir, const float &costheta) const;
+		static void getAngles(float &u, float &v, const Vec3 &dir, const float &costheta);
 
 		Point3 position_;
 		Vec3 dir_; //!< orientation of the spot cone

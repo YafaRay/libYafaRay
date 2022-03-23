@@ -121,10 +121,6 @@ class Rgb
 		}
 
 		void clampProportionalRgb(float max_value);
-
-		float linearRgbFromSRgb(float value_s_rgb);
-		float sRgbFromLinearRgb(float value_linear_rgb);
-
 		void linearRgbFromColorSpace(ColorSpace color_space, float gamma);
 		void colorSpaceFromLinearRgb(ColorSpace color_space, float gamma);
 		void rgbToHsv(float &h, float &s, float &v) const;
@@ -134,7 +130,8 @@ class Rgb
 
 		static std::string colorSpaceName(const ColorSpace &color_space);
 		static ColorSpace colorSpaceFromName(const std::string &color_space_name, const ColorSpace &default_color_space = ColorSpace::RawManualGamma);
-
+		static float linearRgbFromSRgb(float value_s_rgb);
+		static float sRgbFromLinearRgb(float value_linear_rgb);
 		static Rgb mix(const Rgb &a, const Rgb &b, float point);
 		static float maxAbsDiff(const Rgb &a, const Rgb &b);
 

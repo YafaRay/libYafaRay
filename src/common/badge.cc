@@ -118,7 +118,7 @@ std::string Badge::print(const std::string &denoise_params, const RenderControl 
 
 #if HAVE_FREETYPE
 
-void Badge::drawFontBitmap(FT_Bitmap_ *bitmap, Image *badge_image, int x, int y) const
+void Badge::drawFontBitmap(FT_Bitmap_ *bitmap, Image *badge_image, int x, int y)
 {
 	int i, j, p, q;
 	const int width = badge_image->getWidth();

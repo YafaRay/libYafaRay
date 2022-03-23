@@ -466,7 +466,7 @@ bool PhotonIntegrator::preprocess(ImageFilm *image_film, const RenderView *rende
 		{
 			logger_.logInfo(getName(), ": Building diffuse photons kd-tree:");
 			intpb_->setTag("Building diffuse photons kd-tree...");
-			diffuse_map_build_kd_tree_thread = std::thread(&PhotonIntegrator::photonMapKdTreeWorker, this, diffuse_map_.get());
+			diffuse_map_build_kd_tree_thread = std::thread(&PhotonIntegrator::photonMapKdTreeWorker, diffuse_map_.get());
 		}
 		else
 		{
@@ -537,7 +537,7 @@ bool PhotonIntegrator::preprocess(ImageFilm *image_film, const RenderView *rende
 		{
 			logger_.logInfo(getName(), ": Building caustic photons kd-tree:");
 			intpb_->setTag("Building caustic photons kd-tree...");
-			caustic_map_build_kd_tree_thread = std::thread(&PhotonIntegrator::photonMapKdTreeWorker, this, caustic_map_.get());
+			caustic_map_build_kd_tree_thread = std::thread(&PhotonIntegrator::photonMapKdTreeWorker, caustic_map_.get());
 		}
 		else
 		{
@@ -579,7 +579,7 @@ bool PhotonIntegrator::preprocess(ImageFilm *image_film, const RenderView *rende
 		pgdat.pbar_->setTag("Pregathering radiance data for final gathering...");
 
 		std::vector<std::thread> threads;
-		for(int i = 0; i < n_threads; ++i) threads.push_back(std::thread(&PhotonIntegrator::preGatherWorker, this, &pgdat, ds_radius_, n_diffuse_search_));
+		for(int i = 0; i < n_threads; ++i) threads.push_back(std::thread(&PhotonIntegrator::preGatherWorker, &pgdat, ds_radius_, n_diffuse_search_));
 		for(auto &t : threads) t.join();
 
 		radiance_map_->swapVector(pgdat.radiance_vec_);

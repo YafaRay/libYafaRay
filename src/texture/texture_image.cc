@@ -178,7 +178,7 @@ void ImageTexture::setCrop(float minx, float miny, float maxx, float maxy)
 	cropy_ = ((cropminy_ != 0.0) || (cropmaxy_ != 1.0));
 }
 
-void ImageTexture::findTextureInterpolationCoordinates(int &coord_0, int &coord_1, int &coord_2, int &coord_3, float &coord_decimal_part, float coord_float, int resolution, bool repeat, bool mirror) const
+void ImageTexture::findTextureInterpolationCoordinates(int &coord_0, int &coord_1, int &coord_2, int &coord_3, float &coord_decimal_part, float coord_float, int resolution, bool repeat, bool mirror)
 {
 	if(repeat)
 	{

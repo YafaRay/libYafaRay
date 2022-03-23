@@ -175,7 +175,7 @@ std::unique_ptr<const SurfacePoint> TrianglePrimitive::getSurface(const RayDiffe
 	return sp;
 }
 
-void TrianglePrimitive::calculateShadingSpace(SurfacePoint &sp) const
+void TrianglePrimitive::calculateShadingSpace(SurfacePoint &sp)
 {
 	// transform dPdU and dPdV in shading space
 	sp.ds_du_.x_ = sp.nu_ * sp.dp_du_;

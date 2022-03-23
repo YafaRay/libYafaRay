@@ -54,15 +54,15 @@ class BidirectionalIntegrator final : public TiledIntegrator
 		Rgb evalPath(const Accelerator &accelerator, int s, int t, const PathData &pd, const Camera *camera) const;
 		Rgb evalLPath(const Accelerator &accelerator, int t, const PathData &pd, const Ray &l_ray, const Rgb &lcol, const Camera *camera) const;
 		Rgb evalPathE(const Accelerator &accelerator, int s, const PathData &pd, const Camera *camera) const;
-		bool connectPaths(PathData &pd, int s, int t) const;
 		bool connectLPath(PathData &pd, Ray &l_ray, Rgb &lcol, RandomGenerator &random_generator, bool chromatic_enabled, float wavelength, int t) const;
 		bool connectPathE(PathData &pd, int s) const;
-		float pathWeight(int s, int t, const PathData &pd) const;
 		float pathWeight0T(PathData &pd, int t) const;
 		static void clearPath(std::vector<PathEvalVertex> &p, int s, int t);
 		static void checkPath(std::vector<PathEvalVertex> &p, int s, int t);
 		static void copyLightSubpath(PathData &pd, int s, int t);
 		static void copyEyeSubpath(PathData &pd, int s, int t);
+		static bool connectPaths(PathData &pd, int s, int t);
+		static float pathWeight(int s, int t, const PathData &pd);
 
 		//mutable std::vector<pathVertex_t> lightPath, eyePath;
 		//mutable int nPaths;

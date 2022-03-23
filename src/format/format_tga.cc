@@ -133,12 +133,12 @@ template <class ColorType> void TgaFormat::readDirectImage(FILE *fp, ColorProces
 	}
 }
 
-Rgba TgaFormat::processGray8(void *data)
+Rgba TgaFormat::processGray8(void *data) // NOLINT(readability-convert-member-functions-to-static)
 {
 	return Rgba(*(uint8_t *)data * inv_max_8_bit_);
 }
 
-Rgba TgaFormat::processGray16(void *data)
+Rgba TgaFormat::processGray16(void *data) // NOLINT(readability-convert-member-functions-to-static)
 {
 	uint16_t color = *(uint16_t *)data;
 	return Rgba(Rgb((color & tga_constants::gray_mask) * inv_max_8_bit_), ((color & tga_constants::alpha_gray_mask) >> 8) * inv_max_8_bit_);
@@ -150,7 +150,7 @@ Rgba TgaFormat::processColor8(void *data)
 	return (*color_map_)(color, 0).getColor();
 }
 
-Rgba TgaFormat::processColor15(void *data)
+Rgba TgaFormat::processColor15(void *data) // NOLINT(readability-convert-member-functions-to-static)
 {
 	const uint16_t color = *(uint16_t *)data;
 	return Rgba(((color & tga_constants::red_mask) >> 11) * inv_31_,
@@ -159,7 +159,7 @@ Rgba TgaFormat::processColor15(void *data)
 				1.f);
 }
 
-Rgba TgaFormat::processColor16(void *data)
+Rgba TgaFormat::processColor16(void *data) // NOLINT(readability-convert-member-functions-to-static)
 {
 	const uint16_t color = *(uint16_t *)data;
 	return Rgba(((color & tga_constants::red_mask) >> 11) * inv_31_,
@@ -168,7 +168,7 @@ Rgba TgaFormat::processColor16(void *data)
 				(float)(color & tga_constants::alpha_mask));
 }
 
-Rgba TgaFormat::processColor24(void *data)
+Rgba TgaFormat::processColor24(void *data) // NOLINT(readability-convert-member-functions-to-static)
 {
 	const TgaPixelRgb *color = (TgaPixelRgb *)data;
 	return Rgba(color->r_ * inv_max_8_bit_,
@@ -177,7 +177,7 @@ Rgba TgaFormat::processColor24(void *data)
 				1.f);
 }
 
-Rgba TgaFormat::processColor32(void *data)
+Rgba TgaFormat::processColor32(void *data) // NOLINT(readability-convert-member-functions-to-static)
 {
 	const TgaPixelRgba *color = (TgaPixelRgba *)data;
 	return Rgba(color->r_ * inv_max_8_bit_,

@@ -54,11 +54,11 @@ class NewPerlinNoiseGenerator final : public NoiseGenerator
 
 	private:
 		float operator()(const Point3 &pt) const override;
-		float fade(float t) const { return t * t * t * (t * (t * 6 - 15) + 10); }
-		float grad(int hash, float x, float y, float z) const;
+		static float fade(float t) { return t * t * t * (t * (t * 6 - 15) + 10); }
+		static float grad(int hash, float x, float y, float z);
 };
 
-inline float NewPerlinNoiseGenerator::grad(int hash, float x, float y, float z) const
+inline float NewPerlinNoiseGenerator::grad(int hash, float x, float y, float z)
 {
 	int h = hash & 15;                     // CONVERT LO 4 BITS OF HASH CODE
 	float u = h < 8 ? x : y,            // INTO 12 GRADIENT DIRECTIONS.
@@ -174,8 +174,8 @@ class VoronoiNoiseGenerator final : public NoiseGenerator
 		void setDistM(DMetricType dm);
 		void setMinkovskyExponent(float me) { mk_exp_ = me; }
 		void getFeatures(const Point3 &pt, float da[4], Point3 pa[4]) const;
-		float getDistance(int x, float da[4]) const { return da[x & 3]; }
-		Point3 getPoint(int x, Point3 pa[4]) const { return pa[x & 3]; }
+		static float getDistance(int x, float da[4]) { return da[x & 3]; }
+		static Point3 getPoint(int x, Point3 pa[4]) { return pa[x & 3]; }
 
 	private:
 		float operator()(const Point3 &pt) const override;

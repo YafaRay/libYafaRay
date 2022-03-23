@@ -120,7 +120,7 @@ class SurfacePoint final
 		std::shared_ptr<const SurfaceDifferentials> differentials_;
 
 	private:
-		void dUdvFromDpdPdUdPdV(float &du, float &dv, const Point3 &dp, const Vec3 &dp_du, const Vec3 &dp_dv) const;
+		static void dUdvFromDpdPdUdPdV(float &du, float &dv, const Point3 &dp, const Vec3 &dp_du, const Vec3 &dp_dv);
 };
 
 inline float SurfacePoint::getDistToNearestEdge() const

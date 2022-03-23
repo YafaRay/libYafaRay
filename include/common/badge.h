@@ -75,7 +75,7 @@ class Badge
 
 	protected:
 #if HAVE_FREETYPE
-		void drawFontBitmap(FT_Bitmap_ *bitmap, Image *badge_image, int x, int y) const;
+		static void drawFontBitmap(FT_Bitmap_ *bitmap, Image *badge_image, int x, int y);
 #endif
 		int image_width_ = 0;
 		int image_height_ = 0;

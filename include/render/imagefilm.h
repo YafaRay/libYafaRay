@@ -120,7 +120,6 @@ class ImageFilm final
 		int getTotalPixels() const { return width_ * height_; };
 		void setAaNoiseParams(const AaNoiseParams &aa_noise_params) { aa_noise_params_ = aa_noise_params; };
 		/*! Methods for rendering the parameters badge; Note that FreeType lib is needed to render text */
-		float darkThresholdCurveInterpolate(float pixel_brightness);
 		int getWidth() const { return width_; }
 		int getHeight() const { return height_; }
 		int getCx0() const { return cx_0_; }
@@ -154,6 +153,7 @@ class ImageFilm final
 		Timer * getTimer() { return &timer_; }
 
 		static std::string printRenderStats(const RenderControl &render_control, const Timer &timer, int width, int height);
+		static float darkThresholdCurveInterpolate(float pixel_brightness);
 
 	private:
 		void initLayersImages();

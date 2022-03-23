@@ -45,7 +45,7 @@ class ProgressBar
 		virtual std::string getTag() const { return tag_; }
 		virtual float getPercent() const;
 		virtual float getTotalSteps() const { return steps_total_; }
-		std::string getName() const { return "ProgressBar"; }
+		static std::string getName() { return "ProgressBar"; }
 
 	protected:
 		bool colors_enabled_ = true;

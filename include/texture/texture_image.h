@@ -72,7 +72,6 @@ class ImageTexture final : public Texture
 		void resolution(int &x, int &y, int &z) const override;
 		void generateMipMaps() override;
 		void setCrop(float minx, float miny, float maxx, float maxy);
-		void findTextureInterpolationCoordinates(int &coord_0, int &coord_1, int &coord_2, int &coord_3, float &coord_decimal_part, float coord_float, int resolution, bool repeat, bool mirror) const;
 		Rgba noInterpolation(const Point3 &p, int mipmap_level = 0) const;
 		Rgba bilinearInterpolation(const Point3 &p, int mipmap_level = 0) const;
 		Rgba bicubicInterpolation(const Point3 &p, int mipmap_level = 0) const;
@@ -81,6 +80,7 @@ class ImageTexture final : public Texture
 		Rgba ewaEllipticCalculation(const Point3 &p, float ds_0, float dt_0, float ds_1, float dt_1, int mipmap_level = 0) const;
 		bool doMapping(Point3 &texp) const;
 		Rgba interpolateImage(const Point3 &p, const MipMapParams *mipmap_params) const;
+		static void findTextureInterpolationCoordinates(int &coord_0, int &coord_1, int &coord_2, int &coord_3, float &coord_decimal_part, float coord_float, int resolution, bool repeat, bool mirror);
 		static ImageTexture::ClipMode string2Cliptype(const std::string &clipname);
 
 		bool calc_alpha_, normalmap_;

@@ -41,7 +41,7 @@ class TrianglePrimitive final : public FacePrimitive
 		float surfaceArea(const Matrix4 *obj_to_world) const override;
 		void sample(float s_1, float s_2, Point3 &p, Vec3 &n, const Matrix4 *obj_to_world) const override;
 		void calculateGeometricNormal() override;
-		void calculateShadingSpace(SurfacePoint &sp) const;
+		static void calculateShadingSpace(SurfacePoint &sp);
 		static IntersectData intersect(const Ray &ray, const std::array<Point3, 3> &vertices);
 		static bool intersectsBound(const ExBound &ex_bound, const std::array<Point3, 3> &vertices);
 		static Vec3 calculateNormal(const std::array<Point3, 3> &vertices);

@@ -48,7 +48,7 @@ IesLight::IesLight(Logger &logger, const Point3 &from, const Point3 &to, const R
 	}
 }
 
-void IesLight::getAngles(float &u, float &v, const Vec3 &dir, const float &costheta) const
+void IesLight::getAngles(float &u, float &v, const Vec3 &dir, const float &costheta)
 {
 	u = (dir.z_ >= 1.f) ? 0.f : math::radToDeg(math::acos(dir.z_));
 

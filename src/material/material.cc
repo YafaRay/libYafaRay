@@ -82,7 +82,7 @@ Material::~Material()
 	resetMaterialIndex();
 }
 
-Rgb Material::sampleClay(const SurfacePoint &sp, const Vec3 &wo, Vec3 &wi, Sample &s, float &w) const
+Rgb Material::sampleClay(const SurfacePoint &sp, const Vec3 &wo, Vec3 &wi, Sample &s, float &w)
 {
 	const Vec3 n{SurfacePoint::normalFaceForward(sp.ng_, sp.n_, wo)};
 	wi = sample::cosHemisphere(n, sp.nu_, sp.nv_, s.s_1_, s.s_2_);
@@ -173,7 +173,7 @@ Rgb Material::getReflectivity(const MaterialData *mat_data, const SurfacePoint &
 	return total * 0.0625f; //total / 16.f
 }
 
-void Material::applyBump(SurfacePoint &sp, const DuDv &du_dv) const
+void Material::applyBump(SurfacePoint &sp, const DuDv &du_dv)
 {
 	sp.nu_ += du_dv.getDu() * sp.n_;
 	sp.nv_ += du_dv.getDv() * sp.n_;

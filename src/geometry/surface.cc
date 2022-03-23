@@ -116,7 +116,7 @@ float SurfacePoint::projectedPixelArea()
 	else return 0.f;
 }
 
-void SurfacePoint::dUdvFromDpdPdUdPdV(float &du, float &dv, const Point3 &dp, const Vec3 &dp_du, const Vec3 &dp_dv) const
+void SurfacePoint::dUdvFromDpdPdUdPdV(float &du, float &dv, const Point3 &dp, const Vec3 &dp_du, const Vec3 &dp_dv)
 {
 	const float det_xy = (dp_du.x_ * dp_dv.y_) - (dp_dv.x_ * dp_du.y_);
 	const float det_xz = (dp_du.x_ * dp_dv.z_) - (dp_dv.x_ * dp_du.z_);

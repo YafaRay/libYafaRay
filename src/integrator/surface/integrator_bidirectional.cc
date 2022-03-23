@@ -476,7 +476,7 @@ void BidirectionalIntegrator::copyEyeSubpath(PathData &pd, int s, int t)
 
 
 //===  connect paths with s and t > 1  ===//
-bool BidirectionalIntegrator::connectPaths(PathData &pd, int s, int t) const
+bool BidirectionalIntegrator::connectPaths(PathData &pd, int s, int t)
 {
 	const PathVertex &y = pd.light_path_[s - 1];
 	const PathVertex &z = pd.eye_path_[t - 1];
@@ -659,7 +659,7 @@ bool BidirectionalIntegrator::connectPathE(PathData &pd, int s) const
  ============================================================ */
 
 // compute path densities and weight path
-float BidirectionalIntegrator::pathWeight(int s, int t, const PathData &pd) const
+float BidirectionalIntegrator::pathWeight(int s, int t, const PathData &pd)
 {
 	const std::vector<PathEvalVertex> &path = pd.path_;
 	std::vector<float> p, pr;

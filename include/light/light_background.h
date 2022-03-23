@@ -55,8 +55,8 @@ class BackgroundLight final : public Light
 		float dirPdf(const Vec3 &dir) const;
 		float calcFromSample(float s_1, float s_2, float &u, float &v, bool inv = false) const;
 		float calcFromDir(const Vec3 &dir, float &u, float &v, bool inv = false) const;
-		float calcPdf(float p_0, float p_1, float s) const;
-		float calcInvPdf(float p_0, float p_1, float s) const;
+		static float calcPdf(float p_0, float p_1, float s);
+		static float calcInvPdf(float p_0, float p_1, float s);
 		static constexpr float addOff(float v);
 		static int clampSample(int s, int m);
 		static float clampZero(float val);

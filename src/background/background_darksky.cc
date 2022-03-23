@@ -159,7 +159,7 @@ double DarkSkyBackground::prePerez(const double *perez)
 	return 1.0 / p_num;
 }
 
-double DarkSkyBackground::perezFunction(const double *lam, double cos_theta, double gamma, double cos_gamma, double lvz) const
+double DarkSkyBackground::perezFunction(const double *lam, double cos_theta, double gamma, double cos_gamma, double lvz)
 {
 	const double num = ((1 + lam[0] * std::exp(lam[1] / cos_theta)) * (1 + lam[2] * std::exp(lam[3] * gamma) + lam[4] * cos_gamma));
 	return lvz * num * lam[5];

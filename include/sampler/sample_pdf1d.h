@@ -51,7 +51,7 @@ class Pdf1D final
 
 	private:
 		void init();
-		std::pair<float, std::vector<float>> cumulateStep1DDf(const std::vector<float> &function);
+		static std::pair<float, std::vector<float>> cumulateStep1DDf(const std::vector<float> &function);
 		const std::vector<float> function_;
 		std::vector<float> cdf_;
 		float integral_, inv_integral_, inv_size_;
