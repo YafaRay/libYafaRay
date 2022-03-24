@@ -23,7 +23,7 @@ BEGIN_YAFARAY
 
 PhotonGather::PhotonGather(uint32_t mp, const Point3 &p): p_(p)
 {
-	photons_ = 0;
+	photons_ = nullptr;
 	n_lookup_ = mp;
 	found_photons_ = 0;
 }

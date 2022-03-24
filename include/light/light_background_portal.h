@@ -52,7 +52,7 @@ class BackgroundPortalLight final : public Light
 		bool illumSample(const SurfacePoint &sp, LSample &s, Ray &wi) const override;
 		bool illuminate(const SurfacePoint &sp, Rgb &col, Ray &wi) const override { return false; }
 		int nSamples() const override { return samples_; }
-		bool canIntersect() const override { return accelerator_ != 0 /* false */ ; }
+		bool canIntersect() const override { return accelerator_ != nullptr /* false */ ; }
 		bool intersect(const Ray &ray, float &t, Rgb &col, float &ipdf) const override;
 		float illumPdf(const SurfacePoint &sp, const SurfacePoint &sp_light) const override;
 		void emitPdf(const SurfacePoint &sp, const Vec3 &wi, float &area_pdf, float &dir_pdf, float &cos_wo) const override;

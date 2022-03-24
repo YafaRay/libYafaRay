@@ -348,7 +348,7 @@ std::pair<Rgb, float> BidirectionalIntegrator::integrate(Ray &ray, RandomGenerat
 			path_data.pdf_emit_ = o_pdf_emit;
 			// light paths with one vertices are handled by classic direct light sampling (like regular path tracing)
 			// hence we start with s=2 here. currently the sampling probability is the same though, so weights are unaffected
-			path_data.light_ = lights_.size() > 0 ? lights_[light_num] : 0;
+			path_data.light_ = lights_.size() > 0 ? lights_[light_num] : nullptr;
 			for(int s = 2; s <= n_light; ++s)
 			{
 				clearPath(path_data.path_, s, t);

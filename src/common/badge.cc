@@ -246,7 +246,7 @@ Image * Badge::generateImage(const std::string &denoise_params, const RenderCont
 		}
 
 		// Set transformation
-		FT_Set_Transform(face, 0, &pen);
+		FT_Set_Transform(face, nullptr, &pen);
 
 		// Load glyph image into the slot (erase previous one)
 		if(FT_Load_Char(face, ch, FT_LOAD_DEFAULT))
