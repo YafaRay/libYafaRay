@@ -173,9 +173,9 @@ class VoronoiNoiseGenerator final : public NoiseGenerator
 		//~VoronoiNoiseGenerator() override { if (distfunc) { delete distfunc;  distfunc=nullptr; }
 		void setDistM(DMetricType dm);
 		void setMinkovskyExponent(float me) { mk_exp_ = me; }
-		void getFeatures(const Point3 &pt, float da[4], Point3 pa[4]) const;
-		static float getDistance(int x, float da[4]) { return da[x & 3]; }
-		static Point3 getPoint(int x, Point3 pa[4]) { return pa[x & 3]; }
+		std::pair<std::array<float, 4>, std::array<Point3, 4>> getFeatures(const Point3 &pt) const;
+		static float getDistance(int x, const std::array<float, 4> &da) { return da[x & 3]; }
+		static Point3 getPoint(int x, const std::array<Point3, 4> &pa) { return pa[x & 3]; }
 
 	private:
 		float operator()(const Point3 &pt) const override;

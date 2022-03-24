@@ -512,7 +512,7 @@ float BlenderNoiseGenerator::operator()(const Point3 &pt) const
 	h = hashvectf_ + 3 * hash_[b_21 + b_11];
 	n += i * (h[0] * jx + h[1] * jy + h[2] * jz);
 
-	if(n < 0.0) n = 0.0; else if(n > 1.0) n = 1.0;
+	if(n < 0.f) n = 0.f; else if(n > 1.f) n = 1.f;
 	return n;
 }
 
@@ -568,29 +568,25 @@ const float *NoiseGenerator::hashPnt(int x, int y, int z)
 	return hashpntf_ + 3 * hash_[(hash_[(hash_[z & 255] + y) & 255] + x) & 255];
 }
 
-void VoronoiNoiseGenerator::getFeatures(const Point3 &pt, float da[4], Point3 pa[4]) const
+std::pair<std::array<float, 4>, std::array<Point3, 4>> VoronoiNoiseGenerator::getFeatures(const Point3 &pt) const
 {
-	int xx, yy, zz, xi, yi, zi;
-	//float xd, yd, zd, d, *p;
-	//float x=pt.x, y=pt.y, z=pt.z;
-	float xd, yd, zd, d;
-	float x = pt.x_, y = pt.y_, z = pt.z_;
-	xi = (int)(floor(x));
-	yi = (int)(floor(y));
-	zi = (int)(floor(z));
-	da[0] = da[1] = da[2] = da[3] = 1e10f;
-	for(xx = xi - 1; xx <= xi + 1; xx++)
+	const int xi = static_cast<int>(floor(pt.x_));
+	const int yi = static_cast<int>(floor(pt.y_));
+	const int zi = static_cast<int>(floor(pt.z_));
+	std::array<float, 4> da{1e10f, 1e10f, 1e10f, 1e10f};
+	std::array<Point3, 4> pa;
+	for(int xx = xi - 1; xx <= xi + 1; xx++)
 	{
-		for(yy = yi - 1; yy <= yi + 1; yy++)
+		for(int yy = yi - 1; yy <= yi + 1; yy++)
 		{
-			for(zz = zi - 1; zz <= zi + 1; zz++)
+			for(int zz = zi - 1; zz <= zi + 1; zz++)
 			{
 				const float *p = hashPnt(xx, yy, zz);
-				xd = x - (p[0] + xx);
-				yd = y - (p[1] + yy);
-				zd = z - (p[2] + zz);
+				const float xd = pt.x_ - (p[0] + xx);
+				const float yd = pt.y_ - (p[1] + yy);
+				const float zd = pt.z_ - (p[2] + zz);
 				//d = (*distfunc)(xd, yd, zd, mk_exp);
-				d = distfunc_2_(xd, yd, zd, mk_exp_);
+				const float d = distfunc_2_(xd, yd, zd, mk_exp_);
 				if(d < da[0])
 				{
 					da[3] = da[2];  da[2] = da[1];  da[1] = da[0];  da[0] = d;
@@ -614,13 +610,13 @@ void VoronoiNoiseGenerator::getFeatures(const Point3 &pt, float da[4], Point3 pa
 			}
 		}
 	}
+	return {da, pa};
 }
 
 float VoronoiNoiseGenerator::operator()(const Point3 &pt) const
 {
-	float da[4];
-	Point3 pa[4];
-	getFeatures(pt, da, pa);
+	const auto features = getFeatures(pt);
+	const auto &da = features.first;
 	switch(v_type_)
 	{
 		case Vf2:
@@ -633,8 +629,8 @@ float VoronoiNoiseGenerator::operator()(const Point3 &pt) const
 			return da[1] - da[0];
 		case VCrackle:
 		{
-			float t = 10.0 * (da[1] - da[0]);
-			return (t > 1.0) ? 1.0 : t;
+			const float t = 10.f * (da[1] - da[0]);
+			return (t > 1.f) ? 1.f : t;
 		}
 		default:
 		case Vf1:
@@ -645,12 +641,12 @@ float VoronoiNoiseGenerator::operator()(const Point3 &pt) const
 // Cell noise
 float CellNoiseGenerator::operator()(const Point3 &pt) const
 {
-	int xi = (int)(floor(pt.x_));
-	int yi = (int)(floor(pt.y_));
-	int zi = (int)(floor(pt.z_));
+	const int xi = static_cast<int>(floor(pt.x_));
+	const int yi = static_cast<int>(floor(pt.y_));
+	const int zi = static_cast<int>(floor(pt.z_));
 	unsigned int n = xi + yi * 1301 + zi * 314159;
 	n ^= (n << 13);
-	return ((float)(n * (n * n * 15731 + 789221) + 1376312589) / 4294967296.0);
+	return (static_cast<float>(n * (n * n * 15731 + 789221) + 1376312589) / 4294967296.0);
 }
 
 //------------------------------------------------------------------------------------
