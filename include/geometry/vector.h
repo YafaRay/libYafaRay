@@ -67,7 +67,7 @@ class Vec3
 		static bool refract(const Vec3 &n, const Vec3 &wi, Vec3 &wo, float ior);
 		static void fresnel(const Vec3 &i, const Vec3 &n, float ior, float &kr, float &kt);
 		static void fastFresnel(const Vec3 &i, const Vec3 &n, float iorf, float &kr, float &kt);
-		static void createCs(const Vec3 &normal, Vec3 &u, Vec3 &v);
+		static std::pair<Vec3, Vec3> createCoordsSystem(const Vec3 &normal);
 		static void shirleyDisk(float r_1, float r_2, float &u, float &v);
 		static Vec3 randomSpherical();
 		static Vec3 randomVectorCone(const Vec3 &d, const Vec3 &u, const Vec3 &v, float cosang, float z_1, float z_2);
@@ -254,23 +254,19 @@ inline Vec3 Vec3::reflectDir(const Vec3 &normal, const Vec3 &v)
 	return 2.f * vn * normal - v;
 }
 
-inline void Vec3::createCs(const Vec3 &normal, Vec3 &u, Vec3 &v)
+inline std::pair<Vec3, Vec3> Vec3::createCoordsSystem(const Vec3 &normal)
 {
 	if((normal.x_ == 0.f) && (normal.y_ == 0.f))
 	{
-		if(normal.z_ < 0.f)
-			u.set(-1.f, 0.f, 0.f);
-		else
-			u.set(1.f, 0.f, 0.f);
-		v.set(0.f, 1.f, 0.f);
+		return { (normal.z_ < 0.f ? Vec3{-1.f, 0.f, 0.f} : Vec3{1.f, 0.f, 0.f}), Vec3{0.f, 1.f, 0.f} };
 	}
 	else
 	{
 		// Note: The root cannot become zero if
 		// N.x==0 && N.y==0.
 		const float d = 1.f / math::sqrt(normal.y_ * normal.y_ + normal.x_ * normal.x_);
-		u.set(normal.y_ * d, -normal.x_ * d, 0.f);
-		v = normal ^ u;
+		const Vec3 u{normal.y_ * d, -normal.x_ * d, 0.f};
+		return {u, normal ^ u};
 	}
 }
 

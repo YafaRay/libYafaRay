@@ -171,9 +171,8 @@ Vec3 Vec3::randomVectorCone(const Vec3 &d, const Vec3 &u, const Vec3 &v, float c
 
 Vec3 Vec3::randomVectorCone(const Vec3 &dir, float cangle, float r_1, float r_2)
 {
-	Vec3 u, v;
-	Vec3::createCs(dir, u, v);
-	return Vec3::randomVectorCone(dir, u, v, cangle, r_1, r_2);
+	const auto coords{createCoordsSystem(dir)};
+	return Vec3::randomVectorCone(dir, coords.first, coords.second, cangle, r_1, r_2);
 }
 
 Vec3 Vec3::discreteVectorCone(const Vec3 &dir, float cangle, int sample, int square)

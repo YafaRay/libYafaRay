@@ -167,7 +167,7 @@ std::unique_ptr<const SurfacePoint> TrianglePrimitive::getSurface(const RayDiffe
 	sp->has_uv_ = base_mesh_object_.hasUv();
 	sp->prim_num_ = getSelfIndex();
 	sp->p_ = hit_point;
-	Vec3::createCs(sp->n_, sp->nu_, sp->nv_);
+	std::tie(sp->nu_, sp->nv_) = Vec3::createCoordsSystem(sp->n_);
 	calculateShadingSpace(*sp);
 	sp->material_ = getMaterial();
 	sp->setRayDifferentials(ray_differentials);

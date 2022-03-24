@@ -33,7 +33,7 @@ SunLight::SunLight(Logger &logger, Vec3 dir, const Rgb &col, float inte, float a
 	cast_shadows_ = b_cast_shadows;
 	color_ = col * inte;
 	direction_.normalize();
-	Vec3::createCs(dir, du_, dv_);
+	std::tie(du_, dv_) = Vec3::createCoordsSystem(dir);
 	if(angle > 80.f) angle = 80.f;
 	cos_angle_ = math::cos(math::degToRad(angle));
 	invpdf_ = (math::mult_pi_by_2 * (1.f - cos_angle_));

@@ -178,7 +178,7 @@ std::unique_ptr<const SurfacePoint> BsTrianglePrimitive::getSurface(const RayDif
 	sp->material_ = material_->get();
 	sp->object_ = &base_mesh_object_;
 	sp->p_ = hit;
-	Vec3::createCs(sp->n_, sp->nu_, sp->nv_);
+	std::tie(sp->nu_, sp->nv_) = Vec3::createCoordsSystem(sp->n_);
 	// transform dPdU and dPdV in shading space
 	sp->ds_du_.x_ = sp->nu_ * sp->dp_du_;
 	sp->ds_du_.y_ = sp->nv_ * sp->dp_du_;
@@ -189,7 +189,7 @@ std::unique_ptr<const SurfacePoint> BsTrianglePrimitive::getSurface(const RayDif
 	sp->light_ = base_mesh_object_.getLight();
 	sp->has_uv_ = base_mesh_object_.hasUv();
 	sp->prim_num_ = getSelfIndex();
-	Vec3::createCs(sp->n_, sp->nu_, sp->nv_);
+	std::tie(sp->nu_, sp->nv_) = Vec3::createCoordsSystem(sp->n_);
 	sp->material_ = getMaterial();
 	sp->setRayDifferentials(ray_differentials);
 	sp->mat_data_ = std::shared_ptr<const MaterialData>(sp->material_->initBsdf(*sp, camera));

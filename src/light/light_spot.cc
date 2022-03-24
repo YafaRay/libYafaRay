@@ -35,7 +35,7 @@ SpotLight::SpotLight(Logger &logger, const Point3 &from, const Point3 &to, const
 	ndir_ = (from - to).normalize();
 	dir_ = -ndir_;
 	color_ = col * power;
-	Vec3::createCs(dir_, du_, dv_);
+	std::tie(du_, dv_) = Vec3::createCoordsSystem(dir_);
 	double rad_angle = math::degToRad(angle);
 	double rad_inner_angle = rad_angle * (1.f - falloff);
 	cos_start_ = math::cos(rad_inner_angle);

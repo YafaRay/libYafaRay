@@ -85,7 +85,7 @@ bool CurveObject::calculateObject(const std::unique_ptr<Material> *material)
 		{
 			Vec3 normal{points[i + 1] - points[i]};
 			normal.normalize();
-			Vec3::createCs(normal, u, v);
+			std::tie(u, v) = Vec3::createCoordsSystem(normal);
 		}
 		// TODO: thikness?
 		const Point3 a{o - (0.5 * r * v) - 1.5 * r / math::sqrt(3.f) * u};

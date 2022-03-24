@@ -40,7 +40,7 @@ IesLight::IesLight(Logger &logger, const Point3 &from, const Point3 &to, const R
 		ndir_.normalize();
 		dir_ = -ndir_;
 
-		Vec3::createCs(dir_, du_, dv_);
+		std::tie(du_, dv_) = Vec3::createCoordsSystem(dir_);
 		cos_end_ = math::cos(ies_data_->getMaxVAngle());
 
 		color_ = col * power;
