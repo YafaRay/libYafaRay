@@ -55,7 +55,7 @@ Path::Path(const std::string &full_path)
 
 	if(directory_.empty()) full_name = full_path;
 
-	const size_t dot = full_name.find_last_of(".");
+	const size_t dot = full_name.find_last_of('.');
 
 	if(dot != std::string::npos)
 	{

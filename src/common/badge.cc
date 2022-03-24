@@ -276,7 +276,7 @@ Image * Badge::generateImage(const std::string &denoise_params, const RenderCont
 	// Draw logo image
 	if(!getIconPath().empty())
 	{
-		std::string icon_extension = getIconPath().substr(getIconPath().find_last_of(".") + 1);
+		std::string icon_extension = getIconPath().substr(getIconPath().find_last_of('.') + 1);
 		std::transform(icon_extension.begin(), icon_extension.end(), icon_extension.begin(), ::tolower);
 
 		std::string imagehandler_type = "png";

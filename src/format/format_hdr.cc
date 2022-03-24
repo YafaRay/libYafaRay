@@ -158,7 +158,7 @@ bool HdrFormat::readHeader(FILE *fp, int &width, int &height)
 	std::fgets(linebuf, line_size, fp);
 	line = std::string(linebuf);
 	const std::vector<std::string> size_orient = string::tokenize(line);
-	header_.y_first_ = (size_orient[0].find("Y") != std::string::npos);
+	header_.y_first_ = (size_orient[0].find('Y') != std::string::npos);
 	int w = 3, h = 1;
 	int x = 2, y = 0;
 	int f = 0, s = 1;
@@ -172,8 +172,8 @@ bool HdrFormat::readHeader(FILE *fp, int &width, int &height)
 	string::converter(size_orient[h], height);
 
 	// Set the reading order to fit yafaray's image coordinates
-	const bool from_left = (size_orient[x].find("+") != std::string::npos);
-	const bool from_top = (size_orient[y].find("-") != std::string::npos);
+	const bool from_left = (size_orient[x].find('+') != std::string::npos);
+	const bool from_top = (size_orient[y].find('-') != std::string::npos);
 	header_.min_[f] = 0;
 	header_.max_[f] = height;
 	header_.step_[f] = 1;
