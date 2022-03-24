@@ -116,22 +116,19 @@ Rgb AreaLight::emitSample(Vec3 &wo, LSample &s) const
 
 bool AreaLight::triIntersect(const Point3 &a, const Point3 &b, const Point3 &c, const Ray &ray, float &t)
 {
-	Vec3 edge_1, edge_2, tvec, pvec, qvec;
-	float det, inv_det, u, v;
-	edge_1 = b - a;
-	edge_2 = c - a;
-	pvec = ray.dir_ ^ edge_2;
-	det = edge_1 * pvec;
-	if(det == 0.0) return false;
-	inv_det = 1.0 / det;
-	tvec = ray.from_ - a;
-	u = (tvec * pvec) * inv_det;
-	if(u < 0.0 || u > 1.0) return false;
-	qvec = tvec ^ edge_1;
-	v = (ray.dir_ * qvec) * inv_det;
-	if((v < 0.0) || ((u + v) > 1.0)) return false;
+	const Vec3 edge_1{b - a};
+	const Vec3 edge_2{c - a};
+	const Vec3 pvec{ray.dir_ ^ edge_2};
+	const float det = edge_1 * pvec;
+	if(det == 0.f) return false;
+	const float inv_det = 1.f / det;
+	const Vec3 tvec{ray.from_ - a};
+	const float u = (tvec * pvec) * inv_det;
+	if(u < 0.f || u > 1.f) return false;
+	const Vec3 qvec{tvec ^ edge_1};
+	const float v = (ray.dir_ * qvec) * inv_det;
+	if((v < 0.f) || ((u + v) > 1.f)) return false;
 	t = edge_2 * qvec * inv_det;
-
 	return true;
 }
 
