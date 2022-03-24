@@ -62,12 +62,12 @@ bool SingleScatterIntegrator::preprocess(ImageFilm *image_film, const RenderView
 
 			logger_.logParams("SingleScatter: volume, attGridMaps with size: ", x_size, " ", y_size, " ", x_size);
 
-			for(auto l = lights_.begin(); l != lights_.end(); ++l)
+			for(const auto &light : lights_)
 			{
 				Rgb lcol(0.0);
 
 				float *attenuation_grid = (float *)malloc(x_size * y_size * z_size * sizeof(float));
-				vr->attenuation_grid_map_[(*l)] = attenuation_grid;
+				vr->attenuation_grid_map_[light] = attenuation_grid;
 
 				for(int z = 0; z < z_size; ++z)
 				{
@@ -88,9 +88,9 @@ bool SingleScatterIntegrator::preprocess(ImageFilm *image_film, const RenderView
 							light_ray.from_ = sp.p_;
 
 							// handle lights with delta distribution, e.g. point and directional lights
-							if((*l)->diracLight())
+							if(light->diracLight())
 							{
-								bool ill = (*l)->illuminate(sp, lcol, light_ray);
+								bool ill = light->illuminate(sp, lcol, light_ray);
 								light_ray.tmin_ = shadow_bias_;
 								if(light_ray.tmax_ < 0.f) light_ray.tmax_ = 1e10;  // infinitely distant light
 
@@ -110,7 +110,7 @@ bool SingleScatterIntegrator::preprocess(ImageFilm *image_film, const RenderView
 							else // area light and suchlike
 							{
 								float light_tr = 0;
-								int n = (*l)->nSamples() >> 1; // samples / 2
+								int n = light->nSamples() >> 1; // samples / 2
 								if(n < 1) n = 1;
 								LSample ls;
 								for(int i = 0; i < n; ++i)
@@ -118,7 +118,7 @@ bool SingleScatterIntegrator::preprocess(ImageFilm *image_film, const RenderView
 									ls.s_1_ = 0.5f; //(*state.random_generator)();
 									ls.s_2_ = 0.5f; //(*state.random_generator)();
 
-									(*l)->illumSample(sp, ls, light_ray);
+									light->illumSample(sp, ls, light_ray);
 									light_ray.tmin_ = shadow_bias_;
 									if(light_ray.tmax_ < 0.f) light_ray.tmax_ = 1e10;  // infinitely distant light
 
@@ -150,14 +150,14 @@ Rgb SingleScatterIntegrator::getInScatter(RandomGenerator &random_generator, con
 	Ray light_ray;
 	light_ray.from_ = sp.p_;
 
-	for(auto l = lights_.begin(); l != lights_.end(); ++l)
+	for(const auto &light : lights_)
 	{
 		Rgb lcol(0.0);
 
 		// handle lights with delta distribution, e.g. point and directional lights
-		if((*l)->diracLight())
+		if(light->diracLight())
 		{
-			if((*l)->illuminate(sp, lcol, light_ray))
+			if(light->illuminate(sp, lcol, light_ray))
 			{
 				// ...shadowed...
 				if(light_ray.tmax_ < 0.f) light_ray.tmax_ = 1e10;  // infinitely distant light
@@ -172,7 +172,7 @@ Rgb SingleScatterIntegrator::getInScatter(RandomGenerator &random_generator, con
 						for(const auto &v : *volume_regions_)
 						{
 							const Bound::Cross cross = v.second->crossBound(light_ray);
-							if(cross.crossed_) light_tr += v.second->attenuation(sp.p_, (*l));
+							if(cross.crossed_) light_tr += v.second->attenuation(sp.p_, light);
 						}
 					}
 					else
@@ -193,7 +193,7 @@ Rgb SingleScatterIntegrator::getInScatter(RandomGenerator &random_generator, con
 		}
 		else // area light and suchlike
 		{
-			int n = (*l)->nSamples() >> 2; // samples / 4
+			int n = light->nSamples() >> 2; // samples / 4
 			if(n < 1) n = 1;
 			float i_n = 1.f / (float)n; // inverse of n
 			Rgb ccol(0.0);
@@ -206,7 +206,7 @@ Rgb SingleScatterIntegrator::getInScatter(RandomGenerator &random_generator, con
 				ls.s_1_ = random_generator();
 				ls.s_2_ = random_generator();
 
-				if((*l)->illumSample(sp, ls, light_ray))
+				if(light->illumSample(sp, ls, light_ray))
 				{
 					// ...shadowed...
 					if(light_ray.tmax_ < 0.f) light_ray.tmax_ = 1e10;  // infinitely distant light
@@ -224,7 +224,7 @@ Rgb SingleScatterIntegrator::getInScatter(RandomGenerator &random_generator, con
 								const Bound::Cross cross = v.second->crossBound(light_ray);
 								if(cross.crossed_)
 								{
-									light_tr += v.second->attenuation(sp.p_, (*l));
+									light_tr += v.second->attenuation(sp.p_, light);
 									break;
 								}
 							}

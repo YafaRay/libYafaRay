@@ -252,9 +252,9 @@ bool TiledIntegrator::renderPass(int samples, int offset, bool adaptive, int aa_
 	while(tc.finished_threads_ < num_threads_)
 	{
 		tc.c_.wait(lk);
-		for(size_t i = 0; i < tc.areas_.size(); ++i)
+		for(const auto &area : tc.areas_)
 		{
-			image_film_->finishArea(render_view_, render_control_, tc.areas_[i], edge_toon_params_);
+			image_film_->finishArea(render_view_, render_control_, area, edge_toon_params_);
 		}
 		tc.areas_.clear();
 	}

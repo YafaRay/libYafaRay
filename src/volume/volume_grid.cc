@@ -101,13 +101,13 @@ GridVolumeRegion::GridVolumeRegion(Logger &logger, Rgb sa, Rgb ss, Rgb le, float
 	input_stream.seekg(0, std::ios_base::beg);
 
 	int dim[3];
-	for(int i = 0; i < 3; ++i)
+	for(int &dim_entry : dim)
 	{
 		short i_0 = 0, i_1 = 0;
 		input_stream.read((char *)&i_0, 1);
 		input_stream.read((char *)&i_1, 1);
 		if(logger_.isVerbose()) logger_.logVerbose("GridVolume: ", i_0, " ", i_1);
-		dim[i] = (((unsigned short)i_0 << 8) | (unsigned short)i_1);
+		dim_entry = (((unsigned short)i_0 << 8) | (unsigned short)i_1);
 	}
 
 	int size_per_voxel = file_size / (dim[0] * dim[1] * dim[2]);

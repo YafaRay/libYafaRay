@@ -226,10 +226,10 @@ Image * Badge::generateImage(const std::string &denoise_params, const RenderCont
 	pen.y = text_offset_y * 64;
 
 	// Draw the text
-	for(size_t n = 0; n < wtext_utf_32.size(); n++)
+	for(char32_t ch : wtext_utf_32)
 	{
 		// Set Coordinates for the carrige return
-		if(wtext_utf_32[n] == '\n')
+		if(ch == '\n')
 		{
 			pen.x = text_offset_x * 64;
 			pen.y -= text_interline_offset * 64;
@@ -247,9 +247,9 @@ Image * Badge::generateImage(const std::string &denoise_params, const RenderCont
 		FT_Set_Transform(face, 0, &pen);
 
 		// Load glyph image into the slot (erase previous one)
-		if(FT_Load_Char(face, wtext_utf_32[n], FT_LOAD_DEFAULT))
+		if(FT_Load_Char(face, ch, FT_LOAD_DEFAULT))
 		{
-			logger_.logError("Badge: FreeType Couldn't load the glyph image for: '", wtext_utf_32[n], "'!");
+			logger_.logError("Badge: FreeType Couldn't load the glyph image for: '", ch, "'!");
 			continue;
 		}
 

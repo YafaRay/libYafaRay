@@ -244,15 +244,15 @@ inline void Rgb::expgamAdjust(float e, float g, bool clamp_rgb)
 	}
 }
 
-void operator >> (unsigned char *data, Rgb &c);
+void operator >> (const unsigned char *data, Rgb &c);
 void operator << (unsigned char *data, const Rgb &c);
-void operator >> (float *data, Rgb &c);
+void operator >> (const float *data, Rgb &c);
 void operator << (float *data, const Rgb &c);
 std::ostream &operator << (std::ostream &out, const Rgb &c);
 
-void operator >> (unsigned char *data, Rgba &c);
+void operator >> (const unsigned char *data, Rgba &c);
 void operator << (unsigned char *data, const Rgba &c);
-void operator >> (float *data, Rgba &c);
+void operator >> (const float *data, Rgba &c);
 void operator << (float *data, const Rgba &c);
 std::ostream &operator << (std::ostream &out, const Rgba &c);
 

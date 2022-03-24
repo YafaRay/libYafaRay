@@ -138,13 +138,13 @@ inline unsigned int fnv32ABuf(unsigned int value)
 	union Fnv32
 	{
 		unsigned int in_;
-		unsigned char out_[4];
+		unsigned char outs_[4];
 	} val;
 	val.in_ = value;
 
-	for(int i = 0; i < 4; i++)
+	for(unsigned char out : val.outs_)
 	{
-		hash ^= val.out_[i];
+		hash ^= out;
 		hash *= fnv_32_prime;
 	}
 	return hash;

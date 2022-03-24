@@ -141,7 +141,7 @@ bool MeshObject::smoothNormals(Logger &logger, float angle)
 			}
 			face->setNormalsIndices(vert_indices);
 		}
-		for(size_t idx = 0; idx < normals_.size(); ++idx) normals_[idx].normalize();
+		for(auto &normal : normals_) normal.normalize();
 	}
 	else if(angle > 0.1f) // angle dependant smoothing
 	{

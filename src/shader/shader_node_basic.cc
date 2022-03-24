@@ -309,7 +309,7 @@ ShaderNode * TextureMapperNode::factory(Logger &logger, const ParamMap &params, 
 	Projection projection = Plain;
 	float bump_str = 1.f;
 	bool scalar = true;
-	int map[3] = { 1, 2, 3 };
+	int map[3] = {1, 2, 3 };
 	Point3 offset{0.f, 0.f, 0.f}, scale{1.f, 1.f, 1.f};
 	Matrix4 mtx(1);
 	if(!params.getParam("texture", texname))
@@ -352,7 +352,7 @@ ShaderNode * TextureMapperNode::factory(Logger &logger, const ParamMap &params, 
 	params.getParam("proj_x", map[0]);
 	params.getParam("proj_y", map[1]);
 	params.getParam("proj_z", map[2]);
-	for(int i = 0; i < 3; ++i) map[i] = std::min(3, std::max(0, map[i]));
+	for(int &map_entry : map) map_entry = std::min(3, std::max(0, map_entry));
 	tm->coords_ = tc;
 	tm->projection_ = projection;
 	tm->map_x_ = map[0];

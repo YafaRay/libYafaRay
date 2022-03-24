@@ -25,7 +25,7 @@
 
 BEGIN_YAFARAY
 
-void operator >> (unsigned char *data, Rgb &c)
+void operator >> (const unsigned char *data, Rgb &c)
 {
 	c.r_ = static_cast<float>(data[0]) / static_cast<float>(255);
 	c.g_ = static_cast<float>(data[1]) / static_cast<float>(255);
@@ -39,7 +39,7 @@ void operator << (unsigned char *data, const Rgb &c)
 	data[2] = (c.b_ < 0.f) ? 0 : ((c.b_ >= 1.f) ? 255 : static_cast<unsigned char>(255.f * c.b_));
 }
 
-void operator >> (unsigned char *data, Rgba &c)
+void operator >> (const unsigned char *data, Rgba &c)
 {
 	c.r_ = static_cast<float>(data[0]) / static_cast<float>(255);
 	c.g_ = static_cast<float>(data[1]) / static_cast<float>(255);
@@ -56,7 +56,7 @@ void operator << (unsigned char *data, const Rgba &c)
 	data[3] = (c.a_ < 0.f) ? 0 : ((c.a_ >= 1.f) ? 255 : static_cast<unsigned char>(255.f * c.a_));
 }
 
-void operator >> (float *data, Rgb &c)
+void operator >> (const float *data, Rgb &c)
 {
 	c.r_ = data[0];
 	c.g_ = data[1];
@@ -70,7 +70,7 @@ void operator << (float *data, const Rgb &c)
 	data[2] = c.b_;
 }
 
-void operator >> (float *data, Rgba &c)
+void operator >> (const float *data, Rgba &c)
 {
 	c.r_ = data[0];
 	c.g_ = data[1];

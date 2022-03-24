@@ -40,10 +40,8 @@ class MemoryArena
 		~MemoryArena()
 		{
 			free(current_block_);
-			for(uint32_t i = 0; i < used_blocks_.size(); ++i)
-				free(used_blocks_[i]);
-			for(uint32_t i = 0; i < available_blocks_.size(); ++i)
-				free(available_blocks_[i]);
+			for(const auto &used_block : used_blocks_) free(used_block);
+			for(const auto &available_block : available_blocks_) free(available_block);
 		}
 		void *alloc(uint32_t sz)
 		{

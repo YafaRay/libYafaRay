@@ -559,14 +559,14 @@ bool PhotonIntegrator::preprocess(ImageFilm *image_film, const RenderView *rende
 		// == remove too close radiance points ==//
 		auto r_tree = std::unique_ptr<kdtree::PointKdTree<RadData>>(new kdtree::PointKdTree<RadData>(logger_, pgdat.rad_points_, "FG Radiance Photon Map", num_threads_photons_));
 		std::vector< RadData > cleaned;
-		for(unsigned int i = 0; i < pgdat.rad_points_.size(); ++i)
+		for(const auto &rad_point : pgdat.rad_points_)
 		{
-			if(pgdat.rad_points_[i].use_)
+			if(rad_point.use_)
 			{
-				cleaned.push_back(pgdat.rad_points_[i]);
-				EliminatePhoton elim_proc(pgdat.rad_points_[i].normal_);
+				cleaned.push_back(rad_point);
+				const EliminatePhoton elim_proc(rad_point.normal_);
 				float maxrad = 0.01f * ds_radius_; // 10% of diffuse search radius
-				r_tree->lookup(pgdat.rad_points_[i].pos_, elim_proc, maxrad);
+				r_tree->lookup(rad_point.pos_, elim_proc, maxrad);
 			}
 		}
 		pgdat.rad_points_.swap(cleaned);
