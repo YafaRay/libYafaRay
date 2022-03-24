@@ -60,9 +60,9 @@ Vec3 PrimitiveInstance::getGeometricNormal(const Matrix4 *, float u, float v) co
 	return base_primitive_->getGeometricNormal(base_instance_.getObjToWorldMatrix(), u, v);
 }
 
-void PrimitiveInstance::sample(float s_1, float s_2, Point3 &p, Vec3 &n, const Matrix4 *) const
+std::pair<Point3, Vec3> PrimitiveInstance::sample(float s_1, float s_2, const Matrix4 *) const
 {
-	return base_primitive_->sample(s_1, s_2, p, n, base_instance_.getObjToWorldMatrix());
+	return base_primitive_->sample(s_1, s_2, base_instance_.getObjToWorldMatrix());
 }
 
 END_YAFARAY

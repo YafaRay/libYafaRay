@@ -217,18 +217,20 @@ float TrianglePrimitive::surfaceArea(const Matrix4 *obj_to_world) const
 	return surfaceArea({ getVertex(0, obj_to_world), getVertex(1, obj_to_world), getVertex(2, obj_to_world) });
 }
 
-void TrianglePrimitive::sample(float s_1, float s_2, Point3 &p, Vec3 &n, const Matrix4 *obj_to_world) const
+std::pair<Point3, Vec3> TrianglePrimitive::sample(float s_1, float s_2, const Matrix4 *obj_to_world) const
 {
-	TrianglePrimitive::sample(s_1, s_2, p, { getVertex(0, obj_to_world), getVertex(1, obj_to_world), getVertex(2, obj_to_world) });
-	n = Primitive::getGeometricNormal(obj_to_world);
+	return {
+		TrianglePrimitive::sample(s_1, s_2, {getVertex(0, obj_to_world), getVertex(1, obj_to_world), getVertex(2, obj_to_world)}),
+		Primitive::getGeometricNormal(obj_to_world)
+	};
 }
 
-void TrianglePrimitive::sample(float s_1, float s_2, Point3 &p, const std::array<Point3, 3> &vertices)
+Point3 TrianglePrimitive::sample(float s_1, float s_2, const std::array<Point3, 3> &vertices)
 {
 	const float su_1 = math::sqrt(s_1);
 	const float u = 1.f - su_1;
 	const float v = s_2 * su_1;
-	p = u * vertices[0] + v * vertices[1] + (1.f - u - v) * vertices[2];
+	return u * vertices[0] + v * vertices[1] + (1.f - u - v) * vertices[2];
 }
 
 /*************************************************************

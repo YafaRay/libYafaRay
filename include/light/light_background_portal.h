@@ -57,7 +57,7 @@ class BackgroundPortalLight final : public Light
 		float illumPdf(const SurfacePoint &sp, const SurfacePoint &sp_light) const override;
 		void emitPdf(const SurfacePoint &sp, const Vec3 &wi, float &area_pdf, float &dir_pdf, float &cos_wo) const override;
 		void initIs();
-		void sampleSurface(Point3 &p, Vec3 &n, float s_1, float s_2) const;
+		std::pair<Point3, Vec3> sampleSurface(float s_1, float s_2) const;
 
 		std::string object_name_;
 		std::unique_ptr<Pdf1D> area_dist_;

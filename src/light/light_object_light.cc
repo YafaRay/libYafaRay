@@ -83,14 +83,14 @@ void ObjectLight::init(Scene &scene)
 	}
 }
 
-void ObjectLight::sampleSurface(Point3 &p, Vec3 &n, float s_1, float s_2) const
+std::pair<Point3, Vec3> ObjectLight::sampleSurface(float s_1, float s_2) const
 {
 	float prim_pdf;
 	const size_t prim_num = area_dist_->dSample(s_1, prim_pdf);
 	if(prim_num >= area_dist_->size())
 	{
 		logger_.logWarning("ObjectLight: Sampling error!");
-		return;
+		return {};
 	}
 	float ss_1, delta = area_dist_->cdf(prim_num);
 	if(prim_num > 0)
@@ -99,7 +99,7 @@ void ObjectLight::sampleSurface(Point3 &p, Vec3 &n, float s_1, float s_2) const
 		ss_1 = (s_1 - area_dist_->cdf(prim_num - 1)) / delta;
 	}
 	else ss_1 = s_1 / delta;
-	primitives_[prim_num]->sample(ss_1, s_2, p, n);
+	return primitives_[prim_num]->sample(ss_1, s_2);
 	//	++stats[primNum];
 }
 
@@ -109,9 +109,9 @@ bool ObjectLight::illumSample(const SurfacePoint &sp, LSample &s, Ray &wi) const
 {
 	if(photonOnly()) return false;
 
-	Vec3 n;
-	Point3 p;
-	sampleSurface(p, n, s.s_1_, s.s_2_);
+	const auto sampled{sampleSurface(s.s_1_, s.s_2_)};
+	const auto &p{sampled.first};
+	const auto &n{sampled.second};
 
 	Vec3 ldir{p - sp.p_};
 	//normalize vec and compute inverse square distance
@@ -148,8 +148,9 @@ bool ObjectLight::illumSample(const SurfacePoint &sp, LSample &s, Ray &wi) const
 Rgb ObjectLight::emitPhoton(float s_1, float s_2, float s_3, float s_4, Ray &ray, float &ipdf) const
 {
 	ipdf = area_;
-	Vec3 normal;
-	sampleSurface(ray.from_, normal, s_3, s_4);
+	const auto sampled{sampleSurface(s_3, s_4)};
+	ray.from_ = sampled.first;
+	const auto normal{sampled.second};
 	const auto coords{Vec3::createCoordsSystem(normal)};
 	if(double_sided_)
 	{
@@ -164,7 +165,7 @@ Rgb ObjectLight::emitPhoton(float s_1, float s_2, float s_3, float s_4, Ray &ray
 Rgb ObjectLight::emitSample(Vec3 &wo, LSample &s) const
 {
 	s.area_pdf_ = inv_area_ * math::num_pi;
-	sampleSurface(s.sp_->p_, s.sp_->ng_, s.s_3_, s.s_4_);
+	std::tie(s.sp_->p_, s.sp_->ng_) = sampleSurface(s.s_3_, s.s_4_);
 	s.sp_->n_ = s.sp_->ng_;
 	const auto coords{Vec3::createCoordsSystem(s.sp_->ng_)};
 	if(double_sided_)

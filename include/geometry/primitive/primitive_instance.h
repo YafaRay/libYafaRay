@@ -50,7 +50,7 @@ class PrimitiveInstance : public Primitive
 		const Material *getMaterial() const override { return base_primitive_->getMaterial(); }
 		float surfaceArea(const Matrix4 *) const override;
 		Vec3 getGeometricNormal(const Matrix4 *, float u, float v) const override;
-		void sample(float s_1, float s_2, Point3 &p, Vec3 &n, const Matrix4 *) const override;
+		std::pair<Point3, Vec3> sample(float s_1, float s_2, const Matrix4 *) const override;
 		const Object *getObject() const override { return &base_instance_; }
 		Visibility getVisibility() const override { return base_primitive_->getVisibility(); }
 

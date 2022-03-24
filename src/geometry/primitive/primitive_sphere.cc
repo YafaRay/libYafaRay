@@ -111,9 +111,9 @@ Vec3 SpherePrimitive::getGeometricNormal(const Matrix4 *obj_to_world, float u, f
 	return {}; //FIXME
 }
 
-void SpherePrimitive::sample(float s_1, float s_2, Point3 &p, Vec3 &n, const Matrix4 *obj_to_world) const
+std::pair<Point3, Vec3> SpherePrimitive::sample(float s_1, float s_2, const Matrix4 *obj_to_world) const
 {
-	//FIXME
+	return {}; //FIXME
 }
 
 END_YAFARAY

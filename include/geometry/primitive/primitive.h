@@ -76,8 +76,8 @@ class Primitive
 		Vec3 getGeometricNormal(const Matrix4 *obj_to_world) const { return getGeometricNormal(obj_to_world, 0.f, 0.f); }
 		Vec3 getGeometricNormal() const { return getGeometricNormal(nullptr); }
 		/* surface sampling */
-		virtual void sample(float s_1, float s_2, Point3 &p, Vec3 &n, const Matrix4 *obj_to_world) const = 0;
-		void sample(float s_1, float s_2, Point3 &p, Vec3 &n) const { sample(s_1, s_2, p, n, nullptr); }
+		virtual std::pair<Point3, Vec3> sample(float s_1, float s_2, const Matrix4 *obj_to_world) const = 0;
+		std::pair<Point3, Vec3> sample(float s_1, float s_2) const { return sample(s_1, s_2, nullptr); }
 		virtual const Object *getObject() const = 0;
 		virtual Visibility getVisibility() const = 0;
 		/*! calculate the overlapping box of given bound and primitive
