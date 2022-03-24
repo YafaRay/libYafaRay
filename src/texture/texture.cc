@@ -18,6 +18,8 @@
  */
 
 #include "texture/texture.h"
+
+#include <cmath>
 #include "texture/texture_basic.h"
 #include "texture/texture_image.h"
 #include "common/param.h"
@@ -93,7 +95,7 @@ void Texture::tubeMap(const Point3 &p, float &u, float &v)
 	if(d > 0)
 	{
 		d = 1 / math::sqrt(d);
-		u = 0.5f * (1 - (atan2(p.x_ * d, p.y_ * d) * math::div_1_by_pi));
+		u = 0.5f * (1 - (std::atan2(p.x_ * d, p.y_ * d) * math::div_1_by_pi));
 	}
 }
 

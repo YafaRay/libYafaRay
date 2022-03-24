@@ -17,6 +17,8 @@
  */
 
 #include "texture/texture_basic.h"
+
+#include <cmath>
 #include "texture/texture_image.h"
 #include "common/param.h"
 
@@ -144,11 +146,11 @@ float MarbleTexture::getFloat(const Point3 &p, const MipMapParams *mipmap_params
 	{
 		case Shape::Saw:
 			w *= 0.5f * math::div_1_by_pi;
-			w -= floor(w);
+			w -= std::floor(w);
 			break;
 		case Shape::Tri:
 			w *= 0.5f * math::div_1_by_pi;
-			w = std::abs(2.f * (w - floor(w)) -1.f);
+			w = std::abs(2.f * (w - std::floor(w)) -1.f);
 			break;
 		default:
 		case Shape::Sin:
@@ -229,11 +231,11 @@ float WoodTexture::getFloat(const Point3 &p, const MipMapParams *mipmap_params) 
 	{
 		case Shape::Saw:
 			w *= 0.5f * math::div_1_by_pi;
-			w -= floor(w);
+			w -= std::floor(w);
 			break;
 		case Shape::Tri:
 			w *= 0.5f * math::div_1_by_pi;
-			w = std::abs(2.f * (w - floor(w)) - 1.f);
+			w = std::abs(2.f * (w - std::floor(w)) - 1.f);
 			break;
 		default:
 		case Shape::Sin:

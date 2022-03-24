@@ -21,6 +21,8 @@
  */
 
 #include "camera/camera_angular.h"
+
+#include <cmath>
 #include "common/param.h"
 
 BEGIN_YAFARAY
@@ -61,7 +63,7 @@ CameraRay AngularCamera::shootRay(float px, float py, float lu, float lv) const
 	ray.from_ = position_;
 	if(circular_ && radius > max_radius_) { return {std::move(ray), false}; }
 	float theta = 0.f;
-	if(!((u == 0.f) && (v == 0.f))) theta = atan2(v, u);
+	if(!((u == 0.f) && (v == 0.f))) theta = std::atan2(v, u);
 	float phi;
 	if(projection_ == Projection::Orthographic) phi = math::asin(radius / focal_length_);
 	else if(projection_ == Projection::Stereographic) phi = 2.f * std::atan(radius / (2.f * focal_length_));

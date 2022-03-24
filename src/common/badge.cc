@@ -34,6 +34,8 @@
 	#include "resource/guifont.h"
 	#include <ft2build.h>
 	#include FT_FREETYPE_H
+
+#include <cmath>
 #endif
 
 BEGIN_YAFARAY
@@ -218,8 +220,8 @@ Image * Badge::generateImage(const std::string &denoise_params, const RenderCont
 
 	// offsets
 	const int text_offset_x = 4;
-	const int text_offset_y = -1 * (int) ceil(12 * getFontSizeFactor());
-	const int text_interline_offset = (int) ceil(13 * getFontSizeFactor());
+	const int text_offset_y = -1 * static_cast<int>(std::ceil(12 * getFontSizeFactor()));
+	const int text_interline_offset = static_cast<int>(std::ceil(13 * getFontSizeFactor()));
 
 	// The pen position in 26.6 cartesian space coordinates
 	pen.x = text_offset_x * 64;

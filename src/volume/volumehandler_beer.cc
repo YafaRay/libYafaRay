@@ -17,6 +17,8 @@
  */
 
 #include "volume/volumehandler_beer.h"
+
+#include <cmath>
 #include "scene/scene.h"
 #include "material/material.h"
 #include "common/param.h"
@@ -26,9 +28,9 @@ BEGIN_YAFARAY
 BeerVolumeHandler::BeerVolumeHandler(Logger &logger, const Rgb &acol, double dist) : VolumeHandler(logger)
 {
 	const float maxlog = math::log(1e38f);
-	sigma_a_.r_ = (acol.r_ > 1e-38f) ? -log(acol.r_) : maxlog;
-	sigma_a_.g_ = (acol.g_ > 1e-38f) ? -log(acol.g_) : maxlog;
-	sigma_a_.b_ = (acol.b_ > 1e-38f) ? -log(acol.b_) : maxlog;
+	sigma_a_.r_ = (acol.r_ > 1e-38f) ? -std::log(acol.r_) : maxlog;
+	sigma_a_.g_ = (acol.g_ > 1e-38f) ? -std::log(acol.g_) : maxlog;
+	sigma_a_.b_ = (acol.b_ > 1e-38f) ? -std::log(acol.b_) : maxlog;
 	if(dist != 0.f) sigma_a_ *= 1.f / dist;
 }
 

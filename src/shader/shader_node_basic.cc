@@ -17,6 +17,8 @@
  */
 
 #include "shader/shader_node_basic.h"
+
+#include <cmath>
 #include "shader/shader_node_layer.h"
 #include "camera/camera.h"
 #include "common/param.h"
@@ -62,7 +64,7 @@ Point3 TextureMapperNode::tubeMap(const Point3 &p)
 	if(d > 0.f)
 	{
 		res.z_ = 1.f / math::sqrt(d);
-		res.x_ = -atan2(p.x_, p.y_) * math::div_1_by_pi;
+		res.x_ = -std::atan2(p.x_, p.y_) * math::div_1_by_pi;
 	}
 	else res.x_ = res.z_ = 0.f;
 	return res;
@@ -76,7 +78,7 @@ Point3 TextureMapperNode::sphereMap(const Point3 &p)
 	if(d > 0.f)
 	{
 		res.z_ = math::sqrt(d);
-		if((p.x_ != 0.f) && (p.y_ != 0.f)) res.x_ = -atan2(p.x_, p.y_) * math::div_1_by_pi;
+		if((p.x_ != 0.f) && (p.y_ != 0.f)) res.x_ = -std::atan2(p.x_, p.y_) * math::div_1_by_pi;
 		res.y_ = 1.f - 2.f * (math::acos(p.z_ / res.z_) * math::div_1_by_pi);
 	}
 	return res;

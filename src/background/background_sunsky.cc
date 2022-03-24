@@ -19,6 +19,8 @@
  */
 
 #include "background/background_sunsky.h"
+
+#include <cmath>
 #include "color/spectrum_sun.h"
 #include "common/logger.h"
 #include "common/param.h"
@@ -41,7 +43,7 @@ SunSkyBackground::SunSkyBackground(Logger &logger, const Point3 &dir, float turb
 	theta_s_ = math::acos(sun_dir_.z_);
 	theta_2_ = theta_s_ * theta_s_;
 	theta_3_ = theta_2_ * theta_s_;
-	phi_s_ = atan2(sun_dir_.y_, sun_dir_.x_);
+	phi_s_ = std::atan2(sun_dir_.y_, sun_dir_.x_);
 	t_ = turb;
 	t_2_ = turb * turb;
 	const double chi = (4.0 / 9.0 - t_ / 120.0) * (math::num_pi - 2.0 * theta_s_);
@@ -139,7 +141,7 @@ inline Rgb SunSkyBackground::getSkyCol(const Vec3 &dir) const
 	if((iw.y_ == 0.0) && (iw.x_ == 0.0))
 		phi = math::num_pi * 0.5;
 	else
-		phi = atan2(iw.y_, iw.x_);
+		phi = std::atan2(iw.y_, iw.x_);
 
 	const double gamma = angleBetween(theta, phi);
 	// Compute xyY values

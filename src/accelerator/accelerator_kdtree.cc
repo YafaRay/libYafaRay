@@ -23,6 +23,7 @@
 #include "geometry/primitive/primitive.h"
 #include "common/param.h"
 #include "image/image_output.h"
+#include <cmath>
 #include <cstring>
 
 BEGIN_YAFARAY
@@ -54,7 +55,7 @@ AcceleratorKdTree::AcceleratorKdTree(Logger &logger, const std::vector<const Pri
 	next_free_node_ = 0;
 	allocated_nodes_count_ = 256;
 	nodes_ = std::unique_ptr<Node[]>(new Node[allocated_nodes_count_]);
-	if(max_depth_ <= 0 && total_prims_ > 0) max_depth_ = static_cast<int>(7.0f + 1.66f * log(static_cast<float>(total_prims_)));
+	if(max_depth_ <= 0 && total_prims_ > 0) max_depth_ = static_cast<int>(7.0f + 1.66f * std::log(static_cast<float>(total_prims_)));
 	const double log_leaves = 1.442695f * log(static_cast<double >(total_prims_)); // = base2 log
 	if(leaf_size <= 0)
 	{

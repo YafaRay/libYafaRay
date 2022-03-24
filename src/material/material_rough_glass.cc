@@ -18,6 +18,8 @@
  *      Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 #include "material/material_rough_glass.h"
+
+#include <cmath>
 #include "shader/shader_node.h"
 #include "common/logger.h"
 #include "material/material_utils_microfacet.h"
@@ -322,9 +324,9 @@ Material * RoughGlassMaterial::factory(Logger &logger, ParamMap &params, std::li
 			if(params.getParam("absorption_dist", dist))
 			{
 				const float maxlog = log(1e38);
-				sigma.r_ = (absorp.r_ > 1e-38) ? -log(absorp.r_) : maxlog;
-				sigma.g_ = (absorp.g_ > 1e-38) ? -log(absorp.g_) : maxlog;
-				sigma.b_ = (absorp.b_ > 1e-38) ? -log(absorp.b_) : maxlog;
+				sigma.r_ = (absorp.r_ > 1e-38) ? -std::log(absorp.r_) : maxlog;
+				sigma.g_ = (absorp.g_ > 1e-38) ? -std::log(absorp.g_) : maxlog;
+				sigma.b_ = (absorp.b_ > 1e-38) ? -std::log(absorp.b_) : maxlog;
 				if(dist != 0.f) sigma *= 1.f / dist;
 			}
 			mat->absorb_ = true;

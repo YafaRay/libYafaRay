@@ -34,6 +34,7 @@
 #include "common/version_build_info.h"
 
 #ifdef HAVE_OPENCV
+#include <cmath>
 #include <opencv2/photo/photo.hpp>
 #endif
 
@@ -451,7 +452,7 @@ bool ImageFilm::nextArea(const RenderView *render_view, const RenderControl &ren
 {
 	if(cancel_) return false;
 
-	const int ifilterw = (int) ceil(filterw_);
+	const int ifilterw = static_cast<int>(std::ceil(filterw_));
 
 	if(split_)
 	{

@@ -28,6 +28,7 @@
 #include "common/file.h"
 
 #ifdef HAVE_OPENCV
+#include <cmath>
 #include <opencv2/photo/photo.hpp>
 #endif
 
@@ -132,7 +133,7 @@ bool ImageTexture::doMapping(Point3 &texpt) const
 		}
 		case ClipMode::Checker:
 		{
-			const int xs = static_cast<int>(floor(texpt.x_)), ys = static_cast<int>(floor(texpt.y_));
+			const int xs = static_cast<int>(std::floor(texpt.x_)), ys = static_cast<int>(std::floor(texpt.y_));
 			texpt.x_ -= xs;
 			texpt.y_ -= ys;
 			if(!checker_odd_ && !((xs + ys) & 1))
@@ -234,7 +235,7 @@ void ImageTexture::findTextureInterpolationCoordinates(int &coord_0, int &coord_
 		else coord_2 = 0;
 		coord_0 = std::max(0, coord_1 - 1);
 		coord_3 = std::min(resolution - 1, coord_2 + 1);
-		coord_decimal_part = coord_float - floor(coord_float);
+		coord_decimal_part = coord_float - std::floor(coord_float);
 	}
 }
 
@@ -243,8 +244,8 @@ Rgba ImageTexture::noInterpolation(const Point3 &p, int mipmap_level) const
 	const int resx = images_.at(mipmap_level)->getWidth();
 	const int resy = images_.at(mipmap_level)->getHeight();
 
-	const float xf = (static_cast<float>(resx) * (p.x_ - floor(p.x_)));
-	const float yf = (static_cast<float>(resy) * (p.y_ - floor(p.y_)));
+	const float xf = (static_cast<float>(resx) * (p.x_ - std::floor(p.x_)));
+	const float yf = (static_cast<float>(resy) * (p.y_ - std::floor(p.y_)));
 
 	int x_0, x_1, x_2, x_3, y_0, y_1, y_2, y_3;
 	float dx, dy;
@@ -258,8 +259,8 @@ Rgba ImageTexture::bilinearInterpolation(const Point3 &p, int mipmap_level) cons
 	const int resx = images_.at(mipmap_level)->getWidth();
 	const int resy = images_.at(mipmap_level)->getHeight();
 
-	const float xf = (static_cast<float>(resx) * (p.x_ - floor(p.x_))) - 0.5f;
-	const float yf = (static_cast<float>(resy) * (p.y_ - floor(p.y_))) - 0.5f;
+	const float xf = (static_cast<float>(resx) * (p.x_ - std::floor(p.x_))) - 0.5f;
+	const float yf = (static_cast<float>(resy) * (p.y_ - std::floor(p.y_))) - 0.5f;
 
 	int x_0, x_1, x_2, x_3, y_0, y_1, y_2, y_3;
 	float dx, dy;
@@ -284,8 +285,8 @@ Rgba ImageTexture::bicubicInterpolation(const Point3 &p, int mipmap_level) const
 	const int resx = images_.at(mipmap_level)->getWidth();
 	const int resy = images_.at(mipmap_level)->getHeight();
 
-	const float xf = (static_cast<float>(resx) * (p.x_ - floor(p.x_))) - 0.5f;
-	const float yf = (static_cast<float>(resy) * (p.y_ - floor(p.y_))) - 0.5f;
+	const float xf = (static_cast<float>(resx) * (p.x_ - std::floor(p.x_))) - 0.5f;
+	const float yf = (static_cast<float>(resy) * (p.y_ - std::floor(p.y_))) - 0.5f;
 
 	int x_0, x_1, x_2, x_3, y_0, y_1, y_2, y_3;
 	float dx, dy;
@@ -332,8 +333,8 @@ Rgba ImageTexture::mipMapsTrilinearInterpolation(const Point3 &p, const MipMapPa
 
 	mipmap_level = std::min(std::max(0.f, mipmap_level), static_cast<float>(images_.size() - 1));
 
-	const int mipmap_level_a = static_cast<int>(floor(mipmap_level));
-	const int mipmap_level_b = static_cast<int>(ceil(mipmap_level));
+	const int mipmap_level_a = static_cast<int>(std::floor(mipmap_level));
+	const int mipmap_level_b = static_cast<int>(std::ceil(mipmap_level));
 	const float mipmap_level_delta = mipmap_level - static_cast<float>(mipmap_level_a);
 
 	Rgba col = bilinearInterpolation(p, mipmap_level_a);
@@ -374,8 +375,8 @@ Rgba ImageTexture::mipMapsEwaInterpolation(const Point3 &p, float max_anisotropy
 	float mipmap_level = static_cast<float>(images_.size() - 1) - 1.f + math::log2(minor_length);
 	mipmap_level = std::min(std::max(0.f, mipmap_level), static_cast<float>(images_.size() - 1));
 
-	const int mipmap_level_a = static_cast<int>(floor(mipmap_level));
-	const int mipmap_level_b = static_cast<int>(ceil(mipmap_level));
+	const int mipmap_level_a = static_cast<int>(std::floor(mipmap_level));
+	const int mipmap_level_b = static_cast<int>(std::ceil(mipmap_level));
 	const float mipmap_level_delta = mipmap_level - static_cast<float>(mipmap_level_a);
 
 	Rgba col = ewaEllipticCalculation(p, ds_0, dt_0, ds_1, dt_1, mipmap_level_a);
@@ -398,8 +399,8 @@ Rgba ImageTexture::ewaEllipticCalculation(const Point3 &p, float ds_0, float dt_
 	const int resx = images_.at(mipmap_level)->getWidth();
 	const int resy = images_.at(mipmap_level)->getHeight();
 
-	const float xf = (static_cast<float>(resx) * (p.x_ - floor(p.x_))) - 0.5f;
-	const float yf = (static_cast<float>(resy) * (p.y_ - floor(p.y_))) - 0.5f;
+	const float xf = (static_cast<float>(resx) * (p.x_ - std::floor(p.x_))) - 0.5f;
+	const float yf = (static_cast<float>(resy) * (p.y_ - std::floor(p.y_))) - 0.5f;
 
 	ds_0 *= resx;
 	ds_1 *= resx;

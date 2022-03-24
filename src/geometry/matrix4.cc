@@ -20,6 +20,8 @@
  *
  */
 
+#include <cmath>
+
 #include "geometry/matrix4.h"
 #include "common/logger.h"
 
@@ -140,8 +142,7 @@ void Matrix4::translate(float dx, float dy, float dz)
 
 void Matrix4::rotateZ(float degrees)
 {
-	float temp = degrees;
-	temp = fmod(temp, 360.f);
+	float temp = std::fmod(degrees, 360.f);
 	if(temp < 0.f) temp = 360.f - temp;
 	temp *= math::div_pi_by_180;
 
@@ -156,8 +157,7 @@ void Matrix4::rotateZ(float degrees)
 
 void Matrix4::rotateX(float degrees)
 {
-	float temp = degrees;
-	temp = fmod(temp, 360.f);
+	float temp = std::fmod(degrees, 360.f);
 	if(temp < 0.f) temp = 360.f - temp;
 	temp *= math::div_pi_by_180;
 
@@ -172,8 +172,7 @@ void Matrix4::rotateX(float degrees)
 
 void Matrix4::rotateY(float degrees)
 {
-	float temp = degrees;
-	temp = fmod(temp, 360.f);
+	float temp = std::fmod(degrees, 360.f);
 	if(temp < 0.f) temp = 360.f - temp;
 	temp *= math::div_pi_by_180;
 

@@ -24,6 +24,8 @@
  */
 
 #include "integrator/surface/integrator_tiled.h"
+
+#include <cmath>
 #include "common/layers.h"
 #include "background/background.h"
 #include "geometry/surface.h"
@@ -302,7 +304,7 @@ bool TiledIntegrator::renderTile(const RenderArea &a, int n_samples, int offset,
 				}
 				if(mat_sample_factor != 1.f)
 				{
-					n_samples_adjusted = static_cast<int>(round(static_cast<float>(n_samples) * mat_sample_factor));
+					n_samples_adjusted = static_cast<int>(std::round(static_cast<float>(n_samples) * mat_sample_factor));
 					d_1 = 1.f / static_cast<float>(n_samples_adjusted);	//DAVID FIXME: is this correct???
 				}
 			}

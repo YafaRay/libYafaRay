@@ -17,6 +17,8 @@
  */
 
 #include "volume/volume_grid.h"
+
+#include <cmath>
 #include "geometry/surface.h"
 #include "texture/texture.h"
 #include "common/param.h"
@@ -31,13 +33,13 @@ float GridVolumeRegion::density(const Point3 &p) const
 	const float y = (p.y_ - b_box_.a_.y_) / b_box_.longY() * size_y_ - .5f;
 	const float z = (p.z_ - b_box_.a_.z_) / b_box_.longZ() * size_z_ - .5f;
 
-	const int x_0 = std::max(0, static_cast<int>(floor(x)));
-	const int y_0 = std::max(0, static_cast<int>(floor(y)));
-	const int z_0 = std::max(0, static_cast<int>(floor(z)));
+	const int x_0 = std::max(0, static_cast<int>(std::floor(x)));
+	const int y_0 = std::max(0, static_cast<int>(std::floor(y)));
+	const int z_0 = std::max(0, static_cast<int>(std::floor(z)));
 
-	const int x_1 = std::min(size_x_ - 1, static_cast<int>(ceil(x)));
-	const int y_1 = std::min(size_y_ - 1, static_cast<int>(ceil(y)));
-	const int z_1 = std::min(size_z_ - 1, static_cast<int>(ceil(z)));
+	const int x_1 = std::min(size_x_ - 1, static_cast<int>(std::ceil(x)));
+	const int y_1 = std::min(size_y_ - 1, static_cast<int>(std::ceil(y)));
+	const int z_1 = std::min(size_z_ - 1, static_cast<int>(std::ceil(z)));
 
 	const float xd = x - x_0;
 	const float yd = y - y_0;

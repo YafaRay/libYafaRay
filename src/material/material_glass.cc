@@ -19,6 +19,8 @@
  */
 
 #include "material/material_glass.h"
+
+#include <cmath>
 #include "shader/shader_node.h"
 #include "geometry/surface.h"
 #include "common/logger.h"
@@ -345,9 +347,9 @@ Material * GlassMaterial::factory(Logger &logger, ParamMap &params, std::list<Pa
 			if(params.getParam("absorption_dist", dist))
 			{
 				const float maxlog = log(1e38);
-				sigma.r_ = (absorp.r_ > 1e-38) ? -log(absorp.r_) : maxlog;
-				sigma.g_ = (absorp.g_ > 1e-38) ? -log(absorp.g_) : maxlog;
-				sigma.b_ = (absorp.b_ > 1e-38) ? -log(absorp.b_) : maxlog;
+				sigma.r_ = (absorp.r_ > 1e-38) ? -std::log(absorp.r_) : maxlog;
+				sigma.g_ = (absorp.g_ > 1e-38) ? -std::log(absorp.g_) : maxlog;
+				sigma.b_ = (absorp.b_ > 1e-38) ? -std::log(absorp.b_) : maxlog;
 				if(dist != 0.f) sigma *= 1.f / dist;
 			}
 			mat->absorb_ = true;
