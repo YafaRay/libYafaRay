@@ -44,7 +44,7 @@ ColorRamp::ColorRamp(const std::string &mode_str, const std::string &interpolati
 
 void ColorRamp::addItem(const Rgba &color, float position)
 {
-	ramp_.push_back(ColorRampItem(color, position));
+	ramp_.emplace_back(color, position);
 	std::sort(ramp_.begin(), ramp_.end());
 }
 

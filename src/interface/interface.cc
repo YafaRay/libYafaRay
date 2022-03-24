@@ -171,7 +171,7 @@ void Interface::paramsClearAll() noexcept
 
 void Interface::paramsPushList() noexcept
 {
-	nodes_params_.push_back({});
+	nodes_params_.emplace_back();
 	cparams_ = &nodes_params_.back();
 }
 

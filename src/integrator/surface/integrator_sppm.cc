@@ -544,7 +544,7 @@ void SppmIntegrator::prePass(int samples, int offset, bool adaptive)
 	logger_.logParams(getName(), ": Shooting ", n_photons_, " photons across ", num_threads_photons_, " threads (", (n_photons_ / num_threads_photons_), " photons/thread)");
 
 	std::vector<std::thread> threads;
-	for(int i = 0; i < num_threads_photons_; ++i) threads.push_back(std::thread(&SppmIntegrator::photonWorker, this, std::ref(curr), i, num_lights, light_power_d.get(), lights_, pb_step));
+	for(int i = 0; i < num_threads_photons_; ++i) threads.emplace_back(&SppmIntegrator::photonWorker, this, std::ref(curr), i, num_lights, light_power_d.get(), lights_, pb_step);
 	for(auto &t : threads) t.join();
 
 	intpb_->done();

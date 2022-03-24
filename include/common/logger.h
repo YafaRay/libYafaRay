@@ -157,7 +157,7 @@ template <class ...Args> void Logger::log(int verbosity_level, const Args &...ar
 	{
 		if(previous_log_event_date_time_ == 0) previous_log_event_date_time_ = current_datetime;
 		const double duration = std::difftime(current_datetime, previous_log_event_date_time_);
-		memory_log_.push_back(LogEntry(current_datetime, duration, verbosity_level, description));
+		memory_log_.emplace_back(current_datetime, duration, verbosity_level, description);
 		previous_log_event_date_time_ = current_datetime;
 	}
 

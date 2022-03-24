@@ -437,7 +437,7 @@ bool PhotonIntegrator::preprocess(ImageFilm *image_film, const RenderView *rende
 		n_diffuse_photons_ = std::max((unsigned int) num_threads_photons_, (n_diffuse_photons_ / num_threads_photons_) * num_threads_photons_); //rounding the number of diffuse photons so it's a number divisible by the number of threads (distribute uniformly among the threads). At least 1 photon per thread
 		logger_.logParams(getName(), ": Shooting ", n_diffuse_photons_, " photons across ", num_threads_photons_, " threads (", (n_diffuse_photons_ / num_threads_photons_), " photons/thread)");
 		std::vector<std::thread> threads;
-		for(int i = 0; i < num_threads_photons_; ++i) threads.push_back(std::thread(&PhotonIntegrator::diffuseWorker, this, std::ref(pgdat), std::ref(curr), i, light_power_d_diffuse.get(), lights_diffuse, pb_step));
+		for(int i = 0; i < num_threads_photons_; ++i) threads.emplace_back(&PhotonIntegrator::diffuseWorker, this, std::ref(pgdat), std::ref(curr), i, light_power_d_diffuse.get(), lights_diffuse, pb_step);
 		for(auto &t : threads) t.join();
 
 		intpb_->done();
@@ -517,7 +517,7 @@ bool PhotonIntegrator::preprocess(ImageFilm *image_film, const RenderView *rende
 		logger_.logParams(getName(), ": Shooting ", n_caus_photons_, " photons across ", num_threads_photons_, " threads (", (n_caus_photons_ / num_threads_photons_), " photons/thread)");
 
 		std::vector<std::thread> threads;
-		for(int i = 0; i < num_threads_photons_; ++i) threads.push_back(std::thread(&PhotonIntegrator::causticWorker, this, std::ref(curr), i, light_power_d_caustic.get(), lights_caustic, pb_step));
+		for(int i = 0; i < num_threads_photons_; ++i) threads.emplace_back(&PhotonIntegrator::causticWorker, this, std::ref(curr), i, light_power_d_caustic.get(), lights_caustic, pb_step);
 		for(auto &t : threads) t.join();
 
 		intpb_->done();
@@ -579,7 +579,7 @@ bool PhotonIntegrator::preprocess(ImageFilm *image_film, const RenderView *rende
 		pgdat.pbar_->setTag("Pregathering radiance data for final gathering...");
 
 		std::vector<std::thread> threads;
-		for(int i = 0; i < n_threads; ++i) threads.push_back(std::thread(&PhotonIntegrator::preGatherWorker, &pgdat, ds_radius_, n_diffuse_search_));
+		for(int i = 0; i < n_threads; ++i) threads.emplace_back(&PhotonIntegrator::preGatherWorker, &pgdat, ds_radius_, n_diffuse_search_);
 		for(auto &t : threads) t.join();
 
 		radiance_map_->swapVector(pgdat.radiance_vec_);

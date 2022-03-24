@@ -1207,7 +1207,7 @@ void ImageFilm::generateDebugFacesEdges(int xstart, int width, int ystart, int h
 	if(normal_image && z_depth_image)
 	{
 		std::vector<cv::Mat> image_mat;
-		for(int i = 0; i < 4; ++i) image_mat.push_back(cv::Mat(height_, width_, CV_32FC1));
+		for(int i = 0; i < 4; ++i) image_mat.emplace_back(height_, width_, CV_32FC1);
 		for(int j = ystart; j < height; ++j)
 		{
 			for(int i = xstart; i < width; ++i)
@@ -1256,7 +1256,7 @@ void ImageFilm::generateToonAndDebugObjectEdges(int xstart, int width, int ystar
 	{
 		cv::Mat_<cv::Vec3f> image_mat_combined_vec(height_, width_, CV_32FC3);
 		std::vector<cv::Mat> image_mat;
-		for(int i = 0; i < 4; ++i) image_mat.push_back(cv::Mat(height_, width_, CV_32FC1));
+		for(int i = 0; i < 4; ++i) image_mat.emplace_back(height_, width_, CV_32FC1);
 		Rgb col_normal(0.f);
 		float z_depth = 0.f;
 

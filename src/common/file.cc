@@ -293,7 +293,7 @@ std::vector<std::string> File::listFiles(const std::string &directory)
 	{
 		while((dir = readdir(dirp)))
 		{
-			if(dir->d_type == DT_REG) files.push_back(std::string(dir->d_name));
+			if(dir->d_type == DT_REG) files.emplace_back(dir->d_name);
 		}
 		closedir(dirp);
 	}
