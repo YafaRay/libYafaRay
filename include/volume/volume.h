@@ -53,7 +53,7 @@ class VolumeRegion
 	public:
 		static VolumeRegion *factory(Logger &logger, const ParamMap &params, const Scene &scene);
 		explicit VolumeRegion(Logger &logger) : logger_(logger) { }
-		VolumeRegion(Logger &logger, Rgb sa, Rgb ss, Rgb le, float gg, Point3 pmin, Point3 pmax, int attgrid_scale);
+		VolumeRegion(Logger &logger, const Rgb &sa, const Rgb &ss, const Rgb &le, float gg, const Point3 &pmin, const Point3 &pmax, int attgrid_scale);
 		virtual ~VolumeRegion() = default;
 
 		virtual Rgb sigmaA(const Point3 &p, const Vec3 &v) const = 0;
@@ -99,10 +99,10 @@ class DensityVolumeRegion : public VolumeRegion
 {
 	protected:
 		explicit DensityVolumeRegion(Logger &logger) : VolumeRegion(logger) {}
-		DensityVolumeRegion(Logger &logger, Rgb sa, Rgb ss, Rgb le, float gg, Point3 pmin, Point3 pmax, int attgrid_scale) :
+		DensityVolumeRegion(Logger &logger, const Rgb &sa, const Rgb &ss, const Rgb &le, float gg, const Point3 &pmin, const Point3 &pmax, int attgrid_scale) :
 			VolumeRegion(logger, sa, ss, le, gg, pmin, pmax, attgrid_scale) {}
 
-		virtual float density(Point3 p) const = 0;
+		virtual float density(const Point3 &p) const = 0;
 
 		Rgb tau(const Ray &ray, float step_size, float offset) const override;
 

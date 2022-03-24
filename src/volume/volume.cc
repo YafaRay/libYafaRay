@@ -60,7 +60,7 @@ VolumeHandler * VolumeHandler::factory(Logger &logger, const ParamMap &params, c
 	else return nullptr;
 }
 
-VolumeRegion::VolumeRegion(Logger &logger, Rgb sa, Rgb ss, Rgb le, float gg, Point3 pmin, Point3 pmax, int attgrid_scale) : logger_(logger)
+VolumeRegion::VolumeRegion(Logger &logger, const Rgb &sa, const Rgb &ss, const Rgb &le, float gg, const Point3 &pmin, const Point3 &pmax, int attgrid_scale) : logger_(logger)
 {
 	b_box_ = Bound(pmin, pmax);
 	s_a_ = sa;

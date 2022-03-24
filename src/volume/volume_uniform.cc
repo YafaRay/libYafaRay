@@ -97,7 +97,7 @@ VolumeRegion * UniformVolumeRegion::factory(Logger &logger, const ParamMap &para
 	return new UniformVolumeRegion(logger, Rgb(sa), Rgb(ss), Rgb(le), g, {min[0], min[1], min[2]}, {max[0], max[1], max[2]}, att_sc);
 }
 
-UniformVolumeRegion::UniformVolumeRegion(Logger &logger, Rgb sa, Rgb ss, Rgb le, float gg, Point3 pmin, Point3 pmax, int attgrid_scale) :
+UniformVolumeRegion::UniformVolumeRegion(Logger &logger, const Rgb &sa, const Rgb &ss, const Rgb &le, float gg, const Point3 &pmin, const Point3 &pmax, int attgrid_scale) :
 		VolumeRegion(logger, sa, ss, le, gg, pmin, pmax, attgrid_scale)
 {
 	if(logger_.isVerbose()) logger_.logVerbose("UniformVolume: Vol.[", s_a_, ", ", s_s_, ", ", l_e_, ", ", pmin, ", ", pmax, ", ", attgrid_scale, "]");

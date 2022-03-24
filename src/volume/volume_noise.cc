@@ -26,7 +26,7 @@ BEGIN_YAFARAY
 
 struct PSample;
 
-float NoiseVolumeRegion::density(Point3 p) const
+float NoiseVolumeRegion::density(const Point3 &p) const
 {
 	float d = tex_dist_noise_->getColor(p * 0.1f).energy();
 

@@ -104,7 +104,7 @@ VolumeRegion * SkyVolumeRegion::factory(Logger &logger, const ParamMap &params, 
 	return new SkyVolumeRegion(logger, Rgb(sa), Rgb(ss), Rgb(le), {min[0], min[1], min[2]}, {max[0], max[1], max[2]});
 }
 
-SkyVolumeRegion::SkyVolumeRegion(Logger &logger, Rgb sa, Rgb ss, Rgb le, Point3 pmin, Point3 pmax) : VolumeRegion(logger)
+SkyVolumeRegion::SkyVolumeRegion(Logger &logger, const Rgb &sa, const Rgb &ss, const Rgb &le, const Point3 &pmin, const Point3 &pmax) : VolumeRegion(logger)
 {
 	b_box_ = Bound(pmin, pmax);
 	s_a_ = Rgb(0.f);

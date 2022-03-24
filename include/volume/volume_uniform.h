@@ -34,7 +34,7 @@ class UniformVolumeRegion : public VolumeRegion
 		static VolumeRegion *factory(Logger &logger, const ParamMap &params, const Scene &scene);
 
 	private:
-		UniformVolumeRegion(Logger &logger, Rgb sa, Rgb ss, Rgb le, float gg, Point3 pmin, Point3 pmax, int attgrid_scale);
+		UniformVolumeRegion(Logger &logger, const Rgb &sa, const Rgb &ss, const Rgb &le, float gg, const Point3 &pmin, const Point3 &pmax, int attgrid_scale);
 		Rgb sigmaA(const Point3 &p, const Vec3 &v) const override;
 		Rgb sigmaS(const Point3 &p, const Vec3 &v) const override;
 		Rgb emission(const Point3 &p, const Vec3 &v) const override;

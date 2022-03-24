@@ -34,7 +34,7 @@ class SkyVolumeRegion final : public VolumeRegion
 		static VolumeRegion *factory(Logger &logger, const ParamMap &params, const Scene &scene);
 
 	private:
-		SkyVolumeRegion(Logger &logger, Rgb sa, Rgb ss, Rgb le, Point3 pmin, Point3 pmax);
+		SkyVolumeRegion(Logger &logger, const Rgb &sa, const Rgb &ss, const Rgb &le, const Point3 &pmin, const Point3 &pmax);
 		float p(const Vec3 &w_l, const Vec3 &w_s) const override;
 		float phaseRayleigh(const Vec3 &w_l, const Vec3 &w_s) const;
 		float phaseMie(const Vec3 &w_l, const Vec3 &w_s) const;
