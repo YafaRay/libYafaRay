@@ -422,7 +422,7 @@ void MonteCarloIntegrator::causticWorker(unsigned int &total_photons_shot, int t
 {
 	bool done = false;
 	const int num_lights_caustic = lights_caustic.size();
-	const float f_num_lights = static_cast<float>(num_lights_caustic);
+	const auto f_num_lights = static_cast<float>(num_lights_caustic);
 	unsigned int curr = 0;
 	const unsigned int n_caus_photons_thread = 1 + ((n_caus_photons_ - 1) / num_threads_photons_);
 	std::vector<Photon> local_caustic_photons;
@@ -582,7 +582,7 @@ bool MonteCarloIntegrator::createCausticMap()
 	if(!lights_caustic.empty())
 	{
 		const int num_lights_caustic = lights_caustic.size();
-		const float f_num_lights_caustic = static_cast<float>(num_lights_caustic);
+		const auto f_num_lights_caustic = static_cast<float>(num_lights_caustic);
 		std::vector<float> energies_caustic(num_lights_caustic);
 		for(int i = 0; i < num_lights_caustic; ++i) energies_caustic[i] = lights_caustic[i]->totalEnergy().energy();
 		auto light_power_d_caustic = std::unique_ptr<Pdf1D>(new Pdf1D(energies_caustic));

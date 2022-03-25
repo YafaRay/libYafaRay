@@ -46,7 +46,7 @@ AcceleratorKdTreeMultiThread::AcceleratorKdTreeMultiThread(Logger &logger, const
 {
 	Parameters tree_build_parameters = parameters;
 
-	const uint32_t num_primitives = static_cast<uint32_t>(primitives.size());
+	const auto num_primitives = static_cast<uint32_t>(primitives.size());
 	logger_.logInfo("Kd-Tree MultiThread: Starting build (", num_primitives, " prims, cost_ratio:", parameters.cost_ratio_, " empty_bonus:", parameters.empty_bonus_, ") [using ", tree_build_parameters.num_threads_, " threads, min indices to spawn threads: ", tree_build_parameters.min_indices_to_spawn_threads_, "]");
 	clock_t clock_start = clock();
 	if(tree_build_parameters.max_depth_ <= 0) tree_build_parameters.max_depth_ = static_cast<int>(7.0f + 1.66f * log(static_cast<float>(num_primitives)));
@@ -137,7 +137,7 @@ AcceleratorKdTreeMultiThread::~AcceleratorKdTreeMultiThread()
 
 AcceleratorKdTreeMultiThread::SplitCost AcceleratorKdTreeMultiThread::pigeonMinCost(Logger &logger, float e_bonus, float cost_ratio, const std::vector<Bound> &bounds, const Bound &node_bound, const std::vector<uint32_t> &prim_indices)
 {
-	const uint32_t num_prim_indices = static_cast<uint32_t>(prim_indices.size());
+	const auto num_prim_indices = static_cast<uint32_t>(prim_indices.size());
 	static constexpr int max_bin = 1024;
 	static constexpr int num_bins = max_bin + 1;
 	std::array<TreeBin, num_bins> bins;
@@ -283,7 +283,7 @@ AcceleratorKdTreeMultiThread::SplitCost AcceleratorKdTreeMultiThread::pigeonMinC
 
 AcceleratorKdTreeMultiThread::SplitCost AcceleratorKdTreeMultiThread::minimalCost(Logger &logger, float e_bonus, float cost_ratio, const Bound &node_bound, const std::vector<uint32_t> &indices, const std::vector<Bound> &bounds)
 {
-	const uint32_t num_indices = static_cast<uint32_t>(indices.size());
+	const auto num_indices = static_cast<uint32_t>(indices.size());
 	const Vec3 node_bound_axes {node_bound.longX(), node_bound.longY(), node_bound.longZ() };
 	const Vec3 inv_node_bound_axes { 1.f / node_bound_axes[0], 1.f / node_bound_axes[1], 1.f / node_bound_axes[2] };
 	SplitCost split;
@@ -421,7 +421,7 @@ void AcceleratorKdTreeMultiThread::buildTreeWorker(const std::vector<const Primi
 	std::vector<uint32_t> poly_indices;
 	std::vector<uint32_t> prim_indices;
 	std::vector<Bound> poly_bounds;
-	const uint32_t num_indices = static_cast<uint32_t>(indices.size());
+	const auto num_indices = static_cast<uint32_t>(indices.size());
 	const bool do_poly_clipping = (num_indices <= poly_clipping_threshold && num_indices <= primitive_indices.size());
 	if(do_poly_clipping)
 	{
@@ -473,7 +473,7 @@ void AcceleratorKdTreeMultiThread::buildTreeWorker(const std::vector<const Primi
 	}
 #endif
 
-	const uint32_t num_new_indices = static_cast<uint32_t>(new_indices.get().size());
+	const auto num_new_indices = static_cast<uint32_t>(new_indices.get().size());
 	//	<< check if leaf criteria met >>
 	if(num_new_indices <= static_cast<uint32_t>(parameters.max_leaf_size_) || depth >= parameters.max_depth_)
 	{
@@ -611,7 +611,7 @@ void AcceleratorKdTreeMultiThread::buildTreeWorker(const std::vector<const Primi
 
 	if(num_current_threads_ < parameters.num_threads_ && (left_primitive_indices.size() >= (right_primitive_indices.size() / 10)) && (right_primitive_indices.size() >= (left_primitive_indices.size() / 10)) && (left_primitive_indices.size() >= static_cast<size_t>(parameters.min_indices_to_spawn_threads_)))
 	{
-		const uint32_t next_free_node_original = static_cast<uint32_t>(next_node_id + result.nodes_.size());
+		const auto next_free_node_original = static_cast<uint32_t>(next_node_id + result.nodes_.size());
 		Result result_left;
 		auto left_worker = std::thread(&AcceleratorKdTreeMultiThread::buildTreeWorker, this, primitives, bound_left, left_indices, depth + 1, next_free_node_original, bad_refines, new_bounds, parameters, left_clip_plane, new_polygons, left_primitive_indices, std::ref(result_left), std::ref(num_current_threads));
 		num_current_threads++;
@@ -626,7 +626,7 @@ void AcceleratorKdTreeMultiThread::buildTreeWorker(const std::vector<const Primi
 		result.stats_ += result_left.stats_;
 		result.stats_ += result_right.stats_;
 
-		const uint32_t num_nodes_left = static_cast<uint32_t>(result_left.nodes_.size());
+		const auto num_nodes_left = static_cast<uint32_t>(result_left.nodes_.size());
 		const uint32_t next_free_node_left = next_free_node_original + num_nodes_left;
 		result.nodes_.back().setRightChild(next_free_node_left);
 		//Correct the "right child" in the right nodes adding the original nodes + left nodes list sizes as offset to each

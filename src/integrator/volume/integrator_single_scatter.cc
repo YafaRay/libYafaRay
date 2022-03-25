@@ -66,7 +66,7 @@ bool SingleScatterIntegrator::preprocess(ImageFilm *image_film, const RenderView
 			{
 				Rgb lcol(0.0);
 
-				float *attenuation_grid = (float *)malloc(x_size * y_size * z_size * sizeof(float));
+				auto *attenuation_grid = static_cast<float *>(malloc(x_size * y_size * z_size * sizeof(float)));
 				vr->attenuation_grid_map_[light] = attenuation_grid;
 
 				for(int z = 0; z < z_size; ++z)

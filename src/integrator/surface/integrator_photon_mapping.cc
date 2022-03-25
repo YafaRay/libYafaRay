@@ -114,7 +114,7 @@ void PhotonIntegrator::diffuseWorker(PreGatherData &pgdat, unsigned int &total_p
 	unsigned int curr = 0;
 	std::unique_ptr<const SurfacePoint> hit_prev, hit_curr;
 	const int num_lights_diffuse = lights_diffuse.size();
-	const float f_num_lights = static_cast<float>(num_lights_diffuse);
+	const auto f_num_lights = static_cast<float>(num_lights_diffuse);
 	unsigned int n_diffuse_photons_thread = 1 + ((n_diffuse_photons_ - 1) / num_threads_photons_);
 	std::vector<Photon> local_diffuse_photons;
 	std::vector<RadData> local_rad_points;
@@ -413,7 +413,7 @@ bool PhotonIntegrator::preprocess(ImageFilm *image_film, const RenderView *rende
 	if(use_photon_diffuse_ && !lights_diffuse.empty())
 	{
 		const int num_lights_diffuse = lights_diffuse.size();
-		const float f_num_lights = static_cast<float>(num_lights_diffuse);
+		const auto f_num_lights = static_cast<float>(num_lights_diffuse);
 		std::vector<float> energies_diffuse(num_lights_diffuse);
 		for(int i = 0; i < num_lights_diffuse; ++i) energies_diffuse[i] = lights_diffuse[i]->totalEnergy().energy();
 		auto light_power_d_diffuse = std::unique_ptr<Pdf1D>(new Pdf1D(energies_diffuse));
@@ -488,7 +488,7 @@ bool PhotonIntegrator::preprocess(ImageFilm *image_film, const RenderView *rende
 	{
 		curr = 0;
 		const int num_lights_caustic = lights_caustic.size();
-		const float f_num_lights = static_cast<float>(num_lights_caustic);
+		const auto f_num_lights = static_cast<float>(num_lights_caustic);
 		std::vector<float> energies_caustic(num_lights_caustic);
 
 		for(int i = 0; i < num_lights_caustic; ++i) energies_caustic[i] = lights_caustic[i]->totalEnergy().energy();
@@ -950,7 +950,7 @@ std::pair<Rgb, float> PhotonIntegrator::integrate(Ray &ray, RandomGenerator &ran
 					col += estimateAllDirectLight(random_generator, color_layers, chromatic_enabled, wavelength, *sp, wo, ray_division, pixel_sampling_data);
 				}
 
-				FoundPhoton *gathered = (FoundPhoton *)alloca(n_diffuse_search_ * sizeof(FoundPhoton));
+				auto *gathered = static_cast<FoundPhoton *>(alloca(n_diffuse_search_ * sizeof(FoundPhoton)));
 				float radius = ds_radius_; //actually the square radius...
 
 				int n_gathered = 0;

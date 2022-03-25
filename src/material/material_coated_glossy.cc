@@ -146,19 +146,19 @@ Rgb CoatedGlossyMaterial::eval(const MaterialData *mat_data, const SurfacePoint 
 		if(anisotropic_)
 		{
 			const Vec3 hs(h * sp.nu_, h * sp.nv_, h * n);
-			const CoatedGlossyMaterialData *mat_data_specific = static_cast<const CoatedGlossyMaterialData *>(mat_data);
+			const auto *mat_data_specific = static_cast<const CoatedGlossyMaterialData *>(mat_data);
 			glossy = kt * microfacet::asAnisoD(hs, exp_u_, exp_v_) * microfacet::schlickFresnel(cos_wi_h, mat_data_specific->glossy_) / microfacet::asDivisor(cos_wi_h, wo_n, wi_n);
 		}
 		else
 		{
-			const CoatedGlossyMaterialData *mat_data_specific = static_cast<const CoatedGlossyMaterialData *>(mat_data);
+			const auto *mat_data_specific = static_cast<const CoatedGlossyMaterialData *>(mat_data);
 			glossy = kt * microfacet::blinnD(h * n, getShaderScalar(exponent_shader_, mat_data->node_tree_data_, exponent_)) * microfacet::schlickFresnel(cos_wi_h, mat_data_specific->glossy_) / microfacet::asDivisor(cos_wi_h, wo_n, wi_n);
 		}
 		col = glossy * getShaderColor(glossy_shader_, mat_data->node_tree_data_, gloss_color_);
 	}
 	if(with_diffuse_ && diffuse_flag)
 	{
-		const CoatedGlossyMaterialData *mat_data_specific = static_cast<const CoatedGlossyMaterialData *>(mat_data);
+		const auto *mat_data_specific = static_cast<const CoatedGlossyMaterialData *>(mat_data);
 		Rgb add_col = mat_data_specific->diffuse_ * (1.f - mat_data_specific->glossy_) * getShaderColor(diffuse_shader_, mat_data->node_tree_data_, diff_color_) * kt;
 
 		if(diffuse_reflection_shader_) add_col *= diffuse_reflection_shader_->getScalar(mat_data->node_tree_data_);
@@ -189,7 +189,7 @@ Rgb CoatedGlossyMaterial::sample(const MaterialData *mat_data, const SurfacePoin
 	int c_index[3]; // entry values: 0 := specular part, 1 := glossy part, 2:= diffuse part;
 	int rc_index[3]; // reverse fmapping of cIndex, gives position of spec/glossy/diff in val/width array
 	accum_c[0] = kr;
-	const CoatedGlossyMaterialData *mat_data_specific = static_cast<const CoatedGlossyMaterialData *>(mat_data);
+	const auto *mat_data_specific = static_cast<const CoatedGlossyMaterialData *>(mat_data);
 	accum_c[1] = kt * (1.f - mat_data_specific->p_diffuse_);
 	accum_c[2] = kt * (mat_data_specific->p_diffuse_);
 
@@ -361,7 +361,7 @@ float CoatedGlossyMaterial::pdf(const MaterialData *mat_data, const SurfacePoint
 
 	float accum_c[3], sum = 0.f, width;
 	accum_c[0] = kr;
-	const CoatedGlossyMaterialData *mat_data_specific = static_cast<const CoatedGlossyMaterialData *>(mat_data);
+	const auto *mat_data_specific = static_cast<const CoatedGlossyMaterialData *>(mat_data);
 	accum_c[1] = kt * (1.f - mat_data_specific->p_diffuse_);
 	accum_c[2] = kt * (mat_data_specific->p_diffuse_);
 

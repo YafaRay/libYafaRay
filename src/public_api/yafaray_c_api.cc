@@ -364,7 +364,7 @@ yafaray_Image_t *yafaray_createImage(yafaray_Interface_t *interface, const char 
 
 yafaray_bool_t yafaray_setImageColor(yafaray_Image_t *image, int x, int y, float red, float green, float blue, float alpha)
 {
-	yafaray::Image *yaf_image = reinterpret_cast<yafaray::Image *>(image);
+	auto *yaf_image = reinterpret_cast<yafaray::Image *>(image);
 	if(!yaf_image) return YAFARAY_BOOL_FALSE;
 	if(x < 0 || x >= yaf_image->getWidth()) return YAFARAY_BOOL_FALSE;
 	else if(y < 0 || y >= yaf_image->getHeight()) return YAFARAY_BOOL_FALSE;
@@ -374,7 +374,7 @@ yafaray_bool_t yafaray_setImageColor(yafaray_Image_t *image, int x, int y, float
 
 yafaray_bool_t yafaray_getImageColor(const yafaray_Image_t *image, int x, int y, float *red, float *green, float *blue, float *alpha)
 {
-	const yafaray::Image *yaf_image = reinterpret_cast<const yafaray::Image *>(image);
+	const auto *yaf_image = reinterpret_cast<const yafaray::Image *>(image);
 	if(!yaf_image) return YAFARAY_BOOL_FALSE;
 	if(x < 0 || x >= yaf_image->getWidth()) return YAFARAY_BOOL_FALSE;
 	else if(y < 0 || y >= yaf_image->getHeight()) return YAFARAY_BOOL_FALSE;

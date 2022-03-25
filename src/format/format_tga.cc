@@ -285,7 +285,7 @@ Image * TgaFormat::loadFromFile(const std::string &name, const Image::Optimizati
 	TgaHeader header;
 	std::fread(&header, 1, sizeof(TgaHeader), fp);
 	// Prereading checks
-	uint8_t alpha_bit_depth = (uint8_t)(header.desc_ & tga_constants::alpha_bit_depth_mask);
+	auto alpha_bit_depth = static_cast<uint8_t>(header.desc_ & tga_constants::alpha_bit_depth_mask);
 	bool is_rle = false;
 	bool has_color_map = false;
 	bool is_gray = false;

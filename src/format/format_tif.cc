@@ -69,7 +69,7 @@ bool TifFormat::saveToFile(const std::string &name, const ImageLayer &image_laye
 	const size_t bytes_per_scanline = channels * w;
 	libtiff::TIFFSetField(out, TIFFTAG_ROWSPERSTRIP, libtiff::TIFFDefaultStripSize(out, bytes_per_scanline));
 
-	uint8_t *scanline = (uint8_t *)libtiff::_TIFFmalloc(bytes_per_scanline);
+	auto *scanline = static_cast<uint8_t *>(libtiff::_TIFFmalloc(bytes_per_scanline));
 	for(int y = 0; y < h; y++)
 	{
 		for(int x = 0; x < w; x++)
@@ -113,7 +113,7 @@ Image * TifFormat::loadFromFile(const std::string &name, const Image::Optimizati
 	libtiff::uint32 w, h;
 	TIFFGetField(tif, TIFFTAG_IMAGEWIDTH, &w);
 	TIFFGetField(tif, TIFFTAG_IMAGELENGTH, &h);
-	libtiff::uint32 *tiff_data = (libtiff::uint32 *)libtiff::_TIFFmalloc(w * h * sizeof(libtiff::uint32));
+	auto *tiff_data = static_cast<libtiff::uint32 *>(libtiff::_TIFFmalloc(w * h * sizeof(libtiff::uint32)));
 	if(!libtiff::TIFFReadRGBAImage(tif, w, h, tiff_data, 0))
 	{
 		logger_.logError(getFormatName(), ": Error reading TIFF file");

@@ -426,7 +426,7 @@ double Halton::lowDiscrepancySampling(int dim, unsigned int n)
 		const std::vector<int> &sigma = faure::all_tables[dim];
 		const unsigned int base = faure::prims[dim];
 		const double f = faure::inv_prims[dim];
-		double dn = static_cast<double>(n);
+		auto dn = static_cast<double>(n);
 		double factor = f;
 		while(n > 0)
 		{

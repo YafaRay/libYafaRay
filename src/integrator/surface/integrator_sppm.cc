@@ -326,7 +326,7 @@ void SppmIntegrator::photonWorker(unsigned int &total_photons_shot, int thread_i
 
 	std::unique_ptr<const SurfacePoint> hit_prev, hit_curr;
 
-	float f_num_lights = (float)num_d_lights;
+	const auto f_num_lights = static_cast<float>(num_d_lights);
 
 	unsigned int n_photons_thread = 1 + ((n_photons_ - 1) / num_threads_photons_);
 
@@ -509,7 +509,7 @@ void SppmIntegrator::prePass(int samples, int offset, bool adaptive)
 	//background do not emit photons, or it is merged into normal light?
 
 	const int num_lights = lights_.size();
-	const float f_num_lights = static_cast<float>(num_lights);
+	const auto f_num_lights = static_cast<float>(num_lights);
 	std::vector<float> energies(num_lights);
 	for(int i = 0; i < num_lights; ++i) energies[i] = lights_[i]->totalEnergy().energy();
 	auto light_power_d = std::unique_ptr<Pdf1D>(new Pdf1D(energies));

@@ -58,7 +58,7 @@ typedef struct JpgErrorManager *ErrorPtr_t;
 
 void jpgExitOnError_global(j_common_ptr info)
 {
-	ErrorPtr_t myerr = (ErrorPtr_t)info->err;
+	const auto myerr = reinterpret_cast<ErrorPtr_t>(info->err);
 	(*info->err->output_message)(info);
 	longjmp(myerr->setjmp_buffer_, 1);
 }
@@ -94,7 +94,7 @@ bool JpgFormat::saveToFile(const std::string &name, const ImageLayer &image_laye
 	jpeg_set_quality(&info, 100, TRUE);
 	jpeg_start_compress(&info, TRUE);
 
-	uint8_t *scanline = new uint8_t[width * 3];
+	auto *scanline = new uint8_t[width * 3];
 	for(int y = 0; y < height; y++)
 	{
 		for(int x = 0; x < width; x++)
@@ -143,7 +143,7 @@ bool JpgFormat::saveAlphaChannelOnlyToFile(const std::string &name, const ImageL
 	jpeg_set_quality(&info, 100, TRUE);
 	jpeg_start_compress(&info, TRUE);
 
-	uint8_t *scanline =  new uint8_t[ width ];
+	auto *scanline =  new uint8_t[ width ];
 	for(int y = 0; y < height; y++)
 	{
 		for(int x = 0; x < width; x++)
@@ -206,7 +206,7 @@ Image * JpgFormat::loadFromFile(const std::string &name, const Image::Optimizati
 	const Image::Type type = Image::getTypeFromSettings(false, grayscale_);
 	auto image = Image::factory(logger_, width, height, type, optimization);
 
-	uint8_t *scanline = new uint8_t[width * info.output_components];
+	auto *scanline = new uint8_t[width * info.output_components];
 	for(int y = 0; info.output_scanline < info.output_height; ++y)
 	{
 		jpeg_read_scanlines(&info, &scanline, 1);

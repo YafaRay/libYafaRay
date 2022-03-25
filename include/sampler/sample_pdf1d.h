@@ -75,7 +75,7 @@ inline std::pair<float, std::vector<float>> Pdf1D::cumulateStep1DDf(const std::v
 		c += static_cast<double>(function[i]) * delta;
 		cdf[i] = static_cast<float>(c);
 	}
-	const float integral = static_cast<float>(c);// * delta;
+	const auto integral = static_cast<float>(c);// * delta;
 	for(auto &cdf_entry : cdf) cdf_entry /= integral;
 	return {integral, cdf};
 }

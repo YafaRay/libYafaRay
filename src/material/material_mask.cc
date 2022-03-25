@@ -54,7 +54,7 @@ const MaterialData * MaskMaterial::initBsdf(SurfacePoint &sp, const Camera *came
 
 Rgb MaskMaterial::eval(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wl, const BsdfFlags &bsdfs, bool force_eval) const
 {
-	const MaskMaterialData *mat_data_specific = static_cast<const MaskMaterialData *>(mat_data);
+	const auto *mat_data_specific = static_cast<const MaskMaterialData *>(mat_data);
 	Rgb col;
 	if(mat_data_specific->select_mat_2_) col = mat_2_->get()->eval(mat_data_specific->mat_2_data_.get(), sp, wo, wl, bsdfs);
 	else col = mat_1_->get()->eval(mat_data_specific->mat_1_data_.get(), sp, wo, wl, bsdfs);
@@ -63,7 +63,7 @@ Rgb MaskMaterial::eval(const MaterialData *mat_data, const SurfacePoint &sp, con
 
 Rgb MaskMaterial::sample(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, Vec3 &wi, Sample &s, float &w, bool chromatic, float wavelength, const Camera *camera) const
 {
-	const MaskMaterialData *mat_data_specific = static_cast<const MaskMaterialData *>(mat_data);
+	const auto *mat_data_specific = static_cast<const MaskMaterialData *>(mat_data);
 	Rgb col;
 	if(mat_data_specific->select_mat_2_) col = mat_2_->get()->sample(mat_data_specific->mat_2_data_.get(), sp, wo, wi, s, w, chromatic, wavelength, camera);
 	else col = mat_1_->get()->sample(mat_data_specific->mat_1_data_.get(), sp, wo, wi, s, w, chromatic, wavelength, camera);
@@ -73,7 +73,7 @@ Rgb MaskMaterial::sample(const MaterialData *mat_data, const SurfacePoint &sp, c
 float MaskMaterial::pdf(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wi, const BsdfFlags &bsdfs) const
 {
 	float pdf;
-	const MaskMaterialData *mat_data_specific = static_cast<const MaskMaterialData *>(mat_data);
+	const auto *mat_data_specific = static_cast<const MaskMaterialData *>(mat_data);
 	if(mat_data_specific->select_mat_2_) pdf = mat_2_->get()->pdf(mat_data_specific->mat_2_data_.get(), sp, wo, wi, bsdfs);
 	else pdf = mat_1_->get()->pdf(mat_data_specific->mat_1_data_.get(), sp, wo, wi, bsdfs);
 	return pdf;
@@ -86,14 +86,14 @@ bool MaskMaterial::isTransparent() const
 
 Rgb MaskMaterial::getTransparency(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, const Camera *camera) const
 {
-	const MaskMaterialData *mat_data_specific = static_cast<const MaskMaterialData *>(mat_data);
+	const auto *mat_data_specific = static_cast<const MaskMaterialData *>(mat_data);
 	if(mat_data_specific->select_mat_2_) return mat_2_->get()->getTransparency(mat_data_specific->mat_2_data_.get(), sp, wo, camera);
 	else return mat_1_->get()->getTransparency(mat_data_specific->mat_1_data_.get(), sp, wo, camera);
 }
 
 Specular MaskMaterial::getSpecular(int ray_level, const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, bool chromatic, float wavelength) const
 {
-	const MaskMaterialData *mat_data_specific = static_cast<const MaskMaterialData *>(mat_data);
+	const auto *mat_data_specific = static_cast<const MaskMaterialData *>(mat_data);
 	Specular specular;
 	if(mat_data_specific->select_mat_2_) specular = mat_2_->get()->getSpecular(ray_level, mat_data_specific->mat_2_data_.get(), sp, wo, chromatic, wavelength);
 	else specular = mat_1_->get()->getSpecular(ray_level, mat_data_specific->mat_1_data_.get(), sp, wo, chromatic, wavelength);
@@ -102,7 +102,7 @@ Specular MaskMaterial::getSpecular(int ray_level, const MaterialData *mat_data, 
 
 Rgb MaskMaterial::emit(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo) const
 {
-	const MaskMaterialData *mat_data_specific = static_cast<const MaskMaterialData *>(mat_data);
+	const auto *mat_data_specific = static_cast<const MaskMaterialData *>(mat_data);
 	Rgb col;
 	if(mat_data_specific->select_mat_2_) col = mat_2_->get()->emit(mat_data_specific->mat_2_data_.get(), sp, wo);
 	else col = mat_1_->get()->emit(mat_data_specific->mat_1_data_.get(), sp, wo);
@@ -111,7 +111,7 @@ Rgb MaskMaterial::emit(const MaterialData *mat_data, const SurfacePoint &sp, con
 
 float MaskMaterial::getAlpha(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, const Camera *camera) const
 {
-	const MaskMaterialData *mat_data_specific = static_cast<const MaskMaterialData *>(mat_data);
+	const auto *mat_data_specific = static_cast<const MaskMaterialData *>(mat_data);
 	float alpha;
 	if(mat_data_specific->select_mat_2_) alpha = mat_2_->get()->getAlpha(mat_data_specific->mat_2_data_.get(), sp, wo, camera);
 	else alpha = mat_1_->get()->getAlpha(mat_data_specific->mat_1_data_.get(), sp, wo, camera);

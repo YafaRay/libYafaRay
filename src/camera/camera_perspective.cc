@@ -86,7 +86,7 @@ void PerspectiveCamera::biasDist(float &r) const
 
 void PerspectiveCamera::sampleTsd(float r_1, float r_2, float &u, float &v) const
 {
-	float fn = (float)bkhtype_;
+	const auto fn = static_cast<float>(bkhtype_);
 	int idx = int(r_1 * fn);
 	r_1 = (r_1 - ((float)idx) / fn) * fn;
 	biasDist(r_1);
