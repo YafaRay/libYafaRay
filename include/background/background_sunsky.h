@@ -48,9 +48,9 @@ class SunSkyBackground final : public Background
 		double theta_s_, phi_s_;	// sun coords
 		double theta_2_, theta_3_, t_, t_2_;
 		double zenith_Y_, zenith_x_, zenith_y_;
-		double perez_Y_[5], perez_x_[5], perez_y_[5];
+		std::array<double, 5> perez_Y_, perez_x_, perez_y_;
 		double angleBetween(double thetav, double phiv) const;
-		double perezFunction(const double *lam, double theta, double gamma, double lvz) const;
+		double perezFunction(const std::array<double, 5> &lam, double theta, double gamma, double lvz) const;
 		float power_;
 };
 

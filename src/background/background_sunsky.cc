@@ -77,7 +77,7 @@ SunSkyBackground::SunSkyBackground(Logger &logger, const Point3 &dir, float turb
 	perez_y_[4] = (-0.01092 * t_ + 0.05291) * e_var;
 }
 
-double SunSkyBackground::perezFunction(const double *lam, double theta, double gamma, double lvz) const
+double SunSkyBackground::perezFunction(const std::array<double, 5> &lam, double theta, double gamma, double lvz) const
 {
 	double e_1, e_2, e_3, e_4;
 	if(lam[1] <= 230.)
