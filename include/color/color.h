@@ -46,7 +46,6 @@ class Rgb
 		Rgb() = default;
 		Rgb(float r, float g, float b) : r_{r}, g_{g}, b_{b} { }
 		explicit Rgb(float f) : r_{f}, g_{f}, b_{f} { }
-		explicit Rgb(float af[3]) : r_{af[0]}, g_{af[1]}, b_{af[2]} { }
 		bool isBlack() const { return ((r_ == 0) && (g_ == 0) && (b_ == 0)); }
 		bool isNaN() const { return (std::isnan(r_) || std::isnan(g_) || std::isnan(b_)); }
 		bool isInf() const { return (std::isinf(r_) || std::isinf(g_) || std::isinf(b_)); }
@@ -144,12 +143,11 @@ class Rgba final : public Rgb
 {
 	public:
 		Rgba() = default;
-		explicit Rgba(const Rgb &c): Rgb{c}, a_{1.f} { }
+		explicit Rgba(const Rgb &c): Rgb{c} { }
 		Rgba(const Rgb &c, float a): Rgb{c}, a_{a} { }
 		Rgba(float r, float g, float b, float a = 1.f): Rgb{r, g, b}, a_{a} { }
 		explicit Rgba(float g): Rgb{g}, a_{g} { }
 		Rgba(float g, float a): Rgb{g}, a_{a} { }
-		explicit Rgba(float af[4]): Rgb{af}, a_{af[3]} { }
 
 		void set(float r, float g, float b, float a = 1.f) { Rgb::set(r, g, b); a_ = a; }
 
@@ -208,15 +206,15 @@ class Rgbe final
 			if(rgbe_[3])
 			{
 				/*nonzero pixel*/
-				const float f = math::ldexp(1.0, rgbe_[3] - (128 + 8));
+				const float f = math::ldexp(1.f, rgbe_[3] - (128 + 8));
 				return {rgbe_[0] * f, rgbe_[1] * f, rgbe_[2] * f};
 			}
-			else return {0, 0, 0};
+			else return {0.f, 0.f, 0.f};
 		}
 		//		unsigned char& operator [] (int i){ return rgbe[i]; }
 
 		//	protected:
-		unsigned char rgbe_[4];
+		std::array<unsigned char, 4> rgbe_;
 };
 
 inline void Rgb::expgamAdjust(float e, float g, bool clamp_rgb)
