@@ -93,7 +93,7 @@ Camera * ArchitectCamera::factory(Logger &logger, ParamMap &params, const Scene 
 	int resx = 320, resy = 200;
 	float aspect = 1, dfocal = 1, apt = 0, dofd = 0, bkhrot = 0;
 	float near_clip = 0.0f, far_clip = -1.0f;
-	std::string view_name = "";
+	std::string view_name;
 
 	params.getParam("from", from);
 	params.getParam("to", to);

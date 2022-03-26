@@ -124,7 +124,7 @@ class Logger final
 		int log_master_verbosity_level_ = YAFARAY_LOG_LEVEL_VERBOSE;
 		bool print_datetime_ = true;
 		std::vector<LogEntry> memory_log_;	//Log entries stored in memory
-		std::string image_path_ = "";
+		std::string image_path_;
 		bool console_log_colors_enabled_ = true;	//If false, will supress the colors from the Console log, to help some 3rd party software that cannot handle properly the color ANSI codes
 		std::time_t previous_console_event_date_time_ = 0;
 		std::time_t previous_log_event_date_time_ = 0;
