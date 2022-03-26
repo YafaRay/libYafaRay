@@ -38,7 +38,7 @@ class OrthographicCamera final: public Camera
 		CameraRay shootRay(float px, float py, float lu, float lv) const override;
 		Point3 screenproject(const Point3 &p) const override;
 
-		static Camera *factory(Logger &logger, ParamMap &params, const Scene &scene);
+		static const Camera * factory(Logger &logger, ParamMap &params, const Scene &scene);
 	protected:
 		float scale_;
 		Point3 pos_;

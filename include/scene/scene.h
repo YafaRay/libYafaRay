@@ -105,7 +105,7 @@ class Scene final
 		RenderControl &getRenderControl() { return render_control_; }
 		const std::unique_ptr<Material> * getMaterial(const std::string &name) const;
 		Texture *getTexture(const std::string &name) const;
-		Camera *getCamera(const std::string &name) const;
+		const Camera * getCamera(const std::string &name) const;
 		Light *getLight(const std::string &name) const;
 		Background* getBackground(const std::string &name) const;
 		Integrator *getIntegrator(const std::string &name) const;
@@ -118,7 +118,7 @@ class Scene final
 		Light *createLight(const std::string &name, ParamMap &params);
 		Texture *createTexture(const std::string &name, ParamMap &params);
 		std::unique_ptr<Material> * createMaterial(const std::string &name, ParamMap &params, std::list<ParamMap> &nodes_params);
-		Camera *createCamera(const std::string &name, ParamMap &params);
+		const Camera *createCamera(const std::string &name, ParamMap &params);
 		Background* createBackground(const std::string &name, ParamMap &params);
 		Integrator *createIntegrator(const std::string &name, ParamMap &params);
 		VolumeRegion *createVolumeRegion(const std::string &name, ParamMap &params);
@@ -205,7 +205,7 @@ class Scene final
 		SurfaceIntegrator *surf_integrator_ = nullptr;
 		VolumeIntegrator *vol_integrator_ = nullptr;
 		std::map<std::string, std::unique_ptr<Texture>> textures_;
-		std::map<std::string, std::unique_ptr<Camera>> cameras_;
+		std::map<std::string, std::unique_ptr<const Camera>> cameras_;
 		std::map<std::string, std::unique_ptr<Background>> backgrounds_;
 		std::map<std::string, std::unique_ptr<Integrator>> integrators_;
 		std::map<std::string, std::unique_ptr<VolumeRegion>> volume_regions_;

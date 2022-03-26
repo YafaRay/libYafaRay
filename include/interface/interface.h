@@ -89,7 +89,7 @@ class Interface
 		virtual Light *createLight(const char *name) noexcept;
 		virtual Texture *createTexture(const char *name) noexcept;
 		virtual Material *createMaterial(const char *name) noexcept;
-		virtual Camera *createCamera(const char *name) noexcept;
+		virtual const Camera * createCamera(const char *name) noexcept;
 		virtual Background *createBackground(const char *name) noexcept;
 		virtual Integrator *createIntegrator(const char *name) noexcept;
 		virtual VolumeRegion *createVolumeRegion(const char *name) noexcept;

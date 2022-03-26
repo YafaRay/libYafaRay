@@ -334,7 +334,7 @@ Material *ExportC::createMaterial(const char *name) noexcept
 	if(section_num_lines_ >= section_max_lines_) file_ << sectionSplit();
 	return nullptr;
 }
-Camera *ExportC::createCamera(const char *name) noexcept
+const Camera * ExportC::createCamera(const char *name) noexcept
 {
 	writeParamMap(*params_);
 	params_->clear();

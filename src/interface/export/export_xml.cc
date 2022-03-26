@@ -249,7 +249,7 @@ Material *ExportXml::createMaterial(const char *name) noexcept
 	file_ << "</material>\n";
 	return nullptr;
 }
-Camera *ExportXml::createCamera(const char *name) noexcept
+const Camera * ExportXml::createCamera(const char *name) noexcept
 {
 	file_ << "\n<camera name=\"" << name << "\">\n";
 	writeParamMap(*params_);

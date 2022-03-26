@@ -323,9 +323,9 @@ Texture *Scene::getTexture(const std::string &name) const
 	return Scene::findMapItem<Texture>(name, textures_);
 }
 
-Camera *Scene::getCamera(const std::string &name) const
+const Camera * Scene::getCamera(const std::string &name) const
 {
-	return Scene::findMapItem<Camera>(name, cameras_);
+	return Scene::findMapItem<const Camera>(name, cameras_);
 }
 
 Light *Scene::getLight(const std::string &name) const
@@ -504,9 +504,9 @@ Background *Scene::createBackground(const std::string &name, ParamMap &params)
 	return createMapItem<Background>(logger_, name, "Background", params, backgrounds_, this);
 }
 
-Camera *Scene::createCamera(const std::string &name, ParamMap &params)
+const Camera *Scene::createCamera(const std::string &name, ParamMap &params)
 {
-	return createMapItem<Camera>(logger_, name, "Camera", params, cameras_, this);
+	return createMapItem<const Camera>(logger_, name, "Camera", params, cameras_, this);
 }
 
 Integrator *Scene::createIntegrator(const std::string &name, ParamMap &params)
