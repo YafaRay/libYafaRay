@@ -36,7 +36,7 @@ BEGIN_YAFARAY
 class SunSkyBackground final : public Background
 {
 	public:
-		static Background *factory(Logger &logger, ParamMap &params, Scene &scene);
+		static const Background * factory(Logger &logger, ParamMap &params, Scene &scene);
 
 	private:
 		SunSkyBackground(Logger &logger, const Point3 &dir, float turb, float a_var, float b_var, float c_var, float d_var, float e_var, float pwr);

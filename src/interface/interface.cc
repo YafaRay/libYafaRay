@@ -185,7 +185,7 @@ Light *Interface::createLight(const char *name) noexcept { return scene_->create
 Texture *Interface::createTexture(const char *name) noexcept { return scene_->createTexture(name, *params_); }
 Material *Interface::createMaterial(const char *name) noexcept { return scene_->createMaterial(name, *params_, nodes_params_)->get(); }
 const Camera * Interface::createCamera(const char *name) noexcept { return scene_->createCamera(name, *params_); }
-Background *Interface::createBackground(const char *name) noexcept { return scene_->createBackground(name, *params_); }
+const Background * Interface::createBackground(const char *name) noexcept { return scene_->createBackground(name, *params_); }
 Integrator *Interface::createIntegrator(const char *name) noexcept { return scene_->createIntegrator(name, *params_); }
 VolumeRegion *Interface::createVolumeRegion(const char *name) noexcept { return scene_->createVolumeRegion(name, *params_); }
 RenderView *Interface::createRenderView(const char *name) noexcept { return scene_->createRenderView(name, *params_); }

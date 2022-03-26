@@ -45,7 +45,7 @@ Rgb GradientBackground::eval(const Vec3 &dir, bool use_ibl_blur) const
 	return color;
 }
 
-Background * GradientBackground::factory(Logger &logger, ParamMap &params, Scene &scene)
+const Background * GradientBackground::factory(Logger &logger, ParamMap &params, Scene &scene)
 {
 	Rgb gzenith, ghoriz, szenith(0.4f, 0.5f, 1.f), shoriz(1.f);
 	float p = 1.0;

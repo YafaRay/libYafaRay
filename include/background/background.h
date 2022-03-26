@@ -36,7 +36,7 @@ class Vec3;
 class Background
 {
 	public:
-		static Background *factory(Logger &logger, ParamMap &params, Scene &scene);
+		static const Background * factory(Logger &logger, ParamMap &params, Scene &scene);
 		explicit Background(Logger &logger) : logger_(logger) { }
 		virtual ~Background() = default;
 		Rgb operator()(const Vec3 &dir) const { return operator()(dir, false); }

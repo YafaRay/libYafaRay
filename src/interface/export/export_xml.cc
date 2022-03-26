@@ -256,7 +256,7 @@ const Camera * ExportXml::createCamera(const char *name) noexcept
 	file_ << "</camera>\n";
 	return nullptr;
 }
-Background *ExportXml::createBackground(const char *name) noexcept
+const Background * ExportXml::createBackground(const char *name) noexcept
 {
 	file_ << "\n<background name=\"" << name << "\">\n";
 	writeParamMap(*params_);

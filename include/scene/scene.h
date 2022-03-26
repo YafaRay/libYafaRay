@@ -107,7 +107,7 @@ class Scene final
 		Texture *getTexture(const std::string &name) const;
 		const Camera * getCamera(const std::string &name) const;
 		Light *getLight(const std::string &name) const;
-		Background* getBackground(const std::string &name) const;
+		const Background * getBackground(const std::string &name) const;
 		Integrator *getIntegrator(const std::string &name) const;
 		ImageOutput *getOutput(const std::string &name) const;
 		std::shared_ptr<Image> getImage(const std::string &name) const;
@@ -119,7 +119,7 @@ class Scene final
 		Texture *createTexture(const std::string &name, ParamMap &params);
 		std::unique_ptr<Material> * createMaterial(const std::string &name, ParamMap &params, std::list<ParamMap> &nodes_params);
 		const Camera *createCamera(const std::string &name, ParamMap &params);
-		Background* createBackground(const std::string &name, ParamMap &params);
+		const Background * createBackground(const std::string &name, ParamMap &params);
 		Integrator *createIntegrator(const std::string &name, ParamMap &params);
 		VolumeRegion *createVolumeRegion(const std::string &name, ParamMap &params);
 		RenderView *createRenderView(const std::string &name, ParamMap &params);
@@ -206,7 +206,7 @@ class Scene final
 		VolumeIntegrator *vol_integrator_ = nullptr;
 		std::map<std::string, std::unique_ptr<Texture>> textures_;
 		std::map<std::string, std::unique_ptr<const Camera>> cameras_;
-		std::map<std::string, std::unique_ptr<Background>> backgrounds_;
+		std::map<std::string, std::unique_ptr<const Background>> backgrounds_;
 		std::map<std::string, std::unique_ptr<Integrator>> integrators_;
 		std::map<std::string, std::unique_ptr<VolumeRegion>> volume_regions_;
 		std::map<std::string, std::unique_ptr<ImageOutput>> outputs_;

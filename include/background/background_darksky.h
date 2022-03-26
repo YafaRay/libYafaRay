@@ -39,7 +39,7 @@ BEGIN_YAFARAY
 class DarkSkyBackground final : public Background
 {
 	public:
-		static Background *factory(Logger &logger, ParamMap &params, Scene &scene);
+		static const Background * factory(Logger &logger, ParamMap &params, Scene &scene);
 
 	private:
 		DarkSkyBackground(Logger &logger, const Point3 &dir, float turb, float pwr, float sky_bright, bool clamp, float av, float bv, float cv, float dv, float ev, float altitude, bool night, float exp, bool genc, ColorConv::ColorSpace cs);

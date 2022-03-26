@@ -272,7 +272,7 @@ const Camera * ExportPython::createCamera(const char *name) noexcept
 	file_ << "yi.paramsClearAll()\n\n";
 	return nullptr;
 }
-Background *ExportPython::createBackground(const char *name) noexcept
+const Background * ExportPython::createBackground(const char *name) noexcept
 {
 	writeParamMap(*params_);
 	params_->clear();

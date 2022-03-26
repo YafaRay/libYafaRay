@@ -344,7 +344,7 @@ const Camera * ExportC::createCamera(const char *name) noexcept
 	if(section_num_lines_ >= section_max_lines_) file_ << sectionSplit();
 	return nullptr;
 }
-Background *ExportC::createBackground(const char *name) noexcept
+const Background * ExportC::createBackground(const char *name) noexcept
 {
 	writeParamMap(*params_);
 	params_->clear();
