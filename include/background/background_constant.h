@@ -31,7 +31,7 @@ BEGIN_YAFARAY
 class ConstantBackground final : public Background
 {
 	public:
-		static const Background * factory(Logger &logger, ParamMap &params, Scene &scene);
+		static const Background * factory(Logger &logger, const ParamMap &params, Scene &scene);
 
 	private:
 		ConstantBackground(Logger &logger, Rgb col);

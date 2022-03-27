@@ -60,7 +60,7 @@ Rgb EmissionIntegrator::integrate(RandomGenerator &random_generator, const Ray &
 	return result;
 }
 
-Integrator * EmissionIntegrator::factory(Logger &logger, ParamMap &params, const Scene &scene, RenderControl &render_control)
+Integrator * EmissionIntegrator::factory(Logger &logger, const ParamMap &params, const Scene &scene, RenderControl &render_control)
 {
 	return new EmissionIntegrator(logger);
 }

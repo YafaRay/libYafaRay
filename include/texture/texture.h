@@ -39,7 +39,7 @@ enum class InterpolationType : int { None, Bilinear, Bicubic, Trilinear, Ewa };
 class Texture
 {
 	public :
-		static Texture *factory(Logger &logger, ParamMap &params, Scene &scene);
+		static Texture *factory(Logger &logger, const ParamMap &params, Scene &scene);
 		explicit Texture(Logger &logger) : logger_(logger) { }
 		virtual ~Texture() = default;
 

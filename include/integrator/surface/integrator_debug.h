@@ -31,7 +31,7 @@ class Light;
 class DebugIntegrator final : public TiledIntegrator
 {
 	public:
-		static Integrator *factory(Logger &logger, ParamMap &params, const Scene &scene, RenderControl &render_control);
+		static Integrator *factory(Logger &logger, const ParamMap &params, const Scene &scene, RenderControl &render_control);
 
 	private:
 		enum SurfaceProperties {N = 1, DPdU = 2, DPdV = 3, Nu = 4, Nv = 5, DSdU = 6, DSdV = 7};

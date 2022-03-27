@@ -37,7 +37,7 @@ class SurfacePoint;
 class SpherePrimitive final : public Primitive
 {
 	public:
-		static Primitive *factory(ParamMap &params, const Scene &scene, const Object &object);
+		static Primitive *factory(const ParamMap &params, const Scene &scene, const Object &object);
 		SpherePrimitive(const Point3 &centr, float rad, const std::unique_ptr<const Material> *material, const Object &base_object): center_(centr), radius_(rad), base_object_(base_object), material_(material) {}
 
 	private:

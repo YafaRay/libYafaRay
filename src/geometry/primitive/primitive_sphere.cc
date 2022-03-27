@@ -30,7 +30,7 @@
 
 BEGIN_YAFARAY
 
-Primitive *SpherePrimitive::factory(ParamMap &params, const Scene &scene, const Object &object)
+Primitive *SpherePrimitive::factory(const ParamMap &params, const Scene &scene, const Object &object)
 {
 /*	if(logger_.isDebug())
 	{

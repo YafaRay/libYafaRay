@@ -30,7 +30,7 @@ class Background;
 class SkyIntegrator : public VolumeIntegrator
 {
 	public:
-		static Integrator *factory(Logger &logger, ParamMap &params, const Scene &scene, RenderControl &render_control);
+		static Integrator *factory(Logger &logger, const ParamMap &params, const Scene &scene, RenderControl &render_control);
 
 	private:
 		SkyIntegrator(Logger &logger, float s_size, float a, float ss, float t);

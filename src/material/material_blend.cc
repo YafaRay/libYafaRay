@@ -271,9 +271,8 @@ const VolumeHandler *BlendMaterial::getVolumeHandler(bool inside) const
 	else return vol_2;
 }
 
-const Material *BlendMaterial::factory(Logger &logger, ParamMap &params, std::list<ParamMap> &nodes_params, const Scene &scene)
+const Material *BlendMaterial::factory(Logger &logger, const ParamMap &params, const std::list<ParamMap> &nodes_params, const Scene &scene)
 {
-	std::string name;
 	double blend_val = 0.5;
 	std::string s_visibility = "normal";
 	int mat_pass_index = 0;
@@ -284,10 +283,12 @@ const Material *BlendMaterial::factory(Logger &logger, ParamMap &params, std::li
 	float wire_frame_exponent = 0.f;         //!< Wireframe exponent (0.f = solid, 1.f=linearly gradual, etc)
 	Rgb wire_frame_color = Rgb(1.f); //!< Wireframe shading color
 
-	if(! params.getParam("material1", name)) return nullptr;
-	const std::unique_ptr<const Material> *m_1 = scene.getMaterial(name);
-	if(! params.getParam("material2", name)) return nullptr;
-	const std::unique_ptr<const Material> *m_2 = scene.getMaterial(name);
+	std::string mat1_name;
+	if(! params.getParam("material1", mat1_name)) return nullptr;
+	const std::unique_ptr<const Material> *m_1 = scene.getMaterial(mat1_name);
+	std::string mat2_name;
+	if(! params.getParam("material2", mat2_name)) return nullptr;
+	const std::unique_ptr<const Material> *m_2 = scene.getMaterial(mat2_name);
 	if(!m_1 || !m_2) return nullptr;
 	params.getParam("blend_value", blend_val);
 
@@ -317,9 +318,10 @@ const Material *BlendMaterial::factory(Logger &logger, ParamMap &params, std::li
 	mat->nodes_map_ = mat->loadNodes(nodes_params, scene, logger);
 	if(!mat->nodes_map_.empty())
 	{
-		if(params.getParam("mask", name))
+		std::string mask;
+		if(params.getParam("mask", mask))
 		{
-			const auto i = mat->nodes_map_.find(name);
+			const auto i = mat->nodes_map_.find(mask);
 			if(i != mat->nodes_map_.end())
 			{
 				mat->blend_shader_ = i->second.get();
@@ -328,7 +330,7 @@ const Material *BlendMaterial::factory(Logger &logger, ParamMap &params, std::li
 			}
 			else
 			{
-				logger.logError("Blend: Blend shader node '", name, "' does not exist!");
+				logger.logError("Blend: Blend shader node '", mask, "' does not exist!");
 				return nullptr;
 			}
 		}

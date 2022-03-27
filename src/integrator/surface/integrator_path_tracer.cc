@@ -289,7 +289,7 @@ std::pair<Rgb, float> PathIntegrator::integrate(Ray &ray, RandomGenerator &rando
 	return {col, alpha};
 }
 
-Integrator * PathIntegrator::factory(Logger &logger, ParamMap &params, const Scene &scene, RenderControl &render_control)
+Integrator * PathIntegrator::factory(Logger &logger, const ParamMap &params, const Scene &scene, RenderControl &render_control)
 {
 	bool transp_shad = false, no_rec = false;
 	int shadow_depth = 5;

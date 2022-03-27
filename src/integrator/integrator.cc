@@ -34,7 +34,7 @@
 
 BEGIN_YAFARAY
 
-Integrator * Integrator::factory(Logger &logger, ParamMap &params, Scene &scene)
+Integrator * Integrator::factory(Logger &logger, const ParamMap &params, Scene &scene)
 {
 	if(logger.isDebug())
 	{

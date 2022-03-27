@@ -224,7 +224,7 @@ Rgb SunSkyBackground::computeAttenuatedSunlight(float theta, int turbidity)
 	};
 }
 
-const Background * SunSkyBackground::factory(Logger &logger, ParamMap &params, Scene &scene)
+const Background * SunSkyBackground::factory(Logger &logger, const ParamMap &params, Scene &scene)
 {
 	Point3 dir(1, 1, 1);	// same as sunlight, position interpreted as direction
 	float turb = 4.0;	// turbidity of atmosphere

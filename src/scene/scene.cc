@@ -387,10 +387,9 @@ Light *Scene::createLight(const std::string &name, ParamMap &params)
 	return nullptr;
 }
 
-std::unique_ptr<const Material> * Scene::createMaterial(const std::string &name, ParamMap &params, std::list<ParamMap> &nodes_params)
+std::unique_ptr<const Material> * Scene::createMaterial(const std::string &name, const ParamMap &params, const std::list<ParamMap> &nodes_params)
 {
 	std::string pname = "Material";
-	params["name"] = std::string(name);
 	if(materials_.find(name) != materials_.end())
 	{
 		logger_.logDebug("Scene: ", pname, " \"", name, "\" already exists, replacing.");
@@ -400,11 +399,10 @@ std::unique_ptr<const Material> * Scene::createMaterial(const std::string &name,
 		materials_[name] = std::unique_ptr<std::unique_ptr<const Material>>(new std::unique_ptr<const Material>());
 	}
 	std::string type;
-	if(! params.getParam("type", type))
+	if(!params.getParam("type", type))
 	{
 		logErrNoType(logger_, pname, name, type); return nullptr;
 	}
-	params["name"] = name;
 	auto material = std::unique_ptr<const Material>(Material::factory(logger_, params, nodes_params, *this));
 	if(material)
 	{
@@ -420,18 +418,17 @@ std::unique_ptr<const Material> * Scene::createMaterial(const std::string &name,
 template <typename T>
 T *Scene::createMapItem(Logger &logger, const std::string &name, const std::string &class_name, ParamMap &params, std::map<std::string, std::unique_ptr<T>> &map, Scene *scene, bool check_type_exists)
 {
-	std::string pname = class_name;
 	params["name"] = std::string(name);
 	if(map.find(name) != map.end())
 	{
-		logWarnExist(logger, pname, name); return nullptr;
+		logWarnExist(logger, class_name, name); return nullptr;
 	}
 	std::string type;
 	if(! params.getParam("type", type))
 	{
 		if(check_type_exists)
 		{
-			logErrNoType(logger, pname, name, type);
+			logErrNoType(logger, class_name, name, type);
 			return nullptr;
 		}
 	}
@@ -439,28 +436,27 @@ T *Scene::createMapItem(Logger &logger, const std::string &name, const std::stri
 	if(item)
 	{
 		map[name] = std::move(item);
-		if(logger.isVerbose()) logInfoVerboseSuccess(logger, pname, name, type);
+		if(logger.isVerbose()) logInfoVerboseSuccess(logger, class_name, name, type);
 		return map[name].get();
 	}
-	logErrOnCreate(logger, pname, name, type);
+	logErrOnCreate(logger, class_name, name, type);
 	return nullptr;
 }
 
 template <typename T>
 std::shared_ptr<T> Scene::createMapItem(Logger &logger, const std::string &name, const std::string &class_name, ParamMap &params, std::map<std::string, std::shared_ptr<T>> &map, Scene *scene, bool check_type_exists)
 {
-	std::string pname = class_name;
 	params["name"] = std::string(name);
 	if(map.find(name) != map.end())
 	{
-		logWarnExist(logger, pname, name); return nullptr;
+		logWarnExist(logger, class_name, name); return nullptr;
 	}
 	std::string type;
 	if(! params.getParam("type", type))
 	{
 		if(check_type_exists)
 		{
-			logErrNoType(logger, pname, name, type);
+			logErrNoType(logger, class_name, name, type);
 			return nullptr;
 		}
 	}
@@ -468,10 +464,10 @@ std::shared_ptr<T> Scene::createMapItem(Logger &logger, const std::string &name,
 	if(item)
 	{
 		map[name] = std::move(item);
-		if(logger.isVerbose()) logInfoVerboseSuccess(logger, pname, name, type);
+		if(logger.isVerbose()) logInfoVerboseSuccess(logger, class_name, name, type);
 		return map[name];
 	}
-	logErrOnCreate(logger, pname, name, type);
+	logErrOnCreate(logger, class_name, name, type);
 	return nullptr;
 }
 

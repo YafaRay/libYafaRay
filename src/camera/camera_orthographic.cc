@@ -67,7 +67,7 @@ Point3 OrthographicCamera::screenproject(const Point3 &p) const
 	return { 2.f * (proj * cam_x_ / scale_) - 1.f, -2.f * proj * cam_y_ / (aspect_ratio_ * scale_) + 1.f, 0.f};
 }
 
-const Camera * OrthographicCamera::factory(Logger &logger, ParamMap &params, const Scene &scene)
+const Camera * OrthographicCamera::factory(Logger &logger, const ParamMap &params, const Scene &scene)
 {
 	Point3 from(0, 1, 0), to(0, 0, 0), up(0, 1, 1);
 	int resx = 320, resy = 200;

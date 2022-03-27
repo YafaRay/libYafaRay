@@ -33,7 +33,7 @@
 
 BEGIN_YAFARAY
 
-Light * Light::factory(Logger &logger, ParamMap &params, const Scene &scene)
+Light * Light::factory(Logger &logger, const ParamMap &params, const Scene &scene)
 {
 	if(logger.isDebug())
 	{

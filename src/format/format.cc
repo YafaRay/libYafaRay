@@ -37,7 +37,7 @@
 
 BEGIN_YAFARAY
 
-Format * Format::factory(Logger &logger, ParamMap &params)
+Format * Format::factory(Logger &logger, const ParamMap &params)
 {
 	if(logger.isDebug())
 	{

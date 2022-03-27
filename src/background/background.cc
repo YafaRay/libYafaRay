@@ -28,7 +28,7 @@
 
 BEGIN_YAFARAY
 
-const Background * Background::factory(Logger &logger, ParamMap &params, Scene &scene)
+const Background * Background::factory(Logger &logger, const ParamMap &params, Scene &scene)
 {
 	if(logger.isDebug())
 	{

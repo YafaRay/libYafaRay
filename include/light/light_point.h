@@ -34,7 +34,7 @@ class Scene;
 class PointLight final : public Light
 {
 	public:
-		static Light *factory(Logger &logger, ParamMap &params, const Scene &scene);
+		static Light *factory(Logger &logger, const ParamMap &params, const Scene &scene);
 
 	private:
 		PointLight(Logger &logger, const Point3 &pos, const Rgb &col, float inte, bool b_light_enabled = true, bool b_cast_shadows = true);

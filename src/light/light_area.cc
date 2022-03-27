@@ -165,7 +165,7 @@ void AreaLight::emitPdf(const SurfacePoint &sp, const Vec3 &wo, float &area_pdf,
 	dir_pdf = cos_wo > 0 ? cos_wo : 0.f;
 }
 
-Light * AreaLight::factory(Logger &logger, ParamMap &params, const Scene &scene)
+Light * AreaLight::factory(Logger &logger, const ParamMap &params, const Scene &scene)
 {
 	Point3 corner{0.f, 0.f, 0.f};
 	Point3 p_1{0.f, 0.f, 0.f};

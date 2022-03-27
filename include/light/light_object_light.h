@@ -39,7 +39,7 @@ class Scene;
 class ObjectLight final : public Light
 {
 	public:
-		static Light *factory(Logger &logger, ParamMap &params, const Scene &scene);
+		static Light *factory(Logger &logger, const ParamMap &params, const Scene &scene);
 
 	private:
 		ObjectLight(Logger &logger, const std::string &object_name, const Rgb &col, int sampl, bool dbl_s = false, bool light_enabled = true, bool cast_shadows = true);

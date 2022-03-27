@@ -23,7 +23,7 @@
 
 BEGIN_YAFARAY
 
-Object * CurveObject::factory(Logger &logger, ParamMap &params, const Scene &scene)
+Object * CurveObject::factory(Logger &logger, const ParamMap &params, const Scene &scene)
 {
 	if(logger.isDebug())
 	{

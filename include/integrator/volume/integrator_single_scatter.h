@@ -35,7 +35,7 @@ class RandomGenerator;
 class SingleScatterIntegrator final : public VolumeIntegrator
 {
 	public:
-		static Integrator *factory(Logger &logger, ParamMap &params, const Scene &scene, RenderControl &render_control);
+		static Integrator *factory(Logger &logger, const ParamMap &params, const Scene &scene, RenderControl &render_control);
 
 	private:
 		SingleScatterIntegrator(Logger &logger, float s_size, bool adapt, bool opt);

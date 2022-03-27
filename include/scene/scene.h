@@ -117,7 +117,7 @@ class Scene final
 
 		Light *createLight(const std::string &name, ParamMap &params);
 		Texture *createTexture(const std::string &name, ParamMap &params);
-		std::unique_ptr<const Material> * createMaterial(const std::string &name, ParamMap &params, std::list<ParamMap> &nodes_params);
+		std::unique_ptr<const Material> * createMaterial(const std::string &name, const ParamMap &params, const std::list<ParamMap> &nodes_params);
 		const Camera *createCamera(const std::string &name, ParamMap &params);
 		const Background * createBackground(const std::string &name, ParamMap &params);
 		Integrator *createIntegrator(const std::string &name, ParamMap &params);

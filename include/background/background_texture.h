@@ -33,7 +33,7 @@ class Texture;
 class TextureBackground final : public Background
 {
 	public:
-		static const Background * factory(Logger &logger, ParamMap &params, Scene &scene);
+		static const Background * factory(Logger &logger, const ParamMap &params, Scene &scene);
 
 	private:
 		enum Projection { Spherical = 0, Angular };

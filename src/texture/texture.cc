@@ -26,7 +26,7 @@
 
 BEGIN_YAFARAY
 
-Texture * Texture::factory(Logger &logger, ParamMap &params, Scene &scene)
+Texture * Texture::factory(Logger &logger, const ParamMap &params, Scene &scene)
 {
 	if(logger.isDebug())
 	{

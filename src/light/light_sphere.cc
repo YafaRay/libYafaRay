@@ -156,7 +156,7 @@ Rgb SphereLight::emitSample(Vec3 &wo, LSample &s) const
 	return color_;
 }
 
-Light * SphereLight::factory(Logger &logger, ParamMap &params, const Scene &scene)
+Light * SphereLight::factory(Logger &logger, const ParamMap &params, const Scene &scene)
 {
 	Point3 from{0.f, 0.f, 0.f};
 	Rgb color(1.0);

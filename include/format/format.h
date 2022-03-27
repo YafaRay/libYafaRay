@@ -40,7 +40,7 @@ enum ColorSpace : int;
 class Format
 {
 	public:
-		static Format *factory(Logger &logger, ParamMap &params);
+		static Format *factory(Logger &logger, const ParamMap &params);
 		explicit Format(Logger &logger) : logger_(logger) { }
 		virtual ~Format() = default;
 		virtual Image *loadFromFile(const std::string &name, const Image::Optimization &optimization, const ColorSpace &color_space, float gamma) = 0;

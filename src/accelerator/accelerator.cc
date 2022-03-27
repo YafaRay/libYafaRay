@@ -29,7 +29,7 @@
 
 BEGIN_YAFARAY
 
-const Accelerator * Accelerator::factory(Logger &logger, const std::vector<const Primitive *> &primitives_list, ParamMap &params)
+const Accelerator * Accelerator::factory(Logger &logger, const std::vector<const Primitive *> &primitives_list, const ParamMap &params)
 {
 	if(logger.isDebug())
 	{

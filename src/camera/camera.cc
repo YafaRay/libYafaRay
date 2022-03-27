@@ -31,7 +31,7 @@
 
 BEGIN_YAFARAY
 
-const Camera * Camera::factory(Logger &logger, ParamMap &params, const Scene &scene)
+const Camera * Camera::factory(Logger &logger, const ParamMap &params, const Scene &scene)
 {
 	if(logger.isDebug())
 	{

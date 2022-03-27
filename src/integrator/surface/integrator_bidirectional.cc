@@ -890,7 +890,7 @@ Rgb BidirectionalIntegrator::evalPathE(const Accelerator &accelerator, int s, co
     return col/lightNumPdf;
 } */
 
-Integrator * BidirectionalIntegrator::factory(Logger &logger, ParamMap &params, const Scene &scene, RenderControl &render_control)
+Integrator * BidirectionalIntegrator::factory(Logger &logger, const ParamMap &params, const Scene &scene, RenderControl &render_control)
 {
 	bool do_ao = false;
 	int ao_samples = 32;

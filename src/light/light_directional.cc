@@ -113,7 +113,7 @@ Rgb DirectionalLight::emitSample(Vec3 &wo, LSample &s) const
 	return color_;
 }
 
-Light * DirectionalLight::factory(Logger &logger, ParamMap &params, const Scene &scene)
+Light * DirectionalLight::factory(Logger &logger, const ParamMap &params, const Scene &scene)
 {
 	Point3 from{0.f, 0.f, 0.f};
 	Point3 dir{0.f, 0.f, 1.f};

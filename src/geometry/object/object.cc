@@ -26,7 +26,7 @@
 
 BEGIN_YAFARAY
 
-Object * Object::factory(Logger &logger, ParamMap &params, const Scene &scene)
+Object * Object::factory(Logger &logger, const ParamMap &params, const Scene &scene)
 {
 	if(logger.isDebug())
 	{

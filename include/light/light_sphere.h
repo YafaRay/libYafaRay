@@ -41,7 +41,7 @@ class Scene;
 class SphereLight final : public Light
 {
 	public:
-		static Light *factory(Logger &logger, ParamMap &params, const Scene &scene);
+		static Light *factory(Logger &logger, const ParamMap &params, const Scene &scene);
 
 	private:
 		SphereLight(Logger &logger, const Point3 &c, float rad, const Rgb &col, float inte, int nsam, bool b_light_enabled = true, bool b_cast_shadows = true);

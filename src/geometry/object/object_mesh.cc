@@ -26,7 +26,7 @@
 
 BEGIN_YAFARAY
 
-Object * MeshObject::factory(Logger &logger, ParamMap &params, const Scene &scene)
+Object * MeshObject::factory(Logger &logger, const ParamMap &params, const Scene &scene)
 {
 	if(logger.isDebug())
 	{

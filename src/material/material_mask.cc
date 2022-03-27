@@ -118,7 +118,7 @@ float MaskMaterial::getAlpha(const MaterialData *mat_data, const SurfacePoint &s
 	return alpha;
 }
 
-const Material *MaskMaterial::factory(Logger &logger, ParamMap &params, std::list<ParamMap> &nodes_params, const Scene &scene)
+const Material *MaskMaterial::factory(Logger &logger, const ParamMap &params, const std::list<ParamMap> &nodes_params, const Scene &scene)
 {
 	std::string name;
 	if(!params.getParam("material1", name)) return nullptr;

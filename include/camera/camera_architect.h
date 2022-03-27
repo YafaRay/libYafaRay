@@ -31,7 +31,7 @@ class Scene;
 class ArchitectCamera final : public PerspectiveCamera
 {
 	public:
-		static const Camera * factory(Logger &logger, ParamMap &params, const Scene &scene);
+		static const Camera * factory(Logger &logger, const ParamMap &params, const Scene &scene);
 
 	private:
 		ArchitectCamera(Logger &logger, const Point3 &pos, const Point3 &look, const Point3 &up,

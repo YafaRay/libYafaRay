@@ -101,7 +101,7 @@ void PointLight::emitPdf(const SurfacePoint &sp, const Vec3 &wo, float &area_pdf
 	cos_wo = 1.f;
 }
 
-Light * PointLight::factory(Logger &logger, ParamMap &params, const Scene &scene)
+Light * PointLight::factory(Logger &logger, const ParamMap &params, const Scene &scene)
 {
 	Point3 from{0.f, 0.f, 0.f};
 	Rgb color(1.0);

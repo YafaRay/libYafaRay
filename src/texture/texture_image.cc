@@ -535,7 +535,7 @@ ImageTexture::ClipMode ImageTexture::string2Cliptype(const std::string &clipname
 	return tex_clipmode;
 }
 
-Texture * ImageTexture::factory(Logger &logger, ParamMap &params, Scene &scene)
+Texture * ImageTexture::factory(Logger &logger, const ParamMap &params, Scene &scene)
 {
 	std::string name;
 	std::string image_name;

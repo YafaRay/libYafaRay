@@ -39,7 +39,7 @@ struct IntersectData;
 class AcceleratorKdTree final : public Accelerator
 {
 	public:
-		static const Accelerator * factory(Logger &logger, const std::vector<const Primitive *> &primitives, ParamMap &params);
+		static const Accelerator * factory(Logger &logger, const std::vector<const Primitive *> &primitives, const ParamMap &params);
 
 	private:
 		struct Stats;

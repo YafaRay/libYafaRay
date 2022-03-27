@@ -27,7 +27,7 @@
 
 BEGIN_YAFARAY
 
-RenderView * RenderView::factory(Logger &logger, ParamMap &params, const Scene &scene)
+RenderView * RenderView::factory(Logger &logger, const ParamMap &params, const Scene &scene)
 {
 	if(logger.isDebug())
 	{

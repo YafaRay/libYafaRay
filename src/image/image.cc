@@ -39,7 +39,7 @@
 
 BEGIN_YAFARAY
 
-Image * Image::factory(Logger &logger, ParamMap &params, const Scene &scene)
+Image * Image::factory(Logger &logger, const ParamMap &params, const Scene &scene)
 {
 	if(logger.isDebug()) logger.logDebug("**Image::factory params");
 	int width = 100;

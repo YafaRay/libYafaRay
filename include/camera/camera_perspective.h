@@ -32,7 +32,7 @@ class Scene;
 class PerspectiveCamera : public Camera
 {
 	public:
-		static const Camera * factory(Logger &logger, ParamMap &params, const Scene &scene);
+		static const Camera * factory(Logger &logger, const ParamMap &params, const Scene &scene);
 
 	protected:
 		enum BokehType {BkDisk1, BkDisk2, BkTri = 3, BkSqr, BkPenta, BkHexa, BkRing};

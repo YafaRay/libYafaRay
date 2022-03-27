@@ -259,14 +259,13 @@ float RoughGlassMaterial::getMatIor() const
 	return ior_;
 }
 
-const Material *RoughGlassMaterial::factory(Logger &logger, ParamMap &params, std::list<ParamMap> &nodes_params, const Scene &scene)
+const Material *RoughGlassMaterial::factory(Logger &logger, const ParamMap &params, const std::list<ParamMap> &nodes_params, const Scene &scene)
 {
 	float ior = 1.4;
 	float filt = 0.f;
 	float alpha = 0.5f;
 	float disp_power = 0.0;
 	Rgb filt_col(1.f), absorp(1.f), sr_col(1.f);
-	std::string name;
 	bool fake_shad = false;
 	std::string s_visibility = "normal";
 	int mat_pass_index = 0;
@@ -333,15 +332,12 @@ const Material *RoughGlassMaterial::factory(Logger &logger, ParamMap &params, st
 			mat->beer_sigma_a_ = sigma;
 			mat->bsdf_flags_ |= BsdfFlags::Volumetric;
 			// creat volume handler (backwards compatibility)
-			if(params.getParam("name", name))
-			{
-				ParamMap map;
-				map["type"] = std::string("beer");
-				map["absorption_col"] = absorp;
-				map["absorption_dist"] = Parameter(dist);
-				mat->vol_i_ = std::unique_ptr<VolumeHandler>(VolumeHandler::factory(logger, map, scene));
-				mat->bsdf_flags_ |= BsdfFlags::Volumetric;
-			}
+			ParamMap map;
+			map["type"] = std::string("beer");
+			map["absorption_col"] = absorp;
+			map["absorption_dist"] = Parameter(dist);
+			mat->vol_i_ = std::unique_ptr<VolumeHandler>(VolumeHandler::factory(logger, map, scene));
+			mat->bsdf_flags_ |= BsdfFlags::Volumetric;
 		}
 	}
 

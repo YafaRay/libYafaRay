@@ -430,7 +430,7 @@ Specular CoatedGlossyMaterial::getSpecular(int ray_level, const MaterialData *ma
 	return specular;
 }
 
-const Material *CoatedGlossyMaterial::factory(Logger &logger, ParamMap &params, std::list<ParamMap> &nodes_params, const Scene &scene)
+const Material *CoatedGlossyMaterial::factory(Logger &logger, const ParamMap &params, const std::list<ParamMap> &nodes_params, const Scene &scene)
 {
 	Rgb col(1.f), dcol(1.f), mir_col(1.f);
 	float refl = 1.f;
@@ -440,7 +440,6 @@ const Material *CoatedGlossyMaterial::factory(Logger &logger, ParamMap &params, 
 	double ior = 1.4;
 	bool as_diff = true;
 	bool aniso = false;
-	std::string name;
 	std::string s_visibility = "normal";
 	int mat_pass_index = 0;
 	bool receive_shadows = true;
@@ -500,9 +499,10 @@ const Material *CoatedGlossyMaterial::factory(Logger &logger, ParamMap &params, 
 		mat->exp_v_ = e_v;
 	}
 
-	if(params.getParam("diffuse_brdf", name))
+	std::string diffuse_brdf;
+	if(params.getParam("diffuse_brdf", diffuse_brdf))
 	{
-		if(name == "Oren-Nayar")
+		if(diffuse_brdf == "Oren-Nayar")
 		{
 			double sigma = 0.1;
 			params.getParam("sigma", sigma);

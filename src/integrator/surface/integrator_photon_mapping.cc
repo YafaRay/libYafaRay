@@ -762,7 +762,7 @@ Rgb PhotonIntegrator::finalGathering(RandomGenerator &random_generator, int thre
 	return path_col / (float)n_sampl;
 }
 
-Integrator * PhotonIntegrator::factory(Logger &logger, ParamMap &params, const Scene &scene, RenderControl &render_control)
+Integrator * PhotonIntegrator::factory(Logger &logger, const ParamMap &params, const Scene &scene, RenderControl &render_control)
 {
 	bool transp_shad = false;
 	bool final_gather = true;

@@ -39,7 +39,7 @@ class Accelerator;
 class BackgroundPortalLight final : public Light
 {
 	public:
-		static Light *factory(Logger &logger, ParamMap &params, const Scene &scene);
+		static Light *factory(Logger &logger, const ParamMap &params, const Scene &scene);
 
 	private:
 		BackgroundPortalLight(Logger &logger, const std::string &object_name, int sampl, float pow, bool light_enabled = true, bool cast_shadows = true);

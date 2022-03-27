@@ -219,7 +219,7 @@ void ObjectLight::emitPdf(const SurfacePoint &sp, const Vec3 &wo, float &area_pd
 }
 
 
-Light * ObjectLight::factory(Logger &logger, ParamMap &params, const Scene &scene)
+Light * ObjectLight::factory(Logger &logger, const ParamMap &params, const Scene &scene)
 {
 	bool double_s = false;
 	Rgb color(1.0);

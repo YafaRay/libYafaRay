@@ -59,7 +59,7 @@ CameraRay EquirectangularCamera::shootRay(float px, float py, float lu, float lv
 	return {std::move(ray), true};
 }
 
-const Camera * EquirectangularCamera::factory(Logger &logger, ParamMap &params, const Scene &scene)
+const Camera * EquirectangularCamera::factory(Logger &logger, const ParamMap &params, const Scene &scene)
 {
 	Point3 from(0, 1, 0), to(0, 0, 0), up(0, 1, 1);
 	int resx = 320, resy = 200;

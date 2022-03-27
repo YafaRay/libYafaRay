@@ -28,7 +28,7 @@
 
 BEGIN_YAFARAY
 
-const Accelerator * AcceleratorKdTreeMultiThread::factory(Logger &logger, const std::vector<const Primitive *> &primitives, ParamMap &params)
+const Accelerator * AcceleratorKdTreeMultiThread::factory(Logger &logger, const std::vector<const Primitive *> &primitives, const ParamMap &params)
 {
 	AcceleratorKdTreeMultiThread::Parameters parameters;
 

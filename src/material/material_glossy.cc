@@ -354,7 +354,7 @@ float GlossyMaterial::pdf(const MaterialData *mat_data, const SurfacePoint &sp, 
 	return pdf;
 }
 
-const Material *GlossyMaterial::factory(Logger &logger, ParamMap &params, std::list<ParamMap> &nodes_params, const Scene &scene)
+const Material *GlossyMaterial::factory(Logger &logger, const ParamMap &params, const std::list<ParamMap> &nodes_params, const Scene &scene)
 {
 	Rgb col(1.f), dcol(1.f);
 	float refl = 1.f;
@@ -372,7 +372,6 @@ const Material *GlossyMaterial::factory(Logger &logger, ParamMap &params, std::l
 	float wire_frame_exponent = 0.f;         //!< Wireframe exponent (0.f = solid, 1.f=linearly gradual, etc)
 	Rgb wire_frame_color = Rgb(1.f); //!< Wireframe shading color
 
-	std::string name;
 	params.getParam("color", col);
 	params.getParam("diffuse_color", dcol);
 	params.getParam("diffuse_reflect", diff);
@@ -417,9 +416,10 @@ const Material *GlossyMaterial::factory(Logger &logger, ParamMap &params, std::l
 		mat->exp_v_ = e_v;
 	}
 
-	if(params.getParam("diffuse_brdf", name))
+	std::string diffuse_brdf;
+	if(params.getParam("diffuse_brdf", diffuse_brdf))
 	{
-		if(name == "Oren-Nayar")
+		if(diffuse_brdf == "Oren-Nayar")
 		{
 			double sigma = 0.1;
 			params.getParam("sigma", sigma);

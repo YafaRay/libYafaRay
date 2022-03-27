@@ -286,13 +286,12 @@ float GlassMaterial::getMatIor() const
 	return ior_;
 }
 
-const Material *GlassMaterial::factory(Logger &logger, ParamMap &params, std::list<ParamMap> &nodes_params, const Scene &scene)
+const Material *GlassMaterial::factory(Logger &logger, const ParamMap &params, const std::list<ParamMap> &nodes_params, const Scene &scene)
 {
 	double ior = 1.4;
 	double filt = 0.f;
 	double disp_power = 0.0;
 	Rgb filt_col(1.f), absorp(1.f), sr_col(1.f);
-	std::string name;
 	bool fake_shad = false;
 	std::string s_visibility = "normal";
 	int mat_pass_index = 0;
@@ -356,15 +355,12 @@ const Material *GlassMaterial::factory(Logger &logger, ParamMap &params, std::li
 			mat->beer_sigma_a_ = sigma;
 			mat->bsdf_flags_ |= BsdfFlags::Volumetric;
 			// creat volume handler (backwards compatibility)
-			if(params.getParam("name", name))
-			{
-				ParamMap map;
-				map["type"] = std::string("beer");
-				map["absorption_col"] = absorp;
-				map["absorption_dist"] = Parameter(dist);
-				mat->vol_i_ = std::unique_ptr<VolumeHandler>(VolumeHandler::factory(logger, map, scene));
-				mat->bsdf_flags_ |= BsdfFlags::Volumetric;
-			}
+			ParamMap map;
+			map["type"] = std::string("beer");
+			map["absorption_col"] = absorp;
+			map["absorption_dist"] = Parameter(dist);
+			mat->vol_i_ = std::unique_ptr<VolumeHandler>(VolumeHandler::factory(logger, map, scene));
+			mat->bsdf_flags_ |= BsdfFlags::Volumetric;
 		}
 	}
 
@@ -454,7 +450,7 @@ Specular MirrorMaterial::getSpecular(int ray_level, const MaterialData *mat_data
 	return specular;
 }
 
-const Material *MirrorMaterial::factory(Logger &logger, ParamMap &params, std::list<ParamMap> &param_list, const Scene &scene)
+const Material *MirrorMaterial::factory(Logger &logger, const ParamMap &params, const std::list<ParamMap> &nodes_params, const Scene &scene)
 {
 	Rgb col(1.0);
 	float refl = 1.0;
@@ -471,7 +467,7 @@ Rgb NullMaterial::sample(const MaterialData *mat_data, const SurfacePoint &sp, c
 	return Rgb{0.f};
 }
 
-const Material *NullMaterial::factory(Logger &logger, ParamMap &, std::list<ParamMap> &, const Scene &)
+const Material *NullMaterial::factory(Logger &logger, const ParamMap &params, const std::list<ParamMap> &nodes_params, const Scene &scene)
 {
 	return new NullMaterial(logger);
 }

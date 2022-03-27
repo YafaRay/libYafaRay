@@ -28,7 +28,7 @@
 
 BEGIN_YAFARAY
 
-const Accelerator * AcceleratorKdTree::factory(Logger &logger, const std::vector<const Primitive *> &primitives, ParamMap &params)
+const Accelerator * AcceleratorKdTree::factory(Logger &logger, const std::vector<const Primitive *> &primitives, const ParamMap &params)
 {
 	int depth = 0;
 	int leaf_size = 1;

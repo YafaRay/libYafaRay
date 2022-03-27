@@ -42,7 +42,7 @@ class BlendMaterialData final : public MaterialData
 class BlendMaterial final : public NodeMaterial
 {
 	public:
-		static const Material *factory(Logger &logger, ParamMap &params, std::list<ParamMap> &nodes_params, const Scene &scene);
+		static const Material *factory(Logger &logger, const ParamMap &params, const std::list<ParamMap> &nodes_params, const Scene &scene);
 
 	private:
 		BlendMaterial(Logger &logger, const std::unique_ptr<const Material> *material_1, const std::unique_ptr<const Material> *material_2, float blendv, Visibility visibility = Visibility::NormalVisible);

@@ -34,7 +34,7 @@ class Scene;
 class DirectionalLight final : public Light
 {
 	public:
-		static Light *factory(Logger &logger, ParamMap &params, const Scene &scene);
+		static Light *factory(Logger &logger, const ParamMap &params, const Scene &scene);
 
 	private:
 		DirectionalLight(Logger &logger, const Point3 &pos, Vec3 dir, const Rgb &col, float inte, bool inf, float rad, bool b_light_enabled = true, bool b_cast_shadows = true);
