@@ -259,7 +259,7 @@ float RoughGlassMaterial::getMatIor() const
 	return ior_;
 }
 
-Material * RoughGlassMaterial::factory(Logger &logger, ParamMap &params, std::list<ParamMap> &nodes_params, const Scene &scene)
+const Material *RoughGlassMaterial::factory(Logger &logger, ParamMap &params, std::list<ParamMap> &nodes_params, const Scene &scene)
 {
 	float ior = 1.4;
 	float filt = 0.f;

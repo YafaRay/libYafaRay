@@ -40,10 +40,10 @@ class MaskMaterialData final : public MaterialData
 class MaskMaterial final : public NodeMaterial
 {
 	public:
-		static Material *factory(Logger &logger, ParamMap &, std::list<ParamMap> &, const Scene &);
+		static const Material *factory(Logger &logger, ParamMap &, std::list<ParamMap> &, const Scene &);
 
 	private:
-		MaskMaterial(Logger &logger, const std::unique_ptr<Material> *m_1, const std::unique_ptr<Material> *m_2, float thresh, Visibility visibility = Visibility::NormalVisible);
+		MaskMaterial(Logger &logger, const std::unique_ptr<const Material> *material_1, const std::unique_ptr<const Material> *material_2, float thresh, Visibility visibility = Visibility::NormalVisible);
 		MaterialData * createMaterialData(size_t number_of_nodes) const override { return new MaskMaterialData(bsdf_flags_, number_of_nodes); };
 		const MaterialData * initBsdf(SurfacePoint &sp, const Camera *camera) const override;
 		Rgb eval(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wi, const BsdfFlags &bsdfs, bool force_eval) const override;
@@ -55,8 +55,8 @@ class MaskMaterial final : public NodeMaterial
 		Rgb emit(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo) const override;
 		float getAlpha(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, const Camera *camera) const override;
 
-		const std::unique_ptr<Material> *mat_1_ = nullptr;
-		const std::unique_ptr<Material> *mat_2_ = nullptr;
+		const std::unique_ptr<const Material> *mat_1_ = nullptr;
+		const std::unique_ptr<const Material> *mat_2_ = nullptr;
 		ShaderNode *mask_ = nullptr;
 		float threshold_;
 };

@@ -241,7 +241,7 @@ Texture *ExportXml::createTexture(const char *name) noexcept
 	return nullptr;
 }
 
-Material *ExportXml::createMaterial(const char *name) noexcept
+const Material *ExportXml::createMaterial(const char *name) noexcept
 {
 	file_ << "\n<material name=\"" << name << "\">\n";
 	writeParamMap(*params_);

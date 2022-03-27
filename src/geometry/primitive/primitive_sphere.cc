@@ -39,15 +39,15 @@ Primitive *SpherePrimitive::factory(ParamMap &params, const Scene &scene, const 
 	}*/
 	Point3 center(0.f, 0.f, 0.f);
 	double radius(1.f);
-	const std::unique_ptr<Material> *mat;
+	const std::unique_ptr<const Material> *material;
 	std::string matname;
 	params.getParam("center", center);
 	params.getParam("radius", radius);
 	params.getParam("material", matname);
 	if(matname.empty()) return nullptr;
-	mat = scene.getMaterial(matname);
-	if(!mat) return nullptr;
-	return new SpherePrimitive(center, radius, mat, object);
+	material = scene.getMaterial(matname);
+	if(!material) return nullptr;
+	return new SpherePrimitive(center, radius, material, object);
 }
 
 Bound SpherePrimitive::getBound(const Matrix4 *obj_to_world) const

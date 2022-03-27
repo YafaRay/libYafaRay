@@ -322,7 +322,7 @@ Texture *ExportC::createTexture(const char *name) noexcept
 	return nullptr;
 }
 
-Material *ExportC::createMaterial(const char *name) noexcept
+const Material *ExportC::createMaterial(const char *name) noexcept
 {
 	writeParamMap(*params_);
 	writeParamList(1);

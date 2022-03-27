@@ -254,7 +254,7 @@ Texture *ExportPython::createTexture(const char *name) noexcept
 	return nullptr;
 }
 
-Material *ExportPython::createMaterial(const char *name) noexcept
+const Material *ExportPython::createMaterial(const char *name) noexcept
 {
 	writeParamMap(*params_);
 	writeParamList(1);

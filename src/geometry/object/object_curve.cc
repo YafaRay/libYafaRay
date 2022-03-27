@@ -61,7 +61,7 @@ CurveObject::CurveObject(int num_vertices, float strand_start, float strand_end,
 {
 }
 
-bool CurveObject::calculateObject(const std::unique_ptr<Material> *material)
+bool CurveObject::calculateObject(const std::unique_ptr<const Material> *material)
 {
 	const std::vector<Point3> &points = getPoints();
 	const int points_size = points.size();

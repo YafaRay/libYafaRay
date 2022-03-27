@@ -37,7 +37,7 @@ class GlossyMaterialData final : public MaterialData
 class GlossyMaterial final : public NodeMaterial
 {
 	public:
-		static Material *factory(Logger &logger, ParamMap &, std::list<ParamMap> &, const Scene &);
+		static const Material *factory(Logger &logger, ParamMap &, std::list<ParamMap> &, const Scene &);
 
 	private:
 		GlossyMaterial(Logger &logger, const Rgb &col, const Rgb &dcol, float reflect, float diff, float expo, bool as_diffuse, Visibility e_visibility = Visibility::NormalVisible);

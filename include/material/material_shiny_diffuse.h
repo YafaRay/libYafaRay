@@ -48,7 +48,7 @@ class ShinyDiffuseMaterialData final : public MaterialData
 class ShinyDiffuseMaterial final : public NodeMaterial
 {
 	public:
-		static Material *factory(Logger &logger, ParamMap &params, std::list<ParamMap> &nodes_params, const Scene &scene);
+		static const Material *factory(Logger &logger, ParamMap &params, std::list<ParamMap> &nodes_params, const Scene &scene);
 
 	private:
 		ShinyDiffuseMaterial(Logger &logger, const Rgb &diffuse_color, const Rgb &mirror_color, float diffuse_strength, float transparency_strength = 0.0, float translucency_strength = 0.0, float mirror_strength = 0.0, float emit_strength = 0.0, float transmit_filter_strength = 1.0, Visibility visibility = Visibility::NormalVisible);

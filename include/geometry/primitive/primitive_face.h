@@ -51,7 +51,7 @@ class FacePrimitive: public Primitive
 		std::vector<Point3> getOrcoVertices() const;
 		std::vector<Vec3> getVerticesNormals(const Vec3 &surface_normal, const Matrix4 *obj_to_world = nullptr) const;
 		std::vector<Uv> getVerticesUvs() const;
-		void setMaterial(const std::unique_ptr<Material> *material) { material_ = material; }
+		void setMaterial(const std::unique_ptr<const Material> *material) { material_ = material; }
 		size_t getSelfIndex() const { return self_index_; }
 		void setSelfIndex(size_t index) { self_index_ = index; }
 		static Bound getBound(const std::vector<Point3> &vertices);
@@ -62,7 +62,7 @@ class FacePrimitive: public Primitive
 		size_t self_index_ = 0;
 		Vec3 normal_geometric_;
 		const MeshObject &base_mesh_object_;
-		const std::unique_ptr<Material> *material_ = nullptr;
+		const std::unique_ptr<const Material> *material_ = nullptr;
 		std::vector<int> vertices_; //!< indices in point array, referenced in mesh.
 		std::vector<int> vertex_normals_; //!< indices in normal array, if mesh is smoothed.
 		std::vector<int> vertex_uvs_; //!< indices in uv array, if mesh has explicit uv.

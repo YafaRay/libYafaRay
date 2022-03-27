@@ -286,7 +286,7 @@ float GlassMaterial::getMatIor() const
 	return ior_;
 }
 
-Material * GlassMaterial::factory(Logger &logger, ParamMap &params, std::list<ParamMap> &nodes_params, const Scene &scene)
+const Material *GlassMaterial::factory(Logger &logger, ParamMap &params, std::list<ParamMap> &nodes_params, const Scene &scene)
 {
 	double ior = 1.4;
 	double filt = 0.f;
@@ -454,7 +454,7 @@ Specular MirrorMaterial::getSpecular(int ray_level, const MaterialData *mat_data
 	return specular;
 }
 
-Material * MirrorMaterial::factory(Logger &logger, ParamMap &params, std::list<ParamMap> &param_list, const Scene &scene)
+const Material *MirrorMaterial::factory(Logger &logger, ParamMap &params, std::list<ParamMap> &param_list, const Scene &scene)
 {
 	Rgb col(1.0);
 	float refl = 1.0;
@@ -471,7 +471,7 @@ Rgb NullMaterial::sample(const MaterialData *mat_data, const SurfacePoint &sp, c
 	return Rgb{0.f};
 }
 
-Material * NullMaterial::factory(Logger &logger, ParamMap &, std::list<ParamMap> &, const Scene &)
+const Material *NullMaterial::factory(Logger &logger, ParamMap &, std::list<ParamMap> &, const Scene &)
 {
 	return new NullMaterial(logger);
 }

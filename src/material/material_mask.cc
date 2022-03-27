@@ -26,8 +26,8 @@
 
 BEGIN_YAFARAY
 
-MaskMaterial::MaskMaterial(Logger &logger, const std::unique_ptr<Material> *m_1, const std::unique_ptr<Material> *m_2, float thresh, Visibility visibility):
-		NodeMaterial(logger), mat_1_(m_1), mat_2_(m_2), threshold_(thresh)
+MaskMaterial::MaskMaterial(Logger &logger, const std::unique_ptr<const Material> *material_1, const std::unique_ptr<const Material> *material_2, float thresh, Visibility visibility):
+		NodeMaterial(logger), mat_1_(material_1), mat_2_(material_2), threshold_(thresh)
 {
 	visibility_ = visibility;
 }
@@ -118,14 +118,14 @@ float MaskMaterial::getAlpha(const MaterialData *mat_data, const SurfacePoint &s
 	return alpha;
 }
 
-Material * MaskMaterial::factory(Logger &logger, ParamMap &params, std::list<ParamMap> &nodes_params, const Scene &scene)
+const Material *MaskMaterial::factory(Logger &logger, ParamMap &params, std::list<ParamMap> &nodes_params, const Scene &scene)
 {
 	std::string name;
 	if(!params.getParam("material1", name)) return nullptr;
-	const std::unique_ptr<Material> *m_1 = scene.getMaterial(name);
+	const std::unique_ptr<const Material> *material_1 = scene.getMaterial(name);
 	if(!params.getParam("material2", name)) return nullptr;
-	const std::unique_ptr<Material> *m_2 = scene.getMaterial(name);
-	if(m_1 == nullptr || m_2 == nullptr) return nullptr;
+	const std::unique_ptr<const Material> *material_2 = scene.getMaterial(name);
+	if(material_1 == nullptr || material_2 == nullptr) return nullptr;
 	//if(! params.getParam("mask", name) ) return nullptr;
 	//mask = scene.getTexture(*name);
 
@@ -137,7 +137,7 @@ Material * MaskMaterial::factory(Logger &logger, ParamMap &params, std::list<Par
 	params.getParam("visibility", s_visibility);
 
 	const Visibility visibility = visibility::fromString(s_visibility);
-	auto mat = new MaskMaterial(logger, m_1, m_2, thresh, visibility);
+	auto mat = new MaskMaterial(logger, material_1, material_2, thresh, visibility);
 	mat->receive_shadows_ = receive_shadows;
 
 	std::vector<const ShaderNode *> root_nodes_list;

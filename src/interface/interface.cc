@@ -183,7 +183,7 @@ void Interface::paramsEndList() noexcept
 Object *Interface::createObject(const char *name) noexcept { return scene_->createObject(name, *params_); }
 Light *Interface::createLight(const char *name) noexcept { return scene_->createLight(name, *params_); }
 Texture *Interface::createTexture(const char *name) noexcept { return scene_->createTexture(name, *params_); }
-Material *Interface::createMaterial(const char *name) noexcept { return scene_->createMaterial(name, *params_, nodes_params_)->get(); }
+const Material *Interface::createMaterial(const char *name) noexcept { return scene_->createMaterial(name, *params_, nodes_params_)->get(); }
 const Camera * Interface::createCamera(const char *name) noexcept { return scene_->createCamera(name, *params_); }
 const Background * Interface::createBackground(const char *name) noexcept { return scene_->createBackground(name, *params_); }
 Integrator *Interface::createIntegrator(const char *name) noexcept { return scene_->createIntegrator(name, *params_); }
@@ -282,7 +282,7 @@ void Interface::cancel() noexcept
 	logger_->logWarning("Interface: Render canceled by user.");
 }
 
-void Interface::setCurrentMaterial(const std::unique_ptr<Material> *material) noexcept
+void Interface::setCurrentMaterial(const std::unique_ptr<const Material> *material) noexcept
 {
 	if(scene_) scene_->setCurrentMaterial(material);
 }

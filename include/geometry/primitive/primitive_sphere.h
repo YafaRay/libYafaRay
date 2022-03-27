@@ -38,7 +38,7 @@ class SpherePrimitive final : public Primitive
 {
 	public:
 		static Primitive *factory(ParamMap &params, const Scene &scene, const Object &object);
-		SpherePrimitive(const Point3 &centr, float rad, const std::unique_ptr<Material> *m, const Object &base_object): center_(centr), radius_(rad), base_object_(base_object), material_(m) {}
+		SpherePrimitive(const Point3 &centr, float rad, const std::unique_ptr<const Material> *material, const Object &base_object): center_(centr), radius_(rad), base_object_(base_object), material_(material) {}
 
 	private:
 		Bound getBound(const Matrix4 *obj_to_world) const override;
@@ -55,7 +55,7 @@ class SpherePrimitive final : public Primitive
 		Point3 center_;
 		float radius_;
 		const Object &base_object_;
-		const std::unique_ptr<Material> *material_ = nullptr;
+		const std::unique_ptr<const Material> *material_ = nullptr;
 };
 
 END_YAFARAY

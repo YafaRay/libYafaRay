@@ -90,7 +90,7 @@ class Scene final
 		void setAntialiasing(const AaNoiseParams &aa_noise_params) { aa_noise_params_ = aa_noise_params; };
 		void setNumThreads(int threads);
 		void setNumThreadsPhotons(int threads_photons);
-		void setCurrentMaterial(const std::unique_ptr<Material> *material);
+		void setCurrentMaterial(const std::unique_ptr<const Material> *material);
 		void createDefaultMaterial();
 		void clearNonObjects();
 		void clearAll();
@@ -103,7 +103,7 @@ class Scene final
 		int getNumThreadsPhotons() const { return nthreads_photons_; }
 		AaNoiseParams getAaParameters() const { return aa_noise_params_; }
 		RenderControl &getRenderControl() { return render_control_; }
-		const std::unique_ptr<Material> * getMaterial(const std::string &name) const;
+		const std::unique_ptr<const Material> * getMaterial(const std::string &name) const;
 		Texture *getTexture(const std::string &name) const;
 		const Camera * getCamera(const std::string &name) const;
 		Light *getLight(const std::string &name) const;
@@ -117,7 +117,7 @@ class Scene final
 
 		Light *createLight(const std::string &name, ParamMap &params);
 		Texture *createTexture(const std::string &name, ParamMap &params);
-		std::unique_ptr<Material> * createMaterial(const std::string &name, ParamMap &params, std::list<ParamMap> &nodes_params);
+		std::unique_ptr<const Material> * createMaterial(const std::string &name, ParamMap &params, std::list<ParamMap> &nodes_params);
 		const Camera *createCamera(const std::string &name, ParamMap &params);
 		const Background * createBackground(const std::string &name, ParamMap &params);
 		Integrator *createIntegrator(const std::string &name, ParamMap &params);
@@ -179,7 +179,7 @@ class Scene final
 			std::list<State> stack_;
 			unsigned int changes_;
 			ObjId_t next_free_id_;
-			const std::unique_ptr<Material> *current_material_ = nullptr;
+			const std::unique_ptr<const Material> *current_material_ = nullptr;
 		} creation_state_;
 		Bound scene_bound_; //!< bounding box of all (finite) scene geometry
 		std::string scene_accelerator_;
@@ -187,7 +187,7 @@ class Scene final
 		Object *current_object_ = nullptr;
 		std::map<std::string, std::unique_ptr<Object>> objects_;
 		std::map<std::string, std::unique_ptr<Light>> lights_;
-		std::map<std::string, std::unique_ptr<std::unique_ptr<Material>>> materials_;
+		std::map<std::string, std::unique_ptr<std::unique_ptr<const Material>>> materials_;
 		RenderControl render_control_;
 		Logger &logger_;
 

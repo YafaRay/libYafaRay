@@ -53,7 +53,7 @@ class ExportXml: public Interface
 		Object *createObject(const char *name) noexcept override;
 		Light *createLight(const char *name) noexcept override;
 		Texture *createTexture(const char *name) noexcept override;
-		Material *createMaterial(const char *name) noexcept override;
+		const Material *createMaterial(const char *name) noexcept override;
 		const Camera * createCamera(const char *name) noexcept override;
 		const Background * createBackground(const char *name) noexcept override;
 		Integrator *createIntegrator(const char *name) noexcept override;

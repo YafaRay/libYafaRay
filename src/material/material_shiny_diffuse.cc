@@ -487,7 +487,7 @@ float ShinyDiffuseMaterial::getAlpha(const MaterialData *mat_data, const Surface
 	else return 1.f;
 }
 
-Material * ShinyDiffuseMaterial::factory(Logger &logger, ParamMap &params, std::list<ParamMap> &nodes_params, const Scene &scene)
+const Material *ShinyDiffuseMaterial::factory(Logger &logger, ParamMap &params, std::list<ParamMap> &nodes_params, const Scene &scene)
 {
 	/// Material Parameters
 	Rgb diffuse_color{1.f};

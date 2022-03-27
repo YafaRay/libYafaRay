@@ -88,7 +88,7 @@ class Interface
 		virtual Object *createObject(const char *name) noexcept;
 		virtual Light *createLight(const char *name) noexcept;
 		virtual Texture *createTexture(const char *name) noexcept;
-		virtual Material *createMaterial(const char *name) noexcept;
+		virtual const Material *createMaterial(const char *name) noexcept;
 		virtual const Camera * createCamera(const char *name) noexcept;
 		virtual const Background * createBackground(const char *name) noexcept;
 		virtual Integrator *createIntegrator(const char *name) noexcept;
@@ -124,7 +124,7 @@ class Interface
 		void setInputColorSpace(const std::string &color_space_string, float gamma_val) noexcept;
 
 	protected:
-		virtual void setCurrentMaterial(const std::unique_ptr<Material> *material) noexcept;
+		virtual void setCurrentMaterial(const std::unique_ptr<const Material> *material) noexcept;
 		std::unique_ptr<Logger> logger_;
 		std::unique_ptr<ParamMap> params_;
 		std::list<ParamMap> nodes_params_; //! for materials that need to define a whole shader tree etc.

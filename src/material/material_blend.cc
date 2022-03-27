@@ -29,8 +29,8 @@
 
 BEGIN_YAFARAY
 
-BlendMaterial::BlendMaterial(Logger &logger, const std::unique_ptr<Material> *m_1, const std::unique_ptr<Material> *m_2, float blendv, Visibility visibility):
-		NodeMaterial(logger), mat_1_(m_1), mat_2_(m_2)
+BlendMaterial::BlendMaterial(Logger &logger, const std::unique_ptr<const Material> *material_1, const std::unique_ptr<const Material> *material_2, float blendv, Visibility visibility):
+		NodeMaterial(logger), mat_1_(material_1), mat_2_(material_2)
 {
 	visibility_ = visibility;
 	recalc_blend_ = false;
@@ -271,7 +271,7 @@ const VolumeHandler *BlendMaterial::getVolumeHandler(bool inside) const
 	else return vol_2;
 }
 
-Material * BlendMaterial::factory(Logger &logger, ParamMap &params, std::list<ParamMap> &nodes_params, const Scene &scene)
+const Material *BlendMaterial::factory(Logger &logger, ParamMap &params, std::list<ParamMap> &nodes_params, const Scene &scene)
 {
 	std::string name;
 	double blend_val = 0.5;
@@ -285,9 +285,9 @@ Material * BlendMaterial::factory(Logger &logger, ParamMap &params, std::list<Pa
 	Rgb wire_frame_color = Rgb(1.f); //!< Wireframe shading color
 
 	if(! params.getParam("material1", name)) return nullptr;
-	const std::unique_ptr<Material> *m_1 = scene.getMaterial(name);
+	const std::unique_ptr<const Material> *m_1 = scene.getMaterial(name);
 	if(! params.getParam("material2", name)) return nullptr;
-	const std::unique_ptr<Material> *m_2 = scene.getMaterial(name);
+	const std::unique_ptr<const Material> *m_2 = scene.getMaterial(name);
 	if(!m_1 || !m_2) return nullptr;
 	params.getParam("blend_value", blend_val);
 

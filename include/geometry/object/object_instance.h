@@ -56,7 +56,7 @@ class ObjectInstance : public Object
 		/*! set a light source to be associated with this object */
 		void setLight(const Light *light) override { }
 		const Matrix4 *getObjToWorldMatrix() const { return obj_to_world_.get(); }
-		bool calculateObject(const std::unique_ptr<Material> *material) override { return true; }
+		bool calculateObject(const std::unique_ptr<const Material> *material) override { return true; }
 
 	protected:
 		const Object &base_object_;

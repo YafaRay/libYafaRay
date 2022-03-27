@@ -100,11 +100,11 @@ void Scene::createDefaultMaterial()
 	std::list<ParamMap> nodes_params;
 	//Note: keep the std::string or the parameter will be created incorrectly as a bool. This should improve with the new C++17 string literals, but for now with C++11 this should be done.
 	param_map["type"] = std::string("shinydiffusemat");
-	const std::unique_ptr<Material> *material = createMaterial("YafaRay_Default_Material", param_map, nodes_params);
+	const std::unique_ptr<const Material> *material = createMaterial("YafaRay_Default_Material", param_map, nodes_params);
 	setCurrentMaterial(material);
 }
 
-void Scene::setCurrentMaterial(const std::unique_ptr<Material> *material)
+void Scene::setCurrentMaterial(const std::unique_ptr<const Material> *material)
 {
 	if(material) creation_state_.current_material_ = material;
 	else creation_state_.current_material_ = getMaterial("YafaRay_Default_Material");
@@ -313,9 +313,9 @@ std::shared_ptr<T> Scene::findMapItem(const std::string &name, const std::map<st
 	else return nullptr;
 }
 
-const std::unique_ptr<Material> * Scene::getMaterial(const std::string &name) const
+const std::unique_ptr<const Material> * Scene::getMaterial(const std::string &name) const
 {
-	return Scene::findMapItem<std::unique_ptr<Material>>(name, materials_);
+	return Scene::findMapItem<std::unique_ptr<const Material>>(name, materials_);
 }
 
 Texture *Scene::getTexture(const std::string &name) const
@@ -387,7 +387,7 @@ Light *Scene::createLight(const std::string &name, ParamMap &params)
 	return nullptr;
 }
 
-std::unique_ptr<Material> * Scene::createMaterial(const std::string &name, ParamMap &params, std::list<ParamMap> &nodes_params)
+std::unique_ptr<const Material> * Scene::createMaterial(const std::string &name, ParamMap &params, std::list<ParamMap> &nodes_params)
 {
 	std::string pname = "Material";
 	params["name"] = std::string(name);
@@ -397,7 +397,7 @@ std::unique_ptr<Material> * Scene::createMaterial(const std::string &name, Param
 	}
 	else
 	{
-		materials_[name] = std::unique_ptr<std::unique_ptr<Material>>(new std::unique_ptr<Material>());
+		materials_[name] = std::unique_ptr<std::unique_ptr<const Material>>(new std::unique_ptr<const Material>());
 	}
 	std::string type;
 	if(! params.getParam("type", type))
@@ -405,7 +405,7 @@ std::unique_ptr<Material> * Scene::createMaterial(const std::string &name, Param
 		logErrNoType(logger_, pname, name, type); return nullptr;
 	}
 	params["name"] = name;
-	auto material = std::unique_ptr<Material>(Material::factory(logger_, params, nodes_params, *this));
+	auto material = std::unique_ptr<const Material>(Material::factory(logger_, params, nodes_params, *this));
 	if(material)
 	{
 		*(materials_[name]) = std::move(material);
