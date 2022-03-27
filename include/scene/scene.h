@@ -183,7 +183,7 @@ class Scene final
 		} creation_state_;
 		Bound scene_bound_; //!< bounding box of all (finite) scene geometry
 		std::string scene_accelerator_;
-		std::unique_ptr<Accelerator> accelerator_;
+		std::unique_ptr<const Accelerator> accelerator_;
 		Object *current_object_ = nullptr;
 		std::map<std::string, std::unique_ptr<Object>> objects_;
 		std::map<std::string, std::unique_ptr<Light>> lights_;

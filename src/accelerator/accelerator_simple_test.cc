@@ -24,7 +24,7 @@
 
 BEGIN_YAFARAY
 
-Accelerator * AcceleratorSimpleTest::factory(Logger &logger, const std::vector<const Primitive *> &primitives, ParamMap &params)
+const Accelerator * AcceleratorSimpleTest::factory(Logger &logger, const std::vector<const Primitive *> &primitives, ParamMap &params)
 {
 	return new AcceleratorSimpleTest(logger, primitives);
 }

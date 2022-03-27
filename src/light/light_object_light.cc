@@ -67,7 +67,7 @@ void ObjectLight::initIs()
 	params["cost_ratio"] = 0.8f;
 	params["empty_bonus"] = 0.33f;
 
-	accelerator_ = std::unique_ptr<Accelerator>(Accelerator::factory(logger_, primitives_, params));
+	accelerator_ = std::unique_ptr<const Accelerator>(Accelerator::factory(logger_, primitives_, params));
 }
 
 void ObjectLight::init(Scene &scene)

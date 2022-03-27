@@ -67,7 +67,7 @@ class ObjectLight final : public Light
 		int num_primitives_; //!< gives the array size of uDist
 		float area_, inv_area_;
 		Object *base_object_ = nullptr;
-		std::unique_ptr<Accelerator> accelerator_;
+		std::unique_ptr<const Accelerator> accelerator_;
 };
 
 END_YAFARAY
