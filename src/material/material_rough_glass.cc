@@ -259,7 +259,7 @@ float RoughGlassMaterial::getMatIor() const
 	return ior_;
 }
 
-const Material *RoughGlassMaterial::factory(Logger &logger, const ParamMap &params, const std::list<ParamMap> &nodes_params, const Scene &scene)
+const Material *RoughGlassMaterial::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params, const std::list<ParamMap> &nodes_params)
 {
 	float ior = 1.4;
 	float filt = 0.f;
@@ -336,7 +336,7 @@ const Material *RoughGlassMaterial::factory(Logger &logger, const ParamMap &para
 			map["type"] = std::string("beer");
 			map["absorption_col"] = absorp;
 			map["absorption_dist"] = Parameter(dist);
-			mat->vol_i_ = std::unique_ptr<VolumeHandler>(VolumeHandler::factory(logger, map, scene));
+			mat->vol_i_ = std::unique_ptr<VolumeHandler>(VolumeHandler::factory(logger, scene, name, map));
 			mat->bsdf_flags_ |= BsdfFlags::Volumetric;
 		}
 	}

@@ -82,7 +82,7 @@ float SkyVolumeRegion::phaseMie(const Vec3 &w_l, const Vec3 &w_s) const
 }
 
 
-VolumeRegion * SkyVolumeRegion::factory(Logger &logger, const ParamMap &params, const Scene &scene)
+VolumeRegion * SkyVolumeRegion::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params)
 {
 	float ss = .1f;
 	float sa = .1f;

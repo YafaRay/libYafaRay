@@ -35,7 +35,7 @@ Rgb ConstantBackground::eval(const Vec3 &dir, bool use_ibl_blur) const
 	return color_;
 }
 
-const Background * ConstantBackground::factory(Logger &logger, const ParamMap &params, Scene &scene)
+const Background * ConstantBackground::factory(Logger &logger, Scene &scene, const std::string &name, const ParamMap &params)
 {
 	Rgb col(0.f);
 	float power = 1.0;

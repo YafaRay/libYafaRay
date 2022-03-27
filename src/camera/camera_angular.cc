@@ -77,7 +77,7 @@ CameraRay AngularCamera::shootRay(float px, float py, float lu, float lv) const
 	return {std::move(ray), true};
 }
 
-const Camera * AngularCamera::factory(Logger &logger, const ParamMap &params, const Scene &scene)
+const Camera * AngularCamera::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params)
 {
 	Point3 from(0, 1, 0), to(0, 0, 0), up(0, 1, 1);
 	int resx = 320, resy = 200;

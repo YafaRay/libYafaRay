@@ -64,15 +64,13 @@ void ImageOutput::setBadgeParams(const ParamMap &params)
 	badge_.setParams(params);
 }
 
-ImageOutput * ImageOutput::factory(Logger &logger, const ParamMap &params, const Scene &scene)
+ImageOutput * ImageOutput::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params)
 {
 	if(logger.isDebug())
 	{
 		logger.logDebug("**ImageOutput");
 		params.logContents(logger);
 	}
-
-	std::string name;
 	std::string image_path;
 	std::string color_space_str = "Raw_Manual_Gamma";
 	float gamma = 1.f;
@@ -81,7 +79,6 @@ ImageOutput * ImageOutput::factory(Logger &logger, const ParamMap &params, const
 	bool multi_layer = true;
 	DenoiseParams denoise_params;
 
-	params.getParam("name", name);
 	params.getParam("image_path", image_path);
 	params.getParam("color_space", color_space_str);
 	params.getParam("gamma", gamma);

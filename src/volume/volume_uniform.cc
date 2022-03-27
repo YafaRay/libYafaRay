@@ -72,7 +72,7 @@ Rgb UniformVolumeRegion::emission(const Point3 &p, const Vec3 &v) const
 		return Rgb{0.f};
 }
 
-VolumeRegion * UniformVolumeRegion::factory(Logger &logger, const ParamMap &params, const Scene &scene)
+VolumeRegion * UniformVolumeRegion::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params)
 {
 	float ss = .1f;
 	float sa = .1f;

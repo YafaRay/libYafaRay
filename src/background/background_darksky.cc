@@ -196,7 +196,7 @@ Rgb DarkSkyBackground::eval(const Vec3 &dir, bool use_ibl_blur) const
 	return getSkyCol(dir) * power_;
 }
 
-const Background * DarkSkyBackground::factory(Logger &logger, const ParamMap &params, Scene &scene)
+const Background * DarkSkyBackground::factory(Logger &logger, Scene &scene, const std::string &name, const ParamMap &params)
 {
 	Point3 dir(1, 1, 1);
 	float turb = 4.0;

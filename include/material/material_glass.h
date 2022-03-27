@@ -35,7 +35,7 @@ class GlassMaterialData final : public MaterialData
 class GlassMaterial final : public NodeMaterial
 {
 	public:
-		static const Material *factory(Logger &logger, const ParamMap &params, const std::list<ParamMap> &nodes_params, const Scene &scene);
+		static const Material *factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params, const std::list<ParamMap> &nodes_params);
 
 	private:
 		GlassMaterial(Logger &logger, float ior, Rgb filt_c, const Rgb &srcol, double disp_pow, bool fake_s, Visibility e_visibility = Visibility::NormalVisible);
@@ -80,7 +80,7 @@ class MirrorMaterialData final : public MaterialData
 class MirrorMaterial final : public Material
 {
 	public:
-		static const Material *factory(Logger &logger, const ParamMap &params, const std::list<ParamMap> &nodes_params, const Scene &scene);
+		static const Material *factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params, const std::list<ParamMap> &nodes_params);
 
 	private:
 		MirrorMaterial(Logger &logger, Rgb r_col, float ref_val): Material(logger), ref_(ref_val)
@@ -112,7 +112,7 @@ class NullMaterialData final : public MaterialData
 class NullMaterial final : public Material
 {
 	public:
-		static const Material *factory(Logger &logger, const ParamMap &params, const std::list<ParamMap> &nodes_params, const Scene &scene);
+		static const Material *factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params, const std::list<ParamMap> &nodes_params);
 
 	private:
 		explicit NullMaterial(Logger &logger) : Material(logger) { }

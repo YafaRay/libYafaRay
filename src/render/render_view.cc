@@ -27,18 +27,16 @@
 
 BEGIN_YAFARAY
 
-RenderView * RenderView::factory(Logger &logger, const ParamMap &params, const Scene &scene)
+RenderView * RenderView::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params)
 {
 	if(logger.isDebug())
 	{
 		logger.logDebug("**RenderView");
 		params.logContents(logger);
 	}
-	std::string name;
 	std::string camera_name;
 	std::string light_names; //Separated by semicolon ";"
 	float wavelength = 0.f;
-	params.getParam("name", name);
 	params.getParam("camera_name", camera_name);
 	params.getParam("light_names", light_names);
 	params.getParam("wavelength", wavelength);

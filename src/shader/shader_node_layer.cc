@@ -301,7 +301,7 @@ float LayerNode::textureValueBlend(float tex, float out, float fact, float facg,
 	}
 }
 
-ShaderNode * LayerNode::factory(Logger &logger, const ParamMap &params, const Scene &scene)
+ShaderNode * LayerNode::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params)
 {
 	Rgb def_col(1.f);
 	bool do_color = true, do_scalar = false, color_input = true, use_alpha = false;

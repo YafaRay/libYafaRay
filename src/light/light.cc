@@ -33,7 +33,7 @@
 
 BEGIN_YAFARAY
 
-Light * Light::factory(Logger &logger, const ParamMap &params, const Scene &scene)
+Light * Light::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params)
 {
 	if(logger.isDebug())
 	{
@@ -41,20 +41,18 @@ Light * Light::factory(Logger &logger, const ParamMap &params, const Scene &scen
 		params.logContents(logger);
 	}
 	std::string type;
-	std::string name;
 	params.getParam("type", type);
-	params.getParam("name", name);
 	Light *light = nullptr;
-	if(type == "arealight") light = AreaLight::factory(logger, params, scene);
-	else if(type == "bgPortalLight") light = BackgroundPortalLight::factory(logger, params, scene);
-	else if(type == "meshlight" || type == "objectlight") light = ObjectLight::factory(logger, params, scene);
-	else if(type == "bglight") light = BackgroundLight::factory(logger, params, scene);
-	else if(type == "directional") light = DirectionalLight::factory(logger, params, scene);
-	else if(type == "ieslight") light = IesLight::factory(logger, params, scene);
-	else if(type == "pointlight") light = PointLight::factory(logger, params, scene);
-	else if(type == "spherelight") light = SphereLight::factory(logger, params, scene);
-	else if(type == "spotlight") light = SpotLight::factory(logger, params, scene);
-	else if(type == "sunlight") light = SunLight::factory(logger, params, scene);
+	if(type == "arealight") light = AreaLight::factory(logger, scene, name, params);
+	else if(type == "bgPortalLight") light = BackgroundPortalLight::factory(logger, scene, name, params);
+	else if(type == "meshlight" || type == "objectlight") light = ObjectLight::factory(logger, scene, name, params);
+	else if(type == "bglight") light = BackgroundLight::factory(logger, scene, name, params);
+	else if(type == "directional") light = DirectionalLight::factory(logger, scene, name, params);
+	else if(type == "ieslight") light = IesLight::factory(logger, scene, name, params);
+	else if(type == "pointlight") light = PointLight::factory(logger, scene, name, params);
+	else if(type == "spherelight") light = SphereLight::factory(logger, scene, name, params);
+	else if(type == "spotlight") light = SpotLight::factory(logger, scene, name, params);
+	else if(type == "sunlight") light = SunLight::factory(logger, scene, name, params);
 	
 	light->setName(name);
 	return light;

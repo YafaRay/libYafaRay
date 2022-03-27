@@ -136,7 +136,7 @@ std::map<std::string, std::unique_ptr<ShaderNode>> NodeMaterial::loadNodes(const
 			break;
 		}
 
-		std::unique_ptr<ShaderNode> shader(ShaderNode::factory(logger, param_map, scene));
+		std::unique_ptr<ShaderNode> shader(ShaderNode::factory(logger, scene, name, param_map));
 		if(shader)
 		{
 			shaders_table[name] = std::move(shader);

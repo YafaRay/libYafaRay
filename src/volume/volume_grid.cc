@@ -57,7 +57,7 @@ float GridVolumeRegion::density(const Point3 &p) const
 	return dens;
 }
 
-VolumeRegion * GridVolumeRegion::factory(Logger &logger, const ParamMap &params, const Scene &scene)
+VolumeRegion * GridVolumeRegion::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params)
 {
 	float ss = .1f;
 	float sa = .1f;

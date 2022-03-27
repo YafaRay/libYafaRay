@@ -39,18 +39,16 @@
 
 BEGIN_YAFARAY
 
-Image * Image::factory(Logger &logger, const ParamMap &params, const Scene &scene)
+Image * Image::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params)
 {
 	if(logger.isDebug()) logger.logDebug("**Image::factory params");
 	int width = 100;
 	int height = 100;
-	std::string name;
 	std::string image_type_str = "ColorAlpha";
 	std::string image_optimization_str = "optimized";
 	std::string color_space_str = "Raw_Manual_Gamma";
 	double gamma = 1.0;
 	std::string filename;
-	params.getParam("name", name);
 	params.getParam("type", image_type_str);
 	params.getParam("image_optimization", image_optimization_str);
 	params.getParam("filename", filename);

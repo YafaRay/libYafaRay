@@ -31,7 +31,7 @@
 
 BEGIN_YAFARAY
 
-const Camera * Camera::factory(Logger &logger, const ParamMap &params, const Scene &scene)
+const Camera * Camera::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params)
 {
 	if(logger.isDebug())
 	{
@@ -40,11 +40,11 @@ const Camera * Camera::factory(Logger &logger, const ParamMap &params, const Sce
 	}
 	std::string type;
 	params.getParam("type", type);
-	if(type == "angular") return AngularCamera::factory(logger, params, scene);
-	else if(type == "perspective") return PerspectiveCamera::factory(logger, params, scene);
-	else if(type == "architect") return ArchitectCamera::factory(logger, params, scene);
-	else if(type == "orthographic") return OrthographicCamera::factory(logger, params, scene);
-	else if(type == "equirectangular") return EquirectangularCamera::factory(logger, params, scene);
+	if(type == "angular") return AngularCamera::factory(logger, scene, name, params);
+	else if(type == "perspective") return PerspectiveCamera::factory(logger, scene, name, params);
+	else if(type == "architect") return ArchitectCamera::factory(logger, scene, name, params);
+	else if(type == "orthographic") return OrthographicCamera::factory(logger, scene, name, params);
+	else if(type == "equirectangular") return EquirectangularCamera::factory(logger, scene, name, params);
 	else return nullptr;
 }
 

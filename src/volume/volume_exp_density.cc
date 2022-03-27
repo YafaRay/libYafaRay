@@ -31,7 +31,7 @@ float ExpDensityVolumeRegion::density(const Point3 &p) const
 	return a_ * math::exp(-b_ * height);
 }
 
-VolumeRegion * ExpDensityVolumeRegion::factory(Logger &logger, const ParamMap &params, const Scene &scene)
+VolumeRegion * ExpDensityVolumeRegion::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params)
 {
 	float ss = .1f;
 	float sa = .1f;

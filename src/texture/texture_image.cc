@@ -535,15 +535,13 @@ ImageTexture::ClipMode ImageTexture::string2Cliptype(const std::string &clipname
 	return tex_clipmode;
 }
 
-Texture * ImageTexture::factory(Logger &logger, const ParamMap &params, Scene &scene)
+Texture * ImageTexture::factory(Logger &logger, Scene &scene, const std::string &name, const ParamMap &params)
 {
-	std::string name;
 	std::string image_name;
 	std::string interpolation_type_str;
 	double gamma = 1.0;
 	double expadj = 0.0;
 	bool normalmap = false;
-	params.getParam("name", name);
 	params.getParam("interpolate", interpolation_type_str);
 	params.getParam("gamma", gamma);
 	params.getParam("exposure_adjust", expadj);

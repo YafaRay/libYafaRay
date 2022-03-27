@@ -94,7 +94,7 @@ Rgb SunLight::emitPhoton(float s_1, float s_2, float s_3, float s_4, Ray &ray, f
 }
 
 
-Light * SunLight::factory(Logger &logger, const ParamMap &params, const Scene &scene)
+Light * SunLight::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params)
 {
 	Point3 dir{0.f, 0.f, 1.f};
 	Rgb color(1.0);

@@ -32,7 +32,7 @@ class ParamMap;
 class AreaLight final : public Light
 {
 	public:
-		static Light *factory(Logger &logger, const ParamMap &params, const Scene &scene);
+		static Light *factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params);
 
 	private:
 		AreaLight(Logger &logger, const Point3 &c, const Vec3 &v_1, const Vec3 &v_2, const Rgb &col, float inte, int nsam, bool light_enabled = true, bool cast_shadows = true);

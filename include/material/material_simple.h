@@ -41,7 +41,7 @@ class LightMaterialData final : public MaterialData
 class LightMaterial final : public Material
 {
 	public:
-		static const Material *factory(Logger &logger, const ParamMap &params, const std::list<ParamMap> &nodes_params, const Scene &scene);
+		static const Material *factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params, const std::list<ParamMap> &nodes_params);
 
 	private:
 		LightMaterial(Logger &logger, Rgb light_c, bool ds = false);

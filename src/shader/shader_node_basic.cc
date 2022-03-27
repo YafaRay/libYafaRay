@@ -303,7 +303,7 @@ void TextureMapperNode::evalDerivative(NodeTreeData &node_tree_data, const Surfa
 	node_tree_data[getId()] = NodeResult(Rgba(du, dv, 0.f, 0.f), 0.f);
 }
 
-ShaderNode * TextureMapperNode::factory(Logger &logger, const ParamMap &params, const Scene &scene)
+ShaderNode * TextureMapperNode::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params)
 {
 	const Texture *tex = nullptr;
 	std::string texname, option;
@@ -378,7 +378,7 @@ void ValueNode::eval(NodeTreeData &node_tree_data, const SurfacePoint &sp, const
 	node_tree_data[getId()] = NodeResult(color_, value_);
 }
 
-ShaderNode * ValueNode::factory(Logger &logger, const ParamMap &params, const Scene &scene)
+ShaderNode * ValueNode::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params)
 {
 	Rgb col(1.f);
 	float alpha = 1.f;
@@ -653,7 +653,7 @@ class OverlayNode: public MixNode
 };
 
 
-ShaderNode * MixNode::factory(Logger &logger, const ParamMap &params, const Scene &scene)
+ShaderNode * MixNode::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params)
 {
 	float cfactor = 0.5f;
 	std::string blend_mode;

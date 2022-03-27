@@ -28,7 +28,7 @@
 
 BEGIN_YAFARAY
 
-const Background * Background::factory(Logger &logger, const ParamMap &params, Scene &scene)
+const Background * Background::factory(Logger &logger, Scene &scene, const std::string &name, const ParamMap &params)
 {
 	if(logger.isDebug())
 	{
@@ -37,11 +37,11 @@ const Background * Background::factory(Logger &logger, const ParamMap &params, S
 	}
 	std::string type;
 	params.getParam("type", type);
-	if(type == "darksky") return DarkSkyBackground::factory(logger, params, scene);
-	else if(type == "gradientback") return GradientBackground::factory(logger, params, scene);
-	else if(type == "sunsky") return SunSkyBackground::factory(logger, params, scene);
-	else if(type == "textureback") return TextureBackground::factory(logger, params, scene);
-	else if(type == "constant") return ConstantBackground::factory(logger, params, scene);
+	if(type == "darksky") return DarkSkyBackground::factory(logger, scene, name, params);
+	else if(type == "gradientback") return GradientBackground::factory(logger, scene, name, params);
+	else if(type == "sunsky") return SunSkyBackground::factory(logger, scene, name, params);
+	else if(type == "textureback") return TextureBackground::factory(logger, scene, name, params);
+	else if(type == "constant") return ConstantBackground::factory(logger, scene, name, params);
 	else return nullptr;
 }
 

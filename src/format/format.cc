@@ -65,8 +65,6 @@ Format * Format::factory(Logger &logger, const ParamMap &params)
 #endif // HAVE_TIFF
 	else
 	{
-		std::string name;
-		params.getParam("name", name);
 		logger.logError("Cannot process file, libYafaRay has not been built with support for image file format '" + type + "'");
 		return nullptr;
 	}

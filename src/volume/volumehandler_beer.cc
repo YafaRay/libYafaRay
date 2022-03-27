@@ -48,7 +48,7 @@ bool BeerVolumeHandler::scatter(const Ray &ray, Ray &s_ray, PSample &s) const
 	return false;
 }
 
-VolumeHandler * BeerVolumeHandler::factory(Logger &logger, const ParamMap &params, const Scene &scene)
+VolumeHandler * BeerVolumeHandler::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params)
 {
 	Rgb a_col(0.5f);
 	double dist = 1.f;

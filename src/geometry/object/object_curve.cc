@@ -23,21 +23,20 @@
 
 BEGIN_YAFARAY
 
-Object * CurveObject::factory(Logger &logger, const ParamMap &params, const Scene &scene)
+Object * CurveObject::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params)
 {
 	if(logger.isDebug())
 	{
 		logger.logDebug("CurveObject::factory");
 		params.logContents(logger);
 	}
-	std::string name, light_name, visibility, base_object_name;
+	std::string light_name, visibility, base_object_name;
 	bool is_base_object = false, has_uv = false, has_orco = false;
 	int num_vertices = 0;
 	int object_index = 0;
 	float strand_start = 0.01f;
 	float strand_end = 0.01f;
 	float strand_shape = 0.f;
-	params.getParam("name", name);
 	params.getParam("light_name", light_name);
 	params.getParam("visibility", visibility);
 	params.getParam("is_base_object", is_base_object);

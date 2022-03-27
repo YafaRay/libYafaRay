@@ -76,7 +76,7 @@ Rgb TextureBackground::eval(const Vec3 &dir, bool use_ibl_blur) const
 	return power_ * ret;
 }
 
-const Background * TextureBackground::factory(Logger &logger, const ParamMap &params, Scene &scene)
+const Background * TextureBackground::factory(Logger &logger, Scene &scene, const std::string &name, const ParamMap &params)
 {
 	std::string texname;
 	std::string mapping;

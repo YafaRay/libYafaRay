@@ -430,7 +430,7 @@ Specular CoatedGlossyMaterial::getSpecular(int ray_level, const MaterialData *ma
 	return specular;
 }
 
-const Material *CoatedGlossyMaterial::factory(Logger &logger, const ParamMap &params, const std::list<ParamMap> &nodes_params, const Scene &scene)
+const Material *CoatedGlossyMaterial::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params, const std::list<ParamMap> &nodes_params)
 {
 	Rgb col(1.f), dcol(1.f), mir_col(1.f);
 	float refl = 1.f;

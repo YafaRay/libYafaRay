@@ -31,7 +31,7 @@ class Scene;
 class ExpDensityVolumeRegion final : public DensityVolumeRegion
 {
 	public:
-		static VolumeRegion *factory(Logger &logger, const ParamMap &params, const Scene &scene);
+		static VolumeRegion *factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params);
 
 	private:
 		ExpDensityVolumeRegion(Logger &logger, const Rgb &sa, const Rgb &ss, const Rgb &le, float gg, const Point3 &pmin, const Point3 &pmax, int attgrid_scale, float aa, float bb);

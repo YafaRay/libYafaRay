@@ -286,7 +286,7 @@ float GlassMaterial::getMatIor() const
 	return ior_;
 }
 
-const Material *GlassMaterial::factory(Logger &logger, const ParamMap &params, const std::list<ParamMap> &nodes_params, const Scene &scene)
+const Material *GlassMaterial::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params, const std::list<ParamMap> &nodes_params)
 {
 	double ior = 1.4;
 	double filt = 0.f;
@@ -359,7 +359,7 @@ const Material *GlassMaterial::factory(Logger &logger, const ParamMap &params, c
 			map["type"] = std::string("beer");
 			map["absorption_col"] = absorp;
 			map["absorption_dist"] = Parameter(dist);
-			mat->vol_i_ = std::unique_ptr<VolumeHandler>(VolumeHandler::factory(logger, map, scene));
+			mat->vol_i_ = std::unique_ptr<VolumeHandler>(VolumeHandler::factory(logger, scene, name, map));
 			mat->bsdf_flags_ |= BsdfFlags::Volumetric;
 		}
 	}
@@ -450,7 +450,7 @@ Specular MirrorMaterial::getSpecular(int ray_level, const MaterialData *mat_data
 	return specular;
 }
 
-const Material *MirrorMaterial::factory(Logger &logger, const ParamMap &params, const std::list<ParamMap> &nodes_params, const Scene &scene)
+const Material *MirrorMaterial::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params, const std::list<ParamMap> &nodes_params)
 {
 	Rgb col(1.0);
 	float refl = 1.0;
@@ -467,7 +467,7 @@ Rgb NullMaterial::sample(const MaterialData *mat_data, const SurfacePoint &sp, c
 	return Rgb{0.f};
 }
 
-const Material *NullMaterial::factory(Logger &logger, const ParamMap &params, const std::list<ParamMap> &nodes_params, const Scene &scene)
+const Material *NullMaterial::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params, const std::list<ParamMap> &nodes_params)
 {
 	return new NullMaterial(logger);
 }

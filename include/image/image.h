@@ -47,7 +47,7 @@ class Image
 		enum class Type : int { None, Gray, GrayAlpha, Color, ColorAlpha };
 		enum class Optimization : int { None, Optimized, Compressed };
 		enum class Position : int { None, Top, Bottom, Left, Right, Overlay };
-		static Image *factory(Logger &logger, const ParamMap &params, const Scene &scene);
+		static Image *factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params);
 		static Image *factory(Logger &logger, int width, int height, const Type &type, const Optimization &optimization);
 		virtual ~Image() = default;
 

@@ -211,7 +211,7 @@ void BackgroundPortalLight::emitPdf(const SurfacePoint &sp, const Vec3 &wo, floa
 }
 
 
-Light * BackgroundPortalLight::factory(Logger &logger, const ParamMap &params, const Scene &scene)
+Light * BackgroundPortalLight::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params)
 {
 	int samples = 4;
 	std::string object_name;

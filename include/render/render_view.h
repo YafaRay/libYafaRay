@@ -39,7 +39,7 @@ class Scene;
 class RenderView final
 {
 	public:
-		static RenderView *factory(Logger &logger, const ParamMap &params, const Scene &scene);
+		static RenderView *factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params);
 		bool init(Logger &logger, const Scene &scene);
 		std::string getName() const { return name_; }
 		const Camera *getCamera() const { return camera_; }

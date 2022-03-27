@@ -30,7 +30,7 @@ class Scene;
 class BeerVolumeHandler : public VolumeHandler
 {
 	public:
-		static VolumeHandler *factory(Logger &logger, const ParamMap &params, const Scene &scene);
+		static VolumeHandler *factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params);
 
 	protected:
 		BeerVolumeHandler(Logger &logger, const Rgb &sigma): VolumeHandler(logger), sigma_a_(sigma) {};

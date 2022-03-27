@@ -85,7 +85,7 @@ Rgba CloudsTexture::getColor(const Point3 &p, const MipMapParams *mipmap_params)
 	else return applyColorAdjustments(color_ramp_->getColorInterpolated(Texture::getFloat(p)));
 }
 
-Texture * CloudsTexture::factory(Logger &logger, const ParamMap &params, Scene &scene)
+Texture * CloudsTexture::factory(Logger &logger, Scene &scene, const std::string &name, const ParamMap &params)
 {
 	Rgb color_1(0.0), color_2(1.0);
 	int depth = 2;
@@ -165,7 +165,7 @@ Rgba MarbleTexture::getColor(const Point3 &p, const MipMapParams *mipmap_params)
 	else return applyColorAdjustments(color_ramp_->getColorInterpolated(Texture::getFloat(p)));
 }
 
-Texture * MarbleTexture::factory(Logger &logger, const ParamMap &params, Scene &scene)
+Texture * MarbleTexture::factory(Logger &logger, Scene &scene, const std::string &name, const ParamMap &params)
 {
 	Rgb col_1(0.0), col_2(1.0);
 	int oct = 2;
@@ -250,7 +250,7 @@ Rgba WoodTexture::getColor(const Point3 &p, const MipMapParams *mipmap_params) c
 	else return applyColorAdjustments(color_ramp_->getColorInterpolated(Texture::getFloat(p)));
 }
 
-Texture * WoodTexture::factory(Logger &logger, const ParamMap &params, Scene &scene)
+Texture * WoodTexture::factory(Logger &logger, Scene &scene, const std::string &name, const ParamMap &params)
 {
 	Rgb col_1(0.0), col_2(1.0);
 	int oct = 2;
@@ -311,7 +311,7 @@ float RgbCubeTexture::getFloat(const Point3 &p, const MipMapParams *mipmap_param
 	return applyIntensityContrastAdjustments(col.energy());
 }
 
-Texture * RgbCubeTexture::factory(Logger &logger, const ParamMap &params, Scene &scene)
+Texture * RgbCubeTexture::factory(Logger &logger, Scene &scene, const std::string &name, const ParamMap &params)
 {
 	float intensity = 1.f, contrast = 1.f, saturation = 1.f, hue = 0.f, factor_red = 1.f, factor_green = 1.f, factor_blue = 1.f;
 	bool clamp = false;
@@ -404,7 +404,7 @@ Rgba VoronoiTexture::getColor(const Point3 &p, const MipMapParams *mipmap_params
 	else return applyColorAdjustments(Rgba(inte, inte, inte, inte));
 }
 
-Texture * VoronoiTexture::factory(Logger &logger, const ParamMap &params, Scene &scene)
+Texture * VoronoiTexture::factory(Logger &logger, Scene &scene, const std::string &name, const ParamMap &params)
 {
 	Rgb col_1(0.0), col_2(1.0);
 	std::string cltype, dname;
@@ -488,7 +488,7 @@ Rgba MusgraveTexture::getColor(const Point3 &p, const MipMapParams *mipmap_param
 	else return applyColorAdjustments(color_ramp_->getColorInterpolated(Texture::getFloat(p)));
 }
 
-Texture * MusgraveTexture::factory(Logger &logger, const ParamMap &params, Scene &scene)
+Texture * MusgraveTexture::factory(Logger &logger, Scene &scene, const std::string &name, const ParamMap &params)
 {
 	Rgb col_1(0.0), col_2(1.0);
 	std::string ntype, mtype;
@@ -558,7 +558,7 @@ Rgba DistortedNoiseTexture::getColor(const Point3 &p, const MipMapParams *mipmap
 	else return applyColorAdjustments(color_ramp_->getColorInterpolated(Texture::getFloat(p)));
 }
 
-Texture * DistortedNoiseTexture::factory(Logger &logger, const ParamMap &params, Scene &scene)
+Texture * DistortedNoiseTexture::factory(Logger &logger, Scene &scene, const std::string &name, const ParamMap &params)
 {
 	Rgb col_1(0.0), col_2(1.0);
 	std::string ntype_1, ntype_2;
@@ -671,7 +671,7 @@ Rgba BlendTexture::getColor(const Point3 &p, const MipMapParams *mipmap_params) 
 	else return applyColorAdjustments(color_ramp_->getColorInterpolated(Texture::getFloat(p)));
 }
 
-Texture * BlendTexture::factory(Logger &logger, const ParamMap &params, Scene &scene)
+Texture * BlendTexture::factory(Logger &logger, Scene &scene, const std::string &name, const ParamMap &params)
 {
 	std::string stype;
 	float intensity = 1.f, contrast = 1.f, saturation = 1.f, hue = 0.f, factor_red = 1.f, factor_green = 1.f, factor_blue = 1.f;

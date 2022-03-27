@@ -86,7 +86,7 @@ Point3 ArchitectCamera::screenproject(const Point3 &p) const
 	return s;
 }
 
-const Camera * ArchitectCamera::factory(Logger &logger, const ParamMap &params, const Scene &scene)
+const Camera * ArchitectCamera::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params)
 {
 	std::string bkhtype = "disk1", bkhbias = "uniform";
 	Point3 from(0, 1, 0), to(0, 0, 0), up(0, 1, 1);

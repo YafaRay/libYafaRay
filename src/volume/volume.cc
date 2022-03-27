@@ -29,7 +29,7 @@
 
 BEGIN_YAFARAY
 
-VolumeRegion * VolumeRegion::factory(Logger &logger, const ParamMap &params, const Scene &scene)
+VolumeRegion * VolumeRegion::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params)
 {
 	if(logger.isDebug())
 	{
@@ -38,15 +38,15 @@ VolumeRegion * VolumeRegion::factory(Logger &logger, const ParamMap &params, con
 	}
 	std::string type;
 	params.getParam("type", type);
-	if(type == "ExpDensityVolume") return ExpDensityVolumeRegion::factory(logger, params, scene);
-	else if(type == "GridVolume") return GridVolumeRegion::factory(logger, params, scene);
-	else if(type == "NoiseVolume") return NoiseVolumeRegion::factory(logger, params, scene);
-	else if(type == "SkyVolume") return SkyVolumeRegion::factory(logger, params, scene);
-	else if(type == "UniformVolume") return UniformVolumeRegion::factory(logger, params, scene);
+	if(type == "ExpDensityVolume") return ExpDensityVolumeRegion::factory(logger, scene, name, params);
+	else if(type == "GridVolume") return GridVolumeRegion::factory(logger, scene, name, params);
+	else if(type == "NoiseVolume") return NoiseVolumeRegion::factory(logger, scene, name, params);
+	else if(type == "SkyVolume") return SkyVolumeRegion::factory(logger, scene, name, params);
+	else if(type == "UniformVolume") return UniformVolumeRegion::factory(logger, scene, name, params);
 	else return nullptr;
 }
 
-VolumeHandler * VolumeHandler::factory(Logger &logger, const ParamMap &params, const Scene &scene)
+VolumeHandler * VolumeHandler::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params)
 {
 	if(logger.isDebug())
 	{
@@ -55,8 +55,8 @@ VolumeHandler * VolumeHandler::factory(Logger &logger, const ParamMap &params, c
 	}
 	std::string type;
 	params.getParam("type", type);
-	if(type == "beer") return BeerVolumeHandler::factory(logger, params, scene);
-	else if(type == "sss") return SssVolumeHandler::factory(logger, params, scene);
+	if(type == "beer") return BeerVolumeHandler::factory(logger, scene, name, params);
+	else if(type == "sss") return SssVolumeHandler::factory(logger, scene, name, params);
 	else return nullptr;
 }
 

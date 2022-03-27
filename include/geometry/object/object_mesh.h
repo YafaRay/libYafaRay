@@ -35,7 +35,7 @@ class Material;
 class MeshObject : public ObjectBasic
 {
 	public:
-		static Object *factory(Logger &logger, const ParamMap &params, const Scene &scene);
+		static Object *factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params);
 		MeshObject(int num_vertices, int num_faces, bool has_uv = false, bool has_orco = false);
 		~MeshObject() override;
 		/*! the number of primitives the object holds. Primitive is an element

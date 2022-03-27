@@ -36,7 +36,7 @@ float NoiseVolumeRegion::density(const Point3 &p) const
 	return d;
 }
 
-VolumeRegion * NoiseVolumeRegion::factory(Logger &logger, const ParamMap &params, const Scene &scene)
+VolumeRegion * NoiseVolumeRegion::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params)
 {
 	float ss = .1f;
 	float sa = .1f;

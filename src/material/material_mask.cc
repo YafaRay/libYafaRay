@@ -118,13 +118,14 @@ float MaskMaterial::getAlpha(const MaterialData *mat_data, const SurfacePoint &s
 	return alpha;
 }
 
-const Material *MaskMaterial::factory(Logger &logger, const ParamMap &params, const std::list<ParamMap> &nodes_params, const Scene &scene)
+const Material *MaskMaterial::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params, const std::list<ParamMap> &nodes_params)
 {
-	std::string name;
-	if(!params.getParam("material1", name)) return nullptr;
-	const std::unique_ptr<const Material> *material_1 = scene.getMaterial(name);
-	if(!params.getParam("material2", name)) return nullptr;
-	const std::unique_ptr<const Material> *material_2 = scene.getMaterial(name);
+	std::string mat1_name;
+	if(!params.getParam("material1", mat1_name)) return nullptr;
+	const std::unique_ptr<const Material> *material_1 = scene.getMaterial(mat1_name);
+	std::string mat2_name;
+	if(!params.getParam("material2", mat2_name)) return nullptr;
+	const std::unique_ptr<const Material> *material_2 = scene.getMaterial(mat2_name);
 	if(material_1 == nullptr || material_2 == nullptr) return nullptr;
 	//if(! params.getParam("mask", name) ) return nullptr;
 	//mask = scene.getTexture(*name);
@@ -148,13 +149,14 @@ const Material *MaskMaterial::factory(Logger &logger, const ParamMap &params, co
 	}
 	else
 	{
-		if(params.getParam("mask", name))
+		std::string mask;
+		if(params.getParam("mask", mask))
 		{
-			const auto &i = mat->nodes_map_.find(name);
+			const auto &i = mat->nodes_map_.find(mask);
 			if(i != mat->nodes_map_.end()) { mat->mask_ = i->second.get(); root_nodes_list.push_back(mat->mask_); }
 			else
 			{
-				logger.logError("MaskMat: Mask shader node '", name, "' does not exist!");
+				logger.logError("MaskMat: Mask shader node '", mask, "' does not exist!");
 				return nullptr;
 			}
 		}

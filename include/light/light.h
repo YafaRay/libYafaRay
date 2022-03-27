@@ -42,7 +42,7 @@ struct LSample;
 class Light
 {
 	public:
-		static Light *factory(Logger &logger, const ParamMap &params, const Scene &scene);
+		static Light *factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params);
 		struct Flags : public yafaray::Flags
 		{
 			Flags() = default;

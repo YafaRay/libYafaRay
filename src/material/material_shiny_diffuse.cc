@@ -487,7 +487,7 @@ float ShinyDiffuseMaterial::getAlpha(const MaterialData *mat_data, const Surface
 	else return 1.f;
 }
 
-const Material *ShinyDiffuseMaterial::factory(Logger &logger, const ParamMap &params, const std::list<ParamMap> &nodes_params, const Scene &scene)
+const Material *ShinyDiffuseMaterial::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params, const std::list<ParamMap> &nodes_params)
 {
 	/// Material Parameters
 	Rgb diffuse_color{1.f};
@@ -564,10 +564,10 @@ const Material *ShinyDiffuseMaterial::factory(Logger &logger, const ParamMap &pa
 		mat->has_fresnel_effect_ = true;
 	}
 
-	std::string name;
-	if(params.getParam("diffuse_brdf", name))
+	std::string diffuse_brdf;
+	if(params.getParam("diffuse_brdf", diffuse_brdf))
 	{
-		if(name == "oren_nayar")
+		if(diffuse_brdf == "oren_nayar")
 		{
 			double sigma = 0.1;
 			params.getParam("sigma", sigma);

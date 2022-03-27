@@ -30,7 +30,7 @@ class Scene;
 class AngularCamera final : public Camera
 {
 	public:
-		static const Camera * factory(Logger &logger, const ParamMap &params, const Scene &scene);
+		static const Camera * factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params);
 
 	private:
 		enum class Projection : int  //Fish Eye Projections as defined in https://en.wikipedia.org/wiki/Fisheye_lens

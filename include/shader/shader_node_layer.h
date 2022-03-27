@@ -34,7 +34,7 @@ class LayerNode final : public ShaderNode
 			Flags(unsigned int flags) : yafaray::Flags(flags) { } // NOLINT(google-explicit-constructor)
 			enum Enum : unsigned int { None = 0, RgbToInt = 1 << 0, Stencil = 1 << 1, Negative = 1 << 2, AlphaMix = 1 << 3 };
 		};
-		static ShaderNode *factory(Logger &logger, const ParamMap &params, const Scene &scene);
+		static ShaderNode *factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params);
 
 	private:
 		enum class BlendMode { Mix, Add, Mult, Sub, Screen, Div, Diff, Dark, Light };

@@ -31,7 +31,7 @@ class Scene;
 class EquirectangularCamera final : public Camera
 {
 	public:
-		static const Camera * factory(Logger &logger, const ParamMap &params, const Scene &scene);
+		static const Camera * factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params);
 
 	private:
 		EquirectangularCamera(Logger &logger, const Point3 &pos, const Point3 &look, const Point3 &up,

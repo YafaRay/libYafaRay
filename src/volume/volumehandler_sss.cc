@@ -40,7 +40,7 @@ bool SssVolumeHandler::scatter(const Ray &ray, Ray &s_ray, PSample &s) const
 	return true;
 }
 
-VolumeHandler * SssVolumeHandler::factory(Logger &logger, const ParamMap &params, const Scene &scene)
+VolumeHandler * SssVolumeHandler::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params)
 {
 	Rgb a_col(0.5f), s_col(0.8f);
 	double dist = 1.f;

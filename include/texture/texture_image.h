@@ -60,7 +60,7 @@ class ImageTexture final : public Texture
 {
 	public:
 		enum class ClipMode : int { Extend, Clip, ClipCube, Repeat, Checker };
-		static Texture *factory(Logger &logger, const ParamMap &params, Scene &scene);
+		static Texture *factory(Logger &logger, Scene &scene, const std::string &name, const ParamMap &params);
 
 	private:
 		ImageTexture(Logger &logger, std::shared_ptr<Image> image);

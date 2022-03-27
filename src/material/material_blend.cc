@@ -271,7 +271,7 @@ const VolumeHandler *BlendMaterial::getVolumeHandler(bool inside) const
 	else return vol_2;
 }
 
-const Material *BlendMaterial::factory(Logger &logger, const ParamMap &params, const std::list<ParamMap> &nodes_params, const Scene &scene)
+const Material *BlendMaterial::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params, const std::list<ParamMap> &nodes_params)
 {
 	double blend_val = 0.5;
 	std::string s_visibility = "normal";

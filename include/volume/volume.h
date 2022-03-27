@@ -38,7 +38,7 @@ class MaterialData;
 class VolumeHandler
 {
 	public:
-		static VolumeHandler *factory(Logger &logger, const ParamMap &params, const Scene &scene);
+		static VolumeHandler *factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params);
 		explicit VolumeHandler(Logger &logger) : logger_(logger) { }
 		virtual Rgb transmittance(const Ray &ray) const = 0;
 		virtual bool scatter(const Ray &ray, Ray &s_ray, PSample &s) const = 0;
@@ -51,7 +51,7 @@ class VolumeHandler
 class VolumeRegion
 {
 	public:
-		static VolumeRegion *factory(Logger &logger, const ParamMap &params, const Scene &scene);
+		static VolumeRegion *factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params);
 		explicit VolumeRegion(Logger &logger) : logger_(logger) { }
 		VolumeRegion(Logger &logger, const Rgb &sa, const Rgb &ss, const Rgb &le, float gg, const Point3 &pmin, const Point3 &pmax, int attgrid_scale);
 		virtual ~VolumeRegion() = default;

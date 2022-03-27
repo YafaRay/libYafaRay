@@ -361,10 +361,9 @@ bool Scene::removeOutput(const std::string &name)
 	return true;
 }
 
-Light *Scene::createLight(const std::string &name, ParamMap &params)
+Light *Scene::createLight(const std::string &name, const ParamMap &params)
 {
 	std::string pname = "Light";
-	params["name"] = std::string(name);
 	if(lights_.find(name) != lights_.end())
 	{
 		logWarnExist(logger_, pname, name); return nullptr;
@@ -374,7 +373,7 @@ Light *Scene::createLight(const std::string &name, ParamMap &params)
 	{
 		logErrNoType(logger_, pname, name, type); return nullptr;
 	}
-	auto light = std::unique_ptr<Light>(Light::factory(logger_, params, *this));
+	auto light = std::unique_ptr<Light>(Light::factory(logger_, *this, name, params));
 	if(light)
 	{
 		lights_[name] = std::move(light);
@@ -403,7 +402,7 @@ std::unique_ptr<const Material> * Scene::createMaterial(const std::string &name,
 	{
 		logErrNoType(logger_, pname, name, type); return nullptr;
 	}
-	auto material = std::unique_ptr<const Material>(Material::factory(logger_, params, nodes_params, *this));
+	auto material = std::unique_ptr<const Material>(Material::factory(logger_, *this, name, params, nodes_params));
 	if(material)
 	{
 		*(materials_[name]) = std::move(material);
@@ -416,9 +415,8 @@ std::unique_ptr<const Material> * Scene::createMaterial(const std::string &name,
 }
 
 template <typename T>
-T *Scene::createMapItem(Logger &logger, const std::string &name, const std::string &class_name, ParamMap &params, std::map<std::string, std::unique_ptr<T>> &map, Scene *scene, bool check_type_exists)
+T *Scene::createMapItem(Logger &logger, const std::string &name, const std::string &class_name, const ParamMap &params, std::map<std::string, std::unique_ptr<T>> &map, Scene *scene, bool check_type_exists)
 {
-	params["name"] = std::string(name);
 	if(map.find(name) != map.end())
 	{
 		logWarnExist(logger, class_name, name); return nullptr;
@@ -432,7 +430,7 @@ T *Scene::createMapItem(Logger &logger, const std::string &name, const std::stri
 			return nullptr;
 		}
 	}
-	std::unique_ptr<T> item(T::factory(logger, params, *scene));
+	std::unique_ptr<T> item(T::factory(logger, *scene, name, params));
 	if(item)
 	{
 		map[name] = std::move(item);
@@ -444,9 +442,8 @@ T *Scene::createMapItem(Logger &logger, const std::string &name, const std::stri
 }
 
 template <typename T>
-std::shared_ptr<T> Scene::createMapItem(Logger &logger, const std::string &name, const std::string &class_name, ParamMap &params, std::map<std::string, std::shared_ptr<T>> &map, Scene *scene, bool check_type_exists)
+std::shared_ptr<T> Scene::createMapItem(Logger &logger, const std::string &name, const std::string &class_name, const ParamMap &params, std::map<std::string, std::shared_ptr<T>> &map, Scene *scene, bool check_type_exists)
 {
-	params["name"] = std::string(name);
 	if(map.find(name) != map.end())
 	{
 		logWarnExist(logger, class_name, name); return nullptr;
@@ -460,7 +457,7 @@ std::shared_ptr<T> Scene::createMapItem(Logger &logger, const std::string &name,
 			return nullptr;
 		}
 	}
-	std::shared_ptr<T> item(T::factory(logger, params, *scene));
+	std::shared_ptr<T> item(T::factory(logger, *scene, name, params));
 	if(item)
 	{
 		map[name] = std::move(item);
@@ -471,56 +468,55 @@ std::shared_ptr<T> Scene::createMapItem(Logger &logger, const std::string &name,
 	return nullptr;
 }
 
-ImageOutput *Scene::createOutput(const std::string &name, ParamMap &params)
+ImageOutput *Scene::createOutput(const std::string &name, const ParamMap &params)
 {
-	std::string pname = "ColorOutput";
-	params["name"] = std::string(name);
+	std::string class_name = "ColorOutput";
 	if(outputs_.find(name) != outputs_.end())
 	{
-		logWarnExist(logger_, pname, name); return nullptr;
+		logWarnExist(logger_, class_name, name); return nullptr;
 	}
-	std::unique_ptr<ImageOutput> item(ImageOutput::factory(logger_, params, *this));
+	std::unique_ptr<ImageOutput> item(ImageOutput::factory(logger_, *this, name, params));
 	if(item)
 	{
 		outputs_[name] = std::move(item);
-		if(logger_.isVerbose()) logInfoVerboseSuccess(logger_, pname, name, "");
+		if(logger_.isVerbose()) logInfoVerboseSuccess(logger_, class_name, name, "");
 		return outputs_[name].get();
 	}
-	logErrOnCreate(logger_, pname, name, "");
+	logErrOnCreate(logger_, class_name, name, "");
 	return nullptr;
 }
 
-Texture *Scene::createTexture(const std::string &name, ParamMap &params)
+Texture *Scene::createTexture(const std::string &name, const ParamMap &params)
 {
 	return createMapItem<Texture>(logger_, name, "Texture", params, textures_, this);
 }
 
-const Background * Scene::createBackground(const std::string &name, ParamMap &params)
+const Background * Scene::createBackground(const std::string &name, const ParamMap &params)
 {
 	return createMapItem<const Background>(logger_, name, "Background", params, backgrounds_, this);
 }
 
-const Camera *Scene::createCamera(const std::string &name, ParamMap &params)
+const Camera *Scene::createCamera(const std::string &name, const ParamMap &params)
 {
 	return createMapItem<const Camera>(logger_, name, "Camera", params, cameras_, this);
 }
 
-Integrator *Scene::createIntegrator(const std::string &name, ParamMap &params)
+Integrator *Scene::createIntegrator(const std::string &name, const ParamMap &params)
 {
 	return createMapItem<Integrator>(logger_, name, "Integrator", params, integrators_, this);
 }
 
-VolumeRegion *Scene::createVolumeRegion(const std::string &name, ParamMap &params)
+VolumeRegion *Scene::createVolumeRegion(const std::string &name, const ParamMap &params)
 {
 	return createMapItem<VolumeRegion>(logger_, name, "VolumeRegion", params, volume_regions_, this);
 }
 
-RenderView *Scene::createRenderView(const std::string &name, ParamMap &params)
+RenderView *Scene::createRenderView(const std::string &name, const ParamMap &params)
 {
 	return createMapItem<RenderView>(logger_, name, "RenderView", params, render_views_, this, false);
 }
 
-std::shared_ptr<Image> Scene::createImage(const std::string &name, ParamMap &params)
+std::shared_ptr<Image> Scene::createImage(const std::string &name, const ParamMap &params)
 {
 	return createMapItem<Image>(logger_, name, "Image", params, images_, this);
 }
@@ -979,7 +975,7 @@ int Scene::addUv(float u, float v)
 	return current_object_->addUvValue({u, v});
 }
 
-Object *Scene::createObject(const std::string &name, ParamMap &params)
+Object *Scene::createObject(const std::string &name, const ParamMap &params)
 {
 	std::string pname = "Object";
 	if(objects_.find(name) != objects_.end())
@@ -993,7 +989,7 @@ Object *Scene::createObject(const std::string &name, ParamMap &params)
 		logErrNoType(logger_, pname, name, type);
 		return nullptr;
 	}
-	std::unique_ptr<Object> object(Object::factory(logger_, params, *this));
+	std::unique_ptr<Object> object(Object::factory(logger_, *this, name, params));
 	if(object)
 	{
 		object->setName(name);

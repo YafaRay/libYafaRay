@@ -34,7 +34,7 @@ class Scene;
 class GridVolumeRegion final : public DensityVolumeRegion
 {
 	public:
-		static VolumeRegion *factory(Logger &logger, const ParamMap &params, const Scene &scene);
+		static VolumeRegion *factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params);
 		~GridVolumeRegion() override;
 
 	private:
