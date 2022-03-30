@@ -20,6 +20,8 @@
 #ifndef YAFARAY_COMMON_H
 #define YAFARAY_COMMON_H
 
+#include <cstddef>
+
 #define BEGIN_YAFARAY namespace yafaray {
 #define END_YAFARAY }
 
