@@ -70,34 +70,58 @@ endif()
 message_boolean("Using JPEG" YAFARAY_WITH_JPEG "yes" "no")
 if(YAFARAY_WITH_JPEG)
 	find_package(JPEG REQUIRED)
-	target_sources(libyafaray4
+	add_library(libyafaray4_jpg STATIC)
+	set_property(TARGET libyafaray4_jpg PROPERTY POSITION_INDEPENDENT_CODE ON)
+	set_target_properties(libyafaray4_jpg PROPERTIES PREFIX "")
+	set_target_properties(libyafaray4_jpg PROPERTIES CXX_STANDARD 11 CXX_STANDARD_REQUIRED ON CXX_EXTENSIONS OFF)
+	set_target_properties(libyafaray4_jpg PROPERTIES CXX_VISIBILITY_PRESET hidden VISIBILITY_INLINES_HIDDEN ON)
+	target_include_directories(libyafaray4_jpg PRIVATE ${PROJECT_SOURCE_DIR}/include ${PROJECT_BINARY_DIR}/include)
+	target_include_directories(libyafaray4_jpg INTERFACE $<INSTALL_INTERFACE:include>)
+	target_sources(libyafaray4_jpg
 			PRIVATE
 			format_jpg.cc
 			)
 	list(APPEND YAF_FORMAT_DEFINITIONS "HAVE_JPEG")
-	target_link_libraries(libyafaray4 PRIVATE JPEG::JPEG)
+	target_link_libraries(libyafaray4_jpg PRIVATE JPEG::JPEG)
+	target_link_libraries(libyafaray4 PRIVATE libyafaray4_jpg)
 endif()
 
 message_boolean("Using PNG" YAFARAY_WITH_PNG "yes" "no")
 if(YAFARAY_WITH_PNG)
 	find_package(PNG REQUIRED)
-	target_sources(libyafaray4
+	add_library(libyafaray4_png STATIC)
+	set_property(TARGET libyafaray4_png PROPERTY POSITION_INDEPENDENT_CODE ON)
+	set_target_properties(libyafaray4_png PROPERTIES PREFIX "")
+	set_target_properties(libyafaray4_png PROPERTIES CXX_STANDARD 11 CXX_STANDARD_REQUIRED ON CXX_EXTENSIONS OFF)
+	set_target_properties(libyafaray4_png PROPERTIES CXX_VISIBILITY_PRESET hidden VISIBILITY_INLINES_HIDDEN ON)
+	target_include_directories(libyafaray4_png PRIVATE ${PROJECT_SOURCE_DIR}/include ${PROJECT_BINARY_DIR}/include)
+	target_include_directories(libyafaray4_png INTERFACE $<INSTALL_INTERFACE:include>)
+	target_sources(libyafaray4_png
 			PRIVATE
 			format_png.cc
 			)
 	list(APPEND YAF_FORMAT_DEFINITIONS "HAVE_PNG")
-	target_link_libraries(libyafaray4 PRIVATE PNG::PNG)
+	target_link_libraries(libyafaray4_png PRIVATE PNG::PNG)
+	target_link_libraries(libyafaray4 PRIVATE libyafaray4_png)
 endif()
 
 message_boolean("Using TIFF" YAFARAY_WITH_TIFF "yes" "no")
 if(YAFARAY_WITH_TIFF)
 	find_package(TIFF REQUIRED)
-	target_sources(libyafaray4
+	add_library(libyafaray4_tiff STATIC)
+	set_property(TARGET libyafaray4_tiff PROPERTY POSITION_INDEPENDENT_CODE ON)
+	set_target_properties(libyafaray4_tiff PROPERTIES PREFIX "")
+	set_target_properties(libyafaray4_tiff PROPERTIES CXX_STANDARD 11 CXX_STANDARD_REQUIRED ON CXX_EXTENSIONS OFF)
+	set_target_properties(libyafaray4_tiff PROPERTIES CXX_VISIBILITY_PRESET hidden VISIBILITY_INLINES_HIDDEN ON)
+	target_include_directories(libyafaray4_tiff PRIVATE ${PROJECT_SOURCE_DIR}/include ${PROJECT_BINARY_DIR}/include)
+	target_include_directories(libyafaray4_tiff INTERFACE $<INSTALL_INTERFACE:include>)
+	target_sources(libyafaray4_tiff
 			PRIVATE
 			format_tif.cc
 			)
 	list(APPEND YAF_FORMAT_DEFINITIONS "HAVE_TIFF")
-	target_link_libraries(libyafaray4 PRIVATE TIFF::TIFF)
+	target_link_libraries(libyafaray4_tiff PRIVATE TIFF::TIFF)
+	target_link_libraries(libyafaray4 PRIVATE libyafaray4_tiff)
 endif()
 
 set_source_files_properties(
@@ -105,5 +129,3 @@ set_source_files_properties(
 		TARGET_DIRECTORY libyafaray4
 		PROPERTIES COMPILE_DEFINITIONS
 		"${YAF_FORMAT_DEFINITIONS}")
-
-target_include_directories(libyafaray4 SYSTEM BEFORE PRIVATE ${YAF_DEPS_INCLUDE_DIRS})
