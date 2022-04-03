@@ -26,11 +26,7 @@
 #include "math/interpolation.h"
 #include "format/format.h"
 #include "common/file.h"
-
-#ifdef HAVE_OPENCV
-#include <cmath>
-#include <opencv2/photo/photo.hpp>
-#endif
+#include "image/image_manipulation.h"
 
 BEGIN_YAFARAY
 
@@ -463,64 +459,7 @@ EwaWeightLut::EwaWeightLut()
 
 void ImageTexture::generateMipMaps()
 {
-	if(images_.empty()) return;
-
-#ifdef HAVE_OPENCV
-	int img_index = 0;
-	//bool blur_seamless = true;
-	int w = images_.at(0)->getWidth();
-	int h = images_.at(0)->getHeight();
-
-	if(logger_.isVerbose()) logger_.logVerbose("Format: generating mipmaps for texture of resolution [", w, " x ", h, "]");
-
-	const cv::Mat a(h, w, CV_32FC4);
-	cv::Mat_<cv::Vec4f> a_vec = a;
-
-	for(int j = 0; j < h; ++j)
-	{
-		for(int i = 0; i < w; ++i)
-		{
-			Rgba color = images_[img_index]->getColor(i, j);
-			a_vec(j, i)[0] = color.getR();
-			a_vec(j, i)[1] = color.getG();
-			a_vec(j, i)[2] = color.getB();
-			a_vec(j, i)[3] = color.getA();
-		}
-	}
-
-	//Mipmap generation using the temporary full float buffer to reduce information loss
-	while(w > 1 || h > 1)
-	{
-		const int w_2 = (w + 1) / 2;
-		const int h_2 = (h + 1) / 2;
-		++img_index;
-		images_.emplace_back(Image::factory(logger_, w_2, h_2, images_[img_index - 1]->getType(), images_[img_index - 1]->getOptimization()));
-
-		const cv::Mat b(h_2, w_2, CV_32FC4);
-		const cv::Mat_<cv::Vec4f> b_vec = b;
-		cv::resize(a, b, cv::Size(w_2, h_2), 0, 0, cv::INTER_AREA);
-
-		for(int j = 0; j < h_2; ++j)
-		{
-			for(int i = 0; i < w_2; ++i)
-			{
-				Rgba tmp_col(0.f);
-				tmp_col.r_ = b_vec(j, i)[0];
-				tmp_col.g_ = b_vec(j, i)[1];
-				tmp_col.b_ = b_vec(j, i)[2];
-				tmp_col.a_ = b_vec(j, i)[3];
-				images_[img_index]->setColor(i, j, tmp_col);
-			}
-		}
-		w = w_2;
-		h = h_2;
-		if(logger_.isDebug())logger_.logDebug("Format: generated mipmap ", img_index, " [", w_2, " x ", h_2, "]");
-	}
-
-	if(logger_.isVerbose()) logger_.logVerbose("Format: mipmap generation done: ", img_index, " mipmaps generated.");
-#else
-	logger_.logWarning("Format: cannot generate mipmaps, YafaRay was not built with OpenCV support which is needed for mipmap processing.");
-#endif
+	image_manipulation::generateMipMaps(logger_, images_);
 }
 
 ImageTexture::ClipMode ImageTexture::string2Cliptype(const std::string &clipname)

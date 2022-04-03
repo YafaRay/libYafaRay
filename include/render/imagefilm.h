@@ -146,8 +146,6 @@ class ImageFilm final
 		void resetImagesAutoSaveTimer() { images_auto_save_params_.timer_ = 0.0; }
 		void resetFilmAutoSaveTimer() { film_load_save_.auto_save_.timer_ = 0.0; }
 
-		void generateDebugFacesEdges(int xstart, int width, int ystart, int height, bool drawborder, const EdgeToonParams &edge_params);
-		void generateToonAndDebugObjectEdges(int xstart, int width, int ystart, int height, bool drawborder, const EdgeToonParams &edge_params);
 		const ImageLayers *getImageLayers() const { return &film_image_layers_; }
 		const ImageLayers *getExportedImageLayers() const { return &exported_image_layers_; }
 		Timer * getTimer() { return &timer_; }

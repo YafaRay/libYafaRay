@@ -29,14 +29,7 @@
 #include "format/format.h"
 #include "math/interpolation.h"
 #include "common/string.h"
-
-#if HAVE_FREETYPE
-	#include "resource/guifont.h"
-	#include <ft2build.h>
-	#include FT_FREETYPE_H
-
-#include <cmath>
-#endif
+#include "image/image_manipulation.h"
 
 BEGIN_YAFARAY
 
@@ -118,36 +111,6 @@ std::string Badge::print(const std::string &denoise_params, const RenderControl 
 	return ss_badge.str();
 }
 
-#if HAVE_FREETYPE
-
-void Badge::drawFontBitmap(FT_Bitmap_ *bitmap, Image *badge_image, int x, int y)
-{
-	int i, j, p, q;
-	const int width = badge_image->getWidth();
-	const int height = badge_image->getHeight();
-	const int x_max = std::min(x + static_cast<int>(bitmap->width), width);
-	const int y_max = std::min(y + static_cast<int>(bitmap->rows), height);
-	Rgb text_color(1.f);
-
-	for(i = x, p = 0; i < x_max; i++, p++)
-	{
-		for(j = y, q = 0; j < y_max; j++, q++)
-		{
-			if(i >= width || j >= height) continue;
-			const int tmp_buf = bitmap->buffer[q * bitmap->width + p];
-			if(tmp_buf > 0)
-			{
-				Rgba col = badge_image->getColor(std::max(0, i), std::max(0, j));
-				const float alpha = static_cast<float>(tmp_buf) / 255.f;
-				col = Rgba(math::lerp(static_cast<Rgb>(col), text_color, alpha), col.getA());
-				badge_image->setColor(std::max(0, i), std::max(0, j), col);
-			}
-		}
-	}
-}
-
-#endif
-
 Image * Badge::generateImage(const std::string &denoise_params, const RenderControl &render_control, const Timer &timer) const
 {
 	if(position_ == Badge::Position::None) return nullptr;
@@ -166,110 +129,8 @@ Image * Badge::generateImage(const std::string &denoise_params, const RenderCont
 	const int badge_height = (badge_line_count + additional_blank_lines) * std::ceil(line_height * font_size_factor_);
 	auto badge_image= Image::factory(logger_, image_width_, badge_height, Image::Type::Color, Image::Optimization::None);
 
-#ifdef HAVE_FREETYPE
-	FT_Library library;
-	FT_Face face;
-
-	FT_GlyphSlot slot;
-	FT_Vector pen; // untransformed origin
-
-	const std::string text_utf_8 = ss_badge.str();
-	const std::u32string wtext_utf_32 = string::utf8ToWutf32(text_utf_8);
-
-	// set font size at default dpi
-	float fontsize = 12.5f * getFontSizeFactor();
-
-	// initialize library
-	if(FT_Init_FreeType(&library))
-	{
-		logger_.logError("Badge: FreeType lib couldn't be initialized!");
-		return nullptr;
-	}
-
-	// create face object
-	const std::string font_path = getFontPath();
-	if(font_path.empty())
-	{
-		if(FT_New_Memory_Face(library, (const FT_Byte *)font::gui.data(), font::gui.size(), 0, &face))
-		{
-			logger_.logError("Badge: FreeType couldn't load the default font!");
-			return nullptr;
-		}
-	}
-	else if(FT_New_Face(library, font_path.c_str(), 0, &face))
-	{
-		logger_.logWarning("Badge: FreeType couldn't load the font '", font_path, "', loading default font.");
-
-		if(FT_New_Memory_Face(library, (const FT_Byte *)font::gui.data(), font::gui.size(), 0, &face))
-		{
-			logger_.logError("Badge: FreeType couldn't load the default font!");
-			return nullptr;
-		}
-	}
-
-	FT_Select_Charmap(face, ft_encoding_unicode);
-
-	// set character size
-	if(FT_Set_Char_Size(face, (FT_F26Dot6)(fontsize * 64.0), 0, 0, 0))
-	{
-		logger_.logError("Badge: FreeType couldn't set the character size!");
-		return nullptr;
-	}
-
-	slot = face->glyph;
-
-	// offsets
-	const int text_offset_x = 4;
-	const int text_offset_y = -1 * static_cast<int>(std::ceil(12 * getFontSizeFactor()));
-	const int text_interline_offset = static_cast<int>(std::ceil(13 * getFontSizeFactor()));
-
-	// The pen position in 26.6 cartesian space coordinates
-	pen.x = text_offset_x * 64;
-	pen.y = text_offset_y * 64;
-
-	// Draw the text
-	for(char32_t ch : wtext_utf_32)
-	{
-		// Set Coordinates for the carrige return
-		if(ch == '\n')
-		{
-			pen.x = text_offset_x * 64;
-			pen.y -= text_interline_offset * 64;
-			fontsize = 9.5f * getFontSizeFactor();
-			if(FT_Set_Char_Size(face, (FT_F26Dot6)(fontsize * 64.0), 0, 0, 0))
-			{
-				logger_.logError("Badge: FreeType couldn't set the character size!");
-				return nullptr;
-			}
-
-			continue;
-		}
-
-		// Set transformation
-		FT_Set_Transform(face, nullptr, &pen);
-
-		// Load glyph image into the slot (erase previous one)
-		if(FT_Load_Char(face, ch, FT_LOAD_DEFAULT))
-		{
-			logger_.logError("Badge: FreeType Couldn't load the glyph image for: '", ch, "'!");
-			continue;
-		}
-
-		// Render the glyph into the slot
-		FT_Render_Glyph(slot, FT_RENDER_MODE_NORMAL);
-
-		// Now, draw to our target surface (convert position)
-		drawFontBitmap(&slot->bitmap, badge_image, slot->bitmap_left, -slot->bitmap_top);
-
-		// increment pen position
-		pen.x += slot->advance.x;
-		pen.y += slot->advance.y;
-	}
-
-	// Cleanup
-	FT_Done_Face(face);
-	FT_Done_FreeType(library);
-#endif
+	const bool badge_text_ok = image_manipulation::drawTextInImage(logger_, badge_image, ss_badge.str(), getFontSizeFactor(), getFontPath());
+	if(!badge_text_ok) logger_.logError("Badge text could not be generated!");
 
 	std::unique_ptr<Image> logo;
 

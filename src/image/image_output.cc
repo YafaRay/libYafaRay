@@ -27,6 +27,7 @@
 #include "format/format.h"
 #include "render/render_view.h"
 #include "render/imagefilm.h"
+#include "image/image_manipulation.h"
 
 BEGIN_YAFARAY
 
@@ -45,12 +46,12 @@ ImageOutput::ImageOutput(Logger &logger, const std::string &image_path, const De
 
 std::string ImageOutput::printBadge(const RenderControl &render_control, const Timer &timer) const
 {
-	return badge_.print(printDenoiseParams(), render_control, timer);
+	return badge_.print(image_manipulation::printDenoiseParams(denoise_params_), render_control, timer);
 }
 
 Image * ImageOutput::generateBadgeImage(const RenderControl &render_control, const Timer &timer) const
 {
-	return badge_.generateImage(printDenoiseParams(), render_control, timer);
+	return badge_.generateImage(image_manipulation::printDenoiseParams(denoise_params_), render_control, timer);
 }
 
 void ImageOutput::setLoggingParams(const ParamMap &params)
@@ -176,8 +177,8 @@ void ImageOutput::flush(const RenderControl &render_control, const Timer &timer)
 
 void ImageOutput::saveImageFile(const std::string &filename, LayerDef::Type layer_type, Format *format, const RenderControl &render_control, const Timer &timer)
 {
-	if(render_control.inProgress()) logger_.logInfo(name_, ": Autosaving partial render (", math::roundFloatPrecision(render_control.currentPassPercent(), 0.01), "% of pass ", render_control.currentPass(), " of ", render_control.totalPasses(), ") file as \"", filename, "\"...  ", printDenoiseParams());
-	else logger_.logInfo(name_, ": Saving file as \"", filename, "\"...  ", printDenoiseParams());
+	if(render_control.inProgress()) logger_.logInfo(name_, ": Autosaving partial render (", math::roundFloatPrecision(render_control.currentPassPercent(), 0.01), "% of pass ", render_control.currentPass(), " of ", render_control.totalPasses(), ") file as \"", filename, "\"...  ", image_manipulation::printDenoiseParams(denoise_params_));
+	else logger_.logInfo(name_, ": Saving file as \"", filename, "\"...  ", image_manipulation::printDenoiseParams(denoise_params_));
 
 	std::shared_ptr<Image> image = (*image_layers_)(layer_type).image_;
 	if(!image)
@@ -191,7 +192,7 @@ void ImageOutput::saveImageFile(const std::string &filename, LayerDef::Type laye
 		const std::unique_ptr<Image> badge_image(generateBadgeImage(render_control, timer));
 		Image::Position badge_image_position = Image::Position::Bottom;
 		if(badge_.getPosition() == Badge::Position::Top) badge_image_position = Image::Position::Top;
-		image = std::shared_ptr<Image>(Image::getComposedImage(logger_, image.get(), badge_image.get(), badge_image_position));
+		image = std::shared_ptr<Image>(image_manipulation::getComposedImage(logger_, image.get(), badge_image.get(), badge_image_position));
 		if(!image)
 		{
 			logger_.logWarning(name_, ": Image could not be composed with badge and could not be saved.");
@@ -202,7 +203,7 @@ void ImageOutput::saveImageFile(const std::string &filename, LayerDef::Type laye
 	ImageLayer image_layer { image, Layer(layer_type) };
 	if(denoiseEnabled())
 	{
-		std::unique_ptr<Image> image_denoised(Image::getDenoisedLdrImage(logger_, image.get(), denoise_params_));
+		std::unique_ptr<Image> image_denoised(image_manipulation::getDenoisedLdrImage(logger_, image.get(), denoise_params_));
 		if(image_denoised) image_layer.image_ = std::move(image_denoised);
 		else if(logger_.isVerbose()) logger_.logVerbose(name_, ": Denoise was not possible, saving image without denoise postprocessing.");
 	}
@@ -212,7 +213,7 @@ void ImageOutput::saveImageFile(const std::string &filename, LayerDef::Type laye
 	{
 		Path file_path(filename);
 		std::string file_name_alpha = file_path.getBaseName() + "_alpha." + file_path.getExtension();
-		logger_.logInfo(name_, ": Saving separate alpha channel file as \"", file_name_alpha, "\"...  ", printDenoiseParams());
+		logger_.logInfo(name_, ": Saving separate alpha channel file as \"", file_name_alpha, "\"...  ", image_manipulation::printDenoiseParams(denoise_params_));
 		format->saveAlphaChannelOnlyToFile(file_name_alpha, image_layer);
 	}
 }
@@ -227,25 +228,12 @@ void ImageOutput::saveImageFileMultiChannel(const std::string &filename, Format 
 		ImageLayers image_layers_badge;
 		for(const auto &image_layer : *image_layers_)
 		{
-			std::unique_ptr<Image> image_layer_badge(Image::getComposedImage(logger_, image_layer.second.image_.get(), badge_image.get(), badge_image_position));
+			std::unique_ptr<Image> image_layer_badge(image_manipulation::getComposedImage(logger_, image_layer.second.image_.get(), badge_image.get(), badge_image_position));
 			image_layers_badge.set(image_layer.first, {std::move(image_layer_badge), image_layer.second.layer_});
 		}
 		format->saveToFileMultiChannel(filename, image_layers_badge, color_space_, gamma_, alpha_premultiply_);
 	}
 	else format->saveToFileMultiChannel(filename, *image_layers_, color_space_, gamma_, alpha_premultiply_);
 }
-
-std::string ImageOutput::printDenoiseParams() const
-{
-#ifdef HAVE_OPENCV	//Denoise only works if YafaRay is built with OpenCV support
-	if(!denoiseEnabled()) return "";
-	std::stringstream param_string;
-	param_string << "Image file denoise enabled [mix=" << denoise_params_.mix_ << ", h(Luminance)=" << denoise_params_.hlum_ <<  ", h(Chrominance)=" << denoise_params_.hcol_ << "]";
-	return param_string.str();
-#else
-	return "";
-#endif
-}
-
 
 END_YAFARAY

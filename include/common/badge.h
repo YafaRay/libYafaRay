@@ -26,10 +26,6 @@
 #include <string>
 #include <memory>
 
-#if HAVE_FREETYPE
-	struct FT_Bitmap_;
-#endif
-
 BEGIN_YAFARAY
 
 class Rgba;
@@ -74,9 +70,6 @@ class Badge
 		Image *generateImage(const std::string &denoise_params, const RenderControl &render_control, const Timer &timer) const;
 
 	protected:
-#if HAVE_FREETYPE
-		static void drawFontBitmap(FT_Bitmap_ *bitmap, Image *badge_image, int x, int y);
-#endif
 		int image_width_ = 0;
 		int image_height_ = 0;
 		bool draw_aa_ = true;

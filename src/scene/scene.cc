@@ -39,6 +39,7 @@
 #include "image/image_output.h"
 #include "render/render_view.h"
 #include "render/progress_bar.h"
+#include "image/image_manipulation.h"
 #include <limits>
 
 BEGIN_YAFARAY
@@ -86,9 +87,7 @@ Scene::Scene(Logger &logger) : logger_(logger)
 	render_control_.setDifferentialRaysEnabled(false);	//By default, disable ray differential calculations. Only if at least one texture uses them, then enable differentials.
 	createDefaultMaterial();
 
-#ifndef HAVE_OPENCV
-	logger_.logWarning("libYafaRay built without OpenCV support. The following functionality will not work: image output denoise, background IBL blur, object/face edge render layers, toon render layer.");
-#endif
+	image_manipulation::logWarningsMissingLibraries(logger_);
 }
 
 //This is just to avoid compilation error "error: invalid application of ‘sizeof’ to incomplete type ‘yafaray::Accelerator’" because the destructor needs to know the type of any shared_ptr or unique_ptr objects

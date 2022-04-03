@@ -49,7 +49,6 @@ if(YAFARAY_WITH_OpenEXR)
 	set_target_properties(libyafaray4_exr PROPERTIES CXX_STANDARD 14 CXX_STANDARD_REQUIRED ON CXX_EXTENSIONS OFF)
 	set_target_properties(libyafaray4_exr PROPERTIES CXX_VISIBILITY_PRESET hidden VISIBILITY_INLINES_HIDDEN ON)
 	target_include_directories(libyafaray4_exr PRIVATE ${PROJECT_SOURCE_DIR}/include ${PROJECT_BINARY_DIR}/include)
-	target_include_directories(libyafaray4_exr INTERFACE $<INSTALL_INTERFACE:include>)
 	find_package(OpenEXR REQUIRED)
 	if(TARGET OpenEXR::OpenEXR)
 		target_link_libraries(libyafaray4_exr PRIVATE OpenEXR::OpenEXR)
@@ -76,7 +75,6 @@ if(YAFARAY_WITH_JPEG)
 	set_target_properties(libyafaray4_jpg PROPERTIES CXX_STANDARD 14 CXX_STANDARD_REQUIRED ON CXX_EXTENSIONS OFF)
 	set_target_properties(libyafaray4_jpg PROPERTIES CXX_VISIBILITY_PRESET hidden VISIBILITY_INLINES_HIDDEN ON)
 	target_include_directories(libyafaray4_jpg PRIVATE ${PROJECT_SOURCE_DIR}/include ${PROJECT_BINARY_DIR}/include)
-	target_include_directories(libyafaray4_jpg INTERFACE $<INSTALL_INTERFACE:include>)
 	target_sources(libyafaray4_jpg
 			PRIVATE
 			format_jpg.cc
@@ -95,7 +93,6 @@ if(YAFARAY_WITH_PNG)
 	set_target_properties(libyafaray4_png PROPERTIES CXX_STANDARD 14 CXX_STANDARD_REQUIRED ON CXX_EXTENSIONS OFF)
 	set_target_properties(libyafaray4_png PROPERTIES CXX_VISIBILITY_PRESET hidden VISIBILITY_INLINES_HIDDEN ON)
 	target_include_directories(libyafaray4_png PRIVATE ${PROJECT_SOURCE_DIR}/include ${PROJECT_BINARY_DIR}/include)
-	target_include_directories(libyafaray4_png INTERFACE $<INSTALL_INTERFACE:include>)
 	target_sources(libyafaray4_png
 			PRIVATE
 			format_png.cc
@@ -114,7 +111,6 @@ if(YAFARAY_WITH_TIFF)
 	set_target_properties(libyafaray4_tiff PROPERTIES CXX_STANDARD 14 CXX_STANDARD_REQUIRED ON CXX_EXTENSIONS OFF)
 	set_target_properties(libyafaray4_tiff PROPERTIES CXX_VISIBILITY_PRESET hidden VISIBILITY_INLINES_HIDDEN ON)
 	target_include_directories(libyafaray4_tiff PRIVATE ${PROJECT_SOURCE_DIR}/include ${PROJECT_BINARY_DIR}/include)
-	target_include_directories(libyafaray4_tiff INTERFACE $<INSTALL_INTERFACE:include>)
 	target_sources(libyafaray4_tiff
 			PRIVATE
 			format_tif.cc

@@ -32,11 +32,7 @@
 #include "color/color_layers.h"
 #include "math/filter.h"
 #include "common/version_build_info.h"
-
-#ifdef HAVE_OPENCV
-#include <cmath>
-#include <opencv2/photo/photo.hpp>
-#endif
+#include "image/image_manipulation.h"
 
 BEGIN_YAFARAY
 
@@ -498,12 +494,12 @@ void ImageFilm::finishArea(const RenderView *render_view, RenderControl &render_
 
 	if(layers_.isDefined(LayerDef::DebugFacesEdges))
 	{
-		generateDebugFacesEdges(a.x_ - cx_0_, end_x, a.y_ - cy_0_, end_y, true, edge_params);
+		image_manipulation::generateDebugFacesEdges(film_image_layers_, a.x_ - cx_0_, end_x, a.y_ - cy_0_, end_y, true, edge_params, weights_);
 	}
 
 	if(layers_.isDefinedAny({LayerDef::DebugObjectsEdges, LayerDef::Toon}))
 	{
-		generateToonAndDebugObjectEdges(a.x_ - cx_0_, end_x, a.y_ - cy_0_, end_y, true, edge_params);
+		image_manipulation::generateToonAndDebugObjectEdges(film_image_layers_, a.x_ - cx_0_, end_x, a.y_ - cy_0_, end_y, true, edge_params, weights_);
 	}
 
 	for(const auto &film_image_layer : film_image_layers_)
@@ -585,11 +581,11 @@ void ImageFilm::flush(const RenderView *render_view, const RenderControl &render
 	const Layers layers = layers_.getLayersWithImages();
 	if(layers.isDefined(LayerDef::DebugFacesEdges))
 	{
-		generateDebugFacesEdges(0, width_, 0, height_, false, edge_params);
+		image_manipulation::generateDebugFacesEdges(film_image_layers_, 0, width_, 0, height_, false, edge_params, weights_);
 	}
 	if(layers.isDefinedAny({LayerDef::DebugObjectsEdges, LayerDef::Toon}))
 	{
-		generateToonAndDebugObjectEdges(0, width_, 0, height_, false, edge_params);
+		image_manipulation::generateToonAndDebugObjectEdges(film_image_layers_, 0, width_, 0, height_, false, edge_params, weights_);
 	}
 	for(const auto &film_image_layer : film_image_layers_)
 	{
@@ -1167,173 +1163,5 @@ std::string ImageFilm::printRenderStats(const RenderControl &render_control, con
 	ss << " " << times << "s";
 	return ss.str();
 }
-
-
-//The next edge detection, debug faces/object edges and toon functions will only work if YafaRay is built with OpenCV support
-#ifdef HAVE_OPENCV
-
-void edgeImageDetection_global(std::vector<cv::Mat> &image_mat, float edge_threshold, int edge_thickness, float smoothness)
-{
-	//The result of the edges detection will be stored in the first component image of the vector
-
-	//Calculate edges for the different component images and combine them in the first component image
-	for(auto it = image_mat.begin(); it != image_mat.end(); it++)
-	{
-		cv::Laplacian(*it, *it, -1, 3, 1, 0, cv::BORDER_DEFAULT);
-		if(it != image_mat.begin()) image_mat.at(0) = cv::max(image_mat.at(0), *it);
-	}
-
-	//Get a pure black/white image of the edges
-	cv::threshold(image_mat.at(0), image_mat.at(0), edge_threshold, 1.0, 0);
-
-	//Make the edges wider if needed
-	if(edge_thickness > 1)
-	{
-		cv::Mat kernel = cv::Mat::ones(edge_thickness, edge_thickness, CV_32F) / (float)(edge_thickness * edge_thickness);
-		cv::filter2D(image_mat.at(0), image_mat.at(0), -1, kernel);
-		cv::threshold(image_mat.at(0), image_mat.at(0), 0.1, 1.0, 0);
-	}
-
-	//Soften the edges if needed
-	if(smoothness > 0.f) cv::GaussianBlur(image_mat.at(0), image_mat.at(0), cv::Size(3, 3), /*sigmaX=*/ smoothness);
-}
-
-void ImageFilm::generateDebugFacesEdges(int xstart, int width, int ystart, int height, bool drawborder, const EdgeToonParams &edge_params)
-{
-	const Image *normal_image = film_image_layers_(LayerDef::NormalGeom).image_.get();
-	const Image *z_depth_image = film_image_layers_(LayerDef::ZDepthNorm).image_.get();
-	Image *debug_faces_edges_image = film_image_layers_(LayerDef::DebugFacesEdges).image_.get();
-
-	if(normal_image && z_depth_image)
-	{
-		std::vector<cv::Mat> image_mat;
-		for(int i = 0; i < 4; ++i) image_mat.emplace_back(height_, width_, CV_32FC1);
-		for(int j = ystart; j < height; ++j)
-		{
-			for(int i = xstart; i < width; ++i)
-			{
-				const float weight = weights_(i, j).getFloat();
-				const Rgb col_normal = (*normal_image).getColor(i, j).normalized(weight);
-				const float z_depth = (*z_depth_image).getColor(i, j).normalized(weight).a_; //FIXME: can be further optimized
-
-				image_mat.at(0).at<float>(j, i) = col_normal.getR();
-				image_mat.at(1).at<float>(j, i) = col_normal.getG();
-				image_mat.at(2).at<float>(j, i) = col_normal.getB();
-				image_mat.at(3).at<float>(j, i) = z_depth;
-			}
-		}
-
-		edgeImageDetection_global(image_mat, edge_params.threshold_, edge_params.thickness_, edge_params.smoothness_);
-
-		for(int j = ystart; j < height; ++j)
-		{
-			for(int i = xstart; i < width; ++i)
-			{
-				Rgb col_edge = Rgb(image_mat.at(0).at<float>(j, i));
-				if(drawborder && (i <= xstart + 1 || j <= ystart + 1 || i >= width - 1 - 1 || j >= height - 1 - 1)) col_edge = Rgba(0.5f, 0.f, 0.f, 1.f);
-				debug_faces_edges_image->setColor(i, j, Rgba{col_edge});
-			}
-		}
-	}
-}
-
-void ImageFilm::generateToonAndDebugObjectEdges(int xstart, int width, int ystart, int height, bool drawborder, const EdgeToonParams &edge_params)
-{
-	const Image *normal_image = film_image_layers_(LayerDef::NormalSmooth).image_.get();
-	const Image *z_depth_image = film_image_layers_(LayerDef::ZDepthNorm).image_.get();
-	Image *debug_objects_edges_image = film_image_layers_(LayerDef::DebugObjectsEdges).image_.get();
-	Image *toon_image = film_image_layers_(LayerDef::Toon).image_.get();
-
-	const float toon_pre_smooth = edge_params.toon_pre_smooth_;
-	const float toon_quantization = edge_params.toon_quantization_;
-	const float toon_post_smooth = edge_params.toon_post_smooth_;
-	const Rgb toon_edge_color = edge_params.toon_color_;
-	const int object_edge_thickness = edge_params.face_thickness_;
-	const float object_edge_threshold = edge_params.face_threshold_;
-	const float object_edge_smoothness = edge_params.face_smoothness_;
-
-	if(normal_image && z_depth_image)
-	{
-		cv::Mat_<cv::Vec3f> image_mat_combined_vec(height_, width_, CV_32FC3);
-		std::vector<cv::Mat> image_mat;
-		for(int i = 0; i < 4; ++i) image_mat.emplace_back(height_, width_, CV_32FC1);
-		Rgb col_normal(0.f);
-		float z_depth = 0.f;
-
-		for(int j = ystart; j < height; ++j)
-		{
-			for(int i = xstart; i < width; ++i)
-			{
-				const float weight = weights_(i, j).getFloat();
-				col_normal = (*normal_image).getColor(i, j).normalized(weight);
-				z_depth = (*z_depth_image).getColor(i, j).normalized(weight).a_; //FIXME: can be further optimized
-
-				image_mat_combined_vec(j, i)[0] = film_image_layers_(LayerDef::Combined).image_->getColor(i, j).normalized(weight).b_;
-				image_mat_combined_vec(j, i)[1] = film_image_layers_(LayerDef::Combined).image_->getColor(i, j).normalized(weight).g_;
-				image_mat_combined_vec(j, i)[2] = film_image_layers_(LayerDef::Combined).image_->getColor(i, j).normalized(weight).r_;
-
-				image_mat.at(0).at<float>(j, i) = col_normal.getR();
-				image_mat.at(1).at<float>(j, i) = col_normal.getG();
-				image_mat.at(2).at<float>(j, i) = col_normal.getB();
-				image_mat.at(3).at<float>(j, i) = z_depth;
-			}
-		}
-
-		cv::GaussianBlur(image_mat_combined_vec, image_mat_combined_vec, cv::Size(3, 3), toon_pre_smooth);
-
-		if(toon_quantization > 0.f)
-		{
-			for(int j = ystart; j < height; ++j)
-			{
-				for(int i = xstart; i < width; ++i)
-				{
-					{
-						float h, s, v;
-						Rgb col(image_mat_combined_vec(j, i)[0], image_mat_combined_vec(j, i)[1], image_mat_combined_vec(j, i)[2]);
-						col.rgbToHsv(h, s, v);
-						h = std::round(h / toon_quantization) * toon_quantization;
-						s = std::round(s / toon_quantization) * toon_quantization;
-						v = std::round(v / toon_quantization) * toon_quantization;
-						col.hsvToRgb(h, s, v);
-						image_mat_combined_vec(j, i)[0] = col.r_;
-						image_mat_combined_vec(j, i)[1] = col.g_;
-						image_mat_combined_vec(j, i)[2] = col.b_;
-					}
-				}
-			}
-			cv::GaussianBlur(image_mat_combined_vec, image_mat_combined_vec, cv::Size(3, 3), toon_post_smooth);
-		}
-
-		edgeImageDetection_global(image_mat, object_edge_threshold, object_edge_thickness, object_edge_smoothness);
-
-		for(int j = ystart; j < height; ++j)
-		{
-			for(int i = xstart; i < width; ++i)
-			{
-				const float edge_value = image_mat.at(0).at<float>(j, i);
-				Rgb col_edge = Rgb(edge_value);
-
-				if(drawborder && (i <= xstart + 1 || j <= ystart + 1 || i >= width - 1 - 1 || j >= height - 1 - 1)) col_edge = Rgba(0.5f, 0.f, 0.f, 1.f);
-
-				debug_objects_edges_image->setColor(i, j, Rgba{col_edge});
-
-				Rgb col_toon(image_mat_combined_vec(j, i)[2], image_mat_combined_vec(j, i)[1], image_mat_combined_vec(j, i)[0]);
-				col_toon.blend(toon_edge_color, edge_value);
-
-				if(drawborder && (i <= xstart + 1 || j <= ystart + 1 || i >= width - 1 - 1 || j >= height - 1 - 1)) col_toon = Rgba(0.5f, 0.f, 0.f, 1.f);
-
-				toon_image->setColor(i, j, Rgba{col_toon});
-			}
-		}
-	}
-}
-
-#else   //If not built with OpenCV, these functions will do nothing
-
-void ImageFilm::generateToonAndDebugObjectEdges(int xstart, int width, int ystart, int height, bool drawborder, const EdgeToonParams &edge_params) { }
-
-void ImageFilm::generateDebugFacesEdges(int xstart, int width, int ystart, int height, bool drawborder, const EdgeToonParams &edge_params) { }
-
-#endif
 
 END_YAFARAY

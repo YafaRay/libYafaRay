@@ -50,32 +50,17 @@ add_subdirectory(volume)
 
 message_boolean("Using mathematical" YAFARAY_FAST_MATH "approximations (faster)" "precise values (slower)")
 if(YAFARAY_FAST_MATH)
-	list(APPEND YAF_COMMON_DEFINITIONS "FAST_MATH")
+	target_compile_definitions(libyafaray4 PRIVATE "FAST_MATH")
 endif()
 
 message_boolean("Using trigonometric" YAFARAY_FAST_TRIG "approximations (faster)" "precise values (slower)")
 if(YAFARAY_FAST_TRIG)
-	list(APPEND YAF_COMMON_DEFINITIONS "FAST_TRIG")
-endif()
-
-message_boolean("Using FreeType" YAFARAY_WITH_Freetype "yes" "no")
-if(YAFARAY_WITH_Freetype)
-	find_package(Freetype REQUIRED)
-	list(APPEND YAF_COMMON_DEFINITIONS "HAVE_FREETYPE")
-	target_link_libraries(libyafaray4 PRIVATE Freetype::Freetype)
-endif()
-
-message_boolean("Using OpenCV" YAFARAY_WITH_OpenCV "yes" "no")
-if(YAFARAY_WITH_OpenCV)
-	FIND_PACKAGE(OpenCV COMPONENTS core imgproc photo REQUIRED)
-	list(APPEND YAF_COMMON_DEFINITIONS "HAVE_OPENCV")
-	target_link_libraries(libyafaray4 PRIVATE opencv_core opencv_imgproc opencv_photo)
+	target_compile_definitions(libyafaray4 PRIVATE "FAST_TRIG")
 endif()
 
 # Custom definitions
 target_compile_definitions(libyafaray4
 	PRIVATE
-		${YAF_COMMON_DEFINITIONS}
 		"YAFARAY_BUILD_TYPE=\"$<UPPER_CASE:$<CONFIG>>\""
 		"YAFARAY_BUILD_FLAGS=\"${CMAKE_CXX_FLAGS} $<$<CONFIG:Debug>:${CMAKE_CXX_FLAGS_DEBUG}>$<$<CONFIG:Release>:${CMAKE_CXX_FLAGS_RELEASE}>$<$<CONFIG:RelWithDebInfo>:${CMAKE_CXX_FLAGS_RELWITHDEBINFO}>$<$<CONFIG:MinSizeRel>:${CMAKE_CXX_FLAGS_MINSIZEREL}>\"")
 

@@ -33,10 +33,6 @@
 #include "common/logger.h"
 #include "common/param.h"
 
-#ifdef HAVE_OPENCV
-#include <opencv2/photo/photo.hpp>
-#endif
-
 BEGIN_YAFARAY
 
 Image * Image::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params)
@@ -247,109 +243,5 @@ std::string Image::getTypeNameShort(const Type &image_type)
 	}
 }
 
-Image * Image::getDenoisedLdrImage(Logger &logger, const Image *image, const DenoiseParams &denoise_params)
-{
-#ifdef HAVE_OPENCV
-	if(!denoise_params.enabled_) return nullptr;
-
-	auto image_denoised = Image::factory(logger, image->getWidth(), image->getHeight(), image->getType(), image->getOptimization());
-	if(!image_denoised) return image_denoised;
-
-	const int width = image_denoised->getWidth();
-	const int height = image_denoised->getHeight();
-
-	cv::Mat a(height, width, CV_8UC3);
-	cv::Mat b(height, width, CV_8UC3);
-	cv::Mat_<cv::Vec3b> a_vec = a;
-	cv::Mat_<cv::Vec3b> b_vec = b;
-
-	for(int y = 0; y < height; ++y)
-	{
-		for(int x = 0; x < width; ++x)
-		{
-			Rgb color = image->getColor(x, y);
-			color.clampRgb01();
-
-			a_vec(y, x)[0] = (uint8_t)(color.getR() * 255);
-			a_vec(y, x)[1] = (uint8_t)(color.getG() * 255);
-			a_vec(y, x)[2] = (uint8_t)(color.getB() * 255);
-		}
-	}
-
-	cv::fastNlMeansDenoisingColored(a, b, denoise_params.hlum_, denoise_params.hcol_, 7, 21);
-
-	for(int y = 0; y < height; ++y)
-	{
-		for(int x = 0; x < width; ++x)
-		{
-			Rgba col;
-			col.r_ = (denoise_params.mix_ * (float)b_vec(y, x)[0] + (1.f - denoise_params.mix_) * (float)a_vec(y, x)[0]) / 255.0;
-			col.g_ = (denoise_params.mix_ * (float)b_vec(y, x)[1] + (1.f - denoise_params.mix_) * (float)a_vec(y, x)[1]) / 255.0;
-			col.b_ = (denoise_params.mix_ * (float)b_vec(y, x)[2] + (1.f - denoise_params.mix_) * (float)a_vec(y, x)[2]) / 255.0;
-			col.a_ = image->getColor(x, y).a_;
-			image_denoised->setColor(x, y, col);
-		}
-	}
-	return image_denoised;
-#else //HAVE_OPENCV
-	return nullptr;
-#endif //HAVE_OPENCV
-}
-
-Image * Image::getComposedImage(Logger &logger, const Image *image_1, const Image *image_2, const Position &position_image_2, int overlay_x, int overlay_y)
-{
-	if(!image_1 || !image_2) return nullptr;
-	const int width_1 = image_1->getWidth();
-	const int height_1 = image_1->getHeight();
-	const int width_2 = image_2->getWidth();
-	const int height_2 = image_2->getHeight();
-	int width = width_1;
-	int height = height_1;
-	switch(position_image_2)
-	{
-		case Position::Bottom:
-		case Position::Top: height += height_2; break;
-		case Position::Left:
-		case Position::Right: width += width_2; break;
-		case Position::Overlay: break;
-		default: return nullptr;
-	}
-	auto result = Image::factory(logger, width, height, image_1->getType(), image_1->getOptimization());
-
-	for(int x = 0; x < width; ++x)
-	{
-		for(int y = 0; y < height; ++y)
-		{
-			Rgba color;
-			if(position_image_2 == Position::Top)
-			{
-				if(y < height_2 && x < width_2) color = image_2->getColor(x, y);
-				else if(y >= height_2) color = image_1->getColor(x, y - height_2);
-			}
-			else if(position_image_2 == Position::Bottom)
-			{
-				if(y >= height_1 && x < width_2) color = image_2->getColor(x, y - height_1);
-				else if(y < height_1) color = image_1->getColor(x, y);
-			}
-			else if(position_image_2 == Position::Left)
-			{
-				if(x < width_2 && y < height_2) color = image_2->getColor(x, y);
-				else if(x > width_2) color = image_1->getColor(x - width_2, y);
-			}
-			else if(position_image_2 == Position::Right)
-			{
-				if(x >= width_1 && y < height_2) color = image_2->getColor(x - width_1, y);
-				else if(x < width_1) color = image_1->getColor(x, y);
-			}
-			else if(position_image_2 == Position::Overlay)
-			{
-				if(x >= overlay_x && x < overlay_x + width_2 && y >= overlay_y && y < overlay_y + height_2) color = image_2->getColor(x - overlay_x, y - overlay_y);
-				else color = image_1->getColor(x, y);
-			}
-			result->setColor(x, y, color);
-		}
-	}
-	return result;
-}
 
 END_YAFARAY
