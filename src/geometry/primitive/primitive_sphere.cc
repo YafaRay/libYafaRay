@@ -95,8 +95,8 @@ std::unique_ptr<const SurfacePoint> SpherePrimitive::getSurface(const RayDiffere
 	sp->has_orco_ = true;
 	sp->p_ = hit;
 	std::tie(sp->nu_, sp->nv_) = Vec3::createCoordsSystem(sp->n_);
-	sp->u_ = std::atan2(normal.y_, normal.x_) * math::div_1_by_pi + 1;
-	sp->v_ = 1.f - math::acos(normal.z_) * math::div_1_by_pi;
+	sp->u_ = std::atan2(normal.y(), normal.x()) * math::div_1_by_pi + 1;
+	sp->v_ = 1.f - math::acos(normal.z()) * math::div_1_by_pi;
 	sp->light_ = nullptr;
 	sp->setRayDifferentials(ray_differentials);
 	sp->mat_data_ = std::shared_ptr<const MaterialData>(sp->material_->initBsdf(*sp, camera));

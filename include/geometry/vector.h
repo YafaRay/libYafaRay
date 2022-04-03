@@ -27,6 +27,7 @@
 #include "math/math.h"
 #include "math/random.h"
 #include <iostream>
+#include <array>
 
 BEGIN_YAFARAY
 
@@ -40,28 +41,35 @@ class Vec3
 {
 	public:
 		Vec3() = default;
-		explicit Vec3(float f): x_{f}, y_{f}, z_{f} {  }
-		Vec3(float x, float y, float z = 0.f): x_{x}, y_{y}, z_{z} { }
-		Vec3(const Vec3 &v): x_{v.x_}, y_{v.y_}, z_{v.z_} { }
+		explicit Vec3(float f): vec_{f, f, f} {  }
+		Vec3(float x, float y, float z = 0.f): vec_{x, y, z} { }
+		Vec3(const Vec3 &v) = default;
 		explicit Vec3(const Point3 &p);
 
-		void set(float x, float y, float z = 0.f) { x_ = x; y_ = y; z_ = z; }
+		float x() const { return vec_[0]; }
+		float y() const { return vec_[1]; }
+		float z() const { return vec_[2]; }
+		float &x() { return vec_[0]; }
+		float &y() { return vec_[1]; }
+		float &z() { return vec_[2]; }
+
+		void set(float x, float y, float z = 0.f) { vec_ = {x, y, z}; }
 		Vec3 &normalize();
 		Vec3 &reflect(const Vec3 &normal);
 		float normLen(); // normalizes and returns length
 		float normLenSqr(); // normalizes and returns length squared
-		float lengthSqr() const { return x_ * x_ + y_ * y_ + z_ * z_; }
+		float lengthSqr() const { return vec_[0] * vec_[0] + vec_[1] * vec_[1] + vec_[2] * vec_[2]; }
 		float length() const { return math::sqrt(lengthSqr()); }
-		bool null() const { return ((x_ == 0.f) && (y_ == 0.f) && (z_ == 0.f)); }
+		bool null() const { return ((vec_[0] == 0.f) && (vec_[1] == 0.f) && (vec_[2] == 0.f)); }
 		float sinFromVectors(const Vec3 &v) const;
 
-		Vec3 &operator = (const Vec3 &s) { x_ = s.x_; y_ = s.y_; z_ = s.z_;  return *this;}
-		Vec3 &operator +=(const Vec3 &s) { x_ += s.x_; y_ += s.y_; z_ += s.z_;  return *this;}
-		Vec3 &operator -=(const Vec3 &s) { x_ -= s.x_; y_ -= s.y_; z_ -= s.z_;  return *this;}
-		Vec3 &operator /=(float s) { x_ /= s; y_ /= s; z_ /= s;  return *this;}
-		Vec3 &operator *=(float s) { x_ *= s; y_ *= s; z_ *= s;  return *this;}
-		float operator[](int i) const { return (&x_)[i]; } //Lynx
-		float &operator[](int i) { return (&x_)[i]; } //Lynx
+		Vec3 &operator = (const Vec3 &s) = default;
+		Vec3 &operator +=(const Vec3 &s) { for(size_t i = 0; i < 3; ++i) vec_[i] += s.vec_[i]; return *this;}
+		Vec3 &operator -=(const Vec3 &s) { for(size_t i = 0; i < 3; ++i) vec_[i] -= s.vec_[i];  return *this;}
+		Vec3 &operator /=(float s) { for(float &v : vec_) v /= s;  return *this;}
+		Vec3 &operator *=(float s) { for(float &v : vec_) v *= s;  return *this;}
+		float operator[](size_t i) const { return vec_[i]; }
+		float &operator[](size_t i) { return vec_[i]; }
 
 		static Vec3 reflectDir(const Vec3 &normal, const Vec3 &v);
 		static bool refract(const Vec3 &n, const Vec3 &wi, Vec3 &wo, float ior);
@@ -74,7 +82,8 @@ class Vec3
 		static Vec3 randomVectorCone(const Vec3 &dir, float cosangle, float r_1, float r_2);
 		static Vec3 discreteVectorCone(const Vec3 &dir, float cangle, int sample, int square);
 
-		float x_, y_, z_;
+	private:
+		std::array<float, 3> vec_;
 };
 
 class Point3 final : public Vec3
@@ -82,7 +91,7 @@ class Point3 final : public Vec3
 	public:
 		Point3() = default;
 		Point3(float x, float y, float z = 0.f) : Vec3{x, y, z} { }
-		Point3(const Point3 &p) : Vec3{p.x_, p.y_, p.z_} { }
+		Point3(const Point3 &p) = default;
 		explicit Point3(const Vec3 &v): Vec3{v} { }
 		static Point3 mult(const Point3 &a, const Vec3 &b);
 };
@@ -91,94 +100,94 @@ class Point3 final : public Vec3
 #pragma GCC diagnostic pop
 #endif
 
-inline Vec3::Vec3(const Point3 &p): x_{p.x_}, y_{p.y_}, z_{p.z_} { }
+inline Vec3::Vec3(const Point3 &p): vec_{p.vec_} { }
 
 std::ostream &operator << (std::ostream &out, const Vec3 &v);
 std::ostream &operator << (std::ostream &out, const Point3 &p);
 
 inline float operator * (const Vec3 &a, const Vec3 &b)
 {
-	return (a.x_ * b.x_ + a.y_ * b.y_ + a.z_ * b.z_);
+	return a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
 }
 
 inline Vec3 operator * (float f, const Vec3 &v)
 {
-	return {f * v.x_, f * v.y_, f * v.z_};
+	return {f * v[0], f * v[1], f * v[2]};
 }
 
 inline Vec3 operator * (const Vec3 &v, float f)
 {
-	return {f * v.x_, f * v.y_, f * v.z_};
+	return {f * v[0], f * v[1], f * v[2]};
 }
 
 inline Point3 operator * (float f, const Point3 &p)
 {
-	return {f * p.x_, f * p.y_, f * p.z_};
+	return {f * p[0], f * p[1], f * p[2]};
 }
 
 inline Vec3 operator / (const Vec3 &v, float f)
 {
-	return {v.x_ / f, v.y_ / f, v.z_ / f};
+	return {v[0] / f, v[1] / f, v[2] / f};
 }
 
 inline Point3 operator / (const Point3 &p, float f)
 {
-	return {p.x_ / f, p.y_ / f, p.z_ / f};
+	return {p[0] / f, p[1] / f, p[2] / f};
 }
 
 inline Point3 operator * (const Point3 &p, float f)
 {
-	return {p.x_ * f, p.y_ * f, p.z_ * f};
+	return {p[0] * f, p[1] * f, p[2] * f};
 }
 
 inline Vec3 operator / (float f, const Vec3 &v)
 {
-	return {v.x_ / f, v.y_ / f, v.z_ / f};
+	return {v[0] / f, v[1] / f, v[2] / f};
 }
 
 inline Vec3 operator ^ (const Vec3 &a, const Vec3 &b)
 {
-	return {a.y_ * b.z_ - a.z_ * b.y_, a.z_ * b.x_ - a.x_ * b.z_, a.x_ * b.y_ - a.y_ * b.x_};
+	return {a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]};
 }
 
 inline Vec3 operator - (const Vec3 &a, const Vec3 &b)
 {
-	return {a.x_ - b.x_, a.y_ - b.y_, a.z_ - b.z_};
+	return {a[0] - b[0], a[1] - b[1], a[2] - b[2]};
 }
 
 inline Vec3 operator - (const Point3 &a, const Point3 &b)
 {
-	return {a.x_ - b.x_, a.y_ - b.y_, a.z_ - b.z_};
+	return {a[0] - b[0], a[1] - b[1], a[2] - b[2]};
 }
 
 inline Point3 operator - (const Point3 &a, const Vec3 &b)
 {
-	return {a.x_ - b.x_, a.y_ - b.y_, a.z_ - b.z_};
+	return {a[0] - b[0], a[1] - b[1], a[2] - b[2]};
 }
 
 inline Vec3 operator - (const Vec3 &v)
 {
-	return {-v.x_, -v.y_, -v.z_};
+	return {-v[0], -v[1], -v[2]};
 }
 
 inline Vec3 operator + (const Vec3 &a, const Vec3 &b)
 {
-	return {a.x_ + b.x_, a.y_ + b.y_, a.z_ + b.z_};
+	return {a[0] + b[0], a[1] + b[1], a[2] + b[2]};
 }
 
 inline Point3 operator + (const Point3 &a, const Point3 &b)
 {
-	return {a.x_ + b.x_, a.y_ + b.y_, a.z_ + b.z_};
+	return {a[0] + b[0], a[1] + b[1], a[2] + b[2]};
 }
 
 inline Point3 operator + (const Point3 &a, const Vec3 &b)
 {
-	return {a.x_ + b.x_, a.y_ + b.y_, a.z_ + b.z_};
+	return {a[0] + b[0], a[1] + b[1], a[2] + b[2]};
 }
 
 inline bool operator == (const Point3 &a, const Point3 &b)
 {
-	return ((a.x_ == b.x_) && (a.y_ == b.y_) && (a.z_ == b.z_));
+	return ((a[0] == b[0]) && (a[1] == b[1]) && (a[2] == b[2]));
 }
 
 bool operator == (const Vec3 &a, const Vec3 &b);
@@ -186,7 +195,7 @@ bool operator != (const Vec3 &a, const Vec3 &b);
 
 inline Point3 Point3::mult(const Point3 &a, const Vec3 &b)
 {
-	return {a.x_ * b.x_, a.y_ * b.y_, a.z_ * b.z_};
+	return {a[0] * b[0], a[1] * b[1], a[2] * b[2]};
 }
 
 inline Vec3 &Vec3::normalize()
@@ -195,9 +204,7 @@ inline Vec3 &Vec3::normalize()
 	if(len != 0.f)
 	{
 		len = 1.f / math::sqrt(len);
-		x_ *= len;
-		y_ *= len;
-		z_ *= len;
+		for(auto &v : vec_) v *= len;
 	}
 	return *this;
 }
@@ -219,10 +226,8 @@ inline float Vec3::sinFromVectors(const Vec3 &v) const
  */
 inline Vec3 &Vec3::reflect(const Vec3 &normal)
 {
-	const float vn = 2.f * (x_ * normal.x_ + y_ * normal.y_ + z_ * normal.z_);
-	x_ = vn * normal.x_ - x_;
-	y_ = vn * normal.y_ - y_;
-	z_ = vn * normal.z_ - z_;
+	const float vn = 2.f * (vec_[0] * normal.vec_[0] + vec_[1] * normal.vec_[1] + vec_[2] * normal.vec_[2]);
+	for(size_t i = 0; i < 3; ++i) vec_[i] = vn * normal.vec_[i] - vec_[i];
 	return *this;
 }
 
@@ -232,7 +237,7 @@ inline float Vec3::normLen() {
 	{
 		vl = math::sqrt(vl);
 		const float d = 1.f / vl;
-		x_ *= d; y_ *= d; z_ *= d;
+		for(float &v : vec_) v *= d;
 	}
 	return vl;
 }
@@ -242,7 +247,7 @@ inline float Vec3::normLenSqr() {
 	if(vl != 0.f)
 	{
 		const float d = 1.f / math::sqrt(vl);
-		x_ *= d; y_ *= d; z_ *= d;
+		for(float &v : vec_) v *= d;
 	}
 	return vl;
 }
@@ -256,16 +261,16 @@ inline Vec3 Vec3::reflectDir(const Vec3 &normal, const Vec3 &v)
 
 inline std::pair<Vec3, Vec3> Vec3::createCoordsSystem(const Vec3 &normal)
 {
-	if((normal.x_ == 0.f) && (normal.y_ == 0.f))
+	if((normal.vec_[0] == 0.f) && (normal.vec_[1] == 0.f))
 	{
-		return { (normal.z_ < 0.f ? Vec3{-1.f, 0.f, 0.f} : Vec3{1.f, 0.f, 0.f}), Vec3{0.f, 1.f, 0.f} };
+		return { (normal.vec_[2] < 0.f ? Vec3{-1.f, 0.f, 0.f} : Vec3{1.f, 0.f, 0.f}), Vec3{0.f, 1.f, 0.f} };
 	}
 	else
 	{
 		// Note: The root cannot become zero if
 		// N.x==0 && N.y==0.
-		const float d = 1.f / math::sqrt(normal.y_ * normal.y_ + normal.x_ * normal.x_);
-		const Vec3 u{normal.y_ * d, -normal.x_ * d, 0.f};
+		const float d = 1.f / math::sqrt(normal.vec_[1] * normal.vec_[1] + normal.vec_[0] * normal.vec_[0]);
+		const Vec3 u{normal.vec_[1] * d, -normal.vec_[0] * d, 0.f};
 		return {u, normal ^ u};
 	}
 }
@@ -273,14 +278,14 @@ inline std::pair<Vec3, Vec3> Vec3::createCoordsSystem(const Vec3 &normal)
 inline Vec3 Vec3::randomSpherical()
 {
 	Vec3 v{0.f, 0.f, FastRandom::getNextFloatNormalized()};
-	float r = 1.f - v.z_ * v.z_;
+	float r = 1.f - v.vec_[2] * v.vec_[2];
 	if(r > 0.f)
 	{
 		const float a = math::mult_pi_by_2 * FastRandom::getNextFloatNormalized();
 		r = math::sqrt(r);
-		v.x_ = r * math::cos(a); v.y_ = r * math::sin(a);
+		v.vec_[0] = r * math::cos(a); v.vec_[1] = r * math::sin(a);
 	}
-	else v.z_ = 1.f;
+	else v.vec_[2] = 1.f;
 	return v;
 }
 

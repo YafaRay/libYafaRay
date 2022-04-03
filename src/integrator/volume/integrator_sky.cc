@@ -80,8 +80,8 @@ Rgb SkyIntegrator::skyTau(const Ray &ray) const
 	else dist = ray.tmax_;
 	if(dist < 0.f) dist = 1000.f;
 	const float s = dist;
-	const float cos_theta = ray.dir_.z_; //vector3d_t(0.f, 0.f, 1.f) * ray.dir;
-	const float h_0 = ray.from_.z_;
+	const float cos_theta = ray.dir_.z(); //vector3d_t(0.f, 0.f, 1.f) * ray.dir;
+	const float h_0 = ray.from_.z();
 	/*
 	float K = - sigma_t / (alpha * cos_theta);
 	float H = exp(-alpha * h0);
@@ -97,8 +97,8 @@ Rgb SkyIntegrator::skyTau(const Ray &ray, float beta, float alpha) const
 {
 	if(ray.tmax_ < 0.f) return Rgb{0.f};
 	const float s = ray.tmax_ * scale_;
-	float cos_theta = ray.dir_.z_;
-	float h_0 = ray.from_.z_ * scale_;
+	float cos_theta = ray.dir_.z();
+	float h_0 = ray.from_.z() * scale_;
 	return Rgb{beta * math::exp(-alpha * h_0) * (1.f - math::exp(-alpha * cos_theta * s)) / (alpha * cos_theta)};
 	//tauVal = Rgba(-beta / (alpha * cos_theta) * ( exp(-alpha * (h0 + cos_theta * s)) - exp(-alpha*h0) ));
 }
@@ -146,8 +146,8 @@ Rgb SkyIntegrator::integrate(RandomGenerator &random_generator, const Ray &ray, 
 
 	//std::cout << " S0_m: " << S0_m.energy() << std::endl;
 
-	const float cos_theta = ray.dir_.z_;
-	const float h_0 = ray.from_.z_ * scale_;
+	const float cos_theta = ray.dir_.z();
+	const float h_0 = ray.from_.z() * scale_;
 	const float step = step_size_ * scale_;
 	float pos = 0.f + random_generator() * step;
 	Rgb i_r {0.f}, i_m {0.f};

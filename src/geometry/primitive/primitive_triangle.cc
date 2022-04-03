@@ -178,12 +178,12 @@ std::unique_ptr<const SurfacePoint> TrianglePrimitive::getSurface(const RayDiffe
 void TrianglePrimitive::calculateShadingSpace(SurfacePoint &sp)
 {
 	// transform dPdU and dPdV in shading space
-	sp.ds_du_.x_ = sp.nu_ * sp.dp_du_;
-	sp.ds_du_.y_ = sp.nv_ * sp.dp_du_;
-	sp.ds_du_.z_ = sp.n_ * sp.dp_du_;
-	sp.ds_dv_.x_ = sp.nu_ * sp.dp_dv_;
-	sp.ds_dv_.y_ = sp.nv_ * sp.dp_dv_;
-	sp.ds_dv_.z_ = sp.n_ * sp.dp_dv_;
+	sp.ds_du_.x() = sp.nu_ * sp.dp_du_;
+	sp.ds_du_.y() = sp.nv_ * sp.dp_du_;
+	sp.ds_du_.z() = sp.n_ * sp.dp_du_;
+	sp.ds_dv_.x() = sp.nu_ * sp.dp_dv_;
+	sp.ds_dv_.y() = sp.nv_ * sp.dp_dv_;
+	sp.ds_dv_.z() = sp.n_ * sp.dp_dv_;
 }
 
 PolyDouble::ClipResultWithBound TrianglePrimitive::clipToBound(Logger &logger, const std::array<Vec3Double, 2> &bound, const ClipPlane &clip_plane, const PolyDouble &poly, const Matrix4 *obj_to_world) const
@@ -201,7 +201,7 @@ PolyDouble::ClipResultWithBound TrianglePrimitive::clipToBound(Logger &logger, c
 		getVertex(0, obj_to_world), getVertex(1, obj_to_world), getVertex(2, obj_to_world)
 	};
 	PolyDouble poly_triangle;
-	for(const auto &vert : triangle_vertices) poly_triangle.addVertex({vert.x_, vert.y_, vert.z_ });
+	for(const auto &vert : triangle_vertices) poly_triangle.addVertex({vert.x(), vert.y(), vert.z() });
 	return PolyDouble::boxClip(logger, bound[1], poly_triangle, bound[0]);
 }
 

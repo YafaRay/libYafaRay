@@ -72,19 +72,19 @@ std::pair<Rgb, float> DebugIntegrator::integrate(Ray &ray, RandomGenerator &rand
 	{
 		Rgb col {0.f};
 		if(debug_type_ == N)
-			col = Rgb((sp->n_.x_ + 1.f) * .5f, (sp->n_.y_ + 1.f) * .5f, (sp->n_.z_ + 1.f) * .5f);
+			col = Rgb((sp->n_.x() + 1.f) * .5f, (sp->n_.y() + 1.f) * .5f, (sp->n_.z() + 1.f) * .5f);
 		else if(debug_type_ == DPdU)
-			col = Rgb((sp->dp_du_.x_ + 1.f) * .5f, (sp->dp_du_.y_ + 1.f) * .5f, (sp->dp_du_.z_ + 1.f) * .5f);
+			col = Rgb((sp->dp_du_.x() + 1.f) * .5f, (sp->dp_du_.y() + 1.f) * .5f, (sp->dp_du_.z() + 1.f) * .5f);
 		else if(debug_type_ == DPdV)
-			col = Rgb((sp->dp_dv_.x_ + 1.f) * .5f, (sp->dp_dv_.y_ + 1.f) * .5f, (sp->dp_dv_.z_ + 1.f) * .5f);
+			col = Rgb((sp->dp_dv_.x() + 1.f) * .5f, (sp->dp_dv_.y() + 1.f) * .5f, (sp->dp_dv_.z() + 1.f) * .5f);
 		else if(debug_type_ == Nu)
-			col = Rgb((sp->nu_.x_ + 1.f) * .5f, (sp->nu_.y_ + 1.f) * .5f, (sp->nu_.z_ + 1.f) * .5f);
+			col = Rgb((sp->nu_.x() + 1.f) * .5f, (sp->nu_.y() + 1.f) * .5f, (sp->nu_.z() + 1.f) * .5f);
 		else if(debug_type_ == Nv)
-			col = Rgb((sp->nv_.x_ + 1.f) * .5f, (sp->nv_.y_ + 1.f) * .5f, (sp->nv_.z_ + 1.f) * .5f);
+			col = Rgb((sp->nv_.x() + 1.f) * .5f, (sp->nv_.y() + 1.f) * .5f, (sp->nv_.z() + 1.f) * .5f);
 		else if(debug_type_ == DSdU)
-			col = Rgb((sp->ds_du_.x_ + 1.f) * .5f, (sp->ds_du_.y_ + 1.f) * .5f, (sp->ds_du_.z_ + 1.f) * .5f);
+			col = Rgb((sp->ds_du_.x() + 1.f) * .5f, (sp->ds_du_.y() + 1.f) * .5f, (sp->ds_du_.z() + 1.f) * .5f);
 		else if(debug_type_ == DSdV)
-			col = Rgb((sp->ds_dv_.x_ + 1.f) * .5f, (sp->ds_dv_.y_ + 1.f) * .5f, (sp->ds_dv_.z_ + 1.f) * .5f);
+			col = Rgb((sp->ds_dv_.x() + 1.f) * .5f, (sp->ds_dv_.y() + 1.f) * .5f, (sp->ds_dv_.z() + 1.f) * .5f);
 		return {col, 1.f};
 	}
 	return {Rgb{0.f}, 1.f};

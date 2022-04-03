@@ -286,7 +286,7 @@ Rgb CoatedGlossyMaterial::sample(const MaterialData *mat_data, const SurfacePoin
 			}
 			else
 			{
-				h = hs.x_ * sp.nu_ + hs.y_ * sp.nv_ + hs.z_ * n;
+				h = hs.x() * sp.nu_ + hs.y() * sp.nv_ + hs.z() * n;
 				cos_wo_h = wo * h;
 				if(cos_wo_h < 0.f)
 				{

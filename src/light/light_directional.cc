@@ -36,7 +36,7 @@ DirectionalLight::DirectionalLight(Logger &logger, const Point3 &pos, Vec3 dir, 
 	direction_.normalize();
 	std::tie(du_, dv_) = Vec3::createCoordsSystem(direction_);
 	const Vec3 &d{direction_};
-	major_axis_ = (d.x_ > d.y_) ? ((d.x_ > d.z_) ? 0 : 2) : ((d.y_ > d.z_) ? 1 : 2);
+	major_axis_ = (d.x() > d.y()) ? ((d.x() > d.z()) ? 0 : 2) : ((d.y() > d.z()) ? 1 : 2);
 }
 
 void DirectionalLight::init(Scene &scene)

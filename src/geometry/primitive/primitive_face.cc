@@ -117,12 +117,12 @@ Bound FacePrimitive::getBound(const std::vector<Point3> &vertices)
 	const size_t num_vertices = vertices.size();
 	for(size_t vert_num = 1; vert_num < num_vertices; ++vert_num)
 	{
-		if(vertices[vert_num].x_ < min_point.x_) min_point.x_ = vertices[vert_num].x_;
-		if(vertices[vert_num].y_ < min_point.y_) min_point.y_ = vertices[vert_num].y_;
-		if(vertices[vert_num].z_ < min_point.z_) min_point.z_ = vertices[vert_num].z_;
-		if(vertices[vert_num].x_ > max_point.x_) max_point.x_ = vertices[vert_num].x_;
-		if(vertices[vert_num].y_ > max_point.y_) max_point.y_ = vertices[vert_num].y_;
-		if(vertices[vert_num].z_ > max_point.z_) max_point.z_ = vertices[vert_num].z_;
+		if(vertices[vert_num].x() < min_point.x()) min_point.x() = vertices[vert_num].x();
+		if(vertices[vert_num].y() < min_point.y()) min_point.y() = vertices[vert_num].y();
+		if(vertices[vert_num].z() < min_point.z()) min_point.z() = vertices[vert_num].z();
+		if(vertices[vert_num].x() > max_point.x()) max_point.x() = vertices[vert_num].x();
+		if(vertices[vert_num].y() > max_point.y()) max_point.y() = vertices[vert_num].y();
+		if(vertices[vert_num].z() > max_point.z()) max_point.z() = vertices[vert_num].z();
 	}
 	return {min_point, max_point};
 }

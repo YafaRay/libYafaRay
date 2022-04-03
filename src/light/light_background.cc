@@ -190,7 +190,7 @@ void BackgroundLight::emitPdf(const SurfacePoint &sp, const Vec3 &wo, float &are
 {
 	Vec3 wi{wo};
 	wi.normalize();
-	cos_wo = wi.z_;
+	cos_wo = wi.z();
 	wi = -wi;
 	dir_pdf = dirPdf(wi);
 	area_pdf = 1.f;

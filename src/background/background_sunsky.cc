@@ -38,12 +38,12 @@ BEGIN_YAFARAY
 
 SunSkyBackground::SunSkyBackground(Logger &logger, const Point3 &dir, float turb, float a_var, float b_var, float c_var, float d_var, float e_var, float pwr) : Background(logger), power_(pwr)
 {
-	sun_dir_.set(dir.x_, dir.y_, dir.z_);
+	sun_dir_.set(dir.x(), dir.y(), dir.z());
 	sun_dir_.normalize();
-	theta_s_ = math::acos(sun_dir_.z_);
+	theta_s_ = math::acos(sun_dir_.z());
 	theta_2_ = theta_s_ * theta_s_;
 	theta_3_ = theta_2_ * theta_s_;
-	phi_s_ = std::atan2(sun_dir_.y_, sun_dir_.x_);
+	phi_s_ = std::atan2(sun_dir_.y(), sun_dir_.x());
 	t_ = turb;
 	t_2_ = turb * turb;
 	const double chi = (4.0 / 9.0 - t_ / 120.0) * (math::num_pi - 2.0 * theta_s_);
@@ -117,7 +117,7 @@ inline Rgb SunSkyBackground::getSkyCol(const Vec3 &dir) const
 	double hfade = 1, nfade = 1;
 
 	Rgb skycolor(0.0);
-	double theta = math::acos(iw.z_);
+	double theta = math::acos(iw.z());
 	if(theta > (0.5 * math::num_pi))
 	{
 		// this stretches horizon color below horizon, must be possible to do something better...
@@ -138,10 +138,10 @@ inline Rgb SunSkyBackground::getSkyCol(const Vec3 &dir) const
 		}
 	}
 	double phi;
-	if((iw.y_ == 0.0) && (iw.x_ == 0.0))
+	if((iw.y() == 0.0) && (iw.x() == 0.0))
 		phi = math::num_pi * 0.5;
 	else
-		phi = std::atan2(iw.y_, iw.x_);
+		phi = std::atan2(iw.y(), iw.x());
 
 	const double gamma = angleBetween(theta, phi);
 	// Compute xyY values
@@ -280,7 +280,7 @@ const Background * SunSkyBackground::factory(Logger &logger, Scene &scene, const
 
 	if(add_sun)
 	{
-		Rgb suncol = computeAttenuatedSunlight(math::acos(std::abs(dir.z_)), turb);//(*new_sunsky)(vector3d_t(dir.x, dir.y, dir.z));
+		Rgb suncol = computeAttenuatedSunlight(math::acos(std::abs(dir.z())), turb);//(*new_sunsky)(vector3d_t(dir.x, dir.y, dir.z));
 		double angle = 0.27;
 		double cos_angle = math::cos(math::degToRad(angle));
 		float invpdf = (2.f * math::num_pi * (1.f - cos_angle));

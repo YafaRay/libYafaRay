@@ -76,9 +76,9 @@ bool SingleScatterIntegrator::preprocess(ImageFilm *image_film, const RenderView
 						for(int x = 0; x < x_size; ++x)
 						{
 							// generate the world position inside the grid
-							Point3 p(bb.longX() * x_size_inv * x + bb.a_.x_,
-									 bb.longY() * y_size_inv * y + bb.a_.y_,
-									 bb.longZ() * z_size_inv * z + bb.a_.z_);
+							Point3 p(bb.longX() * x_size_inv * x + bb.a_.x(),
+									 bb.longY() * y_size_inv * y + bb.a_.y(),
+									 bb.longZ() * z_size_inv * z + bb.a_.z());
 
 							SurfacePoint sp;
 							sp.p_ = p;

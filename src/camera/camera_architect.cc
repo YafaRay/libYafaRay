@@ -78,11 +78,11 @@ Point3 ArchitectCamera::screenproject(const Point3 &p) const
 	float dz = dir * camz;
 
 	Point3 s;
-	s.y_ = 2 * dy * focal_distance_ / (dz * aspect_ratio_);
+	s.y() = 2 * dy * focal_distance_ / (dz * aspect_ratio_);
 	// Needs focal_distance correction
 	const float fod = focal_distance_ * camy * cam_y_ / (camx * cam_x_);
-	s.x_ = 2 * dx * fod / dz;
-	s.z_ = 0.f;
+	s.x() = 2 * dx * fod / dz;
+	s.z() = 0.f;
 	return s;
 }
 

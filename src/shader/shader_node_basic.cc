@@ -59,14 +59,14 @@ void TextureMapperNode::setup()
 Point3 TextureMapperNode::tubeMap(const Point3 &p)
 {
 	Point3 res;
-	res.y_ = p.z_;
-	const float d = p.x_ * p.x_ + p.y_ * p.y_;
+	res.y() = p.z();
+	const float d = p.x() * p.x() + p.y() * p.y();
 	if(d > 0.f)
 	{
-		res.z_ = 1.f / math::sqrt(d);
-		res.x_ = -std::atan2(p.x_, p.y_) * math::div_1_by_pi;
+		res.z() = 1.f / math::sqrt(d);
+		res.x() = -std::atan2(p.x(), p.y()) * math::div_1_by_pi;
 	}
-	else res.x_ = res.z_ = 0.f;
+	else res.x() = res.z() = 0.f;
 	return res;
 }
 
@@ -74,12 +74,12 @@ Point3 TextureMapperNode::tubeMap(const Point3 &p)
 Point3 TextureMapperNode::sphereMap(const Point3 &p)
 {
 	Point3 res{0.f, 0.f, 0.f};
-	const float d = p.x_ * p.x_ + p.y_ * p.y_ + p.z_ * p.z_;
+	const float d = p.x() * p.x() + p.y() * p.y() + p.z() * p.z();
 	if(d > 0.f)
 	{
-		res.z_ = math::sqrt(d);
-		if((p.x_ != 0.f) && (p.y_ != 0.f)) res.x_ = -std::atan2(p.x_, p.y_) * math::div_1_by_pi;
-		res.y_ = 1.f - 2.f * (math::acos(p.z_ / res.z_) * math::div_1_by_pi);
+		res.z() = math::sqrt(d);
+		if((p.x() != 0.f) && (p.y() != 0.f)) res.x() = -std::atan2(p.x(), p.y()) * math::div_1_by_pi;
+		res.y() = 1.f - 2.f * (math::acos(p.z() / res.z()) * math::div_1_by_pi);
 	}
 	return res;
 }
@@ -91,8 +91,8 @@ Point3 TextureMapperNode::cubeMap(const Point3 &p, const Vec3 &n)
 	// int axis = std::abs(n.x) > std::abs(n.y) ? (std::abs(n.x) > std::abs(n.z) ? 0 : 2) : (std::abs(n.y) > std::abs(n.z) ? 1 : 2);
 	// no functionality changes, just more readable code
 	int axis;
-	if(std::abs(n.z_) >= std::abs(n.x_) && std::abs(n.z_) >= std::abs(n.y_)) axis = 2;
-	else if(std::abs(n.y_) >= std::abs(n.x_) && std::abs(n.y_) >= std::abs(n.z_)) axis = 1;
+	if(std::abs(n.z()) >= std::abs(n.x()) && std::abs(n.z()) >= std::abs(n.y())) axis = 2;
+	else if(std::abs(n.y()) >= std::abs(n.x()) && std::abs(n.y()) >= std::abs(n.z())) axis = 1;
 	else axis = 0;
 	return { p[ma[axis][0]], p[ma[axis][1]], p[ma[axis][2]] };
 }
@@ -109,14 +109,14 @@ Point3 TextureMapperNode::doMapping(const Point3 &p, const Vec3 &n) const
 	// Texture coordinates standardized, if needed, to -1..1
 	switch(coords_)
 	{
-		case Uv: texpt = {2.f * texpt.x_ - 1.f, 2.f * texpt.y_ - 1.f, texpt.z_}; break;
+		case Uv: texpt = {2.f * texpt.x() - 1.f, 2.f * texpt.y() - 1.f, texpt.z()}; break;
 		default: break;
 	}
 	// Texture axis mapping
-	const std::array<float, 4> texmap { 0.f, texpt.x_, texpt.y_, texpt.z_ };
-	texpt.x_ = texmap[map_x_];
-	texpt.y_ = texmap[map_y_];
-	texpt.z_ = texmap[map_z_];
+	const std::array<float, 4> texmap {0.f, texpt.x(), texpt.y(), texpt.z() };
+	texpt.x() = texmap[map_x_];
+	texpt.y() = texmap[map_y_];
+	texpt.z() = texmap[map_z_];
 	// Texture coordinates mapping
 	switch(projection_)
 	{
@@ -181,7 +181,7 @@ void TextureMapperNode::eval(NodeTreeData &node_tree_data, const SurfacePoint &s
 			sp.getUVdifferentials(du_dx, dv_dx, du_dy, dv_dy);
 			const Point3 texpt_diffx{1.0e+2f * (doMapping(texptorig + 1.0e-2f * Point3{du_dx, dv_dx, 0.f}, ng) - texpt)};
 			const Point3 texpt_diffy{1.0e+2f * (doMapping(texptorig + 1.0e-2f * Point3{du_dy, dv_dy, 0.f}, ng) - texpt)};
-			mip_map_params = std::unique_ptr<const MipMapParams>(new MipMapParams(texpt_diffx.x_, texpt_diffx.y_, texpt_diffy.x_, texpt_diffy.y_));
+			mip_map_params = std::unique_ptr<const MipMapParams>(new MipMapParams(texpt_diffx.x(), texpt_diffx.y(), texpt_diffy.x(), texpt_diffy.y()));
 		}
 	}
 	else
@@ -214,9 +214,9 @@ void TextureMapperNode::evalDerivative(NodeTreeData &node_tree_data, const Surfa
 			const Rgba color = tex_->getRawColor(texpt);
 
 			// Assign normal map RGB colors to vector norm
-			norm.x_ = color.getR();
-			norm.y_ = color.getG();
-			norm.z_ = color.getB();
+			norm.x() = color.getR();
+			norm.y() = color.getG();
+			norm.z() = color.getB();
 			norm = (2.f * norm) - Vec3{1.f}; //FIXME DAVID: does the Vec3 portion make sense?
 
 			// Convert norm into shading space
@@ -235,19 +235,19 @@ void TextureMapperNode::evalDerivative(NodeTreeData &node_tree_data, const Surfa
 			// now we got the derivative in UV-space, but need it in shading space:
 			Vec3 vec_u{sp.ds_du_};
 			Vec3 vec_v{sp.ds_dv_};
-			vec_u.z_ = dfdu;
-			vec_v.z_ = dfdv;
+			vec_u.z() = dfdu;
+			vec_v.z() = dfdv;
 			// now we have two vectors NU/NV/df; Solve plane equation to get 1/0/df and 0/1/df (i.e. dNUdf and dNVdf)
 			norm = vec_u ^ vec_v;
 		}
 
 		norm.normalize();
 
-		if(std::abs(norm.z_) > 1e-30f)
+		if(std::abs(norm.z()) > 1e-30f)
 		{
-			const float nf = 1.f / norm.z_ * bump_str_; // normalizes z to 1, why?
-			du = norm.x_ * nf;
-			dv = norm.y_ * nf;
+			const float nf = 1.f / norm.z() * bump_str_; // normalizes z to 1, why?
+			du = norm.x() * nf;
+			dv = norm.y() * nf;
 		}
 		else du = dv = 0.f;
 	}
@@ -270,11 +270,11 @@ void TextureMapperNode::evalDerivative(NodeTreeData &node_tree_data, const Surfa
 
 			norm.normalize();
 
-			if(std::abs(norm.z_) > 1e-30f)
+			if(std::abs(norm.z()) > 1e-30f)
 			{
-				const float nf = 1.0 / norm.z_ * bump_str_; // normalizes z to 1, why?
-				du = norm.x_ * nf;
-				dv = norm.y_ * nf;
+				const float nf = 1.0 / norm.z() * bump_str_; // normalizes z to 1, why?
+				du = norm.x() * nf;
+				dv = norm.y() * nf;
 			}
 			else du = dv = 0.f;
 		}

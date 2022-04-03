@@ -46,9 +46,9 @@ Rgb TextureBackground::eval(const Vec3 &dir, bool use_ibl_blur) const
 	if(project_ == Angular)
 	{
 		const Point3 p {
-				dir.x_ * cos_r_ + dir.y_ * sin_r_,
-				dir.x_ * -sin_r_ + dir.y_ * cos_r_,
-				dir.z_
+				dir.x() * cos_r_ + dir.y() * sin_r_,
+				dir.x() * -sin_r_ + dir.y() * cos_r_,
+				dir.z()
 		};
 		Texture::angMap(p, u, v);
 	}

@@ -184,7 +184,7 @@ void ExportPython::writeParam(const std::string &name, const Parameter &param, s
 	{
 		Point3 p{0.f, 0.f, 0.f};
 		param.getVal(p);
-		file << "yi.paramsSetVector(\"" << name << "\", " << p.x_ << ", " << p.y_ << ", " << p.z_ << ")\n";
+		file << "yi.paramsSetVector(\"" << name << "\", " << p.x() << ", " << p.y() << ", " << p.z() << ")\n";
 	}
 	else if(type == Parameter::Color)
 	{

@@ -50,9 +50,9 @@ IesLight::IesLight(Logger &logger, const Point3 &from, const Point3 &to, const R
 
 void IesLight::getAngles(float &u, float &v, const Vec3 &dir, const float &costheta)
 {
-	u = (dir.z_ >= 1.f) ? 0.f : math::radToDeg(math::acos(dir.z_));
+	u = (dir.z() >= 1.f) ? 0.f : math::radToDeg(math::acos(dir.z()));
 
-	if(dir.y_ < 0)
+	if(dir.y() < 0)
 	{
 		u = 360.f - u;
 	}

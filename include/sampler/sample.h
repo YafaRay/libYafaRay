@@ -58,19 +58,19 @@ Vec3 inline cosHemisphere(const Vec3 &n, const Vec3 &ru, const Vec3 &rv, float s
 Vec3 inline sphere(float s_1, float s_2)
 {
 	Vec3 dir;
-	dir.z_ = 1.0f - 2.0f * s_1;
-	float r = 1.0f - dir.z_ * dir.z_;
+	dir.z() = 1.0f - 2.0f * s_1;
+	float r = 1.0f - dir.z() * dir.z();
 	if(r > 0.0f)
 	{
 		r = math::sqrt(r);
 		const float a = math::mult_pi_by_2 * s_2;
-		dir.x_ = math::cos(a) * r;
-		dir.y_ = math::sin(a) * r;
+		dir.x() = math::cos(a) * r;
+		dir.y() = math::sin(a) * r;
 	}
 	else
 	{
-		dir.x_ = 0.0f;
-		dir.y_ = 0.0f;
+		dir.x() = 0.0f;
+		dir.y() = 0.0f;
 	}
 	return dir;
 }

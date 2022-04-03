@@ -76,51 +76,51 @@ class Bound
 		//! Returns the volume of the bound
 		float vol() const;
 		//! Returns the lenght along X axis
-		float longX() const {return g_.x_ - a_.x_;};
+		float longX() const { return g_.x() - a_.x(); }
 		//! Returns the lenght along Y axis
-		float longY() const {return g_.y_ - a_.y_;};
-		//! Returns the lenght along Y axis
-		float longZ() const {return g_.z_ - a_.z_;};
+		float longY() const { return g_.y() - a_.y(); }
+		//! Returns the lenght along Z axis
+		float longZ() const { return g_.z() - a_.z(); }
 		//! Cuts the bound to have the given max X
-		void setMaxX(float x) { g_.x_ = x;};
+		void setMaxX(float x) { g_.x() = x;};
 		//! Cuts the bound to have the given min X
-		void setMinX(float x) { a_.x_ = x;};
+		void setMinX(float x) { a_.x() = x;};
 
 		//! Cuts the bound to have the given max Y
-		void setMaxY(float y) { g_.y_ = y;};
+		void setMaxY(float y) { g_.y() = y;};
 		//! Cuts the bound to have the given min Y
-		void setMinY(float y) { a_.y_ = y;};
+		void setMinY(float y) { a_.y() = y;};
 
 		//! Cuts the bound to have the given max Z
-		void setMaxZ(float z) { g_.z_ = z;};
+		void setMaxZ(float z) { g_.z() = z;};
 		//! Cuts the bound to have the given min Z
-		void setMinZ(float z) { a_.z_ = z;};
+		void setMinZ(float z) { a_.z() = z;};
 		//! Adjust bound size to include point p
 		void include(const Point3 &p);
 		//! Returns true if the point is inside the bound
 		bool includes(const Point3 &pn) const
 		{
-			return ((pn.x_ >= a_.x_) && (pn.x_ <= g_.x_) &&
-					(pn.y_ >= a_.y_) && (pn.y_ <= g_.y_) &&
-					(pn.z_ >= a_.z_) && (pn.z_ <= g_.z_));
+			return ((pn.x() >= a_.x()) && (pn.x() <= g_.x()) &&
+					(pn.y() >= a_.y()) && (pn.y() <= g_.y()) &&
+					(pn.z() >= a_.z()) && (pn.z() <= g_.z()));
 		};
-		float centerX() const { return (g_.x_ + a_.x_) * 0.5f; }
-		float centerY() const { return (g_.y_ + a_.y_) * 0.5f; }
-		float centerZ() const { return (g_.z_ + a_.z_) * 0.5f; }
+		float centerX() const { return (g_.x() + a_.x()) * 0.5f; }
+		float centerY() const { return (g_.y() + a_.y()) * 0.5f; }
+		float centerZ() const { return (g_.z() + a_.z()) * 0.5f; }
 		Point3 center() const { return (g_ + a_) * 0.5f; }
 		int largestAxis()
 		{
 			const Vec3 d{g_ - a_};
-			return (d.x_ > d.y_) ? ((d.x_ > d.z_) ? 0 : 2) : ((d.y_ > d.z_) ? 1 : 2);
+			return (d.x() > d.y()) ? ((d.x() > d.z()) ? 0 : 2) : ((d.y() > d.z()) ? 1 : 2);
 		}
 		void grow(float d)
 		{
-			a_.x_ -= d;
-			a_.y_ -= d;
-			a_.z_ -= d;
-			g_.x_ += d;
-			g_.y_ += d;
-			g_.z_ += d;
+			a_.x() -= d;
+			a_.y() -= d;
+			a_.z() -= d;
+			g_.x() += d;
+			g_.y() += d;
+			g_.z() += d;
 		};
 
 		//	protected: // Lynx; need these to be public.
@@ -130,12 +130,12 @@ class Bound
 
 inline void Bound::include(const Point3 &p)
 {
-	a_.x_ = std::min(a_.x_, p.x_);
-	a_.y_ = std::min(a_.y_, p.y_);
-	a_.z_ = std::min(a_.z_, p.z_);
-	g_.x_ = std::max(g_.x_, p.x_);
-	g_.y_ = std::max(g_.y_, p.y_);
-	g_.z_ = std::max(g_.z_, p.z_);
+	a_.x() = std::min(a_.x(), p.x());
+	a_.y() = std::min(a_.y(), p.y());
+	a_.z() = std::min(a_.z(), p.z());
+	g_.x() = std::max(g_.x(), p.x());
+	g_.y() = std::max(g_.y(), p.y());
+	g_.z() = std::max(g_.z(), p.z());
 }
 
 inline Bound::Cross Bound::cross(const Ray &ray, float t_max) const
@@ -146,52 +146,52 @@ inline Bound::Cross Bound::cross(const Ray &ray, float t_max) const
 
 	float lmin = -1e38f, lmax = 1e38f, ltmin, ltmax; //infinity check initial values
 
-	if(ray.dir_.x_ != 0)
+	if(ray.dir_.x() != 0)
 	{
-		float invrx = 1.f / ray.dir_.x_;
+		float invrx = 1.f / ray.dir_.x();
 		if(invrx > 0)
 		{
-			lmin = -p.x_ * invrx;
-			lmax = ((a_1.x_ - a_0.x_) - p.x_) * invrx;
+			lmin = -p.x() * invrx;
+			lmax = ((a_1.x() - a_0.x()) - p.x()) * invrx;
 		}
 		else
 		{
-			lmin = ((a_1.x_ - a_0.x_) - p.x_) * invrx;
-			lmax = -p.x_ * invrx;
+			lmin = ((a_1.x() - a_0.x()) - p.x()) * invrx;
+			lmax = -p.x() * invrx;
 		}
 
 		if((lmax < 0) || (lmin > t_max)) return {};
 	}
-	if(ray.dir_.y_ != 0)
+	if(ray.dir_.y() != 0)
 	{
-		float invry = 1.f / ray.dir_.y_;
+		float invry = 1.f / ray.dir_.y();
 		if(invry > 0)
 		{
-			ltmin = -p.y_ * invry;
-			ltmax = ((a_1.y_ - a_0.y_) - p.y_) * invry;
+			ltmin = -p.y() * invry;
+			ltmax = ((a_1.y() - a_0.y()) - p.y()) * invry;
 		}
 		else
 		{
-			ltmin = ((a_1.y_ - a_0.y_) - p.y_) * invry;
-			ltmax = -p.y_ * invry;
+			ltmin = ((a_1.y() - a_0.y()) - p.y()) * invry;
+			ltmax = -p.y() * invry;
 		}
 		lmin = std::max(ltmin, lmin);
 		lmax = std::min(ltmax, lmax);
 
 		if((lmax < 0) || (lmin > t_max)) return {};
 	}
-	if(ray.dir_.z_ != 0)
+	if(ray.dir_.z() != 0)
 	{
-		float invrz = 1.f / ray.dir_.z_;
+		float invrz = 1.f / ray.dir_.z();
 		if(invrz > 0)
 		{
-			ltmin = -p.z_ * invrz;
-			ltmax = ((a_1.z_ - a_0.z_) - p.z_) * invrz;
+			ltmin = -p.z() * invrz;
+			ltmax = ((a_1.z() - a_0.z()) - p.z()) * invrz;
 		}
 		else
 		{
-			ltmin = ((a_1.z_ - a_0.z_) - p.z_) * invrz;
-			ltmax = -p.z_ * invrz;
+			ltmin = ((a_1.z() - a_0.z()) - p.z()) * invrz;
+			ltmax = -p.z() * invrz;
 		}
 		lmin = std::max(ltmin, lmin);
 		lmax = std::min(ltmax, lmax);

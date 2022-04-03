@@ -29,9 +29,9 @@ struct PSample;
 
 float GridVolumeRegion::density(const Point3 &p) const
 {
-	const float x = (p.x_ - b_box_.a_.x_) / b_box_.longX() * size_x_ - .5f;
-	const float y = (p.y_ - b_box_.a_.y_) / b_box_.longY() * size_y_ - .5f;
-	const float z = (p.z_ - b_box_.a_.z_) / b_box_.longZ() * size_z_ - .5f;
+	const float x = (p.x() - b_box_.a_.x()) / b_box_.longX() * size_x_ - .5f;
+	const float y = (p.y() - b_box_.a_.y()) / b_box_.longY() * size_y_ - .5f;
+	const float z = (p.z() - b_box_.a_.z()) / b_box_.longZ() * size_z_ - .5f;
 
 	const int x_0 = std::max(0, static_cast<int>(std::floor(x)));
 	const int y_0 = std::max(0, static_cast<int>(std::floor(y)));

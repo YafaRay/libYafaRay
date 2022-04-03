@@ -70,9 +70,9 @@ void HashGrid::updateGrid()
 	for(const auto &photon : photons_)
 	{
 		const Point3 hashindex{(photon.pos_ - bounding_box_.a_) * inv_cell_size_};
-		const int ix = abs(int(hashindex.x_));
-		const int iy = abs(int(hashindex.y_));
-		const int iz = abs(int(hashindex.z_));
+		const int ix = abs(int(hashindex.x()));
+		const int iy = abs(int(hashindex.y()));
+		const int iz = abs(int(hashindex.z()));
 		const unsigned int index = hash(ix, iy, iz);
 		if(!hash_grid_[index]) hash_grid_[index] = std::unique_ptr<std::list<const Photon *>>(new std::list<const Photon *>());
 		hash_grid_[index]->push_front(&photon);
@@ -94,11 +94,11 @@ unsigned int HashGrid::gather(const Point3 &p, FoundPhoton *found, unsigned int 
 	const Point3 b_min{((p - rad) - bounding_box_.a_) * inv_cell_size_};
 	const Point3 b_max{((p + rad) - bounding_box_.a_) * inv_cell_size_};
 
-	for(int iz = abs(int(b_min.z_)); iz <= abs(int(b_max.z_)); iz++)
+	for(int iz = abs(int(b_min.z())); iz <= abs(int(b_max.z())); iz++)
 	{
-		for(int iy = abs(int(b_min.y_)); iy <= abs(int(b_max.y_)); iy++)
+		for(int iy = abs(int(b_min.y())); iy <= abs(int(b_max.y())); iy++)
 		{
-			for(int ix = abs(int(b_min.x_)); ix <= abs(int(b_max.x_)); ix++)
+			for(int ix = abs(int(b_min.x())); ix <= abs(int(b_max.x())); ix++)
 			{
 				const int hv = hash(ix, iy, iz);
 				if(hash_grid_[hv] == nullptr) continue;

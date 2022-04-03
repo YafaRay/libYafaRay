@@ -27,7 +27,7 @@ struct PSample;
 
 float ExpDensityVolumeRegion::density(const Point3 &p) const
 {
-	float height = p.z_ - b_box_.a_.z_;
+	float height = p.z() - b_box_.a_.z();
 	return a_ * math::exp(-b_ * height);
 }
 

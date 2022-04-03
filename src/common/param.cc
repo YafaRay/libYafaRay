@@ -32,7 +32,7 @@ Parameter::Parameter(double f) : type_(Float) { fval_ = f; }
 
 Parameter::Parameter(const Vec3 &p) : type_(Vector)
 {
-	vval_.resize(3); vval_.at(0) = p.x_, vval_.at(1) = p.y_, vval_.at(2) = p.z_;
+	vval_.resize(3); vval_.at(0) = p.x(), vval_.at(1) = p.y(), vval_.at(2) = p.z();
 }
 
 Parameter::Parameter(const Rgba &c) : type_(Color)
@@ -57,7 +57,7 @@ bool Parameter::getVal(double &f) const {if(type_ == Float) { f = fval_; return 
 bool Parameter::getVal(Vec3 &p) const {
 	if(type_ == Vector)
 	{
-		p.x_ = vval_.at(0), p.y_ = vval_.at(1), p.z_ = vval_.at(2);
+		p.x() = vval_.at(0), p.y() = vval_.at(1), p.z() = vval_.at(2);
 		return true;
 	}
 	return false;
@@ -124,7 +124,7 @@ Parameter &Parameter::operator=(float f)
 Parameter &Parameter::operator=(const Vec3 &p)
 {
 	if(type_ != Vector) { type_ = Vector; sval_.clear(); vval_.resize(3); }
-	vval_.at(0) = p.x_, vval_.at(1) = p.y_, vval_.at(2) = p.z_;
+	vval_.at(0) = p.x(), vval_.at(1) = p.y(), vval_.at(2) = p.z();
 	return *this;
 }
 
@@ -182,7 +182,7 @@ std::string Parameter::print() const
 	{
 		Point3 value;
 		getVal(value);
-		return "(x:" + std::to_string(value.x_) + ", y:" + std::to_string(value.x_) + ", z:" + std::to_string(value.z_) + ")";
+		return "(x:" + std::to_string(value.x()) + ", y:" + std::to_string(value.x()) + ", z:" + std::to_string(value.z()) + ")";
 	}
 	else if(type_ == Color)
 	{

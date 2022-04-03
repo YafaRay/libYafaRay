@@ -1050,12 +1050,12 @@ bool Scene::updateObjects()
 
 	accelerator_ = std::unique_ptr<const Accelerator>(Accelerator::factory(logger_, primitives, params));
 	scene_bound_ = accelerator_->getBound();
-	if(logger_.isVerbose()) logger_.logVerbose("Scene: New scene bound is: ", "(", scene_bound_.a_.x_, ", ", scene_bound_.a_.y_, ", ", scene_bound_.a_.z_, "), (", scene_bound_.g_.x_, ", ", scene_bound_.g_.y_, ", ", scene_bound_.g_.z_, ")");
+	if(logger_.isVerbose()) logger_.logVerbose("Scene: New scene bound is: ", "(", scene_bound_.a_.x(), ", ", scene_bound_.a_.y(), ", ", scene_bound_.a_.z(), "), (", scene_bound_.g_.x(), ", ", scene_bound_.g_.y(), ", ", scene_bound_.g_.z(), ")");
 
 	if(shadow_bias_auto_) shadow_bias_ = shadow_bias_global;
 	if(ray_min_dist_auto_) ray_min_dist_ = min_raydist_global;
 
-	logger_.logInfo("Scene: total scene dimensions: X=", scene_bound_.longX(), ", Y=", scene_bound_.longY(), ", Z=", scene_bound_.longZ(), ", volume=", scene_bound_.vol(), ", Shadow Bias=", shadow_bias_, (shadow_bias_auto_ ? " (auto)" : ""), ", Ray Min Dist=", ray_min_dist_, (ray_min_dist_auto_ ? " (auto)" : ""));
+	logger_.logInfo("Scene: total scene dimensions: X=", scene_bound_.longX(), ", y=", scene_bound_.longY(), ", z=", scene_bound_.longZ(), ", volume=", scene_bound_.vol(), ", Shadow Bias=", shadow_bias_, (shadow_bias_auto_ ? " (auto)" : ""), ", Ray Min Dist=", ray_min_dist_, (ray_min_dist_auto_ ? " (auto)" : ""));
 	return true;
 }
 

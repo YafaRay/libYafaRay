@@ -22,19 +22,19 @@ BEGIN_YAFARAY
 
 Bound::Bound(const Bound &r, const Bound &l)
 {
-	float minx = std::min(r.a_.x_, l.a_.x_);
-	float miny = std::min(r.a_.y_, l.a_.y_);
-	float minz = std::min(r.a_.z_, l.a_.z_);
-	float maxx = std::max(r.g_.x_, l.g_.x_);
-	float maxy = std::max(r.g_.y_, l.g_.y_);
-	float maxz = std::max(r.g_.z_, l.g_.z_);
+	float minx = std::min(r.a_.x(), l.a_.x());
+	float miny = std::min(r.a_.y(), l.a_.y());
+	float minz = std::min(r.a_.z(), l.a_.z());
+	float maxx = std::max(r.g_.x(), l.g_.x());
+	float maxy = std::max(r.g_.y(), l.g_.y());
+	float maxz = std::max(r.g_.z(), l.g_.z());
 	a_.set(minx, miny, minz);
 	g_.set(maxx, maxy, maxz);
 }
 
 float Bound::vol() const
 {
-	float ret = (g_.y_ - a_.y_) * (g_.x_ - a_.x_) * (g_.z_ - a_.z_);
+	float ret = (g_.y() - a_.y()) * (g_.x() - a_.x()) * (g_.z() - a_.z());
 
 	return ret;
 }

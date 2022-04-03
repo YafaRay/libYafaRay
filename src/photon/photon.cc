@@ -79,9 +79,9 @@ bool PhotonMap::load(const std::string &filename)
 	photons_.resize(photons_size);
 	for(auto &p : photons_)
 	{
-		file.read<float>(p.pos_.x_);
-		file.read<float>(p.pos_.y_);
-		file.read<float>(p.pos_.z_);
+		file.read<float>(p.pos_.x());
+		file.read<float>(p.pos_.y());
+		file.read<float>(p.pos_.z());
 		file.read<float>(p.c_.r_);
 		file.read<float>(p.c_.g_);
 		file.read<float>(p.c_.b_);
@@ -104,9 +104,9 @@ bool PhotonMap::save(const std::string &filename) const
 	file.append<unsigned int>((unsigned int) photons_.size());
 	for(const auto &p : photons_)
 	{
-		file.append<float>(p.pos_.x_);
-		file.append<float>(p.pos_.y_);
-		file.append<float>(p.pos_.z_);
+		file.append<float>(p.pos_.x());
+		file.append<float>(p.pos_.y());
+		file.append<float>(p.pos_.z());
 		file.append<float>(p.c_.r_);
 		file.append<float>(p.c_.g_);
 		file.append<float>(p.c_.b_);
@@ -161,8 +161,8 @@ DirConverter::DirConverter()
 }
 
 std::pair<unsigned char, unsigned char> DirConverter::convert(const Vec3 &dir) {
-	int t = (int)(math::acos(dir.z_) * c_255_ratio_);
-	int p = (int)(atan2(dir.y_, dir.x_) * c_256_ratio_);
+	int t = (int)(math::acos(dir.Z()) * c_255_ratio_);
+	int p = (int)(atan2(dir.Y(), dir.X()) * c_256_ratio_);
 	if(t > 254) t = 254;
 	else if(t < 0) t = 0;
 	if(p > 255) p = 255;

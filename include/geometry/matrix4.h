@@ -77,16 +77,16 @@ inline Matrix4 operator * (const Matrix4 &a, const Matrix4 &b)
 
 inline Vec3 operator * (const Matrix4 &a, const Vec3 &b)
 {
-	return { a[0][0] * b.x_ + a[0][1] * b.y_ + a[0][2] * b.z_,
-	                  a[1][0] * b.x_ + a[1][1] * b.y_ + a[1][2] * b.z_,
-	                  a[2][0] * b.x_ + a[2][1] * b.y_ + a[2][2] * b.z_ };
+	return { a[0][0] * b.x() + a[0][1] * b.y() + a[0][2] * b.z(),
+	                  a[1][0] * b.x() + a[1][1] * b.y() + a[1][2] * b.z(),
+	                  a[2][0] * b.x() + a[2][1] * b.y() + a[2][2] * b.z() };
 }
 
 inline Point3 operator * (const Matrix4 &a, const Point3 &b)
 {
-	return {a[0][0] * b.x_ + a[0][1] * b.y_ + a[0][2] * b.z_ + a[0][3],
-	                  a[1][0] * b.x_ + a[1][1] * b.y_ + a[1][2] * b.z_ + a[1][3],
-	                  a[2][0] * b.x_ + a[2][1] * b.y_ + a[2][2] * b.z_ + a[2][3] };
+	return {a[0][0] * b.x() + a[0][1] * b.y() + a[0][2] * b.z() + a[0][3],
+	                  a[1][0] * b.x() + a[1][1] * b.y() + a[1][2] * b.z() + a[1][3],
+	                  a[2][0] * b.x() + a[2][1] * b.y() + a[2][2] * b.z() + a[2][3] };
 }
 
 //matrix4x4_t rayToZ(const point3d_t &from,const vector3d_t & ray);

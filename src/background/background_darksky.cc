@@ -43,10 +43,10 @@ DarkSkyBackground::DarkSkyBackground(Logger &logger, const Point3 &dir, float tu
 	std::string act;
 
 	sun_dir_ = dir;
-	sun_dir_.z_ += alt_;
+	sun_dir_.z() += alt_;
 	sun_dir_.normalize();
 
-	theta_s_ = math::acos(sun_dir_.z_);
+	theta_s_ = math::acos(sun_dir_.z());
 
 	act = (night_sky_) ? "ON" : "OFF";
 	if(logger_.isVerbose())
@@ -168,10 +168,10 @@ double DarkSkyBackground::perezFunction(const std::array<double, 6> &lam, double
 inline Rgb DarkSkyBackground::getSkyCol(const Vec3 &dir) const
 {
 	Vec3 iw {dir};
-	iw.z_ += alt_;
+	iw.z() += alt_;
 	iw.normalize();
 
-	double cos_theta = iw.z_;
+	double cos_theta = iw.z();
 	if(cos_theta <= 0.0) cos_theta = 1e-6;
 	double cos_gamma = iw * sun_dir_;
 	const double cos_gamma_2 = cos_gamma * cos_gamma;
@@ -264,13 +264,13 @@ const Background * DarkSkyBackground::factory(Logger &logger, Scene &scene, cons
 
 	auto dark_sky = new DarkSkyBackground(logger, dir, turb, power, bright, clamp, av, bv, cv, dv, ev, altitude, night, exp, gamma_enc, color_s);
 
-	if(add_sun && math::radToDeg(math::acos(dir.z_)) < 100.0)
+	if(add_sun && math::radToDeg(math::acos(dir.z())) < 100.0)
 	{
 		Vec3 d(dir);
 		d.normalize();
 
 		Rgb suncol = dark_sky->getAttenuatedSunColor();
-		double angle = 0.5 * (2.0 - d.z_);
+		double angle = 0.5 * (2.0 - d.z());
 
 		if(logger.isVerbose()) logger.logVerbose("DarkSky: SunColor = ", suncol);
 

@@ -141,7 +141,7 @@ MarbleTexture::MarbleTexture(Logger &logger, int oct, float sz, const Rgb &c_1, 
 
 float MarbleTexture::getFloat(const Point3 &p, const MipMapParams *mipmap_params) const
 {
-	float w = (p.x_ + p.y_ + p.z_) * 5.f + ((turb_ == 0.f) ? 0.f : turb_ * NoiseGenerator::turbulence(n_gen_.get(), p, octaves_, size_, hard_));
+	float w = (p.x() + p.y() + p.z()) * 5.f + ((turb_ == 0.f) ? 0.f : turb_ * NoiseGenerator::turbulence(n_gen_.get(), p, octaves_, size_, hard_));
 	switch(wshape_)
 	{
 		case Shape::Saw:
@@ -223,9 +223,9 @@ float WoodTexture::getFloat(const Point3 &p, const MipMapParams *mipmap_params) 
 {
 	float w;
 	if(rings_)
-		w = math::sqrt(p.x_ * p.x_ + p.y_ * p.y_ + p.z_ * p.z_) * 20.f;
+		w = math::sqrt(p.x() * p.x() + p.y() * p.y() + p.z() * p.z()) * 20.f;
 	else
-		w = (p.x_ + p.y_ + p.z_) * 10.f;
+		w = (p.x() + p.y() + p.z()) * 10.f;
 	w += (turb_ == 0.0) ? 0.0 : turb_ * NoiseGenerator::turbulence(n_gen_.get(), p, octaves_, size_, hard_);
 	switch(wshape_)
 	{
@@ -298,7 +298,7 @@ Texture * WoodTexture::factory(Logger &logger, Scene &scene, const std::string &
 
 Rgba RgbCubeTexture::getColor(const Point3 &p, const MipMapParams *mipmap_params) const
 {
-	Rgba col = Rgba(p.x_, p.y_, p.z_);
+	Rgba col = Rgba(p.x(), p.y(), p.z());
 	col.clampRgb01();
 	if(adjustments_set_) return applyAdjustments(col);
 	else return col;
@@ -306,7 +306,7 @@ Rgba RgbCubeTexture::getColor(const Point3 &p, const MipMapParams *mipmap_params
 
 float RgbCubeTexture::getFloat(const Point3 &p, const MipMapParams *mipmap_params) const
 {
-	Rgb col = Rgb(p.x_, p.y_, p.z_);
+	Rgb col = Rgb(p.x(), p.y(), p.z());
 	col.clampRgb01();
 	return applyIntensityContrastAdjustments(col.energy());
 }
@@ -615,13 +615,13 @@ BlendTexture::BlendTexture(Logger &logger, const std::string &stype, bool use_fl
 float BlendTexture::getFloat(const Point3 &p, const MipMapParams *mipmap_params) const
 {
 	float blend = 0.f;
-	float coord_1 = p.x_;
-	float coord_2 = p.y_;
+	float coord_1 = p.x();
+	float coord_2 = p.y();
 
 	if(use_flip_axis_)
 	{
-		coord_1 = p.y_;
-		coord_2 = p.x_;
+		coord_1 = p.y();
+		coord_2 = p.x();
 	}
 
 	if(progression_type_ == Quadratic)
@@ -647,7 +647,7 @@ float BlendTexture::getFloat(const Point3 &p, const MipMapParams *mipmap_params)
 	}
 	else if(progression_type_ == Spherical || progression_type_ == QuadraticSphere)
 	{
-		blend = 1.f - math::sqrt(coord_1 * coord_1 + coord_2 * coord_2 + p.z_ * p.z_);
+		blend = 1.f - math::sqrt(coord_1 * coord_1 + coord_2 * coord_2 + p.z() * p.z());
 		if(blend < 0.f) blend = 0.f;
 		if(progression_type_ == QuadraticSphere) blend *= blend;
 	}

@@ -27,29 +27,31 @@ BEGIN_YAFARAY
 
 std::ostream &operator << (std::ostream &out, const Vec3 &v)
 {
-	out << "(" << v.x_ << "," << v.y_ << "," << v.z_ << ")";
+	out << "(" << v[0] << "," << v[1] << "," << v[2] << ")";
 	return out;
 }
 
 std::ostream &operator << (std::ostream &out, const Point3 &p)
 {
-	out << "(" << p.x_ << "," << p.y_ << "," << p.z_ << ")";
+	out << "(" << p[0] << "," << p[1] << "," << p[2] << ")";
 	return out;
 }
 
 bool  operator == (const Vec3 &a, const Vec3 &b)
 {
-	if(a.x_ != b.x_) return false;
-	if(a.y_ != b.y_) return false;
-	if(a.z_ != b.z_) return false;
+	for(size_t i = 0; i < 3; ++i)
+	{
+		if(a[i] != b[i]) return false;
+	}
 	return true;
 }
 
 bool  operator != (const Vec3 &a, const Vec3 &b)
 {
-	if(a.x_ != b.x_) return true;
-	if(a.y_ != b.y_) return true;
-	if(a.z_ != b.z_) return true;
+	for(size_t i = 0; i < 3; ++i)
+	{
+		if(a[i] != b[i]) return true;
+	}
 	return false;
 }
 
@@ -88,7 +90,7 @@ void Vec3::fresnel(const Vec3 &i, const Vec3 &n, float ior, float &kr, float &kt
 	float eta;
 	Vec3 N;
 
-	if((i * n) < 0)
+	if((i * n) < 0.f)
 	{
 		//eta=1.0/IOR;
 		eta = ior;
@@ -100,36 +102,35 @@ void Vec3::fresnel(const Vec3 &i, const Vec3 &n, float ior, float &kr, float &kt
 		N = n;
 	}
 	const float c = i * N;
-	float g = eta * eta + c * c - 1;
-	if(g <= 0)
-		g = 0;
-	else
-		g = math::sqrt(g);
+	float g = eta * eta + c * c - 1.f;
+	if(g <= 0) g = 0;
+	else g = math::sqrt(g);
 	const float aux = c * (g + c);
-
 	kr = ((0.5f * (g - c) * (g - c)) / ((g + c) * (g + c))) *
-		 (1 + ((aux - 1) * (aux - 1)) / ((aux + 1) * (aux + 1)));
-	if(kr < 1.0)
-		kt = 1 - kr;
+		 (1.f + ((aux - 1.f) * (aux - 1.f)) / ((aux + 1.f) * (aux + 1.f)));
+	if(kr < 1.f)
+		kt = 1.f - kr;
 	else
-		kt = 0;
+		kt = 0.f;
 }
 
 // 'Faster' Schlick fresnel approximation,
 void Vec3::fastFresnel(const Vec3 &i, const Vec3 &n, float iorf, float &kr, float &kt)
 {
-	const float t = 1 - (i * n);
+	const float t = 1.f - (i * n);
 	//t = (t<0)?0:((t>1)?1:t);
 	const float t_2 = t * t;
-	kr = iorf + (1 - iorf) * t_2 * t_2 * t;
-	kt = 1 - kr;
+	kr = iorf + (1.f - iorf) * t_2 * t_2 * t;
+	kt = 1.f - kr;
 }
 
 // P.Shirley's concentric disk algorithm, maps square to disk
 void Vec3::shirleyDisk(float r_1, float r_2, float &u, float &v)
 {
-	float phi = 0, r = 0;
-	const float a = 2 * r_1 - 1, b = 2 * r_2 - 1;
+	float phi = 0.f;
+	float r = 0.f;
+	const float a = 2.f * r_1 - 1.f;
+	const float b = 2.f * r_2 - 1.f;
 	if(a > -b)
 	{
 		if(a > b)  	// Reg.1
@@ -140,7 +141,7 @@ void Vec3::shirleyDisk(float r_1, float r_2, float &u, float &v)
 		else  			// Reg.2
 		{
 			r = b;
-			phi = math::div_pi_by_4 * (2 - a / b);
+			phi = math::div_pi_by_4 * (2.f - a / b);
 		}
 	}
 	else
@@ -148,15 +149,15 @@ void Vec3::shirleyDisk(float r_1, float r_2, float &u, float &v)
 		if(a < b)  	// Reg.3
 		{
 			r = -a;
-			phi = math::div_pi_by_4 * (4 + b / a);
+			phi = math::div_pi_by_4 * (4.f + b / a);
 		}
 		else  			// Reg.4
 		{
 			r = -b;
 			if(b != 0)
-				phi = math::div_pi_by_4 * (6 - a / b);
+				phi = math::div_pi_by_4 * (6.f - a / b);
 			else
-				phi = 0;
+				phi = 0.f;
 		}
 	}
 	u = r * math::cos(phi);
@@ -182,26 +183,25 @@ Vec3 Vec3::discreteVectorCone(const Vec3 &dir, float cangle, int sample, int squ
 	const float tt = math::mult_pi_by_2 * r_1;
 	const float ss = math::acos(1.f - (1.f - cangle) * r_2);
 	const Vec3 vx(math::cos(ss), math::sin(ss) * math::cos(tt), math::sin(ss) * math::sin(tt));
-	const Vec3 i(1, 0, 0);
-	Vec3 c;
-	Matrix4 m(1);
-	if((std::abs(dir.y_) > 0.0) || (std::abs(dir.z_) > 0.0))
+	const Vec3 i(1.f, 0.f, 0.f);
+	Matrix4 m(1.f);
+	if((std::abs(dir.vec_[1]) > 0.f) || (std::abs(dir.vec_[2]) > 0.f))
 	{
-		m[0][0] = dir.x_;
-		m[1][0] = dir.y_;
-		m[2][0] = dir.z_;
-		c = i ^ dir;
+		m[0][0] = dir.vec_[0];
+		m[1][0] = dir.vec_[1];
+		m[2][0] = dir.vec_[2];
+		Vec3 c = i ^ dir;
 		c.normalize();
-		m[0][1] = c.x_;
-		m[1][1] = c.y_;
-		m[2][1] = c.z_;
+		m[0][1] = c.vec_[0];
+		m[1][1] = c.vec_[1];
+		m[2][1] = c.vec_[2];
 		c = dir ^ c;
 		c.normalize();
-		m[0][2] = c.x_;
-		m[1][2] = c.y_;
-		m[2][2] = c.z_;
+		m[0][2] = c.vec_[0];
+		m[1][2] = c.vec_[1];
+		m[2][2] = c.vec_[2];
 	}
-	else if(dir.x_ < 0.0) m[0][0] = -1.f;
+	else if(dir.vec_[0] < 0.f) m[0][0] = -1.f;
 	return m * vx;
 }
 

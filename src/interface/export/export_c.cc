@@ -244,7 +244,7 @@ void ExportC::writeParam(const std::string &name, const Parameter &param, std::o
 	{
 		Point3 p{0.f, 0.f, 0.f};
 		param.getVal(p);
-		file << "yafaray_paramsSetVector(yi, \"" << name << "\", " << p.x_ << ", " << p.y_ << ", " << p.z_ << ");\n";
+		file << "yafaray_paramsSetVector(yi, \"" << name << "\", " << p.x() << ", " << p.y() << ", " << p.z() << ");\n";
 	}
 	else if(type == Parameter::Color)
 	{

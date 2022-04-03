@@ -244,7 +244,7 @@ Rgb GlossyMaterial::sample(const MaterialData *mat_data, const SurfacePoint &sp,
 		if(anisotropic_)
 		{
 			const Vec3 hs{microfacet::asAnisoSample(s_1, s.s_2_, exp_u_, exp_v_)};
-			Vec3 h{hs.x_ * sp.nu_ + hs.y_ * sp.nv_ + hs.z_ * n};
+			Vec3 h{hs.x() * sp.nu_ + hs.y() * sp.nv_ + hs.z() * n};
 			float cos_wo_h = wo * h;
 			if(cos_wo_h < 0.f)
 			{
@@ -268,7 +268,7 @@ Rgb GlossyMaterial::sample(const MaterialData *mat_data, const SurfacePoint &sp,
 		else
 		{
 			const Vec3 hs{microfacet::blinnSample(s_1, s.s_2_, getShaderScalar(exponent_shader_, mat_data->node_tree_data_, exponent_))};
-			Vec3 h{hs.x_ * sp.nu_ + hs.y_ * sp.nv_ + hs.z_ * n};
+			Vec3 h{hs.x() * sp.nu_ + hs.y() * sp.nv_ + hs.z() * n};
 			float cos_wo_h = wo * h;
 			if(cos_wo_h < 0.f)
 			{

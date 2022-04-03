@@ -184,9 +184,9 @@ const float BlenderNoiseGenerator::hashvectf_[768]
 
 float NewPerlinNoiseGenerator::operator()(const Point3 &pt) const
 {
-	float x = pt.x_;
-	float y = pt.y_;
-	float z = pt.z_;
+	float x = pt.x();
+	float y = pt.y();
+	float z = pt.z();
 	float u = std::floor(x);
 	float v = std::floor(y);
 	float w = std::floor(z);
@@ -352,7 +352,7 @@ float StdPerlinNoiseGenerator::operator()(const Point3 &pt) const
 {
 	int bx_0, bx_1, by_0, by_1, bz_0, bz_1;
 	float rx_0, rx_1, ry_0, ry_1, rz_0, rz_1;
-	const std::array<float, 3> vec { pt.x_, pt.y_, pt.z_ };
+	const std::array<float, 3> vec {pt.x(), pt.y(), pt.z() };
 
 	setup(0, bx_0, bx_1, rx_0, rx_1, vec);
 	setup(1, by_0, by_1, ry_0, ry_1, vec);
@@ -449,7 +449,7 @@ float VoronoiNoiseGenerator::distMinkovskyF(float x, float y, float z, float e)
 
 float BlenderNoiseGenerator::operator()(const Point3 &pt) const
 {
-	const float x = pt.x_, y = pt.y_, z = pt.z_;
+	const float x = pt.x(), y = pt.y(), z = pt.z();
 	const int ix = static_cast<int>(std::floor(x));
 	const int iy = static_cast<int>(std::floor(y));
 	const int iz = static_cast<int>(std::floor(z));
@@ -571,9 +571,9 @@ const float *NoiseGenerator::hashPnt(int x, int y, int z)
 
 std::pair<std::array<float, 4>, std::array<Point3, 4>> VoronoiNoiseGenerator::getFeatures(const Point3 &pt) const
 {
-	const int xi = static_cast<int>(std::floor(pt.x_));
-	const int yi = static_cast<int>(std::floor(pt.y_));
-	const int zi = static_cast<int>(std::floor(pt.z_));
+	const int xi = static_cast<int>(std::floor(pt.x()));
+	const int yi = static_cast<int>(std::floor(pt.y()));
+	const int zi = static_cast<int>(std::floor(pt.z()));
 	std::array<float, 4> da{1e10f, 1e10f, 1e10f, 1e10f};
 	std::array<Point3, 4> pa;
 	for(int xx = xi - 1; xx <= xi + 1; xx++)
@@ -583,9 +583,9 @@ std::pair<std::array<float, 4>, std::array<Point3, 4>> VoronoiNoiseGenerator::ge
 			for(int zz = zi - 1; zz <= zi + 1; zz++)
 			{
 				const float *p = hashPnt(xx, yy, zz);
-				const float xd = pt.x_ - (p[0] + xx);
-				const float yd = pt.y_ - (p[1] + yy);
-				const float zd = pt.z_ - (p[2] + zz);
+				const float xd = pt.x() - (p[0] + xx);
+				const float yd = pt.y() - (p[1] + yy);
+				const float zd = pt.z() - (p[2] + zz);
 				//d = (*distfunc)(xd, yd, zd, mk_exp);
 				const float d = distfunc_2_(xd, yd, zd, mk_exp_);
 				if(d < da[0])
@@ -642,9 +642,9 @@ float VoronoiNoiseGenerator::operator()(const Point3 &pt) const
 // Cell noise
 float CellNoiseGenerator::operator()(const Point3 &pt) const
 {
-	const int xi = static_cast<int>(std::floor(pt.x_));
-	const int yi = static_cast<int>(std::floor(pt.y_));
-	const int zi = static_cast<int>(std::floor(pt.z_));
+	const int xi = static_cast<int>(std::floor(pt.x()));
+	const int yi = static_cast<int>(std::floor(pt.y()));
+	const int zi = static_cast<int>(std::floor(pt.z()));
 	unsigned int n = xi + yi * 1301 + zi * 314159;
 	n ^= (n << 13);
 	return (static_cast<float>(n * (n * n * 15731 + 789221) + 1376312589) / 4294967296.0);
@@ -825,9 +825,9 @@ float RidgedMFractalMusgrave::operator()(const Point3 &pt) const
 // color cell noise, used by voronoi shader block
 Rgba NoiseGenerator::cellNoiseColor(const Point3 &pt)
 {
-	int xi = (int)(std::floor(pt.x_));
-	int yi = (int)(std::floor(pt.y_));
-	int zi = (int)(std::floor(pt.z_));
+	int xi = (int)(std::floor(pt.x()));
+	int yi = (int)(std::floor(pt.y()));
+	int zi = (int)(std::floor(pt.z()));
 	const float *cl = hashPnt(xi, yi, zi);
 	return {cl[0], cl[1], cl[2], 1.0};
 }

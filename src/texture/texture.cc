@@ -74,14 +74,14 @@ std::string Texture::getInterpolationTypeName(const InterpolationType &interpola
 
 void Texture::angMap(const Point3 &p, float &u, float &v)
 {
-	float r = p.x_ * p.x_ + p.z_ * p.z_;
+	float r = p.x() * p.x() + p.z() * p.z();
 	u = v = 0.f;
 	if(r > 0.f)
 	{
-		const float phi_ratio = math::div_1_by_pi * math::acos(p.y_);//[0,1] range
+		const float phi_ratio = math::div_1_by_pi * math::acos(p.y());//[0,1] range
 		r = phi_ratio / math::sqrt(r);
-		u = p.x_ * r;// costheta * r * phiRatio
-		v = p.z_ * r;// sintheta * r * phiRatio
+		u = p.x() * r;// costheta * r * phiRatio
+		v = p.z() * r;// sintheta * r * phiRatio
 	}
 }
 
@@ -90,20 +90,20 @@ void Texture::angMap(const Point3 &p, float &u, float &v)
 void Texture::tubeMap(const Point3 &p, float &u, float &v)
 {
 	u = 0;
-	v = 1 - (p.z_ + 1) * 0.5f;
-	float d = p.x_ * p.x_ + p.y_ * p.y_;
+	v = 1 - (p.z() + 1) * 0.5f;
+	float d = p.x() * p.x() + p.y() * p.y();
 	if(d > 0)
 	{
 		d = 1 / math::sqrt(d);
-		u = 0.5f * (1 - (std::atan2(p.x_ * d, p.y_ * d) * math::div_1_by_pi));
+		u = 0.5f * (1 - (std::atan2(p.x() * d, p.y() * d) * math::div_1_by_pi));
 	}
 }
 
 // maps a direction to a 2d 0..1 interval
 void Texture::sphereMap(const Point3 &p, float &u, float &v)
 {
-	const float sqrt_r_phi = p.x_ * p.x_ + p.y_ * p.y_;
-	const float sqrt_r_theta = sqrt_r_phi + p.z_ * p.z_;
+	const float sqrt_r_phi = p.x() * p.x() + p.y() * p.y();
+	const float sqrt_r_theta = sqrt_r_phi + p.z() * p.z();
 	float phi_ratio;
 
 	u = 0.f;
@@ -111,12 +111,12 @@ void Texture::sphereMap(const Point3 &p, float &u, float &v)
 
 	if(sqrt_r_phi > 0.f)
 	{
-		if(p.y_ < 0.f) phi_ratio = (math::mult_pi_by_2 - math::acos(p.x_ / math::sqrt(sqrt_r_phi))) * math::div_1_by_2pi;
-		else phi_ratio = math::acos(p.x_ / math::sqrt(sqrt_r_phi)) * math::div_1_by_2pi;
+		if(p.y() < 0.f) phi_ratio = (math::mult_pi_by_2 - math::acos(p.x() / math::sqrt(sqrt_r_phi))) * math::div_1_by_2pi;
+		else phi_ratio = math::acos(p.x() / math::sqrt(sqrt_r_phi)) * math::div_1_by_2pi;
 		u = 1.f - phi_ratio;
 	}
 
-	v = 1.f - (math::acos(p.z_ / math::sqrt(sqrt_r_theta)) * math::div_1_by_pi);
+	v = 1.f - (math::acos(p.z() / math::sqrt(sqrt_r_theta)) * math::div_1_by_pi);
 }
 
 // maps u,v coords in the 0..1 interval to a direction
@@ -126,9 +126,9 @@ void Texture::invSphereMap(float u, float v, Vec3 &p)
 	const float phi = -(u * math::mult_pi_by_2);
 	const float costheta = math::cos(theta), sintheta = math::sin(theta);
 	const float cosphi = math::cos(phi), sinphi = math::sin(phi);
-	p.x_ = sintheta * cosphi;
-	p.y_ = sintheta * sinphi;
-	p.z_ = -costheta;
+	p.x() = sintheta * cosphi;
+	p.y() = sintheta * sinphi;
+	p.z() = -costheta;
 }
 
 void Texture::setAdjustments(float intensity, float contrast, float saturation, float hue, bool clamp, float factor_red, float factor_green, float factor_blue)

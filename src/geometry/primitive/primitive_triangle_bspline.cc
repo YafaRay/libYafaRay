@@ -72,14 +72,14 @@ Bound BsTrianglePrimitive::getBound(const Matrix4 *obj_to_world) const
 	const Point3 *an = &points[vertices_indices[0]];
 	const Point3 *bn = &points[vertices_indices[1]];
 	const Point3 *cn = &points[vertices_indices[2]];
-	const Point3 amin { math::min(an[0].x_, an[1].x_, an[2].x_), math::min(an[0].y_, an[1].y_, an[2].y_), math::min(an[0].z_, an[1].z_, an[2].z_) };
-	const Point3 bmin { math::min(bn[0].x_, bn[1].x_, bn[2].x_), math::min(bn[0].y_, bn[1].y_, bn[2].y_), math::min(bn[0].z_, bn[1].z_, bn[2].z_) };
-	const Point3 cmin { math::min(cn[0].x_, cn[1].x_, cn[2].x_), math::min(cn[0].y_, cn[1].y_, cn[2].y_), math::min(cn[0].z_, cn[1].z_, cn[2].z_) };
-	const Point3 amax { math::max(an[0].x_, an[1].x_, an[2].x_), math::max(an[0].y_, an[1].y_, an[2].y_), math::max(an[0].z_, an[1].z_, an[2].z_) };
-	const Point3 bmax { math::max(bn[0].x_, bn[1].x_, bn[2].x_), math::max(bn[0].y_, bn[1].y_, bn[2].y_), math::max(bn[0].z_, bn[1].z_, bn[2].z_) };
-	const Point3 cmax { math::max(cn[0].x_, cn[1].x_, cn[2].x_), math::max(cn[0].y_, cn[1].y_, cn[2].y_), math::max(cn[0].z_, cn[1].z_, cn[2].z_) };
-	const Point3 l { math::min(amin.x_, bmin.x_, cmin.x_), math::min(amin.y_, bmin.y_, cmin.y_), math::min(amin.z_, bmin.z_, cmin.z_) };
-	const Point3 h { math::max(amax.x_, bmax.x_, cmax.x_), math::max(amax.y_, bmax.y_, cmax.y_), math::max(amax.z_, bmax.z_, cmax.z_) };
+	const Point3 amin {math::min(an[0].x(), an[1].x(), an[2].x()), math::min(an[0].y(), an[1].y(), an[2].y()), math::min(an[0].z(), an[1].z(), an[2].z()) };
+	const Point3 bmin {math::min(bn[0].x(), bn[1].x(), bn[2].x()), math::min(bn[0].y(), bn[1].y(), bn[2].y()), math::min(bn[0].z(), bn[1].z(), bn[2].z()) };
+	const Point3 cmin {math::min(cn[0].x(), cn[1].x(), cn[2].x()), math::min(cn[0].y(), cn[1].y(), cn[2].y()), math::min(cn[0].z(), cn[1].z(), cn[2].z()) };
+	const Point3 amax {math::max(an[0].x(), an[1].x(), an[2].x()), math::max(an[0].y(), an[1].y(), an[2].y()), math::max(an[0].z(), an[1].z(), an[2].z()) };
+	const Point3 bmax {math::max(bn[0].x(), bn[1].x(), bn[2].x()), math::max(bn[0].y(), bn[1].y(), bn[2].y()), math::max(bn[0].z(), bn[1].z(), bn[2].z()) };
+	const Point3 cmax {math::max(cn[0].x(), cn[1].x(), cn[2].x()), math::max(cn[0].y(), cn[1].y(), cn[2].y()), math::max(cn[0].z(), cn[1].z(), cn[2].z()) };
+	const Point3 l {math::min(amin.x(), bmin.x(), cmin.x()), math::min(amin.y(), bmin.y(), cmin.y()), math::min(amin.z(), bmin.z(), cmin.z()) };
+	const Point3 h {math::max(amax.x(), bmax.x(), cmax.x()), math::max(amax.y(), bmax.y(), cmax.y()), math::max(amax.z(), bmax.z(), cmax.z()) };
 	return {l, h};
 }
 
@@ -180,12 +180,12 @@ std::unique_ptr<const SurfacePoint> BsTrianglePrimitive::getSurface(const RayDif
 	sp->p_ = hit;
 	std::tie(sp->nu_, sp->nv_) = Vec3::createCoordsSystem(sp->n_);
 	// transform dPdU and dPdV in shading space
-	sp->ds_du_.x_ = sp->nu_ * sp->dp_du_;
-	sp->ds_du_.y_ = sp->nv_ * sp->dp_du_;
-	sp->ds_du_.z_ = sp->n_ * sp->dp_du_;
-	sp->ds_dv_.x_ = sp->nu_ * sp->dp_dv_;
-	sp->ds_dv_.y_ = sp->nv_ * sp->dp_dv_;
-	sp->ds_dv_.z_ = sp->n_ * sp->dp_dv_;
+	sp->ds_du_.x() = sp->nu_ * sp->dp_du_;
+	sp->ds_du_.y() = sp->nv_ * sp->dp_du_;
+	sp->ds_du_.z() = sp->n_ * sp->dp_du_;
+	sp->ds_dv_.x() = sp->nu_ * sp->dp_dv_;
+	sp->ds_dv_.y() = sp->nv_ * sp->dp_dv_;
+	sp->ds_dv_.z() = sp->n_ * sp->dp_dv_;
 	sp->light_ = base_mesh_object_.getLight();
 	sp->has_uv_ = base_mesh_object_.hasUv();
 	sp->prim_num_ = getSelfIndex();
