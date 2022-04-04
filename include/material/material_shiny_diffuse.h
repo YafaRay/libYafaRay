@@ -42,7 +42,7 @@ class ShinyDiffuseMaterialData final : public MaterialData
 {
 	public:
 		ShinyDiffuseMaterialData(BsdfFlags bsdf_flags, size_t number_of_nodes) : MaterialData(bsdf_flags, number_of_nodes) { }
-		std::array<float, 4> components_{0.f, 0.f, 0.f, 0.f};
+		std::array<float, 4> components_{{0.f, 0.f, 0.f, 0.f}};
 };
 
 class ShinyDiffuseMaterial final : public NodeMaterial
@@ -84,7 +84,7 @@ class ShinyDiffuseMaterial final : public NodeMaterial
 		float ior_ = 1.f;                              //!< IOR
 		float ior_squared_ = 1.f;                     //!< Squared IOR
 
-		std::array<bool, 4> components_view_independent_{false, false, false, false};
+		std::array<bool, 4> components_view_independent_{{false, false, false, false}};
 		const ShaderNode *diffuse_shader_ = nullptr;       //!< Shader node for diffuse color
 		const ShaderNode *bump_shader_ = nullptr;          //!< Shader node for bump
 		const ShaderNode *transparency_shader_ = nullptr;  //!< Shader node for transparency strength (float)
