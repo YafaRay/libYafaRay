@@ -63,6 +63,14 @@ if(YAFARAY_WITH_OpenEXR)
 			PRIVATE
 			format_exr.cc
 			)
+	if(WIN32)
+		#Make sure to define OPENEXR_DLL when using OpenEXR Windows DLL to avoid link errors.
+		#FIXME: This should not be added if linking statically to OpenEXR, but that's unlikely to happen and I'm not sure how to detect that automatically.
+		set_source_files_properties(
+				format_exr.cc
+				PROPERTIES COMPILE_DEFINITIONS
+				"OPENEXR_DLL")
+	endif()
 	list(APPEND YAF_FORMAT_DEFINITIONS "HAVE_OPENEXR")
 endif()
 
