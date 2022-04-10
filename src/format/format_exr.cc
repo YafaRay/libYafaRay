@@ -29,6 +29,7 @@
 #include "color/color_layers.h"
 #include "scene/scene.h"
 
+#include <ImfVersion.h>
 #include <ImfOutputFile.h>
 #include <ImfChannelList.h>
 #include <ImfRgbaFile.h>
@@ -47,8 +48,8 @@ class CiStream: public Imf::IStream
 		CiStream(std::FILE *file, const char file_name[]) : Imf::IStream(file_name), file_(file) { }
 		~CiStream() override;
 		bool read(char c[], int n) override;
-		Int64 tellg() override;
-		void seekg(Int64 pos) override;
+		uint64_t tellg() override;
+		void seekg(uint64_t pos) override;
 		void clear() override;
 		void close();
 	private:
@@ -72,13 +73,13 @@ bool CiStream::read(char c[], int n)
 	else return false;
 }
 
-Int64 CiStream::tellg()
+uint64_t CiStream::tellg()
 {
 	if(file_) return std::ftell(file_);
 	else return 0;
 }
 
-void CiStream::seekg(Int64 pos)
+void CiStream::seekg(uint64_t pos)
 {
 	if(file_)
 	{
@@ -113,8 +114,8 @@ class CoStream: public Imf::OStream
 		CoStream(std::FILE *file, const char file_name[]) : Imf::OStream(file_name), file_(file) { }
 		~CoStream() override;
 		void write(const char c[], int n) override;
-		Int64 tellp() override;
-		void seekp(Int64 pos) override;
+		uint64_t tellp() override;
+		void seekp(uint64_t pos) override;
 		void close();
 	private:
 		std::FILE *file_ = nullptr;
@@ -135,13 +136,13 @@ void CoStream::write(const char c[], int n)
 	}
 }
 
-Int64 CoStream::tellp()
+uint64_t CoStream::tellp()
 {
 	if(file_) return std::ftell(file_);
 	else return 0;
 }
 
-void CoStream::seekp(Int64 pos)
+void CoStream::seekp(uint64_t pos)
 {
 	if(file_)
 	{
