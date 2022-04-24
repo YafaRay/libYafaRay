@@ -205,7 +205,7 @@ inline float sqrt(float a)
 #endif
 }
 
-inline constexpr float ldexp(float x, int a)
+inline float ldexp(float x, int a)
 {
 #ifdef FAST_MATH
 	//return x * fPow(2.0, a);
@@ -215,7 +215,7 @@ inline constexpr float ldexp(float x, int a)
 #endif
 }
 
-inline constexpr float sin(float x)
+inline float sin(float x)
 {
 #ifdef FAST_TRIG
 	if(x > math::mult_pi_by_2 || x < -math::mult_pi_by_2) x -= ((int) (x * static_cast<float>(math::div_1_by_2pi))) * static_cast<float>(math::mult_pi_by_2); //float modulo x % math::mult_pi_by_2
@@ -240,7 +240,7 @@ inline constexpr float sin(float x)
 #endif
 }
 
-inline constexpr float cos(float x)
+inline float cos(float x)
 {
 #ifdef FAST_TRIG
 	return math::sin(x + static_cast<float>(math::div_pi_by_2));
