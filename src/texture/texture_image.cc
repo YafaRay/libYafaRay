@@ -423,7 +423,7 @@ Rgba ImageTexture::ewaEllipticCalculation(const Point3 &p, float ds_0, float dt_
 
 	Rgba sum_col(0.f);
 
-	constexpr int ewa_weight_lut_size = ewa_weight_lut_.size();
+	constexpr int ewa_weight_lut_size = EwaWeightLut::size();
 	float sum_wts = 0.f;
 	for(int it = t_0; it <= t_1; ++it)
 	{

@@ -75,7 +75,7 @@ std::string Badge::getRenderInfo(const RenderControl &render_control, const Time
 	double times = timer.getTimeNotStopping("rendert");
 	if(render_control.finished()) times = timer.getTime("rendert");
 	int timem, timeh;
-	timer.splitTime(times, &times, &timem, &timeh);
+	Timer::splitTime(times, &times, &timem, &timeh);
 	ss_badge << " | " << image_width_ << "x" << image_height_;
 	if(render_control.inProgress()) ss_badge << " | " << (render_control.resumed() ? "film loaded + " : "") << "in progress " << std::fixed << std::setprecision(1) << render_control.currentPassPercent() << "% of pass: " << render_control.currentPass() << " / " << render_control.totalPasses();
 	else if(render_control.canceled()) ss_badge << " | " << (render_control.resumed() ? "film loaded + " : "") << "stopped at " << std::fixed << std::setprecision(1) << render_control.currentPassPercent() << "% of pass: " << render_control.currentPass() << " / " << render_control.totalPasses();
@@ -93,7 +93,7 @@ std::string Badge::getRenderInfo(const RenderControl &render_control, const Time
 
 	times = timer.getTimeNotStopping("rendert") + timer.getTime("prepass");
 	if(render_control.finished()) times = timer.getTime("rendert") + timer.getTime("prepass");
-	timer.splitTime(times, &times, &timem, &timeh);
+	Timer::splitTime(times, &times, &timem, &timeh);
 	ss_badge << " | Total time:";
 	if(timeh > 0) ss_badge << " " << timeh << "h";
 	if(timem > 0) ss_badge << " " << timem << "m";

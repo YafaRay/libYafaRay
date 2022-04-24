@@ -142,7 +142,7 @@ const Material *MaskMaterial::factory(Logger &logger, const Scene &scene, const 
 	mat->receive_shadows_ = receive_shadows;
 
 	std::vector<const ShaderNode *> root_nodes_list;
-	mat->nodes_map_ = mat->loadNodes(nodes_params, scene, logger);
+	mat->nodes_map_ = NodeMaterial::loadNodes(nodes_params, scene, logger);
 	if(mat->nodes_map_.empty())
 	{
 		return nullptr;
@@ -161,7 +161,7 @@ const Material *MaskMaterial::factory(Logger &logger, const Scene &scene, const 
 			}
 		}
 	}
-	mat->color_nodes_ = mat->solveNodesOrder(root_nodes_list, mat->nodes_map_, logger);
+	mat->color_nodes_ = NodeMaterial::solveNodesOrder(root_nodes_list, mat->nodes_map_, logger);
 	return mat;
 }
 

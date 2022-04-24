@@ -373,24 +373,24 @@ VoronoiTexture::VoronoiTexture(Logger &logger, const Rgb &c_1, const Rgb &c_2,
 float VoronoiTexture::getFloat(const Point3 &p, const MipMapParams *mipmap_params) const
 {
 	const auto [da, pa] = v_gen_.getFeatures(p * size_);
-	return applyIntensityContrastAdjustments(intensity_scale_ * std::abs(w_1_ * v_gen_.getDistance(0, da) + w_2_ * v_gen_.getDistance(1, da) + w_3_ * v_gen_.getDistance(2, da) + w_4_ * v_gen_.getDistance(3, da)));
+	return applyIntensityContrastAdjustments(intensity_scale_ * std::abs(w_1_ * VoronoiNoiseGenerator::getDistance(0, da) + w_2_ * VoronoiNoiseGenerator::getDistance(1, da) + w_3_ * VoronoiNoiseGenerator::getDistance(2, da) + w_4_ * VoronoiNoiseGenerator::getDistance(3, da)));
 }
 
 Rgba VoronoiTexture::getColor(const Point3 &p, const MipMapParams *mipmap_params) const
 {
 	const auto [da, pa] = v_gen_.getFeatures(p * size_);
-	const float inte = intensity_scale_ * std::abs(w_1_ * v_gen_.getDistance(0, da) + w_2_ * v_gen_.getDistance(1, da) + w_3_ * v_gen_.getDistance(2, da) + w_4_ * v_gen_.getDistance(3, da));
+	const float inte = intensity_scale_ * std::abs(w_1_ * VoronoiNoiseGenerator::getDistance(0, da) + w_2_ * VoronoiNoiseGenerator::getDistance(1, da) + w_3_ * VoronoiNoiseGenerator::getDistance(2, da) + w_4_ * VoronoiNoiseGenerator::getDistance(3, da));
 	Rgba col(0.0);
 	if(color_ramp_) return applyColorAdjustments(color_ramp_->getColorInterpolated(inte));
 	else if(color_mode_ != ColorMode::IntensityWithoutColor)
 	{
-		col += aw_1_ * NoiseGenerator::cellNoiseColor(v_gen_.getPoint(0, pa));
-		col += aw_2_ * NoiseGenerator::cellNoiseColor(v_gen_.getPoint(1, pa));
-		col += aw_3_ * NoiseGenerator::cellNoiseColor(v_gen_.getPoint(2, pa));
-		col += aw_4_ * NoiseGenerator::cellNoiseColor(v_gen_.getPoint(3, pa));
+		col += aw_1_ * NoiseGenerator::cellNoiseColor(VoronoiNoiseGenerator::getPoint(0, pa));
+		col += aw_2_ * NoiseGenerator::cellNoiseColor(VoronoiNoiseGenerator::getPoint(1, pa));
+		col += aw_3_ * NoiseGenerator::cellNoiseColor(VoronoiNoiseGenerator::getPoint(2, pa));
+		col += aw_4_ * NoiseGenerator::cellNoiseColor(VoronoiNoiseGenerator::getPoint(3, pa));
 		if(color_mode_ == ColorMode::PositionOutline || color_mode_ == ColorMode::PositionOutlineIntensity)
 		{
-			float t_1 = (v_gen_.getDistance(1, da) - v_gen_.getDistance(0, da)) * 10.f;
+			float t_1 = (VoronoiNoiseGenerator::getDistance(1, da) - VoronoiNoiseGenerator::getDistance(0, da)) * 10.f;
 			if(t_1 > 1) t_1 = 1;
 			if(color_mode_ == ColorMode::PositionOutlineIntensity) t_1 *= inte;
 			else t_1 *= intensity_scale_;

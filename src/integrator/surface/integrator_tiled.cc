@@ -592,7 +592,7 @@ void TiledIntegrator::generateCommonLayers(ColorLayers *color_layers, const Surf
 			}
 			if(Rgba *color_layer = color_layers->find(LayerDef::MatIndexAutoAbs))
 			{
-				*color_layer = Rgba{sp.material_->getAutoMaterialIndexNumber()};
+				*color_layer = Rgba{Material::getAutoMaterialIndexNumber()};
 			}
 			if(Rgba *color_layer = color_layers->find(LayerDef::ObjIndexMask))
 			{
@@ -668,7 +668,7 @@ Rgb TiledIntegrator::sampleAmbientOcclusion(const Accelerator &accelerator, bool
 									   BsdfFlags::Glossy | BsdfFlags::Diffuse | BsdfFlags::Reflect;
 		Sample s(s_1, s_2, sample_flags);
 		const Rgb surf_col = clay ?
-							 sp.material_->sampleClay(sp, wo, light_ray.dir_, s, w) :
+							 Material::sampleClay(sp, wo, light_ray.dir_, s, w) :
 							 sp.sample(wo, light_ray.dir_, s, w, chromatic_enabled, wavelength, camera);
 		if(clay) s.pdf_ = 1.f;
 		if(mat_bsdfs.hasAny(BsdfFlags::Emit))
