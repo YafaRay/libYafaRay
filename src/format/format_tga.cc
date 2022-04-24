@@ -21,6 +21,8 @@
  */
 
 #include "format/format_tga.h"
+
+#include <memory>
 #include "format/format_tga_util.h"
 #include "common/logger.h"
 #include "common/param.h"
@@ -304,7 +306,7 @@ Image * TgaFormat::loadFromFile(const std::string &name, const Image::Optimizati
 	// Read the colormap if needed
 	if(has_color_map)
 	{
-		color_map_ = std::unique_ptr<ImageBuffer2D<RgbAlpha>>(new ImageBuffer2D<RgbAlpha>(header.cm_number_of_entries_, 1));
+		color_map_ = std::make_unique<ImageBuffer2D<RgbAlpha>>(header.cm_number_of_entries_, 1);
 		switch(header.cm_entry_bit_depth_)
 		{
 			case 15:

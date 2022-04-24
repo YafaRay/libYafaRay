@@ -168,7 +168,7 @@ std::pair<Rgb, float> PathIntegrator::integrate(Ray &ray, RandomGenerator &rando
 				unsigned int offs = n_paths_ * pixel_sampling_data.sample_ + pixel_sampling_data.offset_ + i; // some redunancy here...
 				Rgb throughput(1.0);
 				Rgb lcol, scol;
-				auto hit = std::unique_ptr<const SurfacePoint>(new SurfacePoint(*sp));
+				auto hit = std::make_unique<const SurfacePoint>(*sp);
 				Vec3 pwo{wo};
 				Ray p_ray;
 

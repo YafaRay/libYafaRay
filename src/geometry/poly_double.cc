@@ -21,6 +21,7 @@
 #include "geometry/bound.h"
 #include "common/logger.h"
 #include <array>
+#include <memory>
 
 BEGIN_YAFARAY
 
@@ -132,7 +133,7 @@ PolyDouble::ClipResultWithBound PolyDouble::planeClipWithBound(Logger &logger, d
 	ClipResultWithBound clip_result(planeClip(logger, pos, clip_plane, poly));
 	if(clip_result.clip_result_code_ == ClipResult::Correct)
 	{
-		clip_result.box_ = std::unique_ptr<Bound>(new Bound);
+		clip_result.box_ = std::make_unique<Bound>();
 		*clip_result.box_ = getBound(clip_result.poly_);
 	}
 	return clip_result;
@@ -159,7 +160,7 @@ PolyDouble::ClipResultWithBound PolyDouble::boxClip(Logger &logger, const Vec3Do
 	}
 	if(clip_result.clip_result_code_ == ClipResult::Correct)
 	{
-		clip_result.box_ = std::unique_ptr<Bound>(new Bound);
+		clip_result.box_ = std::make_unique<Bound>();
 		*clip_result.box_ = getBound(clip_result.poly_);
 	}
 	return clip_result;

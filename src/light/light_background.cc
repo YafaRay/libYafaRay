@@ -20,12 +20,16 @@
  */
 
 #include "light/light_background.h"
+
+#include <memory>
 #include "background/background.h"
 #include "texture/texture.h"
 #include "common/param.h"
 #include "scene/scene.h"
 #include "geometry/surface.h"
 #include "sampler/sample_pdf1d.h"
+#include "geometry/ray.h"
+#include "geometry/bound.h"
 
 BEGIN_YAFARAY
 
@@ -63,10 +67,10 @@ void BackgroundLight::init(Scene &scene)
 			Texture::invSphereMap(fx, fy, wi);
 			fu[x] = background_->eval(wi, true).energy() * sintheta;
 		}
-		u_dist_[y] = std::unique_ptr<Pdf1D>(new Pdf1D(std::move(fu)));
+		u_dist_[y] = std::make_unique<Pdf1D>(std::move(fu));
 		fv[y] = u_dist_[y]->integral();
 	}
-	v_dist_ = std::unique_ptr<Pdf1D>(new Pdf1D(std::move(fv)));
+	v_dist_ = std::make_unique<Pdf1D>(std::move(fv));
 	const Bound w = scene.getSceneBound();
 	world_center_ = 0.5f * (w.a_ + w.g_);
 	world_radius_ = 0.5f * (w.g_ - w.a_).length();

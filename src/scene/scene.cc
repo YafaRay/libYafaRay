@@ -40,7 +40,10 @@
 #include "render/render_view.h"
 #include "render/progress_bar.h"
 #include "image/image_manipulation.h"
+#include "geometry/primitive/primitive.h"
+#include "geometry/matrix4.h"
 #include <limits>
+#include <memory>
 
 BEGIN_YAFARAY
 
@@ -69,7 +72,7 @@ void Scene::logInfoVerboseSuccessDisabled(Logger &logger, const std::string &pna
 	logger.logVerbose("Scene: ", "Added ", pname, " '", name, "' (", t, ")! [DISABLED]");
 }
 
-Scene::Scene(Logger &logger) : logger_(logger)
+Scene::Scene(Logger &logger) : logger_(logger), scene_bound_(std::make_unique<Bound>())
 {
 	creation_state_.changes_ = CreationState::Flags::CAll;
 	creation_state_.stack_.push_front(CreationState::Ready);
@@ -197,7 +200,7 @@ const Background *Scene::getBackground() const
 
 Bound Scene::getSceneBound() const
 {
-	return scene_bound_;
+	return *scene_bound_;
 }
 
 bool Scene::render()
@@ -392,7 +395,7 @@ std::unique_ptr<const Material> * Scene::createMaterial(const std::string &name,
 	}
 	else
 	{
-		materials_[name] = std::unique_ptr<std::unique_ptr<const Material>>(new std::unique_ptr<const Material>());
+		materials_[name] = std::make_unique<std::unique_ptr<const Material>>();
 	}
 	std::string type;
 	if(!params.getParam("type", type))
@@ -1021,7 +1024,7 @@ bool Scene::addInstance(const std::string &base_object_name, const Matrix4 &obj_
 	{
 		const std::string instance_name = base_object_name + "-" + std::to_string(id);
 		if(logger_.isDebug())logger_.logDebug("  Instance: ", instance_name, " base_object_name=", base_object_name);
-		objects_[instance_name] = std::unique_ptr<Object>(new ObjectInstance(*base_object, obj_to_world));
+		objects_[instance_name] = std::make_unique<ObjectInstance>(*base_object, obj_to_world);
 		return true;
 	}
 	else return false;
@@ -1047,13 +1050,13 @@ bool Scene::updateObjects()
 	params["accelerator_threads"] = getNumThreads();
 
 	accelerator_ = std::unique_ptr<const Accelerator>(Accelerator::factory(logger_, primitives, params));
-	scene_bound_ = accelerator_->getBound();
-	if(logger_.isVerbose()) logger_.logVerbose("Scene: New scene bound is: ", "(", scene_bound_.a_.x(), ", ", scene_bound_.a_.y(), ", ", scene_bound_.a_.z(), "), (", scene_bound_.g_.x(), ", ", scene_bound_.g_.y(), ", ", scene_bound_.g_.z(), ")");
+	*scene_bound_ = accelerator_->getBound();
+	if(logger_.isVerbose()) logger_.logVerbose("Scene: New scene bound is: ", "(", scene_bound_->a_.x(), ", ", scene_bound_->a_.y(), ", ", scene_bound_->a_.z(), "), (", scene_bound_->g_.x(), ", ", scene_bound_->g_.y(), ", ", scene_bound_->g_.z(), ")");
 
 	if(shadow_bias_auto_) shadow_bias_ = shadow_bias_global;
 	if(ray_min_dist_auto_) ray_min_dist_ = min_raydist_global;
 
-	logger_.logInfo("Scene: total scene dimensions: X=", scene_bound_.longX(), ", y=", scene_bound_.longY(), ", z=", scene_bound_.longZ(), ", volume=", scene_bound_.vol(), ", Shadow Bias=", shadow_bias_, (shadow_bias_auto_ ? " (auto)" : ""), ", Ray Min Dist=", ray_min_dist_, (ray_min_dist_auto_ ? " (auto)" : ""));
+	logger_.logInfo("Scene: total scene dimensions: X=", scene_bound_->longX(), ", y=", scene_bound_->longY(), ", z=", scene_bound_->longZ(), ", volume=", scene_bound_->vol(), ", Shadow Bias=", shadow_bias_, (shadow_bias_auto_ ? " (auto)" : ""), ", Ray Min Dist=", ray_min_dist_, (ray_min_dist_auto_ ? " (auto)" : ""));
 	return true;
 }
 

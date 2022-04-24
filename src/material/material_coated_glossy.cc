@@ -19,6 +19,8 @@
  */
 
 #include "material/material_coated_glossy.h"
+
+#include <memory>
 #include "scene/scene.h"
 #include "shader/shader_node.h"
 #include "sampler/sample.h"
@@ -414,7 +416,7 @@ Specular CoatedGlossyMaterial::getSpecular(int ray_level, const MaterialData *ma
 	Vec3::fresnel(wo, n, getShaderScalar(ior_shader_, mat_data->node_tree_data_, ior_), kr, kt);
 	Specular specular;
 	if(ray_level > 5) return specular;
-	specular.reflect_ = std::unique_ptr<DirectionColor>(new DirectionColor());
+	specular.reflect_ = std::make_unique<DirectionColor>();
 	specular.reflect_->dir_ = wo;
 	specular.reflect_->dir_.reflect(n);
 	if(mirror_color_shader_) specular.reflect_->col_ = mirror_color_shader_->getColor(mat_data->node_tree_data_) * kr;

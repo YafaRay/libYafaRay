@@ -17,6 +17,8 @@
  */
 
 #include "material/material_shiny_diffuse.h"
+
+#include <memory>
 #include "common/param.h"
 #include "sampler/sample.h"
 #include "shader/shader_node.h"
@@ -412,7 +414,7 @@ Specular ShinyDiffuseMaterial::getSpecular(int ray_level, const MaterialData *ma
 	const float kr = getFresnelKr(wo, n, cur_ior_squared);
 	if(is_transparent_)
 	{
-		specular.refract_ = std::unique_ptr<DirectionColor>(new DirectionColor());
+		specular.refract_ = std::make_unique<DirectionColor>();
 		specular.refract_->dir_ = -wo;
 		const Rgb tcol = transmit_filter_strength_ * getShaderColor(diffuse_shader_, mat_data->node_tree_data_, diffuse_color_) + Rgb(1.f - transmit_filter_strength_);
 		const auto *mat_data_specific = static_cast<const ShinyDiffuseMaterialData *>(mat_data);
@@ -421,7 +423,7 @@ Specular ShinyDiffuseMaterial::getSpecular(int ray_level, const MaterialData *ma
 	}
 	if(is_mirror_)
 	{
-		specular.reflect_ = std::unique_ptr<DirectionColor>(new DirectionColor());
+		specular.reflect_ = std::make_unique<DirectionColor>();
 		//logger_.logWarning(sp.N << " | " << N);
 		specular.reflect_->dir_ = wo;
 		specular.reflect_->dir_.reflect(n);

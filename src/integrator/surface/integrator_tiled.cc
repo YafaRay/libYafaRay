@@ -26,6 +26,7 @@
 #include "integrator/surface/integrator_tiled.h"
 
 #include <cmath>
+#include <memory>
 #include "common/layers.h"
 #include "background/background.h"
 #include "geometry/surface.h"
@@ -348,7 +349,7 @@ bool TiledIntegrator::renderTile(const RenderArea &a, int n_samples, int offset,
 				if(render_control_.getDifferentialRaysEnabled())
 				{
 					//setup ray differentials
-					camera_ray.ray_.differentials_ = std::unique_ptr<RayDifferentials>(new RayDifferentials());
+					camera_ray.ray_.differentials_ = std::make_unique<RayDifferentials>();
 					const CameraRay camera_diff_ray_x = camera_->shootRay(j + 1 + dx, i + dy, lens_u, lens_v);
 					camera_ray.ray_.differentials_->xfrom_ = camera_diff_ray_x.ray_.from_;
 					camera_ray.ray_.differentials_->xdir_ = camera_diff_ray_x.ray_.dir_;

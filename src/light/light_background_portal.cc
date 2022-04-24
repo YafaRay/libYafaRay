@@ -29,6 +29,7 @@
 #include "geometry/object/object_mesh.h"
 #include "geometry/primitive/primitive_face.h"
 #include <limits>
+#include <memory>
 
 BEGIN_YAFARAY
 
@@ -51,7 +52,7 @@ void BackgroundPortalLight::initIs()
 		areas[i] = primitives_[i]->surfaceArea();
 		total_area += areas[i];
 	}
-	area_dist_ = std::unique_ptr<Pdf1D>(new Pdf1D(areas));
+	area_dist_ = std::make_unique<Pdf1D>(areas);
 	area_ = static_cast<float>(total_area);
 	inv_area_ = static_cast<float>(1.0 / total_area);
 	accelerator_ = nullptr;

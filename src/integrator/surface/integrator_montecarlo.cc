@@ -19,6 +19,8 @@
  */
 
 #include "integrator/surface/integrator_montecarlo.h"
+
+#include <memory>
 #include "geometry/surface.h"
 #include "common/layers.h"
 #include "color/color_layers.h"
@@ -45,7 +47,7 @@ constexpr int MonteCarloIntegrator::loffs_delta_;
 //Constructor and destructor defined here to avoid issues with std::unique_ptr<Pdf1D> being Pdf1D incomplete in the header (forward declaration)
 MonteCarloIntegrator::MonteCarloIntegrator(RenderControl &render_control, Logger &logger) : TiledIntegrator(render_control, logger)
 {
-	caustic_map_ = std::unique_ptr<PhotonMap>(new PhotonMap(logger));
+	caustic_map_ = std::make_unique<PhotonMap>(logger);
 	caustic_map_->setName("Caustic Photon Map");
 }
 
@@ -169,23 +171,23 @@ Rgb MonteCarloIntegrator::areaLightSampleLight(Halton &hal_2, Halton &hal_3, Ran
 		if(color_layers->getFlags().hasAny(LayerDef::Flags::IndexLayers))
 		{
 			if(Rgba *color_layer = color_layers->find(LayerDef::MatIndexMaskShadow))
-				layer_mat_index_mask_shadow = std::unique_ptr<ColorLayerAccum>(new ColorLayerAccum(color_layer));
+				layer_mat_index_mask_shadow = std::make_unique<ColorLayerAccum>(color_layer);
 			if(Rgba *color_layer = color_layers->find(LayerDef::ObjIndexMaskShadow))
-				layer_obj_index_mask_shadow = std::unique_ptr<ColorLayerAccum>(new ColorLayerAccum(color_layer));
+				layer_obj_index_mask_shadow = std::make_unique<ColorLayerAccum>(color_layer);
 		}
 		if(color_layers->getFlags().hasAny(LayerDef::Flags::DiffuseLayers))
 		{
 			if(Rgba *color_layer = color_layers->find(LayerDef::Diffuse))
-				layer_diffuse = std::unique_ptr<ColorLayerAccum>(new ColorLayerAccum(color_layer));
+				layer_diffuse = std::make_unique<ColorLayerAccum>(color_layer);
 			if(Rgba *color_layer = color_layers->find(LayerDef::DiffuseNoShadow))
-				layer_diffuse_no_shadow = std::unique_ptr<ColorLayerAccum>(new ColorLayerAccum(color_layer));
+				layer_diffuse_no_shadow = std::make_unique<ColorLayerAccum>(color_layer);
 		}
 		if(color_layers->getFlags().hasAny(LayerDef::Flags::BasicLayers))
 		{
 			if(Rgba *color_layer = color_layers->find(LayerDef::Shadow))
-				layer_shadow = std::unique_ptr<ColorLayerAccum>(new ColorLayerAccum(color_layer));
+				layer_shadow = std::make_unique<ColorLayerAccum>(color_layer);
 			if(Rgba *color_layer = color_layers->find(LayerDef::Glossy))
-				layer_glossy = std::unique_ptr<ColorLayerAccum>(new ColorLayerAccum(color_layer));
+				layer_glossy = std::make_unique<ColorLayerAccum>(color_layer);
 		}
 	}
 	LSample ls;
@@ -294,14 +296,14 @@ Rgb MonteCarloIntegrator::areaLightSampleMaterial(Halton &hal_2, Halton &hal_3, 
 			if(color_layers->getFlags().hasAny(LayerDef::Flags::DiffuseLayers))
 			{
 				if(Rgba *color_layer = color_layers->find(LayerDef::Diffuse))
-					layer_diffuse = std::unique_ptr<ColorLayerAccum>(new ColorLayerAccum(color_layer));
+					layer_diffuse = std::make_unique<ColorLayerAccum>(color_layer);
 				if(Rgba *color_layer = color_layers->find(LayerDef::DiffuseNoShadow))
-					layer_diffuse_no_shadow = std::unique_ptr<ColorLayerAccum>(new ColorLayerAccum(color_layer));
+					layer_diffuse_no_shadow = std::make_unique<ColorLayerAccum>(color_layer);
 			}
 			if(color_layers->getFlags().hasAny(LayerDef::Flags::BasicLayers))
 			{
 				if(Rgba *color_layer = color_layers->find(LayerDef::Glossy))
-					layer_glossy = std::unique_ptr<ColorLayerAccum>(new ColorLayerAccum(color_layer));
+					layer_glossy = std::make_unique<ColorLayerAccum>(color_layer);
 			}
 		}
 		Ray light_ray;
@@ -585,7 +587,7 @@ bool MonteCarloIntegrator::createCausticMap()
 		const auto f_num_lights_caustic = static_cast<float>(num_lights_caustic);
 		std::vector<float> energies_caustic(num_lights_caustic);
 		for(int i = 0; i < num_lights_caustic; ++i) energies_caustic[i] = lights_caustic[i]->totalEnergy().energy();
-		auto light_power_d_caustic = std::unique_ptr<Pdf1D>(new Pdf1D(energies_caustic));
+		auto light_power_d_caustic = std::make_unique<Pdf1D>(energies_caustic);
 
 		if(logger_.isVerbose()) logger_.logVerbose(getName(), ": Light(s) photon color testing for caustics map:");
 
@@ -704,7 +706,7 @@ std::pair<Rgb, float> MonteCarloIntegrator::dispersive(RandomGenerator &random_g
 			dcol += integ_col;
 			if(color_layers) dcol_trans_accum += integ_col;
 			alpha_accum += integ_alpha;
-			if(!ref_ray_chromatic_volume) ref_ray_chromatic_volume = std::unique_ptr<Ray>(new Ray(ref_ray, Ray::DifferentialsCopy::No));
+			if(!ref_ray_chromatic_volume) ref_ray_chromatic_volume = std::make_unique<Ray>(ref_ray, Ray::DifferentialsCopy::No);
 		}
 	}
 	if(ref_ray_chromatic_volume && bsdfs.hasAny(BsdfFlags::Volumetric))

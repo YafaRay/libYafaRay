@@ -21,6 +21,8 @@
  */
 
 #include "render/imagefilm.h"
+
+#include <memory>
 #include "common/logger.h"
 #include "image/image_output.h"
 #include "format/format.h"
@@ -162,7 +164,7 @@ ImageFilm::ImageFilm(Logger &logger, int width, int height, int xstart, int ysta
 	table_scale_ = 0.9999 * filter_table_size_ / filterw_;
 	area_cnt_ = 0;
 
-	progress_bar_ = std::unique_ptr<ProgressBar>(new ConsoleProgressBar(80));
+	progress_bar_ = std::make_unique<ConsoleProgressBar>(80);
 	render_control.setCurrentPassPercent(progress_bar_->getPercent());
 
 	aa_noise_params_.detect_color_noise_ = false;
@@ -206,14 +208,14 @@ void ImageFilm::init(RenderControl &render_control, int num_passes)
 	// Clear density image
 	if(estimate_density_)
 	{
-		density_image_ = std::unique_ptr<ImageBuffer2D<Rgb>>(new ImageBuffer2D<Rgb>(width_, height_));
+		density_image_ = std::make_unique<ImageBuffer2D<Rgb>>(width_, height_);
 	}
 
 	// Setup the bucket splitter
 	if(split_)
 	{
 		next_area_ = 0;
-		splitter_ = std::unique_ptr<ImageSplitter>(new ImageSplitter(width_, height_, cx_0_, cy_0_, tile_size_, tiles_order_, num_threads_));
+		splitter_ = std::make_unique<ImageSplitter>(width_, height_, cx_0_, cy_0_, tile_size_, tiles_order_, num_threads_);
 		area_cnt_ = splitter_->size();
 	}
 	else area_cnt_ = 1;
@@ -781,7 +783,7 @@ void ImageFilm::setDensityEstimation(bool enable)
 {
 	if(enable)
 	{
-		if(!density_image_) density_image_ = std::unique_ptr<ImageBuffer2D<Rgb>>(new ImageBuffer2D<Rgb>(width_, height_));
+		if(!density_image_) density_image_ = std::make_unique<ImageBuffer2D<Rgb>>(width_, height_);
 		else density_image_->clear();
 	}
 	else
@@ -982,7 +984,7 @@ void ImageFilm::imageFilmLoadAllInFolder(RenderControl &render_control)
 	bool any_film_loaded = false;
 	for(const auto &film_file : film_file_paths_list)
 	{
-		auto loaded_film = std::unique_ptr<ImageFilm>(new ImageFilm(logger_, width_, height_, cx_0_, cy_0_, num_threads_, render_control, layers_, outputs_, 1.0, FilterType::Box));
+		auto loaded_film = std::make_unique<ImageFilm>(logger_, width_, height_, cx_0_, cy_0_, num_threads_, render_control, layers_, outputs_, 1.0, FilterType::Box);
 		if(!loaded_film->imageFilmLoad(film_file))
 		{
 			logger_.logWarning("ImageFilm: Could not load film file '", film_file, "'");

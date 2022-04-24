@@ -17,6 +17,8 @@
  */
 
 #include "geometry/primitive/primitive_triangle_bspline.h"
+
+#include <memory>
 #include "geometry/ray.h"
 #include "geometry/bound.h"
 #include "geometry/surface.h"
@@ -98,7 +100,7 @@ std::unique_ptr<const SurfacePoint> BsTrianglePrimitive::getSurface(const RayDif
 	const Point3 b{b_1 * bn[0] + b_2 * bn[1] + b_3 * bn[2]};
 	const Point3 c{b_1 * cn[0] + b_2 * cn[1] + b_3 * cn[2]};
 
-	auto sp = std::unique_ptr<SurfacePoint>(new SurfacePoint);
+	auto sp = std::make_unique<SurfacePoint>();
 	sp->intersect_data_ = intersect_data;
 	sp->ng_ = ((b - a) ^ (c - a)).normalize();
 	// the "u" and "v" in triangle intersection code are actually "v" and "w" when u=>p1, v=>p2, w=>p3

@@ -19,6 +19,8 @@
  */
 
 #include "light/light_spot.h"
+
+#include <memory>
 #include "geometry/surface.h"
 #include "geometry/ray.h"
 #include "sampler/sample.h"
@@ -48,7 +50,7 @@ SpotLight::SpotLight(Logger &logger, const Point3 &from, const Point3 &to, const
 		const float v = static_cast<float>(i) / 64.f;
 		f[i] = v * v * (3.f - 2.f * v);
 	}
-	pdf_ = std::unique_ptr<Pdf1D>(new Pdf1D(f));
+	pdf_ = std::make_unique<Pdf1D>(f);
 
 	/* the integral of the smoothstep is 0.5, and since it gets applied to the cos, and each delta cos
 		corresponds to a constant surface are of the (partial) emitting sphere, we can actually simply

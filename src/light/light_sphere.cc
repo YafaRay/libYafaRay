@@ -25,6 +25,8 @@
 #include "scene/scene.h"
 #include "sampler/sample.h"
 #include "common/logger.h"
+#include "geometry/ray.h"
+#include "geometry/bound.h"
 
 BEGIN_YAFARAY
 

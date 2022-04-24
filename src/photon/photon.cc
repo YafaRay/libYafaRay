@@ -17,6 +17,8 @@
  */
 
 #include "photon/photon.h"
+
+#include <memory>
 #include "common/file.h"
 
 BEGIN_YAFARAY
@@ -119,7 +121,7 @@ void PhotonMap::updateTree()
 {
 	if(photons_.size() > 0)
 	{
-		tree_ = std::unique_ptr<kdtree::PointKdTree<Photon>>(new kdtree::PointKdTree<Photon>(logger_, photons_, name_, threads_pkd_tree_));
+		tree_ = std::make_unique<kdtree::PointKdTree<Photon>>(logger_, photons_, name_, threads_pkd_tree_);
 		updated_ = true;
 	}
 	else tree_ = nullptr;

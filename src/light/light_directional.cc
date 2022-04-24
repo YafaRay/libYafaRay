@@ -23,6 +23,8 @@
 #include "common/param.h"
 #include "scene/scene.h"
 #include "common/logger.h"
+#include "geometry/ray.h"
+#include "geometry/bound.h"
 
 BEGIN_YAFARAY
 

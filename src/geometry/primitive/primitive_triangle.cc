@@ -29,6 +29,8 @@
 #include "common/param.h"
 #include <string.h>
 
+#include <memory>
+
 BEGIN_YAFARAY
 
 TrianglePrimitive::TrianglePrimitive(const std::vector<int> &vertices_indices, const std::vector<int> &vertices_uv_indices, const MeshObject &mesh_object) : FacePrimitive(vertices_indices, vertices_uv_indices, mesh_object)
@@ -96,7 +98,7 @@ Vec3 TrianglePrimitive::calculateNormal(const std::array<Point3, 3> &vertices)
 
 std::unique_ptr<const SurfacePoint> TrianglePrimitive::getSurface(const RayDifferentials *ray_differentials, const Point3 &hit_point, const IntersectData &intersect_data, const Matrix4 *obj_to_world, const Camera *camera) const
 {
-	auto sp = std::unique_ptr<SurfacePoint>(new SurfacePoint);
+	auto sp = std::make_unique<SurfacePoint>();
 	sp->intersect_data_ = intersect_data;
 	sp->ng_ = Primitive::getGeometricNormal(obj_to_world);
 	const float barycentric_u = intersect_data.barycentric_u_, barycentric_v = intersect_data.barycentric_v_, barycentric_w = intersect_data.barycentric_w_;

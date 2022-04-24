@@ -20,6 +20,8 @@
  */
 
 #include "integrator/surface/integrator_photon_mapping.h"
+
+#include <memory>
 #include "geometry/surface.h"
 #include "volume/volume.h"
 #include "color/color_layers.h"
@@ -101,9 +103,9 @@ PhotonIntegrator::PhotonIntegrator(RenderControl &render_control, Logger &logger
 	r_depth_ = 6;
 	max_bounces_ = 5;
 
-	diffuse_map_ = std::unique_ptr<PhotonMap>(new PhotonMap(logger));
+	diffuse_map_ = std::make_unique<PhotonMap>(logger);
 	diffuse_map_->setName("Diffuse Photon Map");
-	radiance_map_ = std::unique_ptr<PhotonMap>(new PhotonMap(logger));
+	radiance_map_ = std::make_unique<PhotonMap>(logger);
 	radiance_map_->setName("FG Radiance Photon Map");
 }
 
@@ -416,7 +418,7 @@ bool PhotonIntegrator::preprocess(ImageFilm *image_film, const RenderView *rende
 		const auto f_num_lights = static_cast<float>(num_lights_diffuse);
 		std::vector<float> energies_diffuse(num_lights_diffuse);
 		for(int i = 0; i < num_lights_diffuse; ++i) energies_diffuse[i] = lights_diffuse[i]->totalEnergy().energy();
-		auto light_power_d_diffuse = std::unique_ptr<Pdf1D>(new Pdf1D(energies_diffuse));
+		auto light_power_d_diffuse = std::make_unique<Pdf1D>(energies_diffuse);
 		if(logger_.isVerbose()) logger_.logVerbose(getName(), ": Light(s) photon color testing for diffuse map:");
 		for(int i = 0; i < num_lights_diffuse; ++i)
 		{
@@ -493,7 +495,7 @@ bool PhotonIntegrator::preprocess(ImageFilm *image_film, const RenderView *rende
 
 		for(int i = 0; i < num_lights_caustic; ++i) energies_caustic[i] = lights_caustic[i]->totalEnergy().energy();
 
-		auto light_power_d_caustic = std::unique_ptr<Pdf1D>(new Pdf1D(energies_caustic));
+		auto light_power_d_caustic = std::make_unique<Pdf1D>(energies_caustic);
 
 		if(logger_.isVerbose()) logger_.logVerbose(getName(), ": Light(s) photon color testing for caustics map:");
 		for(int i = 0; i < num_lights_caustic; ++i)
@@ -557,7 +559,7 @@ bool PhotonIntegrator::preprocess(ImageFilm *image_film, const RenderView *rende
 	if(use_photon_diffuse_ && final_gather_) //create radiance map:
 	{
 		// == remove too close radiance points ==//
-		auto r_tree = std::unique_ptr<kdtree::PointKdTree<RadData>>(new kdtree::PointKdTree<RadData>(logger_, pgdat.rad_points_, "FG Radiance Photon Map", num_threads_photons_));
+		auto r_tree = std::make_unique<kdtree::PointKdTree<RadData>>(logger_, pgdat.rad_points_, "FG Radiance Photon Map", num_threads_photons_);
 		std::vector< RadData > cleaned;
 		for(const auto &rad_point : pgdat.rad_points_)
 		{
@@ -650,7 +652,7 @@ Rgb PhotonIntegrator::finalGathering(RandomGenerator &random_generator, int thre
 	{
 		Rgb throughput(1.0);
 		float length = 0;
-		auto hit = std::unique_ptr<const SurfacePoint>(new SurfacePoint(sp));
+		auto hit = std::make_unique<const SurfacePoint>(sp);
 		Vec3 pwo{wo};
 		Ray p_ray;
 		bool did_hit;

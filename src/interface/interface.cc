@@ -17,6 +17,8 @@
  */
 
 #include "interface/interface.h"
+
+#include <memory>
 #include "common/version_build_info.h"
 #include "common/logger.h"
 #include "scene/scene.h"
@@ -33,8 +35,8 @@ BEGIN_YAFARAY
 
 Interface::Interface(const ::yafaray_LoggerCallback_t logger_callback, void *callback_data, ::yafaray_DisplayConsole_t logger_display_console)
 {
-	logger_ = std::unique_ptr<Logger>(new Logger(logger_callback, callback_data, logger_display_console));
-	params_ = std::unique_ptr<ParamMap>(new ParamMap);
+	logger_ = std::make_unique<Logger>(logger_callback, callback_data, logger_display_console);
+	params_ = std::make_unique<ParamMap>();
 	cparams_ = params_.get();
 #if defined(_WIN32)
 	if(logger_display_console == YAFARAY_DISPLAY_CONSOLE_NORMAL) SetConsoleOutputCP(65001);	//set Windows Console to UTF8 so the image path can be displayed correctly
@@ -48,7 +50,7 @@ void Interface::setLoggingCallback(const ::yafaray_LoggerCallback_t logger_callb
 
 void Interface::createScene() noexcept
 {
-	scene_ = std::unique_ptr<Scene>(new Scene(*logger_));
+	scene_ = std::make_unique<Scene>(*logger_);
 	params_->clear();
 }
 

@@ -19,6 +19,8 @@
  */
 
 #include "integrator/surface/integrator_sppm.h"
+
+#include <memory>
 #include "geometry/surface.h"
 #include "volume/volume.h"
 #include "common/param.h"
@@ -47,9 +49,9 @@ SppmIntegrator::SppmIntegrator(RenderControl &render_control, Logger &logger, un
 	tr_shad_ = transp_shad;
 	b_hashgrid_ = false;
 
-	caustic_map_ = std::unique_ptr<PhotonMap>(new PhotonMap(logger));
+	caustic_map_ = std::make_unique<PhotonMap>(logger);
 	caustic_map_->setName("Caustic Photon Map");
-	diffuse_map_ = std::unique_ptr<PhotonMap>(new PhotonMap(logger));
+	diffuse_map_ = std::make_unique<PhotonMap>(logger);
 	diffuse_map_->setName("Diffuse Photon Map");
 }
 
@@ -223,7 +225,7 @@ bool SppmIntegrator::renderTile(const RenderArea &a, int n_samples, int offset, 
 				if(render_control_.getDifferentialRaysEnabled())
 				{
 					//setup ray differentials
-					camera_ray.ray_.differentials_ = std::unique_ptr<RayDifferentials>(new RayDifferentials());
+					camera_ray.ray_.differentials_ = std::make_unique<RayDifferentials>();
 					const CameraRay camera_diff_ray_x = camera_->shootRay(j + 1 + dx, i + dy, lens_u, lens_v);
 					camera_ray.ray_.differentials_->xfrom_ = camera_diff_ray_x.ray_.from_;
 					camera_ray.ray_.differentials_->xdir_ = camera_diff_ray_x.ray_.dir_;
@@ -512,7 +514,7 @@ void SppmIntegrator::prePass(int samples, int offset, bool adaptive)
 	const auto f_num_lights = static_cast<float>(num_lights);
 	std::vector<float> energies(num_lights);
 	for(int i = 0; i < num_lights; ++i) energies[i] = lights_[i]->totalEnergy().energy();
-	auto light_power_d = std::unique_ptr<Pdf1D>(new Pdf1D(energies));
+	auto light_power_d = std::make_unique<Pdf1D>(energies);
 	if(logger_.isVerbose()) logger_.logVerbose(getName(), ": Light(s) photon color testing for photon map:");
 
 	for(int i = 0; i < num_lights; ++i)

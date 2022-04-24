@@ -24,6 +24,7 @@
 #include "common/flags.h"
 #include "common/visibility.h"
 #include "shader/shader_node.h"
+#include "geometry/vector.h"
 #include <list>
 
 BEGIN_YAFARAY

@@ -19,6 +19,8 @@
 // The Bidirectional integrator is UNSTABLE at the moment and needs to be improved. It might give unexpected and perhaps even incorrect render results. Use at your own risk.
 
 #include "integrator/surface/integrator_bidirectional.h"
+
+#include <memory>
 #include "geometry/surface.h"
 #include "color/color_layers.h"
 #include "common/logger.h"
@@ -161,7 +163,7 @@ bool BidirectionalIntegrator::preprocess(ImageFilm *image_film, const RenderView
 	f_num_lights_ = 1.f / static_cast<float>(num_lights);
 	std::vector<float> energies(num_lights);
 	for(int i = 0; i < num_lights; ++i) energies[i] = lights_[i]->totalEnergy().energy();
-	light_power_d_ = std::unique_ptr<Pdf1D>(new Pdf1D(energies));
+	light_power_d_ = std::make_unique<Pdf1D>(energies);
 	for(int i = 0; i < num_lights; ++i) inv_light_power_d_[lights_[i]] = light_power_d_->function(i) * light_power_d_->invIntegral();
 	if(logger_.isDebug())
 	{

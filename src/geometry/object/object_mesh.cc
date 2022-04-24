@@ -23,6 +23,7 @@
 #include "common/logger.h"
 #include "common/param.h"
 #include <array>
+#include <memory>
 
 BEGIN_YAFARAY
 
@@ -78,7 +79,7 @@ void MeshObject::addFace(std::unique_ptr<FacePrimitive> face)
 void MeshObject::addFace(const std::vector<int> &vertices, const std::vector<int> &vertices_uv, const std::unique_ptr<const Material> *material)
 {
 	std::unique_ptr<FacePrimitive> face;
-	if(vertices.size() == 3) face = std::unique_ptr<FacePrimitive>(new TrianglePrimitive(vertices, vertices_uv, *this));
+	if(vertices.size() == 3) face = std::make_unique<TrianglePrimitive>(vertices, vertices_uv, *this);
 	else return; //Other primitives are not supported
 	face->setMaterial(material);
 	if(hasNormalsExported()) face->setNormalsIndices(vertices);

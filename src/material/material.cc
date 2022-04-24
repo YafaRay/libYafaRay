@@ -18,6 +18,8 @@
  */
 
 #include "material/material.h"
+
+#include <memory>
 #include "material/material_blend.h"
 #include "material/material_mask.h"
 #include "material/material_rough_glass.h"
@@ -188,21 +190,21 @@ std::unique_ptr<DirectionColor> DirectionColor::blend(std::unique_ptr<DirectionC
 	else if(blend_val >= 1.f) return direction_color_2;
 	if(direction_color_1 && direction_color_2)
 	{
-		std::unique_ptr<DirectionColor> direction_color_blend = std::unique_ptr<DirectionColor>(new DirectionColor());
+		auto direction_color_blend = std::make_unique<DirectionColor>();
 		direction_color_blend->col_ = math::lerp(direction_color_1->col_, direction_color_2->col_, blend_val);
 		direction_color_blend->dir_ = (direction_color_1->dir_ + direction_color_2->dir_).normalize();
 		return direction_color_blend;
 	}
 	else if(direction_color_1)
 	{
-		std::unique_ptr<DirectionColor> direction_color_blend = std::unique_ptr<DirectionColor>(new DirectionColor());
+		auto direction_color_blend = std::make_unique<DirectionColor>();
 		direction_color_blend->col_ = math::lerp(direction_color_1->col_, Rgb{0.f}, blend_val);
 		direction_color_blend->dir_ = direction_color_1->dir_.normalize();
 		return direction_color_blend;
 	}
 	else if(direction_color_2)
 	{
-		std::unique_ptr<DirectionColor> direction_color_blend = std::unique_ptr<DirectionColor>(new DirectionColor());
+		auto direction_color_blend = std::make_unique<DirectionColor>();
 		direction_color_blend->col_ = math::lerp(Rgb{0.f}, direction_color_2->col_, blend_val);
 		direction_color_blend->dir_ = direction_color_2->dir_.normalize();
 		return direction_color_blend;

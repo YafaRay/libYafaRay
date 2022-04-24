@@ -16,6 +16,8 @@
  *      Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
+#include <memory>
+
 #include "geometry/surface.h"
 #include "geometry/ray.h"
 #include "math/interpolation.h"
@@ -35,7 +37,7 @@ void SurfacePoint::setRayDifferentials(const RayDifferentials *ray_differentials
 		const Vec3 ryv(ray_differentials->yfrom_);
 		const float ty = -((n_ * ryv) + d) / (n_ * ray_differentials->ydir_);
 		const Point3 py{ray_differentials->yfrom_ + ty * ray_differentials->ydir_};
-		differentials_ = std::unique_ptr<SurfaceDifferentials>(new SurfaceDifferentials{px - p_, py - p_});
+		differentials_ = std::make_unique<SurfaceDifferentials>(px - p_, py - p_);
 	}
 }
 
@@ -51,18 +53,18 @@ SurfacePoint SurfacePoint::blendSurfacePoints(SurfacePoint const &sp_1, SurfaceP
 	result.ds_dv_ = math::lerp(sp_1.ds_dv_, sp_2.ds_dv_, alpha);
 	if(sp_1.differentials_ && sp_2.differentials_)
 	{
-		result.differentials_ = std::unique_ptr<SurfaceDifferentials>(new SurfaceDifferentials{
+		result.differentials_ = std::make_unique<SurfaceDifferentials>(
 				math::lerp(sp_1.differentials_->dp_dx_, sp_2.differentials_->dp_dx_, alpha),
 				math::lerp(sp_1.differentials_->dp_dy_, sp_2.differentials_->dp_dy_, alpha)
-		}); //FIXME: should this std::max or std::min instead of lerp?
+		); //FIXME: should this std::max or std::min instead of lerp?
 	}
 	else if(sp_1.differentials_)
 	{
-		result.differentials_ = std::unique_ptr<SurfaceDifferentials>(new SurfaceDifferentials{*sp_1.differentials_});
+		result.differentials_ = std::make_unique<SurfaceDifferentials>(*sp_1.differentials_);
 	}
 	else if(sp_2.differentials_)
 	{
-		result.differentials_ = std::unique_ptr<SurfaceDifferentials>(new SurfaceDifferentials{*sp_2.differentials_});
+		result.differentials_ = std::make_unique<SurfaceDifferentials>(*sp_2.differentials_);
 	}
 	return result;
 }
@@ -70,7 +72,7 @@ SurfacePoint SurfacePoint::blendSurfacePoints(SurfacePoint const &sp_1, SurfaceP
 std::unique_ptr<RayDifferentials> SurfacePoint::reflectedRay(const RayDifferentials *in_differentials, const Vec3 &in_dir, const Vec3 &out_dir) const
 {
 	if(!differentials_ || !in_differentials) return nullptr;
-	auto out_differentials = std::unique_ptr<RayDifferentials>(new RayDifferentials());
+	auto out_differentials = std::make_unique<RayDifferentials>();
 	// Compute ray differential _rd_ for specular reflection
 	out_differentials->xfrom_ = p_ + differentials_->dp_dx_;
 	out_differentials->yfrom_ = p_ + differentials_->dp_dy_;
@@ -91,7 +93,7 @@ std::unique_ptr<RayDifferentials> SurfacePoint::reflectedRay(const RayDifferenti
 std::unique_ptr<RayDifferentials> SurfacePoint::refractedRay(const RayDifferentials *in_differentials, const Vec3 &in_dir, const Vec3 &out_dir, float ior) const
 {
 	if(!differentials_ || !in_differentials) return nullptr;
-	auto out_differentials = std::unique_ptr<RayDifferentials>(new RayDifferentials());
+	auto out_differentials = std::make_unique<RayDifferentials>();
 	//RayDifferential rd(p, wi);
 	out_differentials->xfrom_ = p_ + differentials_->dp_dx_;
 	out_differentials->yfrom_ = p_ + differentials_->dp_dy_;

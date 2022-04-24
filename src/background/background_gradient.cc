@@ -23,6 +23,7 @@
 #include "scene/scene.h"
 #include "light/light.h"
 #include "image/image_output.h"
+#include "geometry/vector.h"
 
 BEGIN_YAFARAY
 

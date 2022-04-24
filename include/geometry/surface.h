@@ -35,6 +35,7 @@ class Object;
 class Ray;
 class Vec3;
 class Primitive;
+class RayDifferentials;
 struct IntersectData;
 
 struct SurfaceDifferentials

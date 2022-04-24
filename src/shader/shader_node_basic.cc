@@ -181,7 +181,7 @@ void TextureMapperNode::eval(NodeTreeData &node_tree_data, const SurfacePoint &s
 			sp.getUVdifferentials(du_dx, dv_dx, du_dy, dv_dy);
 			const Point3 texpt_diffx{1.0e+2f * (doMapping(texptorig + 1.0e-2f * Point3{du_dx, dv_dx, 0.f}, ng) - texpt)};
 			const Point3 texpt_diffy{1.0e+2f * (doMapping(texptorig + 1.0e-2f * Point3{du_dy, dv_dy, 0.f}, ng) - texpt)};
-			mip_map_params = std::unique_ptr<const MipMapParams>(new MipMapParams(texpt_diffx.x(), texpt_diffx.y(), texpt_diffy.x(), texpt_diffy.y()));
+			mip_map_params = std::make_unique<const MipMapParams>(texpt_diffx.x(), texpt_diffx.y(), texpt_diffy.x(), texpt_diffy.y());
 		}
 	}
 	else

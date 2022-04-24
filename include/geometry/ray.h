@@ -55,7 +55,7 @@ inline Ray::Ray(const Ray &ray, DifferentialsCopy differentials_copy) : Ray{ray.
 {
 	if(differentials_copy == DifferentialsCopy::FullCopy && ray.differentials_)
 	{
-		differentials_ = std::unique_ptr<RayDifferentials>(new RayDifferentials(*ray.differentials_));
+		differentials_ = std::make_unique<RayDifferentials>(*ray.differentials_);
 	}
 }
 

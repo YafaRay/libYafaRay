@@ -19,6 +19,7 @@
 #include "texture/texture_basic.h"
 
 #include <cmath>
+#include <memory>
 #include "texture/texture_image.h"
 #include "common/param.h"
 
@@ -463,15 +464,15 @@ MusgraveTexture::MusgraveTexture(Logger &logger, const Rgb &c_1, const Rgb &c_2,
 {
 	n_gen_ = NoiseGenerator::newNoise(ntype);
 	if(mtype == "multifractal")
-		m_gen_ = std::unique_ptr<Musgrave>(new MFractalMusgrave(h, lacu, octs, n_gen_.get()));
+		m_gen_ = std::make_unique<MFractalMusgrave>(h, lacu, octs, n_gen_.get());
 	else if(mtype == "heteroterrain")
-		m_gen_ = std::unique_ptr<Musgrave>(new HeteroTerrainMusgrave(h, lacu, octs, offs, n_gen_.get()));
+		m_gen_ = std::make_unique<HeteroTerrainMusgrave>(h, lacu, octs, offs, n_gen_.get());
 	else if(mtype == "hybridmf")
-		m_gen_ = std::unique_ptr<Musgrave>(new HybridMFractalMusgrave(h, lacu, octs, offs, gain, n_gen_.get()));
+		m_gen_ = std::make_unique<HybridMFractalMusgrave>(h, lacu, octs, offs, gain, n_gen_.get());
 	else if(mtype == "ridgedmf")
-		m_gen_ = std::unique_ptr<Musgrave>(new RidgedMFractalMusgrave(h, lacu, octs, offs, gain, n_gen_.get()));
+		m_gen_ = std::make_unique<RidgedMFractalMusgrave>(h, lacu, octs, offs, gain, n_gen_.get());
 	else	// 'fBm' default
-		m_gen_ = std::unique_ptr<Musgrave>(new FBmMusgrave(h, lacu, octs, n_gen_.get()));
+		m_gen_ = std::make_unique<FBmMusgrave>(h, lacu, octs, n_gen_.get());
 }
 
 float MusgraveTexture::getFloat(const Point3 &p, const MipMapParams *mipmap_params) const

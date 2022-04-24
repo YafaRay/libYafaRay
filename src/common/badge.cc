@@ -146,7 +146,7 @@ Image * Badge::generateImage(const std::string &denoise_params, const RenderCont
 
 		ParamMap logo_image_params;
 		logo_image_params["type"] = imagehandler_type;
-		std::unique_ptr<Format> logo_format = std::unique_ptr<Format>(Format::factory(logger_, logo_image_params));
+		auto logo_format = std::unique_ptr<Format>(Format::factory(logger_, logo_image_params));
 		if(logo_format) logo = std::unique_ptr<Image>(logo_format->loadFromFile(getIconPath(), Image::Optimization::None, ColorSpace::Srgb, 1.f));
 		if(!logo_format || !logo) logger_.logWarning("Badge: custom params badge icon '", getIconPath(), "' could not be loaded. Using default YafaRay icon.");
 	}
@@ -155,7 +155,7 @@ Image * Badge::generateImage(const std::string &denoise_params, const RenderCont
 	{
 		ParamMap logo_image_params;
 		logo_image_params["type"] = std::string("png");
-		std::unique_ptr<Format> logo_format = std::unique_ptr<Format>(Format::factory(logger_, logo_image_params));
+		auto logo_format = std::unique_ptr<Format>(Format::factory(logger_, logo_image_params));
 		if(logo_format) logo = std::unique_ptr<Image>(logo_format->loadFromMemory(logo::yafaray_tiny.data(), logo::yafaray_tiny.size(), Image::Optimization::None, ColorSpace::Srgb, 1.f));
 	}
 
@@ -164,12 +164,11 @@ Image * Badge::generateImage(const std::string &denoise_params, const RenderCont
 		int logo_width = logo->getWidth();
 		int logo_height = logo->getHeight();
 		if(logo_width > 80 || logo_height > 45) logger_.logWarning("Badge: custom params badge logo is quite big (", logo_width, " x ", logo_height, "). It could invade other areas in the badge. Please try to keep logo size smaller than 80 x 45, for example.");
-		int lx, ly;
 		logo_width = std::min(logo_width, image_width_);
 		logo_height = std::min(logo_height, badge_height);
 
-		for(lx = 0; lx < logo_width; lx++)
-			for(ly = 0; ly < logo_height; ly++)
+		for(int lx = 0; lx < logo_width; lx++)
+			for(int ly = 0; ly < logo_height; ly++)
 			{
 				if(position_ == Badge::Position::Top) badge_image->setColor(image_width_ - logo_width + lx, ly, logo->getColor(lx, ly));
 				else badge_image->setColor(image_width_ - logo_width + lx, badge_height - logo_height + ly, logo->getColor(lx, ly));

@@ -19,6 +19,8 @@
  */
 
 #include "light/light_ies.h"
+
+#include <memory>
 #include "geometry/surface.h"
 #include "sampler/sample.h"
 #include "light/light_ies_data.h"
@@ -32,7 +34,7 @@ IesLight::IesLight(Logger &logger, const Point3 &from, const Point3 &to, const R
 {
 	light_enabled_ = b_light_enabled;
 	cast_shadows_ = b_cast_shadows;
-	ies_data_ = std::unique_ptr<IesData>(new IesData());
+	ies_data_ = std::make_unique<IesData>();
 
 	if((ies_ok_ = ies_data_->parseIesFile(logger, ies_file)))
 	{

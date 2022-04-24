@@ -27,7 +27,6 @@
 #include "image/image.h"
 #include "common/aa_noise_params.h"
 #include "common/mask_edge_toon_params.h"
-#include "geometry/bound.h"
 #include "render/render_callbacks.h"
 #include <vector>
 #include <map>
@@ -57,6 +56,9 @@ class SurfacePoint;
 class Matrix4;
 class Rgb;
 class Accelerator;
+class Point3;
+class Vec3;
+class Bound;
 enum class DarkDetectionType : int;
 
 typedef unsigned int ObjId_t;
@@ -181,7 +183,7 @@ class Scene final
 			ObjId_t next_free_id_;
 			const std::unique_ptr<const Material> *current_material_ = nullptr;
 		} creation_state_;
-		Bound scene_bound_; //!< bounding box of all (finite) scene geometry
+		std::unique_ptr<Bound> scene_bound_; //!< bounding box of all (finite) scene geometry
 		std::string scene_accelerator_;
 		std::unique_ptr<const Accelerator> accelerator_;
 		Object *current_object_ = nullptr;

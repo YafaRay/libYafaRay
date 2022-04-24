@@ -21,6 +21,7 @@
 #include "material/material_glass.h"
 
 #include <cmath>
+#include <memory>
 #include "shader/shader_node.h"
 #include "geometry/surface.h"
 #include "common/logger.h"
@@ -246,7 +247,7 @@ Specular GlassMaterial::getSpecular(int ray_level, const MaterialData *mat_data,
 		Vec3::fresnel(wo, n, cur_ior, kr, kt);
 		if(!chromatic || !disperse_)
 		{
-			specular.refract_ = std::unique_ptr<DirectionColor>(new DirectionColor());
+			specular.refract_ = std::make_unique<DirectionColor>();
 			specular.refract_->col_ = kt * getShaderColor(filter_color_shader_, mat_data->node_tree_data_, filter_color_);
 			specular.refract_->dir_ = refdir;
 		}
@@ -256,7 +257,7 @@ Specular GlassMaterial::getSpecular(int ray_level, const MaterialData *mat_data,
 		// killer as rays keep bouncing inside objects and contribute little after few bounces, so limit we it:
 		if(outside || ray_level < 3)
 		{
-			specular.reflect_ = std::unique_ptr<DirectionColor>(new DirectionColor());
+			specular.reflect_ = std::make_unique<DirectionColor>();
 			specular.reflect_->dir_ = wo;
 			specular.reflect_->dir_.reflect(n);
 			specular.reflect_->col_ = getShaderColor(mirror_color_shader_, mat_data->node_tree_data_, specular_reflection_color_) * kr;
@@ -264,7 +265,7 @@ Specular GlassMaterial::getSpecular(int ray_level, const MaterialData *mat_data,
 	}
 	else //total inner reflection
 	{
-		specular.reflect_ = std::unique_ptr<DirectionColor>(new DirectionColor());
+		specular.reflect_ = std::make_unique<DirectionColor>();
 		specular.reflect_->col_ = getShaderColor(mirror_color_shader_, mat_data->node_tree_data_, specular_reflection_color_);
 		specular.reflect_->dir_ = wo;
 		specular.reflect_->dir_.reflect(n);
@@ -443,7 +444,7 @@ Rgb MirrorMaterial::sample(const MaterialData *mat_data, const SurfacePoint &sp,
 Specular MirrorMaterial::getSpecular(int ray_level, const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, bool chromatic, float wavelength) const
 {
 	Specular specular;
-	specular.reflect_ = std::unique_ptr<DirectionColor>(new DirectionColor());
+	specular.reflect_ = std::make_unique<DirectionColor>();
 	specular.reflect_->col_ = ref_col_;
 	const Vec3 n{SurfacePoint::normalFaceForward(sp.ng_, sp.n_, wo)};
 	specular.reflect_->dir_ = Vec3::reflectDir(n, wo);

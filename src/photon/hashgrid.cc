@@ -17,6 +17,8 @@
  */
 
 #include "photon/hashgrid.h"
+
+#include <memory>
 #include "photon/photon.h"
 
 BEGIN_YAFARAY
@@ -74,7 +76,7 @@ void HashGrid::updateGrid()
 		const int iy = abs(int(hashindex.y()));
 		const int iz = abs(int(hashindex.z()));
 		const unsigned int index = hash(ix, iy, iz);
-		if(!hash_grid_[index]) hash_grid_[index] = std::unique_ptr<std::list<const Photon *>>(new std::list<const Photon *>());
+		if(!hash_grid_[index]) hash_grid_[index] = std::make_unique<std::list<const Photon *>>();
 		hash_grid_[index]->push_front(&photon);
 	}
 	unsigned int notused = 0;

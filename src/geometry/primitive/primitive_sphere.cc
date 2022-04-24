@@ -21,6 +21,7 @@
 #include "geometry/primitive/primitive_sphere.h"
 
 #include <cmath>
+#include <memory>
 #include "geometry/object/object_basic.h"
 #include "common/param.h"
 #include "geometry/bound.h"
@@ -82,7 +83,7 @@ IntersectData SpherePrimitive::intersect(const Ray &ray, const Matrix4 *obj_to_w
 
 std::unique_ptr<const SurfacePoint> SpherePrimitive::getSurface(const RayDifferentials *ray_differentials, const Point3 &hit, const IntersectData &intersect_data, const Matrix4 *obj_to_world, const Camera *camera) const
 {
-	auto sp = std::unique_ptr<SurfacePoint>(new SurfacePoint);
+	auto sp = std::make_unique<SurfacePoint>();
 	sp->intersect_data_ = intersect_data;
 	Vec3 normal{hit - center_};
 	sp->orco_p_ = static_cast<Point3>(normal);
