@@ -19,6 +19,7 @@
 #include "interface/interface.h"
 
 #include <memory>
+#include <utility>
 #include "common/version_build_info.h"
 #include "common/logger.h"
 #include "scene/scene.h"
@@ -331,7 +332,7 @@ void Interface::setupRender() noexcept
 
 void Interface::render(std::shared_ptr<ProgressBar> progress_bar) noexcept
 {
-	if(!scene_->setupSceneProgressBar(*scene_, progress_bar)) return;
+	if(!scene_->setupSceneProgressBar(*scene_, std::move(progress_bar))) return;
 	scene_->render();
 }
 
