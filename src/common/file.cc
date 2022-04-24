@@ -32,10 +32,11 @@
 #endif //defined(_WIN32)
 #include <iostream>
 #include <ctime>
+#include <utility>
 
 BEGIN_YAFARAY
 
-Path::Path(const std::string &directory, const std::string &base_name, const std::string &extension) : directory_(directory), base_name_(base_name), extension_(extension)
+Path::Path(std::string directory, std::string base_name, std::string extension) : directory_(std::move(directory)), base_name_(std::move(base_name)), extension_(std::move(extension))
 {
 	//// if(logger_.isDebug())logger_.logDebug("Directory: " << directory);
 	//// if(logger_.isDebug())logger_.logDebug("Base name: " << baseName);
@@ -100,7 +101,7 @@ File::File(const std::string &path) : path_(path)
 {
 }
 
-File::File(const Path &path) : path_(path)
+File::File(Path path) : path_(std::move(path))
 {
 }
 

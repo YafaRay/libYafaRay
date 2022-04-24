@@ -435,7 +435,7 @@ int ImageFilm::nextPass(const RenderView *render_view, RenderControl &render_con
 	{
 		progress_bar_->init(width_ * height_, logger_.getConsoleLogColorsEnabled());
 		render_control.setCurrentPassPercent(progress_bar_->getPercent());
-		progress_bar_->setTag(pass_string.str().c_str());
+		progress_bar_->setTag(pass_string.str());
 	}
 	completed_cnt_ = 0;
 
@@ -645,7 +645,7 @@ void ImageFilm::flush(const RenderView *render_view, const RenderControl &render
 			if(progress_bar_)
 			{
 				old_tag = progress_bar_->getTag();
-				progress_bar_->setTag(pass_string.str().c_str());
+				progress_bar_->setTag(pass_string.str());
 			}
 			output->flush(render_control, timer_);
 			if(progress_bar_) progress_bar_->setTag(old_tag);
@@ -947,7 +947,7 @@ void ImageFilm::imageFilmLoadAllInFolder(RenderControl &render_control)
 	if(progress_bar_)
 	{
 		old_tag = progress_bar_->getTag();
-		progress_bar_->setTag(pass_string.str().c_str());
+		progress_bar_->setTag(pass_string.str());
 	}
 
 	const Path path_image_output(film_load_save_.path_);
@@ -1028,7 +1028,7 @@ bool ImageFilm::imageFilmSave()
 	if(progress_bar_)
 	{
 		old_tag = progress_bar_->getTag();
-		progress_bar_->setTag(pass_string.str().c_str());
+		progress_bar_->setTag(pass_string.str());
 	}
 
 	const std::string film_path = getFilmPath();
@@ -1111,7 +1111,7 @@ void ImageFilm::imageFilmFileBackup() const
 	if(progress_bar_)
 	{
 		old_tag = progress_bar_->getTag();
-		progress_bar_->setTag(pass_string.str().c_str());
+		progress_bar_->setTag(pass_string.str());
 	}
 
 	const std::string film_path = getFilmPath();

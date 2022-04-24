@@ -38,7 +38,7 @@ namespace string
 {
 
 template<class T>
-inline void converter(std::string str, T &val)
+inline void converter(const std::string &str, T &val)
 {
 	std::stringstream conv;
 
@@ -58,7 +58,7 @@ inline std::string toLower(const std::string &in)
 	return out;
 }
 
-inline std::vector<std::string> tokenize(std::string str, std::string delimiter = " ")
+inline std::vector<std::string> tokenize(const std::string &str, const std::string& delimiter = " ")
 {
 	std::vector<std::string> result;
 	size_t last_pos = str.find_first_not_of(delimiter, 0);

@@ -20,6 +20,8 @@
 #ifndef YAFARAY_PHOTON_H
 #define YAFARAY_PHOTON_H
 
+#include <utility>
+
 #include "common/yafaray_common.h"
 
 #include "pkdtree.h"
@@ -108,7 +110,7 @@ class PhotonMap final
 {
 	public:
 		explicit PhotonMap(Logger &logger) : logger_(logger) { }
-		PhotonMap(Logger &logger, const std::string &mapname, int threads): name_(mapname), threads_pkd_tree_(threads), logger_(logger) { }
+		PhotonMap(Logger &logger, std::string mapname, int threads): name_(std::move(mapname)), threads_pkd_tree_(threads), logger_(logger) { }
 		void setNumPaths(int n) { paths_ = n; }
 		void setName(const std::string &mapname) { name_ = mapname; }
 		void setNumThreadsPkDtree(int threads) { threads_pkd_tree_ = threads; }

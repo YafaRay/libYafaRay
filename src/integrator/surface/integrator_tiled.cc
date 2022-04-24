@@ -145,7 +145,7 @@ bool TiledIntegrator::render()
 	pass_string << "Rendering pass 1 of " << std::max(1, aa_noise_params_.passes_) << "...";
 
 	logger_.logInfo(pass_string.str());
-	if(intpb_) intpb_->setTag(pass_string.str().c_str());
+	if(intpb_) intpb_->setTag(pass_string.str());
 
 	timer_->addEvent("rendert");
 	timer_->start("rendert");
@@ -157,7 +157,7 @@ bool TiledIntegrator::render()
 	{
 		pass_string.clear();
 		pass_string << "Combining ImageFilm files, skipping pass 1...";
-		if(intpb_) intpb_->setTag(pass_string.str().c_str());
+		if(intpb_) intpb_->setTag(pass_string.str());
 	}
 
 	logger_.logInfo(getName(), ": ", pass_string.str());

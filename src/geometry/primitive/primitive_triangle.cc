@@ -27,8 +27,7 @@
 #include "geometry/matrix4.h"
 #include "geometry/poly_double.h"
 #include "common/param.h"
-#include <string.h>
-
+#include <cstring>
 #include <memory>
 
 BEGIN_YAFARAY

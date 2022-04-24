@@ -25,6 +25,7 @@
 #include "common/yafaray_common.h"
 #include "common/collection.h"
 #include <string>
+#include <utility>
 #include <vector>
 #include <memory>
 #include <common/logger.h>
@@ -51,7 +52,7 @@ class RenderView final
 		std::vector<const Light *> getLightsEmittingDiffusePhotons() const;
 
 	private:
-		RenderView(const std::string &name, const std::string &camera_name, const std::string &light_names, float wavelength) : name_(name), camera_name_(camera_name), light_names_(light_names), wavelength_(wavelength) { }
+		RenderView(std::string name, std::string camera_name, std::string light_names, float wavelength) : name_(std::move(name)), camera_name_(std::move(camera_name)), light_names_(std::move(light_names)), wavelength_(wavelength) { }
 		std::string name_;
 		std::string camera_name_;
 		std::string light_names_;

@@ -48,7 +48,7 @@ class ImageOutput final
 		Image * generateBadgeImage(const RenderControl &render_control, const Timer &timer) const;
 
 	private:
-		ImageOutput(Logger &logger, const std::string &image_path, const DenoiseParams &denoise_params, const std::string &name = "out", ColorSpace color_space = ColorSpace::RawManualGamma, float gamma = 1.f, bool with_alpha = true, bool alpha_premultiply = false, bool multi_layer = false);
+		ImageOutput(Logger &logger, std::string image_path, const DenoiseParams &denoise_params, std::string name = "out", ColorSpace color_space = ColorSpace::RawManualGamma, float gamma = 1.f, bool with_alpha = true, bool alpha_premultiply = false, bool multi_layer = false);
 		bool denoiseEnabled() const { return denoise_params_.enabled_; }
 		void saveImageFile(const std::string &filename, LayerDef::Type layer_type, Format *format, const RenderControl &render_control, const Timer &timer);
 		void saveImageFileMultiChannel(const std::string &filename, Format *format, const RenderControl &render_control, const Timer &timer);

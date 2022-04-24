@@ -34,7 +34,7 @@ class Path final
 {
 	public:
 		explicit Path(const std::string &full_path);
-		Path(const std::string &directory, const std::string &base_name, const std::string &extension);
+		Path(std::string directory, std::string base_name, std::string extension);
 		std::string getDirectory() const { return directory_; }
 		std::string getBaseName() const { return base_name_; }
 		std::string getExtension() const { return extension_; }
@@ -56,7 +56,7 @@ class File final
 {
 	public:
 		explicit File(const std::string &path);
-		explicit File(const Path &path);
+		explicit File(Path path);
 		~File();
 		bool save(const std::string &str, bool with_tmp);
 		static std::FILE *open(const std::string &path, const std::string &access_mode);

@@ -117,13 +117,13 @@ void Logger::saveHtmlLog(const std::string &name, const Badge &badge, const Rend
 	std::string ext_lower_case = img_extension;
 	std::transform(ext_lower_case.begin(), ext_lower_case.end(), ext_lower_case.begin(), ::tolower);
 
-	if(!image_path_.empty() && (ext_lower_case == "jpg" || ext_lower_case == "jpeg" || ext_lower_case == "png")) ss << "<a href=\"" << base_img_file_name << "." << img_extension << "\" target=\"_blank\">" << "<img src=\"" << base_img_file_name << "." << img_extension << "\" width=\"768\" alt=\"" << base_img_file_name << "." << img_extension << "\"/></a>" << std::endl;
+	if(!image_path_.empty() && (ext_lower_case == "jpg" || ext_lower_case == "jpeg" || ext_lower_case == "png")) ss << "<a href=\"" << base_img_file_name << "." << img_extension << R"(" target="_blank">)" << "<img src=\"" << base_img_file_name << "." << img_extension << R"(" width="768" alt=")" << base_img_file_name << "." << img_extension << "\"/></a>" << std::endl;
 
 	ss << "<p /><table id=\"yafalog\">" << std::endl;
-	ss << "<tr><th>Image file:</th><td><a href=\"" << base_img_file_name << "." << img_extension << "\" target=\"_blank\"</a>" << base_img_file_name << "." << img_extension << "</td></tr>" << std::endl;
+	ss << "<tr><th>Image file:</th><td><a href=\"" << base_img_file_name << "." << img_extension << R"(" target="_blank"</a>)" << base_img_file_name << "." << img_extension << "</td></tr>" << std::endl;
 	if(!badge.getTitle().empty()) ss << "<tr><th>Title:</th><td>" << badge.getTitle() << "</td></tr>" << std::endl;
 	if(!badge.getAuthor().empty()) ss << "<tr><th>Author:</th><td>" << badge.getAuthor() << "</td></tr>" << std::endl;
-	if(!badge.getIconPath().empty()) ss << "<tr><th></th><td><a href=\"" << badge.getIconPath() << "\" target=\"_blank\">" << "<img src=\"" << badge.getIconPath() << "\" width=\"80\" alt=\"" << badge.getIconPath() << "\"/></a></td></tr>" << std::endl;
+	if(!badge.getIconPath().empty()) ss << "<tr><th></th><td><a href=\"" << badge.getIconPath() << R"(" target="_blank">)" << "<img src=\"" << badge.getIconPath() << R"(" width="80" alt=")" << badge.getIconPath() << "\"/></a></td></tr>" << std::endl;
 	if(!badge.getContact().empty()) ss << "<tr><th>Contact:</th><td>" << badge.getContact() << "</td></tr>" << std::endl;
 	if(!badge.getComments().empty()) ss << "<tr><th>Comments:</th><td>" << badge.getComments() << "</td></tr>" << std::endl;
 	ss << "</table>" << std::endl;
@@ -165,16 +165,15 @@ void Logger::clearAll()
 	image_path_.clear();
 }
 
-int Logger::vlevelFromString(std::string str_v_level)
+int Logger::vlevelFromString(const std::string& str_v_level)
 {
-	if(str_v_level == "debug") return YAFARAY_LOG_LEVEL_DEBUG;
-	else if(str_v_level == "verbose") return YAFARAY_LOG_LEVEL_VERBOSE;
+	if(str_v_level == "mute" || str_v_level == "disabled") return YAFARAY_LOG_LEVEL_MUTE;
 	else if(str_v_level == "info") return YAFARAY_LOG_LEVEL_INFO;
+	else if(str_v_level == "verbose") return YAFARAY_LOG_LEVEL_VERBOSE; // NOLINT(bugprone-branch-clone)
 	else if(str_v_level == "params") return YAFARAY_LOG_LEVEL_PARAMS;
 	else if(str_v_level == "warning") return YAFARAY_LOG_LEVEL_WARNING;
 	else if(str_v_level == "error") return YAFARAY_LOG_LEVEL_ERROR;
-	else if(str_v_level == "mute") return YAFARAY_LOG_LEVEL_MUTE;
-	else if(str_v_level == "disabled") return YAFARAY_LOG_LEVEL_MUTE;
+	else if(str_v_level == "debug") return YAFARAY_LOG_LEVEL_DEBUG;
 	else return YAFARAY_LOG_LEVEL_VERBOSE;
 }
 
@@ -197,7 +196,7 @@ ConsoleColor Logger::consoleColorFromLevel(int v_level)
 	switch(v_level)
 	{
 		case YAFARAY_LOG_LEVEL_DEBUG: return ConsoleColor(ConsoleColor::Magenta);
-		case YAFARAY_LOG_LEVEL_VERBOSE: return ConsoleColor(ConsoleColor::Green);
+		case YAFARAY_LOG_LEVEL_VERBOSE:
 		case YAFARAY_LOG_LEVEL_INFO: return ConsoleColor(ConsoleColor::Green);
 		case YAFARAY_LOG_LEVEL_PARAMS: return ConsoleColor(ConsoleColor::Cyan);
 		case YAFARAY_LOG_LEVEL_WARNING: return ConsoleColor(ConsoleColor::Yellow);
@@ -318,7 +317,7 @@ void Logger::statsAdd(const std::string &stat_name, double stat_value, double in
 	diagnostics_stats_[ss.str()] += stat_value;
 }
 
-void Logger::statsIncrementBucket(std::string stat_name, double stat_value, double bucket_precision_step, double increment_amount)
+void Logger::statsIncrementBucket(const std::string &stat_name, double stat_value, double bucket_precision_step, double increment_amount)
 {
 	const double index = floor(stat_value / bucket_precision_step) * bucket_precision_step;
 	statsAdd(stat_name, increment_amount, index);

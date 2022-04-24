@@ -35,7 +35,7 @@ namespace visibility
 
 inline Visibility fromString(const std::string &str)
 {
-	if(str == "normal") return Visibility::NormalVisible;
+	if(str == "normal") return Visibility::NormalVisible; // NOLINT(bugprone-branch-clone)
 	else if(str == "invisible") return Visibility::Invisible;
 	else if(str == "shadow_only") return Visibility::InvisibleShadowsOnly;
 	else if(str == "no_shadows") return Visibility::VisibleNoShadows;

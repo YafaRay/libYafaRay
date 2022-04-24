@@ -33,6 +33,7 @@
 #include <iomanip>
 #include <sstream>
 #include <unordered_map>
+#include <utility>
 #include <vector>
 #include <mutex>
 
@@ -50,7 +51,7 @@ class LogEntry final
 		friend class Logger;
 
 	public:
-		LogEntry(std::time_t datetime, double duration, int verb_level, std::string description): date_time_(datetime), duration_(duration), verbosity_level_(verb_level), description_(description) {}
+		LogEntry(std::time_t datetime, double duration, int verb_level, std::string description): date_time_(datetime), duration_(duration), verbosity_level_(verb_level), description_(std::move(description)) {}
 
 	protected:
 		std::time_t date_time_;
@@ -106,15 +107,15 @@ class Logger final
 		void statsAdd(const std::string &stat_name, float stat_value, double index = 0.0) { statsAdd(stat_name, (double) stat_value, index); }
 		void statsAdd(const std::string &stat_name, double stat_value, double index = 0.0);
 
-		void statsIncrementBucket(std::string stat_name, int stat_value, double bucket_precision_step = 1.0, double increment_amount = 1.0) { statsIncrementBucket(stat_name, (double) stat_value, bucket_precision_step, increment_amount); }
-		void statsIncrementBucket(std::string stat_name, float stat_value, double bucket_precision_step = 1.0, double increment_amount = 1.0) { statsIncrementBucket(stat_name, (double) stat_value, bucket_precision_step, increment_amount); }
-		void statsIncrementBucket(std::string stat_name, double stat_value, double bucket_precision_step = 1.0, double increment_amount = 1.0);
+		void statsIncrementBucket(const std::string &stat_name, int stat_value, double bucket_precision_step = 1.0, double increment_amount = 1.0) { statsIncrementBucket(stat_name, (double) stat_value, bucket_precision_step, increment_amount); }
+		void statsIncrementBucket(const std::string &stat_name, float stat_value, double bucket_precision_step = 1.0, double increment_amount = 1.0) { statsIncrementBucket(stat_name, (double) stat_value, bucket_precision_step, increment_amount); }
+		void statsIncrementBucket(const std::string &stat_name, double stat_value, double bucket_precision_step = 1.0, double increment_amount = 1.0);
 
 		static std::string printTime(const std::time_t &datetime);
 		static std::string printDuration(double duration);
 		static std::string printDurationSimpleFormat(double duration);
 		static std::string printDate(const std::time_t &datetime);
-		static int vlevelFromString(std::string str_v_level);
+		static int vlevelFromString(const std::string& str_v_level);
 		static std::string logLevelStringFromLevel(int v_level);
 		static ConsoleColor consoleColorFromLevel(int v_level);
 		static std::string htmlColorFromLevel(int v_level);

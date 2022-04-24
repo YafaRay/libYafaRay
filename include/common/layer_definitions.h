@@ -27,6 +27,7 @@
 #include <string>
 #include <array>
 #include <map>
+#include <utility>
 
 BEGIN_YAFARAY
 
@@ -116,7 +117,7 @@ class LayerDef final
 			explicit Flags(unsigned int flags) : yafaray::Flags(flags) { }
 			enum Enum : unsigned int { None = 0, BasicLayers = 1 << 0, DepthLayers = 1 << 1, DiffuseLayers = 1 << 2, IndexLayers = 1 << 3, DebugLayers = 1 << 4, AoLayers = 1 << 5, ToonEdgeLayers = 1 << 6};
 		};
-		LayerDef(Type type, const std::string &name, LayerDef::Flags flags, Image::Type default_image_type = Image::Type::Color, const Rgba &default_color = {0.f, 1.f}, bool apply_color_space = true) : type_(type), flags_(flags), name_(name), default_color_(default_color), apply_color_space_(apply_color_space), default_image_type_(default_image_type) { }
+		LayerDef(Type type, std::string name, LayerDef::Flags flags, Image::Type default_image_type = Image::Type::Color, const Rgba &default_color = {0.f, 1.f}, bool apply_color_space = true) : type_(type), flags_(flags), name_(std::move(name)), default_color_(default_color), apply_color_space_(apply_color_space), default_image_type_(default_image_type) { }
 		Type getType() const { return type_; }
 		const Flags &getFlags() const { return flags_; }
 		const std::string &getName() const { return name_; }

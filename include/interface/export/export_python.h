@@ -65,7 +65,7 @@ class ExportPython: public Interface
 		void clearOutputs() noexcept override { }
 		void setupRender() noexcept override;
 		void render(std::shared_ptr<ProgressBar> progress_bar) noexcept override; //!< render the scene...
-		void setColorSpace(std::string color_space_string, float gamma_val) noexcept;
+		void setColorSpace(const std::string& color_space_string, float gamma_val) noexcept;
 
 	protected:
 		void writeParamMap(const ParamMap &param_map, int indent = 1) noexcept;

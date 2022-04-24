@@ -93,7 +93,7 @@ bool SppmIntegrator::render()
 
 	pass_string << "Rendering pass 1 of " << std::max(1, pass_num_) << "...";
 	logger_.logInfo(getName(), ": ", pass_string.str());
-	if(intpb_) intpb_->setTag(pass_string.str().c_str());
+	if(intpb_) intpb_->setTag(pass_string.str());
 
 	timer_->addEvent("rendert");
 	timer_->start("rendert");
@@ -111,7 +111,7 @@ bool SppmIntegrator::render()
 	{
 		pass_string.clear();
 		pass_string << "Loading film file, skipping pass 1...";
-		intpb_->setTag(pass_string.str().c_str());
+		intpb_->setTag(pass_string.str());
 	}
 
 	logger_.logInfo(getName(), ": ", pass_string.str());

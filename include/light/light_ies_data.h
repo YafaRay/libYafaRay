@@ -136,9 +136,9 @@ bool IesData::parseIesFile(Logger &logger, const std::string &file)
 	}
 
 	//get length of file:
-	fin.seekg(0, fin.end);
+	fin.seekg(0, std::ifstream::end);
 	int length = fin.tellg();
-	fin.seekg(0, fin.beg);
+	fin.seekg(0, std::ifstream::beg);
 
 	if(length < 7)
 	{
@@ -149,16 +149,17 @@ bool IesData::parseIesFile(Logger &logger, const std::string &file)
 	//check header is correct
 	char ies_check_characters[7];
 	fin.get(ies_check_characters, 7);
-	if(logger.isDebug())logger.logDebug("std::string(ies_check_characters)=", std::string(ies_check_characters));
+	const std::string ies_check_str{ies_check_characters};
+	if(logger.isDebug())logger.logDebug("std::string(ies_check_characters)=", ies_check_str);
 
-	if(std::string(ies_check_characters) != "IESNA:")
+	if(ies_check_str != "IESNA:")
 	{
 		logger.logError("IES Parser: wrong file format, first characters are not \"IESNA:\"");
 		return false;
 	}
 
 	//rewind file to beginning again
-	fin.seekg(0, fin.beg);
+	fin.seekg(0, std::ifstream::beg);
 
 	string line;
 	string dummy;

@@ -25,6 +25,7 @@
 #define YAFARAY_CAMERA_H
 
 #include <memory>
+#include <utility>
 #include "common/yafaray_common.h"
 #include "geometry/plane.h"
 
@@ -71,7 +72,7 @@ class Camera
 			DOF-like effects. When false, no lense samples need to be computed */
 		float getNearClip() const { return near_clip_; }
 		float getFarClip() const { return far_clip_; }
-		void setCameraName(std::string name) { camera_name_ = name; }
+		void setCameraName(std::string name) { camera_name_ = std::move(name); }
 		std::string getCameraName() const { return camera_name_; }
 
 	protected:

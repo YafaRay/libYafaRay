@@ -179,7 +179,7 @@ bool ExrFormat::saveToFile(const std::string &name, const ImageLayer &image_laye
 	header.channels().insert("B", Channel(HALF));
 	header.channels().insert("A", Channel(HALF));
 
-	std::FILE *fp = File::open(name.c_str(), "wb");
+	std::FILE *fp = File::open(name, "wb");
 	CoStream ostr(fp, name.c_str());
 	OutputFile file(ostr, header);
 
@@ -298,7 +298,7 @@ bool ExrFormat::saveToFileMultiChannel(const std::string &name, const ImageLayer
 		fb.insert(channel_a, Slice(HALF, data_ptr + 3 * chan_size, totchan_size, w_0 * totchan_size));
 	}
 
-	FILE *fp = File::open(name.c_str(), "wb");
+	FILE *fp = File::open(name, "wb");
 	CoStream ostr(fp, name.c_str());
 	OutputFile file(ostr, header);
 	file.setFrameBuffer(fb);
@@ -321,7 +321,7 @@ bool ExrFormat::saveToFileMultiChannel(const std::string &name, const ImageLayer
 
 Image * ExrFormat::loadFromFile(const std::string &name, const Image::Optimization &optimization, const ColorSpace &color_space, float gamma)
 {
-	std::FILE *fp = File::open(name.c_str(), "rb");
+	std::FILE *fp = File::open(name, "rb");
 	logger_.logInfo(getFormatName(), ": Loading image \"", name, "\"...");
 
 	if(!fp)

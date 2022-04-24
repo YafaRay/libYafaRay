@@ -447,7 +447,7 @@ void ExportC::render(std::shared_ptr<ProgressBar> progress_bar) noexcept
 	file_.close();
 }
 
-void ExportC::setColorSpace(std::string color_space_string, float gamma_val) noexcept
+void ExportC::setColorSpace(const std::string& color_space_string, float gamma_val) noexcept
 {
 	color_space_ = Rgb::colorSpaceFromName(color_space_string, ColorSpace::Srgb);
 	gamma_ = gamma_val;
