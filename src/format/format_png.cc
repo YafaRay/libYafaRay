@@ -37,6 +37,7 @@ extern "C"
 }
 
 #include <cstdio>
+#include <memory>
 
 BEGIN_YAFARAY
 
@@ -129,7 +130,7 @@ Image * PngFormat::loadFromFile(const std::string &name, const Image::Optimizati
 
 Image * PngFormat::loadFromMemory(const uint8_t *data, size_t size, const Image::Optimization &optimization, const ColorSpace &color_space, float gamma)
 {
-	auto reader = std::unique_ptr<PngDataReader>(new PngDataReader(data, size));
+	auto reader = std::make_unique<PngDataReader>(data, size);
 	uint8_t signature[8];
 	if(reader->read(signature, 8) < 8)
 	{
