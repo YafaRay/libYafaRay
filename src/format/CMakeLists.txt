@@ -26,15 +26,15 @@ target_sources(libyafaray4
 
 # Dependency libraries for other image formats
 
-if(YAFARAY_WITH_OpenEXR OR YAFARAY_WITH_PNG)
+if(YAFARAY_WITH_OPENEXR OR YAFARAY_WITH_PNG)
 	find_package(ZLIB)
 	if(NOT ZLIB_FOUND)
 		message(FATAL_ERROR "ZLib not found: if XML Loader, OpenEXR or PNG options are enabled, ZLib is required.")
 	endif()
 endif()
 
-message_boolean("Using OpenEXR" YAFARAY_WITH_OpenEXR "yes" "no")
-if(YAFARAY_WITH_OpenEXR)
+message_boolean("Using OpenEXR" YAFARAY_WITH_OPENEXR "yes" "no")
+if(YAFARAY_WITH_OPENEXR)
 	find_package(Imath CONFIG)
 	if(NOT TARGET Imath::Imath)
 		message("-- Imath not found (not OpenEXR v3.x), looking for IlmBase and OpenEXR v2.4/2.5")

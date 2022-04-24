@@ -24,8 +24,8 @@ target_sources(libyafaray4
 		image_manipulation.cc
 		)
 
-message_boolean("Using FreeType" YAFARAY_WITH_Freetype "yes" "no")
-if(YAFARAY_WITH_Freetype)
+message_boolean("Using FreeType" YAFARAY_WITH_FREETYPE "yes" "no")
+if(YAFARAY_WITH_FREETYPE)
 	find_package(Freetype REQUIRED)
 	add_library(libyafaray4_freetype STATIC)
 	target_sources(libyafaray4_freetype
@@ -42,8 +42,8 @@ if(YAFARAY_WITH_Freetype)
 	list(APPEND YAF_IMAGE_DEFINITIONS "HAVE_FREETYPE")
 endif()
 
-message_boolean("Using OpenCV" YAFARAY_WITH_OpenCV "yes" "no")
-if(YAFARAY_WITH_OpenCV)
+message_boolean("Using OpenCV" YAFARAY_WITH_OPENCV "yes" "no")
+if(YAFARAY_WITH_OPENCV)
 	FIND_PACKAGE(OpenCV COMPONENTS core imgproc photo REQUIRED)
 	add_library(libyafaray4_opencv STATIC)
 	target_sources(libyafaray4_opencv
