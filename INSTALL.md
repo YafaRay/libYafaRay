@@ -2,7 +2,7 @@ libYafaRay uses CMake for the building process in Linux, Windows and MacOSX syst
 
 Dependencies:
   * Required
-    * C++11 compliant compiler
+    * C++17 compliant compiler
     * \>=cmake-3.18
 
   * Optional, depending on options selected in CMake:
