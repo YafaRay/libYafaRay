@@ -108,11 +108,7 @@ Rgb ObjectLight::totalEnergy() const { return (double_sided_ ? 2.f * color_ * ar
 bool ObjectLight::illumSample(const SurfacePoint &sp, LSample &s, Ray &wi) const
 {
 	if(photonOnly()) return false;
-
-	const auto sampled{sampleSurface(s.s_1_, s.s_2_)};
-	const auto &p{sampled.first};
-	const auto &n{sampled.second};
-
+	const auto [p, n]{sampleSurface(s.s_1_, s.s_2_)};
 	Vec3 ldir{p - sp.p_};
 	//normalize vec and compute inverse square distance
 	const float dist_sqr = ldir.lengthSqr();
@@ -148,17 +144,16 @@ bool ObjectLight::illumSample(const SurfacePoint &sp, LSample &s, Ray &wi) const
 Rgb ObjectLight::emitPhoton(float s_1, float s_2, float s_3, float s_4, Ray &ray, float &ipdf) const
 {
 	ipdf = area_;
-	const auto sampled{sampleSurface(s_3, s_4)};
-	ray.from_ = sampled.first;
-	const auto normal{sampled.second};
-	const auto coords{Vec3::createCoordsSystem(normal)};
+	const auto [p, n]{sampleSurface(s_3, s_4)};
+	ray.from_ = p;
+	const auto [du, dv]{Vec3::createCoordsSystem(n)};
 	if(double_sided_)
 	{
 		ipdf *= 2.f;
-		if(s_1 > 0.5f) ray.dir_ = sample::cosHemisphere(-normal, coords.first, coords.second, (s_1 - 0.5f) * 2.f, s_2);
-		else 		ray.dir_ = sample::cosHemisphere(normal, coords.first, coords.second, s_1 * 2.f, s_2);
+		if(s_1 > 0.5f) ray.dir_ = sample::cosHemisphere(-n, du, dv, (s_1 - 0.5f) * 2.f, s_2);
+		else ray.dir_ = sample::cosHemisphere(n, du, dv, s_1 * 2.f, s_2);
 	}
-	else ray.dir_ = sample::cosHemisphere(normal, coords.first, coords.second, s_1, s_2);
+	else ray.dir_ = sample::cosHemisphere(n, du, dv, s_1, s_2);
 	return color_;
 }
 
@@ -167,16 +162,16 @@ Rgb ObjectLight::emitSample(Vec3 &wo, LSample &s) const
 	s.area_pdf_ = inv_area_ * math::num_pi;
 	std::tie(s.sp_->p_, s.sp_->ng_) = sampleSurface(s.s_3_, s.s_4_);
 	s.sp_->n_ = s.sp_->ng_;
-	const auto coords{Vec3::createCoordsSystem(s.sp_->ng_)};
+	const auto [du, dv]{Vec3::createCoordsSystem(s.sp_->ng_)};
 	if(double_sided_)
 	{
-		if(s.s_1_ > 0.5f) wo = sample::cosHemisphere(-s.sp_->ng_, coords.first, coords.second, (s.s_1_ - 0.5f) * 2.f, s.s_2_);
-		else 		wo = sample::cosHemisphere(s.sp_->ng_, coords.first, coords.second, s.s_1_ * 2.f, s.s_2_);
+		if(s.s_1_ > 0.5f) wo = sample::cosHemisphere(-s.sp_->ng_, du, dv, (s.s_1_ - 0.5f) * 2.f, s.s_2_);
+		else wo = sample::cosHemisphere(s.sp_->ng_, du, dv, s.s_1_ * 2.f, s.s_2_);
 		s.dir_pdf_ = 0.5f * std::abs(s.sp_->ng_ * wo);
 	}
 	else
 	{
-		wo = sample::cosHemisphere(s.sp_->ng_, coords.first, coords.second, s.s_1_, s.s_2_);
+		wo = sample::cosHemisphere(s.sp_->ng_, du, dv, s.s_1_, s.s_2_);
 		s.dir_pdf_ = std::abs(s.sp_->ng_ * wo);
 	}
 	s.flags_ = flags_;

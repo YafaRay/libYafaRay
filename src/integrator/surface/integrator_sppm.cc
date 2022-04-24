@@ -259,9 +259,9 @@ bool SppmIntegrator::renderTile(const RenderArea &a, int n_samples, int offset, 
 				color.a_ = g_info.constant_randiance_.a_; //the alpha value is hold in the constantRadiance variable
 				color_layers(LayerDef::Combined) = color;
 
-				for(auto &color_layer : color_layers)
+				for(auto &[layer_def, layer_col] : color_layers)
 				{
-					switch(color_layer.first)
+					switch(layer_def)
 					{
 						case LayerDef::ObjIndexMask:
 						case LayerDef::ObjIndexMaskShadow:
@@ -269,41 +269,41 @@ bool SppmIntegrator::renderTile(const RenderArea &a, int n_samples, int offset, 
 						case LayerDef::MatIndexMask:
 						case LayerDef::MatIndexMaskShadow:
 						case LayerDef::MatIndexMaskAll:
-							if(color_layer.second.a_ > 1.f) color_layer.second.a_ = 1.f;
-							color_layer.second.clampRgb01();
+							if(layer_col.a_ > 1.f) layer_col.a_ = 1.f;
+							layer_col.clampRgb01();
 							if(mask_params_.invert_)
 							{
-								color_layer.second = Rgba(1.f) - color_layer.second;
+								layer_col = Rgba(1.f) - layer_col;
 							}
 							if(!mask_params_.only_)
 							{
 								Rgba col_combined = color_layers(LayerDef::Combined);
 								col_combined.a_ = 1.f;
-								color_layer.second *= col_combined;
+								layer_col *= col_combined;
 							}
 							break;
 						case LayerDef::ZDepthAbs:
-							if(camera_ray.ray_.tmax_ < 0.f) color_layer.second = Rgba(0.f, 0.f); // Show background as fully transparent
-							else color_layer.second = Rgba{camera_ray.ray_.tmax_};
-							if(color_layer.second.a_ > 1.f) color_layer.second.a_ = 1.f;
+							if(camera_ray.ray_.tmax_ < 0.f) layer_col = Rgba(0.f, 0.f); // Show background as fully transparent
+							else layer_col = Rgba{camera_ray.ray_.tmax_};
+							if(layer_col.a_ > 1.f) layer_col.a_ = 1.f;
 							break;
 						case LayerDef::ZDepthNorm:
-							if(camera_ray.ray_.tmax_ < 0.f) color_layer.second = Rgba(0.f, 0.f); // Show background as fully transparent
-							else color_layer.second = Rgba{1.f - (camera_ray.ray_.tmax_ - min_depth_) * max_depth_}; // Distance normalization
-							if(color_layer.second.a_ > 1.f) color_layer.second.a_ = 1.f;
+							if(camera_ray.ray_.tmax_ < 0.f) layer_col = Rgba(0.f, 0.f); // Show background as fully transparent
+							else layer_col = Rgba{1.f - (camera_ray.ray_.tmax_ - min_depth_) * max_depth_}; // Distance normalization
+							if(layer_col.a_ > 1.f) layer_col.a_ = 1.f;
 							break;
 						case LayerDef::Mist:
-							if(camera_ray.ray_.tmax_ < 0.f) color_layer.second = Rgba(0.f, 0.f); // Show background as fully transparent
-							else color_layer.second = Rgba{(camera_ray.ray_.tmax_ - min_depth_) * max_depth_}; // Distance normalization
-							if(color_layer.second.a_ > 1.f) color_layer.second.a_ = 1.f;
+							if(camera_ray.ray_.tmax_ < 0.f) layer_col = Rgba(0.f, 0.f); // Show background as fully transparent
+							else layer_col = Rgba{(camera_ray.ray_.tmax_ - min_depth_) * max_depth_}; // Distance normalization
+							if(layer_col.a_ > 1.f) layer_col.a_ = 1.f;
 							break;
 						case LayerDef::Indirect:
-							color_layer.second = col_indirect;
-							color_layer.second.a_ = g_info.constant_randiance_.a_;
-							if(color_layer.second.a_ > 1.f) color_layer.second.a_ = 1.f;
+							layer_col = col_indirect;
+							layer_col.a_ = g_info.constant_randiance_.a_;
+							if(layer_col.a_ > 1.f) layer_col.a_ = 1.f;
 							break;
 						default:
-							if(color_layer.second.a_ > 1.f) color_layer.second.a_ = 1.f;
+							if(layer_col.a_ > 1.f) layer_col.a_ = 1.f;
 							break;
 					}
 				}
@@ -1019,8 +1019,9 @@ GatherInfo SppmIntegrator::traceGatherRay(Ray &ray, HitPoint &hp, RandomGenerato
 	}
 	else //nothing hit, return background
 	{
-		const auto result = background(ray, color_layers, transp_background_, transp_refracted_background_, background_, ray_level);
-		std::tie(g_info.constant_randiance_, alpha) = std::tuple<Rgba, float>{Rgba{result.first}, result.second};
+		const auto [background_col, background_alpha] = background(ray, color_layers, transp_background_, transp_refracted_background_, background_, ray_level);
+		g_info.constant_randiance_ = Rgba{background_col};
+		alpha = background_alpha;
 	}
 
 	if(vol_integrator_)

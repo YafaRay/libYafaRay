@@ -125,10 +125,7 @@ Rgb BackgroundPortalLight::totalEnergy() const
 bool BackgroundPortalLight::illumSample(const SurfacePoint &sp, LSample &s, Ray &wi) const
 {
 	if(photonOnly()) return false;
-	const auto sampled{sampleSurface(s.s_1_, s.s_2_)};
-	const auto &p{sampled.first};
-	const auto &n{sampled.second};
-
+	const auto [p, n]{sampleSurface(s.s_1_, s.s_2_)};
 	Vec3 ldir{p - sp.p_};
 	//normalize vec and compute inverse square distance
 	const float dist_sqr = ldir.lengthSqr();
@@ -157,10 +154,9 @@ bool BackgroundPortalLight::illumSample(const SurfacePoint &sp, LSample &s, Ray 
 
 Rgb BackgroundPortalLight::emitPhoton(float s_1, float s_2, float s_3, float s_4, Ray &ray, float &ipdf) const
 {
-	const auto sampled{sampleSurface(s_3, s_4)};
-	const Vec3 &normal{sampled.second};
-	const auto coords{Vec3::createCoordsSystem(normal)};
-	ray.dir_ = sample::cosHemisphere(normal, coords.first, coords.second, s_1, s_2);
+	const auto [p, n]{sampleSurface(s_3, s_4)};
+	const auto [du, dv]{Vec3::createCoordsSystem(n)};
+	ray.dir_ = sample::cosHemisphere(n, du, dv, s_1, s_2);
 	const Ray r_2(ray.from_, -ray.dir_);
 	return bg_->eval(r_2.dir_, true);
 }
@@ -170,8 +166,8 @@ Rgb BackgroundPortalLight::emitSample(Vec3 &wo, LSample &s) const
 	s.area_pdf_ = inv_area_ * math::num_pi;
 	sampleSurface(s.s_3_, s.s_4_);
 	s.sp_->n_ = s.sp_->ng_;
-	const auto coords{Vec3::createCoordsSystem(s.sp_->ng_)};
-	wo = sample::cosHemisphere(s.sp_->ng_, coords.first, coords.second, s.s_1_, s.s_2_);
+	const auto [du, dv]{Vec3::createCoordsSystem(s.sp_->ng_)};
+	wo = sample::cosHemisphere(s.sp_->ng_, du, dv, s.s_1_, s.s_2_);
 	s.dir_pdf_ = std::abs(s.sp_->ng_ * wo);
 	s.flags_ = flags_;
 	const Ray r_2(s.sp_->p_, -wo);

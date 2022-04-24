@@ -371,16 +371,13 @@ VoronoiTexture::VoronoiTexture(Logger &logger, const Rgb &c_1, const Rgb &c_2,
 
 float VoronoiTexture::getFloat(const Point3 &p, const MipMapParams *mipmap_params) const
 {
-	const auto features = v_gen_.getFeatures(p * size_);
-	const auto &da = features.first;
+	const auto [da, pa] = v_gen_.getFeatures(p * size_);
 	return applyIntensityContrastAdjustments(intensity_scale_ * std::abs(w_1_ * v_gen_.getDistance(0, da) + w_2_ * v_gen_.getDistance(1, da) + w_3_ * v_gen_.getDistance(2, da) + w_4_ * v_gen_.getDistance(3, da)));
 }
 
 Rgba VoronoiTexture::getColor(const Point3 &p, const MipMapParams *mipmap_params) const
 {
-	const auto features = v_gen_.getFeatures(p * size_);
-	const auto &da = features.first;
-	const auto &pa = features.second;
+	const auto [da, pa] = v_gen_.getFeatures(p * size_);
 	const float inte = intensity_scale_ * std::abs(w_1_ * v_gen_.getDistance(0, da) + w_2_ * v_gen_.getDistance(1, da) + w_3_ * v_gen_.getDistance(2, da) + w_4_ * v_gen_.getDistance(3, da));
 	Rgba col(0.0);
 	if(color_ramp_) return applyColorAdjustments(color_ramp_->getColorInterpolated(inte));

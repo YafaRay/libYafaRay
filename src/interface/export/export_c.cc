@@ -280,10 +280,10 @@ bool ExportC::addInstance(const char *base_object_name, const Matrix4 &obj_to_wo
 void ExportC::writeParamMap(const ParamMap &param_map, int indent) noexcept
 {
 	const std::string tabs(indent, '\t');
-	for(const auto &param : param_map)
+	for(const auto &[param_name, param] : param_map)
 	{
 		file_ << tabs;
-		writeParam(param.first, param.second, file_, color_space_, gamma_);
+		writeParam(param_name, param, file_, color_space_, gamma_);
 		++section_num_lines_;
 	}
 }

@@ -174,23 +174,23 @@ ImageFilm::ImageFilm(Logger &logger, int width, int height, int xstart, int ysta
 
 void ImageFilm::initLayersImages()
 {
-	for(const auto &l : layers_.getLayersWithImages())
+	for(const auto &[layer_def, layer] : layers_.getLayersWithImages())
 	{
-		Image::Type image_type = l.second.getImageType();
+		Image::Type image_type = layer.getImageType();
 		image_type = Image::imageTypeWithAlpha(image_type); //Alpha channel is needed in all images of the weight normalization process will cause problems
 		std::unique_ptr<Image> image(Image::factory(logger_, width_, height_, image_type, Image::Optimization::None));
-		film_image_layers_.set(l.first, {std::move(image), l.second});
+		film_image_layers_.set(layer_def, {std::move(image), layer});
 	}
 }
 
 void ImageFilm::initLayersExportedImages()
 {
-	for(const auto &l: layers_.getLayersWithExportedImages())
+	for(const auto &[layer_def, layer]: layers_.getLayersWithExportedImages())
 	{
-		Image::Type image_type = l.second.getImageType();
+		Image::Type image_type = layer.getImageType();
 		image_type = Image::imageTypeWithAlpha(image_type); //Alpha channel is needed in all images of the weight normalization process will cause problems
 		std::unique_ptr<Image> image(Image::factory(logger_, width_, height_, image_type, Image::Optimization::None));
-		exported_image_layers_.set(l.first, {std::move(image), l.second});
+		exported_image_layers_.set(layer_def, {std::move(image), layer});
 	}
 }
 
@@ -241,17 +241,17 @@ void ImageFilm::init(RenderControl &render_control, int num_passes)
 
 	if(render_callbacks_ && render_callbacks_->notify_view_)
 	{
-		for(const auto &render_view: *render_views_)
+		for(const auto &[render_view_name, render_view]: *render_views_)
 		{
-			render_callbacks_->notify_view_(render_view.second->getName().c_str(), render_callbacks_->notify_view_data_);
+			render_callbacks_->notify_view_(render_view_name.c_str(), render_callbacks_->notify_view_data_);
 		}
 	}
 	if(render_callbacks_ && render_callbacks_->notify_layer_)
 	{
 		const Layers &layers = layers_.getLayersWithExportedImages();
-		for(const auto &layer : layers)
+		for(const auto &[layer_type, layer] : layers)
 		{
-			render_callbacks_->notify_layer_(LayerDef::getName(layer.second.getType()).c_str(), layer.second.getExportedImageName().c_str(), width_, height_, layer.second.getNumExportedChannels(), render_callbacks_->notify_layer_data_);
+			render_callbacks_->notify_layer_(LayerDef::getName(layer_type).c_str(), layer.getExportedImageName().c_str(), width_, height_, layer.getNumExportedChannels(), render_callbacks_->notify_layer_data_);
 		}
 	}
 }
@@ -273,9 +273,9 @@ int ImageFilm::nextPass(const RenderView *render_view, RenderControl &render_con
 	{
 		if((images_auto_save_params_.interval_type_ == ImageFilm::AutoSaveParams::IntervalType::Pass) && (images_auto_save_params_.pass_counter_ >= images_auto_save_params_.interval_passes_))
 		{
-			for(auto &output : outputs_)
+			for(auto &[output_name, output] : outputs_)
 			{
-				if(output.second) flush(render_view, render_control, edge_params, All);
+				if(output) flush(render_view, render_control, edge_params, All);
 			}
 		}
 
@@ -502,17 +502,17 @@ void ImageFilm::finishArea(const RenderView *render_view, RenderControl &render_
 		image_manipulation::generateToonAndDebugObjectEdges(film_image_layers_, a.x_ - cx_0_, end_x, a.y_ - cy_0_, end_y, true, edge_params, weights_);
 	}
 
-	for(const auto &film_image_layer : film_image_layers_)
+	for(const auto &[layer_def, image_layer] : film_image_layers_)
 	{
-		if(!film_image_layer.second.layer_.isExported()) continue;
-		const std::shared_ptr<Image> &image = film_image_layer.second.image_;
+		if(!image_layer.layer_.isExported()) continue;
+		const std::shared_ptr<Image> &image = image_layer.image_;
 		for(int j = a.y_ - cy_0_; j < end_y; ++j)
 		{
 			for(int i = a.x_ - cx_0_; i < end_x; ++i)
 			{
 				const float weight = weights_(i, j).getFloat();
-				Rgba color = (film_image_layer.first == LayerDef::AaSamples ? Rgba{weight} : image->getColor(i, j).normalized(weight));
-				switch(film_image_layer.first)
+				Rgba color = (layer_def == LayerDef::AaSamples ? Rgba{weight} : image->getColor(i, j).normalized(weight));
+				switch(layer_def)
 				{
 					//To correct the antialiasing and ceil the "mixed" values to the upper integer in the Object/Material Index layers
 					case LayerDef::ObjIndexAbs:
@@ -521,10 +521,10 @@ void ImageFilm::finishArea(const RenderView *render_view, RenderControl &render_
 					case LayerDef::MatIndexAutoAbs: color.ceil(); break;
 					default: break;
 				}
-				exported_image_layers_.setColor(i, j, color, film_image_layer.first);
+				exported_image_layers_.setColor(i, j, color, layer_def);
 				if(render_callbacks_ && render_callbacks_->put_pixel_)
 				{
-					render_callbacks_->put_pixel_(render_view->getName().c_str(), LayerDef::getName(film_image_layer.first).c_str(), i, j, color.r_, color.g_, color.b_, color.a_, render_callbacks_->put_pixel_data_);
+					render_callbacks_->put_pixel_(render_view->getName().c_str(), LayerDef::getName(layer_def).c_str(), i, j, color.r_, color.g_, color.b_, color.a_, render_callbacks_->put_pixel_data_);
 				}
 			}
 		}
@@ -587,17 +587,17 @@ void ImageFilm::flush(const RenderView *render_view, const RenderControl &render
 	{
 		image_manipulation::generateToonAndDebugObjectEdges(film_image_layers_, 0, width_, 0, height_, false, edge_params, weights_);
 	}
-	for(const auto &film_image_layer : film_image_layers_)
+	for(const auto &[layer_def, image_layer] : film_image_layers_)
 	{
-		if(!film_image_layer.second.layer_.isExported()) continue;
-		const std::shared_ptr<Image> &image = film_image_layer.second.image_;
+		if(!image_layer.layer_.isExported()) continue;
+		const std::shared_ptr<Image> &image = image_layer.image_;
 		for(int j = 0; j < height_; j++)
 		{
 			for(int i = 0; i < width_; i++)
 			{
 				const float weight = weights_(i, j).getFloat();
-				Rgba color = (film_image_layer.first == LayerDef::AaSamples ? Rgba{weight} : image->getColor(i, j).normalized(weight));
-				switch(film_image_layer.first)
+				Rgba color = (layer_def == LayerDef::AaSamples ? Rgba{weight} : image->getColor(i, j).normalized(weight));
+				switch(layer_def)
 				{
 					//To correct the antialiasing and ceil the "mixed" values to the upper integer in the Object/Material Index layers
 					case LayerDef::ObjIndexAbs:
@@ -606,11 +606,11 @@ void ImageFilm::flush(const RenderView *render_view, const RenderControl &render
 					case LayerDef::MatIndexAutoAbs: color.ceil(); break;
 					default: break;
 				}
-				if(estimate_density_ && (flags & Densityimage) && film_image_layer.first == LayerDef::Combined && density_factor > 0.f) color += Rgba((*density_image_)(i, j) * density_factor, 0.f);
-				exported_image_layers_.setColor(i, j, color, film_image_layer.first);
+				if(estimate_density_ && (flags & Densityimage) && layer_def == LayerDef::Combined && density_factor > 0.f) color += Rgba((*density_image_)(i, j) * density_factor, 0.f);
+				exported_image_layers_.setColor(i, j, color, layer_def);
 				if(render_callbacks_ && render_callbacks_->put_pixel_)
 				{
-					render_callbacks_->put_pixel_(render_view->getName().c_str(), LayerDef::getName(film_image_layer.first).c_str(), i, j, color.r_, color.g_, color.b_, color.a_, render_callbacks_->put_pixel_data_);
+					render_callbacks_->put_pixel_(render_view->getName().c_str(), LayerDef::getName(layer_def).c_str(), i, j, color.r_, color.g_, color.b_, color.a_, render_callbacks_->put_pixel_data_);
 				}
 			}
 		}
@@ -628,17 +628,17 @@ void ImageFilm::flush(const RenderView *render_view, const RenderControl &render
 		logger_.logParams("--------------------------------------------------------------------------------");
 	}
 
-	for(auto &output : outputs_)
+	for(auto &[output_name, output] : outputs_)
 	{
-		if(output.second)
+		if(output)
 		{
 			std::stringstream pass_string;
-			pass_string << "Flushing output '" << output.second->getName() << "' and saving image files.";
+			pass_string << "Flushing output '" << output_name << "' and saving image files.";
 			logger_.logInfo(pass_string.str());
 			if(render_control.finished())
 			{
 				std::stringstream ss;
-				ss << output.second->printBadge(render_control, timer_);
+				ss << output->printBadge(render_control, timer_);
 				//logger_.logParams("--------------------------------------------------------------------------------");
 				for(std::string line; std::getline(ss, line, '\n');) if(line != "" && line != "\n") logger_.logParams(line);
 				//logger_.logParams("--------------------------------------------------------------------------------");
@@ -649,7 +649,7 @@ void ImageFilm::flush(const RenderView *render_view, const RenderControl &render
 				old_tag = progress_bar_->getTag();
 				progress_bar_->setTag(pass_string.str().c_str());
 			}
-			output.second->flush(render_control, timer_);
+			output->flush(render_control, timer_);
 			if(progress_bar_) progress_bar_->setTag(old_tag);
 		}
 	}
@@ -722,11 +722,11 @@ void ImageFilm::addSample(int x, int y, float dx, float dy, const RenderArea *a,
 			weights_(i - cx_0_, j - cy_0_).setFloat(weights_(i - cx_0_, j - cy_0_).getFloat() + filter_wt);
 
 			// update pixel values with filtered sample contribution
-			for(auto &film_image_layer : film_image_layers_)
+			for(auto &[layer_def, image_layer] : film_image_layers_)
 			{
-				Rgba col = color_layers ? (*color_layers)(film_image_layer.first) : Rgba{0.f};
+				Rgba col = color_layers ? (*color_layers)(layer_def) : Rgba{0.f};
 				col.clampProportionalRgb(aa_noise_params_.clamp_samples_);
-				film_image_layer.second.image_->setColor(i - cx_0_, j - cy_0_, film_image_layer.second.image_->getColor(i - cx_0_, j - cy_0_) + (col * filter_wt));
+				image_layer.image_->setColor(i - cx_0_, j - cy_0_, image_layer.image_->getColor(i - cx_0_, j - cy_0_) + (col * filter_wt));
 			}
 		}
 	}
@@ -917,7 +917,7 @@ bool ImageFilm::imageFilmLoad(const std::string &filename)
 		}
 	}
 
-	for(auto &film_image_layer : film_image_layers_)
+	for(auto &[layer_def, image_layer] : film_image_layers_)
 	{
 		for(int y = 0; y < height_; ++y)
 		{
@@ -928,7 +928,7 @@ bool ImageFilm::imageFilmLoad(const std::string &filename)
 				file.read<float>(col.g_);
 				file.read<float>(col.b_);
 				file.read<float>(col.a_);
-				film_image_layer.second.image_->setColor(x, y, col);
+				image_layer.image_->setColor(x, y, col);
 			}
 		}
 	}
@@ -998,14 +998,14 @@ void ImageFilm::imageFilmLoadAllInFolder(RenderControl &render_control)
 			}
 		}
 
-		for(auto &film_image_layer : film_image_layers_)
+		for(auto &[layer_def, image_layer] : film_image_layers_)
 		{
 			const ImageLayers &loaded_image_layers = loaded_film->film_image_layers_;
 			for(int i = 0; i < width_; ++i)
 			{
 				for(int j = 0; j < height_; ++j)
 				{
-					film_image_layer.second.image_->setColor(i, j, film_image_layer.second.image_->getColor(i, j) + loaded_image_layers(film_image_layer.first).image_->getColor(i, j));
+					image_layer.image_->setColor(i, j, image_layer.image_->getColor(i, j) + loaded_image_layers(layer_def).image_->getColor(i, j));
 				}
 			}
 		}
@@ -1068,16 +1068,16 @@ bool ImageFilm::imageFilmSave()
 		}
 	}
 
-	for(const auto &img : film_image_layers_)
+	for(const auto &[layer_def, image_layer] : film_image_layers_)
 	{
-		const int img_w = img.second.image_->getWidth();
+		const int img_w = image_layer.image_->getWidth();
 		if(img_w != width_)
 		{
 			logger_.logWarning("ImageFilm saving problems, film width ", width_, " different from internal 2D image width ", img_w);
 			result_ok = false;
 			break;
 		}
-		const int img_h = img.second.image_->getHeight();
+		const int img_h = image_layer.image_->getHeight();
 		if(img_h != height_)
 		{
 			logger_.logWarning("ImageFilm saving problems, film height ", height_, " different from internal 2D image height ", img_h);
@@ -1088,7 +1088,7 @@ bool ImageFilm::imageFilmSave()
 		{
 			for(int x = 0; x < width_; ++x)
 			{
-				const Rgba &col = img.second.image_->getColor(x, y);
+				const Rgba &col = image_layer.image_->getColor(x, y);
 				file.append<float>(col.r_);
 				file.append<float>(col.g_);
 				file.append<float>(col.b_);

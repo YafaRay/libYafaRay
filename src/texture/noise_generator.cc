@@ -616,8 +616,7 @@ std::pair<std::array<float, 4>, std::array<Point3, 4>> VoronoiNoiseGenerator::ge
 
 float VoronoiNoiseGenerator::operator()(const Point3 &pt) const
 {
-	const auto features = getFeatures(pt);
-	const auto &da = features.first;
+	const auto [da, pa] = getFeatures(pt);
 	switch(v_type_)
 	{
 		case Vf2:

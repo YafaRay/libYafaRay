@@ -224,9 +224,9 @@ std::string Parameter::printType() const
 std::string ParamMap::print() const
 {
 	std::string result;
-	for(const auto &param : param_map_)
+	for(const auto &[param_name, param] : param_map_)
 	{
-		result += "'" + param.first + "' (" + param.second.printType() + ") = '" + param.second.print() + "'\n";
+		result += "'" + param_name + "' (" + param.printType() + ") = '" + param.print() + "'\n";
 	}
 	return result;
 }
@@ -235,9 +235,9 @@ void ParamMap::logContents(Logger &logger) const
 {
 	if(logger.isDebug())
 	{
-		for(const auto &param : param_map_)
+		for(const auto &[param_name, param] : param_map_)
 		{
-			logger.logDebug("'" + param.first + "' (" + param.second.printType() + ") = '" + param.second.print() + "'");
+			logger.logDebug("'" + param_name + "' (" + param.printType() + ") = '" + param.print() + "'");
 		}
 	}
 }

@@ -51,9 +51,9 @@ AcceleratorSimpleTest::AcceleratorSimpleTest(Logger &logger, const std::vector<c
 		}
 		bound_ = Bound(bound_, primitive_bound);
 	}
-	for(const auto &object_data : objects_data_)
+	for(const auto &[object, object_data] : objects_data_)
 	{
-		if(logger_.isVerbose()) logger_.logVerbose("AcceleratorSimpleTest: Primitives in object '", (object_data.first)->getName(), "': ", object_data.second.primitives_.size(), ", bound: (", object_data.second.bound_.a_, ", ", object_data.second.bound_.g_, ")");
+		if(logger_.isVerbose()) logger_.logVerbose("AcceleratorSimpleTest: Primitives in object '", (object)->getName(), "': ", object_data.primitives_.size(), ", bound: (", object_data.bound_.a_, ", ", object_data.bound_.g_, ")");
 	}
 	if(logger_.isVerbose()) logger_.logVerbose("AcceleratorSimpleTest: Objects: ", objects_data_.size(), ", primitives in tree: ", num_primitives, ", bound: (", bound_.a_, ", ", bound_.g_, ")");
 }
@@ -62,11 +62,11 @@ AcceleratorIntersectData AcceleratorSimpleTest::intersect(const Ray &ray, float 
 {
 	AcceleratorIntersectData accelerator_intersect_data;
 	accelerator_intersect_data.t_max_ = t_max;
-	for(const auto &object_data : objects_data_)
+	for(const auto &[object, object_data] : objects_data_)
 	{
-		const Bound::Cross cross = object_data.second.bound_.cross(ray, accelerator_intersect_data.t_max_);
+		const Bound::Cross cross = object_data.bound_.cross(ray, accelerator_intersect_data.t_max_);
 		if(!cross.crossed_) continue;
-		for(const auto &primitive : object_data.second.primitives_)
+		for(const auto &primitive : object_data.primitives_)
 		{
 			const IntersectData intersect_data = primitive->intersect(ray);
 			if(intersect_data.hit_ && intersect_data.t_hit_ >= ray.tmin_ && intersect_data.t_hit_ < accelerator_intersect_data.t_max_)
@@ -90,11 +90,11 @@ AcceleratorIntersectData AcceleratorSimpleTest::intersect(const Ray &ray, float 
 
 AcceleratorIntersectData AcceleratorSimpleTest::intersectS(const Ray &ray, float t_max, float shadow_bias) const
 {
-	for(const auto &object_data : objects_data_)
+	for(const auto &[object, object_data] : objects_data_)
 	{
-		const Bound::Cross cross = object_data.second.bound_.cross(ray, t_max);
+		const Bound::Cross cross = object_data.bound_.cross(ray, t_max);
 		if(!cross.crossed_) continue;
-		for(const auto &primitive : object_data.second.primitives_)
+		for(const auto &primitive : object_data.primitives_)
 		{
 			const IntersectData intersect_data = primitive->intersect(ray);
 			if(intersect_data.hit_ && intersect_data.t_hit_ >= (ray.tmin_ + shadow_bias) && intersect_data.t_hit_ < t_max)
@@ -118,11 +118,11 @@ AcceleratorIntersectData AcceleratorSimpleTest::intersectS(const Ray &ray, float
 
 AcceleratorTsIntersectData AcceleratorSimpleTest::intersectTs(const Ray &ray, int max_depth, float t_max, float shadow_bias, const Camera *camera) const
 {
-	for(const auto &object_data : objects_data_)
+	for(const auto &[object, object_data] : objects_data_)
 	{
-		const Bound::Cross cross = object_data.second.bound_.cross(ray, t_max);
+		const Bound::Cross cross = object_data.bound_.cross(ray, t_max);
 		if(!cross.crossed_) continue;
-		for(const auto &primitive : object_data.second.primitives_)
+		for(const auto &primitive : object_data.primitives_)
 		{
 			const IntersectData intersect_data = primitive->intersect(ray);
 			if(intersect_data.hit_ && intersect_data.t_hit_ >= ray.tmin_ && intersect_data.t_hit_ < t_max)

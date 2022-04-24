@@ -22,18 +22,18 @@ BEGIN_YAFARAY
 
 ColorLayers::ColorLayers(const Layers &layers)
 {
-	for(const auto &layer : layers)
+	for(const auto &[layer_def, layer] : layers)
 	{
-		set(layer.first, LayerDef::getDefaultColor(layer.first));
-		flags_ |= layer.second.getFlags();
+		set(layer_def, LayerDef::getDefaultColor(layer_def));
+		flags_ |= layer.getFlags();
 	}
 }
 
 void ColorLayers::setDefaultColors()
 {
-	for(auto &item : items_)
+	for(auto &[layer_def, color] : items_)
 	{
-		item.second = LayerDef::getDefaultColor(item.first);
+		color = LayerDef::getDefaultColor(layer_def);
 	}
 }
 

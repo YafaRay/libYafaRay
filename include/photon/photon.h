@@ -65,12 +65,7 @@ class Photon
 		{
 #ifdef SMALL_PHOTONS //FIXME: SMALL_PHOTONS not working at the moment because Rgbe members do not include r_, g_ and b_ as needed in the rest of the code
 			if(d.null()) theta_ = 255;
-			else
-			{
-				std::pair<unsigned char, unsigned char> cd = dirconverter_global.convert(d);
-				theta_ = cd.first;
-				phi_ = cd.second;
-			}
+			else std::tie(theta_, phi_) = dirconverter_global.convert(d);
 #else //SMALL_PHOTONS
 			dir_ = d;
 #endif //SMALL_PHOTONS

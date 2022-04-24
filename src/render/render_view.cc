@@ -58,7 +58,7 @@ bool RenderView::init(Logger &logger, const Scene &scene)
 
 	if(selected_lights_names.empty())
 	{
-		for(const auto &l : scene.getLights()) lights_[l.first] = l.second.get();
+		for(const auto &[light_name, light] : scene.getLights()) lights_[light_name] = light.get();
 	}
 	else
 	{
@@ -80,32 +80,32 @@ bool RenderView::init(Logger &logger, const Scene &scene)
 	return true;
 }
 
-const std::vector<const Light *> RenderView::getLightsVisible() const
+std::vector<const Light *> RenderView::getLightsVisible() const
 {
 	std::vector<const Light *> result;
-	for(const auto &l : lights_)
+	for(const auto &[light_name, light] : lights_)
 	{
-		if(l.second->lightEnabled() && !l.second->photonOnly()) result.push_back(l.second);
+		if(light->lightEnabled() && !light->photonOnly()) result.push_back(light);
 	}
 	return result;
 }
 
-const std::vector<const Light *> RenderView::getLightsEmittingCausticPhotons() const
+std::vector<const Light *> RenderView::getLightsEmittingCausticPhotons() const
 {
 	std::vector<const Light *> result;
-	for(const auto &l : lights_)
+	for(const auto &[light_name, light] : lights_)
 	{
-		if(l.second->lightEnabled() && l.second->shootsCausticP()) result.push_back(l.second);
+		if(light->lightEnabled() && light->shootsCausticP()) result.push_back(light);
 	}
 	return result;
 }
 
-const std::vector<const Light *> RenderView::getLightsEmittingDiffusePhotons() const
+std::vector<const Light *> RenderView::getLightsEmittingDiffusePhotons() const
 {
 	std::vector<const Light *> result;
-	for(const auto &l : lights_)
+	for(const auto &[light_name, light] : lights_)
 	{
-		if(l.second->lightEnabled() && l.second->shootsDiffuseP()) result.push_back(l.second);
+		if(light->lightEnabled() && light->shootsDiffuseP()) result.push_back(light);
 	}
 	return result;
 }

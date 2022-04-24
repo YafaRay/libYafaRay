@@ -216,27 +216,25 @@ bool Scene::render()
 	//if(creation_state_.changes_ != CreationState::Flags::CNone) //FIXME: handle better subsequent scene renders differently if previous render already complete
 	{
 		if(creation_state_.changes_ & CreationState::Flags::CGeom) updateObjects();
-
-		for(auto &l : getLights()) l.second->init(*this);
-
-		for(auto &output : outputs_)
+		for(auto &[light_name, light] : getLights()) light->init(*this);
+		for(auto &[output_name, output] : outputs_)
 		{
-			output.second->init(image_film_->getWidth(), image_film_->getHeight(), image_film_->getExportedImageLayers(), &render_views_);
+			output->init(image_film_->getWidth(), image_film_->getHeight(), image_film_->getExportedImageLayers(), &render_views_);
 		}
 
-		for(auto &render_view : render_views_)
+		for(auto &[render_view_name, render_view] : render_views_)
 		{
-			for(auto &o : outputs_) o.second->setRenderView(render_view.second.get());
+			for(auto &[output_name, output] : outputs_) output->setRenderView(render_view.get());
 			std::stringstream inte_settings;
-			bool success = render_view.second->init(logger_, *this);
+			bool success = render_view->init(logger_, *this);
 			if(!success)
 			{
-				logger_.logWarning("Scene: No cameras or lights found at RenderView ", render_view.second->getName(), "', skipping this RenderView...");
+				logger_.logWarning("Scene: No cameras or lights found at RenderView ", render_view_name, "', skipping this RenderView...");
 				continue;
 			}
 
-			success = surf_integrator_->preprocess(image_film_.get(), render_view.second.get(), *this);
-			if(vol_integrator_) success = success && vol_integrator_->preprocess(image_film_.get(), render_view.second.get(), *this);
+			success = surf_integrator_->preprocess(image_film_.get(), render_view.get(), *this);
+			if(vol_integrator_) success = success && vol_integrator_->preprocess(image_film_.get(), render_view.get(), *this);
 
 			if(!success)
 			{
@@ -253,7 +251,7 @@ bool Scene::render()
 			render_control_.setRenderInfo(surf_integrator_->getRenderInfo());
 			render_control_.setAaNoiseInfo(surf_integrator_->getAaNoiseInfo());
 			surf_integrator_->cleanup();
-			image_film_->flush(render_view.second.get(), render_control_, getEdgeToonParams());
+			image_film_->flush(render_view.get(), render_control_, getEdgeToonParams());
 			render_control_.setFinished();
 			image_film_->cleanup();
 		}
@@ -737,9 +735,9 @@ void Scene::defineBasicLayers()
 
 void Scene::defineDependentLayers()
 {
-	for(const auto &layer : layers_)
+	for(const auto &[layer_def, layer] : layers_)
 	{
-		switch(layer.first)
+		switch(layer_def)
 		{
 			case LayerDef::ZDepthNorm:
 				if(!layers_.isDefined(LayerDef::Mist)) defineLayer(LayerDef::Mist);
@@ -1032,11 +1030,11 @@ bool Scene::addInstance(const std::string &base_object_name, const Matrix4 &obj_
 bool Scene::updateObjects()
 {
 	std::vector<const Primitive *> primitives;
-	for(const auto &o : objects_)
+	for(const auto &[object_name, object] : objects_)
 	{
-		if(o.second->getVisibility() == Visibility::Invisible) continue;
-		if(o.second->isBaseObject()) continue;
-		const auto prims = o.second->getPrimitives();
+		if(object->getVisibility() == Visibility::Invisible) continue;
+		if(object->isBaseObject()) continue;
+		const auto prims = object->getPrimitives();
 		primitives.insert(primitives.end(), prims.begin(), prims.end());
 	}
 	if(primitives.empty())

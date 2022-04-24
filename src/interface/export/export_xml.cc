@@ -207,10 +207,10 @@ bool ExportXml::addInstance(const char *base_object_name, const Matrix4 &obj_to_
 void ExportXml::writeParamMap(const ParamMap &param_map, int indent) noexcept
 {
 	const std::string tabs(indent, '\t');
-	for(const auto &param : param_map)
+	for(const auto &[param_name, param] : param_map)
 	{
 		file_ << tabs;
-		writeParam(param.first, param.second, file_, color_space_, gamma_);
+		writeParam(param_name, param, file_, color_space_, gamma_);
 	}
 }
 

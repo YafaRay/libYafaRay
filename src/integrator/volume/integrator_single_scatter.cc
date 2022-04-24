@@ -44,31 +44,26 @@ bool SingleScatterIntegrator::preprocess(ImageFilm *image_film, const RenderView
 	logger_.logInfo("SingleScatter: Preprocessing...");
 	lights_ = render_view->getLightsVisible();
 	vr_size_ = volume_regions_->size();
-	i_vr_size_ = 1.f / (float)vr_size_;
+	i_vr_size_ = 1.f / static_cast<float>(vr_size_);
 	if(optimize_)
 	{
-		for(const auto &v : *volume_regions_)
+		for(const auto &[vr_name, vr] : *volume_regions_)
 		{
-			const auto &vr = v.second;
-			Bound bb = vr->getBb();
-
-			int x_size = vr->att_grid_x_;
-			int y_size = vr->att_grid_y_;
-			int z_size = vr->att_grid_z_;
-
-			float x_size_inv = 1.f / (float)x_size;
-			float y_size_inv = 1.f / (float)y_size;
-			float z_size_inv = 1.f / (float)z_size;
+			const Bound bb = vr->getBb();
+			const int x_size = vr->att_grid_x_;
+			const int y_size = vr->att_grid_y_;
+			const int z_size = vr->att_grid_z_;
+			const float x_size_inv = 1.f / (float)x_size;
+			const float y_size_inv = 1.f / (float)y_size;
+			const float z_size_inv = 1.f / (float)z_size;
 
 			logger_.logParams("SingleScatter: volume, attGridMaps with size: ", x_size, " ", y_size, " ", x_size);
 
 			for(const auto &light : lights_)
 			{
-				Rgb lcol(0.0);
-
+				Rgb lcol{0.f};
 				auto *attenuation_grid = static_cast<float *>(malloc(x_size * y_size * z_size * sizeof(float)));
 				vr->attenuation_grid_map_[light] = attenuation_grid;
-
 				for(int z = 0; z < z_size; ++z)
 				{
 					for(int y = 0; y < y_size; ++y)
@@ -76,7 +71,7 @@ bool SingleScatterIntegrator::preprocess(ImageFilm *image_film, const RenderView
 						for(int x = 0; x < x_size; ++x)
 						{
 							// generate the world position inside the grid
-							Point3 p(bb.longX() * x_size_inv * x + bb.a_.x(),
+							const Point3 p(bb.longX() * x_size_inv * x + bb.a_.x(),
 									 bb.longY() * y_size_inv * y + bb.a_.y(),
 									 bb.longZ() * z_size_inv * z + bb.a_.z());
 
@@ -90,21 +85,21 @@ bool SingleScatterIntegrator::preprocess(ImageFilm *image_film, const RenderView
 							// handle lights with delta distribution, e.g. point and directional lights
 							if(light->diracLight())
 							{
-								bool ill = light->illuminate(sp, lcol, light_ray);
+								const bool ill = light->illuminate(sp, lcol, light_ray);
 								light_ray.tmin_ = shadow_bias_;
-								if(light_ray.tmax_ < 0.f) light_ray.tmax_ = 1e10;  // infinitely distant light
+								if(light_ray.tmax_ < 0.f) light_ray.tmax_ = 1e10f;  // infinitely distant light
 
 								// transmittance from the point p in the volume to the light (i.e. how much light reaches p)
-								Rgb lightstep_tau(0.f);
+								Rgb lightstep_tau{0.f};
 								if(ill)
 								{
-									for(const auto &v_2 : *volume_regions_)
+									for(const auto &[v_2_name, v_2] : *volume_regions_)
 									{
-										lightstep_tau += v_2.second->tau(light_ray, step_size_, 0.0f);
+										lightstep_tau += v_2->tau(light_ray, step_size_, 0.0f);
 									}
 								}
 
-								float light_tr = math::exp(-lightstep_tau.energy());
+								const float light_tr = math::exp(-lightstep_tau.energy());
 								attenuation_grid[x + y * x_size + y_size * x_size * z] = light_tr;
 							}
 							else // area light and suchlike
@@ -120,13 +115,13 @@ bool SingleScatterIntegrator::preprocess(ImageFilm *image_film, const RenderView
 
 									light->illumSample(sp, ls, light_ray);
 									light_ray.tmin_ = shadow_bias_;
-									if(light_ray.tmax_ < 0.f) light_ray.tmax_ = 1e10;  // infinitely distant light
+									if(light_ray.tmax_ < 0.f) light_ray.tmax_ = 1e10f;  // infinitely distant light
 
 									// transmittance from the point p in the volume to the light (i.e. how much light reaches p)
-									Rgb lightstep_tau(0.f);
-									for(const auto &v_2 : *volume_regions_)
+									Rgb lightstep_tau{0.f};
+									for(const auto &[v_2_name, v_2] : *volume_regions_)
 									{
-										lightstep_tau += v_2.second->tau(light_ray, step_size_, 0.0f);
+										lightstep_tau += v_2->tau(light_ray, step_size_, 0.0f);
 									}
 									light_tr += math::exp(-lightstep_tau.energy());
 								}
@@ -161,28 +156,28 @@ Rgb SingleScatterIntegrator::getInScatter(RandomGenerator &random_generator, con
 			{
 				// ...shadowed...
 				if(light_ray.tmax_ < 0.f) light_ray.tmax_ = 1e10;  // infinitely distant light
-				const auto shadow_result = accelerator_->isShadowed(light_ray, shadow_bias_);
-				if(!shadow_result.first)
+				const auto [is_shadowed, primitive] = accelerator_->isShadowed(light_ray, shadow_bias_);
+				if(!is_shadowed)
 				{
 					float light_tr = 0.0f;
 					// replace lightTr with precalculated attenuation
 					if(optimize_)
 					{
 						// replaced by
-						for(const auto &v : *volume_regions_)
+						for(const auto &[vr_name, vr] : *volume_regions_)
 						{
-							const Bound::Cross cross = v.second->crossBound(light_ray);
-							if(cross.crossed_) light_tr += v.second->attenuation(sp.p_, light);
+							const Bound::Cross cross = vr->crossBound(light_ray);
+							if(cross.crossed_) light_tr += vr->attenuation(sp.p_, light);
 						}
 					}
 					else
 					{
 						// replaced by
 						Rgb lightstep_tau(0.f);
-						for(const auto &v : *volume_regions_)
+						for(const auto &[vr_name, vr] : *volume_regions_)
 						{
-							const Bound::Cross cross = v.second->crossBound(light_ray);
-							if(cross.crossed_) lightstep_tau += v.second->tau(light_ray, current_step, 0.f);
+							const Bound::Cross cross = vr->crossBound(light_ray);
+							if(cross.crossed_) lightstep_tau += vr->tau(light_ray, current_step, 0.f);
 						}
 						// transmittance from the point p in the volume to the light (i.e. how much light reaches p)
 						light_tr = math::exp(-lightstep_tau.energy());
@@ -210,8 +205,8 @@ Rgb SingleScatterIntegrator::getInScatter(RandomGenerator &random_generator, con
 				{
 					// ...shadowed...
 					if(light_ray.tmax_ < 0.f) light_ray.tmax_ = 1e10;  // infinitely distant light
-					const auto shadow_result = accelerator_->isShadowed(light_ray, shadow_bias_);
-					if(!shadow_result.first)
+					const auto [is_shadowed, primitive] = accelerator_->isShadowed(light_ray, shadow_bias_);
+					if(!is_shadowed)
 					{
 						ccol += ls.col_ / ls.pdf_;
 
@@ -219,12 +214,12 @@ Rgb SingleScatterIntegrator::getInScatter(RandomGenerator &random_generator, con
 						if(optimize_)
 						{
 							// replaced by
-							for(const auto &v : *volume_regions_)
+							for(const auto &[vr_name, vr] : *volume_regions_)
 							{
-								const Bound::Cross cross = v.second->crossBound(light_ray);
+								const Bound::Cross cross = vr->crossBound(light_ray);
 								if(cross.crossed_)
 								{
-									light_tr += v.second->attenuation(sp.p_, light);
+									light_tr += vr->attenuation(sp.p_, light);
 									break;
 								}
 							}
@@ -233,12 +228,12 @@ Rgb SingleScatterIntegrator::getInScatter(RandomGenerator &random_generator, con
 						{
 							// replaced by
 							Rgb lightstep_tau(0.f);
-							for(const auto &v : *volume_regions_)
+							for(const auto &[vr_name, vr] : *volume_regions_)
 							{
-								const Bound::Cross cross = v.second->crossBound(light_ray);
+								const Bound::Cross cross = vr->crossBound(light_ray);
 								if(cross.crossed_)
 								{
-									lightstep_tau += v.second->tau(light_ray, current_step * 4.f, 0.0f);
+									lightstep_tau += vr->tau(light_ray, current_step * 4.f, 0.0f);
 								}
 							}
 							// transmittance from the point p in the volume to the light (i.e. how much light reaches p)
@@ -263,13 +258,13 @@ Rgb SingleScatterIntegrator::transmittance(RandomGenerator &random_generator, co
 {
 	if(vr_size_ == 0) return Rgb{1.f};
 	Rgb tr{1.f};
-	for(const auto &v : *volume_regions_)
+	for(const auto &[vr_name, vr] : *volume_regions_)
 	{
-		const Bound::Cross cross = v.second->crossBound(ray);
+		const Bound::Cross cross = vr->crossBound(ray);
 		if(cross.crossed_)
 		{
 			const float random_value = random_generator();
-			const Rgb optical_thickness = v.second->tau(ray, step_size_, random_value);
+			const Rgb optical_thickness = vr->tau(ray, step_size_, random_value);
 			tr *= Rgb{math::exp(-optical_thickness.energy())};
 		}
 	}
@@ -282,9 +277,9 @@ Rgb SingleScatterIntegrator::integrate(RandomGenerator &random_generator, const 
 	const bool hit = (ray.tmax_ > 0.f);
 	float t_0 = 1e10f, t_1 = -1e10f;
 	// find min t0 and max t1
-	for(const auto &v : *volume_regions_)
+	for(const auto &[vr_name, vr] : *volume_regions_)
 	{
-		Bound::Cross cross = v.second->crossBound(ray);
+		Bound::Cross cross = vr->crossBound(ray);
 		if(!cross.crossed_) continue;
 		if(hit && ray.tmax_ < cross.enter_) continue;
 		if(cross.enter_ < 0.f) cross.enter_ = 0.f;
@@ -311,9 +306,9 @@ Rgb SingleScatterIntegrator::integrate(RandomGenerator &random_generator, const 
 		{
 			const Point3 p{ray.from_ + (step_size_ * i + pos) * ray.dir_};
 			float density = 0;
-			for(const auto &v : *volume_regions_)
+			for(const auto &[vr_name, vr] : *volume_regions_)
 			{
-				density += v.second->sigmaT(p, {}).energy();
+				density += vr->sigmaT(p, {}).energy();
 			}
 			density_samples.at(i) = density;
 			if(i > 0) accum_density.at(i) = accum_density.at(i - 1) + density * step_size_;
@@ -356,12 +351,12 @@ Rgb SingleScatterIntegrator::integrate(RandomGenerator &random_generator, const 
 		}
 		else
 		{
-			for(const auto &v : *volume_regions_)
+			for(const auto &[vr_name, vr] : *volume_regions_)
 			{
-				const Bound::Cross cross = v.second->crossBound(step_ray);
+				const Bound::Cross cross = vr->crossBound(step_ray);
 				if(cross.crossed_)
 				{
-					step_tau += v.second->sigmaT(step_ray.from_, step_ray.dir_) * current_step;
+					step_tau += vr->sigmaT(step_ray.from_, step_ray.dir_) * current_step;
 				}
 			}
 		}
@@ -373,12 +368,12 @@ Rgb SingleScatterIntegrator::integrate(RandomGenerator &random_generator, const 
 			tr_tmp = tr_tmp / random_val;
 		}
 		float sigma_s = 0.0f;
-		for(const auto &v : *volume_regions_)
+		for(const auto &[vr_name, vr] : *volume_regions_)
 		{
-			const Bound::Cross cross = v.second->crossBound(step_ray);
+			const Bound::Cross cross = vr->crossBound(step_ray);
 			if(cross.crossed_)
 			{
-				sigma_s += v.second->sigmaS(step_ray.from_, step_ray.dir_).energy();
+				sigma_s += vr->sigmaS(step_ray.from_, step_ray.dir_).energy();
 			}
 		}
 		// with a sigma_s close to 0, no light can be scattered -> computation can be skipped

@@ -983,9 +983,9 @@ std::pair<Rgb, float> PhotonIntegrator::integrate(Ray &ray, RandomGenerator &ran
 			col += causticPhotons(color_layers, ray, *sp, wo, aa_noise_params_.clamp_indirect_, caustic_map_.get(), caus_radius_, n_caus_search_);
 		}
 
-		const auto recursive_result = recursiveRaytrace(random_generator, color_layers, thread_id, ray_level + 1, chromatic_enabled, wavelength, ray, mat_bsdfs, *sp, wo, additional_depth, ray_division, pixel_sampling_data);
-		col += recursive_result.first;
-		alpha = recursive_result.second;
+		const auto [raytrace_col, raytrace_alpha] = recursiveRaytrace(random_generator, color_layers, thread_id, ray_level + 1, chromatic_enabled, wavelength, ray, mat_bsdfs, *sp, wo, additional_depth, ray_division, pixel_sampling_data);
+		col += raytrace_col;
+		alpha = raytrace_alpha;
 		if(color_layers)
 		{
 			generateCommonLayers(color_layers, *sp, mask_params_);

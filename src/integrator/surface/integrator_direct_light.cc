@@ -123,9 +123,9 @@ std::pair<Rgb, float> DirectLightIntegrator::integrate(Ray &ray, RandomGenerator
 			}
 			if(use_ambient_occlusion_) col += sampleAmbientOcclusion(*accelerator_, chromatic_enabled, wavelength, *sp, wo, ray_division, camera_, pixel_sampling_data, tr_shad_, false, ao_samples_, shadow_bias_auto_, shadow_bias_, ao_dist_, ao_col_, s_depth_);
 		}
-		const auto recursive_result = recursiveRaytrace(random_generator, color_layers, thread_id, ray_level + 1, chromatic_enabled, wavelength, ray, mat_bsdfs, *sp, wo, additional_depth, ray_division, pixel_sampling_data);
-		col += recursive_result.first;
-		alpha = recursive_result.second;
+		const auto [raytrace_col, raytrace_alpha] = recursiveRaytrace(random_generator, color_layers, thread_id, ray_level + 1, chromatic_enabled, wavelength, ray, mat_bsdfs, *sp, wo, additional_depth, ray_division, pixel_sampling_data);
+		col += raytrace_col;
+		alpha = raytrace_alpha;
 		if(color_layers)
 		{
 			generateCommonLayers(color_layers, *sp, mask_params_);

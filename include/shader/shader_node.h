@@ -54,7 +54,7 @@ class NodeTreeData final
 class NodeFinder final : public Collection<std::string, const ShaderNode *>
 {
 	public:
-		explicit NodeFinder(const std::map<std::string, std::unique_ptr<ShaderNode>> &table) { for(const auto &s : table) items_[s.first] = s.second.get(); }
+		explicit NodeFinder(const std::map<std::string, std::unique_ptr<ShaderNode>> &table) { for(const auto &[shader_name, shader] : table) items_[shader_name] = shader.get(); }
 };
 
 class DuDv final

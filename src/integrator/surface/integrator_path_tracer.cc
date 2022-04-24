@@ -230,9 +230,9 @@ std::pair<Rgb, float> PathIntegrator::integrate(Ray &ray, RandomGenerator &rando
 					p_ray.tmin_ = ray_min_dist_;
 					p_ray.tmax_ = -1.f;
 					p_ray.from_ = hit->p_;
-					auto intersect_result = accelerator_->intersect(p_ray, camera_);
-					if(!intersect_result.first) break; //hit background
-					std::swap(hit, intersect_result.first);
+					auto [intersect_sp, intersect_tmax] = accelerator_->intersect(p_ray, camera_);
+					if(!intersect_sp) break; //hit background
+					std::swap(hit, intersect_sp);
 					pwo = -p_ray.dir_;
 
 					if(mat_bsd_fs.hasAny(BsdfFlags::Diffuse)) lcol = estimateOneDirectLight(random_generator, thread_id, chromatic_enabled, wavelength_dispersive, *hit, pwo, offs, ray_division, pixel_sampling_data);
@@ -268,9 +268,9 @@ std::pair<Rgb, float> PathIntegrator::integrate(Ray &ray, RandomGenerator &rando
 			}
 			col += path_col / n_samples;
 		}
-		const auto recursive_result = recursiveRaytrace(random_generator, color_layers, thread_id, ray_level + 1, chromatic_enabled, wavelength, ray, mat_bsdfs, *sp, wo, additional_depth, ray_division, pixel_sampling_data);
-		col += recursive_result.first;
-		alpha = recursive_result.second;
+		const auto [raytrace_col, raytrace_alpha] = recursiveRaytrace(random_generator, color_layers, thread_id, ray_level + 1, chromatic_enabled, wavelength, ray, mat_bsdfs, *sp, wo, additional_depth, ray_division, pixel_sampling_data);
+		col += raytrace_col;
+		alpha = raytrace_alpha;
 		if(color_layers)
 		{
 			generateCommonLayers(color_layers, *sp, mask_params_);

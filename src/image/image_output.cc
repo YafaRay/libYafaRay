@@ -138,22 +138,22 @@ void ImageOutput::flush(const RenderControl &render_control, const Timer &timer)
 		else
 		{
 			if(!directory.empty()) directory += "/";
-			for(const auto &image_layer : *image_layers_)
+			for(const auto &[layer_def, image_layer] : *image_layers_)
 			{
-				const std::string exported_image_name = image_layer.second.layer_.getExportedImageName();
-				if(image_layer.first == LayerDef::Combined)
+				const std::string exported_image_name = image_layer.layer_.getExportedImageName();
+				if(layer_def == LayerDef::Combined)
 				{
-					saveImageFile(image_path_, image_layer.first, format.get(), render_control, timer); //default imagehandler filename, when not using views nor passes and for reloading into Blender
+					saveImageFile(image_path_, layer_def, format.get(), render_control, timer); //default imagehandler filename, when not using views nor passes and for reloading into Blender
 					logger_.setImagePath(image_path_); //to show the image in the HTML log output
 				}
 
-				if(image_layer.first != LayerDef::Disabled && (image_layers_->size() > 1 || render_views_->size() > 1))
+				if(layer_def != LayerDef::Disabled && (image_layers_->size() > 1 || render_views_->size() > 1))
 				{
-					const std::string layer_type_name = LayerDef::getName(image_layer.first);
+					const std::string layer_type_name = LayerDef::getName(layer_def);
 					std::string fname_pass = directory + base_name + " [" + layer_type_name;
 					if(!exported_image_name.empty()) fname_pass += " - " + exported_image_name;
 					fname_pass += "]." + ext;
-					saveImageFile(fname_pass, image_layer.first, format.get(), render_control, timer);
+					saveImageFile(fname_pass, layer_def, format.get(), render_control, timer);
 				}
 			}
 		}
@@ -226,10 +226,10 @@ void ImageOutput::saveImageFileMultiChannel(const std::string &filename, Format 
 		Image::Position badge_image_position = Image::Position::Bottom;
 		if(badge_.getPosition() == Badge::Position::Top) badge_image_position = Image::Position::Top;
 		ImageLayers image_layers_badge;
-		for(const auto &image_layer : *image_layers_)
+		for(const auto &[layer_def, image_layer] : *image_layers_)
 		{
-			std::unique_ptr<Image> image_layer_badge(image_manipulation::getComposedImage(logger_, image_layer.second.image_.get(), badge_image.get(), badge_image_position));
-			image_layers_badge.set(image_layer.first, {std::move(image_layer_badge), image_layer.second.layer_});
+			std::unique_ptr<Image> image_layer_badge(image_manipulation::getComposedImage(logger_, image_layer.image_.get(), badge_image.get(), badge_image_position));
+			image_layers_badge.set(layer_def, {std::move(image_layer_badge), image_layer.layer_});
 		}
 		format->saveToFileMultiChannel(filename, image_layers_badge, color_space_, gamma_, alpha_premultiply_);
 	}

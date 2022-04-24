@@ -291,9 +291,9 @@ std::string Logger::printDurationSimpleFormat(double duration)
 void Logger::statsPrint(bool sorted) const
 {
 	std::cout << "name, index, value" << std::endl;
-	std::vector<std::pair<std::string, double>> vector_print(diagnostics_stats_.begin(), diagnostics_stats_.end());
-	if(sorted) std::sort(vector_print.begin(), vector_print.end());
-	for(auto &item : vector_print) std::cout << std::setprecision(std::numeric_limits<double>::digits10 + 1) << item.first << item.second << std::endl;
+	std::vector<std::pair<std::string, double>> stats_vector{diagnostics_stats_.begin(), diagnostics_stats_.end()};
+	if(sorted) std::sort(stats_vector.begin(), stats_vector.end());
+	for(auto &[stat_name, stat_value] : stats_vector) std::cout << std::setprecision(std::numeric_limits<double>::digits10 + 1) << stat_name << stat_value << std::endl;
 }
 
 void Logger::statsSaveToFile(const std::string &file_path, bool sorted) const
@@ -301,9 +301,9 @@ void Logger::statsSaveToFile(const std::string &file_path, bool sorted) const
 	File file(file_path);
 	std::stringstream ss;
 	ss << "name, index, value" << std::endl;
-	std::vector<std::pair<std::string, double>> vector_print(diagnostics_stats_.begin(), diagnostics_stats_.end());
-	if(sorted) std::sort(vector_print.begin(), vector_print.end());
-	for(const auto &item : vector_print) ss << std::setprecision(std::numeric_limits<double>::digits10 + 1) << item.first << item.second << std::endl;
+	std::vector<std::pair<std::string, double>> stats_vector{diagnostics_stats_.begin(), diagnostics_stats_.end()};
+	if(sorted) std::sort(stats_vector.begin(), stats_vector.end());
+	for(const auto &[stat_name, stat_value] : stats_vector) ss << std::setprecision(std::numeric_limits<double>::digits10 + 1) << stat_name << stat_value << std::endl;
 	file.save(ss.str(), true);
 }
 
@@ -312,7 +312,7 @@ void Logger::statsAdd(const std::string &stat_name, double stat_value, double in
 	std::stringstream ss;
 	ss << stat_name << ", " << std::fixed << std::setfill('0') << std::setw(std::numeric_limits<int>::digits10 + 1 + std::numeric_limits<double>::digits10 + 1) << std::setprecision(std::numeric_limits<double>::digits10) << index << ", ";
 #if !defined(_WIN32) || defined(__MINGW32__)
-	//Don't lock if building with Visual Studio because it cause hangs when executing YafaRay in Windows 7 for some weird reason!
+	//FIXME Don't lock if building with Visual Studio because it cause hangs when executing YafaRay in Windows 7 for some weird reason!
 	std::lock_guard<std::mutex> lock_guard(mutx_);
 #endif
 	diagnostics_stats_[ss.str()] += stat_value;

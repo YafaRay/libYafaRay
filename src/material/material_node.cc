@@ -59,7 +59,7 @@ void NodeMaterial::evalNodes(const SurfacePoint &sp, const std::vector<const Sha
 
 std::vector<const ShaderNode *> NodeMaterial::solveNodesOrder(const std::vector<const ShaderNode *> &roots, const std::map<std::string, std::unique_ptr<ShaderNode>> &shaders_table, Logger &logger)
 {
-	for(const auto &shader : shaders_table) shader.second->setId(0); //set all IDs = 0 to indicate "not tested yet"
+	for(const auto &[shader_name, shader] : shaders_table) shader->setId(0); //set all IDs = 0 to indicate "not tested yet"
 	std::vector<const ShaderNode *> color_nodes_sorted;
 	for(const auto &root : roots)
 	{
@@ -170,18 +170,18 @@ std::map<std::string, std::unique_ptr<ShaderNode>> NodeMaterial::loadNodes(const
 
 void NodeMaterial::parseNodes(const ParamMap &params, std::vector<const ShaderNode *> &root_nodes_list, std::map<std::string, const ShaderNode *> &root_nodes_map, const std::map<std::string, std::unique_ptr<ShaderNode>> &shaders_table, Logger &logger)
 {
-	for(auto &node : root_nodes_map)
+	for(auto &[shader_name, shader] : root_nodes_map)
 	{
 		std::string name;
-		if(params.getParam(node.first, name))
+		if(params.getParam(shader_name, name))
 		{
 			const auto node_found = shaders_table.find(name);
 			if(node_found != shaders_table.end())
 			{
-				node.second = node_found->second.get();
-				root_nodes_list.push_back(node.second);
+				shader = node_found->second.get();
+				root_nodes_list.push_back(shader);
 			}
-			else logger.logWarning("Shader node ", node.first, " '", name, "' does not exist!");
+			else logger.logWarning("Shader node ", shader_name, " '", name, "' does not exist!");
 		}
 	}
 }

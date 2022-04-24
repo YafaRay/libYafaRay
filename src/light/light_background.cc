@@ -156,10 +156,10 @@ Rgb BackgroundLight::emitPhoton(float s_1, float s_2, float s_3, float s_4, Ray 
 	sampleDir(s_3, s_4, ray.dir_, ipdf, true);
 	const Rgb pcol = background_->eval(ray.dir_, true);
 	ray.dir_ = -ray.dir_;
-	const auto coords{Vec3::createCoordsSystem(ray.dir_)};
+	const auto [u_vec, v_vec]{Vec3::createCoordsSystem(ray.dir_)};
 	float u, v;
 	Vec3::shirleyDisk(s_1, s_2, u, v);
-	const Vec3 offs{u * coords.first + v * coords.second};
+	const Vec3 offs{u * u_vec + v * v_vec};
 	ray.from_ = world_center_ + world_radius_ * (offs - ray.dir_);
 	return pcol * a_pdf_;
 }
@@ -169,10 +169,10 @@ Rgb BackgroundLight::emitSample(Vec3 &wo, LSample &s) const
 	sampleDir(s.s_1_, s.s_2_, wo, s.dir_pdf_, true);
 	const Rgb pcol = background_->eval(wo, true);
 	wo = -wo;
-	const auto coords{Vec3::createCoordsSystem(wo)};
+	const auto [u_vec, v_vec]{Vec3::createCoordsSystem(wo)};
 	float u, v;
 	Vec3::shirleyDisk(s.s_1_, s.s_2_, u, v);
-	const Vec3 offs{u * coords.first + v * coords.second};
+	const Vec3 offs{u * u_vec + v * v_vec};
 	s.sp_->p_ = world_center_ + world_radius_ * offs - world_radius_ * wo;
 	s.sp_->n_ = s.sp_->ng_ = wo;
 	s.area_pdf_ = 1.f;
