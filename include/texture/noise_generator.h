@@ -42,7 +42,7 @@ class NoiseGenerator
 	protected:
 		static const float *hashPnt(int x, int y, int z);
 		static const std::array<unsigned char, 512> hash_;
-		static const float hashpntf_[768];
+		static const std::array<float, 768> hashpntf_;
 };
 
 //---------------------------------------------------------------------------

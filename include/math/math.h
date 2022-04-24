@@ -109,8 +109,8 @@ inline float exp2(float x)
 	BitTwiddler ipart, fpart;
 	BitTwiddler expipart;
 
-	static constexpr float f_hi = 129.00000f;
-	static constexpr float f_lo = -126.99999f;
+	constexpr float f_hi = 129.00000f;
+	constexpr float f_lo = -126.99999f;
 
 	x = std::min(x, f_hi);
 	x = std::max(x, f_lo);
@@ -205,7 +205,7 @@ inline float sqrt(float a)
 #endif
 }
 
-inline float ldexp(float x, int a)
+inline constexpr float ldexp(float x, int a)
 {
 #ifdef FAST_MATH
 	//return x * fPow(2.0, a);
@@ -215,7 +215,7 @@ inline float ldexp(float x, int a)
 #endif
 }
 
-inline float sin(float x)
+inline constexpr float sin(float x)
 {
 #ifdef FAST_TRIG
 	if(x > math::mult_pi_by_2 || x < -math::mult_pi_by_2) x -= ((int) (x * static_cast<float>(math::div_1_by_2pi))) * static_cast<float>(math::mult_pi_by_2); //float modulo x % math::mult_pi_by_2
@@ -229,7 +229,7 @@ inline float sin(float x)
 	}
 
 	x = (static_cast<float>(math::div_4_by_pi * x)) - (static_cast<float>(math::div_4_by_squared_pi * x * std::abs(x)));
-	static constexpr float const_p = 0.225f;
+	constexpr float const_p = 0.225f;
 	const float result = const_p * (x * std::abs(x) - x) + x;
 	//Make sure that the function is in the valid range [-1.0,+1.0]
 	if(result <= -1.f) return -1.f;
@@ -240,7 +240,7 @@ inline float sin(float x)
 #endif
 }
 
-inline float cos(float x)
+inline constexpr float cos(float x)
 {
 #ifdef FAST_TRIG
 	return math::sin(x + static_cast<float>(math::div_pi_by_2));
@@ -249,7 +249,7 @@ inline float cos(float x)
 #endif
 }
 
-inline float acos(float x)
+inline constexpr float acos(float x)
 {
 	//checks if variable gets out of domain [-1.0,+1.0], so you get the range limit instead of NaN
 	if(x <= -1.f) return (static_cast<float>(math::num_pi));
@@ -257,7 +257,7 @@ inline float acos(float x)
 	else return std::acos(x);
 }
 
-inline float asin(float x)
+inline constexpr float asin(float x)
 {
 	//checks if variable gets out of domain [-1.0,+1.0], so you get the range limit instead of NaN
 	if(x <= -1.f) return (static_cast<float>(-math::div_pi_by_2));
@@ -306,20 +306,20 @@ inline int ceilToInt(double val)
 #endif
 }
 
-inline double roundFloatPrecision(double val, double precision) //To round, for example 3.2384764 to 3.24 use precision 0.01
+inline constexpr double roundFloatPrecision(double val, double precision) //To round, for example 3.2384764 to 3.24 use precision 0.01
 {
 	if(precision <= 0.0) return 0.0;
 	else return std::round(val / precision) * precision;
 }
 
 template<typename T>
-inline bool isValid(const T &value)	//To check a floating point number is not a NaN for example, even while using --fast-math compile flag
+inline constexpr bool isValid(const T &value)	//To check a floating point number is not a NaN for example, even while using --fast-math compile flag
 {
 	return (value >= std::numeric_limits<T>::lowest() && value <= std::numeric_limits<T>::max());
 }
 
 template<typename T>
-inline T mod(const T &a, const T &b)
+inline constexpr T mod(const T &a, const T &b)
 {
 	const T n = static_cast<T>(a / b);
 	T result = a - n * b;
@@ -329,13 +329,13 @@ inline T mod(const T &a, const T &b)
 
 //! Just a "modulo 1" addition, assumed that both values are in range [0;1]
 template<typename T>
-inline T addMod1(const T &a, const T &b)
+inline constexpr T addMod1(const T &a, const T &b)
 {
 	const T s = a + b;
 	return s > 1 ? s - 1 : s;
 }
 
-inline int nextPrime(int last_prime)
+inline constexpr int nextPrime(int last_prime)
 {
 	int new_prime = last_prime + (last_prime & 1) + 1;
 	for(;;)

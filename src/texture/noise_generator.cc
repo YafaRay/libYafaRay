@@ -25,7 +25,7 @@ BEGIN_YAFARAY
 
 // needed for voronoi
 
-const float NoiseGenerator::hashpntf_[768]
+constexpr std::array<float, 768> NoiseGenerator::hashpntf_
 {
 	0.536902f, 0.020915f, 0.501445f, 0.216316f, 0.517036f, 0.822466f, 0.965315f,
 	0.377313f, 0.678764f, 0.744545f, 0.097731f, 0.396357f, 0.247202f, 0.520897f,
@@ -566,7 +566,7 @@ VoronoiNoiseGenerator::VoronoiNoiseGenerator(VoronoiType vt, DMetricType dm, flo
 
 const float *NoiseGenerator::hashPnt(int x, int y, int z)
 {
-	return hashpntf_ + 3 * hash_[(hash_[(hash_[z & 255] + y) & 255] + x) & 255];
+	return hashpntf_.data() + 3 * hash_[(hash_[(hash_[z & 255] + y) & 255] + x) & 255];
 }
 
 std::pair<std::array<float, 4>, std::array<Point3, 4>> VoronoiNoiseGenerator::getFeatures(const Point3 &pt) const
