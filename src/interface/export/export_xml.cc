@@ -321,7 +321,7 @@ void ExportXml::setupRender() noexcept
 	file_ << "</render>\n";
 }
 
-void ExportXml::render(std::shared_ptr<ProgressBar> progress_bar) noexcept
+void ExportXml::render(const std::shared_ptr<ProgressBar> &progress_bar) noexcept
 {
 	file_ << "</scene>\n";
 	file_.flush();

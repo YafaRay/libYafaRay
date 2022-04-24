@@ -107,7 +107,7 @@ class Interface
 		virtual void clearOutputs() noexcept;
 		virtual void clearAll() noexcept;
 		virtual void setupRender() noexcept;
-		virtual void render(std::shared_ptr<ProgressBar> progress_bar) noexcept; //!< render the scene...
+		virtual void render(const std::shared_ptr<ProgressBar> &progress_bar) noexcept; //!< render the scene...
 		virtual void defineLayer() noexcept;
 		virtual void cancel() noexcept;
 

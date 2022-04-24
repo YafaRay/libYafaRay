@@ -644,7 +644,7 @@ bool Scene::setupSceneRenderParams(Scene &scene, const ParamMap &params)
 	return true;
 }
 
-bool Scene::setupSceneProgressBar(Scene &scene, std::shared_ptr<ProgressBar> progress_bar)
+bool Scene::setupSceneProgressBar(Scene &scene, const std::shared_ptr<ProgressBar> &progress_bar)
 {
 	if(logger_.isDebug())
 	{

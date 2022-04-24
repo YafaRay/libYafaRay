@@ -330,9 +330,9 @@ void Interface::setupRender() noexcept
 	scene_->setupSceneRenderParams(*scene_, *params_);
 }
 
-void Interface::render(std::shared_ptr<ProgressBar> progress_bar) noexcept
+void Interface::render(const std::shared_ptr<ProgressBar> &progress_bar) noexcept
 {
-	if(!scene_->setupSceneProgressBar(*scene_, std::move(progress_bar))) return;
+	if(!scene_->setupSceneProgressBar(*scene_, progress_bar)) return;
 	scene_->render();
 }
 
