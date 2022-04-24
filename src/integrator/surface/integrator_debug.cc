@@ -65,9 +65,7 @@ bool DebugIntegrator::preprocess(ImageFilm *image_film, const RenderView *render
 
 std::pair<Rgb, float> DebugIntegrator::integrate(Ray &ray, RandomGenerator &random_generator, ColorLayers *color_layers, int thread_id, int ray_level, bool chromatic_enabled, float wavelength, int additional_depth, const RayDivision &ray_division, const PixelSamplingData &pixel_sampling_data) const
 {
-	std::unique_ptr<const SurfacePoint> sp;
-	float intersect_tmax;
-	std::tie(sp, intersect_tmax) = accelerator_->intersect(ray, camera_);
+	const auto [sp, tmax] = accelerator_->intersect(ray, camera_);
 	if(sp)
 	{
 		Rgb col {0.f};

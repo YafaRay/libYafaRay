@@ -609,9 +609,9 @@ std::pair<Rgb, float> SppmIntegrator::integrate(Ray &ray, RandomGenerator &rando
 GatherInfo SppmIntegrator::traceGatherRay(Ray &ray, HitPoint &hp, RandomGenerator &random_generator, ColorLayers *color_layers, int thread_id, int ray_level, bool chromatic_enabled, float wavelength, const RayDivision &ray_division, const PixelSamplingData &pixel_sampling_data)
 {
 	GatherInfo g_info;
-	std::unique_ptr<const SurfacePoint> sp;
 	float alpha = transp_background_ ? 0.f : 1.f;
-	std::tie(sp, ray.tmax_) = accelerator_->intersect(ray, camera_);
+	const auto [sp, tmax] = accelerator_->intersect(ray, camera_);
+	ray.tmax_ = tmax;
 	if(sp)
 	{
 		int additional_depth = 0;

@@ -225,9 +225,7 @@ std::pair<Rgb, float> BidirectionalIntegrator::integrate(Ray &ray, RandomGenerat
 {
 	Rgb col {0.f};
 	float alpha = 1.f;
-	std::unique_ptr<const SurfacePoint> sp;
-	float intersect_tmax;
-	std::tie(sp, intersect_tmax) = accelerator_->intersect(ray, camera_); //FIXME: should we change directly ray.tmax_ here or not?
+	const auto [sp, tmax] = accelerator_->intersect(ray, camera_); //FIXME: should we change directly ray.tmax_ here or not?
 	if(sp)
 	{
 		const Vec3 wo{-ray.dir_};
@@ -392,8 +390,8 @@ int BidirectionalIntegrator::createPath(RandomGenerator &random_generator, const
 	{
 		path.push_back({});
 		PathVertex &v = path[n_vert];
-		std::unique_ptr<const SurfacePoint> sp;
-		std::tie(sp, ray.tmax_) = accelerator_->intersect(ray, camera_);
+		const auto [sp, tmax] = accelerator_->intersect(ray, camera_);
+		ray.tmax_ = tmax;
 		if(!sp) break;
 		v.sp_ = *sp;
 		const PathVertex &v_prev = path[n_vert - 1];

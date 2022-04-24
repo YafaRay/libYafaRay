@@ -124,8 +124,8 @@ std::pair<Rgb, float> PathIntegrator::integrate(Ray &ray, RandomGenerator &rando
 	Rgb col {0.f};
 	float alpha = 1.f;
 	float w = 0.f;
-	std::unique_ptr<const SurfacePoint> sp;
-	std::tie(sp, ray.tmax_) = accelerator_->intersect(ray, camera_);
+	const auto [sp, tmax] = accelerator_->intersect(ray, camera_);
+	ray.tmax_ = tmax;
 	if(sp)
 	{
 		const BsdfFlags &mat_bsdfs = sp->mat_data_->bsdf_flags_;
