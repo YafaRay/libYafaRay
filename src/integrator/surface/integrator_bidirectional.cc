@@ -37,10 +37,6 @@
 
 BEGIN_YAFARAY
 
-constexpr int BidirectionalIntegrator::max_path_length_;
-constexpr int BidirectionalIntegrator::max_path_eval_length_;
-constexpr int BidirectionalIntegrator::min_path_length_;
-
 /*  conventions:
     y_0 := point on light source
     z_0 := point on camera lens

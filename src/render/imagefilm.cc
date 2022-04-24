@@ -38,11 +38,7 @@
 
 BEGIN_YAFARAY
 
-constexpr int ImageFilm::filter_table_size_;
-constexpr int ImageFilm::max_filter_size_;
-
 typedef float FilterFunc_t(float dx, float dy);
-
 
 ImageFilm * ImageFilm::factory(Logger &logger, const ParamMap &params, Scene *scene)
 {

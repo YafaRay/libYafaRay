@@ -36,8 +36,6 @@
 
 BEGIN_YAFARAY
 
-constexpr int SppmIntegrator::n_max_gather_;
-
 SppmIntegrator::SppmIntegrator(RenderControl &render_control, Logger &logger, unsigned int d_photons, int passnum, bool transp_shad, int shadow_depth) : MonteCarloIntegrator(render_control, logger)
 {
 	n_photons_ = d_photons;

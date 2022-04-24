@@ -42,8 +42,6 @@
 
 BEGIN_YAFARAY
 
-constexpr int MonteCarloIntegrator::loffs_delta_;
-
 //Constructor and destructor defined here to avoid issues with std::unique_ptr<Pdf1D> being Pdf1D incomplete in the header (forward declaration)
 MonteCarloIntegrator::MonteCarloIntegrator(RenderControl &render_control, Logger &logger) : TiledIntegrator(render_control, logger)
 {

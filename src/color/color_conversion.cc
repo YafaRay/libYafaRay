@@ -20,9 +20,4 @@
 
 BEGIN_YAFARAY
 
-constexpr std::array<float, 9> ColorConv::cie_rgb_e_;
-constexpr std::array<float, 9> ColorConv::cie_rgb_d_50_;
-constexpr std::array<float, 9> ColorConv::s_rgb_d_65_;
-constexpr std::array<float, 9> ColorConv::s_rgb_d_50_;
-
 END_YAFARAY

@@ -33,12 +33,6 @@
 
 BEGIN_YAFARAY
 
-constexpr int BackgroundLight::max_vsamples_;
-constexpr int BackgroundLight::max_usamples_;
-constexpr int BackgroundLight::min_samples_;
-constexpr float BackgroundLight::smpl_off_;
-constexpr float BackgroundLight::sigma_;
-
 BackgroundLight::BackgroundLight(Logger &logger, int sampl, bool invert_intersect, bool light_enabled, bool cast_shadows):
 		Light(logger, Light::Flags::None), samples_(sampl), abs_inter_(invert_intersect)
 {
