@@ -611,6 +611,7 @@ bool MonteCarloIntegrator::createCausticMap()
 		logger_.logParams(getName(), ": Shooting ", n_caus_photons_, " photons across ", num_threads_photons_, " threads (", (n_caus_photons_ / num_threads_photons_), " photons/thread)");
 
 		std::vector<std::thread> threads;
+		threads.reserve(num_threads_photons_);
 		for(int i = 0; i < num_threads_photons_; ++i) threads.emplace_back(&MonteCarloIntegrator::causticWorker, this, std::ref(curr), i, light_power_d_caustic.get(), lights_caustic, pb_step);
 		for(auto &t : threads) t.join();
 
