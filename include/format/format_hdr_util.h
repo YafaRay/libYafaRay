@@ -100,7 +100,7 @@ inline Rgba RgbePixel::getRgba() const
 	if(e_)
 	{
 		/*nonzero pixel*/
-		const float f = math::ldexp(1.f, e_ - (128 + 8));
+		const float f = std::ldexp(1.f, e_ - (128 + 8));
 		return {f * r_, f * g_, f * b_, 1.f};
 	}
 	return {0.f, 0.f, 0.f, 1.0f};

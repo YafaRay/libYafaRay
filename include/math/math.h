@@ -200,16 +200,6 @@ inline float sqrt(float a)
 #endif
 }
 
-inline float ldexp(float x, int a)
-{
-#ifdef FAST_MATH
-	//return x * fPow(2.0, a);
-	return std::ldexp(x, a);
-#else
-	return std::ldexp(x, a);
-#endif
-}
-
 inline float sin(float x)
 {
 #ifdef FAST_TRIG

@@ -206,7 +206,7 @@ class Rgbe final
 			if(rgbe_[3])
 			{
 				/*nonzero pixel*/
-				const float f = math::ldexp(1.f, rgbe_[3] - (128 + 8));
+				const float f = std::ldexp(1.f, rgbe_[3] - (128 + 8));
 				return {rgbe_[0] * f, rgbe_[1] * f, rgbe_[2] * f};
 			}
 			else return {0.f, 0.f, 0.f};
