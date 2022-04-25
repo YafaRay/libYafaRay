@@ -181,7 +181,7 @@ void PhotonIntegrator::diffuseWorker(PreGatherData &pgdat, unsigned int &total_p
 				if(!caustic_photon)
 				{
 					Photon np(wi, hit_curr->p_, pcol);
-					local_diffuse_photons.push_back(np);
+					local_diffuse_photons.emplace_back(np);
 				}
 				// create entry for radiance photon:
 				// don't forget to choose subset only, face normal forward; geometric vs. smooth normal?
@@ -191,7 +191,7 @@ void PhotonIntegrator::diffuseWorker(PreGatherData &pgdat, unsigned int &total_p
 					RadData rd(hit_curr->p_, n);
 					rd.refl_ = hit_curr->getReflectivity(BsdfFlags::Diffuse | BsdfFlags::Glossy | BsdfFlags::Reflect, true, 0.f, camera_);
 					rd.transm_ = hit_curr->getReflectivity(BsdfFlags::Diffuse | BsdfFlags::Glossy | BsdfFlags::Transmit, true, 0.f, camera_);
-					local_rad_points.push_back(rd);
+					local_rad_points.emplace_back(rd);
 				}
 			}
 			// need to break in the middle otherwise we scatter the photon and then discard it => redundant
@@ -567,7 +567,7 @@ bool PhotonIntegrator::preprocess(ImageFilm *image_film, const RenderView *rende
 		{
 			if(rad_point.use_)
 			{
-				cleaned.push_back(rad_point);
+				cleaned.emplace_back(rad_point);
 				const EliminatePhoton elim_proc(rad_point.normal_);
 				float maxrad = 0.01f * ds_radius_; // 10% of diffuse search radius
 				r_tree->lookup(rad_point.pos_, elim_proc, maxrad);

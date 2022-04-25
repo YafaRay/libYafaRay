@@ -187,8 +187,8 @@ bool LayerNode::configInputs(Logger &logger, const ParamMap &params, const NodeF
 std::vector<const ShaderNode *> LayerNode::getDependencies() const
 {
 	std::vector<const ShaderNode *> dependencies;
-	if(input_) dependencies.push_back(input_);
-	if(upper_layer_) dependencies.push_back(upper_layer_);
+	if(input_) dependencies.emplace_back(input_);
+	if(upper_layer_) dependencies.emplace_back(upper_layer_);
 	return dependencies;
 }
 

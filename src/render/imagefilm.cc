@@ -970,7 +970,7 @@ void ImageFilm::imageFilmLoadAllInFolder(RenderControl &render_control)
 			//if(logger_.isDebug()) Y_DEBUG PR(baseImageFileName) PR(fileName) PR(base) PR(ext) PR(base_rfind_result");
 			if(ext == "film" && base_rfind_result == 0)
 			{
-				film_file_paths_list.push_back(dir + "//" + file_name);
+				film_file_paths_list.emplace_back(dir + "//" + file_name);
 				//if(logger_.isDebug())logger_.logDebug("Added: " << dir + "//" + fileName);
 			}
 		}

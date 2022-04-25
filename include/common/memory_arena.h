@@ -50,7 +50,7 @@ class MemoryArena
 			if(cur_block_pos_ + sz > block_size_)
 			{
 				// Get new block of memory for _MemoryArena_
-				used_blocks_.push_back(current_block_);
+				used_blocks_.emplace_back(current_block_);
 				if(available_blocks_.size() && sz <= block_size_)
 				{
 					current_block_ = available_blocks_.back();

@@ -132,7 +132,7 @@ struct IrregularSpectrum final
 {
 	IrregularSpectrum(const float *amps, const float *wl, int n)
 	{
-		for(int i = 0; i < n; ++i) { wavelen_.push_back(wl[i]); amplitude_.push_back(amps[i]); }
+		for(int i = 0; i < n; ++i) { wavelen_.emplace_back(wl[i]); amplitude_.emplace_back(amps[i]); }
 	}
 	float sample(float wl);
 	std::vector<float> wavelen_;

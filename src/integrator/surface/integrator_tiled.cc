@@ -58,7 +58,7 @@ void TiledIntegrator::renderWorker(ThreadControl *control, int thread_id, int sa
 		renderTile(a, samples, offset, adaptive, thread_id, aa_pass);
 
 		std::unique_lock<std::mutex> lk(control->m_);
-		control->areas_.push_back(a);
+		control->areas_.emplace_back(a);
 		control->c_.notify_one();
 
 	}

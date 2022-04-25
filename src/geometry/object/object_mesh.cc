@@ -105,7 +105,7 @@ const std::vector<const Primitive *> MeshObject::getPrimitives() const
 {
 	std::vector<const Primitive *> primitives;
 	primitives.reserve(faces_.size());
-	for(const auto &face : faces_) primitives.push_back(face.get());
+	for(const auto &face : faces_) primitives.emplace_back(face.get());
 	return primitives;
 }
 
@@ -113,7 +113,7 @@ void MeshObject::addNormal(const Vec3 &n)
 {
 	const size_t points_size = points_.size();
 	if(normals_.size() < points_size) normals_.reserve(points_size);
-	normals_.push_back(n);
+	normals_.emplace_back(n);
 }
 
 float MeshObject::getAngleSine(const std::array<int, 3> &triangle_indices, const std::vector<Point3> &vertices)
@@ -155,8 +155,8 @@ bool MeshObject::smoothNormals(Logger &logger, float angle)
 			const size_t num_indices = vert_indices.size();
 			for(size_t relative_vertex = 0; relative_vertex < num_indices; ++relative_vertex)
 			{
-				points_angles_sines[vert_indices[relative_vertex]].push_back(getAngleSine({vert_indices[relative_vertex], vert_indices[(relative_vertex + 1) % num_indices], vert_indices[(relative_vertex + 2) % num_indices]}, points_));
-				points_faces[vert_indices[relative_vertex]].push_back(face.get());
+				points_angles_sines[vert_indices[relative_vertex]].emplace_back(getAngleSine({vert_indices[relative_vertex], vert_indices[(relative_vertex + 1) % num_indices], vert_indices[(relative_vertex + 2) % num_indices]}, points_));
+				points_faces[vert_indices[relative_vertex]].emplace_back(face.get());
 			}
 		}
 		for(size_t point_id = 0; point_id < points_size; ++point_id)
@@ -204,9 +204,9 @@ bool MeshObject::smoothNormals(Logger &logger, float angle)
 					if(normal_idx == -1)
 					{
 						normal_idx = normals_.size();
-						vertex_normals.push_back(vertex_normal);
-						vertex_normals_indices.push_back(normal_idx);
-						normals_.push_back(vertex_normal);
+						vertex_normals.emplace_back(vertex_normal);
+						vertex_normals_indices.emplace_back(normal_idx);
+						normals_.emplace_back(vertex_normal);
 					}
 				}
 				// set vertex normal to idx

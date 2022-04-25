@@ -44,7 +44,7 @@ void HashGrid::clear()
 
 void HashGrid::pushPhoton(Photon &p)
 {
-	photons_.push_back(p);
+	photons_.emplace_back(p);
 }
 
 void HashGrid::updateGrid()

@@ -412,7 +412,7 @@ void SppmIntegrator::photonWorker(unsigned int &total_photons_shot, int thread_i
 				if(b_hashgrid_) photon_grid_.pushPhoton(np);
 				else
 				{
-					local_diffuse_photons.push_back(np);
+					local_diffuse_photons.emplace_back(np);
 				}
 				nd_photon_stored++;
 			}
@@ -424,7 +424,7 @@ void SppmIntegrator::photonWorker(unsigned int &total_photons_shot, int thread_i
 				if(b_hashgrid_) photon_grid_.pushPhoton(np);
 				else
 				{
-					local_caustic_photons.push_back(np);
+					local_caustic_photons.emplace_back(np);
 				}
 				nd_photon_stored++;
 			}
@@ -1049,7 +1049,7 @@ void SppmIntegrator::initializePpm()
 		hp.radius_2_ = (initial_radius * initial_factor_) * (initial_radius * initial_factor_);
 		hp.constant_randiance_ = Rgba(0.f);
 		hp.radius_setted_ = false;	   // the flag used for IRE
-		hit_points_.push_back(hp);
+		hit_points_.emplace_back(hp);
 	}
 	if(b_hashgrid_) photon_grid_.setParm(initial_radius * 2.f, n_photons_, scene_bound_);
 }

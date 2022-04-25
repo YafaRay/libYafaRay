@@ -116,7 +116,7 @@ class PhotonMap final
 		void setNumThreadsPkDtree(int threads) { threads_pkd_tree_ = threads; }
 		int nPaths() const { return paths_; }
 		int nPhotons() const { return photons_.size(); }
-		void pushPhoton(Photon &p) { photons_.push_back(p); updated_ = false; }
+		void pushPhoton(Photon &p) { photons_.emplace_back(p); updated_ = false; }
 		void swapVector(std::vector<Photon> &vec) { photons_.swap(vec); updated_ = false; }
 		void appendVector(std::vector<Photon> &vec, unsigned int curr) { photons_.insert(std::end(photons_), std::begin(vec), std::end(vec)); updated_ = false; paths_ += curr;}
 		void reserveMemory(size_t num_photons) { photons_.reserve(num_photons); }

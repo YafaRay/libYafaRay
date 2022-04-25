@@ -34,7 +34,7 @@ std::vector<const ShaderNode *> NodeMaterial::recursiveSolver(const ShaderNode *
 		const std::vector<const ShaderNode *> dependencies_sorted = recursiveSolver(dependency_node);
 		sorted_nodes.insert(sorted_nodes.end(), dependencies_sorted.begin(), dependencies_sorted.end());
 	}
-	sorted_nodes.push_back(node);
+	sorted_nodes.emplace_back(node);
 	return sorted_nodes;
 }
 
@@ -87,7 +87,7 @@ std::vector<const ShaderNode *> NodeMaterial::getNodeList(const ShaderNode *root
 	std::vector<const ShaderNode *> nodes;
 	for(const auto &node : nodes_sorted)
 	{
-		if(in_tree.find(node) != in_tree.end()) nodes.push_back(node);
+		if(in_tree.find(node) != in_tree.end()) nodes.emplace_back(node);
 	}
 	return nodes;
 }
@@ -179,7 +179,7 @@ void NodeMaterial::parseNodes(const ParamMap &params, std::vector<const ShaderNo
 			if(node_found != shaders_table.end())
 			{
 				shader = node_found->second.get();
-				root_nodes_list.push_back(shader);
+				root_nodes_list.emplace_back(shader);
 			}
 			else logger.logWarning("Shader node ", shader_name, " '", name, "' does not exist!");
 		}

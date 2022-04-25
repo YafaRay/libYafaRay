@@ -479,9 +479,9 @@ bool MixNode::configInputs(Logger &logger, const ParamMap &params, const NodeFin
 std::vector<const ShaderNode *> MixNode::getDependencies() const
 {
 	std::vector<const ShaderNode *> dependencies;
-	if(input_1_) dependencies.push_back(input_1_);
-	if(input_2_) dependencies.push_back(input_2_);
-	if(factor_) dependencies.push_back(factor_);
+	if(input_1_) dependencies.emplace_back(input_1_);
+	if(input_2_) dependencies.emplace_back(input_2_);
+	if(factor_) dependencies.emplace_back(factor_);
 	return dependencies;
 }
 

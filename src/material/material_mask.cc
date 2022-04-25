@@ -153,7 +153,7 @@ const Material *MaskMaterial::factory(Logger &logger, const Scene &scene, const 
 		if(params.getParam("mask", mask))
 		{
 			const auto &i = mat->nodes_map_.find(mask);
-			if(i != mat->nodes_map_.end()) { mat->mask_ = i->second.get(); root_nodes_list.push_back(mat->mask_); }
+			if(i != mat->nodes_map_.end()) { mat->mask_ = i->second.get(); root_nodes_list.emplace_back(mat->mask_); }
 			else
 			{
 				logger.logError("MaskMat: Mask shader node '", mask, "' does not exist!");

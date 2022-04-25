@@ -85,7 +85,7 @@ std::vector<const Light *> RenderView::getLightsVisible() const
 	std::vector<const Light *> result;
 	for(const auto &[light_name, light] : lights_)
 	{
-		if(light->lightEnabled() && !light->photonOnly()) result.push_back(light);
+		if(light->lightEnabled() && !light->photonOnly()) result.emplace_back(light);
 	}
 	return result;
 }
@@ -95,7 +95,7 @@ std::vector<const Light *> RenderView::getLightsEmittingCausticPhotons() const
 	std::vector<const Light *> result;
 	for(const auto &[light_name, light] : lights_)
 	{
-		if(light->lightEnabled() && light->shootsCausticP()) result.push_back(light);
+		if(light->lightEnabled() && light->shootsCausticP()) result.emplace_back(light);
 	}
 	return result;
 }
@@ -105,7 +105,7 @@ std::vector<const Light *> RenderView::getLightsEmittingDiffusePhotons() const
 	std::vector<const Light *> result;
 	for(const auto &[light_name, light] : lights_)
 	{
-		if(light->lightEnabled() && light->shootsDiffuseP()) result.push_back(light);
+		if(light->lightEnabled() && light->shootsDiffuseP()) result.emplace_back(light);
 	}
 	return result;
 }

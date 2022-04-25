@@ -384,7 +384,7 @@ int BidirectionalIntegrator::createPath(RandomGenerator &random_generator, const
 	int n_vert = 1;
 	while(n_vert < max_len)
 	{
-		path.push_back({});
+		path.emplace_back();
 		PathVertex &v = path[n_vert];
 		const auto [sp, tmax] = accelerator_->intersect(ray, camera_);
 		ray.tmax_ = tmax;

@@ -42,12 +42,12 @@ AcceleratorSimpleTest::AcceleratorSimpleTest(Logger &logger, const std::vector<c
 		if(obj_bound_it == objects_data_.end())
 		{
 			objects_data_[object].bound_ = primitive_bound;
-			objects_data_[object].primitives_.push_back(primitive);
+			objects_data_[object].primitives_.emplace_back(primitive);
 		}
 		else
 		{
 			obj_bound_it->second.bound_ = Bound(obj_bound_it->second.bound_, primitive_bound);
-			obj_bound_it->second.primitives_.push_back(primitive);
+			obj_bound_it->second.primitives_.emplace_back(primitive);
 		}
 		bound_ = Bound(bound_, primitive_bound);
 	}

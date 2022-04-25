@@ -66,7 +66,7 @@ inline std::vector<std::string> tokenize(const std::string &str, const std::stri
 
 	while(std::string::npos != pos || std::string::npos != last_pos)
 	{
-		result.push_back(str.substr(last_pos, pos - last_pos));
+		result.emplace_back(str.substr(last_pos, pos - last_pos));
 		last_pos = str.find_first_not_of(delimiter, pos);
 		pos = str.find_first_of(delimiter, last_pos);
 	}

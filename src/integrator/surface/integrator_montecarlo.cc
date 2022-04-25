@@ -489,7 +489,7 @@ void MonteCarloIntegrator::causticWorker(unsigned int &total_photons_shot, int t
 				if(caustic_photon)
 				{
 					Photon np(wi, hit_curr->p_, pcol);
-					local_caustic_photons.push_back(np);
+					local_caustic_photons.emplace_back(np);
 				}
 			}
 			// need to break in the middle otherwise we scatter the photon and then discard it => redundant

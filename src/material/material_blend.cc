@@ -326,7 +326,7 @@ const Material *BlendMaterial::factory(Logger &logger, const Scene &scene, const
 			{
 				mat->blend_shader_ = i->second.get();
 				mat->recalc_blend_ = true;
-				root_nodes_list.push_back(mat->blend_shader_);
+				root_nodes_list.emplace_back(mat->blend_shader_);
 			}
 			else
 			{

@@ -278,7 +278,7 @@ std::vector<std::string> File::listFiles(const std::string &directory)
 		{
 			if(!(findData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) && !(findData.dwFileAttributes & FILE_ATTRIBUTE_DEVICE))
 			{
-				files.push_back(string::wutf16LeToUtf8(std::wstring(findData.cFileName)));
+				files.emplace_back(string::wutf16LeToUtf8(std::wstring(findData.cFileName)));
 			}
 		}
 		while(::FindNextFileW(hFind, &findData) != 0);

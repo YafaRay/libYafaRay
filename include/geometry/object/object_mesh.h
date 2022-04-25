@@ -57,10 +57,10 @@ class MeshObject : public ObjectBasic
 		bool hasUv() const { return !uv_values_.empty(); }
 		bool isSmooth() const { return is_smooth_; }
 		bool hasNormalsExported() const override { return !normals_.empty(); }
-		void addPoint(const Point3 &p) override { points_.push_back(p); }
-		void addOrcoPoint(const Point3 &p) override { orco_points_.push_back(p); }
+		void addPoint(const Point3 &p) override { points_.emplace_back(p); }
+		void addOrcoPoint(const Point3 &p) override { orco_points_.emplace_back(p); }
 		void addNormal(const Vec3 &n) override;
-		int addUvValue(const Uv &uv) override { uv_values_.push_back(uv); return static_cast<int>(uv_values_.size()) - 1; }
+		int addUvValue(const Uv &uv) override { uv_values_.emplace_back(uv); return static_cast<int>(uv_values_.size()) - 1; }
 		void setSmooth(bool smooth) override { is_smooth_ = smooth; }
 		bool smoothNormals(Logger &logger, float angle) override;
 		//int convertToBezierControlPoints();

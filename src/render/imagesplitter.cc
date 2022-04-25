@@ -44,7 +44,7 @@ ImageSplitter::ImageSplitter(int w, int h, int x_0, int y_0, int bsize, TilesOrd
 			r.y_ = y_0 + j * blocksize_;
 			r.w_ = std::min(blocksize_, x_0 + w - r.x_);
 			r.h_ = std::min(blocksize_, y_0 + h - r.y_);
-			regions_raw.push_back(r);
+			regions_raw.emplace_back(r);
 		}
 	}
 
@@ -63,7 +63,7 @@ ImageSplitter::ImageSplitter(int w, int h, int x_0, int y_0, int bsize, TilesOrd
 	{
 		if(nthreads == 1 || blocksize_ <= 4 || rn < regions_raw.size() - 2 * nthreads)	//If blocksize is more than 4, resubdivide the last (2 x nunber of threads) so their block size is progressively smaller (better CPU/thread usage in the last tiles to avoid/mitigate having one big tile at the end with only 1 CPU thread)
 		{
-			regions_.push_back(regions_raw[rn]);
+			regions_.emplace_back(regions_raw[rn]);
 		}
 		else
 		{
@@ -83,7 +83,7 @@ ImageSplitter::ImageSplitter(int w, int h, int x_0, int y_0, int bsize, TilesOrd
 					r.y_ = regions_raw[rn].y_ + j * blocksize_2;
 					r.w_ = std::min(blocksize_2, regions_raw[rn].x_ + regions_raw[rn].w_ - r.x_);
 					r.h_ = std::min(blocksize_2, regions_raw[rn].y_ + regions_raw[rn].h_ - r.y_);
-					regions_subdivided.push_back(r);
+					regions_subdivided.emplace_back(r);
 				}
 			}
 		}
