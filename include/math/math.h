@@ -75,13 +75,8 @@ template<typename FloatingPointType> inline constexpr FloatingPointType radToDeg
 	return rad * math::div_180_by_pi;
 }
 
-//#if ( defined(__i386__) || defined(_M_IX86) || defined(_X86_) )
-//#define FAST_INT 1
-static constexpr double doublemagicroundeps = .5 - 1.4e-11;
-//almost .5f = .5f - 1e^(number of exp bit)
-static constexpr double doublemagic = 6755399441055744.0;
-//2^52 * 1.5, uses limited precision to floor
-//#endif
+static constexpr double doublemagicroundeps = .5 - 1.4e-11; //almost .5f = .5f - 1e^(number of exp bit)
+static constexpr double doublemagic = 6755399441055744.0; //2^52 * 1.5, uses limited precision to floor
 
 // fast base-2 van der Corput, Sobel, and Larcher & Pillichshammer sequences,
 // all from "Efficient Multidimensional Sampling" by Alexander Keller
@@ -267,43 +262,22 @@ inline constexpr float asin(float x)
 
 inline int roundToInt(double val)
 {
-#ifdef FAST_INT
-	val += math::doublemagic;
-	return static_cast<long *>(&val)[0];
-#else
-	//	#warning "using slow rounding"
 	return static_cast<int>(val + math::doublemagicroundeps);
-#endif
 }
 
 inline int floatToInt(double val)
 {
-#ifdef FAST_INT
-	return (val < 0) ? math::roundToInt(val + math::doublemagicroundeps) : (val - math::doublemagicroundeps);
-#else
-	//	#warning "using slow rounding"
 	return static_cast<int>(val);
-#endif
 }
 
 inline int floorToInt(double val)
 {
-#ifdef FAST_INT
-	return math::roundToInt(val - math::doublemagicroundeps);
-#else
-	//	#warning "using slow rounding"
 	return static_cast<int>(std::floor(val));
-#endif
 }
 
 inline int ceilToInt(double val)
 {
-#ifdef FAST_INT
-	return math::roundToInt(val + math::doublemagicroundeps);
-#else
-	//	#warning "using slow rounding"
 	return static_cast<int>(std::ceil(val));
-#endif
 }
 
 inline constexpr double roundFloatPrecision(double val, double precision) //To round, for example 3.2384764 to 3.24 use precision 0.01
