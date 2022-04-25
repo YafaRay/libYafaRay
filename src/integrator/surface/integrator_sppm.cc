@@ -253,7 +253,7 @@ bool SppmIntegrator::renderTile(const RenderArea &a, int n_samples, int offset, 
 
 				//radiance estimate
 				//colorPasses.probe_mult(PASS_INT_DIFFUSE_INDIRECT, 1.f / (hp.radius2 * num_pi * totalnPhotons));
-				const Rgba col_indirect = hp.acc_photon_flux_ / (hp.radius_2_ * math::num_pi * totaln_photons_);
+				const Rgba col_indirect = hp.acc_photon_flux_ / (hp.radius_2_ * math::num_pi<> * totaln_photons_);
 				Rgba color = col_indirect;
 				color += g_info.constant_randiance_;
 				color.a_ = g_info.constant_randiance_.a_; //the alpha value is hold in the constantRadiance variable

@@ -38,7 +38,7 @@ SunLight::SunLight(Logger &logger, Vec3 dir, const Rgb &col, float inte, float a
 	std::tie(du_, dv_) = Vec3::createCoordsSystem(dir);
 	if(angle > 80.f) angle = 80.f;
 	cos_angle_ = math::cos(math::degToRad(angle));
-	invpdf_ = (math::mult_pi_by_2 * (1.f - cos_angle_));
+	invpdf_ = math::mult_pi_by_2<> * (1.f - cos_angle_);
 	pdf_ = 1.0 / invpdf_;
 	pdf_ = std::min(pdf_, math::sqrt(std::numeric_limits<float>::max())); //Using the square root of the maximum possible float value when the invpdf_ is zero, because there are calculations in the integrators squaring the pdf value and it could be overflowing (NaN) in that case.
 	col_pdf_ = color_ * pdf_;
@@ -50,7 +50,7 @@ void SunLight::init(Scene &scene)
 	Bound w = scene.getSceneBound();
 	world_radius_ = 0.5 * (w.g_ - w.a_).length();
 	world_center_ = 0.5 * (w.a_ + w.g_);
-	e_pdf_ = (math::num_pi * world_radius_ * world_radius_);
+	e_pdf_ = math::num_pi<> * world_radius_ * world_radius_;
 }
 
 bool SunLight::illumSample(const SurfacePoint &sp, LSample &s, Ray &wi) const

@@ -144,7 +144,7 @@ void Matrix4::rotateZ(float degrees)
 {
 	float temp = std::fmod(degrees, 360.f);
 	if(temp < 0.f) temp = 360.f - temp;
-	temp *= math::div_pi_by_180;
+	temp *= math::div_pi_by_180<>;
 
 	Matrix4 aux(1.f);
 	aux[0][0] = math::cos(temp);
@@ -159,7 +159,7 @@ void Matrix4::rotateX(float degrees)
 {
 	float temp = std::fmod(degrees, 360.f);
 	if(temp < 0.f) temp = 360.f - temp;
-	temp *= math::div_pi_by_180;
+	temp *= math::div_pi_by_180<>;
 
 	Matrix4 aux(1.f);
 	aux[1][1] = math::cos(temp);
@@ -174,7 +174,7 @@ void Matrix4::rotateY(float degrees)
 {
 	float temp = std::fmod(degrees, 360.f);
 	if(temp < 0.f) temp = 360.f - temp;
-	temp *= math::div_pi_by_180;
+	temp *= math::div_pi_by_180<>;
 
 	Matrix4 aux(1.f);
 	aux[0][0] = math::cos(temp);

@@ -31,8 +31,8 @@ TextureBackground::TextureBackground(Logger &logger, const Texture *texture, Pro
 		Background(logger), tex_(texture), project_(proj), power_(bpower), ibl_blur_mipmap_level_(math::pow(ibl_blur, 2.f))
 {
 	rotation_ = 2.f * rot / 360.f;
-	sin_r_ = math::sin(math::num_pi * rotation_);
-	cos_r_ = math::cos(math::num_pi * rotation_);
+	sin_r_ = math::sin(math::num_pi<> * rotation_);
+	cos_r_ = math::cos(math::num_pi<> * rotation_);
 	if(ibl_blur > 0.f)
 	{
 		with_ibl_blur_ = true;

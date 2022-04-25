@@ -46,7 +46,7 @@ SunSkyBackground::SunSkyBackground(Logger &logger, const Point3 &dir, float turb
 	phi_s_ = std::atan2(sun_dir_.y(), sun_dir_.x());
 	t_ = turb;
 	t_2_ = turb * turb;
-	const double chi = (4.0 / 9.0 - t_ / 120.0) * (math::num_pi - 2.0 * theta_s_);
+	const double chi = (4.0 / 9.0 - t_ / 120.0) * (math::num_pi<double> - 2.0 * theta_s_);
 	zenith_Y_ = (4.0453 * t_ - 4.9710) * std::tan(chi) - 0.2155 * t_ + 2.4192;
 	zenith_Y_ *= 1000;  // conversion from kcd/m^2 to cd/m^2
 
@@ -106,7 +106,7 @@ double SunSkyBackground::angleBetween(double thetav, double phiv) const
 {
 	const double cospsi = math::sin(thetav) * math::sin(theta_s_) * math::cos(phi_s_ - phiv) + math::cos(thetav) * math::cos(theta_s_);
 	if(cospsi > 1)  return 0.0;
-	if(cospsi < -1) return math::num_pi;
+	if(cospsi < -1) return math::num_pi<double>;
 	return math::acos(cospsi);
 }
 
@@ -118,28 +118,28 @@ inline Rgb SunSkyBackground::getSkyCol(const Vec3 &dir) const
 
 	Rgb skycolor(0.0);
 	double theta = math::acos(iw.z());
-	if(theta > (0.5 * math::num_pi))
+	if(theta > (0.5 * math::num_pi<double>))
 	{
 		// this stretches horizon color below horizon, must be possible to do something better...
 		// to compensate, simple fade to black
-		hfade = 1.0 - (theta * math::div_1_by_pi - 0.5) * 2.0;
+		hfade = 1.0 - (theta * math::div_1_by_pi<double> - 0.5) * 2.0;
 		hfade = hfade * hfade * (3.0 - 2.0 * hfade);
-		theta = 0.5 * math::num_pi;
+		theta = 0.5 * math::num_pi<double>;
 	}
 	// compensation for nighttime exaggerated blue
 	// also simple fade out towards zenith
-	if(theta_s_ > (0.5 * math::num_pi))
+	if(theta_s_ > (0.5 * math::num_pi<double>))
 	{
-		if(theta <= 0.5 * math::num_pi)
+		if(theta <= 0.5 * math::num_pi<double>)
 		{
-			nfade = 1.0 - (0.5 - theta * math::div_1_by_pi) * 2.0;
-			nfade *= 1.0 - (theta_s_ * math::div_1_by_pi - 0.5) * 2.0;
+			nfade = 1.0 - (0.5 - theta * math::div_1_by_pi<double>) * 2.0;
+			nfade *= 1.0 - (theta_s_ * math::div_1_by_pi<double> - 0.5) * 2.0;
 			nfade = nfade * nfade * (3.0 - 2.0 * nfade);
 		}
 	}
 	double phi;
 	if((iw.y() == 0.0) && (iw.x() == 0.0))
-		phi = math::num_pi * 0.5;
+		phi = math::num_pi<double> * 0.5;
 	else
 		phi = std::atan2(iw.y(), iw.x());
 
@@ -281,9 +281,9 @@ const Background * SunSkyBackground::factory(Logger &logger, Scene &scene, const
 	if(add_sun)
 	{
 		Rgb suncol = computeAttenuatedSunlight(math::acos(std::abs(dir.z())), turb);//(*new_sunsky)(vector3d_t(dir.x, dir.y, dir.z));
-		double angle = 0.27;
-		double cos_angle = math::cos(math::degToRad(angle));
-		float invpdf = (2.f * math::num_pi * (1.f - cos_angle));
+		const double angle = 0.27;
+		const double cos_angle = math::cos(math::degToRad(angle));
+		const float invpdf = (2.f * math::num_pi<> * (1.f - cos_angle));
 		suncol *= invpdf * power;
 
 		if(logger.isVerbose()) logger.logVerbose("Sunsky: sun color = ", suncol);

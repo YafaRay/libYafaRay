@@ -38,7 +38,7 @@ SphereLight::SphereLight(Logger &logger, const Point3 &c, float rad, const Rgb &
 	color_ = col * inte;
 	square_radius_ = radius_ * radius_;
 	square_radius_epsilon_ = square_radius_ * 1.000003815; // ~0.2% larger radius squared
-	area_ = square_radius_ * 4.0 * math::num_pi;
+	area_ = square_radius_ * 4.0 * math::num_pi<>;
 	inv_area_ = 1.f / area_;
 }
 
@@ -129,7 +129,7 @@ float SphereLight::illumPdf(const SurfacePoint &sp, const SurfacePoint &sp_light
 
 void SphereLight::emitPdf(const SurfacePoint &sp, const Vec3 &wo, float &area_pdf, float &dir_pdf, float &cos_wo) const
 {
-	area_pdf = inv_area_ * math::num_pi;
+	area_pdf = inv_area_ * math::num_pi<>;
 	cos_wo = wo * sp.n_;
 	//! unfinished! use real normal, sp.N might be approximation by mesh...
 	dir_pdf = cos_wo > 0 ? cos_wo : 0.f;
@@ -153,7 +153,7 @@ Rgb SphereLight::emitSample(Vec3 &wo, LSample &s) const
 	const auto [du, dv]{Vec3::createCoordsSystem(sdir)};
 	wo = sample::cosHemisphere(sdir, du, dv, s.s_1_, s.s_2_);
 	s.dir_pdf_ = std::abs(sdir * wo);
-	s.area_pdf_ = inv_area_ * math::num_pi;
+	s.area_pdf_ = inv_area_ * math::num_pi<>;
 	s.flags_ = flags_;
 	return color_;
 }

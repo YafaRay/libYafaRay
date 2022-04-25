@@ -110,7 +110,7 @@ const Camera * AngularCamera::factory(Logger &logger, const Scene &scene, const 
 	else if(projection_string == "rectilinear") projection = Projection::Rectilinear;
 	else projection = Projection::Equidistant;
 
-	auto cam = new AngularCamera(logger, from, to, up, resx, resy, aspect, angle_degrees * math::div_pi_by_180, max_angle_degrees * math::div_pi_by_180, circular, projection, near_clip, far_clip);
+	auto cam = new AngularCamera(logger, from, to, up, resx, resy, aspect, angle_degrees * math::div_pi_by_180<double>, max_angle_degrees * math::div_pi_by_180<double>, circular, projection, near_clip, far_clip);
 	if(mirrored) cam->vright_ *= -1.0;
 	return cam;
 }
@@ -124,7 +124,7 @@ Point3 AngularCamera::screenproject(const Point3 &p) const
 	const float dx = cam_x_ * dir;
 	const float dy = cam_y_ * dir;
 	const float dz = cam_z_ * dir;
-	return { -dx / (4.f * static_cast<float>(math::num_pi) * dz), -dy / (4.f * static_cast<float>(math::num_pi) * dz), 0.f };
+	return { -dx / (4.f * math::num_pi<> * dz), -dy / (4.f * math::num_pi<> * dz), 0.f };
 }
 
 END_YAFARAY

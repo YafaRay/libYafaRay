@@ -62,7 +62,7 @@ inline Y lerpSegment(const X &x, const Y &y_1, const X &x_1, const Y &y_2, const
 template<typename Y, typename X>
 inline Y cosineInterpolate(const Y &y_1, const Y &y_2, const X &x)
 {
-	const X x_cos = (static_cast<X>(1) - math::cos(x * static_cast<X>(num_pi))) * static_cast<X>(0.5);
+	const X x_cos = (static_cast<X>(1) - math::cos(x * num_pi<X>)) * static_cast<X>(0.5);
 	return (y_1 * (static_cast<X>(1) - x_cos) + y_2 * x_cos);
 }
 

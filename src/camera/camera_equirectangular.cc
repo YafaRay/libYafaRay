@@ -51,8 +51,8 @@ CameraRay EquirectangularCamera::shootRay(float px, float py, float lu, float lv
 	ray.from_ = position_;
 	float u = 2.f * px / (float)resx_ - 1.f;
 	float v = 2.f * py / (float)resy_ - 1.f;
-	const float phi = math::num_pi * u;
-	const float theta = math::div_pi_by_2 * v;
+	const float phi = math::num_pi<> * u;
+	const float theta = math::div_pi_by_2<> * v;
 	ray.dir_ = math::cos(theta) * (math::cos(phi) * vto_ + math::sin(phi) * vright_) + math::sin(theta) * vup_;
 	ray.tmin_ = near_plane_.rayIntersection(ray);
 	ray.tmax_ = far_plane_.rayIntersection(ray);
@@ -90,7 +90,7 @@ Point3 EquirectangularCamera::screenproject(const Point3 &p) const
 	float dy = cam_y_ * dir;
 	float dz = cam_z_ * dir;
 
-	return {static_cast<float>(-dx / (4.f * math::num_pi * dz)), static_cast<float>(dy / (4.f * math::num_pi * dz)), 0.f};
+	return {-dx / (4.f * math::num_pi<> * dz), dy / (4.f * math::num_pi<> * dz), 0.f};
 }
 
 END_YAFARAY

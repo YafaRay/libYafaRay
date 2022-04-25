@@ -71,7 +71,7 @@ class VolumeRegion
 		{
 			float k = 1.55f * g_ - .55f * g_ * g_ * g_;
 			float kcostheta = k * (w_l * w_s);
-			return 1.f / (4.f * math::num_pi) * (1.f - k * k) / ((1.f - kcostheta) * (1.f - kcostheta));
+			return 1.f / (4.f * math::num_pi<>) * (1.f - k * k) / ((1.f - kcostheta) * (1.f - kcostheta));
 		}
 
 		virtual Rgb tau(const Ray &ray, float step, float offset) const = 0;

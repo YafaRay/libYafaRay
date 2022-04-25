@@ -43,44 +43,45 @@ BEGIN_YAFARAY
 
 namespace math
 {
-static constexpr long double num_e = 2.7182818284590452353602874713527L; // Number e
-static constexpr long double log2e = 1.4426950408889634073599246810019L;
-static constexpr long double log10e = 0.43429448190325182765112891891661L;
-static constexpr long double ln2 = 0.69314718055994530941723212145818L;
-static constexpr long double ln10 = 2.3025850929940456840179914546844L;
-static constexpr long double num_pi = 3.1415926535897932384626433832795L; // Number pi
-static constexpr long double div_pi_by_2 = 1.5707963267948966192313216916398L;
-static constexpr long double div_pi_by_4 = 0.78539816339744830961566084581988L;
-static constexpr long double div_1_by_pi = 0.31830988618379067153776752674503L;
-static constexpr long double div_2_by_pi = 0.63661977236758134307553505349006L;
-static constexpr long double div_2_by_sqrt_pi = 1.1283791670955125738961589031215L;
-static constexpr long double sqrt2 = 1.4142135623730950488016887242097L;
-static constexpr long double div_1_by_sqrt2 = 0.70710678118654752440084436210485L;
-static constexpr long double mult_pi_by_2 = 6.283185307179586476925286766559L; // pi * 2
-static constexpr long double squared_pi = 9.8696044010893586188344909998762L; // pi ^ 2
-static constexpr long double div_1_by_2pi = 0.15915494309189533576888376337251L; // 1 / (2 * pi)
-static constexpr long double div_4_by_pi = 1.2732395447351626861510701069801L; // 4 / pi
-static constexpr long double div_4_by_squared_pi = 0.40528473456935108577551785283891L; // 4 / (pi ^ 2)
-static constexpr long double div_pi_by_180 = 0.01745329251994329576923690768489L; // pi / 180
-static constexpr long double div_180_by_pi = 57.295779513082320876798154814105L; // 180 / pi
+//FIXME: make all global constants "static inline constexpr" in the future once we can go fully C++17 when all dependencies allow building with C++17
+template<typename T = float> static constexpr T num_e {2.7182818284590452353602874713527L}; // Number e
+template<typename T = float> static constexpr T log2e {1.4426950408889634073599246810019L};
+template<typename T = float> static constexpr T log10e {0.43429448190325182765112891891661L};
+template<typename T = float> static constexpr T ln2 {0.69314718055994530941723212145818L};
+template<typename T = float> static constexpr T ln10 {2.3025850929940456840179914546844L};
+template<typename T = float> static constexpr T num_pi {3.1415926535897932384626433832795L}; // Number pi
+template<typename T = float> static constexpr T div_pi_by_2 {1.5707963267948966192313216916398L};
+template<typename T = float> static constexpr T div_pi_by_4 {0.78539816339744830961566084581988L};
+template<typename T = float> static constexpr T div_1_by_pi {0.31830988618379067153776752674503L};
+template<typename T = float> static constexpr T div_2_by_pi {0.63661977236758134307553505349006L};
+template<typename T = float> static constexpr T div_2_by_sqrt_pi {1.1283791670955125738961589031215L};
+template<typename T = float> static constexpr T sqrt2 {1.4142135623730950488016887242097L};
+template<typename T = float> static constexpr T div_1_by_sqrt2 {0.70710678118654752440084436210485L};
+template<typename T = float> static constexpr T mult_pi_by_2 {6.283185307179586476925286766559L}; // pi * 2
+template<typename T = float> static constexpr T squared_pi {9.8696044010893586188344909998762L}; // pi ^ 2
+template<typename T = float> static constexpr T div_1_by_2pi {0.15915494309189533576888376337251L}; // 1 / (2 * pi)
+template<typename T = float> static constexpr T div_4_by_pi {1.2732395447351626861510701069801L}; // 4 / pi
+template<typename T = float> static constexpr T div_4_by_squared_pi {0.40528473456935108577551785283891L}; // 4 / (pi ^ 2)
+template<typename T = float> static constexpr T div_pi_by_180 {0.01745329251994329576923690768489L}; // pi / 180
+template<typename T = float> static constexpr T div_180_by_pi {57.295779513082320876798154814105L}; // 180 / pi
 
-template<typename FloatingPointType> inline constexpr FloatingPointType degToRad(FloatingPointType deg)
+template<typename T> inline constexpr T degToRad(T deg)
 {
-	static_assert(std::is_floating_point<FloatingPointType>::value, "This function can only be instantiated for floating point arguments");
-	return deg * math::div_pi_by_180;
+	static_assert(std::is_floating_point<T>::value, "This function can only be instantiated for floating point arguments");
+	return deg * math::div_pi_by_180<T>;
 }
-template<typename FloatingPointType> inline constexpr FloatingPointType radToDeg(FloatingPointType rad)
+template<typename T> inline constexpr T radToDeg(T rad)
 {
-	static_assert(std::is_floating_point<FloatingPointType>::value, "This function can only be instantiated for floating point arguments");
-	return rad * math::div_180_by_pi;
+	static_assert(std::is_floating_point<T>::value, "This function can only be instantiated for floating point arguments");
+	return rad * math::div_180_by_pi<T>;
 }
 
-static constexpr double doublemagicroundeps = .5 - 1.4e-11; //almost .5f = .5f - 1e^(number of exp bit)
-static constexpr double doublemagic = 6755399441055744.0; //2^52 * 1.5, uses limited precision to floor
+static constexpr double doublemagicroundeps {.5 - 1.4e-11}; //almost .5f = .5f - 1e^(number of exp bit)
+static constexpr double doublemagic {6755399441055744.0}; //2^52 * 1.5, uses limited precision to floor
 
 // fast base-2 van der Corput, Sobel, and Larcher & Pillichshammer sequences,
 // all from "Efficient Multidimensional Sampling" by Alexander Keller
-static constexpr long double sample_mult_ratio = 0.00000000023283064365386962890625L;
+template<typename T = float> static constexpr T sample_mult_ratio {0.00000000023283064365386962890625L};
 
 template <class T>
 constexpr T min(const T &a, const T &b, const T &c) { return std::min(a, std::min(b, c)); }
@@ -125,10 +126,10 @@ inline constexpr float polylog(float x)
 inline float log2(float x)
 {
 	BitTwiddler one, i, m, e;
-	static constexpr int log_exp = 0x7F800000;
-	static constexpr int log_mant = 0x7FFFFF;
+	constexpr int log_exp = 0x7F800000;
+	constexpr int log_mant = 0x7FFFFF;
 
-	one.f_ = 1.0f;
+	one.f_ = 1.f;
 	i.f_ = x;
 	e.f_ = static_cast<float>(((i.i_ & log_exp) >> 23) - 127);
 	m.i_ = (i.i_ & log_mant) | one.i_;
@@ -167,7 +168,7 @@ inline float sqrt_asm(float n)
 inline float pow(float a, float b)
 {
 #ifdef FAST_MATH
-	return math::exp2(static_cast<float>(math::log2(a) * b));
+	return math::exp2(math::log2(a) * b);
 #else
 	return std::pow(a, b);
 #endif
@@ -176,7 +177,7 @@ inline float pow(float a, float b)
 inline float log(float a)
 {
 #ifdef FAST_MATH
-	return math::log2(a) * static_cast<float>(math::ln2);
+	return math::log2(a) * math::ln2<>;
 #else
 	return std::log(a);
 #endif
@@ -185,7 +186,7 @@ inline float log(float a)
 inline float exp(float a)
 {
 #ifdef FAST_MATH
-	return math::exp2(static_cast<float>(math::log2e * a));
+	return math::exp2(math::log2e<> * a);
 #else
 	return std::exp(a);
 #endif
@@ -203,17 +204,17 @@ inline float sqrt(float a)
 inline float sin(float x)
 {
 #ifdef FAST_TRIG
-	if(x > math::mult_pi_by_2 || x < -math::mult_pi_by_2) x -= ((int) (x * static_cast<float>(math::div_1_by_2pi))) * static_cast<float>(math::mult_pi_by_2); //float modulo x % math::mult_pi_by_2
-	if(x < -math::num_pi)
+	if(x > math::mult_pi_by_2<> || x < -math::mult_pi_by_2<>) x -= static_cast<int>(x * math::div_1_by_2pi<>) * math::mult_pi_by_2<>; //float modulo x % math::mult_pi_by_2<>
+	if(x < -math::num_pi<>)
 	{
-		x += static_cast<float>(math::mult_pi_by_2);
+		x += math::mult_pi_by_2<>;
 	}
-	else if(x > math::num_pi)
+	else if(x > math::num_pi<>)
 	{
-		x -= static_cast<float>(math::mult_pi_by_2);
+		x -= math::mult_pi_by_2<>;
 	}
 
-	x = (static_cast<float>(math::div_4_by_pi * x)) - (static_cast<float>(math::div_4_by_squared_pi * x * std::abs(x)));
+	x = math::div_4_by_pi<> * x - math::div_4_by_squared_pi<> * x * std::abs(x);
 	constexpr float const_p = 0.225f;
 	const float result = const_p * (x * std::abs(x) - x) + x;
 	//Make sure that the function is in the valid range [-1.0,+1.0]
@@ -228,7 +229,7 @@ inline float sin(float x)
 inline float cos(float x)
 {
 #ifdef FAST_TRIG
-	return math::sin(x + static_cast<float>(math::div_pi_by_2));
+	return math::sin(x + math::div_pi_by_2<>);
 #else
 	return std::cos(x);
 #endif
@@ -237,7 +238,7 @@ inline float cos(float x)
 inline constexpr float acos(float x)
 {
 	//checks if variable gets out of domain [-1.0,+1.0], so you get the range limit instead of NaN
-	if(x <= -1.f) return (static_cast<float>(math::num_pi));
+	if(x <= -1.f) return math::num_pi<>;
 	else if(x >= 1.f) return (0.f);
 	else return std::acos(x);
 }
@@ -245,8 +246,8 @@ inline constexpr float acos(float x)
 inline constexpr float asin(float x)
 {
 	//checks if variable gets out of domain [-1.0,+1.0], so you get the range limit instead of NaN
-	if(x <= -1.f) return (static_cast<float>(-math::div_pi_by_2));
-	else if(x >= 1.f) return (static_cast<float>(math::div_pi_by_2));
+	if(x <= -1.f) return -math::div_pi_by_2<>;
+	else if(x >= 1.f) return math::div_pi_by_2<>;
 	else return std::asin(x);
 }
 
@@ -286,9 +287,9 @@ template<typename T>
 inline constexpr T mod(const T &a, const T &b)
 {
 	const T n = static_cast<T>(a / b);
-	T result = a - n * b;
-	if(a < 0) result += b;
-	return result;
+	const T result = a - n * b;
+	if(a < 0) return result + b;
+	else return result;
 }
 
 //! Just a "modulo 1" addition, assumed that both values are in range [0;1]
@@ -302,11 +303,11 @@ inline constexpr T addMod1(const T &a, const T &b)
 inline constexpr int nextPrime(int last_prime)
 {
 	int new_prime = last_prime + (last_prime & 1) + 1;
-	for(;;)
+	while(true)
 	{
 		int dv = 3;
 		bool ispr = true;
-		while((ispr) && (dv * dv <= new_prime))
+		while(ispr && (dv * dv <= new_prime))
 		{
 			ispr = ((new_prime % dv) != 0);
 			dv += 2;

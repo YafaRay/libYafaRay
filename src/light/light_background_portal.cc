@@ -120,7 +120,7 @@ Rgb BackgroundPortalLight::totalEnergy() const
 			if(cos_n > 0) energy += col * cos_n * primitives_[j]->surfaceArea();
 		}
 	}
-	return energy * math::div_1_by_pi * 0.001f;
+	return energy * math::div_1_by_pi<> * 0.001f;
 }
 
 bool BackgroundPortalLight::illumSample(const SurfacePoint &sp, LSample &s, Ray &wi) const
@@ -143,7 +143,7 @@ bool BackgroundPortalLight::illumSample(const SurfacePoint &sp, LSample &s, Ray 
 
 	s.col_ = bg_->eval(wi.dir_, true) * power_;
 	// pdf = distance^2 / area * cos(norm, ldir);
-	s.pdf_ = dist_sqr * math::num_pi / (area_ * cos_angle);
+	s.pdf_ = dist_sqr * math::num_pi<> / (area_ * cos_angle);
 	s.flags_ = flags_;
 	if(s.sp_)
 	{
@@ -164,7 +164,7 @@ Rgb BackgroundPortalLight::emitPhoton(float s_1, float s_2, float s_3, float s_4
 
 Rgb BackgroundPortalLight::emitSample(Vec3 &wo, LSample &s) const
 {
-	s.area_pdf_ = inv_area_ * math::num_pi;
+	s.area_pdf_ = inv_area_ * math::num_pi<>;
 	sampleSurface(s.s_3_, s.s_4_);
 	s.sp_->n_ = s.sp_->ng_;
 	const auto [du, dv]{Vec3::createCoordsSystem(s.sp_->ng_)};
@@ -186,7 +186,7 @@ bool BackgroundPortalLight::intersect(const Ray &ray, float &t, Rgb &col, float 
 	const float cos_angle = ray.dir_ * (-n);
 	if(cos_angle <= 0.f) return false;
 	const float idist_sqr = 1.f / (t * t);
-	ipdf = idist_sqr * area_ * cos_angle * math::div_1_by_pi;
+	ipdf = idist_sqr * area_ * cos_angle * math::div_1_by_pi<>;
 	col = bg_->eval(ray.dir_, true) * power_;
 	col.clampProportionalRgb(clamp_intersect_); //trick to reduce light sampling noise at the expense of realism and inexact overall light. 0.f disables clamping
 	return true;
@@ -197,12 +197,12 @@ float BackgroundPortalLight::illumPdf(const SurfacePoint &sp, const SurfacePoint
 	Vec3 wo{sp.p_ - sp_light.p_};
 	const float r_2 = wo.normLenSqr();
 	const float cos_n = wo * sp_light.ng_;
-	return cos_n > 0 ? (r_2 * math::num_pi / (area_ * cos_n)) : 0.f;
+	return cos_n > 0 ? (r_2 * math::num_pi<> / (area_ * cos_n)) : 0.f;
 }
 
 void BackgroundPortalLight::emitPdf(const SurfacePoint &sp, const Vec3 &wo, float &area_pdf, float &dir_pdf, float &cos_wo) const
 {
-	area_pdf = inv_area_ * math::num_pi;
+	area_pdf = inv_area_ * math::num_pi<>;
 	cos_wo = wo * sp.n_;
 	dir_pdf = cos_wo > 0.f ? cos_wo : 0.f;
 }

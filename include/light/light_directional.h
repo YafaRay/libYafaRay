@@ -39,7 +39,7 @@ class DirectionalLight final : public Light
 	private:
 		DirectionalLight(Logger &logger, const Point3 &pos, Vec3 dir, const Rgb &col, float inte, bool inf, float rad, bool b_light_enabled = true, bool b_cast_shadows = true);
 		void init(Scene &scene) override;
-		Rgb totalEnergy() const override { return color_ * radius_ * radius_ * math::num_pi; }
+		Rgb totalEnergy() const override { return color_ * radius_ * radius_ * math::num_pi<>; }
 		Rgb emitPhoton(float s_1, float s_2, float s_3, float s_4, Ray &ray, float &ipdf) const override;
 		Rgb emitSample(Vec3 &wo, LSample &s) const override;
 		bool diracLight() const override { return true; }

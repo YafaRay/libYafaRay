@@ -281,7 +281,7 @@ inline Vec3 Vec3::randomSpherical()
 	float r = 1.f - v.vec_[2] * v.vec_[2];
 	if(r > 0.f)
 	{
-		const float a = math::mult_pi_by_2 * FastRandom::getNextFloatNormalized();
+		const float a = math::mult_pi_by_2<> * FastRandom::getNextFloatNormalized();
 		r = math::sqrt(r);
 		v.vec_[0] = r * math::cos(a); v.vec_[1] = r * math::sin(a);
 	}

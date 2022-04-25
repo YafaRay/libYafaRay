@@ -31,13 +31,13 @@ namespace sample
 inline float kernel(float r_photon_2, float ir_gather_2)
 {
 	const float s = (1.f - r_photon_2 * ir_gather_2);
-	return 3.f * ir_gather_2 * math::div_1_by_pi * s * s;
+	return 3.f * ir_gather_2 * math::div_1_by_pi<> * s * s;
 }
 
 inline float cKernel(float r_photon_2, float r_gather_2, float ir_gather_2)
 {
 	const float r_p = math::sqrt(r_photon_2), ir_g = 1.f / math::sqrt(r_gather_2);
-	return 3.f * (1.f - r_p * ir_g) * ir_gather_2 * math::div_1_by_pi;
+	return 3.f * (1.f - r_p * ir_g) * ir_gather_2 * math::div_1_by_pi<>;
 }
 
 //! Sample a cosine-weighted hemisphere given the the coordinate system built by N, Ru, Rv.
@@ -48,7 +48,7 @@ Vec3 inline cosHemisphere(const Vec3 &n, const Vec3 &ru, const Vec3 &rv, float s
 	else
 	{
 		const float z_1 = s_1;
-		const float z_2 = s_2 * math::mult_pi_by_2;
+		const float z_2 = s_2 * math::mult_pi_by_2<>;
 		return (ru * math::cos(z_2) + rv * math::sin(z_2)) * math::sqrt(1.f - z_1) + n * math::sqrt(z_1);
 	}
 }
@@ -63,7 +63,7 @@ Vec3 inline sphere(float s_1, float s_2)
 	if(r > 0.0f)
 	{
 		r = math::sqrt(r);
-		const float a = math::mult_pi_by_2 * s_2;
+		const float a = math::mult_pi_by_2<> * s_2;
 		dir.x() = math::cos(a) * r;
 		dir.y() = math::sin(a) * r;
 	}
@@ -81,7 +81,7 @@ Vec3 inline cone(const Vec3 &d, const Vec3 &u, const Vec3 &v, float max_cos_ang,
 {
 	const float cos_ang = 1.f - (1.f - max_cos_ang) * s_2;
 	const float sin_ang = math::sqrt(1.f - cos_ang * cos_ang);
-	const float t_1 = math::mult_pi_by_2 * s_1;
+	const float t_1 = math::mult_pi_by_2<> * s_1;
 	return (u * math::cos(t_1) + v * math::sin(t_1)) * sin_ang + d * cos_ang;
 }
 
@@ -107,21 +107,21 @@ inline float riVdC(unsigned int bits, unsigned int r = 0)
 	bits = ((bits & 0x0f0f0f0f) << 4) | ((bits & 0xf0f0f0f0) >> 4);
 	bits = ((bits & 0x33333333) << 2) | ((bits & 0xcccccccc) >> 2);
 	bits = ((bits & 0x55555555) << 1) | ((bits & 0xaaaaaaaa) >> 1);
-	return std::max(0.f, std::min(1.f, static_cast<float>(static_cast<double>(bits ^ r) * math::sample_mult_ratio)));
+	return std::max(0.f, std::min(1.f, static_cast<float>(static_cast<double>(bits ^ r) * math::sample_mult_ratio<double>)));
 }
 
 inline float riS(unsigned int i, unsigned int r = 0)
 {
 	for(unsigned int v = 1 << 31; i; i >>= 1, v ^= v >> 1)
 		if(i & 1) r ^= v;
-	return std::max(0.f, std::min(1.f, (static_cast<float>(static_cast<double>(r) * math::sample_mult_ratio))));
+	return std::max(0.f, std::min(1.f, (static_cast<float>(static_cast<double>(r) * math::sample_mult_ratio<double>))));
 }
 
 inline float riLp(unsigned int i, unsigned int r = 0)
 {
 	for(unsigned int v = 1 << 31; i; i >>= 1, v |= v >> 1)
 		if(i & 1) r ^= v;
-	return std::max(0.f, std::min(1.f, (static_cast<float>(static_cast<double>(r) * math::sample_mult_ratio))));
+	return std::max(0.f, std::min(1.f, (static_cast<float>(static_cast<double>(r) * math::sample_mult_ratio<double>))));
 }
 
 /* The fnv - Fowler/Noll/Vo- hash code

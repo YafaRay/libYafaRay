@@ -64,7 +64,7 @@ Point3 TextureMapperNode::tubeMap(const Point3 &p)
 	if(d > 0.f)
 	{
 		res.z() = 1.f / math::sqrt(d);
-		res.x() = -std::atan2(p.x(), p.y()) * math::div_1_by_pi;
+		res.x() = -std::atan2(p.x(), p.y()) * math::div_1_by_pi<>;
 	}
 	else res.x() = res.z() = 0.f;
 	return res;
@@ -78,8 +78,8 @@ Point3 TextureMapperNode::sphereMap(const Point3 &p)
 	if(d > 0.f)
 	{
 		res.z() = math::sqrt(d);
-		if((p.x() != 0.f) && (p.y() != 0.f)) res.x() = -std::atan2(p.x(), p.y()) * math::div_1_by_pi;
-		res.y() = 1.f - 2.f * (math::acos(p.z() / res.z()) * math::div_1_by_pi);
+		if((p.x() != 0.f) && (p.y() != 0.f)) res.x() = -std::atan2(p.x(), p.y()) * math::div_1_by_pi<>;
+		res.y() = 1.f - 2.f * (math::acos(p.z() / res.z()) * math::div_1_by_pi<>);
 	}
 	return res;
 }

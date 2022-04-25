@@ -100,7 +100,7 @@ inline double RandomGenerator::operator()()
 	x_ = x_ * y_a_ + c_;
 	c_ = xh * y_ah_ + ((xh * y_al_) >> 16) + ((xl * y_ah_) >> 16);
 	if(xl * y_al_ >= ~c_ + 1) c_++;
-	return static_cast<double>(x_) * math::sample_mult_ratio;
+	return static_cast<double>(x_) * math::sample_mult_ratio<double>;
 }
 
 

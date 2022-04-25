@@ -39,7 +39,7 @@ AreaLight::AreaLight(Logger &logger, const Point3 &c, const Vec3 &v_1, const Vec
 	cast_shadows_ = cast_shadows;
 
 	fnormal_ = to_y_ ^ to_x_; //f normal is "flipped" normal direction...
-	color_ = col * inte * math::num_pi;
+	color_ = col * inte * math::num_pi<>;
 	area_ = fnormal_.normLen();
 	inv_area_ = 1.0 / area_;
 
@@ -86,7 +86,7 @@ bool AreaLight::illumSample(const SurfacePoint &sp, LSample &s, Ray &wi) const
 
 	s.col_ = color_;
 	// pdf = distance^2 / area * cos(norm, ldir);
-	s.pdf_ = dist_sqr * math::num_pi / (area_ * cos_angle);
+	s.pdf_ = dist_sqr * math::num_pi<> / (area_ * cos_angle);
 	s.flags_ = Light::Flags::None; // no delta functions...
 	if(s.sp_)
 	{
@@ -106,7 +106,7 @@ Rgb AreaLight::emitPhoton(float s_1, float s_2, float s_3, float s_4, Ray &ray, 
 
 Rgb AreaLight::emitSample(Vec3 &wo, LSample &s) const
 {
-	s.area_pdf_ = inv_area_ * math::num_pi;
+	s.area_pdf_ = inv_area_ * math::num_pi<>;
 	s.sp_->p_ = corner_ + s.s_3_ * to_x_ + s.s_4_ * to_y_;
 	wo = sample::cosHemisphere(normal_, du_, dv_, s.s_1_, s.s_2_);
 	s.sp_->n_ = s.sp_->ng_ = normal_;
@@ -147,7 +147,7 @@ bool AreaLight::intersect(const Ray &ray, float &t, Rgb &col, float &ipdf) const
 
 	col = color_;
 	// pdf = distance^2 / area * cos(norm, ldir); ipdf = 1/pdf;
-	ipdf = 1.f / (t * t) * area_ * cos_angle * math::div_1_by_pi;
+	ipdf = 1.f / (t * t) * area_ * cos_angle * math::div_1_by_pi<>;
 	return true;
 }
 
@@ -156,12 +156,12 @@ float AreaLight::illumPdf(const SurfacePoint &sp, const SurfacePoint &sp_light) 
 	Vec3 wi{sp_light.p_ - sp.p_};
 	float r_2 = wi.normLenSqr();
 	float cos_n = wi * fnormal_;
-	return cos_n > 0 ? r_2 * math::num_pi / (area_ * cos_n) : 0.f;
+	return cos_n > 0 ? r_2 * math::num_pi<> / (area_ * cos_n) : 0.f;
 }
 
 void AreaLight::emitPdf(const SurfacePoint &sp, const Vec3 &wo, float &area_pdf, float &dir_pdf, float &cos_wo) const
 {
-	area_pdf = inv_area_ * math::num_pi;
+	area_pdf = inv_area_ * math::num_pi<>;
 	cos_wo = wo * sp.n_;
 	dir_pdf = cos_wo > 0 ? cos_wo : 0.f;
 }

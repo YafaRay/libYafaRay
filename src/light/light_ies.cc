@@ -46,7 +46,7 @@ IesLight::IesLight(Logger &logger, const Point3 &from, const Point3 &to, const R
 		cos_end_ = math::cos(ies_data_->getMaxVAngle());
 
 		color_ = col * power;
-		tot_energy_ = math::mult_pi_by_2 * (1.f - 0.5f * cos_end_);
+		tot_energy_ = math::mult_pi_by_2<> * (1.f - 0.5f * cos_end_);
 	}
 }
 

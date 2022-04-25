@@ -47,8 +47,8 @@ float lanczos2(float dx, float dy)
 	if(x == 0.f) return 1.f;
 	if(-2 < x && x < 2)
 	{
-		const float a = math::num_pi * x;
-		const float b = math::div_pi_by_2 * x;
+		const float a = math::num_pi<> * x;
+		const float b = math::div_pi_by_2<> * x;
 		return ((math::sin(a) * math::sin(b)) / (a * b));
 	}
 	return 0.f;

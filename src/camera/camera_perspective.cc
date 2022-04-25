@@ -40,7 +40,7 @@ PerspectiveCamera::PerspectiveCamera(Logger &logger, const Point3 &pos, const Po
 	int ns = (int)bkhtype_;
 	if((ns >= 3) && (ns <= 6))
 	{
-		float w = math::degToRad(bro), wi = (math::mult_pi_by_2) / (float)ns;
+		float w = math::degToRad(bro), wi = math::mult_pi_by_2<> / static_cast<float>(ns);
 		ns = (ns + 2) * 2;
 		ls_.resize(ns);
 		for(int i = 0; i < ns; i += 2)
@@ -110,7 +110,7 @@ void PerspectiveCamera::getLensUv(float r_1, float r_2, float &u, float &v) cons
 		case BkDisk2:
 		case BkRing:
 		{
-			float w = (float)math::mult_pi_by_2 * r_2;
+			float w = math::mult_pi_by_2<> * r_2;
 			if(bkhtype_ == BkRing) r_1 = math::sqrt((float) 0.707106781 + (float) 0.292893218);
 			else biasDist(r_1);
 			u = r_1 * math::cos(w);
@@ -173,7 +173,7 @@ bool PerspectiveCamera::project(const Ray &wo, float lu, float lv, float &u, flo
 
 	// pdf = 1/A_pix * r^2 / cos(forward, dir), where r^2 is also 1/cos(vto, dir)^2
 	const float cos_wo = dz; //camZ * wo.dir;
-	pdf = 8.f * math::num_pi / (a_pix_ * cos_wo * cos_wo * cos_wo);
+	pdf = 8.f * math::num_pi<> / (a_pix_ * cos_wo * cos_wo * cos_wo);
 	return true;
 }
 

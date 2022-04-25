@@ -146,11 +146,11 @@ float MarbleTexture::getFloat(const Point3 &p, const MipMapParams *mipmap_params
 	switch(wshape_)
 	{
 		case Shape::Saw:
-			w *= 0.5f * math::div_1_by_pi;
+			w *= 0.5f * math::div_1_by_pi<>;
 			w -= std::floor(w);
 			break;
 		case Shape::Tri:
-			w *= 0.5f * math::div_1_by_pi;
+			w *= 0.5f * math::div_1_by_pi<>;
 			w = std::abs(2.f * (w - std::floor(w)) -1.f);
 			break;
 		default:
@@ -231,11 +231,11 @@ float WoodTexture::getFloat(const Point3 &p, const MipMapParams *mipmap_params) 
 	switch(wshape_)
 	{
 		case Shape::Saw:
-			w *= 0.5f * math::div_1_by_pi;
+			w *= 0.5f * math::div_1_by_pi<>;
 			w -= std::floor(w);
 			break;
 		case Shape::Tri:
-			w *= 0.5f * math::div_1_by_pi;
+			w *= 0.5f * math::div_1_by_pi<>;
 			w = std::abs(2.f * (w - std::floor(w)) - 1.f);
 			break;
 		default:
@@ -651,7 +651,7 @@ float BlendTexture::getFloat(const Point3 &p, const MipMapParams *mipmap_params)
 	}
 	else if(progression_type_ == Radial)
 	{
-		blend = (atan2f(coord_2, coord_1) / (float)(2.f * math::num_pi) + 0.5f);
+		blend = (atan2f(coord_2, coord_1) / (2.f * math::num_pi<>) + 0.5f);
 	}
 	else  //linear by default
 	{

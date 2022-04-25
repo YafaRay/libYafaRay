@@ -69,7 +69,7 @@ void BackgroundLight::init(Scene &scene)
 	world_center_ = 0.5f * (w.a_ + w.g_);
 	world_radius_ = 0.5f * (w.g_ - w.a_).length();
 	a_pdf_ = world_radius_ * world_radius_;
-	world_pi_factor_ = (math::mult_pi_by_2 * a_pdf_);
+	world_pi_factor_ = math::mult_pi_by_2<> * a_pdf_;
 }
 
 inline float BackgroundLight::calcFromSample(float s_1, float s_2, float &u, float &v, bool inv) const
@@ -112,12 +112,12 @@ float BackgroundLight::dirPdf(const Vec3 &dir) const
 
 float BackgroundLight::calcPdf(float p_0, float p_1, float s)
 {
-	return std::max(sigma_, p_0 * p_1 * static_cast<float>(math::div_1_by_2pi) * clampZero(sinSample(s)));
+	return std::max(sigma_, p_0 * p_1 * math::div_1_by_2pi<> * clampZero(sinSample(s)));
 }
 
 float BackgroundLight::calcInvPdf(float p_0, float p_1, float s)
 {
-	return std::max(sigma_, static_cast<float>(math::mult_pi_by_2) * sinSample(s) * clampZero(p_0 * p_1));
+	return std::max(sigma_, math::mult_pi_by_2<> * sinSample(s) * clampZero(p_0 * p_1));
 }
 
 bool BackgroundLight::illumSample(const SurfacePoint &sp, LSample &s, Ray &wi) const
@@ -239,7 +239,7 @@ float BackgroundLight::clampZero(float val)
 
 float BackgroundLight::sinSample(float s)
 {
-	return math::sin(s * math::num_pi);
+	return math::sin(s * math::num_pi<>);
 }
 
 END_YAFARAY

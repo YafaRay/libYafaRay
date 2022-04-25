@@ -78,7 +78,7 @@ void Texture::angMap(const Point3 &p, float &u, float &v)
 	u = v = 0.f;
 	if(r > 0.f)
 	{
-		const float phi_ratio = math::div_1_by_pi * math::acos(p.y());//[0,1] range
+		const float phi_ratio = math::div_1_by_pi<> * math::acos(p.y());//[0,1] range
 		r = phi_ratio / math::sqrt(r);
 		u = p.x() * r;// costheta * r * phiRatio
 		v = p.z() * r;// sintheta * r * phiRatio
@@ -95,7 +95,7 @@ void Texture::tubeMap(const Point3 &p, float &u, float &v)
 	if(d > 0)
 	{
 		d = 1 / math::sqrt(d);
-		u = 0.5f * (1 - (std::atan2(p.x() * d, p.y() * d) * math::div_1_by_pi));
+		u = 0.5f * (1 - (std::atan2(p.x() * d, p.y() * d) * math::div_1_by_pi<>));
 	}
 }
 
@@ -111,19 +111,19 @@ void Texture::sphereMap(const Point3 &p, float &u, float &v)
 
 	if(sqrt_r_phi > 0.f)
 	{
-		if(p.y() < 0.f) phi_ratio = (math::mult_pi_by_2 - math::acos(p.x() / math::sqrt(sqrt_r_phi))) * math::div_1_by_2pi;
-		else phi_ratio = math::acos(p.x() / math::sqrt(sqrt_r_phi)) * math::div_1_by_2pi;
+		if(p.y() < 0.f) phi_ratio = (math::mult_pi_by_2<> - math::acos(p.x() / math::sqrt(sqrt_r_phi))) * math::div_1_by_2pi<>;
+		else phi_ratio = math::acos(p.x() / math::sqrt(sqrt_r_phi)) * math::div_1_by_2pi<>;
 		u = 1.f - phi_ratio;
 	}
 
-	v = 1.f - (math::acos(p.z() / math::sqrt(sqrt_r_theta)) * math::div_1_by_pi);
+	v = 1.f - (math::acos(p.z() / math::sqrt(sqrt_r_theta)) * math::div_1_by_pi<>);
 }
 
 // maps u,v coords in the 0..1 interval to a direction
 void Texture::invSphereMap(float u, float v, Vec3 &p)
 {
-	const float theta = v * math::num_pi;
-	const float phi = -(u * math::mult_pi_by_2);
+	const float theta = v * math::num_pi<>;
+	const float phi = -(u * math::mult_pi_by_2<>);
 	const float costheta = math::cos(theta), sintheta = math::sin(theta);
 	const float cosphi = math::cos(phi), sinphi = math::sin(phi);
 	p.x() = sintheta * cosphi;

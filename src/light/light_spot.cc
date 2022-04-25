@@ -69,7 +69,7 @@ SpotLight::SpotLight(Logger &logger, const Point3 &from, const Point3 &to, const
 
 Rgb SpotLight::totalEnergy() const
 {
-	return color_ * math::mult_pi_by_2 * (1.f - 0.5f * (cos_start_ + cos_end_));
+	return color_ * math::mult_pi_by_2<> * (1.f - 0.5f * (cos_start_ + cos_end_));
 }
 
 bool SpotLight::illuminate(const SurfacePoint &sp, Rgb &col, Ray &wi) const
@@ -151,16 +151,16 @@ Rgb SpotLight::emitPhoton(float s_1, float s_2, float s_3, float s_4, Ray &ray, 
 	if(s_3 <= interv_1_) // sample from cone not affected by falloff:
 	{
 		ray.dir_ = sample::cone(dir_, du_, dv_, cos_start_, s_1, s_2);
-		ipdf = math::mult_pi_by_2 * (1.f - cos_start_) / interv_1_;
+		ipdf = math::mult_pi_by_2<> * (1.f - cos_start_) / interv_1_;
 	}
 	else // sample in the falloff area
 	{
 		float spdf;
 		float sm_2 = pdf_->sample(s_2, spdf) * pdf_->invSize();
-		ipdf = math::mult_pi_by_2 * (cos_start_ - cos_end_) / (interv_2_ * spdf);
+		ipdf = math::mult_pi_by_2<> * (cos_start_ - cos_end_) / (interv_2_ * spdf);
 		double cos_ang = cos_end_ + (cos_start_ - cos_end_) * (double)sm_2;
 		double sin_ang = math::sqrt(1.0 - cos_ang * cos_ang);
-		float t_1 = math::mult_pi_by_2 * s_1;
+		float t_1 = math::mult_pi_by_2<> * s_1;
 		ray.dir_ = (du_ * math::cos(t_1) + dv_ * math::sin(t_1)) * (float)sin_ang + dir_ * (float)cos_ang;
 		return color_ * spdf * pdf_->integral(); // scale is just the actual falloff function, since spdf is func * invIntegral...
 	}
@@ -175,16 +175,16 @@ Rgb SpotLight::emitSample(Vec3 &wo, LSample &s) const
 	if(s.s_3_ <= interv_1_) // sample from cone not affected by falloff:
 	{
 		wo = sample::cone(dir_, du_, dv_, cos_start_, s.s_1_, s.s_2_);
-		s.dir_pdf_ = interv_1_ / (math::mult_pi_by_2 * (1.f - cos_start_));
+		s.dir_pdf_ = interv_1_ / (math::mult_pi_by_2<> * (1.f - cos_start_));
 	}
 	else // sample in the falloff area
 	{
 		float spdf;
 		float sm_2 = pdf_->sample(s.s_2_, spdf) * pdf_->invSize();
-		s.dir_pdf_ = (interv_2_ * spdf) / (math::mult_pi_by_2 * (cos_start_ - cos_end_));
+		s.dir_pdf_ = (interv_2_ * spdf) / (math::mult_pi_by_2<> * (cos_start_ - cos_end_));
 		double cos_ang = cos_end_ + (cos_start_ - cos_end_) * (double)sm_2;
 		double sin_ang = math::sqrt(1.0 - cos_ang * cos_ang);
-		float t_1 = math::mult_pi_by_2 * s.s_1_;
+		float t_1 = math::mult_pi_by_2<> * s.s_1_;
 		wo = (du_ * math::cos(t_1) + dv_ * math::sin(t_1)) * (float)sin_ang + dir_ * (float)cos_ang;
 		float v = sm_2 * sm_2 * (3.f - 2.f * sm_2);
 		return color_ * v;
@@ -201,13 +201,13 @@ void SpotLight::emitPdf(const SurfacePoint &sp, const Vec3 &wo, float &area_pdf,
 	if(cosa < cos_end_) dir_pdf = 0.f;
 	else if(cosa >= cos_start_) // not affected by falloff
 	{
-		dir_pdf = interv_1_ / (math::mult_pi_by_2 * (1.f - cos_start_));
+		dir_pdf = interv_1_ / (math::mult_pi_by_2<> * (1.f - cos_start_));
 	}
 	else
 	{
 		float v = (cosa - cos_end_) * icos_diff_;
 		v = v * v * (3.f - 2.f * v);
-		dir_pdf = interv_2_ * v * 2.f / (math::mult_pi_by_2 * (cos_start_ - cos_end_));   //divide by integral of v (0.5)?
+		dir_pdf = interv_2_ * v * 2.f / (math::mult_pi_by_2<> * (cos_start_ - cos_end_));   //divide by integral of v (0.5)?
 	}
 }
 bool SpotLight::intersect(const Ray &ray, float &t, Rgb &col, float &ipdf) const

@@ -136,12 +136,12 @@ void Vec3::shirleyDisk(float r_1, float r_2, float &u, float &v)
 		if(a > b)  	// Reg.1
 		{
 			r = a;
-			phi = math::div_pi_by_4 * (b / a);
+			phi = math::div_pi_by_4<> * (b / a);
 		}
 		else  			// Reg.2
 		{
 			r = b;
-			phi = math::div_pi_by_4 * (2.f - a / b);
+			phi = math::div_pi_by_4<> * (2.f - a / b);
 		}
 	}
 	else
@@ -149,13 +149,13 @@ void Vec3::shirleyDisk(float r_1, float r_2, float &u, float &v)
 		if(a < b)  	// Reg.3
 		{
 			r = -a;
-			phi = math::div_pi_by_4 * (4.f + b / a);
+			phi = math::div_pi_by_4<> * (4.f + b / a);
 		}
 		else  			// Reg.4
 		{
 			r = -b;
 			if(b != 0)
-				phi = math::div_pi_by_4 * (6.f - a / b);
+				phi = math::div_pi_by_4<> * (6.f - a / b);
 			else
 				phi = 0.f;
 		}
@@ -166,7 +166,7 @@ void Vec3::shirleyDisk(float r_1, float r_2, float &u, float &v)
 
 Vec3 Vec3::randomVectorCone(const Vec3 &d, const Vec3 &u, const Vec3 &v, float cosang, float z_1, float z_2)
 {
-	const float t_1 = math::mult_pi_by_2 * z_1, t_2 = 1.f - (1.f - cosang) * z_2;
+	const float t_1 = math::mult_pi_by_2<> * z_1, t_2 = 1.f - (1.f - cosang) * z_2;
 	return (u * math::cos(t_1) + v * math::sin(t_1)) * math::sqrt(1.f - t_2 * t_2) + d * t_2;
 }
 
@@ -180,7 +180,7 @@ Vec3 Vec3::discreteVectorCone(const Vec3 &dir, float cangle, int sample, int squ
 {
 	const float r_1 = static_cast<float>(sample / square) / static_cast<float>(square);
 	const float r_2 = static_cast<float>(sample % square) / static_cast<float>(square);
-	const float tt = math::mult_pi_by_2 * r_1;
+	const float tt = math::mult_pi_by_2<> * r_1;
 	const float ss = math::acos(1.f - (1.f - cangle) * r_2);
 	const Vec3 vx(math::cos(ss), math::sin(ss) * math::cos(tt), math::sin(ss) * math::sin(tt));
 	const Vec3 i(1.f, 0.f, 0.f);

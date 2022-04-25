@@ -36,7 +36,7 @@ ArchitectCamera::ArchitectCamera(Logger &logger, const Point3 &pos, const Point3
 	int ns = (int)bkhtype_;
 	if((ns >= 3) && (ns <= 6))
 	{
-		float w = math::degToRad(bro), wi = (math::mult_pi_by_2) / (float)ns;
+		float w = math::degToRad(bro), wi = math::mult_pi_by_2<> / static_cast<float>(ns);
 		ns = (ns + 2) * 2;
 		ls_.resize(ns);
 		for(int i = 0; i < ns; i += 2)

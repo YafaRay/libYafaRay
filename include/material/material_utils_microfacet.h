@@ -27,17 +27,17 @@ namespace microfacet
 
 inline constexpr float pdfDivisor(float cos)
 {
-	return 8.f * math::num_pi * (cos * 0.99f + 0.04f);
+	return 8.f * math::num_pi<> * (cos * 0.99f + 0.04f);
 }
 
 inline float asDivisor(float cos_1, float cos_i, float cos_o)
 {
-	return 8.f * math::num_pi * ((cos_1 * std::max(cos_i, cos_o)) * 0.99f + 0.04f);
+	return 8.f * math::num_pi<> * ((cos_1 * std::max(cos_i, cos_o)) * 0.99f + 0.04f);
 }
 
 inline Vec3 sampleQuadrantAniso(float s_1, float s_2, float e_u, float e_v)
 {
-	const float phi = std::atan(math::sqrt((e_u + 1.f) / (e_v + 1.f)) * std::tan(math::div_pi_by_2 * s_1));
+	const float phi = std::atan(math::sqrt((e_u + 1.f) / (e_v + 1.f)) * std::tan(math::div_pi_by_2<> * s_1));
 	const float cos_phi = math::cos(phi);
 	const float sin_phi = math::sin(phi);
 	const float cos_phi_2 = cos_phi * cos_phi;
@@ -101,7 +101,7 @@ inline Vec3 blinnSample(float s_1, float s_2, float exponent)
 	// Compute sampled half-angle vector H for Blinn distribution
 	const float cos_theta = math::pow(1.f - s_2, 1.f / (exponent + 1.f));
 	const float sin_theta = math::sqrt(1.f - cos_theta * cos_theta);
-	const float phi = s_1 * math::mult_pi_by_2;
+	const float phi = s_1 * math::mult_pi_by_2<>;
 	return { sin_theta * math::cos(phi), sin_theta * math::sin(phi), cos_theta };
 }
 
@@ -115,7 +115,7 @@ inline Vec3 ggxSample(float alpha_2, float s_1, float s_2)
 	const float tan_theta_2 = alpha_2 * (s_1 / (1.00001f - s_1));
 	const float cos_theta = 1.f / math::sqrt(1.f + tan_theta_2);
 	const float sin_theta = math::sqrt(1.00001f - (cos_theta * cos_theta));
-	const float phi = math::mult_pi_by_2 * s_2;
+	const float phi = math::mult_pi_by_2<> * s_2;
 	return { sin_theta * math::cos(phi), sin_theta * math::sin(phi), cos_theta };
 }
 
@@ -123,7 +123,7 @@ inline float ggxD(float alpha_2, float cos_theta_2, float tan_theta_2)
 {
 	const float cos_theta_4 = cos_theta_2 * cos_theta_2;
 	const float a_tan = alpha_2 + tan_theta_2;
-	const float div = (math::num_pi * cos_theta_4 * a_tan * a_tan);
+	const float div = math::num_pi<> * cos_theta_4 * a_tan * a_tan;
 	return alpha_2 / div;
 }
 
