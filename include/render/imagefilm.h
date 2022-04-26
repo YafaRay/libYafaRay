@@ -156,6 +156,7 @@ class ImageFilm final
 	private:
 		void initLayersImages();
 		void initLayersExportedImages();
+		static int roundToIntWithBias(double val); //!< Asymmetrical rounding function with a +0.5 bias
 		int width_, height_, cx_0_, cx_1_, cy_0_, cy_1_;
 		int tile_size_;
 		ImageSplitter::TilesOrderType tiles_order_;
@@ -200,6 +201,13 @@ class ImageFilm final
 		static constexpr int filter_table_size_ = 16;
 		static constexpr int max_filter_size_ = 8;
 };
+
+inline int ImageFilm::roundToIntWithBias(double val)
+{
+	static constexpr double doublemagicroundeps {.5 - 1.4e-11}; //almost .5f = .5f - 1e^(number of exp bit)
+	return static_cast<int>(val + doublemagicroundeps);
+}
+
 
 END_YAFARAY
 

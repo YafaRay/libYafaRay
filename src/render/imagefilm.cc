@@ -678,11 +678,12 @@ bool ImageFilm::doMoreSamples(int x, int y) const
 void ImageFilm::addSample(int x, int y, float dx, float dy, const RenderArea *a, int num_sample, int aa_pass_number, float inv_aa_max_possible_samples, const ColorLayers *color_layers)
 {
 	// get filter extent and make sure we don't leave image area:
+	//FIXME: using for some reason an asymmetrical rounding function with a +0.5 bias. Using a standard rounding function would increase processing time due to increased filter applicable area and potentially causing more thread locks. Keeping this asymmetrical rounding for now to keep the original functionality, but probably something to be investigated and made better in the future.
+	const int dx_0 = std::max(cx_0_ - x, roundToIntWithBias(static_cast<double>(dx) - filterw_));
+	const int dx_1 = std::min(cx_1_ - x - 1, roundToIntWithBias(static_cast<double>(dx) + filterw_ - 1.0));
+	const int dy_0 = std::max(cy_0_ - y, roundToIntWithBias(static_cast<double>(dy) - filterw_));
+	const int dy_1 = std::min(cy_1_ - y - 1, roundToIntWithBias(static_cast<double>(dy) + filterw_ - 1.0));
 
-	const int dx_0 = std::max(cx_0_ - x, static_cast<int>(std::lround(dx - filterw_)));
-	const int dx_1 = std::min(cx_1_ - x - 1, static_cast<int>(std::lround(dx + filterw_ - 1.f)));
-	const int dy_0 = std::max(cy_0_ - y, static_cast<int>(std::lround(dy - filterw_)));
-	const int dy_1 = std::min(cy_1_ - y - 1, static_cast<int>(std::lround(dy + filterw_ - 1.f)));
 
 	// get indizes in filter table
 	const double x_offs = dx - 0.5;
@@ -735,10 +736,12 @@ void ImageFilm::addDensitySample(const Rgb &c, int x, int y, float dx, float dy,
 	if(!estimate_density_) return;
 
 	// get filter extent and make sure we don't leave image area:
-	const int dx_0 = std::max(cx_0_ - x, static_cast<int>(std::lround(dx - filterw_)));
-	const int dx_1 = std::min(cx_1_ - x - 1, static_cast<int>(std::lround(dx + filterw_ - 1.f)));
-	const int dy_0 = std::max(cy_0_ - y, static_cast<int>(std::lround(dy - filterw_)));
-	const int dy_1 = std::min(cy_1_ - y - 1, static_cast<int>(std::lround(dy + filterw_ - 1.f)));
+	//FIXME: using for some reason an asymmetrical rounding function with a +0.5 bias. Using a standard rounding function would increase processing time due to increased filter applicable area and potentially causing more thread locks. Keeping this asymmetrical rounding for now to keep the original functionality, but probably something to be investigated and made better in the future.
+	const int dx_0 = std::max(cx_0_ - x, roundToIntWithBias(static_cast<double>(dx) - filterw_));
+	const int dx_1 = std::min(cx_1_ - x - 1, roundToIntWithBias(static_cast<double>(dx) + filterw_ - 1.0));
+	const int dy_0 = std::max(cy_0_ - y, roundToIntWithBias(static_cast<double>(dy) - filterw_));
+	const int dy_1 = std::min(cy_1_ - y - 1, roundToIntWithBias(static_cast<double>(dy) + filterw_ - 1.0));
+
 
 	std::array<int, max_filter_size_ + 1> x_index;
 	std::array<int, max_filter_size_ + 1> y_index;
