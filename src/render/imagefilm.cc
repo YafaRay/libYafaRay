@@ -687,8 +687,8 @@ void ImageFilm::addSample(int x, int y, float dx, float dy, const RenderArea *a,
 	// get indizes in filter table
 	const double x_offs = dx - 0.5;
 
-	int x_index[max_filter_size_ + 1];
-	int y_index[max_filter_size_ + 1];
+	std::array<int, max_filter_size_ + 1> x_index;
+	std::array<int, max_filter_size_ + 1> y_index;
 
 	for(int i = dx_0, n = 0; i <= dx_1; ++i, ++n)
 	{
@@ -740,8 +740,8 @@ void ImageFilm::addDensitySample(const Rgb &c, int x, int y, float dx, float dy,
 	const int dy_0 = std::max(cy_0_ - y, static_cast<int>(std::lround(dy - filterw_)));
 	const int dy_1 = std::min(cy_1_ - y - 1, static_cast<int>(std::lround(dy + filterw_ - 1.f)));
 
-	int x_index[max_filter_size_ + 1];
-	int y_index[max_filter_size_ + 1];
+	std::array<int, max_filter_size_ + 1> x_index;
+	std::array<int, max_filter_size_ + 1> y_index;
 
 	const double x_offs = dx - 0.5;
 	for(int i = dx_0, n = 0; i <= dx_1; ++i, ++n)
@@ -980,7 +980,7 @@ void ImageFilm::imageFilmLoadAllInFolder(RenderControl &render_control)
 	bool any_film_loaded = false;
 	for(const auto &film_file : film_file_paths_list)
 	{
-		auto loaded_film = std::make_unique<ImageFilm>(logger_, width_, height_, cx_0_, cy_0_, num_threads_, render_control, layers_, outputs_, 1.0, FilterType::Box);
+		auto loaded_film = std::make_unique<ImageFilm>(logger_, width_, height_, cx_0_, cy_0_, num_threads_, render_control, layers_, outputs_, 1.f, FilterType::Box);
 		if(!loaded_film->imageFilmLoad(film_file))
 		{
 			logger_.logWarning("ImageFilm: Could not load film file '", film_file, "'");

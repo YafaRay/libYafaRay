@@ -78,7 +78,7 @@ class ImageFilm final
 
 		static ImageFilm *factory(Logger &logger, const ParamMap &params, Scene *scene);
 		/*! imageFilm_t Constructor */
-		ImageFilm(Logger &logger, int width, int height, int xstart, int ystart, int num_threads, RenderControl &render_control, const Layers &layers, const std::map<std::string, std::unique_ptr<ImageOutput>> &outputs, float filter_size = 1.0, FilterType filt = FilterType::Box, int t_size = 32, ImageSplitter::TilesOrderType tiles_order_type = ImageSplitter::Linear);
+		ImageFilm(Logger &logger, int width, int height, int xstart, int ystart, int num_threads, RenderControl &render_control, const Layers &layers, const std::map<std::string, std::unique_ptr<ImageOutput>> &outputs, float filter_size = 1.f, FilterType filt = FilterType::Box, int t_size = 32, ImageSplitter::TilesOrderType tiles_order_type = ImageSplitter::Linear);
 		/*! Initialize imageFilm for new rendering, i.e. set pixels black etc */
 		void init(RenderControl &render_control, int num_passes = 0);
 		/*! Prepare for next pass, i.e. reset area_cnt, check if pixels need resample...
