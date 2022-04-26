@@ -679,10 +679,10 @@ void ImageFilm::addSample(int x, int y, float dx, float dy, const RenderArea *a,
 {
 	// get filter extent and make sure we don't leave image area:
 
-	const int dx_0 = std::max(cx_0_ - x, math::roundToInt(static_cast<double>(dx) - filterw_));
-	const int dx_1 = std::min(cx_1_ - x - 1, math::roundToInt(static_cast<double>(dx) + filterw_ - 1.0));
-	const int dy_0 = std::max(cy_0_ - y, math::roundToInt(static_cast<double>(dy) - filterw_));
-	const int dy_1 = std::min(cy_1_ - y - 1, math::roundToInt(static_cast<double>(dy) + filterw_ - 1.0));
+	const int dx_0 = std::max(cx_0_ - x, static_cast<int>(std::lround(dx - filterw_)));
+	const int dx_1 = std::min(cx_1_ - x - 1, static_cast<int>(std::lround(dx + filterw_ - 1.f)));
+	const int dy_0 = std::max(cy_0_ - y, static_cast<int>(std::lround(dy - filterw_)));
+	const int dy_1 = std::min(cy_1_ - y - 1, static_cast<int>(std::lround(dy + filterw_ - 1.f)));
 
 	// get indizes in filter table
 	const double x_offs = dx - 0.5;
@@ -693,7 +693,7 @@ void ImageFilm::addSample(int x, int y, float dx, float dy, const RenderArea *a,
 	for(int i = dx_0, n = 0; i <= dx_1; ++i, ++n)
 	{
 		const double d = std::abs((static_cast<double>(i) - x_offs) * table_scale_);
-		x_index[n] = math::floorToInt(d);
+		x_index[n] = static_cast<int>(std::floor(d));
 	}
 
 	const double y_offs = dy - 0.5;
@@ -701,7 +701,7 @@ void ImageFilm::addSample(int x, int y, float dx, float dy, const RenderArea *a,
 	for(int i = dy_0, n = 0; i <= dy_1; ++i, ++n)
 	{
 		const double d = std::abs((static_cast<double>(i) - y_offs) * table_scale_);
-		y_index[n] = math::floorToInt(d);
+		y_index[n] = static_cast<int>(std::floor(d));
 	}
 
 	const int x_0 = x + dx_0;
@@ -735,10 +735,10 @@ void ImageFilm::addDensitySample(const Rgb &c, int x, int y, float dx, float dy,
 	if(!estimate_density_) return;
 
 	// get filter extent and make sure we don't leave image area:
-	const int dx_0 = std::max(cx_0_ - x, math::roundToInt(static_cast<double>(dx) - filterw_));
-	const int dx_1 = std::min(cx_1_ - x - 1, math::roundToInt(static_cast<double>(dx) + filterw_ - 1.0));
-	const int dy_0 = std::max(cy_0_ - y, math::roundToInt(static_cast<double>(dy) - filterw_));
-	const int dy_1 = std::min(cy_1_ - y - 1, math::roundToInt(static_cast<double>(dy) + filterw_ - 1.0));
+	const int dx_0 = std::max(cx_0_ - x, static_cast<int>(std::lround(dx - filterw_)));
+	const int dx_1 = std::min(cx_1_ - x - 1, static_cast<int>(std::lround(dx + filterw_ - 1.f)));
+	const int dy_0 = std::max(cy_0_ - y, static_cast<int>(std::lround(dy - filterw_)));
+	const int dy_1 = std::min(cy_1_ - y - 1, static_cast<int>(std::lround(dy + filterw_ - 1.f)));
 
 	int x_index[max_filter_size_ + 1];
 	int y_index[max_filter_size_ + 1];
@@ -747,14 +747,14 @@ void ImageFilm::addDensitySample(const Rgb &c, int x, int y, float dx, float dy,
 	for(int i = dx_0, n = 0; i <= dx_1; ++i, ++n)
 	{
 		const double d = std::abs((static_cast<double>(i) - x_offs) * table_scale_);
-		x_index[n] = math::floorToInt(d);
+		x_index[n] = static_cast<int>(std::floor(d));
 	}
 
 	const double y_offs = dy - 0.5;
 	for(int i = dy_0, n = 0; i <= dy_1; ++i, ++n)
 	{
 		const float d = std::abs(static_cast<float>((static_cast<double>(i) - y_offs) * table_scale_));
-		y_index[n] = math::floorToInt(d);
+		y_index[n] = static_cast<int>(std::floor(d));
 	}
 
 	const int x_0 = x + dx_0;

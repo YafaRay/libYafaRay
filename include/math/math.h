@@ -65,29 +65,34 @@ template<typename T = float> static constexpr T div_4_by_squared_pi {0.405284734
 template<typename T = float> static constexpr T div_pi_by_180 {0.01745329251994329576923690768489L}; // pi / 180
 template<typename T = float> static constexpr T div_180_by_pi {57.295779513082320876798154814105L}; // 180 / pi
 
+// fast base-2 van der Corput, Sobel, and Larcher & Pillichshammer sequences,
+// all from "Efficient Multidimensional Sampling" by Alexander Keller
+template<typename T = float> static constexpr T sample_mult_ratio {0.00000000023283064365386962890625L};
+
+
 template<typename T> inline constexpr T degToRad(T deg)
 {
 	static_assert(std::is_floating_point<T>::value, "This function can only be instantiated for floating point arguments");
 	return deg * math::div_pi_by_180<T>;
 }
+
 template<typename T> inline constexpr T radToDeg(T rad)
 {
 	static_assert(std::is_floating_point<T>::value, "This function can only be instantiated for floating point arguments");
 	return rad * math::div_180_by_pi<T>;
 }
 
-static constexpr double doublemagicroundeps {.5 - 1.4e-11}; //almost .5f = .5f - 1e^(number of exp bit)
-static constexpr double doublemagic {6755399441055744.0}; //2^52 * 1.5, uses limited precision to floor
+template <class T> inline constexpr T min(T a, T b, T c)
+{
+	static_assert(std::is_pod<T>::value, "This function can only be instantiated for simple 'plain old data' types");
+	return std::min(a, std::min(b, c));
+}
 
-// fast base-2 van der Corput, Sobel, and Larcher & Pillichshammer sequences,
-// all from "Efficient Multidimensional Sampling" by Alexander Keller
-template<typename T = float> static constexpr T sample_mult_ratio {0.00000000023283064365386962890625L};
-
-template <class T>
-constexpr T min(const T &a, const T &b, const T &c) { return std::min(a, std::min(b, c)); }
-
-template <class T>
-constexpr T max(const T &a, const T &b, const T &c) { return std::max(a, std::max(b, c)); }
+template <class T> inline constexpr T max(T a, T b, T c)
+{
+	static_assert(std::is_pod<T>::value, "This function can only be instantiated for simple 'plain old data' types");
+	return std::max(a, std::max(b, c));
+}
 
 union BitTwiddler
 {
@@ -235,7 +240,7 @@ inline float cos(float x)
 #endif
 }
 
-inline constexpr float acos(float x)
+template<typename T> inline constexpr T acos(T x)
 {
 	//checks if variable gets out of domain [-1.0,+1.0], so you get the range limit instead of NaN
 	if(x <= -1.f) return math::num_pi<>;
@@ -251,36 +256,10 @@ inline constexpr float asin(float x)
 	else return std::asin(x);
 }
 
-inline int roundToInt(double val)
-{
-	return static_cast<int>(val + math::doublemagicroundeps);
-}
-
-inline int floatToInt(double val)
-{
-	return static_cast<int>(val);
-}
-
-inline int floorToInt(double val)
-{
-	return static_cast<int>(std::floor(val));
-}
-
-inline int ceilToInt(double val)
-{
-	return static_cast<int>(std::ceil(val));
-}
-
 inline constexpr double roundFloatPrecision(double val, double precision) //To round, for example 3.2384764 to 3.24 use precision 0.01
 {
 	if(precision <= 0.0) return 0.0;
 	else return std::round(val / precision) * precision;
-}
-
-template<typename T>
-inline constexpr bool isValid(const T &value)	//To check a floating point number is not a NaN for example, even while using --fast-math compile flag
-{
-	return (value >= std::numeric_limits<T>::lowest() && value <= std::numeric_limits<T>::max());
 }
 
 template<typename T>
@@ -298,24 +277,6 @@ inline constexpr T addMod1(const T &a, const T &b)
 {
 	const T s = a + b;
 	return s > 1 ? s - 1 : s;
-}
-
-inline constexpr int nextPrime(int last_prime)
-{
-	int new_prime = last_prime + (last_prime & 1) + 1;
-	while(true)
-	{
-		int dv = 3;
-		bool ispr = true;
-		while(ispr && (dv * dv <= new_prime))
-		{
-			ispr = ((new_prime % dv) != 0);
-			dv += 2;
-		}
-		if(ispr) break;
-		new_prime += 2;
-	}
-	return new_prime;
 }
 
 } //namespace math
