@@ -52,7 +52,7 @@ class Object
 		virtual int numPrimitives() const = 0;
 		/*! write the primitive pointers to the given array
 			\return number of written primitives */
-		virtual const std::vector<const Primitive *> getPrimitives() const = 0;
+		virtual std::vector<const Primitive *> getPrimitives() const = 0;
 		/*! sample object surface */
 		//virtual void sample(float s_1, float s_2, Point3 &p, Vec3 &n)  const = 0;
 		/*! Sets the object visibility to the renderer (is added or not to the kdtree) */

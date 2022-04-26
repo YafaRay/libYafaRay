@@ -45,7 +45,7 @@ class HashGrid final
 		unsigned int gather(const Point3 &p, FoundPhoton *found, unsigned int k, float sq_radius);
 
 	private:
-		unsigned int hash(const int ix, const int iy, const int iz)
+		unsigned int hash(const int ix, const int iy, const int iz) const
 		{
 			return static_cast<unsigned int>((ix * 73856093) ^ (iy * 19349663) ^ (iz * 83492791)) % grid_size_;
 		}

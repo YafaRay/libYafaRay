@@ -41,7 +41,7 @@ class MeshObject : public ObjectBasic
 		/*! the number of primitives the object holds. Primitive is an element
 			that by definition can perform ray-triangle intersection */
 		int numPrimitives() const override { return faces_.size(); }
-		const std::vector<const Primitive *> getPrimitives() const override;
+		std::vector<const Primitive *> getPrimitives() const override;
 		int lastVertexId() const override { return points_.size() - 1; }
 		Vec3 getVertexNormal(int index) const { return normals_[index]; }
 		Point3 getVertex(int index) const { return points_[index]; }

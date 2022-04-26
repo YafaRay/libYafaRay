@@ -342,7 +342,7 @@ bool HdrFormat::saveToFile(const std::string &name, const ImageLayer &image_laye
 	return true;
 }
 
-bool HdrFormat::writeHeader(std::ofstream &file, const Image *image)
+bool HdrFormat::writeHeader(std::ofstream &file, const Image *image) const
 {
 	const int h = image->getHeight();
 	const int w = image->getWidth();

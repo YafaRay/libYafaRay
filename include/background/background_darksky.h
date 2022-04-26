@@ -47,7 +47,7 @@ class DarkSkyBackground final : public Background
 		Rgb eval(const Vec3 &dir, bool use_ibl_blur) const override;
 		Rgb getAttenuatedSunColor();
 		Rgb getSkyCol(const Vec3 &dir) const;
-		double prePerez(const std::array<double, 6> &perez);
+		double prePerez(const std::array<double, 6> &perez) const;
 		Rgb getSunColorFromSunRad();
 		static double perezFunction(const std::array<double, 6> &lam, double cos_theta, double gamma, double cos_gamma, double lvz);
 

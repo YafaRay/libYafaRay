@@ -152,7 +152,7 @@ Rgb DarkSkyBackground::getSunColorFromSunRad()
 	return color_conv_.fromXyz(s_xyz, true);
 }
 
-double DarkSkyBackground::prePerez(const std::array<double, 6> &perez)
+double DarkSkyBackground::prePerez(const std::array<double, 6> &perez) const
 {
 	const double p_num = ((1 + perez[0] * std::exp(perez[1])) * (1 + (perez[2] * std::exp(perez[3] * theta_s_)) + (perez[4] * cos_theta_2_)));
 	if(p_num == 0.0) return 0.0;

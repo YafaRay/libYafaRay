@@ -108,7 +108,7 @@ class Bound
 		float centerY() const { return (g_.y() + a_.y()) * 0.5f; }
 		float centerZ() const { return (g_.z() + a_.z()) * 0.5f; }
 		Point3 center() const { return (g_ + a_) * 0.5f; }
-		int largestAxis()
+		int largestAxis() const
 		{
 			const Vec3 d{g_ - a_};
 			return (d.x() > d.y()) ? ((d.x() > d.z()) ? 0 : 2) : ((d.y() > d.z()) ? 1 : 2);

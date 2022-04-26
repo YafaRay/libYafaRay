@@ -44,9 +44,9 @@ class FacePrimitive: public Primitive
 		Uv getVertexUv(size_t vertex_number) const; //!< Get face vertex Uv
 		void setNormalsIndices(const std::vector<int> &normals_indices) { vertex_normals_ = normals_indices; }
 		void setUvIndices(const std::vector<int> &uv_indices) { vertex_uvs_ = uv_indices; }
-		const std::vector<int> getVerticesIndices() const { return vertices_; }
-		const std::vector<int> getNormalsIndices() const { return vertex_normals_; }
-		const std::vector<int> getUvIndices() const { return vertex_uvs_; }
+		std::vector<int> getVerticesIndices() const { return vertices_; }
+		std::vector<int> getNormalsIndices() const { return vertex_normals_; }
+		std::vector<int> getUvIndices() const { return vertex_uvs_; }
 		std::vector<Point3> getVertices(const Matrix4 *obj_to_world = nullptr) const;
 		std::vector<Point3> getOrcoVertices() const;
 		std::vector<Vec3> getVerticesNormals(const Vec3 &surface_normal, const Matrix4 *obj_to_world = nullptr) const;

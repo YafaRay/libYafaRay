@@ -44,7 +44,7 @@ class RenderView final
 		bool init(Logger &logger, const Scene &scene);
 		std::string getName() const { return name_; }
 		const Camera *getCamera() const { return camera_; }
-		const std::map<std::string, Light *> getLights() const { return lights_; }
+		std::map<std::string, Light *> getLights() const { return lights_; }
 		bool isSpectral() const { return wavelength_ != 0.f; }
 		float getWaveLength() const { return wavelength_; }
 		std::vector<const Light *> getLightsVisible() const;

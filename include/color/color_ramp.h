@@ -36,8 +36,8 @@ class ColorRampItem final
 		bool operator < (const ColorRampItem &item) const { return (position_ < item.position_); }
 		bool operator < (float pos) const { return (position_ < pos); }
 		bool operator > (const ColorRampItem &item) const { return (position_ > item.position_); }
-		const Rgba color() const { return color_; }
-		const float position() const { return position_; }
+		Rgba color() const { return color_; }
+		float position() const { return position_; }
 
 	private:
 		Rgba color_ = Rgba(0.f, 0.f, 0.f, 1.f);

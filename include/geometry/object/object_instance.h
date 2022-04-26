@@ -31,7 +31,7 @@ class ObjectInstance : public Object
 	public:
 		ObjectInstance(const Object &base_object, const Matrix4 &obj_to_world);
 		int numPrimitives() const override { return primitive_instances_.size(); }
-		const std::vector<const Primitive *> getPrimitives() const override;
+		std::vector<const Primitive *> getPrimitives() const override;
 		std::string getName() const override { return base_object_.getName(); }
 		void setName(const std::string &name) override { }
 		/*! sample object surface */

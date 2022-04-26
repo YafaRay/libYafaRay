@@ -52,7 +52,7 @@ class Photon
 		//			direction(dir);
 		//		};
 		const Point3 &position() const {return pos_;};
-		const Rgb color() const {return c_;};
+		Rgb color() const {return c_;};
 		void color(const Rgb &col) { c_ = col;};
 		Vec3 direction() const
 		{

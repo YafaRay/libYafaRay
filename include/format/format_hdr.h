@@ -40,7 +40,7 @@ class HdrFormat final : public Format
 		Image * loadFromFile(const std::string &name, const Image::Optimization &optimization, const ColorSpace &color_space, float gamma) override;
 		bool saveToFile(const std::string &name, const ImageLayer &image_layer, ColorSpace color_space, float gamma, bool alpha_premultiply) override;
 		bool isHdr() const override { return true; }
-		bool writeHeader(std::ofstream &file, const Image *image);
+		bool writeHeader(std::ofstream &file, const Image *image) const;
 		bool readHeader(std::FILE *fp, int &width, int &height); //!< Reads file header and detects if the file is valid
 		bool readOrle(std::FILE *fp, int y, int scan_width, Image *image, const ColorSpace &color_space, float gamma); //!< Reads the scanline with the original Radiance RLE schema or without compression
 		bool readArle(std::FILE *fp, int y, int scan_width, Image *image, const ColorSpace &color_space, float gamma); //!< Reads a scanline with Adaptative RLE schema

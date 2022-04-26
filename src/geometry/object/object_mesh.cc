@@ -101,7 +101,7 @@ bool MeshObject::calculateObject(const std::unique_ptr<const Material> *)
 	return true;
 }
 
-const std::vector<const Primitive *> MeshObject::getPrimitives() const
+std::vector<const Primitive *> MeshObject::getPrimitives() const
 {
 	std::vector<const Primitive *> primitives;
 	primitives.reserve(faces_.size());

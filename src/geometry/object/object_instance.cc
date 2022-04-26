@@ -32,7 +32,7 @@ ObjectInstance::ObjectInstance(const Object &base_object, const Matrix4 &obj_to_
 	}
 }
 
-const std::vector<const Primitive *> ObjectInstance::getPrimitives() const
+std::vector<const Primitive *> ObjectInstance::getPrimitives() const
 {
 	std::vector<const Primitive *> result;
 	for(const auto &primitive_instance : primitive_instances_) result.emplace_back(primitive_instance.get());
