@@ -135,7 +135,7 @@ bool HdrFormat::readHeader(FILE *fp, int &width, int &height)
 	{
 		std::fgets(linebuf, line_size, fp);
 		line = std::string(linebuf);
-		if(line == "" || line == "\n") break;  // We found the end of the header tag section and we move on
+		if(line.empty() || line == "\n") break;  // We found the end of the header tag section and we move on
 		//Find variables
 		// We only check for the most used tags and ignore the rest
 		if((found_pos = line.find("FORMAT=")) != std::string::npos)

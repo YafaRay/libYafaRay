@@ -51,7 +51,7 @@ class MemoryArena
 			{
 				// Get new block of memory for _MemoryArena_
 				used_blocks_.emplace_back(current_block_);
-				if(available_blocks_.size() && sz <= block_size_)
+				if(!available_blocks_.empty() && sz <= block_size_)
 				{
 					current_block_ = available_blocks_.back();
 					available_blocks_.pop_back();
