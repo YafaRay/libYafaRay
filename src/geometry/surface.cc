@@ -110,7 +110,7 @@ std::unique_ptr<RayDifferentials> SurfacePoint::refractedRay(const RayDifferenti
 	return out_differentials;
 }
 
-float SurfacePoint::projectedPixelArea()
+float SurfacePoint::projectedPixelArea() const
 {
 	if(differentials_) return (differentials_->dp_dx_ ^ differentials_->dp_dy_).length();
 	else return 0.f;

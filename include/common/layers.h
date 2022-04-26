@@ -39,8 +39,8 @@ class Layers final : public Collection<LayerDef::Type, Layer>
 	public:
 		bool isDefined(LayerDef::Type type) const;
 		bool isDefinedAny(const std::vector<LayerDef::Type> &types) const;
-		const Layers getLayersWithImages() const;
-		const Layers getLayersWithExportedImages() const;
+		Layers getLayersWithImages() const;
+		Layers getLayersWithExportedImages() const;
 		std::string printExportedTable() const;
 };
 

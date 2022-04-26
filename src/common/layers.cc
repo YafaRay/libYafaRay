@@ -32,7 +32,7 @@ bool Layers::isDefinedAny(const std::vector<LayerDef::Type> &types) const
 	return false;
 }
 
-const Layers Layers::getLayersWithImages() const
+Layers Layers::getLayersWithImages() const
 {
 	Layers result;
 	for(const auto &[layer_def, layer] : items_)
@@ -42,7 +42,7 @@ const Layers Layers::getLayersWithImages() const
 	return result;
 }
 
-const Layers Layers::getLayersWithExportedImages() const
+Layers Layers::getLayersWithExportedImages() const
 {
 	Layers result;
 	for(const auto &[layer_def, layer] : items_)

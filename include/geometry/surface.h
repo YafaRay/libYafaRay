@@ -67,7 +67,7 @@ class SurfacePoint final
 		std::unique_ptr<RayDifferentials> reflectedRay(const RayDifferentials *in_differentials, const Vec3 &in_dir, const Vec3 &out_dir) const;
 		//! compute differentials for a refracted ray
 		std::unique_ptr<RayDifferentials> refractedRay(const RayDifferentials *in_differentials, const Vec3 &in_dir, const Vec3 &out_dir, float ior) const;
-		float projectedPixelArea();
+		float projectedPixelArea() const;
 		void getUVdifferentials(float &du_dx, float &dv_dx, float &du_dy, float &dv_dy) const;
 		void setRayDifferentials(const RayDifferentials *ray_differentials);
 
