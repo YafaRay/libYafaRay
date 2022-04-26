@@ -351,8 +351,8 @@ const Material *RoughGlassMaterial::factory(Logger &logger, const Scene &scene, 
 	root_nodes_map["roughness_shader"] = nullptr;
 
 	std::vector<const ShaderNode *> root_nodes_list;
-	mat->nodes_map_ = mat->loadNodes(nodes_params, scene, logger);
-	if(!mat->nodes_map_.empty()) mat->parseNodes(params, root_nodes_list, root_nodes_map, mat->nodes_map_, logger);
+	mat->nodes_map_ = NodeMaterial::loadNodes(nodes_params, scene, logger);
+	if(!mat->nodes_map_.empty()) NodeMaterial::parseNodes(params, root_nodes_list, root_nodes_map, mat->nodes_map_, logger);
 
 	mat->mirror_color_shader_ = root_nodes_map["mirror_color_shader"];
 	mat->bump_shader_ = root_nodes_map["bump_shader"];
@@ -364,33 +364,33 @@ const Material *RoughGlassMaterial::factory(Logger &logger, const Scene &scene, 
 	// solve nodes order
 	if(!root_nodes_list.empty())
 	{
-		const std::vector<const ShaderNode *> nodes_sorted = mat->solveNodesOrder(root_nodes_list, mat->nodes_map_, logger);
+		const std::vector<const ShaderNode *> nodes_sorted = NodeMaterial::solveNodesOrder(root_nodes_list, mat->nodes_map_, logger);
 		if(mat->mirror_color_shader_)
 		{
-			const std::vector<const ShaderNode *> shader_nodes_list = mat->getNodeList(mat->mirror_color_shader_, nodes_sorted);
+			const std::vector<const ShaderNode *> shader_nodes_list = NodeMaterial::getNodeList(mat->mirror_color_shader_, nodes_sorted);
 			mat->color_nodes_.insert(mat->color_nodes_.end(), shader_nodes_list.begin(), shader_nodes_list.end());
 		}
 		if(mat->roughness_shader_)
 		{
-			const std::vector<const ShaderNode *> shader_nodes_list = mat->getNodeList(mat->roughness_shader_, nodes_sorted);
+			const std::vector<const ShaderNode *> shader_nodes_list = NodeMaterial::getNodeList(mat->roughness_shader_, nodes_sorted);
 			mat->color_nodes_.insert(mat->color_nodes_.end(), shader_nodes_list.begin(), shader_nodes_list.end());
 		}
 		if(mat->ior_shader_)
 		{
-			const std::vector<const ShaderNode *> shader_nodes_list = mat->getNodeList(mat->ior_shader_, nodes_sorted);
+			const std::vector<const ShaderNode *> shader_nodes_list = NodeMaterial::getNodeList(mat->ior_shader_, nodes_sorted);
 			mat->color_nodes_.insert(mat->color_nodes_.end(), shader_nodes_list.begin(), shader_nodes_list.end());
 		}
 		if(mat->wireframe_shader_)
 		{
-			const std::vector<const ShaderNode *> shader_nodes_list = mat->getNodeList(mat->wireframe_shader_, nodes_sorted);
+			const std::vector<const ShaderNode *> shader_nodes_list = NodeMaterial::getNodeList(mat->wireframe_shader_, nodes_sorted);
 			mat->color_nodes_.insert(mat->color_nodes_.end(), shader_nodes_list.begin(), shader_nodes_list.end());
 		}
 		if(mat->filter_col_shader_)
 		{
-			const std::vector<const ShaderNode *> shader_nodes_list = mat->getNodeList(mat->filter_col_shader_, nodes_sorted);
+			const std::vector<const ShaderNode *> shader_nodes_list = NodeMaterial::getNodeList(mat->filter_col_shader_, nodes_sorted);
 			mat->color_nodes_.insert(mat->color_nodes_.end(), shader_nodes_list.begin(), shader_nodes_list.end());
 		}
-		if(mat->bump_shader_) mat->bump_nodes_ = mat->getNodeList(mat->bump_shader_, nodes_sorted);
+		if(mat->bump_shader_) mat->bump_nodes_ = NodeMaterial::getNodeList(mat->bump_shader_, nodes_sorted);
 	}
 	return mat;
 }

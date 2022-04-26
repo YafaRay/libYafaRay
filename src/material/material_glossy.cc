@@ -439,8 +439,8 @@ const Material *GlossyMaterial::factory(Logger &logger, const Scene &scene, cons
 	root_nodes_map["diffuse_refl_shader"] = nullptr;
 
 	std::vector<const ShaderNode *> root_nodes_list;
-	mat->nodes_map_ =mat->loadNodes(nodes_params, scene, logger);
-	if(!mat->nodes_map_.empty()) mat->parseNodes(params, root_nodes_list, root_nodes_map, mat->nodes_map_, logger);
+	mat->nodes_map_ = NodeMaterial::loadNodes(nodes_params, scene, logger);
+	if(!mat->nodes_map_.empty()) NodeMaterial::parseNodes(params, root_nodes_list, root_nodes_map, mat->nodes_map_, logger);
 
 	mat->diffuse_shader_ = root_nodes_map["diffuse_shader"];
 	mat->glossy_shader_ = root_nodes_map["glossy_shader"];
@@ -454,43 +454,43 @@ const Material *GlossyMaterial::factory(Logger &logger, const Scene &scene, cons
 	// solve nodes order
 	if(!root_nodes_list.empty())
 	{
-		const std::vector<const ShaderNode *> nodes_sorted = mat->solveNodesOrder(root_nodes_list, mat->nodes_map_, logger);
+		const std::vector<const ShaderNode *> nodes_sorted = NodeMaterial::solveNodesOrder(root_nodes_list, mat->nodes_map_, logger);
 		if(mat->diffuse_shader_)
 		{
-			const std::vector<const ShaderNode *> shader_nodes_list = mat->getNodeList(mat->diffuse_shader_, nodes_sorted);
+			const std::vector<const ShaderNode *> shader_nodes_list = NodeMaterial::getNodeList(mat->diffuse_shader_, nodes_sorted);
 			mat->color_nodes_.insert(mat->color_nodes_.end(), shader_nodes_list.begin(), shader_nodes_list.end());
 		}
 		if(mat->glossy_shader_)
 		{
-			const std::vector<const ShaderNode *> shader_nodes_list = mat->getNodeList(mat->glossy_shader_, nodes_sorted);
+			const std::vector<const ShaderNode *> shader_nodes_list = NodeMaterial::getNodeList(mat->glossy_shader_, nodes_sorted);
 			mat->color_nodes_.insert(mat->color_nodes_.end(), shader_nodes_list.begin(), shader_nodes_list.end());
 		}
 		if(mat->glossy_reflection_shader_)
 		{
-			const std::vector<const ShaderNode *> shader_nodes_list = mat->getNodeList(mat->glossy_reflection_shader_, nodes_sorted);
+			const std::vector<const ShaderNode *> shader_nodes_list = NodeMaterial::getNodeList(mat->glossy_reflection_shader_, nodes_sorted);
 			mat->color_nodes_.insert(mat->color_nodes_.end(), shader_nodes_list.begin(), shader_nodes_list.end());
 		}
 		if(mat->sigma_oren_shader_)
 		{
-			const std::vector<const ShaderNode *> shader_nodes_list = mat->getNodeList(mat->sigma_oren_shader_, nodes_sorted);
+			const std::vector<const ShaderNode *> shader_nodes_list = NodeMaterial::getNodeList(mat->sigma_oren_shader_, nodes_sorted);
 			mat->color_nodes_.insert(mat->color_nodes_.end(), shader_nodes_list.begin(), shader_nodes_list.end());
 		}
 		if(mat->exponent_shader_)
 		{
-			const std::vector<const ShaderNode *> shader_nodes_list = mat->getNodeList(mat->exponent_shader_, nodes_sorted);
+			const std::vector<const ShaderNode *> shader_nodes_list = NodeMaterial::getNodeList(mat->exponent_shader_, nodes_sorted);
 			mat->color_nodes_.insert(mat->color_nodes_.end(), shader_nodes_list.begin(), shader_nodes_list.end());
 		}
 		if(mat->wireframe_shader_)
 		{
-			const std::vector<const ShaderNode *> shader_nodes_list = mat->getNodeList(mat->wireframe_shader_, nodes_sorted);
+			const std::vector<const ShaderNode *> shader_nodes_list = NodeMaterial::getNodeList(mat->wireframe_shader_, nodes_sorted);
 			mat->color_nodes_.insert(mat->color_nodes_.end(), shader_nodes_list.begin(), shader_nodes_list.end());
 		}
 		if(mat->diffuse_reflection_shader_)
 		{
-			const std::vector<const ShaderNode *> shader_nodes_list = mat->getNodeList(mat->diffuse_reflection_shader_, nodes_sorted);
+			const std::vector<const ShaderNode *> shader_nodes_list = NodeMaterial::getNodeList(mat->diffuse_reflection_shader_, nodes_sorted);
 			mat->color_nodes_.insert(mat->color_nodes_.end(), shader_nodes_list.begin(), shader_nodes_list.end());
 		}
-		if(mat->bump_shader_) mat->bump_nodes_ = mat->getNodeList(mat->bump_shader_, nodes_sorted);
+		if(mat->bump_shader_) mat->bump_nodes_ = NodeMaterial::getNodeList(mat->bump_shader_, nodes_sorted);
 	}
 	return mat;
 }

@@ -1136,7 +1136,7 @@ std::string ImageFilm::printRenderStats(const RenderControl &render_control, con
 	double times = timer.getTimeNotStopping("rendert");
 	if(render_control.finished()) times = timer.getTime("rendert");
 	int timem, timeh;
-	timer.splitTime(times, &times, &timem, &timeh);
+	Timer::splitTime(times, &times, &timem, &timeh);
 	ss << " | " << width << "x" << height;
 	if(render_control.inProgress()) ss << " | " << (render_control.resumed() ? "film loaded + " : "") << "in progress " << std::fixed << std::setprecision(1) << render_control.currentPassPercent() << "% of pass: " << render_control.currentPass() << " / " << render_control.totalPasses();
 	else if(render_control.canceled()) ss << " | " << (render_control.resumed() ? "film loaded + " : "") << "stopped at " << std::fixed << std::setprecision(1) << render_control.currentPassPercent() << "% of pass: " << render_control.currentPass() << " / " << render_control.totalPasses();
@@ -1154,7 +1154,7 @@ std::string ImageFilm::printRenderStats(const RenderControl &render_control, con
 
 	times = timer.getTimeNotStopping("rendert") + timer.getTime("prepass");
 	if(render_control.finished()) times = timer.getTime("rendert") + timer.getTime("prepass");
-	timer.splitTime(times, &times, &timem, &timeh);
+	Timer::splitTime(times, &times, &timem, &timeh);
 	ss << " | Total time:";
 	if(timeh > 0) ss << " " << timeh << "h";
 	if(timem > 0) ss << " " << timem << "m";
