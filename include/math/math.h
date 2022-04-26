@@ -188,6 +188,11 @@ inline float log(float a)
 #endif
 }
 
+inline double log(double a)
+{
+	return std::log(a);
+}
+
 inline float exp(float a)
 {
 #ifdef FAST_MATH
@@ -197,6 +202,11 @@ inline float exp(float a)
 #endif
 }
 
+inline double exp(double a)
+{
+	return std::exp2(a);
+}
+
 inline float sqrt(float a)
 {
 #ifdef FAST_MATH
@@ -204,6 +214,11 @@ inline float sqrt(float a)
 #else
 	return std::sqrt(a);
 #endif
+}
+
+inline double sqrt(double a)
+{
+	return std::sqrt(a);
 }
 
 inline float sin(float x)
@@ -231,6 +246,11 @@ inline float sin(float x)
 #endif
 }
 
+inline double sin(double x)
+{
+	return std::sin(x);
+}
+
 inline float cos(float x)
 {
 #ifdef FAST_TRIG
@@ -238,6 +258,11 @@ inline float cos(float x)
 #else
 	return std::cos(x);
 #endif
+}
+
+inline double cos(double x)
+{
+	return std::cos(x);
 }
 
 template<typename T> inline constexpr T acos(T x)

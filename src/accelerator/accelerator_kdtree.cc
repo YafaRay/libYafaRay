@@ -55,8 +55,8 @@ AcceleratorKdTree::AcceleratorKdTree(Logger &logger, const std::vector<const Pri
 	next_free_node_ = 0;
 	allocated_nodes_count_ = 256;
 	nodes_ = std::unique_ptr<Node[]>(new Node[allocated_nodes_count_]);
-	if(max_depth_ <= 0 && total_prims_ > 0) max_depth_ = static_cast<int>(7.0f + 1.66f * std::log(static_cast<float>(total_prims_)));
-	const double log_leaves = 1.442695f * log(static_cast<double >(total_prims_)); // = base2 log
+	if(max_depth_ <= 0 && total_prims_ > 0) max_depth_ = static_cast<int>(7.0f + 1.66f * math::log(static_cast<float>(total_prims_)));
+	const double log_leaves = 1.442695 * math::log(static_cast<double >(total_prims_)); // = base2 log
 	if(leaf_size <= 0)
 	{
 		int mls = static_cast<int>(log_leaves - 16.0);

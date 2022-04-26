@@ -322,10 +322,10 @@ const Material *RoughGlassMaterial::factory(Logger &logger, const Scene &scene, 
 			Rgb sigma(0.f);
 			if(params.getParam("absorption_dist", dist))
 			{
-				const float maxlog = log(1e38);
-				sigma.r_ = (absorp.r_ > 1e-38) ? -std::log(absorp.r_) : maxlog;
-				sigma.g_ = (absorp.g_ > 1e-38) ? -std::log(absorp.g_) : maxlog;
-				sigma.b_ = (absorp.b_ > 1e-38) ? -std::log(absorp.b_) : maxlog;
+				const float maxlog = math::log(1e38f);
+				sigma.r_ = (absorp.r_ > 1e-38f) ? -math::log(absorp.r_) : maxlog;
+				sigma.g_ = (absorp.g_ > 1e-38f) ? -math::log(absorp.g_) : maxlog;
+				sigma.b_ = (absorp.b_ > 1e-38f) ? -math::log(absorp.b_) : maxlog;
 				if(dist != 0.f) sigma *= 1.f / dist;
 			}
 			mat->absorb_ = true;

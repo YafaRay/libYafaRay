@@ -49,8 +49,8 @@ AcceleratorKdTreeMultiThread::AcceleratorKdTreeMultiThread(Logger &logger, const
 	const auto num_primitives = static_cast<uint32_t>(primitives.size());
 	logger_.logInfo("Kd-Tree MultiThread: Starting build (", num_primitives, " prims, cost_ratio:", parameters.cost_ratio_, " empty_bonus:", parameters.empty_bonus_, ") [using ", tree_build_parameters.num_threads_, " threads, min indices to spawn threads: ", tree_build_parameters.min_indices_to_spawn_threads_, "]");
 	clock_t clock_start = clock();
-	if(tree_build_parameters.max_depth_ <= 0) tree_build_parameters.max_depth_ = static_cast<int>(7.0f + 1.66f * log(static_cast<float>(num_primitives)));
-	const double log_leaves = 1.442695f * log(static_cast<double >(num_primitives)); // = base2 log
+	if(tree_build_parameters.max_depth_ <= 0) tree_build_parameters.max_depth_ = static_cast<int>(7.0f + 1.66f * math::log(static_cast<float>(num_primitives)));
+	const double log_leaves = 1.442695 * math::log(static_cast<double >(num_primitives)); // = base2 log
 	if(tree_build_parameters.max_leaf_size_ <= 0)
 	{
 		int mls = static_cast<int>(log_leaves - 16.0);
