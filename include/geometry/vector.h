@@ -77,7 +77,7 @@ class Vec3
 		static void fastFresnel(const Vec3 &i, const Vec3 &n, float iorf, float &kr, float &kt);
 		static std::pair<Vec3, Vec3> createCoordsSystem(const Vec3 &normal);
 		static void shirleyDisk(float r_1, float r_2, float &u, float &v);
-		static Vec3 randomSpherical();
+		static Vec3 randomSpherical(FastRandom &fast_random);
 		static Vec3 randomVectorCone(const Vec3 &d, const Vec3 &u, const Vec3 &v, float cosang, float z_1, float z_2);
 		static Vec3 randomVectorCone(const Vec3 &dir, float cosangle, float r_1, float r_2);
 		static Vec3 discreteVectorCone(const Vec3 &dir, float cangle, int sample, int square);
@@ -275,13 +275,13 @@ inline std::pair<Vec3, Vec3> Vec3::createCoordsSystem(const Vec3 &normal)
 	}
 }
 
-inline Vec3 Vec3::randomSpherical()
+inline Vec3 Vec3::randomSpherical(FastRandom &fast_random)
 {
-	Vec3 v{0.f, 0.f, FastRandom::getNextFloatNormalized()};
+	Vec3 v{0.f, 0.f, fast_random.getNextFloatNormalized()};
 	float r = 1.f - v.vec_[2] * v.vec_[2];
 	if(r > 0.f)
 	{
-		const float a = math::mult_pi_by_2<> * FastRandom::getNextFloatNormalized();
+		const float a = math::mult_pi_by_2<> * fast_random.getNextFloatNormalized();
 		r = math::sqrt(r);
 		v.vec_[0] = r * math::cos(a); v.vec_[1] = r * math::sin(a);
 	}

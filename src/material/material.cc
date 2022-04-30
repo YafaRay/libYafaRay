@@ -155,7 +155,7 @@ bool Material::scatterPhoton(const MaterialData *mat_data, const SurfacePoint &s
 	return false;
 }
 
-Rgb Material::getReflectivity(const MaterialData *mat_data, const SurfacePoint &sp, BsdfFlags flags, bool chromatic, float wavelength, const Camera *camera) const
+Rgb Material::getReflectivity(FastRandom &fast_random, const MaterialData *mat_data, const SurfacePoint &sp, BsdfFlags flags, bool chromatic, float wavelength, const Camera *camera) const
 {
 	if(!flags.hasAny((BsdfFlags::Transmit | BsdfFlags::Reflect) & bsdf_flags_)) return Rgb{0.f};
 	Rgb total(0.f);
@@ -163,8 +163,8 @@ Rgb Material::getReflectivity(const MaterialData *mat_data, const SurfacePoint &
 	{
 		const float s_1 = 0.03125f + 0.0625f * static_cast<float>(i); // (1.f/32.f) + (1.f/16.f)*(float)i;
 		const float s_2 = sample::riVdC(i);
-		const float s_3 = Halton::lowDiscrepancySampling(2, i);
-		const float s_4 = Halton::lowDiscrepancySampling(3, i);
+		const float s_3 = Halton::lowDiscrepancySampling(fast_random, 2, i);
+		const float s_4 = Halton::lowDiscrepancySampling(fast_random, 3, i);
 		const Vec3 wo{sample::cosHemisphere(sp.n_, sp.nu_, sp.nv_, s_1, s_2)};
 		Vec3 wi;
 		Sample s(s_3, s_4, flags);

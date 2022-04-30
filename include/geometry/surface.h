@@ -78,7 +78,7 @@ class SurfacePoint final
 		float pdf(const Vec3 &wo, const Vec3 &wi, const BsdfFlags &bsdfs) const;
 		Rgb getTransparency(const Vec3 &wo, const Camera *camera) const;
 		Specular getSpecular(int ray_level, const Vec3 &wo, bool chromatic, float wavelength) const;
-		Rgb getReflectivity(BsdfFlags flags, bool chromatic, float wavelength, const Camera *camera) const;
+		Rgb getReflectivity(FastRandom &fast_random, BsdfFlags flags, bool chromatic, float wavelength, const Camera *camera) const;
 		Rgb emit(const Vec3 &wo) const;
 		float getAlpha(const Vec3 &wo, const Camera *camera) const;
 		bool scatterPhoton(const Vec3 &wi, Vec3 &wo, PSample &s, bool chromatic, float wavelength, const Camera *camera) const;
@@ -175,9 +175,9 @@ inline Specular SurfacePoint::getSpecular(int ray_level, const Vec3 &wo, bool ch
 	return material_->getSpecular(ray_level, mat_data_.get(), *this, wo, chromatic, wavelength);
 }
 
-inline Rgb SurfacePoint::getReflectivity(BsdfFlags flags, bool chromatic, float wavelength, const Camera *camera) const
+inline Rgb SurfacePoint::getReflectivity(FastRandom &fast_random, BsdfFlags flags, bool chromatic, float wavelength, const Camera *camera) const
 {
-	return material_->getReflectivity(mat_data_.get(), *this, flags, chromatic, wavelength, camera);
+	return material_->getReflectivity(fast_random, mat_data_.get(), *this, flags, chromatic, wavelength, camera);
 }
 
 inline Rgb SurfacePoint::emit(const Vec3 &wo) const

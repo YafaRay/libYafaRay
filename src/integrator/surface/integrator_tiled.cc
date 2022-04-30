@@ -48,14 +48,14 @@ BEGIN_YAFARAY
 
 std::vector<int> TiledIntegrator::correlative_sample_number_(0);
 
-void TiledIntegrator::renderWorker(ThreadControl *control, int thread_id, int samples, int offset, bool adaptive, int aa_pass)
+void TiledIntegrator::renderWorker(ThreadControl *control, FastRandom &fast_random, int thread_id, int samples, int offset, bool adaptive, int aa_pass)
 {
 	RenderArea a;
 
 	while(image_film_->nextArea(render_view_, render_control_, a))
 	{
 		if(render_control_.canceled()) break;
-		renderTile(a, samples, offset, adaptive, thread_id, aa_pass);
+		renderTile(fast_random, a, samples, offset, adaptive, thread_id, aa_pass);
 
 		std::unique_lock<std::mutex> lk(control->m_);
 		control->areas_.emplace_back(a);
@@ -95,7 +95,7 @@ void TiledIntegrator::precalcDepths()
 	if(max_depth_ > 0.f) max_depth_ = 1.f / (max_depth_ - min_depth_);
 }
 
-bool TiledIntegrator::render()
+bool TiledIntegrator::render(FastRandom &fast_random)
 {
 	std::stringstream pass_string;
 	std::stringstream aa_settings;
@@ -174,9 +174,10 @@ bool TiledIntegrator::render()
 	int resampled_pixels = 0;
 	if(render_control_.resumed())
 	{
-		renderPass(0, image_film_->getSamplingOffset(), false, 0);
+		renderPass(fast_random, 0, image_film_->getSamplingOffset(), false, 0);
 	}
-	else renderPass(aa_noise_params_.samples_, 0, false, 0);
+	else
+		renderPass(fast_random, aa_noise_params_.samples_, 0, false, 0);
 
 	bool aa_threshold_changed = true;
 	int acum_aa_samples = aa_noise_params_.samples_;
@@ -211,7 +212,7 @@ bool TiledIntegrator::render()
 
 		if(logger_.isDebug())logger_.logDebug("acumAASamples=", acum_aa_samples, " AA_samples=", aa_noise_params_.samples_, " AA_samples_mult=", aa_samples_mult);
 
-		if(resampled_pixels > 0) renderPass(aa_samples_mult, acum_aa_samples, true, i);
+		if(resampled_pixels > 0) renderPass(fast_random, aa_samples_mult, acum_aa_samples, true, i);
 
 		acum_aa_samples += aa_samples_mult;
 
@@ -234,11 +235,11 @@ bool TiledIntegrator::render()
 }
 
 
-bool TiledIntegrator::renderPass(int samples, int offset, bool adaptive, int aa_pass_number)
+bool TiledIntegrator::renderPass(FastRandom &fast_random, int samples, int offset, bool adaptive, int aa_pass_number)
 {
 	if(logger_.isDebug())logger_.logDebug("Sampling: samples=", samples, " Offset=", offset, " Base Offset=", + image_film_->getBaseSamplingOffset(), "  AA_pass_number=", aa_pass_number);
 
-	prePass(samples, (offset + image_film_->getBaseSamplingOffset()), adaptive);
+	prePass(fast_random, samples, (offset + image_film_->getBaseSamplingOffset()), adaptive);
 
 	render_control_.setCurrentPass(aa_pass_number + 1);
 
@@ -247,7 +248,7 @@ bool TiledIntegrator::renderPass(int samples, int offset, bool adaptive, int aa_
 	ThreadControl tc;
 	std::vector<std::thread> threads;
 	threads.reserve(num_threads_);
-	for(int i = 0; i < num_threads_; ++i) threads.emplace_back(&TiledIntegrator::renderWorker, this, &tc, i, samples, (offset + image_film_->getBaseSamplingOffset()), adaptive, aa_pass_number);
+	for(int i = 0; i < num_threads_; ++i) threads.emplace_back(&TiledIntegrator::renderWorker, this, &tc, std::ref(fast_random), i, samples, (offset + image_film_->getBaseSamplingOffset()), adaptive, aa_pass_number);
 
 	std::unique_lock<std::mutex> lk(tc.m_);
 	while(tc.finished_threads_ < num_threads_)
@@ -265,7 +266,7 @@ bool TiledIntegrator::renderPass(int samples, int offset, bool adaptive, int aa_
 	return true; //hm...quite useless the return value :)
 }
 
-bool TiledIntegrator::renderTile(const RenderArea &a, int n_samples, int offset, bool adaptive, int thread_id, int aa_pass_number)
+bool TiledIntegrator::renderTile(FastRandom &fast_random, const RenderArea &a, int n_samples, int offset, bool adaptive, int thread_id, int aa_pass_number)
 {
 	const int camera_res_x = camera_->resX();
 	RandomGenerator random_generator(rand() + offset * (camera_res_x * a.y_ + a.x_) + 123);
@@ -310,7 +311,7 @@ bool TiledIntegrator::renderTile(const RenderArea &a, int n_samples, int offset,
 			PixelSamplingData pixel_sampling_data;
 			pixel_sampling_data.number_ = camera_res_x * i + j;
 			pixel_sampling_data.offset_ = sample::fnv32ABuf(i * sample::fnv32ABuf(j)); //fnv_32a_buf(rstate.pixelNumber);
-			const float toff = Halton::lowDiscrepancySampling(5, pass_offs + pixel_sampling_data.offset_); // **shall be just the pass number...**
+			const float toff = Halton::lowDiscrepancySampling(fast_random, 5, pass_offs + pixel_sampling_data.offset_); // **shall be just the pass number...**
 			hal_u.setStart(pass_offs + pixel_sampling_data.offset_);
 			hal_v.setStart(pass_offs + pixel_sampling_data.offset_);
 			for(int sample = 0; sample < n_samples_adjusted; ++sample)
@@ -357,7 +358,7 @@ bool TiledIntegrator::renderTile(const RenderArea &a, int n_samples, int offset,
 				}
 				camera_ray.ray_.time_ = time;
 				RayDivision ray_division;
-				const auto [integ_col, integ_alpha] = integrate(camera_ray.ray_, random_generator, &color_layers, thread_id, 0, true, 0.f, 0, ray_division, pixel_sampling_data);
+				const auto [integ_col, integ_alpha] = integrate(camera_ray.ray_, fast_random, random_generator, &color_layers, thread_id, 0, true, 0.f, 0, ray_division, pixel_sampling_data);
 				color_layers(LayerDef::Combined) = {integ_col, integ_alpha};
 				for(auto &[layer_def, layer_col] : color_layers)
 				{

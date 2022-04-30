@@ -59,7 +59,7 @@ Integrator * Integrator::factory(Logger &logger, Scene &scene, const std::string
 	else return nullptr;
 }
 
-bool Integrator::preprocess(ImageFilm *image_film, const RenderView *render_view, const Scene &scene)
+bool Integrator::preprocess(FastRandom &fast_random, ImageFilm *image_film, const RenderView *render_view, const Scene &scene)
 {
 	accelerator_ = scene.getAccelerator();
 	if(!accelerator_) return false;
@@ -68,9 +68,9 @@ bool Integrator::preprocess(ImageFilm *image_film, const RenderView *render_view
 	return true;
 }
 
-bool SurfaceIntegrator::preprocess(ImageFilm *image_film, const RenderView *render_view, const Scene &scene)
+bool SurfaceIntegrator::preprocess(FastRandom &fast_random, ImageFilm *image_film, const RenderView *render_view, const Scene &scene)
 {
-	bool success = Integrator::preprocess(image_film, render_view, scene);
+	bool success = Integrator::preprocess(fast_random, image_film, render_view, scene);
 	num_threads_ = scene.getNumThreads();
 	num_threads_photons_ = scene.getNumThreadsPhotons();
 	shadow_bias_auto_ = scene.isShadowBiasAuto();
@@ -89,9 +89,9 @@ bool SurfaceIntegrator::preprocess(ImageFilm *image_film, const RenderView *rend
 	return success && static_cast<bool>(layers_) && static_cast<bool>(image_film) && static_cast<bool>(render_view_) && static_cast<bool>(camera_) && static_cast<bool>(timer_);
 }
 
-bool VolumeIntegrator::preprocess(ImageFilm *image_film, const RenderView *render_view, const Scene &scene)
+bool VolumeIntegrator::preprocess(FastRandom &fast_random, ImageFilm *image_film, const RenderView *render_view, const Scene &scene)
 {
-	bool success = Integrator::preprocess(image_film, render_view, scene);
+	bool success = Integrator::preprocess(fast_random, image_film, render_view, scene);
 	volume_regions_ = scene.getVolumeRegions();
 	return success && static_cast<bool>(volume_regions_);
 }

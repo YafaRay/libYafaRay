@@ -57,13 +57,13 @@ DebugIntegrator::DebugIntegrator(RenderControl &render_control, Logger &logger, 
 	render_info_ += "' | ";
 }
 
-bool DebugIntegrator::preprocess(ImageFilm *image_film, const RenderView *render_view, const Scene &scene)
+bool DebugIntegrator::preprocess(FastRandom &fast_random, ImageFilm *image_film, const RenderView *render_view, const Scene &scene)
 {
-	bool success = SurfaceIntegrator::preprocess(image_film, render_view, scene);
+	bool success = SurfaceIntegrator::preprocess(fast_random, image_film, render_view, scene);
 	return success;
 }
 
-std::pair<Rgb, float> DebugIntegrator::integrate(Ray &ray, RandomGenerator &random_generator, ColorLayers *color_layers, int thread_id, int ray_level, bool chromatic_enabled, float wavelength, int additional_depth, const RayDivision &ray_division, const PixelSamplingData &pixel_sampling_data) const
+std::pair<Rgb, float> DebugIntegrator::integrate(Ray &ray, FastRandom &fast_random, RandomGenerator &random_generator, ColorLayers *color_layers, int thread_id, int ray_level, bool chromatic_enabled, float wavelength, int additional_depth, const RayDivision &ray_division, const PixelSamplingData &pixel_sampling_data) const
 {
 	const auto [sp, tmax] = accelerator_->intersect(ray, camera_);
 	if(sp)

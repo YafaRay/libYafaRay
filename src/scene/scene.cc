@@ -236,8 +236,9 @@ bool Scene::render()
 				continue;
 			}
 
-			success = surf_integrator_->preprocess(image_film_.get(), render_view.get(), *this);
-			if(vol_integrator_) success = success && vol_integrator_->preprocess(image_film_.get(), render_view.get(), *this);
+			FastRandom fast_random;
+			success = surf_integrator_->preprocess(fast_random, image_film_.get(), render_view.get(), *this);
+			if(vol_integrator_) success = success && vol_integrator_->preprocess(fast_random, image_film_.get(), render_view.get(), *this);
 
 			if(!success)
 			{
@@ -245,7 +246,7 @@ bool Scene::render()
 				return false;
 			}
 			render_control_.setStarted();
-			success = surf_integrator_->render();
+			success = surf_integrator_->render(fast_random);
 			if(!success)
 			{
 				logger_.logError("Scene: Rendering process failed, exiting...");

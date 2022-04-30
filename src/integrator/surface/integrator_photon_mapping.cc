@@ -109,7 +109,7 @@ PhotonIntegrator::PhotonIntegrator(RenderControl &render_control, Logger &logger
 	radiance_map_->setName("FG Radiance Photon Map");
 }
 
-void PhotonIntegrator::diffuseWorker(PreGatherData &pgdat, unsigned int &total_photons_shot, int thread_id, const Pdf1D *light_power_d, const std::vector<const Light *> &lights_diffuse, int pb_step)
+void PhotonIntegrator::diffuseWorker(FastRandom &fast_random, PreGatherData &pgdat, unsigned int &total_photons_shot, int thread_id, const Pdf1D *light_power_d, const std::vector<const Light *> &lights_diffuse, int pb_step)
 {
 	//shoot photons
 	bool done = false;
@@ -128,9 +128,9 @@ void PhotonIntegrator::diffuseWorker(PreGatherData &pgdat, unsigned int &total_p
 	{
 		unsigned int haltoncurr = curr + n_diffuse_photons_thread * thread_id;
 		const float s_1 = sample::riVdC(haltoncurr);
-		const float s_2 = Halton::lowDiscrepancySampling(2, haltoncurr);
-		const float s_3 = Halton::lowDiscrepancySampling(3, haltoncurr);
-		const float s_4 = Halton::lowDiscrepancySampling(4, haltoncurr);
+		const float s_2 = Halton::lowDiscrepancySampling(fast_random, 2, haltoncurr);
+		const float s_3 = Halton::lowDiscrepancySampling(fast_random, 3, haltoncurr);
+		const float s_4 = Halton::lowDiscrepancySampling(fast_random, 4, haltoncurr);
 		const float s_l = float(haltoncurr) * inv_diff_photons;
 		float light_num_pdf;
 		const int light_num = light_power_d->dSample(s_l, light_num_pdf);
@@ -185,12 +185,12 @@ void PhotonIntegrator::diffuseWorker(PreGatherData &pgdat, unsigned int &total_p
 				}
 				// create entry for radiance photon:
 				// don't forget to choose subset only, face normal forward; geometric vs. smooth normal?
-				if(final_gather_ && FastRandom::getNextFloatNormalized() < 0.125 && !caustic_photon)
+				if(final_gather_ && fast_random.getNextFloatNormalized() < 0.125 && !caustic_photon)
 				{
 					const Vec3 n{SurfacePoint::normalFaceForward(hit_curr->ng_, hit_curr->n_, wi)};
 					RadData rd(hit_curr->p_, n);
-					rd.refl_ = hit_curr->getReflectivity(BsdfFlags::Diffuse | BsdfFlags::Glossy | BsdfFlags::Reflect, true, 0.f, camera_);
-					rd.transm_ = hit_curr->getReflectivity(BsdfFlags::Diffuse | BsdfFlags::Glossy | BsdfFlags::Transmit, true, 0.f, camera_);
+					rd.refl_ = hit_curr->getReflectivity(fast_random, BsdfFlags::Diffuse | BsdfFlags::Glossy | BsdfFlags::Reflect, true, 0.f, camera_);
+					rd.transm_ = hit_curr->getReflectivity(fast_random, BsdfFlags::Diffuse | BsdfFlags::Glossy | BsdfFlags::Transmit, true, 0.f, camera_);
 					local_rad_points.emplace_back(rd);
 				}
 			}
@@ -198,9 +198,9 @@ void PhotonIntegrator::diffuseWorker(PreGatherData &pgdat, unsigned int &total_p
 			if(n_bounces == max_bounces_) break;
 			// scatter photon
 			const int d_5 = 3 * n_bounces + 5;
-			const float s_5 = Halton::lowDiscrepancySampling(d_5, haltoncurr);
-			const float s_6 = Halton::lowDiscrepancySampling(d_5 + 1, haltoncurr);
-			const float s_7 = Halton::lowDiscrepancySampling(d_5 + 2, haltoncurr);
+			const float s_5 = Halton::lowDiscrepancySampling(fast_random, d_5, haltoncurr);
+			const float s_6 = Halton::lowDiscrepancySampling(fast_random, d_5 + 1, haltoncurr);
+			const float s_7 = Halton::lowDiscrepancySampling(fast_random, d_5 + 2, haltoncurr);
 			PSample sample(s_5, s_6, s_7, BsdfFlags::All, pcol, transm);
 			Vec3 wo;
 			bool scattered = hit_curr->scatterPhoton(wi, wo, sample, true, 0.f, camera_);
@@ -241,9 +241,9 @@ void PhotonIntegrator::photonMapKdTreeWorker(PhotonMap *photon_map)
 	photon_map->updateTree();
 }
 
-bool PhotonIntegrator::preprocess(ImageFilm *image_film, const RenderView *render_view, const Scene &scene)
+bool PhotonIntegrator::preprocess(FastRandom &fast_random, ImageFilm *image_film, const RenderView *render_view, const Scene &scene)
 {
-	bool success = SurfaceIntegrator::preprocess(image_film, render_view, scene);
+	bool success = SurfaceIntegrator::preprocess(fast_random, image_film, render_view, scene);
 	lookup_rad_ = 4 * ds_radius_ * ds_radius_;
 
 	std::stringstream set;
@@ -440,7 +440,7 @@ bool PhotonIntegrator::preprocess(ImageFilm *image_film, const RenderView *rende
 		logger_.logParams(getName(), ": Shooting ", n_diffuse_photons_, " photons across ", num_threads_photons_, " threads (", (n_diffuse_photons_ / num_threads_photons_), " photons/thread)");
 		std::vector<std::thread> threads;
 		threads.reserve(num_threads_photons_);
-		for(int i = 0; i < num_threads_photons_; ++i) threads.emplace_back(&PhotonIntegrator::diffuseWorker, this, std::ref(pgdat), std::ref(curr), i, light_power_d_diffuse.get(), lights_diffuse, pb_step);
+		for(int i = 0; i < num_threads_photons_; ++i) threads.emplace_back(&PhotonIntegrator::diffuseWorker, this, std::ref(fast_random), std::ref(pgdat), std::ref(curr), i, light_power_d_diffuse.get(), lights_diffuse, pb_step);
 		for(auto &t : threads) t.join();
 
 		intpb_->done();
@@ -521,7 +521,7 @@ bool PhotonIntegrator::preprocess(ImageFilm *image_film, const RenderView *rende
 
 		std::vector<std::thread> threads;
 		threads.reserve(num_threads_photons_);
-		for(int i = 0; i < num_threads_photons_; ++i) threads.emplace_back(&PhotonIntegrator::causticWorker, this, std::ref(curr), i, light_power_d_caustic.get(), lights_caustic, pb_step);
+		for(int i = 0; i < num_threads_photons_; ++i) threads.emplace_back(&PhotonIntegrator::causticWorker, this, std::ref(fast_random), std::ref(curr), i, light_power_d_caustic.get(), lights_caustic, pb_step);
 		for(auto &t : threads) t.join();
 
 		intpb_->done();
@@ -645,7 +645,7 @@ bool PhotonIntegrator::preprocess(ImageFilm *image_film, const RenderView *rende
 // final gathering: this is basically a full path tracer only that it uses the radiance map only
 // at the path end. I.e. paths longer than 1 are only generated to overcome lack of local radiance detail.
 // precondition: initBSDF of current spot has been called!
-Rgb PhotonIntegrator::finalGathering(RandomGenerator &random_generator, int thread_id, bool chromatic_enabled, float wavelength, const SurfacePoint &sp, const Vec3 &wo, const RayDivision &ray_division, const PixelSamplingData &pixel_sampling_data) const
+Rgb PhotonIntegrator::finalGathering(FastRandom &fast_random, RandomGenerator &random_generator, int thread_id, bool chromatic_enabled, float wavelength, const SurfacePoint &sp, const Vec3 &wo, const RayDivision &ray_division, const PixelSamplingData &pixel_sampling_data) const
 {
 	Rgb path_col(0.0);
 	float w = 0.f;
@@ -663,7 +663,7 @@ Rgb PhotonIntegrator::finalGathering(RandomGenerator &random_generator, int thre
 		Rgb lcol, scol;
 		// "zero'th" FG bounce:
 		float s_1 = sample::riVdC(offs);
-		float s_2 = Halton::lowDiscrepancySampling(2, offs);
+		float s_2 = Halton::lowDiscrepancySampling(fast_random, 2, offs);
 		if(ray_division.division_ > 1)
 		{
 			s_1 = math::addMod1(s_1, ray_division.decorrelation_1_);
@@ -721,8 +721,8 @@ Rgb PhotonIntegrator::finalGathering(RandomGenerator &random_generator, int thre
 				}
 			}
 
-			s_1 = Halton::lowDiscrepancySampling(d_4 + 3, offs);
-			s_2 = Halton::lowDiscrepancySampling(d_4 + 4, offs);
+			s_1 = Halton::lowDiscrepancySampling(fast_random, d_4 + 3, offs);
+			s_2 = Halton::lowDiscrepancySampling(fast_random, d_4 + 4, offs);
 
 			if(ray_division.division_ > 1)
 			{
@@ -854,7 +854,7 @@ Integrator * PhotonIntegrator::factory(Logger &logger, const ParamMap &params, c
 	return inte;
 }
 
-std::pair<Rgb, float> PhotonIntegrator::integrate(Ray &ray, RandomGenerator &random_generator, ColorLayers *color_layers, int thread_id, int ray_level, bool chromatic_enabled, float wavelength, int additional_depth, const RayDivision &ray_division, const PixelSamplingData &pixel_sampling_data) const
+std::pair<Rgb, float> PhotonIntegrator::integrate(Ray &ray, FastRandom &fast_random, RandomGenerator &random_generator, ColorLayers *color_layers, int thread_id, int ray_level, bool chromatic_enabled, float wavelength, int additional_depth, const RayDivision &ray_division, const PixelSamplingData &pixel_sampling_data) const
 {
 	static int n_max = 0;
 	static int calls = 0;
@@ -910,7 +910,7 @@ std::pair<Rgb, float> PhotonIntegrator::integrate(Ray &ray, RandomGenerator &ran
 				if(mat_bsdfs.hasAny(BsdfFlags::Diffuse))
 				{
 					col += estimateAllDirectLight(random_generator, color_layers, chromatic_enabled, wavelength, *sp, wo, ray_division, pixel_sampling_data);
-					Rgb col_tmp = finalGathering(random_generator, thread_id, chromatic_enabled, wavelength, *sp, wo, ray_division, pixel_sampling_data);
+					Rgb col_tmp = finalGathering(fast_random, random_generator, thread_id, chromatic_enabled, wavelength, *sp, wo, ray_division, pixel_sampling_data);
 					if(aa_noise_params_.clamp_indirect_ > 0.f) col_tmp.clampProportionalRgb(aa_noise_params_.clamp_indirect_);
 					col += col_tmp;
 					if(color_layers && color_layers->getFlags().hasAny(LayerDef::Flags::DiffuseLayers))
@@ -988,7 +988,7 @@ std::pair<Rgb, float> PhotonIntegrator::integrate(Ray &ray, RandomGenerator &ran
 			col += causticPhotons(color_layers, ray, *sp, wo, aa_noise_params_.clamp_indirect_, caustic_map_.get(), caus_radius_, n_caus_search_);
 		}
 
-		const auto [raytrace_col, raytrace_alpha] = recursiveRaytrace(random_generator, color_layers, thread_id, ray_level + 1, chromatic_enabled, wavelength, ray, mat_bsdfs, *sp, wo, additional_depth, ray_division, pixel_sampling_data);
+		const auto [raytrace_col, raytrace_alpha] = recursiveRaytrace(fast_random, random_generator, color_layers, thread_id, ray_level + 1, chromatic_enabled, wavelength, ray, mat_bsdfs, *sp, wo, additional_depth, ray_division, pixel_sampling_data);
 		col += raytrace_col;
 		alpha = raytrace_alpha;
 		if(color_layers)

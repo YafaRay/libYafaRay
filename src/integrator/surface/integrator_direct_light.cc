@@ -40,9 +40,9 @@ DirectLightIntegrator::DirectLightIntegrator(RenderControl &render_control, Logg
 	r_depth_ = ray_depth;
 }
 
-bool DirectLightIntegrator::preprocess(ImageFilm *image_film, const RenderView *render_view, const Scene &scene)
+bool DirectLightIntegrator::preprocess(FastRandom &fast_random, ImageFilm *image_film, const RenderView *render_view, const Scene &scene)
 {
-	bool success = SurfaceIntegrator::preprocess(image_film, render_view, scene);
+	bool success = SurfaceIntegrator::preprocess(fast_random, image_film, render_view, scene);
 	std::stringstream set;
 
 	timer_->addEvent("prepass");
@@ -65,7 +65,7 @@ bool DirectLightIntegrator::preprocess(ImageFilm *image_film, const RenderView *
 
 	if(use_photon_caustics_)
 	{
-		success = success && createCausticMap();
+		success = success && createCausticMap(fast_random);
 		set << "\nCaustic photons=" << n_caus_photons_ << " search=" << n_caus_search_ << " radius=" << caus_radius_ << " depth=" << caus_depth_ << "  ";
 
 		if(photon_map_processing_ == PhotonsLoad)
@@ -94,7 +94,7 @@ bool DirectLightIntegrator::preprocess(ImageFilm *image_film, const RenderView *
 	return success;
 }
 
-std::pair<Rgb, float> DirectLightIntegrator::integrate(Ray &ray, RandomGenerator &random_generator, ColorLayers *color_layers, int thread_id, int ray_level, bool chromatic_enabled, float wavelength, int additional_depth, const RayDivision &ray_division, const PixelSamplingData &pixel_sampling_data) const
+std::pair<Rgb, float> DirectLightIntegrator::integrate(Ray &ray, FastRandom &fast_random, RandomGenerator &random_generator, ColorLayers *color_layers, int thread_id, int ray_level, bool chromatic_enabled, float wavelength, int additional_depth, const RayDivision &ray_division, const PixelSamplingData &pixel_sampling_data) const
 {
 	Rgb col {0.f};
 	float alpha = 1.f;
@@ -123,7 +123,7 @@ std::pair<Rgb, float> DirectLightIntegrator::integrate(Ray &ray, RandomGenerator
 			}
 			if(use_ambient_occlusion_) col += sampleAmbientOcclusion(*accelerator_, chromatic_enabled, wavelength, *sp, wo, ray_division, camera_, pixel_sampling_data, tr_shad_, false, ao_samples_, shadow_bias_auto_, shadow_bias_, ao_dist_, ao_col_, s_depth_);
 		}
-		const auto [raytrace_col, raytrace_alpha] = recursiveRaytrace(random_generator, color_layers, thread_id, ray_level + 1, chromatic_enabled, wavelength, ray, mat_bsdfs, *sp, wo, additional_depth, ray_division, pixel_sampling_data);
+		const auto [raytrace_col, raytrace_alpha] = recursiveRaytrace(fast_random, random_generator, color_layers, thread_id, ray_level + 1, chromatic_enabled, wavelength, ray, mat_bsdfs, *sp, wo, additional_depth, ray_division, pixel_sampling_data);
 		col += raytrace_col;
 		alpha = raytrace_alpha;
 		if(color_layers)

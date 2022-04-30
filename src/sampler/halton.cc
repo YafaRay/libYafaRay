@@ -418,7 +418,7 @@ static constexpr std::array<double, 50> inv_prims
 /** Low Discrepancy Halton sampling */
 // dim MUST NOT be larger than 50! Above that, random numbers may be
 // the better choice anyway, not even scrambling is realiable at high dimensions.
-double Halton::lowDiscrepancySampling(int dim, unsigned int n)
+double Halton::lowDiscrepancySampling(FastRandom &fast_random, int dim, unsigned int n)
 {
 	double value = 0.0;
 	if(dim < 50)
@@ -436,7 +436,7 @@ double Halton::lowDiscrepancySampling(int dim, unsigned int n)
 			factor *= f;
 		}
 	}
-	else value = static_cast<double>(FastRandom::getNextFloatNormalized());
+	else value = static_cast<double>(fast_random.getNextFloatNormalized());
 	return value;
 }
 

@@ -149,9 +149,9 @@ BidirectionalIntegrator::BidirectionalIntegrator(RenderControl &render_control, 
 	s_depth_ = shadow_depth;
 }
 
-bool BidirectionalIntegrator::preprocess(ImageFilm *image_film, const RenderView *render_view, const Scene &scene)
+bool BidirectionalIntegrator::preprocess(FastRandom &fast_random, ImageFilm *image_film, const RenderView *render_view, const Scene &scene)
 {
-	bool success = SurfaceIntegrator::preprocess(image_film, render_view, scene);
+	bool success = SurfaceIntegrator::preprocess(fast_random, image_film, render_view, scene);
 	n_paths_ = 0;
 	// initialize userdata (todo!)
 	lights_ = render_view->getLightsVisible();
@@ -217,7 +217,7 @@ void BidirectionalIntegrator::cleanup()
 /* ============================================================
     integrate
  ============================================================ */
-std::pair<Rgb, float> BidirectionalIntegrator::integrate(Ray &ray, RandomGenerator &random_generator, ColorLayers *color_layers, int thread_id, int ray_level, bool chromatic_enabled, float wavelength, int additional_depth, const RayDivision &ray_division, const PixelSamplingData &pixel_sampling_data) const
+std::pair<Rgb, float> BidirectionalIntegrator::integrate(Ray &ray, FastRandom &fast_random, RandomGenerator &random_generator, ColorLayers *color_layers, int thread_id, int ray_level, bool chromatic_enabled, float wavelength, int additional_depth, const RayDivision &ray_division, const PixelSamplingData &pixel_sampling_data) const
 {
 	Rgb col {0.f};
 	float alpha = 1.f;

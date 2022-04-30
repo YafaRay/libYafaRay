@@ -66,19 +66,19 @@ class SppmIntegrator final : public MonteCarloIntegrator
 		SppmIntegrator(RenderControl &render_control, Logger &logger, unsigned int d_photons, int passnum, bool transp_shad, int shadow_depth);
 		std::string getShortName() const override { return "SPPM"; }
 		std::string getName() const override { return "SPPM"; }
-		bool render() override;
+		bool render(FastRandom &fast_random) override;
 		/*! render a tile; only required by default implementation of render() */
-		bool renderTile(const RenderArea &a, int n_samples, int offset, bool adaptive, int thread_id, int aa_pass_number) override;
-		std::pair<Rgb, float> integrate(Ray &ray, RandomGenerator &random_generator, ColorLayers *color_layers, int thread_id, int ray_level, bool chromatic_enabled, float wavelength, int additional_depth, const RayDivision &ray_division, const PixelSamplingData &pixel_sampling_data) const override;
-		bool preprocess(ImageFilm *image_film, const RenderView *render_view, const Scene &scene) override; //not used for now
+		bool renderTile(FastRandom &fast_random, const RenderArea &a, int n_samples, int offset, bool adaptive, int thread_id, int aa_pass_number) override;
+		std::pair<Rgb, float> integrate(Ray &ray, FastRandom &fast_random, RandomGenerator &random_generator, ColorLayers *color_layers, int thread_id, int ray_level, bool chromatic_enabled, float wavelength, int additional_depth, const RayDivision &ray_division, const PixelSamplingData &pixel_sampling_data) const override;
+		bool preprocess(FastRandom &fast_random, ImageFilm *image_film, const RenderView *render_view, const Scene &scene) override; //not used for now
 		// not used now
-		void prePass(int samples, int offset, bool adaptive) override;
+		void prePass(FastRandom &fast_random, int samples, int offset, bool adaptive) override;
 		/*! not used now, use traceGatherRay instead*/
 		/*! initializing the things that PPM uses such as initial radius */
 		void initializePpm();
 		/*! based on integrate method to do the gatering trace, need double-check deadly. */
-		GatherInfo traceGatherRay(Ray &ray, HitPoint &hp, RandomGenerator &random_generator, ColorLayers *color_layers, int thread_id, int ray_level, bool chromatic_enabled, float wavelength, const RayDivision &ray_division, const PixelSamplingData &pixel_sampling_data);
-		void photonWorker(unsigned int &total_photons_shot, int thread_id, int num_d_lights, const Pdf1D *light_power_d, const std::vector<const Light *> &tmplights, int pb_step);
+		GatherInfo traceGatherRay(Ray &ray, HitPoint &hp, FastRandom &fast_random, RandomGenerator &random_generator, ColorLayers *color_layers, int thread_id, int ray_level, bool chromatic_enabled, float wavelength, const RayDivision &ray_division, const PixelSamplingData &pixel_sampling_data);
+		void photonWorker(FastRandom &fast_random, unsigned int &total_photons_shot, int thread_id, int num_d_lights, const Pdf1D *light_power_d, const std::vector<const Light *> &tmplights, int pb_step);
 
 		HashGrid  photon_grid_; // the hashgrid for holding photons
 		unsigned int n_photons_; //photon number to scatter

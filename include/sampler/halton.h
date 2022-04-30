@@ -21,6 +21,7 @@
 #define YAFARAY_HALTON_H
 
 #include "common/yafaray_common.h"
+#include "math/random.h"
 #include <algorithm>
 
 BEGIN_YAFARAY
@@ -35,7 +36,7 @@ class Halton final
 		void setStart(unsigned int start);
 		void reset() { value_ = 0.0; }
 		float getNext();
-		static double lowDiscrepancySampling(int dim, unsigned int n);
+		static double lowDiscrepancySampling(FastRandom &fast_random, int dim, unsigned int n);
 
 	private:
 		void setBase(int base);

@@ -59,9 +59,9 @@ SkyIntegrator::SkyIntegrator(Logger &logger, float s_size, float a, float ss, fl
 	std::cout << "SkyIntegrator: b_m: " << b_m_ << " b_r: " << b_r_ << std::endl;
 }
 
-bool SkyIntegrator::preprocess(ImageFilm *image_film, const RenderView *render_view, const Scene &scene)
+bool SkyIntegrator::preprocess(FastRandom &fast_random, ImageFilm *image_film, const RenderView *render_view, const Scene &scene)
 {
-	bool success = VolumeIntegrator::preprocess(image_film, render_view, scene);
+	bool success = VolumeIntegrator::preprocess(fast_random, image_film, render_view, scene);
 	background_ = scene.getBackground();
 	success = success && static_cast<bool>(background_);
 	return success;

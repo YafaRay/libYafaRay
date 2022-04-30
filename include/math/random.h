@@ -30,13 +30,16 @@ BEGIN_YAFARAY
 class FastRandom final
 {
 	public:
-		static int getNextInt();
-		static int getNextInt(int &seed);
-		static float getNextFloatNormalized();
-		static float getNextFloatNormalized(int &seed);
+		FastRandom() = default;
+		FastRandom(int seed) { myseed_ = seed; }
+		FastRandom(const FastRandom &fast_random) = delete; //Avoid mistakenly passing the fast_random objects by value instead of passing them by reference
+		int getNextInt();
+		int getNextInt(int &seed);
+		float getNextFloatNormalized();
+		float getNextFloatNormalized(int &seed);
 
 	private:
-		static int myseed_; //FIXME: Should this be std::atomic<int> for thread safety? Performance??
+		int myseed_ = 123212;
 		static constexpr int a_ = 0x000041A7;
 		static constexpr int m_ = 0x7FFFFFFF;
 		static constexpr int q_ = 0x0001F31D; // m/a

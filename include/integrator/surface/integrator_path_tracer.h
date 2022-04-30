@@ -34,8 +34,8 @@ class PathIntegrator final : public MonteCarloIntegrator
 		PathIntegrator(RenderControl &render_control, Logger &logger, bool transp_shad = false, int shadow_depth = 4);
 		std::string getShortName() const override { return "PT"; }
 		std::string getName() const override { return "PathTracer"; }
-		bool preprocess(ImageFilm *image_film, const RenderView *render_view, const Scene &scene) override;
-		std::pair<Rgb, float> integrate(Ray &ray, RandomGenerator &random_generator, ColorLayers *color_layers, int thread_id, int ray_level, bool chromatic_enabled, float wavelength, int additional_depth, const RayDivision &ray_division, const PixelSamplingData &pixel_sampling_data) const override;
+		bool preprocess(FastRandom &fast_random, ImageFilm *image_film, const RenderView *render_view, const Scene &scene) override;
+		std::pair<Rgb, float> integrate(Ray &ray, FastRandom &fast_random, RandomGenerator &random_generator, ColorLayers *color_layers, int thread_id, int ray_level, bool chromatic_enabled, float wavelength, int additional_depth, const RayDivision &ray_division, const PixelSamplingData &pixel_sampling_data) const override;
 		enum class CausticType { None, Path, Photon, Both };
 
 		bool trace_caustics_; //!< use path tracing for caustics (determined by causticType)
