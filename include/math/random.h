@@ -24,6 +24,7 @@
 
 #include "common/yafaray_common.h"
 #include "math/math.h"
+#include <atomic>
 
 BEGIN_YAFARAY
 
@@ -39,7 +40,7 @@ class FastRandom final
 		float getNextFloatNormalized(int &seed);
 
 	private:
-		int myseed_ = 123212;
+		std::atomic<int> myseed_ = 123212;
 		static constexpr int a_ = 0x000041A7;
 		static constexpr int m_ = 0x7FFFFFFF;
 		static constexpr int q_ = 0x0001F31D; // m/a
@@ -63,7 +64,7 @@ class RandomGenerator final
 		explicit RandomGenerator(unsigned int seed): c_(seed) { }
 		double operator()();
 	protected:
-		unsigned int x_ = 30903, c_ = 0;
+		std::atomic<unsigned int> x_ = 30903, c_ = 0;
 		static constexpr unsigned int y_a_ = 1791398085;
 		static constexpr unsigned int y_ah_ = (y_a_ >> 16);
 		static constexpr unsigned int y_al_ = y_a_ & 65535;
