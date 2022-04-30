@@ -63,14 +63,11 @@ class Object
 		virtual Visibility getVisibility() const = 0;
 		/*! Returns if this object is used as base object for instances. */
 		virtual bool isBaseObject() const = 0;
-		virtual void resetObjectIndex() = 0;
-		virtual void setObjectIndex(unsigned int new_obj_index) = 0;
-		virtual unsigned int getAbsObjectIndex() const = 0;
-		virtual float getNormObjectIndex() const = 0;
-		virtual Rgb getAbsObjectIndexColor() const = 0;
-		virtual Rgb getNormObjectIndexColor() const = 0;
-		virtual Rgb getAutoObjectIndexColor() const = 0;
-		virtual Rgb getAutoObjectIndexNumber() const = 0;
+		virtual void setIndex(unsigned int new_obj_index) = 0;
+		virtual void setIndexAuto(unsigned int new_obj_index) = 0;
+		virtual unsigned int getIndex() const = 0;
+		virtual unsigned int getIndexAuto() const = 0;
+		virtual Rgb getIndexAutoColor() const = 0;
 		virtual const Light *getLight() const = 0;
 		/*! set a light source to be associated with this object */
 		virtual void setLight(const Light *light) = 0;

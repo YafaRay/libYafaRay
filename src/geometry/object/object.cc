@@ -21,6 +21,7 @@
 #include "geometry/object/object_curve.h"
 #include "geometry/object/object_primitive.h"
 #include "geometry/primitive/primitive_sphere.h"
+#include "scene/scene.h"
 #include "common/param.h"
 #include "common/logger.h"
 
@@ -35,15 +36,17 @@ Object * Object::factory(Logger &logger, const Scene &scene, const std::string &
 	}
 	std::string type;
 	params.getParam("type", type);
-	if(type == "mesh") return MeshObject::factory(logger, scene, name, params);
-	else if(type == "curve") return CurveObject::factory(logger, scene, name, params);
+	Object *object = nullptr;
+	if(type == "mesh") object = MeshObject::factory(logger, scene, name, params);
+	else if(type == "curve") object = CurveObject::factory(logger, scene, name, params);
 	else if(type == "sphere")
 	{
-		auto object = new PrimitiveObject;
-		object->setPrimitive(SpherePrimitive::factory(params, scene, *object));
-		return object;
+		auto primitive_object = new PrimitiveObject;
+		primitive_object->setPrimitive(SpherePrimitive::factory(params, scene, *primitive_object));
+		object = primitive_object;
 	}
-	else return nullptr;
+	object->setIndexAuto(scene.getObjectIndexAuto());
+	return object;
 }
 
 END_YAFARAY

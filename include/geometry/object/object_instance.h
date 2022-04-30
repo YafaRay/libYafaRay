@@ -44,14 +44,11 @@ class ObjectInstance : public Object
 		Visibility getVisibility() const override { return base_object_.getVisibility(); }
 		/*! Returns if this object is used as base object for instances. */
 		bool isBaseObject() const override { return false; }
-		void resetObjectIndex() override { }
-		void setObjectIndex(unsigned int new_obj_index) override { }
-		unsigned int getAbsObjectIndex() const override { return base_object_.getAbsObjectIndex(); }
-		float getNormObjectIndex() const override { return base_object_.getNormObjectIndex(); }
-		Rgb getAbsObjectIndexColor() const override { return Rgb{static_cast<float>(base_object_.getAbsObjectIndex())}; }
-		Rgb getNormObjectIndexColor() const override { return Rgb{base_object_.getNormObjectIndex()}; }
-		Rgb getAutoObjectIndexColor() const override { return base_object_.getAutoObjectIndexColor(); }
-		Rgb getAutoObjectIndexNumber() const override { return base_object_.getAutoObjectIndexNumber(); }
+		void setIndex(unsigned int new_obj_index) override { }
+		void setIndexAuto(unsigned int new_obj_index) override { }
+		unsigned int getIndex() const override { return base_object_.getIndex(); }
+		unsigned int getIndexAuto() const override { return base_object_.getIndexAuto(); }
+		Rgb getIndexAutoColor() const override { return base_object_.getIndexAutoColor(); }
 		const Light *getLight() const override { return base_object_.getLight(); }
 		/*! set a light source to be associated with this object */
 		void setLight(const Light *light) override { }

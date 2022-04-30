@@ -28,7 +28,6 @@ BEGIN_YAFARAY
 class ObjectBasic : public Object
 {
 	public:
-		~ObjectBasic() override { resetObjectIndex(); }
 		std::string getName() const override { return name_; }
 		void setName(const std::string &name) override { name_ = name; }
 		/*! sample object surface */
@@ -41,28 +40,23 @@ class ObjectBasic : public Object
 		Visibility getVisibility() const override { return visibility_; }
 		/*! Returns if this object is used as base object for instances. */
 		bool isBaseObject() const override { return is_base_object_; }
-		void resetObjectIndex() override { highest_object_index_ = 1; object_index_auto_ = 0; }
-		void setObjectIndex(unsigned int new_obj_index) override;
-		unsigned int getAbsObjectIndex() const override { return object_index_; }
-		float getNormObjectIndex() const override { return static_cast<float>(getAbsObjectIndex()) / static_cast<float>(highest_object_index_); }
-		Rgb getAbsObjectIndexColor() const override { return Rgb{static_cast<float>(getAbsObjectIndex())}; }
-		Rgb getNormObjectIndexColor() const override { return Rgb{getNormObjectIndex()}; }
-		Rgb getAutoObjectIndexColor() const override { return object_index_auto_color_; }
-		Rgb getAutoObjectIndexNumber() const override { return Rgb{static_cast<float>(object_index_auto_)}; }
+		void setIndex(unsigned int new_obj_index) override { index_ = new_obj_index; }
+		void setIndexAuto(unsigned int new_obj_index) override;
+		unsigned int getIndex() const override { return index_; }
+		Rgb getIndexAutoColor() const override { return index_auto_color_; }
+		unsigned int getIndexAuto() const override { return index_auto_; }
 		const Light *getLight() const override { return light_; }
 		/*! set a light source to be associated with this object */
 		void setLight(const Light *light) override { light_ = light; }
 
 	protected:
-		ObjectBasic();
 		std::string name_;
 		const Light *light_ = nullptr;
 		Visibility visibility_ = Visibility::NormalVisible;
 		bool is_base_object_ = false;
-		unsigned int object_index_ = 0;	//!< Object Index for the object-index render pass
-		Rgb object_index_auto_color_{0.f};	//!< Object Index color automatically generated for the object-index-auto color render pass
-		static unsigned int object_index_auto_;	//!< Object Index automatically generated for the object-index-auto render pass
-		static unsigned int highest_object_index_;	//!< Class shared variable containing the highest object index used for the Normalized Object Index pass.
+		unsigned int index_ = 1;	//!< Object Index for the object-index render pass
+		unsigned int index_auto_ = 1;	//!< Object Index automatically generated for the object-index-auto render pass
+		Rgb index_auto_color_{0.f};	//!< Object Index color automatically generated for the object-index-auto color render pass
 };
 
 END_YAFARAY

@@ -488,7 +488,7 @@ float ShinyDiffuseMaterial::getAlpha(const MaterialData *mat_data, const Surface
 	else return 1.f;
 }
 
-const Material *ShinyDiffuseMaterial::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params, const std::list<ParamMap> &nodes_params)
+Material *ShinyDiffuseMaterial::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params, const std::list<ParamMap> &nodes_params)
 {
 	/// Material Parameters
 	Rgb diffuse_color{1.f};
@@ -544,7 +544,7 @@ const Material *ShinyDiffuseMaterial::factory(Logger &logger, const Scene &scene
 	// !!remember to put diffuse multiplier in material itself!
 	auto mat = new ShinyDiffuseMaterial(logger, diffuse_color, mirror_color, diffuse_strength, transparency_strength, translucency_strength, mirror_strength, emit_strength, transmit_filter_strength, visibility);
 
-	mat->setMaterialIndex(mat_pass_index);
+	mat->setIndex(mat_pass_index);
 	mat->receive_shadows_ = receive_shadows;
 	mat->flat_material_ = flat_material;
 	mat->additional_depth_ = additionaldepth;

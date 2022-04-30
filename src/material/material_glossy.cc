@@ -353,7 +353,7 @@ float GlossyMaterial::pdf(const MaterialData *mat_data, const SurfacePoint &sp, 
 	return pdf;
 }
 
-const Material *GlossyMaterial::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params, const std::list<ParamMap> &nodes_params)
+Material *GlossyMaterial::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params, const std::list<ParamMap> &nodes_params)
 {
 	Rgb col(1.f), dcol(1.f);
 	float refl = 1.f;
@@ -394,7 +394,7 @@ const Material *GlossyMaterial::factory(Logger &logger, const Scene &scene, cons
 
 	auto mat = new GlossyMaterial(logger, col, dcol, refl, diff, exponent, as_diff, visibility);
 
-	mat->setMaterialIndex(mat_pass_index);
+	mat->setIndex(mat_pass_index);
 	mat->receive_shadows_ = receive_shadows;
 	mat->additional_depth_ = additionaldepth;
 

@@ -269,7 +269,7 @@ const VolumeHandler *BlendMaterial::getVolumeHandler(bool inside) const
 	else return vol_2;
 }
 
-const Material *BlendMaterial::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params, const std::list<ParamMap> &nodes_params)
+Material *BlendMaterial::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params, const std::list<ParamMap> &nodes_params)
 {
 	double blend_val = 0.5;
 	std::string s_visibility = "normal";
@@ -304,7 +304,7 @@ const Material *BlendMaterial::factory(Logger &logger, const Scene &scene, const
 
 	auto mat = new BlendMaterial(logger, m_1, m_2, blend_val, visibility);
 
-	mat->setMaterialIndex(mat_pass_index);
+	mat->setIndex(mat_pass_index);
 	mat->receive_shadows_ = receive_shadows;
 	mat->wireframe_amount_ = wire_frame_amount;
 	mat->wireframe_thickness_ = wire_frame_thickness;

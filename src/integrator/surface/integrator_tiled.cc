@@ -45,14 +45,14 @@
 
 BEGIN_YAFARAY
 
-void TiledIntegrator::renderWorker(ThreadControl *control, FastRandom &fast_random, std::vector<int> &correlative_sample_number, int thread_id, int samples, int offset, bool adaptive, int aa_pass)
+void TiledIntegrator::renderWorker(ThreadControl *control, FastRandom &fast_random, std::vector<int> &correlative_sample_number, int thread_id, int samples, int offset, bool adaptive, int aa_pass, unsigned int object_index_highest, unsigned int material_index_highest)
 {
 	RenderArea a;
 
 	while(image_film_->nextArea(render_view_, render_control_, a))
 	{
 		if(render_control_.canceled()) break;
-		renderTile(fast_random, correlative_sample_number, a, samples, offset, adaptive, thread_id, aa_pass);
+		renderTile(fast_random, correlative_sample_number, a, samples, offset, adaptive, thread_id, aa_pass, object_index_highest, material_index_highest);
 
 		std::unique_lock<std::mutex> lk(control->m_);
 		control->areas_.emplace_back(a);
@@ -92,7 +92,7 @@ void TiledIntegrator::precalcDepths()
 	if(max_depth_ > 0.f) max_depth_ = 1.f / (max_depth_ - min_depth_);
 }
 
-bool TiledIntegrator::render(FastRandom &fast_random)
+bool TiledIntegrator::render(FastRandom &fast_random, unsigned int object_index_highest, unsigned int material_index_highest)
 {
 	std::stringstream pass_string;
 	std::stringstream aa_settings;
@@ -169,10 +169,10 @@ bool TiledIntegrator::render(FastRandom &fast_random)
 	int resampled_pixels = 0;
 	if(render_control_.resumed())
 	{
-		renderPass(fast_random, correlative_sample_number, 0, image_film_->getSamplingOffset(), false, 0);
+		renderPass(fast_random, correlative_sample_number, 0, image_film_->getSamplingOffset(), false, 0, object_index_highest, material_index_highest);
 	}
 	else
-		renderPass(fast_random, correlative_sample_number, aa_noise_params_.samples_, 0, false, 0);
+		renderPass(fast_random, correlative_sample_number, aa_noise_params_.samples_, 0, false, 0, object_index_highest, material_index_highest);
 
 	bool aa_threshold_changed = true;
 	int acum_aa_samples = aa_noise_params_.samples_;
@@ -180,8 +180,6 @@ bool TiledIntegrator::render(FastRandom &fast_random)
 	for(int i = 1; i < aa_noise_params_.passes_; ++i)
 	{
 		if(render_control_.canceled()) break;
-
-		//scene->getSurfIntegrator()->setSampleMultiplier(scene->getSurfIntegrator()->getSampleMultiplier() * AA_sample_multiplier_factor);
 
 		aa_sample_multiplier_ *= aa_noise_params_.sample_multiplier_factor_;
 		aa_light_sample_multiplier_ *= aa_noise_params_.light_sample_multiplier_factor_;
@@ -207,7 +205,7 @@ bool TiledIntegrator::render(FastRandom &fast_random)
 
 		if(logger_.isDebug())logger_.logDebug("acumAASamples=", acum_aa_samples, " AA_samples=", aa_noise_params_.samples_, " AA_samples_mult=", aa_samples_mult);
 
-		if(resampled_pixels > 0) renderPass(fast_random, correlative_sample_number, aa_samples_mult, acum_aa_samples, true, i);
+		if(resampled_pixels > 0) renderPass(fast_random, correlative_sample_number, aa_samples_mult, acum_aa_samples, true, i, object_index_highest, material_index_highest);
 
 		acum_aa_samples += aa_samples_mult;
 
@@ -230,7 +228,7 @@ bool TiledIntegrator::render(FastRandom &fast_random)
 }
 
 
-bool TiledIntegrator::renderPass(FastRandom &fast_random, std::vector<int> &correlative_sample_number, int samples, int offset, bool adaptive, int aa_pass_number)
+bool TiledIntegrator::renderPass(FastRandom &fast_random, std::vector<int> &correlative_sample_number, int samples, int offset, bool adaptive, int aa_pass_number, unsigned int object_index_highest, unsigned int material_index_highest)
 {
 	if(logger_.isDebug())logger_.logDebug("Sampling: samples=", samples, " Offset=", offset, " Base Offset=", + image_film_->getBaseSamplingOffset(), "  AA_pass_number=", aa_pass_number);
 
@@ -243,7 +241,7 @@ bool TiledIntegrator::renderPass(FastRandom &fast_random, std::vector<int> &corr
 	ThreadControl tc;
 	std::vector<std::thread> threads;
 	threads.reserve(num_threads_);
-	for(int i = 0; i < num_threads_; ++i) threads.emplace_back(&TiledIntegrator::renderWorker, this, &tc, std::ref(fast_random), std::ref(correlative_sample_number), i, samples, (offset + image_film_->getBaseSamplingOffset()), adaptive, aa_pass_number);
+	for(int i = 0; i < num_threads_; ++i) threads.emplace_back(&TiledIntegrator::renderWorker, this, &tc, std::ref(fast_random), std::ref(correlative_sample_number), i, samples, (offset + image_film_->getBaseSamplingOffset()), adaptive, aa_pass_number, object_index_highest, material_index_highest);
 
 	std::unique_lock<std::mutex> lk(tc.m_);
 	while(tc.finished_threads_ < num_threads_)
@@ -261,7 +259,7 @@ bool TiledIntegrator::renderPass(FastRandom &fast_random, std::vector<int> &corr
 	return true; //hm...quite useless the return value :)
 }
 
-bool TiledIntegrator::renderTile(FastRandom &fast_random, std::vector<int> &correlative_sample_number, const RenderArea &a, int n_samples, int offset, bool adaptive, int thread_id, int aa_pass_number)
+bool TiledIntegrator::renderTile(FastRandom &fast_random, std::vector<int> &correlative_sample_number, const RenderArea &a, int n_samples, int offset, bool adaptive, int thread_id, int aa_pass_number, unsigned int object_index_highest, unsigned int material_index_highest)
 {
 	const int camera_res_x = camera_->resX();
 	RandomGenerator random_generator(rand() + offset * (camera_res_x * a.y_ + a.x_) + 123);
@@ -353,7 +351,7 @@ bool TiledIntegrator::renderTile(FastRandom &fast_random, std::vector<int> &corr
 				}
 				camera_ray.ray_.time_ = time;
 				RayDivision ray_division;
-				const auto [integ_col, integ_alpha] = integrate(camera_ray.ray_, fast_random, random_generator, correlative_sample_number, &color_layers, thread_id, 0, true, 0.f, 0, ray_division, pixel_sampling_data);
+				const auto [integ_col, integ_alpha] = integrate(camera_ray.ray_, fast_random, random_generator, correlative_sample_number, &color_layers, thread_id, 0, true, 0.f, 0, ray_division, pixel_sampling_data, object_index_highest, material_index_highest);
 				color_layers(LayerDef::Combined) = {integ_col, integ_alpha};
 				for(auto &[layer_def, layer_col] : color_layers)
 				{
@@ -402,7 +400,7 @@ bool TiledIntegrator::renderTile(FastRandom &fast_random, std::vector<int> &corr
 	return true;
 }
 
-void TiledIntegrator::generateCommonLayers(ColorLayers *color_layers, const SurfacePoint &sp, const MaskParams &mask_params)
+void TiledIntegrator::generateCommonLayers(ColorLayers *color_layers, const SurfacePoint &sp, const MaskParams &mask_params, unsigned int object_index_highest, unsigned int material_index_highest)
 {
 	if(color_layers)
 	{
@@ -560,39 +558,39 @@ void TiledIntegrator::generateCommonLayers(ColorLayers *color_layers, const Surf
 		{
 			if(Rgba *color_layer = color_layers->find(LayerDef::ObjIndexAbs))
 			{
-				*color_layer = Rgba{sp.object_->getAbsObjectIndexColor()};
+				*color_layer = Rgba{static_cast<float>(sp.object_->getIndex())};
 			}
 			if(Rgba *color_layer = color_layers->find(LayerDef::ObjIndexNorm))
 			{
-				*color_layer = Rgba{sp.object_->getNormObjectIndexColor()};
+				*color_layer = Rgba{static_cast<float>(sp.object_->getIndex()) / object_index_highest};
 			}
 			if(Rgba *color_layer = color_layers->find(LayerDef::ObjIndexAuto))
 			{
-				*color_layer = Rgba{sp.object_->getAutoObjectIndexColor()};
+				*color_layer = Rgba{sp.object_->getIndexAutoColor()};
 			}
 			if(Rgba *color_layer = color_layers->find(LayerDef::ObjIndexAutoAbs))
 			{
-				*color_layer = Rgba{sp.object_->getAutoObjectIndexNumber()};
+				*color_layer = Rgba{static_cast<float>(sp.object_->getIndexAuto())};
 			}
 			if(Rgba *color_layer = color_layers->find(LayerDef::MatIndexAbs))
 			{
-				*color_layer = Rgba{sp.material_->getAbsMaterialIndexColor()};
+				*color_layer = Rgba{static_cast<float>(sp.material_->getIndex())};
 			}
 			if(Rgba *color_layer = color_layers->find(LayerDef::MatIndexNorm))
 			{
-				*color_layer = Rgba{sp.material_->getNormMaterialIndexColor()};
+				*color_layer = Rgba{static_cast<float>(sp.material_->getIndex()) / material_index_highest};
 			}
 			if(Rgba *color_layer = color_layers->find(LayerDef::MatIndexAuto))
 			{
-				*color_layer = Rgba{sp.material_->getAutoMaterialIndexColor()};
+				*color_layer = Rgba{sp.material_->getIndexAutoColor()};
 			}
 			if(Rgba *color_layer = color_layers->find(LayerDef::MatIndexAutoAbs))
 			{
-				*color_layer = Rgba{Material::getAutoMaterialIndexNumber()};
+				*color_layer = Rgba{static_cast<float>(sp.material_->getIndexAuto())};
 			}
 			if(Rgba *color_layer = color_layers->find(LayerDef::ObjIndexMask))
 			{
-				if(sp.object_->getAbsObjectIndex() == mask_params.obj_index_) *color_layer = Rgba(1.f);
+				if(sp.object_->getIndex() == mask_params.obj_index_) *color_layer = Rgba(1.f);
 			}
 			if(Rgba *color_layer = color_layers->find(LayerDef::ObjIndexMaskAll))
 			{
@@ -607,7 +605,7 @@ void TiledIntegrator::generateCommonLayers(ColorLayers *color_layers, const Surf
 			}
 			if(Rgba *color_layer = color_layers->find(LayerDef::MatIndexMask))
 			{
-				if(sp.material_->getAbsMaterialIndex() == mask_params.mat_index_) *color_layer = Rgba(1.f);
+				if(sp.material_->getIndex() == mask_params.mat_index_) *color_layer = Rgba(1.f);
 			}
 			if(Rgba *color_layer = color_layers->find(LayerDef::MatIndexMaskAll))
 			{

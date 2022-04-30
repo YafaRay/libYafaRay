@@ -51,7 +51,7 @@ Object * MeshObject::factory(Logger &logger, const Scene &scene, const std::stri
 	object->setLight(scene.getLight(light_name));
 	object->setVisibility(visibility::fromString(visibility));
 	object->useAsBaseObject(is_base_object);
-	object->setObjectIndex(object_index);
+	object->setIndex(object_index);
 	return object;
 }
 

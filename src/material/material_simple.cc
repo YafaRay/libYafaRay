@@ -57,7 +57,7 @@ float LightMaterial::pdf(const MaterialData *mat_data, const SurfacePoint &sp, c
 	return 0.f;
 }
 
-const Material *LightMaterial::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params, const std::list<ParamMap> &nodes_params)
+Material *LightMaterial::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params, const std::list<ParamMap> &nodes_params)
 {
 	Rgb col(1.0);
 	double power = 1.0;

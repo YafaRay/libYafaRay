@@ -151,18 +151,11 @@ class Material
 		virtual Rgb getTransColor(const NodeTreeData &node_tree_data) const { return Rgb{0.f}; }
 		virtual Rgb getMirrorColor(const NodeTreeData &node_tree_data) const { return Rgb{0.f}; }
 		virtual Rgb getSubSurfaceColor(const NodeTreeData &node_tree_data) const { return Rgb{0.f}; }
-		void setMaterialIndex(unsigned int new_mat_index)
-		{
-			material_index_ = new_mat_index;
-			if(material_index_highest_ < material_index_) material_index_highest_ = material_index_;
-		}
-		static void resetMaterialIndex() { material_index_highest_ = 1.f; material_index_auto_ = 0; }
-		unsigned int getAbsMaterialIndex() const { return material_index_; }
-		float getNormMaterialIndex() const { return static_cast<float>(getAbsMaterialIndex()) / static_cast<float>(material_index_highest_); }
-		Rgb getAbsMaterialIndexColor() const { return Rgb{static_cast<float>(getAbsMaterialIndex())}; }
-		Rgb getNormMaterialIndexColor() const { return Rgb{getNormMaterialIndex()}; }
-		Rgb getAutoMaterialIndexColor() const { return material_index_auto_color_; }
-		static Rgb getAutoMaterialIndexNumber() { return Rgb{static_cast<float>(material_index_auto_)}; }
+		void setIndex(unsigned int new_mat_index) { index_ = new_mat_index; }
+		void setIndexAuto(unsigned int new_mat_index);
+		unsigned int getIndex() const { return index_; }
+		unsigned int getIndexAuto() const { return index_auto_; }
+		Rgb getIndexAutoColor() const { return index_auto_color_; }
 		Visibility getVisibility() const { return visibility_; }
 		bool getReceiveShadows() const { return receive_shadows_; }
 
@@ -204,8 +197,6 @@ class Material
 		bool receive_shadows_ = true; //!< enables/disables material reception of shadows.
 		std::unique_ptr<VolumeHandler> vol_i_; //!< volumetric handler for space inside material (opposed to surface normal)
 		std::unique_ptr<VolumeHandler> vol_o_; //!< volumetric handler for space outside ofmaterial (where surface normal points to)
-		unsigned int material_index_ = 0;	//!< Material Index for the material-index render pass
-		Rgb material_index_auto_color_{0.f};	//!< Material Index color automatically generated for the material-index-auto (color) render pass
 		int additional_depth_ = 0;	//!< Per-material additional ray-depth
 		float transparent_bias_factor_ = 0.f;	//!< Per-material additional ray-bias setting for transparency (trick to avoid black areas due to insufficient depth when many transparent surfaces stacked). If >0.f this function is enabled and the result will no longer be realistic and may have artifacts.
 		bool transparent_bias_multiply_ray_depth_ = false;	//!< Per-material additional ray-bias setting for transparency (trick to avoid black areas due to insufficient depth when many transparent surfaces stacked). If enabled the bias will be multiplied by the current ray depth so the first transparent surfaces are rendered better and subsequent surfaces might be skipped.
@@ -218,9 +209,9 @@ class Material
 		float sampling_factor_ = 1.f;	//!< Material sampling factor, to allow some materials to receive more samples than others
 
 		bool flat_material_ = false;		//!< Flat Material is a special non-photorealistic material that does not multiply the surface color by the cosine of the angle with the light, as happens in real life. Also, if receive_shadows is disabled, this flat material does no longer self-shadow. For special applications only.
-
-		static unsigned int material_index_auto_;	//!< Material Index automatically generated for the material-index-auto render pass
-		static unsigned int material_index_highest_;	//!< Class shared variable containing the highest material index used for the Normalized Material Index pass.
+		unsigned int index_ = 1;	//!< Material Index for the material-index render pass
+		unsigned int index_auto_ = 1;	//!< Material Index automatically generated for the material-index-auto render pass
+		Rgb index_auto_color_{0.f};	//!< Material Index color automatically generated for the material-index-auto (color) render pass
 		Logger &logger_;
 };
 

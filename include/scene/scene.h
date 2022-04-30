@@ -144,6 +144,11 @@ class Scene final
 		bool isRayMinDistAuto() const { return ray_min_dist_auto_; }
 		const VolumeIntegrator *getVolIntegrator() const { return vol_integrator_; }
 
+		unsigned int getMaterialIndexHighest() const { return material_index_highest_; }
+		unsigned int getMaterialIndexAuto() const { return material_index_auto_; }
+		unsigned int getObjectIndexHighest() const { return object_index_highest_; }
+		unsigned int getObjectIndexAuto() const { return object_index_auto_; }
+
 		static void logWarnExist(Logger &logger, const std::string &pname, const std::string &name);
 		static void logErrNoType(Logger &logger, const std::string &pname, const std::string &name, const std::string &type);
 		static void logErrOnCreate(Logger &logger, const std::string &pname, const std::string &name, const std::string &t);
@@ -202,6 +207,10 @@ class Scene final
 		//enable automatic shadow bias calculation
 		float ray_min_dist_ = 1.0e-5f;  //ray minimum distance
 		bool ray_min_dist_auto_ = true;  //enable automatic ray minimum distance calculation
+		unsigned int material_index_highest_ = 1; //!< Highest material index used for the Normalized Material Index pass.
+		unsigned int material_index_auto_ = 1; //!< Material Index automatically generated for the material-index-auto render pass
+		unsigned int object_index_highest_ = 1; //!< Highest object index used for the Normalized Object Index pass.
+		unsigned int object_index_auto_ = 1; //!< Object Index automatically generated for the object-index-auto render pass
 		std::unique_ptr<ImageFilm> image_film_;
 		const Background* background_ = nullptr;
 		SurfaceIntegrator *surf_integrator_ = nullptr;

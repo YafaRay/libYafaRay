@@ -22,13 +22,10 @@
 
 BEGIN_YAFARAY
 
-unsigned int ObjectBasic::object_index_auto_ = 0;
-unsigned int ObjectBasic::highest_object_index_ = 1;
-
-ObjectBasic::ObjectBasic()
+void ObjectBasic::setIndexAuto(unsigned int new_obj_index)
 {
-	object_index_auto_++;
-	srand(object_index_auto_);
+	index_auto_ = new_obj_index;
+	srand(index_auto_);
 	float r, g, b;
 	do
 	{
@@ -37,13 +34,7 @@ ObjectBasic::ObjectBasic()
 		b = static_cast<float>(rand() % 8) / 8.f;
 	}
 	while(r + g + b < 0.5f);
-	object_index_auto_color_ = Rgb(r, g, b);
-}
-
-void ObjectBasic::setObjectIndex(unsigned int new_obj_index)
-{
-	object_index_ = new_obj_index;
-	if(highest_object_index_ < object_index_) highest_object_index_ = object_index_;
+	index_auto_color_ = Rgb(r, g, b);
 }
 
 END_YAFARAY

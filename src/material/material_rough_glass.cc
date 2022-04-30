@@ -259,7 +259,7 @@ float RoughGlassMaterial::getMatIor() const
 	return ior_;
 }
 
-const Material *RoughGlassMaterial::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params, const std::list<ParamMap> &nodes_params)
+Material *RoughGlassMaterial::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params, const std::list<ParamMap> &nodes_params)
 {
 	float ior = 1.4;
 	float filt = 0.f;
@@ -302,7 +302,7 @@ const Material *RoughGlassMaterial::factory(Logger &logger, const Scene &scene, 
 
 	auto mat = new RoughGlassMaterial(logger, ior, filt * filt_col + Rgb(1.f - filt), sr_col, fake_shad, alpha, disp_power, visibility);
 
-	mat->setMaterialIndex(mat_pass_index);
+	mat->setIndex(mat_pass_index);
 	mat->receive_shadows_ = receive_shadows;
 	mat->additional_depth_ = additionaldepth;
 

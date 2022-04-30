@@ -246,7 +246,7 @@ bool Scene::render()
 				return false;
 			}
 			render_control_.setStarted();
-			success = surf_integrator_->render(fast_random);
+			success = surf_integrator_->render(fast_random, object_index_highest_, material_index_highest_);
 			if(!success)
 			{
 				logger_.logError("Scene: Rendering process failed, exiting...");
@@ -406,10 +406,11 @@ std::unique_ptr<const Material> * Scene::createMaterial(const std::string &name,
 	auto material = std::unique_ptr<const Material>(Material::factory(logger_, *this, name, params, nodes_params));
 	if(material)
 	{
+		creation_state_.changes_ |= CreationState::Flags::CMaterial;
+		++material_index_auto_;
 		*(materials_[name]) = std::move(material);
 		if(logger_.isVerbose()) logInfoVerboseSuccess(logger_, pname, name, type);
 		return materials_[name].get();
-		creation_state_.changes_ |= CreationState::Flags::CMaterial;
 	}
 	logErrOnCreate(logger_, pname, name, type);
 	return nullptr;
@@ -993,11 +994,12 @@ Object *Scene::createObject(const std::string &name, const ParamMap &params)
 	std::unique_ptr<Object> object(Object::factory(logger_, *this, name, params));
 	if(object)
 	{
+		creation_state_.changes_ |= CreationState::Flags::CGeom;
 		object->setName(name);
+		++object_index_auto_;
 		objects_[name] = std::move(object);
 		if(logger_.isVerbose()) logInfoVerboseSuccess(logger_, pname, name, type);
 		creation_state_.stack_.push_front(CreationState::Object);
-		creation_state_.changes_ |= CreationState::Flags::CGeom;
 		current_object_ = objects_[name].get();
 		return objects_[name].get();
 	}
@@ -1053,6 +1055,18 @@ bool Scene::updateObjects()
 	accelerator_ = std::unique_ptr<const Accelerator>(Accelerator::factory(logger_, primitives, params));
 	*scene_bound_ = accelerator_->getBound();
 	if(logger_.isVerbose()) logger_.logVerbose("Scene: New scene bound is: ", "(", scene_bound_->a_.x(), ", ", scene_bound_->a_.y(), ", ", scene_bound_->a_.z(), "), (", scene_bound_->g_.x(), ", ", scene_bound_->g_.y(), ", ", scene_bound_->g_.z(), ")");
+
+	object_index_highest_ = 1;
+	for(const auto &[object_name, object] : objects_)
+	{
+		if(object_index_highest_ < object->getIndex()) object_index_highest_ = object->getIndex();
+	}
+
+	material_index_highest_ = 1;
+	for(const auto &[material_name, material] : materials_)
+	{
+		if(material_index_highest_ < material->get()->getIndex()) material_index_highest_ = material->get()->getIndex();
+	}
 
 	if(shadow_bias_auto_) shadow_bias_ = shadow_bias_global;
 	if(ray_min_dist_auto_) ray_min_dist_ = min_raydist_global;

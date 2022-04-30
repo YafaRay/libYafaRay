@@ -287,7 +287,7 @@ float GlassMaterial::getMatIor() const
 	return ior_;
 }
 
-const Material *GlassMaterial::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params, const std::list<ParamMap> &nodes_params)
+Material *GlassMaterial::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params, const std::list<ParamMap> &nodes_params)
 {
 	double ior = 1.4;
 	double filt = 0.f;
@@ -326,7 +326,7 @@ const Material *GlassMaterial::factory(Logger &logger, const Scene &scene, const
 
 	auto mat = new GlassMaterial(logger, ior, filt * filt_col + Rgb(1.f - filt), sr_col, disp_power, fake_shad, visibility);
 
-	mat->setMaterialIndex(mat_pass_index);
+	mat->setIndex(mat_pass_index);
 	mat->receive_shadows_ = receive_shadows;
 	mat->additional_depth_ = additionaldepth;
 
@@ -451,7 +451,7 @@ Specular MirrorMaterial::getSpecular(int ray_level, const MaterialData *mat_data
 	return specular;
 }
 
-const Material *MirrorMaterial::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params, const std::list<ParamMap> &nodes_params)
+Material *MirrorMaterial::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params, const std::list<ParamMap> &nodes_params)
 {
 	Rgb col(1.0);
 	float refl = 1.0;
@@ -468,7 +468,7 @@ Rgb NullMaterial::sample(const MaterialData *mat_data, const SurfacePoint &sp, c
 	return Rgb{0.f};
 }
 
-const Material *NullMaterial::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params, const std::list<ParamMap> &nodes_params)
+Material *NullMaterial::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params, const std::list<ParamMap> &nodes_params)
 {
 	return new NullMaterial(logger);
 }
