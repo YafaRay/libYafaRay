@@ -38,7 +38,7 @@
 
 BEGIN_YAFARAY
 
-typedef float FilterFunc_t(float dx, float dy);
+typedef float FilterFunction_t(float dx, float dy);
 
 ImageFilm * ImageFilm::factory(Logger &logger, const ParamMap &params, Scene *scene)
 {
@@ -124,40 +124,43 @@ ImageFilm * ImageFilm::factory(Logger &logger, const ParamMap &params, Scene *sc
 	return film;
 }
 
-ImageFilm::ImageFilm(Logger &logger, int width, int height, int xstart, int ystart, int num_threads, RenderControl &render_control, const Layers &layers, const std::map<std::string, std::unique_ptr<ImageOutput>> &outputs, float filter_size, FilterType filt, int t_size, ImageSplitter::TilesOrderType tiles_order_type) : width_(width), height_(height), cx_0_(xstart), cy_0_(ystart), tile_size_(t_size), tiles_order_(tiles_order_type), num_threads_(num_threads), layers_(layers), outputs_(outputs), filterw_(filter_size * 0.5), flags_(width, height), weights_(width, height), logger_(logger)
+ImageFilm::ImageFilm(Logger &logger, int width, int height, int xstart, int ystart, int num_threads, RenderControl &render_control, const Layers &layers, const std::map<std::string, std::unique_ptr<ImageOutput>> &outputs, float filter_size, FilterType filt, int t_size, ImageSplitter::TilesOrderType tiles_order_type) : width_(width), height_(height), cx_0_(xstart), cy_0_(ystart), tile_size_(t_size), tiles_order_(tiles_order_type), num_threads_(num_threads), layers_(layers), outputs_(outputs), filter_width_(filter_size * 0.5), flags_(width, height), weights_(width, height), logger_(logger)
 {
 	cx_1_ = xstart + width;
 	cy_1_ = ystart + height;
-	filter_table_ = std::unique_ptr<float[]>(new float[filter_table_size_ * filter_table_size_]);
 
 	estimate_density_ = false;
 
 	// fill filter table:
-	float *f_tp = filter_table_.get();
-	const float scale = 1.f / static_cast<float>(filter_table_size_);
-
-	FilterFunc_t *ffunc = nullptr;
+	FilterFunction_t *filter_function = nullptr;
 	switch(filt)
 	{
-		case ImageFilm::FilterType::Mitchell: ffunc = math::filter::mitchell; filterw_ *= 2.6f; break;
-		case ImageFilm::FilterType::Lanczos: ffunc = math::filter::lanczos2; break;
-		case ImageFilm::FilterType::Gauss: ffunc = math::filter::gauss; filterw_ *= 2.f; break;
+		case ImageFilm::FilterType::Mitchell:
+			filter_function = math::filter::mitchell;
+			filter_width_ *= 2.6f; break;
+		case ImageFilm::FilterType::Lanczos:
+			filter_function = math::filter::lanczos2; break;
+		case ImageFilm::FilterType::Gauss:
+			filter_function = math::filter::gauss;
+			filter_width_ *= 2.f; break;
 		default:
-		case ImageFilm::FilterType::Box: ffunc = math::filter::box; break;
+		case ImageFilm::FilterType::Box:
+			filter_function = math::filter::box; break;
 	}
 
-	filterw_ = std::min(std::max(0.501f, filterw_), 0.5f * max_filter_size_); // filter needs to cover at least the area of one pixel and no more than MAX_FILTER_SIZE/2
+	filter_width_ = std::min(std::max(0.501f, filter_width_), 0.5f * max_filter_size_); // filter needs to cover at least the area of one pixel and no more than MAX_FILTER_SIZE/2
 
+	size_t filter_table_index = 0;
 	for(int y = 0; y < filter_table_size_; ++y)
 	{
 		for(int x = 0; x < filter_table_size_; ++x)
 		{
-			*f_tp = ffunc((x + .5f) * scale, (y + .5f) * scale);
-			++f_tp;
+			filter_table_[filter_table_index] = filter_function((x + .5f) * filter_scale_, (y + .5f) * filter_scale_);
+			++filter_table_index;
 		}
 	}
 
-	table_scale_ = 0.9999 * filter_table_size_ / filterw_;
+	filter_table_scale_ = 0.9999f * filter_table_size_ / filter_width_;
 	area_cnt_ = 0;
 
 	progress_bar_ = std::make_unique<ConsoleProgressBar>(80);
@@ -446,7 +449,7 @@ bool ImageFilm::nextArea(const RenderView *render_view, const RenderControl &ren
 {
 	if(cancel_) return false;
 
-	const int ifilterw = static_cast<int>(std::ceil(filterw_));
+	const int ifilterw = static_cast<int>(std::ceil(filter_width_));
 
 	if(split_)
 	{
@@ -679,10 +682,10 @@ void ImageFilm::addSample(int x, int y, float dx, float dy, const RenderArea *a,
 {
 	// get filter extent and make sure we don't leave image area:
 	//FIXME: using for some reason an asymmetrical rounding function with a +0.5 bias. Using a standard rounding function would increase processing time due to increased filter applicable area and potentially causing more thread locks. Keeping this asymmetrical rounding for now to keep the original functionality, but probably something to be investigated and made better in the future.
-	const int dx_0 = std::max(cx_0_ - x, roundToIntWithBias(static_cast<double>(dx) - filterw_));
-	const int dx_1 = std::min(cx_1_ - x - 1, roundToIntWithBias(static_cast<double>(dx) + filterw_ - 1.0));
-	const int dy_0 = std::max(cy_0_ - y, roundToIntWithBias(static_cast<double>(dy) - filterw_));
-	const int dy_1 = std::min(cy_1_ - y - 1, roundToIntWithBias(static_cast<double>(dy) + filterw_ - 1.0));
+	const int dx_0 = std::max(cx_0_ - x, roundToIntWithBias(static_cast<double>(dx) - filter_width_));
+	const int dx_1 = std::min(cx_1_ - x - 1, roundToIntWithBias(static_cast<double>(dx) + filter_width_ - 1.0));
+	const int dy_0 = std::max(cy_0_ - y, roundToIntWithBias(static_cast<double>(dy) - filter_width_));
+	const int dy_1 = std::min(cy_1_ - y - 1, roundToIntWithBias(static_cast<double>(dy) + filter_width_ - 1.0));
 
 
 	// get indizes in filter table
@@ -693,7 +696,7 @@ void ImageFilm::addSample(int x, int y, float dx, float dy, const RenderArea *a,
 
 	for(int i = dx_0, n = 0; i <= dx_1; ++i, ++n)
 	{
-		const double d = std::abs((static_cast<double>(i) - x_offs) * table_scale_);
+		const double d = std::abs((static_cast<double>(i) - x_offs) * filter_table_scale_);
 		x_index[n] = static_cast<int>(std::floor(d));
 	}
 
@@ -701,7 +704,7 @@ void ImageFilm::addSample(int x, int y, float dx, float dy, const RenderArea *a,
 
 	for(int i = dy_0, n = 0; i <= dy_1; ++i, ++n)
 	{
-		const double d = std::abs((static_cast<double>(i) - y_offs) * table_scale_);
+		const double d = std::abs((static_cast<double>(i) - y_offs) * filter_table_scale_);
 		y_index[n] = static_cast<int>(std::floor(d));
 	}
 
@@ -716,7 +719,7 @@ void ImageFilm::addSample(int x, int y, float dx, float dy, const RenderArea *a,
 		for(int i = x_0; i <= x_1; ++i)
 		{
 			// get filter value at pixel (x,y)
-			const int offset = y_index[j - y_0] * filter_table_size_ + x_index[i - x_0];
+			const size_t offset = y_index[j - y_0] * filter_table_size_ + x_index[i - x_0];
 			const float filter_wt = filter_table_[offset];
 			weights_(i - cx_0_, j - cy_0_).setFloat(weights_(i - cx_0_, j - cy_0_).getFloat() + filter_wt);
 
@@ -737,10 +740,10 @@ void ImageFilm::addDensitySample(const Rgb &c, int x, int y, float dx, float dy,
 
 	// get filter extent and make sure we don't leave image area:
 	//FIXME: using for some reason an asymmetrical rounding function with a +0.5 bias. Using a standard rounding function would increase processing time due to increased filter applicable area and potentially causing more thread locks. Keeping this asymmetrical rounding for now to keep the original functionality, but probably something to be investigated and made better in the future.
-	const int dx_0 = std::max(cx_0_ - x, roundToIntWithBias(static_cast<double>(dx) - filterw_));
-	const int dx_1 = std::min(cx_1_ - x - 1, roundToIntWithBias(static_cast<double>(dx) + filterw_ - 1.0));
-	const int dy_0 = std::max(cy_0_ - y, roundToIntWithBias(static_cast<double>(dy) - filterw_));
-	const int dy_1 = std::min(cy_1_ - y - 1, roundToIntWithBias(static_cast<double>(dy) + filterw_ - 1.0));
+	const int dx_0 = std::max(cx_0_ - x, roundToIntWithBias(static_cast<double>(dx) - filter_width_));
+	const int dx_1 = std::min(cx_1_ - x - 1, roundToIntWithBias(static_cast<double>(dx) + filter_width_ - 1.0));
+	const int dy_0 = std::max(cy_0_ - y, roundToIntWithBias(static_cast<double>(dy) - filter_width_));
+	const int dy_1 = std::min(cy_1_ - y - 1, roundToIntWithBias(static_cast<double>(dy) + filter_width_ - 1.0));
 
 
 	std::array<int, max_filter_size_ + 1> x_index;
@@ -749,14 +752,14 @@ void ImageFilm::addDensitySample(const Rgb &c, int x, int y, float dx, float dy,
 	const double x_offs = dx - 0.5;
 	for(int i = dx_0, n = 0; i <= dx_1; ++i, ++n)
 	{
-		const double d = std::abs((static_cast<double>(i) - x_offs) * table_scale_);
+		const double d = std::abs((static_cast<double>(i) - x_offs) * filter_table_scale_);
 		x_index[n] = static_cast<int>(std::floor(d));
 	}
 
 	const double y_offs = dy - 0.5;
 	for(int i = dy_0, n = 0; i <= dy_1; ++i, ++n)
 	{
-		const float d = std::abs(static_cast<float>((static_cast<double>(i) - y_offs) * table_scale_));
+		const float d = std::abs(static_cast<float>((static_cast<double>(i) - y_offs) * filter_table_scale_));
 		y_index[n] = static_cast<int>(std::floor(d));
 	}
 
@@ -770,7 +773,7 @@ void ImageFilm::addDensitySample(const Rgb &c, int x, int y, float dx, float dy,
 	{
 		for(int i = x_0; i <= x_1; ++i)
 		{
-			const int offset = y_index[j - y_0] * filter_table_size_ + x_index[i - x_0];
+			const size_t offset = y_index[j - y_0] * filter_table_size_ + x_index[i - x_0];
 			Rgb &pixel = (*density_image_)(i - cx_0_, j - cy_0_);
 			pixel += c * filter_table_[offset];
 		}

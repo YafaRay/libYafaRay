@@ -183,8 +183,6 @@ class ImageFilm final
 		AutoSaveParams images_auto_save_params_;
 		FilmLoadSave film_load_save_;
 
-		float filterw_, table_scale_;
-		std::unique_ptr<float[]> filter_table_;
 		// Thread mutes for shared access
 		std::mutex image_mutex_, out_mutex_, density_image_mutex_;
 
@@ -193,13 +191,17 @@ class ImageFilm final
 		ImageLayers film_image_layers_;
 		ImageLayers exported_image_layers_;
 		std::unique_ptr<ImageBuffer2D<Rgb>> density_image_; //!< storage for z-buffer channel
+
+		float filter_width_, filter_table_scale_;
+		static constexpr int max_filter_size_ = 8;
+		static constexpr int filter_table_size_ = 16;
+		static constexpr float filter_scale_ = 1.f / static_cast<float>(filter_table_size_);
+		alignas(16) std::array<float, filter_table_size_ * filter_table_size_> filter_table_;
+
 		Logger &logger_;
 		const std::map<std::string, std::unique_ptr<RenderView>> *render_views_ = nullptr;
 		const RenderCallbacks *render_callbacks_ = nullptr;
 		Timer timer_;
-
-		static constexpr int filter_table_size_ = 16;
-		static constexpr int max_filter_size_ = 8;
 };
 
 inline int ImageFilm::roundToIntWithBias(double val)
