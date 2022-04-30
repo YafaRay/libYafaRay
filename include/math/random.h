@@ -62,6 +62,7 @@ class RandomGenerator final
 	public:
 		RandomGenerator() = default;
 		explicit RandomGenerator(unsigned int seed): c_(seed) { }
+		RandomGenerator(const RandomGenerator &random_generator) = delete; //Avoid mistakenly passing the random_generator objects by value instead of passing them by reference
 		double operator()();
 	protected:
 		std::atomic<unsigned int> x_ = 30903, c_ = 0;
