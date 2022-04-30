@@ -123,9 +123,9 @@ class Rgb
 		void linearRgbFromColorSpace(ColorSpace color_space, float gamma);
 		void colorSpaceFromLinearRgb(ColorSpace color_space, float gamma);
 		void rgbToHsv(float &h, float &s, float &v) const;
-		void hsvToRgb(const float &h, const float &s, const float &v);
+		void hsvToRgb(float h, float s, float v);
 		void rgbToHsl(float &h, float &s, float &l) const;
-		void hslToRgb(const float &h, const float &s, const float &l);
+		void hslToRgb(float h, float s, float l);
 
 		static std::string colorSpaceName(const ColorSpace &color_space);
 		static ColorSpace colorSpaceFromName(const std::string &color_space_name, const ColorSpace &default_color_space = ColorSpace::RawManualGamma);
@@ -489,7 +489,7 @@ inline void Rgb::rgbToHsv(float &h, float &s, float &v) const
 	if(h < 0.f) h += 6.f;
 }
 
-inline void Rgb::hsvToRgb(const float &h, const float &s, const float &v)
+inline void Rgb::hsvToRgb(float h, float s, float v)
 {
 	//RGB-HSV Based on https://en.wikipedia.org/wiki/HSL_and_HSV#Converting_to_RGB
 	const float c = v * s;
@@ -531,7 +531,7 @@ inline void Rgb::rgbToHsl(float &h, float &s, float &l) const
 	if(h < 0.f) h += 6.f;
 }
 
-inline void Rgb::hslToRgb(const float &h, const float &s, const float &l)
+inline void Rgb::hslToRgb(float h, float s, float l)
 {
 	//RGB-hsl Based on https://en.wikipedia.org/wiki/HSL_and_hsl#Converting_to_RGB
 	const float c = (1.f - std::abs((2.f * l) - 1.f)) * s;
