@@ -40,11 +40,10 @@ enum class DarkDetectionType : int;
 class ThreadControl final
 {
 	public:
-		ThreadControl() : finished_threads_(0) {}
 		std::mutex m_;
 		std::condition_variable c_; //!< condition variable to signal main thread
 		std::vector<RenderArea> areas_; //!< area to be output to e.g. blender, if any
-		volatile int finished_threads_; //!< number of finished threads, lock countCV when increasing/reading!
+		int finished_threads_ = 0; //!< number of finished threads, lock countCV when increasing/reading!
 };
 
 class TiledIntegrator : public SurfaceIntegrator
