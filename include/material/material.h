@@ -92,8 +92,6 @@ class Material
 		explicit Material(Logger &logger);
 		virtual ~Material();
 
-		virtual MaterialData * createMaterialData(size_t number_of_nodes) const = 0;
-
 		/*! Initialize the BSDF of a material. You must call this with the current surface point
 			first before any other methods (except isTransparent/getTransparency)! The renderstate
 			holds a pointer to preallocated userdata to save data that only depends on the current sp,

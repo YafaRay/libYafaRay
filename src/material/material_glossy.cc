@@ -50,14 +50,13 @@ GlossyMaterial::GlossyMaterial(Logger &logger, const Rgb &col, const Rgb &dcol, 
 
 const MaterialData * GlossyMaterial::initBsdf(SurfacePoint &sp, const Camera *camera) const
 {
-	auto mat_data = createMaterialData(color_nodes_.size() + bump_nodes_.size());
+	auto mat_data = new GlossyMaterialData(bsdf_flags_, color_nodes_.size() + bump_nodes_.size());
 	if(bump_shader_) evalBump(mat_data->node_tree_data_, sp, bump_shader_, camera);
 
 	for(const auto &node : color_nodes_) node->eval(mat_data->node_tree_data_, sp, camera);
-	auto mat_data_specific = static_cast<GlossyMaterialData *>(mat_data);
-	mat_data_specific->m_diffuse_ = diffuse_;
-	mat_data_specific->m_glossy_ = getShaderScalar(glossy_reflection_shader_, mat_data->node_tree_data_, reflectivity_);
-	mat_data_specific->p_diffuse_ = std::min(0.6f, 1.f - (mat_data_specific->m_glossy_ / (mat_data_specific->m_glossy_ + (1.f - mat_data_specific->m_glossy_) * mat_data_specific->m_diffuse_)));
+	mat_data->m_diffuse_ = diffuse_;
+	mat_data->m_glossy_ = getShaderScalar(glossy_reflection_shader_, mat_data->node_tree_data_, reflectivity_);
+	mat_data->p_diffuse_ = std::min(0.6f, 1.f - (mat_data->m_glossy_ / (mat_data->m_glossy_ + (1.f - mat_data->m_glossy_) * mat_data->m_diffuse_)));
 	return mat_data;
 }
 

@@ -48,17 +48,15 @@ inline float BlendMaterial::getBlendVal(const NodeTreeData &node_tree_data) cons
 
 const MaterialData * BlendMaterial::initBsdf(SurfacePoint &sp, const Camera *camera) const
 {
-	auto mat_data = createMaterialData(color_nodes_.size() + bump_nodes_.size());
+	auto mat_data = new BlendMaterialData(bsdf_flags_, color_nodes_.size() + bump_nodes_.size());
 	evalNodes(sp, color_nodes_, mat_data->node_tree_data_, camera);
 	const float blend_val = getBlendVal(mat_data->node_tree_data_);
-
-	auto mat_data_specific = static_cast<BlendMaterialData *>(mat_data);
 	SurfacePoint sp_1 {sp};
-	mat_data_specific->mat_1_data_ = std::unique_ptr<const MaterialData>(mat_1_->get()->initBsdf(sp_1, camera));
+	mat_data->mat_1_data_ = std::unique_ptr<const MaterialData>(mat_1_->get()->initBsdf(sp_1, camera));
 	SurfacePoint sp_2 {sp};
-	mat_data_specific->mat_2_data_ = std::unique_ptr<const MaterialData>(mat_2_->get()->initBsdf(sp_2, camera));
+	mat_data->mat_2_data_ = std::unique_ptr<const MaterialData>(mat_2_->get()->initBsdf(sp_2, camera));
 	sp = SurfacePoint::blendSurfacePoints(sp_1, sp_2, blend_val);
-	mat_data->bsdf_flags_ = mat_data_specific->mat_1_data_->bsdf_flags_ | mat_data_specific->mat_2_data_->bsdf_flags_;
+	mat_data->bsdf_flags_ = mat_data->mat_1_data_->bsdf_flags_ | mat_data->mat_2_data_->bsdf_flags_;
 
 	//todo: bump mapping blending
 	return mat_data;
