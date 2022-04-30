@@ -645,7 +645,7 @@ bool PhotonIntegrator::preprocess(FastRandom &fast_random, ImageFilm *image_film
 // final gathering: this is basically a full path tracer only that it uses the radiance map only
 // at the path end. I.e. paths longer than 1 are only generated to overcome lack of local radiance detail.
 // precondition: initBSDF of current spot has been called!
-Rgb PhotonIntegrator::finalGathering(FastRandom &fast_random, RandomGenerator &random_generator, int thread_id, bool chromatic_enabled, float wavelength, const SurfacePoint &sp, const Vec3 &wo, const RayDivision &ray_division, const PixelSamplingData &pixel_sampling_data) const
+Rgb PhotonIntegrator::finalGathering(FastRandom &fast_random, RandomGenerator &random_generator, std::vector<int> &correlative_sample_number, int thread_id, bool chromatic_enabled, float wavelength, const SurfacePoint &sp, const Vec3 &wo, const RayDivision &ray_division, const PixelSamplingData &pixel_sampling_data) const
 {
 	Rgb path_col(0.0);
 	float w = 0.f;
@@ -705,7 +705,7 @@ Rgb PhotonIntegrator::finalGathering(FastRandom &fast_random, RandomGenerator &r
 			{
 				if(close)
 				{
-					lcol = estimateOneDirectLight(random_generator, thread_id, chromatic_enabled, wavelength, *hit, pwo, offs, ray_division, pixel_sampling_data);
+					lcol = estimateOneDirectLight(random_generator, correlative_sample_number, thread_id, chromatic_enabled, wavelength, *hit, pwo, offs, ray_division, pixel_sampling_data);
 				}
 				else if(caustic)
 				{
@@ -854,7 +854,7 @@ Integrator * PhotonIntegrator::factory(Logger &logger, const ParamMap &params, c
 	return inte;
 }
 
-std::pair<Rgb, float> PhotonIntegrator::integrate(Ray &ray, FastRandom &fast_random, RandomGenerator &random_generator, ColorLayers *color_layers, int thread_id, int ray_level, bool chromatic_enabled, float wavelength, int additional_depth, const RayDivision &ray_division, const PixelSamplingData &pixel_sampling_data) const
+std::pair<Rgb, float> PhotonIntegrator::integrate(Ray &ray, FastRandom &fast_random, RandomGenerator &random_generator, std::vector<int> &correlative_sample_number, ColorLayers *color_layers, int thread_id, int ray_level, bool chromatic_enabled, float wavelength, int additional_depth, const RayDivision &ray_division, const PixelSamplingData &pixel_sampling_data) const
 {
 	static int n_max = 0;
 	static int calls = 0;
@@ -910,7 +910,7 @@ std::pair<Rgb, float> PhotonIntegrator::integrate(Ray &ray, FastRandom &fast_ran
 				if(mat_bsdfs.hasAny(BsdfFlags::Diffuse))
 				{
 					col += estimateAllDirectLight(random_generator, color_layers, chromatic_enabled, wavelength, *sp, wo, ray_division, pixel_sampling_data);
-					Rgb col_tmp = finalGathering(fast_random, random_generator, thread_id, chromatic_enabled, wavelength, *sp, wo, ray_division, pixel_sampling_data);
+					Rgb col_tmp = finalGathering(fast_random, random_generator, correlative_sample_number, thread_id, chromatic_enabled, wavelength, *sp, wo, ray_division, pixel_sampling_data);
 					if(aa_noise_params_.clamp_indirect_ > 0.f) col_tmp.clampProportionalRgb(aa_noise_params_.clamp_indirect_);
 					col += col_tmp;
 					if(color_layers && color_layers->getFlags().hasAny(LayerDef::Flags::DiffuseLayers))
@@ -988,7 +988,7 @@ std::pair<Rgb, float> PhotonIntegrator::integrate(Ray &ray, FastRandom &fast_ran
 			col += causticPhotons(color_layers, ray, *sp, wo, aa_noise_params_.clamp_indirect_, caustic_map_.get(), caus_radius_, n_caus_search_);
 		}
 
-		const auto [raytrace_col, raytrace_alpha] = recursiveRaytrace(fast_random, random_generator, color_layers, thread_id, ray_level + 1, chromatic_enabled, wavelength, ray, mat_bsdfs, *sp, wo, additional_depth, ray_division, pixel_sampling_data);
+		const auto [raytrace_col, raytrace_alpha] = recursiveRaytrace(fast_random, random_generator, correlative_sample_number, color_layers, thread_id, ray_level + 1, chromatic_enabled, wavelength, ray, mat_bsdfs, *sp, wo, additional_depth, ray_division, pixel_sampling_data);
 		col += raytrace_col;
 		alpha = raytrace_alpha;
 		if(color_layers)

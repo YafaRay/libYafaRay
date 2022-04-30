@@ -122,14 +122,15 @@ bool SppmIntegrator::render(FastRandom &fast_random)
 	if(layers_->isDefinedAny({LayerDef::ZDepthNorm, LayerDef::Mist})) precalcDepths();
 
 	int acum_aa_samples = 1;
+	std::vector<int> correlative_sample_number(num_threads_, 0);  //!< Used to sample lights more uniformly when using estimateOneDirectLight
 	initializePpm(); // seems could integrate into the preRender
 	if(render_control_.resumed())
 	{
 		acum_aa_samples = image_film_->getSamplingOffset();
-		renderPass(fast_random, 0, acum_aa_samples, false, 0);
+		renderPass(fast_random, correlative_sample_number, 0, acum_aa_samples, false, 0);
 	}
 	else
-		renderPass(fast_random, 1, 0, false, 0);
+		renderPass(fast_random, correlative_sample_number, 1, 0, false, 0);
 
 	std::string initial_estimate = "no";
 	if(pm_ire_) initial_estimate = "yes";
@@ -144,7 +145,7 @@ bool SppmIntegrator::render(FastRandom &fast_random)
 		pass_info = i + 1;
 		image_film_->nextPass(render_view_, render_control_, false, getName(), edge_toon_params_);
 		n_refined_ = 0;
-		renderPass(fast_random, 1, acum_aa_samples, false, i); // offset are only related to the passNum, since we alway have only one sample.
+		renderPass(fast_random, correlative_sample_number, 1, acum_aa_samples, false, i); // offset are only related to the passNum, since we alway have only one sample.
 		acum_aa_samples += 1;
 		logger_.logInfo(getName(), ": This pass refined ", n_refined_, " of ", hp_num, " pixels.");
 	}
@@ -171,7 +172,7 @@ bool SppmIntegrator::render(FastRandom &fast_random)
 }
 
 
-bool SppmIntegrator::renderTile(FastRandom &fast_random, const RenderArea &a, int n_samples, int offset, bool adaptive, int thread_id, int aa_pass_number)
+bool SppmIntegrator::renderTile(FastRandom &fast_random, std::vector<int> &correlative_sample_number, const RenderArea &a, int n_samples, int offset, bool adaptive, int thread_id, int aa_pass_number)
 {
 	const int camera_res_x = camera_->resX();
 	RandomGenerator random_generator(rand() + offset * (camera_res_x * a.y_ + a.x_) + 123);
@@ -600,7 +601,7 @@ void SppmIntegrator::prePass(FastRandom &fast_random, int samples, int offset, b
 }
 
 //now it's a dummy function
-std::pair<Rgb, float> SppmIntegrator::integrate(Ray &ray, FastRandom &fast_random, RandomGenerator &random_generator, ColorLayers *color_layers, int thread_id, int ray_level, bool chromatic_enabled, float wavelength, int additional_depth, const RayDivision &ray_division, const PixelSamplingData &pixel_sampling_data) const
+std::pair<Rgb, float> SppmIntegrator::integrate(Ray &ray, FastRandom &fast_random, RandomGenerator &random_generator, std::vector<int> &correlative_sample_number, ColorLayers *color_layers, int thread_id, int ray_level, bool chromatic_enabled, float wavelength, int additional_depth, const RayDivision &ray_division, const PixelSamplingData &pixel_sampling_data) const
 {
 	return {Rgb{0.f}, 0.f};
 }

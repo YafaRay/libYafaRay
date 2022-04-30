@@ -68,8 +68,8 @@ class SppmIntegrator final : public MonteCarloIntegrator
 		std::string getName() const override { return "SPPM"; }
 		bool render(FastRandom &fast_random) override;
 		/*! render a tile; only required by default implementation of render() */
-		bool renderTile(FastRandom &fast_random, const RenderArea &a, int n_samples, int offset, bool adaptive, int thread_id, int aa_pass_number) override;
-		std::pair<Rgb, float> integrate(Ray &ray, FastRandom &fast_random, RandomGenerator &random_generator, ColorLayers *color_layers, int thread_id, int ray_level, bool chromatic_enabled, float wavelength, int additional_depth, const RayDivision &ray_division, const PixelSamplingData &pixel_sampling_data) const override;
+		bool renderTile(FastRandom &fast_random, std::vector<int> &correlative_sample_number, const RenderArea &a, int n_samples, int offset, bool adaptive, int thread_id, int aa_pass_number) override;
+		std::pair<Rgb, float> integrate(Ray &ray, FastRandom &fast_random, RandomGenerator &random_generator, std::vector<int> &correlative_sample_number, ColorLayers *color_layers, int thread_id, int ray_level, bool chromatic_enabled, float wavelength, int additional_depth, const RayDivision &ray_division, const PixelSamplingData &pixel_sampling_data) const override;
 		bool preprocess(FastRandom &fast_random, ImageFilm *image_film, const RenderView *render_view, const Scene &scene) override; //not used for now
 		// not used now
 		void prePass(FastRandom &fast_random, int samples, int offset, bool adaptive) override;

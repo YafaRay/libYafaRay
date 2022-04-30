@@ -117,7 +117,7 @@ bool PathIntegrator::preprocess(FastRandom &fast_random, ImageFilm *image_film, 
 	return success;
 }
 
-std::pair<Rgb, float> PathIntegrator::integrate(Ray &ray, FastRandom &fast_random, RandomGenerator &random_generator, ColorLayers *color_layers, int thread_id, int ray_level, bool chromatic_enabled, float wavelength, int additional_depth, const RayDivision &ray_division, const PixelSamplingData &pixel_sampling_data) const
+std::pair<Rgb, float> PathIntegrator::integrate(Ray &ray, FastRandom &fast_random, RandomGenerator &random_generator, std::vector<int> &correlative_sample_number, ColorLayers *color_layers, int thread_id, int ray_level, bool chromatic_enabled, float wavelength, int additional_depth, const RayDivision &ray_division, const PixelSamplingData &pixel_sampling_data) const
 {
 	static int calls = 0;
 	++calls;
@@ -192,7 +192,7 @@ std::pair<Rgb, float> PathIntegrator::integrate(Ray &ray, FastRandom &fast_rando
 				std::tie(hit, p_ray.tmax_) = accelerator_->intersect(p_ray, camera_);
 				if(!hit) continue; //hit background
 				if(s.sampled_flags_ != BsdfFlags::None) pwo = -p_ray.dir_; //Fix for white dots in path tracing with shiny diffuse with transparent PNG texture and transparent shadows, especially in Win32, (precision?). Sometimes the first sampling does not take place and pRay.dir is not initialized, so before this change when that happened pwo = -pRay.dir was getting a random_generator non-initialized value! This fix makes that, if the first sample fails for some reason, pwo is not modified and the rest of the sampling continues with the same pwo value. FIXME: Question: if the first sample fails, should we continue as now or should we exit the loop with the "continue" command?
-				lcol = estimateOneDirectLight(random_generator, thread_id, chromatic_enabled, wavelength_dispersive, *hit, pwo, offs, ray_division, pixel_sampling_data);
+				lcol = estimateOneDirectLight(random_generator, correlative_sample_number, thread_id, chromatic_enabled, wavelength_dispersive, *hit, pwo, offs, ray_division, pixel_sampling_data);
 				const BsdfFlags mat_bsd_fs = hit->mat_data_->bsdf_flags_;
 				if(mat_bsd_fs.hasAny(BsdfFlags::Emit))
 				{
@@ -235,7 +235,7 @@ std::pair<Rgb, float> PathIntegrator::integrate(Ray &ray, FastRandom &fast_rando
 					std::swap(hit, intersect_sp);
 					pwo = -p_ray.dir_;
 
-					if(mat_bsd_fs.hasAny(BsdfFlags::Diffuse)) lcol = estimateOneDirectLight(random_generator, thread_id, chromatic_enabled, wavelength_dispersive, *hit, pwo, offs, ray_division, pixel_sampling_data);
+					if(mat_bsd_fs.hasAny(BsdfFlags::Diffuse)) lcol = estimateOneDirectLight(random_generator, correlative_sample_number, thread_id, chromatic_enabled, wavelength_dispersive, *hit, pwo, offs, ray_division, pixel_sampling_data);
 					else lcol = Rgb(0.f);
 
 					if(mat_bsd_fs.hasAny(BsdfFlags::Volumetric))
@@ -268,7 +268,7 @@ std::pair<Rgb, float> PathIntegrator::integrate(Ray &ray, FastRandom &fast_rando
 			}
 			col += path_col / n_samples;
 		}
-		const auto [raytrace_col, raytrace_alpha] = recursiveRaytrace(fast_random, random_generator, color_layers, thread_id, ray_level + 1, chromatic_enabled, wavelength, ray, mat_bsdfs, *sp, wo, additional_depth, ray_division, pixel_sampling_data);
+		const auto [raytrace_col, raytrace_alpha] = recursiveRaytrace(fast_random, random_generator, correlative_sample_number, color_layers, thread_id, ray_level + 1, chromatic_enabled, wavelength, ray, mat_bsdfs, *sp, wo, additional_depth, ray_division, pixel_sampling_data);
 		col += raytrace_col;
 		alpha = raytrace_alpha;
 		if(color_layers)

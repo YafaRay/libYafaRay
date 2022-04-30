@@ -63,7 +63,7 @@ bool DebugIntegrator::preprocess(FastRandom &fast_random, ImageFilm *image_film,
 	return success;
 }
 
-std::pair<Rgb, float> DebugIntegrator::integrate(Ray &ray, FastRandom &fast_random, RandomGenerator &random_generator, ColorLayers *color_layers, int thread_id, int ray_level, bool chromatic_enabled, float wavelength, int additional_depth, const RayDivision &ray_division, const PixelSamplingData &pixel_sampling_data) const
+std::pair<Rgb, float> DebugIntegrator::integrate(Ray &ray, FastRandom &fast_random, RandomGenerator &random_generator, std::vector<int> &correlative_sample_number, ColorLayers *color_layers, int thread_id, int ray_level, bool chromatic_enabled, float wavelength, int additional_depth, const RayDivision &ray_division, const PixelSamplingData &pixel_sampling_data) const
 {
 	const auto [sp, tmax] = accelerator_->intersect(ray, camera_);
 	if(sp)

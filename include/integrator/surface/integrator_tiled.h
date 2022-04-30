@@ -57,11 +57,11 @@ class TiledIntegrator : public SurfaceIntegrator
 		dividing each pass into tiles for multithreading. */
 		bool render(FastRandom &fast_random) override;
 		/*! render a pass; only required by the default implementation of render() */
-		virtual bool renderPass(FastRandom &fast_random, int samples, int offset, bool adaptive, int aa_pass_number);
+		virtual bool renderPass(FastRandom &fast_random, std::vector<int> &correlative_sample_number, int samples, int offset, bool adaptive, int aa_pass_number);
 		/*! render a tile; only required by default implementation of render() */
-		virtual bool renderTile(FastRandom &fast_random, const RenderArea &a, int n_samples, int offset, bool adaptive, int thread_id, int aa_pass_number);
-		bool renderTile(FastRandom &fast_random, const RenderArea &a, int n_samples, int offset, bool adaptive, int thread_id) { return renderTile(fast_random, a, n_samples, offset, adaptive, thread_id, 0); }
-		virtual void renderWorker(ThreadControl *control, FastRandom &fast_random, int thread_id, int samples, int offset, bool adaptive, int aa_pass);
+		virtual bool renderTile(FastRandom &fast_random, std::vector<int> &correlative_sample_number, const RenderArea &a, int n_samples, int offset, bool adaptive, int thread_id, int aa_pass_number);
+		bool renderTile(FastRandom &fast_random, std::vector<int> &correlative_sample_number, const RenderArea &a, int n_samples, int offset, bool adaptive, int thread_id) { return renderTile(fast_random, correlative_sample_number, a, n_samples, offset, adaptive, thread_id, 0); }
+		virtual void renderWorker(ThreadControl *control, FastRandom &fast_random, std::vector<int> &correlative_sample_number, int thread_id, int samples, int offset, bool adaptive, int aa_pass);
 		virtual void precalcDepths();
 		static void generateCommonLayers(ColorLayers *color_layers, const SurfacePoint &sp, const MaskParams &mask_params); //!< Generates render passes common to all integrators
 		static void generateOcclusionLayers(ColorLayers *color_layers, const Accelerator &accelerator, bool chromatic_enabled, float wavelength, const RayDivision &ray_division, const Camera *camera, const PixelSamplingData &pixel_sampling_data, const SurfacePoint &sp, const Vec3 &wo, int ao_samples, bool shadow_bias_auto, float shadow_bias, float ao_dist, const Rgb &ao_col, int transp_shadows_depth);
@@ -85,7 +85,6 @@ class TiledIntegrator : public SurfaceIntegrator
 		bool tr_shad_; //! Use transparent shadows
 		bool transp_background_; //! Render background as transparent
 		bool transp_refracted_background_; //! Render refractions of background as transparent
-		static std::vector<int> correlative_sample_number_;  //!< Used to sample lights more uniformly when using estimateOneDirectLight
 };
 
 END_YAFARAY
