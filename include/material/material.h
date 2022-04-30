@@ -176,11 +176,7 @@ class Material
 		void applyWireFrame(float &value, float wire_frame_amount, const SurfacePoint &sp) const;
 		void applyWireFrame(Rgb &col, float wire_frame_amount, const SurfacePoint &sp) const;
 		void applyWireFrame(Rgba &col, float wire_frame_amount, const SurfacePoint &sp) const;
-		void setSamplingFactor(const float &new_sampling_factor)
-		{
-			sampling_factor_ = new_sampling_factor;
-			if(highest_sampling_factor_ < sampling_factor_) highest_sampling_factor_ = sampling_factor_;
-		}
+		void setSamplingFactor(float new_sampling_factor) { sampling_factor_ = new_sampling_factor; }
 		float getSamplingFactor() const { return sampling_factor_; }
 		static Rgb sampleClay(const SurfacePoint &sp, const Vec3 &wo, Vec3 &wi, Sample &s, float &w);
 		static Rgb getShaderColor(const ShaderNode *shader_node, const NodeTreeData &node_tree_data, const Rgb &color_without_shader)
@@ -223,7 +219,6 @@ class Material
 
 		bool flat_material_ = false;		//!< Flat Material is a special non-photorealistic material that does not multiply the surface color by the cosine of the angle with the light, as happens in real life. Also, if receive_shadows is disabled, this flat material does no longer self-shadow. For special applications only.
 
-		static float highest_sampling_factor_;	//!< Class shared variable containing the highest material sampling factor. This is used to calculate the max. possible samples for the Sampling pass.
 		static unsigned int material_index_auto_;	//!< Material Index automatically generated for the material-index-auto render pass
 		static unsigned int material_index_highest_;	//!< Class shared variable containing the highest material index used for the Normalized Material Index pass.
 		Logger &logger_;
