@@ -53,8 +53,7 @@ Light * Light::factory(Logger &logger, const Scene &scene, const std::string &na
 	else if(type == "spherelight") light = SphereLight::factory(logger, scene, name, params);
 	else if(type == "spotlight") light = SpotLight::factory(logger, scene, name, params);
 	else if(type == "sunlight") light = SunLight::factory(logger, scene, name, params);
-	
-	light->setName(name);
+	if(light) light->setName(name);
 	return light;
 }
 
