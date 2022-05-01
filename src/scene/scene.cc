@@ -439,7 +439,7 @@ T *Scene::createMapItem(Logger &logger, const std::string &name, const std::stri
 		if(logger.isVerbose()) logInfoVerboseSuccess(logger, class_name, name, type);
 		return map[name].get();
 	}
-	logErrOnCreate(logger, class_name, name, type);
+	if(type != "none") logErrOnCreate(logger, class_name, name, type);
 	return nullptr;
 }
 
