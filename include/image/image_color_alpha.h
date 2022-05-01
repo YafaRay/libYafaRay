@@ -39,7 +39,9 @@ class ImageColorAlpha final : public Image
 		Rgba getColor(int x, int y) const override { return buffer_(x, y).getColor(); }
 		float getFloat(int x, int y) const override { return getColor(x, y).r_; }
 		void setColor(int x, int y, const Rgba &col) override { buffer_(x, y).setColor(col); }
+		void addColor(int x, int y, const Rgba &col) override { buffer_(x, y).addColor(col); }
 		void setFloat(int x, int y, float val) override { setColor(x, y, Rgba{val}); }
+		void addFloat(int x, int y, float val) override { addColor(x, y, Rgba{val}); }
 		void clear() override { buffer_.clear(); }
 
 		ImageBuffer2D<RgbAlpha> buffer_;

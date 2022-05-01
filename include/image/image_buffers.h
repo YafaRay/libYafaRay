@@ -42,10 +42,12 @@ class Pixel final
 		Rgba getColor() const { return col_; }
 		float getWeight() const { return weight_; }
 		void setColor(const Rgba &col) { col_ = col; }
+		void addColor(const Rgba &col) { col_ += col; }
 		void setWeight(float weight) { weight_ = weight; }
+		void addWeight(float weight) { weight_ += weight; }
 
 	private:
-		Rgba col_ = Rgba(0.f);
+		Rgba col_{0.f};
 		float weight_ = 0.f;
 };
 
@@ -54,17 +56,21 @@ class Gray
 	public:
 		float getFloat() const { return val_; }
 		void setFloat(float val) { val_ = val; }
-		void setColor(const Rgba &col) { val_ = (col.r_ + col.g_ + col.b_) / 3.f; }
+		void addFloat(float val) { val_ += val; }
+		void setColor(const Rgba &col) { val_ = colorToFloat(col); }
+		void addColor(const Rgba &col) { val_ += colorToFloat(col); }
 		Rgba getColor() const { return { val_, 1.f }; }
 
 	protected:
+		static float colorToFloat(const Rgba &col) { return (col.r_ + col.g_ + col.b_) / 3.f; }
 		float val_ = 0.f;
 };
 
 class GrayAlpha : public Gray
 {
 	public:
-		void setColor(const Rgba &col) { val_ = (col.r_ + col.g_ + col.b_) / 3.f; alpha_ = col.a_; }
+		void setColor(const Rgba &col) { val_ = colorToFloat(col); alpha_ = col.a_; }
+		void addColor(const Rgba &col) { val_ += colorToFloat(col); alpha_ += col.a_; }
 		Rgba getColor() const { return { val_, alpha_ }; }
 
 	protected:
@@ -82,6 +88,7 @@ class PixelGray final : public Gray
 		}
 		float getWeight() const { return weight_; }
 		void setWeight(float weight) { weight_ = weight; }
+		void addWeight(float weight) { weight_ += weight; }
 
 	private:
 		float weight_ = 0.f;
@@ -98,6 +105,7 @@ class PixelGrayAlpha final : public GrayAlpha
 		}
 		float getWeight() const { return weight_; }
 		void setWeight(float weight) { weight_ = weight; }
+		void addWeight(float weight) { weight_ += weight; }
 
 	private:
 		float weight_ = 0.f;
@@ -107,6 +115,7 @@ class RgbAlpha final
 {
 	public:
 		void setColor(const Rgba &col) { rgba_ = col; }
+		void addColor(const Rgba &col) { rgba_ += col; }
 		Rgba getColor() const { return rgba_; }
 
 	private:
@@ -118,7 +127,7 @@ class Rgba8888 final
 {
 	public:
 		void setColor(const Rgba &col) { setR((uint8_t)roundf(col.r_ * 255.f)); setG((uint8_t)roundf(col.g_ * 255.f)); setB((uint8_t)roundf(col.b_ * 255.f)); setA((uint8_t)roundf(col.a_ * 255.f)); }
-
+		void addColor(const Rgba &col) { setColor(getColor() + col); } // Do not use, this class has too little precision for additions
 		Rgba getColor() const { return {(float) getR() / 255.f, (float) getG() / 255.f, (float) getB() / 255.f, (float) getA() / 255.f}; }
 
 	private:
@@ -145,7 +154,7 @@ class Rgba7773 final
 
 	public:
 		void setColor(const Rgba &col) { setR((uint8_t)roundf(col.r_ * 255.f)); setG((uint8_t)roundf(col.g_ * 255.f)); setB((uint8_t)roundf(col.b_ * 255.f));  setA((uint8_t)roundf(col.a_ * 255.f)); }
-
+		void addColor(const Rgba &col) { setColor(getColor() + col); } // Do not use, this class has too little precision for additions
 		Rgba getColor() const { return {(float) getR() / 254.f, (float) getG() / 254.f, (float) getB() / 254.f, (float) getA() / 224.f}; } //maximum range is 7bit 0xFE (254) for colors and 3bit 0xE0 (224) for alpha, so I'm scaling acordingly. Loss of color data is happening and scaling may make it worse, but it's the only way of doing this consistently
 
 	private:
@@ -173,7 +182,7 @@ class Rgb888 final
 {
 	public:
 		void setColor(const Rgba &col) { setR((uint8_t)roundf(col.r_ * 255.f)); setG((uint8_t)roundf(col.g_ * 255.f)); setB((uint8_t)roundf(col.b_ * 255.f)); }
-
+		void addColor(const Rgba &col) { setColor(getColor() + col); } // Do not use, this class has too little precision for additions
 		Rgba getColor() const { return {(float) getR() / 255.f, (float) getG() / 255.f, (float) getB() / 255.f, 1.f}; }
 
 	private:
@@ -198,7 +207,7 @@ class Gray8 final
 			const float f_gray_avg = (col.r_ + col.g_ + col.b_) / 3.f;
 			value_ = ((uint8_t)roundf(f_gray_avg * 255.f));
 		}
-
+		void addColor(const Rgba &col) { setColor(getColor() + col); } // Do not use, this class has too little precision for additions
 		Rgba getColor() const
 		{
 			const float f_value = (float) value_ / 255.f;
@@ -218,7 +227,7 @@ class Rgb565 final
 		//RGB565 lossy 16bit format: rrrr rggg gggb bbbb
 	public:
 		void setColor(const Rgba &col) { setR((uint8_t)roundf(col.r_ * 255.f)); setG((uint8_t)roundf(col.g_ * 255.f)); setB((uint8_t)roundf(col.b_ * 255.f)); }
-
+		void addColor(const Rgba &col) { setColor(getColor() + col); } // Do not use, this class has too little precision for additions
 		Rgba getColor() const { return {(float) getR() / 248.f, (float) getG() / 252.f, (float) getB() / 248.f, 1.f}; } //maximum range is 5bit 0xF8 (248) for r,b colors and 6bit 0xFC (252) for g color, so I'm scaling acordingly. Loss of color data is happening and scaling may make it worse, but it's the only way of doing this consistently
 
 	private:
@@ -244,7 +253,7 @@ class Rgb101010 final
 			setG((uint16_t)roundf(col.g_ * 1023.f));
 			setB((uint16_t)roundf(col.b_ * 1023.f));
 		}
-
+		void addColor(const Rgba &col) { setColor(getColor() + col); } // Do not use, this class has too little precision for additions
 		Rgba getColor() const { return {(float) getR() / 1023.f, (float) getG() / 1023.f, (float) getB() / 1023.f, 1.f}; }
 
 	private:
@@ -274,7 +283,7 @@ class Rgba1010108 final
 			setB((uint16_t)roundf(col.b_ * 1023.f));
 			setA((uint8_t)roundf(col.a_ * 255.f));
 		}
-
+		void addColor(const Rgba &col) { setColor(getColor() + col); } // Do not use, this class has too little precision for additions
 		Rgba getColor() const { return {(float) getR() / 1023.f, (float) getG() / 1023.f, (float) getB() / 1023.f, (float) getA() / 255.f}; }
 
 	private:

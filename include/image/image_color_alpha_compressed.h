@@ -39,7 +39,9 @@ class ImageColorAlphaCompressed final : public Image
 		Rgba getColor(int x, int y) const override { return buffer_(x, y).getColor(); }
 		float getFloat(int x, int y) const override { return getColor(x, y).r_; }
 		void setColor(int x, int y, const Rgba &col) override { buffer_(x, y).setColor(col); }
+		void addColor(int x, int y, const Rgba &col) override { buffer_(x, y).addColor(col); } // Do not use, this class has too little precision for additions
 		void setFloat(int x, int y, float val) override { setColor(x, y, Rgba{val}); }
+		void addFloat(int x, int y, float val) override { addColor(x, y, Rgba{val}); } // Do not use, this class has too little precision for additions
 		void clear() override { buffer_.clear(); }
 
 		ImageBuffer2D<Rgba7773> buffer_;

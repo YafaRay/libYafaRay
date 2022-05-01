@@ -724,7 +724,7 @@ void ImageFilm::addSample(int x, int y, float dx, float dy, const RenderArea *a,
 			{
 				Rgba col = color_layers ? (*color_layers)(layer_def) : Rgba{0.f};
 				col.clampProportionalRgb(aa_noise_params_.clamp_samples_);
-				image_layer.image_->setColor(i - cx_0_, j - cy_0_, image_layer.image_->getColor(i - cx_0_, j - cy_0_) + (col * filter_wt));
+				image_layer.image_->addColor(i - cx_0_, j - cy_0_, col * filter_wt);
 			}
 		}
 	}
@@ -1003,7 +1003,7 @@ void ImageFilm::imageFilmLoadAllInFolder(RenderControl &render_control)
 			{
 				for(int j = 0; j < height_; ++j)
 				{
-					image_layer.image_->setColor(i, j, image_layer.image_->getColor(i, j) + loaded_image_layers(layer_def).image_->getColor(i, j));
+					image_layer.image_->addColor(i, j, loaded_image_layers(layer_def).image_->getColor(i, j));
 				}
 			}
 		}
