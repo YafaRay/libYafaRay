@@ -29,7 +29,7 @@ BEGIN_YAFARAY
 
 class Image;
 class Logger;
-class DenoiseParams;
+struct DenoiseParams;
 struct EdgeToonParams;
 struct DenoiseParams;
 class ImageLayers;
