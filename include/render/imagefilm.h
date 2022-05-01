@@ -107,7 +107,7 @@ class ImageFilm final
 			IMPORTANT: when a is given, all samples within a are assumed to come from the same thread!
 			use a=0 for contributions outside the area associated with current thread!
 		*/
-		void addDensitySample(const Rgb &c, int x, int y, float dx, float dy, const RenderArea *a = nullptr);
+		void addDensitySample(const Rgb &c, int x, int y, float dx, float dy);
 		//! Enables/Disables a light density estimation image
 		void setDensityEstimation(bool enable);
 		//! set number of samples for correct density estimation (if enabled)

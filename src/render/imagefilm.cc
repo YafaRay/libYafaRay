@@ -687,21 +687,16 @@ void ImageFilm::addSample(int x, int y, float dx, float dy, const RenderArea *a,
 	const int dy_0 = std::max(cy_0_ - y, roundToIntWithBias(static_cast<double>(dy) - filter_width_));
 	const int dy_1 = std::min(cy_1_ - y - 1, roundToIntWithBias(static_cast<double>(dy) + filter_width_ - 1.0));
 
-
-	// get indizes in filter table
+	// get indices in filter table
 	const double x_offs = dx - 0.5;
-
 	std::array<int, max_filter_size_ + 1> x_index;
-	std::array<int, max_filter_size_ + 1> y_index;
-
 	for(int i = dx_0, n = 0; i <= dx_1; ++i, ++n)
 	{
 		const double d = std::abs((static_cast<double>(i) - x_offs) * filter_table_scale_);
 		x_index[n] = static_cast<int>(std::floor(d));
 	}
-
 	const double y_offs = dy - 0.5;
-
+	std::array<int, max_filter_size_ + 1> y_index;
 	for(int i = dy_0, n = 0; i <= dy_1; ++i, ++n)
 	{
 		const double d = std::abs((static_cast<double>(i) - y_offs) * filter_table_scale_);
@@ -712,8 +707,9 @@ void ImageFilm::addSample(int x, int y, float dx, float dy, const RenderArea *a,
 	const int x_1 = x + dx_1;
 	const int y_0 = y + dy_0;
 	const int y_1 = y + dy_1;
+	const bool outside_thread_safe_area = (x_0 < a->sx_0_ || x_1 > a->sx_1_ || y_0 < a->sy_0_ || y_1 > a->sy_1_);
 
-	std::lock_guard<std::mutex> lock_guard(image_mutex_);
+	if(outside_thread_safe_area) image_mutex_.lock();
 	for(int j = y_0; j <= y_1; ++j)
 	{
 		for(int i = x_0; i <= x_1; ++i)
@@ -732,9 +728,10 @@ void ImageFilm::addSample(int x, int y, float dx, float dy, const RenderArea *a,
 			}
 		}
 	}
+	if(outside_thread_safe_area) image_mutex_.unlock();
 }
 
-void ImageFilm::addDensitySample(const Rgb &c, int x, int y, float dx, float dy, const RenderArea *a)
+void ImageFilm::addDensitySample(const Rgb &c, int x, int y, float dx, float dy)
 {
 	if(!estimate_density_) return;
 
@@ -745,21 +742,18 @@ void ImageFilm::addDensitySample(const Rgb &c, int x, int y, float dx, float dy,
 	const int dy_0 = std::max(cy_0_ - y, roundToIntWithBias(static_cast<double>(dy) - filter_width_));
 	const int dy_1 = std::min(cy_1_ - y - 1, roundToIntWithBias(static_cast<double>(dy) + filter_width_ - 1.0));
 
-
-	std::array<int, max_filter_size_ + 1> x_index;
-	std::array<int, max_filter_size_ + 1> y_index;
-
 	const double x_offs = dx - 0.5;
+	std::array<int, max_filter_size_ + 1> x_index;
 	for(int i = dx_0, n = 0; i <= dx_1; ++i, ++n)
 	{
 		const double d = std::abs((static_cast<double>(i) - x_offs) * filter_table_scale_);
 		x_index[n] = static_cast<int>(std::floor(d));
 	}
-
 	const double y_offs = dy - 0.5;
+	std::array<int, max_filter_size_ + 1> y_index;
 	for(int i = dy_0, n = 0; i <= dy_1; ++i, ++n)
 	{
-		const float d = std::abs(static_cast<float>((static_cast<double>(i) - y_offs) * filter_table_scale_));
+		const double d = std::abs((static_cast<double>(i) - y_offs) * filter_table_scale_);
 		y_index[n] = static_cast<int>(std::floor(d));
 	}
 

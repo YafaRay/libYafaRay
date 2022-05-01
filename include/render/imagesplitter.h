@@ -29,40 +29,9 @@ BEGIN_YAFARAY
 
 struct RenderArea
 {
-	RenderArea(int id, int x, int y, int w, int h) : id_(id), x_(x), y_(y), w_(w), h_(h), real_x_(x), real_y_(y), real_w_(w), real_h_(h), resample_(w * h) { }
-	RenderArea() = default;
-
-	void set(int id, int x, int y, int w, int h)
-	{
-		id_ = id;
-		real_x_ = x_ = x;
-		real_y_ = y_ = y;
-		real_w_ = w_ = w;
-		real_h_ = h_ = h;
-		//		image.resize(w*h);
-		//		depth.resize(w*h);
-		resample_.resize(w * h);
-	}
-	void setReal(int x, int y, int w, int h)
-	{
-		real_x_ = x;
-		real_y_ = y;
-		real_w_ = w;
-		real_h_ = h;
-	}
-	//	bool out(colorOutput_t &o);
-
-	//	Rgba & imagePixel(int x,int y) {return image[(y-Y)*W+(x-X)];};
-	//	float & depthPixel(int x,int y)   {return depth[(y-Y)*W+(x-X)];};
-	bool  resamplePixel(int x, int y)  {return resample_[(y - y_) * w_ + (x - x_)];};
-
 	int id_ = -1; //!< Area id, for client software to clearly reference flushed areas respect to previously highlighted areas
-	int x_, y_, w_, h_;
-	int real_x_, real_y_, real_w_, real_h_;
-	int sx_0_, sx_1_, sy_0_, sy_1_; //!< safe area, i.e. region unaffected by samples outside (needs to be set by ImageFilm_t)
-	//	std::vector<Rgba> image;
-	//	std::vector<float> depth;
-	std::vector<bool> resample_;
+	int x_, y_, w_, h_; //!< Coordinates and dimensions of the area
+	int sx_0_, sx_1_, sy_0_, sy_1_; //!< safe area unaffected by samples outside, does not need to be thread locked
 };
 
 /*!	Splits the image to be rendered into pieces, e.g. "buckets" for
@@ -76,7 +45,6 @@ class ImageSplitter final
 		struct Region
 		{
 			int x_, y_, w_, h_;
-			//			int rx,ry,rw,rh;
 		};
 		ImageSplitter() = default;
 		ImageSplitter(int w, int h, int x_0, int y_0, int bsize, TilesOrderType torder, int nthreads);
