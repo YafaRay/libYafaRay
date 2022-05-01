@@ -84,7 +84,7 @@ class ImageTexture final : public Texture
 		static ImageTexture::ClipMode string2Cliptype(const std::string &clipname);
 
 		bool calc_alpha_, normalmap_;
-		bool grayscale_ = false;	//!< Converts the information loaded from the texture RGB to grayscale to reduce memory usage for bump or mask textures, for example. Alpha is ignored in this case.
+		//bool grayscale_ = false;	//!< Converts the information loaded from the texture RGB to grayscale to reduce memory usage for bump or mask textures, for example. Alpha is ignored in this case. //TODO: to implement at some point
 		bool cropx_, cropy_, checker_odd_, checker_even_, rot_90_;
 		float cropminx_, cropmaxx_, cropminy_, cropmaxy_;
 		float checker_dist_;
