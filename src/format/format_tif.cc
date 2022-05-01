@@ -110,10 +110,10 @@ Image * TifFormat::loadFromFile(const std::string &name, const Image::Optimizati
 		return nullptr;
 	}
 	logger_.logInfo(getFormatName(), ": Loading image \"", name, "\"...");
-	libtiff::uint32 w, h;
+	uint32_t w, h;
 	TIFFGetField(tif, TIFFTAG_IMAGEWIDTH, &w);
 	TIFFGetField(tif, TIFFTAG_IMAGELENGTH, &h);
-	auto *tiff_data = static_cast<libtiff::uint32 *>(libtiff::_TIFFmalloc(w * h * sizeof(libtiff::uint32)));
+	auto *tiff_data = static_cast<uint32_t *>(libtiff::_TIFFmalloc(w * h * sizeof(uint32_t)));
 	if(!libtiff::TIFFReadRGBAImage(tif, w, h, tiff_data, 0))
 	{
 		logger_.logError(getFormatName(), ": Error reading TIFF file");
