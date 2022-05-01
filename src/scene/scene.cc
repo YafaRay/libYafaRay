@@ -72,7 +72,7 @@ void Scene::logInfoVerboseSuccessDisabled(Logger &logger, const std::string &pna
 	logger.logVerbose("Scene: ", "Added ", pname, " '", name, "' (", t, ")! [DISABLED]");
 }
 
-Scene::Scene(Logger &logger) : logger_(logger), scene_bound_(std::make_unique<Bound>())
+Scene::Scene(Logger &logger) : scene_bound_(std::make_unique<Bound>()), logger_(logger)
 {
 	creation_state_.changes_ = CreationState::Flags::CAll;
 	creation_state_.stack_.push_front(CreationState::Ready);
