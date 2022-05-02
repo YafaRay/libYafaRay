@@ -154,7 +154,7 @@ int ExportC::addVertex(double x, double y, double z, double ox, double oy, doubl
 	return 0;
 }
 
-void ExportC::addNormal(double x, double y, double z) noexcept
+void ExportC::addVertexNormal(double x, double y, double z) noexcept
 {
 	file_ << "\t" << "yafaray_addNormal(yi, " << x << ", " << y << ", " << z << ");\n";
 	++section_num_lines_;
@@ -196,7 +196,7 @@ int ExportC::addUv(float u, float v) noexcept
 	return n_uvs_++;
 }
 
-bool ExportC::smoothMesh(const char *name, double angle) noexcept
+bool ExportC::smoothVerticesNormals(const char *name, double angle) noexcept
 {
 	file_ << "\t" << "yafaray_smoothMesh(yi, \"" << name << "\", " << angle << ");\n\n";
 	++section_num_lines_;

@@ -71,10 +71,10 @@ class Scene final
 		~Scene();
 		int addVertex(const Point3 &p);
 		int addVertex(const Point3 &p, const Point3 &orco);
-		void addNormal(const Vec3 &n);
+		void addVertexNormal(const Vec3 &n);
 		bool addFace(const std::vector<int> &vert_indices, const std::vector<int> &uv_indices = {});
 		int addUv(float u, float v);
-		bool smoothNormals(const std::string &name, float angle);
+		bool smoothVerticesNormals(const std::string &name, float angle);
 		Object *createObject(const std::string &name, const ParamMap &params);
 		bool endObject();
 		bool addInstance(const std::string &base_object_name, const Matrix4 &obj_to_world);

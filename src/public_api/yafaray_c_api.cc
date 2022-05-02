@@ -85,7 +85,7 @@ int  yafaray_addVertexWithOrco(yafaray_Interface_t *interface, double x, double 
 
 void yafaray_addNormal(yafaray_Interface_t *interface, double nx, double ny, double nz) //!< add vertex normal to mesh; the vertex that will be attached to is the last one inserted by addVertex method
 {
-	reinterpret_cast<yafaray::Interface *>(interface)->addNormal(nx, ny, nz);
+	reinterpret_cast<yafaray::Interface *>(interface)->addVertexNormal(nx, ny, nz);
 }
 
 yafaray_bool_t yafaray_addTriangle(yafaray_Interface_t *interface, int a, int b, int c) //!< add a triangle given vertex indices and material pointer
@@ -105,7 +105,7 @@ int  yafaray_addUv(yafaray_Interface_t *interface, float u, float v) //!< add a 
 
 yafaray_bool_t yafaray_smoothMesh(yafaray_Interface_t *interface, const char *name, double angle) //!< smooth vertex normals of mesh with given ID and angle (in degrees)
 {
-	return static_cast<yafaray_bool_t>(reinterpret_cast<yafaray::Interface *>(interface)->smoothMesh(name, angle));
+	return static_cast<yafaray_bool_t>(reinterpret_cast<yafaray::Interface *>(interface)->smoothVerticesNormals(name, angle));
 }
 
 yafaray_bool_t yafaray_addInstance(yafaray_Interface_t *interface, const char *base_object_name, float m_00, float m_01, float m_02, float m_03, float m_10, float m_11, float m_12, float m_13, float m_20, float m_21, float m_22, float m_23, float m_30, float m_31, float m_32, float m_33)

@@ -664,7 +664,6 @@ bool Scene::setupSceneProgressBar(Scene &scene, const std::shared_ptr<ProgressBa
 	return true;
 }
 
-
 void Scene::defineLayer(const ParamMap &params)
 {
 	if(logger_.isDebug())
@@ -909,9 +908,9 @@ bool Scene::endObject()
 	return result;
 }
 
-bool Scene::smoothNormals(const std::string &name, float angle)
+bool Scene::smoothVerticesNormals(const std::string &name, float angle)
 {
-	if(logger_.isDebug()) logger_.logDebug("Scene::startObject) PR(name) PR(angle");
+	if(logger_.isDebug()) logger_.logDebug("Scene::smoothVerticesNormals) PR(name) PR(angle");
 	if(creation_state_.stack_.front() != CreationState::Geometry) return false;
 	Object *object;
 	if(!name.empty())
@@ -926,12 +925,12 @@ bool Scene::smoothNormals(const std::string &name, float angle)
 		if(!object) return false;
 	}
 
-	if(object->hasNormalsExported() && object->numNormals() == object->numVertices())
+	if(object->hasVerticesNormals() && object->numVerticesNormals() == object->numVertices())
 	{
 		object->setSmooth(true);
 		return true;
 	}
-	else return object->smoothNormals(logger_, angle);
+	else return object->smoothVerticesNormals(logger_, angle);
 }
 
 int Scene::addVertex(const Point3 &p)
@@ -958,10 +957,10 @@ int Scene::addVertex(const Point3 &p, const Point3 &orco)
 	//	FIXME BsTriangle handling? if(object_creation_state_.cur_obj_->type_ == mtrim_global) return addVertex(p);
 }
 
-void Scene::addNormal(const Vec3 &n)
+void Scene::addVertexNormal(const Vec3 &n)
 {
 	if(creation_state_.stack_.front() != CreationState::Object) return;
-	current_object_->addNormal(n);
+	current_object_->addVertexNormal(n);
 }
 
 bool Scene::addFace(const std::vector<int> &vert_indices, const std::vector<int> &uv_indices)

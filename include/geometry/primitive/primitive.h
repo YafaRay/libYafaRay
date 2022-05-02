@@ -72,9 +72,9 @@ class Primitive
 		virtual float surfaceArea(const Matrix4 *obj_to_world) const = 0;
 		float surfaceArea() const { return surfaceArea(nullptr); }
 		/* obtains the geometric normal in the surface parametric u,v coordinates */
-		virtual Vec3 getGeometricNormal(const Matrix4 *obj_to_world, float u, float v) const = 0;
-		Vec3 getGeometricNormal(const Matrix4 *obj_to_world) const { return getGeometricNormal(obj_to_world, 0.f, 0.f); }
-		Vec3 getGeometricNormal() const { return getGeometricNormal(nullptr); }
+		virtual Vec3 getGeometricFaceNormal(const Matrix4 *obj_to_world, float u, float v) const = 0;
+		Vec3 getGeometricFaceNormal(const Matrix4 *obj_to_world) const { return getGeometricFaceNormal(obj_to_world, 0.f, 0.f); }
+		Vec3 getGeometricFaceNormal() const { return getGeometricFaceNormal(nullptr); }
 		/* surface sampling */
 		virtual std::pair<Point3, Vec3> sample(float s_1, float s_2, const Matrix4 *obj_to_world) const = 0;
 		std::pair<Point3, Vec3> sample(float s_1, float s_2) const { return sample(s_1, s_2, nullptr); }

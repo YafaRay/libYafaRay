@@ -122,7 +122,7 @@ bool CurveObject::calculateObject(const std::unique_ptr<const Material> *materia
 	}
 	// Close top
 	addFace({i, 2 * i + points_size, 2 * i + points_size + 1}, {iv, iv, iv}, material);
-	calculateNormals();
+	calculateFaceNormals();
 	return true;
 }
 

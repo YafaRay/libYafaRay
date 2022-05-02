@@ -44,11 +44,11 @@ class ExportPython: public Interface
 		bool addInstance(const char *base_object_name, const Matrix4 &obj_to_world) noexcept override;
 		int  addVertex(double x, double y, double z) noexcept override; //!< add vertex to mesh; returns index to be used for addTriangle
 		int  addVertex(double x, double y, double z, double ox, double oy, double oz) noexcept override; //!< add vertex with Orco to mesh; returns index to be used for addTriangle
-		void addNormal(double nx, double ny, double nz) noexcept override; //!< add vertex normal to mesh; the vertex that will be attached to is the last one inserted by addVertex method
+		void addVertexNormal(double nx, double ny, double nz) noexcept override; //!< add vertex normal to mesh; the vertex that will be attached to is the last one inserted by addVertex method
 		bool addFace(int a, int b, int c) noexcept override;
 		bool addFace(int a, int b, int c, int uv_a, int uv_b, int uv_c) noexcept override;
 		int  addUv(float u, float v) noexcept override;
-		bool smoothMesh(const char *name, double angle) noexcept override;
+		bool smoothVerticesNormals(const char *name, double angle) noexcept override;
 		void setCurrentMaterial(const char *name) noexcept override;
 		Object *createObject(const char *name) noexcept override;
 		Light *createLight(const char *name) noexcept override;

@@ -42,27 +42,27 @@ class MeshObject : public ObjectBasic
 			that by definition can perform ray-triangle intersection */
 		int numPrimitives() const override { return faces_.size(); }
 		std::vector<const Primitive *> getPrimitives() const override;
-		int lastVertexId() const override { return points_.size() - 1; }
-		Vec3 getVertexNormal(int index) const { return normals_[index]; }
+		int lastVertexId() const override { return numVertices() - 1; }
+		Vec3 getVertexNormal(int index) const { return vertices_normals_vectors_[index]; }
 		Point3 getVertex(int index) const { return points_[index]; }
 		Point3 getOrcoVertex(int index) const { return orco_points_[index]; }
 		int numVertices() const override { return points_.size(); }
-		int numNormals() const override { return normals_.size(); }
+		int numVerticesNormals() const override { return vertices_normals_vectors_.size(); }
 		void addFace(std::unique_ptr<FacePrimitive> face);
 		void addFace(const std::vector<int> &vertices, const std::vector<int> &vertices_uv, const std::unique_ptr<const Material> *material) override;
-		void calculateNormals();
+		void calculateFaceNormals();
 		const std::vector<Point3> &getPoints() const { return points_; }
 		const std::vector<Uv> &getUvValues() const { return uv_values_; }
 		bool hasOrco() const { return !orco_points_.empty(); }
 		bool hasUv() const { return !uv_values_.empty(); }
 		bool isSmooth() const { return is_smooth_; }
-		bool hasNormalsExported() const override { return !normals_.empty(); }
+		bool hasVerticesNormals() const override { return !vertices_normals_vectors_.empty(); }
 		void addPoint(const Point3 &p) override { points_.emplace_back(p); }
 		void addOrcoPoint(const Point3 &p) override { orco_points_.emplace_back(p); }
-		void addNormal(const Vec3 &n) override;
+		void addVertexNormal(const Vec3 &n) override;
 		int addUvValue(const Uv &uv) override { uv_values_.emplace_back(uv); return static_cast<int>(uv_values_.size()) - 1; }
 		void setSmooth(bool smooth) override { is_smooth_ = smooth; }
-		bool smoothNormals(Logger &logger, float angle) override;
+		bool smoothVerticesNormals(Logger &logger, float angle) override;
 		//int convertToBezierControlPoints();
 		bool calculateObject(const std::unique_ptr<const Material> *material) override;
 
@@ -71,7 +71,7 @@ class MeshObject : public ObjectBasic
 		std::vector<std::unique_ptr<FacePrimitive>> faces_;
 		std::vector<Point3> points_;
 		std::vector<Point3> orco_points_;
-		std::vector<Vec3> normals_;
+		std::vector<Vec3> vertices_normals_vectors_;
 		std::vector<Uv> uv_values_;
 		bool is_smooth_ = false;
 };

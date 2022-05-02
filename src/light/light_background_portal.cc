@@ -116,7 +116,7 @@ Rgb BackgroundPortalLight::totalEnergy() const
 		const Rgb col = bg_->eval(wo.dir_, true);
 		for(int j = 0; j < num_primitives_; j++)
 		{
-			float cos_n = -wo.dir_ * primitives_[j]->getGeometricNormal(); //not 100% sure about sign yet...
+			float cos_n = -wo.dir_ * primitives_[j]->getGeometricFaceNormal(); //not 100% sure about sign yet...
 			if(cos_n > 0) energy += col * cos_n * primitives_[j]->surfaceArea();
 		}
 	}
@@ -182,7 +182,7 @@ bool BackgroundPortalLight::intersect(const Ray &ray, float &t, Rgb &col, float 
 	// intersect with tree:
 	const AcceleratorIntersectData accelerator_intersect_data = accelerator_->intersect(ray, t_max);
 	if(!accelerator_intersect_data.hit_) { return false; }
-	const Vec3 n{accelerator_intersect_data.hit_primitive_->getGeometricNormal()};
+	const Vec3 n{accelerator_intersect_data.hit_primitive_->getGeometricFaceNormal()};
 	const float cos_angle = ray.dir_ * (-n);
 	if(cos_angle <= 0.f) return false;
 	const float idist_sqr = 1.f / (t * t);

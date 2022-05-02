@@ -55,9 +55,9 @@ float PrimitiveInstance::surfaceArea(const Matrix4 *) const
 	return base_primitive_->surfaceArea(base_instance_.getObjToWorldMatrix());
 }
 
-Vec3 PrimitiveInstance::getGeometricNormal(const Matrix4 *, float u, float v) const
+Vec3 PrimitiveInstance::getGeometricFaceNormal(const Matrix4 *, float u, float v) const
 {
-	return base_primitive_->getGeometricNormal(base_instance_.getObjToWorldMatrix(), u, v);
+	return base_primitive_->getGeometricFaceNormal(base_instance_.getObjToWorldMatrix(), u, v);
 }
 
 std::pair<Point3, Vec3> PrimitiveInstance::sample(float s_1, float s_2, const Matrix4 *) const

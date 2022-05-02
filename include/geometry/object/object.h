@@ -78,14 +78,14 @@ class Object
 		virtual int lastVertexId() const { return -1; }
 		virtual void addPoint(const Point3 &p) { }
 		virtual void addOrcoPoint(const Point3 &p) { }
-		virtual void addNormal(const Vec3 &n) { }
+		virtual void addVertexNormal(const Vec3 &n) { }
 		virtual void addFace(const std::vector<int> &vertices, const std::vector<int> &vertices_uv, const std::unique_ptr<const Material> *material) { }
 		virtual int addUvValue(const Uv &uv) { return -1; }
-		virtual bool hasNormalsExported() const { return false; }
-		virtual int numNormals() const { return 0; }
+		virtual bool hasVerticesNormals() const { return false; }
+		virtual int numVerticesNormals() const { return 0; }
 		virtual int numVertices() const { return 0; }
 		virtual void setSmooth(bool smooth) { }
-		virtual bool smoothNormals(Logger &logger, float angle) { return false; }
+		virtual bool smoothVerticesNormals(Logger &logger, float angle) { return false; }
 };
 
 END_YAFARAY

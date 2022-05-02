@@ -34,7 +34,7 @@ BEGIN_YAFARAY
 
 TrianglePrimitive::TrianglePrimitive(const std::vector<int> &vertices_indices, const std::vector<int> &vertices_uv_indices, const MeshObject &mesh_object) : FacePrimitive(vertices_indices, vertices_uv_indices, mesh_object)
 {
-	calculateGeometricNormal();
+	calculateGeometricFaceNormal();
 }
 
 IntersectData TrianglePrimitive::intersect(const Ray &ray, const Matrix4 *obj_to_world) const
@@ -85,12 +85,12 @@ bool TrianglePrimitive::intersectsBound(const ExBound &ex_bound, const std::arra
 	return triBoxOverlap(ex_bound.center_, ex_bound.half_size_, t_points);
 }
 
-void TrianglePrimitive::calculateGeometricNormal()
+void TrianglePrimitive::calculateGeometricFaceNormal()
 {
-	normal_geometric_ = calculateNormal({ getVertex(0), getVertex(1), getVertex(2) });
+	face_normal_geometric_ = calculateFaceNormal({getVertex(0), getVertex(1), getVertex(2)});
 }
 
-Vec3 TrianglePrimitive::calculateNormal(const std::array<Point3, 3> &vertices)
+Vec3 TrianglePrimitive::calculateFaceNormal(const std::array<Point3, 3> &vertices)
 {
 	return ((vertices[1] - vertices[0]) ^ (vertices[2] - vertices[0])).normalize();
 }
@@ -99,9 +99,9 @@ std::unique_ptr<const SurfacePoint> TrianglePrimitive::getSurface(const RayDiffe
 {
 	auto sp = std::make_unique<SurfacePoint>();
 	sp->intersect_data_ = intersect_data;
-	sp->ng_ = Primitive::getGeometricNormal(obj_to_world);
+	sp->ng_ = Primitive::getGeometricFaceNormal(obj_to_world);
 	const float barycentric_u = intersect_data.barycentric_u_, barycentric_v = intersect_data.barycentric_v_, barycentric_w = intersect_data.barycentric_w_;
-	if(base_mesh_object_.isSmooth() || base_mesh_object_.hasNormalsExported())
+	if(base_mesh_object_.isSmooth() || base_mesh_object_.hasVerticesNormals())
 	{
 		const std::array<Vec3, 3> v {
 			getVertexNormal(0, sp->ng_, obj_to_world),
@@ -124,7 +124,7 @@ std::unique_ptr<const SurfacePoint> TrianglePrimitive::getSurface(const RayDiffe
 	{
 		sp->orco_p_ = hit_point;
 		sp->has_orco_ = false;
-		sp->orco_ng_ = Primitive::getGeometricNormal();
+		sp->orco_ng_ = Primitive::getGeometricFaceNormal();
 	}
 	bool implicit_uv = true;
 	const std::array<Point3, 3> p { getVertex(0, obj_to_world), getVertex(1, obj_to_world), getVertex(2, obj_to_world) };
@@ -222,7 +222,7 @@ std::pair<Point3, Vec3> TrianglePrimitive::sample(float s_1, float s_2, const Ma
 {
 	return {
 		TrianglePrimitive::sample(s_1, s_2, {getVertex(0, obj_to_world), getVertex(1, obj_to_world), getVertex(2, obj_to_world)}),
-		Primitive::getGeometricNormal(obj_to_world)
+		Primitive::getGeometricFaceNormal(obj_to_world)
 	};
 }
 

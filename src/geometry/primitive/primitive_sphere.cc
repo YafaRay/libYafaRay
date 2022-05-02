@@ -109,7 +109,7 @@ float SpherePrimitive::surfaceArea(const Matrix4 *obj_to_world) const
 	return 0; //FIXME
 }
 
-Vec3 SpherePrimitive::getGeometricNormal(const Matrix4 *obj_to_world, float u, float v) const
+Vec3 SpherePrimitive::getGeometricFaceNormal(const Matrix4 *obj_to_world, float u, float v) const
 {
 	return {}; //FIXME
 }

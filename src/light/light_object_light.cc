@@ -186,7 +186,7 @@ bool ObjectLight::intersect(const Ray &ray, float &t, Rgb &col, float &ipdf) con
 	// intersect with tree:
 	const AcceleratorIntersectData accelerator_intersect_data = accelerator_->intersect(ray, t_max);
 	if(!accelerator_intersect_data.hit_) { return false; }
-	const Vec3 n{accelerator_intersect_data.hit_primitive_->getGeometricNormal()};
+	const Vec3 n{accelerator_intersect_data.hit_primitive_->getGeometricFaceNormal()};
 	float cos_angle = ray.dir_ * (-n);
 	if(cos_angle <= 0.f)
 	{

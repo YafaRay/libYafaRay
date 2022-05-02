@@ -63,9 +63,7 @@ MeshObject::MeshObject(int num_vertices, int num_faces, bool has_uv, bool has_or
 	if(has_uv) uv_values_.reserve(num_vertices);
 }
 
-MeshObject::~MeshObject()
-{
-}
+MeshObject::~MeshObject() = default;
 
 void MeshObject::addFace(std::unique_ptr<FacePrimitive> face)
 {
@@ -82,13 +80,13 @@ void MeshObject::addFace(const std::vector<int> &vertices, const std::vector<int
 	if(vertices.size() == 3) face = std::make_unique<TrianglePrimitive>(vertices, vertices_uv, *this);
 	else return; //Other primitives are not supported
 	face->setMaterial(material);
-	if(hasNormalsExported()) face->setNormalsIndices(vertices);
+	if(hasVerticesNormals()) face->setVerticesNormalsIndices(vertices);
 	addFace(std::move(face));
 }
 
-void MeshObject::calculateNormals()
+void MeshObject::calculateFaceNormals()
 {
-	for(auto &face : faces_) face->calculateGeometricNormal();
+	for(auto &face : faces_) face->calculateGeometricFaceNormal();
 }
 
 bool MeshObject::calculateObject(const std::unique_ptr<const Material> *)
@@ -97,7 +95,7 @@ bool MeshObject::calculateObject(const std::unique_ptr<const Material> *)
 	points_.shrink_to_fit();
 	if(!orco_points_.empty()) orco_points_.shrink_to_fit();
 	if(!uv_values_.empty()) uv_values_.shrink_to_fit();
-	calculateNormals();
+	calculateFaceNormals();
 	return true;
 }
 
@@ -109,11 +107,11 @@ std::vector<const Primitive *> MeshObject::getPrimitives() const
 	return primitives;
 }
 
-void MeshObject::addNormal(const Vec3 &n)
+void MeshObject::addVertexNormal(const Vec3 &n)
 {
 	const size_t points_size = points_.size();
-	if(normals_.size() < points_size) normals_.reserve(points_size);
-	normals_.emplace_back(n);
+	if(vertices_normals_vectors_.size() < points_size) vertices_normals_vectors_.reserve(points_size);
+	vertices_normals_vectors_.emplace_back(n);
 }
 
 float MeshObject::getAngleSine(const std::array<int, 3> &triangle_indices, const std::vector<Point3> &vertices)
@@ -123,25 +121,25 @@ float MeshObject::getAngleSine(const std::array<int, 3> &triangle_indices, const
 	return edge_1.sinFromVectors(edge_2);
 }
 
-bool MeshObject::smoothNormals(Logger &logger, float angle)
+bool MeshObject::smoothVerticesNormals(Logger &logger, float angle)
 {
 	const size_t points_size = points_.size();
-	normals_.resize(points_size, {0, 0, 0});
+	vertices_normals_vectors_.resize(points_size, {0, 0, 0});
 
 	if(angle >= 180)
 	{
 		for(auto &face : faces_)
 		{
-			const Vec3 n{face->Primitive::getGeometricNormal()};
+			const Vec3 n{face->Primitive::getGeometricFaceNormal()};
 			const std::vector<int> vert_indices = face->getVerticesIndices();
 			const size_t num_indices = vert_indices.size();
 			for(size_t relative_vertex = 0; relative_vertex < num_indices; ++relative_vertex)
 			{
-				normals_[vert_indices[relative_vertex]] += n * getAngleSine({vert_indices[relative_vertex], vert_indices[(relative_vertex + 1) % num_indices], vert_indices[(relative_vertex + 2) % num_indices]}, points_);
+				vertices_normals_vectors_[vert_indices[relative_vertex]] += n * getAngleSine({vert_indices[relative_vertex], vert_indices[(relative_vertex + 1) % num_indices], vert_indices[(relative_vertex + 2) % num_indices]}, points_);
 			}
-			face->setNormalsIndices(vert_indices);
+			face->setVerticesNormalsIndices(vert_indices);
 		}
-		for(auto &normal : normals_) normal.normalize();
+		for(auto &normal : vertices_normals_vectors_) normal.normalize();
 	}
 	else if(angle > 0.1f) // angle dependant smoothing
 	{
@@ -168,7 +166,7 @@ bool MeshObject::smoothNormals(Logger &logger, float angle)
 			{
 				bool smooth = false;
 				// calculate vertex normal for face
-				const Vec3 face_normal{point_face->Primitive::getGeometricNormal()};
+				const Vec3 face_normal{point_face->Primitive::getGeometricFaceNormal()};
 				Vec3 vertex_normal{face_normal * points_angles_sines[point_id][j]};
 				int k = 0;
 				for(const auto &point_face_2 : points_faces[point_id])
@@ -178,7 +176,7 @@ bool MeshObject::smoothNormals(Logger &logger, float angle)
 						k++;
 						continue;
 					}
-					const Vec3 face_2_normal{point_face_2->Primitive::getGeometricNormal()};
+					const Vec3 face_2_normal{point_face_2->Primitive::getGeometricFaceNormal()};
 					if((face_normal * face_2_normal) > angle_threshold)
 					{
 						smooth = true;
@@ -203,15 +201,15 @@ bool MeshObject::smoothNormals(Logger &logger, float angle)
 					// create new if none found
 					if(normal_idx == -1)
 					{
-						normal_idx = normals_.size();
+						normal_idx = vertices_normals_vectors_.size();
 						vertex_normals.emplace_back(vertex_normal);
 						vertex_normals_indices.emplace_back(normal_idx);
-						normals_.emplace_back(vertex_normal);
+						vertices_normals_vectors_.emplace_back(vertex_normal);
 					}
 				}
 				// set vertex normal to idx
 				const std::vector<int> vertices_indices = point_face->getVerticesIndices();
-				std::vector<int> normals_indices = point_face->getNormalsIndices();
+				std::vector<int> normals_indices = point_face->getVerticesNormalsIndices();
 				bool smooth_ok = false;
 				const size_t num_vertices = vertices_indices.size();
 				for(size_t relative_vertex = 0; relative_vertex < num_vertices; ++relative_vertex)
@@ -225,7 +223,7 @@ bool MeshObject::smoothNormals(Logger &logger, float angle)
 				}
 				if(smooth_ok)
 				{
-					point_face->setNormalsIndices(normals_indices);
+					point_face->setVerticesNormalsIndices(normals_indices);
 					j++;
 				}
 				else

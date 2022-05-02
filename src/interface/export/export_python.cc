@@ -104,7 +104,7 @@ int ExportPython::addVertex(double x, double y, double z, double ox, double oy, 
 	return 0;
 }
 
-void ExportPython::addNormal(double x, double y, double z) noexcept
+void ExportPython::addVertexNormal(double x, double y, double z) noexcept
 {
 	file_ << "yi.addNormal(" << x << ", " << y << ", " << z << ")\n";
 }
@@ -137,7 +137,7 @@ int ExportPython::addUv(float u, float v) noexcept
 	return n_uvs_++;
 }
 
-bool ExportPython::smoothMesh(const char *name, double angle) noexcept
+bool ExportPython::smoothVerticesNormals(const char *name, double angle) noexcept
 {
 	file_ << "yi.smoothMesh(\"" << name << "\", " << angle << ")\n";
 	return true;

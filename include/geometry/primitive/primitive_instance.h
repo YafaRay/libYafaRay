@@ -49,7 +49,7 @@ class PrimitiveInstance : public Primitive
 		std::unique_ptr<const SurfacePoint> getSurface(const RayDifferentials *ray_differentials, const Point3 &hit_point, const IntersectData &intersect_data, const Matrix4 *, const Camera *camera) const override;
 		const Material *getMaterial() const override { return base_primitive_->getMaterial(); }
 		float surfaceArea(const Matrix4 *) const override;
-		Vec3 getGeometricNormal(const Matrix4 *, float u, float v) const override;
+		Vec3 getGeometricFaceNormal(const Matrix4 *, float u, float v) const override;
 		std::pair<Point3, Vec3> sample(float s_1, float s_2, const Matrix4 *) const override;
 		const Object *getObject() const override { return &base_instance_; }
 		Visibility getVisibility() const override { return base_primitive_->getVisibility(); }

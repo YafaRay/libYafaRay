@@ -24,7 +24,7 @@
 
 BEGIN_YAFARAY
 
-FacePrimitive::FacePrimitive(const std::vector<int> &vertices_indices, const std::vector<int> &vertices_uv_indices, const MeshObject &mesh_object) : base_mesh_object_(mesh_object), vertices_(vertices_indices), vertex_normals_(vertices_indices.size(), -1), vertex_uvs_(vertices_uv_indices)
+FacePrimitive::FacePrimitive(const std::vector<int> &vertices_indices, const std::vector<int> &vertices_uv_indices, const MeshObject &mesh_object) : base_mesh_object_(mesh_object), vertices_(vertices_indices), vertices_normals_indices_(vertices_indices.size(), -1), vertex_uvs_(vertices_uv_indices)
 {
 }
 
@@ -43,9 +43,9 @@ Point3 FacePrimitive::getOrcoVertex(size_t vertex_number) const
 
 Vec3 FacePrimitive::getVertexNormal(size_t vertex_number, const Vec3 &surface_normal_world, const Matrix4 *obj_to_world) const
 {
-	if(vertex_normals_[vertex_number] >= 0)
+	if(vertices_normals_indices_[vertex_number] >= 0)
 	{
-		const Vec3 vertex_normal{base_mesh_object_.getVertexNormal(vertex_normals_[vertex_number])};
+		const Vec3 vertex_normal{base_mesh_object_.getVertexNormal(vertices_normals_indices_[vertex_number])};
 		if(obj_to_world) return ((*obj_to_world) * vertex_normal).normalize();
 		else return vertex_normal;
 	}
@@ -127,10 +127,10 @@ Bound FacePrimitive::getBound(const std::vector<Point3> &vertices)
 	return {min_point, max_point};
 }
 
-Vec3 FacePrimitive::getGeometricNormal(const Matrix4 *obj_to_world, float, float) const
+Vec3 FacePrimitive::getGeometricFaceNormal(const Matrix4 *obj_to_world, float u, float v) const
 {
-	if(obj_to_world) return ((*obj_to_world) * normal_geometric_).normalize();
-	else return normal_geometric_;
+	if(obj_to_world) return ((*obj_to_world) * face_normal_geometric_).normalize();
+	else return face_normal_geometric_;
 }
 
 END_YAFARAY

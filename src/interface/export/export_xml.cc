@@ -96,7 +96,7 @@ int ExportXml::addVertex(double x, double y, double z, double ox, double oy, dou
 	return 0;
 }
 
-void ExportXml::addNormal(double x, double y, double z) noexcept
+void ExportXml::addVertexNormal(double x, double y, double z) noexcept
 {
 	file_ << "\t<n x=\"" << x << "\" y=\"" << y << "\" z=\"" << z << "\"/>\n";
 }
@@ -130,7 +130,7 @@ int ExportXml::addUv(float u, float v) noexcept
 	return n_uvs_++;
 }
 
-bool ExportXml::smoothMesh(const char *name, double angle) noexcept
+bool ExportXml::smoothVerticesNormals(const char *name, double angle) noexcept
 {
 	file_ << "<smooth object_name=\"" << name << "\" angle=\"" << angle << "\"/>\n";
 	return true;

@@ -94,9 +94,9 @@ int  Interface::addVertex(double x, double y, double z, double ox, double oy, do
 	return scene_->addVertex({static_cast<float>(x), static_cast<float>(y), static_cast<float>(z)}, {static_cast<float>(ox), static_cast<float>(oy), static_cast<float>(oz)});
 }
 
-void Interface::addNormal(double x, double y, double z) noexcept
+void Interface::addVertexNormal(double x, double y, double z) noexcept
 {
-	scene_->addNormal({static_cast<float>(x), static_cast<float>(y), static_cast<float>(z)});
+	scene_->addVertexNormal({static_cast<float>(x), static_cast<float>(y), static_cast<float>(z)});
 }
 
 bool Interface::addFace(int a, int b, int c) noexcept
@@ -111,7 +111,7 @@ bool Interface::addFace(int a, int b, int c, int uv_a, int uv_b, int uv_c) noexc
 
 int Interface::addUv(float u, float v) noexcept { return scene_->addUv(u, v); }
 
-bool Interface::smoothMesh(const char *name, double angle) noexcept { return scene_->smoothNormals(name, angle); }
+bool Interface::smoothVerticesNormals(const char *name, double angle) noexcept { return scene_->smoothVerticesNormals(name, angle); }
 
 bool Interface::addInstance(const char *base_object_name, const Matrix4 &obj_to_world) noexcept
 {
