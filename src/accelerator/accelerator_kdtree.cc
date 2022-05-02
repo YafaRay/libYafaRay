@@ -723,32 +723,11 @@ AcceleratorIntersectData AcceleratorKdTree::intersect(const Ray &ray, float t_ma
 		}
 
 		// Check for intersections inside leaf node
-		const auto &primitive_intersection = [](AcceleratorIntersectData &accelerator_intersect_data, const Primitive *primitive, const Ray &ray) -> void
-		{
-			const IntersectData intersect_data = primitive->intersect(ray);
-			if(intersect_data.hit_)
-			{
-				if(intersect_data.t_hit_ < accelerator_intersect_data.t_max_ && intersect_data.t_hit_ >= ray.tmin_)
-				{
-					const Visibility prim_visibility = primitive->getVisibility();
-					if(prim_visibility == Visibility::NormalVisible || prim_visibility == Visibility::VisibleNoShadows)
-					{
-						const Visibility mat_visibility = primitive->getMaterial()->getVisibility();
-						if(mat_visibility == Visibility::NormalVisible || mat_visibility == Visibility::VisibleNoShadows)
-						{
-							accelerator_intersect_data.setIntersectData(intersect_data);
-							accelerator_intersect_data.t_max_ = intersect_data.t_hit_;
-							accelerator_intersect_data.hit_primitive_ = primitive;
-						}
-					}
-				}
-			}
-		};
 		const uint32_t n_primitives = curr_node->nPrimitives();
 		if(n_primitives == 1)
 		{
 			const Primitive *primitive = curr_node->one_primitive_;
-			primitive_intersection(accelerator_intersect_data, primitive, ray);
+			Accelerator::primitiveIntersection(accelerator_intersect_data, primitive, ray);
 		}
 		else
 		{
@@ -756,7 +735,7 @@ AcceleratorIntersectData AcceleratorKdTree::intersect(const Ray &ray, float t_ma
 			for(uint32_t i = 0; i < n_primitives; ++i)
 			{
 				const Primitive *primitive = prims[i];
-				primitive_intersection(accelerator_intersect_data, primitive, ray);
+				Accelerator::primitiveIntersection(accelerator_intersect_data, primitive, ray);
 			}
 		}
 
@@ -859,33 +838,11 @@ AcceleratorIntersectData AcceleratorKdTree::intersectS(const Ray &ray, float t_m
 		}
 
 		// Check for intersections inside leaf node
-		const auto &primitive_intersection = [](AcceleratorIntersectData &accelerator_intersect_data, const Primitive *primitive, const Ray &ray, float t_max) -> bool
-				{
-					const IntersectData intersect_data = primitive->intersect(ray);
-					if(intersect_data.hit_)
-					{
-						if(intersect_data.t_hit_ < t_max && intersect_data.t_hit_ >= 0.f)  // '>=' ?
-						{
-							const Visibility prim_visibility = primitive->getVisibility();
-							if(prim_visibility == Visibility::NormalVisible || prim_visibility == Visibility::InvisibleShadowsOnly)
-							{
-								const Visibility mat_visibility = primitive->getMaterial()->getVisibility();
-								if(mat_visibility == Visibility::NormalVisible || mat_visibility == Visibility::InvisibleShadowsOnly)
-								{
-									accelerator_intersect_data.setIntersectData(intersect_data);
-									accelerator_intersect_data.hit_primitive_ = primitive;
-									return true;
-								}
-							}
-						}
-					}
-					return false;
-				};
 		const uint32_t n_primitives = curr_node->nPrimitives();
 		if(n_primitives == 1)
 		{
 			const Primitive *primitive = curr_node->one_primitive_;
-			if(primitive_intersection(accelerator_intersect_data, primitive, ray, t_max)) return accelerator_intersect_data;
+			if(Accelerator::primitiveIntersection(accelerator_intersect_data, primitive, ray, t_max)) return accelerator_intersect_data;
 		}
 		else
 		{
@@ -893,7 +850,7 @@ AcceleratorIntersectData AcceleratorKdTree::intersectS(const Ray &ray, float t_m
 			for(uint32_t i = 0; i < n_primitives; ++i)
 			{
 				const Primitive *primitive = prims[i];
-				if(primitive_intersection(accelerator_intersect_data, primitive, ray, t_max)) return accelerator_intersect_data;
+				if(Accelerator::primitiveIntersection(accelerator_intersect_data, primitive, ray, t_max)) return accelerator_intersect_data;
 			}
 		}
 		entry_idx = exit_idx;
@@ -1011,37 +968,11 @@ AcceleratorTsIntersectData AcceleratorKdTree::intersectTs(const Ray &ray, int ma
 		}
 
 		// Check for intersections inside leaf node
-		const auto &primitive_intersection = [](AcceleratorTsIntersectData &accelerator_intersect_data, std::set<const Primitive *> &filtered, int &depth, int max_depth, const Primitive *primitive, const Ray &ray, float t_max, const Camera *camera) -> bool
-		{
-			const IntersectData intersect_data = primitive->intersect(ray);
-			if(intersect_data.hit_)
-			{
-				if(intersect_data.t_hit_ < t_max && intersect_data.t_hit_ >= ray.tmin_)  // '>=' ?
-				{
-					const Material *mat = primitive->getMaterial();
-					if(mat->getVisibility() == Visibility::NormalVisible || mat->getVisibility() == Visibility::InvisibleShadowsOnly)
-					{
-						accelerator_intersect_data.setIntersectData(intersect_data);
-						accelerator_intersect_data.hit_primitive_ = primitive;
-						if(!mat->isTransparent()) return true;
-						if(filtered.insert(primitive).second)
-						{
-							if(depth >= max_depth) return true;
-							const Point3 hit_point{ray.from_ + accelerator_intersect_data.t_hit_ * ray.dir_};
-							const auto sp = primitive->getSurface(ray.differentials_.get(), hit_point, accelerator_intersect_data, nullptr, camera);
-							accelerator_intersect_data.transparent_color_ *= sp->getTransparency(ray.dir_, camera);
-							++depth;
-						}
-					}
-				}
-			}
-			return false;
-		};
 		const uint32_t n_primitives = curr_node->nPrimitives();
 		if(n_primitives == 1)
 		{
 			const Primitive *primitive = curr_node->one_primitive_;
-			if(primitive_intersection(accelerator_intersect_data, filtered, depth, max_depth, primitive, ray, t_max, camera)) return accelerator_intersect_data;
+			if(Accelerator::primitiveIntersection(accelerator_intersect_data, filtered, depth, max_depth, primitive, ray, t_max, camera)) return accelerator_intersect_data;
 		}
 		else
 		{
@@ -1049,7 +980,7 @@ AcceleratorTsIntersectData AcceleratorKdTree::intersectTs(const Ray &ray, int ma
 			for(uint32_t i = 0; i < n_primitives; ++i)
 			{
 				const Primitive *primitive = prims[i];
-				if(primitive_intersection(accelerator_intersect_data, filtered, depth, max_depth, primitive, ray, t_max, camera)) return accelerator_intersect_data;
+				if(Accelerator::primitiveIntersection(accelerator_intersect_data, filtered, depth, max_depth, primitive, ray, t_max, camera)) return accelerator_intersect_data;
 			}
 		}
 		entry_idx = exit_idx;

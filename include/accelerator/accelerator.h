@@ -27,6 +27,7 @@
 #include <vector>
 #include <memory>
 #include <limits>
+#include <set>
 
 BEGIN_YAFARAY
 
@@ -65,6 +66,9 @@ class Accelerator
 		std::tuple<bool, Rgb, const Primitive *> isShadowed(const Ray &ray, int max_depth, float shadow_bias, const Camera *camera) const;
 
 	protected:
+		static void primitiveIntersection(AcceleratorIntersectData &accelerator_intersect_data, const Primitive *primitive, const Ray &ray);
+		static bool primitiveIntersection(AcceleratorIntersectData &accelerator_intersect_data, const Primitive *primitive, const Ray &ray, float t_max);
+		static bool primitiveIntersection(AcceleratorTsIntersectData &accelerator_intersect_data, std::set<const Primitive *> &filtered, int &depth, int max_depth, const Primitive *primitive, const Ray &ray, float t_max, const Camera *camera);
 		Logger &logger_;
 };
 
