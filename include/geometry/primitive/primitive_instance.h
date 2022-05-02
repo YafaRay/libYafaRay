@@ -41,10 +41,12 @@ class PrimitiveInstance : public Primitive
 	public:
 		//static PrimitiveInstance *factory(ParamMap &params, const Scene &scene);
 		PrimitiveInstance(const Primitive *base_primitive, const ObjectInstance &base_instance) : base_instance_(base_instance), base_primitive_(base_primitive) { }
-		Bound getBound(const Matrix4 *) const override;
+		Bound getBound() const override { return getBound(nullptr); }
+		Bound getBound(const Matrix4 *) const override { return base_primitive_->getBound(base_instance_.getObjToWorldMatrix()); }
 		bool intersectsBound(const ExBound &b, const Matrix4 *) const override;
 		bool clippingSupport() const override { return base_primitive_->clippingSupport(); }
 		PolyDouble::ClipResultWithBound clipToBound(Logger &logger, const std::array<Vec3Double, 2> &bound, const ClipPlane &clip_plane, const PolyDouble &poly, const Matrix4 *obj_to_world) const override;
+		IntersectData intersect(const Ray &ray) const override { return intersect(ray, nullptr); }
 		IntersectData intersect(const Ray &ray, const Matrix4 *) const override;
 		std::unique_ptr<const SurfacePoint> getSurface(const RayDifferentials *ray_differentials, const Point3 &hit_point, const IntersectData &intersect_data, const Matrix4 *, const Camera *camera) const override;
 		const Material *getMaterial() const override { return base_primitive_->getMaterial(); }
@@ -58,6 +60,36 @@ class PrimitiveInstance : public Primitive
 		const ObjectInstance &base_instance_;
 		const Primitive *base_primitive_ = nullptr;
 };
+
+inline bool PrimitiveInstance::intersectsBound(const ExBound &b, const Matrix4 *) const
+{
+	return base_primitive_->intersectsBound(b, base_instance_.getObjToWorldMatrix());
+}
+
+inline PolyDouble::ClipResultWithBound PrimitiveInstance::clipToBound(Logger &logger, const std::array<Vec3Double, 2> &bound, const ClipPlane &clip_plane, const PolyDouble &poly, const Matrix4 *obj_to_world) const
+{
+	return base_primitive_->clipToBound(logger, bound, clip_plane, poly, base_instance_.getObjToWorldMatrix());
+}
+
+inline IntersectData PrimitiveInstance::intersect(const Ray &ray, const Matrix4 *) const
+{
+	return base_primitive_->intersect(ray, base_instance_.getObjToWorldMatrix());
+}
+
+inline float PrimitiveInstance::surfaceArea(const Matrix4 *) const
+{
+	return base_primitive_->surfaceArea(base_instance_.getObjToWorldMatrix());
+}
+
+inline Vec3 PrimitiveInstance::getGeometricFaceNormal(const Matrix4 *, float u, float v) const
+{
+	return base_primitive_->getGeometricFaceNormal(base_instance_.getObjToWorldMatrix(), u, v);
+}
+
+inline std::pair<Point3, Vec3> PrimitiveInstance::sample(float s_1, float s_2, const Matrix4 *) const
+{
+	return base_primitive_->sample(s_1, s_2, base_instance_.getObjToWorldMatrix());
+}
 
 END_YAFARAY
 

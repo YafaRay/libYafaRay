@@ -32,16 +32,6 @@
 
 BEGIN_YAFARAY
 
-TrianglePrimitive::TrianglePrimitive(const std::vector<int> &vertices_indices, const std::vector<int> &vertices_uv_indices, const MeshObject &mesh_object) : FacePrimitive(vertices_indices, vertices_uv_indices, mesh_object)
-{
-	calculateGeometricFaceNormal();
-}
-
-IntersectData TrianglePrimitive::intersect(const Ray &ray, const Matrix4 *obj_to_world) const
-{
-	return TrianglePrimitive::intersect(ray, { getVertex(0, obj_to_world), getVertex(1, obj_to_world), getVertex(2, obj_to_world) });
-}
-
 IntersectData TrianglePrimitive::intersect(const Ray &ray, const std::array<Point3, 3> &vertices)
 {
 	//Tomas Moller and Ben Trumbore ray intersection scheme
@@ -69,30 +59,6 @@ IntersectData TrianglePrimitive::intersect(const Ray &ray, const std::array<Poin
 	intersect_data.barycentric_w_ = v;
 	intersect_data.time_ = ray.time_;
 	return intersect_data;
-}
-
-bool TrianglePrimitive::intersectsBound(const ExBound &ex_bound, const Matrix4 *obj_to_world) const
-{
-	return TrianglePrimitive::intersectsBound(ex_bound, { getVertex(0, obj_to_world), getVertex(1, obj_to_world), getVertex(2, obj_to_world) });
-}
-
-bool TrianglePrimitive::intersectsBound(const ExBound &ex_bound, const std::array<Point3, 3> &vertices)
-{
-	std::array<Vec3Double, 3> t_points;
-	for(size_t i = 0; i < 3; ++i)
-		for(size_t j = 0; j < 3; ++j)
-			t_points[j][i] = vertices[j][i];
-	return triBoxOverlap(ex_bound.center_, ex_bound.half_size_, t_points);
-}
-
-void TrianglePrimitive::calculateGeometricFaceNormal()
-{
-	face_normal_geometric_ = calculateFaceNormal({getVertex(0), getVertex(1), getVertex(2)});
-}
-
-Vec3 TrianglePrimitive::calculateFaceNormal(const std::array<Point3, 3> &vertices)
-{
-	return ((vertices[1] - vertices[0]) ^ (vertices[2] - vertices[0])).normalize();
 }
 
 std::unique_ptr<const SurfacePoint> TrianglePrimitive::getSurface(const RayDifferentials *ray_differentials, const Point3 &hit_point, const IntersectData &intersect_data, const Matrix4 *obj_to_world, const Camera *camera) const
@@ -127,7 +93,12 @@ std::unique_ptr<const SurfacePoint> TrianglePrimitive::getSurface(const RayDiffe
 		sp->orco_ng_ = Primitive::getGeometricFaceNormal();
 	}
 	bool implicit_uv = true;
-	const std::array<Point3, 3> p { getVertex(0, obj_to_world), getVertex(1, obj_to_world), getVertex(2, obj_to_world) };
+	const std::array<Point3, 3> p {
+		obj_to_world ?
+		std::array<Point3, 3>{ getVertex(0, obj_to_world), getVertex(1, obj_to_world), getVertex(2, obj_to_world) }
+		:
+		std::array<Point3, 3>{ getVertex(0), getVertex(1), getVertex(2) }
+	};
 	if(base_mesh_object_.hasUv())
 	{
 		const std::array<Uv, 3> uv { getVertexUv(0), getVertexUv(1), getVertexUv(2) };
@@ -199,39 +170,14 @@ PolyDouble::ClipResultWithBound TrianglePrimitive::clipToBound(Logger &logger, c
 	}
 	// initial clip
 	const std::array<Point3, 3> triangle_vertices {
-		getVertex(0, obj_to_world), getVertex(1, obj_to_world), getVertex(2, obj_to_world)
+		obj_to_world ?
+		std::array<Point3, 3>{ getVertex(0, obj_to_world), getVertex(1, obj_to_world), getVertex(2, obj_to_world) }
+		:
+		std::array<Point3, 3>{ getVertex(0), getVertex(1), getVertex(2) }
 	};
 	PolyDouble poly_triangle;
 	for(const auto &vert : triangle_vertices) poly_triangle.addVertex({vert.x(), vert.y(), vert.z() });
 	return PolyDouble::boxClip(logger, bound[1], poly_triangle, bound[0]);
-}
-
-float TrianglePrimitive::surfaceArea(const std::array<Point3, 3> &vertices)
-{
-	const Vec3 vec_0_1{vertices[1] - vertices[0]};
-	const Vec3 vec_0_2{vertices[2] - vertices[0]};
-	return 0.5f * (vec_0_1 ^ vec_0_2).length();
-}
-
-float TrianglePrimitive::surfaceArea(const Matrix4 *obj_to_world) const
-{
-	return surfaceArea({ getVertex(0, obj_to_world), getVertex(1, obj_to_world), getVertex(2, obj_to_world) });
-}
-
-std::pair<Point3, Vec3> TrianglePrimitive::sample(float s_1, float s_2, const Matrix4 *obj_to_world) const
-{
-	return {
-		TrianglePrimitive::sample(s_1, s_2, {getVertex(0, obj_to_world), getVertex(1, obj_to_world), getVertex(2, obj_to_world)}),
-		Primitive::getGeometricFaceNormal(obj_to_world)
-	};
-}
-
-Point3 TrianglePrimitive::sample(float s_1, float s_2, const std::array<Point3, 3> &vertices)
-{
-	const float su_1 = math::sqrt(s_1);
-	const float u = 1.f - su_1;
-	const float v = s_2 * su_1;
-	return u * vertices[0] + v * vertices[1] + (1.f - u - v) * vertices[2];
 }
 
 /*************************************************************

@@ -32,6 +32,11 @@ std::unique_ptr<const SurfacePoint> Primitive::getSurface(const RayDifferentials
 	return {};
 }
 
+IntersectData Primitive::intersect(const Ray &ray) const
+{
+	return {};
+}
+
 IntersectData Primitive::intersect(const Ray &ray, const Matrix4 *obj_to_world) const
 {
 	return {};

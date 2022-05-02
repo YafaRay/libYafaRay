@@ -51,7 +51,7 @@ Primitive *SpherePrimitive::factory(const ParamMap &params, const Scene &scene, 
 	return new SpherePrimitive(center, radius, material, object);
 }
 
-Bound SpherePrimitive::getBound(const Matrix4 *obj_to_world) const
+Bound SpherePrimitive::getBound(const Matrix4 *) const
 {
 	const Vec3 r{radius_ * 1.0001f};
 	return {center_ - r, center_ + r};

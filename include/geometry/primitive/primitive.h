@@ -49,8 +49,8 @@ class Primitive
 		Primitive() = default;
 		virtual ~Primitive() = default;
 		/*! return the object bound in global ("world") coordinates */
+		virtual Bound getBound() const = 0;
 		virtual Bound getBound(const Matrix4 *obj_to_world) const = 0;
-		Bound getBound() const { return getBound(nullptr); }
 		/*! a possibly more precise check to find out if the primitve really
 			intersects the bound of interest, given that the primitive's bound does.
 			used e.g. for optimized kd-tree construction */
@@ -62,8 +62,8 @@ class Primitive
 			The caller decides wether t matters or not.
 			\return false if ray misses primitive, true otherwise
 			\param t set this to raydepth where hit occurs */
+		virtual IntersectData intersect(const Ray &ray) const = 0;
 		virtual IntersectData intersect(const Ray &ray, const Matrix4 *obj_to_world) const;
-		IntersectData intersect(const Ray &ray) const { return intersect(ray, nullptr); }
 		/* fill in surfacePoint_t */
 		virtual std::unique_ptr<const SurfacePoint> getSurface(const RayDifferentials *ray_differentials, const Point3 &hit, const IntersectData &data, const Matrix4 *obj_to_world, const Camera *camera) const;
 		/* return the material */
