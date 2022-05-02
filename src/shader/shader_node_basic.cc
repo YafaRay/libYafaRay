@@ -33,8 +33,7 @@ void TextureMapperNode::setup()
 {
 	if(tex_->discrete())
 	{
-		int u, v, w;
-		tex_->resolution(u, v, w);
+		const auto [u, v, w] = tex_->resolution();
 		d_u_ = 1.f / static_cast<float>(u);
 		d_v_ = 1.f / static_cast<float>(v);
 		if(tex_->isThreeD()) d_w_ = 1.f / static_cast<float>(w);

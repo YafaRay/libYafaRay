@@ -29,8 +29,6 @@
 
 BEGIN_YAFARAY
 
-class Format;
-
 class MipMapParams final
 {
 	public:
@@ -47,7 +45,7 @@ class MipMapParams final
 class EwaWeightLut final
 {
 	public:
-		EwaWeightLut();
+		EwaWeightLut() noexcept;
 		float get(int index) const { return items_[index]; };
 		static constexpr int size() { return num_items_; }
 
@@ -69,7 +67,7 @@ class ImageTexture final : public Texture
 		bool isNormalmap() const override { return normalmap_; }
 		Rgba getColor(const Point3 &p, const MipMapParams *mipmap_params) const override;
 		Rgba getRawColor(const Point3 &p, const MipMapParams *mipmap_params) const override;
-		void resolution(int &x, int &y, int &z) const override;
+		std::tuple<int, int, int> resolution() const override;
 		void generateMipMaps() override;
 		void setCrop(float minx, float miny, float maxx, float maxy);
 		Rgba noInterpolation(const Point3 &p, int mipmap_level = 0) const;
@@ -78,7 +76,7 @@ class ImageTexture final : public Texture
 		Rgba mipMapsTrilinearInterpolation(const Point3 &p, const MipMapParams *mipmap_params) const;
 		Rgba mipMapsEwaInterpolation(const Point3 &p, float max_anisotropy, const MipMapParams *mipmap_params) const;
 		Rgba ewaEllipticCalculation(const Point3 &p, float ds_0, float dt_0, float ds_1, float dt_1, int mipmap_level = 0) const;
-		bool doMapping(Point3 &texp) const;
+		std::pair<Point3, bool> doMapping(const Point3 &tex_point) const;
 		Rgba interpolateImage(const Point3 &p, const MipMapParams *mipmap_params) const;
 		static void findTextureInterpolationCoordinates(int &coord_0, int &coord_1, int &coord_2, int &coord_3, float &coord_decimal_part, float coord_float, int resolution, bool repeat, bool mirror);
 		static ImageTexture::ClipMode string2Cliptype(const std::string &clipname);

@@ -37,45 +37,33 @@ ImageTexture::ImageTexture(Logger &logger, std::shared_ptr<Image> image) : Textu
 	images_.emplace_back(std::move(image));
 }
 
-void ImageTexture::resolution(int &x, int &y, int &z) const
+std::tuple<int, int, int> ImageTexture::resolution() const
 {
-	x = images_.at(0)->getWidth();
-	y = images_.at(0)->getHeight();
-	z = 0;
+	return { images_[0]->getWidth(), images_[0]->getHeight(), 0 };
 }
 
 Rgba ImageTexture::interpolateImage(const Point3 &p, const MipMapParams *mipmap_params) const
 {
-	if(mipmap_params && mipmap_params->force_image_level_ > 0.f) return mipMapsTrilinearInterpolation(p, mipmap_params);
-
-	Rgba interpolated_color(0.f);
-
 	switch(interpolation_type_)
 	{
-		case InterpolationType::None: interpolated_color = noInterpolation(p); break;
-		case InterpolationType::Bicubic: interpolated_color = bicubicInterpolation(p); break;
+		case InterpolationType::None: return noInterpolation(p);
+		case InterpolationType::Bicubic: return bicubicInterpolation(p);
 		case InterpolationType::Trilinear:
-			if(mipmap_params) interpolated_color = mipMapsTrilinearInterpolation(p, mipmap_params);
-			else interpolated_color = bilinearInterpolation(p);
-			break;
+			if(mipmap_params) return mipMapsTrilinearInterpolation(p, mipmap_params);
+			else return bilinearInterpolation(p);
 		case InterpolationType::Ewa:
-			if(mipmap_params) interpolated_color = mipMapsEwaInterpolation(p, ewa_max_anisotropy_, mipmap_params);
-			else interpolated_color = bilinearInterpolation(p);
-			break;
+			if(mipmap_params) return mipMapsEwaInterpolation(p, ewa_max_anisotropy_, mipmap_params);
+			else return bilinearInterpolation(p);
 		default: //By default use Bilinear
-		case InterpolationType::Bilinear: interpolated_color = bilinearInterpolation(p); break;
+		case InterpolationType::Bilinear: return bilinearInterpolation(p);
 	}
-	return interpolated_color;
 }
 
 Rgba ImageTexture::getColor(const Point3 &p, const MipMapParams *mipmap_params) const
 {
-	Point3 p_1{p.x(), -p.y(), p.z()};
-	Rgba ret(0.f);
-	const bool outside = doMapping(p_1);
-	if(outside) return ret;
-	ret = interpolateImage(p_1, mipmap_params);
-	return applyAdjustments(ret);
+	const auto [p_mapped, outside] = doMapping({p.x(), -p.y(), p.z()});
+	if(outside) return Rgba{0.f};
+	else return applyAdjustments(interpolateImage(p_mapped, mipmap_params));
 }
 
 Rgba ImageTexture::getRawColor(const Point3 &p, const MipMapParams *mipmap_params) const
@@ -93,79 +81,80 @@ Rgba ImageTexture::getRawColor(const Point3 &p, const MipMapParams *mipmap_param
 	return ret;
 }
 
-bool ImageTexture::doMapping(Point3 &texpt) const
+std::pair<Point3, bool> ImageTexture::doMapping(const Point3 &tex_point) const
 {
 	bool outside = false;
-	texpt = 0.5f * texpt + Vec3{0.5f}; //FIXME DAVID: does the Vec3 portion make sense?
+	Point3 mapped{ 0.5f * tex_point + Vec3{0.5f} }; //FIXME DAVID: does the Vec3 portion make sense?
 	// repeat, only valid for REPEAT clipmode
 	if(tex_clip_mode_ == ClipMode::Repeat)
 	{
-		if(xrepeat_ > 1) texpt.x() *= static_cast<float>(xrepeat_);
-		if(yrepeat_ > 1) texpt.y() *= static_cast<float>(yrepeat_);
-		if(mirror_x_ && static_cast<int>(ceilf(texpt.x())) % 2 == 0) texpt.x() = -texpt.x();
-		if(mirror_y_ && static_cast<int>(ceilf(texpt.y())) % 2 == 0) texpt.y() = -texpt.y();
-		if(texpt.x() > 1.f) texpt.x() -= static_cast<int>(texpt.x());
-		else if(texpt.x() < 0.f) texpt.x() += 1 - static_cast<int>(texpt.x());
-
-		if(texpt.y() > 1.f) texpt.y() -= static_cast<int>(texpt.y());
-		else if(texpt.y() < 0.f) texpt.y() += 1 - static_cast<int>(texpt.y());
+		if(xrepeat_ > 1) mapped.x() *= static_cast<float>(xrepeat_);
+		if(yrepeat_ > 1) mapped.y() *= static_cast<float>(yrepeat_);
+		if(mirror_x_ && static_cast<int>(ceilf(mapped.x())) % 2 == 0) mapped.x() = -mapped.x();
+		if(mirror_y_ && static_cast<int>(ceilf(mapped.y())) % 2 == 0) mapped.y() = -mapped.y();
+		if(mapped.x() > 1.f) mapped.x() -= std::trunc(mapped.x());
+		else if(mapped.x() < 0.f)
+			mapped.x() += 1.f - std::trunc(mapped.x());
+		if(mapped.y() > 1.f) mapped.y() -= std::trunc(mapped.y());
+		else if(mapped.y() < 0.f)
+			mapped.y() += 1.f - std::trunc(mapped.y());
 	}
+	if(cropx_) mapped.x() = cropminx_ + mapped.x() * (cropmaxx_ - cropminx_);
+	if(cropy_) mapped.y() = cropminy_ + mapped.y() * (cropmaxy_ - cropminy_);
+	if(rot_90_) std::swap(mapped.x(), mapped.y());
 
-	// crop
-	if(cropx_) texpt.x() = cropminx_ + texpt.x() * (cropmaxx_ - cropminx_);
-	if(cropy_) texpt.y() = cropminy_ + texpt.y() * (cropmaxy_ - cropminy_);
-
-	// rot90
-	if(rot_90_) std::swap(texpt.x(), texpt.y());
-
-	// clipping
 	switch(tex_clip_mode_)
 	{
 		case ClipMode::ClipCube:
 		{
-			if((texpt.x() < 0) || (texpt.x() > 1) || (texpt.y() < 0) || (texpt.y() > 1) || (texpt.z() < -1) || (texpt.z() > 1))
+			if(mapped.x() < 0.f || mapped.x() > 1.f || mapped.y() < 0.f || mapped.y() > 1.f || mapped.z() < -1.f || mapped.z() > 1.f)
 				outside = true;
 			break;
 		}
 		case ClipMode::Checker:
 		{
-			const int xs = static_cast<int>(std::floor(texpt.x())), ys = static_cast<int>(std::floor(texpt.y()));
-			texpt.x() -= xs;
-			texpt.y() -= ys;
-			if(!checker_odd_ && !((xs + ys) & 1))
+			const float xs = std::floor(mapped.x());
+			const float ys = std::floor(mapped.y());
+			mapped.x() -= xs;
+			mapped.y() -= ys;
+			if(!checker_odd_ && !(static_cast<int>(xs + ys) & 1))
 			{
 				outside = true;
 				break;
 			}
-			if(!checker_even_ && ((xs + ys) & 1))
+			if(!checker_even_ && (static_cast<int>(xs + ys) & 1))
 			{
 				outside = true;
 				break;
 			}
 			// scale around center, (0.5, 0.5)
-			if(checker_dist_ < 1.0)
+			if(checker_dist_ < 1.f)
 			{
-				texpt.x() = (texpt.x() - 0.5f) / (1.f - checker_dist_) + 0.5f;
-				texpt.y() = (texpt.y() - 0.5f) / (1.f - checker_dist_) + 0.5f;
+				mapped.x() = (mapped.x() - 0.5f) / (1.f - checker_dist_) + 0.5f;
+				mapped.y() = (mapped.y() - 0.5f) / (1.f - checker_dist_) + 0.5f;
 			}
 			// continue to TCL_CLIP
 		}
 		case ClipMode::Clip:
 		{
-			if((texpt.x() < 0) || (texpt.x() > 1) || (texpt.y() < 0) || (texpt.y() > 1))
+			if(mapped.x() < 0.f || mapped.x() > 1.f || mapped.y() < 0.f || mapped.y() > 1.f)
 				outside = true;
 			break;
 		}
 		case ClipMode::Extend:
 		{
-			if(texpt.x() > 0.99999f) texpt.x() = 0.99999f; else if(texpt.x() < 0) texpt.x() = 0;
-			if(texpt.y() > 0.99999f) texpt.y() = 0.99999f; else if(texpt.y() < 0) texpt.y() = 0;
+			if(mapped.x() > 0.99999f) mapped.x() = 0.99999f;
+			else if(mapped.x() < 0.f)
+				mapped.x() = 0.f;
+			if(mapped.y() > 0.99999f) mapped.y() = 0.99999f;
+			else if(mapped.y() < 0.f)
+				mapped.y() = 0.f;
 			// no break, fall thru to TEX_REPEAT
 		}
 		default:
 		case ClipMode::Repeat: outside = false; break;
 	}
-	return outside;
+	return {mapped, outside };
 }
 
 void ImageTexture::setCrop(float minx, float miny, float maxx, float maxy)
@@ -447,13 +436,13 @@ Rgba ImageTexture::ewaEllipticCalculation(const Point3 &p, float ds_0, float dt_
 	return sum_col;
 }
 
-EwaWeightLut::EwaWeightLut()
+EwaWeightLut::EwaWeightLut() noexcept
 {
 	for(int i = 0; i < num_items_; ++i)
 	{
 		constexpr float alpha = 2.f;
-		const float r_2 = static_cast<float>(i) / float(num_items_ - 1);
-		items_[i] = expf(-alpha * r_2) - expf(-alpha);
+		const float r_2 = static_cast<float>(i) / static_cast<float>(num_items_ - 1);
+		items_[i] = std::exp(-alpha * r_2) - std::exp(-alpha);
 	}
 }
 

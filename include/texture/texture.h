@@ -58,8 +58,8 @@ class Texture
 		virtual float getFloat(const Point3 &p, const MipMapParams *mipmap_params) const { return applyIntensityContrastAdjustments(getRawColor(p, mipmap_params).col2Bri()); }
 		float getFloat(const Point3 &p) const { return getFloat(p, nullptr); }
 
-		/* gives the number of values in each dimension for discrete textures */
-		virtual void resolution(int &x, int &y, int &z) const { x = 0, y = 0, z = 0; };
+		/* gives the number of values in each dimension for discrete textures. Returns resolution of the texture, last coordinate z/depth is for 3D textures (not currently implemented) */
+		virtual std::tuple<int, int, int> resolution() const { return {0, 0, 0}; };
 		virtual void generateMipMaps() {}
 		void setAdjustments(float intensity, float contrast, float saturation, float hue, bool clamp, float factor_red, float factor_green, float factor_blue);
 		Rgba applyAdjustments(const Rgba &tex_col) const;
