@@ -36,7 +36,7 @@ class MaterialData;
 struct NodeResult final
 {
 	NodeResult() = default;
-	NodeResult(Rgba color, float fval): col_(color), f_(fval) {}
+	NodeResult(Rgba color, float fval): col_{std::move(color)}, f_{fval} { }
 	Rgba col_ {0.f};
 	float f_ = 0.f;
 };

@@ -67,7 +67,7 @@ class Camera
 		int resY() const { return resy_; } //!< Get camera Y resolution
 		Point3 getPosition() const { return position_; } //!< Get camera position
 		void setPosition(const Point3 &pos) { position_ = pos; } //!< Set camera position
-		void getAxis(Vec3 &vx, Vec3 &vy, Vec3 &vz) const { vx = cam_x_; vy = cam_y_; vz = cam_z_; } //!< Get camera axis
+		std::tuple<Vec3, Vec3, Vec3> getAxes() const { return { cam_x_, cam_y_, cam_z_}; } //!< Get camera axis
 		/*! Indicate whether the lense need to be sampled (u, v parameters of shootRay), i.e.
 			DOF-like effects. When false, no lense samples need to be computed */
 		float getNearClip() const { return near_clip_; }

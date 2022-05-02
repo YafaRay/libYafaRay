@@ -42,7 +42,7 @@ class TextureMapperNode final : public ShaderNode
 		//virtual void getDerivative(const surfacePoint_t &sp, float &du, float &dv) const;
 
 		void setup();
-		void getCoords(Point3 &texpt, Vec3 &ng, const SurfacePoint &sp, const Camera *camera) const;
+		std::pair<Point3, Vec3> getCoords(const SurfacePoint &sp, const Camera *camera) const;
 		Point3 doMapping(const Point3 &p, const Vec3 &n) const;
 		static Point3 tubeMap(const Point3 &p);
 		static Point3 sphereMap(const Point3 &p);
@@ -84,20 +84,27 @@ class MixNode : public ShaderNode
 
 	protected:
 		MixNode() = default;
-		void getInputs(const NodeTreeData &node_tree_data, Rgba &cin_1, Rgba &cin_2, float &fin_1, float &fin_2, float &f_2) const;
+		struct Inputs
+		{
+			Inputs(NodeResult input_1, NodeResult input_2, float factor) : in_1_{std::move(input_1)}, in_2_{std::move(input_2)}, factor_{factor} { }
+			NodeResult in_1_;
+			NodeResult in_2_;
+			float factor_;
+		};
+		Inputs getInputs(const NodeTreeData &node_tree_data) const;
 
 	private:
-		explicit MixNode(float val) : cfactor_(val) { }
+		explicit MixNode(float mix_factor) : factor_(mix_factor) { }
 		void eval(NodeTreeData &node_tree_data, const SurfacePoint &sp, const Camera *camera) const override;
 		bool configInputs(Logger &logger, const ParamMap &params, const NodeFinder &find) override;
 		std::vector<const ShaderNode *> getDependencies() const override;
 
 		Rgba col_1_, col_2_;
 		float val_1_, val_2_;
-		float cfactor_ = 0.f;
-		const ShaderNode *input_1_ = nullptr;
-		const ShaderNode *input_2_ = nullptr;
-		const ShaderNode *factor_ = nullptr;
+		float factor_ = 0.f;
+		const ShaderNode *node_in_1_ = nullptr;
+		const ShaderNode *node_in_2_ = nullptr;
+		const ShaderNode *node_factor_ = nullptr;
 };
 
 END_YAFARAY

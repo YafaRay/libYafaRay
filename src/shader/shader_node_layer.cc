@@ -109,7 +109,7 @@ void LayerNode::eval(NodeTreeData &node_tree_data, const SurfacePoint &sp, const
 		if(rval < 0.f) rval = 0.f;
 	}
 	rcol.a_ = stencil_tin;
-	node_tree_data[getId()] = NodeResult(rcol, rval);
+	node_tree_data[getId()] = { rcol, rval };
 }
 
 void LayerNode::evalDerivative(NodeTreeData &node_tree_data, const SurfacePoint &sp, const Camera *camera) const
@@ -140,7 +140,7 @@ void LayerNode::evalDerivative(NodeTreeData &node_tree_data, const SurfacePoint 
 	rdu += tdu;
 	rdv += tdv;
 
-	node_tree_data[getId()] = NodeResult(Rgba(rdu, rdv, 0.f, stencil_tin), 0.f);
+	node_tree_data[getId()] = { {rdu, rdv, 0.f, stencil_tin}, 0.f };
 }
 
 bool LayerNode::configInputs(Logger &logger, const ParamMap &params, const NodeFinder &find)

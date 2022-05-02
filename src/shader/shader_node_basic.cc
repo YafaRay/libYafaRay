@@ -18,13 +18,14 @@
 
 #include "shader/shader_node_basic.h"
 
-#include <cmath>
-#include "shader/shader_node_layer.h"
 #include "camera/camera.h"
 #include "common/param.h"
 #include "geometry/surface.h"
-#include "texture/texture_image.h"
+#include "math/interpolation.h"
 #include "render/render_data.h"
+#include "shader/shader_node_layer.h"
+#include "texture/texture_image.h"
+#include <cmath>
 
 BEGIN_YAFARAY
 
@@ -136,87 +137,69 @@ Point3 TextureMapperNode::evalUv(const SurfacePoint &sp)
 	return { sp.u_, sp.v_, 0.f };
 }
 
-void TextureMapperNode::getCoords(Point3 &texpt, Vec3 &ng, const SurfacePoint &sp, const Camera *camera) const
+std::pair<Point3, Vec3> TextureMapperNode::getCoords(const SurfacePoint &sp, const Camera *camera) const
 {
 	switch(coords_)
 	{
-		case Uv: texpt = evalUv(sp); ng = sp.ng_; break;
-		case Orco: texpt = sp.orco_p_; ng = sp.orco_ng_; break;
-		case Transformed: texpt = mtx_ * sp.p_; ng = mtx_ * sp.ng_; break;  // apply 4x4 matrix of object for mapping also to true surface normals
-		case Window: texpt = camera->screenproject(sp.p_); ng = sp.ng_; break;
-		case Normal:
-			{
-				Vec3 camx, camy, camz;
-				camera->getAxis(camx, camy, camz);
-				texpt = {sp.n_ * camx, -sp.n_ * camy, 0.f};
-				ng = sp.ng_;
+		case Uv: return { evalUv(sp), sp.ng_ };
+		case Orco: return { sp.orco_p_, sp.orco_ng_ };
+		case Transformed: return { mtx_ * sp.p_, mtx_ * sp.ng_ };  // apply 4x4 matrix of object for mapping also to true surface normals
+		case Window: return { camera->screenproject(sp.p_), sp.ng_ };
+		case Normal: {
+			const auto [cam_x, cam_y, cam_z] = camera->getAxes();
+			return {{sp.n_ * cam_x, -sp.n_ * cam_y, 0.f}, sp.ng_};
 			}
-			break;
 		case Stick: // Not implemented yet use GLOB
 		case Stress: // Not implemented yet use GLOB
 		case Tangent: // Not implemented yet use GLOB
 		case Reflect: // Not implemented yet use GLOB
 		case Global: // GLOB mapped as default
-		default:
-			texpt = sp.p_; ng = sp.ng_;
-			break;
+		default: return { sp.p_, sp.ng_ };
 	}
 }
 
 void TextureMapperNode::eval(NodeTreeData &node_tree_data, const SurfacePoint &sp, const Camera *camera) const
 {
-	Point3 texpt{0.f, 0.f, 0.f};
-	Vec3 ng(0.f);
 	std::unique_ptr<const MipMapParams> mip_map_params;
-
+	auto [texpt, ng] = getCoords(sp, camera);
 	if((tex_->getInterpolationType() == InterpolationType::Trilinear || tex_->getInterpolationType() == InterpolationType::Ewa) && sp.differentials_)
 	{
-		getCoords(texpt, ng, sp, camera);
-		const Point3 texptorig{texpt};
-		texpt = doMapping(texptorig, ng);
+		const Point3 texpt_orig {texpt};
+		texpt = doMapping(texpt_orig, ng);
 		if(coords_ == Uv && sp.has_uv_)
 		{
 			float du_dx = 0.f, dv_dx = 0.f;
 			float du_dy = 0.f, dv_dy = 0.f;
 			sp.getUVdifferentials(du_dx, dv_dx, du_dy, dv_dy);
-			const Point3 texpt_diffx{1.0e+2f * (doMapping(texptorig + 1.0e-2f * Point3{du_dx, dv_dx, 0.f}, ng) - texpt)};
-			const Point3 texpt_diffy{1.0e+2f * (doMapping(texptorig + 1.0e-2f * Point3{du_dy, dv_dy, 0.f}, ng) - texpt)};
+			const Point3 texpt_diffx{1.0e+2f * (doMapping(texpt_orig + 1.0e-2f * Point3{du_dx, dv_dx, 0.f}, ng) - texpt)};
+			const Point3 texpt_diffy{1.0e+2f * (doMapping(texpt_orig + 1.0e-2f * Point3{du_dy, dv_dy, 0.f}, ng) - texpt)};
 			mip_map_params = std::make_unique<const MipMapParams>(texpt_diffx.x(), texpt_diffx.y(), texpt_diffy.x(), texpt_diffy.y());
 		}
 	}
-	else
-	{
-		getCoords(texpt, ng, sp, camera);
-		texpt = doMapping(texpt, ng);
-	}
-
-	node_tree_data[getId()] = NodeResult(tex_->getColor(texpt, mip_map_params.get()), (do_scalar_) ? tex_->getFloat(texpt, mip_map_params.get()) : 0.f);
+	else texpt = doMapping(texpt, ng);
+	node_tree_data[getId()] = {
+			tex_->getColor(texpt, mip_map_params.get()),
+			do_scalar_ ? tex_->getFloat(texpt, mip_map_params.get()) : 0.f
+	};
 }
 
 // Normal perturbation
 
 void TextureMapperNode::evalDerivative(NodeTreeData &node_tree_data, const SurfacePoint &sp, const Camera *camera) const
 {
-	Point3 texpt{0.f, 0.f, 0.f};
-	Vec3 ng(0.f);
 	float du = 0.0f, dv = 0.0f;
-
-	getCoords(texpt, ng, sp, camera);
-
+	auto [texpt, ng] = getCoords(sp, camera);
 	if(tex_->discrete() && sp.has_uv_ && coords_ == Uv)
 	{
 		texpt = doMapping(texpt, ng);
-		Vec3 norm(0.f);
+		Vec3 norm;
 
 		if(tex_->isNormalmap())
 		{
 			// Get color from normal map texture
 			const Rgba color = tex_->getRawColor(texpt);
-
 			// Assign normal map RGB colors to vector norm
-			norm.x() = color.getR();
-			norm.y() = color.getG();
-			norm.z() = color.getB();
+			norm = { color.getR(), color.getG(), color.getB() };
 			norm = (2.f * norm) - Vec3{1.f}; //FIXME DAVID: does the Vec3 portion make sense?
 
 			// Convert norm into shading space
@@ -272,7 +255,7 @@ void TextureMapperNode::evalDerivative(NodeTreeData &node_tree_data, const Surfa
 
 			if(std::abs(norm.z()) > 1e-30f)
 			{
-				const float nf = 1.0 / norm.z() * bump_str_; // normalizes z to 1, why?
+				const float nf = 1.f / norm.z() * bump_str_; // normalizes z to 1, why?
 				du = norm.x() * nf;
 				dv = norm.y() * nf;
 			}
@@ -299,8 +282,7 @@ void TextureMapperNode::evalDerivative(NodeTreeData &node_tree_data, const Surfa
 			}
 		}
 	}
-
-	node_tree_data[getId()] = NodeResult(Rgba(du, dv, 0.f, 0.f), 0.f);
+	node_tree_data[getId()] = { {du, dv, 0.f, 0.f}, 0.f };
 }
 
 ShaderNode * TextureMapperNode::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params)
@@ -311,9 +293,9 @@ ShaderNode * TextureMapperNode::factory(Logger &logger, const Scene &scene, cons
 	Projection projection = Plain;
 	float bump_str = 1.f;
 	bool scalar = true;
-	int map[3] = {1, 2, 3 };
+	std::array<int, 3> map { 1, 2, 3 };
 	Point3 offset{0.f, 0.f, 0.f}, scale{1.f, 1.f, 1.f};
-	Matrix4 mtx(1);
+	Matrix4 mtx{1.f};
 	if(!params.getParam("texture", texname))
 	{
 		logger.logError("TextureMapper: No texture given for texture mapper!");
@@ -375,7 +357,7 @@ ShaderNode * TextureMapperNode::factory(Logger &logger, const Scene &scene, cons
 
 void ValueNode::eval(NodeTreeData &node_tree_data, const SurfacePoint &sp, const Camera *camera) const
 {
-	node_tree_data[getId()] = NodeResult(color_, value_);
+	node_tree_data[getId()] = { color_, value_ };
 }
 
 ShaderNode * ValueNode::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params)
@@ -395,34 +377,15 @@ ShaderNode * ValueNode::factory(Logger &logger, const Scene &scene, const std::s
 
 void MixNode::eval(NodeTreeData &node_tree_data, const SurfacePoint &sp, const Camera *camera) const
 {
-	const float f_2 = factor_ ? factor_->getScalar(node_tree_data) : cfactor_;
-	const float f_1 = 1.f - f_2;
-	float fin_1, fin_2;
-	Rgba cin_1, cin_2;
-	if(input_1_)
-	{
-		cin_1 = input_1_->getColor(node_tree_data);
-		fin_1 = input_1_->getScalar(node_tree_data);
-	}
-	else
-	{
-		cin_1 = col_1_;
-		fin_1 = val_1_;
-	}
-	if(input_2_)
-	{
-		cin_2 = input_2_->getColor(node_tree_data);
-		fin_2 = input_2_->getScalar(node_tree_data);
-	}
-	else
-	{
-		cin_2 = col_2_;
-		fin_2 = val_2_;
-	}
-
-	const Rgba color { f_1 * cin_1 + f_2 * cin_2 };
-	const float scalar { f_1 * fin_1 + f_2 * fin_2 };
-	node_tree_data[getId()] = NodeResult(color, scalar);
+	const float factor = node_factor_ ? node_factor_->getScalar(node_tree_data) : factor_;
+	const Rgba col_1 = node_in_1_ ? node_in_1_->getColor(node_tree_data) : col_1_;
+	const float f_1 = node_in_1_ ? node_in_1_->getScalar(node_tree_data) : val_1_;
+	const Rgba col_2 = node_in_2_ ? node_in_2_->getColor(node_tree_data) : col_2_;
+	const float f_2 = node_in_2_ ? node_in_2_->getScalar(node_tree_data) : val_2_;
+	node_tree_data[getId()] = {
+			math::lerp(col_1, col_2, factor),
+			math::lerp(f_1, f_2, factor)
+	};
 }
 
 bool MixNode::configInputs(Logger &logger, const ParamMap &params, const NodeFinder &find)
@@ -430,8 +393,8 @@ bool MixNode::configInputs(Logger &logger, const ParamMap &params, const NodeFin
 	std::string name;
 	if(params.getParam("input1", name))
 	{
-		input_1_ = find(name);
-		if(!input_1_)
+		node_in_1_ = find(name);
+		if(!node_in_1_)
 		{
 			logger.logError("MixNode: Couldn't get input1 ", name);
 			return false;
@@ -445,8 +408,8 @@ bool MixNode::configInputs(Logger &logger, const ParamMap &params, const NodeFin
 
 	if(params.getParam("input2", name))
 	{
-		input_2_ = find(name);
-		if(!input_2_)
+		node_in_2_ = find(name);
+		if(!node_in_2_)
 		{
 			logger.logError("MixNode: Couldn't get input2 ", name);
 			return false;
@@ -460,14 +423,14 @@ bool MixNode::configInputs(Logger &logger, const ParamMap &params, const NodeFin
 
 	if(params.getParam("factor", name))
 	{
-		factor_ = find(name);
-		if(!factor_)
+		node_factor_ = find(name);
+		if(!node_factor_)
 		{
 			logger.logError("MixNode: Couldn't get factor ", name);
 			return false;
 		}
 	}
-	else if(!params.getParam("value", cfactor_))
+	else if(!params.getParam("value", factor_))
 	{
 		logger.logError("MixNode: Value not set");
 		return false;
@@ -479,35 +442,22 @@ bool MixNode::configInputs(Logger &logger, const ParamMap &params, const NodeFin
 std::vector<const ShaderNode *> MixNode::getDependencies() const
 {
 	std::vector<const ShaderNode *> dependencies;
-	if(input_1_) dependencies.emplace_back(input_1_);
-	if(input_2_) dependencies.emplace_back(input_2_);
-	if(factor_) dependencies.emplace_back(factor_);
+	if(node_in_1_) dependencies.emplace_back(node_in_1_);
+	if(node_in_2_) dependencies.emplace_back(node_in_2_);
+	if(node_factor_) dependencies.emplace_back(node_factor_);
 	return dependencies;
 }
 
-void MixNode::getInputs(const NodeTreeData &node_tree_data, Rgba &cin_1, Rgba &cin_2, float &fin_1, float &fin_2, float &f_2) const
+MixNode::Inputs MixNode::getInputs(const NodeTreeData &node_tree_data) const
 {
-	f_2 = factor_ ? factor_->getScalar(node_tree_data) : cfactor_;
-	if(input_1_)
-	{
-		cin_1 = input_1_->getColor(node_tree_data);
-		fin_1 = input_1_->getScalar(node_tree_data);
-	}
-	else
-	{
-		cin_1 = col_1_;
-		fin_1 = val_1_;
-	}
-	if(input_2_)
-	{
-		cin_2 = input_2_->getColor(node_tree_data);
-		fin_2 = input_2_->getScalar(node_tree_data);
-	}
-	else
-	{
-		cin_2 = col_2_;
-		fin_2 = val_2_;
-	}
+	const float factor = node_factor_ ? node_factor_->getScalar(node_tree_data) : factor_;
+	NodeResult in_1 = node_in_1_ ?
+		NodeResult{node_in_1_->getColor(node_tree_data), node_in_1_->getScalar(node_tree_data)} :
+		NodeResult{col_1_, val_1_};
+	NodeResult in_2 = node_in_2_ ?
+		NodeResult{node_in_2_->getColor(node_tree_data), node_in_2_->getScalar(node_tree_data)} :
+		NodeResult{col_2_, val_2_};
+	return {std::move(in_1), std::move(in_2), factor};
 }
 
 class AddNode: public MixNode
@@ -515,13 +465,10 @@ class AddNode: public MixNode
 	public:
 		void eval(NodeTreeData &node_tree_data, const SurfacePoint &sp, const Camera *camera) const override
 		{
-			float f_2, fin_1, fin_2;
-			Rgba cin_1, cin_2;
-			getInputs(node_tree_data, cin_1, cin_2, fin_1, fin_2, f_2);
-
-			cin_1 += f_2 * cin_2;
-			fin_1 += f_2 * fin_2;
-			node_tree_data[getId()] = NodeResult(cin_1, fin_1);
+			Inputs inputs = getInputs(node_tree_data);
+			inputs.in_1_.col_ += inputs.factor_ * inputs.in_2_.col_;
+			inputs.in_1_.f_ += inputs.factor_ * inputs.in_2_.f_;
+			node_tree_data[getId()] = std::move(inputs.in_1_);
 		}
 };
 
@@ -530,14 +477,10 @@ class MultNode: public MixNode
 	public:
 		void eval(NodeTreeData &node_tree_data, const SurfacePoint &sp, const Camera *camera) const override
 		{
-			float f_1, f_2, fin_1, fin_2;
-			Rgba cin_1, cin_2;
-			getInputs(node_tree_data, cin_1, cin_2, fin_1, fin_2, f_2);
-			f_1 = 1.f - f_2;
-
-			cin_1 *= Rgba(f_1) + f_2 * cin_2;
-			fin_2 *= f_1 + f_2 * fin_2;
-			node_tree_data[getId()] = NodeResult(cin_1, fin_1);
+			Inputs inputs = getInputs(node_tree_data);
+			inputs.in_1_.col_ *= math::lerp(Rgba{1.f}, inputs.in_2_.col_, inputs.factor_);
+			inputs.in_1_.f_ *= math::lerp(1.f, inputs.in_2_.f_, inputs.factor_);
+			node_tree_data[getId()] = std::move(inputs.in_1_);
 		}
 };
 
@@ -546,13 +489,10 @@ class SubNode: public MixNode
 	public:
 		void eval(NodeTreeData &node_tree_data, const SurfacePoint &sp, const Camera *camera) const override
 		{
-			float f_2, fin_1, fin_2;
-			Rgba cin_1, cin_2;
-			getInputs(node_tree_data, cin_1, cin_2, fin_1, fin_2, f_2);
-
-			cin_1 -= f_2 * cin_2;
-			fin_1 -= f_2 * fin_2;
-			node_tree_data[getId()] = NodeResult(cin_1, fin_1);
+			Inputs inputs = getInputs(node_tree_data);
+			inputs.in_1_.col_ -= inputs.factor_ * inputs.in_2_.col_;
+			inputs.in_1_.f_ -= inputs.factor_ * inputs.in_2_.f_;
+			node_tree_data[getId()] = std::move(inputs.in_1_);
 		}
 };
 
@@ -561,14 +501,11 @@ class ScreenNode: public MixNode
 	public:
 		void eval(NodeTreeData &node_tree_data, const SurfacePoint &sp, const Camera *camera) const override
 		{
-			float f_1, f_2, fin_1, fin_2;
-			Rgba cin_1, cin_2;
-			getInputs(node_tree_data, cin_1, cin_2, fin_1, fin_2, f_2);
-			f_1 = 1.f - f_2;
-
-			const Rgba color { Rgba{1.f} - (Rgba{f_1} + f_2 * (Rgba{1.f} - cin_2)) * (Rgba{1.f} - cin_1) };
-			const float scalar = 1.f - (f_1 + f_2 * (1.f - fin_2)) * (1.f - fin_1);
-			node_tree_data[getId()] = NodeResult(color, scalar);
+			Inputs inputs = getInputs(node_tree_data);
+			const float factor_reversed = 1.f - inputs.factor_;
+			const Rgba color { Rgba{1.f} - (Rgba{factor_reversed} + inputs.factor_ * (Rgba{1.f} - inputs.in_2_.col_)) * (Rgba{1.f} - inputs.in_1_.col_) };
+			const float scalar = 1.f - (factor_reversed + inputs.factor_ * (1.f - inputs.in_2_.f_)) * (1.f - inputs.in_1_.f_);
+			node_tree_data[getId()] = { color, scalar };
 		}
 };
 
@@ -577,17 +514,16 @@ class DiffNode: public MixNode
 	public:
 		void eval(NodeTreeData &node_tree_data, const SurfacePoint &sp, const Camera *camera) const override
 		{
-			float f_1, f_2, fin_1, fin_2;
-			Rgba cin_1, cin_2;
-			getInputs(node_tree_data, cin_1, cin_2, fin_1, fin_2, f_2);
-			f_1 = 1.f - f_2;
-
-			cin_1.r_ = f_1 * cin_1.r_ + f_2 * std::abs(cin_1.r_ - cin_2.r_);
-			cin_1.g_ = f_1 * cin_1.g_ + f_2 * std::abs(cin_1.g_ - cin_2.g_);
-			cin_1.b_ = f_1 * cin_1.b_ + f_2 * std::abs(cin_1.b_ - cin_2.b_);
-			cin_1.a_ = f_1 * cin_1.a_ + f_2 * std::abs(cin_1.a_ - cin_2.a_);
-			fin_1   = f_1 * fin_1 + f_2 * std::abs(fin_1 - fin_2);
-			node_tree_data[getId()] = NodeResult(cin_1, fin_1);
+			Inputs inputs = getInputs(node_tree_data);
+			const auto mix_function = [](float val_1, float val_2, float factor) -> float {
+				return math::lerp(val_1, std::abs(val_1 - val_2), factor);
+			};
+			inputs.in_1_.col_.r_ = mix_function(inputs.in_1_.col_.r_, inputs.in_2_.col_.r_, inputs.factor_);
+			inputs.in_1_.col_.g_ = mix_function(inputs.in_1_.col_.g_, inputs.in_2_.col_.g_, inputs.factor_);
+			inputs.in_1_.col_.b_ = mix_function(inputs.in_1_.col_.b_, inputs.in_2_.col_.b_, inputs.factor_);
+			inputs.in_1_.col_.a_ = mix_function(inputs.in_1_.col_.a_, inputs.in_2_.col_.a_, inputs.factor_);
+			inputs.in_1_.f_ = mix_function(inputs.in_1_.f_, inputs.in_2_.f_, inputs.factor_);
+			node_tree_data[getId()] = std::move(inputs.in_1_);
 		}
 };
 
@@ -596,18 +532,15 @@ class DarkNode: public MixNode
 	public:
 		void eval(NodeTreeData &node_tree_data, const SurfacePoint &sp, const Camera *camera) const override
 		{
-			float f_2, fin_1, fin_2;
-			Rgba cin_1, cin_2;
-			getInputs(node_tree_data, cin_1, cin_2, fin_1, fin_2, f_2);
-
-			cin_2 *= f_2;
-			if(cin_2.r_ < cin_1.r_) cin_1.r_ = cin_2.r_;
-			if(cin_2.g_ < cin_1.g_) cin_1.g_ = cin_2.g_;
-			if(cin_2.b_ < cin_1.b_) cin_1.b_ = cin_2.b_;
-			if(cin_2.a_ < cin_1.a_) cin_1.a_ = cin_2.a_;
-			fin_2 *= f_2;
-			if(fin_2 < fin_1) fin_1 = fin_2;
-			node_tree_data[getId()] = NodeResult(cin_1, fin_1);
+			Inputs inputs = getInputs(node_tree_data);
+			inputs.in_2_.col_ *= inputs.factor_;
+			if(inputs.in_2_.col_.r_ < inputs.in_1_.col_.r_) inputs.in_1_.col_.r_ = inputs.in_2_.col_.r_;
+			if(inputs.in_2_.col_.g_ < inputs.in_1_.col_.g_) inputs.in_1_.col_.g_ = inputs.in_2_.col_.g_;
+			if(inputs.in_2_.col_.b_ < inputs.in_1_.col_.b_) inputs.in_1_.col_.b_ = inputs.in_2_.col_.b_;
+			if(inputs.in_2_.col_.a_ < inputs.in_1_.col_.a_) inputs.in_1_.col_.a_ = inputs.in_2_.col_.a_;
+			inputs.in_2_.f_ *= inputs.factor_;
+			if(inputs.in_2_.f_ < inputs.in_1_.f_) inputs.in_1_.f_ = inputs.in_2_.f_;
+			node_tree_data[getId()] = std::move(inputs.in_1_);
 		}
 };
 
@@ -616,18 +549,15 @@ class LightNode: public MixNode
 	public:
 		void eval(NodeTreeData &node_tree_data, const SurfacePoint &sp, const Camera *camera) const override
 		{
-			float f_2, fin_1, fin_2;
-			Rgba cin_1, cin_2;
-			getInputs(node_tree_data, cin_1, cin_2, fin_1, fin_2, f_2);
-
-			cin_2 *= f_2;
-			if(cin_2.r_ > cin_1.r_) cin_1.r_ = cin_2.r_;
-			if(cin_2.g_ > cin_1.g_) cin_1.g_ = cin_2.g_;
-			if(cin_2.b_ > cin_1.b_) cin_1.b_ = cin_2.b_;
-			if(cin_2.a_ > cin_1.a_) cin_1.a_ = cin_2.a_;
-			fin_2 *= f_2;
-			if(fin_2 > fin_1) fin_1 = fin_2;
-			node_tree_data[getId()] = NodeResult(cin_1, fin_1);
+			Inputs inputs = getInputs(node_tree_data);
+			inputs.in_2_.col_ *= inputs.factor_;
+			if(inputs.in_2_.col_.r_ > inputs.in_1_.col_.r_) inputs.in_1_.col_.r_ = inputs.in_2_.col_.r_;
+			if(inputs.in_2_.col_.g_ > inputs.in_1_.col_.g_) inputs.in_1_.col_.g_ = inputs.in_2_.col_.g_;
+			if(inputs.in_2_.col_.b_ > inputs.in_1_.col_.b_) inputs.in_1_.col_.b_ = inputs.in_2_.col_.b_;
+			if(inputs.in_2_.col_.a_ > inputs.in_1_.col_.a_) inputs.in_1_.col_.a_ = inputs.in_2_.col_.a_;
+			inputs.in_2_.f_ *= inputs.factor_;
+			if(inputs.in_2_.f_ > inputs.in_1_.f_) inputs.in_1_.f_ = inputs.in_2_.f_;
+			node_tree_data[getId()] = std::move(inputs.in_1_);
 		}
 };
 
@@ -636,22 +566,21 @@ class OverlayNode: public MixNode
 	public:
 		void eval(NodeTreeData &node_tree_data, const SurfacePoint &sp, const Camera *camera) const override
 		{
-			float f_1, f_2, fin_1, fin_2;
-			Rgba cin_1, cin_2;
-			getInputs(node_tree_data, cin_1, cin_2, fin_1, fin_2, f_2);
-			f_1 = 1.f - f_2;
-
-			const Rgba color {
-				(cin_1.r_ < 0.5f) ? cin_1.r_ * (f_1 + 2.f * f_2 * cin_2.r_) : 1.f - (f_1 + 2.f * f_2 * (1.f - cin_2.r_)) * (1.f - cin_1.r_),
-				(cin_1.g_ < 0.5f) ? cin_1.g_ * (f_1 + 2.f * f_2 * cin_2.g_) : 1.f - (f_1 + 2.f * f_2 * (1.f - cin_2.g_)) * (1.f - cin_1.g_),
-				(cin_1.b_ < 0.5f) ? cin_1.b_ * (f_1 + 2.f * f_2 * cin_2.b_) : 1.f - (f_1 + 2.f * f_2 * (1.f - cin_2.b_)) * (1.f - cin_1.b_),
-				(cin_1.a_ < 0.5f) ? cin_1.a_ * (f_1 + 2.f * f_2 * cin_2.a_) : 1.f - (f_1 + 2.f * f_2 * (1.f - cin_2.a_)) * (1.f - cin_1.a_)
+			Inputs inputs = getInputs(node_tree_data);
+			const auto overlay_function = [](float val_1, float val_2, float factor) -> float {
+				if(val_1 < 0.5f) return val_1 * ((1.f - factor) + 2.f * factor * val_2);
+				else return 1.f - ((1.f - factor) + 2.f * factor * (1.f - val_2)) * (1.f - val_1);
 			};
-			const float scalar = (fin_1 < 0.5f) ? fin_1 * (f_1 + 2.f * f_2 * fin_2) : 1.f - (f_1 + 2.f * f_2 * (1.f - fin_2)) * (1.f - fin_1);
-			node_tree_data[getId()] = NodeResult(color, scalar);
+			const Rgba color {
+					overlay_function(inputs.in_1_.col_.r_, inputs.in_2_.col_.r_, inputs.factor_),
+					overlay_function(inputs.in_1_.col_.g_, inputs.in_2_.col_.g_, inputs.factor_),
+					overlay_function(inputs.in_1_.col_.b_, inputs.in_2_.col_.b_, inputs.factor_),
+					overlay_function(inputs.in_1_.col_.a_, inputs.in_2_.col_.a_, inputs.factor_)
+			};
+			const float scalar = overlay_function(inputs.in_1_.f_, inputs.in_2_.f_, inputs.factor_);
+			node_tree_data[getId()] = {color, scalar};
 		}
 };
-
 
 ShaderNode * MixNode::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params)
 {
