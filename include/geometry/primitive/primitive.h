@@ -54,7 +54,7 @@ class Primitive
 		/*! a possibly more precise check to find out if the primitve really
 			intersects the bound of interest, given that the primitive's bound does.
 			used e.g. for optimized kd-tree construction */
-		virtual bool intersectsBound(const ExBound &b, const Matrix4 *obj_to_world) const { return true; };
+		virtual bool intersectsBound(const ExBound &ex_bound, const Matrix4 *obj_to_world) const { return true; };
 		/*! indicate if the object has a clipping implementation */
 		virtual bool clippingSupport() const { return false; }
 		/*! basic ray primitive interection for raytracing.

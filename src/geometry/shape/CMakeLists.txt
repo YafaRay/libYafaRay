@@ -18,14 +18,5 @@
 
 target_sources(libyafaray4
 	PRIVATE
-		axis.cc
-		bound.cc
-		matrix4.cc
-		poly_double.cc
-		surface.cc
-		vector.cc
+		shape_triangle.cc
 )
-
-add_subdirectory(object)
-add_subdirectory(primitive)
-add_subdirectory(shape)
