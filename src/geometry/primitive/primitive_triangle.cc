@@ -111,22 +111,11 @@ std::unique_ptr<const SurfacePoint> TrianglePrimitive::getSurface(const RayDiffe
 	sp->prim_num_ = getSelfIndex();
 	sp->p_ = hit_point;
 	std::tie(sp->nu_, sp->nv_) = Vec3::createCoordsSystem(sp->n_);
-	calculateShadingSpace(*sp);
+	sp->calculateShadingSpace();
 	sp->material_ = getMaterial();
 	sp->setRayDifferentials(ray_differentials);
 	sp->mat_data_ = std::shared_ptr<const MaterialData>(sp->material_->initBsdf(*sp, camera));
 	return sp;
-}
-
-void TrianglePrimitive::calculateShadingSpace(SurfacePoint &sp)
-{
-	// transform dPdU and dPdV in shading space
-	sp.ds_du_.x() = sp.nu_ * sp.dp_du_;
-	sp.ds_du_.y() = sp.nv_ * sp.dp_du_;
-	sp.ds_du_.z() = sp.n_ * sp.dp_du_;
-	sp.ds_dv_.x() = sp.nu_ * sp.dp_dv_;
-	sp.ds_dv_.y() = sp.nv_ * sp.dp_dv_;
-	sp.ds_dv_.z() = sp.n_ * sp.dp_dv_;
 }
 
 PolyDouble::ClipResultWithBound TrianglePrimitive::clipToBound(Logger &logger, const std::array<Vec3Double, 2> &bound, const ClipPlane &clip_plane, const PolyDouble &poly, const Matrix4 *obj_to_world) const

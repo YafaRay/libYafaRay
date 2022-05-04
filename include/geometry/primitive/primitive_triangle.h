@@ -42,7 +42,6 @@ class TrianglePrimitive final : public FacePrimitive
 		float surfaceArea(const Matrix4 *obj_to_world) const override;
 		std::pair<Point3, Vec3> sample(float s_1, float s_2, const Matrix4 *obj_to_world) const override;
 		void calculateGeometricFaceNormal() override;
-		static void calculateShadingSpace(SurfacePoint &sp);
 };
 
 inline TrianglePrimitive::TrianglePrimitive(const std::vector<int> &vertices_indices, const std::vector<int> &vertices_uv_indices, const MeshObject &mesh_object) : FacePrimitive(vertices_indices, vertices_uv_indices, mesh_object)

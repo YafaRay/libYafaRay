@@ -60,6 +60,7 @@ class SurfacePoint final
 		SurfacePoint& operator=(const SurfacePoint &sp) = default;
 		SurfacePoint(SurfacePoint &&surface_point) = default;
 		SurfacePoint& operator=(SurfacePoint&& surface_point) = default;
+		void calculateShadingSpace();
 		static Vec3 normalFaceForward(const Vec3 &normal_geometry, const Vec3 &normal, const Vec3 &incoming_vector);
 		static SurfacePoint blendSurfacePoints(SurfacePoint const &sp_1, SurfacePoint const &sp_2, float alpha);
 		float getDistToNearestEdge() const;
@@ -133,6 +134,17 @@ inline float SurfacePoint::getDistToNearestEdge() const
 	const float w_dist_rel = 0.5f - std::abs(intersect_data_.barycentric_w_ - 0.5f);
 	const float w_dist_abs = w_dist_rel * (dp_dv_abs_ - dp_du_abs_).length();
 	return math::min(u_dist_abs, v_dist_abs, w_dist_abs);
+}
+
+inline void SurfacePoint::calculateShadingSpace()
+{
+	// transform dPdU and dPdV in shading space
+	ds_du_.x() = nu_ * dp_du_;
+	ds_du_.y() = nv_ * dp_du_;
+	ds_du_.z() = n_ * dp_du_;
+	ds_dv_.x() = nu_ * dp_dv_;
+	ds_dv_.y() = nv_ * dp_dv_;
+	ds_dv_.z() = n_ * dp_dv_;
 }
 
 inline Vec3 SurfacePoint::normalFaceForward(const Vec3 &normal_geometry, const Vec3 &normal, const Vec3 &incoming_vector)
