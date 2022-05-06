@@ -204,7 +204,7 @@ bool SppmIntegrator::renderTile(FastRandom &fast_random, std::vector<int> &corre
 				const float time = math::addMod1(static_cast<float>(sample) * d_1, toff); //(0.5+(float)sample)*d1;
 				// the (1/n, Larcher&Pillichshammer-Seq.) only gives good coverage when total sample count is known
 				// hence we use scrambled (Sobol, van-der-Corput) for multipass AA //!< the current (normalized) frame time  //FIXME, time not currently used in libYafaRay
-
+				pixel_sampling_data.time_ = time;
 				float dx = 0.5f, dy = 0.5f;
 				dx = sample::riVdC(pixel_sampling_data.sample_, pixel_sampling_data.offset_);
 				dy = sample::riS(pixel_sampling_data.sample_, pixel_sampling_data.offset_);

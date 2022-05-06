@@ -18,6 +18,7 @@
 
 #include "geometry/object/object.h"
 #include "geometry/object/object_mesh.h"
+#include "geometry/object/object_mesh_bezier.h"
 #include "geometry/object/object_curve.h"
 #include "geometry/object/object_primitive.h"
 #include "geometry/primitive/primitive_sphere.h"
@@ -38,6 +39,7 @@ Object * Object::factory(Logger &logger, const Scene &scene, const std::string &
 	params.getParam("type", type);
 	Object *object = nullptr;
 	if(type == "mesh") object = MeshObject::factory(logger, scene, name, params);
+	else if(type == "mesh_bezier") object = MeshBezierObject::factory(logger, scene, name, params);
 	else if(type == "curve") object = CurveObject::factory(logger, scene, name, params);
 	else if(type == "sphere")
 	{

@@ -238,15 +238,4 @@ bool MeshObject::smoothVerticesNormals(Logger &logger, float angle)
 	return true;
 }
 
-/*int MeshObject::convertToBezierControlPoints()
-{
-	const int n = points_.size();
-	if(n % 3 == 0)
-	{
-		//convert point 2 to quadratic bezier control point
-		points_[n - 2] = 2.f * points_[n - 2] - 0.5f * (points_[n - 3] + points_[n - 1]);
-	}
-	return (n - 1) / 3;
-}*/
-
 END_YAFARAY

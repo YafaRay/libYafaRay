@@ -939,12 +939,6 @@ int Scene::addVertex(const Point3 &p)
 	if(creation_state_.stack_.front() != CreationState::Object) return -1;
 	current_object_->addPoint(p);
 	return current_object_->lastVertexId();
-/*FIXME BsTriangle handling? if(geometry_creation_state_.cur_obj_->type_ == mtrim_global)
-	{
-		geometry_creation_state_.cur_obj_->mobj_->addPoint(p);
-		geometry_creation_state_.cur_obj_->last_vert_id_ = geometry_creation_state_.cur_obj_->mobj_->getPoints().size() - 1;
-		return geometry_creation_state_.cur_obj_->mobj_->convertToBezierControlPoints();
-	}*/
 }
 
 int Scene::addVertex(const Point3 &p, const Point3 &orco)
@@ -953,8 +947,6 @@ int Scene::addVertex(const Point3 &p, const Point3 &orco)
 	current_object_->addPoint(p);
 	current_object_->addOrcoPoint(orco);
 	return current_object_->lastVertexId();
-
-	//	FIXME BsTriangle handling? if(object_creation_state_.cur_obj_->type_ == mtrim_global) return addVertex(p);
 }
 
 void Scene::addVertexNormal(const Vec3 &n)

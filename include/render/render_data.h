@@ -37,6 +37,7 @@ struct PixelSamplingData final
 	int sample_ = 0; //!< number of samples inside this pixels so far
 	int number_ = 0;
 	unsigned int offset_ = 0; //!< a "noise-like" pixel offset you may use to decorelate sampling of adjacent pixel.
+	float time_ = 0.f;
 };
 
 END_YAFARAY

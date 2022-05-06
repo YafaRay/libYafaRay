@@ -77,9 +77,10 @@ Rgb MonteCarloIntegrator::estimateOneDirectLight(RandomGenerator &random_generat
 	return doLightEstimation(random_generator, nullptr, chromatic_enabled, wavelength, lights_[lnum], sp, wo, lnum, ray_division, pixel_sampling_data) * num_lights;
 }
 
-Rgb MonteCarloIntegrator::diracLight(RandomGenerator &random_generator, ColorLayers *color_layers, const Light *light, const Vec3 &wo, const SurfacePoint &sp, bool cast_shadows) const
+Rgb MonteCarloIntegrator::diracLight(RandomGenerator &random_generator, ColorLayers *color_layers, const Light *light, const Vec3 &wo, const SurfacePoint &sp, bool cast_shadows, float time) const
 {
 	Ray light_ray;
+	light_ray.time_ = time;
 	Rgb lcol;
 	if(light->illuminate(sp, lcol, light_ray))
 	{
@@ -153,10 +154,11 @@ Rgb MonteCarloIntegrator::diracLight(RandomGenerator &random_generator, ColorLay
 	else return Rgb{0.f};
 }
 
-Rgb MonteCarloIntegrator::areaLightSampleLight(Halton &hal_2, Halton &hal_3, RandomGenerator &random_generator, ColorLayers *color_layers, const Light *light, const Vec3 &wo, const SurfacePoint &sp, bool cast_shadows, unsigned int num_samples, float inv_num_samples) const
+Rgb MonteCarloIntegrator::areaLightSampleLight(Halton &hal_2, Halton &hal_3, RandomGenerator &random_generator, ColorLayers *color_layers, const Light *light, const Vec3 &wo, const SurfacePoint &sp, bool cast_shadows, unsigned int num_samples, float inv_num_samples, float time) const
 {
 	Ray light_ray;
 	light_ray.from_ = sp.p_;
+	light_ray.time_ = time;
 	Rgb col{0.f};
 	std::unique_ptr<ColorLayerAccum> layer_shadow;
 	std::unique_ptr<ColorLayerAccum> layer_mat_index_mask_shadow;
@@ -388,7 +390,7 @@ Rgb MonteCarloIntegrator::doLightEstimation(RandomGenerator &random_generator, C
 	const bool cast_shadows = light->castShadows() && sp.material_->getReceiveShadows();
 	if(light->diracLight()) // handle lights with delta distribution, e.g. point and directional lights
 	{
-		col += diracLight(random_generator, color_layers, light, wo, sp, cast_shadows);
+		col += diracLight(random_generator, color_layers, light, wo, sp, cast_shadows, pixel_sampling_data.time_);
 	}
 	else // area light and suchlike
 	{
@@ -399,7 +401,7 @@ Rgb MonteCarloIntegrator::doLightEstimation(RandomGenerator &random_generator, C
 		const unsigned int offs = num_samples * pixel_sampling_data.sample_ + pixel_sampling_data.offset_ + l_offs;
 		Halton hal_2(2, offs - 1);
 		Halton hal_3(3, offs - 1);
-		col += areaLightSampleLight(hal_2, hal_3, random_generator, color_layers, light, wo, sp, cast_shadows, num_samples, inv_num_samples);
+		col += areaLightSampleLight(hal_2, hal_3, random_generator, color_layers, light, wo, sp, cast_shadows, num_samples, inv_num_samples, pixel_sampling_data.time_);
 		hal_2.setStart(offs - 1);
 		hal_3.setStart(offs - 1);
 		col += areaLightSampleMaterial(hal_2, hal_3, random_generator, color_layers, chromatic_enabled, wavelength, light, wo, sp, cast_shadows, num_samples, inv_num_samples);

@@ -26,7 +26,7 @@
 
 BEGIN_YAFARAY
 
-class TrianglePrimitive final : public FacePrimitive
+class TrianglePrimitive : public FacePrimitive
 {
 	public:
 		TrianglePrimitive(const std::vector<int> &vertices_indices, const std::vector<int> &vertices_uv_indices, const MeshObject &mesh_object);

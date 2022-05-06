@@ -63,7 +63,6 @@ class MeshObject : public ObjectBasic
 		int addUvValue(const Uv &uv) override { uv_values_.emplace_back(uv); return static_cast<int>(uv_values_.size()) - 1; }
 		void setSmooth(bool smooth) override { is_smooth_ = smooth; }
 		bool smoothVerticesNormals(Logger &logger, float angle) override;
-		//int convertToBezierControlPoints();
 		bool calculateObject(const std::unique_ptr<const Material> *material) override;
 
 	protected:
