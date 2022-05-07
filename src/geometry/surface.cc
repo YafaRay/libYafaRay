@@ -18,9 +18,15 @@
 
 #include "geometry/surface.h"
 #include "geometry/ray.h"
+#include "geometry/primitive/primitive.h"
 #include "math/interpolation.h"
 
 BEGIN_YAFARAY
+
+float SurfacePoint::getDistToNearestEdge() const
+{
+	return primitive_->getDistToNearestEdge(intersect_data_.u_, intersect_data_.v_, dp_du_abs_, dp_dv_abs_);
+}
 
 void SurfacePoint::setRayDifferentials(const RayDifferentials *ray_differentials)
 {

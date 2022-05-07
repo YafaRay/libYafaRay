@@ -172,7 +172,7 @@ void ExportC::setCurrentMaterial(const char *name) noexcept
 	}
 }
 
-bool ExportC::addFace(int a, int b, int c) noexcept
+bool ExportC::addTriangle(int a, int b, int c) noexcept
 {
 	file_ << "\t" << "yafaray_addTriangle(yi, " << a << ", " << b << ", " << c << ");\n";
 	++section_num_lines_;
@@ -180,7 +180,7 @@ bool ExportC::addFace(int a, int b, int c) noexcept
 	return true;
 }
 
-bool ExportC::addFace(int a, int b, int c, int uv_a, int uv_b, int uv_c) noexcept
+bool ExportC::addTriangleWithUv(int a, int b, int c, int uv_a, int uv_b, int uv_c) noexcept
 {
 	file_ << "\t" << "yafaray_addTriangleWithUv(yi, " << a << ", " << b << ", " << c << ", " << uv_a << ", " << uv_b << ", " << uv_c << ");\n";
 	++section_num_lines_;
@@ -188,6 +188,21 @@ bool ExportC::addFace(int a, int b, int c, int uv_a, int uv_b, int uv_c) noexcep
 	return true;
 }
 
+bool ExportC::addQuad(int a, int b, int c, int d) noexcept
+{
+	file_ << "\t" << "yafaray_addQuad(yi, " << a << ", " << b << ", " << c << ", " << d << ");\n";
+	++section_num_lines_;
+	if(section_num_lines_ >= section_max_lines_) file_ << sectionSplit();
+	return true;
+}
+
+bool ExportC::addQuadWithUv(int a, int b, int c, int d, int uv_a, int uv_b, int uv_c, int uv_d) noexcept
+{
+	file_ << "\t" << "yafaray_addQuadWithUv(yi, " << a << ", " << b << ", " << c << ", " << d << ", " << uv_a << ", " << uv_b << ", " << uv_c << ", " << uv_d << ");\n";
+	++section_num_lines_;
+	if(section_num_lines_ >= section_max_lines_) file_ << sectionSplit();
+	return true;
+}
 int ExportC::addUv(float u, float v) noexcept
 {
 	file_ << "\t" << "yafaray_addUv(yi, " << u << ", " << v << ");\n";

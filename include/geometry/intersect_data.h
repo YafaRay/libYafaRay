@@ -29,9 +29,8 @@ struct IntersectData
 	void setIntersectData(const IntersectData &intersect_data);
 	bool hit_ = false;
 	float t_hit_;
-	float barycentric_u_;
-	float barycentric_v_;
-	float barycentric_w_;
+	float u_;
+	float v_;
 	float time_;
 };
 
@@ -41,9 +40,8 @@ inline void IntersectData::setIntersectData(const IntersectData &intersect_data)
 	if(hit_)
 	{
 		t_hit_ = intersect_data.t_hit_;
-		barycentric_u_ = intersect_data.barycentric_u_;
-		barycentric_v_ = intersect_data.barycentric_v_;
-		barycentric_w_ = intersect_data.barycentric_w_;
+		u_ = intersect_data.u_;
+		v_ = intersect_data.v_;
 		time_ = intersect_data.time_;
 	}
 }

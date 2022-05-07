@@ -31,6 +31,16 @@ struct Uv
 	float u_, v_;
 };
 
+inline Uv operator * (float f, const Uv &uv)
+{
+	return {f * uv.u_, f * uv.v_};
+}
+
+inline Uv operator + (const Uv &a, const Uv &b)
+{
+	return {a.u_ + b.u_, a.v_ + b.v_};
+}
+
 END_YAFARAY
 
 #endif //YAFARAY_UV_H

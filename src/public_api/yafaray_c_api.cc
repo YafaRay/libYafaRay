@@ -73,12 +73,12 @@ yafaray_bool_t yafaray_endObject(yafaray_Interface_t *interface) //!< end curren
 	return static_cast<yafaray_bool_t>(reinterpret_cast<yafaray::Interface *>(interface)->endObject());
 }
 
-int  yafaray_addVertex(yafaray_Interface_t *interface, double x, double y, double z) //!< add vertex to mesh; returns index to be used for addTriangle
+int  yafaray_addVertex(yafaray_Interface_t *interface, double x, double y, double z) //!< add vertex to mesh; returns index to be used for addTriangle/addQuad
 {
 	return reinterpret_cast<yafaray::Interface *>(interface)->addVertex(x, y, z);
 }
 
-int  yafaray_addVertexWithOrco(yafaray_Interface_t *interface, double x, double y, double z, double ox, double oy, double oz) //!< add vertex with Orco to mesh; returns index to be used for addTriangle
+int  yafaray_addVertexWithOrco(yafaray_Interface_t *interface, double x, double y, double z, double ox, double oy, double oz) //!< add vertex with Orco to mesh; returns index to be used for addTriangle/addQuad
 {
 	return reinterpret_cast<yafaray::Interface *>(interface)->addVertex(x, y, z, ox, oy, oz);
 }
@@ -90,15 +90,25 @@ void yafaray_addNormal(yafaray_Interface_t *interface, double nx, double ny, dou
 
 yafaray_bool_t yafaray_addTriangle(yafaray_Interface_t *interface, int a, int b, int c) //!< add a triangle given vertex indices and material pointer
 {
-	return static_cast<yafaray_bool_t>(reinterpret_cast<yafaray::Interface *>(interface)->addFace(a, b, c));
+	return static_cast<yafaray_bool_t>(reinterpret_cast<yafaray::Interface *>(interface)->addTriangle(a, b, c));
 }
 
 yafaray_bool_t yafaray_addTriangleWithUv(yafaray_Interface_t *interface, int a, int b, int c, int uv_a, int uv_b, int uv_c) //!< add a triangle given vertex and uv indices and material pointer
 {
-	return static_cast<yafaray_bool_t>(reinterpret_cast<yafaray::Interface *>(interface)->addFace(a, b, c, uv_a, uv_b, uv_c));
+	return static_cast<yafaray_bool_t>(reinterpret_cast<yafaray::Interface *>(interface)->addTriangleWithUv(a, b, c, uv_a, uv_b, uv_c));
 }
 
-int  yafaray_addUv(yafaray_Interface_t *interface, float u, float v) //!< add a UV coordinate pair; returns index to be used for addTriangle
+yafaray_bool_t yafaray_addQuad(yafaray_Interface_t *interface, int a, int b, int c, int d) //!< add a triangle given vertex indices and material pointer
+{
+	return static_cast<yafaray_bool_t>(reinterpret_cast<yafaray::Interface *>(interface)->addQuad(a, b, c, d));
+}
+
+yafaray_bool_t yafaray_addQuadWithUv(yafaray_Interface_t *interface, int a, int b, int c, int d, int uv_a, int uv_b, int uv_c, int uv_d) //!< add a triangle given vertex and uv indices and material pointer
+{
+	return static_cast<yafaray_bool_t>(reinterpret_cast<yafaray::Interface *>(interface)->addQuadWithUv(a, b, c, d, uv_a, uv_b, uv_c, uv_d));
+}
+
+int  yafaray_addUv(yafaray_Interface_t *interface, float u, float v) //!< add a UV coordinate pair; returns index to be used for addTriangle/addQuad
 {
 	return reinterpret_cast<yafaray::Interface *>(interface)->addUv(u, v);
 }

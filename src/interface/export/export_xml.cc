@@ -111,16 +111,29 @@ void ExportXml::setCurrentMaterial(const char *name) noexcept
 	}
 }
 
-bool ExportXml::addFace(int a, int b, int c) noexcept
+bool ExportXml::addTriangle(int a, int b, int c) noexcept
 {
 	file_ << "\t<f a=\"" << a << "\" b=\"" << b << "\" c=\"" << c << "\"/>\n";
 	return true;
 }
 
-bool ExportXml::addFace(int a, int b, int c, int uv_a, int uv_b, int uv_c) noexcept
+bool ExportXml::addTriangleWithUv(int a, int b, int c, int uv_a, int uv_b, int uv_c) noexcept
 {
 	file_ << "\t<f a=\"" << a << "\" b=\"" << b << "\" c=\"" << c
 			  << "\" uv_a=\"" << uv_a << "\" uv_b=\"" << uv_b << "\" uv_c=\"" << uv_c << "\"/>\n";
+	return true;
+}
+
+bool ExportXml::addQuad(int a, int b, int c, int d) noexcept
+{
+	file_ << "\t<f a=\"" << a << "\" b=\"" << b << "\" c=\"" << c << "\" d=\"" << d << "\"/>\n";
+	return true;
+}
+
+bool ExportXml::addQuadWithUv(int a, int b, int c, int d, int uv_a, int uv_b, int uv_c, int uv_d) noexcept
+{
+	file_ << "\t<f a=\"" << a << "\" b=\"" << b << "\" c=\"" << c << "\" d=\"" << d
+		  << "\" uv_a=\"" << uv_a << "\" uv_b=\"" << uv_b << "\" uv_c=\"" << uv_c << "\" uv_d=\"" << uv_d << "\"/>\n";
 	return true;
 }
 

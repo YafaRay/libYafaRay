@@ -119,15 +119,27 @@ void ExportPython::setCurrentMaterial(const char *name) noexcept
 	}
 }
 
-bool ExportPython::addFace(int a, int b, int c) noexcept
+bool ExportPython::addTriangle(int a, int b, int c) noexcept
 {
 	file_ << "yi.addTriangle(" << a << ", " << b << ", " << c << ")\n";
 	return true;
 }
 
-bool ExportPython::addFace(int a, int b, int c, int uv_a, int uv_b, int uv_c) noexcept
+bool ExportPython::addTriangleWithUv(int a, int b, int c, int uv_a, int uv_b, int uv_c) noexcept
 {
 	file_ << "yi.addTriangleWithUv(" << a << ", " << b << ", " << c << ", " << uv_a << ", " << uv_b << ", " << uv_c << ")\n";
+	return true;
+}
+
+bool ExportPython::addQuad(int a, int b, int c, int d) noexcept
+{
+	file_ << "yi.addQuad(" << a << ", " << b << ", " << c << ", " << d << ")\n";
+	return true;
+}
+
+bool ExportPython::addQuadWithUv(int a, int b, int c, int d, int uv_a, int uv_b, int uv_c, int uv_d) noexcept
+{
+	file_ << "yi.addQuadWithUv(" << a << ", " << b << ", " << c << ", " << d << ", " << uv_a << ", " << uv_b << ", " << uv_c << ", " << uv_d << ")\n";
 	return true;
 }
 

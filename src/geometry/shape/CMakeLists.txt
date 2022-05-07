@@ -19,4 +19,5 @@
 target_sources(libyafaray4
 	PRIVATE
 		shape_triangle.cc
+		shape_quad.cc
 )

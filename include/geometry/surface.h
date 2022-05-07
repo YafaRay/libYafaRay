@@ -89,6 +89,7 @@ class SurfacePoint final
 		std::shared_ptr<const MaterialData> mat_data_;
 		const Light *light_; //!< light source if surface point is on a light
 		const Object *object_; //!< object the prim belongs to
+		const Primitive *primitive_; //!< primitive the surface belongs to
 		//	point2d_t screenpos; // only used with 'win' texture coord. mode
 		IntersectData intersect_data_;
 
@@ -124,17 +125,6 @@ class SurfacePoint final
 	private:
 		static void dUdvFromDpdPdUdPdV(float &du, float &dv, const Point3 &dp, const Vec3 &dp_du, const Vec3 &dp_dv);
 };
-
-inline float SurfacePoint::getDistToNearestEdge() const
-{
-	const float u_dist_rel = 0.5f - std::abs(intersect_data_.barycentric_u_ - 0.5f);
-	const float u_dist_abs = u_dist_rel * dp_du_abs_.length();
-	const float v_dist_rel = 0.5f - std::abs(intersect_data_.barycentric_v_ - 0.5f);
-	const float v_dist_abs = v_dist_rel * dp_dv_abs_.length();
-	const float w_dist_rel = 0.5f - std::abs(intersect_data_.barycentric_w_ - 0.5f);
-	const float w_dist_abs = w_dist_rel * (dp_dv_abs_ - dp_du_abs_).length();
-	return math::min(u_dist_abs, v_dist_abs, w_dist_abs);
-}
 
 inline void SurfacePoint::calculateShadingSpace()
 {

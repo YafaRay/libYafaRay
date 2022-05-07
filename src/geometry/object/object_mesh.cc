@@ -18,6 +18,7 @@
 
 #include "geometry/object/object_mesh.h"
 #include "geometry/primitive/primitive_triangle.h"
+#include "geometry/primitive/primitive_quad.h"
 #include "geometry/uv.h"
 #include "scene/scene.h"
 #include "common/logger.h"
@@ -78,6 +79,7 @@ void MeshObject::addFace(const std::vector<int> &vertices, const std::vector<int
 {
 	std::unique_ptr<FacePrimitive> face;
 	if(vertices.size() == 3) face = std::make_unique<TrianglePrimitive>(vertices, vertices_uv, *this);
+	else if(vertices.size() == 4) face = std::make_unique<QuadPrimitive>(vertices, vertices_uv, *this);
 	else return; //Other primitives are not supported
 	face->setMaterial(material);
 	if(hasVerticesNormals()) face->setVerticesNormalsIndices(vertices);

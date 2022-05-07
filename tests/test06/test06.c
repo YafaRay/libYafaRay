@@ -1,7 +1,7 @@
 /****************************************************************************
  *      This is part of the libYafaRay package
  *
- *      test05.c : scene with texture and motion blur using mesh_bezier
+ *      test06.c : scene with quads
  *      Should work even with a "barebones" libYafaRay built without
  *      any dependencies
  * 
@@ -217,10 +217,8 @@ int main()
 	yafaray_paramsSetInt(yi, "num_faces", 6);
 	yafaray_paramsSetInt(yi, "num_vertices", 8);
 	yafaray_paramsSetInt(yi, "object_index", 5);
-	yafaray_paramsSetString(yi, "type", "mesh_bezier");
+	yafaray_paramsSetString(yi, "type", "mesh");
 	yafaray_paramsSetString(yi, "visibility", "visible");
-	yafaray_paramsSetFloat(yi, "time_range_start", 0.f);
-	yafaray_paramsSetFloat(yi, "time_range_end", 0.9f);
 	yafaray_createObject(yi, "Cube_TGA");
 	yafaray_paramsClearAll(yi);
 
@@ -233,31 +231,14 @@ int main()
 	yafaray_addVertexWithOrco(yi, 2.36442, -0.81854, 1.00136e-05, 1, 1, -1);
 	yafaray_addVertexWithOrco(yi, 2.36442, -0.81854, 2.00001, 1, 1, 1);
 
-	yafaray_addVertexWithOrco(yi, 1.364422, -1.81854, 1.00136e-05, -1, -1, -1);
-	yafaray_addVertexWithOrco(yi, 1.364422, -1.81854, 2.00001, -1, -1, 1);
-	yafaray_addVertexWithOrco(yi, 1.364422, 0.18146, 1.00136e-05, -1, 1, -1);
-	yafaray_addVertexWithOrco(yi, 1.364422, 0.18146, 2.00001, -1, 1, 1);
-	yafaray_addVertexWithOrco(yi, 3.36442, -1.81854, 1.00136e-05, 1, -1, -1);
-	yafaray_addVertexWithOrco(yi, 3.36442, -1.81854, 2.00001, 1, -1, 1);
-	yafaray_addVertexWithOrco(yi, 3.36442, 0.181464, 1.00136e-05, 1, 1, -1);
-	yafaray_addVertexWithOrco(yi, 3.36442, 0.181464, 2.00001, 1, 1, 1);
-
-	yafaray_addVertexWithOrco(yi, 1.364422, -0.81854, 1.00136e-05, -1, -1, -1);
-	yafaray_addVertexWithOrco(yi, 1.364422, -0.81854, 2.00001, -1, -1, 1);
-	yafaray_addVertexWithOrco(yi, 1.364422, 1.18146, 1.00136e-05, -1, 1, -1);
-	yafaray_addVertexWithOrco(yi, 1.364422, 1.18146, 2.00001, -1, 1, 1);
-	yafaray_addVertexWithOrco(yi, 3.36442, -0.81854, 1.00136e-05, 1, -1, -1);
-	yafaray_addVertexWithOrco(yi, 3.36442, -0.81854, 2.00001, 1, -1, 1);
-	yafaray_addVertexWithOrco(yi, 3.36442, 1.181464, 1.00136e-05, 1, 1, -1);
-	yafaray_addVertexWithOrco(yi, 3.36442, 1.181464, 2.00001, 1, 1, 1);
-
 	yafaray_setCurrentMaterial(yi, "Material_TGA");
 	yafaray_addQuad(yi, 2, 0, 1, 3);
 	yafaray_addQuad(yi, 3, 7, 6, 2);
 	yafaray_addQuad(yi, 7, 5, 4, 6);
 	yafaray_addQuad(yi, 0, 4, 5, 1);
 	yafaray_addQuad(yi, 0, 2, 6, 4);
-	yafaray_addQuad(yi, 5, 7, 3, 1);
+	yafaray_addTriangle(yi, 5, 7, 3);
+	yafaray_addTriangle(yi, 5, 3, 1);
 	yafaray_endObject(yi);
 	yafaray_paramsClearAll(yi);
 
@@ -335,7 +316,7 @@ int main()
 	yafaray_defineLayer(yi);
 	yafaray_paramsClearAll(yi);
 
-	yafaray_paramsSetInt(yi, "AA_minsamples", 30);
+	yafaray_paramsSetInt(yi, "AA_minsamples", 3);
 	yafaray_paramsSetInt(yi, "AA_passes", 1);
 	yafaray_paramsSetInt(yi, "AA_inc_samples", 1);
 	yafaray_paramsSetString(yi, "background_name", "world_background");
@@ -353,7 +334,7 @@ int main()
 	yafaray_paramsClearAll(yi);
 
 	/* Creating image output */
-	yafaray_paramsSetString(yi, "image_path", "./test05-output1.tga");
+	yafaray_paramsSetString(yi, "image_path", "./test06-output1.tga");
 	yafaray_paramsSetString(yi, "color_space", "sRGB");
 	yafaray_paramsSetString(yi, "badge_position", "top");
 	yafaray_createOutput(yi, "output1_tga");

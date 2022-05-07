@@ -17,6 +17,8 @@ LIBYAFARAY_4.0.0 {
         yafaray_addNormal;
         yafaray_addTriangle;
         yafaray_addTriangleWithUv;
+        yafaray_addQuad;
+        yafaray_addQuadWithUv;
         yafaray_addUv;
         yafaray_smoothMesh;
         yafaray_addInstance;

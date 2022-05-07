@@ -53,7 +53,7 @@ struct MinMax
 	static MinMax find(const Vec3Double &values);
 };
 
-MinMax MinMax::find(const Vec3Double &values)
+inline MinMax MinMax::find(const Vec3Double &values)
 {
 	MinMax min_max;
 	min_max.min_ = math::min(values[0], values[1], values[2]);
@@ -61,7 +61,7 @@ MinMax MinMax::find(const Vec3Double &values)
 	return min_max;
 }
 
-int planeBoxOverlap(const Vec3Double &normal, const Vec3Double &vert, const Vec3Double &maxbox)    // -NJMP-
+inline int planeBoxOverlap(const Vec3Double &normal, const Vec3Double &vert, const Vec3Double &maxbox)    // -NJMP-
 {
 	Vec3Double vmin, vmax;
 	for(int axis = 0; axis < 3; ++axis)
@@ -84,7 +84,7 @@ int planeBoxOverlap(const Vec3Double &normal, const Vec3Double &vert, const Vec3
 	return 0;
 }
 
-bool axisTest(double a, double b, double f_a, double f_b, const Vec3Double &v_a, const Vec3Double &v_b, const Vec3Double &boxhalfsize, int axis)
+inline bool axisTest(double a, double b, double f_a, double f_b, const Vec3Double &v_a, const Vec3Double &v_b, const Vec3Double &boxhalfsize, int axis)
 {
 	const int axis_a = (axis == Axis::X ? Axis::Y : Axis::X);
 	const int axis_b = (axis == Axis::Z ? Axis::Y : Axis::Z);
@@ -107,7 +107,7 @@ bool axisTest(double a, double b, double f_a, double f_b, const Vec3Double &v_a,
 	else return true;
 }
 
-bool triBoxOverlap(const Vec3Double &boxcenter, const Vec3Double &boxhalfsize, const std::array<Vec3Double, 3> &triverts)
+inline bool triBoxOverlap(const Vec3Double &boxcenter, const Vec3Double &boxhalfsize, const std::array<Vec3Double, 3> &triverts)
 {
 
 	/*    use separating axis theorem to test overlap between triangle and box */

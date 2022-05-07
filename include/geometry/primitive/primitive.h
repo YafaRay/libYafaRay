@@ -71,6 +71,7 @@ class Primitive
 		/* calculate surface area */
 		virtual float surfaceArea(const Matrix4 *obj_to_world) const = 0;
 		float surfaceArea() const { return surfaceArea(nullptr); }
+		virtual float getDistToNearestEdge(float u, float v, const Vec3 &dp_du_abs, const Vec3 &dp_dv_abs) const = 0;
 		/* obtains the geometric normal in the surface parametric u,v coordinates */
 		virtual Vec3 getGeometricFaceNormal(const Matrix4 *obj_to_world, float u, float v) const = 0;
 		Vec3 getGeometricFaceNormal(const Matrix4 *obj_to_world) const { return getGeometricFaceNormal(obj_to_world, 0.f, 0.f); }

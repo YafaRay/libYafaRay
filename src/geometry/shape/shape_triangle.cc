@@ -31,25 +31,32 @@ IntersectData ShapeTriangle::intersect(const Ray &ray) const
 	const float epsilon = 0.1f * min_raydist_global * std::max(edge_1.length(), edge_2.length());
 	const Vec3 pvec{ray.dir_ ^ edge_2};
 	const float det = edge_1 * pvec;
-	if(det > -epsilon && det < epsilon) return {};
-	const float inv_det = 1.f / det;
-	const Vec3 tvec{ray.from_ - vertices_[0]};
-	const float u = (tvec * pvec) * inv_det;
-	if(u < 0.f || u > 1.f) return {};
-	const Vec3 qvec{tvec ^ edge_1};
-	const float v = (ray.dir_ * qvec) * inv_det;
-	if((v < 0.f) || ((u + v) > 1.f)) return {};
-	const float t = edge_2 * qvec * inv_det;
-	if(t < epsilon) return {};
-	IntersectData intersect_data;
-	intersect_data.hit_ = true;
-	intersect_data.t_hit_ = t;
-	//UV <-> Barycentric UVW relationship is not obvious, interesting explanation in: https://www.scratchapixel.com/lessons/3d-basic-rendering/ray-tracing-rendering-a-triangle/barycentric-coordinates
-	intersect_data.barycentric_u_ = 1.f - u - v;
-	intersect_data.barycentric_v_ = u;
-	intersect_data.barycentric_w_ = v;
-	intersect_data.time_ = ray.time_;
-	return intersect_data;
+	if(det <= -epsilon || det >= epsilon)
+	{
+		const float inv_det = 1.f / det;
+		const Vec3 tvec{ray.from_ - vertices_[0]};
+		const float u = (tvec * pvec) * inv_det;
+		if(u >= 0.f && u <= 1.f)
+		{
+			const Vec3 qvec{tvec ^ edge_1};
+			const float v = (ray.dir_ * qvec) * inv_det;
+			if(v >= 0.f && (u + v) <= 1.f)
+			{
+				const float t = edge_2 * qvec * inv_det;
+				if(t >= epsilon)
+				{
+					IntersectData intersect_data;
+					intersect_data.hit_ = true;
+					intersect_data.t_hit_ = t;
+					intersect_data.u_ = u;
+					intersect_data.v_ = v;
+					intersect_data.time_ = ray.time_;
+					return intersect_data;
+				}
+			}
+		}
+	}
+	return {};
 }
 
 bool ShapeTriangle::intersectsBound(const ExBound &ex_bound) const

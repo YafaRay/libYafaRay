@@ -64,12 +64,14 @@ class Interface
 		virtual bool endGeometry() noexcept; //!< call after creating geometry;
 		virtual unsigned int getNextFreeId() noexcept;
 		virtual bool endObject() noexcept; //!< end current mesh and return to geometry state
-		virtual int  addVertex(double x, double y, double z) noexcept; //!< add vertex to mesh; returns index to be used for addTriangle
-		virtual int  addVertex(double x, double y, double z, double ox, double oy, double oz) noexcept; //!< add vertex with Orco to mesh; returns index to be used for addTriangle
+		virtual int  addVertex(double x, double y, double z) noexcept; //!< add vertex to mesh; returns index to be used for addTriangle/addQuad
+		virtual int  addVertex(double x, double y, double z, double ox, double oy, double oz) noexcept; //!< add vertex with Orco to mesh; returns index to be used for addTriangle/addQuad
 		virtual void addVertexNormal(double nx, double ny, double nz) noexcept; //!< add vertex normal to mesh; the vertex that will be attached to is the last one inserted by addVertex method
-		virtual bool addFace(int a, int b, int c) noexcept; //!< add a triangle given vertex indices and material pointer
-		virtual bool addFace(int a, int b, int c, int uv_a, int uv_b, int uv_c) noexcept; //!< add a triangle given vertex and uv indices and material pointer
-		virtual int  addUv(float u, float v) noexcept; //!< add a UV coordinate pair; returns index to be used for addTriangle
+		virtual bool addTriangle(int a, int b, int c) noexcept; //!< add a triangle given vertex indices and material pointer
+		virtual bool addTriangleWithUv(int a, int b, int c, int uv_a, int uv_b, int uv_c) noexcept; //!< add a triangle given vertex and uv indices and material pointer
+		virtual bool addQuad(int a, int b, int c, int d) noexcept; //!< add a quad given vertex indices and material pointer
+		virtual bool addQuadWithUv(int a, int b, int c, int d, int uv_a, int uv_b, int uv_c, int uv_d) noexcept; //!< add a quad given vertex and uv indices and material pointer
+		virtual int  addUv(float u, float v) noexcept; //!< add a UV coordinate pair; returns index to be used for addTriangle/addQuad
 		virtual bool smoothVerticesNormals(const char *name, double angle) noexcept; //!< smooth vertex normals of mesh with given ID and angle (in degrees)
 		virtual bool addInstance(const char *base_object_name, const Matrix4 &obj_to_world) noexcept;
 		virtual void paramsSetVector(const char *name, double x, double y, double z) noexcept;

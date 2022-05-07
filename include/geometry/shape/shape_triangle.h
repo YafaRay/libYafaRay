@@ -40,6 +40,9 @@ class ShapeTriangle final
 		Vec3 calculateFaceNormal() const;
 		float surfaceArea() const;
 		Point3 sample(float s_1, float s_2) const;
+		//UV <-> Barycentric UVW relationship is not obvious, interesting explanation in: https://www.scratchapixel.com/lessons/3d-basic-rendering/ray-tracing-rendering-a-triangle/barycentric-coordinates
+		static std::tuple<float, float, float> getBarycentricUVW(float u, float v) { return { 1.f - u - v, u, v }; }
+		static float getDistToNearestEdge(float u, float v, const Vec3 &dp_du_abs, const Vec3 &dp_dv_abs);
 
 	private:
 		std::array<Point3, 3> vertices_;
@@ -63,6 +66,18 @@ inline Point3 ShapeTriangle::sample(float s_1, float s_2) const
 	const float u = 1.f - su_1;
 	const float v = s_2 * su_1;
 	return u * vertices_[0] + v * vertices_[1] + (1.f - u - v) * vertices_[2];
+}
+
+inline float ShapeTriangle::getDistToNearestEdge(float u, float v, const Vec3 &dp_du_abs, const Vec3 &dp_dv_abs)
+{
+	const auto [barycentric_u, barycentric_v, barycentric_w] = ShapeTriangle::getBarycentricUVW(u, v);
+	const float u_dist_rel = 0.5f - std::abs(barycentric_u - 0.5f);
+	const float u_dist_abs = u_dist_rel * dp_du_abs.length();
+	const float v_dist_rel = 0.5f - std::abs(barycentric_u - 0.5f);
+	const float v_dist_abs = v_dist_rel * dp_dv_abs.length();
+	const float w_dist_rel = 0.5f - std::abs(barycentric_w - 0.5f);
+	const float w_dist_abs = w_dist_rel * (dp_dv_abs - dp_du_abs).length();
+	return math::min(u_dist_abs, v_dist_abs, w_dist_abs);
 }
 
 END_YAFARAY

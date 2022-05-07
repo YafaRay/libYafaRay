@@ -20,6 +20,7 @@
 #include "common/logger.h"
 #include "common/param.h"
 #include "geometry/primitive/primitive_triangle_bezier.h"
+#include "geometry/primitive/primitive_quad_bezier.h"
 #include "scene/scene.h"
 
 BEGIN_YAFARAY
@@ -56,7 +57,7 @@ Object * MeshBezierObject::factory(Logger &logger, const Scene &scene, const std
 		return object;
 }
 
-MeshBezierObject::MeshBezierObject(int num_vertices, int num_faces, bool has_uv, bool has_orco, float time_range_start, float time_range_end) : MeshObject(num_vertices * 3, num_faces, has_uv, has_orco), time_range_start_(time_range_start), time_range_end_(time_range_end)
+MeshBezierObject::MeshBezierObject(int num_vertices, int num_faces, bool has_uv, bool has_orco, float time_range_start, float time_range_end) : MeshObject(num_vertices * FacePrimitive::time_steps_.size(), num_faces, has_uv, has_orco), time_range_start_(time_range_start), time_range_end_(time_range_end)
 {
 }
 
@@ -64,6 +65,7 @@ void MeshBezierObject::addFace(const std::vector<int> &vertices, const std::vect
 {
 	std::unique_ptr<FacePrimitive> face;
 	if(vertices.size() == 3) face = std::make_unique<TriangleBezierPrimitive>(vertices, vertices_uv, *this);
+	else if(vertices.size() == 4) face = std::make_unique<QuadBezierPrimitive>(vertices, vertices_uv, *this);
 	else return; //Other primitives are not supported
 	face->setMaterial(material);
 	if(hasVerticesNormals()) face->setVerticesNormalsIndices(vertices);
@@ -72,17 +74,17 @@ void MeshBezierObject::addFace(const std::vector<int> &vertices, const std::vect
 
 Vec3 MeshBezierObject::getVertexNormal(BezierTimeStep time_step, int index) const
 {
-	return vertices_normals_vectors_[static_cast<int>(time_step) * numVertices() / 3 + index];
+	return vertices_normals_vectors_[static_cast<int>(time_step) * numVertices() / FacePrimitive::time_steps_.size() + index];
 }
 
 Point3 MeshBezierObject::getVertex(BezierTimeStep time_step, int index) const
 {
-	return points_[static_cast<int>(time_step) * numVertices() / 3 + index];
+	return points_[static_cast<int>(time_step) * numVertices() / FacePrimitive::time_steps_.size() + index];
 }
 
 Point3 MeshBezierObject::getOrcoVertex(BezierTimeStep time_step, int index) const
 {
-	return orco_points_[static_cast<int>(time_step) * numVertices() / 3 + index];
+	return orco_points_[static_cast<int>(time_step) * numVertices() / FacePrimitive::time_steps_.size() + index];
 }
 
 bool MeshBezierObject::calculateObject(const std::unique_ptr<const Material> *material)
@@ -94,7 +96,7 @@ bool MeshBezierObject::calculateObject(const std::unique_ptr<const Material> *ma
 void MeshBezierObject::convertToBezierControlPoints()
 {
 	//convert previous vertex for time_mid (vertex 1) to quadratic Bezier control point p1. This way when the vertex 1 is calculated as part of the Bezier curve, it will match the original vertex 1 coordinates.
-	const int num_vertices = numVertices() / 3;
+	const int num_vertices = numVertices() / FacePrimitive::time_steps_.size();
 	for(int i = 0; i < num_vertices; ++i)
 	{
 		points_[num_vertices + i] = Point3{2.f * points_[num_vertices + i] - 0.5f * (points_[i] + points_[2 * num_vertices + i])};

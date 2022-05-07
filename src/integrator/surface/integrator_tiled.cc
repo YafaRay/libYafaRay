@@ -411,10 +411,11 @@ void TiledIntegrator::generateCommonLayers(ColorLayers *color_layers, const Surf
 			{
 				*color_layer = Rgba(sp.u_, sp.v_, 0.f, 1.f);
 			}
+			/* FIXME: probably does not make sense when we have now also quads in addition to triangles...
 			if(Rgba *color_layer = color_layers->find(LayerDef::BarycentricUvw))
 			{
-				*color_layer = Rgba(sp.intersect_data_.barycentric_u_, sp.intersect_data_.barycentric_v_, sp.intersect_data_.barycentric_w_, 1.f);
-			}
+				*color_layer = Rgba(sp.intersect_data_.u_, sp.intersect_data_.v_, sp.intersect_data_.barycentric_w_, 1.f);
+			}*/
 			if(Rgba *color_layer = color_layers->find(LayerDef::NormalSmooth))
 			{
 				*color_layer = Rgba((sp.n_.x() + 1.f) * .5f, (sp.n_.y() + 1.f) * .5f, (sp.n_.z() + 1.f) * .5f, 1.f);

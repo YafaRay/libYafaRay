@@ -16,13 +16,13 @@
  *      Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-#include "geometry/primitive/primitive_triangle_bezier.h"
-
+#include "geometry/primitive/primitive_quad_bezier.h"
 #include <memory>
 #include "geometry/ray.h"
 #include "geometry/bound.h"
 #include "geometry/surface.h"
 #include "geometry/object/object_mesh_bezier.h"
+#include "geometry/shape/shape_quad.h"
 #include "geometry/uv.h"
 #include "geometry/primitive/primitive_triangle.h"
 #include "geometry/shape/shape_triangle.h"
@@ -30,21 +30,23 @@
 
 BEGIN_YAFARAY
 
-ShapeTriangle TriangleBezierPrimitive::getShapeTriangleAtTime(float time, const Matrix4 *obj_to_world) const
+ShapeQuad QuadBezierPrimitive::getShapeQuadAtTime(float time, const Matrix4 *obj_to_world) const
 {
 	//FIXME: ugly static casts but for performance we cannot affort dynamic casts here and the base mesh should be MeshBezier in any case...
 	const float time_start = static_cast<const MeshBezierObject *>(&base_mesh_object_)->getTimeRangeStart();
 	const float time_end = static_cast<const MeshBezierObject *>(&base_mesh_object_)->getTimeRangeEnd();
 
-	if(time <= time_start) return ShapeTriangle {{
+	if(time <= time_start) return ShapeQuad {{
 			getVertex(BezierTimeStep::Start, 0, obj_to_world),
 			getVertex(BezierTimeStep::Start, 1, obj_to_world),
-			getVertex(BezierTimeStep::Start, 2, obj_to_world)
+			getVertex(BezierTimeStep::Start, 2, obj_to_world),
+			getVertex(BezierTimeStep::Start, 3, obj_to_world)
 	}};
-	else if(time >= time_end) return ShapeTriangle {{
+	else if(time >= time_end) return ShapeQuad {{
 				getVertex(BezierTimeStep::End, 0, obj_to_world),
 				getVertex(BezierTimeStep::End, 1, obj_to_world),
-				getVertex(BezierTimeStep::End, 2, obj_to_world)
+				getVertex(BezierTimeStep::End, 2, obj_to_world),
+				getVertex(BezierTimeStep::End, 3, obj_to_world)
 	}};
 	else
 	{
@@ -63,40 +65,46 @@ ShapeTriangle TriangleBezierPrimitive::getShapeTriangleAtTime(float time, const 
 				getVertex(BezierTimeStep::Mid, 2, obj_to_world),
 				getVertex(BezierTimeStep::End, 2, obj_to_world)
 		};
+		const std::array<Point3, 3> pd {
+				getVertex(BezierTimeStep::Start, 3, obj_to_world),
+				getVertex(BezierTimeStep::Mid, 3, obj_to_world),
+				getVertex(BezierTimeStep::End, 3, obj_to_world)
+		};
 		const float time_mapped = math::lerpSegment(time, 0.f, time_start, 1.f, time_end); //time_mapped must be in range [0.f-1.f]
 		const float tc = 1.f - time_mapped;
 		const float b_1 = tc * tc;
 		const float b_2 = 2.f * time_mapped * tc;
 		const float b_3 = time_mapped * time_mapped;
-		return ShapeTriangle{{
+		return ShapeQuad{{
 				b_1 * pa[BezierTimeStep::Start] + b_2 * pa[BezierTimeStep::Mid] + b_3 * pa[BezierTimeStep::End],
 				b_1 * pb[BezierTimeStep::Start] + b_2 * pb[BezierTimeStep::Mid] + b_3 * pb[BezierTimeStep::End],
-				b_1 * pc[BezierTimeStep::Start] + b_2 * pc[BezierTimeStep::Mid] + b_3 * pc[BezierTimeStep::End]
+				b_1 * pc[BezierTimeStep::Start] + b_2 * pc[BezierTimeStep::Mid] + b_3 * pc[BezierTimeStep::End],
+				b_1 * pd[BezierTimeStep::Start] + b_2 * pd[BezierTimeStep::Mid] + b_3 * pd[BezierTimeStep::End]
 		}};
 	}
 }
 
-IntersectData TriangleBezierPrimitive::intersect(const Ray &ray, const Matrix4 *obj_to_world) const
+IntersectData QuadBezierPrimitive::intersect(const Ray &ray, const Matrix4 *obj_to_world) const
 {
-	return getShapeTriangleAtTime(ray.time_, obj_to_world).intersect(ray);
+	return getShapeQuadAtTime(ray.time_, obj_to_world).intersect(ray);
 }
 
-float TriangleBezierPrimitive::surfaceArea(const Matrix4 *obj_to_world) const
+float QuadBezierPrimitive::surfaceArea(const Matrix4 *obj_to_world) const
 {
-	return ShapeTriangle {{ getVertex(BezierTimeStep::Start, 0, obj_to_world), getVertex(BezierTimeStep::Start, 1, obj_to_world), getVertex(BezierTimeStep::Start, 2, obj_to_world) }}.surfaceArea();
+	return ShapeQuad {{ getVertex(BezierTimeStep::Start, 0, obj_to_world), getVertex(BezierTimeStep::Start, 1, obj_to_world), getVertex(BezierTimeStep::Start, 2, obj_to_world), getVertex(BezierTimeStep::Start, 3, obj_to_world) }}.surfaceArea();
 }
 
-std::pair<Point3, Vec3> TriangleBezierPrimitive::sample(float s_1, float s_2, const Matrix4 *obj_to_world) const
+std::pair<Point3, Vec3> QuadBezierPrimitive::sample(float s_1, float s_2, const Matrix4 *obj_to_world) const
 {
 	return {
-			ShapeTriangle{{getVertex(BezierTimeStep::Start, 0, obj_to_world), getVertex(BezierTimeStep::Start, 1, obj_to_world), getVertex(BezierTimeStep::Start, 2, obj_to_world)}}.sample(s_1, s_2),
+			ShapeQuad{{getVertex(BezierTimeStep::Start, 0, obj_to_world), getVertex(BezierTimeStep::Start, 1, obj_to_world), getVertex(BezierTimeStep::Start, 2, obj_to_world), getVertex(BezierTimeStep::Start, 3, obj_to_world)}}.sample(s_1, s_2),
 			Primitive::getGeometricFaceNormal(obj_to_world)
 	};
 }
 
-void TriangleBezierPrimitive::calculateGeometricFaceNormal()
+void QuadBezierPrimitive::calculateGeometricFaceNormal()
 {
-	face_normal_geometric_ = getShapeTriangleAtTime(0.f, nullptr).calculateFaceNormal();
+	face_normal_geometric_ = getShapeQuadAtTime(0.f, nullptr).calculateFaceNormal();
 }
 
 END_YAFARAY

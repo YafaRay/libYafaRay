@@ -65,6 +65,8 @@ extern "C" {
 	YAFARAY_C_API_EXPORT void yafaray_addNormal(yafaray_Interface_t *interface, double nx, double ny, double nz);
 	YAFARAY_C_API_EXPORT yafaray_bool_t yafaray_addTriangle(yafaray_Interface_t *interface, int a, int b, int c);
 	YAFARAY_C_API_EXPORT yafaray_bool_t yafaray_addTriangleWithUv(yafaray_Interface_t *interface, int a, int b, int c, int uv_a, int uv_b, int uv_c);
+	YAFARAY_C_API_EXPORT yafaray_bool_t yafaray_addQuad(yafaray_Interface_t *interface, int a, int b, int c, int d);
+	YAFARAY_C_API_EXPORT yafaray_bool_t yafaray_addQuadWithUv(yafaray_Interface_t *interface, int a, int b, int c, int d, int uv_a, int uv_b, int uv_c, int uv_d);
 	YAFARAY_C_API_EXPORT int yafaray_addUv(yafaray_Interface_t *interface, float u, float v);
 	YAFARAY_C_API_EXPORT yafaray_bool_t yafaray_smoothMesh(yafaray_Interface_t *interface, const char *name, double angle);
 	YAFARAY_C_API_EXPORT yafaray_bool_t yafaray_addInstance(yafaray_Interface_t *interface, const char *base_object_name, float m_00, float m_01, float m_02, float m_03, float m_10, float m_11, float m_12, float m_13, float m_20, float m_21, float m_22, float m_23, float m_30, float m_31, float m_32, float m_33);

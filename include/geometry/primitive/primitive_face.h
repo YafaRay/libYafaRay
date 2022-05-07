@@ -30,10 +30,12 @@ BEGIN_YAFARAY
 
 struct Uv;
 
+enum BezierTimeStep : int { Start = 0, Mid = 1, End = 2 };
+
 class FacePrimitive: public Primitive
 {
 	public:
-		FacePrimitive(const std::vector<int> &vertices_indices, std::vector<int> vertices_uv_indices, const MeshObject &mesh_object);
+		FacePrimitive(std::vector<int> vertices_indices, std::vector<int> vertices_uv_indices, const MeshObject &mesh_object);
 		//In the following functions "vertex_number" is the vertex number in the face: 0, 1, 2 in triangles, 0, 1, 2, 3 in quads, etc
 		Vec3 getGeometricFaceNormal(const Matrix4 *obj_to_world, float u, float v) const override;
 		const Material *getMaterial() const override { return material_->get(); }
@@ -51,6 +53,7 @@ class FacePrimitive: public Primitive
 		std::vector<int> getVerticesIndices() const { return vertices_; }
 		std::vector<int> getVerticesNormalsIndices() const { return vertices_normals_indices_; }
 		std::vector<int> getUvIndices() const { return vertex_uvs_; }
+		size_t numVertices() const { return vertices_.size(); }
 		std::vector<Point3> getVertices() const;
 		std::vector<Point3> getVertices(const Matrix4 *obj_to_world) const;
 		std::vector<Point3> getOrcoVertices() const;
@@ -63,6 +66,10 @@ class FacePrimitive: public Primitive
 		static Bound getBound(const std::vector<Point3> &vertices);
 		const Object *getObject() const override { return &base_mesh_object_; }
 		Visibility getVisibility() const override { return base_mesh_object_.getVisibility(); }
+		Point3 getVertex(BezierTimeStep time_step, size_t vertex_number, const Matrix4 *obj_to_world) const { if(obj_to_world) return (*obj_to_world) * getVertex(time_step, vertex_number); else return getVertex(time_step, vertex_number); }
+		Point3 getVertex(BezierTimeStep time_step, size_t vertex_number) const;
+		Bound getBoundTimeSteps(const Matrix4 *obj_to_world) const;
+		static constexpr std::array<BezierTimeStep, 3> time_steps_ {BezierTimeStep::Start, BezierTimeStep::Mid, BezierTimeStep::End};
 
 	protected:
 		size_t self_index_ = 0;
@@ -74,7 +81,7 @@ class FacePrimitive: public Primitive
 		std::vector<int> vertex_uvs_; //!< indices in uv array, if mesh has explicit uv.
 };
 
-inline FacePrimitive::FacePrimitive(const std::vector<int> &vertices_indices, std::vector<int> vertices_uv_indices, const MeshObject &mesh_object) : base_mesh_object_(mesh_object), vertices_(vertices_indices), vertices_normals_indices_(vertices_indices.size(), -1), vertex_uvs_(std::move(vertices_uv_indices))
+inline FacePrimitive::FacePrimitive(std::vector<int> vertices_indices, std::vector<int> vertices_uv_indices, const MeshObject &mesh_object) : base_mesh_object_(mesh_object), vertices_(std::move(vertices_indices)), vertices_normals_indices_(vertices_indices.size(), -1), vertex_uvs_(std::move(vertices_uv_indices))
 {
 }
 
@@ -193,6 +200,20 @@ inline Vec3 FacePrimitive::getGeometricFaceNormal(const Matrix4 *obj_to_world, f
 {
 	if(obj_to_world) return ((*obj_to_world) * face_normal_geometric_).normalize();
 	else return face_normal_geometric_;
+}
+
+inline Bound FacePrimitive::getBoundTimeSteps(const Matrix4 *obj_to_world) const
+{
+	std::vector<Point3> vertices;
+	vertices.reserve(numVertices() * time_steps_.size());
+	for(size_t vertex_num = 0; vertex_num < numVertices(); ++vertex_num)
+	{
+		for(BezierTimeStep time_step : time_steps_)
+		{
+			vertices.emplace_back(getVertex(time_step, vertex_num, obj_to_world));
+		}
+	}
+	return FacePrimitive::getBound(vertices);
 }
 
 std::ostream &operator<<(std::ostream &out, const FacePrimitive &face);

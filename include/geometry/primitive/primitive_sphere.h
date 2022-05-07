@@ -53,6 +53,7 @@ class SpherePrimitive final : public Primitive
 		std::pair<Point3, Vec3> sample(float s_1, float s_2, const Matrix4 *obj_to_world) const override;
 		const Object *getObject() const override { return &base_object_; }
 		Visibility getVisibility() const override { return base_object_.getVisibility(); }
+		float getDistToNearestEdge(float u, float v, const Vec3 &dp_du_abs, const Vec3 &dp_dv_abs) const override { return 0.f; }
 
 		Point3 center_;
 		float radius_;

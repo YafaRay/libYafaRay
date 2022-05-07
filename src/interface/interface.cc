@@ -99,14 +99,24 @@ void Interface::addVertexNormal(double x, double y, double z) noexcept
 	scene_->addVertexNormal({static_cast<float>(x), static_cast<float>(y), static_cast<float>(z)});
 }
 
-bool Interface::addFace(int a, int b, int c) noexcept
+bool Interface::addTriangle(int a, int b, int c) noexcept
 {
 	return scene_->addFace({a, b, c});
 }
 
-bool Interface::addFace(int a, int b, int c, int uv_a, int uv_b, int uv_c) noexcept
+bool Interface::addTriangleWithUv(int a, int b, int c, int uv_a, int uv_b, int uv_c) noexcept
 {
 	return scene_->addFace({a, b, c}, {uv_a, uv_b, uv_c});
+}
+
+bool Interface::addQuad(int a, int b, int c, int d) noexcept
+{
+	return scene_->addFace({a, b, c, d});
+}
+
+bool Interface::addQuadWithUv(int a, int b, int c, int d, int uv_a, int uv_b, int uv_c, int uv_d) noexcept
+{
+	return scene_->addFace({a, b, c, d}, {uv_a, uv_b, uv_c, uv_d});
 }
 
 int Interface::addUv(float u, float v) noexcept { return scene_->addUv(u, v); }

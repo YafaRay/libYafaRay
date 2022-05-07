@@ -16,8 +16,7 @@
  *      Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-//#include "yafaray_config.h"
-#include "geometry/primitive/primitive_triangle.h"
+#include "geometry/primitive/primitive_quad.h"
 #include "geometry/object/object_mesh.h"
 #include "geometry/axis.h"
 #include "geometry/ray.h"
@@ -27,33 +26,36 @@
 #include "geometry/matrix4.h"
 #include "geometry/poly_double.h"
 #include "common/param.h"
-#include <cstring>
 #include <memory>
 
 BEGIN_YAFARAY
 
-std::unique_ptr<const SurfacePoint> TrianglePrimitive::getSurface(const RayDifferentials *ray_differentials, const Point3 &hit_point, const IntersectData &intersect_data, const Matrix4 *obj_to_world, const Camera *camera) const
+std::unique_ptr<const SurfacePoint> QuadPrimitive::getSurface(const RayDifferentials *ray_differentials, const Point3 &hit_point, const IntersectData &intersect_data, const Matrix4 *obj_to_world, const Camera *camera) const
 {
 	auto sp = std::make_unique<SurfacePoint>();
 	sp->intersect_data_ = intersect_data;
 	sp->ng_ = Primitive::getGeometricFaceNormal(obj_to_world);
-	const auto [barycentric_u, barycentric_v, barycentric_w] = ShapeTriangle::getBarycentricUVW(intersect_data.u_, intersect_data.v_);
 	if(base_mesh_object_.isSmooth() || base_mesh_object_.hasVerticesNormals())
 	{
-		const std::array<Vec3, 3> v {
+		const std::array<Vec3, 4> v {
 			getVertexNormal(0, sp->ng_, obj_to_world),
 			getVertexNormal(1, sp->ng_, obj_to_world),
-			getVertexNormal(2, sp->ng_, obj_to_world)
+			getVertexNormal(2, sp->ng_, obj_to_world),
+			getVertexNormal(3, sp->ng_, obj_to_world)
 		};
-		sp->n_ = barycentric_u * v[0] + barycentric_v * v[1] + barycentric_w * v[2];
+		sp->n_ = ShapeQuad::interpolate(intersect_data.u_, intersect_data.v_, v);
 		sp->n_.normalize();
 	}
 	else sp->n_ = sp->ng_;
 	if(base_mesh_object_.hasOrco())
 	{
-		const std::array<Point3, 3> orco_p { getOrcoVertex(0), getOrcoVertex(1), getOrcoVertex(2) };
-
-		sp->orco_p_ = barycentric_u * orco_p[0] + barycentric_v * orco_p[1] + barycentric_w * orco_p[2];
+		const std::array<Point3, 4> orco_p {
+			getOrcoVertex(0),
+			getOrcoVertex(1),
+			getOrcoVertex(2),
+			getOrcoVertex(3)
+		};
+		sp->orco_p_ = ShapeQuad::interpolate(intersect_data.u_, intersect_data.v_, orco_p);
 		sp->orco_ng_ = ((orco_p[1] - orco_p[0]) ^ (orco_p[2] - orco_p[0])).normalize();
 		sp->has_orco_ = true;
 	}
@@ -64,17 +66,23 @@ std::unique_ptr<const SurfacePoint> TrianglePrimitive::getSurface(const RayDiffe
 		sp->orco_ng_ = Primitive::getGeometricFaceNormal();
 	}
 	bool implicit_uv = true;
-	const std::array<Point3, 3> p {
+	const std::array<Point3, 4> p {
 		obj_to_world ?
-		std::array<Point3, 3>{ getVertex(0, obj_to_world), getVertex(1, obj_to_world), getVertex(2, obj_to_world) }
+		std::array<Point3, 4>{ getVertex(0, obj_to_world), getVertex(1, obj_to_world), getVertex(2, obj_to_world), getVertex(3, obj_to_world) }
 		:
-		std::array<Point3, 3>{ getVertex(0), getVertex(1), getVertex(2) }
+		std::array<Point3, 4>{ getVertex(0), getVertex(1), getVertex(2), getVertex(3) }
 	};
 	if(base_mesh_object_.hasUv())
 	{
-		const std::array<Uv, 3> uv { getVertexUv(0), getVertexUv(1), getVertexUv(2) };
-		sp->u_ = barycentric_u * uv[0].u_ + barycentric_v * uv[1].u_ + barycentric_w * uv[2].u_;
-		sp->v_ = barycentric_u * uv[0].v_ + barycentric_v * uv[1].v_ + barycentric_w * uv[2].v_;
+		const std::array<Uv, 4> uv {
+				getVertexUv(0),
+				getVertexUv(1),
+				getVertexUv(2),
+				getVertexUv(3)
+		};
+		const Uv uv_result = ShapeQuad::interpolate(intersect_data.u_, intersect_data.v_, uv);
+		sp->u_ = uv_result.u_;
+		sp->v_ = uv_result.v_;
 		// calculate dPdU and dPdV
 		const float du_1 = uv[1].u_ - uv[0].u_;
 		const float du_2 = uv[2].u_ - uv[0].u_;
@@ -96,8 +104,8 @@ std::unique_ptr<const SurfacePoint> TrianglePrimitive::getSurface(const RayDiffe
 		// implicit mapping, p0 = 0/0, p1 = 1/0, p2 = 0/1 => sp->u_ = barycentric_u, sp->v_ = barycentric_v; (arbitrary choice)
 		sp->dp_du_ = p[1] - p[0];
 		sp->dp_dv_ = p[2] - p[0];
-		sp->u_ = barycentric_u;
-		sp->v_ = barycentric_v;
+		sp->u_ = intersect_data.u_;
+		sp->v_ = intersect_data.v_;
 	}
 	sp->has_uv_ = !implicit_uv;
 	//Copy original dPdU and dPdV before normalization to the "absolute" dPdU and dPdV (for mipmap calculations)
@@ -119,7 +127,7 @@ std::unique_ptr<const SurfacePoint> TrianglePrimitive::getSurface(const RayDiffe
 	return sp;
 }
 
-PolyDouble::ClipResultWithBound TrianglePrimitive::clipToBound(Logger &logger, const std::array<Vec3Double, 2> &bound, const ClipPlane &clip_plane, const PolyDouble &poly, const Matrix4 *obj_to_world) const
+PolyDouble::ClipResultWithBound QuadPrimitive::clipToBound(Logger &logger, const std::array<Vec3Double, 2> &bound, const ClipPlane &clip_plane, const PolyDouble &poly, const Matrix4 *obj_to_world) const
 {
 	if(clip_plane.pos_ != ClipPlane::Pos::None) // re-clip
 	{
@@ -130,14 +138,14 @@ PolyDouble::ClipResultWithBound TrianglePrimitive::clipToBound(Logger &logger, c
 		//else: do initial clipping below, if there are any other PolyDouble::ClipResult results (errors)
 	}
 	// initial clip
-	const std::array<Point3, 3> triangle_vertices {
+	const std::array<Point3, 4> vertices{
 		obj_to_world ?
-		std::array<Point3, 3>{ getVertex(0, obj_to_world), getVertex(1, obj_to_world), getVertex(2, obj_to_world) }
+		std::array<Point3, 4>{ getVertex(0, obj_to_world), getVertex(1, obj_to_world), getVertex(2, obj_to_world), getVertex(3, obj_to_world) }
 		:
-		std::array<Point3, 3>{ getVertex(0), getVertex(1), getVertex(2) }
+		std::array<Point3, 4>{ getVertex(0), getVertex(1), getVertex(2), getVertex(3) }
 	};
 	PolyDouble poly_triangle;
-	for(const auto &vert : triangle_vertices) poly_triangle.addVertex({vert.x(), vert.y(), vert.z() });
+	for(const auto &vert : vertices) poly_triangle.addVertex({vert.x(), vert.y(), vert.z() });
 	return PolyDouble::boxClip(logger, bound[1], poly_triangle, bound[0]);
 }
 
