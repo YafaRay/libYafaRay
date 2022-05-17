@@ -19,7 +19,6 @@
 #include "geometry/shape/shape_triangle.h"
 #include "geometry/bound.h"
 #include "geometry/intersect_data.h"
-#include "geometry/triangle_overlap.h"
 
 BEGIN_YAFARAY
 
@@ -57,15 +56,6 @@ IntersectData ShapeTriangle::intersect(const Ray &ray) const
 		}
 	}
 	return {};
-}
-
-bool ShapeTriangle::intersectsBound(const ExBound &ex_bound) const
-{
-	std::array<Vec3Double, 3> t_points;
-	for(int i = 0; i < 3; ++i)
-		for(size_t j = 0; j < 3; ++j)
-			t_points[j][i] = vertices_[j][i];
-	return triangle_overlap::triBoxOverlap(ex_bound.center_, ex_bound.half_size_, t_points);
 }
 
 END_YAFARAY

@@ -35,9 +35,7 @@ class QuadPrimitive : public FacePrimitive
 	private:
 		IntersectData intersect(const Ray &ray) const override;
 		IntersectData intersect(const Ray &ray, const Matrix4 *obj_to_world) const override;
-		bool intersectsBound(const ExBound &ex_bound, const Matrix4 *obj_to_world) const override;
 		bool clippingSupport() const override { return true; }
-		// return: false:=doesn't overlap bound; true:=valid clip exists
 		PolyDouble::ClipResultWithBound clipToBound(Logger &logger, const std::array<Vec3Double, 2> &bound, const ClipPlane &clip_plane, const PolyDouble &poly, const Matrix4 *obj_to_world) const override;
 		std::unique_ptr<const SurfacePoint> getSurface(const RayDifferentials *ray_differentials, const Point3 &hit_point, const IntersectData &intersect_data, const Matrix4 *obj_to_world, const Camera *camera) const override;
 		float surfaceArea(const Matrix4 *obj_to_world) const override;
@@ -59,11 +57,6 @@ inline IntersectData QuadPrimitive::intersect(const Ray &ray) const
 inline IntersectData QuadPrimitive::intersect(const Ray &ray, const Matrix4 *obj_to_world) const
 {
 	return ShapeQuad{{ getVertex(0, obj_to_world), getVertex(1, obj_to_world), getVertex(2, obj_to_world), getVertex(3, obj_to_world) }}.intersect(ray);
-}
-
-inline bool QuadPrimitive::intersectsBound(const ExBound &ex_bound, const Matrix4 *obj_to_world) const
-{
-	return ShapeQuad{{ getVertex(0, obj_to_world), getVertex(1, obj_to_world), getVertex(2, obj_to_world), getVertex(3, obj_to_world) }}.intersectsBound(ex_bound);
 }
 
 inline void QuadPrimitive::calculateGeometricFaceNormal()

@@ -46,43 +46,25 @@ class Camera;
 class Primitive
 {
 	public:
-		Primitive() = default;
 		virtual ~Primitive() = default;
 		/*! return the object bound in global ("world") coordinates */
 		virtual Bound getBound() const = 0;
 		virtual Bound getBound(const Matrix4 *obj_to_world) const = 0;
-		/*! a possibly more precise check to find out if the primitve really
-			intersects the bound of interest, given that the primitive's bound does.
-			used e.g. for optimized kd-tree construction */
-		virtual bool intersectsBound(const ExBound &ex_bound, const Matrix4 *obj_to_world) const { return true; };
-		/*! indicate if the object has a clipping implementation */
 		virtual bool clippingSupport() const { return false; }
-		/*! basic ray primitive interection for raytracing.
-			This should NOT skip intersections outside of [tmin,tmax], unless negative.
-			The caller decides wether t matters or not.
-			\return false if ray misses primitive, true otherwise
-			\param t set this to raydepth where hit occurs */
 		virtual IntersectData intersect(const Ray &ray) const = 0;
 		virtual IntersectData intersect(const Ray &ray, const Matrix4 *obj_to_world) const;
-		/* fill in surfacePoint_t */
 		virtual std::unique_ptr<const SurfacePoint> getSurface(const RayDifferentials *ray_differentials, const Point3 &hit, const IntersectData &data, const Matrix4 *obj_to_world, const Camera *camera) const;
-		/* return the material */
 		virtual const Material *getMaterial() const { return nullptr; }
-		/* calculate surface area */
 		virtual float surfaceArea(const Matrix4 *obj_to_world) const = 0;
 		float surfaceArea() const { return surfaceArea(nullptr); }
 		virtual float getDistToNearestEdge(float u, float v, const Vec3 &dp_du_abs, const Vec3 &dp_dv_abs) const = 0;
-		/* obtains the geometric normal in the surface parametric u,v coordinates */
 		virtual Vec3 getGeometricFaceNormal(const Matrix4 *obj_to_world, float u, float v) const = 0;
 		Vec3 getGeometricFaceNormal(const Matrix4 *obj_to_world) const { return getGeometricFaceNormal(obj_to_world, 0.f, 0.f); }
 		Vec3 getGeometricFaceNormal() const { return getGeometricFaceNormal(nullptr); }
-		/* surface sampling */
 		virtual std::pair<Point3, Vec3> sample(float s_1, float s_2, const Matrix4 *obj_to_world) const = 0;
 		std::pair<Point3, Vec3> sample(float s_1, float s_2) const { return sample(s_1, s_2, nullptr); }
 		virtual const Object *getObject() const = 0;
 		virtual Visibility getVisibility() const = 0;
-		/*! calculate the overlapping box of given bound and primitive
-			\return: false:=doesn't overlap bound; true:=valid clip exists */
 		virtual PolyDouble::ClipResultWithBound clipToBound(Logger &logger, const std::array<Vec3Double, 2> &bound, const ClipPlane &clip_plane, const PolyDouble &poly, const Matrix4 *obj_to_world) const;
 };
 

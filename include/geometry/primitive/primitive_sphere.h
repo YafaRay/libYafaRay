@@ -30,7 +30,6 @@ BEGIN_YAFARAY
 class Scene;
 class ParamMap;
 class Bound;
-class ExBound;
 class Ray;
 class SurfacePoint;
 
@@ -43,7 +42,6 @@ class SpherePrimitive final : public Primitive
 	private:
 		Bound getBound() const override { return getBound(nullptr); }
 		Bound getBound(const Matrix4 *) const override;
-		bool intersectsBound(const ExBound &b, const Matrix4 *obj_to_world) const override { return true; };
 		IntersectData intersect(const Ray &ray) const override { return intersect(ray, nullptr); }
 		IntersectData intersect(const Ray &ray, const Matrix4 *obj_to_world) const override;
 		std::unique_ptr<const SurfacePoint> getSurface(const RayDifferentials *ray_differentials, const Point3 &hit, const IntersectData &intersect_data, const Matrix4 *obj_to_world, const Camera *camera) const override;

@@ -94,13 +94,6 @@ IntersectData ShapeQuad::intersect(const Ray &ray) const
 	return {};
 }
 
-bool ShapeQuad::intersectsBound(const ExBound &ex_bound) const
-{
-	bool result = ShapeTriangle{{vertices_[0], vertices_[1], vertices_[2]}}.intersectsBound(ex_bound);
-	if(result) return result;
-	else return ShapeTriangle{{vertices_[0], vertices_[2], vertices_[3]}}.intersectsBound(ex_bound);
-}
-
 float ShapeQuad::surfaceArea() const
 {
 	return ShapeTriangle{{vertices_[0], vertices_[1], vertices_[2]}}.surfaceArea() + ShapeTriangle{{vertices_[0], vertices_[2], vertices_[3]}}.surfaceArea();

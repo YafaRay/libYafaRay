@@ -27,7 +27,6 @@ BEGIN_YAFARAY
 
 class Ray;
 struct IntersectData;
-class ExBound;
 
 class ShapeTriangle final
 {
@@ -36,7 +35,6 @@ class ShapeTriangle final
 		ShapeTriangle(ShapeTriangle &&triangle) = default;
 		explicit ShapeTriangle(std::array<Point3, 3> vertices) : vertices_(std::move(vertices)) { }
 		IntersectData intersect(const Ray &ray) const;
-		bool intersectsBound(const ExBound &ex_bound) const;
 		Vec3 calculateFaceNormal() const;
 		float surfaceArea() const;
 		Point3 sample(float s_1, float s_2) const;

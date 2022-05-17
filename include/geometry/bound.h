@@ -26,7 +26,6 @@
 
 #include "common/yafaray_common.h"
 #include "ray.h"
-#include "geometry/vector_double.h"
 
 BEGIN_YAFARAY
 
@@ -209,24 +208,6 @@ inline Bound::Cross Bound::cross(const Ray &ray, float t_max) const
 
 	return {};
 }
-
-
-class ExBound: public Bound
-{
-	public:
-		explicit ExBound(const Bound &b)
-		{
-			for(int i = 0; i < 3; ++i)
-			{
-				center_[i] = (static_cast<double>(a_[i]) + static_cast<double>(g_[i])) * 0.5;
-				half_size_[i] = (static_cast<double>(g_[i]) - static_cast<double>(a_[i])) * 0.5;
-			}
-		}
-
-		Vec3Double center_;
-		Vec3Double half_size_;
-};
-
 
 END_YAFARAY
 

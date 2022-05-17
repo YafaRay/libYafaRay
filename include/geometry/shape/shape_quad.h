@@ -27,7 +27,6 @@ BEGIN_YAFARAY
 
 class Ray;
 struct IntersectData;
-class ExBound;
 
 class ShapeQuad final
 {
@@ -36,7 +35,6 @@ class ShapeQuad final
 		ShapeQuad(ShapeQuad &&quad) = default;
 		explicit ShapeQuad(std::array<Point3, 4> vertices) : vertices_(std::move(vertices)) { }
 		IntersectData intersect(const Ray &ray) const;
-		bool intersectsBound(const ExBound &ex_bound) const;
 		Vec3 calculateFaceNormal() const;
 		float surfaceArea() const;
 		Point3 sample(float s_1, float s_2) const;

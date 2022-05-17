@@ -29,7 +29,6 @@ BEGIN_YAFARAY
 class Material;
 struct IntersectData;
 class Bound;
-class ExBound;
 class Ray;
 class SurfacePoint;
 class Point3;
@@ -39,11 +38,9 @@ class Scene;
 class PrimitiveInstance : public Primitive
 {
 	public:
-		//static PrimitiveInstance *factory(ParamMap &params, const Scene &scene);
 		PrimitiveInstance(const Primitive *base_primitive, const ObjectInstance &base_instance) : base_instance_(base_instance), base_primitive_(base_primitive) { }
 		Bound getBound() const override { return getBound(nullptr); }
 		Bound getBound(const Matrix4 *) const override { return base_primitive_->getBound(base_instance_.getObjToWorldMatrix()); }
-		bool intersectsBound(const ExBound &b, const Matrix4 *) const override;
 		bool clippingSupport() const override { return base_primitive_->clippingSupport(); }
 		PolyDouble::ClipResultWithBound clipToBound(Logger &logger, const std::array<Vec3Double, 2> &bound, const ClipPlane &clip_plane, const PolyDouble &poly, const Matrix4 *obj_to_world) const override;
 		IntersectData intersect(const Ray &ray) const override { return intersect(ray, nullptr); }
@@ -61,11 +58,6 @@ class PrimitiveInstance : public Primitive
 		const ObjectInstance &base_instance_;
 		const Primitive *base_primitive_ = nullptr;
 };
-
-inline bool PrimitiveInstance::intersectsBound(const ExBound &b, const Matrix4 *) const
-{
-	return base_primitive_->intersectsBound(b, base_instance_.getObjToWorldMatrix());
-}
 
 inline PolyDouble::ClipResultWithBound PrimitiveInstance::clipToBound(Logger &logger, const std::array<Vec3Double, 2> &bound, const ClipPlane &clip_plane, const PolyDouble &poly, const Matrix4 *obj_to_world) const
 {
