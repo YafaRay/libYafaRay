@@ -304,6 +304,8 @@ Integrator * PathIntegrator::factory(Logger &logger, const ParamMap &params, con
 	Rgb ao_col(1.f);
 	bool bg_transp = false;
 	bool bg_transp_refract = false;
+	bool time_forced = false;
+	float time_forced_value = 0.f;
 	std::string photon_maps_processing_str = "generate";
 
 	params.getParam("raydepth", raydepth);
@@ -320,6 +322,8 @@ Integrator * PathIntegrator::factory(Logger &logger, const ParamMap &params, con
 	params.getParam("AO_distance", ao_dist);
 	params.getParam("AO_color", ao_col);
 	params.getParam("photon_maps_processing", photon_maps_processing_str);
+	params.getParam("time_forced", time_forced);
+	params.getParam("time_forced_value", time_forced_value);
 
 	auto inte = new PathIntegrator(render_control, logger, transp_shad, shadow_depth);
 	if(params.getParam("caustic_type", c_method))
@@ -356,6 +360,8 @@ Integrator * PathIntegrator::factory(Logger &logger, const ParamMap &params, con
 	inte->ao_samples_ = ao_samples;
 	inte->ao_dist_ = ao_dist;
 	inte->ao_col_ = ao_col;
+	inte->time_forced_ = time_forced;
+	inte->time_forced_value_ = time_forced_value;
 
 	if(photon_maps_processing_str == "generate-save") inte->photon_map_processing_ = PhotonsGenerateAndSave;
 	else if(photon_maps_processing_str == "load") inte->photon_map_processing_ = PhotonsLoad;

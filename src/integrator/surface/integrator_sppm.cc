@@ -201,7 +201,7 @@ bool SppmIntegrator::renderTile(FastRandom &fast_random, std::vector<int> &corre
 			for(int sample = 0; sample < n_samples; ++sample) //set n_samples = 1.
 			{
 				pixel_sampling_data.sample_ = pass_offs + sample;
-				const float time = math::addMod1(static_cast<float>(sample) * d_1, toff); //(0.5+(float)sample)*d1;
+				const float time = time_forced_ ? time_forced_value_ : math::addMod1(static_cast<float>(sample) * d_1, toff); //(0.5+(float)sample)*d1;
 				// the (1/n, Larcher&Pillichshammer-Seq.) only gives good coverage when total sample count is known
 				// hence we use scrambled (Sobol, van-der-Corput) for multipass AA //!< the current (normalized) frame time  //FIXME, time not currently used in libYafaRay
 				pixel_sampling_data.time_ = time;
@@ -1073,6 +1073,8 @@ Integrator * SppmIntegrator::factory(Logger &logger, const ParamMap &params, con
 	Rgb ao_col(1.f);
 	bool bg_transp = false;
 	bool bg_transp_refract = false;
+	bool time_forced = false;
+	float time_forced_value = 0.f;
 
 	params.getParam("transpShad", transp_shad);
 	params.getParam("shadowDepth", shadow_depth);
@@ -1092,6 +1094,8 @@ Integrator * SppmIntegrator::factory(Logger &logger, const ParamMap &params, con
 	params.getParam("AO_samples", ao_samples);
 	params.getParam("AO_distance", ao_dist);
 	params.getParam("AO_color", ao_col);
+	params.getParam("time_forced", time_forced);
+	params.getParam("time_forced_value", time_forced_value);
 
 	auto inte = new SppmIntegrator(render_control, logger, num_photons, pass_num, transp_shad, shadow_depth);
 	inte->r_depth_ = raydepth;
@@ -1109,6 +1113,8 @@ Integrator * SppmIntegrator::factory(Logger &logger, const ParamMap &params, con
 	inte->ao_samples_ = ao_samples;
 	inte->ao_dist_ = ao_dist;
 	inte->ao_col_ = ao_col;
+	inte->time_forced_ = time_forced;
+	inte->time_forced_value_ = time_forced_value;
 
 	return inte;
 }

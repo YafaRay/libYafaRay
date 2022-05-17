@@ -157,8 +157,9 @@ Integrator * DirectLightIntegrator::factory(Logger &logger, const ParamMap &para
 	Rgb ao_col(1.f);
 	bool bg_transp = false;
 	bool bg_transp_refract = false;
+	bool time_forced = false;
+	float time_forced_value = 0.f;
 	std::string photon_maps_processing_str = "generate";
-
 	params.getParam("raydepth", raydepth);
 	params.getParam("transpShad", transp_shad);
 	params.getParam("shadowDepth", shadow_depth);
@@ -174,6 +175,8 @@ Integrator * DirectLightIntegrator::factory(Logger &logger, const ParamMap &para
 	params.getParam("bg_transp", bg_transp);
 	params.getParam("bg_transp_refract", bg_transp_refract);
 	params.getParam("photon_maps_processing", photon_maps_processing_str);
+	params.getParam("time_forced", time_forced);
+	params.getParam("time_forced_value", time_forced_value);
 
 	auto inte = new DirectLightIntegrator(render_control, logger, transp_shad, shadow_depth, raydepth);
 	// caustic settings
@@ -190,6 +193,8 @@ Integrator * DirectLightIntegrator::factory(Logger &logger, const ParamMap &para
 	// Background settings
 	inte->transp_background_ = bg_transp;
 	inte->transp_refracted_background_ = bg_transp_refract;
+	inte->time_forced_ = time_forced;
+	inte->time_forced_value_ = time_forced_value;
 
 	if(photon_maps_processing_str == "generate-save") inte->photon_map_processing_ = PhotonsGenerateAndSave;
 	else if(photon_maps_processing_str == "load") inte->photon_map_processing_ = PhotonsLoad;

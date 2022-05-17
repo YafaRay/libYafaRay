@@ -792,6 +792,8 @@ Integrator * PhotonIntegrator::factory(Logger &logger, const ParamMap &params, c
 	bool bg_transp_refract = false;
 	bool caustics = true;
 	bool diffuse = true;
+	bool time_forced = false;
+	float time_forced_value = 0.f;
 	std::string photon_maps_processing_str = "generate";
 
 	params.getParam("caustics", caustics);
@@ -821,6 +823,8 @@ Integrator * PhotonIntegrator::factory(Logger &logger, const ParamMap &params, c
 	params.getParam("AO_distance", ao_dist);
 	params.getParam("AO_color", ao_col);
 	params.getParam("photon_maps_processing", photon_maps_processing_str);
+	params.getParam("time_forced", time_forced);
+	params.getParam("time_forced_value", time_forced_value);
 
 	auto inte = new PhotonIntegrator(render_control, logger, num_photons, num_c_photons, transp_shad, shadow_depth, ds_rad, c_rad);
 
@@ -845,6 +849,8 @@ Integrator * PhotonIntegrator::factory(Logger &logger, const ParamMap &params, c
 	inte->ao_samples_ = ao_samples;
 	inte->ao_dist_ = ao_dist;
 	inte->ao_col_ = ao_col;
+	inte->time_forced_ = time_forced;
+	inte->time_forced_value_ = time_forced_value;
 
 	if(photon_maps_processing_str == "generate-save") inte->photon_map_processing_ = PhotonsGenerateAndSave;
 	else if(photon_maps_processing_str == "load") inte->photon_map_processing_ = PhotonsLoad;

@@ -312,7 +312,7 @@ bool TiledIntegrator::renderTile(FastRandom &fast_random, std::vector<int> &corr
 				color_layers.setDefaultColors();
 				pixel_sampling_data.sample_ = pass_offs + sample;
 
-				const float time = math::addMod1(static_cast<float>(sample) * d_1, toff); //(0.5+(float)sample)*d1;
+				const float time = time_forced_ ? time_forced_value_ : math::addMod1(static_cast<float>(sample) * d_1, toff); //(0.5+(float)sample)*d1;
 				// the (1/n, Larcher&Pillichshammer-Seq.) only gives good coverage when total sample count is known
 				// hence we use scrambled (Sobol, van-der-Corput) for multipass AA  //!< the current (normalized) frame time  //FIXME, time not currently used in libYafaRay
 				pixel_sampling_data.time_ = time;

@@ -92,11 +92,17 @@ Integrator * DebugIntegrator::factory(Logger &logger, const ParamMap &params, co
 {
 	int dt = 1;
 	bool pn = false;
+	bool time_forced = false;
+	float time_forced_value = 0.f;
 	params.getParam("debugType", dt);
 	params.getParam("showPN", pn);
+	params.getParam("time_forced", time_forced);
+	params.getParam("time_forced_value", time_forced_value);
 	std::cout << "debugType " << dt << std::endl;
 	auto inte = new DebugIntegrator(render_control, logger, static_cast<SurfaceProperties>(dt));
 	inte->show_pn_ = pn;
+	inte->time_forced_ = time_forced;
+	inte->time_forced_value_ = time_forced_value;
 
 	return inte;
 }

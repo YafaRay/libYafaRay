@@ -896,6 +896,8 @@ Integrator * BidirectionalIntegrator::factory(Logger &logger, const ParamMap &pa
 	bool bg_transp_refract = false;
 	bool transp_shad = false;
 	int shadow_depth = 4;
+	bool time_forced = false;
+	float time_forced_value = 0.f;
 
 	params.getParam("transpShad", transp_shad);
 	params.getParam("shadowDepth", shadow_depth);
@@ -913,6 +915,9 @@ Integrator * BidirectionalIntegrator::factory(Logger &logger, const ParamMap &pa
 	inte->ao_samples_ = ao_samples;
 	inte->ao_dist_ = ao_dist;
 	inte->ao_col_ = ao_col;
+
+	inte->time_forced_ = time_forced;
+	inte->time_forced_value_ = time_forced_value;
 
 	// Background settings
 	inte->transp_background_ = bg_transp;

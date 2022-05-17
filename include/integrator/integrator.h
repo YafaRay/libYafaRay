@@ -90,6 +90,8 @@ class Integrator
 	protected:
 		float ray_min_dist_ = 1.0e-5f;  //ray minimum distance
 		float shadow_bias_ = 1.0e-4f;  //shadow bias to apply to shadows to avoid self-shadow artifacts
+		bool time_forced_ = false;
+		float time_forced_value_ = 0.f;
 		std::string render_info_;
 		std::string aa_noise_info_;
 		const Accelerator *accelerator_;
