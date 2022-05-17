@@ -23,5 +23,4 @@ target_sources(libyafaray4
 		object_basic.cc
 		object_curve.cc
 		object_mesh.cc
-		object_mesh_bezier.cc
 )

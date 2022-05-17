@@ -75,17 +75,32 @@ yafaray_bool_t yafaray_endObject(yafaray_Interface_t *interface) //!< end curren
 
 int  yafaray_addVertex(yafaray_Interface_t *interface, double x, double y, double z) //!< add vertex to mesh; returns index to be used for addTriangle/addQuad
 {
-	return reinterpret_cast<yafaray::Interface *>(interface)->addVertex(x, y, z);
+	return reinterpret_cast<yafaray::Interface *>(interface)->addVertex(x, y, z, 0);
+}
+
+int  yafaray_addVertexTimeStep(yafaray_Interface_t *interface, double x, double y, double z, unsigned int time_step) //!< add vertex to mesh; returns index to be used for addTriangle/addQuad
+{
+	return reinterpret_cast<yafaray::Interface *>(interface)->addVertex(x, y, z, time_step);
 }
 
 int  yafaray_addVertexWithOrco(yafaray_Interface_t *interface, double x, double y, double z, double ox, double oy, double oz) //!< add vertex with Orco to mesh; returns index to be used for addTriangle/addQuad
 {
-	return reinterpret_cast<yafaray::Interface *>(interface)->addVertex(x, y, z, ox, oy, oz);
+	return reinterpret_cast<yafaray::Interface *>(interface)->addVertex(x, y, z, ox, oy, oz, 0);
+}
+
+int  yafaray_addVertexWithOrcoTimeStep(yafaray_Interface_t *interface, double x, double y, double z, double ox, double oy, double oz, unsigned int time_step) //!< add vertex with Orco to mesh; returns index to be used for addTriangle/addQuad
+{
+	return reinterpret_cast<yafaray::Interface *>(interface)->addVertex(x, y, z, ox, oy, oz, time_step);
 }
 
 void yafaray_addNormal(yafaray_Interface_t *interface, double nx, double ny, double nz) //!< add vertex normal to mesh; the vertex that will be attached to is the last one inserted by addVertex method
 {
-	reinterpret_cast<yafaray::Interface *>(interface)->addVertexNormal(nx, ny, nz);
+	reinterpret_cast<yafaray::Interface *>(interface)->addVertexNormal(nx, ny, nz, 0);
+}
+
+void yafaray_addNormalTimeStep(yafaray_Interface_t *interface, double nx, double ny, double nz, unsigned int time_step) //!< add vertex normal to mesh; the vertex that will be attached to is the last one inserted by addVertex method
+{
+	reinterpret_cast<yafaray::Interface *>(interface)->addVertexNormal(nx, ny, nz, time_step);
 }
 
 yafaray_bool_t yafaray_addTriangle(yafaray_Interface_t *interface, int a, int b, int c) //!< add a triangle given vertex indices and material pointer

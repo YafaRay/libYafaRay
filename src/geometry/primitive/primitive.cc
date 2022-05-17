@@ -27,21 +27,6 @@
 
 BEGIN_YAFARAY
 
-std::unique_ptr<const SurfacePoint> Primitive::getSurface(const RayDifferentials *ray_differentials, const Point3 &hit, const IntersectData &data, const Matrix4 *obj_to_world, const Camera *camera) const
-{
-	return {};
-}
-
-IntersectData Primitive::intersect(const Ray &ray) const
-{
-	return {};
-}
-
-IntersectData Primitive::intersect(const Ray &ray, const Matrix4 *obj_to_world) const
-{
-	return {};
-}
-
 PolyDouble::ClipResultWithBound Primitive::clipToBound(Logger &logger, const std::array<Vec3Double, 2> &bound, const ClipPlane &clip_plane, const PolyDouble &poly, const Matrix4 *obj_to_world) const
 {
 	return PolyDouble::ClipResultWithBound(PolyDouble::ClipResultWithBound::Code::FatalError);

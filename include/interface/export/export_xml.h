@@ -42,9 +42,9 @@ class ExportXml: public Interface
 		unsigned int getNextFreeId() noexcept override;
 		bool endObject() noexcept override;
 		bool addInstance(const char *base_object_name, const Matrix4 &obj_to_world) noexcept override;
-		int  addVertex(double x, double y, double z) noexcept override; //!< add vertex to mesh; returns index to be used for addTriangle/addQuad
-		int  addVertex(double x, double y, double z, double ox, double oy, double oz) noexcept override; //!< add vertex with Orco to mesh; returns index to be used for addTriangle/addQuad
-		void addVertexNormal(double nx, double ny, double nz) noexcept override; //!< add vertex normal to mesh; the vertex that will be attached to is the last one inserted by addVertex method
+		int addVertex(double x, double y, double z, size_t time_step) noexcept override; //!< add vertex to mesh; returns index to be used for addTriangle/addQuad
+		int addVertex(double x, double y, double z, double ox, double oy, double oz, size_t time_step) noexcept override; //!< add vertex with Orco to mesh; returns index to be used for addTriangle/addQuad
+		void addVertexNormal(double nx, double ny, double nz, size_t time_step) noexcept override; //!< add vertex normal to mesh; the vertex that will be attached to is the last one inserted by addVertex method
 		bool addTriangle(int a, int b, int c) noexcept override;
 		bool addTriangleWithUv(int a, int b, int c, int uv_a, int uv_b, int uv_c) noexcept override;
 		bool addQuad(int a, int b, int c, int d) noexcept override;

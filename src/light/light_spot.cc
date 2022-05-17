@@ -103,7 +103,7 @@ bool SpotLight::illuminate(const SurfacePoint &sp, Rgb &col, Ray &wi) const
 	return true;
 }
 
-bool SpotLight::illumSample(const SurfacePoint &sp, LSample &s, Ray &wi) const
+bool SpotLight::illumSample(const SurfacePoint &sp, LSample &s, Ray &wi, float time) const
 {
 	if(photonOnly()) return false;
 
@@ -167,7 +167,7 @@ Rgb SpotLight::emitPhoton(float s_1, float s_2, float s_3, float s_4, Ray &ray, 
 	return color_;
 }
 
-Rgb SpotLight::emitSample(Vec3 &wo, LSample &s) const
+Rgb SpotLight::emitSample(Vec3 &wo, LSample &s, float time) const
 {
 	s.sp_->p_ = position_;
 	s.area_pdf_ = 1.f;

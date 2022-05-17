@@ -36,22 +36,21 @@ std::unique_ptr<const SurfacePoint> TrianglePrimitive::getSurface(const RayDiffe
 {
 	auto sp = std::make_unique<SurfacePoint>();
 	sp->intersect_data_ = intersect_data;
-	sp->ng_ = Primitive::getGeometricFaceNormal(obj_to_world);
+	sp->ng_ = getGeometricNormal(obj_to_world);
 	const auto [barycentric_u, barycentric_v, barycentric_w] = ShapeTriangle::getBarycentricUVW(intersect_data.u_, intersect_data.v_);
-	if(base_mesh_object_.isSmooth() || base_mesh_object_.hasVerticesNormals())
+	if(base_mesh_object_.isSmooth() || base_mesh_object_.hasVerticesNormals(0))
 	{
 		const std::array<Vec3, 3> v {
-			getVertexNormal(0, sp->ng_, obj_to_world),
-			getVertexNormal(1, sp->ng_, obj_to_world),
-			getVertexNormal(2, sp->ng_, obj_to_world)
-		};
+				getVertexNormal(0, sp->ng_, obj_to_world, 0),
+				getVertexNormal(1, sp->ng_, obj_to_world, 0),
+				getVertexNormal(2, sp->ng_, obj_to_world, 0)};
 		sp->n_ = barycentric_u * v[0] + barycentric_v * v[1] + barycentric_w * v[2];
 		sp->n_.normalize();
 	}
 	else sp->n_ = sp->ng_;
-	if(base_mesh_object_.hasOrco())
+	if(base_mesh_object_.hasOrco(0))
 	{
-		const std::array<Point3, 3> orco_p { getOrcoVertex(0), getOrcoVertex(1), getOrcoVertex(2) };
+		const std::array<Point3, 3> orco_p {getOrcoVertex(0, 0), getOrcoVertex(1, 0), getOrcoVertex(2, 0)};
 
 		sp->orco_p_ = barycentric_u * orco_p[0] + barycentric_v * orco_p[1] + barycentric_w * orco_p[2];
 		sp->orco_ng_ = ((orco_p[1] - orco_p[0]) ^ (orco_p[2] - orco_p[0])).normalize();
@@ -61,14 +60,13 @@ std::unique_ptr<const SurfacePoint> TrianglePrimitive::getSurface(const RayDiffe
 	{
 		sp->orco_p_ = hit_point;
 		sp->has_orco_ = false;
-		sp->orco_ng_ = Primitive::getGeometricFaceNormal();
+		sp->orco_ng_ = getGeometricNormal();
 	}
 	bool implicit_uv = true;
-	const std::array<Point3, 3> p {
-		obj_to_world ?
-		std::array<Point3, 3>{ getVertex(0, obj_to_world), getVertex(1, obj_to_world), getVertex(2, obj_to_world) }
-		:
-		std::array<Point3, 3>{ getVertex(0), getVertex(1), getVertex(2) }
+	const std::array<Point3, 3> p {{
+			getVertex(0, obj_to_world, 0),
+			getVertex(1, obj_to_world, 0),
+			getVertex(2, obj_to_world, 0)}
 	};
 	if(base_mesh_object_.hasUv())
 	{
@@ -130,12 +128,11 @@ PolyDouble::ClipResultWithBound TrianglePrimitive::clipToBound(Logger &logger, c
 		//else: do initial clipping below, if there are any other PolyDouble::ClipResult results (errors)
 	}
 	// initial clip
-	const std::array<Point3, 3> triangle_vertices {
-		obj_to_world ?
-		std::array<Point3, 3>{ getVertex(0, obj_to_world), getVertex(1, obj_to_world), getVertex(2, obj_to_world) }
-		:
-		std::array<Point3, 3>{ getVertex(0), getVertex(1), getVertex(2) }
-	};
+	const std::array<Point3, 3> triangle_vertices {{
+			getVertex(0, obj_to_world, 0),
+			getVertex(1, obj_to_world, 0),
+			getVertex(2, obj_to_world, 0),
+	}};
 	PolyDouble poly_triangle;
 	for(const auto &vert : triangle_vertices) poly_triangle.addVertex({vert.x(), vert.y(), vert.z() });
 	return PolyDouble::boxClip(logger, bound[1], poly_triangle, bound[0]);

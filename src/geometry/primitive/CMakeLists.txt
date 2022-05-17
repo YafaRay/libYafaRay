@@ -20,7 +20,6 @@ target_sources(libyafaray4
 	PRIVATE
 		primitive.cc
 		primitive_instance.cc
-		primitive_face.cc
 		primitive_sphere.cc
 		primitive_triangle.cc
 		primitive_triangle_bezier.cc

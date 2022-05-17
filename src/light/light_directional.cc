@@ -80,7 +80,7 @@ bool DirectionalLight::illuminate(const SurfacePoint &sp, Rgb &col, Ray &wi) con
 	return true;
 }
 
-bool DirectionalLight::illumSample(const SurfacePoint &sp, LSample &s, Ray &wi) const
+bool DirectionalLight::illumSample(const SurfacePoint &sp, LSample &s, Ray &wi, float time) const
 {
 	if(photonOnly()) return false;
 
@@ -100,7 +100,7 @@ Rgb DirectionalLight::emitPhoton(float s_1, float s_2, float s_3, float s_4, Ray
 	return color_;
 }
 
-Rgb DirectionalLight::emitSample(Vec3 &wo, LSample &s) const
+Rgb DirectionalLight::emitSample(Vec3 &wo, LSample &s, float time) const
 {
 	//todo
 	wo = -direction_;

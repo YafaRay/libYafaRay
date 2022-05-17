@@ -38,9 +38,9 @@ class SpotLight final : public Light
 		SpotLight(Logger &logger, const Point3 &from, const Point3 &to, const Rgb &col, float power, float angle, float falloff, bool s_sha, int smpl, float ssfuzzy, bool b_light_enabled = true, bool b_cast_shadows = true);
 		Rgb totalEnergy() const override;
 		Rgb emitPhoton(float s_1, float s_2, float s_3, float s_4, Ray &ray, float &ipdf) const override;
-		Rgb emitSample(Vec3 &wo, LSample &s) const override;
+		Rgb emitSample(Vec3 &wo, LSample &s, float time) const override;
 		bool diracLight() const override { return !soft_shadows_; }
-		bool illumSample(const SurfacePoint &sp, LSample &s, Ray &wi) const override;
+		bool illumSample(const SurfacePoint &sp, LSample &s, Ray &wi, float time) const override;
 		bool illuminate(const SurfacePoint &sp, Rgb &col, Ray &wi) const override;
 		void emitPdf(const SurfacePoint &sp, const Vec3 &wo, float &area_pdf, float &dir_pdf, float &cos_wo) const override;
 		bool canIntersect() const override { return soft_shadows_; }

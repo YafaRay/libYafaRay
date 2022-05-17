@@ -42,9 +42,9 @@ class BackgroundLight final : public Light
 		void init(Scene &scene) override;
 		Rgb totalEnergy() const override;
 		Rgb emitPhoton(float s_1, float s_2, float s_3, float s_4, Ray &ray, float &ipdf) const override;
-		Rgb emitSample(Vec3 &wo, LSample &s) const override;
+		Rgb emitSample(Vec3 &wo, LSample &s, float time) const override;
 		bool diracLight() const override { return false; }
-		bool illumSample(const SurfacePoint &sp, LSample &s, Ray &wi) const override;
+		bool illumSample(const SurfacePoint &sp, LSample &s, Ray &wi, float time) const override;
 		bool illuminate(const SurfacePoint &sp, Rgb &col, Ray &wi) const override { return false; }
 		float illumPdf(const SurfacePoint &sp, const SurfacePoint &sp_light) const override;
 		void emitPdf(const SurfacePoint &sp, const Vec3 &wo, float &area_pdf, float &dir_pdf, float &cos_wo) const override;

@@ -87,16 +87,16 @@ unsigned int Interface::getNextFreeId() noexcept
 
 bool Interface::endObject() noexcept { return scene_->endObject(); }
 
-int  Interface::addVertex(double x, double y, double z) noexcept { return scene_->addVertex({static_cast<float>(x), static_cast<float>(y), static_cast<float>(z)}); }
+int Interface::addVertex(double x, double y, double z, size_t time_step) noexcept { return scene_->addVertex({static_cast<float>(x), static_cast<float>(y), static_cast<float>(z)}, time_step); }
 
-int  Interface::addVertex(double x, double y, double z, double ox, double oy, double oz) noexcept
+int Interface::addVertex(double x, double y, double z, double ox, double oy, double oz, size_t time_step) noexcept
 {
-	return scene_->addVertex({static_cast<float>(x), static_cast<float>(y), static_cast<float>(z)}, {static_cast<float>(ox), static_cast<float>(oy), static_cast<float>(oz)});
+	return scene_->addVertex({static_cast<float>(x), static_cast<float>(y), static_cast<float>(z)}, {static_cast<float>(ox), static_cast<float>(oy), static_cast<float>(oz)}, time_step);
 }
 
-void Interface::addVertexNormal(double x, double y, double z) noexcept
+void Interface::addVertexNormal(double x, double y, double z, size_t time_step) noexcept
 {
-	scene_->addVertexNormal({static_cast<float>(x), static_cast<float>(y), static_cast<float>(z)});
+	scene_->addVertexNormal({static_cast<float>(x), static_cast<float>(y), static_cast<float>(z)}, time_step);
 }
 
 bool Interface::addTriangle(int a, int b, int c) noexcept

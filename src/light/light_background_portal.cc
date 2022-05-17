@@ -49,7 +49,7 @@ void BackgroundPortalLight::initIs()
 	double total_area = 0.0;
 	for(int i = 0; i < num_primitives_; ++i)
 	{
-		areas[i] = primitives_[i]->surfaceArea();
+		areas[i] = primitives_[i]->surfaceArea(0.f);
 		total_area += areas[i];
 	}
 	area_dist_ = std::make_unique<Pdf1D>(areas);
@@ -86,7 +86,7 @@ void BackgroundPortalLight::init(Scene &scene)
 	}
 }
 
-std::pair<Point3, Vec3> BackgroundPortalLight::sampleSurface(float s_1, float s_2) const
+std::pair<Point3, Vec3> BackgroundPortalLight::sampleSurface(float s_1, float s_2, float time) const
 {
 	float prim_pdf;
 	const size_t prim_num = area_dist_->dSample(s_1, prim_pdf);
@@ -102,7 +102,7 @@ std::pair<Point3, Vec3> BackgroundPortalLight::sampleSurface(float s_1, float s_
 		ss_1 = (s_1 - area_dist_->cdf(prim_num - 1)) / delta;
 	}
 	else ss_1 = s_1 / delta;
-	return primitives_[prim_num]->sample(ss_1, s_2);
+	return primitives_[prim_num]->sample(ss_1, s_2, time);
 }
 
 Rgb BackgroundPortalLight::totalEnergy() const
@@ -116,17 +116,17 @@ Rgb BackgroundPortalLight::totalEnergy() const
 		const Rgb col = bg_->eval(wo.dir_, true);
 		for(int j = 0; j < num_primitives_; j++)
 		{
-			float cos_n = -wo.dir_ * primitives_[j]->getGeometricFaceNormal(); //not 100% sure about sign yet...
-			if(cos_n > 0) energy += col * cos_n * primitives_[j]->surfaceArea();
+			float cos_n = -wo.dir_ * primitives_[j]->getGeometricNormal(0.f); //not 100% sure about sign yet...
+			if(cos_n > 0) energy += col * cos_n * primitives_[j]->surfaceArea(0.f);
 		}
 	}
 	return energy * math::div_1_by_pi<> * 0.001f;
 }
 
-bool BackgroundPortalLight::illumSample(const SurfacePoint &sp, LSample &s, Ray &wi) const
+bool BackgroundPortalLight::illumSample(const SurfacePoint &sp, LSample &s, Ray &wi, float time) const
 {
 	if(photonOnly()) return false;
-	const auto [p, n]{sampleSurface(s.s_1_, s.s_2_)};
+	const auto [p, n]{sampleSurface(s.s_1_, s.s_2_, time)};
 	Vec3 ldir{p - sp.p_};
 	//normalize vec and compute inverse square distance
 	const float dist_sqr = ldir.lengthSqr();
@@ -155,17 +155,17 @@ bool BackgroundPortalLight::illumSample(const SurfacePoint &sp, LSample &s, Ray 
 
 Rgb BackgroundPortalLight::emitPhoton(float s_1, float s_2, float s_3, float s_4, Ray &ray, float &ipdf) const
 {
-	const auto [p, n]{sampleSurface(s_3, s_4)};
+	const auto [p, n]{sampleSurface(s_3, s_4, ray.time_)};
 	const auto [du, dv]{Vec3::createCoordsSystem(n)};
 	ray.dir_ = sample::cosHemisphere(n, du, dv, s_1, s_2);
 	const Ray r_2(ray.from_, -ray.dir_);
 	return bg_->eval(r_2.dir_, true);
 }
 
-Rgb BackgroundPortalLight::emitSample(Vec3 &wo, LSample &s) const
+Rgb BackgroundPortalLight::emitSample(Vec3 &wo, LSample &s, float time) const
 {
 	s.area_pdf_ = inv_area_ * math::num_pi<>;
-	sampleSurface(s.s_3_, s.s_4_);
+	sampleSurface(s.s_3_, s.s_4_, time);
 	s.sp_->n_ = s.sp_->ng_;
 	const auto [du, dv]{Vec3::createCoordsSystem(s.sp_->ng_)};
 	wo = sample::cosHemisphere(s.sp_->ng_, du, dv, s.s_1_, s.s_2_);
@@ -182,7 +182,7 @@ bool BackgroundPortalLight::intersect(const Ray &ray, float &t, Rgb &col, float 
 	// intersect with tree:
 	const AcceleratorIntersectData accelerator_intersect_data = accelerator_->intersect(ray, t_max);
 	if(!accelerator_intersect_data.hit_) { return false; }
-	const Vec3 n{accelerator_intersect_data.hit_primitive_->getGeometricFaceNormal()};
+	const Vec3 n{accelerator_intersect_data.hit_primitive_->getGeometricNormal(ray.time_)};
 	const float cos_angle = ray.dir_ * (-n);
 	if(cos_angle <= 0.f) return false;
 	const float idist_sqr = 1.f / (t * t);

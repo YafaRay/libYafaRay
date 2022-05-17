@@ -64,7 +64,7 @@ void AreaLight::init(Scene &scene)
 
 Rgb AreaLight::totalEnergy() const { return color_ * area_; }
 
-bool AreaLight::illumSample(const SurfacePoint &sp, LSample &s, Ray &wi) const
+bool AreaLight::illumSample(const SurfacePoint &sp, LSample &s, Ray &wi, float time) const
 {
 	if(photonOnly()) return false;
 
@@ -104,7 +104,7 @@ Rgb AreaLight::emitPhoton(float s_1, float s_2, float s_3, float s_4, Ray &ray, 
 	return color_;
 }
 
-Rgb AreaLight::emitSample(Vec3 &wo, LSample &s) const
+Rgb AreaLight::emitSample(Vec3 &wo, LSample &s, float time) const
 {
 	s.area_pdf_ = inv_area_ * math::num_pi<>;
 	s.sp_->p_ = corner_ + s.s_3_ * to_x_ + s.s_4_ * to_y_;

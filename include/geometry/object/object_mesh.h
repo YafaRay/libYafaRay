@@ -36,43 +36,53 @@ class MeshObject : public ObjectBasic
 {
 	public:
 		static Object *factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params);
-		MeshObject(int num_vertices, int num_faces, bool has_uv = false, bool has_orco = false);
+		MeshObject(int num_vertices, int num_faces, bool has_uv, bool has_orco, bool motion_blur_bezier, float time_range_start, float time_range_end);
 		~MeshObject() override;
 		/*! the number of primitives the object holds. Primitive is an element
 			that by definition can perform ray-triangle intersection */
-		int numPrimitives() const override { return faces_.size(); }
+		int numPrimitives() const override { return static_cast<int>(faces_.size()); }
 		std::vector<const Primitive *> getPrimitives() const override;
-		int lastVertexId() const override { return numVertices() - 1; }
-		Vec3 getVertexNormal(int index) const { return vertices_normals_vectors_[index]; }
-		Point3 getVertex(int index) const { return points_[index]; }
-		Point3 getOrcoVertex(int index) const { return orco_points_[index]; }
-		int numVertices() const override { return points_.size(); }
-		int numVerticesNormals() const override { return vertices_normals_vectors_.size(); }
-		void addFace(std::unique_ptr<FacePrimitive> face);
+		int lastVertexId(size_t time_step) const override { return numVertices(time_step) - 1; }
+		Vec3 getVertexNormal(int index, size_t time_step) const { return time_steps_[time_step].vertices_normals_[index]; }
+		Point3 getVertex(int index, size_t time_step) const { return time_steps_[time_step].points_[index]; }
+		Point3 getOrcoVertex(int index, size_t time_step) const { return time_steps_[time_step].orco_points_[index]; }
+		int numVertices(size_t time_step) const override { return static_cast<int>(time_steps_[time_step].points_.size()); }
+		int numVerticesNormals(size_t time_step) const override { return static_cast<int>(time_steps_[time_step].vertices_normals_.size()); }
+		void addFace(std::unique_ptr<FacePrimitive> &&face);
 		void addFace(const std::vector<int> &vertices, const std::vector<int> &vertices_uv, const std::unique_ptr<const Material> *material) override;
-		void calculateFaceNormals();
-		const std::vector<Point3> &getPoints() const { return points_; }
+		const std::vector<Point3> &getPoints(size_t time_step) const { return time_steps_[time_step].points_; }
 		const std::vector<Uv> &getUvValues() const { return uv_values_; }
-		bool hasOrco() const { return !orco_points_.empty(); }
+		bool hasOrco(size_t time_step) const { return !time_steps_[time_step].orco_points_.empty(); }
 		bool hasUv() const { return !uv_values_.empty(); }
 		bool isSmooth() const { return is_smooth_; }
-		bool hasVerticesNormals() const override { return !vertices_normals_vectors_.empty(); }
-		void addPoint(const Point3 &p) override { points_.emplace_back(p); }
-		void addOrcoPoint(const Point3 &p) override { orco_points_.emplace_back(p); }
-		void addVertexNormal(const Vec3 &n) override;
+		bool hasVerticesNormals(size_t time_step) const override { return !time_steps_[time_step].vertices_normals_.empty(); }
+		void addPoint(const Point3 &p, size_t time_step) override { time_steps_[time_step].points_.emplace_back(p); }
+		void addOrcoPoint(const Point3 &p, size_t time_step) override { time_steps_[time_step].orco_points_.emplace_back(p); }
+		void addVertexNormal(const Vec3 &n, size_t time_step) override;
 		int addUvValue(const Uv &uv) override { uv_values_.emplace_back(uv); return static_cast<int>(uv_values_.size()) - 1; }
 		void setSmooth(bool smooth) override { is_smooth_ = smooth; }
 		bool smoothVerticesNormals(Logger &logger, float angle) override;
 		bool calculateObject(const std::unique_ptr<const Material> *material) override;
+		bool hasMotionBlurBezier() const { return motion_blur_bezier_; }
+		float getTimeRangeStart() const { return time_steps_.front().time_; }
+		float getTimeRangeEnd() const { return time_steps_.back().time_; }
+		size_t numTimeSteps() const { return time_steps_.size(); }
 
-	protected:
+	private:
+		struct TimeStepGeometry final
+		{
+			float time_ = 0.f;
+			std::vector<Point3> points_;
+			std::vector<Point3> orco_points_;
+			std::vector<Vec3> vertices_normals_;
+		};
+		void convertToBezierControlPoints();
 		static float getAngleSine(const std::array<int, 3> &triangle_indices, const std::vector<Point3> &vertices);
+		std::vector<TimeStepGeometry> time_steps_{1};
 		std::vector<std::unique_ptr<FacePrimitive>> faces_;
-		std::vector<Point3> points_;
-		std::vector<Point3> orco_points_;
-		std::vector<Vec3> vertices_normals_vectors_;
 		std::vector<Uv> uv_values_;
 		bool is_smooth_ = false;
+		bool motion_blur_bezier_ = false;
 };
 
 END_YAFARAY

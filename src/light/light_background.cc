@@ -120,7 +120,7 @@ float BackgroundLight::calcInvPdf(float p_0, float p_1, float s)
 	return std::max(sigma_, math::mult_pi_by_2<> * sinSample(s) * clampZero(p_0 * p_1));
 }
 
-bool BackgroundLight::illumSample(const SurfacePoint &sp, LSample &s, Ray &wi) const
+bool BackgroundLight::illumSample(const SurfacePoint &sp, LSample &s, Ray &wi, float time) const
 {
 	if(photonOnly()) return false;
 	float u = 0.f, v = 0.f;
@@ -162,7 +162,7 @@ Rgb BackgroundLight::emitPhoton(float s_1, float s_2, float s_3, float s_4, Ray 
 	return pcol * a_pdf_;
 }
 
-Rgb BackgroundLight::emitSample(Vec3 &wo, LSample &s) const
+Rgb BackgroundLight::emitSample(Vec3 &wo, LSample &s, float time) const
 {
 	sampleDir(s.s_1_, s.s_2_, wo, s.dir_pdf_, true);
 	const Rgb pcol = background_->eval(wo, true);

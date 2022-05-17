@@ -52,7 +52,7 @@ void ObjectLight::initIs()
 	double total_area = 0.0;
 	for(int i = 0; i < num_primitives_; ++i)
 	{
-		areas[i] = primitives_[i]->surfaceArea();
+		areas[i] = primitives_[i]->surfaceArea(0.f);
 		total_area += areas[i];
 	}
 	area_dist_ = std::make_unique<Pdf1D>(areas);
@@ -84,7 +84,7 @@ void ObjectLight::init(Scene &scene)
 	}
 }
 
-std::pair<Point3, Vec3> ObjectLight::sampleSurface(float s_1, float s_2) const
+std::pair<Point3, Vec3> ObjectLight::sampleSurface(float s_1, float s_2, float time) const
 {
 	float prim_pdf;
 	const size_t prim_num = area_dist_->dSample(s_1, prim_pdf);
@@ -100,16 +100,16 @@ std::pair<Point3, Vec3> ObjectLight::sampleSurface(float s_1, float s_2) const
 		ss_1 = (s_1 - area_dist_->cdf(prim_num - 1)) / delta;
 	}
 	else ss_1 = s_1 / delta;
-	return primitives_[prim_num]->sample(ss_1, s_2);
+	return primitives_[prim_num]->sample(ss_1, s_2, time);
 	//	++stats[primNum];
 }
 
 Rgb ObjectLight::totalEnergy() const { return (double_sided_ ? 2.f * color_ * area_ : color_ * area_); }
 
-bool ObjectLight::illumSample(const SurfacePoint &sp, LSample &s, Ray &wi) const
+bool ObjectLight::illumSample(const SurfacePoint &sp, LSample &s, Ray &wi, float time) const
 {
 	if(photonOnly()) return false;
-	const auto [p, n]{sampleSurface(s.s_1_, s.s_2_)};
+	const auto [p, n]{sampleSurface(s.s_1_, s.s_2_, time)};
 	Vec3 ldir{p - sp.p_};
 	//normalize vec and compute inverse square distance
 	const float dist_sqr = ldir.lengthSqr();
@@ -145,7 +145,7 @@ bool ObjectLight::illumSample(const SurfacePoint &sp, LSample &s, Ray &wi) const
 Rgb ObjectLight::emitPhoton(float s_1, float s_2, float s_3, float s_4, Ray &ray, float &ipdf) const
 {
 	ipdf = area_;
-	const auto [p, n]{sampleSurface(s_3, s_4)};
+	const auto [p, n]{sampleSurface(s_3, s_4, 0.f)};
 	ray.from_ = p;
 	const auto [du, dv]{Vec3::createCoordsSystem(n)};
 	if(double_sided_)
@@ -158,10 +158,10 @@ Rgb ObjectLight::emitPhoton(float s_1, float s_2, float s_3, float s_4, Ray &ray
 	return color_;
 }
 
-Rgb ObjectLight::emitSample(Vec3 &wo, LSample &s) const
+Rgb ObjectLight::emitSample(Vec3 &wo, LSample &s, float time) const
 {
 	s.area_pdf_ = inv_area_ * math::num_pi<>;
-	std::tie(s.sp_->p_, s.sp_->ng_) = sampleSurface(s.s_3_, s.s_4_);
+	std::tie(s.sp_->p_, s.sp_->ng_) = sampleSurface(s.s_3_, s.s_4_, time);
 	s.sp_->n_ = s.sp_->ng_;
 	const auto [du, dv]{Vec3::createCoordsSystem(s.sp_->ng_)};
 	if(double_sided_)
@@ -186,7 +186,7 @@ bool ObjectLight::intersect(const Ray &ray, float &t, Rgb &col, float &ipdf) con
 	// intersect with tree:
 	const AcceleratorIntersectData accelerator_intersect_data = accelerator_->intersect(ray, t_max);
 	if(!accelerator_intersect_data.hit_) { return false; }
-	const Vec3 n{accelerator_intersect_data.hit_primitive_->getGeometricFaceNormal()};
+	const Vec3 n{accelerator_intersect_data.hit_primitive_->getGeometricNormal(nullptr, accelerator_intersect_data.u_, accelerator_intersect_data.v_, ray.time_)};
 	float cos_angle = ray.dir_ * (-n);
 	if(cos_angle <= 0.f)
 	{

@@ -53,7 +53,7 @@ void SunLight::init(Scene &scene)
 	e_pdf_ = math::num_pi<> * world_radius_ * world_radius_;
 }
 
-bool SunLight::illumSample(const SurfacePoint &sp, LSample &s, Ray &wi) const
+bool SunLight::illumSample(const SurfacePoint &sp, LSample &s, Ray &wi, float time) const
 {
 	if(photonOnly()) return false;
 

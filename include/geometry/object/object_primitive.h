@@ -26,7 +26,7 @@ BEGIN_YAFARAY
 
 /*! simple "container" to handle primitives as objects, for objects that
 	consist of just one primitive like spheres etc. */
-class PrimitiveObject : public ObjectBasic
+class PrimitiveObject final : public ObjectBasic
 {
 	public:
 		void setPrimitive(const Primitive *primitive) { primitive_ = primitive; }

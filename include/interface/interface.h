@@ -64,9 +64,9 @@ class Interface
 		virtual bool endGeometry() noexcept; //!< call after creating geometry;
 		virtual unsigned int getNextFreeId() noexcept;
 		virtual bool endObject() noexcept; //!< end current mesh and return to geometry state
-		virtual int  addVertex(double x, double y, double z) noexcept; //!< add vertex to mesh; returns index to be used for addTriangle/addQuad
-		virtual int  addVertex(double x, double y, double z, double ox, double oy, double oz) noexcept; //!< add vertex with Orco to mesh; returns index to be used for addTriangle/addQuad
-		virtual void addVertexNormal(double nx, double ny, double nz) noexcept; //!< add vertex normal to mesh; the vertex that will be attached to is the last one inserted by addVertex method
+		virtual int addVertex(double x, double y, double z, size_t time_step) noexcept; //!< add vertex to mesh; returns index to be used for addTriangle/addQuad
+		virtual int addVertex(double x, double y, double z, double ox, double oy, double oz, size_t time_step) noexcept; //!< add vertex with Orco to mesh; returns index to be used for addTriangle/addQuad
+		virtual void addVertexNormal(double x, double y, double z, size_t time_step) noexcept; //!< add vertex normal to mesh; the vertex that will be attached to is the last one inserted by addVertex method
 		virtual bool addTriangle(int a, int b, int c) noexcept; //!< add a triangle given vertex indices and material pointer
 		virtual bool addTriangleWithUv(int a, int b, int c, int uv_a, int uv_b, int uv_c) noexcept; //!< add a triangle given vertex and uv indices and material pointer
 		virtual bool addQuad(int a, int b, int c, int d) noexcept; //!< add a quad given vertex indices and material pointer

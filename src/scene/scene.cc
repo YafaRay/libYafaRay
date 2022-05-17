@@ -925,7 +925,7 @@ bool Scene::smoothVerticesNormals(const std::string &name, float angle)
 		if(!object) return false;
 	}
 
-	if(object->hasVerticesNormals() && object->numVerticesNormals() == object->numVertices())
+	if(object->hasVerticesNormals(0) && object->numVerticesNormals(0) == object->numVertices(0))
 	{
 		object->setSmooth(true);
 		return true;
@@ -933,26 +933,26 @@ bool Scene::smoothVerticesNormals(const std::string &name, float angle)
 	else return object->smoothVerticesNormals(logger_, angle);
 }
 
-int Scene::addVertex(const Point3 &p)
+int Scene::addVertex(const Point3 &p, size_t time_step)
 {
 	//if(logger_.isDebug()) logger.logDebug("Scene::addVertex) PR(p");
 	if(creation_state_.stack_.front() != CreationState::Object) return -1;
-	current_object_->addPoint(p);
-	return current_object_->lastVertexId();
+	current_object_->addPoint(p, time_step);
+	return current_object_->lastVertexId(time_step);
 }
 
-int Scene::addVertex(const Point3 &p, const Point3 &orco)
+int Scene::addVertex(const Point3 &p, const Point3 &orco, size_t time_step)
 {
 	if(creation_state_.stack_.front() != CreationState::Object) return -1;
-	current_object_->addPoint(p);
-	current_object_->addOrcoPoint(orco);
-	return current_object_->lastVertexId();
+	current_object_->addPoint(p, time_step);
+	current_object_->addOrcoPoint(orco, time_step);
+	return current_object_->lastVertexId(time_step);
 }
 
-void Scene::addVertexNormal(const Vec3 &n)
+void Scene::addVertexNormal(const Vec3 &n, size_t time_step)
 {
 	if(creation_state_.stack_.front() != CreationState::Object) return;
-	current_object_->addVertexNormal(n);
+	current_object_->addVertexNormal(n, time_step);
 }
 
 bool Scene::addFace(const std::vector<int> &vert_indices, const std::vector<int> &uv_indices)

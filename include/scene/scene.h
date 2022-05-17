@@ -69,9 +69,9 @@ class Scene final
 		explicit Scene(Logger &logger);
 		Scene(const Scene &s) = delete;
 		~Scene();
-		int addVertex(const Point3 &p);
-		int addVertex(const Point3 &p, const Point3 &orco);
-		void addVertexNormal(const Vec3 &n);
+		int addVertex(const Point3 &p, size_t time_step);
+		int addVertex(const Point3 &p, const Point3 &orco, size_t time_step);
+		void addVertexNormal(const Vec3 &n, size_t time_step);
 		bool addFace(const std::vector<int> &vert_indices, const std::vector<int> &uv_indices = {});
 		int addUv(float u, float v);
 		bool smoothVerticesNormals(const std::string &name, float angle);

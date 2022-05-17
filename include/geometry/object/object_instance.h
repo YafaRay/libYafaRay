@@ -26,7 +26,7 @@ BEGIN_YAFARAY
 
 class Matrix4;
 
-class ObjectInstance : public Object
+class ObjectInstance final : public Object
 {
 	public:
 		ObjectInstance(const Object &base_object, const Matrix4 &obj_to_world);
@@ -55,7 +55,7 @@ class ObjectInstance : public Object
 		const Matrix4 *getObjToWorldMatrix() const { return obj_to_world_.get(); }
 		bool calculateObject(const std::unique_ptr<const Material> *material) override { return true; }
 
-	protected:
+	private:
 		const Object &base_object_;
 		std::unique_ptr<const Matrix4> obj_to_world_;
 		std::vector<std::unique_ptr<const Primitive>> primitive_instances_;

@@ -104,17 +104,17 @@ std::unique_ptr<const SurfacePoint> SpherePrimitive::getSurface(const RayDiffere
 	return sp;
 }
 
-float SpherePrimitive::surfaceArea(const Matrix4 *obj_to_world) const
+float SpherePrimitive::surfaceArea(const Matrix4 *obj_to_world, float time) const
 {
 	return 0; //FIXME
 }
 
-Vec3 SpherePrimitive::getGeometricFaceNormal(const Matrix4 *obj_to_world, float u, float v) const
+Vec3 SpherePrimitive::getGeometricNormal(const Matrix4 *obj_to_world, float u, float v, float time) const
 {
 	return {}; //FIXME
 }
 
-std::pair<Point3, Vec3> SpherePrimitive::sample(float s_1, float s_2, const Matrix4 *obj_to_world) const
+std::pair<Point3, Vec3> SpherePrimitive::sample(float s_1, float s_2, const Matrix4 *obj_to_world, float time) const
 {
 	return {}; //FIXME
 }

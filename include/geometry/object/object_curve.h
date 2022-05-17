@@ -33,7 +33,7 @@ class CurveObject final : public MeshObject
 {
 	public:
 		static Object *factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params);
-		CurveObject(int num_vertices, float strand_start, float strand_end, float strand_shape, bool has_uv = false, bool has_orco = false);
+		CurveObject(int num_vertices, float strand_start, float strand_end, float strand_shape, bool has_uv, bool has_orco, bool motion_blur_bezier, float time_range_start, float time_range_end);
 		bool calculateObject(const std::unique_ptr<const Material> *material) override;
 
 	private:

@@ -92,21 +92,27 @@ bool ExportPython::endObject() noexcept
 	return true;
 }
 
-int ExportPython::addVertex(double x, double y, double z) noexcept
+int ExportPython::addVertex(double x, double y, double z, size_t time_step) noexcept
 {
-	file_ << "yi.addVertex(" << x << ", " << y << ", " << z << ")\n";
+	file_ << "yi.addVertex(" << x << ", " << y << ", " << z;
+	if(time_step > 0) file_ << ", " << time_step;
+	file_ << ")\n";
 	return 0;
 }
 
-int ExportPython::addVertex(double x, double y, double z, double ox, double oy, double oz) noexcept
+int ExportPython::addVertex(double x, double y, double z, double ox, double oy, double oz, size_t time_step) noexcept
 {
-	file_ << "yi.addVertexWithOrco(" << x << ", " << y << ", " << z << ", " << ox << ", " << oy << ", " << oz << ")\n";
+	file_ << "yi.addVertexWithOrco(" << x << ", " << y << ", " << z << ", " << ox << ", " << oy << ", " << oz;
+	if(time_step > 0) file_ << ", " << time_step;
+	file_ << ")\n";
 	return 0;
 }
 
-void ExportPython::addVertexNormal(double x, double y, double z) noexcept
+void ExportPython::addVertexNormal(double x, double y, double z, size_t time_step) noexcept
 {
-	file_ << "yi.addNormal(" << x << ", " << y << ", " << z << ")\n";
+	file_ << "yi.addNormal(" << x << ", " << y << ", " << z;
+	if(time_step > 0) file_ << ", " << time_step;
+	file_ << ")\n";
 }
 
 void ExportPython::setCurrentMaterial(const char *name) noexcept

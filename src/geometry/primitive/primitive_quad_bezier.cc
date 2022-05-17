@@ -17,94 +17,113 @@
  */
 
 #include "geometry/primitive/primitive_quad_bezier.h"
-#include <memory>
+#include "geometry/object/object_mesh.h"
+#include "geometry/axis.h"
 #include "geometry/ray.h"
 #include "geometry/bound.h"
 #include "geometry/surface.h"
-#include "geometry/object/object_mesh_bezier.h"
-#include "geometry/shape/shape_quad.h"
 #include "geometry/uv.h"
-#include "geometry/primitive/primitive_triangle.h"
-#include "geometry/shape/shape_triangle.h"
-#include "math/interpolation.h"
+#include "geometry/matrix4.h"
+#include "geometry/poly_double.h"
+#include "common/param.h"
+#include <memory>
 
 BEGIN_YAFARAY
 
-ShapeQuad QuadBezierPrimitive::getShapeQuadAtTime(float time, const Matrix4 *obj_to_world) const
+std::unique_ptr<const SurfacePoint> QuadBezierPrimitive::getSurface(const RayDifferentials *ray_differentials, const Point3 &hit_point, const IntersectData &intersect_data, const Matrix4 *obj_to_world, const Camera *camera) const
 {
-	//FIXME: ugly static casts but for performance we cannot affort dynamic casts here and the base mesh should be MeshBezier in any case...
-	const float time_start = static_cast<const MeshBezierObject *>(&base_mesh_object_)->getTimeRangeStart();
-	const float time_end = static_cast<const MeshBezierObject *>(&base_mesh_object_)->getTimeRangeEnd();
-
-	if(time <= time_start) return ShapeQuad {{
-			getVertex(BezierTimeStep::Start, 0, obj_to_world),
-			getVertex(BezierTimeStep::Start, 1, obj_to_world),
-			getVertex(BezierTimeStep::Start, 2, obj_to_world),
-			getVertex(BezierTimeStep::Start, 3, obj_to_world)
-	}};
-	else if(time >= time_end) return ShapeQuad {{
-				getVertex(BezierTimeStep::End, 0, obj_to_world),
-				getVertex(BezierTimeStep::End, 1, obj_to_world),
-				getVertex(BezierTimeStep::End, 2, obj_to_world),
-				getVertex(BezierTimeStep::End, 3, obj_to_world)
-	}};
+	auto sp = std::make_unique<SurfacePoint>();
+	sp->intersect_data_ = intersect_data;
+	const float time = intersect_data.time_;
+	sp->ng_ = Primitive::getGeometricNormal(obj_to_world, time);
+	if(base_mesh_object_.isSmooth() || base_mesh_object_.hasVerticesNormals(0))
+	{
+		const std::array<Vec3, 4> v {
+				getVertexNormal(0, sp->ng_, obj_to_world, 0),
+				getVertexNormal(1, sp->ng_, obj_to_world, 0),
+				getVertexNormal(2, sp->ng_, obj_to_world, 0),
+				getVertexNormal(3, sp->ng_, obj_to_world, 0)};
+		sp->n_ = ShapeQuad::interpolate(intersect_data.u_, intersect_data.v_, v);
+		sp->n_.normalize();
+	}
+	else sp->n_ = sp->ng_;
+	if(base_mesh_object_.hasOrco(0))
+	{
+		const std::array<Point3, 4> orco_p {
+				getOrcoVertex(0, 0),
+				getOrcoVertex(1, 0),
+				getOrcoVertex(2, 0),
+				getOrcoVertex(3, 0)};
+		sp->orco_p_ = ShapeQuad::interpolate(intersect_data.u_, intersect_data.v_, orco_p);
+		sp->orco_ng_ = ((orco_p[1] - orco_p[0]) ^ (orco_p[2] - orco_p[0])).normalize();
+		sp->has_orco_ = true;
+	}
 	else
 	{
-		const std::array<Point3, 3> pa {
-				getVertex(BezierTimeStep::Start, 0, obj_to_world),
-				getVertex(BezierTimeStep::Mid, 0, obj_to_world),
-				getVertex(BezierTimeStep::End, 0, obj_to_world)
-		};
-		const std::array<Point3, 3> pb {
-				getVertex(BezierTimeStep::Start, 1, obj_to_world),
-				getVertex(BezierTimeStep::Mid, 1, obj_to_world),
-				getVertex(BezierTimeStep::End, 1, obj_to_world)
-		};
-		const std::array<Point3, 3> pc {
-				getVertex(BezierTimeStep::Start, 2, obj_to_world),
-				getVertex(BezierTimeStep::Mid, 2, obj_to_world),
-				getVertex(BezierTimeStep::End, 2, obj_to_world)
-		};
-		const std::array<Point3, 3> pd {
-				getVertex(BezierTimeStep::Start, 3, obj_to_world),
-				getVertex(BezierTimeStep::Mid, 3, obj_to_world),
-				getVertex(BezierTimeStep::End, 3, obj_to_world)
-		};
-		const float time_mapped = math::lerpSegment(time, 0.f, time_start, 1.f, time_end); //time_mapped must be in range [0.f-1.f]
-		const float tc = 1.f - time_mapped;
-		const float b_1 = tc * tc;
-		const float b_2 = 2.f * time_mapped * tc;
-		const float b_3 = time_mapped * time_mapped;
-		return ShapeQuad{{
-				b_1 * pa[BezierTimeStep::Start] + b_2 * pa[BezierTimeStep::Mid] + b_3 * pa[BezierTimeStep::End],
-				b_1 * pb[BezierTimeStep::Start] + b_2 * pb[BezierTimeStep::Mid] + b_3 * pb[BezierTimeStep::End],
-				b_1 * pc[BezierTimeStep::Start] + b_2 * pc[BezierTimeStep::Mid] + b_3 * pc[BezierTimeStep::End],
-				b_1 * pd[BezierTimeStep::Start] + b_2 * pd[BezierTimeStep::Mid] + b_3 * pd[BezierTimeStep::End]
-		}};
+		sp->orco_p_ = hit_point;
+		sp->has_orco_ = false;
+		sp->orco_ng_ = Primitive::getGeometricNormal(time);
 	}
-}
-
-IntersectData QuadBezierPrimitive::intersect(const Ray &ray, const Matrix4 *obj_to_world) const
-{
-	return getShapeQuadAtTime(ray.time_, obj_to_world).intersect(ray);
-}
-
-float QuadBezierPrimitive::surfaceArea(const Matrix4 *obj_to_world) const
-{
-	return ShapeQuad {{ getVertex(BezierTimeStep::Start, 0, obj_to_world), getVertex(BezierTimeStep::Start, 1, obj_to_world), getVertex(BezierTimeStep::Start, 2, obj_to_world), getVertex(BezierTimeStep::Start, 3, obj_to_world) }}.surfaceArea();
-}
-
-std::pair<Point3, Vec3> QuadBezierPrimitive::sample(float s_1, float s_2, const Matrix4 *obj_to_world) const
-{
-	return {
-			ShapeQuad{{getVertex(BezierTimeStep::Start, 0, obj_to_world), getVertex(BezierTimeStep::Start, 1, obj_to_world), getVertex(BezierTimeStep::Start, 2, obj_to_world), getVertex(BezierTimeStep::Start, 3, obj_to_world)}}.sample(s_1, s_2),
-			Primitive::getGeometricFaceNormal(obj_to_world)
+	bool implicit_uv = true;
+	const std::array<Point3, 4> p {
+			getVertex(0, obj_to_world, 0),
+			getVertex(1, obj_to_world, 0),
+			getVertex(2, obj_to_world, 0),
+			getVertex(3, obj_to_world, 0),
 	};
-}
-
-void QuadBezierPrimitive::calculateGeometricFaceNormal()
-{
-	face_normal_geometric_ = getShapeQuadAtTime(0.f, nullptr).calculateFaceNormal();
+	if(base_mesh_object_.hasUv())
+	{
+		const std::array<Uv, 4> uv {
+				getVertexUv(0),
+				getVertexUv(1),
+				getVertexUv(2),
+				getVertexUv(3)
+		};
+		const Uv uv_result = ShapeQuad::interpolate(intersect_data.u_, intersect_data.v_, uv);
+		sp->u_ = uv_result.u_;
+		sp->v_ = uv_result.v_;
+		// calculate dPdU and dPdV
+		const float du_1 = uv[1].u_ - uv[0].u_;
+		const float du_2 = uv[2].u_ - uv[0].u_;
+		const float dv_1 = uv[1].v_ - uv[0].v_;
+		const float dv_2 = uv[2].v_ - uv[0].v_;
+		const float det = du_1 * dv_2 - dv_1 * du_2;
+		if(std::abs(det) > 1e-30f)
+		{
+			const float invdet = 1.f / det;
+			const Vec3 dp_1{p[1] - p[0]};
+			const Vec3 dp_2{p[2] - p[0]};
+			sp->dp_du_ = (dv_2 * dp_1 - dv_1 * dp_2) * invdet;
+			sp->dp_dv_ = (du_1 * dp_2 - du_2 * dp_1) * invdet;
+			implicit_uv = false;
+		}
+	}
+	if(implicit_uv)
+	{
+		// implicit mapping, p0 = 0/0, p1 = 1/0, p2 = 0/1 => sp->u_ = barycentric_u, sp->v_ = barycentric_v; (arbitrary choice)
+		sp->dp_du_ = p[1] - p[0];
+		sp->dp_dv_ = p[2] - p[0];
+		sp->u_ = intersect_data.u_;
+		sp->v_ = intersect_data.v_;
+	}
+	sp->has_uv_ = !implicit_uv;
+	//Copy original dPdU and dPdV before normalization to the "absolute" dPdU and dPdV (for mipmap calculations)
+	sp->dp_du_abs_ = sp->dp_du_;
+	sp->dp_dv_abs_ = sp->dp_dv_;
+	sp->dp_du_.normalize();
+	sp->dp_dv_.normalize();
+	sp->object_ = &base_mesh_object_;
+	sp->primitive_ = this;
+	sp->light_ = base_mesh_object_.getLight();
+	sp->has_uv_ = base_mesh_object_.hasUv();
+	sp->prim_num_ = getSelfIndex();
+	sp->p_ = hit_point;
+	std::tie(sp->nu_, sp->nv_) = Vec3::createCoordsSystem(sp->n_);
+	sp->calculateShadingSpace();
+	sp->material_ = getMaterial();
+	sp->setRayDifferentials(ray_differentials);
+	sp->mat_data_ = std::shared_ptr<const MaterialData>(sp->material_->initBsdf(*sp, camera));
+	return sp;
 }
 
 END_YAFARAY

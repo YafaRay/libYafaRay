@@ -61,8 +61,11 @@ extern "C" {
 	YAFARAY_C_API_EXPORT unsigned int yafaray_getNextFreeId(yafaray_Interface_t *interface);
 	YAFARAY_C_API_EXPORT yafaray_bool_t yafaray_endObject(yafaray_Interface_t *interface);
 	YAFARAY_C_API_EXPORT int yafaray_addVertex(yafaray_Interface_t *interface, double x, double y, double z);
+	YAFARAY_C_API_EXPORT int yafaray_addVertexTimeStep(yafaray_Interface_t *interface, double x, double y, double z, unsigned int time_step);
 	YAFARAY_C_API_EXPORT int yafaray_addVertexWithOrco(yafaray_Interface_t *interface, double x, double y, double z, double ox, double oy, double oz);
+	YAFARAY_C_API_EXPORT int yafaray_addVertexWithOrcoTimeStep(yafaray_Interface_t *interface, double x, double y, double z, double ox, double oy, double oz, unsigned int time_step);
 	YAFARAY_C_API_EXPORT void yafaray_addNormal(yafaray_Interface_t *interface, double nx, double ny, double nz);
+	YAFARAY_C_API_EXPORT void yafaray_addNormalTimeStep(yafaray_Interface_t *interface, double nx, double ny, double nz, unsigned int time_step);
 	YAFARAY_C_API_EXPORT yafaray_bool_t yafaray_addTriangle(yafaray_Interface_t *interface, int a, int b, int c);
 	YAFARAY_C_API_EXPORT yafaray_bool_t yafaray_addTriangleWithUv(yafaray_Interface_t *interface, int a, int b, int c, int uv_a, int uv_b, int uv_c);
 	YAFARAY_C_API_EXPORT yafaray_bool_t yafaray_addQuad(yafaray_Interface_t *interface, int a, int b, int c, int d);

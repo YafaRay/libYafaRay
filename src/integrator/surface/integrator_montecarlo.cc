@@ -197,7 +197,7 @@ Rgb MonteCarloIntegrator::areaLightSampleLight(Halton &hal_2, Halton &hal_3, Ran
 		// ...get sample val...
 		ls.s_1_ = hal_2.getNext();
 		ls.s_2_ = hal_3.getNext();
-		if(light->illumSample(sp, ls, light_ray))
+		if(light->illumSample(sp, ls, light_ray, time))
 		{
 			if(shadow_bias_auto_) light_ray.tmin_ = shadow_bias_ * std::max(1.f, sp.p_.length());
 			else light_ray.tmin_ = shadow_bias_;

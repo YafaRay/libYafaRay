@@ -13,8 +13,11 @@ LIBYAFARAY_4.0.0 {
         yafaray_getNextFreeId;
         yafaray_endObject;
         yafaray_addVertex;
+        yafaray_addVertexTimeStep;
         yafaray_addVertexWithOrco;
+        yafaray_addVertexWithOrcoTimeStep;
         yafaray_addNormal;
+        yafaray_addNormalTimeStep;
         yafaray_addTriangle;
         yafaray_addTriangleWithUv;
         yafaray_addQuad;

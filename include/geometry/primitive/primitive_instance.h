@@ -47,9 +47,9 @@ class PrimitiveInstance : public Primitive
 		IntersectData intersect(const Ray &ray, const Matrix4 *) const override;
 		std::unique_ptr<const SurfacePoint> getSurface(const RayDifferentials *ray_differentials, const Point3 &hit_point, const IntersectData &intersect_data, const Matrix4 *, const Camera *camera) const override;
 		const Material *getMaterial() const override { return base_primitive_->getMaterial(); }
-		float surfaceArea(const Matrix4 *) const override;
-		Vec3 getGeometricFaceNormal(const Matrix4 *, float u, float v) const override;
-		std::pair<Point3, Vec3> sample(float s_1, float s_2, const Matrix4 *) const override;
+		float surfaceArea(const Matrix4 *, float time) const override;
+		Vec3 getGeometricNormal(const Matrix4 *, float u, float v, float time) const override;
+		std::pair<Point3, Vec3> sample(float s_1, float s_2, const Matrix4 *, float time) const override;
 		const Object *getObject() const override { return &base_instance_; }
 		Visibility getVisibility() const override { return base_primitive_->getVisibility(); }
 		float getDistToNearestEdge(float u, float v, const Vec3 &dp_du_abs, const Vec3 &dp_dv_abs) const override { return base_primitive_->getDistToNearestEdge(u, v, dp_du_abs, dp_dv_abs); }
@@ -69,19 +69,19 @@ inline IntersectData PrimitiveInstance::intersect(const Ray &ray, const Matrix4 
 	return base_primitive_->intersect(ray, base_instance_.getObjToWorldMatrix());
 }
 
-inline float PrimitiveInstance::surfaceArea(const Matrix4 *) const
+inline float PrimitiveInstance::surfaceArea(const Matrix4 *, float time) const
 {
-	return base_primitive_->surfaceArea(base_instance_.getObjToWorldMatrix());
+	return base_primitive_->surfaceArea(base_instance_.getObjToWorldMatrix(), time);
 }
 
-inline Vec3 PrimitiveInstance::getGeometricFaceNormal(const Matrix4 *, float u, float v) const
+inline Vec3 PrimitiveInstance::getGeometricNormal(const Matrix4 *, float u, float v, float time) const
 {
-	return base_primitive_->getGeometricFaceNormal(base_instance_.getObjToWorldMatrix(), u, v);
+	return base_primitive_->getGeometricNormal(base_instance_.getObjToWorldMatrix(), u, v, time);
 }
 
-inline std::pair<Point3, Vec3> PrimitiveInstance::sample(float s_1, float s_2, const Matrix4 *) const
+inline std::pair<Point3, Vec3> PrimitiveInstance::sample(float s_1, float s_2, const Matrix4 *, float time) const
 {
-	return base_primitive_->sample(s_1, s_2, base_instance_.getObjToWorldMatrix());
+	return base_primitive_->sample(s_1, s_2, base_instance_.getObjToWorldMatrix(), time);
 }
 
 END_YAFARAY

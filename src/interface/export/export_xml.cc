@@ -83,22 +83,28 @@ bool ExportXml::endObject() noexcept
 	return true;
 }
 
-int ExportXml::addVertex(double x, double y, double z) noexcept
+int ExportXml::addVertex(double x, double y, double z, size_t time_step) noexcept
 {
-	file_ << "\t<p x=\"" << x << "\" y=\"" << y << "\" z=\"" << z << "\"/>\n";
+	file_ << "\t<p x=\"" << x << "\" y=\"" << y << "\" z=\"" << z;
+	if(time_step > 0) file_ << "\" t=\"" << time_step;
+	file_ << "\"/>\n";
 	return 0;
 }
 
-int ExportXml::addVertex(double x, double y, double z, double ox, double oy, double oz) noexcept
+int ExportXml::addVertex(double x, double y, double z, double ox, double oy, double oz, size_t time_step) noexcept
 {
 	file_ << "\t<p x=\"" << x << "\" y=\"" << y << "\" z=\"" << z
-			  << "\" ox=\"" << ox << "\" oy=\"" << oy << "\" oz=\"" << oz << "\"/>\n";
+			  << "\" ox=\"" << ox << "\" oy=\"" << oy << "\" oz=\"" << oz;
+	if(time_step > 0) file_ << "\" t=\"" << time_step;
+	file_ << "\"/>\n";
 	return 0;
 }
 
-void ExportXml::addVertexNormal(double x, double y, double z) noexcept
+void ExportXml::addVertexNormal(double x, double y, double z, size_t time_step) noexcept
 {
-	file_ << "\t<n x=\"" << x << "\" y=\"" << y << "\" z=\"" << z << "\"/>\n";
+	file_ << "\t<n x=\"" << x << "\" y=\"" << y << "\" z=\"" << z;
+	if(time_step > 0) file_ << "\" t=\"" << time_step;
+	file_ << "\"/>\n";
 }
 
 void ExportXml::setCurrentMaterial(const char *name) noexcept

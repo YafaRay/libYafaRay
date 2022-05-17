@@ -34,27 +34,25 @@ std::unique_ptr<const SurfacePoint> QuadPrimitive::getSurface(const RayDifferent
 {
 	auto sp = std::make_unique<SurfacePoint>();
 	sp->intersect_data_ = intersect_data;
-	sp->ng_ = Primitive::getGeometricFaceNormal(obj_to_world);
-	if(base_mesh_object_.isSmooth() || base_mesh_object_.hasVerticesNormals())
+	sp->ng_ = getGeometricNormal(obj_to_world);
+	if(base_mesh_object_.isSmooth() || base_mesh_object_.hasVerticesNormals(0))
 	{
 		const std::array<Vec3, 4> v {
-			getVertexNormal(0, sp->ng_, obj_to_world),
-			getVertexNormal(1, sp->ng_, obj_to_world),
-			getVertexNormal(2, sp->ng_, obj_to_world),
-			getVertexNormal(3, sp->ng_, obj_to_world)
-		};
+				getVertexNormal(0, sp->ng_, obj_to_world, 0),
+				getVertexNormal(1, sp->ng_, obj_to_world, 0),
+				getVertexNormal(2, sp->ng_, obj_to_world, 0),
+				getVertexNormal(3, sp->ng_, obj_to_world, 0)};
 		sp->n_ = ShapeQuad::interpolate(intersect_data.u_, intersect_data.v_, v);
 		sp->n_.normalize();
 	}
 	else sp->n_ = sp->ng_;
-	if(base_mesh_object_.hasOrco())
+	if(base_mesh_object_.hasOrco(0))
 	{
 		const std::array<Point3, 4> orco_p {
-			getOrcoVertex(0),
-			getOrcoVertex(1),
-			getOrcoVertex(2),
-			getOrcoVertex(3)
-		};
+				getOrcoVertex(0, 0),
+				getOrcoVertex(1, 0),
+				getOrcoVertex(2, 0),
+				getOrcoVertex(3, 0)};
 		sp->orco_p_ = ShapeQuad::interpolate(intersect_data.u_, intersect_data.v_, orco_p);
 		sp->orco_ng_ = ((orco_p[1] - orco_p[0]) ^ (orco_p[2] - orco_p[0])).normalize();
 		sp->has_orco_ = true;
@@ -63,14 +61,14 @@ std::unique_ptr<const SurfacePoint> QuadPrimitive::getSurface(const RayDifferent
 	{
 		sp->orco_p_ = hit_point;
 		sp->has_orco_ = false;
-		sp->orco_ng_ = Primitive::getGeometricFaceNormal();
+		sp->orco_ng_ = getGeometricNormal();
 	}
 	bool implicit_uv = true;
 	const std::array<Point3, 4> p {
-		obj_to_world ?
-		std::array<Point3, 4>{ getVertex(0, obj_to_world), getVertex(1, obj_to_world), getVertex(2, obj_to_world), getVertex(3, obj_to_world) }
-		:
-		std::array<Point3, 4>{ getVertex(0), getVertex(1), getVertex(2), getVertex(3) }
+			getVertex(0, obj_to_world, 0),
+			getVertex(1, obj_to_world, 0),
+			getVertex(2, obj_to_world, 0),
+			getVertex(3, obj_to_world, 0),
 	};
 	if(base_mesh_object_.hasUv())
 	{
@@ -139,10 +137,10 @@ PolyDouble::ClipResultWithBound QuadPrimitive::clipToBound(Logger &logger, const
 	}
 	// initial clip
 	const std::array<Point3, 4> vertices{
-		obj_to_world ?
-		std::array<Point3, 4>{ getVertex(0, obj_to_world), getVertex(1, obj_to_world), getVertex(2, obj_to_world), getVertex(3, obj_to_world) }
-		:
-		std::array<Point3, 4>{ getVertex(0), getVertex(1), getVertex(2), getVertex(3) }
+			getVertex(0, obj_to_world, 0),
+			getVertex(1, obj_to_world, 0),
+			getVertex(2, obj_to_world, 0),
+			getVertex(3, obj_to_world, 0),
 	};
 	PolyDouble poly_triangle;
 	for(const auto &vert : vertices) poly_triangle.addVertex({vert.x(), vert.y(), vert.z() });

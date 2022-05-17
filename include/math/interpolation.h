@@ -39,7 +39,7 @@ inline constexpr Y lerp(const Y &y_1, const Y &y_2, const X &x)
 }
 
 template<typename Y, typename X>
-inline Y lerpTruncated(const Y &y_1, const Y &y_2, const X &x)
+inline constexpr Y lerpTruncated(const Y &y_1, const Y &y_2, const X &x)
 {
 	if(x <= 0) return y_1;
 	else if(x >= 1) return y_2;
@@ -47,7 +47,7 @@ inline Y lerpTruncated(const Y &y_1, const Y &y_2, const X &x)
 }
 
 template<typename Y, typename X>
-inline Y lerpSegment(const X &x, const Y &y_1, const X &x_1, const Y &y_2, const X &x_2)
+inline constexpr Y lerpSegment(const X &x, const Y &y_1, const X &x_1, const Y &y_2, const X &x_2)
 {
 	if(x == x_1 || x_1 == x_2) return y_1;
 	else if(x == x_2) return y_2;
@@ -60,14 +60,14 @@ inline Y lerpSegment(const X &x, const Y &y_1, const X &x_1, const Y &y_2, const
 }
 
 template<typename Y, typename X>
-inline Y cosineInterpolate(const Y &y_1, const Y &y_2, const X &x)
+inline constexpr Y cosineInterpolate(const Y &y_1, const Y &y_2, const X &x)
 {
 	const X x_cos = (static_cast<X>(1) - math::cos(x * num_pi<X>)) * static_cast<X>(0.5);
 	return (y_1 * (static_cast<X>(1) - x_cos) + y_2 * x_cos);
 }
 
 template<class Y, typename X>
-inline Y cubicInterpolate(const Y &y_0, const Y &y_1, const Y &y_2, const Y &y_3, const X &x)
+inline constexpr Y cubicInterpolate(const Y &y_0, const Y &y_1, const Y &y_2, const Y &y_3, const X &x)
 {
 	const X x_squared = x * x;
 	const X x_cubed = x * x_squared;
@@ -77,6 +77,33 @@ inline Y cubicInterpolate(const Y &y_0, const Y &y_1, const Y &y_2, const Y &y_3
 	const Y a_3 = y_1;
 
 	return (a_0 * x_cubed + a_1 * x_squared + a_2 * x + a_3);
+}
+
+template<class Y, typename X>
+inline constexpr Y bezierInterpolate(const std::array<Y, 3> &y, const std::array<X, 3> &bezier_factors)
+{
+	return static_cast<Y>(y[0] * bezier_factors[0] + y[1] * bezier_factors[1] + y[2] * bezier_factors[2]);
+}
+
+template<typename X>
+inline constexpr std::array<X, 3> bezierCalculateFactors(const X &x)
+{
+	const X x_reversed { 1 - x };
+	return { x_reversed * x_reversed, 2 * x * x_reversed, x * x };
+}
+
+template<class Y, typename X>
+inline constexpr Y bezierInterpolateTruncated(const std::array<Y, 3> &y, const X &x)
+{
+	if(x <= 0) return y[0];
+	else if(x >= 1) return y[2];
+	else return static_cast<Y>(bezierInterpolateTruncated<Y, X>(y, bezierCalculateFactors<X>(x)));
+}
+
+template<class Y>
+inline constexpr Y bezierFindControlPoint(const std::array<Y, 3> &y)
+{
+	return static_cast<Y>(2 * y[1] - (y[0] + y[2]) / 2);
 }
 
 } // namespace math

@@ -49,7 +49,7 @@ class ObjectBasic : public Object
 		/*! set a light source to be associated with this object */
 		void setLight(const Light *light) override { light_ = light; }
 
-	protected:
+	private:
 		std::string name_;
 		const Light *light_ = nullptr;
 		Visibility visibility_ = Visibility::NormalVisible;

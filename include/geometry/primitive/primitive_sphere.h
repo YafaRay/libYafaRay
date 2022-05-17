@@ -46,11 +46,12 @@ class SpherePrimitive final : public Primitive
 		IntersectData intersect(const Ray &ray, const Matrix4 *obj_to_world) const override;
 		std::unique_ptr<const SurfacePoint> getSurface(const RayDifferentials *ray_differentials, const Point3 &hit, const IntersectData &intersect_data, const Matrix4 *obj_to_world, const Camera *camera) const override;
 		const Material *getMaterial() const override { return material_->get(); }
-		float surfaceArea(const Matrix4 *obj_to_world) const override;
-		Vec3 getGeometricFaceNormal(const Matrix4 *obj_to_world, float u, float v) const override;
-		std::pair<Point3, Vec3> sample(float s_1, float s_2, const Matrix4 *obj_to_world) const override;
+		float surfaceArea(const Matrix4 *obj_to_world, float time) const override;
+		Vec3 getGeometricNormal(const Matrix4 *obj_to_world, float u, float v, float time) const override;
+		std::pair<Point3, Vec3> sample(float s_1, float s_2, const Matrix4 *obj_to_world, float time) const override;
 		const Object *getObject() const override { return &base_object_; }
 		Visibility getVisibility() const override { return base_object_.getVisibility(); }
+		bool clippingSupport() const override { return false; }
 		float getDistToNearestEdge(float u, float v, const Vec3 &dp_du_abs, const Vec3 &dp_dv_abs) const override { return 0.f; }
 
 		Point3 center_;

@@ -138,25 +138,31 @@ bool ExportC::endObject() noexcept
 	return true;
 }
 
-int ExportC::addVertex(double x, double y, double z) noexcept
+int ExportC::addVertex(double x, double y, double z, size_t time_step) noexcept
 {
-	file_ << "\t" << "yafaray_addVertex(yi, " << x << ", " << y << ", " << z << ");\n";
+	file_ << "\t" << "yafaray_addVertex(yi, " << x << ", " << y << ", " << z;
+	if(time_step > 0) file_ << ", " << time_step;
+	file_ << ");\n";
 	++section_num_lines_;
 	if(section_num_lines_ >= section_max_lines_) file_ << sectionSplit();
 	return 0;
 }
 
-int ExportC::addVertex(double x, double y, double z, double ox, double oy, double oz) noexcept
+int ExportC::addVertex(double x, double y, double z, double ox, double oy, double oz, size_t time_step) noexcept
 {
-	file_ << "\t" << "yafaray_addVertexWithOrco(yi, " << x << ", " << y << ", " << z << ", " << ox << ", " << oy << ", " << oz << ");\n";
+	file_ << "\t" << "yafaray_addVertexWithOrco(yi, " << x << ", " << y << ", " << z << ", " << ox << ", " << oy << ", " << oz;
+	if(time_step > 0) file_ << ", " << time_step;
+	file_ << ");\n";
 	++section_num_lines_;
 	if(section_num_lines_ >= section_max_lines_) file_ << sectionSplit();
 	return 0;
 }
 
-void ExportC::addVertexNormal(double x, double y, double z) noexcept
+void ExportC::addVertexNormal(double x, double y, double z, size_t time_step) noexcept
 {
-	file_ << "\t" << "yafaray_addNormal(yi, " << x << ", " << y << ", " << z << ");\n";
+	file_ << "\t" << "yafaray_addNormal(yi, " << x << ", " << y << ", " << z;
+	if(time_step > 0) file_ << ", " << time_step;
+	file_ << ");\n";
 	++section_num_lines_;
 	if(section_num_lines_ >= section_max_lines_) file_ << sectionSplit();
 }

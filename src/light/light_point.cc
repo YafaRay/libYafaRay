@@ -55,7 +55,7 @@ bool PointLight::illuminate(const SurfacePoint &sp, Rgb &col, Ray &wi) const
 	return true;
 }
 
-bool PointLight::illumSample(const SurfacePoint &sp, LSample &s, Ray &wi) const
+bool PointLight::illumSample(const SurfacePoint &sp, LSample &s, Ray &wi, float time) const
 {
 	if(photonOnly()) return false;
 
@@ -84,7 +84,7 @@ Rgb PointLight::emitPhoton(float s_1, float s_2, float s_3, float s_4, Ray &ray,
 	return color_;
 }
 
-Rgb PointLight::emitSample(Vec3 &wo, LSample &s) const
+Rgb PointLight::emitSample(Vec3 &wo, LSample &s, float time) const
 {
 	s.sp_->p_ = position_;
 	wo = sample::sphere(s.s_1_, s.s_2_);

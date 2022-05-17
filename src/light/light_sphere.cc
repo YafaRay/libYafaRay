@@ -68,7 +68,7 @@ bool SphereLight::sphereIntersect(const Ray &ray, const Point3 &c, float r_2, fl
 	return true;
 }
 
-bool SphereLight::illumSample(const SurfacePoint &sp, LSample &s, Ray &wi) const
+bool SphereLight::illumSample(const SurfacePoint &sp, LSample &s, Ray &wi, float time) const
 {
 	if(photonOnly()) return false;
 
@@ -145,7 +145,7 @@ Rgb SphereLight::emitPhoton(float s_1, float s_2, float s_3, float s_4, Ray &ray
 	return color_;
 }
 
-Rgb SphereLight::emitSample(Vec3 &wo, LSample &s) const
+Rgb SphereLight::emitSample(Vec3 &wo, LSample &s, float time) const
 {
 	Vec3 sdir{sample::sphere(s.s_3_, s.s_4_)};
 	s.sp_->p_ = center_ + radius_ * sdir;

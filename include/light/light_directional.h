@@ -41,9 +41,9 @@ class DirectionalLight final : public Light
 		void init(Scene &scene) override;
 		Rgb totalEnergy() const override { return color_ * radius_ * radius_ * math::num_pi<>; }
 		Rgb emitPhoton(float s_1, float s_2, float s_3, float s_4, Ray &ray, float &ipdf) const override;
-		Rgb emitSample(Vec3 &wo, LSample &s) const override;
+		Rgb emitSample(Vec3 &wo, LSample &s, float time) const override;
 		bool diracLight() const override { return true; }
-		bool illumSample(const SurfacePoint &sp, LSample &s, Ray &wi) const override;
+		bool illumSample(const SurfacePoint &sp, LSample &s, Ray &wi, float time) const override;
 		bool illuminate(const SurfacePoint &sp, Rgb &col, Ray &wi) const override;
 
 		Point3 position_;

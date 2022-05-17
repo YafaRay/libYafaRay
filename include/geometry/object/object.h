@@ -20,12 +20,12 @@
 #ifndef YAFARAY_OBJECT_H
 #define YAFARAY_OBJECT_H
 
-#include "common/yafaray_common.h"
 #include "color/color.h"
 #include "common/visibility.h"
-#include <vector>
-#include <memory>
+#include "common/yafaray_common.h"
 #include <common/logger.h>
+#include <memory>
+#include <vector>
 
 BEGIN_YAFARAY
 
@@ -75,15 +75,15 @@ class Object
 		bool calculateObject() { return calculateObject(nullptr); }
 
 		/* Mesh-related interface functions below, only for Mesh objects */
-		virtual int lastVertexId() const { return -1; }
-		virtual void addPoint(const Point3 &p) { }
-		virtual void addOrcoPoint(const Point3 &p) { }
-		virtual void addVertexNormal(const Vec3 &n) { }
+		virtual int lastVertexId(size_t time_step) const { return -1; }
+		virtual void addPoint(const Point3 &p, size_t time_step) { }
+		virtual void addOrcoPoint(const Point3 &p, size_t time_step) { }
+		virtual void addVertexNormal(const Vec3 &n, size_t time_step) { }
 		virtual void addFace(const std::vector<int> &vertices, const std::vector<int> &vertices_uv, const std::unique_ptr<const Material> *material) { }
 		virtual int addUvValue(const Uv &uv) { return -1; }
-		virtual bool hasVerticesNormals() const { return false; }
-		virtual int numVerticesNormals() const { return 0; }
-		virtual int numVertices() const { return 0; }
+		virtual bool hasVerticesNormals(size_t time_step) const { return false; }
+		virtual int numVerticesNormals(size_t time_step) const { return 0; }
+		virtual int numVertices(size_t time_step) const { return 0; }
 		virtual void setSmooth(bool smooth) { }
 		virtual bool smoothVerticesNormals(Logger &logger, float angle) { return false; }
 };

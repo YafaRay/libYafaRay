@@ -37,6 +37,9 @@ Object * CurveObject::factory(Logger &logger, const Scene &scene, const std::str
 	float strand_start = 0.01f;
 	float strand_end = 0.01f;
 	float strand_shape = 0.f;
+	bool motion_blur_bezier = false;
+	float time_range_start = 0.f;
+	float time_range_end = 1.f;
 	params.getParam("light_name", light_name);
 	params.getParam("visibility", visibility);
 	params.getParam("is_base_object", is_base_object);
@@ -47,7 +50,10 @@ Object * CurveObject::factory(Logger &logger, const Scene &scene, const std::str
 	params.getParam("strand_shape", strand_shape);
 	params.getParam("has_uv", has_uv);
 	params.getParam("has_orco", has_orco);
-	auto object = new CurveObject(num_vertices, strand_start, strand_end, strand_shape, has_uv, has_orco);
+	params.getParam("motion_blur_bezier", motion_blur_bezier);
+	params.getParam("time_range_start", time_range_start);
+	params.getParam("time_range_end", time_range_end);
+	auto object = new CurveObject(num_vertices, strand_start, strand_end, strand_shape, has_uv, has_orco, motion_blur_bezier, time_range_start, time_range_end);
 	object->setName(name);
 	object->setLight(scene.getLight(light_name));
 	object->setVisibility(visibility::fromString(visibility));
@@ -56,42 +62,45 @@ Object * CurveObject::factory(Logger &logger, const Scene &scene, const std::str
 	return object;
 }
 
-CurveObject::CurveObject(int num_vertices, float strand_start, float strand_end, float strand_shape, bool has_uv, bool has_orco) : MeshObject(num_vertices, 2 * (num_vertices - 1), has_uv, has_orco), strand_start_(strand_start), strand_end_(strand_end), strand_shape_(strand_shape)
+CurveObject::CurveObject(int num_vertices, float strand_start, float strand_end, float strand_shape, bool has_uv, bool has_orco, bool motion_blur_bezier, float time_range_start, float time_range_end) : MeshObject(num_vertices, 2 * (num_vertices - 1), has_uv, has_orco, motion_blur_bezier, time_range_start, time_range_end), strand_start_(strand_start), strand_end_(strand_end), strand_shape_(strand_shape)
 {
 }
 
 bool CurveObject::calculateObject(const std::unique_ptr<const Material> *material)
 {
-	const std::vector<Point3> &points = getPoints();
-	const int points_size = points.size();
-	// Vertex extruding
-	Vec3 u{0.f};
-	Vec3 v{0.f};
-	for(int i = 0; i < points_size; i++)
+	const int points_size = MeshObject::numVertices(0);
+	for(size_t time_step = 0; time_step < numTimeSteps(); ++time_step)
 	{
-		const Point3 o{points[i]};
-		float r;	//current radius
-		if(strand_shape_ < 0)
+		const std::vector<Point3> &points = getPoints(time_step);
+		// Vertex extruding
+		Vec3 u{0.f};
+		Vec3 v{0.f};
+		for(int i = 0; i < points_size; i++)
 		{
-			r = strand_start_ + math::pow((float)i / (points_size - 1), 1 + strand_shape_) * (strand_end_ - strand_start_);
-		}
-		else
-		{
-			r = strand_start_ + (1 - math::pow(((float)(points_size - i - 1)) / (points_size - 1), 1 - strand_shape_)) * (strand_end_ - strand_start_);
-		}
-		// Last point keep previous tangent plane
-		if(i < points_size - 1)
-		{
-			Vec3 normal{points[i + 1] - points[i]};
-			normal.normalize();
-			std::tie(u, v) = Vec3::createCoordsSystem(normal);
-		}
-		// TODO: thikness?
-		const Point3 a{o - (0.5 * r * v) - 1.5 * r / math::sqrt(3.f) * u};
-		const Point3 b{o - (0.5 * r * v) + 1.5 * r / math::sqrt(3.f) * u};
+			const Point3 o{points[i]};
+			float r;//current radius
+			if(strand_shape_ < 0)
+			{
+				r = strand_start_ + math::pow((float) i / (points_size - 1), 1 + strand_shape_) * (strand_end_ - strand_start_);
+			}
+			else
+			{
+				r = strand_start_ + (1 - math::pow(((float) (points_size - i - 1)) / (points_size - 1), 1 - strand_shape_)) * (strand_end_ - strand_start_);
+			}
+			// Last point keep previous tangent plane
+			if(i < points_size - 1)
+			{
+				Vec3 normal{points[i + 1] - points[i]};
+				normal.normalize();
+				std::tie(u, v) = Vec3::createCoordsSystem(normal);
+			}
+			// TODO: thikness?
+			const Point3 a{o - (0.5 * r * v) - 1.5 * r / math::sqrt(3.f) * u};
+			const Point3 b{o - (0.5 * r * v) + 1.5 * r / math::sqrt(3.f) * u};
 
-		addPoint(a);
-		addPoint(b);
+			addPoint(a, time_step);
+			addPoint(b, time_step);
+		}
 	}
 
 	// Face fill
@@ -122,8 +131,7 @@ bool CurveObject::calculateObject(const std::unique_ptr<const Material> *materia
 	}
 	// Close top
 	addFace({i, 2 * i + points_size, 2 * i + points_size + 1}, {iv, iv, iv}, material);
-	calculateFaceNormals();
-	return true;
+	return MeshObject::calculateObject(material);
 }
 
 

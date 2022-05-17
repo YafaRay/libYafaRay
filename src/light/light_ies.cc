@@ -90,7 +90,7 @@ bool IesLight::illuminate(const SurfacePoint &sp, Rgb &col, Ray &wi) const
 	return true;
 }
 
-bool IesLight::illumSample(const SurfacePoint &sp, LSample &s, Ray &wi) const
+bool IesLight::illumSample(const SurfacePoint &sp, LSample &s, Ray &wi, float time) const
 {
 	if(photonOnly()) return false;
 
@@ -153,7 +153,7 @@ Rgb IesLight::emitPhoton(float s_1, float s_2, float s_3, float s_4, Ray &ray, f
 	return color_;
 }
 
-Rgb IesLight::emitSample(Vec3 &wo, LSample &s) const
+Rgb IesLight::emitSample(Vec3 &wo, LSample &s, float time) const
 {
 	s.sp_->p_ = position_;
 	s.flags_ = flags_;

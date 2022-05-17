@@ -20,38 +20,96 @@
 #ifndef YAFARAY_PRIMITIVE_TRIANGLE_BEZIER_H
 #define YAFARAY_PRIMITIVE_TRIANGLE_BEZIER_H
 
-#include "primitive_triangle.h"
+#include "primitive_face.h"
 #include "geometry/shape/shape_triangle.h"
 
 BEGIN_YAFARAY
 
-class ShapeTriangle;
-
-/*! a triangle supporting time based deformation described by a quadratic bezier spline */
-class TriangleBezierPrimitive final : public TrianglePrimitive
+class TriangleBezierPrimitive : public FacePrimitive
 {
 	public:
-	TriangleBezierPrimitive(const std::vector<int> &vertices_indices, const std::vector<int> &vertices_uv_indices, const MeshObject &mesh_object);
+		TriangleBezierPrimitive(const std::vector<int> &vertices_indices, const std::vector<int> &vertices_uv_indices, const MeshObject &mesh_object);
 
 	private:
-		ShapeTriangle getShapeTriangleAtTime(float time, const Matrix4 *obj_to_world) const;
-		IntersectData intersect(const Ray &ray) const override { return TriangleBezierPrimitive::intersect(ray, nullptr); }
+		IntersectData intersect(const Ray &ray) const override { return intersect(ray, nullptr); }
 		IntersectData intersect(const Ray &ray, const Matrix4 *obj_to_world) const override;
 		bool clippingSupport() const override { return false; }
-		void calculateGeometricFaceNormal() override;
-		float surfaceArea(const Matrix4 *obj_to_world) const override;
-		std::pair<Point3, Vec3> sample(float s_1, float s_2, const Matrix4 *obj_to_world) const override;
+		Bound getBound() const override { return getBound(nullptr); }
+		Bound getBound(const Matrix4 *obj_to_world) const override;
+		Vec3 getGeometricNormal(const Matrix4 *obj_to_world, float u, float v, float time) const override;
+		std::unique_ptr<const SurfacePoint> getSurface(const RayDifferentials *ray_differentials, const Point3 &hit_point, const IntersectData &intersect_data, const Matrix4 *obj_to_world, const Camera *camera) const override;
+		float surfaceArea(const Matrix4 *obj_to_world, float time) const override;
+		std::pair<Point3, Vec3> sample(float s_1, float s_2, const Matrix4 *obj_to_world, float time) const override;
 		float getDistToNearestEdge(float u, float v, const Vec3 &dp_du_abs, const Vec3 &dp_dv_abs) const override { return ShapeTriangle::getDistToNearestEdge(u, v, dp_du_abs, dp_dv_abs); }
-		Bound getBound(const Matrix4 *obj_to_world) const override { return getBoundTimeSteps(obj_to_world); }
-		Bound getBound() const override { return getBoundTimeSteps(nullptr); }
-
+		ShapeTriangle getShapeTriangle(const Matrix4 *obj_to_world, size_t time_step) const;
+		ShapeTriangle getShapeTriangleAtTime(const Matrix4 *obj_to_world, float time) const;
 };
 
-inline TriangleBezierPrimitive::TriangleBezierPrimitive(const std::vector<int> &vertices_indices, const std::vector<int> &vertices_uv_indices, const MeshObject &mesh_object) : TrianglePrimitive(vertices_indices, vertices_uv_indices, mesh_object)
+inline TriangleBezierPrimitive::TriangleBezierPrimitive(const std::vector<int> &vertices_indices, const std::vector<int> &vertices_uv_indices, const MeshObject &mesh_object) : FacePrimitive(vertices_indices, vertices_uv_indices, mesh_object)
 {
-	calculateGeometricFaceNormal();
+}
+
+inline IntersectData TriangleBezierPrimitive::intersect(const Ray &ray, const Matrix4 *obj_to_world) const
+{
+	return getShapeTriangleAtTime(obj_to_world, ray.time_).intersect(ray);
+}
+
+inline float TriangleBezierPrimitive::surfaceArea(const Matrix4 *obj_to_world, float time) const
+{
+	return getShapeTriangleAtTime(obj_to_world, time).surfaceArea();
+}
+
+inline std::pair<Point3, Vec3> TriangleBezierPrimitive::sample(float s_1, float s_2, const Matrix4 *obj_to_world, float time) const
+{
+	const auto triangle = getShapeTriangleAtTime(obj_to_world, time);
+	return {
+			triangle.sample(s_1, s_2),
+			triangle.calculateFaceNormal()
+	};
+}
+
+inline Vec3 TriangleBezierPrimitive::getGeometricNormal(const Matrix4 *obj_to_world, float u, float v, float time) const
+{
+	const Vec3 normal {getShapeTriangleAtTime(obj_to_world, time).calculateFaceNormal()};
+	if(obj_to_world) return ((*obj_to_world) * normal).normalize();
+	else return normal;
+}
+
+inline Bound TriangleBezierPrimitive::getBound(const Matrix4 *obj_to_world) const
+{
+	return getBoundTimeSteps(obj_to_world);
+}
+
+inline ShapeTriangle TriangleBezierPrimitive::getShapeTriangle(const Matrix4 *obj_to_world, size_t time_step) const
+{
+	return ShapeTriangle {{
+			getVertex(0, obj_to_world, time_step),
+			getVertex(1, obj_to_world, time_step),
+			getVertex(2, obj_to_world, time_step)
+	}};
+}
+
+inline ShapeTriangle TriangleBezierPrimitive::getShapeTriangleAtTime(const Matrix4 *obj_to_world, float time) const
+{
+	const float time_start = base_mesh_object_.getTimeRangeStart();
+	const float time_end = base_mesh_object_.getTimeRangeEnd();
+
+	if(time <= time_start)
+		return getShapeTriangle(obj_to_world, 0);
+	else if(time >= time_end)
+		return getShapeTriangle(obj_to_world, 2);
+	else
+	{
+		const float time_mapped = math::lerpSegment(time, 0.f, time_start, 1.f, time_end); //time_mapped must be in range [0.f-1.f]
+		const auto bezier = math::bezierCalculateFactors(time_mapped);
+		return ShapeTriangle{{
+				getVertex(0, bezier),
+				getVertex(1, bezier),
+				getVertex(2, bezier),
+		}};
+	}
 }
 
 END_YAFARAY
 
-#endif//YAFARAY_PRIMITIVE_TRIANGLE_BEZIER_H
+#endif //YAFARAY_PRIMITIVE_TRIANGLE_BEZIER_H

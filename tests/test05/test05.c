@@ -217,7 +217,8 @@ int main()
 	yafaray_paramsSetInt(yi, "num_faces", 6);
 	yafaray_paramsSetInt(yi, "num_vertices", 8);
 	yafaray_paramsSetInt(yi, "object_index", 5);
-	yafaray_paramsSetString(yi, "type", "mesh_bezier");
+	yafaray_paramsSetString(yi, "type", "mesh");
+	yafaray_paramsSetBool(yi, "motion_blur_bezier", YAFARAY_BOOL_TRUE);
 	yafaray_paramsSetString(yi, "visibility", "visible");
 	yafaray_paramsSetFloat(yi, "time_range_start", 0.f);
 	yafaray_paramsSetFloat(yi, "time_range_end", 0.9f);
@@ -233,23 +234,23 @@ int main()
 	yafaray_addVertexWithOrco(yi, 2.36442, -0.81854, 1.00136e-05, 1, 1, -1);
 	yafaray_addVertexWithOrco(yi, 2.36442, -0.81854, 2.00001, 1, 1, 1);
 
-	yafaray_addVertexWithOrco(yi, 1.364422, -1.81854, 1.00136e-05, -1, -1, -1);
-	yafaray_addVertexWithOrco(yi, 1.364422, -1.81854, 2.00001, -1, -1, 1);
-	yafaray_addVertexWithOrco(yi, 1.364422, 0.18146, 1.00136e-05, -1, 1, -1);
-	yafaray_addVertexWithOrco(yi, 1.364422, 0.18146, 2.00001, -1, 1, 1);
-	yafaray_addVertexWithOrco(yi, 3.36442, -1.81854, 1.00136e-05, 1, -1, -1);
-	yafaray_addVertexWithOrco(yi, 3.36442, -1.81854, 2.00001, 1, -1, 1);
-	yafaray_addVertexWithOrco(yi, 3.36442, 0.181464, 1.00136e-05, 1, 1, -1);
-	yafaray_addVertexWithOrco(yi, 3.36442, 0.181464, 2.00001, 1, 1, 1);
+	yafaray_addVertexWithOrcoTimeStep(yi, 1.364422, -1.81854, 1.00136e-05, -1, -1, -1, 1);
+	yafaray_addVertexWithOrcoTimeStep(yi, 1.364422, -1.81854, 2.00001, -1, -1, 1, 1);
+	yafaray_addVertexWithOrcoTimeStep(yi, 1.364422, 0.18146, 1.00136e-05, -1, 1, -1, 1);
+	yafaray_addVertexWithOrcoTimeStep(yi, 1.364422, 0.18146, 2.00001, -1, 1, 1, 1);
+	yafaray_addVertexWithOrcoTimeStep(yi, 3.36442, -1.81854, 1.00136e-05, 1, -1, -1, 1);
+	yafaray_addVertexWithOrcoTimeStep(yi, 3.36442, -1.81854, 2.00001, 1, -1, 1, 1);
+	yafaray_addVertexWithOrcoTimeStep(yi, 3.36442, 0.181464, 1.00136e-05, 1, 1, -1, 1);
+	yafaray_addVertexWithOrcoTimeStep(yi, 3.36442, 0.181464, 2.00001, 1, 1, 1, 1);
 
-	yafaray_addVertexWithOrco(yi, 1.364422, -0.81854, 1.00136e-05, -1, -1, -1);
-	yafaray_addVertexWithOrco(yi, 1.364422, -0.81854, 2.00001, -1, -1, 1);
-	yafaray_addVertexWithOrco(yi, 1.364422, 1.18146, 1.00136e-05, -1, 1, -1);
-	yafaray_addVertexWithOrco(yi, 1.364422, 1.18146, 2.00001, -1, 1, 1);
-	yafaray_addVertexWithOrco(yi, 3.36442, -0.81854, 1.00136e-05, 1, -1, -1);
-	yafaray_addVertexWithOrco(yi, 3.36442, -0.81854, 2.00001, 1, -1, 1);
-	yafaray_addVertexWithOrco(yi, 3.36442, 1.181464, 1.00136e-05, 1, 1, -1);
-	yafaray_addVertexWithOrco(yi, 3.36442, 1.181464, 2.00001, 1, 1, 1);
+	yafaray_addVertexWithOrcoTimeStep(yi, 1.364422, -0.81854, 1.00136e-05, -1, -1, -1, 2);
+	yafaray_addVertexWithOrcoTimeStep(yi, 1.364422, -0.81854, 2.00001, -1, -1, 1, 2);
+	yafaray_addVertexWithOrcoTimeStep(yi, 1.364422, 1.18146, 1.00136e-05, -1, 1, -1, 2);
+	yafaray_addVertexWithOrcoTimeStep(yi, 1.364422, 1.18146, 2.00001, -1, 1, 1, 2);
+	yafaray_addVertexWithOrcoTimeStep(yi, 3.36442, -0.81854, 1.00136e-05, 1, -1, -1, 2);
+	yafaray_addVertexWithOrcoTimeStep(yi, 3.36442, -0.81854, 2.00001, 1, -1, 1, 2);
+	yafaray_addVertexWithOrcoTimeStep(yi, 3.36442, 1.181464, 1.00136e-05, 1, 1, -1, 2);
+	yafaray_addVertexWithOrcoTimeStep(yi, 3.36442, 1.181464, 2.00001, 1, 1, 1, 2);
 
 	yafaray_setCurrentMaterial(yi, "Material_TGA");
 	yafaray_addQuad(yi, 2, 0, 1, 3);
