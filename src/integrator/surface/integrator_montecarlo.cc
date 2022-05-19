@@ -82,7 +82,7 @@ Rgb MonteCarloIntegrator::diracLight(RandomGenerator &random_generator, ColorLay
 	Ray light_ray;
 	light_ray.time_ = time;
 	Rgb lcol;
-	if(light->illuminate(sp, lcol, light_ray))
+	if(light->illuminate(sp.p_, lcol, light_ray))
 	{
 		Rgb col{0.f};
 		light_ray.from_ = sp.p_;
@@ -197,7 +197,7 @@ Rgb MonteCarloIntegrator::areaLightSampleLight(Halton &hal_2, Halton &hal_3, Ran
 		// ...get sample val...
 		ls.s_1_ = hal_2.getNext();
 		ls.s_2_ = hal_3.getNext();
-		if(light->illumSample(sp, ls, light_ray, time))
+		if(light->illumSample(sp.p_, ls, light_ray, time))
 		{
 			if(shadow_bias_auto_) light_ray.tmin_ = shadow_bias_ * std::max(1.f, sp.p_.length());
 			else light_ray.tmin_ = shadow_bias_;

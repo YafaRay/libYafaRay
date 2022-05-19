@@ -35,11 +35,11 @@ PointLight::PointLight(Logger &logger, const Point3 &pos, const Rgb &col, float 
 	intensity_ = color_.energy();
 }
 
-bool PointLight::illuminate(const SurfacePoint &sp, Rgb &col, Ray &wi) const
+bool PointLight::illuminate(const Point3 &surface_p, Rgb &col, Ray &wi) const
 {
 	if(photonOnly()) return false;
 
-	Vec3 ldir(position_ - sp.p_);
+	Vec3 ldir{position_ - surface_p};
 	float dist_sqr = ldir.x() * ldir.x() + ldir.y() * ldir.y() + ldir.z() * ldir.z();
 	float dist = math::sqrt(dist_sqr);
 	float idist_sqr = 0.0;
@@ -55,12 +55,12 @@ bool PointLight::illuminate(const SurfacePoint &sp, Rgb &col, Ray &wi) const
 	return true;
 }
 
-bool PointLight::illumSample(const SurfacePoint &sp, LSample &s, Ray &wi, float time) const
+bool PointLight::illumSample(const Point3 &surface_p, LSample &s, Ray &wi, float time) const
 {
 	if(photonOnly()) return false;
 
 	// bleh...
-	Vec3 ldir(position_ - sp.p_);
+	Vec3 ldir{position_ - surface_p};
 	float dist_sqr = ldir.x() * ldir.x() + ldir.y() * ldir.y() + ldir.z() * ldir.z();
 	float dist = math::sqrt(dist_sqr);
 	if(dist == 0.0) return false;

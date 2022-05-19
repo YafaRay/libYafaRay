@@ -120,7 +120,7 @@ float BackgroundLight::calcInvPdf(float p_0, float p_1, float s)
 	return std::max(sigma_, math::mult_pi_by_2<> * sinSample(s) * clampZero(p_0 * p_1));
 }
 
-bool BackgroundLight::illumSample(const SurfacePoint &sp, LSample &s, Ray &wi, float time) const
+bool BackgroundLight::illumSample(const Point3 &, LSample &s, Ray &wi, float time) const
 {
 	if(photonOnly()) return false;
 	float u = 0.f, v = 0.f;

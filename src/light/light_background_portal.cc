@@ -123,11 +123,11 @@ Rgb BackgroundPortalLight::totalEnergy() const
 	return energy * math::div_1_by_pi<> * 0.001f;
 }
 
-bool BackgroundPortalLight::illumSample(const SurfacePoint &sp, LSample &s, Ray &wi, float time) const
+bool BackgroundPortalLight::illumSample(const Point3 &surface_p, LSample &s, Ray &wi, float time) const
 {
 	if(photonOnly()) return false;
 	const auto [p, n]{sampleSurface(s.s_1_, s.s_2_, time)};
-	Vec3 ldir{p - sp.p_};
+	Vec3 ldir{p - surface_p};
 	//normalize vec and compute inverse square distance
 	const float dist_sqr = ldir.lengthSqr();
 	const float dist = math::sqrt(dist_sqr);

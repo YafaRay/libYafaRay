@@ -42,8 +42,8 @@ class IesLight final : public Light
 		Rgb totalEnergy() const override{ return color_ * tot_energy_;};
 		int nSamples() const override { return samples_; };
 		bool diracLight() const override { return !soft_shadow_; }
-		bool illuminate(const SurfacePoint &sp, Rgb &col, Ray &wi) const override;
-		bool illumSample(const SurfacePoint &sp, LSample &s, Ray &wi, float time) const override;
+		bool illuminate(const Point3 &surface_p, Rgb &col, Ray &wi) const override;
+		bool illumSample(const Point3 &surface_p, LSample &s, Ray &wi, float time) const override;
 		bool canIntersect() const override;
 		bool intersect(const Ray &ray, float &t, Rgb &col, float &ipdf) const override;
 		Rgb emitPhoton(float s_1, float s_2, float s_3, float s_4, Ray &ray, float &ipdf) const override;

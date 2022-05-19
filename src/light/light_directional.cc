@@ -57,14 +57,14 @@ void DirectionalLight::init(Scene &scene)
 }
 
 
-bool DirectionalLight::illuminate(const SurfacePoint &sp, Rgb &col, Ray &wi) const
+bool DirectionalLight::illuminate(const Point3 &surface_p, Rgb &col, Ray &wi) const
 {
 	if(photonOnly()) return false;
 
 	// check if the point is outside of the illuminated cylinder (non-infinite lights)
 	if(!infinite_)
 	{
-		Vec3 vec{position_ - sp.p_};
+		const Vec3 vec{position_ - surface_p};
 		float dist = (direction_ ^ vec).length();
 		if(dist > radius_) return false;
 		wi.tmax_ = (vec * direction_);
@@ -80,12 +80,12 @@ bool DirectionalLight::illuminate(const SurfacePoint &sp, Rgb &col, Ray &wi) con
 	return true;
 }
 
-bool DirectionalLight::illumSample(const SurfacePoint &sp, LSample &s, Ray &wi, float time) const
+bool DirectionalLight::illumSample(const Point3 &surface_p, LSample &s, Ray &wi, float time) const
 {
 	if(photonOnly()) return false;
 
 	s.pdf_ = 1.0;
-	return illuminate(sp, s.col_, wi);
+	return illuminate(surface_p, s.col_, wi);
 }
 
 Rgb DirectionalLight::emitPhoton(float s_1, float s_2, float s_3, float s_4, Ray &ray, float &ipdf) const

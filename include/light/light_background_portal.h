@@ -49,8 +49,8 @@ class BackgroundPortalLight final : public Light
 		Rgb emitSample(Vec3 &wo, LSample &s, float time) const override;
 		bool diracLight() const override { return false; }
 		//bool illumSample(const surfacePoint_t &sp, float s1, float s2, Rgb &col, float &ipdf, ray_t &wi) const override;
-		bool illumSample(const SurfacePoint &sp, LSample &s, Ray &wi, float time) const override;
-		bool illuminate(const SurfacePoint &sp, Rgb &col, Ray &wi) const override { return false; }
+		bool illumSample(const Point3 &surface_p, LSample &s, Ray &wi, float time) const override;
+		bool illuminate(const Point3 &surface_p, Rgb &col, Ray &wi) const override { return false; }
 		int nSamples() const override { return samples_; }
 		bool canIntersect() const override { return accelerator_ != nullptr /* false */ ; }
 		bool intersect(const Ray &ray, float &t, Rgb &col, float &ipdf) const override;

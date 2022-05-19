@@ -106,11 +106,11 @@ std::pair<Point3, Vec3> ObjectLight::sampleSurface(float s_1, float s_2, float t
 
 Rgb ObjectLight::totalEnergy() const { return (double_sided_ ? 2.f * color_ * area_ : color_ * area_); }
 
-bool ObjectLight::illumSample(const SurfacePoint &sp, LSample &s, Ray &wi, float time) const
+bool ObjectLight::illumSample(const Point3 &surface_p, LSample &s, Ray &wi, float time) const
 {
 	if(photonOnly()) return false;
 	const auto [p, n]{sampleSurface(s.s_1_, s.s_2_, time)};
-	Vec3 ldir{p - sp.p_};
+	Vec3 ldir{p - surface_p};
 	//normalize vec and compute inverse square distance
 	const float dist_sqr = ldir.lengthSqr();
 	const float dist = math::sqrt(dist_sqr);

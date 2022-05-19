@@ -65,10 +65,10 @@ class Light
 		virtual bool diracLight() const = 0;
 		//! illuminate a given surface point, generating sample s, fill in s.sp if not nullptr; Set ray to test visibility by integrator
 		/*! fill in s.pdf, s.col and s.flags */
-		virtual bool illumSample(const SurfacePoint &sp, LSample &s, Ray &wi, float time) const = 0;
+		virtual bool illumSample(const Point3 &surface_p, LSample &s, Ray &wi, float time) const = 0;
 		//! illuminate a given surfance point; Set ray to test visibility by integrator. Only for dirac lights.
 		/*!	return false only if no light is emitted towards sp, e.g. outside cone angle of spot light	*/
-		virtual bool illuminate(const SurfacePoint &sp, Rgb &col, Ray &wi) const = 0;
+		virtual bool illuminate(const Point3 &surface_p, Rgb &col, Ray &wi) const = 0;
 		//! indicate whether the light can intersect with a ray (by the sphereIntersect function)
 		virtual bool canIntersect() const { return false; }
 		//! sphereIntersect the light source with a ray, giving back distance, energy and 1/PDF

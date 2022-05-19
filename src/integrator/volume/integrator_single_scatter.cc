@@ -85,7 +85,7 @@ bool SingleScatterIntegrator::preprocess(FastRandom &fast_random, ImageFilm *ima
 							// handle lights with delta distribution, e.g. point and directional lights
 							if(light->diracLight())
 							{
-								const bool ill = light->illuminate(sp, lcol, light_ray);
+								const bool ill = light->illuminate(sp.p_, lcol, light_ray);
 								light_ray.tmin_ = shadow_bias_;
 								if(light_ray.tmax_ < 0.f) light_ray.tmax_ = 1e10f;  // infinitely distant light
 
@@ -113,7 +113,7 @@ bool SingleScatterIntegrator::preprocess(FastRandom &fast_random, ImageFilm *ima
 									ls.s_1_ = 0.5f; //(*state.random_generator)();
 									ls.s_2_ = 0.5f; //(*state.random_generator)();
 
-									light->illumSample(sp, ls, light_ray, light_ray.time_);
+									light->illumSample(sp.p_, ls, light_ray, light_ray.time_);
 									light_ray.tmin_ = shadow_bias_;
 									if(light_ray.tmax_ < 0.f) light_ray.tmax_ = 1e10f;  // infinitely distant light
 
@@ -152,7 +152,7 @@ Rgb SingleScatterIntegrator::getInScatter(RandomGenerator &random_generator, con
 		// handle lights with delta distribution, e.g. point and directional lights
 		if(light->diracLight())
 		{
-			if(light->illuminate(sp, lcol, light_ray))
+			if(light->illuminate(sp.p_, lcol, light_ray))
 			{
 				// ...shadowed...
 				if(light_ray.tmax_ < 0.f) light_ray.tmax_ = 1e10;  // infinitely distant light
@@ -201,7 +201,7 @@ Rgb SingleScatterIntegrator::getInScatter(RandomGenerator &random_generator, con
 				ls.s_1_ = random_generator();
 				ls.s_2_ = random_generator();
 
-				if(light->illumSample(sp, ls, light_ray, light_ray.time_))
+				if(light->illumSample(sp.p_, ls, light_ray, light_ray.time_))
 				{
 					// ...shadowed...
 					if(light_ray.tmax_ < 0.f) light_ray.tmax_ = 1e10;  // infinitely distant light

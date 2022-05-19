@@ -68,11 +68,11 @@ bool SphereLight::sphereIntersect(const Ray &ray, const Point3 &c, float r_2, fl
 	return true;
 }
 
-bool SphereLight::illumSample(const SurfacePoint &sp, LSample &s, Ray &wi, float time) const
+bool SphereLight::illumSample(const Point3 &surface_p, LSample &s, Ray &wi, float time) const
 {
 	if(photonOnly()) return false;
 
-	Vec3 cdir{center_ - sp.p_};
+	Vec3 cdir{center_ - surface_p};
 	float dist_sqr = cdir.lengthSqr();
 	if(dist_sqr <= square_radius_) return false; //only emit light on the outside!
 

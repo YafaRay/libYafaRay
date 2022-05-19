@@ -62,11 +62,11 @@ void IesLight::getAngles(float &u, float &v, const Vec3 &dir, float costheta)
 	v = (costheta >= 1.f) ? 0.f : math::radToDeg(math::acos(costheta));
 }
 
-bool IesLight::illuminate(const SurfacePoint &sp, Rgb &col, Ray &wi) const
+bool IesLight::illuminate(const Point3 &surface_p, Rgb &col, Ray &wi) const
 {
 	if(photonOnly()) return false;
 
-	Vec3 ldir(position_ - sp.p_);
+	Vec3 ldir{position_ - surface_p};
 	float dist_sqrt = ldir.lengthSqr();
 	float dist = math::sqrt(dist_sqrt);
 	float i_dist_sqrt = 1.f / dist_sqrt;
@@ -90,11 +90,11 @@ bool IesLight::illuminate(const SurfacePoint &sp, Rgb &col, Ray &wi) const
 	return true;
 }
 
-bool IesLight::illumSample(const SurfacePoint &sp, LSample &s, Ray &wi, float time) const
+bool IesLight::illumSample(const Point3 &surface_p, LSample &s, Ray &wi, float time) const
 {
 	if(photonOnly()) return false;
 
-	Vec3 ldir(position_ - sp.p_);
+	Vec3 ldir{position_ - surface_p};
 	float dist_sqrt = ldir.lengthSqr();
 	float dist = math::sqrt(dist_sqrt);
 	float i_dist_sqrt = 1.f / dist_sqrt;

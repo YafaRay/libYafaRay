@@ -64,13 +64,13 @@ void AreaLight::init(Scene &scene)
 
 Rgb AreaLight::totalEnergy() const { return color_ * area_; }
 
-bool AreaLight::illumSample(const SurfacePoint &sp, LSample &s, Ray &wi, float time) const
+bool AreaLight::illumSample(const Point3 &surface_p, LSample &s, Ray &wi, float time) const
 {
 	if(photonOnly()) return false;
 
 	//get point on area light and vector to surface point:
 	Point3 p{corner_ + s.s_1_ * to_x_ + s.s_2_ * to_y_};
-	Vec3 ldir{p - sp.p_};
+	Vec3 ldir{p - surface_p};
 	//normalize vec and compute inverse square distance
 	float dist_sqr = ldir.lengthSqr();
 	float dist = math::sqrt(dist_sqr);

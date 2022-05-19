@@ -558,7 +558,7 @@ bool BidirectionalIntegrator::connectLPath(PathData &pd, Ray &l_ray, Rgb &lcol, 
 	}
 	ls.sp_ = &sp_light;
 	// generate light sample, cancel when none could be created:
-	if(!light->illumSample(z.sp_, ls, l_ray, l_ray.time_)) return false;
+	if(!light->illumSample(z.sp_.p_, ls, l_ray, l_ray.time_)) return false;
 
 	//FIXME DAVID: another series of horrible hacks to avoid uninitialized values and incorrect renders in bidir. However, this should be properly solved by implementing correctly the functions needed by bidir in the lights and materials, and correcting the bidir integrator itself...
 	ls.sp_->p_ = {0.f, 0.f, 0.f};

@@ -72,11 +72,11 @@ Rgb SpotLight::totalEnergy() const
 	return color_ * math::mult_pi_by_2<> * (1.f - 0.5f * (cos_start_ + cos_end_));
 }
 
-bool SpotLight::illuminate(const SurfacePoint &sp, Rgb &col, Ray &wi) const
+bool SpotLight::illuminate(const Point3 &surface_p, Rgb &col, Ray &wi) const
 {
 	if(photonOnly()) return false;
 
-	Vec3 ldir(position_ - sp.p_);
+	Vec3 ldir{position_ - surface_p};
 	float dist_sqr = ldir * ldir;
 	float dist = math::sqrt(dist_sqr);
 	if(dist == 0.0) return false;
@@ -103,11 +103,11 @@ bool SpotLight::illuminate(const SurfacePoint &sp, Rgb &col, Ray &wi) const
 	return true;
 }
 
-bool SpotLight::illumSample(const SurfacePoint &sp, LSample &s, Ray &wi, float time) const
+bool SpotLight::illumSample(const Point3 &surface_p, LSample &s, Ray &wi, float time) const
 {
 	if(photonOnly()) return false;
 
-	Vec3 ldir(position_ - sp.p_);
+	Vec3 ldir{position_ - surface_p};
 	float dist_sqr = ldir * ldir;
 	if(dist_sqr == 0.0) return false;
 	float dist = math::sqrt(dist_sqr);
