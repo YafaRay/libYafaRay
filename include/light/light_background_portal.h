@@ -54,7 +54,7 @@ class BackgroundPortalLight final : public Light
 		int nSamples() const override { return samples_; }
 		bool canIntersect() const override { return accelerator_ != nullptr /* false */ ; }
 		bool intersect(const Ray &ray, float &t, Rgb &col, float &ipdf) const override;
-		float illumPdf(const SurfacePoint &sp, const SurfacePoint &sp_light) const override;
+		float illumPdf(const Point3 &surface_p, const Point3 &light_p, const Vec3 &light_ng) const override;
 		void emitPdf(const Vec3 &surface_n, const Vec3 &wi, float &area_pdf, float &dir_pdf, float &cos_wo) const override;
 		void initIs();
 		std::pair<Point3, Vec3> sampleSurface(float s_1, float s_2, float time) const;

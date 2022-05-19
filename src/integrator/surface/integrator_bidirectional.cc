@@ -282,7 +282,7 @@ std::pair<Rgb, float> BidirectionalIntegrator::integrate(Ray &ray, FastRandom &f
 		const int n_light = createPath(random_generator, *accelerator_, chromatic_enabled, wavelength, lray, path_data.light_path_, max_path_length_, camera_);
 		if(n_light > 1)
 		{
-			path_data.pdf_illum_ = lights_[light_num]->illumPdf(path_data.light_path_[1].sp_, vl.sp_) * light_num_pdf;
+			path_data.pdf_illum_ = lights_[light_num]->illumPdf(path_data.light_path_[1].sp_.p_, vl.sp_.p_, vl.sp_.ng_) * light_num_pdf;
 			path_data.pdf_emit_ = ls.area_pdf_ * path_data.light_path_[1].ds_ / vl.cos_wo_;
 		}
 		path_data.path_.resize(n_eye + n_light + 1); //FIXME why +1?
@@ -719,7 +719,7 @@ float BidirectionalIntegrator::pathWeight0T(PathData &pd, int t) const
 	float light_num_pdf = inv_light_power_d_.find(vl.sp_.light_)->second;
 	light_num_pdf *= f_num_lights_;
 	// direct lighting pdf...
-	const float pdf_illum = vl.sp_.light_->illumPdf(pd.eye_path_[t - 2].sp_, vl.sp_) * light_num_pdf;
+	const float pdf_illum = vl.sp_.light_->illumPdf(pd.eye_path_[t - 2].sp_.p_, vl.sp_.p_, vl.sp_.ng_) * light_num_pdf;
 	if(pdf_illum < 1e-6f) return 0.f;
 
 	float cos_wo;

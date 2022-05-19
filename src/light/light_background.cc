@@ -178,9 +178,9 @@ Rgb BackgroundLight::emitSample(Vec3 &wo, LSample &s, float time) const
 	return pcol;
 }
 
-float BackgroundLight::illumPdf(const SurfacePoint &sp, const SurfacePoint &sp_light) const
+float BackgroundLight::illumPdf(const Point3 &surface_p, const Point3 &light_p, const Vec3 &) const
 {
-	const Vec3 dir{(sp_light.p_ - sp.p_).normalize()};
+	const Vec3 dir{(light_p - surface_p).normalize()};
 	return dirPdf(dir);
 }
 

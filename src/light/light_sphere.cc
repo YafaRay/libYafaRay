@@ -117,9 +117,9 @@ bool SphereLight::intersect(const Ray &ray, float &t, Rgb &col, float &ipdf) con
 	return false;
 }
 
-float SphereLight::illumPdf(const SurfacePoint &sp, const SurfacePoint &sp_light) const
+float SphereLight::illumPdf(const Point3 &surface_p, const Point3 &light_p, const Vec3 &) const
 {
-	Vec3 cdir{center_ - sp.p_};
+	Vec3 cdir{center_ - surface_p};
 	float dist_sqr = cdir.lengthSqr();
 	if(dist_sqr <= square_radius_) return 0.f; //only emit light on the outside!
 	float idist_sqr = 1.f / (dist_sqr);

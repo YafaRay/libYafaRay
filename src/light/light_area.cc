@@ -151,9 +151,9 @@ bool AreaLight::intersect(const Ray &ray, float &t, Rgb &col, float &ipdf) const
 	return true;
 }
 
-float AreaLight::illumPdf(const SurfacePoint &sp, const SurfacePoint &sp_light) const
+float AreaLight::illumPdf(const Point3 &surface_p, const Point3 &light_p, const Vec3 &) const
 {
-	Vec3 wi{sp_light.p_ - sp.p_};
+	Vec3 wi{light_p - surface_p};
 	float r_2 = wi.normLenSqr();
 	float cos_n = wi * fnormal_;
 	return cos_n > 0 ? r_2 * math::num_pi<> / (area_ * cos_n) : 0.f;

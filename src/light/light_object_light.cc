@@ -199,11 +199,11 @@ bool ObjectLight::intersect(const Ray &ray, float &t, Rgb &col, float &ipdf) con
 	return true;
 }
 
-float ObjectLight::illumPdf(const SurfacePoint &sp, const SurfacePoint &sp_light) const
+float ObjectLight::illumPdf(const Point3 &surface_p, const Point3 &light_p, const Vec3 &light_ng) const
 {
-	Vec3 wo{sp.p_ - sp_light.p_};
+	Vec3 wo{surface_p - light_p};
 	const float r_2 = wo.normLenSqr();
-	const float cos_n = wo * sp_light.ng_;
+	const float cos_n = wo * light_ng;
 	return cos_n > 0 ? r_2 * math::num_pi<> / (area_ * cos_n) : (double_sided_ ? r_2 * math::num_pi<> / (area_ * -cos_n) : 0.f);
 }
 

@@ -46,7 +46,7 @@ class BackgroundLight final : public Light
 		bool diracLight() const override { return false; }
 		bool illumSample(const Point3 &, LSample &s, Ray &wi, float time) const override;
 		bool illuminate(const Point3 &surface_p, Rgb &col, Ray &wi) const override { return false; }
-		float illumPdf(const SurfacePoint &sp, const SurfacePoint &sp_light) const override;
+		float illumPdf(const Point3 &surface_p, const Point3 &light_p, const Vec3 &light_ng) const override;
 		void emitPdf(const Vec3 &, const Vec3 &wo, float &area_pdf, float &dir_pdf, float &cos_wo) const override;
 		int nSamples() const override { return samples_; }
 		bool canIntersect() const override { return true; }

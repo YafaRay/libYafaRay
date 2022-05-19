@@ -75,7 +75,7 @@ class Light
 		virtual bool intersect(const Ray &ray, float &t, Rgb &col, float &ipdf) const { return false; }
 		//! get the pdf for sampling the incoming direction wi at surface point sp (illumSample!)
 		/*! this method requires an intersection point with the light (sp_light). Otherwise, use sphereIntersect() */
-		virtual float illumPdf(const SurfacePoint &sp, const SurfacePoint &sp_light) const { return 0.f; }
+		virtual float illumPdf(const Point3 &surface_p, const Point3 &light_p, const Vec3 &light_ng) const { return 0.f; }
 		//! get the pdf values for sampling point sp on the light and outgoing direction wo when emitting energy (emitSample, NOT illumSample)
 		/*! sp should've been generated from illumSample or emitSample, and may only be complete enough to call light functions! */
 		virtual void emitPdf(const Vec3 &surface_n, const Vec3 &wo, float &area_pdf, float &dir_pdf, float &cos_wo) const { area_pdf = 0.f; dir_pdf = 0.f; }
