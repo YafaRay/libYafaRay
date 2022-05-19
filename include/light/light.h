@@ -113,7 +113,6 @@ class Light
 
 struct LSample
 {
-	explicit LSample(SurfacePoint *s_p = nullptr): sp_(s_p) {}
 	float s_1_, s_2_; //<! 2d sample value for choosing a surface point on the light.
 	float s_3_, s_4_; //<! 2d sample value for choosing an outgoing direction on the light (emitSample)
 	float pdf_; //<! "standard" directional pdf from illuminated surface point for MC integration of direct lighting (illumSample)
@@ -121,7 +120,7 @@ struct LSample
 	float area_pdf_; //<! probability density for generating this sample point on light surface (emitSample)
 	Rgb col_; //<! color of the generated sample
 	Light::Flags flags_; //<! flags of the sampled light source
-	SurfacePoint *sp_; //!< surface point on the light source, may only be complete enough to call other light methods with it!
+	SurfacePoint *sp_ = nullptr; //!< surface point on the light source, may only be complete enough to call other light methods with it!
 };
 
 END_YAFARAY
