@@ -24,13 +24,13 @@
  */
 
 #include "integrator/surface/integrator_tiled.h"
-
 #include <cmath>
 #include <memory>
 #include "common/layers.h"
 #include "background/background.h"
 #include "geometry/surface.h"
 #include "geometry/object/object.h"
+#include "geometry/primitive/primitive.h"
 #include "common/timer.h"
 #include "sampler/halton.h"
 #include "render/imagefilm.h"
@@ -560,19 +560,19 @@ void TiledIntegrator::generateCommonLayers(ColorLayers *color_layers, const Surf
 		{
 			if(Rgba *color_layer = color_layers->find(LayerDef::ObjIndexAbs))
 			{
-				*color_layer = Rgba{static_cast<float>(sp.object_->getIndex())};
+				*color_layer = Rgba{static_cast<float>(sp.primitive_->getObject()->getIndex())};
 			}
 			if(Rgba *color_layer = color_layers->find(LayerDef::ObjIndexNorm))
 			{
-				*color_layer = Rgba{static_cast<float>(sp.object_->getIndex()) / object_index_highest};
+				*color_layer = Rgba{static_cast<float>(sp.primitive_->getObject()->getIndex()) / object_index_highest};
 			}
 			if(Rgba *color_layer = color_layers->find(LayerDef::ObjIndexAuto))
 			{
-				*color_layer = Rgba{sp.object_->getIndexAutoColor()};
+				*color_layer = Rgba{sp.primitive_->getObject()->getIndexAutoColor()};
 			}
 			if(Rgba *color_layer = color_layers->find(LayerDef::ObjIndexAutoAbs))
 			{
-				*color_layer = Rgba{static_cast<float>(sp.object_->getIndexAuto())};
+				*color_layer = Rgba{static_cast<float>(sp.primitive_->getObject()->getIndexAuto())};
 			}
 			if(Rgba *color_layer = color_layers->find(LayerDef::MatIndexAbs))
 			{
@@ -592,7 +592,7 @@ void TiledIntegrator::generateCommonLayers(ColorLayers *color_layers, const Surf
 			}
 			if(Rgba *color_layer = color_layers->find(LayerDef::ObjIndexMask))
 			{
-				if(sp.object_->getIndex() == mask_params.obj_index_) *color_layer = Rgba(1.f);
+				if(sp.primitive_->getObject()->getIndex() == mask_params.obj_index_) *color_layer = Rgba(1.f);
 			}
 			if(Rgba *color_layer = color_layers->find(LayerDef::ObjIndexMaskAll))
 			{

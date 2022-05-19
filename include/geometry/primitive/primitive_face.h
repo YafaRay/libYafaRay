@@ -53,8 +53,6 @@ class FacePrimitive: public Primitive
 		std::vector<Vec3> getVerticesNormals(const Vec3 &surface_normal, size_t time_step) const;
 		std::vector<Uv> getVerticesUvs() const;
 		void setMaterial(const std::unique_ptr<const Material> *material) { material_ = material; }
-		size_t getSelfIndex() const { return self_index_; }
-		void setSelfIndex(size_t index) { self_index_ = index; }
 		static Bound getBound(const std::vector<Point3> &vertices);
 		const Object *getObject() const override { return &base_mesh_object_; }
 		Visibility getVisibility() const override { return base_mesh_object_.getVisibility(); }

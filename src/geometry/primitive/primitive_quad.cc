@@ -105,23 +105,20 @@ std::unique_ptr<const SurfacePoint> QuadPrimitive::getSurface(const RayDifferent
 		sp->u_ = intersect_data.u_;
 		sp->v_ = intersect_data.v_;
 	}
-	sp->has_uv_ = !implicit_uv;
 	//Copy original dPdU and dPdV before normalization to the "absolute" dPdU and dPdV (for mipmap calculations)
 	sp->dp_du_abs_ = sp->dp_du_;
 	sp->dp_dv_abs_ = sp->dp_dv_;
 	sp->dp_du_.normalize();
 	sp->dp_dv_.normalize();
-	sp->object_ = &base_mesh_object_;
 	sp->primitive_ = this;
 	sp->light_ = base_mesh_object_.getLight();
 	sp->has_uv_ = base_mesh_object_.hasUv();
-	sp->prim_num_ = getSelfIndex();
 	sp->p_ = hit_point;
 	std::tie(sp->nu_, sp->nv_) = Vec3::createCoordsSystem(sp->n_);
 	sp->calculateShadingSpace();
 	sp->material_ = getMaterial();
 	sp->setRayDifferentials(ray_differentials);
-	sp->mat_data_ = std::shared_ptr<const MaterialData>(sp->material_->initBsdf(*sp, camera));
+	sp->mat_data_ = std::unique_ptr<const MaterialData>(sp->material_->initBsdf(*sp, camera));
 	return sp;
 }
 

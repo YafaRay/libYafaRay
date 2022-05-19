@@ -85,7 +85,6 @@ void MeshObject::addFace(std::unique_ptr<FacePrimitive> &&face)
 {
 	if(face)
 	{
-		face->setSelfIndex(faces_.size());
 		faces_.emplace_back(std::move(face));
 	}
 }

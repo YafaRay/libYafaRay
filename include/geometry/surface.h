@@ -88,7 +88,6 @@ class SurfacePoint final
 		const Material *material_; //!< the surface material
 		std::shared_ptr<const MaterialData> mat_data_;
 		const Light *light_; //!< light source if surface point is on a light
-		const Object *object_; //!< object the prim belongs to
 		const Primitive *primitive_; //!< primitive the surface belongs to
 		//	point2d_t screenpos; // only used with 'win' texture coord. mode
 		IntersectData intersect_data_;
@@ -102,8 +101,6 @@ class SurfacePoint final
 		//	Rgb vertex_col;
 		bool has_uv_;
 		bool has_orco_;
-		bool available_;
-		int prim_num_;
 
 		float u_; //!< the u texture coord.
 		float v_; //!< the v texture coord.
@@ -115,10 +112,6 @@ class SurfacePoint final
 		Vec3 ds_dv_; //!< v-axis in shading space (NU, NV, N)
 		Vec3 dp_du_abs_; //!< u-axis in world space (before normalization)
 		Vec3 dp_dv_abs_; //!< v-axis in world space (before normalization)
-		//float dudNU;
-		//float dudNV;
-		//float dvdNU;
-		//float dvdNV;
 		// Surface Differentials for mipmaps calculations
 		std::shared_ptr<const SurfaceDifferentials> differentials_;
 
