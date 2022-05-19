@@ -568,7 +568,7 @@ bool BidirectionalIntegrator::connectLPath(PathData &pd, Ray &l_ray, Rgb &lcol, 
 	lcol = ls.col_ / (ls.pdf_ * light_num_pdf); //shouldn't really do that division, better use proper c_st in evalLPath...
 	// get probabilities for generating light sample without a given surface point
 	const Vec3 vec{-l_ray.dir_};
-	light->emitPdf(sp_light, vec, pd.path_[0].pdf_a_0_, pd.path_[0].pdf_f_, cos_wo);
+	light->emitPdf(sp_light.n_, vec, pd.path_[0].pdf_a_0_, pd.path_[0].pdf_f_, cos_wo);
 	pd.path_[0].pdf_a_0_ *= light_num_pdf;
 	pd.path_[0].pdf_f_ /= cos_wo;
 	pd.path_[0].specular_ = ls.flags_.hasAny(Light::Flags::DiracDir); //FIXME this has to be clarified
@@ -723,7 +723,7 @@ float BidirectionalIntegrator::pathWeight0T(PathData &pd, int t) const
 	if(pdf_illum < 1e-6f) return 0.f;
 
 	float cos_wo;
-	vl.sp_.light_->emitPdf(vl.sp_, vl.wi_, pd.path_[0].pdf_a_0_, pd.path_[0].pdf_f_, cos_wo);
+	vl.sp_.light_->emitPdf(vl.sp_.n_, vl.wi_, pd.path_[0].pdf_a_0_, pd.path_[0].pdf_f_, cos_wo);
 	pd.path_[0].pdf_a_0_ *= light_num_pdf;
 	float pdf_emit = pd.path_[0].pdf_a_0_ * vl.ds_ / cos_wo;
 	pd.path_[0].g_ = 0.f; // unused...

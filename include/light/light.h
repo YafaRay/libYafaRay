@@ -78,7 +78,7 @@ class Light
 		virtual float illumPdf(const SurfacePoint &sp, const SurfacePoint &sp_light) const { return 0.f; }
 		//! get the pdf values for sampling point sp on the light and outgoing direction wo when emitting energy (emitSample, NOT illumSample)
 		/*! sp should've been generated from illumSample or emitSample, and may only be complete enough to call light functions! */
-		virtual void emitPdf(const SurfacePoint &sp, const Vec3 &wo, float &area_pdf, float &dir_pdf, float &cos_wo) const { area_pdf = 0.f; dir_pdf = 0.f; }
+		virtual void emitPdf(const Vec3 &surface_n, const Vec3 &wo, float &area_pdf, float &dir_pdf, float &cos_wo) const { area_pdf = 0.f; dir_pdf = 0.f; }
 		//! (preferred) number of samples for direct lighting
 		virtual int nSamples() const { return 8; }
 		//! This method must be called right after the factory is called on a background light or the light will fail

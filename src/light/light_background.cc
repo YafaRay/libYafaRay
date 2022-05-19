@@ -184,7 +184,7 @@ float BackgroundLight::illumPdf(const SurfacePoint &sp, const SurfacePoint &sp_l
 	return dirPdf(dir);
 }
 
-void BackgroundLight::emitPdf(const SurfacePoint &sp, const Vec3 &wo, float &area_pdf, float &dir_pdf, float &cos_wo) const
+void BackgroundLight::emitPdf(const Vec3 &surface_n, const Vec3 &wo, float &area_pdf, float &dir_pdf, float &cos_wo) const
 {
 	Vec3 wi{wo};
 	wi.normalize();

@@ -192,7 +192,7 @@ Rgb SpotLight::emitSample(Vec3 &wo, LSample &s, float time) const
 	return color_;
 }
 
-void SpotLight::emitPdf(const SurfacePoint &sp, const Vec3 &wo, float &area_pdf, float &dir_pdf, float &cos_wo) const
+void SpotLight::emitPdf(const Vec3 &surface_n, const Vec3 &wo, float &area_pdf, float &dir_pdf, float &cos_wo) const
 {
 	area_pdf = 1.f;
 	cos_wo = 1.f;

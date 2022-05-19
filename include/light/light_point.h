@@ -44,7 +44,7 @@ class PointLight final : public Light
 		bool diracLight() const override { return true; }
 		bool illumSample(const Point3 &surface_p, LSample &s, Ray &wi, float time) const override;
 		bool illuminate(const Point3 &surface_p, Rgb &col, Ray &wi) const override;
-		void emitPdf(const SurfacePoint &sp, const Vec3 &wo, float &area_pdf, float &dir_pdf, float &cos_wo) const override;
+		void emitPdf(const Vec3 &, const Vec3 &wo, float &area_pdf, float &dir_pdf, float &cos_wo) const override;
 
 		Point3 position_;
 		Rgb color_;

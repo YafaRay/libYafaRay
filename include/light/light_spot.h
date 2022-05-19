@@ -42,7 +42,7 @@ class SpotLight final : public Light
 		bool diracLight() const override { return !soft_shadows_; }
 		bool illumSample(const Point3 &surface_p, LSample &s, Ray &wi, float time) const override;
 		bool illuminate(const Point3 &surface_p, Rgb &col, Ray &wi) const override;
-		void emitPdf(const SurfacePoint &sp, const Vec3 &wo, float &area_pdf, float &dir_pdf, float &cos_wo) const override;
+		void emitPdf(const Vec3 &surface_n, const Vec3 &wo, float &area_pdf, float &dir_pdf, float &cos_wo) const override;
 		bool canIntersect() const override { return soft_shadows_; }
 		bool intersect(const Ray &ray, float &t, Rgb &col, float &ipdf) const override;
 		int nSamples() const override { return samples_; };

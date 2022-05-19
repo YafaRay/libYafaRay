@@ -207,10 +207,10 @@ float ObjectLight::illumPdf(const SurfacePoint &sp, const SurfacePoint &sp_light
 	return cos_n > 0 ? r_2 * math::num_pi<> / (area_ * cos_n) : (double_sided_ ? r_2 * math::num_pi<> / (area_ * -cos_n) : 0.f);
 }
 
-void ObjectLight::emitPdf(const SurfacePoint &sp, const Vec3 &wo, float &area_pdf, float &dir_pdf, float &cos_wo) const
+void ObjectLight::emitPdf(const Vec3 &surface_n, const Vec3 &wo, float &area_pdf, float &dir_pdf, float &cos_wo) const
 {
 	area_pdf = inv_area_ * math::num_pi<>;
-	cos_wo = wo * sp.n_;
+	cos_wo = wo * surface_n;
 	dir_pdf = cos_wo > 0.f ? (double_sided_ ? cos_wo * 0.5f : cos_wo) : (double_sided_ ? -cos_wo * 0.5f : 0.f);
 }
 

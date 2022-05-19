@@ -55,7 +55,7 @@ class SphereLight final : public Light
 		bool canIntersect() const override { return false; }
 		bool intersect(const Ray &ray, float &t, Rgb &col, float &ipdf) const override;
 		float illumPdf(const SurfacePoint &sp, const SurfacePoint &sp_light) const override;
-		void emitPdf(const SurfacePoint &sp, const Vec3 &wo, float &area_pdf, float &dir_pdf, float &cos_wo) const override;
+		void emitPdf(const Vec3 &surface_n, const Vec3 &wo, float &area_pdf, float &dir_pdf, float &cos_wo) const override;
 		int nSamples() const override { return samples_; }
 		static bool sphereIntersect(const Ray &ray, const Point3 &c, float r_2, float &d_1, float &d_2);
 

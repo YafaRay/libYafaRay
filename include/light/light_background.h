@@ -47,7 +47,7 @@ class BackgroundLight final : public Light
 		bool illumSample(const Point3 &, LSample &s, Ray &wi, float time) const override;
 		bool illuminate(const Point3 &surface_p, Rgb &col, Ray &wi) const override { return false; }
 		float illumPdf(const SurfacePoint &sp, const SurfacePoint &sp_light) const override;
-		void emitPdf(const SurfacePoint &sp, const Vec3 &wo, float &area_pdf, float &dir_pdf, float &cos_wo) const override;
+		void emitPdf(const Vec3 &, const Vec3 &wo, float &area_pdf, float &dir_pdf, float &cos_wo) const override;
 		int nSamples() const override { return samples_; }
 		bool canIntersect() const override { return true; }
 		bool intersect(const Ray &ray, float &t, Rgb &col, float &ipdf) const override;

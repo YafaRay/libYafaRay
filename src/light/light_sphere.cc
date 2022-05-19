@@ -127,10 +127,10 @@ float SphereLight::illumPdf(const SurfacePoint &sp, const SurfacePoint &sp_light
 	return 1.f / (2.f * (1.f - cos_alpha));
 }
 
-void SphereLight::emitPdf(const SurfacePoint &sp, const Vec3 &wo, float &area_pdf, float &dir_pdf, float &cos_wo) const
+void SphereLight::emitPdf(const Vec3 &surface_n, const Vec3 &wo, float &area_pdf, float &dir_pdf, float &cos_wo) const
 {
 	area_pdf = inv_area_ * math::num_pi<>;
-	cos_wo = wo * sp.n_;
+	cos_wo = wo * surface_n;
 	//! unfinished! use real normal, sp.N might be approximation by mesh...
 	dir_pdf = cos_wo > 0 ? cos_wo : 0.f;
 }
