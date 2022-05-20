@@ -44,6 +44,10 @@ class Rgb
 {
 	public:
 		Rgb() = default;
+		Rgb(const Rgb &rgb) = default;
+		Rgb(Rgb &&rgb) = default;
+		Rgb &operator = (const Rgb &rgb) = default;
+		Rgb &operator = (Rgb &&rgb) = default;
 		Rgb(float r, float g, float b) : r_{r}, g_{g}, b_{b} { }
 		explicit Rgb(float f) : r_{f}, g_{f}, b_{f} { }
 		bool isBlack() const { return ((r_ == 0) && (g_ == 0) && (b_ == 0)); }
@@ -143,8 +147,14 @@ class Rgba final : public Rgb
 {
 	public:
 		Rgba() = default;
+		Rgba(const Rgba &rgb) = default;
+		Rgba(Rgba &&rgb) = default;
+		Rgba &operator = (const Rgba &rgb) = default;
+		Rgba &operator = (Rgba &&rgb) = default;
 		explicit Rgba(const Rgb &c): Rgb{c} { }
+		explicit Rgba(Rgb &&c): Rgb{std::move(c)} { }
 		Rgba(const Rgb &c, float a): Rgb{c}, a_{a} { }
+		Rgba(Rgb &&c, float a): Rgb{std::move(c)}, a_{a} { }
 		Rgba(float r, float g, float b, float a = 1.f): Rgb{r, g, b}, a_{a} { }
 		explicit Rgba(float g): Rgb{g}, a_{g} { }
 		Rgba(float g, float a): Rgb{g}, a_{a} { }
