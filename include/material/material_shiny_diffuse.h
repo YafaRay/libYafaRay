@@ -42,6 +42,7 @@ class ShinyDiffuseMaterialData final : public MaterialData
 {
 	public:
 		ShinyDiffuseMaterialData(BsdfFlags bsdf_flags, size_t number_of_nodes) : MaterialData(bsdf_flags, number_of_nodes) { }
+		std::unique_ptr<MaterialData> clone() const override { return std::make_unique<ShinyDiffuseMaterialData>(*this); }
 		std::array<float, 4> components_{{0.f, 0.f, 0.f, 0.f}};
 };
 

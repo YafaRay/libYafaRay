@@ -68,7 +68,9 @@ class MaterialData
 {
 	public:
 		MaterialData(BsdfFlags bsdf_flags, size_t number_of_nodes) : bsdf_flags_(bsdf_flags), node_tree_data_(number_of_nodes) { }
+		MaterialData(BsdfFlags bsdf_flags, NodeTreeData node_tree_data) : bsdf_flags_(bsdf_flags), node_tree_data_{std::move(node_tree_data)} { }
 		virtual ~MaterialData() = default;
+		virtual std::unique_ptr<MaterialData> clone() const = 0;
 		BsdfFlags bsdf_flags_;
 		NodeTreeData node_tree_data_;
 };

@@ -30,6 +30,7 @@ class GlassMaterialData final : public MaterialData
 {
 	public:
 		GlassMaterialData(BsdfFlags bsdf_flags, size_t number_of_nodes) : MaterialData(bsdf_flags, number_of_nodes) { }
+		std::unique_ptr<MaterialData> clone() const override { return std::make_unique<GlassMaterialData>(*this); }
 };
 
 class GlassMaterial final : public NodeMaterial
@@ -74,6 +75,7 @@ class MirrorMaterialData final : public MaterialData
 {
 	public:
 		MirrorMaterialData(BsdfFlags bsdf_flags, size_t number_of_nodes) : MaterialData(bsdf_flags, number_of_nodes) { }
+		std::unique_ptr<MaterialData> clone() const override { return std::make_unique<MirrorMaterialData>(*this); }
 };
 
 class MirrorMaterial final : public Material
@@ -105,6 +107,7 @@ class NullMaterialData final : public MaterialData
 {
 	public:
 		NullMaterialData(BsdfFlags bsdf_flags, size_t number_of_nodes) : MaterialData(bsdf_flags, number_of_nodes) { }
+		std::unique_ptr<MaterialData> clone() const override { return std::make_unique<NullMaterialData>(*this); }
 };
 
 class NullMaterial final : public Material

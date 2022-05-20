@@ -31,6 +31,7 @@ class GlossyMaterialData final : public MaterialData
 {
 	public:
 		GlossyMaterialData(BsdfFlags bsdf_flags, size_t number_of_nodes) : MaterialData(bsdf_flags, number_of_nodes) { }
+		std::unique_ptr<MaterialData> clone() const override { return std::make_unique<GlossyMaterialData>(*this); }
 		float m_diffuse_, m_glossy_, p_diffuse_;
 };
 

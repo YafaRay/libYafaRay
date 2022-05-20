@@ -35,6 +35,11 @@ class BlendMaterialData final : public MaterialData
 {
 	public:
 		BlendMaterialData(BsdfFlags bsdf_flags, size_t number_of_nodes) : MaterialData(bsdf_flags, number_of_nodes) { }
+		BlendMaterialData(const BlendMaterialData &blend_material_data)
+			: MaterialData{blend_material_data.bsdf_flags_, blend_material_data.node_tree_data_},
+			  mat_1_data_{blend_material_data.mat_1_data_->clone()},
+			  mat_2_data_{blend_material_data.mat_2_data_->clone()} { }
+		std::unique_ptr<MaterialData> clone() const override { return std::make_unique<BlendMaterialData>(*this); }
 		std::unique_ptr<const MaterialData> mat_1_data_;
 		std::unique_ptr<const MaterialData> mat_2_data_;
 };

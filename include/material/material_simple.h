@@ -36,6 +36,7 @@ class LightMaterialData final : public MaterialData
 {
 	public:
 		LightMaterialData(BsdfFlags bsdf_flags, size_t number_of_nodes) : MaterialData(bsdf_flags, number_of_nodes) { }
+		std::unique_ptr<MaterialData> clone() const override { return std::make_unique<LightMaterialData>(*this); }
 };
 
 class LightMaterial final : public Material

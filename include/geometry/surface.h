@@ -38,10 +38,11 @@ class Primitive;
 struct RayDifferentials;
 struct IntersectData;
 
-struct SurfaceDifferentials
+struct SurfaceDifferentials final
 {
 	SurfaceDifferentials() = default;
 	SurfaceDifferentials(const SurfaceDifferentials &surface_differentials) = default;
+	SurfaceDifferentials(SurfaceDifferentials &&surface_differentials) = default;
 	SurfaceDifferentials(const Vec3 &dp_dx, const Vec3 &dp_dy) : dp_dx_(dp_dx), dp_dy_(dp_dy) { }
 	Vec3 dp_dx_;
 	Vec3 dp_dy_;
@@ -56,8 +57,8 @@ class SurfacePoint final
 {
 	public:
 		SurfacePoint() = default;
-		SurfacePoint(const SurfacePoint &sp) = default;
-		SurfacePoint& operator=(const SurfacePoint &sp) = default;
+		SurfacePoint(const SurfacePoint &sp);
+		SurfacePoint& operator=(const SurfacePoint &sp);
 		SurfacePoint(SurfacePoint &&surface_point) = default;
 		SurfacePoint& operator=(SurfacePoint&& surface_point) = default;
 		void calculateShadingSpace();
@@ -86,7 +87,7 @@ class SurfacePoint final
 
 		//int object; //!< the object owner of the point.
 		const Material *material_; //!< the surface material
-		std::shared_ptr<const MaterialData> mat_data_;
+		std::unique_ptr<const MaterialData> mat_data_;
 		const Light *light_; //!< light source if surface point is on a light
 		const Primitive *primitive_; //!< primitive the surface belongs to
 		//	point2d_t screenpos; // only used with 'win' texture coord. mode
@@ -113,11 +114,68 @@ class SurfacePoint final
 		Vec3 dp_du_abs_; //!< u-axis in world space (before normalization)
 		Vec3 dp_dv_abs_; //!< v-axis in world space (before normalization)
 		// Surface Differentials for mipmaps calculations
-		std::shared_ptr<const SurfaceDifferentials> differentials_;
+		std::unique_ptr<const SurfaceDifferentials> differentials_;
 
 	private:
 		static void dUdvFromDpdPdUdPdV(float &du, float &dv, const Point3 &dp, const Vec3 &dp_du, const Vec3 &dp_dv);
 };
+
+inline SurfacePoint::SurfacePoint(const SurfacePoint &sp)
+	:
+	material_{sp.material_},
+	light_{sp.light_},
+	primitive_{sp.primitive_},
+	intersect_data_{sp.intersect_data_},
+	n_{sp.n_},
+	ng_{sp.ng_},
+	orco_ng_{sp.orco_ng_},
+	p_{sp.p_},
+	orco_p_{sp.orco_p_},
+	has_uv_{sp.has_uv_},
+	has_orco_{sp.has_orco_},
+	u_{sp.u_},
+	v_{sp.v_},
+	nu_{sp.nu_},
+	nv_{sp.nv_},
+	dp_du_{sp.dp_du_},
+	dp_dv_{sp.dp_dv_},
+	ds_du_{sp.ds_du_},
+	ds_dv_{sp.ds_dv_},
+	dp_du_abs_{sp.dp_du_abs_},
+	dp_dv_abs_{sp.dp_dv_abs_}
+{
+	if(sp.mat_data_) mat_data_ = sp.mat_data_->clone();
+	if(sp.differentials_) differentials_ = std::make_unique<const SurfaceDifferentials>(*sp.differentials_);
+}
+
+inline SurfacePoint &SurfacePoint::operator=(const SurfacePoint &sp)
+{
+	if(this == &sp) return *this;
+	material_ = sp.material_;
+	if(sp.mat_data_) mat_data_ = sp.mat_data_->clone();
+	light_ = sp.light_;
+	primitive_ = sp.primitive_;
+	intersect_data_ = sp.intersect_data_;
+	n_ = sp.n_;
+	ng_ = sp.ng_;
+	orco_ng_ = sp.orco_ng_;
+	p_ = sp.p_;
+	orco_p_ = sp.orco_p_;
+	has_uv_ = sp.has_uv_;
+	has_orco_ = sp.has_orco_;
+	u_ = sp.u_;
+	v_ = sp.v_;
+	nu_ = sp.nu_;
+	nv_ = sp.nv_;
+	dp_du_ = sp.dp_du_;
+	dp_dv_ = sp.dp_dv_;
+	ds_du_ = sp.ds_du_;
+	ds_dv_ = sp.ds_dv_;
+	dp_du_abs_ = sp.dp_du_abs_;
+	dp_dv_abs_ = sp.dp_dv_abs_;
+	if(sp.differentials_) differentials_ = std::make_unique<const SurfaceDifferentials>(*sp.differentials_);
+	return *this;
+}
 
 inline void SurfacePoint::calculateShadingSpace()
 {

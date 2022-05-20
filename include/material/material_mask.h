@@ -32,6 +32,12 @@ class MaskMaterialData final : public MaterialData
 {
 	public:
 		MaskMaterialData(BsdfFlags bsdf_flags, size_t number_of_nodes) : MaterialData(bsdf_flags, number_of_nodes) { }
+		std::unique_ptr<MaterialData> clone() const override { return std::make_unique<MaskMaterialData>(*this); }
+		MaskMaterialData(const MaskMaterialData &mask_material_data)
+			: MaterialData{mask_material_data.bsdf_flags_, mask_material_data.node_tree_data_},
+			  select_mat_2_{mask_material_data.select_mat_2_},
+			  mat_1_data_{mask_material_data.mat_1_data_->clone()},
+			  mat_2_data_{mask_material_data.mat_2_data_->clone()} { }
 		bool select_mat_2_;
 		std::unique_ptr<const MaterialData> mat_1_data_;
 		std::unique_ptr<const MaterialData> mat_2_data_;
