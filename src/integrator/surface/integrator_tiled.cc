@@ -628,11 +628,11 @@ void TiledIntegrator::generateOcclusionLayers(ColorLayers *color_layers, const A
 {
 	if(Rgba *color_layer = color_layers->find(LayerDef::Ao))
 	{
-		*color_layer += Rgba{sampleAmbientOcclusion(accelerator, chromatic_enabled, wavelength, sp, wo, ray_division, camera, pixel_sampling_data, false, false, ao_samples, shadow_bias_auto, shadow_bias, ao_dist, ao_col, transp_shadows_depth)};
+		*color_layer += sampleAmbientOcclusion(accelerator, chromatic_enabled, wavelength, sp, wo, ray_division, camera, pixel_sampling_data, false, false, ao_samples, shadow_bias_auto, shadow_bias, ao_dist, ao_col, transp_shadows_depth);
 	}
 	if(Rgba *color_layer = color_layers->find(LayerDef::AoClay))
 	{
-		*color_layer += Rgba{sampleAmbientOcclusion(accelerator, chromatic_enabled, wavelength, sp, wo, ray_division, camera, pixel_sampling_data, false, true, ao_samples, shadow_bias_auto, shadow_bias, ao_dist, ao_col, transp_shadows_depth)};
+		*color_layer += sampleAmbientOcclusion(accelerator, chromatic_enabled, wavelength, sp, wo, ray_division, camera, pixel_sampling_data, false, true, ao_samples, shadow_bias_auto, shadow_bias, ao_dist, ao_col, transp_shadows_depth);
 	}
 }
 

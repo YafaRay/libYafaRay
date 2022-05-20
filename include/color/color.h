@@ -44,13 +44,13 @@ class Rgb
 {
 	public:
 		Rgb() = default;
-		Rgb(const Rgb &rgb) = default;
-		Rgb(Rgb &&rgb) = default;
-		Rgb &operator = (const Rgb &rgb) = default;
-		Rgb &operator = (Rgb &&rgb) = default;
+		Rgb(const Rgb &c) = default;
+		Rgb(Rgb &&c) = default;
+		Rgb &operator = (const Rgb &c) = default;
+		Rgb &operator = (Rgb &&c) = default;
 		Rgb(float r, float g, float b) : r_{r}, g_{g}, b_{b} { }
 		explicit Rgb(float f) : r_{f}, g_{f}, b_{f} { }
-		bool isBlack() const { return ((r_ == 0) && (g_ == 0) && (b_ == 0)); }
+		bool isBlack() const { return ((r_ == 0.f) && (g_ == 0.f) && (b_ == 0.f)); }
 		bool isNaN() const { return (std::isnan(r_) || std::isnan(g_) || std::isnan(b_)); }
 		bool isInf() const { return (std::isinf(r_) || std::isinf(g_) || std::isinf(b_)); }
 		void set(float r, float g, float b) { r_ = r; g_ = g; b_ = b; }
@@ -147,10 +147,10 @@ class Rgba final : public Rgb
 {
 	public:
 		Rgba() = default;
-		Rgba(const Rgba &rgb) = default;
-		Rgba(Rgba &&rgb) = default;
-		Rgba &operator = (const Rgba &rgb) = default;
-		Rgba &operator = (Rgba &&rgb) = default;
+		Rgba(const Rgba &c) = default;
+		Rgba(Rgba &&c) = default;
+		Rgba &operator = (const Rgba &c) = default;
+		Rgba &operator = (Rgba &&c) = default;
 		explicit Rgba(const Rgb &c): Rgb{c} { }
 		explicit Rgba(Rgb &&c): Rgb{std::move(c)} { }
 		Rgba(const Rgb &c, float a): Rgb{c}, a_{a} { }
@@ -164,6 +164,8 @@ class Rgba final : public Rgb
 		Rgba &operator +=(const Rgba &c);
 		Rgba &operator -=(const Rgba &c);
 		Rgba &operator *=(const Rgba &c);
+		Rgba &operator +=(const Rgb &c);
+		Rgba &operator *=(const Rgb &c);
 		Rgba &operator *=(float f);
 
 		void alphaPremultiply() { r_ *= a_; g_ *= a_; b_ *= a_; }
@@ -339,6 +341,8 @@ inline Rgba &Rgba::operator +=(const Rgba &c) { r_ += c.r_; g_ += c.g_; b_ += c.
 inline Rgba &Rgba::operator *=(const Rgba &c) { r_ *= c.r_; g_ *= c.g_; b_ *= c.b_; a_ *= c.a_;  return *this; }
 inline Rgba &Rgba::operator *=(float f) { r_ *= f; g_ *= f; b_ *= f; a_ *= f;  return *this; }
 inline Rgba &Rgba::operator -=(const Rgba &c) { r_ -= c.r_; g_ -= c.g_; b_ -= c.b_; a_ -= c.a_;  return *this; }
+inline Rgba &Rgba::operator +=(const Rgb &c) { r_ += c.r_; g_ += c.g_; b_ += c.b_;  return *this; }
+inline Rgba &Rgba::operator *=(const Rgb &c) { r_ *= c.r_; g_ *= c.g_; b_ *= c.b_;  return *this; }
 
 inline float Rgb::maxAbsDiff(const Rgb &a, const Rgb &b)
 {

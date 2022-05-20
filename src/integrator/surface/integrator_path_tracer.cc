@@ -139,7 +139,7 @@ std::pair<Rgb, float> PathIntegrator::integrate(Ray &ray, FastRandom &fast_rando
 			col += col_emit;
 			if(color_layers && color_layers->getFlags().hasAny(LayerDef::Flags::BasicLayers))
 			{
-				if(Rgba *color_layer = color_layers->find(LayerDef::Emit)) *color_layer += Rgba{col_emit};
+				if(Rgba *color_layer = color_layers->find(LayerDef::Emit)) *color_layer += col_emit;
 			}
 		}
 
@@ -200,7 +200,7 @@ std::pair<Rgb, float> PathIntegrator::integrate(Ray &ray, FastRandom &fast_rando
 					lcol += col_emit;
 					if(color_layers && color_layers->getFlags().hasAny(LayerDef::Flags::BasicLayers))
 					{
-						if(Rgba *color_layer = color_layers->find(LayerDef::Emit)) *color_layer += Rgba{col_emit};
+						if(Rgba *color_layer = color_layers->find(LayerDef::Emit)) *color_layer += col_emit;
 					}
 				}
 
@@ -260,7 +260,7 @@ std::pair<Rgb, float> PathIntegrator::integrate(Ray &ray, FastRandom &fast_rando
 						lcol += col_tmp;
 						if(color_layers && color_layers->getFlags().hasAny(LayerDef::Flags::BasicLayers))
 						{
-							if(Rgba *color_layer = color_layers->find(LayerDef::Emit)) *color_layer += Rgba{col_tmp};
+							if(Rgba *color_layer = color_layers->find(LayerDef::Emit)) *color_layer += col_tmp;
 						}
 					}
 					path_col += lcol * throughput;

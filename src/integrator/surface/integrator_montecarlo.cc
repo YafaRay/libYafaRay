@@ -126,8 +126,8 @@ Rgb MonteCarloIntegrator::diracLight(RandomGenerator &random_generator, ColorLay
 				if(color_layer_diffuse_no_shadow) *color_layer_diffuse_no_shadow += tmp_col_no_shadow;
 				if(!shadowed)
 				{
-					if(color_layer_diffuse) *color_layer_diffuse += Rgba{sp.eval(wo, light_ray.dir_, BsdfFlags::Diffuse) * lcol * angle_light_normal * transmit_col};
-					if(color_layer_glossy) *color_layer_glossy += Rgba{sp.eval(wo, light_ray.dir_, BsdfFlags::Glossy, true) * lcol * angle_light_normal * transmit_col};
+					if(color_layer_diffuse) *color_layer_diffuse += sp.eval(wo, light_ray.dir_, BsdfFlags::Diffuse) * lcol * angle_light_normal * transmit_col;
+					if(color_layer_glossy) *color_layer_glossy += sp.eval(wo, light_ray.dir_, BsdfFlags::Glossy, true) * lcol * angle_light_normal * transmit_col;
 				}
 			}
 			if(!shadowed) col += surf_col * lcol * angle_light_normal * transmit_col;
@@ -146,7 +146,7 @@ Rgb MonteCarloIntegrator::diracLight(RandomGenerator &random_generator, ColorLay
 			}
 			if(color_layers->getFlags().hasAny(LayerDef::Flags::DebugLayers))
 			{
-				if(Rgba *color_layer = color_layers->find(LayerDef::DebugLightEstimationLightDirac)) *color_layer += Rgba{col};
+				if(Rgba *color_layer = color_layers->find(LayerDef::DebugLightEstimationLightDirac)) *color_layer += col;
 			}
 		}
 		return col;
@@ -236,13 +236,13 @@ Rgb MonteCarloIntegrator::areaLightSampleLight(Halton &hal_2, Halton &hal_3, Ran
 					if(layer_diffuse || layer_diffuse_no_shadow)
 					{
 						const Rgb tmp_col_no_light_color = sp.eval(wo, light_ray.dir_, BsdfFlags::Diffuse) * angle_light_normal * w / ls.pdf_;
-						if(layer_diffuse_no_shadow) layer_diffuse_no_shadow->accum_ += Rgba{tmp_col_no_light_color * ls_col_no_shadow};
-						if(layer_diffuse && !shadowed && ls.pdf_ > 1e-6f) layer_diffuse->accum_ += Rgba{tmp_col_no_light_color * ls.col_};
+						if(layer_diffuse_no_shadow) layer_diffuse_no_shadow->accum_ += tmp_col_no_light_color * ls_col_no_shadow;
+						if(layer_diffuse && !shadowed && ls.pdf_ > 1e-6f) layer_diffuse->accum_ += tmp_col_no_light_color * ls.col_;
 					}
 					if(layer_glossy)
 					{
 						const Rgb tmp_col = sp.eval(wo, light_ray.dir_, BsdfFlags::Glossy, true) * ls.col_ * angle_light_normal * w / ls.pdf_;
-						if(!shadowed && ls.pdf_ > 1e-6f) layer_glossy->accum_ += Rgba{tmp_col};
+						if(!shadowed && ls.pdf_ > 1e-6f) layer_glossy->accum_ += tmp_col;
 					}
 				}
 				if(!shadowed && ls.pdf_ > 1e-6f) col += surf_col * ls.col_ * angle_light_normal * w / ls.pdf_;
@@ -277,7 +277,7 @@ Rgb MonteCarloIntegrator::areaLightSampleLight(Halton &hal_2, Halton &hal_3, Ran
 		}
 		if(color_layers->getFlags().hasAny(LayerDef::Flags::DebugLayers))
 		{
-			if(Rgba *color_layer = color_layers->find(LayerDef::DebugLightEstimationLightSampling)) *color_layer += Rgba{col_result};
+			if(Rgba *color_layer = color_layers->find(LayerDef::DebugLightEstimationLightSampling)) *color_layer += col_result;
 		}
 	}
 	return col_result;
@@ -349,13 +349,13 @@ Rgb MonteCarloIntegrator::areaLightSampleMaterial(Halton &hal_2, Halton &hal_3, 
 						if(layer_diffuse || layer_diffuse_no_shadow)
 						{
 							const Rgb tmp_col = sp.sample(wo, b_ray.dir_, s, W, chromatic_enabled, wavelength, camera_) * lcol * w * W;
-							if(layer_diffuse_no_shadow) layer_diffuse_no_shadow->accum_ += Rgba{tmp_col};
-							if(layer_diffuse && !shadowed && light_pdf > 1e-6f && s.sampled_flags_.hasAny(BsdfFlags::Diffuse)) layer_diffuse->accum_ += Rgba{tmp_col};
+							if(layer_diffuse_no_shadow) layer_diffuse_no_shadow->accum_ += tmp_col;
+							if(layer_diffuse && !shadowed && light_pdf > 1e-6f && s.sampled_flags_.hasAny(BsdfFlags::Diffuse)) layer_diffuse->accum_ += tmp_col;
 						}
 						if(layer_glossy)
 						{
 							const Rgb tmp_col = sp.sample(wo, b_ray.dir_, s, W, chromatic_enabled, wavelength, camera_) * lcol * w * W;
-							if(!shadowed && light_pdf > 1e-6f && s.sampled_flags_.hasAny(BsdfFlags::Glossy)) layer_glossy->accum_ += Rgba{tmp_col};
+							if(!shadowed && light_pdf > 1e-6f && s.sampled_flags_.hasAny(BsdfFlags::Glossy)) layer_glossy->accum_ += tmp_col;
 						}
 					}
 					if(!shadowed && light_pdf > 1e-6f) col += surf_col * lcol * w * W;
@@ -376,7 +376,7 @@ Rgb MonteCarloIntegrator::areaLightSampleMaterial(Halton &hal_2, Halton &hal_3, 
 			}
 			if(color_layers->getFlags().hasAny(LayerDef::Flags::DebugLayers))
 			{
-				if(Rgba *color_layer = color_layers->find(LayerDef::DebugLightEstimationMatSampling)) *color_layer += Rgba{col_result};
+				if(Rgba *color_layer = color_layers->find(LayerDef::DebugLightEstimationMatSampling)) *color_layer += col_result;
 			}
 		}
 		return col_result;
@@ -415,7 +415,7 @@ Rgb MonteCarloIntegrator::causticPhotons(ColorLayers *color_layers, const Ray &r
 	if(clamp_indirect > 0.f) col.clampProportionalRgb(clamp_indirect);
 	if(color_layers && color_layers->getFlags().hasAny(LayerDef::Flags::BasicLayers))
 	{
-		if(Rgba *color_layer = color_layers->find(LayerDef::Indirect)) *color_layer += Rgba{col};
+		if(Rgba *color_layer = color_layers->find(LayerDef::Indirect)) *color_layer += col;
 	}
 	return col;
 }
@@ -722,7 +722,7 @@ std::pair<Rgb, float> MonteCarloIntegrator::dispersive(FastRandom &fast_random, 
 		if(Rgba *color_layer = color_layers->find(LayerDef::Trans))
 		{
 			dcol_trans_accum *= d_1;
-			*color_layer += Rgba{dcol_trans_accum};
+			*color_layer += dcol_trans_accum;
 		}
 	}
 	return {dcol * d_1, alpha_accum * d_1};
@@ -796,17 +796,17 @@ std::pair<Rgb, float> MonteCarloIntegrator::glossy(FastRandom &fast_random, Rand
 		if(Rgba *color_layer = color_layers->find(LayerDef::GlossyIndirect))
 		{
 			gcol_indirect_accum *= inverse_ray_samples_glossy;
-			*color_layer += Rgba{gcol_indirect_accum};
+			*color_layer += gcol_indirect_accum;
 		}
 		if(Rgba *color_layer = color_layers->find(LayerDef::Trans))
 		{
 			gcol_reflect_accum *= inverse_ray_samples_glossy;
-			*color_layer += Rgba{gcol_reflect_accum};
+			*color_layer += gcol_reflect_accum;
 		}
 		if(Rgba *color_layer = color_layers->find(LayerDef::GlossyIndirect))
 		{
 			gcol_transmit_accum *= inverse_ray_samples_glossy;
-			*color_layer += Rgba{gcol_transmit_accum};
+			*color_layer += gcol_transmit_accum;
 		}
 	}
 	return {gcol * inverse_ray_samples_glossy, alpha_accum * inverse_ray_samples_glossy};
@@ -883,7 +883,7 @@ std::pair<Rgb, float> MonteCarloIntegrator::specularReflect(FastRandom &fast_ran
 	integ_col *= reflect_data->col_;
 	if(color_layers && color_layers->getFlags().hasAny(LayerDef::Flags::BasicLayers))
 	{
-		if(Rgba *color_layer = color_layers->find(LayerDef::ReflectPerfect)) *color_layer += Rgba{integ_col};
+		if(Rgba *color_layer = color_layers->find(LayerDef::ReflectPerfect)) *color_layer += integ_col;
 	}
 	return {integ_col, integ_alpha};
 }
@@ -913,7 +913,7 @@ std::pair<Rgb, float> MonteCarloIntegrator::specularRefract(FastRandom &fast_ran
 	integ_col *= refract_data->col_;
 	if(color_layers && color_layers->getFlags().hasAny(LayerDef::Flags::BasicLayers))
 	{
-		if(Rgba *color_layer = color_layers->find(LayerDef::RefractPerfect)) *color_layer += Rgba{integ_col};
+		if(Rgba *color_layer = color_layers->find(LayerDef::RefractPerfect)) *color_layer += integ_col;
 	}
 	return {integ_col, integ_alpha};
 }
