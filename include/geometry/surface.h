@@ -28,6 +28,7 @@
 #include "geometry/intersect_data.h"
 #include "color/color.h"
 #include "material/material.h"
+#include "math/interpolation.h"
 
 BEGIN_YAFARAY
 class Light;
@@ -58,12 +59,12 @@ class SurfacePoint final
 	public:
 		SurfacePoint() = default;
 		SurfacePoint(const SurfacePoint &sp);
+		SurfacePoint(const SurfacePoint &sp_1, const SurfacePoint &sp_2, float alpha);
 		SurfacePoint& operator=(const SurfacePoint &sp);
 		SurfacePoint(SurfacePoint &&surface_point) = default;
 		SurfacePoint& operator=(SurfacePoint&& surface_point) = default;
 		void calculateShadingSpace();
 		static Vec3 normalFaceForward(const Vec3 &normal_geometry, const Vec3 &normal, const Vec3 &incoming_vector);
-		static SurfacePoint blendSurfacePoints(SurfacePoint const &sp_1, SurfacePoint const &sp_2, float alpha);
 		float getDistToNearestEdge() const;
 		//! compute differentials for a scattered ray
 		std::unique_ptr<RayDifferentials> reflectedRay(const RayDifferentials *in_differentials, const Vec3 &in_dir, const Vec3 &out_dir) const;
@@ -146,6 +147,55 @@ inline SurfacePoint::SurfacePoint(const SurfacePoint &sp)
 {
 	if(sp.mat_data_) mat_data_ = sp.mat_data_->clone();
 	if(sp.differentials_) differentials_ = std::make_unique<const SurfaceDifferentials>(*sp.differentials_);
+}
+
+inline SurfacePoint::SurfacePoint(const SurfacePoint &sp_1, const SurfacePoint &sp_2, float alpha)
+	:
+	  material_{ alpha < 0.5f ? sp_1.material_ : sp_2.material_ },
+	  light_{ alpha < 0.5f ? sp_1.light_ : sp_2.light_},
+	  primitive_{alpha < 0.5f ? sp_1.primitive_ : sp_2.primitive_},
+	  intersect_data_{alpha < 0.5f ? sp_1.intersect_data_ : sp_2.intersect_data_},
+	  n_{math::lerp(sp_1.n_, sp_2.n_, alpha)},
+	  ng_{alpha < 0.5f ? sp_1.ng_ : sp_2.ng_},
+	  orco_ng_{alpha < 0.5f ? sp_1.orco_ng_ : sp_2.orco_ng_},
+	  p_{alpha < 0.5f ? sp_1.p_ : sp_2.p_},
+	  orco_p_{alpha < 0.5f ? sp_1.orco_p_ : sp_2.orco_p_},
+	  has_uv_{alpha < 0.5f ? sp_1.has_uv_ : sp_2.has_uv_},
+	  has_orco_{alpha < 0.5f ? sp_1.has_orco_ : sp_2.has_orco_},
+	  u_{alpha < 0.5f ? sp_1.u_ : sp_2.u_},
+	  v_{alpha < 0.5f ? sp_1.v_ : sp_2.v_},
+	  nu_{math::lerp(sp_1.nu_, sp_2.nu_, alpha)},
+	  nv_{math::lerp(sp_1.nv_, sp_2.nv_, alpha)},
+	  dp_du_{math::lerp(sp_1.dp_du_, sp_2.dp_du_, alpha)},
+	  dp_dv_{math::lerp(sp_1.dp_dv_, sp_2.dp_dv_, alpha)},
+	  ds_du_{math::lerp(sp_1.ds_du_, sp_2.ds_du_, alpha)},
+	  ds_dv_{math::lerp(sp_1.ds_dv_, sp_2.ds_dv_, alpha)},
+	  dp_du_abs_{alpha < 0.5f ? sp_1.dp_du_abs_ : sp_2.dp_du_abs_},
+	  dp_dv_abs_{alpha < 0.5f ? sp_1.dp_dv_abs_ : sp_2.dp_dv_abs_}
+{
+	if(alpha < 0.5f)
+	{
+		if(sp_1.mat_data_) mat_data_ = sp_1.mat_data_->clone();
+	}
+	else
+	{
+		if(sp_2.mat_data_) mat_data_ = sp_2.mat_data_->clone();
+	}
+	if(sp_1.differentials_ && sp_2.differentials_)
+	{
+		differentials_ = std::make_unique<SurfaceDifferentials>(
+				math::lerp(sp_1.differentials_->dp_dx_, sp_2.differentials_->dp_dx_, alpha),
+				math::lerp(sp_1.differentials_->dp_dy_, sp_2.differentials_->dp_dy_, alpha)
+		); //FIXME: should this std::max or std::min instead of lerp?
+	}
+	else if(sp_1.differentials_)
+	{
+		differentials_ = std::make_unique<SurfaceDifferentials>(*sp_1.differentials_);
+	}
+	else if(sp_2.differentials_)
+	{
+		differentials_ = std::make_unique<SurfaceDifferentials>(*sp_2.differentials_);
+	}
 }
 
 inline SurfacePoint &SurfacePoint::operator=(const SurfacePoint &sp)

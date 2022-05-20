@@ -45,34 +45,6 @@ void SurfacePoint::setRayDifferentials(const RayDifferentials *ray_differentials
 	}
 }
 
-SurfacePoint SurfacePoint::blendSurfacePoints(SurfacePoint const &sp_1, SurfacePoint const &sp_2, float alpha)
-{
-	SurfacePoint result(sp_1);
-	result.n_ = math::lerp(sp_1.n_, sp_2.n_, alpha);
-	result.nu_ = math::lerp(sp_1.nu_, sp_2.nu_, alpha);
-	result.nv_ = math::lerp(sp_1.nv_, sp_2.nv_, alpha);
-	result.dp_du_ = math::lerp(sp_1.dp_du_, sp_2.dp_du_, alpha);
-	result.dp_dv_ = math::lerp(sp_1.dp_dv_, sp_2.dp_dv_, alpha);
-	result.ds_du_ = math::lerp(sp_1.ds_du_, sp_2.ds_du_, alpha);
-	result.ds_dv_ = math::lerp(sp_1.ds_dv_, sp_2.ds_dv_, alpha);
-	if(sp_1.differentials_ && sp_2.differentials_)
-	{
-		result.differentials_ = std::make_unique<SurfaceDifferentials>(
-				math::lerp(sp_1.differentials_->dp_dx_, sp_2.differentials_->dp_dx_, alpha),
-				math::lerp(sp_1.differentials_->dp_dy_, sp_2.differentials_->dp_dy_, alpha)
-		); //FIXME: should this std::max or std::min instead of lerp?
-	}
-	else if(sp_1.differentials_)
-	{
-		result.differentials_ = std::make_unique<SurfaceDifferentials>(*sp_1.differentials_);
-	}
-	else if(sp_2.differentials_)
-	{
-		result.differentials_ = std::make_unique<SurfaceDifferentials>(*sp_2.differentials_);
-	}
-	return result;
-}
-
 std::unique_ptr<RayDifferentials> SurfacePoint::reflectedRay(const RayDifferentials *in_differentials, const Vec3 &in_dir, const Vec3 &out_dir) const
 {
 	if(!differentials_ || !in_differentials) return nullptr;

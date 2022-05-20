@@ -55,9 +55,8 @@ const MaterialData * BlendMaterial::initBsdf(SurfacePoint &sp, const Camera *cam
 	mat_data->mat_1_data_ = std::unique_ptr<const MaterialData>(mat_1_->get()->initBsdf(sp_1, camera));
 	SurfacePoint sp_2 {sp};
 	mat_data->mat_2_data_ = std::unique_ptr<const MaterialData>(mat_2_->get()->initBsdf(sp_2, camera));
-	sp = SurfacePoint::blendSurfacePoints(sp_1, sp_2, blend_val);
+	sp = SurfacePoint{sp_1, sp_2, blend_val};
 	mat_data->bsdf_flags_ = mat_data->mat_1_data_->bsdf_flags_ | mat_data->mat_2_data_->bsdf_flags_;
-
 	//todo: bump mapping blending
 	return mat_data;
 }
