@@ -32,8 +32,11 @@ class Vec3Double
 {
 	public:
 		Vec3Double() = default;
+		Vec3Double(const Vec3Double &v) = default;
+		Vec3Double(Vec3Double &&v) = default;
 		Vec3Double(double x, double y, double z) : vec_{x, y, z} { }
 		Vec3Double &operator = (const Vec3Double &v) = default;
+		Vec3Double &operator = (Vec3Double &&v) = default;
 		double operator[](int i) const { return vec_[i]; }
 		double &operator[](int i) { return vec_[i]; }
 		std::string print() const;

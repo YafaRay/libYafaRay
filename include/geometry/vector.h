@@ -44,7 +44,9 @@ class Vec3
 		explicit Vec3(float f): vec_{f, f, f} {  }
 		Vec3(float x, float y, float z = 0.f): vec_{x, y, z} { }
 		Vec3(const Vec3 &v) = default;
+		Vec3(Vec3 &&v) = default;
 		explicit Vec3(const Point3 &p);
+		explicit Vec3(Point3 &&p);
 
 		float x() const { return vec_[0]; }
 		float y() const { return vec_[1]; }
@@ -64,6 +66,7 @@ class Vec3
 		float sinFromVectors(const Vec3 &v) const;
 
 		Vec3 &operator = (const Vec3 &s) = default;
+		Vec3 &operator = (Vec3 &&s) = default;
 		Vec3 &operator +=(const Vec3 &s) { for(size_t i = 0; i < 3; ++i) vec_[i] += s.vec_[i]; return *this;}
 		Vec3 &operator -=(const Vec3 &s) { for(size_t i = 0; i < 3; ++i) vec_[i] -= s.vec_[i];  return *this;}
 		Vec3 &operator /=(float s) { for(float &v : vec_) v /= s;  return *this;}
@@ -92,7 +95,11 @@ class Point3 final : public Vec3
 		Point3() = default;
 		Point3(float x, float y, float z = 0.f) : Vec3{x, y, z} { }
 		Point3(const Point3 &p) = default;
+		Point3(Point3 &&p) = default;
 		explicit Point3(const Vec3 &v): Vec3{v} { }
+		explicit Point3(Vec3 &&v): Vec3{std::move(v)} { }
+		Point3 &operator = (const Point3 &s) = default;
+		Point3 &operator = (Point3 &&s) = default;
 		static Point3 mult(const Point3 &a, const Vec3 &b);
 };
 
@@ -101,6 +108,7 @@ class Point3 final : public Vec3
 #endif
 
 inline Vec3::Vec3(const Point3 &p): vec_{p.vec_} { }
+inline Vec3::Vec3(Point3 &&p): vec_{std::move(p.vec_)} { }
 
 std::ostream &operator << (std::ostream &out, const Vec3 &v);
 std::ostream &operator << (std::ostream &out, const Point3 &p);
