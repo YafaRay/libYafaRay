@@ -56,6 +56,7 @@ class Image
 		virtual Rgba getColor(int x, int y) const = 0;
 		virtual float getFloat(int x, int y) const = 0;
 		virtual void setColor(int x, int y, const Rgba &col) = 0;
+		virtual void setColor(int x, int y, Rgba &&col) = 0;
 		virtual void addColor(int x, int y, const Rgba &col) = 0;
 		virtual void setFloat(int x, int y, float val) = 0;
 		virtual void addFloat(int x, int y, float val) = 0;

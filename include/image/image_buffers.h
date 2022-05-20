@@ -115,6 +115,7 @@ class RgbAlpha final
 {
 	public:
 		void setColor(const Rgba &col) { rgba_ = col; }
+		void setColor(Rgba &&col) { rgba_ = std::move(col); }
 		void addColor(const Rgba &col) { rgba_ += col; }
 		Rgba getColor() const { return rgba_; }
 

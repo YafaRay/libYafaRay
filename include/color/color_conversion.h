@@ -40,7 +40,7 @@ class ColorConv final
 	public:
 		enum ColorSpace { CieRgbECs, CieRgbD50Cs, SRgbD50Cs, SRgbD65Cs };
 		explicit ColorConv(bool cl = false, bool g_enc = false, ColorSpace cs = CieRgbECs, float exposure = 0.f);
-		Rgb fromXyz(Rgb &c, bool force_gamma = false) const;
+		Rgb fromXyz(const Rgb &c, bool force_gamma = false) const;
 		Rgb fromXyz(float x, float y, float z, bool force_gamma = false) const;
 		Rgb fromxyY(float x, float y, float Y) const;
 		Rgb fromxyY2Xyz(float x, float y, float Y) const;
@@ -127,7 +127,7 @@ inline Rgb ColorConv::fromXyz(float x, float y, float z, bool force_gamma) const
 	return ret;
 }
 
-inline Rgb ColorConv::fromXyz(Rgb &c, bool force_gamma) const
+inline Rgb ColorConv::fromXyz(const Rgb &c, bool force_gamma) const
 {
 	return fromXyz(c.r_, c.g_, c.b_, force_gamma);
 }

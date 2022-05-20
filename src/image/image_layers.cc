@@ -39,4 +39,10 @@ void ImageLayers::setColor(int x, int y, const Rgba &color, LayerDef::Type layer
 	if(image_layer) image_layer->image_->setColor(x, y, color);
 }
 
+void ImageLayers::setColor(int x, int y, Rgba &&color, LayerDef::Type layer_type)
+{
+	ImageLayer *image_layer = find(layer_type);
+	if(image_layer) image_layer->image_->setColor(x, y, std::move(color));
+}
+
 END_YAFARAY

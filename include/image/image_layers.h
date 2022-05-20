@@ -42,6 +42,7 @@ class ImageLayers final : public Collection<LayerDef::Type, ImageLayer>  //Actua
 {
 	public:
 		void setColor(int x, int y, const Rgba &color, LayerDef::Type layer_type);
+		void setColor(int x, int y, Rgba &&color, LayerDef::Type layer_type);
 };
 
 END_YAFARAY

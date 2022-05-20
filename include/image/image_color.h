@@ -39,6 +39,7 @@ class ImageColor final : public Image
 		Rgba getColor(int x, int y) const override { return Rgba{buffer_(x, y)}; }
 		float getFloat(int x, int y) const override { return getColor(x, y).r_; }
 		void setColor(int x, int y, const Rgba &col) override { buffer_(x, y) = col; }
+		void setColor(int x, int y, Rgba &&col) override { buffer_(x, y) = std::move(col); }
 		void addColor(int x, int y, const Rgba &col) override { buffer_(x, y) += col; }
 		void setFloat(int x, int y, float val) override { setColor(x, y, Rgba{val}); }
 		void addFloat(int x, int y, float val) override { addColor(x, y, Rgba{val}); }
