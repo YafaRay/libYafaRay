@@ -655,7 +655,6 @@ Rgb PhotonIntegrator::finalGathering(FastRandom &fast_random, RandomGenerator &r
 	{
 		Rgb throughput(1.0);
 		float length = 0;
-		auto hit = std::make_unique<const SurfacePoint>(sp);
 		Vec3 pwo{wo};
 		Ray p_ray;
 		bool did_hit;
@@ -671,15 +670,16 @@ Rgb PhotonIntegrator::finalGathering(FastRandom &fast_random, RandomGenerator &r
 		}
 
 		Sample s(s_1, s_2, BsdfFlags::Diffuse | BsdfFlags::Reflect | BsdfFlags::Transmit); // glossy/dispersion/specular done via recursive raytracing
-		scol = hit->sample(pwo, p_ray.dir_, s, w, chromatic_enabled, wavelength, camera_);
+		scol = sp.sample(pwo, p_ray.dir_, s, w, chromatic_enabled, wavelength, camera_);
 
 		scol *= w;
 		if(scol.isBlack()) continue;
 
 		p_ray.tmin_ = ray_min_dist_;
 		p_ray.tmax_ = -1.f;
-		p_ray.from_ = hit->p_;
+		p_ray.from_ = sp.p_;
 		throughput = scol;
+		std::unique_ptr<const SurfacePoint> hit;
 		std::tie(hit, p_ray.tmax_) = accelerator_->intersect(p_ray, camera_);
 		did_hit = static_cast<bool>(hit);
 		if(!did_hit) continue;   //hit background
