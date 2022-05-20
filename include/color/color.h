@@ -208,27 +208,6 @@ class Rgba final : public Rgb
 		float a_ = 1.f;
 };
 
-class Rgbe final
-{
-	public:
-		Rgbe() { rgbe_[3] = 0;};
-		explicit Rgbe(const Rgb &s);
-		explicit operator Rgb () const
-		{
-			if(rgbe_[3])
-			{
-				/*nonzero pixel*/
-				const float f = std::ldexp(1.f, rgbe_[3] - (128 + 8));
-				return {rgbe_[0] * f, rgbe_[1] * f, rgbe_[2] * f};
-			}
-			else return {0.f, 0.f, 0.f};
-		}
-		//		unsigned char& operator [] (int i){ return rgbe[i]; }
-
-		//	protected:
-		std::array<unsigned char, 4> rgbe_;
-};
-
 inline void Rgb::expgamAdjust(float e, float g, bool clamp_rgb)
 {
 	if((e == 0.f) && (g == 1.f))

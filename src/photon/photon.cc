@@ -23,13 +23,6 @@
 
 BEGIN_YAFARAY
 
-PhotonGather::PhotonGather(uint32_t mp, const Point3 &p): p_(p)
-{
-	photons_ = nullptr;
-	n_lookup_ = mp;
-	found_photons_ = 0;
-}
-
 void PhotonGather::operator()(const Photon *photon, float dist_2, float &max_dist_squared) const
 {
 	// Do usual photon heap management
@@ -142,35 +135,5 @@ const Photon *PhotonMap::findNearest(const Point3 &p, const Vec3 &n, float dist)
 	tree_->lookup(p, proc, dist);
 	return proc.nearest_;
 }
-
-#ifdef SMALL_PHOTONS
-DirConverter dirconverter_global;
-
-DirConverter::DirConverter()
-{
-	for(int i = 0; i < 255; ++i)
-	{
-		float angle = (float)i * c_inv_255_ratio_;
-		costheta_[i] = math::cos(angle);
-		sintheta_[i] = math::sin(angle);
-	}
-	for(int i = 0; i < 256; ++i)
-	{
-		float angle = (float)i * c_inv_256_ratio_;
-		cosphi_[i] = math::cos(angle);
-		sinphi_[i] = math::sin(angle);
-	}
-}
-
-std::pair<unsigned char, unsigned char> DirConverter::convert(const Vec3 &dir) {
-	int t = (int)(math::acos(dir.Z()) * c_255_ratio_);
-	int p = (int)(atan2(dir.Y(), dir.X()) * c_256_ratio_);
-	if(t > 254) t = 254;
-	else if(t < 0) t = 0;
-	if(p > 255) p = 255;
-	else if(p < 0) p += 256;
-	return std::pair<unsigned char, unsigned char>(t, p);
-}
-#endif // SMALL_PHOTONS
 
 END_YAFARAY

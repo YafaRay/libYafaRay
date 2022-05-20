@@ -129,21 +129,4 @@ ColorSpace Rgb::colorSpaceFromName(const std::string &color_space_name, const Co
 	else return default_color_space;
 }
 
-Rgbe::Rgbe(const Rgb &s)
-{
-	float v = s.getR();
-	if(s.getG() > v) v = s.getG();
-	if(s.getB() > v) v = s.getB();
-	if(v < 1e-32f) rgbe_[0] = rgbe_[1] = rgbe_[2] = rgbe_[3] = 0.f;
-	else
-	{
-		int e;
-		v = std::frexp(v, &e) * 256.f / v;
-		rgbe_[0] = (unsigned char)(s.getR() * v);
-		rgbe_[1] = (unsigned char)(s.getG() * v);
-		rgbe_[2] = (unsigned char)(s.getB() * v);
-		rgbe_[3] = (unsigned char)(e + 128);
-	}
-}
-
 END_YAFARAY

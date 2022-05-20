@@ -29,76 +29,40 @@
 
 BEGIN_YAFARAY
 
-class Photon
+class Photon final
 {
 	public:
-		Photon() {/*theta=255;*/};
-		Photon(const Vec3 &d, const Point3 &p, const Rgb &col)
-		{
-#ifdef SMALL_PHOTONS //FIXME: SMALL_PHOTONS not working at the moment because Rgbe members do not include r_, g_ and b_ as needed in the rest of the code
-			direction(d);
-#else
-			dir_ = d;
-#endif
-			pos_ = p;
-			c_ = col;
-		};
-		//		photon_t(const runningPhoton_t &p)
-		//		{
-		//			pos=p.pos;
-		//			c=p.c;
-		//			vector3d_t dir=p.lastpos-p.pos;
-		//			dir.normalize();
-		//			direction(dir);
-		//		};
-		const Point3 &position() const {return pos_;};
-		Rgb color() const {return c_;};
-		void color(const Rgb &col) { c_ = col;};
-		Vec3 direction() const
-		{
-#ifdef SMALL_PHOTONS //FIXME: SMALL_PHOTONS not working at the moment because Rgbe members do not include r_, g_ and b_ as needed in the rest of the code
-			if(theta_ == 255) return {0, 0, 0};
-			else return dirconverter_global.convert(theta_, phi_);
-#else //SMALL_PHOTONS
-			return dir_;
-#endif //SMALL_PHOTONS
-		};
-		void direction(const Vec3 &d)
-		{
-#ifdef SMALL_PHOTONS //FIXME: SMALL_PHOTONS not working at the moment because Rgbe members do not include r_, g_ and b_ as needed in the rest of the code
-			if(d.null()) theta_ = 255;
-			else std::tie(theta_, phi_) = dirconverter_global.convert(d);
-#else //SMALL_PHOTONS
-			dir_ = d;
-#endif //SMALL_PHOTONS
-		}
+		Photon() = default;
+		Photon(const Vec3 &d, const Point3 &p, const Rgb &col) : dir_{d}, pos_{p}, c_{col} { }
+		Photon(Vec3 &&d, Point3 &&p, Rgb &&col) : dir_{std::move(d)}, pos_{std::move(p)}, c_{std::move(col)} { }
+		const Point3 &position() const { return pos_; }
+		Rgb color() const { return c_; }
+		void color(const Rgb &col) { c_ = col;}
+		void color(Rgb &&col) { c_ = std::move(col); }
+		Vec3 direction() const { return dir_; }
+		void direction(const Vec3 &d) { dir_ = d; }
+		void direction(Vec3 &&d) { dir_ = std::move(d); }
 
 		Point3 pos_;
-
-#ifdef SMALL_PHOTONS //FIXME: SMALL_PHOTONS not working at the moment because Rgbe members do not include r_, g_ and b_ as needed in the rest of the code
-		Rgbe c_;
-		unsigned char theta_, phi_;
-
-#else //SMALL_PHOTONS
 		Rgb c_;
 		Vec3 dir_;
-#endif //SMALL_PHOTONS
 };
 
 struct RadData
 {
-	RadData(const Point3 &p, Vec3 n): pos_(p), normal_(n), use_(true) {}
+	RadData(const Point3 &p, const Vec3 &n): pos_{p}, normal_(n) { }
+	RadData(Point3 &&p, Vec3 &&n): pos_(std::move(p)), normal_(std::move(n)) { }
 	Point3 pos_;
 	Vec3 normal_;
 	Rgb refl_;
 	Rgb transm_;
-	mutable bool use_;
+	mutable bool use_ = true;
 };
 
 struct FoundPhoton
 {
-	FoundPhoton() {};
-	FoundPhoton(const Photon *p, float d): photon_(p), dist_square_(d) {}
+	FoundPhoton() = default;
+	FoundPhoton(const Photon *p, float d): photon_{p}, dist_square_{d} { }
 	bool operator<(const FoundPhoton &p_2) const { return dist_square_ < p_2.dist_square_; }
 	const Photon *photon_;
 	float dist_square_;
@@ -145,64 +109,39 @@ class PhotonMap final
 
 struct PhotonGather
 {
-	PhotonGather(uint32_t mp, const Point3 &p);
+	PhotonGather(uint32_t mp, const Point3 &p) : p_{p}, n_lookup_{mp} { }
+	PhotonGather(uint32_t mp, Point3 &&p) : p_{std::move(p)}, n_lookup_{mp} { }
 	void operator()(const Photon *photon, float dist_2, float &max_dist_squared) const;
 	const Point3 &p_;
-	FoundPhoton *photons_;
+	FoundPhoton *photons_ = nullptr;
 	uint32_t n_lookup_;
-	mutable uint32_t found_photons_;
+	mutable uint32_t found_photons_ = 0;
 };
 
 struct NearestPhoton
 {
-	NearestPhoton(const Point3 &pos, const Vec3 &norm): p_(pos), n_(norm) {}
+	NearestPhoton(const Point3 &pos, const Vec3 &norm): p_{pos}, n_{norm} { }
+	NearestPhoton(Point3 &&pos, Vec3 &&norm): p_{std::move(pos)}, n_{std::move(norm)} { }
 	void operator()(const Photon *photon, float dist_2, float &max_dist_squared)
 	{
 		if(photon->direction() * n_ > 0.f) { nearest_ = photon; max_dist_squared = dist_2; }
 	}
-	const Point3 p_; //wth do i need this for actually??
-	const Vec3 n_;
+	const Point3 &p_; //wth do i need this for actually??
+	const Vec3 &n_;
 	const Photon *nearest_ = nullptr;
 };
 
 /*! "eliminates" photons within lookup radius (sets use=false) */
 struct EliminatePhoton
 {
-	explicit EliminatePhoton(const Vec3 &norm): n_(norm) {}
+	explicit EliminatePhoton(const Vec3 &norm): n_{norm} { }
+	explicit EliminatePhoton(Vec3 &&norm): n_{std::move(norm)} { }
 	void operator()(const RadData *rpoint, float dist_2, float &max_dist_squared) const
 	{
 		if(rpoint->normal_ * n_ > 0.f) { rpoint->use_ = false; }
 	}
-	const Vec3 n_;
+	const Vec3 &n_;
 };
-
-#ifdef SMALL_PHOTONS
-class DirConverter
-{
-	public:
-		DirConverter();
-
-		Vec3 convert(unsigned char theta, unsigned char phi)
-		{
-			return {sintheta_[theta] * cosphi_[phi],
-					sintheta_[theta] * sinphi_[phi],
-					costheta_[theta]};
-		}
-		std::pair<unsigned char, unsigned char> convert(const Vec3 &dir);
-
-	protected:
-		static constexpr double c_255_ratio_ = 81.16902097686662123083;
-		static constexpr double c_256_ratio_ = 40.74366543152520595687;
-		static constexpr double c_inv_255_ratio_ = 0.01231997119054820878;
-		static constexpr double c_inv_256_ratio_ = 0.02454369260617025968;
-		float cosphi_[256];
-		float sinphi_[256];
-		float costheta_[255];
-		float sintheta_[255];
-};
-
-extern DirConverter dirconverter_global;
-#endif // SMALL_PHOTONS
 
 END_YAFARAY
 
