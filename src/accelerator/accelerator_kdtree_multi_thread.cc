@@ -668,9 +668,7 @@ AcceleratorIntersectData AcceleratorKdTreeMultiThread::intersect(const Ray &ray,
 	accelerator_intersect_data.t_max_ = t_max;
 	const Bound::Cross cross = tree_bound.cross(ray, t_max);
 	if(!cross.crossed_) { return {}; }
-
-	const Vec3 inv_dir(1.f / ray.dir_.x(), 1.f / ray.dir_.y(), 1.f / ray.dir_.z());
-
+	const Vec3 inv_dir{math::inverse(ray.dir_.x()), math::inverse(ray.dir_.y()), math::inverse(ray.dir_.z())};
 	std::array<Stack, kd_max_stack_> stack;
 	const Node *far_child;
 	const Node *curr_node;
@@ -776,7 +774,7 @@ AcceleratorIntersectData AcceleratorKdTreeMultiThread::intersectS(const Ray &ray
 	AcceleratorIntersectData accelerator_intersect_data;
 	const Bound::Cross cross = tree_bound.cross(ray, t_max);
 	if(!cross.crossed_) { return {}; }
-	const Vec3 inv_dir(1.f / ray.dir_.x(), 1.f / ray.dir_.y(), 1.f / ray.dir_.z());
+	const Vec3 inv_dir{math::inverse(ray.dir_.x()), math::inverse(ray.dir_.y()), math::inverse(ray.dir_.z())};
 	std::array<Stack, kd_max_stack_> stack;
 	const Node *far_child, *curr_node;
 	curr_node = nodes.data();
@@ -879,22 +877,8 @@ AcceleratorTsIntersectData AcceleratorKdTreeMultiThread::intersectTs(const Ray &
 	AcceleratorTsIntersectData accelerator_intersect_data;
 	const Bound::Cross cross = tree_bound.cross(ray, t_max);
 	if(!cross.crossed_) { return {}; }
-
-	//To avoid division by zero
-	float inv_dir_x, inv_dir_y, inv_dir_z;
-
-	if(ray.dir_.x() == 0.f) inv_dir_x = std::numeric_limits<float>::max();
-	else inv_dir_x = 1.f / ray.dir_.x();
-
-	if(ray.dir_.y() == 0.f) inv_dir_y = std::numeric_limits<float>::max();
-	else inv_dir_y = 1.f / ray.dir_.y();
-
-	if(ray.dir_.z() == 0.f) inv_dir_z = std::numeric_limits<float>::max();
-	else inv_dir_z = 1.f / ray.dir_.z();
-
-	Vec3 inv_dir(inv_dir_x, inv_dir_y, inv_dir_z);
+	const Vec3 inv_dir{math::inverse(ray.dir_.x()), math::inverse(ray.dir_.y()), math::inverse(ray.dir_.z())};
 	int depth = 0;
-
 	std::set<const Primitive *> filtered;
 	std::array<Stack, kd_max_stack_> stack;
 	const Node *far_child, *curr_node;

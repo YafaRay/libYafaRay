@@ -69,6 +69,13 @@ template<typename T = float> static constexpr T div_180_by_pi {57.29577951308232
 // all from "Efficient Multidimensional Sampling" by Alexander Keller
 template<typename T = float> static constexpr T sample_mult_ratio {0.00000000023283064365386962890625L};
 
+template<typename T> inline constexpr T inverse(T val)
+{
+	//To avoid division by zero
+	static_assert(std::is_floating_point<T>::value, "This function can only be instantiated for floating point arguments");
+	if(val == T{0}) return std::numeric_limits<T>::max();
+	else return T{1} / val;
+}
 
 template<typename T> inline constexpr T degToRad(T deg)
 {
