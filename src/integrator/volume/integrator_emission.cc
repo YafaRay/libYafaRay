@@ -49,7 +49,7 @@ Rgb EmissionIntegrator::integrate(RandomGenerator &random_generator, const Ray &
 		Rgb tr(1.f);
 		for(int i = 0; i < n; ++i)
 		{
-			const Ray step_ray(ray.from_ + (ray.dir_ * pos), ray.dir_, 0, step, 0);
+			const Ray step_ray{ray.from_ + (ray.dir_ * pos), ray.dir_, 0, step, 0};
 			const Rgb step_tau = vr->tau(step_ray, 0, 0);
 			tr *= Rgb(math::exp(-step_tau.getR()), math::exp(-step_tau.getG()), math::exp(-step_tau.getB()));
 			result += tr * vr->emission(step_ray.from_, step_ray.dir_);

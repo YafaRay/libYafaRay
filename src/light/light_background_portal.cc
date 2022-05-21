@@ -158,7 +158,7 @@ Rgb BackgroundPortalLight::emitPhoton(float s_1, float s_2, float s_3, float s_4
 	const auto [p, n]{sampleSurface(s_3, s_4, ray.time_)};
 	const auto [du, dv]{Vec3::createCoordsSystem(n)};
 	ray.dir_ = sample::cosHemisphere(n, du, dv, s_1, s_2);
-	const Ray r_2(ray.from_, -ray.dir_);
+	const Ray r_2{ray.from_, -ray.dir_};
 	return bg_->eval(r_2.dir_, true);
 }
 
@@ -171,7 +171,7 @@ Rgb BackgroundPortalLight::emitSample(Vec3 &wo, LSample &s, float time) const
 	wo = sample::cosHemisphere(s.sp_->ng_, du, dv, s.s_1_, s.s_2_);
 	s.dir_pdf_ = std::abs(s.sp_->ng_ * wo);
 	s.flags_ = flags_;
-	const Ray r_2(s.sp_->p_, -wo);
+	const Ray r_2{s.sp_->p_, -wo};
 	return bg_->eval(r_2.dir_, true);
 }
 
