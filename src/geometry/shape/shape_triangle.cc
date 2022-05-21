@@ -42,16 +42,7 @@ IntersectData ShapeTriangle::intersect(const Ray &ray) const
 			if(v >= 0.f && (u + v) <= 1.f)
 			{
 				const float t = edge_2 * qvec * inv_det;
-				if(t >= epsilon)
-				{
-					IntersectData intersect_data;
-					intersect_data.hit_ = true;
-					intersect_data.t_hit_ = t;
-					intersect_data.u_ = u;
-					intersect_data.v_ = v;
-					intersect_data.time_ = ray.time_;
-					return intersect_data;
-				}
+				if(t >= epsilon) return {t, u, v, ray.time_ };
 			}
 		}
 	}

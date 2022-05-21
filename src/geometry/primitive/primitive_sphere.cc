@@ -75,10 +75,7 @@ IntersectData SpherePrimitive::intersect(const Ray &ray, const Matrix4 *obj_to_w
 		if(sol < ray.tmin_) return {};
 	}
 	//if(sol > ray.tmax) return false; //tmax = -1 is not substituted yet...
-	IntersectData intersect_data;
-	intersect_data.hit_ = true;
-	intersect_data.t_hit_ = sol;
-	return intersect_data;
+	return {sol};
 }
 
 std::unique_ptr<const SurfacePoint> SpherePrimitive::getSurface(const RayDifferentials *ray_differentials, const Point3 &hit, const IntersectData &intersect_data, const Matrix4 *obj_to_world, const Camera *camera) const

@@ -26,7 +26,12 @@ BEGIN_YAFARAY
 
 struct IntersectData
 {
-	void setIntersectData(const IntersectData &intersect_data);
+	IntersectData() = default;
+	IntersectData(float t_hit, float u = 0.f, float v = 0.f, float time = 0.f) : hit_{true}, t_hit_{t_hit}, u_{u}, v_{v}, time_{time} { }
+	IntersectData(const IntersectData &intersect_data);
+	IntersectData(IntersectData &&intersect_data) = default;
+	IntersectData& operator=(const IntersectData &intersect_data);
+	IntersectData& operator=(IntersectData &&intersect_data) = default;
 	bool hit_ = false;
 	float t_hit_;
 	float u_;
@@ -34,7 +39,18 @@ struct IntersectData
 	float time_;
 };
 
-inline void IntersectData::setIntersectData(const IntersectData &intersect_data)
+inline IntersectData::IntersectData(const IntersectData &intersect_data) : hit_{intersect_data.hit_}
+{
+	if(hit_)
+	{
+		t_hit_ = intersect_data.t_hit_;
+		u_ = intersect_data.u_;
+		v_ = intersect_data.v_;
+		time_ = intersect_data.time_;
+	}
+}
+
+inline IntersectData& IntersectData::operator=(const IntersectData &intersect_data)
 {
 	hit_ = intersect_data.hit_;
 	if(hit_)
@@ -44,6 +60,7 @@ inline void IntersectData::setIntersectData(const IntersectData &intersect_data)
 		v_ = intersect_data.v_;
 		time_ = intersect_data.time_;
 	}
+	return *this;
 }
 
 

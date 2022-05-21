@@ -42,12 +42,17 @@ class MaterialData;
 
 struct AcceleratorIntersectData : IntersectData
 {
+	AcceleratorIntersectData() = default;
+	explicit AcceleratorIntersectData(bool hit) { hit_ = true; }
+	AcceleratorIntersectData(IntersectData &&intersect_data, const Primitive *hit_primitive) : IntersectData(std::move(intersect_data)), t_max_{intersect_data.t_hit_}, hit_primitive_{hit_primitive} { }
 	float t_max_ = std::numeric_limits<float>::infinity();
 	const Primitive *hit_primitive_ = nullptr;
 };
 
 struct AcceleratorTsIntersectData : AcceleratorIntersectData
 {
+	AcceleratorTsIntersectData() = default;
+	explicit AcceleratorTsIntersectData(AcceleratorIntersectData &&intersect_data, const Rgb &transparent_color = Rgb{1.f}) : AcceleratorIntersectData(std::move(intersect_data)), transparent_color_{transparent_color} { }
 	Rgb transparent_color_ {1.f};
 };
 

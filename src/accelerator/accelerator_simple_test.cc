@@ -60,16 +60,14 @@ AcceleratorSimpleTest::AcceleratorSimpleTest(Logger &logger, const std::vector<c
 
 AcceleratorIntersectData AcceleratorSimpleTest::intersect(const Ray &ray, float t_max) const
 {
-	AcceleratorIntersectData accelerator_intersect_data;
-	accelerator_intersect_data.t_max_ = t_max;
 	for(const auto &[object, object_data] : objects_data_)
 	{
-		const Bound::Cross cross = object_data.bound_.cross(ray, accelerator_intersect_data.t_max_);
+		const Bound::Cross cross = object_data.bound_.cross(ray, t_max);
 		if(!cross.crossed_) continue;
 		for(const auto &primitive : object_data.primitives_)
 		{
-			const IntersectData intersect_data = primitive->intersect(ray);
-			if(intersect_data.hit_ && intersect_data.t_hit_ >= ray.tmin_ && intersect_data.t_hit_ < accelerator_intersect_data.t_max_)
+			IntersectData intersect_data = primitive->intersect(ray);
+			if(intersect_data.hit_ && intersect_data.t_hit_ >= ray.tmin_ && intersect_data.t_hit_ < t_max)
 			{
 				const Visibility prim_visibility = primitive->getVisibility();
 				if(prim_visibility == Visibility::NormalVisible || prim_visibility == Visibility::VisibleNoShadows)
@@ -77,15 +75,13 @@ AcceleratorIntersectData AcceleratorSimpleTest::intersect(const Ray &ray, float 
 					const Visibility mat_visibility = primitive->getMaterial()->getVisibility();
 					if(mat_visibility == Visibility::NormalVisible || mat_visibility == Visibility::VisibleNoShadows)
 					{
-						accelerator_intersect_data.setIntersectData(intersect_data);
-						accelerator_intersect_data.t_max_ = intersect_data.t_hit_;
-						accelerator_intersect_data.hit_primitive_ = primitive;
+						return {std::move(intersect_data), primitive };
 					}
 				}
 			}
 		}
 	}
-	return accelerator_intersect_data;
+	return {};
 }
 
 AcceleratorIntersectData AcceleratorSimpleTest::intersectS(const Ray &ray, float t_max, float shadow_bias) const
@@ -105,9 +101,7 @@ AcceleratorIntersectData AcceleratorSimpleTest::intersectS(const Ray &ray, float
 					const Visibility mat_visibility = primitive->getMaterial()->getVisibility();
 					if(mat_visibility == Visibility::NormalVisible || mat_visibility == Visibility::InvisibleShadowsOnly)
 					{
-						AcceleratorIntersectData accelerator_intersect_data;
-						accelerator_intersect_data.hit_ = true;
-						return accelerator_intersect_data;
+						return AcceleratorIntersectData{true};
 					}
 				}
 			}
@@ -124,14 +118,10 @@ AcceleratorTsIntersectData AcceleratorSimpleTest::intersectTs(const Ray &ray, in
 		if(!cross.crossed_) continue;
 		for(const auto &primitive : object_data.primitives_)
 		{
-			const IntersectData intersect_data = primitive->intersect(ray);
+			IntersectData intersect_data = primitive->intersect(ray);
 			if(intersect_data.hit_ && intersect_data.t_hit_ >= ray.tmin_ && intersect_data.t_hit_ < t_max)
 			{
-				AcceleratorTsIntersectData accelerator_intersect_data;
-				accelerator_intersect_data.setIntersectData(intersect_data);
-				accelerator_intersect_data.t_max_ = intersect_data.t_hit_;
-				accelerator_intersect_data.hit_primitive_ = primitive;
-				return accelerator_intersect_data;
+				return AcceleratorTsIntersectData{ std::move(AcceleratorIntersectData{std::move(intersect_data), primitive})};
 			}
 		}
 	}
