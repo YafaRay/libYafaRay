@@ -92,7 +92,7 @@ class SurfacePoint final
 		const Light *getLight() const { if(primitive_) return primitive_->getObject()->getLight(); else return nullptr; }
 
 		IntersectData intersect_data_;
-		std::unique_ptr<const MaterialData> mat_data_;
+		alignas(8) std::unique_ptr<const MaterialData> mat_data_;
 		std::unique_ptr<const SurfaceDifferentials> differentials_; //!< Surface Differentials for mipmaps calculations
 
 		// Geometry related

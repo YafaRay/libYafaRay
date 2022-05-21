@@ -45,7 +45,7 @@ class Collection
 		const T *find(const K &key) const;
 
 	protected:
-		std::map<K, T> items_;
+		alignas(8) std::map<K, T> items_;
 };
 
 template <typename K, typename T>

@@ -138,7 +138,7 @@ class Rgb
 		static Rgb mix(const Rgb &a, const Rgb &b, float point);
 		static float maxAbsDiff(const Rgb &a, const Rgb &b);
 
-		float r_ = 0.f;
+		alignas(4) float r_ = 0.f;
 		float g_ = 0.f;
 		float b_ = 0.f;
 };

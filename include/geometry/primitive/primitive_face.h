@@ -63,10 +63,10 @@ class FacePrimitive: public Primitive
 		Bound getBoundTimeSteps(const Matrix4 *obj_to_world) const;
 
 	protected:
-		size_t self_index_ = 0;
+		alignas(8) size_t self_index_ = 0;
 		const MeshObject &base_mesh_object_;
 		const std::unique_ptr<const Material> *material_ = nullptr;
-		std::vector<int> vertices_; //!< indices in point array, referenced in mesh.
+		alignas(8) std::vector<int> vertices_; //!< indices in point array, referenced in mesh.
 		std::vector<int> vertices_normals_; //!< indices in normal array, if mesh is smoothed.
 		std::vector<int> vertex_uvs_; //!< indices in uv array, if mesh has explicit uv.
 };

@@ -44,7 +44,7 @@ class Ray
 		Ray(const Point3 &f, const Vec3 &d, float start = 0.f, float end = -1.f, float ftime = 0.f):
 				from_{f}, dir_{d}, tmin_{start}, tmax_{end}, time_{ftime} { }
 		Ray& operator=(Ray&& ray) = default;
-		Point3 from_;
+		alignas(8) Point3 from_;
 		Vec3 dir_;
 		float tmin_ = 0.f, tmax_ = -1.f;
 		float time_ = 0.f; //!< relative frame time (values between [0;1]) at which ray was generated

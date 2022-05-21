@@ -45,7 +45,7 @@ class Vec3Double
 		static Vec3Double sub(const Vec3Double &v_1, const Vec3Double &v_2);
 
 	private:
-		std::array<double, 3> vec_;
+		alignas(8) std::array<double, 3> vec_;
 };
 
 inline std::string Vec3Double::print() const

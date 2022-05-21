@@ -42,7 +42,7 @@ class ShapeQuad final
 		static float getDistToNearestEdge(float u, float v, const Vec3 &dp_du_abs, const Vec3 &dp_dv_abs);
 
 	private:
-		std::array<Point3, 4> vertices_;
+		alignas(8) std::array<Point3, 4> vertices_;
 };
 
 inline Vec3 ShapeQuad::calculateFaceNormal() const

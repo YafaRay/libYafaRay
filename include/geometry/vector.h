@@ -86,7 +86,7 @@ class Vec3
 		static Vec3 discreteVectorCone(const Vec3 &dir, float cangle, int sample, int square);
 
 	private:
-		std::array<float, 3> vec_;
+		alignas(4) std::array<float, 3> vec_;
 };
 
 class Point3 final : public Vec3

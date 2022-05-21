@@ -32,7 +32,7 @@ struct IntersectData
 	IntersectData(IntersectData &&intersect_data) = default;
 	IntersectData& operator=(const IntersectData &intersect_data);
 	IntersectData& operator=(IntersectData &&intersect_data) = default;
-	bool hit_ = false;
+	alignas(8) bool hit_ = false;
 	float t_hit_;
 	float u_;
 	float v_;

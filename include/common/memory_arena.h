@@ -66,9 +66,9 @@ class MemoryArena
 		}
 	private:
 		// MemoryArena Private Data
-		uint32_t cur_block_pos_, block_size_;
+		alignas(8) uint32_t cur_block_pos_, block_size_;
 		char *current_block_;
-		std::vector<char *> used_blocks_, available_blocks_;
+		alignas(8) std::vector<char *> used_blocks_, available_blocks_;
 };
 
 END_YAFARAY

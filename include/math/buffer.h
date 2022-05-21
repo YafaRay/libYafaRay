@@ -44,8 +44,8 @@ class Buffer //! Generic n-dimensional buffer. Unrolled starting from the highes
 	private:
 		size_t calculateDataPosition(const std::array<size_t, n> &coordinates) const;
 
-		std::array<size_t, n> dimensions_;
-		std::vector<T> data_;
+		alignas(8) std::array<size_t, n> dimensions_;
+		alignas(8) std::vector<T> data_;
 };
 
 template<class T, unsigned char n>

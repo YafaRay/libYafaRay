@@ -58,7 +58,7 @@ class Matrix4
 		template<typename T> static void subtractScaledRow(T& matrix, int row_a, int row_b, float factor);
 		template<typename T> static void divideRow(T& matrix, int row, float divisor);
 
-		float matrix_[4][4];
+		alignas(8) float matrix_[4][4];
 		bool invalid_ = false;
 };
 
