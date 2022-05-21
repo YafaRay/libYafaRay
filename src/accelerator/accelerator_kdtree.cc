@@ -54,7 +54,7 @@ AcceleratorKdTree::AcceleratorKdTree(Logger &logger, const std::vector<const Pri
 	c_start = clock();
 	next_free_node_ = 0;
 	allocated_nodes_count_ = 256;
-	nodes_ = std::unique_ptr<Node[]>(new Node[allocated_nodes_count_]);
+	nodes_.resize(allocated_nodes_count_);
 	if(max_depth_ <= 0 && total_prims_ > 0) max_depth_ = static_cast<int>(7.0f + 1.66f * math::log(static_cast<float>(total_prims_)));
 	const double log_leaves = 1.442695 * math::log(static_cast<double >(total_prims_)); // = base2 log
 	if(leaf_size <= 0)
@@ -421,10 +421,11 @@ int AcceleratorKdTree::buildTree(uint32_t n_prims, const std::vector<const Primi
 	{
 		int new_count = 2 * allocated_nodes_count_;
 		new_count = (new_count > 0x100000) ? allocated_nodes_count_ + 0x80000 : new_count;
-		auto n = std::unique_ptr<Node[]>(new Node[new_count]);
-		memcpy(n.get(), nodes_.get(), allocated_nodes_count_ * sizeof(Node));
-		nodes_ = std::move(n);
+//		auto n = std::unique_ptr<Node[]>(new Node[new_count]);
+//		memcpy(n.get(), nodes_.get(), allocated_nodes_count_ * sizeof(Node));
+//		nodes_ = std::move(n);
 		allocated_nodes_count_ = new_count;
+		nodes_.resize(allocated_nodes_count_);
 	}
 
 #if PRIMITIVE_CLIPPING > 0
@@ -547,7 +548,7 @@ int AcceleratorKdTree::buildTree(uint32_t n_prims, const std::vector<const Primi
 		{
 			if(edges[split.axis_][i].end_ != BoundEdge::EndBound::Right)
 			{
-				cindizes[n_0] = edges[split.axis_][i].prim_num_;
+				cindizes[n_0] = edges[split.axis_][i].index_;
 				left_prims[n_0] = old_prims[cindizes[n_0]];
 				++n_0;
 			}
@@ -555,7 +556,7 @@ int AcceleratorKdTree::buildTree(uint32_t n_prims, const std::vector<const Primi
 		for(int i = 0; i < n_0; ++i) { left_prims[n_0 + i] = cindizes[i]; /* std::cout << cindizes[i] << " "; */ }
 		if(edges[split.axis_][split.edge_offset_].end_ == BoundEdge::EndBound::Both)
 		{
-			cindizes[n_1] = edges[split.axis_][split.edge_offset_].prim_num_;
+			cindizes[n_1] = edges[split.axis_][split.edge_offset_].index_;
 			n_right_prims[n_1] = old_prims[cindizes[n_1]];
 			++n_1;
 		}
@@ -564,7 +565,7 @@ int AcceleratorKdTree::buildTree(uint32_t n_prims, const std::vector<const Primi
 		{
 			if(edges[split.axis_][i].end_ != BoundEdge::EndBound::Left)
 			{
-				cindizes[n_1] = edges[split.axis_][i].prim_num_;
+				cindizes[n_1] = edges[split.axis_][i].index_;
 				n_right_prims[n_1] = old_prims[cindizes[n_1]];
 				++n_1;
 			}
@@ -577,12 +578,12 @@ int AcceleratorKdTree::buildTree(uint32_t n_prims, const std::vector<const Primi
 	{
 		for(int i = 0; i < split.edge_offset_; ++i)
 			if(edges[split.axis_][i].end_ != BoundEdge::EndBound::Right)
-				left_prims[n_0++] = edges[split.axis_][i].prim_num_;
+				left_prims[n_0++] = edges[split.axis_][i].index_;
 		if(edges[split.axis_][split.edge_offset_].end_ == BoundEdge::EndBound::Both)
-			n_right_prims[n_1++] = edges[split.axis_][split.edge_offset_].prim_num_;
+			n_right_prims[n_1++] = edges[split.axis_][split.edge_offset_].index_;
 		for(int i = split.edge_offset_ + 1; i < split.num_edges_; ++i)
 			if(edges[split.axis_][i].end_ != BoundEdge::EndBound::Left)
-				n_right_prims[n_1++] = edges[split.axis_][i].prim_num_;
+				n_right_prims[n_1++] = edges[split.axis_][i].index_;
 		split_pos = edges[split.axis_][split.edge_offset_].pos_;
 	}
 	//advance right prims pointer
@@ -631,7 +632,7 @@ int AcceleratorKdTree::buildTree(uint32_t n_prims, const std::vector<const Primi
 */
 AcceleratorIntersectData AcceleratorKdTree::intersect(const Ray &ray, float t_max) const
 {
-	return intersect(ray, t_max, nodes_.get(), tree_bound_);
+	return intersect(ray, t_max, nodes_.data(), tree_bound_);
 }
 
 AcceleratorIntersectData AcceleratorKdTree::intersect(const Ray &ray, float t_max, const Node *nodes, const Bound &tree_bound)
@@ -750,7 +751,7 @@ AcceleratorIntersectData AcceleratorKdTree::intersect(const Ray &ray, float t_ma
 
 AcceleratorIntersectData AcceleratorKdTree::intersectS(const Ray &ray, float t_max, float shadow_bias) const
 {
-	return intersectS(ray, t_max, shadow_bias, nodes_.get(), tree_bound_);
+	return intersectS(ray, t_max, shadow_bias, nodes_.data(), tree_bound_);
 }
 
 AcceleratorIntersectData AcceleratorKdTree::intersectS(const Ray &ray, float t_max, float shadow_bias, const Node *nodes, const Bound &tree_bound)
@@ -864,7 +865,7 @@ AcceleratorIntersectData AcceleratorKdTree::intersectS(const Ray &ray, float t_m
 
 AcceleratorTsIntersectData AcceleratorKdTree::intersectTs(const Ray &ray, int max_depth, float t_max, float shadow_bias, const Camera *camera) const
 {
-	return intersectTs(ray, max_depth, t_max, shadow_bias, nodes_.get(), tree_bound_, camera);
+	return intersectTs(ray, max_depth, t_max, shadow_bias, nodes_.data(), tree_bound_, camera);
 }
 
 AcceleratorTsIntersectData AcceleratorKdTree::intersectTs(const Ray &ray, int max_depth, float t_max, float shadow_bias, const Node *nodes, const Bound &tree_bound, const Camera *camera)

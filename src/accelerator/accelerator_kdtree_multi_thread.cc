@@ -95,35 +95,6 @@ AcceleratorKdTreeMultiThread::AcceleratorKdTreeMultiThread(Logger &logger, const
 	kd_tree_result.stats_.outputLog(logger, num_primitives, tree_build_parameters.max_leaf_size_);
 }
 
-void AcceleratorKdTreeMultiThread::Stats::outputLog(Logger &logger, uint32_t num_primitives, int max_leaf_size) const
-{
-	if(logger.isVerbose())
-	{
-		logger.logVerbose("Kd-Tree MultiThread: Primitives in tree: ", num_primitives);
-		logger.logVerbose("Kd-Tree MultiThread: Interior nodes: ", kd_inodes_, " / ", "leaf nodes: ", kd_leaves_
-				 , " (empty: ", empty_kd_leaves_, " = ", 100.f * static_cast<float>(empty_kd_leaves_) / kd_leaves_, "%)");
-		logger.logVerbose("Kd-Tree MultiThread: Leaf prims: ", kd_prims_, " (", static_cast<float>(kd_prims_) / num_primitives, " x prims in tree, leaf size: ", max_leaf_size, ")");
-		logger.logVerbose("Kd-Tree MultiThread: => ", static_cast<float>(kd_prims_) / (kd_leaves_ - empty_kd_leaves_), " prims per non-empty leaf");
-		logger.logVerbose("Kd-Tree MultiThread: Leaves due to depth limit/bad splits: ", depth_limit_reached_, "/", num_bad_splits_);
-		logger.logVerbose("Kd-Tree MultiThread: clipped primitives: ", clip_, " (", bad_clip_, " bad clips, ", null_clip_, " null clips)");
-	}
-}
-
-AcceleratorKdTreeMultiThread::Stats AcceleratorKdTreeMultiThread::Stats::operator += (const Stats &kd_stats)
-{
-	kd_inodes_ += kd_stats.kd_inodes_;
-	kd_leaves_ += kd_stats.kd_leaves_;
-	empty_kd_leaves_ += kd_stats.empty_kd_leaves_;
-	kd_prims_ += kd_stats.kd_prims_;
-	clip_ += kd_stats.clip_;
-	bad_clip_ += kd_stats.bad_clip_;
-	null_clip_ += kd_stats.null_clip_;
-	early_out_ += kd_stats.early_out_;
-	depth_limit_reached_ += kd_stats.depth_limit_reached_;
-	num_bad_splits_ += kd_stats.num_bad_splits_;
-	return *this;
-}
-
 AcceleratorKdTreeMultiThread::~AcceleratorKdTreeMultiThread()
 {
 	if(logger_.isVerbose()) logger_.logVerbose("Kd-Tree MultiThread: Done");

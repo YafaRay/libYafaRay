@@ -21,6 +21,7 @@
 #define YAFARAY_ACCELERATOR_KDTREE_H
 
 #include "accelerator/accelerator.h"
+#include "accelerator/accelerator_kdtree_common.h"
 #include "common/memory_arena.h"
 #include "geometry/bound.h"
 #include "geometry/primitive/primitive.h"
@@ -42,12 +43,9 @@ class AcceleratorKdTree final : public Accelerator
 		static const Accelerator * factory(Logger &logger, const std::vector<const Primitive *> &primitives, const ParamMap &params);
 
 	private:
-		struct Stats;
 		class Node;
 		struct Stack;
-		class BoundEdge;
 		struct SplitCost;
-		class TreeBin;
 		AcceleratorKdTree(Logger &logger, const std::vector<const Primitive *> &primitives, int depth = 0, int leaf_size = 2,
 						  float cost_ratio = 0.35, float empty_bonus = 0.33);
 		~AcceleratorKdTree() override;
@@ -74,27 +72,14 @@ class AcceleratorKdTree final : public Accelerator
 		unsigned int max_leaf_size_ = 1;
 		Bound tree_bound_; 	//!< overall space the tree encloses
 		MemoryArena prims_arena_;
-		std::unique_ptr<Node[]> nodes_;
+		std::vector<Node> nodes_;
 		// those are temporary actually, to keep argument counts bearable
 		std::unique_ptr<Bound[]> all_bounds_;
 #if PRIMITIVE_CLIPPING > 0
 		std::unique_ptr<ClipPlane[]> clip_; // indicate clip plane(s) for current level
 		std::vector<PolyDouble> cdata_; // clipping data...
 #endif
-		// some statistics:
-		struct Stats
-		{
-			int kd_inodes_ = 0;
-			int kd_leaves_ = 0;
-			int empty_kd_leaves_ = 0;
-			int kd_prims_ = 0;
-			int clip_ = 0;
-			int bad_clip_ = 0;
-			int null_clip_ = 0;
-			int early_out_ = 0;
-			int depth_limit_reached_ = 0;
-			int num_bad_splits_ = 0;
-		} kd_stats_;
+		struct Stats kd_stats_; // some statistics:
 
 		static constexpr int prim_clip_thresh_ = 32;
 		static constexpr int pigeonhole_sort_thresh_ = 128;
@@ -117,7 +102,6 @@ class AcceleratorKdTree::Node
 		bool isLeaf() const { return (flags_ & 3) == 3; }
 		uint32_t getRightChild() const { return (flags_ >> 2); }
 		void setRightChild(uint32_t i) { flags_ = (flags_ & 3) | (i << 2); }
-
 		union
 		{
 			float division_; //!< interior: division plane position
@@ -136,25 +120,6 @@ struct AcceleratorKdTree::Stack
 	int prev_stack_id_; //!< the pointer to the previous stack item
 };
 
-/*! Serves to store the lower and upper bound edges of the primitives
-	for the cost funtion */
-
-class AcceleratorKdTree::BoundEdge
-{
-	public:
-		enum class EndBound : int { Left, Both, Right };
-		BoundEdge() = default;
-		BoundEdge(float position, int primitive, EndBound bound_end): pos_(position), prim_num_(primitive), end_(bound_end) { }
-		bool operator<(const BoundEdge &e) const
-		{
-			if(pos_ == e.pos_) return end_ > e.end_;
-			else return pos_ < e.pos_;
-		}
-		float pos_;
-		int prim_num_;
-		EndBound end_;
-};
-
 struct AcceleratorKdTree::SplitCost
 {
 	int axis_ = -1;
@@ -164,19 +129,8 @@ struct AcceleratorKdTree::SplitCost
 	int num_edges_;
 };
 
-class AcceleratorKdTree::TreeBin
-{
-	public:
-		bool empty() const { return n_ == 0; };
-		void reset() { n_ = 0, c_left_ = 0, c_right_ = 0, c_both_ = 0, c_bleft_ = 0;};
-		int n_ = 0;
-		int c_left_ = 0, c_right_ = 0;
-		int c_bleft_ = 0, c_both_ = 0;
-		float t_ = 0.f;
-};
-
-inline void AcceleratorKdTree::Node::createLeaf(const uint32_t *prim_idx, int np, const std::vector<const Primitive *> &prims, MemoryArena &arena, AcceleratorKdTree::Stats &kd_stats) {
-	primitives_ = nullptr;
+inline void AcceleratorKdTree::Node::createLeaf(const uint32_t *prim_idx, int np, const std::vector<const Primitive *> &prims, MemoryArena &arena, Stats &kd_stats) {
+	//primitives_ = nullptr;
 	flags_ = np << 2;
 	flags_ |= 3;
 	if(np > 1)
@@ -194,7 +148,7 @@ inline void AcceleratorKdTree::Node::createLeaf(const uint32_t *prim_idx, int np
 	kd_stats.kd_leaves_++; //stat
 }
 
-inline void AcceleratorKdTree::Node::createInterior(int axis, float d, AcceleratorKdTree::Stats &kd_stats)
+inline void AcceleratorKdTree::Node::createInterior(int axis, float d, Stats &kd_stats)
 {
 	division_ = d;
 	flags_ = (flags_ & ~3) | axis;
