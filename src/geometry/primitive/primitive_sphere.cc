@@ -88,7 +88,6 @@ std::unique_ptr<const SurfacePoint> SpherePrimitive::getSurface(const RayDiffere
 	Vec3 normal{hit - center_};
 	sp->orco_p_ = static_cast<Point3>(normal);
 	normal.normalize();
-	sp->material_ = material_->get();
 	sp->primitive_ = this;
 	sp->n_ = normal;
 	sp->ng_ = normal;
@@ -100,7 +99,7 @@ std::unique_ptr<const SurfacePoint> SpherePrimitive::getSurface(const RayDiffere
 	sp->v_ = 1.f - math::acos(normal.z()) * math::div_1_by_pi<>;
 	sp->light_ = nullptr;
 	sp->setRayDifferentials(ray_differentials);
-	sp->mat_data_ = std::unique_ptr<const MaterialData>(sp->material_->initBsdf(*sp, camera));
+	sp->mat_data_ = std::unique_ptr<const MaterialData>(sp->primitive_->getMaterial()->initBsdf(*sp, camera));
 	return sp;
 }
 

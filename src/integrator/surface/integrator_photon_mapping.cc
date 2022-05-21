@@ -214,7 +214,7 @@ void PhotonIntegrator::diffuseWorker(FastRandom &fast_random, PreGatherData &pgd
 			ray.dir_ = wo;
 			ray.tmin_ = ray_min_dist_;
 			ray.tmax_ = -1.f;
-			material_prev = hit_curr->material_;
+			material_prev = hit_curr->primitive_->getMaterial();
 			mat_bsdfs_prev = mat_bsdfs;
 			std::swap(hit_prev, hit_curr);
 			++n_bounces;
@@ -696,7 +696,7 @@ Rgb PhotonIntegrator::finalGathering(FastRandom &fast_random, RandomGenerator &r
 			pwo = -p_ray.dir_;
 			if(mat_bsd_fs.hasAny(BsdfFlags::Volumetric))
 			{
-				if(const VolumeHandler *vol = hit->material_->getVolumeHandler(hit->n_ * pwo < 0))
+				if(const VolumeHandler *vol = hit->primitive_->getMaterial()->getVolumeHandler(hit->n_ * pwo < 0))
 				{
 					throughput *= vol->transmittance(p_ray);
 				}
@@ -874,7 +874,7 @@ std::pair<Rgb, float> PhotonIntegrator::integrate(Ray &ray, FastRandom &fast_ran
 		const Vec3 wo{-ray.dir_};
 		const BsdfFlags &mat_bsdfs = sp->mat_data_->bsdf_flags_;
 
-		additional_depth = std::max(additional_depth, sp->material_->getAdditionalDepth());
+		additional_depth = std::max(additional_depth, sp->primitive_->getMaterial()->getAdditionalDepth());
 
 		const Rgb col_emit = sp->emit(wo);
 		col += col_emit;

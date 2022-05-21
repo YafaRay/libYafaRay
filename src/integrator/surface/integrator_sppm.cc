@@ -459,7 +459,7 @@ void SppmIntegrator::photonWorker(FastRandom &fast_random, unsigned int &total_p
 			ray.dir_ = wo;
 			ray.tmin_ = ray_min_dist_;
 			ray.tmax_ = -1.f;
-			material_prev = hit_curr->material_;
+			material_prev = hit_curr->primitive_->getMaterial();
 			mat_bsdfs_prev = mat_bsdfs;
 			std::swap(hit_prev, hit_curr);
 			++n_bounces;
@@ -618,7 +618,7 @@ GatherInfo SppmIntegrator::traceGatherRay(Ray &ray, HitPoint &hp, FastRandom &fa
 
 		const Vec3 wo{-ray.dir_};
 		const BsdfFlags &mat_bsdfs = sp->mat_data_->bsdf_flags_;
-		additional_depth = std::max(additional_depth, sp->material_->getAdditionalDepth());
+		additional_depth = std::max(additional_depth, sp->primitive_->getMaterial()->getAdditionalDepth());
 
 		const Rgb col_emit = sp->emit(wo);
 		g_info.constant_randiance_ += col_emit; //add only once, but FG seems add twice?
@@ -795,7 +795,7 @@ GatherInfo SppmIntegrator::traceGatherRay(Ray &ray, HitPoint &hp, FastRandom &fa
 				}
 				if(mat_bsdfs.hasAny(BsdfFlags::Volumetric))
 				{
-					if(const VolumeHandler *vol = sp->material_->getVolumeHandler(sp->ng_ * ref_ray.dir_ < 0))
+					if(const VolumeHandler *vol = sp->primitive_->getMaterial()->getVolumeHandler(sp->ng_ * ref_ray.dir_ < 0))
 					{
 						const Rgb vcol = vol->transmittance(ref_ray);
 						cing.photon_flux_ *= vcol;
@@ -858,7 +858,7 @@ GatherInfo SppmIntegrator::traceGatherRay(Ray &ray, HitPoint &hp, FastRandom &fa
 						const Rgb mcol = sp->sample(wo, wi, s, w, chromatic_enabled, wavelength, camera_);
 						Ray ref_ray = Ray(sp->p_, wi, ray_min_dist_);
 						if(s.sampled_flags_.hasAny(BsdfFlags::Reflect)) ref_ray.differentials_ = sp->reflectedRay(ray.differentials_.get(), ray.dir_, ref_ray.dir_);
-						else if(s.sampled_flags_.hasAny(BsdfFlags::Transmit)) ref_ray.differentials_ = sp->refractedRay(ray.differentials_.get(), ray.dir_, ref_ray.dir_, sp->material_->getMatIor());
+						else if(s.sampled_flags_.hasAny(BsdfFlags::Transmit)) ref_ray.differentials_ = sp->refractedRay(ray.differentials_.get(), ray.dir_, ref_ray.dir_, sp->primitive_->getMaterial()->getMatIor());
 						//gcol += tmpColorPasses.probe_add(PASS_INT_GLOSSY_INDIRECT, (Rgb)integ * mcol * W, state.ray_level == 1);
 						GatherInfo trace_gather_ray = traceGatherRay(ref_ray, hp, fast_random, random_generator, nullptr, thread_id, ray_level, chromatic_enabled, wavelength, ray_division_new, pixel_sampling_data, object_index_highest, material_index_highest);
 						trace_gather_ray.photon_flux_ *= mcol * w;
@@ -890,7 +890,7 @@ GatherInfo SppmIntegrator::traceGatherRay(Ray &ray, HitPoint &hp, FastRandom &fa
 						if(s.sampled_flags_.hasAny(BsdfFlags::Transmit))
 						{
 							Ray ref_ray = Ray(sp->p_, dir[1], ray_min_dist_);
-							ref_ray.differentials_ = sp->refractedRay(ray.differentials_.get(), ray.dir_, ref_ray.dir_, sp->material_->getMatIor());
+							ref_ray.differentials_ = sp->refractedRay(ray.differentials_.get(), ray.dir_, ref_ray.dir_, sp->primitive_->getMaterial()->getMatIor());
 							const Rgb col_transmit_factor = mcol[1] * w[1];
 							GatherInfo trace_gather_ray = traceGatherRay(ref_ray, hp, fast_random, random_generator, nullptr, thread_id, ray_level, chromatic_enabled, wavelength, ray_division_new, pixel_sampling_data, object_index_highest, material_index_highest);
 							trace_gather_ray.photon_flux_ *= col_transmit_factor;
@@ -909,7 +909,7 @@ GatherInfo SppmIntegrator::traceGatherRay(Ray &ray, HitPoint &hp, FastRandom &fa
 						if(ray.differentials_)
 						{
 							if(s.sampled_flags_.hasAny(BsdfFlags::Reflect)) ref_ray.differentials_ = sp->reflectedRay(ray.differentials_.get(), ray.dir_, ref_ray.dir_);
-							else if(s.sampled_flags_.hasAny(BsdfFlags::Transmit)) ref_ray.differentials_ = sp->refractedRay(ray.differentials_.get(), ray.dir_, ref_ray.dir_, sp->material_->getMatIor());
+							else if(s.sampled_flags_.hasAny(BsdfFlags::Transmit)) ref_ray.differentials_ = sp->refractedRay(ray.differentials_.get(), ray.dir_, ref_ray.dir_, sp->primitive_->getMaterial()->getMatIor());
 						}
 
 						GatherInfo trace_gather_ray = traceGatherRay(ref_ray, hp, fast_random, random_generator, nullptr, thread_id, ray_level, chromatic_enabled, wavelength, ray_division_new, pixel_sampling_data, object_index_highest, material_index_highest);
@@ -924,7 +924,7 @@ GatherInfo SppmIntegrator::traceGatherRay(Ray &ray, HitPoint &hp, FastRandom &fa
 					if(mat_bsdfs.hasAny(BsdfFlags::Volumetric))
 					{
 						const Ray ref_ray = Ray(sp->p_, wi, ray_min_dist_);
-						if(const VolumeHandler *vol = sp->material_->getVolumeHandler(sp->ng_ * ref_ray.dir_ < 0))
+						if(const VolumeHandler *vol = sp->primitive_->getMaterial()->getVolumeHandler(sp->ng_ * ref_ray.dir_ < 0))
 						{
 							const Rgb vcol = vol->transmittance(ref_ray);
 							gather_info.photon_flux_ *= vcol;
@@ -965,7 +965,7 @@ GatherInfo SppmIntegrator::traceGatherRay(Ray &ray, HitPoint &hp, FastRandom &fa
 					GatherInfo refg = traceGatherRay(ref_ray, hp, fast_random, random_generator, nullptr, thread_id, ray_level, chromatic_enabled, wavelength, ray_division, pixel_sampling_data, object_index_highest, material_index_highest);
 					if(mat_bsdfs.hasAny(BsdfFlags::Volumetric))
 					{
-						if(const VolumeHandler *vol = sp->material_->getVolumeHandler(sp->ng_ * ref_ray.dir_ < 0))
+						if(const VolumeHandler *vol = sp->primitive_->getMaterial()->getVolumeHandler(sp->ng_ * ref_ray.dir_ < 0))
 						{
 							const Rgb vcol = vol->transmittance(ref_ray);
 							refg.constant_randiance_ *= vcol;
@@ -984,11 +984,11 @@ GatherInfo SppmIntegrator::traceGatherRay(Ray &ray, HitPoint &hp, FastRandom &fa
 				if(specular.refract_)
 				{
 					Ray ref_ray(sp->p_, specular.refract_->dir_, ray_min_dist_);
-					if(ray.differentials_) ref_ray.differentials_ = sp->refractedRay(ray.differentials_.get(), ray.dir_, ref_ray.dir_, sp->material_->getMatIor());
+					if(ray.differentials_) ref_ray.differentials_ = sp->refractedRay(ray.differentials_.get(), ray.dir_, ref_ray.dir_, sp->primitive_->getMaterial()->getMatIor());
 					GatherInfo refg = traceGatherRay(ref_ray, hp, fast_random, random_generator, nullptr, thread_id, ray_level, chromatic_enabled, wavelength, ray_division, pixel_sampling_data, object_index_highest, material_index_highest);
 					if(mat_bsdfs.hasAny(BsdfFlags::Volumetric))
 					{
-						if(const VolumeHandler *vol = sp->material_->getVolumeHandler(sp->ng_ * ref_ray.dir_ < 0))
+						if(const VolumeHandler *vol = sp->primitive_->getMaterial()->getVolumeHandler(sp->ng_ * ref_ray.dir_ < 0))
 						{
 							const Rgb vcol = vol->transmittance(ref_ray);
 							refg.constant_randiance_ *= vcol;

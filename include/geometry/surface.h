@@ -26,6 +26,7 @@
 #include "common/yafaray_common.h"
 #include "geometry/vector.h"
 #include "geometry/intersect_data.h"
+#include "geometry/primitive/primitive.h"
 #include "color/color.h"
 #include "material/material.h"
 #include "math/interpolation.h"
@@ -86,13 +87,11 @@ class SurfacePoint final
 		float getAlpha(const Vec3 &wo, const Camera *camera) const;
 		bool scatterPhoton(const Vec3 &wi, Vec3 &wo, PSample &s, bool chromatic, float wavelength, const Camera *camera) const;
 
-		//int object; //!< the object owner of the point.
-		const Material *material_; //!< the surface material
-		std::unique_ptr<const MaterialData> mat_data_;
 		const Light *light_; //!< light source if surface point is on a light
 		const Primitive *primitive_; //!< primitive the surface belongs to
-		//	point2d_t screenpos; // only used with 'win' texture coord. mode
 		IntersectData intersect_data_;
+		std::unique_ptr<const MaterialData> mat_data_;
+		std::unique_ptr<const SurfaceDifferentials> differentials_; //!< Surface Differentials for mipmaps calculations
 
 		// Geometry related
 		Vec3 n_; //!< the shading normal.
@@ -114,8 +113,6 @@ class SurfacePoint final
 		Vec3 ds_dv_; //!< v-axis in shading space (NU, NV, N)
 		Vec3 dp_du_abs_; //!< u-axis in world space (before normalization)
 		Vec3 dp_dv_abs_; //!< v-axis in world space (before normalization)
-		// Surface Differentials for mipmaps calculations
-		std::unique_ptr<const SurfaceDifferentials> differentials_;
 
 	private:
 		static void dUdvFromDpdPdUdPdV(float &du, float &dv, const Point3 &dp, const Vec3 &dp_du, const Vec3 &dp_dv);
@@ -123,7 +120,6 @@ class SurfacePoint final
 
 inline SurfacePoint::SurfacePoint(const SurfacePoint &sp)
 	:
-	material_{sp.material_},
 	light_{sp.light_},
 	primitive_{sp.primitive_},
 	intersect_data_{sp.intersect_data_},
@@ -151,7 +147,6 @@ inline SurfacePoint::SurfacePoint(const SurfacePoint &sp)
 
 inline SurfacePoint::SurfacePoint(const SurfacePoint &sp_1, const SurfacePoint &sp_2, float alpha)
 	:
-	  material_{ alpha < 0.5f ? sp_1.material_ : sp_2.material_ },
 	  light_{ alpha < 0.5f ? sp_1.light_ : sp_2.light_},
 	  primitive_{alpha < 0.5f ? sp_1.primitive_ : sp_2.primitive_},
 	  intersect_data_{alpha < 0.5f ? sp_1.intersect_data_ : sp_2.intersect_data_},
@@ -201,7 +196,6 @@ inline SurfacePoint::SurfacePoint(const SurfacePoint &sp_1, const SurfacePoint &
 inline SurfacePoint &SurfacePoint::operator=(const SurfacePoint &sp)
 {
 	if(this == &sp) return *this;
-	material_ = sp.material_;
 	if(sp.mat_data_) mat_data_ = sp.mat_data_->clone();
 	light_ = sp.light_;
 	primitive_ = sp.primitive_;
@@ -245,57 +239,57 @@ inline Vec3 SurfacePoint::normalFaceForward(const Vec3 &normal_geometry, const V
 
 inline const MaterialData * SurfacePoint::initBsdf(const Camera *camera)
 {
-	return material_->initBsdf(*this, camera);
+	return primitive_->getMaterial()->initBsdf(*this, camera);
 }
 
 inline Rgb SurfacePoint::eval(const Vec3 &wo, const Vec3 &wl, const BsdfFlags &types, bool force_eval) const
 {
-	return material_->eval(mat_data_.get(), *this, wo, wl, types, force_eval);
+	return primitive_->getMaterial()->eval(mat_data_.get(), *this, wo, wl, types, force_eval);
 }
 
 inline Rgb SurfacePoint::sample(const Vec3 &wo, Vec3 &wi, Sample &s, float &w, bool chromatic, float wavelength, const Camera *camera) const
 {
-	return material_->sample(mat_data_.get(), *this, wo, wi, s, w, chromatic, wavelength, camera);
+	return primitive_->getMaterial()->sample(mat_data_.get(), *this, wo, wi, s, w, chromatic, wavelength, camera);
 }
 
 inline Rgb SurfacePoint::sample(const Vec3 &wo, Vec3 *const dir, Rgb &tcol, Sample &s, float *const w, bool chromatic, float wavelength) const
 {
-	return material_->sample(mat_data_.get(), *this, wo, dir, tcol, s, w, chromatic, wavelength);
+	return primitive_->getMaterial()->sample(mat_data_.get(), *this, wo, dir, tcol, s, w, chromatic, wavelength);
 }
 
 inline float SurfacePoint::pdf(const Vec3 &wo, const Vec3 &wi, const BsdfFlags &bsdfs) const
 {
-	return material_->pdf(mat_data_.get(), *this, wo, wi, bsdfs);
+	return primitive_->getMaterial()->pdf(mat_data_.get(), *this, wo, wi, bsdfs);
 }
 
 inline Rgb SurfacePoint::getTransparency(const Vec3 &wo, const Camera *camera) const
 {
-	return material_->getTransparency(mat_data_.get(), *this, wo, camera);
+	return primitive_->getMaterial()->getTransparency(mat_data_.get(), *this, wo, camera);
 }
 
 inline Specular SurfacePoint::getSpecular(int ray_level, const Vec3 &wo, bool chromatic, float wavelength) const
 {
-	return material_->getSpecular(ray_level, mat_data_.get(), *this, wo, chromatic, wavelength);
+	return primitive_->getMaterial()->getSpecular(ray_level, mat_data_.get(), *this, wo, chromatic, wavelength);
 }
 
 inline Rgb SurfacePoint::getReflectivity(FastRandom &fast_random, BsdfFlags flags, bool chromatic, float wavelength, const Camera *camera) const
 {
-	return material_->getReflectivity(fast_random, mat_data_.get(), *this, flags, chromatic, wavelength, camera);
+	return primitive_->getMaterial()->getReflectivity(fast_random, mat_data_.get(), *this, flags, chromatic, wavelength, camera);
 }
 
 inline Rgb SurfacePoint::emit(const Vec3 &wo) const
 {
-	return material_->emit(mat_data_.get(), *this, wo);
+	return primitive_->getMaterial()->emit(mat_data_.get(), *this, wo);
 }
 
 inline float SurfacePoint::getAlpha(const Vec3 &wo, const Camera *camera) const
 {
-	return material_->getAlpha(mat_data_.get(), *this, wo, camera);
+	return primitive_->getMaterial()->getAlpha(mat_data_.get(), *this, wo, camera);
 }
 
 inline bool SurfacePoint::scatterPhoton(const Vec3 &wi, Vec3 &wo, PSample &s, bool chromatic, float wavelength, const Camera *camera) const
 {
-	return material_->scatterPhoton(mat_data_.get(), *this, wi, wo, s, chromatic, wavelength, camera);
+	return primitive_->getMaterial()->scatterPhoton(mat_data_.get(), *this, wi, wo, s, chromatic, wavelength, camera);
 }
 
 END_YAFARAY

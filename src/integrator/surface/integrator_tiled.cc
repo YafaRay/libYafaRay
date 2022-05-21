@@ -451,12 +451,12 @@ void TiledIntegrator::generateCommonLayers(ColorLayers *color_layers, const Surf
 			if(Rgba *color_layer = color_layers->find(LayerDef::DebugWireframe))
 			{
 				Rgba wireframe_color = Rgba(0.f, 0.f, 0.f, 0.f);
-				sp.material_->applyWireFrame(wireframe_color, 1.f, sp);
+				sp.primitive_->getMaterial()->applyWireFrame(wireframe_color, 1.f, sp);
 				*color_layer = wireframe_color;
 			}
 			if(Rgba *color_layer = color_layers->find(LayerDef::DebugSamplingFactor))
 			{
-				*color_layer = Rgba(sp.material_->getSamplingFactor());
+				*color_layer = Rgba(sp.primitive_->getMaterial()->getSamplingFactor());
 			}
 			if(color_layers->isDefinedAny({LayerDef::DebugDpLengths, LayerDef::DebugDpdx, LayerDef::DebugDpdy, LayerDef::DebugDpdxy, LayerDef::DebugDudxDvdx, LayerDef::DebugDudyDvdy, LayerDef::DebugDudxyDvdxy}))
 			{
@@ -541,19 +541,19 @@ void TiledIntegrator::generateCommonLayers(ColorLayers *color_layers, const Surf
 			}
 			if(Rgba *color_layer = color_layers->find(LayerDef::DiffuseColor))
 			{
-				*color_layer = Rgba{sp.material_->getDiffuseColor(sp.mat_data_->node_tree_data_)};
+				*color_layer = Rgba{sp.primitive_->getMaterial()->getDiffuseColor(sp.mat_data_->node_tree_data_)};
 			}
 			if(Rgba *color_layer = color_layers->find(LayerDef::GlossyColor))
 			{
-				*color_layer = Rgba{sp.material_->getGlossyColor(sp.mat_data_->node_tree_data_)};
+				*color_layer = Rgba{sp.primitive_->getMaterial()->getGlossyColor(sp.mat_data_->node_tree_data_)};
 			}
 			if(Rgba *color_layer = color_layers->find(LayerDef::TransColor))
 			{
-				*color_layer = Rgba{sp.material_->getTransColor(sp.mat_data_->node_tree_data_)};
+				*color_layer = Rgba{sp.primitive_->getMaterial()->getTransColor(sp.mat_data_->node_tree_data_)};
 			}
 			if(Rgba *color_layer = color_layers->find(LayerDef::SubsurfaceColor))
 			{
-				*color_layer = Rgba{sp.material_->getSubSurfaceColor(sp.mat_data_->node_tree_data_)};
+				*color_layer = Rgba{sp.primitive_->getMaterial()->getSubSurfaceColor(sp.mat_data_->node_tree_data_)};
 			}
 		}
 		if(color_layers->getFlags().hasAny(LayerDef::Flags::IndexLayers))
@@ -576,19 +576,19 @@ void TiledIntegrator::generateCommonLayers(ColorLayers *color_layers, const Surf
 			}
 			if(Rgba *color_layer = color_layers->find(LayerDef::MatIndexAbs))
 			{
-				*color_layer = Rgba{static_cast<float>(sp.material_->getIndex())};
+				*color_layer = Rgba{static_cast<float>(sp.primitive_->getMaterial()->getIndex())};
 			}
 			if(Rgba *color_layer = color_layers->find(LayerDef::MatIndexNorm))
 			{
-				*color_layer = Rgba{static_cast<float>(sp.material_->getIndex()) / material_index_highest};
+				*color_layer = Rgba{static_cast<float>(sp.primitive_->getMaterial()->getIndex()) / material_index_highest};
 			}
 			if(Rgba *color_layer = color_layers->find(LayerDef::MatIndexAuto))
 			{
-				*color_layer = Rgba{sp.material_->getIndexAutoColor()};
+				*color_layer = Rgba{sp.primitive_->getMaterial()->getIndexAutoColor()};
 			}
 			if(Rgba *color_layer = color_layers->find(LayerDef::MatIndexAutoAbs))
 			{
-				*color_layer = Rgba{static_cast<float>(sp.material_->getIndexAuto())};
+				*color_layer = Rgba{static_cast<float>(sp.primitive_->getMaterial()->getIndexAuto())};
 			}
 			if(Rgba *color_layer = color_layers->find(LayerDef::ObjIndexMask))
 			{
@@ -607,7 +607,7 @@ void TiledIntegrator::generateCommonLayers(ColorLayers *color_layers, const Surf
 			}
 			if(Rgba *color_layer = color_layers->find(LayerDef::MatIndexMask))
 			{
-				if(sp.material_->getIndex() == mask_params.mat_index_) *color_layer = Rgba(1.f);
+				if(sp.primitive_->getMaterial()->getIndex() == mask_params.mat_index_) *color_layer = Rgba(1.f);
 			}
 			if(Rgba *color_layer = color_layers->find(LayerDef::MatIndexMaskAll))
 			{

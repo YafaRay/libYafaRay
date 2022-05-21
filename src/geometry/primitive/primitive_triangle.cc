@@ -108,9 +108,8 @@ std::unique_ptr<const SurfacePoint> TrianglePrimitive::getSurface(const RayDiffe
 	sp->p_ = hit_point;
 	std::tie(sp->nu_, sp->nv_) = Vec3::createCoordsSystem(sp->n_);
 	sp->calculateShadingSpace();
-	sp->material_ = getMaterial();
 	sp->setRayDifferentials(ray_differentials);
-	sp->mat_data_ = std::unique_ptr<const MaterialData>(sp->material_->initBsdf(*sp, camera));
+	sp->mat_data_ = std::unique_ptr<const MaterialData>(sp->primitive_->getMaterial()->initBsdf(*sp, camera));
 	return sp;
 }
 
