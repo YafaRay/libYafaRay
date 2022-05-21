@@ -63,15 +63,15 @@ class AcceleratorKdTreeMultiThread final : public Accelerator
 		static AcceleratorIntersectData intersectS(const Ray &ray, float t_max, float shadow_bias, const std::vector<Node> &nodes, const Bound &tree_bound);
 		static AcceleratorTsIntersectData intersectTs(const Ray &ray, int max_depth, float t_max, float, const std::vector<Node> &nodes, const Bound &tree_bound, const Camera *camera);
 
+		alignas(8) std::vector<Node> nodes_;
 		Bound tree_bound_; 	//!< overall space the tree encloses
-		std::vector<Node> nodes_;
 		std::atomic<int> num_current_threads_ { 0 };
 		static constexpr int kd_max_stack_ = 64;
 };
 
 struct AcceleratorKdTreeMultiThread::Parameters
 {
-	int max_depth_ = 0;
+	alignas(8) int max_depth_ = 0;
 	int max_leaf_size_ = 1;
 	float cost_ratio_ = 0.8f; //!< node traversal cost divided by primitive intersection cost
 	float empty_bonus_ = 0.33f;
@@ -96,14 +96,14 @@ class AcceleratorKdTreeMultiThread::Node
 		uint32_t getRightChild() const { return (flags_ >> 2); }
 		void setRightChild(uint32_t i) { flags_ = (flags_ & 3) | (i << 2); }
 		alignas(8) std::vector<const Primitive *> primitives_; //!< leaf: list of primitives
-		alignas(8) uint32_t flags_; //!< 2bits: isLeaf, axis; 30bits: nprims (leaf) or index of right child
+		uint32_t flags_; //!< 2bits: isLeaf, axis; 30bits: nprims (leaf) or index of right child
 		float division_; //!< interior: division plane position
 };
 
 /*! Stack elements for the custom stack of the recursive traversal */
 struct AcceleratorKdTreeMultiThread::Stack
 {
-	const Node *node_; //!< pointer to far child
+	alignas(8) const Node *node_; //!< pointer to far child
 	float t_; //!< the entry/exit signed distance
 	Point3 point_; //!< the point coordinates of entry/exit point
 	int prev_stack_id_; //!< the pointer to the previous stack item
@@ -111,7 +111,7 @@ struct AcceleratorKdTreeMultiThread::Stack
 
 struct AcceleratorKdTreeMultiThread::SplitCost
 {
-	int axis_ = Axis::None;
+	alignas(8) int axis_ = Axis::None;
 	int edge_offset_ = -1;
 	float cost_;
 	float t_;
@@ -121,8 +121,8 @@ struct AcceleratorKdTreeMultiThread::SplitCost
 
 struct AcceleratorKdTreeMultiThread::Result
 {
+	alignas(8) std::vector<Node> nodes_;
 	Stats stats_;
-	std::vector<Node> nodes_;
 };
 
 
@@ -152,6 +152,22 @@ inline Stats AcceleratorKdTreeMultiThread::Node::createInterior(Axis axis, float
 	kd_stats.kd_inodes_++;
 	return kd_stats;
 }
+
+inline AcceleratorIntersectData AcceleratorKdTreeMultiThread::intersect(const Ray &ray, float t_max) const
+{
+	return intersect(ray, t_max, nodes_, tree_bound_);
+}
+
+inline AcceleratorIntersectData AcceleratorKdTreeMultiThread::intersectS(const Ray &ray, float t_max, float shadow_bias) const
+{
+	return intersectS(ray, t_max, shadow_bias, nodes_, tree_bound_);
+}
+
+inline AcceleratorTsIntersectData AcceleratorKdTreeMultiThread::intersectTs(const Ray &ray, int max_depth, float t_max, float shadow_bias, const Camera *camera) const
+{
+	return intersectTs(ray, max_depth, t_max, shadow_bias, nodes_, tree_bound_, camera);
+}
+
 
 END_YAFARAY
 #endif    //YAFARAY_ACCELERATOR_KDTREE_MULTI_THREAD_H

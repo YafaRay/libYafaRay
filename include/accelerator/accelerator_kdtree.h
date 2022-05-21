@@ -155,6 +155,21 @@ inline void AcceleratorKdTree::Node::createInterior(int axis, float d, Stats &kd
 	kd_stats.kd_inodes_++;
 }
 
+inline AcceleratorIntersectData AcceleratorKdTree::intersect(const Ray &ray, float t_max) const
+{
+	return intersect(ray, t_max, nodes_.data(), tree_bound_);
+}
+
+inline AcceleratorIntersectData AcceleratorKdTree::intersectS(const Ray &ray, float t_max, float shadow_bias) const
+{
+	return intersectS(ray, t_max, shadow_bias, nodes_.data(), tree_bound_);
+}
+
+inline AcceleratorTsIntersectData AcceleratorKdTree::intersectTs(const Ray &ray, int max_depth, float t_max, float shadow_bias, const Camera *camera) const
+{
+	return intersectTs(ray, max_depth, t_max, shadow_bias, nodes_.data(), tree_bound_, camera);
+}
+
 END_YAFARAY
 
 #endif    //YAFARAY_ACCELERATOR_KDTREE_H

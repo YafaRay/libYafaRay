@@ -40,7 +40,7 @@ struct BoundEdge
 		if(pos_ == e.pos_) return end_ > e.end_;
 		else return pos_ < e.pos_;
 	}
-	float pos_;
+	alignas(8) float pos_;
 	uint32_t index_;
 	EndBound end_;
 };
@@ -49,7 +49,7 @@ struct TreeBin
 {
 	bool empty() const { return n_ == 0; };
 	void reset() { n_ = 0, c_left_ = 0, c_right_ = 0, c_both_ = 0, c_bleft_ = 0;};
-	int n_ = 0;
+	alignas(8) int n_ = 0;
 	int c_left_ = 0, c_right_ = 0;
 	int c_bleft_ = 0, c_both_ = 0;
 	float t_ = 0.f;
@@ -59,7 +59,7 @@ struct Stats
 {
 	void outputLog(Logger &logger, uint32_t num_primitives, int max_leaf_size) const;
 	Stats operator += (const Stats &kd_stats);
-	int kd_inodes_ = 0;
+	alignas(8) int kd_inodes_ = 0;
 	int kd_leaves_ = 0;
 	int empty_kd_leaves_ = 0;
 	int kd_prims_ = 0;

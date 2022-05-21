@@ -628,10 +628,6 @@ void AcceleratorKdTreeMultiThread::buildTreeWorker(const std::vector<const Primi
 /*! The standard sphereIntersect function,
 	returns the closest hit within dist
 */
-AcceleratorIntersectData AcceleratorKdTreeMultiThread::intersect(const Ray &ray, float t_max) const
-{
-	return intersect(ray, t_max, nodes_, tree_bound_);
-}
 
 AcceleratorIntersectData AcceleratorKdTreeMultiThread::intersect(const Ray &ray, float t_max, const std::vector<Node> &nodes, const Bound &tree_bound)
 {
@@ -735,11 +731,6 @@ AcceleratorIntersectData AcceleratorKdTreeMultiThread::intersect(const Ray &ray,
 	return accelerator_intersect_data;
 }
 
-AcceleratorIntersectData AcceleratorKdTreeMultiThread::intersectS(const Ray &ray, float t_max, float shadow_bias) const
-{
-	return intersectS(ray, t_max, shadow_bias, nodes_, tree_bound_);
-}
-
 AcceleratorIntersectData AcceleratorKdTreeMultiThread::intersectS(const Ray &ray, float t_max, float, const std::vector<Node> &nodes, const Bound &tree_bound)
 {
 	AcceleratorIntersectData accelerator_intersect_data;
@@ -836,12 +827,6 @@ AcceleratorIntersectData AcceleratorKdTreeMultiThread::intersectS(const Ray &ray
 /*=============================================================
 	allow for transparent shadows.
 =============================================================*/
-
-
-AcceleratorTsIntersectData AcceleratorKdTreeMultiThread::intersectTs(const Ray &ray, int max_depth, float t_max, float shadow_bias, const Camera *camera) const
-{
-	return intersectTs(ray, max_depth, t_max, shadow_bias, nodes_, tree_bound_, camera);
-}
 
 AcceleratorTsIntersectData AcceleratorKdTreeMultiThread::intersectTs(const Ray &ray, int max_depth, float t_max, float, const std::vector<Node> &nodes, const Bound &tree_bound, const Camera *camera)
 {
