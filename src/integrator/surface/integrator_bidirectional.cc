@@ -312,7 +312,7 @@ std::pair<Rgb, float> BidirectionalIntegrator::integrate(Ray &ray, FastRandom &f
 		for(int t = 2; t <= n_eye; ++t)
 		{
 			//directly hit a light?
-			if(path_data.eye_path_[t - 1].sp_.light_)
+			if(path_data.eye_path_[t - 1].sp_.getLight())
 			{
 				// pathWeight_0t computes required probabilities, since no connection is required
 				clearPath(path_data.path_, 0, t);
@@ -716,14 +716,14 @@ float BidirectionalIntegrator::pathWeight0T(PathData &pd, int t) const
 	const std::vector<PathEvalVertex> &path = pd.path_;
 	const PathVertex &vl = pd.eye_path_[t - 1];
 	// since we need no connect, complete some probabilities here:
-	float light_num_pdf = inv_light_power_d_.find(vl.sp_.light_)->second;
+	float light_num_pdf = inv_light_power_d_.find(vl.sp_.getLight())->second;
 	light_num_pdf *= f_num_lights_;
 	// direct lighting pdf...
-	const float pdf_illum = vl.sp_.light_->illumPdf(pd.eye_path_[t - 2].sp_.p_, vl.sp_.p_, vl.sp_.ng_) * light_num_pdf;
+	const float pdf_illum = vl.sp_.getLight()->illumPdf(pd.eye_path_[t - 2].sp_.p_, vl.sp_.p_, vl.sp_.ng_) * light_num_pdf;
 	if(pdf_illum < 1e-6f) return 0.f;
 
 	float cos_wo;
-	vl.sp_.light_->emitPdf(vl.sp_.n_, vl.wi_, pd.path_[0].pdf_a_0_, pd.path_[0].pdf_f_, cos_wo);
+	vl.sp_.getLight()->emitPdf(vl.sp_.n_, vl.wi_, pd.path_[0].pdf_a_0_, pd.path_[0].pdf_f_, cos_wo);
 	pd.path_[0].pdf_a_0_ *= light_num_pdf;
 	float pdf_emit = pd.path_[0].pdf_a_0_ * vl.ds_ / cos_wo;
 	pd.path_[0].g_ = 0.f; // unused...

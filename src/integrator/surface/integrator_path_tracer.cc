@@ -130,7 +130,7 @@ std::pair<Rgb, float> PathIntegrator::integrate(Ray &ray, FastRandom &fast_rando
 	{
 		const BsdfFlags &mat_bsdfs = sp->mat_data_->bsdf_flags_;
 		const Vec3 wo{-ray.dir_};
-		additional_depth = std::max(additional_depth, sp->primitive_->getMaterial()->getAdditionalDepth());
+		additional_depth = std::max(additional_depth, sp->getMaterial()->getAdditionalDepth());
 
 		// contribution of light emitting surfaces
 		if(mat_bsdfs.hasAny(BsdfFlags::Emit))
@@ -240,7 +240,7 @@ std::pair<Rgb, float> PathIntegrator::integrate(Ray &ray, FastRandom &fast_rando
 
 					if(mat_bsd_fs.hasAny(BsdfFlags::Volumetric))
 					{
-						if(const VolumeHandler *vol = hit->primitive_->getMaterial()->getVolumeHandler(hit->n_ * pwo < 0))
+						if(const VolumeHandler *vol = hit->getMaterial()->getVolumeHandler(hit->n_ * pwo < 0))
 						{
 							throughput *= vol->transmittance(p_ray);
 						}

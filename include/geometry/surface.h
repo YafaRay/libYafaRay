@@ -26,6 +26,7 @@
 #include "common/yafaray_common.h"
 #include "geometry/vector.h"
 #include "geometry/intersect_data.h"
+#include "geometry/object/object.h"
 #include "geometry/primitive/primitive.h"
 #include "color/color.h"
 #include "material/material.h"
@@ -59,6 +60,7 @@ class SurfacePoint final
 {
 	public:
 		SurfacePoint() = default;
+		SurfacePoint(const Primitive *primitive) : primitive_(primitive) { }
 		SurfacePoint(const SurfacePoint &sp);
 		SurfacePoint(const SurfacePoint &sp_1, const SurfacePoint &sp_2, float alpha);
 		SurfacePoint& operator=(const SurfacePoint &sp);
@@ -85,9 +87,10 @@ class SurfacePoint final
 		Rgb emit(const Vec3 &wo) const;
 		float getAlpha(const Vec3 &wo, const Camera *camera) const;
 		bool scatterPhoton(const Vec3 &wi, Vec3 &wo, PSample &s, bool chromatic, float wavelength, const Camera *camera) const;
+		const Object *getObject() const { if(primitive_) return primitive_->getObject(); else return nullptr; }
+		const Material *getMaterial() const { if(primitive_) return primitive_->getMaterial(); else return nullptr; }
+		const Light *getLight() const { if(primitive_) return primitive_->getObject()->getLight(); else return nullptr; }
 
-		const Light *light_; //!< light source if surface point is on a light
-		const Primitive *primitive_; //!< primitive the surface belongs to
 		IntersectData intersect_data_;
 		std::unique_ptr<const MaterialData> mat_data_;
 		std::unique_ptr<const SurfaceDifferentials> differentials_; //!< Surface Differentials for mipmaps calculations
@@ -115,11 +118,11 @@ class SurfacePoint final
 
 	private:
 		static void dUdvFromDpdPdUdPdV(float &du, float &dv, const Point3 &dp, const Vec3 &dp_du, const Vec3 &dp_dv);
+		const Primitive *primitive_ = nullptr; //!< primitive the surface belongs to
 };
 
 inline SurfacePoint::SurfacePoint(const SurfacePoint &sp)
 	:
-	light_{sp.light_},
 	primitive_{sp.primitive_},
 	intersect_data_{sp.intersect_data_},
 	n_{sp.n_},
@@ -146,7 +149,6 @@ inline SurfacePoint::SurfacePoint(const SurfacePoint &sp)
 
 inline SurfacePoint::SurfacePoint(const SurfacePoint &sp_1, const SurfacePoint &sp_2, float alpha)
 	:
-	  light_{ alpha < 0.5f ? sp_1.light_ : sp_2.light_},
 	  primitive_{alpha < 0.5f ? sp_1.primitive_ : sp_2.primitive_},
 	  intersect_data_{alpha < 0.5f ? sp_1.intersect_data_ : sp_2.intersect_data_},
 	  n_{math::lerp(sp_1.n_, sp_2.n_, alpha)},
@@ -196,7 +198,6 @@ inline SurfacePoint &SurfacePoint::operator=(const SurfacePoint &sp)
 {
 	if(this == &sp) return *this;
 	if(sp.mat_data_) mat_data_ = sp.mat_data_->clone();
-	light_ = sp.light_;
 	primitive_ = sp.primitive_;
 	intersect_data_ = sp.intersect_data_;
 	n_ = sp.n_;

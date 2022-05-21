@@ -34,7 +34,7 @@ BEGIN_YAFARAY
 
 std::unique_ptr<const SurfacePoint> TrianglePrimitive::getSurface(const RayDifferentials *ray_differentials, const Point3 &hit_point, const IntersectData &intersect_data, const Matrix4 *obj_to_world, const Camera *camera) const
 {
-	auto sp = std::make_unique<SurfacePoint>();
+	auto sp = std::make_unique<SurfacePoint>(this);
 	sp->intersect_data_ = intersect_data;
 	sp->ng_ = getGeometricNormal(obj_to_world);
 	const auto [barycentric_u, barycentric_v, barycentric_w] = ShapeTriangle::getBarycentricUVW(intersect_data.u_, intersect_data.v_);
@@ -102,8 +102,6 @@ std::unique_ptr<const SurfacePoint> TrianglePrimitive::getSurface(const RayDiffe
 	sp->dp_dv_abs_ = sp->dp_dv_;
 	sp->dp_du_.normalize();
 	sp->dp_dv_.normalize();
-	sp->primitive_ = this;
-	sp->light_ = base_mesh_object_.getLight();
 	sp->has_uv_ = base_mesh_object_.hasUv();
 	sp->p_ = hit_point;
 	std::tie(sp->nu_, sp->nv_) = Vec3::createCoordsSystem(sp->n_);
@@ -111,7 +109,7 @@ std::unique_ptr<const SurfacePoint> TrianglePrimitive::getSurface(const RayDiffe
 	sp->ds_du_ = {sp->nu_ * sp->dp_du_, sp->nv_ * sp->dp_du_, sp->n_ * sp->dp_du_};
 	sp->ds_dv_ = {sp->nu_ * sp->dp_dv_, sp->nv_ * sp->dp_dv_, sp->n_ * sp->dp_dv_};
 	sp->differentials_ = sp->calcSurfaceDifferentials(ray_differentials);
-	sp->mat_data_ = std::unique_ptr<const MaterialData>(sp->primitive_->getMaterial()->initBsdf(*sp, camera));
+	sp->mat_data_ = std::unique_ptr<const MaterialData>(sp->getMaterial()->initBsdf(*sp, camera));
 	return sp;
 }
 

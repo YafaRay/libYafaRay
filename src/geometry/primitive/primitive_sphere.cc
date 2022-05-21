@@ -83,12 +83,11 @@ IntersectData SpherePrimitive::intersect(const Ray &ray, const Matrix4 *obj_to_w
 
 std::unique_ptr<const SurfacePoint> SpherePrimitive::getSurface(const RayDifferentials *ray_differentials, const Point3 &hit, const IntersectData &intersect_data, const Matrix4 *obj_to_world, const Camera *camera) const
 {
-	auto sp = std::make_unique<SurfacePoint>();
+	auto sp = std::make_unique<SurfacePoint>(this);
 	sp->intersect_data_ = intersect_data;
 	Vec3 normal{hit - center_};
 	sp->orco_p_ = static_cast<Point3>(normal);
 	normal.normalize();
-	sp->primitive_ = this;
 	sp->n_ = normal;
 	sp->ng_ = normal;
 	//sp->origin = (void*)this;
@@ -97,9 +96,8 @@ std::unique_ptr<const SurfacePoint> SpherePrimitive::getSurface(const RayDiffere
 	std::tie(sp->nu_, sp->nv_) = Vec3::createCoordsSystem(sp->n_);
 	sp->u_ = std::atan2(normal.y(), normal.x()) * math::div_1_by_pi<> + 1;
 	sp->v_ = 1.f - math::acos(normal.z()) * math::div_1_by_pi<>;
-	sp->light_ = nullptr;
 	sp->differentials_ = sp->calcSurfaceDifferentials(ray_differentials);
-	sp->mat_data_ = std::unique_ptr<const MaterialData>(sp->primitive_->getMaterial()->initBsdf(*sp, camera));
+	sp->mat_data_ = std::unique_ptr<const MaterialData>(sp->getMaterial()->initBsdf(*sp, camera));
 	return sp;
 }
 
