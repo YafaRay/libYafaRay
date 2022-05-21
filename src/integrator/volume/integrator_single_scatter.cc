@@ -75,17 +75,12 @@ bool SingleScatterIntegrator::preprocess(FastRandom &fast_random, ImageFilm *ima
 									 bb.longY() * y_size_inv * y + bb.a_.y(),
 									 bb.longZ() * z_size_inv * z + bb.a_.z());
 
-							SurfacePoint sp;
-							sp.p_ = p;
-
 							Ray light_ray;
-
-							light_ray.from_ = sp.p_;
-
+							light_ray.from_ = p;
 							// handle lights with delta distribution, e.g. point and directional lights
 							if(light->diracLight())
 							{
-								const bool ill = light->illuminate(sp.p_, lcol, light_ray);
+								const bool ill = light->illuminate(p, lcol, light_ray);
 								light_ray.tmin_ = shadow_bias_;
 								if(light_ray.tmax_ < 0.f) light_ray.tmax_ = 1e10f;  // infinitely distant light
 
@@ -113,7 +108,7 @@ bool SingleScatterIntegrator::preprocess(FastRandom &fast_random, ImageFilm *ima
 									ls.s_1_ = 0.5f; //(*state.random_generator)();
 									ls.s_2_ = 0.5f; //(*state.random_generator)();
 
-									light->illumSample(sp.p_, ls, light_ray, light_ray.time_);
+									light->illumSample(p, ls, light_ray, light_ray.time_);
 									light_ray.tmin_ = shadow_bias_;
 									if(light_ray.tmax_ < 0.f) light_ray.tmax_ = 1e10f;  // infinitely distant light
 
@@ -140,10 +135,8 @@ bool SingleScatterIntegrator::preprocess(FastRandom &fast_random, ImageFilm *ima
 Rgb SingleScatterIntegrator::getInScatter(RandomGenerator &random_generator, const Ray &step_ray, float current_step) const
 {
 	Rgb in_scatter(0.f);
-	SurfacePoint sp;
-	sp.p_ = step_ray.from_;
 	Ray light_ray;
-	light_ray.from_ = sp.p_;
+	light_ray.from_ = step_ray.from_;
 
 	for(const auto &light : lights_)
 	{
@@ -152,7 +145,7 @@ Rgb SingleScatterIntegrator::getInScatter(RandomGenerator &random_generator, con
 		// handle lights with delta distribution, e.g. point and directional lights
 		if(light->diracLight())
 		{
-			if(light->illuminate(sp.p_, lcol, light_ray))
+			if(light->illuminate(step_ray.from_, lcol, light_ray))
 			{
 				// ...shadowed...
 				if(light_ray.tmax_ < 0.f) light_ray.tmax_ = 1e10;  // infinitely distant light
@@ -167,7 +160,7 @@ Rgb SingleScatterIntegrator::getInScatter(RandomGenerator &random_generator, con
 						for(const auto &[vr_name, vr] : *volume_regions_)
 						{
 							const Bound::Cross cross = vr->crossBound(light_ray);
-							if(cross.crossed_) light_tr += vr->attenuation(sp.p_, light);
+							if(cross.crossed_) light_tr += vr->attenuation(step_ray.from_, light);
 						}
 					}
 					else
@@ -201,7 +194,7 @@ Rgb SingleScatterIntegrator::getInScatter(RandomGenerator &random_generator, con
 				ls.s_1_ = random_generator();
 				ls.s_2_ = random_generator();
 
-				if(light->illumSample(sp.p_, ls, light_ray, light_ray.time_))
+				if(light->illumSample(step_ray.from_, ls, light_ray, light_ray.time_))
 				{
 					// ...shadowed...
 					if(light_ray.tmax_ < 0.f) light_ray.tmax_ = 1e10;  // infinitely distant light
@@ -219,7 +212,7 @@ Rgb SingleScatterIntegrator::getInScatter(RandomGenerator &random_generator, con
 								const Bound::Cross cross = vr->crossBound(light_ray);
 								if(cross.crossed_)
 								{
-									light_tr += vr->attenuation(sp.p_, light);
+									light_tr += vr->attenuation(step_ray.from_, light);
 									break;
 								}
 							}
