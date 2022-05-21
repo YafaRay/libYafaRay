@@ -95,9 +95,9 @@ class AcceleratorKdTreeMultiThread::Node
 		bool isLeaf() const { return (flags_ & 3) == 3; }
 		uint32_t getRightChild() const { return (flags_ >> 2); }
 		void setRightChild(uint32_t i) { flags_ = (flags_ & 3) | (i << 2); }
+		alignas(8) std::vector<const Primitive *> primitives_; //!< leaf: list of primitives
+		alignas(8) uint32_t flags_; //!< 2bits: isLeaf, axis; 30bits: nprims (leaf) or index of right child
 		float division_; //!< interior: division plane position
-		std::vector<const Primitive *> primitives_; //!< leaf: list of primitives
-		uint32_t flags_; //!< 2bits: isLeaf, axis; 30bits: nprims (leaf) or index of right child
 };
 
 /*! Stack elements for the custom stack of the recursive traversal */
