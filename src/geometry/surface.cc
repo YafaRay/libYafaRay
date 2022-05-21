@@ -28,7 +28,7 @@ float SurfacePoint::getDistToNearestEdge() const
 	return primitive_->getDistToNearestEdge(intersect_data_.u_, intersect_data_.v_, dp_du_abs_, dp_dv_abs_);
 }
 
-void SurfacePoint::setRayDifferentials(const RayDifferentials *ray_differentials)
+std::unique_ptr<SurfaceDifferentials> SurfacePoint::calcSurfaceDifferentials(const RayDifferentials *ray_differentials) const
 {
 	if(ray_differentials)
 	{
@@ -41,8 +41,9 @@ void SurfacePoint::setRayDifferentials(const RayDifferentials *ray_differentials
 		const Vec3 ryv(ray_differentials->yfrom_);
 		const float ty = -((n_ * ryv) + d) / (n_ * ray_differentials->ydir_);
 		const Point3 py{ray_differentials->yfrom_ + ty * ray_differentials->ydir_};
-		differentials_ = std::make_unique<SurfaceDifferentials>(px - p_, py - p_);
+		return std::make_unique<SurfaceDifferentials>(px - p_, py - p_);
 	}
+	else return nullptr;
 }
 
 std::unique_ptr<RayDifferentials> SurfacePoint::reflectedRay(const RayDifferentials *in_differentials, const Vec3 &in_dir, const Vec3 &out_dir) const

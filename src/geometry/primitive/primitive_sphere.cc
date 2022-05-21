@@ -98,7 +98,7 @@ std::unique_ptr<const SurfacePoint> SpherePrimitive::getSurface(const RayDiffere
 	sp->u_ = std::atan2(normal.y(), normal.x()) * math::div_1_by_pi<> + 1;
 	sp->v_ = 1.f - math::acos(normal.z()) * math::div_1_by_pi<>;
 	sp->light_ = nullptr;
-	sp->setRayDifferentials(ray_differentials);
+	sp->differentials_ = sp->calcSurfaceDifferentials(ray_differentials);
 	sp->mat_data_ = std::unique_ptr<const MaterialData>(sp->primitive_->getMaterial()->initBsdf(*sp, camera));
 	return sp;
 }

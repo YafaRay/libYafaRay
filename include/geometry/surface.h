@@ -64,7 +64,6 @@ class SurfacePoint final
 		SurfacePoint& operator=(const SurfacePoint &sp);
 		SurfacePoint(SurfacePoint &&surface_point) = default;
 		SurfacePoint& operator=(SurfacePoint&& surface_point) = default;
-		void calculateShadingSpace();
 		static Vec3 normalFaceForward(const Vec3 &normal_geometry, const Vec3 &normal, const Vec3 &incoming_vector);
 		float getDistToNearestEdge() const;
 		//! compute differentials for a scattered ray
@@ -73,7 +72,7 @@ class SurfacePoint final
 		std::unique_ptr<RayDifferentials> refractedRay(const RayDifferentials *in_differentials, const Vec3 &in_dir, const Vec3 &out_dir, float ior) const;
 		float projectedPixelArea() const;
 		void getUVdifferentials(float &du_dx, float &dv_dx, float &du_dy, float &dv_dy) const;
-		void setRayDifferentials(const RayDifferentials *ray_differentials);
+		std::unique_ptr<SurfaceDifferentials> calcSurfaceDifferentials(const RayDifferentials *ray_differentials) const;
 
 		const MaterialData * initBsdf(const Camera *camera);
 		Rgb eval(const Vec3 &wo, const Vec3 &wl, const BsdfFlags &types, bool force_eval = false) const;
@@ -219,17 +218,6 @@ inline SurfacePoint &SurfacePoint::operator=(const SurfacePoint &sp)
 	dp_dv_abs_ = sp.dp_dv_abs_;
 	if(sp.differentials_) differentials_ = std::make_unique<const SurfaceDifferentials>(*sp.differentials_);
 	return *this;
-}
-
-inline void SurfacePoint::calculateShadingSpace()
-{
-	// transform dPdU and dPdV in shading space
-	ds_du_.x() = nu_ * dp_du_;
-	ds_du_.y() = nv_ * dp_du_;
-	ds_du_.z() = n_ * dp_du_;
-	ds_dv_.x() = nu_ * dp_dv_;
-	ds_dv_.y() = nv_ * dp_dv_;
-	ds_dv_.z() = n_ * dp_dv_;
 }
 
 inline Vec3 SurfacePoint::normalFaceForward(const Vec3 &normal_geometry, const Vec3 &normal, const Vec3 &incoming_vector)

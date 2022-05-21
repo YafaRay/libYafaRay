@@ -115,8 +115,10 @@ std::unique_ptr<const SurfacePoint> QuadPrimitive::getSurface(const RayDifferent
 	sp->has_uv_ = base_mesh_object_.hasUv();
 	sp->p_ = hit_point;
 	std::tie(sp->nu_, sp->nv_) = Vec3::createCoordsSystem(sp->n_);
-	sp->calculateShadingSpace();
-	sp->setRayDifferentials(ray_differentials);
+	// transform dPdU and dPdV in shading space
+	sp->ds_du_ = {sp->nu_ * sp->dp_du_, sp->nv_ * sp->dp_du_, sp->n_ * sp->dp_du_};
+	sp->ds_dv_ = {sp->nu_ * sp->dp_dv_, sp->nv_ * sp->dp_dv_, sp->n_ * sp->dp_dv_};
+	sp->differentials_ = sp->calcSurfaceDifferentials(ray_differentials);
 	sp->mat_data_ = std::unique_ptr<const MaterialData>(sp->primitive_->getMaterial()->initBsdf(*sp, camera));
 	return sp;
 }
