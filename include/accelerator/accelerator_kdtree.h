@@ -60,8 +60,8 @@ class AcceleratorKdTree final : public Accelerator
 
 		int buildTree(uint32_t n_prims, const std::vector<const Primitive *> &original_primitives, const Bound &node_bound, uint32_t *prim_nums, uint32_t *left_prims, uint32_t *right_prims, const std::array<std::unique_ptr<BoundEdge[]>, 3> &edges, uint32_t right_mem_size, int depth, int bad_refines);
 
-		static SplitCost pigeonMinCost(Logger &logger, float e_bonus, float cost_ratio, uint32_t n_prims, const Bound *all_bounds, const Bound &node_bound, const uint32_t *prim_idx);
-		static SplitCost minimalCost(Logger &logger, float e_bonus, float cost_ratio, uint32_t n_prims, const Bound &node_bound, const uint32_t *prim_idx, const Bound *all_bounds, const Bound *all_bounds_general, const std::array<std::unique_ptr<BoundEdge[]>, 3> &edges, Stats &kd_stats);
+		static SplitCost pigeonMinCost(Logger &logger, float e_bonus, float cost_ratio, uint32_t num_prim_indices, const Bound *bounds, const Bound &node_bound, const uint32_t *prim_indices);
+		static SplitCost minimalCost(Logger &logger, float e_bonus, float cost_ratio, uint32_t num_indices, const Bound &node_bound, const uint32_t *prim_idx, const Bound *all_bounds, const Bound *all_bounds_general, const std::array<std::unique_ptr<BoundEdge[]>, 3> &edges_all_axes, Stats &kd_stats);
 
 		static AcceleratorIntersectData intersect(const Ray &ray, float t_max, const Node *nodes, const Bound &tree_bound);
 		static AcceleratorIntersectData intersectS(const Ray &ray, float t_max, float shadow_bias, const Node *nodes, const Bound &tree_bound);
@@ -133,7 +133,7 @@ struct AcceleratorKdTree::Stack
 	const Node *node_; //!< pointer to far child
 	float t_; //!< the entry/exit signed distance
 	Point3 point_; //!< the point coordinates of entry/exit point
-	int prev_stack_idx_; //!< the pointer to the previous stack item
+	int prev_stack_id_; //!< the pointer to the previous stack item
 };
 
 /*! Serves to store the lower and upper bound edges of the primitives
@@ -157,9 +157,9 @@ class AcceleratorKdTree::BoundEdge
 
 struct AcceleratorKdTree::SplitCost
 {
-	int best_axis_ = -1;
-	int best_offset_ = -1;
-	float best_cost_;
+	int axis_ = -1;
+	int edge_offset_ = -1;
+	float cost_;
 	float t_;
 	int num_edges_;
 };
