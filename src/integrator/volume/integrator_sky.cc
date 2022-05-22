@@ -128,7 +128,7 @@ Rgb SkyIntegrator::integrate(RandomGenerator &random_generator, const Ray &ray, 
 			const float x = math::sin(theta) * math::cos(phi);
 			const float y = math::sin(theta) * math::sin(phi);
 			const Vec3 w{x, y, z};
-			const Ray bgray{{0, 0, 0}, w, 0, 1, 0};
+			const Ray bgray{{0, 0, 0}, w, ray.time_, 0, 1};
 			const Rgb l_s = background_ ? background_->eval(bgray.dir_) : Rgb(0.f);
 			const float b_r_angular = b_r_ * 3 / (2 * math::num_pi<> * 8) * (1.0f + (w * (-ray.dir_)) * (w * (-ray.dir_)));
 			const float k = 0.67f;
@@ -153,7 +153,7 @@ Rgb SkyIntegrator::integrate(RandomGenerator &random_generator, const Ray &ray, 
 	Rgb i_r {0.f}, i_m {0.f};
 	while(pos < s)
 	{
-		const Ray step_ray{ray.from_, ray.dir_, 0, pos / scale_, 0};
+		const Ray step_ray{ray.from_, ray.dir_, ray.time_, 0, pos / scale_};
 		const float u_r = math::exp(-alpha_r_ * (h_0 + pos * cos_theta));
 		const float u_m = math::exp(-alpha_m_ * (h_0 + pos * cos_theta));
 		const Rgb tau_m = skyTau(step_ray, b_m_, alpha_m_);

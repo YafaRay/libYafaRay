@@ -101,7 +101,7 @@ AcceleratorIntersectData AcceleratorSimpleTest::intersectS(const Ray &ray, float
 					const Visibility mat_visibility = primitive->getMaterial()->getVisibility();
 					if(mat_visibility == Visibility::NormalVisible || mat_visibility == Visibility::InvisibleShadowsOnly)
 					{
-						return AcceleratorIntersectData{true};
+						return AcceleratorIntersectData{true, ray.time_};
 					}
 				}
 			}

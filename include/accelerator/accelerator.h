@@ -36,7 +36,7 @@ BEGIN_YAFARAY
 struct AcceleratorIntersectData : IntersectData
 {
 	AcceleratorIntersectData() = default;
-	explicit AcceleratorIntersectData(bool hit) { hit_ = true; }
+	explicit AcceleratorIntersectData(bool hit, float time) { hit_ = true; time_ = time; }
 	AcceleratorIntersectData(IntersectData &&intersect_data, const Primitive *hit_primitive) : IntersectData(std::move(intersect_data)), t_max_{intersect_data.t_hit_}, hit_primitive_{hit_primitive} { }
 	float t_max_ = std::numeric_limits<float>::infinity();
 	const Primitive *hit_primitive_ = nullptr;

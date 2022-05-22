@@ -337,7 +337,7 @@ Rgb SingleScatterIntegrator::integrate(RandomGenerator &random_generator, const 
 				}
 			}
 		}
-		const Ray step_ray{ray.from_ + (ray.dir_ * pos), ray.dir_, 0, current_step, 0};
+		const Ray step_ray{ray.from_ + (ray.dir_ * pos), ray.dir_, ray.time_, 0, current_step};
 		if(adaptive_)
 		{
 			step_tau = Rgb{accum_density.at(step_sample)};

@@ -179,7 +179,7 @@ void PhotonIntegrator::diffuseWorker(FastRandom &fast_random, PreGatherData &pgd
 				//deposit photon on surface
 				if(!caustic_photon)
 				{
-					Photon np(wi, hit_curr->p_, pcol, hit_curr->intersect_data_.time_);
+					Photon np(wi, hit_curr->p_, pcol, ray.time_);
 					local_diffuse_photons.emplace_back(np);
 				}
 				// create entry for radiance photon:
@@ -187,7 +187,7 @@ void PhotonIntegrator::diffuseWorker(FastRandom &fast_random, PreGatherData &pgd
 				if(final_gather_ && fast_random.getNextFloatNormalized() < 0.125 && !caustic_photon)
 				{
 					const Vec3 n{SurfacePoint::normalFaceForward(hit_curr->ng_, hit_curr->n_, wi)};
-					RadData rd(hit_curr->p_, n, hit_curr->intersect_data_.time_);
+					RadData rd(hit_curr->p_, n, ray.time_);
 					rd.refl_ = hit_curr->getReflectivity(fast_random, BsdfFlags::Diffuse | BsdfFlags::Glossy | BsdfFlags::Reflect, true, 0.f, camera_);
 					rd.transm_ = hit_curr->getReflectivity(fast_random, BsdfFlags::Diffuse | BsdfFlags::Glossy | BsdfFlags::Transmit, true, 0.f, camera_);
 					local_rad_points.emplace_back(rd);
@@ -656,6 +656,7 @@ Rgb PhotonIntegrator::finalGathering(FastRandom &fast_random, RandomGenerator &r
 		float length = 0;
 		Vec3 pwo{wo};
 		Ray p_ray;
+		p_ray.time_ = sp.intersect_data_.time_;
 		bool did_hit;
 		unsigned int offs = n_paths_ * pixel_sampling_data.sample_ + pixel_sampling_data.offset_ + i; // some redundancy here...
 		Rgb lcol, scol;

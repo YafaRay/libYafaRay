@@ -41,8 +41,8 @@ class Ray
 		Ray() = default;
 		Ray(const Ray &ray, DifferentialsCopy differentials_copy);
 		Ray(Ray &&ray) = default;
-		Ray(const Point3 &f, const Vec3 &d, float start = 0.f, float end = -1.f, float ftime = 0.f):
-				from_{f}, dir_{d}, tmin_{start}, tmax_{end}, time_{ftime} { }
+		Ray(const Point3 &f, const Vec3 &d, float time, float start = 0.f, float end = -1.f) :
+				from_{f}, dir_{d}, time_{time}, tmin_{start}, tmax_{end} { }
 		Ray& operator=(Ray&& ray) = default;
 		alignas(8) Point3 from_;
 		Vec3 dir_;
@@ -51,7 +51,7 @@ class Ray
 		std::unique_ptr<RayDifferentials> differentials_;
 };
 
-inline Ray::Ray(const Ray &ray, DifferentialsCopy differentials_copy) : Ray{ray.from_, ray.dir_, ray.tmin_, ray.tmax_, ray.time_}
+inline Ray::Ray(const Ray &ray, DifferentialsCopy differentials_copy) : Ray{ray.from_, ray.dir_, ray.time_, ray.tmin_, ray.tmax_}
 {
 	if(differentials_copy == DifferentialsCopy::FullCopy && ray.differentials_)
 	{
