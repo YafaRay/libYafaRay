@@ -90,6 +90,7 @@ class SurfacePoint final
 		const Object *getObject() const { if(primitive_) return primitive_->getObject(); else return nullptr; }
 		const Material *getMaterial() const { if(primitive_) return primitive_->getMaterial(); else return nullptr; }
 		const Light *getLight() const { if(primitive_) return primitive_->getObject()->getLight(); else return nullptr; }
+		bool hasMotionBlur() const { if(primitive_) return primitive_->getObject()->hasMotionBlur(); else return false; }
 
 		IntersectData intersect_data_;
 		alignas(8) std::unique_ptr<const MaterialData> mat_data_;

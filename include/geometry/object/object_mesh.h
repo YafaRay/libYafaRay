@@ -67,6 +67,7 @@ class MeshObject : public ObjectBasic
 		float getTimeRangeStart() const { return time_steps_.front().time_; }
 		float getTimeRangeEnd() const { return time_steps_.back().time_; }
 		size_t numTimeSteps() const { return time_steps_.size(); }
+		bool hasMotionBlur() const override { return hasMotionBlurBezier(); }
 
 	private:
 		struct TimeStepGeometry final

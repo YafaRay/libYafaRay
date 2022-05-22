@@ -61,6 +61,7 @@ class LayerDef final
 			DebugObjectsEdges,
 			DebugSamplingFactor,
 			DebugWireframe,
+			DebugObjectTime,
 			Diffuse,
 			DiffuseColor,
 			DiffuseIndirect,

@@ -86,6 +86,7 @@ class Object
 		virtual int numVertices(size_t time_step) const { return 0; }
 		virtual void setSmooth(bool smooth) { }
 		virtual bool smoothVerticesNormals(Logger &logger, float angle) { return false; }
+		virtual bool hasMotionBlur() const { return false; }
 };
 
 END_YAFARAY

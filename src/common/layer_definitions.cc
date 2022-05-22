@@ -50,6 +50,7 @@ const std::array<LayerDef, LayerDef::Type::Size> LayerDef::definitions_array_ {{
 	{Type::DebugObjectsEdges,"debug-objects-edges", Flags(Flags::DebugLayers | Flags::ToonEdgeLayers)},
 	{Type::DebugSamplingFactor, "debug-sampling-factor", Flags(Flags::DebugLayers), Image::Type::Color, {0.f, 1.f}, false},
 	{Type::DebugWireframe, "debug-wireframe", Flags(Flags::DebugLayers), Image::Type::ColorAlpha, {0.f, 0.f}},
+	{Type::DebugObjectTime, "debug-object-time", Flags(Flags::DebugLayers), Image::Type::Color, {0.f, 1.f}},
 	{Type::Diffuse, "diffuse", Flags(Flags::BasicLayers | Flags::DiffuseLayers)},
 	{Type::DiffuseColor, "adv-diffuse-color", Flags(Flags::BasicLayers | Flags::DiffuseLayers)},
 	{Type::DiffuseIndirect, "adv-diffuse-indirect", Flags(Flags::BasicLayers | Flags::DiffuseLayers)},

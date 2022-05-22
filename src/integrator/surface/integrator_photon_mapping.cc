@@ -1001,6 +1001,12 @@ std::pair<Rgb, float> PhotonIntegrator::integrate(Ray &ray, FastRandom &fast_ran
 		{
 			generateCommonLayers(color_layers, *sp, mask_params_, object_index_highest, material_index_highest);
 			generateOcclusionLayers(color_layers, *accelerator_, chromatic_enabled, wavelength, ray_division, camera_, pixel_sampling_data, *sp, wo, ao_samples_, shadow_bias_auto_, shadow_bias_, ao_dist_, ao_col_, s_depth_);
+			if(Rgba *color_layer = color_layers->find(LayerDef::DebugObjectTime))
+			{
+				const float col_combined_gray = col.col2Bri();
+				if(sp->hasMotionBlur()) *color_layer += {col_combined_gray * ray.time_, 0.f, col_combined_gray * (1.f - ray.time_), 1.f};
+				else *color_layer += {0.f, col_combined_gray, 0.f, 1.f};
+			}
 		}
 	}
 	else //nothing hit, return background
