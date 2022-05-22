@@ -33,8 +33,8 @@ class Photon final
 {
 	public:
 		Photon() = default;
-		Photon(const Vec3 &d, const Point3 &p, const Rgb &col) : dir_{d}, pos_{p}, c_{col} { }
-		Photon(Vec3 &&d, Point3 &&p, Rgb &&col) : dir_{std::move(d)}, pos_{std::move(p)}, c_{std::move(col)} { }
+		Photon(const Vec3 &d, const Point3 &p, const Rgb &col) : pos_{p}, c_{col}, dir_{d} { }
+		Photon(Vec3 &&d, Point3 &&p, Rgb &&col) : pos_{std::move(p)}, c_{std::move(col)}, dir_{std::move(d)} { }
 		const Point3 &position() const { return pos_; }
 		Rgb color() const { return c_; }
 		void color(const Rgb &col) { c_ = col;}

@@ -123,7 +123,6 @@ class SurfacePoint final
 
 inline SurfacePoint::SurfacePoint(const SurfacePoint &sp)
 	:
-	primitive_{sp.primitive_},
 	intersect_data_{sp.intersect_data_},
 	n_{sp.n_},
 	ng_{sp.ng_},
@@ -141,7 +140,8 @@ inline SurfacePoint::SurfacePoint(const SurfacePoint &sp)
 	ds_du_{sp.ds_du_},
 	ds_dv_{sp.ds_dv_},
 	dp_du_abs_{sp.dp_du_abs_},
-	dp_dv_abs_{sp.dp_dv_abs_}
+	dp_dv_abs_{sp.dp_dv_abs_},
+	primitive_{sp.primitive_}
 {
 	if(sp.mat_data_) mat_data_ = sp.mat_data_->clone();
 	if(sp.differentials_) differentials_ = std::make_unique<const SurfaceDifferentials>(*sp.differentials_);
@@ -149,7 +149,6 @@ inline SurfacePoint::SurfacePoint(const SurfacePoint &sp)
 
 inline SurfacePoint::SurfacePoint(const SurfacePoint &sp_1, const SurfacePoint &sp_2, float alpha)
 	:
-	  primitive_{alpha < 0.5f ? sp_1.primitive_ : sp_2.primitive_},
 	  intersect_data_{alpha < 0.5f ? sp_1.intersect_data_ : sp_2.intersect_data_},
 	  n_{math::lerp(sp_1.n_, sp_2.n_, alpha)},
 	  ng_{alpha < 0.5f ? sp_1.ng_ : sp_2.ng_},
@@ -167,7 +166,8 @@ inline SurfacePoint::SurfacePoint(const SurfacePoint &sp_1, const SurfacePoint &
 	  ds_du_{math::lerp(sp_1.ds_du_, sp_2.ds_du_, alpha)},
 	  ds_dv_{math::lerp(sp_1.ds_dv_, sp_2.ds_dv_, alpha)},
 	  dp_du_abs_{alpha < 0.5f ? sp_1.dp_du_abs_ : sp_2.dp_du_abs_},
-	  dp_dv_abs_{alpha < 0.5f ? sp_1.dp_dv_abs_ : sp_2.dp_dv_abs_}
+	  dp_dv_abs_{alpha < 0.5f ? sp_1.dp_dv_abs_ : sp_2.dp_dv_abs_},
+	  primitive_{alpha < 0.5f ? sp_1.primitive_ : sp_2.primitive_}
 {
 	if(alpha < 0.5f)
 	{

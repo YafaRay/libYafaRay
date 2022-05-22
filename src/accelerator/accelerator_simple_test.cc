@@ -121,7 +121,7 @@ AcceleratorTsIntersectData AcceleratorSimpleTest::intersectTs(const Ray &ray, in
 			IntersectData intersect_data = primitive->intersect(ray);
 			if(intersect_data.hit_ && intersect_data.t_hit_ >= ray.tmin_ && intersect_data.t_hit_ < t_max)
 			{
-				return AcceleratorTsIntersectData{ std::move(AcceleratorIntersectData{std::move(intersect_data), primitive})};
+				return AcceleratorTsIntersectData{ AcceleratorIntersectData{std::move(intersect_data), primitive}};
 			}
 		}
 	}

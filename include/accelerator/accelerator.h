@@ -159,7 +159,7 @@ inline bool Accelerator::primitiveIntersection(AcceleratorTsIntersectData &accel
 			if(const Material *mat = primitive->getMaterial();
 			   mat->getVisibility() == Visibility::NormalVisible || mat->getVisibility() == Visibility::InvisibleShadowsOnly)
 			{
-				accelerator_intersect_data = AcceleratorTsIntersectData{std::move(AcceleratorIntersectData{ std::move(intersect_data), primitive })};
+				accelerator_intersect_data = AcceleratorTsIntersectData{AcceleratorIntersectData{ std::move(intersect_data), primitive}};
 				accelerator_intersect_data.hit_primitive_ = primitive;
 				if(!mat->isTransparent()) return true;
 				if(filtered.insert(primitive).second)
