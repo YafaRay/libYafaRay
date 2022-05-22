@@ -42,7 +42,7 @@ class Ray
 		Ray(const Ray &ray, DifferentialsCopy differentials_copy);
 		Ray(Ray &&ray) = default;
 		Ray(const Point3 &f, const Vec3 &d, float time, float start = 0.f, float end = -1.f) :
-				from_{f}, dir_{d}, time_{time}, tmin_{start}, tmax_{end} { }
+				from_{f}, dir_{d}, tmin_{start}, tmax_{end}, time_{time} { }
 		Ray& operator=(Ray&& ray) = default;
 		alignas(8) Point3 from_;
 		Vec3 dir_;
