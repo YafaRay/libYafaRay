@@ -448,6 +448,7 @@ void MonteCarloIntegrator::causticWorker(FastRandom &fast_random, unsigned int &
 			return;
 		}
 		Ray ray;
+		ray.time_ = time_forced_ ? time_forced_value_ : math::addMod1(static_cast<float>(curr) / static_cast<float>(n_caus_photons_thread), s_2); //FIXME: maybe we should use an offset for time that is independent from the space-related samples as s_2 now
 		float light_pdf;
 		Rgb pcol = lights_caustic[light_num]->emitPhoton(s_1, s_2, s_3, s_4, ray, light_pdf);
 		ray.tmin_ = ray_min_dist_;
@@ -490,7 +491,7 @@ void MonteCarloIntegrator::causticWorker(FastRandom &fast_random, unsigned int &
 				//deposit caustic photon on surface
 				if(caustic_photon)
 				{
-					Photon np(wi, hit_curr->p_, pcol);
+					Photon np(wi, hit_curr->p_, pcol, hit_curr->intersect_data_.time_);
 					local_caustic_photons.emplace_back(np);
 				}
 			}

@@ -40,13 +40,11 @@ BEGIN_YAFARAY
 
 void PhotonIntegrator::preGatherWorker(PreGatherData *gdata, float ds_rad, int n_search)
 {
-	unsigned int start, end, total;
-	float ds_radius_2 = ds_rad * ds_rad;
-
+	const float ds_radius_2 = ds_rad * ds_rad;
 	gdata->mutx_.lock();
-	start = gdata->fetched_;
-	total = gdata->rad_points_.size();
-	end = gdata->fetched_ = std::min(total, start + 32);
+	unsigned int start = gdata->fetched_;
+	const unsigned int total = gdata->rad_points_.size();
+	unsigned int end = gdata->fetched_ = std::min(total, start + 32);
 	gdata->mutx_.unlock();
 
 	auto gathered = std::unique_ptr<FoundPhoton[]>(new FoundPhoton[n_search]);
@@ -60,7 +58,7 @@ void PhotonIntegrator::preGatherWorker(PreGatherData *gdata, float ds_rad, int n
 		for(unsigned int n = start; n < end; ++n)
 		{
 			radius = ds_radius_2;//actually the square radius...
-			int n_gathered = gdata->diffuse_map_->gather(gdata->rad_points_[n].pos_, gathered.get(), n_search, radius);
+			const int n_gathered = gdata->diffuse_map_->gather(gdata->rad_points_[n].pos_, gathered.get(), n_search, radius);
 
 			Vec3 rnorm{gdata->rad_points_[n].normal_};
 
@@ -79,7 +77,7 @@ void PhotonIntegrator::preGatherWorker(PreGatherData *gdata, float ds_rad, int n
 				}
 			}
 
-			gdata->radiance_vec_[n] = Photon(rnorm, gdata->rad_points_[n].pos_, sum);
+			gdata->radiance_vec_[n] = Photon(rnorm, gdata->rad_points_[n].pos_, sum, gdata->rad_points_[n].time_);
 		}
 		gdata->mutx_.lock();
 		start = gdata->fetched_;
@@ -140,6 +138,7 @@ void PhotonIntegrator::diffuseWorker(FastRandom &fast_random, PreGatherData &pgd
 			return;
 		}
 		Ray ray;
+		ray.time_ = time_forced_ ? time_forced_value_ : math::addMod1(static_cast<float>(curr) / static_cast<float>(n_diffuse_photons_thread), s_2); //FIXME: maybe we should use an offset for time that is independent from the space-related samples as s_2 now
 		float light_pdf;
 		Rgb pcol = lights_diffuse[light_num]->emitPhoton(s_1, s_2, s_3, s_4, ray, light_pdf);
 		ray.tmin_ = ray_min_dist_;
@@ -180,7 +179,7 @@ void PhotonIntegrator::diffuseWorker(FastRandom &fast_random, PreGatherData &pgd
 				//deposit photon on surface
 				if(!caustic_photon)
 				{
-					Photon np(wi, hit_curr->p_, pcol);
+					Photon np(wi, hit_curr->p_, pcol, hit_curr->intersect_data_.time_);
 					local_diffuse_photons.emplace_back(np);
 				}
 				// create entry for radiance photon:
@@ -188,7 +187,7 @@ void PhotonIntegrator::diffuseWorker(FastRandom &fast_random, PreGatherData &pgd
 				if(final_gather_ && fast_random.getNextFloatNormalized() < 0.125 && !caustic_photon)
 				{
 					const Vec3 n{SurfacePoint::normalFaceForward(hit_curr->ng_, hit_curr->n_, wi)};
-					RadData rd(hit_curr->p_, n);
+					RadData rd(hit_curr->p_, n, hit_curr->intersect_data_.time_);
 					rd.refl_ = hit_curr->getReflectivity(fast_random, BsdfFlags::Diffuse | BsdfFlags::Glossy | BsdfFlags::Reflect, true, 0.f, camera_);
 					rd.transm_ = hit_curr->getReflectivity(fast_random, BsdfFlags::Diffuse | BsdfFlags::Glossy | BsdfFlags::Transmit, true, 0.f, camera_);
 					local_rad_points.emplace_back(rd);

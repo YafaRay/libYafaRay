@@ -33,8 +33,7 @@ class Photon final
 {
 	public:
 		Photon() = default;
-		Photon(const Vec3 &d, const Point3 &p, const Rgb &col) : pos_{p}, c_{col}, dir_{d} { }
-		Photon(Vec3 &&d, Point3 &&p, Rgb &&col) : pos_{std::move(p)}, c_{std::move(col)}, dir_{std::move(d)} { }
+		Photon(const Vec3 &d, const Point3 &p, const Rgb &col, float time) : pos_{p}, c_{col}, dir_{d}, time_{time} { }
 		const Point3 &position() const { return pos_; }
 		Rgb color() const { return c_; }
 		void color(const Rgb &col) { c_ = col;}
@@ -46,16 +45,17 @@ class Photon final
 		Point3 pos_;
 		Rgb c_;
 		Vec3 dir_;
+		float time_{0.f};
 };
 
 struct RadData
 {
-	RadData(const Point3 &p, const Vec3 &n): pos_{p}, normal_(n) { }
-	RadData(Point3 &&p, Vec3 &&n): pos_(std::move(p)), normal_(std::move(n)) { }
+	RadData(const Point3 &p, const Vec3 &n, float time): pos_{p}, normal_(n), time_{time} { }
 	Point3 pos_;
 	Vec3 normal_;
 	Rgb refl_;
 	Rgb transm_;
+	float time_{0.f};
 	mutable bool use_ = true;
 };
 
@@ -66,8 +66,6 @@ struct FoundPhoton
 	bool operator<(const FoundPhoton &p_2) const { return dist_square_ < p_2.dist_square_; }
 	const Photon *photon_;
 	float dist_square_;
-	//temp!!
-	float dis_;
 };
 
 class PhotonMap final

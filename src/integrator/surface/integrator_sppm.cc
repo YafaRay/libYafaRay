@@ -360,6 +360,7 @@ void SppmIntegrator::photonWorker(FastRandom &fast_random, unsigned int &total_p
 		}
 
 		s_l = float(haltoncurr) * inv_diff_photons; // Does sL also need more random_generator for each pass?
+		ray.time_ = time_forced_ ? time_forced_value_ : math::addMod1(static_cast<float>(curr) / static_cast<float>(n_photons_thread), s_2); //FIXME: maybe we should use an offset for time that is independent from the space-related samples as s_2 now
 		const int light_num = light_power_d->dSample(s_l, light_num_pdf);
 		if(light_num >= num_d_lights)
 		{
@@ -408,7 +409,7 @@ void SppmIntegrator::photonWorker(FastRandom &fast_random, unsigned int &total_p
 			//deposit photon on diffuse surface, now we only have one map for all, elimate directPhoton for we estimate it directly
 			if(!direct_photon && !caustic_photon && mat_bsdfs.hasAny(BsdfFlags::Diffuse))
 			{
-				Photon np(wi, hit_curr->p_, pcol);// pcol used here
+				Photon np(wi, hit_curr->p_, pcol, hit_curr->intersect_data_.time_);// pcol used here
 
 				if(b_hashgrid_) photon_grid_.pushPhoton(np);
 				else
@@ -420,7 +421,7 @@ void SppmIntegrator::photonWorker(FastRandom &fast_random, unsigned int &total_p
 			// add caustic photon
 			if(!direct_photon && caustic_photon && mat_bsdfs.hasAny(BsdfFlags::Diffuse | BsdfFlags::Glossy))
 			{
-				Photon np(wi, hit_curr->p_, pcol);// pcol used here
+				Photon np(wi, hit_curr->p_, pcol, hit_curr->intersect_data_.time_);// pcol used here
 
 				if(b_hashgrid_) photon_grid_.pushPhoton(np);
 				else
