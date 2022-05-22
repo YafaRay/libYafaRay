@@ -60,72 +60,56 @@ AcceleratorSimpleTest::AcceleratorSimpleTest(Logger &logger, const std::vector<c
 
 AcceleratorIntersectData AcceleratorSimpleTest::intersect(const Ray &ray, float t_max) const
 {
+	AcceleratorIntersectData accelerator_intersect_data;
 	for(const auto &[object, object_data] : objects_data_)
 	{
-		const Bound::Cross cross = object_data.bound_.cross(ray, t_max);
-		if(!cross.crossed_) continue;
-		for(const auto &primitive : object_data.primitives_)
+		if(const Bound::Cross cross = object_data.bound_.cross(ray, t_max); cross.crossed_)
 		{
-			IntersectData intersect_data = primitive->intersect(ray);
-			if(intersect_data.hit_ && intersect_data.t_hit_ >= ray.tmin_ && intersect_data.t_hit_ < t_max)
+			for(const auto &primitive : object_data.primitives_)
 			{
-				const Visibility prim_visibility = primitive->getVisibility();
-				if(prim_visibility == Visibility::NormalVisible || prim_visibility == Visibility::VisibleNoShadows)
+				Accelerator::primitiveIntersection(accelerator_intersect_data, primitive, ray);
+				if(accelerator_intersect_data.hit_ && accelerator_intersect_data.t_hit_ >= ray.tmin_  && accelerator_intersect_data.t_hit_ <= ray.tmax_)
 				{
-					const Visibility mat_visibility = primitive->getMaterial()->getVisibility();
-					if(mat_visibility == Visibility::NormalVisible || mat_visibility == Visibility::VisibleNoShadows)
-					{
-						return {std::move(intersect_data), primitive };
-					}
+					return accelerator_intersect_data;
 				}
 			}
 		}
 	}
-	return {};
+	return accelerator_intersect_data;
 }
 
 AcceleratorIntersectData AcceleratorSimpleTest::intersectS(const Ray &ray, float t_max, float shadow_bias) const
 {
+	AcceleratorIntersectData accelerator_intersect_data;
 	for(const auto &[object, object_data] : objects_data_)
 	{
-		const Bound::Cross cross = object_data.bound_.cross(ray, t_max);
-		if(!cross.crossed_) continue;
-		for(const auto &primitive : object_data.primitives_)
+		if(const Bound::Cross cross = object_data.bound_.cross(ray, t_max); cross.crossed_)
 		{
-			const IntersectData intersect_data = primitive->intersect(ray);
-			if(intersect_data.hit_ && intersect_data.t_hit_ >= (ray.tmin_ + shadow_bias) && intersect_data.t_hit_ < t_max)
+			for(const auto &primitive : object_data.primitives_)
 			{
-				const Visibility prim_visibility = primitive->getVisibility();
-				if(prim_visibility == Visibility::NormalVisible || prim_visibility == Visibility::InvisibleShadowsOnly)
-				{
-					const Visibility mat_visibility = primitive->getMaterial()->getVisibility();
-					if(mat_visibility == Visibility::NormalVisible || mat_visibility == Visibility::InvisibleShadowsOnly)
-					{
-						return AcceleratorIntersectData{true, ray.time_};
-					}
-				}
+				if(Accelerator::primitiveIntersection(accelerator_intersect_data, primitive, ray, t_max)) return accelerator_intersect_data;
 			}
 		}
 	}
-	return {};
+	return accelerator_intersect_data;
 }
 
 AcceleratorTsIntersectData AcceleratorSimpleTest::intersectTs(const Ray &ray, int max_depth, float t_max, float shadow_bias, const Camera *camera) const
 {
+	std::set<const Primitive *> filtered;
+	int depth = 0;
+	AcceleratorTsIntersectData accelerator_intersect_data;
 	for(const auto &[object, object_data] : objects_data_)
 	{
-		const Bound::Cross cross = object_data.bound_.cross(ray, t_max);
-		if(!cross.crossed_) continue;
-		for(const auto &primitive : object_data.primitives_)
+		if(const Bound::Cross cross = object_data.bound_.cross(ray, t_max); cross.crossed_)
 		{
-			IntersectData intersect_data = primitive->intersect(ray);
-			if(intersect_data.hit_ && intersect_data.t_hit_ >= ray.tmin_ && intersect_data.t_hit_ < t_max)
+			for(const auto &primitive : object_data.primitives_)
 			{
-				return AcceleratorTsIntersectData{ AcceleratorIntersectData{std::move(intersect_data), primitive}};
+				if(Accelerator::primitiveIntersection(accelerator_intersect_data, filtered, depth, max_depth, primitive, ray, t_max, camera)) return accelerator_intersect_data;
 			}
 		}
 	}
-	return {};
+	return accelerator_intersect_data;
 }
 
 END_YAFARAY
