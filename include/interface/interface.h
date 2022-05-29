@@ -73,7 +73,10 @@ class Interface
 		virtual bool addQuadWithUv(int a, int b, int c, int d, int uv_a, int uv_b, int uv_c, int uv_d) noexcept; //!< add a quad given vertex and uv indices and material pointer
 		virtual int  addUv(float u, float v) noexcept; //!< add a UV coordinate pair; returns index to be used for addTriangle/addQuad
 		virtual bool smoothVerticesNormals(const char *name, double angle) noexcept; //!< smooth vertex normals of mesh with given ID and angle (in degrees)
-		virtual bool addInstance(const char *base_object_name, const Matrix4 &obj_to_world) noexcept;
+		virtual size_t createInstance() noexcept;
+		virtual bool addInstanceObject(size_t instance_id, const char *base_object_name) noexcept;
+		virtual bool addInstanceOfInstance(size_t instance_id, size_t base_instance_id) noexcept;
+		virtual bool addInstanceMatrix(size_t instance_id, const Matrix4 &obj_to_world, float time) noexcept;
 		virtual void paramsSetVector(const char *name, double x, double y, double z) noexcept;
 		virtual void paramsSetString(const char *name, const char *s) noexcept;
 		virtual void paramsSetBool(const char *name, bool b) noexcept;

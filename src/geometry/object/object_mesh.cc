@@ -94,12 +94,12 @@ void MeshObject::addFace(const std::vector<int> &vertices, const std::vector<int
 	std::unique_ptr<FacePrimitive> face;
 	if(vertices.size() == 3)
 	{
-		if(hasMotionBlurBezier()) face = std::make_unique<TriangleBezierPrimitive>(vertices, vertices_uv, *this);
+		if(hasMotionBlurBezier() && !ObjectBase::isBaseObject()) face = std::make_unique<TriangleBezierPrimitive>(vertices, vertices_uv, *this);
 		else face = std::make_unique<TrianglePrimitive>(vertices, vertices_uv, *this);
 	}
 	else if(vertices.size() == 4)
 	{
-		if(hasMotionBlurBezier()) face = std::make_unique<QuadBezierPrimitive>(vertices, vertices_uv, *this);
+		if(hasMotionBlurBezier() && !ObjectBase::isBaseObject()) face = std::make_unique<QuadBezierPrimitive>(vertices, vertices_uv, *this);
 		else face = std::make_unique<QuadPrimitive>(vertices, vertices_uv, *this);
 	}
 	else return; //Other primitives are not supported
@@ -155,7 +155,7 @@ bool MeshObject::smoothVerticesNormals(Logger &logger, float angle)
 		{
 			for(auto &face : faces_)
 			{
-				const Vec3 n{face->getGeometricNormal(nullptr, 0, 0, static_cast<float>(time_step) / static_cast<float>(numTimeSteps()))};
+				const Vec3 n{face->getGeometricNormal(0, 0, static_cast<float>(time_step) / static_cast<float>(numTimeSteps()))};
 				const std::vector<int> vert_indices = face->getVerticesIndices();
 				const size_t num_indices = vert_indices.size();
 				for(size_t relative_vertex = 0; relative_vertex < num_indices; ++relative_vertex)
@@ -194,7 +194,7 @@ bool MeshObject::smoothVerticesNormals(Logger &logger, float angle)
 				{
 					bool smooth = false;
 					// calculate vertex normal for face
-					const Vec3 face_normal{point_face->Primitive::getGeometricNormal(nullptr, static_cast<float>(time_step) / static_cast<float>(numTimeSteps()))};
+					const Vec3 face_normal{point_face->Primitive::getGeometricNormal(static_cast<float>(time_step) / static_cast<float>(numTimeSteps()))};
 					Vec3 vertex_normal{face_normal * points_angles_sines[point_id][j]};
 					int k = 0;
 					for(const auto &point_face_2 : points_faces[point_id])
@@ -204,7 +204,7 @@ bool MeshObject::smoothVerticesNormals(Logger &logger, float angle)
 							k++;
 							continue;
 						}
-						const Vec3 face_2_normal{point_face_2->Primitive::getGeometricNormal(nullptr, static_cast<float>(time_step) / static_cast<float>(numTimeSteps()))};
+						const Vec3 face_2_normal{point_face_2->Primitive::getGeometricNormal(static_cast<float>(time_step) / static_cast<float>(numTimeSteps()))};
 						if((face_normal * face_2_normal) > angle_threshold)
 						{
 							smooth = true;

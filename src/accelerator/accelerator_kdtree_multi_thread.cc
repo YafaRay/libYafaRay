@@ -416,7 +416,7 @@ void AcceleratorKdTreeMultiThread::buildTreeWorker(const std::vector<const Primi
 			if(primitive->clippingSupport())
 			{
 				const uint32_t poly_id = (clip_plane.pos_ != ClipPlane::Pos::None) ? indices[index_num] : 0; //If the clipping plane is "None" the initial polygon will be ignored anyway, so we can use poly_id=0 to avoid going outside the list of polygons during first clip, when the indices list is a list of primitives indices and not a list of polygons indices
-				const PolyDouble::ClipResultWithBound clip_result = primitive->clipToBound(logger_, b_ext, clip_plane, polygons[poly_id], nullptr);
+				const PolyDouble::ClipResultWithBound clip_result = primitive->clipToBound(logger_, b_ext, clip_plane, polygons[poly_id]);
 				//std::string polygon_str = "(polygons empty!)";
 				//if(!polygons.empty()) polygon_str = polygons[poly_id].print();
 				//if(logger_.isDebug()) Y_DEBUG PRPREC(12) << " depth=" << depth << " i=" << index_num << " poly_id=" << poly_id << " i_poly=" << polygon_str << " result=" << clip_result.clip_result_code_ << " o_poly=" << clip_result.poly_.print(");

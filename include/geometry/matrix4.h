@@ -36,7 +36,7 @@ class Matrix4
 		explicit Matrix4(float init);
 		Matrix4(const Matrix4 &source);
 		Matrix4(float m_00, float m_01, float m_02, float m_03, float m_10, float m_11, float m_12, float m_13, float m_20, float m_21, float m_22, float m_23, float m_30, float m_31, float m_32, float m_33);
-		explicit Matrix4(const float source[4][4]);
+		explicit Matrix4(const float *source);
 		/*! attention, this function can cause the matrix to become invalid!
 			unless you are sure the matrix is invertible, check invalid() afterwards! */
 		Matrix4 &inverse();
@@ -65,14 +65,37 @@ class Matrix4
 inline Matrix4 operator * (const Matrix4 &a, const Matrix4 &b)
 {
 	Matrix4 aux;
-	for(int i = 0; i < 4; i++)
-		for(int k = 0; k < 4; k++)
+	for(int i = 0; i < 4; ++i)
+		for(int k = 0; k < 4; ++k)
 		{
 			aux[i][k] = 0;
-			for(int j = 0; j < 4; j++)
+			for(int j = 0; j < 4; ++j)
 				aux[i][k] += a[i][j] * b[j][k];
 		}
 	return aux;
+}
+
+inline Matrix4 operator + (const Matrix4 &a, const Matrix4 &b)
+{
+	Matrix4 aux;
+	for(int i = 0; i < 4; ++i)
+		for(int j = 0; j < 4; ++j)
+			aux[i][j] = a[i][j] + b[i][j];
+	return aux;
+}
+
+inline Matrix4 operator * (float f, const Matrix4 &m)
+{
+	Matrix4 aux;
+	for(int i = 0; i < 4; ++i)
+		for(int j = 0; j < 4; ++j)
+			aux[i][j] = f * m[i][j];
+	return aux;
+}
+
+inline Matrix4 operator * (const Matrix4 &m, float f)
+{
+	return f * m;
 }
 
 inline Vec3 operator * (const Matrix4 &a, const Vec3 &b)

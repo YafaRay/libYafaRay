@@ -161,10 +161,10 @@ bool ExportPython::smoothVerticesNormals(const char *name, double angle) noexcep
 	return true;
 }
 
-void ExportPython::writeMatrix(const std::string &name, const Matrix4 &m, std::ofstream &file) noexcept
+void ExportPython::writeMatrix(const Matrix4 &m, std::ofstream &file) noexcept
 {
 
-	file << "\"" << name << "\", " <<
+	file <<
 			m[0][0] << ", " << m[0][1] << ", " << m[0][2] << ", " << m[0][3] << ", " <<
 			m[1][0] << ", " << m[1][1] << ", " << m[1][2] << ", " << m[1][3] << ", " <<
 			m[2][0] << ", " << m[2][1] << ", " << m[2][2] << ", " << m[2][3] << ", " <<
@@ -216,7 +216,7 @@ void ExportPython::writeParam(const std::string &name, const Parameter &param, s
 		Matrix4 m;
 		param.getVal(m);
 		file << "yi.paramsSetMatrix(";
-		writeMatrix(name, m, file);
+		writeMatrix(m, file);
 		file << ")\n";
 	}
 	else
@@ -225,11 +225,29 @@ void ExportPython::writeParam(const std::string &name, const Parameter &param, s
 	}
 }
 
-bool ExportPython::addInstance(const char *base_object_name, const Matrix4 &obj_to_world) noexcept
+size_t ExportPython::createInstance() noexcept
 {
-	file_ << "yi.addInstance(";
-	writeMatrix(base_object_name, obj_to_world, file_);
-	file_ << ")\n";
+	file_ << "yi.createInstance()\n";
+	return current_instance_id_++;
+}
+
+bool ExportPython::addInstanceObject(size_t instance_id, const char *base_object_name) noexcept
+{
+	file_ << "yi.addInstanceObject(" << instance_id << ", \"" << base_object_name << "\")\n"; //FIXME Should I use the variable name "instance_id" for export instead?
+	return true;
+}
+
+bool ExportPython::addInstanceOfInstance(size_t instance_id, size_t base_instance_id) noexcept
+{
+	file_ << "yi.addInstanceOfInstance(" << instance_id << ", " << base_instance_id << ")\n"; //FIXME Should I use the variable name "instance_id" for export instead?
+	return true;
+}
+
+bool ExportPython::addInstanceMatrix(size_t instance_id, const Matrix4 &obj_to_world, float time) noexcept
+{
+	file_ << "yi.addInstanceMatrix(" << instance_id << ", "; //FIXME Should I use the variable name "instance_id" for export instead?
+	writeMatrix(obj_to_world, file_);
+	file_ << ", " << time << ")\n";
 	return true;
 }
 

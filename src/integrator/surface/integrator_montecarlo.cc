@@ -139,7 +139,7 @@ Rgb MonteCarloIntegrator::diracLight(RandomGenerator &random_generator, ColorLay
 				Rgba *color_layer_mat_index_mask_shadow = color_layers->find(LayerDef::MatIndexMaskShadow);
 				Rgba *color_layer_obj_index_mask_shadow = color_layers->find(LayerDef::ObjIndexMaskShadow);
 				float mask_obj_index = 0.f, mask_mat_index = 0.f;
-				if(const Object *casting_object = shadow_casting_primitive->getObject()) mask_obj_index = casting_object->getIndex();    //Object index of the object casting the shadow
+				mask_obj_index = shadow_casting_primitive->getObjectIndex();    //Object index of the object casting the shadow
 				if(const Material *casting_material = shadow_casting_primitive->getMaterial()) mask_mat_index = casting_material->getIndex();    //Material index of the object casting the shadow
 				if(color_layer_mat_index_mask_shadow && mask_mat_index == mask_params_.mat_index_) *color_layer_mat_index_mask_shadow += Rgba{1.f};
 				if(color_layer_obj_index_mask_shadow && mask_obj_index == mask_params_.obj_index_) *color_layer_obj_index_mask_shadow += Rgba{1.f};
@@ -250,7 +250,7 @@ Rgb MonteCarloIntegrator::areaLightSampleLight(Halton &hal_2, Halton &hal_3, Ran
 			if(color_layers && (shadowed || ls.pdf_ <= 1e-6f) && color_layers->getFlags().hasAny(LayerDef::Flags::IndexLayers) && shadow_casting_primitive)
 			{
 				float mask_obj_index = 0.f, mask_mat_index = 0.f;
-				if(const Object *casting_object = shadow_casting_primitive->getObject()) mask_obj_index = casting_object->getIndex();    //Object index of the object casting the shadow
+				mask_obj_index = shadow_casting_primitive->getObjectIndex();    //Object index of the object casting the shadow
 				if(const Material *casting_material = shadow_casting_primitive->getMaterial()) mask_mat_index = casting_material->getIndex();    //Material index of the object casting the shadow
 				if(layer_mat_index_mask_shadow && mask_mat_index == mask_params_.mat_index_) layer_mat_index_mask_shadow->accum_ += Rgba{1.f};
 				if(layer_obj_index_mask_shadow && mask_obj_index == mask_params_.obj_index_) layer_obj_index_mask_shadow->accum_ += Rgba{1.f};

@@ -27,8 +27,6 @@
 #include "image/image_buffers.h"
 #include "image/image_layers.h"
 #include "color/color_layers.h"
-#include "scene/scene.h"
-
 #include <ImfVersion.h>
 #include <ImfOutputFile.h>
 #include <ImfChannelList.h>

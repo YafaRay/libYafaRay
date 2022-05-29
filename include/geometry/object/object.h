@@ -53,9 +53,6 @@ class Object
 		/*! write the primitive pointers to the given array
 			\return number of written primitives */
 		virtual std::vector<const Primitive *> getPrimitives() const = 0;
-		/*! sample object surface */
-		//virtual void sample(float s_1, float s_2, Point3 &p, Vec3 &n)  const = 0;
-		/*! Sets the object visibility to the renderer (is added or not to the kdtree) */
 		virtual void setVisibility(const Visibility &visibility) = 0;
 		/*! Indicates that this object should be used as base object for instances */
 		virtual void useAsBaseObject(bool v) = 0;
@@ -66,8 +63,8 @@ class Object
 		virtual void setIndex(unsigned int new_obj_index) = 0;
 		virtual void setIndexAuto(unsigned int new_obj_index) = 0;
 		virtual unsigned int getIndex() const = 0;
-		virtual unsigned int getIndexAuto() const = 0;
 		virtual Rgb getIndexAutoColor() const = 0;
+		virtual unsigned int getIndexAuto() const = 0;
 		virtual const Light *getLight() const = 0;
 		/*! set a light source to be associated with this object */
 		virtual void setLight(const Light *light) = 0;

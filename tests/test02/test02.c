@@ -21,7 +21,7 @@
  */
 
 #include "yafaray_c_api.h"
-#include <stddef.h>
+#define NULL 0
 
 int main()
 {
@@ -5030,14 +5030,22 @@ int main()
 	for(loop_x = x_start; loop_x < x_end; loop_x += instances_distance)
 		for(loop_y = y_start; loop_y < y_end; loop_y += instances_distance)
 			for(loop_z = z_start; loop_z < z_end; loop_z += instances_distance)
-				yafaray_addInstance(yi, "Cube", instances_scale, 0.f, 0.f, loop_x, 0.f, instances_scale, 0.f, loop_y, 0.f, 0.f, instances_scale, loop_z, 0.f, 0.f, 0.f, 1.f);
+			{
+				const yafaray_index_t instance_id = yafaray_createInstance(yi);
+				yafaray_addInstanceObject(yi, instance_id, "Cube");
+				yafaray_addInstanceMatrix(yi, instance_id, instances_scale, 0.f, 0.f, loop_x, 0.f, instances_scale, 0.f, loop_y, 0.f, 0.f, instances_scale, loop_z, 0.f, 0.f, 0.f, 1.f, 0.f);
+			}
 
 	x_start = 0.f;
 	x_end = 3.f;
 	for(loop_x = x_start; loop_x < x_end; loop_x += instances_distance)
 		for(loop_y = y_start; loop_y < y_end; loop_y += instances_distance)
 			for(loop_z = z_start; loop_z < z_end; loop_z += instances_distance)
-				yafaray_addInstance(yi, "Sphere", instances_scale, 0.f, 0.f, loop_x, 0.f, instances_scale, 0.f, loop_y, 0.f, 0.f, instances_scale, loop_z, 0.f, 0.f, 0.f, 1.f);
+			{
+				const yafaray_index_t instance_id = yafaray_createInstance(yi);
+				yafaray_addInstanceObject(yi, instance_id, "Sphere");
+				yafaray_addInstanceMatrix(yi, instance_id, instances_scale, 0.f, 0.f, loop_x, 0.f, instances_scale, 0.f, loop_y, 0.f, 0.f, instances_scale, loop_z, 0.f, 0.f, 0.f, 1.f, 0.f);
+			}
 
 	yafaray_paramsSetFloat(yi, "aperture", 0);
 	yafaray_paramsSetFloat(yi, "bokeh_rotation", 0);

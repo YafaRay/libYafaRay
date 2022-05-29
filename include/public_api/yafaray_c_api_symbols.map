@@ -24,8 +24,11 @@ LIBYAFARAY_4.0.0 {
         yafaray_addQuadWithUv;
         yafaray_addUv;
         yafaray_smoothMesh;
-        yafaray_addInstance;
-        yafaray_addInstanceArray;
+        yafaray_createInstance;
+        yafaray_addInstanceObject;
+        yafaray_addInstanceOfInstance;
+        yafaray_addInstanceMatrix;
+        yafaray_addInstanceMatrixArray;
         yafaray_paramsSetVector;
         yafaray_paramsSetString;
         yafaray_paramsSetBool;

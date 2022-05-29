@@ -20,44 +20,55 @@
 #ifndef YAFARAY_OBJECT_INSTANCE_H
 #define YAFARAY_OBJECT_INSTANCE_H
 
-#include "object.h"
+#include "geometry/object/object.h"
+#include "geometry/matrix4.h"
+#include <memory>
+#include <vector>
 
 BEGIN_YAFARAY
 
-class Matrix4;
+class Primitive;
+class Bound;
+enum class Visibility : int;
 
 class ObjectInstance final : public Object
 {
 	public:
-		ObjectInstance(const Object &base_object, const Matrix4 &obj_to_world);
-		int numPrimitives() const override { return primitive_instances_.size(); }
-		std::vector<const Primitive *> getPrimitives() const override;
-		std::string getName() const override { return base_object_.getName(); }
+		void addPrimitives(const std::vector<const Primitive *> &base_primitives);
+		void addObjToWorldMatrix(const Matrix4 &obj_to_world, float time);
+		void addObjToWorldMatrix(Matrix4 &&obj_to_world, float time);
+		std::vector<const Matrix4 *> getObjToWorldMatrices() const;
+		const Matrix4 &getObjToWorldMatrix(size_t time_step) const { return time_steps_[time_step].obj_to_world_; }
+		Matrix4 getObjToWorldMatrixAtTime(float time) const;
+		float getObjToWorldTime(size_t time_step) const { return time_steps_[time_step].time_; }
+
+		std::string getName() const override { return "instance"; }
 		void setName(const std::string &name) override { }
-		/*! sample object surface */
-		//void sample(float s_1, float s_2, Point3 &p, Vec3 &n) const override;
-		/*! Sets the object visibility to the renderer (is added or not to the kdtree) */
+		int numPrimitives() const override { return static_cast<int>(primitive_instances_.size()); }
+		std::vector<const Primitive *> getPrimitives() const override;
 		void setVisibility(const Visibility &visibility) override { }
-		/*! Indicates that this object should be used as base object for instances */
 		void useAsBaseObject(bool v) override { }
-		/*! Returns if this object should be used for rendering and/or shadows. */
-		Visibility getVisibility() const override { return base_object_.getVisibility(); }
-		/*! Returns if this object is used as base object for instances. */
+		Visibility getVisibility() const override;
 		bool isBaseObject() const override { return false; }
 		void setIndex(unsigned int new_obj_index) override { }
 		void setIndexAuto(unsigned int new_obj_index) override { }
-		unsigned int getIndex() const override { return base_object_.getIndex(); }
-		unsigned int getIndexAuto() const override { return base_object_.getIndexAuto(); }
-		Rgb getIndexAutoColor() const override { return base_object_.getIndexAutoColor(); }
-		const Light *getLight() const override { return base_object_.getLight(); }
-		/*! set a light source to be associated with this object */
+		unsigned int getIndex() const override;
+		Rgb getIndexAutoColor() const override;
+		unsigned int getIndexAuto() const override;
+		const Light *getLight() const override;
 		void setLight(const Light *light) override { }
-		const Matrix4 *getObjToWorldMatrix() const { return obj_to_world_.get(); }
-		bool calculateObject(const std::unique_ptr<const Material> *material) override { return true; }
+		bool calculateObject(const std::unique_ptr<const Material> *material) override { return false; }
+		bool hasMotionBlur() const override { return time_steps_.size() > 2; }
 
 	private:
-		const Object &base_object_;
-		std::unique_ptr<const Matrix4> obj_to_world_;
+		struct TimeStepGeometry final
+		{
+			TimeStepGeometry(const Matrix4 &obj_to_world, float time) : obj_to_world_{obj_to_world}, time_{time} { }
+			TimeStepGeometry(Matrix4 &&obj_to_world, float time) : obj_to_world_{std::move(obj_to_world)}, time_{time} { }
+			Matrix4 obj_to_world_;
+			float time_ = 0.f;
+		};
+		std::vector<TimeStepGeometry> time_steps_;
 		std::vector<std::unique_ptr<const Primitive>> primitive_instances_;
 };
 

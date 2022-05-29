@@ -78,7 +78,7 @@ inline std::pair<std::unique_ptr<const SurfacePoint>, float> Accelerator::inters
 	if(accelerator_intersect_data.hit_ && accelerator_intersect_data.hit_primitive_)
 	{
 		const Point3 hit_point{ray.from_ + accelerator_intersect_data.t_max_ * ray.dir_};
-		auto sp = accelerator_intersect_data.hit_primitive_->getSurface(ray.differentials_.get(), hit_point, accelerator_intersect_data, nullptr, camera);
+		auto sp = accelerator_intersect_data.hit_primitive_->getSurface(ray.differentials_.get(), hit_point, accelerator_intersect_data, camera);
 		return {std::move(sp), accelerator_intersect_data.t_max_};
 	}
 	return {nullptr, ray.tmax_};
@@ -166,7 +166,7 @@ inline bool Accelerator::primitiveIntersection(AcceleratorTsIntersectData &accel
 				{
 					if(depth >= max_depth) return true;
 					const Point3 hit_point{ray.from_ + accelerator_intersect_data.t_hit_ * ray.dir_};
-					const auto sp = primitive->getSurface(ray.differentials_.get(), hit_point, accelerator_intersect_data, nullptr, camera);
+					const auto sp = primitive->getSurface(ray.differentials_.get(), hit_point, accelerator_intersect_data, camera);
 					if(sp) accelerator_intersect_data.transparent_color_ *= sp->getTransparency(ray.dir_, camera);
 					++depth;
 				}

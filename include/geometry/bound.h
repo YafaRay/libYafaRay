@@ -24,8 +24,8 @@
 #ifndef YAFARAY_BOUND_H
 #define YAFARAY_BOUND_H
 
-#include "common/yafaray_common.h"
 #include "ray.h"
+#include "geometry/matrix4.h"
 
 BEGIN_YAFARAY
 
@@ -96,6 +96,7 @@ class Bound
 		void setMinZ(float z) { a_.z() = z;};
 		//! Adjust bound size to include point p
 		void include(const Point3 &p);
+		void include(const Bound &b);
 		//! Returns true if the point is inside the bound
 		bool includes(const Point3 &pn) const
 		{
@@ -135,6 +136,12 @@ inline void Bound::include(const Point3 &p)
 	g_.x() = std::max(g_.x(), p.x());
 	g_.y() = std::max(g_.y(), p.y());
 	g_.z() = std::max(g_.z(), p.z());
+}
+
+inline void Bound::include(const Bound &b)
+{
+	include(b.a_);
+	include(b.g_);
 }
 
 inline Bound::Cross Bound::cross(const Ray &ray, float t_max) const
@@ -207,6 +214,11 @@ inline Bound::Cross Bound::cross(const Ray &ray, float t_max) const
 	}
 
 	return {};
+}
+
+inline Bound operator * (const Bound &b, const Matrix4 &m)
+{
+	return { m * b.a_, m * b.g_ };
 }
 
 END_YAFARAY

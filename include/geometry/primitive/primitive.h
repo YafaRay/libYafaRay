@@ -42,6 +42,8 @@ class Matrix4;
 class Vec3;
 class Object;
 class Camera;
+class Rgb;
+class Light;
 
 class Primitive
 {
@@ -49,23 +51,31 @@ class Primitive
 		virtual ~Primitive() = default;
 		/*! return the object bound in global ("world") coordinates */
 		virtual Bound getBound() const = 0;
-		virtual Bound getBound(const Matrix4 *obj_to_world) const = 0;
+		virtual Bound getBound(const Matrix4 &obj_to_world) const = 0;
 		virtual bool clippingSupport() const = 0;
 		virtual IntersectData intersect(const Ray &ray) const = 0;
-		virtual IntersectData intersect(const Ray &ray, const Matrix4 *obj_to_world) const = 0;
-		virtual std::unique_ptr<const SurfacePoint> getSurface(const RayDifferentials *ray_differentials, const Point3 &hit, const IntersectData &data, const Matrix4 *obj_to_world, const Camera *camera) const = 0;
+		virtual IntersectData intersect(const Ray &ray, const Matrix4 &obj_to_world) const = 0;
+		virtual std::unique_ptr<const SurfacePoint> getSurface(const RayDifferentials *ray_differentials, const Point3 &hit, const IntersectData &data, const Camera *camera) const = 0;
+		virtual std::unique_ptr<const SurfacePoint> getSurface(const RayDifferentials *ray_differentials, const Point3 &hit, const IntersectData &data, const Matrix4 &obj_to_world, const Camera *camera) const = 0;
 		virtual const Material *getMaterial() const = 0;
-		virtual float surfaceArea(const Matrix4 *obj_to_world, float time) const = 0;
-		float surfaceArea(float time) const { return surfaceArea(nullptr, time); }
+		virtual float surfaceArea(float time) const = 0;
+		virtual float surfaceArea(const Matrix4 &obj_to_world, float time) const = 0;
 		virtual float getDistToNearestEdge(float u, float v, const Vec3 &dp_du_abs, const Vec3 &dp_dv_abs) const = 0;
-		virtual Vec3 getGeometricNormal(const Matrix4 *obj_to_world, float u, float v, float time) const = 0;
-		Vec3 getGeometricNormal(const Matrix4 *obj_to_world, float time) const { return getGeometricNormal(obj_to_world, 0.f, 0.f, time); }
-		Vec3 getGeometricNormal(float time) const { return getGeometricNormal(nullptr, time); }
-		virtual std::pair<Point3, Vec3> sample(float s_1, float s_2, const Matrix4 *obj_to_world, float time) const = 0;
-		std::pair<Point3, Vec3> sample(float s_1, float s_2, float time) const { return sample(s_1, s_2, nullptr, time); }
+		virtual Vec3 getGeometricNormal(float u, float v, float time) const = 0;
+		virtual Vec3 getGeometricNormal(const Matrix4 &obj_to_world, float u, float v, float time) const = 0;
+		Vec3 getGeometricNormal(float time) const { return getGeometricNormal(0.f, 0.f, time); }
+		Vec3 getGeometricNormal(const Matrix4 &obj_to_world, float time) const { return getGeometricNormal(obj_to_world, 0.f, 0.f, time); }
+		virtual std::pair<Point3, Vec3> sample(float s_1, float s_2, float time) const = 0;
+		virtual std::pair<Point3, Vec3> sample(float s_1, float s_2, const Matrix4 &obj_to_world, float time) const = 0;
 		virtual const Object *getObject() const = 0;
 		virtual Visibility getVisibility() const = 0;
-		virtual PolyDouble::ClipResultWithBound clipToBound(Logger &logger, const std::array<Vec3Double, 2> &bound, const ClipPlane &clip_plane, const PolyDouble &poly, const Matrix4 *obj_to_world) const;
+		virtual unsigned int getObjectIndex() const = 0;
+		virtual unsigned int getObjectIndexAuto() const = 0;
+		virtual Rgb getObjectIndexAutoColor() const = 0;
+		virtual const Light *getObjectLight() const = 0;
+		virtual bool hasObjectMotionBlur() const = 0;
+		virtual PolyDouble::ClipResultWithBound clipToBound(Logger &logger, const std::array<Vec3Double, 2> &bound, const ClipPlane &clip_plane, const PolyDouble &poly) const;
+		virtual PolyDouble::ClipResultWithBound clipToBound(Logger &logger, const std::array<Vec3Double, 2> &bound, const ClipPlane &clip_plane, const PolyDouble &poly, const Matrix4 &obj_to_world) const;
 };
 
 END_YAFARAY

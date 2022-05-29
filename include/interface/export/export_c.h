@@ -41,7 +41,10 @@ class ExportC: public Interface
 		bool endGeometry() noexcept override;
 		unsigned int getNextFreeId() noexcept override;
 		bool endObject() noexcept override;
-		bool addInstance(const char *base_object_name, const Matrix4 &obj_to_world) noexcept override;
+		size_t createInstance() noexcept override;
+		bool addInstanceObject(size_t instance_id, const char *base_object_name) noexcept override;
+		bool addInstanceOfInstance(size_t instance_id, size_t base_instance_id) noexcept override;
+		bool addInstanceMatrix(size_t instance_id, const Matrix4 &obj_to_world, float time) noexcept override;
 		int addVertex(double x, double y, double z, size_t time_step) noexcept override; //!< add vertex to mesh; returns index to be used for addTriangle/addQuad
 		int addVertex(double x, double y, double z, double ox, double oy, double oz, size_t time_step) noexcept override; //!< add vertex with Orco to mesh; returns index to be used for addTriangle/addQuad
 		void addVertexNormal(double nx, double ny, double nz, size_t time_step) noexcept override; //!< add vertex normal to mesh; the vertex that will be attached to is the last one inserted by addVertex method
@@ -72,7 +75,7 @@ class ExportC: public Interface
 	protected:
 		void writeParamMap(const ParamMap &param_map, int indent = 1) noexcept;
 		void writeParamList(int indent) noexcept;
-		static void writeMatrix(const std::string &name, const Matrix4 &m, std::ofstream &file) noexcept;
+		static void writeMatrix(const Matrix4 &m, std::ofstream &file) noexcept;
 		static void writeParam(const std::string &name, const Parameter &param, std::ofstream &file, ColorSpace color_space, float gamma) noexcept;
 		static std::string generateHeader();
 		std::string sectionSplit();
@@ -81,6 +84,7 @@ class ExportC: public Interface
 		std::ofstream file_;
 		std::string file_name_;
 		std::string current_material_;
+		size_t current_instance_id_ = 0;
 		int n_uvs_ = 0;
 		unsigned int next_obj_ = 0;
 		float gamma_ = 1.f;

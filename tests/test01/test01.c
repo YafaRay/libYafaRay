@@ -22,7 +22,7 @@
  */
 
 #include "yafaray_c_api.h"
-#include <stddef.h>
+#define NULL 0
 
 int main()
 {

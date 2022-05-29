@@ -16,13 +16,11 @@
  *      Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-#include "geometry/object/object_basic.h"
-#include "geometry/primitive/primitive_sphere.h"
-#include "common/param.h"
+#include "geometry/object/object_base.h"
 
 BEGIN_YAFARAY
 
-void ObjectBasic::setIndexAuto(unsigned int new_obj_index)
+void ObjectBase::setIndexAuto(unsigned int new_obj_index)
 {
 	index_auto_ = new_obj_index;
 	srand(index_auto_);

@@ -20,13 +20,13 @@
 #ifndef YAFARAY_OBJECT_PRIMITIVE_H
 #define YAFARAY_OBJECT_PRIMITIVE_H
 
-#include "object_basic.h"
+#include "object_base.h"
 
 BEGIN_YAFARAY
 
 /*! simple "container" to handle primitives as objects, for objects that
 	consist of just one primitive like spheres etc. */
-class PrimitiveObject final : public ObjectBasic
+class PrimitiveObject final : public ObjectBase
 {
 	public:
 		void setPrimitive(const Primitive *primitive) { primitive_ = primitive; }

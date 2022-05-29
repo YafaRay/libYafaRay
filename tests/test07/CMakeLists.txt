@@ -16,11 +16,14 @@
 #      Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 #
 
-target_sources(libyafaray4
-	PRIVATE
-		object.cc
-		object_base.cc
-		object_curve.cc
-		object_mesh.cc
-		object_instance.cc
-)
+add_executable(yafaray_test07 test07.c)
+set_target_properties(yafaray_test07 PROPERTIES C_STANDARD 90 C_STANDARD_REQUIRED ON C_EXTENSIONS OFF)
+target_link_libraries(yafaray_test07 PRIVATE libyafaray4)
+target_include_directories(yafaray_test07 PRIVATE ${PROJECT_BINARY_DIR}/include)
+
+install(TARGETS yafaray_test07
+		RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+		LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+		ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+		)
+#set_target_properties(yafaray_test07 PROPERTIES BUILD_WITH_INSTALL_RPATH TRUE INSTALL_RPATH "@executable_path/;@executable_path/../../src")

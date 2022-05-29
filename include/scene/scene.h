@@ -20,17 +20,19 @@
 #ifndef YAFARAY_SCENE_H
 #define YAFARAY_SCENE_H
 
-#include "common/yafaray_common.h"
-#include "common/layers.h"
-#include "render/render_view.h"
-#include "render/render_control.h"
-#include "image/image.h"
 #include "common/aa_noise_params.h"
+#include "common/layers.h"
 #include "common/mask_edge_toon_params.h"
+#include "common/yafaray_common.h"
+#include "geometry/object/object.h"
+#include "geometry/object/object_instance.h"
+#include "image/image.h"
 #include "render/render_callbacks.h"
-#include <vector>
-#include <map>
+#include "render/render_control.h"
+#include "render/render_view.h"
 #include <list>
+#include <map>
+#include <vector>
 
 BEGIN_YAFARAY
 
@@ -77,7 +79,10 @@ class Scene final
 		bool smoothVerticesNormals(const std::string &name, float angle);
 		Object *createObject(const std::string &name, const ParamMap &params);
 		bool endObject();
-		bool addInstance(const std::string &base_object_name, const Matrix4 &obj_to_world);
+		size_t createInstance();
+		bool addInstanceObject(size_t instance_id, const std::string &base_object_name);
+		bool addInstanceOfInstance(size_t instance_id, size_t base_instance_id);
+		bool addInstanceMatrix(size_t instance_id, const Matrix4 &obj_to_world, float time);
 		bool updateObjects();
 		Object *getObject(const std::string &name) const;
 		const Accelerator *getAccelerator() const { return accelerator_.get(); }
@@ -193,6 +198,7 @@ class Scene final
 		std::unique_ptr<const Accelerator> accelerator_;
 		Object *current_object_ = nullptr;
 		std::map<std::string, std::unique_ptr<Object>> objects_;
+		std::vector<std::unique_ptr<ObjectInstance>> instances_;
 		std::map<std::string, std::unique_ptr<Light>> lights_;
 		std::map<std::string, std::unique_ptr<std::unique_ptr<const Material>>> materials_;
 		RenderControl render_control_;

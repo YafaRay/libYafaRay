@@ -20,7 +20,7 @@
 #ifndef YAFARAY_OBJECT_MESH_H
 #define YAFARAY_OBJECT_MESH_H
 
-#include "object_basic.h"
+#include "object_base.h"
 #include "geometry/vector.h"
 #include "geometry/uv.h"
 #include <vector>
@@ -32,7 +32,7 @@ struct Uv;
 class FacePrimitive;
 class Material;
 
-class MeshObject : public ObjectBasic
+class MeshObject : public ObjectBase
 {
 	public:
 		static Object *factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params);

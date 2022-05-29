@@ -1,7 +1,7 @@
 /****************************************************************************
  *      This is part of the libYafaRay package
  *
- *      test05.c : scene with texture and motion blur using mesh_bezier
+ *      test07.c : scene with group instances and instances motion blur
  *      Should work even with a "barebones" libYafaRay built without
  *      any dependencies
  * 
@@ -218,10 +218,7 @@ int main()
 	yafaray_paramsSetInt(yi, "num_vertices", 8);
 	yafaray_paramsSetInt(yi, "object_index", 5);
 	yafaray_paramsSetString(yi, "type", "mesh");
-	yafaray_paramsSetBool(yi, "motion_blur_bezier", YAFARAY_BOOL_TRUE);
 	yafaray_paramsSetString(yi, "visibility", "visible");
-	yafaray_paramsSetFloat(yi, "time_range_start", 0.f);
-	yafaray_paramsSetFloat(yi, "time_range_end", 0.9f);
 	yafaray_createObject(yi, "Cube_TGA");
 	yafaray_paramsClearAll(yi);
 
@@ -234,34 +231,16 @@ int main()
 	yafaray_addVertexWithOrco(yi, 2.36442, -0.81854, 1.00136e-05, 1, 1, -1);
 	yafaray_addVertexWithOrco(yi, 2.36442, -0.81854, 2.00001, 1, 1, 1);
 
-	yafaray_addVertexWithOrcoTimeStep(yi, 1.364422, -1.81854, 1.00136e-05, -1, -1, -1, 1);
-	yafaray_addVertexWithOrcoTimeStep(yi, 1.364422, -1.81854, 2.00001, -1, -1, 1, 1);
-	yafaray_addVertexWithOrcoTimeStep(yi, 1.364422, 0.18146, 1.00136e-05, -1, 1, -1, 1);
-	yafaray_addVertexWithOrcoTimeStep(yi, 1.364422, 0.18146, 2.00001, -1, 1, 1, 1);
-	yafaray_addVertexWithOrcoTimeStep(yi, 3.36442, -1.81854, 1.00136e-05, 1, -1, -1, 1);
-	yafaray_addVertexWithOrcoTimeStep(yi, 3.36442, -1.81854, 2.00001, 1, -1, 1, 1);
-	yafaray_addVertexWithOrcoTimeStep(yi, 3.36442, 0.181464, 1.00136e-05, 1, 1, -1, 1);
-	yafaray_addVertexWithOrcoTimeStep(yi, 3.36442, 0.181464, 2.00001, 1, 1, 1, 1);
-
-	yafaray_addVertexWithOrcoTimeStep(yi, 1.364422, -0.81854, 1.00136e-05, -1, -1, -1, 2);
-	yafaray_addVertexWithOrcoTimeStep(yi, 1.364422, -0.81854, 2.00001, -1, -1, 1, 2);
-	yafaray_addVertexWithOrcoTimeStep(yi, 1.364422, 1.18146, 1.00136e-05, -1, 1, -1, 2);
-	yafaray_addVertexWithOrcoTimeStep(yi, 1.364422, 1.18146, 2.00001, -1, 1, 1, 2);
-	yafaray_addVertexWithOrcoTimeStep(yi, 3.36442, -0.81854, 1.00136e-05, 1, -1, -1, 2);
-	yafaray_addVertexWithOrcoTimeStep(yi, 3.36442, -0.81854, 2.00001, 1, -1, 1, 2);
-	yafaray_addVertexWithOrcoTimeStep(yi, 3.36442, 1.181464, 1.00136e-05, 1, 1, -1, 2);
-	yafaray_addVertexWithOrcoTimeStep(yi, 3.36442, 1.181464, 2.00001, 1, 1, 1, 2);
-
 	yafaray_setCurrentMaterial(yi, "Material_TGA");
 	yafaray_addQuad(yi, 2, 0, 1, 3);
 	yafaray_addQuad(yi, 3, 7, 6, 2);
 	yafaray_addQuad(yi, 7, 5, 4, 6);
 	yafaray_addQuad(yi, 0, 4, 5, 1);
 	yafaray_addQuad(yi, 0, 2, 6, 4);
-	yafaray_addQuad(yi, 5, 7, 3, 1);
+	yafaray_addTriangle(yi, 5, 7, 3);
+	yafaray_addTriangle(yi, 5, 3, 1);
 	yafaray_endObject(yi);
 	yafaray_paramsClearAll(yi);
-
 
 	yafaray_paramsSetBool(yi, "has_orco", YAFARAY_BOOL_FALSE);
 	yafaray_paramsSetBool(yi, "has_uv", YAFARAY_BOOL_FALSE);
@@ -283,6 +262,34 @@ int main()
 	yafaray_addTriangle(yi, 0, 3, 2);
 	yafaray_endObject(yi);
 	yafaray_paramsClearAll(yi);
+
+	/* Creating regular instance */
+	yafaray_index_t instance_id = yafaray_createInstance(yi);
+	yafaray_addInstanceObject(yi, instance_id, "Cube_TGA");
+	yafaray_addInstanceMatrix(yi, instance_id, 0.5f, 0.f, 0.f, 0.f, 0.f, 0.5f, 0.f, 0.f, 0.f, 0.f, 0.5f, 2.5f, 0.f, 0.f, 0.f, 1.f, 0.f);
+
+	/* Creating group instance with several objects */
+	instance_id = yafaray_createInstance(yi);
+	yafaray_addInstanceObject(yi, instance_id, "Cube_TGA");
+	yafaray_addInstanceObject(yi, instance_id, "Plane");
+	yafaray_addInstanceMatrix(yi, instance_id, 0.2f, 0.f, 0.f, 3.f, 0.f, 0.2f, 0.f, 0.f, 0.f, 0.f, 0.2f, 0.5f, 0.f, 0.f, 0.f, 1.f, 0.f);
+
+	/* Creating group instance also adding other instances */
+	instance_id = yafaray_createInstance(yi);
+	yafaray_addInstanceObject(yi, instance_id, "Cube_TGA");
+	yafaray_addInstanceOfInstance(yi, instance_id, 0);
+	yafaray_addInstanceOfInstance(yi, instance_id, instance_id - 1);
+	yafaray_addInstanceMatrix(yi, instance_id, 0.4f, 0.f, 0.f, -6.f, 0.f, 0.4f, 0.f, 0.f, 0.f, 0.f, 0.4f, 0.5f, 0.f, 0.f, 0.f, 1.f, 0.f);
+
+	instance_id = yafaray_createInstance(yi);
+	yafaray_addInstanceOfInstance(yi, instance_id, instance_id - 1);
+	yafaray_addInstanceMatrix(yi, instance_id, 1.2f, 0.f, 0.f, 4.0f, 0.f, 1.2f, 0.f, 5.f, 0.f, 0.f, 1.2f, 0.5f, 0.f, 0.f, 0.f, 1.f, 0.f);
+	yafaray_addInstanceMatrix(yi, instance_id, 1.2f, 0.f, 0.f, 4.5f, 0.f, 1.2f, 0.f, 7.f, 0.f, 0.f, 1.2f, 0.5f, 0.f, 0.f, 0.f, 1.f, 0.5f);
+	yafaray_addInstanceMatrix(yi, instance_id, 1.2f, 0.f, 0.f, 5.5f, 0.f, 1.2f, 0.f, 5.f, 0.f, 0.f, 1.2f, 0.5f, 0.f, 0.f, 0.f, 1.f, 1.f);
+
+	instance_id = yafaray_createInstance(yi);
+	yafaray_addInstanceOfInstance(yi, instance_id, instance_id - 2);
+	yafaray_addInstanceMatrix(yi, instance_id, 0.4f, 0.2f, 0.2f, -6.f, 0.f, 0.4f, 0.f, 3.f, 0.f, 0.f, 0.4f, 0.5f, 0.f, 0.f, 0.f, 1.f, 0.f);
 
 	yafaray_paramsSetFloat(yi, "aperture", 0);
 	yafaray_paramsSetFloat(yi, "bokeh_rotation", 0);
@@ -326,6 +333,8 @@ int main()
 	yafaray_paramsSetInt(yi, "shadowDepth", 2);
 	yafaray_paramsSetBool(yi, "transpShad", YAFARAY_BOOL_FALSE);
 	yafaray_paramsSetString(yi, "type", "directlighting");
+	yafaray_paramsSetBool(yi, "time_forced", YAFARAY_BOOL_FALSE);
+	yafaray_paramsSetFloat(yi, "time_forced_value", 1.f);
 	yafaray_createIntegrator(yi, "default");
 	yafaray_paramsClearAll(yi);
 
@@ -336,7 +345,7 @@ int main()
 	yafaray_defineLayer(yi);
 	yafaray_paramsClearAll(yi);
 
-	yafaray_paramsSetInt(yi, "AA_minsamples", 30);
+	yafaray_paramsSetInt(yi, "AA_minsamples", 3);
 	yafaray_paramsSetInt(yi, "AA_passes", 1);
 	yafaray_paramsSetInt(yi, "AA_inc_samples", 1);
 	yafaray_paramsSetString(yi, "background_name", "world_background");
@@ -344,8 +353,8 @@ int main()
 	yafaray_paramsSetFloat(yi, "AA_pixelwidth", 1.5);
 	yafaray_paramsSetString(yi, "scene_accelerator", "yafaray-kdtree-original");
 	yafaray_paramsSetString(yi, "integrator_name", "default");
-	yafaray_paramsSetInt(yi, "threads", -1);
-	yafaray_paramsSetInt(yi, "threads_photons", -1);
+	yafaray_paramsSetInt(yi, "threads", 1);
+	yafaray_paramsSetInt(yi, "threads_photons", 1);
 	yafaray_paramsSetInt(yi, "width", 480);
 	yafaray_paramsSetInt(yi, "height", 270);
 	yafaray_paramsSetInt(yi, "xstart", 0);
@@ -354,7 +363,7 @@ int main()
 	yafaray_paramsClearAll(yi);
 
 	/* Creating image output */
-	yafaray_paramsSetString(yi, "image_path", "./test05-output1.tga");
+	yafaray_paramsSetString(yi, "image_path", "./test07-output1.tga");
 	yafaray_paramsSetString(yi, "color_space", "sRGB");
 	yafaray_paramsSetString(yi, "badge_position", "top");
 	yafaray_createOutput(yi, "output1_tga");

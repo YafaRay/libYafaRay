@@ -123,9 +123,24 @@ int Interface::addUv(float u, float v) noexcept { return scene_->addUv(u, v); }
 
 bool Interface::smoothVerticesNormals(const char *name, double angle) noexcept { return scene_->smoothVerticesNormals(name, angle); }
 
-bool Interface::addInstance(const char *base_object_name, const Matrix4 &obj_to_world) noexcept
+size_t Interface::createInstance() noexcept
 {
-	return scene_->addInstance(base_object_name, obj_to_world);
+	return scene_->createInstance();
+}
+
+bool Interface::addInstanceObject(size_t instance_id, const char *base_object_name) noexcept
+{
+	return scene_->addInstanceObject(instance_id, base_object_name);
+}
+
+bool Interface::addInstanceOfInstance(size_t instance_id, size_t base_instance_id) noexcept
+{
+	return scene_->addInstanceOfInstance(instance_id, base_instance_id);
+}
+
+bool Interface::addInstanceMatrix(size_t instance_id, const Matrix4 &obj_to_world, float time) noexcept
+{
+	return scene_->addInstanceMatrix(instance_id, obj_to_world, time);
 }
 
 void Interface::paramsSetVector(const char *name, double x, double y, double z) noexcept

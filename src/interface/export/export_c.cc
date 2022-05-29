@@ -48,7 +48,7 @@ std::string ExportC::generateHeader()
 	ss << "/* To run the executable */\n";
 	ss << "/* LD_LIBRARY_PATH=(path to folder with libyafaray libs) ./libyafaray_example_executable */\n\n";
 	ss << "#include <yafaray_c_api.h>\n";
-	ss << "#include <stddef.h>\n\n";
+	ss << "#define NULL 0\n\n";
 	ss << "void section_0(yafaray_Interface_t *yi)\n{\n";
 	return ss.str();
 }
@@ -225,9 +225,9 @@ bool ExportC::smoothVerticesNormals(const char *name, double angle) noexcept
 	return true;
 }
 
-void ExportC::writeMatrix(const std::string &name, const Matrix4 &m, std::ofstream &file) noexcept
+void ExportC::writeMatrix(const Matrix4 &m, std::ofstream &file) noexcept
 {
-	file << "\"" << name << "\", " <<
+	file <<
 			m[0][0] << ", " << m[0][1] << ", " << m[0][2] << ", " << m[0][3] << ", " <<
 			m[1][0] << ", " << m[1][1] << ", " << m[1][2] << ", " << m[1][3] << ", " <<
 			m[2][0] << ", " << m[2][1] << ", " << m[2][2] << ", " << m[2][3] << ", " <<
@@ -279,7 +279,7 @@ void ExportC::writeParam(const std::string &name, const Parameter &param, std::o
 		Matrix4 m;
 		param.getVal(m);
 		file << "yafaray_paramsSetMatrix(yi, ";
-		writeMatrix(name, m, file);
+		writeMatrix(m, file);
 		file << ", YAFARAY_BOOL_FALSE);\n";
 	}
 	else
@@ -288,11 +288,35 @@ void ExportC::writeParam(const std::string &name, const Parameter &param, std::o
 	}
 }
 
-bool ExportC::addInstance(const char *base_object_name, const Matrix4 &obj_to_world) noexcept
+size_t ExportC::createInstance() noexcept
 {
-	file_ << "\t" << "yafaray_addInstance(yi, ";
-	writeMatrix(base_object_name, obj_to_world, file_);
-	file_ << ");\n";
+	file_ << "\t" << "yafaray_createInstance(yi);\n";
+	++section_num_lines_;
+	if(section_num_lines_ >= section_max_lines_) file_ << sectionSplit();
+	return current_instance_id_++;
+}
+
+bool ExportC::addInstanceObject(size_t instance_id, const char *base_object_name) noexcept
+{
+	file_ << "\t" << "yafaray_addInstanceObject(yi, " << instance_id << ", \"" << base_object_name << "\");\n"; //FIXME Should I use the variable name "instance_id" for export instead?
+	++section_num_lines_;
+	if(section_num_lines_ >= section_max_lines_) file_ << sectionSplit();
+	return true;
+}
+
+bool ExportC::addInstanceOfInstance(size_t instance_id, size_t base_instance_id) noexcept
+{
+	file_ << "\t" << "yafaray_addInstanceOfInstance(yi, " << instance_id << ", " << base_instance_id << ");\n"; //FIXME Should I use the variable name "instance_id" for export instead?
+	++section_num_lines_;
+	if(section_num_lines_ >= section_max_lines_) file_ << sectionSplit();
+	return true;
+}
+
+bool ExportC::addInstanceMatrix(size_t instance_id, const Matrix4 &obj_to_world, float time) noexcept
+{
+	file_ << "\t" << "yafaray_addInstanceMatrix(yi, " << instance_id << ", "; //FIXME Should I use the variable name "instance_id" for export instead?
+	writeMatrix(obj_to_world, file_);
+	file_ << ", " << time << ");\n";
 	++section_num_lines_;
 	if(section_num_lines_ >= section_max_lines_) file_ << sectionSplit();
 	return true;

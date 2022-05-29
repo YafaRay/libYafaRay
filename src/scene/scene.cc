@@ -19,29 +19,29 @@
  */
 
 #include "scene/scene.h"
-#include "common/version_build_info.h"
-#include "common/logger.h"
-#include "common/sysinfo.h"
 #include "accelerator/accelerator.h"
-#include "geometry/object/object.h"
-#include "geometry/object/object_instance.h"
-#include "geometry/uv.h"
-#include "common/param.h"
-#include "light/light.h"
-#include "material/material.h"
-#include "integrator/integrator.h"
-#include "texture/texture.h"
 #include "background/background.h"
 #include "camera/camera.h"
-#include "render/imagefilm.h"
+#include "common/logger.h"
+#include "common/param.h"
+#include "common/sysinfo.h"
+#include "common/version_build_info.h"
 #include "format/format.h"
-#include "volume/volume.h"
-#include "image/image_output.h"
-#include "render/render_view.h"
-#include "render/progress_bar.h"
-#include "image/image_manipulation.h"
-#include "geometry/primitive/primitive.h"
 #include "geometry/matrix4.h"
+#include "geometry/object/object.h"
+#include "geometry/object/object_instance.h"
+#include "geometry/primitive/primitive.h"
+#include "geometry/uv.h"
+#include "image/image_manipulation.h"
+#include "image/image_output.h"
+#include "integrator/integrator.h"
+#include "light/light.h"
+#include "material/material.h"
+#include "render/imagefilm.h"
+#include "render/progress_bar.h"
+#include "render/render_view.h"
+#include "texture/texture.h"
+#include "volume/volume.h"
 #include <limits>
 #include <memory>
 
@@ -1005,7 +1005,41 @@ Object *Scene::getObject(const std::string &name) const
 	else return nullptr;
 }
 
-bool Scene::addInstance(const std::string &base_object_name, const Matrix4 &obj_to_world)
+size_t Scene::createInstance()
+{
+	instances_.emplace_back(std::make_unique<ObjectInstance>());
+	return instances_.size() - 1;
+}
+
+bool Scene::addInstanceObject(size_t instance_id, const std::string &base_object_name)
+{
+	const Object *object = getObject(base_object_name);
+	if(!object) return false;
+	else
+	{
+		instances_[instance_id]->addPrimitives(object->getPrimitives());
+		return true;
+	}
+}
+
+bool Scene::addInstanceOfInstance(size_t instance_id, size_t base_instance_id)
+{
+	const Object *object = instances_[base_instance_id].get();
+	if(!object) return false;
+	else
+	{
+		instances_[instance_id]->addPrimitives(object->getPrimitives());
+		return true;
+	}
+}
+
+bool Scene::addInstanceMatrix(size_t instance_id, const Matrix4 &obj_to_world, float time)
+{
+	instances_[instance_id]->addObjToWorldMatrix(obj_to_world, time);
+	return true;
+}
+
+/*bool Scene::addInstance(const std::string &base_object_name, const Matrix4 &obj_to_world)
 {
 	const Object *base_object = objects_.find(base_object_name)->second.get();
 	if(objects_.find(base_object_name) == objects_.end())
@@ -1018,11 +1052,21 @@ bool Scene::addInstance(const std::string &base_object_name, const Matrix4 &obj_
 	{
 		const std::string instance_name = base_object_name + "-" + std::to_string(id);
 		if(logger_.isDebug())logger_.logDebug("  Instance: ", instance_name, " base_object_name=", base_object_name);
-		objects_[instance_name] = std::make_unique<ObjectInstance>(*base_object, obj_to_world);
+		std::vector<const Primitive *> primitives;
+		for(const auto &[object_name, object] : objects_)
+		{
+			if(object->getVisibility() == Visibility::Invisible) continue;
+			const auto prims = object->getPrimitives();
+			primitives.insert(primitives.end(), prims.begin(), prims.end());
+		}
+		auto instances = std::make_unique<Instance>();
+		instances->addPrimitives(primitives);
+		instances->addObjToWorldMatrix(obj_to_world, 0); //FIXME set proper time for each time step!
+		instances_[instance_name] = std::move(instances);
 		return true;
 	}
 	else return false;
-}
+}*/
 
 bool Scene::updateObjects()
 {
@@ -1032,6 +1076,12 @@ bool Scene::updateObjects()
 		if(object->getVisibility() == Visibility::Invisible) continue;
 		if(object->isBaseObject()) continue;
 		const auto prims = object->getPrimitives();
+		primitives.insert(primitives.end(), prims.begin(), prims.end());
+	}
+	for(const auto &instance : instances_)
+	{
+		//if(object->getVisibility() == Visibility::Invisible) continue;
+		const auto prims = instance->getPrimitives();
 		primitives.insert(primitives.end(), prims.begin(), prims.end());
 	}
 	if(primitives.empty())

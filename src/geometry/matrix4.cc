@@ -50,11 +50,11 @@ Matrix4::Matrix4(float m_00, float m_01, float m_02, float m_03, float m_10, flo
 {
 }
 
-Matrix4::Matrix4(const float source[4][4])
+Matrix4::Matrix4(const float *source)
 {
 	for(int i = 0; i < 4; i++)
 		for(int j = 0; j < 4; j++)
-			matrix_[i][j] = source[i][j];
+			matrix_[i][j] = source[4 * i + j];
 }
 
 template<typename T>

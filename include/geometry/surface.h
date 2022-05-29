@@ -87,10 +87,12 @@ class SurfacePoint final
 		Rgb emit(const Vec3 &wo) const;
 		float getAlpha(const Vec3 &wo, const Camera *camera) const;
 		bool scatterPhoton(const Vec3 &wi, Vec3 &wo, PSample &s, bool chromatic, float wavelength, const Camera *camera) const;
-		const Object *getObject() const { if(primitive_) return primitive_->getObject(); else return nullptr; }
+		unsigned int getObjectIndex() const { if(primitive_) return primitive_->getObjectIndex(); else return 0; }
+		unsigned int getObjectIndexAuto() const { if(primitive_) return primitive_->getObjectIndexAuto(); else return 0; }
+		Rgb getObjectIndexAutoColor() const { if(primitive_) return primitive_->getObjectIndexAutoColor(); else return Rgb{0.f}; }
 		const Material *getMaterial() const { if(primitive_) return primitive_->getMaterial(); else return nullptr; }
-		const Light *getLight() const { if(primitive_) return primitive_->getObject()->getLight(); else return nullptr; }
-		bool hasMotionBlur() const { if(primitive_) return primitive_->getObject()->hasMotionBlur(); else return false; }
+		const Light *getLight() const { if(primitive_) return primitive_->getObjectLight(); else return nullptr; }
+		bool hasMotionBlur() const { if(primitive_) return primitive_->hasObjectMotionBlur(); else return false; }
 
 		IntersectData intersect_data_;
 		alignas(8) std::unique_ptr<const MaterialData> mat_data_;
