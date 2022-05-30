@@ -21,6 +21,7 @@
 #include "scene/scene.h"
 #include "geometry/matrix4.h"
 #include "common/param.h"
+#include "common/version_build_info.h"
 
 BEGIN_YAFARAY
 
@@ -35,16 +36,15 @@ ExportXml::ExportXml(const char *fname, const ::yafaray_LoggerCallback_t logger_
 	else logger_->logInfo("XmlExport: Writing scene to: ", file_name_);
 	file_ << std::boolalpha;
 	file_ << "<?xml version=\"1.0\"?>\n";
-	file_ << "<yafaray_xml format_version=\"4.0.0\">\n\n";
+	file_ << "<yafaray_xml format_version=\"" << buildinfo::getVersionMajor() << "." << buildinfo::getVersionMinor() << "." << buildinfo::getVersionPatch() << "\">\n\n";
 }
 
 void ExportXml::createScene() noexcept
 {
-	file_ << "<scene>\n\n";
-	file_ << "<scene_parameters>\n";
+	file_ << "<scene>\n";
 	writeParamMap(*params_);
 	params_->clear();
-	file_ << "</scene_parameters>\n";
+	file_ << "</scene>\n";
 }
 
 void ExportXml::clearAll() noexcept
@@ -327,7 +327,9 @@ ImageOutput *ExportXml::createOutput(const char *name) noexcept
 
 RenderView *ExportXml::createRenderView(const char *name) noexcept
 {
-	file_ << "\n<render_view name=\"" << name << "\">\n";
+	std::string render_view_name{name};
+	if(render_view_name.empty()) render_view_name = "render_view";
+	file_ << "\n<render_view name=\"" << render_view_name << "\">\n";
 	writeParamMap(*params_);
 	file_ << "</render_view>\n";
 	return nullptr;
@@ -361,7 +363,7 @@ void ExportXml::setupRender() noexcept
 
 void ExportXml::render(const std::shared_ptr<ProgressBar> &progress_bar) noexcept
 {
-	file_ << "</scene>\n";
+	file_ << "</yafaray_xml>\n";
 	file_.flush();
 	file_.close();
 }

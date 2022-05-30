@@ -911,7 +911,7 @@ bool Scene::endObject()
 bool Scene::smoothVerticesNormals(const std::string &name, float angle)
 {
 	if(logger_.isDebug()) logger_.logDebug("Scene::smoothVerticesNormals) PR(name) PR(angle");
-	if(creation_state_.stack_.front() != CreationState::Geometry) return false;
+	//if(creation_state_.stack_.front() != CreationState::Geometry) return false;
 	Object *object;
 	if(!name.empty())
 	{

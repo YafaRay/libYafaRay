@@ -101,7 +101,7 @@ Image * Image::factory(Logger &logger, const Scene &scene, const std::string &na
 
 Image *Image::factory(Logger &logger, int width, int height, const Type &type, const Optimization &optimization)
 {
-	if(logger.isDebug()) logger.logDebug("**Image::factory");
+	//if(logger.isDebug()) logger.logDebug("**Image::factory");
 	if(type == Type::ColorAlpha)
 	{
 		switch(optimization)
