@@ -70,8 +70,7 @@ class FacePrimitive: public Primitive
 		bool hasObjectMotionBlur() const override { return base_mesh_object_.hasMotionBlur(); }
 
 	protected:
-		alignas(8) size_t self_index_ = 0;
-		const MeshObject &base_mesh_object_;
+		alignas(8) const MeshObject &base_mesh_object_;
 		const std::unique_ptr<const Material> *material_ = nullptr;
 		alignas(8) std::vector<int> vertices_; //!< indices in point array, referenced in mesh.
 		std::vector<int> vertices_normals_; //!< indices in normal array, if mesh is smoothed.
