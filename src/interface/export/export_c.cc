@@ -253,7 +253,7 @@ void ExportC::writeParam(const std::string &name, const Parameter &param, std::o
 	{
 		std::string s;
 		param.getVal(s);
-		if(!s.empty()) file << "yafaray_paramsSetString(yi, \"" << name << "\", \"" << s << "\");\n";
+		file << "yafaray_paramsSetString(yi, \"" << name << "\", \"" << s << "\");\n";
 	}
 	else if(type == Parameter::Vector)
 	{

@@ -195,7 +195,7 @@ void ExportPython::writeParam(const std::string &name, const Parameter &param, s
 	{
 		std::string s;
 		param.getVal(s);
-		if(!s.empty()) file << "yi.paramsSetString(\"" << name << "\", \"" << s << "\")\n";
+		file << "yi.paramsSetString(\"" << name << "\", \"" << s << "\")\n";
 	}
 	else if(type == Parameter::Vector)
 	{
