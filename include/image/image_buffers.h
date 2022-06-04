@@ -311,6 +311,7 @@ class ImageBuffer2D final : public Buffer<T, 2>
 	public:
 		ImageBuffer2D(int width, int height) : Buffer<T, 2>{{static_cast<size_t>(width), static_cast<size_t>(height) }} { }
 		void set(int x, int y, const T &val) { Buffer<T, 2>::set({ static_cast<size_t>(x), static_cast<size_t>(y) }, val); }
+		void set(int x, int y, T &&val) { Buffer<T, 2>::set({ static_cast<size_t>(x), static_cast<size_t>(y) }, std::move(val)); }
 		T get(int x, int y) const { return Buffer<T, 2>::get({ static_cast<size_t>(x), static_cast<size_t>(y) }); }
 		T &operator()(int x, int y) { return Buffer<T, 2>::operator()({ static_cast<size_t>(x), static_cast<size_t>(y) }); }
 		const T &operator()(int x, int y) const { return Buffer<T, 2>::operator()({ static_cast<size_t>(x), static_cast<size_t>(y) }); }
