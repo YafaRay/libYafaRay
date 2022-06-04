@@ -33,10 +33,14 @@ class Matrix4
 {
 	public:
 		Matrix4() = default;
+		Matrix4(const Matrix4 &source) = default;
+		Matrix4(Matrix4 &&source) = default;
 		explicit Matrix4(float init);
-		Matrix4(const Matrix4 &source);
-		Matrix4(float m_00, float m_01, float m_02, float m_03, float m_10, float m_11, float m_12, float m_13, float m_20, float m_21, float m_22, float m_23, float m_30, float m_31, float m_32, float m_33);
+		explicit Matrix4(const std::array<std::array<float, 4>, 4> &source) : matrix_{source} { }
+		explicit Matrix4(std::array<std::array<float, 4>, 4> &&source) : matrix_{std::move(source)} { }
 		explicit Matrix4(const float *source);
+		Matrix4 &operator=(const Matrix4 &matrix) = default;
+		Matrix4 &operator=(Matrix4 &&matrix) = default;
 		/*! attention, this function can cause the matrix to become invalid!
 			unless you are sure the matrix is invertible, check invalid() afterwards! */
 		Matrix4 &inverse();
@@ -48,8 +52,8 @@ class Matrix4
 		void rotateZ(float degrees);
 		void scale(float sx, float sy, float sz);
 		bool invalid() const { return invalid_; }
-		const float *operator [](int i) const { return matrix_[i]; }
-		float *operator [](int i) { return matrix_[i]; }
+		const std::array<float, 4> &operator [](int i) const { return matrix_[i]; }
+		std::array<float, 4> &operator [](int i) { return matrix_[i]; }
 		void setVal(int row, int col, float val) { matrix_[row][col] = val; };
 		float getVal(int row, int col) { return matrix_[row][col]; }
 
@@ -58,7 +62,7 @@ class Matrix4
 		template<typename T> static void subtractScaledRow(T& matrix, int row_a, int row_b, float factor);
 		template<typename T> static void divideRow(T& matrix, int row, float divisor);
 
-		alignas(8) float matrix_[4][4];
+		alignas(8) std::array<std::array<float, 4>, 4> matrix_;
 		bool invalid_ = false;
 };
 

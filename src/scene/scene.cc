@@ -1033,9 +1033,9 @@ bool Scene::addInstanceOfInstance(size_t instance_id, size_t base_instance_id)
 	}
 }
 
-bool Scene::addInstanceMatrix(size_t instance_id, const Matrix4 &obj_to_world, float time)
+bool Scene::addInstanceMatrix(size_t instance_id, Matrix4 &&obj_to_world, float time)
 {
-	instances_[instance_id]->addObjToWorldMatrix(obj_to_world, time);
+	instances_[instance_id]->addObjToWorldMatrix(std::move(obj_to_world), time);
 	return true;
 }
 

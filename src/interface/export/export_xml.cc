@@ -234,7 +234,7 @@ bool ExportXml::addInstanceOfInstance(size_t instance_id, size_t base_instance_i
 	return true;
 }
 
-bool ExportXml::addInstanceMatrix(size_t instance_id, const Matrix4 &obj_to_world, float time) noexcept
+bool ExportXml::addInstanceMatrix(size_t instance_id, Matrix4 &&obj_to_world, float time) noexcept
 {
 	file_ << "\n<addInstanceMatrix instance_id=\"" << instance_id << "\" time=\"" << time << "\">\n\t";
 	writeMatrix("transform", obj_to_world, file_);

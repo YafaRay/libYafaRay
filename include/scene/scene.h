@@ -82,7 +82,7 @@ class Scene final
 		size_t createInstance();
 		bool addInstanceObject(size_t instance_id, const std::string &base_object_name);
 		bool addInstanceOfInstance(size_t instance_id, size_t base_instance_id);
-		bool addInstanceMatrix(size_t instance_id, const Matrix4 &obj_to_world, float time);
+		bool addInstanceMatrix(size_t instance_id, Matrix4 &&obj_to_world, float time);
 		bool updateObjects();
 		Object *getObject(const std::string &name) const;
 		const Accelerator *getAccelerator() const { return accelerator_.get(); }

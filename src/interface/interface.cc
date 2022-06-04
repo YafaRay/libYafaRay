@@ -138,9 +138,9 @@ bool Interface::addInstanceOfInstance(size_t instance_id, size_t base_instance_i
 	return scene_->addInstanceOfInstance(instance_id, base_instance_id);
 }
 
-bool Interface::addInstanceMatrix(size_t instance_id, const Matrix4 &obj_to_world, float time) noexcept
+bool Interface::addInstanceMatrix(size_t instance_id, Matrix4 &&obj_to_world, float time) noexcept
 {
-	return scene_->addInstanceMatrix(instance_id, obj_to_world, time);
+	return scene_->addInstanceMatrix(instance_id, std::move(obj_to_world), time);
 }
 
 void Interface::paramsSetVector(const char *name, double x, double y, double z) noexcept
@@ -175,13 +175,13 @@ void Interface::paramsSetColor(const char *name, float r, float g, float b, floa
 	(*cparams_)[std::string(name)] = Parameter(col);
 }
 
-void Interface::paramsSetMatrix(const char *name, const Matrix4 &matrix, bool transpose) noexcept
+void Interface::paramsSetMatrix(const char *name, Matrix4 &&matrix, bool transpose) noexcept
 {
 	if(transpose)
 	{
-		(*cparams_)[std::string(name)] = Matrix4{matrix}.transpose();
+		(*cparams_)[std::string(name)] = std::move(Matrix4{matrix}.transpose());
 	}
-	else (*cparams_)[std::string(name)] = matrix;
+	else (*cparams_)[std::string(name)] = std::move(matrix);
 }
 
 void Interface::setInputColorSpace(const std::string &color_space_string, float gamma_val) noexcept

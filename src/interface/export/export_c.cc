@@ -312,7 +312,7 @@ bool ExportC::addInstanceOfInstance(size_t instance_id, size_t base_instance_id)
 	return true;
 }
 
-bool ExportC::addInstanceMatrix(size_t instance_id, const Matrix4 &obj_to_world, float time) noexcept
+bool ExportC::addInstanceMatrix(size_t instance_id, Matrix4 &&obj_to_world, float time) noexcept
 {
 	file_ << "\t" << "yafaray_addInstanceMatrix(yi, " << instance_id << ", "; //FIXME Should I use the variable name "instance_id" for export instead?
 	writeMatrix(obj_to_world, file_);

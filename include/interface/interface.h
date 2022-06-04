@@ -76,7 +76,7 @@ class Interface
 		virtual size_t createInstance() noexcept;
 		virtual bool addInstanceObject(size_t instance_id, const char *base_object_name) noexcept;
 		virtual bool addInstanceOfInstance(size_t instance_id, size_t base_instance_id) noexcept;
-		virtual bool addInstanceMatrix(size_t instance_id, const Matrix4 &obj_to_world, float time) noexcept;
+		virtual bool addInstanceMatrix(size_t instance_id, Matrix4 &&obj_to_world, float time) noexcept;
 		virtual void paramsSetVector(const char *name, double x, double y, double z) noexcept;
 		virtual void paramsSetString(const char *name, const char *s) noexcept;
 		virtual void paramsSetBool(const char *name, bool b) noexcept;
@@ -84,8 +84,8 @@ class Interface
 		virtual void paramsSetFloat(const char *name, double f) noexcept;
 		virtual void paramsSetColor(const char *name, float r, float g, float b, float a) noexcept;
 		void paramsSetColor(const char *name, float r, float g, float b) noexcept { paramsSetColor(name, r, g, b, 1.f); };
-		virtual void paramsSetMatrix(const char *name, const Matrix4 &matrix, bool transpose) noexcept;
-		void paramsSetMatrix(const char *name, const Matrix4 &matrix) noexcept { paramsSetMatrix(name, matrix, false); };
+		virtual void paramsSetMatrix(const char *name, Matrix4 &&matrix, bool transpose) noexcept;
+		void paramsSetMatrix(const char *name, Matrix4 &&matrix) noexcept { paramsSetMatrix(name, std::move(matrix), false); };
 		virtual void paramsClearAll() noexcept; 	//!< clear the paramMap and paramList
 		virtual void paramsPushList() noexcept; 	//!< push new list item in paramList (e.g. new shader node description)
 		virtual void paramsEndList() noexcept; 	//!< revert to writing to normal paramMap
