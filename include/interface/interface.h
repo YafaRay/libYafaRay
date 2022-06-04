@@ -23,6 +23,7 @@
 #include "color/color.h"
 #include "common/yafaray_common.h"
 #include "geometry/uv.h"
+#include "geometry/vector.h"
 #include "public_api/yafaray_c_api.h"
 #include <list>
 #include <memory>
@@ -65,40 +66,40 @@ class Interface
 		virtual bool endGeometry() noexcept; //!< call after creating geometry;
 		virtual unsigned int getNextFreeId() noexcept;
 		virtual bool endObject() noexcept; //!< end current mesh and return to geometry state
-		virtual int addVertex(double x, double y, double z, size_t time_step) noexcept; //!< add vertex to mesh; returns index to be used for addTriangle/addQuad
-		virtual int addVertex(double x, double y, double z, double ox, double oy, double oz, size_t time_step) noexcept; //!< add vertex with Orco to mesh; returns index to be used for addTriangle/addQuad
-		virtual void addVertexNormal(double x, double y, double z, size_t time_step) noexcept; //!< add vertex normal to mesh; the vertex that will be attached to is the last one inserted by addVertex method
+		virtual int addVertex(Point3 &&vertex, size_t time_step) noexcept; //!< add vertex to mesh; returns index to be used for addTriangle/addQuad
+		virtual int addVertex(Point3 &&vertex, Point3 &&orco, size_t time_step) noexcept; //!< add vertex with Orco to mesh; returns index to be used for addTriangle/addQuad
+		virtual void addVertexNormal(Vec3 &&normal, size_t time_step) noexcept; //!< add vertex normal to mesh; the vertex that will be attached to is the last one inserted by addVertex method
 		virtual bool addFace(std::vector<int> &&vertices, std::vector<int> &&uv_indices) noexcept; //!< add a mesh face given vertex indices and optionally uv_indices
 		virtual int addUv(Uv &&uv) noexcept; //!< add a UV coordinate pair; returns index to be used for addTriangle/addQuad
-		virtual bool smoothVerticesNormals(const char *name, double angle) noexcept; //!< smooth vertex normals of mesh with given ID and angle (in degrees)
+		virtual bool smoothVerticesNormals(std::string &&name, double angle) noexcept; //!< smooth vertex normals of mesh with given ID and angle (in degrees)
 		virtual size_t createInstance() noexcept;
-		virtual bool addInstanceObject(size_t instance_id, const char *base_object_name) noexcept;
+		virtual bool addInstanceObject(size_t instance_id, std::string &&base_object_name) noexcept;
 		virtual bool addInstanceOfInstance(size_t instance_id, size_t base_instance_id) noexcept;
 		virtual bool addInstanceMatrix(size_t instance_id, Matrix4 &&obj_to_world, float time) noexcept;
-		virtual void paramsSetVector(const char *name, double x, double y, double z) noexcept;
-		virtual void paramsSetString(const char *name, const char *s) noexcept;
-		virtual void paramsSetBool(const char *name, bool b) noexcept;
-		virtual void paramsSetInt(const char *name, int i) noexcept;
-		virtual void paramsSetFloat(const char *name, double f) noexcept;
-		virtual void paramsSetColor(const char *name, float r, float g, float b, float a) noexcept;
-		void paramsSetColor(const char *name, float r, float g, float b) noexcept { paramsSetColor(name, r, g, b, 1.f); };
-		virtual void paramsSetMatrix(const char *name, Matrix4 &&matrix, bool transpose) noexcept;
-		void paramsSetMatrix(const char *name, Matrix4 &&matrix) noexcept { paramsSetMatrix(name, std::move(matrix), false); };
+		virtual void paramsSetVector(std::string &&name, Vec3 &&v) noexcept;
+		virtual void paramsSetString(std::string &&name, std::string &&s) noexcept;
+		virtual void paramsSetBool(std::string &&name, bool b) noexcept;
+		virtual void paramsSetInt(std::string &&name, int i) noexcept;
+		virtual void paramsSetFloat(std::string &&name, double f) noexcept;
+		virtual void paramsSetColor(std::string &&name, Rgba &&col) noexcept;
+		void paramsSetColor(std::string &&name, Rgb &&col) noexcept { paramsSetColor(std::move(name), std::move(Rgba{col})); };
+		virtual void paramsSetMatrix(std::string &&name, Matrix4 &&matrix, bool transpose) noexcept;
+		void paramsSetMatrix(std::string &&name, Matrix4 &&matrix) noexcept { paramsSetMatrix(std::move(name), std::move(matrix), false); };
 		virtual void paramsClearAll() noexcept; 	//!< clear the paramMap and paramList
 		virtual void paramsPushList() noexcept; 	//!< push new list item in paramList (e.g. new shader node description)
 		virtual void paramsEndList() noexcept; 	//!< revert to writing to normal paramMap
-		virtual void setCurrentMaterial(const char *name) noexcept;
-		virtual Object *createObject(const char *name) noexcept;
-		virtual Light *createLight(const char *name) noexcept;
-		virtual Texture *createTexture(const char *name) noexcept;
-		virtual const Material *createMaterial(const char *name) noexcept;
-		virtual const Camera * createCamera(const char *name) noexcept;
-		virtual const Background * createBackground(const char *name) noexcept;
-		virtual Integrator *createIntegrator(const char *name) noexcept;
-		virtual VolumeRegion *createVolumeRegion(const char *name) noexcept;
-		virtual RenderView *createRenderView(const char *name) noexcept;
-		virtual Image *createImage(const char *name) noexcept;
-		virtual ImageOutput *createOutput(const char *name) noexcept;
+		virtual void setCurrentMaterial(std::string &&name) noexcept;
+		virtual Object *createObject(std::string &&name) noexcept;
+		virtual Light *createLight(std::string &&name) noexcept;
+		virtual Texture *createTexture(std::string &&name) noexcept;
+		virtual const Material *createMaterial(std::string &&name) noexcept;
+		virtual const Camera * createCamera(std::string &&name) noexcept;
+		virtual const Background * createBackground(std::string &&name) noexcept;
+		virtual Integrator *createIntegrator(std::string &&name) noexcept;
+		virtual VolumeRegion *createVolumeRegion(std::string &&name) noexcept;
+		virtual RenderView *createRenderView(std::string &&name) noexcept;
+		virtual Image *createImage(std::string &&name) noexcept;
+		virtual ImageOutput *createOutput(std::string &&name) noexcept;
 		void setRenderNotifyViewCallback(yafaray_RenderNotifyViewCallback_t callback, void *callback_data) noexcept;
 		void setRenderNotifyLayerCallback(yafaray_RenderNotifyLayerCallback_t callback, void *callback_data) noexcept;
 		void setRenderPutPixelCallback(yafaray_RenderPutPixelCallback_t callback, void *callback_data) noexcept;
@@ -106,11 +107,11 @@ class Interface
 		void setRenderFlushAreaCallback(yafaray_RenderFlushAreaCallback_t callback, void *callback_data) noexcept;
 		void setRenderFlushCallback(yafaray_RenderFlushCallback_t callback, void *callback_data) noexcept;
 		void setRenderHighlightAreaCallback(yafaray_RenderHighlightAreaCallback_t callback, void *callback_data) noexcept;
-		bool removeOutput(const char *name) noexcept;
+		bool removeOutput(std::string &&name) noexcept;
 		virtual void clearOutputs() noexcept;
 		virtual void clearAll() noexcept;
 		virtual void setupRender() noexcept;
-		virtual void render(const std::shared_ptr<ProgressBar> &progress_bar) noexcept; //!< render the scene...
+		virtual void render(std::shared_ptr<ProgressBar> &&progress_bar) noexcept; //!< render the scene...
 		virtual void defineLayer() noexcept;
 		virtual void cancel() noexcept;
 

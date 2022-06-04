@@ -287,7 +287,7 @@ const Background * DarkSkyBackground::factory(Logger &logger, Scene &scene, cons
 
 		if(logger.isVerbose()) logger.logVerbose("DarkSky: Adding a \"Real Sun\"");
 
-		scene.createLight("DarkSky_RealSun", p);
+		scene.createLight("DarkSky_RealSun", std::move(p));
 	}
 
 	if(bgl)
@@ -301,7 +301,7 @@ const Background * DarkSkyBackground::factory(Logger &logger, Scene &scene, cons
 
 		if(logger.isVerbose()) logger.logVerbose("DarkSky: Adding background light");
 
-		Light *bglight = scene.createLight("DarkSky_bgLight", bgp);
+		Light *bglight = scene.createLight("DarkSky_bgLight", std::move(bgp));
 
 		bglight->setBackground(dark_sky);
 	}

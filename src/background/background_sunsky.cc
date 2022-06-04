@@ -274,7 +274,7 @@ const Background * SunSkyBackground::factory(Logger &logger, Scene &scene, const
 		bgp["with_caustic"] = caus;
 		bgp["with_diffuse"] = diff;
 
-		Light *bglight = scene.createLight("sunsky_bgLight", bgp);
+		Light *bglight = scene.createLight("sunsky_bgLight", std::move(bgp));
 		bglight->setBackground(new_sunsky);
 	}
 
@@ -298,7 +298,7 @@ const Background * SunSkyBackground::factory(Logger &logger, Scene &scene, const
 		p["with_caustic"] = caus;
 		p["with_diffuse"] = diff;
 
-		scene.createLight("sunsky_SUN", p);
+		scene.createLight("sunsky_SUN", std::move(p));
 	}
 
 	return new_sunsky;

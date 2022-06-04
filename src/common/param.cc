@@ -25,6 +25,7 @@
 BEGIN_YAFARAY
 
 Parameter::Parameter(const std::string &s) : type_(String) { sval_ = s; }
+Parameter::Parameter(std::string &&s) : type_(String) { sval_ = std::move(s); }
 Parameter::Parameter(int i) : type_(Int) { ival_ = i; }
 Parameter::Parameter(bool b) : type_(Bool) { bval_ = b; }
 Parameter::Parameter(float f) : type_(Float) { fval_ = f; }
@@ -97,6 +98,13 @@ Parameter &Parameter::operator=(const std::string &s)
 {
 	if(type_ != String) { type_ = String; vval_.clear(); }
 	sval_ = s;
+	return *this;
+}
+
+Parameter &Parameter::operator=(std::string &&s)
+{
+	if(type_ != String) { type_ = String; vval_.clear(); }
+	sval_ = std::move(s);
 	return *this;
 }
 

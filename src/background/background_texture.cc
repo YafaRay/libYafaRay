@@ -135,7 +135,7 @@ const Background * TextureBackground::factory(Logger &logger, Scene &scene, cons
 			if(logger.isVerbose()) logger.logVerbose("TextureBackground: background SmartIBL blurring done using mipmaps.");
 		}
 
-		Light *bglight = scene.createLight("textureBackground_bgLight", bgp);
+		Light *bglight = scene.createLight("textureBackground_bgLight", std::move(bgp));
 
 		bglight->setBackground(tex_bg);
 

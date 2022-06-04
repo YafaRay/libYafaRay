@@ -21,6 +21,7 @@
 #define YAFARAY_EXPORT_XML_H
 
 #include "geometry/uv.h"
+#include "geometry/vector.h"
 #include "interface/interface.h"
 #include <fstream>
 #include <iostream>
@@ -43,31 +44,31 @@ class ExportXml: public Interface
 		unsigned int getNextFreeId() noexcept override;
 		bool endObject() noexcept override;
 		size_t createInstance() noexcept override;
-		bool addInstanceObject(size_t instance_id, const char *base_object_name) noexcept override;
+		bool addInstanceObject(size_t instance_id, std::string &&base_object_name) noexcept override;
 		bool addInstanceOfInstance(size_t instance_id, size_t base_instance_id) noexcept override;
 		bool addInstanceMatrix(size_t instance_id, Matrix4 &&obj_to_world, float time) noexcept override;
-		int addVertex(double x, double y, double z, size_t time_step) noexcept override; //!< add vertex to mesh; returns index to be used for addTriangle/addQuad
-		int addVertex(double x, double y, double z, double ox, double oy, double oz, size_t time_step) noexcept override; //!< add vertex with Orco to mesh; returns index to be used for addTriangle/addQuad
-		void addVertexNormal(double nx, double ny, double nz, size_t time_step) noexcept override; //!< add vertex normal to mesh; the vertex that will be attached to is the last one inserted by addVertex method
+		int addVertex(Point3 &&vertex, size_t time_step) noexcept override; //!< add vertex to mesh; returns index to be used for addTriangle/addQuad
+		int addVertex(Point3 &&vertex, Point3 &&orco, size_t time_step) noexcept override; //!< add vertex with Orco to mesh; returns index to be used for addTriangle/addQuad
+		void addVertexNormal(Vec3 &&normal, size_t time_step) noexcept override; //!< add vertex normal to mesh; the vertex that will be attached to is the last one inserted by addVertex method
 		bool addFace(std::vector<int> &&vertices, std::vector<int> &&uv_indices) noexcept override;
 		int addUv(Uv &&uv) noexcept override;
-		bool smoothVerticesNormals(const char *name, double angle) noexcept override;
-		void setCurrentMaterial(const char *name) noexcept override;
-		Object *createObject(const char *name) noexcept override;
-		Light *createLight(const char *name) noexcept override;
-		Texture *createTexture(const char *name) noexcept override;
-		const Material *createMaterial(const char *name) noexcept override;
-		const Camera * createCamera(const char *name) noexcept override;
-		const Background * createBackground(const char *name) noexcept override;
-		Integrator *createIntegrator(const char *name) noexcept override;
-		VolumeRegion *createVolumeRegion(const char *name) noexcept override;
-		RenderView *createRenderView(const char *name) noexcept override;
-		Image *createImage(const char *name) noexcept override;
-		ImageOutput *createOutput(const char *name) noexcept override;
+		bool smoothVerticesNormals(std::string &&name, double angle) noexcept override;
+		void setCurrentMaterial(std::string &&name) noexcept override;
+		Object *createObject(std::string &&name) noexcept override;
+		Light *createLight(std::string &&name) noexcept override;
+		Texture *createTexture(std::string &&name) noexcept override;
+		const Material *createMaterial(std::string &&name) noexcept override;
+		const Camera * createCamera(std::string &&name) noexcept override;
+		const Background * createBackground(std::string &&name) noexcept override;
+		Integrator *createIntegrator(std::string &&name) noexcept override;
+		VolumeRegion *createVolumeRegion(std::string &&name) noexcept override;
+		RenderView *createRenderView(std::string &&name) noexcept override;
+		Image *createImage(std::string &&name) noexcept override;
+		ImageOutput *createOutput(std::string &&name) noexcept override;
 		void clearAll() noexcept override; //!< clear the whole environment + scene, i.e. free (hopefully) all memory.
 		void clearOutputs() noexcept override { }
 		void setupRender() noexcept override;
-		void render(const std::shared_ptr<ProgressBar> &progress_bar) noexcept override; //!< render the scene...
+		void render(std::shared_ptr<ProgressBar> &&progress_bar) noexcept override; //!< render the scene...
 		void setColorSpace(const std::string& color_space_string, float gamma_val) noexcept;
 
 	protected:

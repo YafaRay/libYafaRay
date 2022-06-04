@@ -138,9 +138,9 @@ bool ExportC::endObject() noexcept
 	return true;
 }
 
-int ExportC::addVertex(double x, double y, double z, size_t time_step) noexcept
+int ExportC::addVertex(Point3 &&vertex, size_t time_step) noexcept
 {
-	file_ << "\t" << "yafaray_addVertex(yi, " << x << ", " << y << ", " << z;
+	file_ << "\t" << "yafaray_addVertex(yi, " << vertex.x() << ", " << vertex.y() << ", " << vertex.z();
 	if(time_step > 0) file_ << ", " << time_step;
 	file_ << ");\n";
 	++section_num_lines_;
@@ -148,9 +148,9 @@ int ExportC::addVertex(double x, double y, double z, size_t time_step) noexcept
 	return 0;
 }
 
-int ExportC::addVertex(double x, double y, double z, double ox, double oy, double oz, size_t time_step) noexcept
+int ExportC::addVertex(Point3 &&vertex, Point3 &&orco, size_t time_step) noexcept
 {
-	file_ << "\t" << "yafaray_addVertexWithOrco(yi, " << x << ", " << y << ", " << z << ", " << ox << ", " << oy << ", " << oz;
+	file_ << "\t" << "yafaray_addVertexWithOrco(yi, " << vertex.x() << ", " << vertex.y() << ", " << vertex.z() << ", " << orco.x() << ", " << orco.y() << ", " << orco.z();
 	if(time_step > 0) file_ << ", " << time_step;
 	file_ << ");\n";
 	++section_num_lines_;
@@ -158,22 +158,21 @@ int ExportC::addVertex(double x, double y, double z, double ox, double oy, doubl
 	return 0;
 }
 
-void ExportC::addVertexNormal(double x, double y, double z, size_t time_step) noexcept
+void ExportC::addVertexNormal(Vec3 &&normal, size_t time_step) noexcept
 {
-	file_ << "\t" << "yafaray_addNormal(yi, " << x << ", " << y << ", " << z;
+	file_ << "\t" << "yafaray_addNormal(yi, " << normal.x() << ", " << normal.y() << ", " << normal.z();
 	if(time_step > 0) file_ << ", " << time_step;
 	file_ << ");\n";
 	++section_num_lines_;
 	if(section_num_lines_ >= section_max_lines_) file_ << sectionSplit();
 }
 
-void ExportC::setCurrentMaterial(const char *name) noexcept
+void ExportC::setCurrentMaterial(std::string &&name) noexcept
 {
-	const std::string name_str(name);
-	if(name_str != current_material_) //need to set current material
+	if(name != current_material_) //need to set current material
 	{
-		file_ << "\t" << "yafaray_setCurrentMaterial(yi, \"" << name_str << "\");\n";
-		current_material_ = name_str;
+		file_ << "\t" << "yafaray_setCurrentMaterial(yi, \"" << name << "\");\n";
+		current_material_ = std::move(name);
 		++section_num_lines_;
 	}
 }
@@ -211,7 +210,7 @@ int ExportC::addUv(Uv &&uv) noexcept
 	return n_uvs_++;
 }
 
-bool ExportC::smoothVerticesNormals(const char *name, double angle) noexcept
+bool ExportC::smoothVerticesNormals(std::string &&name, double angle) noexcept
 {
 	file_ << "\t" << "yafaray_smoothMesh(yi, \"" << name << "\", " << angle << ");\n\n";
 	++section_num_lines_;
@@ -290,7 +289,7 @@ size_t ExportC::createInstance() noexcept
 	return current_instance_id_++;
 }
 
-bool ExportC::addInstanceObject(size_t instance_id, const char *base_object_name) noexcept
+bool ExportC::addInstanceObject(size_t instance_id, std::string &&base_object_name) noexcept
 {
 	file_ << "\t" << "yafaray_addInstanceObject(yi, " << instance_id << ", \"" << base_object_name << "\");\n"; //FIXME Should I use the variable name "instance_id" for export instead?
 	++section_num_lines_;
@@ -339,7 +338,7 @@ void ExportC::writeParamList(int indent) noexcept
 	++section_num_lines_;
 }
 
-Light *ExportC::createLight(const char *name) noexcept
+Light *ExportC::createLight(std::string &&name) noexcept
 {
 	writeParamMap(*params_);
 	params_->clear();
@@ -350,7 +349,7 @@ Light *ExportC::createLight(const char *name) noexcept
 	return nullptr;
 }
 
-Texture *ExportC::createTexture(const char *name) noexcept
+Texture *ExportC::createTexture(std::string &&name) noexcept
 {
 	writeParamMap(*params_);
 	params_->clear();
@@ -361,7 +360,7 @@ Texture *ExportC::createTexture(const char *name) noexcept
 	return nullptr;
 }
 
-const Material *ExportC::createMaterial(const char *name) noexcept
+const Material *ExportC::createMaterial(std::string &&name) noexcept
 {
 	writeParamMap(*params_);
 	writeParamList(1);
@@ -373,7 +372,7 @@ const Material *ExportC::createMaterial(const char *name) noexcept
 	if(section_num_lines_ >= section_max_lines_) file_ << sectionSplit();
 	return nullptr;
 }
-const Camera * ExportC::createCamera(const char *name) noexcept
+const Camera * ExportC::createCamera(std::string &&name) noexcept
 {
 	writeParamMap(*params_);
 	params_->clear();
@@ -383,7 +382,7 @@ const Camera * ExportC::createCamera(const char *name) noexcept
 	if(section_num_lines_ >= section_max_lines_) file_ << sectionSplit();
 	return nullptr;
 }
-const Background * ExportC::createBackground(const char *name) noexcept
+const Background * ExportC::createBackground(std::string &&name) noexcept
 {
 	writeParamMap(*params_);
 	params_->clear();
@@ -393,7 +392,7 @@ const Background * ExportC::createBackground(const char *name) noexcept
 	if(section_num_lines_ >= section_max_lines_) file_ << sectionSplit();
 	return nullptr;
 }
-Integrator *ExportC::createIntegrator(const char *name) noexcept
+Integrator *ExportC::createIntegrator(std::string &&name) noexcept
 {
 	writeParamMap(*params_);
 	params_->clear();
@@ -404,7 +403,7 @@ Integrator *ExportC::createIntegrator(const char *name) noexcept
 	return nullptr;
 }
 
-VolumeRegion *ExportC::createVolumeRegion(const char *name) noexcept
+VolumeRegion *ExportC::createVolumeRegion(std::string &&name) noexcept
 {
 	writeParamMap(*params_);
 	params_->clear();
@@ -415,7 +414,7 @@ VolumeRegion *ExportC::createVolumeRegion(const char *name) noexcept
 	return nullptr;
 }
 
-ImageOutput *ExportC::createOutput(const char *name) noexcept
+ImageOutput *ExportC::createOutput(std::string &&name) noexcept
 {
 	writeParamMap(*params_);
 	params_->clear();
@@ -426,7 +425,7 @@ ImageOutput *ExportC::createOutput(const char *name) noexcept
 	return nullptr;
 }
 
-RenderView *ExportC::createRenderView(const char *name) noexcept
+RenderView *ExportC::createRenderView(std::string &&name) noexcept
 {
 	writeParamMap(*params_);
 	params_->clear();
@@ -437,7 +436,7 @@ RenderView *ExportC::createRenderView(const char *name) noexcept
 	return nullptr;
 }
 
-Image *ExportC::createImage(const char *name) noexcept
+Image *ExportC::createImage(std::string &&name) noexcept
 {
 	writeParamMap(*params_);
 	params_->clear();
@@ -448,7 +447,7 @@ Image *ExportC::createImage(const char *name) noexcept
 	return nullptr;
 }
 
-Object *ExportC::createObject(const char *name) noexcept
+Object *ExportC::createObject(std::string &&name) noexcept
 {
 	n_uvs_ = 0;
 	writeParamMap(*params_);
@@ -470,7 +469,7 @@ void ExportC::setupRender() noexcept
 	section_num_lines_ += 2;
 }
 
-void ExportC::render(const std::shared_ptr<ProgressBar> &progress_bar) noexcept
+void ExportC::render(std::shared_ptr<ProgressBar> &&progress_bar) noexcept
 {
 	file_ << "\t" << "/* Creating image output */\n";
 	file_ << "\t" << "yafaray_paramsSetString(yi, \"image_path\", \"./test01-output1.tga\");\n";

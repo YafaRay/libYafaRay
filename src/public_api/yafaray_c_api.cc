@@ -17,17 +17,17 @@
  */
 
 #include "public_api/yafaray_c_api.h"
-#include "interface/interface.h"
-#include "interface/export/export_xml.h"
-#include "interface/export/export_c.h"
-#include "interface/export/export_python.h"
+#include "color/color.h"
+#include "common/logger.h"
+#include "common/version_build_info.h"
 #include "geometry/matrix4.h"
 #include "geometry/uv.h"
-#include "render/progress_bar.h"
 #include "image/image.h"
-#include "common/logger.h"
-#include "color/color.h"
-#include "common/version_build_info.h"
+#include "interface/export/export_c.h"
+#include "interface/export/export_python.h"
+#include "interface/export/export_xml.h"
+#include "interface/interface.h"
+#include "render/progress_bar.h"
 #include <cstring>
 
 yafaray_Interface_t *yafaray_createInterface(yafaray_Interface_Type_t interface_type, const char *exported_file_path, const yafaray_LoggerCallback_t logger_callback, void *callback_data, yafaray_DisplayConsole_t display_console)
@@ -76,32 +76,32 @@ yafaray_bool_t yafaray_endObject(yafaray_Interface_t *interface) //!< end curren
 
 int  yafaray_addVertex(yafaray_Interface_t *interface, double x, double y, double z) //!< add vertex to mesh; returns index to be used for addTriangle/addQuad
 {
-	return reinterpret_cast<yafaray::Interface *>(interface)->addVertex(x, y, z, 0);
+	return reinterpret_cast<yafaray::Interface *>(interface)->addVertex({static_cast<float>(x), static_cast<float>(y), static_cast<float>(z)}, 0);
 }
 
 int  yafaray_addVertexTimeStep(yafaray_Interface_t *interface, double x, double y, double z, unsigned int time_step) //!< add vertex to mesh; returns index to be used for addTriangle/addQuad
 {
-	return reinterpret_cast<yafaray::Interface *>(interface)->addVertex(x, y, z, time_step);
+	return reinterpret_cast<yafaray::Interface *>(interface)->addVertex({static_cast<float>(x), static_cast<float>(y), static_cast<float>(z)}, time_step);
 }
 
 int  yafaray_addVertexWithOrco(yafaray_Interface_t *interface, double x, double y, double z, double ox, double oy, double oz) //!< add vertex with Orco to mesh; returns index to be used for addTriangle/addQuad
 {
-	return reinterpret_cast<yafaray::Interface *>(interface)->addVertex(x, y, z, ox, oy, oz, 0);
+	return reinterpret_cast<yafaray::Interface *>(interface)->addVertex({static_cast<float>(x), static_cast<float>(y), static_cast<float>(z)}, {static_cast<float>(ox), static_cast<float>(oy), static_cast<float>(oz)}, 0);
 }
 
 int  yafaray_addVertexWithOrcoTimeStep(yafaray_Interface_t *interface, double x, double y, double z, double ox, double oy, double oz, unsigned int time_step) //!< add vertex with Orco to mesh; returns index to be used for addTriangle/addQuad
 {
-	return reinterpret_cast<yafaray::Interface *>(interface)->addVertex(x, y, z, ox, oy, oz, time_step);
+	return reinterpret_cast<yafaray::Interface *>(interface)->addVertex({static_cast<float>(x), static_cast<float>(y), static_cast<float>(z)}, {static_cast<float>(ox), static_cast<float>(oy), static_cast<float>(oz)}, time_step);
 }
 
 void yafaray_addNormal(yafaray_Interface_t *interface, double nx, double ny, double nz) //!< add vertex normal to mesh; the vertex that will be attached to is the last one inserted by addVertex method
 {
-	reinterpret_cast<yafaray::Interface *>(interface)->addVertexNormal(nx, ny, nz, 0);
+	reinterpret_cast<yafaray::Interface *>(interface)->addVertexNormal({static_cast<float>(nx), static_cast<float>(ny), static_cast<float>(nz)}, 0);
 }
 
 void yafaray_addNormalTimeStep(yafaray_Interface_t *interface, double nx, double ny, double nz, unsigned int time_step) //!< add vertex normal to mesh; the vertex that will be attached to is the last one inserted by addVertex method
 {
-	reinterpret_cast<yafaray::Interface *>(interface)->addVertexNormal(nx, ny, nz, time_step);
+	reinterpret_cast<yafaray::Interface *>(interface)->addVertexNormal({static_cast<float>(nx), static_cast<float>(ny), static_cast<float>(nz)}, time_step);
 }
 
 yafaray_bool_t yafaray_addTriangle(yafaray_Interface_t *interface, int a, int b, int c)
@@ -161,7 +161,7 @@ yafaray_bool_t yafaray_addInstanceMatrixArray(yafaray_Interface_t *interface, ya
 
 void yafaray_paramsSetVector(yafaray_Interface_t *interface, const char *name, double x, double y, double z)
 {
-	reinterpret_cast<yafaray::Interface *>(interface)->paramsSetVector(name, x, y, z);
+	reinterpret_cast<yafaray::Interface *>(interface)->paramsSetVector(name, {static_cast<float>(x), static_cast<float>(y), static_cast<float>(z)});
 }
 
 void yafaray_paramsSetString(yafaray_Interface_t *interface, const char *name, const char *s)
@@ -186,7 +186,7 @@ void yafaray_paramsSetFloat(yafaray_Interface_t *interface, const char *name, do
 
 void yafaray_paramsSetColor(yafaray_Interface_t *interface, const char *name, float r, float g, float b, float a)
 {
-	reinterpret_cast<yafaray::Interface *>(interface)->paramsSetColor(name, r, g, b, a);
+	reinterpret_cast<yafaray::Interface *>(interface)->paramsSetColor(name, yafaray::Rgba{r, g, b, a});
 }
 
 void yafaray_paramsSetMatrix(yafaray_Interface_t *interface, const char *name, float m_00, float m_01, float m_02, float m_03, float m_10, float m_11, float m_12, float m_13, float m_20, float m_21, float m_22, float m_23, float m_30, float m_31, float m_32, float m_33, yafaray_bool_t transpose)
@@ -339,7 +339,7 @@ void yafaray_render(yafaray_Interface_t *interface, yafaray_ProgressBarCallback_
 	std::shared_ptr<yafaray::ProgressBar> progress_bar;
 	if(progress_bar_display_console == YAFARAY_DISPLAY_CONSOLE_NORMAL) progress_bar = std::make_shared<yafaray::ConsoleProgressBar>(80, monitor_callback, callback_data);
 	else progress_bar = std::make_shared<yafaray::ProgressBar>(monitor_callback, callback_data);
-	reinterpret_cast<yafaray::Interface *>(interface)->render(progress_bar);
+	reinterpret_cast<yafaray::Interface *>(interface)->render(std::move(progress_bar));
 }
 
 void yafaray_defineLayer(yafaray_Interface_t *interface)

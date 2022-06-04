@@ -130,7 +130,7 @@ std::vector<const Primitive *> MeshObject::getPrimitives() const
 	return primitives;
 }
 
-void MeshObject::addVertexNormal(const Vec3 &n, size_t time_step)
+void MeshObject::addVertexNormal(Vec3 &&n, size_t time_step)
 {
 	const size_t points_size = time_steps_[time_step].points_.size();
 	if(time_steps_[time_step].vertices_normals_.size() < points_size) time_steps_[time_step].vertices_normals_.reserve(points_size);

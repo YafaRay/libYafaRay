@@ -46,6 +46,7 @@ class Parameter
 
 		Parameter() = default;
 		explicit Parameter(const std::string &s);
+		explicit Parameter(std::string &&s);
 		explicit Parameter(int i);
 		explicit Parameter(bool b);
 		explicit Parameter(float f);
@@ -68,6 +69,7 @@ class Parameter
 
 		// operator= assigns new value, be aware that this may change the parameter type!
 		Parameter &operator = (const std::string &s);
+		Parameter &operator = (std::string &&s);
 		Parameter &operator = (int i);
 		Parameter &operator = (bool b);
 		Parameter &operator = (float f);

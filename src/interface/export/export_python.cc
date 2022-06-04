@@ -92,36 +92,35 @@ bool ExportPython::endObject() noexcept
 	return true;
 }
 
-int ExportPython::addVertex(double x, double y, double z, size_t time_step) noexcept
+int ExportPython::addVertex(Point3 &&vertex, size_t time_step) noexcept
 {
-	file_ << "yi.addVertex(" << x << ", " << y << ", " << z;
+	file_ << "yi.addVertex(" << vertex.x() << ", " << vertex.y() << ", " << vertex.z();
 	if(time_step > 0) file_ << ", " << time_step;
 	file_ << ")\n";
 	return 0;
 }
 
-int ExportPython::addVertex(double x, double y, double z, double ox, double oy, double oz, size_t time_step) noexcept
+int ExportPython::addVertex(Point3 &&vertex, Point3 &&orco, size_t time_step) noexcept
 {
-	file_ << "yi.addVertexWithOrco(" << x << ", " << y << ", " << z << ", " << ox << ", " << oy << ", " << oz;
+	file_ << "yi.addVertexWithOrco(" << vertex.x() << ", " << vertex.y() << ", " << vertex.z() << ", " << orco.x() << ", " << orco.y() << ", " << orco.z();
 	if(time_step > 0) file_ << ", " << time_step;
 	file_ << ")\n";
 	return 0;
 }
 
-void ExportPython::addVertexNormal(double x, double y, double z, size_t time_step) noexcept
+void ExportPython::addVertexNormal(Vec3 &&normal, size_t time_step) noexcept
 {
-	file_ << "yi.addNormal(" << x << ", " << y << ", " << z;
+	file_ << "yi.addNormal(" << normal.x() << ", " << normal.y() << ", " << normal.z();
 	if(time_step > 0) file_ << ", " << time_step;
 	file_ << ")\n";
 }
 
-void ExportPython::setCurrentMaterial(const char *name) noexcept
+void ExportPython::setCurrentMaterial(std::string &&name) noexcept
 {
-	const std::string name_str(name);
-	if(name_str != current_material_) //need to set current material
+	if(name != current_material_) //need to set current material
 	{
-		file_ << "yi.setCurrentMaterial(\"" << name_str << "\")\n";
-		current_material_ = name_str;
+		file_ << "yi.setCurrentMaterial(\"" << name << "\")\n";
+		current_material_ = std::move(name);
 	}
 }
 
@@ -154,7 +153,7 @@ int ExportPython::addUv(Uv &&uv) noexcept
 	return n_uvs_++;
 }
 
-bool ExportPython::smoothVerticesNormals(const char *name, double angle) noexcept
+bool ExportPython::smoothVerticesNormals(std::string &&name, double angle) noexcept
 {
 	file_ << "yi.smoothMesh(\"" << name << "\", " << angle << ")\n";
 	return true;
@@ -230,7 +229,7 @@ size_t ExportPython::createInstance() noexcept
 	return current_instance_id_++;
 }
 
-bool ExportPython::addInstanceObject(size_t instance_id, const char *base_object_name) noexcept
+bool ExportPython::addInstanceObject(size_t instance_id, std::string &&base_object_name) noexcept
 {
 	file_ << "yi.addInstanceObject(" << instance_id << ", \"" << base_object_name << "\")\n"; //FIXME Should I use the variable name "instance_id" for export instead?
 	return true;
@@ -271,7 +270,7 @@ void ExportPython::writeParamList(int indent) noexcept
 	file_ << "yi.paramsEndList()\n";
 }
 
-Light *ExportPython::createLight(const char *name) noexcept
+Light *ExportPython::createLight(std::string &&name) noexcept
 {
 	writeParamMap(*params_);
 	params_->clear();
@@ -280,7 +279,7 @@ Light *ExportPython::createLight(const char *name) noexcept
 	return nullptr;
 }
 
-Texture *ExportPython::createTexture(const char *name) noexcept
+Texture *ExportPython::createTexture(std::string &&name) noexcept
 {
 	writeParamMap(*params_);
 	params_->clear();
@@ -289,7 +288,7 @@ Texture *ExportPython::createTexture(const char *name) noexcept
 	return nullptr;
 }
 
-const Material *ExportPython::createMaterial(const char *name) noexcept
+const Material *ExportPython::createMaterial(std::string &&name) noexcept
 {
 	writeParamMap(*params_);
 	writeParamList(1);
@@ -299,7 +298,7 @@ const Material *ExportPython::createMaterial(const char *name) noexcept
 	file_ << "yi.paramsClearAll()\n\n";
 	return nullptr;
 }
-const Camera * ExportPython::createCamera(const char *name) noexcept
+const Camera * ExportPython::createCamera(std::string &&name) noexcept
 {
 	writeParamMap(*params_);
 	params_->clear();
@@ -307,7 +306,7 @@ const Camera * ExportPython::createCamera(const char *name) noexcept
 	file_ << "yi.paramsClearAll()\n\n";
 	return nullptr;
 }
-const Background * ExportPython::createBackground(const char *name) noexcept
+const Background * ExportPython::createBackground(std::string &&name) noexcept
 {
 	writeParamMap(*params_);
 	params_->clear();
@@ -315,7 +314,7 @@ const Background * ExportPython::createBackground(const char *name) noexcept
 	file_ << "yi.paramsClearAll()\n\n";
 	return nullptr;
 }
-Integrator *ExportPython::createIntegrator(const char *name) noexcept
+Integrator *ExportPython::createIntegrator(std::string &&name) noexcept
 {
 	writeParamMap(*params_);
 	params_->clear();
@@ -324,7 +323,7 @@ Integrator *ExportPython::createIntegrator(const char *name) noexcept
 	return nullptr;
 }
 
-VolumeRegion *ExportPython::createVolumeRegion(const char *name) noexcept
+VolumeRegion *ExportPython::createVolumeRegion(std::string &&name) noexcept
 {
 	writeParamMap(*params_);
 	params_->clear();
@@ -333,7 +332,7 @@ VolumeRegion *ExportPython::createVolumeRegion(const char *name) noexcept
 	return nullptr;
 }
 
-ImageOutput *ExportPython::createOutput(const char *name) noexcept
+ImageOutput *ExportPython::createOutput(std::string &&name) noexcept
 {
 	writeParamMap(*params_);
 	params_->clear();
@@ -342,7 +341,7 @@ ImageOutput *ExportPython::createOutput(const char *name) noexcept
 	return nullptr;
 }
 
-RenderView *ExportPython::createRenderView(const char *name) noexcept
+RenderView *ExportPython::createRenderView(std::string &&name) noexcept
 {
 	writeParamMap(*params_);
 	params_->clear();
@@ -351,7 +350,7 @@ RenderView *ExportPython::createRenderView(const char *name) noexcept
 	return nullptr;
 }
 
-Image *ExportPython::createImage(const char *name) noexcept
+Image *ExportPython::createImage(std::string &&name) noexcept
 {
 	writeParamMap(*params_);
 	params_->clear();
@@ -360,7 +359,7 @@ Image *ExportPython::createImage(const char *name) noexcept
 	return nullptr;
 }
 
-Object *ExportPython::createObject(const char *name) noexcept
+Object *ExportPython::createObject(std::string &&name) noexcept
 {
 	n_uvs_ = 0;
 	writeParamMap(*params_);
@@ -379,7 +378,7 @@ void ExportPython::setupRender() noexcept
 	file_ << "yi.paramsClearAll()\n\n";
 }
 
-void ExportPython::render(const std::shared_ptr<ProgressBar> &progress_bar) noexcept
+void ExportPython::render(std::shared_ptr<ProgressBar> &&progress_bar) noexcept
 {
 	file_ << "# Creating image output #\n";
 	file_ << "yi.paramsSetString(\"image_path\", \"./test01-output1.tga\")\n";

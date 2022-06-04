@@ -95,11 +95,11 @@ bool CurveObject::calculateObject(const std::unique_ptr<const Material> *materia
 				std::tie(u, v) = Vec3::createCoordsSystem(normal);
 			}
 			// TODO: thikness?
-			const Point3 a{o - (0.5 * r * v) - 1.5 * r / math::sqrt(3.f) * u};
-			const Point3 b{o - (0.5 * r * v) + 1.5 * r / math::sqrt(3.f) * u};
+			Point3 a{o - (0.5 * r * v) - 1.5 * r / math::sqrt(3.f) * u};
+			Point3 b{o - (0.5 * r * v) + 1.5 * r / math::sqrt(3.f) * u};
 
-			addPoint(a, time_step);
-			addPoint(b, time_step);
+			addPoint(std::move(a), time_step);
+			addPoint(std::move(b), time_step);
 		}
 	}
 

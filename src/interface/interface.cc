@@ -73,7 +73,7 @@ void Interface::clearAll() noexcept
 
 void Interface::defineLayer() noexcept
 {
-	scene_->defineLayer(*params_);
+	scene_->defineLayer(std::move(*params_));
 }
 
 bool Interface::startGeometry() noexcept { return scene_->startObjects(); }
@@ -87,16 +87,16 @@ unsigned int Interface::getNextFreeId() noexcept
 
 bool Interface::endObject() noexcept { return scene_->endObject(); }
 
-int Interface::addVertex(double x, double y, double z, size_t time_step) noexcept { return scene_->addVertex({static_cast<float>(x), static_cast<float>(y), static_cast<float>(z)}, time_step); }
+int Interface::addVertex(Point3 &&vertex, size_t time_step) noexcept { return scene_->addVertex(std::move(vertex), time_step); }
 
-int Interface::addVertex(double x, double y, double z, double ox, double oy, double oz, size_t time_step) noexcept
+int Interface::addVertex(Point3 &&vertex, Point3 &&orco, size_t time_step) noexcept
 {
-	return scene_->addVertex({static_cast<float>(x), static_cast<float>(y), static_cast<float>(z)}, {static_cast<float>(ox), static_cast<float>(oy), static_cast<float>(oz)}, time_step);
+	return scene_->addVertex(std::move(vertex), std::move(orco), time_step);
 }
 
-void Interface::addVertexNormal(double x, double y, double z, size_t time_step) noexcept
+void Interface::addVertexNormal(Vec3 &&normal, size_t time_step) noexcept
 {
-	scene_->addVertexNormal({static_cast<float>(x), static_cast<float>(y), static_cast<float>(z)}, time_step);
+	scene_->addVertexNormal(std::move(normal), time_step);
 }
 
 bool Interface::addFace(std::vector<int> &&vertices, std::vector<int> &&uv_indices) noexcept
@@ -106,16 +106,16 @@ bool Interface::addFace(std::vector<int> &&vertices, std::vector<int> &&uv_indic
 
 int Interface::addUv(Uv &&uv) noexcept { return scene_->addUv(std::move(uv)); }
 
-bool Interface::smoothVerticesNormals(const char *name, double angle) noexcept { return scene_->smoothVerticesNormals(name, angle); }
+bool Interface::smoothVerticesNormals(std::string &&name, double angle) noexcept { return scene_->smoothVerticesNormals(std::move(name), angle); }
 
 size_t Interface::createInstance() noexcept
 {
 	return scene_->createInstance();
 }
 
-bool Interface::addInstanceObject(size_t instance_id, const char *base_object_name) noexcept
+bool Interface::addInstanceObject(size_t instance_id, std::string &&base_object_name) noexcept
 {
-	return scene_->addInstanceObject(instance_id, base_object_name);
+	return scene_->addInstanceObject(instance_id, std::move(base_object_name));
 }
 
 bool Interface::addInstanceOfInstance(size_t instance_id, size_t base_instance_id) noexcept
@@ -128,39 +128,38 @@ bool Interface::addInstanceMatrix(size_t instance_id, Matrix4 &&obj_to_world, fl
 	return scene_->addInstanceMatrix(instance_id, std::move(obj_to_world), time);
 }
 
-void Interface::paramsSetVector(const char *name, double x, double y, double z) noexcept
+void Interface::paramsSetVector(std::string &&name, Vec3 &&v) noexcept
 {
-	(*cparams_)[std::string(name)] = Parameter{Vec3{static_cast<float>(x), static_cast<float>(y), static_cast<float>(z)}};
+	(*cparams_)[name] = Parameter{std::move(v)};
 }
 
-void Interface::paramsSetString(const char *name, const char *s) noexcept
+void Interface::paramsSetString(std::string &&name, std::string &&s) noexcept
 {
-	(*cparams_)[std::string(name)] = Parameter(std::string(s));
+	(*cparams_)[name] = Parameter(std::move(s));
 }
 
-void Interface::paramsSetBool(const char *name, bool b) noexcept
+void Interface::paramsSetBool(std::string &&name, bool b) noexcept
 {
-	(*cparams_)[std::string(name)] = Parameter(b);
+	(*cparams_)[std::string(name)] = b;
 }
 
-void Interface::paramsSetInt(const char *name, int i) noexcept
+void Interface::paramsSetInt(std::string &&name, int i) noexcept
 {
-	(*cparams_)[std::string(name)] = Parameter(i);
+	(*cparams_)[std::string(name)] = i;
 }
 
-void Interface::paramsSetFloat(const char *name, double f) noexcept
+void Interface::paramsSetFloat(std::string &&name, double f) noexcept
 {
-	(*cparams_)[std::string(name)] = Parameter(f);
+	(*cparams_)[std::string(name)] = Parameter{f};
 }
 
-void Interface::paramsSetColor(const char *name, float r, float g, float b, float a) noexcept
+void Interface::paramsSetColor(std::string &&name, Rgba &&col) noexcept
 {
-	Rgba col(r, g, b, a);
 	col.linearRgbFromColorSpace(input_color_space_, input_gamma_);
-	(*cparams_)[std::string(name)] = Parameter(col);
+	(*cparams_)[std::string(name)] = std::move(col);
 }
 
-void Interface::paramsSetMatrix(const char *name, Matrix4 &&matrix, bool transpose) noexcept
+void Interface::paramsSetMatrix(std::string &&name, Matrix4 &&matrix, bool transpose) noexcept
 {
 	if(transpose)
 	{
@@ -193,20 +192,20 @@ void Interface::paramsEndList() noexcept
 	cparams_ = params_.get();
 }
 
-Object *Interface::createObject(const char *name) noexcept { return scene_->createObject(name, *params_); }
-Light *Interface::createLight(const char *name) noexcept { return scene_->createLight(name, *params_); }
-Texture *Interface::createTexture(const char *name) noexcept { return scene_->createTexture(name, *params_); }
-const Material *Interface::createMaterial(const char *name) noexcept { return scene_->createMaterial(name, *params_, nodes_params_)->get(); }
-const Camera * Interface::createCamera(const char *name) noexcept { return scene_->createCamera(name, *params_); }
-const Background * Interface::createBackground(const char *name) noexcept { return scene_->createBackground(name, *params_); }
-Integrator *Interface::createIntegrator(const char *name) noexcept { return scene_->createIntegrator(name, *params_); }
-VolumeRegion *Interface::createVolumeRegion(const char *name) noexcept { return scene_->createVolumeRegion(name, *params_); }
-RenderView *Interface::createRenderView(const char *name) noexcept { return scene_->createRenderView(name, *params_); }
-Image *Interface::createImage(const char *name) noexcept { return scene_->createImage(name, *params_).get(); }
+Object *Interface::createObject(std::string &&name) noexcept { return scene_->createObject(std::move(name), std::move(*params_)); }
+Light *Interface::createLight(std::string &&name) noexcept { return scene_->createLight(std::move(name), std::move(*params_)); }
+Texture *Interface::createTexture(std::string &&name) noexcept { return scene_->createTexture(std::move(name), std::move(*params_)); }
+const Material *Interface::createMaterial(std::string &&name) noexcept { return scene_->createMaterial(std::move(name), std::move(*params_), std::move(nodes_params_))->get(); }
+const Camera * Interface::createCamera(std::string &&name) noexcept { return scene_->createCamera(std::move(name), std::move(*params_)); }
+const Background * Interface::createBackground(std::string &&name) noexcept { return scene_->createBackground(std::move(name), std::move(*params_)); }
+Integrator *Interface::createIntegrator(std::string &&name) noexcept { return scene_->createIntegrator(std::move(name), std::move(*params_)); }
+VolumeRegion *Interface::createVolumeRegion(std::string &&name) noexcept { return scene_->createVolumeRegion(std::move(name), std::move(*params_)); }
+RenderView *Interface::createRenderView(std::string &&name) noexcept { return scene_->createRenderView(std::move(name), std::move(*params_)); }
+Image *Interface::createImage(std::string &&name) noexcept { return scene_->createImage(std::move(name), std::move(*params_)).get(); }
 
-ImageOutput *Interface::createOutput(const char *name) noexcept
+ImageOutput *Interface::createOutput(std::string &&name) noexcept
 {
-	return scene_->createOutput(name, *params_);
+	return scene_->createOutput(std::move(name), std::move(*params_));
 }
 
 void Interface::setRenderNotifyViewCallback(yafaray_RenderNotifyViewCallback_t callback, void *callback_data) noexcept
@@ -279,9 +278,9 @@ std::string Interface::printViewsTable() const noexcept
 	else return "";
 }
 
-bool Interface::removeOutput(const char *name) noexcept
+bool Interface::removeOutput(std::string &&name) noexcept
 {
-	return scene_->removeOutput(name);
+	return scene_->removeOutput(std::move(name));
 }
 
 void Interface::clearOutputs() noexcept
@@ -300,7 +299,7 @@ void Interface::setCurrentMaterial(const std::unique_ptr<const Material> *materi
 	if(scene_) scene_->setCurrentMaterial(material);
 }
 
-void Interface::setCurrentMaterial(const char *name) noexcept
+void Interface::setCurrentMaterial(std::string &&name) noexcept
 {
 	if(scene_) scene_->setCurrentMaterial(scene_->getMaterial(std::string(name)));
 }
@@ -337,12 +336,12 @@ void Interface::printError(const std::string &msg) const noexcept
 
 void Interface::setupRender() noexcept
 {
-	scene_->setupSceneRenderParams(*scene_, *params_);
+	scene_->setupSceneRenderParams(*scene_, std::move(*params_));
 }
 
-void Interface::render(const std::shared_ptr<ProgressBar> &progress_bar) noexcept
+void Interface::render(std::shared_ptr<ProgressBar> &&progress_bar) noexcept
 {
-	if(!scene_->setupSceneProgressBar(*scene_, progress_bar)) return;
+	if(!scene_->setupSceneProgressBar(*scene_, std::move(progress_bar))) return;
 	scene_->render();
 }
 

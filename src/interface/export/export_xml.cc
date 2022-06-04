@@ -84,37 +84,36 @@ bool ExportXml::endObject() noexcept
 	return true;
 }
 
-int ExportXml::addVertex(double x, double y, double z, size_t time_step) noexcept
+int ExportXml::addVertex(Point3 &&vertex, size_t time_step) noexcept
 {
-	file_ << "\t<p x=\"" << x << "\" y=\"" << y << "\" z=\"" << z;
+	file_ << "\t<p x=\"" << vertex.x() << "\" y=\"" << vertex.y() << "\" z=\"" << vertex.z();
 	if(time_step > 0) file_ << "\" t=\"" << time_step;
 	file_ << "\"/>\n";
 	return 0;
 }
 
-int ExportXml::addVertex(double x, double y, double z, double ox, double oy, double oz, size_t time_step) noexcept
+int ExportXml::addVertex(Point3 &&vertex, Point3 &&orco, size_t time_step) noexcept
 {
-	file_ << "\t<p x=\"" << x << "\" y=\"" << y << "\" z=\"" << z
-			  << "\" ox=\"" << ox << "\" oy=\"" << oy << "\" oz=\"" << oz;
+	file_ << "\t<p x=\"" << vertex.x() << "\" y=\"" << vertex.y() << "\" z=\"" << vertex.z()
+			  << "\" ox=\"" << orco.x() << "\" oy=\"" << orco.y() << "\" oz=\"" << orco.z();
 	if(time_step > 0) file_ << "\" t=\"" << time_step;
 	file_ << "\"/>\n";
 	return 0;
 }
 
-void ExportXml::addVertexNormal(double x, double y, double z, size_t time_step) noexcept
+void ExportXml::addVertexNormal(Vec3 &&normal, size_t time_step) noexcept
 {
-	file_ << "\t<n x=\"" << x << "\" y=\"" << y << "\" z=\"" << z;
+	file_ << "\t<n x=\"" << normal.x() << "\" y=\"" << normal.y() << "\" z=\"" << normal.z();
 	if(time_step > 0) file_ << "\" t=\"" << time_step;
 	file_ << "\"/>\n";
 }
 
-void ExportXml::setCurrentMaterial(const char *name) noexcept
+void ExportXml::setCurrentMaterial(std::string &&name) noexcept
 {
-	const std::string name_str(name);
-	if(name_str != current_material_) //need to set current material
+	if(name != current_material_) //need to set current material
 	{
-		file_ << "\t<set_material sval=\"" << name_str << "\"/>\n";
-		current_material_ = name_str;
+		file_ << "\t<set_material sval=\"" << name << "\"/>\n";
+		current_material_ = std::move(name);
 	}
 }
 
@@ -124,13 +123,13 @@ bool ExportXml::addFace(std::vector<int> &&vertices, std::vector<int> &&uv_indic
 	const size_t num_vertices = vertices.size();
 	for(size_t i = 0; i < num_vertices; ++i)
 	{
-		const char vertex_char = 'a' + i;
+		const unsigned char vertex_char = 'a' + i;
 		file_ << " " << vertex_char << "=\"" << vertices[i] << "\"";
 	}
 	const size_t num_uv = uv_indices.size();
 	for(size_t i = 0; i < num_uv; ++i)
 	{
-		const char vertex_char = 'a' + i;
+		const unsigned char vertex_char = 'a' + i;
 		file_ << " uv_" << vertex_char << "=\"" << uv_indices[i] << "\"";
 	}
 	file_ << "/>\n";
@@ -143,7 +142,7 @@ int ExportXml::addUv(Uv &&uv) noexcept
 	return n_uvs_++;
 }
 
-bool ExportXml::smoothVerticesNormals(const char *name, double angle) noexcept
+bool ExportXml::smoothVerticesNormals(std::string &&name, double angle) noexcept
 {
 	file_ << "<smooth object_name=\"" << name << "\" angle=\"" << angle << "\"/>\n";
 	return true;
@@ -215,7 +214,7 @@ size_t ExportXml::createInstance() noexcept
 	return current_instance_id_++;
 }
 
-bool ExportXml::addInstanceObject(size_t instance_id, const char *base_object_name) noexcept
+bool ExportXml::addInstanceObject(size_t instance_id, std::string &&base_object_name) noexcept
 {
 	file_ << "\n<addInstanceObject instance_id=\"" << instance_id << "\" base_object_name=\"" << base_object_name << "\"></addInstanceObject>\n";
 	return true;
@@ -256,7 +255,7 @@ void ExportXml::writeParamList(int indent) noexcept
 	}
 }
 
-Light *ExportXml::createLight(const char *name) noexcept
+Light *ExportXml::createLight(std::string &&name) noexcept
 {
 	file_ << "\n<light name=\"" << name << "\">\n";
 	writeParamMap(*params_);
@@ -264,7 +263,7 @@ Light *ExportXml::createLight(const char *name) noexcept
 	return nullptr;
 }
 
-Texture *ExportXml::createTexture(const char *name) noexcept
+Texture *ExportXml::createTexture(std::string &&name) noexcept
 {
 	file_ << "\n<texture name=\"" << name << "\">\n";
 	writeParamMap(*params_);
@@ -272,7 +271,7 @@ Texture *ExportXml::createTexture(const char *name) noexcept
 	return nullptr;
 }
 
-const Material *ExportXml::createMaterial(const char *name) noexcept
+const Material *ExportXml::createMaterial(std::string &&name) noexcept
 {
 	file_ << "\n<material name=\"" << name << "\">\n";
 	writeParamMap(*params_);
@@ -280,21 +279,21 @@ const Material *ExportXml::createMaterial(const char *name) noexcept
 	file_ << "</material>\n";
 	return nullptr;
 }
-const Camera * ExportXml::createCamera(const char *name) noexcept
+const Camera * ExportXml::createCamera(std::string &&name) noexcept
 {
 	file_ << "\n<camera name=\"" << name << "\">\n";
 	writeParamMap(*params_);
 	file_ << "</camera>\n";
 	return nullptr;
 }
-const Background * ExportXml::createBackground(const char *name) noexcept
+const Background * ExportXml::createBackground(std::string &&name) noexcept
 {
 	file_ << "\n<background name=\"" << name << "\">\n";
 	writeParamMap(*params_);
 	file_ << "</background>\n";
 	return nullptr;
 }
-Integrator *ExportXml::createIntegrator(const char *name) noexcept
+Integrator *ExportXml::createIntegrator(std::string &&name) noexcept
 {
 	file_ << "\n<integrator name=\"" << name << "\">\n";
 	writeParamMap(*params_);
@@ -302,7 +301,7 @@ Integrator *ExportXml::createIntegrator(const char *name) noexcept
 	return nullptr;
 }
 
-VolumeRegion *ExportXml::createVolumeRegion(const char *name) noexcept
+VolumeRegion *ExportXml::createVolumeRegion(std::string &&name) noexcept
 {
 	file_ << "\n<volumeregion name=\"" << name << "\">\n";
 	writeParamMap(*params_);
@@ -310,7 +309,7 @@ VolumeRegion *ExportXml::createVolumeRegion(const char *name) noexcept
 	return nullptr;
 }
 
-ImageOutput *ExportXml::createOutput(const char *name) noexcept
+ImageOutput *ExportXml::createOutput(std::string &&name) noexcept
 {
 	file_ << "\n<output name=\"" << name << "\">\n";
 	writeParamMap(*params_);
@@ -318,7 +317,7 @@ ImageOutput *ExportXml::createOutput(const char *name) noexcept
 	return nullptr;
 }
 
-RenderView *ExportXml::createRenderView(const char *name) noexcept
+RenderView *ExportXml::createRenderView(std::string &&name) noexcept
 {
 	std::string render_view_name{name};
 	if(render_view_name.empty()) render_view_name = "render_view";
@@ -328,7 +327,7 @@ RenderView *ExportXml::createRenderView(const char *name) noexcept
 	return nullptr;
 }
 
-Image *ExportXml::createImage(const char *name) noexcept
+Image *ExportXml::createImage(std::string &&name) noexcept
 {
 	file_ << "\n<image name=\"" << name << "\">\n";
 	writeParamMap(*params_);
@@ -336,7 +335,7 @@ Image *ExportXml::createImage(const char *name) noexcept
 	return nullptr;
 }
 
-Object *ExportXml::createObject(const char *name) noexcept
+Object *ExportXml::createObject(std::string &&name) noexcept
 {
 	n_uvs_ = 0;
 	file_ << "\n<object>\n";
@@ -354,7 +353,7 @@ void ExportXml::setupRender() noexcept
 	file_ << "</render>\n";
 }
 
-void ExportXml::render(const std::shared_ptr<ProgressBar> &progress_bar) noexcept
+void ExportXml::render(std::shared_ptr<ProgressBar> &&progress_bar) noexcept
 {
 	file_ << "</yafaray_xml>\n";
 	file_.flush();

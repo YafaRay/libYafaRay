@@ -64,7 +64,7 @@ const Background * ConstantBackground::factory(Logger &logger, Scene &scene, con
 		bgp["with_diffuse"] = diff;
 		bgp["cast_shadows"] = cast_shadows;
 
-		Light *bglight = scene.createLight("constantBackground_bgLight", bgp);
+		Light *bglight = scene.createLight("constantBackground_bgLight", std::move(bgp));
 		bglight->setBackground(const_bg);
 	}
 

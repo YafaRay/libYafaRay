@@ -71,16 +71,16 @@ class Scene final
 		explicit Scene(Logger &logger);
 		Scene(const Scene &s) = delete;
 		~Scene();
-		int addVertex(const Point3 &p, size_t time_step);
-		int addVertex(const Point3 &p, const Point3 &orco, size_t time_step);
-		void addVertexNormal(const Vec3 &n, size_t time_step);
+		int addVertex(Point3 &&p, size_t time_step);
+		int addVertex(Point3 &&p, Point3 &&orco, size_t time_step);
+		void addVertexNormal(Vec3 &&n, size_t time_step);
 		bool addFace(std::vector<int> &&vert_indices, std::vector<int> &&uv_indices = {});
 		int addUv(Uv &&uv);
-		bool smoothVerticesNormals(const std::string &name, float angle);
-		Object *createObject(const std::string &name, const ParamMap &params);
+		bool smoothVerticesNormals(std::string &&name, float angle);
+		Object *createObject(std::string &&name, ParamMap &&params);
 		bool endObject();
 		size_t createInstance();
-		bool addInstanceObject(size_t instance_id, const std::string &base_object_name);
+		bool addInstanceObject(size_t instance_id, std::string &&base_object_name);
 		bool addInstanceOfInstance(size_t instance_id, size_t base_instance_id);
 		bool addInstanceMatrix(size_t instance_id, Matrix4 &&obj_to_world, float time);
 		bool updateObjects();
@@ -94,7 +94,7 @@ class Scene final
 		void setSurfIntegrator(SurfaceIntegrator *s);
 		SurfaceIntegrator *getSurfIntegrator() const { return surf_integrator_; }
 		void setVolIntegrator(VolumeIntegrator *v);
-		void setAntialiasing(const AaNoiseParams &aa_noise_params) { aa_noise_params_ = aa_noise_params; };
+		void setAntialiasing(AaNoiseParams &&aa_noise_params) { aa_noise_params_ = std::move(aa_noise_params); };
 		void setNumThreads(int threads);
 		void setNumThreadsPhotons(int threads_photons);
 		void setCurrentMaterial(const std::unique_ptr<const Material> *material);
@@ -122,24 +122,24 @@ class Scene final
 		const std::map<std::string, std::unique_ptr<VolumeRegion>> * getVolumeRegions() const { return &volume_regions_; }
 		const std::map<std::string, std::unique_ptr<Light>> &getLights() const { return lights_; }
 
-		Light *createLight(const std::string &name, const ParamMap &params);
-		Texture *createTexture(const std::string &name, const ParamMap &params);
-		std::unique_ptr<const Material> * createMaterial(const std::string &name, const ParamMap &params, const std::list<ParamMap> &nodes_params);
-		const Camera *createCamera(const std::string &name, const ParamMap &params);
-		const Background * createBackground(const std::string &name, const ParamMap &params);
-		Integrator *createIntegrator(const std::string &name, const ParamMap &params);
-		VolumeRegion *createVolumeRegion(const std::string &name, const ParamMap &params);
-		RenderView *createRenderView(const std::string &name, const ParamMap &params);
-		std::shared_ptr<Image> createImage(const std::string &name, const ParamMap &params);
-		ImageOutput *createOutput(const std::string &name, const ParamMap &params);
-		bool removeOutput(const std::string &name);
+		Light *createLight(std::string &&name, ParamMap &&params);
+		Texture *createTexture(std::string &&name, ParamMap &&params);
+		std::unique_ptr<const Material> *createMaterial(std::string &&name, ParamMap &&params, std::list<ParamMap> &&nodes_params);
+		const Camera *createCamera(std::string &&name, ParamMap &&params);
+		const Background *createBackground(std::string &&name, ParamMap &&params);
+		Integrator *createIntegrator(std::string &&name, ParamMap &&params);
+		VolumeRegion *createVolumeRegion(std::string &&name, ParamMap &&params);
+		RenderView *createRenderView(std::string &&name, ParamMap &&params);
+		std::shared_ptr<Image> createImage(std::string &&name, ParamMap &&params);
+		ImageOutput *createOutput(std::string &&name, ParamMap &&params);
+		bool removeOutput(std::string &&name);
 		void clearOutputs();
 		std::map<std::string, std::unique_ptr<ImageOutput>> &getOutputs() { return outputs_; }
 		const std::map<std::string, std::unique_ptr<ImageOutput>> &getOutputs() const { return outputs_; }
-		bool setupSceneRenderParams(Scene &scene, const ParamMap &params);
-		bool setupSceneProgressBar(Scene &scene, const std::shared_ptr<ProgressBar> &progress_bar);
-		void defineLayer(const ParamMap &params);
-		void defineLayer(const std::string &layer_type_name, const std::string &image_type_name, const std::string &exported_image_type_name, const std::string &exported_image_name);
+		bool setupSceneRenderParams(Scene &scene, ParamMap &&params);
+		bool setupSceneProgressBar(Scene &scene, std::shared_ptr<ProgressBar> &&progress_bar);
+		void defineLayer(ParamMap &&params);
+		void defineLayer(std::string &&layer_type_name, std::string &&image_type_name, std::string &&exported_image_type_name, std::string &&exported_image_name);
 		void defineLayer(LayerDef::Type layer_type, Image::Type image_type = Image::Type::None, Image::Type exported_image_type = Image::Type::None, const std::string &exported_image_name = "");
 		void clearLayers();
 		const Layers * getLayers() const { return &layers_; }
@@ -179,8 +179,8 @@ class Scene final
 		template <typename T> static std::shared_ptr<T> findMapItem(const std::string &name, const std::map<std::string, std::shared_ptr<T>> &map);
 		void setMaskParams(const ParamMap &params);
 		void setEdgeToonParams(const ParamMap &params);
-		template <typename T> static T *createMapItem(Logger &logger, const std::string &name, const std::string &class_name, const ParamMap &params, std::map<std::string, std::unique_ptr<T>> &map, Scene *scene, bool check_type_exists = true);
-		template <typename T> static std::shared_ptr<T> createMapItem(Logger &logger, const std::string &name, const std::string &class_name, const ParamMap &params, std::map<std::string, std::shared_ptr<T>> &map, Scene *scene, bool check_type_exists = true);
+		template <typename T> static T *createMapItem(Logger &logger, std::string &&name, std::string &&class_name, ParamMap &&params, std::map<std::string, std::unique_ptr<T>> &map, Scene *scene, bool check_type_exists = true);
+		template <typename T> static std::shared_ptr<T> createMapItem(Logger &logger, std::string &&name, std::string &&class_name, ParamMap &&params, std::map<std::string, std::shared_ptr<T>> &map, Scene *scene, bool check_type_exists = true);
 		void defineBasicLayers();
 		void defineDependentLayers(); //!< This function generates the basic/auxiliary layers. Must be called *after* defining all render layers with the defineLayer function.
 

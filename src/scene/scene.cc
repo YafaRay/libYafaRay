@@ -102,7 +102,7 @@ void Scene::createDefaultMaterial()
 	std::list<ParamMap> nodes_params;
 	//Note: keep the std::string or the parameter will be created incorrectly as a bool. This should improve with the new C++17 string literals, but for now with C++11 this should be done.
 	param_map["type"] = std::string("shinydiffusemat");
-	const std::unique_ptr<const Material> *material = createMaterial("YafaRay_Default_Material", param_map, nodes_params);
+	const std::unique_ptr<const Material> *material = createMaterial("YafaRay_Default_Material", std::move(param_map), std::move(nodes_params));
 	setCurrentMaterial(material);
 }
 
@@ -354,7 +354,7 @@ std::shared_ptr<Image> Scene::getImage(const std::string &name) const
 	return Scene::findMapItem<Image>(name, images_);
 }
 
-bool Scene::removeOutput(const std::string &name)
+bool Scene::removeOutput(std::string &&name)
 {
 	ImageOutput *output = getOutput(name);
 	if(!output) return false;
@@ -362,7 +362,7 @@ bool Scene::removeOutput(const std::string &name)
 	return true;
 }
 
-Light *Scene::createLight(const std::string &name, const ParamMap &params)
+Light *Scene::createLight(std::string &&name, ParamMap &&params)
 {
 	std::string pname = "Light";
 	if(lights_.find(name) != lights_.end())
@@ -387,7 +387,7 @@ Light *Scene::createLight(const std::string &name, const ParamMap &params)
 	return nullptr;
 }
 
-std::unique_ptr<const Material> * Scene::createMaterial(const std::string &name, const ParamMap &params, const std::list<ParamMap> &nodes_params)
+std::unique_ptr<const Material> * Scene::createMaterial(std::string &&name, ParamMap &&params, std::list<ParamMap> &&nodes_params)
 {
 	std::string pname = "Material";
 	if(materials_.find(name) != materials_.end())
@@ -417,7 +417,7 @@ std::unique_ptr<const Material> * Scene::createMaterial(const std::string &name,
 }
 
 template <typename T>
-T *Scene::createMapItem(Logger &logger, const std::string &name, const std::string &class_name, const ParamMap &params, std::map<std::string, std::unique_ptr<T>> &map, Scene *scene, bool check_type_exists)
+T *Scene::createMapItem(Logger &logger, std::string &&name, std::string &&class_name, ParamMap &&params, std::map<std::string, std::unique_ptr<T>> &map, Scene *scene, bool check_type_exists)
 {
 	if(map.find(name) != map.end())
 	{
@@ -444,7 +444,7 @@ T *Scene::createMapItem(Logger &logger, const std::string &name, const std::stri
 }
 
 template <typename T>
-std::shared_ptr<T> Scene::createMapItem(Logger &logger, const std::string &name, const std::string &class_name, const ParamMap &params, std::map<std::string, std::shared_ptr<T>> &map, Scene *scene, bool check_type_exists)
+std::shared_ptr<T> Scene::createMapItem(Logger &logger, std::string &&name, std::string &&class_name, ParamMap &&params, std::map<std::string, std::shared_ptr<T>> &map, Scene *scene, bool check_type_exists)
 {
 	if(map.find(name) != map.end())
 	{
@@ -470,7 +470,7 @@ std::shared_ptr<T> Scene::createMapItem(Logger &logger, const std::string &name,
 	return nullptr;
 }
 
-ImageOutput *Scene::createOutput(const std::string &name, const ParamMap &params)
+ImageOutput *Scene::createOutput(std::string &&name, ParamMap &&params)
 {
 	std::string class_name = "ColorOutput";
 	if(outputs_.find(name) != outputs_.end())
@@ -488,39 +488,39 @@ ImageOutput *Scene::createOutput(const std::string &name, const ParamMap &params
 	return nullptr;
 }
 
-Texture *Scene::createTexture(const std::string &name, const ParamMap &params)
+Texture *Scene::createTexture(std::string &&name, ParamMap &&params)
 {
-	return createMapItem<Texture>(logger_, name, "Texture", params, textures_, this);
+	return createMapItem<Texture>(logger_, std::move(name), "Texture", std::move(params), textures_, this);
 }
 
-const Background * Scene::createBackground(const std::string &name, const ParamMap &params)
+const Background * Scene::createBackground(std::string &&name, ParamMap &&params)
 {
-	return createMapItem<const Background>(logger_, name, "Background", params, backgrounds_, this);
+	return createMapItem<const Background>(logger_, std::move(name), "Background", std::move(params), backgrounds_, this);
 }
 
-const Camera *Scene::createCamera(const std::string &name, const ParamMap &params)
+const Camera *Scene::createCamera(std::string &&name, ParamMap &&params)
 {
-	return createMapItem<const Camera>(logger_, name, "Camera", params, cameras_, this);
+	return createMapItem<const Camera>(logger_, std::move(name), "Camera", std::move(params), cameras_, this);
 }
 
-Integrator *Scene::createIntegrator(const std::string &name, const ParamMap &params)
+Integrator *Scene::createIntegrator(std::string &&name, ParamMap &&params)
 {
-	return createMapItem<Integrator>(logger_, name, "Integrator", params, integrators_, this);
+	return createMapItem<Integrator>(logger_, std::move(name), "Integrator", std::move(params), integrators_, this);
 }
 
-VolumeRegion *Scene::createVolumeRegion(const std::string &name, const ParamMap &params)
+VolumeRegion *Scene::createVolumeRegion(std::string &&name, ParamMap &&params)
 {
-	return createMapItem<VolumeRegion>(logger_, name, "VolumeRegion", params, volume_regions_, this);
+	return createMapItem<VolumeRegion>(logger_, std::move(name), "VolumeRegion", std::move(params), volume_regions_, this);
 }
 
-RenderView *Scene::createRenderView(const std::string &name, const ParamMap &params)
+RenderView *Scene::createRenderView(std::string &&name, ParamMap &&params)
 {
-	return createMapItem<RenderView>(logger_, name, "RenderView", params, render_views_, this, false);
+	return createMapItem<RenderView>(logger_, std::move(name), "RenderView", std::move(params), render_views_, this, false);
 }
 
-std::shared_ptr<Image> Scene::createImage(const std::string &name, const ParamMap &params)
+std::shared_ptr<Image> Scene::createImage(std::string &&name, ParamMap &&params)
 {
-	return createMapItem<Image>(logger_, name, "Image", params, images_, this);
+	return createMapItem<Image>(logger_, std::move(name), "Image", std::move(params), images_, this);
 }
 
 /*! setup the scene for rendering (set camera, background, integrator, create image film,
@@ -528,7 +528,7 @@ std::shared_ptr<Image> Scene::createImage(const std::string &name, const ParamMa
 	attention: since this function creates an image film and asigns it to the scene,
 	you need to delete it before deleting the scene!
 */
-bool Scene::setupSceneRenderParams(Scene &scene, const ParamMap &params)
+bool Scene::setupSceneRenderParams(Scene &scene, ParamMap &&params)
 {
 	if(logger_.isDebug())
 	{
@@ -630,7 +630,7 @@ bool Scene::setupSceneRenderParams(Scene &scene, const ParamMap &params)
 
 	scene.setSurfIntegrator(static_cast<SurfaceIntegrator *>(integrator));
 	scene.setVolIntegrator(static_cast<VolumeIntegrator *>(volume_integrator));
-	scene.setAntialiasing(aa_noise_params);
+	scene.setAntialiasing(std::move(aa_noise_params));
 	scene.setNumThreads(nthreads);
 	scene.setNumThreadsPhotons(nthreads_photons);
 	if(background) scene.setBackground(background);
@@ -646,7 +646,7 @@ bool Scene::setupSceneRenderParams(Scene &scene, const ParamMap &params)
 	return true;
 }
 
-bool Scene::setupSceneProgressBar(Scene &scene, const std::shared_ptr<ProgressBar> &progress_bar)
+bool Scene::setupSceneProgressBar(Scene &scene, std::shared_ptr<ProgressBar> &&progress_bar)
 {
 	if(logger_.isDebug())
 	{
@@ -664,7 +664,7 @@ bool Scene::setupSceneProgressBar(Scene &scene, const std::shared_ptr<ProgressBa
 	return true;
 }
 
-void Scene::defineLayer(const ParamMap &params)
+void Scene::defineLayer(ParamMap &&params)
 {
 	if(logger_.isDebug())
 	{
@@ -676,10 +676,10 @@ void Scene::defineLayer(const ParamMap &params)
 	params.getParam("image_type", image_type_name);
 	params.getParam("exported_image_name", exported_image_name);
 	params.getParam("exported_image_type", exported_image_type_name);
-	defineLayer(layer_type_name, image_type_name, exported_image_type_name, exported_image_name);
+	defineLayer(std::move(layer_type_name), std::move(image_type_name), std::move(exported_image_type_name), std::move(exported_image_name));
 }
 
-void Scene::defineLayer(const std::string &layer_type_name, const std::string &image_type_name, const std::string &exported_image_type_name, const std::string &exported_image_name)
+void Scene::defineLayer(std::string &&layer_type_name, std::string &&image_type_name, std::string &&exported_image_type_name, std::string &&exported_image_name)
 {
 	const LayerDef::Type layer_type = LayerDef::getType(layer_type_name);
 	const Image::Type image_type = image_type_name.empty() ? LayerDef::getDefaultImageType(layer_type) : Image::getTypeFromName(image_type_name);
@@ -908,7 +908,7 @@ bool Scene::endObject()
 	return result;
 }
 
-bool Scene::smoothVerticesNormals(const std::string &name, float angle)
+bool Scene::smoothVerticesNormals(std::string &&name, float angle)
 {
 	if(logger_.isDebug()) logger_.logDebug("Scene::smoothVerticesNormals) PR(name) PR(angle");
 	//if(creation_state_.stack_.front() != CreationState::Geometry) return false;
@@ -933,26 +933,26 @@ bool Scene::smoothVerticesNormals(const std::string &name, float angle)
 	else return object->smoothVerticesNormals(logger_, angle);
 }
 
-int Scene::addVertex(const Point3 &p, size_t time_step)
+int Scene::addVertex(Point3 &&p, size_t time_step)
 {
 	//if(logger_.isDebug()) logger.logDebug("Scene::addVertex) PR(p");
 	if(creation_state_.stack_.front() != CreationState::Object) return -1;
-	current_object_->addPoint(p, time_step);
+	current_object_->addPoint(std::move(p), time_step);
 	return current_object_->lastVertexId(time_step);
 }
 
-int Scene::addVertex(const Point3 &p, const Point3 &orco, size_t time_step)
+int Scene::addVertex(Point3 &&p, Point3 &&orco, size_t time_step)
 {
 	if(creation_state_.stack_.front() != CreationState::Object) return -1;
-	current_object_->addPoint(p, time_step);
-	current_object_->addOrcoPoint(orco, time_step);
+	current_object_->addPoint(std::move(p), time_step);
+	current_object_->addOrcoPoint(std::move(orco), time_step);
 	return current_object_->lastVertexId(time_step);
 }
 
-void Scene::addVertexNormal(const Vec3 &n, size_t time_step)
+void Scene::addVertexNormal(Vec3 &&n, size_t time_step)
 {
 	if(creation_state_.stack_.front() != CreationState::Object) return;
-	current_object_->addVertexNormal(n, time_step);
+	current_object_->addVertexNormal(std::move(n), time_step);
 }
 
 bool Scene::addFace(std::vector<int> &&vert_indices, std::vector<int> &&uv_indices)
@@ -968,7 +968,7 @@ int Scene::addUv(Uv &&uv)
 	return current_object_->addUvValue(std::move(uv));
 }
 
-Object *Scene::createObject(const std::string &name, const ParamMap &params)
+Object *Scene::createObject(std::string &&name, ParamMap &&params)
 {
 	std::string pname = "Object";
 	if(objects_.find(name) != objects_.end())
@@ -1011,7 +1011,7 @@ size_t Scene::createInstance()
 	return instances_.size() - 1;
 }
 
-bool Scene::addInstanceObject(size_t instance_id, const std::string &base_object_name)
+bool Scene::addInstanceObject(size_t instance_id, std::string &&base_object_name)
 {
 	const Object *object = getObject(base_object_name);
 	if(!object) return false;
