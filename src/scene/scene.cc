@@ -955,10 +955,10 @@ void Scene::addVertexNormal(const Vec3 &n, size_t time_step)
 	current_object_->addVertexNormal(n, time_step);
 }
 
-bool Scene::addFace(const std::vector<int> &vert_indices, const std::vector<int> &uv_indices)
+bool Scene::addFace(std::vector<int> &&vert_indices, std::vector<int> &&uv_indices)
 {
 	if(creation_state_.stack_.front() != CreationState::Object) return false;
-	current_object_->addFace(vert_indices, uv_indices, creation_state_.current_material_);
+	current_object_->addFace(std::move(vert_indices), std::move(uv_indices), creation_state_.current_material_);
 	return true;
 }
 

@@ -89,22 +89,22 @@ void MeshObject::addFace(std::unique_ptr<FacePrimitive> &&face)
 	}
 }
 
-void MeshObject::addFace(const std::vector<int> &vertices, const std::vector<int> &vertices_uv, const std::unique_ptr<const Material> *material)
+void MeshObject::addFace(std::vector<int> &&vertices, std::vector<int> &&vertices_uv, const std::unique_ptr<const Material> *material)
 {
 	std::unique_ptr<FacePrimitive> face;
 	if(vertices.size() == 3)
 	{
-		if(hasMotionBlurBezier() && !ObjectBase::isBaseObject()) face = std::make_unique<TriangleBezierPrimitive>(vertices, vertices_uv, *this);
-		else face = std::make_unique<TrianglePrimitive>(vertices, vertices_uv, *this);
+		if(hasMotionBlurBezier() && !ObjectBase::isBaseObject()) face = std::make_unique<TriangleBezierPrimitive>(std::move(vertices), std::move(vertices_uv), *this);
+		else face = std::make_unique<TrianglePrimitive>(std::move(vertices), std::move(vertices_uv), *this);
 	}
 	else if(vertices.size() == 4)
 	{
-		if(hasMotionBlurBezier() && !ObjectBase::isBaseObject()) face = std::make_unique<QuadBezierPrimitive>(vertices, vertices_uv, *this);
-		else face = std::make_unique<QuadPrimitive>(vertices, vertices_uv, *this);
+		if(hasMotionBlurBezier() && !ObjectBase::isBaseObject()) face = std::make_unique<QuadBezierPrimitive>(std::move(vertices), std::move(vertices_uv), *this);
+		else face = std::make_unique<QuadPrimitive>(std::move(vertices), std::move(vertices_uv), *this);
 	}
 	else return; //Other primitives are not supported
 	face->setMaterial(material);
-	if(hasVerticesNormals(0)) face->setVerticesNormalsIndices(vertices);
+	if(hasVerticesNormals(0)) face->generateInitialVerticesNormalsIndices();
 	addFace(std::move(face));
 }
 
@@ -156,13 +156,13 @@ bool MeshObject::smoothVerticesNormals(Logger &logger, float angle)
 			for(auto &face : faces_)
 			{
 				const Vec3 n{face->getGeometricNormal(0, 0, static_cast<float>(time_step) / static_cast<float>(numTimeSteps()))};
-				const std::vector<int> vert_indices = face->getVerticesIndices();
+				const std::vector<int> &vert_indices = face->getVerticesIndices();
 				const size_t num_indices = vert_indices.size();
 				for(size_t relative_vertex = 0; relative_vertex < num_indices; ++relative_vertex)
 				{
 					time_steps_[time_step].vertices_normals_[vert_indices[relative_vertex]] += n * getAngleSine({vert_indices[relative_vertex], vert_indices[(relative_vertex + 1) % num_indices], vert_indices[(relative_vertex + 2) % num_indices]}, time_steps_[time_step].points_);
 				}
-				face->setVerticesNormalsIndices(vert_indices);
+				face->generateInitialVerticesNormalsIndices();
 			}
 			for(auto &normal : time_steps_[time_step].vertices_normals_) normal.normalize();
 		}
@@ -252,7 +252,7 @@ bool MeshObject::smoothVerticesNormals(Logger &logger, float angle)
 					}
 					if(smooth_ok)
 					{
-						point_face->setVerticesNormalsIndices(normals_indices);
+						point_face->setVerticesNormalsIndices(std::move(normals_indices));
 						j++;
 					}
 					else

@@ -34,18 +34,19 @@ struct Uv;
 class FacePrimitive: public Primitive
 {
 	public:
-		FacePrimitive(std::vector<int> vertices_indices, std::vector<int> vertices_uv_indices, const MeshObject &mesh_object);
+		FacePrimitive(std::vector<int> &&vertices_indices, std::vector<int> &&vertices_uv_indices, const MeshObject &mesh_object);
 		//In the following functions "vertex_number" is the vertex number in the face: 0, 1, 2 in triangles, 0, 1, 2, 3 in quads, etc
 		const Material *getMaterial() const override { return material_->get(); }
 		Point3 getOrcoVertex(size_t vertex_number, size_t time_step) const; //!< Get face original coordinates (orco) vertex in instance objects
 		Vec3 getVertexNormal(size_t vertex_number, const Vec3 &surface_normal_world, size_t time_step) const; //!< Get face vertex normal
 		Vec3 getVertexNormal(size_t vertex_number, const Vec3 &surface_normal_world, const Matrix4 &obj_to_world, size_t time_step) const; //!< Get face vertex normal
 		Uv getVertexUv(size_t vertex_number) const; //!< Get face vertex Uv
-		void setVerticesNormalsIndices(const std::vector<int> &vertices_normals_indices) { vertices_normals_ = vertices_normals_indices; }
+		void generateInitialVerticesNormalsIndices() { vertices_normals_ = vertices_; }
+		void setVerticesNormalsIndices(std::vector<int> &&vertices_normals_indices) { vertices_normals_ = std::move(vertices_normals_indices); }
 		void setUvIndices(const std::vector<int> &uv_indices) { vertex_uvs_ = uv_indices; }
-		std::vector<int> getVerticesIndices() const { return vertices_; }
-		std::vector<int> getVerticesNormalsIndices() const { return vertices_normals_; }
-		std::vector<int> getUvIndices() const { return vertex_uvs_; }
+		const std::vector<int> &getVerticesIndices() const { return vertices_; }
+		const std::vector<int> &getVerticesNormalsIndices() const { return vertices_normals_; }
+		const std::vector<int> &getUvIndices() const { return vertex_uvs_; }
 		size_t numVertices() const { return vertices_.size(); }
 		std::vector<Point3> getVertices(size_t time_step) const;
 		std::vector<Point3> getVertices(const Matrix4 &obj_to_world, size_t time_step) const;
@@ -77,7 +78,7 @@ class FacePrimitive: public Primitive
 		std::vector<int> vertex_uvs_; //!< indices in uv array, if mesh has explicit uv.
 };
 
-inline FacePrimitive::FacePrimitive(std::vector<int> vertices_indices, std::vector<int> vertices_uv_indices, const MeshObject &mesh_object) : base_mesh_object_(mesh_object), vertices_(std::move(vertices_indices)), vertices_normals_(vertices_indices.size(), -1), vertex_uvs_(std::move(vertices_uv_indices))
+inline FacePrimitive::FacePrimitive(std::vector<int> &&vertices_indices, std::vector<int> &&vertices_uv_indices, const MeshObject &mesh_object) : base_mesh_object_(mesh_object), vertices_(std::move(vertices_indices)), vertices_normals_(vertices_indices.size(), -1), vertex_uvs_(std::move(vertices_uv_indices))
 {
 }
 

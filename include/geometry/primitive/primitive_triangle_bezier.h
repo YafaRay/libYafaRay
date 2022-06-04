@@ -28,7 +28,7 @@ BEGIN_YAFARAY
 class TriangleBezierPrimitive : public FacePrimitive
 {
 	public:
-		TriangleBezierPrimitive(const std::vector<int> &vertices_indices, const std::vector<int> &vertices_uv_indices, const MeshObject &mesh_object);
+		TriangleBezierPrimitive(std::vector<int> &&vertices_indices, std::vector<int> &&vertices_uv_indices, const MeshObject &mesh_object);
 
 	private:
 		IntersectData intersect(const Ray &ray) const override;
@@ -51,7 +51,7 @@ class TriangleBezierPrimitive : public FacePrimitive
 		ShapeTriangle getShapeTriangleAtTime(const Matrix4 &obj_to_world, float time) const;
 };
 
-inline TriangleBezierPrimitive::TriangleBezierPrimitive(const std::vector<int> &vertices_indices, const std::vector<int> &vertices_uv_indices, const MeshObject &mesh_object) : FacePrimitive(vertices_indices, vertices_uv_indices, mesh_object)
+inline TriangleBezierPrimitive::TriangleBezierPrimitive(std::vector<int> &&vertices_indices, std::vector<int> &&vertices_uv_indices, const MeshObject &mesh_object) : FacePrimitive{std::move(vertices_indices), std::move(vertices_uv_indices), mesh_object}
 {
 }
 

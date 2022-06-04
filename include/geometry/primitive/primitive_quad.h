@@ -29,7 +29,7 @@ BEGIN_YAFARAY
 class QuadPrimitive : public FacePrimitive
 {
 	public:
-		QuadPrimitive(const std::vector<int> &vertices_indices, const std::vector<int> &vertices_uv_indices, const MeshObject &mesh_object);
+		QuadPrimitive(std::vector<int> &&vertices_indices, std::vector<int> &&vertices_uv_indices, const MeshObject &mesh_object);
 
 	private:
 		IntersectData intersect(const Ray &ray) const override;
@@ -53,7 +53,7 @@ class QuadPrimitive : public FacePrimitive
 		Vec3 face_normal_geometric_;
 };
 
-inline QuadPrimitive::QuadPrimitive(const std::vector<int> &vertices_indices, const std::vector<int> &vertices_uv_indices, const MeshObject &mesh_object) : FacePrimitive(vertices_indices, vertices_uv_indices, mesh_object),
+inline QuadPrimitive::QuadPrimitive(std::vector<int> &&vertices_indices, std::vector<int> &&vertices_uv_indices, const MeshObject &mesh_object) : FacePrimitive{std::move(vertices_indices), std::move(vertices_uv_indices), mesh_object},
 	face_normal_geometric_{ ShapeQuad{{
 		getVertex(0, 0),
 		getVertex(1, 0),

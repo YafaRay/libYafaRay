@@ -76,7 +76,7 @@ class Object
 		virtual void addPoint(const Point3 &p, size_t time_step) { }
 		virtual void addOrcoPoint(const Point3 &p, size_t time_step) { }
 		virtual void addVertexNormal(const Vec3 &n, size_t time_step) { }
-		virtual void addFace(const std::vector<int> &vertices, const std::vector<int> &vertices_uv, const std::unique_ptr<const Material> *material) { }
+		virtual void addFace(std::vector<int> &&vertices, std::vector<int> &&vertices_uv, const std::unique_ptr<const Material> *material) { }
 		virtual int addUvValue(const Uv &uv) { return -1; }
 		virtual bool hasVerticesNormals(size_t time_step) const { return false; }
 		virtual int numVerticesNormals(size_t time_step) const { return 0; }

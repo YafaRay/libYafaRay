@@ -49,7 +49,7 @@ class MeshObject : public ObjectBase
 		int numVertices(size_t time_step) const override { return static_cast<int>(time_steps_[time_step].points_.size()); }
 		int numVerticesNormals(size_t time_step) const override { return static_cast<int>(time_steps_[time_step].vertices_normals_.size()); }
 		void addFace(std::unique_ptr<FacePrimitive> &&face);
-		void addFace(const std::vector<int> &vertices, const std::vector<int> &vertices_uv, const std::unique_ptr<const Material> *material) override;
+		void addFace(std::vector<int> &&vertices, std::vector<int> &&vertices_uv, const std::unique_ptr<const Material> *material) override;
 		const std::vector<Point3> &getPoints(size_t time_step) const { return time_steps_[time_step].points_; }
 		const std::vector<Uv> &getUvValues() const { return uv_values_; }
 		bool hasOrco(size_t time_step) const { return !time_steps_[time_step].orco_points_.empty(); }
