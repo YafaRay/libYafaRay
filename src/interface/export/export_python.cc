@@ -125,33 +125,32 @@ void ExportPython::setCurrentMaterial(const char *name) noexcept
 	}
 }
 
-bool ExportPython::addTriangle(int a, int b, int c) noexcept
+bool ExportPython::addFace(std::vector<int> &&vertices, std::vector<int> &&uv_indices) noexcept
 {
-	file_ << "yi.addTriangle(" << a << ", " << b << ", " << c << ")\n";
+	const size_t num_vertices = vertices.size();
+	const size_t num_uv = uv_indices.size();
+	if(num_vertices == 3 && num_uv == 0) file_ << "yi.addTriangle(";
+	else if(num_vertices == 3 && num_uv == 3) file_ << "yi.addTriangleWithUv(";
+	else if(num_vertices == 4 && num_uv == 0) file_ << "yi.addQuad(";
+	else if(num_vertices == 4 && num_uv == 4) file_ << "yi.addQuadWithUv(";
+	else return false;
+
+	for(size_t i = 0; i < num_vertices; ++i)
+	{
+		if(i > 0) file_ << ", ";
+		file_ << vertices[i];
+	}
+	for(size_t i = 0; i < num_uv; ++i)
+	{
+		file_ << ", " << uv_indices[i];
+	}
+	file_ << ")\n";
 	return true;
 }
 
-bool ExportPython::addTriangleWithUv(int a, int b, int c, int uv_a, int uv_b, int uv_c) noexcept
+int ExportPython::addUv(Uv &&uv) noexcept
 {
-	file_ << "yi.addTriangleWithUv(" << a << ", " << b << ", " << c << ", " << uv_a << ", " << uv_b << ", " << uv_c << ")\n";
-	return true;
-}
-
-bool ExportPython::addQuad(int a, int b, int c, int d) noexcept
-{
-	file_ << "yi.addQuad(" << a << ", " << b << ", " << c << ", " << d << ")\n";
-	return true;
-}
-
-bool ExportPython::addQuadWithUv(int a, int b, int c, int d, int uv_a, int uv_b, int uv_c, int uv_d) noexcept
-{
-	file_ << "yi.addQuadWithUv(" << a << ", " << b << ", " << c << ", " << d << ", " << uv_a << ", " << uv_b << ", " << uv_c << ", " << uv_d << ")\n";
-	return true;
-}
-
-int ExportPython::addUv(float u, float v) noexcept
-{
-	file_ << "yi.addUv(" << u << ", " << v << ")\n";
+	file_ << "yi.addUv(" << uv.u_ << ", " << uv.v_ << ")\n";
 	return n_uvs_++;
 }
 

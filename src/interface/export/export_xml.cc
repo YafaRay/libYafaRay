@@ -118,35 +118,28 @@ void ExportXml::setCurrentMaterial(const char *name) noexcept
 	}
 }
 
-bool ExportXml::addTriangle(int a, int b, int c) noexcept
+bool ExportXml::addFace(std::vector<int> &&vertices, std::vector<int> &&uv_indices) noexcept
 {
-	file_ << "\t<f a=\"" << a << "\" b=\"" << b << "\" c=\"" << c << "\"/>\n";
+	file_ << "\t<f";
+	const size_t num_vertices = vertices.size();
+	for(size_t i = 0; i < num_vertices; ++i)
+	{
+		const char vertex_char = 'a' + i;
+		file_ << " " << vertex_char << "=\"" << vertices[i] << "\"";
+	}
+	const size_t num_uv = uv_indices.size();
+	for(size_t i = 0; i < num_uv; ++i)
+	{
+		const char vertex_char = 'a' + i;
+		file_ << " uv_" << vertex_char << "=\"" << uv_indices[i] << "\"";
+	}
+	file_ << "/>\n";
 	return true;
 }
 
-bool ExportXml::addTriangleWithUv(int a, int b, int c, int uv_a, int uv_b, int uv_c) noexcept
+int ExportXml::addUv(Uv &&uv) noexcept
 {
-	file_ << "\t<f a=\"" << a << "\" b=\"" << b << "\" c=\"" << c
-			  << "\" uv_a=\"" << uv_a << "\" uv_b=\"" << uv_b << "\" uv_c=\"" << uv_c << "\"/>\n";
-	return true;
-}
-
-bool ExportXml::addQuad(int a, int b, int c, int d) noexcept
-{
-	file_ << "\t<f a=\"" << a << "\" b=\"" << b << "\" c=\"" << c << "\" d=\"" << d << "\"/>\n";
-	return true;
-}
-
-bool ExportXml::addQuadWithUv(int a, int b, int c, int d, int uv_a, int uv_b, int uv_c, int uv_d) noexcept
-{
-	file_ << "\t<f a=\"" << a << "\" b=\"" << b << "\" c=\"" << c << "\" d=\"" << d
-		  << "\" uv_a=\"" << uv_a << "\" uv_b=\"" << uv_b << "\" uv_c=\"" << uv_c << "\" uv_d=\"" << uv_d << "\"/>\n";
-	return true;
-}
-
-int ExportXml::addUv(float u, float v) noexcept
-{
-	file_ << "\t<uv u=\"" << u << "\" v=\"" << v << "\"/>\n";
+	file_ << "\t<uv u=\"" << uv.u_ << "\" v=\"" << uv.v_ << "\"/>\n";
 	return n_uvs_++;
 }
 

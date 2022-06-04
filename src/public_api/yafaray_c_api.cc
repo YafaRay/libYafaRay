@@ -22,6 +22,7 @@
 #include "interface/export/export_c.h"
 #include "interface/export/export_python.h"
 #include "geometry/matrix4.h"
+#include "geometry/uv.h"
 #include "render/progress_bar.h"
 #include "image/image.h"
 #include "common/logger.h"
@@ -103,29 +104,29 @@ void yafaray_addNormalTimeStep(yafaray_Interface_t *interface, double nx, double
 	reinterpret_cast<yafaray::Interface *>(interface)->addVertexNormal(nx, ny, nz, time_step);
 }
 
-yafaray_bool_t yafaray_addTriangle(yafaray_Interface_t *interface, int a, int b, int c) //!< add a triangle given vertex indices and material pointer
+yafaray_bool_t yafaray_addTriangle(yafaray_Interface_t *interface, int a, int b, int c)
 {
-	return static_cast<yafaray_bool_t>(reinterpret_cast<yafaray::Interface *>(interface)->addTriangle(a, b, c));
+	return static_cast<yafaray_bool_t>(reinterpret_cast<yafaray::Interface *>(interface)->addFace({a, b, c}, {}));
 }
 
-yafaray_bool_t yafaray_addTriangleWithUv(yafaray_Interface_t *interface, int a, int b, int c, int uv_a, int uv_b, int uv_c) //!< add a triangle given vertex and uv indices and material pointer
+yafaray_bool_t yafaray_addTriangleWithUv(yafaray_Interface_t *interface, int a, int b, int c, int uv_a, int uv_b, int uv_c)
 {
-	return static_cast<yafaray_bool_t>(reinterpret_cast<yafaray::Interface *>(interface)->addTriangleWithUv(a, b, c, uv_a, uv_b, uv_c));
+	return static_cast<yafaray_bool_t>(reinterpret_cast<yafaray::Interface *>(interface)->addFace({a, b, c}, {uv_a, uv_b, uv_c}));
 }
 
-yafaray_bool_t yafaray_addQuad(yafaray_Interface_t *interface, int a, int b, int c, int d) //!< add a triangle given vertex indices and material pointer
+yafaray_bool_t yafaray_addQuad(yafaray_Interface_t *interface, int a, int b, int c, int d)
 {
-	return static_cast<yafaray_bool_t>(reinterpret_cast<yafaray::Interface *>(interface)->addQuad(a, b, c, d));
+	return static_cast<yafaray_bool_t>(reinterpret_cast<yafaray::Interface *>(interface)->addFace({a, b, c, d}, {}));
 }
 
-yafaray_bool_t yafaray_addQuadWithUv(yafaray_Interface_t *interface, int a, int b, int c, int d, int uv_a, int uv_b, int uv_c, int uv_d) //!< add a triangle given vertex and uv indices and material pointer
+yafaray_bool_t yafaray_addQuadWithUv(yafaray_Interface_t *interface, int a, int b, int c, int d, int uv_a, int uv_b, int uv_c, int uv_d)
 {
-	return static_cast<yafaray_bool_t>(reinterpret_cast<yafaray::Interface *>(interface)->addQuadWithUv(a, b, c, d, uv_a, uv_b, uv_c, uv_d));
+	return static_cast<yafaray_bool_t>(reinterpret_cast<yafaray::Interface *>(interface)->addFace({a, b, c, d}, {uv_a, uv_b, uv_c, uv_d}));
 }
 
-int  yafaray_addUv(yafaray_Interface_t *interface, float u, float v) //!< add a UV coordinate pair; returns index to be used for addTriangle/addQuad
+int yafaray_addUv(yafaray_Interface_t *interface, float u, float v) //!< add a UV coordinate pair; returns index to be used for addTriangle/addQuad
 {
-	return reinterpret_cast<yafaray::Interface *>(interface)->addUv(u, v);
+	return reinterpret_cast<yafaray::Interface *>(interface)->addUv({u, v});
 }
 
 yafaray_bool_t yafaray_smoothMesh(yafaray_Interface_t *interface, const char *name, double angle) //!< smooth vertex normals of mesh with given ID and angle (in degrees)

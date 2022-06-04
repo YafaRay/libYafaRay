@@ -20,13 +20,14 @@
 #ifndef YAFARAY_INTERFACE_H
 #define YAFARAY_INTERFACE_H
 
-#include "common/yafaray_common.h"
-#include "public_api/yafaray_c_api.h"
 #include "color/color.h"
+#include "common/yafaray_common.h"
+#include "geometry/uv.h"
+#include "public_api/yafaray_c_api.h"
 #include <list>
-#include <vector>
-#include <string>
 #include <memory>
+#include <string>
+#include <vector>
 
 BEGIN_YAFARAY
 
@@ -67,11 +68,8 @@ class Interface
 		virtual int addVertex(double x, double y, double z, size_t time_step) noexcept; //!< add vertex to mesh; returns index to be used for addTriangle/addQuad
 		virtual int addVertex(double x, double y, double z, double ox, double oy, double oz, size_t time_step) noexcept; //!< add vertex with Orco to mesh; returns index to be used for addTriangle/addQuad
 		virtual void addVertexNormal(double x, double y, double z, size_t time_step) noexcept; //!< add vertex normal to mesh; the vertex that will be attached to is the last one inserted by addVertex method
-		virtual bool addTriangle(int a, int b, int c) noexcept; //!< add a triangle given vertex indices and material pointer
-		virtual bool addTriangleWithUv(int a, int b, int c, int uv_a, int uv_b, int uv_c) noexcept; //!< add a triangle given vertex and uv indices and material pointer
-		virtual bool addQuad(int a, int b, int c, int d) noexcept; //!< add a quad given vertex indices and material pointer
-		virtual bool addQuadWithUv(int a, int b, int c, int d, int uv_a, int uv_b, int uv_c, int uv_d) noexcept; //!< add a quad given vertex and uv indices and material pointer
-		virtual int  addUv(float u, float v) noexcept; //!< add a UV coordinate pair; returns index to be used for addTriangle/addQuad
+		virtual bool addFace(std::vector<int> &&vertices, std::vector<int> &&uv_indices) noexcept; //!< add a mesh face given vertex indices and optionally uv_indices
+		virtual int addUv(Uv &&uv) noexcept; //!< add a UV coordinate pair; returns index to be used for addTriangle/addQuad
 		virtual bool smoothVerticesNormals(const char *name, double angle) noexcept; //!< smooth vertex normals of mesh with given ID and angle (in degrees)
 		virtual size_t createInstance() noexcept;
 		virtual bool addInstanceObject(size_t instance_id, const char *base_object_name) noexcept;

@@ -75,7 +75,7 @@ class Scene final
 		int addVertex(const Point3 &p, const Point3 &orco, size_t time_step);
 		void addVertexNormal(const Vec3 &n, size_t time_step);
 		bool addFace(std::vector<int> &&vert_indices, std::vector<int> &&uv_indices = {});
-		int addUv(float u, float v);
+		int addUv(Uv &&uv);
 		bool smoothVerticesNormals(const std::string &name, float angle);
 		Object *createObject(const std::string &name, const ParamMap &params);
 		bool endObject();

@@ -962,10 +962,10 @@ bool Scene::addFace(std::vector<int> &&vert_indices, std::vector<int> &&uv_indic
 	return true;
 }
 
-int Scene::addUv(float u, float v)
+int Scene::addUv(Uv &&uv)
 {
 	if(creation_state_.stack_.front() != CreationState::Object) return false;
-	return current_object_->addUvValue({u, v});
+	return current_object_->addUvValue(std::move(uv));
 }
 
 Object *Scene::createObject(const std::string &name, const ParamMap &params)

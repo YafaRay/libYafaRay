@@ -178,40 +178,34 @@ void ExportC::setCurrentMaterial(const char *name) noexcept
 	}
 }
 
-bool ExportC::addTriangle(int a, int b, int c) noexcept
+bool ExportC::addFace(std::vector<int> &&vertices, std::vector<int> &&uv_indices) noexcept
 {
-	file_ << "\t" << "yafaray_addTriangle(yi, " << a << ", " << b << ", " << c << ");\n";
+	const size_t num_vertices = vertices.size();
+	const size_t num_uv = uv_indices.size();
+	if(num_vertices == 3 && num_uv == 0) file_ << "\t" << "yafaray_addTriangle(yi, ";
+	else if(num_vertices == 3 && num_uv == 3) file_ << "\t" << "yafaray_addTriangleWithUv(yi, ";
+	else if(num_vertices == 4 && num_uv == 0) file_ << "\t" << "yafaray_addQuad(yi, ";
+	else if(num_vertices == 4 && num_uv == 4) file_ << "\t" << "yafaray_addQuadWithUv(yi, ";
+	else return false;
+
+	for(size_t i = 0; i < num_vertices; ++i)
+	{
+		if(i > 0) file_ << ", ";
+		file_ << vertices[i];
+	}
+	for(size_t i = 0; i < num_uv; ++i)
+	{
+		file_ << ", " << uv_indices[i];
+	}
+	file_ << ");\n";
 	++section_num_lines_;
 	if(section_num_lines_ >= section_max_lines_) file_ << sectionSplit();
 	return true;
 }
 
-bool ExportC::addTriangleWithUv(int a, int b, int c, int uv_a, int uv_b, int uv_c) noexcept
+int ExportC::addUv(Uv &&uv) noexcept
 {
-	file_ << "\t" << "yafaray_addTriangleWithUv(yi, " << a << ", " << b << ", " << c << ", " << uv_a << ", " << uv_b << ", " << uv_c << ");\n";
-	++section_num_lines_;
-	if(section_num_lines_ >= section_max_lines_) file_ << sectionSplit();
-	return true;
-}
-
-bool ExportC::addQuad(int a, int b, int c, int d) noexcept
-{
-	file_ << "\t" << "yafaray_addQuad(yi, " << a << ", " << b << ", " << c << ", " << d << ");\n";
-	++section_num_lines_;
-	if(section_num_lines_ >= section_max_lines_) file_ << sectionSplit();
-	return true;
-}
-
-bool ExportC::addQuadWithUv(int a, int b, int c, int d, int uv_a, int uv_b, int uv_c, int uv_d) noexcept
-{
-	file_ << "\t" << "yafaray_addQuadWithUv(yi, " << a << ", " << b << ", " << c << ", " << d << ", " << uv_a << ", " << uv_b << ", " << uv_c << ", " << uv_d << ");\n";
-	++section_num_lines_;
-	if(section_num_lines_ >= section_max_lines_) file_ << sectionSplit();
-	return true;
-}
-int ExportC::addUv(float u, float v) noexcept
-{
-	file_ << "\t" << "yafaray_addUv(yi, " << u << ", " << v << ");\n";
+	file_ << "\t" << "yafaray_addUv(yi, " << uv.u_ << ", " << uv.v_ << ");\n";
 	++section_num_lines_;
 	if(section_num_lines_ >= section_max_lines_) file_ << sectionSplit();
 	return n_uvs_++;

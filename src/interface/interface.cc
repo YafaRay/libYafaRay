@@ -99,27 +99,12 @@ void Interface::addVertexNormal(double x, double y, double z, size_t time_step) 
 	scene_->addVertexNormal({static_cast<float>(x), static_cast<float>(y), static_cast<float>(z)}, time_step);
 }
 
-bool Interface::addTriangle(int a, int b, int c) noexcept
+bool Interface::addFace(std::vector<int> &&vertices, std::vector<int> &&uv_indices) noexcept
 {
-	return scene_->addFace({a, b, c});
+	return scene_->addFace(std::move(vertices), std::move(uv_indices));
 }
 
-bool Interface::addTriangleWithUv(int a, int b, int c, int uv_a, int uv_b, int uv_c) noexcept
-{
-	return scene_->addFace({a, b, c}, {uv_a, uv_b, uv_c});
-}
-
-bool Interface::addQuad(int a, int b, int c, int d) noexcept
-{
-	return scene_->addFace({a, b, c, d});
-}
-
-bool Interface::addQuadWithUv(int a, int b, int c, int d, int uv_a, int uv_b, int uv_c, int uv_d) noexcept
-{
-	return scene_->addFace({a, b, c, d}, {uv_a, uv_b, uv_c, uv_d});
-}
-
-int Interface::addUv(float u, float v) noexcept { return scene_->addUv(u, v); }
+int Interface::addUv(Uv &&uv) noexcept { return scene_->addUv(std::move(uv)); }
 
 bool Interface::smoothVerticesNormals(const char *name, double angle) noexcept { return scene_->smoothVerticesNormals(name, angle); }
 

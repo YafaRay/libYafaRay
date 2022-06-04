@@ -20,10 +20,11 @@
 #ifndef YAFARAY_EXPORT_XML_H
 #define YAFARAY_EXPORT_XML_H
 
+#include "geometry/uv.h"
 #include "interface/interface.h"
-#include <map>
-#include <iostream>
 #include <fstream>
+#include <iostream>
+#include <map>
 
 BEGIN_YAFARAY
 
@@ -48,11 +49,8 @@ class ExportXml: public Interface
 		int addVertex(double x, double y, double z, size_t time_step) noexcept override; //!< add vertex to mesh; returns index to be used for addTriangle/addQuad
 		int addVertex(double x, double y, double z, double ox, double oy, double oz, size_t time_step) noexcept override; //!< add vertex with Orco to mesh; returns index to be used for addTriangle/addQuad
 		void addVertexNormal(double nx, double ny, double nz, size_t time_step) noexcept override; //!< add vertex normal to mesh; the vertex that will be attached to is the last one inserted by addVertex method
-		bool addTriangle(int a, int b, int c) noexcept override;
-		bool addTriangleWithUv(int a, int b, int c, int uv_a, int uv_b, int uv_c) noexcept override;
-		bool addQuad(int a, int b, int c, int d) noexcept override;
-		bool addQuadWithUv(int a, int b, int c, int d, int uv_a, int uv_b, int uv_c, int uv_d) noexcept override;
-		int  addUv(float u, float v) noexcept override;
+		bool addFace(std::vector<int> &&vertices, std::vector<int> &&uv_indices) noexcept override;
+		int addUv(Uv &&uv) noexcept override;
 		bool smoothVerticesNormals(const char *name, double angle) noexcept override;
 		void setCurrentMaterial(const char *name) noexcept override;
 		Object *createObject(const char *name) noexcept override;

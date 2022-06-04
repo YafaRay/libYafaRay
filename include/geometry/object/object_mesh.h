@@ -59,7 +59,7 @@ class MeshObject : public ObjectBase
 		void addPoint(const Point3 &p, size_t time_step) override { time_steps_[time_step].points_.emplace_back(p); }
 		void addOrcoPoint(const Point3 &p, size_t time_step) override { time_steps_[time_step].orco_points_.emplace_back(p); }
 		void addVertexNormal(const Vec3 &n, size_t time_step) override;
-		int addUvValue(const Uv &uv) override { uv_values_.emplace_back(uv); return static_cast<int>(uv_values_.size()) - 1; }
+		int addUvValue(Uv &&uv) override { uv_values_.emplace_back(uv); return static_cast<int>(uv_values_.size()) - 1; }
 		void setSmooth(bool smooth) override { is_smooth_ = smooth; }
 		bool smoothVerticesNormals(Logger &logger, float angle) override;
 		bool calculateObject(const std::unique_ptr<const Material> *material) override;
