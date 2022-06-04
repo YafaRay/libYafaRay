@@ -182,7 +182,7 @@ void ExportXml::writeParam(const std::string &name, const Parameter &param, std:
 	{
 		std::string s;
 		param.getVal(s);
-		if(!s.empty()) file << "<" << name << " sval=\"" << s << "\"/>\n";
+		file << "<" << name << " sval=\"" << s << "\"/>\n";
 	}
 	else if(type == Parameter::Vector)
 	{
