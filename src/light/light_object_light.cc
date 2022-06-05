@@ -58,16 +58,9 @@ void ObjectLight::initIs()
 	area_dist_ = std::make_unique<Pdf1D>(areas);
 	area_ = static_cast<float>(total_area);
 	inv_area_ = static_cast<float>(1.f / total_area);
-	accelerator_ = nullptr;
-
 	ParamMap params;
-	params["type"] = std::string("yafaray-kdtree-original"); //Do not remove the std::string(), entering directly a string literal can be confused with bool until C++17 new string literals
-	params["num_primitives"] = num_primitives_;
+	params["type"] = std::string("yafaray-kdtree-original"); //Do not remove the std::string(), entering directly a string literal can be confused with bool
 	params["depth"] = -1;
-	params["leaf_size"] = 1;
-	params["cost_ratio"] = 0.8f;
-	params["empty_bonus"] = 0.33f;
-
 	accelerator_ = std::unique_ptr<const Accelerator>(Accelerator::factory(logger_, primitives_, params));
 }
 

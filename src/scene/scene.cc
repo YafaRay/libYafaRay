@@ -100,7 +100,7 @@ void Scene::createDefaultMaterial()
 {
 	ParamMap param_map;
 	std::list<ParamMap> nodes_params;
-	//Note: keep the std::string or the parameter will be created incorrectly as a bool. This should improve with the new C++17 string literals, but for now with C++11 this should be done.
+	//Note: keep the std::string or the parameter will be created incorrectly as a bool
 	param_map["type"] = std::string("shinydiffusemat");
 	const std::unique_ptr<const Material> *material = createMaterial("YafaRay_Default_Material", std::move(param_map), std::move(nodes_params));
 	setCurrentMaterial(material);
