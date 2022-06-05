@@ -103,8 +103,15 @@ template <class T> inline constexpr T max(T a, T b, T c)
 
 union BitTwiddler
 {
-	int i_;
-	float f_;
+	public:
+		explicit BitTwiddler(int i) : i_{i} { }
+		explicit BitTwiddler(float f) : f_{f} { }
+		int getAsInt() const { return i_; }
+		float getAsFloat() const { return f_; }
+
+	private:
+		int i_;
+		float f_;
 };
 
 inline constexpr float polyexp(float x)
@@ -114,20 +121,13 @@ inline constexpr float polyexp(float x)
 
 inline float exp2(float x)
 {
-	BitTwiddler ipart, fpart;
-	BitTwiddler expipart;
-
 	constexpr float f_hi = 129.00000f;
 	constexpr float f_lo = -126.99999f;
-
-	x = std::min(x, f_hi);
-	x = std::max(x, f_lo);
-
-	ipart.i_ = static_cast<int>(x - 0.5f);
-	fpart.f_ = (x - static_cast<float>(ipart.i_));
-	expipart.i_ = ((ipart.i_ + 127) << 23);
-
-	return (expipart.f_ * math::polyexp(fpart.f_));
+	const float x_limited = std::max(std::min(x, f_hi), f_lo);
+	const auto ipart = static_cast<int>(x_limited - 0.5f);
+	const float fpart = x_limited - static_cast<float>(ipart);
+	const BitTwiddler expipart{((ipart + 127) << 23)};
+	return expipart.getAsFloat() * math::polyexp(fpart);
 }
 
 inline constexpr float polylog(float x)
@@ -137,15 +137,13 @@ inline constexpr float polylog(float x)
 
 inline float log2(float x)
 {
-	BitTwiddler one, i, m, e;
-	constexpr int log_exp = 0x7F800000;
 	constexpr int log_mant = 0x7FFFFF;
-
-	one.f_ = 1.f;
-	i.f_ = x;
-	e.f_ = static_cast<float>(((i.i_ & log_exp) >> 23) - 127);
-	m.i_ = (i.i_ & log_mant) | one.i_;
-	return polylog(m.f_) * (m.f_ - one.f_) + e.f_;
+	const BitTwiddler i{x};
+	const BitTwiddler one{1.f};
+	const BitTwiddler m{(i.getAsInt() & log_mant) | one.getAsInt()};
+	constexpr int log_exp = 0x7F800000;
+	const auto e = static_cast<float>(((i.getAsInt() & log_exp) >> 23) - 127);
+	return polylog(m.getAsFloat()) * (m.getAsFloat() - 1.f) + e;
 }
 
 #ifdef FAST_MATH
