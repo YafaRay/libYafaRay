@@ -1080,7 +1080,8 @@ bool Scene::updateObjects()
 	}
 	for(const auto &instance : instances_)
 	{
-		//if(object->getVisibility() == Visibility::Invisible) continue;
+		//if(object->getVisibility() == Visibility::Invisible) continue; //FIXME
+		//if(object->isBaseObject()) continue; //FIXME
 		const auto prims = instance->getPrimitives();
 		primitives.insert(primitives.end(), prims.begin(), prims.end());
 	}
@@ -1090,7 +1091,6 @@ bool Scene::updateObjects()
 	}
 	ParamMap params;
 	params["type"] = scene_accelerator_;
-	params["num_primitives"] = static_cast<int>(primitives.size());
 	params["accelerator_threads"] = getNumThreads();
 
 	accelerator_ = std::unique_ptr<const Accelerator>(Accelerator::factory(logger_, primitives, params));
