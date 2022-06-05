@@ -37,7 +37,7 @@ ImageTexture::ImageTexture(Logger &logger, std::shared_ptr<Image> image) : Textu
 	images_.emplace_back(std::move(image));
 }
 
-std::tuple<int, int, int> ImageTexture::resolution() const
+std::array<int, 3> ImageTexture::resolution() const
 {
 	return { images_[0]->getWidth(), images_[0]->getHeight(), 0 };
 }

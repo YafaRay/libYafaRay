@@ -39,7 +39,7 @@ class ShapeTriangle final
 		float surfaceArea() const;
 		Point3 sample(float s_1, float s_2) const;
 		//UV <-> Barycentric UVW relationship is not obvious, interesting explanation in: https://www.scratchapixel.com/lessons/3d-basic-rendering/ray-tracing-rendering-a-triangle/barycentric-coordinates
-		static std::tuple<float, float, float> getBarycentricUVW(float u, float v) { return { 1.f - u - v, u, v }; }
+		static std::array<float, 3> getBarycentricUVW(float u, float v) { return { 1.f - u - v, u, v }; }
 		static float getDistToNearestEdge(float u, float v, const Vec3 &dp_du_abs, const Vec3 &dp_dv_abs);
 
 	private:

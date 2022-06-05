@@ -45,7 +45,7 @@ struct AcceleratorIntersectData : IntersectData
 struct AcceleratorTsIntersectData : AcceleratorIntersectData
 {
 	AcceleratorTsIntersectData() = default;
-	explicit AcceleratorTsIntersectData(AcceleratorIntersectData &&intersect_data, const Rgb &transparent_color = Rgb{1.f}) : AcceleratorIntersectData(std::move(intersect_data)), transparent_color_{transparent_color} { }
+	explicit AcceleratorTsIntersectData(AcceleratorIntersectData &&intersect_data) : AcceleratorIntersectData(std::move(intersect_data)) { }
 	Rgb transparent_color_ {1.f};
 };
 
@@ -81,7 +81,7 @@ inline std::pair<std::unique_ptr<const SurfacePoint>, float> Accelerator::inters
 		auto sp = accelerator_intersect_data.hit_primitive_->getSurface(ray.differentials_.get(), hit_point, accelerator_intersect_data, camera);
 		return {std::move(sp), accelerator_intersect_data.t_max_};
 	}
-	return {nullptr, ray.tmax_};
+	else return {nullptr, ray.tmax_};
 }
 
 inline std::pair<bool, const Primitive *> Accelerator::isShadowed(const Ray &ray, float shadow_bias) const
@@ -91,8 +91,7 @@ inline std::pair<bool, const Primitive *> Accelerator::isShadowed(const Ray &ray
 	sray.time_ = ray.time_;
 	const float t_max = (ray.tmax_ >= 0.f) ? sray.tmax_ - 2 * sray.tmin_ : std::numeric_limits<float>::infinity();
 	const AcceleratorIntersectData accelerator_intersect_data = intersectS(sray, t_max, shadow_bias);
-	if(accelerator_intersect_data.hit_) return {true, accelerator_intersect_data.hit_primitive_};
-	else return {false, nullptr};
+	return {accelerator_intersect_data.hit_, accelerator_intersect_data.hit_primitive_};
 }
 
 inline std::tuple<bool, Rgb, const Primitive *> Accelerator::isShadowed(const Ray &ray, int max_depth, float shadow_bias, const Camera *camera) const
@@ -100,15 +99,8 @@ inline std::tuple<bool, Rgb, const Primitive *> Accelerator::isShadowed(const Ra
 	Ray sray(ray, Ray::DifferentialsCopy::No); //Should this function use Ray::DifferentialsAssignment::Copy ? If using copy it would be slower but would take into account texture mipmaps, although that's probably irrelevant for transparent shadows?
 	sray.from_ += sray.dir_ * sray.tmin_;
 	const float t_max = (ray.tmax_ >= 0.f) ? sray.tmax_ - 2 * sray.tmin_ : std::numeric_limits<float>::infinity();
-	const AcceleratorTsIntersectData accelerator_intersect_data = intersectTs(sray, max_depth, t_max, shadow_bias, camera);
-	std::tuple<bool, Rgb, const Primitive *> result {false, Rgb{0.f}, nullptr};
-	std::get<1>(result) = accelerator_intersect_data.transparent_color_;
-	if(accelerator_intersect_data.hit_)
-	{
-		std::get<0>(result) = true;
-		std::get<2>(result) = accelerator_intersect_data.hit_primitive_;
-	}
-	return result;
+	AcceleratorTsIntersectData accelerator_intersect_data = intersectTs(sray, max_depth, t_max, shadow_bias, camera);
+	return {accelerator_intersect_data.hit_, std::move(accelerator_intersect_data.transparent_color_), accelerator_intersect_data.hit_ ? accelerator_intersect_data.hit_primitive_ : nullptr};
 }
 
 inline void Accelerator::primitiveIntersection(AcceleratorIntersectData &accelerator_intersect_data, const Primitive *primitive, const Ray &ray)
@@ -160,7 +152,6 @@ inline bool Accelerator::primitiveIntersection(AcceleratorTsIntersectData &accel
 			   mat->getVisibility() == Visibility::NormalVisible || mat->getVisibility() == Visibility::InvisibleShadowsOnly)
 			{
 				accelerator_intersect_data = AcceleratorTsIntersectData{AcceleratorIntersectData{ std::move(intersect_data), primitive}};
-				accelerator_intersect_data.hit_primitive_ = primitive;
 				if(!mat->isTransparent()) return true;
 				if(filtered.insert(primitive).second)
 				{

@@ -67,7 +67,7 @@ class ImageTexture final : public Texture
 		bool isNormalmap() const override { return normalmap_; }
 		Rgba getColor(const Point3 &p, const MipMapParams *mipmap_params) const override;
 		Rgba getRawColor(const Point3 &p, const MipMapParams *mipmap_params) const override;
-		std::tuple<int, int, int> resolution() const override;
+		std::array<int, 3> resolution() const override;
 		void generateMipMaps() override;
 		void setCrop(float minx, float miny, float maxx, float maxy);
 		Rgba noInterpolation(const Point3 &p, int mipmap_level = 0) const;
