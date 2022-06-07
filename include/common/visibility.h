@@ -25,7 +25,7 @@
 
 BEGIN_YAFARAY
 
-enum class Visibility : int
+enum class Visibility : unsigned char
 {
 	NormalVisible = 0, VisibleNoShadows, InvisibleShadowsOnly, Invisible
 };

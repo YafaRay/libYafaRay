@@ -33,9 +33,9 @@ class AngularCamera final : public Camera
 		static const Camera * factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params);
 
 	private:
-		enum class Projection : int  //Fish Eye Projections as defined in https://en.wikipedia.org/wiki/Fisheye_lens
+		enum class Projection : unsigned char  //Fish Eye Projections as defined in https://en.wikipedia.org/wiki/Fisheye_lens
 		{
-				Equidistant = 0, //Default and used traditionally in YafaRay
+				Equidistant, //Default and used traditionally in YafaRay
 				Orthographic, //Orthographic projection where the centre of the image is enlarged/more defined at the cost of much more distorted edges
 				Stereographic,
 				EquisolidAngle,

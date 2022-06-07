@@ -35,7 +35,7 @@ class Scene;
 class MipMapParams;
 class Logger;
 
-enum class InterpolationType : int { None, Bilinear, Bicubic, Trilinear, Ewa };
+enum class InterpolationType : unsigned char { None, Bilinear, Bicubic, Trilinear, Ewa };
 
 class Texture
 {
@@ -88,8 +88,8 @@ class Texture
 		float adj_mult_factor_blue_ = 1.f;
 		bool adjustments_set_ = false;
 		std::unique_ptr<ColorRamp> color_ramp_;
-		InterpolationType interpolation_type_ = InterpolationType::Bilinear;
 		Logger &logger_;
+		InterpolationType interpolation_type_ = InterpolationType::Bilinear;
 };
 
 END_YAFARAY

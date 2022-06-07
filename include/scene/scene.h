@@ -61,7 +61,7 @@ class Accelerator;
 class Point3;
 class Vec3;
 class Bound;
-enum class DarkDetectionType : int;
+enum class DarkDetectionType : unsigned char;
 
 typedef unsigned int ObjId_t;
 

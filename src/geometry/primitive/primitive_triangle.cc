@@ -200,8 +200,8 @@ PolyDouble::ClipResultWithBound TrianglePrimitive::clipToBound(Logger &logger, c
 	{
 		const double split = (clip_plane.pos_ == ClipPlane::Pos::Lower) ? bound[0][clip_plane.axis_] : bound[1][clip_plane.axis_];
 		PolyDouble::ClipResultWithBound clip_result = PolyDouble::planeClipWithBound(logger, split, clip_plane, poly);
-		if(clip_result.clip_result_code_ == PolyDouble::ClipResultWithBound::Correct) return clip_result;
-		else if(clip_result.clip_result_code_ == PolyDouble::ClipResultWithBound::NoOverlapDisappeared) return PolyDouble::ClipResultWithBound(PolyDouble::ClipResultWithBound::NoOverlapDisappeared);
+		if(clip_result.clip_result_code_ == PolyDouble::ClipResultWithBound::Code::Correct) return clip_result;
+		else if(clip_result.clip_result_code_ == PolyDouble::ClipResultWithBound::Code::NoOverlapDisappeared) return PolyDouble::ClipResultWithBound(PolyDouble::ClipResultWithBound::Code::NoOverlapDisappeared);
 		//else: do initial clipping below, if there are any other PolyDouble::ClipResult results (errors)
 	}
 	// initial clip
@@ -221,8 +221,8 @@ PolyDouble::ClipResultWithBound TrianglePrimitive::clipToBound(Logger &logger, c
 	{
 		const double split = (clip_plane.pos_ == ClipPlane::Pos::Lower) ? bound[0][clip_plane.axis_] : bound[1][clip_plane.axis_];
 		PolyDouble::ClipResultWithBound clip_result = PolyDouble::planeClipWithBound(logger, split, clip_plane, poly);
-		if(clip_result.clip_result_code_ == PolyDouble::ClipResultWithBound::Correct) return clip_result;
-		else if(clip_result.clip_result_code_ == PolyDouble::ClipResultWithBound::NoOverlapDisappeared) return PolyDouble::ClipResultWithBound(PolyDouble::ClipResultWithBound::NoOverlapDisappeared);
+		if(clip_result.clip_result_code_ == PolyDouble::ClipResultWithBound::Code::Correct) return clip_result;
+		else if(clip_result.clip_result_code_ == PolyDouble::ClipResultWithBound::Code::NoOverlapDisappeared) return PolyDouble::ClipResultWithBound(PolyDouble::ClipResultWithBound::Code::NoOverlapDisappeared);
 		//else: do initial clipping below, if there are any other PolyDouble::ClipResult results (errors)
 	}
 	// initial clip

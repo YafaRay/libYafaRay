@@ -26,7 +26,7 @@ BEGIN_YAFARAY
 
 struct AaNoiseParams
 {
-	enum class DarkDetectionType : int { None, Linear, Curve };
+	enum class DarkDetectionType : unsigned char { None, Linear, Curve };
 
 	int samples_ = 1;
 	int passes_ = 1;

@@ -24,24 +24,24 @@
 
 BEGIN_YAFARAY
 
-Parameter::Parameter(const std::string &s) : type_(String) { sval_ = s; }
-Parameter::Parameter(std::string &&s) : type_(String) { sval_ = std::move(s); }
-Parameter::Parameter(int i) : type_(Int) { ival_ = i; }
-Parameter::Parameter(bool b) : type_(Bool) { bval_ = b; }
-Parameter::Parameter(float f) : type_(Float) { fval_ = f; }
-Parameter::Parameter(double f) : type_(Float) { fval_ = f; }
+Parameter::Parameter(const std::string &s) : type_(Type::String) { sval_ = s; }
+Parameter::Parameter(std::string &&s) : type_(Type::String) { sval_ = std::move(s); }
+Parameter::Parameter(int i) : type_(Type::Int) { ival_ = i; }
+Parameter::Parameter(bool b) : type_(Type::Bool) { bval_ = b; }
+Parameter::Parameter(float f) : type_(Type::Float) { fval_ = f; }
+Parameter::Parameter(double f) : type_(Type::Float) { fval_ = f; }
 
-Parameter::Parameter(const Vec3 &p) : type_(Vector)
+Parameter::Parameter(const Vec3 &p) : type_(Type::Vector)
 {
 	vval_.resize(3); vval_.at(0) = p.x(), vval_.at(1) = p.y(), vval_.at(2) = p.z();
 }
 
-Parameter::Parameter(const Rgba &c) : type_(Color)
+Parameter::Parameter(const Rgba &c) : type_(Type::Color)
 {
 	vval_.resize(4); vval_.at(0) = c.r_, vval_.at(1) = c.g_, vval_.at(2) = c.b_, vval_.at(3) = c.a_;
 }
 
-Parameter::Parameter(const Matrix4 &m) : type_(Matrix)
+Parameter::Parameter(const Matrix4 &m) : type_(Type::Matrix)
 {
 	vval_.resize(16);
 	for(int i = 0; i < 4; ++i)
@@ -49,14 +49,14 @@ Parameter::Parameter(const Matrix4 &m) : type_(Matrix)
 			vval_.at(i * 4 + j) = m[i][j];
 }
 
-bool Parameter::getVal(std::string &s) const {if(type_ == String) { s = sval_; return true;} return false;}
-bool Parameter::getVal(int &i) const {if(type_ == Int)  { i = ival_; return true;} return false;}
-bool Parameter::getVal(bool &b) const {if(type_ == Bool)  { b = bval_; return true;} return false;}
-bool Parameter::getVal(float &f) const {if(type_ == Float) { f = (float)fval_; return true;} return false;}
-bool Parameter::getVal(double &f) const {if(type_ == Float) { f = fval_; return true;} return false;}
+bool Parameter::getVal(std::string &s) const {if(type_ == Type::String) { s = sval_; return true;} return false;}
+bool Parameter::getVal(int &i) const {if(type_ == Type::Int)  { i = ival_; return true;} return false;}
+bool Parameter::getVal(bool &b) const {if(type_ == Type::Bool)  { b = bval_; return true;} return false;}
+bool Parameter::getVal(float &f) const {if(type_ == Type::Float) { f = (float)fval_; return true;} return false;}
+bool Parameter::getVal(double &f) const {if(type_ == Type::Float) { f = fval_; return true;} return false;}
 
 bool Parameter::getVal(Vec3 &p) const {
-	if(type_ == Vector)
+	if(type_ == Type::Vector)
 	{
 		p.x() = vval_.at(0), p.y() = vval_.at(1), p.z() = vval_.at(2);
 		return true;
@@ -65,7 +65,7 @@ bool Parameter::getVal(Vec3 &p) const {
 }
 
 bool Parameter::getVal(Rgb &c) const {
-	if(type_ == Color)
+	if(type_ == Type::Color)
 	{
 		c.r_ = vval_.at(0), c.g_ = vval_.at(1), c.b_ = vval_.at(2);
 		return true;
@@ -74,7 +74,7 @@ bool Parameter::getVal(Rgb &c) const {
 }
 
 bool Parameter::getVal(Rgba &c) const {
-	if(type_ == Color)
+	if(type_ == Type::Color)
 	{
 		c.r_ = vval_.at(0), c.g_ = vval_.at(1), c.b_ = vval_.at(2), c.a_ = vval_.at(3);
 		return true;
@@ -84,7 +84,7 @@ bool Parameter::getVal(Rgba &c) const {
 
 bool Parameter::getVal(Matrix4 &m) const
 {
-	if(type_ == Matrix)
+	if(type_ == Type::Matrix)
 	{
 		for(int i = 0; i < 4; ++i)
 			for(int j = 0; j < 4; ++j)
@@ -96,49 +96,49 @@ bool Parameter::getVal(Matrix4 &m) const
 
 Parameter &Parameter::operator=(const std::string &s)
 {
-	if(type_ != String) { type_ = String; vval_.clear(); }
+	if(type_ != Type::String) { type_ = Type::String; vval_.clear(); }
 	sval_ = s;
 	return *this;
 }
 
 Parameter &Parameter::operator=(std::string &&s)
 {
-	if(type_ != String) { type_ = String; vval_.clear(); }
+	if(type_ != Type::String) { type_ = Type::String; vval_.clear(); }
 	sval_ = std::move(s);
 	return *this;
 }
 
 Parameter &Parameter::operator=(int i)
 {
-	if(type_ != Int) { type_ = Int; vval_.clear(); sval_.clear(); }
+	if(type_ != Type::Int) { type_ = Type::Int; vval_.clear(); sval_.clear(); }
 	ival_ = i;
 	return *this;
 }
 
 Parameter &Parameter::operator=(bool b)
 {
-	if(type_ != Bool) { type_ = Bool; vval_.clear(); sval_.clear(); }
+	if(type_ != Type::Bool) { type_ = Type::Bool; vval_.clear(); sval_.clear(); }
 	bval_ = b;
 	return *this;
 }
 
 Parameter &Parameter::operator=(float f)
 {
-	if(type_ != Float) { type_ = Float; vval_.clear(); sval_.clear(); }
+	if(type_ != Type::Float) { type_ = Type::Float; vval_.clear(); sval_.clear(); }
 	fval_ = f;
 	return *this;
 }
 
 Parameter &Parameter::operator=(const Vec3 &p)
 {
-	if(type_ != Vector) { type_ = Vector; sval_.clear(); vval_.resize(3); }
+	if(type_ != Type::Vector) { type_ = Type::Vector; sval_.clear(); vval_.resize(3); }
 	vval_.at(0) = p.x(), vval_.at(1) = p.y(), vval_.at(2) = p.z();
 	return *this;
 }
 
 Parameter &Parameter::operator=(const Rgb &c)
 {
-	if(type_ != Color) { type_ = Color; sval_.clear(); vval_.resize(4); }
+	if(type_ != Type::Color) { type_ = Type::Color; sval_.clear(); vval_.resize(4); }
 	const Rgba col{c};
 	vval_.at(0) = col.r_, vval_.at(1) = col.g_, vval_.at(2) = col.b_, vval_.at(3) = col.a_;
 	return *this;
@@ -146,14 +146,14 @@ Parameter &Parameter::operator=(const Rgb &c)
 
 Parameter &Parameter::operator=(const Rgba &c)
 {
-	if(type_ != Color) { type_ = Color; sval_.clear(); vval_.resize(4); }
+	if(type_ != Type::Color) { type_ = Type::Color; sval_.clear(); vval_.resize(4); }
 	vval_.at(0) = c.r_, vval_.at(1) = c.g_, vval_.at(2) = c.b_, vval_.at(3) = c.a_;
 	return *this;
 }
 
 Parameter &Parameter::operator=(const Matrix4 &m)
 {
-	if(type_ != Matrix) { type_ = Matrix; sval_.clear(); vval_.resize(16); }
+	if(type_ != Type::Matrix) { type_ = Type::Matrix; sval_.clear(); vval_.resize(16); }
 	for(int i = 0; i < 4; ++i)
 		for(int j = 0; j < 4; ++j)
 			vval_.at(i * 4 + j) = m[i][j];
@@ -162,43 +162,43 @@ Parameter &Parameter::operator=(const Matrix4 &m)
 
 std::string Parameter::print() const
 {
-	if(type_ == Int)
+	if(type_ == Type::Int)
 	{
 		int value;
 		getVal(value);
 		return std::to_string(value);
 	}
-	else if(type_ == Bool)
+	else if(type_ == Type::Bool)
 	{
 		bool value;
 		getVal(value);
 		return value == true ? "true" : "false";
 	}
-	else if(type_ == Float)
+	else if(type_ == Type::Float)
 	{
 		double value;
 		getVal(value);
 		return std::to_string(value);
 	}
-	else if(type_ == String)
+	else if(type_ == Type::String)
 	{
 		std::string value;
 		getVal(value);
 		return value;
 	}
-	else if(type_ == Vector)
+	else if(type_ == Type::Vector)
 	{
 		Point3 value;
 		getVal(value);
 		return "(x:" + std::to_string(value.x()) + ", y:" + std::to_string(value.x()) + ", z:" + std::to_string(value.z()) + ")";
 	}
-	else if(type_ == Color)
+	else if(type_ == Type::Color)
 	{
 		Rgba value;
 		getVal(value);
 		return "(r:" + std::to_string(value.r_) + ", g:" + std::to_string(value.g_) + ", b:" + std::to_string(value.b_) + ", a:" + std::to_string(value.a_) + ")";
 	}
-	else if(type_ == Matrix)
+	else if(type_ == Type::Matrix)
 	{
 		Matrix4 value;
 		getVal(value);
@@ -218,13 +218,13 @@ std::string Parameter::printType() const
 {
 	switch(type_)
 	{
-		case Int: return "Int";
-		case Bool: return "Bool";
-		case Float: return "Float";
-		case String: return "String";
-		case Vector: return "Vector";
-		case Color: return "Color";
-		case Matrix: return "Matrix";
+		case Type::Int: return "Int";
+		case Type::Bool: return "Bool";
+		case Type::Float: return "Float";
+		case Type::String: return "String";
+		case Type::Vector: return "Vector";
+		case Type::Color: return "Color";
+		case Type::Matrix: return "Matrix";
 		default: return "None/Unknown";
 	}
 }

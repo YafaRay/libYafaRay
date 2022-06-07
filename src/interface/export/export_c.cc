@@ -230,44 +230,44 @@ void ExportC::writeMatrix(const Matrix4 &m, std::ofstream &file) noexcept
 void ExportC::writeParam(const std::string &name, const Parameter &param, std::ofstream &file, ColorSpace color_space, float gamma) noexcept
 {
 	const Parameter::Type type = param.type();
-	if(type == Parameter::Int)
+	if(type == Parameter::Type::Int)
 	{
 		int i = 0;
 		param.getVal(i);
 		file << "yafaray_paramsSetInt(yi, \"" << name << "\", " << i << ");\n";
 	}
-	else if(type == Parameter::Bool)
+	else if(type == Parameter::Type::Bool)
 	{
 		bool b = false;
 		param.getVal(b);
 		file << "yafaray_paramsSetBool(yi, \"" << name << "\", " << (b ? "YAFARAY_BOOL_TRUE" : "YAFARAY_BOOL_FALSE") << ");\n";
 	}
-	else if(type == Parameter::Float)
+	else if(type == Parameter::Type::Float)
 	{
 		double f = 0.0;
 		param.getVal(f);
 		file << "yafaray_paramsSetFloat(yi, \"" << name << "\", " << f << ");\n";
 	}
-	else if(type == Parameter::String)
+	else if(type == Parameter::Type::String)
 	{
 		std::string s;
 		param.getVal(s);
 		file << "yafaray_paramsSetString(yi, \"" << name << "\", \"" << s << "\");\n";
 	}
-	else if(type == Parameter::Vector)
+	else if(type == Parameter::Type::Vector)
 	{
 		Point3 p{0.f, 0.f, 0.f};
 		param.getVal(p);
 		file << "yafaray_paramsSetVector(yi, \"" << name << "\", " << p.x() << ", " << p.y() << ", " << p.z() << ");\n";
 	}
-	else if(type == Parameter::Color)
+	else if(type == Parameter::Type::Color)
 	{
 		Rgba c(0.f);
 		param.getVal(c);
 		c.colorSpaceFromLinearRgb(color_space, gamma);    //Color values are encoded to the desired color space before saving them to the XML file
 		file << "yafaray_paramsSetColor(yi, \"" << name << "\", " << c.r_ << ", " << c.g_ << ", " << c.b_ << ", " << c.a_ << ");\n";
 	}
-	else if(type == Parameter::Matrix)
+	else if(type == Parameter::Type::Matrix)
 	{
 		Matrix4 m;
 		param.getVal(m);

@@ -84,9 +84,9 @@ ImageFilm * ImageFilm::factory(Logger &logger, const ParamMap &params, Scene *sc
 
 	if(logger.isDebug())logger.logDebug("ImageFilm load/save mode: ", film_load_save_mode_str, ", path:'", film_load_save.path_, "', interval: ", film_autosave_interval_type_str, ", ", film_load_save.auto_save_.interval_passes_, ", ", film_load_save.auto_save_.interval_seconds_);
 
-	if(film_load_save_mode_str == "load-save") film_load_save.mode_ = ImageFilm::FilmLoadSave::LoadAndSave;
-	else if(film_load_save_mode_str == "save") film_load_save.mode_ = ImageFilm::FilmLoadSave::Save;
-	else film_load_save.mode_ = ImageFilm::FilmLoadSave::None;
+	if(film_load_save_mode_str == "load-save") film_load_save.mode_ = ImageFilm::FilmLoadSave::Mode::LoadAndSave;
+	else if(film_load_save_mode_str == "save") film_load_save.mode_ = ImageFilm::FilmLoadSave::Mode::Save;
+	else film_load_save.mode_ = ImageFilm::FilmLoadSave::Mode::None;
 
 	if(film_autosave_interval_type_str == "pass-interval") film_load_save.auto_save_.interval_type_ = ImageFilm::AutoSaveParams::IntervalType::Pass;
 	else if(film_autosave_interval_type_str == "time-interval") film_load_save.auto_save_.interval_type_ = ImageFilm::AutoSaveParams::IntervalType::Time;
@@ -112,8 +112,8 @@ ImageFilm * ImageFilm::factory(Logger &logger, const ParamMap &params, Scene *sc
 
 	if(images_autosave_params.interval_type_ == ImageFilm::AutoSaveParams::IntervalType::Time) logger.logInfo("ImageFilm: ", "AutoSave partially rendered image every ", images_autosave_params.interval_seconds_, " seconds");
 
-	if(film_load_save.mode_ != ImageFilm::FilmLoadSave::Save) logger.logInfo("ImageFilm: ", "Enabling imageFilm file saving feature");
-	if(film_load_save.mode_ == ImageFilm::FilmLoadSave::LoadAndSave) logger.logInfo("ImageFilm: ", "Enabling imageFilm Loading feature. It will load and combine the ImageFilm files from the currently selected image output folder before start rendering, autodetecting each film format (binary/text) automatically. If they don't match exactly the scene, bad results could happen. Use WITH CARE!");
+	if(film_load_save.mode_ != ImageFilm::FilmLoadSave::Mode::Save) logger.logInfo("ImageFilm: ", "Enabling imageFilm file saving feature");
+	if(film_load_save.mode_ == ImageFilm::FilmLoadSave::Mode::LoadAndSave) logger.logInfo("ImageFilm: ", "Enabling imageFilm Loading feature. It will load and combine the ImageFilm files from the currently selected image output folder before start rendering, autodetecting each film format (binary/text) automatically. If they don't match exactly the scene, bad results could happen. Use WITH CARE!");
 
 	if(film_load_save.auto_save_.interval_type_ == ImageFilm::AutoSaveParams::IntervalType::Pass) logger.logInfo("ImageFilm: ", "AutoSave internal imageFilm every ", film_load_save.auto_save_.interval_passes_, " passes");
 
@@ -237,8 +237,8 @@ void ImageFilm::init(RenderControl &render_control, int num_passes)
 	timer_.start("imagesAutoSaveTimer");
 	timer_.start("filmAutoSaveTimer");
 
-	if(film_load_save_.mode_ == FilmLoadSave::LoadAndSave) imageFilmLoadAllInFolder(render_control);	//Load all the existing Film in the images output folder, combining them together. It will load only the Film files with the same "base name" as the output image film (including file name, computer node name and frame) to allow adding samples to animations.
-	if(film_load_save_.mode_ == FilmLoadSave::LoadAndSave || film_load_save_.mode_ == FilmLoadSave::Save) imageFilmFileBackup(); //If the imageFilm is set to Save, at the start rename the previous film file as a "backup" just in case the user has made a mistake and wants to get the previous film back.
+	if(film_load_save_.mode_ == FilmLoadSave::Mode::LoadAndSave) imageFilmLoadAllInFolder(render_control);	//Load all the existing Film in the images output folder, combining them together. It will load only the Film files with the same "base name" as the output image film (including file name, computer node name and frame) to allow adding samples to animations.
+	if(film_load_save_.mode_ == FilmLoadSave::Mode::LoadAndSave || film_load_save_.mode_ == FilmLoadSave::Mode::Save) imageFilmFileBackup(); //If the imageFilm is set to Save, at the start rename the previous film file as a "backup" just in case the user has made a mistake and wants to get the previous film back.
 
 	if(render_callbacks_ && render_callbacks_->notify_view_)
 	{
@@ -280,7 +280,7 @@ int ImageFilm::nextPass(const RenderView *render_view, RenderControl &render_con
 			}
 		}
 
-		if((film_load_save_.mode_ == FilmLoadSave::LoadAndSave || film_load_save_.mode_ == FilmLoadSave::Save) && (film_load_save_.auto_save_.interval_type_ == ImageFilm::AutoSaveParams::IntervalType::Pass) && (film_load_save_.auto_save_.pass_counter_ >= film_load_save_.auto_save_.interval_passes_))
+		if((film_load_save_.mode_ == FilmLoadSave::Mode::LoadAndSave || film_load_save_.mode_ == FilmLoadSave::Mode::Save) && (film_load_save_.auto_save_.interval_type_ == ImageFilm::AutoSaveParams::IntervalType::Pass) && (film_load_save_.auto_save_.pass_counter_ >= film_load_save_.auto_save_.interval_passes_))
 		{
 				imageFilmSave();
 				film_load_save_.auto_save_.pass_counter_ = 0;
@@ -552,7 +552,7 @@ void ImageFilm::finishArea(const RenderView *render_view, RenderControl &render_
 			resetImagesAutoSaveTimer();
 		}
 
-		if((film_load_save_.mode_ == FilmLoadSave::LoadAndSave || film_load_save_.mode_ == FilmLoadSave::Save) && (film_load_save_.auto_save_.interval_type_ == ImageFilm::AutoSaveParams::IntervalType::Time) && (film_load_save_.auto_save_.timer_ > film_load_save_.auto_save_.interval_seconds_))
+		if((film_load_save_.mode_ == FilmLoadSave::Mode::LoadAndSave || film_load_save_.mode_ == FilmLoadSave::Mode::Save) && (film_load_save_.auto_save_.interval_type_ == ImageFilm::AutoSaveParams::IntervalType::Time) && (film_load_save_.auto_save_.timer_ > film_load_save_.auto_save_.interval_seconds_))
 		{
 			if(logger_.isDebug())logger_.logDebug("filmAutoSaveTimer=", film_load_save_.auto_save_.timer_);
 			imageFilmSave();
@@ -568,7 +568,7 @@ void ImageFilm::finishArea(const RenderView *render_view, RenderControl &render_
 	}
 }
 
-void ImageFilm::flush(const RenderView *render_view, const RenderControl &render_control, const EdgeToonParams &edge_params, int flags)
+void ImageFilm::flush(const RenderView *render_view, const RenderControl &render_control, const EdgeToonParams &edge_params, Flags flags)
 {
 	if(render_control.finished())
 	{
@@ -657,7 +657,7 @@ void ImageFilm::flush(const RenderView *render_view, const RenderControl &render
 
 	if(render_control.finished())
 	{
-		if(film_load_save_.mode_ == FilmLoadSave::LoadAndSave || film_load_save_.mode_ == FilmLoadSave::Save)
+		if(film_load_save_.mode_ == FilmLoadSave::Mode::LoadAndSave || film_load_save_.mode_ == FilmLoadSave::Mode::Save)
 		{
 			imageFilmSave();
 		}

@@ -32,8 +32,8 @@ class TextureMapperNode final : public ShaderNode
 		static ShaderNode *factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params);
 
 	private:
-		enum Coords : int { Uv, Global, Orco, Transformed, Normal, Reflect, Window, Stick, Stress, Tangent };
-		enum Projection : int { Plain = 0, Cube, Tube, Sphere };
+		enum class Coords : unsigned char { Uv, Global, Orco, Transformed, Normal, Reflect, Window, Stick, Stress, Tangent };
+		enum class Projection : unsigned char { Plain, Cube, Tube, Sphere };
 
 		explicit TextureMapperNode(const Texture *texture) : tex_(texture) { }
 		void eval(NodeTreeData &node_tree_data, const SurfacePoint &sp, const Camera *camera) const override;
@@ -50,8 +50,6 @@ class TextureMapperNode final : public ShaderNode
 		static Point3 flatMap(const Point3 &p);
 		static Point3 evalUv(const SurfacePoint &sp);
 
-		Coords coords_;
-		Projection projection_;
 		int map_x_ = 1, map_y_ = 2, map_z_ = 3; //!< axis mapping; 0:set to zero, 1:x, 2:y, 3:z
 		Point3 p_du_, p_dv_, p_dw_;
 		float d_u_, d_v_, d_w_;
@@ -61,6 +59,8 @@ class TextureMapperNode final : public ShaderNode
 		float bump_str_ = 0.02f;
 		bool do_scalar_ = true;
 		Matrix4 mtx_;
+		Coords coords_;
+		Projection projection_;
 };
 
 class ValueNode final : public ShaderNode

@@ -57,7 +57,7 @@ class EwaWeightLut final
 class ImageTexture final : public Texture
 {
 	public:
-		enum class ClipMode : int { Extend, Clip, ClipCube, Repeat, Checker };
+		enum class ClipMode : unsigned char { Extend, Clip, ClipCube, Repeat, Checker };
 		static Texture *factory(Logger &logger, Scene &scene, const std::string &name, const ParamMap &params);
 
 	private:
@@ -87,14 +87,14 @@ class ImageTexture final : public Texture
 		float cropminx_, cropmaxx_, cropminy_, cropmaxy_;
 		float checker_dist_;
 		int xrepeat_, yrepeat_;
-		ClipMode tex_clip_mode_;
 		std::vector<std::shared_ptr<Image>> images_;
-		ColorSpace original_image_file_color_space_;
 		float original_image_file_gamma_;
 		bool mirror_x_;
 		bool mirror_y_;
 		float trilinear_level_bias_ = 0.f; //!< manually specified delta to be added/subtracted from the calculated mipmap level. Negative values will choose higher resolution mipmaps than calculated, reducing the blurry artifacts at the cost of increasing texture noise. Positive values will choose lower resolution mipmaps than calculated. Default (and recommended) is 0.0 to use the calculated mipmaps as-is.
 		float ewa_max_anisotropy_ = 8.f; //!< Maximum anisotropy allowed for mipmap EWA algorithm. Higher values give better quality in textures seen from an angle, but render will be slower. Lower values will give more speed but lower quality in textures seen in an angle.
+		ColorSpace original_image_file_color_space_;
+		ClipMode tex_clip_mode_;
 		static const EwaWeightLut ewa_weight_lut_;
 };
 

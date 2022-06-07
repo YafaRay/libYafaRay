@@ -35,12 +35,12 @@ BEGIN_YAFARAY
 
 ImageOutput::ImageOutput(Logger &logger, std::string image_path, const DenoiseParams &denoise_params, std::string name, ColorSpace color_space, float gamma, bool with_alpha, bool alpha_premultiply, bool multi_layer) : name_(std::move(name)), image_path_(std::move(image_path)), color_space_(color_space), gamma_(gamma), with_alpha_(with_alpha), alpha_premultiply_(alpha_premultiply), multi_layer_(multi_layer), denoise_params_(denoise_params), badge_(logger), logger_(logger)
 {
-	if(color_space == RawManualGamma)
+	if(color_space == ColorSpace::RawManualGamma)
 	{
 		//If the gamma is too close to 1.f, or negative, ignore gamma and do a pure linear RGB processing without gamma.
 		if(gamma <= 0 || std::abs(1.f - gamma) <= 0.001)
 		{
-			color_space_ = LinearRgb;
+			color_space_ = ColorSpace::LinearRgb;
 			gamma_ = 1.f;
 		}
 	}

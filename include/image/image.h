@@ -44,9 +44,9 @@ struct DenoiseParams
 class Image
 {
 	public:
-		enum class Type : int { None, Gray, GrayAlpha, Color, ColorAlpha };
-		enum class Optimization : int { None, Optimized, Compressed };
-		enum class Position : int { None, Top, Bottom, Left, Right, Overlay };
+		enum class Type : unsigned char { None, Gray, GrayAlpha, Color, ColorAlpha };
+		enum class Optimization : unsigned char { None, Optimized, Compressed };
+		enum class Position : unsigned char { None, Top, Bottom, Left, Right, Overlay };
 		static Image *factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params);
 		static Image *factory(Logger &logger, int width, int height, const Type &type, const Optimization &optimization);
 		virtual ~Image() = default;
@@ -86,8 +86,8 @@ class Image
 		Image(int width, int height) : width_(width), height_(height) { }
 		int width_ = 0;
 		int height_ = 0;
-		ColorSpace color_space_ = RawManualGamma;
 		float gamma_ = 1.f;
+		ColorSpace color_space_ = ColorSpace::RawManualGamma;
 };
 
 END_YAFARAY

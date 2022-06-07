@@ -57,23 +57,23 @@ struct EdgeToonParams;
 class ImageFilm final
 {
 	public:
-		enum class FilterType : int { Box, Mitchell, Gauss, Lanczos };
-		enum Flags : unsigned int { RegularImage = 1 << 0, Densityimage = 1 << 1, All = RegularImage | Densityimage };
+		enum class FilterType : unsigned char { Box, Mitchell, Gauss, Lanczos };
+		enum Flags : unsigned char { RegularImage = 1 << 0, Densityimage = 1 << 1, All = RegularImage | Densityimage };
 		struct AutoSaveParams
 		{
-			enum class IntervalType : int { None, Time, Pass };
-			IntervalType interval_type_ = IntervalType::None;
+			enum class IntervalType : unsigned char { None, Time, Pass };
 			double interval_seconds_ = 300.0;
 			int interval_passes_ = 1;
 			double timer_ = 0.0; //Internal timer for AutoSave
 			int pass_counter_ = 0; //Internal counter for AutoSave
+			IntervalType interval_type_ = IntervalType::None;
 		};
 		struct FilmLoadSave
 		{
-			enum Mode : int { None, Save, LoadAndSave };
-			Mode mode_ = Mode::None;
+			enum class Mode : unsigned char { None, Save, LoadAndSave };
 			std::string path_ = "./";
 			AutoSaveParams auto_save_;
+			Mode mode_ = Mode::None;
 		};
 
 		static ImageFilm *factory(Logger &logger, const ParamMap &params, Scene *scene);
@@ -92,7 +92,7 @@ class ImageFilm final
 		/*! Indicate that all pixels inside the area have been sampled for this pass */
 		void finishArea(const RenderView *render_view, RenderControl &render_control, const RenderArea &a, const EdgeToonParams &edge_params);
 		/*! Output all pixels to the color output */
-		void flush(const RenderView *render_view, const RenderControl &render_control, const EdgeToonParams &edge_params, int flags = All);
+		void flush(const RenderView *render_view, const RenderControl &render_control, const EdgeToonParams &edge_params, Flags flags = All);
 		void cleanup() { weights_.clear(); }
 		/*! query if sample (x,y) was flagged to need more samples.
 			IMPORTANT! You may only call this after you have called nextPass(true, ...), otherwise

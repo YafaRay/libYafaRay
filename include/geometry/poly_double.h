@@ -58,15 +58,15 @@ struct PolyDouble::ClipResult
 		ClipResult::FatalError: fatal error occured (didn't ever happen to me :)
 		ClipResult::DegeneratedLessThan3Edges: resulting polygon degenerated to less than 3 edges (never happened either)
 	*/
-	enum Code : int { Correct, NoOverlapDisappeared, FatalError, DegeneratedLessThan3Edges };
-	explicit ClipResult(Code clip_result_code = Correct) : clip_result_code_(clip_result_code) { }
-	Code clip_result_code_ = Correct;
+	enum class Code : unsigned char { Correct, NoOverlapDisappeared, FatalError, DegeneratedLessThan3Edges };
+	explicit ClipResult(Code clip_result_code = Code::Correct) : clip_result_code_(clip_result_code) { }
+	Code clip_result_code_ = Code::Correct;
 	PolyDouble poly_;
 };
 
 struct PolyDouble::ClipResultWithBound : PolyDouble::ClipResult
 {
-	explicit ClipResultWithBound(Code clip_result_code = Correct);
+	explicit ClipResultWithBound(Code clip_result_code = Code::Correct);
 	ClipResultWithBound(ClipResultWithBound &&clip_result_with_bound) = default;
 	ClipResultWithBound& operator=(ClipResultWithBound&&) = default;
 	explicit ClipResultWithBound(ClipResult &&clip_result);

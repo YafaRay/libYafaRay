@@ -453,7 +453,7 @@ int AcceleratorKdTree::buildTree(uint32_t n_prims, const std::vector<const Primi
 				const PolyDouble::ClipResultWithBound clip_result = ct->clipToBound(logger_, b_ext, clip_[depth], cdata_[prim_clip_thresh_ * depth + old_idx]);
 				//if(logger_.isDebug()) Y_DEBUG PRPREC(12) << " depth=" << depth << " i=" << i << " poly_id=" << old_idx << " i_poly=" << cdata_[prim_clip_thresh_ * depth + old_idx].print() << " result=" << clip_result.clip_result_code_ << " o_poly=" << clip_result.poly_.print(");
 
-				if(clip_result.clip_result_code_ == PolyDouble::ClipResultWithBound::Correct)
+				if(clip_result.clip_result_code_ == PolyDouble::ClipResultWithBound::Code::Correct)
 				{
 					++kd_stats_.clip_;
 					cdata_[prim_clip_thresh_ * (depth + 1) + n_overl] = clip_result.poly_;

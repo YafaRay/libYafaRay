@@ -31,18 +31,19 @@ class CloudsTexture final : public Texture
 		static Texture *factory(Logger &logger, Scene &scene, const std::string &name, const ParamMap &params);
 
 	private:
-		enum BiasType : int { None, Positive, Negative };
+		enum class BiasType : unsigned char { None, Positive, Negative };
 		CloudsTexture(Logger &logger, int dep, float sz, bool hd,
 					  const Rgb &c_1, const Rgb &c_2,
 					  const std::string &ntype, const std::string &btype);
 		Rgba getColor(const Point3 &p, const MipMapParams *mipmap_params) const override;
 		float getFloat(const Point3 &p, const MipMapParams *mipmap_params) const override;
 
-		int depth_, bias_;
+		int depth_;
 		float size_;
 		bool hard_;
 		Rgb color_1_, color_2_;
 		std::unique_ptr<NoiseGenerator> n_gen_;
+		BiasType bias_;
 };
 
 
@@ -92,9 +93,9 @@ class VoronoiTexture final : public Texture
 		static Texture *factory(Logger &logger, Scene &scene, const std::string &name, const ParamMap &params);
 
 	private:
-		enum class ColorMode : int { IntensityWithoutColor, Position, PositionOutline, PositionOutlineIntensity};
+		enum class ColorMode : unsigned char { IntensityWithoutColor, Position, PositionOutline, PositionOutlineIntensity};
 		VoronoiTexture(Logger &logger, const Rgb &c_1, const Rgb &c_2,
-					   const ColorMode &color_mode,
+					   ColorMode color_mode,
 					   float w_1, float w_2, float w_3, float w_4,
 					   float mex, float sz,
 					   float isc, const std::string &dname);
@@ -104,9 +105,9 @@ class VoronoiTexture final : public Texture
 		float w_1_, w_2_, w_3_, w_4_;	// feature weights
 		float aw_1_, aw_2_, aw_3_, aw_4_;	// absolute value of above
 		float size_ = 1.f;
-		ColorMode color_mode_ = ColorMode::IntensityWithoutColor;
 		float intensity_scale_ = 1.f;
 		VoronoiNoiseGenerator v_gen_;
+		ColorMode color_mode_ = ColorMode::IntensityWithoutColor;
 };
 
 class MusgraveTexture final : public Texture
@@ -166,13 +167,13 @@ class BlendTexture final : public Texture
 		static Texture *factory(Logger &logger, Scene &scene, const std::string &name, const ParamMap &params);
 
 	private:
-		enum ProgressionType : int { Linear, Quadratic, Easing, Diagonal, Spherical, QuadraticSphere, Radial };
+		enum class ProgressionType : unsigned char { Linear, Quadratic, Easing, Diagonal, Spherical, QuadraticSphere, Radial };
 		BlendTexture(Logger &logger, const std::string &stype, bool use_flip_axis);
 		Rgba getColor(const Point3 &p, const MipMapParams *mipmap_params) const override;
 		float getFloat(const Point3 &p, const MipMapParams *mipmap_params) const override;
 
-		ProgressionType progression_type_ = Linear;
 		bool use_flip_axis_ = false;
+		ProgressionType progression_type_ = ProgressionType::Linear;
 };
 
 END_YAFARAY

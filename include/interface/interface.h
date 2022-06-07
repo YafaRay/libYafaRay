@@ -135,7 +135,7 @@ class Interface
 		ParamMap *cparams_ = nullptr; //! just a pointer to the current paramMap, either params or a nodes_params element
 		std::unique_ptr<Scene> scene_;
 		float input_gamma_ = 1.f;
-		ColorSpace input_color_space_ = RawManualGamma;
+		ColorSpace input_color_space_ = ColorSpace::RawManualGamma;
 };
 
 END_YAFARAY

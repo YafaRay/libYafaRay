@@ -86,9 +86,9 @@ class ExportC: public Interface
 		int n_uvs_ = 0;
 		unsigned int next_obj_ = 0;
 		float gamma_ = 1.f;
-		ColorSpace color_space_ = RawManualGamma;
 		int section_num_lines_ = 0;
 		int num_sections_ = 1;
+		ColorSpace color_space_ = ColorSpace::RawManualGamma;
 		static constexpr int section_max_lines_ = 50000; //To divide the exported C code in sections of this maximum amount of lines, so the C compilers do not crash due to out of memory errors in large C scenes.
 };
 

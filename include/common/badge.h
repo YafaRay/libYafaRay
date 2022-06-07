@@ -39,7 +39,7 @@ class Badge
 	public:
 		explicit Badge(Logger &logger) : logger_(logger) { }
 		void setParams(const ParamMap &params);
-		enum class Position : int { None, Top, Bottom };
+		enum class Position : unsigned char { None, Top, Bottom };
 		Position getPosition() const { return position_; }
 		std::string getTitle() const { return title_; }
 		std::string getAuthor() const { return author_; }
@@ -74,7 +74,6 @@ class Badge
 		int image_height_ = 0;
 		bool draw_aa_ = true;
 		bool draw_render_settings_ = true;
-		Position position_ = Position::None;
 		float font_size_factor_ = 1.f;
 		std::string title_;
 		std::string author_;
@@ -83,6 +82,7 @@ class Badge
 		std::string icon_path_;
 		std::string font_path_;
 		Logger &logger_;
+		Position position_ = Position::None;
 };
 
 END_YAFARAY

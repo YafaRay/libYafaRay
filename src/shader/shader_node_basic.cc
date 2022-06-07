@@ -109,7 +109,7 @@ Point3 TextureMapperNode::doMapping(const Point3 &p, const Vec3 &n) const
 	// Texture coordinates standardized, if needed, to -1..1
 	switch(coords_)
 	{
-		case Uv: texpt = {2.f * texpt.x() - 1.f, 2.f * texpt.y() - 1.f, texpt.z()}; break;
+		case Coords::Uv: texpt = {2.f * texpt.x() - 1.f, 2.f * texpt.y() - 1.f, texpt.z()}; break;
 		default: break;
 	}
 	// Texture axis mapping
@@ -120,10 +120,10 @@ Point3 TextureMapperNode::doMapping(const Point3 &p, const Vec3 &n) const
 	// Texture coordinates mapping
 	switch(projection_)
 	{
-		case Tube: texpt = tubeMap(texpt); break;
-		case Sphere: texpt = sphereMap(texpt); break;
-		case Cube: texpt = cubeMap(texpt, n); break;
-		case Plain: // texpt = flatmap(texpt); break;
+		case Projection::Tube: texpt = tubeMap(texpt); break;
+		case Projection::Sphere: texpt = sphereMap(texpt); break;
+		case Projection::Cube: texpt = cubeMap(texpt, n); break;
+		case Projection::Plain: // texpt = flatmap(texpt); break;
 		default: break;
 	}
 	// Texture scale and offset
@@ -140,19 +140,19 @@ std::pair<Point3, Vec3> TextureMapperNode::getCoords(const SurfacePoint &sp, con
 {
 	switch(coords_)
 	{
-		case Uv: return { evalUv(sp), sp.ng_ };
-		case Orco: return { sp.orco_p_, sp.orco_ng_ };
-		case Transformed: return { mtx_ * sp.p_, mtx_ * sp.ng_ };  // apply 4x4 matrix of object for mapping also to true surface normals
-		case Window: return { camera->screenproject(sp.p_), sp.ng_ };
-		case Normal: {
+		case Coords::Uv: return { evalUv(sp), sp.ng_ };
+		case Coords::Orco: return { sp.orco_p_, sp.orco_ng_ };
+		case Coords::Transformed: return { mtx_ * sp.p_, mtx_ * sp.ng_ };  // apply 4x4 matrix of object for mapping also to true surface normals
+		case Coords::Window: return { camera->screenproject(sp.p_), sp.ng_ };
+		case Coords::Normal: {
 			const auto [cam_x, cam_y, cam_z] = camera->getAxes();
 			return {{sp.n_ * cam_x, -sp.n_ * cam_y, 0.f}, sp.ng_};
 			}
-		case Stick: // Not implemented yet use GLOB
-		case Stress: // Not implemented yet use GLOB
-		case Tangent: // Not implemented yet use GLOB
-		case Reflect: // Not implemented yet use GLOB
-		case Global: // GLOB mapped as default
+		case Coords::Stick: // Not implemented yet use GLOB
+		case Coords::Stress: // Not implemented yet use GLOB
+		case Coords::Tangent: // Not implemented yet use GLOB
+		case Coords::Reflect: // Not implemented yet use GLOB
+		case Coords::Global: // GLOB mapped as default
 		default: return { sp.p_, sp.ng_ };
 	}
 }
@@ -165,7 +165,7 @@ void TextureMapperNode::eval(NodeTreeData &node_tree_data, const SurfacePoint &s
 	{
 		const Point3 texpt_orig {texpt};
 		texpt = doMapping(texpt_orig, ng);
-		if(coords_ == Uv && sp.has_uv_)
+		if(coords_ == Coords::Uv && sp.has_uv_)
 		{
 			float du_dx = 0.f, dv_dx = 0.f;
 			float du_dy = 0.f, dv_dy = 0.f;
@@ -188,7 +188,7 @@ void TextureMapperNode::evalDerivative(NodeTreeData &node_tree_data, const Surfa
 {
 	float du = 0.0f, dv = 0.0f;
 	auto [texpt, ng] = getCoords(sp, camera);
-	if(tex_->discrete() && sp.has_uv_ && coords_ == Uv)
+	if(tex_->discrete() && sp.has_uv_ && coords_ == Coords::Uv)
 	{
 		texpt = doMapping(texpt, ng);
 		Vec3 norm;
@@ -274,7 +274,7 @@ void TextureMapperNode::evalDerivative(NodeTreeData &node_tree_data, const Surfa
 			du *= bump_str_;
 			dv *= bump_str_;
 
-			if(coords_ != Uv)
+			if(coords_ != Coords::Uv)
 			{
 				du = -du;
 				dv = -dv;
@@ -288,8 +288,8 @@ ShaderNode * TextureMapperNode::factory(Logger &logger, const Scene &scene, cons
 {
 	const Texture *tex = nullptr;
 	std::string texname, option;
-	Coords tc = Global;
-	Projection projection = Plain;
+	Coords tc = Coords::Global;
+	Projection projection = Projection::Plain;
 	float bump_str = 1.f;
 	bool scalar = true;
 	std::array<int, 3> map { 1, 2, 3 };
@@ -309,23 +309,23 @@ ShaderNode * TextureMapperNode::factory(Logger &logger, const Scene &scene, cons
 	auto tm = new TextureMapperNode(tex);
 	if(params.getParam("texco", option))
 	{
-		if(option == "uv") tc = Uv;
-		else if(option == "global") tc = Global;
-		else if(option == "orco") tc = Orco;
-		else if(option == "transformed") tc = Transformed;
-		else if(option == "window") tc = Window;
-		else if(option == "normal") tc = Normal;
-		else if(option == "reflect") tc = Reflect;
-		else if(option == "stick") tc = Stick;
-		else if(option == "stress") tc = Stress;
-		else if(option == "tangent") tc = Tangent;
+		if(option == "uv") tc = Coords::Uv;
+		else if(option == "global") tc = Coords::Global;
+		else if(option == "orco") tc = Coords::Orco;
+		else if(option == "transformed") tc = Coords::Transformed;
+		else if(option == "window") tc = Coords::Window;
+		else if(option == "normal") tc = Coords::Normal;
+		else if(option == "reflect") tc = Coords::Reflect;
+		else if(option == "stick") tc = Coords::Stick;
+		else if(option == "stress") tc = Coords::Stress;
+		else if(option == "tangent") tc = Coords::Tangent;
 	}
 	if(params.getParam("mapping", option) && tex->discrete())
 	{
-		if(option == "plain") projection = Plain;
-		else if(option == "cube") projection = Cube;
-		else if(option == "tube") projection = Tube;
-		else if(option == "sphere") projection = Sphere;
+		if(option == "plain") projection = Projection::Plain;
+		else if(option == "cube") projection = Projection::Cube;
+		else if(option == "tube") projection = Projection::Tube;
+		else if(option == "sphere") projection = Projection::Sphere;
 	}
 	params.getParam("transform", mtx);
 	params.getParam("scale", scale);

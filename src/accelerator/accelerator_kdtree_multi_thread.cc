@@ -421,7 +421,7 @@ void AcceleratorKdTreeMultiThread::buildTreeWorker(const std::vector<const Primi
 				//if(!polygons.empty()) polygon_str = polygons[poly_id].print();
 				//if(logger_.isDebug()) Y_DEBUG PRPREC(12) << " depth=" << depth << " i=" << index_num << " poly_id=" << poly_id << " i_poly=" << polygon_str << " result=" << clip_result.clip_result_code_ << " o_poly=" << clip_result.poly_.print(");
 
-				if(clip_result.clip_result_code_ == PolyDouble::ClipResultWithBound::Correct)
+				if(clip_result.clip_result_code_ == PolyDouble::ClipResultWithBound::Code::Correct)
 				{
 					++result.stats_.clip_;
 					new_polygons.emplace_back(clip_result.poly_);

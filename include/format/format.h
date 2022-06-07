@@ -35,7 +35,7 @@ class ImageLayers;
 class ImageLayer;
 class ParamMap;
 class Scene;
-enum ColorSpace : int;
+enum class ColorSpace : unsigned char;
 
 class Format
 {

@@ -35,7 +35,7 @@ class Background;
 struct RenderArea;
 struct MaskParams;
 class Vec3;
-enum class DarkDetectionType : int;
+enum class DarkDetectionType : unsigned char;
 
 class ThreadControl final
 {

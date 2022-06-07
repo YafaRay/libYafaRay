@@ -25,7 +25,7 @@
 
 BEGIN_YAFARAY
 
-class Axis
+class Axis //FIXME, too big underlying data and a bit awkward handling, needs to be optimized
 {
 	public:
 		enum Code : int { None = -1, X = 0, Y, Z };
@@ -46,7 +46,7 @@ class Axis
 
 struct ClipPlane
 {
-	enum class Pos: int { None, Lower, Upper };
+	enum class Pos: unsigned char { None, Lower, Upper };
 	explicit ClipPlane(Pos pos = Pos::None) : pos_(pos) { }
 	ClipPlane(int axis, Pos pos) : axis_(axis), pos_(pos) { }
 	int axis_ = Axis::None;

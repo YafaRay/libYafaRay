@@ -73,7 +73,7 @@ Image * Image::factory(Logger &logger, const Scene &scene, const std::string &na
 			if(format->isHdr())
 			{
 				if(color_space != ColorSpace::LinearRgb && logger.isVerbose()) logger.logVerbose("Image: The image is a HDR/EXR file: forcing linear RGB and ignoring selected color space '", color_space_str, "' and the gamma setting.");
-				color_space = LinearRgb;
+				color_space = ColorSpace::LinearRgb;
 				if(image_optimization_str != "none" && logger.isVerbose()) logger.logVerbose("Image: The image is a HDR/EXR file: forcing texture optimization to 'none' and ignoring selected texture optimization '", image_optimization_str, "'");
 				optimization = Image::Optimization::None;
 			}

@@ -32,7 +32,7 @@ BEGIN_YAFARAY
 
 struct BoundEdge
 {
-	enum class EndBound : int { Left, Both, Right };
+	enum class EndBound : unsigned char { Left, Both, Right };
 	BoundEdge() = default;
 	BoundEdge(float position, uint32_t index, EndBound bound_end): pos_(position), index_(index), end_(bound_end) { }
 	bool operator<(const BoundEdge &e) const

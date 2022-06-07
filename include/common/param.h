@@ -38,7 +38,7 @@ class Logger;
 class Parameter
 {
 	public:
-		enum Type : int { None = -1, Int = 1, Bool, Float, String, Vector, Color, Matrix };
+		enum class Type : unsigned char { None, Int, Bool, Float, String, Vector, Color, Matrix };
 		//! return the type of the parameter_t
 		Type type() const { return type_; }
 		std::string print() const;
@@ -79,7 +79,6 @@ class Parameter
 		Parameter &operator = (const Matrix4 &m);
 
 	private:
-		Type type_ = None; //!< type of the stored value
 		union
 		{
 			int ival_;
@@ -88,6 +87,7 @@ class Parameter
 		};
 		std::string sval_;
 		std::vector<float> vval_;
+		Type type_ = Type::None; //!< type of the stored value
 };
 
 class ParamMap

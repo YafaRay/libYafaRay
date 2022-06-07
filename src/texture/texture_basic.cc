@@ -341,7 +341,7 @@ Texture * RgbCubeTexture::factory(Logger &logger, Scene &scene, const std::strin
 //-----------------------------------------------------------------------------------------
 
 VoronoiTexture::VoronoiTexture(Logger &logger, const Rgb &c_1, const Rgb &c_2,
-							   const ColorMode &color_mode,
+							   ColorMode color_mode,
 							   float w_1, float w_2, float w_3, float w_4,
 							   float mex, float sz,
 							   float isc, const std::string &dname)
@@ -600,14 +600,14 @@ Texture * DistortedNoiseTexture::factory(Logger &logger, Scene &scene, const std
 BlendTexture::BlendTexture(Logger &logger, const std::string &stype, bool use_flip_axis) : Texture(logger)
 {
 	use_flip_axis_ = use_flip_axis;
-	if(stype == "lin") progression_type_ = Linear;
-	else if(stype == "quad") progression_type_ = Quadratic;
-	else if(stype == "ease") progression_type_ = Easing;
-	else if(stype == "diag") progression_type_ = Diagonal;
-	else if(stype == "sphere") progression_type_ = Spherical;
-	else if(stype == "halo" || stype == "quad_sphere") progression_type_ = QuadraticSphere;
-	else if(stype == "radial") progression_type_ = Radial;
-	else progression_type_ = Linear;
+	if(stype == "lin") progression_type_ = ProgressionType::Linear;
+	else if(stype == "quad") progression_type_ = ProgressionType::Quadratic;
+	else if(stype == "ease") progression_type_ = ProgressionType::Easing;
+	else if(stype == "diag") progression_type_ = ProgressionType::Diagonal;
+	else if(stype == "sphere") progression_type_ = ProgressionType::Spherical;
+	else if(stype == "halo" || stype == "quad_sphere") progression_type_ = ProgressionType::QuadraticSphere;
+	else if(stype == "radial") progression_type_ = ProgressionType::Radial;
+	else progression_type_ = ProgressionType::Linear;
 }
 
 float BlendTexture::getFloat(const Point3 &p, const MipMapParams *mipmap_params) const
@@ -622,14 +622,14 @@ float BlendTexture::getFloat(const Point3 &p, const MipMapParams *mipmap_params)
 		coord_2 = p.x();
 	}
 
-	if(progression_type_ == Quadratic)
+	if(progression_type_ == ProgressionType::Quadratic)
 	{
 		// Transform -1..1 to 0..1
 		blend = 0.5f * (coord_1 + 1.f);
 		if(blend < 0.f) blend = 0.f;
 		else blend *= blend;
 	}
-	else if(progression_type_ == Easing)
+	else if(progression_type_ == ProgressionType::Easing)
 	{
 		blend = 0.5f * (coord_1 + 1.f);
 		if(blend <= 0.f) blend = 0.f;
@@ -639,17 +639,17 @@ float BlendTexture::getFloat(const Point3 &p, const MipMapParams *mipmap_params)
 			blend = (3.f * blend * blend - 2.f * blend * blend * blend);
 		}
 	}
-	else if(progression_type_ == Diagonal)
+	else if(progression_type_ == ProgressionType::Diagonal)
 	{
 		blend = 0.25f * (2.f + coord_1 + coord_2);
 	}
-	else if(progression_type_ == Spherical || progression_type_ == QuadraticSphere)
+	else if(progression_type_ == ProgressionType::Spherical || progression_type_ == ProgressionType::QuadraticSphere)
 	{
 		blend = 1.f - math::sqrt(coord_1 * coord_1 + coord_2 * coord_2 + p.z() * p.z());
 		if(blend < 0.f) blend = 0.f;
-		if(progression_type_ == QuadraticSphere) blend *= blend;
+		if(progression_type_ == ProgressionType::QuadraticSphere) blend *= blend;
 	}
-	else if(progression_type_ == Radial)
+	else if(progression_type_ == ProgressionType::Radial)
 	{
 		blend = (atan2f(coord_2, coord_1) / (2.f * math::num_pi<>) + 0.5f);
 	}

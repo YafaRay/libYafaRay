@@ -34,7 +34,7 @@ BEGIN_YAFARAY
 class LayerDef final
 {
 	public:
-		enum Type : int
+		enum Type : unsigned char
 		{
 			Combined = 0, //Combined should always have value 0 and be the first entry in the enum
 			AaSamples,

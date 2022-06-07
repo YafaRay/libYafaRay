@@ -38,7 +38,7 @@ class IesData final
 		float getMaxVAngle() const { return max_v_angle_; }
 
 	private:
-		enum Type : int { TypeC = 1, TypeB = 2, TypeA = 3, };
+		enum Type : unsigned char { TypeC = 1, TypeB = 2, TypeA = 3, };
 		std::unique_ptr<float[]> vert_angle_map_; //<! vertical spherical angles
 		std::unique_ptr<float[]> hor_angle_map_; //<! horizontal sperical angles
 		std::unique_ptr<std::unique_ptr<float[]>[]> rad_map_; //<! spherical radiance map corresponding with entries to the angle maps

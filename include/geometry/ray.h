@@ -37,7 +37,7 @@ struct RayDifferentials
 class Ray
 {
 	public:
-		enum class DifferentialsCopy : int { No, FullCopy };
+		enum class DifferentialsCopy : unsigned char { No, FullCopy };
 		Ray() = default;
 		Ray(const Ray &ray, DifferentialsCopy differentials_copy);
 		Ray(Ray &&ray) = default;

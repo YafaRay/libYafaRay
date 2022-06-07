@@ -159,44 +159,44 @@ void ExportXml::writeMatrix(const std::string &name, const Matrix4 &m, std::ofst
 void ExportXml::writeParam(const std::string &name, const Parameter &param, std::ofstream &file, ColorSpace color_space, float gamma) noexcept
 {
 	const Parameter::Type type = param.type();
-	if(type == Parameter::Int)
+	if(type == Parameter::Type::Int)
 	{
 		int i = 0;
 		param.getVal(i);
 		file << "<" << name << " ival=\"" << i << "\"/>\n";
 	}
-	else if(type == Parameter::Bool)
+	else if(type == Parameter::Type::Bool)
 	{
 		bool b = false;
 		param.getVal(b);
 		file << "<" << name << " bval=\"" << b << "\"/>\n";
 	}
-	else if(type == Parameter::Float)
+	else if(type == Parameter::Type::Float)
 	{
 		double f = 0.0;
 		param.getVal(f);
 		file << "<" << name << " fval=\"" << f << "\"/>\n";
 	}
-	else if(type == Parameter::String)
+	else if(type == Parameter::Type::String)
 	{
 		std::string s;
 		param.getVal(s);
 		file << "<" << name << " sval=\"" << s << "\"/>\n";
 	}
-	else if(type == Parameter::Vector)
+	else if(type == Parameter::Type::Vector)
 	{
 		Point3 p{0.f, 0.f, 0.f};
 		param.getVal(p);
 		file << "<" << name << " x=\"" << p.x() << "\" y=\"" << p.y() << "\" z=\"" << p.z() << "\"/>\n";
 	}
-	else if(type == Parameter::Color)
+	else if(type == Parameter::Type::Color)
 	{
 		Rgba c(0.f);
 		param.getVal(c);
 		c.colorSpaceFromLinearRgb(color_space, gamma);    //Color values are encoded to the desired color space before saving them to the XML file
 		file << "<" << name << " r=\"" << c.r_ << "\" g=\"" << c.g_ << "\" b=\"" << c.b_ << "\" a=\"" << c.a_ << "\"/>\n";
 	}
-	else if(type == Parameter::Matrix)
+	else if(type == Parameter::Type::Matrix)
 	{
 		Matrix4 m;
 		param.getVal(m);

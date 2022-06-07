@@ -32,7 +32,7 @@
 
 BEGIN_YAFARAY
 
-enum ColorSpace : int
+enum class ColorSpace : unsigned char
 {
 	RawManualGamma	= 1,
 	LinearRgb		= 2,
@@ -353,20 +353,20 @@ inline void Rgb::linearRgbFromColorSpace(ColorSpace color_space, float gamma)
 	 }};
 
 	//NOTE: Alpha value is not converted from linear to color space and vice versa. Should it be converted?
-	if(color_space == Srgb)
+	if(color_space == ColorSpace::Srgb)
 	{
 		r_ = linearRgbFromSRgb(r_);
 		g_ = linearRgbFromSRgb(g_);
 		b_ = linearRgbFromSRgb(b_);
 	}
-	else if(color_space == XyzD65)
+	else if(color_space == ColorSpace::XyzD65)
 	{
 		float old_r = r_, old_g = g_, old_b = b_;
 		r_ = linear_rgb_from_xyz_d_65[0][0] * old_r + linear_rgb_from_xyz_d_65[0][1] * old_g + linear_rgb_from_xyz_d_65[0][2] * old_b;
 		g_ = linear_rgb_from_xyz_d_65[1][0] * old_r + linear_rgb_from_xyz_d_65[1][1] * old_g + linear_rgb_from_xyz_d_65[1][2] * old_b;
 		b_ = linear_rgb_from_xyz_d_65[2][0] * old_r + linear_rgb_from_xyz_d_65[2][1] * old_g + linear_rgb_from_xyz_d_65[2][2] * old_b;
 	}
-	else if(color_space == RawManualGamma && gamma != 1.f)
+	else if(color_space == ColorSpace::RawManualGamma && gamma != 1.f)
 	{
 		gammaAdjust(gamma);
 	}
@@ -384,20 +384,20 @@ inline void Rgb::colorSpaceFromLinearRgb(ColorSpace color_space, float gamma)
 	}};
 
 	//NOTE: Alpha value is not converted from linear to color space and vice versa. Should it be converted?
-	if(color_space == Srgb)
+	if(color_space == ColorSpace::Srgb)
 	{
 		r_ = sRgbFromLinearRgb(r_);
 		g_ = sRgbFromLinearRgb(g_);
 		b_ = sRgbFromLinearRgb(b_);
 	}
-	else if(color_space == XyzD65)
+	else if(color_space == ColorSpace::XyzD65)
 	{
 		float old_r = r_, old_g = g_, old_b = b_;
 		r_ = xyz_d_65_from_linear_rgb[0][0] * old_r + xyz_d_65_from_linear_rgb[0][1] * old_g + xyz_d_65_from_linear_rgb[0][2] * old_b;
 		g_ = xyz_d_65_from_linear_rgb[1][0] * old_r + xyz_d_65_from_linear_rgb[1][1] * old_g + xyz_d_65_from_linear_rgb[1][2] * old_b;
 		b_ = xyz_d_65_from_linear_rgb[2][0] * old_r + xyz_d_65_from_linear_rgb[2][1] * old_g + xyz_d_65_from_linear_rgb[2][2] * old_b;
 	}
-	else if(color_space == RawManualGamma && gamma != 1.f)
+	else if(color_space == ColorSpace::RawManualGamma && gamma != 1.f)
 	{
 		if(gamma <= 0.f) gamma = 1.0e-2f;	//Arbitrary lower boundary limit for the output gamma, to avoid division by 0
 		float inv_gamma = 1.f / gamma;

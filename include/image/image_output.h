@@ -55,7 +55,6 @@ class ImageOutput final
 
 		std::string name_ = "out";
 		std::string image_path_;
-		ColorSpace color_space_ = ColorSpace::RawManualGamma;
 		float gamma_ = 1.f;
 		bool with_alpha_ = false;
 		bool alpha_premultiply_ = false;
@@ -68,6 +67,7 @@ class ImageOutput final
 		const RenderView *current_render_view_ = nullptr;
 		const std::map<std::string, std::unique_ptr<RenderView>> *render_views_ = nullptr;
 		Logger &logger_;
+		ColorSpace color_space_ = ColorSpace::RawManualGamma;
 };
 
 END_YAFARAY

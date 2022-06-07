@@ -29,7 +29,7 @@ BEGIN_YAFARAY
 
 class Primitive;
 class Bound;
-enum class Visibility : int;
+enum class Visibility : unsigned char;
 
 class ObjectInstance final : public Object
 {
