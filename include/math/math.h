@@ -104,10 +104,10 @@ template <class T> inline constexpr T max(T a, T b, T c)
 union BitTwiddler
 {
 	public:
-		explicit BitTwiddler(int i) : i_{i} { }
-		explicit BitTwiddler(float f) : f_{f} { }
-		int getAsInt() const { return i_; }
-		float getAsFloat() const { return f_; }
+		explicit constexpr BitTwiddler(int i) : i_{i} { }
+		explicit constexpr BitTwiddler(float f) : f_{f} { }
+		constexpr int getAsInt() const { return i_; }
+		constexpr float getAsFloat() const { return f_; }
 
 	private:
 		int i_;
@@ -119,7 +119,7 @@ inline constexpr float polyexp(float x)
 	return x * (x * (x * (x * (x * 1.8775767e-3f + 8.9893397e-3f) + 5.5826318e-2f) + 2.4015361e-1f) + 6.9315308e-1f) + 9.9999994e-1f;
 }
 
-inline float exp2(float x)
+inline constexpr float exp2(float x)
 {
 	constexpr float f_hi = 129.00000f;
 	constexpr float f_lo = -126.99999f;
@@ -135,7 +135,7 @@ inline constexpr float polylog(float x)
 	return x * (x * (x * (x * (x * -3.4436006e-2f + 3.1821337e-1f) + -1.2315303f) + 2.5988452f) + -3.3241990f) + 3.1157899f;
 }
 
-inline float log2(float x)
+inline constexpr float log2(float x)
 {
 	constexpr int log_mant = 0x7FFFFF;
 	const BitTwiddler i{x};
@@ -226,7 +226,7 @@ inline double sqrt(double a)
 	return std::sqrt(a);
 }
 
-inline float sin(float x)
+inline constexpr float sin(float x)
 {
 #ifdef FAST_TRIG
 	if(x > math::mult_pi_by_2<> || x < -math::mult_pi_by_2<>) x -= static_cast<int>(x * math::div_1_by_2pi<>) * math::mult_pi_by_2<>; //float modulo x % math::mult_pi_by_2<>
@@ -251,12 +251,12 @@ inline float sin(float x)
 #endif
 }
 
-inline double sin(double x)
+inline constexpr double sin(double x)
 {
 	return std::sin(x);
 }
 
-inline float cos(float x)
+inline constexpr float cos(float x)
 {
 #ifdef FAST_TRIG
 	return math::sin(x + math::div_pi_by_2<>);

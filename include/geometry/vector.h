@@ -42,45 +42,45 @@ class Vec3
 {
 	public:
 		Vec3() = default;
-		explicit Vec3(float f): vec_{f, f, f} {  }
-		Vec3(float x, float y, float z = 0.f): vec_{x, y, z} { }
-		Vec3(const Vec3 &v) = default;
-		Vec3(Vec3 &&v) = default;
-		explicit Vec3(const Point3 &p);
-		explicit Vec3(Point3 &&p);
+		constexpr explicit Vec3(float f): vec_{f, f, f} {  }
+		constexpr Vec3(float x, float y, float z = 0.f): vec_{x, y, z} { }
+		constexpr Vec3(const Vec3 &v) = default;
+		constexpr Vec3(Vec3 &&v) = default;
+		explicit constexpr Vec3(const Point3 &p);
+		explicit constexpr Vec3(Point3 &&p);
 
-		float x() const { return vec_[0]; }
-		float y() const { return vec_[1]; }
-		float z() const { return vec_[2]; }
-		float &x() { return vec_[0]; }
-		float &y() { return vec_[1]; }
-		float &z() { return vec_[2]; }
+		constexpr float x() const { return vec_[0]; }
+		constexpr float y() const { return vec_[1]; }
+		constexpr float z() const { return vec_[2]; }
+		constexpr float &x() { return vec_[0]; }
+		constexpr float &y() { return vec_[1]; }
+		constexpr float &z() { return vec_[2]; }
 
-		void set(float x, float y, float z = 0.f) { vec_ = {x, y, z}; }
+		constexpr void set(float x, float y, float z = 0.f) { vec_ = {x, y, z}; }
 		Vec3 &normalize();
-		Vec3 &reflect(const Vec3 &normal);
+		constexpr Vec3 &reflect(const Vec3 &normal);
 		float normLen(); // normalizes and returns length
 		float normLenSqr(); // normalizes and returns length squared
-		float lengthSqr() const { return vec_[0] * vec_[0] + vec_[1] * vec_[1] + vec_[2] * vec_[2]; }
+		constexpr float lengthSqr() const { return vec_[0] * vec_[0] + vec_[1] * vec_[1] + vec_[2] * vec_[2]; }
 		float length() const { return math::sqrt(lengthSqr()); }
-		bool null() const { return ((vec_[0] == 0.f) && (vec_[1] == 0.f) && (vec_[2] == 0.f)); }
+		constexpr bool null() const { return ((vec_[0] == 0.f) && (vec_[1] == 0.f) && (vec_[2] == 0.f)); }
 		float sinFromVectors(const Vec3 &v) const;
 
-		Vec3 &operator = (const Vec3 &s) = default;
-		Vec3 &operator = (Vec3 &&s) = default;
-		Vec3 &operator +=(const Vec3 &s) { for(size_t i = 0; i < 3; ++i) vec_[i] += s.vec_[i]; return *this;}
-		Vec3 &operator -=(const Vec3 &s) { for(size_t i = 0; i < 3; ++i) vec_[i] -= s.vec_[i];  return *this;}
-		Vec3 &operator /=(float s) { for(float &v : vec_) v /= s;  return *this;}
-		Vec3 &operator *=(float s) { for(float &v : vec_) v *= s;  return *this;}
-		float operator[](Axis axis) const { return vec_[axis::getId(axis)]; }
-		float &operator[](Axis axis) { return vec_[axis::getId(axis)]; }
+		constexpr Vec3 &operator = (const Vec3 &s) = default;
+		constexpr Vec3 &operator = (Vec3 &&s) = default;
+		constexpr Vec3 &operator +=(const Vec3 &s) { for(size_t i = 0; i < 3; ++i) vec_[i] += s.vec_[i]; return *this;}
+		constexpr Vec3 &operator -=(const Vec3 &s) { for(size_t i = 0; i < 3; ++i) vec_[i] -= s.vec_[i];  return *this;}
+		constexpr Vec3 &operator /=(float s) { for(float &v : vec_) v /= s;  return *this;}
+		constexpr Vec3 &operator *=(float s) { for(float &v : vec_) v *= s;  return *this;}
+		constexpr float operator[](Axis axis) const { return vec_[axis::getId(axis)]; }
+		constexpr float &operator[](Axis axis) { return vec_[axis::getId(axis)]; }
 
-		static Vec3 reflectDir(const Vec3 &normal, const Vec3 &v);
-		static bool refract(const Vec3 &n, const Vec3 &wi, Vec3 &wo, float ior);
-		static void fresnel(const Vec3 &i, const Vec3 &n, float ior, float &kr, float &kt);
-		static void fastFresnel(const Vec3 &i, const Vec3 &n, float iorf, float &kr, float &kt);
-		static std::pair<Vec3, Vec3> createCoordsSystem(const Vec3 &normal);
-		static void shirleyDisk(float r_1, float r_2, float &u, float &v);
+		static constexpr Vec3 reflectDir(const Vec3 &normal, const Vec3 &v);
+		static constexpr bool refract(const Vec3 &n, const Vec3 &wi, Vec3 &wo, float ior);
+		static constexpr void fresnel(const Vec3 &i, const Vec3 &n, float ior, float &kr, float &kt);
+		static constexpr void fastFresnel(const Vec3 &i, const Vec3 &n, float iorf, float &kr, float &kt);
+		static constexpr std::pair<Vec3, Vec3> createCoordsSystem(const Vec3 &normal);
+		static constexpr void shirleyDisk(float r_1, float r_2, float &u, float &v);
 		static Vec3 randomSpherical(FastRandom &fast_random);
 		static Vec3 randomVectorCone(const Vec3 &d, const Vec3 &u, const Vec3 &v, float cosang, float z_1, float z_2);
 		static Vec3 randomVectorCone(const Vec3 &dir, float cosangle, float r_1, float r_2);
@@ -94,107 +94,107 @@ class Point3 final : public Vec3
 {
 	public:
 		Point3() = default;
-		Point3(float x, float y, float z = 0.f) : Vec3{x, y, z} { }
-		Point3(const Point3 &p) = default;
-		Point3(Point3 &&p) = default;
-		explicit Point3(const Vec3 &v): Vec3{v} { }
-		explicit Point3(Vec3 &&v): Vec3{std::move(v)} { }
-		Point3 &operator = (const Point3 &s) = default;
-		Point3 &operator = (Point3 &&s) = default;
-		static Point3 mult(const Point3 &a, const Vec3 &b);
+		constexpr Point3(float x, float y, float z = 0.f) : Vec3{x, y, z} { }
+		constexpr Point3(const Point3 &p) = default;
+		constexpr Point3(Point3 &&p) = default;
+		explicit constexpr Point3(const Vec3 &v): Vec3{v} { }
+		explicit constexpr Point3(Vec3 &&v): Vec3{std::move(v)} { }
+		constexpr Point3 &operator = (const Point3 &s) = default;
+		constexpr Point3 &operator = (Point3 &&s) = default;
+		static constexpr Point3 mult(const Point3 &a, const Vec3 &b);
 };
 
 #if defined(__GNUC__) && !defined(__clang__)
 #pragma GCC diagnostic pop
 #endif
 
-inline Vec3::Vec3(const Point3 &p): vec_{p.vec_} { }
-inline Vec3::Vec3(Point3 &&p): vec_{std::move(p.vec_)} { }
+inline constexpr Vec3::Vec3(const Point3 &p): vec_{p.vec_} { }
+inline constexpr Vec3::Vec3(Point3 &&p): vec_{std::move(p.vec_)} { }
 
 std::ostream &operator << (std::ostream &out, const Vec3 &v);
 std::ostream &operator << (std::ostream &out, const Point3 &p);
 
-inline float operator * (const Vec3 &a, const Vec3 &b)
+inline constexpr float operator * (const Vec3 &a, const Vec3 &b)
 {
 	return a[Axis::X] * b[Axis::X] + a[Axis::Y] * b[Axis::Y] + a[Axis::Z] * b[Axis::Z];
 }
 
-inline Vec3 operator * (float f, const Vec3 &v)
+inline constexpr Vec3 operator * (float f, const Vec3 &v)
 {
 	return {f * v[Axis::X], f * v[Axis::Y], f * v[Axis::Z]};
 }
 
-inline Vec3 operator * (const Vec3 &v, float f)
+inline constexpr Vec3 operator * (const Vec3 &v, float f)
 {
 	return {f * v[Axis::X], f * v[Axis::Y], f * v[Axis::Z]};
 }
 
-inline Point3 operator * (float f, const Point3 &p)
+inline constexpr Point3 operator * (float f, const Point3 &p)
 {
 	return {f * p[Axis::X], f * p[Axis::Y], f * p[Axis::Z]};
 }
 
-inline Vec3 operator / (const Vec3 &v, float f)
+inline constexpr Vec3 operator / (const Vec3 &v, float f)
 {
 	return {v[Axis::X] / f, v[Axis::Y] / f, v[Axis::Z] / f};
 }
 
-inline Point3 operator / (const Point3 &p, float f)
+inline constexpr Point3 operator / (const Point3 &p, float f)
 {
 	return {p[Axis::X] / f, p[Axis::Y] / f, p[Axis::Z] / f};
 }
 
-inline Point3 operator * (const Point3 &p, float f)
+inline constexpr Point3 operator * (const Point3 &p, float f)
 {
 	return {p[Axis::X] * f, p[Axis::Y] * f, p[Axis::Z] * f};
 }
 
-inline Vec3 operator / (float f, const Vec3 &v)
+inline constexpr Vec3 operator / (float f, const Vec3 &v)
 {
 	return {v[Axis::X] / f, v[Axis::Y] / f, v[Axis::Z] / f};
 }
 
-inline Vec3 operator ^ (const Vec3 &a, const Vec3 &b)
+inline constexpr Vec3 operator ^ (const Vec3 &a, const Vec3 &b)
 {
 	return {a[Axis::Y] * b[Axis::Z] - a[Axis::Z] * b[Axis::Y], a[Axis::Z] * b[Axis::X] - a[Axis::X] * b[Axis::Z], a[Axis::X] * b[Axis::Y] - a[Axis::Y] * b[Axis::X]};
 }
 
-inline Vec3 operator - (const Vec3 &a, const Vec3 &b)
+inline constexpr Vec3 operator - (const Vec3 &a, const Vec3 &b)
 {
 	return {a[Axis::X] - b[Axis::X], a[Axis::Y] - b[Axis::Y], a[Axis::Z] - b[Axis::Z]};
 }
 
-inline Vec3 operator - (const Point3 &a, const Point3 &b)
+inline constexpr Vec3 operator - (const Point3 &a, const Point3 &b)
 {
 	return {a[Axis::X] - b[Axis::X], a[Axis::Y] - b[Axis::Y], a[Axis::Z] - b[Axis::Z]};
 }
 
-inline Point3 operator - (const Point3 &a, const Vec3 &b)
+inline constexpr Point3 operator - (const Point3 &a, const Vec3 &b)
 {
 	return {a[Axis::X] - b[Axis::X], a[Axis::Y] - b[Axis::Y], a[Axis::Z] - b[Axis::Z]};
 }
 
-inline Vec3 operator - (const Vec3 &v)
+inline constexpr Vec3 operator - (const Vec3 &v)
 {
 	return {-v[Axis::X], -v[Axis::Y], -v[Axis::Z]};
 }
 
-inline Vec3 operator + (const Vec3 &a, const Vec3 &b)
+inline constexpr Vec3 operator + (const Vec3 &a, const Vec3 &b)
 {
 	return {a[Axis::X] + b[Axis::X], a[Axis::Y] + b[Axis::Y], a[Axis::Z] + b[Axis::Z]};
 }
 
-inline Point3 operator + (const Point3 &a, const Point3 &b)
+inline constexpr Point3 operator + (const Point3 &a, const Point3 &b)
 {
 	return {a[Axis::X] + b[Axis::X], a[Axis::Y] + b[Axis::Y], a[Axis::Z] + b[Axis::Z]};
 }
 
-inline Point3 operator + (const Point3 &a, const Vec3 &b)
+inline constexpr Point3 operator + (const Point3 &a, const Vec3 &b)
 {
 	return {a[Axis::X] + b[Axis::X], a[Axis::Y] + b[Axis::Y], a[Axis::Z] + b[Axis::Z]};
 }
 
-inline bool operator == (const Point3 &a, const Point3 &b)
+inline constexpr bool operator == (const Point3 &a, const Point3 &b)
 {
 	return ((a[Axis::X] == b[Axis::X]) && (a[Axis::Y] == b[Axis::Y]) && (a[Axis::Z] == b[Axis::Z]));
 }
@@ -202,7 +202,7 @@ inline bool operator == (const Point3 &a, const Point3 &b)
 bool operator == (const Vec3 &a, const Vec3 &b);
 bool operator != (const Vec3 &a, const Vec3 &b);
 
-inline Point3 Point3::mult(const Point3 &a, const Vec3 &b)
+inline constexpr Point3 Point3::mult(const Point3 &a, const Vec3 &b)
 {
 	return {a[Axis::X] * b[Axis::X], a[Axis::Y] * b[Axis::Y], a[Axis::Z] * b[Axis::Z]};
 }
@@ -233,7 +233,7 @@ inline float Vec3::sinFromVectors(const Vec3 &v) const
  *  @warning	\a n must be unit vector!
  *  @note	Lynn's formula: R = 2*(V dot N)*N -V (http://www.3dkingdoms.com/weekly/weekly.php?a=2)
  */
-inline Vec3 &Vec3::reflect(const Vec3 &normal)
+inline constexpr Vec3 &Vec3::reflect(const Vec3 &normal)
 {
 	const float vn = 2.f * (vec_[0] * normal.vec_[0] + vec_[1] * normal.vec_[1] + vec_[2] * normal.vec_[2]);
 	for(size_t i = 0; i < 3; ++i) vec_[i] = vn * normal.vec_[i] - vec_[i];
@@ -261,14 +261,14 @@ inline float Vec3::normLenSqr() {
 	return vl;
 }
 
-inline Vec3 Vec3::reflectDir(const Vec3 &normal, const Vec3 &v)
+inline constexpr Vec3 Vec3::reflectDir(const Vec3 &normal, const Vec3 &v)
 {
 	const float vn = v * normal;
 	if(vn < 0.f) return -v;
 	return 2.f * vn * normal - v;
 }
 
-inline std::pair<Vec3, Vec3> Vec3::createCoordsSystem(const Vec3 &normal)
+inline constexpr std::pair<Vec3, Vec3> Vec3::createCoordsSystem(const Vec3 &normal)
 {
 	if((normal.vec_[0] == 0.f) && (normal.vec_[1] == 0.f))
 	{
@@ -296,6 +296,102 @@ inline Vec3 Vec3::randomSpherical(FastRandom &fast_random)
 	}
 	else v.vec_[2] = 1.f;
 	return v;
+}
+
+// P.Shirley's concentric disk algorithm, maps square to disk
+inline constexpr void Vec3::shirleyDisk(float r_1, float r_2, float &u, float &v)
+{
+	float phi = 0.f;
+	float r = 0.f;
+	const float a = 2.f * r_1 - 1.f;
+	const float b = 2.f * r_2 - 1.f;
+	if(a > -b)
+	{
+		if(a > b)  	// Reg.1
+		{
+			r = a;
+			phi = math::div_pi_by_4<> * (b / a);
+		}
+		else  			// Reg.2
+		{
+			r = b;
+			phi = math::div_pi_by_4<> * (2.f - a / b);
+		}
+	}
+	else
+	{
+		if(a < b)  	// Reg.3
+		{
+			r = -a;
+			phi = math::div_pi_by_4<> * (4.f + b / a);
+		}
+		else  			// Reg.4
+		{
+			r = -b;
+			if(b != 0)
+				phi = math::div_pi_by_4<> * (6.f - a / b);
+			else
+				phi = 0.f;
+		}
+	}
+	u = r * math::cos(phi);
+	v = r * math::sin(phi);
+}
+
+/*! refract a ray given the IOR. All directions (n, wi and wo) point away from the intersection point.
+	\return true when refraction was possible, false when total inner reflrection occurs (wo is not computed then)
+	\param ior Index of refraction, or precisely the ratio of eta_t/eta_i, where eta_i is by definition the
+				medium in which n points. E.g. "outside" is air, "inside" is water, the normal points outside,
+				IOR = eta_air / eta_water = 1.33
+*/
+inline constexpr bool Vec3::refract(const Vec3 &n, const Vec3 &wi, Vec3 &wo, float ior)
+{
+	Vec3 N{n};
+	float eta = ior;
+	const Vec3 i{-wi};
+	float cos_v_n = wi * n;
+	if((cos_v_n) < 0)
+	{
+		N = -n;
+		cos_v_n = -cos_v_n;
+	}
+	else
+	{
+		eta = 1.f / ior;
+	}
+	const float k = 1 - eta * eta * (1 - cos_v_n * cos_v_n);
+	if(k <= 0.f) return false;
+
+	wo = eta * i + (eta * cos_v_n - math::sqrt(k)) * N;
+	wo.normalize();
+
+	return true;
+}
+
+inline constexpr void Vec3::fresnel(const Vec3 &i, const Vec3 &n, float ior, float &kr, float &kt)
+{
+	const bool negative = ((i * n) < 0.f);
+	const float c = i * (negative ? (-n) : n);
+	float g = ior * ior + c * c - 1.f;
+	if(g <= 0) g = 0;
+	else g = math::sqrt(g);
+	const float aux = c * (g + c);
+	kr = ((0.5f * (g - c) * (g - c)) / ((g + c) * (g + c))) *
+		 (1.f + ((aux - 1.f) * (aux - 1.f)) / ((aux + 1.f) * (aux + 1.f)));
+	if(kr < 1.f)
+		kt = 1.f - kr;
+	else
+		kt = 0.f;
+}
+
+// 'Faster' Schlick fresnel approximation,
+inline constexpr void Vec3::fastFresnel(const Vec3 &i, const Vec3 &n, float iorf, float &kr, float &kt)
+{
+	const float t = 1.f - (i * n);
+	//t = (t<0)?0:((t>1)?1:t);
+	const float t_2 = t * t;
+	kr = iorf + (1.f - iorf) * t_2 * t_2 * t;
+	kt = 1.f - kr;
 }
 
 END_YAFARAY
