@@ -26,6 +26,7 @@
 #include "common/yafaray_common.h"
 #include "math/math.h"
 #include "math/random.h"
+#include "geometry/axis.h"
 #include <iostream>
 #include <array>
 
@@ -71,8 +72,8 @@ class Vec3
 		Vec3 &operator -=(const Vec3 &s) { for(size_t i = 0; i < 3; ++i) vec_[i] -= s.vec_[i];  return *this;}
 		Vec3 &operator /=(float s) { for(float &v : vec_) v /= s;  return *this;}
 		Vec3 &operator *=(float s) { for(float &v : vec_) v *= s;  return *this;}
-		float operator[](size_t i) const { return vec_[i]; }
-		float &operator[](size_t i) { return vec_[i]; }
+		float operator[](Axis axis) const { return vec_[axis::getId(axis)]; }
+		float &operator[](Axis axis) { return vec_[axis::getId(axis)]; }
 
 		static Vec3 reflectDir(const Vec3 &normal, const Vec3 &v);
 		static bool refract(const Vec3 &n, const Vec3 &wi, Vec3 &wo, float ior);
@@ -115,87 +116,87 @@ std::ostream &operator << (std::ostream &out, const Point3 &p);
 
 inline float operator * (const Vec3 &a, const Vec3 &b)
 {
-	return a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
+	return a[Axis::X] * b[Axis::X] + a[Axis::Y] * b[Axis::Y] + a[Axis::Z] * b[Axis::Z];
 }
 
 inline Vec3 operator * (float f, const Vec3 &v)
 {
-	return {f * v[0], f * v[1], f * v[2]};
+	return {f * v[Axis::X], f * v[Axis::Y], f * v[Axis::Z]};
 }
 
 inline Vec3 operator * (const Vec3 &v, float f)
 {
-	return {f * v[0], f * v[1], f * v[2]};
+	return {f * v[Axis::X], f * v[Axis::Y], f * v[Axis::Z]};
 }
 
 inline Point3 operator * (float f, const Point3 &p)
 {
-	return {f * p[0], f * p[1], f * p[2]};
+	return {f * p[Axis::X], f * p[Axis::Y], f * p[Axis::Z]};
 }
 
 inline Vec3 operator / (const Vec3 &v, float f)
 {
-	return {v[0] / f, v[1] / f, v[2] / f};
+	return {v[Axis::X] / f, v[Axis::Y] / f, v[Axis::Z] / f};
 }
 
 inline Point3 operator / (const Point3 &p, float f)
 {
-	return {p[0] / f, p[1] / f, p[2] / f};
+	return {p[Axis::X] / f, p[Axis::Y] / f, p[Axis::Z] / f};
 }
 
 inline Point3 operator * (const Point3 &p, float f)
 {
-	return {p[0] * f, p[1] * f, p[2] * f};
+	return {p[Axis::X] * f, p[Axis::Y] * f, p[Axis::Z] * f};
 }
 
 inline Vec3 operator / (float f, const Vec3 &v)
 {
-	return {v[0] / f, v[1] / f, v[2] / f};
+	return {v[Axis::X] / f, v[Axis::Y] / f, v[Axis::Z] / f};
 }
 
 inline Vec3 operator ^ (const Vec3 &a, const Vec3 &b)
 {
-	return {a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]};
+	return {a[Axis::Y] * b[Axis::Z] - a[Axis::Z] * b[Axis::Y], a[Axis::Z] * b[Axis::X] - a[Axis::X] * b[Axis::Z], a[Axis::X] * b[Axis::Y] - a[Axis::Y] * b[Axis::X]};
 }
 
 inline Vec3 operator - (const Vec3 &a, const Vec3 &b)
 {
-	return {a[0] - b[0], a[1] - b[1], a[2] - b[2]};
+	return {a[Axis::X] - b[Axis::X], a[Axis::Y] - b[Axis::Y], a[Axis::Z] - b[Axis::Z]};
 }
 
 inline Vec3 operator - (const Point3 &a, const Point3 &b)
 {
-	return {a[0] - b[0], a[1] - b[1], a[2] - b[2]};
+	return {a[Axis::X] - b[Axis::X], a[Axis::Y] - b[Axis::Y], a[Axis::Z] - b[Axis::Z]};
 }
 
 inline Point3 operator - (const Point3 &a, const Vec3 &b)
 {
-	return {a[0] - b[0], a[1] - b[1], a[2] - b[2]};
+	return {a[Axis::X] - b[Axis::X], a[Axis::Y] - b[Axis::Y], a[Axis::Z] - b[Axis::Z]};
 }
 
 inline Vec3 operator - (const Vec3 &v)
 {
-	return {-v[0], -v[1], -v[2]};
+	return {-v[Axis::X], -v[Axis::Y], -v[Axis::Z]};
 }
 
 inline Vec3 operator + (const Vec3 &a, const Vec3 &b)
 {
-	return {a[0] + b[0], a[1] + b[1], a[2] + b[2]};
+	return {a[Axis::X] + b[Axis::X], a[Axis::Y] + b[Axis::Y], a[Axis::Z] + b[Axis::Z]};
 }
 
 inline Point3 operator + (const Point3 &a, const Point3 &b)
 {
-	return {a[0] + b[0], a[1] + b[1], a[2] + b[2]};
+	return {a[Axis::X] + b[Axis::X], a[Axis::Y] + b[Axis::Y], a[Axis::Z] + b[Axis::Z]};
 }
 
 inline Point3 operator + (const Point3 &a, const Vec3 &b)
 {
-	return {a[0] + b[0], a[1] + b[1], a[2] + b[2]};
+	return {a[Axis::X] + b[Axis::X], a[Axis::Y] + b[Axis::Y], a[Axis::Z] + b[Axis::Z]};
 }
 
 inline bool operator == (const Point3 &a, const Point3 &b)
 {
-	return ((a[0] == b[0]) && (a[1] == b[1]) && (a[2] == b[2]));
+	return ((a[Axis::X] == b[Axis::X]) && (a[Axis::Y] == b[Axis::Y]) && (a[Axis::Z] == b[Axis::Z]));
 }
 
 bool operator == (const Vec3 &a, const Vec3 &b);
@@ -203,7 +204,7 @@ bool operator != (const Vec3 &a, const Vec3 &b);
 
 inline Point3 Point3::mult(const Point3 &a, const Vec3 &b)
 {
-	return {a[0] * b[0], a[1] * b[1], a[2] * b[2]};
+	return {a[Axis::X] * b[Axis::X], a[Axis::Y] * b[Axis::Y], a[Axis::Z] * b[Axis::Z]};
 }
 
 inline Vec3 &Vec3::normalize()

@@ -44,29 +44,29 @@ struct KdNode
 		flags_ = 3;
 		data_ = d;
 	}
-	void createInterior(int axis, float d)
+	void createInterior(Axis axis, float d)
 	{
 		division_ = d;
-		flags_ = (flags_ & ~3) | axis;
+		flags_ = (flags_ & ~3) | axis::getId(axis);
 	}
-	float 	splitPos() const { return division_; }
-	int 	splitAxis() const { return flags_ & 3; }
-	int 	nPrimitives() const { return flags_ >> 2; }
-	bool 	isLeaf() const { return (flags_ & 3) == 3; }
-	uint32_t	getRightChild() const { return (flags_ >> 2); }
-	void 	setRightChild(uint32_t i) { flags_ = (flags_ & 3) | (i << 2); }
+	float splitPos() const { return division_; }
+	Axis splitAxis() const { return static_cast<Axis>(flags_ & 3); }
+	uint32_t nPrimitives() const { return flags_ >> 2; }
+	bool isLeaf() const { return (flags_ & 3) == 3; }
+	uint32_t getRightChild() const { return (flags_ >> 2); }
+	void setRightChild(uint32_t i) { flags_ = (flags_ & 3) | (i << 2); }
 	union
 	{
 		float division_;
 		const T *data_;
 	};
-	uint32_t	flags_;
+	uint32_t flags_;
 };
 
 template<class NodeData> struct CompareNode
 {
-	explicit CompareNode(int a) { axis_ = a; }
-	int axis_;
+	explicit CompareNode(Axis axis) { axis_ = axis; }
+	Axis axis_;
 	bool operator()(const NodeData *d_1, const NodeData *d_2) const
 	{
 		return d_1->pos_[axis_] == d_2->pos_[axis_] ? (d_1 < d_2) : d_1->pos_[axis_] < d_2->pos_[axis_];
@@ -86,8 +86,8 @@ class PointKdTree
 		struct KdStack
 		{
 			const KdNode<T> *node_; //!< pointer to far child
-			float s_; 		//!< the split val of parent node
-			int axis_; 		//!< the split axis of parent node
+			float s_; //!< the split val of parent node
+			Axis axis_; //!< the split axis of parent node
 		};
 		void buildTree(uint32_t start, uint32_t end, Bound &node_bound, const T **prims);
 		void buildTreeWorker(uint32_t start, uint32_t end, Bound &node_bound, const T **prims, int level, uint32_t &local_next_free_node, KdNode<T> *local_nodes);
@@ -148,7 +148,7 @@ void PointKdTree<T>::buildTreeWorker(uint32_t start, uint32_t end, Bound &node_b
 		--level;
 		return;
 	}
-	int split_axis = node_bound.largestAxis();
+	Axis split_axis = node_bound.largestAxis();
 	int split_el = (start + end) / 2;
 	std::nth_element(&prims[start], &prims[split_el],
 	                 &prims[end], CompareNode<T>(split_axis));
@@ -159,9 +159,10 @@ void PointKdTree<T>::buildTreeWorker(uint32_t start, uint32_t end, Bound &node_b
 	Bound bound_l = node_bound, bound_r = node_bound;
 	switch(split_axis)
 	{
-		case 0: bound_l.setMaxX(split_pos); bound_r.setMinX(split_pos); break;
-		case 1: bound_l.setMaxY(split_pos); bound_r.setMinY(split_pos); break;
-		case 2: bound_l.setMaxZ(split_pos); bound_r.setMinZ(split_pos); break;
+		case Axis::X: bound_l.setMaxX(split_pos); bound_r.setMinX(split_pos); break;
+		case Axis::Y: bound_l.setMaxY(split_pos); bound_r.setMinY(split_pos); break;
+		case Axis::Z: bound_l.setMaxZ(split_pos); bound_r.setMinZ(split_pos); break;
+		default: break;
 	}
 
 	if(level <= max_level_threads_)   //launch threads for the first "x" levels to try to match (at least) the scene threads parameter
@@ -236,7 +237,7 @@ void PointKdTree<T>::lookup(const Point3 &p, LookupProc &proc, float &max_dist_s
 	{
 		while(!curr_node->isLeaf())
 		{
-			int axis = curr_node->splitAxis();
+			Axis axis = curr_node->splitAxis();
 			float split_val = curr_node->splitPos();
 
 			if(p[axis] <= split_val)   //need traverse left first
@@ -266,7 +267,7 @@ void PointKdTree<T>::lookup(const Point3 &p, LookupProc &proc, float &max_dist_s
 
 		if(!stack[stack_ptr].node_) return; // stack empty, done.
 		//radius probably lowered so we may pop additional elements:
-		int axis = stack[stack_ptr].axis_;
+		Axis axis = stack[stack_ptr].axis_;
 		dist_2 = p[axis] - stack[stack_ptr].s_;
 		dist_2 *= dist_2;
 
@@ -305,7 +306,7 @@ void PointKdTree<T>::recursiveLookup(const Point3 &p, const LookupProc &proc, fl
 		}
 		return;
 	}
-	int axis = curr_node->splitAxis();
+	Axis axis = curr_node->splitAxis();
 	float dist_2 = p[axis] - curr_node->splitPos();
 	dist_2 *= dist_2;
 	if(p[axis] <= curr_node->splitPos())

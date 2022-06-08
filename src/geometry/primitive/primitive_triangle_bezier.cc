@@ -18,15 +18,15 @@
 
 //#include "yafaray_config.h"
 #include "geometry/primitive/primitive_triangle_bezier.h"
-#include "geometry/object/object_mesh.h"
-#include "geometry/axis.h"
-#include "geometry/ray.h"
+#include "common/param.h"
 #include "geometry/bound.h"
+#include "geometry/clip_plane.h"
+#include "geometry/matrix4.h"
+#include "geometry/object/object_mesh.h"
+#include "geometry/poly_double.h"
+#include "geometry/ray.h"
 #include "geometry/surface.h"
 #include "geometry/uv.h"
-#include "geometry/matrix4.h"
-#include "geometry/poly_double.h"
-#include "common/param.h"
 #include <cstring>
 #include <memory>
 

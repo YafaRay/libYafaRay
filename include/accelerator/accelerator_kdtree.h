@@ -97,8 +97,8 @@ class AcceleratorKdTree::Node
 		void createLeaf(const uint32_t *prim_idx, int np, const std::vector<const Primitive *> &prims, MemoryArena &arena, Stats &kd_stats);
 		void createInterior(int axis, float d, Stats &kd_stats);
 		float splitPos() const { return division_; }
-		int splitAxis() const { return flags_ & 3; }
-		int nPrimitives() const { return flags_ >> 2; }
+		Axis splitAxis() const { return static_cast<Axis>(flags_ & 3); }
+		uint32_t nPrimitives() const { return flags_ >> 2; }
 		bool isLeaf() const { return (flags_ & 3) == 3; }
 		uint32_t getRightChild() const { return (flags_ >> 2); }
 		void setRightChild(uint32_t i) { flags_ = (flags_ & 3) | (i << 2); }
@@ -122,7 +122,7 @@ struct AcceleratorKdTree::Stack
 
 struct AcceleratorKdTree::SplitCost
 {
-	int axis_ = -1;
+	Axis axis_ = Axis::None;
 	int edge_offset_ = -1;
 	float cost_;
 	float t_;

@@ -17,42 +17,43 @@
  *      Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-#ifndef YAFARAY_AXIS_H
-#define YAFARAY_AXIS_H
+#ifndef LIBYAFARAY_AXIS_H
+#define LIBYAFARAY_AXIS_H
 
 #include "common/yafaray_common.h"
 #include <array>
 
 BEGIN_YAFARAY
 
-class Axis //FIXME, too big underlying data and a bit awkward handling, needs to be optimized
-{
-	public:
-		enum Code : int { None = -1, X = 0, Y, Z };
-		explicit Axis(int axis) : axis_(axis) { }
-		bool operator == (Code axis_code) const { return axis_ == axis_code; }
-		bool operator != (Code axis_code) const { return axis_ != axis_code; }
-		int get() const { return axis_; }
-		int next() const { return next(axis_); }
-		int prev() const { return prev(axis_); }
-		static constexpr int next(int axis) { return (axis + 1) % 3; }
-		static constexpr int prev(int axis) { return ((axis + 3) - 1) % 3; }
-//		static constexpr int next(int axis) { return axis_lut_[axis][1]; }
-//		static constexpr int prev(int axis) { return axis_lut_[axis][2]; }
-	private:
-		int axis_;
-//		static const std::array<std::array<int, 3>, 3> axis_lut_;
-};
+enum class Axis : unsigned char { X = 0, Y, Z, T, None };
 
-struct ClipPlane
+namespace axis
 {
-	enum class Pos: unsigned char { None, Lower, Upper };
-	explicit ClipPlane(Pos pos = Pos::None) : pos_(pos) { }
-	ClipPlane(int axis, Pos pos) : axis_(axis), pos_(pos) { }
-	int axis_ = Axis::None;
-	Pos pos_ = Pos::None;
-};
+	static inline constexpr std::array<Axis, 3> spatial {Axis::X, Axis::Y, Axis::Z};
+	static inline constexpr Axis temporal {Axis::T};
+	static inline constexpr Axis getNextSpatial(Axis current_axis)
+	{
+		switch(current_axis)
+		{
+			case Axis::X: return Axis::Y;
+			case Axis::Y: return Axis::Z;
+			case Axis::Z: return Axis::X;
+			default: return Axis::None;
+		}
+	}
+	static inline constexpr Axis getPrevSpatial(Axis current_axis)
+	{
+		switch(current_axis)
+		{
+			case Axis::X: return Axis::Z;
+			case Axis::Y: return Axis::X;
+			case Axis::Z: return Axis::Y;
+			default: return Axis::None;
+		}
+	}
+	static inline constexpr unsigned char getId(Axis axis) { return static_cast<unsigned char>(axis); }
+}
 
 END_YAFARAY
 
-#endif //YAFARAY_AXIS_H
+#endif//LIBYAFARAY_AXIS_H

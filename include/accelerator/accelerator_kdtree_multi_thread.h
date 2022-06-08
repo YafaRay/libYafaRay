@@ -90,8 +90,8 @@ class AcceleratorKdTreeMultiThread::Node
 		Stats createLeaf(const std::vector<uint32_t> &prim_indices, const std::vector<const Primitive *> &primitives);
 		Stats createInterior(Axis axis, float d);
 		float splitPos() const { return division_; }
-		int splitAxis() const { return flags_ & 3; }
-		int nPrimitives() const { return primitives_.size(); /*flags_ >> 2; */ }
+		Axis splitAxis() const { return static_cast<Axis>(flags_ & 3); }
+		uint32_t nPrimitives() const { return primitives_.size(); /*flags_ >> 2; */ }
 		bool isLeaf() const { return (flags_ & 3) == 3; }
 		uint32_t getRightChild() const { return (flags_ >> 2); }
 		void setRightChild(uint32_t i) { flags_ = (flags_ & 3) | (i << 2); }
@@ -111,12 +111,12 @@ struct AcceleratorKdTreeMultiThread::Stack
 
 struct AcceleratorKdTreeMultiThread::SplitCost
 {
-	alignas(8) int axis_ = Axis::None;
-	int edge_offset_ = -1;
+	alignas(8) int edge_offset_ = -1;
 	float cost_;
 	float t_;
 	std::vector<BoundEdge> edges_;
 	int stats_early_out_ = 0;
+	Axis axis_ = Axis::None;
 };
 
 struct AcceleratorKdTreeMultiThread::Result
@@ -148,7 +148,7 @@ inline Stats AcceleratorKdTreeMultiThread::Node::createInterior(Axis axis, float
 {
 	Stats kd_stats;
 	division_ = d;
-	flags_ = (flags_ & ~3) | axis.get();
+	flags_ = (flags_ & ~3) | axis::getId(axis);
 	kd_stats.kd_inodes_++;
 	return kd_stats;
 }

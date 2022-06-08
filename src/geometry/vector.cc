@@ -27,30 +27,30 @@ BEGIN_YAFARAY
 
 std::ostream &operator << (std::ostream &out, const Vec3 &v)
 {
-	out << "(" << v[0] << "," << v[1] << "," << v[2] << ")";
+	out << "(" << v[Axis::X] << "," << v[Axis::Y] << "," << v[Axis::Z] << ")";
 	return out;
 }
 
 std::ostream &operator << (std::ostream &out, const Point3 &p)
 {
-	out << "(" << p[0] << "," << p[1] << "," << p[2] << ")";
+	out << "(" << p[Axis::X] << "," << p[Axis::Y] << "," << p[Axis::Z] << ")";
 	return out;
 }
 
 bool  operator == (const Vec3 &a, const Vec3 &b)
 {
-	for(size_t i = 0; i < 3; ++i)
+	for(const auto axis : axis::spatial)
 	{
-		if(a[i] != b[i]) return false;
+		if(a[axis] != b[axis]) return false;
 	}
 	return true;
 }
 
 bool  operator != (const Vec3 &a, const Vec3 &b)
 {
-	for(size_t i = 0; i < 3; ++i)
+	for(const auto axis : axis::spatial)
 	{
-		if(a[i] != b[i]) return true;
+		if(a[axis] != b[axis]) return true;
 	}
 	return false;
 }

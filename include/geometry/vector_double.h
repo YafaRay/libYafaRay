@@ -21,10 +21,10 @@
 #define YAFARAY_VECTOR_DOUBLE_H
 
 #include "common/yafaray_common.h"
-#include "geometry/axis.h"
-#include <sstream>
+#include "geometry/clip_plane.h"
 #include <iomanip>
 #include <limits>
+#include <sstream>
 
 BEGIN_YAFARAY
 
@@ -37,8 +37,8 @@ class Vec3Double
 		Vec3Double(double x, double y, double z) : vec_{x, y, z} { }
 		Vec3Double &operator = (const Vec3Double &v) = default;
 		Vec3Double &operator = (Vec3Double &&v) = default;
-		double operator[](int i) const { return vec_[i]; }
-		double &operator[](int i) { return vec_[i]; }
+		double operator[](Axis axis) const { return vec_[axis::getId(axis)]; }
+		double &operator[](Axis axis) { return vec_[axis::getId(axis)]; }
 		std::string print() const;
 		static Vec3Double cross(const Vec3Double &v_1, const Vec3Double &v_2);
 		static double dot(const Vec3Double &v_1, const Vec3Double &v_2);
@@ -59,20 +59,20 @@ inline std::string Vec3Double::print() const
 inline Vec3Double Vec3Double::cross(const Vec3Double &v_1, const Vec3Double &v_2)
 {
 	return {
-			v_1[1] * v_2[2] - v_1[2] * v_2[1],
-			v_1[2] * v_2[0] - v_1[0] * v_2[2],
-			v_1[0] * v_2[1] - v_1[1] * v_2[0]
+			v_1[Axis::Y] * v_2[Axis::Z] - v_1[Axis::Z] * v_2[Axis::Y],
+			v_1[Axis::Z] * v_2[Axis::X] - v_1[Axis::X] * v_2[Axis::Z],
+			v_1[Axis::X] * v_2[Axis::Y] - v_1[Axis::Y] * v_2[Axis::X]
 	};
 }
 
 inline double Vec3Double::dot(const Vec3Double &v_1, const Vec3Double &v_2)
 {
-	return v_1[0] * v_2[0] + v_1[1] * v_2[1] + v_1[2] * v_2[2];
+	return v_1[Axis::X] * v_2[Axis::X] + v_1[Axis::Y] * v_2[Axis::Y] + v_1[Axis::Z] * v_2[Axis::Z];
 }
 
 inline Vec3Double Vec3Double::sub(const Vec3Double &v_1, const Vec3Double &v_2)
 {
-	return {v_1[0] - v_2[0], v_1[1] - v_2[1], v_1[2] - v_2[2]};
+	return {v_1[Axis::X] - v_2[Axis::X], v_1[Axis::Y] - v_2[Axis::Y], v_1[Axis::Z] - v_2[Axis::Z]};
 }
 
 END_YAFARAY

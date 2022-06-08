@@ -17,9 +17,9 @@
  */
 
 #include "geometry/poly_double.h"
-#include "geometry/axis.h"
-#include "geometry/bound.h"
 #include "common/logger.h"
+#include "geometry/bound.h"
+#include "geometry/clip_plane.h"
 #include <array>
 #include <memory>
 
@@ -30,7 +30,7 @@ PolyDouble::ClipResultWithBound::ClipResultWithBound(ClipResult &&clip_result) :
 
 PolyDouble::ClipResult PolyDouble::planeClip(Logger &logger, double pos, const ClipPlane &clip_plane, const PolyDouble &poly)
 {
-	const int poly_num_vertices = poly.numVertices();
+	const size_t poly_num_vertices = poly.numVertices();
 	if(poly_num_vertices < 3)
 	{
 		logger.logWarning("Polygon clip: polygon with only ", poly.numVertices(), " vertices (less than 3), poly is 'degenerated'!");
@@ -42,12 +42,12 @@ PolyDouble::ClipResult PolyDouble::planeClip(Logger &logger, double pos, const C
 		return ClipResult(ClipResult::Code::FatalError);
 	}
 	PolyDouble::ClipResult clip_result;
-	const int curr_axis = clip_plane.axis_;
-	const int next_axis = Axis::next(curr_axis);
-	const int prev_axis = Axis::prev(curr_axis);
+	const Axis curr_axis = clip_plane.axis_;
+	const Axis next_axis = axis::getNextSpatial(curr_axis);
+	const Axis prev_axis = axis::getPrevSpatial(curr_axis);
 	for(int vert = 0; vert < poly_num_vertices; vert++) // for each poly edge
 	{
-		const int next_vert = (vert + 1) % poly_num_vertices;
+		const unsigned int next_vert = (vert + 1) % poly_num_vertices;
 		const Vec3Double &vert_1 = poly[vert];
 		const Vec3Double &vert_2 = poly[next_vert];
 		const bool vert_1_inside = (clip_plane.pos_ == ClipPlane::Pos::Lower) ? (vert_1[curr_axis] >= pos) : (vert_1[curr_axis] <= pos);
@@ -90,7 +90,7 @@ PolyDouble::ClipResult PolyDouble::planeClip(Logger &logger, double pos, const C
 		}
 		//else: both out, do nothing.
 	} //for all edges
-	const int clipped_poly_num_vertices = clip_result.poly_.numVertices();
+	const size_t clipped_poly_num_vertices = clip_result.poly_.numVertices();
 	if(clipped_poly_num_vertices == 0) return ClipResult(ClipResult::Code::NoOverlapDisappeared);
 	else if(clipped_poly_num_vertices > 10)
 	{
@@ -109,21 +109,20 @@ PolyDouble::ClipResult PolyDouble::planeClip(Logger &logger, double pos, const C
 Bound PolyDouble::getBound(const PolyDouble &poly)
 {
 	Vec3Double a, g;
-	for(int i = 0; i < 3; ++i) a[i] = g[i] = poly[0][i];
-	const int poly_num_vertices = poly.numVertices();
-	for(int i = 1; i < poly_num_vertices; ++i)
+	for(const auto &axis : axis::spatial) a[axis] = g[axis] = poly[0][axis];
+	for(size_t i = 1; i < poly.numVertices(); ++i)
 	{
-		for(int j = 0; j < 3; ++j)
+		for(const auto &axis : axis::spatial)
 		{
-			a[j] = std::min(a[j], poly[i][j]);
-			g[j] = std::max(g[j], poly[i][j]);
+			a[axis] = std::min(a[axis], poly[i][axis]);
+			g[axis] = std::max(g[axis], poly[i][axis]);
 		}
 	}
 	Bound bound;
-	for(int i = 0; i < 3; ++i)
+	for(const auto &axis : axis::spatial)
 	{
-		bound.a_[i] = a[i];
-		bound.g_[i] = g[i];
+		bound.a_[axis] = static_cast<float>(a[axis]);
+		bound.g_[axis] = static_cast<float>(g[axis]);
 	}
 	return bound;
 }
@@ -151,7 +150,7 @@ PolyDouble::ClipResultWithBound PolyDouble::boxClip(Logger &logger, const Vec3Do
 	ClipResultWithBound clip_result;
 	clip_result.poly_ = poly;
 	//for each axis
-	for(int axis = 0; axis < 3; ++axis)
+	for(const auto &axis : axis::spatial)
 	{
 		clip_result = ClipResultWithBound(planeClip(logger, b_min[axis], {axis, ClipPlane::Pos::Lower}, clip_result.poly_));
 		if(clip_result.clip_result_code_ != ClipResult::Code::Correct) return ClipResultWithBound(clip_result.clip_result_code_);

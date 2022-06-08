@@ -66,7 +66,7 @@ AcceleratorKdTree::AcceleratorKdTree(Logger &logger, const std::vector<const Pri
 	else max_leaf_size_ = static_cast<unsigned int>(leaf_size);
 	if(max_depth_ > kd_max_stack_) max_depth_ = kd_max_stack_; //to prevent our stack to overflow
 	//experiment: add penalty to cost ratio to reduce memory usage on huge scenes
-	if(log_leaves > 16.0) cost_ratio_ += 0.25 * (log_leaves - 16.0);
+	if(log_leaves > 16.0) cost_ratio_ += 0.25f * (log_leaves - 16.0);
 	all_bounds_ = std::unique_ptr<Bound[]>(new Bound[total_prims_ + prim_clip_thresh_ + 1]);
 	if(logger_.isVerbose()) logger_.logVerbose("Kd-Tree: Getting primitive bounds...");
 	for(uint32_t i = 0; i < total_prims_; i++)
@@ -78,10 +78,10 @@ AcceleratorKdTree::AcceleratorKdTree(Logger &logger, const std::vector<const Pri
 	}
 	//slightly(!) increase tree bound to prevent errors with prims
 	//lying in a bound plane (still slight bug with trees where one dim. is 0)
-	for(int i = 0; i < 3; i++)
+	for(const auto axis : axis::spatial)
 	{
-		const double foo = (tree_bound_.g_[i] - tree_bound_.a_[i]) * 0.001;
-		tree_bound_.a_[i] -= foo, tree_bound_.g_[i] += foo;
+		const double offset = (tree_bound_.g_[axis] - tree_bound_.a_[axis]) * 0.001;
+		tree_bound_.a_[axis] -= static_cast<float>(offset), tree_bound_.g_[axis] += static_cast<float>(offset);
 	}
 	if(logger_.isVerbose()) logger_.logVerbose("Kd-Tree: Done.");
 	// get working memory for tree construction
@@ -138,13 +138,13 @@ AcceleratorKdTree::SplitCost AcceleratorKdTree::pigeonMinCost(Logger &logger, fl
 	static constexpr int max_bin = 1024;
 	static constexpr int num_bins = max_bin + 1;
 	std::array<TreeBin, num_bins> bins;
-	const std::array<float, 3> node_bound_axes {node_bound.longX(), node_bound.longY(), node_bound.longZ() };
-	const std::array<float, 3> inv_node_bound_axes { 1.f / node_bound_axes[0], 1.f / node_bound_axes[1], 1.f / node_bound_axes[2] };
+	const Vec3 node_bound_axes {node_bound.longX(), node_bound.longY(), node_bound.longZ() };
+	const Vec3 inv_node_bound_axes { 1.f / node_bound_axes[Axis::X], 1.f / node_bound_axes[Axis::Y], 1.f / node_bound_axes[Axis::Z] };
 	SplitCost split;
 	split.cost_ = std::numeric_limits<float>::infinity();
-	const float inv_total_sa = 1.f / (node_bound_axes[0] * node_bound_axes[1] + node_bound_axes[0] * node_bound_axes[2] + node_bound_axes[1] * node_bound_axes[2]);
+	const float inv_total_sa = 1.f / (node_bound_axes[Axis::X] * node_bound_axes[Axis::Y] + node_bound_axes[Axis::X] * node_bound_axes[Axis::Z] + node_bound_axes[Axis::Y] * node_bound_axes[Axis::Z]);
 
-	for(int axis = 0; axis < 3; ++axis)
+	for(const auto axis : axis::spatial)
 	{
 		const float s = max_bin * inv_node_bound_axes[axis];
 		const float min = node_bound.a_[axis];
@@ -204,9 +204,9 @@ AcceleratorKdTree::SplitCost AcceleratorKdTree::pigeonMinCost(Logger &logger, fl
 			}
 		}
 
-		static constexpr std::array<std::array<int, 3>, 3> axis_lut {{{0, 1, 2}, {1, 2, 0}, {2, 0, 1}}};
-		const float cap_area = node_bound_axes[ axis_lut[1][axis] ] * node_bound_axes[ axis_lut[2][axis] ];
-		const float cap_perim = node_bound_axes[ axis_lut[1][axis] ] + node_bound_axes[ axis_lut[2][axis] ];
+		static constexpr std::array<std::array<Axis, 3>, 3> axis_lut {{{Axis::X, Axis::Y, Axis::Z}, {Axis::Y, Axis::Z, Axis::X}, {Axis::Z, Axis::X, Axis::Y}}};
+		const float cap_area = node_bound_axes[ axis_lut[1][axis::getId(axis)] ] * node_bound_axes[ axis_lut[2][axis::getId(axis)] ];
+		const float cap_perim = node_bound_axes[ axis_lut[1][axis::getId(axis)] ] + node_bound_axes[ axis_lut[2][axis::getId(axis)] ];
 
 		uint32_t num_left = 0;
 		uint32_t num_right = num_prim_indices;
@@ -285,8 +285,9 @@ AcceleratorKdTree::SplitCost AcceleratorKdTree::minimalCost(Logger &logger, floa
 	SplitCost split;
 	split.cost_ = std::numeric_limits<float>::infinity();
 	const float inv_total_sa = 1.f / (node_bound_axes[0] * node_bound_axes[1] + node_bound_axes[0] * node_bound_axes[2] + node_bound_axes[1] * node_bound_axes[2]);
-	for(int axis = 0; axis < 3; ++axis)
+	for(const auto axis : axis::spatial)
 	{
+		const unsigned char axis_id = axis::getId(axis);
 		// << get edges for axis >>
 		int num_edges = 0;
 		//test!
@@ -295,13 +296,13 @@ AcceleratorKdTree::SplitCost AcceleratorKdTree::minimalCost(Logger &logger, floa
 			const Bound &bbox = all_bounds[i];
 			if(bbox.a_[axis] == bbox.g_[axis])
 			{
-				edges_all_axes[axis][num_edges] = BoundEdge(bbox.a_[axis], i /* pn */, BoundEdge::EndBound::Both);
+				edges_all_axes[axis_id][num_edges] = BoundEdge(bbox.a_[axis], i /* pn */, BoundEdge::EndBound::Both);
 				++num_edges;
 			}
 			else
 			{
-				edges_all_axes[axis][num_edges] = BoundEdge(bbox.a_[axis], i /* pn */, BoundEdge::EndBound::Left);
-				edges_all_axes[axis][num_edges + 1] = BoundEdge(bbox.g_[axis], i /* pn */, BoundEdge::EndBound::Right);
+				edges_all_axes[axis_id][num_edges] = BoundEdge(bbox.a_[axis], i /* pn */, BoundEdge::EndBound::Left);
+				edges_all_axes[axis_id][num_edges + 1] = BoundEdge(bbox.g_[axis], i /* pn */, BoundEdge::EndBound::Right);
 				num_edges += 2;
 			}
 		}
@@ -311,27 +312,27 @@ AcceleratorKdTree::SplitCost AcceleratorKdTree::minimalCost(Logger &logger, floa
 			const Bound &bbox = all_bounds[pn];
 			if(bbox.a_[axis] == bbox.g_[axis])
 			{
-				edges_all_axes[axis][num_edges] = BoundEdge(bbox.a_[axis], pn, BoundEdge::EndBound::Both);
+				edges_all_axes[axis_id][num_edges] = BoundEdge(bbox.a_[axis], pn, BoundEdge::EndBound::Both);
 				++num_edges;
 			}
 			else
 			{
-				edges_all_axes[axis][num_edges] = BoundEdge(bbox.a_[axis], pn, BoundEdge::EndBound::Left);
-				edges_all_axes[axis][num_edges + 1] = BoundEdge(bbox.g_[axis], pn, BoundEdge::EndBound::Right);
+				edges_all_axes[axis_id][num_edges] = BoundEdge(bbox.a_[axis], pn, BoundEdge::EndBound::Left);
+				edges_all_axes[axis_id][num_edges + 1] = BoundEdge(bbox.g_[axis], pn, BoundEdge::EndBound::Right);
 				num_edges += 2;
 			}
 		}
-		std::sort(&edges_all_axes[axis][0], &edges_all_axes[axis][num_edges]);
+		std::sort(&edges_all_axes[axis_id][0], &edges_all_axes[axis_id][num_edges]);
 		// Compute cost of all splits for _axis_ to find best
 		const std::array<std::array<int, 3>, 3> axis_lut {{ {0, 1, 2}, {1, 2, 0}, {2, 0, 1} }};
-		const float cap_area = node_bound_axes[ axis_lut[1][axis] ] * node_bound_axes[ axis_lut[2][axis] ];
-		const float cap_perim = node_bound_axes[ axis_lut[1][axis] ] + node_bound_axes[ axis_lut[2][axis] ];
+		const float cap_area = node_bound_axes[ axis_lut[1][axis_id] ] * node_bound_axes[ axis_lut[2][axis_id] ];
+		const float cap_perim = node_bound_axes[ axis_lut[1][axis_id] ] + node_bound_axes[ axis_lut[2][axis_id] ];
 		uint32_t num_left = 0;
 		uint32_t num_right = num_indices;
 		//todo: early-out criteria: if l1 > l2*nPrims (l2 > l1*nPrims) => minimum is lowest (highest) edge!
 		if(num_indices > 5)
 		{
-			float edget = edges_all_axes[axis][0].pos_;
+			float edget = edges_all_axes[axis_id][0].pos_;
 			float l_below = edget - node_bound.a_[axis];
 			float l_above = node_bound.g_[axis] - edget;
 			if(l_below > l_above * static_cast<float>(num_indices) && l_above > 0.f)
@@ -349,7 +350,7 @@ AcceleratorKdTree::SplitCost AcceleratorKdTree::minimalCost(Logger &logger, floa
 				}
 				continue;
 			}
-			edget = edges_all_axes[axis][num_edges - 1].pos_;
+			edget = edges_all_axes[axis_id][num_edges - 1].pos_;
 			l_below = edget - node_bound.a_[axis];
 			l_above = node_bound.g_[axis] - edget;
 			if(l_above > l_below * static_cast<float>(num_indices) && l_below > 0.f)
@@ -370,8 +371,8 @@ AcceleratorKdTree::SplitCost AcceleratorKdTree::minimalCost(Logger &logger, floa
 
 		for(int edge_id = 0; edge_id < num_edges; ++edge_id)
 		{
-			if(edges_all_axes[axis][edge_id].end_ == BoundEdge::EndBound::Right) --num_right;
-			const float edget = edges_all_axes[axis][edge_id].pos_;
+			if(edges_all_axes[axis_id][edge_id].end_ == BoundEdge::EndBound::Right) --num_right;
+			const float edget = edges_all_axes[axis_id][edge_id].pos_;
 			if(edget > node_bound.a_[axis] &&
 			   edget < node_bound.g_[axis])
 			{
@@ -382,8 +383,8 @@ AcceleratorKdTree::SplitCost AcceleratorKdTree::minimalCost(Logger &logger, floa
 				const float above_sa = cap_area + (l_above) * cap_perim;
 				const float raw_costs = (below_sa * num_left + above_sa * num_right);
 				float eb;
-				if(num_right == 0) eb = (0.1f + l_above * inv_node_bound_axes[axis]) * e_bonus * raw_costs;
-				else if(num_left == 0) eb = (0.1f + l_below * inv_node_bound_axes[axis]) * e_bonus * raw_costs;
+				if(num_right == 0) eb = (0.1f + l_above * inv_node_bound_axes[axis_id]) * e_bonus * raw_costs;
+				else if(num_left == 0) eb = (0.1f + l_below * inv_node_bound_axes[axis_id]) * e_bonus * raw_costs;
 				else eb = 0.0f;
 
 				const float cost = cost_ratio + inv_total_sa * (raw_costs - eb);
@@ -396,10 +397,10 @@ AcceleratorKdTree::SplitCost AcceleratorKdTree::minimalCost(Logger &logger, floa
 					split.num_edges_ = num_edges;
 				}
 			}
-			if(edges_all_axes[axis][edge_id].end_ != BoundEdge::EndBound::Right)
+			if(edges_all_axes[axis_id][edge_id].end_ != BoundEdge::EndBound::Right)
 			{
 				++num_left;
-				if(edges_all_axes[axis][edge_id].end_ == BoundEdge::EndBound::Both) --num_right;
+				if(edges_all_axes[axis_id][edge_id].end_ == BoundEdge::EndBound::Both) --num_right;
 			}
 		}
 		if((num_left != num_indices || num_right != 0) && logger.isVerbose()) logger.logVerbose("you screwed your new idea!");
@@ -435,12 +436,13 @@ int AcceleratorKdTree::buildTree(uint32_t n_prims, const std::vector<const Primi
 		int n_overl = 0;
 		std::array<double, 3> b_half_size;
 		std::array<Vec3Double, 2> b_ext;
-		for(int i = 0; i < 3; ++i)
+		for(const auto axis : axis::spatial)
 		{
-			b_half_size[i] = (static_cast<double>(node_bound.g_[i]) - static_cast<double>(node_bound.a_[i]));
-			double temp  = (static_cast<double>(tree_bound_.g_[i]) - static_cast<double>(tree_bound_.a_[i]));
-			b_ext[0][i] = node_bound.a_[i] - 0.021 * b_half_size[i] - 0.00001 * temp;
-			b_ext[1][i] = node_bound.g_[i] + 0.021 * b_half_size[i] + 0.00001 * temp;
+			const auto axis_id = axis::getId(axis);
+			b_half_size[axis_id] = (static_cast<double>(node_bound.g_[axis]) - static_cast<double>(node_bound.a_[axis]));
+			double temp  = (static_cast<double>(tree_bound_.g_[axis]) - static_cast<double>(tree_bound_.a_[axis]));
+			b_ext[0][axis] = node_bound.a_[axis] - 0.021 * b_half_size[axis_id] - 0.00001 * temp;
+			b_ext[1][axis] = node_bound.g_[axis] + 0.021 * b_half_size[axis_id] + 0.00001 * temp;
 		}
 		for(unsigned int i = 0; i < n_prims; ++i)
 		{
@@ -496,7 +498,7 @@ int AcceleratorKdTree::buildTree(uint32_t n_prims, const std::vector<const Primi
 	//<< if (minimum > leafcost) increase bad refines >>
 	if(split.cost_ > n_prims) ++bad_refines;
 	if((split.cost_ > 1.6f * n_prims && n_prims < 16) ||
-	   split.axis_ == -1 || bad_refines == 2)
+	   split.axis_ == Axis::None || bad_refines == 2)
 	{
 		nodes_[next_free_node_].createLeaf(prim_nums, n_prims, original_primitives, prims_arena_, kd_stats_);
 		next_free_node_++;
@@ -542,62 +544,64 @@ int AcceleratorKdTree::buildTree(uint32_t n_prims, const std::vector<const Primi
 	{
 		std::array<int, prim_clip_thresh_> cindizes;
 		std::array<uint32_t, prim_clip_thresh_> old_prims;
+		const auto split_axis_id = axis::getId(split.axis_);
 		memcpy(old_prims.data(), prim_nums, n_prims * sizeof(int));
-
 		for(int i = 0; i < split.edge_offset_; ++i)
 		{
-			if(edges[split.axis_][i].end_ != BoundEdge::EndBound::Right)
+			if(edges[split_axis_id][i].end_ != BoundEdge::EndBound::Right)
 			{
-				cindizes[n_0] = edges[split.axis_][i].index_;
+				cindizes[n_0] = edges[split_axis_id][i].index_;
 				left_prims[n_0] = old_prims[cindizes[n_0]];
 				++n_0;
 			}
 		}
 		for(int i = 0; i < n_0; ++i) { left_prims[n_0 + i] = cindizes[i]; /* std::cout << cindizes[i] << " "; */ }
-		if(edges[split.axis_][split.edge_offset_].end_ == BoundEdge::EndBound::Both)
+		if(edges[split_axis_id][split.edge_offset_].end_ == BoundEdge::EndBound::Both)
 		{
-			cindizes[n_1] = edges[split.axis_][split.edge_offset_].index_;
+			cindizes[n_1] = edges[split_axis_id][split.edge_offset_].index_;
 			n_right_prims[n_1] = old_prims[cindizes[n_1]];
 			++n_1;
 		}
 
 		for(int i = split.edge_offset_ + 1; i < split.num_edges_; ++i)
 		{
-			if(edges[split.axis_][i].end_ != BoundEdge::EndBound::Left)
+			if(edges[split_axis_id][i].end_ != BoundEdge::EndBound::Left)
 			{
-				cindizes[n_1] = edges[split.axis_][i].index_;
+				cindizes[n_1] = edges[split_axis_id][i].index_;
 				n_right_prims[n_1] = old_prims[cindizes[n_1]];
 				++n_1;
 			}
 		}
 		for(int i = 0; i < n_1; ++i) { n_right_prims[n_1 + i] = cindizes[i]; /* std::cout << cindizes[i] << " "; */ }
-		split_pos = edges[split.axis_][split.edge_offset_].pos_;
+		split_pos = edges[split_axis_id][split.edge_offset_].pos_;
 	}
 #endif //PRIMITIVE_CLIPPING > 0
 	else //we did "normal" cost function
 	{
+		const auto split_axis_id = axis::getId(split.axis_);
 		for(int i = 0; i < split.edge_offset_; ++i)
-			if(edges[split.axis_][i].end_ != BoundEdge::EndBound::Right)
-				left_prims[n_0++] = edges[split.axis_][i].index_;
-		if(edges[split.axis_][split.edge_offset_].end_ == BoundEdge::EndBound::Both)
-			n_right_prims[n_1++] = edges[split.axis_][split.edge_offset_].index_;
+			if(edges[split_axis_id][i].end_ != BoundEdge::EndBound::Right)
+				left_prims[n_0++] = edges[split_axis_id][i].index_;
+		if(edges[split_axis_id][split.edge_offset_].end_ == BoundEdge::EndBound::Both)
+			n_right_prims[n_1++] = edges[split_axis_id][split.edge_offset_].index_;
 		for(int i = split.edge_offset_ + 1; i < split.num_edges_; ++i)
-			if(edges[split.axis_][i].end_ != BoundEdge::EndBound::Left)
-				n_right_prims[n_1++] = edges[split.axis_][i].index_;
-		split_pos = edges[split.axis_][split.edge_offset_].pos_;
+			if(edges[split_axis_id][i].end_ != BoundEdge::EndBound::Left)
+				n_right_prims[n_1++] = edges[split_axis_id][i].index_;
+		split_pos = edges[split_axis_id][split.edge_offset_].pos_;
 	}
 	//advance right prims pointer
 	remaining_mem -= n_1;
 
 	uint32_t cur_node = next_free_node_;
-	nodes_[cur_node].createInterior(split.axis_, split_pos, kd_stats_);
+	nodes_[cur_node].createInterior(axis::getId(split.axis_), split_pos, kd_stats_);
 	++next_free_node_;
 	Bound bound_l = node_bound, bound_r = node_bound;
 	switch(split.axis_)
 	{
-		case 0: bound_l.setMaxX(split_pos); bound_r.setMinX(split_pos); break;
-		case 1: bound_l.setMaxY(split_pos); bound_r.setMinY(split_pos); break;
-		case 2: bound_l.setMaxZ(split_pos); bound_r.setMinZ(split_pos); break;
+		case Axis::X: bound_l.setMaxX(split_pos); bound_r.setMinX(split_pos); break;
+		case Axis::Y: bound_l.setMaxY(split_pos); bound_r.setMinY(split_pos); break;
+		case Axis::Z: bound_l.setMaxZ(split_pos); bound_r.setMinZ(split_pos); break;
+		default: break;
 	}
 
 #if PRIMITIVE_CLIPPING > 0
@@ -665,7 +669,7 @@ AcceleratorIntersectData AcceleratorKdTree::intersect(const Ray &ray, float t_ma
 		// loop until leaf is found
 		while(!curr_node->isLeaf())
 		{
-			const int axis = curr_node->splitAxis();
+			const Axis axis = curr_node->splitAxis();
 			const float split_val = curr_node->splitPos();
 
 			if(stack[entry_id].point_[axis] <= split_val)
@@ -705,9 +709,9 @@ AcceleratorIntersectData AcceleratorKdTree::intersect(const Ray &ray, float t_ma
 			// possibly skip current entry point so not to overwrite the data
 			if(exit_id == entry_id) exit_id++;
 			// push values onto the stack //todo: lookup table
-			static constexpr std::array<std::array<int, 3>, 2> np_axis {{{1, 2, 0}, {2, 0, 1} }};
-			const int next_axis = np_axis[0][axis];
-			const int prev_axis = np_axis[1][axis];
+			static constexpr std::array<std::array<Axis, 3>, 2> np_axis {{{Axis::Y, Axis::Z, Axis::X}, {Axis::Z, Axis::X, Axis::Y} }};
+			const Axis next_axis = np_axis[0][axis::getId(axis)];
+			const Axis prev_axis = np_axis[1][axis::getId(axis)];
 			stack[exit_id].prev_stack_id_ = tmp_id;
 			stack[exit_id].t_ = t;
 			stack[exit_id].node_ = far_child;
@@ -776,7 +780,7 @@ AcceleratorIntersectData AcceleratorKdTree::intersectS(const Ray &ray, float t_m
 		// loop until leaf is found
 		while(!curr_node->isLeaf())
 		{
-			const int axis = curr_node->splitAxis();
+			const Axis axis = curr_node->splitAxis();
 			const float split_val = curr_node->splitPos();
 			if(stack[entry_id].point_[axis] <= split_val)
 			{
@@ -815,9 +819,9 @@ AcceleratorIntersectData AcceleratorKdTree::intersectS(const Ray &ray, float t_m
 			// possibly skip current entry point so not to overwrite the data
 			if(exit_id == entry_id) exit_id++;
 			// push values onto the stack //todo: lookup table
-			static constexpr std::array<std::array<int, 3>, 2> np_axis {{{1, 2, 0}, {2, 0, 1} }};
-			const int next_axis = np_axis[0][axis];//(axis+1)%3;
-			const int prev_axis = np_axis[1][axis];//(axis+2)%3;
+			static constexpr std::array<std::array<Axis, 3>, 2> np_axis {{{Axis::Y, Axis::Z, Axis::X}, {Axis::Z, Axis::X, Axis::Y} }};
+			const Axis next_axis = np_axis[0][axis::getId(axis)];
+			const Axis prev_axis = np_axis[1][axis::getId(axis)];
 			stack[exit_id].prev_stack_id_ = tmp_id;
 			stack[exit_id].t_ = t;
 			stack[exit_id].node_ = far_child;
@@ -887,7 +891,7 @@ AcceleratorTsIntersectData AcceleratorKdTree::intersectTs(const Ray &ray, int ma
 		// loop until leaf is found
 		while(!curr_node->isLeaf())
 		{
-			const int axis = curr_node->splitAxis();
+			const Axis axis = curr_node->splitAxis();
 			const float split_val = curr_node->splitPos();
 			if(stack[entry_id].point_[axis] <= split_val)
 			{
@@ -925,9 +929,9 @@ AcceleratorTsIntersectData AcceleratorKdTree::intersectTs(const Ray &ray, int ma
 			// possibly skip current entry point so not to overwrite the data
 			if(exit_id == entry_id) exit_id++;
 			// push values onto the stack //todo: lookup table
-			static constexpr std::array<std::array<int, 3>, 2> np_axis {{{1, 2, 0}, {2, 0, 1}}};
-			const int next_axis = np_axis[0][axis];//(axis+1)%3;
-			const int prev_axis = np_axis[1][axis];//(axis+2)%3;
+			static constexpr std::array<std::array<Axis, 3>, 2> np_axis {{{Axis::Y, Axis::Z, Axis::X}, {Axis::Z, Axis::X, Axis::Y} }};
+			const Axis next_axis = np_axis[0][axis::getId(axis)];
+			const Axis prev_axis = np_axis[1][axis::getId(axis)];
 			stack[exit_id].prev_stack_id_ = tmp_id;
 			stack[exit_id].t_ = t;
 			stack[exit_id].node_ = far_child;

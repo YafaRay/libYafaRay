@@ -56,15 +56,15 @@ struct MinMax
 inline MinMax MinMax::find(const Vec3Double &values)
 {
 	MinMax min_max;
-	min_max.min_ = math::min(values[0], values[1], values[2]);
-	min_max.max_ = math::max(values[0], values[1], values[2]);
+	min_max.min_ = math::min(values[Axis::X], values[Axis::Y], values[Axis::Z]);
+	min_max.max_ = math::max(values[Axis::X], values[Axis::Y], values[Axis::Z]);
 	return min_max;
 }
 
 inline int planeBoxOverlap(const Vec3Double &normal, const Vec3Double &vert, const Vec3Double &maxbox)    // -NJMP-
 {
 	Vec3Double vmin, vmax;
-	for(int axis = 0; axis < 3; ++axis)
+	for(const auto axis : axis::spatial)
 	{
 		const double v = vert[axis];                    // -NJMP-
 		if(normal[axis] > 0)
@@ -84,10 +84,10 @@ inline int planeBoxOverlap(const Vec3Double &normal, const Vec3Double &vert, con
 	return 0;
 }
 
-inline bool axisTest(double a, double b, double f_a, double f_b, const Vec3Double &v_a, const Vec3Double &v_b, const Vec3Double &boxhalfsize, int axis)
+inline bool axisTest(double a, double b, double f_a, double f_b, const Vec3Double &v_a, const Vec3Double &v_b, const Vec3Double &boxhalfsize, Axis axis)
 {
-	const int axis_a = (axis == Axis::X ? Axis::Y : Axis::X);
-	const int axis_b = (axis == Axis::Z ? Axis::Y : Axis::Z);
+	const Axis axis_a = (axis == Axis::X ? Axis::Y : Axis::X);
+	const Axis axis_b = (axis == Axis::Z ? Axis::Y : Axis::Z);
 	const int sign = (axis == Axis::Y ? -1 : 1);
 	const double p_a = sign * (a * v_a[axis_a] - b * v_a[axis_b]);
 	const double p_b = sign * (a * v_b[axis_a] - b * v_b[axis_b]);
@@ -155,9 +155,9 @@ inline bool triBoxOverlap(const Vec3Double &boxcenter, const Vec3Double &boxhalf
 	/*  the triangle against the AABB */
 
 	/* test in the 3 directions */
-	for(int axis = 0; axis < 3; ++axis)
+	for(const auto axis : axis::spatial)
 	{
-		const MinMax min_max = MinMax::find(tri_verts[axis]);
+		const MinMax min_max = MinMax::find(tri_verts[axis::getId(axis)]);
 		if(min_max.min_ > boxhalfsize[axis] || min_max.max_ < -boxhalfsize[axis]) return false;
 	}
 

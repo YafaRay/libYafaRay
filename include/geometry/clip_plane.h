@@ -1,3 +1,4 @@
+#pragma once
 /****************************************************************************
  *      This is part of the libYafaRay package
  *
@@ -16,10 +17,23 @@
  *      Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-#include "geometry/clip_plane.h"
+#ifndef YAFARAY_CLIP_PLANE_H
+#define YAFARAY_CLIP_PLANE_H
+
+#include "common/yafaray_common.h"
+#include "geometry/axis.h"
 
 BEGIN_YAFARAY
 
-//const std::array<std::array<int, 3>, 3> Axis::axis_lut_ {{ {X, Y, Z}, {Y, Z, X}, {Z, X, Y} }};
+struct ClipPlane
+{
+	enum class Pos: unsigned char { None, Lower, Upper };
+	explicit ClipPlane(Pos pos = Pos::None) : pos_(pos) { }
+	ClipPlane(Axis axis, Pos pos) : axis_(axis), pos_(pos) { }
+	Axis axis_ = Axis::None;
+	Pos pos_ = Pos::None;
+};
 
 END_YAFARAY
+
+#endif //YAFARAY_CLIP_PLANE_H

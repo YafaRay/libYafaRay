@@ -87,14 +87,15 @@ Point3 TextureMapperNode::sphereMap(const Point3 &p)
 // Map the texture to a cube
 Point3 TextureMapperNode::cubeMap(const Point3 &p, const Vec3 &n)
 {
-	const std::array<std::array<int, 3>, 3> ma {{ {1, 2, 0}, {0, 2, 1}, {0, 1, 2} }};
+	const std::array<std::array<Axis, 3>, 3> ma {{ {Axis::Y, Axis::Z, Axis::X}, {Axis::X, Axis::Z, Axis::Y}, {Axis::X, Axis::Y, Axis::Z} }};
 	// int axis = std::abs(n.x) > std::abs(n.y) ? (std::abs(n.x) > std::abs(n.z) ? 0 : 2) : (std::abs(n.y) > std::abs(n.z) ? 1 : 2);
 	// no functionality changes, just more readable code
-	int axis;
-	if(std::abs(n.z()) >= std::abs(n.x()) && std::abs(n.z()) >= std::abs(n.y())) axis = 2;
-	else if(std::abs(n.y()) >= std::abs(n.x()) && std::abs(n.y()) >= std::abs(n.z())) axis = 1;
-	else axis = 0;
-	return { p[ma[axis][0]], p[ma[axis][1]], p[ma[axis][2]] };
+	Axis axis;
+	if(std::abs(n.z()) >= std::abs(n.x()) && std::abs(n.z()) >= std::abs(n.y())) axis = Axis::Z;
+	else if(std::abs(n.y()) >= std::abs(n.x()) && std::abs(n.y()) >= std::abs(n.z())) axis = Axis::Y;
+	else axis = Axis::X;
+	const auto axis_id = axis::getId(axis);
+	return { p[ma[axis_id][0]], p[ma[axis_id][1]], p[ma[axis_id][2]] };
 }
 
 // Map the texture to a plane, but it should not be used by now as it does nothing, it's just for completeness' sake
