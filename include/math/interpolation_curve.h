@@ -33,11 +33,11 @@ BEGIN_YAFARAY
 class IrregularCurve final
 {
 	public:
-		IrregularCurve(const float *datay, const float *datax, int n);
-		IrregularCurve(const float *datay, int n);
-		float getSample(float wl) const;
-		float operator()(float x) const {return getSample(x);};
-		void addSample(float data);
+		IrregularCurve(const float *datay, const float *datax, int n) noexcept;
+		IrregularCurve(const float *datay, int n) noexcept;
+		float getSample(float wl) const noexcept;
+		float operator()(float x) const noexcept {return getSample(x);};
+		void addSample(float data) noexcept;
 
 	private:
 		std::unique_ptr<float[]> c_1_, c_2_;
@@ -45,7 +45,7 @@ class IrregularCurve final
 		int index_;
 };
 
-IrregularCurve::IrregularCurve(const float *datay, const float *datax, int n): size_(n), index_(0)
+IrregularCurve::IrregularCurve(const float *datay, const float *datax, int n) noexcept : size_(n), index_(0)
 {
 	c_1_ = std::unique_ptr<float[]>(new float[n]);
 	c_2_ = std::unique_ptr<float[]>(new float[n]);
@@ -56,14 +56,14 @@ IrregularCurve::IrregularCurve(const float *datay, const float *datax, int n): s
 	}
 }
 
-IrregularCurve::IrregularCurve(const float *datay, int n): size_(n), index_(0)
+IrregularCurve::IrregularCurve(const float *datay, int n) noexcept : size_(n), index_(0)
 {
 	c_1_ = std::unique_ptr<float[]>(new float[n]);
 	c_2_ = std::unique_ptr<float[]>(new float[n]);
 	for(int i = 0; i < n; i++) c_2_[i] = datay[i];
 }
 
-float IrregularCurve::getSample(float x) const
+float IrregularCurve::getSample(float x) const noexcept
 {
 	if(x < c_1_[0] || x > c_1_[size_ - 1]) return 0.0;
 	int zero = 0;
@@ -84,7 +84,7 @@ float IrregularCurve::getSample(float x) const
 	return y;
 }
 
-void IrregularCurve::addSample(float data)
+void IrregularCurve::addSample(float data) noexcept
 {
 	if(index_ < size_) c_1_[index_++] = data;
 }
@@ -96,11 +96,11 @@ void IrregularCurve::addSample(float data)
 class RegularCurve final
 {
 	public:
-		RegularCurve(const float *data, float begin_r, float end_r, int n);
-		RegularCurve(float begin_r, float end_r, int n);
-		float getSample(float x) const;
-		float operator()(float x) const {return getSample(x);};
-		void addSample(float data);
+		RegularCurve(const float *data, float begin_r, float end_r, int n) noexcept;
+		RegularCurve(float begin_r, float end_r, int n) noexcept;
+		float getSample(float x) const noexcept;
+		float operator()(float x) const noexcept {return getSample(x);};
+		void addSample(float data) noexcept;
 
 	private:
 		std::vector<float> c_;
@@ -110,20 +110,20 @@ class RegularCurve final
 		size_t index_ = 0;
 };
 
-RegularCurve::RegularCurve(const float *data, float begin_r, float end_r, int n): end_r_(begin_r), begin_r_(end_r)
+RegularCurve::RegularCurve(const float *data, float begin_r, float end_r, int n) noexcept : end_r_(begin_r), begin_r_(end_r)
 {
 	c_ = std::vector<float>(n);
 	for(int i = 0; i < n; i++) c_[i] = data[i];
 	step_ = n / (begin_r_ - end_r_);
 }
 
-RegularCurve::RegularCurve(float begin_r, float end_r, int n) : end_r_(begin_r), begin_r_(end_r)
+RegularCurve::RegularCurve(float begin_r, float end_r, int n) noexcept : end_r_(begin_r), begin_r_(end_r)
 {
 	c_ = std::vector<float>(n);
 	step_ = n / (begin_r_ - end_r_);
 }
 
-float RegularCurve::getSample(float x) const
+float RegularCurve::getSample(float x) const noexcept
 {
 	if(x < end_r_ || x > begin_r_) return 0.0;
 
@@ -143,7 +143,7 @@ float RegularCurve::getSample(float x) const
 	return y;
 }
 
-void RegularCurve::addSample(float data)
+void RegularCurve::addSample(float data) noexcept
 {
 	if(index_ < c_.size()) c_[index_++] = data;
 }

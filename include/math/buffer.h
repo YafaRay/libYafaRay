@@ -30,27 +30,26 @@ template <class T, unsigned char n>
 class Buffer //! Generic n-dimensional buffer. Unrolled starting from the highest dimension goind down in the dimensions (i.e. in 2D an x,y buffer would be unrolled so x=0,y=0->pos=0, x=0,y=1->pos=1, x=1,y=0->pos=height*x + y
 {
 	public:
-		Buffer() = default;
-		explicit Buffer(const std::array<size_t, n> &dimensions) { resize(dimensions); }
-		void zero() { data_.clear(); resize(dimensions_); }
-		void resize(const std::array<size_t, n> &dimensions);
-		void fill(const T &val) { const size_t size_prev = data_.size(); data_.clear(); data_.resize(size_prev, val); }
-		void set(const std::array<size_t, n> &coordinates, const T &val) { data_[calculateDataPosition(coordinates)] = val; }
-		void set(const std::array<size_t, n> &coordinates, T &&val) { data_[calculateDataPosition(coordinates)] = std::move(val); }
-		T get(const std::array<size_t, n> &coordinates) const { return data_[calculateDataPosition(coordinates)]; }
-		T &operator()(const std::array<size_t, n> &coordinates) { return data_[calculateDataPosition(coordinates)]; }
-		const T &operator()(const std::array<size_t, n> &coordinates) const { return data_[calculateDataPosition(coordinates)]; }
-		const std::array<size_t, n> &getDimensions() const { return dimensions_; }
+		Buffer() noexcept = default;
+		explicit constexpr Buffer(const std::array<size_t, n> &dimensions) noexcept { resize(dimensions); }
+		constexpr void zero() noexcept { data_.clear(); resize(dimensions_); }
+		constexpr void resize(const std::array<size_t, n> &dimensions) noexcept;
+		constexpr void fill(const T &val) noexcept { const size_t size_prev = data_.size(); data_.clear(); data_.resize(size_prev, val); }
+		constexpr void set(const std::array<size_t, n> &coordinates, const T &val) noexcept { data_[calculateDataPosition(coordinates)] = val; }
+		constexpr void set(const std::array<size_t, n> &coordinates, T &&val) noexcept { data_[calculateDataPosition(coordinates)] = std::move(val); }
+		constexpr T get(const std::array<size_t, n> &coordinates) const noexcept { return data_[calculateDataPosition(coordinates)]; }
+		constexpr T &operator()(const std::array<size_t, n> &coordinates) noexcept { return data_[calculateDataPosition(coordinates)]; }
+		constexpr const T &operator()(const std::array<size_t, n> &coordinates) const noexcept { return data_[calculateDataPosition(coordinates)]; }
+		constexpr const std::array<size_t, n> &getDimensions() const noexcept { return dimensions_; }
 
 	private:
-		size_t calculateDataPosition(const std::array<size_t, n> &coordinates) const;
-
+		constexpr size_t calculateDataPosition(const std::array<size_t, n> &coordinates) const noexcept;
 		alignas(8) std::array<size_t, n> dimensions_;
 		alignas(8) std::vector<T> data_;
 };
 
 template<class T, unsigned char n>
-inline void Buffer<T, n>::resize(const std::array<size_t, n> &dimensions)
+inline constexpr void Buffer<T, n>::resize(const std::array<size_t, n> &dimensions) noexcept
 {
 	dimensions_ = dimensions;
 	size_t size = 1;
@@ -59,7 +58,7 @@ inline void Buffer<T, n>::resize(const std::array<size_t, n> &dimensions)
 }
 
 template<class T, unsigned char n>
-inline size_t Buffer<T, n>::calculateDataPosition(const std::array<size_t, n> &coordinates) const
+inline constexpr size_t Buffer<T, n>::calculateDataPosition(const std::array<size_t, n> &coordinates) const noexcept
 {
 	if(n == 2) return coordinates[0] * dimensions_[1] + coordinates[1];
 	else if(n == 1) return coordinates[0];

@@ -31,13 +31,13 @@ BEGIN_YAFARAY
 class FastRandom final
 {
 	public:
-		FastRandom() = default;
-		FastRandom(int seed) { myseed_ = seed; }
-		FastRandom(const FastRandom &fast_random) = delete; //Avoid mistakenly passing the fast_random objects by value instead of passing them by reference
-		int getNextInt();
-		int getNextInt(int &seed);
-		float getNextFloatNormalized();
-		float getNextFloatNormalized(int &seed);
+		constexpr FastRandom() noexcept = default;
+		constexpr FastRandom(int seed) noexcept { myseed_ = seed; }
+		constexpr FastRandom(const FastRandom &fast_random) noexcept = delete; //Avoid mistakenly passing the fast_random objects by value instead of passing them by reference
+		int getNextInt() noexcept;
+		int getNextInt(int &seed) noexcept;
+		float getNextFloatNormalized() noexcept;
+		float getNextFloatNormalized(int &seed) noexcept;
 
 	private:
 		std::atomic<int> myseed_ = 123212;
@@ -60,10 +60,10 @@ class FastRandom final
 class RandomGenerator final
 {
 	public:
-		RandomGenerator() = default;
-		explicit RandomGenerator(unsigned int seed): c_(seed) { }
-		RandomGenerator(const RandomGenerator &random_generator) = delete; //Avoid mistakenly passing the random_generator objects by value instead of passing them by reference
-		double operator()();
+		constexpr RandomGenerator() noexcept = default;
+		explicit constexpr RandomGenerator(unsigned int seed) noexcept : c_(seed) { }
+		constexpr RandomGenerator(const RandomGenerator &random_generator) noexcept = delete; //Avoid mistakenly passing the random_generator objects by value instead of passing them by reference
+		double operator()() noexcept;
 	protected:
 		std::atomic<unsigned int> x_ = 30903, c_ = 0;
 		static constexpr unsigned int y_a_ = 1791398085;
@@ -73,7 +73,7 @@ class RandomGenerator final
 };
 
 
-inline int FastRandom::getNextInt()
+inline int FastRandom::getNextInt() noexcept
 {
 	myseed_ = a_ * (myseed_ % q_) - r_ * (myseed_ / q_);
 	if(myseed_ < 0)
@@ -81,12 +81,12 @@ inline int FastRandom::getNextInt()
 	return myseed_;
 }
 
-inline float FastRandom::getNextFloatNormalized()
+inline float FastRandom::getNextFloatNormalized() noexcept
 {
 	return static_cast<float>(getNextInt()) / static_cast<float>(m_);
 }
 
-inline int FastRandom::getNextInt(int &seed)
+inline int FastRandom::getNextInt(int &seed) noexcept
 {
 	seed = a_ * (seed % q_) - r_ * (seed / q_);
 	if(myseed_ < 0)
@@ -94,12 +94,12 @@ inline int FastRandom::getNextInt(int &seed)
 	return seed;
 }
 
-inline float FastRandom::getNextFloatNormalized(int &seed)
+inline float FastRandom::getNextFloatNormalized(int &seed) noexcept
 {
 	return static_cast<float>(getNextInt(seed)) / static_cast<float>(m_);
 }
 
-inline double RandomGenerator::operator()()
+inline double RandomGenerator::operator()() noexcept
 {
 	const unsigned int xh = x_ >> 16, xl = x_ & 65535;
 	x_ = x_ * y_a_ + c_;

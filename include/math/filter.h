@@ -31,9 +31,9 @@ namespace math
 namespace filter
 {
 
-float box(float dx, float dy) { return 1.f; }
+constexpr float box(float dx, float dy) noexcept { return 1.f; }
 
-float gauss(float dx, float dy)
+constexpr float gauss(float dx, float dy) noexcept
 {
 	constexpr float gauss_exp = 0.00247875f;
 	const float r_2 = dx * dx + dy * dy;
@@ -41,7 +41,7 @@ float gauss(float dx, float dy)
 }
 
 //Lanczos sinc window size 2
-float lanczos2(float dx, float dy)
+constexpr float lanczos2(float dx, float dy) noexcept
 {
 	const float x = math::sqrt(dx * dx + dy * dy);
 	if(x == 0.f) return 1.f;
@@ -54,7 +54,7 @@ float lanczos2(float dx, float dy)
 	return 0.f;
 }
 
-float mitchell(float dx, float dy)
+constexpr float mitchell(float dx, float dy) noexcept
 {
 /*!
 Mitchell-Netravali constants

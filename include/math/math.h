@@ -69,7 +69,7 @@ template<typename T = float> static constexpr T div_180_by_pi {57.29577951308232
 // all from "Efficient Multidimensional Sampling" by Alexander Keller
 template<typename T = float> static constexpr T sample_mult_ratio {0.00000000023283064365386962890625L};
 
-template<typename T> inline constexpr T inverse(T val)
+template<typename T> inline constexpr T inverse(T val) noexcept
 {
 	//To avoid division by zero
 	static_assert(std::is_floating_point<T>::value, "This function can only be instantiated for floating point arguments");
@@ -77,25 +77,25 @@ template<typename T> inline constexpr T inverse(T val)
 	else return T{1} / val;
 }
 
-template<typename T> inline constexpr T degToRad(T deg)
+template<typename T> inline constexpr T degToRad(T deg) noexcept
 {
 	static_assert(std::is_floating_point<T>::value, "This function can only be instantiated for floating point arguments");
 	return deg * math::div_pi_by_180<T>;
 }
 
-template<typename T> inline constexpr T radToDeg(T rad)
+template<typename T> inline constexpr T radToDeg(T rad) noexcept
 {
 	static_assert(std::is_floating_point<T>::value, "This function can only be instantiated for floating point arguments");
 	return rad * math::div_180_by_pi<T>;
 }
 
-template <class T> inline constexpr T min(T a, T b, T c)
+template <class T> inline constexpr T min(T a, T b, T c) noexcept
 {
 	static_assert(std::is_pod<T>::value, "This function can only be instantiated for simple 'plain old data' types");
 	return std::min(a, std::min(b, c));
 }
 
-template <class T> inline constexpr T max(T a, T b, T c)
+template <class T> inline constexpr T max(T a, T b, T c) noexcept
 {
 	static_assert(std::is_pod<T>::value, "This function can only be instantiated for simple 'plain old data' types");
 	return std::max(a, std::max(b, c));
@@ -104,22 +104,22 @@ template <class T> inline constexpr T max(T a, T b, T c)
 union BitTwiddler
 {
 	public:
-		explicit constexpr BitTwiddler(int i) : i_{i} { }
-		explicit constexpr BitTwiddler(float f) : f_{f} { }
-		constexpr int getAsInt() const { return i_; }
-		constexpr float getAsFloat() const { return f_; }
+		explicit constexpr BitTwiddler(int i) noexcept : i_{i} { }
+		explicit constexpr BitTwiddler(float f) noexcept : f_{f} { }
+		constexpr int getAsInt() const noexcept { return i_; }
+		constexpr float getAsFloat() const noexcept { return f_; }
 
 	private:
 		int i_;
 		float f_;
 };
 
-inline constexpr float polyexp(float x)
+inline constexpr float polyexp(float x) noexcept
 {
 	return x * (x * (x * (x * (x * 1.8775767e-3f + 8.9893397e-3f) + 5.5826318e-2f) + 2.4015361e-1f) + 6.9315308e-1f) + 9.9999994e-1f;
 }
 
-inline constexpr float exp2(float x)
+inline constexpr float exp2(float x) noexcept
 {
 	constexpr float f_hi = 129.00000f;
 	constexpr float f_lo = -126.99999f;
@@ -130,12 +130,12 @@ inline constexpr float exp2(float x)
 	return expipart.getAsFloat() * math::polyexp(fpart);
 }
 
-inline constexpr float polylog(float x)
+inline constexpr float polylog(float x) noexcept
 {
 	return x * (x * (x * (x * (x * -3.4436006e-2f + 3.1821337e-1f) + -1.2315303f) + 2.5988452f) + -3.3241990f) + 3.1157899f;
 }
 
-inline constexpr float log2(float x)
+inline constexpr float log2(float x) noexcept
 {
 	constexpr int log_mant = 0x7FFFFF;
 	const BitTwiddler i{x};
@@ -147,7 +147,7 @@ inline constexpr float log2(float x)
 }
 
 #ifdef FAST_MATH
-inline float sqrt_asm(float n)
+inline constexpr float sqrt_asm(float n) noexcept
 {
 #if defined (__APPLE__)
 	float r = n;
@@ -175,7 +175,7 @@ inline float sqrt_asm(float n)
 }
 #endif // FAST_MATH
 
-inline float pow(float a, float b)
+inline constexpr float pow(float a, float b) noexcept
 {
 #ifdef FAST_MATH
 	return math::exp2(math::log2(a) * b);
@@ -184,7 +184,7 @@ inline float pow(float a, float b)
 #endif
 }
 
-inline float log(float a)
+inline constexpr float log(float a) noexcept
 {
 #ifdef FAST_MATH
 	return math::log2(a) * math::ln2<>;
@@ -193,12 +193,12 @@ inline float log(float a)
 #endif
 }
 
-inline double log(double a)
+inline constexpr double log(double a) noexcept
 {
 	return std::log(a);
 }
 
-inline float exp(float a)
+inline constexpr float exp(float a) noexcept
 {
 #ifdef FAST_MATH
 	return math::exp2(math::log2e<> * a);
@@ -207,12 +207,12 @@ inline float exp(float a)
 #endif
 }
 
-inline double exp(double a)
+inline constexpr double exp(double a) noexcept
 {
 	return std::exp2(a);
 }
 
-inline float sqrt(float a)
+inline constexpr float sqrt(float a) noexcept
 {
 #ifdef FAST_MATH
 	return math::sqrt_asm(a);
@@ -221,12 +221,12 @@ inline float sqrt(float a)
 #endif
 }
 
-inline double sqrt(double a)
+inline constexpr double sqrt(double a) noexcept
 {
 	return std::sqrt(a);
 }
 
-inline constexpr float sin(float x)
+inline constexpr float sin(float x) noexcept
 {
 #ifdef FAST_TRIG
 	if(x > math::mult_pi_by_2<> || x < -math::mult_pi_by_2<>) x -= static_cast<int>(x * math::div_1_by_2pi<>) * math::mult_pi_by_2<>; //float modulo x % math::mult_pi_by_2<>
@@ -251,12 +251,12 @@ inline constexpr float sin(float x)
 #endif
 }
 
-inline constexpr double sin(double x)
+inline constexpr double sin(double x) noexcept
 {
 	return std::sin(x);
 }
 
-inline constexpr float cos(float x)
+inline constexpr float cos(float x) noexcept
 {
 #ifdef FAST_TRIG
 	return math::sin(x + math::div_pi_by_2<>);
@@ -265,12 +265,12 @@ inline constexpr float cos(float x)
 #endif
 }
 
-inline double cos(double x)
+inline constexpr double cos(double x) noexcept
 {
 	return std::cos(x);
 }
 
-template<typename T> inline constexpr T acos(T x)
+template<typename T> inline constexpr T acos(T x) noexcept
 {
 	//checks if variable gets out of domain [-1.0,+1.0], so you get the range limit instead of NaN
 	if(x <= -1.f) return math::num_pi<>;
@@ -278,7 +278,7 @@ template<typename T> inline constexpr T acos(T x)
 	else return std::acos(x);
 }
 
-inline constexpr float asin(float x)
+inline constexpr float asin(float x) noexcept
 {
 	//checks if variable gets out of domain [-1.0,+1.0], so you get the range limit instead of NaN
 	if(x <= -1.f) return -math::div_pi_by_2<>;
@@ -286,14 +286,14 @@ inline constexpr float asin(float x)
 	else return std::asin(x);
 }
 
-inline constexpr double roundFloatPrecision(double val, double precision) //To round, for example 3.2384764 to 3.24 use precision 0.01
+inline constexpr double roundFloatPrecision(double val, double precision) noexcept //To round, for example 3.2384764 to 3.24 use precision 0.01
 {
 	if(precision <= 0.0) return 0.0;
 	else return std::round(val / precision) * precision;
 }
 
 template<typename T>
-inline constexpr T mod(const T &a, const T &b)
+inline constexpr T mod(const T &a, const T &b) noexcept
 {
 	const T n = static_cast<T>(a / b);
 	const T result = a - n * b;
@@ -303,7 +303,7 @@ inline constexpr T mod(const T &a, const T &b)
 
 //! Just a "modulo 1" addition, assumed that both values are in range [0;1]
 template<typename T>
-inline constexpr T addMod1(const T &a, const T &b)
+inline constexpr T addMod1(const T &a, const T &b) noexcept
 {
 	const T s = a + b;
 	return s > 1 ? s - 1 : s;
