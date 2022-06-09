@@ -76,6 +76,7 @@ AcceleratorKdTree::AcceleratorKdTree(Logger &logger, const std::vector<const Pri
 		if(i > 0) tree_bound_ = Bound(tree_bound_, all_bounds_[i]);
 		else tree_bound_ = all_bounds_[i];
 	}
+	if(total_prims_ == 0) tree_bound_ = Bound{Point3{0.f, 0.f, 0.f}, Point3{0.f, 0.f, 0.f}};
 	//slightly(!) increase tree bound to prevent errors with prims
 	//lying in a bound plane (still slight bug with trees where one dim. is 0)
 	for(const auto axis : axis::spatial)
