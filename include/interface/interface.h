@@ -72,10 +72,10 @@ class Interface
 		virtual bool addFace(std::vector<int> &&vertices, std::vector<int> &&uv_indices) noexcept; //!< add a mesh face given vertex indices and optionally uv_indices
 		virtual int addUv(Uv &&uv) noexcept; //!< add a UV coordinate pair; returns index to be used for addTriangle/addQuad
 		virtual bool smoothVerticesNormals(std::string &&name, double angle) noexcept; //!< smooth vertex normals of mesh with given ID and angle (in degrees)
-		virtual size_t createInstance() noexcept;
-		virtual bool addInstanceObject(size_t instance_id, std::string &&base_object_name) noexcept;
-		virtual bool addInstanceOfInstance(size_t instance_id, size_t base_instance_id) noexcept;
-		virtual bool addInstanceMatrix(size_t instance_id, Matrix4 &&obj_to_world, float time) noexcept;
+		virtual int createInstance() noexcept;
+		virtual bool addInstanceObject(int instance_id, std::string &&base_object_name) noexcept;
+		virtual bool addInstanceOfInstance(int instance_id, size_t base_instance_id) noexcept;
+		virtual bool addInstanceMatrix(int instance_id, Matrix4 &&obj_to_world, float time) noexcept;
 		virtual void paramsSetVector(std::string &&name, Vec3 &&v) noexcept;
 		virtual void paramsSetString(std::string &&name, std::string &&s) noexcept;
 		virtual void paramsSetBool(std::string &&name, bool b) noexcept;

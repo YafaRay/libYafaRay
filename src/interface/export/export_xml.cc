@@ -208,25 +208,25 @@ void ExportXml::writeParam(const std::string &name, const Parameter &param, std:
 	}
 }
 
-size_t ExportXml::createInstance() noexcept
+int ExportXml::createInstance() noexcept
 {
 	file_ << "\n<createInstance></createInstance>\n";
 	return current_instance_id_++;
 }
 
-bool ExportXml::addInstanceObject(size_t instance_id, std::string &&base_object_name) noexcept
+bool ExportXml::addInstanceObject(int instance_id, std::string &&base_object_name) noexcept
 {
 	file_ << "\n<addInstanceObject instance_id=\"" << instance_id << "\" base_object_name=\"" << base_object_name << "\"></addInstanceObject>\n";
 	return true;
 }
 
-bool ExportXml::addInstanceOfInstance(size_t instance_id, size_t base_instance_id) noexcept
+bool ExportXml::addInstanceOfInstance(int instance_id, size_t base_instance_id) noexcept
 {
 	file_ << "\n<addInstanceOfInstance instance_id=\"" << instance_id << "\" base_instance_id=\"" << base_instance_id << "\"></addInstanceOfInstance>\n";
 	return true;
 }
 
-bool ExportXml::addInstanceMatrix(size_t instance_id, Matrix4 &&obj_to_world, float time) noexcept
+bool ExportXml::addInstanceMatrix(int instance_id, Matrix4 &&obj_to_world, float time) noexcept
 {
 	file_ << "\n<addInstanceMatrix instance_id=\"" << instance_id << "\" time=\"" << time << "\">\n\t";
 	writeMatrix("transform", obj_to_world, file_);

@@ -281,7 +281,7 @@ void ExportC::writeParam(const std::string &name, const Parameter &param, std::o
 	}
 }
 
-size_t ExportC::createInstance() noexcept
+int ExportC::createInstance() noexcept
 {
 	file_ << "\t" << "yafaray_createInstance(yi);\n";
 	++section_num_lines_;
@@ -289,7 +289,7 @@ size_t ExportC::createInstance() noexcept
 	return current_instance_id_++;
 }
 
-bool ExportC::addInstanceObject(size_t instance_id, std::string &&base_object_name) noexcept
+bool ExportC::addInstanceObject(int instance_id, std::string &&base_object_name) noexcept
 {
 	file_ << "\t" << "yafaray_addInstanceObject(yi, " << instance_id << ", \"" << base_object_name << "\");\n"; //FIXME Should I use the variable name "instance_id" for export instead?
 	++section_num_lines_;
@@ -297,7 +297,7 @@ bool ExportC::addInstanceObject(size_t instance_id, std::string &&base_object_na
 	return true;
 }
 
-bool ExportC::addInstanceOfInstance(size_t instance_id, size_t base_instance_id) noexcept
+bool ExportC::addInstanceOfInstance(int instance_id, size_t base_instance_id) noexcept
 {
 	file_ << "\t" << "yafaray_addInstanceOfInstance(yi, " << instance_id << ", " << base_instance_id << ");\n"; //FIXME Should I use the variable name "instance_id" for export instead?
 	++section_num_lines_;
@@ -305,7 +305,7 @@ bool ExportC::addInstanceOfInstance(size_t instance_id, size_t base_instance_id)
 	return true;
 }
 
-bool ExportC::addInstanceMatrix(size_t instance_id, Matrix4 &&obj_to_world, float time) noexcept
+bool ExportC::addInstanceMatrix(int instance_id, Matrix4 &&obj_to_world, float time) noexcept
 {
 	file_ << "\t" << "yafaray_addInstanceMatrix(yi, " << instance_id << ", "; //FIXME Should I use the variable name "instance_id" for export instead?
 	writeMatrix(obj_to_world, file_);

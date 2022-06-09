@@ -31,9 +31,6 @@ extern "C" {
 	typedef struct yafaray_Interface yafaray_Interface_t;
 	typedef struct yafaray_Image yafaray_Image_t;
 
-	/* Index type, 32 bit only, ANSI C89/90 does not allow to define exactly 64 bit integers */
-	typedef unsigned int yafaray_index_t;
-
 	/* Basic enums */
 	typedef enum { YAFARAY_LOG_LEVEL_MUTE = 0, YAFARAY_LOG_LEVEL_ERROR, YAFARAY_LOG_LEVEL_WARNING, YAFARAY_LOG_LEVEL_PARAMS, YAFARAY_LOG_LEVEL_INFO, YAFARAY_LOG_LEVEL_VERBOSE, YAFARAY_LOG_LEVEL_DEBUG } yafaray_LogLevel_t;
 	typedef enum { YAFARAY_DISPLAY_CONSOLE_HIDDEN, YAFARAY_DISPLAY_CONSOLE_NORMAL } yafaray_DisplayConsole_t;
@@ -75,11 +72,11 @@ extern "C" {
 	YAFARAY_C_API_EXPORT yafaray_bool_t yafaray_addQuadWithUv(yafaray_Interface_t *interface, int a, int b, int c, int d, int uv_a, int uv_b, int uv_c, int uv_d);
 	YAFARAY_C_API_EXPORT int yafaray_addUv(yafaray_Interface_t *interface, float u, float v);
 	YAFARAY_C_API_EXPORT yafaray_bool_t yafaray_smoothMesh(yafaray_Interface_t *interface, const char *name, double angle);
-	YAFARAY_C_API_EXPORT yafaray_index_t yafaray_createInstance(yafaray_Interface_t *interface);
-	YAFARAY_C_API_EXPORT yafaray_bool_t yafaray_addInstanceObject(yafaray_Interface_t *interface, yafaray_index_t instance_id, const char *base_object_name);
-	YAFARAY_C_API_EXPORT yafaray_bool_t yafaray_addInstanceOfInstance(yafaray_Interface_t *interface, yafaray_index_t instance_id, yafaray_index_t base_instance_id);
-	YAFARAY_C_API_EXPORT yafaray_bool_t yafaray_addInstanceMatrix(yafaray_Interface_t *interface, yafaray_index_t instance_id, float m_00, float m_01, float m_02, float m_03, float m_10, float m_11, float m_12, float m_13, float m_20, float m_21, float m_22, float m_23, float m_30, float m_31, float m_32, float m_33, float time);
-	YAFARAY_C_API_EXPORT yafaray_bool_t yafaray_addInstanceMatrixArray(yafaray_Interface_t *interface, yafaray_index_t instance_id, const float *obj_to_world, float time);
+	YAFARAY_C_API_EXPORT int yafaray_createInstance(yafaray_Interface_t *interface);
+	YAFARAY_C_API_EXPORT yafaray_bool_t yafaray_addInstanceObject(yafaray_Interface_t *interface, int instance_id, const char *base_object_name);
+	YAFARAY_C_API_EXPORT yafaray_bool_t yafaray_addInstanceOfInstance(yafaray_Interface_t *interface, int instance_id, int base_instance_id);
+	YAFARAY_C_API_EXPORT yafaray_bool_t yafaray_addInstanceMatrix(yafaray_Interface_t *interface, int instance_id, float m_00, float m_01, float m_02, float m_03, float m_10, float m_11, float m_12, float m_13, float m_20, float m_21, float m_22, float m_23, float m_30, float m_31, float m_32, float m_33, float time);
+	YAFARAY_C_API_EXPORT yafaray_bool_t yafaray_addInstanceMatrixArray(yafaray_Interface_t *interface, int instance_id, const float *obj_to_world, float time);
 	YAFARAY_C_API_EXPORT void yafaray_paramsSetVector(yafaray_Interface_t *interface, const char *name, double x, double y, double z);
 	YAFARAY_C_API_EXPORT void yafaray_paramsSetString(yafaray_Interface_t *interface, const char *name, const char *s);
 	YAFARAY_C_API_EXPORT void yafaray_paramsSetBool(yafaray_Interface_t *interface, const char *name, yafaray_bool_t b);

@@ -42,10 +42,10 @@ class ExportPython: public Interface
 		bool endGeometry() noexcept override;
 		unsigned int getNextFreeId() noexcept override;
 		bool endObject() noexcept override;
-		size_t createInstance() noexcept override;
-		bool addInstanceObject(size_t instance_id, std::string &&base_object_name) noexcept override;
-		bool addInstanceOfInstance(size_t instance_id, size_t base_instance_id) noexcept override;
-		bool addInstanceMatrix(size_t instance_id, Matrix4 &&obj_to_world, float time) noexcept override;
+		int createInstance() noexcept override;
+		bool addInstanceObject(int instance_id, std::string &&base_object_name) noexcept override;
+		bool addInstanceOfInstance(int instance_id, size_t base_instance_id) noexcept override;
+		bool addInstanceMatrix(int instance_id, Matrix4 &&obj_to_world, float time) noexcept override;
 		int addVertex(Point3 &&vertex, size_t time_step) noexcept override; //!< add vertex to mesh; returns index to be used for addTriangle/addQuad
 		int addVertex(Point3 &&vertex, Point3 &&orco, size_t time_step) noexcept override; //!< add vertex with Orco to mesh; returns index to be used for addTriangle/addQuad
 		void addVertexNormal(Vec3 &&normal, size_t time_step) noexcept override; //!< add vertex normal to mesh; the vertex that will be attached to is the last one inserted by addVertex method
@@ -78,7 +78,7 @@ class ExportPython: public Interface
 		std::ofstream file_;
 		std::string file_name_;
 		std::string current_material_;
-		size_t current_instance_id_ = 0;
+		int current_instance_id_ = 0;
 		int n_uvs_ = 0;
 		unsigned int next_obj_ = 0;
 		float gamma_ = 1.f;

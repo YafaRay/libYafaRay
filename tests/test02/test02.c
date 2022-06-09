@@ -5031,7 +5031,7 @@ int main()
 		for(loop_y = y_start; loop_y < y_end; loop_y += instances_distance)
 			for(loop_z = z_start; loop_z < z_end; loop_z += instances_distance)
 			{
-				const yafaray_index_t instance_id = yafaray_createInstance(yi);
+				const int instance_id = yafaray_createInstance(yi);
 				yafaray_addInstanceObject(yi, instance_id, "Cube");
 				yafaray_addInstanceMatrix(yi, instance_id, instances_scale, 0.f, 0.f, loop_x, 0.f, instances_scale, 0.f, loop_y, 0.f, 0.f, instances_scale, loop_z, 0.f, 0.f, 0.f, 1.f, 0.f);
 			}
@@ -5042,7 +5042,7 @@ int main()
 		for(loop_y = y_start; loop_y < y_end; loop_y += instances_distance)
 			for(loop_z = z_start; loop_z < z_end; loop_z += instances_distance)
 			{
-				const yafaray_index_t instance_id = yafaray_createInstance(yi);
+				const int instance_id = yafaray_createInstance(yi);
 				yafaray_addInstanceObject(yi, instance_id, "Sphere");
 				yafaray_addInstanceMatrix(yi, instance_id, instances_scale, 0.f, 0.f, loop_x, 0.f, instances_scale, 0.f, loop_y, 0.f, 0.f, instances_scale, loop_z, 0.f, 0.f, 0.f, 1.f, 0.f);
 			}

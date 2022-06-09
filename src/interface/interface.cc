@@ -108,22 +108,22 @@ int Interface::addUv(Uv &&uv) noexcept { return scene_->addUv(std::move(uv)); }
 
 bool Interface::smoothVerticesNormals(std::string &&name, double angle) noexcept { return scene_->smoothVerticesNormals(std::move(name), angle); }
 
-size_t Interface::createInstance() noexcept
+int Interface::createInstance() noexcept
 {
 	return scene_->createInstance();
 }
 
-bool Interface::addInstanceObject(size_t instance_id, std::string &&base_object_name) noexcept
+bool Interface::addInstanceObject(int instance_id, std::string &&base_object_name) noexcept
 {
 	return scene_->addInstanceObject(instance_id, std::move(base_object_name));
 }
 
-bool Interface::addInstanceOfInstance(size_t instance_id, size_t base_instance_id) noexcept
+bool Interface::addInstanceOfInstance(int instance_id, size_t base_instance_id) noexcept
 {
 	return scene_->addInstanceOfInstance(instance_id, base_instance_id);
 }
 
-bool Interface::addInstanceMatrix(size_t instance_id, Matrix4 &&obj_to_world, float time) noexcept
+bool Interface::addInstanceMatrix(int instance_id, Matrix4 &&obj_to_world, float time) noexcept
 {
 	return scene_->addInstanceMatrix(instance_id, std::move(obj_to_world), time);
 }

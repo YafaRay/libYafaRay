@@ -1005,13 +1005,13 @@ Object *Scene::getObject(const std::string &name) const
 	else return nullptr;
 }
 
-size_t Scene::createInstance()
+int Scene::createInstance()
 {
 	instances_.emplace_back(std::make_unique<ObjectInstance>());
-	return instances_.size() - 1;
+	return static_cast<int>(instances_.size()) - 1;
 }
 
-bool Scene::addInstanceObject(size_t instance_id, std::string &&base_object_name)
+bool Scene::addInstanceObject(int instance_id, std::string &&base_object_name)
 {
 	const Object *object = getObject(base_object_name);
 	if(!object) return false;
@@ -1022,7 +1022,7 @@ bool Scene::addInstanceObject(size_t instance_id, std::string &&base_object_name
 	}
 }
 
-bool Scene::addInstanceOfInstance(size_t instance_id, size_t base_instance_id)
+bool Scene::addInstanceOfInstance(int instance_id, size_t base_instance_id)
 {
 	const Object *object = instances_[base_instance_id].get();
 	if(!object) return false;
@@ -1033,7 +1033,7 @@ bool Scene::addInstanceOfInstance(size_t instance_id, size_t base_instance_id)
 	}
 }
 
-bool Scene::addInstanceMatrix(size_t instance_id, Matrix4 &&obj_to_world, float time)
+bool Scene::addInstanceMatrix(int instance_id, Matrix4 &&obj_to_world, float time)
 {
 	instances_[instance_id]->addObjToWorldMatrix(std::move(obj_to_world), time);
 	return true;

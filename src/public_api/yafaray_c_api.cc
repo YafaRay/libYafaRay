@@ -134,27 +134,27 @@ yafaray_bool_t yafaray_smoothMesh(yafaray_Interface_t *interface, const char *na
 	return static_cast<yafaray_bool_t>(reinterpret_cast<yafaray::Interface *>(interface)->smoothVerticesNormals(name, angle));
 }
 
-yafaray_index_t yafaray_createInstance(yafaray_Interface_t *interface)
+int yafaray_createInstance(yafaray_Interface_t *interface)
 {
-	return static_cast<yafaray_index_t>(reinterpret_cast<yafaray::Interface *>(interface)->createInstance());
+	return reinterpret_cast<yafaray::Interface *>(interface)->createInstance();
 }
 
-yafaray_bool_t yafaray_addInstanceObject(yafaray_Interface_t *interface, yafaray_index_t instance_id, const char *base_object_name)
+yafaray_bool_t yafaray_addInstanceObject(yafaray_Interface_t *interface, int instance_id, const char *base_object_name)
 {
 	return static_cast<yafaray_bool_t>(reinterpret_cast<yafaray::Interface *>(interface)->addInstanceObject(static_cast<size_t>(instance_id), base_object_name));
 }
 
-yafaray_bool_t yafaray_addInstanceOfInstance(yafaray_Interface_t *interface, yafaray_index_t instance_id, yafaray_index_t base_instance_id)
+yafaray_bool_t yafaray_addInstanceOfInstance(yafaray_Interface_t *interface, int instance_id, int base_instance_id)
 {
 	return static_cast<yafaray_bool_t>(reinterpret_cast<yafaray::Interface *>(interface)->addInstanceOfInstance(static_cast<size_t>(instance_id), static_cast<size_t>(base_instance_id)));
 }
 
-yafaray_bool_t yafaray_addInstanceMatrix(yafaray_Interface_t *interface, yafaray_index_t instance_id, float m_00, float m_01, float m_02, float m_03, float m_10, float m_11, float m_12, float m_13, float m_20, float m_21, float m_22, float m_23, float m_30, float m_31, float m_32, float m_33, float time)
+yafaray_bool_t yafaray_addInstanceMatrix(yafaray_Interface_t *interface, int instance_id, float m_00, float m_01, float m_02, float m_03, float m_10, float m_11, float m_12, float m_13, float m_20, float m_21, float m_22, float m_23, float m_30, float m_31, float m_32, float m_33, float time)
 {
 	return static_cast<yafaray_bool_t>(reinterpret_cast<yafaray::Interface *>(interface)->addInstanceMatrix(static_cast<size_t>(instance_id), yafaray::Matrix4{std::array<std::array<float, 4>, 4>{{{m_00, m_01, m_02, m_03}, {m_10, m_11, m_12, m_13}, {m_20, m_21, m_22, m_23}, {m_30, m_31, m_32, m_33}}}}, time));
 }
 
-yafaray_bool_t yafaray_addInstanceMatrixArray(yafaray_Interface_t *interface, yafaray_index_t instance_id, const float *obj_to_world, float time)
+yafaray_bool_t yafaray_addInstanceMatrixArray(yafaray_Interface_t *interface, int instance_id, const float *obj_to_world, float time)
 {
 	return static_cast<yafaray_bool_t>(reinterpret_cast<yafaray::Interface *>(interface)->addInstanceMatrix(static_cast<size_t>(instance_id), yafaray::Matrix4{obj_to_world}, time));
 }

@@ -264,7 +264,7 @@ int main()
 	yafaray_paramsClearAll(yi);
 
 	/* Creating regular instance */
-	yafaray_index_t instance_id = yafaray_createInstance(yi);
+	int instance_id = yafaray_createInstance(yi);
 	yafaray_addInstanceObject(yi, instance_id, "Cube_TGA");
 	yafaray_addInstanceMatrix(yi, instance_id, 0.5f, 0.f, 0.f, 0.f, 0.f, 0.5f, 0.f, 0.f, 0.f, 0.f, 0.5f, 2.5f, 0.f, 0.f, 0.f, 1.f, 0.f);
 

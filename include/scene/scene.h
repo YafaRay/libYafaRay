@@ -79,10 +79,10 @@ class Scene final
 		bool smoothVerticesNormals(std::string &&name, float angle);
 		Object *createObject(std::string &&name, ParamMap &&params);
 		bool endObject();
-		size_t createInstance();
-		bool addInstanceObject(size_t instance_id, std::string &&base_object_name);
-		bool addInstanceOfInstance(size_t instance_id, size_t base_instance_id);
-		bool addInstanceMatrix(size_t instance_id, Matrix4 &&obj_to_world, float time);
+		int createInstance();
+		bool addInstanceObject(int instance_id, std::string &&base_object_name);
+		bool addInstanceOfInstance(int instance_id, size_t base_instance_id);
+		bool addInstanceMatrix(int instance_id, Matrix4 &&obj_to_world, float time);
 		bool updateObjects();
 		Object *getObject(const std::string &name) const;
 		const Accelerator *getAccelerator() const { return accelerator_.get(); }
