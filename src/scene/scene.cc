@@ -933,7 +933,7 @@ bool Scene::smoothVerticesNormals(std::string &&name, float angle)
 	else return object->smoothVerticesNormals(logger_, angle);
 }
 
-int Scene::addVertex(Point3 &&p, size_t time_step)
+int Scene::addVertex(Point3 &&p, int time_step)
 {
 	//if(logger_.isDebug()) logger.logDebug("Scene::addVertex) PR(p");
 	if(creation_state_.stack_.front() != CreationState::Object) return -1;
@@ -941,7 +941,7 @@ int Scene::addVertex(Point3 &&p, size_t time_step)
 	return current_object_->lastVertexId(time_step);
 }
 
-int Scene::addVertex(Point3 &&p, Point3 &&orco, size_t time_step)
+int Scene::addVertex(Point3 &&p, Point3 &&orco, int time_step)
 {
 	if(creation_state_.stack_.front() != CreationState::Object) return -1;
 	current_object_->addPoint(std::move(p), time_step);
@@ -949,7 +949,7 @@ int Scene::addVertex(Point3 &&p, Point3 &&orco, size_t time_step)
 	return current_object_->lastVertexId(time_step);
 }
 
-void Scene::addVertexNormal(Vec3 &&n, size_t time_step)
+void Scene::addVertexNormal(Vec3 &&n, int time_step)
 {
 	if(creation_state_.stack_.front() != CreationState::Object) return;
 	current_object_->addVertexNormal(std::move(n), time_step);

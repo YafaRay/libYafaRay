@@ -130,7 +130,7 @@ std::vector<const Primitive *> MeshObject::getPrimitives() const
 	return primitives;
 }
 
-void MeshObject::addVertexNormal(Vec3 &&n, size_t time_step)
+void MeshObject::addVertexNormal(Vec3 &&n, int time_step)
 {
 	const size_t points_size = time_steps_[time_step].points_.size();
 	if(time_steps_[time_step].vertices_normals_.size() < points_size) time_steps_[time_step].vertices_normals_.reserve(points_size);
@@ -151,7 +151,7 @@ bool MeshObject::smoothVerticesNormals(Logger &logger, float angle)
 
 	if(angle >= 180)
 	{
-		for(size_t time_step = 0; time_step < numTimeSteps(); ++time_step)
+		for(int time_step = 0; time_step < numTimeSteps(); ++time_step)
 		{
 			for(auto &face : faces_)
 			{
@@ -169,7 +169,7 @@ bool MeshObject::smoothVerticesNormals(Logger &logger, float angle)
 	}
 	else if(angle > 0.1f) // angle dependant smoothing
 	{
-		for(size_t time_step = 0; time_step < numTimeSteps(); ++time_step)
+		for(int time_step = 0; time_step < numTimeSteps(); ++time_step)
 		{
 			const float angle_threshold = math::cos(math::degToRad(angle));
 			// create list of faces that include given vertex

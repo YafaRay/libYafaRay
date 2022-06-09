@@ -92,7 +92,7 @@ bool ExportPython::endObject() noexcept
 	return true;
 }
 
-int ExportPython::addVertex(Point3 &&vertex, size_t time_step) noexcept
+int ExportPython::addVertex(Point3 &&vertex, int time_step) noexcept
 {
 	file_ << "yi.addVertex(" << vertex.x() << ", " << vertex.y() << ", " << vertex.z();
 	if(time_step > 0) file_ << ", " << time_step;
@@ -100,7 +100,7 @@ int ExportPython::addVertex(Point3 &&vertex, size_t time_step) noexcept
 	return 0;
 }
 
-int ExportPython::addVertex(Point3 &&vertex, Point3 &&orco, size_t time_step) noexcept
+int ExportPython::addVertex(Point3 &&vertex, Point3 &&orco, int time_step) noexcept
 {
 	file_ << "yi.addVertexWithOrco(" << vertex.x() << ", " << vertex.y() << ", " << vertex.z() << ", " << orco.x() << ", " << orco.y() << ", " << orco.z();
 	if(time_step > 0) file_ << ", " << time_step;
@@ -108,7 +108,7 @@ int ExportPython::addVertex(Point3 &&vertex, Point3 &&orco, size_t time_step) no
 	return 0;
 }
 
-void ExportPython::addVertexNormal(Vec3 &&normal, size_t time_step) noexcept
+void ExportPython::addVertexNormal(Vec3 &&normal, int time_step) noexcept
 {
 	file_ << "yi.addNormal(" << normal.x() << ", " << normal.y() << ", " << normal.z();
 	if(time_step > 0) file_ << ", " << time_step;

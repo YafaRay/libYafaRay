@@ -87,14 +87,14 @@ unsigned int Interface::getNextFreeId() noexcept
 
 bool Interface::endObject() noexcept { return scene_->endObject(); }
 
-int Interface::addVertex(Point3 &&vertex, size_t time_step) noexcept { return scene_->addVertex(std::move(vertex), time_step); }
+int Interface::addVertex(Point3 &&vertex, int time_step) noexcept { return scene_->addVertex(std::move(vertex), time_step); }
 
-int Interface::addVertex(Point3 &&vertex, Point3 &&orco, size_t time_step) noexcept
+int Interface::addVertex(Point3 &&vertex, Point3 &&orco, int time_step) noexcept
 {
 	return scene_->addVertex(std::move(vertex), std::move(orco), time_step);
 }
 
-void Interface::addVertexNormal(Vec3 &&normal, size_t time_step) noexcept
+void Interface::addVertexNormal(Vec3 &&normal, int time_step) noexcept
 {
 	scene_->addVertexNormal(std::move(normal), time_step);
 }

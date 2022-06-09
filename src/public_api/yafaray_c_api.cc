@@ -74,34 +74,34 @@ yafaray_bool_t yafaray_endObject(yafaray_Interface_t *interface) //!< end curren
 	return static_cast<yafaray_bool_t>(reinterpret_cast<yafaray::Interface *>(interface)->endObject());
 }
 
-int  yafaray_addVertex(yafaray_Interface_t *interface, double x, double y, double z) //!< add vertex to mesh; returns index to be used for addTriangle/addQuad
+int  yafaray_addVertex(yafaray_Interface_t *interface, float x, float y, float z) //!< add vertex to mesh; returns index to be used for addTriangle/addQuad
 {
-	return reinterpret_cast<yafaray::Interface *>(interface)->addVertex({static_cast<float>(x), static_cast<float>(y), static_cast<float>(z)}, 0);
+	return reinterpret_cast<yafaray::Interface *>(interface)->addVertex({x, y, z}, 0);
 }
 
-int  yafaray_addVertexTimeStep(yafaray_Interface_t *interface, double x, double y, double z, unsigned int time_step) //!< add vertex to mesh; returns index to be used for addTriangle/addQuad
+int  yafaray_addVertexTimeStep(yafaray_Interface_t *interface, float x, float y, float z, int time_step) //!< add vertex to mesh; returns index to be used for addTriangle/addQuad
 {
-	return reinterpret_cast<yafaray::Interface *>(interface)->addVertex({static_cast<float>(x), static_cast<float>(y), static_cast<float>(z)}, time_step);
+	return reinterpret_cast<yafaray::Interface *>(interface)->addVertex({x, y, z}, time_step);
 }
 
-int  yafaray_addVertexWithOrco(yafaray_Interface_t *interface, double x, double y, double z, double ox, double oy, double oz) //!< add vertex with Orco to mesh; returns index to be used for addTriangle/addQuad
+int  yafaray_addVertexWithOrco(yafaray_Interface_t *interface, float x, float y, float z, float ox, float oy, float oz) //!< add vertex with Orco to mesh; returns index to be used for addTriangle/addQuad
 {
-	return reinterpret_cast<yafaray::Interface *>(interface)->addVertex({static_cast<float>(x), static_cast<float>(y), static_cast<float>(z)}, {static_cast<float>(ox), static_cast<float>(oy), static_cast<float>(oz)}, 0);
+	return reinterpret_cast<yafaray::Interface *>(interface)->addVertex({x, y, z}, {ox, oy, oz}, 0);
 }
 
-int  yafaray_addVertexWithOrcoTimeStep(yafaray_Interface_t *interface, double x, double y, double z, double ox, double oy, double oz, unsigned int time_step) //!< add vertex with Orco to mesh; returns index to be used for addTriangle/addQuad
+int  yafaray_addVertexWithOrcoTimeStep(yafaray_Interface_t *interface, float x, float y, float z, float ox, float oy, float oz, int time_step) //!< add vertex with Orco to mesh; returns index to be used for addTriangle/addQuad
 {
-	return reinterpret_cast<yafaray::Interface *>(interface)->addVertex({static_cast<float>(x), static_cast<float>(y), static_cast<float>(z)}, {static_cast<float>(ox), static_cast<float>(oy), static_cast<float>(oz)}, time_step);
+	return reinterpret_cast<yafaray::Interface *>(interface)->addVertex({x, y, z}, {ox, oy, oz}, time_step);
 }
 
-void yafaray_addNormal(yafaray_Interface_t *interface, double nx, double ny, double nz) //!< add vertex normal to mesh; the vertex that will be attached to is the last one inserted by addVertex method
+void yafaray_addNormal(yafaray_Interface_t *interface, float nx, float ny, float nz) //!< add vertex normal to mesh; the vertex that will be attached to is the last one inserted by addVertex method
 {
-	reinterpret_cast<yafaray::Interface *>(interface)->addVertexNormal({static_cast<float>(nx), static_cast<float>(ny), static_cast<float>(nz)}, 0);
+	reinterpret_cast<yafaray::Interface *>(interface)->addVertexNormal({nx, ny, nz}, 0);
 }
 
-void yafaray_addNormalTimeStep(yafaray_Interface_t *interface, double nx, double ny, double nz, unsigned int time_step) //!< add vertex normal to mesh; the vertex that will be attached to is the last one inserted by addVertex method
+void yafaray_addNormalTimeStep(yafaray_Interface_t *interface, float nx, float ny, float nz, int time_step) //!< add vertex normal to mesh; the vertex that will be attached to is the last one inserted by addVertex method
 {
-	reinterpret_cast<yafaray::Interface *>(interface)->addVertexNormal({static_cast<float>(nx), static_cast<float>(ny), static_cast<float>(nz)}, time_step);
+	reinterpret_cast<yafaray::Interface *>(interface)->addVertexNormal({nx, ny, nz}, time_step);
 }
 
 yafaray_bool_t yafaray_addTriangle(yafaray_Interface_t *interface, int a, int b, int c)
@@ -129,7 +129,7 @@ int yafaray_addUv(yafaray_Interface_t *interface, float u, float v) //!< add a U
 	return reinterpret_cast<yafaray::Interface *>(interface)->addUv({u, v});
 }
 
-yafaray_bool_t yafaray_smoothMesh(yafaray_Interface_t *interface, const char *name, double angle) //!< smooth vertex normals of mesh with given ID and angle (in degrees)
+yafaray_bool_t yafaray_smoothMesh(yafaray_Interface_t *interface, const char *name, float angle) //!< smooth vertex normals of mesh with given ID and angle (in degrees)
 {
 	return static_cast<yafaray_bool_t>(reinterpret_cast<yafaray::Interface *>(interface)->smoothVerticesNormals(name, angle));
 }
@@ -141,27 +141,27 @@ int yafaray_createInstance(yafaray_Interface_t *interface)
 
 yafaray_bool_t yafaray_addInstanceObject(yafaray_Interface_t *interface, int instance_id, const char *base_object_name)
 {
-	return static_cast<yafaray_bool_t>(reinterpret_cast<yafaray::Interface *>(interface)->addInstanceObject(static_cast<size_t>(instance_id), base_object_name));
+	return static_cast<yafaray_bool_t>(reinterpret_cast<yafaray::Interface *>(interface)->addInstanceObject(instance_id, base_object_name));
 }
 
 yafaray_bool_t yafaray_addInstanceOfInstance(yafaray_Interface_t *interface, int instance_id, int base_instance_id)
 {
-	return static_cast<yafaray_bool_t>(reinterpret_cast<yafaray::Interface *>(interface)->addInstanceOfInstance(static_cast<size_t>(instance_id), static_cast<size_t>(base_instance_id)));
+	return static_cast<yafaray_bool_t>(reinterpret_cast<yafaray::Interface *>(interface)->addInstanceOfInstance(instance_id, base_instance_id));
 }
 
 yafaray_bool_t yafaray_addInstanceMatrix(yafaray_Interface_t *interface, int instance_id, float m_00, float m_01, float m_02, float m_03, float m_10, float m_11, float m_12, float m_13, float m_20, float m_21, float m_22, float m_23, float m_30, float m_31, float m_32, float m_33, float time)
 {
-	return static_cast<yafaray_bool_t>(reinterpret_cast<yafaray::Interface *>(interface)->addInstanceMatrix(static_cast<size_t>(instance_id), yafaray::Matrix4{std::array<std::array<float, 4>, 4>{{{m_00, m_01, m_02, m_03}, {m_10, m_11, m_12, m_13}, {m_20, m_21, m_22, m_23}, {m_30, m_31, m_32, m_33}}}}, time));
+	return static_cast<yafaray_bool_t>(reinterpret_cast<yafaray::Interface *>(interface)->addInstanceMatrix(instance_id, yafaray::Matrix4{std::array<std::array<float, 4>, 4>{{{m_00, m_01, m_02, m_03}, {m_10, m_11, m_12, m_13}, {m_20, m_21, m_22, m_23}, {m_30, m_31, m_32, m_33}}}}, time));
 }
 
 yafaray_bool_t yafaray_addInstanceMatrixArray(yafaray_Interface_t *interface, int instance_id, const float *obj_to_world, float time)
 {
-	return static_cast<yafaray_bool_t>(reinterpret_cast<yafaray::Interface *>(interface)->addInstanceMatrix(static_cast<size_t>(instance_id), yafaray::Matrix4{obj_to_world}, time));
+	return static_cast<yafaray_bool_t>(reinterpret_cast<yafaray::Interface *>(interface)->addInstanceMatrix(instance_id, yafaray::Matrix4{obj_to_world}, time));
 }
 
-void yafaray_paramsSetVector(yafaray_Interface_t *interface, const char *name, double x, double y, double z)
+void yafaray_paramsSetVector(yafaray_Interface_t *interface, const char *name, float x, float y, float z)
 {
-	reinterpret_cast<yafaray::Interface *>(interface)->paramsSetVector(name, {static_cast<float>(x), static_cast<float>(y), static_cast<float>(z)});
+	reinterpret_cast<yafaray::Interface *>(interface)->paramsSetVector(name, {x, y, z});
 }
 
 void yafaray_paramsSetString(yafaray_Interface_t *interface, const char *name, const char *s)
@@ -179,7 +179,7 @@ void yafaray_paramsSetInt(yafaray_Interface_t *interface, const char *name, int 
 	reinterpret_cast<yafaray::Interface *>(interface)->paramsSetInt(name, i);
 }
 
-void yafaray_paramsSetFloat(yafaray_Interface_t *interface, const char *name, double f)
+void yafaray_paramsSetFloat(yafaray_Interface_t *interface, const char *name, float f)
 {
 	reinterpret_cast<yafaray::Interface *>(interface)->paramsSetFloat(name, f);
 }
@@ -407,8 +407,7 @@ yafaray_bool_t yafaray_setImageColor(yafaray_Image_t *image, int x, int y, float
 {
 	auto *yaf_image = reinterpret_cast<yafaray::Image *>(image);
 	if(!yaf_image) return YAFARAY_BOOL_FALSE;
-	if(x < 0 || x >= yaf_image->getWidth()) return YAFARAY_BOOL_FALSE;
-	else if(y < 0 || y >= yaf_image->getHeight()) return YAFARAY_BOOL_FALSE;
+	if(x < 0 || x >= yaf_image->getWidth() || y < 0 || y >= yaf_image->getHeight()) return YAFARAY_BOOL_FALSE;
 	yaf_image->setColor(x, y, {red, green, blue, alpha});
 	return YAFARAY_BOOL_TRUE;
 }
@@ -417,8 +416,7 @@ yafaray_bool_t yafaray_getImageColor(const yafaray_Image_t *image, int x, int y,
 {
 	const auto *yaf_image = reinterpret_cast<const yafaray::Image *>(image);
 	if(!yaf_image) return YAFARAY_BOOL_FALSE;
-	if(x < 0 || x >= yaf_image->getWidth()) return YAFARAY_BOOL_FALSE;
-	else if(y < 0 || y >= yaf_image->getHeight()) return YAFARAY_BOOL_FALSE;
+	if(x < 0 || x >= yaf_image->getWidth() || y < 0 || y >= yaf_image->getHeight()) return YAFARAY_BOOL_FALSE;
 	const yafaray::Rgba color = yaf_image->getColor(x, y);
 	*red = color.r_;
 	*green = color.g_;

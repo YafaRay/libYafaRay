@@ -138,7 +138,7 @@ bool ExportC::endObject() noexcept
 	return true;
 }
 
-int ExportC::addVertex(Point3 &&vertex, size_t time_step) noexcept
+int ExportC::addVertex(Point3 &&vertex, int time_step) noexcept
 {
 	file_ << "\t" << "yafaray_addVertex(yi, " << vertex.x() << ", " << vertex.y() << ", " << vertex.z();
 	if(time_step > 0) file_ << ", " << time_step;
@@ -148,7 +148,7 @@ int ExportC::addVertex(Point3 &&vertex, size_t time_step) noexcept
 	return 0;
 }
 
-int ExportC::addVertex(Point3 &&vertex, Point3 &&orco, size_t time_step) noexcept
+int ExportC::addVertex(Point3 &&vertex, Point3 &&orco, int time_step) noexcept
 {
 	file_ << "\t" << "yafaray_addVertexWithOrco(yi, " << vertex.x() << ", " << vertex.y() << ", " << vertex.z() << ", " << orco.x() << ", " << orco.y() << ", " << orco.z();
 	if(time_step > 0) file_ << ", " << time_step;
@@ -158,7 +158,7 @@ int ExportC::addVertex(Point3 &&vertex, Point3 &&orco, size_t time_step) noexcep
 	return 0;
 }
 
-void ExportC::addVertexNormal(Vec3 &&normal, size_t time_step) noexcept
+void ExportC::addVertexNormal(Vec3 &&normal, int time_step) noexcept
 {
 	file_ << "\t" << "yafaray_addNormal(yi, " << normal.x() << ", " << normal.y() << ", " << normal.z();
 	if(time_step > 0) file_ << ", " << time_step;

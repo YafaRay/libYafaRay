@@ -37,9 +37,9 @@ class FacePrimitive: public Primitive
 		FacePrimitive(std::vector<int> &&vertices_indices, std::vector<int> &&vertices_uv_indices, const MeshObject &mesh_object);
 		//In the following functions "vertex_number" is the vertex number in the face: 0, 1, 2 in triangles, 0, 1, 2, 3 in quads, etc
 		const Material *getMaterial() const override { return material_->get(); }
-		Point3 getOrcoVertex(size_t vertex_number, size_t time_step) const; //!< Get face original coordinates (orco) vertex in instance objects
-		Vec3 getVertexNormal(size_t vertex_number, const Vec3 &surface_normal_world, size_t time_step) const; //!< Get face vertex normal
-		Vec3 getVertexNormal(size_t vertex_number, const Vec3 &surface_normal_world, const Matrix4 &obj_to_world, size_t time_step) const; //!< Get face vertex normal
+		Point3 getOrcoVertex(size_t vertex_number, int time_step) const; //!< Get face original coordinates (orco) vertex in instance objects
+		Vec3 getVertexNormal(size_t vertex_number, const Vec3 &surface_normal_world, int time_step) const; //!< Get face vertex normal
+		Vec3 getVertexNormal(size_t vertex_number, const Vec3 &surface_normal_world, const Matrix4 &obj_to_world, int time_step) const; //!< Get face vertex normal
 		Uv getVertexUv(size_t vertex_number) const; //!< Get face vertex Uv
 		void generateInitialVerticesNormalsIndices() { vertices_normals_ = vertices_; }
 		void setVerticesNormalsIndices(std::vector<int> &&vertices_normals_indices) { vertices_normals_ = std::move(vertices_normals_indices); }
@@ -48,17 +48,17 @@ class FacePrimitive: public Primitive
 		const std::vector<int> &getVerticesNormalsIndices() const { return vertices_normals_; }
 		const std::vector<int> &getUvIndices() const { return vertex_uvs_; }
 		size_t numVertices() const { return vertices_.size(); }
-		std::vector<Point3> getVertices(size_t time_step) const;
-		std::vector<Point3> getVertices(const Matrix4 &obj_to_world, size_t time_step) const;
-		std::vector<Point3> getOrcoVertices(size_t time_step) const;
-		std::vector<Vec3> getVerticesNormals(const Vec3 &surface_normal, size_t time_step) const;
+		std::vector<Point3> getVertices(int time_step) const;
+		std::vector<Point3> getVertices(const Matrix4 &obj_to_world, int time_step) const;
+		std::vector<Point3> getOrcoVertices(int time_step) const;
+		std::vector<Vec3> getVerticesNormals(const Vec3 &surface_normal, int time_step) const;
 		std::vector<Uv> getVerticesUvs() const;
 		void setMaterial(const std::unique_ptr<const Material> *material) { material_ = material; }
 		static Bound getBound(const std::vector<Point3> &vertices);
 		const Object *getObject() const override { return &base_mesh_object_; }
 		Visibility getVisibility() const override { return base_mesh_object_.getVisibility(); }
-		Point3 getVertex(size_t vertex_number, const Matrix4 &obj_to_world, size_t time_step) const;
-		Point3 getVertex(size_t vertex_number, size_t time_step) const;
+		Point3 getVertex(size_t vertex_number, const Matrix4 &obj_to_world, int time_step) const;
+		Point3 getVertex(size_t vertex_number, int time_step) const;
 		Point3 getVertexAtTime(size_t vertex_number, float time) const;
 		Point3 getVertex(size_t vertex_number, const std::array<float, 3> &bezier_factors) const;
 		Point3 getVertex(size_t vertex_number, const Matrix4 &obj_to_world, const std::array<float, 3> &bezier_factors) const;
@@ -82,12 +82,12 @@ inline FacePrimitive::FacePrimitive(std::vector<int> &&vertices_indices, std::ve
 {
 }
 
-inline Point3 FacePrimitive::getVertex(size_t vertex_number, size_t time_step) const
+inline Point3 FacePrimitive::getVertex(size_t vertex_number, int time_step) const
 {
 	return base_mesh_object_.getVertex(vertices_[vertex_number], time_step);
 }
 
-inline Point3 FacePrimitive::getVertex(size_t vertex_number, const Matrix4 &obj_to_world, size_t time_step) const
+inline Point3 FacePrimitive::getVertex(size_t vertex_number, const Matrix4 &obj_to_world, int time_step) const
 {
 	return obj_to_world * getVertex(vertex_number, time_step);
 }
@@ -109,19 +109,19 @@ inline Point3 FacePrimitive::getVertexAtTime(size_t vertex_number, float time) c
 	return getVertex(vertex_number, bezier_factors);
 }
 
-inline Point3 FacePrimitive::getOrcoVertex(size_t vertex_number, size_t time_step) const
+inline Point3 FacePrimitive::getOrcoVertex(size_t vertex_number, int time_step) const
 {
 	if(base_mesh_object_.hasOrco(time_step)) return base_mesh_object_.getOrcoVertex(vertices_[vertex_number], time_step);
 	else return getVertex(0, vertex_number);
 }
 
-inline Vec3 FacePrimitive::getVertexNormal(size_t vertex_number, const Vec3 &surface_normal_world, size_t time_step) const
+inline Vec3 FacePrimitive::getVertexNormal(size_t vertex_number, const Vec3 &surface_normal_world, int time_step) const
 {
 	if(vertices_normals_[vertex_number] >= 0) return base_mesh_object_.getVertexNormal(vertices_normals_[vertex_number], time_step);
 	else return surface_normal_world;
 }
 
-inline Vec3 FacePrimitive::getVertexNormal(size_t vertex_number, const Vec3 &surface_normal_world, const Matrix4 &obj_to_world, size_t time_step) const
+inline Vec3 FacePrimitive::getVertexNormal(size_t vertex_number, const Vec3 &surface_normal_world, const Matrix4 &obj_to_world, int time_step) const
 {
 	if(vertices_normals_[vertex_number] >= 0)
 	{
@@ -135,7 +135,7 @@ inline Uv FacePrimitive::getVertexUv(size_t vertex_number) const
 	return base_mesh_object_.getUvValues()[vertex_uvs_[vertex_number]];
 }
 
-inline std::vector<Point3> FacePrimitive::getVertices(size_t time_step) const
+inline std::vector<Point3> FacePrimitive::getVertices(int time_step) const
 {
 	const size_t num_vertices = vertices_.size();
 	std::vector<Point3> result;
@@ -147,7 +147,7 @@ inline std::vector<Point3> FacePrimitive::getVertices(size_t time_step) const
 	return result;
 }
 
-inline std::vector<Point3> FacePrimitive::getVertices(const Matrix4 &obj_to_world, size_t time_step) const
+inline std::vector<Point3> FacePrimitive::getVertices(const Matrix4 &obj_to_world, int time_step) const
 {
 	const size_t num_vertices = vertices_.size();
 	std::vector<Point3> result;
@@ -159,7 +159,7 @@ inline std::vector<Point3> FacePrimitive::getVertices(const Matrix4 &obj_to_worl
 	return result;
 }
 
-inline std::vector<Point3> FacePrimitive::getOrcoVertices(size_t time_step) const
+inline std::vector<Point3> FacePrimitive::getOrcoVertices(int time_step) const
 {
 	const size_t num_vertices = vertices_.size();
 	std::vector<Point3> result;
@@ -171,7 +171,7 @@ inline std::vector<Point3> FacePrimitive::getOrcoVertices(size_t time_step) cons
 	return result;
 }
 
-inline std::vector<Vec3> FacePrimitive::getVerticesNormals(const Vec3 &surface_normal, size_t time_step) const
+inline std::vector<Vec3> FacePrimitive::getVerticesNormals(const Vec3 &surface_normal, int time_step) const
 {
 	const size_t num_vertices = vertices_.size();
 	std::vector<Vec3> result;
@@ -218,7 +218,7 @@ inline Bound FacePrimitive::getBoundTimeSteps() const
 	vertices.reserve(numVertices() * base_mesh_object_.numTimeSteps());
 	for(size_t vertex_num = 0; vertex_num < numVertices(); ++vertex_num)
 	{
-		for(size_t time_step = 0; time_step < base_mesh_object_.numTimeSteps(); ++time_step)
+		for(int time_step = 0; time_step < base_mesh_object_.numTimeSteps(); ++time_step)
 		{
 			vertices.emplace_back(getVertex(vertex_num, time_step));
 		}
@@ -232,7 +232,7 @@ inline Bound FacePrimitive::getBoundTimeSteps(const Matrix4 &obj_to_world) const
 	vertices.reserve(numVertices() * base_mesh_object_.numTimeSteps());
 	for(size_t vertex_num = 0; vertex_num < numVertices(); ++vertex_num)
 	{
-		for(size_t time_step = 0; time_step < base_mesh_object_.numTimeSteps(); ++time_step)
+		for(int time_step = 0; time_step < base_mesh_object_.numTimeSteps(); ++time_step)
 		{
 			vertices.emplace_back(getVertex(vertex_num, obj_to_world, time_step));
 		}

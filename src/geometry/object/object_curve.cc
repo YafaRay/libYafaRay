@@ -69,7 +69,7 @@ CurveObject::CurveObject(int num_vertices, float strand_start, float strand_end,
 bool CurveObject::calculateObject(const std::unique_ptr<const Material> *material)
 {
 	const int points_size = MeshObject::numVertices(0);
-	for(size_t time_step = 0; time_step < numTimeSteps(); ++time_step)
+	for(int time_step = 0; time_step < numTimeSteps(); ++time_step)
 	{
 		const std::vector<Point3> &points = getPoints(time_step);
 		// Vertex extruding

@@ -72,15 +72,15 @@ class Object
 		bool calculateObject() { return calculateObject(nullptr); }
 
 		/* Mesh-related interface functions below, only for Mesh objects */
-		virtual int lastVertexId(size_t time_step) const { return -1; }
-		virtual void addPoint(Point3 &&p, size_t time_step) { }
-		virtual void addOrcoPoint(Point3 &&p, size_t time_step) { }
-		virtual void addVertexNormal(Vec3 &&n, size_t time_step) { }
+		virtual int lastVertexId(int time_step) const { return -1; }
+		virtual void addPoint(Point3 &&p, int time_step) { }
+		virtual void addOrcoPoint(Point3 &&p, int time_step) { }
+		virtual void addVertexNormal(Vec3 &&n, int time_step) { }
 		virtual void addFace(std::vector<int> &&vertices, std::vector<int> &&vertices_uv, const std::unique_ptr<const Material> *material) { }
 		virtual int addUvValue(Uv &&uv) { return -1; }
-		virtual bool hasVerticesNormals(size_t time_step) const { return false; }
-		virtual int numVerticesNormals(size_t time_step) const { return 0; }
-		virtual int numVertices(size_t time_step) const { return 0; }
+		virtual bool hasVerticesNormals(int time_step) const { return false; }
+		virtual int numVerticesNormals(int time_step) const { return 0; }
+		virtual int numVertices(int time_step) const { return 0; }
 		virtual void setSmooth(bool smooth) { }
 		virtual bool smoothVerticesNormals(Logger &logger, float angle) { return false; }
 		virtual bool hasMotionBlur() const { return false; }

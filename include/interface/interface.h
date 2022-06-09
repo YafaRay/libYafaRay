@@ -66,9 +66,9 @@ class Interface
 		virtual bool endGeometry() noexcept; //!< call after creating geometry;
 		virtual unsigned int getNextFreeId() noexcept;
 		virtual bool endObject() noexcept; //!< end current mesh and return to geometry state
-		virtual int addVertex(Point3 &&vertex, size_t time_step) noexcept; //!< add vertex to mesh; returns index to be used for addTriangle/addQuad
-		virtual int addVertex(Point3 &&vertex, Point3 &&orco, size_t time_step) noexcept; //!< add vertex with Orco to mesh; returns index to be used for addTriangle/addQuad
-		virtual void addVertexNormal(Vec3 &&normal, size_t time_step) noexcept; //!< add vertex normal to mesh; the vertex that will be attached to is the last one inserted by addVertex method
+		virtual int addVertex(Point3 &&vertex, int time_step) noexcept; //!< add vertex to mesh; returns index to be used for addTriangle/addQuad
+		virtual int addVertex(Point3 &&vertex, Point3 &&orco, int time_step) noexcept; //!< add vertex with Orco to mesh; returns index to be used for addTriangle/addQuad
+		virtual void addVertexNormal(Vec3 &&normal, int time_step) noexcept; //!< add vertex normal to mesh; the vertex that will be attached to is the last one inserted by addVertex method
 		virtual bool addFace(std::vector<int> &&vertices, std::vector<int> &&uv_indices) noexcept; //!< add a mesh face given vertex indices and optionally uv_indices
 		virtual int addUv(Uv &&uv) noexcept; //!< add a UV coordinate pair; returns index to be used for addTriangle/addQuad
 		virtual bool smoothVerticesNormals(std::string &&name, double angle) noexcept; //!< smooth vertex normals of mesh with given ID and angle (in degrees)

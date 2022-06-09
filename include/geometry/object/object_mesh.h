@@ -42,23 +42,23 @@ class MeshObject : public ObjectBase
 			that by definition can perform ray-triangle intersection */
 		int numPrimitives() const override { return static_cast<int>(faces_.size()); }
 		std::vector<const Primitive *> getPrimitives() const override;
-		int lastVertexId(size_t time_step) const override { return numVertices(time_step) - 1; }
-		Vec3 getVertexNormal(int index, size_t time_step) const { return time_steps_[time_step].vertices_normals_[index]; }
-		Point3 getVertex(int index, size_t time_step) const { return time_steps_[time_step].points_[index]; }
-		Point3 getOrcoVertex(int index, size_t time_step) const { return time_steps_[time_step].orco_points_[index]; }
-		int numVertices(size_t time_step) const override { return static_cast<int>(time_steps_[time_step].points_.size()); }
-		int numVerticesNormals(size_t time_step) const override { return static_cast<int>(time_steps_[time_step].vertices_normals_.size()); }
+		int lastVertexId(int time_step) const override { return numVertices(time_step) - 1; }
+		Vec3 getVertexNormal(int index, int time_step) const { return time_steps_[time_step].vertices_normals_[index]; }
+		Point3 getVertex(int index, int time_step) const { return time_steps_[time_step].points_[index]; }
+		Point3 getOrcoVertex(int index, int time_step) const { return time_steps_[time_step].orco_points_[index]; }
+		int numVertices(int time_step) const override { return static_cast<int>(time_steps_[time_step].points_.size()); }
+		int numVerticesNormals(int time_step) const override { return static_cast<int>(time_steps_[time_step].vertices_normals_.size()); }
 		void addFace(std::unique_ptr<FacePrimitive> &&face);
 		void addFace(std::vector<int> &&vertices, std::vector<int> &&vertices_uv, const std::unique_ptr<const Material> *material) override;
-		const std::vector<Point3> &getPoints(size_t time_step) const { return time_steps_[time_step].points_; }
+		const std::vector<Point3> &getPoints(int time_step) const { return time_steps_[time_step].points_; }
 		const std::vector<Uv> &getUvValues() const { return uv_values_; }
-		bool hasOrco(size_t time_step) const { return !time_steps_[time_step].orco_points_.empty(); }
+		bool hasOrco(int time_step) const { return !time_steps_[time_step].orco_points_.empty(); }
 		bool hasUv() const { return !uv_values_.empty(); }
 		bool isSmooth() const { return is_smooth_; }
-		bool hasVerticesNormals(size_t time_step) const override { return !time_steps_[time_step].vertices_normals_.empty(); }
-		void addPoint(Point3 &&p, size_t time_step) override { time_steps_[time_step].points_.emplace_back(p); }
-		void addOrcoPoint(Point3 &&p, size_t time_step) override { time_steps_[time_step].orco_points_.emplace_back(p); }
-		void addVertexNormal(Vec3 &&n, size_t time_step) override;
+		bool hasVerticesNormals(int time_step) const override { return !time_steps_[time_step].vertices_normals_.empty(); }
+		void addPoint(Point3 &&p, int time_step) override { time_steps_[time_step].points_.emplace_back(p); }
+		void addOrcoPoint(Point3 &&p, int time_step) override { time_steps_[time_step].orco_points_.emplace_back(p); }
+		void addVertexNormal(Vec3 &&n, int time_step) override;
 		int addUvValue(Uv &&uv) override { uv_values_.emplace_back(uv); return static_cast<int>(uv_values_.size()) - 1; }
 		void setSmooth(bool smooth) override { is_smooth_ = smooth; }
 		bool smoothVerticesNormals(Logger &logger, float angle) override;

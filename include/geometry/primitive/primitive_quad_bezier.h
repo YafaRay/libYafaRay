@@ -45,8 +45,8 @@ class QuadBezierPrimitive : public FacePrimitive
 		std::pair<Point3, Vec3> sample(float s_1, float s_2, float time) const override;
 		std::pair<Point3, Vec3> sample(float s_1, float s_2, const Matrix4 &obj_to_world, float time) const override;
 		float getDistToNearestEdge(float u, float v, const Vec3 &dp_du_abs, const Vec3 &dp_dv_abs) const override { return ShapeQuad::getDistToNearestEdge(u, v, dp_du_abs, dp_dv_abs); }
-		ShapeQuad getShapeQuad(size_t time_step) const;
-		ShapeQuad getShapeQuad(const Matrix4 &obj_to_world, size_t time_step) const;
+		ShapeQuad getShapeQuad(int time_step) const;
+		ShapeQuad getShapeQuad(const Matrix4 &obj_to_world, int time_step) const;
 		ShapeQuad getShapeQuadAtTime(float time) const;
 		ShapeQuad getShapeQuadAtTime(const Matrix4 &obj_to_world, float time) const;
 };
@@ -114,7 +114,7 @@ inline Bound QuadBezierPrimitive::getBound(const Matrix4 &obj_to_world) const
 	return getBoundTimeSteps(obj_to_world);
 }
 
-inline ShapeQuad QuadBezierPrimitive::getShapeQuad(size_t time_step) const
+inline ShapeQuad QuadBezierPrimitive::getShapeQuad(int time_step) const
 {
 	return ShapeQuad {{
 			getVertex(0, time_step),
@@ -124,7 +124,7 @@ inline ShapeQuad QuadBezierPrimitive::getShapeQuad(size_t time_step) const
 	}};
 }
 
-inline ShapeQuad QuadBezierPrimitive::getShapeQuad(const Matrix4 &obj_to_world, size_t time_step) const
+inline ShapeQuad QuadBezierPrimitive::getShapeQuad(const Matrix4 &obj_to_world, int time_step) const
 {
 	return ShapeQuad {{
 			getVertex(0, obj_to_world, time_step),

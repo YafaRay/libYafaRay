@@ -84,7 +84,7 @@ bool ExportXml::endObject() noexcept
 	return true;
 }
 
-int ExportXml::addVertex(Point3 &&vertex, size_t time_step) noexcept
+int ExportXml::addVertex(Point3 &&vertex, int time_step) noexcept
 {
 	file_ << "\t<p x=\"" << vertex.x() << "\" y=\"" << vertex.y() << "\" z=\"" << vertex.z();
 	if(time_step > 0) file_ << "\" t=\"" << time_step;
@@ -92,7 +92,7 @@ int ExportXml::addVertex(Point3 &&vertex, size_t time_step) noexcept
 	return 0;
 }
 
-int ExportXml::addVertex(Point3 &&vertex, Point3 &&orco, size_t time_step) noexcept
+int ExportXml::addVertex(Point3 &&vertex, Point3 &&orco, int time_step) noexcept
 {
 	file_ << "\t<p x=\"" << vertex.x() << "\" y=\"" << vertex.y() << "\" z=\"" << vertex.z()
 			  << "\" ox=\"" << orco.x() << "\" oy=\"" << orco.y() << "\" oz=\"" << orco.z();
@@ -101,7 +101,7 @@ int ExportXml::addVertex(Point3 &&vertex, Point3 &&orco, size_t time_step) noexc
 	return 0;
 }
 
-void ExportXml::addVertexNormal(Vec3 &&normal, size_t time_step) noexcept
+void ExportXml::addVertexNormal(Vec3 &&normal, int time_step) noexcept
 {
 	file_ << "\t<n x=\"" << normal.x() << "\" y=\"" << normal.y() << "\" z=\"" << normal.z();
 	if(time_step > 0) file_ << "\" t=\"" << time_step;

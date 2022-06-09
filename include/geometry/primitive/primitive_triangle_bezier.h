@@ -45,8 +45,8 @@ class TriangleBezierPrimitive : public FacePrimitive
 		std::pair<Point3, Vec3> sample(float s_1, float s_2, float time) const override;
 		std::pair<Point3, Vec3> sample(float s_1, float s_2, const Matrix4 &obj_to_world, float time) const override;
 		float getDistToNearestEdge(float u, float v, const Vec3 &dp_du_abs, const Vec3 &dp_dv_abs) const override { return ShapeTriangle::getDistToNearestEdge(u, v, dp_du_abs, dp_dv_abs); }
-		ShapeTriangle getShapeTriangle(size_t time_step) const;
-		ShapeTriangle getShapeTriangle(const Matrix4 &obj_to_world, size_t time_step) const;
+		ShapeTriangle getShapeTriangle(int time_step) const;
+		ShapeTriangle getShapeTriangle(const Matrix4 &obj_to_world, int time_step) const;
 		ShapeTriangle getShapeTriangleAtTime(float time) const;
 		ShapeTriangle getShapeTriangleAtTime(const Matrix4 &obj_to_world, float time) const;
 };
@@ -114,7 +114,7 @@ inline Bound TriangleBezierPrimitive::getBound(const Matrix4 &obj_to_world) cons
 	return getBoundTimeSteps(obj_to_world);
 }
 
-inline ShapeTriangle TriangleBezierPrimitive::getShapeTriangle(size_t time_step) const
+inline ShapeTriangle TriangleBezierPrimitive::getShapeTriangle(int time_step) const
 {
 	return ShapeTriangle {{
 			getVertex(0, time_step),
@@ -123,7 +123,7 @@ inline ShapeTriangle TriangleBezierPrimitive::getShapeTriangle(size_t time_step)
 	}};
 }
 
-inline ShapeTriangle TriangleBezierPrimitive::getShapeTriangle(const Matrix4 &obj_to_world, size_t time_step) const
+inline ShapeTriangle TriangleBezierPrimitive::getShapeTriangle(const Matrix4 &obj_to_world, int time_step) const
 {
 	return ShapeTriangle {{
 			getVertex(0, obj_to_world, time_step),

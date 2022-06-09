@@ -38,9 +38,9 @@ class ObjectInstance final : public Object
 		void addObjToWorldMatrix(const Matrix4 &obj_to_world, float time);
 		void addObjToWorldMatrix(Matrix4 &&obj_to_world, float time);
 		std::vector<const Matrix4 *> getObjToWorldMatrices() const;
-		const Matrix4 &getObjToWorldMatrix(size_t time_step) const { return time_steps_[time_step].obj_to_world_; }
+		const Matrix4 &getObjToWorldMatrix(int time_step) const { return time_steps_[time_step].obj_to_world_; }
 		Matrix4 getObjToWorldMatrixAtTime(float time) const;
-		float getObjToWorldTime(size_t time_step) const { return time_steps_[time_step].time_; }
+		float getObjToWorldTime(int time_step) const { return time_steps_[time_step].time_; }
 
 		std::string getName() const override { return "instance"; }
 		void setName(const std::string &name) override { }
