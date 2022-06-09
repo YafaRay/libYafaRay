@@ -25,67 +25,6 @@
 
 BEGIN_YAFARAY
 
-void operator >> (const unsigned char *data, Rgb &c)
-{
-	c.r_ = static_cast<float>(data[0]) / static_cast<float>(255);
-	c.g_ = static_cast<float>(data[1]) / static_cast<float>(255);
-	c.b_ = static_cast<float>(data[2]) / static_cast<float>(255);
-}
-
-void operator << (unsigned char *data, const Rgb &c)
-{
-	data[0] = (c.r_ < 0.f) ? 0 : ((c.r_ >= 1.f) ? 255 : static_cast<unsigned char>(255.f * c.r_));
-	data[1] = (c.g_ < 0.f) ? 0 : ((c.g_ >= 1.f) ? 255 : static_cast<unsigned char>(255.f * c.g_));
-	data[2] = (c.b_ < 0.f) ? 0 : ((c.b_ >= 1.f) ? 255 : static_cast<unsigned char>(255.f * c.b_));
-}
-
-void operator >> (const unsigned char *data, Rgba &c)
-{
-	c.r_ = static_cast<float>(data[0]) / static_cast<float>(255);
-	c.g_ = static_cast<float>(data[1]) / static_cast<float>(255);
-	c.b_ = static_cast<float>(data[2]) / static_cast<float>(255);
-	c.a_ = static_cast<float>(data[3]) / static_cast<float>(255);
-}
-
-
-void operator << (unsigned char *data, const Rgba &c)
-{
-	data[0] = (c.r_ < 0.f) ? 0 : ((c.r_ >= 1.f) ? 255 : static_cast<unsigned char>(255.f * c.r_));
-	data[1] = (c.g_ < 0.f) ? 0 : ((c.g_ >= 1.f) ? 255 : static_cast<unsigned char>(255.f * c.g_));
-	data[2] = (c.b_ < 0.f) ? 0 : ((c.b_ >= 1.f) ? 255 : static_cast<unsigned char>(255.f * c.b_));
-	data[3] = (c.a_ < 0.f) ? 0 : ((c.a_ >= 1.f) ? 255 : static_cast<unsigned char>(255.f * c.a_));
-}
-
-void operator >> (const float *data, Rgb &c)
-{
-	c.r_ = data[0];
-	c.g_ = data[1];
-	c.b_ = data[2];
-}
-
-void operator << (float *data, const Rgb &c)
-{
-	data[0] = c.r_;
-	data[1] = c.g_;
-	data[2] = c.b_;
-}
-
-void operator >> (const float *data, Rgba &c)
-{
-	c.r_ = data[0];
-	c.g_ = data[1];
-	c.b_ = data[2];
-	c.a_ = data[3];
-}
-
-void operator << (float *data, const Rgba &c)
-{
-	data[0] = c.r_;
-	data[1] = c.g_;
-	data[2] = c.b_;
-	data[3] = c.a_;
-}
-
 std::ostream &operator << (std::ostream &out, const Rgb &c)
 {
 	out << "[" << c.r_ << " " << c.g_ << " " << c.b_ << "]";
