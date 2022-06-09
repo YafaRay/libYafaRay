@@ -80,7 +80,7 @@ class Vec3
 		static constexpr void fresnel(const Vec3 &i, const Vec3 &n, float ior, float &kr, float &kt);
 		static constexpr void fastFresnel(const Vec3 &i, const Vec3 &n, float iorf, float &kr, float &kt);
 		static constexpr std::pair<Vec3, Vec3> createCoordsSystem(const Vec3 &normal);
-		static constexpr void shirleyDisk(float r_1, float r_2, float &u, float &v);
+		static void shirleyDisk(float r_1, float r_2, float &u, float &v);
 		static Vec3 randomSpherical(FastRandom &fast_random);
 		static Vec3 randomVectorCone(const Vec3 &d, const Vec3 &u, const Vec3 &v, float cosang, float z_1, float z_2);
 		static Vec3 randomVectorCone(const Vec3 &dir, float cosangle, float r_1, float r_2);
@@ -299,7 +299,7 @@ inline Vec3 Vec3::randomSpherical(FastRandom &fast_random)
 }
 
 // P.Shirley's concentric disk algorithm, maps square to disk
-inline constexpr void Vec3::shirleyDisk(float r_1, float r_2, float &u, float &v)
+inline void Vec3::shirleyDisk(float r_1, float r_2, float &u, float &v)
 {
 	float phi = 0.f;
 	float r = 0.f;

@@ -41,7 +41,7 @@ constexpr float gauss(float dx, float dy) noexcept
 }
 
 //Lanczos sinc window size 2
-constexpr float lanczos2(float dx, float dy) noexcept
+float lanczos2(float dx, float dy) noexcept
 {
 	const float x = math::sqrt(dx * dx + dy * dy);
 	if(x == 0.f) return 1.f;
@@ -54,7 +54,7 @@ constexpr float lanczos2(float dx, float dy) noexcept
 	return 0.f;
 }
 
-constexpr float mitchell(float dx, float dy) noexcept
+float mitchell(float dx, float dy) noexcept
 {
 /*!
 Mitchell-Netravali constants

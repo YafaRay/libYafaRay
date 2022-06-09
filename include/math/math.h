@@ -147,7 +147,7 @@ inline constexpr float log2(float x) noexcept
 }
 
 #ifdef FAST_MATH
-inline constexpr float sqrt_asm(float n) noexcept
+inline float sqrt_asm(float n) noexcept
 {
 #if defined (__APPLE__)
 	float r = n;
@@ -193,7 +193,7 @@ inline constexpr float log(float a) noexcept
 #endif
 }
 
-inline constexpr double log(double a) noexcept
+inline double log(double a) noexcept
 {
 	return std::log(a);
 }
@@ -207,12 +207,12 @@ inline constexpr float exp(float a) noexcept
 #endif
 }
 
-inline constexpr double exp(double a) noexcept
+inline double exp(double a) noexcept
 {
 	return std::exp2(a);
 }
 
-inline constexpr float sqrt(float a) noexcept
+inline float sqrt(float a) noexcept
 {
 #ifdef FAST_MATH
 	return math::sqrt_asm(a);
@@ -221,12 +221,12 @@ inline constexpr float sqrt(float a) noexcept
 #endif
 }
 
-inline constexpr double sqrt(double a) noexcept
+inline double sqrt(double a) noexcept
 {
 	return std::sqrt(a);
 }
 
-inline constexpr float sin(float x) noexcept
+inline float sin(float x) noexcept
 {
 #ifdef FAST_TRIG
 	if(x > math::mult_pi_by_2<> || x < -math::mult_pi_by_2<>) x -= static_cast<int>(x * math::div_1_by_2pi<>) * math::mult_pi_by_2<>; //float modulo x % math::mult_pi_by_2<>
@@ -251,12 +251,12 @@ inline constexpr float sin(float x) noexcept
 #endif
 }
 
-inline constexpr double sin(double x) noexcept
+inline double sin(double x) noexcept
 {
 	return std::sin(x);
 }
 
-inline constexpr float cos(float x) noexcept
+inline float cos(float x) noexcept
 {
 #ifdef FAST_TRIG
 	return math::sin(x + math::div_pi_by_2<>);
@@ -265,7 +265,7 @@ inline constexpr float cos(float x) noexcept
 #endif
 }
 
-inline constexpr double cos(double x) noexcept
+inline double cos(double x) noexcept
 {
 	return std::cos(x);
 }

@@ -32,7 +32,7 @@ class FastRandom final
 {
 	public:
 		constexpr FastRandom() noexcept = default;
-		constexpr FastRandom(int seed) noexcept { myseed_ = seed; }
+		FastRandom(int seed) noexcept { myseed_ = seed; }
 		constexpr FastRandom(const FastRandom &fast_random) noexcept = delete; //Avoid mistakenly passing the fast_random objects by value instead of passing them by reference
 		int getNextInt() noexcept;
 		int getNextInt(int &seed) noexcept;
