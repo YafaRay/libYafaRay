@@ -26,30 +26,30 @@
 
 BEGIN_YAFARAY
 
-template <class T, unsigned char n>
-class Buffer //! Generic n-dimensional buffer. Unrolled starting from the highest dimension goind down in the dimensions (i.e. in 2D an x,y buffer would be unrolled so x=0,y=0->pos=0, x=0,y=1->pos=1, x=1,y=0->pos=height*x + y
+template <class T, unsigned char num_dimensions>
+class Buffer //! Generic num_dimensions-dimensional buffer. Unrolled starting from the highest dimension goind down in the dimensions (i.e. in 2D an x,y buffer would be unrolled so x=0,y=0->pos=0, x=0,y=1->pos=1, x=1,y=0->pos=height*x + y
 {
 	public:
 		Buffer() noexcept = default;
-		explicit constexpr Buffer(const std::array<size_t, n> &dimensions) noexcept { resize(dimensions); }
+		explicit constexpr Buffer(const std::array<int, num_dimensions> &dimensions) noexcept { resize(dimensions); }
 		constexpr void zero() noexcept { data_.clear(); resize(dimensions_); }
-		constexpr void resize(const std::array<size_t, n> &dimensions) noexcept;
+		constexpr void resize(const std::array<int, num_dimensions> &dimensions) noexcept;
 		constexpr void fill(const T &val) noexcept { const size_t size_prev = data_.size(); data_.clear(); data_.resize(size_prev, val); }
-		constexpr void set(const std::array<size_t, n> &coordinates, const T &val) noexcept { data_[calculateDataPosition(coordinates)] = val; }
-		constexpr void set(const std::array<size_t, n> &coordinates, T &&val) noexcept { data_[calculateDataPosition(coordinates)] = std::move(val); }
-		constexpr T get(const std::array<size_t, n> &coordinates) const noexcept { return data_[calculateDataPosition(coordinates)]; }
-		constexpr T &operator()(const std::array<size_t, n> &coordinates) noexcept { return data_[calculateDataPosition(coordinates)]; }
-		constexpr const T &operator()(const std::array<size_t, n> &coordinates) const noexcept { return data_[calculateDataPosition(coordinates)]; }
-		constexpr const std::array<size_t, n> &getDimensions() const noexcept { return dimensions_; }
+		constexpr void set(const std::array<int, num_dimensions> &coordinates, const T &val) noexcept { data_[calculateDataPosition(coordinates)] = val; }
+		constexpr void set(const std::array<int, num_dimensions> &coordinates, T &&val) noexcept { data_[calculateDataPosition(coordinates)] = std::move(val); }
+		constexpr T get(const std::array<int, num_dimensions> &coordinates) const noexcept { return data_[calculateDataPosition(coordinates)]; }
+		constexpr T &operator()(const std::array<int, num_dimensions> &coordinates) noexcept { return data_[calculateDataPosition(coordinates)]; }
+		constexpr const T &operator()(const std::array<int, num_dimensions> &coordinates) const noexcept { return data_[calculateDataPosition(coordinates)]; }
+		constexpr const std::array<int, num_dimensions> &getDimensions() const noexcept { return dimensions_; }
 
 	private:
-		constexpr size_t calculateDataPosition(const std::array<size_t, n> &coordinates) const noexcept;
-		alignas(8) std::array<size_t, n> dimensions_;
+		constexpr size_t calculateDataPosition(const std::array<int, num_dimensions> &coordinates) const noexcept;
+		alignas(8) std::array<int, num_dimensions> dimensions_;
 		alignas(8) std::vector<T> data_;
 };
 
-template<class T, unsigned char n>
-inline constexpr void Buffer<T, n>::resize(const std::array<size_t, n> &dimensions) noexcept
+template<class T, unsigned char num_dimensions>
+inline constexpr void Buffer<T, num_dimensions>::resize(const std::array<int, num_dimensions> &dimensions) noexcept
 {
 	dimensions_ = dimensions;
 	size_t size = 1;
@@ -57,22 +57,22 @@ inline constexpr void Buffer<T, n>::resize(const std::array<size_t, n> &dimensio
 	data_.resize(size);
 }
 
-template<class T, unsigned char n>
-inline constexpr size_t Buffer<T, n>::calculateDataPosition(const std::array<size_t, n> &coordinates) const noexcept
+template<class T, unsigned char num_dimensions>
+inline constexpr size_t Buffer<T, num_dimensions>::calculateDataPosition(const std::array<int, num_dimensions> &coordinates) const noexcept
 {
-	if(n == 2) return coordinates[0] * dimensions_[1] + coordinates[1];
-	else if(n == 1) return coordinates[0];
+	if(num_dimensions == 2) return coordinates[0] * dimensions_[1] + coordinates[1];
+	else if(num_dimensions == 1) return coordinates[0];
 	else
 	{
 		size_t data_position = 0;
-		for(size_t coord_idx = 0; coord_idx < n; ++coord_idx)
+		for(unsigned char dimension_id = 0; dimension_id < num_dimensions; ++dimension_id)
 		{
-			if(coord_idx == n - 1) data_position += coordinates[coord_idx];
+			if(dimension_id == num_dimensions - 1) data_position += coordinates[dimension_id];
 			else
 			{
-				for(size_t dimension_idx = coord_idx + 1; dimension_idx < n; ++dimension_idx)
+				for(unsigned char dimension_id_2 = dimension_id + 1; dimension_id_2 < num_dimensions; ++dimension_id_2)
 				{
-					data_position += coordinates[coord_idx] * dimensions_[dimension_idx];
+					data_position += coordinates[dimension_id] * dimensions_[dimension_id_2];
 				}
 			}
 		}
