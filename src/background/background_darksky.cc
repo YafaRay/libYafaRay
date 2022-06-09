@@ -119,10 +119,10 @@ Rgb DarkSkyBackground::getSunColorFromSunRad()
 	const double l = 0.35;
 	const double w = 2.0;
 
-	const IrregularCurve ko(spectral_data::ko_amplitudes.data(), spectral_data::ko_wavelengths.data(), spectral_data::ko_amplitudes.size());
-	const IrregularCurve kg(spectral_data::kg_amplitudes.data(), spectral_data::kg_wavelengths.data(), spectral_data::kg_amplitudes.size());
-	const IrregularCurve kwa(spectral_data::kwa_amplitudes.data(), spectral_data::kwa_wavelengths.data(), spectral_data::kwa_amplitudes.size());
-	const RegularCurve sun_radiance_curve(spectral_data::sun_radiance.data(), 380, 750, spectral_data::sun_radiance.size());
+	const IrregularCurve ko(spectral_data::ko_wavelength_amplitudes);
+	const IrregularCurve kg(spectral_data::kg_wavelength_amplitudes);
+	const IrregularCurve kwa(spectral_data::kwa_wavelength_amplitudes);
+	const RegularCurve sun_radiance_curve(spectral_data::sun_radiance, 380, 750);
 
 	const double m = 1.0 / (cos_theta_s_ + 0.15 * std::pow(93.885f - math::radToDeg(theta_s_), -1.253f));
 	const double mw = m * w;

@@ -92,46 +92,23 @@ static constexpr std::array<std::array<float, 3>, 95> chroma_match_2_deg //[Lamb
 	{0.000001251141f, 0.000000451810f, 0.000000000000f}
 }};
 
-static constexpr std::array<float, 64> ko_wavelengths
+static const std::vector<std::pair<float, float>> ko_wavelength_amplitudes
 {
-	300.f, 305.f, 310.f, 315.f, 320.f, 325.f, 330.f, 335.f, 340.f, 345.f, 350.f, 355.f, 445.f, 450.f, 455.f, 460.f,
-	465.f, 470.f, 475.f, 480.f, 485.f, 490.f, 495.f, 500.f, 505.f, 510.f, 515.f, 520.f,	525.f, 530.f, 535.f, 540.f,
-	545.f, 550.f, 555.f, 560.f, 565.f, 570.f, 575.f, 580.f, 585.f, 590.f, 595.f, 600.f, 605.f, 610.f, 620.f, 630.f,
-	640.f, 650.f, 660.f, 670.f, 680.f, 690.f, 700.f, 710.f, 720.f, 730.f, 740.f, 750.f, 760.f, 770.f, 780.f, 790.f
+	{300.f, 10.f}, {305.f, 4.8f}, {310.f, 2.7f}, {315.f, 1.35f}, {320.f, 0.8f}, {325.f, 0.38f}, {330.f, 0.16f}, {335.f, 0.075f}, {340.f, 0.04f}, {345.f, 0.019f}, {350.f, 0.007f}, {355.f, 0.f}, {445.f, 0.003f}, {450.f, 0.003f}, {455.f, 0.004f}, {460.f, 0.006f}, {465.f, 0.008f}, {470.f, 0.009f}, {475.f, 0.012f}, {480.f, 0.014f}, {485.f, 0.017f}, {490.f, 0.021f}, {495.f, 0.025f}, {500.f, 0.03f}, {505.f, 0.035f}, {510.f, 0.04f}, {515.f, 0.045f}, {520.f, 0.048f}, {525.f, 0.057f}, {530.f, 0.063f}, {535.f, 0.07f}, {540.f, 0.075f}, {545.f, 0.08f}, {550.f, 0.085f}, {555.f, 0.095f}, {560.f, 0.103f}, {565.f, 0.11f}, {570.f, 0.12f}, {575.f, 0.122f}, {580.f, 0.12f}, {585.f, 0.118f}, {590.f, 0.115f}, {595.f, 0.12f}, {600.f, 0.125f}, {605.f, 0.13f}, {610.f, 0.12f}, {620.f, 0.105f}, {630.f, 0.09f}, {640.f, 0.079f}, {650.f, 0.067f}, {660.f, 0.057f}, {670.f, 0.048f}, {680.f, 0.036f}, {690.f, 0.028f}, {700.f, 0.023f}, {710.f, 0.018f}, {720.f, 0.014f}, {730.f, 0.011f}, {740.f, 0.01f}, {750.f, 0.009f}, {760.f, 0.007f}, {770.f, 0.004f}, {780.f, 0.f}, {790.f, 0.f}
 };
 
-static constexpr std::array<float, 64> ko_amplitudes
+static const std::vector<std::pair<float, float>> kg_wavelength_amplitudes
 {
-	10.0f, 4.8f, 2.7f, 1.35f, .8f, .380f, .160f, .075f, .04f, .019f, .007f, .0f, .003f, .003f, .004f, .006f,
-	.008f, .009f, .012f, .014f,	.017f, .021f,	.025f, .03f, .035f, .04f, .045f, .048f,	.057f, .063f, .07f, .075f,
-	.08f, .085f, .095f, .103f, .110f, .12f,	.122f, .12f, .118f, .115f, .12f, .125f, .130f, .12f, .105f, .09f,
-	.079f, .067f, .057f, .048f, .036f, .028f,	.023f, .018f, .014f, .011f, .010f, .009f,	.007f, .004f, .0f, .0f
+	{759.f, 0.f}, {760.f, 3.0f}, {770.f, 0.210f}, { 771.f, 0.f }
 };
 
-static constexpr std::array<float, 4> kg_wavelengths
+static const std::vector<std::pair<float, float>> kwa_wavelength_amplitudes
 {
-	759.f, 760.f, 770.f, 771.f
-};
-
-static constexpr std::array<float, 4> kg_amplitudes
-{
-	0.f, 3.0f, 0.210f, 0.f
-};
-
-static constexpr std::array<float, 13> kwa_wavelengths
-{
-	689.f, 690.f, 700.f, 710.f, 720.f, 730.f, 740.f,
-	750.f, 760.f, 770.f, 780.f, 790.f, 800.f
-};
-
-static constexpr std::array<float, 13> kwa_amplitudes
-{
-	0.00000f, 0.01600f, 0.02400f, 0.01250f, 1.0000f, 0.8700f, 0.06100f,
-	0.00100f, 0.00001f, 0.00001f, 0.00060f, 0.0175f, 0.0360f
+	{689.f, 0.f}, {690.f, 0.016f}, {700.f, 0.024f}, {710.f, 0.0125f}, {720.f, 1.f}, {730.f, 0.87f}, {740.f, 0.061f}, {750.f, 0.001f}, {760.f, 1e-05f}, {770.f, 1e-05f}, {780.f, 0.0006f}, {790.f, 0.0175f}, {800.f, 0.036f}
 };
 
 //Sun Spectral Radiance [W / (m^2 sr nm)]
-static constexpr std::array<float, 38> sun_radiance
+static const std::vector<float> sun_radiance
 {
 	1.65590e+2f,
 	1.62337e+2f,

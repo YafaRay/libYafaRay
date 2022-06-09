@@ -22,7 +22,7 @@
 #ifndef YAFARAY_INTERPOLATION_CURVE_H
 #define YAFARAY_INTERPOLATION_CURVE_H
 
-#include "common/yafaray_common.h"
+#include "math/interpolation.h"
 
 BEGIN_YAFARAY
 
@@ -33,60 +33,31 @@ BEGIN_YAFARAY
 class IrregularCurve final
 {
 	public:
-		IrregularCurve(const float *datay, const float *datax, int n) noexcept;
-		IrregularCurve(const float *datay, int n) noexcept;
+		explicit IrregularCurve(const std::vector<std::pair<float, float>> &data) noexcept : c_{data} { }
 		float getSample(float wl) const noexcept;
 		float operator()(float x) const noexcept {return getSample(x);};
-		void addSample(float data) noexcept;
 
 	private:
-		std::unique_ptr<float[]> c_1_, c_2_;
-		int size_;
-		int index_;
+		const std::vector<std::pair<float, float>> &c_;
 };
-
-IrregularCurve::IrregularCurve(const float *datay, const float *datax, int n) noexcept : size_(n), index_(0)
-{
-	c_1_ = std::unique_ptr<float[]>(new float[n]);
-	c_2_ = std::unique_ptr<float[]>(new float[n]);
-	for(int i = 0; i < n; i++)
-	{
-		c_1_[i] = datax[i];
-		c_2_[i] = datay[i];
-	}
-}
-
-IrregularCurve::IrregularCurve(const float *datay, int n) noexcept : size_(n), index_(0)
-{
-	c_1_ = std::unique_ptr<float[]>(new float[n]);
-	c_2_ = std::unique_ptr<float[]>(new float[n]);
-	for(int i = 0; i < n; i++) c_2_[i] = datay[i];
-}
 
 float IrregularCurve::getSample(float x) const noexcept
 {
-	if(x < c_1_[0] || x > c_1_[size_ - 1]) return 0.0;
-	int zero = 0;
-
-	for(int i = 0; i < size_; i++)
+	if(c_.empty() || x < c_[0].first || x > c_.back().first) return 0.f;
+	const size_t segments_to_check = c_.size() - 1; //Look into all the segments except the last, to avoid reading the vector out of bounds when checking for c_[i + 1] or c_[segment_start + 1]
+	size_t segment_start = c_.size() - 1;
+	for(size_t i = 0; i < segments_to_check; i++)
 	{
-		if(c_1_[i] == x) return c_2_[i];
-		else if(c_1_[i] <= x && c_1_[i + 1] > x)
+		if(c_[i].first == x) return c_[i].second;
+		else if(c_[i].first <= x && c_[i + 1].first > x)
 		{
-			zero = i;
+			segment_start = i;
 			break;
 		}
 	}
-
-	float y = x - c_1_[zero];
-	y *= (c_2_[zero + 1] - c_2_[zero]) / (c_1_[zero + 1] - c_1_[zero]);
-	y += c_2_[zero];
-	return y;
-}
-
-void IrregularCurve::addSample(float data) noexcept
-{
-	if(index_ < size_) c_1_[index_++] = data;
+	if(segment_start == (c_.size() - 1)) return c_.back().second; //If the segment was not found it means that x must be in the last segment
+	const float offset_within_segment = x - c_[segment_start].first;
+	return math::lerpSegment(offset_within_segment, c_[segment_start].second, c_[segment_start].first, c_[segment_start + 1].second, c_[segment_start + 1].first);
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -96,56 +67,33 @@ void IrregularCurve::addSample(float data) noexcept
 class RegularCurve final
 {
 	public:
-		RegularCurve(const float *data, float begin_r, float end_r, int n) noexcept;
-		RegularCurve(float begin_r, float end_r, int n) noexcept;
+		RegularCurve(const std::vector<float> &data, float begin_r, float end_r) noexcept :
+			c_{data}, end_r_{begin_r}, begin_r_{end_r}, step_{ static_cast<float>(c_.size()) / (begin_r_ - end_r_)} { }
 		float getSample(float x) const noexcept;
-		float operator()(float x) const noexcept {return getSample(x);};
-		void addSample(float data) noexcept;
+		float operator()(float x) const noexcept { return getSample(x); }
 
 	private:
-		std::vector<float> c_;
+		const std::vector<float> &c_;
 		float end_r_;
 		float begin_r_;
 		float step_ = 0.f;
-		size_t index_ = 0;
 };
-
-RegularCurve::RegularCurve(const float *data, float begin_r, float end_r, int n) noexcept : end_r_(begin_r), begin_r_(end_r)
-{
-	c_ = std::vector<float>(n);
-	for(int i = 0; i < n; i++) c_[i] = data[i];
-	step_ = n / (begin_r_ - end_r_);
-}
-
-RegularCurve::RegularCurve(float begin_r, float end_r, int n) noexcept : end_r_(begin_r), begin_r_(end_r)
-{
-	c_ = std::vector<float>(n);
-	step_ = n / (begin_r_ - end_r_);
-}
 
 float RegularCurve::getSample(float x) const noexcept
 {
-	if(x < end_r_ || x > begin_r_) return 0.0;
+	if(c_.empty() || x < end_r_ || x > begin_r_) return 0.f;
 
 	const float med = (x - end_r_) * step_;
-	const int y_0 = static_cast<int>(floor(med));
-	const int y_1 = static_cast<int>(ceil(med));
+	const auto y_0 = static_cast<size_t>(std::floor(med));
+	const auto y_1 = static_cast<size_t>(std::ceil(med));
 
-	if(y_0 == y_1 || y_1 >= static_cast<int>(c_.size())) return c_[y_0];
+	if(y_0 == y_1 || y_1 >= c_.size()) return c_[y_0];
 
-	const float x_0 = (y_0 / step_) + end_r_;
-	const float x_1 = (y_1 / step_) + end_r_;
+	const float x_0 = (static_cast<float>(y_0) / step_) + end_r_;
+	const float x_1 = (static_cast<float>(y_1) / step_) + end_r_;
 
-	float y = x - x_0;
-	y *= c_[y_1] - c_[y_0] / (x_1 - x_0);
-	y += c_[y_0];
-
-	return y;
-}
-
-void RegularCurve::addSample(float data) noexcept
-{
-	if(index_ < c_.size()) c_[index_++] = data;
+	const float offset_within_segment = x - x_0;
+	return math::lerpSegment(offset_within_segment, c_[y_0], x_0, c_[y_1], x_1);
 }
 
 END_YAFARAY
