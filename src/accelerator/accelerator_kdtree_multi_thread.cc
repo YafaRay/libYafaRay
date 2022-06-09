@@ -569,6 +569,7 @@ void AcceleratorKdTreeMultiThread::buildTreeWorker(const std::vector<const Primi
 		case Axis::X: bound_left.setMaxX(split_pos); bound_right.setMinX(split_pos); break;
 		case Axis::Y: bound_left.setMaxY(split_pos); bound_right.setMinY(split_pos); break;
 		case Axis::Z: bound_left.setMaxZ(split_pos); bound_right.setMinZ(split_pos); break;
+		default: break;
 	}
 
 	ClipPlane left_clip_plane;
