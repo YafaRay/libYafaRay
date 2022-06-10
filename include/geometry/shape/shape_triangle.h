@@ -72,7 +72,7 @@ inline float ShapeTriangle::getDistToNearestEdge(const Uv &uv, const Vec3 &dp_du
 	const auto [barycentric_u, barycentric_v, barycentric_w] = ShapeTriangle::getBarycentricUVW(uv);
 	const float u_dist_rel = 0.5f - std::abs(barycentric_u - 0.5f);
 	const float u_dist_abs = u_dist_rel * dp_du_abs.length();
-	const float v_dist_rel = 0.5f - std::abs(barycentric_u - 0.5f);
+	const float v_dist_rel = 0.5f - std::abs(barycentric_v - 0.5f);
 	const float v_dist_abs = v_dist_rel * dp_dv_abs.length();
 	const float w_dist_rel = 0.5f - std::abs(barycentric_w - 0.5f);
 	const float w_dist_abs = w_dist_rel * (dp_dv_abs - dp_du_abs).length();
