@@ -26,14 +26,17 @@ BEGIN_YAFARAY
 
 struct Uv
 {
-	Uv() = default;
-	Uv(float u, float v): u_(u), v_(v) { }
 	float u_, v_;
 };
 
 inline Uv operator * (float f, const Uv &uv)
 {
 	return {f * uv.u_, f * uv.v_};
+}
+
+inline Uv operator * (const Uv &uv, float f)
+{
+	return f * uv;
 }
 
 inline Uv operator + (const Uv &a, const Uv &b)
