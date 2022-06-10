@@ -34,7 +34,7 @@ std::unique_ptr<const SurfacePoint> QuadBezierPrimitive::getSurface(const RayDif
 {
 	auto sp = std::make_unique<SurfacePoint>(this);
 	sp->intersect_data_ = intersect_data;
-	const float time = intersect_data.time_;
+	const float time = intersect_data.time();
 	sp->ng_ = Primitive::getGeometricNormal(time);
 	if(base_mesh_object_.isSmooth() || base_mesh_object_.hasVerticesNormals(0))
 	{
@@ -43,7 +43,7 @@ std::unique_ptr<const SurfacePoint> QuadBezierPrimitive::getSurface(const RayDif
 				getVertexNormal(1, sp->ng_, 0),
 				getVertexNormal(2, sp->ng_, 0),
 				getVertexNormal(3, sp->ng_, 0)};
-		sp->n_ = ShapeQuad::interpolate(intersect_data.u_, intersect_data.v_, v);
+		sp->n_ = ShapeQuad::interpolate(intersect_data.uv(), v);
 		sp->n_.normalize();
 	}
 	else sp->n_ = sp->ng_;
@@ -54,7 +54,7 @@ std::unique_ptr<const SurfacePoint> QuadBezierPrimitive::getSurface(const RayDif
 				getOrcoVertex(1, 0),
 				getOrcoVertex(2, 0),
 				getOrcoVertex(3, 0)};
-		sp->orco_p_ = ShapeQuad::interpolate(intersect_data.u_, intersect_data.v_, orco_p);
+		sp->orco_p_ = ShapeQuad::interpolate(intersect_data.uv(), orco_p);
 		sp->orco_ng_ = ((orco_p[1] - orco_p[0]) ^ (orco_p[2] - orco_p[0])).normalize();
 		sp->has_orco_ = true;
 	}
@@ -79,9 +79,7 @@ std::unique_ptr<const SurfacePoint> QuadBezierPrimitive::getSurface(const RayDif
 				getVertexUv(2),
 				getVertexUv(3)
 		};
-		const Uv uv_result = ShapeQuad::interpolate(intersect_data.u_, intersect_data.v_, uv);
-		sp->u_ = uv_result.u_;
-		sp->v_ = uv_result.v_;
+		sp->uv_ = ShapeQuad::interpolate(intersect_data.uv(), uv);
 		// calculate dPdU and dPdV
 		const float du_1 = uv[1].u_ - uv[0].u_;
 		const float du_2 = uv[2].u_ - uv[0].u_;
@@ -103,8 +101,7 @@ std::unique_ptr<const SurfacePoint> QuadBezierPrimitive::getSurface(const RayDif
 		// implicit mapping, p0 = 0/0, p1 = 1/0, p2 = 0/1 => sp->u_ = barycentric_u, sp->v_ = barycentric_v; (arbitrary choice)
 		sp->dp_du_ = p[1] - p[0];
 		sp->dp_dv_ = p[2] - p[0];
-		sp->u_ = intersect_data.u_;
-		sp->v_ = intersect_data.v_;
+		sp->uv_ = intersect_data.uv();
 	}
 	//Copy original dPdU and dPdV before normalization to the "absolute" dPdU and dPdV (for mipmap calculations)
 	sp->dp_du_abs_ = sp->dp_du_;
@@ -126,7 +123,7 @@ std::unique_ptr<const SurfacePoint> QuadBezierPrimitive::getSurface(const RayDif
 {
 	auto sp = std::make_unique<SurfacePoint>(this);
 	sp->intersect_data_ = intersect_data;
-	const float time = intersect_data.time_;
+	const float time = intersect_data.time();
 	sp->ng_ = Primitive::getGeometricNormal(obj_to_world, time);
 	if(base_mesh_object_.isSmooth() || base_mesh_object_.hasVerticesNormals(0))
 	{
@@ -135,7 +132,7 @@ std::unique_ptr<const SurfacePoint> QuadBezierPrimitive::getSurface(const RayDif
 				getVertexNormal(1, sp->ng_, obj_to_world, 0),
 				getVertexNormal(2, sp->ng_, obj_to_world, 0),
 				getVertexNormal(3, sp->ng_, obj_to_world, 0)};
-		sp->n_ = ShapeQuad::interpolate(intersect_data.u_, intersect_data.v_, v);
+		sp->n_ = ShapeQuad::interpolate(intersect_data.uv(), v);
 		sp->n_.normalize();
 	}
 	else sp->n_ = sp->ng_;
@@ -146,7 +143,7 @@ std::unique_ptr<const SurfacePoint> QuadBezierPrimitive::getSurface(const RayDif
 				getOrcoVertex(1, 0),
 				getOrcoVertex(2, 0),
 				getOrcoVertex(3, 0)};
-		sp->orco_p_ = ShapeQuad::interpolate(intersect_data.u_, intersect_data.v_, orco_p);
+		sp->orco_p_ = ShapeQuad::interpolate(intersect_data.uv(), orco_p);
 		sp->orco_ng_ = ((orco_p[1] - orco_p[0]) ^ (orco_p[2] - orco_p[0])).normalize();
 		sp->has_orco_ = true;
 	}
@@ -171,9 +168,7 @@ std::unique_ptr<const SurfacePoint> QuadBezierPrimitive::getSurface(const RayDif
 				getVertexUv(2),
 				getVertexUv(3)
 		};
-		const Uv uv_result = ShapeQuad::interpolate(intersect_data.u_, intersect_data.v_, uv);
-		sp->u_ = uv_result.u_;
-		sp->v_ = uv_result.v_;
+		sp->uv_ = ShapeQuad::interpolate(intersect_data.uv(), uv);
 		// calculate dPdU and dPdV
 		const float du_1 = uv[1].u_ - uv[0].u_;
 		const float du_2 = uv[2].u_ - uv[0].u_;
@@ -195,8 +190,7 @@ std::unique_ptr<const SurfacePoint> QuadBezierPrimitive::getSurface(const RayDif
 		// implicit mapping, p0 = 0/0, p1 = 1/0, p2 = 0/1 => sp->u_ = barycentric_u, sp->v_ = barycentric_v; (arbitrary choice)
 		sp->dp_du_ = p[1] - p[0];
 		sp->dp_dv_ = p[2] - p[0];
-		sp->u_ = intersect_data.u_;
-		sp->v_ = intersect_data.v_;
+		sp->uv_ = intersect_data.uv();
 	}
 	//Copy original dPdU and dPdV before normalization to the "absolute" dPdU and dPdV (for mipmap calculations)
 	sp->dp_du_abs_ = sp->dp_du_;

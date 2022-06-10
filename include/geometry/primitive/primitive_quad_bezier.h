@@ -36,15 +36,15 @@ class QuadBezierPrimitive : public FacePrimitive
 		bool clippingSupport() const override { return false; }
 		Bound getBound() const override;
 		Bound getBound(const Matrix4 &obj_to_world) const override;
-		Vec3 getGeometricNormal(float u, float v, float time) const override;
-		Vec3 getGeometricNormal(const Matrix4 &obj_to_world, float u, float v, float time) const override;
+		Vec3 getGeometricNormal(const Uv &uv, float time) const override;
+		Vec3 getGeometricNormal(const Matrix4 &obj_to_world, const Uv &uv, float time) const override;
 		std::unique_ptr<const SurfacePoint> getSurface(const RayDifferentials *ray_differentials, const Point3 &hit_point, const IntersectData &intersect_data, const Camera *camera) const override;
 		std::unique_ptr<const SurfacePoint> getSurface(const RayDifferentials *ray_differentials, const Point3 &hit_point, const IntersectData &intersect_data, const Matrix4 &obj_to_world, const Camera *camera) const override;
 		float surfaceArea(float time) const override;
 		float surfaceArea(const Matrix4 &obj_to_world, float time) const override;
-		std::pair<Point3, Vec3> sample(float s_1, float s_2, float time) const override;
-		std::pair<Point3, Vec3> sample(float s_1, float s_2, const Matrix4 &obj_to_world, float time) const override;
-		float getDistToNearestEdge(float u, float v, const Vec3 &dp_du_abs, const Vec3 &dp_dv_abs) const override { return ShapeQuad::getDistToNearestEdge(u, v, dp_du_abs, dp_dv_abs); }
+		std::pair<Point3, Vec3> sample(const Uv &uv, float time) const override;
+		std::pair<Point3, Vec3> sample(const Uv &uv, const Matrix4 &obj_to_world, float time) const override;
+		float getDistToNearestEdge(const Uv &uv, const Vec3 &dp_du_abs, const Vec3 &dp_dv_abs) const override { return ShapeQuad::getDistToNearestEdge(uv, dp_du_abs, dp_dv_abs); }
 		ShapeQuad getShapeQuad(int time_step) const;
 		ShapeQuad getShapeQuad(const Matrix4 &obj_to_world, int time_step) const;
 		ShapeQuad getShapeQuadAtTime(float time) const;
@@ -75,30 +75,30 @@ inline float QuadBezierPrimitive::surfaceArea(const Matrix4 &obj_to_world, float
 	return getShapeQuadAtTime(obj_to_world, time).surfaceArea();
 }
 
-inline std::pair<Point3, Vec3> QuadBezierPrimitive::sample(float s_1, float s_2, float time) const
+inline std::pair<Point3, Vec3> QuadBezierPrimitive::sample(const Uv &uv, float time) const
 {
 	const auto quad = getShapeQuadAtTime(time);
 	return {
-			quad.sample(s_1, s_2),
+			quad.sample(uv),
 			quad.calculateFaceNormal()
 	};
 }
 
-inline std::pair<Point3, Vec3> QuadBezierPrimitive::sample(float s_1, float s_2, const Matrix4 &obj_to_world, float time) const
+inline std::pair<Point3, Vec3> QuadBezierPrimitive::sample(const Uv &uv, const Matrix4 &obj_to_world, float time) const
 {
 	const auto quad = getShapeQuadAtTime(obj_to_world, time);
 	return {
-			quad.sample(s_1, s_2),
+			quad.sample(uv),
 			quad.calculateFaceNormal()
 	};
 }
 
-inline Vec3 QuadBezierPrimitive::getGeometricNormal(float u, float v, float time) const
+inline Vec3 QuadBezierPrimitive::getGeometricNormal(const Uv &uv, float time) const
 {
 	return getShapeQuadAtTime(time).calculateFaceNormal();
 }
 
-inline Vec3 QuadBezierPrimitive::getGeometricNormal(const Matrix4 &obj_to_world, float u, float v, float time) const
+inline Vec3 QuadBezierPrimitive::getGeometricNormal(const Matrix4 &obj_to_world, const Uv &uv, float time) const
 {
 	const Vec3 normal {getShapeQuadAtTime(obj_to_world, time).calculateFaceNormal()};
 	return (obj_to_world * normal).normalize();

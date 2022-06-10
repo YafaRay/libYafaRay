@@ -634,7 +634,7 @@ void AcceleratorKdTreeMultiThread::buildTreeWorker(const std::vector<const Primi
 AcceleratorIntersectData AcceleratorKdTreeMultiThread::intersect(const Ray &ray, float t_max, const std::vector<Node> &nodes, const Bound &tree_bound)
 {
 	AcceleratorIntersectData accelerator_intersect_data;
-	accelerator_intersect_data.t_max_ = t_max;
+	accelerator_intersect_data.setTMax(t_max);
 	const Bound::Cross cross = tree_bound.cross(ray, t_max);
 	if(!cross.crossed_) { return {}; }
 	const Vec3 inv_dir{math::inverse(ray.dir_.x()), math::inverse(ray.dir_.y()), math::inverse(ray.dir_.z())};
@@ -721,7 +721,7 @@ AcceleratorIntersectData AcceleratorKdTreeMultiThread::intersect(const Ray &ray,
 		{
 			Accelerator::primitiveIntersection(accelerator_intersect_data, prim, ray);
 		}
-		if(accelerator_intersect_data.hit_ && accelerator_intersect_data.t_max_ <= stack[exit_id].t_)
+		if(accelerator_intersect_data.isHit() && accelerator_intersect_data.tMax() <= stack[exit_id].t_)
 		{
 			return accelerator_intersect_data;
 		}
@@ -922,7 +922,7 @@ AcceleratorTsIntersectData AcceleratorKdTreeMultiThread::intersectTs(const Ray &
 		curr_node = stack[exit_id].node_;
 		exit_id = stack[entry_id].prev_stack_id_;
 	} // while
-	accelerator_intersect_data.hit_ = false;
+	accelerator_intersect_data.setHit(false);
 	return accelerator_intersect_data;
 }
 

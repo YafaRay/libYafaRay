@@ -27,12 +27,12 @@ BEGIN_YAFARAY
 
 std::unique_ptr<const SurfacePoint> PrimitiveInstance::getSurface(const RayDifferentials *ray_differentials, const Point3 &hit, const IntersectData &intersect_data, const Camera *camera) const
 {
-	return base_primitive_->getSurface(ray_differentials, hit, intersect_data, base_instance_.getObjToWorldMatrixAtTime(intersect_data.time_), camera);
+	return base_primitive_->getSurface(ray_differentials, hit, intersect_data, base_instance_.getObjToWorldMatrixAtTime(intersect_data.time()), camera);
 }
 
 std::unique_ptr<const SurfacePoint> PrimitiveInstance::getSurface(const RayDifferentials *ray_differentials, const Point3 &hit, const IntersectData &intersect_data, const Matrix4 &obj_to_world, const Camera *camera) const
 {
-	return base_primitive_->getSurface(ray_differentials, hit, intersect_data, obj_to_world * base_instance_.getObjToWorldMatrixAtTime(intersect_data.time_), camera);
+	return base_primitive_->getSurface(ray_differentials, hit, intersect_data, obj_to_world * base_instance_.getObjToWorldMatrixAtTime(intersect_data.time()), camera);
 }
 
 END_YAFARAY

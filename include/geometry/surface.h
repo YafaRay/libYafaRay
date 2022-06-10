@@ -39,7 +39,7 @@ class Ray;
 class Vec3;
 class Primitive;
 struct RayDifferentials;
-struct IntersectData;
+class IntersectData;
 
 struct SurfaceDifferentials final
 {
@@ -108,8 +108,7 @@ class SurfacePoint final
 		bool has_uv_;
 		bool has_orco_;
 
-		float u_; //!< the u texture coord.
-		float v_; //!< the v texture coord.
+		Uv uv_; //!< the u, v texture coords.
 		Vec3 nu_; //!< second vector building orthogonal shading space with N
 		Vec3 nv_; //!< third vector building orthogonal shading space with N
 		Vec3 dp_du_; //!< u-axis in world space (normalized)
@@ -134,8 +133,7 @@ inline SurfacePoint::SurfacePoint(const SurfacePoint &sp)
 	orco_p_{sp.orco_p_},
 	has_uv_{sp.has_uv_},
 	has_orco_{sp.has_orco_},
-	u_{sp.u_},
-	v_{sp.v_},
+	uv_{sp.uv_},
 	nu_{sp.nu_},
 	nv_{sp.nv_},
 	dp_du_{sp.dp_du_},
@@ -160,8 +158,7 @@ inline SurfacePoint::SurfacePoint(const SurfacePoint &sp_1, const SurfacePoint &
 	  orco_p_{alpha < 0.5f ? sp_1.orco_p_ : sp_2.orco_p_},
 	  has_uv_{alpha < 0.5f ? sp_1.has_uv_ : sp_2.has_uv_},
 	  has_orco_{alpha < 0.5f ? sp_1.has_orco_ : sp_2.has_orco_},
-	  u_{alpha < 0.5f ? sp_1.u_ : sp_2.u_},
-	  v_{alpha < 0.5f ? sp_1.v_ : sp_2.v_},
+	  uv_{alpha < 0.5f ? sp_1.uv_ : sp_2.uv_},
 	  nu_{math::lerp(sp_1.nu_, sp_2.nu_, alpha)},
 	  nv_{math::lerp(sp_1.nv_, sp_2.nv_, alpha)},
 	  dp_du_{math::lerp(sp_1.dp_du_, sp_2.dp_du_, alpha)},
@@ -210,8 +207,7 @@ inline SurfacePoint &SurfacePoint::operator=(const SurfacePoint &sp)
 	orco_p_ = sp.orco_p_;
 	has_uv_ = sp.has_uv_;
 	has_orco_ = sp.has_orco_;
-	u_ = sp.u_;
-	v_ = sp.v_;
+	uv_ = sp.uv_;
 	nu_ = sp.nu_;
 	nv_ = sp.nv_;
 	dp_du_ = sp.dp_du_;

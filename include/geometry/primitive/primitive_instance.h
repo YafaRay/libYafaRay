@@ -28,7 +28,7 @@
 BEGIN_YAFARAY
 
 class Material;
-struct IntersectData;
+class IntersectData;
 class Bound;
 class Ray;
 class SurfacePoint;
@@ -52,10 +52,10 @@ class PrimitiveInstance : public Primitive
 		const Material *getMaterial() const override { return base_primitive_->getMaterial(); }
 		float surfaceArea(float time) const override;
 		float surfaceArea(const Matrix4 &obj_to_world, float time) const override;
-		Vec3 getGeometricNormal(float u, float v, float time) const override;
-		Vec3 getGeometricNormal(const Matrix4 &obj_to_world, float u, float v, float time) const override;
-		std::pair<Point3, Vec3> sample(float s_1, float s_2, float time) const override;
-		std::pair<Point3, Vec3> sample(float s_1, float s_2, const Matrix4 &obj_to_world, float time) const override;
+		Vec3 getGeometricNormal(const Uv &uv, float time) const override;
+		Vec3 getGeometricNormal(const Matrix4 &obj_to_world, const Uv &uv, float time) const override;
+		std::pair<Point3, Vec3> sample(const Uv &uv, float time) const override;
+		std::pair<Point3, Vec3> sample(const Uv &uv, const Matrix4 &obj_to_world, float time) const override;
 		const Object *getObject() const override { return &base_instance_; }
 		Visibility getVisibility() const override { return base_primitive_->getVisibility(); }
 		unsigned int getObjectIndex() const override { return base_primitive_->getObjectIndex(); }
@@ -63,7 +63,7 @@ class PrimitiveInstance : public Primitive
 		Rgb getObjectIndexAutoColor() const override { return base_primitive_->getObjectIndexAutoColor(); }
 		const Light *getObjectLight() const override { return base_primitive_->getObjectLight(); }
 		bool hasObjectMotionBlur() const override { return base_primitive_->hasObjectMotionBlur(); }
-		float getDistToNearestEdge(float u, float v, const Vec3 &dp_du_abs, const Vec3 &dp_dv_abs) const override { return base_primitive_->getDistToNearestEdge(u, v, dp_du_abs, dp_dv_abs); }
+		float getDistToNearestEdge(const Uv &uv, const Vec3 &dp_du_abs, const Vec3 &dp_dv_abs) const override { return base_primitive_->getDistToNearestEdge(uv, dp_du_abs, dp_dv_abs); }
 
 	private:
 		const ObjectInstance &base_instance_;
@@ -100,24 +100,24 @@ inline float PrimitiveInstance::surfaceArea(const Matrix4 &obj_to_world, float t
 	return base_primitive_->surfaceArea(obj_to_world * base_instance_.getObjToWorldMatrixAtTime(time), time);
 }
 
-inline Vec3 PrimitiveInstance::getGeometricNormal(float u, float v, float time) const
+inline Vec3 PrimitiveInstance::getGeometricNormal(const Uv &uv, float time) const
 {
-	return base_primitive_->getGeometricNormal(base_instance_.getObjToWorldMatrixAtTime(time), u, v, time);
+	return base_primitive_->getGeometricNormal(base_instance_.getObjToWorldMatrixAtTime(time), uv, time);
 }
 
-inline Vec3 PrimitiveInstance::getGeometricNormal(const Matrix4 &obj_to_world, float u, float v, float time) const
+inline Vec3 PrimitiveInstance::getGeometricNormal(const Matrix4 &obj_to_world, const Uv &uv, float time) const
 {
-	return base_primitive_->getGeometricNormal(obj_to_world * base_instance_.getObjToWorldMatrixAtTime(time), u, v, time);
+	return base_primitive_->getGeometricNormal(obj_to_world * base_instance_.getObjToWorldMatrixAtTime(time), uv, time);
 }
 
-inline std::pair<Point3, Vec3> PrimitiveInstance::sample(float s_1, float s_2, float time) const
+inline std::pair<Point3, Vec3> PrimitiveInstance::sample(const Uv &uv, float time) const
 {
-	return base_primitive_->sample(s_1, s_2, base_instance_.getObjToWorldMatrixAtTime(time), time);
+	return base_primitive_->sample(uv, base_instance_.getObjToWorldMatrixAtTime(time), time);
 }
 
-inline std::pair<Point3, Vec3> PrimitiveInstance::sample(float s_1, float s_2, const Matrix4 &obj_to_world, float time) const
+inline std::pair<Point3, Vec3> PrimitiveInstance::sample(const Uv &uv, const Matrix4 &obj_to_world, float time) const
 {
-	return base_primitive_->sample(s_1, s_2, obj_to_world * base_instance_.getObjToWorldMatrixAtTime(time), time);
+	return base_primitive_->sample(uv, obj_to_world * base_instance_.getObjToWorldMatrixAtTime(time), time);
 }
 
 inline Bound PrimitiveInstance::getBound() const

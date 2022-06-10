@@ -132,16 +132,11 @@ Point3 TextureMapperNode::doMapping(const Point3 &p, const Vec3 &n) const
 	return texpt;
 }
 
-Point3 TextureMapperNode::evalUv(const SurfacePoint &sp)
-{
-	return { sp.u_, sp.v_, 0.f };
-}
-
 std::pair<Point3, Vec3> TextureMapperNode::getCoords(const SurfacePoint &sp, const Camera *camera) const
 {
 	switch(coords_)
 	{
-		case Coords::Uv: return { evalUv(sp), sp.ng_ };
+		case Coords::Uv: return { { sp.uv_.u_, sp.uv_.v_, 0.f }, sp.ng_ };
 		case Coords::Orco: return { sp.orco_p_, sp.orco_ng_ };
 		case Coords::Transformed: return { mtx_ * sp.p_, mtx_ * sp.ng_ };  // apply 4x4 matrix of object for mapping also to true surface normals
 		case Coords::Window: return { camera->screenproject(sp.p_), sp.ng_ };

@@ -60,13 +60,13 @@ class Primitive
 		virtual const Material *getMaterial() const = 0;
 		virtual float surfaceArea(float time) const = 0;
 		virtual float surfaceArea(const Matrix4 &obj_to_world, float time) const = 0;
-		virtual float getDistToNearestEdge(float u, float v, const Vec3 &dp_du_abs, const Vec3 &dp_dv_abs) const = 0;
-		virtual Vec3 getGeometricNormal(float u, float v, float time) const = 0;
-		virtual Vec3 getGeometricNormal(const Matrix4 &obj_to_world, float u, float v, float time) const = 0;
-		Vec3 getGeometricNormal(float time) const { return getGeometricNormal(0.f, 0.f, time); }
-		Vec3 getGeometricNormal(const Matrix4 &obj_to_world, float time) const { return getGeometricNormal(obj_to_world, 0.f, 0.f, time); }
-		virtual std::pair<Point3, Vec3> sample(float s_1, float s_2, float time) const = 0;
-		virtual std::pair<Point3, Vec3> sample(float s_1, float s_2, const Matrix4 &obj_to_world, float time) const = 0;
+		virtual float getDistToNearestEdge(const Uv &uv, const Vec3 &dp_du_abs, const Vec3 &dp_dv_abs) const = 0;
+		virtual Vec3 getGeometricNormal(const Uv &uv, float time) const = 0;
+		virtual Vec3 getGeometricNormal(const Matrix4 &obj_to_world, const Uv &uv, float time) const = 0;
+		Vec3 getGeometricNormal(float time) const { return getGeometricNormal({0.f, 0.f}, time); }
+		Vec3 getGeometricNormal(const Matrix4 &obj_to_world, float time) const { return getGeometricNormal(obj_to_world, {0.f, 0.f}, time); }
+		virtual std::pair<Point3, Vec3> sample(const Uv &uv, float time) const = 0;
+		virtual std::pair<Point3, Vec3> sample(const Uv &uv, const Matrix4 &obj_to_world, float time) const = 0;
 		virtual const Object *getObject() const = 0;
 		virtual Visibility getVisibility() const = 0;
 		virtual unsigned int getObjectIndex() const = 0;

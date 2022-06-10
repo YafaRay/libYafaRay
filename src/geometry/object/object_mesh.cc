@@ -155,7 +155,7 @@ bool MeshObject::smoothVerticesNormals(Logger &logger, float angle)
 		{
 			for(auto &face : faces_)
 			{
-				const Vec3 n{face->getGeometricNormal(0, 0, static_cast<float>(time_step) / static_cast<float>(numTimeSteps()))};
+				const Vec3 n{face->getGeometricNormal({0.f, 0.f}, static_cast<float>(time_step) / static_cast<float>(numTimeSteps()))};
 				const std::vector<int> &vert_indices = face->getVerticesIndices();
 				const size_t num_indices = vert_indices.size();
 				for(size_t relative_vertex = 0; relative_vertex < num_indices; ++relative_vertex)

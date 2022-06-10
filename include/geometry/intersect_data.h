@@ -21,44 +21,51 @@
 #define YAFARAY_INTERSECT_DATA_H
 
 #include "common/yafaray_common.h"
+#include "geometry/uv.h"
+#include <algorithm>
 
 BEGIN_YAFARAY
 
-struct IntersectData
+class IntersectData
 {
-	IntersectData() = default;
-	IntersectData(float t_hit, float u = 0.f, float v = 0.f, float time = 0.f) : hit_{true}, t_hit_{t_hit}, u_{u}, v_{v}, time_{time} { }
-	IntersectData(const IntersectData &intersect_data);
-	IntersectData(IntersectData &&intersect_data) = default;
-	IntersectData& operator=(const IntersectData &intersect_data);
-	IntersectData& operator=(IntersectData &&intersect_data) = default;
-	alignas(8) bool hit_ = false;
-	float t_hit_;
-	float u_;
-	float v_;
-	float time_;
+	public:
+		IntersectData() = default;
+		explicit IntersectData(float t_hit, Uv &&uv = {0.f, 0.f}, float time = 0.f) : hit_{true}, t_hit_{t_hit}, uv_{std::move(uv)}, time_{time} { }
+		IntersectData(const IntersectData &intersect_data);
+		IntersectData(IntersectData &&intersect_data) = default;
+		IntersectData& operator=(const IntersectData &intersect_data);
+		IntersectData& operator=(IntersectData &&intersect_data) = default;
+		bool isHit() const { return hit_; }
+		float tHit() const { return t_hit_; }
+		Uv uv() const { return uv_; }
+		float time() const { return time_; }
+		void setHit(bool hit) { hit_ = hit; }
+
+	protected:
+		alignas(8) bool hit_ = false;
+		float t_hit_;
+		Uv uv_;
+		float time_;
 };
 
-inline IntersectData::IntersectData(const IntersectData &intersect_data) : hit_{intersect_data.hit_}
+inline IntersectData::IntersectData(const IntersectData &intersect_data) : hit_{intersect_data.isHit()}
 {
 	if(hit_)
 	{
-		t_hit_ = intersect_data.t_hit_;
-		u_ = intersect_data.u_;
-		v_ = intersect_data.v_;
-		time_ = intersect_data.time_;
+		t_hit_ = intersect_data.tHit();
+		uv_ = intersect_data.uv();
+		time_ = intersect_data.time();
 	}
 }
 
 inline IntersectData& IntersectData::operator=(const IntersectData &intersect_data)
 {
-	hit_ = intersect_data.hit_;
+	hit_ = intersect_data.isHit();
 	if(hit_)
 	{
-		t_hit_ = intersect_data.t_hit_;
-		u_ = intersect_data.u_;
-		v_ = intersect_data.v_;
-		time_ = intersect_data.time_;
+		t_hit_ = intersect_data.tHit();
+		uv_ = intersect_data.uv();
+		time_ = intersect_data.time();
 	}
 	return *this;
 }

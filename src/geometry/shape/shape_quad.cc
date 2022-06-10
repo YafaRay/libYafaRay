@@ -46,7 +46,7 @@ IntersectData ShapeQuad::intersect(const Ray &ray) const
 			if(v >= 0.f && (u + v) <= 1.f)
 			{
 				const float t = edge_2 * qvec_1 * inv_det_1_2;
-				if(t >= epsilon_1_2) return {t, u + v, v, ray.time_ };
+				if(t >= epsilon_1_2) return IntersectData{t, {u + v, v}, ray.time_ };
 			}
 		}
 		else //Test second triangle in the quad
@@ -67,7 +67,7 @@ IntersectData ShapeQuad::intersect(const Ray &ray) const
 					if(v >= 0.f && (u + v) <= 1.f)
 					{
 						const float t = edge_3 * qvec_2 * inv_det_2_3;
-						if(t >= epsilon_2_3) return {t, u, u + v, ray.time_ };
+						if(t >= epsilon_2_3) return IntersectData{t, {u, u + v}, ray.time_ };
 					}
 				}
 			}

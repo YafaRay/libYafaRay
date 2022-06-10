@@ -68,7 +68,7 @@ AcceleratorIntersectData AcceleratorSimpleTest::intersect(const Ray &ray, float 
 			for(const auto &primitive : object_data.primitives_)
 			{
 				Accelerator::primitiveIntersection(accelerator_intersect_data, primitive, ray);
-				if(accelerator_intersect_data.hit_ && accelerator_intersect_data.t_hit_ >= ray.tmin_  && accelerator_intersect_data.t_hit_ <= ray.tmax_)
+				if(accelerator_intersect_data.isHit() && accelerator_intersect_data.tHit() >= ray.tmin_  && accelerator_intersect_data.tHit() <= ray.tmax_)
 				{
 					return accelerator_intersect_data;
 				}

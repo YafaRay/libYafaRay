@@ -21,8 +21,7 @@
 #define YAFARAY_ACCELERATOR_H
 
 #include "common/yafaray_common.h"
-#include "geometry/intersect_data.h"
-#include "color/color.h"
+#include "accelerator/accelerator_intersect_data.h"
 #include "camera/camera.h"
 #include "geometry/primitive/primitive.h"
 #include "geometry/surface.h"
@@ -32,22 +31,6 @@
 #include <set>
 
 BEGIN_YAFARAY
-
-struct AcceleratorIntersectData : IntersectData
-{
-	AcceleratorIntersectData() = default;
-	explicit AcceleratorIntersectData(bool hit, float time) { hit_ = true; time_ = time; }
-	AcceleratorIntersectData(IntersectData &&intersect_data, const Primitive *hit_primitive) : IntersectData(std::move(intersect_data)), t_max_{intersect_data.t_hit_}, hit_primitive_{hit_primitive} { }
-	float t_max_ = std::numeric_limits<float>::infinity();
-	const Primitive *hit_primitive_ = nullptr;
-};
-
-struct AcceleratorTsIntersectData : AcceleratorIntersectData
-{
-	AcceleratorTsIntersectData() = default;
-	explicit AcceleratorTsIntersectData(AcceleratorIntersectData &&intersect_data) : AcceleratorIntersectData(std::move(intersect_data)) { }
-	Rgb transparent_color_ {1.f};
-};
 
 class Accelerator
 {
@@ -75,11 +58,11 @@ inline std::pair<std::unique_ptr<const SurfacePoint>, float> Accelerator::inters
 	const float t_max = (ray.tmax_ >= 0.f) ? ray.tmax_ : std::numeric_limits<float>::infinity();
 	// intersect with tree:
 	const AcceleratorIntersectData accelerator_intersect_data = intersect(ray, t_max);
-	if(accelerator_intersect_data.hit_ && accelerator_intersect_data.hit_primitive_)
+	if(accelerator_intersect_data.isHit() && accelerator_intersect_data.primitive())
 	{
-		const Point3 hit_point{ray.from_ + accelerator_intersect_data.t_max_ * ray.dir_};
-		auto sp = accelerator_intersect_data.hit_primitive_->getSurface(ray.differentials_.get(), hit_point, accelerator_intersect_data, camera);
-		return {std::move(sp), accelerator_intersect_data.t_max_};
+		const Point3 hit_point{ray.from_ + accelerator_intersect_data.tMax() * ray.dir_};
+		auto sp = accelerator_intersect_data.primitive()->getSurface(ray.differentials_.get(), hit_point, accelerator_intersect_data, camera);
+		return {std::move(sp), accelerator_intersect_data.tMax()};
 	}
 	else return {nullptr, ray.tmax_};
 }
@@ -91,7 +74,7 @@ inline std::pair<bool, const Primitive *> Accelerator::isShadowed(const Ray &ray
 	sray.time_ = ray.time_;
 	const float t_max = (ray.tmax_ >= 0.f) ? sray.tmax_ - 2 * sray.tmin_ : std::numeric_limits<float>::infinity();
 	const AcceleratorIntersectData accelerator_intersect_data = intersectS(sray, t_max, shadow_bias);
-	return {accelerator_intersect_data.hit_, accelerator_intersect_data.hit_primitive_};
+	return {accelerator_intersect_data.isHit(), accelerator_intersect_data.primitive()};
 }
 
 inline std::tuple<bool, Rgb, const Primitive *> Accelerator::isShadowed(const Ray &ray, int max_depth, float shadow_bias, const Camera *camera) const
@@ -100,13 +83,13 @@ inline std::tuple<bool, Rgb, const Primitive *> Accelerator::isShadowed(const Ra
 	sray.from_ += sray.dir_ * sray.tmin_;
 	const float t_max = (ray.tmax_ >= 0.f) ? sray.tmax_ - 2 * sray.tmin_ : std::numeric_limits<float>::infinity();
 	AcceleratorTsIntersectData accelerator_intersect_data = intersectTs(sray, max_depth, t_max, shadow_bias, camera);
-	return {accelerator_intersect_data.hit_, std::move(accelerator_intersect_data.transparent_color_), accelerator_intersect_data.hit_ ? accelerator_intersect_data.hit_primitive_ : nullptr};
+	return {accelerator_intersect_data.isHit(), std::move(accelerator_intersect_data.transparentColor()), accelerator_intersect_data.isHit() ? accelerator_intersect_data.primitive() : nullptr};
 }
 
 inline void Accelerator::primitiveIntersection(AcceleratorIntersectData &accelerator_intersect_data, const Primitive *primitive, const Ray &ray)
 {
 	if(IntersectData intersect_data = primitive->intersect(ray);
-	   intersect_data.hit_ && intersect_data.t_hit_ < accelerator_intersect_data.t_max_ && intersect_data.t_hit_ >= ray.tmin_)
+	   intersect_data.isHit() && intersect_data.tHit() < accelerator_intersect_data.tMax() && intersect_data.tHit() >= ray.tmin_)
 	{
 		if(const Visibility prim_visibility = primitive->getVisibility();
 		   prim_visibility == Visibility::NormalVisible || prim_visibility == Visibility::VisibleNoShadows)
@@ -124,7 +107,7 @@ inline void Accelerator::primitiveIntersection(AcceleratorIntersectData &acceler
 inline bool Accelerator::primitiveIntersection(AcceleratorIntersectData &accelerator_intersect_data, const Primitive *primitive, const Ray &ray, float t_max)
 {
 	if(IntersectData intersect_data = primitive->intersect(ray);
-	   intersect_data.hit_ && intersect_data.t_hit_ < t_max && intersect_data.t_hit_ >= 0.f)  // '>=' ?
+	   intersect_data.isHit() && intersect_data.tHit() < t_max && intersect_data.tHit() >= 0.f)  // '>=' ?
 	{
 		if(const Visibility prim_visibility = primitive->getVisibility();
 		   prim_visibility == Visibility::NormalVisible || prim_visibility == Visibility::InvisibleShadowsOnly)
@@ -143,7 +126,7 @@ inline bool Accelerator::primitiveIntersection(AcceleratorIntersectData &acceler
 inline bool Accelerator::primitiveIntersection(AcceleratorTsIntersectData &accelerator_intersect_data, std::set<const Primitive *> &filtered, int &depth, int max_depth, const Primitive *primitive, const Ray &ray, float t_max, const Camera *camera)
 {
 	if(IntersectData intersect_data = primitive->intersect(ray);
-	   intersect_data.hit_ && intersect_data.t_hit_ < t_max && intersect_data.t_hit_ >= ray.tmin_)// '>=' ?
+	   intersect_data.isHit() && intersect_data.tHit() < t_max && intersect_data.tHit() >= ray.tmin_)// '>=' ?
 	{
 		if(const Visibility prim_visibility = primitive->getVisibility();
 		   prim_visibility == Visibility::NormalVisible || prim_visibility == Visibility::InvisibleShadowsOnly)
@@ -156,9 +139,9 @@ inline bool Accelerator::primitiveIntersection(AcceleratorTsIntersectData &accel
 				if(filtered.insert(primitive).second)
 				{
 					if(depth >= max_depth) return true;
-					const Point3 hit_point{ray.from_ + accelerator_intersect_data.t_hit_ * ray.dir_};
+					const Point3 hit_point{ray.from_ + accelerator_intersect_data.tHit() * ray.dir_};
 					const auto sp = primitive->getSurface(ray.differentials_.get(), hit_point, accelerator_intersect_data, camera);
-					if(sp) accelerator_intersect_data.transparent_color_ *= sp->getTransparency(ray.dir_, camera);
+					if(sp) accelerator_intersect_data.multiplyTransparentColor(sp->getTransparency(ray.dir_, camera));
 					++depth;
 				}
 			}

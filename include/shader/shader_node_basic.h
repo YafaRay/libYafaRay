@@ -48,7 +48,6 @@ class TextureMapperNode final : public ShaderNode
 		static Point3 sphereMap(const Point3 &p);
 		static Point3 cubeMap(const Point3 &p, const Vec3 &n);
 		static Point3 flatMap(const Point3 &p);
-		static Point3 evalUv(const SurfacePoint &sp);
 
 		int map_x_ = 1, map_y_ = 2, map_z_ = 3; //!< axis mapping; 0:set to zero, 1:x, 2:y, 3:z
 		Point3 p_du_, p_dv_, p_dw_;

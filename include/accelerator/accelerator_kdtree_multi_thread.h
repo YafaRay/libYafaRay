@@ -31,7 +31,7 @@ BEGIN_YAFARAY
 
 #define POLY_CLIPPING_MULTITHREAD 1
 
-struct IntersectData;
+class IntersectData;
 
 // ============================================================
 /*! This class holds a complete kd-tree with building and

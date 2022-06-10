@@ -95,7 +95,7 @@ std::pair<Point3, Vec3> BackgroundPortalLight::sampleSurface(float s_1, float s_
 		ss_1 = (s_1 - area_dist_->cdf(prim_num - 1)) / delta;
 	}
 	else ss_1 = s_1 / delta;
-	return primitives_[prim_num]->sample(ss_1, s_2, time);
+	return primitives_[prim_num]->sample({ss_1, s_2}, time);
 }
 
 Rgb BackgroundPortalLight::totalEnergy() const
@@ -174,8 +174,8 @@ bool BackgroundPortalLight::intersect(const Ray &ray, float &t, Rgb &col, float 
 	const float t_max = (ray.tmax_ >= 0.f) ? ray.tmax_ : std::numeric_limits<float>::infinity();
 	// intersect with tree:
 	const AcceleratorIntersectData accelerator_intersect_data = accelerator_->intersect(ray, t_max);
-	if(!accelerator_intersect_data.hit_) { return false; }
-	const Vec3 n{accelerator_intersect_data.hit_primitive_->getGeometricNormal(ray.time_)};
+	if(!accelerator_intersect_data.isHit()) { return false; }
+	const Vec3 n{accelerator_intersect_data.primitive()->getGeometricNormal(ray.time_)};
 	const float cos_angle = ray.dir_ * (-n);
 	if(cos_angle <= 0.f) return false;
 	const float idist_sqr = 1.f / (t * t);

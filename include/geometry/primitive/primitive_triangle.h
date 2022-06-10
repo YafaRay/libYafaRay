@@ -38,15 +38,15 @@ class TrianglePrimitive : public FacePrimitive
 		PolyDouble::ClipResultWithBound clipToBound(Logger &logger, const std::array<Vec3Double, 2> &bound, const ClipPlane &clip_plane, const PolyDouble &poly, const Matrix4 &obj_to_world) const override;
 		Bound getBound() const override;
 		Bound getBound(const Matrix4 &obj_to_world) const override;
-		Vec3 getGeometricNormal(float u, float v, float time) const override;
-		Vec3 getGeometricNormal(const Matrix4 &obj_to_world, float u, float v, float time) const override;
+		Vec3 getGeometricNormal(const Uv &uv, float time) const override;
+		Vec3 getGeometricNormal(const Matrix4 &obj_to_world, const Uv &uv, float time) const override;
 		std::unique_ptr<const SurfacePoint> getSurface(const RayDifferentials *ray_differentials, const Point3 &hit, const IntersectData &intersect_data, const Camera *camera) const override;
 		std::unique_ptr<const SurfacePoint> getSurface(const RayDifferentials *ray_differentials, const Point3 &hit_point, const IntersectData &intersect_data, const Matrix4 &obj_to_world, const Camera *camera) const override;
 		float surfaceArea(float time) const override;
 		float surfaceArea(const Matrix4 &obj_to_world, float time) const override;
-		std::pair<Point3, Vec3> sample(float s_1, float s_2, float time) const override;
-		std::pair<Point3, Vec3> sample(float s_1, float s_2, const Matrix4 &obj_to_world, float time) const override;
-		float getDistToNearestEdge(float u, float v, const Vec3 &dp_du_abs, const Vec3 &dp_dv_abs) const override { return ShapeTriangle::getDistToNearestEdge(u, v, dp_du_abs, dp_dv_abs); }
+		std::pair<Point3, Vec3> sample(const Uv &uv, float time) const override;
+		std::pair<Point3, Vec3> sample(const Uv &uv, const Matrix4 &obj_to_world, float time) const override;
+		float getDistToNearestEdge(const Uv &uv, const Vec3 &dp_du_abs, const Vec3 &dp_dv_abs) const override { return ShapeTriangle::getDistToNearestEdge(uv, dp_du_abs, dp_dv_abs); }
 		Vec3 getGeometricNormal(const Matrix4 &obj_to_world) const;
 		Vec3 getGeometricNormal() const;
 		Vec3 face_normal_geometric_;
@@ -97,26 +97,26 @@ inline float TrianglePrimitive::surfaceArea(const Matrix4 &obj_to_world, float t
 	}}.surfaceArea();
 }
 
-inline std::pair<Point3, Vec3> TrianglePrimitive::sample(float s_1, float s_2, float time) const
+inline std::pair<Point3, Vec3> TrianglePrimitive::sample(const Uv &uv, float time) const
 {
 	return {
-		ShapeTriangle{{
-			getVertex(0, 0),
-			getVertex(1, 0),
-			getVertex(2, 0),
-		}}.sample(s_1, s_2),
+			ShapeTriangle{{
+								  getVertex(0, 0),
+								  getVertex(1, 0),
+								  getVertex(2, 0),
+						  }}.sample(uv),
 		getGeometricNormal()
 	};
 }
 
-inline std::pair<Point3, Vec3> TrianglePrimitive::sample(float s_1, float s_2, const Matrix4 &obj_to_world, float time) const
+inline std::pair<Point3, Vec3> TrianglePrimitive::sample(const Uv &uv, const Matrix4 &obj_to_world, float time) const
 {
 	return {
-		ShapeTriangle{{
-			getVertex(0, obj_to_world, 0),
-			getVertex(1, obj_to_world, 0),
-			getVertex(2, obj_to_world, 0),
-		}}.sample(s_1, s_2),
+			ShapeTriangle{{
+								  getVertex(0, obj_to_world, 0),
+								  getVertex(1, obj_to_world, 0),
+								  getVertex(2, obj_to_world, 0),
+						  }}.sample(uv),
 		getGeometricNormal(obj_to_world)
 	};
 }
@@ -136,12 +136,12 @@ inline Vec3 TrianglePrimitive::getGeometricNormal() const
 	return face_normal_geometric_;
 }
 
-inline Vec3 TrianglePrimitive::getGeometricNormal(float, float, float) const
+inline Vec3 TrianglePrimitive::getGeometricNormal(const Uv &, float) const
 {
 	return getGeometricNormal();
 }
 
-inline Vec3 TrianglePrimitive::getGeometricNormal(const Matrix4 &obj_to_world, float, float, float) const
+inline Vec3 TrianglePrimitive::getGeometricNormal(const Matrix4 &obj_to_world, const Uv &, float) const
 {
 	return getGeometricNormal(obj_to_world);
 }

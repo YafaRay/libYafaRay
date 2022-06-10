@@ -21,12 +21,13 @@
 #define YAFARAY_SHAPE_QUAD_H
 
 #include "geometry/vector.h"
+#include "geometry/uv.h"
 #include <array>
 
 BEGIN_YAFARAY
 
 class Ray;
-struct IntersectData;
+class IntersectData;
 
 class ShapeQuad final
 {
@@ -37,9 +38,9 @@ class ShapeQuad final
 		IntersectData intersect(const Ray &ray) const;
 		Vec3 calculateFaceNormal() const;
 		float surfaceArea() const;
-		Point3 sample(float s_1, float s_2) const;
-		template <class T> static T interpolate(float u, float v, const std::array<T, 4> &t);
-		static float getDistToNearestEdge(float u, float v, const Vec3 &dp_du_abs, const Vec3 &dp_dv_abs);
+		Point3 sample(const Uv &uv) const;
+		template <class T> static T interpolate(const Uv &uv, const std::array<T, 4> &t);
+		static float getDistToNearestEdge(const Uv &uv, const Vec3 &dp_du_abs, const Vec3 &dp_dv_abs);
 
 	private:
 		alignas(8) std::array<Point3, 4> vertices_;
@@ -51,22 +52,22 @@ inline Vec3 ShapeQuad::calculateFaceNormal() const
 	return ((vertices_[1] - vertices_[0]) ^ (vertices_[2] - vertices_[0])).normalize();
 }
 
-inline Point3 ShapeQuad::sample(float s_1, float s_2) const
+inline Point3 ShapeQuad::sample(const Uv &uv) const
 {
-	return ShapeQuad::interpolate(s_1, s_2, vertices_);
+	return ShapeQuad::interpolate(uv, vertices_);
 }
 
 template <class T>
-inline T ShapeQuad::interpolate(float u, float v, const std::array<T, 4> &t)
+inline T ShapeQuad::interpolate(const Uv &uv, const std::array<T, 4> &t)
 {
-	return (1.f - v) * ((1.f - u) * t[0] + u * t[1]) + v * ((1.f - u) * t[3] + u * t[2]);
+	return (1.f - uv.v_) * ((1.f - uv.u_) * t[0] + uv.u_ * t[1]) + uv.v_ * ((1.f - uv.u_) * t[3] + uv.u_ * t[2]);
 }
 
-inline float ShapeQuad::getDistToNearestEdge(float u, float v, const Vec3 &dp_du_abs, const Vec3 &dp_dv_abs)
+inline float ShapeQuad::getDistToNearestEdge(const Uv &uv, const Vec3 &dp_du_abs, const Vec3 &dp_dv_abs)
 {
-	const float u_dist_rel = 0.5f - std::abs(u - 0.5f);
+	const float u_dist_rel = 0.5f - std::abs(uv.u_ - 0.5f);
 	const float u_dist_abs = u_dist_rel * dp_du_abs.length();
-	const float v_dist_rel = 0.5f - std::abs(v - 0.5f);
+	const float v_dist_rel = 0.5f - std::abs(uv.v_ - 0.5f);
 	const float v_dist_abs = v_dist_rel * dp_dv_abs.length();
 	return std::min(u_dist_abs, v_dist_abs);
 }

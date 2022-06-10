@@ -656,7 +656,7 @@ Rgb PhotonIntegrator::finalGathering(FastRandom &fast_random, RandomGenerator &r
 		float length = 0;
 		Vec3 pwo{wo};
 		Ray p_ray;
-		p_ray.time_ = sp.intersect_data_.time_;
+		p_ray.time_ = sp.intersect_data_.time();
 		bool did_hit;
 		unsigned int offs = n_paths_ * pixel_sampling_data.sample_ + pixel_sampling_data.offset_ + i; // some redundancy here...
 		Rgb lcol, scol;

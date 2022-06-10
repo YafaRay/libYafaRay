@@ -93,7 +93,7 @@ std::pair<Point3, Vec3> ObjectLight::sampleSurface(float s_1, float s_2, float t
 		ss_1 = (s_1 - area_dist_->cdf(prim_num - 1)) / delta;
 	}
 	else ss_1 = s_1 / delta;
-	return primitives_[prim_num]->sample(ss_1, s_2, time);
+	return primitives_[prim_num]->sample({ss_1, s_2}, time);
 	//	++stats[primNum];
 }
 
@@ -178,8 +178,8 @@ bool ObjectLight::intersect(const Ray &ray, float &t, Rgb &col, float &ipdf) con
 	const float t_max = (ray.tmax_ >= 0.f) ? ray.tmax_ : std::numeric_limits<float>::infinity();
 	// intersect with tree:
 	const AcceleratorIntersectData accelerator_intersect_data = accelerator_->intersect(ray, t_max);
-	if(!accelerator_intersect_data.hit_) { return false; }
-	const Vec3 n{accelerator_intersect_data.hit_primitive_->getGeometricNormal(accelerator_intersect_data.u_, accelerator_intersect_data.v_, ray.time_)};
+	if(!accelerator_intersect_data.isHit()) { return false; }
+	const Vec3 n{accelerator_intersect_data.primitive()->getGeometricNormal(accelerator_intersect_data.uv(), 0)};
 	float cos_angle = ray.dir_ * (-n);
 	if(cos_angle <= 0.f)
 	{

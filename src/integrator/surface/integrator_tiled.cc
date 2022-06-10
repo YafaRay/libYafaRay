@@ -409,7 +409,7 @@ void TiledIntegrator::generateCommonLayers(ColorLayers *color_layers, const Surf
 		{
 			if(Rgba *color_layer = color_layers->find(LayerDef::Uv))
 			{
-				*color_layer = Rgba(sp.u_, sp.v_, 0.f, 1.f);
+				*color_layer = Rgba(sp.uv_.u_, sp.uv_.v_, 0.f, 1.f);
 			}
 			/* FIXME: probably does not make sense when we have now also quads in addition to triangles...
 			if(Rgba *color_layer = color_layers->find(LayerDef::BarycentricUvw))
@@ -640,7 +640,7 @@ Rgb TiledIntegrator::sampleAmbientOcclusion(const Accelerator &accelerator, bool
 {
 	Rgb col{0.f};
 	const BsdfFlags &mat_bsdfs = sp.mat_data_->bsdf_flags_;
-	Ray light_ray{sp.p_, Vec3{0.f}, sp.intersect_data_.time_};
+	Ray light_ray{sp.p_, Vec3{0.f}, sp.intersect_data_.time()};
 	int n = ao_samples;//(int) ceilf(aoSamples*getSampleMultiplier());
 	if(ray_division.division_ > 1) n = std::max(1, n / ray_division.division_);
 	const unsigned int offs = n * pixel_sampling_data.sample_ + pixel_sampling_data.offset_;

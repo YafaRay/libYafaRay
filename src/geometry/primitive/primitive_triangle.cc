@@ -37,7 +37,7 @@ std::unique_ptr<const SurfacePoint> TrianglePrimitive::getSurface(const RayDiffe
 	auto sp = std::make_unique<SurfacePoint>(this);
 	sp->intersect_data_ = intersect_data;
 	sp->ng_ = getGeometricNormal();
-	const auto [barycentric_u, barycentric_v, barycentric_w] = ShapeTriangle::getBarycentricUVW(intersect_data.u_, intersect_data.v_);
+	const auto [barycentric_u, barycentric_v, barycentric_w] = ShapeTriangle::getBarycentricUVW(intersect_data.uv());
 	if(base_mesh_object_.isSmooth() || base_mesh_object_.hasVerticesNormals(0))
 	{
 		const std::array<Vec3, 3> v {
@@ -71,8 +71,7 @@ std::unique_ptr<const SurfacePoint> TrianglePrimitive::getSurface(const RayDiffe
 	if(base_mesh_object_.hasUv())
 	{
 		const std::array<Uv, 3> uv { getVertexUv(0), getVertexUv(1), getVertexUv(2) };
-		sp->u_ = barycentric_u * uv[0].u_ + barycentric_v * uv[1].u_ + barycentric_w * uv[2].u_;
-		sp->v_ = barycentric_u * uv[0].v_ + barycentric_v * uv[1].v_ + barycentric_w * uv[2].v_;
+		sp->uv_ = barycentric_u * uv[0] + barycentric_v * uv[1] + barycentric_w * uv[2];
 		// calculate dPdU and dPdV
 		const float du_1 = uv[1].u_ - uv[0].u_;
 		const float du_2 = uv[2].u_ - uv[0].u_;
@@ -94,8 +93,7 @@ std::unique_ptr<const SurfacePoint> TrianglePrimitive::getSurface(const RayDiffe
 		// implicit mapping, p0 = 0/0, p1 = 1/0, p2 = 0/1 => sp->u_ = barycentric_u, sp->v_ = barycentric_v; (arbitrary choice)
 		sp->dp_du_ = p[1] - p[0];
 		sp->dp_dv_ = p[2] - p[0];
-		sp->u_ = barycentric_u;
-		sp->v_ = barycentric_v;
+		sp->uv_ = {barycentric_u, barycentric_v};
 	}
 	//Copy original dPdU and dPdV before normalization to the "absolute" dPdU and dPdV (for mipmap calculations)
 	sp->dp_du_abs_ = sp->dp_du_;
@@ -118,7 +116,7 @@ std::unique_ptr<const SurfacePoint> TrianglePrimitive::getSurface(const RayDiffe
 	auto sp = std::make_unique<SurfacePoint>(this);
 	sp->intersect_data_ = intersect_data;
 	sp->ng_ = getGeometricNormal(obj_to_world);
-	const auto [barycentric_u, barycentric_v, barycentric_w] = ShapeTriangle::getBarycentricUVW(intersect_data.u_, intersect_data.v_);
+	const auto [barycentric_u, barycentric_v, barycentric_w] = ShapeTriangle::getBarycentricUVW(intersect_data.uv());
 	if(base_mesh_object_.isSmooth() || base_mesh_object_.hasVerticesNormals(0))
 	{
 		const std::array<Vec3, 3> v {
@@ -152,8 +150,7 @@ std::unique_ptr<const SurfacePoint> TrianglePrimitive::getSurface(const RayDiffe
 	if(base_mesh_object_.hasUv())
 	{
 		const std::array<Uv, 3> uv { getVertexUv(0), getVertexUv(1), getVertexUv(2) };
-		sp->u_ = barycentric_u * uv[0].u_ + barycentric_v * uv[1].u_ + barycentric_w * uv[2].u_;
-		sp->v_ = barycentric_u * uv[0].v_ + barycentric_v * uv[1].v_ + barycentric_w * uv[2].v_;
+		sp->uv_ = barycentric_u * uv[0] + barycentric_v * uv[1] + barycentric_w * uv[2];
 		// calculate dPdU and dPdV
 		const float du_1 = uv[1].u_ - uv[0].u_;
 		const float du_2 = uv[2].u_ - uv[0].u_;
@@ -175,8 +172,7 @@ std::unique_ptr<const SurfacePoint> TrianglePrimitive::getSurface(const RayDiffe
 		// implicit mapping, p0 = 0/0, p1 = 1/0, p2 = 0/1 => sp->u_ = barycentric_u, sp->v_ = barycentric_v; (arbitrary choice)
 		sp->dp_du_ = p[1] - p[0];
 		sp->dp_dv_ = p[2] - p[0];
-		sp->u_ = barycentric_u;
-		sp->v_ = barycentric_v;
+		sp->uv_ = {barycentric_u, barycentric_v};
 	}
 	//Copy original dPdU and dPdV before normalization to the "absolute" dPdU and dPdV (for mipmap calculations)
 	sp->dp_du_abs_ = sp->dp_du_;
