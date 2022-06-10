@@ -27,6 +27,7 @@
 #include "scene/scene.h"
 #include "light/light.h"
 #include "image/image_output.h"
+#include "math/interpolation_curve.h"
 
 BEGIN_YAFARAY
 
@@ -170,9 +171,9 @@ Rgb SunSkyBackground::eval(const Vec3 &dir, bool use_ibl_blur) const
 
 Rgb SunSkyBackground::computeAttenuatedSunlight(float theta, int turbidity)
 {
-	IrregularSpectrum k_o_curve(spectrum_sun::k_o_amplitudes.data(), spectrum_sun::k_o_wavelengths.data(), spectrum_sun::k_o_amplitudes.size());
-	IrregularSpectrum k_g_curve(spectrum_sun::k_g_amplitudes.data(), spectrum_sun::k_g_wavelengths.data(), spectrum_sun::k_g_amplitudes.size());
-	IrregularSpectrum k_wa_curve(spectrum_sun::k_wa_amplitudes.data(), spectrum_sun::k_wa_wavelengths.data(), spectrum_sun::k_wa_amplitudes.size());
+	const IrregularCurve k_o_curve(spectrum_sun::k_o_wavelength_amplitudes);
+	const IrregularCurve k_g_curve(spectrum_sun::k_g_wavelength_amplitudes);
+	const IrregularCurve k_wa_curve(spectrum_sun::k_wa_wavelength_amplitudes);
 	//RiRegularSpectralCurve   solCurve(solAmplitudes, 380, 750, 38);  // every 10 nm  IN WRONG UNITS
 	// Need a factor of 100 (done below)
 	std::array<float, spectrum_sun::sol_amplitudes.size()> data;  // (750 - 380) / 10  + 1
@@ -199,15 +200,15 @@ Rgb SunSkyBackground::computeAttenuatedSunlight(float theta, int turbidity)
 		// Attenuation due to ozone absorption
 		// lOzone - amount of ozone in cm(NTP)
 		// Results agree with the graph (pg 128, MI)
-		const float tau_o = math::exp(-m * k_o_curve.sample(lambda) * l_ozone);
+		const float tau_o = math::exp(-m * k_o_curve.getSample(lambda) * l_ozone);
 		// Attenuation due to mixed gases absorption
 		// Results agree with the graph (pg 131, MI)
-		const float tau_g = math::exp(-1.41f * k_g_curve.sample(lambda) * m / math::pow(1.f + 118.93f * k_g_curve.sample(lambda) * m, 0.45f));
+		const float tau_g = math::exp(-1.41f * k_g_curve.getSample(lambda) * m / math::pow(1.f + 118.93f * k_g_curve.getSample(lambda) * m, 0.45f));
 		// Attenuation due to water vapor absorbtion
 		// w - precipitable water vapor in centimeters (standard = 2)
 		// Results agree with the graph (pg 132, MI)
-		const float tau_wa = math::exp(-0.2385f * k_wa_curve.sample(lambda) * w * m /
-									   math::pow(1.f + 20.07f * k_wa_curve.sample(lambda) * w * m, 0.45f));
+		const float tau_wa = math::exp(-0.2385f * k_wa_curve.getSample(lambda) * w * m /
+									   math::pow(1.f + 20.07f * k_wa_curve.getSample(lambda) * w * m, 0.45f));
 
 		data[i] = 100.f * sol_amplitude * tau_r * tau_a * tau_o * tau_g * tau_wa; // 100 comes from solCurve being
 		// in wrong units.

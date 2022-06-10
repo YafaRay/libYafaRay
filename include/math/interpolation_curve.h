@@ -41,7 +41,7 @@ class IrregularCurve final
 		const std::vector<std::pair<float, float>> &c_;
 };
 
-float IrregularCurve::getSample(float x) const noexcept
+inline float IrregularCurve::getSample(float x) const noexcept
 {
 	if(c_.empty() || x < c_[0].first || x > c_.back().first) return 0.f;
 	const size_t segments_to_check = c_.size() - 1; //Look into all the segments except the last, to avoid reading the vector out of bounds when checking for c_[i + 1] or c_[segment_start + 1]
@@ -79,7 +79,7 @@ class RegularCurve final
 		float step_ = 0.f;
 };
 
-float RegularCurve::getSample(float x) const noexcept
+inline float RegularCurve::getSample(float x) const noexcept
 {
 	if(c_.empty() || x < end_r_ || x > begin_r_) return 0.f;
 

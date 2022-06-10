@@ -31,86 +31,21 @@ namespace spectrum_sun
 {
 
 // k_o Spectrum table from pg 127, MI.
-static constexpr std::array<float, 64> k_o_wavelengths
+static const std::vector<std::pair<float, float>> k_o_wavelength_amplitudes
 {
-	300, 305, 310, 315, 320,
-	325, 330, 335, 340, 345,
-	350, 355,
-
-	445, 450, 455, 460, 465,
-	470, 475, 480, 485, 490,
-	495,
-
-	500, 505, 510, 515, 520,
-	525, 530, 535, 540, 545,
-	550, 555, 560, 565, 570,
-	575, 580, 585, 590, 595,
-
-	600, 605, 610, 620, 630,
-	640, 650, 660, 670, 680,
-	690,
-
-	700, 710, 720, 730, 740,
-	750, 760, 770, 780, 790,
+	{300.f, 10.f}, {305.f, 4.8f}, {310.f, 2.7f}, {315.f, 1.35f}, {320.f, 0.8f}, {325.f, 0.38f}, {330.f, 0.16f}, {335.f, 0.075f}, {340.f, 0.04f}, {345.f, 0.019f}, {350.f, 0.007f}, {355.f, 0.f}, {445.f, 0.003f}, {450.f, 0.003f}, {455.f, 0.004f}, {460.f, 0.006f}, {465.f, 0.008f}, {470.f, 0.009f}, {475.f, 0.012f}, {480.f, 0.014f}, {485.f, 0.017f}, {490.f, 0.021f}, {495.f, 0.025f}, {500.f, 0.03f}, {505.f, 0.035f}, {510.f, 0.04f}, {515.f, 0.045f}, {520.f, 0.048f}, {525.f, 0.057f}, {530.f, 0.063f}, {535.f, 0.07f}, {540.f, 0.075f}, {545.f, 0.08f}, {550.f, 0.085f}, {555.f, 0.095f}, {560.f, 0.103f}, {565.f, 0.11f}, {570.f, 0.12f}, {575.f, 0.122f}, {580.f, 0.12f}, {585.f, 0.118f}, {590.f, 0.115f}, {595.f, 0.12f}, {600.f, 0.125f}, {605.f, 0.13f}, {610.f, 0.12f}, {620.f, 0.105f}, {630.f, 0.09f}, {640.f, 0.079f}, {650.f, 0.067f}, {660.f, 0.057f}, {670.f, 0.048f}, {680.f, 0.036f}, {690.f, 0.028f}, {700.f, 0.023f}, {710.f, 0.018f}, {720.f, 0.014f}, {730.f, 0.011f}, {740.f, 0.01f}, {750.f, 0.009f}, {760.f, 0.007f}, {770.f, 0.004f}, {780.f, 0.f}, {790.f, 0.f}
 };
-
-static constexpr std::array<float, 64> k_o_amplitudes
-{
-	10.0, 4.8, 2.7, 1.35, .8,
-	.380, .160, .075, .04, .019,
-	.007, .0,
-
-	.003, .003, .004, .006, .008,
-	.009, .012, .014,	.017, .021,
-	.025,
-
-	.03, .035, .04, .045, .048,
-	.057, .063, .07, .075, .08,
-	.085, .095, .103, .110, .12,
-	.122, .12, .118, .115, .12,
-
-	.125, .130, .12, .105, .09,
-	.079,	.067, .057, .048, .036,
-	.028,
-
-	.023, .018, .014, .011, .010,
-	.009,	.007, .004, .0, .0
-};
-
 
 // k_g Spectrum table from pg 130, MI.
-static constexpr std::array<float, 4> k_g_wavelengths
+static const std::vector<std::pair<float, float>> k_g_wavelength_amplitudes
 {
-	759, 760, 770, 771
-};
-
-static constexpr std::array<float, 4> k_g_amplitudes
-{
-	0, 3.0, 0.210, 0
+	{759.f, 0.f}, {760.f, 3.f}, {770.f, 0.21f}, {771.f, 0.f}
 };
 
 // k_wa Spectrum table from pg 130, MI.
-static constexpr std::array<float, 13> k_wa_wavelengths
+static const std::vector<std::pair<float, float>> k_wa_wavelength_amplitudes
 {
-	689, 690, 700, 710, 720, 730, 740,
-	750, 760, 770, 780, 790, 800
-};
-
-static constexpr std::array<float, 13> k_wa_amplitudes
-{
-	0,
-	0.160e-1,
-	0.240e-1,
-	0.125e-1,
-	0.100e+1,
-	0.870,
-	0.610e-1,
-	0.100e-2,
-	0.100e-4,
-	0.100e-4,
-	0.600e-3,
-	0.175e-1,
-	0.360e-1
+	{689.f, 0.f}, {690.f, 0.016f}, {700.f, 0.024f}, {710.f, 0.0125f}, {720.f, 1.f}, {730.f, 0.87f}, {740.f, 0.061f}, {750.f, 0.001f}, {760.f, 1e-05f}, {770.f, 1e-05f}, {780.f, 0.0006f}, {790.f, 0.0175f}, {800.f, 0.036f}
 };
 
 // 380-750 by 10nm
@@ -128,25 +63,6 @@ static constexpr std::array<float, 38> sol_amplitudes
 
 } //namespace spectrum_sun
 
-struct IrregularSpectrum final
-{
-	IrregularSpectrum(const float *amps, const float *wl, int n)
-	{
-		for(int i = 0; i < n; ++i) { wavelen_.emplace_back(wl[i]); amplitude_.emplace_back(amps[i]); }
-	}
-	float sample(float wl);
-	std::vector<float> wavelen_;
-	std::vector<float> amplitude_;
-};
-
-inline float IrregularSpectrum::sample(float wl)
-{
-	const auto i = lower_bound(wavelen_.begin(), wavelen_.end(), wl);
-	if(i == wavelen_.begin() || i == wavelen_.end()) return 0.f;
-	int index = (i - wavelen_.begin()) - 1;
-	float delta = (wl - wavelen_[index]) / (wavelen_[index + 1] - wavelen_[index]);
-	return (1.f - delta) * amplitude_[index] + delta * amplitude_[index + 1];
-}
 
 END_YAFARAY
 
