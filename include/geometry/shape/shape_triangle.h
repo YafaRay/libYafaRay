@@ -34,7 +34,7 @@ class ShapeTriangle final
 	public:
 		ShapeTriangle(const ShapeTriangle &triangle) = default;
 		ShapeTriangle(ShapeTriangle &&triangle) = default;
-		explicit ShapeTriangle(std::array<Point3, 3> vertices) : vertices_(std::move(vertices)) { }
+		explicit ShapeTriangle(std::array<Point3, 3> &&vertices) : vertices_(std::move(vertices)) { }
 		IntersectData intersect(const Ray &ray) const;
 		Vec3 calculateFaceNormal() const;
 		float surfaceArea() const;

@@ -34,7 +34,7 @@ class ShapeQuad final
 	public:
 		ShapeQuad(const ShapeQuad &quad) = default;
 		ShapeQuad(ShapeQuad &&quad) = default;
-		explicit ShapeQuad(std::array<Point3, 4> vertices) : vertices_(std::move(vertices)) { }
+		explicit ShapeQuad(std::array<Point3, 4> &&vertices) : vertices_(std::move(vertices)) { }
 		IntersectData intersect(const Ray &ray) const;
 		Vec3 calculateFaceNormal() const;
 		float surfaceArea() const;
