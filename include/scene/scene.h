@@ -208,9 +208,7 @@ class Scene final
 		int nthreads_ = 1;
 		int nthreads_photons_ = 1;
 		float shadow_bias_ = 1.0e-4f;  //shadow bias to apply to shadows to avoid self-shadow artifacts
-		bool shadow_bias_auto_ = true;
-	private:
-		//enable automatic shadow bias calculation
+		bool shadow_bias_auto_ = true; //enable automatic shadow bias calculation
 		float ray_min_dist_ = 1.0e-5f;  //ray minimum distance
 		bool ray_min_dist_auto_ = true;  //enable automatic ray minimum distance calculation
 		unsigned int material_index_highest_ = 1; //!< Highest material index used for the Normalized Material Index pass.
