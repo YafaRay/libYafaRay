@@ -27,7 +27,7 @@
 
 BEGIN_YAFARAY
 
-class Photon;
+struct Photon;
 struct FoundPhoton;
 class Bound;
 class Point3;
@@ -36,12 +36,12 @@ class Point3;
 class HashGrid final
 {
 	public:
-		HashGrid() { hash_grid_ = nullptr;}
+		HashGrid() = default;
 		HashGrid(double cell_size, unsigned int grid_size, Bound b_box);
 		void setParm(double cell_size, unsigned int grid_size, Bound b_box);
 		void clear(); //remove all the photons in the grid;
 		void updateGrid(); //build the hashgrid
-		void pushPhoton(Photon &p);
+		void pushPhoton(Photon &&p);
 		unsigned int gather(const Point3 &p, FoundPhoton *found, unsigned int k, float sq_radius);
 
 	private:
@@ -57,7 +57,6 @@ class HashGrid final
 		std::vector<Photon>photons_;
 		std::unique_ptr<std::unique_ptr<std::list<const Photon *>>[]> hash_grid_;
 };
-
 
 END_YAFARAY
 #endif

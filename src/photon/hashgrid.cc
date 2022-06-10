@@ -42,7 +42,7 @@ void HashGrid::clear()
 	photons_.clear();
 }
 
-void HashGrid::pushPhoton(Photon &p)
+void HashGrid::pushPhoton(Photon &&p)
 {
 	photons_.emplace_back(p);
 }
@@ -108,7 +108,7 @@ unsigned int HashGrid::gather(const Point3 &p, FoundPhoton *found, unsigned int 
 				{
 					if((photon->pos_ - p).lengthSqr() < sq_radius)
 					{
-						found[count++] = FoundPhoton(photon, sq_radius);
+						found[count++] = {photon, sq_radius};
 					}
 				}
 			}

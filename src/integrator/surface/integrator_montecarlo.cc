@@ -491,8 +491,7 @@ void MonteCarloIntegrator::causticWorker(FastRandom &fast_random, unsigned int &
 				//deposit caustic photon on surface
 				if(caustic_photon)
 				{
-					Photon np(wi, hit_curr->p_, pcol, ray.time_);
-					local_caustic_photons.emplace_back(np);
+					local_caustic_photons.emplace_back(Photon{wi, hit_curr->p_, pcol, ray.time_});
 				}
 			}
 			// need to break in the middle otherwise we scatter the photon and then discard it => redundant
@@ -656,9 +655,9 @@ Rgb MonteCarloIntegrator::estimateCausticPhotons(const SurfacePoint &sp, const V
 		for(int i = 0; i < n_gathered; ++i)
 		{
 			const Photon *photon = gathered[i].photon_;
-			const Rgb surf_col = sp.eval(wo, photon->direction(), BsdfFlags::All);
+			const Rgb surf_col = sp.eval(wo, photon->dir_, BsdfFlags::All);
 			const float k = sample::kernel(gathered[i].dist_square_, g_radius_square);
-			sum += surf_col * k * photon->color();
+			sum += surf_col * k * photon->col_;
 		}
 		sum *= 1.f / static_cast<float>(caustic_map->nPaths());
 	}

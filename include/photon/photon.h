@@ -29,23 +29,12 @@
 
 BEGIN_YAFARAY
 
-class Photon final
+struct Photon
 {
-	public:
-		Photon() = default;
-		Photon(const Vec3 &d, const Point3 &p, const Rgb &col, float time) : pos_{p}, c_{col}, dir_{d}, time_{time} { }
-		const Point3 &position() const { return pos_; }
-		Rgb color() const { return c_; }
-		void color(const Rgb &col) { c_ = col;}
-		void color(Rgb &&col) { c_ = std::move(col); }
-		Vec3 direction() const { return dir_; }
-		void direction(const Vec3 &d) { dir_ = d; }
-		void direction(Vec3 &&d) { dir_ = std::move(d); }
-
-		Point3 pos_;
-		Rgb c_;
-		Vec3 dir_;
-		float time_{0.f};
+	Vec3 dir_;
+	Point3 pos_;
+	Rgb col_;
+	float time_{0.f};
 };
 
 struct RadData
@@ -61,9 +50,7 @@ struct RadData
 
 struct FoundPhoton
 {
-	FoundPhoton() = default;
-	FoundPhoton(const Photon *p, float d): photon_{p}, dist_square_{d} { }
-	bool operator<(const FoundPhoton &p_2) const { return dist_square_ < p_2.dist_square_; }
+	bool operator<(const FoundPhoton &photon) const { return dist_square_ < photon.dist_square_; }
 	const Photon *photon_;
 	float dist_square_;
 };
@@ -108,25 +95,21 @@ class PhotonMap final
 struct PhotonGather
 {
 	PhotonGather(uint32_t mp, const Point3 &p) : p_{p}, n_lookup_{mp} { }
-	PhotonGather(uint32_t mp, Point3 &&p) : p_{std::move(p)}, n_lookup_{mp} { }
 	void operator()(const Photon *photon, float dist_2, float &max_dist_squared) const;
 	const Point3 &p_;
-	FoundPhoton *photons_ = nullptr;
+	FoundPhoton *found_photon_ = nullptr;
 	uint32_t n_lookup_;
 	mutable uint32_t found_photons_ = 0;
 };
 
 struct NearestPhoton
 {
-	NearestPhoton(const Point3 &pos, const Vec3 &norm): p_{pos}, n_{norm} { }
-	NearestPhoton(Point3 &&pos, Vec3 &&norm): p_{std::move(pos)}, n_{std::move(norm)} { }
-	void operator()(const Photon *photon, float dist_2, float &max_dist_squared)
+	void operator()(const Photon *photon, float dist_squared, float &max_dist_squared)
 	{
-		if(photon->direction() * n_ > 0.f) { nearest_ = photon; max_dist_squared = dist_2; }
+		if(photon->dir_ * n_ > 0.f) { photon_ = photon; max_dist_squared = dist_squared; }
 	}
-	const Point3 &p_; //wth do i need this for actually??
 	const Vec3 &n_;
-	const Photon *nearest_ = nullptr;
+	const Photon *photon_ = nullptr;
 };
 
 /*! "eliminates" photons within lookup radius (sets use=false) */

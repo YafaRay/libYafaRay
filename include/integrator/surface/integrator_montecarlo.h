@@ -29,7 +29,7 @@
 BEGIN_YAFARAY
 
 class Background;
-class Photon;
+struct Photon;
 class Vec3;
 class Light;
 struct BsdfFlags;

@@ -409,25 +409,17 @@ void SppmIntegrator::photonWorker(FastRandom &fast_random, unsigned int &total_p
 			//deposit photon on diffuse surface, now we only have one map for all, elimate directPhoton for we estimate it directly
 			if(!direct_photon && !caustic_photon && mat_bsdfs.hasAny(BsdfFlags::Diffuse))
 			{
-				Photon np(wi, hit_curr->p_, pcol, ray.time_);// pcol used here
-
-				if(b_hashgrid_) photon_grid_.pushPhoton(np);
-				else
-				{
-					local_diffuse_photons.emplace_back(np);
-				}
+				Photon np{wi, hit_curr->p_, pcol, ray.time_};// pcol used here
+				if(b_hashgrid_) photon_grid_.pushPhoton(std::move(np));
+				else local_diffuse_photons.emplace_back(std::move(np));
 				nd_photon_stored++;
 			}
 			// add caustic photon
 			if(!direct_photon && caustic_photon && mat_bsdfs.hasAny(BsdfFlags::Diffuse | BsdfFlags::Glossy))
 			{
-				Photon np(wi, hit_curr->p_, pcol, ray.time_);// pcol used here
-
-				if(b_hashgrid_) photon_grid_.pushPhoton(np);
-				else
-				{
-					local_caustic_photons.emplace_back(np);
-				}
+				Photon np{wi, hit_curr->p_, pcol, ray.time_};// pcol used here
+				if(b_hashgrid_) photon_grid_.pushPhoton(std::move(np));
+				else local_caustic_photons.emplace_back(std::move(np));
 				nd_photon_stored++;
 			}
 
@@ -681,7 +673,7 @@ GatherInfo SppmIntegrator::traceGatherRay(Ray &ray, HitPoint &hp, FastRandom &fa
 						{
 							for(int j = 0; j < n_gathered; ++j)
 							{
-								logger_.logDebug("col:", gathered[j].photon_->color());
+								logger_.logDebug("col:", gathered[j].photon_->col_);
 							}
 						}
 					}
@@ -700,10 +692,10 @@ GatherInfo SppmIntegrator::traceGatherRay(Ray &ray, HitPoint &hp, FastRandom &fa
 					//if(temp.lengthSqr() > 1.)continue;
 
 					g_info.photon_count_++;
-					Vec3 pdir{gathered[i].photon_->direction()};
+					Vec3 pdir{gathered[i].photon_->dir_};
 					Rgb surf_col = sp->eval(wo, pdir, BsdfFlags::Diffuse); // seems could speed up using rho, (something pbrt made)
-					g_info.photon_flux_ += surf_col * gathered[i].photon_->color();// * std::abs(sp->N*pdir); //< wrong!?
-					//Rgb  flux= surfCol * gathered[i].photon->color();// * std::abs(sp->N*pdir); //< wrong!?
+					g_info.photon_flux_ += surf_col * gathered[i].photon_->col_;// * std::abs(sp->N*pdir); //< wrong!?
+					//Rgb  flux= surfCol * gathered[i].photon->col_;// * std::abs(sp->N*pdir); //< wrong!?
 
 					////start refine here
 					//double ALPHA = 0.7;
@@ -725,11 +717,11 @@ GatherInfo SppmIntegrator::traceGatherRay(Ray &ray, HitPoint &hp, FastRandom &fa
 					Rgb surf_col(0.f);
 					for(int i = 0; i < n_gathered; ++i)
 					{
-						Vec3 pdir{gathered[i].photon_->direction()};
+						Vec3 pdir{gathered[i].photon_->dir_};
 						g_info.photon_count_++;
 						surf_col = sp->eval(wo, pdir, BsdfFlags::All); // seems could speed up using rho, (something pbrt made)
-						g_info.photon_flux_ += surf_col * gathered[i].photon_->color();// * std::abs(sp->N*pdir); //< wrong!?//gInfo.photonFlux += colorPasses.probe_add(PASS_INT_DIFFUSE_INDIRECT, surfCol * gathered[i].photon->color(), state.ray_level == 0);// * std::abs(sp->N*pdir); //< wrong!?
-						//Rgb  flux= surfCol * gathered[i].photon->color();// * std::abs(sp->N*pdir); //< wrong!?
+						g_info.photon_flux_ += surf_col * gathered[i].photon_->col_;// * std::abs(sp->N*pdir); //< wrong!?//gInfo.photonFlux += colorPasses.probe_add(PASS_INT_DIFFUSE_INDIRECT, surfCol * gathered[i].photon->col_, state.ray_level == 0);// * std::abs(sp->N*pdir); //< wrong!?
+						//Rgb  flux= surfCol * gathered[i].photon->col_;// * std::abs(sp->N*pdir); //< wrong!?
 
 						////start refine here
 						//double ALPHA = 0.7;

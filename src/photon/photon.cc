@@ -29,20 +29,20 @@ void PhotonGather::operator()(const Photon *photon, float dist_2, float &max_dis
 	if(found_photons_ < n_lookup_)
 	{
 		// Add photon to unordered array of photons
-		photons_[found_photons_++] = FoundPhoton(photon, dist_2);
+		found_photon_[found_photons_++] = {photon, dist_2};
 		if(found_photons_ == n_lookup_)
 		{
-			std::make_heap(&photons_[0], &photons_[n_lookup_]);
-			max_dist_squared = photons_[0].dist_square_;
+			std::make_heap(&found_photon_[0], &found_photon_[n_lookup_]);
+			max_dist_squared = found_photon_[0].dist_square_;
 		}
 	}
 	else
 	{
 		// Remove most distant photon from heap and add new photon
-		std::pop_heap(&photons_[0], &photons_[n_lookup_]);
-		photons_[n_lookup_ - 1] = FoundPhoton(photon, dist_2);
-		std::push_heap(&photons_[0], &photons_[n_lookup_]);
-		max_dist_squared = photons_[0].dist_square_;
+		std::pop_heap(&found_photon_[0], &found_photon_[n_lookup_]);
+		found_photon_[n_lookup_ - 1] = {photon, dist_2};
+		std::push_heap(&found_photon_[0], &found_photon_[n_lookup_]);
+		max_dist_squared = found_photon_[0].dist_square_;
 	}
 }
 
@@ -77,9 +77,9 @@ bool PhotonMap::load(const std::string &filename)
 		file.read<float>(p.pos_.x());
 		file.read<float>(p.pos_.y());
 		file.read<float>(p.pos_.z());
-		file.read<float>(p.c_.r_);
-		file.read<float>(p.c_.g_);
-		file.read<float>(p.c_.b_);
+		file.read<float>(p.col_.r_);
+		file.read<float>(p.col_.g_);
+		file.read<float>(p.col_.b_);
 	}
 	file.close();
 
@@ -102,9 +102,9 @@ bool PhotonMap::save(const std::string &filename) const
 		file.append<float>(p.pos_.x());
 		file.append<float>(p.pos_.y());
 		file.append<float>(p.pos_.z());
-		file.append<float>(p.c_.r_);
-		file.append<float>(p.c_.g_);
-		file.append<float>(p.c_.b_);
+		file.append<float>(p.col_.r_);
+		file.append<float>(p.col_.g_);
+		file.append<float>(p.col_.b_);
 	}
 	file.close();
 	return true;
@@ -122,18 +122,18 @@ void PhotonMap::updateTree()
 
 int PhotonMap::gather(const Point3 &p, FoundPhoton *found, unsigned int k, float &sq_radius) const
 {
-	PhotonGather proc(k, p);
-	proc.photons_ = found;
+	PhotonGather proc{k, p};
+	proc.found_photon_ = found;
 	tree_->lookup(p, proc, sq_radius);
 	return proc.found_photons_;
 }
 
 const Photon *PhotonMap::findNearest(const Point3 &p, const Vec3 &n, float dist) const
 {
-	NearestPhoton proc(p, n);
+	NearestPhoton proc{n};
 	//float dist=std::numeric_limits<float>::infinity(); //really bad idea...
 	tree_->lookup(p, proc, dist);
-	return proc.nearest_;
+	return proc.photon_;
 }
 
 END_YAFARAY
