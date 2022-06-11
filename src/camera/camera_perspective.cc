@@ -72,14 +72,14 @@ void PerspectiveCamera::biasDist(float &r) const
 {
 	switch(bkhbias_)
 	{
-		case BbCenter:
+		case BkhBiasType::BbCenter:
 			r = math::sqrt(math::sqrt(r) * r);
 			break;
-		case BbEdge:
+		case BkhBiasType::BbEdge:
 			r = math::sqrt((float) 1.0 - r * r);
 			break;
 		default:
-		case BbNone:
+		case BkhBiasType::BbNone:
 			r = math::sqrt(r);
 	}
 }
@@ -101,24 +101,24 @@ void PerspectiveCamera::getLensUv(float r_1, float r_2, float &u, float &v) cons
 {
 	switch(bkhtype_)
 	{
-		case BkTri:
-		case BkSqr:
-		case BkPenta:
-		case BkHexa:
+		case BokehType::BkTri:
+		case BokehType::BkSqr:
+		case BokehType::BkPenta:
+		case BokehType::BkHexa:
 			sampleTsd(r_1, r_2, u, v);
 			break;
-		case BkDisk2:
-		case BkRing:
+		case BokehType::BkDisk2:
+		case BokehType::BkRing:
 		{
 			float w = math::mult_pi_by_2<> * r_2;
-			if(bkhtype_ == BkRing) r_1 = math::sqrt((float) 0.707106781 + (float) 0.292893218);
+			if(bkhtype_ == BokehType::BkRing) r_1 = math::sqrt((float) 0.707106781 + (float) 0.292893218);
 			else biasDist(r_1);
 			u = r_1 * math::cos(w);
 			v = r_1 * math::sin(w);
 			break;
 		}
 		default:
-		case BkDisk1:
+		case BokehType::BkDisk1:
 			Vec3::shirleyDisk(r_1, r_2, u, v);
 	}
 }
@@ -204,17 +204,17 @@ const Camera * PerspectiveCamera::factory(Logger &logger, const Scene &scene, co
 	params.getParam("farClip", far_clip);
 	params.getParam("view_name", view_name);
 
-	BokehType bt = BkDisk1;
-	if(bkhtype == "disk2")			bt = BkDisk2;
-	else if(bkhtype == "triangle")	bt = BkTri;
-	else if(bkhtype == "square")	bt = BkSqr;
-	else if(bkhtype == "pentagon")	bt = BkPenta;
-	else if(bkhtype == "hexagon")	bt = BkHexa;
-	else if(bkhtype == "ring")		bt = BkRing;
+	BokehType bt = BokehType::BkDisk1;
+	if(bkhtype == "disk2")			bt = BokehType::BkDisk2;
+	else if(bkhtype == "triangle")	bt = BokehType::BkTri;
+	else if(bkhtype == "square")	bt = BokehType::BkSqr;
+	else if(bkhtype == "pentagon")	bt = BokehType::BkPenta;
+	else if(bkhtype == "hexagon")	bt = BokehType::BkHexa;
+	else if(bkhtype == "ring")		bt = BokehType::BkRing;
 	// bokeh bias
-	BkhBiasType bbt = BbNone;
-	if(bkhbias == "center") 		bbt = BbCenter;
-	else if(bkhbias == "edge") 		bbt = BbEdge;
+	BkhBiasType bbt = BkhBiasType::BbNone;
+	if(bkhbias == "center") 		bbt = BkhBiasType::BbCenter;
+	else if(bkhbias == "edge") 		bbt = BkhBiasType::BbEdge;
 
 	return new PerspectiveCamera(logger, from, to, up, resx, resy, aspect, dfocal, apt, dofd, bt, bbt, bkhrot, near_clip, far_clip);
 }

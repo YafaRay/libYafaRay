@@ -111,17 +111,17 @@ const Camera * ArchitectCamera::factory(Logger &logger, const Scene &scene, cons
 	params.getParam("farClip", far_clip);
 	params.getParam("view_name", view_name);
 
-	BokehType bt = BkDisk1;
-	if(bkhtype == "disk2")			bt = BkDisk2;
-	else if(bkhtype == "triangle")	bt = BkTri;
-	else if(bkhtype == "square")	bt = BkSqr;
-	else if(bkhtype == "pentagon")	bt = BkPenta;
-	else if(bkhtype == "hexagon")	bt = BkHexa;
-	else if(bkhtype == "ring")		bt = BkRing;
+	BokehType bt = BokehType::BkDisk1;
+	if(bkhtype == "disk2")			bt = BokehType::BkDisk2;
+	else if(bkhtype == "triangle")	bt = BokehType::BkTri;
+	else if(bkhtype == "square")	bt = BokehType::BkSqr;
+	else if(bkhtype == "pentagon")	bt = BokehType::BkPenta;
+	else if(bkhtype == "hexagon")	bt = BokehType::BkHexa;
+	else if(bkhtype == "ring")		bt = BokehType::BkRing;
 	// bokeh bias
-	BkhBiasType bbt = BbNone;
-	if(bkhbias == "center") 		bbt = BbCenter;
-	else if(bkhbias == "edge") 		bbt = BbEdge;
+	BkhBiasType bbt = BkhBiasType::BbNone;
+	if(bkhbias == "center") 		bbt = BkhBiasType::BbCenter;
+	else if(bkhbias == "edge") 		bbt = BkhBiasType::BbEdge;
 
 	return new ArchitectCamera(logger, from, to, up, resx, resy, aspect, dfocal, apt, dofd, bt, bbt, bkhrot, near_clip, far_clip);
 }

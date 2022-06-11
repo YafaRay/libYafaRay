@@ -35,12 +35,12 @@ class PerspectiveCamera : public Camera
 		static const Camera * factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params);
 
 	protected:
-		enum BokehType {BkDisk1, BkDisk2, BkTri = 3, BkSqr, BkPenta, BkHexa, BkRing};
-		enum BkhBiasType {BbNone, BbCenter, BbEdge};
+		enum class BokehType : unsigned char {BkDisk1, BkDisk2, BkTri, BkSqr, BkPenta, BkHexa, BkRing};
+		enum class BkhBiasType : unsigned char {BbNone, BbCenter, BbEdge};
 
 		PerspectiveCamera(Logger &logger, const Point3 &pos, const Point3 &look, const Point3 &up,
 						  int resx, int resy, float aspect = 1,
-						  float df = 1, float ap = 0, float dofd = 0, BokehType bt = BkDisk1, BkhBiasType bbt = BbNone, float bro = 0,
+						  float df = 1, float ap = 0, float dofd = 0, BokehType bt = BokehType::BkDisk1, BkhBiasType bbt = BkhBiasType::BbNone, float bro = 0,
 						  float near_clip_distance = 0.0f, float far_clip_distance = 1e6f);
 		void setAxis(const Vec3 &vx, const Vec3 &vy, const Vec3 &vz) override;
 		CameraRay shootRay(float px, float py, float lu, float lv) const override;
