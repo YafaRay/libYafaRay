@@ -28,7 +28,7 @@
 
 BEGIN_YAFARAY
 
-struct Uv;
+template <typename T> struct Uv;
 class FacePrimitive;
 class Material;
 
@@ -51,7 +51,7 @@ class MeshObject : public ObjectBase
 		void addFace(std::unique_ptr<FacePrimitive> &&face);
 		void addFace(std::vector<int> &&vertices, std::vector<int> &&vertices_uv, const std::unique_ptr<const Material> *material) override;
 		const std::vector<Point3> &getPoints(int time_step) const { return time_steps_[time_step].points_; }
-		const std::vector<Uv> &getUvValues() const { return uv_values_; }
+		const std::vector<Uv<float>> &getUvValues() const { return uv_values_; }
 		bool hasOrco(int time_step) const { return !time_steps_[time_step].orco_points_.empty(); }
 		bool hasUv() const { return !uv_values_.empty(); }
 		bool isSmooth() const { return is_smooth_; }
@@ -59,7 +59,7 @@ class MeshObject : public ObjectBase
 		void addPoint(Point3 &&p, int time_step) override { time_steps_[time_step].points_.emplace_back(p); }
 		void addOrcoPoint(Point3 &&p, int time_step) override { time_steps_[time_step].orco_points_.emplace_back(p); }
 		void addVertexNormal(Vec3 &&n, int time_step) override;
-		int addUvValue(Uv &&uv) override { uv_values_.emplace_back(uv); return static_cast<int>(uv_values_.size()) - 1; }
+		int addUvValue(Uv<float> &&uv) override { uv_values_.emplace_back(uv); return static_cast<int>(uv_values_.size()) - 1; }
 		void setSmooth(bool smooth) override { is_smooth_ = smooth; }
 		bool smoothVerticesNormals(Logger &logger, float angle) override;
 		bool calculateObject(const std::unique_ptr<const Material> *material) override;
@@ -81,7 +81,7 @@ class MeshObject : public ObjectBase
 		static float getAngleSine(const std::array<int, 3> &triangle_indices, const std::vector<Point3> &vertices);
 		std::vector<TimeStepGeometry> time_steps_{1};
 		std::vector<std::unique_ptr<FacePrimitive>> faces_;
-		std::vector<Uv> uv_values_;
+		std::vector<Uv<float>> uv_values_;
 		bool is_smooth_ = false;
 		bool motion_blur_bezier_ = false;
 };

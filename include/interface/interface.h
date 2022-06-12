@@ -70,7 +70,7 @@ class Interface
 		virtual int addVertex(Point3 &&vertex, Point3 &&orco, int time_step) noexcept; //!< add vertex with Orco to mesh; returns index to be used for addTriangle/addQuad
 		virtual void addVertexNormal(Vec3 &&normal, int time_step) noexcept; //!< add vertex normal to mesh; the vertex that will be attached to is the last one inserted by addVertex method
 		virtual bool addFace(std::vector<int> &&vertices, std::vector<int> &&uv_indices) noexcept; //!< add a mesh face given vertex indices and optionally uv_indices
-		virtual int addUv(Uv &&uv) noexcept; //!< add a UV coordinate pair; returns index to be used for addTriangle/addQuad
+		virtual int addUv(Uv<float> &&uv) noexcept; //!< add a UV coordinate pair; returns index to be used for addTriangle/addQuad
 		virtual bool smoothVerticesNormals(std::string &&name, double angle) noexcept; //!< smooth vertex normals of mesh with given ID and angle (in degrees)
 		virtual int createInstance() noexcept;
 		virtual bool addInstanceObject(int instance_id, std::string &&base_object_name) noexcept;

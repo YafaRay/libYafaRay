@@ -108,7 +108,7 @@ class SurfacePoint final
 		bool has_uv_;
 		bool has_orco_;
 
-		Uv uv_; //!< the u, v texture coords.
+		Uv<float> uv_; //!< the u, v texture coords.
 		Vec3 nu_; //!< second vector building orthogonal shading space with N
 		Vec3 nv_; //!< third vector building orthogonal shading space with N
 		Vec3 dp_du_; //!< u-axis in world space (normalized)

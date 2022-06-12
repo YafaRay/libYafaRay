@@ -29,7 +29,7 @@
 
 BEGIN_YAFARAY
 
-struct Uv;
+template <typename T> struct Uv;
 
 class FacePrimitive: public Primitive
 {
@@ -40,7 +40,7 @@ class FacePrimitive: public Primitive
 		Point3 getOrcoVertex(size_t vertex_number, int time_step) const; //!< Get face original coordinates (orco) vertex in instance objects
 		Vec3 getVertexNormal(size_t vertex_number, const Vec3 &surface_normal_world, int time_step) const; //!< Get face vertex normal
 		Vec3 getVertexNormal(size_t vertex_number, const Vec3 &surface_normal_world, const Matrix4 &obj_to_world, int time_step) const; //!< Get face vertex normal
-		Uv getVertexUv(size_t vertex_number) const; //!< Get face vertex Uv
+		Uv<float> getVertexUv(size_t vertex_number) const; //!< Get face vertex Uv<float>
 		void generateInitialVerticesNormalsIndices() { vertices_normals_ = vertices_; }
 		void setVerticesNormalsIndices(std::vector<int> &&vertices_normals_indices) { vertices_normals_ = std::move(vertices_normals_indices); }
 		void setUvIndices(const std::vector<int> &uv_indices) { vertex_uvs_ = uv_indices; }
@@ -52,7 +52,7 @@ class FacePrimitive: public Primitive
 		std::vector<Point3> getVertices(const Matrix4 &obj_to_world, int time_step) const;
 		std::vector<Point3> getOrcoVertices(int time_step) const;
 		std::vector<Vec3> getVerticesNormals(const Vec3 &surface_normal, int time_step) const;
-		std::vector<Uv> getVerticesUvs() const;
+		std::vector<Uv<float>> getVerticesUvs() const;
 		void setMaterial(const std::unique_ptr<const Material> *material) { material_ = material; }
 		static Bound getBound(const std::vector<Point3> &vertices);
 		const Object *getObject() const override { return &base_mesh_object_; }
@@ -130,7 +130,7 @@ inline Vec3 FacePrimitive::getVertexNormal(size_t vertex_number, const Vec3 &sur
 	else return surface_normal_world;
 }
 
-inline Uv FacePrimitive::getVertexUv(size_t vertex_number) const
+inline Uv<float> FacePrimitive::getVertexUv(size_t vertex_number) const
 {
 	return base_mesh_object_.getUvValues()[vertex_uvs_[vertex_number]];
 }
@@ -183,10 +183,10 @@ inline std::vector<Vec3> FacePrimitive::getVerticesNormals(const Vec3 &surface_n
 	return result;
 }
 
-inline std::vector<Uv> FacePrimitive::getVerticesUvs() const
+inline std::vector<Uv<float>> FacePrimitive::getVerticesUvs() const
 {
 	const size_t num_vertices = vertices_.size();
-	std::vector<Uv> result;
+	std::vector<Uv<float>> result;
 	result.reserve(num_vertices);
 	for(size_t vert_num = 0; vert_num < num_vertices; ++vert_num)
 	{

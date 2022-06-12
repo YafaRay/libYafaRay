@@ -147,7 +147,7 @@ bool ExportPython::addFace(std::vector<int> &&vertices, std::vector<int> &&uv_in
 	return true;
 }
 
-int ExportPython::addUv(Uv &&uv) noexcept
+int ExportPython::addUv(Uv<float> &&uv) noexcept
 {
 	file_ << "yi.addUv(" << uv.u_ << ", " << uv.v_ << ")\n";
 	return n_uvs_++;

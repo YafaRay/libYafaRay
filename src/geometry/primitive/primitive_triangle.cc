@@ -70,7 +70,7 @@ std::unique_ptr<const SurfacePoint> TrianglePrimitive::getSurface(const RayDiffe
 	};
 	if(base_mesh_object_.hasUv())
 	{
-		const std::array<Uv, 3> uv { getVertexUv(0), getVertexUv(1), getVertexUv(2) };
+		const std::array<Uv<float>, 3> uv { getVertexUv(0), getVertexUv(1), getVertexUv(2) };
 		sp->uv_ = barycentric_u * uv[0] + barycentric_v * uv[1] + barycentric_w * uv[2];
 		// calculate dPdU and dPdV
 		const float du_1 = uv[1].u_ - uv[0].u_;
@@ -149,7 +149,7 @@ std::unique_ptr<const SurfacePoint> TrianglePrimitive::getSurface(const RayDiffe
 	};
 	if(base_mesh_object_.hasUv())
 	{
-		const std::array<Uv, 3> uv { getVertexUv(0), getVertexUv(1), getVertexUv(2) };
+		const std::array<Uv<float>, 3> uv { getVertexUv(0), getVertexUv(1), getVertexUv(2) };
 		sp->uv_ = barycentric_u * uv[0] + barycentric_v * uv[1] + barycentric_w * uv[2];
 		// calculate dPdU and dPdV
 		const float du_1 = uv[1].u_ - uv[0].u_;

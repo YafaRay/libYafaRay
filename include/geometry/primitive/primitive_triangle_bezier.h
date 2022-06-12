@@ -36,15 +36,15 @@ class TriangleBezierPrimitive : public FacePrimitive
 		bool clippingSupport() const override { return false; }
 		Bound getBound() const override;
 		Bound getBound(const Matrix4 &obj_to_world) const override;
-		Vec3 getGeometricNormal(const Uv &uv, float time) const override;
-		Vec3 getGeometricNormal(const Matrix4 &obj_to_world, const Uv &uv, float time) const override;
+		Vec3 getGeometricNormal(const Uv<float> &uv, float time) const override;
+		Vec3 getGeometricNormal(const Matrix4 &obj_to_world, const Uv<float> &uv, float time) const override;
 		std::unique_ptr<const SurfacePoint> getSurface(const RayDifferentials *ray_differentials, const Point3 &hit, const IntersectData &intersect_data, const Camera *camera) const override;
 		std::unique_ptr<const SurfacePoint> getSurface(const RayDifferentials *ray_differentials, const Point3 &hit_point, const IntersectData &intersect_data, const Matrix4 &obj_to_world, const Camera *camera) const override;
 		float surfaceArea(float time) const override;
 		float surfaceArea(const Matrix4 &obj_to_world, float time) const override;
-		std::pair<Point3, Vec3> sample(const Uv &uv, float time) const override;
-		std::pair<Point3, Vec3> sample(const Uv &uv, const Matrix4 &obj_to_world, float time) const override;
-		float getDistToNearestEdge(const Uv &uv, const Vec3 &dp_du_abs, const Vec3 &dp_dv_abs) const override { return ShapeTriangle::getDistToNearestEdge(uv, dp_du_abs, dp_dv_abs); }
+		std::pair<Point3, Vec3> sample(const Uv<float> &uv, float time) const override;
+		std::pair<Point3, Vec3> sample(const Uv<float> &uv, const Matrix4 &obj_to_world, float time) const override;
+		float getDistToNearestEdge(const Uv<float> &uv, const Vec3 &dp_du_abs, const Vec3 &dp_dv_abs) const override { return ShapeTriangle::getDistToNearestEdge(uv, dp_du_abs, dp_dv_abs); }
 		ShapeTriangle getShapeTriangle(int time_step) const;
 		ShapeTriangle getShapeTriangle(const Matrix4 &obj_to_world, int time_step) const;
 		ShapeTriangle getShapeTriangleAtTime(float time) const;
@@ -75,7 +75,7 @@ inline float TriangleBezierPrimitive::surfaceArea(const Matrix4 &obj_to_world, f
 	return getShapeTriangleAtTime(obj_to_world, time).surfaceArea();
 }
 
-inline std::pair<Point3, Vec3> TriangleBezierPrimitive::sample(const Uv &uv, float time) const
+inline std::pair<Point3, Vec3> TriangleBezierPrimitive::sample(const Uv<float> &uv, float time) const
 {
 	const auto triangle = getShapeTriangleAtTime(time);
 	return {
@@ -84,7 +84,7 @@ inline std::pair<Point3, Vec3> TriangleBezierPrimitive::sample(const Uv &uv, flo
 	};
 }
 
-inline std::pair<Point3, Vec3> TriangleBezierPrimitive::sample(const Uv &uv, const Matrix4 &obj_to_world, float time) const
+inline std::pair<Point3, Vec3> TriangleBezierPrimitive::sample(const Uv<float> &uv, const Matrix4 &obj_to_world, float time) const
 {
 	const auto triangle = getShapeTriangleAtTime(obj_to_world, time);
 	return {
@@ -93,12 +93,12 @@ inline std::pair<Point3, Vec3> TriangleBezierPrimitive::sample(const Uv &uv, con
 	};
 }
 
-inline Vec3 TriangleBezierPrimitive::getGeometricNormal(const Uv &uv, float time) const
+inline Vec3 TriangleBezierPrimitive::getGeometricNormal(const Uv<float> &uv, float time) const
 {
 	return getShapeTriangleAtTime(time).calculateFaceNormal();
 }
 
-inline Vec3 TriangleBezierPrimitive::getGeometricNormal(const Matrix4 &obj_to_world, const Uv &uv, float time) const
+inline Vec3 TriangleBezierPrimitive::getGeometricNormal(const Matrix4 &obj_to_world, const Uv<float> &uv, float time) const
 {
 	const Vec3 normal {getShapeTriangleAtTime(obj_to_world, time).calculateFaceNormal()};
 	return (obj_to_world * normal).normalize();

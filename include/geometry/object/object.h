@@ -38,7 +38,7 @@ class ParamMap;
 class Scene;
 class Matrix4;
 class Material;
-struct Uv;
+template <typename T> struct Uv;
 
 class Object
 {
@@ -77,7 +77,7 @@ class Object
 		virtual void addOrcoPoint(Point3 &&p, int time_step) { }
 		virtual void addVertexNormal(Vec3 &&n, int time_step) { }
 		virtual void addFace(std::vector<int> &&vertices, std::vector<int> &&vertices_uv, const std::unique_ptr<const Material> *material) { }
-		virtual int addUvValue(Uv &&uv) { return -1; }
+		virtual int addUvValue(Uv<float> &&uv) { return -1; }
 		virtual bool hasVerticesNormals(int time_step) const { return false; }
 		virtual int numVerticesNormals(int time_step) const { return 0; }
 		virtual int numVertices(int time_step) const { return 0; }

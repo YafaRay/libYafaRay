@@ -73,7 +73,7 @@ std::unique_ptr<const SurfacePoint> QuadBezierPrimitive::getSurface(const RayDif
 	};
 	if(base_mesh_object_.hasUv())
 	{
-		const std::array<Uv, 4> uv {
+		const std::array<Uv<float>, 4> uv {
 				getVertexUv(0),
 				getVertexUv(1),
 				getVertexUv(2),
@@ -162,7 +162,7 @@ std::unique_ptr<const SurfacePoint> QuadBezierPrimitive::getSurface(const RayDif
 	};
 	if(base_mesh_object_.hasUv())
 	{
-		const std::array<Uv, 4> uv {
+		const std::array<Uv<float>, 4> uv {
 				getVertexUv(0),
 				getVertexUv(1),
 				getVertexUv(2),

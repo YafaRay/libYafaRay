@@ -30,21 +30,21 @@ class IntersectData
 {
 	public:
 		IntersectData() = default;
-		explicit IntersectData(float t_hit, Uv &&uv = {0.f, 0.f}, float time = 0.f) : hit_{true}, t_hit_{t_hit}, uv_{std::move(uv)}, time_{time} { }
+		explicit IntersectData(float t_hit, Uv<float> &&uv = {0.f, 0.f}, float time = 0.f) : hit_{true}, t_hit_{t_hit}, uv_{std::move(uv)}, time_{time} { }
 		IntersectData(const IntersectData &intersect_data);
 		IntersectData(IntersectData &&intersect_data) = default;
 		IntersectData& operator=(const IntersectData &intersect_data);
 		IntersectData& operator=(IntersectData &&intersect_data) = default;
 		bool isHit() const { return hit_; }
 		float tHit() const { return t_hit_; }
-		Uv uv() const { return uv_; }
+		Uv<float> uv() const { return uv_; }
 		float time() const { return time_; }
 		void setHit(bool hit) { hit_ = hit; }
 
 	protected:
 		alignas(8) bool hit_ = false;
 		float t_hit_;
-		Uv uv_;
+		Uv<float> uv_;
 		float time_;
 };
 

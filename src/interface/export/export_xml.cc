@@ -136,7 +136,7 @@ bool ExportXml::addFace(std::vector<int> &&vertices, std::vector<int> &&uv_indic
 	return true;
 }
 
-int ExportXml::addUv(Uv &&uv) noexcept
+int ExportXml::addUv(Uv<float> &&uv) noexcept
 {
 	file_ << "\t<uv u=\"" << uv.u_ << "\" v=\"" << uv.v_ << "\"/>\n";
 	return n_uvs_++;

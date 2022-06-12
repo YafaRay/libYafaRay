@@ -21,27 +21,45 @@
 #define YAFARAY_UV_H
 
 #include "common/yafaray_common.h"
+#include <type_traits>
 
 BEGIN_YAFARAY
 
+template <typename T>
 struct Uv
 {
-	float u_, v_;
+	T u_;
+	T v_;
 };
 
-inline Uv operator * (float f, const Uv &uv)
+template <typename T, typename = std::enable_if_t<std::is_arithmetic_v<T>>>
+inline Uv<T> operator * (T t, const Uv<T> &uv)
 {
-	return {f * uv.u_, f * uv.v_};
+	return {t * uv.u_, t * uv.v_};
 }
 
-inline Uv operator * (const Uv &uv, float f)
+template <typename T, typename = std::enable_if_t<!std::is_arithmetic_v<T>>>
+inline Uv<T> operator * (const T &t, const Uv<T> &uv)
 {
-	return f * uv;
+	return {t * uv.u_, t * uv.v_};
 }
 
-inline Uv operator + (const Uv &a, const Uv &b)
+template <typename T, typename = std::enable_if_t<std::is_arithmetic_v<T>>>
+inline Uv<T> operator * (const Uv<T> &uv, T t)
 {
-	return {a.u_ + b.u_, a.v_ + b.v_};
+	return t * uv;
+}
+
+template <typename T, typename = std::enable_if_t<!std::is_arithmetic_v<T>>>
+inline Uv<T> operator * (const Uv<T> &uv, const T &t)
+{
+	return t * uv;
+}
+
+template <typename T>
+inline Uv<T> operator + (const Uv<T> &uv_a, const Uv<T> &uv_b)
+{
+	return {uv_a.u_ + uv_b.u_, uv_a.v_ + uv_b.v_};
 }
 
 END_YAFARAY

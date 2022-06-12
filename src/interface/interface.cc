@@ -104,7 +104,7 @@ bool Interface::addFace(std::vector<int> &&vertices, std::vector<int> &&uv_indic
 	return scene_->addFace(std::move(vertices), std::move(uv_indices));
 }
 
-int Interface::addUv(Uv &&uv) noexcept { return scene_->addUv(std::move(uv)); }
+int Interface::addUv(Uv<float> &&uv) noexcept { return scene_->addUv(std::move(uv)); }
 
 bool Interface::smoothVerticesNormals(std::string &&name, double angle) noexcept { return scene_->smoothVerticesNormals(std::move(name), angle); }
 

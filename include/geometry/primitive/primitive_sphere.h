@@ -49,14 +49,14 @@ class SpherePrimitive final : public Primitive
 		const Material *getMaterial() const override { return material_->get(); }
 		float surfaceArea(float time) const override;
 		float surfaceArea(const Matrix4 &obj_to_world, float time) const override;
-		Vec3 getGeometricNormal(const Uv &uv, float time) const override;
-		Vec3 getGeometricNormal(const Matrix4 &obj_to_world, const Uv &uv, float time) const override;
-		std::pair<Point3, Vec3> sample(const Uv &uv, float time) const override;
-		std::pair<Point3, Vec3> sample(const Uv &uv, const Matrix4 &obj_to_world, float time) const override;
+		Vec3 getGeometricNormal(const Uv<float> &uv, float time) const override;
+		Vec3 getGeometricNormal(const Matrix4 &obj_to_world, const Uv<float> &uv, float time) const override;
+		std::pair<Point3, Vec3> sample(const Uv<float> &uv, float time) const override;
+		std::pair<Point3, Vec3> sample(const Uv<float> &uv, const Matrix4 &obj_to_world, float time) const override;
 		const Object *getObject() const override { return &base_object_; }
 		Visibility getVisibility() const override { return base_object_.getVisibility(); }
 		bool clippingSupport() const override { return false; }
-		float getDistToNearestEdge(const Uv &uv, const Vec3 &dp_du_abs, const Vec3 &dp_dv_abs) const override { return 0.f; }
+		float getDistToNearestEdge(const Uv<float> &uv, const Vec3 &dp_du_abs, const Vec3 &dp_dv_abs) const override { return 0.f; }
 		unsigned int getObjectIndex() const override { return base_object_.getIndex(); }
 		unsigned int getObjectIndexAuto() const override { return base_object_.getIndexAuto(); }
 		Rgb getObjectIndexAutoColor() const override { return base_object_.getIndexAutoColor(); }

@@ -38,9 +38,9 @@ class ShapeQuad final
 		IntersectData intersect(const Ray &ray) const;
 		Vec3 calculateFaceNormal() const;
 		float surfaceArea() const;
-		Point3 sample(const Uv &uv) const;
-		template <class T> static T interpolate(const Uv &uv, const std::array<T, 4> &t);
-		static float getDistToNearestEdge(const Uv &uv, const Vec3 &dp_du_abs, const Vec3 &dp_dv_abs);
+		Point3 sample(const Uv<float> &uv) const;
+		template <class T> static T interpolate(const Uv<float> &uv, const std::array<T, 4> &t);
+		static float getDistToNearestEdge(const Uv<float> &uv, const Vec3 &dp_du_abs, const Vec3 &dp_dv_abs);
 
 	private:
 		alignas(8) std::array<Point3, 4> vertices_;
@@ -52,18 +52,18 @@ inline Vec3 ShapeQuad::calculateFaceNormal() const
 	return ((vertices_[1] - vertices_[0]) ^ (vertices_[2] - vertices_[0])).normalize();
 }
 
-inline Point3 ShapeQuad::sample(const Uv &uv) const
+inline Point3 ShapeQuad::sample(const Uv<float> &uv) const
 {
 	return ShapeQuad::interpolate(uv, vertices_);
 }
 
 template <class T>
-inline T ShapeQuad::interpolate(const Uv &uv, const std::array<T, 4> &t)
+inline T ShapeQuad::interpolate(const Uv<float> &uv, const std::array<T, 4> &t)
 {
 	return (1.f - uv.v_) * ((1.f - uv.u_) * t[0] + uv.u_ * t[1]) + uv.v_ * ((1.f - uv.u_) * t[3] + uv.u_ * t[2]);
 }
 
-inline float ShapeQuad::getDistToNearestEdge(const Uv &uv, const Vec3 &dp_du_abs, const Vec3 &dp_dv_abs)
+inline float ShapeQuad::getDistToNearestEdge(const Uv<float> &uv, const Vec3 &dp_du_abs, const Vec3 &dp_dv_abs)
 {
 	const float u_dist_rel = 0.5f - std::abs(uv.u_ - 0.5f);
 	const float u_dist_abs = u_dist_rel * dp_du_abs.length();

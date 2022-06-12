@@ -154,22 +154,22 @@ float SpherePrimitive::surfaceArea(const Matrix4 &obj_to_world, float time) cons
 	return 0; //FIXME
 }
 
-Vec3 SpherePrimitive::getGeometricNormal(const Uv &uv, float time) const
+Vec3 SpherePrimitive::getGeometricNormal(const Uv<float> &uv, float time) const
 {
 	return {}; //FIXME
 }
 
-Vec3 SpherePrimitive::getGeometricNormal(const Matrix4 &obj_to_world, const Uv &uv, float time) const
+Vec3 SpherePrimitive::getGeometricNormal(const Matrix4 &obj_to_world, const Uv<float> &uv, float time) const
 {
 	return {}; //FIXME
 }
 
-std::pair<Point3, Vec3> SpherePrimitive::sample(const Uv &uv, float time) const
+std::pair<Point3, Vec3> SpherePrimitive::sample(const Uv<float> &uv, float time) const
 {
 	return {}; //FIXME
 }
 
-std::pair<Point3, Vec3> SpherePrimitive::sample(const Uv &uv, const Matrix4 &obj_to_world, float time) const
+std::pair<Point3, Vec3> SpherePrimitive::sample(const Uv<float> &uv, const Matrix4 &obj_to_world, float time) const
 {
 	return {}; //FIXME
 }

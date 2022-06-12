@@ -202,7 +202,7 @@ bool ExportC::addFace(std::vector<int> &&vertices, std::vector<int> &&uv_indices
 	return true;
 }
 
-int ExportC::addUv(Uv &&uv) noexcept
+int ExportC::addUv(Uv<float> &&uv) noexcept
 {
 	file_ << "\t" << "yafaray_addUv(yi, " << uv.u_ << ", " << uv.v_ << ");\n";
 	++section_num_lines_;

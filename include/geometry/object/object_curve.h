@@ -25,7 +25,7 @@
 
 BEGIN_YAFARAY
 
-struct Uv;
+template <typename T> struct Uv;
 class FacePrimitive;
 class Material;
 

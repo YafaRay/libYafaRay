@@ -51,7 +51,7 @@ class ExportXml: public Interface
 		int addVertex(Point3 &&vertex, Point3 &&orco, int time_step) noexcept override; //!< add vertex with Orco to mesh; returns index to be used for addTriangle/addQuad
 		void addVertexNormal(Vec3 &&normal, int time_step) noexcept override; //!< add vertex normal to mesh; the vertex that will be attached to is the last one inserted by addVertex method
 		bool addFace(std::vector<int> &&vertices, std::vector<int> &&uv_indices) noexcept override;
-		int addUv(Uv &&uv) noexcept override;
+		int addUv(Uv<float> &&uv) noexcept override;
 		bool smoothVerticesNormals(std::string &&name, double angle) noexcept override;
 		void setCurrentMaterial(std::string &&name) noexcept override;
 		Object *createObject(std::string &&name) noexcept override;
