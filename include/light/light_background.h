@@ -50,11 +50,11 @@ class BackgroundLight final : public Light
 		void emitPdf(const Vec3 &, const Vec3 &wo, float &area_pdf, float &dir_pdf, float &cos_wo) const override;
 		int nSamples() const override { return samples_; }
 		bool canIntersect() const override { return true; }
-		bool intersect(const Ray &ray, float &t, Rgb &col, float &ipdf) const override;
-		void sampleDir(float s_1, float s_2, Vec3 &dir, float &pdf, bool inv = false) const;
+		std::tuple<bool, float, Rgb> intersect(const Ray &ray, float &t) const override;
+		std::pair<Vec3, float> sampleDir(float s_1, float s_2, Vec3 &dir, float &NO, bool inv = false) const;
 		float dirPdf(const Vec3 &dir) const;
-		float calcFromSample(float s_1, float s_2, float &u, float &v, bool inv = false) const;
-		float calcFromDir(const Vec3 &dir, float &u, float &v, bool inv = false) const;
+		std::pair<float, Uv<float>> calcFromSample(float s_1, float s_2, bool inv = false) const;
+		std::pair<float, Uv<float>> calcFromDir(const Vec3 &dir, bool inv) const;
 		static float calcPdf(float p_0, float p_1, float s);
 		static float calcInvPdf(float p_0, float p_1, float s);
 		static constexpr float addOff(float v);

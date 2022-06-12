@@ -57,8 +57,7 @@ void BackgroundLight::init(Scene &scene)
 		for(int x = 0; x < nu; x++)
 		{
 			const float fx = (static_cast<float>(x) + 0.5f) * inv_nu;
-			Vec3 wi;
-			Texture::invSphereMap(fx, fy, wi);
+			const Vec3 wi{Texture::invSphereMap({fx, fy})};
 			fu[x] = background_->eval(wi, true).energy() * sintheta;
 		}
 		u_dist_[y] = std::make_unique<Pdf1D>(std::move(fu));
@@ -72,42 +71,40 @@ void BackgroundLight::init(Scene &scene)
 	world_pi_factor_ = math::mult_pi_by_2<> * a_pdf_;
 }
 
-inline float BackgroundLight::calcFromSample(float s_1, float s_2, float &u, float &v, bool inv) const
+inline std::pair<float, Uv<float>> BackgroundLight::calcFromSample(float s_1, float s_2, bool inv) const
 {
-	float pdf_1 = 0.f, pdf_2 = 0.f;
-	v = v_dist_->sample(s_2, pdf_2);
+	auto[v, pdf_2]{v_dist_->sample(s_2)};
 	const int iv = clampSample(addOff(v), v_dist_->size());
-	u = u_dist_[iv]->sample(s_1, pdf_1);
+	auto[u, pdf_1] = u_dist_[iv]->sample(s_1);
 	u *= u_dist_[iv]->invSize();
 	v *= v_dist_->invSize();
-	if(inv) return calcInvPdf(pdf_1, pdf_2, v);
-	return calcPdf(pdf_1, pdf_2, v);
+	if(inv) return {calcInvPdf(pdf_1, pdf_2, v), {u, v}};
+	else return {calcPdf(pdf_1, pdf_2, v), {u, v}};
 }
 
-inline float BackgroundLight::calcFromDir(const Vec3 &dir, float &u, float &v, bool inv) const
+inline std::pair<float, Uv<float>> BackgroundLight::calcFromDir(const Vec3 &dir, bool inv) const
 {
 	float pdf_1 = 0.f, pdf_2 = 0.f;
-	Texture::sphereMap(static_cast<Point3>(dir), u, v); // Returns u,v pair in [0,1] range
-	const int iv = clampSample(addOff(v * v_dist_->size()), v_dist_->size());
-	const int iu = clampSample(addOff(u * u_dist_[iv]->size()), u_dist_[iv]->size());
+	const Uv<float> uv{Texture::sphereMap(static_cast<Point3>(dir))}; // Returns u,v pair in [0,1] range
+	const int iv = clampSample(addOff(uv.v_ * v_dist_->size()), v_dist_->size());
+	const int iu = clampSample(addOff(uv.u_ * u_dist_[iv]->size()), u_dist_[iv]->size());
 	pdf_1 = u_dist_[iv]->function(iu) * u_dist_[iv]->invIntegral();
 	pdf_2 = v_dist_->function(iv) * v_dist_->invIntegral();
-	if(inv) return calcInvPdf(pdf_1, pdf_2, v);
-	return calcPdf(pdf_1, pdf_2, v);
+	if(inv) return {calcInvPdf(pdf_1, pdf_2, uv.v_), uv};
+	return {calcPdf(pdf_1, pdf_2, uv.v_), uv};
 }
 
-void BackgroundLight::sampleDir(float s_1, float s_2, Vec3 &dir, float &pdf, bool inv) const
+std::pair<Vec3, float> BackgroundLight::sampleDir(float s_1, float s_2, Vec3 &dirNO, float &NO, bool inv) const
 {
-	float u = 0.f, v = 0.f;
-	pdf = calcFromSample(s_1, s_2, u, v, inv);
-	Texture::invSphereMap(u, v, dir);
+	const auto[pdf, uv]{calcFromSample(s_1, s_2, inv)};
+	Vec3 dir = Texture::invSphereMap(uv);
+	return {dir, pdf};
 }
 
 // dir points from surface point to background
 float BackgroundLight::dirPdf(const Vec3 &dir) const
 {
-	float u = 0.f, v = 0.f;
-	return calcFromDir(dir, u, v);
+	return calcFromDir(dir, false).first;
 }
 
 float BackgroundLight::calcPdf(float p_0, float p_1, float s)
@@ -123,25 +120,21 @@ float BackgroundLight::calcInvPdf(float p_0, float p_1, float s)
 bool BackgroundLight::illumSample(const Point3 &, LSample &s, Ray &wi, float time) const
 {
 	if(photonOnly()) return false;
-	float u = 0.f, v = 0.f;
 	wi.tmax_ = -1.f;
-	s.pdf_ = calcFromSample(s.s_1_, s.s_2_, u, v, false);
-	Texture::invSphereMap(u, v, wi.dir_);
+	const auto [pdf, uv]{calcFromSample(s.s_1_, s.s_2_, false)};
+	s.pdf_ = pdf;
+	wi.dir_ = Texture::invSphereMap(uv);
 	s.col_ = background_->eval(wi.dir_, true);
 	return true;
 }
 
-bool BackgroundLight::intersect(const Ray &ray, float &t, Rgb &col, float &ipdf) const
+std::tuple<bool, float, Rgb> BackgroundLight::intersect(const Ray &ray, float &) const
 {
-	Vec3 ray_dir{ray.dir_};
-	Vec3 abs_dir{ray.dir_};
-	if(abs_inter_) abs_dir = -abs_dir;
-	float u = 0.f, v = 0.f;
-	ipdf = calcFromDir(abs_dir, u, v, true);
-	Texture::invSphereMap(u, v, ray_dir);
-	col = background_->eval(ray_dir, true);
+	const auto [ipdf, uv]{calcFromDir(abs_inter_ ? ray.dir_: -ray.dir_, true)};
+	const Point3 ray_dir{Texture::invSphereMap(uv)};
+	Rgb col{background_->eval(ray_dir, true)};
 	col.clampProportionalRgb(clamp_intersect_); //trick to reduce light sampling noise at the expense of realism and inexact overall light. 0.f disables clamping
-	return true;
+	return {true, ipdf, col};
 }
 
 Rgb BackgroundLight::totalEnergy() const
@@ -156,7 +149,7 @@ Rgb BackgroundLight::emitPhoton(float s_1, float s_2, float s_3, float s_4, Ray 
 	ray.dir_ = -ray.dir_;
 	const auto [u_vec, v_vec]{Vec3::createCoordsSystem(ray.dir_)};
 	float u, v;
-	Vec3::shirleyDisk(s_1, s_2, u, v);
+	Vec3::shirleyDisk(s_1, s_2);
 	const Vec3 offs{u * u_vec + v * v_vec};
 	ray.from_ = world_center_ + world_radius_ * (offs - ray.dir_);
 	return pcol * a_pdf_;
@@ -169,7 +162,7 @@ Rgb BackgroundLight::emitSample(Vec3 &wo, LSample &s, float time) const
 	wo = -wo;
 	const auto [u_vec, v_vec]{Vec3::createCoordsSystem(wo)};
 	float u, v;
-	Vec3::shirleyDisk(s.s_1_, s.s_2_, u, v);
+	Vec3::shirleyDisk(s.s_1_, s.s_2_);
 	const Vec3 offs{u * u_vec + v * v_vec};
 	s.sp_->p_ = world_center_ + world_radius_ * offs - world_radius_ * wo;
 	s.sp_->n_ = s.sp_->ng_ = wo;

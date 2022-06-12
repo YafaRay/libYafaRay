@@ -45,7 +45,7 @@ class SunLight final : public Light
 		bool illumSample(const Point3 &surface_p, LSample &s, Ray &wi, float time) const override;
 		bool illuminate(const Point3 &surface_p, Rgb &col, Ray &wi) const override { return false; }
 		bool canIntersect() const override { return true; }
-		bool intersect(const Ray &ray, float &t, Rgb &col, float &ipdf) const override;
+		std::tuple<bool, float, Rgb> intersect(const Ray &ray, float &t) const override;
 		int nSamples() const override { return samples_; }
 
 		Point3 world_center_;

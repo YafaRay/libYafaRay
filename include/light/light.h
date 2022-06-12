@@ -72,7 +72,7 @@ class Light
 		//! indicate whether the light can intersect with a ray (by the sphereIntersect function)
 		virtual bool canIntersect() const { return false; }
 		//! sphereIntersect the light source with a ray, giving back distance, energy and 1/PDF
-		virtual bool intersect(const Ray &ray, float &t, Rgb &col, float &ipdf) const { return false; }
+		virtual std::tuple<bool, float, Rgb> intersect(const Ray &ray, float &t) const { return {}; }
 		//! get the pdf for sampling the incoming direction wi at surface point sp (illumSample!)
 		/*! this method requires an intersection point with the light (sp_light). Otherwise, use sphereIntersect() */
 		virtual float illumPdf(const Point3 &surface_p, const Point3 &light_p, const Vec3 &light_ng) const { return 0.f; }

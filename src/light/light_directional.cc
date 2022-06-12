@@ -93,7 +93,7 @@ Rgb DirectionalLight::emitPhoton(float s_1, float s_2, float s_3, float s_4, Ray
 	//todo
 	ray.dir_ = -direction_;
 	float u, v;
-	Vec3::shirleyDisk(s_1, s_2, u, v);
+	Vec3::shirleyDisk(s_1, s_2);
 	ray.from_ = position_ + radius_ * (u * duv_.u_ + v * duv_.v_);
 	if(infinite_) ray.from_ += direction_ * world_radius_;
 	ipdf = math::num_pi<> * radius_ * radius_; //4.0f * num_pi;
@@ -107,7 +107,7 @@ Rgb DirectionalLight::emitSample(Vec3 &wo, LSample &s, float time) const
 	s.sp_->n_ = wo;
 	s.flags_ = flags_;
 	float u, v;
-	Vec3::shirleyDisk(s.s_1_, s.s_2_, u, v);
+	Vec3::shirleyDisk(s.s_1_, s.s_2_);
 	s.sp_->p_ = position_ + radius_ * (u * duv_.u_ + v * duv_.v_);
 	if(infinite_) s.sp_->p_ += direction_ * world_radius_;
 	s.area_pdf_ = area_pdf_;

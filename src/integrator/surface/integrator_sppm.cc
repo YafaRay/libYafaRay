@@ -185,8 +185,8 @@ bool SppmIntegrator::renderTile(FastRandom &fast_random, std::vector<int> &corre
 	}
 	float inv_aa_max_possible_samples = 1.f / static_cast<float>(aa_max_possible_samples);
 	ColorLayers color_layers(*layers_);
-	const float x_start_film = image_film_->getCx0();
-	const float y_start_film = image_film_->getCy0();
+	const int x_start_film = image_film_->getCx0();
+	const int y_start_film = image_film_->getCy0();
 	float d_1 = 1.f / static_cast<float>(n_samples);
 	for(int i = a.y_; i < end_y; ++i)
 	{
@@ -209,13 +209,15 @@ bool SppmIntegrator::renderTile(FastRandom &fast_random, std::vector<int> &corre
 				dx = sample::riVdC(pixel_sampling_data.sample_, pixel_sampling_data.offset_);
 				dy = sample::riS(pixel_sampling_data.sample_, pixel_sampling_data.offset_);
 
-				float lens_u = 0.5f, lens_v = 0.5f;
+				Uv<float> lens_uv{0.5f, 0.5f};
 				if(sample_lns)
 				{
-					lens_u = Halton::lowDiscrepancySampling(fast_random, 3, pixel_sampling_data.sample_ + pixel_sampling_data.offset_);
-					lens_v = Halton::lowDiscrepancySampling(fast_random, 4, pixel_sampling_data.sample_ + pixel_sampling_data.offset_);
+					lens_uv = {
+							static_cast<float>(Halton::lowDiscrepancySampling(fast_random, 3, pixel_sampling_data.sample_ + pixel_sampling_data.offset_)),
+							static_cast<float>(Halton::lowDiscrepancySampling(fast_random, 4, pixel_sampling_data.sample_ + pixel_sampling_data.offset_))
+					};
 				}
-				CameraRay camera_ray = camera_->shootRay(j + dx, i + dy, lens_u, lens_v); // wt need to be considered
+				CameraRay camera_ray = camera_->shootRay(static_cast<float>(j) + dx, static_cast<float>(i) + dy, lens_uv); // wt need to be considered
 				if(!camera_ray.valid_)
 				{
 					image_film_->addSample(j, i, dx, dy, &a, sample, aa_pass_number, inv_aa_max_possible_samples, &color_layers); //maybe not need
@@ -225,17 +227,17 @@ bool SppmIntegrator::renderTile(FastRandom &fast_random, std::vector<int> &corre
 				{
 					//setup ray differentials
 					camera_ray.ray_.differentials_ = std::make_unique<RayDifferentials>();
-					const CameraRay camera_diff_ray_x = camera_->shootRay(j + 1 + dx, i + dy, lens_u, lens_v);
+					const CameraRay camera_diff_ray_x = camera_->shootRay(static_cast<float>(j) + 1 + dx, static_cast<float>(i) + dy, lens_uv);
 					camera_ray.ray_.differentials_->xfrom_ = camera_diff_ray_x.ray_.from_;
 					camera_ray.ray_.differentials_->xdir_ = camera_diff_ray_x.ray_.dir_;
-					const CameraRay camera_diff_ray_y = camera_->shootRay(j + dx, i + 1 + dy, lens_u, lens_v);
+					const CameraRay camera_diff_ray_y = camera_->shootRay(static_cast<float>(j) + dx, static_cast<float>(i) + 1 + dy, lens_uv);
 					camera_ray.ray_.differentials_->yfrom_ = camera_diff_ray_y.ray_.from_;
 					camera_ray.ray_.differentials_->ydir_ = camera_diff_ray_y.ray_.dir_;
 					// col = T * L_o + L_v
 				}
 				camera_ray.ray_.time_ = time;
 				//for sppm progressive
-				int index = ((i - y_start_film) * camera_->resX()) + (j - x_start_film);
+				const int index = ((i - y_start_film) * camera_->resX()) + (j - x_start_film);
 				HitPoint &hp = hit_points_[index];
 				RayDivision ray_division;
 				const GatherInfo g_info = traceGatherRay(camera_ray.ray_, hp, fast_random, random_generator, &color_layers, thread_id, 0, true, 0.f, ray_division, pixel_sampling_data, object_index_highest, material_index_highest);

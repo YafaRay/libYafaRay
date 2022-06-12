@@ -172,24 +172,23 @@ Rgb ObjectLight::emitSample(Vec3 &wo, LSample &s, float time) const
 	return color_;
 }
 
-bool ObjectLight::intersect(const Ray &ray, float &t, Rgb &col, float &ipdf) const
+std::tuple<bool, float, Rgb> ObjectLight::intersect(const Ray &ray, float &t) const
 {
-	if(!accelerator_) return false;
+	if(!accelerator_) return {};
 	const float t_max = (ray.tmax_ >= 0.f) ? ray.tmax_ : std::numeric_limits<float>::infinity();
 	// intersect with tree:
 	const AcceleratorIntersectData accelerator_intersect_data = accelerator_->intersect(ray, t_max);
-	if(!accelerator_intersect_data.isHit()) { return false; }
+	if(!accelerator_intersect_data.isHit()) return {};
 	const Vec3 n{accelerator_intersect_data.primitive()->getGeometricNormal(accelerator_intersect_data.uv(), 0)};
 	float cos_angle = ray.dir_ * (-n);
 	if(cos_angle <= 0.f)
 	{
 		if(double_sided_) cos_angle = std::abs(cos_angle);
-		else return false;
+		else return {};
 	}
 	const float idist_sqr = 1.f / (t * t);
-	ipdf = idist_sqr * area_ * cos_angle * math::div_1_by_pi<>;
-	col = color_;
-	return true;
+	const float ipdf = idist_sqr * area_ * cos_angle * math::div_1_by_pi<>;
+	return {true, ipdf, color_};
 }
 
 float ObjectLight::illumPdf(const Point3 &surface_p, const Point3 &light_p, const Vec3 &light_ng) const

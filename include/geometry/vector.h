@@ -81,7 +81,7 @@ class Vec3
 		static constexpr void fresnel(const Vec3 &i, const Vec3 &n, float ior, float &kr, float &kt);
 		static constexpr void fastFresnel(const Vec3 &i, const Vec3 &n, float iorf, float &kr, float &kt);
 		static constexpr Uv<Vec3> createCoordsSystem(const Vec3 &normal);
-		static void shirleyDisk(float r_1, float r_2, float &u, float &v);
+		static Uv<float> shirleyDisk(float r_1, float r_2);
 		static Vec3 randomSpherical(FastRandom &fast_random);
 		static Vec3 randomVectorCone(const Vec3 &d, const Vec3 &u, const Vec3 &v, float cosang, float z_1, float z_2);
 		static Vec3 randomVectorCone(const Vec3 &dir, float cosangle, float r_1, float r_2);
@@ -300,10 +300,10 @@ inline Vec3 Vec3::randomSpherical(FastRandom &fast_random)
 }
 
 // P.Shirley's concentric disk algorithm, maps square to disk
-inline void Vec3::shirleyDisk(float r_1, float r_2, float &u, float &v)
+inline Uv<float> Vec3::shirleyDisk(float r_1, float r_2)
 {
-	float phi = 0.f;
-	float r = 0.f;
+	float phi;
+	float r;
 	const float a = 2.f * r_1 - 1.f;
 	const float b = 2.f * r_2 - 1.f;
 	if(a > -b)
@@ -335,8 +335,7 @@ inline void Vec3::shirleyDisk(float r_1, float r_2, float &u, float &v)
 				phi = 0.f;
 		}
 	}
-	u = r * math::cos(phi);
-	v = r * math::sin(phi);
+	return {r * math::cos(phi), r * math::sin(phi)};
 }
 
 /*! refract a ray given the IOR. All directions (n, wi and wo) point away from the intersection point.

@@ -59,7 +59,7 @@ class Camera
 		virtual ~Camera() = default;
 		virtual void setAxis(const Vec3 &vx, const Vec3 &vy, const Vec3 &vz) = 0; //!< Set camera axis
 		/*! Shoot a new ray from the camera gived image pixel coordinates px,py and lense dof effect */
-		virtual CameraRay shootRay(float px, float py, float u, float v) const = 0; //!< Shoot a new ray from the camera.
+		virtual CameraRay shootRay(float px, float py, const Uv<float> &uv) const = 0; //!< Shoot a new ray from the camera.
 		virtual Point3 screenproject(const Point3 &p) const = 0; //!< Get projection of point p into camera plane
 		virtual bool sampleLense() const { return false; } //!< Indicate whether the lense need to be sampled
 		virtual bool project(const Ray &wo, float lu, float lv, float &u, float &v, float &pdf) const { return false; }

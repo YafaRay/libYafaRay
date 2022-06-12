@@ -43,7 +43,7 @@ class Pdf1D final
 		float invIntegral() const { return inv_integral_; }
 		float function(size_t index) const { return function_[index]; }
 		float cdf(size_t index) const { return cdf_[index]; }
-		float sample(float u, float &pdf) const;
+		std::pair<float, float> sample(float u) const;
 		// take a discrete sample.
 		// determines an index in the array from which the CDF was taked from, rather than a sample in [0;1]
 		int dSample(float u, float &pdf) const;
@@ -96,28 +96,21 @@ inline int Pdf1D::dSample(float u, float &pdf) const
 	return index;
 }
 
-inline float Pdf1D::sample(float u, float &pdf) const
+inline std::pair<float, float> Pdf1D::sample(float u) const
 {
-	if(u <= 0.f)
-	{
-		constexpr int index = 0;
-		pdf = function_[index] * inv_integral_;
-		return static_cast<float>(index);
-	}
+	if(u <= 0.f) return {0.f, function_[0] * inv_integral_};
 	else if(u >= 1.f)
 	{
-		const int index = cdf_.size() - 1;
-		pdf = function_[index] * inv_integral_;
-		return static_cast<float>(index) + 1.f;
+		const ssize_t index = static_cast<ssize_t>(cdf_.size()) - 1;
+		return {static_cast<float>(index) + 1.f, function_[index] * inv_integral_};
 	}
 	else
 	{
 		const auto &it = std::lower_bound(cdf_.begin(), cdf_.end(), u);
-		const int index = static_cast<int>(it - cdf_.begin());
-		pdf = function_[index] * inv_integral_;
+		const ssize_t index = static_cast<ssize_t>(it - cdf_.begin());
 		// Return offset along current cdf segment
 		const float delta = index > 0 ? (u - cdf_[index - 1]) / (cdf_[index] - cdf_[index - 1]) : u / cdf_[index];
-		return static_cast<float>(index) + delta;
+		return {static_cast<float>(index) + delta, function_[index] * inv_integral_};
 	}
 }
 

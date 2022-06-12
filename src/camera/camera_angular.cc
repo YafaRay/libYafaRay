@@ -53,7 +53,7 @@ void AngularCamera::setAxis(const Vec3 &vx, const Vec3 &vy, const Vec3 &vz)
 	vto_ = cam_z_;
 }
 
-CameraRay AngularCamera::shootRay(float px, float py, float lu, float lv) const
+CameraRay AngularCamera::shootRay(float px, float py, const Uv<float> &uv) const
 {
 	const float u = 1.f - 2.f * (px / static_cast<float>(resx_));
 	float v = 2.f * (py / static_cast<float>(resy_)) - 1.f;

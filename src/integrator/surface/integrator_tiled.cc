@@ -80,7 +80,7 @@ void TiledIntegrator::precalcDepths()
 		{
 			for(int j = 0; j < w; ++j)
 			{
-				CameraRay camera_ray = camera_->shootRay(i, j, 0.5f, 0.5f);
+				CameraRay camera_ray = camera_->shootRay(i, j, {0.5f, 0.5f});
 				const auto [sp, tmax] = accelerator_->intersect(camera_ray.ray_, camera_);
 				if(tmax > max_depth_) max_depth_ = tmax;
 				if(tmax < min_depth_ && tmax >= 0.f) min_depth_ = tmax;
@@ -271,8 +271,7 @@ bool TiledIntegrator::renderTile(FastRandom &fast_random, std::vector<int> &corr
 		aa_max_possible_samples += ceilf(aa_noise_params_.inc_samples_ * pow(aa_noise_params_.sample_multiplier_factor_, i));	//DAVID FIXME: if the per-material sampling factor is used, values higher than 1.f will appear in the Sample Count render pass. Is that acceptable or not?
 	}
 	const float inv_aa_max_possible_samples = 1.f / static_cast<float>(aa_max_possible_samples);
-	Halton hal_u(3);
-	Halton hal_v(5);
+	Uv<Halton> hal{Halton{3}, Halton{5}};
 	ColorLayers color_layers(*layers_);
 	const Image *sampling_factor_image_pass = (*image_film_->getImageLayers())(LayerDef::DebugSamplingFactor).image_.get();
 	const int film_cx_0 = image_film_->getCx0();
@@ -305,8 +304,8 @@ bool TiledIntegrator::renderTile(FastRandom &fast_random, std::vector<int> &corr
 			pixel_sampling_data.number_ = camera_res_x * i + j;
 			pixel_sampling_data.offset_ = sample::fnv32ABuf(i * sample::fnv32ABuf(j)); //fnv_32a_buf(rstate.pixelNumber);
 			const float toff = Halton::lowDiscrepancySampling(fast_random, 5, pass_offs + pixel_sampling_data.offset_); // **shall be just the pass number...**
-			hal_u.setStart(pass_offs + pixel_sampling_data.offset_);
-			hal_v.setStart(pass_offs + pixel_sampling_data.offset_);
+			hal.u_.setStart(pass_offs + pixel_sampling_data.offset_);
+			hal.v_.setStart(pass_offs + pixel_sampling_data.offset_);
 			for(int sample = 0; sample < n_samples_adjusted; ++sample)
 			{
 				color_layers.setDefaultColors();
@@ -327,26 +326,25 @@ bool TiledIntegrator::renderTile(FastRandom &fast_random, std::vector<int> &corr
 					dx = (0.5f + static_cast<float>(sample)) * d_1;
 					dy = sample::riLp(sample + pixel_sampling_data.offset_);
 				}
-				float lens_u = 0.5f, lens_v = 0.5f;
+				Uv<float> lens_uv{0.5f, 0.5f};
 				if(sample_lns)
 				{
-					lens_u = hal_u.getNext();
-					lens_v = hal_v.getNext();
+					lens_uv = {hal.u_.getNext(), hal.v_.getNext()};
 				}
-				CameraRay camera_ray = camera_->shootRay(j + dx, i + dy, lens_u, lens_v);
+				CameraRay camera_ray = camera_->shootRay(static_cast<float>(j) + dx, static_cast<float>(i) + dy, lens_uv);
 				if(!camera_ray.valid_)
 				{
-					image_film_->addSample(j, i, dx, dy, &a, sample, aa_pass_number, inv_aa_max_possible_samples, &color_layers);
+					image_film_->addSample(static_cast<float>(j), static_cast<float>(i), dx, dy, &a, sample, aa_pass_number, inv_aa_max_possible_samples, &color_layers);
 					continue;
 				}
 				if(render_control_.getDifferentialRaysEnabled())
 				{
 					//setup ray differentials
 					camera_ray.ray_.differentials_ = std::make_unique<RayDifferentials>();
-					const CameraRay camera_diff_ray_x = camera_->shootRay(j + 1 + dx, i + dy, lens_u, lens_v);
+					const CameraRay camera_diff_ray_x = camera_->shootRay(static_cast<float>(j) + 1 + dx, static_cast<float>(i) + dy, lens_uv);
 					camera_ray.ray_.differentials_->xfrom_ = camera_diff_ray_x.ray_.from_;
 					camera_ray.ray_.differentials_->xdir_ = camera_diff_ray_x.ray_.dir_;
-					const CameraRay camera_diff_ray_y = camera_->shootRay(j + dx, i + 1 + dy, lens_u, lens_v);
+					const CameraRay camera_diff_ray_y = camera_->shootRay(static_cast<float>(j) + dx, static_cast<float>(i) + 1 + dy, lens_uv);
 					camera_ray.ray_.differentials_->yfrom_ = camera_diff_ray_y.ray_.from_;
 					camera_ray.ray_.differentials_->ydir_ = camera_diff_ray_y.ray_.dir_;
 				}

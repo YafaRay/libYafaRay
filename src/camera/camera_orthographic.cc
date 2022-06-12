@@ -48,7 +48,7 @@ void OrthographicCamera::setAxis(const Vec3 &vx, const Vec3 &vy, const Vec3 &vz)
 }
 
 
-CameraRay OrthographicCamera::shootRay(float px, float py, float lu, float lv) const
+CameraRay OrthographicCamera::shootRay(float px, float py, const Uv<float> &uv) const
 {
 	Ray ray;
 	ray.from_ = pos_ + vright_ * px + vup_ * py;

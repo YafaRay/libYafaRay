@@ -68,20 +68,18 @@ bool SunLight::illumSample(const Point3 &surface_p, LSample &s, Ray &wi, float t
 	return true;
 }
 
-bool SunLight::intersect(const Ray &ray, float &t, Rgb &col, float &ipdf) const
+std::tuple<bool, float, Rgb> SunLight::intersect(const Ray &ray, float &t) const
 {
-	float cosine = ray.dir_ * direction_;
-	if(cosine < cos_angle_) return false;
-	col = col_pdf_;
-	t = -1;
-	ipdf = invpdf_;
-	return true;
+	const float cosine = ray.dir_ * direction_;
+	if(cosine < cos_angle_) return {};
+	t = -1.f;
+	return {true, invpdf_, col_pdf_};
 }
 
 Rgb SunLight::emitPhoton(float s_1, float s_2, float s_3, float s_4, Ray &ray, float &ipdf) const
 {
 	float u, v;
-	Vec3::shirleyDisk(s_3, s_4, u, v);
+	Vec3::shirleyDisk(s_3, s_4);
 
 	Vec3 ldir{sample::cone(direction_, duv_.u_, duv_.v_, cos_angle_, s_3, s_4)};
 	Vec3 du_2, dv_2;

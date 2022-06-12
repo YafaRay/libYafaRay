@@ -71,10 +71,10 @@ class Texture
 		InterpolationType getInterpolationType() const { return interpolation_type_; }
 		static InterpolationType getInterpolationTypeFromName(const std::string &interpolation_type_name);
 		static std::string getInterpolationTypeName(const InterpolationType &interpolation_type);
-		static void angMap(const Point3 &p, float &u, float &v);
+		static Uv<float> angMap(const Point3 &p);
 		static void tubeMap(const Point3 &p, float &u, float &v);
-		static void sphereMap(const Point3 &p, float &u, float &v);
-		static void invSphereMap(float u, float v, Vec3 &p);
+		static Uv<float> sphereMap(const Point3 &p);
+		static Point3 invSphereMap(const Uv<float> &uv);
 
 	protected:
 		static void textureReadColorRamp(const ParamMap &params, Texture *tex);

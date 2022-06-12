@@ -132,22 +132,16 @@ bool AreaLight::triIntersect(const Point3 &a, const Point3 &b, const Point3 &c, 
 	return true;
 }
 
-bool AreaLight::intersect(const Ray &ray, float &t, Rgb &col, float &ipdf) const
+std::tuple<bool, float, Rgb> AreaLight::intersect(const Ray &ray, float &t) const
 {
-	float cos_angle = ray.dir_ * fnormal_;
+	const float cos_angle = ray.dir_ * fnormal_;
 	//no light if point is behind area light (single sided!)
-	if(cos_angle <= 0) return false;
-
-	if(!triIntersect(corner_, c_2_, c_3_, ray, t))
-	{
-		if(!triIntersect(corner_, c_3_, c_4_, ray, t)) return false;
-	}
-	if(!(t > 1.0e-10f)) return false;
-
-	col = color_;
+	if(cos_angle <= 0.f
+		|| (!triIntersect(corner_, c_2_, c_3_, ray, t) && !triIntersect(corner_, c_3_, c_4_, ray, t))
+		|| t <= 1.0e-10f) return {};
 	// pdf = distance^2 / area * cos(norm, ldir); ipdf = 1/pdf;
-	ipdf = 1.f / (t * t) * area_ * cos_angle * math::div_1_by_pi<>;
-	return true;
+	const float ipdf = 1.f / (t * t) * area_ * cos_angle * math::div_1_by_pi<>;
+	return {true, ipdf, color_};
 }
 
 float AreaLight::illumPdf(const Point3 &surface_p, const Point3 &light_p, const Vec3 &) const

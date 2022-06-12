@@ -71,18 +71,19 @@ std::string Texture::getInterpolationTypeName(const InterpolationType &interpola
 	}
 }
 
-
-void Texture::angMap(const Point3 &p, float &u, float &v)
+Uv<float> Texture::angMap(const Point3 &p)
 {
 	float r = p.x() * p.x() + p.z() * p.z();
-	u = v = 0.f;
 	if(r > 0.f)
 	{
 		const float phi_ratio = math::div_1_by_pi<> * math::acos(p.y());//[0,1] range
 		r = phi_ratio / math::sqrt(r);
-		u = p.x() * r;// costheta * r * phiRatio
-		v = p.z() * r;// sintheta * r * phiRatio
+		return {
+			p.x() * r, // costheta * r * phiRatio
+			p.z() * r // sintheta * r * phiRatio
+		};
 	}
+	else return {0.f, 0.f};
 }
 
 // slightly modified Blender's own function,
@@ -100,35 +101,35 @@ void Texture::tubeMap(const Point3 &p, float &u, float &v)
 }
 
 // maps a direction to a 2d 0..1 interval
-void Texture::sphereMap(const Point3 &p, float &u, float &v)
+Uv<float> Texture::sphereMap(const Point3 &p)
 {
 	const float sqrt_r_phi = p.x() * p.x() + p.y() * p.y();
 	const float sqrt_r_theta = sqrt_r_phi + p.z() * p.z();
-	float phi_ratio;
-
-	u = 0.f;
-	v = 0.f;
-
+	Uv<float> uv;
 	if(sqrt_r_phi > 0.f)
 	{
+		float phi_ratio;
 		if(p.y() < 0.f) phi_ratio = (math::mult_pi_by_2<> - math::acos(p.x() / math::sqrt(sqrt_r_phi))) * math::div_1_by_2pi<>;
 		else phi_ratio = math::acos(p.x() / math::sqrt(sqrt_r_phi)) * math::div_1_by_2pi<>;
-		u = 1.f - phi_ratio;
+		uv.u_ = 1.f - phi_ratio;
 	}
-
-	v = 1.f - (math::acos(p.z() / math::sqrt(sqrt_r_theta)) * math::div_1_by_pi<>);
+	else uv.u_ = 0.f;
+	uv.v_ = 1.f - (math::acos(p.z() / math::sqrt(sqrt_r_theta)) * math::div_1_by_pi<>);
+	return uv;
 }
 
 // maps u,v coords in the 0..1 interval to a direction
-void Texture::invSphereMap(float u, float v, Vec3 &p)
+Point3 Texture::invSphereMap(const Uv<float> &uv)
 {
-	const float theta = v * math::num_pi<>;
-	const float phi = -(u * math::mult_pi_by_2<>);
+	const float theta = uv.v_ * math::num_pi<>;
+	const float phi = -(uv.u_ * math::mult_pi_by_2<>);
 	const float costheta = math::cos(theta), sintheta = math::sin(theta);
 	const float cosphi = math::cos(phi), sinphi = math::sin(phi);
-	p.x() = sintheta * cosphi;
-	p.y() = sintheta * sinphi;
-	p.z() = -costheta;
+	return {
+			sintheta * cosphi,
+			sintheta * sinphi,
+			-costheta
+	};
 }
 
 void Texture::setAdjustments(float intensity, float contrast, float saturation, float hue, bool clamp, float factor_red, float factor_green, float factor_blue)

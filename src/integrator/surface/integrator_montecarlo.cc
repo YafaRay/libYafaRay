@@ -309,7 +309,6 @@ Rgb MonteCarloIntegrator::areaLightSampleMaterial(Halton &hal_2, Halton &hal_3, 
 		Ray light_ray;
 		light_ray.from_ = sp.p_;
 		Rgb col{0.f};
-		Rgb lcol;
 		Ray b_ray;
 		for(unsigned int i = 0; i < num_samples; ++i)
 		{
@@ -321,8 +320,7 @@ Rgb MonteCarloIntegrator::areaLightSampleMaterial(Halton &hal_2, Halton &hal_3, 
 			float W = 0.f;
 			Sample s(s_1, s_2, BsdfFlags::Glossy | BsdfFlags::Diffuse | BsdfFlags::Dispersive | BsdfFlags::Reflect | BsdfFlags::Transmit);
 			const Rgb surf_col = sp.sample(wo, b_ray.dir_, s, W, chromatic_enabled, wavelength, camera_);
-			float light_pdf;
-			if(s.pdf_ > 1e-6f && light->intersect(b_ray, b_ray.tmax_, lcol, light_pdf))
+			if(auto [light_hit, light_pdf, lcol]{light->intersect(b_ray, b_ray.tmax_)}; light_hit && s.pdf_ > 1e-6f)
 			{
 				Rgb scol{0.f};
 				bool shadowed = false;

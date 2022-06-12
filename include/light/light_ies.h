@@ -44,8 +44,6 @@ class IesLight final : public Light
 		bool diracLight() const override { return !soft_shadow_; }
 		bool illuminate(const Point3 &surface_p, Rgb &col, Ray &wi) const override;
 		bool illumSample(const Point3 &surface_p, LSample &s, Ray &wi, float time) const override;
-		bool canIntersect() const override;
-		bool intersect(const Ray &ray, float &t, Rgb &col, float &ipdf) const override;
 		Rgb emitPhoton(float s_1, float s_2, float s_3, float s_4, Ray &ray, float &ipdf) const override;
 		Rgb emitSample(Vec3 &wo, LSample &s, float time) const override;
 		void emitPdf(const Vec3 &surface_n, const Vec3 &wo, float &area_pdf, float &dir_pdf, float &cos_wo) const override;

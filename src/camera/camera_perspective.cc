@@ -68,78 +68,70 @@ void PerspectiveCamera::setAxis(const Vec3 &vx, const Vec3 &vy, const Vec3 &vz)
 	vright_ /= (float)resx_;
 }
 
-void PerspectiveCamera::biasDist(float &r) const
+float PerspectiveCamera::biasDist(float r) const
 {
 	switch(bkhbias_)
 	{
 		case BkhBiasType::BbCenter:
-			r = math::sqrt(math::sqrt(r) * r);
-			break;
+			return math::sqrt(math::sqrt(r) * r);
 		case BkhBiasType::BbEdge:
-			r = math::sqrt((float) 1.0 - r * r);
-			break;
+			return math::sqrt(1.f - r * r);
 		default:
 		case BkhBiasType::BbNone:
-			r = math::sqrt(r);
+			return math::sqrt(r);
 	}
 }
 
-void PerspectiveCamera::sampleTsd(float r_1, float r_2, float &u, float &v) const
+Uv<float> PerspectiveCamera::sampleTsd(float r_1, float r_2) const
 {
 	const auto fn = static_cast<float>(bkhtype_);
-	int idx = int(r_1 * fn);
-	r_1 = (r_1 - ((float)idx) / fn) * fn;
-	biasDist(r_1);
-	float b_1 = r_1 * r_2;
-	float b_0 = r_1 - b_1;
+	int idx = static_cast<int>(r_1 * fn);
+	float r = (r_1 - (static_cast<float>(idx)) / fn) * fn;
+	r = biasDist(r);
+	const float b_1 = r * r_2;
+	const float b_0 = r - b_1;
 	idx <<= 1;
-	u = ls_[idx] * b_0 + ls_[idx + 2] * b_1;
-	v = ls_[idx + 1] * b_0 + ls_[idx + 3] * b_1;
+	const Uv<float> uv{
+			ls_[idx] * b_0 + ls_[idx + 2] * b_1,
+			ls_[idx + 1] * b_0 + ls_[idx + 3] * b_1
+	};
+	return uv;
 }
 
-void PerspectiveCamera::getLensUv(float r_1, float r_2, float &u, float &v) const
+Uv<float> PerspectiveCamera::getLensUv(float r_1, float r_2) const
 {
 	switch(bkhtype_)
 	{
 		case BokehType::BkTri:
 		case BokehType::BkSqr:
 		case BokehType::BkPenta:
-		case BokehType::BkHexa:
-			sampleTsd(r_1, r_2, u, v);
-			break;
+		case BokehType::BkHexa: return sampleTsd(r_1, r_2);
 		case BokehType::BkDisk2:
 		case BokehType::BkRing:
 		{
-			float w = math::mult_pi_by_2<> * r_2;
-			if(bkhtype_ == BokehType::BkRing) r_1 = math::sqrt((float) 0.707106781 + (float) 0.292893218);
-			else biasDist(r_1);
-			u = r_1 * math::cos(w);
-			v = r_1 * math::sin(w);
-			break;
+			const float w = math::mult_pi_by_2<> * r_2;
+			const float r = (bkhtype_ == BokehType::BkRing) ?
+					math::sqrt(0.707106781f + 0.292893218f) :
+					biasDist(r_1);
+			return {r * math::cos(w), r * math::sin(w)};
 		}
 		default:
-		case BokehType::BkDisk1:
-			Vec3::shirleyDisk(r_1, r_2, u, v);
+		case BokehType::BkDisk1: return Vec3::shirleyDisk(r_1, r_2);
 	}
 }
 
-
-
-CameraRay PerspectiveCamera::shootRay(float px, float py, float lu, float lv) const
+CameraRay PerspectiveCamera::shootRay(float px, float py, const Uv<float> &uv) const
 {
-	Ray ray;
-	ray.from_ = position_;
-	ray.dir_ = vright_ * px + vup_ * py + vto_;
+	Ray ray{position_, vright_ * px + vup_ * py + vto_, 0.f};
 	ray.dir_.normalize();
 	ray.tmin_ = near_plane_.rayIntersection(ray);
 	ray.tmax_ = far_plane_.rayIntersection(ray);
 	if(aperture_ != 0.f)
 	{
-		float u, v;
-		getLensUv(lu, lv, u, v);
-		const Vec3 li{dof_rt_ * u + dof_up_ * v};
+		const Uv<float> lens_uv{getLensUv(uv.u_, uv.v_)};
+		const Vec3 li{dof_rt_ * lens_uv.u_ + dof_up_ * lens_uv.v_};
 		ray.from_ += li;
-		ray.dir_ = (ray.dir_ * dof_distance_) - li;
+		ray.dir_ = ray.dir_ * dof_distance_ - li;
 		ray.dir_.normalize();
 	}
 	return {std::move(ray), true};

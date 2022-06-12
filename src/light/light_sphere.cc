@@ -53,18 +53,24 @@ void SphereLight::init(Scene &scene)
 
 Rgb SphereLight::totalEnergy() const { return color_ * area_ /* * num_pi */; }
 
-bool SphereLight::sphereIntersect(const Ray &ray, const Point3 &c, float r_2, float &d_1, float &d_2)
+std::pair<bool, Uv<float>> SphereLight::sphereIntersect(const Ray &ray, const Point3 &c, float r_2)
 {
-	Vec3 vf{ray.from_ - c};
-	float ea = ray.dir_ * ray.dir_;
-	float eb = 2.0 * vf * ray.dir_;
-	float ec = vf * vf - r_2;
-	float osc = eb * eb - 4.0 * ea * ec;
-	if(osc < 0) { d_1 = math::sqrt(ec / ea); return false; } // assume tangential hit/miss condition => Pythagoras
-	osc = math::sqrt(osc);
-	d_1 = (-eb - osc) / (2.0 * ea);
-	d_2 = (-eb + osc) / (2.0 * ea);
-	return true;
+	const Vec3 vf{ray.from_ - c};
+	const float ea = ray.dir_ * ray.dir_;
+	const float eb = 2.f * vf * ray.dir_;
+	const float ec = vf * vf - r_2;
+	const float osc = eb * eb - 4.f * ea * ec;
+	if(osc < 0.f)
+	{
+		// assume tangential hit/miss condition => Pythagoras
+		return {false, {math::sqrt(ec / ea), 0.f}};
+	}
+	const float osc_sqrt = math::sqrt(osc);
+	const Uv<float> uv{
+			(-eb - osc_sqrt) / (2.f * ea),
+			(-eb + osc_sqrt) / (2.f * ea)
+	};
+	return {true, uv};
 }
 
 bool SphereLight::illumSample(const Point3 &surface_p, LSample &s, Ray &wi, float time) const
@@ -82,7 +88,7 @@ bool SphereLight::illumSample(const Point3 &surface_p, LSample &s, Ray &wi, floa
 	const auto [du, dv]{Vec3::createCoordsSystem(cdir)};
 	wi.dir_ = sample::cone(cdir, du, dv, cos_alpha, s.s_1_, s.s_2_);
 	float d_1, d_2;
-	if(!sphereIntersect(wi, center_, square_radius_epsilon_, d_1, d_2))
+	if(const auto [hit, uv]{sphereIntersect(wi, center_, square_radius_epsilon_)}; hit)
 	{
 		return false;
 	}
@@ -99,21 +105,19 @@ bool SphereLight::illumSample(const Point3 &surface_p, LSample &s, Ray &wi, floa
 	return true;
 }
 
-bool SphereLight::intersect(const Ray &ray, float &t, Rgb &col, float &ipdf) const
+std::tuple<bool, float, Rgb> SphereLight::intersect(const Ray &ray, float &) const
 {
-	float d_1, d_2;
-	if(sphereIntersect(ray, center_, square_radius_, d_1, d_2))
+	if(const auto[hit, uv]{sphereIntersect(ray, center_, square_radius_)}; hit)
 	{
-		Vec3 cdir{center_ - ray.from_};
-		float dist_sqr = cdir.lengthSqr();
-		if(dist_sqr <= square_radius_) return false; //only emit light on the outside!
-		float idist_sqr = 1.f / (dist_sqr);
-		float cos_alpha = math::sqrt(1.f - square_radius_ * idist_sqr);
-		ipdf = 2.f * (1.f - cos_alpha);
-		col = color_;
-		return true;
+		const Vec3 cdir{center_ - ray.from_};
+		const float dist_sqr = cdir.lengthSqr();
+		if(dist_sqr <= square_radius_) return {}; //only emit light on the outside!
+		const float idist_sqr = 1.f / (dist_sqr);
+		const float cos_alpha = math::sqrt(1.f - square_radius_ * idist_sqr);
+		const float ipdf = 2.f * (1.f - cos_alpha);
+		return {true, ipdf, color_};
 	}
-	return false;
+	else return {};
 }
 
 float SphereLight::illumPdf(const Point3 &surface_p, const Point3 &light_p, const Vec3 &) const

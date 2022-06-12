@@ -122,16 +122,6 @@ bool IesLight::illumSample(const Point3 &surface_p, LSample &s, Ray &wi, float t
 	return true;
 }
 
-bool IesLight::canIntersect() const
-{
-	return false;
-}
-
-bool IesLight::intersect(const Ray &ray, float &t, Rgb &col, float &ipdf) const
-{
-	return false;
-}
-
 Rgb IesLight::emitPhoton(float s_1, float s_2, float s_3, float s_4, Ray &ray, float &ipdf) const
 {
 	ray.from_ = position_;

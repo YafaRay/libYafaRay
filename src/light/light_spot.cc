@@ -155,8 +155,8 @@ Rgb SpotLight::emitPhoton(float s_1, float s_2, float s_3, float s_4, Ray &ray, 
 	}
 	else // sample in the falloff area
 	{
-		float spdf;
-		float sm_2 = pdf_->sample(s_2, spdf) * pdf_->invSize();
+		auto[sm_2, spdf]{pdf_->sample(s_2)};
+		sm_2 *= pdf_->invSize();
 		ipdf = math::mult_pi_by_2<> * (cos_start_ - cos_end_) / (interv_2_ * spdf);
 		double cos_ang = cos_end_ + (cos_start_ - cos_end_) * (double)sm_2;
 		double sin_ang = math::sqrt(1.0 - cos_ang * cos_ang);
@@ -179,8 +179,8 @@ Rgb SpotLight::emitSample(Vec3 &wo, LSample &s, float time) const
 	}
 	else // sample in the falloff area
 	{
-		float spdf;
-		float sm_2 = pdf_->sample(s.s_2_, spdf) * pdf_->invSize();
+		auto[sm_2, spdf]{pdf_->sample(s.s_2_)};
+		sm_2 *= pdf_->invSize();
 		s.dir_pdf_ = (interv_2_ * spdf) / (math::mult_pi_by_2<> * (cos_start_ - cos_end_));
 		double cos_ang = cos_end_ + (cos_start_ - cos_end_) * (double)sm_2;
 		double sin_ang = math::sqrt(1.0 - cos_ang * cos_ang);
@@ -210,43 +210,32 @@ void SpotLight::emitPdf(const Vec3 &surface_n, const Vec3 &wo, float &area_pdf, 
 		dir_pdf = interv_2_ * v * 2.f / (math::mult_pi_by_2<> * (cos_start_ - cos_end_));   //divide by integral of v (0.5)?
 	}
 }
-bool SpotLight::intersect(const Ray &ray, float &t, Rgb &col, float &ipdf) const
+std::tuple<bool, float, Rgb> SpotLight::intersect(const Ray &ray, float &t) const
 {
-	float cos_a = dir_ * ray.dir_;
-
-	if(cos_a == 0.f) return false;
-
+	const float cos_a = dir_ * ray.dir_;
+	if(cos_a == 0.f) return {};
 	t = (dir_ * (position_ - ray.from_)) / cos_a;
-
-	if(t < 0.f) return false;
-
-	Point3 p{ray.from_ + t * ray.dir_};
-
+	if(t < 0.f) return {};
+	const Point3 p{ray.from_ + t * ray.dir_};
 	if(dir_ * (p - position_) == 0.f)
 	{
 		if(p * p <= 1e-2f)
 		{
-			float cosa = dir_ * ray.dir_;
-
-			if(cosa < cos_end_) return false; //outside cone
-
-			if(cosa >= cos_start_) // not affected by falloff
-			{
-				col = color_;
-			}
-			else
+			const float cosa = dir_ * ray.dir_;
+			if(cosa < cos_end_) return {}; //outside cone
+			Rgb col{color_};
+			if(cosa < cos_start_) //affected by falloff
 			{
 				float v = (cosa - cos_end_) * icos_diff_;
 				v = v * v * (3.f - 2.f * v);
-				col = color_ * v;
+				col *= v;
 			}
-
-			ipdf = 1.f / (t * t);
+			const float ipdf = 1.f / (t * t);
 			if(logger_.isVerbose()) logger_.logVerbose("SpotLight: ipdf, color = ", ipdf, ", ", color_);
-			return true;
+			return {true, ipdf, col};
 		}
 	}
-	return false;
+	return {};
 }
 
 Light * SpotLight::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params)
