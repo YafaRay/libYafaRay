@@ -36,7 +36,7 @@ DirectionalLight::DirectionalLight(Logger &logger, const Point3 &pos, Vec3 dir, 
 	color_ = col * inte;
 	intensity_ = color_.energy();
 	direction_.normalize();
-	std::tie(du_, dv_) = Vec3::createCoordsSystem(direction_);
+	duv_ = Vec3::createCoordsSystem(direction_);
 	const Vec3 &d{direction_};
 	major_axis_ = (d.x() > d.y()) ? ((d.x() > d.z()) ? 0 : 2) : ((d.y() > d.z()) ? 1 : 2);
 }
@@ -94,7 +94,7 @@ Rgb DirectionalLight::emitPhoton(float s_1, float s_2, float s_3, float s_4, Ray
 	ray.dir_ = -direction_;
 	float u, v;
 	Vec3::shirleyDisk(s_1, s_2, u, v);
-	ray.from_ = position_ + radius_ * (u * du_ + v * dv_);
+	ray.from_ = position_ + radius_ * (u * duv_.u_ + v * duv_.v_);
 	if(infinite_) ray.from_ += direction_ * world_radius_;
 	ipdf = math::num_pi<> * radius_ * radius_; //4.0f * num_pi;
 	return color_;
@@ -108,7 +108,7 @@ Rgb DirectionalLight::emitSample(Vec3 &wo, LSample &s, float time) const
 	s.flags_ = flags_;
 	float u, v;
 	Vec3::shirleyDisk(s.s_1_, s.s_2_, u, v);
-	s.sp_->p_ = position_ + radius_ * (u * du_ + v * dv_);
+	s.sp_->p_ = position_ + radius_ * (u * duv_.u_ + v * duv_.v_);
 	if(infinite_) s.sp_->p_ += direction_ * world_radius_;
 	s.area_pdf_ = area_pdf_;
 	s.dir_pdf_ = 1.f;

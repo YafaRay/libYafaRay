@@ -37,7 +37,7 @@ SpotLight::SpotLight(Logger &logger, const Point3 &from, const Point3 &to, const
 	ndir_ = (from - to).normalize();
 	dir_ = -ndir_;
 	color_ = col * power;
-	std::tie(du_, dv_) = Vec3::createCoordsSystem(dir_);
+	duv_ = Vec3::createCoordsSystem(dir_);
 	double rad_angle = math::degToRad(angle);
 	double rad_inner_angle = rad_angle * (1.f - falloff);
 	cos_start_ = math::cos(rad_inner_angle);
@@ -118,7 +118,7 @@ bool SpotLight::illumSample(const Point3 &surface_p, LSample &s, Ray &wi, float 
 	if(cosa < cos_end_) return false; //outside cone
 
 	wi.tmax_ = dist;
-	wi.dir_ = sample::cone(ldir, du_, dv_, cos_end_, s.s_1_ * shadow_fuzzy_, s.s_2_ * shadow_fuzzy_);
+	wi.dir_ = sample::cone(ldir, duv_.u_, duv_.v_, cos_end_, s.s_1_ * shadow_fuzzy_, s.s_2_ * shadow_fuzzy_);
 
 	if(cosa >= cos_start_) // not affected by falloff
 	{
@@ -150,7 +150,7 @@ Rgb SpotLight::emitPhoton(float s_1, float s_2, float s_3, float s_4, Ray &ray, 
 
 	if(s_3 <= interv_1_) // sample from cone not affected by falloff:
 	{
-		ray.dir_ = sample::cone(dir_, du_, dv_, cos_start_, s_1, s_2);
+		ray.dir_ = sample::cone(dir_, duv_.u_, duv_.v_, cos_start_, s_1, s_2);
 		ipdf = math::mult_pi_by_2<> * (1.f - cos_start_) / interv_1_;
 	}
 	else // sample in the falloff area
@@ -161,7 +161,7 @@ Rgb SpotLight::emitPhoton(float s_1, float s_2, float s_3, float s_4, Ray &ray, 
 		double cos_ang = cos_end_ + (cos_start_ - cos_end_) * (double)sm_2;
 		double sin_ang = math::sqrt(1.0 - cos_ang * cos_ang);
 		float t_1 = math::mult_pi_by_2<> * s_1;
-		ray.dir_ = (du_ * math::cos(t_1) + dv_ * math::sin(t_1)) * (float)sin_ang + dir_ * (float)cos_ang;
+		ray.dir_ = (duv_.u_ * math::cos(t_1) + duv_.v_ * math::sin(t_1)) * (float)sin_ang + dir_ * (float)cos_ang;
 		return color_ * spdf * pdf_->integral(); // scale is just the actual falloff function, since spdf is func * invIntegral...
 	}
 	return color_;
@@ -174,7 +174,7 @@ Rgb SpotLight::emitSample(Vec3 &wo, LSample &s, float time) const
 	s.flags_ = flags_;
 	if(s.s_3_ <= interv_1_) // sample from cone not affected by falloff:
 	{
-		wo = sample::cone(dir_, du_, dv_, cos_start_, s.s_1_, s.s_2_);
+		wo = sample::cone(dir_, duv_.u_, duv_.v_, cos_start_, s.s_1_, s.s_2_);
 		s.dir_pdf_ = interv_1_ / (math::mult_pi_by_2<> * (1.f - cos_start_));
 	}
 	else // sample in the falloff area
@@ -185,7 +185,7 @@ Rgb SpotLight::emitSample(Vec3 &wo, LSample &s, float time) const
 		double cos_ang = cos_end_ + (cos_start_ - cos_end_) * (double)sm_2;
 		double sin_ang = math::sqrt(1.0 - cos_ang * cos_ang);
 		float t_1 = math::mult_pi_by_2<> * s.s_1_;
-		wo = (du_ * math::cos(t_1) + dv_ * math::sin(t_1)) * (float)sin_ang + dir_ * (float)cos_ang;
+		wo = (duv_.u_ * math::cos(t_1) + duv_.v_ * math::sin(t_1)) * (float)sin_ang + dir_ * (float)cos_ang;
 		float v = sm_2 * sm_2 * (3.f - 2.f * sm_2);
 		return color_ * v;
 	}

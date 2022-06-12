@@ -27,6 +27,7 @@
 #include "math/math.h"
 #include "math/random.h"
 #include "geometry/axis.h"
+#include "uv.h"
 #include <iostream>
 #include <array>
 
@@ -79,7 +80,7 @@ class Vec3
 		static constexpr bool refract(const Vec3 &n, const Vec3 &wi, Vec3 &wo, float ior);
 		static constexpr void fresnel(const Vec3 &i, const Vec3 &n, float ior, float &kr, float &kt);
 		static constexpr void fastFresnel(const Vec3 &i, const Vec3 &n, float iorf, float &kr, float &kt);
-		static constexpr std::pair<Vec3, Vec3> createCoordsSystem(const Vec3 &normal);
+		static constexpr Uv<Vec3> createCoordsSystem(const Vec3 &normal);
 		static void shirleyDisk(float r_1, float r_2, float &u, float &v);
 		static Vec3 randomSpherical(FastRandom &fast_random);
 		static Vec3 randomVectorCone(const Vec3 &d, const Vec3 &u, const Vec3 &v, float cosang, float z_1, float z_2);
@@ -268,7 +269,7 @@ inline constexpr Vec3 Vec3::reflectDir(const Vec3 &normal, const Vec3 &v)
 	return 2.f * vn * normal - v;
 }
 
-inline constexpr std::pair<Vec3, Vec3> Vec3::createCoordsSystem(const Vec3 &normal)
+inline constexpr Uv<Vec3> Vec3::createCoordsSystem(const Vec3 &normal)
 {
 	if((normal.vec_[0] == 0.f) && (normal.vec_[1] == 0.f))
 	{

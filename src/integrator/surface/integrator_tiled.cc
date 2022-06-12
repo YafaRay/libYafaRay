@@ -426,27 +426,27 @@ void TiledIntegrator::generateCommonLayers(ColorLayers *color_layers, const Surf
 			}
 			if(Rgba *color_layer = color_layers->find(LayerDef::DebugDpdu))
 			{
-				*color_layer = Rgba((sp.dp_du_.x() + 1.f) * .5f, (sp.dp_du_.y() + 1.f) * .5f, (sp.dp_du_.z() + 1.f) * .5f, 1.f);
+				*color_layer = Rgba((sp.dp_.u_.x() + 1.f) * .5f, (sp.dp_.u_.y() + 1.f) * .5f, (sp.dp_.u_.z() + 1.f) * .5f, 1.f);
 			}
 			if(Rgba *color_layer = color_layers->find(LayerDef::DebugDpdv))
 			{
-				*color_layer = Rgba((sp.dp_dv_.x() + 1.f) * .5f, (sp.dp_dv_.y() + 1.f) * .5f, (sp.dp_dv_.z() + 1.f) * .5f, 1.f);
+				*color_layer = Rgba((sp.dp_.v_.x() + 1.f) * .5f, (sp.dp_.v_.y() + 1.f) * .5f, (sp.dp_.v_.z() + 1.f) * .5f, 1.f);
 			}
 			if(Rgba *color_layer = color_layers->find(LayerDef::DebugDsdu))
 			{
-				*color_layer = Rgba((sp.ds_du_.x() + 1.f) * .5f, (sp.ds_du_.y() + 1.f) * .5f, (sp.ds_du_.z() + 1.f) * .5f, 1.f);
+				*color_layer = Rgba((sp.ds_.u_.x() + 1.f) * .5f, (sp.ds_.u_.y() + 1.f) * .5f, (sp.ds_.u_.z() + 1.f) * .5f, 1.f);
 			}
 			if(Rgba *color_layer = color_layers->find(LayerDef::DebugDsdv))
 			{
-				*color_layer = Rgba((sp.ds_dv_.x() + 1.f) * .5f, (sp.ds_dv_.y() + 1.f) * .5f, (sp.ds_dv_.z() + 1.f) * .5f, 1.f);
+				*color_layer = Rgba((sp.ds_.v_.x() + 1.f) * .5f, (sp.ds_.v_.y() + 1.f) * .5f, (sp.ds_.v_.z() + 1.f) * .5f, 1.f);
 			}
 			if(Rgba *color_layer = color_layers->find(LayerDef::DebugNu))
 			{
-				*color_layer = Rgba((sp.nu_.x() + 1.f) * .5f, (sp.nu_.y() + 1.f) * .5f, (sp.nu_.z() + 1.f) * .5f, 1.f);
+				*color_layer = Rgba((sp.uvn_.u_.x() + 1.f) * .5f, (sp.uvn_.u_.y() + 1.f) * .5f, (sp.uvn_.u_.z() + 1.f) * .5f, 1.f);
 			}
 			if(Rgba *color_layer = color_layers->find(LayerDef::DebugNv))
 			{
-				*color_layer = Rgba((sp.nv_.x() + 1.f) * .5f, (sp.nv_.y() + 1.f) * .5f, (sp.nv_.z() + 1.f) * .5f, 1.f);
+				*color_layer = Rgba((sp.uvn_.v_.x() + 1.f) * .5f, (sp.uvn_.v_.y() + 1.f) * .5f, (sp.uvn_.v_.z() + 1.f) * .5f, 1.f);
 			}
 			if(Rgba *color_layer = color_layers->find(LayerDef::DebugWireframe))
 			{
@@ -478,20 +478,18 @@ void TiledIntegrator::generateCommonLayers(ColorLayers *color_layers, const Surf
 				}
 				if(color_layers->isDefinedAny({LayerDef::DebugDudxDvdx, LayerDef::DebugDudyDvdy, LayerDef::DebugDudxyDvdxy}))
 				{
-					float du_dx = 0.f, dv_dx = 0.f;
-					float du_dy = 0.f, dv_dy = 0.f;
-					sp.getUVdifferentials(du_dx, dv_dx, du_dy, dv_dy);
+					const auto [d_dx, d_dy]{sp.getUVdifferentialsXY()};
 					if(Rgba *color_layer = color_layers->find(LayerDef::DebugDudxDvdx))
 					{
-						*color_layer = Rgba((du_dx + 1.f) * .5f, (dv_dx + 1.f) * .5f, 0.f, 1.f);
+						*color_layer = Rgba((d_dx.u_ + 1.f) * .5f, (d_dx.v_ + 1.f) * .5f, 0.f, 1.f);
 					}
 					if(Rgba *color_layer = color_layers->find(LayerDef::DebugDudyDvdy))
 					{
-						*color_layer = Rgba((du_dy + 1.f) * .5f, (dv_dy + 1.f) * .5f, 0.f, 1.f);
+						*color_layer = Rgba((d_dy.u_ + 1.f) * .5f, (d_dy.v_ + 1.f) * .5f, 0.f, 1.f);
 					}
 					if(Rgba *color_layer = color_layers->find(LayerDef::DebugDudxyDvdxy))
 					{
-						*color_layer = Rgba((du_dx + du_dy + 1.f) * .5f, (dv_dx + dv_dy + 1.f) * .5f, 0.f, 1.f);
+						*color_layer = Rgba((d_dx.u_ + d_dy.u_ + 1.f) * .5f, (d_dx.v_ + d_dy.v_ + 1.f) * .5f, 0.f, 1.f);
 					}
 				}
 			}

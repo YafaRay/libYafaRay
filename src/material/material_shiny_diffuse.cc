@@ -313,12 +313,12 @@ Rgb ShinyDiffuseMaterial::sample(const MaterialData *mat_data, const SurfacePoin
 			else s.pdf_ = width[pick];
 			break;
 		case(BsdfFlags::Translucency):
-			wi = sample::cosHemisphere(-n, sp.nu_, sp.nv_, s_1, s.s_2_);
+			wi = sample::cosHemisphere(-n, sp.uvn_.u_, sp.uvn_.v_, s_1, s.s_2_);
 			if(cos_ng_wo * (sp.ng_ * wi) /* cos_ng_wi */ < 0) scolor = accum_c[2] * getShaderColor(diffuse_shader_, mat_data->node_tree_data_, diffuse_color_);
 			s.pdf_ = std::abs(wi * n) * width[pick]; break;
 		case(BsdfFlags::DiffuseReflect):
 		default:
-			wi = sample::cosHemisphere(n, sp.nu_, sp.nv_, s_1, s.s_2_);
+			wi = sample::cosHemisphere(n, sp.uvn_.u_, sp.uvn_.v_, s_1, s.s_2_);
 			if(cos_ng_wo * (sp.ng_ * wi) /* cos_ng_wi */ > 0) scolor = accum_c[3] * getShaderColor(diffuse_shader_, mat_data->node_tree_data_, diffuse_color_);
 
 			if(use_oren_nayar_)

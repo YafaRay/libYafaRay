@@ -50,7 +50,8 @@ class SunLight final : public Light
 
 		Point3 world_center_;
 		Rgb color_, col_pdf_;
-		Vec3 direction_, du_, dv_;
+		Vec3 direction_;
+		Uv<Vec3> duv_;
 		float pdf_, invpdf_;
 		double cos_angle_;
 		int samples_;

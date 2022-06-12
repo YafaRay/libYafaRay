@@ -89,7 +89,7 @@ Material::~Material()
 Rgb Material::sampleClay(const SurfacePoint &sp, const Vec3 &wo, Vec3 &wi, Sample &s, float &w)
 {
 	const Vec3 n{SurfacePoint::normalFaceForward(sp.ng_, sp.n_, wo)};
-	wi = sample::cosHemisphere(n, sp.nu_, sp.nv_, s.s_1_, s.s_2_);
+	wi = sample::cosHemisphere(n, sp.uvn_.u_, sp.uvn_.v_, s.s_1_, s.s_2_);
 	s.pdf_ = std::abs(wi * n);
 	w = (std::abs(wi * sp.n_)) / (s.pdf_ * 0.99f + 0.01f);
 	return Rgb{1.f};	//Clay color White 100%
@@ -167,7 +167,7 @@ Rgb Material::getReflectivity(FastRandom &fast_random, const MaterialData *mat_d
 		const float s_2 = sample::riVdC(i);
 		const float s_3 = Halton::lowDiscrepancySampling(fast_random, 2, i);
 		const float s_4 = Halton::lowDiscrepancySampling(fast_random, 3, i);
-		const Vec3 wo{sample::cosHemisphere(sp.n_, sp.nu_, sp.nv_, s_1, s_2)};
+		const Vec3 wo{sample::cosHemisphere(sp.n_, sp.uvn_.u_, sp.uvn_.v_, s_1, s_2)};
 		Vec3 wi;
 		Sample s(s_3, s_4, flags);
 		float w = 0.f;
@@ -179,11 +179,11 @@ Rgb Material::getReflectivity(FastRandom &fast_random, const MaterialData *mat_d
 
 void Material::applyBump(SurfacePoint &sp, const DuDv &du_dv)
 {
-	sp.nu_ += du_dv.getDu() * sp.n_;
-	sp.nv_ += du_dv.getDv() * sp.n_;
-	sp.n_ = (sp.nu_ ^ sp.nv_).normalize();
-	sp.nu_.normalize();
-	sp.nv_ = (sp.n_ ^ sp.nu_).normalize();
+	sp.uvn_.u_ += du_dv.getDu() * sp.n_;
+	sp.uvn_.v_ += du_dv.getDv() * sp.n_;
+	sp.n_ = (sp.uvn_.u_ ^ sp.uvn_.v_).normalize();
+	sp.uvn_.u_.normalize();
+	sp.uvn_.v_ = (sp.n_ ^ sp.uvn_.u_).normalize();
 }
 
 std::unique_ptr<DirectionColor> DirectionColor::blend(std::unique_ptr<DirectionColor> direction_color_1, std::unique_ptr<DirectionColor> direction_color_2, float blend_val)

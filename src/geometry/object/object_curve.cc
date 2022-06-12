@@ -73,8 +73,7 @@ bool CurveObject::calculateObject(const std::unique_ptr<const Material> *materia
 	{
 		const std::vector<Point3> &points = getPoints(time_step);
 		// Vertex extruding
-		Vec3 u{0.f};
-		Vec3 v{0.f};
+		Uv<Vec3> uv{Vec3{0.f}, Vec3{0.f}};
 		for(int i = 0; i < points_size; i++)
 		{
 			const Point3 o{points[i]};
@@ -92,11 +91,11 @@ bool CurveObject::calculateObject(const std::unique_ptr<const Material> *materia
 			{
 				Vec3 normal{points[i + 1] - points[i]};
 				normal.normalize();
-				std::tie(u, v) = Vec3::createCoordsSystem(normal);
+				uv = Vec3::createCoordsSystem(normal);
 			}
 			// TODO: thikness?
-			Point3 a{o - (0.5 * r * v) - 1.5 * r / math::sqrt(3.f) * u};
-			Point3 b{o - (0.5 * r * v) + 1.5 * r / math::sqrt(3.f) * u};
+			Point3 a{o - (0.5 * r * uv.v_) - 1.5 * r / math::sqrt(3.f) * uv.u_};
+			Point3 b{o - (0.5 * r * uv.v_) + 1.5 * r / math::sqrt(3.f) * uv.u_};
 
 			addPoint(std::move(a), time_step);
 			addPoint(std::move(b), time_step);

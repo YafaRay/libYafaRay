@@ -50,7 +50,7 @@ class SpotLight final : public Light
 		Point3 position_;
 		Vec3 dir_; //!< orientation of the spot cone
 		Vec3 ndir_; //!< negative orientation (-dir)
-		Vec3 du_, dv_; //!< form a coordinate system with dir, to sample directions
+		Uv<Vec3> duv_; //!< form a coordinate system with dir, to sample directions
 		float cos_start_, cos_end_; //<! cosStart is actually larger than cosEnd, because cos goes from +1 to -1
 		float icos_diff_; //<! 1.0/(cosStart-cosEnd);
 		Rgb color_; //<! color, premulitplied by light intensity

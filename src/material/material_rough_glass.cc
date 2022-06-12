@@ -61,7 +61,7 @@ Rgb RoughGlassMaterial::sample(const MaterialData *mat_data, const SurfacePoint 
 	const float alpha_texture = roughness_shader_ ? roughness_shader_->getScalar(mat_data->node_tree_data_) + 0.001f : 0.001f;
 	const float alpha_2 = roughness_shader_ ? alpha_texture * alpha_texture : a_2_;
 	Vec3 h{microfacet::ggxSample(alpha_2, s.s_1_, s.s_2_)};
-	h = h.x() * sp.nu_ + h.y() * sp.nv_ + h.z() * n;
+	h = h.x() * sp.uvn_.u_ + h.y() * sp.uvn_.v_ + h.z() * n;
 	h.normalize();
 	float cur_ior = ior_;
 	if(ior_shader_) cur_ior += ior_shader_->getScalar(mat_data->node_tree_data_);
@@ -151,7 +151,7 @@ Rgb RoughGlassMaterial::sample(const MaterialData *mat_data, const SurfacePoint 
 	const float alpha_2 = roughness_shader_ ? alpha_texture * alpha_texture : a_2_;
 
 	Vec3 h{microfacet::ggxSample(alpha_2, s.s_1_, s.s_2_)};
-	h = h.x() * sp.nu_ + h.y() * sp.nv_ + h.z() * n;
+	h = h.x() * sp.uvn_.u_ + h.y() * sp.uvn_.v_ + h.z() * n;
 	h.normalize();
 
 	float cur_ior = ior_;

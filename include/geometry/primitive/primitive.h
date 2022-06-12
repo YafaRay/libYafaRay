@@ -60,7 +60,7 @@ class Primitive
 		virtual const Material *getMaterial() const = 0;
 		virtual float surfaceArea(float time) const = 0;
 		virtual float surfaceArea(const Matrix4 &obj_to_world, float time) const = 0;
-		virtual float getDistToNearestEdge(const Uv<float> &uv, const Vec3 &dp_du_abs, const Vec3 &dp_dv_abs) const = 0;
+		virtual float getDistToNearestEdge(const Uv<float> &uv, const Uv<Vec3> &dp_abs) const = 0;
 		virtual Vec3 getGeometricNormal(const Uv<float> &uv, float time) const = 0;
 		virtual Vec3 getGeometricNormal(const Matrix4 &obj_to_world, const Uv<float> &uv, float time) const = 0;
 		Vec3 getGeometricNormal(float time) const { return getGeometricNormal({0.f, 0.f}, time); }

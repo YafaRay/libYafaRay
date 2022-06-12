@@ -145,7 +145,7 @@ Rgb CoatedGlossyMaterial::eval(const MaterialData *mat_data, const SurfacePoint 
 		float glossy;
 		if(anisotropic_)
 		{
-			const Vec3 hs(h * sp.nu_, h * sp.nv_, h * n);
+			const Vec3 hs(h * sp.uvn_.u_, h * sp.uvn_.v_, h * n);
 			const auto *mat_data_specific = static_cast<const CoatedGlossyMaterialData *>(mat_data);
 			glossy = kt * microfacet::asAnisoD(hs, exp_u_, exp_v_) * microfacet::schlickFresnel(cos_wi_h, mat_data_specific->glossy_) / microfacet::asDivisor(cos_wi_h, wo_n, wi_n);
 		}
@@ -257,7 +257,7 @@ Rgb CoatedGlossyMaterial::sample(const MaterialData *mat_data, const SurfacePoin
 			break;
 		case C_DIFFUSE: // lambertian
 		default:
-			wi = sample::cosHemisphere(n, sp.nu_, sp.nv_, s_1, s.s_2_);
+			wi = sample::cosHemisphere(n, sp.uvn_.u_, sp.uvn_.v_, s_1, s.s_2_);
 			const float cos_ng_wi = sp.ng_ * wi;
 			if(cos_ng_wo * cos_ng_wi < 0)
 			{
@@ -281,12 +281,12 @@ Rgb CoatedGlossyMaterial::sample(const MaterialData *mat_data, const SurfacePoin
 			if(c_index[pick] != C_GLOSSY)
 			{
 				h = (wi + wo).normalize();
-				hs = Vec3{h * sp.nu_, h * sp.nv_, h * n};
+				hs = Vec3{h * sp.uvn_.u_, h * sp.uvn_.v_, h * n};
 				cos_wo_h = wo * h;
 			}
 			else
 			{
-				h = hs.x() * sp.nu_ + hs.y() * sp.nv_ + hs.z() * n;
+				h = hs.x() * sp.uvn_.u_ + hs.y() * sp.uvn_.v_ + hs.z() * n;
 				cos_wo_h = wo * h;
 				if(cos_wo_h < 0.f)
 				{
@@ -379,7 +379,7 @@ float CoatedGlossyMaterial::pdf(const MaterialData *mat_data, const SurfacePoint
 				const float cos_n_h = n * h;
 				if(anisotropic_)
 				{
-					Vec3 hs(h * sp.nu_, h * sp.nv_, cos_n_h);
+					Vec3 hs(h * sp.uvn_.u_, h * sp.uvn_.v_, cos_n_h);
 					pdf += microfacet::asAnisoPdf(hs, cos_wo_h, exp_u_, exp_v_) * width;
 				}
 				else pdf += microfacet::blinnPdf(cos_n_h, cos_wo_h, getShaderScalar(exponent_shader_, mat_data->node_tree_data_, exponent_)) * width;

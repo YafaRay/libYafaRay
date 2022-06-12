@@ -32,34 +32,28 @@ struct Uv
 	T v_;
 };
 
-template <typename T, typename = std::enable_if_t<std::is_arithmetic_v<T>>>
-inline Uv<T> operator * (T t, const Uv<T> &uv)
+template <typename T>
+inline Uv<T> operator * (float f, const Uv<T> &uv)
 {
-	return {t * uv.u_, t * uv.v_};
+	return {f * uv.u_, f * uv.v_};
 }
 
-template <typename T, typename = std::enable_if_t<!std::is_arithmetic_v<T>>>
-inline Uv<T> operator * (const T &t, const Uv<T> &uv)
+template <typename T>
+inline Uv<T> operator * (const Uv<T> &uv, float f)
 {
-	return {t * uv.u_, t * uv.v_};
-}
-
-template <typename T, typename = std::enable_if_t<std::is_arithmetic_v<T>>>
-inline Uv<T> operator * (const Uv<T> &uv, T t)
-{
-	return t * uv;
-}
-
-template <typename T, typename = std::enable_if_t<!std::is_arithmetic_v<T>>>
-inline Uv<T> operator * (const Uv<T> &uv, const T &t)
-{
-	return t * uv;
+	return f * uv;
 }
 
 template <typename T>
 inline Uv<T> operator + (const Uv<T> &uv_a, const Uv<T> &uv_b)
 {
 	return {uv_a.u_ + uv_b.u_, uv_a.v_ + uv_b.v_};
+}
+
+template <typename T>
+inline Uv<T> operator - (const Uv<T> &uv_a, const Uv<T> &uv_b)
+{
+	return {uv_a.u_ - uv_b.u_, uv_a.v_ - uv_b.v_};
 }
 
 END_YAFARAY

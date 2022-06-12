@@ -116,7 +116,7 @@ std::unique_ptr<const SurfacePoint> SpherePrimitive::getSurface(const RayDiffere
 	//sp->origin = (void*)this;
 	sp->has_orco_ = true;
 	sp->p_ = hit;
-	std::tie(sp->nu_, sp->nv_) = Vec3::createCoordsSystem(sp->n_);
+	sp->uvn_ = Vec3::createCoordsSystem(sp->n_);
 	sp->uv_.u_ = std::atan2(normal.y(), normal.x()) * math::div_1_by_pi<> + 1;
 	sp->uv_.v_ = 1.f - math::acos(normal.z()) * math::div_1_by_pi<>;
 	sp->differentials_ = sp->calcSurfaceDifferentials(ray_differentials);
@@ -136,7 +136,7 @@ std::unique_ptr<const SurfacePoint> SpherePrimitive::getSurface(const RayDiffere
 	//sp->origin = (void*)this;
 	sp->has_orco_ = true;
 	sp->p_ = hit;
-	std::tie(sp->nu_, sp->nv_) = Vec3::createCoordsSystem(sp->n_);
+	sp->uvn_ = Vec3::createCoordsSystem(sp->n_);
 	sp->uv_.u_ = std::atan2(normal.y(), normal.x()) * math::div_1_by_pi<> + 1;
 	sp->uv_.v_ = 1.f - math::acos(normal.z()) * math::div_1_by_pi<>;
 	sp->differentials_ = sp->calcSurfaceDifferentials(ray_differentials);

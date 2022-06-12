@@ -25,7 +25,7 @@ BEGIN_YAFARAY
 
 float SurfacePoint::getDistToNearestEdge() const
 {
-	return primitive_->getDistToNearestEdge(uv_, dp_du_abs_, dp_dv_abs_);
+	return primitive_->getDistToNearestEdge(uv_, dp_abs_);
 }
 
 std::unique_ptr<SurfaceDifferentials> SurfacePoint::calcSurfaceDifferentials(const RayDifferentials *ray_differentials) const
@@ -95,38 +95,42 @@ float SurfacePoint::projectedPixelArea() const
 	else return 0.f;
 }
 
-void SurfacePoint::dUdvFromDpdPdUdPdV(float &du, float &dv, const Point3 &dp, const Vec3 &dp_du, const Vec3 &dp_dv)
+Uv<float> SurfacePoint::dUdvFromPointDifferentials(const Vec3 &dp, const Uv<Vec3> &dp_duv)
 {
-	const float det_xy = (dp_du.x() * dp_dv.y()) - (dp_dv.x() * dp_du.y());
-	const float det_xz = (dp_du.x() * dp_dv.z()) - (dp_dv.x() * dp_du.z());
-	const float det_yz = (dp_du.y() * dp_dv.z()) - (dp_dv.y() * dp_du.z());
+	const float det_xy = (dp_duv.u_.x() * dp_duv.v_.y()) - (dp_duv.v_.x() * dp_duv.u_.y());
+	const float det_xz = (dp_duv.u_.x() * dp_duv.v_.z()) - (dp_duv.v_.x() * dp_duv.u_.z());
+	const float det_yz = (dp_duv.u_.y() * dp_duv.v_.z()) - (dp_duv.v_.y() * dp_duv.u_.z());
 
 	if(std::abs(det_xy) > 0.f && std::abs(det_xy) > std::abs(det_xz) && std::abs(det_xy) > std::abs(det_yz))
 	{
-		du = ((dp.x() * dp_dv.y()) - (dp_dv.x() * dp.y())) / det_xy;
-		dv = ((dp_du.x() * dp.y()) - (dp.x() * dp_du.y())) / det_xy;
+		const float du = ((dp.x() * dp_duv.v_.y()) - (dp_duv.v_.x() * dp.y())) / det_xy;
+		const float dv = ((dp_duv.u_.x() * dp.y()) - (dp.x() * dp_duv.u_.y())) / det_xy;
+		return {du, dv};
 	}
-
 	else if(std::abs(det_xz) > 0.f && std::abs(det_xz) > std::abs(det_xy) && std::abs(det_xz) > std::abs(det_yz))
 	{
-		du = ((dp.x() * dp_dv.z()) - (dp_dv.x() * dp.z())) / det_xz;
-		dv = ((dp_du.x() * dp.z()) - (dp.x() * dp_du.z())) / det_xz;
+		const float du = ((dp.x() * dp_duv.v_.z()) - (dp_duv.v_.x() * dp.z())) / det_xz;
+		const float dv = ((dp_duv.u_.x() * dp.z()) - (dp.x() * dp_duv.u_.z())) / det_xz;
+		return {du, dv};
 	}
-
 	else if(std::abs(det_yz) > 0.f && std::abs(det_yz) > std::abs(det_xy) && std::abs(det_yz) > std::abs(det_xz))
 	{
-		du = ((dp.y() * dp_dv.z()) - (dp_dv.y() * dp.z())) / det_yz;
-		dv = ((dp_du.y() * dp.z()) - (dp.y() * dp_du.z())) / det_yz;
+		const float du = ((dp.y() * dp_duv.v_.z()) - (dp_duv.v_.y() * dp.z())) / det_yz;
+		const float dv = ((dp_duv.u_.y() * dp.z()) - (dp.y() * dp_duv.u_.z())) / det_yz;
+		return {du, dv};
 	}
+	return {0.f, 0.f};
 }
 
-void SurfacePoint::getUVdifferentials(float &du_dx, float &dv_dx, float &du_dy, float &dv_dy) const
+std::array<Uv<float>, 2> SurfacePoint::getUVdifferentialsXY() const
 {
 	if(differentials_)
 	{
-		dUdvFromDpdPdUdPdV(du_dx, dv_dx, static_cast<Point3>(differentials_->dp_dx_), dp_du_abs_, dp_dv_abs_);
-		dUdvFromDpdPdUdPdV(du_dy, dv_dy, static_cast<Point3>(differentials_->dp_dy_), dp_du_abs_, dp_dv_abs_);
+		const Uv<float> d_dx{dUdvFromPointDifferentials(differentials_->dp_dx_, dp_abs_)};
+		const Uv<float> d_dy{dUdvFromPointDifferentials(differentials_->dp_dy_, dp_abs_)};
+		return {d_dx, d_dy};
 	}
+	else return {{{0.f, 0.f}, {0.f, 0.f}}};
 }
 
 END_YAFARAY

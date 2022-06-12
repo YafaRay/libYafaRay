@@ -48,7 +48,8 @@ class DirectionalLight final : public Light
 
 		Point3 position_;
 		Rgb color_;
-		Vec3 direction_, du_, dv_;
+		Vec3 direction_;
+		Uv<Vec3> duv_;
 		float intensity_;
 		float radius_;
 		float area_pdf_;

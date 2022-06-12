@@ -40,7 +40,7 @@ class ShapeQuad final
 		float surfaceArea() const;
 		Point3 sample(const Uv<float> &uv) const;
 		template <class T> static T interpolate(const Uv<float> &uv, const std::array<T, 4> &t);
-		static float getDistToNearestEdge(const Uv<float> &uv, const Vec3 &dp_du_abs, const Vec3 &dp_dv_abs);
+		static float getDistToNearestEdge(const Uv<float> &uv, const Uv<Vec3> &dp_abs);
 
 	private:
 		alignas(8) std::array<Point3, 4> vertices_;
@@ -63,12 +63,12 @@ inline T ShapeQuad::interpolate(const Uv<float> &uv, const std::array<T, 4> &t)
 	return (1.f - uv.v_) * ((1.f - uv.u_) * t[0] + uv.u_ * t[1]) + uv.v_ * ((1.f - uv.u_) * t[3] + uv.u_ * t[2]);
 }
 
-inline float ShapeQuad::getDistToNearestEdge(const Uv<float> &uv, const Vec3 &dp_du_abs, const Vec3 &dp_dv_abs)
+inline float ShapeQuad::getDistToNearestEdge(const Uv<float> &uv, const Uv<Vec3> &dp_abs)
 {
 	const float u_dist_rel = 0.5f - std::abs(uv.u_ - 0.5f);
-	const float u_dist_abs = u_dist_rel * dp_du_abs.length();
+	const float u_dist_abs = u_dist_rel * dp_abs.u_.length();
 	const float v_dist_rel = 0.5f - std::abs(uv.v_ - 0.5f);
-	const float v_dist_abs = v_dist_rel * dp_dv_abs.length();
+	const float v_dist_abs = v_dist_rel * dp_abs.v_.length();
 	return std::min(u_dist_abs, v_dist_abs);
 }
 

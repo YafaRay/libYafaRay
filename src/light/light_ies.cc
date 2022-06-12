@@ -42,7 +42,7 @@ IesLight::IesLight(Logger &logger, const Point3 &from, const Point3 &to, const R
 		ndir_.normalize();
 		dir_ = -ndir_;
 
-		std::tie(du_, dv_) = Vec3::createCoordsSystem(dir_);
+		duv_ = Vec3::createCoordsSystem(dir_);
 		cos_end_ = math::cos(ies_data_->getMaxVAngle());
 
 		color_ = col * power;
@@ -107,7 +107,7 @@ bool IesLight::illumSample(const Point3 &surface_p, LSample &s, Ray &wi, float t
 	if(cosa < cos_end_) return false;
 
 	wi.tmax_ = dist;
-	wi.dir_ = sample::cone(ldir, du_, dv_, cosa, s.s_1_, s.s_2_);
+	wi.dir_ = sample::cone(ldir, duv_.u_, duv_.v_, cosa, s.s_1_, s.s_2_);
 
 	float u, v;
 	getAngles(u, v, wi.dir_, cosa);
@@ -135,7 +135,7 @@ bool IesLight::intersect(const Ray &ray, float &t, Rgb &col, float &ipdf) const
 Rgb IesLight::emitPhoton(float s_1, float s_2, float s_3, float s_4, Ray &ray, float &ipdf) const
 {
 	ray.from_ = position_;
-	ray.dir_ = sample::cone(dir_, du_, dv_, cos_end_, s_1, s_2);
+	ray.dir_ = sample::cone(dir_, duv_.u_, duv_.v_, cos_end_, s_1, s_2);
 
 	ipdf = 0.f;
 
@@ -158,7 +158,7 @@ Rgb IesLight::emitSample(Vec3 &wo, LSample &s, float time) const
 	s.sp_->p_ = position_;
 	s.flags_ = flags_;
 
-	wo = sample::cone(dir_, du_, dv_, cos_end_, s.s_3_, s.s_4_);
+	wo = sample::cone(dir_, duv_.u_, duv_.v_, cos_end_, s.s_3_, s.s_4_);
 
 	float u, v;
 	getAngles(u, v, wo, wo * dir_);

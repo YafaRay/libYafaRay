@@ -81,39 +81,39 @@ std::unique_ptr<const SurfacePoint> QuadBezierPrimitive::getSurface(const RayDif
 		};
 		sp->uv_ = ShapeQuad::interpolate(intersect_data.uv(), uv);
 		// calculate dPdU and dPdV
-		const float du_1 = uv[1].u_ - uv[0].u_;
-		const float du_2 = uv[2].u_ - uv[0].u_;
-		const float dv_1 = uv[1].v_ - uv[0].v_;
-		const float dv_2 = uv[2].v_ - uv[0].v_;
-		const float det = du_1 * dv_2 - dv_1 * du_2;
+		const Uv<float> d_1 = uv[1] - uv[0];
+		const Uv<float> d_2 = uv[2] - uv[0];
+		const float det = d_1.u_ * d_2.v_ - d_1.v_ * d_2.u_;
 		if(std::abs(det) > 1e-30f)
 		{
 			const float invdet = 1.f / det;
 			const Vec3 dp_1{p[1] - p[0]};
 			const Vec3 dp_2{p[2] - p[0]};
-			sp->dp_du_ = (dv_2 * dp_1 - dv_1 * dp_2) * invdet;
-			sp->dp_dv_ = (du_1 * dp_2 - du_2 * dp_1) * invdet;
+			sp->dp_ = {
+					(d_2.v_ * dp_1 - d_1.v_ * dp_2) * invdet,
+					(d_1.u_ * dp_2 - d_2.u_ * dp_1) * invdet
+			};
 			implicit_uv = false;
 		}
 	}
 	if(implicit_uv)
 	{
 		// implicit mapping, p0 = 0/0, p1 = 1/0, p2 = 0/1 => sp->u_ = barycentric_u, sp->v_ = barycentric_v; (arbitrary choice)
-		sp->dp_du_ = p[1] - p[0];
-		sp->dp_dv_ = p[2] - p[0];
+		sp->dp_ = { p[1] - p[0], p[2] - p[0]};
 		sp->uv_ = intersect_data.uv();
 	}
 	//Copy original dPdU and dPdV before normalization to the "absolute" dPdU and dPdV (for mipmap calculations)
-	sp->dp_du_abs_ = sp->dp_du_;
-	sp->dp_dv_abs_ = sp->dp_dv_;
-	sp->dp_du_.normalize();
-	sp->dp_dv_.normalize();
+	sp->dp_abs_ = sp->dp_;
+	sp->dp_.u_.normalize();
+	sp->dp_.v_.normalize();
 	sp->has_uv_ = base_mesh_object_.hasUv();
 	sp->p_ = hit_point;
-	std::tie(sp->nu_, sp->nv_) = Vec3::createCoordsSystem(sp->n_);
+	sp->uvn_ = Vec3::createCoordsSystem(sp->n_);
 	// transform dPdU and dPdV in shading space
-	sp->ds_du_ = {sp->nu_ * sp->dp_du_, sp->nv_ * sp->dp_du_, sp->n_ * sp->dp_du_};
-	sp->ds_dv_ = {sp->nu_ * sp->dp_dv_, sp->nv_ * sp->dp_dv_, sp->n_ * sp->dp_dv_};
+	sp->ds_ = {
+			{sp->uvn_.u_ * sp->dp_.u_, sp->uvn_.v_ * sp->dp_.u_, sp->n_ * sp->dp_.u_},
+			{sp->uvn_.u_ * sp->dp_.v_, sp->uvn_.v_ * sp->dp_.v_, sp->n_ * sp->dp_.v_}
+	};
 	sp->differentials_ = sp->calcSurfaceDifferentials(ray_differentials);
 	sp->mat_data_ = std::unique_ptr<const MaterialData>(sp->getMaterial()->initBsdf(*sp, camera));
 	return sp;
@@ -170,39 +170,39 @@ std::unique_ptr<const SurfacePoint> QuadBezierPrimitive::getSurface(const RayDif
 		};
 		sp->uv_ = ShapeQuad::interpolate(intersect_data.uv(), uv);
 		// calculate dPdU and dPdV
-		const float du_1 = uv[1].u_ - uv[0].u_;
-		const float du_2 = uv[2].u_ - uv[0].u_;
-		const float dv_1 = uv[1].v_ - uv[0].v_;
-		const float dv_2 = uv[2].v_ - uv[0].v_;
-		const float det = du_1 * dv_2 - dv_1 * du_2;
+		const Uv<float> d_1 = uv[1] - uv[0];
+		const Uv<float> d_2 = uv[2] - uv[0];
+		const float det = d_1.u_ * d_2.v_ - d_1.v_ * d_2.u_;
 		if(std::abs(det) > 1e-30f)
 		{
 			const float invdet = 1.f / det;
 			const Vec3 dp_1{p[1] - p[0]};
 			const Vec3 dp_2{p[2] - p[0]};
-			sp->dp_du_ = (dv_2 * dp_1 - dv_1 * dp_2) * invdet;
-			sp->dp_dv_ = (du_1 * dp_2 - du_2 * dp_1) * invdet;
+			sp->dp_ = {
+					(d_2.v_ * dp_1 - d_1.v_ * dp_2) * invdet,
+					(d_1.u_ * dp_2 - d_2.u_ * dp_1) * invdet
+			};
 			implicit_uv = false;
 		}
 	}
 	if(implicit_uv)
 	{
 		// implicit mapping, p0 = 0/0, p1 = 1/0, p2 = 0/1 => sp->u_ = barycentric_u, sp->v_ = barycentric_v; (arbitrary choice)
-		sp->dp_du_ = p[1] - p[0];
-		sp->dp_dv_ = p[2] - p[0];
+		sp->dp_ = { p[1] - p[0], p[2] - p[0]};
 		sp->uv_ = intersect_data.uv();
 	}
 	//Copy original dPdU and dPdV before normalization to the "absolute" dPdU and dPdV (for mipmap calculations)
-	sp->dp_du_abs_ = sp->dp_du_;
-	sp->dp_dv_abs_ = sp->dp_dv_;
-	sp->dp_du_.normalize();
-	sp->dp_dv_.normalize();
+	sp->dp_abs_ = sp->dp_;
+	sp->dp_.u_.normalize();
+	sp->dp_.v_.normalize();
 	sp->has_uv_ = base_mesh_object_.hasUv();
 	sp->p_ = hit_point;
-	std::tie(sp->nu_, sp->nv_) = Vec3::createCoordsSystem(sp->n_);
+	sp->uvn_ = Vec3::createCoordsSystem(sp->n_);
 	// transform dPdU and dPdV in shading space
-	sp->ds_du_ = {sp->nu_ * sp->dp_du_, sp->nv_ * sp->dp_du_, sp->n_ * sp->dp_du_};
-	sp->ds_dv_ = {sp->nu_ * sp->dp_dv_, sp->nv_ * sp->dp_dv_, sp->n_ * sp->dp_dv_};
+	sp->ds_ = {
+			{sp->uvn_.u_ * sp->dp_.u_, sp->uvn_.v_ * sp->dp_.u_, sp->n_ * sp->dp_.u_},
+			{sp->uvn_.u_ * sp->dp_.v_, sp->uvn_.v_ * sp->dp_.v_, sp->n_ * sp->dp_.v_}
+	};
 	sp->differentials_ = sp->calcSurfaceDifferentials(ray_differentials);
 	sp->mat_data_ = std::unique_ptr<const MaterialData>(sp->getMaterial()->initBsdf(*sp, camera));
 	return sp;

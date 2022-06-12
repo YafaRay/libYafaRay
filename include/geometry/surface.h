@@ -73,7 +73,7 @@ class SurfacePoint final
 		//! compute differentials for a refracted ray
 		std::unique_ptr<RayDifferentials> refractedRay(const RayDifferentials *in_differentials, const Vec3 &in_dir, const Vec3 &out_dir, float ior) const;
 		float projectedPixelArea() const;
-		void getUVdifferentials(float &du_dx, float &dv_dx, float &du_dy, float &dv_dy) const;
+		std::array<Uv<float>, 2> getUVdifferentialsXY() const;
 		std::unique_ptr<SurfaceDifferentials> calcSurfaceDifferentials(const RayDifferentials *ray_differentials) const;
 
 		const MaterialData * initBsdf(const Camera *camera);
@@ -109,17 +109,13 @@ class SurfacePoint final
 		bool has_orco_;
 
 		Uv<float> uv_; //!< the u, v texture coords.
-		Vec3 nu_; //!< second vector building orthogonal shading space with N
-		Vec3 nv_; //!< third vector building orthogonal shading space with N
-		Vec3 dp_du_; //!< u-axis in world space (normalized)
-		Vec3 dp_dv_; //!< v-axis in world space (normalized)
-		Vec3 ds_du_; //!< u-axis in shading space (NU, NV, N)
-		Vec3 ds_dv_; //!< v-axis in shading space (NU, NV, N)
-		Vec3 dp_du_abs_; //!< u-axis in world space (before normalization)
-		Vec3 dp_dv_abs_; //!< v-axis in world space (before normalization)
+		Uv<Vec3> uvn_; //!< vectors building orthogonal shading space with n_
+		Uv<Vec3> dp_; //!< u-axis and v-axis (dp/du, dp/dv) in world space (normalized)
+		Uv<Vec3> ds_; //!< u-axis and v-axis (ds/du, ds/dv) in shading space (uv_n_.u_, uv_n.v_, n_)
+		Uv<Vec3> dp_abs_; //!< u-axis and v-axis (dp/du, dp/dv) in world space  (before normalization)
 
 	private:
-		static void dUdvFromDpdPdUdPdV(float &du, float &dv, const Point3 &dp, const Vec3 &dp_du, const Vec3 &dp_dv);
+		static Uv<float> dUdvFromPointDifferentials(const Vec3 &dp, const Uv<Vec3> &dp_duv);
 		const Primitive *primitive_ = nullptr; //!< primitive the surface belongs to
 };
 
@@ -134,14 +130,10 @@ inline SurfacePoint::SurfacePoint(const SurfacePoint &sp)
 	has_uv_{sp.has_uv_},
 	has_orco_{sp.has_orco_},
 	uv_{sp.uv_},
-	nu_{sp.nu_},
-	nv_{sp.nv_},
-	dp_du_{sp.dp_du_},
-	dp_dv_{sp.dp_dv_},
-	ds_du_{sp.ds_du_},
-	ds_dv_{sp.ds_dv_},
-	dp_du_abs_{sp.dp_du_abs_},
-	dp_dv_abs_{sp.dp_dv_abs_},
+	uvn_{sp.uvn_},
+	dp_{sp.dp_},
+	ds_{sp.ds_},
+	dp_abs_{sp.dp_abs_},
 	primitive_{sp.primitive_}
 {
 	if(sp.mat_data_) mat_data_ = sp.mat_data_->clone();
@@ -159,14 +151,10 @@ inline SurfacePoint::SurfacePoint(const SurfacePoint &sp_1, const SurfacePoint &
 	  has_uv_{alpha < 0.5f ? sp_1.has_uv_ : sp_2.has_uv_},
 	  has_orco_{alpha < 0.5f ? sp_1.has_orco_ : sp_2.has_orco_},
 	  uv_{alpha < 0.5f ? sp_1.uv_ : sp_2.uv_},
-	  nu_{math::lerp(sp_1.nu_, sp_2.nu_, alpha)},
-	  nv_{math::lerp(sp_1.nv_, sp_2.nv_, alpha)},
-	  dp_du_{math::lerp(sp_1.dp_du_, sp_2.dp_du_, alpha)},
-	  dp_dv_{math::lerp(sp_1.dp_dv_, sp_2.dp_dv_, alpha)},
-	  ds_du_{math::lerp(sp_1.ds_du_, sp_2.ds_du_, alpha)},
-	  ds_dv_{math::lerp(sp_1.ds_dv_, sp_2.ds_dv_, alpha)},
-	  dp_du_abs_{alpha < 0.5f ? sp_1.dp_du_abs_ : sp_2.dp_du_abs_},
-	  dp_dv_abs_{alpha < 0.5f ? sp_1.dp_dv_abs_ : sp_2.dp_dv_abs_},
+	  uvn_{math::lerp(sp_1.uvn_, sp_2.uvn_, alpha)},
+	  dp_{math::lerp(sp_1.dp_, sp_2.dp_, alpha)},
+	  ds_{math::lerp(sp_1.ds_, sp_2.ds_, alpha)},
+	  dp_abs_{alpha < 0.5f ? sp_1.dp_abs_ : sp_2.dp_abs_},
 	  primitive_{alpha < 0.5f ? sp_1.primitive_ : sp_2.primitive_}
 {
 	if(alpha < 0.5f)
@@ -208,14 +196,10 @@ inline SurfacePoint &SurfacePoint::operator=(const SurfacePoint &sp)
 	has_uv_ = sp.has_uv_;
 	has_orco_ = sp.has_orco_;
 	uv_ = sp.uv_;
-	nu_ = sp.nu_;
-	nv_ = sp.nv_;
-	dp_du_ = sp.dp_du_;
-	dp_dv_ = sp.dp_dv_;
-	ds_du_ = sp.ds_du_;
-	ds_dv_ = sp.ds_dv_;
-	dp_du_abs_ = sp.dp_du_abs_;
-	dp_dv_abs_ = sp.dp_dv_abs_;
+	uvn_ = sp.uvn_;
+	dp_ = sp.dp_;
+	ds_ = sp.ds_;
+	dp_abs_ = sp.dp_abs_;
 	if(sp.differentials_) differentials_ = std::make_unique<const SurfaceDifferentials>(*sp.differentials_);
 	return *this;
 }

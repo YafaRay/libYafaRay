@@ -47,7 +47,7 @@ class QuadPrimitive : public FacePrimitive
 		float surfaceArea(const Matrix4 &obj_to_world, float time) const override;
 		std::pair<Point3, Vec3> sample(const Uv<float> &uv, float time) const override;
 		std::pair<Point3, Vec3> sample(const Uv<float> &uv, const Matrix4 &obj_to_world, float time) const override;
-		float getDistToNearestEdge(const Uv<float> &uv, const Vec3 &dp_du_abs, const Vec3 &dp_dv_abs) const override { return ShapeQuad::getDistToNearestEdge(uv, dp_du_abs, dp_dv_abs); }
+		float getDistToNearestEdge(const Uv<float> &uv, const Uv<Vec3> &dp_abs) const override { return ShapeQuad::getDistToNearestEdge(uv, dp_abs); }
 		Vec3 getGeometricNormal(const Matrix4 &obj_to_world) const;
 		Vec3 getGeometricNormal() const;
 		Vec3 face_normal_geometric_;

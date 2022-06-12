@@ -128,7 +128,7 @@ Rgb GlossyMaterial::eval(const MaterialData *mat_data, const SurfacePoint &sp, c
 		float glossy;
 		if(anisotropic_)
 		{
-			const Vec3 hs(h * sp.nu_, h * sp.nv_, h * n);
+			const Vec3 hs(h * sp.uvn_.u_, h * sp.uvn_.v_, h * n);
 			const auto *mat_data_specific = static_cast<const GlossyMaterialData *>(mat_data);
 			glossy = microfacet::asAnisoD(hs, exp_u_, exp_v_) * microfacet::schlickFresnel(cos_wi_h, mat_data_specific->m_glossy_) / microfacet::asDivisor(cos_wi_h, wo_n, wi_n);
 		}
@@ -178,7 +178,7 @@ Rgb GlossyMaterial::sample(const MaterialData *mat_data, const SurfacePoint &sp,
 		if(s_1 < s_p_diffuse)
 		{
 			s_1 /= s_p_diffuse;
-			wi = sample::cosHemisphere(n, sp.nu_, sp.nv_, s_1, s.s_2_);
+			wi = sample::cosHemisphere(n, sp.uvn_.u_, sp.uvn_.v_, s_1, s.s_2_);
 			const float cos_ng_wi = sp.ng_ * wi;
 			if(cos_ng_wi * cos_ng_wo < 0.f)
 			{
@@ -196,7 +196,7 @@ Rgb GlossyMaterial::sample(const MaterialData *mat_data, const SurfacePoint &sp,
 				const float cos_n_h = n * h;
 				if(anisotropic_)
 				{
-					const Vec3 hs(h * sp.nu_, h * sp.nv_, cos_n_h);
+					const Vec3 hs(h * sp.uvn_.u_, h * sp.uvn_.v_, cos_n_h);
 					s.pdf_ = s.pdf_ * cur_p_diffuse + microfacet::asAnisoPdf(hs, cos_wo_h, exp_u_, exp_v_) * (1.f - cur_p_diffuse);
 					glossy = microfacet::asAnisoD(hs, exp_u_, exp_v_) * microfacet::schlickFresnel(cos_wi_h, mat_data_specific->m_glossy_) / microfacet::asDivisor(cos_wi_h, wo_n, wi_n);
 				}
@@ -243,7 +243,7 @@ Rgb GlossyMaterial::sample(const MaterialData *mat_data, const SurfacePoint &sp,
 		if(anisotropic_)
 		{
 			const Vec3 hs{microfacet::asAnisoSample(s_1, s.s_2_, exp_u_, exp_v_)};
-			Vec3 h{hs.x() * sp.nu_ + hs.y() * sp.nv_ + hs.z() * n};
+			Vec3 h{hs.x() * sp.uvn_.u_ + hs.y() * sp.uvn_.v_ + hs.z() * n};
 			float cos_wo_h = wo * h;
 			if(cos_wo_h < 0.f)
 			{
@@ -267,7 +267,7 @@ Rgb GlossyMaterial::sample(const MaterialData *mat_data, const SurfacePoint &sp,
 		else
 		{
 			const Vec3 hs{microfacet::blinnSample(s_1, s.s_2_, getShaderScalar(exponent_shader_, mat_data->node_tree_data_, exponent_))};
-			Vec3 h{hs.x() * sp.nu_ + hs.y() * sp.nv_ + hs.z() * n};
+			Vec3 h{hs.x() * sp.uvn_.u_ + hs.y() * sp.uvn_.v_ + hs.z() * n};
 			float cos_wo_h = wo * h;
 			if(cos_wo_h < 0.f)
 			{
@@ -330,7 +330,7 @@ float GlossyMaterial::pdf(const MaterialData *mat_data, const SurfacePoint &sp, 
 			const float cos_n_h = n * h;
 			if(anisotropic_)
 			{
-				const Vec3 hs(h * sp.nu_, h * sp.nv_, cos_n_h);
+				const Vec3 hs(h * sp.uvn_.u_, h * sp.uvn_.v_, cos_n_h);
 				pdf = pdf * cur_p_diffuse + microfacet::asAnisoPdf(hs, cos_wo_h, exp_u_, exp_v_) * (1.f - cur_p_diffuse);
 			}
 			else pdf = pdf * cur_p_diffuse + microfacet::blinnPdf(cos_n_h, cos_wo_h, getShaderScalar(exponent_shader_, mat_data->node_tree_data_, exponent_)) * (1.f - cur_p_diffuse);
@@ -345,7 +345,7 @@ float GlossyMaterial::pdf(const MaterialData *mat_data, const SurfacePoint &sp, 
 		const float cos_n_h = n * h;
 		if(anisotropic_)
 		{
-			const Vec3 hs(h * sp.nu_, h * sp.nv_, cos_n_h);
+			const Vec3 hs(h * sp.uvn_.u_, h * sp.uvn_.v_, cos_n_h);
 			pdf = microfacet::asAnisoPdf(hs, cos_wo_h, exp_u_, exp_v_);
 		}
 		else pdf = microfacet::blinnPdf(cos_n_h, cos_wo_h, getShaderScalar(exponent_shader_, mat_data->node_tree_data_, exponent_));

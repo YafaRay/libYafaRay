@@ -163,11 +163,9 @@ void TextureMapperNode::eval(NodeTreeData &node_tree_data, const SurfacePoint &s
 		texpt = doMapping(texpt_orig, ng);
 		if(coords_ == Coords::Uv && sp.has_uv_)
 		{
-			float du_dx = 0.f, dv_dx = 0.f;
-			float du_dy = 0.f, dv_dy = 0.f;
-			sp.getUVdifferentials(du_dx, dv_dx, du_dy, dv_dy);
-			const Point3 texpt_diffx{1.0e+2f * (doMapping(texpt_orig + 1.0e-2f * Point3{du_dx, dv_dx, 0.f}, ng) - texpt)};
-			const Point3 texpt_diffy{1.0e+2f * (doMapping(texpt_orig + 1.0e-2f * Point3{du_dy, dv_dy, 0.f}, ng) - texpt)};
+			const auto [d_dx, d_dy]{sp.getUVdifferentialsXY()};
+			const Point3 texpt_diffx{1.0e+2f * (doMapping(texpt_orig + 1.0e-2f * Point3{d_dx.u_, d_dx.v_, 0.f}, ng) - texpt)};
+			const Point3 texpt_diffy{1.0e+2f * (doMapping(texpt_orig + 1.0e-2f * Point3{d_dy.u_, d_dy.v_, 0.f}, ng) - texpt)};
 			mip_map_params = std::make_unique<const MipMapParams>(texpt_diffx.x(), texpt_diffx.y(), texpt_diffy.x(), texpt_diffy.y());
 		}
 	}
@@ -198,8 +196,8 @@ void TextureMapperNode::evalDerivative(NodeTreeData &node_tree_data, const Surfa
 			norm = (2.f * norm) - Vec3{1.f}; //FIXME DAVID: does the Vec3 portion make sense?
 
 			// Convert norm into shading space
-			du = norm * sp.ds_du_;
-			dv = norm * sp.ds_dv_;
+			du = norm * sp.ds_.u_;
+			dv = norm * sp.ds_.v_;
 		}
 		else
 		{
@@ -211,8 +209,8 @@ void TextureMapperNode::evalDerivative(NodeTreeData &node_tree_data, const Surfa
 			const float dfdv = (tex_->getFloat(j_0) - tex_->getFloat(j_1)) / d_v_;
 
 			// now we got the derivative in UV-space, but need it in shading space:
-			Vec3 vec_u{sp.ds_du_};
-			Vec3 vec_v{sp.ds_dv_};
+			Vec3 vec_u{sp.ds_.u_};
+			Vec3 vec_v{sp.ds_.v_};
 			vec_u.z() = dfdu;
 			vec_v.z() = dfdv;
 			// now we have two vectors NU/NV/df; Solve plane equation to get 1/0/df and 0/1/df (i.e. dNUdf and dNVdf)
@@ -243,8 +241,8 @@ void TextureMapperNode::evalDerivative(NodeTreeData &node_tree_data, const Surfa
 			norm = (2.f * norm) - Vec3{1.f}; //FIXME DAVID: does the Vec3 portion make sense?
 
 			// Convert norm into shading space
-			du = norm * sp.ds_du_;
-			dv = norm * sp.ds_dv_;
+			du = norm * sp.ds_.u_;
+			dv = norm * sp.ds_.v_;
 
 			norm.normalize();
 
@@ -260,10 +258,10 @@ void TextureMapperNode::evalDerivative(NodeTreeData &node_tree_data, const Surfa
 		{
 			// no uv coords -> procedurals usually, this mapping only depends on NU/NV which is fairly arbitrary
 			// weird things may happen when objects are rotated, i.e. incorrect bump change
-			const Point3 i_0{doMapping(texpt - d_u_ * sp.nu_, ng)};
-			const Point3 i_1{doMapping(texpt + d_u_ * sp.nu_, ng)};
-			const Point3 j_0{doMapping(texpt - d_v_ * sp.nv_, ng)};
-			const Point3 j_1{doMapping(texpt + d_v_ * sp.nv_, ng)};
+			const Point3 i_0{doMapping(texpt - d_u_ * sp.uvn_.u_, ng)};
+			const Point3 i_1{doMapping(texpt + d_u_ * sp.uvn_.u_, ng)};
+			const Point3 j_0{doMapping(texpt - d_v_ * sp.uvn_.v_, ng)};
+			const Point3 j_1{doMapping(texpt + d_v_ * sp.uvn_.v_, ng)};
 
 			du = (tex_->getFloat(i_0) - tex_->getFloat(i_1)) / d_u_;
 			dv = (tex_->getFloat(j_0) - tex_->getFloat(j_1)) / d_v_;

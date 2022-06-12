@@ -63,7 +63,7 @@ class PrimitiveInstance : public Primitive
 		Rgb getObjectIndexAutoColor() const override { return base_primitive_->getObjectIndexAutoColor(); }
 		const Light *getObjectLight() const override { return base_primitive_->getObjectLight(); }
 		bool hasObjectMotionBlur() const override { return base_primitive_->hasObjectMotionBlur(); }
-		float getDistToNearestEdge(const Uv<float> &uv, const Vec3 &dp_du_abs, const Vec3 &dp_dv_abs) const override { return base_primitive_->getDistToNearestEdge(uv, dp_du_abs, dp_dv_abs); }
+		float getDistToNearestEdge(const Uv<float> &uv, const Uv<Vec3> &dp_abs) const override { return base_primitive_->getDistToNearestEdge(uv, dp_abs); }
 
 	private:
 		const ObjectInstance &base_instance_;
