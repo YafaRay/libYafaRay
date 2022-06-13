@@ -35,8 +35,6 @@ class MaterialData;
 
 struct NodeResult final
 {
-	NodeResult() = default;
-	NodeResult(Rgba color, float fval): col_{std::move(color)}, f_{fval} { }
 	Rgba col_ {0.f};
 	float f_ = 0.f;
 };
@@ -90,7 +88,7 @@ class ShaderNode
 		/*! evaluate the shader partial derivatives for given surface point (e.g. for bump mapping);
 			attention: uses color component of node node_tree_data to store result, so only use a node_tree_data for either eval or evalDeriv! */
 		virtual void evalDerivative(NodeTreeData &node_tree_data, const SurfacePoint &sp, const Camera *camera) const
-		{ node_tree_data[id_] = NodeResult(Rgba(0.f), 0.f); }
+		{ node_tree_data[id_] = {}; }
 		/*! configure the inputs. gets the same paramMap the factory functions get, but shader nodes
 			may be created in any order and linked afterwards, so inputs may not exist yet on instantiation */
 		virtual bool configInputs(Logger &logger, const ParamMap &params, const NodeFinder &find) = 0;
