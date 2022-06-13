@@ -75,7 +75,7 @@ class StdPerlinNoiseGenerator final : public NoiseGenerator
 
 	private:
 		float operator()(const Point3 &pt) const override;
-		static void setup(int i, int &b_0, int &b_1, float &r_0, float &r_1, const std::array<float, 3> &vec);
+		static std::pair<std::array<int, 2>, std::array<float, 2>> setup(int i, const std::array<float, 3> &vec);
 		static constexpr float stdpAt(float rx, float ry, float rz, const float *q);
 		static constexpr float surve(float t);
 		static const std::array<unsigned char, 512 + 2> stdp_p_;

@@ -339,61 +339,59 @@ constexpr float StdPerlinNoiseGenerator::surve(float t)
 	return t * t * (3.f - 2.f * t);
 }
 
-void StdPerlinNoiseGenerator::setup(int i, int &b_0, int &b_1, float &r_0, float &r_1, const std::array<float, 3> &vec)
+std::pair<std::array<int, 2>, std::array<float, 2>> StdPerlinNoiseGenerator::setup(int i, const std::array<float, 3> &vec)
 {
-	const float t = vec[i] + 10000.0;
-	b_0 = static_cast<int>(t) & 255;
-	b_1 = (b_0 + 1) & 255;
-	r_0 = t - static_cast<int>(t);
-	r_1 = r_0 - 1.f;
+	const float t = vec[i] + 10000.f;
+	const int b_0 = static_cast<int>(t) & 255;
+	const int b_1 = (b_0 + 1) & 255;
+	const float r_0 = t - static_cast<int>(t);
+	const float r_1 = r_0 - 1.f;
+	return {{b_0, b_1}, {r_0, r_1}};
 }
 
 float StdPerlinNoiseGenerator::operator()(const Point3 &pt) const
 {
-	int bx_0, bx_1, by_0, by_1, bz_0, bz_1;
-	float rx_0, rx_1, ry_0, ry_1, rz_0, rz_1;
 	const std::array<float, 3> vec {pt.x(), pt.y(), pt.z() };
+	const auto[bx, rx]{setup(0, vec)};
+	const auto[by, ry]{setup(1, vec)};
+	const auto[bz, rz]{setup(2, vec)};
 
-	setup(0, bx_0, bx_1, rx_0, rx_1, vec);
-	setup(1, by_0, by_1, ry_0, ry_1, vec);
-	setup(2, bz_0, bz_1, rz_0, rz_1, vec);
+	const int i = stdp_p_[ bx[0] ];
+	const int j = stdp_p_[ bx[1] ];
 
-	const int i = stdp_p_[ bx_0 ];
-	const int j = stdp_p_[ bx_1 ];
+	const int b_00 = stdp_p_[i + by[0] ];
+	const int b_10 = stdp_p_[j + by[0] ];
+	const int b_01 = stdp_p_[i + by[1] ];
+	const int b_11 = stdp_p_[j + by[1] ];
 
-	const int b_00 = stdp_p_[i + by_0 ];
-	const int b_10 = stdp_p_[j + by_0 ];
-	const int b_01 = stdp_p_[i + by_1 ];
-	const int b_11 = stdp_p_[j + by_1 ];
+	const float sx = surve(rx[0]);
+	const float sy = surve(ry[0]);
+	const float sz = surve(rz[0]);
 
-	const float sx = surve(rx_0);
-	const float sy = surve(ry_0);
-	const float sz = surve(rz_0);
-
-	const float *q = stdp_g_[b_00 + bz_0 ] ;
-	float u = stdpAt(rx_0, ry_0, rz_0, q);
-	q = stdp_g_[b_10 + bz_0 ] ;
-	float v = stdpAt(rx_1, ry_0, rz_0, q);
+	const float *q = stdp_g_[b_00 + bz[0] ] ;
+	float u = stdpAt(rx[0], ry[0], rz[0], q);
+	q = stdp_g_[b_10 + bz[0] ] ;
+	float v = stdpAt(rx[1], ry[0], rz[0], q);
 	float a = math::lerp(u, v, sx);
 
-	q = stdp_g_[b_01 + bz_0 ] ;
-	u = stdpAt(rx_0, ry_1, rz_0, q);
-	q = stdp_g_[b_11 + bz_0 ] ;
-	v = stdpAt(rx_1, ry_1, rz_0, q);
+	q = stdp_g_[b_01 + bz[0] ] ;
+	u = stdpAt(rx[0], ry[1], rz[0], q);
+	q = stdp_g_[b_11 + bz[0] ] ;
+	v = stdpAt(rx[1], ry[1], rz[0], q);
 	float b = math::lerp(u, v, sx);
 
 	const float c = math::lerp(a, b, sy);
 
-	q = stdp_g_[b_00 + bz_1 ] ;
-	u = stdpAt(rx_0, ry_0, rz_1, q);
-	q = stdp_g_[b_10 + bz_1 ] ;
-	v = stdpAt(rx_1, ry_0, rz_1, q);
+	q = stdp_g_[b_00 + bz[1] ] ;
+	u = stdpAt(rx[0], ry[0], rz[1], q);
+	q = stdp_g_[b_10 + bz[1] ] ;
+	v = stdpAt(rx[1], ry[0], rz[1], q);
 	a = math::lerp(u, v, sx);
 
-	q = stdp_g_[b_01 + bz_1 ] ;
-	u = stdpAt(rx_0, ry_1, rz_1, q);
-	q = stdp_g_[b_11 + bz_1 ] ;
-	v = stdpAt(rx_1, ry_1, rz_1, q);
+	q = stdp_g_[b_01 + bz[1] ] ;
+	u = stdpAt(rx[0], ry[1], rz[1], q);
+	q = stdp_g_[b_11 + bz[1] ] ;
+	v = stdpAt(rx[1], ry[1], rz[1], q);
 	b = math::lerp(u, v, sx);
 
 	const float d = math::lerp(a, b, sy);
