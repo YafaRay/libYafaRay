@@ -99,13 +99,13 @@ inline std::pair<float, float> Pdf1D::sample(float u) const
 	if(u <= 0.f) return {0.f, function_[0] * inv_integral_};
 	else if(u >= 1.f)
 	{
-		const ssize_t index = static_cast<ssize_t>(cdf_.size()) - 1;
+		const int index = static_cast<int>(cdf_.size()) - 1;
 		return {static_cast<float>(index) + 1.f, function_[index] * inv_integral_};
 	}
 	else
 	{
 		const auto &it = std::lower_bound(cdf_.begin(), cdf_.end(), u);
-		const ssize_t index = static_cast<ssize_t>(it - cdf_.begin());
+		const int index = static_cast<int>(it - cdf_.begin());
 		// Return offset along current cdf segment
 		const float delta = index > 0 ? (u - cdf_[index - 1]) / (cdf_[index] - cdf_[index - 1]) : u / cdf_[index];
 		return {static_cast<float>(index) + delta, function_[index] * inv_integral_};
