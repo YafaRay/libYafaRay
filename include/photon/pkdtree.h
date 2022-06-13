@@ -117,7 +117,7 @@ PointKdTree<T>::PointKdTree(Logger &logger, const std::vector<T> &dat, const std
 
 	for(uint32_t i = 0; i < n_elements_; ++i) elements[i] = &dat[i];
 
-	tree_bound_.set(dat[0].pos_, dat[0].pos_);
+	tree_bound_ = {dat[0].pos_, dat[0].pos_};
 
 	for(uint32_t i = 1; i < n_elements_; ++i) tree_bound_.include(dat[i].pos_);
 

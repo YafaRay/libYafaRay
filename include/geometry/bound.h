@@ -51,9 +51,14 @@ class Bound
 		 * @param a is the low corner (minx,miny,minz)
 		 * @param g is the up corner (maxx,maxy,maxz)
 		 */
-		Bound(const Point3 &a, const Point3 &g) { a_ = a; g_ = g; /* null=false; */ };
-		//! Default constructor
+		Bound(const Point3 &a, const Point3 &g) : a_{a}, g_{g} { }
+		Bound(Point3 &&a, Point3 &&g) : a_{std::move(a)}, g_{std::move(g)} { }
+		//! Default constructors and assignments
 		Bound() = default;
+		Bound(const Bound &bound) = default;
+		Bound(Bound &&bound) = default;
+		Bound& operator=(const Bound &intersect_data) = default;
+		Bound& operator=(Bound &&intersect_data) = default;
 		/*! Two child constructor.
 		 * This creates a bound that includes the two given bounds. It's used when
 		 * building a bounding tree
@@ -62,16 +67,12 @@ class Bound
 		 * @param l is another child bound
 		 */
 		Bound(const Bound &r, const Bound &l);
-		//! Sets the bound like the constructor
-		void set(const Point3 &a, const Point3 &g) { a_ = a; g_ = g; };
-
 		//! Returns true if the given ray crosses the bound
 		//bool cross(const point3d_t &from,const vector3d_t &ray) const;
 		//! Returns true if the given ray crosses the bound closer than dist
 		//bool cross(const point3d_t &from, const vector3d_t &ray, float dist) const;
 		//bool cross(const point3d_t &from, const vector3d_t &ray, float &where, float dist) const;
 		Cross cross(const Ray &ray, float t_max) const;
-
 		//! Returns the volume of the bound
 		float vol() const;
 		//! Returns the lenght along X axis
@@ -104,24 +105,11 @@ class Bound
 					(pn.y() >= a_.y()) && (pn.y() <= g_.y()) &&
 					(pn.z() >= a_.z()) && (pn.z() <= g_.z()));
 		};
-		float centerX() const { return (g_.x() + a_.x()) * 0.5f; }
-		float centerY() const { return (g_.y() + a_.y()) * 0.5f; }
-		float centerZ() const { return (g_.z() + a_.z()) * 0.5f; }
-		Point3 center() const { return (g_ + a_) * 0.5f; }
 		Axis largestAxis() const
 		{
 			const Vec3 d{g_ - a_};
 			return (d.x() > d.y()) ? ((d.x() > d.z()) ? Axis::X : Axis::Z) : ((d.y() > d.z()) ? Axis::Y : Axis::Z);
 		}
-		void grow(float d)
-		{
-			a_.x() -= d;
-			a_.y() -= d;
-			a_.z() -= d;
-			g_.x() += d;
-			g_.y() += d;
-			g_.z() += d;
-		};
 
 		//	protected: // Lynx; need these to be public.
 		//! Two points define the box
@@ -130,12 +118,16 @@ class Bound
 
 inline void Bound::include(const Point3 &p)
 {
-	a_.x() = std::min(a_.x(), p.x());
-	a_.y() = std::min(a_.y(), p.y());
-	a_.z() = std::min(a_.z(), p.z());
-	g_.x() = std::max(g_.x(), p.x());
-	g_.y() = std::max(g_.y(), p.y());
-	g_.z() = std::max(g_.z(), p.z());
+	a_ = {
+			std::min(a_.x(), p.x()),
+			std::min(a_.y(), p.y()),
+			std::min(a_.z(), p.z())
+	};
+	g_ = {
+			std::max(g_.x(), p.x()),
+			std::max(g_.y(), p.y()),
+			std::max(g_.z(), p.z())
+	};
 }
 
 inline void Bound::include(const Bound &b)
@@ -147,73 +139,44 @@ inline void Bound::include(const Bound &b)
 inline Bound::Cross Bound::cross(const Ray &ray, float t_max) const
 {
 	// Smits method
-	const Point3 &a_0{a_}, &a_1{g_};
-	const Point3 p{ray.from_ - a_0};
-
-	float lmin = -1e38f, lmax = 1e38f, ltmin, ltmax; //infinity check initial values
-
-	if(ray.dir_.x() != 0)
+	const Point3 p{ray.from_ - a_};
+	//infinity check initial values
+	float lmin = -1e38f;
+	float lmax = 1e38f;
+	for(const Axis axis : axis::spatial)
 	{
-		float invrx = 1.f / ray.dir_.x();
-		if(invrx > 0)
+		if(ray.dir_[axis] != 0.f)
 		{
-			lmin = -p.x() * invrx;
-			lmax = ((a_1.x() - a_0.x()) - p.x()) * invrx;
+			const float inv_dir = 1.f / ray.dir_[axis];
+			float ltmin, ltmax;
+			if(inv_dir > 0.f)
+			{
+				ltmin = -p[axis] * inv_dir;
+				ltmax = ((g_[axis] - a_[axis]) - p[axis]) * inv_dir;
+			}
+			else
+			{
+				ltmin = ((g_[axis] - a_[axis]) - p[axis]) * inv_dir;
+				ltmax = -p[axis] * inv_dir;
+			}
+			if(axis == Axis::X)
+			{
+				lmin = ltmin;
+				lmax = ltmax;
+			}
+			else
+			{
+				lmin = std::max(ltmin, lmin);
+				lmax = std::min(ltmax, lmax);
+			}
+			if((lmax < 0) || (lmin > t_max)) return {};
 		}
-		else
-		{
-			lmin = ((a_1.x() - a_0.x()) - p.x()) * invrx;
-			lmax = -p.x() * invrx;
-		}
-
-		if((lmax < 0) || (lmin > t_max)) return {};
 	}
-	if(ray.dir_.y() != 0)
+	if((lmin <= lmax) && (lmax >= 0.f) && (lmin <= t_max))
 	{
-		float invry = 1.f / ray.dir_.y();
-		if(invry > 0)
-		{
-			ltmin = -p.y() * invry;
-			ltmax = ((a_1.y() - a_0.y()) - p.y()) * invry;
-		}
-		else
-		{
-			ltmin = ((a_1.y() - a_0.y()) - p.y()) * invry;
-			ltmax = -p.y() * invry;
-		}
-		lmin = std::max(ltmin, lmin);
-		lmax = std::min(ltmax, lmax);
-
-		if((lmax < 0) || (lmin > t_max)) return {};
+		return {true, lmin, lmax};
 	}
-	if(ray.dir_.z() != 0)
-	{
-		float invrz = 1.f / ray.dir_.z();
-		if(invrz > 0)
-		{
-			ltmin = -p.z() * invrz;
-			ltmax = ((a_1.z() - a_0.z()) - p.z()) * invrz;
-		}
-		else
-		{
-			ltmin = ((a_1.z() - a_0.z()) - p.z()) * invrz;
-			ltmax = -p.z() * invrz;
-		}
-		lmin = std::max(ltmin, lmin);
-		lmax = std::min(ltmax, lmax);
-
-		if((lmax < 0) || (lmin > t_max)) return {};
-	}
-	if((lmin <= lmax) && (lmax >= 0) && (lmin <= t_max))
-	{
-		Bound::Cross cross;
-		cross.crossed_ = true;
-		cross.enter_ = lmin;   //(lmin>0) ? lmin : 0;
-		cross.leave_ = lmax;
-		return cross;
-	}
-
-	return {};
+	else return {};
 }
 
 inline Bound operator * (const Bound &b, const Matrix4 &m)

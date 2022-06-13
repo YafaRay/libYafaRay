@@ -77,7 +77,7 @@ VolumeRegion::VolumeRegion(Logger &logger, const Rgb &sa, const Rgb &ss, const R
 
 Rgb DensityVolumeRegion::tau(const Ray &ray, float step_size, float offset) const
 {
-	Bound::Cross cross = crossBound(ray);
+	Bound::Cross cross{crossBound(ray)};
 	// ray doesn't hit the BB
 	if(!cross.crossed_) return Rgb{0.f};
 	if(ray.tmax_ < cross.enter_ && ray.tmax_ >= 0.f) return Rgb{0.f};
@@ -88,22 +88,14 @@ Rgb DensityVolumeRegion::tau(const Ray &ray, float step_size, float offset) cons
 	float step = step_size; // length between two sample points along the ray
 	float pos = cross.enter_ + offset * step;
 	Rgb tau_val(0.f);
-
-
 	Rgb tau_prev(0.f);
-
 	bool adaptive = false; //FIXME: unused, always false??
-
 	while(pos < cross.leave_)
 	{
 		Rgb tau_tmp = sigmaT(ray.from_ + (ray.dir_ * pos), ray.dir_);
-
-
 		if(adaptive) //FIXME: unused, always false??
 		{
-
 			float epsilon = 0.01f;
-
 			if(std::abs(tau_tmp.energy() - tau_prev.energy()) > epsilon && step > step_size / 50.f)
 			{
 				pos -= step;
@@ -119,10 +111,8 @@ Rgb DensityVolumeRegion::tau(const Ray &ray, float step_size, float offset) cons
 		{
 			tau_val += tau_tmp * step;
 		}
-
 		pos += step;
 	}
-
 	return tau_val;
 }
 

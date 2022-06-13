@@ -36,7 +36,7 @@ AcceleratorSimpleTest::AcceleratorSimpleTest(Logger &logger, const std::vector<c
 	else bound_ = {{0.f, 0.f, 0.f}, {0.f, 0.f, 0.f}};
 	for(const auto &primitive : primitives)
 	{
-		const Bound primitive_bound = primitive->getBound();
+		const Bound primitive_bound{primitive->getBound()};
 		const Object *object = primitive->getObject();
 		const auto &obj_bound_it = objects_data_.find(object);
 		if(obj_bound_it == objects_data_.end())
@@ -63,7 +63,7 @@ AcceleratorIntersectData AcceleratorSimpleTest::intersect(const Ray &ray, float 
 	AcceleratorIntersectData accelerator_intersect_data;
 	for(const auto &[object, object_data] : objects_data_)
 	{
-		if(const Bound::Cross cross = object_data.bound_.cross(ray, t_max); cross.crossed_)
+		if(const Bound::Cross cross{object_data.bound_.cross(ray, t_max)}; cross.crossed_)
 		{
 			for(const auto &primitive : object_data.primitives_)
 			{
@@ -83,7 +83,7 @@ AcceleratorIntersectData AcceleratorSimpleTest::intersectS(const Ray &ray, float
 	AcceleratorIntersectData accelerator_intersect_data;
 	for(const auto &[object, object_data] : objects_data_)
 	{
-		if(const Bound::Cross cross = object_data.bound_.cross(ray, t_max); cross.crossed_)
+		if(const Bound::Cross cross{object_data.bound_.cross(ray, t_max)}; cross.crossed_)
 		{
 			for(const auto &primitive : object_data.primitives_)
 			{
@@ -101,7 +101,7 @@ AcceleratorTsIntersectData AcceleratorSimpleTest::intersectTs(const Ray &ray, in
 	AcceleratorTsIntersectData accelerator_intersect_data;
 	for(const auto &[object, object_data] : objects_data_)
 	{
-		if(const Bound::Cross cross = object_data.bound_.cross(ray, t_max); cross.crossed_)
+		if(const Bound::Cross cross{object_data.bound_.cross(ray, t_max)}; cross.crossed_)
 		{
 			for(const auto &primitive : object_data.primitives_)
 			{

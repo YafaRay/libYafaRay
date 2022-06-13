@@ -49,7 +49,7 @@ bool SingleScatterIntegrator::preprocess(FastRandom &fast_random, ImageFilm *ima
 	{
 		for(const auto &[vr_name, vr] : *volume_regions_)
 		{
-			const Bound bb = vr->getBb();
+			const Bound bb{vr->getBb()};
 			const int x_size = vr->att_grid_x_;
 			const int y_size = vr->att_grid_y_;
 			const int z_size = vr->att_grid_z_;
@@ -151,7 +151,7 @@ Rgb SingleScatterIntegrator::getInScatter(RandomGenerator &random_generator, con
 						// replaced by
 						for(const auto &[vr_name, vr] : *volume_regions_)
 						{
-							const Bound::Cross cross = vr->crossBound(light_ray);
+							const Bound::Cross cross{vr->crossBound(light_ray)};
 							if(cross.crossed_) light_tr += vr->attenuation(step_ray.from_, light);
 						}
 					}
@@ -161,7 +161,7 @@ Rgb SingleScatterIntegrator::getInScatter(RandomGenerator &random_generator, con
 						Rgb lightstep_tau(0.f);
 						for(const auto &[vr_name, vr] : *volume_regions_)
 						{
-							const Bound::Cross cross = vr->crossBound(light_ray);
+							const Bound::Cross cross{vr->crossBound(light_ray)};
 							if(cross.crossed_) lightstep_tau += vr->tau(light_ray, current_step, 0.f);
 						}
 						// transmittance from the point p in the volume to the light (i.e. how much light reaches p)
@@ -201,7 +201,7 @@ Rgb SingleScatterIntegrator::getInScatter(RandomGenerator &random_generator, con
 							// replaced by
 							for(const auto &[vr_name, vr] : *volume_regions_)
 							{
-								const Bound::Cross cross = vr->crossBound(light_ray);
+								const Bound::Cross cross{vr->crossBound(light_ray)};
 								if(cross.crossed_)
 								{
 									light_tr += vr->attenuation(step_ray.from_, light);
@@ -215,7 +215,7 @@ Rgb SingleScatterIntegrator::getInScatter(RandomGenerator &random_generator, con
 							Rgb lightstep_tau(0.f);
 							for(const auto &[vr_name, vr] : *volume_regions_)
 							{
-								const Bound::Cross cross = vr->crossBound(light_ray);
+								const Bound::Cross cross{vr->crossBound(light_ray)};
 								if(cross.crossed_)
 								{
 									lightstep_tau += vr->tau(light_ray, current_step * 4.f, 0.0f);
@@ -245,7 +245,7 @@ Rgb SingleScatterIntegrator::transmittance(RandomGenerator &random_generator, co
 	Rgb tr{1.f};
 	for(const auto &[vr_name, vr] : *volume_regions_)
 	{
-		const Bound::Cross cross = vr->crossBound(ray);
+		const Bound::Cross cross{vr->crossBound(ray)};
 		if(cross.crossed_)
 		{
 			const float random_value = random_generator();
@@ -264,7 +264,7 @@ Rgb SingleScatterIntegrator::integrate(RandomGenerator &random_generator, const 
 	// find min t0 and max t1
 	for(const auto &[vr_name, vr] : *volume_regions_)
 	{
-		Bound::Cross cross = vr->crossBound(ray);
+		Bound::Cross cross{vr->crossBound(ray)};
 		if(!cross.crossed_) continue;
 		if(hit && ray.tmax_ < cross.enter_) continue;
 		if(cross.enter_ < 0.f) cross.enter_ = 0.f;
@@ -338,7 +338,7 @@ Rgb SingleScatterIntegrator::integrate(RandomGenerator &random_generator, const 
 		{
 			for(const auto &[vr_name, vr] : *volume_regions_)
 			{
-				const Bound::Cross cross = vr->crossBound(step_ray);
+				const Bound::Cross cross{vr->crossBound(step_ray)};
 				if(cross.crossed_)
 				{
 					step_tau += vr->sigmaT(step_ray.from_, step_ray.dir_) * current_step;
@@ -355,7 +355,7 @@ Rgb SingleScatterIntegrator::integrate(RandomGenerator &random_generator, const 
 		float sigma_s = 0.0f;
 		for(const auto &[vr_name, vr] : *volume_regions_)
 		{
-			const Bound::Cross cross = vr->crossBound(step_ray);
+			const Bound::Cross cross{vr->crossBound(step_ray)};
 			if(cross.crossed_)
 			{
 				sigma_s += vr->sigmaS(step_ray.from_, step_ray.dir_).energy();

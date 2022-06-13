@@ -123,7 +123,7 @@ inline std::pair<Point3, Vec3> PrimitiveInstance::sample(const Uv<float> &uv, co
 inline Bound PrimitiveInstance::getBound() const
 {
 	const std::vector<const Matrix4 *> matrices = base_instance_.getObjToWorldMatrices();
-	Bound result = base_primitive_->getBound(*matrices[0]);
+	Bound result{base_primitive_->getBound(*matrices[0])};
 	for(size_t i = 1; i < matrices.size(); ++i)
 	{
 		result.include(base_primitive_->getBound(*matrices[i]));
@@ -134,7 +134,7 @@ inline Bound PrimitiveInstance::getBound() const
 inline Bound PrimitiveInstance::getBound(const Matrix4 &obj_to_world) const
 {
 	const std::vector<const Matrix4 *> matrices = base_instance_.getObjToWorldMatrices();
-	Bound result = base_primitive_->getBound(obj_to_world * *(matrices[0]));
+	Bound result{base_primitive_->getBound(obj_to_world * *(matrices[0]))};
 	for(size_t i = 1; i < matrices.size(); ++i)
 	{
 		result.include(base_primitive_->getBound(obj_to_world * *(matrices[i])));

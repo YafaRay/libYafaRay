@@ -640,7 +640,7 @@ AcceleratorIntersectData AcceleratorKdTree::intersect(const Ray &ray, float t_ma
 {
 	AcceleratorIntersectData accelerator_intersect_data;
 	accelerator_intersect_data.setTMax(t_max);
-	const Bound::Cross cross = tree_bound.cross(ray, t_max);
+	const Bound::Cross cross{tree_bound.cross(ray, t_max)};
 	if(!cross.crossed_) { return {}; }
 	const Vec3 inv_dir{math::inverse(ray.dir_.x()), math::inverse(ray.dir_.y()), math::inverse(ray.dir_.z())};
 	std::array<Stack, kd_max_stack_> stack;
@@ -753,7 +753,7 @@ AcceleratorIntersectData AcceleratorKdTree::intersect(const Ray &ray, float t_ma
 AcceleratorIntersectData AcceleratorKdTree::intersectS(const Ray &ray, float t_max, float shadow_bias, const Node *nodes, const Bound &tree_bound)
 {
 	AcceleratorIntersectData accelerator_intersect_data;
-	const Bound::Cross cross = tree_bound.cross(ray, t_max);
+	const Bound::Cross cross{tree_bound.cross(ray, t_max)};
 	if(!cross.crossed_) { return {}; }
 	const Vec3 inv_dir{math::inverse(ray.dir_.x()), math::inverse(ray.dir_.y()), math::inverse(ray.dir_.z())};
 	std::array<Stack, kd_max_stack_> stack;
@@ -861,7 +861,7 @@ AcceleratorIntersectData AcceleratorKdTree::intersectS(const Ray &ray, float t_m
 AcceleratorTsIntersectData AcceleratorKdTree::intersectTs(const Ray &ray, int max_depth, float t_max, float shadow_bias, const Node *nodes, const Bound &tree_bound, const Camera *camera)
 {
 	AcceleratorTsIntersectData accelerator_intersect_data;
-	const Bound::Cross cross = tree_bound.cross(ray, t_max);
+	const Bound::Cross cross{tree_bound.cross(ray, t_max)};
 	if(!cross.crossed_) { return {}; }
 	const Vec3 inv_dir{math::inverse(ray.dir_.x()), math::inverse(ray.dir_.y()), math::inverse(ray.dir_.z())};
 	int depth = 0;

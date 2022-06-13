@@ -39,7 +39,7 @@ Rgb EmissionIntegrator::integrate(RandomGenerator &random_generator, const Ray &
 	Rgb result {0.f};
 	for(const auto &[vr_name, vr] : *volume_regions_)
 	{
-		Bound::Cross cross = vr->crossBound(ray);
+		Bound::Cross cross{vr->crossBound(ray)};
 		if(!cross.crossed_) continue;
 		if(hit && ray.tmax_ < cross.enter_) continue;
 		if(hit && ray.tmax_ < cross.leave_) cross.leave_ = ray.tmax_;
