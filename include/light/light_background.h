@@ -41,8 +41,8 @@ class BackgroundLight final : public Light
 		BackgroundLight(Logger &logger, int sampl, bool invert_intersect = false, bool light_enabled = true, bool cast_shadows = true);
 		void init(Scene &scene) override;
 		Rgb totalEnergy() const override;
-		Rgb emitPhoton(float s_1, float s_2, float s_3, float s_4, Ray &ray, float &ipdf) const override;
-		Rgb emitSample(Vec3 &wo, LSample &s, float time) const override;
+		std::tuple<Ray, float, Rgb> emitPhoton(float s_1, float s_2, float s_3, float s_4, float time) const override;
+		std::pair<Vec3, Rgb> emitSample(LSample &s, float time) const override;
 		bool diracLight() const override { return false; }
 		bool illumSample(const Point3 &, LSample &s, Ray &wi, float time) const override;
 		bool illuminate(const Point3 &surface_p, Rgb &col, Ray &wi) const override { return false; }
@@ -51,7 +51,7 @@ class BackgroundLight final : public Light
 		int nSamples() const override { return samples_; }
 		bool canIntersect() const override { return true; }
 		std::tuple<bool, float, Rgb> intersect(const Ray &ray, float &t) const override;
-		std::pair<Vec3, float> sampleDir(float s_1, float s_2, Vec3 &dir, float &NO, bool inv = false) const;
+		std::pair<Vec3, float> sampleDir(float s_1, float s_2, bool inv = false) const;
 		float dirPdf(const Vec3 &dir) const;
 		std::pair<float, Uv<float>> calcFromSample(float s_1, float s_2, bool inv = false) const;
 		std::pair<float, Uv<float>> calcFromDir(const Vec3 &dir, bool inv) const;

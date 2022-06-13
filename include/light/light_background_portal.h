@@ -42,11 +42,11 @@ class BackgroundPortalLight final : public Light
 		static Light *factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params);
 
 	private:
-		BackgroundPortalLight(Logger &logger, const std::string &object_name, int sampl, float pow, bool light_enabled = true, bool cast_shadows = true);
+		BackgroundPortalLight(Logger &logger, std::string object_name, int sampl, float pow, bool light_enabled = true, bool cast_shadows = true);
 		void init(Scene &scene) override;
 		Rgb totalEnergy() const override;
-		Rgb emitPhoton(float s_1, float s_2, float s_3, float s_4, Ray &ray, float &ipdf) const override;
-		Rgb emitSample(Vec3 &wo, LSample &s, float time) const override;
+		std::tuple<Ray, float, Rgb> emitPhoton(float s_1, float s_2, float s_3, float s_4, float time) const override;
+		std::pair<Vec3, Rgb> emitSample(LSample &s, float time) const override;
 		bool diracLight() const override { return false; }
 		//bool illumSample(const surfacePoint_t &sp, float s1, float s2, Rgb &col, float &ipdf, ray_t &wi) const override;
 		bool illumSample(const Point3 &surface_p, LSample &s, Ray &wi, float time) const override;

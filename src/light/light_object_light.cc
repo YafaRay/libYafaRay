@@ -135,41 +135,43 @@ bool ObjectLight::illumSample(const Point3 &surface_p, LSample &s, Ray &wi, floa
 	return true;
 }
 
-Rgb ObjectLight::emitPhoton(float s_1, float s_2, float s_3, float s_4, Ray &ray, float &ipdf) const
+std::tuple<Ray, float, Rgb> ObjectLight::emitPhoton(float s_1, float s_2, float s_3, float s_4, float time) const
 {
-	ipdf = area_;
-	const auto [p, n]{sampleSurface(s_3, s_4, 0.f)};
-	ray.from_ = p;
-	const auto [du, dv]{Vec3::createCoordsSystem(n)};
+	float ipdf = area_;
+	auto [p, n]{sampleSurface(s_3, s_4, 0.f)};
+	const Uv<Vec3> duv{Vec3::createCoordsSystem(n)};
+	Vec3 dir;
 	if(double_sided_)
 	{
 		ipdf *= 2.f;
-		if(s_1 > 0.5f) ray.dir_ = sample::cosHemisphere(-n, du, dv, (s_1 - 0.5f) * 2.f, s_2);
-		else ray.dir_ = sample::cosHemisphere(n, du, dv, s_1 * 2.f, s_2);
+		if(s_1 > 0.5f) dir = sample::cosHemisphere(-n, duv, (s_1 - 0.5f) * 2.f, s_2);
+		else dir = sample::cosHemisphere(n, duv, s_1 * 2.f, s_2);
 	}
-	else ray.dir_ = sample::cosHemisphere(n, du, dv, s_1, s_2);
-	return color_;
+	else dir = sample::cosHemisphere(n, duv, s_1, s_2);
+	Ray ray{std::move(p), std::move(dir), time};
+	return {std::move(ray), ipdf, color_};
 }
 
-Rgb ObjectLight::emitSample(Vec3 &wo, LSample &s, float time) const
+std::pair<Vec3, Rgb> ObjectLight::emitSample(LSample &s, float time) const
 {
 	s.area_pdf_ = inv_area_ * math::num_pi<>;
 	std::tie(s.sp_->p_, s.sp_->ng_) = sampleSurface(s.s_3_, s.s_4_, time);
 	s.sp_->n_ = s.sp_->ng_;
-	const auto [du, dv]{Vec3::createCoordsSystem(s.sp_->ng_)};
+	const Uv<Vec3> duv{Vec3::createCoordsSystem(s.sp_->ng_)};
+	Vec3 dir;
 	if(double_sided_)
 	{
-		if(s.s_1_ > 0.5f) wo = sample::cosHemisphere(-s.sp_->ng_, du, dv, (s.s_1_ - 0.5f) * 2.f, s.s_2_);
-		else wo = sample::cosHemisphere(s.sp_->ng_, du, dv, s.s_1_ * 2.f, s.s_2_);
-		s.dir_pdf_ = 0.5f * std::abs(s.sp_->ng_ * wo);
+		if(s.s_1_ > 0.5f) dir = sample::cosHemisphere(-s.sp_->ng_, duv, (s.s_1_ - 0.5f) * 2.f, s.s_2_);
+		else dir = sample::cosHemisphere(s.sp_->ng_, duv, s.s_1_ * 2.f, s.s_2_);
+		s.dir_pdf_ = 0.5f * std::abs(s.sp_->ng_ * dir);
 	}
 	else
 	{
-		wo = sample::cosHemisphere(s.sp_->ng_, du, dv, s.s_1_, s.s_2_);
-		s.dir_pdf_ = std::abs(s.sp_->ng_ * wo);
+		dir = sample::cosHemisphere(s.sp_->ng_, duv, s.s_1_, s.s_2_);
+		s.dir_pdf_ = std::abs(s.sp_->ng_ * dir);
 	}
 	s.flags_ = flags_;
-	return color_;
+	return {std::move(dir), color_};
 }
 
 std::tuple<bool, float, Rgb> ObjectLight::intersect(const Ray &ray, float &t) const

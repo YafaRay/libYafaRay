@@ -47,24 +47,21 @@ SunLight::SunLight(Logger &logger, Vec3 dir, const Rgb &col, float inte, float a
 void SunLight::init(Scene &scene)
 {
 	// calculate necessary parameters for photon mapping
-	Bound w = scene.getSceneBound();
-	world_radius_ = 0.5 * (w.g_ - w.a_).length();
-	world_center_ = 0.5 * (w.a_ + w.g_);
+	const Bound w = scene.getSceneBound();
+	world_radius_ = 0.5f * (w.g_ - w.a_).length();
+	world_center_ = 0.5f * (w.a_ + w.g_);
 	e_pdf_ = math::num_pi<> * world_radius_ * world_radius_;
 }
 
 bool SunLight::illumSample(const Point3 &surface_p, LSample &s, Ray &wi, float time) const
 {
 	if(photonOnly()) return false;
-
 	//sample direction uniformly inside cone:
-	wi.dir_ = sample::cone(direction_, duv_.u_, duv_.v_, cos_angle_, s.s_1_, s.s_2_);
+	wi.dir_ = sample::cone(direction_, duv_, cos_angle_, s.s_1_, s.s_2_);
 	wi.tmax_ = -1.f;
-
 	s.col_ = col_pdf_;
 	// ipdf: inverse of uniform cone pdf; calculated in constructor.
 	s.pdf_ = pdf_;
-
 	return true;
 }
 
@@ -76,23 +73,15 @@ std::tuple<bool, float, Rgb> SunLight::intersect(const Ray &ray, float &t) const
 	return {true, invpdf_, col_pdf_};
 }
 
-Rgb SunLight::emitPhoton(float s_1, float s_2, float s_3, float s_4, Ray &ray, float &ipdf) const
+std::tuple<Ray, float, Rgb> SunLight::emitPhoton(float s_1, float s_2, float s_3, float s_4, float time) const
 {
-	float u, v;
-	Vec3::shirleyDisk(s_3, s_4);
-
-	Vec3 ldir{sample::cone(direction_, duv_.u_, duv_.v_, cos_angle_, s_3, s_4)};
-	Vec3 du_2, dv_2;
-
-	sample::minRot(direction_, duv_.u_, ldir, du_2, dv_2);
-
-	ipdf = invpdf_;
-	ray.from_ = world_center_ + world_radius_ * (u * du_2 + v * dv_2 + ldir);
-	ray.tmax_ = -1;
-	ray.dir_ = -ldir;
-	return col_pdf_ * e_pdf_;
+	const Vec3 ldir{sample::cone(direction_, duv_, cos_angle_, s_3, s_4)};
+	const Uv<Vec3> duv_2{sample::minRot(direction_, duv_.u_, ldir)};
+	const Uv<float> uv{Vec3::shirleyDisk(s_3, s_4)};
+	Point3 from{world_center_ + world_radius_ * (uv.u_ * duv_2.u_ + uv.v_ * duv_2.v_ + ldir)};
+	Ray ray{std::move(from), -ldir, time};
+	return {std::move(ray), invpdf_, col_pdf_ * e_pdf_};
 }
-
 
 Light * SunLight::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params)
 {

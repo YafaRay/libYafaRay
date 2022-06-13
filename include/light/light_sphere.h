@@ -47,8 +47,8 @@ class SphereLight final : public Light
 		SphereLight(Logger &logger, const Point3 &c, float rad, const Rgb &col, float inte, int nsam, bool b_light_enabled = true, bool b_cast_shadows = true);
 		void init(Scene &scene) override;
 		Rgb totalEnergy() const override;
-		Rgb emitPhoton(float s_1, float s_2, float s_3, float s_4, Ray &ray, float &ipdf) const override;
-		Rgb emitSample(Vec3 &wo, LSample &s, float time) const override;
+		std::tuple<Ray, float, Rgb> emitPhoton(float s_1, float s_2, float s_3, float s_4, float time) const override;
+		std::pair<Vec3, Rgb> emitSample(LSample &s, float time) const override;
 		bool diracLight() const override { return false; }
 		bool illumSample(const Point3 &surface_p, LSample &s, Ray &wi, float time) const override;
 		bool illuminate(const Point3 &surface_p, Rgb &col, Ray &wi) const override { return false; }

@@ -445,10 +445,8 @@ void MonteCarloIntegrator::causticWorker(FastRandom &fast_random, unsigned int &
 			logger_.logError(getName(), ": lightPDF sample error! ", s_l, "/", light_num);
 			return;
 		}
-		Ray ray;
-		ray.time_ = time_forced_ ? time_forced_value_ : math::addMod1(static_cast<float>(curr) / static_cast<float>(n_caus_photons_thread), s_2); //FIXME: maybe we should use an offset for time that is independent from the space-related samples as s_2 now
-		float light_pdf;
-		Rgb pcol = lights_caustic[light_num]->emitPhoton(s_1, s_2, s_3, s_4, ray, light_pdf);
+		float time = time_forced_ ? time_forced_value_ : math::addMod1(static_cast<float>(curr) / static_cast<float>(n_caus_photons_thread), s_2); //FIXME: maybe we should use an offset for time that is independent from the space-related samples as s_2 now
+		auto[ray, light_pdf, pcol]{lights_caustic[light_num]->emitPhoton(s_1, s_2, s_3, s_4, time)};
 		ray.tmin_ = ray_min_dist_;
 		ray.tmax_ = -1.f;
 		pcol *= f_num_lights * light_pdf / light_num_pdf; //remember that lightPdf is the inverse of th pdf, hence *=...
@@ -591,9 +589,7 @@ bool MonteCarloIntegrator::createCausticMap(FastRandom &fast_random)
 
 		for(int i = 0; i < num_lights_caustic; ++i)
 		{
-			Ray ray;
-			float light_pdf;
-			Rgb pcol = lights_caustic[i]->emitPhoton(.5, .5, .5, .5, ray, light_pdf);
+			auto[ray, light_pdf, pcol]{lights_caustic[i]->emitPhoton(.5, .5, .5, .5, 0.f)}; //FIXME: What time to use?
 			const float light_num_pdf = light_power_d_caustic->function(i) * light_power_d_caustic->invIntegral();
 			pcol *= f_num_lights_caustic * light_pdf / light_num_pdf; //remember that lightPdf is the inverse of the pdf, hence *=...
 			if(logger_.isVerbose()) logger_.logVerbose(getName(), ": Light [", lights_caustic[i]->getName(), "] Photon col:", pcol, " | lnpdf: ", light_num_pdf);

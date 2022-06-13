@@ -118,7 +118,7 @@ bool SpotLight::illumSample(const Point3 &surface_p, LSample &s, Ray &wi, float 
 	if(cosa < cos_end_) return false; //outside cone
 
 	wi.tmax_ = dist;
-	wi.dir_ = sample::cone(ldir, duv_.u_, duv_.v_, cos_end_, s.s_1_ * shadow_fuzzy_, s.s_2_ * shadow_fuzzy_);
+	wi.dir_ = sample::cone(ldir, duv_, cos_end_, s.s_1_ * shadow_fuzzy_, s.s_2_ * shadow_fuzzy_);
 
 	if(cosa >= cos_start_) // not affected by falloff
 	{
@@ -144,52 +144,53 @@ bool SpotLight::illumSample(const Point3 &surface_p, LSample &s, Ray &wi, float 
 	return true;
 }
 
-Rgb SpotLight::emitPhoton(float s_1, float s_2, float s_3, float s_4, Ray &ray, float &ipdf) const
+std::tuple<Ray, float, Rgb> SpotLight::emitPhoton(float s_1, float s_2, float s_3, float s_4, float time) const
 {
-	ray.from_ = position_;
-
 	if(s_3 <= interv_1_) // sample from cone not affected by falloff:
 	{
-		ray.dir_ = sample::cone(dir_, duv_.u_, duv_.v_, cos_start_, s_1, s_2);
-		ipdf = math::mult_pi_by_2<> * (1.f - cos_start_) / interv_1_;
+		Vec3 dir{sample::cone(dir_, duv_, cos_start_, s_1, s_2)};
+		const float ipdf = math::mult_pi_by_2<> * (1.f - cos_start_) / interv_1_;
+		Ray ray{position_, std::move(dir), time};
+		return {std::move(ray), ipdf, color_};
 	}
 	else // sample in the falloff area
 	{
 		auto[sm_2, spdf]{pdf_->sample(s_2)};
 		sm_2 *= pdf_->invSize();
-		ipdf = math::mult_pi_by_2<> * (cos_start_ - cos_end_) / (interv_2_ * spdf);
-		double cos_ang = cos_end_ + (cos_start_ - cos_end_) * (double)sm_2;
-		double sin_ang = math::sqrt(1.0 - cos_ang * cos_ang);
-		float t_1 = math::mult_pi_by_2<> * s_1;
-		ray.dir_ = (duv_.u_ * math::cos(t_1) + duv_.v_ * math::sin(t_1)) * (float)sin_ang + dir_ * (float)cos_ang;
-		return color_ * spdf * pdf_->integral(); // scale is just the actual falloff function, since spdf is func * invIntegral...
+		const float ipdf = math::mult_pi_by_2<> * (cos_start_ - cos_end_) / (interv_2_ * spdf);
+		const double cos_ang = cos_end_ + (cos_start_ - cos_end_) * (double)sm_2;
+		const double sin_ang = math::sqrt(1.0 - cos_ang * cos_ang);
+		const float t_1 = math::mult_pi_by_2<> * s_1;
+		Vec3 dir{(duv_.u_ * math::cos(t_1) + duv_.v_ * math::sin(t_1)) * (float)sin_ang + dir_ * (float)cos_ang};
+		Rgb col{color_ * spdf * pdf_->integral()}; // scale is just the actual falloff function, since spdf is func * invIntegral...
+		Ray ray{position_, std::move(dir), time};
+		return {std::move(ray), ipdf, std::move(col)};
 	}
-	return color_;
 }
 
-Rgb SpotLight::emitSample(Vec3 &wo, LSample &s, float time) const
+std::pair<Vec3, Rgb> SpotLight::emitSample(LSample &s, float time) const
 {
 	s.sp_->p_ = position_;
 	s.area_pdf_ = 1.f;
 	s.flags_ = flags_;
 	if(s.s_3_ <= interv_1_) // sample from cone not affected by falloff:
 	{
-		wo = sample::cone(dir_, duv_.u_, duv_.v_, cos_start_, s.s_1_, s.s_2_);
+		Vec3 dir{sample::cone(dir_, duv_, cos_start_, s.s_1_, s.s_2_)};
 		s.dir_pdf_ = interv_1_ / (math::mult_pi_by_2<> * (1.f - cos_start_));
+		return {std::move(dir), color_};
 	}
 	else // sample in the falloff area
 	{
 		auto[sm_2, spdf]{pdf_->sample(s.s_2_)};
 		sm_2 *= pdf_->invSize();
 		s.dir_pdf_ = (interv_2_ * spdf) / (math::mult_pi_by_2<> * (cos_start_ - cos_end_));
-		double cos_ang = cos_end_ + (cos_start_ - cos_end_) * (double)sm_2;
-		double sin_ang = math::sqrt(1.0 - cos_ang * cos_ang);
-		float t_1 = math::mult_pi_by_2<> * s.s_1_;
-		wo = (duv_.u_ * math::cos(t_1) + duv_.v_ * math::sin(t_1)) * (float)sin_ang + dir_ * (float)cos_ang;
-		float v = sm_2 * sm_2 * (3.f - 2.f * sm_2);
-		return color_ * v;
+		const double cos_ang = cos_end_ + (cos_start_ - cos_end_) * (double)sm_2;
+		const double sin_ang = math::sqrt(1.0 - cos_ang * cos_ang);
+		const float t_1 = math::mult_pi_by_2<> * s.s_1_;
+		Vec3 dir{(duv_.u_ * math::cos(t_1) + duv_.v_ * math::sin(t_1)) * (float)sin_ang + dir_ * (float)cos_ang};
+		const float v = sm_2 * sm_2 * (3.f - 2.f * sm_2);
+		return {std::move(dir), color_ * v};
 	}
-	return color_;
 }
 
 void SpotLight::emitPdf(const Vec3 &surface_n, const Vec3 &wo, float &area_pdf, float &dir_pdf, float &cos_wo) const

@@ -73,9 +73,9 @@ void BackgroundLight::init(Scene &scene)
 
 inline std::pair<float, Uv<float>> BackgroundLight::calcFromSample(float s_1, float s_2, bool inv) const
 {
-	auto[v, pdf_2]{v_dist_->sample(s_2)};
+	auto [v, pdf_2]{v_dist_->sample(s_2)};
 	const int iv = clampSample(addOff(v), v_dist_->size());
-	auto[u, pdf_1] = u_dist_[iv]->sample(s_1);
+	auto [u, pdf_1]{u_dist_[iv]->sample(s_1)};
 	u *= u_dist_[iv]->invSize();
 	v *= v_dist_->invSize();
 	if(inv) return {calcInvPdf(pdf_1, pdf_2, v), {u, v}};
@@ -84,21 +84,20 @@ inline std::pair<float, Uv<float>> BackgroundLight::calcFromSample(float s_1, fl
 
 inline std::pair<float, Uv<float>> BackgroundLight::calcFromDir(const Vec3 &dir, bool inv) const
 {
-	float pdf_1 = 0.f, pdf_2 = 0.f;
 	const Uv<float> uv{Texture::sphereMap(static_cast<Point3>(dir))}; // Returns u,v pair in [0,1] range
 	const int iv = clampSample(addOff(uv.v_ * v_dist_->size()), v_dist_->size());
 	const int iu = clampSample(addOff(uv.u_ * u_dist_[iv]->size()), u_dist_[iv]->size());
-	pdf_1 = u_dist_[iv]->function(iu) * u_dist_[iv]->invIntegral();
-	pdf_2 = v_dist_->function(iv) * v_dist_->invIntegral();
+	const float pdf_1 = u_dist_[iv]->function(iu) * u_dist_[iv]->invIntegral();
+	const float pdf_2 = v_dist_->function(iv) * v_dist_->invIntegral();
 	if(inv) return {calcInvPdf(pdf_1, pdf_2, uv.v_), uv};
 	return {calcPdf(pdf_1, pdf_2, uv.v_), uv};
 }
 
-std::pair<Vec3, float> BackgroundLight::sampleDir(float s_1, float s_2, Vec3 &dirNO, float &NO, bool inv) const
+std::pair<Vec3, float> BackgroundLight::sampleDir(float s_1, float s_2, bool inv) const
 {
 	const auto[pdf, uv]{calcFromSample(s_1, s_2, inv)};
-	Vec3 dir = Texture::invSphereMap(uv);
-	return {dir, pdf};
+	Vec3 dir{Texture::invSphereMap(uv)};
+	return {std::move(dir), pdf};
 }
 
 // dir points from surface point to background
@@ -134,7 +133,7 @@ std::tuple<bool, float, Rgb> BackgroundLight::intersect(const Ray &ray, float &)
 	const Point3 ray_dir{Texture::invSphereMap(uv)};
 	Rgb col{background_->eval(ray_dir, true)};
 	col.clampProportionalRgb(clamp_intersect_); //trick to reduce light sampling noise at the expense of realism and inexact overall light. 0.f disables clamping
-	return {true, ipdf, col};
+	return {true, ipdf, std::move(col)};
 }
 
 Rgb BackgroundLight::totalEnergy() const
@@ -142,33 +141,33 @@ Rgb BackgroundLight::totalEnergy() const
 	return background_->eval({0.5f, 0.5f, 0.5f}, true) * world_pi_factor_;
 }
 
-Rgb BackgroundLight::emitPhoton(float s_1, float s_2, float s_3, float s_4, Ray &ray, float &ipdf) const
+std::tuple<Ray, float, Rgb> BackgroundLight::emitPhoton(float s_1, float s_2, float s_3, float s_4, float time) const
 {
-	sampleDir(s_3, s_4, ray.dir_, ipdf, true);
-	const Rgb pcol = background_->eval(ray.dir_, true);
-	ray.dir_ = -ray.dir_;
-	const auto [u_vec, v_vec]{Vec3::createCoordsSystem(ray.dir_)};
-	float u, v;
-	Vec3::shirleyDisk(s_1, s_2);
-	const Vec3 offs{u * u_vec + v * v_vec};
-	ray.from_ = world_center_ + world_radius_ * (offs - ray.dir_);
-	return pcol * a_pdf_;
+	auto[dir, ipdf]{sampleDir(s_3, s_4, true)};
+	const Rgb pcol{background_->eval(dir, true)};
+	dir = -dir;
+	const Uv<Vec3> coords{Vec3::createCoordsSystem(dir)};
+	const Uv<float> uv{Vec3::shirleyDisk(s_1, s_2)};
+	const Vec3 offs{uv.u_ * coords.u_ + uv.v_ * coords.v_};
+	Point3 from{world_center_ + world_radius_ * (offs - dir)};
+	return {Ray{std::move(from), std::move(dir), time}, ipdf, pcol * a_pdf_};
 }
 
-Rgb BackgroundLight::emitSample(Vec3 &wo, LSample &s, float time) const
+std::pair<Vec3, Rgb> BackgroundLight::emitSample(LSample &s, float time) const
 {
-	sampleDir(s.s_1_, s.s_2_, wo, s.dir_pdf_, true);
-	const Rgb pcol = background_->eval(wo, true);
-	wo = -wo;
-	const auto [u_vec, v_vec]{Vec3::createCoordsSystem(wo)};
-	float u, v;
-	Vec3::shirleyDisk(s.s_1_, s.s_2_);
-	const Vec3 offs{u * u_vec + v * v_vec};
-	s.sp_->p_ = world_center_ + world_radius_ * offs - world_radius_ * wo;
-	s.sp_->n_ = s.sp_->ng_ = wo;
+	auto[dir, ipdf]{sampleDir(s.s_1_, s.s_2_, true)};
+	s.dir_pdf_ = ipdf;
+	Rgb pcol{background_->eval(dir, true)};
+	dir = -dir;
+	const Uv<Vec3> coords{Vec3::createCoordsSystem(dir)};
+	const Uv<float> uv{Vec3::shirleyDisk(s.s_1_, s.s_2_)};
+	const Vec3 offs{uv.u_ * coords.u_ + uv.v_ * coords.v_};
+	s.sp_->p_ = world_center_ + world_radius_ * offs - world_radius_ * dir;
+	s.sp_->n_ = dir;
+	s.sp_->ng_ = dir;
 	s.area_pdf_ = 1.f;
 	s.flags_ = flags_;
-	return pcol;
+	return {std::move(dir), std::move(pcol)};
 }
 
 float BackgroundLight::illumPdf(const Point3 &surface_p, const Point3 &light_p, const Vec3 &) const

@@ -178,7 +178,7 @@ Rgb GlossyMaterial::sample(const MaterialData *mat_data, const SurfacePoint &sp,
 		if(s_1 < s_p_diffuse)
 		{
 			s_1 /= s_p_diffuse;
-			wi = sample::cosHemisphere(n, sp.uvn_.u_, sp.uvn_.v_, s_1, s.s_2_);
+			wi = sample::cosHemisphere(n, sp.uvn_, s_1, s.s_2_);
 			const float cos_ng_wi = sp.ng_ * wi;
 			if(cos_ng_wi * cos_ng_wo < 0.f)
 			{

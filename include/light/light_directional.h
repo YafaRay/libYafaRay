@@ -40,8 +40,8 @@ class DirectionalLight final : public Light
 		DirectionalLight(Logger &logger, const Point3 &pos, Vec3 dir, const Rgb &col, float inte, bool inf, float rad, bool b_light_enabled = true, bool b_cast_shadows = true);
 		void init(Scene &scene) override;
 		Rgb totalEnergy() const override { return color_ * radius_ * radius_ * math::num_pi<>; }
-		Rgb emitPhoton(float s_1, float s_2, float s_3, float s_4, Ray &ray, float &ipdf) const override;
-		Rgb emitSample(Vec3 &wo, LSample &s, float time) const override;
+		std::tuple<Ray, float, Rgb> emitPhoton(float s_1, float s_2, float s_3, float s_4, float time) const override;
+		std::pair<Vec3, Rgb> emitSample(LSample &s, float time) const override;
 		bool diracLight() const override { return true; }
 		bool illumSample(const Point3 &surface_p, LSample &s, Ray &wi, float time) const override;
 		bool illuminate(const Point3 &surface_p, Rgb &col, Ray &wi) const override;

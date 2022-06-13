@@ -60,39 +60,39 @@ class SurfacePoint final
 {
 	public:
 		SurfacePoint() = default;
-		SurfacePoint(const Primitive *primitive) : primitive_(primitive) { }
+		explicit SurfacePoint(const Primitive *primitive) : primitive_(primitive) { }
 		SurfacePoint(const SurfacePoint &sp);
 		SurfacePoint(const SurfacePoint &sp_1, const SurfacePoint &sp_2, float alpha);
 		SurfacePoint& operator=(const SurfacePoint &sp);
 		SurfacePoint(SurfacePoint &&surface_point) = default;
 		SurfacePoint& operator=(SurfacePoint&& surface_point) = default;
-		static Vec3 normalFaceForward(const Vec3 &normal_geometry, const Vec3 &normal, const Vec3 &incoming_vector);
-		float getDistToNearestEdge() const;
+		[[nodiscard]] static Vec3 normalFaceForward(const Vec3 &normal_geometry, const Vec3 &normal, const Vec3 &incoming_vector);
+		[[nodiscard]] float getDistToNearestEdge() const;
 		//! compute differentials for a scattered ray
-		std::unique_ptr<RayDifferentials> reflectedRay(const RayDifferentials *in_differentials, const Vec3 &in_dir, const Vec3 &out_dir) const;
+		[[nodiscard]] std::unique_ptr<RayDifferentials> reflectedRay(const RayDifferentials *in_differentials, const Vec3 &in_dir, const Vec3 &out_dir) const;
 		//! compute differentials for a refracted ray
-		std::unique_ptr<RayDifferentials> refractedRay(const RayDifferentials *in_differentials, const Vec3 &in_dir, const Vec3 &out_dir, float ior) const;
-		float projectedPixelArea() const;
-		std::array<Uv<float>, 2> getUVdifferentialsXY() const;
-		std::unique_ptr<SurfaceDifferentials> calcSurfaceDifferentials(const RayDifferentials *ray_differentials) const;
+		[[nodiscard]] std::unique_ptr<RayDifferentials> refractedRay(const RayDifferentials *in_differentials, const Vec3 &in_dir, const Vec3 &out_dir, float ior) const;
+		[[nodiscard]] float projectedPixelArea() const;
+		[[nodiscard]] std::array<Uv<float>, 2> getUVdifferentialsXY() const;
+		[[nodiscard]] std::unique_ptr<SurfaceDifferentials> calcSurfaceDifferentials(const RayDifferentials *ray_differentials) const;
 
-		const MaterialData * initBsdf(const Camera *camera);
-		Rgb eval(const Vec3 &wo, const Vec3 &wl, const BsdfFlags &types, bool force_eval = false) const;
-		Rgb sample(const Vec3 &wo, Vec3 &wi, Sample &s, float &w, bool chromatic, float wavelength, const Camera *camera) const;
-		Rgb sample(const Vec3 &wo, Vec3 *dir, Rgb &tcol, Sample &s, float *w, bool chromatic, float wavelength) const;
-		float pdf(const Vec3 &wo, const Vec3 &wi, const BsdfFlags &bsdfs) const;
-		Rgb getTransparency(const Vec3 &wo, const Camera *camera) const;
-		Specular getSpecular(int ray_level, const Vec3 &wo, bool chromatic, float wavelength) const;
-		Rgb getReflectivity(FastRandom &fast_random, BsdfFlags flags, bool chromatic, float wavelength, const Camera *camera) const;
-		Rgb emit(const Vec3 &wo) const;
-		float getAlpha(const Vec3 &wo, const Camera *camera) const;
-		bool scatterPhoton(const Vec3 &wi, Vec3 &wo, PSample &s, bool chromatic, float wavelength, const Camera *camera) const;
-		unsigned int getObjectIndex() const { if(primitive_) return primitive_->getObjectIndex(); else return 0; }
-		unsigned int getObjectIndexAuto() const { if(primitive_) return primitive_->getObjectIndexAuto(); else return 0; }
-		Rgb getObjectIndexAutoColor() const { if(primitive_) return primitive_->getObjectIndexAutoColor(); else return Rgb{0.f}; }
-		const Material *getMaterial() const { if(primitive_) return primitive_->getMaterial(); else return nullptr; }
-		const Light *getLight() const { if(primitive_) return primitive_->getObjectLight(); else return nullptr; }
-		bool hasMotionBlur() const { if(primitive_) return primitive_->hasObjectMotionBlur(); else return false; }
+		[[nodiscard]] const MaterialData * initBsdf(const Camera *camera);
+		[[nodiscard]] Rgb eval(const Vec3 &wo, const Vec3 &wl, const BsdfFlags &types, bool force_eval = false) const;
+		[[nodiscard]] Rgb sample(const Vec3 &wo, Vec3 &wi, Sample &s, float &w, bool chromatic, float wavelength, const Camera *camera) const;
+		[[nodiscard]] Rgb sample(const Vec3 &wo, Vec3 *dir, Rgb &tcol, Sample &s, float *w, bool chromatic, float wavelength) const;
+		[[nodiscard]] float pdf(const Vec3 &wo, const Vec3 &wi, const BsdfFlags &bsdfs) const;
+		[[nodiscard]] Rgb getTransparency(const Vec3 &wo, const Camera *camera) const;
+		[[nodiscard]] Specular getSpecular(int ray_level, const Vec3 &wo, bool chromatic, float wavelength) const;
+		[[nodiscard]] Rgb getReflectivity(FastRandom &fast_random, BsdfFlags flags, bool chromatic, float wavelength, const Camera *camera) const;
+		[[nodiscard]] Rgb emit(const Vec3 &wo) const;
+		[[nodiscard]] float getAlpha(const Vec3 &wo, const Camera *camera) const;
+		[[nodiscard]] bool scatterPhoton(const Vec3 &wi, Vec3 &wo, PSample &s, bool chromatic, float wavelength, const Camera *camera) const;
+		[[nodiscard]] unsigned int getObjectIndex() const { if(primitive_) return primitive_->getObjectIndex(); else return 0; }
+		[[nodiscard]] unsigned int getObjectIndexAuto() const { if(primitive_) return primitive_->getObjectIndexAuto(); else return 0; }
+		[[nodiscard]] Rgb getObjectIndexAutoColor() const { if(primitive_) return primitive_->getObjectIndexAutoColor(); else return Rgb{0.f}; }
+		[[nodiscard]] const Material *getMaterial() const { if(primitive_) return primitive_->getMaterial(); else return nullptr; }
+		[[nodiscard]] const Light *getLight() const { if(primitive_) return primitive_->getObjectLight(); else return nullptr; }
+		[[nodiscard]] bool hasMotionBlur() const { if(primitive_) return primitive_->hasObjectMotionBlur(); else return false; }
 
 		IntersectData intersect_data_;
 		alignas(8) std::unique_ptr<const MaterialData> mat_data_;
@@ -115,7 +115,7 @@ class SurfacePoint final
 		Uv<Vec3> dp_abs_; //!< u-axis and v-axis (dp/du, dp/dv) in world space  (before normalization)
 
 	private:
-		static Uv<float> dUdvFromPointDifferentials(const Vec3 &dp, const Uv<Vec3> &dp_duv);
+		[[nodiscard]] static Uv<float> dUdvFromPointDifferentials(const Vec3 &dp, const Uv<Vec3> &dp_duv);
 		const Primitive *primitive_ = nullptr; //!< primitive the surface belongs to
 };
 

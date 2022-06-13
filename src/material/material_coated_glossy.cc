@@ -257,7 +257,7 @@ Rgb CoatedGlossyMaterial::sample(const MaterialData *mat_data, const SurfacePoin
 			break;
 		case C_DIFFUSE: // lambertian
 		default:
-			wi = sample::cosHemisphere(n, sp.uvn_.u_, sp.uvn_.v_, s_1, s.s_2_);
+			wi = sample::cosHemisphere(n, sp.uvn_, s_1, s.s_2_);
 			const float cos_ng_wi = sp.ng_ * wi;
 			if(cos_ng_wo * cos_ng_wi < 0)
 			{

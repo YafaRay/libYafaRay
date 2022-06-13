@@ -50,115 +50,74 @@ IesLight::IesLight(Logger &logger, const Point3 &from, const Point3 &to, const R
 	}
 }
 
-void IesLight::getAngles(float &u, float &v, const Vec3 &dir, float costheta)
+Uv<float> IesLight::getAngles(const Vec3 &dir, float costheta)
 {
-	u = (dir.z() >= 1.f) ? 0.f : math::radToDeg(math::acos(dir.z()));
-
-	if(dir.y() < 0)
-	{
-		u = 360.f - u;
-	}
-
-	v = (costheta >= 1.f) ? 0.f : math::radToDeg(math::acos(costheta));
+	float u = (dir.z() >= 1.f) ? 0.f : math::radToDeg(math::acos(dir.z()));
+	if(dir.y() < 0) u = 360.f - u;
+	const float v = (costheta >= 1.f) ? 0.f : math::radToDeg(math::acos(costheta));
+	return {u, v};
 }
 
 bool IesLight::illuminate(const Point3 &surface_p, Rgb &col, Ray &wi) const
 {
 	if(photonOnly()) return false;
-
 	Vec3 ldir{position_ - surface_p};
-	float dist_sqrt = ldir.lengthSqr();
-	float dist = math::sqrt(dist_sqrt);
-	float i_dist_sqrt = 1.f / dist_sqrt;
-
+	const float dist_sqrt = ldir.lengthSqr();
+	const float dist = math::sqrt(dist_sqrt);
+	const float i_dist_sqrt = 1.f / dist_sqrt;
 	if(dist == 0.0) return false;
-
 	ldir *= 1.f / dist; //normalize
-
-	float cosa = ndir_ * ldir;
-	if(cosa < cos_end_) return false;
-
-	float u, v;
-
-	getAngles(u, v, ldir, cosa);
-
-	col = color_ * ies_data_->getRadiance(u, v) * i_dist_sqrt;
-
+	const float cos_a = ndir_ * ldir;
+	if(cos_a < cos_end_) return false;
+	const Uv<float> uv{getAngles(ldir, cos_a)};
+	col = color_ * ies_data_->getRadiance(uv.u_, uv.v_) * i_dist_sqrt;
 	wi.tmax_ = dist;
 	wi.dir_ = ldir;
-
 	return true;
 }
 
 bool IesLight::illumSample(const Point3 &surface_p, LSample &s, Ray &wi, float time) const
 {
 	if(photonOnly()) return false;
-
 	Vec3 ldir{position_ - surface_p};
-	float dist_sqrt = ldir.lengthSqr();
-	float dist = math::sqrt(dist_sqrt);
-	float i_dist_sqrt = 1.f / dist_sqrt;
-
+	const float dist_sqrt = ldir.lengthSqr();
+	const float dist = math::sqrt(dist_sqrt);
+	const float i_dist_sqrt = 1.f / dist_sqrt;
 	if(dist == 0.0) return false;
-
 	ldir *= 1.f / dist; //normalize
-
-	float cosa = ndir_ * ldir;
-	if(cosa < cos_end_) return false;
-
+	const float cos_a = ndir_ * ldir;
+	if(cos_a < cos_end_) return false;
 	wi.tmax_ = dist;
-	wi.dir_ = sample::cone(ldir, duv_.u_, duv_.v_, cosa, s.s_1_, s.s_2_);
-
-	float u, v;
-	getAngles(u, v, wi.dir_, cosa);
-
-	float rad = ies_data_->getRadiance(u, v);
-
+	wi.dir_ = sample::cone(ldir, duv_, cos_a, s.s_1_, s.s_2_);
+	const Uv<float> uv{getAngles(wi.dir_, cos_a)};
+	const float rad = ies_data_->getRadiance(uv.u_, uv.v_);
 	if(rad == 0.f) return false;
-
 	s.col_ = color_ * i_dist_sqrt;
 	s.pdf_ = 1.f / rad;
-
 	return true;
 }
 
-Rgb IesLight::emitPhoton(float s_1, float s_2, float s_3, float s_4, Ray &ray, float &ipdf) const
+std::tuple<Ray, float, Rgb> IesLight::emitPhoton(float s_1, float s_2, float s_3, float s_4, float time) const
 {
-	ray.from_ = position_;
-	ray.dir_ = sample::cone(dir_, duv_.u_, duv_.v_, cos_end_, s_1, s_2);
-
-	ipdf = 0.f;
-
-	float cosa = ray.dir_ * dir_;
-
-	if(cosa < cos_end_) return Rgb{0.f};
-
-	float u, v;
-	getAngles(u, v, ray.dir_, cosa);
-
-	float rad = ies_data_->getRadiance(u, v);
-
-	ipdf = rad;
-
-	return color_;
+	Vec3 dir{sample::cone(dir_, duv_, cos_end_, s_1, s_2)};
+	float cos_a = dir * dir_;
+	if(cos_a < cos_end_) return {};
+	const Uv<float> uv{getAngles(dir, cos_a)};
+	const float rad = ies_data_->getRadiance(uv.u_, uv.v_);
+	Ray ray{position_, std::move(dir), time};
+	return {std::move(ray), rad, color_};
 }
 
-Rgb IesLight::emitSample(Vec3 &wo, LSample &s, float time) const
+std::pair<Vec3, Rgb> IesLight::emitSample(LSample &s, float time) const
 {
 	s.sp_->p_ = position_;
 	s.flags_ = flags_;
-
-	wo = sample::cone(dir_, duv_.u_, duv_.v_, cos_end_, s.s_3_, s.s_4_);
-
-	float u, v;
-	getAngles(u, v, wo, wo * dir_);
-
-	float rad = ies_data_->getRadiance(u, v);
-
+	Vec3 dir{sample::cone(dir_, duv_, cos_end_, s.s_3_, s.s_4_)};
+	const Uv<float> uv{getAngles(dir, dir * dir_)};
+	const float rad = ies_data_->getRadiance(uv.u_, uv.v_);
 	s.dir_pdf_ = (rad > 0.f) ? (tot_energy_ / rad) : 0.f;
 	s.area_pdf_ = 1.f;
-
-	return color_ * rad * tot_energy_;
+	return {std::move(dir), color_ * rad * tot_energy_};
 }
 
 void IesLight::emitPdf(const Vec3 &surface_n, const Vec3 &wo, float &area_pdf, float &dir_pdf, float &cos_wo) const
@@ -166,16 +125,10 @@ void IesLight::emitPdf(const Vec3 &surface_n, const Vec3 &wo, float &area_pdf, f
 	cos_wo = 1.f;
 	area_pdf = 1.f;
 	dir_pdf = 0.f;
-
-	float cosa = dir_ * wo;
-
-	if(cosa < cos_end_) return;
-
-	float u, v;
-	getAngles(u, v, wo, cosa);
-
-	float rad = ies_data_->getRadiance(u, v);
-
+	const float cos_a = dir_ * wo;
+	if(cos_a < cos_end_) return;
+	const Uv<float> uv{getAngles(wo, cos_a)};
+	float rad = ies_data_->getRadiance(uv.u_, uv.v_);
 	dir_pdf = (rad > 0.f) ? (tot_energy_ / rad) : 0.f;
 }
 

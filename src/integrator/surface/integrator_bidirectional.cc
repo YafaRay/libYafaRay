@@ -258,7 +258,12 @@ std::pair<Rgb, float> BidirectionalIntegrator::integrate(Ray &ray, FastRandom &f
 		LSample ls;
 		ls.s_1_ = random_generator(), ls.s_2_ = random_generator(), ls.s_3_ = random_generator(), ls.s_4_ = random_generator();
 		ls.sp_ = &vl.sp_;
-		const Rgb pcol = lights_.size() > 0 ? lights_[light_num]->emitSample(lray.dir_, ls, lray.time_) : Rgb(0.f);
+		auto [dir, pcol]{
+			lights_.size() > 0 ?
+			lights_[light_num]->emitSample(ls, lray.time_) :
+			std::pair<Vec3, Rgb>{Vec3{std::move(lray.dir_)},Rgb{0.f}}
+		};
+		lray.dir_ = std::move(dir);
 		lray.from_ = vl.sp_.p_;
 		// test!
 		ls.area_pdf_ *= light_num_pdf;
@@ -568,8 +573,7 @@ bool BidirectionalIntegrator::connectLPath(PathData &pd, Ray &l_ray, Rgb &lcol, 
 
 	//FIXME DAVID: another series of horrible hacks to avoid uninitialized values and incorrect renders in bidir. However, this should be properly solved by implementing correctly the functions needed by bidir in the lights and materials, and correcting the bidir integrator itself...
 	ls.sp_->p_ = {0.f, 0.f, 0.f};
-	Vec3 wo{l_ray.dir_};
-	light->emitSample(wo, ls, l_ray.time_);
+	const auto [wo, scol]{light->emitSample(ls, l_ray.time_)};
 	ls.flags_ = static_cast<Light::Flags>(0xFFFFFFFF);
 	lcol = ls.col_ / (ls.pdf_ * light_num_pdf); //shouldn't really do that division, better use proper c_st in evalLPath...
 	// get probabilities for generating light sample without a given surface point

@@ -76,22 +76,21 @@ bool PointLight::illumSample(const Point3 &surface_p, LSample &s, Ray &wi, float
 	return true;
 }
 
-Rgb PointLight::emitPhoton(float s_1, float s_2, float s_3, float s_4, Ray &ray, float &ipdf) const
+std::tuple<Ray, float, Rgb> PointLight::emitPhoton(float s_1, float s_2, float s_3, float s_4, float time) const
 {
-	ray.from_ = position_;
-	ray.dir_ = sample::sphere(s_1, s_2);
-	ipdf = 4.0f * math::num_pi<>;
-	return color_;
+	Vec3 dir{sample::sphere(s_1, s_2)};
+	Ray ray{position_, std::move(dir), time};
+	return {std::move(ray), 4.f * math::num_pi<>, color_};
 }
 
-Rgb PointLight::emitSample(Vec3 &wo, LSample &s, float time) const
+std::pair<Vec3, Rgb> PointLight::emitSample(LSample &s, float time) const
 {
 	s.sp_->p_ = position_;
-	wo = sample::sphere(s.s_1_, s.s_2_);
+	Vec3 dir{sample::sphere(s.s_1_, s.s_2_)};
 	s.flags_ = flags_;
 	s.dir_pdf_ = 0.25f;
 	s.area_pdf_ = 1.f;
-	return color_;
+	return {std::move(dir), color_};
 }
 
 void PointLight::emitPdf(const Vec3 &surface_n, const Vec3 &wo, float &area_pdf, float &dir_pdf, float &cos_wo) const

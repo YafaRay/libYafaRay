@@ -40,12 +40,12 @@ AreaLight::AreaLight(Logger &logger, const Point3 &c, const Vec3 &v_1, const Vec
 	fnormal_ = to_y_ ^ to_x_; //f normal is "flipped" normal direction...
 	color_ = col * inte * math::num_pi<>;
 	area_ = fnormal_.normLen();
-	inv_area_ = 1.0 / area_;
+	inv_area_ = 1.f / area_;
 
 	normal_ = -fnormal_;
-	du_ = to_x_;
-	du_.normalize();
-	dv_ = normal_ ^ du_;
+	duv_.u_ = to_x_;
+	duv_.u_.normalize();
+	duv_.v_ = normal_ ^ duv_.u_;
 	c_2_ = corner_ + to_x_;
 	c_3_ = corner_ + (to_x_ + to_y_);
 	c_4_ = corner_ + to_y_;
@@ -95,23 +95,24 @@ bool AreaLight::illumSample(const Point3 &surface_p, LSample &s, Ray &wi, float 
 	return true;
 }
 
-Rgb AreaLight::emitPhoton(float s_1, float s_2, float s_3, float s_4, Ray &ray, float &ipdf) const
+std::tuple<Ray, float, Rgb> AreaLight::emitPhoton(float s_1, float s_2, float s_3, float s_4, float time) const
 {
-	ipdf = area_/*  * num_pi */; // really two num_pi?
-	ray.from_ = corner_ + s_3 * to_x_ + s_4 * to_y_;
-	ray.dir_ = sample::cosHemisphere(normal_, du_, dv_, s_1, s_2);
-	return color_;
+	const float ipdf = area_/*  * num_pi */; // really two num_pi?
+	Point3 from{corner_ + s_3 * to_x_ + s_4 * to_y_};
+	Vec3 dir{sample::cosHemisphere(normal_, duv_, s_1, s_2)};
+	Ray ray{std::move(from), std::move(dir), time};
+	return {std::move(ray), ipdf, color_};
 }
 
-Rgb AreaLight::emitSample(Vec3 &wo, LSample &s, float time) const
+std::pair<Vec3, Rgb> AreaLight::emitSample(LSample &s, float time) const
 {
 	s.area_pdf_ = inv_area_ * math::num_pi<>;
 	s.sp_->p_ = corner_ + s.s_3_ * to_x_ + s.s_4_ * to_y_;
-	wo = sample::cosHemisphere(normal_, du_, dv_, s.s_1_, s.s_2_);
+	const Vec3 dir{sample::cosHemisphere(normal_, duv_, s.s_1_, s.s_2_)};
 	s.sp_->n_ = s.sp_->ng_ = normal_;
-	s.dir_pdf_ = std::abs(normal_ * wo);
+	s.dir_pdf_ = std::abs(normal_ * dir);
 	s.flags_ = Light::Flags::None; // no delta functions...
-	return color_; // still not 100% sure this is correct without cosine...
+	return {std::move(dir), color_}; // still not 100% sure this is correct without cosine...
 }
 
 bool AreaLight::triIntersect(const Point3 &a, const Point3 &b, const Point3 &c, const Ray &ray, float &t)

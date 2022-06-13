@@ -40,12 +40,13 @@ class SunLight final : public Light
 		SunLight(Logger &logger, Vec3 dir, const Rgb &col, float inte, float angle, int n_samples, bool b_light_enabled = true, bool b_cast_shadows = true);
 		void init(Scene &scene) override;
 		Rgb totalEnergy() const override { return color_ * e_pdf_; }
-		Rgb emitPhoton(float s_1, float s_2, float s_3, float s_4, Ray &ray, float &ipdf) const override;
+		std::tuple<Ray, float, Rgb> emitPhoton(float s_1, float s_2, float s_3, float s_4, float time) const override;
 		bool diracLight() const override { return false; }
 		bool illumSample(const Point3 &surface_p, LSample &s, Ray &wi, float time) const override;
 		bool illuminate(const Point3 &surface_p, Rgb &col, Ray &wi) const override { return false; }
 		bool canIntersect() const override { return true; }
 		std::tuple<bool, float, Rgb> intersect(const Ray &ray, float &t) const override;
+		std::pair<Vec3, Rgb> emitSample(LSample &s, float time) const override { return {}; }
 		int nSamples() const override { return samples_; }
 
 		Point3 world_center_;

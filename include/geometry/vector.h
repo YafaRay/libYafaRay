@@ -59,13 +59,13 @@ class Vec3
 
 		constexpr void set(float x, float y, float z = 0.f) { vec_ = {x, y, z}; }
 		Vec3 &normalize();
-		constexpr Vec3 &reflect(const Vec3 &normal);
-		float normLen(); // normalizes and returns length
-		float normLenSqr(); // normalizes and returns length squared
-		constexpr float lengthSqr() const { return vec_[0] * vec_[0] + vec_[1] * vec_[1] + vec_[2] * vec_[2]; }
-		float length() const { return math::sqrt(lengthSqr()); }
-		constexpr bool null() const { return ((vec_[0] == 0.f) && (vec_[1] == 0.f) && (vec_[2] == 0.f)); }
-		float sinFromVectors(const Vec3 &v) const;
+		[[nodiscard]] constexpr Vec3 &reflect(const Vec3 &normal);
+		[[nodiscard]] float normLen(); // normalizes and returns length
+		[[nodiscard]] float normLenSqr(); // normalizes and returns length squared
+		[[nodiscard]] constexpr float lengthSqr() const { return vec_[0] * vec_[0] + vec_[1] * vec_[1] + vec_[2] * vec_[2]; }
+		[[nodiscard]] float length() const { return math::sqrt(lengthSqr()); }
+		[[nodiscard]] constexpr bool null() const { return ((vec_[0] == 0.f) && (vec_[1] == 0.f) && (vec_[2] == 0.f)); }
+		[[nodiscard]] float sinFromVectors(const Vec3 &v) const;
 
 		constexpr Vec3 &operator = (const Vec3 &s) = default;
 		constexpr Vec3 &operator = (Vec3 &&s) = default;
@@ -76,16 +76,16 @@ class Vec3
 		constexpr float operator[](Axis axis) const { return vec_[axis::getId(axis)]; }
 		constexpr float &operator[](Axis axis) { return vec_[axis::getId(axis)]; }
 
-		static constexpr Vec3 reflectDir(const Vec3 &normal, const Vec3 &v);
-		static constexpr bool refract(const Vec3 &n, const Vec3 &wi, Vec3 &wo, float ior);
+		[[nodiscard]] static constexpr Vec3 reflectDir(const Vec3 &normal, const Vec3 &v);
+		[[nodiscard]] static constexpr bool refract(const Vec3 &n, const Vec3 &wi, Vec3 &wo, float ior);
 		static constexpr void fresnel(const Vec3 &i, const Vec3 &n, float ior, float &kr, float &kt);
 		static constexpr void fastFresnel(const Vec3 &i, const Vec3 &n, float iorf, float &kr, float &kt);
-		static constexpr Uv<Vec3> createCoordsSystem(const Vec3 &normal);
-		static Uv<float> shirleyDisk(float r_1, float r_2);
-		static Vec3 randomSpherical(FastRandom &fast_random);
-		static Vec3 randomVectorCone(const Vec3 &d, const Vec3 &u, const Vec3 &v, float cosang, float z_1, float z_2);
-		static Vec3 randomVectorCone(const Vec3 &dir, float cosangle, float r_1, float r_2);
-		static Vec3 discreteVectorCone(const Vec3 &dir, float cangle, int sample, int square);
+		[[nodiscard]] static constexpr Uv<Vec3> createCoordsSystem(const Vec3 &normal);
+		[[nodiscard]] static Uv<float> shirleyDisk(float r_1, float r_2);
+		[[nodiscard]] static Vec3 randomSpherical(FastRandom &fast_random);
+		[[nodiscard]] static Vec3 randomVectorCone(const Vec3 &d, const Vec3 &u, const Vec3 &v, float cosang, float z_1, float z_2);
+		[[nodiscard]] static Vec3 randomVectorCone(const Vec3 &dir, float cosangle, float r_1, float r_2);
+		[[nodiscard]] static Vec3 discreteVectorCone(const Vec3 &dir, float cangle, int sample, int square);
 
 	private:
 		alignas(4) std::array<float, 3> vec_;

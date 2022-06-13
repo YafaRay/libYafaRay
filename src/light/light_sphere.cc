@@ -85,10 +85,10 @@ bool SphereLight::illumSample(const Point3 &surface_p, LSample &s, Ray &wi, floa
 	float idist_sqr = 1.f / (dist_sqr);
 	float cos_alpha = math::sqrt(1.f - square_radius_ * idist_sqr);
 	cdir *= 1.f / dist;
-	const auto [du, dv]{Vec3::createCoordsSystem(cdir)};
-	wi.dir_ = sample::cone(cdir, du, dv, cos_alpha, s.s_1_, s.s_2_);
+	const Uv<Vec3> duv{Vec3::createCoordsSystem(cdir)};
+	wi.dir_ = sample::cone(cdir, duv, cos_alpha, s.s_1_, s.s_2_);
 	float d_1, d_2;
-	if(const auto [hit, uv]{sphereIntersect(wi, center_, square_radius_epsilon_)}; hit)
+	if(const auto [hit, uv]{sphereIntersect(wi, center_, square_radius_epsilon_)}; !hit)
 	{
 		return false;
 	}
@@ -138,27 +138,27 @@ void SphereLight::emitPdf(const Vec3 &surface_n, const Vec3 &wo, float &area_pdf
 	dir_pdf = cos_wo > 0 ? cos_wo : 0.f;
 }
 
-Rgb SphereLight::emitPhoton(float s_1, float s_2, float s_3, float s_4, Ray &ray, float &ipdf) const
+std::tuple<Ray, float, Rgb> SphereLight::emitPhoton(float s_1, float s_2, float s_3, float s_4, float time) const
 {
-	Vec3 sdir{sample::sphere(s_3, s_4)};
-	ray.from_ = center_ + radius_ * sdir;
-	const auto [du, dv]{Vec3::createCoordsSystem(sdir)};
-	ray.dir_ = sample::cosHemisphere(sdir, du, dv, s_1, s_2);
-	ipdf = area_;
-	return color_;
+	const Vec3 sdir{sample::sphere(s_3, s_4)};
+	Point3 from{center_ + radius_ * sdir};
+	const Uv<Vec3> duv{Vec3::createCoordsSystem(sdir)};
+	Vec3 dir{sample::cosHemisphere(sdir, duv, s_1, s_2)};
+	Ray ray{std::move(from), std::move(dir), time};
+	return {std::move(ray), area_, color_};
 }
 
-Rgb SphereLight::emitSample(Vec3 &wo, LSample &s, float time) const
+std::pair<Vec3, Rgb> SphereLight::emitSample(LSample &s, float time) const
 {
-	Vec3 sdir{sample::sphere(s.s_3_, s.s_4_)};
+	const Vec3 sdir{sample::sphere(s.s_3_, s.s_4_)};
 	s.sp_->p_ = center_ + radius_ * sdir;
 	s.sp_->n_ = s.sp_->ng_ = sdir;
-	const auto [du, dv]{Vec3::createCoordsSystem(sdir)};
-	wo = sample::cosHemisphere(sdir, du, dv, s.s_1_, s.s_2_);
-	s.dir_pdf_ = std::abs(sdir * wo);
+	const Uv<Vec3> duv{Vec3::createCoordsSystem(sdir)};
+	Vec3 dir{sample::cosHemisphere(sdir, duv, s.s_1_, s.s_2_)};
+	s.dir_pdf_ = std::abs(sdir * dir);
 	s.area_pdf_ = inv_area_ * math::num_pi<>;
 	s.flags_ = flags_;
-	return color_;
+	return {std::move(dir), color_};
 }
 
 Light * SphereLight::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params)

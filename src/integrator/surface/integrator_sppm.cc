@@ -319,10 +319,6 @@ bool SppmIntegrator::renderTile(FastRandom &fast_random, std::vector<int> &corre
 
 void SppmIntegrator::photonWorker(FastRandom &fast_random, unsigned int &total_photons_shot, int thread_id, int num_d_lights, const Pdf1D *light_power_d, const std::vector<const Light *> &tmplights, int pb_step)
 {
-	Ray ray;
-	float light_num_pdf, light_pdf, s_1, s_2, s_3, s_4, s_5, s_6, s_7, s_l;
-	Rgb pcol;
-
 	//shoot photons
 	bool done = false;
 	unsigned int curr = 0;
@@ -353,24 +349,22 @@ void SppmIntegrator::photonWorker(FastRandom &fast_random, unsigned int &total_p
 		const float wavelength = Halton::lowDiscrepancySampling(fast_random, 5, haltoncurr);
 
 		// Tried LD, get bad and strange results for some stategy.
-		{
-			std::lock_guard<std::mutex> lock_halton(mutex_);
-			s_1 = hal_1_.getNext();
-			s_2 = hal_2_.getNext();
-			s_3 = hal_3_.getNext();
-			s_4 = hal_4_.getNext();
-		}
-
-		s_l = float(haltoncurr) * inv_diff_photons; // Does sL also need more random_generator for each pass?
-		ray.time_ = time_forced_ ? time_forced_value_ : math::addMod1(static_cast<float>(curr) / static_cast<float>(n_photons_thread), s_2); //FIXME: maybe we should use an offset for time that is independent from the space-related samples as s_2 now
+		mutex_.lock();
+		const float s_1 = hal_1_.getNext();
+		const float s_2 = hal_2_.getNext();
+		const float s_3 = hal_3_.getNext();
+		const float s_4 = hal_4_.getNext();
+		mutex_.unlock();
+		const float s_l = static_cast<float>(haltoncurr) * inv_diff_photons; // Does sL also need more random_generator for each pass?
+		float light_num_pdf;
 		const int light_num = light_power_d->dSample(s_l, light_num_pdf);
 		if(light_num >= num_d_lights)
 		{
 			logger_.logError(getName(), ": lightPDF sample error! ", s_l, "/", light_num);
 			return;
 		}
-
-		pcol = tmplights[light_num]->emitPhoton(s_1, s_2, s_3, s_4, ray, light_pdf);
+		float time = time_forced_ ? time_forced_value_ : math::addMod1(static_cast<float>(curr) / static_cast<float>(n_photons_thread), s_2); //FIXME: maybe we should use an offset for time that is independent from the space-related samples as s_2 now
+		auto[ray, light_pdf, pcol]{tmplights[light_num]->emitPhoton(s_1, s_2, s_3, s_4, time)};
 		ray.tmin_ = ray_min_dist_;
 		ray.tmax_ = -1.f;
 		pcol *= f_num_lights * light_pdf / light_num_pdf; //remember that lightPdf is the inverse of th pdf, hence *=...
@@ -429,9 +423,9 @@ void SppmIntegrator::photonWorker(FastRandom &fast_random, unsigned int &total_p
 			if(n_bounces == max_bounces_) break;
 
 			// scatter photon
-			s_5 = fast_random.getNextFloatNormalized(); // now should use this to see correctness
-			s_6 = fast_random.getNextFloatNormalized();
-			s_7 = fast_random.getNextFloatNormalized();
+			const float s_5 = fast_random.getNextFloatNormalized(); // now should use this to see correctness
+			const float s_6 = fast_random.getNextFloatNormalized();
+			const float s_7 = fast_random.getNextFloatNormalized();
 
 			PSample sample(s_5, s_6, s_7, BsdfFlags::All, pcol, transm);
 
@@ -513,9 +507,7 @@ void SppmIntegrator::prePass(FastRandom &fast_random, int samples, int offset, b
 
 	for(int i = 0; i < num_lights; ++i)
 	{
-		Ray ray;
-		float light_pdf;
-		Rgb pcol = lights_[i]->emitPhoton(.5, .5, .5, .5, ray, light_pdf);
+		auto[ray, light_pdf, pcol]{lights_[i]->emitPhoton(.5, .5, .5, .5, 0.f)}; //FIXME: what time to use?
 		const float light_num_pdf = light_power_d->function(i) * light_power_d->invIntegral();
 		pcol *= f_num_lights * light_pdf / light_num_pdf; //remember that lightPdf is the inverse of the pdf, hence *=...
 		if(logger_.isVerbose()) logger_.logVerbose(getName(), ": Light [", lights_[i]->getName(), "] Photon col:", pcol, " | lnpdf: ", light_num_pdf);

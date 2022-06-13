@@ -88,31 +88,26 @@ bool DirectionalLight::illumSample(const Point3 &surface_p, LSample &s, Ray &wi,
 	return illuminate(surface_p, s.col_, wi);
 }
 
-Rgb DirectionalLight::emitPhoton(float s_1, float s_2, float s_3, float s_4, Ray &ray, float &ipdf) const
+std::tuple<Ray, float, Rgb> DirectionalLight::emitPhoton(float s_1, float s_2, float s_3, float s_4, float time) const
 {
-	//todo
-	ray.dir_ = -direction_;
-	float u, v;
-	Vec3::shirleyDisk(s_1, s_2);
-	ray.from_ = position_ + radius_ * (u * duv_.u_ + v * duv_.v_);
-	if(infinite_) ray.from_ += direction_ * world_radius_;
-	ipdf = math::num_pi<> * radius_ * radius_; //4.0f * num_pi;
-	return color_;
+	const Uv<float> uv{Vec3::shirleyDisk(s_1, s_2)};
+	Point3 from{position_ + radius_ * (uv.u_ * duv_.u_ + uv.v_ * duv_.v_)};
+	if(infinite_) from += direction_ * world_radius_;
+	const float ipdf = math::num_pi<> * radius_ * radius_; //4.0f * num_pi;
+	Ray ray{std::move(from), -direction_, time};
+	return {std::move(ray), ipdf, color_};
 }
 
-Rgb DirectionalLight::emitSample(Vec3 &wo, LSample &s, float time) const
+std::pair<Vec3, Rgb> DirectionalLight::emitSample(LSample &s, float time) const
 {
-	//todo
-	wo = -direction_;
-	s.sp_->n_ = wo;
+	s.sp_->n_ = -direction_;
 	s.flags_ = flags_;
-	float u, v;
-	Vec3::shirleyDisk(s.s_1_, s.s_2_);
-	s.sp_->p_ = position_ + radius_ * (u * duv_.u_ + v * duv_.v_);
+	const Uv<float> uv{Vec3::shirleyDisk(s.s_1_, s.s_2_)};
+	s.sp_->p_ = position_ + radius_ * (uv.u_ * duv_.u_ + uv.v_ * duv_.v_);
 	if(infinite_) s.sp_->p_ += direction_ * world_radius_;
 	s.area_pdf_ = area_pdf_;
 	s.dir_pdf_ = 1.f;
-	return color_;
+	return {-direction_, color_};
 }
 
 Light * DirectionalLight::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params)

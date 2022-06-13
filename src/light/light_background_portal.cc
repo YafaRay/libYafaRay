@@ -30,11 +30,12 @@
 #include "geometry/primitive/primitive_face.h"
 #include <limits>
 #include <memory>
+#include <utility>
 
 BEGIN_YAFARAY
 
-BackgroundPortalLight::BackgroundPortalLight(Logger &logger, const std::string &object_name, int sampl, float pow, bool light_enabled, bool cast_shadows):
-		Light(logger), object_name_(object_name), samples_(sampl), power_(pow)
+BackgroundPortalLight::BackgroundPortalLight(Logger &logger, std::string object_name, int sampl, float pow, bool light_enabled, bool cast_shadows):
+		Light(logger), object_name_(std::move(object_name)), samples_(sampl), power_(pow)
 {
 	light_enabled_ = light_enabled;
 	cast_shadows_ = cast_shadows;
@@ -65,7 +66,7 @@ void BackgroundPortalLight::init(Scene &scene)
 {
 	bg_ = scene.getBackground();
 	const Bound w = scene.getSceneBound();
-	const float world_radius = 0.5 * (w.g_ - w.a_).length();
+	const float world_radius = 0.5f * (w.g_ - w.a_).length();
 	a_pdf_ = world_radius * world_radius;
 
 	world_center_ = 0.5 * (w.a_ + w.g_);
@@ -146,26 +147,25 @@ bool BackgroundPortalLight::illumSample(const Point3 &surface_p, LSample &s, Ray
 	return true;
 }
 
-Rgb BackgroundPortalLight::emitPhoton(float s_1, float s_2, float s_3, float s_4, Ray &ray, float &ipdf) const
+std::tuple<Ray, float, Rgb> BackgroundPortalLight::emitPhoton(float s_1, float s_2, float s_3, float s_4, float time) const
 {
-	const auto [p, n]{sampleSurface(s_3, s_4, ray.time_)};
-	const auto [du, dv]{Vec3::createCoordsSystem(n)};
-	ray.dir_ = sample::cosHemisphere(n, du, dv, s_1, s_2);
-	const Ray r_2{ray.from_, -ray.dir_, ray.time_};
-	return bg_->eval(r_2.dir_, true);
+	const auto [p, n]{sampleSurface(s_3, s_4, time)};
+	const Uv<Vec3> duv{Vec3::createCoordsSystem(n)};
+	const Vec3 dir{sample::cosHemisphere(n, duv, s_1, s_2)};
+	Ray ray{p, -dir, time}; //FIXME: is it correct to use p or should we use the coordinates 0,0,0 for ray origin?
+	return {std::move(ray), true, bg_->eval(-dir, true)};
 }
 
-Rgb BackgroundPortalLight::emitSample(Vec3 &wo, LSample &s, float time) const
+std::pair<Vec3, Rgb> BackgroundPortalLight::emitSample(LSample &s, float time) const
 {
 	s.area_pdf_ = inv_area_ * math::num_pi<>;
-	sampleSurface(s.s_3_, s.s_4_, time);
+	std::tie(s.sp_->p_, s.sp_->ng_) = sampleSurface(s.s_3_, s.s_4_, time);
 	s.sp_->n_ = s.sp_->ng_;
-	const auto [du, dv]{Vec3::createCoordsSystem(s.sp_->ng_)};
-	wo = sample::cosHemisphere(s.sp_->ng_, du, dv, s.s_1_, s.s_2_);
-	s.dir_pdf_ = std::abs(s.sp_->ng_ * wo);
+	const Uv<Vec3> duv{Vec3::createCoordsSystem(s.sp_->ng_)};
+	Vec3 dir{sample::cosHemisphere(s.sp_->ng_, duv, s.s_1_, s.s_2_)};
+	s.dir_pdf_ = std::abs(s.sp_->ng_ * dir);
 	s.flags_ = flags_;
-	const Ray r_2{s.sp_->p_, -wo, time};
-	return bg_->eval(r_2.dir_, true);
+	return {-dir, bg_->eval(-dir, true)};
 }
 
 std::tuple<bool, float, Rgb> BackgroundPortalLight::intersect(const Ray &ray, float &t) const

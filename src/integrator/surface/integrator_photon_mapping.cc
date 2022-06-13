@@ -137,10 +137,8 @@ void PhotonIntegrator::diffuseWorker(FastRandom &fast_random, PreGatherData &pgd
 			logger_.logError(getName(), ": lightPDF sample error! ", s_l, "/", light_num);
 			return;
 		}
-		Ray ray;
-		ray.time_ = time_forced_ ? time_forced_value_ : math::addMod1(static_cast<float>(curr) / static_cast<float>(n_diffuse_photons_thread), s_2); //FIXME: maybe we should use an offset for time that is independent from the space-related samples as s_2 now
-		float light_pdf;
-		Rgb pcol = lights_diffuse[light_num]->emitPhoton(s_1, s_2, s_3, s_4, ray, light_pdf);
+		float time = time_forced_ ? time_forced_value_ : math::addMod1(static_cast<float>(curr) / static_cast<float>(n_diffuse_photons_thread), s_2); //FIXME: maybe we should use an offset for time that is independent from the space-related samples as s_2 now
+		auto[ray, light_pdf, pcol]{lights_diffuse[light_num]->emitPhoton(s_1, s_2, s_3, s_4, time)};
 		ray.tmin_ = ray_min_dist_;
 		ray.tmax_ = -1.f;
 		pcol *= f_num_lights * light_pdf / light_num_pdf; //remember that lightPdf is the inverse of th pdf, hence *=...
@@ -420,9 +418,7 @@ bool PhotonIntegrator::preprocess(FastRandom &fast_random, ImageFilm *image_film
 		if(logger_.isVerbose()) logger_.logVerbose(getName(), ": Light(s) photon color testing for diffuse map:");
 		for(int i = 0; i < num_lights_diffuse; ++i)
 		{
-			Ray ray;
-			float light_pdf;
-			Rgb pcol = lights_diffuse[i]->emitPhoton(.5, .5, .5, .5, ray, light_pdf);
+			auto[ray, light_pdf, pcol]{lights_diffuse[i]->emitPhoton(.5, .5, .5, .5, 0.f)}; //FIXME: what time to use?
 			const float light_num_pdf = light_power_d_diffuse->function(i) * light_power_d_diffuse->invIntegral();
 			pcol *= f_num_lights * light_pdf / light_num_pdf; //remember that lightPdf is the inverse of the pdf, hence *=...
 			if(logger_.isVerbose()) logger_.logVerbose(getName(), ": Light [", lights_diffuse[i]->getName(), "] Photon col:", pcol, " | lnpdf: ", light_num_pdf);
@@ -499,9 +495,7 @@ bool PhotonIntegrator::preprocess(FastRandom &fast_random, ImageFilm *image_film
 		if(logger_.isVerbose()) logger_.logVerbose(getName(), ": Light(s) photon color testing for caustics map:");
 		for(int i = 0; i < num_lights_caustic; ++i)
 		{
-			Ray ray;
-			float light_pdf;
-			Rgb pcol = lights_caustic[i]->emitPhoton(.5, .5, .5, .5, ray, light_pdf);
+			auto[ray, light_pdf, pcol]{lights_caustic[i]->emitPhoton(.5, .5, .5, .5, 0.f)}; //FIXME: what time to use?
 			const float light_num_pdf = light_power_d_caustic->function(i) * light_power_d_caustic->invIntegral();
 			pcol *= f_num_lights * light_pdf / light_num_pdf; //remember that lightPdf is the inverse of the pdf, hence *=...
 			if(logger_.isVerbose()) logger_.logVerbose(getName(), ": Light [", lights_caustic[i]->getName(), "] Photon col:", pcol, " | lnpdf: ", light_num_pdf);
