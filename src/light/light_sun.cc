@@ -53,16 +53,17 @@ void SunLight::init(Scene &scene)
 	e_pdf_ = math::num_pi<> * world_radius_ * world_radius_;
 }
 
-bool SunLight::illumSample(const Point3 &surface_p, LSample &s, Ray &wi, float time) const
+std::pair<bool, Ray> SunLight::illumSample(const Point3 &surface_p, LSample &s, float time) const
 {
-	if(photonOnly()) return false;
+	if(photonOnly()) return {};
 	//sample direction uniformly inside cone:
-	wi.dir_ = sample::cone(direction_, duv_, cos_angle_, s.s_1_, s.s_2_);
-	wi.tmax_ = -1.f;
+	Vec3 dir{sample::cone(direction_, duv_, cos_angle_, s.s_1_, s.s_2_)};
 	s.col_ = col_pdf_;
 	// ipdf: inverse of uniform cone pdf; calculated in constructor.
 	s.pdf_ = pdf_;
-	return true;
+	Ray ray{surface_p, std::move(dir), time};
+	ray.tmax_ = -1.f;
+	return {true, std::move(ray)};
 }
 
 std::tuple<bool, float, Rgb> SunLight::intersect(const Ray &ray, float &t) const
@@ -114,6 +115,11 @@ Light * SunLight::factory(Logger &logger, const Scene &scene, const std::string 
 	light->photon_only_ = p_only;
 
 	return light;
+}
+
+std::tuple<bool, Ray, Rgb> SunLight::illuminate(const Point3 &surface_p, float time) const
+{
+	return {};
 }
 
 END_YAFARAY

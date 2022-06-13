@@ -79,10 +79,7 @@ Rgb MonteCarloIntegrator::estimateOneDirectLight(RandomGenerator &random_generat
 
 Rgb MonteCarloIntegrator::diracLight(RandomGenerator &random_generator, ColorLayers *color_layers, const Light *light, const Vec3 &wo, const SurfacePoint &sp, bool cast_shadows, float time) const
 {
-	Ray light_ray;
-	light_ray.time_ = time;
-	Rgb lcol;
-	if(light->illuminate(sp.p_, lcol, light_ray))
+	if(auto[hit, light_ray, lcol]{light->illuminate(sp.p_, time)}; hit)
 	{
 		Rgb col{0.f};
 		light_ray.from_ = sp.p_;
@@ -156,9 +153,6 @@ Rgb MonteCarloIntegrator::diracLight(RandomGenerator &random_generator, ColorLay
 
 Rgb MonteCarloIntegrator::areaLightSampleLight(Halton &hal_2, Halton &hal_3, RandomGenerator &random_generator, ColorLayers *color_layers, const Light *light, const Vec3 &wo, const SurfacePoint &sp, bool cast_shadows, unsigned int num_samples, float inv_num_samples, float time) const
 {
-	Ray light_ray;
-	light_ray.from_ = sp.p_;
-	light_ray.time_ = time;
 	Rgb col{0.f};
 	std::unique_ptr<ColorLayerAccum> layer_shadow;
 	std::unique_ptr<ColorLayerAccum> layer_mat_index_mask_shadow;
@@ -190,19 +184,19 @@ Rgb MonteCarloIntegrator::areaLightSampleLight(Halton &hal_2, Halton &hal_3, Ran
 				layer_glossy = std::make_unique<ColorLayerAccum>(color_layer);
 		}
 	}
-	LSample ls;
-	Rgb scol{0.f};
 	for(unsigned int i = 0; i < num_samples; ++i)
 	{
 		// ...get sample val...
+		LSample ls;
 		ls.s_1_ = hal_2.getNext();
 		ls.s_2_ = hal_3.getNext();
-		if(light->illumSample(sp.p_, ls, light_ray, time))
+		if(auto[hit, light_ray]{light->illumSample(sp.p_, ls, time)}; hit)
 		{
 			if(shadow_bias_auto_) light_ray.tmin_ = shadow_bias_ * std::max(1.f, sp.p_.length());
 			else light_ray.tmin_ = shadow_bias_;
 			bool shadowed = false;
 			const Primitive *shadow_casting_primitive = nullptr;
+			Rgb scol{0.f};
 			if(cast_shadows)
 			{
 				if(tr_shad_) std::tie(shadowed, scol, shadow_casting_primitive) = accelerator_->isShadowed(light_ray, s_depth_, shadow_bias_, camera_);

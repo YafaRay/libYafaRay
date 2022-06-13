@@ -57,35 +57,31 @@ void DirectionalLight::init(Scene &scene)
 }
 
 
-bool DirectionalLight::illuminate(const Point3 &surface_p, Rgb &col, Ray &wi) const
+std::tuple<bool, Ray, Rgb> DirectionalLight::illuminate(const Point3 &surface_p, float time) const
 {
-	if(photonOnly()) return false;
-
+	if(photonOnly()) return {};
 	// check if the point is outside of the illuminated cylinder (non-infinite lights)
+	float tmax;
 	if(!infinite_)
 	{
 		const Vec3 vec{position_ - surface_p};
 		float dist = (direction_ ^ vec).length();
-		if(dist > radius_) return false;
-		wi.tmax_ = (vec * direction_);
-		if(wi.tmax_ <= 0.0) return false;
+		if(dist > radius_) return {};
+		tmax = vec * direction_;
+		if(tmax <= 0.f) return {};
 	}
-	else
-	{
-		wi.tmax_ = -1.0;
-	}
-	wi.dir_ = direction_;
-
-	col = color_;
-	return true;
+	else tmax = -1.f;
+	Ray ray{surface_p, direction_, time};
+	ray.tmax_ = tmax;
+	return {true, std::move(ray), color_};
 }
 
-bool DirectionalLight::illumSample(const Point3 &surface_p, LSample &s, Ray &wi, float time) const
+std::pair<bool, Ray> DirectionalLight::illumSample(const Point3 &surface_p, LSample &s, float time) const
 {
-	if(photonOnly()) return false;
-
-	s.pdf_ = 1.0;
-	return illuminate(surface_p, s.col_, wi);
+	if(photonOnly()) return {};
+	s.pdf_ = 1.f;
+	auto[hit, ray, col]{illuminate(surface_p, time)};
+	return {hit, std::move(ray)};
 }
 
 std::tuple<Ray, float, Rgb> DirectionalLight::emitPhoton(float s_1, float s_2, float s_3, float s_4, float time) const

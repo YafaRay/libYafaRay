@@ -72,65 +72,54 @@ Rgb SpotLight::totalEnergy() const
 	return color_ * math::mult_pi_by_2<> * (1.f - 0.5f * (cos_start_ + cos_end_));
 }
 
-bool SpotLight::illuminate(const Point3 &surface_p, Rgb &col, Ray &wi) const
+std::tuple<bool, Ray, Rgb> SpotLight::illuminate(const Point3 &surface_p, float time) const
 {
-	if(photonOnly()) return false;
-
+	if(photonOnly()) return {};
 	Vec3 ldir{position_ - surface_p};
-	float dist_sqr = ldir * ldir;
-	float dist = math::sqrt(dist_sqr);
-	if(dist == 0.0) return false;
-
-	float idist_sqr = 1.f / dist_sqr;
+	const float dist_sqr = ldir * ldir;
+	const float dist = math::sqrt(dist_sqr);
+	if(dist == 0.f) return {};
+	const float idist_sqr = 1.f / dist_sqr;
 	ldir *= 1.f / dist; //normalize
-
-	float cosa = ndir_ * ldir;
-
-	if(cosa < cos_end_) return false; //outside cone
-	if(cosa >= cos_start_) // not affected by falloff
+	const float cos_a = ndir_ * ldir;
+	if(cos_a < cos_end_) return {}; //outside cone
+	if(cos_a >= cos_start_) // not affected by falloff
 	{
-		col = color_ * idist_sqr;
+		Ray ray{surface_p, std::move(ldir), time};
+		ray.tmax_ = dist;
+		return {true, std::move(ray), color_ * idist_sqr};
 	}
 	else
 	{
-		float v = (cosa - cos_end_) * icos_diff_;
+		float v = (cos_a - cos_end_) * icos_diff_;
 		v = v * v * (3.f - 2.f * v);
-		col = color_ * v * idist_sqr;
+		Ray ray{surface_p, std::move(ldir), time};
+		ray.tmax_ = dist;
+		return {true, std::move(ray), color_ * v * idist_sqr};
 	}
-
-	wi.tmax_ = dist;
-	wi.dir_ = ldir;
-	return true;
 }
 
-bool SpotLight::illumSample(const Point3 &surface_p, LSample &s, Ray &wi, float time) const
+std::pair<bool, Ray> SpotLight::illumSample(const Point3 &surface_p, LSample &s, float time) const
 {
-	if(photonOnly()) return false;
-
+	if(photonOnly()) return {};
 	Vec3 ldir{position_ - surface_p};
-	float dist_sqr = ldir * ldir;
-	if(dist_sqr == 0.0) return false;
-	float dist = math::sqrt(dist_sqr);
-
+	const float dist_sqr = ldir * ldir;
+	if(dist_sqr == 0.f) return {};
+	const float dist = math::sqrt(dist_sqr);
 	ldir *= 1.f / dist; //normalize
-
-	float cosa = ndir_ * ldir;
-	if(cosa < cos_end_) return false; //outside cone
-
-	wi.tmax_ = dist;
-	wi.dir_ = sample::cone(ldir, duv_, cos_end_, s.s_1_ * shadow_fuzzy_, s.s_2_ * shadow_fuzzy_);
-
-	if(cosa >= cos_start_) // not affected by falloff
+	const float cos_a = ndir_ * ldir;
+	if(cos_a < cos_end_) return {}; //outside cone
+	Vec3 dir{sample::cone(ldir, duv_, cos_end_, s.s_1_ * shadow_fuzzy_, s.s_2_ * shadow_fuzzy_)};
+	if(cos_a >= cos_start_) // not affected by falloff
 	{
 		s.col_ = color_;
 	}
 	else
 	{
-		float v = (cosa - cos_end_) * icos_diff_;
+		float v = (cos_a - cos_end_) * icos_diff_;
 		v = v * v * (3.f - 2.f * v);
 		s.col_ = color_ * v;
 	}
-
 	s.flags_ = flags_;
 	s.pdf_ = dist_sqr;
 
@@ -141,7 +130,9 @@ bool SpotLight::illumSample(const Point3 &surface_p, LSample &s, Ray &wi, float 
 		s.col_ = s.col_ / dist_sqr;
 	}
 
-	return true;
+	Ray ray{surface_p, std::move(dir), time};
+	ray.tmax_ = dist;
+	return {true, std::move(ray)};
 }
 
 std::tuple<Ray, float, Rgb> SpotLight::emitPhoton(float s_1, float s_2, float s_3, float s_4, float time) const

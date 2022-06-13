@@ -116,15 +116,16 @@ float BackgroundLight::calcInvPdf(float p_0, float p_1, float s)
 	return std::max(sigma_, math::mult_pi_by_2<> * sinSample(s) * clampZero(p_0 * p_1));
 }
 
-bool BackgroundLight::illumSample(const Point3 &, LSample &s, Ray &wi, float time) const
+std::pair<bool, Ray> BackgroundLight::illumSample(const Point3 &surface_p, LSample &s, float time) const
 {
-	if(photonOnly()) return false;
-	wi.tmax_ = -1.f;
+	if(photonOnly()) return {};
 	const auto [pdf, uv]{calcFromSample(s.s_1_, s.s_2_, false)};
 	s.pdf_ = pdf;
-	wi.dir_ = Texture::invSphereMap(uv);
-	s.col_ = background_->eval(wi.dir_, true);
-	return true;
+	Vec3 dir{Texture::invSphereMap(uv)};
+	s.col_ = background_->eval(dir, true);
+	Ray ray{surface_p, std::move(dir), time};
+	ray.tmax_ = -1.f;
+	return {true, std::move(ray)};
 }
 
 std::tuple<bool, float, Rgb> BackgroundLight::intersect(const Ray &ray, float &) const
@@ -232,6 +233,11 @@ float BackgroundLight::clampZero(float val)
 float BackgroundLight::sinSample(float s)
 {
 	return math::sin(s * math::num_pi<>);
+}
+
+std::tuple<bool, Ray, Rgb> BackgroundLight::illuminate(const Point3 &surface_p, float time) const
+{
+	return {};
 }
 
 END_YAFARAY

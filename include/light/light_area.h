@@ -41,8 +41,8 @@ class AreaLight final : public Light
 		std::tuple<Ray, float, Rgb> emitPhoton(float s_1, float s_2, float s_3, float s_4, float time) const override;
 		std::pair<Vec3, Rgb> emitSample(LSample &s, float time) const override;
 		bool diracLight() const override { return false; }
-		bool illumSample(const Point3 &surface_p, LSample &s, Ray &wi, float time) const override;
-		bool illuminate(const Point3 &surface_p, Rgb &col, Ray &wi) const override { return false; }
+		std::pair<bool, Ray> illumSample(const Point3 &surface_p, LSample &s, float time) const override;
+		std::tuple<bool, Ray, Rgb> illuminate(const Point3 &surface_p, float time) const override;
 		bool canIntersect() const override { return true; }
 		std::tuple<bool, float, Rgb> intersect(const Ray &ray, float &t) const override;
 		float illumPdf(const Point3 &surface_p, const Point3 &light_p, const Vec3 &light_ng) const override;

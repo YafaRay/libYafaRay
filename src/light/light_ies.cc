@@ -58,43 +58,44 @@ Uv<float> IesLight::getAngles(const Vec3 &dir, float costheta)
 	return {u, v};
 }
 
-bool IesLight::illuminate(const Point3 &surface_p, Rgb &col, Ray &wi) const
+std::tuple<bool, Ray, Rgb> IesLight::illuminate(const Point3 &surface_p, float time) const
 {
-	if(photonOnly()) return false;
+	if(photonOnly()) return {};
 	Vec3 ldir{position_ - surface_p};
 	const float dist_sqrt = ldir.lengthSqr();
 	const float dist = math::sqrt(dist_sqrt);
 	const float i_dist_sqrt = 1.f / dist_sqrt;
-	if(dist == 0.0) return false;
+	if(dist == 0.f) return {};
 	ldir *= 1.f / dist; //normalize
 	const float cos_a = ndir_ * ldir;
-	if(cos_a < cos_end_) return false;
+	if(cos_a < cos_end_) return {};
 	const Uv<float> uv{getAngles(ldir, cos_a)};
-	col = color_ * ies_data_->getRadiance(uv.u_, uv.v_) * i_dist_sqrt;
-	wi.tmax_ = dist;
-	wi.dir_ = ldir;
-	return true;
+	Rgb col{color_ * ies_data_->getRadiance(uv.u_, uv.v_) * i_dist_sqrt};
+	Ray ray{surface_p, std::move(ldir), time};
+	ray.tmax_ = dist;
+	return {true, std::move(ray), std::move(col)};
 }
 
-bool IesLight::illumSample(const Point3 &surface_p, LSample &s, Ray &wi, float time) const
+std::pair<bool, Ray> IesLight::illumSample(const Point3 &surface_p, LSample &s, float time) const
 {
-	if(photonOnly()) return false;
+	if(photonOnly()) return {};
 	Vec3 ldir{position_ - surface_p};
 	const float dist_sqrt = ldir.lengthSqr();
 	const float dist = math::sqrt(dist_sqrt);
 	const float i_dist_sqrt = 1.f / dist_sqrt;
-	if(dist == 0.0) return false;
+	if(dist == 0.f) return {};
 	ldir *= 1.f / dist; //normalize
 	const float cos_a = ndir_ * ldir;
-	if(cos_a < cos_end_) return false;
-	wi.tmax_ = dist;
-	wi.dir_ = sample::cone(ldir, duv_, cos_a, s.s_1_, s.s_2_);
-	const Uv<float> uv{getAngles(wi.dir_, cos_a)};
+	if(cos_a < cos_end_) return {};
+	Vec3 dir{sample::cone(ldir, duv_, cos_a, s.s_1_, s.s_2_)};
+	const Uv<float> uv{getAngles(dir, cos_a)};
 	const float rad = ies_data_->getRadiance(uv.u_, uv.v_);
-	if(rad == 0.f) return false;
+	if(rad == 0.f) return {};
 	s.col_ = color_ * i_dist_sqrt;
 	s.pdf_ = 1.f / rad;
-	return true;
+	Ray ray{surface_p, std::move(dir), time};
+	ray.tmax_ = dist;
+	return {true, std::move(ray)};
 }
 
 std::tuple<Ray, float, Rgb> IesLight::emitPhoton(float s_1, float s_2, float s_3, float s_4, float time) const

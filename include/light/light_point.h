@@ -42,8 +42,8 @@ class PointLight final : public Light
 		std::tuple<Ray, float, Rgb> emitPhoton(float s_1, float s_2, float s_3, float s_4, float time) const override;
 		std::pair<Vec3, Rgb> emitSample(LSample &s, float time) const override;
 		bool diracLight() const override { return true; }
-		bool illumSample(const Point3 &surface_p, LSample &s, Ray &wi, float time) const override;
-		bool illuminate(const Point3 &surface_p, Rgb &col, Ray &wi) const override;
+		std::pair<bool, Ray> illumSample(const Point3 &surface_p, LSample &s, float time) const override;
+		std::tuple<bool, Ray, Rgb> illuminate(const Point3 &surface_p, float time) const override;
 		void emitPdf(const Vec3 &, const Vec3 &wo, float &area_pdf, float &dir_pdf, float &cos_wo) const override;
 
 		Point3 position_;

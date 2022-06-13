@@ -35,45 +35,35 @@ PointLight::PointLight(Logger &logger, const Point3 &pos, const Rgb &col, float 
 	intensity_ = color_.energy();
 }
 
-bool PointLight::illuminate(const Point3 &surface_p, Rgb &col, Ray &wi) const
+std::tuple<bool, Ray, Rgb> PointLight::illuminate(const Point3 &surface_p, float time) const
 {
-	if(photonOnly()) return false;
-
+	if(photonOnly()) return {};
 	Vec3 ldir{position_ - surface_p};
-	float dist_sqr = ldir.x() * ldir.x() + ldir.y() * ldir.y() + ldir.z() * ldir.z();
-	float dist = math::sqrt(dist_sqr);
-	float idist_sqr = 0.0;
-	if(dist == 0.0) return false;
-
-	idist_sqr = 1.f / (dist_sqr);
+	const float dist_sqr = ldir.x() * ldir.x() + ldir.y() * ldir.y() + ldir.z() * ldir.z();
+	const float dist = math::sqrt(dist_sqr);
+	if(dist == 0.f) return {};
+	const float idist_sqr = 1.f / dist_sqr;
 	ldir *= 1.f / dist;
-
-	wi.tmax_ = dist;
-	wi.dir_ = ldir;
-
-	col = color_ * idist_sqr;
-	return true;
+	Ray ray{surface_p, std::move(ldir), time};
+	ray.tmax_ = dist;
+	return {true, std::move(ray), color_ * idist_sqr};
 }
 
-bool PointLight::illumSample(const Point3 &surface_p, LSample &s, Ray &wi, float time) const
+std::pair<bool, Ray> PointLight::illumSample(const Point3 &surface_p, LSample &s, float time) const
 {
-	if(photonOnly()) return false;
-
+	if(photonOnly()) return {};
 	// bleh...
 	Vec3 ldir{position_ - surface_p};
 	float dist_sqr = ldir.x() * ldir.x() + ldir.y() * ldir.y() + ldir.z() * ldir.z();
 	float dist = math::sqrt(dist_sqr);
-	if(dist == 0.0) return false;
-
+	if(dist == 0.f) return {};
 	ldir *= 1.f / dist;
-
-	wi.tmax_ = dist;
-	wi.dir_ = ldir;
-
 	s.flags_ = flags_;
 	s.col_ =  color_;
 	s.pdf_ = dist_sqr;
-	return true;
+	Ray ray{surface_p, std::move(ldir), time};
+	ray.tmax_ = dist;
+	return {true, std::move(ray)};
 }
 
 std::tuple<Ray, float, Rgb> PointLight::emitPhoton(float s_1, float s_2, float s_3, float s_4, float time) const

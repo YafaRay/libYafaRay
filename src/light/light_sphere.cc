@@ -53,11 +53,11 @@ void SphereLight::init(Scene &scene)
 
 Rgb SphereLight::totalEnergy() const { return color_ * area_ /* * num_pi */; }
 
-std::pair<bool, Uv<float>> SphereLight::sphereIntersect(const Ray &ray, const Point3 &c, float r_2)
+std::pair<bool, Uv<float>> SphereLight::sphereIntersect(const Point3 &from, const Vec3 &dir, const Point3 &c, float r_2)
 {
-	const Vec3 vf{ray.from_ - c};
-	const float ea = ray.dir_ * ray.dir_;
-	const float eb = 2.f * vf * ray.dir_;
+	const Vec3 vf{from - c};
+	const float ea = dir * dir;
+	const float eb = 2.f * vf * dir;
 	const float ec = vf * vf - r_2;
 	const float osc = eb * eb - 4.f * ea * ec;
 	if(osc < 0.f)
@@ -73,41 +73,41 @@ std::pair<bool, Uv<float>> SphereLight::sphereIntersect(const Ray &ray, const Po
 	return {true, uv};
 }
 
-bool SphereLight::illumSample(const Point3 &surface_p, LSample &s, Ray &wi, float time) const
+std::pair<bool, Ray> SphereLight::illumSample(const Point3 &surface_p, LSample &s, float time) const
 {
-	if(photonOnly()) return false;
+	if(photonOnly()) return {};
 
 	Vec3 cdir{center_ - surface_p};
 	float dist_sqr = cdir.lengthSqr();
-	if(dist_sqr <= square_radius_) return false; //only emit light on the outside!
+	if(dist_sqr <= square_radius_) return {}; //only emit light on the outside!
 
 	float dist = math::sqrt(dist_sqr);
 	float idist_sqr = 1.f / (dist_sqr);
 	float cos_alpha = math::sqrt(1.f - square_radius_ * idist_sqr);
 	cdir *= 1.f / dist;
 	const Uv<Vec3> duv{Vec3::createCoordsSystem(cdir)};
-	wi.dir_ = sample::cone(cdir, duv, cos_alpha, s.s_1_, s.s_2_);
+	Vec3 dir{sample::cone(cdir, duv, cos_alpha, s.s_1_, s.s_2_)};
 	float d_1, d_2;
-	if(const auto [hit, uv]{sphereIntersect(wi, center_, square_radius_epsilon_)}; !hit)
+	if(const auto [hit, uv]{sphereIntersect(surface_p, dir, center_, square_radius_epsilon_)}; !hit)
 	{
-		return false;
+		return {};
 	}
-	wi.tmax_ = d_1;
-
 	s.pdf_ = 1.f / (2.f * (1.f - cos_alpha));
 	s.col_ = color_;
 	s.flags_ = flags_;
 	if(s.sp_)
 	{
-		s.sp_->p_ = wi.from_ + d_1 * wi.dir_;
+		s.sp_->p_ = surface_p + d_1 * dir;
 		s.sp_->n_ = s.sp_->ng_ = (s.sp_->p_ - center_).normalize();
 	}
-	return true;
+	Ray ray{surface_p, std::move(dir), time};
+	ray.tmax_ = d_1;
+	return {true, std::move(ray)};
 }
 
 std::tuple<bool, float, Rgb> SphereLight::intersect(const Ray &ray, float &) const
 {
-	if(const auto[hit, uv]{sphereIntersect(ray, center_, square_radius_)}; hit)
+	if(const auto[hit, uv]{sphereIntersect(ray.from_, ray.dir_, center_, square_radius_)}; hit)
 	{
 		const Vec3 cdir{center_ - ray.from_};
 		const float dist_sqr = cdir.lengthSqr();
@@ -195,6 +195,11 @@ Light * SphereLight::factory(Logger &logger, const Scene &scene, const std::stri
 	light->photon_only_ = p_only;
 
 	return light;
+}
+
+std::tuple<bool, Ray, Rgb> SphereLight::illuminate(const Point3 &surface_p, float time) const
+{
+	return {};
 }
 
 END_YAFARAY

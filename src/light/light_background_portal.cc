@@ -117,25 +117,20 @@ Rgb BackgroundPortalLight::totalEnergy() const
 	return energy * math::div_1_by_pi<> * 0.001f;
 }
 
-bool BackgroundPortalLight::illumSample(const Point3 &surface_p, LSample &s, Ray &wi, float time) const
+std::pair<bool, Ray> BackgroundPortalLight::illumSample(const Point3 &surface_p, LSample &s, float time) const
 {
-	if(photonOnly()) return false;
+	if(photonOnly()) return {};
 	const auto [p, n]{sampleSurface(s.s_1_, s.s_2_, time)};
 	Vec3 ldir{p - surface_p};
 	//normalize vec and compute inverse square distance
 	const float dist_sqr = ldir.lengthSqr();
 	const float dist = math::sqrt(dist_sqr);
-	if(dist <= 0.0) return false;
+	if(dist <= 0.f) return {};
 	ldir *= 1.f / dist;
 	const float cos_angle = -(ldir * n);
 	//no light if point is behind area light (single sided!)
-	if(cos_angle <= 0) return false;
-
-	// fill direction
-	wi.tmax_ = dist;
-	wi.dir_ = ldir;
-
-	s.col_ = bg_->eval(wi.dir_, true) * power_;
+	if(cos_angle <= 0.f) return {};
+	s.col_ = bg_->eval(ldir, true) * power_;
 	// pdf = distance^2 / area * cos(norm, ldir);
 	s.pdf_ = dist_sqr * math::num_pi<> / (area_ * cos_angle);
 	s.flags_ = flags_;
@@ -144,7 +139,9 @@ bool BackgroundPortalLight::illumSample(const Point3 &surface_p, LSample &s, Ray
 		s.sp_->p_ = p;
 		s.sp_->n_ = s.sp_->ng_ = n;
 	}
-	return true;
+	Ray ray{surface_p, std::move(ldir), time};
+	ray.tmax_ = dist;
+	return {true, std::move(ray)};
 }
 
 std::tuple<Ray, float, Rgb> BackgroundPortalLight::emitPhoton(float s_1, float s_2, float s_3, float s_4, float time) const
@@ -228,6 +225,11 @@ Light * BackgroundPortalLight::factory(Logger &logger, const Scene &scene, const
 	light->photon_only_ = p_only;
 
 	return light;
+}
+
+std::tuple<bool, Ray, Rgb> BackgroundPortalLight::illuminate(const Point3 &surface_p, float time) const
+{
+	return {};
 }
 
 END_YAFARAY

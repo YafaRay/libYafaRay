@@ -313,7 +313,6 @@ std::pair<Rgb, float> BidirectionalIntegrator::integrate(Ray &ray, FastRandom &f
 		}
 #endif
 
-		float wt;
 		for(int t = 2; t <= n_eye; ++t)
 		{
 			//directly hit a light?
@@ -322,7 +321,7 @@ std::pair<Rgb, float> BidirectionalIntegrator::integrate(Ray &ray, FastRandom &f
 				// pathWeight_0t computes required probabilities, since no connection is required
 				clearPath(path_data.path_, 0, t);
 				// unless someone proves the necessity, directly visible lights (s+t==2) will never be connected via light vertices
-				wt = (t == 2) ? 1.f : pathWeight0T(path_data, t);
+				const float wt = (t == 2) ? 1.f : pathWeight0T(path_data, t);
 				if(wt > 0.f)
 				{
 					//eval is done in place here...
@@ -332,16 +331,14 @@ std::pair<Rgb, float> BidirectionalIntegrator::integrate(Ray &ray, FastRandom &f
 				}
 			}
 			// direct lighting strategy (desperately needs adaption...):
-			Ray d_ray;
-			Rgb dcol;
 			clearPath(path_data.path_, 1, t);
 			const bool o_singular_l = path_data.singular_l_;  // will be overwritten from connectLPath...
 			const float o_pdf_illum = path_data.pdf_illum_; // will be overwritten from connectLPath...
 			const float o_pdf_emit = path_data.pdf_emit_;   // will be overwritten from connectLPath...
-			if(connectLPath(path_data, d_ray, dcol, random_generator, chromatic_enabled, wavelength, t))
+			if(auto[hit, d_ray, dcol]{connectLPath(path_data, random_generator, chromatic_enabled, wavelength, t)}; hit)
 			{
 				checkPath(path_data.path_, 1, t);
-				wt = pathWeight(1, t, path_data);
+				const float wt = pathWeight(1, t, path_data);
 				if(wt > 0.f) col += wt * evalLPath(*accelerator_, t, path_data, d_ray, dcol, camera_);
 			}
 			path_data.singular_l_ = o_singular_l;
@@ -355,7 +352,7 @@ std::pair<Rgb, float> BidirectionalIntegrator::integrate(Ray &ray, FastRandom &f
 				clearPath(path_data.path_, s, t);
 				if(!connectPaths(path_data, s, t)) continue;
 				checkPath(path_data.path_, s, t);
-				wt = pathWeight(s, t, path_data);
+				const float wt = pathWeight(s, t, path_data);
 				if(wt > 0.f) col += wt * evalPath(*accelerator_, s, t, path_data, camera_);
 			}
 		}
@@ -545,14 +542,12 @@ bool BidirectionalIntegrator::connectPaths(PathData &pd, int s, int t)
 }
 
 // connect path with s==1 (eye path with single light vertex)
-bool BidirectionalIntegrator::connectLPath(PathData &pd, Ray &l_ray, Rgb &lcol, RandomGenerator &random_generator, bool chromatic_enabled, float wavelength, int t) const
+std::tuple<bool, Ray, Rgb> BidirectionalIntegrator::connectLPath(PathData &pd, RandomGenerator &random_generator, bool chromatic_enabled, float wavelength, int t) const
 {
 	// create light sample with direct lighting strategy:
-	const PathVertex &z = pd.eye_path_[t - 1];
-	l_ray.from_ = z.sp_.p_;
-	l_ray.tmin_ = 0.0005f;
 	const int n_lights_i = lights_.size();
-	if(n_lights_i == 0) return false;
+	if(n_lights_i == 0) return {};
+	const PathVertex &z = pd.eye_path_[t - 1];
 	float light_num_pdf, cos_wo;
 	int lnum = light_power_d_->dSample(random_generator(), light_num_pdf);
 	light_num_pdf *= f_num_lights_;
@@ -569,13 +564,14 @@ bool BidirectionalIntegrator::connectLPath(PathData &pd, Ray &l_ray, Rgb &lcol, 
 	}
 	ls.sp_ = &sp_light;
 	// generate light sample, cancel when none could be created:
-	if(!light->illumSample(z.sp_.p_, ls, l_ray, l_ray.time_)) return false;
+	auto[hit, l_ray]{light->illumSample(z.sp_.p_, ls, 0.f)}; //FIXME: what time to use?
+	if(!hit) return {false, std::move(l_ray), Rgb{}};
+	l_ray.tmin_ = 0.0005f;
 
 	//FIXME DAVID: another series of horrible hacks to avoid uninitialized values and incorrect renders in bidir. However, this should be properly solved by implementing correctly the functions needed by bidir in the lights and materials, and correcting the bidir integrator itself...
 	ls.sp_->p_ = {0.f, 0.f, 0.f};
 	const auto [wo, scol]{light->emitSample(ls, l_ray.time_)};
 	ls.flags_ = static_cast<Light::Flags>(0xFFFFFFFF);
-	lcol = ls.col_ / (ls.pdf_ * light_num_pdf); //shouldn't really do that division, better use proper c_st in evalLPath...
 	// get probabilities for generating light sample without a given surface point
 	const Vec3 vec{-l_ray.dir_};
 	light->emitPdf(sp_light.n_, vec, pd.path_[0].pdf_a_0_, pd.path_[0].pdf_f_, cos_wo);
@@ -594,7 +590,7 @@ bool BidirectionalIntegrator::connectLPath(PathData &pd, Ray &l_ray, Rgb &lcol, 
 	pd.w_l_e_ = vec;
 	pd.d_yz_ = l_ray.tmax_;
 	x_e.pdf_b_ = z.sp_.pdf(z.wi_, l_ray.dir_, BsdfFlags::All); //eye to light
-	if(x_e.pdf_b_ < 1e-6f) return false;
+	if(x_e.pdf_b_ < 1e-6f) return {false, std::move(l_ray), Rgb{}};
 	x_e.pdf_f_ = z.sp_.pdf(l_ray.dir_, z.wi_, BsdfFlags::All); // eye to prev eye
 	x_e.pdf_b_ /= cos_z;
 	x_e.pdf_f_ /= z.cos_wi_;
@@ -617,7 +613,8 @@ bool BidirectionalIntegrator::connectLPath(PathData &pd, Ray &l_ray, Rgb &lcol, 
 	//backward:
 	for(int i = min_path_length_, t_1 = t - 1; i < t_1; ++i)
 		pd.path_[k - i].pdf_b_ *= pd.eye_path_[i].qi_wo_;
-	return true;
+	Rgb lcol{ls.col_ / (ls.pdf_ * light_num_pdf)}; //shouldn't really do that division, better use proper c_st in evalLPath...
+	return {true, std::move(l_ray), std::move(lcol)};
 }
 
 // connect path with t==1 (s>1)

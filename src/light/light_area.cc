@@ -63,26 +63,20 @@ void AreaLight::init(Scene &scene)
 
 Rgb AreaLight::totalEnergy() const { return color_ * area_; }
 
-bool AreaLight::illumSample(const Point3 &surface_p, LSample &s, Ray &wi, float time) const
+std::pair<bool, Ray> AreaLight::illumSample(const Point3 &surface_p, LSample &s, float time) const
 {
-	if(photonOnly()) return false;
-
+	if(photonOnly()) return {};
 	//get point on area light and vector to surface point:
-	Point3 p{corner_ + s.s_1_ * to_x_ + s.s_2_ * to_y_};
+	const Point3 p{corner_ + s.s_1_ * to_x_ + s.s_2_ * to_y_};
 	Vec3 ldir{p - surface_p};
 	//normalize vec and compute inverse square distance
-	float dist_sqr = ldir.lengthSqr();
-	float dist = math::sqrt(dist_sqr);
-	if(dist <= 0.0) return false;
+	const float dist_sqr = ldir.lengthSqr();
+	const float dist = math::sqrt(dist_sqr);
+	if(dist <= 0.f) return {};
 	ldir *= 1.f / dist;
-	float cos_angle = ldir * fnormal_;
+	const float cos_angle = ldir * fnormal_;
 	//no light if point is behind area light (single sided!)
-	if(cos_angle <= 0) return false;
-
-	// fill direction
-	wi.tmax_ = dist;
-	wi.dir_ = ldir;
-
+	if(cos_angle <= 0.f) return {};
 	s.col_ = color_;
 	// pdf = distance^2 / area * cos(norm, ldir);
 	s.pdf_ = dist_sqr * math::num_pi<> / (area_ * cos_angle);
@@ -92,7 +86,9 @@ bool AreaLight::illumSample(const Point3 &surface_p, LSample &s, Ray &wi, float 
 		s.sp_->p_ = p;
 		s.sp_->n_ = s.sp_->ng_ = normal_;
 	}
-	return true;
+	Ray ray{surface_p, std::move(ldir), time};
+	ray.tmax_ = dist;
+	return {true, std::move(ray)};
 }
 
 std::tuple<Ray, float, Rgb> AreaLight::emitPhoton(float s_1, float s_2, float s_3, float s_4, float time) const
@@ -196,6 +192,11 @@ Light * AreaLight::factory(Logger &logger, const Scene &scene, const std::string
 	light->photon_only_ = p_only;
 
 	return light;
+}
+
+std::tuple<bool, Ray, Rgb> AreaLight::illuminate(const Point3 &surface_p, float time) const
+{
+	return {};
 }
 
 END_YAFARAY

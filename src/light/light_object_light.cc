@@ -99,28 +99,23 @@ std::pair<Point3, Vec3> ObjectLight::sampleSurface(float s_1, float s_2, float t
 
 Rgb ObjectLight::totalEnergy() const { return (double_sided_ ? 2.f * color_ * area_ : color_ * area_); }
 
-bool ObjectLight::illumSample(const Point3 &surface_p, LSample &s, Ray &wi, float time) const
+std::pair<bool, Ray> ObjectLight::illumSample(const Point3 &surface_p, LSample &s, float time) const
 {
-	if(photonOnly()) return false;
+	if(photonOnly()) return {};
 	const auto [p, n]{sampleSurface(s.s_1_, s.s_2_, time)};
 	Vec3 ldir{p - surface_p};
 	//normalize vec and compute inverse square distance
 	const float dist_sqr = ldir.lengthSqr();
 	const float dist = math::sqrt(dist_sqr);
-	if(dist <= 0.0) return false;
+	if(dist <= 0.f) return {};
 	ldir *= 1.f / dist;
 	float cos_angle = -(ldir * n);
 	//no light if point is behind area light (single sided!)
-	if(cos_angle <= 0)
+	if(cos_angle <= 0.f)
 	{
 		if(double_sided_) cos_angle = -cos_angle;
-		else return false;
+		else return {};
 	}
-
-	// fill direction
-	wi.tmax_ = dist;
-	wi.dir_ = ldir;
-
 	s.col_ = color_;
 	// pdf = distance^2 / area * cos(norm, ldir);
 	const float area_mul_cosangle = area_ * cos_angle;
@@ -132,7 +127,9 @@ bool ObjectLight::illumSample(const Point3 &surface_p, LSample &s, Ray &wi, floa
 		s.sp_->p_ = p;
 		s.sp_->n_ = s.sp_->ng_ = n;
 	}
-	return true;
+	Ray ray{surface_p, std::move(ldir), time};
+	ray.tmax_ = dist;
+	return {true, std::move(ray)};
 }
 
 std::tuple<Ray, float, Rgb> ObjectLight::emitPhoton(float s_1, float s_2, float s_3, float s_4, float time) const
@@ -240,6 +237,11 @@ Light * ObjectLight::factory(Logger &logger, const Scene &scene, const std::stri
 	light->photon_only_ = p_only;
 
 	return light;
+}
+
+std::tuple<bool, Ray, Rgb> ObjectLight::illuminate(const Point3 &surface_p, float time) const
+{
+	return {};
 }
 
 END_YAFARAY
