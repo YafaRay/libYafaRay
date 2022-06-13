@@ -44,7 +44,7 @@ class PointLight final : public Light
 		bool diracLight() const override { return true; }
 		std::pair<bool, Ray> illumSample(const Point3 &surface_p, LSample &s, float time) const override;
 		std::tuple<bool, Ray, Rgb> illuminate(const Point3 &surface_p, float time) const override;
-		void emitPdf(const Vec3 &, const Vec3 &wo, float &area_pdf, float &dir_pdf, float &cos_wo) const override;
+		std::array<float, 3> emitPdf(const Vec3 &, const Vec3 &wo) const override;
 
 		Point3 position_;
 		Rgb color_;

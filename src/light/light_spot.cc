@@ -177,12 +177,12 @@ std::pair<Vec3, Rgb> SpotLight::emitSample(LSample &s, float time) const
 	}
 }
 
-void SpotLight::emitPdf(const Vec3 &surface_n, const Vec3 &wo, float &area_pdf, float &dir_pdf, float &cos_wo) const
+std::array<float, 3> SpotLight::emitPdf(const Vec3 &surface_n, const Vec3 &wo) const
 {
-	area_pdf = 1.f;
-	cos_wo = 1.f;
-
-	float cosa = dir_ * wo;
+	float area_pdf = 1.f;
+	const float cos_wo = 1.f;
+	const float cosa = dir_ * wo;
+	float dir_pdf;
 	if(cosa < cos_end_) dir_pdf = 0.f;
 	else if(cosa >= cos_start_) // not affected by falloff
 	{
@@ -194,6 +194,7 @@ void SpotLight::emitPdf(const Vec3 &surface_n, const Vec3 &wo, float &area_pdf, 
 		v = v * v * (3.f - 2.f * v);
 		dir_pdf = interv_2_ * v * 2.f / (math::mult_pi_by_2<> * (cos_start_ - cos_end_));   //divide by integral of v (0.5)?
 	}
+	return {area_pdf, dir_pdf, cos_wo};
 }
 std::tuple<bool, float, Rgb> SpotLight::intersect(const Ray &ray, float &t) const
 {

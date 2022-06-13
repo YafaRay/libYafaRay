@@ -46,7 +46,7 @@ class AreaLight final : public Light
 		bool canIntersect() const override { return true; }
 		std::tuple<bool, float, Rgb> intersect(const Ray &ray, float &t) const override;
 		float illumPdf(const Point3 &surface_p, const Point3 &light_p, const Vec3 &light_ng) const override;
-		void emitPdf(const Vec3 &surface_n, const Vec3 &wo, float &area_pdf, float &dir_pdf, float &cos_wo) const override;
+		std::array<float, 3> emitPdf(const Vec3 &surface_n, const Vec3 &wo) const override;
 		int nSamples() const override { return samples_; }
 		static bool triIntersect(const Point3 &a, const Point3 &b, const Point3 &c, const Ray &ray, float &t);
 

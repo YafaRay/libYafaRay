@@ -177,14 +177,15 @@ float BackgroundLight::illumPdf(const Point3 &surface_p, const Point3 &light_p, 
 	return dirPdf(dir);
 }
 
-void BackgroundLight::emitPdf(const Vec3 &surface_n, const Vec3 &wo, float &area_pdf, float &dir_pdf, float &cos_wo) const
+std::array<float, 3> BackgroundLight::emitPdf(const Vec3 &surface_n, const Vec3 &wo) const
 {
 	Vec3 wi{wo};
 	wi.normalize();
-	cos_wo = wi.z();
+	const float cos_wo = wi.z();
 	wi = -wi;
-	dir_pdf = dirPdf(wi);
-	area_pdf = 1.f;
+	const float dir_pdf = dirPdf(wi);
+	const float area_pdf = 1.f;
+	return {area_pdf, dir_pdf, cos_wo};
 }
 
 Light * BackgroundLight::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params)

@@ -548,7 +548,7 @@ std::tuple<bool, Ray, Rgb> BidirectionalIntegrator::connectLPath(PathData &pd, R
 	const int n_lights_i = lights_.size();
 	if(n_lights_i == 0) return {};
 	const PathVertex &z = pd.eye_path_[t - 1];
-	float light_num_pdf, cos_wo;
+	float light_num_pdf;
 	int lnum = light_power_d_->dSample(random_generator(), light_num_pdf);
 	light_num_pdf *= f_num_lights_;
 	if(lnum > n_lights_i - 1) lnum = n_lights_i - 1;
@@ -574,9 +574,9 @@ std::tuple<bool, Ray, Rgb> BidirectionalIntegrator::connectLPath(PathData &pd, R
 	ls.flags_ = static_cast<Light::Flags>(0xFFFFFFFF);
 	// get probabilities for generating light sample without a given surface point
 	const Vec3 vec{-l_ray.dir_};
-	light->emitPdf(sp_light.n_, vec, pd.path_[0].pdf_a_0_, pd.path_[0].pdf_f_, cos_wo);
-	pd.path_[0].pdf_a_0_ *= light_num_pdf;
-	pd.path_[0].pdf_f_ /= cos_wo;
+	const auto [area_pdf, dir_pdf, cos_wo]{light->emitPdf(sp_light.n_, vec)};
+	pd.path_[0].pdf_a_0_ = area_pdf * light_num_pdf;
+	pd.path_[0].pdf_f_ = dir_pdf / cos_wo;
 	pd.path_[0].specular_ = ls.flags_.hasAny(Light::Flags::DiracDir); //FIXME this has to be clarified
 	pd.singular_l_ = ls.flags_.hasAny(Light::Flags::Singular);
 	pd.pdf_illum_ = ls.pdf_ * light_num_pdf;
@@ -728,11 +728,10 @@ float BidirectionalIntegrator::pathWeight0T(PathData &pd, int t) const
 	// direct lighting pdf...
 	const float pdf_illum = vl.sp_.getLight()->illumPdf(pd.eye_path_[t - 2].sp_.p_, vl.sp_.p_, vl.sp_.ng_) * light_num_pdf;
 	if(pdf_illum < 1e-6f) return 0.f;
-
-	float cos_wo;
-	vl.sp_.getLight()->emitPdf(vl.sp_.n_, vl.wi_, pd.path_[0].pdf_a_0_, pd.path_[0].pdf_f_, cos_wo);
-	pd.path_[0].pdf_a_0_ *= light_num_pdf;
-	float pdf_emit = pd.path_[0].pdf_a_0_ * vl.ds_ / cos_wo;
+	const auto [area_pdf, dir_pdf, cos_wo]{vl.sp_.getLight()->emitPdf(vl.sp_.n_, vl.wi_)};
+	pd.path_[0].pdf_f_ = dir_pdf;
+	pd.path_[0].pdf_a_0_ = area_pdf * light_num_pdf;
+	const float pdf_emit = pd.path_[0].pdf_a_0_ * vl.ds_ / cos_wo;
 	pd.path_[0].g_ = 0.f; // unused...
 	pd.path_[0].specular_ = false;
 	copyEyeSubpath(pd, 0, t);
@@ -740,14 +739,13 @@ float BidirectionalIntegrator::pathWeight0T(PathData &pd, int t) const
 
 	// == standard weighting procedure now == //
 
-	float pr;
 	std::array<float, max_path_eval_length_> p;
 	p[0] = 1;
 	p[1] = path[0].pdf_a_0_ / (path[1].pdf_b_ * path[1].g_);
 	const int k = t - 1;
 	for(int i = 1; i < k; ++i)
 	{
-		pr = (path[i - 1].pdf_f_ * path[i].g_) / (path[i + 1].pdf_b_ * path[i + 1].g_);
+		const float pr = (path[i - 1].pdf_f_ * path[i].g_) / (path[i + 1].pdf_b_ * path[i + 1].g_);
 		p[i + 1] = p[i] * pr;
 	}
 

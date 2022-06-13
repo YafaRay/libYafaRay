@@ -81,11 +81,12 @@ std::pair<Vec3, Rgb> PointLight::emitSample(LSample &s, float time) const
 	return {std::move(dir), color_};
 }
 
-void PointLight::emitPdf(const Vec3 &surface_n, const Vec3 &wo, float &area_pdf, float &dir_pdf, float &cos_wo) const
+std::array<float, 3> PointLight::emitPdf(const Vec3 &surface_n, const Vec3 &wo) const
 {
-	area_pdf = 1.f;
-	dir_pdf = 0.25f;
-	cos_wo = 1.f;
+	const float area_pdf = 1.f;
+	const float dir_pdf = 0.25f;
+	const float cos_wo = 1.f;
+	return {area_pdf, dir_pdf, cos_wo};
 }
 
 Light * PointLight::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params)

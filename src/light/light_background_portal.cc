@@ -189,11 +189,12 @@ float BackgroundPortalLight::illumPdf(const Point3 &surface_p, const Point3 &lig
 	return cos_n > 0 ? (r_2 * math::num_pi<> / (area_ * cos_n)) : 0.f;
 }
 
-void BackgroundPortalLight::emitPdf(const Vec3 &surface_n, const Vec3 &wo, float &area_pdf, float &dir_pdf, float &cos_wo) const
+std::array<float, 3> BackgroundPortalLight::emitPdf(const Vec3 &surface_n, const Vec3 &wo) const
 {
-	area_pdf = inv_area_ * math::num_pi<>;
-	cos_wo = wo * surface_n;
-	dir_pdf = cos_wo > 0.f ? cos_wo : 0.f;
+	const float area_pdf = inv_area_ * math::num_pi<>;
+	const float cos_wo = wo * surface_n;
+	const float dir_pdf = cos_wo > 0.f ? cos_wo : 0.f;
+	return {area_pdf, dir_pdf, cos_wo};
 }
 
 

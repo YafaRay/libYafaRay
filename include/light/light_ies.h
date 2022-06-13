@@ -46,7 +46,7 @@ class IesLight final : public Light
 		std::pair<bool, Ray> illumSample(const Point3 &surface_p, LSample &s, float time) const override;
 		std::tuple<Ray, float, Rgb> emitPhoton(float s_1, float s_2, float s_3, float s_4, float time) const override;
 		std::pair<Vec3, Rgb> emitSample(LSample &s, float time) const override;
-		void emitPdf(const Vec3 &surface_n, const Vec3 &wo, float &area_pdf, float &dir_pdf, float &cos_wo) const override;
+		std::array<float, 3> emitPdf(const Vec3 &surface_n, const Vec3 &wo) const override;
 		bool isIesOk() const { return ies_ok_; };
 		[[nodiscard]] static Uv<float> getAngles(const Vec3 &dir, float costheta);
 

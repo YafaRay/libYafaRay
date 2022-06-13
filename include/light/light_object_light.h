@@ -54,7 +54,7 @@ class ObjectLight final : public Light
 		bool canIntersect() const override { return accelerator_ != nullptr; }
 		std::tuple<bool, float, Rgb> intersect(const Ray &ray, float &t) const override;
 		float illumPdf(const Point3 &surface_p, const Point3 &light_p, const Vec3 &light_ng) const override;
-		void emitPdf(const Vec3 &surface_n, const Vec3 &wi, float &area_pdf, float &dir_pdf, float &cos_wo) const override;
+		std::array<float, 3> emitPdf(const Vec3 &surface_n, const Vec3 &wi) const override;
 		void initIs();
 		std::pair<Point3, Vec3> sampleSurface(float s_1, float s_2, float time) const;
 

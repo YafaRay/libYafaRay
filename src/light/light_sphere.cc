@@ -129,12 +129,13 @@ float SphereLight::illumPdf(const Point3 &surface_p, const Point3 &light_p, cons
 	return 1.f / (2.f * (1.f - cos_alpha));
 }
 
-void SphereLight::emitPdf(const Vec3 &surface_n, const Vec3 &wo, float &area_pdf, float &dir_pdf, float &cos_wo) const
+std::array<float, 3> SphereLight::emitPdf(const Vec3 &surface_n, const Vec3 &wo) const
 {
-	area_pdf = inv_area_ * math::num_pi<>;
-	cos_wo = wo * surface_n;
+	const float area_pdf = inv_area_ * math::num_pi<>;
+	const float cos_wo = wo * surface_n;
 	//! unfinished! use real normal, sp.N might be approximation by mesh...
-	dir_pdf = cos_wo > 0 ? cos_wo : 0.f;
+	const float dir_pdf = cos_wo > 0 ? cos_wo : 0.f;
+	return {area_pdf, dir_pdf, cos_wo};
 }
 
 std::tuple<Ray, float, Rgb> SphereLight::emitPhoton(float s_1, float s_2, float s_3, float s_4, float time) const
