@@ -87,8 +87,8 @@ std::pair<bool, Ray> SphereLight::illumSample(const Point3 &surface_p, LSample &
 	cdir *= 1.f / dist;
 	const Uv<Vec3> duv{Vec3::createCoordsSystem(cdir)};
 	Vec3 dir{sample::cone(cdir, duv, cos_alpha, s.s_1_, s.s_2_)};
-	float d_1, d_2;
-	if(const auto [hit, uv]{sphereIntersect(surface_p, dir, center_, square_radius_epsilon_)}; !hit)
+	const auto [hit, uv]{sphereIntersect(surface_p, dir, center_, square_radius_epsilon_)};
+	if(!hit)
 	{
 		return {};
 	}
@@ -97,10 +97,10 @@ std::pair<bool, Ray> SphereLight::illumSample(const Point3 &surface_p, LSample &
 	s.flags_ = flags_;
 	if(s.sp_)
 	{
-		s.sp_->p_ = surface_p + d_1 * dir;
+		s.sp_->p_ = surface_p + uv.u_ * dir;
 		s.sp_->n_ = s.sp_->ng_ = (s.sp_->p_ - center_).normalize();
 	}
-	Ray ray{surface_p, std::move(dir), time, 0.f, d_1};
+	Ray ray{surface_p, std::move(dir), time, 0.f, uv.u_};
 	return {true, std::move(ray)};
 }
 
