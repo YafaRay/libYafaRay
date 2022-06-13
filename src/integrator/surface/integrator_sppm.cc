@@ -769,7 +769,7 @@ GatherInfo SppmIntegrator::traceGatherRay(Ray &ray, HitPoint &hp, FastRandom &fa
 					if(s.pdf_ > 1.0e-6f && s.sampled_flags_.hasAny(BsdfFlags::Dispersive))
 					{
 						const Rgb wl_col = spectrum::wl2Rgb(wavelength_dispersive);
-						ref_ray = {sp->p_, wi, ray_min_dist_};
+						ref_ray = {sp->p_, wi, ray.time_, ray_min_dist_};
 						t_cing = traceGatherRay(ref_ray, hp, fast_random, random_generator, nullptr, thread_id, ray_level, false, wavelength_dispersive, ray_division_new, pixel_sampling_data, object_index_highest, material_index_highest);
 						t_cing.photon_flux_ *= mcol * wl_col * w;
 						t_cing.constant_randiance_ *= mcol * wl_col * w;

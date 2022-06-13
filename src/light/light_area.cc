@@ -86,8 +86,7 @@ std::pair<bool, Ray> AreaLight::illumSample(const Point3 &surface_p, LSample &s,
 		s.sp_->p_ = p;
 		s.sp_->n_ = s.sp_->ng_ = normal_;
 	}
-	Ray ray{surface_p, std::move(ldir), time};
-	ray.tmax_ = dist;
+	Ray ray{surface_p, std::move(ldir), time, 0.f, dist};
 	return {true, std::move(ray)};
 }
 

@@ -71,8 +71,7 @@ std::tuple<bool, Ray, Rgb> DirectionalLight::illuminate(const Point3 &surface_p,
 		if(tmax <= 0.f) return {};
 	}
 	else tmax = -1.f;
-	Ray ray{surface_p, direction_, time};
-	ray.tmax_ = tmax;
+	Ray ray{surface_p, direction_, time, 0.f, tmax};
 	return {true, std::move(ray), color_};
 }
 

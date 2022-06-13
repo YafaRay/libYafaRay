@@ -83,20 +83,14 @@ std::tuple<bool, Ray, Rgb> SpotLight::illuminate(const Point3 &surface_p, float 
 	ldir *= 1.f / dist; //normalize
 	const float cos_a = ndir_ * ldir;
 	if(cos_a < cos_end_) return {}; //outside cone
-	if(cos_a >= cos_start_) // not affected by falloff
+	float v = 1.f;
+	if(cos_a < cos_start_) //affected by falloff
 	{
-		Ray ray{surface_p, std::move(ldir), time};
-		ray.tmax_ = dist;
-		return {true, std::move(ray), color_ * idist_sqr};
-	}
-	else
-	{
-		float v = (cos_a - cos_end_) * icos_diff_;
+		v = (cos_a - cos_end_) * icos_diff_;
 		v = v * v * (3.f - 2.f * v);
-		Ray ray{surface_p, std::move(ldir), time};
-		ray.tmax_ = dist;
-		return {true, std::move(ray), color_ * v * idist_sqr};
 	}
+	Ray ray{surface_p, std::move(ldir), time, 0.f, dist};
+	return {true, std::move(ray), color_ * v * idist_sqr};
 }
 
 std::pair<bool, Ray> SpotLight::illumSample(const Point3 &surface_p, LSample &s, float time) const
@@ -130,8 +124,7 @@ std::pair<bool, Ray> SpotLight::illumSample(const Point3 &surface_p, LSample &s,
 		s.col_ = s.col_ / dist_sqr;
 	}
 
-	Ray ray{surface_p, std::move(dir), time};
-	ray.tmax_ = dist;
+	Ray ray{surface_p, std::move(dir), time, 0.f, dist};
 	return {true, std::move(ray)};
 }
 

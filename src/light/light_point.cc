@@ -44,8 +44,7 @@ std::tuple<bool, Ray, Rgb> PointLight::illuminate(const Point3 &surface_p, float
 	if(dist == 0.f) return {};
 	const float idist_sqr = 1.f / dist_sqr;
 	ldir *= 1.f / dist;
-	Ray ray{surface_p, std::move(ldir), time};
-	ray.tmax_ = dist;
+	Ray ray{surface_p, std::move(ldir), time, 0.f, dist};
 	return {true, std::move(ray), color_ * idist_sqr};
 }
 
@@ -61,8 +60,7 @@ std::pair<bool, Ray> PointLight::illumSample(const Point3 &surface_p, LSample &s
 	s.flags_ = flags_;
 	s.col_ =  color_;
 	s.pdf_ = dist_sqr;
-	Ray ray{surface_p, std::move(ldir), time};
-	ray.tmax_ = dist;
+	Ray ray{surface_p, std::move(ldir), time, 0.f, dist};
 	return {true, std::move(ray)};
 }
 

@@ -71,8 +71,7 @@ std::tuple<bool, Ray, Rgb> IesLight::illuminate(const Point3 &surface_p, float t
 	if(cos_a < cos_end_) return {};
 	const Uv<float> uv{getAngles(ldir, cos_a)};
 	Rgb col{color_ * ies_data_->getRadiance(uv.u_, uv.v_) * i_dist_sqrt};
-	Ray ray{surface_p, std::move(ldir), time};
-	ray.tmax_ = dist;
+	Ray ray{surface_p, std::move(ldir), time, 0.f, dist};
 	return {true, std::move(ray), std::move(col)};
 }
 
@@ -93,8 +92,7 @@ std::pair<bool, Ray> IesLight::illumSample(const Point3 &surface_p, LSample &s, 
 	if(rad == 0.f) return {};
 	s.col_ = color_ * i_dist_sqrt;
 	s.pdf_ = 1.f / rad;
-	Ray ray{surface_p, std::move(dir), time};
-	ray.tmax_ = dist;
+	Ray ray{surface_p, std::move(dir), time, 0.f, dist};
 	return {true, std::move(ray)};
 }
 

@@ -100,8 +100,7 @@ std::pair<bool, Ray> SphereLight::illumSample(const Point3 &surface_p, LSample &
 		s.sp_->p_ = surface_p + d_1 * dir;
 		s.sp_->n_ = s.sp_->ng_ = (s.sp_->p_ - center_).normalize();
 	}
-	Ray ray{surface_p, std::move(dir), time};
-	ray.tmax_ = d_1;
+	Ray ray{surface_p, std::move(dir), time, 0.f, d_1};
 	return {true, std::move(ray)};
 }
 

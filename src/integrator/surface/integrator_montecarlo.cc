@@ -884,9 +884,9 @@ std::pair<Rgb, float> MonteCarloIntegrator::specularRefract(FastRandom &fast_ran
 	{
 		const bool transpbias_multiply_raydepth = material->getTransparentBiasMultiplyRayDepth();
 		if(transpbias_multiply_raydepth) transp_bias_factor *= ray_level;
-		ref_ray = {sp.p_ + refract_data->dir_ * transp_bias_factor, refract_data->dir_, ray_min_dist_};
+		ref_ray = {sp.p_ + refract_data->dir_ * transp_bias_factor, refract_data->dir_, ray.time_, ray_min_dist_};
 	}
-	else ref_ray = {sp.p_, refract_data->dir_, ray_min_dist_};
+	else ref_ray = {sp.p_, refract_data->dir_, ray.time_, ray_min_dist_};
 
 	if(ray.differentials_) ref_ray.differentials_ = sp.refractedRay(ray.differentials_.get(), ray.dir_, ref_ray.dir_, material->getMatIor());
 	auto [integ_col, integ_alpha] = integrate(ref_ray, fast_random, random_generator, correlative_sample_number, nullptr, thread_id, ray_level, chromatic_enabled, wavelength, additional_depth, ray_division, pixel_sampling_data, 0, 0);

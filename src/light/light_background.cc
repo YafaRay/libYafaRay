@@ -124,7 +124,6 @@ std::pair<bool, Ray> BackgroundLight::illumSample(const Point3 &surface_p, LSamp
 	Vec3 dir{Texture::invSphereMap(uv)};
 	s.col_ = background_->eval(dir, true);
 	Ray ray{surface_p, std::move(dir), time};
-	ray.tmax_ = -1.f;
 	return {true, std::move(ray)};
 }
 
@@ -151,7 +150,8 @@ std::tuple<Ray, float, Rgb> BackgroundLight::emitPhoton(float s_1, float s_2, fl
 	const Uv<float> uv{Vec3::shirleyDisk(s_1, s_2)};
 	const Vec3 offs{uv.u_ * coords.u_ + uv.v_ * coords.v_};
 	Point3 from{world_center_ + world_radius_ * (offs - dir)};
-	return {Ray{std::move(from), std::move(dir), time}, ipdf, pcol * a_pdf_};
+	Ray ray{std::move(from), std::move(dir), time};
+	return {std::move(ray), ipdf, pcol * a_pdf_};
 }
 
 std::pair<Vec3, Rgb> BackgroundLight::emitSample(LSample &s, float time) const

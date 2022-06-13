@@ -62,7 +62,6 @@ std::pair<bool, Ray> SunLight::illumSample(const Point3 &surface_p, LSample &s, 
 	// ipdf: inverse of uniform cone pdf; calculated in constructor.
 	s.pdf_ = pdf_;
 	Ray ray{surface_p, std::move(dir), time};
-	ray.tmax_ = -1.f;
 	return {true, std::move(ray)};
 }
 
