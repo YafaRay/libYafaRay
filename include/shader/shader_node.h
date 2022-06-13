@@ -42,8 +42,11 @@ struct NodeResult final
 class NodeTreeData final
 {
 	public:
+		NodeTreeData() = default;
 		NodeTreeData(const NodeTreeData &node_tree_data) = default;
 		NodeTreeData(NodeTreeData &&node_tree_data) = default;
+		NodeTreeData &operator=(const NodeTreeData &node_tree_data) = default;
+		NodeTreeData &operator=(NodeTreeData &&node_tree_data) = default;
 		explicit NodeTreeData(size_t number_of_nodes) : node_results_(number_of_nodes) { }
 		const NodeResult &operator()(unsigned int id) const { return node_results_[id]; }
 		NodeResult &operator[](unsigned int id) { return node_results_[id]; }
