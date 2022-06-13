@@ -564,9 +564,11 @@ VoronoiNoiseGenerator::VoronoiNoiseGenerator(VoronoiType vt, DMetricType dm, flo
 	setDistM(dm_type_);
 }
 
-const float *NoiseGenerator::hashPnt(int x, int y, int z)
+std::array<float, 3> NoiseGenerator::hashPnt(int x, int y, int z)
 {
-	return hashpntf_.data() + 3 * hash_[(hash_[(hash_[z & 255] + y) & 255] + x) & 255];
+	const int index = 3 * hash_[(hash_[(hash_[z & 255] + y) & 255] + x) & 255];
+	if(index < 0 || index > (hashpntf_.size() - 3)) return {};
+	else return {hashpntf_[index], hashpntf_[index + 1], hashpntf_[index + 2]};
 }
 
 std::pair<std::array<float, 4>, std::array<Point3, 4>> VoronoiNoiseGenerator::getFeatures(const Point3 &pt) const
@@ -582,7 +584,7 @@ std::pair<std::array<float, 4>, std::array<Point3, 4>> VoronoiNoiseGenerator::ge
 		{
 			for(int zz = zi - 1; zz <= zi + 1; zz++)
 			{
-				const float *p = hashPnt(xx, yy, zz);
+				const std::array<float, 3> p{hashPnt(xx, yy, zz)};
 				const float xd = pt.x() - (p[0] + xx);
 				const float yd = pt.y() - (p[1] + yy);
 				const float zd = pt.z() - (p[2] + zz);
@@ -827,7 +829,7 @@ Rgba NoiseGenerator::cellNoiseColor(const Point3 &pt)
 	const int xi = static_cast<int>(std::floor(pt.x()));
 	const int yi = static_cast<int>(std::floor(pt.y()));
 	const int zi = static_cast<int>(std::floor(pt.z()));
-	const float *cl = hashPnt(xi, yi, zi);
+	const std::array<float, 3> cl{hashPnt(xi, yi, zi)};
 	return {cl[0], cl[1], cl[2], 1.f};
 }
 

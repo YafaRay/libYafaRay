@@ -40,7 +40,7 @@ class NoiseGenerator
 		static float getSignedNoise(const NoiseGenerator *n_gen, const Point3 &pt) { return 2.f * (*n_gen)(pt) - 1.f; }
 
 	protected:
-		static const float *hashPnt(int x, int y, int z);
+		static std::array<float, 3> hashPnt(int x, int y, int z);
 		static const std::array<unsigned char, 512> hash_;
 		static const std::array<float, 768> hashpntf_;
 };
