@@ -59,7 +59,7 @@ class Vec3
 
 		constexpr void set(float x, float y, float z = 0.f) { vec_ = {x, y, z}; }
 		Vec3 &normalize();
-		[[nodiscard]] constexpr Vec3 &reflect(const Vec3 &normal);
+		constexpr void reflect(const Vec3 &normal);
 		[[nodiscard]] float normLen(); // normalizes and returns length
 		[[nodiscard]] float normLenSqr(); // normalizes and returns length squared
 		[[nodiscard]] constexpr float lengthSqr() const { return vec_[0] * vec_[0] + vec_[1] * vec_[1] + vec_[2] * vec_[2]; }
@@ -234,11 +234,10 @@ inline float Vec3::sinFromVectors(const Vec3 &v) const
  *  @warning	\a n must be unit vector!
  *  @note	Lynn's formula: R = 2*(V dot N)*N -V (http://www.3dkingdoms.com/weekly/weekly.php?a=2)
  */
-inline constexpr Vec3 &Vec3::reflect(const Vec3 &normal)
+inline constexpr void Vec3::reflect(const Vec3 &normal)
 {
 	const float vn = 2.f * (vec_[0] * normal.vec_[0] + vec_[1] * normal.vec_[1] + vec_[2] * normal.vec_[2]);
 	for(size_t i = 0; i < 3; ++i) vec_[i] = vn * normal.vec_[i] - vec_[i];
-	return *this;
 }
 
 inline float Vec3::normLen() {
