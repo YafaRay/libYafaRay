@@ -70,20 +70,18 @@ std::pair<bool, Uv<float>> SphereLight::sphereIntersect(const Point3 &from, cons
 			(-eb - osc_sqrt) / (2.f * ea),
 			(-eb + osc_sqrt) / (2.f * ea)
 	};
-	return {true, uv};
+	return {true, std::move(uv)};
 }
 
 std::pair<bool, Ray> SphereLight::illumSample(const Point3 &surface_p, LSample &s, float time) const
 {
 	if(photonOnly()) return {};
-
 	Vec3 cdir{center_ - surface_p};
-	float dist_sqr = cdir.lengthSqr();
+	const float dist_sqr = cdir.lengthSqr();
 	if(dist_sqr <= square_radius_) return {}; //only emit light on the outside!
-
-	float dist = math::sqrt(dist_sqr);
-	float idist_sqr = 1.f / (dist_sqr);
-	float cos_alpha = math::sqrt(1.f - square_radius_ * idist_sqr);
+	const float dist = math::sqrt(dist_sqr);
+	const float idist_sqr = 1.f / (dist_sqr);
+	const float cos_alpha = math::sqrt(1.f - square_radius_ * idist_sqr);
 	cdir *= 1.f / dist;
 	const Uv<Vec3> duv{Vec3::createCoordsSystem(cdir)};
 	Vec3 dir{sample::cone(cdir, duv, cos_alpha, s.s_1_, s.s_2_)};
