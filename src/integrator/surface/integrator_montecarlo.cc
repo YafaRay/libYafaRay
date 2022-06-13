@@ -432,8 +432,7 @@ void MonteCarloIntegrator::causticWorker(FastRandom &fast_random, unsigned int &
 		const float s_3 = Halton::lowDiscrepancySampling(fast_random, 3, haltoncurr);
 		const float s_4 = Halton::lowDiscrepancySampling(fast_random, 4, haltoncurr);
 		const float s_l = static_cast<float>(haltoncurr) / static_cast<float>(n_caus_photons_);
-		float light_num_pdf;
-		const int light_num = light_power_d_caustic->dSample(s_l, light_num_pdf);
+		const auto [light_num, light_num_pdf]{light_power_d_caustic->dSample(s_l)};
 		if(light_num >= num_lights_caustic)
 		{
 			logger_.logError(getName(), ": lightPDF sample error! ", s_l, "/", light_num);

@@ -356,8 +356,7 @@ void SppmIntegrator::photonWorker(FastRandom &fast_random, unsigned int &total_p
 		const float s_4 = hal_4_.getNext();
 		mutex_.unlock();
 		const float s_l = static_cast<float>(haltoncurr) * inv_diff_photons; // Does sL also need more random_generator for each pass?
-		float light_num_pdf;
-		const int light_num = light_power_d->dSample(s_l, light_num_pdf);
+		const auto [light_num, light_num_pdf]{light_power_d->dSample(s_l)};
 		if(light_num >= num_d_lights)
 		{
 			logger_.logError(getName(), ": lightPDF sample error! ", s_l, "/", light_num);

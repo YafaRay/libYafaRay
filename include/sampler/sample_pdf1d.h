@@ -37,21 +37,21 @@ class Pdf1D final
 	public:
 		explicit Pdf1D(const std::vector<float> &function) : function_(function) { init(); }
 		explicit Pdf1D(std::vector<float> &&function) : function_(std::move(function)) { init(); }
-		size_t size() const { return function_.size(); }
-		float invSize() const { return inv_size_; }
-		float integral() const { return integral_; }
-		float invIntegral() const { return inv_integral_; }
-		float function(size_t index) const { return function_[index]; }
-		float cdf(size_t index) const { return cdf_[index]; }
-		std::pair<float, float> sample(float u) const;
+		[[nodiscard]] size_t size() const { return function_.size(); }
+		[[nodiscard]] float invSize() const { return inv_size_; }
+		[[nodiscard]] float integral() const { return integral_; }
+		[[nodiscard]] float invIntegral() const { return inv_integral_; }
+		[[nodiscard]] float function(size_t index) const { return function_[index]; }
+		[[nodiscard]] float cdf(size_t index) const { return cdf_[index]; }
+		[[nodiscard]] std::pair<float, float> sample(float u) const;
 		// take a discrete sample.
 		// determines an index in the array from which the CDF was taked from, rather than a sample in [0;1]
-		int dSample(float u, float &pdf) const;
+		[[nodiscard]] std::pair<int, float> dSample(float u) const;
 		// Distribution1D Data
 
 	private:
 		void init();
-		static std::pair<float, std::vector<float>> cumulateStep1DDf(const std::vector<float> &function);
+		[[nodiscard]] static std::pair<float, std::vector<float>> cumulateStep1DDf(const std::vector<float> &function);
 		const std::vector<float> function_;
 		std::vector<float> cdf_;
 		float integral_, inv_integral_, inv_size_;
@@ -80,20 +80,18 @@ inline std::pair<float, std::vector<float>> Pdf1D::cumulateStep1DDf(const std::v
 	return {integral, cdf};
 }
 
-inline int Pdf1D::dSample(float u, float &pdf) const
+inline std::pair<int, float> Pdf1D::dSample(float u) const
 {
 	int index;
-	if(u <= 0.f)
-		index = 0;
-	else if(u >= 1.f)
-		index = cdf_.size() - 1;
+	if(u <= 0.f) index = 0;
+	else if(u >= 1.f) index = cdf_.size() - 1;
 	else
 	{
 		const auto &it = std::lower_bound(cdf_.begin(), cdf_.end(), u);
 		index = static_cast<int>(it - cdf_.begin());
 	}
-	pdf = function_[index] * inv_integral_;
-	return index;
+	const float pdf = function_[index] * inv_integral_;
+	return {index, pdf};
 }
 
 inline std::pair<float, float> Pdf1D::sample(float u) const

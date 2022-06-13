@@ -79,14 +79,14 @@ void ObjectLight::init(Scene &scene)
 
 std::pair<Point3, Vec3> ObjectLight::sampleSurface(float s_1, float s_2, float time) const
 {
-	float prim_pdf;
-	const size_t prim_num = area_dist_->dSample(s_1, prim_pdf);
+	const auto [prim_num, prim_pdf]{area_dist_->dSample(s_1)};
 	if(prim_num >= area_dist_->size())
 	{
 		logger_.logWarning("ObjectLight: Sampling error!");
 		return {};
 	}
-	float ss_1, delta = area_dist_->cdf(prim_num);
+	float delta = area_dist_->cdf(prim_num);
+	float ss_1;
 	if(prim_num > 0)
 	{
 		delta -= area_dist_->cdf(prim_num - 1);

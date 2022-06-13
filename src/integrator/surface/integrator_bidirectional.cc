@@ -252,8 +252,7 @@ std::pair<Rgb, float> BidirectionalIntegrator::integrate(Ray &ray, FastRandom &f
 		Ray lray;
 		lray.tmin_ = ray_min_dist_;
 		lray.tmax_ = -1.f;
-		float light_num_pdf = 0.f;
-		const int light_num = lights_.size() > 0 ? light_power_d_->dSample(random_generator(), light_num_pdf) : -1;
+		auto [light_num, light_num_pdf]{lights_.size() > 0 ? light_power_d_->dSample(random_generator()) : std::pair<int, float>{-1, 0.f}};
 		light_num_pdf *= f_num_lights_;
 		LSample ls;
 		ls.s_1_ = random_generator(), ls.s_2_ = random_generator(), ls.s_3_ = random_generator(), ls.s_4_ = random_generator();
@@ -548,8 +547,7 @@ std::tuple<bool, Ray, Rgb> BidirectionalIntegrator::connectLPath(PathData &pd, R
 	const int n_lights_i = lights_.size();
 	if(n_lights_i == 0) return {};
 	const PathVertex &z = pd.eye_path_[t - 1];
-	float light_num_pdf;
-	int lnum = light_power_d_->dSample(random_generator(), light_num_pdf);
+	auto [lnum, light_num_pdf]{light_power_d_->dSample(random_generator())};
 	light_num_pdf *= f_num_lights_;
 	if(lnum > n_lights_i - 1) lnum = n_lights_i - 1;
 	const Light *light = lights_[lnum];
