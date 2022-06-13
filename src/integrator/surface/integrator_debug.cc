@@ -83,7 +83,7 @@ std::pair<Rgb, float> DebugIntegrator::integrate(Ray &ray, FastRandom &fast_rand
 			col = Rgb((sp->ds_.u_.x() + 1.f) * .5f, (sp->ds_.u_.y() + 1.f) * .5f, (sp->ds_.u_.z() + 1.f) * .5f);
 		else if(debug_type_ == DSdV)
 			col = Rgb((sp->ds_.v_.x() + 1.f) * .5f, (sp->ds_.v_.y() + 1.f) * .5f, (sp->ds_.v_.z() + 1.f) * .5f);
-		return {col, 1.f};
+		return {std::move(col), 1.f};
 	}
 	return {Rgb{0.f}, 1.f};
 }

@@ -376,7 +376,7 @@ std::pair<Rgb, float> BidirectionalIntegrator::integrate(Ray &ray, FastRandom &f
 	{
 		applyVolumetricEffects(col, alpha, color_layers, ray, random_generator, vol_integrator_, transp_background_);
 	}
-	return {col, alpha};
+	return {std::move(col), alpha};
 }
 
 /* ============================================================

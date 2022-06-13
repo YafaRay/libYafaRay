@@ -812,7 +812,7 @@ std::pair<Rgb, float> MonteCarloIntegrator::glossyReflect(FastRandom &fast_rando
 		}
 	}
 	integ_col *= reflect_color * w;
-	return {integ_col, integ_alpha};
+	return {std::move(integ_col), integ_alpha};
 }
 
 std::pair<Rgb, float> MonteCarloIntegrator::glossyTransmit(FastRandom &fast_random, RandomGenerator &random_generator, std::vector<int> &correlative_sample_number, int thread_id, int ray_level, bool chromatic_enabled, float wavelength, const Ray &ray, const SurfacePoint &sp, const BsdfFlags &bsdfs, int additional_depth, const PixelSamplingData &pixel_sampling_data, const RayDivision &ray_division_new, const Rgb &transmit_col, float w, const Vec3 &dir) const
@@ -828,7 +828,7 @@ std::pair<Rgb, float> MonteCarloIntegrator::glossyTransmit(FastRandom &fast_rand
 		}
 	}
 	integ_col *= transmit_col * w;
-	return {integ_col, integ_alpha};
+	return {std::move(integ_col), integ_alpha};
 }
 
 std::pair<Rgb, float> MonteCarloIntegrator::glossyReflectNoTransmit(FastRandom &fast_random, RandomGenerator &random_generator, std::vector<int> &correlative_sample_number, int thread_id, int ray_level, bool chromatic_enabled, float wavelength, const Ray &ray, const SurfacePoint &sp, const BsdfFlags &bsdfs, const Vec3 &wo, int additional_depth, const PixelSamplingData &pixel_sampling_data, const RayDivision &ray_division_new, const float s_1, const float s_2) const
@@ -852,7 +852,7 @@ std::pair<Rgb, float> MonteCarloIntegrator::glossyReflectNoTransmit(FastRandom &
 		}
 	}
 	integ_col *= mcol * w;
-	return {integ_col, integ_alpha};
+	return {std::move(integ_col), integ_alpha};
 }
 
 std::pair<Rgb, float> MonteCarloIntegrator::specularReflect(FastRandom &fast_random, RandomGenerator &random_generator, std::vector<int> &correlative_sample_number, ColorLayers *color_layers, int thread_id, int ray_level, bool chromatic_enabled, float wavelength, const Ray &ray, const SurfacePoint &sp, const Material *material, const BsdfFlags &bsdfs, const DirectionColor *reflect_data, int additional_depth, const RayDivision &ray_division, const PixelSamplingData &pixel_sampling_data) const
@@ -872,7 +872,7 @@ std::pair<Rgb, float> MonteCarloIntegrator::specularReflect(FastRandom &fast_ran
 	{
 		if(Rgba *color_layer = color_layers->find(LayerDef::ReflectPerfect)) *color_layer += integ_col;
 	}
-	return {integ_col, integ_alpha};
+	return {std::move(integ_col), integ_alpha};
 }
 
 std::pair<Rgb, float> MonteCarloIntegrator::specularRefract(FastRandom &fast_random, RandomGenerator &random_generator, std::vector<int> &correlative_sample_number, ColorLayers *color_layers, int thread_id, int ray_level, bool chromatic_enabled, float wavelength, const Ray &ray, const SurfacePoint &sp, const Material *material, const BsdfFlags &bsdfs, const DirectionColor *refract_data, int additional_depth, const RayDivision &ray_division, const PixelSamplingData &pixel_sampling_data) const
@@ -902,7 +902,7 @@ std::pair<Rgb, float> MonteCarloIntegrator::specularRefract(FastRandom &fast_ran
 	{
 		if(Rgba *color_layer = color_layers->find(LayerDef::RefractPerfect)) *color_layer += integ_col;
 	}
-	return {integ_col, integ_alpha};
+	return {std::move(integ_col), integ_alpha};
 }
 
 std::pair<Rgb, float> MonteCarloIntegrator::recursiveRaytrace(FastRandom &fast_random, RandomGenerator &random_generator, std::vector<int> &correlative_sample_number, ColorLayers *color_layers, int thread_id, int ray_level, bool chromatic_enabled, float wavelength, const Ray &ray, const BsdfFlags &bsdfs, const SurfacePoint &sp, const Vec3 &wo, int additional_depth, const RayDivision &ray_division, const PixelSamplingData &pixel_sampling_data) const
@@ -954,7 +954,7 @@ std::pair<Rgb, float> MonteCarloIntegrator::recursiveRaytrace(FastRandom &fast_r
 			}
 		}
 	}
-	return {col, (alpha_count > 0 ? alpha / alpha_count : 1.f)};
+	return {std::move(col), (alpha_count > 0 ? alpha / alpha_count : 1.f)};
 }
 
 END_YAFARAY

@@ -705,7 +705,7 @@ std::pair<Rgb, float> TiledIntegrator::background(const Ray &ray, ColorLayers *c
 		{
 			if(Rgba *color_layer = color_layers->find(LayerDef::Env)) *color_layer = Rgba{col};
 		}
-		return {col, 1.f};
+		return {std::move(col), 1.f};
 	}
 	else return {Rgb{0.f}, 1.f};
 }
