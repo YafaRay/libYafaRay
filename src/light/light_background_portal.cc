@@ -178,7 +178,7 @@ std::tuple<bool, float, Rgb> BackgroundPortalLight::intersect(const Ray &ray, fl
 	const float ipdf = idist_sqr * area_ * cos_angle * math::div_1_by_pi<>;
 	Rgb col{bg_->eval(ray.dir_, true) * power_};
 	col.clampProportionalRgb(clamp_intersect_); //trick to reduce light sampling noise at the expense of realism and inexact overall light. 0.f disables clamping
-	return {true, ipdf, col};
+	return {true, ipdf, std::move(col)};
 }
 
 float BackgroundPortalLight::illumPdf(const Point3 &surface_p, const Point3 &light_p, const Vec3 &light_ng) const

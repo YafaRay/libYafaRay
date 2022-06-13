@@ -77,7 +77,7 @@ inline std::pair<float, std::vector<float>> Pdf1D::cumulateStep1DDf(const std::v
 	}
 	const auto integral = static_cast<float>(c);// * delta;
 	for(auto &cdf_entry : cdf) cdf_entry /= integral;
-	return {integral, cdf};
+	return {integral, std::move(cdf)};
 }
 
 inline std::pair<int, float> Pdf1D::dSample(float u) const

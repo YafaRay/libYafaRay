@@ -209,7 +209,7 @@ inline Bound FacePrimitive::getBound(const std::vector<Point3> &vertices)
 		if(vertices[vert_num].y() > max_point.y()) max_point.y() = vertices[vert_num].y();
 		if(vertices[vert_num].z() > max_point.z()) max_point.z() = vertices[vert_num].z();
 	}
-	return {min_point, max_point};
+	return {std::move(min_point), std::move(max_point)};
 }
 
 inline Bound FacePrimitive::getBoundTimeSteps() const

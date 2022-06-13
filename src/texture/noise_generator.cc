@@ -611,7 +611,7 @@ std::pair<std::array<float, 4>, std::array<Point3, 4>> VoronoiNoiseGenerator::ge
 			}
 		}
 	}
-	return {da, pa};
+	return {std::move(da), std::move(pa)};
 }
 
 float VoronoiNoiseGenerator::operator()(const Point3 &pt) const
@@ -824,11 +824,11 @@ float RidgedMFractalMusgrave::operator()(const Point3 &pt) const
 // color cell noise, used by voronoi shader block
 Rgba NoiseGenerator::cellNoiseColor(const Point3 &pt)
 {
-	int xi = (int)(std::floor(pt.x()));
-	int yi = (int)(std::floor(pt.y()));
-	int zi = (int)(std::floor(pt.z()));
+	const int xi = static_cast<int>(std::floor(pt.x()));
+	const int yi = static_cast<int>(std::floor(pt.y()));
+	const int zi = static_cast<int>(std::floor(pt.z()));
 	const float *cl = hashPnt(xi, yi, zi);
-	return {cl[0], cl[1], cl[2], 1.0};
+	return {cl[0], cl[1], cl[2], 1.f};
 }
 
 // turbulence function used by basic blocks

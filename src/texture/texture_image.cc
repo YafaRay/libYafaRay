@@ -154,7 +154,7 @@ std::pair<Point3, bool> ImageTexture::doMapping(const Point3 &tex_point) const
 		default:
 		case ClipMode::Repeat: outside = false; break;
 	}
-	return {mapped, outside };
+	return {std::move(mapped), outside };
 }
 
 void ImageTexture::setCrop(float minx, float miny, float maxx, float maxy)
