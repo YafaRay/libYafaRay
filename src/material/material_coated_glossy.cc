@@ -132,11 +132,9 @@ Rgb CoatedGlossyMaterial::eval(const MaterialData *mat_data, const SurfacePoint 
 		if(!diffuse_flag || ((sp.ng_ * wl) * (sp.ng_ * wo)) < 0.f) return col;
 	}
 	const Vec3 n{SurfacePoint::normalFaceForward(sp.ng_, sp.n_, wo)};
-	float kr, kt;
 	const float wi_n = std::abs(wl * n);
 	const float wo_n = std::abs(wo * n);
-
-	Vec3::fresnel(wo, n, getShaderScalar(ior_shader_, mat_data->node_tree_data_, ior_), kr, kt);
+	const auto [kr, kt]{Vec3::fresnel(wo, n, getShaderScalar(ior_shader_, mat_data->node_tree_data_, ior_))};
 
 	if((as_diffuse_ && diffuse_flag) || (!as_diffuse_ && bsdfs.hasAny(BsdfFlags::Glossy)))
 	{
@@ -181,8 +179,7 @@ Rgb CoatedGlossyMaterial::sample(const MaterialData *mat_data, const SurfacePoin
 	const Vec3 n{SurfacePoint::normalFaceForward(sp.ng_, sp.n_, wo)};
 	Vec3 hs(0.f);
 	s.pdf_ = 0.f;
-	float kr, kt;
-	Vec3::fresnel(wo, n, getShaderScalar(ior_shader_, mat_data->node_tree_data_, ior_), kr, kt);
+	const auto [kr, kt]{Vec3::fresnel(wo, n, getShaderScalar(ior_shader_, mat_data->node_tree_data_, ior_))};
 	// missing! get components
 	bool use[3] = {false, false, false};
 	float sum = 0.f, accum_c[3], val[3], width[3];
@@ -355,9 +352,7 @@ float CoatedGlossyMaterial::pdf(const MaterialData *mat_data, const SurfacePoint
 	if(transmit) return 0.f;
 	const Vec3 n{SurfacePoint::normalFaceForward(sp.ng_, sp.n_, wo)};
 	float pdf = 0.f;
-	float kr, kt;
-
-	Vec3::fresnel(wo, n, getShaderScalar(ior_shader_, mat_data->node_tree_data_, ior_), kr, kt);
+	const auto [kr, kt]{Vec3::fresnel(wo, n, getShaderScalar(ior_shader_, mat_data->node_tree_data_, ior_))};
 
 	float accum_c[3], sum = 0.f, width;
 	accum_c[0] = kr;
@@ -410,8 +405,7 @@ Specular CoatedGlossyMaterial::getSpecular(int ray_level, const MaterialData *ma
 		n = (cos_wo_n <= 0) ? sp.n_ : (sp.n_ - (1.00001 * cos_wo_n) * wo).normalize();
 		ng = -sp.ng_;
 	}
-	float kr, kt;
-	Vec3::fresnel(wo, n, getShaderScalar(ior_shader_, mat_data->node_tree_data_, ior_), kr, kt);
+	const auto [kr, kt]{Vec3::fresnel(wo, n, getShaderScalar(ior_shader_, mat_data->node_tree_data_, ior_))};
 	Specular specular;
 	if(ray_level > 5) return specular;
 	specular.reflect_ = std::make_unique<DirectionColor>();

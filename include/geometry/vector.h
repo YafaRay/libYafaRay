@@ -78,8 +78,8 @@ class Vec3
 
 		[[nodiscard]] static constexpr Vec3 reflectDir(const Vec3 &normal, const Vec3 &v);
 		[[nodiscard]] static constexpr bool refract(const Vec3 &n, const Vec3 &wi, Vec3 &wo, float ior);
-		static constexpr void fresnel(const Vec3 &i, const Vec3 &n, float ior, float &kr, float &kt);
-		static constexpr void fastFresnel(const Vec3 &i, const Vec3 &n, float iorf, float &kr, float &kt);
+		[[nodiscard]] static constexpr std::array<float, 2> fresnel(const Vec3 &i, const Vec3 &n, float ior);
+		[[nodiscard]] static constexpr std::array<float, 2> fastFresnel(const Vec3 &i, const Vec3 &n, float iorf);
 		[[nodiscard]] static constexpr Uv<Vec3> createCoordsSystem(const Vec3 &normal);
 		[[nodiscard]] static Uv<float> shirleyDisk(float r_1, float r_2);
 		[[nodiscard]] static Vec3 randomSpherical(FastRandom &fast_random);
@@ -367,7 +367,7 @@ inline constexpr bool Vec3::refract(const Vec3 &n, const Vec3 &wi, Vec3 &wo, flo
 	return true;
 }
 
-inline constexpr void Vec3::fresnel(const Vec3 &i, const Vec3 &n, float ior, float &kr, float &kt)
+inline constexpr std::array<float, 2> Vec3::fresnel(const Vec3 &i, const Vec3 &n, float ior)
 {
 	const bool negative = ((i * n) < 0.f);
 	const float c = i * (negative ? (-n) : n);
@@ -375,22 +375,20 @@ inline constexpr void Vec3::fresnel(const Vec3 &i, const Vec3 &n, float ior, flo
 	if(g <= 0) g = 0;
 	else g = math::sqrt(g);
 	const float aux = c * (g + c);
-	kr = ((0.5f * (g - c) * (g - c)) / ((g + c) * (g + c))) *
-		 (1.f + ((aux - 1.f) * (aux - 1.f)) / ((aux + 1.f) * (aux + 1.f)));
-	if(kr < 1.f)
-		kt = 1.f - kr;
-	else
-		kt = 0.f;
+	const float kr = ((0.5f * (g - c) * (g - c)) / ((g + c) * (g + c))) * (1.f + ((aux - 1.f) * (aux - 1.f)) / ((aux + 1.f) * (aux + 1.f)));
+	const float kt = (kr < 1.f) ? 1.f - kr : 0.f;
+	return {kr, kt};
 }
 
 // 'Faster' Schlick fresnel approximation,
-inline constexpr void Vec3::fastFresnel(const Vec3 &i, const Vec3 &n, float iorf, float &kr, float &kt)
+inline constexpr std::array<float, 2> Vec3::fastFresnel(const Vec3 &i, const Vec3 &n, float iorf)
 {
 	const float t = 1.f - (i * n);
 	//t = (t<0)?0:((t>1)?1:t);
 	const float t_2 = t * t;
-	kr = iorf + (1.f - iorf) * t_2 * t_2 * t;
-	kt = 1.f - kr;
+	const float kr = iorf + (1.f - iorf) * t_2 * t_2 * t;
+	const float kt = 1.f - kr;
+	return {kr, kt};
 }
 
 END_YAFARAY

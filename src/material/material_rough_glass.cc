@@ -240,8 +240,7 @@ Rgb RoughGlassMaterial::sample(const MaterialData *mat_data, const SurfacePoint 
 Rgb RoughGlassMaterial::getTransparency(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, const Camera *camera) const
 {
 	const Vec3 n{SurfacePoint::normalFaceForward(sp.ng_, sp.n_, wo)};
-	float kr, kt;
-	Vec3::fresnel(wo, n, getShaderScalar(ior_shader_, mat_data->node_tree_data_, ior_), kr, kt);
+	const auto [kr, kt]{Vec3::fresnel(wo, n, getShaderScalar(ior_shader_, mat_data->node_tree_data_, ior_))};
 	Rgb result = kt * getShaderColor(filter_col_shader_, mat_data->node_tree_data_, filter_color_);
 	applyWireFrame(result, wireframe_shader_, mat_data->node_tree_data_, sp);
 	return result;

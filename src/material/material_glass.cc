@@ -89,8 +89,7 @@ Rgb GlassMaterial::sample(const MaterialData *mat_data, const SurfacePoint &sp, 
 
 		if(Vec3::refract(n, wo, refdir, cur_ior))
 		{
-			float kr, kt;
-			Vec3::fresnel(wo, n, cur_ior, kr, kt);
+			const auto [kr, kt]{Vec3::fresnel(wo, n, cur_ior)};
 			const float p_kr = 0.01 + 0.99 * kr, p_kt = 0.01 + 0.99 * kt;
 			if(!s.flags_.hasAny(BsdfFlags::Specular) || s.s_1_ < p_kt)
 			{
@@ -139,8 +138,7 @@ Rgb GlassMaterial::sample(const MaterialData *mat_data, const SurfacePoint &sp, 
 
 		if(Vec3::refract(n, wo, refdir, cur_ior))
 		{
-			float kr, kt;
-			Vec3::fresnel(wo, n, cur_ior, kr, kt);
+			const auto [kr, kt]{Vec3::fresnel(wo, n, cur_ior)};
 			float p_kr = 0.01 + 0.99 * kr, p_kt = 0.01 + 0.99 * kt;
 			if(s.s_1_ < p_kt && MATCHES(s.flags_, tm_flags_))
 			{
@@ -198,8 +196,7 @@ Rgb GlassMaterial::sample(const MaterialData *mat_data, const SurfacePoint &sp, 
 Rgb GlassMaterial::getTransparency(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, const Camera *camera) const
 {
 	const Vec3 n{SurfacePoint::normalFaceForward(sp.ng_, sp.n_, wo)};
-	float kr, kt;
-	Vec3::fresnel(wo, n, getShaderScalar(ior_shader_, mat_data->node_tree_data_, ior_), kr, kt);
+	const auto [kr, kt]{Vec3::fresnel(wo, n, getShaderScalar(ior_shader_, mat_data->node_tree_data_, ior_))};
 	Rgb result = kt * getShaderColor(filter_color_shader_, mat_data->node_tree_data_, filter_color_);
 	applyWireFrame(result, wireframe_shader_, mat_data->node_tree_data_, sp);
 	return result;
@@ -243,8 +240,7 @@ Specular GlassMaterial::getSpecular(int ray_level, const MaterialData *mat_data,
 	Specular specular;
 	if(Vec3::refract(n, wo, refdir, cur_ior))
 	{
-		float kr, kt;
-		Vec3::fresnel(wo, n, cur_ior, kr, kt);
+		const auto [kr, kt]{Vec3::fresnel(wo, n, cur_ior)};
 		if(!chromatic || !disperse_)
 		{
 			specular.refract_ = std::make_unique<DirectionColor>();
