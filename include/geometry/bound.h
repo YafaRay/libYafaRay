@@ -57,8 +57,8 @@ class Bound
 		Bound() = default;
 		Bound(const Bound &bound) = default;
 		Bound(Bound &&bound) = default;
-		Bound& operator=(const Bound &intersect_data) = default;
-		Bound& operator=(Bound &&intersect_data) = default;
+		Bound& operator=(const Bound &bound) = default;
+		Bound& operator=(Bound &&bound) = default;
 		/*! Two child constructor.
 		 * This creates a bound that includes the two given bounds. It's used when
 		 * building a bounding tree
