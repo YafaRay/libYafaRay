@@ -33,7 +33,7 @@ void ObjectInstance::addPrimitives(const std::vector<const Primitive *> &base_pr
 	}
 }
 
-inline std::vector<const Primitive *> ObjectInstance::getPrimitives() const
+std::vector<const Primitive *> ObjectInstance::getPrimitives() const
 {
 	std::vector<const Primitive *> result;
 	for(const auto &primitive_instance : primitive_instances_) result.emplace_back(primitive_instance.get());
