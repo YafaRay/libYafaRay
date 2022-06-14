@@ -22,12 +22,11 @@
 
 #include "geometry/vector.h"
 #include "geometry/uv.h"
+#include "geometry/intersect_data.h"
+#include "geometry/ray.h"
 #include <array>
 
 BEGIN_YAFARAY
-
-class Ray;
-class IntersectData;
 
 class ShapeTriangle final
 {
@@ -77,6 +76,33 @@ inline float ShapeTriangle::getDistToNearestEdge(const Uv<float> &uv, const Uv<V
 	const float w_dist_rel = 0.5f - std::abs(barycentric_w - 0.5f);
 	const float w_dist_abs = w_dist_rel * (dp_abs.v_ - dp_abs.u_).length();
 	return math::min(u_dist_abs, v_dist_abs, w_dist_abs);
+}
+
+inline IntersectData ShapeTriangle::intersect(const Ray &ray) const
+{
+	//Tomas Moller and Ben Trumbore ray intersection scheme
+	const Vec3 edge_1{vertices_[1] - vertices_[0]};
+	const Vec3 edge_2{vertices_[2] - vertices_[0]};
+	const float epsilon = 0.1f * min_raydist_global * std::max(edge_1.length(), edge_2.length());
+	const Vec3 pvec{ray.dir_ ^ edge_2};
+	const float det = edge_1 * pvec;
+	if(det <= -epsilon || det >= epsilon)
+	{
+		const float inv_det = 1.f / det;
+		const Vec3 tvec{ray.from_ - vertices_[0]};
+		const float u = (tvec * pvec) * inv_det;
+		if(u >= 0.f && u <= 1.f)
+		{
+			const Vec3 qvec{tvec ^ edge_1};
+			const float v = (ray.dir_ * qvec) * inv_det;
+			if(v >= 0.f && (u + v) <= 1.f)
+			{
+				const float t = edge_2 * qvec * inv_det;
+				if(t >= epsilon) return IntersectData{t, {u, v}, ray.time_ };
+			}
+		}
+	}
+	return {};
 }
 
 END_YAFARAY

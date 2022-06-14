@@ -28,4 +28,3 @@ target_sources(libyafaray4
 
 add_subdirectory(object)
 add_subdirectory(primitive)
-add_subdirectory(shape)
