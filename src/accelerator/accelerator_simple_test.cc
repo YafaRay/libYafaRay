@@ -109,6 +109,7 @@ AccelTsData AcceleratorSimpleTest::intersectTs(const Ray &ray, int max_depth, fl
 			}
 		}
 	}
+	accel_ts_data.setHit(false);
 	return accel_ts_data;
 }
 

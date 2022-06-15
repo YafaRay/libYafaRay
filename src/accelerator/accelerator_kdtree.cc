@@ -638,8 +638,6 @@ int AcceleratorKdTree::buildTree(uint32_t n_prims, const std::vector<const Primi
 
 AccelData AcceleratorKdTree::intersect(const Ray &ray, float t_max, const Node *nodes, const Bound &tree_bound)
 {
-	AccelData accel_data;
-	accel_data.setTMax(t_max);
 	const Bound::Cross cross{tree_bound.cross(ray, t_max)};
 	if(!cross.crossed_) { return {}; }
 	const Vec3 inv_dir{math::inverse(ray.dir_.x()), math::inverse(ray.dir_.y()), math::inverse(ray.dir_.z())};
@@ -664,6 +662,8 @@ AccelData AcceleratorKdTree::intersect(const Ray &ray, float t_max, const Node *
 	stack[exit_id].node_ = nullptr; // "nowhere", termination flag
 
 	//loop, traverse kd-Tree until object intersection or ray leaves tree bound
+	AccelData accel_data;
+	accel_data.setTMax(t_max);
 	while(curr_node)
 	{
 		if(t_max < stack[entry_id].t_) break;
@@ -752,7 +752,6 @@ AccelData AcceleratorKdTree::intersect(const Ray &ray, float t_max, const Node *
 
 AccelData AcceleratorKdTree::intersectS(const Ray &ray, float t_max, const Node *nodes, const Bound &tree_bound)
 {
-	AccelData accel_data;
 	const Bound::Cross cross{tree_bound.cross(ray, t_max)};
 	if(!cross.crossed_) { return {}; }
 	const Vec3 inv_dir{math::inverse(ray.dir_.x()), math::inverse(ray.dir_.y()), math::inverse(ray.dir_.z())};
@@ -775,6 +774,8 @@ AccelData AcceleratorKdTree::intersectS(const Ray &ray, float t_max, const Node 
 	stack[exit_id].node_ = nullptr; // "nowhere", termination flag
 
 	//loop, traverse kd-Tree until object intersection or ray leaves tree bound
+	AccelData accel_data;
+	accel_data.setTMax(t_max);
 	while(curr_node)
 	{
 		if(t_max < stack[entry_id].t_ /*a*/) break;
@@ -860,7 +861,6 @@ AccelData AcceleratorKdTree::intersectS(const Ray &ray, float t_max, const Node 
 
 AccelTsData AcceleratorKdTree::intersectTs(const Ray &ray, int max_depth, float t_max, const Node *nodes, const Bound &tree_bound, const Camera *camera)
 {
-	AccelTsData accel_ts_data;
 	const Bound::Cross cross{tree_bound.cross(ray, t_max)};
 	if(!cross.crossed_) { return {}; }
 	const Vec3 inv_dir{math::inverse(ray.dir_.x()), math::inverse(ray.dir_.y()), math::inverse(ray.dir_.z())};
@@ -886,6 +886,8 @@ AccelTsData AcceleratorKdTree::intersectTs(const Ray &ray, int max_depth, float 
 	stack[exit_id].node_ = nullptr; // "nowhere", termination flag
 
 	//loop, traverse kd-Tree until object intersection or ray leaves tree bound
+	AccelTsData accel_ts_data;
+	accel_ts_data.setTMax(t_max);
 	while(curr_node)
 	{
 		if(t_max < stack[entry_id].t_ /*a*/) break;
