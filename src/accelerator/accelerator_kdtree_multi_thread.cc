@@ -705,9 +705,8 @@ AccelData AcceleratorKdTreeMultiThread::intersect(const Ray &ray, float t_max, c
 			// possibly skip current entry point so not to overwrite the data
 			if(exit_id == entry_id) exit_id++;
 			// push values onto the stack //todo: lookup table
-			static constexpr std::array<std::array<Axis, 3>, 2> np_axis {{{Axis::Y, Axis::Z, Axis::X}, {Axis::Z, Axis::X, Axis::Y} }};
-			const Axis next_axis = np_axis[0][axis::getId(axis)];
-			const Axis prev_axis = np_axis[1][axis::getId(axis)];
+			const Axis next_axis{axis::getNextSpatial(axis)};
+			const Axis prev_axis{axis::getPrevSpatial(axis)};
 			stack[exit_id].prev_stack_id_ = tmp_id;
 			stack[exit_id].t_ = t;
 			stack[exit_id].node_ = far_child;
@@ -804,9 +803,8 @@ AccelData AcceleratorKdTreeMultiThread::intersectS(const Ray &ray, float t_max, 
 			// possibly skip current entry point so not to overwrite the data
 			if(exit_id == entry_id) exit_id++;
 			// push values onto the stack //todo: lookup table
-			static constexpr std::array<std::array<Axis, 3>, 2> np_axis {{{Axis::Y, Axis::Z, Axis::X}, {Axis::Z, Axis::X, Axis::Y} }};
-			const Axis next_axis = np_axis[0][axis::getId(axis)];//(axis+1)%3;
-			const Axis prev_axis = np_axis[1][axis::getId(axis)];//(axis+2)%3;
+			const Axis next_axis{axis::getNextSpatial(axis)};
+			const Axis prev_axis{axis::getPrevSpatial(axis)};
 			stack[exit_id].prev_stack_id_ = tmp_id;
 			stack[exit_id].t_ = t;
 			stack[exit_id].node_ = far_child;
@@ -904,9 +902,8 @@ AccelTsData AcceleratorKdTreeMultiThread::intersectTs(const Ray &ray, int max_de
 			// possibly skip current entry point so not to overwrite the data
 			if(exit_id == entry_id) exit_id++;
 			// push values onto the stack //todo: lookup table
-			static constexpr std::array<std::array<Axis, 3>, 2> np_axis {{{Axis::Y, Axis::Z, Axis::X}, {Axis::Z, Axis::X, Axis::Y} }};
-			const Axis next_axis = np_axis[0][axis::getId(axis)];//(axis+1)%3;
-			const Axis prev_axis = np_axis[1][axis::getId(axis)];//(axis+2)%3;
+			const Axis next_axis{axis::getNextSpatial(axis)};
+			const Axis prev_axis{axis::getPrevSpatial(axis)};
 			stack[exit_id].prev_stack_id_ = tmp_id;
 			stack[exit_id].t_ = t;
 			stack[exit_id].node_ = far_child;
