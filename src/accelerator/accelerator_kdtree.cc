@@ -750,7 +750,7 @@ AccelData AcceleratorKdTree::intersect(const Ray &ray, float t_max, const Node *
 	return accel_data;
 }
 
-AccelData AcceleratorKdTree::intersectS(const Ray &ray, float t_max, float shadow_bias, const Node *nodes, const Bound &tree_bound)
+AccelData AcceleratorKdTree::intersectS(const Ray &ray, float t_max, const Node *nodes, const Bound &tree_bound)
 {
 	AccelData accel_data;
 	const Bound::Cross cross{tree_bound.cross(ray, t_max)};
@@ -858,7 +858,7 @@ AccelData AcceleratorKdTree::intersectS(const Ray &ray, float t_max, float shado
 	allow for transparent shadows.
 =============================================================*/
 
-AccelTsData AcceleratorKdTree::intersectTs(const Ray &ray, int max_depth, float t_max, float shadow_bias, const Node *nodes, const Bound &tree_bound, const Camera *camera)
+AccelTsData AcceleratorKdTree::intersectTs(const Ray &ray, int max_depth, float t_max, const Node *nodes, const Bound &tree_bound, const Camera *camera)
 {
 	AccelTsData accel_ts_data;
 	const Bound::Cross cross{tree_bound.cross(ray, t_max)};

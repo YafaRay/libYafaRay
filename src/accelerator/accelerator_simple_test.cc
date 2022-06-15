@@ -78,7 +78,7 @@ AccelData AcceleratorSimpleTest::intersect(const Ray &ray, float t_max) const
 	return accel_data;
 }
 
-AccelData AcceleratorSimpleTest::intersectS(const Ray &ray, float t_max, float shadow_bias) const
+AccelData AcceleratorSimpleTest::intersectS(const Ray &ray, float t_max) const
 {
 	AccelData accel_data;
 	for(const auto &[object, object_data] : objects_data_)
@@ -94,7 +94,7 @@ AccelData AcceleratorSimpleTest::intersectS(const Ray &ray, float t_max, float s
 	return accel_data;
 }
 
-AccelTsData AcceleratorSimpleTest::intersectTs(const Ray &ray, int max_depth, float t_max, float shadow_bias, const Camera *camera) const
+AccelTsData AcceleratorSimpleTest::intersectTs(const Ray &ray, int max_depth, float t_max, const Camera *camera) const
 {
 	std::set<const Primitive *> filtered;
 	int depth = 0;

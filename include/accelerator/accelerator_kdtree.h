@@ -51,8 +51,8 @@ class AcceleratorKdTree final : public Accelerator
 		~AcceleratorKdTree() override;
 		AccelData intersect(const Ray &ray, float t_max) const override;
 		//	bool IntersectDBG(const ray_t &ray, float dist, triangle_t **tr, float &Z) const;
-		AccelData intersectS(const Ray &ray, float t_max, float shadow_bias) const override;
-		AccelTsData intersectTs(const Ray &ray, int max_depth, float t_max, float shadow_bias, const Camera *camera) const override;
+		AccelData intersectS(const Ray &ray, float t_max) const override;
+		AccelTsData intersectTs(const Ray &ray, int max_depth, float t_max, const Camera *camera) const override;
 		//	bool IntersectO(const point3d_t &from, const vector3d_t &ray, float dist, Primitive **tr, float &Z) const;
 		Bound getBound() const override { return tree_bound_; }
 
@@ -62,8 +62,8 @@ class AcceleratorKdTree final : public Accelerator
 		static SplitCost minimalCost(Logger &logger, float e_bonus, float cost_ratio, uint32_t num_indices, const Bound &node_bound, const uint32_t *prim_idx, const Bound *all_bounds, const Bound *all_bounds_general, const std::array<std::unique_ptr<BoundEdge[]>, 3> &edges_all_axes, Stats &kd_stats);
 
 		static AccelData intersect(const Ray &ray, float t_max, const Node *nodes, const Bound &tree_bound);
-		static AccelData intersectS(const Ray &ray, float t_max, float shadow_bias, const Node *nodes, const Bound &tree_bound);
-		static AccelTsData intersectTs(const Ray &ray, int max_depth, float t_max, float shadow_bias, const Node *nodes, const Bound &tree_bound, const Camera *camera);
+		static AccelData intersectS(const Ray &ray, float t_max, const Node *nodes, const Bound &tree_bound);
+		static AccelTsData intersectTs(const Ray &ray, int max_depth, float t_max, const Node *nodes, const Bound &tree_bound, const Camera *camera);
 
 		float cost_ratio_ = 0.8f; //!< node traversal cost divided by primitive intersection cost
 		float e_bonus_ = 0.33f; //!< empty bonus
@@ -160,14 +160,14 @@ inline AccelData AcceleratorKdTree::intersect(const Ray &ray, float t_max) const
 	return intersect(ray, t_max, nodes_.data(), tree_bound_);
 }
 
-inline AccelData AcceleratorKdTree::intersectS(const Ray &ray, float t_max, float shadow_bias) const
+inline AccelData AcceleratorKdTree::intersectS(const Ray &ray, float t_max) const
 {
-	return intersectS(ray, t_max, shadow_bias, nodes_.data(), tree_bound_);
+	return intersectS(ray, t_max, nodes_.data(), tree_bound_);
 }
 
-inline AccelTsData AcceleratorKdTree::intersectTs(const Ray &ray, int max_depth, float t_max, float shadow_bias, const Camera *camera) const
+inline AccelTsData AcceleratorKdTree::intersectTs(const Ray &ray, int max_depth, float t_max, const Camera *camera) const
 {
-	return intersectTs(ray, max_depth, t_max, shadow_bias, nodes_.data(), tree_bound_, camera);
+	return intersectTs(ray, max_depth, t_max, nodes_.data(), tree_bound_, camera);
 }
 
 END_YAFARAY

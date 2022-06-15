@@ -39,8 +39,8 @@ class Accelerator
 		explicit Accelerator(Logger &logger) : logger_(logger) { }
 		virtual ~Accelerator() = default;
 		virtual AccelData intersect(const Ray &ray, float t_max) const = 0;
-		virtual AccelData intersectS(const Ray &ray, float t_max, float shadow_bias) const = 0;
-		virtual AccelTsData intersectTs(const Ray &ray, int max_depth, float dist, float shadow_bias, const Camera *camera) const = 0;
+		virtual AccelData intersectS(const Ray &ray, float t_max) const = 0;
+		virtual AccelTsData intersectTs(const Ray &ray, int max_depth, float dist, const Camera *camera) const = 0;
 		virtual Bound getBound() const = 0;
 		std::pair<std::unique_ptr<const SurfacePoint>, float> intersect(const Ray &ray, const Camera *camera) const;
 		std::pair<bool, const Primitive *> isShadowed(const Ray &ray, float shadow_bias) const;
@@ -73,7 +73,7 @@ inline std::pair<bool, const Primitive *> Accelerator::isShadowed(const Ray &ray
 	sray.from_ += sray.dir_ * sray.tmin_;
 	sray.time_ = ray.time_;
 	const float t_max = (ray.tmax_ >= 0.f) ? sray.tmax_ - 2 * sray.tmin_ : std::numeric_limits<float>::infinity();
-	const AccelData accel_data = intersectS(sray, t_max, shadow_bias);
+	const AccelData accel_data = intersectS(sray, t_max);
 	return {accel_data.isHit(), accel_data.primitive()};
 }
 
@@ -82,7 +82,7 @@ inline std::tuple<bool, Rgb, const Primitive *> Accelerator::isShadowed(const Ra
 	Ray sray(ray, Ray::DifferentialsCopy::No); //Should this function use Ray::DifferentialsAssignment::Copy ? If using copy it would be slower but would take into account texture mipmaps, although that's probably irrelevant for transparent shadows?
 	sray.from_ += sray.dir_ * sray.tmin_;
 	const float t_max = (ray.tmax_ >= 0.f) ? sray.tmax_ - 2 * sray.tmin_ : std::numeric_limits<float>::infinity();
-	AccelTsData accel_ts_data = intersectTs(sray, max_depth, t_max, shadow_bias, camera);
+	AccelTsData accel_ts_data = intersectTs(sray, max_depth, t_max, camera);
 	return {accel_ts_data.isHit(), accel_ts_data.transparentColor(), accel_ts_data.isHit() ? accel_ts_data.primitive() : nullptr};
 }
 
