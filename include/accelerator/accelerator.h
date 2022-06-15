@@ -98,7 +98,7 @@ inline void Accelerator::primitiveIntersection(AcceleratorIntersectData &acceler
 inline bool Accelerator::primitiveIntersection(AcceleratorIntersectData &accelerator_intersect_data, const Primitive *primitive, const Ray &ray, float t_max)
 {
 	IntersectData intersect_data = primitive->intersect(ray);
-	if(!intersect_data.isHit() || intersect_data.tHit() >= t_max || intersect_data.tHit() < 0.f) return false; // '>=' ?
+	if(!intersect_data.isHit() || intersect_data.tHit() >= t_max || intersect_data.tHit() < 0.f) return false;
 	if(const Visibility prim_visibility = primitive->getVisibility(); prim_visibility == Visibility::VisibleNoShadows || prim_visibility == Visibility::Invisible) return false;
 	else if(const Visibility mat_visibility = primitive->getMaterial()->getVisibility(); mat_visibility == Visibility::VisibleNoShadows || mat_visibility == Visibility::Invisible) return false;
 	accelerator_intersect_data = {std::move(intersect_data), primitive};
@@ -108,7 +108,7 @@ inline bool Accelerator::primitiveIntersection(AcceleratorIntersectData &acceler
 inline bool Accelerator::primitiveIntersection(AcceleratorTsIntersectData &accelerator_intersect_data, std::set<const Primitive *> &filtered, int &depth, int max_depth, const Primitive *primitive, const Ray &ray, float t_max, const Camera *camera)
 {
 	IntersectData intersect_data = primitive->intersect(ray);
-	if(!intersect_data.isHit() || intersect_data.tHit() >= t_max || intersect_data.tHit() < ray.tmin_) return false; // '>=' ?
+	if(!intersect_data.isHit() || intersect_data.tHit() >= t_max || intersect_data.tHit() < ray.tmin_) return false;
 	const Material *mat = nullptr;
 	if(const Visibility prim_visibility = primitive->getVisibility(); prim_visibility == Visibility::VisibleNoShadows || prim_visibility == Visibility::Invisible) return false;
 	mat = primitive->getMaterial();
