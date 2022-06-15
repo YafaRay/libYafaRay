@@ -27,30 +27,57 @@ BEGIN_YAFARAY
 
 class Primitive;
 
-class AcceleratorIntersectData : public IntersectData
+class AccelData
 {
 	public:
-		AcceleratorIntersectData() = default;
-		explicit AcceleratorIntersectData(bool hit, float time) { hit_ = true; time_ = time; }
-		AcceleratorIntersectData(IntersectData &&intersect_data, const Primitive *hit_primitive) : IntersectData(std::move(intersect_data)), t_max_{intersect_data.tHit()}, hit_primitive_{hit_primitive} { }
+		AccelData() = default;
+		AccelData(const AccelData &accel_data) = default;
+		AccelData(AccelData &&accel_data) = default;
+		AccelData &operator=(const AccelData &accel_data) = default;
+		AccelData &operator=(AccelData &&accel_data) = default;
 		float tMax() const { return t_max_; }
 		const Primitive *primitive() const { return hit_primitive_; }
+		void setPrimitive(const Primitive *primitive) { hit_primitive_ = primitive; }
 		void setTMax(float t_max) { t_max_ = t_max; }
+		bool isHit() const { return intersect_data_.isHit(); }
+		float tHit() const { return intersect_data_.tHit(); }
+		Uv<float> uv() const { return intersect_data_.uv(); }
+		float time() const { return intersect_data_.time(); }
+		void setHit(bool hit) { intersect_data_.setHit(hit); }
+		IntersectData intersectData() const { return intersect_data_; }
+		void setIntersectData(IntersectData &&intersect_data) { setTMax(intersect_data.tHit()); intersect_data_ = std::move(intersect_data); }
 
 	protected:
+		IntersectData intersect_data_;
 		float t_max_ = std::numeric_limits<float>::infinity();
 		const Primitive *hit_primitive_ = nullptr;
 };
 
-class AcceleratorTsIntersectData final : public AcceleratorIntersectData
+class AccelTsData
 {
 	public:
-		AcceleratorTsIntersectData() = default;
-		explicit AcceleratorTsIntersectData(AcceleratorIntersectData &&intersect_data) : AcceleratorIntersectData(std::move(intersect_data)) { }
-		const Rgb transparentColor() const { return transparent_color_; }
+		AccelTsData() = default;
+		AccelTsData(const AccelTsData &accel_ts_data) = default;
+		AccelTsData(AccelTsData &&accel_ts_data) = default;
+		AccelTsData &operator=(const AccelTsData &accel_ts_data) = default;
+		AccelTsData &operator=(AccelTsData &&accel_ts_data) = default;
+		AccelTsData(AccelData &&accel_data, Rgb &&transparent_color) : accel_data_{std::move(accel_data)}, transparent_color_{std::move(transparent_color)} { }
+		Rgb transparentColor() const { return transparent_color_; }
 		void multiplyTransparentColor(const Rgb &color_to_multiply) { transparent_color_ *= color_to_multiply; }
+		float tMax() const { return accel_data_.tMax(); }
+		void setTMax(float t_max) { accel_data_.setTMax(t_max); }
+		const Primitive *primitive() const { return accel_data_.primitive(); }
+		void setPrimitive(const Primitive *primitive) { accel_data_.setPrimitive(primitive); }
+		bool isHit() const { return accel_data_.isHit(); }
+		float tHit() const { return accel_data_.tHit(); }
+		Uv<float> uv() const { return accel_data_.uv(); }
+		float time() const { return accel_data_.time(); }
+		void setHit(bool hit) { accel_data_.setHit(hit); }
+		IntersectData intersectData() const { return accel_data_.intersectData(); }
+		void setIntersectData(IntersectData &&intersect_data) { accel_data_.setIntersectData(std::move(intersect_data)); }
 
 	private:
+		AccelData accel_data_;
 		Rgb transparent_color_ {1.f};
 };
 

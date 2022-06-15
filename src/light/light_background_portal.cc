@@ -169,9 +169,9 @@ std::tuple<bool, float, Rgb> BackgroundPortalLight::intersect(const Ray &ray, fl
 	if(!accelerator_) return {};
 	const float t_max = (ray.tmax_ >= 0.f) ? ray.tmax_ : std::numeric_limits<float>::infinity();
 	// intersect with tree:
-	const AcceleratorIntersectData accelerator_intersect_data = accelerator_->intersect(ray, t_max);
-	if(!accelerator_intersect_data.isHit()) return {};
-	const Vec3 n{accelerator_intersect_data.primitive()->getGeometricNormal(ray.time_)};
+	const AccelData accel_data = accelerator_->intersect(ray, t_max);
+	if(!accel_data.isHit()) return {};
+	const Vec3 n{accel_data.primitive()->getGeometricNormal(ray.time_)};
 	const float cos_angle = ray.dir_ * (-n);
 	if(cos_angle <= 0.f) return {};
 	const float idist_sqr = 1.f / (t * t);

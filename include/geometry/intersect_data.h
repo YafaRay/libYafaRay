@@ -26,50 +26,28 @@
 
 BEGIN_YAFARAY
 
-class IntersectData
+class IntersectData final
 {
 	public:
 		IntersectData() = default;
-		explicit IntersectData(float t_hit, Uv<float> &&uv = {0.f, 0.f}, float time = 0.f) : hit_{true}, t_hit_{t_hit}, uv_{std::move(uv)}, time_{time} { }
-		IntersectData(const IntersectData &intersect_data);
+		IntersectData(const IntersectData &intersect_data) = default;
 		IntersectData(IntersectData &&intersect_data) = default;
-		IntersectData& operator=(const IntersectData &intersect_data);
-		IntersectData& operator=(IntersectData &&intersect_data) = default;
+		IntersectData &operator=(const IntersectData &intersect_data) = default;
+		IntersectData &operator=(IntersectData &&intersect_data) = default;
+		explicit IntersectData(float t_hit) : hit_{true}, t_hit_{t_hit}, uv_{Uv<float>{0.f, 0.f}}, time_{0.f} { }
+		IntersectData(float t_hit, Uv<float> &&uv, float time) : hit_{true}, t_hit_{t_hit}, uv_{std::move(uv)}, time_{time} { }
 		bool isHit() const { return hit_; }
 		float tHit() const { return t_hit_; }
 		Uv<float> uv() const { return uv_; }
 		float time() const { return time_; }
 		void setHit(bool hit) { hit_ = hit; }
 
-	protected:
-		alignas(8) bool hit_ = false;
+	private:
+		bool hit_ = false;
 		float t_hit_;
 		Uv<float> uv_;
 		float time_;
 };
-
-inline IntersectData::IntersectData(const IntersectData &intersect_data) : hit_{intersect_data.isHit()}
-{
-	if(hit_)
-	{
-		t_hit_ = intersect_data.tHit();
-		uv_ = intersect_data.uv();
-		time_ = intersect_data.time();
-	}
-}
-
-inline IntersectData& IntersectData::operator=(const IntersectData &intersect_data)
-{
-	hit_ = intersect_data.isHit();
-	if(hit_)
-	{
-		t_hit_ = intersect_data.tHit();
-		uv_ = intersect_data.uv();
-		time_ = intersect_data.time();
-	}
-	return *this;
-}
-
 
 END_YAFARAY
 

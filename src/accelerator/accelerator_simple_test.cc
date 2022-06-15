@@ -58,58 +58,58 @@ AcceleratorSimpleTest::AcceleratorSimpleTest(Logger &logger, const std::vector<c
 	if(logger_.isVerbose()) logger_.logVerbose("AcceleratorSimpleTest: Objects: ", objects_data_.size(), ", primitives in tree: ", num_primitives, ", bound: (", bound_.a_, ", ", bound_.g_, ")");
 }
 
-AcceleratorIntersectData AcceleratorSimpleTest::intersect(const Ray &ray, float t_max) const
+AccelData AcceleratorSimpleTest::intersect(const Ray &ray, float t_max) const
 {
-	AcceleratorIntersectData accelerator_intersect_data;
+	AccelData accel_data;
 	for(const auto &[object, object_data] : objects_data_)
 	{
 		if(const Bound::Cross cross{object_data.bound_.cross(ray, t_max)}; cross.crossed_)
 		{
 			for(const auto &primitive : object_data.primitives_)
 			{
-				Accelerator::primitiveIntersection(accelerator_intersect_data, primitive, ray);
-				if(accelerator_intersect_data.isHit() && accelerator_intersect_data.tHit() >= ray.tmin_  && accelerator_intersect_data.tHit() <= ray.tmax_)
+				Accelerator::primitiveIntersection(accel_data, primitive, ray);
+				if(accel_data.isHit() && accel_data.tHit() >= ray.tmin_  && accel_data.tHit() <= ray.tmax_)
 				{
-					return accelerator_intersect_data;
+					return accel_data;
 				}
 			}
 		}
 	}
-	return accelerator_intersect_data;
+	return accel_data;
 }
 
-AcceleratorIntersectData AcceleratorSimpleTest::intersectS(const Ray &ray, float t_max, float shadow_bias) const
+AccelData AcceleratorSimpleTest::intersectS(const Ray &ray, float t_max, float shadow_bias) const
 {
-	AcceleratorIntersectData accelerator_intersect_data;
+	AccelData accel_data;
 	for(const auto &[object, object_data] : objects_data_)
 	{
 		if(const Bound::Cross cross{object_data.bound_.cross(ray, t_max)}; cross.crossed_)
 		{
 			for(const auto &primitive : object_data.primitives_)
 			{
-				if(Accelerator::primitiveIntersection(accelerator_intersect_data, primitive, ray, t_max)) return accelerator_intersect_data;
+				if(Accelerator::primitiveIntersection(accel_data, primitive, ray, t_max)) return accel_data;
 			}
 		}
 	}
-	return accelerator_intersect_data;
+	return accel_data;
 }
 
-AcceleratorTsIntersectData AcceleratorSimpleTest::intersectTs(const Ray &ray, int max_depth, float t_max, float shadow_bias, const Camera *camera) const
+AccelTsData AcceleratorSimpleTest::intersectTs(const Ray &ray, int max_depth, float t_max, float shadow_bias, const Camera *camera) const
 {
 	std::set<const Primitive *> filtered;
 	int depth = 0;
-	AcceleratorTsIntersectData accelerator_intersect_data;
+	AccelTsData accel_ts_data;
 	for(const auto &[object, object_data] : objects_data_)
 	{
 		if(const Bound::Cross cross{object_data.bound_.cross(ray, t_max)}; cross.crossed_)
 		{
 			for(const auto &primitive : object_data.primitives_)
 			{
-				if(Accelerator::primitiveIntersection(accelerator_intersect_data, filtered, depth, max_depth, primitive, ray, t_max, camera)) return accelerator_intersect_data;
+				if(Accelerator::primitiveIntersection(accel_ts_data, filtered, depth, max_depth, primitive, ray, t_max, camera)) return accel_ts_data;
 			}
 		}
 	}
-	return accelerator_intersect_data;
+	return accel_ts_data;
 }
 
 END_YAFARAY

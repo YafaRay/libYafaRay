@@ -636,10 +636,10 @@ int AcceleratorKdTree::buildTree(uint32_t n_prims, const std::vector<const Primi
 	returns the closest hit within dist
 */
 
-AcceleratorIntersectData AcceleratorKdTree::intersect(const Ray &ray, float t_max, const Node *nodes, const Bound &tree_bound)
+AccelData AcceleratorKdTree::intersect(const Ray &ray, float t_max, const Node *nodes, const Bound &tree_bound)
 {
-	AcceleratorIntersectData accelerator_intersect_data;
-	accelerator_intersect_data.setTMax(t_max);
+	AccelData accel_data;
+	accel_data.setTMax(t_max);
 	const Bound::Cross cross{tree_bound.cross(ray, t_max)};
 	if(!cross.crossed_) { return {}; }
 	const Vec3 inv_dir{math::inverse(ray.dir_.x()), math::inverse(ray.dir_.y()), math::inverse(ray.dir_.z())};
@@ -726,7 +726,7 @@ AcceleratorIntersectData AcceleratorKdTree::intersect(const Ray &ray, float t_ma
 		if(n_primitives == 1)
 		{
 			const Primitive *primitive = curr_node->one_primitive_;
-			Accelerator::primitiveIntersection(accelerator_intersect_data, primitive, ray);
+			Accelerator::primitiveIntersection(accel_data, primitive, ray);
 		}
 		else
 		{
@@ -734,25 +734,25 @@ AcceleratorIntersectData AcceleratorKdTree::intersect(const Ray &ray, float t_ma
 			for(uint32_t i = 0; i < n_primitives; ++i)
 			{
 				const Primitive *primitive = prims[i];
-				Accelerator::primitiveIntersection(accelerator_intersect_data, primitive, ray);
+				Accelerator::primitiveIntersection(accel_data, primitive, ray);
 			}
 		}
 
-		if(accelerator_intersect_data.isHit() && accelerator_intersect_data.tMax() <= stack[exit_id].t_)
+		if(accel_data.isHit() && accel_data.tMax() <= stack[exit_id].t_)
 		{
-			return accelerator_intersect_data;
+			return accel_data;
 		}
 
 		entry_id = exit_id;
 		curr_node = stack[exit_id].node_;
 		exit_id = stack[entry_id].prev_stack_id_;
 	} // while
-	return accelerator_intersect_data;
+	return accel_data;
 }
 
-AcceleratorIntersectData AcceleratorKdTree::intersectS(const Ray &ray, float t_max, float shadow_bias, const Node *nodes, const Bound &tree_bound)
+AccelData AcceleratorKdTree::intersectS(const Ray &ray, float t_max, float shadow_bias, const Node *nodes, const Bound &tree_bound)
 {
-	AcceleratorIntersectData accelerator_intersect_data;
+	AccelData accel_data;
 	const Bound::Cross cross{tree_bound.cross(ray, t_max)};
 	if(!cross.crossed_) { return {}; }
 	const Vec3 inv_dir{math::inverse(ray.dir_.x()), math::inverse(ray.dir_.y()), math::inverse(ray.dir_.z())};
@@ -836,7 +836,7 @@ AcceleratorIntersectData AcceleratorKdTree::intersectS(const Ray &ray, float t_m
 		if(n_primitives == 1)
 		{
 			const Primitive *primitive = curr_node->one_primitive_;
-			if(Accelerator::primitiveIntersection(accelerator_intersect_data, primitive, ray, t_max)) return accelerator_intersect_data;
+			if(Accelerator::primitiveIntersection(accel_data, primitive, ray, t_max)) return accel_data;
 		}
 		else
 		{
@@ -844,7 +844,7 @@ AcceleratorIntersectData AcceleratorKdTree::intersectS(const Ray &ray, float t_m
 			for(uint32_t i = 0; i < n_primitives; ++i)
 			{
 				const Primitive *primitive = prims[i];
-				if(Accelerator::primitiveIntersection(accelerator_intersect_data, primitive, ray, t_max)) return accelerator_intersect_data;
+				if(Accelerator::primitiveIntersection(accel_data, primitive, ray, t_max)) return accel_data;
 			}
 		}
 		entry_id = exit_id;
@@ -858,9 +858,9 @@ AcceleratorIntersectData AcceleratorKdTree::intersectS(const Ray &ray, float t_m
 	allow for transparent shadows.
 =============================================================*/
 
-AcceleratorTsIntersectData AcceleratorKdTree::intersectTs(const Ray &ray, int max_depth, float t_max, float shadow_bias, const Node *nodes, const Bound &tree_bound, const Camera *camera)
+AccelTsData AcceleratorKdTree::intersectTs(const Ray &ray, int max_depth, float t_max, float shadow_bias, const Node *nodes, const Bound &tree_bound, const Camera *camera)
 {
-	AcceleratorTsIntersectData accelerator_intersect_data;
+	AccelTsData accel_ts_data;
 	const Bound::Cross cross{tree_bound.cross(ray, t_max)};
 	if(!cross.crossed_) { return {}; }
 	const Vec3 inv_dir{math::inverse(ray.dir_.x()), math::inverse(ray.dir_.y()), math::inverse(ray.dir_.z())};
@@ -946,7 +946,7 @@ AcceleratorTsIntersectData AcceleratorKdTree::intersectTs(const Ray &ray, int ma
 		if(n_primitives == 1)
 		{
 			const Primitive *primitive = curr_node->one_primitive_;
-			if(Accelerator::primitiveIntersection(accelerator_intersect_data, filtered, depth, max_depth, primitive, ray, t_max, camera)) return accelerator_intersect_data;
+			if(Accelerator::primitiveIntersection(accel_ts_data, filtered, depth, max_depth, primitive, ray, t_max, camera)) return accel_ts_data;
 		}
 		else
 		{
@@ -954,15 +954,15 @@ AcceleratorTsIntersectData AcceleratorKdTree::intersectTs(const Ray &ray, int ma
 			for(uint32_t i = 0; i < n_primitives; ++i)
 			{
 				const Primitive *primitive = prims[i];
-				if(Accelerator::primitiveIntersection(accelerator_intersect_data, filtered, depth, max_depth, primitive, ray, t_max, camera)) return accelerator_intersect_data;
+				if(Accelerator::primitiveIntersection(accel_ts_data, filtered, depth, max_depth, primitive, ray, t_max, camera)) return accel_ts_data;
 			}
 		}
 		entry_id = exit_id;
 		curr_node = stack[exit_id].node_;
 		exit_id = stack[entry_id].prev_stack_id_;
 	} // while
-	accelerator_intersect_data.setHit(false);
-	return accelerator_intersect_data;
+	accel_ts_data.setHit(false);
+	return accel_ts_data;
 }
 
 END_YAFARAY
