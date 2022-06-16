@@ -659,6 +659,7 @@ IntersectData AcceleratorKdTreeMultiThread::intersect(const Ray &ray, float t_ma
 	//loop, traverse kd-Tree until object intersection or ray leaves tree bound
 	IntersectData intersect_data;
 	intersect_data.t_max_ = t_max;
+	const float t_min = std::max(ray.tmin_, calculateDynamicRayBias(cross));
 	while(curr_node)
 	{
 		if(t_max < stack[entry_id].t_) break;
@@ -718,7 +719,7 @@ IntersectData AcceleratorKdTreeMultiThread::intersect(const Ray &ray, float t_ma
 		// Check for intersections inside leaf node
 		for(auto prim : curr_node->primitives_)
 		{
-			Accelerator::primitiveIntersection(intersect_data, prim, ray);
+			Accelerator::primitiveIntersection(intersect_data, prim, ray.from_, ray.dir_, t_min, intersect_data.t_max_, ray.time_);
 		}
 		if(intersect_data.isHit() && intersect_data.t_max_ <= stack[exit_id].t_)
 		{
@@ -758,6 +759,7 @@ IntersectData AcceleratorKdTreeMultiThread::intersectShadow(const Ray &ray, floa
 	//loop, traverse kd-Tree until object intersection or ray leaves tree bound
 	IntersectData intersect_data;
 	intersect_data.t_max_ = t_max;
+	const float t_min = calculateDynamicRayBias(cross);
 	while(curr_node)
 	{
 		if(t_max < stack[entry_id].t_ /*a*/) break;
@@ -816,7 +818,7 @@ IntersectData AcceleratorKdTreeMultiThread::intersectShadow(const Ray &ray, floa
 		// Check for intersections inside leaf node
 		for(auto prim : curr_node->primitives_)
 		{
-			if(Accelerator::primitiveIntersectionShadow(intersect_data, prim, ray, t_max)) return intersect_data;
+			if(Accelerator::primitiveIntersectionShadow(intersect_data, prim, ray.from_, ray.dir_, t_min, t_max, ray.time_)) return intersect_data;
 		}
 		entry_id = exit_id;
 		curr_node = stack[exit_id].node_;
@@ -858,6 +860,7 @@ IntersectDataColor AcceleratorKdTreeMultiThread::intersectTransparentShadow(cons
 	//loop, traverse kd-Tree until object intersection or ray leaves tree bound
 	IntersectDataColor intersect_data_color;
 	intersect_data_color.t_max_ = t_max;
+	const float t_min = std::max(ray.tmin_, calculateDynamicRayBias(cross));
 	while(curr_node)
 	{
 		if(t_max < stack[entry_id].t_ /*a*/) break;
@@ -915,7 +918,7 @@ IntersectDataColor AcceleratorKdTreeMultiThread::intersectTransparentShadow(cons
 		// Check for intersections inside leaf node
 		for(auto prim : curr_node->primitives_)
 		{
-				if(Accelerator::primitiveIntersectionTransparentShadow(intersect_data_color, filtered, depth, max_depth, prim, ray, t_max, camera)) return intersect_data_color;
+				if(Accelerator::primitiveIntersectionTransparentShadow(intersect_data_color, filtered, depth, max_depth, prim, camera, ray.from_, ray.dir_, t_min, t_max, ray.time_)) return intersect_data_color;
 		}
 		entry_id = exit_id;
 		curr_node = stack[exit_id].node_;

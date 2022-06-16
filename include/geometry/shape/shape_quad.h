@@ -72,12 +72,9 @@ inline std::pair<float, Uv<float>> ShapeQuad::intersect(const Point3 &from, cons
 	//Tomas Moller and Ben Trumbore ray intersection scheme
 	const Vec3 edge_1{vertices_[1] - vertices_[0]};
 	const Vec3 edge_2{vertices_[2] - vertices_[0]};
-	const float edge_1_length = edge_1.length();
-	const float edge_2_length = edge_2.length();
-	const float epsilon_1_2 = 0.1f * min_raydist_global * std::max(edge_1_length, edge_2_length);
 	const Vec3 pvec_2{dir ^ edge_2};
 	const float det_1_2 = edge_1 * pvec_2;
-	if(det_1_2 <= -epsilon_1_2 || det_1_2 >= epsilon_1_2) //Test first triangle in the quad
+	if(det_1_2 != 0.f) //Test first triangle in the quad
 	{
 		const float inv_det_1_2 = 1.f / det_1_2;
 		const Vec3 tvec{from - vertices_[0]};
@@ -89,17 +86,15 @@ inline std::pair<float, Uv<float>> ShapeQuad::intersect(const Point3 &from, cons
 			if(v >= 0.f && (u + v) <= 1.f)
 			{
 				const float t = edge_2 * qvec_1 * inv_det_1_2;
-				if(t >= epsilon_1_2) return {t, {u + v, v}};
+				if(t > 0.f) return {t, {u + v, v}};
 			}
 		}
 		else //Test second triangle in the quad
 		{
 			const Vec3 edge_3{vertices_[3] - vertices_[0]};
-			const float edge_3_length = edge_3.length();
-			const float epsilon_2_3 = 0.1f * min_raydist_global * std::max(edge_2_length, edge_3_length);
 			const Vec3 pvec_3{dir ^ edge_3};
 			const float det_2_3 = edge_2 * pvec_3;
-			if(det_2_3 <= -epsilon_2_3 || det_2_3 >= epsilon_2_3)
+			if(det_2_3 != 0.f)
 			{
 				const float inv_det_2_3 = 1.f / det_2_3;
 				u = (tvec * pvec_3) * inv_det_2_3;
@@ -110,7 +105,7 @@ inline std::pair<float, Uv<float>> ShapeQuad::intersect(const Point3 &from, cons
 					if(v >= 0.f && (u + v) <= 1.f)
 					{
 						const float t = edge_3 * qvec_2 * inv_det_2_3;
-						if(t >= epsilon_2_3) return {t, {u, u + v}};
+						if(t > 0.f) return {t, {u, u + v}};
 					}
 				}
 			}

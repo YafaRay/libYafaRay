@@ -47,9 +47,10 @@ class Accelerator
 		std::tuple<bool, Rgb, const Primitive *> isShadowedTransparentShadow(const Ray &ray, int max_depth, float shadow_bias, const Camera *camera) const;
 
 	protected:
-		static void primitiveIntersection(IntersectData &intersect_data, const Primitive *primitive, const Ray &ray);
-		static bool primitiveIntersectionShadow(IntersectData &intersect_data, const Primitive *primitive, const Ray &ray, float t_max);
-		static bool primitiveIntersectionTransparentShadow(IntersectDataColor &intersect_data_color, std::set<const Primitive *> &filtered, int &depth, int max_depth, const Primitive *primitive, const Ray &ray, float t_max, const Camera *camera);
+		static void primitiveIntersection(IntersectData &intersect_data, const Primitive *primitive, const Point3 &from, const Vec3 &dir, float t_min, float t_max, float time);
+		static bool primitiveIntersectionShadow(IntersectData &intersect_data, const Primitive *primitive, const Point3 &from, const Vec3 &dir, float t_min, float t_max, float time);
+		static bool primitiveIntersectionTransparentShadow(IntersectDataColor &intersect_data_color, std::set<const Primitive *> &filtered, int &depth, int max_depth, const Primitive *primitive, const Camera *camera, const Point3 &from, const Vec3 &dir, float t_min, float t_max, float time);
+		static float calculateDynamicRayBias(const Bound::Cross &bound_cross) { return 0.1f * min_raydist_global * std::abs(bound_cross.leave_ - bound_cross.enter_); } //!< empirical guesstimate for ray bias to avoid self intersections, calculated based on the length segment of the ray crossing the tree bound, to estimate the loss of precision caused by the (very roughly approximate) size of the primitive
 		Logger &logger_;
 };
 
@@ -86,10 +87,10 @@ inline std::tuple<bool, Rgb, const Primitive *> Accelerator::isShadowedTranspare
 	return {intersect_data_color.isHit(), intersect_data_color.color_, intersect_data_color.primitive_};
 }
 
-inline void Accelerator::primitiveIntersection(IntersectData &intersect_data, const Primitive *primitive, const Ray &ray)
+inline void Accelerator::primitiveIntersection(IntersectData &intersect_data, const Primitive *primitive, const Point3 &from, const Vec3 &dir, float t_min, float t_max, float time)
 {
-	auto [t_hit, uv]{primitive->intersect(ray.from_, ray.dir_, ray.time_)};
-	if(t_hit <= 0.f || t_hit < ray.tmin_ || t_hit >= intersect_data.t_max_) return;
+	auto [t_hit, uv]{primitive->intersect(from, dir, time)};
+	if(t_hit <= 0.f || t_hit < t_min || t_hit >= t_max) return;
 	if(const Visibility prim_visibility = primitive->getVisibility(); prim_visibility == Visibility::InvisibleShadowsOnly || prim_visibility == Visibility::Invisible) return;
 	else if(const Visibility mat_visibility = primitive->getMaterial()->getVisibility(); mat_visibility == Visibility::InvisibleShadowsOnly || mat_visibility == Visibility::Invisible) return;
 	intersect_data.t_hit_ = t_hit;
@@ -98,10 +99,10 @@ inline void Accelerator::primitiveIntersection(IntersectData &intersect_data, co
 	intersect_data.primitive_ = primitive;
 }
 
-inline bool Accelerator::primitiveIntersectionShadow(IntersectData &intersect_data, const Primitive *primitive, const Ray &ray, float t_max)
+inline bool Accelerator::primitiveIntersectionShadow(IntersectData &intersect_data, const Primitive *primitive, const Point3 &from, const Vec3 &dir, float t_min, float t_max, float time)
 {
-	auto [t_hit, uv]{primitive->intersect(ray.from_, ray.dir_, ray.time_)};
-	if(t_hit <= 0.f || t_hit >= t_max) return false;
+	auto [t_hit, uv]{primitive->intersect(from, dir, time)};
+	if(t_hit <= 0.f || t_hit < t_min || t_hit >= t_max) return false;
 	if(const Visibility prim_visibility = primitive->getVisibility(); prim_visibility == Visibility::VisibleNoShadows || prim_visibility == Visibility::Invisible) return false;
 	else if(const Visibility mat_visibility = primitive->getMaterial()->getVisibility(); mat_visibility == Visibility::VisibleNoShadows || mat_visibility == Visibility::Invisible) return false;
 	intersect_data.t_hit_ = t_hit;
@@ -111,10 +112,10 @@ inline bool Accelerator::primitiveIntersectionShadow(IntersectData &intersect_da
 	return true;
 }
 
-inline bool Accelerator::primitiveIntersectionTransparentShadow(IntersectDataColor &intersect_data_color, std::set<const Primitive *> &filtered, int &depth, int max_depth, const Primitive *primitive, const Ray &ray, float t_max, const Camera *camera)
+inline bool Accelerator::primitiveIntersectionTransparentShadow(IntersectDataColor &intersect_data_color, std::set<const Primitive *> &filtered, int &depth, int max_depth, const Primitive *primitive, const Camera *camera, const Point3 &from, const Vec3 &dir, float t_min, float t_max, float time)
 {
-	auto [t_hit, uv]{primitive->intersect(ray.from_, ray.dir_, ray.time_)};
-	if(t_hit <= 0.f || t_hit < ray.tmin_ || t_hit >= t_max) return false;
+	auto [t_hit, uv]{primitive->intersect(from, dir, time)};
+	if(t_hit <= 0.f || t_hit < t_min || t_hit >= t_max) return false;
 	const Material *mat = nullptr;
 	if(const Visibility prim_visibility = primitive->getVisibility(); prim_visibility == Visibility::VisibleNoShadows || prim_visibility == Visibility::Invisible) return false;
 	mat = primitive->getMaterial();
@@ -127,9 +128,9 @@ inline bool Accelerator::primitiveIntersectionTransparentShadow(IntersectDataCol
 	else if(filtered.insert(primitive).second)
 	{
 		if(depth >= max_depth) return true;
-		const Point3 hit_point{ray.from_ + intersect_data_color.t_hit_ * ray.dir_};
-		const auto sp{primitive->getSurface(ray.differentials_.get(), hit_point, ray.time_, intersect_data_color.uv_, camera)};
-		if(sp) intersect_data_color.color_ *= sp->getTransparency(ray.dir_, camera);
+		const Point3 hit_point{from + intersect_data_color.t_hit_ * dir};
+		const auto sp{primitive->getSurface(nullptr, hit_point, time, intersect_data_color.uv_, camera)}; //I don't think we need differentials for transparent shadows, no need to blur the texture from a distance for this
+		if(sp) intersect_data_color.color_ *= sp->getTransparency(dir, camera);
 		++depth;
 	}
 	return false;

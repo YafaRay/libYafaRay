@@ -65,9 +65,10 @@ IntersectData AcceleratorSimpleTest::intersect(const Ray &ray, float t_max) cons
 	{
 		if(const Bound::Cross cross{object_data.bound_.cross(ray, t_max)}; cross.crossed_)
 		{
+			const float t_min = std::max(ray.tmin_, calculateDynamicRayBias(cross));
 			for(const auto &primitive : object_data.primitives_)
 			{
-				Accelerator::primitiveIntersection(intersect_data, primitive, ray);
+				Accelerator::primitiveIntersection(intersect_data, primitive, ray.from_, ray.dir_, t_min, intersect_data.t_max_, ray.time_);
 				if(intersect_data.isHit() && intersect_data.t_hit_ >= ray.tmin_  && intersect_data.t_hit_ <= ray.tmax_)
 				{
 					return intersect_data;
@@ -85,9 +86,10 @@ IntersectData AcceleratorSimpleTest::intersectShadow(const Ray &ray, float t_max
 	{
 		if(const Bound::Cross cross{object_data.bound_.cross(ray, t_max)}; cross.crossed_)
 		{
+			const float t_min = calculateDynamicRayBias(cross);
 			for(const auto &primitive : object_data.primitives_)
 			{
-				if(Accelerator::primitiveIntersectionShadow(intersect_data, primitive, ray, t_max)) return intersect_data;
+				if(Accelerator::primitiveIntersectionShadow(intersect_data, primitive, ray.from_, ray.dir_, t_min, t_max, ray.time_)) return intersect_data;
 			}
 		}
 	}
@@ -103,9 +105,10 @@ IntersectDataColor AcceleratorSimpleTest::intersectTransparentShadow(const Ray &
 	{
 		if(const Bound::Cross cross{object_data.bound_.cross(ray, t_max)}; cross.crossed_)
 		{
+			const float t_min = std::max(ray.tmin_, calculateDynamicRayBias(cross));
 			for(const auto &primitive : object_data.primitives_)
 			{
-				if(Accelerator::primitiveIntersectionTransparentShadow(intersect_data_color, filtered, depth, max_depth, primitive, ray, t_max, camera)) return intersect_data_color;
+				if(Accelerator::primitiveIntersectionTransparentShadow(intersect_data_color, filtered, depth, max_depth, primitive, camera, ray.from_, ray.dir_, t_min, t_max, ray.time_)) return intersect_data_color;
 			}
 		}
 	}

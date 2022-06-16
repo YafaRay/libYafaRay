@@ -81,10 +81,9 @@ inline std::pair<float, Uv<float>> ShapeTriangle::intersect(const Point3 &from, 
 	//Tomas Moller and Ben Trumbore ray intersection scheme
 	const Vec3 edge_1{vertices_[1] - vertices_[0]};
 	const Vec3 edge_2{vertices_[2] - vertices_[0]};
-	const float epsilon = 0.1f * min_raydist_global * std::max(edge_1.length(), edge_2.length());
 	const Vec3 pvec{dir ^ edge_2};
 	const float det = edge_1 * pvec;
-	if(det <= -epsilon || det >= epsilon)
+	if(det != 0.f)
 	{
 		const float inv_det = 1.f / det;
 		const Vec3 tvec{from - vertices_[0]};
@@ -96,7 +95,7 @@ inline std::pair<float, Uv<float>> ShapeTriangle::intersect(const Point3 &from, 
 			if(v >= 0.f && (u + v) <= 1.f)
 			{
 				const float t = edge_2 * qvec * inv_det;
-				if(t >= epsilon) return {t, {u, v}};
+				if(t > 0.f) return {t, {u, v}};
 			}
 		}
 	}

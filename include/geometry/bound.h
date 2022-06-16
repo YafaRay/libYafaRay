@@ -75,12 +75,14 @@ class Bound
 		Cross cross(const Ray &ray, float t_max) const;
 		//! Returns the volume of the bound
 		float vol() const;
-		//! Returns the lenght along X axis
+		//! Returns the length along X axis
 		float longX() const { return g_.x() - a_.x(); }
-		//! Returns the lenght along Y axis
+		//! Returns the length along Y axis
 		float longY() const { return g_.y() - a_.y(); }
-		//! Returns the lenght along Z axis
+		//! Returns the length along Z axis
 		float longZ() const { return g_.z() - a_.z(); }
+		//! Returns the length along Z axis
+		float longestAxisLength() const { return math::max(longX(), longY(), longZ()); }
 		//! Cuts the bound to have the given max X
 		void setMaxX(float x) { g_.x() = x;};
 		//! Cuts the bound to have the given min X

@@ -664,6 +664,7 @@ IntersectData AcceleratorKdTree::intersect(const Ray &ray, float t_max, const No
 	//loop, traverse kd-Tree until object intersection or ray leaves tree bound
 	IntersectData intersect_data;
 	intersect_data.t_max_ = t_max;
+	const float t_min = std::max(ray.tmin_, calculateDynamicRayBias(cross));
 	while(curr_node)
 	{
 		if(t_max < stack[entry_id].t_) break;
@@ -725,7 +726,7 @@ IntersectData AcceleratorKdTree::intersect(const Ray &ray, float t_max, const No
 		if(n_primitives == 1)
 		{
 			const Primitive *primitive = curr_node->one_primitive_;
-			Accelerator::primitiveIntersection(intersect_data, primitive, ray);
+			Accelerator::primitiveIntersection(intersect_data, primitive, ray.from_, ray.dir_, t_min, intersect_data.t_max_, ray.time_);
 		}
 		else
 		{
@@ -733,7 +734,7 @@ IntersectData AcceleratorKdTree::intersect(const Ray &ray, float t_max, const No
 			for(uint32_t i = 0; i < n_primitives; ++i)
 			{
 				const Primitive *primitive = prims[i];
-				Accelerator::primitiveIntersection(intersect_data, primitive, ray);
+				Accelerator::primitiveIntersection(intersect_data, primitive, ray.from_, ray.dir_, t_min, intersect_data.t_max_, ray.time_);
 			}
 		}
 
@@ -775,6 +776,7 @@ IntersectData AcceleratorKdTree::intersectShadow(const Ray &ray, float t_max, co
 	//loop, traverse kd-Tree until object intersection or ray leaves tree bound
 	IntersectData intersect_data;
 	intersect_data.t_max_ = t_max;
+	const float t_min = calculateDynamicRayBias(cross);
 	while(curr_node)
 	{
 		if(t_max < stack[entry_id].t_ /*a*/) break;
@@ -835,7 +837,7 @@ IntersectData AcceleratorKdTree::intersectShadow(const Ray &ray, float t_max, co
 		if(n_primitives == 1)
 		{
 			const Primitive *primitive = curr_node->one_primitive_;
-			if(Accelerator::primitiveIntersectionShadow(intersect_data, primitive, ray, t_max)) return intersect_data;
+			if(Accelerator::primitiveIntersectionShadow(intersect_data, primitive, ray.from_, ray.dir_, t_min, t_max, ray.time_)) return intersect_data;
 		}
 		else
 		{
@@ -843,7 +845,7 @@ IntersectData AcceleratorKdTree::intersectShadow(const Ray &ray, float t_max, co
 			for(uint32_t i = 0; i < n_primitives; ++i)
 			{
 				const Primitive *primitive = prims[i];
-				if(Accelerator::primitiveIntersectionShadow(intersect_data, primitive, ray, t_max)) return intersect_data;
+				if(Accelerator::primitiveIntersectionShadow(intersect_data, primitive, ray.from_, ray.dir_, t_min, t_max, ray.time_)) return intersect_data;
 			}
 		}
 		entry_id = exit_id;
@@ -886,6 +888,7 @@ IntersectDataColor AcceleratorKdTree::intersectTransparentShadow(const Ray &ray,
 	//loop, traverse kd-Tree until object intersection or ray leaves tree bound
 	IntersectDataColor intersect_data_color;
 	intersect_data_color.t_max_ = t_max;
+	const float t_min = std::max(ray.tmin_, calculateDynamicRayBias(cross));
 	while(curr_node)
 	{
 		if(t_max < stack[entry_id].t_ /*a*/) break;
@@ -945,7 +948,7 @@ IntersectDataColor AcceleratorKdTree::intersectTransparentShadow(const Ray &ray,
 		if(n_primitives == 1)
 		{
 			const Primitive *primitive = curr_node->one_primitive_;
-			if(Accelerator::primitiveIntersectionTransparentShadow(intersect_data_color, filtered, depth, max_depth, primitive, ray, t_max, camera)) return intersect_data_color;
+			if(Accelerator::primitiveIntersectionTransparentShadow(intersect_data_color, filtered, depth, max_depth, primitive, camera, ray.from_, ray.dir_, t_min, t_max, ray.time_)) return intersect_data_color;
 		}
 		else
 		{
@@ -953,7 +956,7 @@ IntersectDataColor AcceleratorKdTree::intersectTransparentShadow(const Ray &ray,
 			for(uint32_t i = 0; i < n_primitives; ++i)
 			{
 				const Primitive *primitive = prims[i];
-				if(Accelerator::primitiveIntersectionTransparentShadow(intersect_data_color, filtered, depth, max_depth, primitive, ray, t_max, camera)) return intersect_data_color;
+				if(Accelerator::primitiveIntersectionTransparentShadow(intersect_data_color, filtered, depth, max_depth, primitive, camera, ray.from_, ray.dir_, t_min, t_max, ray.time_)) return intersect_data_color;
 			}
 		}
 		entry_id = exit_id;
