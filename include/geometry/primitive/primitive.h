@@ -24,7 +24,6 @@
 #include "common/visibility.h"
 #include "geometry/poly_double.h"
 #include "common/logger.h"
-#include "geometry/ray.h"
 #include "geometry/bound.h"
 #include <vector>
 #include <array>
@@ -32,7 +31,6 @@
 BEGIN_YAFARAY
 
 class Material;
-class Ray;
 class SurfacePoint;
 class Point3;
 class ParamMap;
@@ -53,8 +51,8 @@ class Primitive
 		virtual Bound getBound() const = 0;
 		virtual Bound getBound(const Matrix4 &obj_to_world) const = 0;
 		virtual bool clippingSupport() const = 0;
-		virtual IntersectData intersect(const Ray &ray) const = 0;
-		virtual IntersectData intersect(const Ray &ray, const Matrix4 &obj_to_world) const = 0;
+		virtual IntersectData intersect(const Point3 &from, const Vec3 &dir, float time) const = 0;
+		virtual IntersectData intersect(const Point3 &from, const Vec3 &dir, float time, const Matrix4 &obj_to_world) const = 0;
 		virtual std::unique_ptr<const SurfacePoint> getSurface(const RayDifferentials *ray_differentials, const Point3 &hit_point, float time, const Uv<float> &intersect_uv, const Camera *camera) const = 0;
 		virtual std::unique_ptr<const SurfacePoint> getSurface(const RayDifferentials *ray_differentials, const Point3 &hit_point, float time, const Uv<float> &intersect_uv, const Matrix4 &obj_to_world, const Camera *camera) const = 0;
 		virtual const Material *getMaterial() const = 0;

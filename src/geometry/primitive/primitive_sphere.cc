@@ -61,11 +61,11 @@ Bound SpherePrimitive::getBound(const Matrix4 &obj_to_world) const
 	return {center_ - r, center_ + r};
 }
 
-IntersectData SpherePrimitive::intersect(const Ray &ray) const
+IntersectData SpherePrimitive::intersect(const Point3 &from, const Vec3 &dir, float time) const
 {
-	const Vec3 vf{ray.from_ - center_};
-	const float ea = ray.dir_ * ray.dir_;
-	const float eb = 2.0 * (vf * ray.dir_);
+	const Vec3 vf{from - center_};
+	const float ea = dir * dir;
+	const float eb = 2.0 * (vf * dir);
 	const float ec = vf * vf - radius_ * radius_;
 	float osc = eb * eb - 4.0 * ea * ec;
 	if(osc < 0) return {};
@@ -73,20 +73,20 @@ IntersectData SpherePrimitive::intersect(const Ray &ray) const
 	const float sol_1 = (-eb - osc) / (2.0 * ea);
 	const float sol_2 = (-eb + osc) / (2.0 * ea);
 	float sol = sol_1;
-	if(sol < ray.tmin_)
+	if(sol < 0.f) //used to be "< ray.tmin_", was that necessary?
 	{
 		sol = sol_2;
-		if(sol < ray.tmin_) return {};
+		if(sol < 0.f) return {}; //used to be "< ray.tmin_", was that necessary?
 	}
 	//if(sol > ray.tmax) return false; //tmax = -1 is not substituted yet...
 	return IntersectData{sol};
 }
 
-IntersectData SpherePrimitive::intersect(const Ray &ray, const Matrix4 &obj_to_world) const
+IntersectData SpherePrimitive::intersect(const Point3 &from, const Vec3 &dir, float time, const Matrix4 &obj_to_world) const
 {
-	const Vec3 vf{ray.from_ - center_};
-	const float ea = ray.dir_ * ray.dir_;
-	const float eb = 2.0 * (vf * ray.dir_);
+	const Vec3 vf{from - center_};
+	const float ea = dir * dir;
+	const float eb = 2.0 * (vf * dir);
 	const float ec = vf * vf - radius_ * radius_;
 	float osc = eb * eb - 4.0 * ea * ec;
 	if(osc < 0) return {};
@@ -94,10 +94,10 @@ IntersectData SpherePrimitive::intersect(const Ray &ray, const Matrix4 &obj_to_w
 	const float sol_1 = (-eb - osc) / (2.0 * ea);
 	const float sol_2 = (-eb + osc) / (2.0 * ea);
 	float sol = sol_1;
-	if(sol < ray.tmin_)
+	if(sol < 0.f) //used to be "< ray.tmin_", was that necessary?
 	{
 		sol = sol_2;
-		if(sol < ray.tmin_) return {};
+		if(sol < 0.f) return {}; //used to be "< ray.tmin_", was that necessary?
 	}
 	//if(sol > ray.tmax) return false; //tmax = -1 is not substituted yet...
 	return IntersectData{sol};

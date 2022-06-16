@@ -31,7 +31,6 @@ BEGIN_YAFARAY
 class Material;
 class IntersectData;
 class Bound;
-class Ray;
 class SurfacePoint;
 class Point3;
 class ParamMap;
@@ -46,8 +45,8 @@ class PrimitiveInstance : public Primitive
 		bool clippingSupport() const override { return base_primitive_->clippingSupport() && !base_instance_.hasMotionBlur(); }
 		PolyDouble::ClipResultWithBound clipToBound(Logger &logger, const std::array<Vec3Double, 2> &bound, const ClipPlane &clip_plane, const PolyDouble &poly) const override;
 		PolyDouble::ClipResultWithBound clipToBound(Logger &logger, const std::array<Vec3Double, 2> &bound, const ClipPlane &clip_plane, const PolyDouble &poly, const Matrix4 &obj_to_world) const override;
-		IntersectData intersect(const Ray &ray) const override;
-		IntersectData intersect(const Ray &ray, const Matrix4 &obj_to_world) const override;
+		IntersectData intersect(const Point3 &from, const Vec3 &dir, float time) const override;
+		IntersectData intersect(const Point3 &from, const Vec3 &dir, float time, const Matrix4 &obj_to_world) const override;
 		std::unique_ptr<const SurfacePoint> getSurface(const RayDifferentials *ray_differentials, const Point3 &hit_point, float time, const Uv<float> &intersect_uv, const Camera *camera) const override;
 		std::unique_ptr<const SurfacePoint> getSurface(const RayDifferentials *ray_differentials, const Point3 &hit_point, float time, const Uv<float> &intersect_uv, const Matrix4 &obj_to_world, const Camera *camera) const override;
 		const Material *getMaterial() const override { return base_primitive_->getMaterial(); }
@@ -81,14 +80,14 @@ inline PolyDouble::ClipResultWithBound PrimitiveInstance::clipToBound(Logger &lo
 	return base_primitive_->clipToBound(logger, bound, clip_plane, poly, obj_to_world * base_instance_.getObjToWorldMatrix(0));
 }
 
-inline IntersectData PrimitiveInstance::intersect(const Ray &ray) const
+inline IntersectData PrimitiveInstance::intersect(const Point3 &from, const Vec3 &dir, float time) const
 {
-	return base_primitive_->intersect(ray, base_instance_.getObjToWorldMatrixAtTime(ray.time_));
+	return base_primitive_->intersect(from, dir, time, base_instance_.getObjToWorldMatrixAtTime(time));
 }
 
-inline IntersectData PrimitiveInstance::intersect(const Ray &ray, const Matrix4 &obj_to_world) const
+inline IntersectData PrimitiveInstance::intersect(const Point3 &from, const Vec3 &dir, float time, const Matrix4 &obj_to_world) const
 {
-	return base_primitive_->intersect(ray, obj_to_world * base_instance_.getObjToWorldMatrixAtTime(ray.time_));
+	return base_primitive_->intersect(from, dir, time, obj_to_world * base_instance_.getObjToWorldMatrixAtTime(time));
 }
 
 inline float PrimitiveInstance::surfaceArea(float time) const

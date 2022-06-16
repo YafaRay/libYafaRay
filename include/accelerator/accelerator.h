@@ -61,7 +61,7 @@ inline std::pair<std::unique_ptr<const SurfacePoint>, float> Accelerator::inters
 	if(accel_data.isHit() && accel_data.primitive())
 	{
 		const Point3 hit_point{ray.from_ + accel_data.tMax() * ray.dir_};
-		auto sp{accel_data.primitive()->getSurface(ray.differentials_.get(), hit_point, accel_data.time(), accel_data.uv(), camera)};
+		auto sp{accel_data.primitive()->getSurface(ray.differentials_.get(), hit_point, ray.time_, accel_data.uv(), camera)};
 		return {std::move(sp), accel_data.tMax()};
 	}
 	else return {nullptr, ray.tmax_};
@@ -88,7 +88,7 @@ inline std::tuple<bool, Rgb, const Primitive *> Accelerator::isShadowedTranspare
 
 inline void Accelerator::primitiveIntersection(AccelData &accel_data, const Primitive *primitive, const Ray &ray)
 {
-	IntersectData intersect_data{primitive->intersect(ray)};
+	IntersectData intersect_data{primitive->intersect(ray.from_, ray.dir_, ray.time_)};
 	if(intersect_data.tHit() < ray.tmin_ || intersect_data.tHit() >= accel_data.tMax()) return;
 	if(const Visibility prim_visibility = primitive->getVisibility(); prim_visibility == Visibility::InvisibleShadowsOnly || prim_visibility == Visibility::Invisible) return;
 	else if(const Visibility mat_visibility = primitive->getMaterial()->getVisibility(); mat_visibility == Visibility::InvisibleShadowsOnly || mat_visibility == Visibility::Invisible) return;
@@ -98,7 +98,7 @@ inline void Accelerator::primitiveIntersection(AccelData &accel_data, const Prim
 
 inline bool Accelerator::primitiveIntersectionShadow(AccelData &accel_data, const Primitive *primitive, const Ray &ray, float t_max)
 {
-	IntersectData intersect_data{primitive->intersect(ray)};
+	IntersectData intersect_data{primitive->intersect(ray.from_, ray.dir_, ray.time_)};
 	if(intersect_data.tHit() < 0.f || intersect_data.tHit() >= t_max) return false;
 	if(const Visibility prim_visibility = primitive->getVisibility(); prim_visibility == Visibility::VisibleNoShadows || prim_visibility == Visibility::Invisible) return false;
 	else if(const Visibility mat_visibility = primitive->getMaterial()->getVisibility(); mat_visibility == Visibility::VisibleNoShadows || mat_visibility == Visibility::Invisible) return false;
@@ -109,7 +109,7 @@ inline bool Accelerator::primitiveIntersectionShadow(AccelData &accel_data, cons
 
 inline bool Accelerator::primitiveIntersectionTransparentShadow(AccelTsData &accel_ts_data, std::set<const Primitive *> &filtered, int &depth, int max_depth, const Primitive *primitive, const Ray &ray, float t_max, const Camera *camera)
 {
-	IntersectData intersect_data{primitive->intersect(ray)};
+	IntersectData intersect_data{primitive->intersect(ray.from_, ray.dir_, ray.time_)};
 	if(!intersect_data.isHit() || intersect_data.tHit() >= t_max || intersect_data.tHit() < ray.tmin_) return false;
 	const Material *mat = nullptr;
 	if(const Visibility prim_visibility = primitive->getVisibility(); prim_visibility == Visibility::VisibleNoShadows || prim_visibility == Visibility::Invisible) return false;
@@ -122,7 +122,7 @@ inline bool Accelerator::primitiveIntersectionTransparentShadow(AccelTsData &acc
 	{
 		if(depth >= max_depth) return true;
 		const Point3 hit_point{ray.from_ + accel_ts_data.tHit() * ray.dir_};
-		const auto sp{primitive->getSurface(ray.differentials_.get(), hit_point, accel_ts_data.time(), accel_ts_data.uv(), camera)};
+		const auto sp{primitive->getSurface(ray.differentials_.get(), hit_point, ray.time_, accel_ts_data.uv(), camera)};
 		if(sp) accel_ts_data.multiplyTransparentColor(sp->getTransparency(ray.dir_, camera));
 		++depth;
 	}

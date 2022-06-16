@@ -32,8 +32,8 @@ class QuadPrimitive : public FacePrimitive
 		QuadPrimitive(std::vector<int> &&vertices_indices, std::vector<int> &&vertices_uv_indices, const MeshObject &mesh_object);
 
 	private:
-		IntersectData intersect(const Ray &ray) const override;
-		IntersectData intersect(const Ray &ray, const Matrix4 &obj_to_world) const override;
+		IntersectData intersect(const Point3 &from, const Vec3 &dir, float time) const override;
+		IntersectData intersect(const Point3 &from, const Vec3 &dir, float time, const Matrix4 &obj_to_world) const override;
 		bool clippingSupport() const override { return true; }
 		PolyDouble::ClipResultWithBound clipToBound(Logger &logger, const std::array<Vec3Double, 2> &bound, const ClipPlane &clip_plane, const PolyDouble &poly) const override;
 		PolyDouble::ClipResultWithBound clipToBound(Logger &logger, const std::array<Vec3Double, 2> &bound, const ClipPlane &clip_plane, const PolyDouble &poly, const Matrix4 &obj_to_world) const override;
@@ -63,24 +63,24 @@ inline QuadPrimitive::QuadPrimitive(std::vector<int> &&vertices_indices, std::ve
 {
 }
 
-inline IntersectData QuadPrimitive::intersect(const Ray &ray) const
+inline IntersectData QuadPrimitive::intersect(const Point3 &from, const Vec3 &dir, float time) const
 {
 	return ShapeQuad{{
 		getVertex(0, 0),
 		getVertex(1, 0),
 		getVertex(2, 0),
 		getVertex(3, 0),
-   }}.intersect(ray);
+	 }}.intersect(from, dir);
 }
 
-inline IntersectData QuadPrimitive::intersect(const Ray &ray, const Matrix4 &obj_to_world) const
+inline IntersectData QuadPrimitive::intersect(const Point3 &from, const Vec3 &dir, float time, const Matrix4 &obj_to_world) const
 {
 	return ShapeQuad{{
 		getVertex(0, obj_to_world, 0),
 		getVertex(1, obj_to_world, 0),
 		getVertex(2, obj_to_world, 0),
 		getVertex(3, obj_to_world, 0),
-   }}.intersect(ray);
+	 }}.intersect(from, dir);
 }
 
 inline float QuadPrimitive::surfaceArea(float time) const

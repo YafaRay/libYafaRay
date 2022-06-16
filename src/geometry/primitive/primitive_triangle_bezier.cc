@@ -24,7 +24,6 @@
 #include "geometry/matrix4.h"
 #include "geometry/object/object_mesh.h"
 #include "geometry/poly_double.h"
-#include "geometry/ray.h"
 #include "geometry/surface.h"
 #include "geometry/uv.h"
 #include <cstring>

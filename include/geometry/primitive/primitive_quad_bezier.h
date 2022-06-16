@@ -31,8 +31,8 @@ class QuadBezierPrimitive : public FacePrimitive
 		QuadBezierPrimitive(std::vector<int> &&vertices_indices, std::vector<int> &&vertices_uv_indices, const MeshObject &mesh_object);
 
 	private:
-		IntersectData intersect(const Ray &ray) const override;
-		IntersectData intersect(const Ray &ray, const Matrix4 &obj_to_world) const override;
+		IntersectData intersect(const Point3 &from, const Vec3 &dir, float time) const override;
+		IntersectData intersect(const Point3 &from, const Vec3 &dir, float time, const Matrix4 &obj_to_world) const override;
 		bool clippingSupport() const override { return false; }
 		Bound getBound() const override;
 		Bound getBound(const Matrix4 &obj_to_world) const override;
@@ -55,14 +55,14 @@ inline QuadBezierPrimitive::QuadBezierPrimitive(std::vector<int> &&vertices_indi
 {
 }
 
-inline IntersectData QuadBezierPrimitive::intersect(const Ray &ray) const
+inline IntersectData QuadBezierPrimitive::intersect(const Point3 &from, const Vec3 &dir, float time) const
 {
-	return getShapeQuadAtTime(ray.time_).intersect(ray);
+	return getShapeQuadAtTime(time).intersect(from, dir);
 }
 
-inline IntersectData QuadBezierPrimitive::intersect(const Ray &ray, const Matrix4 &obj_to_world) const
+inline IntersectData QuadBezierPrimitive::intersect(const Point3 &from, const Vec3 &dir, float time, const Matrix4 &obj_to_world) const
 {
-	return getShapeQuadAtTime(obj_to_world, ray.time_).intersect(ray);
+	return getShapeQuadAtTime(obj_to_world, time).intersect(from, dir);
 }
 
 inline float QuadBezierPrimitive::surfaceArea(float time) const

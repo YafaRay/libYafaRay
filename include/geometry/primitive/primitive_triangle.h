@@ -31,8 +31,8 @@ class TrianglePrimitive : public FacePrimitive
 		TrianglePrimitive(std::vector<int> &&vertices_indices, std::vector<int> &&vertices_uv_indices, const MeshObject &mesh_object);
 
 	private:
-		IntersectData intersect(const Ray &ray) const override;
-		IntersectData intersect(const Ray &ray, const Matrix4 &obj_to_world) const override;
+		IntersectData intersect(const Point3 &from, const Vec3 &dir, float time) const override;
+		IntersectData intersect(const Point3 &from, const Vec3 &dir, float time, const Matrix4 &obj_to_world) const override;
 		bool clippingSupport() const override { return true; }
 		PolyDouble::ClipResultWithBound clipToBound(Logger &logger, const std::array<Vec3Double, 2> &bound, const ClipPlane &clip_plane, const PolyDouble &poly) const override;
 		PolyDouble::ClipResultWithBound clipToBound(Logger &logger, const std::array<Vec3Double, 2> &bound, const ClipPlane &clip_plane, const PolyDouble &poly, const Matrix4 &obj_to_world) const override;
@@ -61,22 +61,22 @@ inline TrianglePrimitive::TrianglePrimitive(std::vector<int> &&vertices_indices,
 {
 }
 
-inline IntersectData TrianglePrimitive::intersect(const Ray &ray) const
+inline IntersectData TrianglePrimitive::intersect(const Point3 &from, const Vec3 &dir, float time) const
 {
 	return ShapeTriangle{{
-		getVertex(0, 0),
-		getVertex(1, 0),
-		getVertex(2, 0),
-   }}.intersect(ray);
+								 getVertex(0, 0),
+								 getVertex(1, 0),
+								 getVertex(2, 0),
+						 }}.intersect(from, dir);
 }
 
-inline IntersectData TrianglePrimitive::intersect(const Ray &ray, const Matrix4 &obj_to_world) const
+inline IntersectData TrianglePrimitive::intersect(const Point3 &from, const Vec3 &dir, float time, const Matrix4 &obj_to_world) const
 {
 	return ShapeTriangle{{
 		getVertex(0, obj_to_world, 0),
 		getVertex(1, obj_to_world, 0),
 		getVertex(2, obj_to_world, 0),
-   }}.intersect(ray);
+	 }}.intersect(from, dir);
 }
 
 inline float TrianglePrimitive::surfaceArea(float time) const
@@ -101,10 +101,10 @@ inline std::pair<Point3, Vec3> TrianglePrimitive::sample(const Uv<float> &uv, fl
 {
 	return {
 			ShapeTriangle{{
-								  getVertex(0, 0),
-								  getVertex(1, 0),
-								  getVertex(2, 0),
-						  }}.sample(uv),
+				getVertex(0, 0),
+				getVertex(1, 0),
+				getVertex(2, 0),
+			}}.sample(uv),
 		getGeometricNormal()
 	};
 }
@@ -113,10 +113,10 @@ inline std::pair<Point3, Vec3> TrianglePrimitive::sample(const Uv<float> &uv, co
 {
 	return {
 			ShapeTriangle{{
-								  getVertex(0, obj_to_world, 0),
-								  getVertex(1, obj_to_world, 0),
-								  getVertex(2, obj_to_world, 0),
-						  }}.sample(uv),
+				getVertex(0, obj_to_world, 0),
+				getVertex(1, obj_to_world, 0),
+				getVertex(2, obj_to_world, 0),
+			}}.sample(uv),
 		getGeometricNormal(obj_to_world)
 	};
 }

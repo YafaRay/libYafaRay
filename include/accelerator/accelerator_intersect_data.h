@@ -42,7 +42,6 @@ class AccelData
 		bool isHit() const { return intersect_data_.isHit(); }
 		float tHit() const { return intersect_data_.tHit(); }
 		Uv<float> uv() const { return intersect_data_.uv(); }
-		float time() const { return intersect_data_.time(); }
 		void setNoHit() { intersect_data_.setNoHit(); }
 		IntersectData intersectData() const { return intersect_data_; }
 		void setIntersectData(IntersectData &&intersect_data) { setTMax(intersect_data.tHit()); intersect_data_ = std::move(intersect_data); }
@@ -71,7 +70,6 @@ class AccelTsData
 		bool isHit() const { return accel_data_.isHit(); }
 		float tHit() const { return accel_data_.tHit(); }
 		Uv<float> uv() const { return accel_data_.uv(); }
-		float time() const { return accel_data_.time(); }
 		void setNoHit() { accel_data_.setNoHit(); }
 		IntersectData intersectData() const { return accel_data_.intersectData(); }
 		void setIntersectData(IntersectData &&intersect_data) { accel_data_.setIntersectData(std::move(intersect_data)); }
