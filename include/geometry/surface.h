@@ -94,7 +94,6 @@ class SurfacePoint final
 		[[nodiscard]] const Light *getLight() const { if(primitive_) return primitive_->getObjectLight(); else return nullptr; }
 		[[nodiscard]] bool hasMotionBlur() const { if(primitive_) return primitive_->hasObjectMotionBlur(); else return false; }
 
-		IntersectData intersect_data_;
 		alignas(8) std::unique_ptr<const MaterialData> mat_data_;
 		std::unique_ptr<const SurfaceDifferentials> differentials_; //!< Surface Differentials for mipmaps calculations
 
@@ -107,6 +106,7 @@ class SurfacePoint final
 		//	Rgb vertex_col;
 		bool has_uv_;
 		bool has_orco_;
+		float time_;
 
 		Uv<float> uv_; //!< the u, v texture coords.
 		Uv<Vec3> uvn_; //!< vectors building orthogonal shading space with n_
@@ -121,7 +121,6 @@ class SurfacePoint final
 
 inline SurfacePoint::SurfacePoint(const SurfacePoint &sp)
 	:
-	intersect_data_{sp.intersect_data_},
 	n_{sp.n_},
 	ng_{sp.ng_},
 	orco_ng_{sp.orco_ng_},
@@ -129,6 +128,7 @@ inline SurfacePoint::SurfacePoint(const SurfacePoint &sp)
 	orco_p_{sp.orco_p_},
 	has_uv_{sp.has_uv_},
 	has_orco_{sp.has_orco_},
+	time_{sp.time_},
 	uv_{sp.uv_},
 	uvn_{sp.uvn_},
 	dp_{sp.dp_},
@@ -142,7 +142,6 @@ inline SurfacePoint::SurfacePoint(const SurfacePoint &sp)
 
 inline SurfacePoint::SurfacePoint(const SurfacePoint &sp_1, const SurfacePoint &sp_2, float alpha)
 	:
-	  intersect_data_{alpha < 0.5f ? sp_1.intersect_data_ : sp_2.intersect_data_},
 	  n_{math::lerp(sp_1.n_, sp_2.n_, alpha)},
 	  ng_{alpha < 0.5f ? sp_1.ng_ : sp_2.ng_},
 	  orco_ng_{alpha < 0.5f ? sp_1.orco_ng_ : sp_2.orco_ng_},
@@ -150,6 +149,7 @@ inline SurfacePoint::SurfacePoint(const SurfacePoint &sp_1, const SurfacePoint &
 	  orco_p_{alpha < 0.5f ? sp_1.orco_p_ : sp_2.orco_p_},
 	  has_uv_{alpha < 0.5f ? sp_1.has_uv_ : sp_2.has_uv_},
 	  has_orco_{alpha < 0.5f ? sp_1.has_orco_ : sp_2.has_orco_},
+	  time_{alpha < 0.5f ? sp_1.time_ : sp_2.time_},
 	  uv_{alpha < 0.5f ? sp_1.uv_ : sp_2.uv_},
 	  uvn_{math::lerp(sp_1.uvn_, sp_2.uvn_, alpha)},
 	  dp_{math::lerp(sp_1.dp_, sp_2.dp_, alpha)},
@@ -187,7 +187,6 @@ inline SurfacePoint &SurfacePoint::operator=(const SurfacePoint &sp)
 	if(this == &sp) return *this;
 	if(sp.mat_data_) mat_data_ = sp.mat_data_->clone();
 	primitive_ = sp.primitive_;
-	intersect_data_ = sp.intersect_data_;
 	n_ = sp.n_;
 	ng_ = sp.ng_;
 	orco_ng_ = sp.orco_ng_;
@@ -195,6 +194,7 @@ inline SurfacePoint &SurfacePoint::operator=(const SurfacePoint &sp)
 	orco_p_ = sp.orco_p_;
 	has_uv_ = sp.has_uv_;
 	has_orco_ = sp.has_orco_;
+	time_ = sp.time_;
 	uv_ = sp.uv_;
 	uvn_ = sp.uvn_;
 	dp_ = sp.dp_;

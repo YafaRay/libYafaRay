@@ -625,7 +625,7 @@ bool BidirectionalIntegrator::connectPathE(PathData &pd, int s) const
 	Vec3 vec{z.sp_.p_ - y.sp_.p_};
 	const float dist_2 = vec.normLenSqr();
 	const float cos_y = std::abs(y.sp_.n_ * vec);
-	const Ray wo{z.sp_.p_, -vec, z.sp_.intersect_data_.time()};
+	const Ray wo{z.sp_.p_, -vec, z.sp_.time_};
 	if(!camera_->project(wo, 0, 0, pd.u_, pd.v_, x_e.pdf_b_)) return false;
 	x_e.specular_ = false; // cannot query yet...
 	x_l.pdf_f_ = y.sp_.pdf(y.wi_, vec, BsdfFlags::All); // light vert to eye vert
@@ -782,7 +782,7 @@ Rgb BidirectionalIntegrator::evalPath(const Accelerator &accelerator, int s, int
 	const Rgb c_st = pd.f_y_ * pd.path_[s].g_ * pd.f_z_;
 	//unweighted contronution C*:
 	Rgb c_uw = y.alpha_ * c_st * z.alpha_;
-	Ray con_ray{y.sp_.p_, pd.w_l_e_, y.sp_.intersect_data_.time(), 0.0005f, pd.d_yz_};
+	Ray con_ray{y.sp_.p_, pd.w_l_e_, y.sp_.time_, 0.0005f, pd.d_yz_};
 	bool shadowed = false;
 	Rgb scol {0.f};
 	const Primitive *shadow_casting_primitive = nullptr;
@@ -819,7 +819,7 @@ Rgb BidirectionalIntegrator::evalLPath(const Accelerator &accelerator, int t, co
 Rgb BidirectionalIntegrator::evalPathE(const Accelerator &accelerator, int s, const PathData &pd, const Camera *camera) const
 {
 	const PathVertex &y = pd.light_path_[s - 1];
-	const Ray con_ray{y.sp_.p_, pd.w_l_e_, y.sp_.intersect_data_.time(), 0.0005f, pd.d_yz_};
+	const Ray con_ray{y.sp_.p_, pd.w_l_e_, y.sp_.time_, 0.0005f, pd.d_yz_};
 	bool shadowed = false;
 	Rgb scol {0.f};
 	const Primitive *shadow_casting_primitive = nullptr;

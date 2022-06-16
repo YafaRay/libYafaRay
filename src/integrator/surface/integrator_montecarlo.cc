@@ -688,7 +688,7 @@ std::pair<Rgb, float> MonteCarloIntegrator::dispersive(FastRandom &fast_random, 
 		if(s.pdf_ > 1.0e-6f && s.sampled_flags_.hasAny(BsdfFlags::Dispersive))
 		{
 			const Rgb wl_col = spectrum::wl2Rgb(wavelength_dispersive);
-			Ray ref_ray{sp.p_, wi, sp.intersect_data_.time(), ray_min_dist_};
+			Ray ref_ray{sp.p_, wi, sp.time_, ray_min_dist_};
 			auto [integ_col, integ_alpha] = integrate(ref_ray, fast_random, random_generator, correlative_sample_number, nullptr, thread_id, ray_level, false, wavelength_dispersive, additional_depth, ray_division_new, pixel_sampling_data, 0, 0);
 			integ_col *= mcol * wl_col * w;
 			dcol += integ_col;

@@ -44,8 +44,8 @@ class SpherePrimitive final : public Primitive
 		Bound getBound(const Matrix4 &obj_to_world) const override;
 		IntersectData intersect(const Ray &ray) const override;
 		IntersectData intersect(const Ray &ray, const Matrix4 &obj_to_world) const override;
-		std::unique_ptr<const SurfacePoint> getSurface(const RayDifferentials *ray_differentials, const Point3 &hit, const IntersectData &intersect_data, const Camera *camera) const override;
-		std::unique_ptr<const SurfacePoint> getSurface(const RayDifferentials *ray_differentials, const Point3 &hit, const IntersectData &intersect_data, const Matrix4 &obj_to_world, const Camera *camera) const override;
+		std::unique_ptr<const SurfacePoint> getSurface(const RayDifferentials *ray_differentials, const Point3 &hit_point, float time, const Uv<float> &intersect_uv, const Camera *camera) const override;
+		std::unique_ptr<const SurfacePoint> getSurface(const RayDifferentials *ray_differentials, const Point3 &hit_point, float time, const Uv<float> &intersect_uv, const Matrix4 &obj_to_world, const Camera *camera) const override;
 		const Material *getMaterial() const override { return material_->get(); }
 		float surfaceArea(float time) const override;
 		float surfaceArea(const Matrix4 &obj_to_world, float time) const override;

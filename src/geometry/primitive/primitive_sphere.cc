@@ -19,7 +19,6 @@
  */
 
 #include "geometry/primitive/primitive_sphere.h"
-
 #include <cmath>
 #include <memory>
 #include "common/param.h"
@@ -104,18 +103,18 @@ IntersectData SpherePrimitive::intersect(const Ray &ray, const Matrix4 &obj_to_w
 	return IntersectData{sol};
 }
 
-std::unique_ptr<const SurfacePoint> SpherePrimitive::getSurface(const RayDifferentials *ray_differentials, const Point3 &hit, const IntersectData &intersect_data, const Camera *camera) const
+std::unique_ptr<const SurfacePoint> SpherePrimitive::getSurface(const RayDifferentials *ray_differentials, const Point3 &hit_point, float time, const Uv<float> &intersect_uv, const Camera *camera) const
 {
 	auto sp = std::make_unique<SurfacePoint>(this);
-	sp->intersect_data_ = intersect_data;
-	Vec3 normal{hit - center_};
+	sp->time_ = time;
+	Vec3 normal{hit_point - center_};
 	sp->orco_p_ = static_cast<Point3>(normal);
 	normal.normalize();
 	sp->n_ = normal;
 	sp->ng_ = normal;
 	//sp->origin = (void*)this;
 	sp->has_orco_ = true;
-	sp->p_ = hit;
+	sp->p_ = hit_point;
 	sp->uvn_ = Vec3::createCoordsSystem(sp->n_);
 	sp->uv_.u_ = std::atan2(normal.y(), normal.x()) * math::div_1_by_pi<> + 1;
 	sp->uv_.v_ = 1.f - math::acos(normal.z()) * math::div_1_by_pi<>;
@@ -124,18 +123,18 @@ std::unique_ptr<const SurfacePoint> SpherePrimitive::getSurface(const RayDiffere
 	return sp;
 }
 
-std::unique_ptr<const SurfacePoint> SpherePrimitive::getSurface(const RayDifferentials *ray_differentials, const Point3 &hit, const IntersectData &intersect_data, const Matrix4 &obj_to_world, const Camera *camera) const
+std::unique_ptr<const SurfacePoint> SpherePrimitive::getSurface(const RayDifferentials *ray_differentials, const Point3 &hit_point, float time, const Uv<float> &intersect_uv, const Matrix4 &obj_to_world, const Camera *camera) const
 {
 	auto sp = std::make_unique<SurfacePoint>(this);
-	sp->intersect_data_ = intersect_data;
-	Vec3 normal{hit - center_};
+	sp->time_ = time;
+	Vec3 normal{hit_point - center_};
 	sp->orco_p_ = static_cast<Point3>(normal);
 	normal.normalize();
 	sp->n_ = normal;
 	sp->ng_ = normal;
 	//sp->origin = (void*)this;
 	sp->has_orco_ = true;
-	sp->p_ = hit;
+	sp->p_ = hit_point;
 	sp->uvn_ = Vec3::createCoordsSystem(sp->n_);
 	sp->uv_.u_ = std::atan2(normal.y(), normal.x()) * math::div_1_by_pi<> + 1;
 	sp->uv_.v_ = 1.f - math::acos(normal.z()) * math::div_1_by_pi<>;

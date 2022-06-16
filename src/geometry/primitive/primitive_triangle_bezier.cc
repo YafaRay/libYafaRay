@@ -32,13 +32,12 @@
 
 BEGIN_YAFARAY
 
-std::unique_ptr<const SurfacePoint> TriangleBezierPrimitive::getSurface(const RayDifferentials *ray_differentials, const Point3 &hit, const IntersectData &intersect_data, const Camera *camera) const
+std::unique_ptr<const SurfacePoint> TriangleBezierPrimitive::getSurface(const RayDifferentials *ray_differentials, const Point3 &hit_point, float time, const Uv<float> &intersect_uv, const Camera *camera) const
 {
 	auto sp = std::make_unique<SurfacePoint>(this);
-	sp->intersect_data_ = intersect_data;
-	const float time = intersect_data.time();
+	sp->time_ = time;
 	sp->ng_ = Primitive::getGeometricNormal(time);
-	const auto [barycentric_u, barycentric_v, barycentric_w] = ShapeTriangle::getBarycentricUVW(intersect_data.uv());
+	const auto [barycentric_u, barycentric_v, barycentric_w] = ShapeTriangle::getBarycentricUVW(intersect_uv);
 	if(base_mesh_object_.isSmooth() || base_mesh_object_.hasVerticesNormals(0))
 	{
 		const std::array<Vec3, 3> v {
@@ -58,7 +57,7 @@ std::unique_ptr<const SurfacePoint> TriangleBezierPrimitive::getSurface(const Ra
 	}
 	else
 	{
-		sp->orco_p_ = hit;
+		sp->orco_p_ = hit_point;
 		sp->has_orco_ = false;
 		sp->orco_ng_ = Primitive::getGeometricNormal(time);
 	}
@@ -99,7 +98,7 @@ std::unique_ptr<const SurfacePoint> TriangleBezierPrimitive::getSurface(const Ra
 	sp->dp_.u_.normalize();
 	sp->dp_.v_.normalize();
 	sp->has_uv_ = base_mesh_object_.hasUv();
-	sp->p_ = hit;
+	sp->p_ = hit_point;
 	sp->uvn_ = Vec3::createCoordsSystem(sp->n_);
 	// transform dPdU and dPdV in shading space
 	sp->ds_ = {
@@ -111,13 +110,12 @@ std::unique_ptr<const SurfacePoint> TriangleBezierPrimitive::getSurface(const Ra
 	return sp;
 }
 
-std::unique_ptr<const SurfacePoint> TriangleBezierPrimitive::getSurface(const RayDifferentials *ray_differentials, const Point3 &hit, const IntersectData &intersect_data, const Matrix4 &obj_to_world, const Camera *camera) const
+std::unique_ptr<const SurfacePoint> TriangleBezierPrimitive::getSurface(const RayDifferentials *ray_differentials, const Point3 &hit_point, float time, const Uv<float> &intersect_uv, const Matrix4 &obj_to_world, const Camera *camera) const
 {
 	auto sp = std::make_unique<SurfacePoint>(this);
-	sp->intersect_data_ = intersect_data;
-	const float time = intersect_data.time();
+	sp->time_ = time;
 	sp->ng_ = Primitive::getGeometricNormal(obj_to_world, time);
-	const auto [barycentric_u, barycentric_v, barycentric_w] = ShapeTriangle::getBarycentricUVW(intersect_data.uv());
+	const auto [barycentric_u, barycentric_v, barycentric_w] = ShapeTriangle::getBarycentricUVW(intersect_uv);
 	if(base_mesh_object_.isSmooth() || base_mesh_object_.hasVerticesNormals(0))
 	{
 		const std::array<Vec3, 3> v {
@@ -137,7 +135,7 @@ std::unique_ptr<const SurfacePoint> TriangleBezierPrimitive::getSurface(const Ra
 	}
 	else
 	{
-		sp->orco_p_ = hit;
+		sp->orco_p_ = hit_point;
 		sp->has_orco_ = false;
 		sp->orco_ng_ = Primitive::getGeometricNormal(time);
 	}
@@ -178,7 +176,7 @@ std::unique_ptr<const SurfacePoint> TriangleBezierPrimitive::getSurface(const Ra
 	sp->dp_.u_.normalize();
 	sp->dp_.v_.normalize();
 	sp->has_uv_ = base_mesh_object_.hasUv();
-	sp->p_ = hit;
+	sp->p_ = hit_point;
 	sp->uvn_ = Vec3::createCoordsSystem(sp->n_);
 	// transform dPdU and dPdV in shading space
 	sp->ds_ = {

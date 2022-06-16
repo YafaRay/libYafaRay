@@ -25,7 +25,6 @@
 #include "geometry/poly_double.h"
 #include "common/logger.h"
 #include "geometry/ray.h"
-#include "geometry/intersect_data.h"
 #include "geometry/bound.h"
 #include <vector>
 #include <array>
@@ -44,6 +43,7 @@ class Object;
 class Camera;
 class Rgb;
 class Light;
+class IntersectData;
 
 class Primitive
 {
@@ -55,8 +55,8 @@ class Primitive
 		virtual bool clippingSupport() const = 0;
 		virtual IntersectData intersect(const Ray &ray) const = 0;
 		virtual IntersectData intersect(const Ray &ray, const Matrix4 &obj_to_world) const = 0;
-		virtual std::unique_ptr<const SurfacePoint> getSurface(const RayDifferentials *ray_differentials, const Point3 &hit, const IntersectData &data, const Camera *camera) const = 0;
-		virtual std::unique_ptr<const SurfacePoint> getSurface(const RayDifferentials *ray_differentials, const Point3 &hit, const IntersectData &data, const Matrix4 &obj_to_world, const Camera *camera) const = 0;
+		virtual std::unique_ptr<const SurfacePoint> getSurface(const RayDifferentials *ray_differentials, const Point3 &hit_point, float time, const Uv<float> &intersect_uv, const Camera *camera) const = 0;
+		virtual std::unique_ptr<const SurfacePoint> getSurface(const RayDifferentials *ray_differentials, const Point3 &hit_point, float time, const Uv<float> &intersect_uv, const Matrix4 &obj_to_world, const Camera *camera) const = 0;
 		virtual const Material *getMaterial() const = 0;
 		virtual float surfaceArea(float time) const = 0;
 		virtual float surfaceArea(const Matrix4 &obj_to_world, float time) const = 0;
