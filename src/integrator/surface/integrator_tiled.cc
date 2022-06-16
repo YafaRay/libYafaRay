@@ -670,7 +670,7 @@ Rgb TiledIntegrator::sampleAmbientOcclusion(const Accelerator &accelerator, bool
 		bool shadowed = false;
 		Rgb scol {0.f};
 		const Primitive *shadow_casting_primitive = nullptr;
-		if(transparent_shadows) std::tie(shadowed, scol, shadow_casting_primitive) = accelerator.isShadowed(light_ray, transp_shadows_depth, shadow_bias, camera);
+		if(transparent_shadows) std::tie(shadowed, scol, shadow_casting_primitive) = accelerator.isShadowedTransparentShadow(light_ray, transp_shadows_depth, shadow_bias, camera);
 		else std::tie(shadowed, shadow_casting_primitive) = accelerator.isShadowed(light_ray, shadow_bias);
 		if(!shadowed)
 		{

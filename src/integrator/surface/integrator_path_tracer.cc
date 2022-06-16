@@ -36,9 +36,9 @@ BEGIN_YAFARAY
 
 class Pdf1D;
 
-PathIntegrator::PathIntegrator(RenderControl &render_control, Logger &logger, bool transp_shad, int shadow_depth) : MonteCarloIntegrator(render_control, logger)
+PathIntegrator::PathIntegrator(RenderControl &render_control, Logger &logger, bool transparent_shadows, int shadow_depth) : MonteCarloIntegrator(render_control, logger)
 {
-	tr_shad_ = transp_shad;
+	transparent_shadows_ = transparent_shadows;
 	s_depth_ = shadow_depth;
 	caustic_type_ = CausticType::Path;
 	r_depth_ = 6;
@@ -61,7 +61,7 @@ bool PathIntegrator::preprocess(FastRandom &fast_random, ImageFilm *image_film, 
 
 	set << "Path Tracing  ";
 
-	if(tr_shad_)
+	if(transparent_shadows_)
 	{
 		set << "ShadowDepth=" << s_depth_ << "  ";
 	}
@@ -297,7 +297,7 @@ std::pair<Rgb, float> PathIntegrator::integrate(Ray &ray, FastRandom &fast_rando
 
 Integrator * PathIntegrator::factory(Logger &logger, const ParamMap &params, const Scene &scene, RenderControl &render_control)
 {
-	bool transp_shad = false, no_rec = false;
+	bool transparent_shadows = false, no_rec = false;
 	int shadow_depth = 5;
 	int path_samples = 32;
 	int bounces = 3;
@@ -315,7 +315,7 @@ Integrator * PathIntegrator::factory(Logger &logger, const ParamMap &params, con
 	std::string photon_maps_processing_str = "generate";
 
 	params.getParam("raydepth", raydepth);
-	params.getParam("transpShad", transp_shad);
+	params.getParam("transpShad", transparent_shadows);
 	params.getParam("shadowDepth", shadow_depth);
 	params.getParam("path_samples", path_samples);
 	params.getParam("bounces", bounces);
@@ -331,7 +331,7 @@ Integrator * PathIntegrator::factory(Logger &logger, const ParamMap &params, con
 	params.getParam("time_forced", time_forced);
 	params.getParam("time_forced_value", time_forced_value);
 
-	auto inte = new PathIntegrator(render_control, logger, transp_shad, shadow_depth);
+	auto inte = new PathIntegrator(render_control, logger, transparent_shadows, shadow_depth);
 	if(params.getParam("caustic_type", c_method))
 	{
 		bool use_photons = false;

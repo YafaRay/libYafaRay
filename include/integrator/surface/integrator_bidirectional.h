@@ -44,7 +44,7 @@ class BidirectionalIntegrator final : public TiledIntegrator
 		struct PathData;
 		struct PathVertex;
 		struct PathEvalVertex;
-		BidirectionalIntegrator(RenderControl &render_control, Logger &logger, bool transp_shad = false, int shadow_depth = 4);
+		BidirectionalIntegrator(RenderControl &render_control, Logger &logger, bool transparent_shadows = false, int shadow_depth = 4);
 		std::string getShortName() const override { return "BdPT"; }
 		std::string getName() const override { return "BidirectionalPathTracer"; }
 		bool preprocess(FastRandom &fast_random, ImageFilm *image_film, const RenderView *render_view, const Scene &scene) override;

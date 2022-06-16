@@ -78,7 +78,7 @@ AccelData AcceleratorSimpleTest::intersect(const Ray &ray, float t_max) const
 	return accel_data;
 }
 
-AccelData AcceleratorSimpleTest::intersectS(const Ray &ray, float t_max) const
+AccelData AcceleratorSimpleTest::intersectShadow(const Ray &ray, float t_max) const
 {
 	AccelData accel_data;
 	for(const auto &[object, object_data] : objects_data_)
@@ -87,14 +87,14 @@ AccelData AcceleratorSimpleTest::intersectS(const Ray &ray, float t_max) const
 		{
 			for(const auto &primitive : object_data.primitives_)
 			{
-				if(Accelerator::primitiveIntersection(accel_data, primitive, ray, t_max)) return accel_data;
+				if(Accelerator::primitiveIntersectionShadow(accel_data, primitive, ray, t_max)) return accel_data;
 			}
 		}
 	}
 	return accel_data;
 }
 
-AccelTsData AcceleratorSimpleTest::intersectTs(const Ray &ray, int max_depth, float t_max, const Camera *camera) const
+AccelTsData AcceleratorSimpleTest::intersectTransparentShadow(const Ray &ray, int max_depth, float t_max, const Camera *camera) const
 {
 	std::set<const Primitive *> filtered;
 	int depth = 0;
@@ -105,7 +105,7 @@ AccelTsData AcceleratorSimpleTest::intersectTs(const Ray &ray, int max_depth, fl
 		{
 			for(const auto &primitive : object_data.primitives_)
 			{
-				if(Accelerator::primitiveIntersection(accel_ts_data, filtered, depth, max_depth, primitive, ray, t_max, camera)) return accel_ts_data;
+				if(Accelerator::primitiveIntersectionTransparentShadow(accel_ts_data, filtered, depth, max_depth, primitive, ray, t_max, camera)) return accel_ts_data;
 			}
 		}
 	}

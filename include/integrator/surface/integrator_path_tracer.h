@@ -31,7 +31,7 @@ class PathIntegrator final : public MonteCarloIntegrator
 		static Integrator *factory(Logger &logger, const ParamMap &params, const Scene &scene, RenderControl &render_control);
 
 	private:
-		PathIntegrator(RenderControl &render_control, Logger &logger, bool transp_shad = false, int shadow_depth = 4);
+		PathIntegrator(RenderControl &render_control, Logger &logger, bool transparent_shadows = false, int shadow_depth = 4);
 		std::string getShortName() const override { return "PT"; }
 		std::string getName() const override { return "PathTracer"; }
 		bool preprocess(FastRandom &fast_random, ImageFilm *image_film, const RenderView *render_view, const Scene &scene) override;

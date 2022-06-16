@@ -36,7 +36,7 @@
 
 BEGIN_YAFARAY
 
-SppmIntegrator::SppmIntegrator(RenderControl &render_control, Logger &logger, unsigned int d_photons, int passnum, bool transp_shad, int shadow_depth) : MonteCarloIntegrator(render_control, logger)
+SppmIntegrator::SppmIntegrator(RenderControl &render_control, Logger &logger, unsigned int d_photons, int passnum, bool transparent_shadows, int shadow_depth) : MonteCarloIntegrator(render_control, logger)
 {
 	n_photons_ = d_photons;
 	pass_num_ = passnum;
@@ -44,7 +44,7 @@ SppmIntegrator::SppmIntegrator(RenderControl &render_control, Logger &logger, un
 	initial_factor_ = 1.f;
 
 	s_depth_ = shadow_depth;
-	tr_shad_ = transp_shad;
+	transparent_shadows_ = transparent_shadows;
 	b_hashgrid_ = false;
 
 	caustic_map_ = std::make_unique<PhotonMap>(logger);
@@ -81,7 +81,7 @@ bool SppmIntegrator::render(FastRandom &fast_random, unsigned int object_index_h
 
 	set << "SPPM  ";
 
-	if(tr_shad_)
+	if(transparent_shadows_)
 	{
 		set << "ShadowDepth=" << s_depth_ << "  ";
 	}
@@ -1049,7 +1049,7 @@ void SppmIntegrator::initializePpm()
 
 Integrator * SppmIntegrator::factory(Logger &logger, const ParamMap &params, const Scene &scene, RenderControl &render_control)
 {
-	bool transp_shad = false;
+	bool transparent_shadows = false;
 	bool pm_ire = false;
 	int shadow_depth = 5; //may used when integrate Direct Light
 	int raydepth = 5;
@@ -1068,7 +1068,7 @@ Integrator * SppmIntegrator::factory(Logger &logger, const ParamMap &params, con
 	bool time_forced = false;
 	float time_forced_value = 0.f;
 
-	params.getParam("transpShad", transp_shad);
+	params.getParam("transpShad", transparent_shadows);
 	params.getParam("shadowDepth", shadow_depth);
 	params.getParam("raydepth", raydepth);
 	params.getParam("photons", num_photons);
@@ -1089,7 +1089,7 @@ Integrator * SppmIntegrator::factory(Logger &logger, const ParamMap &params, con
 	params.getParam("time_forced", time_forced);
 	params.getParam("time_forced_value", time_forced_value);
 
-	auto inte = new SppmIntegrator(render_control, logger, num_photons, pass_num, transp_shad, shadow_depth);
+	auto inte = new SppmIntegrator(render_control, logger, num_photons, pass_num, transparent_shadows, shadow_depth);
 	inte->r_depth_ = raydepth;
 	inte->max_bounces_ = bounces;
 	inte->initial_factor_ = times;

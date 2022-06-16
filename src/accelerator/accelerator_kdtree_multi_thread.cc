@@ -716,7 +716,7 @@ AccelData AcceleratorKdTreeMultiThread::intersect(const Ray &ray, float t_max, c
 		}
 
 		// Check for intersections inside leaf node
-		for(const auto &prim : curr_node->primitives_)
+		for(auto prim : curr_node->primitives_)
 		{
 			Accelerator::primitiveIntersection(accel_data, prim, ray);
 		}
@@ -732,7 +732,7 @@ AccelData AcceleratorKdTreeMultiThread::intersect(const Ray &ray, float t_max, c
 	return accel_data;
 }
 
-AccelData AcceleratorKdTreeMultiThread::intersectS(const Ray &ray, float t_max, const std::vector<Node> &nodes, const Bound &tree_bound)
+AccelData AcceleratorKdTreeMultiThread::intersectShadow(const Ray &ray, float t_max, const std::vector<Node> &nodes, const Bound &tree_bound)
 {
 	const Bound::Cross cross{tree_bound.cross(ray, t_max)};
 	if(!cross.crossed_) { return {}; }
@@ -814,9 +814,9 @@ AccelData AcceleratorKdTreeMultiThread::intersectS(const Ray &ray, float t_max, 
 		}
 
 		// Check for intersections inside leaf node
-		for(const auto &prim : curr_node->primitives_)
+		for(auto prim : curr_node->primitives_)
 		{
-			if(Accelerator::primitiveIntersection(accel_data, prim, ray, t_max)) return accel_data;
+			if(Accelerator::primitiveIntersectionShadow(accel_data, prim, ray, t_max)) return accel_data;
 		}
 		entry_id = exit_id;
 		curr_node = stack[exit_id].node_;
@@ -829,7 +829,7 @@ AccelData AcceleratorKdTreeMultiThread::intersectS(const Ray &ray, float t_max, 
 	allow for transparent shadows.
 =============================================================*/
 
-AccelTsData AcceleratorKdTreeMultiThread::intersectTs(const Ray &ray, int max_depth, float t_max, const std::vector<Node> &nodes, const Bound &tree_bound, const Camera *camera)
+AccelTsData AcceleratorKdTreeMultiThread::intersectTransparentShadow(const Ray &ray, int max_depth, float t_max, const std::vector<Node> &nodes, const Bound &tree_bound, const Camera *camera)
 {
 	const Bound::Cross cross{tree_bound.cross(ray, t_max)};
 	if(!cross.crossed_) { return {}; }
@@ -913,9 +913,9 @@ AccelTsData AcceleratorKdTreeMultiThread::intersectTs(const Ray &ray, int max_de
 		}
 
 		// Check for intersections inside leaf node
-		for(const auto &prim : curr_node->primitives_)
+		for(auto prim : curr_node->primitives_)
 		{
-				if(Accelerator::primitiveIntersection(accel_ts_data, filtered, depth, max_depth, prim, ray, t_max, camera)) return accel_ts_data;
+				if(Accelerator::primitiveIntersectionTransparentShadow(accel_ts_data, filtered, depth, max_depth, prim, ray, t_max, camera)) return accel_ts_data;
 		}
 		entry_id = exit_id;
 		curr_node = stack[exit_id].node_;

@@ -87,11 +87,11 @@ void PhotonIntegrator::preGatherWorker(PreGatherData *gdata, float ds_rad, int n
 	}
 }
 
-PhotonIntegrator::PhotonIntegrator(RenderControl &render_control, Logger &logger, unsigned int d_photons, unsigned int c_photons, bool transp_shad, int shadow_depth, float ds_rad, float c_rad) : MonteCarloIntegrator(render_control, logger)
+PhotonIntegrator::PhotonIntegrator(RenderControl &render_control, Logger &logger, unsigned int d_photons, unsigned int c_photons, bool transparent_shadows, int shadow_depth, float ds_rad, float c_rad) : MonteCarloIntegrator(render_control, logger)
 {
 	use_photon_caustics_ = true;
 	use_photon_diffuse_ = true;
-	tr_shad_ = transp_shad;
+	transparent_shadows_ = transparent_shadows;
 	final_gather_ = true;
 	n_diffuse_photons_ = d_photons;
 	n_caus_photons_ = c_photons;
@@ -250,7 +250,7 @@ bool PhotonIntegrator::preprocess(FastRandom &fast_random, ImageFilm *image_film
 
 	set << "Photon Mapping  ";
 
-	if(tr_shad_)
+	if(transparent_shadows_)
 	{
 		set << "ShadowDepth=" << s_depth_ << "  ";
 	}
@@ -761,7 +761,7 @@ Rgb PhotonIntegrator::finalGathering(FastRandom &fast_random, RandomGenerator &r
 
 Integrator * PhotonIntegrator::factory(Logger &logger, const ParamMap &params, const Scene &scene, RenderControl &render_control)
 {
-	bool transp_shad = false;
+	bool transparent_shadows = false;
 	bool final_gather = true;
 	bool show_map = false;
 	int shadow_depth = 5;
@@ -791,7 +791,7 @@ Integrator * PhotonIntegrator::factory(Logger &logger, const ParamMap &params, c
 	params.getParam("caustics", caustics);
 	params.getParam("diffuse", diffuse);
 
-	params.getParam("transpShad", transp_shad);
+	params.getParam("transpShad", transparent_shadows);
 	params.getParam("shadowDepth", shadow_depth);
 	params.getParam("raydepth", raydepth);
 	params.getParam("photons", num_photons);
@@ -818,7 +818,7 @@ Integrator * PhotonIntegrator::factory(Logger &logger, const ParamMap &params, c
 	params.getParam("time_forced", time_forced);
 	params.getParam("time_forced_value", time_forced_value);
 
-	auto inte = new PhotonIntegrator(render_control, logger, num_photons, num_c_photons, transp_shad, shadow_depth, ds_rad, c_rad);
+	auto inte = new PhotonIntegrator(render_control, logger, num_photons, num_c_photons, transparent_shadows, shadow_depth, ds_rad, c_rad);
 
 	inte->use_photon_caustics_ = caustics;
 	inte->use_photon_diffuse_ = diffuse;

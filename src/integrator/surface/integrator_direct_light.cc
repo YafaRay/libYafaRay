@@ -28,13 +28,13 @@
 
 BEGIN_YAFARAY
 
-DirectLightIntegrator::DirectLightIntegrator(RenderControl &render_control, Logger &logger, bool transp_shad, int shadow_depth, int ray_depth) : MonteCarloIntegrator(render_control, logger)
+DirectLightIntegrator::DirectLightIntegrator(RenderControl &render_control, Logger &logger, bool transparent_shadows, int shadow_depth, int ray_depth) : MonteCarloIntegrator(render_control, logger)
 {
 	caus_radius_ = 0.25;
 	caus_depth_ = 10;
 	n_caus_photons_ = 100000;
 	n_caus_search_ = 100;
-	tr_shad_ = transp_shad;
+	transparent_shadows_ = transparent_shadows;
 	use_photon_caustics_ = false;
 	s_depth_ = shadow_depth;
 	r_depth_ = ray_depth;
@@ -50,7 +50,7 @@ bool DirectLightIntegrator::preprocess(FastRandom &fast_random, ImageFilm *image
 
 	set << "Direct Light  ";
 
-	if(tr_shad_)
+	if(transparent_shadows_)
 	{
 		set << "ShadowDepth=" << s_depth_ << "  ";
 	}
@@ -121,7 +121,7 @@ std::pair<Rgb, float> DirectLightIntegrator::integrate(Ray &ray, FastRandom &fas
 			{
 				col += causticPhotons(color_layers, ray, *sp, wo, aa_noise_params_.clamp_indirect_, caustic_map_.get(), caus_radius_, n_caus_search_);
 			}
-			if(use_ambient_occlusion_) col += sampleAmbientOcclusion(*accelerator_, chromatic_enabled, wavelength, *sp, wo, ray_division, camera_, pixel_sampling_data, tr_shad_, false, ao_samples_, shadow_bias_auto_, shadow_bias_, ao_dist_, ao_col_, s_depth_);
+			if(use_ambient_occlusion_) col += sampleAmbientOcclusion(*accelerator_, chromatic_enabled, wavelength, *sp, wo, ray_division, camera_, pixel_sampling_data, transparent_shadows_, false, ao_samples_, shadow_bias_auto_, shadow_bias_, ao_dist_, ao_col_, s_depth_);
 		}
 		const auto [raytrace_col, raytrace_alpha]{recursiveRaytrace(fast_random, random_generator, correlative_sample_number, color_layers, thread_id, ray_level + 1, chromatic_enabled, wavelength, ray, mat_bsdfs, *sp, wo, additional_depth, ray_division, pixel_sampling_data)};
 		col += raytrace_col;
@@ -151,7 +151,7 @@ std::pair<Rgb, float> DirectLightIntegrator::integrate(Ray &ray, FastRandom &fas
 
 Integrator * DirectLightIntegrator::factory(Logger &logger, const ParamMap &params, const Scene &scene, RenderControl &render_control)
 {
-	bool transp_shad = false;
+	bool transparent_shadows = false;
 	bool caustics = false;
 	bool do_ao = false;
 	int shadow_depth = 5;
@@ -167,7 +167,7 @@ Integrator * DirectLightIntegrator::factory(Logger &logger, const ParamMap &para
 	float time_forced_value = 0.f;
 	std::string photon_maps_processing_str = "generate";
 	params.getParam("raydepth", raydepth);
-	params.getParam("transpShad", transp_shad);
+	params.getParam("transpShad", transparent_shadows);
 	params.getParam("shadowDepth", shadow_depth);
 	params.getParam("caustics", caustics);
 	params.getParam("photons", photons);
@@ -184,7 +184,7 @@ Integrator * DirectLightIntegrator::factory(Logger &logger, const ParamMap &para
 	params.getParam("time_forced", time_forced);
 	params.getParam("time_forced_value", time_forced_value);
 
-	auto inte = new DirectLightIntegrator(render_control, logger, transp_shad, shadow_depth, raydepth);
+	auto inte = new DirectLightIntegrator(render_control, logger, transparent_shadows, shadow_depth, raydepth);
 	// caustic settings
 	inte->use_photon_caustics_ = caustics;
 	inte->n_caus_photons_ = photons;

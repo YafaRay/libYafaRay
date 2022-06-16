@@ -143,9 +143,9 @@ BidirectionalIntegrator::PathData::PathData()
 	path_.resize(1);
 }
 
-BidirectionalIntegrator::BidirectionalIntegrator(RenderControl &render_control, Logger &logger, bool transp_shad, int shadow_depth) : TiledIntegrator(render_control, logger)
+BidirectionalIntegrator::BidirectionalIntegrator(RenderControl &render_control, Logger &logger, bool transparent_shadows, int shadow_depth) : TiledIntegrator(render_control, logger)
 {
-	tr_shad_ = transp_shad;
+	transparent_shadows_ = transparent_shadows;
 	s_depth_ = shadow_depth;
 }
 
@@ -202,7 +202,7 @@ bool BidirectionalIntegrator::preprocess(FastRandom &fast_random, ImageFilm *ima
 	*/
 	std::stringstream set;
 	set << "Bidirectional  ";
-	if(tr_shad_) set << "ShadowDepth=" << s_depth_ << "  ";
+	if(transparent_shadows_) set << "ShadowDepth=" << s_depth_ << "  ";
 	if(use_ambient_occlusion_) set << "AO samples=" << ao_samples_ << " dist=" << ao_dist_ << "  ";
 	render_info_ += set.str();
 	return success;
@@ -786,10 +786,10 @@ Rgb BidirectionalIntegrator::evalPath(const Accelerator &accelerator, int s, int
 	bool shadowed = false;
 	Rgb scol {0.f};
 	const Primitive *shadow_casting_primitive = nullptr;
-	if(tr_shad_) std::tie(shadowed, scol, shadow_casting_primitive) = accelerator_->isShadowed(con_ray, s_depth_, shadow_bias_, camera_);
+	if(transparent_shadows_) std::tie(shadowed, scol, shadow_casting_primitive) = accelerator_->isShadowedTransparentShadow(con_ray, s_depth_, shadow_bias_, camera_);
 	else std::tie(shadowed, shadow_casting_primitive) = accelerator_->isShadowed(con_ray, shadow_bias_);
 	if(shadowed) return Rgb{0.f};
-	if(tr_shad_) c_uw *= scol;
+	if(transparent_shadows_) c_uw *= scol;
 	return c_uw;
 }
 
@@ -799,12 +799,12 @@ Rgb BidirectionalIntegrator::evalLPath(const Accelerator &accelerator, int t, co
 	bool shadowed = false;
 	Rgb scol {0.f};
 	const Primitive *shadow_casting_primitive = nullptr;
-	if(tr_shad_) std::tie(shadowed, scol, shadow_casting_primitive) = accelerator_->isShadowed(l_ray, s_depth_, shadow_bias_, camera_);
+	if(transparent_shadows_) std::tie(shadowed, scol, shadow_casting_primitive) = accelerator_->isShadowedTransparentShadow(l_ray, s_depth_, shadow_bias_, camera_);
 	else std::tie(shadowed, shadow_casting_primitive) = accelerator_->isShadowed(l_ray, shadow_bias_);
 	if(shadowed) return Rgb{0.f};
 	const PathVertex &z = pd.eye_path_[t - 1];
 	Rgb c_uw = lcol * pd.f_z_ * z.alpha_ * std::abs(z.sp_.n_ * l_ray.dir_); // f_y, cos_x0_f and r^2 computed in connectLPath...(light pdf)
-	if(tr_shad_) c_uw *= scol;
+	if(transparent_shadows_) c_uw *= scol;
 	// hence c_st is only cos_x1_b * f_z...like path tracing
 /*
 	static int dbg = 0;
@@ -823,14 +823,14 @@ Rgb BidirectionalIntegrator::evalPathE(const Accelerator &accelerator, int s, co
 	bool shadowed = false;
 	Rgb scol {0.f};
 	const Primitive *shadow_casting_primitive = nullptr;
-	if(tr_shad_) std::tie(shadowed, scol, shadow_casting_primitive) = accelerator_->isShadowed(con_ray, s_depth_, shadow_bias_, camera_);
+	if(transparent_shadows_) std::tie(shadowed, scol, shadow_casting_primitive) = accelerator_->isShadowedTransparentShadow(con_ray, s_depth_, shadow_bias_, camera_);
 	else std::tie(shadowed, shadow_casting_primitive) = accelerator_->isShadowed(con_ray, shadow_bias_);
 	if(shadowed) return Rgb{0.f};
 	//eval material
 	//Rgb f_y = y.sp.material->eval(state, y.sp, y.wi, pd.w_l_e, BSDF_ALL);
 	//TODO:
 	Rgb c_uw = y.alpha_ * math::num_pi<> * pd.f_y_ * pd.path_[s].g_;
-	if(tr_shad_) c_uw *= scol;
+	if(transparent_shadows_) c_uw *= scol;
 	return c_uw;
 }
 
@@ -897,12 +897,12 @@ Integrator * BidirectionalIntegrator::factory(Logger &logger, const ParamMap &pa
 	Rgb ao_col(1.f);
 	bool bg_transp = false;
 	bool bg_transp_refract = false;
-	bool transp_shad = false;
+	bool transparent_shadows = false;
 	int shadow_depth = 4;
 	bool time_forced = false;
 	float time_forced_value = 0.f;
 
-	params.getParam("transpShad", transp_shad);
+	params.getParam("transpShad", transparent_shadows);
 	params.getParam("shadowDepth", shadow_depth);
 	params.getParam("do_AO", do_ao);
 	params.getParam("AO_samples", ao_samples);
@@ -911,7 +911,7 @@ Integrator * BidirectionalIntegrator::factory(Logger &logger, const ParamMap &pa
 	params.getParam("bg_transp", bg_transp);
 	params.getParam("bg_transp_refract", bg_transp_refract);
 
-	auto inte = new BidirectionalIntegrator(render_control, logger, transp_shad, shadow_depth);
+	auto inte = new BidirectionalIntegrator(render_control, logger, transparent_shadows, shadow_depth);
 
 	// AO settings
 	inte->use_ambient_occlusion_ = do_ao;

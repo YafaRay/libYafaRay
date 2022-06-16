@@ -63,7 +63,7 @@ class SppmIntegrator final : public MonteCarloIntegrator
 		static Integrator *factory(Logger &logger, const ParamMap &params, const Scene &scene, RenderControl &render_control);
 
 	private:
-		SppmIntegrator(RenderControl &render_control, Logger &logger, unsigned int d_photons, int passnum, bool transp_shad, int shadow_depth);
+		SppmIntegrator(RenderControl &render_control, Logger &logger, unsigned int d_photons, int passnum, bool transparent_shadows, int shadow_depth);
 		std::string getShortName() const override { return "SPPM"; }
 		std::string getName() const override { return "SPPM"; }
 		bool render(FastRandom &fast_random, unsigned int object_index_highest, unsigned int material_index_highest) override;

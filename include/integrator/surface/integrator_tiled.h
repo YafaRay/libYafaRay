@@ -81,7 +81,7 @@ class TiledIntegrator : public SurfaceIntegrator
 		float ao_dist_; //! Ambient occlusion distance
 		Rgb ao_col_; //! Ambient occlusion color
 		int s_depth_; //! Shadow depth for transparent shadows
-		bool tr_shad_; //! Use transparent shadows
+		bool transparent_shadows_; //! Use transparent shadows
 		bool transp_background_; //! Render background as transparent
 		bool transp_refracted_background_; //! Render refractions of background as transparent
 };

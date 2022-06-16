@@ -44,7 +44,7 @@ class PhotonIntegrator final : public MonteCarloIntegrator
 		static Integrator *factory(Logger &logger, const ParamMap &params, const Scene &scene, RenderControl &render_control);
 
 	private:
-		PhotonIntegrator(RenderControl &render_control, Logger &logger, unsigned int d_photons, unsigned int c_photons, bool transp_shad = false, int shadow_depth = 4, float ds_rad = 0.1f, float c_rad = 0.01f);
+		PhotonIntegrator(RenderControl &render_control, Logger &logger, unsigned int d_photons, unsigned int c_photons, bool transparent_shadows = false, int shadow_depth = 4, float ds_rad = 0.1f, float c_rad = 0.01f);
 		std::string getShortName() const override { return "PM"; }
 		std::string getName() const override { return "PhotonMap"; }
 		bool preprocess(FastRandom &fast_random, ImageFilm *image_film, const RenderView *render_view, const Scene &scene) override;

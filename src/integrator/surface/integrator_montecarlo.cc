@@ -107,7 +107,7 @@ Rgb MonteCarloIntegrator::diracLight(RandomGenerator &random_generator, ColorLay
 		const Primitive *shadow_casting_primitive = nullptr;
 		if(cast_shadows)
 		{
-			if(tr_shad_) std::tie(shadowed, scol, shadow_casting_primitive) = accelerator_->isShadowed(light_ray, s_depth_, shadow_bias_, camera_);
+			if(transparent_shadows_) std::tie(shadowed, scol, shadow_casting_primitive) = accelerator_->isShadowedTransparentShadow(light_ray, s_depth_, shadow_bias_, camera_);
 			else std::tie(shadowed, shadow_casting_primitive) = accelerator_->isShadowed(light_ray, shadow_bias_);
 		}
 		const float angle_light_normal = sp.getMaterial()->isFlat() ? 1.f : std::abs(sp.n_ * light_ray.dir_);	//If the material has the special attribute "isFlat()" then we will not multiply the surface reflection by the cosine of the angle between light and normal
@@ -117,7 +117,7 @@ Rgb MonteCarloIntegrator::diracLight(RandomGenerator &random_generator, ColorLay
 			const Rgb surf_col = sp.eval(wo, light_ray.dir_, BsdfFlags::All);
 			const Rgb transmit_col = vol_integrator_ ? vol_integrator_->transmittance(random_generator, light_ray) : Rgb{1.f};
 			const Rgba tmp_col_no_shadow{surf_col * lcol * angle_light_normal * transmit_col};
-			if(tr_shad_ && cast_shadows) lcol *= scol;
+			if(transparent_shadows_ && cast_shadows) lcol *= scol;
 			if(color_layers)
 			{
 				if(color_layer_diffuse_no_shadow) *color_layer_diffuse_no_shadow += tmp_col_no_shadow;
@@ -199,13 +199,13 @@ Rgb MonteCarloIntegrator::areaLightSampleLight(Halton &hal_2, Halton &hal_3, Ran
 			Rgb scol{0.f};
 			if(cast_shadows)
 			{
-				if(tr_shad_) std::tie(shadowed, scol, shadow_casting_primitive) = accelerator_->isShadowed(light_ray, s_depth_, shadow_bias_, camera_);
+				if(transparent_shadows_) std::tie(shadowed, scol, shadow_casting_primitive) = accelerator_->isShadowedTransparentShadow(light_ray, s_depth_, shadow_bias_, camera_);
 				else std::tie(shadowed, shadow_casting_primitive) = accelerator_->isShadowed(light_ray, shadow_bias_);
 			}
 			if((!shadowed && ls.pdf_ > 1e-6f) || layer_diffuse_no_shadow)
 			{
 				const Rgb ls_col_no_shadow = ls.col_;
-				if(tr_shad_ && cast_shadows) ls.col_ *= scol;
+				if(transparent_shadows_ && cast_shadows) ls.col_ *= scol;
 				if(vol_integrator_)
 				{
 					const Rgb transmit_col = vol_integrator_->transmittance(random_generator, light_ray);
@@ -321,12 +321,12 @@ Rgb MonteCarloIntegrator::areaLightSampleMaterial(Halton &hal_2, Halton &hal_3, 
 				const Primitive *shadow_casting_primitive = nullptr;
 				if(cast_shadows)
 				{
-					if(tr_shad_) std::tie(shadowed, scol, shadow_casting_primitive) = accelerator_->isShadowed(b_ray, s_depth_, shadow_bias_, camera_);
+					if(transparent_shadows_) std::tie(shadowed, scol, shadow_casting_primitive) = accelerator_->isShadowedTransparentShadow(b_ray, s_depth_, shadow_bias_, camera_);
 					else std::tie(shadowed, shadow_casting_primitive) = accelerator_->isShadowed(b_ray, shadow_bias_);
 				}
 				if((!shadowed && light_pdf > 1e-6f) || layer_diffuse_no_shadow)
 				{
-					if(tr_shad_ && cast_shadows) lcol *= scol;
+					if(transparent_shadows_ && cast_shadows) lcol *= scol;
 					if(vol_integrator_)
 					{
 						const Rgb transmit_col = vol_integrator_->transmittance(random_generator, b_ray);
