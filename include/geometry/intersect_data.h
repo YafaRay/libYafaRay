@@ -34,17 +34,16 @@ class IntersectData final
 		IntersectData(IntersectData &&intersect_data) = default;
 		IntersectData &operator=(const IntersectData &intersect_data) = default;
 		IntersectData &operator=(IntersectData &&intersect_data) = default;
-		explicit IntersectData(float t_hit) : hit_{true}, t_hit_{t_hit}, uv_{Uv<float>{0.f, 0.f}}, time_{0.f} { }
-		IntersectData(float t_hit, Uv<float> &&uv, float time) : hit_{true}, t_hit_{t_hit}, uv_{std::move(uv)}, time_{time} { }
-		bool isHit() const { return hit_; }
+		explicit IntersectData(float t_hit) : t_hit_{t_hit}, uv_{Uv<float>{0.f, 0.f}}, time_{0.f} { }
+		IntersectData(float t_hit, Uv<float> &&uv, float time) : t_hit_{t_hit}, uv_{std::move(uv)}, time_{time} { }
+		bool isHit() const { return t_hit_ >= 0.f; }
 		float tHit() const { return t_hit_; }
 		Uv<float> uv() const { return uv_; }
 		float time() const { return time_; }
-		void setHit(bool hit) { hit_ = hit; }
+		void setNoHit() { t_hit_ = -1.f; }
 
 	private:
-		bool hit_ = false;
-		float t_hit_;
+		float t_hit_ = -1.f;
 		Uv<float> uv_;
 		float time_;
 };

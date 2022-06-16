@@ -109,7 +109,7 @@ AccelTsData AcceleratorSimpleTest::intersectTransparentShadow(const Ray &ray, in
 			}
 		}
 	}
-	accel_ts_data.setHit(false);
+	accel_ts_data.setNoHit();
 	return accel_ts_data;
 }
 

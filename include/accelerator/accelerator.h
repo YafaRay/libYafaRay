@@ -89,7 +89,7 @@ inline std::tuple<bool, Rgb, const Primitive *> Accelerator::isShadowedTranspare
 inline void Accelerator::primitiveIntersection(AccelData &accel_data, const Primitive *primitive, const Ray &ray)
 {
 	IntersectData intersect_data{primitive->intersect(ray)};
-	if(!intersect_data.isHit() || intersect_data.tHit() >= accel_data.tMax() || intersect_data.tHit() < ray.tmin_) return;
+	if(intersect_data.tHit() < ray.tmin_ || intersect_data.tHit() >= accel_data.tMax()) return;
 	if(const Visibility prim_visibility = primitive->getVisibility(); prim_visibility == Visibility::InvisibleShadowsOnly || prim_visibility == Visibility::Invisible) return;
 	else if(const Visibility mat_visibility = primitive->getMaterial()->getVisibility(); mat_visibility == Visibility::InvisibleShadowsOnly || mat_visibility == Visibility::Invisible) return;
 	accel_data.setIntersectData(std::move(intersect_data));
@@ -99,7 +99,7 @@ inline void Accelerator::primitiveIntersection(AccelData &accel_data, const Prim
 inline bool Accelerator::primitiveIntersectionShadow(AccelData &accel_data, const Primitive *primitive, const Ray &ray, float t_max)
 {
 	IntersectData intersect_data{primitive->intersect(ray)};
-	if(!intersect_data.isHit() || intersect_data.tHit() >= t_max || intersect_data.tHit() < 0.f) return false;
+	if(intersect_data.tHit() < 0.f || intersect_data.tHit() >= t_max) return false;
 	if(const Visibility prim_visibility = primitive->getVisibility(); prim_visibility == Visibility::VisibleNoShadows || prim_visibility == Visibility::Invisible) return false;
 	else if(const Visibility mat_visibility = primitive->getMaterial()->getVisibility(); mat_visibility == Visibility::VisibleNoShadows || mat_visibility == Visibility::Invisible) return false;
 	accel_data.setIntersectData(std::move(intersect_data));

@@ -921,7 +921,7 @@ AccelTsData AcceleratorKdTreeMultiThread::intersectTransparentShadow(const Ray &
 		curr_node = stack[exit_id].node_;
 		exit_id = stack[entry_id].prev_stack_id_;
 	} // while
-	accel_ts_data.setHit(false);
+	accel_ts_data.setNoHit();
 	return accel_ts_data;
 }
 
