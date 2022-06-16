@@ -20,8 +20,8 @@
 #ifndef LIBYAFARAY_ACCELERATOR_INTERSECT_DATA_H
 #define LIBYAFARAY_ACCELERATOR_INTERSECT_DATA_H
 
-#include "geometry/intersect_data.h"
 #include "color/color.h"
+#include "geometry/uv.h"
 
 BEGIN_YAFARAY
 
@@ -39,15 +39,16 @@ class AccelData
 		const Primitive *primitive() const { return hit_primitive_; }
 		void setPrimitive(const Primitive *primitive) { hit_primitive_ = primitive; }
 		void setTMax(float t_max) { t_max_ = t_max; }
-		bool isHit() const { return intersect_data_.isHit(); }
-		float tHit() const { return intersect_data_.tHit(); }
-		Uv<float> uv() const { return intersect_data_.uv(); }
-		void setNoHit() { intersect_data_.setNoHit(); }
-		IntersectData intersectData() const { return intersect_data_; }
-		void setIntersectData(IntersectData &&intersect_data) { setTMax(intersect_data.tHit()); intersect_data_ = std::move(intersect_data); }
+		bool isHit() const { return t_hit_ > 0.f; }
+		float tHit() const { return t_hit_; }
+		void setTHit(float t_hit) { setTMax(t_hit); t_hit_ = t_hit; }
+		Uv<float> uv() const { return uv_; }
+		void setUv(Uv<float> &&uv) { uv_ = std::move(uv); }
+		void setNoHit() { t_hit_ = 0.f; }
 
 	protected:
-		IntersectData intersect_data_;
+		float t_hit_ = 0.f;
+		Uv<float> uv_;
 		float t_max_ = std::numeric_limits<float>::infinity();
 		const Primitive *hit_primitive_ = nullptr;
 };
@@ -69,10 +70,10 @@ class AccelTsData
 		void setPrimitive(const Primitive *primitive) { accel_data_.setPrimitive(primitive); }
 		bool isHit() const { return accel_data_.isHit(); }
 		float tHit() const { return accel_data_.tHit(); }
+		void setTHit(float t_hit) {  accel_data_.setTHit(t_hit); }
 		Uv<float> uv() const { return accel_data_.uv(); }
+		void setUv(Uv<float> &&uv) { accel_data_.setUv(std::move(uv)); }
 		void setNoHit() { accel_data_.setNoHit(); }
-		IntersectData intersectData() const { return accel_data_.intersectData(); }
-		void setIntersectData(IntersectData &&intersect_data) { accel_data_.setIntersectData(std::move(intersect_data)); }
 
 	private:
 		AccelData accel_data_;

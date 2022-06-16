@@ -31,8 +31,8 @@ class TriangleBezierPrimitive : public FacePrimitive
 		TriangleBezierPrimitive(std::vector<int> &&vertices_indices, std::vector<int> &&vertices_uv_indices, const MeshObject &mesh_object);
 
 	private:
-		IntersectData intersect(const Point3 &from, const Vec3 &dir, float time) const override;
-		IntersectData intersect(const Point3 &from, const Vec3 &dir, float time, const Matrix4 &obj_to_world) const override;
+		std::pair<float, Uv<float>> intersect(const Point3 &from, const Vec3 &dir, float time) const override;
+		std::pair<float, Uv<float>> intersect(const Point3 &from, const Vec3 &dir, float time, const Matrix4 &obj_to_world) const override;
 		bool clippingSupport() const override { return false; }
 		Bound getBound() const override;
 		Bound getBound(const Matrix4 &obj_to_world) const override;
@@ -55,12 +55,12 @@ inline TriangleBezierPrimitive::TriangleBezierPrimitive(std::vector<int> &&verti
 {
 }
 
-inline IntersectData TriangleBezierPrimitive::intersect(const Point3 &from, const Vec3 &dir, float time) const
+inline std::pair<float, Uv<float>> TriangleBezierPrimitive::intersect(const Point3 &from, const Vec3 &dir, float time) const
 {
 	return getShapeTriangleAtTime(time).intersect(from, dir);
 }
 
-inline IntersectData TriangleBezierPrimitive::intersect(const Point3 &from, const Vec3 &dir, float time, const Matrix4 &obj_to_world) const
+inline std::pair<float, Uv<float>> TriangleBezierPrimitive::intersect(const Point3 &from, const Vec3 &dir, float time, const Matrix4 &obj_to_world) const
 {
 	return getShapeTriangleAtTime(obj_to_world, time).intersect(from, dir);
 }

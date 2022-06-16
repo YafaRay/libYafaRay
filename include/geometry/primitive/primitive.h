@@ -41,7 +41,6 @@ class Object;
 class Camera;
 class Rgb;
 class Light;
-class IntersectData;
 
 class Primitive
 {
@@ -51,8 +50,8 @@ class Primitive
 		virtual Bound getBound() const = 0;
 		virtual Bound getBound(const Matrix4 &obj_to_world) const = 0;
 		virtual bool clippingSupport() const = 0;
-		virtual IntersectData intersect(const Point3 &from, const Vec3 &dir, float time) const = 0;
-		virtual IntersectData intersect(const Point3 &from, const Vec3 &dir, float time, const Matrix4 &obj_to_world) const = 0;
+		virtual std::pair<float, Uv<float>> intersect(const Point3 &from, const Vec3 &dir, float time) const = 0;
+		virtual std::pair<float, Uv<float>> intersect(const Point3 &from, const Vec3 &dir, float time, const Matrix4 &obj_to_world) const = 0;
 		virtual std::unique_ptr<const SurfacePoint> getSurface(const RayDifferentials *ray_differentials, const Point3 &hit_point, float time, const Uv<float> &intersect_uv, const Camera *camera) const = 0;
 		virtual std::unique_ptr<const SurfacePoint> getSurface(const RayDifferentials *ray_differentials, const Point3 &hit_point, float time, const Uv<float> &intersect_uv, const Matrix4 &obj_to_world, const Camera *camera) const = 0;
 		virtual const Material *getMaterial() const = 0;

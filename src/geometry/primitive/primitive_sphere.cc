@@ -61,7 +61,7 @@ Bound SpherePrimitive::getBound(const Matrix4 &obj_to_world) const
 	return {center_ - r, center_ + r};
 }
 
-IntersectData SpherePrimitive::intersect(const Point3 &from, const Vec3 &dir, float time) const
+std::pair<float, Uv<float>> SpherePrimitive::intersect(const Point3 &from, const Vec3 &dir, float time) const
 {
 	const Vec3 vf{from - center_};
 	const float ea = dir * dir;
@@ -79,10 +79,10 @@ IntersectData SpherePrimitive::intersect(const Point3 &from, const Vec3 &dir, fl
 		if(sol < 0.f) return {}; //used to be "< ray.tmin_", was that necessary?
 	}
 	//if(sol > ray.tmax) return false; //tmax = -1 is not substituted yet...
-	return IntersectData{sol};
+	return {sol, {}};
 }
 
-IntersectData SpherePrimitive::intersect(const Point3 &from, const Vec3 &dir, float time, const Matrix4 &obj_to_world) const
+std::pair<float, Uv<float>> SpherePrimitive::intersect(const Point3 &from, const Vec3 &dir, float time, const Matrix4 &obj_to_world) const
 {
 	const Vec3 vf{from - center_};
 	const float ea = dir * dir;
@@ -100,7 +100,7 @@ IntersectData SpherePrimitive::intersect(const Point3 &from, const Vec3 &dir, fl
 		if(sol < 0.f) return {}; //used to be "< ray.tmin_", was that necessary?
 	}
 	//if(sol > ray.tmax) return false; //tmax = -1 is not substituted yet...
-	return IntersectData{sol};
+	return {sol, {}};
 }
 
 std::unique_ptr<const SurfacePoint> SpherePrimitive::getSurface(const RayDifferentials *ray_differentials, const Point3 &hit_point, float time, const Uv<float> &intersect_uv, const Camera *camera) const

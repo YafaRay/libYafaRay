@@ -30,7 +30,7 @@ class ShapeQuad final
 		ShapeQuad(const ShapeQuad &quad) = default;
 		ShapeQuad(ShapeQuad &&quad) = default;
 		explicit ShapeQuad(std::array<Point3, 4> &&vertices) : vertices_(std::move(vertices)) { }
-		IntersectData intersect(const Point3 &from, const Vec3 &dir) const;
+		std::pair<float, Uv<float>> intersect(const Point3 &from, const Vec3 &dir) const;
 		Vec3 calculateFaceNormal() const;
 		float surfaceArea() const;
 		Point3 sample(const Uv<float> &uv) const;
@@ -67,7 +67,7 @@ inline float ShapeQuad::getDistToNearestEdge(const Uv<float> &uv, const Uv<Vec3>
 	return std::min(u_dist_abs, v_dist_abs);
 }
 
-inline IntersectData ShapeQuad::intersect(const Point3 &from, const Vec3 &dir) const
+inline std::pair<float, Uv<float>> ShapeQuad::intersect(const Point3 &from, const Vec3 &dir) const
 {
 	//Tomas Moller and Ben Trumbore ray intersection scheme
 	const Vec3 edge_1{vertices_[1] - vertices_[0]};
@@ -89,7 +89,7 @@ inline IntersectData ShapeQuad::intersect(const Point3 &from, const Vec3 &dir) c
 			if(v >= 0.f && (u + v) <= 1.f)
 			{
 				const float t = edge_2 * qvec_1 * inv_det_1_2;
-				if(t >= epsilon_1_2) return IntersectData{t, {u + v, v}};
+				if(t >= epsilon_1_2) return {t, {u + v, v}};
 			}
 		}
 		else //Test second triangle in the quad
@@ -110,7 +110,7 @@ inline IntersectData ShapeQuad::intersect(const Point3 &from, const Vec3 &dir) c
 					if(v >= 0.f && (u + v) <= 1.f)
 					{
 						const float t = edge_3 * qvec_2 * inv_det_2_3;
-						if(t >= epsilon_2_3) return IntersectData{t, {u, u + v}};
+						if(t >= epsilon_2_3) return {t, {u, u + v}};
 					}
 				}
 			}

@@ -31,8 +31,6 @@ BEGIN_YAFARAY
 
 #define PRIMITIVE_CLIPPING 1
 
-class IntersectData;
-
 // ============================================================
 /*! This class holds a complete kd-tree with building and
 	traversal funtions

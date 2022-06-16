@@ -25,7 +25,6 @@
 
 #include "common/yafaray_common.h"
 #include "geometry/vector.h"
-#include "geometry/intersect_data.h"
 #include "geometry/object/object.h"
 #include "geometry/primitive/primitive.h"
 #include "color/color.h"
@@ -39,7 +38,6 @@ class Ray;
 class Vec3;
 class Primitive;
 struct RayDifferentials;
-class IntersectData;
 
 struct SurfaceDifferentials final
 {
