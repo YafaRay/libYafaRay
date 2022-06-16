@@ -115,7 +115,7 @@ AcceleratorKdTreeMultiThread::SplitCost AcceleratorKdTreeMultiThread::pigeonMinC
 	const Vec3 node_bound_axes {node_bound.longX(), node_bound.longY(), node_bound.longZ() };
 	const Vec3 inv_node_bound_axes { 1.f / node_bound_axes[Axis::X], 1.f / node_bound_axes[Axis::Y], 1.f / node_bound_axes[Axis::Z] };
 	SplitCost split;
-	split.cost_ = std::numeric_limits<float>::infinity();
+	split.cost_ = std::numeric_limits<float>::max();
 	const float inv_total_sa = 1.f / (node_bound_axes[Axis::X] * node_bound_axes[Axis::Y] + node_bound_axes[Axis::X] * node_bound_axes[Axis::Z] + node_bound_axes[Axis::Y] * node_bound_axes[Axis::Z]);
 
 	for(const auto axis : axis::spatial)
@@ -258,7 +258,7 @@ AcceleratorKdTreeMultiThread::SplitCost AcceleratorKdTreeMultiThread::minimalCos
 	const Vec3 node_bound_axes {node_bound.longX(), node_bound.longY(), node_bound.longZ() };
 	const Vec3 inv_node_bound_axes { 1.f / node_bound_axes[Axis::X], 1.f / node_bound_axes[Axis::Y], 1.f / node_bound_axes[Axis::Z] };
 	SplitCost split;
-	split.cost_ = std::numeric_limits<float>::infinity();
+	split.cost_ = std::numeric_limits<float>::max();
 	const float inv_total_sa = 1.f / (node_bound_axes[Axis::X] * node_bound_axes[Axis::Y] + node_bound_axes[Axis::X] * node_bound_axes[Axis::Z] + node_bound_axes[Axis::Y] * node_bound_axes[Axis::Z]);
 	std::array<std::vector<BoundEdge>, 3> edges_all_axes;
 	for(auto axis : axis::spatial)
@@ -631,7 +631,7 @@ void AcceleratorKdTreeMultiThread::buildTreeWorker(const std::vector<const Primi
 	returns the closest hit within dist
 */
 
-AccelData AcceleratorKdTreeMultiThread::intersect(const Ray &ray, float t_max, const std::vector<Node> &nodes, const Bound &tree_bound)
+IntersectData AcceleratorKdTreeMultiThread::intersect(const Ray &ray, float t_max, const std::vector<Node> &nodes, const Bound &tree_bound)
 {
 	const Bound::Cross cross{tree_bound.cross(ray, t_max)};
 	if(!cross.crossed_) { return {}; }
@@ -657,8 +657,8 @@ AccelData AcceleratorKdTreeMultiThread::intersect(const Ray &ray, float t_max, c
 	stack[exit_id].node_ = nullptr; // "nowhere", termination flag
 
 	//loop, traverse kd-Tree until object intersection or ray leaves tree bound
-	AccelData accel_data;
-	accel_data.setTMax(t_max);
+	IntersectData intersect_data;
+	intersect_data.t_max_ = t_max;
 	while(curr_node)
 	{
 		if(t_max < stack[entry_id].t_) break;
@@ -718,21 +718,21 @@ AccelData AcceleratorKdTreeMultiThread::intersect(const Ray &ray, float t_max, c
 		// Check for intersections inside leaf node
 		for(auto prim : curr_node->primitives_)
 		{
-			Accelerator::primitiveIntersection(accel_data, prim, ray);
+			Accelerator::primitiveIntersection(intersect_data, prim, ray);
 		}
-		if(accel_data.isHit() && accel_data.tMax() <= stack[exit_id].t_)
+		if(intersect_data.isHit() && intersect_data.t_max_ <= stack[exit_id].t_)
 		{
-			return accel_data;
+			return intersect_data;
 		}
 
 		entry_id = exit_id;
 		curr_node = stack[exit_id].node_;
 		exit_id = stack[entry_id].prev_stack_id_;
 	} // while
-	return accel_data;
+	return intersect_data;
 }
 
-AccelData AcceleratorKdTreeMultiThread::intersectShadow(const Ray &ray, float t_max, const std::vector<Node> &nodes, const Bound &tree_bound)
+IntersectData AcceleratorKdTreeMultiThread::intersectShadow(const Ray &ray, float t_max, const std::vector<Node> &nodes, const Bound &tree_bound)
 {
 	const Bound::Cross cross{tree_bound.cross(ray, t_max)};
 	if(!cross.crossed_) { return {}; }
@@ -756,8 +756,8 @@ AccelData AcceleratorKdTreeMultiThread::intersectShadow(const Ray &ray, float t_
 	stack[exit_id].node_ = nullptr; // "nowhere", termination flag
 
 	//loop, traverse kd-Tree until object intersection or ray leaves tree bound
-	AccelData accel_data;
-	accel_data.setTMax(t_max);
+	IntersectData intersect_data;
+	intersect_data.t_max_ = t_max;
 	while(curr_node)
 	{
 		if(t_max < stack[entry_id].t_ /*a*/) break;
@@ -816,7 +816,7 @@ AccelData AcceleratorKdTreeMultiThread::intersectShadow(const Ray &ray, float t_
 		// Check for intersections inside leaf node
 		for(auto prim : curr_node->primitives_)
 		{
-			if(Accelerator::primitiveIntersectionShadow(accel_data, prim, ray, t_max)) return accel_data;
+			if(Accelerator::primitiveIntersectionShadow(intersect_data, prim, ray, t_max)) return intersect_data;
 		}
 		entry_id = exit_id;
 		curr_node = stack[exit_id].node_;
@@ -829,7 +829,7 @@ AccelData AcceleratorKdTreeMultiThread::intersectShadow(const Ray &ray, float t_
 	allow for transparent shadows.
 =============================================================*/
 
-AccelTsData AcceleratorKdTreeMultiThread::intersectTransparentShadow(const Ray &ray, int max_depth, float t_max, const std::vector<Node> &nodes, const Bound &tree_bound, const Camera *camera)
+IntersectDataColor AcceleratorKdTreeMultiThread::intersectTransparentShadow(const Ray &ray, int max_depth, float t_max, const std::vector<Node> &nodes, const Bound &tree_bound, const Camera *camera)
 {
 	const Bound::Cross cross{tree_bound.cross(ray, t_max)};
 	if(!cross.crossed_) { return {}; }
@@ -856,8 +856,8 @@ AccelTsData AcceleratorKdTreeMultiThread::intersectTransparentShadow(const Ray &
 	stack[exit_id].node_ = nullptr; // "nowhere", termination flag
 
 	//loop, traverse kd-Tree until object intersection or ray leaves tree bound
-	AccelTsData accel_ts_data;
-	accel_ts_data.setTMax(t_max);
+	IntersectDataColor intersect_data_color;
+	intersect_data_color.t_max_ = t_max;
 	while(curr_node)
 	{
 		if(t_max < stack[entry_id].t_ /*a*/) break;
@@ -915,14 +915,14 @@ AccelTsData AcceleratorKdTreeMultiThread::intersectTransparentShadow(const Ray &
 		// Check for intersections inside leaf node
 		for(auto prim : curr_node->primitives_)
 		{
-				if(Accelerator::primitiveIntersectionTransparentShadow(accel_ts_data, filtered, depth, max_depth, prim, ray, t_max, camera)) return accel_ts_data;
+				if(Accelerator::primitiveIntersectionTransparentShadow(intersect_data_color, filtered, depth, max_depth, prim, ray, t_max, camera)) return intersect_data_color;
 		}
 		entry_id = exit_id;
 		curr_node = stack[exit_id].node_;
 		exit_id = stack[entry_id].prev_stack_id_;
 	} // while
-	accel_ts_data.setNoHit();
-	return accel_ts_data;
+	intersect_data_color.setNoHit();
+	return intersect_data_color;
 }
 
 END_YAFARAY

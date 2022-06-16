@@ -58,59 +58,59 @@ AcceleratorSimpleTest::AcceleratorSimpleTest(Logger &logger, const std::vector<c
 	if(logger_.isVerbose()) logger_.logVerbose("AcceleratorSimpleTest: Objects: ", objects_data_.size(), ", primitives in tree: ", num_primitives, ", bound: (", bound_.a_, ", ", bound_.g_, ")");
 }
 
-AccelData AcceleratorSimpleTest::intersect(const Ray &ray, float t_max) const
+IntersectData AcceleratorSimpleTest::intersect(const Ray &ray, float t_max) const
 {
-	AccelData accel_data;
+	IntersectData intersect_data;
 	for(const auto &[object, object_data] : objects_data_)
 	{
 		if(const Bound::Cross cross{object_data.bound_.cross(ray, t_max)}; cross.crossed_)
 		{
 			for(const auto &primitive : object_data.primitives_)
 			{
-				Accelerator::primitiveIntersection(accel_data, primitive, ray);
-				if(accel_data.isHit() && accel_data.tHit() >= ray.tmin_  && accel_data.tHit() <= ray.tmax_)
+				Accelerator::primitiveIntersection(intersect_data, primitive, ray);
+				if(intersect_data.isHit() && intersect_data.t_hit_ >= ray.tmin_  && intersect_data.t_hit_ <= ray.tmax_)
 				{
-					return accel_data;
+					return intersect_data;
 				}
 			}
 		}
 	}
-	return accel_data;
+	return intersect_data;
 }
 
-AccelData AcceleratorSimpleTest::intersectShadow(const Ray &ray, float t_max) const
+IntersectData AcceleratorSimpleTest::intersectShadow(const Ray &ray, float t_max) const
 {
-	AccelData accel_data;
+	IntersectData intersect_data;
 	for(const auto &[object, object_data] : objects_data_)
 	{
 		if(const Bound::Cross cross{object_data.bound_.cross(ray, t_max)}; cross.crossed_)
 		{
 			for(const auto &primitive : object_data.primitives_)
 			{
-				if(Accelerator::primitiveIntersectionShadow(accel_data, primitive, ray, t_max)) return accel_data;
+				if(Accelerator::primitiveIntersectionShadow(intersect_data, primitive, ray, t_max)) return intersect_data;
 			}
 		}
 	}
-	return accel_data;
+	return intersect_data;
 }
 
-AccelTsData AcceleratorSimpleTest::intersectTransparentShadow(const Ray &ray, int max_depth, float t_max, const Camera *camera) const
+IntersectDataColor AcceleratorSimpleTest::intersectTransparentShadow(const Ray &ray, int max_depth, float t_max, const Camera *camera) const
 {
 	std::set<const Primitive *> filtered;
 	int depth = 0;
-	AccelTsData accel_ts_data;
+	IntersectDataColor intersect_data_color;
 	for(const auto &[object, object_data] : objects_data_)
 	{
 		if(const Bound::Cross cross{object_data.bound_.cross(ray, t_max)}; cross.crossed_)
 		{
 			for(const auto &primitive : object_data.primitives_)
 			{
-				if(Accelerator::primitiveIntersectionTransparentShadow(accel_ts_data, filtered, depth, max_depth, primitive, ray, t_max, camera)) return accel_ts_data;
+				if(Accelerator::primitiveIntersectionTransparentShadow(intersect_data_color, filtered, depth, max_depth, primitive, ray, t_max, camera)) return intersect_data_color;
 			}
 		}
 	}
-	accel_ts_data.setNoHit();
-	return accel_ts_data;
+	intersect_data_color.setNoHit();
+	return intersect_data_color;
 }
 
 END_YAFARAY

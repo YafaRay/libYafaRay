@@ -48,18 +48,18 @@ class AcceleratorKdTreeMultiThread final : public Accelerator
 		struct Stack;
 		AcceleratorKdTreeMultiThread(Logger &logger, const std::vector<const Primitive *> &primitives, const Parameters &parameters);
 		~AcceleratorKdTreeMultiThread() override;
-		AccelData intersect(const Ray &ray, float t_max) const override;
-		AccelData intersectShadow(const Ray &ray, float t_max) const override;
-		AccelTsData intersectTransparentShadow(const Ray &ray, int max_depth, float t_max, const Camera *camera) const override;
+		IntersectData intersect(const Ray &ray, float t_max) const override;
+		IntersectData intersectShadow(const Ray &ray, float t_max) const override;
+		IntersectDataColor intersectTransparentShadow(const Ray &ray, int max_depth, float t_max, const Camera *camera) const override;
 		Bound getBound() const override { return tree_bound_; }
 
 		AcceleratorKdTreeMultiThread::Result buildTree(const std::vector<const Primitive *> &primitives, const Bound &node_bound, const std::vector<uint32_t> &indices, int depth, uint32_t next_node_id, int bad_refines, const std::vector<Bound> &bounds, const Parameters &parameters, const ClipPlane &clip_plane, const std::vector<PolyDouble> &polygons, const std::vector<uint32_t> &primitive_indices, std::atomic<int> &num_current_threads) const;
 		void buildTreeWorker(const std::vector<const Primitive *> &primitives, const Bound &node_bound, const std::vector<uint32_t> &indices, int depth, uint32_t next_node_id, int bad_refines, const std::vector<Bound> &bounds, const Parameters &parameters, const ClipPlane &clip_plane, const std::vector<PolyDouble> &polygons, const std::vector<uint32_t> &primitive_indices, Result &result, std::atomic<int> &num_current_threads) const;
 		static SplitCost pigeonMinCost(Logger &logger, float e_bonus, float cost_ratio, const std::vector<Bound> &bounds, const Bound &node_bound, const std::vector<uint32_t> &prim_indices);
 		static SplitCost minimalCost(Logger &logger, float e_bonus, float cost_ratio, const Bound &node_bound, const std::vector<uint32_t> &indices, const std::vector<Bound> &bounds);
-		static AccelData intersect(const Ray &ray, float t_max, const std::vector<Node> &nodes, const Bound &tree_bound);
-		static AccelData intersectShadow(const Ray &ray, float t_max, const std::vector<Node> &nodes, const Bound &tree_bound);
-		static AccelTsData intersectTransparentShadow(const Ray &ray, int max_depth, float t_max, const std::vector<Node> &nodes, const Bound &tree_bound, const Camera *camera);
+		static IntersectData intersect(const Ray &ray, float t_max, const std::vector<Node> &nodes, const Bound &tree_bound);
+		static IntersectData intersectShadow(const Ray &ray, float t_max, const std::vector<Node> &nodes, const Bound &tree_bound);
+		static IntersectDataColor intersectTransparentShadow(const Ray &ray, int max_depth, float t_max, const std::vector<Node> &nodes, const Bound &tree_bound, const Camera *camera);
 
 		alignas(8) std::vector<Node> nodes_;
 		Bound tree_bound_; 	//!< overall space the tree encloses
@@ -151,17 +151,17 @@ inline Stats AcceleratorKdTreeMultiThread::Node::createInterior(Axis axis, float
 	return kd_stats;
 }
 
-inline AccelData AcceleratorKdTreeMultiThread::intersect(const Ray &ray, float t_max) const
+inline IntersectData AcceleratorKdTreeMultiThread::intersect(const Ray &ray, float t_max) const
 {
 	return intersect(ray, t_max, nodes_, tree_bound_);
 }
 
-inline AccelData AcceleratorKdTreeMultiThread::intersectShadow(const Ray &ray, float t_max) const
+inline IntersectData AcceleratorKdTreeMultiThread::intersectShadow(const Ray &ray, float t_max) const
 {
 	return intersectShadow(ray, t_max, nodes_, tree_bound_);
 }
 
-inline AccelTsData AcceleratorKdTreeMultiThread::intersectTransparentShadow(const Ray &ray, int max_depth, float t_max, const Camera *camera) const
+inline IntersectDataColor AcceleratorKdTreeMultiThread::intersectTransparentShadow(const Ray &ray, int max_depth, float t_max, const Camera *camera) const
 {
 	return intersectTransparentShadow(ray, max_depth, t_max, nodes_, tree_bound_, camera);
 }

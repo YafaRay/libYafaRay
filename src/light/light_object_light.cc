@@ -173,11 +173,11 @@ std::pair<Vec3, Rgb> ObjectLight::emitSample(LSample &s, float time) const
 std::tuple<bool, float, Rgb> ObjectLight::intersect(const Ray &ray, float &t) const
 {
 	if(!accelerator_) return {};
-	const float t_max = (ray.tmax_ >= 0.f) ? ray.tmax_ : std::numeric_limits<float>::infinity();
+	const float t_max = (ray.tmax_ >= 0.f) ? ray.tmax_ : std::numeric_limits<float>::max();
 	// intersect with tree:
-	const AccelData accel_data = accelerator_->intersect(ray, t_max);
-	if(!accel_data.isHit()) return {};
-	const Vec3 n{accel_data.primitive()->getGeometricNormal(accel_data.uv(), 0)};
+	const IntersectData intersect_data = accelerator_->intersect(ray, t_max);
+	if(!intersect_data.isHit()) return {};
+	const Vec3 n{intersect_data.primitive_->getGeometricNormal(intersect_data.uv_, 0)};
 	float cos_angle = ray.dir_ * (-n);
 	if(cos_angle <= 0.f)
 	{

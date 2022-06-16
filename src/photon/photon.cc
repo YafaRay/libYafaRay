@@ -131,7 +131,7 @@ int PhotonMap::gather(const Point3 &p, FoundPhoton *found, unsigned int k, float
 const Photon *PhotonMap::findNearest(const Point3 &p, const Vec3 &n, float dist) const
 {
 	NearestPhoton proc{n};
-	//float dist=std::numeric_limits<float>::infinity(); //really bad idea...
+	//float dist=std::numeric_limits<float>::max(); //really bad idea...
 	tree_->lookup(p, proc, dist);
 	return proc.photon_;
 }
