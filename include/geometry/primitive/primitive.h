@@ -53,17 +53,17 @@ class Primitive
 		virtual std::pair<float, Uv<float>> intersect(const Point3 &from, const Vec3 &dir, float time) const = 0;
 		virtual std::pair<float, Uv<float>> intersect(const Point3 &from, const Vec3 &dir, float time, const Matrix4 &obj_to_world) const = 0;
 		virtual std::unique_ptr<const SurfacePoint> getSurface(const RayDifferentials *ray_differentials, const Point3 &hit_point, float time, const Uv<float> &intersect_uv, const Camera *camera) const = 0;
-		virtual std::unique_ptr<const SurfacePoint> getSurface(const RayDifferentials *ray_differentials, const Point3 &hit_point, float time, const Uv<float> &intersect_uv, const Matrix4 &obj_to_world, const Camera *camera) const = 0;
+		virtual std::unique_ptr<const SurfacePoint> getSurface(const RayDifferentials *ray_differentials, const Point3 &hit_point, float time, const Uv<float> &intersect_uv, const Camera *camera, const Matrix4 &obj_to_world) const = 0;
 		virtual const Material *getMaterial() const = 0;
 		virtual float surfaceArea(float time) const = 0;
-		virtual float surfaceArea(const Matrix4 &obj_to_world, float time) const = 0;
+		virtual float surfaceArea(float time, const Matrix4 &obj_to_world) const = 0;
 		virtual float getDistToNearestEdge(const Uv<float> &uv, const Uv<Vec3> &dp_abs) const = 0;
 		virtual Vec3 getGeometricNormal(const Uv<float> &uv, float time) const = 0;
-		virtual Vec3 getGeometricNormal(const Matrix4 &obj_to_world, const Uv<float> &uv, float time) const = 0;
+		virtual Vec3 getGeometricNormal(const Uv<float> &uv, float time, const Matrix4 &obj_to_world) const = 0;
 		Vec3 getGeometricNormal(float time) const { return getGeometricNormal({0.f, 0.f}, time); }
-		Vec3 getGeometricNormal(const Matrix4 &obj_to_world, float time) const { return getGeometricNormal(obj_to_world, {0.f, 0.f}, time); }
+		Vec3 getGeometricNormal(float time, const Matrix4 &obj_to_world) const { return getGeometricNormal({0.f, 0.f}, time, obj_to_world); }
 		virtual std::pair<Point3, Vec3> sample(const Uv<float> &uv, float time) const = 0;
-		virtual std::pair<Point3, Vec3> sample(const Uv<float> &uv, const Matrix4 &obj_to_world, float time) const = 0;
+		virtual std::pair<Point3, Vec3> sample(const Uv<float> &uv, float time, const Matrix4 &obj_to_world) const = 0;
 		virtual const Object *getObject() const = 0;
 		virtual Visibility getVisibility() const = 0;
 		virtual unsigned int getObjectIndex() const = 0;

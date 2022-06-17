@@ -37,13 +37,13 @@ class QuadBezierPrimitive : public FacePrimitive
 		Bound getBound() const override;
 		Bound getBound(const Matrix4 &obj_to_world) const override;
 		Vec3 getGeometricNormal(const Uv<float> &uv, float time) const override;
-		Vec3 getGeometricNormal(const Matrix4 &obj_to_world, const Uv<float> &uv, float time) const override;
+		Vec3 getGeometricNormal(const Uv<float> &uv, float time, const Matrix4 &obj_to_world) const override;
 		std::unique_ptr<const SurfacePoint> getSurface(const RayDifferentials *ray_differentials, const Point3 &hit_point, float time, const Uv<float> &intersect_uv, const Camera *camera) const override;
-		std::unique_ptr<const SurfacePoint> getSurface(const RayDifferentials *ray_differentials, const Point3 &hit_point, float time, const Uv<float> &intersect_uv, const Matrix4 &obj_to_world, const Camera *camera) const override;
+		std::unique_ptr<const SurfacePoint> getSurface(const RayDifferentials *ray_differentials, const Point3 &hit_point, float time, const Uv<float> &intersect_uv, const Camera *camera, const Matrix4 &obj_to_world) const override;
 		float surfaceArea(float time) const override;
-		float surfaceArea(const Matrix4 &obj_to_world, float time) const override;
+		float surfaceArea(float time, const Matrix4 &obj_to_world) const override;
 		std::pair<Point3, Vec3> sample(const Uv<float> &uv, float time) const override;
-		std::pair<Point3, Vec3> sample(const Uv<float> &uv, const Matrix4 &obj_to_world, float time) const override;
+		std::pair<Point3, Vec3> sample(const Uv<float> &uv, float time, const Matrix4 &obj_to_world) const override;
 		float getDistToNearestEdge(const Uv<float> &uv, const Uv<Vec3> &dp_abs) const override { return ShapeQuad::getDistToNearestEdge(uv, dp_abs); }
 		ShapeQuad getShapeQuad(int time_step) const;
 		ShapeQuad getShapeQuad(const Matrix4 &obj_to_world, int time_step) const;
@@ -70,7 +70,7 @@ inline float QuadBezierPrimitive::surfaceArea(float time) const
 	return getShapeQuadAtTime(time).surfaceArea();
 }
 
-inline float QuadBezierPrimitive::surfaceArea(const Matrix4 &obj_to_world, float time) const
+inline float QuadBezierPrimitive::surfaceArea(float time, const Matrix4 &obj_to_world) const
 {
 	return getShapeQuadAtTime(obj_to_world, time).surfaceArea();
 }
@@ -84,7 +84,7 @@ inline std::pair<Point3, Vec3> QuadBezierPrimitive::sample(const Uv<float> &uv, 
 	};
 }
 
-inline std::pair<Point3, Vec3> QuadBezierPrimitive::sample(const Uv<float> &uv, const Matrix4 &obj_to_world, float time) const
+inline std::pair<Point3, Vec3> QuadBezierPrimitive::sample(const Uv<float> &uv, float time, const Matrix4 &obj_to_world) const
 {
 	const auto quad = getShapeQuadAtTime(obj_to_world, time);
 	return {
@@ -98,7 +98,7 @@ inline Vec3 QuadBezierPrimitive::getGeometricNormal(const Uv<float> &uv, float t
 	return getShapeQuadAtTime(time).calculateFaceNormal();
 }
 
-inline Vec3 QuadBezierPrimitive::getGeometricNormal(const Matrix4 &obj_to_world, const Uv<float> &uv, float time) const
+inline Vec3 QuadBezierPrimitive::getGeometricNormal(const Uv<float> &uv, float time, const Matrix4 &obj_to_world) const
 {
 	const Vec3 normal {getShapeQuadAtTime(obj_to_world, time).calculateFaceNormal()};
 	return (obj_to_world * normal).normalize();
@@ -127,10 +127,10 @@ inline ShapeQuad QuadBezierPrimitive::getShapeQuad(int time_step) const
 inline ShapeQuad QuadBezierPrimitive::getShapeQuad(const Matrix4 &obj_to_world, int time_step) const
 {
 	return ShapeQuad {{
-			getVertex(0, obj_to_world, time_step),
-			getVertex(1, obj_to_world, time_step),
-			getVertex(2, obj_to_world, time_step),
-			getVertex(3, obj_to_world, time_step)
+			getVertex(0, time_step, obj_to_world),
+			getVertex(1, time_step, obj_to_world),
+			getVertex(2, time_step, obj_to_world),
+			getVertex(3, time_step, obj_to_world)
 	}};
 }
 
@@ -170,10 +170,10 @@ inline ShapeQuad QuadBezierPrimitive::getShapeQuadAtTime(const Matrix4 &obj_to_w
 		const float time_mapped = math::lerpSegment(time, 0.f, time_start, 1.f, time_end); //time_mapped must be in range [0.f-1.f]
 		const auto bezier = math::bezierCalculateFactors(time_mapped);
 		return ShapeQuad{{
-				getVertex(0, obj_to_world, bezier),
-				getVertex(1, obj_to_world, bezier),
-				getVertex(2, obj_to_world, bezier),
-				getVertex(3, obj_to_world, bezier),
+				getVertex(0, bezier, obj_to_world),
+				getVertex(1, bezier, obj_to_world),
+				getVertex(2, bezier, obj_to_world),
+				getVertex(3, bezier, obj_to_world),
 		}};
 	}
 }

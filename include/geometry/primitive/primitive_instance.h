@@ -46,14 +46,14 @@ class PrimitiveInstance : public Primitive
 		std::pair<float, Uv<float>> intersect(const Point3 &from, const Vec3 &dir, float time) const override;
 		std::pair<float, Uv<float>> intersect(const Point3 &from, const Vec3 &dir, float time, const Matrix4 &obj_to_world) const override;
 		std::unique_ptr<const SurfacePoint> getSurface(const RayDifferentials *ray_differentials, const Point3 &hit_point, float time, const Uv<float> &intersect_uv, const Camera *camera) const override;
-		std::unique_ptr<const SurfacePoint> getSurface(const RayDifferentials *ray_differentials, const Point3 &hit_point, float time, const Uv<float> &intersect_uv, const Matrix4 &obj_to_world, const Camera *camera) const override;
+		std::unique_ptr<const SurfacePoint> getSurface(const RayDifferentials *ray_differentials, const Point3 &hit_point, float time, const Uv<float> &intersect_uv, const Camera *camera, const Matrix4 &obj_to_world) const override;
 		const Material *getMaterial() const override { return base_primitive_->getMaterial(); }
 		float surfaceArea(float time) const override;
-		float surfaceArea(const Matrix4 &obj_to_world, float time) const override;
+		float surfaceArea(float time, const Matrix4 &obj_to_world) const override;
 		Vec3 getGeometricNormal(const Uv<float> &uv, float time) const override;
-		Vec3 getGeometricNormal(const Matrix4 &obj_to_world, const Uv<float> &uv, float time) const override;
+		Vec3 getGeometricNormal(const Uv<float> &uv, float time, const Matrix4 &obj_to_world) const override;
 		std::pair<Point3, Vec3> sample(const Uv<float> &uv, float time) const override;
-		std::pair<Point3, Vec3> sample(const Uv<float> &uv, const Matrix4 &obj_to_world, float time) const override;
+		std::pair<Point3, Vec3> sample(const Uv<float> &uv, float time, const Matrix4 &obj_to_world) const override;
 		const Object *getObject() const override { return &base_instance_; }
 		Visibility getVisibility() const override { return base_primitive_->getVisibility(); }
 		unsigned int getObjectIndex() const override { return base_primitive_->getObjectIndex(); }
@@ -90,32 +90,32 @@ inline std::pair<float, Uv<float>> PrimitiveInstance::intersect(const Point3 &fr
 
 inline float PrimitiveInstance::surfaceArea(float time) const
 {
-	return base_primitive_->surfaceArea( base_instance_.getObjToWorldMatrixAtTime(time), time);
+	return base_primitive_->surfaceArea(time, base_instance_.getObjToWorldMatrixAtTime(time));
 }
 
-inline float PrimitiveInstance::surfaceArea(const Matrix4 &obj_to_world, float time) const
+inline float PrimitiveInstance::surfaceArea(float time, const Matrix4 &obj_to_world) const
 {
-	return base_primitive_->surfaceArea(obj_to_world * base_instance_.getObjToWorldMatrixAtTime(time), time);
+	return base_primitive_->surfaceArea(time, obj_to_world * base_instance_.getObjToWorldMatrixAtTime(time));
 }
 
 inline Vec3 PrimitiveInstance::getGeometricNormal(const Uv<float> &uv, float time) const
 {
-	return base_primitive_->getGeometricNormal(base_instance_.getObjToWorldMatrixAtTime(time), uv, time);
+	return base_primitive_->getGeometricNormal(uv, time, base_instance_.getObjToWorldMatrixAtTime(time));
 }
 
-inline Vec3 PrimitiveInstance::getGeometricNormal(const Matrix4 &obj_to_world, const Uv<float> &uv, float time) const
+inline Vec3 PrimitiveInstance::getGeometricNormal(const Uv<float> &uv, float time, const Matrix4 &obj_to_world) const
 {
-	return base_primitive_->getGeometricNormal(obj_to_world * base_instance_.getObjToWorldMatrixAtTime(time), uv, time);
+	return base_primitive_->getGeometricNormal(uv, time, obj_to_world * base_instance_.getObjToWorldMatrixAtTime(time));
 }
 
 inline std::pair<Point3, Vec3> PrimitiveInstance::sample(const Uv<float> &uv, float time) const
 {
-	return base_primitive_->sample(uv, base_instance_.getObjToWorldMatrixAtTime(time), time);
+	return base_primitive_->sample(uv, time, base_instance_.getObjToWorldMatrixAtTime(time));
 }
 
-inline std::pair<Point3, Vec3> PrimitiveInstance::sample(const Uv<float> &uv, const Matrix4 &obj_to_world, float time) const
+inline std::pair<Point3, Vec3> PrimitiveInstance::sample(const Uv<float> &uv, float time, const Matrix4 &obj_to_world) const
 {
-	return base_primitive_->sample(uv, obj_to_world * base_instance_.getObjToWorldMatrixAtTime(time), time);
+	return base_primitive_->sample(uv, time, obj_to_world * base_instance_.getObjToWorldMatrixAtTime(time));
 }
 
 inline Bound PrimitiveInstance::getBound() const

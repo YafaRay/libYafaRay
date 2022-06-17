@@ -44,14 +44,14 @@ class SpherePrimitive final : public Primitive
 		std::pair<float, Uv<float>> intersect(const Point3 &from, const Vec3 &dir, float time) const override;
 		std::pair<float, Uv<float>> intersect(const Point3 &from, const Vec3 &dir, float time, const Matrix4 &obj_to_world) const override;
 		std::unique_ptr<const SurfacePoint> getSurface(const RayDifferentials *ray_differentials, const Point3 &hit_point, float time, const Uv<float> &intersect_uv, const Camera *camera) const override;
-		std::unique_ptr<const SurfacePoint> getSurface(const RayDifferentials *ray_differentials, const Point3 &hit_point, float time, const Uv<float> &intersect_uv, const Matrix4 &obj_to_world, const Camera *camera) const override;
+		std::unique_ptr<const SurfacePoint> getSurface(const RayDifferentials *ray_differentials, const Point3 &hit_point, float time, const Uv<float> &intersect_uv, const Camera *camera, const Matrix4 &obj_to_world) const override;
 		const Material *getMaterial() const override { return material_->get(); }
 		float surfaceArea(float time) const override;
-		float surfaceArea(const Matrix4 &obj_to_world, float time) const override;
+		float surfaceArea(float time, const Matrix4 &obj_to_world) const override;
 		Vec3 getGeometricNormal(const Uv<float> &uv, float time) const override;
-		Vec3 getGeometricNormal(const Matrix4 &obj_to_world, const Uv<float> &uv, float time) const override;
+		Vec3 getGeometricNormal(const Uv<float> &uv, float time, const Matrix4 &obj_to_world) const override;
 		std::pair<Point3, Vec3> sample(const Uv<float> &uv, float time) const override;
-		std::pair<Point3, Vec3> sample(const Uv<float> &uv, const Matrix4 &obj_to_world, float time) const override;
+		std::pair<Point3, Vec3> sample(const Uv<float> &uv, float time, const Matrix4 &obj_to_world) const override;
 		const Object *getObject() const override { return &base_object_; }
 		Visibility getVisibility() const override { return base_object_.getVisibility(); }
 		bool clippingSupport() const override { return false; }

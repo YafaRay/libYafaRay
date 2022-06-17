@@ -117,7 +117,7 @@ std::unique_ptr<const SurfacePoint> QuadPrimitive::getSurface(const RayDifferent
 	return sp;
 }
 
-std::unique_ptr<const SurfacePoint> QuadPrimitive::getSurface(const RayDifferentials *ray_differentials, const Point3 &hit_point, float time, const Uv<float> &intersect_uv, const Matrix4 &obj_to_world, const Camera *camera) const
+std::unique_ptr<const SurfacePoint> QuadPrimitive::getSurface(const RayDifferentials *ray_differentials, const Point3 &hit_point, float time, const Uv<float> &intersect_uv, const Camera *camera, const Matrix4 &obj_to_world) const
 {
 	auto sp = std::make_unique<SurfacePoint>(this);
 	sp->time_ = time;
@@ -125,10 +125,10 @@ std::unique_ptr<const SurfacePoint> QuadPrimitive::getSurface(const RayDifferent
 	if(base_mesh_object_.isSmooth() || base_mesh_object_.hasVerticesNormals(0))
 	{
 		const std::array<Vec3, 4> v {
-				getVertexNormal(0, sp->ng_, obj_to_world, 0),
-				getVertexNormal(1, sp->ng_, obj_to_world, 0),
-				getVertexNormal(2, sp->ng_, obj_to_world, 0),
-				getVertexNormal(3, sp->ng_, obj_to_world, 0)};
+				getVertexNormal(0, sp->ng_, 0, obj_to_world),
+				getVertexNormal(1, sp->ng_, 0, obj_to_world),
+				getVertexNormal(2, sp->ng_, 0, obj_to_world),
+				getVertexNormal(3, sp->ng_, 0, obj_to_world)};
 		sp->n_ = ShapeQuad::interpolate(intersect_uv, v);
 		sp->n_.normalize();
 	}
@@ -152,10 +152,10 @@ std::unique_ptr<const SurfacePoint> QuadPrimitive::getSurface(const RayDifferent
 	}
 	bool implicit_uv = true;
 	const std::array<Point3, 4> p {
-			getVertex(0, obj_to_world, 0),
-			getVertex(1, obj_to_world, 0),
-			getVertex(2, obj_to_world, 0),
-			getVertex(3, obj_to_world, 0),
+			getVertex(0, 0, obj_to_world),
+			getVertex(1, 0, obj_to_world),
+			getVertex(2, 0, obj_to_world),
+			getVertex(3, 0, obj_to_world),
 	};
 	if(base_mesh_object_.hasUv())
 	{
@@ -239,10 +239,10 @@ PolyDouble::ClipResultWithBound QuadPrimitive::clipToBound(Logger &logger, const
 	}
 	// initial clip
 	const std::array<Point3, 4> vertices{
-			getVertex(0, obj_to_world, 0),
-			getVertex(1, obj_to_world, 0),
-			getVertex(2, obj_to_world, 0),
-			getVertex(3, obj_to_world, 0),
+			getVertex(0, 0, obj_to_world),
+			getVertex(1, 0, obj_to_world),
+			getVertex(2, 0, obj_to_world),
+			getVertex(3, 0, obj_to_world),
 	};
 	PolyDouble poly_triangle;
 	for(const auto &vert : vertices) poly_triangle.addVertex({vert.x(), vert.y(), vert.z() });

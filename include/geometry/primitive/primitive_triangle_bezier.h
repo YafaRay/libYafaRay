@@ -37,13 +37,13 @@ class TriangleBezierPrimitive : public FacePrimitive
 		Bound getBound() const override;
 		Bound getBound(const Matrix4 &obj_to_world) const override;
 		Vec3 getGeometricNormal(const Uv<float> &uv, float time) const override;
-		Vec3 getGeometricNormal(const Matrix4 &obj_to_world, const Uv<float> &uv, float time) const override;
+		Vec3 getGeometricNormal(const Uv<float> &uv, float time, const Matrix4 &obj_to_world) const override;
 		std::unique_ptr<const SurfacePoint> getSurface(const RayDifferentials *ray_differentials, const Point3 &hit_point, float time, const Uv<float> &intersect_uv, const Camera *camera) const override;
-		std::unique_ptr<const SurfacePoint> getSurface(const RayDifferentials *ray_differentials, const Point3 &hit_point, float time, const Uv<float> &intersect_uv, const Matrix4 &obj_to_world, const Camera *camera) const override;
+		std::unique_ptr<const SurfacePoint> getSurface(const RayDifferentials *ray_differentials, const Point3 &hit_point, float time, const Uv<float> &intersect_uv, const Camera *camera, const Matrix4 &obj_to_world) const override;
 		float surfaceArea(float time) const override;
-		float surfaceArea(const Matrix4 &obj_to_world, float time) const override;
+		float surfaceArea(float time, const Matrix4 &obj_to_world) const override;
 		std::pair<Point3, Vec3> sample(const Uv<float> &uv, float time) const override;
-		std::pair<Point3, Vec3> sample(const Uv<float> &uv, const Matrix4 &obj_to_world, float time) const override;
+		std::pair<Point3, Vec3> sample(const Uv<float> &uv, float time, const Matrix4 &obj_to_world) const override;
 		float getDistToNearestEdge(const Uv<float> &uv, const Uv<Vec3> &dp_abs) const override { return ShapeTriangle::getDistToNearestEdge(uv, dp_abs); }
 		ShapeTriangle getShapeTriangle(int time_step) const;
 		ShapeTriangle getShapeTriangle(const Matrix4 &obj_to_world, int time_step) const;
@@ -70,7 +70,7 @@ inline float TriangleBezierPrimitive::surfaceArea(float time) const
 	return getShapeTriangleAtTime(time).surfaceArea();
 }
 
-inline float TriangleBezierPrimitive::surfaceArea(const Matrix4 &obj_to_world, float time) const
+inline float TriangleBezierPrimitive::surfaceArea(float time, const Matrix4 &obj_to_world) const
 {
 	return getShapeTriangleAtTime(obj_to_world, time).surfaceArea();
 }
@@ -84,7 +84,7 @@ inline std::pair<Point3, Vec3> TriangleBezierPrimitive::sample(const Uv<float> &
 	};
 }
 
-inline std::pair<Point3, Vec3> TriangleBezierPrimitive::sample(const Uv<float> &uv, const Matrix4 &obj_to_world, float time) const
+inline std::pair<Point3, Vec3> TriangleBezierPrimitive::sample(const Uv<float> &uv, float time, const Matrix4 &obj_to_world) const
 {
 	const auto triangle = getShapeTriangleAtTime(obj_to_world, time);
 	return {
@@ -98,7 +98,7 @@ inline Vec3 TriangleBezierPrimitive::getGeometricNormal(const Uv<float> &uv, flo
 	return getShapeTriangleAtTime(time).calculateFaceNormal();
 }
 
-inline Vec3 TriangleBezierPrimitive::getGeometricNormal(const Matrix4 &obj_to_world, const Uv<float> &uv, float time) const
+inline Vec3 TriangleBezierPrimitive::getGeometricNormal(const Uv<float> &uv, float time, const Matrix4 &obj_to_world) const
 {
 	const Vec3 normal {getShapeTriangleAtTime(obj_to_world, time).calculateFaceNormal()};
 	return (obj_to_world * normal).normalize();
@@ -126,9 +126,9 @@ inline ShapeTriangle TriangleBezierPrimitive::getShapeTriangle(int time_step) co
 inline ShapeTriangle TriangleBezierPrimitive::getShapeTriangle(const Matrix4 &obj_to_world, int time_step) const
 {
 	return ShapeTriangle {{
-			getVertex(0, obj_to_world, time_step),
-			getVertex(1, obj_to_world, time_step),
-			getVertex(2, obj_to_world, time_step)
+			getVertex(0, time_step, obj_to_world),
+			getVertex(1, time_step, obj_to_world),
+			getVertex(2, time_step, obj_to_world)
 	}};
 }
 
@@ -167,9 +167,9 @@ inline ShapeTriangle TriangleBezierPrimitive::getShapeTriangleAtTime(const Matri
 		const float time_mapped = math::lerpSegment(time, 0.f, time_start, 1.f, time_end); //time_mapped must be in range [0.f-1.f]
 		const auto bezier = math::bezierCalculateFactors(time_mapped);
 		return ShapeTriangle{{
-				getVertex(0, obj_to_world, bezier),
-				getVertex(1, obj_to_world, bezier),
-				getVertex(2, obj_to_world, bezier),
+				getVertex(0, bezier, obj_to_world),
+				getVertex(1, bezier, obj_to_world),
+				getVertex(2, bezier, obj_to_world),
 		}};
 	}
 }

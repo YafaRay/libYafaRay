@@ -109,18 +109,18 @@ std::unique_ptr<const SurfacePoint> TriangleBezierPrimitive::getSurface(const Ra
 	return sp;
 }
 
-std::unique_ptr<const SurfacePoint> TriangleBezierPrimitive::getSurface(const RayDifferentials *ray_differentials, const Point3 &hit_point, float time, const Uv<float> &intersect_uv, const Matrix4 &obj_to_world, const Camera *camera) const
+std::unique_ptr<const SurfacePoint> TriangleBezierPrimitive::getSurface(const RayDifferentials *ray_differentials, const Point3 &hit_point, float time, const Uv<float> &intersect_uv, const Camera *camera, const Matrix4 &obj_to_world) const
 {
 	auto sp = std::make_unique<SurfacePoint>(this);
 	sp->time_ = time;
-	sp->ng_ = Primitive::getGeometricNormal(obj_to_world, time);
+	sp->ng_ = Primitive::getGeometricNormal(time, obj_to_world);
 	const auto [barycentric_u, barycentric_v, barycentric_w] = ShapeTriangle::getBarycentricUVW(intersect_uv);
 	if(base_mesh_object_.isSmooth() || base_mesh_object_.hasVerticesNormals(0))
 	{
 		const std::array<Vec3, 3> v {
-				getVertexNormal(0, sp->ng_, obj_to_world, 0),
-				getVertexNormal(1, sp->ng_, obj_to_world, 0),
-				getVertexNormal(2, sp->ng_, obj_to_world, 0)};
+				getVertexNormal(0, sp->ng_, 0, obj_to_world),
+				getVertexNormal(1, sp->ng_, 0, obj_to_world),
+				getVertexNormal(2, sp->ng_, 0, obj_to_world)};
 		sp->n_ = barycentric_u * v[0] + barycentric_v * v[1] + barycentric_w * v[2];
 		sp->n_.normalize();
 	}
@@ -140,9 +140,9 @@ std::unique_ptr<const SurfacePoint> TriangleBezierPrimitive::getSurface(const Ra
 	}
 	bool implicit_uv = true;
 	const std::array<Point3, 3> p {{
-			getVertex(0, obj_to_world, 0),
-			getVertex(1, obj_to_world, 0),
-			getVertex(2, obj_to_world, 0)}
+			getVertex(0, 0, obj_to_world),
+			getVertex(1, 0, obj_to_world),
+			getVertex(2, 0, obj_to_world)}
 	};
 	if(base_mesh_object_.hasUv())
 	{

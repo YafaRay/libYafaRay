@@ -123,7 +123,7 @@ std::unique_ptr<const SurfacePoint> SpherePrimitive::getSurface(const RayDiffere
 	return sp;
 }
 
-std::unique_ptr<const SurfacePoint> SpherePrimitive::getSurface(const RayDifferentials *ray_differentials, const Point3 &hit_point, float time, const Uv<float> &intersect_uv, const Matrix4 &obj_to_world, const Camera *camera) const
+std::unique_ptr<const SurfacePoint> SpherePrimitive::getSurface(const RayDifferentials *ray_differentials, const Point3 &hit_point, float time, const Uv<float> &intersect_uv, const Camera *camera, const Matrix4 &obj_to_world) const
 {
 	auto sp = std::make_unique<SurfacePoint>(this);
 	sp->time_ = time;
@@ -148,7 +148,7 @@ float SpherePrimitive::surfaceArea(float time) const
 	return 0; //FIXME
 }
 
-float SpherePrimitive::surfaceArea(const Matrix4 &obj_to_world, float time) const
+float SpherePrimitive::surfaceArea(float time, const Matrix4 &obj_to_world) const
 {
 	return 0; //FIXME
 }
@@ -158,7 +158,7 @@ Vec3 SpherePrimitive::getGeometricNormal(const Uv<float> &uv, float time) const
 	return {}; //FIXME
 }
 
-Vec3 SpherePrimitive::getGeometricNormal(const Matrix4 &obj_to_world, const Uv<float> &uv, float time) const
+Vec3 SpherePrimitive::getGeometricNormal(const Uv<float> &uv, float time, const Matrix4 &obj_to_world) const
 {
 	return {}; //FIXME
 }
@@ -168,7 +168,7 @@ std::pair<Point3, Vec3> SpherePrimitive::sample(const Uv<float> &uv, float time)
 	return {}; //FIXME
 }
 
-std::pair<Point3, Vec3> SpherePrimitive::sample(const Uv<float> &uv, const Matrix4 &obj_to_world, float time) const
+std::pair<Point3, Vec3> SpherePrimitive::sample(const Uv<float> &uv, float time, const Matrix4 &obj_to_world) const
 {
 	return {}; //FIXME
 }

@@ -117,18 +117,18 @@ std::unique_ptr<const SurfacePoint> QuadBezierPrimitive::getSurface(const RayDif
 	return sp;
 }
 
-std::unique_ptr<const SurfacePoint> QuadBezierPrimitive::getSurface(const RayDifferentials *ray_differentials, const Point3 &hit_point, float time, const Uv<float> &intersect_uv, const Matrix4 &obj_to_world, const Camera *camera) const
+std::unique_ptr<const SurfacePoint> QuadBezierPrimitive::getSurface(const RayDifferentials *ray_differentials, const Point3 &hit_point, float time, const Uv<float> &intersect_uv, const Camera *camera, const Matrix4 &obj_to_world) const
 {
 	auto sp = std::make_unique<SurfacePoint>(this);
 	sp->time_ = time;
-	sp->ng_ = Primitive::getGeometricNormal(obj_to_world, time);
+	sp->ng_ = Primitive::getGeometricNormal(time, obj_to_world);
 	if(base_mesh_object_.isSmooth() || base_mesh_object_.hasVerticesNormals(0))
 	{
 		const std::array<Vec3, 4> v {
-				getVertexNormal(0, sp->ng_, obj_to_world, 0),
-				getVertexNormal(1, sp->ng_, obj_to_world, 0),
-				getVertexNormal(2, sp->ng_, obj_to_world, 0),
-				getVertexNormal(3, sp->ng_, obj_to_world, 0)};
+				getVertexNormal(0, sp->ng_, 0, obj_to_world),
+				getVertexNormal(1, sp->ng_, 0, obj_to_world),
+				getVertexNormal(2, sp->ng_, 0, obj_to_world),
+				getVertexNormal(3, sp->ng_, 0, obj_to_world)};
 		sp->n_ = ShapeQuad::interpolate(intersect_uv, v);
 		sp->n_.normalize();
 	}
@@ -152,10 +152,10 @@ std::unique_ptr<const SurfacePoint> QuadBezierPrimitive::getSurface(const RayDif
 	}
 	bool implicit_uv = true;
 	const std::array<Point3, 4> p {
-			getVertex(0, obj_to_world, 0),
-			getVertex(1, obj_to_world, 0),
-			getVertex(2, obj_to_world, 0),
-			getVertex(3, obj_to_world, 0),
+			getVertex(0, 0, obj_to_world),
+			getVertex(1, 0, obj_to_world),
+			getVertex(2, 0, obj_to_world),
+			getVertex(3, 0, obj_to_world),
 	};
 	if(base_mesh_object_.hasUv())
 	{

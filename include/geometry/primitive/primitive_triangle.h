@@ -39,13 +39,13 @@ class TrianglePrimitive : public FacePrimitive
 		Bound getBound() const override;
 		Bound getBound(const Matrix4 &obj_to_world) const override;
 		Vec3 getGeometricNormal(const Uv<float> &uv, float time) const override;
-		Vec3 getGeometricNormal(const Matrix4 &obj_to_world, const Uv<float> &uv, float time) const override;
+		Vec3 getGeometricNormal(const Uv<float> &uv, float time, const Matrix4 &obj_to_world) const override;
 		std::unique_ptr<const SurfacePoint> getSurface(const RayDifferentials *ray_differentials, const Point3 &hit_point, float time, const Uv<float> &intersect_uv, const Camera *camera) const override;
-		std::unique_ptr<const SurfacePoint> getSurface(const RayDifferentials *ray_differentials, const Point3 &hit_point, float time, const Uv<float> &intersect_uv, const Matrix4 &obj_to_world, const Camera *camera) const override;
+		std::unique_ptr<const SurfacePoint> getSurface(const RayDifferentials *ray_differentials, const Point3 &hit_point, float time, const Uv<float> &intersect_uv, const Camera *camera, const Matrix4 &obj_to_world) const override;
 		float surfaceArea(float time) const override;
-		float surfaceArea(const Matrix4 &obj_to_world, float time) const override;
+		float surfaceArea(float time, const Matrix4 &obj_to_world) const override;
 		std::pair<Point3, Vec3> sample(const Uv<float> &uv, float time) const override;
-		std::pair<Point3, Vec3> sample(const Uv<float> &uv, const Matrix4 &obj_to_world, float time) const override;
+		std::pair<Point3, Vec3> sample(const Uv<float> &uv, float time, const Matrix4 &obj_to_world) const override;
 		float getDistToNearestEdge(const Uv<float> &uv, const Uv<Vec3> &dp_abs) const override { return ShapeTriangle::getDistToNearestEdge(uv, dp_abs); }
 		Vec3 getGeometricNormal(const Matrix4 &obj_to_world) const;
 		Vec3 getGeometricNormal() const;
@@ -73,9 +73,9 @@ inline std::pair<float, Uv<float>> TrianglePrimitive::intersect(const Point3 &fr
 inline std::pair<float, Uv<float>> TrianglePrimitive::intersect(const Point3 &from, const Vec3 &dir, float time, const Matrix4 &obj_to_world) const
 {
 	return ShapeTriangle{{
-		getVertex(0, obj_to_world, 0),
-		getVertex(1, obj_to_world, 0),
-		getVertex(2, obj_to_world, 0),
+		getVertex(0, 0, obj_to_world),
+		getVertex(1, 0, obj_to_world),
+		getVertex(2, 0, obj_to_world),
 	 }}.intersect(from, dir);
 }
 
@@ -88,12 +88,12 @@ inline float TrianglePrimitive::surfaceArea(float time) const
 	}}.surfaceArea();
 }
 
-inline float TrianglePrimitive::surfaceArea(const Matrix4 &obj_to_world, float time) const
+inline float TrianglePrimitive::surfaceArea(float time, const Matrix4 &obj_to_world) const
 {
 	return ShapeTriangle{{
-		getVertex(0, obj_to_world, 0),
-		getVertex(1, obj_to_world, 0),
-		getVertex(2, obj_to_world, 0),
+		getVertex(0, 0, obj_to_world),
+		getVertex(1, 0, obj_to_world),
+		getVertex(2, 0, obj_to_world),
 	}}.surfaceArea();
 }
 
@@ -109,13 +109,13 @@ inline std::pair<Point3, Vec3> TrianglePrimitive::sample(const Uv<float> &uv, fl
 	};
 }
 
-inline std::pair<Point3, Vec3> TrianglePrimitive::sample(const Uv<float> &uv, const Matrix4 &obj_to_world, float time) const
+inline std::pair<Point3, Vec3> TrianglePrimitive::sample(const Uv<float> &uv, float time, const Matrix4 &obj_to_world) const
 {
 	return {
 			ShapeTriangle{{
-				getVertex(0, obj_to_world, 0),
-				getVertex(1, obj_to_world, 0),
-				getVertex(2, obj_to_world, 0),
+				getVertex(0, 0, obj_to_world),
+				getVertex(1, 0, obj_to_world),
+				getVertex(2, 0, obj_to_world),
 			}}.sample(uv),
 		getGeometricNormal(obj_to_world)
 	};
@@ -128,7 +128,7 @@ inline Bound TrianglePrimitive::getBound() const
 
 inline Bound TrianglePrimitive::getBound(const Matrix4 &obj_to_world) const
 {
-	return FacePrimitive::getBound(getVertices(obj_to_world, 0));
+	return FacePrimitive::getBound(getVertices(0, obj_to_world));
 }
 
 inline Vec3 TrianglePrimitive::getGeometricNormal() const
@@ -141,7 +141,7 @@ inline Vec3 TrianglePrimitive::getGeometricNormal(const Uv<float> &, float) cons
 	return getGeometricNormal();
 }
 
-inline Vec3 TrianglePrimitive::getGeometricNormal(const Matrix4 &obj_to_world, const Uv<float> &, float) const
+inline Vec3 TrianglePrimitive::getGeometricNormal(const Uv<float> &uv, float time, const Matrix4 &obj_to_world) const
 {
 	return getGeometricNormal(obj_to_world);
 }

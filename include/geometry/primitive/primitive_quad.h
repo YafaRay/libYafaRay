@@ -40,13 +40,13 @@ class QuadPrimitive : public FacePrimitive
 		Bound getBound() const override;
 		Bound getBound(const Matrix4 &obj_to_world) const override;
 		Vec3 getGeometricNormal(const Uv<float> &uv, float time) const override;
-		Vec3 getGeometricNormal(const Matrix4 &obj_to_world, const Uv<float> &uv, float time) const override;
+		Vec3 getGeometricNormal(const Uv<float> &uv, float time, const Matrix4 &obj_to_world) const override;
 		std::unique_ptr<const SurfacePoint> getSurface(const RayDifferentials *ray_differentials, const Point3 &hit_point, float time, const Uv<float> &intersect_uv, const Camera *camera) const override;
-		std::unique_ptr<const SurfacePoint> getSurface(const RayDifferentials *ray_differentials, const Point3 &hit_point, float time, const Uv<float> &intersect_uv, const Matrix4 &obj_to_world, const Camera *camera) const override;
+		std::unique_ptr<const SurfacePoint> getSurface(const RayDifferentials *ray_differentials, const Point3 &hit_point, float time, const Uv<float> &intersect_uv, const Camera *camera, const Matrix4 &obj_to_world) const override;
 		float surfaceArea(float time) const override;
-		float surfaceArea(const Matrix4 &obj_to_world, float time) const override;
+		float surfaceArea(float time, const Matrix4 &obj_to_world) const override;
 		std::pair<Point3, Vec3> sample(const Uv<float> &uv, float time) const override;
-		std::pair<Point3, Vec3> sample(const Uv<float> &uv, const Matrix4 &obj_to_world, float time) const override;
+		std::pair<Point3, Vec3> sample(const Uv<float> &uv, float time, const Matrix4 &obj_to_world) const override;
 		float getDistToNearestEdge(const Uv<float> &uv, const Uv<Vec3> &dp_abs) const override { return ShapeQuad::getDistToNearestEdge(uv, dp_abs); }
 		Vec3 getGeometricNormal(const Matrix4 &obj_to_world) const;
 		Vec3 getGeometricNormal() const;
@@ -76,10 +76,10 @@ inline std::pair<float, Uv<float>> QuadPrimitive::intersect(const Point3 &from, 
 inline std::pair<float, Uv<float>> QuadPrimitive::intersect(const Point3 &from, const Vec3 &dir, float time, const Matrix4 &obj_to_world) const
 {
 	return ShapeQuad{{
-		getVertex(0, obj_to_world, 0),
-		getVertex(1, obj_to_world, 0),
-		getVertex(2, obj_to_world, 0),
-		getVertex(3, obj_to_world, 0),
+		getVertex(0, 0, obj_to_world),
+		getVertex(1, 0, obj_to_world),
+		getVertex(2, 0, obj_to_world),
+		getVertex(3, 0, obj_to_world),
 	 }}.intersect(from, dir);
 }
 
@@ -93,13 +93,13 @@ inline float QuadPrimitive::surfaceArea(float time) const
 	}}.surfaceArea();
 }
 
-inline float QuadPrimitive::surfaceArea(const Matrix4 &obj_to_world, float time) const
+inline float QuadPrimitive::surfaceArea(float time, const Matrix4 &obj_to_world) const
 {
 	return ShapeQuad{{
-		getVertex(0, obj_to_world, 0),
-		getVertex(1, obj_to_world, 0),
-		getVertex(2, obj_to_world, 0),
-		getVertex(3, obj_to_world, 0),
+		getVertex(0, 0, obj_to_world),
+		getVertex(1, 0, obj_to_world),
+		getVertex(2, 0, obj_to_world),
+		getVertex(3, 0, obj_to_world),
 	}}.surfaceArea();
 }
 
@@ -116,14 +116,14 @@ inline std::pair<Point3, Vec3> QuadPrimitive::sample(const Uv<float> &uv, float 
 	};
 }
 
-inline std::pair<Point3, Vec3> QuadPrimitive::sample(const Uv<float> &uv, const Matrix4 &obj_to_world, float time) const
+inline std::pair<Point3, Vec3> QuadPrimitive::sample(const Uv<float> &uv, float time, const Matrix4 &obj_to_world) const
 {
 	return {
 			ShapeQuad{{
-							  getVertex(0, obj_to_world, 0),
-							  getVertex(1, obj_to_world, 0),
-							  getVertex(2, obj_to_world, 0),
-							  getVertex(3, obj_to_world, 0),
+							  getVertex(0, 0, obj_to_world),
+							  getVertex(1, 0, obj_to_world),
+							  getVertex(2, 0, obj_to_world),
+							  getVertex(3, 0, obj_to_world),
 					  }}.sample(uv),
 		getGeometricNormal(obj_to_world)
 	};
@@ -136,7 +136,7 @@ inline Bound QuadPrimitive::getBound() const
 
 inline Bound QuadPrimitive::getBound(const Matrix4 &obj_to_world) const
 {
-	return FacePrimitive::getBound(getVertices(obj_to_world, 0));
+	return FacePrimitive::getBound(getVertices(0, obj_to_world));
 }
 
 inline Vec3 QuadPrimitive::getGeometricNormal() const
@@ -149,7 +149,7 @@ inline Vec3 QuadPrimitive::getGeometricNormal(const Uv<float> &, float) const
 	return getGeometricNormal();
 }
 
-inline Vec3 QuadPrimitive::getGeometricNormal(const Matrix4 &obj_to_world, const Uv<float> &, float) const
+inline Vec3 QuadPrimitive::getGeometricNormal(const Uv<float> &, float, const Matrix4 &obj_to_world) const
 {
 	return getGeometricNormal(obj_to_world);
 }
