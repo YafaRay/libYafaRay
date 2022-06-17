@@ -153,7 +153,7 @@ float SpherePrimitive::surfaceArea(float time, const Matrix4 &obj_to_world) cons
 	return 0; //FIXME
 }
 
-Vec3 SpherePrimitive::getGeometricNormal(const Uv<float> &uv, float time) const
+Vec3 SpherePrimitive::getGeometricNormal(const Uv<float> &uv, float time, bool) const
 {
 	return {}; //FIXME
 }

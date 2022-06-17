@@ -38,17 +38,18 @@ class TrianglePrimitive : public FacePrimitive
 		PolyDouble::ClipResultWithBound clipToBound(Logger &logger, const std::array<Vec3Double, 2> &bound, const ClipPlane &clip_plane, const PolyDouble &poly, const Matrix4 &obj_to_world) const override;
 		Bound getBound() const override;
 		Bound getBound(const Matrix4 &obj_to_world) const override;
-		Vec3 getGeometricNormal(const Uv<float> &uv, float time) const override;
+		Vec3 getGeometricNormal(const Uv<float> &uv, float time, bool) const override;
 		Vec3 getGeometricNormal(const Uv<float> &uv, float time, const Matrix4 &obj_to_world) const override;
 		std::unique_ptr<const SurfacePoint> getSurface(const RayDifferentials *ray_differentials, const Point3 &hit_point, float time, const Uv<float> &intersect_uv, const Camera *camera) const override;
 		std::unique_ptr<const SurfacePoint> getSurface(const RayDifferentials *ray_differentials, const Point3 &hit_point, float time, const Uv<float> &intersect_uv, const Camera *camera, const Matrix4 &obj_to_world) const override;
+		template<typename T=bool> std::unique_ptr<const SurfacePoint> getSurfaceTriangle(const RayDifferentials *ray_differentials, const Point3 &hit_point, float time, const Uv<float> &intersect_uv, const Camera *camera, const T &obj_to_world = {}) const;
 		float surfaceArea(float time) const override;
 		float surfaceArea(float time, const Matrix4 &obj_to_world) const override;
 		std::pair<Point3, Vec3> sample(const Uv<float> &uv, float time) const override;
 		std::pair<Point3, Vec3> sample(const Uv<float> &uv, float time, const Matrix4 &obj_to_world) const override;
 		float getDistToNearestEdge(const Uv<float> &uv, const Uv<Vec3> &dp_abs) const override { return ShapeTriangle::getDistToNearestEdge(uv, dp_abs); }
 		Vec3 getGeometricNormal(const Matrix4 &obj_to_world) const;
-		Vec3 getGeometricNormal() const;
+		Vec3 getGeometricNormal(bool = false) const;
 		Vec3 face_normal_geometric_;
 };
 
@@ -131,12 +132,12 @@ inline Bound TrianglePrimitive::getBound(const Matrix4 &obj_to_world) const
 	return FacePrimitive::getBound(getVertices(0, obj_to_world));
 }
 
-inline Vec3 TrianglePrimitive::getGeometricNormal() const
+inline Vec3 TrianglePrimitive::getGeometricNormal(bool) const
 {
 	return face_normal_geometric_;
 }
 
-inline Vec3 TrianglePrimitive::getGeometricNormal(const Uv<float> &, float) const
+inline Vec3 TrianglePrimitive::getGeometricNormal(const Uv<float> &, float, bool) const
 {
 	return getGeometricNormal();
 }

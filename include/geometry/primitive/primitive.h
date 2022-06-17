@@ -58,9 +58,9 @@ class Primitive
 		virtual float surfaceArea(float time) const = 0;
 		virtual float surfaceArea(float time, const Matrix4 &obj_to_world) const = 0;
 		virtual float getDistToNearestEdge(const Uv<float> &uv, const Uv<Vec3> &dp_abs) const = 0;
-		virtual Vec3 getGeometricNormal(const Uv<float> &uv, float time) const = 0;
+		virtual Vec3 getGeometricNormal(const Uv<float> &uv, float time, bool = false) const = 0;
 		virtual Vec3 getGeometricNormal(const Uv<float> &uv, float time, const Matrix4 &obj_to_world) const = 0;
-		Vec3 getGeometricNormal(float time) const { return getGeometricNormal({0.f, 0.f}, time); }
+		Vec3 getGeometricNormal(float time, bool = false) const { return getGeometricNormal({0.f, 0.f}, time); }
 		Vec3 getGeometricNormal(float time, const Matrix4 &obj_to_world) const { return getGeometricNormal({0.f, 0.f}, time, obj_to_world); }
 		virtual std::pair<Point3, Vec3> sample(const Uv<float> &uv, float time) const = 0;
 		virtual std::pair<Point3, Vec3> sample(const Uv<float> &uv, float time, const Matrix4 &obj_to_world) const = 0;

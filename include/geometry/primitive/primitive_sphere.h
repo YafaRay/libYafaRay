@@ -48,7 +48,7 @@ class SpherePrimitive final : public Primitive
 		const Material *getMaterial() const override { return material_->get(); }
 		float surfaceArea(float time) const override;
 		float surfaceArea(float time, const Matrix4 &obj_to_world) const override;
-		Vec3 getGeometricNormal(const Uv<float> &uv, float time) const override;
+		Vec3 getGeometricNormal(const Uv<float> &uv, float time, bool) const override;
 		Vec3 getGeometricNormal(const Uv<float> &uv, float time, const Matrix4 &obj_to_world) const override;
 		std::pair<Point3, Vec3> sample(const Uv<float> &uv, float time) const override;
 		std::pair<Point3, Vec3> sample(const Uv<float> &uv, float time, const Matrix4 &obj_to_world) const override;

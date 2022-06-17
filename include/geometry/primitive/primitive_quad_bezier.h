@@ -36,10 +36,11 @@ class QuadBezierPrimitive : public FacePrimitive
 		bool clippingSupport() const override { return false; }
 		Bound getBound() const override;
 		Bound getBound(const Matrix4 &obj_to_world) const override;
-		Vec3 getGeometricNormal(const Uv<float> &uv, float time) const override;
+		Vec3 getGeometricNormal(const Uv<float> &uv, float time, bool) const override;
 		Vec3 getGeometricNormal(const Uv<float> &uv, float time, const Matrix4 &obj_to_world) const override;
 		std::unique_ptr<const SurfacePoint> getSurface(const RayDifferentials *ray_differentials, const Point3 &hit_point, float time, const Uv<float> &intersect_uv, const Camera *camera) const override;
 		std::unique_ptr<const SurfacePoint> getSurface(const RayDifferentials *ray_differentials, const Point3 &hit_point, float time, const Uv<float> &intersect_uv, const Camera *camera, const Matrix4 &obj_to_world) const override;
+		template<typename T=bool> std::unique_ptr<const SurfacePoint> getSurfaceQuadBezier(const RayDifferentials *ray_differentials, const Point3 &hit_point, float time, const Uv<float> &intersect_uv, const Camera *camera, const T &obj_to_world = {}) const;
 		float surfaceArea(float time) const override;
 		float surfaceArea(float time, const Matrix4 &obj_to_world) const override;
 		std::pair<Point3, Vec3> sample(const Uv<float> &uv, float time) const override;
@@ -93,7 +94,7 @@ inline std::pair<Point3, Vec3> QuadBezierPrimitive::sample(const Uv<float> &uv, 
 	};
 }
 
-inline Vec3 QuadBezierPrimitive::getGeometricNormal(const Uv<float> &uv, float time) const
+inline Vec3 QuadBezierPrimitive::getGeometricNormal(const Uv<float> &uv, float time, bool) const
 {
 	return getShapeQuadAtTime(time).calculateFaceNormal();
 }

@@ -50,7 +50,7 @@ class PrimitiveInstance : public Primitive
 		const Material *getMaterial() const override { return base_primitive_->getMaterial(); }
 		float surfaceArea(float time) const override;
 		float surfaceArea(float time, const Matrix4 &obj_to_world) const override;
-		Vec3 getGeometricNormal(const Uv<float> &uv, float time) const override;
+		Vec3 getGeometricNormal(const Uv<float> &uv, float time, bool) const override;
 		Vec3 getGeometricNormal(const Uv<float> &uv, float time, const Matrix4 &obj_to_world) const override;
 		std::pair<Point3, Vec3> sample(const Uv<float> &uv, float time) const override;
 		std::pair<Point3, Vec3> sample(const Uv<float> &uv, float time, const Matrix4 &obj_to_world) const override;
@@ -98,7 +98,7 @@ inline float PrimitiveInstance::surfaceArea(float time, const Matrix4 &obj_to_wo
 	return base_primitive_->surfaceArea(time, obj_to_world * base_instance_.getObjToWorldMatrixAtTime(time));
 }
 
-inline Vec3 PrimitiveInstance::getGeometricNormal(const Uv<float> &uv, float time) const
+inline Vec3 PrimitiveInstance::getGeometricNormal(const Uv<float> &uv, float time, bool) const
 {
 	return base_primitive_->getGeometricNormal(uv, time, base_instance_.getObjToWorldMatrixAtTime(time));
 }
