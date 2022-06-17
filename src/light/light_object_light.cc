@@ -177,7 +177,7 @@ std::tuple<bool, float, Rgb> ObjectLight::intersect(const Ray &ray, float &t) co
 	// intersect with tree:
 	const IntersectData intersect_data = accelerator_->intersect(ray, t_max);
 	if(!intersect_data.isHit()) return {};
-	const Vec3 n{intersect_data.primitive_->getGeometricNormal(intersect_data.uv_, 0)};
+	const Vec3 n{intersect_data.primitive_->getGeometricNormal(intersect_data.uv_, 0, false)};
 	float cos_angle = ray.dir_ * (-n);
 	if(cos_angle <= 0.f)
 	{

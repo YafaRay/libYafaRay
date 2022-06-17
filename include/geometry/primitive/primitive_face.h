@@ -48,7 +48,7 @@ class FacePrimitive: public Primitive
 		const std::vector<int> &getVerticesNormalsIndices() const { return vertices_normals_; }
 		void generateInitialVerticesNormalsIndices() { vertices_normals_ = vertices_; }
 		void setVerticesNormalsIndices(std::vector<int> &&vertices_normals_indices) { vertices_normals_ = std::move(vertices_normals_indices); }
-		template<typename T=bool> std::vector<Point3> getVertices(int time_step, const T &obj_to_world = {}) const;
+		template<typename T=bool> std::vector<Point3> getVerticesAsVector(int time_step, const T &obj_to_world = {}) const;
 		template<typename T=bool> Point3 getVertex(size_t vertex_number, const std::array<float, 3> &bezier_factors, const T &obj_to_world = {}) const;
 		template<typename T=bool> Point3 getVertexAtTime(size_t vertex_number, float time, const T &obj_to_world = {}) const;
 		static Bound getBound(const std::vector<Point3> &vertices);
@@ -126,7 +126,7 @@ inline Uv<float> FacePrimitive::getVertexUv(size_t vertex_number) const
 }
 
 template <typename T>
-inline std::vector<Point3> FacePrimitive::getVertices(int time_step, const T &obj_to_world) const
+inline std::vector<Point3> FacePrimitive::getVerticesAsVector(int time_step, const T &obj_to_world) const
 {
 	const size_t num_vertices = vertices_.size();
 	std::vector<Point3> result;

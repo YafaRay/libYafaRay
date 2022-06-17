@@ -17,13 +17,6 @@
  */
 
 #include "geometry/primitive/primitive.h"
-#include "geometry/object/object.h"
-#include "geometry/surface.h"
-#include "geometry/primitive/primitive_triangle.h"
-#include "geometry/primitive/primitive_sphere.h"
-#include "geometry/bound.h"
-#include "common/logger.h"
-#include "common/param.h"
 
 BEGIN_YAFARAY
 

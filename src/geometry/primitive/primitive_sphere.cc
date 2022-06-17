@@ -19,13 +19,8 @@
  */
 
 #include "geometry/primitive/primitive_sphere.h"
-#include <cmath>
-#include <memory>
-#include "common/param.h"
-#include "geometry/bound.h"
 #include "geometry/surface.h"
-#include "scene/scene.h"
-#include "common/logger.h"
+#include "common/param.h"
 
 BEGIN_YAFARAY
 

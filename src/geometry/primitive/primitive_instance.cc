@@ -17,11 +17,7 @@
  */
 
 #include "geometry/primitive/primitive_instance.h"
-#include "geometry/bound.h"
-#include "geometry/matrix4.h"
-#include "geometry/object/object_instance.h"
 #include "geometry/surface.h"
-#include <common/logger.h>
 
 BEGIN_YAFARAY
 

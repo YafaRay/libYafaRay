@@ -20,8 +20,7 @@
 #ifndef YAFARAY_PRIMITIVE_QUAD_H
 #define YAFARAY_PRIMITIVE_QUAD_H
 
-#include "primitive_face.h"
-#include "geometry/shape/shape_triangle.h"
+#include "geometry/primitive/primitive_face.h"
 #include "geometry/shape/shape_quad.h"
 
 BEGIN_YAFARAY
@@ -51,93 +50,78 @@ class QuadPrimitive : public FacePrimitive
 		float getDistToNearestEdge(const Uv<float> &uv, const Uv<Vec3> &dp_abs) const override { return ShapeQuad::getDistToNearestEdge(uv, dp_abs); }
 		Vec3 getGeometricNormal(const Matrix4 &obj_to_world) const;
 		Vec3 getGeometricNormal(bool = false) const;
+		template <typename T=bool> std::array<Point3, 4> getVerticesAsArray(int time_step, const T &obj_to_world = {}) const;
+		inline std::array<Point3, 4> getOrcoVertices(int time_step) const;
+		template <typename T=bool> std::array<Vec3, 4> getVerticesNormals(int time_step, const Vec3 &surface_normal_world, const T &obj_to_world = {}) const;
+		inline std::array<Uv<float>, 4> getVerticesUvs() const;
 		Vec3 face_normal_geometric_;
 };
 
 inline QuadPrimitive::QuadPrimitive(std::vector<int> &&vertices_indices, std::vector<int> &&vertices_uv_indices, const MeshObject &mesh_object) : FacePrimitive{std::move(vertices_indices), std::move(vertices_uv_indices), mesh_object},
-	face_normal_geometric_{ ShapeQuad{{
-		getVertex(0, 0),
-		getVertex(1, 0),
-		getVertex(2, 0),
-		getVertex(3, 0),
-	}}.calculateFaceNormal()}
+	face_normal_geometric_{ ShapeQuad{getVerticesAsArray(0)}.calculateFaceNormal()}
 {
+}
+
+template <typename T>
+inline std::array<Point3, 4> QuadPrimitive::getVerticesAsArray(int time_step, const T &obj_to_world) const
+{
+	return { getVertex(0, time_step, obj_to_world), getVertex(1, time_step, obj_to_world), getVertex(2, time_step, obj_to_world), getVertex(3, time_step, obj_to_world) };
+}
+
+inline std::array<Point3, 4> QuadPrimitive::getOrcoVertices(int time_step) const
+{
+	return { getOrcoVertex(0, time_step), getOrcoVertex(1, time_step), getOrcoVertex(2, time_step), getOrcoVertex(3, time_step) };
+}
+
+template <typename T>
+inline std::array<Vec3, 4> QuadPrimitive::getVerticesNormals(int time_step, const Vec3 &surface_normal_world, const T &obj_to_world) const
+{
+	return { getVertexNormal(0, surface_normal_world, time_step, obj_to_world), getVertexNormal(1, surface_normal_world, time_step, obj_to_world), getVertexNormal(2, surface_normal_world, time_step, obj_to_world), getVertexNormal(3, surface_normal_world, time_step, obj_to_world) };
+}
+
+inline std::array<Uv<float>, 4> QuadPrimitive::getVerticesUvs() const
+{
+	return { getVertexUv(0), getVertexUv(1), getVertexUv(2), getVertexUv(3) };
 }
 
 inline std::pair<float, Uv<float>> QuadPrimitive::intersect(const Point3 &from, const Vec3 &dir, float time) const
 {
-	return ShapeQuad{{
-		getVertex(0, 0),
-		getVertex(1, 0),
-		getVertex(2, 0),
-		getVertex(3, 0),
-	 }}.intersect(from, dir);
+	return ShapeQuad{getVerticesAsArray(0)}.intersect(from, dir);
 }
 
 inline std::pair<float, Uv<float>> QuadPrimitive::intersect(const Point3 &from, const Vec3 &dir, float time, const Matrix4 &obj_to_world) const
 {
-	return ShapeQuad{{
-		getVertex(0, 0, obj_to_world),
-		getVertex(1, 0, obj_to_world),
-		getVertex(2, 0, obj_to_world),
-		getVertex(3, 0, obj_to_world),
-	 }}.intersect(from, dir);
+	return ShapeQuad{getVerticesAsArray(0, obj_to_world)}.intersect(from, dir);
 }
 
 inline float QuadPrimitive::surfaceArea(float time) const
 {
-	return ShapeQuad{{
-		getVertex(0, 0),
-		getVertex(1, 0),
-		getVertex(2, 0),
-		getVertex(3, 0),
-	}}.surfaceArea();
+	return ShapeQuad{getVerticesAsArray(0)}.surfaceArea();
 }
 
 inline float QuadPrimitive::surfaceArea(float time, const Matrix4 &obj_to_world) const
 {
-	return ShapeQuad{{
-		getVertex(0, 0, obj_to_world),
-		getVertex(1, 0, obj_to_world),
-		getVertex(2, 0, obj_to_world),
-		getVertex(3, 0, obj_to_world),
-	}}.surfaceArea();
+	return ShapeQuad{getVerticesAsArray(0, obj_to_world)}.surfaceArea();
 }
 
 inline std::pair<Point3, Vec3> QuadPrimitive::sample(const Uv<float> &uv, float time) const
 {
-	return {
-			ShapeQuad{{
-							  getVertex(0, 0),
-							  getVertex(1, 0),
-							  getVertex(2, 0),
-							  getVertex(3, 0),
-					  }}.sample(uv),
-		getGeometricNormal()
-	};
+	return {ShapeQuad{getVerticesAsArray(0)}.sample(uv), getGeometricNormal()};
 }
 
 inline std::pair<Point3, Vec3> QuadPrimitive::sample(const Uv<float> &uv, float time, const Matrix4 &obj_to_world) const
 {
-	return {
-			ShapeQuad{{
-							  getVertex(0, 0, obj_to_world),
-							  getVertex(1, 0, obj_to_world),
-							  getVertex(2, 0, obj_to_world),
-							  getVertex(3, 0, obj_to_world),
-					  }}.sample(uv),
-		getGeometricNormal(obj_to_world)
-	};
+	return {ShapeQuad{getVerticesAsArray(0, obj_to_world)}.sample(uv), getGeometricNormal(obj_to_world) };
 }
 
 inline Bound QuadPrimitive::getBound() const
 {
-	return FacePrimitive::getBound(getVertices(0));
+	return FacePrimitive::getBound(getVerticesAsVector(0));
 }
 
 inline Bound QuadPrimitive::getBound(const Matrix4 &obj_to_world) const
 {
-	return FacePrimitive::getBound(getVertices(0, obj_to_world));
+	return FacePrimitive::getBound(getVerticesAsVector(0, obj_to_world));
 }
 
 inline Vec3 QuadPrimitive::getGeometricNormal(bool) const

@@ -29,6 +29,7 @@ class ShapeQuad final
 	public:
 		ShapeQuad(const ShapeQuad &quad) = default;
 		ShapeQuad(ShapeQuad &&quad) = default;
+		explicit ShapeQuad(const std::array<Point3, 4> &vertices) : vertices_(vertices) { }
 		explicit ShapeQuad(std::array<Point3, 4> &&vertices) : vertices_(std::move(vertices)) { }
 		std::pair<float, Uv<float>> intersect(const Point3 &from, const Vec3 &dir) const;
 		Vec3 calculateFaceNormal() const;

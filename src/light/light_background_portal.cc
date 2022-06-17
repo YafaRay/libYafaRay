@@ -110,7 +110,7 @@ Rgb BackgroundPortalLight::totalEnergy() const
 		const Rgb col = bg_->eval(wo.dir_, true);
 		for(int j = 0; j < num_primitives_; j++)
 		{
-			float cos_n = -wo.dir_ * primitives_[j]->getGeometricNormal(0.f); //not 100% sure about sign yet...
+			float cos_n = -wo.dir_ * primitives_[j]->getGeometricNormal({}, 0.f, false); //not 100% sure about sign yet...
 			if(cos_n > 0) energy += col * cos_n * primitives_[j]->surfaceArea(0.f);
 		}
 	}
@@ -171,7 +171,7 @@ std::tuple<bool, float, Rgb> BackgroundPortalLight::intersect(const Ray &ray, fl
 	// intersect with tree:
 	const IntersectData intersect_data = accelerator_->intersect(ray, t_max);
 	if(!intersect_data.isHit()) return {};
-	const Vec3 n{intersect_data.primitive_->getGeometricNormal(ray.time_)};
+	const Vec3 n{intersect_data.primitive_->getGeometricNormal({}, ray.time_, false)};
 	const float cos_angle = ray.dir_ * (-n);
 	if(cos_angle <= 0.f) return {};
 	const float idist_sqr = 1.f / (t * t);
