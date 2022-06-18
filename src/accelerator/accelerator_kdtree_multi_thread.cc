@@ -660,30 +660,26 @@ IntersectData AcceleratorKdTreeMultiThread::intersect(const Ray &ray, float t_ma
 	IntersectData intersect_data;
 	intersect_data.t_max_ = t_max;
 	const float t_min = std::max(ray.tmin_, calculateDynamicRayBias(cross));
-	while(curr_node)
+	while(curr_node && stack[entry_id].t_ < t_max)
 	{
-		if(t_max < stack[entry_id].t_) break;
 		// loop until leaf is found
 		while(!curr_node->isLeaf())
 		{
 			const Axis axis = curr_node->splitAxis();
 			const float split_val = curr_node->splitPos();
-
 			if(stack[entry_id].point_[axis] <= split_val)
 			{
 				if(stack[exit_id].point_[axis] <= split_val)
 				{
-					curr_node++;
-					continue;
-				}
-				if(stack[exit_id].point_[axis] == split_val)
-				{
-					curr_node = &nodes[curr_node->getRightChild()];
+					++curr_node;
 					continue;
 				}
 				// case N4
-				far_child = &nodes[curr_node->getRightChild()];
-				curr_node ++;
+				else
+				{
+					far_child = &nodes[curr_node->getRightChild()];
+					++curr_node;
+				}
 			}
 			else
 			{
@@ -692,30 +688,29 @@ IntersectData AcceleratorKdTreeMultiThread::intersect(const Ray &ray, float t_ma
 					curr_node = &nodes[curr_node->getRightChild()];
 					continue;
 				}
-				far_child = curr_node + 1;
-				curr_node = &nodes[curr_node->getRightChild()];
+				else
+				{
+					far_child = curr_node + 1;
+					curr_node = &nodes[curr_node->getRightChild()];
+				}
 			}
 			// traverse both children
-
 			const float t = (split_val - ray.from_[axis]) * inv_dir[axis]; //splitting plane signed distance
-
 			// set up the new exit point
-			const int tmp_id = exit_id;
-			exit_id++;
-
+			const int exit_id_prev = exit_id;
+			++exit_id;
 			// possibly skip current entry point so not to overwrite the data
-			if(exit_id == entry_id) exit_id++;
+			if(exit_id == entry_id) ++exit_id;
 			// push values onto the stack //todo: lookup table
 			const Axis next_axis{axis::getNextSpatial(axis)};
 			const Axis prev_axis{axis::getPrevSpatial(axis)};
-			stack[exit_id].prev_stack_id_ = tmp_id;
+			stack[exit_id].prev_stack_id_ = exit_id_prev;
 			stack[exit_id].t_ = t;
 			stack[exit_id].node_ = far_child;
 			stack[exit_id].point_[axis] = split_val;
 			stack[exit_id].point_[next_axis] = ray.from_[next_axis] + t * ray.dir_[next_axis];
 			stack[exit_id].point_[prev_axis] = ray.from_[prev_axis] + t * ray.dir_[prev_axis];
 		}
-
 		// Check for intersections inside leaf node
 		for(auto prim : curr_node->primitives_)
 		{
@@ -760,9 +755,8 @@ IntersectData AcceleratorKdTreeMultiThread::intersectShadow(const Ray &ray, floa
 	IntersectData intersect_data;
 	intersect_data.t_max_ = t_max;
 	const float t_min = calculateDynamicRayBias(cross);
-	while(curr_node)
+	while(curr_node && stack[entry_id].t_ < t_max)
 	{
-		if(t_max < stack[entry_id].t_ /*a*/) break;
 		// loop until leaf is found
 		while(!curr_node->isLeaf())
 		{
@@ -772,17 +766,15 @@ IntersectData AcceleratorKdTreeMultiThread::intersectShadow(const Ray &ray, floa
 			{
 				if(stack[exit_id].point_[axis] <= split_val)
 				{
-					curr_node++;
-					continue;
-				}
-				if(stack[exit_id].point_[axis] == split_val)
-				{
-					curr_node = &nodes[curr_node->getRightChild()];
+					++curr_node;
 					continue;
 				}
 				// case N4
-				far_child = &nodes[curr_node->getRightChild()];
-				curr_node ++;
+				else
+				{
+					far_child = &nodes[curr_node->getRightChild()];
+					++curr_node;
+				}
 			}
 			else
 			{
@@ -791,30 +783,29 @@ IntersectData AcceleratorKdTreeMultiThread::intersectShadow(const Ray &ray, floa
 					curr_node = &nodes[curr_node->getRightChild()];
 					continue;
 				}
-				far_child = curr_node + 1;
-				curr_node = &nodes[curr_node->getRightChild()];
+				else
+				{
+					far_child = curr_node + 1;
+					curr_node = &nodes[curr_node->getRightChild()];
+				}
 			}
 			// traverse both children
-
 			const float t = (split_val - ray.from_[axis]) * inv_dir[axis]; //splitting plane signed distance
-
 			// set up the new exit point
-			const int tmp_id = exit_id;
-			exit_id++;
-
+			const int exit_id_prev = exit_id;
+			++exit_id;
 			// possibly skip current entry point so not to overwrite the data
-			if(exit_id == entry_id) exit_id++;
+			if(exit_id == entry_id) ++exit_id;
 			// push values onto the stack //todo: lookup table
 			const Axis next_axis{axis::getNextSpatial(axis)};
 			const Axis prev_axis{axis::getPrevSpatial(axis)};
-			stack[exit_id].prev_stack_id_ = tmp_id;
+			stack[exit_id].prev_stack_id_ = exit_id_prev;
 			stack[exit_id].t_ = t;
 			stack[exit_id].node_ = far_child;
 			stack[exit_id].point_[axis] = split_val;
 			stack[exit_id].point_[next_axis] = ray.from_[next_axis] + t * ray.dir_[next_axis];
 			stack[exit_id].point_[prev_axis] = ray.from_[prev_axis] + t * ray.dir_[prev_axis];
 		}
-
 		// Check for intersections inside leaf node
 		for(auto prim : curr_node->primitives_)
 		{
@@ -861,9 +852,8 @@ IntersectDataColor AcceleratorKdTreeMultiThread::intersectTransparentShadow(cons
 	IntersectDataColor intersect_data_color;
 	intersect_data_color.t_max_ = t_max;
 	const float t_min = std::max(ray.tmin_, calculateDynamicRayBias(cross));
-	while(curr_node)
+	while(curr_node && stack[entry_id].t_ < t_max)
 	{
-		if(t_max < stack[entry_id].t_ /*a*/) break;
 		// loop until leaf is found
 		while(!curr_node->isLeaf())
 		{
@@ -873,17 +863,15 @@ IntersectDataColor AcceleratorKdTreeMultiThread::intersectTransparentShadow(cons
 			{
 				if(stack[exit_id].point_[axis] <= split_val)
 				{
-					curr_node++;
-					continue;
-				}
-				if(stack[exit_id].point_[axis] == split_val)
-				{
-					curr_node = &nodes[curr_node->getRightChild()];
+					++curr_node;
 					continue;
 				}
 				// case N4
-				far_child = &nodes[curr_node->getRightChild()];
-				curr_node ++;
+				else
+				{
+					far_child = &nodes[curr_node->getRightChild()];
+					++curr_node;
+				}
 			}
 			else
 			{
@@ -892,33 +880,33 @@ IntersectDataColor AcceleratorKdTreeMultiThread::intersectTransparentShadow(cons
 					curr_node = &nodes[curr_node->getRightChild()];
 					continue;
 				}
-				far_child = curr_node + 1;
-				curr_node = &nodes[curr_node->getRightChild()];
+				else
+				{
+					far_child = curr_node + 1;
+					curr_node = &nodes[curr_node->getRightChild()];
+				}
 			}
 			// traverse both children
 			const float t = (split_val - ray.from_[axis]) * inv_dir[axis]; //splitting plane signed distance
-
 			// set up the new exit point
-			const int tmp_id = exit_id;
-			exit_id++;
-
+			const int exit_id_prev = exit_id;
+			++exit_id;
 			// possibly skip current entry point so not to overwrite the data
-			if(exit_id == entry_id) exit_id++;
+			if(exit_id == entry_id) ++exit_id;
 			// push values onto the stack //todo: lookup table
 			const Axis next_axis{axis::getNextSpatial(axis)};
 			const Axis prev_axis{axis::getPrevSpatial(axis)};
-			stack[exit_id].prev_stack_id_ = tmp_id;
+			stack[exit_id].prev_stack_id_ = exit_id_prev;
 			stack[exit_id].t_ = t;
 			stack[exit_id].node_ = far_child;
 			stack[exit_id].point_[axis] = split_val;
 			stack[exit_id].point_[next_axis] = ray.from_[next_axis] + t * ray.dir_[next_axis];
 			stack[exit_id].point_[prev_axis] = ray.from_[prev_axis] + t * ray.dir_[prev_axis];
 		}
-
 		// Check for intersections inside leaf node
 		for(auto prim : curr_node->primitives_)
 		{
-				if(Accelerator::primitiveIntersectionTransparentShadow(intersect_data_color, filtered, depth, max_depth, prim, camera, ray.from_, ray.dir_, t_min, t_max, ray.time_)) return intersect_data_color;
+			if(Accelerator::primitiveIntersectionTransparentShadow(intersect_data_color, filtered, depth, max_depth, prim, camera, ray.from_, ray.dir_, t_min, t_max, ray.time_)) return intersect_data_color;
 		}
 		entry_id = exit_id;
 		curr_node = stack[exit_id].node_;
