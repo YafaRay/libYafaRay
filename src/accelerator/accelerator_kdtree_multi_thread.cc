@@ -57,7 +57,7 @@ AcceleratorKdTreeMultiThread::AcceleratorKdTreeMultiThread(Logger &logger, const
 		if(mls <= 0) mls = 1;
 		tree_build_parameters.max_leaf_size_ = mls;
 	}
-	if(tree_build_parameters.max_depth_ > kd_max_stack_) tree_build_parameters.max_depth_ = kd_max_stack_; //to prevent our stack to overflow
+	if(tree_build_parameters.max_depth_ > kdtree::kd_max_stack_global) tree_build_parameters.max_depth_ = kdtree::kd_max_stack_global; //to prevent our stack to overflow
 	//experiment: add penalty to cost ratio to reduce memory usage on huge scenes
 	if(log_leaves > 16.0) tree_build_parameters.cost_ratio_ += 0.25 * (log_leaves - 16.0);
 	std::vector<Bound> bounds;
@@ -111,7 +111,7 @@ AcceleratorKdTreeMultiThread::SplitCost AcceleratorKdTreeMultiThread::pigeonMinC
 	const auto num_prim_indices = static_cast<uint32_t>(prim_indices.size());
 	static constexpr int max_bin = 1024;
 	static constexpr int num_bins = max_bin + 1;
-	std::array<TreeBin, num_bins> bins;
+	std::array<kdtree::TreeBin, num_bins> bins;
 	const Vec3 node_bound_axes {node_bound.longX(), node_bound.longY(), node_bound.longZ() };
 	const Vec3 inv_node_bound_axes { 1.f / node_bound_axes[Axis::X], 1.f / node_bound_axes[Axis::Y], 1.f / node_bound_axes[Axis::Z] };
 	SplitCost split;
@@ -260,7 +260,7 @@ AcceleratorKdTreeMultiThread::SplitCost AcceleratorKdTreeMultiThread::minimalCos
 	SplitCost split;
 	split.cost_ = std::numeric_limits<float>::max();
 	const float inv_total_sa = 1.f / (node_bound_axes[Axis::X] * node_bound_axes[Axis::Y] + node_bound_axes[Axis::X] * node_bound_axes[Axis::Z] + node_bound_axes[Axis::Y] * node_bound_axes[Axis::Z]);
-	std::array<std::vector<BoundEdge>, 3> edges_all_axes;
+	std::array<std::vector<kdtree::BoundEdge>, 3> edges_all_axes;
 	for(auto axis : axis::spatial)
 	{
 		// << get edges for axis >>
@@ -273,12 +273,12 @@ AcceleratorKdTreeMultiThread::SplitCost AcceleratorKdTreeMultiThread::minimalCos
 			const Bound &bbox = bounds[index];
 			if(bbox.a_[axis] == bbox.g_[axis])
 			{
-				edges_all_axes[axis_id].emplace_back(BoundEdge(bbox.a_[axis], index, BoundEdge::EndBound::Both));
+				edges_all_axes[axis_id].emplace_back(kdtree::BoundEdge(bbox.a_[axis], index, kdtree::BoundEdge::EndBound::Both));
 			}
 			else
 			{
-				edges_all_axes[axis_id].emplace_back(BoundEdge(bbox.a_[axis], index, BoundEdge::EndBound::Left));
-				edges_all_axes[axis_id].emplace_back(BoundEdge(bbox.g_[axis], index, BoundEdge::EndBound::Right));
+				edges_all_axes[axis_id].emplace_back(kdtree::BoundEdge(bbox.a_[axis], index, kdtree::BoundEdge::EndBound::Left));
+				edges_all_axes[axis_id].emplace_back(kdtree::BoundEdge(bbox.g_[axis], index, kdtree::BoundEdge::EndBound::Right));
 			}
 		}
 		std::sort(edges_all_axes[axis_id].begin(), edges_all_axes[axis_id].end());
@@ -327,7 +327,7 @@ AcceleratorKdTreeMultiThread::SplitCost AcceleratorKdTreeMultiThread::minimalCos
 		const int num_edges = static_cast<int>(edges_all_axes[axis_id].size());
 		for(int edge_id = 0; edge_id < num_edges; ++edge_id)
 		{
-			if(edges_all_axes[axis_id][edge_id].end_ == BoundEdge::EndBound::Right) --num_right;
+			if(edges_all_axes[axis_id][edge_id].end_ == kdtree::BoundEdge::EndBound::Right) --num_right;
 			const float edget = edges_all_axes[axis_id][edge_id].pos_;
 			if(edget > node_bound.a_[axis] &&
 			   edget < node_bound.g_[axis])
@@ -352,10 +352,10 @@ AcceleratorKdTreeMultiThread::SplitCost AcceleratorKdTreeMultiThread::minimalCos
 					split.edge_offset_ = edge_id;
 				}
 			}
-			if(edges_all_axes[axis_id][edge_id].end_ != BoundEdge::EndBound::Right)
+			if(edges_all_axes[axis_id][edge_id].end_ != kdtree::BoundEdge::EndBound::Right)
 			{
 				++num_left;
-				if(edges_all_axes[axis_id][edge_id].end_ == BoundEdge::EndBound::Both) --num_right;
+				if(edges_all_axes[axis_id][edge_id].end_ == kdtree::BoundEdge::EndBound::Both) --num_right;
 			}
 		}
 		if((num_left != num_indices || num_right != 0) && logger.isVerbose()) logger.logVerbose("you screwed your new idea!");
@@ -450,7 +450,7 @@ void AcceleratorKdTreeMultiThread::buildTreeWorker(const std::vector<const Primi
 	if(num_new_indices <= static_cast<uint32_t>(parameters.max_leaf_size_) || depth >= parameters.max_depth_)
 	{
 		Node node;
-		const Stats leaf_stats = node.createLeaf(new_primitive_indices, primitives);
+		const kdtree::Stats leaf_stats = node.createLeaf(new_primitive_indices, primitives);
 		result.stats_ += leaf_stats;
 		result.nodes_.emplace_back(node);
 		if(depth >= parameters.max_depth_) result.stats_.depth_limit_reached_++;
@@ -469,7 +469,7 @@ void AcceleratorKdTreeMultiThread::buildTreeWorker(const std::vector<const Primi
 	   split.axis_ == Axis::None || bad_refines == 2)
 	{
 		Node node;
-		const Stats leaf_stats = node.createLeaf(new_primitive_indices, primitives);
+		const kdtree::Stats leaf_stats = node.createLeaf(new_primitive_indices, primitives);
 		result.stats_ += leaf_stats;
 		result.nodes_.emplace_back(node);
 		if(bad_refines == 2) ++result.stats_.num_bad_splits_;
@@ -509,13 +509,13 @@ void AcceleratorKdTreeMultiThread::buildTreeWorker(const std::vector<const Primi
 	{
 		for(int edge_id = 0; edge_id < split.edge_offset_; ++edge_id)
 		{
-			if(split.edges_[edge_id].end_ != BoundEdge::EndBound::Right)
+			if(split.edges_[edge_id].end_ != kdtree::BoundEdge::EndBound::Right)
 			{
 				left_indices.emplace_back(split.edges_[edge_id].index_);
 				left_primitive_indices.emplace_back(new_primitive_indices.get()[left_indices.back()]);
 			}
 		}
-		if(split.edges_[split.edge_offset_].end_ == BoundEdge::EndBound::Both)
+		if(split.edges_[split.edge_offset_].end_ == kdtree::BoundEdge::EndBound::Both)
 		{
 			right_indices.emplace_back(split.edges_[split.edge_offset_].index_);
 			right_primitive_indices.emplace_back(new_primitive_indices.get()[right_indices.back()]);
@@ -523,7 +523,7 @@ void AcceleratorKdTreeMultiThread::buildTreeWorker(const std::vector<const Primi
 		const int num_edges = static_cast<int>(split.edges_.size());
 		for(int edge_id = split.edge_offset_ + 1; edge_id < num_edges; ++edge_id)
 		{
-			if(split.edges_[edge_id].end_ != BoundEdge::EndBound::Left)
+			if(split.edges_[edge_id].end_ != kdtree::BoundEdge::EndBound::Left)
 			{
 				right_indices.emplace_back(split.edges_[edge_id].index_);
 				right_primitive_indices.emplace_back(new_primitive_indices.get()[right_indices.back()]);
@@ -536,19 +536,19 @@ void AcceleratorKdTreeMultiThread::buildTreeWorker(const std::vector<const Primi
 	{
 		for(int edge_id = 0; edge_id < split.edge_offset_; ++edge_id)
 		{
-			if(split.edges_[edge_id].end_ != BoundEdge::EndBound::Right)
+			if(split.edges_[edge_id].end_ != kdtree::BoundEdge::EndBound::Right)
 			{
 				left_indices.emplace_back(split.edges_[edge_id].index_);
 			}
 		}
-		if(split.edges_[split.edge_offset_].end_ == BoundEdge::EndBound::Both)
+		if(split.edges_[split.edge_offset_].end_ == kdtree::BoundEdge::EndBound::Both)
 		{
 			right_indices.emplace_back(split.edges_[split.edge_offset_].index_);
 		}
 		const int num_edges = static_cast<int>(split.edges_.size());
 		for(int edge_id = split.edge_offset_ + 1; edge_id < num_edges; ++edge_id)
 		{
-			if(split.edges_[edge_id].end_ != BoundEdge::EndBound::Left)
+			if(split.edges_[edge_id].end_ != kdtree::BoundEdge::EndBound::Left)
 			{
 				right_indices.emplace_back(split.edges_[edge_id].index_);
 			}
@@ -559,7 +559,7 @@ void AcceleratorKdTreeMultiThread::buildTreeWorker(const std::vector<const Primi
 	}
 
 	Node node;
-	const Stats interior_stats = node.createInterior(Axis(split.axis_), split_pos);
+	const kdtree::Stats interior_stats = node.createInterior(Axis(split.axis_), split_pos);
 	result.stats_ += interior_stats;
 	result.nodes_.emplace_back(node);
 	Bound bound_left = node_bound;
@@ -624,296 +624,6 @@ void AcceleratorKdTreeMultiThread::buildTreeWorker(const std::vector<const Primi
 		result.stats_ += result_right.stats_;
 		result.nodes_.insert(result.nodes_.end(), result_right.nodes_.begin(), result_right.nodes_.end());
 	}
-}
-
-//============================
-/*! The standard sphereIntersect function,
-	returns the closest hit within dist
-*/
-
-IntersectData AcceleratorKdTreeMultiThread::intersect(const Ray &ray, float t_max, const std::vector<Node> &nodes, const Bound &tree_bound)
-{
-	const Bound::Cross cross{tree_bound.cross(ray, t_max)};
-	if(!cross.crossed_) { return {}; }
-	const Vec3 inv_dir{math::inverse(ray.dir_.x()), math::inverse(ray.dir_.y()), math::inverse(ray.dir_.z())};
-	std::array<Stack, kd_max_stack_> stack;
-	const Node *far_child;
-	const Node *curr_node;
-	curr_node = nodes.data();
-
-	int entry_id = 0;
-	stack[entry_id].t_ = cross.enter_;
-
-	//distinguish between internal and external origin
-	if(cross.enter_ >= 0.f) // ray with external origin
-		stack[entry_id].point_ = ray.from_ + ray.dir_ * cross.enter_;
-	else // ray with internal origin
-		stack[entry_id].point_ = ray.from_;
-
-	// setup initial entry and exit point in stack
-	int exit_id = 1; // pointer to stack
-	stack[exit_id].t_ = cross.leave_;
-	stack[exit_id].point_ = ray.from_ + ray.dir_ * cross.leave_;
-	stack[exit_id].node_ = nullptr; // "nowhere", termination flag
-
-	//loop, traverse kd-Tree until object intersection or ray leaves tree bound
-	IntersectData intersect_data;
-	intersect_data.t_max_ = t_max;
-	const float t_min = std::max(ray.tmin_, calculateDynamicRayBias(cross));
-	while(curr_node && stack[entry_id].t_ < t_max)
-	{
-		// loop until leaf is found
-		while(!curr_node->isLeaf())
-		{
-			const Axis axis = curr_node->splitAxis();
-			const float split_val = curr_node->splitPos();
-			if(stack[entry_id].point_[axis] <= split_val)
-			{
-				if(stack[exit_id].point_[axis] <= split_val)
-				{
-					++curr_node;
-					continue;
-				}
-				// case N4
-				else
-				{
-					far_child = &nodes[curr_node->getRightChild()];
-					++curr_node;
-				}
-			}
-			else
-			{
-				if(split_val < stack[exit_id].point_[axis])
-				{
-					curr_node = &nodes[curr_node->getRightChild()];
-					continue;
-				}
-				else
-				{
-					far_child = curr_node + 1;
-					curr_node = &nodes[curr_node->getRightChild()];
-				}
-			}
-			// traverse both children
-			const float t = (split_val - ray.from_[axis]) * inv_dir[axis]; //splitting plane signed distance
-			// set up the new exit point
-			const int exit_id_prev = exit_id;
-			++exit_id;
-			// possibly skip current entry point so not to overwrite the data
-			if(exit_id == entry_id) ++exit_id;
-			// push values onto the stack //todo: lookup table
-			const Axis next_axis{axis::getNextSpatial(axis)};
-			const Axis prev_axis{axis::getPrevSpatial(axis)};
-			stack[exit_id].prev_stack_id_ = exit_id_prev;
-			stack[exit_id].t_ = t;
-			stack[exit_id].node_ = far_child;
-			stack[exit_id].point_[axis] = split_val;
-			stack[exit_id].point_[next_axis] = ray.from_[next_axis] + t * ray.dir_[next_axis];
-			stack[exit_id].point_[prev_axis] = ray.from_[prev_axis] + t * ray.dir_[prev_axis];
-		}
-		// Check for intersections inside leaf node
-		for(auto prim : curr_node->primitives_)
-		{
-			Accelerator::primitiveIntersection(intersect_data, prim, ray.from_, ray.dir_, t_min, intersect_data.t_max_, ray.time_);
-		}
-		if(intersect_data.isHit() && intersect_data.t_max_ <= stack[exit_id].t_)
-		{
-			return intersect_data;
-		}
-
-		entry_id = exit_id;
-		curr_node = stack[exit_id].node_;
-		exit_id = stack[entry_id].prev_stack_id_;
-	} // while
-	return intersect_data;
-}
-
-IntersectData AcceleratorKdTreeMultiThread::intersectShadow(const Ray &ray, float t_max, const std::vector<Node> &nodes, const Bound &tree_bound)
-{
-	const Bound::Cross cross{tree_bound.cross(ray, t_max)};
-	if(!cross.crossed_) { return {}; }
-	const Vec3 inv_dir{math::inverse(ray.dir_.x()), math::inverse(ray.dir_.y()), math::inverse(ray.dir_.z())};
-	std::array<Stack, kd_max_stack_> stack;
-	const Node *far_child, *curr_node;
-	curr_node = nodes.data();
-	int entry_id = 0;
-	stack[entry_id].t_ = cross.enter_;
-
-	//distinguish between internal and external origin
-	if(cross.enter_ >= 0.f) // ray with external origin
-		stack[entry_id].point_ = ray.from_ + ray.dir_ * cross.enter_;
-	else // ray with internal origin
-		stack[entry_id].point_ = ray.from_;
-
-	// setup initial entry and exit poimt in stack
-	int exit_id = 1; // pointer to stack
-	stack[exit_id].t_ = cross.leave_;
-	stack[exit_id].point_ = ray.from_ + ray.dir_ * cross.leave_;
-	stack[exit_id].node_ = nullptr; // "nowhere", termination flag
-
-	//loop, traverse kd-Tree until object intersection or ray leaves tree bound
-	IntersectData intersect_data;
-	intersect_data.t_max_ = t_max;
-	const float t_min = calculateDynamicRayBias(cross);
-	while(curr_node && stack[entry_id].t_ < t_max)
-	{
-		// loop until leaf is found
-		while(!curr_node->isLeaf())
-		{
-			const Axis axis = curr_node->splitAxis();
-			const float split_val = curr_node->splitPos();
-			if(stack[entry_id].point_[axis] <= split_val)
-			{
-				if(stack[exit_id].point_[axis] <= split_val)
-				{
-					++curr_node;
-					continue;
-				}
-				// case N4
-				else
-				{
-					far_child = &nodes[curr_node->getRightChild()];
-					++curr_node;
-				}
-			}
-			else
-			{
-				if(split_val < stack[exit_id].point_[axis])
-				{
-					curr_node = &nodes[curr_node->getRightChild()];
-					continue;
-				}
-				else
-				{
-					far_child = curr_node + 1;
-					curr_node = &nodes[curr_node->getRightChild()];
-				}
-			}
-			// traverse both children
-			const float t = (split_val - ray.from_[axis]) * inv_dir[axis]; //splitting plane signed distance
-			// set up the new exit point
-			const int exit_id_prev = exit_id;
-			++exit_id;
-			// possibly skip current entry point so not to overwrite the data
-			if(exit_id == entry_id) ++exit_id;
-			// push values onto the stack //todo: lookup table
-			const Axis next_axis{axis::getNextSpatial(axis)};
-			const Axis prev_axis{axis::getPrevSpatial(axis)};
-			stack[exit_id].prev_stack_id_ = exit_id_prev;
-			stack[exit_id].t_ = t;
-			stack[exit_id].node_ = far_child;
-			stack[exit_id].point_[axis] = split_val;
-			stack[exit_id].point_[next_axis] = ray.from_[next_axis] + t * ray.dir_[next_axis];
-			stack[exit_id].point_[prev_axis] = ray.from_[prev_axis] + t * ray.dir_[prev_axis];
-		}
-		// Check for intersections inside leaf node
-		for(auto prim : curr_node->primitives_)
-		{
-			if(Accelerator::primitiveIntersectionShadow(intersect_data, prim, ray.from_, ray.dir_, t_min, t_max, ray.time_)) return intersect_data;
-		}
-		entry_id = exit_id;
-		curr_node = stack[exit_id].node_;
-		exit_id = stack[entry_id].prev_stack_id_;
-	} // while
-	return {};
-}
-
-/*=============================================================
-	allow for transparent shadows.
-=============================================================*/
-
-IntersectDataColor AcceleratorKdTreeMultiThread::intersectTransparentShadow(const Ray &ray, int max_depth, float t_max, const std::vector<Node> &nodes, const Bound &tree_bound, const Camera *camera)
-{
-	const Bound::Cross cross{tree_bound.cross(ray, t_max)};
-	if(!cross.crossed_) { return {}; }
-	const Vec3 inv_dir{math::inverse(ray.dir_.x()), math::inverse(ray.dir_.y()), math::inverse(ray.dir_.z())};
-	int depth = 0;
-	std::set<const Primitive *> filtered;
-	std::array<Stack, kd_max_stack_> stack;
-	const Node *far_child, *curr_node;
-	curr_node = nodes.data();
-
-	int entry_id = 0;
-	stack[entry_id].t_ = cross.enter_;
-
-	//distinguish between internal and external origin
-	if(cross.enter_ >= 0.f) // ray with external origin
-		stack[entry_id].point_ = ray.from_ + ray.dir_ * cross.enter_;
-	else // ray with internal origin
-		stack[entry_id].point_ = ray.from_;
-
-	// setup initial entry and exit poimt in stack
-	int exit_id = 1; // pointer to stack
-	stack[exit_id].t_ = cross.leave_;
-	stack[exit_id].point_ = ray.from_ + ray.dir_ * cross.leave_;
-	stack[exit_id].node_ = nullptr; // "nowhere", termination flag
-
-	//loop, traverse kd-Tree until object intersection or ray leaves tree bound
-	IntersectDataColor intersect_data_color;
-	intersect_data_color.t_max_ = t_max;
-	const float t_min = std::max(ray.tmin_, calculateDynamicRayBias(cross));
-	while(curr_node && stack[entry_id].t_ < t_max)
-	{
-		// loop until leaf is found
-		while(!curr_node->isLeaf())
-		{
-			const Axis axis = curr_node->splitAxis();
-			const float split_val = curr_node->splitPos();
-			if(stack[entry_id].point_[axis] <= split_val)
-			{
-				if(stack[exit_id].point_[axis] <= split_val)
-				{
-					++curr_node;
-					continue;
-				}
-				// case N4
-				else
-				{
-					far_child = &nodes[curr_node->getRightChild()];
-					++curr_node;
-				}
-			}
-			else
-			{
-				if(split_val < stack[exit_id].point_[axis])
-				{
-					curr_node = &nodes[curr_node->getRightChild()];
-					continue;
-				}
-				else
-				{
-					far_child = curr_node + 1;
-					curr_node = &nodes[curr_node->getRightChild()];
-				}
-			}
-			// traverse both children
-			const float t = (split_val - ray.from_[axis]) * inv_dir[axis]; //splitting plane signed distance
-			// set up the new exit point
-			const int exit_id_prev = exit_id;
-			++exit_id;
-			// possibly skip current entry point so not to overwrite the data
-			if(exit_id == entry_id) ++exit_id;
-			// push values onto the stack //todo: lookup table
-			const Axis next_axis{axis::getNextSpatial(axis)};
-			const Axis prev_axis{axis::getPrevSpatial(axis)};
-			stack[exit_id].prev_stack_id_ = exit_id_prev;
-			stack[exit_id].t_ = t;
-			stack[exit_id].node_ = far_child;
-			stack[exit_id].point_[axis] = split_val;
-			stack[exit_id].point_[next_axis] = ray.from_[next_axis] + t * ray.dir_[next_axis];
-			stack[exit_id].point_[prev_axis] = ray.from_[prev_axis] + t * ray.dir_[prev_axis];
-		}
-		// Check for intersections inside leaf node
-		for(auto prim : curr_node->primitives_)
-		{
-			if(Accelerator::primitiveIntersectionTransparentShadow(intersect_data_color, filtered, depth, max_depth, prim, camera, ray.from_, ray.dir_, t_min, t_max, ray.time_)) return intersect_data_color;
-		}
-		entry_id = exit_id;
-		curr_node = stack[exit_id].node_;
-		exit_id = stack[entry_id].prev_stack_id_;
-	} // while
-	intersect_data_color.setNoHit();
-	return intersect_data_color;
 }
 
 END_YAFARAY

@@ -50,21 +50,17 @@ class AcceleratorKdTreeMultiThread final : public Accelerator
 		~AcceleratorKdTreeMultiThread() override;
 		IntersectData intersect(const Ray &ray, float t_max) const override;
 		IntersectData intersectShadow(const Ray &ray, float t_max) const override;
-		IntersectDataColor intersectTransparentShadow(const Ray &ray, int max_depth, float t_max, const Camera *camera) const override;
+		IntersectData intersectTransparentShadow(const Ray &ray, int max_depth, float t_max, const Camera *camera) const override;
 		Bound getBound() const override { return tree_bound_; }
 
 		AcceleratorKdTreeMultiThread::Result buildTree(const std::vector<const Primitive *> &primitives, const Bound &node_bound, const std::vector<uint32_t> &indices, int depth, uint32_t next_node_id, int bad_refines, const std::vector<Bound> &bounds, const Parameters &parameters, const ClipPlane &clip_plane, const std::vector<PolyDouble> &polygons, const std::vector<uint32_t> &primitive_indices, std::atomic<int> &num_current_threads) const;
 		void buildTreeWorker(const std::vector<const Primitive *> &primitives, const Bound &node_bound, const std::vector<uint32_t> &indices, int depth, uint32_t next_node_id, int bad_refines, const std::vector<Bound> &bounds, const Parameters &parameters, const ClipPlane &clip_plane, const std::vector<PolyDouble> &polygons, const std::vector<uint32_t> &primitive_indices, Result &result, std::atomic<int> &num_current_threads) const;
 		static SplitCost pigeonMinCost(Logger &logger, float e_bonus, float cost_ratio, const std::vector<Bound> &bounds, const Bound &node_bound, const std::vector<uint32_t> &prim_indices);
 		static SplitCost minimalCost(Logger &logger, float e_bonus, float cost_ratio, const Bound &node_bound, const std::vector<uint32_t> &indices, const std::vector<Bound> &bounds);
-		static IntersectData intersect(const Ray &ray, float t_max, const std::vector<Node> &nodes, const Bound &tree_bound);
-		static IntersectData intersectShadow(const Ray &ray, float t_max, const std::vector<Node> &nodes, const Bound &tree_bound);
-		static IntersectDataColor intersectTransparentShadow(const Ray &ray, int max_depth, float t_max, const std::vector<Node> &nodes, const Bound &tree_bound, const Camera *camera);
 
 		alignas(8) std::vector<Node> nodes_;
 		Bound tree_bound_; 	//!< overall space the tree encloses
 		std::atomic<int> num_current_threads_ { 0 };
-		static constexpr int kd_max_stack_ = 64;
 };
 
 struct AcceleratorKdTreeMultiThread::Parameters
@@ -85,11 +81,12 @@ struct AcceleratorKdTreeMultiThread::Parameters
 class AcceleratorKdTreeMultiThread::Node
 {
 	public:
-		Stats createLeaf(const std::vector<uint32_t> &prim_indices, const std::vector<const Primitive *> &primitives);
-		Stats createInterior(Axis axis, float d);
+		kdtree::Stats createLeaf(const std::vector<uint32_t> &prim_indices, const std::vector<const Primitive *> &primitives);
+		kdtree::Stats createInterior(Axis axis, float d);
 		float splitPos() const { return division_; }
 		Axis splitAxis() const { return static_cast<Axis>(flags_ & 3); }
 		uint32_t nPrimitives() const { return primitives_.size(); /*flags_ >> 2; */ }
+		const Primitive *getOnePrimitive() const { return primitives_[0]; }
 		bool isLeaf() const { return (flags_ & 3) == 3; }
 		uint32_t getRightChild() const { return (flags_ >> 2); }
 		void setRightChild(uint32_t i) { flags_ = (flags_ & 3) | (i << 2); }
@@ -112,7 +109,7 @@ struct AcceleratorKdTreeMultiThread::SplitCost
 	alignas(8) int edge_offset_ = -1;
 	float cost_;
 	float t_;
-	std::vector<BoundEdge> edges_;
+	std::vector<kdtree::BoundEdge> edges_;
 	int stats_early_out_ = 0;
 	Axis axis_ = Axis::None;
 };
@@ -120,14 +117,14 @@ struct AcceleratorKdTreeMultiThread::SplitCost
 struct AcceleratorKdTreeMultiThread::Result
 {
 	alignas(8) std::vector<Node> nodes_;
-	Stats stats_;
+	kdtree::Stats stats_;
 };
 
 
-inline Stats AcceleratorKdTreeMultiThread::Node::createLeaf(const std::vector<uint32_t> &prim_indices, const std::vector<const Primitive *> &primitives)
+inline kdtree::Stats AcceleratorKdTreeMultiThread::Node::createLeaf(const std::vector<uint32_t> &prim_indices, const std::vector<const Primitive *> &primitives)
 {
 	const uint32_t num_prim_indices = prim_indices.size();
-	Stats kd_stats;
+	kdtree::Stats kd_stats;
 	primitives_.clear();
 	//flags_ = num_prim_indices << 2;
 	flags_ |= 3;
@@ -142,9 +139,9 @@ inline Stats AcceleratorKdTreeMultiThread::Node::createLeaf(const std::vector<ui
 	return kd_stats;
 }
 
-inline Stats AcceleratorKdTreeMultiThread::Node::createInterior(Axis axis, float d)
+inline kdtree::Stats AcceleratorKdTreeMultiThread::Node::createInterior(Axis axis, float d)
 {
-	Stats kd_stats;
+	kdtree::Stats kd_stats;
 	division_ = d;
 	flags_ = (flags_ & ~3) | axis::getId(axis);
 	kd_stats.kd_inodes_++;
@@ -153,17 +150,17 @@ inline Stats AcceleratorKdTreeMultiThread::Node::createInterior(Axis axis, float
 
 inline IntersectData AcceleratorKdTreeMultiThread::intersect(const Ray &ray, float t_max) const
 {
-	return intersect(ray, t_max, nodes_, tree_bound_);
+	return kdtree::intersect<Node, Stack, kdtree::IntersectTestType::Nearest>(ray, t_max, nodes_, tree_bound_, 0, nullptr);
 }
 
 inline IntersectData AcceleratorKdTreeMultiThread::intersectShadow(const Ray &ray, float t_max) const
 {
-	return intersectShadow(ray, t_max, nodes_, tree_bound_);
+	return kdtree::intersect<Node, Stack, kdtree::IntersectTestType::Shadow>(ray, t_max, nodes_, tree_bound_, 0, nullptr);
 }
 
-inline IntersectDataColor AcceleratorKdTreeMultiThread::intersectTransparentShadow(const Ray &ray, int max_depth, float t_max, const Camera *camera) const
+inline IntersectData AcceleratorKdTreeMultiThread::intersectTransparentShadow(const Ray &ray, int max_depth, float t_max, const Camera *camera) const
 {
-	return intersectTransparentShadow(ray, max_depth, t_max, nodes_, tree_bound_, camera);
+	return kdtree::intersect<Node, Stack, kdtree::IntersectTestType::TransparentShadow>(ray, t_max, nodes_, tree_bound_, max_depth, camera);
 }
 
 

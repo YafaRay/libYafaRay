@@ -19,7 +19,7 @@
 target_sources(libyafaray4
 	PRIVATE
 		accelerator.cc
-		accelerator_kdtree.cc
+		accelerator_kdtree_original.cc
 		accelerator_kdtree_multi_thread.cc
 		accelerator_simple_test.cc
 )

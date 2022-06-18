@@ -35,10 +35,6 @@ struct IntersectData
 	Uv<float> uv_;
 	float t_max_ = std::numeric_limits<float>::max();
 	const Primitive *primitive_ = nullptr;
-};
-
-struct IntersectDataColor : IntersectData
-{
 	Rgb color_ {1.f};
 };
 

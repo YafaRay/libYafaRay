@@ -50,18 +50,14 @@ class AcceleratorKdTree final : public Accelerator
 		IntersectData intersect(const Ray &ray, float t_max) const override;
 		//	bool IntersectDBG(const ray_t &ray, float dist, triangle_t **tr, float &Z) const;
 		IntersectData intersectShadow(const Ray &ray, float t_max) const override;
-		IntersectDataColor intersectTransparentShadow(const Ray &ray, int max_depth, float t_max, const Camera *camera) const override;
+		IntersectData intersectTransparentShadow(const Ray &ray, int max_depth, float t_max, const Camera *camera) const override;
 		//	bool IntersectO(const point3d_t &from, const vector3d_t &ray, float dist, Primitive **tr, float &Z) const;
 		Bound getBound() const override { return tree_bound_; }
 
-		int buildTree(uint32_t n_prims, const std::vector<const Primitive *> &original_primitives, const Bound &node_bound, uint32_t *prim_nums, uint32_t *left_prims, uint32_t *right_prims, const std::array<std::unique_ptr<BoundEdge[]>, 3> &edges, uint32_t right_mem_size, int depth, int bad_refines);
+		int buildTree(uint32_t n_prims, const std::vector<const Primitive *> &original_primitives, const Bound &node_bound, uint32_t *prim_nums, uint32_t *left_prims, uint32_t *right_prims, const std::array<std::unique_ptr<kdtree::BoundEdge[]>, 3> &edges, uint32_t right_mem_size, int depth, int bad_refines);
 
 		static SplitCost pigeonMinCost(Logger &logger, float e_bonus, float cost_ratio, uint32_t num_prim_indices, const Bound *bounds, const Bound &node_bound, const uint32_t *prim_indices);
-		static SplitCost minimalCost(Logger &logger, float e_bonus, float cost_ratio, uint32_t num_indices, const Bound &node_bound, const uint32_t *prim_idx, const Bound *all_bounds, const Bound *all_bounds_general, const std::array<std::unique_ptr<BoundEdge[]>, 3> &edges_all_axes, Stats &kd_stats);
-
-		static IntersectData intersect(const Ray &ray, float t_max, const Node *nodes, const Bound &tree_bound);
-		static IntersectData intersectShadow(const Ray &ray, float t_max, const Node *nodes, const Bound &tree_bound);
-		static IntersectDataColor intersectTransparentShadow(const Ray &ray, int max_depth, float t_max, const Node *nodes, const Bound &tree_bound, const Camera *camera);
+		static SplitCost minimalCost(Logger &logger, float e_bonus, float cost_ratio, uint32_t num_indices, const Bound &node_bound, const uint32_t *prim_idx, const Bound *all_bounds, const Bound *all_bounds_general, const std::array<std::unique_ptr<kdtree::BoundEdge[]>, 3> &edges_all_axes, kdtree::Stats &kd_stats);
 
 		float cost_ratio_ = 0.8f; //!< node traversal cost divided by primitive intersection cost
 		float e_bonus_ = 0.33f; //!< empty bonus
@@ -77,7 +73,7 @@ class AcceleratorKdTree final : public Accelerator
 		std::unique_ptr<ClipPlane[]> clip_; // indicate clip plane(s) for current level
 		std::vector<PolyDouble> cdata_; // clipping data...
 #endif
-		struct Stats kd_stats_; // some statistics:
+		struct kdtree::Stats kd_stats_; // some statistics:
 
 		static constexpr int prim_clip_thresh_ = 32;
 		static constexpr int pigeonhole_sort_thresh_ = 128;
@@ -92,11 +88,12 @@ class AcceleratorKdTree final : public Accelerator
 class AcceleratorKdTree::Node
 {
 	public:
-		void createLeaf(const uint32_t *prim_idx, int np, const std::vector<const Primitive *> &prims, MemoryArena &arena, Stats &kd_stats);
-		void createInterior(int axis, float d, Stats &kd_stats);
+		void createLeaf(const uint32_t *prim_idx, int np, const std::vector<const Primitive *> &prims, MemoryArena &arena, kdtree::Stats &kd_stats);
+		void createInterior(int axis, float d, kdtree::Stats &kd_stats);
 		float splitPos() const { return division_; }
 		Axis splitAxis() const { return static_cast<Axis>(flags_ & 3); }
 		uint32_t nPrimitives() const { return flags_ >> 2; }
+		const Primitive *getOnePrimitive() const { return one_primitive_; }
 		bool isLeaf() const { return (flags_ & 3) == 3; }
 		uint32_t getRightChild() const { return (flags_ >> 2); }
 		void setRightChild(uint32_t i) { flags_ = (flags_ & 3) | (i << 2); }
@@ -127,7 +124,7 @@ struct AcceleratorKdTree::SplitCost
 	int num_edges_;
 };
 
-inline void AcceleratorKdTree::Node::createLeaf(const uint32_t *prim_idx, int np, const std::vector<const Primitive *> &prims, MemoryArena &arena, Stats &kd_stats) {
+inline void AcceleratorKdTree::Node::createLeaf(const uint32_t *prim_idx, int np, const std::vector<const Primitive *> &prims, MemoryArena &arena, kdtree::Stats &kd_stats) {
 	//primitives_ = nullptr;
 	flags_ = np << 2;
 	flags_ |= 3;
@@ -146,7 +143,7 @@ inline void AcceleratorKdTree::Node::createLeaf(const uint32_t *prim_idx, int np
 	kd_stats.kd_leaves_++; //stat
 }
 
-inline void AcceleratorKdTree::Node::createInterior(int axis, float d, Stats &kd_stats)
+inline void AcceleratorKdTree::Node::createInterior(int axis, float d, kdtree::Stats &kd_stats)
 {
 	division_ = d;
 	flags_ = (flags_ & ~3) | axis;
@@ -155,17 +152,17 @@ inline void AcceleratorKdTree::Node::createInterior(int axis, float d, Stats &kd
 
 inline IntersectData AcceleratorKdTree::intersect(const Ray &ray, float t_max) const
 {
-	return intersect(ray, t_max, nodes_.data(), tree_bound_);
+	return kdtree::intersect<Node, Stack, kdtree::IntersectTestType::Nearest>(ray, t_max, nodes_, tree_bound_, 0, nullptr);
 }
 
 inline IntersectData AcceleratorKdTree::intersectShadow(const Ray &ray, float t_max) const
 {
-	return intersectShadow(ray, t_max, nodes_.data(), tree_bound_);
+	return kdtree::intersect<Node, Stack, kdtree::IntersectTestType::Shadow>(ray, t_max, nodes_, tree_bound_, 0, nullptr);
 }
 
-inline IntersectDataColor AcceleratorKdTree::intersectTransparentShadow(const Ray &ray, int max_depth, float t_max, const Camera *camera) const
+inline IntersectData AcceleratorKdTree::intersectTransparentShadow(const Ray &ray, int max_depth, float t_max, const Camera *camera) const
 {
-	return intersectTransparentShadow(ray, max_depth, t_max, nodes_.data(), tree_bound_, camera);
+	return kdtree::intersect<Node, Stack, kdtree::IntersectTestType::TransparentShadow>(ray, t_max, nodes_, tree_bound_, max_depth, camera);
 }
 
 END_YAFARAY

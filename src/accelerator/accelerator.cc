@@ -17,7 +17,7 @@
  */
 
 #include "accelerator/accelerator.h"
-#include "accelerator/accelerator_kdtree.h"
+#include "accelerator/accelerator_kdtree_original.h"
 #include "accelerator/accelerator_kdtree_multi_thread.h"
 #include "accelerator/accelerator_simple_test.h"
 #include "common/logger.h"
@@ -38,7 +38,7 @@ const Accelerator * Accelerator::factory(Logger &logger, const std::vector<const
 	params.getParam("type", type);
 	const Accelerator *accelerator = nullptr;
 	if(type == "yafaray-kdtree-original") accelerator = AcceleratorKdTree::factory(logger, primitives_list, params);
-	else if(type == "yafaray-kdtree-multi-thread") accelerator = AcceleratorKdTreeMultiThread::factory(logger, primitives_list, params);
+	if(type == "yafaray-kdtree-multi-thread") accelerator = AcceleratorKdTreeMultiThread::factory(logger, primitives_list, params);
 	else if(type == "yafaray-simpletest") accelerator = AcceleratorSimpleTest::factory(logger, primitives_list, params);
 
 	if(accelerator) logger.logInfo("Accelerator type '", type, "' created.");
