@@ -20,7 +20,6 @@
 #ifndef YAFARAY_VOLUME_H
 #define YAFARAY_VOLUME_H
 
-#include "common/yafaray_common.h"
 #include "geometry/bound.h"
 #include "color/color.h"
 #include <map>

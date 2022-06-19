@@ -21,7 +21,6 @@
 #ifndef YAFARAY_LAYER_DEFINITIONS_H
 #define YAFARAY_LAYER_DEFINITIONS_H
 
-#include "yafaray_common.h"
 #include "image/image.h"
 #include "common/flags.h"
 #include <string>

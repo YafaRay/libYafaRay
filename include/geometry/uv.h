@@ -20,7 +20,6 @@
 #ifndef YAFARAY_UV_H
 #define YAFARAY_UV_H
 
-#include "common/yafaray_common.h"
 #include <type_traits>
 
 namespace yafaray {

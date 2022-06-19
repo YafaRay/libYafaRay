@@ -22,7 +22,6 @@
 
 #include "color/color.h"
 #include "common/visibility.h"
-#include "common/yafaray_common.h"
 #include <common/logger.h>
 #include <memory>
 #include <vector>

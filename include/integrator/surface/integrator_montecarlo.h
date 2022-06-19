@@ -25,7 +25,6 @@
 #include "integrator_tiled.h"
 #include "color/color.h"
 
-
 namespace yafaray {
 
 class Background;

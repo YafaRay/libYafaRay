@@ -20,7 +20,6 @@
 #ifndef YAFARAY_ACCELERATOR_H
 #define YAFARAY_ACCELERATOR_H
 
-#include "common/yafaray_common.h"
 #include "accelerator/intersect_data.h"
 #include "camera/camera.h"
 #include "geometry/primitive/primitive.h"

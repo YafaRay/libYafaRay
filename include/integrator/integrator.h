@@ -23,7 +23,6 @@
 #ifndef YAFARAY_INTEGRATOR_H
 #define YAFARAY_INTEGRATOR_H
 
-#include "common/yafaray_common.h"
 #include "common/logger.h"
 #include "common/aa_noise_params.h"
 #include "common/mask_edge_toon_params.h"

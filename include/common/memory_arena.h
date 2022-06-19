@@ -20,7 +20,6 @@
 #ifndef YAFARAY_MEMORY_ARENA_H
 #define YAFARAY_MEMORY_ARENA_H
 
-#include "yafaray_common.h"
 #include <vector>
 #include <algorithm>
 #include <cstdint>

@@ -21,7 +21,6 @@
 #ifndef YAFARAY_LAYER_H
 #define YAFARAY_LAYER_H
 
-#include "yafaray_common.h"
 #include "common/collection.h"
 #include "image/image.h"
 #include "common/layer_definitions.h"

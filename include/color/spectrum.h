@@ -20,7 +20,6 @@
 #ifndef YAFARAY_SPECTRUM_H
 #define YAFARAY_SPECTRUM_H
 
-#include "common/yafaray_common.h"
 #include "color/color.h"
 
 namespace yafaray {

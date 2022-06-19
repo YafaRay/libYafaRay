@@ -20,7 +20,6 @@
 #ifndef YAFARAY_MASK_EDGE_TOON_PARAMS_H
 #define YAFARAY_MASK_EDGE_TOON_PARAMS_H
 
-#include "common/yafaray_common.h"
 #include "color/color.h"
 
 namespace yafaray {

@@ -20,7 +20,6 @@
 #ifndef LIBYAFARAY_AXIS_H
 #define LIBYAFARAY_AXIS_H
 
-#include "common/yafaray_common.h"
 #include <array>
 
 namespace yafaray {

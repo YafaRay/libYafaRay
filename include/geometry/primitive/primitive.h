@@ -20,7 +20,6 @@
 #ifndef YAFARAY_PRIMITIVE_H
 #define YAFARAY_PRIMITIVE_H
 
-#include "common/yafaray_common.h"
 #include "common/visibility.h"
 #include "geometry/poly_double.h"
 #include "common/logger.h"

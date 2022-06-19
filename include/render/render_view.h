@@ -22,7 +22,6 @@
 #ifndef YAFARAY_RENDER_VIEW_H
 #define YAFARAY_RENDER_VIEW_H
 
-#include "common/yafaray_common.h"
 #include "common/collection.h"
 #include <string>
 #include <utility>

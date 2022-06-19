@@ -21,7 +21,6 @@
 #ifndef YAFARAY_IMAGE_MANIPULATION_H
 #define YAFARAY_IMAGE_MANIPULATION_H
 
-#include "common/yafaray_common.h"
 #include "image/image.h"
 #include "image/image_buffers.h"
 

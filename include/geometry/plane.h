@@ -20,7 +20,6 @@
 #ifndef YAFARAY_PLANE_H
 #define YAFARAY_PLANE_H
 
-#include "common/yafaray_common.h"
 #include "geometry/ray.h"
 
 namespace yafaray {

@@ -22,7 +22,6 @@
 #ifndef YAFARAY_COLOR_CONSOLE_H
 #define YAFARAY_COLOR_CONSOLE_H
 
-#include "common/yafaray_common.h"
 #include <iostream>
 
 namespace yafaray {

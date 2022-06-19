@@ -20,7 +20,6 @@
 #ifndef YAFARAY_RAY_H
 #define YAFARAY_RAY_H
 
-#include "common/yafaray_common.h"
 #include "geometry/vector.h"
 #include <memory>
 

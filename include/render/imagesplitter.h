@@ -20,7 +20,6 @@
 #ifndef YAFARAY_IMAGESPLITTER_H
 #define YAFARAY_IMAGESPLITTER_H
 
-#include "common/yafaray_common.h"
 
 #include <vector>
 #include <cmath>

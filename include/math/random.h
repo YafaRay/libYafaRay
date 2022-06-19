@@ -22,7 +22,6 @@
 #ifndef YAFARAY_RANDOM_H
 #define YAFARAY_RANDOM_H
 
-#include "common/yafaray_common.h"
 #include "math/math.h"
 #include <atomic>
 

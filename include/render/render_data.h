@@ -20,8 +20,6 @@
 #ifndef YAFARAY_RENDER_DATA_H
 #define YAFARAY_RENDER_DATA_H
 
-#include "common/yafaray_common.h"
-
 namespace yafaray {
 
 struct RayDivision final

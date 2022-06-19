@@ -20,7 +20,6 @@
 #ifndef YAFARAY_PROGRESS_BAR_H
 #define YAFARAY_PROGRESS_BAR_H
 
-#include "common/yafaray_common.h"
 #include "public_api/yafaray_c_api.h"
 #include <string>
 #include <mutex>

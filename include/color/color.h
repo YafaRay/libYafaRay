@@ -24,7 +24,6 @@
 #ifndef YAFARAY_COLOR_H
 #define YAFARAY_COLOR_H
 
-#include "common/yafaray_common.h"
 #include "math/math.h"
 #include <array>
 #include <ostream>

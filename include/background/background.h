@@ -20,7 +20,6 @@
 #ifndef YAFARAY_BACKGROUND_H
 #define YAFARAY_BACKGROUND_H
 
-#include "common/yafaray_common.h"
 #include "color/color.h"
 #include <memory>
 

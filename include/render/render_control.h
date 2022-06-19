@@ -20,7 +20,6 @@
 #ifndef YAFARAY_RENDER_CONTROL_H
 #define YAFARAY_RENDER_CONTROL_H
 
-#include "common/yafaray_common.h"
 #include "common/timer.h"
 #include <string>
 #include <mutex>

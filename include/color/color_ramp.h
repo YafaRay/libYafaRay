@@ -23,7 +23,6 @@
 #ifndef YAFARAY_COLOR_RAMP_H
 #define YAFARAY_COLOR_RAMP_H
 
-#include "common/yafaray_common.h"
 #include <vector>
 
 namespace yafaray {

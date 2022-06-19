@@ -20,7 +20,6 @@
 #ifndef YAFARAY_CLIP_PLANE_H
 #define YAFARAY_CLIP_PLANE_H
 
-#include "common/yafaray_common.h"
 #include "geometry/axis.h"
 
 namespace yafaray {

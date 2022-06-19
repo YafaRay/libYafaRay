@@ -23,7 +23,6 @@
 #ifndef YAFARAY_SURFACE_H
 #define YAFARAY_SURFACE_H
 
-#include "common/yafaray_common.h"
 #include "geometry/vector.h"
 #include "geometry/object/object.h"
 #include "geometry/primitive/primitive.h"

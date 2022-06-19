@@ -30,7 +30,6 @@
 #ifndef YAFARAY_COLOR_CONVERSION_H
 #define YAFARAY_COLOR_CONVERSION_H
 
-#include "common/yafaray_common.h"
 #include "color.h"
 
 namespace yafaray {

@@ -23,7 +23,6 @@
 #ifndef YAFARAY_VECTOR_H
 #define YAFARAY_VECTOR_H
 
-#include "common/yafaray_common.h"
 #include "math/math.h"
 #include "math/random.h"
 #include "geometry/axis.h"

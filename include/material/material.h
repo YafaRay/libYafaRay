@@ -20,7 +20,6 @@
 #ifndef YAFARAY_MATERIAL_H
 #define YAFARAY_MATERIAL_H
 
-#include "common/yafaray_common.h"
 #include "common/flags.h"
 #include "common/visibility.h"
 #include "shader/shader_node.h"

@@ -21,7 +21,6 @@
 #ifndef YAFARAY_BADGE_H
 #define YAFARAY_BADGE_H
 
-#include "yafaray_common.h"
 #include "render/render_control.h"
 #include <string>
 #include <memory>

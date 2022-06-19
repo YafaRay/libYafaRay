@@ -26,7 +26,6 @@
 
 #include <memory>
 #include <utility>
-#include "common/yafaray_common.h"
 #include "geometry/plane.h"
 
 namespace yafaray {

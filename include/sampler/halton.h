@@ -20,7 +20,6 @@
 #ifndef YAFARAY_HALTON_H
 #define YAFARAY_HALTON_H
 
-#include "common/yafaray_common.h"
 #include "math/random.h"
 #include <algorithm>
 

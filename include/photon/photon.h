@@ -22,7 +22,6 @@
 
 #include <utility>
 
-#include "common/yafaray_common.h"
 
 #include "pkdtree.h"
 #include "color/color.h"

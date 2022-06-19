@@ -20,7 +20,6 @@
 #ifndef YAFARAY_NOISE_GENERATOR_H
 #define YAFARAY_NOISE_GENERATOR_H
 
-#include "common/yafaray_common.h"
 #include "geometry/vector.h"
 #include "color/color.h"
 #include <memory>

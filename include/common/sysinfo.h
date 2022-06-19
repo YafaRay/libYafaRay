@@ -22,8 +22,6 @@
 #ifndef YAFARAY_SYSINFO_H
 #define YAFARAY_SYSINFO_H
 
-#include "yafaray_common.h"
-
 namespace yafaray {
 
 namespace sys_info

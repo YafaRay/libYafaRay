@@ -20,7 +20,6 @@
 #ifndef YAFARAY_CAMERA_EQUIRECTANGULAR_H
 #define YAFARAY_CAMERA_EQUIRECTANGULAR_H
 
-#include "common/yafaray_common.h"
 #include "camera/camera.h"
 
 namespace yafaray {

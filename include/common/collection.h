@@ -22,8 +22,8 @@
 #ifndef YAFARAY_COLLECTION_H
 #define YAFARAY_COLLECTION_H
 
-#include "yafaray_common.h"
 #include <map>
+#include <cstddef>
 
 namespace yafaray {
 

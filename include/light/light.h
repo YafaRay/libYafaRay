@@ -20,7 +20,6 @@
 #ifndef YAFARAY_LIGHT_H
 #define YAFARAY_LIGHT_H
 
-#include "common/yafaray_common.h"
 #include "common/flags.h"
 #include "color/color.h"
 #include <sstream>

@@ -20,7 +20,6 @@
 #ifndef YAFARAY_VECTOR_DOUBLE_H
 #define YAFARAY_VECTOR_DOUBLE_H
 
-#include "common/yafaray_common.h"
 #include "geometry/clip_plane.h"
 #include <iomanip>
 #include <limits>

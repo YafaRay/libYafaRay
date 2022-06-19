@@ -21,7 +21,6 @@
 #define YAFARAY_INTERFACE_H
 
 #include "color/color.h"
-#include "common/yafaray_common.h"
 #include "geometry/uv.h"
 #include "geometry/vector.h"
 #include "public_api/yafaray_c_api.h"

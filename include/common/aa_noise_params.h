@@ -20,8 +20,6 @@
 #ifndef YAFARAY_AA_NOISE_PARAMS_H
 #define YAFARAY_AA_NOISE_PARAMS_H
 
-#include "common/yafaray_common.h"
-
 namespace yafaray {
 
 struct AaNoiseParams

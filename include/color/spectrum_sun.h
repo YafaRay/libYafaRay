@@ -20,7 +20,6 @@
 #ifndef YAFARAY_SPECTRUM_SUN_H
 #define YAFARAY_SPECTRUM_SUN_H
 
-#include "common/yafaray_common.h"
 #include "color/spectrum.h"
 #include <algorithm>
 #include <vector>
