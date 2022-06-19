@@ -27,7 +27,7 @@
 #include "texture/texture.h"
 #include "image/image.h"
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 class MipMapParams final
 {
@@ -99,6 +99,6 @@ class ImageTexture final : public Texture
 };
 
 
-END_YAFARAY
+} //namespace yafaray
 
 #endif // YAFARAY_TEXTURE_IMAGE_H

@@ -26,7 +26,7 @@
 #include "math/math.h"
 #include <atomic>
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 class FastRandom final
 {
@@ -109,6 +109,6 @@ inline double RandomGenerator::operator()() noexcept
 }
 
 
-END_YAFARAY
+} //namespace yafaray
 
 #endif //YAFARAY_RANDOM_H

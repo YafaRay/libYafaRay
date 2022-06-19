@@ -29,7 +29,7 @@
 #include "image/image_output.h"
 #include "math/interpolation_curve.h"
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 // sunsky, from 'A Practical Analytic Model For DayLight' by Preetham, Shirley & Smits.
 // http://www.cs.utah.edu/vissim/papers/sunsky/
@@ -305,4 +305,4 @@ const Background * SunSkyBackground::factory(Logger &logger, Scene &scene, const
 	return new_sunsky;
 }
 
-END_YAFARAY
+} //namespace yafaray

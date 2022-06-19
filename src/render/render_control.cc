@@ -18,7 +18,7 @@
 
 #include "render/render_control.h"
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 void RenderControl::setStarted()
 {
@@ -122,5 +122,5 @@ float RenderControl::currentPassPercent() const
 	return current_pass_percent_;
 }
 
-END_YAFARAY
+} //namespace yafaray
 

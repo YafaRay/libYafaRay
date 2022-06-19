@@ -24,7 +24,7 @@
 
 #include "math/math.h"
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 namespace math
 {
@@ -93,6 +93,6 @@ mnc2 = (6 - 2 * B)/6
 
 } // namespace math
 
-END_YAFARAY
+} //namespace yafaray
 
 #endif //YAFARAY_FILTER_H

@@ -25,7 +25,7 @@
 #include "image/image.h"
 #include "image/image_buffers.h"
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 //!< Compressed Rgba (24 bit/pixel) [LOSSY!] image buffer
 class ImageColorAlphaCompressed final : public Image
@@ -48,6 +48,6 @@ class ImageColorAlphaCompressed final : public Image
 		ImageBuffer2D<Rgba7773> buffer_;
 };
 
-END_YAFARAY
+} //namespace yafaray
 
 #endif //YAFARAY_IMAGE_COLOR_ALPHA_COMPRESSED_H

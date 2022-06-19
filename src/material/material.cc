@@ -36,7 +36,7 @@
 #include "volume/volume.h"
 #include "math/interpolation.h"
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 const Material *Material::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params, const std::list<ParamMap> &nodes_params)
 {
@@ -214,4 +214,4 @@ std::unique_ptr<DirectionColor> DirectionColor::blend(std::unique_ptr<DirectionC
 	return nullptr;
 }
 
-END_YAFARAY
+} //namespace yafaray

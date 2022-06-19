@@ -35,7 +35,7 @@ extern "C"
 #include <jpeglib.h>
 }
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 // error handlers for libJPEG,
 
@@ -259,4 +259,4 @@ Image * JpgFormat::loadFromFile(const std::string &name, const Image::Optimizati
 	return image;
 }
 
-END_YAFARAY
+} //namespace yafaray

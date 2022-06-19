@@ -30,7 +30,7 @@ extern "C" struct timeval;
 #include <sys/time.h>
 #endif
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 class Timer
 {
@@ -59,6 +59,6 @@ class Timer
 		std::map<std::string, Tdata> events_;
 };
 
-END_YAFARAY
+} //namespace yafaray
 
 #endif

@@ -28,7 +28,7 @@
 #include <memory>
 #include <sstream>
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 class ParamMap;
 class Scene;
@@ -92,6 +92,6 @@ class Texture
 		InterpolationType interpolation_type_ = InterpolationType::Bilinear;
 };
 
-END_YAFARAY
+} //namespace yafaray
 
 #endif // YAFARAY_TEXTURE_H

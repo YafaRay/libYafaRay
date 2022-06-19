@@ -22,7 +22,7 @@
 
 #include "volume/volumehandler_beer.h"
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 class ParamMap;
 class Scene;
@@ -40,6 +40,6 @@ class SssVolumeHandler final : public BeerVolumeHandler
 		Rgb scatter_col_;
 };
 
-END_YAFARAY
+} //namespace yafaray
 
 #endif // YAFARAY_VOLUMEHANDLER_SSS_H

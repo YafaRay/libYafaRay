@@ -27,7 +27,7 @@
 #include <common/logger.h>
 #include <memory>
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 class ParamMap;
 class Scene;
@@ -123,6 +123,6 @@ struct LSample
 	SurfacePoint *sp_ = nullptr; //!< surface point on the light source, may only be complete enough to call other light methods with it!
 };
 
-END_YAFARAY
+} //namespace yafaray
 
 #endif // YAFARAY_LIGHT_H

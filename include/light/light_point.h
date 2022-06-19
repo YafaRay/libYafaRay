@@ -26,7 +26,7 @@
 #include "light/light.h"
 #include "geometry/vector.h"
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 class ParamMap;
 class Scene;
@@ -51,7 +51,7 @@ class PointLight final : public Light
 		float intensity_;
 };
 
-END_YAFARAY
+} //namespace yafaray
 
 #endif // YAFARAY_LIGHT_POINT_H
 

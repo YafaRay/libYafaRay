@@ -25,7 +25,7 @@
 #include "image/image_output.h"
 #include "geometry/vector.h"
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 GradientBackground::GradientBackground(Logger &logger, const Rgb &gzcol, const Rgb &ghcol, const Rgb &szcol, const Rgb &shcol) :
 		Background(logger), gzenith_(gzcol), ghoriz_(ghcol), szenith_(szcol), shoriz_(shcol)
@@ -87,4 +87,4 @@ const Background * GradientBackground::factory(Logger &logger, Scene &scene, con
 	return grad_bg;
 }
 
-END_YAFARAY
+} //namespace yafaray

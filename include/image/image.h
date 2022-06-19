@@ -27,7 +27,7 @@
 #include <string>
 #include <memory>
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 class ParamMap;
 class Scene;
@@ -90,6 +90,6 @@ class Image
 		ColorSpace color_space_ = ColorSpace::RawManualGamma;
 };
 
-END_YAFARAY
+} //namespace yafaray
 
 #endif // YAFARAY_IMAGE_H

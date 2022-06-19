@@ -27,7 +27,7 @@
 #include <array>
 #include <atomic>
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 #define POLY_CLIPPING_MULTITHREAD 1
 
@@ -164,5 +164,5 @@ inline IntersectData AcceleratorKdTreeMultiThread::intersectTransparentShadow(co
 }
 
 
-END_YAFARAY
+} //namespace yafaray
 #endif    //YAFARAY_ACCELERATOR_KDTREE_MULTI_THREAD_H

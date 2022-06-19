@@ -26,7 +26,7 @@
 
 #include "format.h"
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 class TgaFormat;
 struct TgaHeader;
@@ -68,6 +68,6 @@ class TgaFormat final : public Format
 
 };
 
-END_YAFARAY
+} //namespace yafaray
 
 #endif // YAFARAY_FORMAT_TGA_H

@@ -23,7 +23,7 @@
 #include "color/color_ramp.h"
 #include "math/interpolation.h"
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 ColorRamp::ColorRamp(const std::string &mode_str, const std::string &interpolation_str, const std::string &hue_interpolation_str)
 {
@@ -130,4 +130,4 @@ Rgba ColorRamp::getColorInterpolated(float pos) const
 }
 
 
-END_YAFARAY
+} //namespace yafaray

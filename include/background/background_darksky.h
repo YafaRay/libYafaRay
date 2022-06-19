@@ -34,7 +34,7 @@
 #include "geometry/vector.h"
 #include "color/color_conversion.h"
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 class DarkSkyBackground final : public Background
 {
@@ -65,6 +65,6 @@ class DarkSkyBackground final : public Background
 		bool night_sky_;
 };
 
-END_YAFARAY
+} //namespace yafaray
 
 #endif // YAFARAY_BACKGROUND_DARKSKY_H

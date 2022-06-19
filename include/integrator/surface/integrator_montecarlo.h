@@ -26,7 +26,7 @@
 #include "color/color.h"
 
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 class Background;
 struct Photon;
@@ -100,6 +100,6 @@ class MonteCarloIntegrator: public TiledIntegrator
 		static constexpr int loffs_delta_ = 4567; //just some number to have different sequences per light...and it's a prime even...
 };
 
-END_YAFARAY
+} //namespace yafaray
 
 #endif

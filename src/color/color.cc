@@ -23,7 +23,7 @@
 #include "math/interpolation.h"
 #include <iostream>
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 std::ostream &operator << (std::ostream &out, const Rgb &c)
 {
@@ -68,4 +68,4 @@ ColorSpace Rgb::colorSpaceFromName(const std::string &color_space_name, const Co
 	else return default_color_space;
 }
 
-END_YAFARAY
+} //namespace yafaray

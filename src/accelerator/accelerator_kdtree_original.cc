@@ -26,7 +26,7 @@
 #include <cmath>
 #include <cstring>
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 const Accelerator * AcceleratorKdTree::factory(Logger &logger, const std::vector<const Primitive *> &primitives, const ParamMap &params)
 {
@@ -631,4 +631,4 @@ int AcceleratorKdTree::buildTree(uint32_t n_prims, const std::vector<const Primi
 	return 1;
 }
 
-END_YAFARAY
+} //namespace yafaray

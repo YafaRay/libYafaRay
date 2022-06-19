@@ -22,7 +22,7 @@
 #include "common/param.h"
 #include "scene/scene.h"
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 struct PSample;
 
@@ -83,4 +83,4 @@ VolumeRegion * NoiseVolumeRegion::factory(Logger &logger, const Scene &scene, co
 	return new NoiseVolumeRegion(logger, Rgb(sa), Rgb(ss), Rgb(le), g, cov, sharp, dens, {min[0], min[1], min[2]}, {max[0], max[1], max[2]}, att_sc, noise);
 }
 
-END_YAFARAY
+} //namespace yafaray

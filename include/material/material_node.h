@@ -24,7 +24,7 @@
 #include <map>
 #include <vector>
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 class Scene;
 class ShaderNode;
@@ -54,6 +54,6 @@ class NodeMaterial: public Material
 		std::vector<const ShaderNode *> color_nodes_, bump_nodes_;
 };
 
-END_YAFARAY
+} //namespace yafaray
 
 #endif // YAFARAY_MATERIAL_NODE_H

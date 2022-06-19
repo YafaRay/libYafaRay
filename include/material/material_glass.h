@@ -24,7 +24,7 @@
 
 #include "material/material_node.h"
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 class GlassMaterialData final : public MaterialData
 {
@@ -122,6 +122,6 @@ class NullMaterial final : public Material
 		Rgb sample(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, Vec3 &wi, Sample &s, float &w, bool chromatic, float wavelength, const Camera *camera) const override;
 };
 
-END_YAFARAY
+} //namespace yafaray
 
 #endif // YAFARAY_MATERIAL_GLASS_H

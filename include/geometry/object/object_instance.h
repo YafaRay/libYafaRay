@@ -26,7 +26,7 @@
 #include <memory>
 #include <vector>
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 class Primitive;
 class Bound;
@@ -102,6 +102,6 @@ inline Matrix4 ObjectInstance::getObjToWorldMatrixAtTime(float time) const
 	else return getObjToWorldMatrix(0);
 }
 
-END_YAFARAY
+} //namespace yafaray
 
 #endif //YAFARAY_OBJECT_INSTANCE_H

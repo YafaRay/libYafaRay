@@ -25,7 +25,7 @@
 #include "image/image.h"
 #include "image/image_buffers.h"
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 //!< Compressed Rgb (16 bit/pixel) [LOSSY!] image buffer
 class ImageColorCompressed final : public Image
@@ -48,6 +48,6 @@ class ImageColorCompressed final : public Image
 		ImageBuffer2D<Rgb565> buffer_;
 };
 
-END_YAFARAY
+} //namespace yafaray
 
 #endif //YAFARAY_IMAGE_COLOR_COMPRESSED_H

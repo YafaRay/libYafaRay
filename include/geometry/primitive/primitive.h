@@ -28,7 +28,7 @@
 #include <vector>
 #include <array>
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 class Material;
 class SurfacePoint;
@@ -73,6 +73,6 @@ class Primitive
 		virtual PolyDouble::ClipResultWithBound clipToBound(Logger &logger, const std::array<Vec3Double, 2> &bound, const ClipPlane &clip_plane, const PolyDouble &poly, const Matrix4 &obj_to_world) const;
 };
 
-END_YAFARAY
+} //namespace yafaray
 
 #endif // YAFARAY_PRIMITIVE_H

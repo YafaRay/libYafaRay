@@ -24,7 +24,7 @@
 #include "light/light.h"
 #include "geometry/vector.h"
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 class Scene;
 class ParamMap;
@@ -59,6 +59,6 @@ class AreaLight final : public Light
 		float area_, inv_area_;
 };
 
-END_YAFARAY
+} //namespace yafaray
 
 #endif //YAFARAY_LIGHT_AREA_H

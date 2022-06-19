@@ -33,7 +33,7 @@
 #include <memory>
 #include <map>
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 /*!	Integrate the incoming light scattered by the surfaces
 	hit by a given ray
@@ -142,6 +142,6 @@ class VolumeIntegrator: public Integrator
 		const std::map<std::string, std::unique_ptr<VolumeRegion>> *volume_regions_ = nullptr;
 };
 
-END_YAFARAY
+} //namespace yafaray
 
 #endif // YAFARAY_INTEGRATOR_H

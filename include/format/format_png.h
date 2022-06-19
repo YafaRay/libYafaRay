@@ -25,7 +25,7 @@
 
 #include "format/format.h"
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 struct PngStructs;
 
@@ -44,6 +44,6 @@ class PngFormat final : public Format
 		bool fillWriteStructs(std::FILE *fp, unsigned int color_type, const PngStructs &png_structs, const Image *image);
 };
 
-END_YAFARAY
+} //namespace yafaray
 
 #endif // YAFARAY_FORMAT_PNG_H

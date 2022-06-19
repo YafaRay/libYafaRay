@@ -24,7 +24,7 @@
 #include "geometry/bound.h"
 #include <map>
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 class Object;
 
@@ -49,6 +49,6 @@ class AcceleratorSimpleTest final : Accelerator
 		Bound bound_;
 };
 
-END_YAFARAY
+} //namespace yafaray
 
 #endif //YAFARAY_ACCELERATOR_SIMPLE_TEST_H

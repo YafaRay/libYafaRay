@@ -24,7 +24,7 @@
 #ifndef YAFARAY_SPECTRAL_DATA_H
 #define YAFARAY_SPECTRAL_DATA_H
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 #include <array>
 
@@ -159,6 +159,6 @@ Rgb chromaMatch(float wl)
 
 } //namespace spectral_data
 
-END_YAFARAY
+} //namespace yafaray
 
 #endif /* YAFARAY_SPECTRAL_DATA_H */

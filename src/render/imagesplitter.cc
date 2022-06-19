@@ -21,7 +21,7 @@
 #include <algorithm>
 #include <random>
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 // currently only supports creation of scanrow-ordered tiles
 // shuffling would of course be easy, but i don't find that too usefull really,
@@ -118,4 +118,4 @@ bool ImageSplitter::getArea(int n, RenderArea &area)
 	return true;
 }
 
-END_YAFARAY
+} //namespace yafaray

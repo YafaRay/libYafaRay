@@ -25,7 +25,7 @@
 #include "color/color.h"
 #include <memory>
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 class NoiseGenerator
 {
@@ -282,6 +282,6 @@ class RidgedMFractalMusgrave final : public Musgrave
 		const NoiseGenerator *n_gen_;
 };
 
-END_YAFARAY
+} //namespace yafaray
 
 #endif  //YAFARAY_NOISE_GENERATOR_H

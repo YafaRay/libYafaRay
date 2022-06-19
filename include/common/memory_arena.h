@@ -25,7 +25,7 @@
 #include <algorithm>
 #include <cstdint>
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 class MemoryArena
 {
@@ -71,6 +71,6 @@ class MemoryArena
 		alignas(8) std::vector<char *> used_blocks_, available_blocks_;
 };
 
-END_YAFARAY
+} //namespace yafaray
 
 #endif // YAFARAY_MEMORY_ARENA_H

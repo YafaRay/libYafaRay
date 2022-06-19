@@ -27,7 +27,7 @@
 #include "math/interpolation.h"
 #include "render/render_data.h"
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 BlendMaterial::BlendMaterial(Logger &logger, const std::unique_ptr<const Material> *material_1, const std::unique_ptr<const Material> *material_2, float blendv, Visibility visibility):
 		NodeMaterial(logger), mat_1_(material_1), mat_2_(material_2)
@@ -336,4 +336,4 @@ Material *BlendMaterial::factory(Logger &logger, const Scene &scene, const std::
 	return mat;
 }
 
-END_YAFARAY
+} //namespace yafaray

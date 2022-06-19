@@ -25,7 +25,7 @@
 #include "image/image.h"
 #include "image/image_buffers.h"
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 //!< Optimized Rgb (32 bit/pixel) image buffer
 class ImageColorOptimized final : public Image
@@ -48,6 +48,6 @@ class ImageColorOptimized final : public Image
 		ImageBuffer2D<Rgb101010> buffer_;
 };
 
-END_YAFARAY
+} //namespace yafaray
 
 #endif //YAFARAY_IMAGE_COLOR_OPTIMIZED_H

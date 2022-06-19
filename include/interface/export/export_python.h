@@ -26,7 +26,7 @@
 #include <iostream>
 #include <map>
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 class Parameter;
 
@@ -85,6 +85,6 @@ class ExportPython: public Interface
 		ColorSpace color_space_ = ColorSpace::RawManualGamma;
 };
 
-END_YAFARAY
+} //namespace yafaray
 
 #endif // YAFARAY_EXPORT_PYTHON_H

@@ -23,7 +23,7 @@
 #include "primitive_face.h"
 #include "geometry/shape/shape_triangle.h"
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 class TrianglePrimitive : public FacePrimitive
 {
@@ -144,6 +144,6 @@ inline Vec3 TrianglePrimitive::getGeometricNormal(const Matrix4 &obj_to_world) c
 	return (obj_to_world * face_normal_geometric_).normalize();
 }
 
-END_YAFARAY
+} //namespace yafaray
 
 #endif //YAFARAY_PRIMITIVE_TRIANGLE_H

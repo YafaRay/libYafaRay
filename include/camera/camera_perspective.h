@@ -24,7 +24,7 @@
 #include "camera/camera.h"
 #include <vector>
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 class ParamMap;
 class Scene;
@@ -61,6 +61,6 @@ class PerspectiveCamera : public Camera
 		std::vector<float> ls_;
 };
 
-END_YAFARAY
+} //namespace yafaray
 
 #endif // YAFARAY_CAMERA_PERSPECTIVE_H

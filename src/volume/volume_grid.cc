@@ -23,7 +23,7 @@
 #include "texture/texture.h"
 #include "common/param.h"
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 struct PSample;
 
@@ -171,4 +171,4 @@ GridVolumeRegion::~GridVolumeRegion() {
 	free(grid_);
 }
 
-END_YAFARAY
+} //namespace yafaray

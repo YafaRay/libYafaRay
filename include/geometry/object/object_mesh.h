@@ -26,7 +26,7 @@
 #include <vector>
 #include "common/logger.h"
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 template <typename T> struct Uv;
 class FacePrimitive;
@@ -86,7 +86,7 @@ class MeshObject : public ObjectBase
 		bool motion_blur_bezier_ = false;
 };
 
-END_YAFARAY
+} //namespace yafaray
 
 #endif //YAFARAY_OBJECT_MESH_H
 

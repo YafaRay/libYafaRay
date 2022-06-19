@@ -22,7 +22,7 @@
 
 #include "volume/volume.h"
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 struct PSample;
 class ParamMap;
@@ -47,6 +47,6 @@ class SkyVolumeRegion final : public VolumeRegion
 		Rgb s_mie_;
 };
 
-END_YAFARAY
+} //namespace yafaray
 
 #endif // YAFARAY_VOLUME_SKY_H

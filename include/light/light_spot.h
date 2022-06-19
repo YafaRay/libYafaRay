@@ -25,7 +25,7 @@
 #include "light/light.h"
 #include "geometry/vector.h"
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 class Pdf1D;
 
@@ -62,6 +62,6 @@ class SpotLight final : public Light
 		int samples_;
 };
 
-END_YAFARAY
+} //namespace yafaray
 
 #endif // YAFARAY_LIGHT_SPOT_H

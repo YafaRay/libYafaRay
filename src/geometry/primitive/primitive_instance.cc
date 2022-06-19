@@ -19,7 +19,7 @@
 #include "geometry/primitive/primitive_instance.h"
 #include "geometry/surface.h"
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 std::unique_ptr<const SurfacePoint> PrimitiveInstance::getSurface(const RayDifferentials *ray_differentials, const Point3 &hit_point, float time, const Uv<float> &intersect_uv, const Camera *camera) const
 {
@@ -31,4 +31,4 @@ std::unique_ptr<const SurfacePoint> PrimitiveInstance::getSurface(const RayDiffe
 	return base_primitive_->getSurface(ray_differentials, hit_point, time, intersect_uv, camera, obj_to_world * base_instance_.getObjToWorldMatrixAtTime(time));
 }
 
-END_YAFARAY
+} //namespace yafaray

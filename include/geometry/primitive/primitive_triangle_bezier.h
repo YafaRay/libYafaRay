@@ -23,7 +23,7 @@
 #include "primitive_face.h"
 #include "geometry/shape/shape_triangle.h"
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 class TriangleBezierPrimitive : public FacePrimitive
 {
@@ -163,6 +163,6 @@ inline ShapeTriangle TriangleBezierPrimitive::getShapeAtTime(float time, const T
 	}
 }
 
-END_YAFARAY
+} //namespace yafaray
 
 #endif //YAFARAY_PRIMITIVE_TRIANGLE_BEZIER_H

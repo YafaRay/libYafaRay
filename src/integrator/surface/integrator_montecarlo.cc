@@ -40,7 +40,7 @@
 #include "geometry/primitive/primitive.h"
 #include "geometry/object/object.h"
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 //Constructor and destructor defined here to avoid issues with std::unique_ptr<Pdf1D> being Pdf1D incomplete in the header (forward declaration)
 MonteCarloIntegrator::MonteCarloIntegrator(RenderControl &render_control, Logger &logger) : TiledIntegrator(render_control, logger)
@@ -957,4 +957,4 @@ std::pair<Rgb, float> MonteCarloIntegrator::recursiveRaytrace(FastRandom &fast_r
 	return {std::move(col), (alpha_count > 0 ? alpha / alpha_count : 1.f)};
 }
 
-END_YAFARAY
+} //namespace yafaray

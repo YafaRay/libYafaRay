@@ -23,7 +23,7 @@
 #include "background/background.h"
 #include "light/light.h"
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 Rgb EmissionIntegrator::transmittance(RandomGenerator &random_generator, const Ray &ray) const
 {
@@ -65,4 +65,4 @@ Integrator * EmissionIntegrator::factory(Logger &logger, const ParamMap &params,
 	return new EmissionIntegrator(logger);
 }
 
-END_YAFARAY
+} //namespace yafaray

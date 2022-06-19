@@ -25,7 +25,7 @@
 #include "image/image.h"
 #include "image/image_buffers.h"
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 class Image;
 class Logger;
@@ -46,6 +46,6 @@ namespace image_manipulation
 	void logWarningsMissingLibraries(Logger &logger);
 }
 
-END_YAFARAY
+} //namespace yafaray
 
 #endif //YAFARAY_IMAGE_MANIPULATION_H

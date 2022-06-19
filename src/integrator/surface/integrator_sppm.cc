@@ -34,7 +34,7 @@
 #include "accelerator/accelerator.h"
 #include "photon/photon.h"
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 SppmIntegrator::SppmIntegrator(RenderControl &render_control, Logger &logger, unsigned int d_photons, int passnum, bool transparent_shadows, int shadow_depth) : MonteCarloIntegrator(render_control, logger)
 {
@@ -1111,4 +1111,4 @@ Integrator * SppmIntegrator::factory(Logger &logger, const ParamMap &params, con
 	return inte;
 }
 
-END_YAFARAY
+} //namespace yafaray

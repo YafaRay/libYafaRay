@@ -23,7 +23,7 @@
 #include "primitive_face.h"
 #include "geometry/shape/shape_quad.h"
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 class QuadBezierPrimitive : public FacePrimitive
 {
@@ -163,6 +163,6 @@ inline ShapeQuad QuadBezierPrimitive::getShapeAtTime(float time, const T &obj_to
 	}
 }
 
-END_YAFARAY
+} //namespace yafaray
 
 #endif //YAFARAY_PRIMITIVE_QUAD_BEZIER_H

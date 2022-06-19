@@ -31,7 +31,7 @@
 #include "geometry/ray.h"
 #include "geometry/bound.h"
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 BackgroundLight::BackgroundLight(Logger &logger, int sampl, bool invert_intersect, bool light_enabled, bool cast_shadows):
 		Light(logger, Light::Flags::None), samples_(sampl), abs_inter_(invert_intersect)
@@ -241,5 +241,5 @@ std::tuple<bool, Ray, Rgb> BackgroundLight::illuminate(const Point3 &surface_p, 
 	return {};
 }
 
-END_YAFARAY
+} //namespace yafaray
 

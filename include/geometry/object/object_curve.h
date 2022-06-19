@@ -23,7 +23,7 @@
 #include "common/logger.h"
 #include "object_mesh.h"
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 template <typename T> struct Uv;
 class FacePrimitive;
@@ -42,6 +42,6 @@ class CurveObject final : public MeshObject
 		float strand_shape_ = 0.f;
 };
 
-END_YAFARAY
+} //namespace yafaray
 
 #endif //YAFARAY_OBJECT_CURVE_H

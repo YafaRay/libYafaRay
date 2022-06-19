@@ -18,7 +18,7 @@
 
 #include "geometry/primitive/primitive.h"
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 PolyDouble::ClipResultWithBound Primitive::clipToBound(Logger &logger, const std::array<Vec3Double, 2> &bound, const ClipPlane &clip_plane, const PolyDouble &poly) const
 {
@@ -30,4 +30,4 @@ PolyDouble::ClipResultWithBound Primitive::clipToBound(Logger &logger, const std
 	return PolyDouble::ClipResultWithBound(PolyDouble::ClipResultWithBound::Code::FatalError);
 }
 
-END_YAFARAY
+} //namespace yafaray

@@ -23,7 +23,7 @@
 #include "common/param.h"
 #include "common/version_build_info.h"
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 ExportXml::ExportXml(const char *fname, const ::yafaray_LoggerCallback_t logger_callback, void *callback_data, ::yafaray_DisplayConsole_t logger_display_console) : Interface(logger_callback, callback_data, logger_display_console), file_name_(std::string(fname))
 {
@@ -366,4 +366,4 @@ void ExportXml::setColorSpace(const std::string& color_space_string, float gamma
 	gamma_ = gamma_val;
 }
 
-END_YAFARAY
+} //namespace yafaray

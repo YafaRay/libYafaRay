@@ -24,7 +24,7 @@
 #ifndef YAFARAY_FORMAT_PNG_UTIL_H
 #define YAFARAY_FORMAT_PNG_UTIL_H
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 class PngDataReader
 {
@@ -60,6 +60,6 @@ inline void PngDataReader::readFromMem(png_structp png_ptr, png_bytep buffer, pn
 	else if(img->read((uint8_t *)buffer, static_cast<size_t>(bytes_to_read)) < bytes_to_read) png_warning(png_ptr, "EOF Found while reading image data");
 }
 
-END_YAFARAY
+} //namespace yafaray
 
 #endif // YAFARAY_FORMAT_PNG_UTIL_H

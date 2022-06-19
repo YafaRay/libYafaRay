@@ -25,7 +25,7 @@
 #include "color/color.h"
 #include <map>
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 struct PSample;
 class Light;
@@ -144,6 +144,6 @@ class DensityVolumeRegion : public VolumeRegion
 
 
 
-END_YAFARAY
+} //namespace yafaray
 
 #endif // YAFARAY_VOLUME_H

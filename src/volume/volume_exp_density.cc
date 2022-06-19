@@ -21,7 +21,7 @@
 #include "geometry/surface.h"
 #include "common/param.h"
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 struct PSample;
 
@@ -68,4 +68,4 @@ ExpDensityVolumeRegion::ExpDensityVolumeRegion(Logger &logger, const Rgb &sa, co
 	if(logger_.isVerbose()) logger_.logVerbose("ExpDensityVolume vol: ", s_a_, " ", s_s_, " ", l_e_, " ", a_, " ", b_);
 }
 
-END_YAFARAY
+} //namespace yafaray

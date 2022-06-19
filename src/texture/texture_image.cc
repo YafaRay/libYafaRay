@@ -28,7 +28,7 @@
 #include "common/file.h"
 #include "image/image_manipulation.h"
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 const EwaWeightLut ImageTexture::ewa_weight_lut_;
 
@@ -583,4 +583,4 @@ Texture * ImageTexture::factory(Logger &logger, Scene &scene, const std::string 
 	return tex;
 }
 
-END_YAFARAY
+} //namespace yafaray

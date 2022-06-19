@@ -34,7 +34,7 @@
 #include <ctime>
 #include <utility>
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 Path::Path(std::string directory, std::string base_name, std::string extension) : directory_(std::move(directory)), base_name_(std::move(base_name)), extension_(std::move(extension))
 {
@@ -302,4 +302,4 @@ std::vector<std::string> File::listFiles(const std::string &directory)
 	return files;
 }
 
-END_YAFARAY
+} //namespace yafaray

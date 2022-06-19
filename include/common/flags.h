@@ -24,7 +24,7 @@
 #include "yafaray_common.h"
 #include <sstream>
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 class Flags
 {
@@ -96,6 +96,6 @@ inline constexpr bool Flags::hasAll(const Flags &f_2) const
 	return hasAll(*this, f_2);
 }
 
-END_YAFARAY
+} //namespace yafaray
 
 #endif //YAFARAY_FLAGS_H

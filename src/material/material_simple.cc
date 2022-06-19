@@ -31,7 +31,7 @@ other properties than emiting light in conformance to uniform
 surface light sources (area, sphere, mesh lights...)
 =============================================================*/
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 LightMaterial::LightMaterial(Logger &logger, Rgb light_c, bool ds): Material(logger), light_col_(light_c), double_sided_(ds)
 {
@@ -69,4 +69,4 @@ Material *LightMaterial::factory(Logger &logger, const Scene &scene, const std::
 	return new LightMaterial(logger, col * static_cast<float>(power), ds);
 }
 
-END_YAFARAY
+} //namespace yafaray

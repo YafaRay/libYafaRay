@@ -22,7 +22,7 @@
 
 #include "volume/volume.h"
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 class ParamMap;
 class Scene;
@@ -43,6 +43,6 @@ class BeerVolumeHandler : public VolumeHandler
 		Rgb sigma_a_;
 };
 
-END_YAFARAY
+} //namespace yafaray
 
 #endif // YAFARAY_VOLUMEHANDLER_BEER_H

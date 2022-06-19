@@ -24,7 +24,7 @@
 #include "color/color.h"
 #include <memory>
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 class ParamMap;
 class Scene;
@@ -48,6 +48,6 @@ class Background
 		Logger &logger_;
 };
 
-END_YAFARAY
+} //namespace yafaray
 
 #endif // YAFARAY_BACKGROUND_H

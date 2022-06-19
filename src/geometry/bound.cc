@@ -18,7 +18,7 @@
 
 #include "geometry/bound.h"
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 Bound::Bound(const Bound &r, const Bound &l) :
 	a_{
@@ -41,4 +41,4 @@ float Bound::vol() const
 	return ret;
 }
 
-END_YAFARAY
+} //namespace yafaray

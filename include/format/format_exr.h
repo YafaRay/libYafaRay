@@ -26,7 +26,7 @@
 
 #include "format/format.h"
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 class ExrFormat final : public Format
 {
@@ -42,6 +42,6 @@ class ExrFormat final : public Format
 		bool supportsMultiLayer() const override { return true; }
 };
 
-END_YAFARAY
+} //namespace yafaray
 
 #endif // YAFARAY_FORMAT_EXR_H

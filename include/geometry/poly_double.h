@@ -25,7 +25,7 @@
 #include <array>
 #include <common/logger.h>
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 struct ClipPlane;
 class Bound;
@@ -74,6 +74,6 @@ struct PolyDouble::ClipResultWithBound : PolyDouble::ClipResult
 };
 
 
-END_YAFARAY
+} //namespace yafaray
 
 #endif //YAFARAY_POLY_DOUBLE_H

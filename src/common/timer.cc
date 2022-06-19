@@ -22,7 +22,7 @@
 #include <windows.h>
 #endif
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 bool Timer::addEvent(const std::string &name)
 {
@@ -134,4 +134,4 @@ void Timer::splitTime(double t, double *secs, int *mins, int *hours, int *days)
 	*secs = t - static_cast<double>(s - times);
 }
 
-END_YAFARAY
+} //namespace yafaray

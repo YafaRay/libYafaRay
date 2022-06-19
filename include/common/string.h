@@ -32,7 +32,7 @@
 #include <locale>
 #include <codecvt>
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 namespace string
 {
@@ -115,6 +115,6 @@ inline std::string wutf16LeToUtf8(const std::wstring &wutf_16_str)
 
 } //namespace string
 
-END_YAFARAY
+} //namespace yafaray
 
 #endif

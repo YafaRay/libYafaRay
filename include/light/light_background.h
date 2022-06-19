@@ -25,7 +25,7 @@
 #include "light/light.h"
 #include "geometry/vector.h"
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 class Background;
 class Pdf1D;
@@ -79,6 +79,6 @@ class BackgroundLight final : public Light
 		static constexpr float sigma_ = 0.000001f;
 };
 
-END_YAFARAY
+} //namespace yafaray
 
 #endif // YAFARAY_LIGHT_BACKGROUND_H

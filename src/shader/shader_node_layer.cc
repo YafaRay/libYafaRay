@@ -20,7 +20,7 @@
 #include "common/param.h"
 #include "common/logger.h"
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 LayerNode::LayerNode(const Flags &flags, float col_fac, float var_fac, float def_val, const Rgba &def_col, const BlendMode &blend_mode):
 		flags_(flags), colfac_(col_fac), valfac_(var_fac), default_val_(def_val),
@@ -348,4 +348,4 @@ ShaderNode * LayerNode::factory(Logger &logger, const Scene &scene, const std::s
 	return node;
 }
 
-END_YAFARAY
+} //namespace yafaray

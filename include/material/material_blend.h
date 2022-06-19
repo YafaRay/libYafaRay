@@ -22,7 +22,7 @@
 
 #include "material/material_node.h"
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 /*! A material that blends the properties of two materials
 	note: if both materials have specular reflection or specular transmission
@@ -75,6 +75,6 @@ class BlendMaterial final : public NodeMaterial
 };
 
 
-END_YAFARAY
+} //namespace yafaray
 
 #endif // YAFARAY_MATERIAL_BLEND_H

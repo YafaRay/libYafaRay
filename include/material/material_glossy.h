@@ -25,7 +25,7 @@
 #include <common/logger.h>
 #include "material/material_node.h"
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 class GlossyMaterialData final : public MaterialData
 {
@@ -69,6 +69,6 @@ class GlossyMaterial final : public NodeMaterial
 		float oren_a_, oren_b_;
 };
 
-END_YAFARAY
+} //namespace yafaray
 
 #endif // YAFARAY_MATERIAL_GLOSSY_H

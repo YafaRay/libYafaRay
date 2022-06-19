@@ -25,7 +25,7 @@
 #include <string>
 #include <mutex>
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 class RenderControl final
 {
@@ -65,6 +65,6 @@ class RenderControl final
 		std::mutex mutx_;
 };
 
-END_YAFARAY
+} //namespace yafaray
 
 #endif //YAFARAY_RENDER_CONTROL_H

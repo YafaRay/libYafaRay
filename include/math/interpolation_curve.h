@@ -24,7 +24,7 @@
 
 #include "math/interpolation.h"
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 //////////////////////////////////////////////////////////////////////////////
 // irregularCurve declaration & definition
@@ -96,5 +96,5 @@ inline float RegularCurve::getSample(float x) const noexcept
 	return math::lerpSegment(offset_within_segment, c_[y_0], x_0, c_[y_1], x_1);
 }
 
-END_YAFARAY
+} //namespace yafaray
 #endif

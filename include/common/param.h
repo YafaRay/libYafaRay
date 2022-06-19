@@ -25,7 +25,7 @@
 #include <vector>
 #include <string>
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 class Rgb;
 class Rgba;
@@ -105,5 +105,5 @@ class ParamMap : public Collection<std::string, Parameter>
 		void logContents(Logger &logger) const;
 };
 
-END_YAFARAY
+} //namespace yafaray
 #endif // YAFARAY_PARAM_H

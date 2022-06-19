@@ -29,7 +29,7 @@
 #include <array>
 #include <memory>
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 Object * MeshObject::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params)
 {
@@ -279,4 +279,4 @@ void MeshObject::convertToBezierControlPoints()
 	}
 }
 
-END_YAFARAY
+} //namespace yafaray

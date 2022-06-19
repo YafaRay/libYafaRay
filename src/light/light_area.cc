@@ -26,7 +26,7 @@
 #include "common/logger.h"
 #include "geometry/ray.h"
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 //int hit_t1=0, hit_t2=0;
 
@@ -199,4 +199,4 @@ std::tuple<bool, Ray, Rgb> AreaLight::illuminate(const Point3 &surface_p, float 
 	return {};
 }
 
-END_YAFARAY
+} //namespace yafaray

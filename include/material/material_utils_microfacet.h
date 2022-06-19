@@ -20,7 +20,7 @@
 #ifndef YAFARAY_MATERIAL_UTILS_MICROFACET_H
 #define YAFARAY_MATERIAL_UTILS_MICROFACET_H
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 namespace microfacet
 {
@@ -206,6 +206,6 @@ inline Rgb diffuseReflectFresnel(float wi_n, float wo_n, float glossy, float dif
 
 } // namespace microfacet
 
-END_YAFARAY
+} //namespace yafaray
 
 #endif // YAFARAY_MATERIAL_UTILS_MICROFACET_H

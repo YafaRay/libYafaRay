@@ -26,7 +26,7 @@
 #include "light/light.h"
 #include "geometry/vector.h"
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 class ParamMap;
 class Scene;
@@ -63,6 +63,6 @@ class IesLight final : public Light
 		bool ies_ok_;
 };
 
-END_YAFARAY
+} //namespace yafaray
 
 #endif // YAFARAY_LIGHT_IES_H

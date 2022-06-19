@@ -25,7 +25,7 @@
 
 #include "format.h"
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 class TifFormat final : public Format
 {
@@ -38,6 +38,6 @@ class TifFormat final : public Format
 		bool saveToFile(const std::string &name, const ImageLayer &image_layer, ColorSpace color_space, float gamma, bool alpha_premultiply) override;
 };
 
-END_YAFARAY
+} //namespace yafaray
 
 #endif // YAFARAY_FORMAT_TIF_H

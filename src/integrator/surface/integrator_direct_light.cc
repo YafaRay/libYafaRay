@@ -26,7 +26,7 @@
 #include "accelerator/accelerator.h"
 #include "render/imagesplitter.h"
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 DirectLightIntegrator::DirectLightIntegrator(RenderControl &render_control, Logger &logger, bool transparent_shadows, int shadow_depth, int ray_depth) : MonteCarloIntegrator(render_control, logger)
 {
@@ -210,4 +210,4 @@ Integrator * DirectLightIntegrator::factory(Logger &logger, const ParamMap &para
 	return inte;
 }
 
-END_YAFARAY
+} //namespace yafaray

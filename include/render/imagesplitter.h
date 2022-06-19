@@ -25,7 +25,7 @@
 #include <vector>
 #include <cmath>
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 struct RenderArea
 {
@@ -77,6 +77,6 @@ class ImageSpliterCentreSorter final
 };
 
 
-END_YAFARAY
+} //namespace yafaray
 
 #endif // YAFARAY_IMAGESPLITTER_H

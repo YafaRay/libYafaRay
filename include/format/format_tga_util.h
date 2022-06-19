@@ -27,7 +27,7 @@
 #include "common/yafaray_common.h"
 #include "color/color.h"
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 enum TgaImageDataType
 {
@@ -145,6 +145,6 @@ struct TgaPixelRgba
 
 #pragma pack(pop)
 
-END_YAFARAY
+} //namespace yafaray
 
 #endif // YAFARAY_FORMAT_TGA_UTIL_H

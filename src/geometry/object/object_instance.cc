@@ -22,7 +22,7 @@
 #include "geometry/object/object_instance.h"
 #include "geometry/primitive/primitive_instance.h"
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 void ObjectInstance::addPrimitives(const std::vector<const Primitive *> &base_primitives)
 {
@@ -75,4 +75,4 @@ std::vector<const Matrix4 *> ObjectInstance::getObjToWorldMatrices() const
 	return result;
 }
 
-END_YAFARAY
+} //namespace yafaray

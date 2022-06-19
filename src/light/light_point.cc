@@ -24,7 +24,7 @@
 #include "geometry/ray.h"
 #include "common/param.h"
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 PointLight::PointLight(Logger &logger, const Point3 &pos, const Rgb &col, float inte, bool b_light_enabled, bool b_cast_shadows):
 		Light(logger, Light::Flags::Singular), position_(pos)
@@ -119,4 +119,4 @@ Light * PointLight::factory(Logger &logger, const Scene &scene, const std::strin
 	return light;
 }
 
-END_YAFARAY
+} //namespace yafaray

@@ -18,7 +18,7 @@
 
 #include "color/spectrum.h"
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 namespace spectrum
 {
@@ -594,4 +594,4 @@ float getIoRcolor(float w, float cauchy_a, float cauchy_b, Rgb &col)
 
 } //namespace spectrum
 
-END_YAFARAY
+} //namespace yafaray

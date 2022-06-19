@@ -41,7 +41,7 @@
 
 #include "geometry/vector_double.h"
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 namespace triangle_overlap
 {
@@ -173,6 +173,6 @@ inline bool triBoxOverlap(const Vec3Double &boxcenter, const Vec3Double &boxhalf
 
 } //namespace triangle_overlap
 
-END_YAFARAY
+} //namespace yafaray
 
 #endif//LIBYAFARAY_TRIANGLE_OVERLAP_H

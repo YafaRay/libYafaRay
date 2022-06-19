@@ -29,7 +29,7 @@
 #include "render/render_data.h"
 #include "volume/volume.h"
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 RoughGlassMaterial::RoughGlassMaterial(Logger &logger, float ior, Rgb filt_c, const Rgb &srcol, bool fake_s, float alpha, float disp_pow, Visibility e_visibility):
 		NodeMaterial(logger), filter_color_(filt_c), specular_reflection_color_(srcol), ior_(ior), a_2_(alpha * alpha), fake_shadow_(fake_s), dispersion_power_(disp_pow)
@@ -406,4 +406,4 @@ Rgb RoughGlassMaterial::getMirrorColor(const NodeTreeData &node_tree_data) const
 	return mirror_color_shader_ ? mirror_color_shader_->getColor(node_tree_data) : specular_reflection_color_;
 }
 
-END_YAFARAY
+} //namespace yafaray

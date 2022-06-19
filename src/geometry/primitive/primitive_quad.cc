@@ -19,7 +19,7 @@
 #include "geometry/primitive/primitive_quad.h"
 #include "geometry/surface.h"
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 std::unique_ptr<const SurfacePoint> QuadPrimitive::getSurface(const RayDifferentials *ray_differentials, const Point3 &hit_point, float time, const Uv<float> &intersect_uv, const Camera *camera) const
 {
@@ -135,4 +135,4 @@ PolyDouble::ClipResultWithBound QuadPrimitive::clipToBound(Logger &logger, const
 	return PolyDouble::boxClip(logger, bound[1], poly_triangle, bound[0]);
 }
 
-END_YAFARAY
+} //namespace yafaray

@@ -27,7 +27,7 @@
 #include "math/interpolation.h"
 #include <vector>
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 template <typename T> struct Uv;
 
@@ -172,6 +172,6 @@ inline Bound FacePrimitive::getBoundTimeSteps(const T &obj_to_world) const
 
 std::ostream &operator<<(std::ostream &out, const FacePrimitive &face);
 
-END_YAFARAY
+} //namespace yafaray
 
 #endif //YAFARAY_PRIMITIVE_FACE_H

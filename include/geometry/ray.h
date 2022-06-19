@@ -24,7 +24,7 @@
 #include "geometry/vector.h"
 #include <memory>
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 struct RayDifferentials
 {
@@ -59,6 +59,6 @@ inline Ray::Ray(const Ray &ray, DifferentialsCopy differentials_copy) : Ray{ray.
 	}
 }
 
-END_YAFARAY
+} //namespace yafaray
 
 #endif //YAFARAY_RAY_H

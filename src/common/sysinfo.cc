@@ -33,7 +33,7 @@
 #include <unistd.h>
 #endif
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 namespace sys_info
 {
@@ -66,4 +66,4 @@ int getNumSystemThreads()
 
 } //namespace sys_info
 
-END_YAFARAY
+} //namespace yafaray

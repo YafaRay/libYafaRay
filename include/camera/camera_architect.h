@@ -23,7 +23,7 @@
 #include "common/yafaray_common.h"
 #include "camera/camera_perspective.h"
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 class ParamMap;
 class Scene;
@@ -42,6 +42,6 @@ class ArchitectCamera final : public PerspectiveCamera
 		Point3 screenproject(const Point3 &p) const override;
 };
 
-END_YAFARAY
+} //namespace yafaray
 
 #endif // YAFARAY_CAMERA_ARCHITECT_H

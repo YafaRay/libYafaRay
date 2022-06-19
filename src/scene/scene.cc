@@ -45,7 +45,7 @@
 #include <limits>
 #include <memory>
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 void Scene::logWarnExist(Logger &logger, const std::string &pname, const std::string &name)
 {
@@ -540,9 +540,9 @@ bool Scene::setupSceneRenderParams(Scene &scene, ParamMap &&params)
 	AaNoiseParams aa_noise_params;
 	int nthreads = -1, nthreads_photons = -1;
 	bool adv_auto_shadow_bias_enabled = true;
-	float adv_shadow_bias_value = shadow_bias_global;
+	float adv_shadow_bias_value = Accelerator::shadowBias();
 	bool adv_auto_min_raydist_enabled = true;
-	float adv_min_raydist_value = min_raydist_global;
+	float adv_min_raydist_value = Accelerator::minRayDist();
 	int adv_base_sampling_offset = 0;
 	int adv_computer_node = 0;
 	bool background_resampling = true;  //If false, the background will not be resampled in subsequent adaptative AA passes
@@ -1109,11 +1109,11 @@ bool Scene::updateObjects()
 		if(material_index_highest_ < material->get()->getIndex()) material_index_highest_ = material->get()->getIndex();
 	}
 
-	if(shadow_bias_auto_) shadow_bias_ = shadow_bias_global;
-	if(ray_min_dist_auto_) ray_min_dist_ = min_raydist_global;
+	if(shadow_bias_auto_) shadow_bias_ = Accelerator::shadowBias();
+	if(ray_min_dist_auto_) ray_min_dist_ = Accelerator::minRayDist();
 
 	logger_.logInfo("Scene: total scene dimensions: X=", scene_bound_->longX(), ", y=", scene_bound_->longY(), ", z=", scene_bound_->longZ(), ", volume=", scene_bound_->vol(), ", Shadow Bias=", shadow_bias_, (shadow_bias_auto_ ? " (auto)" : ""), ", Ray Min Dist=", ray_min_dist_, (ray_min_dist_auto_ ? " (auto)" : ""));
 	return true;
 }
 
-END_YAFARAY
+} //namespace yafaray

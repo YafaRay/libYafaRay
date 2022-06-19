@@ -25,7 +25,7 @@
 #include "geometry/matrix4.h"
 #include "common/logger.h"
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 Matrix4::Matrix4(const float init)
 {
@@ -204,4 +204,4 @@ std::ostream &operator << (std::ostream &out, const Matrix4 &m)
 	return out;
 }
 
-END_YAFARAY
+} //namespace yafaray

@@ -26,7 +26,7 @@
 #include "image/image.h"
 #include "image_layers.h"
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 class ImageLayer
 {
@@ -45,6 +45,6 @@ class ImageLayers final : public Collection<LayerDef::Type, ImageLayer>  //Actua
 		void setColor(int x, int y, Rgba &&color, LayerDef::Type layer_type);
 };
 
-END_YAFARAY
+} //namespace yafaray
 
 #endif //YAFARAY_IMAGE_LAYERS_H

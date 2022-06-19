@@ -26,7 +26,7 @@
 #include "common/yafaray_common.h"
 #include <vector>
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 class ColorRampItem final
 {
@@ -63,6 +63,6 @@ class ColorRamp final
 		std::vector<ColorRampItem> ramp_;
 };
 
-END_YAFARAY
+} //namespace yafaray
 
 #endif // YAFARAY_COLOR_RAMP_H

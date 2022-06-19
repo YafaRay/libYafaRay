@@ -26,7 +26,7 @@
 #include <map>
 #include <atomic>
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 class Vec3;
 class Light;
@@ -74,6 +74,6 @@ class BidirectionalIntegrator final : public TiledIntegrator
 		std::map <const Light *, float> inv_light_power_d_;
 };
 
-END_YAFARAY
+} //namespace yafaray
 
 #endif // YAFARAY_INTEGRATOR_BIDIRECTIONAL_H

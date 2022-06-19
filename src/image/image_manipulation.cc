@@ -25,7 +25,7 @@
 #endif //HAVE_OPENCV
 #include "common/logger.h"
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 Image *image_manipulation::getDenoisedLdrImage(Logger &logger, const Image *image, const DenoiseParams &denoise_params)
 {
@@ -150,4 +150,4 @@ void image_manipulation::logWarningsMissingLibraries(Logger &logger)
 }
 
 
-END_YAFARAY
+} //namespace yafaray

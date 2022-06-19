@@ -22,7 +22,7 @@
 #include "material/material.h"
 #include "common/logger.h"
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 const Accelerator * AcceleratorSimpleTest::factory(Logger &logger, const std::vector<const Primitive *> &primitives, const ParamMap &params)
 {
@@ -116,4 +116,4 @@ IntersectData AcceleratorSimpleTest::intersectTransparentShadow(const Ray &ray, 
 	return intersect_data;
 }
 
-END_YAFARAY
+} //namespace yafaray

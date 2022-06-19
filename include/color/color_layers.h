@@ -25,7 +25,7 @@
 #include "color/color.h"
 #include "common/flags.h"
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 class ColorLayers final : public Collection<LayerDef::Type, Rgba>  //Actual buffer of colors in the rendering process, one entry for each enabled layer.
 {
@@ -39,6 +39,6 @@ class ColorLayers final : public Collection<LayerDef::Type, Rgba>  //Actual buff
 		LayerDef::Flags flags_{LayerDef::Flags::None};
 };
 
-END_YAFARAY
+} //namespace yafaray
 
 #endif //YAFARAY_COLOR_LAYERS_H

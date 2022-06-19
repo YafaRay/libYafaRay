@@ -39,7 +39,7 @@
 #include <algorithm>
 #include <limits>
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 namespace math
 {
@@ -310,6 +310,6 @@ inline constexpr T addMod1(const T &a, const T &b) noexcept
 
 } //namespace math
 
-END_YAFARAY
+} //namespace yafaray
 
 #endif // YAFARAY_MATH_H

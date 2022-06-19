@@ -27,7 +27,7 @@
 #include <list>
 #include <map>
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 class ParamMap;
 class ShaderNode;
@@ -115,6 +115,6 @@ class ShaderNode
 		mutable unsigned int id_;
 };
 
-END_YAFARAY
+} //namespace yafaray
 
 #endif // YAFARAY_SHADER_NODE_H

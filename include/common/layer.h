@@ -32,7 +32,7 @@
 #include <vector>
 #include <array>
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 class Layer final
 {
@@ -68,6 +68,6 @@ class Layer final
 		std::string exported_image_name_;
 };
 
-END_YAFARAY
+} //namespace yafaray
 
 #endif // YAFARAY_LAYER_H

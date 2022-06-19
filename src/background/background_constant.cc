@@ -24,7 +24,7 @@
 #include "light/light.h"
 #include "image/image_output.h"
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 ConstantBackground::ConstantBackground(Logger &logger, Rgb col) : Background(logger), color_(col)
 {
@@ -71,4 +71,4 @@ const Background * ConstantBackground::factory(Logger &logger, Scene &scene, con
 	return const_bg;
 }
 
-END_YAFARAY
+} //namespace yafaray

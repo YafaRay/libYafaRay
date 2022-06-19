@@ -28,7 +28,7 @@
 #include "format/format.h"
 #include "format/format_hdr_util.h"
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 class HdrFormat final : public Format
 {
@@ -49,6 +49,6 @@ class HdrFormat final : public Format
 		RgbeHeader header_;
 };
 
-END_YAFARAY
+} //namespace yafaray
 
 #endif // YAFARAY_FORMAT_HDR_H

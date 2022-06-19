@@ -25,7 +25,7 @@
 #include "image/image.h"
 #include "image/image_buffers.h"
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 //!< Optimized grayscale (8 bit/pixel) image buffer
 class ImageGrayOptimized final : public Image
@@ -48,6 +48,6 @@ class ImageGrayOptimized final : public Image
 		ImageBuffer2D<Gray8> buffer_;
 };
 
-END_YAFARAY
+} //namespace yafaray
 
 #endif //YAFARAY_IMAGE_GRAY_OPTIMIZED_H

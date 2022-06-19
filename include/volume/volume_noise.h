@@ -22,7 +22,7 @@
 
 #include "volume/volume.h"
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 struct PSample;
 class ParamMap;
@@ -52,6 +52,6 @@ class NoiseVolumeRegion final : public DensityVolumeRegion
 		float density_;
 };
 
-END_YAFARAY
+} //namespace yafaray
 
 #endif // YAFARAY_VOLUME_NOISE_H

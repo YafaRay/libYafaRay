@@ -26,7 +26,7 @@
 #include <string>
 #include <memory>
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 class Rgba;
 class Image;
@@ -85,6 +85,6 @@ class Badge
 		Position position_ = Position::None;
 };
 
-END_YAFARAY
+} //namespace yafaray
 
 #endif

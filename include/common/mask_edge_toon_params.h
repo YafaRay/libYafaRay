@@ -23,7 +23,7 @@
 #include "common/yafaray_common.h"
 #include "color/color.h"
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 struct MaskParams
 {
@@ -47,6 +47,6 @@ struct EdgeToonParams //Options for Edge detection and Toon Render Layers
 	float face_smoothness_ = 0.5f; //!Smoothness (blur) of the edges used in the Faces Edge Render Layers
 };
 
-END_YAFARAY
+} //namespace yafaray
 
 #endif //LIBYAFARAY_MASK_EDGE_TOON_PARAMS_H

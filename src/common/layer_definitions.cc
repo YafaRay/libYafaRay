@@ -18,7 +18,7 @@
 
 #include "common/layer_definitions.h"
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 // CRITICAL: Make sure the entries below are entered EXACTLY in the same order as in the Enum!!!!
 // Each actual array index must match the integer value of the associated Type, otherwise a bad mismatch will happen between the expected layer definition and the actual layer index being used!
@@ -123,4 +123,4 @@ LayerDef::Type LayerDef::getType(const std::string &name)
 }
 
 
-END_YAFARAY
+} //namespace yafaray

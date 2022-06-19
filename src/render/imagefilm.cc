@@ -36,7 +36,7 @@
 #include "common/version_build_info.h"
 #include "image/image_manipulation.h"
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 typedef float FilterFunction_t(float dx, float dy);
 
@@ -1162,4 +1162,4 @@ std::string ImageFilm::printRenderStats(const RenderControl &render_control, con
 	return ss.str();
 }
 
-END_YAFARAY
+} //namespace yafaray

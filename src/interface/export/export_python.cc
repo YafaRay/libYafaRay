@@ -22,7 +22,7 @@
 #include "geometry/matrix4.h"
 #include "common/param.h"
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 ExportPython::ExportPython(const char *fname, const ::yafaray_LoggerCallback_t logger_callback, void *callback_data, ::yafaray_DisplayConsole_t logger_display_console) : Interface(logger_callback, callback_data, logger_display_console), file_name_(std::string(fname))
 {
@@ -401,4 +401,4 @@ void ExportPython::setColorSpace(const std::string& color_space_string, float ga
 	gamma_ = gamma_val;
 }
 
-END_YAFARAY
+} //namespace yafaray

@@ -25,7 +25,7 @@
 #include "background.h"
 #include "color/color.h"
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 class GradientBackground final : public Background
 {
@@ -39,6 +39,6 @@ class GradientBackground final : public Background
 		Rgb gzenith_, ghoriz_, szenith_, shoriz_;
 };
 
-END_YAFARAY
+} //namespace yafaray
 
 #endif // YAFARAY_BACKGROUND_GRADIENT_H

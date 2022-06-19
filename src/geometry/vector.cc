@@ -23,7 +23,7 @@
 #include "geometry/vector.h"
 #include "geometry/matrix4.h"
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 std::ostream &operator << (std::ostream &out, const Vec3 &v)
 {
@@ -96,4 +96,4 @@ Vec3 Vec3::discreteVectorCone(const Vec3 &dir, float cangle, int sample, int squ
 	return m * vx;
 }
 
-END_YAFARAY
+} //namespace yafaray

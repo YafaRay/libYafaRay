@@ -32,7 +32,7 @@
 #include <windows.h>
 #endif
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 Interface::Interface(const ::yafaray_LoggerCallback_t logger_callback, void *callback_data, ::yafaray_DisplayConsole_t logger_display_console)
 {
@@ -365,5 +365,5 @@ void Interface::setConsoleLogColorsEnabled(bool console_log_colors_enabled) cons
 	logger_->setConsoleLogColorsEnabled(console_log_colors_enabled);
 }
 
-END_YAFARAY
+} //namespace yafaray
 

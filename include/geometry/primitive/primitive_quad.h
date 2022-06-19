@@ -23,7 +23,7 @@
 #include "geometry/primitive/primitive_face.h"
 #include "geometry/shape/shape_quad.h"
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 class QuadPrimitive : public FacePrimitive
 {
@@ -144,6 +144,6 @@ inline Vec3 QuadPrimitive::getGeometricNormal(const Matrix4 &obj_to_world) const
 	return (obj_to_world * face_normal_geometric_).normalize();
 }
 
-END_YAFARAY
+} //namespace yafaray
 
 #endif //YAFARAY_PRIMITIVE_QUAD_H

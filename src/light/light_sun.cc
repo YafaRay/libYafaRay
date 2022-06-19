@@ -26,7 +26,7 @@
 #include "geometry/bound.h"
 #include <limits>
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 SunLight::SunLight(Logger &logger, Vec3 dir, const Rgb &col, float inte, float angle, int n_samples, bool b_light_enabled, bool b_cast_shadows):
 		Light(logger), direction_(dir), samples_(n_samples)
@@ -121,4 +121,4 @@ std::tuple<bool, Ray, Rgb> SunLight::illuminate(const Point3 &surface_p, float t
 	return {};
 }
 
-END_YAFARAY
+} //namespace yafaray

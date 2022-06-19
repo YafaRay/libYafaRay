@@ -25,7 +25,7 @@
 #include "image/image.h"
 #include "image/image_buffers.h"
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 //!< Grayscale with alpha float (64 bit/pixel) image buffer
 class ImageGrayAlpha final : public Image
@@ -48,6 +48,6 @@ class ImageGrayAlpha final : public Image
 		ImageBuffer2D<GrayAlpha> buffer_;
 };
 
-END_YAFARAY
+} //namespace yafaray
 
 #endif //YAFARAY_IMAGE_GRAY_ALPHA_H

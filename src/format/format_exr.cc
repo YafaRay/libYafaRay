@@ -38,7 +38,7 @@
 #include <ImfRgbaFile.h>
 #undef throw
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 //Class C_IStream from "Reading and Writing OpenEXR Image Files with the IlmImf Library" in the OpenEXR sources
 class CiStream: public Imf::IStream
@@ -373,4 +373,4 @@ Image * ExrFormat::loadFromFile(const std::string &name, const Image::Optimizati
 	return image;
 }
 
-END_YAFARAY
+} //namespace yafaray

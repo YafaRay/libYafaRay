@@ -27,7 +27,7 @@
 #include <iostream>
 #include <map>
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 class Parameter;
 
@@ -86,6 +86,6 @@ class ExportXml: public Interface
 		ColorSpace color_space_ = ColorSpace::RawManualGamma;
 };
 
-END_YAFARAY
+} //namespace yafaray
 
 #endif // YAFARAY_EXPORT_XML_H

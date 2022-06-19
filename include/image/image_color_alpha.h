@@ -25,7 +25,7 @@
 #include "image/image.h"
 #include "image/image_buffers.h"
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 //!< Rgba float image buffer (128 bit/pixel)
 class ImageColorAlpha final : public Image
@@ -48,6 +48,6 @@ class ImageColorAlpha final : public Image
 		ImageBuffer2D<RgbAlpha> buffer_;
 };
 
-END_YAFARAY
+} //namespace yafaray
 
 #endif //YAFARAY_IMAGE_COLOR_ALPHA_H

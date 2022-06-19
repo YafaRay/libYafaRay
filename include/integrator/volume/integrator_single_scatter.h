@@ -25,7 +25,7 @@
 #include <vector>
 #include "render/render_view.h"
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 class VolumeRegion;
 class Light;
@@ -57,6 +57,6 @@ class SingleScatterIntegrator final : public VolumeIntegrator
 		float step_size_;
 };
 
-END_YAFARAY
+} //namespace yafaray
 
 #endif // YAFARAY_INTEGRATOR_SINGLE_SCATTER_H

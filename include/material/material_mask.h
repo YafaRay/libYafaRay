@@ -23,7 +23,7 @@
 #include <common/logger.h>
 #include "material/material_node.h"
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 class Texture;
 class Scene;
@@ -66,6 +66,6 @@ class MaskMaterial final : public NodeMaterial
 		float threshold_;
 };
 
-END_YAFARAY
+} //namespace yafaray
 
 #endif // YAFARAY_MATERIAL_MASK_H

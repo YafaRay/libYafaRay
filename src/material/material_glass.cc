@@ -30,7 +30,7 @@
 #include "render/render_data.h"
 #include "volume/volume.h"
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 GlassMaterial::GlassMaterial(Logger &logger, float ior, Rgb filt_c, const Rgb &srcol, double disp_pow, bool fake_s, Visibility e_visibility):
 		NodeMaterial(logger), filter_color_(filt_c), specular_reflection_color_(srcol), fake_shadow_(fake_s), dispersion_power_(disp_pow)
@@ -469,4 +469,4 @@ Material *NullMaterial::factory(Logger &logger, const Scene &scene, const std::s
 	return new NullMaterial(logger);
 }
 
-END_YAFARAY
+} //namespace yafaray

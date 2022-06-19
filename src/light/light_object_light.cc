@@ -34,7 +34,7 @@
 #include <limits>
 #include <memory>
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 ObjectLight::ObjectLight(Logger &logger, const std::string &object_name, const Rgb &col, int sampl, bool dbl_s, bool light_enabled, bool cast_shadows):
 		Light(logger), object_name_(object_name), double_sided_(dbl_s), color_(col), samples_(sampl)
@@ -244,4 +244,4 @@ std::tuple<bool, Ray, Rgb> ObjectLight::illuminate(const Point3 &surface_p, floa
 	return {};
 }
 
-END_YAFARAY
+} //namespace yafaray

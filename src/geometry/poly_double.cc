@@ -23,7 +23,7 @@
 #include <array>
 #include <memory>
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 PolyDouble::ClipResultWithBound::ClipResultWithBound(Code clip_result_code) : PolyDouble::ClipResult(clip_result_code) { }
 PolyDouble::ClipResultWithBound::ClipResultWithBound(ClipResult &&clip_result) : PolyDouble::ClipResult(std::move(clip_result)) { }
@@ -176,4 +176,4 @@ std::string PolyDouble::print() const
 	return result;
 }
 
-END_YAFARAY
+} //namespace yafaray

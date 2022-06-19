@@ -25,7 +25,7 @@
 #include "common/logger.h"
 #include <map>
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 namespace kdtree
 {
@@ -257,6 +257,6 @@ IntersectData intersect(const Ray &ray, float t_max, const std::vector<NodeType>
 }
 } //namespace kdtree
 
-END_YAFARAY
+} //namespace yafaray
 
 #endif //YAFARAY_ACCELERATOR_KDTREE_COMMON_H

@@ -24,7 +24,7 @@
 #include "photon/photon.h"
 #include <vector>
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 struct PreGatherData final
 {
@@ -67,6 +67,6 @@ class PhotonIntegrator final : public MonteCarloIntegrator
 		std::unique_ptr<PhotonMap> diffuse_map_, radiance_map_;
 };
 
-END_YAFARAY
+} //namespace yafaray
 
 #endif // YAFARAY_INTEGRATOR_PHOTON_MAPPING_H

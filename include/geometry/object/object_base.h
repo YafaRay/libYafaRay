@@ -22,7 +22,7 @@
 
 #include "geometry/object/object.h"
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 class ObjectBase : public Object
 {
@@ -51,6 +51,6 @@ class ObjectBase : public Object
 		Rgb index_auto_color_{0.f}; //!< Object Index color automatically generated for the object-index-auto color render pass
 };
 
-END_YAFARAY
+} //namespace yafaray
 
 #endif //YAFARAY_OBJECT_BASE_H

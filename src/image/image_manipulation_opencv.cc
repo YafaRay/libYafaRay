@@ -24,7 +24,7 @@
 #include "common/logger.h"
 #include <opencv2/photo/photo.hpp>
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 Image *image_manipulation_opencv::getDenoisedLdrImage(Logger &logger, const Image *image, const DenoiseParams &denoise_params)
 {
@@ -286,4 +286,4 @@ int image_manipulation_opencv::generateMipMaps(Logger &logger, std::vector<std::
 }
 
 
-END_YAFARAY
+} //namespace yafaray

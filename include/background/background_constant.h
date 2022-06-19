@@ -26,7 +26,7 @@
 #include "background.h"
 #include "color/color.h"
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 class ConstantBackground final : public Background
 {
@@ -40,6 +40,6 @@ class ConstantBackground final : public Background
 		Rgb color_;
 };
 
-END_YAFARAY
+} //namespace yafaray
 
 #endif // YAFARAY_BACKGROUND_CONSTANT_H

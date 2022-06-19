@@ -23,7 +23,7 @@
 #include "common/yafaray_common.h"
 #include "geometry/ray.h"
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 class Plane final
 {
@@ -39,6 +39,6 @@ inline float Plane::rayIntersection(Ray const &ray) const
 	return n_ * (p_ - static_cast<Vec3>(ray.from_)) / (ray.dir_ * n_);
 }
 
-END_YAFARAY
+} //namespace yafaray
 
 #endif // YAFARAY_PLANE_H

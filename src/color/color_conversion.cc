@@ -18,6 +18,6 @@
 
 #include "color/color_conversion.h"
 
-BEGIN_YAFARAY
+namespace yafaray {
 
-END_YAFARAY
+} //namespace yafaray

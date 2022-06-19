@@ -23,7 +23,7 @@
 #include "camera/camera_orthographic.h"
 #include "common/param.h"
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 OrthographicCamera::OrthographicCamera(Logger &logger, const Point3 &pos, const Point3 &look, const Point3 &up,
 									   int resx, int resy, float aspect, float scale, float const near_clip_distance, float const far_clip_distance)
@@ -89,4 +89,4 @@ const Camera * OrthographicCamera::factory(Logger &logger, const Scene &scene, c
 	return new OrthographicCamera(logger, from, to, up, resx, resy, aspect, scale, near_clip, far_clip);
 }
 
-END_YAFARAY
+} //namespace yafaray

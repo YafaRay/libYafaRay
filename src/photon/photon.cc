@@ -21,7 +21,7 @@
 #include <memory>
 #include "common/file.h"
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 void PhotonGather::operator()(const Photon *photon, float dist_2, float &max_dist_squared) const
 {
@@ -136,4 +136,4 @@ const Photon *PhotonMap::findNearest(const Point3 &p, const Vec3 &n, float dist)
 	return proc.photon_;
 }
 
-END_YAFARAY
+} //namespace yafaray

@@ -33,7 +33,7 @@
 #include "common/logger.h"
 #include "common/param.h"
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 Image * Image::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params)
 {
@@ -244,4 +244,4 @@ std::string Image::getTypeNameShort(const Type &image_type)
 }
 
 
-END_YAFARAY
+} //namespace yafaray

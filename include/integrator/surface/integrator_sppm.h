@@ -24,7 +24,7 @@
 #include "photon/hashgrid.h"
 #include "sampler/halton.h"
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 class RandomGenerator;
 
@@ -98,6 +98,6 @@ class SppmIntegrator final : public MonteCarloIntegrator
 		std::mutex mutex_;
 };
 
-END_YAFARAY
+} //namespace yafaray
 
 #endif // SPPM

@@ -23,7 +23,7 @@
 #include "yafaray_common.h"
 #include <string>
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 enum class Visibility : unsigned char
 {
@@ -53,6 +53,6 @@ inline std::string toString(const Visibility &visibility)
 
 } //namespace visibility
 
-END_YAFARAY
+} //namespace yafaray
 
 #endif //YAFARAY_VISIBILITY_H

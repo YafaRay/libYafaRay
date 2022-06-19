@@ -30,7 +30,7 @@
 #include <memory>
 #include <common/logger.h>
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 class Camera;
 class Light;
@@ -61,6 +61,6 @@ class RenderView final
 		std::map<std::string, Light *> lights_;
 };
 
-END_YAFARAY
+} //namespace yafaray
 
 #endif //YAFARAY_RENDER_VIEW_H

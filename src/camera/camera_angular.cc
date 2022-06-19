@@ -25,7 +25,7 @@
 #include <cmath>
 #include "common/param.h"
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 AngularCamera::AngularCamera(Logger &logger, const Point3 &pos, const Point3 &look, const Point3 &up,
 							 int resx, int resy, float asp, float angle, float max_angle, bool circ, const Projection &projection,
@@ -127,4 +127,4 @@ Point3 AngularCamera::screenproject(const Point3 &p) const
 	return { -dx / (4.f * math::num_pi<> * dz), -dy / (4.f * math::num_pi<> * dz), 0.f };
 }
 
-END_YAFARAY
+} //namespace yafaray

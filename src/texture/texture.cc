@@ -24,7 +24,7 @@
 #include "texture/texture_image.h"
 #include "common/param.h"
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 Texture * Texture::factory(Logger &logger, Scene &scene, const std::string &name, const ParamMap &params)
 {
@@ -302,4 +302,4 @@ void Texture::textureReadColorRamp(const ParamMap &params, Texture *tex)
 	}
 }
 
-END_YAFARAY
+} //namespace yafaray

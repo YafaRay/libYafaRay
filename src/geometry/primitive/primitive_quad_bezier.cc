@@ -19,7 +19,7 @@
 #include "geometry/primitive/primitive_quad_bezier.h"
 #include "geometry/surface.h"
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 std::unique_ptr<const SurfacePoint> QuadBezierPrimitive::getSurface(const RayDifferentials *ray_differentials, const Point3 &hit_point, float time, const Uv<float> &intersect_uv, const Camera *camera) const
 {
@@ -101,4 +101,4 @@ std::unique_ptr<const SurfacePoint> QuadBezierPrimitive::getSurfaceQuadBezier(co
 	return sp;
 }
 
-END_YAFARAY
+} //namespace yafaray

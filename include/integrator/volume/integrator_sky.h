@@ -23,7 +23,7 @@
 #include <math/random.h>
 #include "integrator/integrator.h"
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 class Background;
 
@@ -56,6 +56,6 @@ class SkyIntegrator : public VolumeIntegrator
 		float scale_;
 };
 
-END_YAFARAY
+} //namespace yafaray
 
 #endif // YAFARAY_INTEGRATOR_SKY_H

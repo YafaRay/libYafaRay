@@ -25,7 +25,7 @@
 #include <fstream>
 #include <cstdlib>
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 struct PSample;
 class ParamMap;
@@ -45,6 +45,6 @@ class GridVolumeRegion final : public DensityVolumeRegion
 		int size_x_, size_y_, size_z_;
 };
 
-END_YAFARAY
+} //namespace yafaray
 
 #endif // YAFARAY_VOLUME_GRID_H

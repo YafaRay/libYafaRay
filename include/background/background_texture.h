@@ -26,7 +26,7 @@
 #include "background.h"
 #include "color/color.h"
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 class Texture;
 
@@ -49,6 +49,6 @@ class TextureBackground final : public Background
 		float ibl_blur_mipmap_level_; //Calculated based on the IBL_Blur parameter. As mipmap levels have half size each, this parameter is not linear
 };
 
-END_YAFARAY
+} //namespace yafaray
 
 #endif //LIBYAFARAY_BACKGROUND_TEXTURE_H

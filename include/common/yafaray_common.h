@@ -22,10 +22,5 @@
 
 #include <cstddef>
 
-#define BEGIN_YAFARAY namespace yafaray {
-#define END_YAFARAY }
-
-static constexpr float min_raydist_global = 0.00005f;
-static constexpr float shadow_bias_global = 0.0005f;
 
 #endif // YAFARAY_COMMON_H

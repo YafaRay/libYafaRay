@@ -24,7 +24,7 @@
 #include "math/random.h"
 #include <algorithm>
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 // fast incremental Halton sequence generator
 // calculation of value must be double prec.
@@ -81,6 +81,6 @@ inline float Halton::getNext()
 	return std::max(0.f, std::min(1.f, static_cast<float>(value_)));
 }
 
-END_YAFARAY
+} //namespace yafaray
 
 #endif    //YAFARAY_HALTON_H

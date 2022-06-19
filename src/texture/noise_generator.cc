@@ -21,7 +21,7 @@
 #include <array>
 #include <cmath>
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 // needed for voronoi
 
@@ -845,4 +845,4 @@ float NoiseGenerator::turbulence(const NoiseGenerator *ngen, const Point3 &pt, i
 	return sum * ((float)(1 << oct) / (float)((1 << (oct + 1)) - 1));
 }
 
-END_YAFARAY
+} //namespace yafaray

@@ -19,7 +19,7 @@
 #include "image/image_layers.h"
 #include "color/color_layers.h"
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 int ImageLayer::getWidth() const
 {
@@ -45,4 +45,4 @@ void ImageLayers::setColor(int x, int y, Rgba &&color, LayerDef::Type layer_type
 	if(image_layer) image_layer->image_->setColor(x, y, std::move(color));
 }
 
-END_YAFARAY
+} //namespace yafaray

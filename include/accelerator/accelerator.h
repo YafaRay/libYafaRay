@@ -30,7 +30,7 @@
 #include <limits>
 #include <set>
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 class Accelerator
 {
@@ -46,14 +46,18 @@ class Accelerator
 		std::pair<bool, const Primitive *> isShadowed(const Ray &ray, float shadow_bias) const;
 		std::tuple<bool, Rgb, const Primitive *> isShadowedTransparentShadow(const Ray &ray, int max_depth, float shadow_bias, const Camera *camera) const;
 
+		static constexpr float minRayDist() { return min_raydist_; }
+		static constexpr float shadowBias() { return shadow_bias_; }
 		static void primitiveIntersection(IntersectData &intersect_data, const Primitive *primitive, const Point3 &from, const Vec3 &dir, float t_min, float t_max, float time);
 		static bool primitiveIntersectionShadow(IntersectData &intersect_data, const Primitive *primitive, const Point3 &from, const Vec3 &dir, float t_min, float t_max, float time);
 		static bool primitiveIntersectionTransparentShadow(IntersectData &intersect_data, std::set<const Primitive *> &filtered, int &depth, int max_depth, const Primitive *primitive, const Camera *camera, const Point3 &from, const Vec3 &dir, float t_min, float t_max, float time);
 
-		static float calculateDynamicRayBias(const Bound::Cross &bound_cross) { return 0.1f * min_raydist_global * std::abs(bound_cross.leave_ - bound_cross.enter_); } //!< empirical guesstimate for ray bias to avoid self intersections, calculated based on the length segment of the ray crossing the tree bound, to estimate the loss of precision caused by the (very roughly approximate) size of the primitive
+		static float calculateDynamicRayBias(const Bound::Cross &bound_cross) { return 0.1f * minRayDist() * std::abs(bound_cross.leave_ - bound_cross.enter_); } //!< empirical guesstimate for ray bias to avoid self intersections, calculated based on the length segment of the ray crossing the tree bound, to estimate the loss of precision caused by the (very roughly approximate) size of the primitive
 
 	protected:
 		Logger &logger_;
+		static constexpr float min_raydist_ = 0.00005f;
+		static constexpr float shadow_bias_ = 0.0005f;
 };
 
 inline std::pair<std::unique_ptr<const SurfacePoint>, float> Accelerator::intersect(const Ray &ray, const Camera *camera) const
@@ -138,5 +142,5 @@ inline bool Accelerator::primitiveIntersectionTransparentShadow(IntersectData &i
 	return false;
 }
 
-END_YAFARAY
+} //namespace yafaray
 #endif    //YAFARAY_ACCELERATOR_H

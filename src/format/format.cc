@@ -35,7 +35,7 @@
 #include "common/param.h"
 #include "common/logger.h"
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 Format * Format::factory(Logger &logger, const ParamMap &params)
 {
@@ -75,4 +75,4 @@ Image * Format::loadFromMemory(const uint8_t *data, size_t size, const Image::Op
 	return nullptr;
 }
 
-END_YAFARAY
+} //namespace yafaray

@@ -31,7 +31,7 @@
 #include "material/material.h"
 #include "math/interpolation.h"
 
-BEGIN_YAFARAY
+namespace yafaray {
 class Light;
 class Object;
 class Ray;
@@ -262,6 +262,6 @@ inline bool SurfacePoint::scatterPhoton(const Vec3 &wi, Vec3 &wo, PSample &s, bo
 	return primitive_->getMaterial()->scatterPhoton(mat_data_.get(), *this, wi, wo, s, chromatic, wavelength, camera);
 }
 
-END_YAFARAY
+} //namespace yafaray
 
 #endif

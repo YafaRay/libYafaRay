@@ -30,7 +30,7 @@
 #include "common/logger.h"
 #include "render/render_data.h"
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 /*! Coated Glossy Material.
 	A Material with Phong/Anisotropic Phong microfacet base layer and a layer of
@@ -609,4 +609,4 @@ Rgb CoatedGlossyMaterial::getMirrorColor(const NodeTreeData &node_tree_data) con
 	return (mirror_shader_ ? mirror_shader_->getScalar(node_tree_data) : mirror_strength_) * (mirror_color_shader_ ? mirror_color_shader_->getColor(node_tree_data) : mirror_color_);
 }
 
-END_YAFARAY
+} //namespace yafaray

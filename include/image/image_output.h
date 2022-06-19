@@ -28,7 +28,7 @@
 #include "common/badge.h"
 #include "image/image_layers.h"
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 class RenderView;
 class ColorLayers;
@@ -70,6 +70,6 @@ class ImageOutput final
 		ColorSpace color_space_ = ColorSpace::RawManualGamma;
 };
 
-END_YAFARAY
+} //namespace yafaray
 
 #endif // YAFARAY_IMAGE_OUTPUT_H

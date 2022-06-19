@@ -27,7 +27,7 @@
 #include "sampler/sample_pdf1d.h"
 #include "common/param.h"
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 SpotLight::SpotLight(Logger &logger, const Point3 &from, const Point3 &to, const Rgb &col, float power, float angle, float falloff, bool s_sha, int smpl, float ssfuzzy, bool b_light_enabled, bool b_cast_shadows):
 		Light(logger, Light::Flags::Singular), position_(from), soft_shadows_(s_sha), shadow_fuzzy_(ssfuzzy), samples_(smpl)
@@ -264,4 +264,4 @@ Light * SpotLight::factory(Logger &logger, const Scene &scene, const std::string
 	return light;
 }
 
-END_YAFARAY
+} //namespace yafaray

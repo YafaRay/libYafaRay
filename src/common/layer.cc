@@ -22,7 +22,7 @@
 #include "common/logger.h"
 #include <sstream>
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 Rgba Layer::postProcess(const Rgba &color, LayerDef::Type layer_type, ColorSpace color_space, float gamma, bool alpha_premultiply)
 {
@@ -51,4 +51,4 @@ std::string Layer::print() const
 	return ss.str();
 }
 
-END_YAFARAY
+} //namespace yafaray

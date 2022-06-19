@@ -26,7 +26,7 @@
 
 #include "format/format.h"
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 class JpgFormat final : public Format
 {
@@ -41,6 +41,6 @@ class JpgFormat final : public Format
 		bool saveAlphaChannelOnlyToFile(const std::string &name, const ImageLayer &image_layer) override;
 };
 
-END_YAFARAY
+} //namespace yafaray
 
 #endif // YAFARAY_FORMAT_JPG_H

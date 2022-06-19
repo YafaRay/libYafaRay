@@ -23,7 +23,7 @@
 #include "render/render_view.h"
 #include "integrator_montecarlo.h"
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 class PathIntegrator final : public MonteCarloIntegrator
 {
@@ -45,6 +45,6 @@ class PathIntegrator final : public MonteCarloIntegrator
 		int russian_roulette_min_bounces_;  //!< minimum number of bounces where russian roulette is not applied. Afterwards russian roulette will be used until the maximum selected bounces. If min_bounces >= max_bounces, then no russian roulette takes place
 };
 
-END_YAFARAY
+} //namespace yafaray
 
 #endif // PATHTRACER

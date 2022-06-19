@@ -27,7 +27,7 @@
 #include "common/logger.h"
 #include "render/render_data.h"
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 GlossyMaterial::GlossyMaterial(Logger &logger, const Rgb &col, const Rgb &dcol, float reflect, float diff, float expo, bool as_diff, Visibility e_visibility):
 		NodeMaterial(logger), gloss_color_(col), diff_color_(dcol), exponent_(expo), reflectivity_(reflect), diffuse_(diff), as_diffuse_(as_diff)
@@ -505,4 +505,4 @@ Rgb GlossyMaterial::getGlossyColor(const NodeTreeData &node_tree_data) const
 	return (glossy_reflection_shader_ ? glossy_reflection_shader_->getScalar(node_tree_data) : reflectivity_) * (glossy_shader_ ? glossy_shader_->getColor(node_tree_data) : gloss_color_);
 }
 
-END_YAFARAY
+} //namespace yafaray

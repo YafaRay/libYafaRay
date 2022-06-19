@@ -21,7 +21,7 @@
 #include "common/param.h"
 #include "scene/scene.h"
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 Object * CurveObject::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params)
 {
@@ -135,4 +135,4 @@ bool CurveObject::calculateObject(const std::unique_ptr<const Material> *materia
 
 
 
-END_YAFARAY
+} //namespace yafaray

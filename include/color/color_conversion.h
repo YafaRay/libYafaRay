@@ -33,7 +33,7 @@
 #include "common/yafaray_common.h"
 #include "color.h"
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 class ColorConv final
 {
@@ -167,6 +167,6 @@ inline float ColorConv::sGammaEnc(float v) const
 	return math::pow(v, simple_g_enc_);
 }
 
-END_YAFARAY
+} //namespace yafaray
 
 #endif /* YAFARAY_COLOR_CONVERSION_H */

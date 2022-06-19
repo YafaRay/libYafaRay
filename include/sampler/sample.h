@@ -23,7 +23,7 @@
 #include "math/math.h"
 #include "geometry/vector.h"
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 namespace sample
 {
@@ -151,6 +151,6 @@ namespace sample
 
 } // namespace sample
 
-END_YAFARAY
+} //namespace yafaray
 
 #endif // YAFARAY_SAMPLE_H

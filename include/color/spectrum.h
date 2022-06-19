@@ -23,7 +23,7 @@
 #include "common/yafaray_common.h"
 #include "color/color.h"
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 namespace spectrum
 {
@@ -48,6 +48,6 @@ inline Rgb wl2Rgb(float w)
 
 } //namespace spectrum
 
-END_YAFARAY
+} //namespace yafaray
 
 #endif // YAFARAY_SPECTRUM_H

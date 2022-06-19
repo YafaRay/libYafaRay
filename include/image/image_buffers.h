@@ -28,7 +28,7 @@
 #include "color/color.h"
 #include "math/buffer.h"
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 /*! Color weighted pixel structure */
 class Pixel final
@@ -320,6 +320,6 @@ class ImageBuffer2D final : public Buffer<T, 2>
 		int getHeight() const { return static_cast<int>(Buffer<T, 2>::getDimensions().at(1)); }
 };
 
-END_YAFARAY
+} //namespace yafaray
 
 #endif

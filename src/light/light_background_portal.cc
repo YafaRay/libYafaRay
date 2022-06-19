@@ -32,7 +32,7 @@
 #include <memory>
 #include <utility>
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 BackgroundPortalLight::BackgroundPortalLight(Logger &logger, std::string object_name, int sampl, float pow, bool light_enabled, bool cast_shadows):
 		Light(logger), object_name_(std::move(object_name)), samples_(sampl), power_(pow)
@@ -232,4 +232,4 @@ std::tuple<bool, Ray, Rgb> BackgroundPortalLight::illuminate(const Point3 &surfa
 	return {};
 }
 
-END_YAFARAY
+} //namespace yafaray

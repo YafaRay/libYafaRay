@@ -23,7 +23,7 @@
 #include "color/color.h"
 #include "geometry/uv.h"
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 class Primitive;
 
@@ -38,6 +38,6 @@ struct IntersectData
 	Rgb color_ {1.f};
 };
 
-END_YAFARAY
+} //namespace yafaray
 
 #endif //LIBYAFARAY_INTERSECT_DATA_H

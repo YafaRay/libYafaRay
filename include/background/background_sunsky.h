@@ -26,7 +26,7 @@
 #include "color/color.h"
 #include "geometry/vector.h"
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 // sunsky, from 'A Practical Analytic Model For DayLight' by Preetham, Shirley & Smits.
 // http://www.cs.utah.edu/vissim/papers/sunsky/
@@ -54,6 +54,6 @@ class SunSkyBackground final : public Background
 		float power_;
 };
 
-END_YAFARAY
+} //namespace yafaray
 
 #endif // YAFARAY_BACKGROUND_SUNSKY_H

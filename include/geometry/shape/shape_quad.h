@@ -22,7 +22,7 @@
 
 #include "geometry/shape/shape_triangle.h"
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 class ShapeQuad final
 {
@@ -120,6 +120,6 @@ inline float ShapeQuad::surfaceArea() const
 	return ShapeTriangle{{vertices_[0], vertices_[1], vertices_[2]}}.surfaceArea() + ShapeTriangle{{vertices_[0], vertices_[2], vertices_[3]}}.surfaceArea();
 }
 
-END_YAFARAY
+} //namespace yafaray
 
 #endif //YAFARAY_SHAPE_QUAD_H

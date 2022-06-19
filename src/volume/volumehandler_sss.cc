@@ -24,7 +24,7 @@
 #include "common/param.h"
 #include "sampler/sample.h"
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 SssVolumeHandler::SssVolumeHandler(Logger &logger, const Rgb &a_col, const Rgb &s_col, double dist):
 		BeerVolumeHandler(logger, a_col, dist), dist_s_(dist), scatter_col_(s_col)
@@ -50,4 +50,4 @@ VolumeHandler * SssVolumeHandler::factory(Logger &logger, const Scene &scene, co
 	return new SssVolumeHandler(logger, a_col, s_col, dist);
 }
 
-END_YAFARAY
+} //namespace yafaray

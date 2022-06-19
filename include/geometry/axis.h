@@ -23,7 +23,7 @@
 #include "common/yafaray_common.h"
 #include <array>
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 enum class Axis : unsigned char { X = 0, Y, Z, T, None };
 
@@ -54,6 +54,6 @@ namespace axis
 	static inline constexpr unsigned char getId(Axis axis) { return static_cast<unsigned char>(axis); }
 }
 
-END_YAFARAY
+} //namespace yafaray
 
 #endif//LIBYAFARAY_AXIS_H

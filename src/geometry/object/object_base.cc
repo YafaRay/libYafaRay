@@ -18,7 +18,7 @@
 
 #include "geometry/object/object_base.h"
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 void ObjectBase::setIndexAuto(unsigned int new_obj_index)
 {
@@ -35,4 +35,4 @@ void ObjectBase::setIndexAuto(unsigned int new_obj_index)
 	index_auto_color_ = Rgb(r, g, b);
 }
 
-END_YAFARAY
+} //namespace yafaray

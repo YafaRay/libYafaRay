@@ -25,7 +25,7 @@
 
 #include "math/math.h"
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 // Algorithms from: http://local.wasp.uwa.edu.au/~pbourke/miscellaneous/interpolation/
 
@@ -108,6 +108,6 @@ inline constexpr Y bezierFindControlPoint(const std::array<Y, 3> &y) noexcept
 
 } // namespace math
 
-END_YAFARAY
+} //namespace yafaray
 
 #endif //YAFARAY_INTERPOLATION_H

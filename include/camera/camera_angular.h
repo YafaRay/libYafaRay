@@ -22,7 +22,7 @@
 
 #include "camera/camera.h"
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 class ParamMap;
 class Scene;
@@ -55,6 +55,6 @@ class AngularCamera final : public Camera
 };
 
 
-END_YAFARAY
+} //namespace yafaray
 
 #endif // YAFARAY_CAMERA_ANGULAR_H

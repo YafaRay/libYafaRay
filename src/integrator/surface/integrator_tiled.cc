@@ -43,7 +43,7 @@
 #include "accelerator/accelerator.h"
 #include "photon/photon.h"
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 void TiledIntegrator::renderWorker(ThreadControl *control, FastRandom &fast_random, std::vector<int> &correlative_sample_number, int thread_id, int samples, int offset, bool adaptive, int aa_pass, unsigned int object_index_highest, unsigned int material_index_highest)
 {
@@ -711,4 +711,4 @@ std::pair<Rgb, float> TiledIntegrator::background(const Ray &ray, ColorLayers *c
 }
 
 
-END_YAFARAY
+} //namespace yafaray

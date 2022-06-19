@@ -27,7 +27,7 @@
 #include "ray.h"
 #include "geometry/matrix4.h"
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 /** Bounding box
  *
@@ -186,6 +186,6 @@ inline Bound operator * (const Bound &b, const Matrix4 &m)
 	return { m * b.a_, m * b.g_ };
 }
 
-END_YAFARAY
+} //namespace yafaray
 
 #endif // YAFARAY_BOUND_H

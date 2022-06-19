@@ -23,7 +23,7 @@
 #include "common/yafaray_common.h"
 #include "camera/camera.h"
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 class ParamMap;
 class Scene;
@@ -44,6 +44,6 @@ class OrthographicCamera final: public Camera
 		Point3 pos_;
 };
 
-END_YAFARAY
+} //namespace yafaray
 
 #endif // YAFARAY_CAMERA_ORTHOGRAPHIC_H

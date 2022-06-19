@@ -22,7 +22,7 @@
 #include "geometry/surface.h"
 #include "common/param.h"
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 Primitive *SpherePrimitive::factory(const ParamMap &params, const Scene &scene, const Object &object)
 {
@@ -168,4 +168,4 @@ std::pair<Point3, Vec3> SpherePrimitive::sample(const Uv<float> &uv, float time,
 	return {}; //FIXME
 }
 
-END_YAFARAY
+} //namespace yafaray

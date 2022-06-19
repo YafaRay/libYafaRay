@@ -21,7 +21,7 @@
 #include "common/logger.h"
 #include <sstream>
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 bool Layers::isDefinedAny(const std::vector<LayerDef::Type> &types) const
 {
@@ -65,4 +65,4 @@ std::string Layers::printExportedTable() const
 	return ss.str();
 }
 
-END_YAFARAY
+} //namespace yafaray

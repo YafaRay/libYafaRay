@@ -32,7 +32,7 @@
 #include "scene/scene.h"
 #include "render/imagefilm.h"
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 Integrator * Integrator::factory(Logger &logger, Scene &scene, const std::string &name, const ParamMap &params)
 {
@@ -96,4 +96,4 @@ bool VolumeIntegrator::preprocess(FastRandom &fast_random, ImageFilm *image_film
 	return success && static_cast<bool>(volume_regions_);
 }
 
-END_YAFARAY
+} //namespace yafaray

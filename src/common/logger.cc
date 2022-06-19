@@ -28,7 +28,7 @@
 #include <cmath>
 #include <limits>
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 void Logger::saveTxtLog(const std::string &name, const Badge &badge, const RenderControl &render_control, const Timer &timer)
 {
@@ -328,5 +328,5 @@ void Logger::statsIncrementBucket(const std::string &stat_name, double stat_valu
 	return static_cast<::yafaray_LogLevel_t>(std::max(console_master_verbosity_level_, log_master_verbosity_level_));
 }
 
-END_YAFARAY
+} //namespace yafaray
 

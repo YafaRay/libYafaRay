@@ -25,7 +25,7 @@
 
 struct FT_Bitmap_;
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 namespace image_manipulation_freetype
 {
@@ -33,6 +33,6 @@ namespace image_manipulation_freetype
 	bool drawTextInImage(Logger &logger, Image *image, const std::string &text_utf_8, float font_size_factor, const std::string &font_path);
 }
 
-END_YAFARAY
+} //namespace yafaray
 
 #endif //YAFARAY_IMAGE_MANIPULATION_FREETYPE_H

@@ -27,7 +27,7 @@
 #include <vector>
 #include <memory>
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 class Object;
 class Primitive;
@@ -70,6 +70,6 @@ class ObjectLight final : public Light
 		std::unique_ptr<const Accelerator> accelerator_;
 };
 
-END_YAFARAY
+} //namespace yafaray
 
 #endif // YAFARAY_LIGHT_MESHLIGHT_H

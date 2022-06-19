@@ -30,7 +30,7 @@ other properties than emiting light in conformance to uniform
 surface light sources (area, sphere, mesh lights...)
 =============================================================*/
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 class LightMaterialData final : public MaterialData
 {
@@ -56,6 +56,6 @@ class LightMaterial final : public Material
 		bool double_sided_;
 };
 
-END_YAFARAY
+} //namespace yafaray
 
 #endif // YAFARAY_MATERIAL_SIMPLE_H

@@ -25,7 +25,7 @@
 #include "image/image.h"
 #include "image/image_buffers.h"
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 //!< Rgb float image buffer (96 bit/pixel)
 class ImageColor final : public Image
@@ -48,6 +48,6 @@ class ImageColor final : public Image
 		ImageBuffer2D<Rgb> buffer_;
 };
 
-END_YAFARAY
+} //namespace yafaray
 
 #endif //YAFARAY_IMAGE_COLOR_H

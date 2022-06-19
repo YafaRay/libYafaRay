@@ -25,7 +25,7 @@
 #include "light/light.h"
 #include "image/image_output.h"
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 TextureBackground::TextureBackground(Logger &logger, const Texture *texture, Projection proj, float bpower, float rot, float ibl_blur) :
 		Background(logger), tex_(texture), project_(proj), power_(bpower), ibl_blur_mipmap_level_(math::pow(ibl_blur, 2.f))
@@ -150,4 +150,4 @@ const Background * TextureBackground::factory(Logger &logger, Scene &scene, cons
 	return tex_bg;
 }
 
-END_YAFARAY
+} //namespace yafaray

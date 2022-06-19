@@ -23,7 +23,7 @@
 #include "texture/texture.h"
 #include "texture/noise_generator.h"
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 class CloudsTexture final : public Texture
 {
@@ -176,6 +176,6 @@ class BlendTexture final : public Texture
 		ProgressionType progression_type_ = ProgressionType::Linear;
 };
 
-END_YAFARAY
+} //namespace yafaray
 
 #endif // YAFARAY_TEXTURE_BASIC_H

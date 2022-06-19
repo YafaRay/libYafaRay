@@ -25,7 +25,7 @@
 #include "common/logger.h"
 #include <cstring>
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 /*! class that holds a 1D probability distribution function (pdf) and is also able to
 	take samples from it. In order to do this the cumulative distribution function (cdf)
@@ -112,6 +112,6 @@ inline std::pair<float, float> Pdf1D::sample(float u) const
 	}
 }
 
-END_YAFARAY
+} //namespace yafaray
 
 #endif //YAFARAY_SAMPLE_PDF1D_H

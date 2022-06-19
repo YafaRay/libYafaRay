@@ -25,7 +25,7 @@
 #include <common/logger.h>
 #include "material/material_node.h"
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 /*! Coated Glossy Material.
 	A Material with Phong/Anisotropic Phong microfacet base layer and a layer of
@@ -83,6 +83,6 @@ class CoatedGlossyMaterial final : public NodeMaterial
 		float oren_a_, oren_b_;
 };
 
-END_YAFARAY
+} //namespace yafaray
 
 #endif // YAFARAY_MATERIAL_COATED_GLOSSY_H

@@ -24,7 +24,7 @@
 
 #include "integrator_tiled.h"
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 class Light;
 
@@ -46,6 +46,6 @@ class DebugIntegrator final : public TiledIntegrator
 		bool show_pn_;
 };
 
-END_YAFARAY
+} //namespace yafaray
 
 #endif // YAFARAY_INTEGRATOR_DEBUG_H

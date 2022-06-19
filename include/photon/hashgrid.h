@@ -25,7 +25,7 @@
 #include <list>
 #include <vector>
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 struct Photon;
 struct FoundPhoton;
@@ -58,5 +58,5 @@ class HashGrid final
 		std::unique_ptr<std::unique_ptr<std::list<const Photon *>>[]> hash_grid_;
 };
 
-END_YAFARAY
+} //namespace yafaray
 #endif

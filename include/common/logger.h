@@ -37,7 +37,7 @@
 #include <vector>
 #include <mutex>
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 class PhotonMap;
 class Badge;
@@ -181,6 +181,6 @@ template <typename ...Args> void Logger::log(int verbosity_level, const Args &..
 	}
 }
 
-END_YAFARAY
+} //namespace yafaray
 
 #endif

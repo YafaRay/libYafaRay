@@ -32,7 +32,7 @@
 #include "render/imagesplitter.h"
 #include "math/interpolation.h"
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 class Pdf1D;
 
@@ -377,4 +377,4 @@ Integrator * PathIntegrator::factory(Logger &logger, const ParamMap &params, con
 	return inte;
 }
 
-END_YAFARAY
+} //namespace yafaray

@@ -27,7 +27,7 @@
 #include <cstdlib>
 #include <thread>
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 class Point3;
 
@@ -325,6 +325,6 @@ void PointKdTree<T>::recursiveLookup(const Point3 &p, const LookupProc &proc, fl
 
 } // namespace::kdtree
 
-END_YAFARAY
+} //namespace yafaray
 
 #endif // YAFARAY_PKDTREE_H

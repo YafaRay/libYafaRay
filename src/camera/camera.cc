@@ -29,7 +29,7 @@
 #include "common/param.h"
 #include "common/logger.h"
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 const Camera * Camera::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params)
 {
@@ -70,4 +70,4 @@ Camera::Camera(Logger &logger, const Point3 &pos, const Point3 &look, const Poin
 	far_clip_ = far_clip_distance;
 }
 
-END_YAFARAY
+} //namespace yafaray

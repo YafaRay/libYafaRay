@@ -27,7 +27,7 @@
 #include "geometry/primitive/primitive.h"
 #include <array>
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 #define PRIMITIVE_CLIPPING 1
 
@@ -165,6 +165,6 @@ inline IntersectData AcceleratorKdTree::intersectTransparentShadow(const Ray &ra
 	return kdtree::intersect<Node, Stack, kdtree::IntersectTestType::TransparentShadow>(ray, t_max, nodes_, tree_bound_, max_depth, camera);
 }
 
-END_YAFARAY
+} //namespace yafaray
 
 #endif    //YAFARAY_ACCELERATOR_KDTREE_H

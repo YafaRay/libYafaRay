@@ -22,7 +22,7 @@
 
 #include "material/material_node.h"
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 class RoughGlassMaterialData final : public MaterialData
 {
@@ -66,6 +66,6 @@ class RoughGlassMaterial final : public NodeMaterial
 		float cauchy_a_, cauchy_b_;
 };
 
-END_YAFARAY
+} //namespace yafaray
 
 #endif // YAFARAY_MATERIAL_ROUGH_GLASS_H

@@ -27,7 +27,7 @@
 #include "geometry/vector.h"
 #include <list>
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 class ParamMap;
 class Scene;
@@ -254,6 +254,6 @@ struct PSample final : public Sample // << whats with the public?? structs inher
 	Rgb color_; //!< the new color after scattering, i.e. what will be lcol for next scatter.
 };
 
-END_YAFARAY
+} //namespace yafaray
 
 #endif // YAFARAY_MATERIAL_H

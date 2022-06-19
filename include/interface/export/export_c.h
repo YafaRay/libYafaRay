@@ -26,7 +26,7 @@
 #include <iostream>
 #include <map>
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 class Parameter;
 
@@ -92,6 +92,6 @@ class ExportC: public Interface
 		static constexpr int section_max_lines_ = 50000; //To divide the exported C code in sections of this maximum amount of lines, so the C compilers do not crash due to out of memory errors in large C scenes.
 };
 
-END_YAFARAY
+} //namespace yafaray
 
 #endif // YAFARAY_EXPORT_C_H

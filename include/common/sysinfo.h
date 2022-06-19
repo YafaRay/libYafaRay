@@ -24,7 +24,7 @@
 
 #include "yafaray_common.h"
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 namespace sys_info
 {
@@ -33,6 +33,6 @@ int getNumSystemThreads();
 
 } //namespace sys_info
 
-END_YAFARAY
+} //namespace yafaray
 
 #endif

@@ -25,7 +25,7 @@
 #include "common/param.h"
 #include "common/logger.h"
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 Object * Object::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params)
 {
@@ -49,4 +49,4 @@ Object * Object::factory(Logger &logger, const Scene &scene, const std::string &
 	return object;
 }
 
-END_YAFARAY
+} //namespace yafaray

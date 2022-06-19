@@ -24,7 +24,7 @@
 #include <ft2build.h>
 #include FT_FREETYPE_H
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 void image_manipulation_freetype::drawFontBitmap(FT_Bitmap_ *bitmap, Image *badge_image, int x, int y)
 {
@@ -156,4 +156,4 @@ bool image_manipulation_freetype::drawTextInImage(Logger &logger, Image *image, 
 }
 
 
-END_YAFARAY
+} //namespace yafaray

@@ -30,7 +30,7 @@
 #include <ostream>
 #include <string>
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 enum class ColorSpace : unsigned char
 {
@@ -540,6 +540,6 @@ inline Rgba Rgba::normalized(float weight) const
 	else return Rgba{0.f};
 }
 
-END_YAFARAY
+} //namespace yafaray
 
 #endif // YAFARAY_COLOR_H

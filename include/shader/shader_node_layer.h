@@ -23,7 +23,7 @@
 #include "shader/shader_node.h"
 #include "common/flags.h"
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 class LayerNode final : public ShaderNode
 {
@@ -58,6 +58,6 @@ class LayerNode final : public ShaderNode
 		bool do_color_ = false, do_scalar_ = false, color_input_ = false, use_alpha_ = false;
 };
 
-END_YAFARAY
+} //namespace yafaray
 
 #endif // YAFARAY_SHADER_NODE_LAYER_H

@@ -25,7 +25,7 @@
 #include "render/render_data.h"
 #include "integrator/integrator.h"
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 const Accelerator * Accelerator::factory(Logger &logger, const std::vector<const Primitive *> &primitives_list, const ParamMap &params)
 {
@@ -50,4 +50,4 @@ const Accelerator * Accelerator::factory(Logger &logger, const std::vector<const
 	return accelerator;
 }
 
-END_YAFARAY
+} //namespace yafaray

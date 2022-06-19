@@ -27,7 +27,7 @@
 #include "texture/texture_image.h"
 #include <cmath>
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 void TextureMapperNode::setup()
 {
@@ -595,4 +595,4 @@ ShaderNode * MixNode::factory(Logger &logger, const Scene &scene, const std::str
 	else return new MixNode(cfactor);
 }
 
-END_YAFARAY
+} //namespace yafaray

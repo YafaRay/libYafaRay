@@ -21,7 +21,7 @@
 #include "geometry/primitive/primitive.h"
 #include "math/interpolation.h"
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 float SurfacePoint::getDistToNearestEdge() const
 {
@@ -133,4 +133,4 @@ std::array<Uv<float>, 2> SurfacePoint::getUVdifferentialsXY() const
 	else return {{{0.f, 0.f}, {0.f, 0.f}}};
 }
 
-END_YAFARAY
+} //namespace yafaray

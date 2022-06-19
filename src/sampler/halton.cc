@@ -21,7 +21,7 @@
 #include <vector>
 #include <array>
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 namespace faure
 {
@@ -440,4 +440,4 @@ double Halton::lowDiscrepancySampling(FastRandom &fast_random, int dim, unsigned
 	return value;
 }
 
-END_YAFARAY
+} //namespace yafaray

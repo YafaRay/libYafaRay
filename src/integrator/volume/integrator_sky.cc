@@ -25,7 +25,7 @@
 #include "render/render_data.h"
 #include "photon/photon.h"
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 SkyIntegrator::SkyIntegrator(Logger &logger, float s_size, float a, float ss, float t) : VolumeIntegrator(logger)
 {
@@ -206,4 +206,4 @@ Integrator * SkyIntegrator::factory(Logger &logger, const ParamMap &params, cons
 }
 
 
-END_YAFARAY
+} //namespace yafaray

@@ -25,7 +25,7 @@
 #include "common/logger.h"
 #include "light/light.h"
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 RenderView * RenderView::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params)
 {
@@ -110,4 +110,4 @@ std::vector<const Light *> RenderView::getLightsEmittingDiffusePhotons() const
 	return result;
 }
 
-END_YAFARAY
+} //namespace yafaray

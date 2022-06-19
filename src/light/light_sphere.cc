@@ -27,7 +27,7 @@
 #include "geometry/ray.h"
 #include "geometry/bound.h"
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 SphereLight::SphereLight(Logger &logger, const Point3 &c, float rad, const Rgb &col, float inte, int nsam, bool b_light_enabled, bool b_cast_shadows):
 		Light(logger), center_(c), radius_(rad), samples_(nsam)
@@ -200,4 +200,4 @@ std::tuple<bool, Ray, Rgb> SphereLight::illuminate(const Point3 &surface_p, floa
 	return {};
 }
 
-END_YAFARAY
+} //namespace yafaray

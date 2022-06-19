@@ -23,7 +23,7 @@
 #include <common/logger.h>
 #include "material/material_node.h"
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 /*! A general purpose material for basic diffuse and specular reflecting
     surfaces with transparency and translucency support.
@@ -117,6 +117,6 @@ class ShinyDiffuseMaterial final : public NodeMaterial
 };
 
 
-END_YAFARAY
+} //namespace yafaray
 
 #endif // YAFARAY_MATERIAL_SHINY_DIFFUSE_H

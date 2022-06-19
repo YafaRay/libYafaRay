@@ -22,7 +22,7 @@
 #include "geometry/matrix4.h"
 #include "common/logger.h"
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 Parameter::Parameter(const std::string &s) : type_(Type::String) { sval_ = s; }
 Parameter::Parameter(std::string &&s) : type_(Type::String) { sval_ = std::move(s); }
@@ -250,4 +250,4 @@ void ParamMap::logContents(Logger &logger) const
 	}
 }
 
-END_YAFARAY
+} //namespace yafaray

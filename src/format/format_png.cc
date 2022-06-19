@@ -39,7 +39,7 @@ extern "C"
 #include <cstdio>
 #include <memory>
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 struct PngStructs
 {
@@ -329,4 +329,4 @@ Image * PngFormat::readFromStructs(const PngStructs &png_structs, const Image::O
 	return image;
 }
 
-END_YAFARAY
+} //namespace yafaray

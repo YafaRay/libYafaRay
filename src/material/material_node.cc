@@ -21,7 +21,7 @@
 #include "common/param.h"
 #include "shader/shader_node.h"
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 std::vector<const ShaderNode *> NodeMaterial::recursiveSolver(const ShaderNode *node)
 {
@@ -186,4 +186,4 @@ void NodeMaterial::parseNodes(const ParamMap &params, std::vector<const ShaderNo
 	}
 }
 
-END_YAFARAY
+} //namespace yafaray

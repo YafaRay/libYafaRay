@@ -31,7 +31,7 @@
 #include <iostream>
 #include <array>
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 class Point3;
 
@@ -391,6 +391,6 @@ inline constexpr std::array<float, 2> Vec3::fastFresnel(const Vec3 &i, const Vec
 	return {kr, kt};
 }
 
-END_YAFARAY
+} //namespace yafaray
 
 #endif // YAFARAY_VECTOR_H

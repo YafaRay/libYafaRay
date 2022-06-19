@@ -26,7 +26,7 @@
 #include "geometry/ray.h"
 #include "geometry/bound.h"
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 DirectionalLight::DirectionalLight(Logger &logger, const Point3 &pos, Vec3 dir, const Rgb &col, float inte, bool inf, float rad, bool b_light_enabled, bool b_cast_shadows):
 		Light(logger, Light::Flags::DiracDir), position_(pos), direction_(dir), radius_(rad), infinite_(inf)
@@ -147,5 +147,5 @@ Light * DirectionalLight::factory(Logger &logger, const Scene &scene, const std:
 	return light;
 }
 
-END_YAFARAY
+} //namespace yafaray
 

@@ -23,7 +23,7 @@
 #include "texture/texture_image.h"
 #include "common/param.h"
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 std::unique_ptr<NoiseGenerator> NoiseGenerator::newNoise(const std::string &ntype)
 {
@@ -688,4 +688,4 @@ Texture * BlendTexture::factory(Logger &logger, Scene &scene, const std::string 
 	return tex;
 }
 
-END_YAFARAY
+} //namespace yafaray

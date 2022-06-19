@@ -34,7 +34,7 @@
 #include <map>
 #include <vector>
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 class Light;
 class Material;
@@ -233,6 +233,6 @@ class Scene final
 		RenderCallbacks render_callbacks_;
 };
 
-END_YAFARAY
+} //namespace yafaray
 
 #endif // YAFARAY_SCENE_H

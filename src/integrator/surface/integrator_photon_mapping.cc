@@ -36,7 +36,7 @@
 #include "accelerator/accelerator.h"
 #include "math/interpolation.h"
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 void PhotonIntegrator::preGatherWorker(PreGatherData *gdata, float ds_rad, int n_search)
 {
@@ -1012,4 +1012,4 @@ std::pair<Rgb, float> PhotonIntegrator::integrate(Ray &ray, FastRandom &fast_ran
 	return {std::move(col), alpha};
 }
 
-END_YAFARAY
+} //namespace yafaray

@@ -36,7 +36,7 @@
 #include <mutex>
 #include <atomic>
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 /*!	This class recieves all rendered image samples.
 	You can see it as an enhanced render buffer;
@@ -211,6 +211,6 @@ inline int ImageFilm::roundToIntWithBias(double val)
 }
 
 
-END_YAFARAY
+} //namespace yafaray
 
 #endif // YAFARAY_IMAGEFILM_H

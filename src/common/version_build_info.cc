@@ -21,7 +21,7 @@
 #include "common/version_build_info.h"
 #include "yafaray_version_build_info.h"
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 std::string buildinfo::getVersionString() { return YAFARAY_VERSION_STRING + getGitLine(false); }
 std::string buildinfo::getVersionDescription() { return YAFARAY_VERSION_DESCRIPTION; }
@@ -99,4 +99,4 @@ std::vector<std::string> buildinfo::getAllBuildDetails()
 	return result;
 }
 
-END_YAFARAY
+} //namespace yafaray

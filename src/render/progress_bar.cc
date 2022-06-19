@@ -28,7 +28,7 @@
 #include <algorithm>
 #endif
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 float ProgressBar::getPercent() const
 {
@@ -117,4 +117,4 @@ void ConsoleProgressBar::printBar(bool colors_enabled, int progress_empty, int p
 	std::cout << ")" << std::flush;
 }
 
-END_YAFARAY
+} //namespace yafaray

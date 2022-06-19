@@ -25,7 +25,7 @@
 #include "yafaray_common.h"
 #include <map>
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 template <typename K, typename T>
 class Collection
@@ -66,6 +66,6 @@ inline const T *Collection<K, T>::find(const K &key) const
 	else return nullptr;
 }
 
-END_YAFARAY
+} //namespace yafaray
 
 #endif //YAFARAY_COLLECTION_H

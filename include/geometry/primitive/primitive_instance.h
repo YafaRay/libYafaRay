@@ -25,7 +25,7 @@
 #include "primitive.h"
 #include <array>
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 class Material;
 class Bound;
@@ -140,6 +140,6 @@ inline Bound PrimitiveInstance::getBound(const Matrix4 &obj_to_world) const
 	return result;
 }
 
-END_YAFARAY
+} //namespace yafaray
 
 #endif //YAFARAY_PRIMITIVE_INSTANCE_H

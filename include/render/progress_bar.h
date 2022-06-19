@@ -25,7 +25,7 @@
 #include <string>
 #include <mutex>
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 //! Progress bar abstract class with pure virtual members
 class ProgressBar
@@ -76,6 +76,6 @@ class ConsoleProgressBar : public ProgressBar
 		int last_bar_len_;
 };
 
-END_YAFARAY
+} //namespace yafaray
 
 #endif // YAFARAY_PROGRESS_BAR_H

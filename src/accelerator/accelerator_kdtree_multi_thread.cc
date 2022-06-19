@@ -26,7 +26,7 @@
 #include "material/material.h"
 #include <thread>
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 const Accelerator * AcceleratorKdTreeMultiThread::factory(Logger &logger, const std::vector<const Primitive *> &primitives, const ParamMap &params)
 {
@@ -626,4 +626,4 @@ void AcceleratorKdTreeMultiThread::buildTreeWorker(const std::vector<const Primi
 	}
 }
 
-END_YAFARAY
+} //namespace yafaray

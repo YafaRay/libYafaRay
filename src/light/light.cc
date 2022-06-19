@@ -31,7 +31,7 @@
 #include "common/param.h"
 #include "common/logger.h"
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 Light * Light::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params)
 {
@@ -57,4 +57,4 @@ Light * Light::factory(Logger &logger, const Scene &scene, const std::string &na
 	return light;
 }
 
-END_YAFARAY
+} //namespace yafaray

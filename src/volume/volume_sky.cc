@@ -21,7 +21,7 @@
 #include "texture/texture.h"
 #include "common/param.h"
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 struct PSample;
 
@@ -117,4 +117,4 @@ SkyVolumeRegion::SkyVolumeRegion(Logger &logger, const Rgb &sa, const Rgb &ss, c
 	if(logger_.isVerbose()) logger_.logVerbose("SkyVolume: Vol. [", s_ray_, ", ", s_mie_, ", ", l_e_, "]");
 }
 
-END_YAFARAY
+} //namespace yafaray

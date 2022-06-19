@@ -22,7 +22,7 @@
 
 #include "object_base.h"
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 /*! simple "container" to handle primitives as objects, for objects that
 	consist of just one primitive like spheres etc. */
@@ -38,6 +38,6 @@ class PrimitiveObject final : public ObjectBase
 		const Primitive *primitive_ = nullptr;
 };
 
-END_YAFARAY
+} //namespace yafaray
 
 #endif //YAFARAY_OBJECT_PRIMITIVE_H

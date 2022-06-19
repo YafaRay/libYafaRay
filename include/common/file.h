@@ -28,7 +28,7 @@
 #include <string>
 #include <vector>
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 class Path final
 {
@@ -94,6 +94,6 @@ template <typename T> bool File::append(const T &value)
 }
 
 
-END_YAFARAY
+} //namespace yafaray
 
 #endif //YAFARAY_FILE_H

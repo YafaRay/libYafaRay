@@ -30,7 +30,7 @@
 #include <string>
 #include <vector>
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 class Light;
 class Texture;
@@ -138,6 +138,6 @@ class Interface
 		ColorSpace input_color_space_ = ColorSpace::RawManualGamma;
 };
 
-END_YAFARAY
+} //namespace yafaray
 
 #endif // YAFARAY_INTERFACE_H

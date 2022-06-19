@@ -27,7 +27,7 @@
 #include <memory>
 #include <vector>
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 class Light;
 class Primitive;
@@ -86,6 +86,6 @@ class Object
 		virtual bool hasMotionBlur() const { return false; }
 };
 
-END_YAFARAY
+} //namespace yafaray
 
 #endif //YAFARAY_OBJECT_H

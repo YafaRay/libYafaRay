@@ -23,7 +23,7 @@
 #include "material/material.h"
 #include "common/param.h"
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 BeerVolumeHandler::BeerVolumeHandler(Logger &logger, const Rgb &acol, double dist) : VolumeHandler(logger)
 {
@@ -57,4 +57,4 @@ VolumeHandler * BeerVolumeHandler::factory(Logger &logger, const Scene &scene, c
 	return new BeerVolumeHandler(logger, a_col, dist);
 }
 
-END_YAFARAY
+} //namespace yafaray

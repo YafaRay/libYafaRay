@@ -23,7 +23,7 @@
 #include "common/yafaray_common.h"
 #include <type_traits>
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 template <typename T>
 struct Uv
@@ -56,6 +56,6 @@ inline Uv<T> operator - (const Uv<T> &uv_a, const Uv<T> &uv_b)
 	return {uv_a.u_ - uv_b.u_, uv_a.v_ - uv_b.v_};
 }
 
-END_YAFARAY
+} //namespace yafaray
 
 #endif //YAFARAY_UV_H

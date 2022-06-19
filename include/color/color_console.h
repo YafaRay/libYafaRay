@@ -25,7 +25,7 @@
 #include "common/yafaray_common.h"
 #include <iostream>
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 struct ConsoleColor final
 {
@@ -85,6 +85,6 @@ struct ConsoleColor final
 
 std::ostream &operator<<(std::ostream &o, const ConsoleColor &c);
 
-END_YAFARAY
+} //namespace yafaray
 
 #endif

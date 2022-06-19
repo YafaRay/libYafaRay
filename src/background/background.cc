@@ -26,7 +26,7 @@
 #include "common/param.h"
 #include "common/logger.h"
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 const Background * Background::factory(Logger &logger, Scene &scene, const std::string &name, const ParamMap &params)
 {
@@ -45,4 +45,4 @@ const Background * Background::factory(Logger &logger, Scene &scene, const std::
 	else return nullptr;
 }
 
-END_YAFARAY
+} //namespace yafaray

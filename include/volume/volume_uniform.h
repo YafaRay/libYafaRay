@@ -22,7 +22,7 @@
 
 #include "volume/volume.h"
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 struct PSample;
 class ParamMap;
@@ -41,6 +41,6 @@ class UniformVolumeRegion : public VolumeRegion
 		Rgb tau(const Ray &ray, float step, float offset) const override;
 };
 
-END_YAFARAY
+} //namespace yafaray
 
 #endif // YAFARAY_VOLUME_UNIFORM_H

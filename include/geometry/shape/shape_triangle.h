@@ -24,7 +24,7 @@
 #include "geometry/uv.h"
 #include <array>
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 class ShapeTriangle final
 {
@@ -103,6 +103,6 @@ inline std::pair<float, Uv<float>> ShapeTriangle::intersect(const Point3 &from, 
 	return {};
 }
 
-END_YAFARAY
+} //namespace yafaray
 
 #endif //YAFARAY_SHAPE_TRIANGLE_H

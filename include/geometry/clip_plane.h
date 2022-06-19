@@ -23,7 +23,7 @@
 #include "common/yafaray_common.h"
 #include "geometry/axis.h"
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 struct ClipPlane
 {
@@ -34,6 +34,6 @@ struct ClipPlane
 	Pos pos_ = Pos::None;
 };
 
-END_YAFARAY
+} //namespace yafaray
 
 #endif //YAFARAY_CLIP_PLANE_H

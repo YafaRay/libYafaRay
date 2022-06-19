@@ -22,7 +22,7 @@
 
 #include "common/yafaray_common.h"
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 struct RayDivision final
 {
@@ -40,6 +40,6 @@ struct PixelSamplingData final
 	float time_ = 0.f;
 };
 
-END_YAFARAY
+} //namespace yafaray
 
 #endif //YAFARAY_RENDER_DATA_H

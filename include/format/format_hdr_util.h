@@ -28,7 +28,7 @@
 #include "color/color.h"
 #include "common/string.h"
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 #pragma pack(push, 1)
 
@@ -116,6 +116,6 @@ inline void RgbePixel::setScanlineStart(int w)
 
 #pragma pack(pop)
 
-END_YAFARAY
+} //namespace yafaray
 
 #endif // YAFARAY_FORMAT_HDR_UTIL_H

@@ -32,7 +32,7 @@
 #include <vector>
 #include <array>
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 class Layers final : public Collection<LayerDef::Type, Layer>
 {
@@ -50,6 +50,6 @@ inline bool Layers::isDefined(LayerDef::Type type) const
 	else return find(type);
 }
 
-END_YAFARAY
+} //namespace yafaray
 
 #endif // YAFARAY_LAYERS_H

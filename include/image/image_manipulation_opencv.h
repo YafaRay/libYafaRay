@@ -21,7 +21,7 @@
 #ifndef YAFARAY_IMAGE_MANIPULATION_OPENCV_H
 #define YAFARAY_IMAGE_MANIPULATION_OPENCV_H
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 namespace image_manipulation_opencv
 {
@@ -32,6 +32,6 @@ namespace image_manipulation_opencv
 	int generateMipMaps(Logger &logger, std::vector<std::shared_ptr<Image>> &images);
 }
 
-END_YAFARAY
+} //namespace yafaray
 
 #endif //YAFARAY_IMAGE_MANIPULATION_OPENCV_H

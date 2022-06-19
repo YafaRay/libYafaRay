@@ -21,7 +21,7 @@
 #include "geometry/surface.h"
 #include "common/param.h"
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 struct PSample;
 
@@ -103,4 +103,4 @@ UniformVolumeRegion::UniformVolumeRegion(Logger &logger, const Rgb &sa, const Rg
 	if(logger_.isVerbose()) logger_.logVerbose("UniformVolume: Vol.[", s_a_, ", ", s_s_, ", ", l_e_, ", ", pmin, ", ", pmax, ", ", attgrid_scale, "]");
 }
 
-END_YAFARAY
+} //namespace yafaray

@@ -26,7 +26,7 @@
 #include "geometry/vector.h"
 #include <vector>
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 class Object;
 class Primitive;
@@ -73,6 +73,6 @@ class BackgroundPortalLight final : public Light
 		float a_pdf_;
 };
 
-END_YAFARAY
+} //namespace yafaray
 
 #endif // Y_BACKGROUNDLIGHT_H

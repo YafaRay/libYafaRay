@@ -27,7 +27,7 @@
 #include <condition_variable>
 #include <accelerator/accelerator.h>
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 class SurfacePoint;
 class PhotonMap;
@@ -86,6 +86,6 @@ class TiledIntegrator : public SurfaceIntegrator
 		bool transp_refracted_background_; //! Render refractions of background as transparent
 };
 
-END_YAFARAY
+} //namespace yafaray
 
 #endif // YAFARAY_INTEGRATOR_TILED_H

@@ -26,7 +26,7 @@
 #include "light/light.h"
 #include "geometry/vector.h"
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 class ParamMap;
 class Scene;
@@ -58,6 +58,6 @@ class DirectionalLight final : public Light
 		int major_axis_; //!< the largest component of direction
 };
 
-END_YAFARAY
+} //namespace yafaray
 
 #endif // YAFARAY_LIGHT_DIRECTIONAL_H

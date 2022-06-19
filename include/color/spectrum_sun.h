@@ -25,7 +25,7 @@
 #include <algorithm>
 #include <vector>
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 namespace spectrum_sun
 {
@@ -64,6 +64,6 @@ static constexpr std::array<float, 38> sol_amplitudes
 } //namespace spectrum_sun
 
 
-END_YAFARAY
+} //namespace yafaray
 
 #endif // YAFARAY_SPECTRUM_SUN_H

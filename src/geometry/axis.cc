@@ -18,8 +18,8 @@
 
 #include "geometry/clip_plane.h"
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 //const std::array<std::array<int, 3>, 3> Axis::axis_lut_ {{ {X, Y, Z}, {Y, Z, X}, {Z, X, Y} }};
 
-END_YAFARAY
+} //namespace yafaray

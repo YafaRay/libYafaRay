@@ -22,7 +22,7 @@
 #include "shader/shader_node_layer.h"
 #include "common/param.h"
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 ShaderNode * ShaderNode::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params)
 {
@@ -40,4 +40,4 @@ ShaderNode * ShaderNode::factory(Logger &logger, const Scene &scene, const std::
 	else return nullptr;
 }
 
-END_YAFARAY
+} //namespace yafaray

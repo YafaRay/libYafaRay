@@ -25,7 +25,7 @@
 #include "geometry/object/object.h"
 #include "camera/camera.h"
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 class Scene;
 class ParamMap;
@@ -68,6 +68,6 @@ class SpherePrimitive final : public Primitive
 		const std::unique_ptr<const Material> *material_ = nullptr;
 };
 
-END_YAFARAY
+} //namespace yafaray
 
 #endif //YAFARAY_PRIMITIVE_SPHERE_H

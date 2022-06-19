@@ -26,7 +26,7 @@
 #include <fstream>
 #include "common/logger.h"
 
-BEGIN_YAFARAY
+namespace yafaray {
 //!TODO: Preblur data
 
 class IesData final
@@ -361,6 +361,6 @@ bool IesData::parseIesFile(Logger &logger, const std::string &file)
 }
 
 
-END_YAFARAY
+} //namespace yafaray
 
 #endif //YAFARAY_LIGHT_IES_DATA_H

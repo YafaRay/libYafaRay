@@ -35,7 +35,7 @@
 #include "color/spectral_data.h"
 #include "math/interpolation_curve.h"
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 DarkSkyBackground::DarkSkyBackground(Logger &logger, const Point3 &dir, float turb, float pwr, float sky_bright, bool clamp, float av, float bv, float cv, float dv, float ev, float altitude, bool night, float exp, bool genc, ColorConv::ColorSpace cs) :
 		Background(logger), power_(pwr * sky_bright), sky_brightness_(sky_bright), color_conv_(clamp, genc, cs, exp), alt_(altitude), night_sky_(night)
@@ -311,4 +311,4 @@ const Background * DarkSkyBackground::factory(Logger &logger, Scene &scene, cons
 	return dark_sky;
 }
 
-END_YAFARAY
+} //namespace yafaray

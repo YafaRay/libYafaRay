@@ -27,7 +27,7 @@
 #include "pkdtree.h"
 #include "color/color.h"
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 struct Photon
 {
@@ -124,6 +124,6 @@ struct EliminatePhoton
 	const Vec3 &n_;
 };
 
-END_YAFARAY
+} //namespace yafaray
 
 #endif // YAFARAY_PHOTON_H

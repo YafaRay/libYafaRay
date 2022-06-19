@@ -23,7 +23,7 @@
 #include "camera/camera_architect.h"
 #include "common/param.h"
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 ArchitectCamera::ArchitectCamera(Logger &logger, const Point3 &pos, const Point3 &look, const Point3 &up,
 								 int resx, int resy, float aspect,
@@ -126,4 +126,4 @@ const Camera * ArchitectCamera::factory(Logger &logger, const Scene &scene, cons
 	return new ArchitectCamera(logger, from, to, up, resx, resy, aspect, dfocal, apt, dofd, bt, bbt, bkhrot, near_clip, far_clip);
 }
 
-END_YAFARAY
+} //namespace yafaray

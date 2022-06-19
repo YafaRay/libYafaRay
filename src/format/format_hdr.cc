@@ -31,7 +31,7 @@
 
 #include <fstream>
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 Image * HdrFormat::loadFromFile(const std::string &name, const Image::Optimization &optimization, const ColorSpace &color_space, float gamma)
 {
@@ -414,4 +414,4 @@ bool HdrFormat::writeScanline(std::ofstream &file, RgbePixel *scanline, const Im
 	return true;
 }
 
-END_YAFARAY
+} //namespace yafaray

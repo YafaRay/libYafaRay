@@ -35,7 +35,7 @@
 #include "render/render_data.h"
 #include "accelerator/accelerator.h"
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 /*  conventions:
     y_0 := point on light source
@@ -929,4 +929,4 @@ Integrator * BidirectionalIntegrator::factory(Logger &logger, const ParamMap &pa
 	return inte;
 }
 
-END_YAFARAY
+} //namespace yafaray

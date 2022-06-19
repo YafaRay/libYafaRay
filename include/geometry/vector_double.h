@@ -26,7 +26,7 @@
 #include <limits>
 #include <sstream>
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 class Vec3Double
 {
@@ -75,6 +75,6 @@ inline Vec3Double Vec3Double::sub(const Vec3Double &v_1, const Vec3Double &v_2)
 	return {v_1[Axis::X] - v_2[Axis::X], v_1[Axis::Y] - v_2[Axis::Y], v_1[Axis::Z] - v_2[Axis::Z]};
 }
 
-END_YAFARAY
+} //namespace yafaray
 
 #endif //YAFARAY_VECTOR_DOUBLE_H

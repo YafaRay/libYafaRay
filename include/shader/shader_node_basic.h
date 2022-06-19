@@ -24,7 +24,7 @@
 #include "texture/texture.h"
 #include "geometry/matrix4.h"
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 class TextureMapperNode final : public ShaderNode
 {
@@ -106,6 +106,6 @@ class MixNode : public ShaderNode
 		const ShaderNode *node_factor_ = nullptr;
 };
 
-END_YAFARAY
+} //namespace yafaray
 
 #endif // YAFARAY_SHADER_NODE_BASIC_H

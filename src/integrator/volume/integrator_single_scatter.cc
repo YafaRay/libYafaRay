@@ -27,7 +27,7 @@
 #include "render/render_data.h"
 #include "accelerator/accelerator.h"
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 SingleScatterIntegrator::SingleScatterIntegrator(Logger &logger, float s_size, bool adapt, bool opt) : VolumeIntegrator(logger)
 {
@@ -407,4 +407,4 @@ Integrator * SingleScatterIntegrator::factory(Logger &logger, const ParamMap &pa
 	return new SingleScatterIntegrator(logger, s_size, adapt, opt);
 }
 
-END_YAFARAY
+} //namespace yafaray

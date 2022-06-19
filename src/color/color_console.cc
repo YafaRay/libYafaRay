@@ -24,7 +24,7 @@
 #include <windows.h>
 #endif
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 std::ostream &operator << (std::ostream &o, const ConsoleColor &c)
 {
@@ -53,5 +53,5 @@ std::ostream &operator << (std::ostream &o, const ConsoleColor &c)
 	return o;
 }
 
-END_YAFARAY
+} //namespace yafaray
 

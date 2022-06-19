@@ -29,7 +29,7 @@
 #include <map>
 #include <utility>
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 class LayerDef final
 {
@@ -145,6 +145,6 @@ class LayerDef final
 		static const std::map<std::string, Type> layer_name_map_; //!Dictionary name->layer
 };
 
-END_YAFARAY
+} //namespace yafaray
 
 #endif //LIBYAFARAY_LAYER_DEFINITIONS_H

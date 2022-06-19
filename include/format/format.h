@@ -29,7 +29,7 @@
 #include "image/image_buffers.h"
 #include <limits>
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 class ImageLayers;
 class ImageLayer;
@@ -62,6 +62,6 @@ class Format
 		static constexpr double inv_max_16_bit_ = 1.0 / static_cast<double>(std::numeric_limits<uint16_t>::max());
 };
 
-END_YAFARAY
+} //namespace yafaray
 
 #endif // YAFARAY_IMAGE_H

@@ -22,7 +22,7 @@
 
 #include "common/yafaray_common.h"
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 struct AaNoiseParams
 {
@@ -45,6 +45,6 @@ struct AaNoiseParams
 	float clamp_indirect_ = 0.f;
 };
 
-END_YAFARAY
+} //namespace yafaray
 
 #endif //YAFARAY_AA_NOISE_PARAMS_H

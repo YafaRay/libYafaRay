@@ -24,7 +24,7 @@
 #include "accelerator/accelerator.h"
 #include "render/imagesplitter.h"
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 DebugIntegrator::DebugIntegrator(RenderControl &render_control, Logger &logger, SurfaceProperties dt) : TiledIntegrator(render_control, logger), debug_type_(dt)
 {
@@ -107,4 +107,4 @@ Integrator * DebugIntegrator::factory(Logger &logger, const ParamMap &params, co
 	return inte;
 }
 
-END_YAFARAY
+} //namespace yafaray

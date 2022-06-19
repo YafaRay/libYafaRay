@@ -27,7 +27,7 @@
 #include "common/logger.h"
 #include "common/param.h"
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 VolumeRegion * VolumeRegion::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params)
 {
@@ -161,5 +161,5 @@ float VolumeRegion::attenuation(const Point3 &p, const Light *l) const
 	return att;
 }
 
-END_YAFARAY
+} //namespace yafaray
 

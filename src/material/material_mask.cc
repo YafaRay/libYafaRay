@@ -24,7 +24,7 @@
 #include "common/param.h"
 #include "render/render_data.h"
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 MaskMaterial::MaskMaterial(Logger &logger, const std::unique_ptr<const Material> *material_1, const std::unique_ptr<const Material> *material_2, float thresh, Visibility visibility):
 		NodeMaterial(logger), mat_1_(material_1), mat_2_(material_2), threshold_(thresh)
@@ -164,4 +164,4 @@ Material *MaskMaterial::factory(Logger &logger, const Scene &scene, const std::s
 	return mat;
 }
 
-END_YAFARAY
+} //namespace yafaray

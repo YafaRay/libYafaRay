@@ -21,7 +21,7 @@
 #include <memory>
 #include "photon/photon.h"
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 HashGrid::HashGrid(double cell_size, unsigned int grid_size, Bound b_box)
 	: cell_size_(cell_size), grid_size_(grid_size), bounding_box_(b_box)
@@ -117,4 +117,4 @@ unsigned int HashGrid::gather(const Point3 &p, FoundPhoton *found, unsigned int 
 	return count;
 }
 
-END_YAFARAY
+} //namespace yafaray

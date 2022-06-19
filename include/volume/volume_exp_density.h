@@ -22,7 +22,7 @@
 
 #include "volume/volume.h"
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 struct PSample;
 class ParamMap;
@@ -40,6 +40,6 @@ class ExpDensityVolumeRegion final : public DensityVolumeRegion
 		float a_, b_;
 };
 
-END_YAFARAY
+} //namespace yafaray
 
 #endif // YAFARAY_VOLUME_EXP_DENSITY_H

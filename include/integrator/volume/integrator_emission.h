@@ -22,7 +22,7 @@
 
 #include "integrator/integrator.h"
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 class EmissionIntegrator final : public VolumeIntegrator
 {
@@ -39,6 +39,6 @@ class EmissionIntegrator final : public VolumeIntegrator
 		Rgb integrate(RandomGenerator &random_generator, const Ray &ray, int additional_depth) const override;
 };
 
-END_YAFARAY
+} //namespace yafaray
 
 #endif // YAFARAY_INTEGRATOR_EMISSION_H

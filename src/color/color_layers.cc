@@ -18,7 +18,7 @@
 
 #include "color/color_layers.h"
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 ColorLayers::ColorLayers(const Layers &layers)
 {
@@ -47,4 +47,4 @@ bool ColorLayers::isDefinedAny(const std::vector<LayerDef::Type> &types) const
 }
 
 
-END_YAFARAY
+} //namespace yafaray

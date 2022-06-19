@@ -37,7 +37,7 @@ namespace libtiff
 #include <tiffio.h>
 }
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 bool TifFormat::saveToFile(const std::string &name, const ImageLayer &image_layer, ColorSpace color_space, float gamma, bool alpha_premultiply)
 {
@@ -142,4 +142,4 @@ Image * TifFormat::loadFromFile(const std::string &name, const Image::Optimizati
 	return image;
 }
 
-END_YAFARAY
+} //namespace yafaray

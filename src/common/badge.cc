@@ -31,7 +31,7 @@
 #include "common/string.h"
 #include "image/image_manipulation.h"
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 void Badge::setParams(const ParamMap &params)
 {
@@ -181,4 +181,4 @@ Image * Badge::generateImage(const std::string &denoise_params, const RenderCont
 	return badge_image;
 }
 
-END_YAFARAY
+} //namespace yafaray

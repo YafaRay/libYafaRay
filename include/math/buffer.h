@@ -24,7 +24,7 @@
 #include <vector>
 #include <array>
 
-BEGIN_YAFARAY
+namespace yafaray {
 
 template <typename T, unsigned char num_dimensions>
 class Buffer //! Generic num_dimensions-dimensional buffer. Unrolled starting from the highest dimension goind down in the dimensions (i.e. in 2D an x,y buffer would be unrolled so x=0,y=0->pos=0, x=0,y=1->pos=1, x=1,y=0->pos=height*x + y
@@ -80,6 +80,6 @@ inline constexpr size_t Buffer<T, num_dimensions>::calculateDataPosition(const s
 	}
 }
 
-END_YAFARAY
+} //namespace yafaray
 
 #endif // YAFARAY_BUFFER_H
