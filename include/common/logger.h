@@ -88,14 +88,14 @@ class Logger final
 		void clearAll();
 
 		void stringstreamBuilder(std::stringstream &ss) { }
-		template <class Arg0, class ...Args> void stringstreamBuilder(std::stringstream &ss, const Arg0 &arg_0, const Args &...args);
-		template <class ...Args> void log(int verbosity_level, const Args &...args);
-		template <class ...Args> void logDebug(const Args &...args) { log(::YAFARAY_LOG_LEVEL_DEBUG, args...); }
-		template <class ...Args> void logVerbose(const Args &...args) { log(::YAFARAY_LOG_LEVEL_VERBOSE, args...); }
-		template <class ...Args> void logInfo(const Args &...args) { log(::YAFARAY_LOG_LEVEL_INFO, args...); }
-		template <class ...Args> void logParams(const Args &...args) { log(::YAFARAY_LOG_LEVEL_PARAMS, args...); }
-		template <class ...Args> void logWarning(const Args &...args) { log(::YAFARAY_LOG_LEVEL_WARNING, args...); }
-		template <class ...Args> void logError(const Args &...args) { log(::YAFARAY_LOG_LEVEL_ERROR, args...); }
+		template <typename Arg0, typename ...Args> void stringstreamBuilder(std::stringstream &ss, const Arg0 &arg_0, const Args &...args);
+		template <typename ...Args> void log(int verbosity_level, const Args &...args);
+		template <typename ...Args> void logDebug(const Args &...args) { log(::YAFARAY_LOG_LEVEL_DEBUG, args...); }
+		template <typename ...Args> void logVerbose(const Args &...args) { log(::YAFARAY_LOG_LEVEL_VERBOSE, args...); }
+		template <typename ...Args> void logInfo(const Args &...args) { log(::YAFARAY_LOG_LEVEL_INFO, args...); }
+		template <typename ...Args> void logParams(const Args &...args) { log(::YAFARAY_LOG_LEVEL_PARAMS, args...); }
+		template <typename ...Args> void logWarning(const Args &...args) { log(::YAFARAY_LOG_LEVEL_WARNING, args...); }
+		template <typename ...Args> void logError(const Args &...args) { log(::YAFARAY_LOG_LEVEL_ERROR, args...); }
 
 		void statsClear() { diagnostics_stats_.clear(); }
 		void statsPrint(bool sorted = false) const;
@@ -136,15 +136,13 @@ class Logger final
 		std::mutex mutx_;  //To try to avoid garbled output when there are several threads trying to output data to the log
 };
 
-template <class Arg0, class ...Args> void Logger::stringstreamBuilder(std::stringstream &ss, const Arg0 &arg_0, const Args &...args)
+template <typename Arg0, typename ...Args> void Logger::stringstreamBuilder(std::stringstream &ss, const Arg0 &arg_0, const Args &...args)
 {
 	ss << arg_0;
 	stringstreamBuilder(ss, args...);
 }
 
-
-
-template <class ...Args> void Logger::log(int verbosity_level, const Args &...args)
+template <typename ...Args> void Logger::log(int verbosity_level, const Args &...args)
 {
 	if(verbosity_level > getMaxLogLevel()) return;
 	const std::time_t current_datetime = std::time(nullptr);

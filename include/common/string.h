@@ -37,7 +37,7 @@ BEGIN_YAFARAY
 namespace string
 {
 
-template<class T>
+template<typename T>
 inline void converter(const std::string &str, T &val)
 {
 	std::stringstream conv;

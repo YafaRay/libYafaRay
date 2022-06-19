@@ -58,6 +58,7 @@ astyle -r --mode=c --style=allman --indent-classes --indent=tab --keep-one-line-
 * Avoid singletons and static/global variables as much as possible, avoid unexpected hidden dependencies!
 * For classes, use the keyword "final" when no further derived classes are expected.
 * Use templated functions and classes when necesary to reduce code repetition as much as possible
+* When using templates, use "template<typename>" instead of "template<class>". This is only a naming convention, but it is more generic as it implies it can be used for anything including plain old data.
 * Avoid new, delete, alloc, malloc, etc, as much as possible and use the more intelligent standard libraries and containers instead.
 * Don't optimize prematurely. Write well designed quality code and profile before using any dirty tricks. Many "dirty tricks" make the code buggy and fragile and do not necessarily improve performance significantly!
 

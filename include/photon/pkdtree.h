@@ -36,7 +36,7 @@ namespace kdtree
 
 #define NON_REC_LOOKUP 1
 
-template <class T>
+template <typename T>
 struct KdNode
 {
 	void createLeaf(const T *d)
@@ -63,7 +63,7 @@ struct KdNode
 	uint32_t flags_;
 };
 
-template<class NodeData> struct CompareNode
+template<typename NodeData> struct CompareNode
 {
 	explicit CompareNode(Axis axis) { axis_ = axis; }
 	Axis axis_;
@@ -73,16 +73,16 @@ template<class NodeData> struct CompareNode
 	}
 };
 
-template <class T>
+template <typename T>
 class PointKdTree
 {
 	public:
 		PointKdTree() = default;
 		PointKdTree(Logger &logger, const std::vector<T> &dat, const std::string &map_name, int num_threads = 1);
 		~PointKdTree() { if(nodes_) free(nodes_); }
-		template<class LookupProc> void lookup(const Point3 &p, LookupProc &proc, float &max_dist_squared) const;
+		template<typename LookupProc> void lookup(const Point3 &p, LookupProc &proc, float &max_dist_squared) const;
 	protected:
-		template<class LookupProc> void recursiveLookup(const Point3 &p, const LookupProc &proc, float &max_dist_squared, int node_num) const;
+		template<typename LookupProc> void recursiveLookup(const Point3 &p, const LookupProc &proc, float &max_dist_squared, int node_num) const;
 		struct KdStack
 		{
 			const KdNode<T> *node_; //!< pointer to far child
@@ -99,7 +99,7 @@ class PointKdTree
 		std::mutex mutx_;
 };
 
-template<class T>
+template<typename T>
 PointKdTree<T>::PointKdTree(Logger &logger, const std::vector<T> &dat, const std::string &map_name, int num_threads)
 {
 	next_free_node_ = 0;
@@ -131,13 +131,13 @@ PointKdTree<T>::PointKdTree(Logger &logger, const std::vector<T> &dat, const std
 	if(logger.isVerbose()) logger.logVerbose("pointKdTree: ", map_name, " tree built.");
 }
 
-template<class T>
+template<typename T>
 void PointKdTree<T>::buildTree(uint32_t start, uint32_t end, Bound &node_bound, const T **prims)
 {
 	buildTreeWorker(start, end, node_bound, prims, 0, next_free_node_, nodes_);
 }
 
-template<class T>
+template<typename T>
 void PointKdTree<T>::buildTreeWorker(uint32_t start, uint32_t end, Bound &node_bound, const T **prims, int level, uint32_t &local_next_free_node, KdNode<T> *local_nodes)
 {
 	++level;
@@ -223,7 +223,7 @@ void PointKdTree<T>::buildTreeWorker(uint32_t start, uint32_t end, Bound &node_b
 }
 
 
-template<class T> template<class LookupProc>
+template<typename T> template<typename LookupProc>
 void PointKdTree<T>::lookup(const Point3 &p, LookupProc &proc, float &max_dist_squared) const
 {
 #if NON_REC_LOOKUP > 0
@@ -292,7 +292,7 @@ void PointKdTree<T>::lookup(const Point3 &p, LookupProc &proc, float &max_dist_s
 #endif
 }
 
-template<class T> template<class LookupProc>
+template<typename T> template<typename LookupProc>
 void PointKdTree<T>::recursiveLookup(const Point3 &p, const LookupProc &proc, float &max_dist_squared, int node_num) const
 {
 	const KdNode<T> *curr_node = &nodes_[node_num];

@@ -305,7 +305,7 @@ class Rgba1010108 final
 		uint8_t a_ = 0;
 };
 
-template <class T>
+template <typename T>
 class ImageBuffer2D final : public Buffer<T, 2>
 {
 	public:

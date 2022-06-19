@@ -35,7 +35,7 @@ class ShapeQuad final
 		Vec3 calculateFaceNormal() const;
 		float surfaceArea() const;
 		Point3 sample(const Uv<float> &uv) const;
-		template <class T> static T interpolate(const Uv<float> &uv, const std::array<T, 4> &t);
+		template <typename T> static T interpolate(const Uv<float> &uv, const std::array<T, 4> &t);
 		static float getDistToNearestEdge(const Uv<float> &uv, const Uv<Vec3> &dp_abs);
 
 	private:
@@ -53,7 +53,7 @@ inline Point3 ShapeQuad::sample(const Uv<float> &uv) const
 	return ShapeQuad::interpolate(uv, vertices_);
 }
 
-template <class T>
+template <typename T>
 inline T ShapeQuad::interpolate(const Uv<float> &uv, const std::array<T, 4> &t)
 {
 	return (1.f - uv.v_) * ((1.f - uv.u_) * t[0] + uv.u_ * t[1]) + uv.v_ * ((1.f - uv.u_) * t[3] + uv.u_ * t[2]);

@@ -80,7 +80,7 @@ bool TgaFormat::saveToFile(const std::string &name, const ImageLayer &image_laye
 	return true;
 }
 
-template <class ColorType> void TgaFormat::readColorMap(std::FILE *fp, TgaHeader &header, ColorProcessor_t cp)
+template <typename ColorType> void TgaFormat::readColorMap(std::FILE *fp, TgaHeader &header, ColorProcessor_t cp)
 {
 	auto color = std::unique_ptr<ColorType[]>(new ColorType[header.cm_number_of_entries_]);
 	std::fread(color.get(), sizeof(ColorType), header.cm_number_of_entries_, fp);
@@ -90,7 +90,7 @@ template <class ColorType> void TgaFormat::readColorMap(std::FILE *fp, TgaHeader
 	}
 }
 
-template <class ColorType> void TgaFormat::readRleImage(std::FILE *fp, ColorProcessor_t cp, Image *image, const ColorSpace &color_space, float gamma)
+template <typename ColorType> void TgaFormat::readRleImage(std::FILE *fp, ColorProcessor_t cp, Image *image, const ColorSpace &color_space, float gamma)
 {
 	size_t y = min_y_;
 	size_t x = min_x_;
@@ -118,7 +118,7 @@ template <class ColorType> void TgaFormat::readRleImage(std::FILE *fp, ColorProc
 	}
 }
 
-template <class ColorType> void TgaFormat::readDirectImage(FILE *fp, ColorProcessor_t cp, Image *image, const ColorSpace &color_space, float gamma)
+template <typename ColorType> void TgaFormat::readDirectImage(FILE *fp, ColorProcessor_t cp, Image *image, const ColorSpace &color_space, float gamma)
 {
 	auto color_type = std::unique_ptr<ColorType[]>(new ColorType[tot_pixels_]);
 	std::fread(color_type.get(), sizeof(ColorType), tot_pixels_, fp);

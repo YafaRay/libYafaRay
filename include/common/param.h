@@ -94,7 +94,7 @@ class ParamMap : public Collection<std::string, Parameter>
 {
 	public:
 		//! template function to get a value, available types are those of parameter_t::getVal()
-		template <class T>
+		template <typename T>
 		bool getParam(const std::string &name, T &val) const
 		{
 			auto i{find(name)};

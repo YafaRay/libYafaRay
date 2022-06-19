@@ -66,7 +66,7 @@ inline constexpr Y cosineInterpolate(const Y &y_1, const Y &y_2, const X &x) noe
 	return (y_1 * (static_cast<X>(1) - x_cos) + y_2 * x_cos);
 }
 
-template<class Y, typename X>
+template<typename Y, typename X>
 inline constexpr Y cubicInterpolate(const Y &y_0, const Y &y_1, const Y &y_2, const Y &y_3, const X &x) noexcept
 {
 	const X x_squared = x * x;
@@ -79,7 +79,7 @@ inline constexpr Y cubicInterpolate(const Y &y_0, const Y &y_1, const Y &y_2, co
 	return (a_0 * x_cubed + a_1 * x_squared + a_2 * x + a_3);
 }
 
-template<class Y, typename X>
+template<typename Y, typename X>
 inline constexpr Y bezierInterpolate(const std::array<Y, 3> &y, const std::array<X, 3> &bezier_factors) noexcept
 {
 	return static_cast<Y>(y[0] * bezier_factors[0] + y[1] * bezier_factors[1] + y[2] * bezier_factors[2]);
@@ -92,7 +92,7 @@ inline constexpr std::array<X, 3> bezierCalculateFactors(const X &x) noexcept
 	return { x_reversed * x_reversed, 2 * x * x_reversed, x * x };
 }
 
-template<class Y, typename X>
+template<typename Y, typename X>
 inline constexpr Y bezierInterpolateTruncated(const std::array<Y, 3> &y, const X &x) noexcept
 {
 	if(x <= 0) return y[0];
@@ -100,7 +100,7 @@ inline constexpr Y bezierInterpolateTruncated(const std::array<Y, 3> &y, const X
 	else return static_cast<Y>(bezierInterpolateTruncated<Y, X>(y, bezierCalculateFactors<X>(x)));
 }
 
-template<class Y>
+template<typename Y>
 inline constexpr Y bezierFindControlPoint(const std::array<Y, 3> &y) noexcept
 {
 	return static_cast<Y>(2 * y[1] - (y[0] + y[2]) / 2);
