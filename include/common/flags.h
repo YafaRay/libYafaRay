@@ -34,8 +34,8 @@ class Flags
 		constexpr explicit operator unsigned int() const { return data_; }
 		constexpr bool hasAny(const Flags &f) const;
 		constexpr bool hasAll(const Flags &f) const;
-		static constexpr bool hasAny(const Flags &f_1, const Flags &f_2);
-		static constexpr bool hasAll(const Flags &f_1, const Flags &f_2);
+		static constexpr inline bool hasAny(const Flags &f_1, const Flags &f_2);
+		static constexpr inline bool hasAll(const Flags &f_1, const Flags &f_2);
 	private:
 		unsigned int data_ = 0;
 };

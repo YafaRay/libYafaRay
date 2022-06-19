@@ -75,11 +75,11 @@ class Vec3
 		constexpr float operator[](Axis axis) const { return vec_[axis::getId(axis)]; }
 		constexpr float &operator[](Axis axis) { return vec_[axis::getId(axis)]; }
 
-		[[nodiscard]] static constexpr Vec3 reflectDir(const Vec3 &normal, const Vec3 &v);
+		[[nodiscard]] static constexpr inline Vec3 reflectDir(const Vec3 &normal, const Vec3 &v);
 		[[nodiscard]] static bool refract(const Vec3 &n, const Vec3 &wi, Vec3 &wo, float ior);
-		[[nodiscard]] static constexpr std::array<float, 2> fresnel(const Vec3 &i, const Vec3 &n, float ior);
-		[[nodiscard]] static constexpr std::array<float, 2> fastFresnel(const Vec3 &i, const Vec3 &n, float iorf);
-		[[nodiscard]] static constexpr Uv<Vec3> createCoordsSystem(const Vec3 &normal);
+		[[nodiscard]] static constexpr inline std::array<float, 2> fresnel(const Vec3 &i, const Vec3 &n, float ior);
+		[[nodiscard]] static constexpr inline std::array<float, 2> fastFresnel(const Vec3 &i, const Vec3 &n, float iorf);
+		[[nodiscard]] static constexpr inline Uv<Vec3> createCoordsSystem(const Vec3 &normal);
 		[[nodiscard]] static Uv<float> shirleyDisk(float r_1, float r_2);
 		[[nodiscard]] static Vec3 randomSpherical(FastRandom &fast_random);
 		[[nodiscard]] static Vec3 randomVectorCone(const Vec3 &d, const Vec3 &u, const Vec3 &v, float cosang, float z_1, float z_2);
@@ -101,7 +101,7 @@ class Point3 final : public Vec3
 		explicit constexpr Point3(Vec3 &&v): Vec3{std::move(v)} { }
 		constexpr Point3 &operator = (const Point3 &s) = default;
 		constexpr Point3 &operator = (Point3 &&s) = default;
-		static constexpr Point3 mult(const Point3 &a, const Vec3 &b);
+		static constexpr inline Point3 mult(const Point3 &a, const Vec3 &b);
 };
 
 #if defined(__GNUC__) && !defined(__clang__)

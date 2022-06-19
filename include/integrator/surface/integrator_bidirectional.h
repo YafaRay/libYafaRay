@@ -36,9 +36,9 @@ class BidirectionalIntegrator final : public TiledIntegrator
 {
 	public:
 		static Integrator *factory(Logger &logger, const ParamMap &params, const Scene &scene, RenderControl &render_control);
-		static constexpr int max_path_length_ = 32;
-		static constexpr int max_path_eval_length_ = 2 * max_path_length_ + 1;
-		static constexpr int min_path_length_ = 3;
+		static constexpr inline int max_path_length_ = 32;
+		static constexpr inline int max_path_eval_length_ = 2 * max_path_length_ + 1;
+		static constexpr inline int min_path_length_ = 3;
 
 	private:
 		struct PathData;

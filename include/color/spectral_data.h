@@ -31,7 +31,7 @@ namespace yafaray {
 namespace spectral_data
 {
 
-static constexpr std::array<std::array<float, 3>, 95> chroma_match_2_deg //[Lambda][chromacord] Wavelength range 360-830 @ 5nm interval
+static constexpr inline std::array<std::array<float, 3>, 95> chroma_match_2_deg //[Lambda][chromacord] Wavelength range 360-830 @ 5nm interval
 {{
 	{0.000129900000f, 0.000003917000f, 0.000606100000f}, {0.000232100000f, 0.000006965000f, 0.001086000000f},
 	{0.000414900000f, 0.000012390000f, 0.001946000000f}, {0.000741600000f, 0.000022020000f, 0.003486000000f},

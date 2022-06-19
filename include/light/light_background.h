@@ -57,7 +57,7 @@ class BackgroundLight final : public Light
 		std::pair<float, Uv<float>> calcFromDir(const Vec3 &dir, bool inv) const;
 		static float calcPdf(float p_0, float p_1, float s);
 		static float calcInvPdf(float p_0, float p_1, float s);
-		static constexpr float addOff(float v);
+		static constexpr inline float addOff(float v);
 		static int clampSample(int s, int m);
 		static float clampZero(float val);
 		static float sinSample(float s);
@@ -71,12 +71,12 @@ class BackgroundLight final : public Light
 		float world_pi_factor_;
 		bool abs_inter_;
 
-		static constexpr int max_vsamples_ = 360;
-		static constexpr int max_usamples_ = 720;
-		static constexpr int min_samples_ = 16;
+		static constexpr inline int max_vsamples_ = 360;
+		static constexpr inline int max_usamples_ = 720;
+		static constexpr inline int min_samples_ = 16;
 
-		static constexpr float smpl_off_ = 0.4999f;
-		static constexpr float sigma_ = 0.000001f;
+		static constexpr inline float smpl_off_ = 0.4999f;
+		static constexpr inline float sigma_ = 0.000001f;
 };
 
 } //namespace yafaray

@@ -22,7 +22,7 @@ namespace yafaray::spectrum
 {
 
 // CIE color matching function table, 1931, 2 degree
-static constexpr std::array<std::array<float, 4>, 471> cie_xy_zcolmat{{
+static constexpr inline std::array<std::array<float, 4>, 471> cie_xy_zcolmat{{
 				{360.f, 0.000129900000f, 0.000003917000f, 0.000606100000f},
 				{361.f, 0.000145847000f, 0.000004393581f, 0.000680879200f},
 				{362.f, 0.000163802100f, 0.000004929604f, 0.000765145600f},

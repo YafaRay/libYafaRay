@@ -44,7 +44,7 @@ respectively. For further information, contact: fonts at gnome dot org.
 namespace font
 {
 
-static constexpr std::array<unsigned char, 65932> gui
+static constexpr inline std::array<unsigned char, 65932> gui
 {
 	0, 1, 0, 0, 0, 17, 1, 0, 0, 4, 0, 16,
 	79, 83, 47, 50, 180, 95, 244, 99, 0, 0, 235, 112, 0, 0, 0, 86, 80, 67, 76, 84, 209, 138, 94, 151, 0, 0, 235, 200, 0, 0, 0, 54,

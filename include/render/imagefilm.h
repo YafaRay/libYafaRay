@@ -192,9 +192,9 @@ class ImageFilm final
 		std::unique_ptr<ImageBuffer2D<Rgb>> density_image_; //!< storage for z-buffer channel
 
 		float filter_width_, filter_table_scale_;
-		static constexpr int max_filter_size_ = 8;
-		static constexpr int filter_table_size_ = 16;
-		static constexpr float filter_scale_ = 1.f / static_cast<float>(filter_table_size_);
+		static constexpr inline int max_filter_size_ = 8;
+		static constexpr inline int filter_table_size_ = 16;
+		static constexpr inline float filter_scale_ = 1.f / static_cast<float>(filter_table_size_);
 		alignas(16) std::array<float, filter_table_size_ * filter_table_size_> filter_table_;
 
 		Logger &logger_;

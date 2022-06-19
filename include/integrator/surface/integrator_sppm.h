@@ -94,7 +94,7 @@ class SppmIntegrator final : public MonteCarloIntegrator
 		unsigned int n_refined_; // Debug info: Refined pixel per pass
 		int n_max_gathered_ = 0; //Just for statistical information about max number of gathered photons
 		std::unique_ptr<PhotonMap> diffuse_map_;
-		static constexpr int n_max_gather_ = 1000; //used to gather all the photon in the radius. seems could get a better way to do that
+		static constexpr inline int n_max_gather_ = 1000; //used to gather all the photon in the radius. seems could get a better way to do that
 		std::mutex mutex_;
 };
 

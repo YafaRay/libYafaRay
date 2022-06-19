@@ -45,8 +45,8 @@ class Accelerator
 		std::pair<bool, const Primitive *> isShadowed(const Ray &ray, float shadow_bias) const;
 		std::tuple<bool, Rgb, const Primitive *> isShadowedTransparentShadow(const Ray &ray, int max_depth, float shadow_bias, const Camera *camera) const;
 
-		static constexpr float minRayDist() { return min_raydist_; }
-		static constexpr float shadowBias() { return shadow_bias_; }
+		static constexpr inline float minRayDist() { return min_raydist_; }
+		static constexpr inline float shadowBias() { return shadow_bias_; }
 		static void primitiveIntersection(IntersectData &intersect_data, const Primitive *primitive, const Point3 &from, const Vec3 &dir, float t_min, float t_max, float time);
 		static bool primitiveIntersectionShadow(IntersectData &intersect_data, const Primitive *primitive, const Point3 &from, const Vec3 &dir, float t_min, float t_max, float time);
 		static bool primitiveIntersectionTransparentShadow(IntersectData &intersect_data, std::set<const Primitive *> &filtered, int &depth, int max_depth, const Primitive *primitive, const Camera *camera, const Point3 &from, const Vec3 &dir, float t_min, float t_max, float time);
@@ -55,8 +55,8 @@ class Accelerator
 
 	protected:
 		Logger &logger_;
-		static constexpr float min_raydist_ = 0.00005f;
-		static constexpr float shadow_bias_ = 0.0005f;
+		static constexpr inline float min_raydist_ = 0.00005f;
+		static constexpr inline float shadow_bias_ = 0.0005f;
 };
 
 inline std::pair<std::unique_ptr<const SurfacePoint>, float> Accelerator::intersect(const Ray &ray, const Camera *camera) const

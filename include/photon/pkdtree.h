@@ -94,7 +94,7 @@ class PointKdTree
 		uint32_t n_elements_, next_free_node_;
 		Bound tree_bound_;
 		int max_level_threads_ = 0;  //max level where we will launch threads. We will try to launch at least as many threads as scene threads parameter
-		static constexpr unsigned int kd_max_stack_ = 64;
+		static constexpr inline unsigned int kd_max_stack_ = 64;
 		std::mutex mutx_;
 };
 

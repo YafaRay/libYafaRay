@@ -75,9 +75,9 @@ class AcceleratorKdTree final : public Accelerator
 #endif
 		struct kdtree::Stats kd_stats_; // some statistics:
 
-		static constexpr int prim_clip_thresh_ = 32;
-		static constexpr int pigeonhole_sort_thresh_ = 128;
-		static constexpr int kd_max_stack_ = 64;
+		static constexpr inline int prim_clip_thresh_ = 32;
+		static constexpr inline int pigeonhole_sort_thresh_ = 128;
+		static constexpr inline int kd_max_stack_ = 64;
 };
 
 // ============================================================

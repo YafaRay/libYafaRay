@@ -56,9 +56,9 @@ class Format
 	protected:
 		bool grayscale_ = false; //!< Converts the information loaded from the texture RGB to grayscale to reduce memory usage for bump or mask textures, for example. Alpha is ignored in this case.
 		Logger &logger_;
-		static constexpr double inv_31_ = 1.0 / 31.0;
-		static constexpr double inv_max_8_bit_ = 1.0 / static_cast<double>(std::numeric_limits<uint8_t>::max());
-		static constexpr double inv_max_16_bit_ = 1.0 / static_cast<double>(std::numeric_limits<uint16_t>::max());
+		static constexpr inline double inv_31_ = 1.0 / 31.0;
+		static constexpr inline double inv_max_8_bit_ = 1.0 / static_cast<double>(std::numeric_limits<uint8_t>::max());
+		static constexpr inline double inv_max_16_bit_ = 1.0 / static_cast<double>(std::numeric_limits<uint16_t>::max());
 };
 
 } //namespace yafaray

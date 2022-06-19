@@ -47,10 +47,10 @@ class EwaWeightLut final
 	public:
 		EwaWeightLut() noexcept;
 		float get(int index) const { return items_[index]; };
-		static constexpr int size() { return num_items_; }
+		static constexpr inline int size() { return num_items_; }
 
 	private:
-		static constexpr int num_items_ = 128;
+		static constexpr inline int num_items_ = 128;
 		std::array<float, num_items_> items_;
 };
 

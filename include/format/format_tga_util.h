@@ -43,34 +43,34 @@ namespace tga_constants
 {
 // TGA image origin corner descriptions
 // B = bottom, T =top, L = left, R = right
-static constexpr uint8_t bottom_left = 0x00;
-static constexpr uint8_t bottom_right = 0x10;
-static constexpr uint8_t top_left = 0x20;
-static constexpr uint8_t top_right = 0x30;
+static constexpr inline uint8_t bottom_left = 0x00;
+static constexpr inline uint8_t bottom_right = 0x10;
+static constexpr inline uint8_t top_left = 0x20;
+static constexpr inline uint8_t top_right = 0x30;
 
-static constexpr uint8_t no_alpha = 0x00;
-static constexpr uint8_t alpha = 0x08;
+static constexpr inline uint8_t no_alpha = 0x00;
+static constexpr inline uint8_t alpha = 0x08;
 
 // Mask defines
 //15/16 bit color masking for BGRA color order on tga files
 // B    |G    |R    |A
 // 11111|11111|11111|1
-static constexpr uint16_t blue_mask = 0xF800;   // 11111|00000|00000|0
-static constexpr uint16_t green_mask = 0x07C0;  // 00000|11111|00000|0
-static constexpr uint16_t red_mask = 0x003E;    // 00000|00000|11111|0
-static constexpr uint16_t alpha_mask = 0x0001;  // 00000|00000|00000|1
+static constexpr inline uint16_t blue_mask = 0xF800;   // 11111|00000|00000|0
+static constexpr inline uint16_t green_mask = 0x07C0;  // 00000|11111|00000|0
+static constexpr inline uint16_t red_mask = 0x003E;    // 00000|00000|11111|0
+static constexpr inline uint16_t alpha_mask = 0x0001;  // 00000|00000|00000|1
 
 // 8Bit gray + 8Bit alpha in 16Bit packets
-static constexpr uint16_t alpha_gray_mask = 0xFF00; // 11111111|00000000
-static constexpr uint16_t gray_mask = 0x00FF;       // 00000000|11111111
+static constexpr inline uint16_t alpha_gray_mask = 0xFF00; // 11111111|00000000
+static constexpr inline uint16_t gray_mask = 0x00FF;       // 00000000|11111111
 
 // Image description bit masks
-static constexpr uint8_t alpha_bit_depth_mask = 0x0F;   // 00|00|1111
-static constexpr uint8_t top_mask = 0x20;               // 00|10|0000
-static constexpr uint8_t left_mask = 0x10;              // 00|01|0000
+static constexpr inline uint8_t alpha_bit_depth_mask = 0x0F;   // 00|00|1111
+static constexpr inline uint8_t top_mask = 0x20;               // 00|10|0000
+static constexpr inline uint8_t left_mask = 0x10;              // 00|01|0000
 
-static constexpr uint8_t rle_pack_mask = 0x80;   // 1|0000000
-static constexpr uint8_t rle_rep_mask = 0x7F;    // 0|1111111
+static constexpr inline uint8_t rle_pack_mask = 0x80;   // 1|0000000
+static constexpr inline uint8_t rle_rep_mask = 0x7F;    // 0|1111111
 
 } //namespace tga_constants
 
@@ -109,7 +109,7 @@ struct TgaFooter
 {
 	int ext_offset_ = 0;
 	int dev_area_offset_ = 0;
-	static constexpr char signature_[] = "TRUEVISION-XFILE.";
+	static constexpr inline char signature_[] = "TRUEVISION-XFILE.";
 };
 
 struct TgaPixelRgb

@@ -46,7 +46,7 @@ static const std::vector<std::pair<float, float>> k_wa_wavelength_amplitudes
 };
 
 // 380-750 by 10nm
-static constexpr std::array<float, 38> sol_amplitudes
+static constexpr inline std::array<float, 38> sol_amplitudes
 {
 	165.5, 162.3, 211.2, 258.8, 258.2,
 	242.3, 267.6, 296.6, 305.4, 300.6,

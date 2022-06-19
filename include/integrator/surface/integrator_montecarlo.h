@@ -94,9 +94,9 @@ class MonteCarloIntegrator: public TiledIntegrator
 		std::vector<const Light *> lights_; //! An array containing all the visible scene lights
 		std::unique_ptr<PhotonMap> caustic_map_;
 
-		static constexpr int initial_ray_samples_dispersive_ = 8;
-		static constexpr int initial_ray_samples_glossy_ = 8;
-		static constexpr int loffs_delta_ = 4567; //just some number to have different sequences per light...and it's a prime even...
+		static constexpr inline int initial_ray_samples_dispersive_ = 8;
+		static constexpr inline int initial_ray_samples_glossy_ = 8;
+		static constexpr inline int loffs_delta_ = 4567; //just some number to have different sequences per light...and it's a prime even...
 };
 
 } //namespace yafaray

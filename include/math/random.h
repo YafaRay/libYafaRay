@@ -40,10 +40,10 @@ class FastRandom final
 
 	private:
 		std::atomic<int> myseed_ = 123212;
-		static constexpr int a_ = 0x000041A7;
-		static constexpr int m_ = 0x7FFFFFFF;
-		static constexpr int q_ = 0x0001F31D; // m/a
-		static constexpr int r_ = 0x00000B14; // m%a;
+		static constexpr inline int a_ = 0x000041A7;
+		static constexpr inline int m_ = 0x7FFFFFFF;
+		static constexpr inline int q_ = 0x0001F31D; // m/a
+		static constexpr inline int r_ = 0x00000B14; // m%a;
 
 };
 
@@ -65,9 +65,9 @@ class RandomGenerator final
 		double operator()() noexcept;
 	protected:
 		std::atomic<unsigned int> x_ = 30903, c_ = 0;
-		static constexpr unsigned int y_a_ = 1791398085;
-		static constexpr unsigned int y_ah_ = (y_a_ >> 16);
-		static constexpr unsigned int y_al_ = y_a_ & 65535;
+		static constexpr inline unsigned int y_a_ = 1791398085;
+		static constexpr inline unsigned int y_ah_ = (y_a_ >> 16);
+		static constexpr inline unsigned int y_al_ = y_a_ & 65535;
 
 };
 

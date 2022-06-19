@@ -29,7 +29,7 @@ namespace yafaray::kdtree
 {
 enum class IntersectTestType : unsigned char { Nearest, Shadow, TransparentShadow };
 
-static constexpr int kd_max_stack_global = 64;
+static constexpr inline int kd_max_stack_global = 64;
 
 /*! Serves to store the lower and upper bound edges of the primitives
 	for the cost funtion */
