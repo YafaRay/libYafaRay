@@ -20,7 +20,7 @@
 #ifndef YAFARAY_PARAM_H
 #define YAFARAY_PARAM_H
 
-#include "yafaray_common.h"
+#include "common/collection.h"
 #include <map>
 #include <vector>
 #include <string>
@@ -90,28 +90,19 @@ class Parameter
 		Type type_ = Type::None; //!< type of the stored value
 };
 
-class ParamMap
+class ParamMap : public Collection<std::string, Parameter>
 {
 	public:
-		ParamMap() = default;
 		//! template function to get a value, available types are those of parameter_t::getVal()
 		template <class T>
 		bool getParam(const std::string &name, T &val) const
 		{
-			auto i = param_map_.find(name);
-			if(i != param_map_.end()) return i->second.getVal(val);
-			return false;
+			auto i{find(name)};
+			if(i) return i->getVal(val);
+			else return false;
 		}
-		Parameter &operator [](const std::string &key);
 		std::string print() const;
 		void logContents(Logger &logger) const;
-
-		void clear();
-		std::map<std::string, Parameter>::const_iterator begin() const;
-		std::map<std::string, Parameter>::const_iterator end() const;
-
-	private:
-		std::map<std::string, Parameter> param_map_;
 };
 
 END_YAFARAY

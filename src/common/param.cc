@@ -232,7 +232,7 @@ std::string Parameter::printType() const
 std::string ParamMap::print() const
 {
 	std::string result;
-	for(const auto &[param_name, param] : param_map_)
+	for(const auto &[param_name, param] : items_)
 	{
 		result += "'" + param_name + "' (" + param.printType() + ") = '" + param.print() + "'\n";
 	}
@@ -243,18 +243,11 @@ void ParamMap::logContents(Logger &logger) const
 {
 	if(logger.isDebug())
 	{
-		for(const auto &[param_name, param] : param_map_)
+		for(const auto &[param_name, param] : items_)
 		{
 			logger.logDebug("'" + param_name + "' (" + param.printType() + ") = '" + param.print() + "'");
 		}
 	}
 }
-
-
-Parameter &ParamMap::operator[](const std::string &key) { return param_map_[key]; }
-void ParamMap::clear() { param_map_.clear(); }
-
-std::map<std::string, Parameter>::const_iterator ParamMap::begin() const { return param_map_.begin(); }
-std::map<std::string, Parameter>::const_iterator ParamMap::end() const { return param_map_.end(); }
 
 END_YAFARAY

@@ -41,6 +41,8 @@ class Collection
 		typename std::map<K, T>::const_iterator end() const { return items_.end(); }
 		T &operator()(const K &key) { return items_.at(key); }
 		const T &operator()(const K &key) const { return items_.at(key); }
+		T &operator[](const K &key) { return items_[key]; }
+		const T &operator[](const K &key) const { return items_.at(key); }
 		T *find(const K &key);
 		const T *find(const K &key) const;
 
