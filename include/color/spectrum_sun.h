@@ -24,9 +24,7 @@
 #include <algorithm>
 #include <vector>
 
-namespace yafaray {
-
-namespace spectrum_sun
+namespace yafaray::spectrum_sun
 {
 
 // k_o Spectrum table from pg 127, MI.
@@ -60,9 +58,6 @@ static constexpr std::array<float, 38> sol_amplitudes
 	190.7, 186.3, 182.6
 };
 
-} //namespace spectrum_sun
-
-
-} //namespace yafaray
+} //namespace yafaray::spectrum_sun
 
 #endif // YAFARAY_SPECTRUM_SUN_H

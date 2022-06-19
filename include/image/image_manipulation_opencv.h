@@ -21,17 +21,15 @@
 #ifndef YAFARAY_IMAGE_MANIPULATION_OPENCV_H
 #define YAFARAY_IMAGE_MANIPULATION_OPENCV_H
 
-namespace yafaray {
-
-namespace image_manipulation_opencv
+namespace yafaray::image_manipulation_opencv
 {
+
 	Image *getDenoisedLdrImage(Logger &logger, const Image *image, const DenoiseParams &denoise_params);
 	void generateDebugFacesEdges(int xstart, int width, int ystart, int height, bool drawborder, const EdgeToonParams &edge_params);
 	void generateDebugFacesEdges(ImageLayers &film_image_layers, int xstart, int width, int ystart, int height, bool drawborder, const EdgeToonParams &edge_params, const ImageBuffer2D<Gray> &weights);
 	void generateToonAndDebugObjectEdges(ImageLayers &film_image_layers, int xstart, int width, int ystart, int height, bool drawborder, const EdgeToonParams &edge_params, const ImageBuffer2D<Gray> &weights);
 	int generateMipMaps(Logger &logger, std::vector<std::shared_ptr<Image>> &images);
-}
 
-} //namespace yafaray
+} //namespace yafaray::image_manipulation_opencv
 
 #endif //YAFARAY_IMAGE_MANIPULATION_OPENCV_H

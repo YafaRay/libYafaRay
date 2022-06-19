@@ -142,7 +142,7 @@ void Scene::setNumThreads(int threads)
 	if(nthreads_ == -1) //Automatic detection of number of threads supported by this system, taken from Blender. (DT)
 	{
 		if(logger_.isVerbose()) logger_.logVerbose("Automatic Detection of Threads: Active.");
-		nthreads_ = sys_info::getNumSystemThreads();
+		nthreads_ = sysinfo::getNumSystemThreads();
 		if(logger_.isVerbose()) logger_.logVerbose("Number of Threads supported: [", nthreads_, "].");
 	}
 	else
@@ -165,7 +165,7 @@ void Scene::setNumThreadsPhotons(int threads_photons)
 	if(nthreads_photons_ == -1) //Automatic detection of number of threads supported by this system, taken from Blender. (DT)
 	{
 		if(logger_.isVerbose()) logger_.logVerbose("Automatic Detection of Threads for Photon Mapping: Active.");
-		nthreads_photons_ = sys_info::getNumSystemThreads();
+		nthreads_photons_ = sysinfo::getNumSystemThreads();
 		if(logger_.isVerbose()) logger_.logVerbose("Number of Threads supported for Photon Mapping: [", nthreads_photons_, "].");
 	}
 	else

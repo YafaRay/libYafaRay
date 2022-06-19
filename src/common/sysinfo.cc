@@ -21,7 +21,6 @@
 //Threads detection code moved here from scene.cc
 
 #include "common/sysinfo.h"
-//#include "yafaray_config.h"
 
 #ifdef __APPLE__
 #include <sys/sysctl.h>
@@ -33,9 +32,7 @@
 #include <unistd.h>
 #endif
 
-namespace yafaray {
-
-namespace sys_info
+namespace yafaray::sysinfo
 {
 int getNumSystemThreads()
 {
@@ -57,13 +54,11 @@ int getNumSystemThreads()
 #	elif defined(__sgi)
 	nthreads = sysconf(_SC_NPROC_ONLN);
 #	else
-	nthreads = (int) sysconf(_SC_NPROCESSORS_ONLN);
+	nthreads = static_cast<int>(sysconf(_SC_NPROCESSORS_ONLN));
 #	endif
 #endif
 
 	return nthreads;
 }
 
-} //namespace sys_info
-
-} //namespace yafaray
+} //namespace yafaray::sys_info

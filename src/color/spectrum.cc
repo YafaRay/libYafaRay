@@ -18,9 +18,7 @@
 
 #include "color/spectrum.h"
 
-namespace yafaray {
-
-namespace spectrum
+namespace yafaray::spectrum
 {
 
 // CIE color matching function table, 1931, 2 degree
@@ -592,6 +590,4 @@ float getIoRcolor(float w, float cauchy_a, float cauchy_b, Rgb &col)
 	return cauchy_a + cauchy_b / (wl * wl);
 }
 
-} //namespace spectrum
-
-} //namespace yafaray
+} //namespace yafaray::spectrum

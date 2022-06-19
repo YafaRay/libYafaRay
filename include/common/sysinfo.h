@@ -22,15 +22,11 @@
 #ifndef YAFARAY_SYSINFO_H
 #define YAFARAY_SYSINFO_H
 
-namespace yafaray {
-
-namespace sys_info
+namespace yafaray::sysinfo
 {
 
 int getNumSystemThreads();
 
-} //namespace sys_info
-
-} //namespace yafaray
+} //namespace yafaray::sys_info
 
 #endif

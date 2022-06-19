@@ -39,9 +39,7 @@
 #include <algorithm>
 #include <limits>
 
-namespace yafaray {
-
-namespace math
+namespace yafaray::math
 {
 template<typename T = float> static inline constexpr T num_e {2.7182818284590452353602874713527L}; // Number e
 template<typename T = float> static inline constexpr T log2e {1.4426950408889634073599246810019L};
@@ -308,8 +306,6 @@ inline constexpr T addMod1(const T &a, const T &b) noexcept
 	return s > 1 ? s - 1 : s;
 }
 
-} //namespace math
-
-} //namespace yafaray
+} //namespace yafaray::math
 
 #endif // YAFARAY_MATH_H

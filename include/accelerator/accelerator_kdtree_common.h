@@ -25,9 +25,7 @@
 #include "common/logger.h"
 #include <map>
 
-namespace yafaray {
-
-namespace kdtree
+namespace yafaray::kdtree
 {
 enum class IntersectTestType : unsigned char { Nearest, Shadow, TransparentShadow };
 
@@ -255,8 +253,7 @@ IntersectData intersect(const Ray &ray, float t_max, const std::vector<NodeType>
 		return {};
 	}
 }
-} //namespace kdtree
 
-} //namespace yafaray
+} //namespace yafaray::kdtree
 
 #endif //YAFARAY_ACCELERATOR_KDTREE_COMMON_H

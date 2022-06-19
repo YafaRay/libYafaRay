@@ -23,9 +23,7 @@
 #include "math/math.h"
 #include "geometry/vector.h"
 
-namespace yafaray {
-
-namespace sample
+namespace yafaray::sample
 {
 //! r_photon2: Square distance of photon path; ir_gather2: inverse of square gather radius
 [[nodiscard]] inline float kernel(float r_photon_2, float ir_gather_2)
@@ -149,8 +147,6 @@ namespace sample
 	return hash;
 }
 
-} // namespace sample
-
-} //namespace yafaray
+} // namespace yafaray::sample
 
 #endif // YAFARAY_SAMPLE_H

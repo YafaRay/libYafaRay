@@ -22,9 +22,7 @@
 
 #include "color/color.h"
 
-namespace yafaray {
-
-namespace spectrum
+namespace yafaray::spectrum
 {
 
 Rgb wl2RgbFromCie(float wl);
@@ -45,8 +43,6 @@ inline Rgb wl2Rgb(float w)
 	return wl_col;
 }
 
-} //namespace spectrum
-
-} //namespace yafaray
+} //namespace yafaray::spectrum
 
 #endif // YAFARAY_SPECTRUM_H

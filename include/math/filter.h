@@ -24,11 +24,7 @@
 
 #include "math/math.h"
 
-namespace yafaray {
-
-namespace math
-{
-namespace filter
+namespace yafaray::math::filter
 {
 
 constexpr float box(float dx, float dy) noexcept { return 1.f; }
@@ -89,10 +85,7 @@ mnc2 = (6 - 2 * B)/6
 	return x * x * (1.16666666f * x - 2.0f) + 0.88888889f;
 }
 
-} // namespace filter
+} // namespace yafaray::math::filter
 
-} // namespace math
-
-} //namespace yafaray
 
 #endif //YAFARAY_FILTER_H

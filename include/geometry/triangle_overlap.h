@@ -41,9 +41,8 @@
 
 #include "geometry/vector_double.h"
 
-namespace yafaray {
 
-namespace triangle_overlap
+namespace yafaray::triangle_overlap
 {
 
 struct MinMax

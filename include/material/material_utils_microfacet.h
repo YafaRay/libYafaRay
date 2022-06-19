@@ -20,9 +20,7 @@
 #ifndef YAFARAY_MATERIAL_UTILS_MICROFACET_H
 #define YAFARAY_MATERIAL_UTILS_MICROFACET_H
 
-namespace yafaray {
-
-namespace microfacet
+namespace yafaray::microfacet
 {
 
 inline constexpr float pdfDivisor(float cos)
@@ -204,8 +202,6 @@ inline Rgb diffuseReflectFresnel(float wi_n, float wo_n, float glossy, float dif
 	return kt * diffuseReflect(wi_n, wo_n, glossy, diffuse, diff_base);
 }
 
-} // namespace microfacet
-
-} //namespace yafaray
+} // namespace yafaray::microfacet
 
 #endif // YAFARAY_MATERIAL_UTILS_MICROFACET_H

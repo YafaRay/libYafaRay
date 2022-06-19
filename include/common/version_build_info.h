@@ -25,9 +25,7 @@
 #include <string>
 #include <vector>
 
-namespace yafaray {
-
-namespace buildinfo
+namespace yafaray::buildinfo
 {
 	std::string getVersionString();
 	std::string getVersionDescription();
@@ -53,8 +51,7 @@ namespace buildinfo
 	std::string getBuildOptions();
 	std::string getBuildFlags();
 	std::vector<std::string> getAllBuildDetails();
-}
 
-} //namespace yafaray
+} //namespace yafaray::buildinfo
 
 #endif //LIBYAFARAY_VERSION_BUILD_INFO_H

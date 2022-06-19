@@ -32,9 +32,7 @@
 #include <locale>
 #include <codecvt>
 
-namespace yafaray {
-
-namespace string
+namespace yafaray::string
 {
 
 template<typename T>
@@ -113,8 +111,6 @@ inline std::string wutf16LeToUtf8(const std::wstring &wutf_16_str)
 	return string_conversion.to_bytes(wutf_16_str);
 }
 
-} //namespace string
-
-} //namespace yafaray
+} //namespace yafaray::string
 
 #endif
