@@ -122,12 +122,10 @@ float IesData::getRadiance(float h_ang, float v_ang) const
 
 bool IesData::parseIesFile(Logger &logger, const std::string &file)
 {
-	//FIXME: migrate to new file_t system
-	using namespace std;
-
+	//FIXME: migrate to new yafaray::File system
 	if(logger.isVerbose()) logger.logVerbose("IES Parser: Parsing IES file ", file);
 
-	ifstream fin(file.c_str(), std::ios::in);
+	std::ifstream fin(file.c_str(), std::ios::in);
 
 	if(!fin)
 	{
@@ -161,17 +159,17 @@ bool IesData::parseIesFile(Logger &logger, const std::string &file)
 	//rewind file to beginning again
 	fin.seekg(0, std::ifstream::beg);
 
-	string line;
-	string dummy;
+	std::string line;
+	std::string dummy;
 
 	fin >> line;
 
-	while(line.find("TILT=") == string::npos)
+	while(line.find("TILT=") == std::string::npos)
 	{
 		fin >> line;
 	}
 
-	if(line.find("TILT=") != string::npos)
+	if(line.find("TILT=") != std::string::npos)
 	{
 		if(line == "TILT=INCLUDE")
 		{

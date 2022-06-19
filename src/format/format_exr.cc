@@ -34,9 +34,6 @@
 #include <ImfArray.h>
 #include <IexThrowErrnoExc.h>
 
-using namespace Imf;
-using namespace Imath;
-
 BEGIN_YAFARAY
 
 //Class C_IStream from "Reading and Writing OpenEXR Image Files with the IlmImf Library" in the OpenEXR sources
@@ -170,16 +167,16 @@ bool ExrFormat::saveToFile(const std::string &name, const ImageLayer &image_laye
 	const int chan_size = sizeof(half);
 	const int num_colchan = 4;
 	const int totchan_size = num_colchan * chan_size;
-	Header header(w, h);
-	header.compression() = ZIP_COMPRESSION;
-	header.channels().insert("R", Channel(HALF));
-	header.channels().insert("G", Channel(HALF));
-	header.channels().insert("B", Channel(HALF));
-	header.channels().insert("A", Channel(HALF));
+	Imf::Header header(w, h);
+	header.compression() = Imf::ZIP_COMPRESSION;
+	header.channels().insert("R", Imf::Channel(Imf::HALF));
+	header.channels().insert("G", Imf::Channel(Imf::HALF));
+	header.channels().insert("B", Imf::Channel(Imf::HALF));
+	header.channels().insert("A", Imf::Channel(Imf::HALF));
 
 	std::FILE *fp = File::open(name, "wb");
 	CoStream ostr(fp, name.c_str());
-	OutputFile file(ostr, header);
+	Imf::OutputFile file(ostr, header);
 
 	Imf::Array2D<Imf::Rgba> pixels;
 	pixels.resizeErase(h, w);
@@ -198,11 +195,11 @@ bool ExrFormat::saveToFile(const std::string &name, const ImageLayer &image_laye
 
 	char *data_ptr = (char *)&pixels[0][0];
 
-	FrameBuffer fb;
-	fb.insert("R", Slice(HALF, data_ptr, totchan_size, w * totchan_size));
-	fb.insert("G", Slice(HALF, data_ptr +   chan_size, totchan_size, w * totchan_size));
-	fb.insert("B", Slice(HALF, data_ptr + 2 * chan_size, totchan_size, w * totchan_size));
-	fb.insert("A", Slice(HALF, data_ptr + 3 * chan_size, totchan_size, w * totchan_size));
+	Imf::FrameBuffer fb;
+	fb.insert("R", Imf::Slice(Imf::HALF, data_ptr, totchan_size, w * totchan_size));
+	fb.insert("G", Imf::Slice(Imf::HALF, data_ptr +   chan_size, totchan_size, w * totchan_size));
+	fb.insert("B", Imf::Slice(Imf::HALF, data_ptr + 2 * chan_size, totchan_size, w * totchan_size));
+	fb.insert("A", Imf::Slice(Imf::HALF, data_ptr + 3 * chan_size, totchan_size, w * totchan_size));
 
 	file.setFrameBuffer(fb);
 
@@ -244,9 +241,9 @@ bool ExrFormat::saveToFileMultiChannel(const std::string &name, const ImageLayer
 	const int num_colchan = 4;
 	const int totchan_size = num_colchan * chan_size;
 
-	Header header(w_0, h_0);
-	FrameBuffer fb;
-	header.compression() = ZIP_COMPRESSION;
+	Imf::Header header(w_0, h_0);
+	Imf::FrameBuffer fb;
+	header.compression() = Imf::ZIP_COMPRESSION;
 
 	std::vector<std::unique_ptr<Imf::Array2D<Imf::Rgba>>> pixels;
 
@@ -268,10 +265,10 @@ bool ExrFormat::saveToFileMultiChannel(const std::string &name, const ImageLayer
 		const char *channel_b = channel_b_string.c_str();
 		const char *channel_a = channel_a_string.c_str();
 
-		header.channels().insert(channel_r, Channel(HALF));
-		header.channels().insert(channel_g, Channel(HALF));
-		header.channels().insert(channel_b, Channel(HALF));
-		header.channels().insert(channel_a, Channel(HALF));
+		header.channels().insert(channel_r, Imf::Channel(Imf::HALF));
+		header.channels().insert(channel_g, Imf::Channel(Imf::HALF));
+		header.channels().insert(channel_b, Imf::Channel(Imf::HALF));
+		header.channels().insert(channel_a, Imf::Channel(Imf::HALF));
 
 		pixels.emplace_back(new Imf::Array2D<Imf::Rgba>);
 		pixels.back()->resizeErase(h_0, w_0);
@@ -290,15 +287,15 @@ bool ExrFormat::saveToFileMultiChannel(const std::string &name, const ImageLayer
 
 		char *data_ptr = (char *) & (*pixels.back())[0][0];
 
-		fb.insert(channel_r, Slice(HALF, data_ptr, totchan_size, w_0 * totchan_size));
-		fb.insert(channel_g, Slice(HALF, data_ptr + chan_size, totchan_size, w_0 * totchan_size));
-		fb.insert(channel_b, Slice(HALF, data_ptr + 2 * chan_size, totchan_size, w_0 * totchan_size));
-		fb.insert(channel_a, Slice(HALF, data_ptr + 3 * chan_size, totchan_size, w_0 * totchan_size));
+		fb.insert(channel_r, Imf::Slice(Imf::HALF, data_ptr, totchan_size, w_0 * totchan_size));
+		fb.insert(channel_g, Imf::Slice(Imf::HALF, data_ptr + chan_size, totchan_size, w_0 * totchan_size));
+		fb.insert(channel_b, Imf::Slice(Imf::HALF, data_ptr + 2 * chan_size, totchan_size, w_0 * totchan_size));
+		fb.insert(channel_a, Imf::Slice(Imf::HALF, data_ptr + 3 * chan_size, totchan_size, w_0 * totchan_size));
 	}
 
 	FILE *fp = File::open(name, "wb");
 	CoStream ostr(fp, name.c_str());
-	OutputFile file(ostr, header);
+	Imf::OutputFile file(ostr, header);
 	file.setFrameBuffer(fb);
 
 	bool result = true;
@@ -331,7 +328,7 @@ Image * ExrFormat::loadFromFile(const std::string &name, const Image::Optimizati
 	{
 		char bytes[4];
 		std::fread(&bytes, 1, 4, fp);
-		if(!isImfMagic(bytes)) return nullptr;
+		if(!Imf::isImfMagic(bytes)) return nullptr;
 		std::fseek(fp, 0, SEEK_SET);
 	}
 
@@ -339,8 +336,8 @@ Image * ExrFormat::loadFromFile(const std::string &name, const Image::Optimizati
 	try
 	{
 		CiStream istr(fp, name.c_str());
-		RgbaInputFile file(istr);
-		const Box2i dw = file.dataWindow();
+		Imf::RgbaInputFile file(istr);
+		const Imath::Box2i dw = file.dataWindow();
 		const int width  = dw.max.x - dw.min.x + 1;
 		const int height = dw.max.y - dw.min.y + 1;
 		const Image::Type type = Image::getTypeFromSettings(true, grayscale_);
