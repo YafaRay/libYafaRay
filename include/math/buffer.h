@@ -59,8 +59,8 @@ inline constexpr void Buffer<T, num_dimensions>::resize(const std::array<int, nu
 template<typename T, unsigned char num_dimensions>
 inline constexpr size_t Buffer<T, num_dimensions>::calculateDataPosition(const std::array<int, num_dimensions> &coordinates) const noexcept
 {
-	if(num_dimensions == 2) return coordinates[0] * dimensions_[1] + coordinates[1];
-	else if(num_dimensions == 1) return coordinates[0];
+	if constexpr (num_dimensions == 2) return coordinates[0] * dimensions_[1] + coordinates[1];
+	else if constexpr(num_dimensions == 1) return coordinates[0];
 	else
 	{
 		size_t data_position = 0;

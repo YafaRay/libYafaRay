@@ -194,11 +194,11 @@ IntersectData intersect(const Ray &ray, float t_max, const std::vector<NodeType>
 		if(n_primitives == 1)
 		{
 			const Primitive *primitive = curr_node->getOnePrimitive();
-			if(test_type == IntersectTestType::Nearest)
+			if constexpr (test_type == IntersectTestType::Nearest)
 			{
 				Accelerator::primitiveIntersection(intersect_data, primitive, ray.from_, ray.dir_, t_min, intersect_data.t_max_, ray.time_);
 			}
-			else if(test_type == IntersectTestType::TransparentShadow)
+			else if constexpr (test_type == IntersectTestType::TransparentShadow)
 			{
 				if(Accelerator::primitiveIntersectionTransparentShadow(intersect_data, filtered, depth, transparent_color_max_depth, primitive, camera, ray.from_, ray.dir_, t_min, t_max, ray.time_)) return intersect_data;
 			}
@@ -213,11 +213,11 @@ IntersectData intersect(const Ray &ray, float t_max, const std::vector<NodeType>
 			for(uint32_t i = 0; i < n_primitives; ++i)
 			{
 				const Primitive *primitive = prims[i];
-				if(test_type == IntersectTestType::Nearest)
+				if constexpr (test_type == IntersectTestType::Nearest)
 				{
 					Accelerator::primitiveIntersection(intersect_data, primitive, ray.from_, ray.dir_, t_min, intersect_data.t_max_, ray.time_);
 				}
-				else if(test_type == IntersectTestType::TransparentShadow)
+				else if constexpr (test_type == IntersectTestType::TransparentShadow)
 				{
 					if(Accelerator::primitiveIntersectionTransparentShadow(intersect_data, filtered, depth, transparent_color_max_depth, primitive, camera, ray.from_, ray.dir_, t_min, t_max, ray.time_)) return intersect_data;
 				}
@@ -227,7 +227,7 @@ IntersectData intersect(const Ray &ray, float t_max, const std::vector<NodeType>
 				}
 			}
 		}
-		if(test_type == IntersectTestType::Nearest)
+		if constexpr (test_type == IntersectTestType::Nearest)
 		{
 			if(intersect_data.isHit() && intersect_data.t_max_ <= stack[exit_id].t_)
 			{
@@ -239,11 +239,11 @@ IntersectData intersect(const Ray &ray, float t_max, const std::vector<NodeType>
 		exit_id = stack[entry_id].prev_stack_id_;
 	} // while
 
-	if(test_type == IntersectTestType::Nearest)
+	if constexpr (test_type == IntersectTestType::Nearest)
 	{
 		return intersect_data;
 	}
-	else if(test_type == IntersectTestType::TransparentShadow)
+	else if constexpr (test_type == IntersectTestType::TransparentShadow)
 	{
 		intersect_data.setNoHit();
 		return intersect_data;
