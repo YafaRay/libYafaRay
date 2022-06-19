@@ -28,11 +28,15 @@
 #include "image/image_layers.h"
 #include "color/color_layers.h"
 #include <ImfVersion.h>
-#include <ImfOutputFile.h>
 #include <ImfChannelList.h>
-#include <ImfRgbaFile.h>
 #include <ImfArray.h>
 #include <IexThrowErrnoExc.h>
+
+//Ugly trick to allow using old OpenEXR v2.2 while building using C++17 standard
+#define throw(...)
+#include <ImfOutputFile.h>
+#include <ImfRgbaFile.h>
+#undef throw
 
 BEGIN_YAFARAY
 

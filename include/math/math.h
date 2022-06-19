@@ -43,31 +43,30 @@ BEGIN_YAFARAY
 
 namespace math
 {
-//FIXME: make all global constants "static inline constexpr" in the future once we can go fully C++17 when all dependencies allow building with C++17
-template<typename T = float> static constexpr T num_e {2.7182818284590452353602874713527L}; // Number e
-template<typename T = float> static constexpr T log2e {1.4426950408889634073599246810019L};
-template<typename T = float> static constexpr T log10e {0.43429448190325182765112891891661L};
-template<typename T = float> static constexpr T ln2 {0.69314718055994530941723212145818L};
-template<typename T = float> static constexpr T ln10 {2.3025850929940456840179914546844L};
-template<typename T = float> static constexpr T num_pi {3.1415926535897932384626433832795L}; // Number pi
-template<typename T = float> static constexpr T div_pi_by_2 {1.5707963267948966192313216916398L};
-template<typename T = float> static constexpr T div_pi_by_4 {0.78539816339744830961566084581988L};
-template<typename T = float> static constexpr T div_1_by_pi {0.31830988618379067153776752674503L};
-template<typename T = float> static constexpr T div_2_by_pi {0.63661977236758134307553505349006L};
-template<typename T = float> static constexpr T div_2_by_sqrt_pi {1.1283791670955125738961589031215L};
-template<typename T = float> static constexpr T sqrt2 {1.4142135623730950488016887242097L};
-template<typename T = float> static constexpr T div_1_by_sqrt2 {0.70710678118654752440084436210485L};
-template<typename T = float> static constexpr T mult_pi_by_2 {6.283185307179586476925286766559L}; // pi * 2
-template<typename T = float> static constexpr T squared_pi {9.8696044010893586188344909998762L}; // pi ^ 2
-template<typename T = float> static constexpr T div_1_by_2pi {0.15915494309189533576888376337251L}; // 1 / (2 * pi)
-template<typename T = float> static constexpr T div_4_by_pi {1.2732395447351626861510701069801L}; // 4 / pi
-template<typename T = float> static constexpr T div_4_by_squared_pi {0.40528473456935108577551785283891L}; // 4 / (pi ^ 2)
-template<typename T = float> static constexpr T div_pi_by_180 {0.01745329251994329576923690768489L}; // pi / 180
-template<typename T = float> static constexpr T div_180_by_pi {57.295779513082320876798154814105L}; // 180 / pi
+template<typename T = float> static inline constexpr T num_e {2.7182818284590452353602874713527L}; // Number e
+template<typename T = float> static inline constexpr T log2e {1.4426950408889634073599246810019L};
+template<typename T = float> static inline constexpr T log10e {0.43429448190325182765112891891661L};
+template<typename T = float> static inline constexpr T ln2 {0.69314718055994530941723212145818L};
+template<typename T = float> static inline constexpr T ln10 {2.3025850929940456840179914546844L};
+template<typename T = float> static inline constexpr T num_pi {3.1415926535897932384626433832795L}; // Number pi
+template<typename T = float> static inline constexpr T div_pi_by_2 {1.5707963267948966192313216916398L};
+template<typename T = float> static inline constexpr T div_pi_by_4 {0.78539816339744830961566084581988L};
+template<typename T = float> static inline constexpr T div_1_by_pi {0.31830988618379067153776752674503L};
+template<typename T = float> static inline constexpr T div_2_by_pi {0.63661977236758134307553505349006L};
+template<typename T = float> static inline constexpr T div_2_by_sqrt_pi {1.1283791670955125738961589031215L};
+template<typename T = float> static inline constexpr T sqrt2 {1.4142135623730950488016887242097L};
+template<typename T = float> static inline constexpr T div_1_by_sqrt2 {0.70710678118654752440084436210485L};
+template<typename T = float> static inline constexpr T mult_pi_by_2 {6.283185307179586476925286766559L}; // pi * 2
+template<typename T = float> static inline constexpr T squared_pi {9.8696044010893586188344909998762L}; // pi ^ 2
+template<typename T = float> static inline constexpr T div_1_by_2pi {0.15915494309189533576888376337251L}; // 1 / (2 * pi)
+template<typename T = float> static inline constexpr T div_4_by_pi {1.2732395447351626861510701069801L}; // 4 / pi
+template<typename T = float> static inline constexpr T div_4_by_squared_pi {0.40528473456935108577551785283891L}; // 4 / (pi ^ 2)
+template<typename T = float> static inline constexpr T div_pi_by_180 {0.01745329251994329576923690768489L}; // pi / 180
+template<typename T = float> static inline constexpr T div_180_by_pi {57.295779513082320876798154814105L}; // 180 / pi
 
 // fast base-2 van der Corput, Sobel, and Larcher & Pillichshammer sequences,
 // all from "Efficient Multidimensional Sampling" by Alexander Keller
-template<typename T = float> static constexpr T sample_mult_ratio {0.00000000023283064365386962890625L};
+template<typename T = float> static inline constexpr T sample_mult_ratio {0.00000000023283064365386962890625L};
 
 template<typename T> inline constexpr T inverse(T val) noexcept
 {
