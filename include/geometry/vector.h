@@ -77,7 +77,7 @@ class Vec3
 		constexpr float &operator[](Axis axis) { return vec_[axis::getId(axis)]; }
 
 		[[nodiscard]] static constexpr Vec3 reflectDir(const Vec3 &normal, const Vec3 &v);
-		[[nodiscard]] static constexpr bool refract(const Vec3 &n, const Vec3 &wi, Vec3 &wo, float ior);
+		[[nodiscard]] static bool refract(const Vec3 &n, const Vec3 &wi, Vec3 &wo, float ior);
 		[[nodiscard]] static constexpr std::array<float, 2> fresnel(const Vec3 &i, const Vec3 &n, float ior);
 		[[nodiscard]] static constexpr std::array<float, 2> fastFresnel(const Vec3 &i, const Vec3 &n, float iorf);
 		[[nodiscard]] static constexpr Uv<Vec3> createCoordsSystem(const Vec3 &normal);
@@ -343,7 +343,7 @@ inline Uv<float> Vec3::shirleyDisk(float r_1, float r_2)
 				medium in which n points. E.g. "outside" is air, "inside" is water, the normal points outside,
 				IOR = eta_air / eta_water = 1.33
 */
-inline constexpr bool Vec3::refract(const Vec3 &n, const Vec3 &wi, Vec3 &wo, float ior)
+inline bool Vec3::refract(const Vec3 &n, const Vec3 &wi, Vec3 &wo, float ior)
 {
 	Vec3 N{n};
 	float eta = ior;
