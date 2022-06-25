@@ -23,9 +23,6 @@ set_target_properties(libyafaray4 PROPERTIES CXX_VISIBILITY_PRESET hidden VISIBI
 target_include_directories(libyafaray4 PRIVATE ${PROJECT_SOURCE_DIR}/include ${PROJECT_BINARY_DIR}/include)
 target_include_directories(libyafaray4 INTERFACE $<INSTALL_INTERFACE:include>)
 
-find_package(Threads REQUIRED)
-target_link_libraries(libyafaray4 PRIVATE Threads::Threads)
-
 add_subdirectory(accelerator)
 add_subdirectory(background)
 add_subdirectory(color)
@@ -55,6 +52,22 @@ endif()
 message_boolean("Using trigonometric" YAFARAY_FAST_TRIG "approximations (faster)" "precise values (slower)")
 if(YAFARAY_FAST_TRIG)
 	target_compile_definitions(libyafaray4 PRIVATE "FAST_TRIG")
+endif()
+
+find_package(Threads REQUIRED)
+if(WIN32 AND MINGW AND NOT CMAKE_HAVE_LIBC_PTHREAD)
+	message("Using mingw-std-threads 3rd party library: yes")
+	find_path(MINGW_STD_THREADS_PATH mingw.thread.h PATH_SUFFIXES mingw-std-threads NO_CACHE)
+	if(MINGW_STD_THREADS_PATH)
+		option(MINGW_STDTHREADS_GENERATE_STDHEADERS "" ON)
+		add_subdirectory(${MINGW_STD_THREADS_PATH} mingw-std-threads-generated)
+		target_link_libraries(libyafaray4 PRIVATE mingw_stdthreads)
+		target_compile_definitions(libyafaray4 PRIVATE "HAVE_MINGW_STD_THREADS")
+	else()
+		message(SEND_ERROR "mingw-std-threads library not found.\nWhen using a MinGW compiler with the Win32 threads model instead of the Posix/Pthread model, MinGW does not support the standard thread library such as std::thread, std::mutex, etc.\nIn this case a third party library called 'mingw-std-threads' is needed. It can be obtained from 'https://github.com/meganz/mingw-std-threads' and put in a system include folder.")
+	endif()
+else()
+	target_link_libraries(libyafaray4 PRIVATE Threads::Threads)
 endif()
 
 # Custom definitions

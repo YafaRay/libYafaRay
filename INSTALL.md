@@ -14,7 +14,9 @@ Dependencies:
     * \>=tiff-4.0.3
     * \>=ilmbase-2.2.0
     * \>=openexr-2.2.0
+    * \>=mingw-std-threads-1.0.0
 
 Notes about dependencies:
  * ZLib is needed if libPNG or OpenEXR are used.
  * OpenCV is used to do some image processing, most importantly LDR denoise, edge/toon layers and texture mipmaps for Trilinear or EWA interpolations.
+ * mingw-std-threads is used only when building with MinGW with the native Win32 threads model
