@@ -122,10 +122,10 @@ float CoatedGlossyMaterial::orenNayar(const Vec3 &wi, const Vec3 &wo, const Vec3
 	}
 }
 
-Rgb CoatedGlossyMaterial::eval(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wl, const BsdfFlags &bsdfs, bool force_eval) const
+Rgb CoatedGlossyMaterial::eval(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wl, BsdfFlags bsdfs, bool force_eval) const
 {
 	Rgb col(0.f);
-	const bool diffuse_flag = bsdfs.hasAny(BsdfFlags::Diffuse);
+	const bool diffuse_flag = flags::have(bsdfs, BsdfFlags::Diffuse);
 
 	if(!force_eval)	//If the flag force_eval = true then the next line will be skipped, necessary for the Glossy Direct render pass
 	{
@@ -136,7 +136,7 @@ Rgb CoatedGlossyMaterial::eval(const MaterialData *mat_data, const SurfacePoint 
 	const float wo_n = std::abs(wo * n);
 	const auto [kr, kt]{Vec3::fresnel(wo, n, getShaderScalar(ior_shader_, mat_data->node_tree_data_, ior_))};
 
-	if((as_diffuse_ && diffuse_flag) || (!as_diffuse_ && bsdfs.hasAny(BsdfFlags::Glossy)))
+	if((as_diffuse_ && diffuse_flag) || (!as_diffuse_ && flags::have(bsdfs, BsdfFlags::Glossy)))
 	{
 		const Vec3 h{(wo + wl).normalize()}; // half-angle
 		const float cos_wi_h = wl * h;
@@ -346,7 +346,7 @@ Rgb CoatedGlossyMaterial::sample(const MaterialData *mat_data, const SurfacePoin
 	return scolor;
 }
 
-float CoatedGlossyMaterial::pdf(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wi, const BsdfFlags &flags) const
+float CoatedGlossyMaterial::pdf(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wi, BsdfFlags flags) const
 {
 	const bool transmit = ((sp.ng_ * wo) * (sp.ng_ * wi)) < 0.f;
 	if(transmit) return 0.f;

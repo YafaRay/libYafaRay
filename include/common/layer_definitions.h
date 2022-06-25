@@ -33,6 +33,7 @@ namespace yafaray {
 class LayerDef final
 {
 	public:
+		enum class Flags : unsigned int { None = 0, BasicLayers = 1 << 0, DepthLayers = 1 << 1, DiffuseLayers = 1 << 2, IndexLayers = 1 << 3, DebugLayers = 1 << 4, AoLayers = 1 << 5, ToonEdgeLayers = 1 << 6};
 		enum Type : unsigned char
 		{
 			Combined = 0, //Combined should always have value 0 and be the first entry in the enum
@@ -111,21 +112,15 @@ class LayerDef final
 			ZDepthNorm,
 			Size //Size should always be the last entry in the enum!
 		};
-		struct Flags : public yafaray::Flags //!< Flags to group layers and improve runtime performance
-		{
-			Flags() = default;
-			explicit Flags(unsigned int flags) : yafaray::Flags(flags) { }
-			enum Enum : unsigned int { None = 0, BasicLayers = 1 << 0, DepthLayers = 1 << 1, DiffuseLayers = 1 << 2, IndexLayers = 1 << 3, DebugLayers = 1 << 4, AoLayers = 1 << 5, ToonEdgeLayers = 1 << 6};
-		};
-		LayerDef(Type type, std::string name, LayerDef::Flags flags, Image::Type default_image_type = Image::Type::Color, const Rgba &default_color = {0.f, 1.f}, bool apply_color_space = true) : type_(type), flags_(flags), name_(std::move(name)), default_color_(default_color), apply_color_space_(apply_color_space), default_image_type_(default_image_type) { }
+		LayerDef(Type type, std::string name, Flags flags, Image::Type default_image_type = Image::Type::Color, const Rgba &default_color = {0.f, 1.f}, bool apply_color_space = true) : type_(type), flags_(flags), name_(std::move(name)), default_color_(default_color), apply_color_space_(apply_color_space), default_image_type_(default_image_type) { }
 		Type getType() const { return type_; }
-		const Flags &getFlags() const { return flags_; }
+		Flags getFlags() const { return flags_; }
 		const std::string &getName() const { return name_; }
 		const Rgba &getDefaultColor() const { return default_color_; }
 		bool applyColorSpace() const { return apply_color_space_; }
 		Image::Type getDefaultImageType() const { return default_image_type_; }
 		static Type getType(const std::string &name);
-		static const Flags &getFlags(Type type) { return definitions_array_[type].getFlags(); }
+		static Flags getFlags(Type type) { return definitions_array_[type].getFlags(); }
 		static const std::string &getName(Type type) { return definitions_array_[type].getName(); }
 		static const Rgba &getDefaultColor(Type type) { return definitions_array_[type].getDefaultColor(); }
 		static bool applyColorSpace(Type type) { return definitions_array_[type].applyColorSpace(); }

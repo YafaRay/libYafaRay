@@ -22,7 +22,7 @@
 
 namespace yafaray {
 
-LayerNode::LayerNode(const Flags &flags, float col_fac, float var_fac, float def_val, const Rgba &def_col, const BlendMode &blend_mode):
+LayerNode::LayerNode(Flags flags, float col_fac, float var_fac, float def_val, const Rgba &def_col, BlendMode blend_mode):
 		flags_(flags), colfac_(col_fac), valfac_(var_fac), default_val_(def_val),
 		default_col_(def_col), blend_mode_(blend_mode)
 {}
@@ -46,19 +46,19 @@ void LayerNode::eval(NodeTreeData &node_tree_data, const SurfacePoint &sp, const
 	}
 	else tin = input_->getScalar(node_tree_data);
 
-	if(flags_.hasAny(Flags::RgbToInt))
+	if(flags::have(flags_, Flags::RgbToInt))
 	{
 		tin = texcolor.col2Bri();
 		tex_rgb = false;
 	}
 
-	if(flags_.hasAny(Flags::Negative))
+	if(flags::have(flags_, Flags::Negative))
 	{
 		if(tex_rgb) texcolor = Rgba(1.f) - texcolor;
 		tin = 1.f - tin;
 	}
 
-	if(flags_.hasAny(Flags::Stencil))
+	if(flags::have(flags_, Flags::Stencil))
 	{
 		if(tex_rgb) // only scalar input affects stencil...?
 		{
@@ -97,7 +97,7 @@ void LayerNode::eval(NodeTreeData &node_tree_data, const SurfacePoint &sp, const
 			if(use_alpha_)
 			{
 				tin = ta;
-				if(flags_.hasAny(Flags::Negative)) tin = 1.f - tin;
+				if(flags::have(flags_, Flags::Negative)) tin = 1.f - tin;
 			}
 			else
 			{
@@ -130,7 +130,7 @@ void LayerNode::evalDerivative(NodeTreeData &node_tree_data, const SurfacePoint 
 	float tdu = texcolor.r_;
 	float tdv = texcolor.g_;
 
-	if(flags_.hasAny(Flags::Negative))
+	if(flags::have(flags_, Flags::Negative))
 	{
 		tdu = -tdu;
 		tdv = -tdv;
@@ -192,7 +192,7 @@ std::vector<const ShaderNode *> LayerNode::getDependencies() const
 	return dependencies;
 }
 
-Rgb LayerNode::textureRgbBlend(const Rgb &tex, const Rgb &out, float fact, float facg, const BlendMode &blend_mode)
+Rgb LayerNode::textureRgbBlend(const Rgb &tex, const Rgb &out, float fact, float facg, BlendMode blend_mode)
 {
 	switch(blend_mode)
 	{
@@ -253,7 +253,7 @@ Rgb LayerNode::textureRgbBlend(const Rgb &tex, const Rgb &out, float fact, float
 
 }
 
-float LayerNode::textureValueBlend(float tex, float out, float fact, float facg, const BlendMode &blend_mode, bool flip)
+float LayerNode::textureValueBlend(float tex, float out, float fact, float facg, BlendMode blend_mode, bool flip)
 {
 	fact *= facg;
 	float facm = 1.f - fact;

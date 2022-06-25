@@ -74,10 +74,10 @@ class SurfacePoint final
 		[[nodiscard]] std::unique_ptr<SurfaceDifferentials> calcSurfaceDifferentials(const RayDifferentials *ray_differentials) const;
 
 		[[nodiscard]] const MaterialData * initBsdf(const Camera *camera);
-		[[nodiscard]] Rgb eval(const Vec3 &wo, const Vec3 &wl, const BsdfFlags &types, bool force_eval = false) const;
+		[[nodiscard]] Rgb eval(const Vec3 &wo, const Vec3 &wl, BsdfFlags types, bool force_eval = false) const;
 		[[nodiscard]] Rgb sample(const Vec3 &wo, Vec3 &wi, Sample &s, float &w, bool chromatic, float wavelength, const Camera *camera) const;
 		[[nodiscard]] Rgb sample(const Vec3 &wo, Vec3 *dir, Rgb &tcol, Sample &s, float *w, bool chromatic, float wavelength) const;
-		[[nodiscard]] float pdf(const Vec3 &wo, const Vec3 &wi, const BsdfFlags &bsdfs) const;
+		[[nodiscard]] float pdf(const Vec3 &wo, const Vec3 &wi, BsdfFlags bsdfs) const;
 		[[nodiscard]] Rgb getTransparency(const Vec3 &wo, const Camera *camera) const;
 		[[nodiscard]] Specular getSpecular(int ray_level, const Vec3 &wo, bool chromatic, float wavelength) const;
 		[[nodiscard]] Rgb getReflectivity(FastRandom &fast_random, BsdfFlags flags, bool chromatic, float wavelength, const Camera *camera) const;
@@ -211,7 +211,7 @@ inline const MaterialData * SurfacePoint::initBsdf(const Camera *camera)
 	return primitive_->getMaterial()->initBsdf(*this, camera);
 }
 
-inline Rgb SurfacePoint::eval(const Vec3 &wo, const Vec3 &wl, const BsdfFlags &types, bool force_eval) const
+inline Rgb SurfacePoint::eval(const Vec3 &wo, const Vec3 &wl, BsdfFlags types, bool force_eval) const
 {
 	return primitive_->getMaterial()->eval(mat_data_.get(), *this, wo, wl, types, force_eval);
 }
@@ -226,7 +226,7 @@ inline Rgb SurfacePoint::sample(const Vec3 &wo, Vec3 *const dir, Rgb &tcol, Samp
 	return primitive_->getMaterial()->sample(mat_data_.get(), *this, wo, dir, tcol, s, w, chromatic, wavelength);
 }
 
-inline float SurfacePoint::pdf(const Vec3 &wo, const Vec3 &wi, const BsdfFlags &bsdfs) const
+inline float SurfacePoint::pdf(const Vec3 &wo, const Vec3 &wi, BsdfFlags bsdfs) const
 {
 	return primitive_->getMaterial()->pdf(mat_data_.get(), *this, wo, wi, bsdfs);
 }

@@ -62,7 +62,7 @@ const MaterialData * GlassMaterial::initBsdf(SurfacePoint &sp, const Camera *cam
 
 Rgb GlassMaterial::sample(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, Vec3 &wi, Sample &s, float &w, bool chromatic, float wavelength, const Camera *camera) const
 {
-	if(!s.flags_.hasAny(BsdfFlags::Specular) && !(s.flags_.hasAny(bsdf_flags_ & BsdfFlags::Dispersive) && chromatic))
+	if(!flags::have(s.flags_, BsdfFlags::Specular) && !(flags::have(s.flags_, bsdf_flags_ & BsdfFlags::Dispersive) && chromatic))
 	{
 		s.pdf_ = 0.f;
 		Rgb scolor = Rgb(0.f);
@@ -91,7 +91,7 @@ Rgb GlassMaterial::sample(const MaterialData *mat_data, const SurfacePoint &sp, 
 		{
 			const auto [kr, kt]{Vec3::fresnel(wo, n, cur_ior)};
 			const float p_kr = 0.01 + 0.99 * kr, p_kt = 0.01 + 0.99 * kt;
-			if(!s.flags_.hasAny(BsdfFlags::Specular) || s.s_1_ < p_kt)
+			if(!flags::have(s.flags_, BsdfFlags::Specular) || s.s_1_ < p_kt)
 			{
 				wi = refdir;
 				s.pdf_ = (MATCHES(s.flags_, BsdfFlags::Specular | BsdfFlags::Reflect)) ? p_kt : 1.f;

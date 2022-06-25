@@ -28,20 +28,15 @@ namespace yafaray {
 class LayerNode final : public ShaderNode
 {
 	public:
-		struct Flags : public yafaray::Flags
-		{
-			Flags() = default;
-			Flags(unsigned int flags) : yafaray::Flags(flags) { } // NOLINT(google-explicit-constructor)
-			enum Enum : unsigned int { None = 0, RgbToInt = 1 << 0, Stencil = 1 << 1, Negative = 1 << 2, AlphaMix = 1 << 3 };
-		};
+		enum class Flags : unsigned int { None = 0, RgbToInt = 1 << 0, Stencil = 1 << 1, Negative = 1 << 2, AlphaMix = 1 << 3 };
 		static ShaderNode *factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params);
 
 	private:
-		enum class BlendMode { Mix, Add, Mult, Sub, Screen, Div, Diff, Dark, Light };
-		static Rgb textureRgbBlend(const Rgb &tex, const Rgb &out, float fact, float facg, const BlendMode &blend_mode);
-		static float textureValueBlend(float tex, float out, float fact, float facg, const BlendMode &blend_mode, bool flip = false);
+		enum class BlendMode : unsigned char { Mix, Add, Mult, Sub, Screen, Div, Diff, Dark, Light };
+		static Rgb textureRgbBlend(const Rgb &tex, const Rgb &out, float fact, float facg, BlendMode blend_mode);
+		static float textureValueBlend(float tex, float out, float fact, float facg, BlendMode blend_mode, bool flip = false);
 
-		LayerNode(const Flags &flags, float col_fac, float var_fac, float def_val, const Rgba &def_col, const BlendMode &blend_mode);
+		LayerNode(Flags flags, float col_fac, float var_fac, float def_val, const Rgba &def_col, BlendMode blend_mode);
 		void eval(NodeTreeData &node_tree_data, const SurfacePoint &sp, const Camera *camera) const override;
 		void evalDerivative(NodeTreeData &node_tree_data, const SurfacePoint &sp, const Camera *camera) const override;
 		bool configInputs(Logger &logger, const ParamMap &params, const NodeFinder &find) override;

@@ -128,22 +128,22 @@ std::pair<Rgb, float> PathIntegrator::integrate(Ray &ray, FastRandom &fast_rando
 	ray.tmax_ = tmax;
 	if(sp)
 	{
-		const BsdfFlags &mat_bsdfs = sp->mat_data_->bsdf_flags_;
+		const BsdfFlags mat_bsdfs = sp->mat_data_->bsdf_flags_;
 		const Vec3 wo{-ray.dir_};
 		additional_depth = std::max(additional_depth, sp->getMaterial()->getAdditionalDepth());
 
 		// contribution of light emitting surfaces
-		if(mat_bsdfs.hasAny(BsdfFlags::Emit))
+		if(flags::have(mat_bsdfs, BsdfFlags::Emit))
 		{
 			const Rgb col_emit = sp->emit(wo);
 			col += col_emit;
-			if(color_layers && color_layers->getFlags().hasAny(LayerDef::Flags::BasicLayers))
+			if(color_layers && flags::have(color_layers->getFlags(), LayerDef::Flags::BasicLayers))
 			{
 				if(Rgba *color_layer = color_layers->find(LayerDef::Emit)) *color_layer += col_emit;
 			}
 		}
 
-		if(mat_bsdfs.hasAny(BsdfFlags::Diffuse))
+		if(flags::have(mat_bsdfs, BsdfFlags::Diffuse))
 		{
 			col += estimateAllDirectLight(random_generator, color_layers, chromatic_enabled, wavelength, *sp, wo, ray_division, pixel_sampling_data);
 			if(caustic_type_ == CausticType::Photon || caustic_type_ == CausticType::Both)
@@ -158,7 +158,7 @@ std::pair<Rgb, float> PathIntegrator::integrate(Ray &ray, FastRandom &fast_rando
 
 		BsdfFlags path_flags = no_recursive_ ? BsdfFlags::All : (BsdfFlags::Diffuse);
 
-		if(mat_bsdfs.hasAny(path_flags))
+		if(flags::have(mat_bsdfs, path_flags))
 		{
 			Rgb path_col(0.0);
 			path_flags |= (BsdfFlags::Diffuse | BsdfFlags::Reflect | BsdfFlags::Transmit);
@@ -194,11 +194,11 @@ std::pair<Rgb, float> PathIntegrator::integrate(Ray &ray, FastRandom &fast_rando
 				if(s.sampled_flags_ != BsdfFlags::None) pwo = -p_ray.dir_; //Fix for white dots in path tracing with shiny diffuse with transparent PNG texture and transparent shadows, especially in Win32, (precision?). Sometimes the first sampling does not take place and pRay.dir is not initialized, so before this change when that happened pwo = -pRay.dir was getting a random_generator non-initialized value! This fix makes that, if the first sample fails for some reason, pwo is not modified and the rest of the sampling continues with the same pwo value. FIXME: Question: if the first sample fails, should we continue as now or should we exit the loop with the "continue" command?
 				lcol = estimateOneDirectLight(random_generator, correlative_sample_number, thread_id, chromatic_enabled, wavelength_dispersive, *hit, pwo, offs, ray_division, pixel_sampling_data);
 				const BsdfFlags mat_bsd_fs = hit->mat_data_->bsdf_flags_;
-				if(mat_bsd_fs.hasAny(BsdfFlags::Emit))
+				if(flags::have(mat_bsd_fs, BsdfFlags::Emit))
 				{
 					const Rgb col_emit = hit->emit(pwo);
 					lcol += col_emit;
-					if(color_layers && color_layers->getFlags().hasAny(LayerDef::Flags::BasicLayers))
+					if(color_layers && flags::have(color_layers->getFlags(), LayerDef::Flags::BasicLayers))
 					{
 						if(Rgba *color_layer = color_layers->find(LayerDef::Emit)) *color_layer += col_emit;
 					}
@@ -226,7 +226,7 @@ std::pair<Rgb, float> PathIntegrator::integrate(Ray &ray, FastRandom &fast_rando
 					scol *= w;
 					if(scol.isBlack()) break;
 					throughput *= scol;
-					caustic = trace_caustics_ && s.sampled_flags_.hasAny(BsdfFlags::Specular | BsdfFlags::Glossy | BsdfFlags::Filter);
+					caustic = trace_caustics_ && flags::have(s.sampled_flags_, BsdfFlags::Specular | BsdfFlags::Glossy | BsdfFlags::Filter);
 					p_ray.tmin_ = ray_min_dist_;
 					p_ray.tmax_ = -1.f;
 					p_ray.from_ = hit->p_;
@@ -235,10 +235,10 @@ std::pair<Rgb, float> PathIntegrator::integrate(Ray &ray, FastRandom &fast_rando
 					std::swap(hit, intersect_sp);
 					pwo = -p_ray.dir_;
 
-					if(mat_bsd_fs.hasAny(BsdfFlags::Diffuse)) lcol = estimateOneDirectLight(random_generator, correlative_sample_number, thread_id, chromatic_enabled, wavelength_dispersive, *hit, pwo, offs, ray_division, pixel_sampling_data);
+					if(flags::have(mat_bsd_fs, BsdfFlags::Diffuse)) lcol = estimateOneDirectLight(random_generator, correlative_sample_number, thread_id, chromatic_enabled, wavelength_dispersive, *hit, pwo, offs, ray_division, pixel_sampling_data);
 					else lcol = Rgb(0.f);
 
-					if(mat_bsd_fs.hasAny(BsdfFlags::Volumetric))
+					if(flags::have(mat_bsd_fs, BsdfFlags::Volumetric))
 					{
 						if(const VolumeHandler *vol = hit->getMaterial()->getVolumeHandler(hit->n_ * pwo < 0))
 						{
@@ -254,11 +254,11 @@ std::pair<Rgb, float> PathIntegrator::integrate(Ray &ray, FastRandom &fast_rando
 						throughput *= 1.f / probability;
 					}
 
-					if(mat_bsd_fs.hasAny(BsdfFlags::Emit) && caustic)
+					if(flags::have(mat_bsd_fs, BsdfFlags::Emit) && caustic)
 					{
 						const Rgb col_tmp = hit->emit(pwo);
 						lcol += col_tmp;
-						if(color_layers && color_layers->getFlags().hasAny(LayerDef::Flags::BasicLayers))
+						if(color_layers && flags::have(color_layers->getFlags(), LayerDef::Flags::BasicLayers))
 						{
 							if(Rgba *color_layer = color_layers->find(LayerDef::Emit)) *color_layer += col_tmp;
 						}

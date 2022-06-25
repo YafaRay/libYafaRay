@@ -403,7 +403,7 @@ void TiledIntegrator::generateCommonLayers(ColorLayers *color_layers, const Surf
 {
 	if(color_layers)
 	{
-		if(color_layers->getFlags().hasAny(LayerDef::Flags::DebugLayers))
+		if(flags::have(color_layers->getFlags(), LayerDef::Flags::DebugLayers))
 		{
 			if(Rgba *color_layer = color_layers->find(LayerDef::Uv))
 			{
@@ -492,7 +492,7 @@ void TiledIntegrator::generateCommonLayers(ColorLayers *color_layers, const Surf
 				}
 			}
 		}
-		if(color_layers->getFlags().hasAny(LayerDef::Flags::BasicLayers))
+		if(flags::have(color_layers->getFlags(), LayerDef::Flags::BasicLayers))
 		{
 			if(Rgba *color_layer = color_layers->find(LayerDef::ReflectAll))
 			{
@@ -552,7 +552,7 @@ void TiledIntegrator::generateCommonLayers(ColorLayers *color_layers, const Surf
 				*color_layer = Rgba{sp.getMaterial()->getSubSurfaceColor(sp.mat_data_->node_tree_data_)};
 			}
 		}
-		if(color_layers->getFlags().hasAny(LayerDef::Flags::IndexLayers))
+		if(flags::have(color_layers->getFlags(), LayerDef::Flags::IndexLayers))
 		{
 			if(Rgba *color_layer = color_layers->find(LayerDef::ObjIndexAbs))
 			{
@@ -635,7 +635,7 @@ void TiledIntegrator::generateOcclusionLayers(ColorLayers *color_layers, const A
 Rgb TiledIntegrator::sampleAmbientOcclusion(const Accelerator &accelerator, bool chromatic_enabled, float wavelength, const SurfacePoint &sp, const Vec3 &wo, const RayDivision &ray_division, const Camera *camera, const PixelSamplingData &pixel_sampling_data, bool transparent_shadows, bool clay, int ao_samples, bool shadow_bias_auto, float shadow_bias, float ao_dist, const Rgb &ao_col, int transp_shadows_depth)
 {
 	Rgb col{0.f};
-	const BsdfFlags &mat_bsdfs = sp.mat_data_->bsdf_flags_;
+	const BsdfFlags mat_bsdfs = sp.mat_data_->bsdf_flags_;
 	Ray light_ray{sp.p_, Vec3{0.f}, sp.time_};
 	int n = ao_samples;//(int) ceilf(aoSamples*getSampleMultiplier());
 	if(ray_division.division_ > 1) n = std::max(1, n / ray_division.division_);
@@ -663,7 +663,7 @@ Rgb TiledIntegrator::sampleAmbientOcclusion(const Accelerator &accelerator, bool
 							 Material::sampleClay(sp, wo, light_ray.dir_, s, w) :
 							 sp.sample(wo, light_ray.dir_, s, w, chromatic_enabled, wavelength, camera);
 		if(clay) s.pdf_ = 1.f;
-		if(mat_bsdfs.hasAny(BsdfFlags::Emit))
+		if(flags::have(mat_bsdfs, BsdfFlags::Emit))
 		{
 			col += sp.emit(wo) * s.pdf_;
 		}

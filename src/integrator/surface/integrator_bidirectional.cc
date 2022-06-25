@@ -276,12 +276,12 @@ std::pair<Rgb, float> BidirectionalIntegrator::integrate(Ray &ray, FastRandom &f
 		vl.alpha_ = pcol / ls.area_pdf_; // as above, this should not contain the "light BSDF"...missing lightNumPdf!
 		vl.g_ = 0.f; //unused actually...
 		vl.qi_wo_ = vl.qi_wi_ = 1.f; // definitely no russian roulette here...
-		vl.cos_wo_ = ls.flags_.hasAny(Light::Flags::Singular) ? 1.0 : std::abs(vl.sp_.n_ * lray.dir_); //singularities have no surface, hence no normal
+		vl.cos_wo_ = flags::have(ls.flags_, Light::Flags::Singular) ? 1.0 : std::abs(vl.sp_.n_ * lray.dir_); //singularities have no surface, hence no normal
 		vl.cos_wi_ = 1.f;
 		vl.pdf_wo_ = ls.dir_pdf_;
 		vl.pdf_wi_ = ls.area_pdf_; //store area PDF here, so we don't need extra members just for camera/eye vertices
 		//FIXME: this does not make any sense: vl.flags_ = ls.flags_; //store light flags in BSDF flags...same purpose though, check if delta function are involved
-		path_data.singular_l_ = ls.flags_.hasAny(Light::Flags::Singular);
+		path_data.singular_l_ = flags::have(ls.flags_, Light::Flags::Singular);
 		// create lightPath
 		const int n_light = createPath(random_generator, *accelerator_, chromatic_enabled, wavelength, lray, path_data.light_path_, max_path_length_, camera_);
 		if(n_light > 1)
@@ -420,7 +420,7 @@ int BidirectionalIntegrator::createPath(RandomGenerator &random_generator, const
 			if(random_generator() > v.qi_wo_) break; // terminate path with russian roulette
 		}
 		else v.qi_wo_ = 1.f;
-		if(s.sampled_flags_.hasAny(BsdfFlags::Specular)) // specular surfaces need special treatment...
+		if(flags::have(s.sampled_flags_, BsdfFlags::Specular)) // specular surfaces need special treatment...
 		{
 			// other materials don't return pdf_back and col_back yet
 			//v.pdf_wi = s.pdf;
@@ -454,7 +454,7 @@ void BidirectionalIntegrator::copyLightSubpath(PathData &pd, int s, int t)
 		const PathVertex &v = pd.light_path_[i];
 		pd.path_[i].pdf_f_ = v.pdf_wo_ / v.cos_wo_;
 		pd.path_[i].pdf_b_ = v.pdf_wi_ / v.cos_wi_;
-		pd.path_[i].specular_ = v.flags_.hasAny(BsdfFlags::Specular);
+		pd.path_[i].specular_ = flags::have(v.flags_, BsdfFlags::Specular);
 		pd.path_[i].g_ = v.g_;
 	}
 	pd.path_[s - 1].g_ = pd.light_path_[s - 1].g_;
@@ -467,7 +467,7 @@ void BidirectionalIntegrator::copyEyeSubpath(PathData &pd, int s, int t)
 		const PathVertex &v = pd.eye_path_[j];
 		pd.path_[i].pdf_f_ = v.pdf_wi_ / v.cos_wi_;
 		pd.path_[i].pdf_b_ = v.pdf_wo_ / v.cos_wo_;
-		pd.path_[i].specular_ = v.flags_.hasAny(BsdfFlags::Specular);
+		pd.path_[i].specular_ = flags::have(v.flags_, BsdfFlags::Specular);
 		pd.path_[i].g_ = pd.eye_path_[j + 1].g_;
 	}
 }
@@ -555,7 +555,7 @@ std::tuple<bool, Ray, Rgb> BidirectionalIntegrator::connectLPath(PathData &pd, R
 
 	//== use illumSample, no matter what...s1/s2 is only set when required ==
 	LSample ls;
-	if(!light->getFlags()) //only lights with non-specular components need sample values
+	if(light->getFlags() == Light::Flags::None) //only lights with non-specular components need sample values
 	{
 		ls.s_1_ = random_generator();
 		ls.s_2_ = random_generator();
@@ -575,8 +575,8 @@ std::tuple<bool, Ray, Rgb> BidirectionalIntegrator::connectLPath(PathData &pd, R
 	const auto [area_pdf, dir_pdf, cos_wo]{light->emitPdf(sp_light.n_, vec)};
 	pd.path_[0].pdf_a_0_ = area_pdf * light_num_pdf;
 	pd.path_[0].pdf_f_ = dir_pdf / cos_wo;
-	pd.path_[0].specular_ = ls.flags_.hasAny(Light::Flags::DiracDir); //FIXME this has to be clarified
-	pd.singular_l_ = ls.flags_.hasAny(Light::Flags::Singular);
+	pd.path_[0].specular_ = flags::have(ls.flags_, Light::Flags::DiracDir); //FIXME this has to be clarified
+	pd.singular_l_ = flags::have(ls.flags_, Light::Flags::Singular);
 	pd.pdf_illum_ = ls.pdf_ * light_num_pdf;
 	pd.pdf_emit_ = pd.path_[0].pdf_a_0_ * (sp_light.p_ - z.sp_.p_).lengthSqr() / cos_wo;
 

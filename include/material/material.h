@@ -36,31 +36,25 @@ struct Sample;
 struct PSample;
 class Logger;
 
-struct BsdfFlags : public Flags
+enum class BsdfFlags : unsigned int
 {
-	BsdfFlags() = default;
-	BsdfFlags(const Flags &flags) : Flags(flags) { } // NOLINT(google-explicit-constructor)
-	BsdfFlags(unsigned int flags) : Flags(flags) { } // NOLINT(google-explicit-constructor)
-	enum Enum : unsigned int
-	{
-			None		= 0,
-			Specular	= 1 << 0,
-			Glossy		= 1 << 1,
-			Diffuse		= 1 << 2,
-			Dispersive	= 1 << 3,
-			Reflect		= 1 << 4,
-			Transmit	= 1 << 5,
-			Filter		= 1 << 6,
-			Emit		= 1 << 7,
-			Volumetric	= 1 << 8,
-			DiffuseReflect = Diffuse | Reflect,
-			SpecularReflect = Specular | Reflect,
-			SpecularTransmit = Transmit | Filter,
-			Translucency = Diffuse | Transmit,// translucency (diffuse transmitt)
-			AllSpecular = Specular | Reflect | Transmit,
-			AllGlossy = Glossy | Reflect | Transmit,
-			All = Specular | Glossy | Diffuse | Dispersive | Reflect | Transmit | Filter
-	};
+	None		= 0,
+	Specular	= 1 << 0,
+	Glossy		= 1 << 1,
+	Diffuse		= 1 << 2,
+	Dispersive	= 1 << 3,
+	Reflect		= 1 << 4,
+	Transmit	= 1 << 5,
+	Filter		= 1 << 6,
+	Emit		= 1 << 7,
+	Volumetric	= 1 << 8,
+	DiffuseReflect = Diffuse | Reflect,
+	SpecularReflect = Specular | Reflect,
+	SpecularTransmit = Transmit | Filter,
+	Translucency = Diffuse | Transmit,// translucency (diffuse transmitt)
+	AllSpecular = Specular | Reflect | Transmit,
+	AllGlossy = Glossy | Reflect | Transmit,
+	All = Specular | Glossy | Diffuse | Dispersive | Reflect | Transmit | Filter
 };
 
 class MaterialData
@@ -103,8 +97,8 @@ class Material
 
 		/*! evaluate the BSDF for the given components.
 				@param types the types of BSDFs to be evaluated (e.g. diffuse only, or diffuse and glossy) */
-		virtual Rgb eval(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wl, const BsdfFlags &types, bool force_eval) const = 0;
-		Rgb eval(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wl, const BsdfFlags &types) const { return eval(mat_data, sp, wo, wl, types, false); }
+		virtual Rgb eval(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wl, BsdfFlags types, bool force_eval) const = 0;
+		Rgb eval(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wl, BsdfFlags types) const { return eval(mat_data, sp, wo, wl, types, false); }
 
 		/*! take a sample from the BSDF, given a 2-dimensional sample value and the BSDF types to be sampled from
 			\param s s1, s2 and flags members give necessary information for creating the sample, pdf and sampledFlags need to be returned
@@ -114,7 +108,7 @@ class Material
 		virtual Rgb sample(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, Vec3 *const dir, Rgb &tcol, Sample &s, float *const w, bool chromatic, float wavelength) const {return Rgb{0.f};}
 		/*! return the pdf for sampling the BSDF with wi and wo
 		*/
-		virtual float pdf(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wi, const BsdfFlags &bsdfs) const {return 0.f;}
+		virtual float pdf(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wi, BsdfFlags bsdfs) const {return 0.f;}
 		/*! indicate whether light can (partially) pass the material without getting refracted,
 			e.g. a curtain or even very thin foils approximated as single non-refractive layer.
 			used to trace transparent shadows. Note that in this case, initBSDF was NOT called before!
@@ -191,7 +185,7 @@ class Material
 			you need to determine the partial derivatives for NU and NV first, e.g. from a shader node */
 		static void applyBump(SurfacePoint &sp, const DuDv &du_dv);
 
-		BsdfFlags bsdf_flags_ = BsdfFlags::None;
+		BsdfFlags bsdf_flags_{BsdfFlags::None};
 
 		Visibility visibility_ = Visibility::NormalVisible; //!< sets material visibility (Normal:visible, visible without shadows, invisible (shadows only) or totally invisible.
 

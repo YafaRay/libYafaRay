@@ -25,76 +25,34 @@
 
 namespace yafaray {
 
-class Flags
+template<typename EnumClass>
+inline constexpr EnumClass operator | (EnumClass f_1, EnumClass f_2)
 {
-	public:
-		constexpr Flags() = default;
-		constexpr Flags(const Flags &flags) = default;
-		constexpr Flags(unsigned int flags) : data_(flags) { } // NOLINT(google-explicit-constructor)
-		constexpr explicit operator unsigned int() const { return data_; }
-		constexpr bool hasAny(const Flags &f) const;
-		constexpr bool hasAll(const Flags &f) const;
-		static constexpr inline bool hasAny(const Flags &f_1, const Flags &f_2);
-		static constexpr inline bool hasAll(const Flags &f_1, const Flags &f_2);
-	private:
-		unsigned int data_ = 0;
-};
-
-inline constexpr Flags operator | (const Flags &f_1, const Flags &f_2)
-{
-	return (static_cast<unsigned int>(f_1) | static_cast<unsigned int>(f_2));
+	return static_cast<EnumClass>(static_cast<unsigned int>(f_1) | static_cast<unsigned int>(f_2));
 }
 
-inline Flags operator|=(Flags &f_1, const Flags &f_2)
+template<typename EnumClass>
+inline constexpr EnumClass operator & (EnumClass f_1, EnumClass f_2)
 {
-	return f_1 = (f_1 | f_2);
+	return static_cast<EnumClass>(static_cast<unsigned int>(f_1) & static_cast<unsigned int>(f_2));
 }
 
-inline constexpr Flags operator & (const Flags &f_1, const Flags &f_2)
+template<typename EnumClass>
+inline EnumClass operator|=(EnumClass &f_1, EnumClass f_2)
 {
-	return (static_cast<unsigned int>(f_1) & static_cast<unsigned int>(f_2));
+	return f_1 = static_cast<EnumClass>(static_cast<unsigned int>(f_1) | static_cast<unsigned int>(f_2));
 }
 
-inline Flags operator&=(Flags &f_1, const Flags &f_2)
+namespace flags
 {
-	return f_1 = (f_1 & f_2);
+
+template<typename EnumClass>
+inline bool have(EnumClass f_1, EnumClass f_2)
+{
+	return (static_cast<unsigned int>(f_1) & static_cast<unsigned int>(f_2)) != 0;
 }
 
-inline constexpr bool operator!(const Flags &f)
-{
-	return static_cast<unsigned int>(f) == 0;
-}
-
-inline constexpr bool operator == (const Flags &f_1, const Flags &f_2)
-{
-	return static_cast<unsigned int>(f_1) == static_cast<unsigned int>(f_2);
-}
-
-inline constexpr bool operator != (const Flags &f_1, const Flags &f_2)
-{
-	return !(f_1 == f_2);
-}
-
-inline constexpr bool Flags::hasAny(const Flags &f_1, const Flags &f_2)
-{
-	return !!(f_1 & f_2);
-}
-
-inline constexpr bool Flags::hasAny(const Flags &f_2) const
-{
-	return hasAny(*this, f_2);
-}
-
-inline constexpr bool Flags::hasAll(const Flags &f_1, const Flags &f_2)
-{
-	return !(f_1 & !f_2);
-}
-
-inline constexpr bool Flags::hasAll(const Flags &f_2) const
-{
-	return hasAll(*this, f_2);
-}
-
+} //namespace flags
 } //namespace yafaray
 
 #endif //YAFARAY_FLAGS_H

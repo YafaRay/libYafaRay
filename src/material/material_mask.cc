@@ -51,7 +51,7 @@ const MaterialData * MaskMaterial::initBsdf(SurfacePoint &sp, const Camera *came
 	return mat_data;
 }
 
-Rgb MaskMaterial::eval(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wl, const BsdfFlags &bsdfs, bool force_eval) const
+Rgb MaskMaterial::eval(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wl, BsdfFlags bsdfs, bool force_eval) const
 {
 	const auto *mat_data_specific = static_cast<const MaskMaterialData *>(mat_data);
 	Rgb col;
@@ -69,7 +69,7 @@ Rgb MaskMaterial::sample(const MaterialData *mat_data, const SurfacePoint &sp, c
 	return col;
 }
 
-float MaskMaterial::pdf(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wi, const BsdfFlags &bsdfs) const
+float MaskMaterial::pdf(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wi, BsdfFlags bsdfs) const
 {
 	float pdf;
 	const auto *mat_data_specific = static_cast<const MaskMaterialData *>(mat_data);

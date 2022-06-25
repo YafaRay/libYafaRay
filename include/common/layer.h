@@ -50,7 +50,7 @@ class Layer final
 		std::string getExportedImageTypeNameLong() const { return Image::getTypeNameLong(exported_image_type_); }
 		std::string getExportedImageTypeNameShort() const { return Image::getTypeNameShort(exported_image_type_); }
 		std::string getExportedImageName() const { return exported_image_name_; }
-		Flags getFlags() const { return LayerDef::getFlags(type_); }
+		LayerDef::Flags getFlags() const { return LayerDef::getFlags(type_); }
 		std::string print() const;
 
 		void setType(LayerDef::Type type) { type_ = type; }

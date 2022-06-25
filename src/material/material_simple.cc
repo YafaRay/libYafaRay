@@ -52,7 +52,7 @@ Rgb LightMaterial::emit(const MaterialData *mat_data, const SurfacePoint &sp, co
 	return angle > 0 ? light_col_ : Rgb(0.f);
 }
 
-float LightMaterial::pdf(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wi, const BsdfFlags &bsdfs) const
+float LightMaterial::pdf(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wi, BsdfFlags bsdfs) const
 {
 	return 0.f;
 }

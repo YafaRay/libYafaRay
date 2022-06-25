@@ -41,7 +41,6 @@ namespace yafaray {
 class PhotonMap;
 class Badge;
 struct ConsoleColor;
-struct BsdfFlags;
 class RenderControl;
 class Timer;
 

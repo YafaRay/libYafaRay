@@ -195,13 +195,13 @@ float ShinyDiffuseMaterial::orenNayar(const Vec3 &wi, const Vec3 &wo, const Vec3
 	else return std::min(1.f, std::max(0.f, oren_nayar_a_ + oren_nayar_b_ * maxcos_f * sin_alpha * tan_beta));
 }
 
-Rgb ShinyDiffuseMaterial::eval(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wl, const BsdfFlags &bsdfs, bool force_eval) const
+Rgb ShinyDiffuseMaterial::eval(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wl, BsdfFlags bsdfs, bool force_eval) const
 {
 	const float cos_ng_wo = sp.ng_ * wo;
 	const float cos_ng_wl = sp.ng_ * wl;
 	// face forward:
 	const Vec3 n{SurfacePoint::normalFaceForward(sp.ng_, sp.n_, wo)};
-	if(!bsdfs.hasAny(bsdf_flags_ & BsdfFlags::Diffuse)) return Rgb{0.f};
+	if(!flags::have(bsdfs, bsdf_flags_ & BsdfFlags::Diffuse)) return Rgb{0.f};
 
 	float cur_ior_squared;
 	if(ior_shader_)
@@ -293,9 +293,9 @@ Rgb ShinyDiffuseMaterial::sample(const MaterialData *mat_data, const SurfacePoin
 	else s_1 = s.s_1_ / width[pick];
 
 	Rgb scolor(0.f);
-	switch(static_cast<unsigned int>(choice[pick]))
+	switch(choice[pick])
 	{
-		case(BsdfFlags::SpecularReflect):
+		case BsdfFlags::SpecularReflect:
 			wi = Vec3::reflectDir(n, wo);
 			s.pdf_ = width[pick];
 			scolor = getShaderColor(mirror_color_shader_, mat_data->node_tree_data_, mirror_color_) * (accum_c[0]);
@@ -306,17 +306,17 @@ Rgb ShinyDiffuseMaterial::sample(const MaterialData *mat_data, const SurfacePoin
 			}
 			scolor *= 1.f / std::max(std::abs(sp.n_ * wi), 1.0e-6f);
 			break;
-		case(BsdfFlags::SpecularTransmit):
+		case BsdfFlags::SpecularTransmit:
 			wi = -wo;
 			scolor = accum_c[1] * (transmit_filter_strength_ * getShaderColor(diffuse_shader_, mat_data->node_tree_data_, diffuse_color_) + Rgb(1.f - transmit_filter_strength_));
 			if(std::abs(wi * n) /*cos_n*/ < 1e-6) s.pdf_ = 0.f;
 			else s.pdf_ = width[pick];
 			break;
-		case(BsdfFlags::Translucency):
+		case BsdfFlags::Translucency:
 			wi = sample::cosHemisphere(-n, sp.uvn_, s_1, s.s_2_);
 			if(cos_ng_wo * (sp.ng_ * wi) /* cos_ng_wi */ < 0) scolor = accum_c[2] * getShaderColor(diffuse_shader_, mat_data->node_tree_data_, diffuse_color_);
 			s.pdf_ = std::abs(wi * n) * width[pick]; break;
-		case(BsdfFlags::DiffuseReflect):
+		case BsdfFlags::DiffuseReflect:
 		default:
 			wi = sample::cosHemisphere(n, sp.uvn_, s_1, s.s_2_);
 			if(cos_ng_wo * (sp.ng_ * wi) /* cos_ng_wi */ > 0) scolor = accum_c[3] * getShaderColor(diffuse_shader_, mat_data->node_tree_data_, diffuse_color_);
@@ -339,9 +339,9 @@ Rgb ShinyDiffuseMaterial::sample(const MaterialData *mat_data, const SurfacePoin
 	return scolor;
 }
 
-float ShinyDiffuseMaterial::pdf(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wi, const BsdfFlags &bsdfs) const
+float ShinyDiffuseMaterial::pdf(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wi, BsdfFlags bsdfs) const
 {
-	if(!bsdfs.hasAny(BsdfFlags::Diffuse)) return 0.f;
+	if(!flags::have(bsdfs, BsdfFlags::Diffuse)) return 0.f;
 
 	float pdf = 0.f;
 	const float cos_ng_wo = sp.ng_ * wo;
@@ -363,16 +363,16 @@ float ShinyDiffuseMaterial::pdf(const MaterialData *mat_data, const SurfacePoint
 	int n_match = 0;
 	for(int i = 0; i < n_bsdf_; ++i)
 	{
-		if(bsdfs.hasAny(c_flags_[i]))
+		if(flags::have(bsdfs, c_flags_[i]))
 		{
 			width = accum_c[c_index_[i]];
 			sum += width;
-			switch(static_cast<unsigned int>(c_flags_[i]))
+			switch(c_flags_[i])
 			{
-				case(BsdfFlags::Diffuse | BsdfFlags::Transmit):  // translucency (diffuse transmitt)
+				case BsdfFlags::Diffuse | BsdfFlags::Transmit:  // translucency (diffuse transmitt)
 					if(cos_ng_wo * (sp.ng_ * wi) /*cos_ng_wi*/ < 0) pdf += std::abs(wi * n) * width;
 					break;
-				case(BsdfFlags::Diffuse | BsdfFlags::Reflect):  // lambertian
+				case BsdfFlags::Diffuse | BsdfFlags::Reflect:  // lambertian
 					pdf += std::abs(wi * n) * width;
 					break;
 				default:

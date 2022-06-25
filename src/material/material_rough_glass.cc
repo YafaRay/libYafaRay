@@ -86,7 +86,7 @@ Rgb RoughGlassMaterial::sample(const MaterialData *mat_data, const SurfacePoint 
 	float kr, kt;
 	if(microfacet::refract(((outside) ? 1.f / cur_ior : cur_ior), wo, wi, h, wo_h, kr, kt))
 	{
-		if(s.s_1_ < kt && s.flags_.hasAny(BsdfFlags::Transmit))
+		if(s.s_1_ < kt && flags::have(s.flags_, BsdfFlags::Transmit))
 		{
 			const float wi_n = wi * n;
 			const float wi_h = wi * h;
@@ -110,7 +110,7 @@ Rgb RoughGlassMaterial::sample(const MaterialData *mat_data, const SurfacePoint 
 			ret = glossy * getShaderColor(filter_col_shader_, mat_data->node_tree_data_, filter_color_);
 			w = std::abs(wi_n) / std::max(0.1f, s.pdf_); //FIXME: I have to put a lower limit to s.pdf to avoid white dots (high values) piling up in the recursive render stage. Why is this needed?
 		}
-		else if(s.flags_.hasAny(BsdfFlags::Reflect))
+		else if(flags::have(s.flags_, BsdfFlags::Reflect))
 		{
 			microfacet::reflect(wo, wi, h);
 
@@ -182,7 +182,7 @@ Rgb RoughGlassMaterial::sample(const MaterialData *mat_data, const SurfacePoint 
 	Vec3 wi;
 	if(microfacet::refract(((outside) ? 1.f / cur_ior : cur_ior), wo, wi, h, wo_h, kr, kt))
 	{
-		if(s.flags_.hasAny(BsdfFlags::Transmit))
+		if(flags::have(s.flags_, BsdfFlags::Transmit))
 		{
 			const float wi_n = wi * n;
 			const float wi_h = wi * h;
@@ -209,7 +209,7 @@ Rgb RoughGlassMaterial::sample(const MaterialData *mat_data, const SurfacePoint 
 			dir[0] = wi;
 
 		}
-		if(s.flags_.hasAny(BsdfFlags::Reflect))
+		if(flags::have(s.flags_, BsdfFlags::Reflect))
 		{
 			microfacet::reflect(wo, wi, h);
 			const float wi_n = wi * n;

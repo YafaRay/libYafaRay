@@ -107,21 +107,21 @@ float GlossyMaterial::orenNayar(const Vec3 &wi, const Vec3 &wo, const Vec3 &n, b
 	}
 }
 
-Rgb GlossyMaterial::eval(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wl, const BsdfFlags &bsdfs, bool force_eval) const
+Rgb GlossyMaterial::eval(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wl, BsdfFlags bsdfs, bool force_eval) const
 {
 	if(!force_eval)	//If the flag force_eval = true then the next line will be skipped, necessary for the Glossy Direct render pass
 	{
-		if(!bsdfs.hasAny(BsdfFlags::Diffuse) || ((sp.ng_ * wl) * (sp.ng_ * wo)) < 0.f) return Rgb{0.f};
+		if(!flags::have(bsdfs, BsdfFlags::Diffuse) || ((sp.ng_ * wl) * (sp.ng_ * wo)) < 0.f) return Rgb{0.f};
 	}
 
 	Rgb col(0.f);
-	const bool diffuse_flag = bsdfs.hasAny(BsdfFlags::Diffuse);
+	const bool diffuse_flag = flags::have(bsdfs, BsdfFlags::Diffuse);
 	const Vec3 n{SurfacePoint::normalFaceForward(sp.ng_, sp.n_, wo)};
 
 	const float wi_n = std::abs(wl * n);
 	const float wo_n = std::abs(wo * n);
 
-	if((as_diffuse_ && diffuse_flag) || (!as_diffuse_ && bsdfs.hasAny(BsdfFlags::Glossy)))
+	if((as_diffuse_ && diffuse_flag) || (!as_diffuse_ && flags::have(bsdfs, BsdfFlags::Glossy)))
 	{
 		const Vec3 h{(wo + wl).normalize()}; // half-angle
 		const float cos_wi_h = std::max(0.f, wl * h);
@@ -170,8 +170,8 @@ Rgb GlossyMaterial::sample(const MaterialData *mat_data, const SurfacePoint &sp,
 	float s_1 = s.s_1_;
 	const auto *mat_data_specific = static_cast<const GlossyMaterialData *>(mat_data);
 	float cur_p_diffuse = mat_data_specific->p_diffuse_;
-	const bool use_glossy = as_diffuse_ ? s.flags_.hasAny(BsdfFlags::Diffuse) : s.flags_.hasAny(BsdfFlags::Glossy);
-	const bool use_diffuse = with_diffuse_ && s.flags_.hasAny(BsdfFlags::Diffuse);
+	const bool use_glossy = as_diffuse_ ? flags::have(s.flags_, BsdfFlags::Diffuse) : flags::have(s.flags_, BsdfFlags::Glossy);
+	const bool use_diffuse = with_diffuse_ && flags::have(s.flags_, BsdfFlags::Diffuse);
 	if(use_diffuse)
 	{
 		float s_p_diffuse = use_glossy ? cur_p_diffuse : 1.f;
@@ -208,7 +208,7 @@ Rgb GlossyMaterial::sample(const MaterialData *mat_data, const SurfacePoint &sp,
 			}
 			s.sampled_flags_ = BsdfFlags::Diffuse | BsdfFlags::Reflect;
 
-			if(!s.flags_.hasAny(BsdfFlags::Reflect))
+			if(!flags::have(s.flags_, BsdfFlags::Reflect))
 			{
 				scolor = Rgb(0.f);
 				applyWireFrame(scolor, wireframe_shader_, mat_data->node_tree_data_, sp);
@@ -311,15 +311,15 @@ Rgb GlossyMaterial::sample(const MaterialData *mat_data, const SurfacePoint &sp,
 	return scolor;
 }
 
-float GlossyMaterial::pdf(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wi, const BsdfFlags &flags) const
+float GlossyMaterial::pdf(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wi, BsdfFlags flags) const
 {
 	if((sp.ng_ * wo) * (sp.ng_ * wi) < 0.f) return 0.f;
 	const Vec3 n{SurfacePoint::normalFaceForward(sp.ng_, sp.n_, wo)};
 	float pdf = 0.f;
 	const auto *mat_data_specific = static_cast<const GlossyMaterialData *>(mat_data);
 	const float cur_p_diffuse = mat_data_specific->p_diffuse_;
-	const bool use_glossy = as_diffuse_ ? flags.hasAny(BsdfFlags::Diffuse) : flags.hasAny(BsdfFlags::Glossy);
-	const bool use_diffuse = with_diffuse_ && flags.hasAny(BsdfFlags::Diffuse);
+	const bool use_glossy = as_diffuse_ ? flags::have(flags, BsdfFlags::Diffuse) : flags::have(flags, BsdfFlags::Glossy);
+	const bool use_diffuse = with_diffuse_ && flags::have(flags, BsdfFlags::Diffuse);
 	if(use_diffuse)
 	{
 		pdf = std::abs(wi * n);

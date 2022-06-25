@@ -61,7 +61,7 @@ const MaterialData * BlendMaterial::initBsdf(SurfacePoint &sp, const Camera *cam
 	return mat_data;
 }
 
-Rgb BlendMaterial::eval(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wl, const BsdfFlags &bsdfs, bool force_eval) const
+Rgb BlendMaterial::eval(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wl, BsdfFlags bsdfs, bool force_eval) const
 {
 	const float blend_val = getBlendVal(mat_data->node_tree_data_);
 	const auto *mat_data_specific = static_cast<const BlendMaterialData *>(mat_data);
@@ -85,13 +85,13 @@ Rgb BlendMaterial::sample(const MaterialData *mat_data, const SurfacePoint &sp, 
 
 	s_2.pdf_ = s_1.pdf_ = s.pdf_ = 0.f;
 	const auto *mat_data_specific = static_cast<const BlendMaterialData *>(mat_data);
-	if(s.flags_.hasAny(mat_data_specific->mat_1_data_->bsdf_flags_))
+	if(flags::have(s.flags_, mat_data_specific->mat_1_data_->bsdf_flags_))
 	{
 		col_1 = mat_1_->get()->sample(mat_data_specific->mat_1_data_.get(), sp, wo, wi_1, s_1, w_1, chromatic, wavelength, camera);
 		mat_1_sampled = true;
 	}
 
-	if(s.flags_.hasAny(mat_data_specific->mat_2_data_->bsdf_flags_))
+	if(flags::have(s.flags_, mat_data_specific->mat_2_data_->bsdf_flags_))
 	{
 		col_2 = mat_2_->get()->sample(mat_data_specific->mat_2_data_.get(), sp, wo, wi_2, s_2, w_2, chromatic, wavelength, camera);
 		mat_2_sampled = true;
@@ -163,7 +163,7 @@ Rgb BlendMaterial::sample(const MaterialData *mat_data, const SurfacePoint &sp, 
 	return col;
 }
 
-float BlendMaterial::pdf(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wi, const BsdfFlags &bsdfs) const
+float BlendMaterial::pdf(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wi, BsdfFlags bsdfs) const
 {
 	const float blend_val = getBlendVal(mat_data->node_tree_data_);
 	const auto *mat_data_specific = static_cast<const BlendMaterialData *>(mat_data);

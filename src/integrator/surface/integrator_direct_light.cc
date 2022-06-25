@@ -102,19 +102,19 @@ std::pair<Rgb, float> DirectLightIntegrator::integrate(Ray &ray, FastRandom &fas
 	ray.tmax_ = tmax;
 	if(sp)
 	{
-		const BsdfFlags &mat_bsdfs = sp->mat_data_->bsdf_flags_;
+		const BsdfFlags mat_bsdfs = sp->mat_data_->bsdf_flags_;
 		const Vec3 wo{-ray.dir_};
 		additional_depth = std::max(additional_depth, sp->getMaterial()->getAdditionalDepth());
-		if(mat_bsdfs.hasAny(BsdfFlags::Emit))
+		if(flags::have(mat_bsdfs, BsdfFlags::Emit))
 		{
 			const Rgb col_emit = sp->emit(wo);
 			col += col_emit;
-			if(color_layers && color_layers->getFlags().hasAny(LayerDef::Flags::BasicLayers))
+			if(color_layers && flags::have(color_layers->getFlags(), LayerDef::Flags::BasicLayers))
 			{
 				if(Rgba *color_layer = color_layers->find(LayerDef::Emit)) *color_layer = Rgba{col_emit};
 			}
 		}
-		if(mat_bsdfs.hasAny(BsdfFlags::Diffuse))
+		if(flags::have(mat_bsdfs, BsdfFlags::Diffuse))
 		{
 			col += estimateAllDirectLight(random_generator, color_layers, chromatic_enabled, wavelength, *sp, wo, ray_division, pixel_sampling_data);
 			if(use_photon_caustics_)

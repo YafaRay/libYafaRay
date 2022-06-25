@@ -162,7 +162,7 @@ void PhotonIntegrator::diffuseWorker(FastRandom &fast_random, PreGatherData &pgd
 			std::tie(hit_curr, ray.tmax_) = accelerator_->intersect(ray, camera_);
 			if(!hit_curr) break;
 			Rgb transm(1.f);
-			if(material_prev && hit_prev && mat_bsdfs_prev.hasAny(BsdfFlags::Volumetric))
+			if(material_prev && hit_prev && flags::have(mat_bsdfs_prev, BsdfFlags::Volumetric))
 			{
 				if(const VolumeHandler *vol = material_prev->getVolumeHandler(hit_prev->ng_ * -ray.dir_ < 0))
 				{
@@ -170,8 +170,8 @@ void PhotonIntegrator::diffuseWorker(FastRandom &fast_random, PreGatherData &pgd
 				}
 			}
 			const Vec3 wi{-ray.dir_};
-			const BsdfFlags &mat_bsdfs = hit_curr->mat_data_->bsdf_flags_;
-			if(mat_bsdfs.hasAny(BsdfFlags::Diffuse))
+			const BsdfFlags mat_bsdfs = hit_curr->mat_data_->bsdf_flags_;
+			if(flags::have(mat_bsdfs, BsdfFlags::Diffuse))
 			{
 				//deposit photon on surface
 				if(!caustic_photon)
@@ -201,10 +201,10 @@ void PhotonIntegrator::diffuseWorker(FastRandom &fast_random, PreGatherData &pgd
 			bool scattered = hit_curr->scatterPhoton(wi, wo, sample, true, 0.f, camera_);
 			if(!scattered) break; //photon was absorped.
 			pcol = sample.color_;
-			caustic_photon = (sample.sampled_flags_.hasAny((BsdfFlags::Glossy | BsdfFlags::Specular | BsdfFlags::Dispersive)) && direct_photon) ||
-							 (sample.sampled_flags_.hasAny((BsdfFlags::Glossy | BsdfFlags::Specular | BsdfFlags::Filter | BsdfFlags::Dispersive)) &&
-							 caustic_photon);
-			direct_photon = sample.sampled_flags_.hasAny(BsdfFlags::Filter) && direct_photon;
+			caustic_photon = (flags::have(sample.sampled_flags_, (BsdfFlags::Glossy | BsdfFlags::Specular | BsdfFlags::Dispersive)) && direct_photon) ||
+							 (flags::have(sample.sampled_flags_, (BsdfFlags::Glossy | BsdfFlags::Specular | BsdfFlags::Filter | BsdfFlags::Dispersive)) &&
+							  caustic_photon);
+			direct_photon = flags::have(sample.sampled_flags_, BsdfFlags::Filter) && direct_photon;
 			ray.from_ = hit_curr->p_;
 			ray.dir_ = wo;
 			ray.tmin_ = ray_min_dist_;
@@ -676,8 +676,8 @@ Rgb PhotonIntegrator::finalGathering(FastRandom &fast_random, RandomGenerator &r
 		did_hit = static_cast<bool>(hit);
 		if(!did_hit) continue;   //hit background
 		length = p_ray.tmax_;
-		const BsdfFlags &mat_bsd_fs = hit->mat_data_->bsdf_flags_;
-		bool has_spec = mat_bsd_fs.hasAny(BsdfFlags::Specular);
+		const BsdfFlags mat_bsd_fs = hit->mat_data_->bsdf_flags_;
+		bool has_spec = flags::have(mat_bsd_fs, BsdfFlags::Specular);
 		bool caustic = false;
 		bool close = length < gather_dist_;
 		bool do_bounce = close || has_spec;
@@ -686,14 +686,14 @@ Rgb PhotonIntegrator::finalGathering(FastRandom &fast_random, RandomGenerator &r
 		{
 			int d_4 = 4 * depth;
 			pwo = -p_ray.dir_;
-			if(mat_bsd_fs.hasAny(BsdfFlags::Volumetric))
+			if(flags::have(mat_bsd_fs, BsdfFlags::Volumetric))
 			{
 				if(const VolumeHandler *vol = hit->getMaterial()->getVolumeHandler(hit->n_ * pwo < 0))
 				{
 					throughput *= vol->transmittance(p_ray);
 				}
 			}
-			if(mat_bsd_fs.hasAny(BsdfFlags::Diffuse))
+			if(flags::have(mat_bsd_fs, BsdfFlags::Diffuse))
 			{
 				if(close)
 				{
@@ -708,7 +708,7 @@ Rgb PhotonIntegrator::finalGathering(FastRandom &fast_random, RandomGenerator &r
 
 				if(close || caustic)
 				{
-					if(mat_bsd_fs.hasAny(BsdfFlags::Emit)) lcol += hit->emit(pwo);
+					if(flags::have(mat_bsd_fs, BsdfFlags::Emit)) lcol += hit->emit(pwo);
 					path_col += lcol * throughput;
 				}
 			}
@@ -739,19 +739,19 @@ Rgb PhotonIntegrator::finalGathering(FastRandom &fast_random, RandomGenerator &r
 			did_hit = static_cast<bool>(hit);
 			if(!did_hit) break; //hit background
 			length += p_ray.tmax_;
-			caustic = (caustic || !depth) && sb.sampled_flags_.hasAny(BsdfFlags::Specular | BsdfFlags::Filter);
+			caustic = (caustic || !depth) && flags::have(sb.sampled_flags_, BsdfFlags::Specular | BsdfFlags::Filter);
 			close = length < gather_dist_;
 			do_bounce = caustic || close;
 		}
 
 		if(did_hit)
 		{
-			if(mat_bsd_fs.hasAny(BsdfFlags::Diffuse | BsdfFlags::Glossy))
+			if(flags::have(mat_bsd_fs, BsdfFlags::Diffuse | BsdfFlags::Glossy))
 			{
 				Vec3 sf{SurfacePoint::normalFaceForward(hit->ng_, hit->n_, -p_ray.dir_)};
 				const Photon *nearest = radiance_map_->findNearest(hit->p_, sf, lookup_rad_);
 				if(nearest) lcol = nearest->col_; //FIXME should lcol be a local variable? Is it getting its value from previous functions or not??
-				if(mat_bsd_fs.hasAny(BsdfFlags::Emit)) lcol += hit->emit(-p_ray.dir_);
+				if(flags::have(mat_bsd_fs, BsdfFlags::Emit)) lcol += hit->emit(-p_ray.dir_);
 				path_col += lcol * throughput;
 			}
 		}
@@ -864,13 +864,13 @@ std::pair<Rgb, float> PhotonIntegrator::integrate(Ray &ray, FastRandom &fast_ran
 	if(sp)
 	{
 		const Vec3 wo{-ray.dir_};
-		const BsdfFlags &mat_bsdfs = sp->mat_data_->bsdf_flags_;
+		const BsdfFlags mat_bsdfs = sp->mat_data_->bsdf_flags_;
 
 		additional_depth = std::max(additional_depth, sp->getMaterial()->getAdditionalDepth());
 
 		const Rgb col_emit = sp->emit(wo);
 		col += col_emit;
-		if(color_layers && color_layers->getFlags().hasAny(LayerDef::Flags::BasicLayers))
+		if(color_layers && flags::have(color_layers->getFlags(), LayerDef::Flags::BasicLayers))
 		{
 			if(Rgba *color_layer = color_layers->find(LayerDef::Emit)) *color_layer += col_emit;
 		}
@@ -884,7 +884,7 @@ std::pair<Rgb, float> PhotonIntegrator::integrate(Ray &ray, FastRandom &fast_ran
 			}
 			else
 			{
-				if(color_layers && color_layers->getFlags().hasAny(LayerDef::Flags::BasicLayers))
+				if(color_layers && flags::have(color_layers->getFlags(), LayerDef::Flags::BasicLayers))
 				{
 					if(Rgba *color_layer = color_layers->find(LayerDef::Radiance))
 					{
@@ -895,23 +895,23 @@ std::pair<Rgb, float> PhotonIntegrator::integrate(Ray &ray, FastRandom &fast_ran
 				}
 
 				// contribution of light emitting surfaces
-				if(mat_bsdfs.hasAny(BsdfFlags::Emit))
+				if(flags::have(mat_bsdfs, BsdfFlags::Emit))
 				{
 					const Rgb col_tmp = sp->emit(wo);
 					col += col_tmp;
-					if(color_layers && color_layers->getFlags().hasAny(LayerDef::Flags::BasicLayers))
+					if(color_layers && flags::have(color_layers->getFlags(), LayerDef::Flags::BasicLayers))
 					{
 						if(Rgba *color_layer = color_layers->find(LayerDef::Emit)) *color_layer += col_tmp;
 					}
 				}
 
-				if(mat_bsdfs.hasAny(BsdfFlags::Diffuse))
+				if(flags::have(mat_bsdfs, BsdfFlags::Diffuse))
 				{
 					col += estimateAllDirectLight(random_generator, color_layers, chromatic_enabled, wavelength, *sp, wo, ray_division, pixel_sampling_data);
 					Rgb col_tmp = finalGathering(fast_random, random_generator, correlative_sample_number, thread_id, chromatic_enabled, wavelength, *sp, wo, ray_division, pixel_sampling_data);
 					if(aa_noise_params_.clamp_indirect_ > 0.f) col_tmp.clampProportionalRgb(aa_noise_params_.clamp_indirect_);
 					col += col_tmp;
-					if(color_layers && color_layers->getFlags().hasAny(LayerDef::Flags::DiffuseLayers))
+					if(color_layers && flags::have(color_layers->getFlags(), LayerDef::Flags::DiffuseLayers))
 					{
 						if(Rgba *color_layer = color_layers->find(LayerDef::DiffuseIndirect)) *color_layer = Rgba{col_tmp};
 					}
@@ -928,7 +928,7 @@ std::pair<Rgb, float> PhotonIntegrator::integrate(Ray &ray, FastRandom &fast_ran
 			}
 			else
 			{
-				if(use_photon_diffuse_ && color_layers && color_layers->getFlags().hasAny(LayerDef::Flags::BasicLayers))
+				if(use_photon_diffuse_ && color_layers && flags::have(color_layers->getFlags(), LayerDef::Flags::BasicLayers))
 				{
 					if(Rgba *color_layer = color_layers->find(LayerDef::Radiance))
 					{
@@ -938,17 +938,17 @@ std::pair<Rgb, float> PhotonIntegrator::integrate(Ray &ray, FastRandom &fast_ran
 					}
 				}
 
-				if(mat_bsdfs.hasAny(BsdfFlags::Emit))
+				if(flags::have(mat_bsdfs, BsdfFlags::Emit))
 				{
 					const Rgb col_tmp = sp->emit(wo);
 					col += col_tmp;
-					if(color_layers && color_layers->getFlags().hasAny(LayerDef::Flags::BasicLayers))
+					if(color_layers && flags::have(color_layers->getFlags(), LayerDef::Flags::BasicLayers))
 					{
 						if(Rgba *color_layer = color_layers->find(LayerDef::Emit)) *color_layer += col_tmp;
 					}
 				}
 
-				if(mat_bsdfs.hasAny(BsdfFlags::Diffuse))
+				if(flags::have(mat_bsdfs, BsdfFlags::Diffuse))
 				{
 					col += estimateAllDirectLight(random_generator, color_layers, chromatic_enabled, wavelength, *sp, wo, ray_division, pixel_sampling_data);
 				}
@@ -971,7 +971,7 @@ std::pair<Rgb, float> PhotonIntegrator::integrate(Ray &ray, FastRandom &fast_ran
 
 						const Rgb col_tmp = surf_col * scale * gathered[i].photon_->col_;
 						col += col_tmp;
-						if(color_layers && color_layers->getFlags().hasAny(LayerDef::Flags::BasicLayers))
+						if(color_layers && flags::have(color_layers->getFlags(), LayerDef::Flags::BasicLayers))
 						{
 							if(Rgba *color_layer = color_layers->find(LayerDef::DiffuseIndirect)) *color_layer += col_tmp;
 						}
@@ -981,7 +981,7 @@ std::pair<Rgb, float> PhotonIntegrator::integrate(Ray &ray, FastRandom &fast_ran
 		}
 
 		// add caustics
-		if(use_photon_caustics_ && mat_bsdfs.hasAny(BsdfFlags::Diffuse))
+		if(use_photon_caustics_ && flags::have(mat_bsdfs, BsdfFlags::Diffuse))
 		{
 			col += causticPhotons(color_layers, ray, *sp, wo, aa_noise_params_.clamp_indirect_, caustic_map_.get(), caus_radius_, n_caus_search_);
 		}

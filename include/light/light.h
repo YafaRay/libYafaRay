@@ -41,15 +41,10 @@ struct LSample;
 class Light
 {
 	public:
+		enum class Flags : unsigned int { None = 0, DiracDir = 1, Singular = 1 << 1 };
 		static Light *factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params);
-		struct Flags : public yafaray::Flags
-		{
-			Flags() = default;
-			Flags(unsigned int flags) : yafaray::Flags(flags) { } // NOLINT(google-explicit-constructor)
-			enum Enum : unsigned int { None = 0, DiracDir = 1, Singular = 1 << 1 };
-		};
 		explicit Light(Logger &logger) : logger_(logger) { }
-		Light(Logger &logger, const Flags &flags): flags_(flags), logger_(logger) { }
+		Light(Logger &logger, Flags flags): flags_(flags), logger_(logger) { }
 		virtual ~Light() = default;
 		//! allow for preprocessing when scene loading has finished
 		virtual void init(Scene &scene) {}

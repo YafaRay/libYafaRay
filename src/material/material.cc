@@ -159,7 +159,7 @@ bool Material::scatterPhoton(const MaterialData *mat_data, const SurfacePoint &s
 
 Rgb Material::getReflectivity(FastRandom &fast_random, const MaterialData *mat_data, const SurfacePoint &sp, BsdfFlags flags, bool chromatic, float wavelength, const Camera *camera) const
 {
-	if(!flags.hasAny((BsdfFlags::Transmit | BsdfFlags::Reflect) & bsdf_flags_)) return Rgb{0.f};
+	if(!flags::have(flags, (BsdfFlags::Transmit | BsdfFlags::Reflect) & bsdf_flags_)) return Rgb{0.f};
 	Rgb total(0.f);
 	for(int i = 0; i < 16; ++i)
 	{
