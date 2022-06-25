@@ -1,3 +1,2 @@
-#include/resource/*.h -linguist-detectable
-#include/resource/qtanim/*.h -linguist-detectable
+tests/** linguist-vendored
 *.h linguist-language=C++
