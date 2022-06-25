@@ -55,7 +55,7 @@ class PrimitiveInstance : public Primitive
 		std::pair<Point3, Vec3> sample(const Uv<float> &uv, float time) const override;
 		std::pair<Point3, Vec3> sample(const Uv<float> &uv, float time, const Matrix4 &obj_to_world) const override;
 		const Object *getObject() const override { return &base_instance_; }
-		Visibility getVisibility() const override { return base_primitive_->getVisibility(); }
+		VisibilityFlags getVisibility() const override { return base_primitive_->getVisibility(); }
 		unsigned int getObjectIndex() const override { return base_primitive_->getObjectIndex(); }
 		unsigned int getObjectIndexAuto() const override { return base_primitive_->getObjectIndexAuto(); }
 		Rgb getObjectIndexAutoColor() const override { return base_primitive_->getObjectIndexAutoColor(); }

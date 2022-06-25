@@ -26,7 +26,7 @@
 
 namespace yafaray {
 
-MaskMaterial::MaskMaterial(Logger &logger, const std::unique_ptr<const Material> *material_1, const std::unique_ptr<const Material> *material_2, float thresh, Visibility visibility):
+MaskMaterial::MaskMaterial(Logger &logger, const std::unique_ptr<const Material> *material_1, const std::unique_ptr<const Material> *material_2, float thresh, VisibilityFlags visibility):
 		NodeMaterial(logger), mat_1_(material_1), mat_2_(material_2), threshold_(thresh)
 {
 	visibility_ = visibility;
@@ -136,7 +136,7 @@ Material *MaskMaterial::factory(Logger &logger, const Scene &scene, const std::s
 	params.getParam("receive_shadows", receive_shadows);
 	params.getParam("visibility", s_visibility);
 
-	const Visibility visibility = visibility::fromString(s_visibility);
+	const VisibilityFlags visibility = visibility::fromString(s_visibility);
 	auto mat = new MaskMaterial(logger, material_1, material_2, thresh, visibility);
 	mat->receive_shadows_ = receive_shadows;
 

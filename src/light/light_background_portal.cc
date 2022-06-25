@@ -73,7 +73,7 @@ void BackgroundPortalLight::init(Scene &scene)
 	base_object_ = scene.getObject(object_name_);
 	if(base_object_)
 	{
-		base_object_->setVisibility(Visibility::Invisible);
+		base_object_->setVisibility(VisibilityFlags::None);
 		initIs();
 		if(logger_.isVerbose()) logger_.logVerbose("bgPortalLight: Triangles:", num_primitives_, ", Area:", area_);
 		base_object_->setLight(this);

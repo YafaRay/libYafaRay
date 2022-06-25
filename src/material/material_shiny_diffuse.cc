@@ -28,8 +28,7 @@
 
 namespace yafaray {
 
-ShinyDiffuseMaterial::ShinyDiffuseMaterial(Logger &logger, const Rgb &diffuse_color, const Rgb &mirror_color, float diffuse_strength, float transparency_strength, float translucency_strength, float mirror_strength, float emit_strength, float transmit_filter_strength, Visibility visibility): NodeMaterial(logger), diffuse_color_(diffuse_color), emit_color_(emit_strength * diffuse_color), mirror_color_(mirror_color),
-mirror_strength_(mirror_strength), transparency_strength_(transparency_strength), translucency_strength_(translucency_strength), diffuse_strength_(diffuse_strength), emit_strength_(emit_strength), transmit_filter_strength_(transmit_filter_strength)
+ShinyDiffuseMaterial::ShinyDiffuseMaterial(Logger &logger, const Rgb &diffuse_color, const Rgb &mirror_color, float diffuse_strength, float transparency_strength, float translucency_strength, float mirror_strength, float emit_strength, float transmit_filter_strength, VisibilityFlags visibility): NodeMaterial(logger), diffuse_color_(diffuse_color), emit_color_(emit_strength * diffuse_color), mirror_color_(mirror_color), mirror_strength_(mirror_strength), transparency_strength_(transparency_strength), translucency_strength_(translucency_strength), diffuse_strength_(diffuse_strength), emit_strength_(emit_strength), transmit_filter_strength_(transmit_filter_strength)
 {
 	visibility_ = visibility;
 	if(emit_strength > 0.f) bsdf_flags_ |= BsdfFlags::Emit;
@@ -539,7 +538,7 @@ Material *ShinyDiffuseMaterial::factory(Logger &logger, const Scene &scene, cons
 	params.getParam("wireframe_exponent", wire_frame_exponent);
 	params.getParam("wireframe_color", wire_frame_color);
 
-	const Visibility visibility = visibility::fromString(s_visibility);
+	const VisibilityFlags visibility = visibility::fromString(s_visibility);
 
 	// !!remember to put diffuse multiplier in material itself!
 	auto mat = new ShinyDiffuseMaterial(logger, diffuse_color, mirror_color, diffuse_strength, transparency_strength, translucency_strength, mirror_strength, emit_strength, transmit_filter_strength, visibility);

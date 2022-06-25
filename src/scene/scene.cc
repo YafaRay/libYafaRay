@@ -1073,7 +1073,7 @@ bool Scene::updateObjects()
 	std::vector<const Primitive *> primitives;
 	for(const auto &[object_name, object] : objects_)
 	{
-		if(object->getVisibility() == Visibility::Invisible) continue;
+		if(object->getVisibility() == VisibilityFlags::None) continue;
 		if(object->isBaseObject()) continue;
 		const auto prims = object->getPrimitives();
 		primitives.insert(primitives.end(), prims.begin(), prims.end());

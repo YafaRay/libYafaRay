@@ -29,7 +29,7 @@
 
 namespace yafaray {
 
-BlendMaterial::BlendMaterial(Logger &logger, const std::unique_ptr<const Material> *material_1, const std::unique_ptr<const Material> *material_2, float blendv, Visibility visibility):
+BlendMaterial::BlendMaterial(Logger &logger, const std::unique_ptr<const Material> *material_1, const std::unique_ptr<const Material> *material_2, float blendv, VisibilityFlags visibility):
 		NodeMaterial(logger), mat_1_(material_1), mat_2_(material_2)
 {
 	visibility_ = visibility;
@@ -299,7 +299,7 @@ Material *BlendMaterial::factory(Logger &logger, const Scene &scene, const std::
 	params.getParam("wireframe_exponent", wire_frame_exponent);
 	params.getParam("wireframe_color", wire_frame_color);
 
-	const Visibility visibility = visibility::fromString(s_visibility);
+	const VisibilityFlags visibility = visibility::fromString(s_visibility);
 
 	auto mat = new BlendMaterial(logger, m_1, m_2, blend_val, visibility);
 

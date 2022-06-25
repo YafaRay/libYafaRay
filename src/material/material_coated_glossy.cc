@@ -41,7 +41,7 @@ namespace yafaray {
 #define C_GLOSSY  	1
 #define C_DIFFUSE 	2
 
-CoatedGlossyMaterial::CoatedGlossyMaterial(Logger &logger, const Rgb &col, const Rgb &dcol, const Rgb &mir_col, float mirror_strength, float reflect, float diff, float ior, float expo, bool as_diff, Visibility e_visibility):
+CoatedGlossyMaterial::CoatedGlossyMaterial(Logger &logger, const Rgb &col, const Rgb &dcol, const Rgb &mir_col, float mirror_strength, float reflect, float diff, float ior, float expo, bool as_diff, VisibilityFlags e_visibility):
 		NodeMaterial(logger), gloss_color_(col), diff_color_(dcol), mirror_color_(mir_col), mirror_strength_(mirror_strength), ior_(ior), exponent_(expo), reflectivity_(reflect), diffuse_(diff), as_diffuse_(as_diff)
 {
 	visibility_ = e_visibility;
@@ -466,7 +466,7 @@ Material *CoatedGlossyMaterial::factory(Logger &logger, const Scene &scene, cons
 	params.getParam("wireframe_exponent", wire_frame_exponent);
 	params.getParam("wireframe_color", wire_frame_color);
 
-	const Visibility visibility = visibility::fromString(s_visibility);
+	const VisibilityFlags visibility = visibility::fromString(s_visibility);
 
 	if(ior == 1.f) ior = 1.0000001f;
 

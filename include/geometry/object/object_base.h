@@ -29,9 +29,9 @@ class ObjectBase : public Object
 	public:
 		std::string getName() const override { return name_; }
 		void setName(const std::string &name) override { name_ = name; }
-		void setVisibility(const Visibility &visibility) override { visibility_ = visibility; }
+		void setVisibility(VisibilityFlags visibility) override { visibility_ = visibility; }
 		void useAsBaseObject(bool v) override { is_base_object_ = v; }
-		Visibility getVisibility() const override { return visibility_; }
+		VisibilityFlags getVisibility() const override { return visibility_; }
 		bool isBaseObject() const override { return is_base_object_; }
 		void setIndex(unsigned int new_obj_index) override { index_ = new_obj_index; }
 		void setIndexAuto(unsigned int new_obj_index) override;
@@ -44,7 +44,7 @@ class ObjectBase : public Object
 	private:
 		std::string name_;
 		const Light *light_ = nullptr;
-		Visibility visibility_ = Visibility::NormalVisible;
+		VisibilityFlags visibility_{VisibilityFlags::Visible | VisibilityFlags::CastsShadows};
 		bool is_base_object_ = false;
 		unsigned int index_ = 1; //!< Object Index for the object-index render pass
 		unsigned int index_auto_ = 1; //!< Object Index automatically generated for the object-index-auto render pass

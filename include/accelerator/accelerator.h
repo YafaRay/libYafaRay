@@ -96,8 +96,8 @@ inline void Accelerator::primitiveIntersection(IntersectData &intersect_data, co
 {
 	auto [t_hit, uv]{primitive->intersect(from, dir, time)};
 	if(t_hit <= 0.f || t_hit < t_min || t_hit >= t_max) return;
-	if(const Visibility prim_visibility = primitive->getVisibility(); prim_visibility == Visibility::InvisibleShadowsOnly || prim_visibility == Visibility::Invisible) return;
-	else if(const Visibility mat_visibility = primitive->getMaterial()->getVisibility(); mat_visibility == Visibility::InvisibleShadowsOnly || mat_visibility == Visibility::Invisible) return;
+	if(const VisibilityFlags prim_visibility = primitive->getVisibility(); !flags::have(prim_visibility, VisibilityFlags::Visible)) return;
+	else if(const VisibilityFlags mat_visibility = primitive->getMaterial()->getVisibility(); !flags::have(mat_visibility, VisibilityFlags::Visible)) return;
 	intersect_data.t_hit_ = t_hit;
 	intersect_data.t_max_ = t_hit;
 	intersect_data.uv_ = std::move(uv);
@@ -108,8 +108,8 @@ inline bool Accelerator::primitiveIntersectionShadow(IntersectData &intersect_da
 {
 	auto [t_hit, uv]{primitive->intersect(from, dir, time)};
 	if(t_hit <= 0.f || t_hit < t_min || t_hit >= t_max) return false;
-	if(const Visibility prim_visibility = primitive->getVisibility(); prim_visibility == Visibility::VisibleNoShadows || prim_visibility == Visibility::Invisible) return false;
-	else if(const Visibility mat_visibility = primitive->getMaterial()->getVisibility(); mat_visibility == Visibility::VisibleNoShadows || mat_visibility == Visibility::Invisible) return false;
+	if(const VisibilityFlags prim_visibility = primitive->getVisibility(); !flags::have(prim_visibility, VisibilityFlags::CastsShadows)) return false;
+	else if(const VisibilityFlags mat_visibility = primitive->getMaterial()->getVisibility(); !flags::have(mat_visibility, VisibilityFlags::CastsShadows)) return false;
 	intersect_data.t_hit_ = t_hit;
 	intersect_data.t_max_ = t_hit;
 	intersect_data.uv_ = std::move(uv);
@@ -122,9 +122,9 @@ inline bool Accelerator::primitiveIntersectionTransparentShadow(IntersectData &i
 	auto [t_hit, uv]{primitive->intersect(from, dir, time)};
 	if(t_hit <= 0.f || t_hit < t_min || t_hit >= t_max) return false;
 	const Material *mat = nullptr;
-	if(const Visibility prim_visibility = primitive->getVisibility(); prim_visibility == Visibility::VisibleNoShadows || prim_visibility == Visibility::Invisible) return false;
+	if(const VisibilityFlags prim_visibility = primitive->getVisibility(); !flags::have(prim_visibility, VisibilityFlags::CastsShadows)) return false;
 	mat = primitive->getMaterial();
-	if(mat->getVisibility() == Visibility::VisibleNoShadows || mat->getVisibility() == Visibility::Invisible) return false;
+	if(!flags::have(mat->getVisibility(),VisibilityFlags::CastsShadows)) return false;
 	intersect_data.t_hit_ = t_hit;
 	intersect_data.t_max_ = t_hit;
 	intersect_data.uv_ = std::move(uv);

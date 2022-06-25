@@ -32,7 +32,7 @@
 
 namespace yafaray {
 
-GlassMaterial::GlassMaterial(Logger &logger, float ior, Rgb filt_c, const Rgb &srcol, double disp_pow, bool fake_s, Visibility e_visibility):
+GlassMaterial::GlassMaterial(Logger &logger, float ior, Rgb filt_c, const Rgb &srcol, double disp_pow, bool fake_s, VisibilityFlags e_visibility):
 		NodeMaterial(logger), filter_color_(filt_c), specular_reflection_color_(srcol), fake_shadow_(fake_s), dispersion_power_(disp_pow)
 {
 	visibility_ = e_visibility;
@@ -318,7 +318,7 @@ Material *GlassMaterial::factory(Logger &logger, const Scene &scene, const std::
 	params.getParam("wireframe_exponent", wire_frame_exponent);
 	params.getParam("wireframe_color", wire_frame_color);
 
-	const Visibility visibility = visibility::fromString(s_visibility);
+	const VisibilityFlags visibility = visibility::fromString(s_visibility);
 
 	auto mat = new GlassMaterial(logger, ior, filt * filt_col + Rgb(1.f - filt), sr_col, disp_power, fake_shad, visibility);
 

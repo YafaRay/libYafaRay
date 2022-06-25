@@ -151,7 +151,7 @@ class Material
 		unsigned int getIndex() const { return index_; }
 		unsigned int getIndexAuto() const { return index_auto_; }
 		Rgb getIndexAutoColor() const { return index_auto_color_; }
-		Visibility getVisibility() const { return visibility_; }
+		VisibilityFlags getVisibility() const { return visibility_; }
 		bool getReceiveShadows() const { return receive_shadows_; }
 
 		bool isFlat() const { return flat_material_; }
@@ -186,9 +186,7 @@ class Material
 		static void applyBump(SurfacePoint &sp, const DuDv &du_dv);
 
 		BsdfFlags bsdf_flags_{BsdfFlags::None};
-
-		Visibility visibility_ = Visibility::NormalVisible; //!< sets material visibility (Normal:visible, visible without shadows, invisible (shadows only) or totally invisible.
-
+		VisibilityFlags visibility_{VisibilityFlags::Visible | VisibilityFlags::CastsShadows};
 		bool receive_shadows_ = true; //!< enables/disables material reception of shadows.
 		std::unique_ptr<VolumeHandler> vol_i_; //!< volumetric handler for space inside material (opposed to surface normal)
 		std::unique_ptr<VolumeHandler> vol_o_; //!< volumetric handler for space outside ofmaterial (where surface normal points to)

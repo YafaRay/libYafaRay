@@ -31,7 +31,7 @@
 
 namespace yafaray {
 
-RoughGlassMaterial::RoughGlassMaterial(Logger &logger, float ior, Rgb filt_c, const Rgb &srcol, bool fake_s, float alpha, float disp_pow, Visibility e_visibility):
+RoughGlassMaterial::RoughGlassMaterial(Logger &logger, float ior, Rgb filt_c, const Rgb &srcol, bool fake_s, float alpha, float disp_pow, VisibilityFlags e_visibility):
 		NodeMaterial(logger), filter_color_(filt_c), specular_reflection_color_(srcol), ior_(ior), a_2_(alpha * alpha), fake_shadow_(fake_s), dispersion_power_(disp_pow)
 {
 	visibility_ = e_visibility;
@@ -295,7 +295,7 @@ Material *RoughGlassMaterial::factory(Logger &logger, const Scene &scene, const 
 	params.getParam("wireframe_exponent", wire_frame_exponent);
 	params.getParam("wireframe_color", wire_frame_color);
 
-	const Visibility visibility = visibility::fromString(s_visibility);
+	const VisibilityFlags visibility = visibility::fromString(s_visibility);
 
 	alpha = std::max(1e-4f, std::min(alpha * 0.5f, 1.f));
 

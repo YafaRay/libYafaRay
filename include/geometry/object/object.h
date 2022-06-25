@@ -52,11 +52,11 @@ class Object
 		/*! write the primitive pointers to the given array
 			\return number of written primitives */
 		virtual std::vector<const Primitive *> getPrimitives() const = 0;
-		virtual void setVisibility(const Visibility &visibility) = 0;
+		virtual void setVisibility(VisibilityFlags visibility) = 0;
 		/*! Indicates that this object should be used as base object for instances */
 		virtual void useAsBaseObject(bool v) = 0;
 		/*! Returns if this object should be used for rendering and/or shadows. */
-		virtual Visibility getVisibility() const = 0;
+		virtual VisibilityFlags getVisibility() const = 0;
 		/*! Returns if this object is used as base object for instances. */
 		virtual bool isBaseObject() const = 0;
 		virtual void setIndex(unsigned int new_obj_index) = 0;

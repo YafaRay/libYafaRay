@@ -20,34 +20,34 @@
 #ifndef YAFARAY_VISIBILITY_H
 #define YAFARAY_VISIBILITY_H
 
+#include "common/flags.h"
 #include <string>
 
 namespace yafaray {
 
-enum class Visibility : unsigned char
+enum class VisibilityFlags : unsigned int
 {
-	NormalVisible = 0, VisibleNoShadows, InvisibleShadowsOnly, Invisible
+	None = 0, Visible = 1 << 0, CastsShadows = 1 << 1,
 };
 
 namespace visibility
 {
 
-inline Visibility fromString(const std::string &str)
+inline VisibilityFlags fromString(const std::string &str)
 {
-	if(str == "normal") return Visibility::NormalVisible; // NOLINT(bugprone-branch-clone)
-	else if(str == "invisible") return Visibility::Invisible;
-	else if(str == "shadow_only") return Visibility::InvisibleShadowsOnly;
-	else if(str == "no_shadows") return Visibility::VisibleNoShadows;
-	else return Visibility::NormalVisible;
+	if(str == "normal") return VisibilityFlags::Visible | VisibilityFlags::CastsShadows; // NOLINT(bugprone-branch-clone)
+	else if(str == "invisible") return VisibilityFlags::None;
+	else if(str == "shadow_only") return VisibilityFlags::CastsShadows;
+	else if(str == "no_shadows") return VisibilityFlags::Visible;
+	else return VisibilityFlags::Visible | VisibilityFlags::CastsShadows;
 }
 
-inline std::string toString(const Visibility &visibility)
+inline std::string toString(VisibilityFlags visibility)
 {
-	if(visibility == Visibility::NormalVisible) return "normal";
-	else if(visibility == Visibility::Invisible) return "invisible";
-	else if(visibility == Visibility::InvisibleShadowsOnly) return "shadow_only";
-	else if(visibility == Visibility::VisibleNoShadows) return "no_shadows";
-	else return "unknown";
+	if(flags::have(visibility, VisibilityFlags::Visible) && flags::have(visibility, VisibilityFlags::CastsShadows)) return "normal";
+	else if(flags::have(visibility, VisibilityFlags::CastsShadows)) return "shadow_only";
+	else if(flags::have(visibility, VisibilityFlags::Visible)) return "no_shadows";
+	else return "invisible";
 }
 
 } //namespace visibility

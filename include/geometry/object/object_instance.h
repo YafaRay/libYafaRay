@@ -30,7 +30,7 @@ namespace yafaray {
 
 class Primitive;
 class Bound;
-enum class Visibility : unsigned char;
+enum class VisibilityFlags : unsigned int;
 
 class ObjectInstance final : public Object
 {
@@ -47,9 +47,9 @@ class ObjectInstance final : public Object
 		void setName(const std::string &name) override { }
 		int numPrimitives() const override { return static_cast<int>(primitive_instances_.size()); }
 		std::vector<const Primitive *> getPrimitives() const override;
-		void setVisibility(const Visibility &visibility) override { }
+		void setVisibility(VisibilityFlags visibility) override { }
 		void useAsBaseObject(bool v) override { }
-		Visibility getVisibility() const override;
+		VisibilityFlags getVisibility() const override;
 		bool isBaseObject() const override { return false; }
 		void setIndex(unsigned int new_obj_index) override { }
 		void setIndexAuto(unsigned int new_obj_index) override { }
