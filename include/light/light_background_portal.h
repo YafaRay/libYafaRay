@@ -46,18 +46,18 @@ class BackgroundPortalLight final : public Light
 		void init(Scene &scene) override;
 		Rgb totalEnergy() const override;
 		std::tuple<Ray, float, Rgb> emitPhoton(float s_1, float s_2, float s_3, float s_4, float time) const override;
-		std::pair<Vec3, Rgb> emitSample(LSample &s, float time) const override;
+		std::pair<Vec3f, Rgb> emitSample(LSample &s, float time) const override;
 		bool diracLight() const override { return false; }
 		//bool illumSample(const surfacePoint_t &sp, float s1, float s2, Rgb &col, float &ipdf, ray_t &wi) const override;
-		std::pair<bool, Ray> illumSample(const Point3 &surface_p, LSample &s, float time) const override;
-		std::tuple<bool, Ray, Rgb> illuminate(const Point3 &surface_p, float time) const override;
+		std::pair<bool, Ray> illumSample(const Point3f &surface_p, LSample &s, float time) const override;
+		std::tuple<bool, Ray, Rgb> illuminate(const Point3f &surface_p, float time) const override;
 		int nSamples() const override { return samples_; }
 		bool canIntersect() const override { return accelerator_ != nullptr /* false */ ; }
 		std::tuple<bool, float, Rgb> intersect(const Ray &ray, float &t) const override;
-		float illumPdf(const Point3 &surface_p, const Point3 &light_p, const Vec3 &light_ng) const override;
-		std::array<float, 3> emitPdf(const Vec3 &surface_n, const Vec3 &wi) const override;
+		float illumPdf(const Point3f &surface_p, const Point3f &light_p, const Vec3f &light_ng) const override;
+		std::array<float, 3> emitPdf(const Vec3f &surface_n, const Vec3f &wi) const override;
 		void initIs();
-		std::pair<Point3, Vec3> sampleSurface(float s_1, float s_2, float time) const;
+		std::pair<Point3f, Vec3f> sampleSurface(float s_1, float s_2, float time) const;
 
 		std::string object_name_;
 		std::unique_ptr<Pdf1D> area_dist_;
@@ -69,7 +69,7 @@ class BackgroundPortalLight final : public Light
 		Object *base_object_ = nullptr;
 		std::unique_ptr<const Accelerator> accelerator_;
 		const Background *bg_ = nullptr;
-		Point3 world_center_;
+		Point3f world_center_;
 		float a_pdf_;
 };
 

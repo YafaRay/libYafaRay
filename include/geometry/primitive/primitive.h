@@ -31,11 +31,14 @@ namespace yafaray {
 
 class Material;
 class SurfacePoint;
-class Point3;
+template <typename T, size_t N> class Point;
+typedef Point<float, 3> Point3f;
 class ParamMap;
 class Scene;
-class Matrix4;
-class Vec3;
+template <typename T, size_t N> class SquareMatrix;
+typedef SquareMatrix<float, 4> Matrix4f;
+template <typename T, size_t N> class Vec;
+typedef Vec<float, 3> Vec3f;
 class Object;
 class Camera;
 class Rgb;
@@ -47,20 +50,20 @@ class Primitive
 		virtual ~Primitive() = default;
 		/*! return the object bound in global ("world") coordinates */
 		virtual Bound getBound() const = 0;
-		virtual Bound getBound(const Matrix4 &obj_to_world) const = 0;
+		virtual Bound getBound(const Matrix4f &obj_to_world) const = 0;
 		virtual bool clippingSupport() const = 0;
-		virtual std::pair<float, Uv<float>> intersect(const Point3 &from, const Vec3 &dir, float time) const = 0;
-		virtual std::pair<float, Uv<float>> intersect(const Point3 &from, const Vec3 &dir, float time, const Matrix4 &obj_to_world) const = 0;
-		virtual std::unique_ptr<const SurfacePoint> getSurface(const RayDifferentials *ray_differentials, const Point3 &hit_point, float time, const Uv<float> &intersect_uv, const Camera *camera) const = 0;
-		virtual std::unique_ptr<const SurfacePoint> getSurface(const RayDifferentials *ray_differentials, const Point3 &hit_point, float time, const Uv<float> &intersect_uv, const Camera *camera, const Matrix4 &obj_to_world) const = 0;
+		virtual std::pair<float, Uv<float>> intersect(const Point3f &from, const Vec3f &dir, float time) const = 0;
+		virtual std::pair<float, Uv<float>> intersect(const Point3f &from, const Vec3f &dir, float time, const Matrix4f &obj_to_world) const = 0;
+		virtual std::unique_ptr<const SurfacePoint> getSurface(const RayDifferentials *ray_differentials, const Point3f &hit_point, float time, const Uv<float> &intersect_uv, const Camera *camera) const = 0;
+		virtual std::unique_ptr<const SurfacePoint> getSurface(const RayDifferentials *ray_differentials, const Point3f &hit_point, float time, const Uv<float> &intersect_uv, const Camera *camera, const Matrix4f &obj_to_world) const = 0;
 		virtual const Material *getMaterial() const = 0;
 		virtual float surfaceArea(float time) const = 0;
-		virtual float surfaceArea(float time, const Matrix4 &obj_to_world) const = 0;
-		virtual float getDistToNearestEdge(const Uv<float> &uv, const Uv<Vec3> &dp_abs) const = 0;
-		virtual Vec3 getGeometricNormal(const Uv<float> &uv, float time, bool) const = 0;
-		virtual Vec3 getGeometricNormal(const Uv<float> &uv, float time, const Matrix4 &obj_to_world) const = 0;
-		virtual std::pair<Point3, Vec3> sample(const Uv<float> &uv, float time) const = 0;
-		virtual std::pair<Point3, Vec3> sample(const Uv<float> &uv, float time, const Matrix4 &obj_to_world) const = 0;
+		virtual float surfaceArea(float time, const Matrix4f &obj_to_world) const = 0;
+		virtual float getDistToNearestEdge(const Uv<float> &uv, const Uv<Vec3f> &dp_abs) const = 0;
+		virtual Vec3f getGeometricNormal(const Uv<float> &uv, float time, bool) const = 0;
+		virtual Vec3f getGeometricNormal(const Uv<float> &uv, float time, const Matrix4f &obj_to_world) const = 0;
+		virtual std::pair<Point3f, Vec3f> sample(const Uv<float> &uv, float time) const = 0;
+		virtual std::pair<Point3f, Vec3f> sample(const Uv<float> &uv, float time, const Matrix4f &obj_to_world) const = 0;
 		virtual const Object *getObject() const = 0;
 		virtual VisibilityFlags getVisibility() const = 0;
 		virtual unsigned int getObjectIndex() const = 0;
@@ -68,8 +71,8 @@ class Primitive
 		virtual Rgb getObjectIndexAutoColor() const = 0;
 		virtual const Light *getObjectLight() const = 0;
 		virtual bool hasObjectMotionBlur() const = 0;
-		virtual PolyDouble::ClipResultWithBound clipToBound(Logger &logger, const std::array<Vec3Double, 2> &bound, const ClipPlane &clip_plane, const PolyDouble &poly) const;
-		virtual PolyDouble::ClipResultWithBound clipToBound(Logger &logger, const std::array<Vec3Double, 2> &bound, const ClipPlane &clip_plane, const PolyDouble &poly, const Matrix4 &obj_to_world) const;
+		virtual PolyDouble::ClipResultWithBound clipToBound(Logger &logger, const std::array<Vec3d, 2> &bound, const ClipPlane &clip_plane, const PolyDouble &poly) const;
+		virtual PolyDouble::ClipResultWithBound clipToBound(Logger &logger, const std::array<Vec3d, 2> &bound, const ClipPlane &clip_plane, const PolyDouble &poly, const Matrix4f &obj_to_world) const;
 };
 
 } //namespace yafaray

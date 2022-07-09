@@ -26,7 +26,7 @@ namespace yafaray {
 
 struct PSample;
 
-float NoiseVolumeRegion::density(const Point3 &p) const
+float NoiseVolumeRegion::density(const Point3f &p) const
 {
 	float d = tex_dist_noise_->getColor(p * 0.1f).energy();
 
@@ -80,7 +80,7 @@ VolumeRegion * NoiseVolumeRegion::factory(Logger &logger, const Scene &scene, co
 		return nullptr;
 	}
 
-	return new NoiseVolumeRegion(logger, Rgb(sa), Rgb(ss), Rgb(le), g, cov, sharp, dens, {min[0], min[1], min[2]}, {max[0], max[1], max[2]}, att_sc, noise);
+	return new NoiseVolumeRegion(logger, Rgb(sa), Rgb(ss), Rgb(le), g, cov, sharp, dens, {{min[0], min[1], min[2]}}, {{max[0], max[1], max[2]}}, att_sc, noise);
 }
 
 } //namespace yafaray

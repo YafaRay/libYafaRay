@@ -28,14 +28,14 @@
 
 namespace yafaray {
 
-SunLight::SunLight(Logger &logger, Vec3 dir, const Rgb &col, float inte, float angle, int n_samples, bool b_light_enabled, bool b_cast_shadows):
+SunLight::SunLight(Logger &logger, Vec3f dir, const Rgb &col, float inte, float angle, int n_samples, bool b_light_enabled, bool b_cast_shadows):
 		Light(logger), direction_(dir), samples_(n_samples)
 {
 	light_enabled_ = b_light_enabled;
 	cast_shadows_ = b_cast_shadows;
 	color_ = col * inte;
 	direction_.normalize();
-	duv_ = Vec3::createCoordsSystem(dir);
+	duv_ = Vec3f::createCoordsSystem(dir);
 	if(angle > 80.f) angle = 80.f;
 	cos_angle_ = math::cos(math::degToRad(angle));
 	invpdf_ = math::mult_pi_by_2<> * (1.f - cos_angle_);
@@ -53,11 +53,11 @@ void SunLight::init(Scene &scene)
 	e_pdf_ = math::num_pi<> * world_radius_ * world_radius_;
 }
 
-std::pair<bool, Ray> SunLight::illumSample(const Point3 &surface_p, LSample &s, float time) const
+std::pair<bool, Ray> SunLight::illumSample(const Point3f &surface_p, LSample &s, float time) const
 {
 	if(photonOnly()) return {};
 	//sample direction uniformly inside cone:
-	Vec3 dir{sample::cone(direction_, duv_, cos_angle_, s.s_1_, s.s_2_)};
+	Vec3f dir{sample::cone(direction_, duv_, cos_angle_, s.s_1_, s.s_2_)};
 	s.col_ = col_pdf_;
 	// ipdf: inverse of uniform cone pdf; calculated in constructor.
 	s.pdf_ = pdf_;
@@ -75,17 +75,17 @@ std::tuple<bool, float, Rgb> SunLight::intersect(const Ray &ray, float &t) const
 
 std::tuple<Ray, float, Rgb> SunLight::emitPhoton(float s_1, float s_2, float s_3, float s_4, float time) const
 {
-	const Vec3 ldir{sample::cone(direction_, duv_, cos_angle_, s_3, s_4)};
-	const Uv<Vec3> duv_2{sample::minRot(direction_, duv_.u_, ldir)};
-	const Uv<float> uv{Vec3::shirleyDisk(s_3, s_4)};
-	Point3 from{world_center_ + world_radius_ * (uv.u_ * duv_2.u_ + uv.v_ * duv_2.v_ + ldir)};
+	const Vec3f ldir{sample::cone(direction_, duv_, cos_angle_, s_3, s_4)};
+	const Uv<Vec3f> duv_2{sample::minRot(direction_, duv_.u_, ldir)};
+	const Uv<float> uv{Vec3f::shirleyDisk(s_3, s_4)};
+	Point3f from{world_center_ + world_radius_ * (uv.u_ * duv_2.u_ + uv.v_ * duv_2.v_ + ldir)};
 	Ray ray{std::move(from), -ldir, time};
 	return {std::move(ray), invpdf_, col_pdf_ * e_pdf_};
 }
 
 Light * SunLight::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params)
 {
-	Point3 dir{0.f, 0.f, 1.f};
+	Point3f dir{{0.f, 0.f, 1.f}};
 	Rgb color(1.0);
 	float power = 1.0;
 	float angle = 0.27; //angular (half-)size of the real sun;
@@ -116,7 +116,7 @@ Light * SunLight::factory(Logger &logger, const Scene &scene, const std::string 
 	return light;
 }
 
-std::tuple<bool, Ray, Rgb> SunLight::illuminate(const Point3 &surface_p, float time) const
+std::tuple<bool, Ray, Rgb> SunLight::illuminate(const Point3f &surface_p, float time) const
 {
 	return {};
 }

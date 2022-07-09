@@ -50,12 +50,12 @@ class Texture
 		virtual bool isThreeD() const { return true; }
 		virtual bool isNormalmap() const { return false; }
 
-		virtual Rgba getColor(const Point3 &p, const MipMapParams *mipmap_params) const { return Rgba(0.f); }
-		Rgba getColor(const Point3 &p) const { return getColor(p, nullptr); }
-		virtual Rgba getRawColor(const Point3 &p, const MipMapParams *mipmap_params) const { return getColor(p, mipmap_params); }
-		Rgba getRawColor(const Point3 &p) const { return getRawColor(p, nullptr); }
-		virtual float getFloat(const Point3 &p, const MipMapParams *mipmap_params) const { return applyIntensityContrastAdjustments(getRawColor(p, mipmap_params).col2Bri()); }
-		float getFloat(const Point3 &p) const { return getFloat(p, nullptr); }
+		virtual Rgba getColor(const Point3f &p, const MipMapParams *mipmap_params) const { return Rgba(0.f); }
+		Rgba getColor(const Point3f &p) const { return getColor(p, nullptr); }
+		virtual Rgba getRawColor(const Point3f &p, const MipMapParams *mipmap_params) const { return getColor(p, mipmap_params); }
+		Rgba getRawColor(const Point3f &p) const { return getRawColor(p, nullptr); }
+		virtual float getFloat(const Point3f &p, const MipMapParams *mipmap_params) const { return applyIntensityContrastAdjustments(getRawColor(p, mipmap_params).col2Bri()); }
+		float getFloat(const Point3f &p) const { return getFloat(p, nullptr); }
 
 		/* gives the number of values in each dimension for discrete textures. Returns resolution of the texture, last coordinate z/depth is for 3D textures (not currently implemented) */
 		virtual std::array<int, 3> resolution() const { return {0, 0, 0}; };
@@ -70,10 +70,10 @@ class Texture
 		InterpolationType getInterpolationType() const { return interpolation_type_; }
 		static InterpolationType getInterpolationTypeFromName(const std::string &interpolation_type_name);
 		static std::string getInterpolationTypeName(const InterpolationType &interpolation_type);
-		static Uv<float> angMap(const Point3 &p);
-		static void tubeMap(const Point3 &p, float &u, float &v);
-		static Uv<float> sphereMap(const Point3 &p);
-		static Point3 invSphereMap(const Uv<float> &uv);
+		static Uv<float> angMap(const Point3f &p);
+		static void tubeMap(const Point3f &p, float &u, float &v);
+		static Uv<float> sphereMap(const Point3f &p);
+		static Point3f invSphereMap(const Uv<float> &uv);
 
 	protected:
 		static void textureReadColorRamp(const ParamMap &params, Texture *tex);

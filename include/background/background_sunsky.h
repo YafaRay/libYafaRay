@@ -39,12 +39,12 @@ class SunSkyBackground final : public Background
 		static const Background * factory(Logger &logger, Scene &scene, const std::string &name, const ParamMap &params);
 
 	private:
-		SunSkyBackground(Logger &logger, const Point3 &dir, float turb, float a_var, float b_var, float c_var, float d_var, float e_var, float pwr);
-		Rgb eval(const Vec3 &dir, bool use_ibl_blur) const override;
-		Rgb getSkyCol(const Vec3 &dir) const;
+		SunSkyBackground(Logger &logger, const Point3f &dir, float turb, float a_var, float b_var, float c_var, float d_var, float e_var, float pwr);
+		Rgb eval(const Vec3f &dir, bool use_ibl_blur) const override;
+		Rgb getSkyCol(const Vec3f &dir) const;
 		static Rgb computeAttenuatedSunlight(float theta, int turbidity);
 
-		Vec3 sun_dir_;
+		Vec3f sun_dir_;
 		double theta_s_, phi_s_;	// sun coords
 		double theta_2_, theta_3_, t_, t_2_;
 		double zenith_Y_, zenith_x_, zenith_y_;

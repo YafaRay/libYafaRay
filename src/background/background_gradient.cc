@@ -32,9 +32,9 @@ GradientBackground::GradientBackground(Logger &logger, const Rgb &gzcol, const R
 {
 }
 
-Rgb GradientBackground::eval(const Vec3 &dir, bool use_ibl_blur) const
+Rgb GradientBackground::eval(const Vec3f &dir, bool use_ibl_blur) const
 {
-	float blend = dir.z();
+	float blend = dir[Axis::Z];
 	Rgb color;
 	if(blend >= 0.f) color = blend * szenith_ + (1.f - blend) * shoriz_;
 	else

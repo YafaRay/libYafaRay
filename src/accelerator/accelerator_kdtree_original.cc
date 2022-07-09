@@ -21,6 +21,7 @@
 #include "common/logger.h"
 #include "geometry/surface.h"
 #include "geometry/primitive/primitive.h"
+#include "geometry/clip_plane.h"
 #include "common/param.h"
 #include "image/image_output.h"
 #include <cmath>
@@ -76,7 +77,7 @@ AcceleratorKdTree::AcceleratorKdTree(Logger &logger, const std::vector<const Pri
 		if(i > 0) tree_bound_ = Bound(tree_bound_, all_bounds_[i]);
 		else tree_bound_ = all_bounds_[i];
 	}
-	if(total_prims_ == 0) tree_bound_ = Bound{Point3{0.f, 0.f, 0.f}, Point3{0.f, 0.f, 0.f}};
+	if(total_prims_ == 0) tree_bound_ = Bound{{{0.f, 0.f, 0.f}}, {{0.f, 0.f, 0.f}}};
 	//slightly(!) increase tree bound to prevent errors with prims
 	//lying in a bound plane (still slight bug with trees where one dim. is 0)
 	for(const auto axis : axis::spatial)
@@ -139,8 +140,8 @@ AcceleratorKdTree::SplitCost AcceleratorKdTree::pigeonMinCost(Logger &logger, fl
 	static constexpr int max_bin = 1024;
 	static constexpr int num_bins = max_bin + 1;
 	std::array<kdtree::TreeBin, num_bins> bins;
-	const Vec3 node_bound_axes {node_bound.longX(), node_bound.longY(), node_bound.longZ() };
-	const Vec3 inv_node_bound_axes { 1.f / node_bound_axes[Axis::X], 1.f / node_bound_axes[Axis::Y], 1.f / node_bound_axes[Axis::Z] };
+	const Vec3f node_bound_axes {{node_bound.longX(), node_bound.longY(), node_bound.longZ()}};
+	const Vec3f inv_node_bound_axes {{1.f / node_bound_axes[Axis::X], 1.f / node_bound_axes[Axis::Y], 1.f / node_bound_axes[Axis::Z]}};
 	SplitCost split;
 	split.cost_ = std::numeric_limits<float>::max();
 	const float inv_total_sa = 1.f / (node_bound_axes[Axis::X] * node_bound_axes[Axis::Y] + node_bound_axes[Axis::X] * node_bound_axes[Axis::Z] + node_bound_axes[Axis::Y] * node_bound_axes[Axis::Z]);
@@ -281,7 +282,7 @@ AcceleratorKdTree::SplitCost AcceleratorKdTree::pigeonMinCost(Logger &logger, fl
 
 AcceleratorKdTree::SplitCost AcceleratorKdTree::minimalCost(Logger &logger, float e_bonus, float cost_ratio, uint32_t num_indices, const Bound &node_bound, const uint32_t *prim_idx, const Bound *all_bounds, const Bound *all_bounds_general, const std::array<std::unique_ptr<kdtree::BoundEdge[]>, 3> &edges_all_axes, kdtree::Stats &kd_stats)
 {
-	const std::array<float, 3> node_bound_axes {node_bound.longX(), node_bound.longY(), node_bound.longZ() };
+	const std::array<float, 3> node_bound_axes {{node_bound.longX(), node_bound.longY(), node_bound.longZ()}};
 	const std::array<float, 3> inv_node_bound_axes { 1.f / node_bound_axes[0], 1.f / node_bound_axes[1], 1.f / node_bound_axes[2] };
 	SplitCost split;
 	split.cost_ = std::numeric_limits<float>::max();
@@ -436,7 +437,7 @@ int AcceleratorKdTree::buildTree(uint32_t n_prims, const std::vector<const Primi
 		std::array<int, prim_clip_thresh_> o_prims;
 		int n_overl = 0;
 		std::array<double, 3> b_half_size;
-		std::array<Vec3Double, 2> b_ext;
+		std::array<Vec3d, 2> b_ext;
 		for(const auto axis : axis::spatial)
 		{
 			const auto axis_id = axis::getId(axis);

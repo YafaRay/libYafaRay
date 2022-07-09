@@ -31,33 +31,33 @@ class ShapeTriangle final
 	public:
 		ShapeTriangle(const ShapeTriangle &triangle) = default;
 		ShapeTriangle(ShapeTriangle &&triangle) = default;
-		explicit ShapeTriangle(std::array<Point3, 3> &&vertices) : vertices_(std::move(vertices)) { }
-		explicit ShapeTriangle(const std::array<Point3, 3> &vertices) : vertices_(std::move(vertices)) { }
-		std::pair<float, Uv<float>> intersect(const Point3 &from, const Vec3 &dir) const;
-		Vec3 calculateFaceNormal() const;
+		explicit ShapeTriangle(std::array<Point3f, 3> &&vertices) : vertices_(std::move(vertices)) { }
+		explicit ShapeTriangle(const std::array<Point3f, 3> &vertices) : vertices_(std::move(vertices)) { }
+		std::pair<float, Uv<float>> intersect(const Point3f &from, const Vec3f &dir) const;
+		Vec3f calculateFaceNormal() const;
 		float surfaceArea() const;
-		Point3 sample(const Uv<float> &uv) const;
+		Point3f sample(const Uv<float> &uv) const;
 		//UV <-> Barycentric UVW relationship is not obvious, interesting explanation in: https://www.scratchapixel.com/lessons/3d-basic-rendering/ray-tracing-rendering-a-triangle/barycentric-coordinates
 		static std::array<float, 3> getBarycentricUVW(const Uv<float> &uv) { return { 1.f - uv.u_ - uv.v_, uv.u_, uv.v_ }; }
-		static float getDistToNearestEdge(const Uv<float> &uv, const Uv<Vec3> &dp_abs);
+		static float getDistToNearestEdge(const Uv<float> &uv, const Uv<Vec3f> &dp_abs);
 
 	private:
-		alignas(8) std::array<Point3, 3> vertices_;
+		alignas(8) std::array<Point3f, 3> vertices_;
 };
 
-inline Vec3 ShapeTriangle::calculateFaceNormal() const
+inline Vec3f ShapeTriangle::calculateFaceNormal() const
 {
 	return ((vertices_[1] - vertices_[0]) ^ (vertices_[2] - vertices_[0])).normalize();
 }
 
 inline float ShapeTriangle::surfaceArea() const
 {
-	const Vec3 vec_0_1{vertices_[1] - vertices_[0]};
-	const Vec3 vec_0_2{vertices_[2] - vertices_[0]};
+	const Vec3f vec_0_1{vertices_[1] - vertices_[0]};
+	const Vec3f vec_0_2{vertices_[2] - vertices_[0]};
 	return 0.5f * (vec_0_1 ^ vec_0_2).length();
 }
 
-inline Point3 ShapeTriangle::sample(const Uv<float> &uv) const
+inline Point3f ShapeTriangle::sample(const Uv<float> &uv) const
 {
 	const float su_1 = math::sqrt(uv.u_);
 	const float u = 1.f - su_1;
@@ -65,7 +65,7 @@ inline Point3 ShapeTriangle::sample(const Uv<float> &uv) const
 	return u * vertices_[0] + v * vertices_[1] + (1.f - u - v) * vertices_[2];
 }
 
-inline float ShapeTriangle::getDistToNearestEdge(const Uv<float> &uv, const Uv<Vec3> &dp_abs)
+inline float ShapeTriangle::getDistToNearestEdge(const Uv<float> &uv, const Uv<Vec3f> &dp_abs)
 {
 	const auto [barycentric_u, barycentric_v, barycentric_w] = ShapeTriangle::getBarycentricUVW(uv);
 	const float u_dist_rel = 0.5f - std::abs(barycentric_u - 0.5f);
@@ -77,21 +77,21 @@ inline float ShapeTriangle::getDistToNearestEdge(const Uv<float> &uv, const Uv<V
 	return math::min(u_dist_abs, v_dist_abs, w_dist_abs);
 }
 
-inline std::pair<float, Uv<float>> ShapeTriangle::intersect(const Point3 &from, const Vec3 &dir) const
+inline std::pair<float, Uv<float>> ShapeTriangle::intersect(const Point3f &from, const Vec3f &dir) const
 {
 	//Tomas Moller and Ben Trumbore ray intersection scheme
-	const Vec3 edge_1{vertices_[1] - vertices_[0]};
-	const Vec3 edge_2{vertices_[2] - vertices_[0]};
-	const Vec3 pvec{dir ^ edge_2};
+	const Vec3f edge_1{vertices_[1] - vertices_[0]};
+	const Vec3f edge_2{vertices_[2] - vertices_[0]};
+	const Vec3f pvec{dir ^ edge_2};
 	const float det = edge_1 * pvec;
 	if(det != 0.f)
 	{
 		const float inv_det = 1.f / det;
-		const Vec3 tvec{from - vertices_[0]};
+		const Vec3f tvec{from - vertices_[0]};
 		const float u = (tvec * pvec) * inv_det;
 		if(u >= 0.f && u <= 1.f)
 		{
-			const Vec3 qvec{tvec ^ edge_1};
+			const Vec3f qvec{tvec ^ edge_1};
 			const float v = (dir * qvec) * inv_det;
 			if(v >= 0.f && (u + v) <= 1.f)
 			{

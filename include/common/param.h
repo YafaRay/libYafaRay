@@ -29,8 +29,10 @@ namespace yafaray {
 
 class Rgb;
 class Rgba;
-class Vec3;
-class Matrix4;
+template <typename T, size_t N> class Vec;
+typedef Vec<float, 3> Vec3f;
+template <typename T, size_t N> class SquareMatrix;
+typedef SquareMatrix<float, 4> Matrix4f;
 class Logger;
 
 /*! a class that can hold exactly one value of a range types.
@@ -51,9 +53,9 @@ class Parameter
 		explicit Parameter(bool b);
 		explicit Parameter(float f);
 		explicit Parameter(double f);
-		explicit Parameter(const Vec3 &p);
+		explicit Parameter(const Vec3f &p);
 		explicit Parameter(const Rgba &c);
-		explicit Parameter(const Matrix4 &m);
+		explicit Parameter(const Matrix4f &m);
 
 		// return parameter value in reference parameter, return true if
 		// the parameter type matches, false otherwise.
@@ -62,10 +64,10 @@ class Parameter
 		bool getVal(bool &b) const;
 		bool getVal(float &f) const;
 		bool getVal(double &f) const;
-		bool getVal(Vec3 &p) const;
+		bool getVal(Vec3f &p) const;
 		bool getVal(Rgb &c) const;
 		bool getVal(Rgba &c) const;
-		bool getVal(Matrix4 &m) const;
+		bool getVal(Matrix4f &m) const;
 
 		// operator= assigns new value, be aware that this may change the parameter type!
 		Parameter &operator = (const std::string &s);
@@ -73,10 +75,10 @@ class Parameter
 		Parameter &operator = (int i);
 		Parameter &operator = (bool b);
 		Parameter &operator = (float f);
-		Parameter &operator = (const Vec3 &p);
+		Parameter &operator = (const Vec3f &p);
 		Parameter &operator = (const Rgb &c);
 		Parameter &operator = (const Rgba &c);
-		Parameter &operator = (const Matrix4 &m);
+		Parameter &operator = (const Matrix4f &m);
 
 	private:
 		union

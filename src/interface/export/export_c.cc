@@ -19,7 +19,7 @@
 #include "interface/export/export_c.h"
 #include "common/logger.h"
 #include "scene/scene.h"
-#include "geometry/matrix4.h"
+#include "geometry/matrix.h"
 #include "common/param.h"
 
 namespace yafaray {
@@ -138,9 +138,9 @@ bool ExportC::endObject() noexcept
 	return true;
 }
 
-int ExportC::addVertex(Point3 &&vertex, int time_step) noexcept
+int ExportC::addVertex(Point3f &&vertex, int time_step) noexcept
 {
-	file_ << "\t" << "yafaray_addVertex(yi, " << vertex.x() << ", " << vertex.y() << ", " << vertex.z();
+	file_ << "\t" << "yafaray_addVertex(yi, " << vertex[Axis::X] << ", " << vertex[Axis::Y] << ", " << vertex[Axis::Z];
 	if(time_step > 0) file_ << ", " << time_step;
 	file_ << ");\n";
 	++section_num_lines_;
@@ -148,9 +148,9 @@ int ExportC::addVertex(Point3 &&vertex, int time_step) noexcept
 	return 0;
 }
 
-int ExportC::addVertex(Point3 &&vertex, Point3 &&orco, int time_step) noexcept
+int ExportC::addVertex(Point3f &&vertex, Point3f &&orco, int time_step) noexcept
 {
-	file_ << "\t" << "yafaray_addVertexWithOrco(yi, " << vertex.x() << ", " << vertex.y() << ", " << vertex.z() << ", " << orco.x() << ", " << orco.y() << ", " << orco.z();
+	file_ << "\t" << "yafaray_addVertexWithOrco(yi, " << vertex[Axis::X] << ", " << vertex[Axis::Y] << ", " << vertex[Axis::Z] << ", " << orco[Axis::X] << ", " << orco[Axis::Y] << ", " << orco[Axis::Z];
 	if(time_step > 0) file_ << ", " << time_step;
 	file_ << ");\n";
 	++section_num_lines_;
@@ -158,9 +158,9 @@ int ExportC::addVertex(Point3 &&vertex, Point3 &&orco, int time_step) noexcept
 	return 0;
 }
 
-void ExportC::addVertexNormal(Vec3 &&normal, int time_step) noexcept
+void ExportC::addVertexNormal(Vec3f &&normal, int time_step) noexcept
 {
-	file_ << "\t" << "yafaray_addNormal(yi, " << normal.x() << ", " << normal.y() << ", " << normal.z();
+	file_ << "\t" << "yafaray_addNormal(yi, " << normal[Axis::X] << ", " << normal[Axis::Y] << ", " << normal[Axis::Z];
 	if(time_step > 0) file_ << ", " << time_step;
 	file_ << ");\n";
 	++section_num_lines_;
@@ -218,7 +218,7 @@ bool ExportC::smoothVerticesNormals(std::string &&name, double angle) noexcept
 	return true;
 }
 
-void ExportC::writeMatrix(const Matrix4 &m, std::ofstream &file) noexcept
+void ExportC::writeMatrix(const Matrix4f &m, std::ofstream &file) noexcept
 {
 	file <<
 			m[0][0] << ", " << m[0][1] << ", " << m[0][2] << ", " << m[0][3] << ", " <<
@@ -256,9 +256,9 @@ void ExportC::writeParam(const std::string &name, const Parameter &param, std::o
 	}
 	else if(type == Parameter::Type::Vector)
 	{
-		Point3 p{0.f, 0.f, 0.f};
+		Point3f p{{0.f, 0.f, 0.f}};
 		param.getVal(p);
-		file << "yafaray_paramsSetVector(yi, \"" << name << "\", " << p.x() << ", " << p.y() << ", " << p.z() << ");\n";
+		file << "yafaray_paramsSetVector(yi, \"" << name << "\", " << p[Axis::X] << ", " << p[Axis::Y] << ", " << p[Axis::Z] << ");\n";
 	}
 	else if(type == Parameter::Type::Color)
 	{
@@ -269,7 +269,7 @@ void ExportC::writeParam(const std::string &name, const Parameter &param, std::o
 	}
 	else if(type == Parameter::Type::Matrix)
 	{
-		Matrix4 m;
+		Matrix4f m;
 		param.getVal(m);
 		file << "yafaray_paramsSetMatrix(yi, ";
 		writeMatrix(m, file);
@@ -305,7 +305,7 @@ bool ExportC::addInstanceOfInstance(int instance_id, size_t base_instance_id) no
 	return true;
 }
 
-bool ExportC::addInstanceMatrix(int instance_id, Matrix4 &&obj_to_world, float time) noexcept
+bool ExportC::addInstanceMatrix(int instance_id, Matrix4f &&obj_to_world, float time) noexcept
 {
 	file_ << "\t" << "yafaray_addInstanceMatrix(yi, " << instance_id << ", "; //FIXME Should I use the variable name "instance_id" for export instead?
 	writeMatrix(obj_to_world, file_);

@@ -53,15 +53,15 @@ const MaterialData * RoughGlassMaterial::initBsdf(SurfacePoint &sp, const Camera
 	return mat_data;
 }
 
-Rgb RoughGlassMaterial::sample(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, Vec3 &wi, Sample &s, float &w, bool chromatic, float wavelength, const Camera *camera) const
+Rgb RoughGlassMaterial::sample(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3f &wo, Vec3f &wi, Sample &s, float &w, bool chromatic, float wavelength, const Camera *camera) const
 {
-	const Vec3 n{SurfacePoint::normalFaceForward(sp.ng_, sp.n_, wo)};
+	const Vec3f n{SurfacePoint::normalFaceForward(sp.ng_, sp.n_, wo)};
 	const bool outside = sp.ng_ * wo > 0.f;
 	s.pdf_ = 1.f;
 	const float alpha_texture = roughness_shader_ ? roughness_shader_->getScalar(mat_data->node_tree_data_) + 0.001f : 0.001f;
 	const float alpha_2 = roughness_shader_ ? alpha_texture * alpha_texture : a_2_;
-	Vec3 h{microfacet::ggxSample(alpha_2, s.s_1_, s.s_2_)};
-	h = h.x() * sp.uvn_.u_ + h.y() * sp.uvn_.v_ + h.z() * n;
+	Vec3f h{microfacet::ggxSample(alpha_2, s.s_1_, s.s_2_)};
+	h = h[Axis::X] * sp.uvn_.u_ + h[Axis::Y] * sp.uvn_.v_ + h[Axis::Z] * n;
 	h.normalize();
 	float cur_ior = ior_;
 	if(ior_shader_) cur_ior += ior_shader_->getScalar(mat_data->node_tree_data_);
@@ -142,16 +142,16 @@ Rgb RoughGlassMaterial::sample(const MaterialData *mat_data, const SurfacePoint 
 	return ret;
 }
 
-Rgb RoughGlassMaterial::sample(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, Vec3 *const dir, Rgb &tcol, Sample &s, float *const w, bool chromatic, float wavelength) const
+Rgb RoughGlassMaterial::sample(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3f &wo, Vec3f *const dir, Rgb &tcol, Sample &s, float *const w, bool chromatic, float wavelength) const
 {
-	const Vec3 n{SurfacePoint::normalFaceForward(sp.ng_, sp.n_, wo)};
+	const Vec3f n{SurfacePoint::normalFaceForward(sp.ng_, sp.n_, wo)};
 	const bool outside = sp.ng_ * wo > 0.f;
 	s.pdf_ = 1.f;
 	const float alpha_texture = roughness_shader_ ? roughness_shader_->getScalar(mat_data->node_tree_data_) + 0.001f : 0.001f;
 	const float alpha_2 = roughness_shader_ ? alpha_texture * alpha_texture : a_2_;
 
-	Vec3 h{microfacet::ggxSample(alpha_2, s.s_1_, s.s_2_)};
-	h = h.x() * sp.uvn_.u_ + h.y() * sp.uvn_.v_ + h.z() * n;
+	Vec3f h{microfacet::ggxSample(alpha_2, s.s_1_, s.s_2_)};
+	h = h[Axis::X] * sp.uvn_.u_ + h[Axis::Y] * sp.uvn_.v_ + h[Axis::Z] * n;
 	h.normalize();
 
 	float cur_ior = ior_;
@@ -179,7 +179,7 @@ Rgb RoughGlassMaterial::sample(const MaterialData *mat_data, const SurfacePoint 
 	s.sampled_flags_ = BsdfFlags::None;
 
 	float kr, kt;
-	Vec3 wi;
+	Vec3f wi;
 	if(microfacet::refract(((outside) ? 1.f / cur_ior : cur_ior), wo, wi, h, wo_h, kr, kt))
 	{
 		if(flags::have(s.flags_, BsdfFlags::Transmit))
@@ -237,16 +237,16 @@ Rgb RoughGlassMaterial::sample(const MaterialData *mat_data, const SurfacePoint 
 	return ret;
 }
 
-Rgb RoughGlassMaterial::getTransparency(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, const Camera *camera) const
+Rgb RoughGlassMaterial::getTransparency(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3f &wo, const Camera *camera) const
 {
-	const Vec3 n{SurfacePoint::normalFaceForward(sp.ng_, sp.n_, wo)};
-	const auto [kr, kt]{Vec3::fresnel(wo, n, getShaderScalar(ior_shader_, mat_data->node_tree_data_, ior_))};
+	const Vec3f n{SurfacePoint::normalFaceForward(sp.ng_, sp.n_, wo)};
+	const auto [kr, kt]{Vec3f::fresnel(wo, n, getShaderScalar(ior_shader_, mat_data->node_tree_data_, ior_))};
 	Rgb result = kt * getShaderColor(filter_col_shader_, mat_data->node_tree_data_, filter_color_);
 	applyWireFrame(result, wireframe_shader_, mat_data->node_tree_data_, sp);
 	return result;
 }
 
-float RoughGlassMaterial::getAlpha(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, const Camera *camera) const
+float RoughGlassMaterial::getAlpha(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3f &wo, const Camera *camera) const
 {
 	float alpha = std::max(0.f, std::min(1.f, 1.f - getTransparency(mat_data, sp, wo, camera).energy()));
 	applyWireFrame(alpha, wireframe_shader_, mat_data->node_tree_data_, sp);

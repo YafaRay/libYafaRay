@@ -103,7 +103,7 @@ std::pair<Rgb, float> DirectLightIntegrator::integrate(Ray &ray, FastRandom &fas
 	if(sp)
 	{
 		const BsdfFlags mat_bsdfs = sp->mat_data_->bsdf_flags_;
-		const Vec3 wo{-ray.dir_};
+		const Vec3f wo{-ray.dir_};
 		additional_depth = std::max(additional_depth, sp->getMaterial()->getAdditionalDepth());
 		if(flags::have(mat_bsdfs, BsdfFlags::Emit))
 		{

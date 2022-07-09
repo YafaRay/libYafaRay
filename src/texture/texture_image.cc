@@ -42,7 +42,7 @@ std::array<int, 3> ImageTexture::resolution() const
 	return { images_[0]->getWidth(), images_[0]->getHeight(), 0 };
 }
 
-Rgba ImageTexture::interpolateImage(const Point3 &p, const MipMapParams *mipmap_params) const
+Rgba ImageTexture::interpolateImage(const Point3f &p, const MipMapParams *mipmap_params) const
 {
 	switch(interpolation_type_)
 	{
@@ -59,14 +59,14 @@ Rgba ImageTexture::interpolateImage(const Point3 &p, const MipMapParams *mipmap_
 	}
 }
 
-Rgba ImageTexture::getColor(const Point3 &p, const MipMapParams *mipmap_params) const
+Rgba ImageTexture::getColor(const Point3f &p, const MipMapParams *mipmap_params) const
 {
-	const auto [p_mapped, outside] = doMapping({p.x(), -p.y(), p.z()});
+	const auto [p_mapped, outside] = doMapping({{p[Axis::X], -p[Axis::Y], p[Axis::Z]}});
 	if(outside) return Rgba{0.f};
 	else return applyAdjustments(interpolateImage(p_mapped, mipmap_params));
 }
 
-Rgba ImageTexture::getRawColor(const Point3 &p, const MipMapParams *mipmap_params) const
+Rgba ImageTexture::getRawColor(const Point3f &p, const MipMapParams *mipmap_params) const
 {
 	// As from v3.2.0 all image buffers are already Linear RGB, if any part of the code requires the original "raw" color, a "de-linearization" (encoding again into the original color space) takes place in this function.
 
@@ -81,42 +81,42 @@ Rgba ImageTexture::getRawColor(const Point3 &p, const MipMapParams *mipmap_param
 	return ret;
 }
 
-std::pair<Point3, bool> ImageTexture::doMapping(const Point3 &tex_point) const
+std::pair<Point3f, bool> ImageTexture::doMapping(const Point3f &tex_point) const
 {
 	bool outside = false;
-	Point3 mapped{ 0.5f * tex_point + Vec3{0.5f} }; //FIXME DAVID: does the Vec3 portion make sense?
+	Point3f mapped{0.5f * tex_point + Vec3f{0.5f} }; //FIXME DAVID: does the Vec3 portion make sense?
 	// repeat, only valid for REPEAT clipmode
 	if(tex_clip_mode_ == ClipMode::Repeat)
 	{
-		if(xrepeat_ > 1) mapped.x() *= static_cast<float>(xrepeat_);
-		if(yrepeat_ > 1) mapped.y() *= static_cast<float>(yrepeat_);
-		if(mirror_x_ && static_cast<int>(ceilf(mapped.x())) % 2 == 0) mapped.x() = -mapped.x();
-		if(mirror_y_ && static_cast<int>(ceilf(mapped.y())) % 2 == 0) mapped.y() = -mapped.y();
-		if(mapped.x() > 1.f) mapped.x() -= std::trunc(mapped.x());
-		else if(mapped.x() < 0.f)
-			mapped.x() += 1.f - std::trunc(mapped.x());
-		if(mapped.y() > 1.f) mapped.y() -= std::trunc(mapped.y());
-		else if(mapped.y() < 0.f)
-			mapped.y() += 1.f - std::trunc(mapped.y());
+		if(xrepeat_ > 1) mapped[Axis::X] *= static_cast<float>(xrepeat_);
+		if(yrepeat_ > 1) mapped[Axis::Y] *= static_cast<float>(yrepeat_);
+		if(mirror_x_ && static_cast<int>(ceilf(mapped[Axis::X])) % 2 == 0) mapped[Axis::X] = -mapped[Axis::X];
+		if(mirror_y_ && static_cast<int>(ceilf(mapped[Axis::Y])) % 2 == 0) mapped[Axis::Y] = -mapped[Axis::Y];
+		if(mapped[Axis::X] > 1.f) mapped[Axis::X] -= std::trunc(mapped[Axis::X]);
+		else if(mapped[Axis::X] < 0.f)
+			mapped[Axis::X] += 1.f - std::trunc(mapped[Axis::X]);
+		if(mapped[Axis::Y] > 1.f) mapped[Axis::Y] -= std::trunc(mapped[Axis::Y]);
+		else if(mapped[Axis::Y] < 0.f)
+			mapped[Axis::Y] += 1.f - std::trunc(mapped[Axis::Y]);
 	}
-	if(cropx_) mapped.x() = cropminx_ + mapped.x() * (cropmaxx_ - cropminx_);
-	if(cropy_) mapped.y() = cropminy_ + mapped.y() * (cropmaxy_ - cropminy_);
-	if(rot_90_) std::swap(mapped.x(), mapped.y());
+	if(cropx_) mapped[Axis::X] = cropminx_ + mapped[Axis::X] * (cropmaxx_ - cropminx_);
+	if(cropy_) mapped[Axis::Y] = cropminy_ + mapped[Axis::Y] * (cropmaxy_ - cropminy_);
+	if(rot_90_) std::swap(mapped[Axis::X], mapped[Axis::Y]);
 
 	switch(tex_clip_mode_)
 	{
 		case ClipMode::ClipCube:
 		{
-			if(mapped.x() < 0.f || mapped.x() > 1.f || mapped.y() < 0.f || mapped.y() > 1.f || mapped.z() < -1.f || mapped.z() > 1.f)
+			if(mapped[Axis::X] < 0.f || mapped[Axis::X] > 1.f || mapped[Axis::Y] < 0.f || mapped[Axis::Y] > 1.f || mapped[Axis::Z] < -1.f || mapped[Axis::Z] > 1.f)
 				outside = true;
 			break;
 		}
 		case ClipMode::Checker:
 		{
-			const float xs = std::floor(mapped.x());
-			const float ys = std::floor(mapped.y());
-			mapped.x() -= xs;
-			mapped.y() -= ys;
+			const float xs = std::floor(mapped[Axis::X]);
+			const float ys = std::floor(mapped[Axis::Y]);
+			mapped[Axis::X] -= xs;
+			mapped[Axis::Y] -= ys;
 			if(!checker_odd_ && !(static_cast<int>(xs + ys) & 1))
 			{
 				outside = true;
@@ -130,25 +130,25 @@ std::pair<Point3, bool> ImageTexture::doMapping(const Point3 &tex_point) const
 			// scale around center, (0.5, 0.5)
 			if(checker_dist_ < 1.f)
 			{
-				mapped.x() = (mapped.x() - 0.5f) / (1.f - checker_dist_) + 0.5f;
-				mapped.y() = (mapped.y() - 0.5f) / (1.f - checker_dist_) + 0.5f;
+				mapped[Axis::X] = (mapped[Axis::X] - 0.5f) / (1.f - checker_dist_) + 0.5f;
+				mapped[Axis::Y] = (mapped[Axis::Y] - 0.5f) / (1.f - checker_dist_) + 0.5f;
 			}
 			// continue to TCL_CLIP
 		}
 		case ClipMode::Clip:
 		{
-			if(mapped.x() < 0.f || mapped.x() > 1.f || mapped.y() < 0.f || mapped.y() > 1.f)
+			if(mapped[Axis::X] < 0.f || mapped[Axis::X] > 1.f || mapped[Axis::Y] < 0.f || mapped[Axis::Y] > 1.f)
 				outside = true;
 			break;
 		}
 		case ClipMode::Extend:
 		{
-			if(mapped.x() > 0.99999f) mapped.x() = 0.99999f;
-			else if(mapped.x() < 0.f)
-				mapped.x() = 0.f;
-			if(mapped.y() > 0.99999f) mapped.y() = 0.99999f;
-			else if(mapped.y() < 0.f)
-				mapped.y() = 0.f;
+			if(mapped[Axis::X] > 0.99999f) mapped[Axis::X] = 0.99999f;
+			else if(mapped[Axis::X] < 0.f)
+				mapped[Axis::X] = 0.f;
+			if(mapped[Axis::Y] > 0.99999f) mapped[Axis::Y] = 0.99999f;
+			else if(mapped[Axis::Y] < 0.f)
+				mapped[Axis::Y] = 0.f;
 			// no break, fall thru to TEX_REPEAT
 		}
 		default:
@@ -224,38 +224,38 @@ void ImageTexture::findTextureInterpolationCoordinates(int &coord_0, int &coord_
 	}
 }
 
-Rgba ImageTexture::noInterpolation(const Point3 &p, int mipmap_level) const
+Rgba ImageTexture::noInterpolation(const Point3f &p, int mipmap_level) const
 {
 	const int resx = images_.at(mipmap_level)->getWidth();
 	const int resy = images_.at(mipmap_level)->getHeight();
 
-	const float xf = (static_cast<float>(resx) * (p.x() - std::floor(p.x())));
-	const float yf = (static_cast<float>(resy) * (p.y() - std::floor(p.y())));
+	const float xf = (static_cast<float>(resx) * (p[Axis::X] - std::floor(p[Axis::X])));
+	const float yf = (static_cast<float>(resy) * (p[Axis::Y] - std::floor(p[Axis::Y])));
 
 	int x_0, x_1, x_2, x_3, y_0, y_1, y_2, y_3;
 	float dx, dy;
 	findTextureInterpolationCoordinates(x_0, x_1, x_2, x_3, dx, xf, resx, tex_clip_mode_ == ClipMode::Repeat, mirror_x_);
 	findTextureInterpolationCoordinates(y_0, y_1, y_2, y_3, dy, yf, resy, tex_clip_mode_ == ClipMode::Repeat, mirror_y_);
-	return images_.at(mipmap_level)->getColor(x_1, y_1);
+	return images_.at(mipmap_level)->getColor({{x_1, y_1}});
 }
 
-Rgba ImageTexture::bilinearInterpolation(const Point3 &p, int mipmap_level) const
+Rgba ImageTexture::bilinearInterpolation(const Point3f &p, int mipmap_level) const
 {
 	const int resx = images_.at(mipmap_level)->getWidth();
 	const int resy = images_.at(mipmap_level)->getHeight();
 
-	const float xf = (static_cast<float>(resx) * (p.x() - std::floor(p.x()))) - 0.5f;
-	const float yf = (static_cast<float>(resy) * (p.y() - std::floor(p.y()))) - 0.5f;
+	const float xf = (static_cast<float>(resx) * (p[Axis::X] - std::floor(p[Axis::X]))) - 0.5f;
+	const float yf = (static_cast<float>(resy) * (p[Axis::Y] - std::floor(p[Axis::Y]))) - 0.5f;
 
 	int x_0, x_1, x_2, x_3, y_0, y_1, y_2, y_3;
 	float dx, dy;
 	findTextureInterpolationCoordinates(x_0, x_1, x_2, x_3, dx, xf, resx, tex_clip_mode_ == ClipMode::Repeat, mirror_x_);
 	findTextureInterpolationCoordinates(y_0, y_1, y_2, y_3, dy, yf, resy, tex_clip_mode_ == ClipMode::Repeat, mirror_y_);
 
-	const Rgba c_11 = images_.at(mipmap_level)->getColor(x_1, y_1);
-	const Rgba c_21 = images_.at(mipmap_level)->getColor(x_2, y_1);
-	const Rgba c_12 = images_.at(mipmap_level)->getColor(x_1, y_2);
-	const Rgba c_22 = images_.at(mipmap_level)->getColor(x_2, y_2);
+	const Rgba c_11 = images_.at(mipmap_level)->getColor({{x_1, y_1}});
+	const Rgba c_21 = images_.at(mipmap_level)->getColor({{x_2, y_1}});
+	const Rgba c_12 = images_.at(mipmap_level)->getColor({{x_1, y_2}});
+	const Rgba c_22 = images_.at(mipmap_level)->getColor({{x_2, y_2}});
 
 	const float w_11 = (1 - dx) * (1 - dy);
 	const float w_12 = (1 - dx) * dy;
@@ -265,38 +265,38 @@ Rgba ImageTexture::bilinearInterpolation(const Point3 &p, int mipmap_level) cons
 	return (w_11 * c_11) + (w_12 * c_12) + (w_21 * c_21) + (w_22 * c_22);
 }
 
-Rgba ImageTexture::bicubicInterpolation(const Point3 &p, int mipmap_level) const
+Rgba ImageTexture::bicubicInterpolation(const Point3f &p, int mipmap_level) const
 {
 	const int resx = images_.at(mipmap_level)->getWidth();
 	const int resy = images_.at(mipmap_level)->getHeight();
 
-	const float xf = (static_cast<float>(resx) * (p.x() - std::floor(p.x()))) - 0.5f;
-	const float yf = (static_cast<float>(resy) * (p.y() - std::floor(p.y()))) - 0.5f;
+	const float xf = (static_cast<float>(resx) * (p[Axis::X] - std::floor(p[Axis::X]))) - 0.5f;
+	const float yf = (static_cast<float>(resy) * (p[Axis::Y] - std::floor(p[Axis::Y]))) - 0.5f;
 
 	int x_0, x_1, x_2, x_3, y_0, y_1, y_2, y_3;
 	float dx, dy;
 	findTextureInterpolationCoordinates(x_0, x_1, x_2, x_3, dx, xf, resx, tex_clip_mode_ == ClipMode::Repeat, mirror_x_);
 	findTextureInterpolationCoordinates(y_0, y_1, y_2, y_3, dy, yf, resy, tex_clip_mode_ == ClipMode::Repeat, mirror_y_);
 
-	const Rgba c_00 = images_.at(mipmap_level)->getColor(x_0, y_0);
-	const Rgba c_01 = images_.at(mipmap_level)->getColor(x_0, y_1);
-	const Rgba c_02 = images_.at(mipmap_level)->getColor(x_0, y_2);
-	const Rgba c_03 = images_.at(mipmap_level)->getColor(x_0, y_3);
+	const Rgba c_00 = images_.at(mipmap_level)->getColor({{x_0, y_0}});
+	const Rgba c_01 = images_.at(mipmap_level)->getColor({{x_0, y_1}});
+	const Rgba c_02 = images_.at(mipmap_level)->getColor({{x_0, y_2}});
+	const Rgba c_03 = images_.at(mipmap_level)->getColor({{x_0, y_3}});
 
-	const Rgba c_10 = images_.at(mipmap_level)->getColor(x_1, y_0);
-	const Rgba c_11 = images_.at(mipmap_level)->getColor(x_1, y_1);
-	const Rgba c_12 = images_.at(mipmap_level)->getColor(x_1, y_2);
-	const Rgba c_13 = images_.at(mipmap_level)->getColor(x_1, y_3);
+	const Rgba c_10 = images_.at(mipmap_level)->getColor({{x_1, y_0}});
+	const Rgba c_11 = images_.at(mipmap_level)->getColor({{x_1, y_1}});
+	const Rgba c_12 = images_.at(mipmap_level)->getColor({{x_1, y_2}});
+	const Rgba c_13 = images_.at(mipmap_level)->getColor({{x_1, y_3}});
 
-	const Rgba c_20 = images_.at(mipmap_level)->getColor(x_2, y_0);
-	const Rgba c_21 = images_.at(mipmap_level)->getColor(x_2, y_1);
-	const Rgba c_22 = images_.at(mipmap_level)->getColor(x_2, y_2);
-	const Rgba c_23 = images_.at(mipmap_level)->getColor(x_2, y_3);
+	const Rgba c_20 = images_.at(mipmap_level)->getColor({{x_2, y_0}});
+	const Rgba c_21 = images_.at(mipmap_level)->getColor({{x_2, y_1}});
+	const Rgba c_22 = images_.at(mipmap_level)->getColor({{x_2, y_2}});
+	const Rgba c_23 = images_.at(mipmap_level)->getColor({{x_2, y_3}});
 
-	const Rgba c_30 = images_.at(mipmap_level)->getColor(x_3, y_0);
-	const Rgba c_31 = images_.at(mipmap_level)->getColor(x_3, y_1);
-	const Rgba c_32 = images_.at(mipmap_level)->getColor(x_3, y_2);
-	const Rgba c_33 = images_.at(mipmap_level)->getColor(x_3, y_3);
+	const Rgba c_30 = images_.at(mipmap_level)->getColor({{x_3, y_0}});
+	const Rgba c_31 = images_.at(mipmap_level)->getColor({{x_3, y_1}});
+	const Rgba c_32 = images_.at(mipmap_level)->getColor({{x_3, y_2}});
+	const Rgba c_33 = images_.at(mipmap_level)->getColor({{x_3, y_3}});
 
 	const Rgba cy_0 = math::cubicInterpolate(c_00, c_10, c_20, c_30, dx);
 	const Rgba cy_1 = math::cubicInterpolate(c_01, c_11, c_21, c_31, dx);
@@ -306,7 +306,7 @@ Rgba ImageTexture::bicubicInterpolation(const Point3 &p, int mipmap_level) const
 	return math::cubicInterpolate(cy_0, cy_1, cy_2, cy_3, dy);
 }
 
-Rgba ImageTexture::mipMapsTrilinearInterpolation(const Point3 &p, const MipMapParams *mipmap_params) const
+Rgba ImageTexture::mipMapsTrilinearInterpolation(const Point3f &p, const MipMapParams *mipmap_params) const
 {
 	const float ds = std::max(std::abs(mipmap_params->ds_dx_), std::abs(mipmap_params->ds_dy_)) * images_.at(0)->getWidth();
 	const float dt = std::max(std::abs(mipmap_params->dt_dx_), std::abs(mipmap_params->dt_dy_)) * images_.at(0)->getHeight();
@@ -331,7 +331,7 @@ Rgba ImageTexture::mipMapsTrilinearInterpolation(const Point3 &p, const MipMapPa
 
 //All EWA interpolation/calculation code has been adapted from PBRT v2 (https://github.com/mmp/pbrt-v2). see LICENSES file
 
-Rgba ImageTexture::mipMapsEwaInterpolation(const Point3 &p, float max_anisotropy, const MipMapParams *mipmap_params) const
+Rgba ImageTexture::mipMapsEwaInterpolation(const Point3f &p, float max_anisotropy, const MipMapParams *mipmap_params) const
 {
 	float ds_0 = std::abs(mipmap_params->ds_dx_);
 	float ds_1 = std::abs(mipmap_params->ds_dy_);
@@ -372,20 +372,20 @@ Rgba ImageTexture::mipMapsEwaInterpolation(const Point3 &p, float max_anisotropy
 	return col;
 }
 
-Rgba ImageTexture::ewaEllipticCalculation(const Point3 &p, float ds_0, float dt_0, float ds_1, float dt_1, int mipmap_level) const
+Rgba ImageTexture::ewaEllipticCalculation(const Point3f &p, float ds_0, float dt_0, float ds_1, float dt_1, int mipmap_level) const
 {
 	if(mipmap_level >= static_cast<float>(images_.size() - 1))
 	{
 		const int resx = images_.at(0)->getWidth();
 		const int resy = images_.at(0)->getHeight();
-		return images_.at(images_.size() - 1)->getColor(math::mod(static_cast<int>(p.x()), resx), math::mod(static_cast<int>(p.y()), resy));
+		return images_.at(images_.size() - 1)->getColor({{math::mod(static_cast<int>(p[Axis::X]), resx), math::mod(static_cast<int>(p[Axis::Y]), resy)}});
 	}
 
 	const int resx = images_.at(mipmap_level)->getWidth();
 	const int resy = images_.at(mipmap_level)->getHeight();
 
-	const float xf = (static_cast<float>(resx) * (p.x() - std::floor(p.x()))) - 0.5f;
-	const float yf = (static_cast<float>(resy) * (p.y() - std::floor(p.y()))) - 0.5f;
+	const float xf = (static_cast<float>(resx) * (p[Axis::X] - std::floor(p[Axis::X]))) - 0.5f;
+	const float yf = (static_cast<float>(resy) * (p[Axis::Y] - std::floor(p[Axis::Y]))) - 0.5f;
 
 	ds_0 *= resx;
 	ds_1 *= resx;
@@ -426,7 +426,7 @@ Rgba ImageTexture::ewaEllipticCalculation(const Point3 &p, float ds_0, float dt_
 				const float weight = ewa_weight_lut_.get(std::min(static_cast<int>(floorf(r_2 * ewa_weight_lut_size)), ewa_weight_lut_size - 1));
 				const int ismod = math::mod(is, resx);
 				const int itmod = math::mod(it, resy);
-				sum_col += images_.at(mipmap_level)->getColor(ismod, itmod) * weight;
+				sum_col += images_.at(mipmap_level)->getColor({{ismod, itmod}}) * weight;
 				sum_wts += weight;
 			}
 		}

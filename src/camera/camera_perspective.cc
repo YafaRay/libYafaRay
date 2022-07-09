@@ -25,7 +25,7 @@
 
 namespace yafaray {
 
-PerspectiveCamera::PerspectiveCamera(Logger &logger, const Point3 &pos, const Point3 &look, const Point3 &up,
+PerspectiveCamera::PerspectiveCamera(Logger &logger, const Point3f &pos, const Point3f &look, const Point3f &up,
 									 int resx, int resy, float aspect,
 									 float df, float ap, float dofd, BokehType bt, BkhBiasType bbt, float bro,
 									 float const near_clip_distance, float const far_clip_distance) :
@@ -52,7 +52,7 @@ PerspectiveCamera::PerspectiveCamera(Logger &logger, const Point3 &pos, const Po
 	}
 }
 
-void PerspectiveCamera::setAxis(const Vec3 &vx, const Vec3 &vy, const Vec3 &vz)
+void PerspectiveCamera::setAxis(const Vec3f &vx, const Vec3f &vy, const Vec3f &vz)
 {
 	cam_x_ = vx;
 	cam_y_ = vy;
@@ -63,7 +63,7 @@ void PerspectiveCamera::setAxis(const Vec3 &vx, const Vec3 &vy, const Vec3 &vz)
 
 	vright_ = cam_x_;
 	vup_ = aspect_ratio_ * cam_y_;
-	vto_ = (cam_z_ * focal_distance_) - 0.5 * (vup_ + vright_);
+	vto_ = (cam_z_ * focal_distance_) - 0.5f * (vup_ + vright_);
 	vup_ /= (float)resy_;
 	vright_ /= (float)resx_;
 }
@@ -116,7 +116,7 @@ Uv<float> PerspectiveCamera::getLensUv(float r_1, float r_2) const
 			return {r * math::cos(w), r * math::sin(w)};
 		}
 		default:
-		case BokehType::BkDisk1: return Vec3::shirleyDisk(r_1, r_2);
+		case BokehType::BkDisk1: return Vec3f::shirleyDisk(r_1, r_2);
 	}
 }
 
@@ -129,7 +129,7 @@ CameraRay PerspectiveCamera::shootRay(float px, float py, const Uv<float> &uv) c
 	if(aperture_ != 0.f)
 	{
 		const Uv<float> lens_uv{getLensUv(uv.u_, uv.v_)};
-		const Vec3 li{dof_rt_ * lens_uv.u_ + dof_up_ * lens_uv.v_};
+		const Vec3f li{dof_rt_ * lens_uv.u_ + dof_up_ * lens_uv.v_};
 		ray.from_ += li;
 		ray.dir_ = ray.dir_ * dof_distance_ - li;
 		ray.dir_.normalize();
@@ -137,14 +137,14 @@ CameraRay PerspectiveCamera::shootRay(float px, float py, const Uv<float> &uv) c
 	return {std::move(ray), true};
 }
 
-Point3 PerspectiveCamera::screenproject(const Point3 &p) const
+Point3f PerspectiveCamera::screenproject(const Point3f &p) const
 {
-	const Vec3 dir{p - position_};
+	const Vec3f dir{p - position_};
 	// project p to pixel plane:
 	const float dx = dir * cam_x_;
 	const float dy = dir * cam_y_;
 	const float dz = dir * cam_z_;
-	return { 2.f * dx * focal_distance_ / dz, -2.f * dy * focal_distance_ / (dz * aspect_ratio_), 0.f };
+	return {{ 2.f * dx * focal_distance_ / dz, -2.f * dy * focal_distance_ / (dz * aspect_ratio_), 0.f }};
 }
 
 bool PerspectiveCamera::project(const Ray &wo, float lu, float lv, float &u, float &v, float &pdf) const
@@ -174,7 +174,7 @@ bool PerspectiveCamera::sampleLense() const { return aperture_ != 0; }
 const Camera * PerspectiveCamera::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params)
 {
 	std::string bkhtype = "disk1", bkhbias = "uniform";
-	Point3 from(0, 1, 0), to(0, 0, 0), up(0, 1, 1);
+	Point3f from{{0, 1, 0}}, to{{0, 0, 0}}, up{{0, 1, 1}};
 	int resx = 320, resy = 200;
 	float aspect = 1, dfocal = 1, apt = 0, dofd = 0, bkhrot = 0;
 	float near_clip = 0.0f, far_clip = -1.0f;

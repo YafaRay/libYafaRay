@@ -43,14 +43,14 @@ class GlossyMaterial final : public NodeMaterial
 	private:
 		GlossyMaterial(Logger &logger, const Rgb &col, const Rgb &dcol, float reflect, float diff, float expo, bool as_diffuse, VisibilityFlags e_visibility = VisibilityFlags::Visible | VisibilityFlags::CastsShadows);
 		const MaterialData * initBsdf(SurfacePoint &sp, const Camera *camera) const override;
-		Rgb eval(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wi, BsdfFlags bsdfs, bool force_eval) const override;
-		Rgb sample(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, Vec3 &wi, Sample &s, float &w, bool chromatic, float wavelength, const Camera *camera) const override;
-		float pdf(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wi, BsdfFlags bsdfs) const override;
+		Rgb eval(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3f &wo, const Vec3f &wi, BsdfFlags bsdfs, bool force_eval) const override;
+		Rgb sample(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3f &wo, Vec3f &wi, Sample &s, float &w, bool chromatic, float wavelength, const Camera *camera) const override;
+		float pdf(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3f &wo, const Vec3f &wi, BsdfFlags bsdfs) const override;
 		Rgb getDiffuseColor(const NodeTreeData &node_tree_data) const override;
 		Rgb getGlossyColor(const NodeTreeData &node_tree_data) const override;
 
 		void initOrenNayar(double sigma);
-		float orenNayar(const Vec3 &wi, const Vec3 &wo, const Vec3 &n, bool use_texture_sigma, double texture_sigma) const;
+		float orenNayar(const Vec3f &wi, const Vec3f &wo, const Vec3f &n, bool use_texture_sigma, double texture_sigma) const;
 
 		const ShaderNode *diffuse_shader_ = nullptr;
 		const ShaderNode *glossy_shader_ = nullptr;

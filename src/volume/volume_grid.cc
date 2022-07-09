@@ -27,11 +27,11 @@ namespace yafaray {
 
 struct PSample;
 
-float GridVolumeRegion::density(const Point3 &p) const
+float GridVolumeRegion::density(const Point3f &p) const
 {
-	const float x = (p.x() - b_box_.a_.x()) / b_box_.longX() * size_x_ - .5f;
-	const float y = (p.y() - b_box_.a_.y()) / b_box_.longY() * size_y_ - .5f;
-	const float z = (p.z() - b_box_.a_.z()) / b_box_.longZ() * size_z_ - .5f;
+	const float x = (p[Axis::X] - b_box_.a_[Axis::X]) / b_box_.longX() * size_x_ - .5f;
+	const float y = (p[Axis::Y] - b_box_.a_[Axis::Y]) / b_box_.longY() * size_y_ - .5f;
+	const float z = (p[Axis::Z] - b_box_.a_[Axis::Z]) / b_box_.longZ() * size_z_ - .5f;
 
 	const int x_0 = std::max(0, static_cast<int>(std::floor(x)));
 	const int y_0 = std::max(0, static_cast<int>(std::floor(y)));
@@ -76,10 +76,10 @@ VolumeRegion * GridVolumeRegion::factory(Logger &logger, const Scene &scene, con
 	params.getParam("maxY", max[1]);
 	params.getParam("maxZ", max[2]);
 
-	return new GridVolumeRegion(logger, Rgb(sa), Rgb(ss), Rgb(le), g, {min[0], min[1], min[2]}, {max[0], max[1], max[2]});
+	return new GridVolumeRegion(logger, Rgb(sa), Rgb(ss), Rgb(le), g, {{min[0], min[1], min[2]}}, {{max[0], max[1], max[2]}});
 }
 
-GridVolumeRegion::GridVolumeRegion(Logger &logger, const Rgb &sa, const Rgb &ss, const Rgb &le, float gg, const Point3 &pmin, const Point3 &pmax) : DensityVolumeRegion(logger)
+GridVolumeRegion::GridVolumeRegion(Logger &logger, const Rgb &sa, const Rgb &ss, const Rgb &le, float gg, const Point3f &pmin, const Point3f &pmax) : DensityVolumeRegion(logger)
 {
 	b_box_ = Bound(pmin, pmax);
 	s_a_ = sa;

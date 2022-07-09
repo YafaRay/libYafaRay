@@ -34,13 +34,13 @@ class SkyVolumeRegion final : public VolumeRegion
 		static VolumeRegion *factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params);
 
 	private:
-		SkyVolumeRegion(Logger &logger, const Rgb &sa, const Rgb &ss, const Rgb &le, const Point3 &pmin, const Point3 &pmax);
-		float p(const Vec3 &w_l, const Vec3 &w_s) const override;
-		float phaseRayleigh(const Vec3 &w_l, const Vec3 &w_s) const;
-		float phaseMie(const Vec3 &w_l, const Vec3 &w_s) const;
-		Rgb sigmaA(const Point3 &p, const Vec3 &v) const override;
-		Rgb sigmaS(const Point3 &p, const Vec3 &v) const override;
-		Rgb emission(const Point3 &p, const Vec3 &v) const override;
+		SkyVolumeRegion(Logger &logger, const Rgb &sa, const Rgb &ss, const Rgb &le, const Point3f &pmin, const Point3f &pmax);
+		float p(const Vec3f &w_l, const Vec3f &w_s) const override;
+		float phaseRayleigh(const Vec3f &w_l, const Vec3f &w_s) const;
+		float phaseMie(const Vec3f &w_l, const Vec3f &w_s) const;
+		Rgb sigmaA(const Point3f &p, const Vec3f &v) const override;
+		Rgb sigmaS(const Point3f &p, const Vec3f &v) const override;
+		Rgb emission(const Point3f &p, const Vec3f &v) const override;
 		Rgb tau(const Ray &ray, float step, float offset) const override;
 
 		Rgb s_ray_;

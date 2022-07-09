@@ -90,7 +90,7 @@ Image * Image::factory(Logger &logger, const Scene &scene, const std::string &na
 			logger.logError("Image '", name, "': Couldn't load from file '", filename, "', creating empty image with width=", width, " height=", height);
 		}
 	}
-	if(!image) image = Image::factory(logger, width, height, type, optimization);
+	if(!image) image = Image::factory(logger, {{width, height}}, type, optimization);
 	if(image)
 	{
 		image->color_space_ = color_space;
@@ -99,38 +99,38 @@ Image * Image::factory(Logger &logger, const Scene &scene, const std::string &na
 	return image;
 }
 
-Image *Image::factory(Logger &logger, int width, int height, const Type &type, const Optimization &optimization)
+Image *Image::factory(Logger &logger, const Size2i &size, const Type &type, const Optimization &optimization)
 {
 	//if(logger.isDebug()) logger.logDebug("**Image::factory");
 	if(type == Type::ColorAlpha)
 	{
 		switch(optimization)
 		{
-			case Optimization::Optimized: return new ImageColorAlphaOptimized(width, height);
-			case Optimization::Compressed: return new ImageColorAlphaCompressed(width, height);
-			default: return new ImageColorAlpha(width, height);
+			case Optimization::Optimized: return new ImageColorAlphaOptimized(size);
+			case Optimization::Compressed: return new ImageColorAlphaCompressed(size);
+			default: return new ImageColorAlpha(size);
 		}
 	}
 	else if(type == Type::Color)
 	{
 		switch(optimization)
 		{
-			case Optimization::Optimized: return new ImageColorOptimized(width, height);
-			case Optimization::Compressed: return new ImageColorCompressed(width, height);
-			default: return new ImageColor(width, height);
+			case Optimization::Optimized: return new ImageColorOptimized(size);
+			case Optimization::Compressed: return new ImageColorCompressed(size);
+			default: return new ImageColor(size);
 		}
 	}
 	else if(type == Type::GrayAlpha)
 	{
-		return new ImageGrayAlpha(width, height);
+		return new ImageGrayAlpha(size);
 	}
 	else if(type == Type::Gray)
 	{
 		switch(optimization)
 		{
 			case Optimization::Compressed:
-			case Optimization::Optimized: return new ImageGrayOptimized(width, height);
-			default: return new ImageGray(width, height);
+			case Optimization::Optimized: return new ImageGrayOptimized(size);
+			default: return new ImageGray(size);
 		}
 	}
 	else return nullptr;

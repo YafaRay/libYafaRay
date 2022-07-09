@@ -33,16 +33,16 @@ int ImageLayer::getHeight() const
 	else return image_->getHeight();
 }
 
-void ImageLayers::setColor(int x, int y, const Rgba &color, LayerDef::Type layer_type)
+void ImageLayers::setColor(const Point2i &point, const Rgba &color, LayerDef::Type layer_type)
 {
 	ImageLayer *image_layer = find(layer_type);
-	if(image_layer) image_layer->image_->setColor(x, y, color);
+	if(image_layer) image_layer->image_->setColor(point, color);
 }
 
-void ImageLayers::setColor(int x, int y, Rgba &&color, LayerDef::Type layer_type)
+void ImageLayers::setColor(const Point2i &point, Rgba &&color, LayerDef::Type layer_type)
 {
 	ImageLayer *image_layer = find(layer_type);
-	if(image_layer) image_layer->image_->setColor(x, y, std::move(color));
+	if(image_layer) image_layer->image_->setColor(point, std::move(color));
 }
 
 } //namespace yafaray

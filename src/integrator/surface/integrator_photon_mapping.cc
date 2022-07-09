@@ -60,7 +60,7 @@ void PhotonIntegrator::preGatherWorker(PreGatherData *gdata, float ds_rad, int n
 			radius = ds_radius_2;//actually the square radius...
 			const int n_gathered = gdata->diffuse_map_->gather(gdata->rad_points_[n].pos_, gathered.get(), n_search, radius);
 
-			Vec3 rnorm{gdata->rad_points_[n].normal_};
+			Vec3f rnorm{gdata->rad_points_[n].normal_};
 
 			Rgb sum(0.0);
 
@@ -70,7 +70,7 @@ void PhotonIntegrator::preGatherWorker(PreGatherData *gdata, float ds_rad, int n
 
 				for(int i = 0; i < n_gathered; ++i)
 				{
-					Vec3 pdir{gathered[i].photon_->dir_};
+					Vec3f pdir{gathered[i].photon_->dir_};
 
 					if(rnorm * pdir > 0.f) sum += gdata->rad_points_[n].refl_ * scale * gathered[i].photon_->col_;
 					else sum += gdata->rad_points_[n].transm_ * scale * gathered[i].photon_->col_;
@@ -169,7 +169,7 @@ void PhotonIntegrator::diffuseWorker(FastRandom &fast_random, PreGatherData &pgd
 					transm = vol->transmittance(ray);
 				}
 			}
-			const Vec3 wi{-ray.dir_};
+			const Vec3f wi{-ray.dir_};
 			const BsdfFlags mat_bsdfs = hit_curr->mat_data_->bsdf_flags_;
 			if(flags::have(mat_bsdfs, BsdfFlags::Diffuse))
 			{
@@ -182,7 +182,7 @@ void PhotonIntegrator::diffuseWorker(FastRandom &fast_random, PreGatherData &pgd
 				// don't forget to choose subset only, face normal forward; geometric vs. smooth normal?
 				if(final_gather_ && fast_random.getNextFloatNormalized() < 0.125 && !caustic_photon)
 				{
-					const Vec3 n{SurfacePoint::normalFaceForward(hit_curr->ng_, hit_curr->n_, wi)};
+					const Vec3f n{SurfacePoint::normalFaceForward(hit_curr->ng_, hit_curr->n_, wi)};
 					RadData rd(hit_curr->p_, n, ray.time_);
 					rd.refl_ = hit_curr->getReflectivity(fast_random, BsdfFlags::Diffuse | BsdfFlags::Glossy | BsdfFlags::Reflect, true, 0.f, camera_);
 					rd.transm_ = hit_curr->getReflectivity(fast_random, BsdfFlags::Diffuse | BsdfFlags::Glossy | BsdfFlags::Transmit, true, 0.f, camera_);
@@ -197,7 +197,7 @@ void PhotonIntegrator::diffuseWorker(FastRandom &fast_random, PreGatherData &pgd
 			const float s_6 = Halton::lowDiscrepancySampling(fast_random, d_5 + 1, haltoncurr);
 			const float s_7 = Halton::lowDiscrepancySampling(fast_random, d_5 + 2, haltoncurr);
 			PSample sample(s_5, s_6, s_7, BsdfFlags::All, pcol, transm);
-			Vec3 wo;
+			Vec3f wo;
 			bool scattered = hit_curr->scatterPhoton(wi, wo, sample, true, 0.f, camera_);
 			if(!scattered) break; //photon was absorped.
 			pcol = sample.color_;
@@ -636,7 +636,7 @@ bool PhotonIntegrator::preprocess(FastRandom &fast_random, ImageFilm *image_film
 // final gathering: this is basically a full path tracer only that it uses the radiance map only
 // at the path end. I.e. paths longer than 1 are only generated to overcome lack of local radiance detail.
 // precondition: initBSDF of current spot has been called!
-Rgb PhotonIntegrator::finalGathering(FastRandom &fast_random, RandomGenerator &random_generator, std::vector<int> &correlative_sample_number, int thread_id, bool chromatic_enabled, float wavelength, const SurfacePoint &sp, const Vec3 &wo, const RayDivision &ray_division, const PixelSamplingData &pixel_sampling_data) const
+Rgb PhotonIntegrator::finalGathering(FastRandom &fast_random, RandomGenerator &random_generator, std::vector<int> &correlative_sample_number, int thread_id, bool chromatic_enabled, float wavelength, const SurfacePoint &sp, const Vec3f &wo, const RayDivision &ray_division, const PixelSamplingData &pixel_sampling_data) const
 {
 	Rgb path_col(0.0);
 	float w = 0.f;
@@ -646,7 +646,7 @@ Rgb PhotonIntegrator::finalGathering(FastRandom &fast_random, RandomGenerator &r
 	{
 		Rgb throughput(1.0);
 		float length = 0;
-		Vec3 pwo{wo};
+		Vec3f pwo{wo};
 		Ray p_ray;
 		p_ray.time_ = sp.time_;
 		bool did_hit;
@@ -701,7 +701,7 @@ Rgb PhotonIntegrator::finalGathering(FastRandom &fast_random, RandomGenerator &r
 				}
 				else if(caustic)
 				{
-					Vec3 sf{SurfacePoint::normalFaceForward(hit->ng_, hit->n_, pwo)};
+					Vec3f sf{SurfacePoint::normalFaceForward(hit->ng_, hit->n_, pwo)};
 					const Photon *nearest = radiance_map_->findNearest(hit->p_, sf, lookup_rad_);
 					if(nearest) lcol = nearest->col_;
 				}
@@ -748,7 +748,7 @@ Rgb PhotonIntegrator::finalGathering(FastRandom &fast_random, RandomGenerator &r
 		{
 			if(flags::have(mat_bsd_fs, BsdfFlags::Diffuse | BsdfFlags::Glossy))
 			{
-				Vec3 sf{SurfacePoint::normalFaceForward(hit->ng_, hit->n_, -p_ray.dir_)};
+				Vec3f sf{SurfacePoint::normalFaceForward(hit->ng_, hit->n_, -p_ray.dir_)};
 				const Photon *nearest = radiance_map_->findNearest(hit->p_, sf, lookup_rad_);
 				if(nearest) lcol = nearest->col_; //FIXME should lcol be a local variable? Is it getting its value from previous functions or not??
 				if(flags::have(mat_bsd_fs, BsdfFlags::Emit)) lcol += hit->emit(-p_ray.dir_);
@@ -863,7 +863,7 @@ std::pair<Rgb, float> PhotonIntegrator::integrate(Ray &ray, FastRandom &fast_ran
 	ray.tmax_ = tmax;
 	if(sp)
 	{
-		const Vec3 wo{-ray.dir_};
+		const Vec3f wo{-ray.dir_};
 		const BsdfFlags mat_bsdfs = sp->mat_data_->bsdf_flags_;
 
 		additional_depth = std::max(additional_depth, sp->getMaterial()->getAdditionalDepth());
@@ -878,7 +878,7 @@ std::pair<Rgb, float> PhotonIntegrator::integrate(Ray &ray, FastRandom &fast_ran
 		{
 			if(show_map_)
 			{
-				const Vec3 n{SurfacePoint::normalFaceForward(sp->ng_, sp->n_, wo)};
+				const Vec3f n{SurfacePoint::normalFaceForward(sp->ng_, sp->n_, wo)};
 				const Photon *nearest = radiance_map_->findNearest(sp->p_, n, lookup_rad_);
 				if(nearest) col += nearest->col_;
 			}
@@ -888,7 +888,7 @@ std::pair<Rgb, float> PhotonIntegrator::integrate(Ray &ray, FastRandom &fast_ran
 				{
 					if(Rgba *color_layer = color_layers->find(LayerDef::Radiance))
 					{
-						const Vec3 n{SurfacePoint::normalFaceForward(sp->ng_, sp->n_, wo)};
+						const Vec3f n{SurfacePoint::normalFaceForward(sp->ng_, sp->n_, wo)};
 						const Photon *nearest = radiance_map_->findNearest(sp->p_, n, lookup_rad_);
 						if(nearest) *color_layer = Rgba{nearest->col_};
 					}
@@ -922,7 +922,7 @@ std::pair<Rgb, float> PhotonIntegrator::integrate(Ray &ray, FastRandom &fast_ran
 		{
 			if(use_photon_diffuse_ && show_map_)
 			{
-				const Vec3 n{SurfacePoint::normalFaceForward(sp->ng_, sp->n_, wo)};
+				const Vec3f n{SurfacePoint::normalFaceForward(sp->ng_, sp->n_, wo)};
 				const Photon *nearest = diffuse_map_->findNearest(sp->p_, n, ds_radius_);
 				if(nearest) col += nearest->col_;
 			}
@@ -932,7 +932,7 @@ std::pair<Rgb, float> PhotonIntegrator::integrate(Ray &ray, FastRandom &fast_ran
 				{
 					if(Rgba *color_layer = color_layers->find(LayerDef::Radiance))
 					{
-						const Vec3 n{SurfacePoint::normalFaceForward(sp->ng_, sp->n_, wo)};
+						const Vec3f n{SurfacePoint::normalFaceForward(sp->ng_, sp->n_, wo)};
 						const Photon *nearest = radiance_map_->findNearest(sp->p_, n, lookup_rad_);
 						if(nearest) *color_layer = Rgba{nearest->col_};
 					}
@@ -966,7 +966,7 @@ std::pair<Rgb, float> PhotonIntegrator::integrate(Ray &ray, FastRandom &fast_ran
 					const float scale = 1.f / (static_cast<float>(diffuse_map_->nPaths()) * radius * math::num_pi<>);
 					for(int i = 0; i < n_gathered; ++i)
 					{
-						const Vec3 pdir{gathered[i].photon_->dir_};
+						const Vec3f pdir{gathered[i].photon_->dir_};
 						const Rgb surf_col = sp->eval(wo, pdir, BsdfFlags::Diffuse);
 
 						const Rgb col_tmp = surf_col * scale * gathered[i].photon_->col_;

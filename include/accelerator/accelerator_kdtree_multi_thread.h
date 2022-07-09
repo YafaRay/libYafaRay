@@ -100,7 +100,7 @@ struct AcceleratorKdTreeMultiThread::Stack
 {
 	alignas(8) const Node *node_; //!< pointer to far child
 	float t_; //!< the entry/exit signed distance
-	Point3 point_; //!< the point coordinates of entry/exit point
+	Point3f point_; //!< the point coordinates of entry/exit point
 	int prev_stack_id_; //!< the pointer to the previous stack item
 };
 

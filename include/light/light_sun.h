@@ -37,22 +37,22 @@ class SunLight final : public Light
 		static Light *factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params);
 
 	private:
-		SunLight(Logger &logger, Vec3 dir, const Rgb &col, float inte, float angle, int n_samples, bool b_light_enabled = true, bool b_cast_shadows = true);
+		SunLight(Logger &logger, Vec3f dir, const Rgb &col, float inte, float angle, int n_samples, bool b_light_enabled = true, bool b_cast_shadows = true);
 		void init(Scene &scene) override;
 		Rgb totalEnergy() const override { return color_ * e_pdf_; }
 		std::tuple<Ray, float, Rgb> emitPhoton(float s_1, float s_2, float s_3, float s_4, float time) const override;
 		bool diracLight() const override { return false; }
-		std::pair<bool, Ray> illumSample(const Point3 &surface_p, LSample &s, float time) const override;
-		std::tuple<bool, Ray, Rgb> illuminate(const Point3 &surface_p, float time) const override;
+		std::pair<bool, Ray> illumSample(const Point3f &surface_p, LSample &s, float time) const override;
+		std::tuple<bool, Ray, Rgb> illuminate(const Point3f &surface_p, float time) const override;
 		bool canIntersect() const override { return true; }
 		std::tuple<bool, float, Rgb> intersect(const Ray &ray, float &t) const override;
-		std::pair<Vec3, Rgb> emitSample(LSample &s, float time) const override { return {}; }
+		std::pair<Vec3f, Rgb> emitSample(LSample &s, float time) const override { return {}; }
 		int nSamples() const override { return samples_; }
 
-		Point3 world_center_;
+		Point3f world_center_;
 		Rgb color_, col_pdf_;
-		Vec3 direction_;
-		Uv<Vec3> duv_;
+		Vec3f direction_;
+		Uv<Vec3f> duv_;
 		float pdf_, invpdf_;
 		double cos_angle_;
 		int samples_;

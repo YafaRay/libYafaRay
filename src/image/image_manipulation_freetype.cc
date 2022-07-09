@@ -26,27 +26,27 @@
 
 namespace yafaray {
 
-void image_manipulation_freetype::drawFontBitmap(FT_Bitmap_ *bitmap, Image *badge_image, int x, int y)
+void image_manipulation_freetype::drawFontBitmap(FT_Bitmap_ *bitmap, Image *badge_image, const Point2i &point)
 {
 	int i, j, p, q;
 	const int width = badge_image->getWidth();
 	const int height = badge_image->getHeight();
-	const int x_max = std::min(x + static_cast<int>(bitmap->width), width);
-	const int y_max = std::min(y + static_cast<int>(bitmap->rows), height);
+	const int x_max = std::min(point[Axis::X] + static_cast<int>(bitmap->width), width);
+	const int y_max = std::min(point[Axis::Y] + static_cast<int>(bitmap->rows), height);
 	Rgb text_color(1.f);
 
-	for(i = x, p = 0; i < x_max; i++, p++)
+	for(i = point[Axis::X], p = 0; i < x_max; i++, p++)
 	{
-		for(j = y, q = 0; j < y_max; j++, q++)
+		for(j = point[Axis::Y], q = 0; j < y_max; j++, q++)
 		{
 			if(i >= width || j >= height) continue;
 			const int tmp_buf = bitmap->buffer[q * bitmap->width + p];
 			if(tmp_buf > 0)
 			{
-				Rgba col = badge_image->getColor(std::max(0, i), std::max(0, j));
+				Rgba col = badge_image->getColor({{std::max(0, i), std::max(0, j)}});
 				const float alpha = static_cast<float>(tmp_buf) / 255.f;
 				col = Rgba(math::lerp(static_cast<Rgb>(col), text_color, alpha), col.getA());
-				badge_image->setColor(std::max(0, i), std::max(0, j), col);
+				badge_image->setColor({{std::max(0, i), std::max(0, j)}}, col);
 			}
 		}
 	}
@@ -142,7 +142,7 @@ bool image_manipulation_freetype::drawTextInImage(Logger &logger, Image *image, 
 		FT_Render_Glyph(slot, FT_RENDER_MODE_NORMAL);
 
 		// Now, draw to our target surface (convert position)
-		drawFontBitmap(&slot->bitmap, image, slot->bitmap_left, -slot->bitmap_top);
+		drawFontBitmap(&slot->bitmap, image, {{slot->bitmap_left, -slot->bitmap_top}});
 
 		// increment pen position
 		pen.x += slot->advance.x;

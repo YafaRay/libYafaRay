@@ -110,7 +110,7 @@ IntersectData intersect(const Ray &ray, float t_max, const std::vector<NodeType>
 	const Bound::Cross cross{tree_bound.cross(ray, t_max)};
 	if(!cross.crossed_)
 	{ return {}; }
-	const Vec3 inv_dir{math::inverse(ray.dir_.x()), math::inverse(ray.dir_.y()), math::inverse(ray.dir_.z())};
+	const Vec3f inv_dir{{math::inverse(ray.dir_[Axis::X]), math::inverse(ray.dir_[Axis::Y]), math::inverse(ray.dir_[Axis::Z])}};
 	int depth = 0;
 	std::set<const Primitive *> filtered;
 	std::array<NodeStackType, kd_max_stack_global> stack;

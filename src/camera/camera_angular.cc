@@ -27,7 +27,7 @@
 
 namespace yafaray {
 
-AngularCamera::AngularCamera(Logger &logger, const Point3 &pos, const Point3 &look, const Point3 &up,
+AngularCamera::AngularCamera(Logger &logger, const Point3f &pos, const Point3f &look, const Point3f &up,
 							 int resx, int resy, float asp, float angle, float max_angle, bool circ, const Projection &projection,
 							 float const near_clip_distance, float const far_clip_distance) :
 		Camera(logger, pos, look, up, resx, resy, asp, near_clip_distance, far_clip_distance), max_radius_(max_angle / angle), circular_(circ), projection_(projection)
@@ -42,7 +42,7 @@ AngularCamera::AngularCamera(Logger &logger, const Point3 &pos, const Point3 &lo
 	else focal_length_ = 1.f / angle; //By default, AngularProjection::Equidistant
 }
 
-void AngularCamera::setAxis(const Vec3 &vx, const Vec3 &vy, const Vec3 &vz)
+void AngularCamera::setAxis(const Vec3f &vx, const Vec3f &vy, const Vec3f &vz)
 {
 	cam_x_ = vx;
 	cam_y_ = vy;
@@ -79,7 +79,7 @@ CameraRay AngularCamera::shootRay(float px, float py, const Uv<float> &uv) const
 
 const Camera * AngularCamera::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params)
 {
-	Point3 from(0, 1, 0), to(0, 0, 0), up(0, 1, 1);
+	Point3f from{{0, 1, 0}}, to{{0, 0, 0}}, up{{0, 1, 1}};
 	int resx = 320, resy = 200;
 	double aspect = 1.0, angle_degrees = 90, max_angle_degrees = 90;
 	Projection projection = Projection::Equidistant;
@@ -111,20 +111,20 @@ const Camera * AngularCamera::factory(Logger &logger, const Scene &scene, const 
 	else projection = Projection::Equidistant;
 
 	auto cam = new AngularCamera(logger, from, to, up, resx, resy, aspect, angle_degrees * math::div_pi_by_180<double>, max_angle_degrees * math::div_pi_by_180<double>, circular, projection, near_clip, far_clip);
-	if(mirrored) cam->vright_ *= -1.0;
+	if(mirrored) cam->vright_ = -cam->vright_;
 	return cam;
 }
 
-Point3 AngularCamera::screenproject(const Point3 &p) const
+Point3f AngularCamera::screenproject(const Point3f &p) const
 {
 	//FIXME
-	Vec3 dir{p - position_};
+	Vec3f dir{p - position_};
 	dir.normalize();
 	// project p to pixel plane:
 	const float dx = cam_x_ * dir;
 	const float dy = cam_y_ * dir;
 	const float dz = cam_z_ * dir;
-	return { -dx / (4.f * math::num_pi<> * dz), -dy / (4.f * math::num_pi<> * dz), 0.f };
+	return {{ -dx / (4.f * math::num_pi<> * dz), -dy / (4.f * math::num_pi<> * dz), 0.f }};
 }
 
 } //namespace yafaray

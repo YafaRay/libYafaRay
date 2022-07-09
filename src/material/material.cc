@@ -86,9 +86,9 @@ Material::~Material()
 	//Destructor definition done here and not in material.h to avoid compilation problems with std::unique_ptr
 }
 
-Rgb Material::sampleClay(const SurfacePoint &sp, const Vec3 &wo, Vec3 &wi, Sample &s, float &w)
+Rgb Material::sampleClay(const SurfacePoint &sp, const Vec3f &wo, Vec3f &wi, Sample &s, float &w)
 {
-	const Vec3 n{SurfacePoint::normalFaceForward(sp.ng_, sp.n_, wo)};
+	const Vec3f n{SurfacePoint::normalFaceForward(sp.ng_, sp.n_, wo)};
 	wi = sample::cosHemisphere(n, sp.uvn_, s.s_1_, s.s_2_);
 	s.pdf_ = std::abs(wi * n);
 	w = (std::abs(wi * sp.n_)) / (s.pdf_ * 0.99f + 0.01f);
@@ -138,7 +138,7 @@ void Material::applyWireFrame(Rgba &col, float wire_frame_amount, const SurfaceP
 	}
 }
 
-bool Material::scatterPhoton(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wi, Vec3 &wo, PSample &s, bool chromatic, float wavelength, const Camera *camera) const
+bool Material::scatterPhoton(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3f &wi, Vec3f &wo, PSample &s, bool chromatic, float wavelength, const Camera *camera) const
 {
 	float w = 0.f;
 	const Rgb scol = sample(mat_data, sp, wi, wo, s, w, chromatic, wavelength, camera);
@@ -167,8 +167,8 @@ Rgb Material::getReflectivity(FastRandom &fast_random, const MaterialData *mat_d
 		const float s_2 = sample::riVdC(i);
 		const float s_3 = Halton::lowDiscrepancySampling(fast_random, 2, i);
 		const float s_4 = Halton::lowDiscrepancySampling(fast_random, 3, i);
-		const Vec3 wo{sample::cosHemisphere(sp.n_, sp.uvn_, s_1, s_2)};
-		Vec3 wi;
+		const Vec3f wo{sample::cosHemisphere(sp.n_, sp.uvn_, s_1, s_2)};
+		Vec3f wi;
 		Sample s(s_3, s_4, flags);
 		float w = 0.f;
 		const Rgb col = sample(mat_data, sp, wo, wi, s, w, chromatic, wavelength, camera);

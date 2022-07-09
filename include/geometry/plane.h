@@ -29,13 +29,13 @@ class Plane final
 	public:
 		float rayIntersection(Ray const &ray) const;
 
-		Vec3 p_;
-		Vec3 n_;
+		Vec3f p_;
+		Vec3f n_;
 };
 
 inline float Plane::rayIntersection(Ray const &ray) const
 {
-	return n_ * (p_ - static_cast<Vec3>(ray.from_)) / (ray.dir_ * n_);
+	return n_ * (p_ - ray.from_) / (ray.dir_ * n_);
 }
 
 } //namespace yafaray

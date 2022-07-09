@@ -25,7 +25,7 @@
 
 namespace yafaray {
 
-ArchitectCamera::ArchitectCamera(Logger &logger, const Point3 &pos, const Point3 &look, const Point3 &up,
+ArchitectCamera::ArchitectCamera(Logger &logger, const Point3f &pos, const Point3f &look, const Point3f &up,
 								 int resx, int resy, float aspect,
 								 float df, float ap, float dofd, BokehType bt, BkhBiasType bbt, float bro, float const near_clip_distance, float const far_clip_distance)
 	: PerspectiveCamera(logger, pos, look, up, resx, resy, aspect, df, ap, dofd, bt, bbt, bro, near_clip_distance, far_clip_distance)
@@ -48,7 +48,7 @@ ArchitectCamera::ArchitectCamera(Logger &logger, const Point3 &pos, const Point3
 	}
 }
 
-void ArchitectCamera::setAxis(const Vec3 &vx, const Vec3 &vy, const Vec3 &vz)
+void ArchitectCamera::setAxis(const Vec3f &vx, const Vec3f &vy, const Vec3f &vz)
 {
 	cam_x_ = vx;
 	cam_y_ = vy;
@@ -58,38 +58,38 @@ void ArchitectCamera::setAxis(const Vec3 &vx, const Vec3 &vy, const Vec3 &vz)
 	dof_up_ = cam_y_ * aperture_;
 
 	vright_ = cam_x_;
-	vup_ = aspect_ratio_ * Vec3{0.f, 0.f, -1.f};
-	vto_ = (cam_z_ * focal_distance_) - 0.5 * (vup_ + vright_);
-	vup_ /= (float)resy_;
-	vright_ /= (float)resx_;
+	vup_ = aspect_ratio_ * Vec3f{{0.f, 0.f, -1.f}};
+	vto_ = (cam_z_ * focal_distance_) - 0.5f * (vup_ + vright_);
+	vup_ /= static_cast<float>(resy_);
+	vright_ /= static_cast<float>(resx_);
 }
 
-Point3 ArchitectCamera::screenproject(const Point3 &p) const
+Point3f ArchitectCamera::screenproject(const Point3f &p) const
 {
 	// FIXME
-	const Vec3 dir{p - position_};
+	const Vec3f dir{p - position_};
 	// project p to pixel plane:
-	const Vec3 camy{0.f, 0.f, 1.f};
-	const Vec3 camz{camy ^ cam_x_};
-	const Vec3 camx{camz ^camy};
+	const Vec3f camy{{0.f, 0.f, 1.f}};
+	const Vec3f camz{camy ^ cam_x_};
+	const Vec3f camx{camz ^ camy};
 
 	const float dx = dir * camx;
 	const float dy = dir * cam_y_;
 	float dz = dir * camz;
 
-	Point3 s;
-	s.y() = 2 * dy * focal_distance_ / (dz * aspect_ratio_);
+	Point3f s;
+	s[Axis::Y] = 2 * dy * focal_distance_ / (dz * aspect_ratio_);
 	// Needs focal_distance correction
 	const float fod = focal_distance_ * camy * cam_y_ / (camx * cam_x_);
-	s.x() = 2 * dx * fod / dz;
-	s.z() = 0.f;
+	s[Axis::X] = 2 * dx * fod / dz;
+	s[Axis::Z] = 0.f;
 	return s;
 }
 
 const Camera * ArchitectCamera::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params)
 {
 	std::string bkhtype = "disk1", bkhbias = "uniform";
-	Point3 from(0, 1, 0), to(0, 0, 0), up(0, 1, 1);
+	Point3f from{{0, 1, 0}}, to{{0, 0, 0}}, up{{0, 1, 1}};
 	int resx = 320, resy = 200;
 	float aspect = 1, dfocal = 1, apt = 0, dofd = 0, bkhrot = 0;
 	float near_clip = 0.0f, far_clip = -1.0f;

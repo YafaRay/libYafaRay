@@ -31,18 +31,18 @@ namespace yafaray {
 class ImageGray final : public Image
 {
 	public:
-		ImageGray(int width, int height) : Image(width, height), buffer_{width, height} { }
+		ImageGray(const Size2i &size) : Image{size}, buffer_{size} { }
 
 	private:
 		Type getType() const override { return Type::Gray; }
 		Image::Optimization getOptimization() const override { return Image::Optimization::None; }
-		Rgba getColor(int x, int y) const override { return buffer_(x, y).getColor(); }
-		float getFloat(int x, int y) const override { return buffer_(x, y).getFloat(); }
-		void setColor(int x, int y, const Rgba &col) override { buffer_(x, y).setColor(col); }
-		void setColor(int x, int y, Rgba &&col) override { buffer_(x, y).setColor(std::move(col)); }
-		void addColor(int x, int y, const Rgba &col) override { buffer_(x, y).addColor(col); }
-		void setFloat(int x, int y, float val) override { buffer_(x, y).setFloat(val); }
-		void addFloat(int x, int y, float val) override { buffer_(x, y).addFloat(val); }
+		Rgba getColor(const Point2i &point) const override { return buffer_(point).getColor(); }
+		float getFloat(const Point2i &point) const override { return buffer_(point).getFloat(); }
+		void setColor(const Point2i &point, const Rgba &col) override { buffer_(point).setColor(col); }
+		void setColor(const Point2i &point, Rgba &&col) override { buffer_(point).setColor(std::move(col)); }
+		void addColor(const Point2i &point, const Rgba &col) override { buffer_(point).addColor(col); }
+		void setFloat(const Point2i &point, float val) override { buffer_(point).setFloat(val); }
+		void addFloat(const Point2i &point, float val) override { buffer_(point).addFloat(val); }
 		void clear() override { buffer_.clear(); }
 
 		ImageBuffer2D<Gray> buffer_;

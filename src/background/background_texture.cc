@@ -40,21 +40,21 @@ TextureBackground::TextureBackground(Logger &logger, const Texture *texture, Pro
 	}
 }
 
-Rgb TextureBackground::eval(const Vec3 &dir, bool use_ibl_blur) const
+Rgb TextureBackground::eval(const Vec3f &dir, bool use_ibl_blur) const
 {
 	Uv<float> uv;
 	if(project_ == Angular)
 	{
-		const Point3 p {
-				dir.x() * cos_r_ + dir.y() * sin_r_,
-				dir.x() * -sin_r_ + dir.y() * cos_r_,
-				dir.z()
-		};
+		const Point3f p {{
+				dir[Axis::X] * cos_r_ + dir[Axis::Y] * sin_r_,
+				dir[Axis::X] * -sin_r_ + dir[Axis::Y] * cos_r_,
+				dir[Axis::Z]
+		}};
 		uv = Texture::angMap(p);
 	}
 	else
 	{
-		uv = Texture::sphereMap(static_cast<Point3>(dir)); // This returns u,v in 0,1 range (useful for bgLight_t)
+		uv = Texture::sphereMap(static_cast<Point3f>(dir)); // This returns u,v in 0,1 range (useful for bgLight_t)
 		// Put u,v in -1,1 range for mapping
 		uv.u_ = 2.f * uv.u_ - 1.f;
 		uv.v_ = 2.f * uv.v_ - 1.f;
@@ -65,9 +65,9 @@ Rgb TextureBackground::eval(const Vec3 &dir, bool use_ibl_blur) const
 	if(with_ibl_blur_ && use_ibl_blur)
 	{
 		const MipMapParams mip_map_params {ibl_blur_mipmap_level_};
-		ret = tex_->getColor({uv.u_, uv.v_, 0.f}, &mip_map_params);
+		ret = tex_->getColor({{uv.u_, uv.v_, 0.f}}, &mip_map_params);
 	}
-	else ret = tex_->getColor({uv.u_, uv.v_, 0.f});
+	else ret = tex_->getColor({{uv.u_, uv.v_, 0.f}});
 
 	const float min_component = 1.0e-5f;
 	if(ret.r_ < min_component) ret.r_ = min_component;

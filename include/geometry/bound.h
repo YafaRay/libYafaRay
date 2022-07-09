@@ -25,7 +25,7 @@
 #define YAFARAY_BOUND_H
 
 #include "ray.h"
-#include "geometry/matrix4.h"
+#include "geometry/matrix.h"
 
 namespace yafaray {
 
@@ -51,8 +51,8 @@ class Bound
 		 * @param a is the low corner (minx,miny,minz)
 		 * @param g is the up corner (maxx,maxy,maxz)
 		 */
-		Bound(const Point3 &a, const Point3 &g) : a_{a}, g_{g} { }
-		Bound(Point3 &&a, Point3 &&g) : a_{std::move(a)}, g_{std::move(g)} { }
+		Bound(const Point3f &a, const Point3f &g) : a_{a}, g_{g} { }
+		Bound(Point3f &&a, Point3f &&g) : a_{std::move(a)}, g_{std::move(g)} { }
 		//! Default constructors and assignments
 		Bound() = default;
 		Bound(const Bound &bound) = default;
@@ -76,60 +76,60 @@ class Bound
 		//! Returns the volume of the bound
 		float vol() const;
 		//! Returns the length along X axis
-		float longX() const { return g_.x() - a_.x(); }
+		float longX() const { return g_[Axis::X] - a_[Axis::X]; }
 		//! Returns the length along Y axis
-		float longY() const { return g_.y() - a_.y(); }
+		float longY() const { return g_[Axis::Y] - a_[Axis::Y]; }
 		//! Returns the length along Z axis
-		float longZ() const { return g_.z() - a_.z(); }
+		float longZ() const { return g_[Axis::Z] - a_[Axis::Z]; }
 		//! Returns the length along Z axis
 		float longestAxisLength() const { return math::max(longX(), longY(), longZ()); }
 		//! Cuts the bound to have the given max X
-		void setMaxX(float x) { g_.x() = x;};
+		void setMaxX(float x) { g_[Axis::X] = x;};
 		//! Cuts the bound to have the given min X
-		void setMinX(float x) { a_.x() = x;};
+		void setMinX(float x) { a_[Axis::X] = x;};
 
 		//! Cuts the bound to have the given max Y
-		void setMaxY(float y) { g_.y() = y;};
+		void setMaxY(float y) { g_[Axis::Y] = y;};
 		//! Cuts the bound to have the given min Y
-		void setMinY(float y) { a_.y() = y;};
+		void setMinY(float y) { a_[Axis::Y] = y;};
 
 		//! Cuts the bound to have the given max Z
-		void setMaxZ(float z) { g_.z() = z;};
+		void setMaxZ(float z) { g_[Axis::Z] = z;};
 		//! Cuts the bound to have the given min Z
-		void setMinZ(float z) { a_.z() = z;};
+		void setMinZ(float z) { a_[Axis::Z] = z;};
 		//! Adjust bound size to include point p
-		void include(const Point3 &p);
+		void include(const Point3f &p);
 		void include(const Bound &b);
 		//! Returns true if the point is inside the bound
-		bool includes(const Point3 &pn) const
+		bool includes(const Point3f &pn) const
 		{
-			return ((pn.x() >= a_.x()) && (pn.x() <= g_.x()) &&
-					(pn.y() >= a_.y()) && (pn.y() <= g_.y()) &&
-					(pn.z() >= a_.z()) && (pn.z() <= g_.z()));
+			return ((pn[Axis::X] >= a_[Axis::X]) && (pn[Axis::X] <= g_[Axis::X]) &&
+					(pn[Axis::Y] >= a_[Axis::Y]) && (pn[Axis::Y] <= g_[Axis::Y]) &&
+					(pn[Axis::Z] >= a_[Axis::Z]) && (pn[Axis::Z] <= g_[Axis::Z]));
 		};
 		Axis largestAxis() const
 		{
-			const Vec3 d{g_ - a_};
-			return (d.x() > d.y()) ? ((d.x() > d.z()) ? Axis::X : Axis::Z) : ((d.y() > d.z()) ? Axis::Y : Axis::Z);
+			const Vec3f d{g_ - a_};
+			return (d[Axis::X] > d[Axis::Y]) ? ((d[Axis::X] > d[Axis::Z]) ? Axis::X : Axis::Z) : ((d[Axis::Y] > d[Axis::Z]) ? Axis::Y : Axis::Z);
 		}
 
 		//	protected: // Lynx; need these to be public.
 		//! Two points define the box
-		Point3 a_, g_;
+		Point3f a_, g_;
 };
 
-inline void Bound::include(const Point3 &p)
+inline void Bound::include(const Point3f &p)
 {
-	a_ = {
-			std::min(a_.x(), p.x()),
-			std::min(a_.y(), p.y()),
-			std::min(a_.z(), p.z())
-	};
-	g_ = {
-			std::max(g_.x(), p.x()),
-			std::max(g_.y(), p.y()),
-			std::max(g_.z(), p.z())
-	};
+	a_ = {{
+			std::min(a_[Axis::X], p[Axis::X]),
+			std::min(a_[Axis::Y], p[Axis::Y]),
+			std::min(a_[Axis::Z], p[Axis::Z])
+	}};
+	g_ = {{
+			std::max(g_[Axis::X], p[Axis::X]),
+			std::max(g_[Axis::Y], p[Axis::Y]),
+			std::max(g_[Axis::Z], p[Axis::Z])
+	}};
 }
 
 inline void Bound::include(const Bound &b)
@@ -141,7 +141,7 @@ inline void Bound::include(const Bound &b)
 inline Bound::Cross Bound::cross(const Ray &ray, float t_max) const
 {
 	// Smits method
-	const Point3 p{ray.from_ - a_};
+	const Point3f p{ray.from_ - a_};
 	//infinity check initial values
 	float lmin = -1e38f;
 	float lmax = 1e38f;
@@ -181,7 +181,7 @@ inline Bound::Cross Bound::cross(const Ray &ray, float t_max) const
 	else return {};
 }
 
-inline Bound operator * (const Bound &b, const Matrix4 &m)
+inline Bound operator * (const Bound &b, const Matrix4f &m)
 {
 	return { m * b.a_, m * b.g_ };
 }

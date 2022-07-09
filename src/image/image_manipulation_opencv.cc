@@ -30,7 +30,7 @@ Image *image_manipulation_opencv::getDenoisedLdrImage(Logger &logger, const Imag
 {
 	if(!denoise_params.enabled_) return nullptr;
 
-	auto image_denoised = Image::factory(logger, image->getWidth(), image->getHeight(), image->getType(), image->getOptimization());
+	auto image_denoised = Image::factory(logger, image->getSize(), image->getType(), image->getOptimization());
 	if(!image_denoised) return image_denoised;
 
 	const int width = image_denoised->getWidth();
@@ -45,7 +45,7 @@ Image *image_manipulation_opencv::getDenoisedLdrImage(Logger &logger, const Imag
 	{
 		for(int x = 0; x < width; ++x)
 		{
-			Rgb color = image->getColor(x, y);
+			Rgb color = image->getColor({{x, y}});
 			color.clampRgb01();
 
 			a_vec(y, x)[0] = (uint8_t) (color.getR() * 255);
@@ -64,8 +64,8 @@ Image *image_manipulation_opencv::getDenoisedLdrImage(Logger &logger, const Imag
 			col.r_ = (denoise_params.mix_ * (float) b_vec(y, x)[0] + (1.f - denoise_params.mix_) * (float) a_vec(y, x)[0]) / 255.0;
 			col.g_ = (denoise_params.mix_ * (float) b_vec(y, x)[1] + (1.f - denoise_params.mix_) * (float) a_vec(y, x)[1]) / 255.0;
 			col.b_ = (denoise_params.mix_ * (float) b_vec(y, x)[2] + (1.f - denoise_params.mix_) * (float) a_vec(y, x)[2]) / 255.0;
-			col.a_ = image->getColor(x, y).a_;
-			image_denoised->setColor(x, y, col);
+			col.a_ = image->getColor({{x, y}}).a_;
+			image_denoised->setColor({{x, y}}, col);
 		}
 	}
 	return image_denoised;
@@ -111,9 +111,9 @@ void image_manipulation_opencv::generateDebugFacesEdges(ImageLayers &film_image_
 		{
 			for(int i = xstart; i < width; ++i)
 			{
-				const float weight = weights(i, j).getFloat();
-				const Rgb col_normal = (*normal_image).getColor(i, j).normalized(weight);
-				const float z_depth = (*z_depth_image).getColor(i, j).normalized(weight).a_; //FIXME: can be further optimized
+				const float weight = weights({{i, j}}).getFloat();
+				const Rgb col_normal = (*normal_image).getColor({{i, j}}).normalized(weight);
+				const float z_depth = (*z_depth_image).getColor({{i, j}}).normalized(weight).a_; //FIXME: can be further optimized
 
 				image_mat.at(0).at<float>(j, i) = col_normal.getR();
 				image_mat.at(1).at<float>(j, i) = col_normal.getG();
@@ -130,7 +130,7 @@ void image_manipulation_opencv::generateDebugFacesEdges(ImageLayers &film_image_
 			{
 				Rgb col_edge = Rgb(image_mat.at(0).at<float>(j, i));
 				if(drawborder && (i <= xstart + 1 || j <= ystart + 1 || i >= width - 1 - 1 || j >= height - 1 - 1)) col_edge = Rgba(0.5f, 0.f, 0.f, 1.f);
-				debug_faces_edges_image->setColor(i, j, Rgba{col_edge});
+				debug_faces_edges_image->setColor({{i, j}}, Rgba{col_edge});
 			}
 		}
 	}
@@ -163,13 +163,13 @@ void image_manipulation_opencv::generateToonAndDebugObjectEdges(ImageLayers &fil
 		{
 			for(int i = xstart; i < width; ++i)
 			{
-				const float weight = weights(i, j).getFloat();
-				col_normal = (*normal_image).getColor(i, j).normalized(weight);
-				z_depth = (*z_depth_image).getColor(i, j).normalized(weight).a_; //FIXME: can be further optimized
+				const float weight = weights({{i, j}}).getFloat();
+				col_normal = (*normal_image).getColor({{i, j}}).normalized(weight);
+				z_depth = (*z_depth_image).getColor({{i, j}}).normalized(weight).a_; //FIXME: can be further optimized
 
-				image_mat_combined_vec(j, i)[0] = film_image_layers(LayerDef::Combined).image_->getColor(i, j).normalized(weight).b_;
-				image_mat_combined_vec(j, i)[1] = film_image_layers(LayerDef::Combined).image_->getColor(i, j).normalized(weight).g_;
-				image_mat_combined_vec(j, i)[2] = film_image_layers(LayerDef::Combined).image_->getColor(i, j).normalized(weight).r_;
+				image_mat_combined_vec(j, i)[0] = film_image_layers(LayerDef::Combined).image_->getColor({{i, j}}).normalized(weight).b_;
+				image_mat_combined_vec(j, i)[1] = film_image_layers(LayerDef::Combined).image_->getColor({{i, j}}).normalized(weight).g_;
+				image_mat_combined_vec(j, i)[2] = film_image_layers(LayerDef::Combined).image_->getColor({{i, j}}).normalized(weight).r_;
 
 				image_mat.at(0).at<float>(j, i) = col_normal.getR();
 				image_mat.at(1).at<float>(j, i) = col_normal.getG();
@@ -214,14 +214,14 @@ void image_manipulation_opencv::generateToonAndDebugObjectEdges(ImageLayers &fil
 
 				if(drawborder && (i <= xstart + 1 || j <= ystart + 1 || i >= width - 1 - 1 || j >= height - 1 - 1)) col_edge = Rgba(0.5f, 0.f, 0.f, 1.f);
 
-				debug_objects_edges_image->setColor(i, j, Rgba{col_edge});
+				debug_objects_edges_image->setColor({{i, j}}, Rgba{col_edge});
 
 				Rgb col_toon(image_mat_combined_vec(j, i)[2], image_mat_combined_vec(j, i)[1], image_mat_combined_vec(j, i)[0]);
 				col_toon.blend(toon_edge_color, edge_value);
 
 				if(drawborder && (i <= xstart + 1 || j <= ystart + 1 || i >= width - 1 - 1 || j >= height - 1 - 1)) col_toon = Rgba(0.5f, 0.f, 0.f, 1.f);
 
-				toon_image->setColor(i, j, Rgba{col_toon});
+				toon_image->setColor({{i, j}}, Rgba{col_toon});
 			}
 		}
 	}
@@ -244,7 +244,7 @@ int image_manipulation_opencv::generateMipMaps(Logger &logger, std::vector<std::
 	{
 		for(int i = 0; i < w; ++i)
 		{
-			Rgba color = images[img_index]->getColor(i, j);
+			Rgba color = images[img_index]->getColor({{i, j}});
 			a_vec(j, i)[0] = color.getR();
 			a_vec(j, i)[1] = color.getG();
 			a_vec(j, i)[2] = color.getB();
@@ -258,7 +258,7 @@ int image_manipulation_opencv::generateMipMaps(Logger &logger, std::vector<std::
 		const int w_2 = (w + 1) / 2;
 		const int h_2 = (h + 1) / 2;
 		++img_index;
-		images.emplace_back(Image::factory(logger, w_2, h_2, images[img_index - 1]->getType(), images[img_index - 1]->getOptimization()));
+		images.emplace_back(Image::factory(logger, {{w_2, h_2}}, images[img_index - 1]->getType(), images[img_index - 1]->getOptimization()));
 
 		const cv::Mat b(h_2, w_2, CV_32FC4);
 		const cv::Mat_<cv::Vec4f> b_vec = b;
@@ -273,7 +273,7 @@ int image_manipulation_opencv::generateMipMaps(Logger &logger, std::vector<std::
 				tmp_col.g_ = b_vec(j, i)[1];
 				tmp_col.b_ = b_vec(j, i)[2];
 				tmp_col.a_ = b_vec(j, i)[3];
-				images[img_index]->setColor(i, j, tmp_col);
+				images[img_index]->setColor({{i, j}}, tmp_col);
 			}
 		}
 		w = w_2;

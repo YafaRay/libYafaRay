@@ -25,7 +25,7 @@ namespace yafaray {
 
 struct PSample;
 
-Rgb UniformVolumeRegion::sigmaA(const Point3 &p, const Vec3 &v) const
+Rgb UniformVolumeRegion::sigmaA(const Point3f &p, const Vec3f &v) const
 {
 	if(!have_s_a_) return Rgb{0.f};
 	if(b_box_.includes(p))
@@ -37,7 +37,7 @@ Rgb UniformVolumeRegion::sigmaA(const Point3 &p, const Vec3 &v) const
 
 }
 
-Rgb UniformVolumeRegion::sigmaS(const Point3 &p, const Vec3 &v) const
+Rgb UniformVolumeRegion::sigmaS(const Point3f &p, const Vec3f &v) const
 {
 	if(!have_s_s_) return Rgb{0.f};
 	if(b_box_.includes(p))
@@ -61,7 +61,7 @@ Rgb UniformVolumeRegion::tau(const Ray &ray, float step, float offset) const
 	return dist * (s_s_ + s_a_);
 }
 
-Rgb UniformVolumeRegion::emission(const Point3 &p, const Vec3 &v) const
+Rgb UniformVolumeRegion::emission(const Point3f &p, const Vec3f &v) const
 {
 	if(!have_l_e_) return Rgb{0.f};
 	if(b_box_.includes(p))
@@ -94,10 +94,10 @@ VolumeRegion * UniformVolumeRegion::factory(Logger &logger, const Scene &scene, 
 	params.getParam("maxZ", max[2]);
 	params.getParam("attgridScale", att_sc);
 
-	return new UniformVolumeRegion(logger, Rgb(sa), Rgb(ss), Rgb(le), g, {min[0], min[1], min[2]}, {max[0], max[1], max[2]}, att_sc);
+	return new UniformVolumeRegion(logger, Rgb(sa), Rgb(ss), Rgb(le), g, {{min[0], min[1], min[2]}}, {{max[0], max[1], max[2]}}, att_sc);
 }
 
-UniformVolumeRegion::UniformVolumeRegion(Logger &logger, const Rgb &sa, const Rgb &ss, const Rgb &le, float gg, const Point3 &pmin, const Point3 &pmax, int attgrid_scale) :
+UniformVolumeRegion::UniformVolumeRegion(Logger &logger, const Rgb &sa, const Rgb &ss, const Rgb &le, float gg, const Point3f &pmin, const Point3f &pmax, int attgrid_scale) :
 		VolumeRegion(logger, sa, ss, le, gg, pmin, pmax, attgrid_scale)
 {
 	if(logger_.isVerbose()) logger_.logVerbose("UniformVolume: Vol.[", s_a_, ", ", s_s_, ", ", l_e_, ", ", pmin, ", ", pmax, ", ", attgrid_scale, "]");

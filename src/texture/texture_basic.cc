@@ -69,7 +69,7 @@ CloudsTexture::CloudsTexture(Logger &logger, int dep, float sz, bool hd,
 	n_gen_ = NoiseGenerator::newNoise(ntype);
 }
 
-float CloudsTexture::getFloat(const Point3 &p, const MipMapParams *mipmap_params) const
+float CloudsTexture::getFloat(const Point3f &p, const MipMapParams *mipmap_params) const
 {
 	float v = NoiseGenerator::turbulence(n_gen_.get(), p, depth_, size_, hard_);
 	if(bias_ != BiasType::None)
@@ -80,7 +80,7 @@ float CloudsTexture::getFloat(const Point3 &p, const MipMapParams *mipmap_params
 	return applyIntensityContrastAdjustments(v);
 }
 
-Rgba CloudsTexture::getColor(const Point3 &p, const MipMapParams *mipmap_params) const
+Rgba CloudsTexture::getColor(const Point3f &p, const MipMapParams *mipmap_params) const
 {
 	if(!color_ramp_) return applyColorAdjustments(Rgba{color_1_} + Texture::getFloat(p) * Rgba{color_2_ - color_1_});
 	else return applyColorAdjustments(color_ramp_->getColorInterpolated(Texture::getFloat(p)));
@@ -140,9 +140,9 @@ MarbleTexture::MarbleTexture(Logger &logger, int oct, float sz, const Rgb &c_1, 
 	else wshape_ = Shape::Sin;
 }
 
-float MarbleTexture::getFloat(const Point3 &p, const MipMapParams *mipmap_params) const
+float MarbleTexture::getFloat(const Point3f &p, const MipMapParams *mipmap_params) const
 {
-	float w = (p.x() + p.y() + p.z()) * 5.f + ((turb_ == 0.f) ? 0.f : turb_ * NoiseGenerator::turbulence(n_gen_.get(), p, octaves_, size_, hard_));
+	float w = (p[Axis::X] + p[Axis::Y] + p[Axis::Z]) * 5.f + ((turb_ == 0.f) ? 0.f : turb_ * NoiseGenerator::turbulence(n_gen_.get(), p, octaves_, size_, hard_));
 	switch(wshape_)
 	{
 		case Shape::Saw:
@@ -160,7 +160,7 @@ float MarbleTexture::getFloat(const Point3 &p, const MipMapParams *mipmap_params
 	return applyIntensityContrastAdjustments(math::pow(w, sharpness_));
 }
 
-Rgba MarbleTexture::getColor(const Point3 &p, const MipMapParams *mipmap_params) const
+Rgba MarbleTexture::getColor(const Point3f &p, const MipMapParams *mipmap_params) const
 {
 	if(!color_ramp_) return applyColorAdjustments(Rgba{color_1_} + Texture::getFloat(p) * Rgba{color_2_ - color_1_});
 	else return applyColorAdjustments(color_ramp_->getColorInterpolated(Texture::getFloat(p)));
@@ -220,13 +220,13 @@ WoodTexture::WoodTexture(Logger &logger, int oct, float sz, const Rgb &c_1, cons
 	else wshape_ = Shape::Sin;
 }
 
-float WoodTexture::getFloat(const Point3 &p, const MipMapParams *mipmap_params) const
+float WoodTexture::getFloat(const Point3f &p, const MipMapParams *mipmap_params) const
 {
 	float w;
 	if(rings_)
-		w = math::sqrt(p.x() * p.x() + p.y() * p.y() + p.z() * p.z()) * 20.f;
+		w = math::sqrt(p[Axis::X] * p[Axis::X] + p[Axis::Y] * p[Axis::Y] + p[Axis::Z] * p[Axis::Z]) * 20.f;
 	else
-		w = (p.x() + p.y() + p.z()) * 10.f;
+		w = (p[Axis::X] + p[Axis::Y] + p[Axis::Z]) * 10.f;
 	w += (turb_ == 0.0) ? 0.0 : turb_ * NoiseGenerator::turbulence(n_gen_.get(), p, octaves_, size_, hard_);
 	switch(wshape_)
 	{
@@ -245,7 +245,7 @@ float WoodTexture::getFloat(const Point3 &p, const MipMapParams *mipmap_params) 
 	return applyIntensityContrastAdjustments(w);
 }
 
-Rgba WoodTexture::getColor(const Point3 &p, const MipMapParams *mipmap_params) const
+Rgba WoodTexture::getColor(const Point3f &p, const MipMapParams *mipmap_params) const
 {
 	if(!color_ramp_) return applyColorAdjustments(Rgba{color_1_} + Texture::getFloat(p) * Rgba{color_2_ - color_1_});
 	else return applyColorAdjustments(color_ramp_->getColorInterpolated(Texture::getFloat(p)));
@@ -297,17 +297,17 @@ Texture * WoodTexture::factory(Logger &logger, Scene &scene, const std::string &
 /* even simpler RGB cube, goes r in x, g in y and b in z inside the unit cube.  */
 //-----------------------------------------------------------------------------------------
 
-Rgba RgbCubeTexture::getColor(const Point3 &p, const MipMapParams *mipmap_params) const
+Rgba RgbCubeTexture::getColor(const Point3f &p, const MipMapParams *mipmap_params) const
 {
-	Rgba col = Rgba(p.x(), p.y(), p.z());
+	Rgba col = Rgba(p[Axis::X], p[Axis::Y], p[Axis::Z]);
 	col.clampRgb01();
 	if(adjustments_set_) return applyAdjustments(col);
 	else return col;
 }
 
-float RgbCubeTexture::getFloat(const Point3 &p, const MipMapParams *mipmap_params) const
+float RgbCubeTexture::getFloat(const Point3f &p, const MipMapParams *mipmap_params) const
 {
-	Rgb col = Rgb(p.x(), p.y(), p.z());
+	Rgb col = Rgb(p[Axis::X], p[Axis::Y], p[Axis::Z]);
 	col.clampRgb01();
 	return applyIntensityContrastAdjustments(col.energy());
 }
@@ -370,13 +370,13 @@ VoronoiTexture::VoronoiTexture(Logger &logger, const Rgb &c_1, const Rgb &c_2,
 	if(intensity_scale_ != 0.f) intensity_scale_ = isc / intensity_scale_;
 }
 
-float VoronoiTexture::getFloat(const Point3 &p, const MipMapParams *mipmap_params) const
+float VoronoiTexture::getFloat(const Point3f &p, const MipMapParams *mipmap_params) const
 {
 	const auto [da, pa] = v_gen_.getFeatures(p * size_);
 	return applyIntensityContrastAdjustments(intensity_scale_ * std::abs(w_1_ * VoronoiNoiseGenerator::getDistance(0, da) + w_2_ * VoronoiNoiseGenerator::getDistance(1, da) + w_3_ * VoronoiNoiseGenerator::getDistance(2, da) + w_4_ * VoronoiNoiseGenerator::getDistance(3, da)));
 }
 
-Rgba VoronoiTexture::getColor(const Point3 &p, const MipMapParams *mipmap_params) const
+Rgba VoronoiTexture::getColor(const Point3f &p, const MipMapParams *mipmap_params) const
 {
 	const auto [da, pa] = v_gen_.getFeatures(p * size_);
 	const float inte = intensity_scale_ * std::abs(w_1_ * VoronoiNoiseGenerator::getDistance(0, da) + w_2_ * VoronoiNoiseGenerator::getDistance(1, da) + w_3_ * VoronoiNoiseGenerator::getDistance(2, da) + w_4_ * VoronoiNoiseGenerator::getDistance(3, da));
@@ -475,12 +475,12 @@ MusgraveTexture::MusgraveTexture(Logger &logger, const Rgb &c_1, const Rgb &c_2,
 		m_gen_ = std::make_unique<FBmMusgrave>(h, lacu, octs, n_gen_.get());
 }
 
-float MusgraveTexture::getFloat(const Point3 &p, const MipMapParams *mipmap_params) const
+float MusgraveTexture::getFloat(const Point3f &p, const MipMapParams *mipmap_params) const
 {
 	return applyIntensityContrastAdjustments(iscale_ * (*m_gen_)(p * size_));
 }
 
-Rgba MusgraveTexture::getColor(const Point3 &p, const MipMapParams *mipmap_params) const
+Rgba MusgraveTexture::getColor(const Point3f &p, const MipMapParams *mipmap_params) const
 {
 	if(!color_ramp_) return applyColorAdjustments(Rgba{color_1_} + Texture::getFloat(p) * Rgba{color_2_ - color_1_});
 	else return applyColorAdjustments(color_ramp_->getColorInterpolated(Texture::getFloat(p)));
@@ -541,16 +541,16 @@ DistortedNoiseTexture::DistortedNoiseTexture(Logger &logger, const Rgb &c_1, con
 }
 
 
-float DistortedNoiseTexture::getFloat(const Point3 &p, const MipMapParams *mipmap_params) const
+float DistortedNoiseTexture::getFloat(const Point3f &p, const MipMapParams *mipmap_params) const
 {
 	// get a random vector and scale the randomization
-	const Point3 ofs(13.5, 13.5, 13.5);
-	const Point3 tp(p * size_);
-	const Point3 rv(NoiseGenerator::getSignedNoise(n_gen_1_.get(), tp + ofs), NoiseGenerator::getSignedNoise(n_gen_1_.get(), tp), NoiseGenerator::getSignedNoise(n_gen_1_.get(), static_cast<Point3>(tp - ofs)));
+	const Point3f ofs{{13.5, 13.5, 13.5}};
+	const Point3f tp(p * size_);
+	const Point3f rv{{NoiseGenerator::getSignedNoise(n_gen_1_.get(), tp + ofs), NoiseGenerator::getSignedNoise(n_gen_1_.get(), tp), NoiseGenerator::getSignedNoise(n_gen_1_.get(), static_cast<Point3f>(tp - ofs))}};
 	return applyIntensityContrastAdjustments(NoiseGenerator::getSignedNoise(n_gen_2_.get(), tp + rv * distort_));	// distorted-domain noise
 }
 
-Rgba DistortedNoiseTexture::getColor(const Point3 &p, const MipMapParams *mipmap_params) const
+Rgba DistortedNoiseTexture::getColor(const Point3f &p, const MipMapParams *mipmap_params) const
 {
 	if(!color_ramp_) return applyColorAdjustments(Rgba{color_1_} + Texture::getFloat(p) * Rgba{color_2_ - color_1_});
 	else return applyColorAdjustments(color_ramp_->getColorInterpolated(Texture::getFloat(p)));
@@ -610,16 +610,16 @@ BlendTexture::BlendTexture(Logger &logger, const std::string &stype, bool use_fl
 	else progression_type_ = ProgressionType::Linear;
 }
 
-float BlendTexture::getFloat(const Point3 &p, const MipMapParams *mipmap_params) const
+float BlendTexture::getFloat(const Point3f &p, const MipMapParams *mipmap_params) const
 {
 	float blend = 0.f;
-	float coord_1 = p.x();
-	float coord_2 = p.y();
+	float coord_1 = p[Axis::X];
+	float coord_2 = p[Axis::Y];
 
 	if(use_flip_axis_)
 	{
-		coord_1 = p.y();
-		coord_2 = p.x();
+		coord_1 = p[Axis::Y];
+		coord_2 = p[Axis::X];
 	}
 
 	if(progression_type_ == ProgressionType::Quadratic)
@@ -645,7 +645,7 @@ float BlendTexture::getFloat(const Point3 &p, const MipMapParams *mipmap_params)
 	}
 	else if(progression_type_ == ProgressionType::Spherical || progression_type_ == ProgressionType::QuadraticSphere)
 	{
-		blend = 1.f - math::sqrt(coord_1 * coord_1 + coord_2 * coord_2 + p.z() * p.z());
+		blend = 1.f - math::sqrt(coord_1 * coord_1 + coord_2 * coord_2 + p[Axis::Z] * p[Axis::Z]);
 		if(blend < 0.f) blend = 0.f;
 		if(progression_type_ == ProgressionType::QuadraticSphere) blend *= blend;
 	}
@@ -663,7 +663,7 @@ float BlendTexture::getFloat(const Point3 &p, const MipMapParams *mipmap_params)
 	return applyIntensityContrastAdjustments(blend);
 }
 
-Rgba BlendTexture::getColor(const Point3 &p, const MipMapParams *mipmap_params) const
+Rgba BlendTexture::getColor(const Point3f &p, const MipMapParams *mipmap_params) const
 {
 	if(!color_ramp_) return applyColorAdjustments(Rgba{Texture::getFloat(p)});
 	else return applyColorAdjustments(color_ramp_->getColorInterpolated(Texture::getFloat(p)));

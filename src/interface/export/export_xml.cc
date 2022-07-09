@@ -19,7 +19,7 @@
 #include "interface/export/export_xml.h"
 #include "common/logger.h"
 #include "scene/scene.h"
-#include "geometry/matrix4.h"
+#include "geometry/matrix.h"
 #include "common/param.h"
 #include "common/version_build_info.h"
 
@@ -84,26 +84,26 @@ bool ExportXml::endObject() noexcept
 	return true;
 }
 
-int ExportXml::addVertex(Point3 &&vertex, int time_step) noexcept
+int ExportXml::addVertex(Point3f &&vertex, int time_step) noexcept
 {
-	file_ << "\t<p x=\"" << vertex.x() << "\" y=\"" << vertex.y() << "\" z=\"" << vertex.z();
+	file_ << "\t<p x=\"" << vertex[Axis::X] << "\" y=\"" << vertex[Axis::Y] << "\" z=\"" << vertex[Axis::Z];
 	if(time_step > 0) file_ << "\" t=\"" << time_step;
 	file_ << "\"/>\n";
 	return 0;
 }
 
-int ExportXml::addVertex(Point3 &&vertex, Point3 &&orco, int time_step) noexcept
+int ExportXml::addVertex(Point3f &&vertex, Point3f &&orco, int time_step) noexcept
 {
-	file_ << "\t<p x=\"" << vertex.x() << "\" y=\"" << vertex.y() << "\" z=\"" << vertex.z()
-			  << "\" ox=\"" << orco.x() << "\" oy=\"" << orco.y() << "\" oz=\"" << orco.z();
+	file_ << "\t<p x=\"" << vertex[Axis::X] << "\" y=\"" << vertex[Axis::Y] << "\" z=\"" << vertex[Axis::Z]
+			  << "\" ox=\"" << orco[Axis::X] << "\" oy=\"" << orco[Axis::Y] << "\" oz=\"" << orco[Axis::Z];
 	if(time_step > 0) file_ << "\" t=\"" << time_step;
 	file_ << "\"/>\n";
 	return 0;
 }
 
-void ExportXml::addVertexNormal(Vec3 &&normal, int time_step) noexcept
+void ExportXml::addVertexNormal(Vec3f &&normal, int time_step) noexcept
 {
-	file_ << "\t<n x=\"" << normal.x() << "\" y=\"" << normal.y() << "\" z=\"" << normal.z();
+	file_ << "\t<n x=\"" << normal[Axis::X] << "\" y=\"" << normal[Axis::Y] << "\" z=\"" << normal[Axis::Z];
 	if(time_step > 0) file_ << "\" t=\"" << time_step;
 	file_ << "\"/>\n";
 }
@@ -148,7 +148,7 @@ bool ExportXml::smoothVerticesNormals(std::string &&name, double angle) noexcept
 	return true;
 }
 
-void ExportXml::writeMatrix(const std::string &name, const Matrix4 &m, std::ofstream &file) noexcept
+void ExportXml::writeMatrix(const std::string &name, const Matrix4f &m, std::ofstream &file) noexcept
 {
 	file << "<" << name << " m00=\"" << m[0][0] << "\" m01=\"" << m[0][1] << "\" m02=\"" << m[0][2] << "\" m03=\"" << m[0][3] << "\""
 		 << " m10=\"" << m[1][0] << "\" m11=\"" << m[1][1] << "\" m12=\"" << m[1][2] << "\" m13=\"" << m[1][3] << "\""
@@ -185,9 +185,9 @@ void ExportXml::writeParam(const std::string &name, const Parameter &param, std:
 	}
 	else if(type == Parameter::Type::Vector)
 	{
-		Point3 p{0.f, 0.f, 0.f};
+		Point3f p{{0.f, 0.f, 0.f}};
 		param.getVal(p);
-		file << "<" << name << " x=\"" << p.x() << "\" y=\"" << p.y() << "\" z=\"" << p.z() << "\"/>\n";
+		file << "<" << name << " x=\"" << p[Axis::X] << "\" y=\"" << p[Axis::Y] << "\" z=\"" << p[Axis::Z] << "\"/>\n";
 	}
 	else if(type == Parameter::Type::Color)
 	{
@@ -198,7 +198,7 @@ void ExportXml::writeParam(const std::string &name, const Parameter &param, std:
 	}
 	else if(type == Parameter::Type::Matrix)
 	{
-		Matrix4 m;
+		Matrix4f m;
 		param.getVal(m);
 		writeMatrix(name, m, file);
 	}
@@ -226,7 +226,7 @@ bool ExportXml::addInstanceOfInstance(int instance_id, size_t base_instance_id) 
 	return true;
 }
 
-bool ExportXml::addInstanceMatrix(int instance_id, Matrix4 &&obj_to_world, float time) noexcept
+bool ExportXml::addInstanceMatrix(int instance_id, Matrix4f &&obj_to_world, float time) noexcept
 {
 	file_ << "\n<addInstanceMatrix instance_id=\"" << instance_id << "\" time=\"" << time << "\">\n\t";
 	writeMatrix("transform", obj_to_world, file_);

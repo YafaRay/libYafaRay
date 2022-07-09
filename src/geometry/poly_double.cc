@@ -48,8 +48,8 @@ PolyDouble::ClipResult PolyDouble::planeClip(Logger &logger, double pos, const C
 	for(int vert = 0; vert < poly_num_vertices; vert++) // for each poly edge
 	{
 		const unsigned int next_vert = (vert + 1) % poly_num_vertices;
-		const Vec3Double &vert_1 = poly[vert];
-		const Vec3Double &vert_2 = poly[next_vert];
+		const Vec3d &vert_1 = poly[vert];
+		const Vec3d &vert_2 = poly[next_vert];
 		const bool vert_1_inside = (clip_plane.pos_ == ClipPlane::Pos::Lower) ? (vert_1[curr_axis] >= pos) : (vert_1[curr_axis] <= pos);
 		if(vert_1_inside)   // vert_1 inside
 		{
@@ -63,7 +63,7 @@ PolyDouble::ClipResult PolyDouble::planeClip(Logger &logger, double pos, const C
 			{
 				// clip line, add intersection to new poly
 				const double t = (pos - vert_1[curr_axis]) / (vert_2[curr_axis] - vert_1[curr_axis]);
-				Vec3Double vert_new;
+				Vec3d vert_new;
 				vert_new[curr_axis] = pos;
 				vert_new[next_axis] = vert_1[next_axis] + t * (vert_2[next_axis] - vert_1[next_axis]);
 				vert_new[prev_axis] = vert_1[prev_axis] + t * (vert_2[prev_axis] - vert_1[prev_axis]);
@@ -76,7 +76,7 @@ PolyDouble::ClipResult PolyDouble::planeClip(Logger &logger, double pos, const C
 			if(vert_2_inside) //vert_2 inside, add vert_new and vert_2
 			{
 				const double t = (pos - vert_2[curr_axis]) / (vert_1[curr_axis] - vert_2[curr_axis]);
-				Vec3Double vert_new;
+				Vec3d vert_new;
 				vert_new[curr_axis] = pos;
 				vert_new[next_axis] = vert_2[next_axis] + t * (vert_1[next_axis] - vert_2[next_axis]);
 				vert_new[prev_axis] = vert_2[prev_axis] + t * (vert_1[prev_axis] - vert_2[prev_axis]);
@@ -108,7 +108,7 @@ PolyDouble::ClipResult PolyDouble::planeClip(Logger &logger, double pos, const C
 
 Bound PolyDouble::getBound(const PolyDouble &poly)
 {
-	Vec3Double a, g;
+	Vec3d a, g;
 	for(const auto &axis : axis::spatial) a[axis] = g[axis] = poly[0][axis];
 	for(size_t i = 1; i < poly.numVertices(); ++i)
 	{
@@ -145,7 +145,7 @@ PolyDouble::ClipResultWithBound PolyDouble::planeClipWithBound(Logger &logger, d
 			ClipResult::FatalError: fatal error occured
 			ClipResult::DegeneratedLessThan3Edges: resulting polygon degenerated to less than 3 edges
 */
-PolyDouble::ClipResultWithBound PolyDouble::boxClip(Logger &logger, const Vec3Double &b_max, const PolyDouble &poly, const Vec3Double &b_min)
+PolyDouble::ClipResultWithBound PolyDouble::boxClip(Logger &logger, const Vec3d &b_max, const PolyDouble &poly, const Vec3d &b_min)
 {
 	ClipResultWithBound clip_result;
 	clip_result.poly_ = poly;

@@ -220,7 +220,7 @@ bool SppmIntegrator::renderTile(FastRandom &fast_random, std::vector<int> &corre
 				CameraRay camera_ray = camera_->shootRay(static_cast<float>(j) + dx, static_cast<float>(i) + dy, lens_uv); // wt need to be considered
 				if(!camera_ray.valid_)
 				{
-					image_film_->addSample(j, i, dx, dy, &a, sample, aa_pass_number, inv_aa_max_possible_samples, &color_layers); //maybe not need
+					image_film_->addSample({{j, i}}, dx, dy, &a, sample, aa_pass_number, inv_aa_max_possible_samples, &color_layers); //maybe not need
 					continue;
 				}
 				if(render_control_.getDifferentialRaysEnabled())
@@ -310,7 +310,7 @@ bool SppmIntegrator::renderTile(FastRandom &fast_random, std::vector<int> &corre
 							break;
 					}
 				}
-				image_film_->addSample(j, i, dx, dy, &a, sample, aa_pass_number, inv_aa_max_possible_samples, &color_layers);
+				image_film_->addSample({{j, i}}, dx, dy, &a, sample, aa_pass_number, inv_aa_max_possible_samples, &color_layers);
 			}
 		}
 	}
@@ -398,7 +398,7 @@ void SppmIntegrator::photonWorker(FastRandom &fast_random, unsigned int &total_p
 					transm = vol->transmittance(ray);
 				}
 			}
-			const Vec3 wi{-ray.dir_};
+			const Vec3f wi{-ray.dir_};
 			const BsdfFlags mat_bsdfs = hit_curr->mat_data_->bsdf_flags_;
 
 			//deposit photon on diffuse surface, now we only have one map for all, elimate directPhoton for we estimate it directly
@@ -428,7 +428,7 @@ void SppmIntegrator::photonWorker(FastRandom &fast_random, unsigned int &total_p
 
 			PSample sample(s_5, s_6, s_7, BsdfFlags::All, pcol, transm);
 
-			Vec3 wo;
+			Vec3f wo;
 			bool scattered = hit_curr->scatterPhoton(wi, wo, sample, chromatic_enabled, wavelength, camera_);
 			if(!scattered) break; //photon was absorped.  actually based on russian roulette
 
@@ -602,7 +602,7 @@ GatherInfo SppmIntegrator::traceGatherRay(Ray &ray, HitPoint &hp, FastRandom &fa
 	{
 		int additional_depth = 0;
 
-		const Vec3 wo{-ray.dir_};
+		const Vec3f wo{-ray.dir_};
 		const BsdfFlags mat_bsdfs = sp->mat_data_->bsdf_flags_;
 		additional_depth = std::max(additional_depth, sp->getMaterial()->getAdditionalDepth());
 
@@ -685,7 +685,7 @@ GatherInfo SppmIntegrator::traceGatherRay(Ray &ray, HitPoint &hp, FastRandom &fa
 					//if(temp.lengthSqr() > 1.)continue;
 
 					g_info.photon_count_++;
-					Vec3 pdir{gathered[i].photon_->dir_};
+					Vec3f pdir{gathered[i].photon_->dir_};
 					Rgb surf_col = sp->eval(wo, pdir, BsdfFlags::Diffuse); // seems could speed up using rho, (something pbrt made)
 					g_info.photon_flux_ += surf_col * gathered[i].photon_->col_;// * std::abs(sp->N*pdir); //< wrong!?
 					//Rgb  flux= surfCol * gathered[i].photon->col_;// * std::abs(sp->N*pdir); //< wrong!?
@@ -710,7 +710,7 @@ GatherInfo SppmIntegrator::traceGatherRay(Ray &ray, HitPoint &hp, FastRandom &fa
 					Rgb surf_col(0.f);
 					for(int i = 0; i < n_gathered; ++i)
 					{
-						Vec3 pdir{gathered[i].photon_->dir_};
+						Vec3f pdir{gathered[i].photon_->dir_};
 						g_info.photon_count_++;
 						surf_col = sp->eval(wo, pdir, BsdfFlags::All); // seems could speed up using rho, (something pbrt made)
 						g_info.photon_flux_ += surf_col * gathered[i].photon_->col_;// * std::abs(sp->N*pdir); //< wrong!?//gInfo.photonFlux += colorPasses.probe_add(PASS_INT_DIFFUSE_INDIRECT, surfCol * gathered[i].photon->col_, state.ray_level == 0);// * std::abs(sp->N*pdir); //< wrong!?
@@ -762,7 +762,7 @@ GatherInfo SppmIntegrator::traceGatherRay(Ray &ray, HitPoint &hp, FastRandom &fa
 					ray_division_new.offset_ = branch;
 					++branch;
 					Sample s(0.5f, 0.5f, BsdfFlags::Reflect | BsdfFlags::Transmit | BsdfFlags::Dispersive);
-					Vec3 wi;
+					Vec3f wi;
 					Rgb mcol = sp->sample(wo, wi, s, w, chromatic_enabled, wavelength_dispersive, camera_);
 
 					if(s.pdf_ > 1.0e-6f && flags::have(s.sampled_flags_, BsdfFlags::Dispersive))
@@ -833,7 +833,7 @@ GatherInfo SppmIntegrator::traceGatherRay(Ray &ray, HitPoint &hp, FastRandom &fa
 					float W = 0.f;
 
 					Sample s(s_1, s_2, BsdfFlags::AllGlossy);
-					Vec3 wi;
+					Vec3f wi;
 					Rgb mcol = sp->sample(wo, wi, s, W, chromatic_enabled, wavelength, camera_);
 
 					if(flags::have(mat_bsdfs, BsdfFlags::Reflect) && !flags::have(mat_bsdfs, BsdfFlags::Transmit))
@@ -856,7 +856,7 @@ GatherInfo SppmIntegrator::traceGatherRay(Ray &ray, HitPoint &hp, FastRandom &fa
 						Sample s(s_1, s_2, BsdfFlags::Glossy | BsdfFlags::AllGlossy);
 						Rgb mcol[2];
 						float w[2];
-						Vec3 dir[2];
+						Vec3f dir[2];
 						mcol[0] = sp->sample(wo, dir, mcol[1], s, w, chromatic_enabled, wavelength);
 						if(flags::have(s.sampled_flags_, BsdfFlags::Reflect) && !flags::have(s.sampled_flags_, BsdfFlags::Dispersive))
 						{

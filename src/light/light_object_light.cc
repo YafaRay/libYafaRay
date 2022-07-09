@@ -77,7 +77,7 @@ void ObjectLight::init(Scene &scene)
 	}
 }
 
-std::pair<Point3, Vec3> ObjectLight::sampleSurface(float s_1, float s_2, float time) const
+std::pair<Point3f, Vec3f> ObjectLight::sampleSurface(float s_1, float s_2, float time) const
 {
 	const auto [prim_num, prim_pdf]{area_dist_->dSample(s_1)};
 	if(prim_num >= area_dist_->size())
@@ -99,13 +99,13 @@ std::pair<Point3, Vec3> ObjectLight::sampleSurface(float s_1, float s_2, float t
 
 Rgb ObjectLight::totalEnergy() const { return (double_sided_ ? 2.f * color_ * area_ : color_ * area_); }
 
-std::pair<bool, Ray> ObjectLight::illumSample(const Point3 &surface_p, LSample &s, float time) const
+std::pair<bool, Ray> ObjectLight::illumSample(const Point3f &surface_p, LSample &s, float time) const
 {
 	if(photonOnly()) return {};
 	const auto [p, n]{sampleSurface(s.s_1_, s.s_2_, time)};
-	Vec3 ldir{p - surface_p};
+	Vec3f ldir{p - surface_p};
 	//normalize vec and compute inverse square distance
-	const float dist_sqr = ldir.lengthSqr();
+	const float dist_sqr = ldir.lengthSquared();
 	const float dist = math::sqrt(dist_sqr);
 	if(dist <= 0.f) return {};
 	ldir *= 1.f / dist;
@@ -135,8 +135,8 @@ std::tuple<Ray, float, Rgb> ObjectLight::emitPhoton(float s_1, float s_2, float 
 {
 	float ipdf = area_;
 	auto [p, n]{sampleSurface(s_3, s_4, 0.f)};
-	const Uv<Vec3> duv{Vec3::createCoordsSystem(n)};
-	Vec3 dir;
+	const Uv<Vec3f> duv{Vec3f::createCoordsSystem(n)};
+	Vec3f dir;
 	if(double_sided_)
 	{
 		ipdf *= 2.f;
@@ -148,13 +148,13 @@ std::tuple<Ray, float, Rgb> ObjectLight::emitPhoton(float s_1, float s_2, float 
 	return {std::move(ray), ipdf, color_};
 }
 
-std::pair<Vec3, Rgb> ObjectLight::emitSample(LSample &s, float time) const
+std::pair<Vec3f, Rgb> ObjectLight::emitSample(LSample &s, float time) const
 {
 	s.area_pdf_ = inv_area_ * math::num_pi<>;
 	std::tie(s.sp_->p_, s.sp_->ng_) = sampleSurface(s.s_3_, s.s_4_, time);
 	s.sp_->n_ = s.sp_->ng_;
-	const Uv<Vec3> duv{Vec3::createCoordsSystem(s.sp_->ng_)};
-	Vec3 dir;
+	const Uv<Vec3f> duv{Vec3f::createCoordsSystem(s.sp_->ng_)};
+	Vec3f dir;
 	if(double_sided_)
 	{
 		if(s.s_1_ > 0.5f) dir = sample::cosHemisphere(-s.sp_->ng_, duv, (s.s_1_ - 0.5f) * 2.f, s.s_2_);
@@ -177,7 +177,7 @@ std::tuple<bool, float, Rgb> ObjectLight::intersect(const Ray &ray, float &t) co
 	// intersect with tree:
 	const IntersectData intersect_data = accelerator_->intersect(ray, t_max);
 	if(!intersect_data.isHit()) return {};
-	const Vec3 n{intersect_data.primitive_->getGeometricNormal(intersect_data.uv_, 0, false)};
+	const Vec3f n{intersect_data.primitive_->getGeometricNormal(intersect_data.uv_, 0, false)};
 	float cos_angle = ray.dir_ * (-n);
 	if(cos_angle <= 0.f)
 	{
@@ -189,15 +189,15 @@ std::tuple<bool, float, Rgb> ObjectLight::intersect(const Ray &ray, float &t) co
 	return {true, ipdf, color_};
 }
 
-float ObjectLight::illumPdf(const Point3 &surface_p, const Point3 &light_p, const Vec3 &light_ng) const
+float ObjectLight::illumPdf(const Point3f &surface_p, const Point3f &light_p, const Vec3f &light_ng) const
 {
-	Vec3 wo{surface_p - light_p};
-	const float r_2 = wo.normLenSqr();
+	Vec3f wo{surface_p - light_p};
+	const float r_2 = wo.normalizeAndReturnLengthSquared();
 	const float cos_n = wo * light_ng;
 	return cos_n > 0 ? r_2 * math::num_pi<> / (area_ * cos_n) : (double_sided_ ? r_2 * math::num_pi<> / (area_ * -cos_n) : 0.f);
 }
 
-std::array<float, 3> ObjectLight::emitPdf(const Vec3 &surface_n, const Vec3 &wo) const
+std::array<float, 3> ObjectLight::emitPdf(const Vec3f &surface_n, const Vec3f &wo) const
 {
 	const float area_pdf = inv_area_ * math::num_pi<>;
 	const float cos_wo = wo * surface_n;
@@ -239,7 +239,7 @@ Light * ObjectLight::factory(Logger &logger, const Scene &scene, const std::stri
 	return light;
 }
 
-std::tuple<bool, Ray, Rgb> ObjectLight::illuminate(const Point3 &surface_p, float time) const
+std::tuple<bool, Ray, Rgb> ObjectLight::illuminate(const Point3f &surface_p, float time) const
 {
 	return {};
 }

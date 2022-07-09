@@ -103,7 +103,9 @@ ImageFilm * ImageFilm::factory(Logger &logger, const ParamMap &params, Scene *sc
 	else if(tiles_order == "random") tiles_order_type = ImageSplitter::Random;
 	else if(tiles_order != "centre" && logger.isVerbose()) logger.logVerbose("ImageFilm: ", "Defaulting to Centre tiles order."); // this is info imho not a warning
 
-	auto film = new ImageFilm(logger, width, height, xstart, ystart, scene->getNumThreads(), scene->getRenderControl(), *scene->getLayers(), scene->getOutputs(), filt_sz, type, tile_size, tiles_order_type);
+	const Rect rect{Point2i{{xstart, ystart}}, Size2i{{width, height}}};
+
+	auto film = new ImageFilm(logger, rect, scene->getNumThreads(), scene->getRenderControl(), *scene->getLayers(), scene->getOutputs(), filt_sz, type, tile_size, tiles_order_type);
 
 	film->setImagesAutoSaveParams(images_autosave_params);
 	film->setFilmLoadSaveParams(film_load_save);
@@ -124,13 +126,9 @@ ImageFilm * ImageFilm::factory(Logger &logger, const ParamMap &params, Scene *sc
 	return film;
 }
 
-ImageFilm::ImageFilm(Logger &logger, int width, int height, int xstart, int ystart, int num_threads, RenderControl &render_control, const Layers &layers, const std::map<std::string, std::unique_ptr<ImageOutput>> &outputs, float filter_size, FilterType filt, int t_size, ImageSplitter::TilesOrderType tiles_order_type) : width_(width), height_(height), cx_0_(xstart), cy_0_(ystart), tile_size_(t_size), tiles_order_(tiles_order_type), num_threads_(num_threads), layers_(layers), outputs_(outputs), flags_(width, height), weights_(width, height), filter_width_(filter_size * 0.5f), logger_(logger)
+ImageFilm::ImageFilm(Logger &logger, const Rect &rect, int num_threads, RenderControl &render_control, const Layers &layers, const std::map<std::string, std::unique_ptr<ImageOutput>> &outputs, float filter_size, FilterType filt, int t_size, ImageSplitter::TilesOrderType tiles_order_type) : rect_{rect}, tile_size_(t_size), tiles_order_(tiles_order_type), num_threads_(num_threads), layers_(layers), outputs_(outputs), flags_(rect.getSize()), weights_(rect.getSize()), filter_width_(filter_size * 0.5f), logger_(logger)
 {
-	cx_1_ = xstart + width;
-	cy_1_ = ystart + height;
-
 	estimate_density_ = false;
-
 	// fill filter table:
 	FilterFunction_t *filter_function = nullptr;
 	switch(filt)
@@ -179,7 +177,7 @@ void ImageFilm::initLayersImages()
 	{
 		Image::Type image_type = layer.getImageType();
 		image_type = Image::imageTypeWithAlpha(image_type); //Alpha channel is needed in all images of the weight normalization process will cause problems
-		std::unique_ptr<Image> image(Image::factory(logger_, width_, height_, image_type, Image::Optimization::None));
+		std::unique_ptr<Image> image(Image::factory(logger_, rect_.getSize(), image_type, Image::Optimization::None));
 		film_image_layers_.set(layer_def, {std::move(image), layer});
 	}
 }
@@ -190,7 +188,7 @@ void ImageFilm::initLayersExportedImages()
 	{
 		Image::Type image_type = layer.getImageType();
 		image_type = Image::imageTypeWithAlpha(image_type); //Alpha channel is needed in all images of the weight normalization process will cause problems
-		std::unique_ptr<Image> image(Image::factory(logger_, width_, height_, image_type, Image::Optimization::None));
+		std::unique_ptr<Image> image(Image::factory(logger_, rect_.getSize(), image_type, Image::Optimization::None));
 		exported_image_layers_.set(layer_def, {std::move(image), layer});
 	}
 }
@@ -207,19 +205,19 @@ void ImageFilm::init(RenderControl &render_control, int num_passes)
 	// Clear density image
 	if(estimate_density_)
 	{
-		density_image_ = std::make_unique<ImageBuffer2D<Rgb>>(width_, height_);
+		density_image_ = std::make_unique<ImageBuffer2D<Rgb>>(rect_.getSize());
 	}
 
 	// Setup the bucket splitter
 	if(split_)
 	{
 		next_area_ = 0;
-		splitter_ = std::make_unique<ImageSplitter>(width_, height_, cx_0_, cy_0_, tile_size_, tiles_order_, num_threads_);
+		splitter_ = std::make_unique<ImageSplitter>(rect_.getWidth(), rect_.getHeight(), rect_.getPointStart()[Axis::X], rect_.getPointStart()[Axis::Y], tile_size_, tiles_order_, num_threads_);
 		area_cnt_ = splitter_->size();
 	}
 	else area_cnt_ = 1;
 
-	if(progress_bar_) progress_bar_->init(width_ * height_, logger_.getConsoleLogColorsEnabled());
+	if(progress_bar_) progress_bar_->init(rect_.getWidth() * rect_.getHeight(), logger_.getConsoleLogColorsEnabled());
 	render_control.setCurrentPassPercent(progress_bar_->getPercent());
 
 	cancel_ = false;
@@ -252,7 +250,7 @@ void ImageFilm::init(RenderControl &render_control, int num_passes)
 		const Layers &layers = layers_.getLayersWithExportedImages();
 		for(const auto &[layer_type, layer] : layers)
 		{
-			render_callbacks_->notify_layer_(LayerDef::getName(layer_type).c_str(), layer.getExportedImageName().c_str(), width_, height_, layer.getNumExportedChannels(), render_callbacks_->notify_layer_data_);
+			render_callbacks_->notify_layer_(LayerDef::getName(layer_type).c_str(), layer.getExportedImageName().c_str(), rect_.getWidth(), rect_.getHeight(), layer.getNumExportedChannels(), render_callbacks_->notify_layer_data_);
 		}
 	}
 }
@@ -300,30 +298,30 @@ int ImageFilm::nextPass(const RenderView *render_view, RenderControl &render_con
 
 	if(adaptive_aa && aa_noise_params_.threshold_ > 0.f)
 	{
-		for(int y = 0; y < height_; ++y)
+		for(int y = 0; y < rect_.getHeight(); ++y)
 		{
-			for(int x = 0; x < width_; ++x)
+			for(int x = 0; x < rect_.getWidth(); ++x)
 			{
-				const float weight = weights_(x, y).getFloat();
-				if(weight > 0.f) flags_.set(x, y, false);
-				else flags_.set(x, y, true); //If after reloading ImageFiles there are pixels that were not yet rendered at all, make sure they are marked to be rendered in the next AA pass
+				const float weight = weights_({{x, y}}).getFloat();
+				if(weight > 0.f) flags_.set({{x, y}}, false);
+				else flags_.set({{x, y}}, true); //If after reloading ImageFiles there are pixels that were not yet rendered at all, make sure they are marked to be rendered in the next AA pass
 			}
 		}
 
-		for(int y = 0; y < height_ - 1; ++y)
+		for(int y = 0; y < rect_.getHeight() - 1; ++y)
 		{
-			for(int x = 0; x < width_ - 1; ++x)
+			for(int x = 0; x < rect_.getWidth() - 1; ++x)
 			{
 				//We will only consider the Combined Pass (pass 0) for the AA additional sampling calculations.
-				const float weight = weights_(x, y).getFloat();
+				const float weight = weights_({{x, y}}).getFloat();
 				float mat_sample_factor = 1.f;
 				if(sampling_factor_image_pass)
 				{
-					mat_sample_factor = weight > 0.f ? sampling_factor_image_pass->getFloat(x, y) / weight : 1.f;
+					mat_sample_factor = weight > 0.f ? sampling_factor_image_pass->getFloat({{x, y}}) / weight : 1.f;
 					if(!background_resampling_ && mat_sample_factor == 0.f) continue;
 				}
 
-				const Rgba pix_col = combined_image->getColor(x, y).normalized(weight);
+				const Rgba pix_col = combined_image->getColor({{x, y}}).normalized(weight);
 				const float pix_col_bri = pix_col.abscol2Bri();
 
 				if(aa_noise_params_.dark_detection_type_ == AaNoiseParams::DarkDetectionType::Linear && aa_noise_params_.dark_threshold_factor_ > 0.f)
@@ -335,21 +333,21 @@ int ImageFilm::nextPass(const RenderView *render_view, RenderControl &render_con
 					aa_thresh_scaled = darkThresholdCurveInterpolate(pix_col_bri);
 				}
 
-				if(pix_col.colorDifference(combined_image->getColor(x + 1, y).normalized(weights_(x + 1, y).getFloat()), aa_noise_params_.detect_color_noise_) >= aa_thresh_scaled)
+				if(pix_col.colorDifference(combined_image->getColor({{x + 1, y}}).normalized(weights_({{x + 1, y}}).getFloat()), aa_noise_params_.detect_color_noise_) >= aa_thresh_scaled)
 				{
-					flags_.set(x, y, true); flags_.set(x + 1, y, true);
+					flags_.set({{x, y}}, true); flags_.set({{x + 1, y}}, true);
 				}
-				if(pix_col.colorDifference(combined_image->getColor(x, y + 1).normalized(weights_(x, y + 1).getFloat()), aa_noise_params_.detect_color_noise_) >= aa_thresh_scaled)
+				if(pix_col.colorDifference(combined_image->getColor({{x, y + 1}}).normalized(weights_({{x, y + 1}}).getFloat()), aa_noise_params_.detect_color_noise_) >= aa_thresh_scaled)
 				{
-					flags_.set(x, y, true); flags_.set(x, y + 1, true);
+					flags_.set({{x, y}}, true); flags_.set({{x, y + 1}}, true);
 				}
-				if(pix_col.colorDifference(combined_image->getColor(x + 1, y + 1).normalized(weights_(x + 1, y + 1).getFloat()), aa_noise_params_.detect_color_noise_) >= aa_thresh_scaled)
+				if(pix_col.colorDifference(combined_image->getColor({{x + 1, y + 1}}).normalized(weights_({{x + 1, y + 1}}).getFloat()), aa_noise_params_.detect_color_noise_) >= aa_thresh_scaled)
 				{
-					flags_.set(x, y, true); flags_.set(x + 1, y + 1, true);
+					flags_.set({{x, y}}, true); flags_.set({{x + 1, y + 1}}, true);
 				}
-				if(x > 0 && pix_col.colorDifference(combined_image->getColor(x - 1, y + 1).normalized(weights_(x - 1, y + 1).getFloat()), aa_noise_params_.detect_color_noise_) >= aa_thresh_scaled)
+				if(x > 0 && pix_col.colorDifference(combined_image->getColor({{x - 1, y + 1}}).normalized(weights_({{x - 1, y + 1}}).getFloat()), aa_noise_params_.detect_color_noise_) >= aa_thresh_scaled)
 				{
-					flags_.set(x, y, true); flags_.set(x - 1, y + 1, true);
+					flags_.set({{x, y}}, true); flags_.set({{x - 1, y + 1}}, true);
 				}
 
 				if(aa_noise_params_.variance_pixels_ > 0)
@@ -362,10 +360,10 @@ int ImageFilm::nextPass(const RenderView *render_view, RenderControl &render_con
 					{
 						int xi = x + xd;
 						if(xi < 0) xi = 0;
-						else if(xi >= width_ - 1) xi = width_ - 2;
+						else if(xi >= rect_.getWidth() - 1) xi = rect_.getWidth() - 2;
 
-						const Rgba cx_0 = combined_image->getColor(xi, y).normalized(weights_(xi, y).getFloat());
-						const Rgba cx_1 = combined_image->getColor(xi + 1, y).normalized(weights_(xi + 1, y).getFloat());
+						const Rgba cx_0 = combined_image->getColor({{xi, y}}).normalized(weights_({{xi, y}}).getFloat());
+						const Rgba cx_1 = combined_image->getColor({{xi + 1, y}}).normalized(weights_({{xi + 1, y}}).getFloat());
 
 						if(cx_0.colorDifference(cx_1, aa_noise_params_.detect_color_noise_) >= aa_thresh_scaled) ++variance_x;
 					}
@@ -374,10 +372,10 @@ int ImageFilm::nextPass(const RenderView *render_view, RenderControl &render_con
 					{
 						int yi = y + yd;
 						if(yi < 0) yi = 0;
-						else if(yi >= height_ - 1) yi = height_ - 2;
+						else if(yi >= rect_.getHeight() - 1) yi = rect_.getHeight() - 2;
 
-						const Rgba cy_0 = combined_image->getColor(x, yi).normalized(weights_(x, yi).getFloat());
-						const Rgba cy_1 = combined_image->getColor(x, yi + 1).normalized(weights_(x, yi + 1).getFloat());
+						const Rgba cy_0 = combined_image->getColor({{x, yi}}).normalized(weights_({{x, yi}}).getFloat());
+						const Rgba cy_1 = combined_image->getColor({{x, yi + 1}}).normalized(weights_({{x, yi + 1}}).getFloat());
 
 						if(cy_0.colorDifference(cy_1, aa_noise_params_.detect_color_noise_) >= aa_thresh_scaled) ++variance_y;
 					}
@@ -390,13 +388,13 @@ int ImageFilm::nextPass(const RenderView *render_view, RenderControl &render_con
 							{
 								int xi = x + xd;
 								if(xi < 0) xi = 0;
-								else if(xi >= width_) xi = width_ - 1;
+								else if(xi >= rect_.getWidth()) xi = rect_.getWidth() - 1;
 
 								int yi = y + yd;
 								if(yi < 0) yi = 0;
-								else if(yi >= height_) yi = height_ - 1;
+								else if(yi >= rect_.getHeight()) yi = rect_.getHeight() - 1;
 
-								flags_.set(xi, yi, true);
+								flags_.set({{xi, yi}}, true);
 							}
 						}
 					}
@@ -404,17 +402,17 @@ int ImageFilm::nextPass(const RenderView *render_view, RenderControl &render_con
 			}
 		}
 
-		for(int y = 0; y < height_; ++y)
+		for(int y = 0; y < rect_.getHeight(); ++y)
 		{
-			for(int x = 0; x < width_; ++x)
+			for(int x = 0; x < rect_.getWidth(); ++x)
 			{
-				if(flags_.get(x, y))
+				if(flags_.get({{x, y}}))
 				{
 					++n_resample;
 					if(render_callbacks_ && render_callbacks_->highlight_pixel_)
 					{
-						const float weight = weights_(x, y).getFloat();
-						const Rgba col = combined_image->getColor(x, y).normalized(weight);
+						const float weight = weights_({{x, y}}).getFloat();
+						const Rgba col = combined_image->getColor({{x, y}}).normalized(weight);
 						render_callbacks_->highlight_pixel_(render_view->getName().c_str(), x, y, col.r_, col.g_, col.b_, col.a_, render_callbacks_->highlight_pixel_data_);
 					}
 				}
@@ -423,7 +421,7 @@ int ImageFilm::nextPass(const RenderView *render_view, RenderControl &render_con
 	}
 	else
 	{
-		n_resample = height_ * width_;
+		n_resample = rect_.getHeight() * rect_.getWidth();
 	}
 
 	if(render_callbacks_ && render_callbacks_->flush_) render_callbacks_->flush_(render_view->getName().c_str(), render_callbacks_->flush_data_);
@@ -436,7 +434,7 @@ int ImageFilm::nextPass(const RenderView *render_view, RenderControl &render_con
 
 	if(progress_bar_)
 	{
-		progress_bar_->init(width_ * height_, logger_.getConsoleLogColorsEnabled());
+		progress_bar_->init(rect_.getWidth() * rect_.getHeight(), logger_.getConsoleLogColorsEnabled());
 		render_control.setCurrentPassPercent(progress_bar_->getPercent());
 		progress_bar_->setTag(pass_string.str());
 	}
@@ -473,10 +471,10 @@ bool ImageFilm::nextArea(const RenderView *render_view, const RenderControl &ren
 	else
 	{
 		if(area_cnt_) return false;
-		a.x_ = cx_0_;
-		a.y_ = cy_0_;
-		a.w_ = width_;
-		a.h_ = height_;
+		a.x_ = rect_.getPointStart()[Axis::X];
+		a.y_ = rect_.getPointStart()[Axis::Y];
+		a.w_ = rect_.getWidth();
+		a.h_ = rect_.getHeight();
 		a.sx_0_ = a.x_ + ifilterw;
 		a.sx_1_ = a.x_ + a.w_ - ifilterw;
 		a.sy_0_ = a.y_ + ifilterw;
@@ -490,29 +488,29 @@ bool ImageFilm::nextArea(const RenderView *render_view, const RenderControl &ren
 void ImageFilm::finishArea(const RenderView *render_view, RenderControl &render_control, const RenderArea &a, const EdgeToonParams &edge_params)
 {
 	std::lock_guard<std::mutex> lock_guard(out_mutex_);
-	const int end_x = a.x_ + a.w_ - cx_0_;
-	const int end_y = a.y_ + a.h_ - cy_0_;
+	const int end_x = a.x_ + a.w_ - rect_.getPointStart()[Axis::X];
+	const int end_y = a.y_ + a.h_ - rect_.getPointStart()[Axis::Y];
 
 	if(layers_.isDefined(LayerDef::DebugFacesEdges))
 	{
-		image_manipulation::generateDebugFacesEdges(film_image_layers_, a.x_ - cx_0_, end_x, a.y_ - cy_0_, end_y, true, edge_params, weights_);
+		image_manipulation::generateDebugFacesEdges(film_image_layers_, a.x_ - rect_.getPointStart()[Axis::X], end_x, a.y_ - rect_.getPointStart()[Axis::Y], end_y, true, edge_params, weights_);
 	}
 
 	if(layers_.isDefinedAny({LayerDef::DebugObjectsEdges, LayerDef::Toon}))
 	{
-		image_manipulation::generateToonAndDebugObjectEdges(film_image_layers_, a.x_ - cx_0_, end_x, a.y_ - cy_0_, end_y, true, edge_params, weights_);
+		image_manipulation::generateToonAndDebugObjectEdges(film_image_layers_, a.x_ - rect_.getPointStart()[Axis::X], end_x, a.y_ - rect_.getPointStart()[Axis::Y], end_y, true, edge_params, weights_);
 	}
 
 	for(const auto &[layer_def, image_layer] : film_image_layers_)
 	{
 		if(!image_layer.layer_.isExported()) continue;
 		const std::shared_ptr<Image> &image = image_layer.image_;
-		for(int j = a.y_ - cy_0_; j < end_y; ++j)
+		for(int j = a.y_ - rect_.getPointStart()[Axis::Y]; j < end_y; ++j)
 		{
-			for(int i = a.x_ - cx_0_; i < end_x; ++i)
+			for(int i = a.x_ - rect_.getPointStart()[Axis::X]; i < end_x; ++i)
 			{
-				const float weight = weights_(i, j).getFloat();
-				Rgba color = (layer_def == LayerDef::AaSamples ? Rgba{weight} : image->getColor(i, j).normalized(weight));
+				const float weight = weights_({{i, j}}).getFloat();
+				Rgba color = (layer_def == LayerDef::AaSamples ? Rgba{weight} : image->getColor({{i, j}}).normalized(weight));
 				switch(layer_def)
 				{
 					//To correct the antialiasing and ceil the "mixed" values to the upper integer in the Object/Material Index layers
@@ -522,7 +520,7 @@ void ImageFilm::finishArea(const RenderView *render_view, RenderControl &render_
 					case LayerDef::MatIndexAutoAbs: color.ceil(); break;
 					default: break;
 				}
-				exported_image_layers_.setColor(i, j, color, layer_def);
+				exported_image_layers_.setColor({{i, j}}, color, layer_def);
 				if(render_callbacks_ && render_callbacks_->put_pixel_)
 				{
 					render_callbacks_->put_pixel_(render_view->getName().c_str(), LayerDef::getName(layer_def).c_str(), i, j, color.r_, color.g_, color.b_, color.a_, render_callbacks_->put_pixel_data_);
@@ -531,7 +529,7 @@ void ImageFilm::finishArea(const RenderView *render_view, RenderControl &render_
 		}
 	}
 
-	if(render_callbacks_ && render_callbacks_->flush_area_) render_callbacks_->flush_area_(render_view->getName().c_str(), a.id_, a.x_, a.y_, end_x + cx_0_, end_y + cy_0_, render_callbacks_->flush_area_data_);
+	if(render_callbacks_ && render_callbacks_->flush_area_) render_callbacks_->flush_area_(render_view->getName().c_str(), a.id_, a.x_, a.y_, end_x + rect_.getPointStart()[Axis::X], end_y + rect_.getPointStart()[Axis::Y], render_callbacks_->flush_area_data_);
 
 	if(render_control.inProgress())
 	{
@@ -577,27 +575,27 @@ void ImageFilm::flush(const RenderView *render_view, const RenderControl &render
 
 	float density_factor = 0.f;
 
-	if(estimate_density_ && num_density_samples_ > 0) density_factor = (float) (width_ * height_) / (float) num_density_samples_;
+	if(estimate_density_ && num_density_samples_ > 0) density_factor = (float) (rect_.getWidth() * rect_.getHeight()) / (float) num_density_samples_;
 
 	const Layers layers = layers_.getLayersWithImages();
 	if(layers.isDefined(LayerDef::DebugFacesEdges))
 	{
-		image_manipulation::generateDebugFacesEdges(film_image_layers_, 0, width_, 0, height_, false, edge_params, weights_);
+		image_manipulation::generateDebugFacesEdges(film_image_layers_, 0, rect_.getWidth(), 0, rect_.getHeight(), false, edge_params, weights_);
 	}
 	if(layers.isDefinedAny({LayerDef::DebugObjectsEdges, LayerDef::Toon}))
 	{
-		image_manipulation::generateToonAndDebugObjectEdges(film_image_layers_, 0, width_, 0, height_, false, edge_params, weights_);
+		image_manipulation::generateToonAndDebugObjectEdges(film_image_layers_, 0, rect_.getWidth(), 0, rect_.getHeight(), false, edge_params, weights_);
 	}
 	for(const auto &[layer_def, image_layer] : film_image_layers_)
 	{
 		if(!image_layer.layer_.isExported()) continue;
 		const std::shared_ptr<Image> &image = image_layer.image_;
-		for(int j = 0; j < height_; j++)
+		for(int j = 0; j < rect_.getHeight(); j++)
 		{
-			for(int i = 0; i < width_; i++)
+			for(int i = 0; i < rect_.getWidth(); i++)
 			{
-				const float weight = weights_(i, j).getFloat();
-				Rgba color = (layer_def == LayerDef::AaSamples ? Rgba{weight} : image->getColor(i, j).normalized(weight));
+				const float weight = weights_({{i, j}}).getFloat();
+				Rgba color = (layer_def == LayerDef::AaSamples ? Rgba{weight} : image->getColor({{i, j}}).normalized(weight));
 				switch(layer_def)
 				{
 					//To correct the antialiasing and ceil the "mixed" values to the upper integer in the Object/Material Index layers
@@ -607,8 +605,8 @@ void ImageFilm::flush(const RenderView *render_view, const RenderControl &render
 					case LayerDef::MatIndexAutoAbs: color.ceil(); break;
 					default: break;
 				}
-				if(estimate_density_ && (flags & Densityimage) && layer_def == LayerDef::Combined && density_factor > 0.f) color += Rgba((*density_image_)(i, j) * density_factor, 0.f);
-				exported_image_layers_.setColor(i, j, color, layer_def);
+				if(estimate_density_ && (flags & Densityimage) && layer_def == LayerDef::Combined && density_factor > 0.f) color += Rgba((*density_image_)({{i, j}}) * density_factor, 0.f);
+				exported_image_layers_.setColor({{i, j}}, color, layer_def);
 				if(render_callbacks_ && render_callbacks_->put_pixel_)
 				{
 					render_callbacks_->put_pixel_(render_view->getName().c_str(), LayerDef::getName(layer_def).c_str(), i, j, color.r_, color.g_, color.b_, color.a_, render_callbacks_->put_pixel_data_);
@@ -622,7 +620,7 @@ void ImageFilm::flush(const RenderView *render_view, const RenderControl &render
 	if(render_control.finished())
 	{
 		std::stringstream ss;
-		ss << printRenderStats(render_control, timer_, width_, height_);
+		ss << printRenderStats(render_control, timer_, rect_.getSize());
 		ss << render_control.getAaNoiseInfo();
 		logger_.logParams("--------------------------------------------------------------------------------");
 		for(std::string line; std::getline(ss, line, '\n');) if(line != "" && line != "\n") logger_.logParams(line);
@@ -670,22 +668,22 @@ void ImageFilm::flush(const RenderView *render_view, const RenderControl &render
 	}
 }
 
-bool ImageFilm::doMoreSamples(int x, int y) const
+bool ImageFilm::doMoreSamples(const Point2i &point) const
 {
-	return aa_noise_params_.threshold_ <= 0.f || flags_.get(x - cx_0_, y - cy_0_);
+	return aa_noise_params_.threshold_ <= 0.f || flags_.get({{point[Axis::X] - rect_.getPointStart()[Axis::X], point[Axis::Y] - rect_.getPointStart()[Axis::Y]}});
 }
 
 /* CAUTION! Implemantation of this function needs to be thread safe for samples that
 	contribute to pixels outside the area a AND pixels that might get
 	contributions from outside area a! (yes, really!) */
-void ImageFilm::addSample(int x, int y, float dx, float dy, const RenderArea *a, int num_sample, int aa_pass_number, float inv_aa_max_possible_samples, const ColorLayers *color_layers)
+void ImageFilm::addSample(const Point2i &point, float dx, float dy, const RenderArea *a, int num_sample, int aa_pass_number, float inv_aa_max_possible_samples, const ColorLayers *color_layers)
 {
 	// get filter extent and make sure we don't leave image area:
 	//FIXME: using for some reason an asymmetrical rounding function with a +0.5 bias. Using a standard rounding function would increase processing time due to increased filter applicable area and potentially causing more thread locks. Keeping this asymmetrical rounding for now to keep the original functionality, but probably something to be investigated and made better in the future.
-	const int dx_0 = std::max(cx_0_ - x, roundToIntWithBias(static_cast<double>(dx) - filter_width_));
-	const int dx_1 = std::min(cx_1_ - x - 1, roundToIntWithBias(static_cast<double>(dx) + filter_width_ - 1.0));
-	const int dy_0 = std::max(cy_0_ - y, roundToIntWithBias(static_cast<double>(dy) - filter_width_));
-	const int dy_1 = std::min(cy_1_ - y - 1, roundToIntWithBias(static_cast<double>(dy) + filter_width_ - 1.0));
+	const int dx_0 = std::max(rect_.getPointStart()[Axis::X] - point[Axis::X], roundToIntWithBias(static_cast<double>(dx) - filter_width_));
+	const int dx_1 = std::min(rect_.getPointEnd()[Axis::X] - point[Axis::X], roundToIntWithBias(static_cast<double>(dx) + filter_width_ - 1.0));
+	const int dy_0 = std::max(rect_.getPointStart()[Axis::Y] - point[Axis::Y], roundToIntWithBias(static_cast<double>(dy) - filter_width_));
+	const int dy_1 = std::min(rect_.getPointEnd()[Axis::Y] - point[Axis::Y], roundToIntWithBias(static_cast<double>(dy) + filter_width_ - 1.0));
 
 	// get indices in filter table
 	const double x_offs = dx - 0.5;
@@ -703,10 +701,10 @@ void ImageFilm::addSample(int x, int y, float dx, float dy, const RenderArea *a,
 		y_index[n] = static_cast<int>(std::floor(d));
 	}
 
-	const int x_0 = x + dx_0;
-	const int x_1 = x + dx_1;
-	const int y_0 = y + dy_0;
-	const int y_1 = y + dy_1;
+	const int x_0 = point[Axis::X] + dx_0;
+	const int x_1 = point[Axis::X] + dx_1;
+	const int y_0 = point[Axis::Y] + dy_0;
+	const int y_1 = point[Axis::Y] + dy_1;
 	const bool outside_thread_safe_area = (x_0 < a->sx_0_ || x_1 > a->sx_1_ || y_0 < a->sy_0_ || y_1 > a->sy_1_);
 
 	if(outside_thread_safe_area) image_mutex_.lock();
@@ -717,30 +715,30 @@ void ImageFilm::addSample(int x, int y, float dx, float dy, const RenderArea *a,
 			// get filter value at pixel (x,y)
 			const size_t offset = y_index[j - y_0] * filter_table_size_ + x_index[i - x_0];
 			const float filter_wt = filter_table_[offset];
-			weights_(i - cx_0_, j - cy_0_).setFloat(weights_(i - cx_0_, j - cy_0_).getFloat() + filter_wt);
+			weights_({{i - rect_.getPointStart()[Axis::X], j - rect_.getPointStart()[Axis::Y]}}).setFloat(weights_({{i - rect_.getPointStart()[Axis::X], j - rect_.getPointStart()[Axis::Y]}}).getFloat() + filter_wt);
 
 			// update pixel values with filtered sample contribution
 			for(auto &[layer_def, image_layer] : film_image_layers_)
 			{
 				Rgba col = color_layers ? (*color_layers)(layer_def) : Rgba{0.f};
 				col.clampProportionalRgb(aa_noise_params_.clamp_samples_);
-				image_layer.image_->addColor(i - cx_0_, j - cy_0_, col * filter_wt);
+				image_layer.image_->addColor({{i - rect_.getPointStart()[Axis::X], j - rect_.getPointStart()[Axis::Y]}}, col * filter_wt);
 			}
 		}
 	}
 	if(outside_thread_safe_area) image_mutex_.unlock();
 }
 
-void ImageFilm::addDensitySample(const Rgb &c, int x, int y, float dx, float dy)
+void ImageFilm::addDensitySample(const Rgb &c, const Point2i &point, float dx, float dy)
 {
 	if(!estimate_density_) return;
 
 	// get filter extent and make sure we don't leave image area:
 	//FIXME: using for some reason an asymmetrical rounding function with a +0.5 bias. Using a standard rounding function would increase processing time due to increased filter applicable area and potentially causing more thread locks. Keeping this asymmetrical rounding for now to keep the original functionality, but probably something to be investigated and made better in the future.
-	const int dx_0 = std::max(cx_0_ - x, roundToIntWithBias(static_cast<double>(dx) - filter_width_));
-	const int dx_1 = std::min(cx_1_ - x - 1, roundToIntWithBias(static_cast<double>(dx) + filter_width_ - 1.0));
-	const int dy_0 = std::max(cy_0_ - y, roundToIntWithBias(static_cast<double>(dy) - filter_width_));
-	const int dy_1 = std::min(cy_1_ - y - 1, roundToIntWithBias(static_cast<double>(dy) + filter_width_ - 1.0));
+	const int dx_0 = std::max(rect_.getPointStart()[Axis::X] - point[Axis::X], roundToIntWithBias(static_cast<double>(dx) - filter_width_));
+	const int dx_1 = std::min(rect_.getPointEnd()[Axis::X] - point[Axis::X], roundToIntWithBias(static_cast<double>(dx) + filter_width_ - 1.0));
+	const int dy_0 = std::max(rect_.getPointStart()[Axis::Y] - point[Axis::Y], roundToIntWithBias(static_cast<double>(dy) - filter_width_));
+	const int dy_1 = std::min(rect_.getPointEnd()[Axis::Y] - point[Axis::Y], roundToIntWithBias(static_cast<double>(dy) + filter_width_ - 1.0));
 
 	const double x_offs = dx - 0.5;
 	std::array<int, max_filter_size_ + 1> x_index;
@@ -757,10 +755,10 @@ void ImageFilm::addDensitySample(const Rgb &c, int x, int y, float dx, float dy)
 		y_index[n] = static_cast<int>(std::floor(d));
 	}
 
-	const int x_0 = x + dx_0;
-	const int x_1 = x + dx_1;
-	const int y_0 = y + dy_0;
-	const int y_1 = y + dy_1;
+	const int x_0 = point[Axis::X] + dx_0;
+	const int x_1 = point[Axis::X] + dx_1;
+	const int y_0 = point[Axis::Y] + dy_0;
+	const int y_1 = point[Axis::Y] + dy_1;
 
 	std::lock_guard<std::mutex> lock_guard(density_image_mutex_);
 	for(int j = y_0; j <= y_1; ++j)
@@ -768,7 +766,7 @@ void ImageFilm::addDensitySample(const Rgb &c, int x, int y, float dx, float dy)
 		for(int i = x_0; i <= x_1; ++i)
 		{
 			const size_t offset = y_index[j - y_0] * filter_table_size_ + x_index[i - x_0];
-			Rgb &pixel = (*density_image_)(i - cx_0_, j - cy_0_);
+			Rgb &pixel = (*density_image_)({{i - rect_.getPointStart()[Axis::X], j - rect_.getPointStart()[Axis::Y]}});
 			pixel += c * filter_table_[offset];
 		}
 	}
@@ -779,7 +777,7 @@ void ImageFilm::setDensityEstimation(bool enable)
 {
 	if(enable)
 	{
-		if(!density_image_) density_image_ = std::make_unique<ImageBuffer2D<Rgb>>(width_, height_);
+		if(!density_image_) density_image_ = std::make_unique<ImageBuffer2D<Rgb>>(rect_.getSize());
 		else density_image_->clear();
 	}
 	else
@@ -847,49 +845,49 @@ bool ImageFilm::imageFilmLoad(const std::string &filename)
 
 	int filmload_check_w;
 	file.read<int>(filmload_check_w);
-	if(filmload_check_w != width_)
+	if(filmload_check_w != rect_.getWidth())
 	{
-		logger_.logWarning("imageFilm: loading/reusing film check failed. Image width, expected=", width_, ", in reused/loaded film=", filmload_check_w);
+		logger_.logWarning("imageFilm: loading/reusing film check failed. Image width, expected=", rect_.getWidth(), ", in reused/loaded film=", filmload_check_w);
 		return false;
 	}
 
 	int filmload_check_h;
 	file.read<int>(filmload_check_h);
-	if(filmload_check_h != height_)
+	if(filmload_check_h != rect_.getHeight())
 	{
-		logger_.logWarning("imageFilm: loading/reusing film check failed. Image height, expected=", height_, ", in reused/loaded film=", filmload_check_h);
+		logger_.logWarning("imageFilm: loading/reusing film check failed. Image height, expected=", rect_.getHeight(), ", in reused/loaded film=", filmload_check_h);
 		return false;
 	}
 
 	int filmload_check_cx_0;
 	file.read<int>(filmload_check_cx_0);
-	if(filmload_check_cx_0 != cx_0_)
+	if(filmload_check_cx_0 != rect_.getPointStart()[Axis::X])
 	{
-		logger_.logWarning("imageFilm: loading/reusing film check failed. Border cx0, expected=", cx_0_, ", in reused/loaded film=", filmload_check_cx_0);
+		logger_.logWarning("imageFilm: loading/reusing film check failed. Border cx0, expected=", rect_.getPointStart()[Axis::X], ", in reused/loaded film=", filmload_check_cx_0);
 		return false;
 	}
 
 	int filmload_check_cx_1;
 	file.read<int>(filmload_check_cx_1);
-	if(filmload_check_cx_1 != cx_1_)
+	if(filmload_check_cx_1 != rect_.getPointEnd()[Axis::X])
 	{
-		logger_.logWarning("imageFilm: loading/reusing film check failed. Border cx1, expected=", cx_1_, ", in reused/loaded film=", filmload_check_cx_1);
+		logger_.logWarning("imageFilm: loading/reusing film check failed. Border cx1, expected=", rect_.getPointEnd()[Axis::X], ", in reused/loaded film=", filmload_check_cx_1);
 		return false;
 	}
 
 	int filmload_check_cy_0;
 	file.read<int>(filmload_check_cy_0);
-	if(filmload_check_cy_0 != cy_0_)
+	if(filmload_check_cy_0 != rect_.getPointStart()[Axis::Y])
 	{
-		logger_.logWarning("imageFilm: loading/reusing film check failed. Border cy0, expected=", cy_0_, ", in reused/loaded film=", filmload_check_cy_0);
+		logger_.logWarning("imageFilm: loading/reusing film check failed. Border cy0, expected=", rect_.getPointStart()[Axis::Y], ", in reused/loaded film=", filmload_check_cy_0);
 		return false;
 	}
 
 	int filmload_check_cy_1;
 	file.read<int>(filmload_check_cy_1);
-	if(filmload_check_cy_1 != cy_1_)
+	if(filmload_check_cy_1 != rect_.getPointEnd()[Axis::Y])
 	{
-		logger_.logWarning("imageFilm: loading/reusing film check failed. Border cy1, expected=", cy_1_, ", in reused/loaded film=", filmload_check_cy_1);
+		logger_.logWarning("imageFilm: loading/reusing film check failed. Border cy1, expected=", rect_.getPointEnd()[Axis::Y], ", in reused/loaded film=", filmload_check_cy_1);
 		return false;
 	}
 
@@ -905,28 +903,28 @@ bool ImageFilm::imageFilmLoad(const std::string &filename)
 		return false;
 	}
 
-	for(int y = 0; y < height_; ++y)
+	for(int y = 0; y < rect_.getHeight(); ++y)
 	{
-		for(int x = 0; x < width_; ++x)
+		for(int x = 0; x < rect_.getWidth(); ++x)
 		{
 			float weight;
 			file.read<float>(weight);
-			weights_(x, y).setFloat(weight);
+			weights_({{x, y}}).setFloat(weight);
 		}
 	}
 
 	for(auto &[layer_def, image_layer] : film_image_layers_)
 	{
-		for(int y = 0; y < height_; ++y)
+		for(int y = 0; y < rect_.getHeight(); ++y)
 		{
-			for(int x = 0; x < width_; ++x)
+			for(int x = 0; x < rect_.getWidth(); ++x)
 			{
 				Rgba col;
 				file.read<float>(col.r_);
 				file.read<float>(col.g_);
 				file.read<float>(col.b_);
 				file.read<float>(col.a_);
-				image_layer.image_->setColor(x, y, col);
+				image_layer.image_->setColor({{x, y}}, col);
 			}
 		}
 	}
@@ -980,7 +978,7 @@ void ImageFilm::imageFilmLoadAllInFolder(RenderControl &render_control)
 	bool any_film_loaded = false;
 	for(const auto &film_file : film_file_paths_list)
 	{
-		auto loaded_film = std::make_unique<ImageFilm>(logger_, width_, height_, cx_0_, cy_0_, num_threads_, render_control, layers_, outputs_, 1.f, FilterType::Box);
+		auto loaded_film = std::make_unique<ImageFilm>(logger_, rect_, num_threads_, render_control, layers_, outputs_, 1.f, FilterType::Box);
 		if(!loaded_film->imageFilmLoad(film_file))
 		{
 			logger_.logWarning("ImageFilm: Could not load film file '", film_file, "'");
@@ -988,22 +986,22 @@ void ImageFilm::imageFilmLoadAllInFolder(RenderControl &render_control)
 		}
 		else any_film_loaded = true;
 
-		for(int i = 0; i < width_; ++i)
+		for(int i = 0; i < rect_.getWidth(); ++i)
 		{
-			for(int j = 0; j < height_; ++j)
+			for(int j = 0; j < rect_.getHeight(); ++j)
 			{
-				weights_(i, j).setFloat(weights_(i, j).getFloat() + loaded_film->weights_(i, j).getFloat());
+				weights_({{i, j}}).setFloat(weights_({{i, j}}).getFloat() + loaded_film->weights_({{i, j}}).getFloat());
 			}
 		}
 
 		for(auto &[layer_def, image_layer] : film_image_layers_)
 		{
 			const ImageLayers &loaded_image_layers = loaded_film->film_image_layers_;
-			for(int i = 0; i < width_; ++i)
+			for(int i = 0; i < rect_.getWidth(); ++i)
 			{
-				for(int j = 0; j < height_; ++j)
+				for(int j = 0; j < rect_.getHeight(); ++j)
 				{
-					image_layer.image_->addColor(i, j, loaded_image_layers(layer_def).image_->getColor(i, j));
+					image_layer.image_->addColor({{i, j}}, loaded_image_layers(layer_def).image_->getColor({{i, j}}));
 				}
 			}
 		}
@@ -1038,55 +1036,55 @@ bool ImageFilm::imageFilmSave()
 	file.append<unsigned int>(computer_node_);
 	file.append<unsigned int>(base_sampling_offset_);
 	file.append<unsigned int>(sampling_offset_);
-	file.append<int>(width_);
-	file.append<int>(height_);
-	file.append<int>(cx_0_);
-	file.append<int>(cx_1_);
-	file.append<int>(cy_0_);
-	file.append<int>(cy_1_);
+	file.append<int>(rect_.getWidth());
+	file.append<int>(rect_.getHeight());
+	file.append<int>(rect_.getPointStart()[Axis::X]);
+	file.append<int>(rect_.getPointEnd()[Axis::X]);
+	file.append<int>(rect_.getPointStart()[Axis::Y]);
+	file.append<int>(rect_.getPointEnd()[Axis::Y]);
 	file.append<int>((int) film_image_layers_.size());
 
 	const int weights_w = weights_.getWidth();
-	if(weights_w != width_)
+	if(weights_w != rect_.getWidth())
 	{
-		logger_.logWarning("ImageFilm saving problems, film weights width ", width_, " different from internal 2D image width ", weights_w);
+		logger_.logWarning("ImageFilm saving problems, film weights width ", rect_.getWidth(), " different from internal 2D image width ", weights_w);
 		result_ok = false;
 	}
 	const int weights_h = weights_.getHeight();
-	if(weights_h != height_)
+	if(weights_h != rect_.getHeight())
 	{
-		logger_.logWarning("ImageFilm saving problems, film weights height ", height_, " different from internal 2D image height ", weights_h);
+		logger_.logWarning("ImageFilm saving problems, film weights height ", rect_.getHeight(), " different from internal 2D image height ", weights_h);
 		result_ok = false;
 	}
-	for(int y = 0; y < height_; ++y)
+	for(int y = 0; y < rect_.getHeight(); ++y)
 	{
-		for(int x = 0; x < width_; ++x)
+		for(int x = 0; x < rect_.getWidth(); ++x)
 		{
-			file.append<float>(weights_(x, y).getFloat());
+			file.append<float>(weights_({{x, y}}).getFloat());
 		}
 	}
 
 	for(const auto &[layer_def, image_layer] : film_image_layers_)
 	{
 		const int img_w = image_layer.image_->getWidth();
-		if(img_w != width_)
+		if(img_w != rect_.getWidth())
 		{
-			logger_.logWarning("ImageFilm saving problems, film width ", width_, " different from internal 2D image width ", img_w);
+			logger_.logWarning("ImageFilm saving problems, film width ", rect_.getWidth(), " different from internal 2D image width ", img_w);
 			result_ok = false;
 			break;
 		}
 		const int img_h = image_layer.image_->getHeight();
-		if(img_h != height_)
+		if(img_h != rect_.getHeight())
 		{
-			logger_.logWarning("ImageFilm saving problems, film height ", height_, " different from internal 2D image height ", img_h);
+			logger_.logWarning("ImageFilm saving problems, film height ", rect_.getHeight(), " different from internal 2D image height ", img_h);
 			result_ok = false;
 			break;
 		}
-		for(int y = 0; y < height_; ++y)
+		for(int y = 0; y < rect_.getHeight(); ++y)
 		{
-			for(int x = 0; x < width_; ++x)
+			for(int x = 0; x < rect_.getWidth(); ++x)
 			{
-				const Rgba &col = image_layer.image_->getColor(x, y);
+				const Rgba &col = image_layer.image_->getColor({{x, y}});
 				file.append<float>(col.r_);
 				file.append<float>(col.g_);
 				file.append<float>(col.b_);
@@ -1127,7 +1125,7 @@ void ImageFilm::imageFilmFileBackup() const
 	if(progress_bar_) progress_bar_->setTag(old_tag);
 }
 
-std::string ImageFilm::printRenderStats(const RenderControl &render_control, const Timer &timer, int width, int height)
+std::string ImageFilm::printRenderStats(const RenderControl &render_control, const Timer &timer, const Size2i &size)
 {
 	std::stringstream ss;
 	ss << "\nYafaRay (" << buildinfo::getVersionString() << buildinfo::getBuildTypeSuffix() << ")" << " " << buildinfo::getBuildOs() << " " << buildinfo::getBuildArchitectureBits() << "bit (" << buildinfo::getBuildCompiler() << ")";
@@ -1137,7 +1135,7 @@ std::string ImageFilm::printRenderStats(const RenderControl &render_control, con
 	if(render_control.finished()) times = timer.getTime("rendert");
 	int timem, timeh;
 	Timer::splitTime(times, &times, &timem, &timeh);
-	ss << " | " << width << "x" << height;
+	ss << " | " << size[Axis::X] << "x" << size[Axis::Y];
 	if(render_control.inProgress()) ss << " | " << (render_control.resumed() ? "film loaded + " : "") << "in progress " << std::fixed << std::setprecision(1) << render_control.currentPassPercent() << "% of pass: " << render_control.currentPass() << " / " << render_control.totalPasses();
 	else if(render_control.canceled()) ss << " | " << (render_control.resumed() ? "film loaded + " : "") << "stopped at " << std::fixed << std::setprecision(1) << render_control.currentPassPercent() << "% of pass: " << render_control.currentPass() << " / " << render_control.totalPasses();
 	else

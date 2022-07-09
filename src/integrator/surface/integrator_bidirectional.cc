@@ -55,7 +55,7 @@ struct BidirectionalIntegrator::PathVertex
 	BsdfFlags flags_;       //!< flags of the sampled BSDF component (not all components of the sp!)
 	Rgb alpha_;      //!< cumulative subpath weight; note that y_i/z_i stores alpha_i+1 !
 	Rgb f_s_;        //!< f(x_i-1, x_i, x_i+1), i.e. throughput from last to next path vertex
-	Vec3 wi_, wo_;  //!< sampled direction for next vertex (if available)
+	Vec3f wi_, wo_;  //!< sampled direction for next vertex (if available)
 	float ds_;           //!< squared distance between x_i-1 and x_i
 	float g_;            //!< geometric factor G(x_i-1, x_i), required for MIS
 	float qi_wo_;        //!< russian roulette probability for terminating path
@@ -123,7 +123,7 @@ struct BidirectionalIntegrator::PathData
 	std::vector<PathEvalVertex> path_;
 	//pathCon_t pc;
 	// additional information for current path connection:
-	Vec3 w_l_e_;       //!< direction of edge from light to eye vertex, i.e. y_s to z_t
+	Vec3f w_l_e_;       //!< direction of edge from light to eye vertex, i.e. y_s to z_t
 	Rgb f_y_, f_z_;       //!< f for light and eye vertex that are connected
 	float u_, v_;            //!< current position on image plane
 	float d_yz_;             //!< distance between y_s to z_t
@@ -224,7 +224,7 @@ std::pair<Rgb, float> BidirectionalIntegrator::integrate(Ray &ray, FastRandom &f
 	const auto [sp, tmax] = accelerator_->intersect(ray, camera_); //FIXME: should we change directly ray.tmax_ here or not?
 	if(sp)
 	{
-		const Vec3 wo{-ray.dir_};
+		const Vec3f wo{-ray.dir_};
 		PathData path_data;
 		++n_paths_;
 		PathVertex &ve = path_data.eye_path_.front();
@@ -260,7 +260,7 @@ std::pair<Rgb, float> BidirectionalIntegrator::integrate(Ray &ray, FastRandom &f
 		auto [dir, pcol]{
 			lights_.size() > 0 ?
 			lights_[light_num]->emitSample(ls, lray.time_) :
-			std::pair<Vec3, Rgb>{Vec3{std::move(lray.dir_)},Rgb{0.f}}
+			std::pair<Vec3f, Rgb>{Vec3f{std::move(lray.dir_)}, Rgb{0.f}}
 		};
 		lray.dir_ = std::move(dir);
 		lray.from_ = vl.sp_.p_;
@@ -307,7 +307,7 @@ std::pair<Rgb, float> BidirectionalIntegrator::integrate(Ray &ray, FastRandom &f
 				float ix, idx, iy, idy;
 				idx = std::modf(path_data.u_, &ix);
 				idy = std::modf(path_data.v_, &iy);
-				image_film_->addDensitySample(li_col, ix, iy, idx, idy);
+				image_film_->addDensitySample(li_col, {{static_cast<int>(ix), static_cast<int>(iy)}}, idx, idy);
 			}
 		}
 #endif
@@ -402,7 +402,7 @@ int BidirectionalIntegrator::createPath(RandomGenerator &random_generator, const
 		v.alpha_ = v_prev.alpha_ * v_prev.f_s_ * v_prev.cos_wo_ / (v_prev.pdf_wo_ * v_prev.qi_wo_);
 		v.wi_ = -ray.dir_;
 		v.cos_wi_ = std::abs(ray.dir_ * v.sp_.n_);
-		v.ds_ = (v.sp_.p_ - v_prev.sp_.p_).lengthSqr();
+		v.ds_ = (v.sp_.p_ - v_prev.sp_.p_).lengthSquared();
 		v.g_ = v_prev.cos_wo_ * v.cos_wi_ / v.ds_;
 		++n_vert;
 		//if(dbg<10) if(logger_.isDebug())logger_.logDebug(integratorName << ": " << nVert << "  mat: " << (void*) mat << " alpha:" << v.alpha << " p_f_s:" << v_prev.f_s << " qi:"<< v_prev.qi);
@@ -486,8 +486,8 @@ bool BidirectionalIntegrator::connectPaths(PathData &pd, int s, int t)
 	PathEvalVertex &x_l = pd.path_[s - 1];
 	PathEvalVertex &x_e = pd.path_[s];
 	// precompute stuff in pc that is specific to the current connection of sub-paths
-	Vec3 vec{z.sp_.p_ - y.sp_.p_};
-	const float dist_2 = vec.normLenSqr();
+	Vec3f vec{z.sp_.p_ - y.sp_.p_};
+	const float dist_2 = vec.normalizeAndReturnLengthSquared();
 	const float cos_y = std::abs(y.sp_.n_ * vec);
 	const float cos_z = std::abs(z.sp_.n_ * vec);
 
@@ -567,18 +567,18 @@ std::tuple<bool, Ray, Rgb> BidirectionalIntegrator::connectLPath(PathData &pd, R
 	l_ray.tmin_ = 0.0005f;
 
 	//FIXME DAVID: another series of horrible hacks to avoid uninitialized values and incorrect renders in bidir. However, this should be properly solved by implementing correctly the functions needed by bidir in the lights and materials, and correcting the bidir integrator itself...
-	ls.sp_->p_ = {0.f, 0.f, 0.f};
+	ls.sp_->p_ = {{0.f, 0.f, 0.f}};
 	const auto [wo, scol]{light->emitSample(ls, l_ray.time_)};
 	ls.flags_ = static_cast<Light::Flags>(0xFFFFFFFF);
 	// get probabilities for generating light sample without a given surface point
-	const Vec3 vec{-l_ray.dir_};
+	const Vec3f vec{-l_ray.dir_};
 	const auto [area_pdf, dir_pdf, cos_wo]{light->emitPdf(sp_light.n_, vec)};
 	pd.path_[0].pdf_a_0_ = area_pdf * light_num_pdf;
 	pd.path_[0].pdf_f_ = dir_pdf / cos_wo;
 	pd.path_[0].specular_ = flags::have(ls.flags_, Light::Flags::DiracDir); //FIXME this has to be clarified
 	pd.singular_l_ = flags::have(ls.flags_, Light::Flags::Singular);
 	pd.pdf_illum_ = ls.pdf_ * light_num_pdf;
-	pd.pdf_emit_ = pd.path_[0].pdf_a_0_ * (sp_light.p_ - z.sp_.p_).lengthSqr() / cos_wo;
+	pd.pdf_emit_ = pd.path_[0].pdf_a_0_ * (sp_light.p_ - z.sp_.p_).lengthSquared() / cos_wo;
 
 	//fill in pc...connecting to light vertex:
 	//pathEvalVert_t &x_l = pd.path[0];
@@ -622,8 +622,8 @@ bool BidirectionalIntegrator::connectPathE(PathData &pd, int s) const
 	const PathVertex &z = pd.eye_path_[0];
 	PathEvalVertex &x_l = pd.path_[s - 1];
 	PathEvalVertex &x_e = pd.path_[s];
-	Vec3 vec{z.sp_.p_ - y.sp_.p_};
-	const float dist_2 = vec.normLenSqr();
+	Vec3f vec{z.sp_.p_ - y.sp_.p_};
+	const float dist_2 = vec.normalizeAndReturnLengthSquared();
 	const float cos_y = std::abs(y.sp_.n_ * vec);
 	const Ray wo{z.sp_.p_, -vec, z.sp_.time_};
 	if(!camera_->project(wo, 0, 0, pd.u_, pd.v_, x_e.pdf_b_)) return false;

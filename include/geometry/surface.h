@@ -34,7 +34,8 @@ namespace yafaray {
 class Light;
 class Object;
 class Ray;
-class Vec3;
+template <typename T, size_t N> class Vec;
+typedef Vec<float, 3> Vec3f;
 class Primitive;
 struct RayDifferentials;
 
@@ -43,9 +44,9 @@ struct SurfaceDifferentials final
 	SurfaceDifferentials() = default;
 	SurfaceDifferentials(const SurfaceDifferentials &surface_differentials) = default;
 	SurfaceDifferentials(SurfaceDifferentials &&surface_differentials) = default;
-	SurfaceDifferentials(const Vec3 &dp_dx, const Vec3 &dp_dy) : dp_dx_(dp_dx), dp_dy_(dp_dy) { }
-	Vec3 dp_dx_;
-	Vec3 dp_dy_;
+	SurfaceDifferentials(const Vec3f &dp_dx, const Vec3f &dp_dy) : dp_dx_(dp_dx), dp_dy_(dp_dy) { }
+	Vec3f dp_dx_;
+	Vec3f dp_dy_;
 };
 
 /*! This holds a sampled surface point's data
@@ -63,27 +64,27 @@ class SurfacePoint final
 		SurfacePoint& operator=(const SurfacePoint &sp);
 		SurfacePoint(SurfacePoint &&surface_point) = default;
 		SurfacePoint& operator=(SurfacePoint&& surface_point) = default;
-		[[nodiscard]] static Vec3 normalFaceForward(const Vec3 &normal_geometry, const Vec3 &normal, const Vec3 &incoming_vector);
+		[[nodiscard]] static Vec3f normalFaceForward(const Vec3f &normal_geometry, const Vec3f &normal, const Vec3f &incoming_vector);
 		[[nodiscard]] float getDistToNearestEdge() const;
 		//! compute differentials for a scattered ray
-		[[nodiscard]] std::unique_ptr<RayDifferentials> reflectedRay(const RayDifferentials *in_differentials, const Vec3 &in_dir, const Vec3 &out_dir) const;
+		[[nodiscard]] std::unique_ptr<RayDifferentials> reflectedRay(const RayDifferentials *in_differentials, const Vec3f &in_dir, const Vec3f &out_dir) const;
 		//! compute differentials for a refracted ray
-		[[nodiscard]] std::unique_ptr<RayDifferentials> refractedRay(const RayDifferentials *in_differentials, const Vec3 &in_dir, const Vec3 &out_dir, float ior) const;
+		[[nodiscard]] std::unique_ptr<RayDifferentials> refractedRay(const RayDifferentials *in_differentials, const Vec3f &in_dir, const Vec3f &out_dir, float ior) const;
 		[[nodiscard]] float projectedPixelArea() const;
 		[[nodiscard]] std::array<Uv<float>, 2> getUVdifferentialsXY() const;
 		[[nodiscard]] std::unique_ptr<SurfaceDifferentials> calcSurfaceDifferentials(const RayDifferentials *ray_differentials) const;
 
 		[[nodiscard]] const MaterialData * initBsdf(const Camera *camera);
-		[[nodiscard]] Rgb eval(const Vec3 &wo, const Vec3 &wl, BsdfFlags types, bool force_eval = false) const;
-		[[nodiscard]] Rgb sample(const Vec3 &wo, Vec3 &wi, Sample &s, float &w, bool chromatic, float wavelength, const Camera *camera) const;
-		[[nodiscard]] Rgb sample(const Vec3 &wo, Vec3 *dir, Rgb &tcol, Sample &s, float *w, bool chromatic, float wavelength) const;
-		[[nodiscard]] float pdf(const Vec3 &wo, const Vec3 &wi, BsdfFlags bsdfs) const;
-		[[nodiscard]] Rgb getTransparency(const Vec3 &wo, const Camera *camera) const;
-		[[nodiscard]] Specular getSpecular(int ray_level, const Vec3 &wo, bool chromatic, float wavelength) const;
+		[[nodiscard]] Rgb eval(const Vec3f &wo, const Vec3f &wl, BsdfFlags types, bool force_eval = false) const;
+		[[nodiscard]] Rgb sample(const Vec3f &wo, Vec3f &wi, Sample &s, float &w, bool chromatic, float wavelength, const Camera *camera) const;
+		[[nodiscard]] Rgb sample(const Vec3f &wo, Vec3f *dir, Rgb &tcol, Sample &s, float *w, bool chromatic, float wavelength) const;
+		[[nodiscard]] float pdf(const Vec3f &wo, const Vec3f &wi, BsdfFlags bsdfs) const;
+		[[nodiscard]] Rgb getTransparency(const Vec3f &wo, const Camera *camera) const;
+		[[nodiscard]] Specular getSpecular(int ray_level, const Vec3f &wo, bool chromatic, float wavelength) const;
 		[[nodiscard]] Rgb getReflectivity(FastRandom &fast_random, BsdfFlags flags, bool chromatic, float wavelength, const Camera *camera) const;
-		[[nodiscard]] Rgb emit(const Vec3 &wo) const;
-		[[nodiscard]] float getAlpha(const Vec3 &wo, const Camera *camera) const;
-		[[nodiscard]] bool scatterPhoton(const Vec3 &wi, Vec3 &wo, PSample &s, bool chromatic, float wavelength, const Camera *camera) const;
+		[[nodiscard]] Rgb emit(const Vec3f &wo) const;
+		[[nodiscard]] float getAlpha(const Vec3f &wo, const Camera *camera) const;
+		[[nodiscard]] bool scatterPhoton(const Vec3f &wi, Vec3f &wo, PSample &s, bool chromatic, float wavelength, const Camera *camera) const;
 		[[nodiscard]] unsigned int getObjectIndex() const { if(primitive_) return primitive_->getObjectIndex(); else return 0; }
 		[[nodiscard]] unsigned int getObjectIndexAuto() const { if(primitive_) return primitive_->getObjectIndexAuto(); else return 0; }
 		[[nodiscard]] Rgb getObjectIndexAutoColor() const { if(primitive_) return primitive_->getObjectIndexAutoColor(); else return Rgb{0.f}; }
@@ -95,24 +96,24 @@ class SurfacePoint final
 		std::unique_ptr<const SurfaceDifferentials> differentials_; //!< Surface Differentials for mipmaps calculations
 
 		// Geometry related
-		Vec3 n_; //!< the shading normal.
-		Vec3 ng_; //!< the geometric normal.
-		Vec3 orco_ng_; //!< the untransformed geometric normal.
-		Point3 p_; //!< the (world) position.
-		Point3 orco_p_;
+		Vec3f n_; //!< the shading normal.
+		Vec3f ng_; //!< the geometric normal.
+		Vec3f orco_ng_; //!< the untransformed geometric normal.
+		Point3f p_; //!< the (world) position.
+		Point3f orco_p_;
 		//	Rgb vertex_col;
 		bool has_uv_;
 		bool has_orco_;
 		float time_;
 
 		Uv<float> uv_; //!< the u, v texture coords.
-		Uv<Vec3> uvn_; //!< vectors building orthogonal shading space with n_
-		Uv<Vec3> dp_; //!< u-axis and v-axis (dp/du, dp/dv) in world space (normalized)
-		Uv<Vec3> ds_; //!< u-axis and v-axis (ds/du, ds/dv) in shading space (uv_n_.u_, uv_n.v_, n_)
-		Uv<Vec3> dp_abs_; //!< u-axis and v-axis (dp/du, dp/dv) in world space  (before normalization)
+		Uv<Vec3f> uvn_; //!< vectors building orthogonal shading space with n_
+		Uv<Vec3f> dp_; //!< u-axis and v-axis (dp/du, dp/dv) in world space (normalized)
+		Uv<Vec3f> ds_; //!< u-axis and v-axis (ds/du, ds/dv) in shading space (uv_n_.u_, uv_n.v_, n_)
+		Uv<Vec3f> dp_abs_; //!< u-axis and v-axis (dp/du, dp/dv) in world space  (before normalization)
 
 	private:
-		[[nodiscard]] static Uv<float> dUdvFromPointDifferentials(const Vec3 &dp, const Uv<Vec3> &dp_duv);
+		[[nodiscard]] static Uv<float> dUdvFromPointDifferentials(const Vec3f &dp, const Uv<Vec3f> &dp_duv);
 		const Primitive *primitive_ = nullptr; //!< primitive the surface belongs to
 };
 
@@ -201,7 +202,7 @@ inline SurfacePoint &SurfacePoint::operator=(const SurfacePoint &sp)
 	return *this;
 }
 
-inline Vec3 SurfacePoint::normalFaceForward(const Vec3 &normal_geometry, const Vec3 &normal, const Vec3 &incoming_vector)
+inline Vec3f SurfacePoint::normalFaceForward(const Vec3f &normal_geometry, const Vec3f &normal, const Vec3f &incoming_vector)
 {
 	return (normal_geometry * incoming_vector) < 0 ? -normal : normal;
 }
@@ -211,32 +212,32 @@ inline const MaterialData * SurfacePoint::initBsdf(const Camera *camera)
 	return primitive_->getMaterial()->initBsdf(*this, camera);
 }
 
-inline Rgb SurfacePoint::eval(const Vec3 &wo, const Vec3 &wl, BsdfFlags types, bool force_eval) const
+inline Rgb SurfacePoint::eval(const Vec3f &wo, const Vec3f &wl, BsdfFlags types, bool force_eval) const
 {
 	return primitive_->getMaterial()->eval(mat_data_.get(), *this, wo, wl, types, force_eval);
 }
 
-inline Rgb SurfacePoint::sample(const Vec3 &wo, Vec3 &wi, Sample &s, float &w, bool chromatic, float wavelength, const Camera *camera) const
+inline Rgb SurfacePoint::sample(const Vec3f &wo, Vec3f &wi, Sample &s, float &w, bool chromatic, float wavelength, const Camera *camera) const
 {
 	return primitive_->getMaterial()->sample(mat_data_.get(), *this, wo, wi, s, w, chromatic, wavelength, camera);
 }
 
-inline Rgb SurfacePoint::sample(const Vec3 &wo, Vec3 *const dir, Rgb &tcol, Sample &s, float *const w, bool chromatic, float wavelength) const
+inline Rgb SurfacePoint::sample(const Vec3f &wo, Vec3f *const dir, Rgb &tcol, Sample &s, float *const w, bool chromatic, float wavelength) const
 {
 	return primitive_->getMaterial()->sample(mat_data_.get(), *this, wo, dir, tcol, s, w, chromatic, wavelength);
 }
 
-inline float SurfacePoint::pdf(const Vec3 &wo, const Vec3 &wi, BsdfFlags bsdfs) const
+inline float SurfacePoint::pdf(const Vec3f &wo, const Vec3f &wi, BsdfFlags bsdfs) const
 {
 	return primitive_->getMaterial()->pdf(mat_data_.get(), *this, wo, wi, bsdfs);
 }
 
-inline Rgb SurfacePoint::getTransparency(const Vec3 &wo, const Camera *camera) const
+inline Rgb SurfacePoint::getTransparency(const Vec3f &wo, const Camera *camera) const
 {
 	return primitive_->getMaterial()->getTransparency(mat_data_.get(), *this, wo, camera);
 }
 
-inline Specular SurfacePoint::getSpecular(int ray_level, const Vec3 &wo, bool chromatic, float wavelength) const
+inline Specular SurfacePoint::getSpecular(int ray_level, const Vec3f &wo, bool chromatic, float wavelength) const
 {
 	return primitive_->getMaterial()->getSpecular(ray_level, mat_data_.get(), *this, wo, chromatic, wavelength);
 }
@@ -246,17 +247,17 @@ inline Rgb SurfacePoint::getReflectivity(FastRandom &fast_random, BsdfFlags flag
 	return primitive_->getMaterial()->getReflectivity(fast_random, mat_data_.get(), *this, flags, chromatic, wavelength, camera);
 }
 
-inline Rgb SurfacePoint::emit(const Vec3 &wo) const
+inline Rgb SurfacePoint::emit(const Vec3f &wo) const
 {
 	return primitive_->getMaterial()->emit(mat_data_.get(), *this, wo);
 }
 
-inline float SurfacePoint::getAlpha(const Vec3 &wo, const Camera *camera) const
+inline float SurfacePoint::getAlpha(const Vec3f &wo, const Camera *camera) const
 {
 	return primitive_->getMaterial()->getAlpha(mat_data_.get(), *this, wo, camera);
 }
 
-inline bool SurfacePoint::scatterPhoton(const Vec3 &wi, Vec3 &wo, PSample &s, bool chromatic, float wavelength, const Camera *camera) const
+inline bool SurfacePoint::scatterPhoton(const Vec3f &wi, Vec3f &wo, PSample &s, bool chromatic, float wavelength, const Camera *camera) const
 {
 	return primitive_->getMaterial()->scatterPhoton(mat_data_.get(), *this, wi, wo, s, chromatic, wavelength, camera);
 }

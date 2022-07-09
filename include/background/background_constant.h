@@ -35,7 +35,7 @@ class ConstantBackground final : public Background
 
 	private:
 		ConstantBackground(Logger &logger, Rgb col);
-		Rgb eval(const Vec3 &dir, bool use_ibl_blur) const override;
+		Rgb eval(const Vec3f &dir, bool use_ibl_blur) const override;
 
 		Rgb color_;
 };

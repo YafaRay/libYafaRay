@@ -23,7 +23,7 @@
 #include "common/version_build_info.h"
 #include "common/logger.h"
 #include "scene/scene.h"
-#include "geometry/matrix4.h"
+#include "geometry/matrix.h"
 #include "render/imagefilm.h"
 #include "common/param.h"
 #include "image/image_output.h"
@@ -87,14 +87,14 @@ unsigned int Interface::getNextFreeId() noexcept
 
 bool Interface::endObject() noexcept { return scene_->endObject(); }
 
-int Interface::addVertex(Point3 &&vertex, int time_step) noexcept { return scene_->addVertex(std::move(vertex), time_step); }
+int Interface::addVertex(Point3f &&vertex, int time_step) noexcept { return scene_->addVertex(std::move(vertex), time_step); }
 
-int Interface::addVertex(Point3 &&vertex, Point3 &&orco, int time_step) noexcept
+int Interface::addVertex(Point3f &&vertex, Point3f &&orco, int time_step) noexcept
 {
 	return scene_->addVertex(std::move(vertex), std::move(orco), time_step);
 }
 
-void Interface::addVertexNormal(Vec3 &&normal, int time_step) noexcept
+void Interface::addVertexNormal(Vec3f &&normal, int time_step) noexcept
 {
 	scene_->addVertexNormal(std::move(normal), time_step);
 }
@@ -123,12 +123,12 @@ bool Interface::addInstanceOfInstance(int instance_id, size_t base_instance_id) 
 	return scene_->addInstanceOfInstance(instance_id, base_instance_id);
 }
 
-bool Interface::addInstanceMatrix(int instance_id, Matrix4 &&obj_to_world, float time) noexcept
+bool Interface::addInstanceMatrix(int instance_id, Matrix4f &&obj_to_world, float time) noexcept
 {
 	return scene_->addInstanceMatrix(instance_id, std::move(obj_to_world), time);
 }
 
-void Interface::paramsSetVector(std::string &&name, Vec3 &&v) noexcept
+void Interface::paramsSetVector(std::string &&name, Vec3f &&v) noexcept
 {
 	(*cparams_)[name] = Parameter{std::move(v)};
 }
@@ -159,11 +159,11 @@ void Interface::paramsSetColor(std::string &&name, Rgba &&col) noexcept
 	(*cparams_)[std::string(name)] = std::move(col);
 }
 
-void Interface::paramsSetMatrix(std::string &&name, Matrix4 &&matrix, bool transpose) noexcept
+void Interface::paramsSetMatrix(std::string &&name, Matrix4f &&matrix, bool transpose) noexcept
 {
 	if(transpose)
 	{
-		(*cparams_)[std::string(name)] = std::move(Matrix4{matrix}.transpose());
+		(*cparams_)[std::string(name)] = std::move(Matrix4f{matrix}.transpose());
 	}
 	else (*cparams_)[std::string(name)] = std::move(matrix);
 }

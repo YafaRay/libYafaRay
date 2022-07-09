@@ -27,7 +27,7 @@
 #include "common/sysinfo.h"
 #include "common/version_build_info.h"
 #include "format/format.h"
-#include "geometry/matrix4.h"
+#include "geometry/matrix.h"
 #include "geometry/object/object.h"
 #include "geometry/object/object_instance.h"
 #include "geometry/primitive/primitive.h"
@@ -222,7 +222,7 @@ bool Scene::render()
 		for(auto &[light_name, light] : getLights()) light->init(*this);
 		for(auto &[output_name, output] : outputs_)
 		{
-			output->init(image_film_->getWidth(), image_film_->getHeight(), image_film_->getExportedImageLayers(), &render_views_);
+			output->init(image_film_->getSize(), image_film_->getExportedImageLayers(), &render_views_);
 		}
 
 		for(auto &[render_view_name, render_view] : render_views_)
@@ -933,7 +933,7 @@ bool Scene::smoothVerticesNormals(std::string &&name, float angle)
 	else return object->smoothVerticesNormals(logger_, angle);
 }
 
-int Scene::addVertex(Point3 &&p, int time_step)
+int Scene::addVertex(Point3f &&p, int time_step)
 {
 	//if(logger_.isDebug()) logger.logDebug("Scene::addVertex) PR(p");
 	if(creation_state_.stack_.front() != CreationState::Object) return -1;
@@ -941,7 +941,7 @@ int Scene::addVertex(Point3 &&p, int time_step)
 	return current_object_->lastVertexId(time_step);
 }
 
-int Scene::addVertex(Point3 &&p, Point3 &&orco, int time_step)
+int Scene::addVertex(Point3f &&p, Point3f &&orco, int time_step)
 {
 	if(creation_state_.stack_.front() != CreationState::Object) return -1;
 	current_object_->addPoint(std::move(p), time_step);
@@ -949,7 +949,7 @@ int Scene::addVertex(Point3 &&p, Point3 &&orco, int time_step)
 	return current_object_->lastVertexId(time_step);
 }
 
-void Scene::addVertexNormal(Vec3 &&n, int time_step)
+void Scene::addVertexNormal(Vec3f &&n, int time_step)
 {
 	if(creation_state_.stack_.front() != CreationState::Object) return;
 	current_object_->addVertexNormal(std::move(n), time_step);
@@ -1033,7 +1033,7 @@ bool Scene::addInstanceOfInstance(int instance_id, size_t base_instance_id)
 	}
 }
 
-bool Scene::addInstanceMatrix(int instance_id, Matrix4 &&obj_to_world, float time)
+bool Scene::addInstanceMatrix(int instance_id, Matrix4f &&obj_to_world, float time)
 {
 	instances_[instance_id]->addObjToWorldMatrix(std::move(obj_to_world), time);
 	return true;
@@ -1095,7 +1095,7 @@ bool Scene::updateObjects()
 
 	accelerator_ = std::unique_ptr<const Accelerator>(Accelerator::factory(logger_, primitives, params));
 	*scene_bound_ = accelerator_->getBound();
-	if(logger_.isVerbose()) logger_.logVerbose("Scene: New scene bound is: ", "(", scene_bound_->a_.x(), ", ", scene_bound_->a_.y(), ", ", scene_bound_->a_.z(), "), (", scene_bound_->g_.x(), ", ", scene_bound_->g_.y(), ", ", scene_bound_->g_.z(), ")");
+	if(logger_.isVerbose()) logger_.logVerbose("Scene: New scene bound is: ", "(", scene_bound_->a_[Axis::X], ", ", scene_bound_->a_[Axis::Y], ", ", scene_bound_->a_[Axis::Z], "), (", scene_bound_->g_[Axis::X], ", ", scene_bound_->g_[Axis::Y], ", ", scene_bound_->g_[Axis::Z], ")");
 
 	object_index_highest_ = 1;
 	for(const auto &[object_name, object] : objects_)

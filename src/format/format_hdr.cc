@@ -51,7 +51,7 @@ Image * HdrFormat::loadFromFile(const std::string &name, const Image::Optimizati
 		return nullptr;
 	}
 	const Image::Type type = Image::getTypeFromSettings(true, grayscale_);
-	auto image = Image::factory(logger_, width, height, type, optimization);
+	auto image = Image::factory(logger_, {{width, height}}, type, optimization);
 	const int scan_width = (header_.y_first_) ? width : height;
 	// run length encoding is not allowed so read flat and exit
 	if((scan_width < 8) || (scan_width > 0x7fff))
@@ -234,8 +234,8 @@ bool HdrFormat::readOrle(std::FILE *fp, int y, int scan_width, Image *image, con
 	{
 		Rgba color = scanline[j].getRgba();
 		color.linearRgbFromColorSpace(color_space, gamma);
-		if(header_.y_first_) image->setColor(x, y, color);
-		else image->setColor(y, x, color);
+		if(header_.y_first_) image->setColor({{x, y}}, color);
+		else image->setColor({{y, x}}, color);
 		++j;
 	}
 	return true;
@@ -303,8 +303,8 @@ bool HdrFormat::readArle(std::FILE *fp, int y, int scan_width, Image *image, con
 	{
 		Rgba color = scanline[j].getRgba();
 		color.linearRgbFromColorSpace(color_space, gamma);
-		if(header_.y_first_) image->setColor(x, y, color);
-		else image->setColor(y, x, color);
+		if(header_.y_first_) image->setColor({{x, y}}, color);
+		else image->setColor({{y, x}}, color);
 		++j;
 	}
 	return true;
@@ -328,7 +328,7 @@ bool HdrFormat::saveToFile(const std::string &name, const ImageLayer &image_laye
 			// write scanline start signature
 			file.write((char *)&signature, sizeof(RgbePixel));
 			// fill the scanline buffer
-			for(int x = 0; x < w; x++) scanline[x] = Layer::postProcess(image_layer.image_->getColor(x, y), image_layer.layer_.getType(), color_space, gamma, alpha_premultiply);
+			for(int x = 0; x < w; x++) scanline[x] = Layer::postProcess(image_layer.image_->getColor({{x, y}}), image_layer.layer_.getType(), color_space, gamma, alpha_premultiply);
 			// write the scanline RLE compressed by channel in 4 separated blocks not as contigous pixels pixel blocks
 			if(!writeScanline(file, scanline.get(), image_layer.image_.get()))
 			{

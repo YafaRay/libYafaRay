@@ -19,21 +19,22 @@
 //#include "yafaray_config.h"
 #include "geometry/primitive/primitive_triangle.h"
 #include "geometry/surface.h"
+#include "geometry/clip_plane.h"
 
 namespace yafaray {
 
-std::unique_ptr<const SurfacePoint> TrianglePrimitive::getSurface(const RayDifferentials *ray_differentials, const Point3 &hit_point, float time, const Uv<float> &intersect_uv, const Camera *camera) const
+std::unique_ptr<const SurfacePoint> TrianglePrimitive::getSurface(const RayDifferentials *ray_differentials, const Point3f &hit_point, float time, const Uv<float> &intersect_uv, const Camera *camera) const
 {
 	return getSurfaceTriangle(ray_differentials, hit_point, time, intersect_uv, camera);
 }
 
-std::unique_ptr<const SurfacePoint> TrianglePrimitive::getSurface(const RayDifferentials *ray_differentials, const Point3 &hit_point, float time, const Uv<float> &intersect_uv, const Camera *camera, const Matrix4 &obj_to_world) const
+std::unique_ptr<const SurfacePoint> TrianglePrimitive::getSurface(const RayDifferentials *ray_differentials, const Point3f &hit_point, float time, const Uv<float> &intersect_uv, const Camera *camera, const Matrix4f &obj_to_world) const
 {
 	return getSurfaceTriangle(ray_differentials, hit_point, time, intersect_uv, camera, obj_to_world);
 }
 
 template<typename T>
-std::unique_ptr<const SurfacePoint> TrianglePrimitive::getSurfaceTriangle(const RayDifferentials *ray_differentials, const Point3 &hit_point, float time, const Uv<float> &intersect_uv, const Camera *camera, const T &obj_to_world) const
+std::unique_ptr<const SurfacePoint> TrianglePrimitive::getSurfaceTriangle(const RayDifferentials *ray_differentials, const Point3f &hit_point, float time, const Uv<float> &intersect_uv, const Camera *camera, const T &obj_to_world) const
 {
 	auto sp = std::make_unique<SurfacePoint>(this);
 	sp->time_ = time;
@@ -41,7 +42,7 @@ std::unique_ptr<const SurfacePoint> TrianglePrimitive::getSurfaceTriangle(const 
 	const auto [barycentric_u, barycentric_v, barycentric_w] = ShapeTriangle::getBarycentricUVW(intersect_uv);
 	if(base_mesh_object_.isSmooth() || base_mesh_object_.hasVerticesNormals(0))
 	{
-		const std::array<Vec3, 3> v {getVerticesNormals(0, sp->ng_, obj_to_world)};
+		const std::array<Vec3f, 3> v {getVerticesNormals(0, sp->ng_, obj_to_world)};
 		sp->n_ = barycentric_u * v[0] + barycentric_v * v[1] + barycentric_w * v[2];
 		sp->n_.normalize();
 	}
@@ -49,7 +50,7 @@ std::unique_ptr<const SurfacePoint> TrianglePrimitive::getSurfaceTriangle(const 
 	sp->has_orco_ = base_mesh_object_.hasOrco(0);
 	if(sp->has_orco_)
 	{
-		const std::array<Point3, 3> orco_p {getOrcoVertices(0)};
+		const std::array<Point3f, 3> orco_p {getOrcoVertices(0)};
 		sp->orco_p_ = barycentric_u * orco_p[0] + barycentric_v * orco_p[1] + barycentric_w * orco_p[2];
 		sp->orco_ng_ = ((orco_p[1] - orco_p[0]) ^ (orco_p[2] - orco_p[0])).normalize();
 	}
@@ -59,7 +60,7 @@ std::unique_ptr<const SurfacePoint> TrianglePrimitive::getSurfaceTriangle(const 
 		sp->orco_ng_ = getGeometricNormal({}, time, false);
 	}
 	bool implicit_uv = true;
-	const std::array<Point3, 3> p {getVerticesAsArray(0, obj_to_world)};
+	const std::array<Point3f, 3> p {getVerticesAsArray(0, obj_to_world)};
 	if(base_mesh_object_.hasUv())
 	{
 		const std::array<Uv<float>, 3> uv {getUvs() };
@@ -71,8 +72,8 @@ std::unique_ptr<const SurfacePoint> TrianglePrimitive::getSurfaceTriangle(const 
 		if(std::abs(det) > 1e-30f)
 		{
 			const float invdet = 1.f / det;
-			const Vec3 dp_1{p[1] - p[0]};
-			const Vec3 dp_2{p[2] - p[0]};
+			const Vec3f dp_1{p[1] - p[0]};
+			const Vec3f dp_2{p[2] - p[0]};
 			sp->dp_ = {
 					(d_2.v_ * dp_1 - d_1.v_ * dp_2) * invdet,
 					(d_1.u_ * dp_2 - d_2.u_ * dp_1) * invdet
@@ -93,17 +94,17 @@ std::unique_ptr<const SurfacePoint> TrianglePrimitive::getSurfaceTriangle(const 
 	sp->dp_abs_ = sp->dp_;
 	sp->dp_.u_.normalize();
 	sp->dp_.v_.normalize();
-	sp->uvn_ = Vec3::createCoordsSystem(sp->n_);
+	sp->uvn_ = Vec3f::createCoordsSystem(sp->n_);
 	// transform dPdU and dPdV in shading space
 	sp->ds_ = {
-			{sp->uvn_.u_ * sp->dp_.u_, sp->uvn_.v_ * sp->dp_.u_, sp->n_ * sp->dp_.u_},
-			{sp->uvn_.u_ * sp->dp_.v_, sp->uvn_.v_ * sp->dp_.v_, sp->n_ * sp->dp_.v_}
+			{{sp->uvn_.u_ * sp->dp_.u_, sp->uvn_.v_ * sp->dp_.u_, sp->n_ * sp->dp_.u_}},
+			{{sp->uvn_.u_ * sp->dp_.v_, sp->uvn_.v_ * sp->dp_.v_, sp->n_ * sp->dp_.v_}}
 	};
 	sp->mat_data_ = std::unique_ptr<const MaterialData>(sp->getMaterial()->initBsdf(*sp, camera));
 	return sp;
 }
 
-PolyDouble::ClipResultWithBound TrianglePrimitive::clipToBound(Logger &logger, const std::array<Vec3Double, 2> &bound, const ClipPlane &clip_plane, const PolyDouble &poly) const
+PolyDouble::ClipResultWithBound TrianglePrimitive::clipToBound(Logger &logger, const std::array<Vec3d, 2> &bound, const ClipPlane &clip_plane, const PolyDouble &poly) const
 {
 	if(clip_plane.pos_ != ClipPlane::Pos::None) // re-clip
 	{
@@ -114,13 +115,13 @@ PolyDouble::ClipResultWithBound TrianglePrimitive::clipToBound(Logger &logger, c
 		//else: do initial clipping below, if there are any other PolyDouble::ClipResult results (errors)
 	}
 	// initial clip
-	const std::array<Point3, 3> triangle_vertices {getVerticesAsArray(0)};
+	const std::array<Point3f, 3> triangle_vertices {getVerticesAsArray(0)};
 	PolyDouble poly_triangle;
-	for(const auto &vert : triangle_vertices) poly_triangle.addVertex({vert.x(), vert.y(), vert.z() });
+	for(const auto &vert : triangle_vertices) poly_triangle.addVertex({{vert[Axis::X], vert[Axis::Y], vert[Axis::Z]}});
 	return PolyDouble::boxClip(logger, bound[1], poly_triangle, bound[0]);
 }
 
-PolyDouble::ClipResultWithBound TrianglePrimitive::clipToBound(Logger &logger, const std::array<Vec3Double, 2> &bound, const ClipPlane &clip_plane, const PolyDouble &poly, const Matrix4 &obj_to_world) const
+PolyDouble::ClipResultWithBound TrianglePrimitive::clipToBound(Logger &logger, const std::array<Vec3d, 2> &bound, const ClipPlane &clip_plane, const PolyDouble &poly, const Matrix4f &obj_to_world) const
 {
 	if(clip_plane.pos_ != ClipPlane::Pos::None) // re-clip
 	{
@@ -131,9 +132,9 @@ PolyDouble::ClipResultWithBound TrianglePrimitive::clipToBound(Logger &logger, c
 		//else: do initial clipping below, if there are any other PolyDouble::ClipResult results (errors)
 	}
 	// initial clip
-	const std::array<Point3, 3> triangle_vertices {getVerticesAsArray(0, obj_to_world)};
+	const std::array<Point3f, 3> triangle_vertices {getVerticesAsArray(0, obj_to_world)};
 	PolyDouble poly_triangle;
-	for(const auto &vert : triangle_vertices) poly_triangle.addVertex({vert.x(), vert.y(), vert.z() });
+	for(const auto &vert : triangle_vertices) poly_triangle.addVertex({{vert[Axis::X], vert[Axis::Y], vert[Axis::Z]}});
 	return PolyDouble::boxClip(logger, bound[1], poly_triangle, bound[0]);
 }
 

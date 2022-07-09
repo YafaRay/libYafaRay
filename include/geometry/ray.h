@@ -28,9 +28,9 @@ namespace yafaray {
 struct RayDifferentials
 {
 	RayDifferentials() = default;
-	RayDifferentials(const Point3 &xfrom, const Vec3 &xdir, const Point3 &yfrom, const Vec3 &ydir) : xfrom_(xfrom), yfrom_(yfrom), xdir_(xdir), ydir_(ydir) { }
-	Point3 xfrom_, yfrom_;
-	Vec3 xdir_, ydir_;
+	RayDifferentials(const Point3f &xfrom, const Vec3f &xdir, const Point3f &yfrom, const Vec3f &ydir) : xfrom_(xfrom), yfrom_(yfrom), xdir_(xdir), ydir_(ydir) { }
+	Point3f xfrom_, yfrom_;
+	Vec3f xdir_, ydir_;
 };
 
 class Ray
@@ -40,11 +40,11 @@ class Ray
 		Ray() = default;
 		Ray(const Ray &ray, DifferentialsCopy differentials_copy);
 		Ray(Ray &&ray) = default;
-		Ray(const Point3 &f, const Vec3 &d, float time, float tmin = 0.f, float tmax = -1.f) :
+		Ray(const Point3f &f, const Vec3f &d, float time, float tmin = 0.f, float tmax = -1.f) :
 				from_{f}, dir_{d}, tmin_{tmin}, tmax_{tmax}, time_{time} { }
 		Ray& operator=(Ray&& ray) = default;
-		alignas(8) Point3 from_;
-		Vec3 dir_;
+		alignas(8) Point3f from_;
+		Vec3f dir_;
 		float tmin_ = 0.f, tmax_ = -1.f;
 		float time_ = 0.f; //!< relative frame time (values between [0;1]) at which ray was generated
 		std::unique_ptr<RayDifferentials> differentials_;

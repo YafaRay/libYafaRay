@@ -34,7 +34,7 @@ class GradientBackground final : public Background
 
 	private:
 		GradientBackground(Logger &logger, const Rgb &gzcol, const Rgb &ghcol, const Rgb &szcol, const Rgb &shcol);
-		Rgb eval(const Vec3 &dir, bool use_ibl_blur) const override;
+		Rgb eval(const Vec3f &dir, bool use_ibl_blur) const override;
 
 		Rgb gzenith_, ghoriz_, szenith_, shoriz_;
 };

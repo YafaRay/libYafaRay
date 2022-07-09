@@ -30,17 +30,17 @@ namespace yafaray {
 
 struct Photon
 {
-	Vec3 dir_;
-	Point3 pos_;
+	Vec3f dir_;
+	Point3f pos_;
 	Rgb col_;
 	float time_{0.f};
 };
 
 struct RadData
 {
-	RadData(const Point3 &p, const Vec3 &n, float time): pos_{p}, normal_(n), time_{time} { }
-	Point3 pos_;
-	Vec3 normal_;
+	RadData(const Point3f &p, const Vec3f &n, float time): pos_{p}, normal_(n), time_{time} { }
+	Point3f pos_;
+	Vec3f normal_;
 	Rgb refl_;
 	Rgb transm_;
 	float time_{0.f};
@@ -72,8 +72,8 @@ class PhotonMap final
 		void clear() { photons_.clear(); tree_ = nullptr; updated_ = false; }
 		bool ready() const { return updated_; }
 		//	void gather(const point3d_t &P, std::vector< foundPhoton_t > &found, unsigned int K, float &sqRadius) const;
-		int gather(const Point3 &p, FoundPhoton *found, unsigned int k, float &sq_radius) const;
-		const Photon *findNearest(const Point3 &p, const Vec3 &n, float dist) const;
+		int gather(const Point3f &p, FoundPhoton *found, unsigned int k, float &sq_radius) const;
+		const Photon *findNearest(const Point3f &p, const Vec3f &n, float dist) const;
 		bool load(const std::string &filename);
 		bool save(const std::string &filename) const;
 		std::mutex mutx_;
@@ -93,9 +93,9 @@ class PhotonMap final
 
 struct PhotonGather
 {
-	PhotonGather(uint32_t mp, const Point3 &p) : p_{p}, n_lookup_{mp} { }
+	PhotonGather(uint32_t mp, const Point3f &p) : p_{p}, n_lookup_{mp} { }
 	void operator()(const Photon *photon, float dist_2, float &max_dist_squared) const;
-	const Point3 &p_;
+	const Point3f &p_;
 	FoundPhoton *found_photon_ = nullptr;
 	uint32_t n_lookup_;
 	mutable uint32_t found_photons_ = 0;
@@ -107,20 +107,20 @@ struct NearestPhoton
 	{
 		if(photon->dir_ * n_ > 0.f) { photon_ = photon; max_dist_squared = dist_squared; }
 	}
-	const Vec3 &n_;
+	const Vec3f &n_;
 	const Photon *photon_ = nullptr;
 };
 
 /*! "eliminates" photons within lookup radius (sets use=false) */
 struct EliminatePhoton
 {
-	explicit EliminatePhoton(const Vec3 &norm): n_{norm} { }
-	explicit EliminatePhoton(Vec3 &&norm): n_{std::move(norm)} { }
+	explicit EliminatePhoton(const Vec3f &norm): n_{norm} { }
+	explicit EliminatePhoton(Vec3f &&norm): n_{std::move(norm)} { }
 	void operator()(const RadData *rpoint, float dist_2, float &max_dist_squared) const
 	{
 		if(rpoint->normal_ * n_ > 0.f) { rpoint->use_ = false; }
 	}
-	const Vec3 &n_;
+	const Vec3f &n_;
 };
 
 } //namespace yafaray

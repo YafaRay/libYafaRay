@@ -25,9 +25,9 @@ namespace yafaray {
 
 struct PSample;
 
-float ExpDensityVolumeRegion::density(const Point3 &p) const
+float ExpDensityVolumeRegion::density(const Point3f &p) const
 {
-	float height = p.z() - b_box_.a_.z();
+	float height = p[Axis::Z] - b_box_.a_[Axis::Z];
 	return a_ * math::exp(-b_ * height);
 }
 
@@ -57,10 +57,10 @@ VolumeRegion * ExpDensityVolumeRegion::factory(Logger &logger, const Scene &scen
 	params.getParam("maxZ", max[2]);
 	params.getParam("attgridScale", att_sc);
 
-	return new ExpDensityVolumeRegion(logger, Rgb(sa), Rgb(ss), Rgb(le), g, {min[0], min[1], min[2]}, {max[0], max[1], max[2]}, att_sc, a, b);
+	return new ExpDensityVolumeRegion(logger, Rgb(sa), Rgb(ss), Rgb(le), g, {{min[0], min[1], min[2]}}, {{max[0], max[1], max[2]}}, att_sc, a, b);
 }
 
-ExpDensityVolumeRegion::ExpDensityVolumeRegion(Logger &logger, const Rgb &sa, const Rgb &ss, const Rgb &le, float gg, const Point3 &pmin, const Point3 &pmax, int attgrid_scale, float aa, float bb) :
+ExpDensityVolumeRegion::ExpDensityVolumeRegion(Logger &logger, const Rgb &sa, const Rgb &ss, const Rgb &le, float gg, const Point3f &pmin, const Point3f &pmax, int attgrid_scale, float aa, float bb) :
 		DensityVolumeRegion(logger, sa, ss, le, gg, pmin, pmax, attgrid_scale)
 {
 	a_ = aa;

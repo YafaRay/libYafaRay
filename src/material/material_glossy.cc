@@ -68,7 +68,7 @@ void GlossyMaterial::initOrenNayar(double sigma)
 	oren_nayar_ = true;
 }
 
-float GlossyMaterial::orenNayar(const Vec3 &wi, const Vec3 &wo, const Vec3 &n, bool use_texture_sigma, double texture_sigma) const
+float GlossyMaterial::orenNayar(const Vec3f &wi, const Vec3f &wo, const Vec3f &n, bool use_texture_sigma, double texture_sigma) const
 {
 	const float cos_ti = std::max(-1.f, std::min(1.f, n * wi));
 	const float cos_to = std::max(-1.f, std::min(1.f, n * wo));
@@ -76,8 +76,8 @@ float GlossyMaterial::orenNayar(const Vec3 &wi, const Vec3 &wo, const Vec3 &n, b
 
 	if(cos_ti < 0.9999f && cos_to < 0.9999f)
 	{
-		Vec3 v_1{(wi - n * cos_ti).normalize()};
-		Vec3 v_2{(wo - n * cos_to).normalize()};
+		Vec3f v_1{(wi - n * cos_ti).normalize()};
+		Vec3f v_2{(wo - n * cos_to).normalize()};
 		maxcos_f = std::max(0.f, v_1 * v_2);
 	}
 
@@ -107,7 +107,7 @@ float GlossyMaterial::orenNayar(const Vec3 &wi, const Vec3 &wo, const Vec3 &n, b
 	}
 }
 
-Rgb GlossyMaterial::eval(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wl, BsdfFlags bsdfs, bool force_eval) const
+Rgb GlossyMaterial::eval(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3f &wo, const Vec3f &wl, BsdfFlags bsdfs, bool force_eval) const
 {
 	if(!force_eval)	//If the flag force_eval = true then the next line will be skipped, necessary for the Glossy Direct render pass
 	{
@@ -116,19 +116,19 @@ Rgb GlossyMaterial::eval(const MaterialData *mat_data, const SurfacePoint &sp, c
 
 	Rgb col(0.f);
 	const bool diffuse_flag = flags::have(bsdfs, BsdfFlags::Diffuse);
-	const Vec3 n{SurfacePoint::normalFaceForward(sp.ng_, sp.n_, wo)};
+	const Vec3f n{SurfacePoint::normalFaceForward(sp.ng_, sp.n_, wo)};
 
 	const float wi_n = std::abs(wl * n);
 	const float wo_n = std::abs(wo * n);
 
 	if((as_diffuse_ && diffuse_flag) || (!as_diffuse_ && flags::have(bsdfs, BsdfFlags::Glossy)))
 	{
-		const Vec3 h{(wo + wl).normalize()}; // half-angle
+		const Vec3f h{(wo + wl).normalize()}; // half-angle
 		const float cos_wi_h = std::max(0.f, wl * h);
 		float glossy;
 		if(anisotropic_)
 		{
-			const Vec3 hs(h * sp.uvn_.u_, h * sp.uvn_.v_, h * n);
+			const Vec3f hs{{h * sp.uvn_.u_, h * sp.uvn_.v_, h * n}};
 			const auto *mat_data_specific = static_cast<const GlossyMaterialData *>(mat_data);
 			glossy = microfacet::asAnisoD(hs, exp_u_, exp_v_) * microfacet::schlickFresnel(cos_wi_h, mat_data_specific->m_glossy_) / microfacet::asDivisor(cos_wi_h, wo_n, wi_n);
 		}
@@ -159,10 +159,10 @@ Rgb GlossyMaterial::eval(const MaterialData *mat_data, const SurfacePoint &sp, c
 }
 
 
-Rgb GlossyMaterial::sample(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, Vec3 &wi, Sample &s, float &w, bool chromatic, float wavelength, const Camera *camera) const
+Rgb GlossyMaterial::sample(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3f &wo, Vec3f &wi, Sample &s, float &w, bool chromatic, float wavelength, const Camera *camera) const
 {
 	const float cos_ng_wo = sp.ng_ * wo;
-	const Vec3 n{SurfacePoint::normalFaceForward(sp.ng_, sp.n_, wo)};//(cos_Ng_wo < 0) ? -sp.N : sp.N;
+	const Vec3f n{SurfacePoint::normalFaceForward(sp.ng_, sp.n_, wo)};//(cos_Ng_wo < 0) ? -sp.N : sp.N;
 	s.pdf_ = 0.f;
 	float wi_n = 0.f;
 	const float wo_n = std::abs(wo * n);
@@ -190,13 +190,13 @@ Rgb GlossyMaterial::sample(const MaterialData *mat_data, const SurfacePoint &sp,
 			float glossy = 0.f;
 			if(use_glossy)
 			{
-				Vec3 h{(wi + wo).normalize()};
+				Vec3f h{(wi + wo).normalize()};
 				const float cos_wo_h = wo * h;
 				const float cos_wi_h = std::abs(wi * h);
 				const float cos_n_h = n * h;
 				if(anisotropic_)
 				{
-					const Vec3 hs(h * sp.uvn_.u_, h * sp.uvn_.v_, cos_n_h);
+					const Vec3f hs{{h * sp.uvn_.u_, h * sp.uvn_.v_, cos_n_h}};
 					s.pdf_ = s.pdf_ * cur_p_diffuse + microfacet::asAnisoPdf(hs, cos_wo_h, exp_u_, exp_v_) * (1.f - cur_p_diffuse);
 					glossy = microfacet::asAnisoD(hs, exp_u_, exp_v_) * microfacet::schlickFresnel(cos_wi_h, mat_data_specific->m_glossy_) / microfacet::asDivisor(cos_wi_h, wo_n, wi_n);
 				}
@@ -242,8 +242,8 @@ Rgb GlossyMaterial::sample(const MaterialData *mat_data, const SurfacePoint &sp,
 		float glossy = 0.f;
 		if(anisotropic_)
 		{
-			const Vec3 hs{microfacet::asAnisoSample(s_1, s.s_2_, exp_u_, exp_v_)};
-			Vec3 h{hs.x() * sp.uvn_.u_ + hs.y() * sp.uvn_.v_ + hs.z() * n};
+			const Vec3f hs{microfacet::asAnisoSample(s_1, s.s_2_, exp_u_, exp_v_)};
+			Vec3f h{hs[Axis::X] * sp.uvn_.u_ + hs[Axis::Y] * sp.uvn_.v_ + hs[Axis::Z] * n};
 			float cos_wo_h = wo * h;
 			if(cos_wo_h < 0.f)
 			{
@@ -251,7 +251,7 @@ Rgb GlossyMaterial::sample(const MaterialData *mat_data, const SurfacePoint &sp,
 				cos_wo_h = wo * h;
 			}
 			// Compute incident direction by reflecting wo about H
-			wi = Vec3::reflectDir(h, wo);
+			wi = Vec3f::reflectDir(h, wo);
 			const float cos_ng_wi = sp.ng_ * wi;
 
 			if(cos_ng_wo * cos_ng_wi < 0.f)
@@ -266,8 +266,8 @@ Rgb GlossyMaterial::sample(const MaterialData *mat_data, const SurfacePoint &sp,
 		}
 		else
 		{
-			const Vec3 hs{microfacet::blinnSample(s_1, s.s_2_, getShaderScalar(exponent_shader_, mat_data->node_tree_data_, exponent_))};
-			Vec3 h{hs.x() * sp.uvn_.u_ + hs.y() * sp.uvn_.v_ + hs.z() * n};
+			const Vec3f hs{microfacet::blinnSample(s_1, s.s_2_, getShaderScalar(exponent_shader_, mat_data->node_tree_data_, exponent_))};
+			Vec3f h{hs[Axis::X] * sp.uvn_.u_ + hs[Axis::Y] * sp.uvn_.v_ + hs[Axis::Z] * n};
 			float cos_wo_h = wo * h;
 			if(cos_wo_h < 0.f)
 			{
@@ -275,7 +275,7 @@ Rgb GlossyMaterial::sample(const MaterialData *mat_data, const SurfacePoint &sp,
 				cos_wo_h = wo * h;
 			}
 			// Compute incident direction by reflecting wo about H
-			wi = Vec3::reflectDir(h, wo);
+			wi = Vec3f::reflectDir(h, wo);
 			const float cos_ng_wi = sp.ng_ * wi;
 
 			if(cos_ng_wo * cos_ng_wi < 0.f)
@@ -311,10 +311,10 @@ Rgb GlossyMaterial::sample(const MaterialData *mat_data, const SurfacePoint &sp,
 	return scolor;
 }
 
-float GlossyMaterial::pdf(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wi, BsdfFlags flags) const
+float GlossyMaterial::pdf(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3f &wo, const Vec3f &wi, BsdfFlags flags) const
 {
 	if((sp.ng_ * wo) * (sp.ng_ * wi) < 0.f) return 0.f;
-	const Vec3 n{SurfacePoint::normalFaceForward(sp.ng_, sp.n_, wo)};
+	const Vec3f n{SurfacePoint::normalFaceForward(sp.ng_, sp.n_, wo)};
 	float pdf = 0.f;
 	const auto *mat_data_specific = static_cast<const GlossyMaterialData *>(mat_data);
 	const float cur_p_diffuse = mat_data_specific->p_diffuse_;
@@ -325,12 +325,12 @@ float GlossyMaterial::pdf(const MaterialData *mat_data, const SurfacePoint &sp, 
 		pdf = std::abs(wi * n);
 		if(use_glossy)
 		{
-			const Vec3 h{(wi + wo).normalize()};
+			const Vec3f h{(wi + wo).normalize()};
 			const float cos_wo_h = wo * h;
 			const float cos_n_h = n * h;
 			if(anisotropic_)
 			{
-				const Vec3 hs(h * sp.uvn_.u_, h * sp.uvn_.v_, cos_n_h);
+				const Vec3f hs{{h * sp.uvn_.u_, h * sp.uvn_.v_, cos_n_h}};
 				pdf = pdf * cur_p_diffuse + microfacet::asAnisoPdf(hs, cos_wo_h, exp_u_, exp_v_) * (1.f - cur_p_diffuse);
 			}
 			else pdf = pdf * cur_p_diffuse + microfacet::blinnPdf(cos_n_h, cos_wo_h, getShaderScalar(exponent_shader_, mat_data->node_tree_data_, exponent_)) * (1.f - cur_p_diffuse);
@@ -340,12 +340,12 @@ float GlossyMaterial::pdf(const MaterialData *mat_data, const SurfacePoint &sp, 
 
 	if(use_glossy)
 	{
-		const Vec3 h{(wi + wo).normalize()};
+		const Vec3f h{(wi + wo).normalize()};
 		const float cos_wo_h = wo * h;
 		const float cos_n_h = n * h;
 		if(anisotropic_)
 		{
-			const Vec3 hs(h * sp.uvn_.u_, h * sp.uvn_.v_, cos_n_h);
+			const Vec3f hs{{h * sp.uvn_.u_, h * sp.uvn_.v_, cos_n_h}};
 			pdf = microfacet::asAnisoPdf(hs, cos_wo_h, exp_u_, exp_v_);
 		}
 		else pdf = microfacet::blinnPdf(cos_n_h, cos_wo_h, getShaderScalar(exponent_shader_, mat_data->node_tree_data_, exponent_));

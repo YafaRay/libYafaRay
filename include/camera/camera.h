@@ -33,8 +33,10 @@ namespace yafaray {
 class ParamMap;
 class Scene;
 
-class Vec3;
-class Point3;
+template <typename T, size_t N> class Vec;
+typedef Vec<float, 3> Vec3f;
+template <typename T, size_t N> class Point;
+typedef Point<float, 3> Point3f;
 class Logger;
 
 //! Camera base class.
@@ -54,19 +56,19 @@ class Camera
 	public:
 		static const Camera * factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params);
 		explicit Camera(Logger &logger) : logger_(logger) { }
-		Camera(Logger &logger, const Point3 &pos, const Point3 &look, const Point3 &up, int resx, int resy, float aspect, float near_clip_distance, float far_clip_distance);
+		Camera(Logger &logger, const Point3f &pos, const Point3f &look, const Point3f &up, int resx, int resy, float aspect, float near_clip_distance, float far_clip_distance);
 		virtual ~Camera() = default;
-		virtual void setAxis(const Vec3 &vx, const Vec3 &vy, const Vec3 &vz) = 0; //!< Set camera axis
+		virtual void setAxis(const Vec3f &vx, const Vec3f &vy, const Vec3f &vz) = 0; //!< Set camera axis
 		/*! Shoot a new ray from the camera gived image pixel coordinates px,py and lense dof effect */
 		virtual CameraRay shootRay(float px, float py, const Uv<float> &uv) const = 0; //!< Shoot a new ray from the camera.
-		virtual Point3 screenproject(const Point3 &p) const = 0; //!< Get projection of point p into camera plane
+		virtual Point3f screenproject(const Point3f &p) const = 0; //!< Get projection of point p into camera plane
 		virtual bool sampleLense() const { return false; } //!< Indicate whether the lense need to be sampled
 		virtual bool project(const Ray &wo, float lu, float lv, float &u, float &v, float &pdf) const { return false; }
 		int resX() const { return resx_; } //!< Get camera X resolution
 		int resY() const { return resy_; } //!< Get camera Y resolution
-		Point3 getPosition() const { return position_; } //!< Get camera position
-		void setPosition(const Point3 &pos) { position_ = pos; } //!< Set camera position
-		std::array<Vec3, 3> getAxes() const { return { cam_x_, cam_y_, cam_z_}; } //!< Get camera axis
+		Point3f getPosition() const { return position_; } //!< Get camera position
+		void setPosition(const Point3f &pos) { position_ = pos; } //!< Set camera position
+		std::array<Vec3f, 3> getAxes() const { return {cam_x_, cam_y_, cam_z_}; } //!< Get camera axis
 		/*! Indicate whether the lense need to be sampled (u, v parameters of shootRay), i.e.
 			DOF-like effects. When false, no lense samples need to be computed */
 		float getNearClip() const { return near_clip_; }
@@ -75,15 +77,15 @@ class Camera
 		std::string getCameraName() const { return camera_name_; }
 
 	protected:
-		Point3 position_;	//!< Camera position
+		Point3f position_;	//!< Camera position
 		int resx_;		//!< Camera X resolution
 		int resy_;		//!< Camera Y resolution
-		Vec3 cam_x_;	//!< Camera X axis
-		Vec3 cam_y_;	//!< Camera Y axis
-		Vec3 cam_z_;	//!< Camera Z axis
-		Vec3 vto_;
-		Vec3 vup_;
-		Vec3 vright_;
+		Vec3f cam_x_;	//!< Camera X axis
+		Vec3f cam_y_;	//!< Camera Y axis
+		Vec3f cam_z_;	//!< Camera Z axis
+		Vec3f vto_;
+		Vec3f vup_;
+		Vec3f vright_;
 		float aspect_ratio_;	//<! Aspect ratio of camera (not image in pixel units!)
 		std::string camera_name_;       //<! Camera name
 		Plane near_plane_, far_plane_;

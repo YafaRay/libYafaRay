@@ -83,7 +83,7 @@ void CoatedGlossyMaterial::initOrenNayar(double sigma)
 	oren_nayar_ = true;
 }
 
-float CoatedGlossyMaterial::orenNayar(const Vec3 &wi, const Vec3 &wo, const Vec3 &n, bool use_texture_sigma, double texture_sigma) const
+float CoatedGlossyMaterial::orenNayar(const Vec3f &wi, const Vec3f &wo, const Vec3f &n, bool use_texture_sigma, double texture_sigma) const
 {
 	const float cos_ti = std::max(-1.f, std::min(1.f, n * wi));
 	const float cos_to = std::max(-1.f, std::min(1.f, n * wo));
@@ -91,8 +91,8 @@ float CoatedGlossyMaterial::orenNayar(const Vec3 &wi, const Vec3 &wo, const Vec3
 
 	if(cos_ti < 0.9999f && cos_to < 0.9999f)
 	{
-		const Vec3 v_1{(wi - n * cos_ti).normalize()};
-		const Vec3 v_2{(wo - n * cos_to).normalize()};
+		const Vec3f v_1{(wi - n * cos_ti).normalize()};
+		const Vec3f v_2{(wo - n * cos_to).normalize()};
 		maxcos_f = std::max(0.f, v_1 * v_2);
 	}
 
@@ -122,7 +122,7 @@ float CoatedGlossyMaterial::orenNayar(const Vec3 &wi, const Vec3 &wo, const Vec3
 	}
 }
 
-Rgb CoatedGlossyMaterial::eval(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wl, BsdfFlags bsdfs, bool force_eval) const
+Rgb CoatedGlossyMaterial::eval(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3f &wo, const Vec3f &wl, BsdfFlags bsdfs, bool force_eval) const
 {
 	Rgb col(0.f);
 	const bool diffuse_flag = flags::have(bsdfs, BsdfFlags::Diffuse);
@@ -131,19 +131,19 @@ Rgb CoatedGlossyMaterial::eval(const MaterialData *mat_data, const SurfacePoint 
 	{
 		if(!diffuse_flag || ((sp.ng_ * wl) * (sp.ng_ * wo)) < 0.f) return col;
 	}
-	const Vec3 n{SurfacePoint::normalFaceForward(sp.ng_, sp.n_, wo)};
+	const Vec3f n{SurfacePoint::normalFaceForward(sp.ng_, sp.n_, wo)};
 	const float wi_n = std::abs(wl * n);
 	const float wo_n = std::abs(wo * n);
-	const auto [kr, kt]{Vec3::fresnel(wo, n, getShaderScalar(ior_shader_, mat_data->node_tree_data_, ior_))};
+	const auto [kr, kt]{Vec3f::fresnel(wo, n, getShaderScalar(ior_shader_, mat_data->node_tree_data_, ior_))};
 
 	if((as_diffuse_ && diffuse_flag) || (!as_diffuse_ && flags::have(bsdfs, BsdfFlags::Glossy)))
 	{
-		const Vec3 h{(wo + wl).normalize()}; // half-angle
+		const Vec3f h{(wo + wl).normalize()}; // half-angle
 		const float cos_wi_h = wl * h;
 		float glossy;
 		if(anisotropic_)
 		{
-			const Vec3 hs(h * sp.uvn_.u_, h * sp.uvn_.v_, h * n);
+			const Vec3f hs{{h * sp.uvn_.u_, h * sp.uvn_.v_, h * n}};
 			const auto *mat_data_specific = static_cast<const CoatedGlossyMaterialData *>(mat_data);
 			glossy = kt * microfacet::asAnisoD(hs, exp_u_, exp_v_) * microfacet::schlickFresnel(cos_wi_h, mat_data_specific->glossy_) / microfacet::asDivisor(cos_wi_h, wo_n, wi_n);
 		}
@@ -173,13 +173,13 @@ Rgb CoatedGlossyMaterial::eval(const MaterialData *mat_data, const SurfacePoint 
 	return col;
 }
 
-Rgb CoatedGlossyMaterial::sample(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, Vec3 &wi, Sample &s, float &w, bool chromatic, float wavelength, const Camera *camera) const
+Rgb CoatedGlossyMaterial::sample(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3f &wo, Vec3f &wi, Sample &s, float &w, bool chromatic, float wavelength, const Camera *camera) const
 {
 	const float cos_ng_wo = sp.ng_ * wo;
-	const Vec3 n{SurfacePoint::normalFaceForward(sp.ng_, sp.n_, wo)};
-	Vec3 hs(0.f);
+	const Vec3f n{SurfacePoint::normalFaceForward(sp.ng_, sp.n_, wo)};
+	Vec3f hs(0.f);
 	s.pdf_ = 0.f;
-	const auto [kr, kt]{Vec3::fresnel(wo, n, getShaderScalar(ior_shader_, mat_data->node_tree_data_, ior_))};
+	const auto [kr, kt]{Vec3f::fresnel(wo, n, getShaderScalar(ior_shader_, mat_data->node_tree_data_, ior_))};
 	// missing! get components
 	bool use[3] = {false, false, false};
 	float sum = 0.f, accum_c[3], val[3], width[3];
@@ -206,7 +206,7 @@ Rgb CoatedGlossyMaterial::sample(const MaterialData *mat_data, const SurfacePoin
 	}
 	if(!n_match || sum < 0.00001)
 	{
-		wi = Vec3::reflectDir(n, wo);	//If the sampling is prematurely ended for some reason we need to give wi a value, or it will be undefinded causing unexpected problems as black dots. By default, I've chosen wi to be the reflection of wo, but it's an arbitrary choice.
+		wi = Vec3f::reflectDir(n, wo);	//If the sampling is prematurely ended for some reason we need to give wi a value, or it will be undefinded causing unexpected problems as black dots. By default, I've chosen wi to be the reflection of wo, but it's an arbitrary choice.
 		return Rgb{0.f};
 	}
 
@@ -230,7 +230,7 @@ Rgb CoatedGlossyMaterial::sample(const MaterialData *mat_data, const SurfacePoin
 	switch(c_index[pick])
 	{
 		case C_SPECULAR: // specular reflect
-			wi = Vec3::reflectDir(n, wo);
+			wi = Vec3f::reflectDir(n, wo);
 
 			if(mirror_color_shader_) scolor = mirror_color_shader_->getColor(mat_data->node_tree_data_) * kr;
 			else scolor = mirror_color_ * kr;//)/std::abs(N*wi);
@@ -274,16 +274,16 @@ Rgb CoatedGlossyMaterial::sample(const MaterialData *mat_data, const SurfacePoin
 		{
 			float glossy;
 			float cos_wo_h;
-			Vec3 h(0.f);
+			Vec3f h(0.f);
 			if(c_index[pick] != C_GLOSSY)
 			{
 				h = (wi + wo).normalize();
-				hs = Vec3{h * sp.uvn_.u_, h * sp.uvn_.v_, h * n};
+				hs = {{h * sp.uvn_.u_, h * sp.uvn_.v_, h * n}};
 				cos_wo_h = wo * h;
 			}
 			else
 			{
-				h = hs.x() * sp.uvn_.u_ + hs.y() * sp.uvn_.v_ + hs.z() * n;
+				h = hs[Axis::X] * sp.uvn_.u_ + hs[Axis::Y] * sp.uvn_.v_ + hs[Axis::Z] * n;
 				cos_wo_h = wo * h;
 				if(cos_wo_h < 0.f)
 				{
@@ -291,7 +291,7 @@ Rgb CoatedGlossyMaterial::sample(const MaterialData *mat_data, const SurfacePoin
 					cos_wo_h = wo * h;
 				}
 				// Compute incident direction by reflecting wo about H
-				wi = Vec3::reflectDir(h, wo);
+				wi = Vec3f::reflectDir(h, wo);
 				const float cos_ng_wi = sp.ng_ * wi;
 				if(cos_ng_wo * cos_ng_wi < 0)
 				{
@@ -346,13 +346,13 @@ Rgb CoatedGlossyMaterial::sample(const MaterialData *mat_data, const SurfacePoin
 	return scolor;
 }
 
-float CoatedGlossyMaterial::pdf(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wi, BsdfFlags flags) const
+float CoatedGlossyMaterial::pdf(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3f &wo, const Vec3f &wi, BsdfFlags flags) const
 {
 	const bool transmit = ((sp.ng_ * wo) * (sp.ng_ * wi)) < 0.f;
 	if(transmit) return 0.f;
-	const Vec3 n{SurfacePoint::normalFaceForward(sp.ng_, sp.n_, wo)};
+	const Vec3f n{SurfacePoint::normalFaceForward(sp.ng_, sp.n_, wo)};
 	float pdf = 0.f;
-	const auto [kr, kt]{Vec3::fresnel(wo, n, getShaderScalar(ior_shader_, mat_data->node_tree_data_, ior_))};
+	const auto [kr, kt]{Vec3f::fresnel(wo, n, getShaderScalar(ior_shader_, mat_data->node_tree_data_, ior_))};
 
 	float accum_c[3], sum = 0.f, width;
 	accum_c[0] = kr;
@@ -369,12 +369,12 @@ float CoatedGlossyMaterial::pdf(const MaterialData *mat_data, const SurfacePoint
 			sum += width;
 			if(i == C_GLOSSY)
 			{
-				const Vec3 h{(wi + wo).normalize()};
+				const Vec3f h{(wi + wo).normalize()};
 				const float cos_wo_h = wo * h;
 				const float cos_n_h = n * h;
 				if(anisotropic_)
 				{
-					Vec3 hs(h * sp.uvn_.u_, h * sp.uvn_.v_, cos_n_h);
+					Vec3f hs{{h * sp.uvn_.u_, h * sp.uvn_.v_, cos_n_h}};
 					pdf += microfacet::asAnisoPdf(hs, cos_wo_h, exp_u_, exp_v_) * width;
 				}
 				else pdf += microfacet::blinnPdf(cos_n_h, cos_wo_h, getShaderScalar(exponent_shader_, mat_data->node_tree_data_, exponent_)) * width;
@@ -390,22 +390,22 @@ float CoatedGlossyMaterial::pdf(const MaterialData *mat_data, const SurfacePoint
 	return pdf / sum;
 }
 
-Specular CoatedGlossyMaterial::getSpecular(int ray_level, const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, bool chromatic, float wavelength) const
+Specular CoatedGlossyMaterial::getSpecular(int ray_level, const MaterialData *mat_data, const SurfacePoint &sp, const Vec3f &wo, bool chromatic, float wavelength) const
 {
 	const bool outside = sp.ng_ * wo >= 0;
-	Vec3 n, ng;
+	Vec3f n, ng;
 	const float cos_wo_n = sp.n_ * wo;
 	if(outside)
 	{
-		n = (cos_wo_n >= 0) ? sp.n_ : (sp.n_ - (1.00001 * cos_wo_n) * wo).normalize();
+		n = (cos_wo_n >= 0) ? sp.n_ : (sp.n_ - (1.00001f * cos_wo_n) * wo).normalize();
 		ng = sp.ng_;
 	}
 	else
 	{
-		n = (cos_wo_n <= 0) ? sp.n_ : (sp.n_ - (1.00001 * cos_wo_n) * wo).normalize();
+		n = (cos_wo_n <= 0) ? sp.n_ : (sp.n_ - (1.00001f * cos_wo_n) * wo).normalize();
 		ng = -sp.ng_;
 	}
-	const auto [kr, kt]{Vec3::fresnel(wo, n, getShaderScalar(ior_shader_, mat_data->node_tree_data_, ior_))};
+	const auto [kr, kt]{Vec3f::fresnel(wo, n, getShaderScalar(ior_shader_, mat_data->node_tree_data_, ior_))};
 	Specular specular;
 	if(ray_level > 5) return specular;
 	specular.reflect_ = std::make_unique<DirectionColor>();
@@ -415,9 +415,9 @@ Specular CoatedGlossyMaterial::getSpecular(int ray_level, const MaterialData *ma
 	else specular.reflect_->col_ = mirror_color_ * kr;//)/std::abs(N*wi);
 	specular.reflect_->col_ *= getShaderScalar(mirror_shader_, mat_data->node_tree_data_, mirror_strength_);
 	const float cos_wi_ng = specular.reflect_->dir_ * ng;
-	if(cos_wi_ng < 0.01)
+	if(cos_wi_ng < 0.01f)
 	{
-		specular.reflect_->dir_ += (0.01 - cos_wi_ng) * ng;
+		specular.reflect_->dir_ += (0.01f - cos_wi_ng) * ng;
 		specular.reflect_->dir_.normalize();
 	}
 	applyWireFrame(specular.reflect_->col_, wireframe_shader_, mat_data->node_tree_data_, sp);

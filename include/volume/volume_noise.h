@@ -36,7 +36,7 @@ class NoiseVolumeRegion final : public DensityVolumeRegion
 
 	private:
 		NoiseVolumeRegion(Logger &logger, Rgb sa, Rgb ss, Rgb le, float gg, float cov, float sharp, float dens,
-						  Point3 pmin, Point3 pmax, int attgrid_scale, Texture *noise) :
+						  Point3f pmin, Point3f pmax, int attgrid_scale, Texture *noise) :
 				DensityVolumeRegion(logger, sa, ss, le, gg, pmin, pmax, attgrid_scale)
 		{
 			tex_dist_noise_ = noise;
@@ -44,7 +44,7 @@ class NoiseVolumeRegion final : public DensityVolumeRegion
 			sharpness_ = sharp * sharp;
 			density_ = dens;
 		}
-		float density(const Point3 &p) const override;
+		float density(const Point3f &p) const override;
 
 		Texture *tex_dist_noise_;
 		float cover_;

@@ -40,7 +40,7 @@ namespace yafaray::sample
 
 //! Sample a cosine-weighted hemisphere given the the coordinate system built by N, Ru, Rv.
 
-[[nodiscard]] Vec3 inline cosHemisphere(const Vec3 &n, const Uv<Vec3> &r, float s_1, float s_2)
+[[nodiscard]] Vec3f inline cosHemisphere(const Vec3f &n, const Uv<Vec3f> &r, float s_1, float s_2)
 {
 	if(s_1 >= 1.0f) return n; //Fix for some white/black dots when s1>1.0. Also, this returns a fast trivial value when s1=1.0.
 	else
@@ -53,29 +53,29 @@ namespace yafaray::sample
 
 //! Uniform sample a sphere
 
-[[nodiscard]] Vec3 inline sphere(float s_1, float s_2)
+[[nodiscard]] Vec3f inline sphere(float s_1, float s_2)
 {
-	Vec3 dir;
-	dir.z() = 1.0f - 2.0f * s_1;
-	float r = 1.0f - dir.z() * dir.z();
+	Vec3f dir;
+	dir[Axis::Z] = 1.0f - 2.0f * s_1;
+	float r = 1.0f - dir[Axis::Z] * dir[Axis::Z];
 	if(r > 0.0f)
 	{
 		r = math::sqrt(r);
 		const float a = math::mult_pi_by_2<> * s_2;
-		dir.x() = math::cos(a) * r;
-		dir.y() = math::sin(a) * r;
+		dir[Axis::X] = math::cos(a) * r;
+		dir[Axis::Y] = math::sin(a) * r;
 	}
 	else
 	{
-		dir.x() = 0.0f;
-		dir.y() = 0.0f;
+		dir[Axis::X] = 0.0f;
+		dir[Axis::Y] = 0.0f;
 	}
 	return dir;
 }
 
 //! uniformly sample a cone. Using doubles because for small cone angles the cosine is very close to one...
 
-[[nodiscard]] inline Vec3 cone(const Vec3 &d, const Uv<Vec3> &uv, float max_cos_ang, float s_1, float s_2)
+[[nodiscard]] inline Vec3f cone(const Vec3f &d, const Uv<Vec3f> &uv, float max_cos_ang, float s_1, float s_2)
 {
 	const float cos_ang = 1.f - (1.f - max_cos_ang) * s_2;
 	const float sin_ang = math::sqrt(1.f - cos_ang * cos_ang);
@@ -87,13 +87,13 @@ namespace yafaray::sample
 // mapped to D2, i.e. rotate around D^D2.
 // V is assumed to be D^U, accordingly V2 is D2^U2; all input vectors must be normalized!
 
-[[nodiscard]] Uv<Vec3> inline minRot(const Vec3 &d, const Vec3 &u, const Vec3 &d_2)
+[[nodiscard]] Uv<Vec3f> inline minRot(const Vec3f &d, const Vec3f &u, const Vec3f &d_2)
 {
 	const float cos_alpha = d * d_2;
 	const float sin_alpha = math::sqrt(1 - cos_alpha * cos_alpha);
-	const Vec3 v{d ^d_2};
-	Vec3 u_2{cos_alpha * u + Vec3{(1.f - cos_alpha) * (v * u)} + sin_alpha * (v ^ u)}; //FIXME DAVID: strange inconsistency detected when made Vec3 explicit, what is the middle part of the equation now surrounded by Vec3{}? Does it make sense? To be investigated... does the Vec3 portion make sense?
-	Vec3 v_2{d_2 ^ u_2};
+	const Vec3f v{d ^ d_2};
+	Vec3f u_2{cos_alpha * u + Vec3f{(1.f - cos_alpha) * (v * u)} + sin_alpha * (v ^ u)}; //FIXME DAVID: strange inconsistency detected when made Vec3 explicit, what is the middle part of the equation now surrounded by Vec3{}? Does it make sense? To be investigated... does the Vec3 portion make sense?
+	Vec3f v_2{d_2 ^ u_2};
 	return {std::move(u_2), std::move(v_2)};
 }
 

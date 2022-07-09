@@ -17,7 +17,7 @@
  */
 
 #include "common/visibility.h"
-#include "geometry/matrix4.h"
+#include "geometry/matrix.h"
 #include "geometry/object/object.h"
 #include "geometry/object/object_instance.h"
 #include "geometry/primitive/primitive_instance.h"
@@ -65,9 +65,9 @@ const Light *ObjectInstance::getLight() const
 	return primitive_instances_.front()->getObjectLight();
 }
 
-std::vector<const Matrix4 *> ObjectInstance::getObjToWorldMatrices() const
+std::vector<const Matrix4f *> ObjectInstance::getObjToWorldMatrices() const
 {
-	std::vector<const Matrix4 *> result;
+	std::vector<const Matrix4f *> result;
 	for(const auto &time_step : time_steps_)
 	{
 		result.emplace_back(&time_step.obj_to_world_);

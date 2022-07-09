@@ -42,16 +42,16 @@ class DarkSkyBackground final : public Background
 		static const Background * factory(Logger &logger, Scene &scene, const std::string &name, const ParamMap &params);
 
 	private:
-		DarkSkyBackground(Logger &logger, const Point3 &dir, float turb, float pwr, float sky_bright, bool clamp, float av, float bv, float cv, float dv, float ev, float altitude, bool night, float exp, bool genc, ColorConv::ColorSpace cs);
-		Rgb operator()(const Vec3 &dir, bool use_ibl_blur) const override;
-		Rgb eval(const Vec3 &dir, bool use_ibl_blur) const override;
+		DarkSkyBackground(Logger &logger, const Point3f &dir, float turb, float pwr, float sky_bright, bool clamp, float av, float bv, float cv, float dv, float ev, float altitude, bool night, float exp, bool genc, ColorConv::ColorSpace cs);
+		Rgb operator()(const Vec3f &dir, bool use_ibl_blur) const override;
+		Rgb eval(const Vec3f &dir, bool use_ibl_blur) const override;
 		Rgb getAttenuatedSunColor();
-		Rgb getSkyCol(const Vec3 &dir) const;
+		Rgb getSkyCol(const Vec3f &dir) const;
 		double prePerez(const std::array<double, 6> &perez) const;
 		Rgb getSunColorFromSunRad();
 		static double perezFunction(const std::array<double, 6> &lam, double cos_theta, double gamma, double cos_gamma, double lvz);
 
-		Vec3 sun_dir_;
+		Vec3f sun_dir_;
 		double theta_s_;
 		double theta_2_, theta_3_;
 		double cos_theta_s_, cos_theta_2_;

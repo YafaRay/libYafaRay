@@ -31,7 +31,7 @@ Primitive *SpherePrimitive::factory(const ParamMap &params, const Scene &scene, 
 		logger.logDebug("**SpherePrimitive");
 		params.logContents();
 	}*/
-	Point3 center(0.f, 0.f, 0.f);
+	Point3f center{{0.f, 0.f, 0.f}};
 	double radius(1.f);
 	const std::unique_ptr<const Material> *material;
 	std::string matname;
@@ -46,19 +46,19 @@ Primitive *SpherePrimitive::factory(const ParamMap &params, const Scene &scene, 
 
 Bound SpherePrimitive::getBound() const
 {
-	const Vec3 r{radius_ * 1.0001f};
+	const Vec3f r{radius_ * 1.0001f};
 	return {center_ - r, center_ + r};
 }
 
-Bound SpherePrimitive::getBound(const Matrix4 &obj_to_world) const
+Bound SpherePrimitive::getBound(const Matrix4f &obj_to_world) const
 {
-	const Vec3 r{radius_ * 1.0001f};
+	const Vec3f r{radius_ * 1.0001f};
 	return {center_ - r, center_ + r};
 }
 
-std::pair<float, Uv<float>> SpherePrimitive::intersect(const Point3 &from, const Vec3 &dir, float time) const
+std::pair<float, Uv<float>> SpherePrimitive::intersect(const Point3f &from, const Vec3f &dir, float time) const
 {
-	const Vec3 vf{from - center_};
+	const Vec3f vf{from - center_};
 	const float ea = dir * dir;
 	const float eb = 2.0 * (vf * dir);
 	const float ec = vf * vf - radius_ * radius_;
@@ -77,9 +77,9 @@ std::pair<float, Uv<float>> SpherePrimitive::intersect(const Point3 &from, const
 	return {sol, {}};
 }
 
-std::pair<float, Uv<float>> SpherePrimitive::intersect(const Point3 &from, const Vec3 &dir, float time, const Matrix4 &obj_to_world) const
+std::pair<float, Uv<float>> SpherePrimitive::intersect(const Point3f &from, const Vec3f &dir, float time, const Matrix4f &obj_to_world) const
 {
-	const Vec3 vf{from - center_};
+	const Vec3f vf{from - center_};
 	const float ea = dir * dir;
 	const float eb = 2.0 * (vf * dir);
 	const float ec = vf * vf - radius_ * radius_;
@@ -98,41 +98,41 @@ std::pair<float, Uv<float>> SpherePrimitive::intersect(const Point3 &from, const
 	return {sol, {}};
 }
 
-std::unique_ptr<const SurfacePoint> SpherePrimitive::getSurface(const RayDifferentials *ray_differentials, const Point3 &hit_point, float time, const Uv<float> &intersect_uv, const Camera *camera) const
+std::unique_ptr<const SurfacePoint> SpherePrimitive::getSurface(const RayDifferentials *ray_differentials, const Point3f &hit_point, float time, const Uv<float> &intersect_uv, const Camera *camera) const
 {
 	auto sp = std::make_unique<SurfacePoint>(this);
 	sp->time_ = time;
-	Vec3 normal{hit_point - center_};
-	sp->orco_p_ = static_cast<Point3>(normal);
+	Vec3f normal{hit_point - center_};
+	sp->orco_p_ = static_cast<Point3f>(normal);
 	normal.normalize();
 	sp->n_ = normal;
 	sp->ng_ = normal;
 	//sp->origin = (void*)this;
 	sp->has_orco_ = true;
 	sp->p_ = hit_point;
-	sp->uvn_ = Vec3::createCoordsSystem(sp->n_);
-	sp->uv_.u_ = std::atan2(normal.y(), normal.x()) * math::div_1_by_pi<> + 1;
-	sp->uv_.v_ = 1.f - math::acos(normal.z()) * math::div_1_by_pi<>;
+	sp->uvn_ = Vec3f::createCoordsSystem(sp->n_);
+	sp->uv_.u_ = std::atan2(normal[Axis::Y], normal[Axis::X]) * math::div_1_by_pi<> + 1;
+	sp->uv_.v_ = 1.f - math::acos(normal[Axis::Z]) * math::div_1_by_pi<>;
 	sp->differentials_ = sp->calcSurfaceDifferentials(ray_differentials);
 	sp->mat_data_ = std::unique_ptr<const MaterialData>(sp->getMaterial()->initBsdf(*sp, camera));
 	return sp;
 }
 
-std::unique_ptr<const SurfacePoint> SpherePrimitive::getSurface(const RayDifferentials *ray_differentials, const Point3 &hit_point, float time, const Uv<float> &intersect_uv, const Camera *camera, const Matrix4 &obj_to_world) const
+std::unique_ptr<const SurfacePoint> SpherePrimitive::getSurface(const RayDifferentials *ray_differentials, const Point3f &hit_point, float time, const Uv<float> &intersect_uv, const Camera *camera, const Matrix4f &obj_to_world) const
 {
 	auto sp = std::make_unique<SurfacePoint>(this);
 	sp->time_ = time;
-	Vec3 normal{hit_point - center_};
-	sp->orco_p_ = static_cast<Point3>(normal);
+	Vec3f normal{hit_point - center_};
+	sp->orco_p_ = static_cast<Point3f>(normal);
 	normal.normalize();
 	sp->n_ = normal;
 	sp->ng_ = normal;
 	//sp->origin = (void*)this;
 	sp->has_orco_ = true;
 	sp->p_ = hit_point;
-	sp->uvn_ = Vec3::createCoordsSystem(sp->n_);
-	sp->uv_.u_ = std::atan2(normal.y(), normal.x()) * math::div_1_by_pi<> + 1;
-	sp->uv_.v_ = 1.f - math::acos(normal.z()) * math::div_1_by_pi<>;
+	sp->uvn_ = Vec3f::createCoordsSystem(sp->n_);
+	sp->uv_.u_ = std::atan2(normal[Axis::Y], normal[Axis::X]) * math::div_1_by_pi<> + 1;
+	sp->uv_.v_ = 1.f - math::acos(normal[Axis::Z]) * math::div_1_by_pi<>;
 	sp->differentials_ = sp->calcSurfaceDifferentials(ray_differentials);
 	sp->mat_data_ = std::unique_ptr<const MaterialData>(sp->getMaterial()->initBsdf(*sp, camera));
 	return sp;
@@ -143,27 +143,27 @@ float SpherePrimitive::surfaceArea(float time) const
 	return 0; //FIXME
 }
 
-float SpherePrimitive::surfaceArea(float time, const Matrix4 &obj_to_world) const
+float SpherePrimitive::surfaceArea(float time, const Matrix4f &obj_to_world) const
 {
 	return 0; //FIXME
 }
 
-Vec3 SpherePrimitive::getGeometricNormal(const Uv<float> &uv, float time, bool) const
+Vec3f SpherePrimitive::getGeometricNormal(const Uv<float> &uv, float time, bool) const
 {
 	return {}; //FIXME
 }
 
-Vec3 SpherePrimitive::getGeometricNormal(const Uv<float> &uv, float time, const Matrix4 &obj_to_world) const
+Vec3f SpherePrimitive::getGeometricNormal(const Uv<float> &uv, float time, const Matrix4f &obj_to_world) const
 {
 	return {}; //FIXME
 }
 
-std::pair<Point3, Vec3> SpherePrimitive::sample(const Uv<float> &uv, float time) const
+std::pair<Point3f, Vec3f> SpherePrimitive::sample(const Uv<float> &uv, float time) const
 {
 	return {}; //FIXME
 }
 
-std::pair<Point3, Vec3> SpherePrimitive::sample(const Uv<float> &uv, float time, const Matrix4 &obj_to_world) const
+std::pair<Point3f, Vec3f> SpherePrimitive::sample(const Uv<float> &uv, float time, const Matrix4f &obj_to_world) const
 {
 	return {}; //FIXME
 }

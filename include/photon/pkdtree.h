@@ -28,7 +28,8 @@
 
 namespace yafaray {
 
-class Point3;
+template <typename T, size_t N> class Point;
+typedef Point<float, 3> Point3f;
 
 namespace kdtree
 {
@@ -79,9 +80,9 @@ class PointKdTree
 		PointKdTree() = default;
 		PointKdTree(Logger &logger, const std::vector<T> &dat, const std::string &map_name, int num_threads = 1);
 		~PointKdTree() { if(nodes_) free(nodes_); }
-		template<typename LookupProc> void lookup(const Point3 &p, LookupProc &proc, float &max_dist_squared) const;
+		template<typename LookupProc> void lookup(const Point3f &p, LookupProc &proc, float &max_dist_squared) const;
 	protected:
-		template<typename LookupProc> void recursiveLookup(const Point3 &p, const LookupProc &proc, float &max_dist_squared, int node_num) const;
+		template<typename LookupProc> void recursiveLookup(const Point3f &p, const LookupProc &proc, float &max_dist_squared, int node_num) const;
 		struct KdStack
 		{
 			const KdNode<T> *node_; //!< pointer to far child
@@ -223,7 +224,7 @@ void PointKdTree<T>::buildTreeWorker(uint32_t start, uint32_t end, Bound &node_b
 
 
 template<typename T> template<typename LookupProc>
-void PointKdTree<T>::lookup(const Point3 &p, LookupProc &proc, float &max_dist_squared) const
+void PointKdTree<T>::lookup(const Point3f &p, LookupProc &proc, float &max_dist_squared) const
 {
 #if NON_REC_LOOKUP > 0
 	KdStack stack[kd_max_stack_];
@@ -256,8 +257,8 @@ void PointKdTree<T>::lookup(const Point3 &p, LookupProc &proc, float &max_dist_s
 		}
 
 		// Hand leaf-data kd-tree to processing function
-		const Vec3 v{curr_node->data_->pos_ - p};
-		float dist_2 = v.lengthSqr();
+		const Vec3f v{curr_node->data_->pos_ - p};
+		float dist_2 = v.lengthSquared();
 
 		if(dist_2 < max_dist_squared)
 		{
@@ -292,13 +293,13 @@ void PointKdTree<T>::lookup(const Point3 &p, LookupProc &proc, float &max_dist_s
 }
 
 template<typename T> template<typename LookupProc>
-void PointKdTree<T>::recursiveLookup(const Point3 &p, const LookupProc &proc, float &max_dist_squared, int node_num) const
+void PointKdTree<T>::recursiveLookup(const Point3f &p, const LookupProc &proc, float &max_dist_squared, int node_num) const
 {
 	const KdNode<T> *curr_node = &nodes_[node_num];
 	if(curr_node->isLeaf())
 	{
-		const Vec3 v{curr_node->data_->pos_ - p};
-		float dist_2 = v.lengthSqr();
+		const Vec3f v{curr_node->data_->pos_ - p};
+		float dist_2 = v.lengthSquared();
 		if(dist_2 < max_dist_squared)
 		{
 			proc(curr_node->data_, dist_2, max_dist_squared);

@@ -58,7 +58,7 @@ bool TgaFormat::saveToFile(const std::string &name, const ImageLayer &image_laye
 	{
 		for(int x = 0; x < w; x++)
 		{
-			Rgba col = Layer::postProcess(image_layer.image_->getColor(x, y), image_layer.layer_.getType(), color_space, gamma, alpha_premultiply);
+			Rgba col = Layer::postProcess(image_layer.image_->getColor({{x, y}}), image_layer.layer_.getType(), color_space, gamma, alpha_premultiply);
 			col.clampRgba01();
 			if(!image_layer.image_->hasAlpha())
 			{
@@ -86,7 +86,7 @@ template <typename ColorType> void TgaFormat::readColorMap(std::FILE *fp, TgaHea
 	std::fread(color.get(), sizeof(ColorType), header.cm_number_of_entries_, fp);
 	for(int x = 0; x < static_cast<int>(header.cm_number_of_entries_); x++)
 	{
-		(*color_map_)(x, 0).setColor( (this->*cp)(&color[x]));
+		(*color_map_)({{x, 0}}).setColor( (this->*cp)(&color[x]));
 	}
 }
 
@@ -107,7 +107,7 @@ template <typename ColorType> void TgaFormat::readRleImage(std::FILE *fp, ColorP
 			if(!rle_pack) std::fread(&color_type, sizeof(ColorType), 1, fp);
 			Rgba color = (this->*cp)(&color_type);
 			color.linearRgbFromColorSpace(color_space, gamma);
-			image->setColor(x, y, color);
+			image->setColor({{static_cast<int>(x), static_cast<int>(y)}}, color);
 			x += step_x_;
 			if(x == max_x_)
 			{
@@ -129,7 +129,7 @@ template <typename ColorType> void TgaFormat::readDirectImage(FILE *fp, ColorPro
 		{
 			Rgba color = (this->*cp)(&color_type[i]);
 			color.linearRgbFromColorSpace(color_space, gamma);
-			image->setColor(x, y, color);
+			image->setColor({{static_cast<int>(x), static_cast<int>(y)}}, color);
 			++i;
 		}
 	}
@@ -149,7 +149,7 @@ Rgba TgaFormat::processGray16(void *data) // NOLINT(readability-convert-member-f
 Rgba TgaFormat::processColor8(void *data)
 {
 	const uint8_t color = *(uint8_t *)data;
-	return (*color_map_)(color, 0).getColor();
+	return (*color_map_)({{color, 0}}).getColor();
 }
 
 Rgba TgaFormat::processColor15(void *data) // NOLINT(readability-convert-member-functions-to-static)
@@ -301,12 +301,12 @@ Image * TgaFormat::loadFromFile(const std::string &name, const Image::Optimizati
 	const bool has_alpha = (alpha_bit_depth != 0 || header.cm_entry_bit_depth_ == 32);
 	Image::Type type = Image::getTypeFromSettings(has_alpha, grayscale_);
 	if(!has_alpha && !grayscale_ && (header.cm_entry_bit_depth_ == 16 || header.cm_entry_bit_depth_ == 32 || header.bit_depth_ == 16 || header.bit_depth_ == 32)) type = Image::Type::ColorAlpha;
-	auto image = Image::factory(logger_, header.width_, header.height_, type, optimization);
+	auto image = Image::factory(logger_, {{header.width_, header.height_}}, type, optimization);
 	color_map_ = nullptr;
 	// Read the colormap if needed
 	if(has_color_map)
 	{
-		color_map_ = std::make_unique<ImageBuffer2D<RgbAlpha>>(header.cm_number_of_entries_, 1);
+		color_map_ = std::make_unique<ImageBuffer2D<RgbAlpha>>(Size2i{{header.cm_number_of_entries_, 1}});
 		switch(header.cm_entry_bit_depth_)
 		{
 			case 15:

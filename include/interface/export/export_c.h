@@ -45,10 +45,10 @@ class ExportC: public Interface
 		int createInstance() noexcept override;
 		bool addInstanceObject(int instance_id, std::string &&base_object_name) noexcept override;
 		bool addInstanceOfInstance(int instance_id, size_t base_instance_id) noexcept override;
-		bool addInstanceMatrix(int instance_id, Matrix4 &&obj_to_world, float time) noexcept override;
-		int addVertex(Point3 &&vertex, int time_step) noexcept override; //!< add vertex to mesh; returns index to be used for addTriangle/addQuad
-		int addVertex(Point3 &&vertex, Point3 &&orco, int time_step) noexcept override; //!< add vertex with Orco to mesh; returns index to be used for addTriangle/addQuad
-		void addVertexNormal(Vec3 &&normal, int time_step) noexcept override; //!< add vertex normal to mesh; the vertex that will be attached to is the last one inserted by addVertex method
+		bool addInstanceMatrix(int instance_id, Matrix4f &&obj_to_world, float time) noexcept override;
+		int addVertex(Point3f &&vertex, int time_step) noexcept override; //!< add vertex to mesh; returns index to be used for addTriangle/addQuad
+		int addVertex(Point3f &&vertex, Point3f &&orco, int time_step) noexcept override; //!< add vertex with Orco to mesh; returns index to be used for addTriangle/addQuad
+		void addVertexNormal(Vec3f &&normal, int time_step) noexcept override; //!< add vertex normal to mesh; the vertex that will be attached to is the last one inserted by addVertex method
 		bool addFace(std::vector<int> &&vertices, std::vector<int> &&uv_indices) noexcept override;
 		int addUv(Uv<float> &&uv) noexcept override;
 		bool smoothVerticesNormals(std::string &&name, double angle) noexcept override;
@@ -73,7 +73,7 @@ class ExportC: public Interface
 	protected:
 		void writeParamMap(const ParamMap &param_map, int indent = 1) noexcept;
 		void writeParamList(int indent) noexcept;
-		static void writeMatrix(const Matrix4 &m, std::ofstream &file) noexcept;
+		static void writeMatrix(const Matrix4f &m, std::ofstream &file) noexcept;
 		static void writeParam(const std::string &name, const Parameter &param, std::ofstream &file, ColorSpace color_space, float gamma) noexcept;
 		static std::string generateHeader();
 		std::string sectionSplit();

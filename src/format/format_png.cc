@@ -76,7 +76,7 @@ bool PngFormat::saveToFile(const std::string &name, const ImageLayer &image_laye
 	{
 		for(int x = 0; x < w; x++)
 		{
-			Rgba color = Layer::postProcess(image_layer.image_->getColor(x, y), image_layer.layer_.getType(), color_space, gamma, alpha_premultiply);
+			Rgba color = Layer::postProcess(image_layer.image_->getColor({{x, y}}), image_layer.layer_.getType(), color_space, gamma, alpha_premultiply);
 			color.clampRgba01();
 			const int i = x * channels;
 			row_pointers[y][i] = (uint8_t)(color.getR() * 255.f);
@@ -243,7 +243,7 @@ Image * PngFormat::readFromStructs(const PngStructs &png_structs, const Image::O
 	// even 2,147,483,647 (max signed int positive value) pixels on one side is purpostrous
 	// at 1 channel, 8 bits per channel and the other side of 1 pixel wide the resulting image uses 2gb of memory
 	const Image::Type type = Image::getTypeFromSettings(has_alpha, (num_chan == 1 || grayscale_));
-	auto image = Image::factory(logger_, w, h, type, optimization);
+	auto image = Image::factory(logger_, {{static_cast<int>(w), static_cast<int>(h)}}, type, optimization);
 	auto row_pointers = std::unique_ptr<png_bytep[]>(new png_bytep[h]);
 	int bit_mult = 1;
 	if(bit_depth == 16) bit_mult = 2;
@@ -319,7 +319,7 @@ Image * PngFormat::readFromStructs(const PngStructs &png_structs, const Image::O
 				}
 			}
 			color.linearRgbFromColorSpace(color_space, gamma);
-			image->setColor(x, y, color);
+			image->setColor({{static_cast<int>(x), static_cast<int>(y)}}, color);
 		}
 	}
 	png_read_end(png_structs.png_ptr_, png_structs.info_ptr_);

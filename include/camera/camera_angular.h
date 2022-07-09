@@ -41,12 +41,12 @@ class AngularCamera final : public Camera
 				EquisolidAngle,
 				Rectilinear,
 		};
-		AngularCamera(Logger &logger, const Point3 &pos, const Point3 &look, const Point3 &up,
+		AngularCamera(Logger &logger, const Point3f &pos, const Point3f &look, const Point3f &up,
 					  int resx, int resy, float aspect, float angle, float max_angle, bool circ, const Projection &projection,
 					  float near_clip_distance = 0.0f, float far_clip_distance = 1e6f);
-		void setAxis(const Vec3 &vx, const Vec3 &vy, const Vec3 &vz) override;
+		void setAxis(const Vec3f &vx, const Vec3f &vy, const Vec3f &vz) override;
 		CameraRay shootRay(float px, float py, const Uv<float> &uv) const override;
-		Point3 screenproject(const Point3 &p) const override;
+		Point3f screenproject(const Point3f &p) const override;
 
 		float focal_length_;
 		float max_radius_;

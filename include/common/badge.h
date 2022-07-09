@@ -22,6 +22,7 @@
 #define YAFARAY_BADGE_H
 
 #include "render/render_control.h"
+#include "geometry/rect.h"
 #include <string>
 #include <memory>
 
@@ -53,8 +54,8 @@ class Badge
 		bool drawRenderSettings() const { return draw_render_settings_; }
 
 		void setPosition(const std::string &position);
-		void setImageWidth(int width) { image_width_ = width; }
-		void setImageHeight(int height) { image_height_ = height; }
+		void setImageSize(const Size2i &size) { image_size_ = size; }
+		void setImageSize(Size2i &&size) { image_size_ = std::move(size); }
 		void setTitle(const std::string &title) { title_ = title; }
 		void setAuthor(const std::string &author) { author_ = author; }
 		void setContact(const std::string &contact) { contact_ = contact; }
@@ -69,8 +70,7 @@ class Badge
 		Image *generateImage(const std::string &denoise_params, const RenderControl &render_control, const Timer &timer) const;
 
 	protected:
-		int image_width_ = 0;
-		int image_height_ = 0;
+		Size2i image_size_{0};
 		bool draw_aa_ = true;
 		bool draw_render_settings_ = true;
 		float font_size_factor_ = 1.f;

@@ -28,7 +28,7 @@
 
 namespace yafaray {
 
-DirectionalLight::DirectionalLight(Logger &logger, const Point3 &pos, Vec3 dir, const Rgb &col, float inte, bool inf, float rad, bool b_light_enabled, bool b_cast_shadows):
+DirectionalLight::DirectionalLight(Logger &logger, const Point3f &pos, Vec3f dir, const Rgb &col, float inte, bool inf, float rad, bool b_light_enabled, bool b_cast_shadows):
 		Light(logger, Light::Flags::DiracDir), position_(pos), direction_(dir), radius_(rad), infinite_(inf)
 {
 	light_enabled_ = b_light_enabled;
@@ -36,9 +36,9 @@ DirectionalLight::DirectionalLight(Logger &logger, const Point3 &pos, Vec3 dir, 
 	color_ = col * inte;
 	intensity_ = color_.energy();
 	direction_.normalize();
-	duv_ = Vec3::createCoordsSystem(direction_);
-	const Vec3 &d{direction_};
-	major_axis_ = (d.x() > d.y()) ? ((d.x() > d.z()) ? 0 : 2) : ((d.y() > d.z()) ? 1 : 2);
+	duv_ = Vec3f::createCoordsSystem(direction_);
+	const Vec3f &d{direction_};
+	major_axis_ = (d[Axis::X] > d[Axis::Y]) ? ((d[Axis::X] > d[Axis::Z]) ? 0 : 2) : ((d[Axis::Y] > d[Axis::Z]) ? 1 : 2);
 }
 
 void DirectionalLight::init(Scene &scene)
@@ -46,10 +46,10 @@ void DirectionalLight::init(Scene &scene)
 	// calculate necessary parameters for photon mapping if the light
 	//  is set to illuminate the whole scene:
 	Bound w = scene.getSceneBound();
-	world_radius_ = 0.5 * (w.g_ - w.a_).length();
+	world_radius_ = 0.5f * (w.g_ - w.a_).length();
 	if(infinite_)
 	{
-		position_ = 0.5 * (w.a_ + w.g_);
+		position_ = 0.5f * (w.a_ + w.g_);
 		radius_ = world_radius_;
 	}
 	area_pdf_ = 1.f / (radius_ * radius_); // Pi cancels out with our weird conventions :p
@@ -57,14 +57,14 @@ void DirectionalLight::init(Scene &scene)
 }
 
 
-std::tuple<bool, Ray, Rgb> DirectionalLight::illuminate(const Point3 &surface_p, float time) const
+std::tuple<bool, Ray, Rgb> DirectionalLight::illuminate(const Point3f &surface_p, float time) const
 {
 	if(photonOnly()) return {};
 	// check if the point is outside of the illuminated cylinder (non-infinite lights)
 	float tmax;
 	if(!infinite_)
 	{
-		const Vec3 vec{position_ - surface_p};
+		const Vec3f vec{position_ - surface_p};
 		float dist = (direction_ ^ vec).length();
 		if(dist > radius_) return {};
 		tmax = vec * direction_;
@@ -75,7 +75,7 @@ std::tuple<bool, Ray, Rgb> DirectionalLight::illuminate(const Point3 &surface_p,
 	return {true, std::move(ray), color_};
 }
 
-std::pair<bool, Ray> DirectionalLight::illumSample(const Point3 &surface_p, LSample &s, float time) const
+std::pair<bool, Ray> DirectionalLight::illumSample(const Point3f &surface_p, LSample &s, float time) const
 {
 	if(photonOnly()) return {};
 	s.pdf_ = 1.f;
@@ -85,19 +85,19 @@ std::pair<bool, Ray> DirectionalLight::illumSample(const Point3 &surface_p, LSam
 
 std::tuple<Ray, float, Rgb> DirectionalLight::emitPhoton(float s_1, float s_2, float s_3, float s_4, float time) const
 {
-	const Uv<float> uv{Vec3::shirleyDisk(s_1, s_2)};
-	Point3 from{position_ + radius_ * (uv.u_ * duv_.u_ + uv.v_ * duv_.v_)};
+	const Uv<float> uv{Vec3f::shirleyDisk(s_1, s_2)};
+	Point3f from{position_ + radius_ * (uv.u_ * duv_.u_ + uv.v_ * duv_.v_)};
 	if(infinite_) from += direction_ * world_radius_;
 	const float ipdf = math::num_pi<> * radius_ * radius_; //4.0f * num_pi;
 	Ray ray{std::move(from), -direction_, time};
 	return {std::move(ray), ipdf, color_};
 }
 
-std::pair<Vec3, Rgb> DirectionalLight::emitSample(LSample &s, float time) const
+std::pair<Vec3f, Rgb> DirectionalLight::emitSample(LSample &s, float time) const
 {
 	s.sp_->n_ = -direction_;
 	s.flags_ = flags_;
-	const Uv<float> uv{Vec3::shirleyDisk(s.s_1_, s.s_2_)};
+	const Uv<float> uv{Vec3f::shirleyDisk(s.s_1_, s.s_2_)};
 	s.sp_->p_ = position_ + radius_ * (uv.u_ * duv_.u_ + uv.v_ * duv_.v_);
 	if(infinite_) s.sp_->p_ += direction_ * world_radius_;
 	s.area_pdf_ = area_pdf_;
@@ -107,8 +107,8 @@ std::pair<Vec3, Rgb> DirectionalLight::emitSample(LSample &s, float time) const
 
 Light * DirectionalLight::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params)
 {
-	Point3 from{0.f, 0.f, 0.f};
-	Point3 dir{0.f, 0.f, 1.f};
+	Point3f from{{0.f, 0.f, 0.f}};
+	Point3f dir{{0.f, 0.f, 1.f}};
 	Rgb color(1.0);
 	float power = 1.0;
 	float rad = 1.0;

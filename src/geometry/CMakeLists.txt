@@ -20,7 +20,6 @@ target_sources(libyafaray4
 	PRIVATE
 		axis.cc
 		bound.cc
-		matrix4.cc
 		poly_double.cc
 		surface.cc
 		vector.cc

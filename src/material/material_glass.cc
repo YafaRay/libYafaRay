@@ -60,7 +60,7 @@ const MaterialData * GlassMaterial::initBsdf(SurfacePoint &sp, const Camera *cam
 
 #define MATCHES(bits, flags) ((bits & (flags)) == (flags))
 
-Rgb GlassMaterial::sample(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, Vec3 &wi, Sample &s, float &w, bool chromatic, float wavelength, const Camera *camera) const
+Rgb GlassMaterial::sample(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3f &wo, Vec3f &wi, Sample &s, float &w, bool chromatic, float wavelength, const Camera *camera) const
 {
 	if(!flags::have(s.flags_, BsdfFlags::Specular) && !(flags::have(s.flags_, bsdf_flags_ & BsdfFlags::Dispersive) && chromatic))
 	{
@@ -69,11 +69,11 @@ Rgb GlassMaterial::sample(const MaterialData *mat_data, const SurfacePoint &sp, 
 		applyWireFrame(scolor, wireframe_shader_, mat_data->node_tree_data_, sp);
 		return scolor;
 	}
-	Vec3 refdir, n;
+	Vec3f refdir, n;
 	const bool outside = sp.ng_ * wo > 0;
 	const float cos_wo_n = sp.n_ * wo;
-	if(outside) n = (cos_wo_n >= 0) ? sp.n_ : (sp.n_ - (1.00001 * cos_wo_n) * wo).normalize();
-	else n = (cos_wo_n <= 0) ? sp.n_ : (sp.n_ - (1.00001 * cos_wo_n) * wo).normalize();
+	if(outside) n = (cos_wo_n >= 0) ? sp.n_ : (sp.n_ - (1.00001f * cos_wo_n) * wo).normalize();
+	else n = (cos_wo_n <= 0) ? sp.n_ : (sp.n_ - (1.00001f * cos_wo_n) * wo).normalize();
 	s.pdf_ = 1.f;
 
 	// we need to sample dispersion
@@ -87,9 +87,9 @@ Rgb GlassMaterial::sample(const MaterialData *mat_data, const SurfacePoint &sp, 
 		if(ior_shader_) spectrum::cauchyCoefficients(cur_ior, dispersion_power_, cur_cauchy_a, cur_cauchy_b);
 		cur_ior = spectrum::getIor(wavelength, cur_cauchy_a, cur_cauchy_b);
 
-		if(Vec3::refract(n, wo, refdir, cur_ior))
+		if(Vec3f::refract(n, wo, refdir, cur_ior))
 		{
-			const auto [kr, kt]{Vec3::fresnel(wo, n, cur_ior)};
+			const auto [kr, kt]{Vec3f::fresnel(wo, n, cur_ior)};
 			const float p_kr = 0.01 + 0.99 * kr, p_kt = 0.01 + 0.99 * kt;
 			if(!flags::have(s.flags_, BsdfFlags::Specular) || s.s_1_ < p_kt)
 			{
@@ -136,9 +136,9 @@ Rgb GlassMaterial::sample(const MaterialData *mat_data, const SurfacePoint &sp, 
 			cur_ior = spectrum::getIor(wavelength, cur_cauchy_a, cur_cauchy_b);
 		}
 
-		if(Vec3::refract(n, wo, refdir, cur_ior))
+		if(Vec3f::refract(n, wo, refdir, cur_ior))
 		{
-			const auto [kr, kt]{Vec3::fresnel(wo, n, cur_ior)};
+			const auto [kr, kt]{Vec3f::fresnel(wo, n, cur_ior)};
 			float p_kr = 0.01 + 0.99 * kr, p_kt = 0.01 + 0.99 * kt;
 			if(s.s_1_ < p_kt && MATCHES(s.flags_, tm_flags_))
 			{
@@ -193,16 +193,16 @@ Rgb GlassMaterial::sample(const MaterialData *mat_data, const SurfacePoint &sp, 
 	return Rgb{0.f};
 }
 
-Rgb GlassMaterial::getTransparency(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, const Camera *camera) const
+Rgb GlassMaterial::getTransparency(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3f &wo, const Camera *camera) const
 {
-	const Vec3 n{SurfacePoint::normalFaceForward(sp.ng_, sp.n_, wo)};
-	const auto [kr, kt]{Vec3::fresnel(wo, n, getShaderScalar(ior_shader_, mat_data->node_tree_data_, ior_))};
+	const Vec3f n{SurfacePoint::normalFaceForward(sp.ng_, sp.n_, wo)};
+	const auto [kr, kt]{Vec3f::fresnel(wo, n, getShaderScalar(ior_shader_, mat_data->node_tree_data_, ior_))};
 	Rgb result = kt * getShaderColor(filter_color_shader_, mat_data->node_tree_data_, filter_color_);
 	applyWireFrame(result, wireframe_shader_, mat_data->node_tree_data_, sp);
 	return result;
 }
 
-float GlassMaterial::getAlpha(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, const Camera *camera) const
+float GlassMaterial::getAlpha(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3f &wo, const Camera *camera) const
 {
 	float alpha = 1.f - getTransparency(mat_data, sp, wo, camera).energy();
 	if(alpha < 0.f) alpha = 0.f;
@@ -210,10 +210,10 @@ float GlassMaterial::getAlpha(const MaterialData *mat_data, const SurfacePoint &
 	return alpha;
 }
 
-Specular GlassMaterial::getSpecular(int ray_level, const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, bool chromatic, float wavelength) const
+Specular GlassMaterial::getSpecular(int ray_level, const MaterialData *mat_data, const SurfacePoint &sp, const Vec3f &wo, bool chromatic, float wavelength) const
 {
 	const bool outside = sp.ng_ * wo > 0;
-	Vec3 n;
+	Vec3f n;
 	const float cos_wo_n = sp.n_ * wo;
 	if(outside)
 	{
@@ -224,7 +224,7 @@ Specular GlassMaterial::getSpecular(int ray_level, const MaterialData *mat_data,
 		n = (cos_wo_n <= 0.f) ? sp.n_ : (sp.n_ - (1.00001f * cos_wo_n) * wo).normalize();
 	}
 	//	vector3d_t N = SurfacePoint::normalFaceForward(sp.Ng, sp.N, wo);
-	Vec3 refdir;
+	Vec3f refdir;
 
 	float cur_ior = ior_;
 	if(ior_shader_) cur_ior += ior_shader_->getScalar(mat_data->node_tree_data_);
@@ -238,9 +238,9 @@ Specular GlassMaterial::getSpecular(int ray_level, const MaterialData *mat_data,
 	}
 
 	Specular specular;
-	if(Vec3::refract(n, wo, refdir, cur_ior))
+	if(Vec3f::refract(n, wo, refdir, cur_ior))
 	{
-		const auto [kr, kt]{Vec3::fresnel(wo, n, cur_ior)};
+		const auto [kr, kt]{Vec3f::fresnel(wo, n, cur_ior)};
 		if(!chromatic || !disperse_)
 		{
 			specular.refract_ = std::make_unique<DirectionColor>();
@@ -429,21 +429,21 @@ Rgb GlassMaterial::getMirrorColor(const NodeTreeData &node_tree_data) const
 	return mirror_color_shader_ ? mirror_color_shader_->getColor(node_tree_data) : specular_reflection_color_;
 }
 
-Rgb MirrorMaterial::sample(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, Vec3 &wi, Sample &s, float &w, bool chromatic, float wavelength, const Camera *camera) const
+Rgb MirrorMaterial::sample(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3f &wo, Vec3f &wi, Sample &s, float &w, bool chromatic, float wavelength, const Camera *camera) const
 {
-	wi = Vec3::reflectDir(sp.n_, wo);
+	wi = Vec3f::reflectDir(sp.n_, wo);
 	s.sampled_flags_ = BsdfFlags::Specular | BsdfFlags::Reflect;
 	w = 1.f;
 	return ref_col_ * (1.f / std::abs(sp.n_ * wi));
 }
 
-Specular MirrorMaterial::getSpecular(int ray_level, const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, bool chromatic, float wavelength) const
+Specular MirrorMaterial::getSpecular(int ray_level, const MaterialData *mat_data, const SurfacePoint &sp, const Vec3f &wo, bool chromatic, float wavelength) const
 {
 	Specular specular;
 	specular.reflect_ = std::make_unique<DirectionColor>();
 	specular.reflect_->col_ = ref_col_;
-	const Vec3 n{SurfacePoint::normalFaceForward(sp.ng_, sp.n_, wo)};
-	specular.reflect_->dir_ = Vec3::reflectDir(n, wo);
+	const Vec3f n{SurfacePoint::normalFaceForward(sp.ng_, sp.n_, wo)};
+	specular.reflect_->dir_ = Vec3f::reflectDir(n, wo);
 	return specular;
 }
 
@@ -457,7 +457,7 @@ Material *MirrorMaterial::factory(Logger &logger, const Scene &scene, const std:
 }
 
 
-Rgb NullMaterial::sample(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, Vec3 &wi, Sample &s, float &w, bool chromatic, float wavelength, const Camera *camera) const
+Rgb NullMaterial::sample(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3f &wo, Vec3f &wi, Sample &s, float &w, bool chromatic, float wavelength, const Camera *camera) const
 {
 	s.pdf_ = 0.f;
 	w = 0.f;

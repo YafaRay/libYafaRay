@@ -29,7 +29,7 @@
 
 namespace yafaray {
 
-SpotLight::SpotLight(Logger &logger, const Point3 &from, const Point3 &to, const Rgb &col, float power, float angle, float falloff, bool s_sha, int smpl, float ssfuzzy, bool b_light_enabled, bool b_cast_shadows):
+SpotLight::SpotLight(Logger &logger, const Point3f &from, const Point3f &to, const Rgb &col, float power, float angle, float falloff, bool s_sha, int smpl, float ssfuzzy, bool b_light_enabled, bool b_cast_shadows):
 		Light(logger, Light::Flags::Singular), position_(from), soft_shadows_(s_sha), shadow_fuzzy_(ssfuzzy), samples_(smpl)
 {
 	light_enabled_ = b_light_enabled;
@@ -37,7 +37,7 @@ SpotLight::SpotLight(Logger &logger, const Point3 &from, const Point3 &to, const
 	ndir_ = (from - to).normalize();
 	dir_ = -ndir_;
 	color_ = col * power;
-	duv_ = Vec3::createCoordsSystem(dir_);
+	duv_ = Vec3f::createCoordsSystem(dir_);
 	double rad_angle = math::degToRad(angle);
 	double rad_inner_angle = rad_angle * (1.f - falloff);
 	cos_start_ = math::cos(rad_inner_angle);
@@ -72,10 +72,10 @@ Rgb SpotLight::totalEnergy() const
 	return color_ * math::mult_pi_by_2<> * (1.f - 0.5f * (cos_start_ + cos_end_));
 }
 
-std::tuple<bool, Ray, Rgb> SpotLight::illuminate(const Point3 &surface_p, float time) const
+std::tuple<bool, Ray, Rgb> SpotLight::illuminate(const Point3f &surface_p, float time) const
 {
 	if(photonOnly()) return {};
-	Vec3 ldir{position_ - surface_p};
+	Vec3f ldir{position_ - surface_p};
 	const float dist_sqr = ldir * ldir;
 	const float dist = math::sqrt(dist_sqr);
 	if(dist == 0.f) return {};
@@ -93,17 +93,17 @@ std::tuple<bool, Ray, Rgb> SpotLight::illuminate(const Point3 &surface_p, float 
 	return {true, std::move(ray), color_ * v * idist_sqr};
 }
 
-std::pair<bool, Ray> SpotLight::illumSample(const Point3 &surface_p, LSample &s, float time) const
+std::pair<bool, Ray> SpotLight::illumSample(const Point3f &surface_p, LSample &s, float time) const
 {
 	if(photonOnly()) return {};
-	Vec3 ldir{position_ - surface_p};
+	Vec3f ldir{position_ - surface_p};
 	const float dist_sqr = ldir * ldir;
 	if(dist_sqr == 0.f) return {};
 	const float dist = math::sqrt(dist_sqr);
 	ldir *= 1.f / dist; //normalize
 	const float cos_a = ndir_ * ldir;
 	if(cos_a < cos_end_) return {}; //outside cone
-	Vec3 dir{sample::cone(ldir, duv_, cos_end_, s.s_1_ * shadow_fuzzy_, s.s_2_ * shadow_fuzzy_)};
+	Vec3f dir{sample::cone(ldir, duv_, cos_end_, s.s_1_ * shadow_fuzzy_, s.s_2_ * shadow_fuzzy_)};
 	if(cos_a >= cos_start_) // not affected by falloff
 	{
 		s.col_ = color_;
@@ -132,7 +132,7 @@ std::tuple<Ray, float, Rgb> SpotLight::emitPhoton(float s_1, float s_2, float s_
 {
 	if(s_3 <= interv_1_) // sample from cone not affected by falloff:
 	{
-		Vec3 dir{sample::cone(dir_, duv_, cos_start_, s_1, s_2)};
+		Vec3f dir{sample::cone(dir_, duv_, cos_start_, s_1, s_2)};
 		const float ipdf = math::mult_pi_by_2<> * (1.f - cos_start_) / interv_1_;
 		Ray ray{position_, std::move(dir), time};
 		return {std::move(ray), ipdf, color_};
@@ -145,21 +145,21 @@ std::tuple<Ray, float, Rgb> SpotLight::emitPhoton(float s_1, float s_2, float s_
 		const double cos_ang = cos_end_ + (cos_start_ - cos_end_) * (double)sm_2;
 		const double sin_ang = math::sqrt(1.0 - cos_ang * cos_ang);
 		const float t_1 = math::mult_pi_by_2<> * s_1;
-		Vec3 dir{(duv_.u_ * math::cos(t_1) + duv_.v_ * math::sin(t_1)) * (float)sin_ang + dir_ * (float)cos_ang};
+		Vec3f dir{(duv_.u_ * math::cos(t_1) + duv_.v_ * math::sin(t_1)) * (float)sin_ang + dir_ * (float)cos_ang};
 		Rgb col{color_ * spdf * pdf_->integral()}; // scale is just the actual falloff function, since spdf is func * invIntegral...
 		Ray ray{position_, std::move(dir), time};
 		return {std::move(ray), ipdf, std::move(col)};
 	}
 }
 
-std::pair<Vec3, Rgb> SpotLight::emitSample(LSample &s, float time) const
+std::pair<Vec3f, Rgb> SpotLight::emitSample(LSample &s, float time) const
 {
 	s.sp_->p_ = position_;
 	s.area_pdf_ = 1.f;
 	s.flags_ = flags_;
 	if(s.s_3_ <= interv_1_) // sample from cone not affected by falloff:
 	{
-		Vec3 dir{sample::cone(dir_, duv_, cos_start_, s.s_1_, s.s_2_)};
+		Vec3f dir{sample::cone(dir_, duv_, cos_start_, s.s_1_, s.s_2_)};
 		s.dir_pdf_ = interv_1_ / (math::mult_pi_by_2<> * (1.f - cos_start_));
 		return {std::move(dir), color_};
 	}
@@ -171,13 +171,13 @@ std::pair<Vec3, Rgb> SpotLight::emitSample(LSample &s, float time) const
 		const double cos_ang = cos_end_ + (cos_start_ - cos_end_) * (double)sm_2;
 		const double sin_ang = math::sqrt(1.0 - cos_ang * cos_ang);
 		const float t_1 = math::mult_pi_by_2<> * s.s_1_;
-		Vec3 dir{(duv_.u_ * math::cos(t_1) + duv_.v_ * math::sin(t_1)) * (float)sin_ang + dir_ * (float)cos_ang};
+		Vec3f dir{(duv_.u_ * math::cos(t_1) + duv_.v_ * math::sin(t_1)) * (float)sin_ang + dir_ * (float)cos_ang};
 		const float v = sm_2 * sm_2 * (3.f - 2.f * sm_2);
 		return {std::move(dir), color_ * v};
 	}
 }
 
-std::array<float, 3> SpotLight::emitPdf(const Vec3 &surface_n, const Vec3 &wo) const
+std::array<float, 3> SpotLight::emitPdf(const Vec3f &surface_n, const Vec3f &wo) const
 {
 	float area_pdf = 1.f;
 	const float cos_wo = 1.f;
@@ -202,7 +202,7 @@ std::tuple<bool, float, Rgb> SpotLight::intersect(const Ray &ray, float &t) cons
 	if(cos_a == 0.f) return {};
 	t = (dir_ * (position_ - ray.from_)) / cos_a;
 	if(t < 0.f) return {};
-	const Point3 p{ray.from_ + t * ray.dir_};
+	const Point3f p{ray.from_ + t * ray.dir_};
 	if(dir_ * (p - position_) == 0.f)
 	{
 		if(p * p <= 1e-2f)
@@ -226,8 +226,8 @@ std::tuple<bool, float, Rgb> SpotLight::intersect(const Ray &ray, float &t) cons
 
 Light * SpotLight::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params)
 {
-	Point3 from{0.f, 0.f, 0.f};
-	Point3 to(0.f, 0.f, -1.f);
+	Point3f from{{0.f, 0.f, 0.f}};
+	Point3f to{{0.f, 0.f, -1.f}};
 	Rgb color(1.0);
 	float power = 1.0;
 	float angle = 45, falloff = 0.15;

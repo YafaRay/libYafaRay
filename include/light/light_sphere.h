@@ -44,22 +44,22 @@ class SphereLight final : public Light
 		static Light *factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params);
 
 	private:
-		SphereLight(Logger &logger, const Point3 &c, float rad, const Rgb &col, float inte, int nsam, bool b_light_enabled = true, bool b_cast_shadows = true);
+		SphereLight(Logger &logger, const Point3f &c, float rad, const Rgb &col, float inte, int nsam, bool b_light_enabled = true, bool b_cast_shadows = true);
 		void init(Scene &scene) override;
 		Rgb totalEnergy() const override;
 		std::tuple<Ray, float, Rgb> emitPhoton(float s_1, float s_2, float s_3, float s_4, float time) const override;
-		std::pair<Vec3, Rgb> emitSample(LSample &s, float time) const override;
+		std::pair<Vec3f, Rgb> emitSample(LSample &s, float time) const override;
 		bool diracLight() const override { return false; }
-		std::pair<bool, Ray> illumSample(const Point3 &surface_p, LSample &s, float time) const override;
-		std::tuple<bool, Ray, Rgb> illuminate(const Point3 &surface_p, float time) const override;
+		std::pair<bool, Ray> illumSample(const Point3f &surface_p, LSample &s, float time) const override;
+		std::tuple<bool, Ray, Rgb> illuminate(const Point3f &surface_p, float time) const override;
 		bool canIntersect() const override { return false; }
 		std::tuple<bool, float, Rgb> intersect(const Ray &ray, float &t) const override;
-		float illumPdf(const Point3 &surface_p, const Point3 &light_p, const Vec3 &light_ng) const override;
-		std::array<float, 3> emitPdf(const Vec3 &surface_n, const Vec3 &wo) const override;
+		float illumPdf(const Point3f &surface_p, const Point3f &light_p, const Vec3f &light_ng) const override;
+		std::array<float, 3> emitPdf(const Vec3f &surface_n, const Vec3f &wo) const override;
 		int nSamples() const override { return samples_; }
-		static std::pair<bool, Uv<float>> sphereIntersect(const Point3 &from, const Vec3 &dir, const Point3 &c, float r_2);
+		static std::pair<bool, Uv<float>> sphereIntersect(const Point3f &from, const Vec3f &dir, const Point3f &c, float r_2);
 
-		Point3 center_;
+		Point3f center_;
 		float radius_, square_radius_, square_radius_epsilon_;
 		Rgb color_; //!< includes intensity amplification! so...
 		int samples_;

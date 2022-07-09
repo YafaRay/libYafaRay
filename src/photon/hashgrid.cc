@@ -71,10 +71,10 @@ void HashGrid::updateGrid()
 	//travel the vector to build the Grid
 	for(const auto &photon : photons_)
 	{
-		const Point3 hashindex{(photon.pos_ - bounding_box_.a_) * inv_cell_size_};
-		const int ix = abs(int(hashindex.x()));
-		const int iy = abs(int(hashindex.y()));
-		const int iz = abs(int(hashindex.z()));
+		const Point3f hashindex{(photon.pos_ - bounding_box_.a_) * static_cast<float>(inv_cell_size_)};
+		const int ix = abs(int(hashindex[Axis::X]));
+		const int iy = abs(int(hashindex[Axis::Y]));
+		const int iz = abs(int(hashindex[Axis::Z]));
 		const unsigned int index = hash(ix, iy, iz);
 		if(!hash_grid_[index]) hash_grid_[index] = std::make_unique<std::list<const Photon *>>();
 		hash_grid_[index]->push_front(&photon);
@@ -87,26 +87,26 @@ void HashGrid::updateGrid()
 	//if(logger_.isVerbose()) logger_.logVerbose("HashGrid: there are ", notused, " enties not used!", std::endl;
 }
 
-unsigned int HashGrid::gather(const Point3 &p, FoundPhoton *found, unsigned int k, float sq_radius)
+unsigned int HashGrid::gather(const Point3f &p, FoundPhoton *found, unsigned int k, float sq_radius)
 {
 	unsigned int count = 0;
 	float radius = math::sqrt(sq_radius);
 
-	const Point3 rad(radius, radius, radius);
-	const Point3 b_min{((p - rad) - bounding_box_.a_) * inv_cell_size_};
-	const Point3 b_max{((p + rad) - bounding_box_.a_) * inv_cell_size_};
+	const Point3f rad{{radius, radius, radius}};
+	const Point3f b_min{((p - rad) - bounding_box_.a_) * static_cast<float>(inv_cell_size_)};
+	const Point3f b_max{((p + rad) - bounding_box_.a_) * static_cast<float>(inv_cell_size_)};
 
-	for(int iz = abs(int(b_min.z())); iz <= abs(int(b_max.z())); iz++)
+	for(int iz = abs(int(b_min[Axis::Z])); iz <= abs(int(b_max[Axis::Z])); iz++)
 	{
-		for(int iy = abs(int(b_min.y())); iy <= abs(int(b_max.y())); iy++)
+		for(int iy = abs(int(b_min[Axis::Y])); iy <= abs(int(b_max[Axis::Y])); iy++)
 		{
-			for(int ix = abs(int(b_min.x())); ix <= abs(int(b_max.x())); ix++)
+			for(int ix = abs(int(b_min[Axis::X])); ix <= abs(int(b_max[Axis::X])); ix++)
 			{
 				const int hv = hash(ix, iy, iz);
 				if(hash_grid_[hv] == nullptr) continue;
 				for(const auto &photon : *hash_grid_[hv])
 				{
-					if((photon->pos_ - p).lengthSqr() < sq_radius)
+					if((photon->pos_ - p).lengthSquared() < sq_radius)
 					{
 						found[count++] = {photon, sq_radius};
 					}

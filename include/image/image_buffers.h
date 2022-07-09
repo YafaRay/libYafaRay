@@ -309,12 +309,12 @@ template <typename T>
 class ImageBuffer2D final : public Buffer<T, 2>
 {
 	public:
-		ImageBuffer2D(int width, int height) : Buffer<T, 2>{{width, height}} { }
-		void set(int x, int y, const T &val) { Buffer<T, 2>::set({x, y}, val); }
-		void set(int x, int y, T &&val) { Buffer<T, 2>::set({x, y}, std::move(val)); }
-		T get(int x, int y) const { return Buffer<T, 2>::get({x, y}); }
-		T &operator()(int x, int y) { return Buffer<T, 2>::operator()({x, y}); }
-		const T &operator()(int x, int y) const { return Buffer<T, 2>::operator()({x, y}); }
+		explicit ImageBuffer2D(const Size2i &size) : Buffer<T, 2>{size.getArray()} { }
+		void set(const Point2i &point, const T &val) { Buffer<T, 2>::set(point.getArray(), val); }
+		void set(const Point2i &point, T &&val) { Buffer<T, 2>::set(point.getArray(), std::move(val)); }
+		T get(const Point2i &point) const { return Buffer<T, 2>::get(point.getArray()); }
+		T &operator()(const Point2i &point) { return Buffer<T, 2>::operator()(point.getArray()); }
+		const T &operator()(const Point2i &point) const { return Buffer<T, 2>::operator()(point.getArray()); }
 		void clear() { Buffer<T, 2>::zero(); }
 		int getWidth() const { return static_cast<int>(Buffer<T, 2>::getDimensions().at(0)); }
 		int getHeight() const { return static_cast<int>(Buffer<T, 2>::getDimensions().at(1)); }

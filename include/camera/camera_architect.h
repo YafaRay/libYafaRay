@@ -33,12 +33,12 @@ class ArchitectCamera final : public PerspectiveCamera
 		static const Camera * factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params);
 
 	private:
-		ArchitectCamera(Logger &logger, const Point3 &pos, const Point3 &look, const Point3 &up,
+		ArchitectCamera(Logger &logger, const Point3f &pos, const Point3f &look, const Point3f &up,
 						int resx, int resy, float aspect = 1,
 						float df = 1, float ap = 0, float dofd = 0, BokehType bt = BokehType::BkDisk1, BkhBiasType bbt = BkhBiasType::BbNone, float bro = 0,
 						float near_clip_distance = 0.0f, float far_clip_distance = 1e6f);
-		void setAxis(const Vec3 &vx, const Vec3 &vy, const Vec3 &vz) override;
-		Point3 screenproject(const Point3 &p) const override;
+		void setAxis(const Vec3f &vx, const Vec3f &vy, const Vec3f &vz) override;
+		Point3f screenproject(const Point3f &p) const override;
 };
 
 } //namespace yafaray

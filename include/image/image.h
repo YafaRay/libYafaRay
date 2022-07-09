@@ -23,6 +23,7 @@
 #define YAFARAY_IMAGE_H
 
 #include "color/color.h"
+#include "geometry/rect.h"
 #include <string>
 #include <memory>
 
@@ -47,22 +48,23 @@ class Image
 		enum class Optimization : unsigned char { None, Optimized, Compressed };
 		enum class Position : unsigned char { None, Top, Bottom, Left, Right, Overlay };
 		static Image *factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params);
-		static Image *factory(Logger &logger, int width, int height, const Type &type, const Optimization &optimization);
+		static Image *factory(Logger &logger, const Size2i &size, const Type &type, const Optimization &optimization);
 		virtual ~Image() = default;
 
 		virtual Type getType() const = 0;
 		virtual Optimization getOptimization() const = 0;
-		virtual Rgba getColor(int x, int y) const = 0;
-		virtual float getFloat(int x, int y) const = 0;
-		virtual void setColor(int x, int y, const Rgba &col) = 0;
-		virtual void setColor(int x, int y, Rgba &&col) = 0;
-		virtual void addColor(int x, int y, const Rgba &col) = 0;
-		virtual void setFloat(int x, int y, float val) = 0;
-		virtual void addFloat(int x, int y, float val) = 0;
+		virtual Rgba getColor(const Point2i &point) const = 0;
+		virtual float getFloat(const Point2i &point) const = 0;
+		virtual void setColor(const Point2i &point, const Rgba &col) = 0;
+		virtual void setColor(const Point2i &point, Rgba &&col) = 0;
+		virtual void addColor(const Point2i &point, const Rgba &col) = 0;
+		virtual void setFloat(const Point2i &point, float val) = 0;
+		virtual void addFloat(const Point2i &point, float val) = 0;
 		virtual void clear() = 0;
 
-		int getWidth() const { return width_; }
-		int getHeight() const { return height_; }
+		int getWidth() const { return size_[Axis::X]; }
+		int getHeight() const { return size_[Axis::Y]; }
+		Size2i getSize() const { return size_; }
 		std::string getTypeName() const { return getTypeNameLong(getType()); }
 		int getNumChannels() const { return getNumChannels(getType()); }
 		bool hasAlpha() const { return hasAlpha(getType()); }
@@ -82,9 +84,9 @@ class Image
 		static Type getTypeFromSettings(bool has_alpha, bool grayscale);
 
 	protected:
-		Image(int width, int height) : width_(width), height_(height) { }
-		int width_ = 0;
-		int height_ = 0;
+		explicit Image(const Size2i &size) : size_{size} { }
+		explicit Image(Size2i &&size) : size_{std::move(size)} { }
+		Size2i size_{0};
 		float gamma_ = 1.f;
 		ColorSpace color_space_ = ColorSpace::RawManualGamma;
 };

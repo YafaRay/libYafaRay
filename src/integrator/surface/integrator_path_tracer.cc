@@ -129,7 +129,7 @@ std::pair<Rgb, float> PathIntegrator::integrate(Ray &ray, FastRandom &fast_rando
 	if(sp)
 	{
 		const BsdfFlags mat_bsdfs = sp->mat_data_->bsdf_flags_;
-		const Vec3 wo{-ray.dir_};
+		const Vec3f wo{-ray.dir_};
 		additional_depth = std::max(additional_depth, sp->getMaterial()->getAdditionalDepth());
 
 		// contribution of light emitting surfaces
@@ -169,7 +169,7 @@ std::pair<Rgb, float> PathIntegrator::integrate(Ray &ray, FastRandom &fast_rando
 				Rgb throughput(1.0);
 				Rgb lcol, scol;
 				auto hit = std::make_unique<const SurfacePoint>(*sp);
-				Vec3 pwo{wo};
+				Vec3f pwo{wo};
 				Ray p_ray;
 
 				const float wavelength_dispersive = chromatic_enabled ? sample::riS(offs) : 0.f;

@@ -35,8 +35,8 @@ class CloudsTexture final : public Texture
 		CloudsTexture(Logger &logger, int dep, float sz, bool hd,
 					  const Rgb &c_1, const Rgb &c_2,
 					  const std::string &ntype, const std::string &btype);
-		Rgba getColor(const Point3 &p, const MipMapParams *mipmap_params) const override;
-		float getFloat(const Point3 &p, const MipMapParams *mipmap_params) const override;
+		Rgba getColor(const Point3f &p, const MipMapParams *mipmap_params) const override;
+		float getFloat(const Point3f &p, const MipMapParams *mipmap_params) const override;
 
 		int depth_;
 		float size_;
@@ -56,8 +56,8 @@ class MarbleTexture final : public Texture
 		MarbleTexture(Logger &logger, int oct, float sz, const Rgb &c_1, const Rgb &c_2,
 					  float turb, float shp, bool hrd, const std::string &ntype, const std::string &shape);
 
-		Rgba getColor(const Point3 &p, const MipMapParams *mipmap_params) const override;
-		float getFloat(const Point3 &p, const MipMapParams *mipmap_params) const override;
+		Rgba getColor(const Point3f &p, const MipMapParams *mipmap_params) const override;
+		float getFloat(const Point3f &p, const MipMapParams *mipmap_params) const override;
 
 		int octaves_;
 		Rgb color_1_, color_2_;
@@ -76,8 +76,8 @@ class WoodTexture final : public Texture
 		WoodTexture(Logger &logger, int oct, float sz, const Rgb &c_1, const Rgb &c_2, float turb,
 					bool hrd, const std::string &ntype, const std::string &wtype, const std::string &shape);
 
-		Rgba getColor(const Point3 &p, const MipMapParams *mipmap_params) const override;
-		float getFloat(const Point3 &p, const MipMapParams *mipmap_params) const override;
+		Rgba getColor(const Point3f &p, const MipMapParams *mipmap_params) const override;
+		float getFloat(const Point3f &p, const MipMapParams *mipmap_params) const override;
 
 		int octaves_;
 		Rgb color_1_, color_2_;
@@ -99,8 +99,8 @@ class VoronoiTexture final : public Texture
 					   float w_1, float w_2, float w_3, float w_4,
 					   float mex, float sz,
 					   float isc, const std::string &dname);
-		Rgba getColor(const Point3 &p, const MipMapParams *mipmap_params) const override;
-		float getFloat(const Point3 &p, const MipMapParams *mipmap_params) const override;
+		Rgba getColor(const Point3f &p, const MipMapParams *mipmap_params) const override;
+		float getFloat(const Point3f &p, const MipMapParams *mipmap_params) const override;
 
 		float w_1_, w_2_, w_3_, w_4_;	// feature weights
 		float aw_1_, aw_2_, aw_3_, aw_4_;	// absolute value of above
@@ -120,8 +120,8 @@ class MusgraveTexture final : public Texture
 						float h, float lacu, float octs, float offs, float gain,
 						float size, float iscale,
 						const std::string &ntype, const std::string &mtype);
-		Rgba getColor(const Point3 &p, const MipMapParams *mipmap_params) const override;
-		float getFloat(const Point3 &p, const MipMapParams *mipmap_params) const override;
+		Rgba getColor(const Point3f &p, const MipMapParams *mipmap_params) const override;
+		float getFloat(const Point3f &p, const MipMapParams *mipmap_params) const override;
 
 		Rgb color_1_, color_2_;
 		float size_, iscale_;
@@ -138,8 +138,8 @@ class DistortedNoiseTexture final : public Texture
 		DistortedNoiseTexture(Logger &logger, const Rgb &c_1, const Rgb &c_2,
 							  float distort, float size,
 							  const std::string &noiseb_1, const std::string &noiseb_2);
-		Rgba getColor(const Point3 &p, const MipMapParams *mipmap_params) const override;
-		float getFloat(const Point3 &p, const MipMapParams *mipmap_params) const override;
+		Rgba getColor(const Point3f &p, const MipMapParams *mipmap_params) const override;
+		float getFloat(const Point3f &p, const MipMapParams *mipmap_params) const override;
 
 		Rgb color_1_, color_2_;
 		float distort_, size_;
@@ -157,8 +157,8 @@ class RgbCubeTexture final : public Texture
 
 	private:
 		explicit RgbCubeTexture(Logger &logger) : Texture(logger) { }
-		Rgba getColor(const Point3 &p, const MipMapParams *mipmap_params) const override;
-		float getFloat(const Point3 &p, const MipMapParams *mipmap_params) const override;
+		Rgba getColor(const Point3f &p, const MipMapParams *mipmap_params) const override;
+		float getFloat(const Point3f &p, const MipMapParams *mipmap_params) const override;
 };
 
 class BlendTexture final : public Texture
@@ -169,8 +169,8 @@ class BlendTexture final : public Texture
 	private:
 		enum class ProgressionType : unsigned char { Linear, Quadratic, Easing, Diagonal, Spherical, QuadraticSphere, Radial };
 		BlendTexture(Logger &logger, const std::string &stype, bool use_flip_axis);
-		Rgba getColor(const Point3 &p, const MipMapParams *mipmap_params) const override;
-		float getFloat(const Point3 &p, const MipMapParams *mipmap_params) const override;
+		Rgba getColor(const Point3f &p, const MipMapParams *mipmap_params) const override;
+		float getFloat(const Point3f &p, const MipMapParams *mipmap_params) const override;
 
 		bool use_flip_axis_ = false;
 		ProgressionType progression_type_ = ProgressionType::Linear;

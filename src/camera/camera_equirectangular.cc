@@ -25,7 +25,7 @@
 
 namespace yafaray {
 
-EquirectangularCamera::EquirectangularCamera(Logger &logger, const Point3 &pos, const Point3 &look, const Point3 &up,
+EquirectangularCamera::EquirectangularCamera(Logger &logger, const Point3f &pos, const Point3f &look, const Point3f &up,
 											 int resx, int resy, float asp,
 											 float const near_clip_distance, float const far_clip_distance) :
 		Camera(logger, pos, look, up, resx, resy, asp, near_clip_distance, far_clip_distance)
@@ -34,7 +34,7 @@ EquirectangularCamera::EquirectangularCamera(Logger &logger, const Point3 &pos, 
 	setAxis(cam_x_, cam_y_, cam_z_);
 }
 
-void EquirectangularCamera::setAxis(const Vec3 &vx, const Vec3 &vy, const Vec3 &vz)
+void EquirectangularCamera::setAxis(const Vec3f &vx, const Vec3f &vy, const Vec3f &vz)
 {
 	cam_x_ = vx;
 	cam_y_ = vy;
@@ -61,7 +61,7 @@ CameraRay EquirectangularCamera::shootRay(float px, float py, const Uv<float> &u
 
 const Camera * EquirectangularCamera::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params)
 {
-	Point3 from(0, 1, 0), to(0, 0, 0), up(0, 1, 1);
+	Point3f from{{0, 1, 0}}, to{{0, 0, 0}}, up{{0, 1, 1}};
 	int resx = 320, resy = 200;
 	double aspect = 1.0;
 	float near_clip = 0.0f, far_clip = -1.0e38f;
@@ -79,10 +79,10 @@ const Camera * EquirectangularCamera::factory(Logger &logger, const Scene &scene
 	return new EquirectangularCamera(logger, from, to, up, resx, resy, aspect, near_clip, far_clip);
 }
 
-Point3 EquirectangularCamera::screenproject(const Point3 &p) const
+Point3f EquirectangularCamera::screenproject(const Point3f &p) const
 {
 	//FIXME
-	Vec3 dir{p - position_};
+	Vec3f dir{p - position_};
 	dir.normalize();
 
 	// project p to pixel plane:
@@ -90,7 +90,7 @@ Point3 EquirectangularCamera::screenproject(const Point3 &p) const
 	float dy = cam_y_ * dir;
 	float dz = cam_z_ * dir;
 
-	return {-dx / (4.f * math::num_pi<> * dz), dy / (4.f * math::num_pi<> * dz), 0.f};
+	return {{-dx / (4.f * math::num_pi<> * dz), dy / (4.f * math::num_pi<> * dz), 0.f}};
 }
 
 } //namespace yafaray

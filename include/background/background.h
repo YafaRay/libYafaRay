@@ -30,7 +30,8 @@ class Scene;
 class Light;
 class Rgb;
 class Logger;
-class Vec3;
+template <typename T, size_t N> class Vec;
+typedef Vec<float, 3> Vec3f;
 
 class Background
 {
@@ -38,10 +39,10 @@ class Background
 		static const Background * factory(Logger &logger, Scene &scene, const std::string &name, const ParamMap &params);
 		explicit Background(Logger &logger) : logger_(logger) { }
 		virtual ~Background() = default;
-		Rgb operator()(const Vec3 &dir) const { return operator()(dir, false); }
-		virtual Rgb operator()(const Vec3 &dir, bool use_ibl_blur) const { return eval(dir, use_ibl_blur); }
-		Rgb eval(const Vec3 &dir) const { return eval(dir, false); }
-		virtual Rgb eval(const Vec3 &dir, bool use_ibl_blur) const = 0;
+		Rgb operator()(const Vec3f &dir) const { return operator()(dir, false); }
+		virtual Rgb operator()(const Vec3f &dir, bool use_ibl_blur) const { return eval(dir, use_ibl_blur); }
+		Rgb eval(const Vec3f &dir) const { return eval(dir, false); }
+		virtual Rgb eval(const Vec3f &dir, bool use_ibl_blur) const = 0;
 
 	protected:
 		Logger &logger_;

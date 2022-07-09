@@ -39,13 +39,13 @@ class RoughGlassMaterial final : public NodeMaterial
 	private:
 		RoughGlassMaterial(Logger &logger, float ior, Rgb filt_c, const Rgb &srcol, bool fake_s, float alpha, float disp_pow, VisibilityFlags e_visibility = VisibilityFlags::Visible | VisibilityFlags::CastsShadows);
 		const MaterialData * initBsdf(SurfacePoint &sp, const Camera *camera) const override;
-		Rgb sample(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, Vec3 &wi, Sample &s, float &w, bool chromatic, float wavelength, const Camera *camera) const override;
-		Rgb sample(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, Vec3 *dir, Rgb &tcol, Sample &s, float *w, bool chromatic, float wavelength) const override;
-		Rgb eval(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wi, BsdfFlags bsdfs, bool force_eval) const override { return Rgb{0.f}; }
-		float pdf(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wi, BsdfFlags bsdfs) const override { return 0.f; }
+		Rgb sample(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3f &wo, Vec3f &wi, Sample &s, float &w, bool chromatic, float wavelength, const Camera *camera) const override;
+		Rgb sample(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3f &wo, Vec3f *dir, Rgb &tcol, Sample &s, float *w, bool chromatic, float wavelength) const override;
+		Rgb eval(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3f &wo, const Vec3f &wi, BsdfFlags bsdfs, bool force_eval) const override { return Rgb{0.f}; }
+		float pdf(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3f &wo, const Vec3f &wi, BsdfFlags bsdfs) const override { return 0.f; }
 		bool isTransparent() const override { return fake_shadow_; }
-		Rgb getTransparency(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, const Camera *camera) const override;
-		float getAlpha(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, const Camera *camera) const override;
+		Rgb getTransparency(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3f &wo, const Camera *camera) const override;
+		float getAlpha(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3f &wo, const Camera *camera) const override;
 		float getMatIor() const override;
 		Rgb getGlossyColor(const NodeTreeData &node_tree_data) const override;
 		Rgb getTransColor(const NodeTreeData &node_tree_data) const override;

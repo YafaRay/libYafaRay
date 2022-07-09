@@ -63,7 +63,7 @@ AcceleratorKdTreeMultiThread::AcceleratorKdTreeMultiThread(Logger &logger, const
 	std::vector<Bound> bounds;
 	bounds.reserve(num_primitives);
 	if(num_primitives > 0) tree_bound_ = primitives.front()->getBound();
-	else tree_bound_ = {{0.f, 0.f, 0.f}, {0.f, 0.f, 0.f}};
+	else tree_bound_ = {{{0.f, 0.f, 0.f}}, {{0.f, 0.f, 0.f}}};
 	if(logger_.isVerbose()) logger_.logVerbose("Kd-Tree MultiThread: Getting primitive bounds...");
 	for(const auto &primitive : primitives)
 	{
@@ -112,8 +112,8 @@ AcceleratorKdTreeMultiThread::SplitCost AcceleratorKdTreeMultiThread::pigeonMinC
 	static constexpr int max_bin = 1024;
 	static constexpr int num_bins = max_bin + 1;
 	std::array<kdtree::TreeBin, num_bins> bins;
-	const Vec3 node_bound_axes {node_bound.longX(), node_bound.longY(), node_bound.longZ() };
-	const Vec3 inv_node_bound_axes { 1.f / node_bound_axes[Axis::X], 1.f / node_bound_axes[Axis::Y], 1.f / node_bound_axes[Axis::Z] };
+	const Vec3f node_bound_axes {{node_bound.longX(), node_bound.longY(), node_bound.longZ()}};
+	const Vec3f inv_node_bound_axes {{1.f / node_bound_axes[Axis::X], 1.f / node_bound_axes[Axis::Y], 1.f / node_bound_axes[Axis::Z]}};
 	SplitCost split;
 	split.cost_ = std::numeric_limits<float>::max();
 	const float inv_total_sa = 1.f / (node_bound_axes[Axis::X] * node_bound_axes[Axis::Y] + node_bound_axes[Axis::X] * node_bound_axes[Axis::Z] + node_bound_axes[Axis::Y] * node_bound_axes[Axis::Z]);
@@ -255,8 +255,8 @@ AcceleratorKdTreeMultiThread::SplitCost AcceleratorKdTreeMultiThread::pigeonMinC
 AcceleratorKdTreeMultiThread::SplitCost AcceleratorKdTreeMultiThread::minimalCost(Logger &logger, float e_bonus, float cost_ratio, const Bound &node_bound, const std::vector<uint32_t> &indices, const std::vector<Bound> &bounds)
 {
 	const auto num_indices = static_cast<uint32_t>(indices.size());
-	const Vec3 node_bound_axes {node_bound.longX(), node_bound.longY(), node_bound.longZ() };
-	const Vec3 inv_node_bound_axes { 1.f / node_bound_axes[Axis::X], 1.f / node_bound_axes[Axis::Y], 1.f / node_bound_axes[Axis::Z] };
+	const Vec3f node_bound_axes {{node_bound.longX(), node_bound.longY(), node_bound.longZ()}};
+	const Vec3f inv_node_bound_axes {{1.f / node_bound_axes[Axis::X], 1.f / node_bound_axes[Axis::Y], 1.f / node_bound_axes[Axis::Z]}};
 	SplitCost split;
 	split.cost_ = std::numeric_limits<float>::max();
 	const float inv_total_sa = 1.f / (node_bound_axes[Axis::X] * node_bound_axes[Axis::Y] + node_bound_axes[Axis::X] * node_bound_axes[Axis::Z] + node_bound_axes[Axis::Y] * node_bound_axes[Axis::Z]);
@@ -400,8 +400,8 @@ void AcceleratorKdTreeMultiThread::buildTreeWorker(const std::vector<const Primi
 		poly_indices.reserve(poly_clipping_threshold);
 		prim_indices.reserve(poly_clipping_threshold);
 		poly_bounds.reserve(poly_clipping_threshold);
-		Vec3Double b_half_size;
-		std::array<Vec3Double, 2> b_ext;
+		Vec3d b_half_size;
+		std::array<Vec3d, 2> b_ext;
 		for(const auto axis : axis::spatial)
 		{
 			b_half_size[axis] = (static_cast<double>(node_bound.g_[axis]) - static_cast<double>(node_bound.a_[axis]));

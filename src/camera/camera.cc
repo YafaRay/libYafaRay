@@ -48,7 +48,7 @@ const Camera * Camera::factory(Logger &logger, const Scene &scene, const std::st
 	else return nullptr;
 }
 
-Camera::Camera(Logger &logger, const Point3 &pos, const Point3 &look, const Point3 &up, int resx, int resy, float aspect, const float near_clip_distance, const float far_clip_distance) :
+Camera::Camera(Logger &logger, const Point3f &pos, const Point3f &look, const Point3f &up, int resx, int resy, float aspect, const float near_clip_distance, const float far_clip_distance) :
 		position_(pos), resx_(resx), resy_(resy), aspect_ratio_(aspect * (float)resy_ / (float)resx_), logger_(logger)
 {
 	// Calculate and store camera axis

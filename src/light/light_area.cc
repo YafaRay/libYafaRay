@@ -30,7 +30,7 @@ namespace yafaray {
 
 //int hit_t1=0, hit_t2=0;
 
-AreaLight::AreaLight(Logger &logger, const Point3 &c, const Vec3 &v_1, const Vec3 &v_2,
+AreaLight::AreaLight(Logger &logger, const Point3f &c, const Vec3f &v_1, const Vec3f &v_2,
 					 const Rgb &col, float inte, int nsam, bool light_enabled, bool cast_shadows):
 		Light(logger), corner_(c), to_x_(v_1), to_y_(v_2), samples_(nsam)
 {
@@ -39,7 +39,7 @@ AreaLight::AreaLight(Logger &logger, const Point3 &c, const Vec3 &v_1, const Vec
 
 	fnormal_ = to_y_ ^ to_x_; //f normal is "flipped" normal direction...
 	color_ = col * inte * math::num_pi<>;
-	area_ = fnormal_.normLen();
+	area_ = fnormal_.normalizeAndReturnLength();
 	inv_area_ = 1.f / area_;
 
 	normal_ = -fnormal_;
@@ -63,14 +63,14 @@ void AreaLight::init(Scene &scene)
 
 Rgb AreaLight::totalEnergy() const { return color_ * area_; }
 
-std::pair<bool, Ray> AreaLight::illumSample(const Point3 &surface_p, LSample &s, float time) const
+std::pair<bool, Ray> AreaLight::illumSample(const Point3f &surface_p, LSample &s, float time) const
 {
 	if(photonOnly()) return {};
 	//get point on area light and vector to surface point:
-	const Point3 p{corner_ + s.s_1_ * to_x_ + s.s_2_ * to_y_};
-	Vec3 ldir{p - surface_p};
+	const Point3f p{corner_ + s.s_1_ * to_x_ + s.s_2_ * to_y_};
+	Vec3f ldir{p - surface_p};
 	//normalize vec and compute inverse square distance
-	const float dist_sqr = ldir.lengthSqr();
+	const float dist_sqr = ldir.lengthSquared();
 	const float dist = math::sqrt(dist_sqr);
 	if(dist <= 0.f) return {};
 	ldir *= 1.f / dist;
@@ -93,35 +93,35 @@ std::pair<bool, Ray> AreaLight::illumSample(const Point3 &surface_p, LSample &s,
 std::tuple<Ray, float, Rgb> AreaLight::emitPhoton(float s_1, float s_2, float s_3, float s_4, float time) const
 {
 	const float ipdf = area_/*  * num_pi */; // really two num_pi?
-	Point3 from{corner_ + s_3 * to_x_ + s_4 * to_y_};
-	Vec3 dir{sample::cosHemisphere(normal_, duv_, s_1, s_2)};
+	Point3f from{corner_ + s_3 * to_x_ + s_4 * to_y_};
+	Vec3f dir{sample::cosHemisphere(normal_, duv_, s_1, s_2)};
 	Ray ray{std::move(from), std::move(dir), time};
 	return {std::move(ray), ipdf, color_};
 }
 
-std::pair<Vec3, Rgb> AreaLight::emitSample(LSample &s, float time) const
+std::pair<Vec3f, Rgb> AreaLight::emitSample(LSample &s, float time) const
 {
 	s.area_pdf_ = inv_area_ * math::num_pi<>;
 	s.sp_->p_ = corner_ + s.s_3_ * to_x_ + s.s_4_ * to_y_;
-	const Vec3 dir{sample::cosHemisphere(normal_, duv_, s.s_1_, s.s_2_)};
+	const Vec3f dir{sample::cosHemisphere(normal_, duv_, s.s_1_, s.s_2_)};
 	s.sp_->n_ = s.sp_->ng_ = normal_;
 	s.dir_pdf_ = std::abs(normal_ * dir);
 	s.flags_ = Light::Flags::None; // no delta functions...
 	return {std::move(dir), color_}; // still not 100% sure this is correct without cosine...
 }
 
-bool AreaLight::triIntersect(const Point3 &a, const Point3 &b, const Point3 &c, const Ray &ray, float &t)
+bool AreaLight::triIntersect(const Point3f &a, const Point3f &b, const Point3f &c, const Ray &ray, float &t)
 {
-	const Vec3 edge_1{b - a};
-	const Vec3 edge_2{c - a};
-	const Vec3 pvec{ray.dir_ ^ edge_2};
+	const Vec3f edge_1{b - a};
+	const Vec3f edge_2{c - a};
+	const Vec3f pvec{ray.dir_ ^ edge_2};
 	const float det = edge_1 * pvec;
 	if(det == 0.f) return false;
 	const float inv_det = 1.f / det;
-	const Vec3 tvec{ray.from_ - a};
+	const Vec3f tvec{ray.from_ - a};
 	const float u = (tvec * pvec) * inv_det;
 	if(u < 0.f || u > 1.f) return false;
-	const Vec3 qvec{tvec ^ edge_1};
+	const Vec3f qvec{tvec ^ edge_1};
 	const float v = (ray.dir_ * qvec) * inv_det;
 	if((v < 0.f) || ((u + v) > 1.f)) return false;
 	t = edge_2 * qvec * inv_det;
@@ -140,15 +140,15 @@ std::tuple<bool, float, Rgb> AreaLight::intersect(const Ray &ray, float &t) cons
 	return {true, ipdf, color_};
 }
 
-float AreaLight::illumPdf(const Point3 &surface_p, const Point3 &light_p, const Vec3 &) const
+float AreaLight::illumPdf(const Point3f &surface_p, const Point3f &light_p, const Vec3f &) const
 {
-	Vec3 wi{light_p - surface_p};
-	float r_2 = wi.normLenSqr();
+	Vec3f wi{light_p - surface_p};
+	float r_2 = wi.normalizeAndReturnLengthSquared();
 	float cos_n = wi * fnormal_;
 	return cos_n > 0 ? r_2 * math::num_pi<> / (area_ * cos_n) : 0.f;
 }
 
-std::array<float, 3> AreaLight::emitPdf(const Vec3 &surface_n, const Vec3 &wo) const
+std::array<float, 3> AreaLight::emitPdf(const Vec3f &surface_n, const Vec3f &wo) const
 {
 	const float area_pdf = inv_area_ * math::num_pi<>;
 	const float cos_wo = wo * surface_n;
@@ -158,9 +158,9 @@ std::array<float, 3> AreaLight::emitPdf(const Vec3 &surface_n, const Vec3 &wo) c
 
 Light * AreaLight::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params)
 {
-	Point3 corner{0.f, 0.f, 0.f};
-	Point3 p_1{0.f, 0.f, 0.f};
-	Point3 p_2{0.f, 0.f, 0.f};
+	Point3f corner{{0.f, 0.f, 0.f}};
+	Point3f p_1{{0.f, 0.f, 0.f}};
+	Point3f p_2{{0.f, 0.f, 0.f}};
 	Rgb color(1.0);
 	float power = 1.0;
 	int samples = 4;
@@ -194,7 +194,7 @@ Light * AreaLight::factory(Logger &logger, const Scene &scene, const std::string
 	return light;
 }
 
-std::tuple<bool, Ray, Rgb> AreaLight::illuminate(const Point3 &surface_p, float time) const
+std::tuple<bool, Ray, Rgb> AreaLight::illuminate(const Point3f &surface_p, float time) const
 {
 	return {};
 }

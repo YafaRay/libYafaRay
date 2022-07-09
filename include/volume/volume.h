@@ -52,21 +52,21 @@ class VolumeRegion
 	public:
 		static VolumeRegion *factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params);
 		explicit VolumeRegion(Logger &logger) : logger_(logger) { }
-		VolumeRegion(Logger &logger, const Rgb &sa, const Rgb &ss, const Rgb &le, float gg, const Point3 &pmin, const Point3 &pmax, int attgrid_scale);
+		VolumeRegion(Logger &logger, const Rgb &sa, const Rgb &ss, const Rgb &le, float gg, const Point3f &pmin, const Point3f &pmax, int attgrid_scale);
 		virtual ~VolumeRegion() = default;
 
-		virtual Rgb sigmaA(const Point3 &p, const Vec3 &v) const = 0;
-		virtual Rgb sigmaS(const Point3 &p, const Vec3 &v) const = 0;
-		virtual Rgb emission(const Point3 &p, const Vec3 &v) const = 0;
-		Rgb sigmaT(const Point3 &p, const Vec3 &v) const
+		virtual Rgb sigmaA(const Point3f &p, const Vec3f &v) const = 0;
+		virtual Rgb sigmaS(const Point3f &p, const Vec3f &v) const = 0;
+		virtual Rgb emission(const Point3f &p, const Vec3f &v) const = 0;
+		Rgb sigmaT(const Point3f &p, const Vec3f &v) const
 		{
 			return sigmaA(p, v) + sigmaS(p, v);
 		}
 
-		float attenuation(const Point3 &p, const Light *l) const;
+		float attenuation(const Point3f &p, const Light *l) const;
 
 		// w_l: dir *from* the light, w_s: direction, into which should be scattered
-		virtual float p(const Vec3 &w_l, const Vec3 &w_s) const
+		virtual float p(const Vec3f &w_l, const Vec3f &w_s) const
 		{
 			float k = 1.55f * g_ - .55f * g_ * g_ * g_;
 			float kcostheta = k * (w_l * w_s);
@@ -98,14 +98,14 @@ class DensityVolumeRegion : public VolumeRegion
 {
 	protected:
 		explicit DensityVolumeRegion(Logger &logger) : VolumeRegion(logger) {}
-		DensityVolumeRegion(Logger &logger, const Rgb &sa, const Rgb &ss, const Rgb &le, float gg, const Point3 &pmin, const Point3 &pmax, int attgrid_scale) :
+		DensityVolumeRegion(Logger &logger, const Rgb &sa, const Rgb &ss, const Rgb &le, float gg, const Point3f &pmin, const Point3f &pmax, int attgrid_scale) :
 			VolumeRegion(logger, sa, ss, le, gg, pmin, pmax, attgrid_scale) {}
 
-		virtual float density(const Point3 &p) const = 0;
+		virtual float density(const Point3f &p) const = 0;
 
 		Rgb tau(const Ray &ray, float step_size, float offset) const override;
 
-		Rgb sigmaA(const Point3 &p, const Vec3 &v) const override
+		Rgb sigmaA(const Point3f &p, const Vec3f &v) const override
 		{
 			if(!have_s_a_) return Rgb{0.f};
 			if(b_box_.includes(p))
@@ -117,7 +117,7 @@ class DensityVolumeRegion : public VolumeRegion
 
 		}
 
-		Rgb sigmaS(const Point3 &p, const Vec3 &v) const override
+		Rgb sigmaS(const Point3f &p, const Vec3f &v) const override
 		{
 			if(!have_s_s_) return Rgb{0.f};
 			if(b_box_.includes(p))
@@ -128,7 +128,7 @@ class DensityVolumeRegion : public VolumeRegion
 				return Rgb{0.f};
 		}
 
-		Rgb emission(const Point3 &p, const Vec3 &v) const override
+		Rgb emission(const Point3f &p, const Vec3f &v) const override
 		{
 			if(!have_l_e_) return Rgb{0.f};
 			if(b_box_.includes(p))

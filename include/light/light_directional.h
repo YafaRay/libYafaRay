@@ -37,19 +37,19 @@ class DirectionalLight final : public Light
 		static Light *factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params);
 
 	private:
-		DirectionalLight(Logger &logger, const Point3 &pos, Vec3 dir, const Rgb &col, float inte, bool inf, float rad, bool b_light_enabled = true, bool b_cast_shadows = true);
+		DirectionalLight(Logger &logger, const Point3f &pos, Vec3f dir, const Rgb &col, float inte, bool inf, float rad, bool b_light_enabled = true, bool b_cast_shadows = true);
 		void init(Scene &scene) override;
 		Rgb totalEnergy() const override { return color_ * radius_ * radius_ * math::num_pi<>; }
 		std::tuple<Ray, float, Rgb> emitPhoton(float s_1, float s_2, float s_3, float s_4, float time) const override;
-		std::pair<Vec3, Rgb> emitSample(LSample &s, float time) const override;
+		std::pair<Vec3f, Rgb> emitSample(LSample &s, float time) const override;
 		bool diracLight() const override { return true; }
-		std::pair<bool, Ray> illumSample(const Point3 &surface_p, LSample &s, float time) const override;
-		std::tuple<bool, Ray, Rgb> illuminate(const Point3 &surface_p, float time) const override;
+		std::pair<bool, Ray> illumSample(const Point3f &surface_p, LSample &s, float time) const override;
+		std::tuple<bool, Ray, Rgb> illuminate(const Point3f &surface_p, float time) const override;
 
-		Point3 position_;
+		Point3f position_;
 		Rgb color_;
-		Vec3 direction_;
-		Uv<Vec3> duv_;
+		Vec3f direction_;
+		Uv<Vec3f> duv_;
 		float intensity_;
 		float radius_;
 		float area_pdf_;

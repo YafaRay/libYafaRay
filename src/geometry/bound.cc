@@ -21,23 +21,23 @@
 namespace yafaray {
 
 Bound::Bound(const Bound &r, const Bound &l) :
-	a_{
-			std::min(r.a_.x(), l.a_.x()),
-			std::min(r.a_.y(), l.a_.y()),
-			std::min(r.a_.z(), l.a_.z())
-	},
-	g_{
-			std::max(r.g_.x(), l.g_.x()),
-			std::max(r.g_.y(), l.g_.y()),
-			std::max(r.g_.z(), l.g_.z())
-	}
+	a_{{
+			std::min(r.a_[Axis::X], l.a_[Axis::X]),
+			std::min(r.a_[Axis::Y], l.a_[Axis::Y]),
+			std::min(r.a_[Axis::Z], l.a_[Axis::Z])
+	}},
+	g_{{
+			std::max(r.g_[Axis::X], l.g_[Axis::X]),
+			std::max(r.g_[Axis::Y], l.g_[Axis::Y]),
+			std::max(r.g_[Axis::Z], l.g_[Axis::Z])
+	}}
 {
 	//Empty
 }
 
 float Bound::vol() const
 {
-	const float ret = (g_.y() - a_.y()) * (g_.x() - a_.x()) * (g_.z() - a_.z());
+	const float ret = (g_[Axis::Y] - a_[Axis::Y]) * (g_[Axis::X] - a_[Axis::X]) * (g_[Axis::Z] - a_[Axis::Z]);
 	return ret;
 }
 

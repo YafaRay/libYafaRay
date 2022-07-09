@@ -75,7 +75,7 @@ std::string Badge::getRenderInfo(const RenderControl &render_control, const Time
 	if(render_control.finished()) times = timer.getTime("rendert");
 	int timem, timeh;
 	Timer::splitTime(times, &times, &timem, &timeh);
-	ss_badge << " | " << image_width_ << "x" << image_height_;
+	ss_badge << " | " << image_size_[Axis::X] << "x" << image_size_[Axis::Y];
 	if(render_control.inProgress()) ss_badge << " | " << (render_control.resumed() ? "film loaded + " : "") << "in progress " << std::fixed << std::setprecision(1) << render_control.currentPassPercent() << "% of pass: " << render_control.currentPass() << " / " << render_control.totalPasses();
 	else if(render_control.canceled()) ss_badge << " | " << (render_control.resumed() ? "film loaded + " : "") << "stopped at " << std::fixed << std::setprecision(1) << render_control.currentPassPercent() << "% of pass: " << render_control.currentPass() << " / " << render_control.totalPasses();
 	else
@@ -126,7 +126,7 @@ Image * Badge::generateImage(const std::string &denoise_params, const RenderCont
 	std::string line;
 	while(std::getline(ss_badge, line)) ++badge_line_count;
 	const int badge_height = (badge_line_count + additional_blank_lines) * std::ceil(line_height * font_size_factor_);
-	auto badge_image= Image::factory(logger_, image_width_, badge_height, Image::Type::Color, Image::Optimization::None);
+	auto badge_image= Image::factory(logger_, {{image_size_[Axis::X], badge_height}}, Image::Type::Color, Image::Optimization::None);
 
 	const bool badge_text_ok = image_manipulation::drawTextInImage(logger_, badge_image, ss_badge.str(), getFontSizeFactor(), getFontPath());
 	if(!badge_text_ok) logger_.logError("Badge text could not be generated!");
@@ -163,14 +163,14 @@ Image * Badge::generateImage(const std::string &denoise_params, const RenderCont
 		int logo_width = logo->getWidth();
 		int logo_height = logo->getHeight();
 		if(logo_width > 80 || logo_height > 45) logger_.logWarning("Badge: custom params badge logo is quite big (", logo_width, " x ", logo_height, "). It could invade other areas in the badge. Please try to keep logo size smaller than 80 x 45, for example.");
-		logo_width = std::min(logo_width, image_width_);
+		logo_width = std::min(logo_width, image_size_[Axis::X]);
 		logo_height = std::min(logo_height, badge_height);
 
 		for(int lx = 0; lx < logo_width; lx++)
 			for(int ly = 0; ly < logo_height; ly++)
 			{
-				if(position_ == Badge::Position::Top) badge_image->setColor(image_width_ - logo_width + lx, ly, logo->getColor(lx, ly));
-				else badge_image->setColor(image_width_ - logo_width + lx, badge_height - logo_height + ly, logo->getColor(lx, ly));
+				if(position_ == Badge::Position::Top) badge_image->setColor({{image_size_[Axis::X] - logo_width + lx, ly}}, logo->getColor({{lx, ly}}));
+				else badge_image->setColor({{image_size_[Axis::X] - logo_width + lx, badge_height - logo_height + ly}}, logo->getColor({{lx, ly}}));
 			}
 	}
 	else logger_.logWarning("Badge: default YafaRay params badge icon could not be loaded. No icon will be shown.");

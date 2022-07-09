@@ -37,14 +37,14 @@ namespace yafaray {
 // and a thread on gamedev.net on skycolor algorithms
 
 
-SunSkyBackground::SunSkyBackground(Logger &logger, const Point3 &dir, float turb, float a_var, float b_var, float c_var, float d_var, float e_var, float pwr) : Background(logger), power_(pwr)
+SunSkyBackground::SunSkyBackground(Logger &logger, const Point3f &dir, float turb, float a_var, float b_var, float c_var, float d_var, float e_var, float pwr) : Background(logger), power_(pwr)
 {
-	sun_dir_.set(dir.x(), dir.y(), dir.z());
+	sun_dir_ = dir;
 	sun_dir_.normalize();
-	theta_s_ = math::acos(sun_dir_.z());
+	theta_s_ = math::acos(sun_dir_[Axis::Z]);
 	theta_2_ = theta_s_ * theta_s_;
 	theta_3_ = theta_2_ * theta_s_;
-	phi_s_ = std::atan2(sun_dir_.y(), sun_dir_.x());
+	phi_s_ = std::atan2(sun_dir_[Axis::Y], sun_dir_[Axis::X]);
 	t_ = turb;
 	t_2_ = turb * turb;
 	const double chi = (4.0 / 9.0 - t_ / 120.0) * (math::num_pi<double> - 2.0 * theta_s_);
@@ -111,14 +111,14 @@ double SunSkyBackground::angleBetween(double thetav, double phiv) const
 	return math::acos(cospsi);
 }
 
-inline Rgb SunSkyBackground::getSkyCol(const Vec3 &dir) const
+inline Rgb SunSkyBackground::getSkyCol(const Vec3f &dir) const
 {
-	Vec3 iw {dir};
+	Vec3f iw {dir};
 	iw.normalize();
 	double hfade = 1, nfade = 1;
 
 	Rgb skycolor(0.0);
-	double theta = math::acos(iw.z());
+	double theta = math::acos(iw[Axis::Z]);
 	if(theta > (0.5 * math::num_pi<double>))
 	{
 		// this stretches horizon color below horizon, must be possible to do something better...
@@ -139,10 +139,10 @@ inline Rgb SunSkyBackground::getSkyCol(const Vec3 &dir) const
 		}
 	}
 	double phi;
-	if((iw.y() == 0.0) && (iw.x() == 0.0))
+	if((iw[Axis::Y] == 0.0) && (iw[Axis::X] == 0.0))
 		phi = math::num_pi<double> * 0.5;
 	else
-		phi = std::atan2(iw.y(), iw.x());
+		phi = std::atan2(iw[Axis::Y], iw[Axis::X]);
 
 	const double gamma = angleBetween(theta, phi);
 	// Compute xyY values
@@ -164,7 +164,7 @@ inline Rgb SunSkyBackground::getSkyCol(const Vec3 &dir) const
 	return skycolor;
 }
 
-Rgb SunSkyBackground::eval(const Vec3 &dir, bool use_ibl_blur) const
+Rgb SunSkyBackground::eval(const Vec3f &dir, bool use_ibl_blur) const
 {
 	return power_ * getSkyCol(dir);
 }
@@ -227,7 +227,7 @@ Rgb SunSkyBackground::computeAttenuatedSunlight(float theta, int turbidity)
 
 const Background * SunSkyBackground::factory(Logger &logger, Scene &scene, const std::string &name, const ParamMap &params)
 {
-	Point3 dir(1, 1, 1);	// same as sunlight, position interpreted as direction
+	Point3f dir{{1, 1, 1}};	// same as sunlight, position interpreted as direction
 	float turb = 4.0;	// turbidity of atmosphere
 	bool add_sun = false;	// automatically add real sunlight
 	bool bgl = false;
@@ -281,7 +281,7 @@ const Background * SunSkyBackground::factory(Logger &logger, Scene &scene, const
 
 	if(add_sun)
 	{
-		Rgb suncol = computeAttenuatedSunlight(math::acos(std::abs(dir.z())), turb);//(*new_sunsky)(vector3d_t(dir.x, dir.y, dir.z));
+		Rgb suncol = computeAttenuatedSunlight(math::acos(std::abs(dir[Axis::Z])), turb);//(*new_sunsky)(vector3d_t(dir.x, dir.y, dir.z));
 		const double angle = 0.27;
 		const double cos_angle = math::cos(math::degToRad(angle));
 		const float invpdf = (2.f * math::num_pi<> * (1.f - cos_angle));

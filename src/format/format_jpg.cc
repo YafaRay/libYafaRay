@@ -100,7 +100,7 @@ bool JpgFormat::saveToFile(const std::string &name, const ImageLayer &image_laye
 		for(int x = 0; x < width; x++)
 		{
 			const int ix = x * 3;
-			Rgba col = Layer::postProcess(image_layer.image_->getColor(x, y), image_layer.layer_.getType(), color_space, gamma, alpha_premultiply);
+			Rgba col = Layer::postProcess(image_layer.image_->getColor({{x, y}}), image_layer.layer_.getType(), color_space, gamma, alpha_premultiply);
 			col.clampRgba01();
 			scanline[ix] = static_cast<uint8_t>(col.getR() * 255);
 			scanline[ix + 1] = static_cast<uint8_t>(col.getG() * 255);
@@ -148,7 +148,7 @@ bool JpgFormat::saveAlphaChannelOnlyToFile(const std::string &name, const ImageL
 	{
 		for(int x = 0; x < width; x++)
 		{
-			const float col = std::max(0.f, std::min(1.f, image_layer.image_->getColor(x, y).getA()));
+			const float col = std::max(0.f, std::min(1.f, image_layer.image_->getColor({{x, y}}).getA()));
 			scanline[x] = (uint8_t)(col * 255);
 		}
 		jpeg_write_scanlines(&info, &scanline, 1);
@@ -204,7 +204,7 @@ Image * JpgFormat::loadFromFile(const std::string &name, const Image::Optimizati
 	const int width = info.output_width;
 	const int height = info.output_height;
 	const Image::Type type = Image::getTypeFromSettings(false, grayscale_);
-	auto image = Image::factory(logger_, width, height, type, optimization);
+	auto image = Image::factory(logger_, {{width, height}}, type, optimization);
 
 	auto *scanline = new uint8_t[width * info.output_components];
 	for(int y = 0; info.output_scanline < info.output_height; ++y)
@@ -247,7 +247,7 @@ Image * JpgFormat::loadFromFile(const std::string &name, const Image::Optimizati
 						  a);
 			}
 			color.linearRgbFromColorSpace(color_space, gamma);
-			image->setColor(x, y, color);
+			image->setColor({{x, y}}, color);
 		}
 	}
 	delete [] scanline;

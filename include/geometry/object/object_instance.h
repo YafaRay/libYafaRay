@@ -21,7 +21,7 @@
 #define YAFARAY_OBJECT_INSTANCE_H
 
 #include "geometry/object/object.h"
-#include "geometry/matrix4.h"
+#include "geometry/matrix.h"
 #include "math/interpolation.h"
 #include <memory>
 #include <vector>
@@ -36,11 +36,11 @@ class ObjectInstance final : public Object
 {
 	public:
 		void addPrimitives(const std::vector<const Primitive *> &base_primitives);
-		void addObjToWorldMatrix(const Matrix4 &obj_to_world, float time);
-		void addObjToWorldMatrix(Matrix4 &&obj_to_world, float time);
-		std::vector<const Matrix4 *> getObjToWorldMatrices() const;
-		const Matrix4 &getObjToWorldMatrix(int time_step) const { return time_steps_[time_step].obj_to_world_; }
-		Matrix4 getObjToWorldMatrixAtTime(float time) const;
+		void addObjToWorldMatrix(const Matrix4f &obj_to_world, float time);
+		void addObjToWorldMatrix(Matrix4f &&obj_to_world, float time);
+		std::vector<const Matrix4f *> getObjToWorldMatrices() const;
+		const Matrix4f &getObjToWorldMatrix(int time_step) const { return time_steps_[time_step].obj_to_world_; }
+		Matrix4f getObjToWorldMatrixAtTime(float time) const;
 		float getObjToWorldTime(int time_step) const { return time_steps_[time_step].time_; }
 
 		std::string getName() const override { return "instance"; }
@@ -64,26 +64,26 @@ class ObjectInstance final : public Object
 	private:
 		struct TimeStepGeometry final
 		{
-			TimeStepGeometry(const Matrix4 &obj_to_world, float time) : obj_to_world_{obj_to_world}, time_{time} { }
-			TimeStepGeometry(Matrix4 &&obj_to_world, float time) : obj_to_world_{std::move(obj_to_world)}, time_{time} { }
-			Matrix4 obj_to_world_;
+			TimeStepGeometry(const Matrix4f &obj_to_world, float time) : obj_to_world_{obj_to_world}, time_{time} { }
+			TimeStepGeometry(Matrix4f &&obj_to_world, float time) : obj_to_world_{std::move(obj_to_world)}, time_{time} { }
+			Matrix4f obj_to_world_;
 			float time_ = 0.f;
 		};
 		std::vector<TimeStepGeometry> time_steps_;
 		std::vector<std::unique_ptr<const Primitive>> primitive_instances_;
 };
 
-inline void ObjectInstance::addObjToWorldMatrix(const Matrix4 &obj_to_world, float time)
+inline void ObjectInstance::addObjToWorldMatrix(const Matrix4f &obj_to_world, float time)
 {
 	time_steps_.emplace_back(TimeStepGeometry{obj_to_world, time});
 }
 
-inline void ObjectInstance::addObjToWorldMatrix(Matrix4 &&obj_to_world, float time)
+inline void ObjectInstance::addObjToWorldMatrix(Matrix4f &&obj_to_world, float time)
 {
 	time_steps_.emplace_back(TimeStepGeometry{std::move(obj_to_world), time});
 }
 
-inline Matrix4 ObjectInstance::getObjToWorldMatrixAtTime(float time) const
+inline Matrix4f ObjectInstance::getObjToWorldMatrixAtTime(float time) const
 {
 	if(hasMotionBlur())
 	{
@@ -95,7 +95,7 @@ inline Matrix4 ObjectInstance::getObjToWorldMatrixAtTime(float time) const
 		{
 			const float time_mapped = math::lerpSegment(time, 0.f, time_start, 1.f, time_end); //time_mapped must be in range [0.f-1.f]
 			const auto bezier_factors = math::bezierCalculateFactors(time_mapped);
-			const auto m = math::bezierInterpolate<Matrix4>({time_steps_[0].obj_to_world_, time_steps_[1].obj_to_world_, time_steps_[2].obj_to_world_}, bezier_factors);
+			const auto m = math::bezierInterpolate<Matrix4f>({time_steps_[0].obj_to_world_, time_steps_[1].obj_to_world_, time_steps_[2].obj_to_world_}, bezier_factors);
 			return m;
 		}
 	}

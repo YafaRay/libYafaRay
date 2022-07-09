@@ -37,14 +37,14 @@ class PerspectiveCamera : public Camera
 		enum class BokehType : unsigned char {BkDisk1, BkDisk2, BkTri, BkSqr, BkPenta, BkHexa, BkRing};
 		enum class BkhBiasType : unsigned char {BbNone, BbCenter, BbEdge};
 
-		PerspectiveCamera(Logger &logger, const Point3 &pos, const Point3 &look, const Point3 &up,
+		PerspectiveCamera(Logger &logger, const Point3f &pos, const Point3f &look, const Point3f &up,
 						  int resx, int resy, float aspect = 1,
 						  float df = 1, float ap = 0, float dofd = 0, BokehType bt = BokehType::BkDisk1, BkhBiasType bbt = BkhBiasType::BbNone, float bro = 0,
 						  float near_clip_distance = 0.0f, float far_clip_distance = 1e6f);
-		void setAxis(const Vec3 &vx, const Vec3 &vy, const Vec3 &vz) override;
+		void setAxis(const Vec3f &vx, const Vec3f &vy, const Vec3f &vz) override;
 		CameraRay shootRay(float px, float py, const Uv<float> &uv) const override;
 		bool sampleLense() const override;
-		Point3 screenproject(const Point3 &p) const override;
+		Point3f screenproject(const Point3f &p) const override;
 		bool project(const Ray &wo, float lu, float lv, float &u, float &v, float &pdf) const override;
 		float biasDist(float r) const;
 		Uv<float> sampleTsd(float r_1, float r_2) const;
@@ -52,7 +52,7 @@ class PerspectiveCamera : public Camera
 
 		BokehType bkhtype_;
 		BkhBiasType bkhbias_;
-		Vec3 dof_up_, dof_rt_;
+		Vec3f dof_up_, dof_rt_;
 		float aperture_;
 		float focal_distance_, dof_distance_;
 		float fdist_;

@@ -70,9 +70,9 @@ bool SingleScatterIntegrator::preprocess(FastRandom &fast_random, ImageFilm *ima
 						for(int x = 0; x < x_size; ++x)
 						{
 							// generate the world position inside the grid
-							const Point3 p(bb.longX() * x_size_inv * x + bb.a_.x(),
-									 bb.longY() * y_size_inv * y + bb.a_.y(),
-									 bb.longZ() * z_size_inv * z + bb.a_.z());
+							const Point3f p{{bb.longX() * x_size_inv * x + bb.a_[Axis::X],
+									 bb.longY() * y_size_inv * y + bb.a_[Axis::Y],
+									 bb.longZ() * z_size_inv * z + bb.a_[Axis::Z]}};
 
 							// handle lights with delta distribution, e.g. point and directional lights
 							if(light->diracLight())
@@ -289,7 +289,7 @@ Rgb SingleScatterIntegrator::integrate(RandomGenerator &random_generator, const 
 		accum_density.at(0) = 0.f;
 		for(int i = 0; i < samples; ++i)
 		{
-			const Point3 p{ray.from_ + (step_size_ * i + pos) * ray.dir_};
+			const Point3f p{ray.from_ + (step_size_ * i + pos) * ray.dir_};
 			float density = 0;
 			for(const auto &[vr_name, vr] : *volume_regions_)
 			{

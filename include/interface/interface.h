@@ -45,7 +45,8 @@ class ParamMap;
 class ImageFilm;
 class Format;
 class ProgressBar;
-class Matrix4;
+template <typename T, size_t N> class SquareMatrix;
+typedef SquareMatrix<float, 4> Matrix4f;
 class Object;
 class Image;
 class Logger;
@@ -65,25 +66,25 @@ class Interface
 		virtual bool endGeometry() noexcept; //!< call after creating geometry;
 		virtual unsigned int getNextFreeId() noexcept;
 		virtual bool endObject() noexcept; //!< end current mesh and return to geometry state
-		virtual int addVertex(Point3 &&vertex, int time_step) noexcept; //!< add vertex to mesh; returns index to be used for addTriangle/addQuad
-		virtual int addVertex(Point3 &&vertex, Point3 &&orco, int time_step) noexcept; //!< add vertex with Orco to mesh; returns index to be used for addTriangle/addQuad
-		virtual void addVertexNormal(Vec3 &&normal, int time_step) noexcept; //!< add vertex normal to mesh; the vertex that will be attached to is the last one inserted by addVertex method
+		virtual int addVertex(Point3f &&vertex, int time_step) noexcept; //!< add vertex to mesh; returns index to be used for addTriangle/addQuad
+		virtual int addVertex(Point3f &&vertex, Point3f &&orco, int time_step) noexcept; //!< add vertex with Orco to mesh; returns index to be used for addTriangle/addQuad
+		virtual void addVertexNormal(Vec3f &&normal, int time_step) noexcept; //!< add vertex normal to mesh; the vertex that will be attached to is the last one inserted by addVertex method
 		virtual bool addFace(std::vector<int> &&vertices, std::vector<int> &&uv_indices) noexcept; //!< add a mesh face given vertex indices and optionally uv_indices
 		virtual int addUv(Uv<float> &&uv) noexcept; //!< add a UV coordinate pair; returns index to be used for addTriangle/addQuad
 		virtual bool smoothVerticesNormals(std::string &&name, double angle) noexcept; //!< smooth vertex normals of mesh with given ID and angle (in degrees)
 		virtual int createInstance() noexcept;
 		virtual bool addInstanceObject(int instance_id, std::string &&base_object_name) noexcept;
 		virtual bool addInstanceOfInstance(int instance_id, size_t base_instance_id) noexcept;
-		virtual bool addInstanceMatrix(int instance_id, Matrix4 &&obj_to_world, float time) noexcept;
-		virtual void paramsSetVector(std::string &&name, Vec3 &&v) noexcept;
+		virtual bool addInstanceMatrix(int instance_id, Matrix4f &&obj_to_world, float time) noexcept;
+		virtual void paramsSetVector(std::string &&name, Vec3f &&v) noexcept;
 		virtual void paramsSetString(std::string &&name, std::string &&s) noexcept;
 		virtual void paramsSetBool(std::string &&name, bool b) noexcept;
 		virtual void paramsSetInt(std::string &&name, int i) noexcept;
 		virtual void paramsSetFloat(std::string &&name, double f) noexcept;
 		virtual void paramsSetColor(std::string &&name, Rgba &&col) noexcept;
 		void paramsSetColor(std::string &&name, Rgb &&col) noexcept { paramsSetColor(std::move(name), std::move(Rgba{col})); };
-		virtual void paramsSetMatrix(std::string &&name, Matrix4 &&matrix, bool transpose) noexcept;
-		void paramsSetMatrix(std::string &&name, Matrix4 &&matrix) noexcept { paramsSetMatrix(std::move(name), std::move(matrix), false); };
+		virtual void paramsSetMatrix(std::string &&name, Matrix4f &&matrix, bool transpose) noexcept;
+		void paramsSetMatrix(std::string &&name, Matrix4f &&matrix) noexcept { paramsSetMatrix(std::move(name), std::move(matrix), false); };
 		virtual void paramsClearAll() noexcept; 	//!< clear the paramMap and paramList
 		virtual void paramsPushList() noexcept; 	//!< push new list item in paramList (e.g. new shader node description)
 		virtual void paramsEndList() noexcept; 	//!< revert to writing to normal paramMap

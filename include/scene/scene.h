@@ -54,11 +54,14 @@ class Integrator;
 class SurfaceIntegrator;
 class VolumeIntegrator;
 class SurfacePoint;
-class Matrix4;
+template <typename T, size_t N> class SquareMatrix;
+typedef SquareMatrix<float, 4> Matrix4f;
 class Rgb;
 class Accelerator;
-class Point3;
-class Vec3;
+template <typename T, size_t N> class Point;
+typedef Point<float, 3> Point3f;
+template <typename T, size_t N> class Vec;
+typedef Vec<float, 3> Vec3f;
 class Bound;
 enum class DarkDetectionType : unsigned char;
 
@@ -70,9 +73,9 @@ class Scene final
 		explicit Scene(Logger &logger);
 		Scene(const Scene &s) = delete;
 		~Scene();
-		int addVertex(Point3 &&p, int time_step);
-		int addVertex(Point3 &&p, Point3 &&orco, int time_step);
-		void addVertexNormal(Vec3 &&n, int time_step);
+		int addVertex(Point3f &&p, int time_step);
+		int addVertex(Point3f &&p, Point3f &&orco, int time_step);
+		void addVertexNormal(Vec3f &&n, int time_step);
 		bool addFace(std::vector<int> &&vert_indices, std::vector<int> &&uv_indices = {});
 		int addUv(Uv<float> &&uv);
 		bool smoothVerticesNormals(std::string &&name, float angle);
@@ -81,7 +84,7 @@ class Scene final
 		int createInstance();
 		bool addInstanceObject(int instance_id, std::string &&base_object_name);
 		bool addInstanceOfInstance(int instance_id, size_t base_instance_id);
-		bool addInstanceMatrix(int instance_id, Matrix4 &&obj_to_world, float time);
+		bool addInstanceMatrix(int instance_id, Matrix4f &&obj_to_world, float time);
 		bool updateObjects();
 		Object *getObject(const std::string &name) const;
 		const Accelerator *getAccelerator() const { return accelerator_.get(); }

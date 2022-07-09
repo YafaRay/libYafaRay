@@ -41,8 +41,8 @@ class ImageLayer
 class ImageLayers final : public Collection<LayerDef::Type, ImageLayer>  //Actual buffer of images in the rendering process, one entry for each enabled layer.
 {
 	public:
-		void setColor(int x, int y, const Rgba &color, LayerDef::Type layer_type);
-		void setColor(int x, int y, Rgba &&color, LayerDef::Type layer_type);
+		void setColor(const Point2i &point, const Rgba &color, LayerDef::Type layer_type);
+		void setColor(const Point2i &point, Rgba &&color, LayerDef::Type layer_type);
 };
 
 } //namespace yafaray

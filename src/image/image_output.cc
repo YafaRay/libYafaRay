@@ -101,12 +101,11 @@ ImageOutput * ImageOutput::factory(Logger &logger, const Scene &scene, const std
 	return output;
 }
 
-void ImageOutput::init(int width, int height, const ImageLayers *exported_image_layers, const std::map<std::string, std::unique_ptr<RenderView>> *render_views)
+void ImageOutput::init(const Size2i &size, const ImageLayers *exported_image_layers, const std::map<std::string, std::unique_ptr<RenderView>> *render_views)
 {
 	image_layers_ = exported_image_layers;
 	render_views_ = render_views;
-	badge_.setImageWidth(width);
-	badge_.setImageHeight(height);
+	badge_.setImageSize(size);
 }
 
 void ImageOutput::flush(const RenderControl &render_control, const Timer &timer)

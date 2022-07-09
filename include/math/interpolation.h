@@ -103,7 +103,13 @@ inline constexpr Y bezierInterpolateTruncated(const std::array<Y, 3> &y, const X
 template<typename Y>
 inline constexpr Y bezierFindControlPoint(const std::array<Y, 3> &y) noexcept
 {
-	return static_cast<Y>(2 * y[1] - (y[0] + y[2]) / 2);
+	return static_cast<Y>(Y{2} * y[1] - (y[0] + y[2]) / Y{2});
+}
+
+template<typename T, typename Y>
+inline constexpr Y bezierFindControlPoint(const std::array<Y, 3> &y) noexcept
+{
+	return static_cast<Y>(T{2} * y[1] - (y[0] + y[2]) / T{2});
 }
 
 } // namespace math

@@ -29,7 +29,7 @@
 
 namespace yafaray {
 
-IesLight::IesLight(Logger &logger, const Point3 &from, const Point3 &to, const Rgb &col, float power, const std::string &ies_file, int smpls, bool s_sha, float ang, bool b_light_enabled, bool b_cast_shadows):
+IesLight::IesLight(Logger &logger, const Point3f &from, const Point3f &to, const Rgb &col, float power, const std::string &ies_file, int smpls, bool s_sha, float ang, bool b_light_enabled, bool b_cast_shadows):
 		Light(logger, Light::Flags::Singular), position_(from), samples_(smpls), soft_shadow_(s_sha)
 {
 	light_enabled_ = b_light_enabled;
@@ -42,7 +42,7 @@ IesLight::IesLight(Logger &logger, const Point3 &from, const Point3 &to, const R
 		ndir_.normalize();
 		dir_ = -ndir_;
 
-		duv_ = Vec3::createCoordsSystem(dir_);
+		duv_ = Vec3f::createCoordsSystem(dir_);
 		cos_end_ = math::cos(ies_data_->getMaxVAngle());
 
 		color_ = col * power;
@@ -50,19 +50,19 @@ IesLight::IesLight(Logger &logger, const Point3 &from, const Point3 &to, const R
 	}
 }
 
-Uv<float> IesLight::getAngles(const Vec3 &dir, float costheta)
+Uv<float> IesLight::getAngles(const Vec3f &dir, float costheta)
 {
-	float u = (dir.z() >= 1.f) ? 0.f : math::radToDeg(math::acos(dir.z()));
-	if(dir.y() < 0) u = 360.f - u;
+	float u = (dir[Axis::Z] >= 1.f) ? 0.f : math::radToDeg(math::acos(dir[Axis::Z]));
+	if(dir[Axis::Y] < 0) u = 360.f - u;
 	const float v = (costheta >= 1.f) ? 0.f : math::radToDeg(math::acos(costheta));
 	return {u, v};
 }
 
-std::tuple<bool, Ray, Rgb> IesLight::illuminate(const Point3 &surface_p, float time) const
+std::tuple<bool, Ray, Rgb> IesLight::illuminate(const Point3f &surface_p, float time) const
 {
 	if(photonOnly()) return {};
-	Vec3 ldir{position_ - surface_p};
-	const float dist_sqrt = ldir.lengthSqr();
+	Vec3f ldir{position_ - surface_p};
+	const float dist_sqrt = ldir.lengthSquared();
 	const float dist = math::sqrt(dist_sqrt);
 	const float i_dist_sqrt = 1.f / dist_sqrt;
 	if(dist == 0.f) return {};
@@ -75,18 +75,18 @@ std::tuple<bool, Ray, Rgb> IesLight::illuminate(const Point3 &surface_p, float t
 	return {true, std::move(ray), std::move(col)};
 }
 
-std::pair<bool, Ray> IesLight::illumSample(const Point3 &surface_p, LSample &s, float time) const
+std::pair<bool, Ray> IesLight::illumSample(const Point3f &surface_p, LSample &s, float time) const
 {
 	if(photonOnly()) return {};
-	Vec3 ldir{position_ - surface_p};
-	const float dist_sqrt = ldir.lengthSqr();
+	Vec3f ldir{position_ - surface_p};
+	const float dist_sqrt = ldir.lengthSquared();
 	const float dist = math::sqrt(dist_sqrt);
 	const float i_dist_sqrt = 1.f / dist_sqrt;
 	if(dist == 0.f) return {};
 	ldir *= 1.f / dist; //normalize
 	const float cos_a = ndir_ * ldir;
 	if(cos_a < cos_end_) return {};
-	Vec3 dir{sample::cone(ldir, duv_, cos_a, s.s_1_, s.s_2_)};
+	Vec3f dir{sample::cone(ldir, duv_, cos_a, s.s_1_, s.s_2_)};
 	const Uv<float> uv{getAngles(dir, cos_a)};
 	const float rad = ies_data_->getRadiance(uv.u_, uv.v_);
 	if(rad == 0.f) return {};
@@ -98,7 +98,7 @@ std::pair<bool, Ray> IesLight::illumSample(const Point3 &surface_p, LSample &s, 
 
 std::tuple<Ray, float, Rgb> IesLight::emitPhoton(float s_1, float s_2, float s_3, float s_4, float time) const
 {
-	Vec3 dir{sample::cone(dir_, duv_, cos_end_, s_1, s_2)};
+	Vec3f dir{sample::cone(dir_, duv_, cos_end_, s_1, s_2)};
 	float cos_a = dir * dir_;
 	if(cos_a < cos_end_) return {};
 	const Uv<float> uv{getAngles(dir, cos_a)};
@@ -107,11 +107,11 @@ std::tuple<Ray, float, Rgb> IesLight::emitPhoton(float s_1, float s_2, float s_3
 	return {std::move(ray), rad, color_};
 }
 
-std::pair<Vec3, Rgb> IesLight::emitSample(LSample &s, float time) const
+std::pair<Vec3f, Rgb> IesLight::emitSample(LSample &s, float time) const
 {
 	s.sp_->p_ = position_;
 	s.flags_ = flags_;
-	Vec3 dir{sample::cone(dir_, duv_, cos_end_, s.s_3_, s.s_4_)};
+	Vec3f dir{sample::cone(dir_, duv_, cos_end_, s.s_3_, s.s_4_)};
 	const Uv<float> uv{getAngles(dir, dir * dir_)};
 	const float rad = ies_data_->getRadiance(uv.u_, uv.v_);
 	s.dir_pdf_ = (rad > 0.f) ? (tot_energy_ / rad) : 0.f;
@@ -119,7 +119,7 @@ std::pair<Vec3, Rgb> IesLight::emitSample(LSample &s, float time) const
 	return {std::move(dir), color_ * rad * tot_energy_};
 }
 
-std::array<float, 3> IesLight::emitPdf(const Vec3 &surface_n, const Vec3 &wo) const
+std::array<float, 3> IesLight::emitPdf(const Vec3f &surface_n, const Vec3f &wo) const
 {
 	const float cos_wo = 1.f;
 	const float area_pdf = 1.f;
@@ -136,8 +136,8 @@ std::array<float, 3> IesLight::emitPdf(const Vec3 &surface_n, const Vec3 &wo) co
 
 Light * IesLight::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params)
 {
-	Point3 from{0.f, 0.f, 0.f};
-	Point3 to(0.f, 0.f, -1.f);
+	Point3f from{{0.f, 0.f, 0.f}};
+	Point3f to{{0.f, 0.f, -1.f}};
 	Rgb color(1.0);
 	float power = 1.0;
 	std::string file;

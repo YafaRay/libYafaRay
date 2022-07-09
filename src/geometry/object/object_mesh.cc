@@ -130,24 +130,24 @@ std::vector<const Primitive *> MeshObject::getPrimitives() const
 	return primitives;
 }
 
-void MeshObject::addVertexNormal(Vec3 &&n, int time_step)
+void MeshObject::addVertexNormal(Vec3f &&n, int time_step)
 {
 	const size_t points_size = time_steps_[time_step].points_.size();
 	if(time_steps_[time_step].vertices_normals_.size() < points_size) time_steps_[time_step].vertices_normals_.reserve(points_size);
 	time_steps_[time_step].vertices_normals_.emplace_back(n);
 }
 
-float MeshObject::getAngleSine(const std::array<int, 3> &triangle_indices, const std::vector<Point3> &vertices)
+float MeshObject::getAngleSine(const std::array<int, 3> &triangle_indices, const std::vector<Point3f> &vertices)
 {
-	const Vec3 edge_1{vertices[triangle_indices[1]] - vertices[triangle_indices[0]]};
-	const Vec3 edge_2{vertices[triangle_indices[2]] - vertices[triangle_indices[0]]};
+	const Vec3f edge_1{vertices[triangle_indices[1]] - vertices[triangle_indices[0]]};
+	const Vec3f edge_2{vertices[triangle_indices[2]] - vertices[triangle_indices[0]]};
 	return edge_1.sinFromVectors(edge_2);
 }
 
 bool MeshObject::smoothVerticesNormals(Logger &logger, float angle)
 {
 	const size_t points_size = numVertices(0);
-	for(auto &time_step : time_steps_) time_step.vertices_normals_.resize(points_size, {0, 0, 0});
+	for(auto &time_step : time_steps_) time_step.vertices_normals_.resize(points_size, {{0, 0, 0}});
 
 	if(angle >= 180)
 	{
@@ -155,7 +155,7 @@ bool MeshObject::smoothVerticesNormals(Logger &logger, float angle)
 		{
 			for(auto &face : faces_)
 			{
-				const Vec3 n{face->getGeometricNormal({0.f, 0.f}, static_cast<float>(time_step) / static_cast<float>(numTimeSteps()), false)};
+				const Vec3f n{face->getGeometricNormal({0.f, 0.f}, static_cast<float>(time_step) / static_cast<float>(numTimeSteps()), false)};
 				const std::vector<int> &vert_indices = face->getVerticesIndices();
 				const size_t num_indices = vert_indices.size();
 				for(size_t relative_vertex = 0; relative_vertex < num_indices; ++relative_vertex)
@@ -188,14 +188,14 @@ bool MeshObject::smoothVerticesNormals(Logger &logger, float angle)
 			for(size_t point_id = 0; point_id < points_size; ++point_id)
 			{
 				int j = 0;
-				std::vector<Vec3> vertex_normals;
+				std::vector<Vec3f> vertex_normals;
 				std::vector<int> vertex_normals_indices;
 				for(const auto &point_face : points_faces[point_id])
 				{
 					bool smooth = false;
 					// calculate vertex normal for face
-					const Vec3 face_normal{point_face->getGeometricNormal({}, static_cast<float>(time_step) / static_cast<float>(numTimeSteps()), false)};
-					Vec3 vertex_normal{face_normal * points_angles_sines[point_id][j]};
+					const Vec3f face_normal{point_face->getGeometricNormal({}, static_cast<float>(time_step) / static_cast<float>(numTimeSteps()), false)};
+					Vec3f vertex_normal{face_normal * points_angles_sines[point_id][j]};
 					int k = 0;
 					for(const auto &point_face_2 : points_faces[point_id])
 					{
@@ -204,7 +204,7 @@ bool MeshObject::smoothVerticesNormals(Logger &logger, float angle)
 							k++;
 							continue;
 						}
-						const Vec3 face_2_normal{point_face_2->getGeometricNormal({}, static_cast<float>(time_step) / static_cast<float>(numTimeSteps()), false)};
+						const Vec3f face_2_normal{point_face_2->getGeometricNormal({}, static_cast<float>(time_step) / static_cast<float>(numTimeSteps()), false)};
 						if((face_normal * face_2_normal) > angle_threshold)
 						{
 							smooth = true;
@@ -275,7 +275,7 @@ void MeshObject::convertToBezierControlPoints()
 	if(numTimeSteps() < 3) return;
 	for(int i = 0; i < num_vertices; ++i)
 	{
-		time_steps_[1].points_[i] = math::bezierFindControlPoint<Point3>({time_steps_[0].points_[i], time_steps_[1].points_[i], time_steps_[2].points_[i]});
+		time_steps_[1].points_[i] = math::bezierFindControlPoint<float, Point3f>({time_steps_[0].points_[i], time_steps_[1].points_[i], time_steps_[2].points_[i]});
 	}
 }
 

@@ -189,7 +189,7 @@ bool ExrFormat::saveToFile(const std::string &name, const ImageLayer &image_laye
 	{
 		for(int j = 0; j < h; ++j)
 		{
-			const Rgba col = Layer::postProcess(image_layer.image_->getColor(i, j), image_layer.layer_.getType(), color_space, gamma, alpha_premultiply);
+			const Rgba col = Layer::postProcess(image_layer.image_->getColor({{i, j}}), image_layer.layer_.getType(), color_space, gamma, alpha_premultiply);
 			pixels[j][i].r = col.r_;
 			pixels[j][i].g = col.g_;
 			pixels[j][i].b = col.b_;
@@ -281,7 +281,7 @@ bool ExrFormat::saveToFileMultiChannel(const std::string &name, const ImageLayer
 		{
 			for(int j = 0; j < h_0; ++j)
 			{
-				const Rgba col = Layer::postProcess(image_layer.second.image_->getColor(i, j), image_layer.second.layer_.getType(), color_space, gamma, alpha_premultiply);
+				const Rgba col = Layer::postProcess(image_layer.second.image_->getColor({{i, j}}), image_layer.second.layer_.getType(), color_space, gamma, alpha_premultiply);
 				(*pixels.back())[j][i].r = col.r_;
 				(*pixels.back())[j][i].g = col.g_;
 				(*pixels.back())[j][i].b = col.b_;
@@ -345,7 +345,7 @@ Image * ExrFormat::loadFromFile(const std::string &name, const Image::Optimizati
 		const int width  = dw.max.x - dw.min.x + 1;
 		const int height = dw.max.y - dw.min.y + 1;
 		const Image::Type type = Image::getTypeFromSettings(true, grayscale_);
-		image = Image::factory(logger_, width, height, type, optimization);
+		image = Image::factory(logger_, {{width, height}}, type, optimization);
 		Imf::Array2D<Imf::Rgba> pixels;
 		pixels.resizeErase(width, height);
 		file.setFrameBuffer(&pixels[0][0] - dw.min.y - dw.min.x * height, height, 1);
@@ -361,7 +361,7 @@ Image * ExrFormat::loadFromFile(const std::string &name, const Image::Optimizati
 				color.b_ = pixels[i][j].b;
 				color.a_ = pixels[i][j].a;
 				color.linearRgbFromColorSpace(color_space, gamma);
-				image->setColor(i, j, color);
+				image->setColor({{i, j}}, color);
 			}
 		}
 	}

@@ -19,7 +19,7 @@
 #include "common/param.h"
 #include "geometry/vector.h"
 #include "color/color.h"
-#include "geometry/matrix4.h"
+#include "geometry/matrix.h"
 #include "common/logger.h"
 
 namespace yafaray {
@@ -31,9 +31,9 @@ Parameter::Parameter(bool b) : type_(Type::Bool) { bval_ = b; }
 Parameter::Parameter(float f) : type_(Type::Float) { fval_ = f; }
 Parameter::Parameter(double f) : type_(Type::Float) { fval_ = f; }
 
-Parameter::Parameter(const Vec3 &p) : type_(Type::Vector)
+Parameter::Parameter(const Vec3f &p) : type_(Type::Vector)
 {
-	vval_.resize(3); vval_.at(0) = p.x(), vval_.at(1) = p.y(), vval_.at(2) = p.z();
+	vval_.resize(3); vval_.at(0) = p[Axis::X], vval_.at(1) = p[Axis::Y], vval_.at(2) = p[Axis::Z];
 }
 
 Parameter::Parameter(const Rgba &c) : type_(Type::Color)
@@ -41,7 +41,7 @@ Parameter::Parameter(const Rgba &c) : type_(Type::Color)
 	vval_.resize(4); vval_.at(0) = c.r_, vval_.at(1) = c.g_, vval_.at(2) = c.b_, vval_.at(3) = c.a_;
 }
 
-Parameter::Parameter(const Matrix4 &m) : type_(Type::Matrix)
+Parameter::Parameter(const Matrix4f &m) : type_(Type::Matrix)
 {
 	vval_.resize(16);
 	for(int i = 0; i < 4; ++i)
@@ -55,10 +55,10 @@ bool Parameter::getVal(bool &b) const {if(type_ == Type::Bool)  { b = bval_; ret
 bool Parameter::getVal(float &f) const {if(type_ == Type::Float) { f = (float)fval_; return true;} return false;}
 bool Parameter::getVal(double &f) const {if(type_ == Type::Float) { f = fval_; return true;} return false;}
 
-bool Parameter::getVal(Vec3 &p) const {
+bool Parameter::getVal(Vec3f &p) const {
 	if(type_ == Type::Vector)
 	{
-		p.x() = vval_.at(0), p.y() = vval_.at(1), p.z() = vval_.at(2);
+		p[Axis::X] = vval_.at(0), p[Axis::Y] = vval_.at(1), p[Axis::Z] = vval_.at(2);
 		return true;
 	}
 	return false;
@@ -82,7 +82,7 @@ bool Parameter::getVal(Rgba &c) const {
 	return false;
 }
 
-bool Parameter::getVal(Matrix4 &m) const
+bool Parameter::getVal(Matrix4f &m) const
 {
 	if(type_ == Type::Matrix)
 	{
@@ -129,10 +129,10 @@ Parameter &Parameter::operator=(float f)
 	return *this;
 }
 
-Parameter &Parameter::operator=(const Vec3 &p)
+Parameter &Parameter::operator=(const Vec3f &p)
 {
 	if(type_ != Type::Vector) { type_ = Type::Vector; sval_.clear(); vval_.resize(3); }
-	vval_.at(0) = p.x(), vval_.at(1) = p.y(), vval_.at(2) = p.z();
+	vval_.at(0) = p[Axis::X], vval_.at(1) = p[Axis::Y], vval_.at(2) = p[Axis::Z];
 	return *this;
 }
 
@@ -151,7 +151,7 @@ Parameter &Parameter::operator=(const Rgba &c)
 	return *this;
 }
 
-Parameter &Parameter::operator=(const Matrix4 &m)
+Parameter &Parameter::operator=(const Matrix4f &m)
 {
 	if(type_ != Type::Matrix) { type_ = Type::Matrix; sval_.clear(); vval_.resize(16); }
 	for(int i = 0; i < 4; ++i)
@@ -188,9 +188,9 @@ std::string Parameter::print() const
 	}
 	else if(type_ == Type::Vector)
 	{
-		Point3 value;
+		Point3f value;
 		getVal(value);
-		return "(x:" + std::to_string(value.x()) + ", y:" + std::to_string(value.x()) + ", z:" + std::to_string(value.z()) + ")";
+		return "(x:" + std::to_string(value[Axis::X]) + ", y:" + std::to_string(value[Axis::X]) + ", z:" + std::to_string(value[Axis::Z]) + ")";
 	}
 	else if(type_ == Type::Color)
 	{
@@ -200,7 +200,7 @@ std::string Parameter::print() const
 	}
 	else if(type_ == Type::Matrix)
 	{
-		Matrix4 value;
+		Matrix4f value;
 		getVal(value);
 		std::string result = "(";
 		for(int i = 0; i < 4; ++i)

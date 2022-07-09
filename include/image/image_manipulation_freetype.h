@@ -28,7 +28,7 @@ struct FT_Bitmap_;
 namespace yafaray::image_manipulation_freetype
 {
 
-	void drawFontBitmap(FT_Bitmap_ *bitmap, Image *badge_image, int x, int y);
+	void drawFontBitmap(FT_Bitmap_ *bitmap, Image *badge_image, const Point2i &point);
 	bool drawTextInImage(Logger &logger, Image *image, const std::string &text_utf_8, float font_size_factor, const std::string &font_path);
 
 } //namespace yafaray::image_manipulation_freetype

@@ -43,22 +43,22 @@ class MeshObject : public ObjectBase
 		int numPrimitives() const override { return static_cast<int>(faces_.size()); }
 		std::vector<const Primitive *> getPrimitives() const override;
 		int lastVertexId(int time_step) const override { return numVertices(time_step) - 1; }
-		Vec3 getVertexNormal(int index, int time_step) const { return time_steps_[time_step].vertices_normals_[index]; }
-		Point3 getVertex(int index, int time_step) const { return time_steps_[time_step].points_[index]; }
-		Point3 getOrcoVertex(int index, int time_step) const { return time_steps_[time_step].orco_points_[index]; }
+		Vec3f getVertexNormal(int index, int time_step) const { return time_steps_[time_step].vertices_normals_[index]; }
+		Point3f getVertex(int index, int time_step) const { return time_steps_[time_step].points_[index]; }
+		Point3f getOrcoVertex(int index, int time_step) const { return time_steps_[time_step].orco_points_[index]; }
 		int numVertices(int time_step) const override { return static_cast<int>(time_steps_[time_step].points_.size()); }
 		int numVerticesNormals(int time_step) const override { return static_cast<int>(time_steps_[time_step].vertices_normals_.size()); }
 		void addFace(std::unique_ptr<FacePrimitive> &&face);
 		void addFace(std::vector<int> &&vertices, std::vector<int> &&vertices_uv, const std::unique_ptr<const Material> *material) override;
-		const std::vector<Point3> &getPoints(int time_step) const { return time_steps_[time_step].points_; }
+		const std::vector<Point3f> &getPoints(int time_step) const { return time_steps_[time_step].points_; }
 		const std::vector<Uv<float>> &getUvValues() const { return uv_values_; }
 		bool hasOrco(int time_step) const { return !time_steps_[time_step].orco_points_.empty(); }
 		bool hasUv() const { return !uv_values_.empty(); }
 		bool isSmooth() const { return is_smooth_; }
 		bool hasVerticesNormals(int time_step) const override { return !time_steps_[time_step].vertices_normals_.empty(); }
-		void addPoint(Point3 &&p, int time_step) override { time_steps_[time_step].points_.emplace_back(p); }
-		void addOrcoPoint(Point3 &&p, int time_step) override { time_steps_[time_step].orco_points_.emplace_back(p); }
-		void addVertexNormal(Vec3 &&n, int time_step) override;
+		void addPoint(Point3f &&p, int time_step) override { time_steps_[time_step].points_.emplace_back(p); }
+		void addOrcoPoint(Point3f &&p, int time_step) override { time_steps_[time_step].orco_points_.emplace_back(p); }
+		void addVertexNormal(Vec3f &&n, int time_step) override;
 		int addUvValue(Uv<float> &&uv) override { uv_values_.emplace_back(uv); return static_cast<int>(uv_values_.size()) - 1; }
 		void setSmooth(bool smooth) override { is_smooth_ = smooth; }
 		bool smoothVerticesNormals(Logger &logger, float angle) override;
@@ -73,12 +73,12 @@ class MeshObject : public ObjectBase
 		struct TimeStepGeometry final
 		{
 			float time_ = 0.f;
-			std::vector<Point3> points_;
-			std::vector<Point3> orco_points_;
-			std::vector<Vec3> vertices_normals_;
+			std::vector<Point3f> points_;
+			std::vector<Point3f> orco_points_;
+			std::vector<Vec3f> vertices_normals_;
 		};
 		void convertToBezierControlPoints();
-		static float getAngleSine(const std::array<int, 3> &triangle_indices, const std::vector<Point3> &vertices);
+		static float getAngleSine(const std::array<int, 3> &triangle_indices, const std::vector<Point3f> &vertices);
 		std::vector<TimeStepGeometry> time_steps_{1};
 		std::vector<std::unique_ptr<FacePrimitive>> faces_;
 		std::vector<Uv<float>> uv_values_;

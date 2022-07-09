@@ -286,11 +286,11 @@ bool TiledIntegrator::renderTile(FastRandom &fast_random, std::vector<int> &corr
 			int n_samples_adjusted = n_samples;
 			if(adaptive)
 			{
-				if(!image_film_->doMoreSamples(j, i)) continue;
+				if(!image_film_->doMoreSamples({{j, i}})) continue;
 				if(sampling_factor_image_pass)
 				{
-					const float weight = image_film_->getWeight(j - film_cx_0, i - film_cy_0);
-					mat_sample_factor = weight > 0.f ? sampling_factor_image_pass->getColor(j - film_cx_0, i - film_cy_0).normalized(weight).r_ : 1.f;
+					const float weight = image_film_->getWeight({{j - film_cx_0, i - film_cy_0}});
+					mat_sample_factor = weight > 0.f ? sampling_factor_image_pass->getColor({{j - film_cx_0, i - film_cy_0}}).normalized(weight).r_ : 1.f;
 					if(image_film_->getBackgroundResampling()) mat_sample_factor = std::max(mat_sample_factor, 1.f); //If the background is set to be resampled, make sure the matSampleFactor is always >= 1.f
 					if(mat_sample_factor > 0.f && mat_sample_factor < 1.f) mat_sample_factor = 1.f;	//This is to ensure in the edges between objects and background we always shoot samples, otherwise we might not shoot enough samples at the boundaries with the background where they are needed for antialiasing, however if the factor is equal to 0.f (as in the background) then no more samples will be shot
 				}
@@ -334,7 +334,7 @@ bool TiledIntegrator::renderTile(FastRandom &fast_random, std::vector<int> &corr
 				CameraRay camera_ray = camera_->shootRay(static_cast<float>(j) + dx, static_cast<float>(i) + dy, lens_uv);
 				if(!camera_ray.valid_)
 				{
-					image_film_->addSample(static_cast<float>(j), static_cast<float>(i), dx, dy, &a, sample, aa_pass_number, inv_aa_max_possible_samples, &color_layers);
+					image_film_->addSample({{j, i}}, dx, dy, &a, sample, aa_pass_number, inv_aa_max_possible_samples, &color_layers);
 					continue;
 				}
 				if(render_control_.getDifferentialRaysEnabled())
@@ -392,7 +392,7 @@ bool TiledIntegrator::renderTile(FastRandom &fast_random, std::vector<int> &corr
 							break;
 					}
 				}
-				image_film_->addSample(j, i, dx, dy, &a, sample, aa_pass_number, inv_aa_max_possible_samples, &color_layers);
+				image_film_->addSample({{j, i}}, dx, dy, &a, sample, aa_pass_number, inv_aa_max_possible_samples, &color_layers);
 			}
 		}
 	}
@@ -416,35 +416,35 @@ void TiledIntegrator::generateCommonLayers(ColorLayers *color_layers, const Surf
 			}*/
 			if(Rgba *color_layer = color_layers->find(LayerDef::NormalSmooth))
 			{
-				*color_layer = Rgba((sp.n_.x() + 1.f) * .5f, (sp.n_.y() + 1.f) * .5f, (sp.n_.z() + 1.f) * .5f, 1.f);
+				*color_layer = Rgba((sp.n_[Axis::X] + 1.f) * .5f, (sp.n_[Axis::Y] + 1.f) * .5f, (sp.n_[Axis::Z] + 1.f) * .5f, 1.f);
 			}
 			if(Rgba *color_layer = color_layers->find(LayerDef::NormalGeom))
 			{
-				*color_layer = Rgba((sp.ng_.x() + 1.f) * .5f, (sp.ng_.y() + 1.f) * .5f, (sp.ng_.z() + 1.f) * .5f, 1.f);
+				*color_layer = Rgba((sp.ng_[Axis::X] + 1.f) * .5f, (sp.ng_[Axis::Y] + 1.f) * .5f, (sp.ng_[Axis::Z] + 1.f) * .5f, 1.f);
 			}
 			if(Rgba *color_layer = color_layers->find(LayerDef::DebugDpdu))
 			{
-				*color_layer = Rgba((sp.dp_.u_.x() + 1.f) * .5f, (sp.dp_.u_.y() + 1.f) * .5f, (sp.dp_.u_.z() + 1.f) * .5f, 1.f);
+				*color_layer = Rgba((sp.dp_.u_[Axis::X] + 1.f) * .5f, (sp.dp_.u_[Axis::Y] + 1.f) * .5f, (sp.dp_.u_[Axis::Z] + 1.f) * .5f, 1.f);
 			}
 			if(Rgba *color_layer = color_layers->find(LayerDef::DebugDpdv))
 			{
-				*color_layer = Rgba((sp.dp_.v_.x() + 1.f) * .5f, (sp.dp_.v_.y() + 1.f) * .5f, (sp.dp_.v_.z() + 1.f) * .5f, 1.f);
+				*color_layer = Rgba((sp.dp_.v_[Axis::X] + 1.f) * .5f, (sp.dp_.v_[Axis::Y] + 1.f) * .5f, (sp.dp_.v_[Axis::Z] + 1.f) * .5f, 1.f);
 			}
 			if(Rgba *color_layer = color_layers->find(LayerDef::DebugDsdu))
 			{
-				*color_layer = Rgba((sp.ds_.u_.x() + 1.f) * .5f, (sp.ds_.u_.y() + 1.f) * .5f, (sp.ds_.u_.z() + 1.f) * .5f, 1.f);
+				*color_layer = Rgba((sp.ds_.u_[Axis::X] + 1.f) * .5f, (sp.ds_.u_[Axis::Y] + 1.f) * .5f, (sp.ds_.u_[Axis::Z] + 1.f) * .5f, 1.f);
 			}
 			if(Rgba *color_layer = color_layers->find(LayerDef::DebugDsdv))
 			{
-				*color_layer = Rgba((sp.ds_.v_.x() + 1.f) * .5f, (sp.ds_.v_.y() + 1.f) * .5f, (sp.ds_.v_.z() + 1.f) * .5f, 1.f);
+				*color_layer = Rgba((sp.ds_.v_[Axis::X] + 1.f) * .5f, (sp.ds_.v_[Axis::Y] + 1.f) * .5f, (sp.ds_.v_[Axis::Z] + 1.f) * .5f, 1.f);
 			}
 			if(Rgba *color_layer = color_layers->find(LayerDef::DebugNu))
 			{
-				*color_layer = Rgba((sp.uvn_.u_.x() + 1.f) * .5f, (sp.uvn_.u_.y() + 1.f) * .5f, (sp.uvn_.u_.z() + 1.f) * .5f, 1.f);
+				*color_layer = Rgba((sp.uvn_.u_[Axis::X] + 1.f) * .5f, (sp.uvn_.u_[Axis::Y] + 1.f) * .5f, (sp.uvn_.u_[Axis::Z] + 1.f) * .5f, 1.f);
 			}
 			if(Rgba *color_layer = color_layers->find(LayerDef::DebugNv))
 			{
-				*color_layer = Rgba((sp.uvn_.v_.x() + 1.f) * .5f, (sp.uvn_.v_.y() + 1.f) * .5f, (sp.uvn_.v_.z() + 1.f) * .5f, 1.f);
+				*color_layer = Rgba((sp.uvn_.v_[Axis::X] + 1.f) * .5f, (sp.uvn_.v_[Axis::Y] + 1.f) * .5f, (sp.uvn_.v_[Axis::Z] + 1.f) * .5f, 1.f);
 			}
 			if(Rgba *color_layer = color_layers->find(LayerDef::DebugWireframe))
 			{
@@ -464,15 +464,15 @@ void TiledIntegrator::generateCommonLayers(ColorLayers *color_layers, const Surf
 				}
 				if(Rgba *color_layer = color_layers->find(LayerDef::DebugDpdx))
 				{
-					if(sp.differentials_) *color_layer = Rgba((sp.differentials_->dp_dx_.x() + 1.f) * .5f, (sp.differentials_->dp_dx_.y() + 1.f) * .5f, (sp.differentials_->dp_dx_.z() + 1.f) * .5f, 1.f);
+					if(sp.differentials_) *color_layer = Rgba((sp.differentials_->dp_dx_[Axis::X] + 1.f) * .5f, (sp.differentials_->dp_dx_[Axis::Y] + 1.f) * .5f, (sp.differentials_->dp_dx_[Axis::Z] + 1.f) * .5f, 1.f);
 				}
 				if(Rgba *color_layer = color_layers->find(LayerDef::DebugDpdy))
 				{
-					if(sp.differentials_) *color_layer = Rgba((sp.differentials_->dp_dy_.x() + 1.f) * .5f, (sp.differentials_->dp_dy_.y() + 1.f) * .5f, (sp.differentials_->dp_dy_.z() + 1.f) * .5f, 1.f);
+					if(sp.differentials_) *color_layer = Rgba((sp.differentials_->dp_dy_[Axis::X] + 1.f) * .5f, (sp.differentials_->dp_dy_[Axis::Y] + 1.f) * .5f, (sp.differentials_->dp_dy_[Axis::Z] + 1.f) * .5f, 1.f);
 				}
 				if(Rgba *color_layer = color_layers->find(LayerDef::DebugDpdxy))
 				{
-					if(sp.differentials_) *color_layer = Rgba((sp.differentials_->dp_dx_.x() + sp.differentials_->dp_dy_.x() + 1.f) * .5f, (sp.differentials_->dp_dx_.y() + sp.differentials_->dp_dy_.y() + 1.f) * .5f, (sp.differentials_->dp_dx_.z() + sp.differentials_->dp_dy_.z() + 1.f) * .5f, 1.f);
+					if(sp.differentials_) *color_layer = Rgba((sp.differentials_->dp_dx_[Axis::X] + sp.differentials_->dp_dy_[Axis::X] + 1.f) * .5f, (sp.differentials_->dp_dx_[Axis::Y] + sp.differentials_->dp_dy_[Axis::Y] + 1.f) * .5f, (sp.differentials_->dp_dx_[Axis::Z] + sp.differentials_->dp_dy_[Axis::Z] + 1.f) * .5f, 1.f);
 				}
 				if(color_layers->isDefinedAny({LayerDef::DebugDudxDvdx, LayerDef::DebugDudyDvdy, LayerDef::DebugDudxyDvdxy}))
 				{
@@ -620,7 +620,7 @@ void TiledIntegrator::generateCommonLayers(ColorLayers *color_layers, const Surf
 	}
 }
 
-void TiledIntegrator::generateOcclusionLayers(ColorLayers *color_layers, const Accelerator &accelerator, bool chromatic_enabled, float wavelength, const RayDivision &ray_division, const Camera *camera, const PixelSamplingData &pixel_sampling_data, const SurfacePoint &sp, const Vec3 &wo, int ao_samples, bool shadow_bias_auto, float shadow_bias, float ao_dist, const Rgb &ao_col, int transp_shadows_depth)
+void TiledIntegrator::generateOcclusionLayers(ColorLayers *color_layers, const Accelerator &accelerator, bool chromatic_enabled, float wavelength, const RayDivision &ray_division, const Camera *camera, const PixelSamplingData &pixel_sampling_data, const SurfacePoint &sp, const Vec3f &wo, int ao_samples, bool shadow_bias_auto, float shadow_bias, float ao_dist, const Rgb &ao_col, int transp_shadows_depth)
 {
 	if(Rgba *color_layer = color_layers->find(LayerDef::Ao))
 	{
@@ -632,11 +632,11 @@ void TiledIntegrator::generateOcclusionLayers(ColorLayers *color_layers, const A
 	}
 }
 
-Rgb TiledIntegrator::sampleAmbientOcclusion(const Accelerator &accelerator, bool chromatic_enabled, float wavelength, const SurfacePoint &sp, const Vec3 &wo, const RayDivision &ray_division, const Camera *camera, const PixelSamplingData &pixel_sampling_data, bool transparent_shadows, bool clay, int ao_samples, bool shadow_bias_auto, float shadow_bias, float ao_dist, const Rgb &ao_col, int transp_shadows_depth)
+Rgb TiledIntegrator::sampleAmbientOcclusion(const Accelerator &accelerator, bool chromatic_enabled, float wavelength, const SurfacePoint &sp, const Vec3f &wo, const RayDivision &ray_division, const Camera *camera, const PixelSamplingData &pixel_sampling_data, bool transparent_shadows, bool clay, int ao_samples, bool shadow_bias_auto, float shadow_bias, float ao_dist, const Rgb &ao_col, int transp_shadows_depth)
 {
 	Rgb col{0.f};
 	const BsdfFlags mat_bsdfs = sp.mat_data_->bsdf_flags_;
-	Ray light_ray{sp.p_, Vec3{0.f}, sp.time_};
+	Ray light_ray{sp.p_, Vec3f{0.f}, sp.time_};
 	int n = ao_samples;//(int) ceilf(aoSamples*getSampleMultiplier());
 	if(ray_division.division_ > 1) n = std::max(1, n / ray_division.division_);
 	const unsigned int offs = n * pixel_sampling_data.sample_ + pixel_sampling_data.offset_;

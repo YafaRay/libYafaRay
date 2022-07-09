@@ -25,12 +25,12 @@ namespace yafaray {
 
 struct PSample;
 
-Rgb SkyVolumeRegion::sigmaA(const Point3 &p, const Vec3 &v) const
+Rgb SkyVolumeRegion::sigmaA(const Point3f &p, const Vec3f &v) const
 {
 	return Rgb{0.f};
 }
 
-Rgb SkyVolumeRegion::sigmaS(const Point3 &p, const Vec3 &v) const
+Rgb SkyVolumeRegion::sigmaS(const Point3f &p, const Vec3f &v) const
 {
 	//if (bBox.includes(p)) {
 	return s_ray_ + s_mie_;
@@ -53,7 +53,7 @@ Rgb SkyVolumeRegion::tau(const Ray &ray, float step, float offset) const
 	return (s_ray_ + s_mie_) * dist;
 }
 
-Rgb SkyVolumeRegion::emission(const Point3 &p, const Vec3 &v) const
+Rgb SkyVolumeRegion::emission(const Point3f &p, const Vec3f &v) const
 {
 	if(b_box_.includes(p))
 	{
@@ -63,18 +63,18 @@ Rgb SkyVolumeRegion::emission(const Point3 &p, const Vec3 &v) const
 		return Rgb{0.f};
 }
 
-float SkyVolumeRegion::p(const Vec3 &w_l, const Vec3 &w_s) const
+float SkyVolumeRegion::p(const Vec3f &w_l, const Vec3f &w_s) const
 {
 	return phaseRayleigh(w_l, w_s) + phaseMie(w_l, w_s);
 }
 
-float SkyVolumeRegion::phaseRayleigh(const Vec3 &w_l, const Vec3 &w_s) const
+float SkyVolumeRegion::phaseRayleigh(const Vec3f &w_l, const Vec3f &w_s) const
 {
 	float costheta = (w_l * w_s);
 	return 3.f / (16.f * math::num_pi<>) * (1.f + costheta * costheta) * s_ray_.energy();
 }
 
-float SkyVolumeRegion::phaseMie(const Vec3 &w_l, const Vec3 &w_s) const
+float SkyVolumeRegion::phaseMie(const Vec3f &w_l, const Vec3f &w_s) const
 {
 	float k = 1.55f * g_ - .55f * g_ * g_ * g_;
 	float kcostheta = k * (w_l * w_s);
@@ -101,10 +101,10 @@ VolumeRegion * SkyVolumeRegion::factory(Logger &logger, const Scene &scene, cons
 	params.getParam("maxY", max[1]);
 	params.getParam("maxZ", max[2]);
 
-	return new SkyVolumeRegion(logger, Rgb(sa), Rgb(ss), Rgb(le), {min[0], min[1], min[2]}, {max[0], max[1], max[2]});
+	return new SkyVolumeRegion(logger, Rgb(sa), Rgb(ss), Rgb(le), {{min[0], min[1], min[2]}}, {{max[0], max[1], max[2]}});
 }
 
-SkyVolumeRegion::SkyVolumeRegion(Logger &logger, const Rgb &sa, const Rgb &ss, const Rgb &le, const Point3 &pmin, const Point3 &pmax) : VolumeRegion(logger)
+SkyVolumeRegion::SkyVolumeRegion(Logger &logger, const Rgb &sa, const Rgb &ss, const Rgb &le, const Point3f &pmin, const Point3f &pmax) : VolumeRegion(logger)
 {
 	b_box_ = Bound(pmin, pmax);
 	s_a_ = Rgb(0.f);

@@ -71,12 +71,12 @@ bool CurveObject::calculateObject(const std::unique_ptr<const Material> *materia
 	const int points_size = MeshObject::numVertices(0);
 	for(int time_step = 0; time_step < numTimeSteps(); ++time_step)
 	{
-		const std::vector<Point3> &points = getPoints(time_step);
+		const std::vector<Point3f> &points = getPoints(time_step);
 		// Vertex extruding
-		Uv<Vec3> uv{Vec3{0.f}, Vec3{0.f}};
+		Uv<Vec3f> uv{Vec3f{0.f}, Vec3f{0.f}};
 		for(int i = 0; i < points_size; i++)
 		{
-			const Point3 o{points[i]};
+			const Point3f o{points[i]};
 			float r;//current radius
 			if(strand_shape_ < 0)
 			{
@@ -89,13 +89,13 @@ bool CurveObject::calculateObject(const std::unique_ptr<const Material> *materia
 			// Last point keep previous tangent plane
 			if(i < points_size - 1)
 			{
-				Vec3 normal{points[i + 1] - points[i]};
+				Vec3f normal{points[i + 1] - points[i]};
 				normal.normalize();
-				uv = Vec3::createCoordsSystem(normal);
+				uv = Vec3f::createCoordsSystem(normal);
 			}
 			// TODO: thikness?
-			Point3 a{o - (0.5 * r * uv.v_) - 1.5 * r / math::sqrt(3.f) * uv.u_};
-			Point3 b{o - (0.5 * r * uv.v_) + 1.5 * r / math::sqrt(3.f) * uv.u_};
+			Point3f a{o - (0.5f * r * uv.v_) - 1.5f * r / math::sqrt(3.f) * uv.u_};
+			Point3f b{o - (0.5f * r * uv.v_) + 1.5f * r / math::sqrt(3.f) * uv.u_};
 
 			addPoint(std::move(a), time_step);
 			addPoint(std::move(b), time_step);

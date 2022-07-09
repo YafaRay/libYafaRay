@@ -36,33 +36,33 @@ class SpherePrimitive final : public Primitive
 {
 	public:
 		static Primitive *factory(const ParamMap &params, const Scene &scene, const Object &object);
-		SpherePrimitive(const Point3 &centr, float rad, const std::unique_ptr<const Material> *material, const Object &base_object): center_(centr), radius_(rad), base_object_(base_object), material_(material) {}
+		SpherePrimitive(const Point3f &centr, float rad, const std::unique_ptr<const Material> *material, const Object &base_object): center_(centr), radius_(rad), base_object_(base_object), material_(material) {}
 
 	private:
 		Bound getBound() const override;
-		Bound getBound(const Matrix4 &obj_to_world) const override;
-		std::pair<float, Uv<float>> intersect(const Point3 &from, const Vec3 &dir, float time) const override;
-		std::pair<float, Uv<float>> intersect(const Point3 &from, const Vec3 &dir, float time, const Matrix4 &obj_to_world) const override;
-		std::unique_ptr<const SurfacePoint> getSurface(const RayDifferentials *ray_differentials, const Point3 &hit_point, float time, const Uv<float> &intersect_uv, const Camera *camera) const override;
-		std::unique_ptr<const SurfacePoint> getSurface(const RayDifferentials *ray_differentials, const Point3 &hit_point, float time, const Uv<float> &intersect_uv, const Camera *camera, const Matrix4 &obj_to_world) const override;
+		Bound getBound(const Matrix4f &obj_to_world) const override;
+		std::pair<float, Uv<float>> intersect(const Point3f &from, const Vec3f &dir, float time) const override;
+		std::pair<float, Uv<float>> intersect(const Point3f &from, const Vec3f &dir, float time, const Matrix4f &obj_to_world) const override;
+		std::unique_ptr<const SurfacePoint> getSurface(const RayDifferentials *ray_differentials, const Point3f &hit_point, float time, const Uv<float> &intersect_uv, const Camera *camera) const override;
+		std::unique_ptr<const SurfacePoint> getSurface(const RayDifferentials *ray_differentials, const Point3f &hit_point, float time, const Uv<float> &intersect_uv, const Camera *camera, const Matrix4f &obj_to_world) const override;
 		const Material *getMaterial() const override { return material_->get(); }
 		float surfaceArea(float time) const override;
-		float surfaceArea(float time, const Matrix4 &obj_to_world) const override;
-		Vec3 getGeometricNormal(const Uv<float> &uv, float time, bool) const override;
-		Vec3 getGeometricNormal(const Uv<float> &uv, float time, const Matrix4 &obj_to_world) const override;
-		std::pair<Point3, Vec3> sample(const Uv<float> &uv, float time) const override;
-		std::pair<Point3, Vec3> sample(const Uv<float> &uv, float time, const Matrix4 &obj_to_world) const override;
+		float surfaceArea(float time, const Matrix4f &obj_to_world) const override;
+		Vec3f getGeometricNormal(const Uv<float> &uv, float time, bool) const override;
+		Vec3f getGeometricNormal(const Uv<float> &uv, float time, const Matrix4f &obj_to_world) const override;
+		std::pair<Point3f, Vec3f> sample(const Uv<float> &uv, float time) const override;
+		std::pair<Point3f, Vec3f> sample(const Uv<float> &uv, float time, const Matrix4f &obj_to_world) const override;
 		const Object *getObject() const override { return &base_object_; }
 		VisibilityFlags getVisibility() const override { return base_object_.getVisibility(); }
 		bool clippingSupport() const override { return false; }
-		float getDistToNearestEdge(const Uv<float> &uv, const Uv<Vec3> &dp_abs) const override { return 0.f; }
+		float getDistToNearestEdge(const Uv<float> &uv, const Uv<Vec3f> &dp_abs) const override { return 0.f; }
 		unsigned int getObjectIndex() const override { return base_object_.getIndex(); }
 		unsigned int getObjectIndexAuto() const override { return base_object_.getIndexAuto(); }
 		Rgb getObjectIndexAutoColor() const override { return base_object_.getIndexAutoColor(); }
 		const Light *getObjectLight() const override { return base_object_.getLight(); }
 		bool hasObjectMotionBlur() const override { return base_object_.hasMotionBlur(); }
 
-		Point3 center_;
+		Point3f center_;
 		float radius_;
 		const Object &base_object_;
 		const std::unique_ptr<const Material> *material_ = nullptr;

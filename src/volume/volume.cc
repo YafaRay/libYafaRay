@@ -60,7 +60,7 @@ VolumeHandler * VolumeHandler::factory(Logger &logger, const Scene &scene, const
 	else return nullptr;
 }
 
-VolumeRegion::VolumeRegion(Logger &logger, const Rgb &sa, const Rgb &ss, const Rgb &le, float gg, const Point3 &pmin, const Point3 &pmax, int attgrid_scale) : logger_(logger)
+VolumeRegion::VolumeRegion(Logger &logger, const Rgb &sa, const Rgb &ss, const Rgb &le, float gg, const Point3f &pmin, const Point3f &pmax, int attgrid_scale) : logger_(logger)
 {
 	b_box_ = Bound(pmin, pmax);
 	s_a_ = sa;
@@ -116,7 +116,7 @@ Rgb DensityVolumeRegion::tau(const Ray &ray, float step_size, float offset) cons
 	return tau_val;
 }
 
-float VolumeRegion::attenuation(const Point3 &p, const Light *l) const
+float VolumeRegion::attenuation(const Point3f &p, const Light *l) const
 {
 	if(attenuation_grid_map_.find(l) == attenuation_grid_map_.end())
 	{
@@ -125,9 +125,9 @@ float VolumeRegion::attenuation(const Point3 &p, const Light *l) const
 
 	const float *attenuation_grid = attenuation_grid_map_.at(l);
 
-	const float x = (p.x() - b_box_.a_.x()) / b_box_.longX() * att_grid_x_ - 0.5f;
-	const float y = (p.y() - b_box_.a_.y()) / b_box_.longY() * att_grid_y_ - 0.5f;
-	const float z = (p.z() - b_box_.a_.z()) / b_box_.longZ() * att_grid_z_ - 0.5f;
+	const float x = (p[Axis::X] - b_box_.a_[Axis::X]) / b_box_.longX() * att_grid_x_ - 0.5f;
+	const float y = (p[Axis::Y] - b_box_.a_[Axis::Y]) / b_box_.longY() * att_grid_y_ - 0.5f;
+	const float z = (p[Axis::Z] - b_box_.a_[Axis::Z]) / b_box_.longZ() * att_grid_z_ - 0.5f;
 
 	//Check that the point is within the bounding box, return 0 if outside the box
 	if(x < -0.5f || y < -0.5f || z < -0.5f) return 0.f;

@@ -54,14 +54,14 @@ class ShinyDiffuseMaterial final : public NodeMaterial
 	private:
 		ShinyDiffuseMaterial(Logger &logger, const Rgb &diffuse_color, const Rgb &mirror_color, float diffuse_strength, float transparency_strength = 0.0, float translucency_strength = 0.0, float mirror_strength = 0.0, float emit_strength = 0.0, float transmit_filter_strength = 1.0, VisibilityFlags visibility = VisibilityFlags::Visible | VisibilityFlags::CastsShadows);
 		const MaterialData * initBsdf(SurfacePoint &sp, const Camera *camera) const override;
-		Rgb eval(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wl, BsdfFlags bsdfs, bool force_eval) const override;
-		Rgb sample(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, Vec3 &wi, Sample &s, float &w, bool chromatic, float wavelength, const Camera *camera) const override;
-		float pdf(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wi, BsdfFlags bsdfs) const override;
+		Rgb eval(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3f &wo, const Vec3f &wl, BsdfFlags bsdfs, bool force_eval) const override;
+		Rgb sample(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3f &wo, Vec3f &wi, Sample &s, float &w, bool chromatic, float wavelength, const Camera *camera) const override;
+		float pdf(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3f &wo, const Vec3f &wi, BsdfFlags bsdfs) const override;
 		bool isTransparent() const override { return is_transparent_; }
-		Rgb getTransparency(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, const Camera *camera) const override;
-		Rgb emit(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo) const override; // { return emitCol; }
-		Specular getSpecular(int ray_level, const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, bool chromatic, float wavelength) const override;
-		float getAlpha(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3 &wo, const Camera *camera) const override;
+		Rgb getTransparency(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3f &wo, const Camera *camera) const override;
+		Rgb emit(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3f &wo) const override; // { return emitCol; }
+		Specular getSpecular(int ray_level, const MaterialData *mat_data, const SurfacePoint &sp, const Vec3f &wo, bool chromatic, float wavelength) const override;
+		float getAlpha(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3f &wo, const Camera *camera) const override;
 		Rgb getDiffuseColor(const NodeTreeData &node_tree_data) const override;
 		Rgb getGlossyColor(const NodeTreeData &node_tree_data) const override;
 		Rgb getTransColor(const NodeTreeData &node_tree_data) const override;
@@ -70,9 +70,9 @@ class ShinyDiffuseMaterial final : public NodeMaterial
 
 		void config();
 		std::array<float, 4> getComponents(const std::array<bool, 4> &use_nodes, const NodeTreeData &node_tree_data) const;
-		float getFresnelKr(const Vec3 &wo, const Vec3 &n, float current_ior_squared) const;
+		float getFresnelKr(const Vec3f &wo, const Vec3f &n, float current_ior_squared) const;
 		void initOrenNayar(double sigma);
-		float orenNayar(const Vec3 &wi, const Vec3 &wo, const Vec3 &n, bool use_texture_sigma, double texture_sigma) const;
+		float orenNayar(const Vec3f &wi, const Vec3f &wo, const Vec3f &n, bool use_texture_sigma, double texture_sigma) const;
 		static std::array<float, 4> accumulate(const std::array<float, 4> &components, float kr);
 
 		bool is_transparent_ = false;                  //!< Boolean value which is true if you have transparent component

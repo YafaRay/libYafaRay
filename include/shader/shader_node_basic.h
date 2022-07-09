@@ -22,7 +22,7 @@
 
 #include "shader/shader_node.h"
 #include "texture/texture.h"
-#include "geometry/matrix4.h"
+#include "geometry/matrix.h"
 
 namespace yafaray {
 
@@ -42,22 +42,22 @@ class TextureMapperNode final : public ShaderNode
 		//virtual void getDerivative(const surfacePoint_t &sp, float &du, float &dv) const;
 
 		void setup();
-		std::pair<Point3, Vec3> getCoords(const SurfacePoint &sp, const Camera *camera) const;
-		Point3 doMapping(const Point3 &p, const Vec3 &n) const;
-		static Point3 tubeMap(const Point3 &p);
-		static Point3 sphereMap(const Point3 &p);
-		static Point3 cubeMap(const Point3 &p, const Vec3 &n);
-		static Point3 flatMap(const Point3 &p);
+		std::pair<Point3f, Vec3f> getCoords(const SurfacePoint &sp, const Camera *camera) const;
+		Point3f doMapping(const Point3f &p, const Vec3f &n) const;
+		static Point3f tubeMap(const Point3f &p);
+		static Point3f sphereMap(const Point3f &p);
+		static Point3f cubeMap(const Point3f &p, const Vec3f &n);
+		static Point3f flatMap(const Point3f &p);
 
 		int map_x_ = 1, map_y_ = 2, map_z_ = 3; //!< axis mapping; 0:set to zero, 1:x, 2:y, 3:z
-		Point3 p_du_, p_dv_, p_dw_;
+		Point3f p_du_, p_dv_, p_dw_;
 		float d_u_, d_v_, d_w_;
 		const Texture *tex_ = nullptr;
-		Vec3 scale_;
-		Vec3 offset_;
+		Vec3f scale_;
+		Vec3f offset_;
 		float bump_str_ = 0.02f;
 		bool do_scalar_ = true;
-		Matrix4 mtx_;
+		Matrix4f mtx_;
 		Coords coords_;
 		Projection projection_;
 };

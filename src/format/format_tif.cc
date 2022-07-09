@@ -75,7 +75,7 @@ bool TifFormat::saveToFile(const std::string &name, const ImageLayer &image_laye
 		for(int x = 0; x < w; x++)
 		{
 			const int ix = x * channels;
-			Rgba col = Layer::postProcess(image_layer.image_->getColor(x, y), image_layer.layer_.getType(), color_space, gamma, alpha_premultiply);
+			Rgba col = Layer::postProcess(image_layer.image_->getColor({{x, y}}), image_layer.layer_.getType(), color_space, gamma, alpha_premultiply);
 			col.clampRgba01();
 			scanline[ix] = (uint8_t)(col.getR() * 255.f);
 			scanline[ix + 1] = (uint8_t)(col.getG() * 255.f);
@@ -120,7 +120,7 @@ Image * TifFormat::loadFromFile(const std::string &name, const Image::Optimizati
 		return nullptr;
 	}
 	const Image::Type type = Image::getTypeFromSettings(true, grayscale_);
-	auto image = Image::factory(logger_, w, h, type, optimization);
+	auto image = Image::factory(logger_, {{static_cast<int>(w), static_cast<int>(h)}}, type, optimization);
 	int i = 0;
 	for(int y = static_cast<int>(h) - 1; y >= 0; y--)
 	{
@@ -132,7 +132,7 @@ Image * TifFormat::loadFromFile(const std::string &name, const Image::Optimizati
 					  (float)TIFFGetB(tiff_data[i]) * inv_max_8_bit_,
 					  (float)TIFFGetA(tiff_data[i]) * inv_max_8_bit_);
 			color.linearRgbFromColorSpace(color_space, gamma);
-			image->setColor(x, y, color);
+			image->setColor({{x, y}}, color);
 			++i;
 		}
 	}

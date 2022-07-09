@@ -63,7 +63,7 @@ Image *image_manipulation::getComposedImage(Logger &logger, const Image *image_1
 		case Image::Position::Overlay: break;
 		default: return nullptr;
 	}
-	auto result = Image::factory(logger, width, height, image_1->getType(), image_1->getOptimization());
+	auto result = Image::factory(logger, {{width, height}}, image_1->getType(), image_1->getOptimization());
 
 	for(int x = 0; x < width; ++x)
 	{
@@ -72,30 +72,30 @@ Image *image_manipulation::getComposedImage(Logger &logger, const Image *image_1
 			Rgba color;
 			if(position_image_2 == Image::Position::Top)
 			{
-				if(y < height_2 && x < width_2) color = image_2->getColor(x, y);
-				else if(y >= height_2) color = image_1->getColor(x, y - height_2);
+				if(y < height_2 && x < width_2) color = image_2->getColor({{x, y}});
+				else if(y >= height_2) color = image_1->getColor({{x, y - height_2}});
 			}
 			else if(position_image_2 == Image::Position::Bottom)
 			{
-				if(y >= height_1 && x < width_2) color = image_2->getColor(x, y - height_1);
-				else if(y < height_1) color = image_1->getColor(x, y);
+				if(y >= height_1 && x < width_2) color = image_2->getColor({{x, y - height_1}});
+				else if(y < height_1) color = image_1->getColor({{x, y}});
 			}
 			else if(position_image_2 == Image::Position::Left)
 			{
-				if(x < width_2 && y < height_2) color = image_2->getColor(x, y);
-				else if(x > width_2) color = image_1->getColor(x - width_2, y);
+				if(x < width_2 && y < height_2) color = image_2->getColor({{x, y}});
+				else if(x > width_2) color = image_1->getColor({{x - width_2, y}});
 			}
 			else if(position_image_2 == Image::Position::Right)
 			{
-				if(x >= width_1 && y < height_2) color = image_2->getColor(x - width_1, y);
-				else if(x < width_1) color = image_1->getColor(x, y);
+				if(x >= width_1 && y < height_2) color = image_2->getColor({{x - width_1, y}});
+				else if(x < width_1) color = image_1->getColor({{x, y}});
 			}
 			else if(position_image_2 == Image::Position::Overlay)
 			{
-				if(x >= overlay_x && x < overlay_x + width_2 && y >= overlay_y && y < overlay_y + height_2) color = image_2->getColor(x - overlay_x, y - overlay_y);
-				else color = image_1->getColor(x, y);
+				if(x >= overlay_x && x < overlay_x + width_2 && y >= overlay_y && y < overlay_y + height_2) color = image_2->getColor({{x - overlay_x, y - overlay_y}});
+				else color = image_1->getColor({{x, y}});
 			}
-			result->setColor(x, y, color);
+			result->setColor({{x, y}}, color);
 		}
 	}
 	return result;

@@ -74,9 +74,9 @@ bool PhotonMap::load(const std::string &filename)
 	photons_.resize(photons_size);
 	for(auto &p : photons_)
 	{
-		file.read<float>(p.pos_.x());
-		file.read<float>(p.pos_.y());
-		file.read<float>(p.pos_.z());
+		file.read<float>(p.pos_[Axis::X]);
+		file.read<float>(p.pos_[Axis::Y]);
+		file.read<float>(p.pos_[Axis::Z]);
 		file.read<float>(p.col_.r_);
 		file.read<float>(p.col_.g_);
 		file.read<float>(p.col_.b_);
@@ -99,9 +99,9 @@ bool PhotonMap::save(const std::string &filename) const
 	file.append<unsigned int>((unsigned int) photons_.size());
 	for(const auto &p : photons_)
 	{
-		file.append<float>(p.pos_.x());
-		file.append<float>(p.pos_.y());
-		file.append<float>(p.pos_.z());
+		file.append<float>(p.pos_[Axis::X]);
+		file.append<float>(p.pos_[Axis::Y]);
+		file.append<float>(p.pos_[Axis::Z]);
 		file.append<float>(p.col_.r_);
 		file.append<float>(p.col_.g_);
 		file.append<float>(p.col_.b_);
@@ -120,7 +120,7 @@ void PhotonMap::updateTree()
 	else tree_ = nullptr;
 }
 
-int PhotonMap::gather(const Point3 &p, FoundPhoton *found, unsigned int k, float &sq_radius) const
+int PhotonMap::gather(const Point3f &p, FoundPhoton *found, unsigned int k, float &sq_radius) const
 {
 	PhotonGather proc{k, p};
 	proc.found_photon_ = found;
@@ -128,7 +128,7 @@ int PhotonMap::gather(const Point3 &p, FoundPhoton *found, unsigned int k, float
 	return proc.found_photons_;
 }
 
-const Photon *PhotonMap::findNearest(const Point3 &p, const Vec3 &n, float dist) const
+const Photon *PhotonMap::findNearest(const Point3f &p, const Vec3f &n, float dist) const
 {
 	NearestPhoton proc{n};
 	//float dist=std::numeric_limits<float>::max(); //really bad idea...

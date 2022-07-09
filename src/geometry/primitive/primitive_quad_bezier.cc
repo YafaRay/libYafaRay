@@ -21,25 +21,25 @@
 
 namespace yafaray {
 
-std::unique_ptr<const SurfacePoint> QuadBezierPrimitive::getSurface(const RayDifferentials *ray_differentials, const Point3 &hit_point, float time, const Uv<float> &intersect_uv, const Camera *camera) const
+std::unique_ptr<const SurfacePoint> QuadBezierPrimitive::getSurface(const RayDifferentials *ray_differentials, const Point3f &hit_point, float time, const Uv<float> &intersect_uv, const Camera *camera) const
 {
 	return getSurfaceQuadBezier(ray_differentials, hit_point, time, intersect_uv, camera);
 }
 
-std::unique_ptr<const SurfacePoint> QuadBezierPrimitive::getSurface(const RayDifferentials *ray_differentials, const Point3 &hit_point, float time, const Uv<float> &intersect_uv, const Camera *camera, const Matrix4 &obj_to_world) const
+std::unique_ptr<const SurfacePoint> QuadBezierPrimitive::getSurface(const RayDifferentials *ray_differentials, const Point3f &hit_point, float time, const Uv<float> &intersect_uv, const Camera *camera, const Matrix4f &obj_to_world) const
 {
 	return getSurfaceQuadBezier(ray_differentials, hit_point, time, intersect_uv, camera, obj_to_world);
 }
 
 template<typename T>
-std::unique_ptr<const SurfacePoint> QuadBezierPrimitive::getSurfaceQuadBezier(const RayDifferentials *ray_differentials, const Point3 &hit_point, float time, const Uv<float> &intersect_uv, const Camera *camera, const T &obj_to_world) const
+std::unique_ptr<const SurfacePoint> QuadBezierPrimitive::getSurfaceQuadBezier(const RayDifferentials *ray_differentials, const Point3f &hit_point, float time, const Uv<float> &intersect_uv, const Camera *camera, const T &obj_to_world) const
 {
 	auto sp = std::make_unique<SurfacePoint>(this);
 	sp->time_ = time;
 	sp->ng_ = getGeometricNormal({}, time, obj_to_world);
 	if(base_mesh_object_.isSmooth() || base_mesh_object_.hasVerticesNormals(0))
 	{
-		const std::array<Vec3, 4> v {getVerticesNormals(0, sp->ng_, obj_to_world)};
+		const std::array<Vec3f, 4> v {getVerticesNormals(0, sp->ng_, obj_to_world)};
 		sp->n_ = ShapeQuad::interpolate(intersect_uv, v);
 		sp->n_.normalize();
 	}
@@ -47,7 +47,7 @@ std::unique_ptr<const SurfacePoint> QuadBezierPrimitive::getSurfaceQuadBezier(co
 	sp->has_orco_ = base_mesh_object_.hasOrco(0);
 	if(sp->has_orco_)
 	{
-		const std::array<Point3, 4> orco_p {getOrcoVertices(0)};
+		const std::array<Point3f, 4> orco_p {getOrcoVertices(0)};
 		sp->orco_p_ = ShapeQuad::interpolate(intersect_uv, orco_p);
 		sp->orco_ng_ = ((orco_p[1] - orco_p[0]) ^ (orco_p[2] - orco_p[0])).normalize();
 	}
@@ -57,7 +57,7 @@ std::unique_ptr<const SurfacePoint> QuadBezierPrimitive::getSurfaceQuadBezier(co
 		sp->orco_ng_ = getGeometricNormal({}, time, false);
 	}
 	bool implicit_uv = true;
-	const std::array<Point3, 4> p {getVerticesAsArray(0, obj_to_world)};
+	const std::array<Point3f, 4> p {getVerticesAsArray(0, obj_to_world)};
 	if(base_mesh_object_.hasUv())
 	{
 		const std::array<Uv<float>, 4> uv {getUvs()};
@@ -69,8 +69,8 @@ std::unique_ptr<const SurfacePoint> QuadBezierPrimitive::getSurfaceQuadBezier(co
 		if(std::abs(det) > 1e-30f)
 		{
 			const float invdet = 1.f / det;
-			const Vec3 dp_1{p[1] - p[0]};
-			const Vec3 dp_2{p[2] - p[0]};
+			const Vec3f dp_1{p[1] - p[0]};
+			const Vec3f dp_2{p[2] - p[0]};
 			sp->dp_ = {
 					(d_2.v_ * dp_1 - d_1.v_ * dp_2) * invdet,
 					(d_1.u_ * dp_2 - d_2.u_ * dp_1) * invdet
@@ -91,11 +91,11 @@ std::unique_ptr<const SurfacePoint> QuadBezierPrimitive::getSurfaceQuadBezier(co
 	sp->dp_abs_ = sp->dp_;
 	sp->dp_.u_.normalize();
 	sp->dp_.v_.normalize();
-	sp->uvn_ = Vec3::createCoordsSystem(sp->n_);
+	sp->uvn_ = Vec3f::createCoordsSystem(sp->n_);
 	// transform dPdU and dPdV in shading space
 	sp->ds_ = {
-			{sp->uvn_.u_ * sp->dp_.u_, sp->uvn_.v_ * sp->dp_.u_, sp->n_ * sp->dp_.u_},
-			{sp->uvn_.u_ * sp->dp_.v_, sp->uvn_.v_ * sp->dp_.v_, sp->n_ * sp->dp_.v_}
+			{{sp->uvn_.u_ * sp->dp_.u_, sp->uvn_.v_ * sp->dp_.u_, sp->n_ * sp->dp_.u_}},
+			{{sp->uvn_.u_ * sp->dp_.v_, sp->uvn_.v_ * sp->dp_.v_, sp->n_ * sp->dp_.v_}}
 	};
 	sp->mat_data_ = std::unique_ptr<const MaterialData>(sp->getMaterial()->initBsdf(*sp, camera));
 	return sp;

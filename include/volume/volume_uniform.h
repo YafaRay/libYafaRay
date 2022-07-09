@@ -34,10 +34,10 @@ class UniformVolumeRegion : public VolumeRegion
 		static VolumeRegion *factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params);
 
 	private:
-		UniformVolumeRegion(Logger &logger, const Rgb &sa, const Rgb &ss, const Rgb &le, float gg, const Point3 &pmin, const Point3 &pmax, int attgrid_scale);
-		Rgb sigmaA(const Point3 &p, const Vec3 &v) const override;
-		Rgb sigmaS(const Point3 &p, const Vec3 &v) const override;
-		Rgb emission(const Point3 &p, const Vec3 &v) const override;
+		UniformVolumeRegion(Logger &logger, const Rgb &sa, const Rgb &ss, const Rgb &le, float gg, const Point3f &pmin, const Point3f &pmax, int attgrid_scale);
+		Rgb sigmaA(const Point3f &p, const Vec3f &v) const override;
+		Rgb sigmaS(const Point3f &p, const Vec3f &v) const override;
+		Rgb emission(const Point3f &p, const Vec3f &v) const override;
 		Rgb tau(const Ray &ray, float step, float offset) const override;
 };
 

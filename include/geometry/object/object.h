@@ -31,11 +31,14 @@ namespace yafaray {
 class Light;
 class Primitive;
 class SurfacePoint;
-class Point3;
-class Vec3;
+template <typename T, size_t N> class Vec;
+typedef Vec<float, 3> Vec3f;
+template <typename T, size_t N> class Point;
+typedef Point<float, 3> Point3f;
 class ParamMap;
 class Scene;
-class Matrix4;
+template <typename T, size_t N> class SquareMatrix;
+typedef SquareMatrix<float, 4> Matrix4f;
 class Material;
 template <typename T> struct Uv;
 
@@ -72,9 +75,9 @@ class Object
 
 		/* Mesh-related interface functions below, only for Mesh objects */
 		virtual int lastVertexId(int time_step) const { return -1; }
-		virtual void addPoint(Point3 &&p, int time_step) { }
-		virtual void addOrcoPoint(Point3 &&p, int time_step) { }
-		virtual void addVertexNormal(Vec3 &&n, int time_step) { }
+		virtual void addPoint(Point3f &&p, int time_step) { }
+		virtual void addOrcoPoint(Point3f &&p, int time_step) { }
+		virtual void addVertexNormal(Vec3f &&n, int time_step) { }
 		virtual void addFace(std::vector<int> &&vertices, std::vector<int> &&vertices_uv, const std::unique_ptr<const Material> *material) { }
 		virtual int addUvValue(Uv<float> &&uv) { return -1; }
 		virtual bool hasVerticesNormals(int time_step) const { return false; }

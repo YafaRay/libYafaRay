@@ -45,9 +45,9 @@ void TextureMapperNode::setup()
 		d_u_ = d_v_ = d_w_ = step;
 	}
 
-	p_du_ = {d_u_, 0.f, 0.f};
-	p_dv_ = {0.f, d_v_, 0.f};
-	p_dw_ = {0.f, 0.f, d_w_};
+	p_du_ = {{d_u_, 0.f, 0.f}};
+	p_dv_ = {{0.f, d_v_, 0.f}};
+	p_dw_ = {{0.f, 0.f, d_w_}};
 
 	bump_str_ /= scale_.length();
 
@@ -56,68 +56,68 @@ void TextureMapperNode::setup()
 }
 
 // Map the texture to a cylinder
-Point3 TextureMapperNode::tubeMap(const Point3 &p)
+Point3f TextureMapperNode::tubeMap(const Point3f &p)
 {
-	Point3 res;
-	res.y() = p.z();
-	const float d = p.x() * p.x() + p.y() * p.y();
+	Point3f res;
+	res[Axis::Y] = p[Axis::Z];
+	const float d = p[Axis::X] * p[Axis::X] + p[Axis::Y] * p[Axis::Y];
 	if(d > 0.f)
 	{
-		res.z() = 1.f / math::sqrt(d);
-		res.x() = -std::atan2(p.x(), p.y()) * math::div_1_by_pi<>;
+		res[Axis::Z] = 1.f / math::sqrt(d);
+		res[Axis::X] = -std::atan2(p[Axis::X], p[Axis::Y]) * math::div_1_by_pi<>;
 	}
-	else res.x() = res.z() = 0.f;
+	else res[Axis::X] = res[Axis::Z] = 0.f;
 	return res;
 }
 
 // Map the texture to a sphere
-Point3 TextureMapperNode::sphereMap(const Point3 &p)
+Point3f TextureMapperNode::sphereMap(const Point3f &p)
 {
-	Point3 res{0.f, 0.f, 0.f};
-	const float d = p.x() * p.x() + p.y() * p.y() + p.z() * p.z();
+	Point3f res{{0.f, 0.f, 0.f}};
+	const float d = p[Axis::X] * p[Axis::X] + p[Axis::Y] * p[Axis::Y] + p[Axis::Z] * p[Axis::Z];
 	if(d > 0.f)
 	{
-		res.z() = math::sqrt(d);
-		if((p.x() != 0.f) && (p.y() != 0.f)) res.x() = -std::atan2(p.x(), p.y()) * math::div_1_by_pi<>;
-		res.y() = 1.f - 2.f * (math::acos(p.z() / res.z()) * math::div_1_by_pi<>);
+		res[Axis::Z] = math::sqrt(d);
+		if((p[Axis::X] != 0.f) && (p[Axis::Y] != 0.f)) res[Axis::X] = -std::atan2(p[Axis::X], p[Axis::Y]) * math::div_1_by_pi<>;
+		res[Axis::Y] = 1.f - 2.f * (math::acos(p[Axis::Z] / res[Axis::Z]) * math::div_1_by_pi<>);
 	}
 	return res;
 }
 
 // Map the texture to a cube
-Point3 TextureMapperNode::cubeMap(const Point3 &p, const Vec3 &n)
+Point3f TextureMapperNode::cubeMap(const Point3f &p, const Vec3f &n)
 {
 	const std::array<std::array<Axis, 3>, 3> ma {{ {Axis::Y, Axis::Z, Axis::X}, {Axis::X, Axis::Z, Axis::Y}, {Axis::X, Axis::Y, Axis::Z} }};
 	// int axis = std::abs(n.x) > std::abs(n.y) ? (std::abs(n.x) > std::abs(n.z) ? 0 : 2) : (std::abs(n.y) > std::abs(n.z) ? 1 : 2);
 	// no functionality changes, just more readable code
 	Axis axis;
-	if(std::abs(n.z()) >= std::abs(n.x()) && std::abs(n.z()) >= std::abs(n.y())) axis = Axis::Z;
-	else if(std::abs(n.y()) >= std::abs(n.x()) && std::abs(n.y()) >= std::abs(n.z())) axis = Axis::Y;
+	if(std::abs(n[Axis::Z]) >= std::abs(n[Axis::X]) && std::abs(n[Axis::Z]) >= std::abs(n[Axis::Y])) axis = Axis::Z;
+	else if(std::abs(n[Axis::Y]) >= std::abs(n[Axis::X]) && std::abs(n[Axis::Y]) >= std::abs(n[Axis::Z])) axis = Axis::Y;
 	else axis = Axis::X;
 	const auto axis_id = axis::getId(axis);
-	return { p[ma[axis_id][0]], p[ma[axis_id][1]], p[ma[axis_id][2]] };
+	return {{ p[ma[axis_id][0]], p[ma[axis_id][1]], p[ma[axis_id][2]] }};
 }
 
 // Map the texture to a plane, but it should not be used by now as it does nothing, it's just for completeness' sake
-Point3 TextureMapperNode::flatMap(const Point3 &p)
+Point3f TextureMapperNode::flatMap(const Point3f &p)
 {
 	return p;
 }
 
-Point3 TextureMapperNode::doMapping(const Point3 &p, const Vec3 &n) const
+Point3f TextureMapperNode::doMapping(const Point3f &p, const Vec3f &n) const
 {
-	Point3 texpt{p};
+	Point3f texpt{p};
 	// Texture coordinates standardized, if needed, to -1..1
 	switch(coords_)
 	{
-		case Coords::Uv: texpt = {2.f * texpt.x() - 1.f, 2.f * texpt.y() - 1.f, texpt.z()}; break;
+		case Coords::Uv: texpt = {{2.f * texpt[Axis::X] - 1.f, 2.f * texpt[Axis::Y] - 1.f, texpt[Axis::Z]}}; break;
 		default: break;
 	}
 	// Texture axis mapping
-	const std::array<float, 4> texmap {0.f, texpt.x(), texpt.y(), texpt.z() };
-	texpt.x() = texmap[map_x_];
-	texpt.y() = texmap[map_y_];
-	texpt.z() = texmap[map_z_];
+	const std::array<float, 4> texmap {0.f, texpt[Axis::X], texpt[Axis::Y], texpt[Axis::Z] };
+	texpt[Axis::X] = texmap[map_x_];
+	texpt[Axis::Y] = texmap[map_y_];
+	texpt[Axis::Z] = texmap[map_z_];
 	// Texture coordinates mapping
 	switch(projection_)
 	{
@@ -128,21 +128,21 @@ Point3 TextureMapperNode::doMapping(const Point3 &p, const Vec3 &n) const
 		default: break;
 	}
 	// Texture scale and offset
-	texpt = Point3::mult(texpt, scale_) + offset_;
+	texpt = multiplyComponents(texpt, scale_) + offset_;
 	return texpt;
 }
 
-std::pair<Point3, Vec3> TextureMapperNode::getCoords(const SurfacePoint &sp, const Camera *camera) const
+std::pair<Point3f, Vec3f> TextureMapperNode::getCoords(const SurfacePoint &sp, const Camera *camera) const
 {
 	switch(coords_)
 	{
-		case Coords::Uv: return { { sp.uv_.u_, sp.uv_.v_, 0.f }, sp.ng_ };
+		case Coords::Uv: return { {{ sp.uv_.u_, sp.uv_.v_, 0.f }}, sp.ng_ };
 		case Coords::Orco: return { sp.orco_p_, sp.orco_ng_ };
 		case Coords::Transformed: return { mtx_ * sp.p_, mtx_ * sp.ng_ };  // apply 4x4 matrix of object for mapping also to true surface normals
 		case Coords::Window: return { camera->screenproject(sp.p_), sp.ng_ };
 		case Coords::Normal: {
 			const auto [cam_x, cam_y, cam_z] = camera->getAxes();
-			return {{sp.n_ * cam_x, -sp.n_ * cam_y, 0.f}, sp.ng_};
+			return {{{sp.n_ * cam_x, -sp.n_ * cam_y, 0.f}}, sp.ng_};
 			}
 		case Coords::Stick: // Not implemented yet use GLOB
 		case Coords::Stress: // Not implemented yet use GLOB
@@ -159,14 +159,14 @@ void TextureMapperNode::eval(NodeTreeData &node_tree_data, const SurfacePoint &s
 	auto [texpt, ng] = getCoords(sp, camera);
 	if((tex_->getInterpolationType() == InterpolationType::Trilinear || tex_->getInterpolationType() == InterpolationType::Ewa) && sp.differentials_)
 	{
-		const Point3 texpt_orig {texpt};
+		const Point3f texpt_orig {texpt};
 		texpt = doMapping(texpt_orig, ng);
 		if(coords_ == Coords::Uv && sp.has_uv_)
 		{
 			const auto [d_dx, d_dy]{sp.getUVdifferentialsXY()};
-			const Point3 texpt_diffx{1.0e+2f * (doMapping(texpt_orig + 1.0e-2f * Point3{d_dx.u_, d_dx.v_, 0.f}, ng) - texpt)};
-			const Point3 texpt_diffy{1.0e+2f * (doMapping(texpt_orig + 1.0e-2f * Point3{d_dy.u_, d_dy.v_, 0.f}, ng) - texpt)};
-			mip_map_params = std::make_unique<const MipMapParams>(texpt_diffx.x(), texpt_diffx.y(), texpt_diffy.x(), texpt_diffy.y());
+			const Point3f texpt_diffx{1.0e+2f * (doMapping(texpt_orig + 1.0e-2f * Point3f{{d_dx.u_, d_dx.v_, 0.f}}, ng) - texpt)};
+			const Point3f texpt_diffy{1.0e+2f * (doMapping(texpt_orig + 1.0e-2f * Point3f{{d_dy.u_, d_dy.v_, 0.f}}, ng) - texpt)};
+			mip_map_params = std::make_unique<const MipMapParams>(texpt_diffx[Axis::X], texpt_diffx[Axis::Y], texpt_diffy[Axis::X], texpt_diffy[Axis::Y]);
 		}
 	}
 	else texpt = doMapping(texpt, ng);
@@ -185,15 +185,15 @@ void TextureMapperNode::evalDerivative(NodeTreeData &node_tree_data, const Surfa
 	if(tex_->discrete() && sp.has_uv_ && coords_ == Coords::Uv)
 	{
 		texpt = doMapping(texpt, ng);
-		Vec3 norm;
+		Vec3f norm;
 
 		if(tex_->isNormalmap())
 		{
 			// Get color from normal map texture
 			const Rgba color = tex_->getRawColor(texpt);
 			// Assign normal map RGB colors to vector norm
-			norm = { color.getR(), color.getG(), color.getB() };
-			norm = (2.f * norm) - Vec3{1.f}; //FIXME DAVID: does the Vec3 portion make sense?
+			norm = {{ color.getR(), color.getG(), color.getB() }};
+			norm = (2.f * norm) - Vec3f{1.f}; //FIXME DAVID: does the Vec3 portion make sense?
 
 			// Convert norm into shading space
 			du = norm * sp.ds_.u_;
@@ -201,29 +201,29 @@ void TextureMapperNode::evalDerivative(NodeTreeData &node_tree_data, const Surfa
 		}
 		else
 		{
-			const Point3 i_0{texpt - p_du_};
-			const Point3 i_1{texpt + p_du_};
-			const Point3 j_0{texpt - p_dv_};
-			const Point3 j_1{texpt + p_dv_};
+			const Point3f i_0{texpt - p_du_};
+			const Point3f i_1{texpt + p_du_};
+			const Point3f j_0{texpt - p_dv_};
+			const Point3f j_1{texpt + p_dv_};
 			const float dfdu = (tex_->getFloat(i_0) - tex_->getFloat(i_1)) / d_u_;
 			const float dfdv = (tex_->getFloat(j_0) - tex_->getFloat(j_1)) / d_v_;
 
 			// now we got the derivative in UV-space, but need it in shading space:
-			Vec3 vec_u{sp.ds_.u_};
-			Vec3 vec_v{sp.ds_.v_};
-			vec_u.z() = dfdu;
-			vec_v.z() = dfdv;
+			Vec3f vec_u{sp.ds_.u_};
+			Vec3f vec_v{sp.ds_.v_};
+			vec_u[Axis::Z] = dfdu;
+			vec_v[Axis::Z] = dfdv;
 			// now we have two vectors NU/NV/df; Solve plane equation to get 1/0/df and 0/1/df (i.e. dNUdf and dNVdf)
 			norm = vec_u ^ vec_v;
 		}
 
 		norm.normalize();
 
-		if(std::abs(norm.z()) > 1e-30f)
+		if(std::abs(norm[Axis::Z]) > 1e-30f)
 		{
-			const float nf = 1.f / norm.z() * bump_str_; // normalizes z to 1, why?
-			du = norm.x() * nf;
-			dv = norm.y() * nf;
+			const float nf = 1.f / norm[Axis::Z] * bump_str_; // normalizes z to 1, why?
+			du = norm[Axis::X] * nf;
+			dv = norm[Axis::Y] * nf;
 		}
 		else du = dv = 0.f;
 	}
@@ -237,8 +237,8 @@ void TextureMapperNode::evalDerivative(NodeTreeData &node_tree_data, const Surfa
 			const Rgba color = tex_->getRawColor(texpt);
 
 			// Assign normal map RGB colors to vector norm
-			Vec3 norm { color.getR(), color.getG(), color.getB() };
-			norm = (2.f * norm) - Vec3{1.f}; //FIXME DAVID: does the Vec3 portion make sense?
+			Vec3f norm {{color.getR(), color.getG(), color.getB() }};
+			norm = (2.f * norm) - Vec3f{1.f}; //FIXME DAVID: does the Vec3 portion make sense?
 
 			// Convert norm into shading space
 			du = norm * sp.ds_.u_;
@@ -246,11 +246,11 @@ void TextureMapperNode::evalDerivative(NodeTreeData &node_tree_data, const Surfa
 
 			norm.normalize();
 
-			if(std::abs(norm.z()) > 1e-30f)
+			if(std::abs(norm[Axis::Z]) > 1e-30f)
 			{
-				const float nf = 1.f / norm.z() * bump_str_; // normalizes z to 1, why?
-				du = norm.x() * nf;
-				dv = norm.y() * nf;
+				const float nf = 1.f / norm[Axis::Z] * bump_str_; // normalizes z to 1, why?
+				du = norm[Axis::X] * nf;
+				dv = norm[Axis::Y] * nf;
 			}
 			else du = dv = 0.f;
 		}
@@ -258,10 +258,10 @@ void TextureMapperNode::evalDerivative(NodeTreeData &node_tree_data, const Surfa
 		{
 			// no uv coords -> procedurals usually, this mapping only depends on NU/NV which is fairly arbitrary
 			// weird things may happen when objects are rotated, i.e. incorrect bump change
-			const Point3 i_0{doMapping(texpt - d_u_ * sp.uvn_.u_, ng)};
-			const Point3 i_1{doMapping(texpt + d_u_ * sp.uvn_.u_, ng)};
-			const Point3 j_0{doMapping(texpt - d_v_ * sp.uvn_.v_, ng)};
-			const Point3 j_1{doMapping(texpt + d_v_ * sp.uvn_.v_, ng)};
+			const Point3f i_0{doMapping(texpt - d_u_ * sp.uvn_.u_, ng)};
+			const Point3f i_1{doMapping(texpt + d_u_ * sp.uvn_.u_, ng)};
+			const Point3f j_0{doMapping(texpt - d_v_ * sp.uvn_.v_, ng)};
+			const Point3f j_1{doMapping(texpt + d_v_ * sp.uvn_.v_, ng)};
 
 			du = (tex_->getFloat(i_0) - tex_->getFloat(i_1)) / d_u_;
 			dv = (tex_->getFloat(j_0) - tex_->getFloat(j_1)) / d_v_;
@@ -287,8 +287,8 @@ ShaderNode * TextureMapperNode::factory(Logger &logger, const Scene &scene, cons
 	float bump_str = 1.f;
 	bool scalar = true;
 	std::array<int, 3> map { 1, 2, 3 };
-	Point3 offset{0.f, 0.f, 0.f}, scale{1.f, 1.f, 1.f};
-	Matrix4 mtx{1.f};
+	Point3f offset{{0.f, 0.f, 0.f}}, scale{{1.f, 1.f, 1.f}};
+	Matrix4f mtx{1.f};
 	if(!params.getParam("texture", texname))
 	{
 		logger.logError("TextureMapper: No texture given for texture mapper!");
@@ -336,7 +336,7 @@ ShaderNode * TextureMapperNode::factory(Logger &logger, const Scene &scene, cons
 	tm->map_y_ = map[1];
 	tm->map_z_ = map[2];
 	tm->scale_ = scale;
-	tm->offset_ = 2 * offset;	// Offset need to be doubled due to -1..1 texture standardized wich results in a 2 wide width/height
+	tm->offset_ = 2.f * offset;	// Offset need to be doubled due to -1..1 texture standardized wich results in a 2 wide width/height
 	tm->do_scalar_ = scalar;
 	tm->bump_str_ = bump_str;
 	tm->mtx_ = mtx;

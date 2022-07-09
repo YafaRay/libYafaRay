@@ -25,7 +25,7 @@
 
 namespace yafaray {
 
-OrthographicCamera::OrthographicCamera(Logger &logger, const Point3 &pos, const Point3 &look, const Point3 &up,
+OrthographicCamera::OrthographicCamera(Logger &logger, const Point3f &pos, const Point3f &look, const Point3f &up,
 									   int resx, int resy, float aspect, float scale, float const near_clip_distance, float const far_clip_distance)
 	: Camera(logger, pos, look, up, resx, resy, aspect, near_clip_distance, far_clip_distance), scale_(scale)
 {
@@ -33,7 +33,7 @@ OrthographicCamera::OrthographicCamera(Logger &logger, const Point3 &pos, const 
 	setAxis(cam_x_, cam_y_, cam_z_);
 }
 
-void OrthographicCamera::setAxis(const Vec3 &vx, const Vec3 &vy, const Vec3 &vz)
+void OrthographicCamera::setAxis(const Vec3f &vx, const Vec3f &vy, const Vec3f &vz)
 {
 	cam_x_ = vx;
 	cam_y_ = vy;
@@ -42,7 +42,7 @@ void OrthographicCamera::setAxis(const Vec3 &vx, const Vec3 &vy, const Vec3 &vz)
 	vright_ = cam_x_;
 	vup_ = aspect_ratio_ * cam_y_;
 	vto_ = cam_z_;
-	pos_ = position_ - 0.5 * scale_ * (vup_ + vright_);
+	pos_ = position_ - 0.5f * scale_ * (vup_ + vright_);
 	vup_     *= scale_ / (float)resy_;
 	vright_  *= scale_ / (float)resx_;
 }
@@ -58,18 +58,18 @@ CameraRay OrthographicCamera::shootRay(float px, float py, const Uv<float> &uv) 
 	return {std::move(ray), true};
 }
 
-Point3 OrthographicCamera::screenproject(const Point3 &p) const
+Point3f OrthographicCamera::screenproject(const Point3f &p) const
 {
-	const Vec3 dir{p - pos_};
+	const Vec3f dir{p - pos_};
 	// Project p to pixel plane
 	const float dz = cam_z_ * dir;
-	const Vec3 proj{dir - dz * cam_z_};
-	return { 2.f * (proj * cam_x_ / scale_) - 1.f, -2.f * proj * cam_y_ / (aspect_ratio_ * scale_) + 1.f, 0.f};
+	const Vec3f proj{dir - dz * cam_z_};
+	return {{ 2.f * (proj * cam_x_ / scale_) - 1.f, -2.f * proj * cam_y_ / (aspect_ratio_ * scale_) + 1.f, 0.f }};
 }
 
 const Camera * OrthographicCamera::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params)
 {
-	Point3 from(0, 1, 0), to(0, 0, 0), up(0, 1, 1);
+	Point3f from{{0, 1, 0}}, to{{0, 0, 0}}, up{{0, 1, 1}};
 	int resx = 320, resy = 200;
 	double aspect = 1.0, scale = 1.0;
 	float near_clip = 0.0f, far_clip = -1.0f;

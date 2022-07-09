@@ -20,10 +20,10 @@
 #ifndef YAFARAY_POLY_DOUBLE_H
 #define YAFARAY_POLY_DOUBLE_H
 
-#include "geometry/vector_double.h"
+#include "geometry/vector.h"
+#include "common/logger.h"
 #include <vector>
 #include <array>
-#include <common/logger.h>
 
 namespace yafaray {
 
@@ -35,18 +35,18 @@ class PolyDouble
 	public:
 		size_t numVertices() const { return size_; }
 		bool empty() const { return size_ == 0; }
-		Vec3Double operator[](size_t index) const { return vertices_[index]; }
-		void addVertex(const Vec3Double &vertex) { vertices_[size_++] = vertex; }
+		Vec3d operator[](size_t index) const { return vertices_[index]; }
+		void addVertex(const Vec3d &vertex) { vertices_[size_++] = vertex; }
 		std::string print() const;
 		struct ClipResult;
 		struct ClipResultWithBound;
 		/* Sutherland-Hodgman triangle clipping */
 		static PolyDouble::ClipResultWithBound planeClipWithBound(Logger &logger, double pos, const ClipPlane &clip_plane, const PolyDouble &poly);
-		static PolyDouble::ClipResultWithBound boxClip(Logger &logger, const Vec3Double &b_max, const PolyDouble &poly, const Vec3Double &b_min);
+		static PolyDouble::ClipResultWithBound boxClip(Logger &logger, const Vec3d &b_max, const PolyDouble &poly, const Vec3d &b_min);
 	private:
 		static PolyDouble::ClipResult planeClip(Logger &logger, double pos, const ClipPlane &clip_plane, const PolyDouble &poly);
 		static Bound getBound(const PolyDouble &poly);
-		std::array<Vec3Double, 10> vertices_; //Limited to triangles + 6 clipping planes cuts, or to quads + 6 clipping planes (total 10 edges/vertices max)
+		std::array<Vec3d, 10> vertices_; //Limited to triangles + 6 clipping planes cuts, or to quads + 6 clipping planes (total 10 edges/vertices max)
 		size_t size_ = 0;
 };
 

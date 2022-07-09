@@ -28,7 +28,8 @@
 
 namespace yafaray {
 
-class Vec3;
+template <typename T, size_t N> class Vec;
+typedef Vec<float, 3> Vec3f;
 class Light;
 class Pdf1D;
 

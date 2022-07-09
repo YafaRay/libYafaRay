@@ -32,6 +32,7 @@
 #include "image/image_layers.h"
 #include "render/render_callbacks.h"
 #include "common/timer.h"
+#include "geometry/rect.h"
 #include <mutex>
 #include <atomic>
 
@@ -77,7 +78,7 @@ class ImageFilm final
 
 		static ImageFilm *factory(Logger &logger, const ParamMap &params, Scene *scene);
 		/*! imageFilm_t Constructor */
-		ImageFilm(Logger &logger, int width, int height, int xstart, int ystart, int num_threads, RenderControl &render_control, const Layers &layers, const std::map<std::string, std::unique_ptr<ImageOutput>> &outputs, float filter_size = 1.f, FilterType filt = FilterType::Box, int t_size = 32, ImageSplitter::TilesOrderType tiles_order_type = ImageSplitter::Linear);
+		ImageFilm(Logger &logger, const Rect &rect, int num_threads, RenderControl &render_control, const Layers &layers, const std::map<std::string, std::unique_ptr<ImageOutput>> &outputs, float filter_size = 1.f, FilterType filt = FilterType::Box, int t_size = 32, ImageSplitter::TilesOrderType tiles_order_type = ImageSplitter::Linear);
 		/*! Initialize imageFilm for new rendering, i.e. set pixels black etc */
 		void init(RenderControl &render_control, int num_passes = 0);
 		/*! Prepare for next pass, i.e. reset area_cnt, check if pixels need resample...
@@ -96,17 +97,17 @@ class ImageFilm final
 		/*! query if sample (x,y) was flagged to need more samples.
 			IMPORTANT! You may only call this after you have called nextPass(true, ...), otherwise
 			no such flags have been created !! */
-		bool doMoreSamples(int x, int y) const;
+		bool doMoreSamples(const Point2i &point) const;
 		/*!	Add image sample; dx and dy describe the position in the pixel (x,y).
 			IMPORTANT: when a is given, all samples within a are assumed to come from the same thread!
 			use a=0 for contributions outside the area associated with current thread!
 		*/
-		void addSample(int x, int y, float dx, float dy, const RenderArea *a = nullptr, int num_sample = 0, int aa_pass_number = 0, float inv_aa_max_possible_samples = 0.1f, const ColorLayers *color_layers = nullptr);
+		void addSample(const Point2i &point, float dx, float dy, const RenderArea *a = nullptr, int num_sample = 0, int aa_pass_number = 0, float inv_aa_max_possible_samples = 0.1f, const ColorLayers *color_layers = nullptr);
 		/*!	Add light density sample; dx and dy describe the position in the pixel (x,y).
 			IMPORTANT: when a is given, all samples within a are assumed to come from the same thread!
 			use a=0 for contributions outside the area associated with current thread!
 		*/
-		void addDensitySample(const Rgb &c, int x, int y, float dx, float dy);
+		void addDensitySample(const Rgb &c, const Point2i &point, float dx, float dy);
 		//! Enables/Disables a light density estimation image
 		void setDensityEstimation(bool enable);
 		//! set number of samples for correct density estimation (if enabled)
@@ -116,15 +117,17 @@ class ImageFilm final
 		/*! Sets a custom progress bar in the image film */
 		void setProgressBar(std::shared_ptr<ProgressBar> pb);
 		/*! The following methods set the strings used for the parameters badge rendering */
-		int getTotalPixels() const { return width_ * height_; };
+		int getTotalPixels() const { return rect_.getArea(); };
 		void setAaNoiseParams(const AaNoiseParams &aa_noise_params) { aa_noise_params_ = aa_noise_params; };
 		/*! Methods for rendering the parameters badge; Note that FreeType lib is needed to render text */
-		int getWidth() const { return width_; }
-		int getHeight() const { return height_; }
-		int getCx0() const { return cx_0_; }
-		int getCy0() const { return cy_0_; }
+		int getWidth() const { return rect_.getWidth(); }
+		int getHeight() const { return rect_.getHeight(); }
+		int getCx0() const { return rect_.getPointStart()[Axis::X]; }
+		int getCy0() const { return rect_.getPointStart()[Axis::Y]; }
+		Size2i getSize() const { return rect_.getSize(); }
+		Rect getRect() const { return rect_; }
 		int getTileSize() const { return tile_size_; }
-		float getWeight(int x, int y) const { return weights_(x, y).getFloat(); }
+		float getWeight(const Point2i &point) const { return weights_(point).getFloat(); }
 		bool getBackgroundResampling() const { return background_resampling_; }
 		void setBackgroundResampling(bool background_resampling) { background_resampling_ = background_resampling; }
 		unsigned int getComputerNode() const { return computer_node_; }
@@ -149,14 +152,14 @@ class ImageFilm final
 		const ImageLayers *getExportedImageLayers() const { return &exported_image_layers_; }
 		Timer * getTimer() { return &timer_; }
 
-		static std::string printRenderStats(const RenderControl &render_control, const Timer &timer, int width, int height);
+		static std::string printRenderStats(const RenderControl &render_control, const Timer &timer, const Size2i &size);
 		static float darkThresholdCurveInterpolate(float pixel_brightness);
 
 	private:
 		void initLayersImages();
 		void initLayersExportedImages();
 		static int roundToIntWithBias(double val); //!< Asymmetrical rounding function with a +0.5 bias
-		int width_, height_, cx_0_, cx_1_, cy_0_, cy_1_;
+		Rect rect_;
 		int tile_size_;
 		ImageSplitter::TilesOrderType tiles_order_;
 		int num_threads_ = 1;

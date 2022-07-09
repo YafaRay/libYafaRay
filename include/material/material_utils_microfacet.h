@@ -33,7 +33,7 @@ inline float asDivisor(float cos_1, float cos_i, float cos_o)
 	return 8.f * math::num_pi<> * ((cos_1 * std::max(cos_i, cos_o)) * 0.99f + 0.04f);
 }
 
-inline Vec3 sampleQuadrantAniso(float s_1, float s_2, float e_u, float e_v)
+inline Vec3f sampleQuadrantAniso(float s_1, float s_2, float e_u, float e_v)
 {
 	const float phi = std::atan(math::sqrt((e_u + 1.f) / (e_v + 1.f)) * std::tan(math::div_pi_by_2<> * s_1));
 	const float cos_phi = math::cos(phi);
@@ -42,22 +42,22 @@ inline Vec3 sampleQuadrantAniso(float s_1, float s_2, float e_u, float e_v)
 	const float sin_phi_2 = 1.f - cos_phi_2;
 	const float cos_theta = math::pow(1.f - s_2, 1.f / (e_u * cos_phi_2 + e_v * sin_phi_2 + 1.f));
 	const float sin_theta = math::sqrt(1.f - cos_theta * cos_theta);
-	return { sin_theta * cos_phi, sin_theta * sin_phi, cos_theta };
+	return {{ sin_theta * cos_phi, sin_theta * sin_phi, cos_theta }};
 }
 
-inline float asAnisoD(Vec3 h, float e_u, float e_v)
+inline float asAnisoD(Vec3f h, float e_u, float e_v)
 {
-	if(h.z() <= 0.f) return 0.f;
-	float exponent = (e_u * h.x() * h.x() + e_v * h.y() * h.y()) / (1.00001f - h.z() * h.z());
-	return math::sqrt((e_u + 1.f) * (e_v + 1.f)) * math::pow(std::max(0.f, h.z()), exponent);
+	if(h[Axis::Z] <= 0.f) return 0.f;
+	float exponent = (e_u * h[Axis::X] * h[Axis::X] + e_v * h[Axis::Y] * h[Axis::Y]) / (1.00001f - h[Axis::Z] * h[Axis::Z]);
+	return math::sqrt((e_u + 1.f) * (e_v + 1.f)) * math::pow(std::max(0.f, h[Axis::Z]), exponent);
 }
 
-inline float asAnisoPdf(Vec3 h, float cos_w_h, float e_u, float e_v)
+inline float asAnisoPdf(Vec3f h, float cos_w_h, float e_u, float e_v)
 {
 	return asAnisoD(h, e_u, e_v) / pdfDivisor(cos_w_h);
 }
 
-inline Vec3 asAnisoSample(float s_1, float s_2, float e_u, float e_v)
+inline Vec3f asAnisoSample(float s_1, float s_2, float e_u, float e_v)
 {
 	if(s_1 < 0.25f)
 	{
@@ -65,21 +65,21 @@ inline Vec3 asAnisoSample(float s_1, float s_2, float e_u, float e_v)
 	}
 	else if(s_1 < 0.5f)
 	{
-		Vec3 vec{sampleQuadrantAniso(1.f - 4.f * (0.5f - s_1), s_2, e_u, e_v)};
-		vec.x() = -vec.x();
+		Vec3f vec{sampleQuadrantAniso(1.f - 4.f * (0.5f - s_1), s_2, e_u, e_v)};
+		vec[Axis::X] = -vec[Axis::X];
 		return vec;
 	}
 	else if(s_1 < 0.75f)
 	{
-		Vec3 vec{sampleQuadrantAniso(4.f * (s_1 - 0.5f), s_2, e_u, e_v)};
-		vec.x() = -vec.x();
-		vec.y() = -vec.y();
+		Vec3f vec{sampleQuadrantAniso(4.f * (s_1 - 0.5f), s_2, e_u, e_v)};
+		vec[Axis::X] = -vec[Axis::X];
+		vec[Axis::Y] = -vec[Axis::Y];
 		return vec;
 	}
 	else
 	{
-		Vec3 vec{sampleQuadrantAniso(1.f - 4.f * (1.f - s_1), s_2, e_u, e_v)};
-		vec.y() = -vec.y();
+		Vec3f vec{sampleQuadrantAniso(1.f - 4.f * (1.f - s_1), s_2, e_u, e_v)};
+		vec[Axis::Y] = -vec[Axis::Y];
 		return vec;
 	}
 }
@@ -94,19 +94,19 @@ inline float blinnPdf(float costheta, float cos_w_h, float e)
 	return blinnD(costheta, e) / pdfDivisor(cos_w_h);
 }
 
-inline Vec3 blinnSample(float s_1, float s_2, float exponent)
+inline Vec3f blinnSample(float s_1, float s_2, float exponent)
 {
 	// Compute sampled half-angle vector H for Blinn distribution
 	const float cos_theta = math::pow(1.f - s_2, 1.f / (exponent + 1.f));
 	const float sin_theta = math::sqrt(1.f - cos_theta * cos_theta);
 	const float phi = s_1 * math::mult_pi_by_2<>;
-	return { sin_theta * math::cos(phi), sin_theta * math::sin(phi), cos_theta };
+	return {{ sin_theta * math::cos(phi), sin_theta * math::sin(phi), cos_theta }};
 }
 
 // implementation of microfacet model with GGX facet distribution
 // based on http://www.graphics.cornell.edu/~bjw/microfacetbsdf.pdf
 
-inline Vec3 ggxSample(float alpha_2, float s_1, float s_2)
+inline Vec3f ggxSample(float alpha_2, float s_1, float s_2)
 {
 	// using the flollowing identity:
 	// cosTheta == 1 / sqrt(1 + tanTheta2)
@@ -114,7 +114,7 @@ inline Vec3 ggxSample(float alpha_2, float s_1, float s_2)
 	const float cos_theta = 1.f / math::sqrt(1.f + tan_theta_2);
 	const float sin_theta = math::sqrt(1.00001f - (cos_theta * cos_theta));
 	const float phi = math::mult_pi_by_2<> * s_2;
-	return { sin_theta * math::cos(phi), sin_theta * math::sin(phi), cos_theta };
+	return {{ sin_theta * math::cos(phi), sin_theta * math::sin(phi), cos_theta }};
 }
 
 inline float ggxD(float alpha_2, float cos_theta_2, float tan_theta_2)
@@ -156,9 +156,9 @@ inline float fresnel(float wo_h, float ior)
 	else return 1.f; // TIR
 }
 
-inline bool refract(float eta, const Vec3 &wo, Vec3 &wi, const Vec3 &h, float wo_h, float &kr, float &kt)
+inline bool refract(float eta, const Vec3f &wo, Vec3f &wi, const Vec3f &h, float wo_h, float &kr, float &kt)
 {
-	wi = Vec3{0.f};
+	wi = Vec3f{0.f};
 	const float c = -wo * h;
 	const float sign = (c > 0.f) ? 1 : -1;
 	const float t_1 = 1 - (eta * eta * (1 - c * c));
@@ -172,7 +172,7 @@ inline bool refract(float eta, const Vec3 &wo, Vec3 &wi, const Vec3 &h, float wo
 	return true;
 }
 
-inline void reflect(const Vec3 &wo, Vec3 &wi, const Vec3 &h)
+inline void reflect(const Vec3f &wo, Vec3f &wi, const Vec3f &h)
 {
 	wi = wo + (2.f * (h * -wo) * h);
 	wi = -wi;

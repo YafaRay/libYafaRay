@@ -37,16 +37,16 @@ class PointLight final : public Light
 		static Light *factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params);
 
 	private:
-		PointLight(Logger &logger, const Point3 &pos, const Rgb &col, float inte, bool b_light_enabled = true, bool b_cast_shadows = true);
+		PointLight(Logger &logger, const Point3f &pos, const Rgb &col, float inte, bool b_light_enabled = true, bool b_cast_shadows = true);
 		Rgb totalEnergy() const override { return color_ * 4.0f * math::num_pi<>; }
 		std::tuple<Ray, float, Rgb> emitPhoton(float s_1, float s_2, float s_3, float s_4, float time) const override;
-		std::pair<Vec3, Rgb> emitSample(LSample &s, float time) const override;
+		std::pair<Vec3f, Rgb> emitSample(LSample &s, float time) const override;
 		bool diracLight() const override { return true; }
-		std::pair<bool, Ray> illumSample(const Point3 &surface_p, LSample &s, float time) const override;
-		std::tuple<bool, Ray, Rgb> illuminate(const Point3 &surface_p, float time) const override;
-		std::array<float, 3> emitPdf(const Vec3 &, const Vec3 &wo) const override;
+		std::pair<bool, Ray> illumSample(const Point3f &surface_p, LSample &s, float time) const override;
+		std::tuple<bool, Ray, Rgb> illuminate(const Point3f &surface_p, float time) const override;
+		std::array<float, 3> emitPdf(const Vec3f &, const Vec3f &wo) const override;
 
-		Point3 position_;
+		Point3f position_;
 		Rgb color_;
 		float intensity_;
 };

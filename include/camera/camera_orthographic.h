@@ -30,17 +30,17 @@ class Scene;
 class OrthographicCamera final: public Camera
 {
 	public:
-		OrthographicCamera(Logger &logger, const Point3 &pos, const Point3 &look, const Point3 &up,
+		OrthographicCamera(Logger &logger, const Point3f &pos, const Point3f &look, const Point3f &up,
 						   int resx, int resy, float aspect, float scale,
 						   float near_clip_distance = 0.0f, float far_clip_distance = 1e6f);
-		void setAxis(const Vec3 &vx, const Vec3 &vy, const Vec3 &vz) override;
+		void setAxis(const Vec3f &vx, const Vec3f &vy, const Vec3f &vz) override;
 		CameraRay shootRay(float px, float py, const Uv<float> &uv) const override;
-		Point3 screenproject(const Point3 &p) const override;
+		Point3f screenproject(const Point3f &p) const override;
 
 		static const Camera * factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params);
 	protected:
 		float scale_;
-		Point3 pos_;
+		Point3f pos_;
 };
 
 } //namespace yafaray
