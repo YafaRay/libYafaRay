@@ -66,7 +66,7 @@ class MeshObject : public ObjectBase
 		bool hasMotionBlurBezier() const { return motion_blur_bezier_; }
 		float getTimeRangeStart() const { return time_steps_.front().time_; }
 		float getTimeRangeEnd() const { return time_steps_.back().time_; }
-		size_t numTimeSteps() const { return time_steps_.size(); }
+		int numTimeSteps() const { return static_cast<int>(time_steps_.size()); }
 		bool hasMotionBlur() const override { return hasMotionBlurBezier(); }
 
 	private:

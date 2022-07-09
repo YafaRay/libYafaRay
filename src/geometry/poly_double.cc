@@ -30,7 +30,7 @@ PolyDouble::ClipResultWithBound::ClipResultWithBound(ClipResult &&clip_result) :
 
 PolyDouble::ClipResult PolyDouble::planeClip(Logger &logger, double pos, const ClipPlane &clip_plane, const PolyDouble &poly)
 {
-	const size_t poly_num_vertices = poly.numVertices();
+	const int poly_num_vertices = poly.numVertices();
 	if(poly_num_vertices < 3)
 	{
 		logger.logWarning("Polygon clip: polygon with only ", poly.numVertices(), " vertices (less than 3), poly is 'degenerated'!");
@@ -110,7 +110,7 @@ Bound PolyDouble::getBound(const PolyDouble &poly)
 {
 	Vec3d a, g;
 	for(const auto &axis : axis::spatial) a[axis] = g[axis] = poly[0][axis];
-	for(size_t i = 1; i < poly.numVertices(); ++i)
+	for(int i = 1; i < poly.numVertices(); ++i)
 	{
 		for(const auto &axis : axis::spatial)
 		{
@@ -168,7 +168,7 @@ PolyDouble::ClipResultWithBound PolyDouble::boxClip(Logger &logger, const Vec3d 
 std::string PolyDouble::print() const
 {
 	std::string result = "{ ";
-	for(size_t vert = 0; vert < size_; ++vert)
+	for(int vert = 0; vert < size_; ++vert)
 	{
 		result += "[" + std::to_string(vert) + "]=" + vertices_[vert].print() + ", ";
 	}
