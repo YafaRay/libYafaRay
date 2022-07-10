@@ -21,7 +21,7 @@
 #define YAFARAY_PRIMITIVE_QUAD_H
 
 #include "geometry/primitive/primitive_face.h"
-#include "geometry/shape/shape_quad.h"
+#include "geometry/shape/shape_polygon.h"
 
 namespace yafaray {
 

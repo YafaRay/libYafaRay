@@ -21,7 +21,7 @@
 #define YAFARAY_PRIMITIVE_TRIANGLE_BEZIER_H
 
 #include "primitive_face.h"
-#include "geometry/shape/shape_triangle.h"
+#include "geometry/shape/shape_polygon.h"
 
 namespace yafaray {
 

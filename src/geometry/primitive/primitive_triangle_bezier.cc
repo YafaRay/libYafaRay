@@ -38,7 +38,7 @@ std::unique_ptr<const SurfacePoint> TriangleBezierPrimitive::getSurfaceTriangleB
 	auto sp = std::make_unique<SurfacePoint>(this);
 	sp->time_ = time;
 	sp->ng_ = getGeometricNormal({}, time, obj_to_world);
-	const auto [barycentric_u, barycentric_v, barycentric_w] = ShapeTriangle::getBarycentricUVW(intersect_uv);
+	const auto [barycentric_u, barycentric_v, barycentric_w] = ShapeTriangle::getTriangleBarycentricUVW(intersect_uv);
 	if(base_mesh_object_.isSmooth() || base_mesh_object_.hasVerticesNormals(0))
 	{
 		const std::array<Vec3f, 3> v {getVerticesNormals(0, sp->ng_, obj_to_world)};
