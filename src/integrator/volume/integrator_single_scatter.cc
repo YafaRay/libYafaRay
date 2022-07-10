@@ -70,9 +70,9 @@ bool SingleScatterIntegrator::preprocess(FastRandom &fast_random, ImageFilm *ima
 						for(int x = 0; x < x_size; ++x)
 						{
 							// generate the world position inside the grid
-							const Point3f p{{bb.longX() * x_size_inv * x + bb.a_[Axis::X],
-									 bb.longY() * y_size_inv * y + bb.a_[Axis::Y],
-									 bb.longZ() * z_size_inv * z + bb.a_[Axis::Z]}};
+							const Point3f p{{bb.length(Axis::X) * x_size_inv * x + bb.a_[Axis::X],
+									 bb.length(Axis::Y) * y_size_inv * y + bb.a_[Axis::Y],
+									 bb.length(Axis::Z) * z_size_inv * z + bb.a_[Axis::Z]}};
 
 							// handle lights with delta distribution, e.g. point and directional lights
 							if(light->diracLight())

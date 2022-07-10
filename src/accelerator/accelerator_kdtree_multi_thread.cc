@@ -112,7 +112,7 @@ AcceleratorKdTreeMultiThread::SplitCost AcceleratorKdTreeMultiThread::pigeonMinC
 	static constexpr int max_bin = 1024;
 	static constexpr int num_bins = max_bin + 1;
 	std::array<kdtree::TreeBin, num_bins> bins;
-	const Vec3f node_bound_axes {{node_bound.longX(), node_bound.longY(), node_bound.longZ()}};
+	const Vec3f node_bound_axes {{node_bound.length(Axis::X), node_bound.length(Axis::Y), node_bound.length(Axis::Z)}};
 	const Vec3f inv_node_bound_axes {{1.f / node_bound_axes[Axis::X], 1.f / node_bound_axes[Axis::Y], 1.f / node_bound_axes[Axis::Z]}};
 	SplitCost split;
 	split.cost_ = std::numeric_limits<float>::max();
@@ -255,7 +255,7 @@ AcceleratorKdTreeMultiThread::SplitCost AcceleratorKdTreeMultiThread::pigeonMinC
 AcceleratorKdTreeMultiThread::SplitCost AcceleratorKdTreeMultiThread::minimalCost(Logger &logger, float e_bonus, float cost_ratio, const Bound &node_bound, const std::vector<uint32_t> &indices, const std::vector<Bound> &bounds)
 {
 	const auto num_indices = static_cast<uint32_t>(indices.size());
-	const Vec3f node_bound_axes {{node_bound.longX(), node_bound.longY(), node_bound.longZ()}};
+	const Vec3f node_bound_axes {{node_bound.length(Axis::X), node_bound.length(Axis::Y), node_bound.length(Axis::Z)}};
 	const Vec3f inv_node_bound_axes {{1.f / node_bound_axes[Axis::X], 1.f / node_bound_axes[Axis::Y], 1.f / node_bound_axes[Axis::Z]}};
 	SplitCost split;
 	split.cost_ = std::numeric_limits<float>::max();
@@ -564,13 +564,8 @@ void AcceleratorKdTreeMultiThread::buildTreeWorker(const std::vector<const Primi
 	result.nodes_.emplace_back(node);
 	Bound bound_left = node_bound;
 	Bound bound_right = node_bound;
-	switch(split.axis_)
-	{
-		case Axis::X: bound_left.setMaxX(split_pos); bound_right.setMinX(split_pos); break;
-		case Axis::Y: bound_left.setMaxY(split_pos); bound_right.setMinY(split_pos); break;
-		case Axis::Z: bound_left.setMaxZ(split_pos); bound_right.setMinZ(split_pos); break;
-		default: break;
-	}
+	bound_left.setAxisMax(split.axis_, split_pos);
+	bound_right.setAxisMin(split.axis_, split_pos);
 
 	ClipPlane left_clip_plane;
 	ClipPlane right_clip_plane;

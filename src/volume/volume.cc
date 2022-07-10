@@ -125,9 +125,9 @@ float VolumeRegion::attenuation(const Point3f &p, const Light *l) const
 
 	const float *attenuation_grid = attenuation_grid_map_.at(l);
 
-	const float x = (p[Axis::X] - b_box_.a_[Axis::X]) / b_box_.longX() * att_grid_x_ - 0.5f;
-	const float y = (p[Axis::Y] - b_box_.a_[Axis::Y]) / b_box_.longY() * att_grid_y_ - 0.5f;
-	const float z = (p[Axis::Z] - b_box_.a_[Axis::Z]) / b_box_.longZ() * att_grid_z_ - 0.5f;
+	const float x = (p[Axis::X] - b_box_.a_[Axis::X]) / b_box_.length(Axis::X) * att_grid_x_ - 0.5f;
+	const float y = (p[Axis::Y] - b_box_.a_[Axis::Y]) / b_box_.length(Axis::Y) * att_grid_y_ - 0.5f;
+	const float z = (p[Axis::Z] - b_box_.a_[Axis::Z]) / b_box_.length(Axis::Z) * att_grid_z_ - 0.5f;
 
 	//Check that the point is within the bounding box, return 0 if outside the box
 	if(x < -0.5f || y < -0.5f || z < -0.5f) return 0.f;

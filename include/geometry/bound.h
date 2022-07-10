@@ -75,28 +75,14 @@ class Bound
 		Cross cross(const Ray &ray, float t_max) const;
 		//! Returns the volume of the bound
 		float vol() const;
-		//! Returns the length along X axis
-		float longX() const { return g_[Axis::X] - a_[Axis::X]; }
-		//! Returns the length along Y axis
-		float longY() const { return g_[Axis::Y] - a_[Axis::Y]; }
-		//! Returns the length along Z axis
-		float longZ() const { return g_[Axis::Z] - a_[Axis::Z]; }
-		//! Returns the length along Z axis
-		float longestAxisLength() const { return math::max(longX(), longY(), longZ()); }
-		//! Cuts the bound to have the given max X
-		void setMaxX(float x) { g_[Axis::X] = x;};
-		//! Cuts the bound to have the given min X
-		void setMinX(float x) { a_[Axis::X] = x;};
-
-		//! Cuts the bound to have the given max Y
-		void setMaxY(float y) { g_[Axis::Y] = y;};
-		//! Cuts the bound to have the given min Y
-		void setMinY(float y) { a_[Axis::Y] = y;};
-
-		//! Cuts the bound to have the given max Z
-		void setMaxZ(float z) { g_[Axis::Z] = z;};
-		//! Cuts the bound to have the given min Z
-		void setMinZ(float z) { a_[Axis::Z] = z;};
+		//! Returns the length along a certain axis
+		float length(Axis axis) const { return g_[axis] - a_[axis]; }
+		//! Returns the longest length among all axes
+		float longestLength() const { return math::max(length(Axis::X), length(Axis::Y), length(Axis::Z)); }
+		//! Cuts the bound in a certain axis to have the given max value
+		void setAxisMax(Axis axis, float val) { g_[axis] = val;};
+		//! Cuts the bound in a certain axis to have the given min value
+		void setAxisMin(Axis axis, float val) { a_[axis] = val;};
 		//! Adjust bound size to include point p
 		void include(const Point3f &p);
 		void include(const Bound &b);

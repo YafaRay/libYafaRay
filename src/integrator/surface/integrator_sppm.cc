@@ -1032,7 +1032,7 @@ void SppmIntegrator::initializePpm()
 	hit_points_.reserve(resolution);
 	// initialize SPPM statistics
 	// Now using Scene Bound, this could get a bigger initial radius, and need more tests
-	float initial_radius = ((scene_bound_.longX() + scene_bound_.longY() + scene_bound_.longZ()) / 3.f) / ((camera_->resX() + camera_->resY()) / 2.0f) * 2.f ;
+	float initial_radius = ((scene_bound_.length(Axis::X) + scene_bound_.length(Axis::Y) + scene_bound_.length(Axis::Z)) / 3.f) / ((camera_->resX() + camera_->resY()) / 2.0f) * 2.f ;
 	initial_radius = std::min(initial_radius, 1.f); //Fix the overflow bug
 	for(unsigned int i = 0; i < resolution; i++)
 	{

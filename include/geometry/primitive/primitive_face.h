@@ -145,12 +145,11 @@ inline Bound FacePrimitive::getBound(const std::vector<Point3f> &vertices)
 	const size_t num_vertices = vertices.size();
 	for(size_t vert_num = 1; vert_num < num_vertices; ++vert_num)
 	{
-		if(vertices[vert_num][Axis::X] < min_point[Axis::X]) min_point[Axis::X] = vertices[vert_num][Axis::X];
-		if(vertices[vert_num][Axis::Y] < min_point[Axis::Y]) min_point[Axis::Y] = vertices[vert_num][Axis::Y];
-		if(vertices[vert_num][Axis::Z] < min_point[Axis::Z]) min_point[Axis::Z] = vertices[vert_num][Axis::Z];
-		if(vertices[vert_num][Axis::X] > max_point[Axis::X]) max_point[Axis::X] = vertices[vert_num][Axis::X];
-		if(vertices[vert_num][Axis::Y] > max_point[Axis::Y]) max_point[Axis::Y] = vertices[vert_num][Axis::Y];
-		if(vertices[vert_num][Axis::Z] > max_point[Axis::Z]) max_point[Axis::Z] = vertices[vert_num][Axis::Z];
+		for(Axis axis : axis::spatial)
+		{
+			if(vertices[vert_num][axis] < min_point[axis]) min_point[axis] = vertices[vert_num][axis];
+			if(vertices[vert_num][axis] > max_point[axis]) max_point[axis] = vertices[vert_num][axis];
+		}
 	}
 	return {std::move(min_point), std::move(max_point)};
 }

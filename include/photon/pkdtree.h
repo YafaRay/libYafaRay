@@ -157,13 +157,8 @@ void PointKdTree<T>::buildTreeWorker(uint32_t start, uint32_t end, Bound &node_b
 	local_nodes[cur_node].createInterior(split_axis, split_pos);
 	++local_next_free_node;
 	Bound bound_l = node_bound, bound_r = node_bound;
-	switch(split_axis)
-	{
-		case Axis::X: bound_l.setMaxX(split_pos); bound_r.setMinX(split_pos); break;
-		case Axis::Y: bound_l.setMaxY(split_pos); bound_r.setMinY(split_pos); break;
-		case Axis::Z: bound_l.setMaxZ(split_pos); bound_r.setMinZ(split_pos); break;
-		default: break;
-	}
+	bound_l.setAxisMax(split_axis, split_pos);
+	bound_r.setAxisMin(split_axis, split_pos);
 
 	if(level <= max_level_threads_)   //launch threads for the first "x" levels to try to match (at least) the scene threads parameter
 	{

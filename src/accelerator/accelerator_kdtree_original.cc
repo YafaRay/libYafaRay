@@ -140,7 +140,7 @@ AcceleratorKdTree::SplitCost AcceleratorKdTree::pigeonMinCost(Logger &logger, fl
 	static constexpr int max_bin = 1024;
 	static constexpr int num_bins = max_bin + 1;
 	std::array<kdtree::TreeBin, num_bins> bins;
-	const Vec3f node_bound_axes {{node_bound.longX(), node_bound.longY(), node_bound.longZ()}};
+	const Vec3f node_bound_axes {{node_bound.length(Axis::X), node_bound.length(Axis::Y), node_bound.length(Axis::Z)}};
 	const Vec3f inv_node_bound_axes {{1.f / node_bound_axes[Axis::X], 1.f / node_bound_axes[Axis::Y], 1.f / node_bound_axes[Axis::Z]}};
 	SplitCost split;
 	split.cost_ = std::numeric_limits<float>::max();
@@ -282,7 +282,7 @@ AcceleratorKdTree::SplitCost AcceleratorKdTree::pigeonMinCost(Logger &logger, fl
 
 AcceleratorKdTree::SplitCost AcceleratorKdTree::minimalCost(Logger &logger, float e_bonus, float cost_ratio, uint32_t num_indices, const Bound &node_bound, const uint32_t *prim_idx, const Bound *all_bounds, const Bound *all_bounds_general, const std::array<std::unique_ptr<kdtree::BoundEdge[]>, 3> &edges_all_axes, kdtree::Stats &kd_stats)
 {
-	const std::array<float, 3> node_bound_axes {{node_bound.longX(), node_bound.longY(), node_bound.longZ()}};
+	const std::array<float, 3> node_bound_axes {{node_bound.length(Axis::X), node_bound.length(Axis::Y), node_bound.length(Axis::Z)}};
 	const std::array<float, 3> inv_node_bound_axes { 1.f / node_bound_axes[0], 1.f / node_bound_axes[1], 1.f / node_bound_axes[2] };
 	SplitCost split;
 	split.cost_ = std::numeric_limits<float>::max();
@@ -598,13 +598,8 @@ int AcceleratorKdTree::buildTree(uint32_t n_prims, const std::vector<const Primi
 	nodes_[cur_node].createInterior(axis::getId(split.axis_), split_pos, kd_stats_);
 	++next_free_node_;
 	Bound bound_l = node_bound, bound_r = node_bound;
-	switch(split.axis_)
-	{
-		case Axis::X: bound_l.setMaxX(split_pos); bound_r.setMinX(split_pos); break;
-		case Axis::Y: bound_l.setMaxY(split_pos); bound_r.setMinY(split_pos); break;
-		case Axis::Z: bound_l.setMaxZ(split_pos); bound_r.setMinZ(split_pos); break;
-		default: break;
-	}
+	bound_l.setAxisMax(split.axis_, split_pos);
+	bound_r.setAxisMin(split.axis_, split_pos);
 
 #if PRIMITIVE_CLIPPING > 0
 	if(n_prims <= prim_clip_thresh_)
