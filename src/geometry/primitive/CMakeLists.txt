@@ -21,8 +21,7 @@ target_sources(libyafaray4
 		primitive.cc
 		primitive_instance.cc
 		primitive_sphere.cc
-		primitive_triangle.cc
+		primitive_polygon.cc
 		primitive_triangle_bezier.cc
-		primitive_quad.cc
 		primitive_quad_bezier.cc
 )

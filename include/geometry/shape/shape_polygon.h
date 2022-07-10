@@ -42,7 +42,7 @@ class ShapePolygon final
 		T surfaceArea() const;
 		Point<T, 3> sample(const Uv<T> &uv) const;
 		//UV <-> Barycentric UVW relationship is not obvious, interesting explanation in: https://www.scratchapixel.com/lessons/3d-basic-rendering/ray-tracing-rendering-a-triangle/barycentric-coordinates
-		static std::array<T, 3> getTriangleBarycentricUVW(const Uv<T> &uv) { return { T{1} - uv.u_ - uv.v_, uv.u_, uv.v_ }; }
+		static std::tuple<T, T, T> getTriangleBarycentricUVW(const Uv<T> &uv) { return { T{1} - uv.u_ - uv.v_, uv.u_, uv.v_ }; }
 		static T getDistToNearestEdge(const Uv<T> &uv, const Uv<Vec<T, 3>> &dp_abs);
 		template <typename K> static K interpolate(const Uv<T> &uv, const std::array<K, N> &t);
 

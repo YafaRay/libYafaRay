@@ -16,40 +16,53 @@
  *      Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-#include "geometry/primitive/primitive_quad.h"
+#include "geometry/primitive/primitive_polygon.h"
 #include "geometry/surface.h"
 #include "geometry/clip_plane.h"
 
 namespace yafaray {
 
-std::unique_ptr<const SurfacePoint> QuadPrimitive::getSurface(const RayDifferentials *ray_differentials, const Point3f &hit_point, float time, const Uv<float> &intersect_uv, const Camera *camera) const
+template class PrimitivePolygon<float, 3>;
+template class PrimitivePolygon<float, 4>;
+
+template <typename T, size_t N>
+std::unique_ptr<const SurfacePoint> PrimitivePolygon<T, N>::getSurface(const RayDifferentials *ray_differentials, const Point<T, 3> &hit_point, T time, const Uv<T> &intersect_uv, const Camera *camera) const
 {
-	return getSurfaceQuad(ray_differentials, hit_point, time, intersect_uv, camera);
+	return getSurfacePolygon(ray_differentials, hit_point, time, intersect_uv, camera);
 }
 
-std::unique_ptr<const SurfacePoint> QuadPrimitive::getSurface(const RayDifferentials *ray_differentials, const Point3f &hit_point, float time, const Uv<float> &intersect_uv, const Camera *camera, const Matrix4f &obj_to_world) const
+template <typename T, size_t N>
+std::unique_ptr<const SurfacePoint> PrimitivePolygon<T, N>::getSurface(const RayDifferentials *ray_differentials, const Point<T, 3> &hit_point, T time, const Uv<T> &intersect_uv, const Camera *camera, const SquareMatrix<T, 4> &obj_to_world) const
 {
-	return getSurfaceQuad(ray_differentials, hit_point, time, intersect_uv, camera, obj_to_world);
+	return getSurfacePolygon(ray_differentials, hit_point, time, intersect_uv, camera, obj_to_world);
 }
 
-template<typename T>
-std::unique_ptr<const SurfacePoint> QuadPrimitive::getSurfaceQuad(const RayDifferentials *ray_differentials, const Point3f &hit_point, float time, const Uv<float> &intersect_uv, const Camera *camera, const T &obj_to_world) const
+template <typename T, size_t N>
+template<typename M>
+std::unique_ptr<const SurfacePoint> PrimitivePolygon<T, N>::getSurfacePolygon(const RayDifferentials *ray_differentials, const Point<T, 3> &hit_point, T time, const Uv<T> &intersect_uv, const Camera *camera, const M &obj_to_world) const
 {
-	auto sp = std::make_unique<SurfacePoint>(this);
+	auto sp{std::make_unique<SurfacePoint>(this)};
 	sp->time_ = time;
 	sp->ng_ = getGeometricNormal({}, time, obj_to_world);
+	T barycentric_u, barycentric_v, barycentric_w;
+	if constexpr(N == 3)
+	{
+		std::tie(barycentric_u, barycentric_v, barycentric_w) = ShapePolygon<T, N>::getTriangleBarycentricUVW(intersect_uv);
+	}
 	if(base_mesh_object_.isSmooth() || base_mesh_object_.hasVerticesNormals(0))
 	{
-		const std::array<Vec3f, 4> v {getVerticesNormals(0, sp->ng_, obj_to_world)};
-		sp->n_ = ShapeQuad::interpolate(intersect_uv, v);
+		const std::array<Vec<T, 3>, N> v {getVerticesNormals(0, sp->ng_, obj_to_world)};
+		if constexpr(N == 3) sp->n_ = barycentric_u * v[0] + barycentric_v * v[1] + barycentric_w * v[2];
+		else sp->n_ = ShapePolygon<T, N>::interpolate(intersect_uv, v);
 		sp->n_.normalize();
 	}
 	else sp->n_ = sp->ng_;
 	sp->has_orco_ = base_mesh_object_.hasOrco(0);
 	if(sp->has_orco_)
 	{
-		const std::array<Point3f, 4> orco_p {getOrcoVertices(0)};
-		sp->orco_p_ = ShapeQuad::interpolate(intersect_uv, orco_p);
+		const std::array<Point<T, 3>, N> orco_p {getOrcoVertices(0)};
+		if constexpr(N == 3) sp->orco_p_ = barycentric_u * orco_p[0] + barycentric_v * orco_p[1] + barycentric_w * orco_p[2];
+		else sp->orco_p_ = ShapePolygon<T, N>::interpolate(intersect_uv, orco_p);
 		sp->orco_ng_ = ((orco_p[1] - orco_p[0]) ^ (orco_p[2] - orco_p[0])).normalize();
 	}
 	else
@@ -58,20 +71,21 @@ std::unique_ptr<const SurfacePoint> QuadPrimitive::getSurfaceQuad(const RayDiffe
 		sp->orco_ng_ = getGeometricNormal({}, time, false);
 	}
 	bool implicit_uv = true;
-	const std::array<Point3f, 4> p {getVerticesAsArray(0, obj_to_world)};
+	const std::array<Point<T, 3>, N> p {getVerticesAsArray(0, obj_to_world)};
 	if(base_mesh_object_.hasUv())
 	{
-		const std::array<Uv<float>, 4> uv {getVerticesUvs()};
-		sp->uv_ = ShapeQuad::interpolate(intersect_uv, uv);
+		const std::array<Uv<T>, N> uv {getVerticesUvs()};
+		if constexpr(N == 3) sp->uv_ = barycentric_u * uv[0] + barycentric_v * uv[1] + barycentric_w * uv[2];
+		else sp->uv_ = ShapePolygon<T, N>::interpolate(intersect_uv, uv);
 		// calculate dPdU and dPdV
-		const Uv<float> d_1 = uv[1] - uv[0];
-		const Uv<float> d_2 = uv[2] - uv[0];
-		const float det = d_1.u_ * d_2.v_ - d_1.v_ * d_2.u_;
-		if(std::abs(det) > 1e-30f)
+		const Uv<T> d_1 = uv[1] - uv[0];
+		const Uv<T> d_2 = uv[2] - uv[0];
+		const T det = d_1.u_ * d_2.v_ - d_1.v_ * d_2.u_;
+		if(std::abs(det) > T{1e-30})
 		{
-			const float invdet = 1.f / det;
-			const Vec3f dp_1{p[1] - p[0]};
-			const Vec3f dp_2{p[2] - p[0]};
+			const T invdet = T{1} / det;
+			const Vec<T, 3> dp_1{p[1] - p[0]};
+			const Vec<T, 3> dp_2{p[2] - p[0]};
 			sp->dp_ = {
 					(d_2.v_ * dp_1 - d_1.v_ * dp_2) * invdet,
 					(d_1.u_ * dp_2 - d_2.u_ * dp_1) * invdet
@@ -83,7 +97,8 @@ std::unique_ptr<const SurfacePoint> QuadPrimitive::getSurfaceQuad(const RayDiffe
 	{
 		// implicit mapping, p0 = 0/0, p1 = 1/0, p2 = 0/1 => sp->u_ = barycentric_u, sp->v_ = barycentric_v; (arbitrary choice)
 		sp->dp_ = { p[1] - p[0], p[2] - p[0]};
-		sp->uv_ = intersect_uv;
+		if constexpr(N == 3) sp->uv_ = {barycentric_u, barycentric_v};
+		else sp->uv_ = intersect_uv;
 	}
 	sp->p_ = hit_point;
 	sp->has_uv_ = base_mesh_object_.hasUv();
@@ -92,7 +107,7 @@ std::unique_ptr<const SurfacePoint> QuadPrimitive::getSurfaceQuad(const RayDiffe
 	sp->dp_abs_ = sp->dp_;
 	sp->dp_.u_.normalize();
 	sp->dp_.v_.normalize();
-	sp->uvn_ = Vec3f::createCoordsSystem(sp->n_);
+	sp->uvn_ = Vec<T, 3>::createCoordsSystem(sp->n_);
 	// transform dPdU and dPdV in shading space
 	sp->ds_ = {
 			{{sp->uvn_.u_ * sp->dp_.u_, sp->uvn_.v_ * sp->dp_.u_, sp->n_ * sp->dp_.u_}},
@@ -102,7 +117,8 @@ std::unique_ptr<const SurfacePoint> QuadPrimitive::getSurfaceQuad(const RayDiffe
 	return sp;
 }
 
-PolyDouble::ClipResultWithBound QuadPrimitive::clipToBound(Logger &logger, const std::array<Vec3d, 2> &bound, const ClipPlane &clip_plane, const PolyDouble &poly) const
+template <typename T, size_t N>
+PolyDouble::ClipResultWithBound PrimitivePolygon<T, N>::clipToBound(Logger &logger, const std::array<Vec3d, 2> &bound, const ClipPlane &clip_plane, const PolyDouble &poly) const
 {
 	if(clip_plane.pos_ != ClipPlane::Pos::None) // re-clip
 	{
@@ -113,13 +129,14 @@ PolyDouble::ClipResultWithBound QuadPrimitive::clipToBound(Logger &logger, const
 		//else: do initial clipping below, if there are any other PolyDouble::ClipResult results (errors)
 	}
 	// initial clip
-	const std::array<Point3f, 4> vertices{getVerticesAsArray(0)};
+	const std::array<Point<T, 3>, N> vertices{getVerticesAsArray(0)};
 	PolyDouble poly_triangle;
 	for(const auto &vert : vertices) poly_triangle.addVertex({{vert[Axis::X], vert[Axis::Y], vert[Axis::Z]}});
 	return PolyDouble::boxClip(logger, bound[1], poly_triangle, bound[0]);
 }
 
-PolyDouble::ClipResultWithBound QuadPrimitive::clipToBound(Logger &logger, const std::array<Vec3d, 2> &bound, const ClipPlane &clip_plane, const PolyDouble &poly, const Matrix4f &obj_to_world) const
+template <typename T, size_t N>
+PolyDouble::ClipResultWithBound PrimitivePolygon<T, N>::clipToBound(Logger &logger, const std::array<Vec3d, 2> &bound, const ClipPlane &clip_plane, const PolyDouble &poly, const SquareMatrix<T, 4> &obj_to_world) const
 {
 	if(clip_plane.pos_ != ClipPlane::Pos::None) // re-clip
 	{
@@ -130,7 +147,7 @@ PolyDouble::ClipResultWithBound QuadPrimitive::clipToBound(Logger &logger, const
 		//else: do initial clipping below, if there are any other PolyDouble::ClipResult results (errors)
 	}
 	// initial clip
-	const std::array<Point3f, 4> vertices{getVerticesAsArray(0, obj_to_world)};
+	const std::array<Point<T, 3>, N> vertices{getVerticesAsArray(0, obj_to_world)};
 	PolyDouble poly_triangle;
 	for(const auto &vert : vertices) poly_triangle.addVertex({{vert[Axis::X], vert[Axis::Y], vert[Axis::Z]}});
 	return PolyDouble::boxClip(logger, bound[1], poly_triangle, bound[0]);
