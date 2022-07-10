@@ -48,9 +48,9 @@ void OrthographicCamera::setAxis(const Vec3f &vx, const Vec3f &vy, const Vec3f &
 }
 
 
-CameraRay OrthographicCamera::shootRay(float px, float py, const Uv<float> &uv) const
+CameraRay<float> OrthographicCamera::shootRay(float px, float py, const Uv<float> &uv) const
 {
-	Ray ray;
+	Ray<float> ray;
 	ray.from_ = pos_ + vright_ * px + vup_ * py;
 	ray.dir_ = vto_;
 	ray.tmin_ = near_plane_.rayIntersection(ray);

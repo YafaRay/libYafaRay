@@ -129,7 +129,7 @@ bool SingleScatterIntegrator::preprocess(FastRandom &fast_random, ImageFilm *ima
 	return success;
 }
 
-Rgb SingleScatterIntegrator::getInScatter(RandomGenerator &random_generator, const Ray &step_ray, float current_step) const
+Rgb SingleScatterIntegrator::getInScatter(RandomGenerator &random_generator, const Ray<float> &step_ray, float current_step) const
 {
 	Rgb in_scatter(0.f);
 	for(const auto &light : lights_)
@@ -239,7 +239,7 @@ Rgb SingleScatterIntegrator::getInScatter(RandomGenerator &random_generator, con
 	return in_scatter;
 }
 
-Rgb SingleScatterIntegrator::transmittance(RandomGenerator &random_generator, const Ray &ray) const
+Rgb SingleScatterIntegrator::transmittance(RandomGenerator &random_generator, const Ray<float> &ray) const
 {
 	if(vr_size_ == 0) return Rgb{1.f};
 	Rgb tr{1.f};
@@ -256,7 +256,7 @@ Rgb SingleScatterIntegrator::transmittance(RandomGenerator &random_generator, co
 	return tr;
 }
 
-Rgb SingleScatterIntegrator::integrate(RandomGenerator &random_generator, const Ray &ray, int additional_depth) const
+Rgb SingleScatterIntegrator::integrate(RandomGenerator &random_generator, const Ray<float> &ray, int additional_depth) const
 {
 	if(vr_size_ == 0) return Rgb{0.f};
 	const bool hit = (ray.tmax_ > 0.f);
@@ -329,7 +329,7 @@ Rgb SingleScatterIntegrator::integrate(RandomGenerator &random_generator, const 
 				}
 			}
 		}
-		const Ray step_ray{ray.from_ + (ray.dir_ * pos), ray.dir_, ray.time_, 0, current_step};
+		const Ray<float> step_ray{ray.from_ + (ray.dir_ * pos), ray.dir_, ray.time_, 0, current_step};
 		if(adaptive_)
 		{
 			step_tau = Rgb{accum_density.at(step_sample)};

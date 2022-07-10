@@ -117,7 +117,7 @@ bool PathIntegrator::preprocess(FastRandom &fast_random, ImageFilm *image_film, 
 	return success;
 }
 
-std::pair<Rgb, float> PathIntegrator::integrate(Ray &ray, FastRandom &fast_random, RandomGenerator &random_generator, std::vector<int> &correlative_sample_number, ColorLayers *color_layers, int thread_id, int ray_level, bool chromatic_enabled, float wavelength, int additional_depth, const RayDivision &ray_division, const PixelSamplingData &pixel_sampling_data, unsigned int object_index_highest, unsigned int material_index_highest) const
+std::pair<Rgb, float> PathIntegrator::integrate(Ray<float> &ray, FastRandom &fast_random, RandomGenerator &random_generator, std::vector<int> &correlative_sample_number, ColorLayers *color_layers, int thread_id, int ray_level, bool chromatic_enabled, float wavelength, int additional_depth, const RayDivision &ray_division, const PixelSamplingData &pixel_sampling_data, unsigned int object_index_highest, unsigned int material_index_highest) const
 {
 	static int calls = 0;
 	++calls;
@@ -170,7 +170,7 @@ std::pair<Rgb, float> PathIntegrator::integrate(Ray &ray, FastRandom &fast_rando
 				Rgb lcol, scol;
 				auto hit = std::make_unique<const SurfacePoint>(*sp);
 				Vec3f pwo{wo};
-				Ray p_ray;
+				Ray<float> p_ray;
 
 				const float wavelength_dispersive = chromatic_enabled ? sample::riS(offs) : 0.f;
 				//this mat already is initialized, just sample (diffuse...non-specular?)

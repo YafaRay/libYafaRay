@@ -33,11 +33,11 @@
 namespace yafaray {
 class Light;
 class Object;
-class Ray;
+template<typename T> class Ray;
 template <typename T, size_t N> class Vec;
 typedef Vec<float, 3> Vec3f;
 class Primitive;
-struct RayDifferentials;
+template<typename T> class RayDifferentials;
 
 struct SurfaceDifferentials final
 {
@@ -67,12 +67,12 @@ class SurfacePoint final
 		[[nodiscard]] static Vec3f normalFaceForward(const Vec3f &normal_geometry, const Vec3f &normal, const Vec3f &incoming_vector);
 		[[nodiscard]] float getDistToNearestEdge() const;
 		//! compute differentials for a scattered ray
-		[[nodiscard]] std::unique_ptr<RayDifferentials> reflectedRay(const RayDifferentials *in_differentials, const Vec3f &in_dir, const Vec3f &out_dir) const;
+		[[nodiscard]] std::unique_ptr<RayDifferentials<float>> reflectedRay(const RayDifferentials<float> *in_differentials, const Vec3f &in_dir, const Vec3f &out_dir) const;
 		//! compute differentials for a refracted ray
-		[[nodiscard]] std::unique_ptr<RayDifferentials> refractedRay(const RayDifferentials *in_differentials, const Vec3f &in_dir, const Vec3f &out_dir, float ior) const;
+		[[nodiscard]] std::unique_ptr<RayDifferentials<float>> refractedRay(const RayDifferentials<float> *in_differentials, const Vec3f &in_dir, const Vec3f &out_dir, float ior) const;
 		[[nodiscard]] float projectedPixelArea() const;
 		[[nodiscard]] std::array<Uv<float>, 2> getUVdifferentialsXY() const;
-		[[nodiscard]] std::unique_ptr<SurfaceDifferentials> calcSurfaceDifferentials(const RayDifferentials *ray_differentials) const;
+		[[nodiscard]] std::unique_ptr<SurfaceDifferentials> calcSurfaceDifferentials(const RayDifferentials<float> *ray_differentials) const;
 
 		[[nodiscard]] const MaterialData * initBsdf(const Camera *camera);
 		[[nodiscard]] Rgb eval(const Vec3f &wo, const Vec3f &wl, BsdfFlags types, bool force_eval = false) const;

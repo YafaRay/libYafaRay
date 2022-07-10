@@ -647,7 +647,7 @@ Rgb PhotonIntegrator::finalGathering(FastRandom &fast_random, RandomGenerator &r
 		Rgb throughput(1.0);
 		float length = 0;
 		Vec3f pwo{wo};
-		Ray p_ray;
+		Ray<float> p_ray;
 		p_ray.time_ = sp.time_;
 		bool did_hit;
 		unsigned int offs = n_paths_ * pixel_sampling_data.sample_ + pixel_sampling_data.offset_ + i; // some redundancy here...
@@ -852,7 +852,7 @@ Integrator * PhotonIntegrator::factory(Logger &logger, const ParamMap &params, c
 	return inte;
 }
 
-std::pair<Rgb, float> PhotonIntegrator::integrate(Ray &ray, FastRandom &fast_random, RandomGenerator &random_generator, std::vector<int> &correlative_sample_number, ColorLayers *color_layers, int thread_id, int ray_level, bool chromatic_enabled, float wavelength, int additional_depth, const RayDivision &ray_division, const PixelSamplingData &pixel_sampling_data, unsigned int object_index_highest, unsigned int material_index_highest) const
+std::pair<Rgb, float> PhotonIntegrator::integrate(Ray<float> &ray, FastRandom &fast_random, RandomGenerator &random_generator, std::vector<int> &correlative_sample_number, ColorLayers *color_layers, int thread_id, int ray_level, bool chromatic_enabled, float wavelength, int additional_depth, const RayDivision &ray_division, const PixelSamplingData &pixel_sampling_data, unsigned int object_index_highest, unsigned int material_index_highest) const
 {
 	static int n_max = 0;
 	static int calls = 0;

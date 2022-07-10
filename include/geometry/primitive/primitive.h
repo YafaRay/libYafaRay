@@ -56,8 +56,8 @@ class Primitive
 		virtual bool clippingSupport() const = 0;
 		virtual std::pair<float, Uv<float>> intersect(const Point3f &from, const Vec3f &dir, float time) const = 0;
 		virtual std::pair<float, Uv<float>> intersect(const Point3f &from, const Vec3f &dir, float time, const Matrix4f &obj_to_world) const = 0;
-		virtual std::unique_ptr<const SurfacePoint> getSurface(const RayDifferentials *ray_differentials, const Point3f &hit_point, float time, const Uv<float> &intersect_uv, const Camera *camera) const = 0;
-		virtual std::unique_ptr<const SurfacePoint> getSurface(const RayDifferentials *ray_differentials, const Point3f &hit_point, float time, const Uv<float> &intersect_uv, const Camera *camera, const Matrix4f &obj_to_world) const = 0;
+		virtual std::unique_ptr<const SurfacePoint> getSurface(const RayDifferentials<float> *ray_differentials, const Point3f &hit_point, float time, const Uv<float> &intersect_uv, const Camera *camera) const = 0;
+		virtual std::unique_ptr<const SurfacePoint> getSurface(const RayDifferentials<float> *ray_differentials, const Point3f &hit_point, float time, const Uv<float> &intersect_uv, const Camera *camera, const Matrix4f &obj_to_world) const = 0;
 		virtual const Material *getMaterial() const = 0;
 		virtual float surfaceArea(float time) const = 0;
 		virtual float surfaceArea(float time, const Matrix4f &obj_to_world) const = 0;

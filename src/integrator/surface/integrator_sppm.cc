@@ -217,7 +217,7 @@ bool SppmIntegrator::renderTile(FastRandom &fast_random, std::vector<int> &corre
 							static_cast<float>(Halton::lowDiscrepancySampling(fast_random, 4, pixel_sampling_data.sample_ + pixel_sampling_data.offset_))
 					};
 				}
-				CameraRay camera_ray = camera_->shootRay(static_cast<float>(j) + dx, static_cast<float>(i) + dy, lens_uv); // wt need to be considered
+				CameraRay<float> camera_ray = camera_->shootRay(static_cast<float>(j) + dx, static_cast<float>(i) + dy, lens_uv); // wt need to be considered
 				if(!camera_ray.valid_)
 				{
 					image_film_->addSample({{j, i}}, dx, dy, &a, sample, aa_pass_number, inv_aa_max_possible_samples, &color_layers); //maybe not need
@@ -226,11 +226,11 @@ bool SppmIntegrator::renderTile(FastRandom &fast_random, std::vector<int> &corre
 				if(render_control_.getDifferentialRaysEnabled())
 				{
 					//setup ray differentials
-					camera_ray.ray_.differentials_ = std::make_unique<RayDifferentials>();
-					const CameraRay camera_diff_ray_x = camera_->shootRay(static_cast<float>(j) + 1 + dx, static_cast<float>(i) + dy, lens_uv);
+					camera_ray.ray_.differentials_ = std::make_unique<RayDifferentials<float>>();
+					const CameraRay<float> camera_diff_ray_x = camera_->shootRay(static_cast<float>(j) + 1 + dx, static_cast<float>(i) + dy, lens_uv);
 					camera_ray.ray_.differentials_->xfrom_ = camera_diff_ray_x.ray_.from_;
 					camera_ray.ray_.differentials_->xdir_ = camera_diff_ray_x.ray_.dir_;
-					const CameraRay camera_diff_ray_y = camera_->shootRay(static_cast<float>(j) + dx, static_cast<float>(i) + 1 + dy, lens_uv);
+					const CameraRay<float> camera_diff_ray_y = camera_->shootRay(static_cast<float>(j) + dx, static_cast<float>(i) + 1 + dy, lens_uv);
 					camera_ray.ray_.differentials_->yfrom_ = camera_diff_ray_y.ray_.from_;
 					camera_ray.ray_.differentials_->ydir_ = camera_diff_ray_y.ray_.dir_;
 					// col = T * L_o + L_v
@@ -587,12 +587,12 @@ void SppmIntegrator::prePass(FastRandom &fast_random, int samples, int offset, b
 }
 
 //now it's a dummy function
-std::pair<Rgb, float> SppmIntegrator::integrate(Ray &ray, FastRandom &fast_random, RandomGenerator &random_generator, std::vector<int> &correlative_sample_number, ColorLayers *color_layers, int thread_id, int ray_level, bool chromatic_enabled, float wavelength, int additional_depth, const RayDivision &ray_division, const PixelSamplingData &pixel_sampling_data, unsigned int object_index_highest, unsigned int material_index_highest) const
+std::pair<Rgb, float> SppmIntegrator::integrate(Ray<float> &ray, FastRandom &fast_random, RandomGenerator &random_generator, std::vector<int> &correlative_sample_number, ColorLayers *color_layers, int thread_id, int ray_level, bool chromatic_enabled, float wavelength, int additional_depth, const RayDivision &ray_division, const PixelSamplingData &pixel_sampling_data, unsigned int object_index_highest, unsigned int material_index_highest) const
 {
 	return {Rgb{0.f}, 0.f};
 }
 
-GatherInfo SppmIntegrator::traceGatherRay(Ray &ray, HitPoint &hp, FastRandom &fast_random, RandomGenerator &random_generator, ColorLayers *color_layers, int thread_id, int ray_level, bool chromatic_enabled, float wavelength, const RayDivision &ray_division, const PixelSamplingData &pixel_sampling_data, unsigned int object_index_highest, unsigned int material_index_highest)
+GatherInfo SppmIntegrator::traceGatherRay(Ray<float> &ray, HitPoint &hp, FastRandom &fast_random, RandomGenerator &random_generator, ColorLayers *color_layers, int thread_id, int ray_level, bool chromatic_enabled, float wavelength, const RayDivision &ray_division, const PixelSamplingData &pixel_sampling_data, unsigned int object_index_highest, unsigned int material_index_highest)
 {
 	GatherInfo g_info;
 	float alpha = transp_background_ ? 0.f : 1.f;
@@ -743,7 +743,7 @@ GatherInfo SppmIntegrator::traceGatherRay(Ray &ray, HitPoint &hp, FastRandom &fa
 				int branch = ray_division_new.division_ * ray_division.offset_;
 				const float d_1 = 1.f / static_cast<float>(ray_samples_dispersive);
 				const float ss_1 = sample::riS(pixel_sampling_data.sample_ + pixel_sampling_data.offset_);
-				Ray ref_ray;
+				Ray<float> ref_ray;
 				float w = 0.f;
 				GatherInfo cing, t_cing; //Dispersive is different handled, not same as GLOSSY, at the BSDF_VOLUMETRIC part
 
@@ -842,7 +842,7 @@ GatherInfo SppmIntegrator::traceGatherRay(Ray &ray, HitPoint &hp, FastRandom &fa
 
 						Sample s(s_1, s_2, BsdfFlags::Glossy | BsdfFlags::Reflect);
 						const Rgb mcol = sp->sample(wo, wi, s, w, chromatic_enabled, wavelength, camera_);
-						Ray ref_ray{sp->p_, wi, ray.time_, ray_min_dist_};
+						Ray<float> ref_ray{sp->p_, wi, ray.time_, ray_min_dist_};
 						if(flags::have(s.sampled_flags_, BsdfFlags::Reflect)) ref_ray.differentials_ = sp->reflectedRay(ray.differentials_.get(), ray.dir_, ref_ray.dir_);
 						else if(flags::have(s.sampled_flags_, BsdfFlags::Transmit)) ref_ray.differentials_ = sp->refractedRay(ray.differentials_.get(), ray.dir_, ref_ray.dir_, sp->getMaterial()->getMatIor());
 						//gcol += tmpColorPasses.probe_add(PASS_INT_GLOSSY_INDIRECT, (Rgb)integ * mcol * W, state.ray_level == 1);
@@ -860,7 +860,7 @@ GatherInfo SppmIntegrator::traceGatherRay(Ray &ray, HitPoint &hp, FastRandom &fa
 						mcol[0] = sp->sample(wo, dir, mcol[1], s, w, chromatic_enabled, wavelength);
 						if(flags::have(s.sampled_flags_, BsdfFlags::Reflect) && !flags::have(s.sampled_flags_, BsdfFlags::Dispersive))
 						{
-							Ray ref_ray{sp->p_, dir[0], ray.time_, ray_min_dist_};
+							Ray<float> ref_ray{sp->p_, dir[0], ray.time_, ray_min_dist_};
 							ref_ray.differentials_ = sp->reflectedRay(ray.differentials_.get(), ray.dir_, ref_ray.dir_);
 							const Rgb col_reflect_factor = mcol[0] * w[0];
 							GatherInfo trace_gather_ray = traceGatherRay(ref_ray, hp, fast_random, random_generator, nullptr, thread_id, ray_level, chromatic_enabled, wavelength, ray_division_new, pixel_sampling_data, object_index_highest, material_index_highest);
@@ -875,7 +875,7 @@ GatherInfo SppmIntegrator::traceGatherRay(Ray &ray, HitPoint &hp, FastRandom &fa
 
 						if(flags::have(s.sampled_flags_, BsdfFlags::Transmit))
 						{
-							Ray ref_ray{sp->p_, dir[1], ray.time_, ray_min_dist_};
+							Ray<float> ref_ray{sp->p_, dir[1], ray.time_, ray_min_dist_};
 							ref_ray.differentials_ = sp->refractedRay(ray.differentials_.get(), ray.dir_, ref_ray.dir_, sp->getMaterial()->getMatIor());
 							const Rgb col_transmit_factor = mcol[1] * w[1];
 							GatherInfo trace_gather_ray = traceGatherRay(ref_ray, hp, fast_random, random_generator, nullptr, thread_id, ray_level, chromatic_enabled, wavelength, ray_division_new, pixel_sampling_data, object_index_highest, material_index_highest);
@@ -891,7 +891,7 @@ GatherInfo SppmIntegrator::traceGatherRay(Ray &ray, HitPoint &hp, FastRandom &fa
 
 					else if(flags::have(s.sampled_flags_, BsdfFlags::Glossy))
 					{
-						Ray ref_ray{sp->p_, wi, ray.time_, ray_min_dist_};
+						Ray<float> ref_ray{sp->p_, wi, ray.time_, ray_min_dist_};
 						if(ray.differentials_)
 						{
 							if(flags::have(s.sampled_flags_, BsdfFlags::Reflect)) ref_ray.differentials_ = sp->reflectedRay(ray.differentials_.get(), ray.dir_, ref_ray.dir_);
@@ -909,7 +909,7 @@ GatherInfo SppmIntegrator::traceGatherRay(Ray &ray, HitPoint &hp, FastRandom &fa
 					}
 					if(flags::have(mat_bsdfs, BsdfFlags::Volumetric))
 					{
-						const Ray ref_ray{sp->p_, wi, ray.time_, ray_min_dist_};
+						const Ray<float> ref_ray{sp->p_, wi, ray.time_, ray_min_dist_};
 						if(const VolumeHandler *vol = sp->getMaterial()->getVolumeHandler(sp->ng_ * ref_ray.dir_ < 0))
 						{
 							const Rgb vcol = vol->transmittance(ref_ray);
@@ -946,7 +946,7 @@ GatherInfo SppmIntegrator::traceGatherRay(Ray &ray, HitPoint &hp, FastRandom &fa
 				const Specular specular = sp->getSpecular(ray_level, wo, chromatic_enabled, wavelength);
 				if(specular.reflect_)
 				{
-					Ray ref_ray{sp->p_, specular.reflect_->dir_, ray.time_, ray_min_dist_};
+					Ray<float> ref_ray{sp->p_, specular.reflect_->dir_, ray.time_, ray_min_dist_};
 					if(ray.differentials_) ref_ray.differentials_ = sp->reflectedRay(ray.differentials_.get(), ray.dir_, ref_ray.dir_); // compute the ray differentaitl
 					GatherInfo refg = traceGatherRay(ref_ray, hp, fast_random, random_generator, nullptr, thread_id, ray_level, chromatic_enabled, wavelength, ray_division, pixel_sampling_data, object_index_highest, material_index_highest);
 					if(flags::have(mat_bsdfs, BsdfFlags::Volumetric))
@@ -969,7 +969,7 @@ GatherInfo SppmIntegrator::traceGatherRay(Ray &ray, HitPoint &hp, FastRandom &fa
 				}
 				if(specular.refract_)
 				{
-					Ray ref_ray{sp->p_, specular.refract_->dir_, ray.time_, ray_min_dist_};
+					Ray<float> ref_ray{sp->p_, specular.refract_->dir_, ray.time_, ray_min_dist_};
 					if(ray.differentials_) ref_ray.differentials_ = sp->refractedRay(ray.differentials_.get(), ray.dir_, ref_ray.dir_, sp->getMaterial()->getMatIor());
 					GatherInfo refg = traceGatherRay(ref_ray, hp, fast_random, random_generator, nullptr, thread_id, ray_level, chromatic_enabled, wavelength, ray_division, pixel_sampling_data, object_index_highest, material_index_highest);
 					if(flags::have(mat_bsdfs, BsdfFlags::Volumetric))

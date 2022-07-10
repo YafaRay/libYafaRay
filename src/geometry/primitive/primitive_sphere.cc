@@ -98,7 +98,7 @@ std::pair<float, Uv<float>> SpherePrimitive::intersect(const Point3f &from, cons
 	return {sol, {}};
 }
 
-std::unique_ptr<const SurfacePoint> SpherePrimitive::getSurface(const RayDifferentials *ray_differentials, const Point3f &hit_point, float time, const Uv<float> &intersect_uv, const Camera *camera) const
+std::unique_ptr<const SurfacePoint> SpherePrimitive::getSurface(const RayDifferentials<float> *ray_differentials, const Point3f &hit_point, float time, const Uv<float> &intersect_uv, const Camera *camera) const
 {
 	auto sp = std::make_unique<SurfacePoint>(this);
 	sp->time_ = time;
@@ -118,7 +118,7 @@ std::unique_ptr<const SurfacePoint> SpherePrimitive::getSurface(const RayDiffere
 	return sp;
 }
 
-std::unique_ptr<const SurfacePoint> SpherePrimitive::getSurface(const RayDifferentials *ray_differentials, const Point3f &hit_point, float time, const Uv<float> &intersect_uv, const Camera *camera, const Matrix4f &obj_to_world) const
+std::unique_ptr<const SurfacePoint> SpherePrimitive::getSurface(const RayDifferentials<float> *ray_differentials, const Point3f &hit_point, float time, const Uv<float> &intersect_uv, const Camera *camera, const Matrix4f &obj_to_world) const
 {
 	auto sp = std::make_unique<SurfacePoint>(this);
 	sp->time_ = time;

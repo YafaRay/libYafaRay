@@ -24,16 +24,18 @@
 
 namespace yafaray {
 
+template<typename T>
 class Plane final
 {
 	public:
-		float rayIntersection(Ray const &ray) const;
+		float rayIntersection(Ray<float> const &ray) const;
 
-		Vec3f p_;
-		Vec3f n_;
+		Vec<T, 3> p_;
+		Vec<T, 3> n_;
 };
 
-inline float Plane::rayIntersection(Ray const &ray) const
+template<typename T>
+inline float Plane<T>::rayIntersection(Ray<float> const &ray) const
 {
 	return n_ * (p_ - ray.from_) / (ray.dir_ * n_);
 }

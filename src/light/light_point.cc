@@ -35,7 +35,7 @@ PointLight::PointLight(Logger &logger, const Point3f &pos, const Rgb &col, float
 	intensity_ = color_.energy();
 }
 
-std::tuple<bool, Ray, Rgb> PointLight::illuminate(const Point3f &surface_p, float time) const
+std::tuple<bool, Ray<float>, Rgb> PointLight::illuminate(const Point3f &surface_p, float time) const
 {
 	if(photonOnly()) return {};
 	Vec3f ldir{position_ - surface_p};
@@ -44,11 +44,11 @@ std::tuple<bool, Ray, Rgb> PointLight::illuminate(const Point3f &surface_p, floa
 	if(dist == 0.f) return {};
 	const float idist_sqr = 1.f / dist_sqr;
 	ldir *= 1.f / dist;
-	Ray ray{surface_p, std::move(ldir), time, 0.f, dist};
+	Ray<float> ray{surface_p, std::move(ldir), time, 0.f, dist};
 	return {true, std::move(ray), color_ * idist_sqr};
 }
 
-std::pair<bool, Ray> PointLight::illumSample(const Point3f &surface_p, LSample &s, float time) const
+std::pair<bool, Ray<float>> PointLight::illumSample(const Point3f &surface_p, LSample &s, float time) const
 {
 	if(photonOnly()) return {};
 	// bleh...
@@ -60,14 +60,14 @@ std::pair<bool, Ray> PointLight::illumSample(const Point3f &surface_p, LSample &
 	s.flags_ = flags_;
 	s.col_ =  color_;
 	s.pdf_ = dist_sqr;
-	Ray ray{surface_p, std::move(ldir), time, 0.f, dist};
+	Ray<float> ray{surface_p, std::move(ldir), time, 0.f, dist};
 	return {true, std::move(ray)};
 }
 
-std::tuple<Ray, float, Rgb> PointLight::emitPhoton(float s_1, float s_2, float s_3, float s_4, float time) const
+std::tuple<Ray<float>, float, Rgb> PointLight::emitPhoton(float s_1, float s_2, float s_3, float s_4, float time) const
 {
 	Vec3f dir{sample::sphere(s_1, s_2)};
-	Ray ray{position_, std::move(dir), time};
+	Ray<float> ray{position_, std::move(dir), time};
 	return {std::move(ray), 4.f * math::num_pi<>, color_};
 }
 

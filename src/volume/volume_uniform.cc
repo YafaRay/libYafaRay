@@ -48,7 +48,7 @@ Rgb UniformVolumeRegion::sigmaS(const Point3f &p, const Vec3f &v) const
 		return Rgb{0.f};
 }
 
-Rgb UniformVolumeRegion::tau(const Ray &ray, float step, float offset) const
+Rgb UniformVolumeRegion::tau(const Ray<float> &ray, float step, float offset) const
 {
 	Bound<float>::Cross cross{crossBound(ray)};
 	if(!cross.crossed_) return Rgb{0.f};

@@ -76,7 +76,7 @@ class Bound
 		//! Returns true if the given ray crosses the bound closer than dist
 		//bool cross(const point3d_t &from, const vector3d_t &ray, T dist) const;
 		//bool cross(const point3d_t &from, const vector3d_t &ray, T &where, T dist) const;
-		Cross cross(const Ray &ray, T t_max) const;
+		Cross cross(const Ray<float> &ray, T t_max) const;
 		//! Returns the volume of the bound
 		T vol() const;
 		//! Returns the length along a certain axis
@@ -131,7 +131,7 @@ inline void Bound<T>::include(const Bound<T> &b)
 }
 
 template<typename T>
-inline typename Bound<T>::Cross Bound<T>::cross(const Ray &ray, T t_max) const
+inline typename Bound<T>::Cross Bound<T>::cross(const Ray<float> &ray, T t_max) const
 {
 	// Smits method
 	const Point<T, 3> p{ray.from_ - a_};

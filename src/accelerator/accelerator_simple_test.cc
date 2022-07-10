@@ -58,7 +58,7 @@ AcceleratorSimpleTest::AcceleratorSimpleTest(Logger &logger, const std::vector<c
 	if(logger_.isVerbose()) logger_.logVerbose("AcceleratorSimpleTest: Objects: ", objects_data_.size(), ", primitives in tree: ", num_primitives, ", bound: (", bound_.a_, ", ", bound_.g_, ")");
 }
 
-IntersectData AcceleratorSimpleTest::intersect(const Ray &ray, float t_max) const
+IntersectData AcceleratorSimpleTest::intersect(const Ray<float> &ray, float t_max) const
 {
 	IntersectData intersect_data;
 	for(const auto &[object, object_data] : objects_data_)
@@ -79,7 +79,7 @@ IntersectData AcceleratorSimpleTest::intersect(const Ray &ray, float t_max) cons
 	return intersect_data;
 }
 
-IntersectData AcceleratorSimpleTest::intersectShadow(const Ray &ray, float t_max) const
+IntersectData AcceleratorSimpleTest::intersectShadow(const Ray<float> &ray, float t_max) const
 {
 	IntersectData intersect_data;
 	for(const auto &[object, object_data] : objects_data_)
@@ -96,7 +96,7 @@ IntersectData AcceleratorSimpleTest::intersectShadow(const Ray &ray, float t_max
 	return intersect_data;
 }
 
-IntersectData AcceleratorSimpleTest::intersectTransparentShadow(const Ray &ray, int max_depth, float t_max, const Camera *camera) const
+IntersectData AcceleratorSimpleTest::intersectTransparentShadow(const Ray<float> &ray, int max_depth, float t_max, const Camera *camera) const
 {
 	std::set<const Primitive *> filtered;
 	int depth = 0;

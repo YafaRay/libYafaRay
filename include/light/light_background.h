@@ -41,16 +41,16 @@ class BackgroundLight final : public Light
 		BackgroundLight(Logger &logger, int sampl, bool invert_intersect = false, bool light_enabled = true, bool cast_shadows = true);
 		void init(Scene &scene) override;
 		Rgb totalEnergy() const override;
-		std::tuple<Ray, float, Rgb> emitPhoton(float s_1, float s_2, float s_3, float s_4, float time) const override;
+		std::tuple<Ray<float>, float, Rgb> emitPhoton(float s_1, float s_2, float s_3, float s_4, float time) const override;
 		std::pair<Vec3f, Rgb> emitSample(LSample &s, float time) const override;
 		bool diracLight() const override { return false; }
-		std::pair<bool, Ray> illumSample(const Point3f &, LSample &s, float time) const override;
-		std::tuple<bool, Ray, Rgb> illuminate(const Point3f &surface_p, float time) const override;
+		std::pair<bool, Ray<float>> illumSample(const Point3f &, LSample &s, float time) const override;
+		std::tuple<bool, Ray<float>, Rgb> illuminate(const Point3f &surface_p, float time) const override;
 		float illumPdf(const Point3f &surface_p, const Point3f &light_p, const Vec3f &light_ng) const override;
 		std::array<float, 3> emitPdf(const Vec3f &, const Vec3f &wo) const override;
 		int nSamples() const override { return samples_; }
 		bool canIntersect() const override { return true; }
-		std::tuple<bool, float, Rgb> intersect(const Ray &ray, float &t) const override;
+		std::tuple<bool, float, Rgb> intersect(const Ray<float> &ray, float &t) const override;
 		std::pair<Vec3f, float> sampleDir(float s_1, float s_2, bool inv = false) const;
 		float dirPdf(const Vec3f &dir) const;
 		std::pair<float, Uv<float>> calcFromSample(float s_1, float s_2, bool inv = false) const;

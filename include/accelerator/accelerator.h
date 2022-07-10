@@ -37,13 +37,13 @@ class Accelerator
 		static const Accelerator * factory(Logger &logger, const std::vector<const Primitive *> &primitives_list, const ParamMap &params);
 		explicit Accelerator(Logger &logger) : logger_(logger) { }
 		virtual ~Accelerator() = default;
-		virtual IntersectData intersect(const Ray &ray, float t_max) const = 0;
-		virtual IntersectData intersectShadow(const Ray &ray, float t_max) const = 0;
-		virtual IntersectData intersectTransparentShadow(const Ray &ray, int max_depth, float dist, const Camera *camera) const = 0;
+		virtual IntersectData intersect(const Ray<float> &ray, float t_max) const = 0;
+		virtual IntersectData intersectShadow(const Ray<float> &ray, float t_max) const = 0;
+		virtual IntersectData intersectTransparentShadow(const Ray<float> &ray, int max_depth, float dist, const Camera *camera) const = 0;
 		virtual Bound<float> getBound() const = 0;
-		std::pair<std::unique_ptr<const SurfacePoint>, float> intersect(const Ray &ray, const Camera *camera) const;
-		std::pair<bool, const Primitive *> isShadowed(const Ray &ray, float shadow_bias) const;
-		std::tuple<bool, Rgb, const Primitive *> isShadowedTransparentShadow(const Ray &ray, int max_depth, float shadow_bias, const Camera *camera) const;
+		std::pair<std::unique_ptr<const SurfacePoint>, float> intersect(const Ray<float> &ray, const Camera *camera) const;
+		std::pair<bool, const Primitive *> isShadowed(const Ray<float> &ray, float shadow_bias) const;
+		std::tuple<bool, Rgb, const Primitive *> isShadowedTransparentShadow(const Ray<float> &ray, int max_depth, float shadow_bias, const Camera *camera) const;
 
 		static constexpr inline float minRayDist() { return min_raydist_; }
 		static constexpr inline float shadowBias() { return shadow_bias_; }
@@ -59,7 +59,7 @@ class Accelerator
 		static constexpr inline float shadow_bias_ = 0.0005f;
 };
 
-inline std::pair<std::unique_ptr<const SurfacePoint>, float> Accelerator::intersect(const Ray &ray, const Camera *camera) const
+inline std::pair<std::unique_ptr<const SurfacePoint>, float> Accelerator::intersect(const Ray<float> &ray, const Camera *camera) const
 {
 	const float t_max = (ray.tmax_ >= 0.f) ? ray.tmax_ : std::numeric_limits<float>::max();
 	// intersect with tree:
@@ -73,9 +73,9 @@ inline std::pair<std::unique_ptr<const SurfacePoint>, float> Accelerator::inters
 	else return {nullptr, ray.tmax_};
 }
 
-inline std::pair<bool, const Primitive *> Accelerator::isShadowed(const Ray &ray, float shadow_bias) const
+inline std::pair<bool, const Primitive *> Accelerator::isShadowed(const Ray<float> &ray, float shadow_bias) const
 {
-	Ray sray{ray, Ray::DifferentialsCopy::No};
+	Ray<float> sray{ray, Ray<float>::DifferentialsCopy::No};
 	sray.from_ += sray.dir_ * sray.tmin_;
 	sray.time_ = ray.time_;
 	const float t_max = (ray.tmax_ >= 0.f) ? sray.tmax_ - 2 * sray.tmin_ : std::numeric_limits<float>::max();
@@ -83,9 +83,9 @@ inline std::pair<bool, const Primitive *> Accelerator::isShadowed(const Ray &ray
 	return {intersect_data.isHit(), intersect_data.primitive_};
 }
 
-inline std::tuple<bool, Rgb, const Primitive *> Accelerator::isShadowedTransparentShadow(const Ray &ray, int max_depth, float shadow_bias, const Camera *camera) const
+inline std::tuple<bool, Rgb, const Primitive *> Accelerator::isShadowedTransparentShadow(const Ray<float> &ray, int max_depth, float shadow_bias, const Camera *camera) const
 {
-	Ray sray{ray, Ray::DifferentialsCopy::No}; //Should this function use Ray::DifferentialsAssignment::Copy ? If using copy it would be slower but would take into account texture mipmaps, although that's probably irrelevant for transparent shadows?
+	Ray<float> sray{ray, Ray<float>::DifferentialsCopy::No}; //Should this function use Ray<float>::DifferentialsAssignment::Copy ? If using copy it would be slower but would take into account texture mipmaps, although that's probably irrelevant for transparent shadows?
 	sray.from_ += sray.dir_ * sray.tmin_;
 	const float t_max = (ray.tmax_ >= 0.f) ? sray.tmax_ - 2 * sray.tmin_ : std::numeric_limits<float>::max();
 	IntersectData intersect_data{intersectTransparentShadow(sray, max_depth, t_max, camera)};

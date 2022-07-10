@@ -28,7 +28,7 @@ float SurfacePoint::getDistToNearestEdge() const
 	return primitive_->getDistToNearestEdge(uv_, dp_abs_);
 }
 
-std::unique_ptr<SurfaceDifferentials> SurfacePoint::calcSurfaceDifferentials(const RayDifferentials *ray_differentials) const
+std::unique_ptr<SurfaceDifferentials> SurfacePoint::calcSurfaceDifferentials(const RayDifferentials<float> *ray_differentials) const
 {
 	if(ray_differentials)
 	{
@@ -46,10 +46,10 @@ std::unique_ptr<SurfaceDifferentials> SurfacePoint::calcSurfaceDifferentials(con
 	else return nullptr;
 }
 
-std::unique_ptr<RayDifferentials> SurfacePoint::reflectedRay(const RayDifferentials *in_differentials, const Vec3f &in_dir, const Vec3f &out_dir) const
+std::unique_ptr<RayDifferentials<float>> SurfacePoint::reflectedRay(const RayDifferentials<float> *in_differentials, const Vec3f &in_dir, const Vec3f &out_dir) const
 {
 	if(!differentials_ || !in_differentials) return nullptr;
-	auto out_differentials = std::make_unique<RayDifferentials>();
+	auto out_differentials = std::make_unique<RayDifferentials<float>>();
 	// Compute ray differential _rd_ for specular reflection
 	out_differentials->xfrom_ = p_ + differentials_->dp_dx_;
 	out_differentials->yfrom_ = p_ + differentials_->dp_dy_;
@@ -67,10 +67,10 @@ std::unique_ptr<RayDifferentials> SurfacePoint::reflectedRay(const RayDifferenti
 	return out_differentials;
 }
 
-std::unique_ptr<RayDifferentials> SurfacePoint::refractedRay(const RayDifferentials *in_differentials, const Vec3f &in_dir, const Vec3f &out_dir, float ior) const
+std::unique_ptr<RayDifferentials<float>> SurfacePoint::refractedRay(const RayDifferentials<float> *in_differentials, const Vec3f &in_dir, const Vec3f &out_dir, float ior) const
 {
 	if(!differentials_ || !in_differentials) return nullptr;
-	auto out_differentials = std::make_unique<RayDifferentials>();
+	auto out_differentials = std::make_unique<RayDifferentials<float>>();
 	//RayDifferential rd(p, wi);
 	out_differentials->xfrom_ = p_ + differentials_->dp_dx_;
 	out_differentials->yfrom_ = p_ + differentials_->dp_dy_;

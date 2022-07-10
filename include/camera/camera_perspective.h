@@ -42,10 +42,10 @@ class PerspectiveCamera : public Camera
 						  float df = 1, float ap = 0, float dofd = 0, BokehType bt = BokehType::BkDisk1, BkhBiasType bbt = BkhBiasType::BbNone, float bro = 0,
 						  float near_clip_distance = 0.0f, float far_clip_distance = 1e6f);
 		void setAxis(const Vec3f &vx, const Vec3f &vy, const Vec3f &vz) override;
-		CameraRay shootRay(float px, float py, const Uv<float> &uv) const override;
+		CameraRay<float> shootRay(float px, float py, const Uv<float> &uv) const override;
 		bool sampleLense() const override;
 		Point3f screenproject(const Point3f &p) const override;
-		bool project(const Ray &wo, float lu, float lv, float &u, float &v, float &pdf) const override;
+		bool project(const Ray<float> &wo, float lu, float lv, float &u, float &v, float &pdf) const override;
 		float biasDist(float r) const;
 		Uv<float> sampleTsd(float r_1, float r_2) const;
 		Uv<float> getLensUv(float r_1, float r_2) const;

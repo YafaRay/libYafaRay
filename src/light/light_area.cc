@@ -63,7 +63,7 @@ void AreaLight::init(Scene &scene)
 
 Rgb AreaLight::totalEnergy() const { return color_ * area_; }
 
-std::pair<bool, Ray> AreaLight::illumSample(const Point3f &surface_p, LSample &s, float time) const
+std::pair<bool, Ray<float>> AreaLight::illumSample(const Point3f &surface_p, LSample &s, float time) const
 {
 	if(photonOnly()) return {};
 	//get point on area light and vector to surface point:
@@ -86,16 +86,16 @@ std::pair<bool, Ray> AreaLight::illumSample(const Point3f &surface_p, LSample &s
 		s.sp_->p_ = p;
 		s.sp_->n_ = s.sp_->ng_ = normal_;
 	}
-	Ray ray{surface_p, std::move(ldir), time, 0.f, dist};
+	Ray<float> ray{surface_p, std::move(ldir), time, 0.f, dist};
 	return {true, std::move(ray)};
 }
 
-std::tuple<Ray, float, Rgb> AreaLight::emitPhoton(float s_1, float s_2, float s_3, float s_4, float time) const
+std::tuple<Ray<float>, float, Rgb> AreaLight::emitPhoton(float s_1, float s_2, float s_3, float s_4, float time) const
 {
 	const float ipdf = area_/*  * num_pi */; // really two num_pi?
 	Point3f from{corner_ + s_3 * to_x_ + s_4 * to_y_};
 	Vec3f dir{sample::cosHemisphere(normal_, duv_, s_1, s_2)};
-	Ray ray{std::move(from), std::move(dir), time};
+	Ray<float> ray{std::move(from), std::move(dir), time};
 	return {std::move(ray), ipdf, color_};
 }
 
@@ -110,7 +110,7 @@ std::pair<Vec3f, Rgb> AreaLight::emitSample(LSample &s, float time) const
 	return {std::move(dir), color_}; // still not 100% sure this is correct without cosine...
 }
 
-bool AreaLight::triIntersect(const Point3f &a, const Point3f &b, const Point3f &c, const Ray &ray, float &t)
+bool AreaLight::triIntersect(const Point3f &a, const Point3f &b, const Point3f &c, const Ray<float> &ray, float &t)
 {
 	const Vec3f edge_1{b - a};
 	const Vec3f edge_2{c - a};
@@ -128,7 +128,7 @@ bool AreaLight::triIntersect(const Point3f &a, const Point3f &b, const Point3f &
 	return true;
 }
 
-std::tuple<bool, float, Rgb> AreaLight::intersect(const Ray &ray, float &t) const
+std::tuple<bool, float, Rgb> AreaLight::intersect(const Ray<float> &ray, float &t) const
 {
 	const float cos_angle = ray.dir_ * fnormal_;
 	//no light if point is behind area light (single sided!)
@@ -194,7 +194,7 @@ Light * AreaLight::factory(Logger &logger, const Scene &scene, const std::string
 	return light;
 }
 
-std::tuple<bool, Ray, Rgb> AreaLight::illuminate(const Point3f &surface_p, float time) const
+std::tuple<bool, Ray<float>, Rgb> AreaLight::illuminate(const Point3f &surface_p, float time) const
 {
 	return {};
 }

@@ -1115,7 +1115,7 @@ bool Scene::updateObjects()
 	if(shadow_bias_auto_) shadow_bias_ = Accelerator::shadowBias();
 	if(ray_min_dist_auto_) ray_min_dist_ = Accelerator::minRayDist();
 
-	logger_.logInfo("Scene: total scene dimensions: X=", scene_bound_->length(Axis::X), ", y=", scene_bound_->length(Axis::Y), ", z=", scene_bound_->length(Axis::Z), ", volume=", scene_bound_->vol(), ", Shadow Bias=", shadow_bias_, (shadow_bias_auto_ ? " (auto)" : ""), ", Ray Min Dist=", ray_min_dist_, (ray_min_dist_auto_ ? " (auto)" : ""));
+	logger_.logInfo("Scene: total scene dimensions: X=", scene_bound_->length(Axis::X), ", y=", scene_bound_->length(Axis::Y), ", z=", scene_bound_->length(Axis::Z), ", volume=", scene_bound_->vol(), ", Shadow Bias=", shadow_bias_, (shadow_bias_auto_ ? " (auto)" : ""), ", Ray<float> Min Dist=", ray_min_dist_, (ray_min_dist_auto_ ? " (auto)" : ""));
 	return true;
 }
 

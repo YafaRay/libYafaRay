@@ -28,20 +28,20 @@ template class PrimitivePolygon<float, 3, MotionBlurType::Bezier>;
 template class PrimitivePolygon<float, 4, MotionBlurType::Bezier>;
 
 template <typename T, size_t N, MotionBlurType MotionBlur>
-std::unique_ptr<const SurfacePoint> PrimitivePolygon<T, N, MotionBlur>::getSurface(const RayDifferentials *ray_differentials, const Point<T, 3> &hit_point, T time, const Uv<T> &intersect_uv, const Camera *camera) const
+std::unique_ptr<const SurfacePoint> PrimitivePolygon<T, N, MotionBlur>::getSurface(const RayDifferentials<T> *ray_differentials, const Point<T, 3> &hit_point, T time, const Uv<T> &intersect_uv, const Camera *camera) const
 {
 	return getSurfacePolygon(ray_differentials, hit_point, time, intersect_uv, camera);
 }
 
 template <typename T, size_t N, MotionBlurType MotionBlur>
-std::unique_ptr<const SurfacePoint> PrimitivePolygon<T, N, MotionBlur>::getSurface(const RayDifferentials *ray_differentials, const Point<T, 3> &hit_point, T time, const Uv<T> &intersect_uv, const Camera *camera, const SquareMatrix<T, 4> &obj_to_world) const
+std::unique_ptr<const SurfacePoint> PrimitivePolygon<T, N, MotionBlur>::getSurface(const RayDifferentials<T> *ray_differentials, const Point<T, 3> &hit_point, T time, const Uv<T> &intersect_uv, const Camera *camera, const SquareMatrix<T, 4> &obj_to_world) const
 {
 	return getSurfacePolygon(ray_differentials, hit_point, time, intersect_uv, camera, obj_to_world);
 }
 
 template <typename T, size_t N, MotionBlurType MotionBlur>
 template<typename M>
-std::unique_ptr<const SurfacePoint> PrimitivePolygon<T, N, MotionBlur>::getSurfacePolygon(const RayDifferentials *ray_differentials, const Point<T, 3> &hit_point, T time, const Uv<T> &intersect_uv, const Camera *camera, const M &obj_to_world) const
+std::unique_ptr<const SurfacePoint> PrimitivePolygon<T, N, MotionBlur>::getSurfacePolygon(const RayDifferentials<T> *ray_differentials, const Point<T, 3> &hit_point, T time, const Uv<T> &intersect_uv, const Camera *camera, const M &obj_to_world) const
 {
 	auto sp{std::make_unique<SurfacePoint>(this)};
 	sp->time_ = time;

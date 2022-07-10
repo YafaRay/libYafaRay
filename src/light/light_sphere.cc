@@ -73,7 +73,7 @@ std::pair<bool, Uv<float>> SphereLight::sphereIntersect(const Point3f &from, con
 	return {true, std::move(uv)};
 }
 
-std::pair<bool, Ray> SphereLight::illumSample(const Point3f &surface_p, LSample &s, float time) const
+std::pair<bool, Ray<float>> SphereLight::illumSample(const Point3f &surface_p, LSample &s, float time) const
 {
 	if(photonOnly()) return {};
 	Vec3f cdir{center_ - surface_p};
@@ -98,11 +98,11 @@ std::pair<bool, Ray> SphereLight::illumSample(const Point3f &surface_p, LSample 
 		s.sp_->p_ = surface_p + uv.u_ * dir;
 		s.sp_->n_ = s.sp_->ng_ = (s.sp_->p_ - center_).normalize();
 	}
-	Ray ray{surface_p, std::move(dir), time, 0.f, uv.u_};
+	Ray<float> ray{surface_p, std::move(dir), time, 0.f, uv.u_};
 	return {true, std::move(ray)};
 }
 
-std::tuple<bool, float, Rgb> SphereLight::intersect(const Ray &ray, float &) const
+std::tuple<bool, float, Rgb> SphereLight::intersect(const Ray<float> &ray, float &) const
 {
 	if(const auto[hit, uv]{sphereIntersect(ray.from_, ray.dir_, center_, square_radius_)}; hit)
 	{
@@ -136,13 +136,13 @@ std::array<float, 3> SphereLight::emitPdf(const Vec3f &surface_n, const Vec3f &w
 	return {area_pdf, dir_pdf, cos_wo};
 }
 
-std::tuple<Ray, float, Rgb> SphereLight::emitPhoton(float s_1, float s_2, float s_3, float s_4, float time) const
+std::tuple<Ray<float>, float, Rgb> SphereLight::emitPhoton(float s_1, float s_2, float s_3, float s_4, float time) const
 {
 	const Vec3f sdir{sample::sphere(s_3, s_4)};
 	Point3f from{center_ + radius_ * sdir};
 	const Uv<Vec3f> duv{Vec3f::createCoordsSystem(sdir)};
 	Vec3f dir{sample::cosHemisphere(sdir, duv, s_1, s_2)};
-	Ray ray{std::move(from), std::move(dir), time};
+	Ray<float> ray{std::move(from), std::move(dir), time};
 	return {std::move(ray), area_, color_};
 }
 
@@ -195,7 +195,7 @@ Light * SphereLight::factory(Logger &logger, const Scene &scene, const std::stri
 	return light;
 }
 
-std::tuple<bool, Ray, Rgb> SphereLight::illuminate(const Point3f &surface_p, float time) const
+std::tuple<bool, Ray<float>, Rgb> SphereLight::illuminate(const Point3f &surface_p, float time) const
 {
 	return {};
 }

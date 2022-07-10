@@ -75,7 +75,7 @@ VolumeRegion::VolumeRegion(Logger &logger, const Rgb &sa, const Rgb &ss, const R
 	att_grid_z_ = 8 * attgrid_scale;
 }
 
-Rgb DensityVolumeRegion::tau(const Ray &ray, float step_size, float offset) const
+Rgb DensityVolumeRegion::tau(const Ray<float> &ray, float step_size, float offset) const
 {
 	Bound<float>::Cross cross{crossBound(ray)};
 	// ray doesn't hit the BB

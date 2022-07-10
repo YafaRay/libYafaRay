@@ -39,7 +39,7 @@ Rgb SkyVolumeRegion::sigmaS(const Point3f &p, const Vec3f &v) const
 	//	return Rgb{0.f};
 }
 
-Rgb SkyVolumeRegion::tau(const Ray &ray, float step, float offset) const
+Rgb SkyVolumeRegion::tau(const Ray<float> &ray, float step, float offset) const
 {
 	Bound<float>::Cross cross{crossBound(ray)};
 	// ray doesn't hit the BB

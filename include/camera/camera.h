@@ -44,10 +44,11 @@ class Logger;
  Camera base class used by all camera types.
 */
 
+template<typename T>
 struct CameraRay
 {
-	CameraRay(Ray &&ray, bool valid) : ray_(std::move(ray)), valid_(valid) { }
-	Ray ray_;
+	CameraRay(Ray<float> &&ray, bool valid) : ray_(std::move(ray)), valid_(valid) { }
+	Ray<float> ray_;
 	bool valid_;
 };
 
@@ -60,10 +61,10 @@ class Camera
 		virtual ~Camera() = default;
 		virtual void setAxis(const Vec3f &vx, const Vec3f &vy, const Vec3f &vz) = 0; //!< Set camera axis
 		/*! Shoot a new ray from the camera gived image pixel coordinates px,py and lense dof effect */
-		virtual CameraRay shootRay(float px, float py, const Uv<float> &uv) const = 0; //!< Shoot a new ray from the camera.
+		virtual CameraRay<float> shootRay(float px, float py, const Uv<float> &uv) const = 0; //!< Shoot a new ray from the camera.
 		virtual Point3f screenproject(const Point3f &p) const = 0; //!< Get projection of point p into camera plane
 		virtual bool sampleLense() const { return false; } //!< Indicate whether the lense need to be sampled
-		virtual bool project(const Ray &wo, float lu, float lv, float &u, float &v, float &pdf) const { return false; }
+		virtual bool project(const Ray<float> &wo, float lu, float lv, float &u, float &v, float &pdf) const { return false; }
 		int resX() const { return resx_; } //!< Get camera X resolution
 		int resY() const { return resy_; } //!< Get camera Y resolution
 		Point3f getPosition() const { return position_; } //!< Get camera position
@@ -88,7 +89,7 @@ class Camera
 		Vec3f vright_;
 		float aspect_ratio_;	//<! Aspect ratio of camera (not image in pixel units!)
 		std::string camera_name_;       //<! Camera name
-		Plane near_plane_, far_plane_;
+		Plane<float> near_plane_, far_plane_;
 		float near_clip_, far_clip_;
 		Logger &logger_;
 };

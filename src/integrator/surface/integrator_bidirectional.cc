@@ -217,7 +217,7 @@ void BidirectionalIntegrator::cleanup()
 /* ============================================================
     integrate
  ============================================================ */
-std::pair<Rgb, float> BidirectionalIntegrator::integrate(Ray &ray, FastRandom &fast_random, RandomGenerator &random_generator, std::vector<int> &correlative_sample_number, ColorLayers *color_layers, int thread_id, int ray_level, bool chromatic_enabled, float wavelength, int additional_depth, const RayDivision &ray_division, const PixelSamplingData &pixel_sampling_data, unsigned int object_index_highest, unsigned int material_index_highest) const
+std::pair<Rgb, float> BidirectionalIntegrator::integrate(Ray<float> &ray, FastRandom &fast_random, RandomGenerator &random_generator, std::vector<int> &correlative_sample_number, ColorLayers *color_layers, int thread_id, int ray_level, bool chromatic_enabled, float wavelength, int additional_depth, const RayDivision &ray_division, const PixelSamplingData &pixel_sampling_data, unsigned int object_index_highest, unsigned int material_index_highest) const
 {
 	Rgb col {0.f};
 	float alpha = 1.f;
@@ -249,7 +249,7 @@ std::pair<Rgb, float> BidirectionalIntegrator::integrate(Ray &ray, FastRandom &f
 		// create eyePath
 		const int n_eye = createPath(random_generator, *accelerator_, chromatic_enabled, wavelength, ray, path_data.eye_path_, max_path_length_, camera_);
 		// sample light (todo!)
-		Ray lray;
+		Ray<float> lray;
 		lray.tmin_ = ray_min_dist_;
 		lray.tmax_ = -1.f;
 		auto [light_num, light_num_pdf]{lights_.size() > 0 ? light_power_d_->dSample(random_generator()) : std::pair<int, float>{-1, 0.f}};
@@ -384,9 +384,9 @@ std::pair<Rgb, float> BidirectionalIntegrator::integrate(Ray &ray, FastRandom &f
     important: resize path to maxLen *before* calling this function!
  ============================================================ */
 
-int BidirectionalIntegrator::createPath(RandomGenerator &random_generator, const Accelerator &accelerator, bool chromatic_enabled, float wavelength, const Ray &start, std::vector<PathVertex> &path, int max_len, const Camera *camera) const
+int BidirectionalIntegrator::createPath(RandomGenerator &random_generator, const Accelerator &accelerator, bool chromatic_enabled, float wavelength, const Ray<float> &start, std::vector<PathVertex> &path, int max_len, const Camera *camera) const
 {
-	Ray ray {start, Ray::DifferentialsCopy::FullCopy};
+	Ray<float> ray {start, Ray<float>::DifferentialsCopy::FullCopy};
 	// the 0th vertex has already been generated, which is ray.pos obviously
 	int n_vert = 1;
 	while(n_vert < max_len)
@@ -541,7 +541,7 @@ bool BidirectionalIntegrator::connectPaths(PathData &pd, int s, int t)
 }
 
 // connect path with s==1 (eye path with single light vertex)
-std::tuple<bool, Ray, Rgb> BidirectionalIntegrator::connectLPath(PathData &pd, RandomGenerator &random_generator, bool chromatic_enabled, float wavelength, int t) const
+std::tuple<bool, Ray<float>, Rgb> BidirectionalIntegrator::connectLPath(PathData &pd, RandomGenerator &random_generator, bool chromatic_enabled, float wavelength, int t) const
 {
 	// create light sample with direct lighting strategy:
 	const int n_lights_i = lights_.size();
@@ -625,7 +625,7 @@ bool BidirectionalIntegrator::connectPathE(PathData &pd, int s) const
 	Vec3f vec{z.sp_.p_ - y.sp_.p_};
 	const float dist_2 = vec.normalizeAndReturnLengthSquared();
 	const float cos_y = std::abs(y.sp_.n_ * vec);
-	const Ray wo{z.sp_.p_, -vec, z.sp_.time_};
+	const Ray<float> wo{z.sp_.p_, -vec, z.sp_.time_};
 	if(!camera_->project(wo, 0, 0, pd.u_, pd.v_, x_e.pdf_b_)) return false;
 	x_e.specular_ = false; // cannot query yet...
 	x_l.pdf_f_ = y.sp_.pdf(y.wi_, vec, BsdfFlags::All); // light vert to eye vert
@@ -782,7 +782,7 @@ Rgb BidirectionalIntegrator::evalPath(const Accelerator &accelerator, int s, int
 	const Rgb c_st = pd.f_y_ * pd.path_[s].g_ * pd.f_z_;
 	//unweighted contronution C*:
 	Rgb c_uw = y.alpha_ * c_st * z.alpha_;
-	Ray con_ray{y.sp_.p_, pd.w_l_e_, y.sp_.time_, 0.0005f, pd.d_yz_};
+	Ray<float> con_ray{y.sp_.p_, pd.w_l_e_, y.sp_.time_, 0.0005f, pd.d_yz_};
 	bool shadowed = false;
 	Rgb scol {0.f};
 	const Primitive *shadow_casting_primitive = nullptr;
@@ -794,7 +794,7 @@ Rgb BidirectionalIntegrator::evalPath(const Accelerator &accelerator, int s, int
 }
 
 //===  eval paths with s==1 (direct lighting strategy)  ===//
-Rgb BidirectionalIntegrator::evalLPath(const Accelerator &accelerator, int t, const PathData &pd, const Ray &l_ray, const Rgb &lcol, const Camera *camera) const
+Rgb BidirectionalIntegrator::evalLPath(const Accelerator &accelerator, int t, const PathData &pd, const Ray<float> &l_ray, const Rgb &lcol, const Camera *camera) const
 {
 	bool shadowed = false;
 	Rgb scol {0.f};
@@ -819,7 +819,7 @@ Rgb BidirectionalIntegrator::evalLPath(const Accelerator &accelerator, int t, co
 Rgb BidirectionalIntegrator::evalPathE(const Accelerator &accelerator, int s, const PathData &pd, const Camera *camera) const
 {
 	const PathVertex &y = pd.light_path_[s - 1];
-	const Ray con_ray{y.sp_.p_, pd.w_l_e_, y.sp_.time_, 0.0005f, pd.d_yz_};
+	const Ray<float> con_ray{y.sp_.p_, pd.w_l_e_, y.sp_.time_, 0.0005f, pd.d_yz_};
 	bool shadowed = false;
 	Rgb scol {0.f};
 	const Primitive *shadow_casting_primitive = nullptr;

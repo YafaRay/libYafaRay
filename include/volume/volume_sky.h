@@ -41,7 +41,7 @@ class SkyVolumeRegion final : public VolumeRegion
 		Rgb sigmaA(const Point3f &p, const Vec3f &v) const override;
 		Rgb sigmaS(const Point3f &p, const Vec3f &v) const override;
 		Rgb emission(const Point3f &p, const Vec3f &v) const override;
-		Rgb tau(const Ray &ray, float step, float offset) const override;
+		Rgb tau(const Ray<float> &ray, float step, float offset) const override;
 
 		Rgb s_ray_;
 		Rgb s_mie_;

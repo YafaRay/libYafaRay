@@ -37,14 +37,14 @@ class SpotLight final : public Light
 	private:
 		SpotLight(Logger &logger, const Point3f &from, const Point3f &to, const Rgb &col, float power, float angle, float falloff, bool s_sha, int smpl, float ssfuzzy, bool b_light_enabled = true, bool b_cast_shadows = true);
 		Rgb totalEnergy() const override;
-		std::tuple<Ray, float, Rgb> emitPhoton(float s_1, float s_2, float s_3, float s_4, float time) const override;
+		std::tuple<Ray<float>, float, Rgb> emitPhoton(float s_1, float s_2, float s_3, float s_4, float time) const override;
 		std::pair<Vec3f, Rgb> emitSample(LSample &s, float time) const override;
 		bool diracLight() const override { return !soft_shadows_; }
-		std::pair<bool, Ray> illumSample(const Point3f &surface_p, LSample &s, float time) const override;
-		std::tuple<bool, Ray, Rgb> illuminate(const Point3f &surface_p, float time) const override;
+		std::pair<bool, Ray<float>> illumSample(const Point3f &surface_p, LSample &s, float time) const override;
+		std::tuple<bool, Ray<float>, Rgb> illuminate(const Point3f &surface_p, float time) const override;
 		std::array<float, 3> emitPdf(const Vec3f &surface_n, const Vec3f &wo) const override;
 		bool canIntersect() const override { return soft_shadows_; }
-		std::tuple<bool, float, Rgb> intersect(const Ray &ray, float &t) const override;
+		std::tuple<bool, float, Rgb> intersect(const Ray<float> &ray, float &t) const override;
 		int nSamples() const override { return samples_; };
 
 		Point3f position_;

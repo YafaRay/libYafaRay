@@ -42,9 +42,9 @@ class IesLight final : public Light
 		Rgb totalEnergy() const override{ return color_ * tot_energy_;};
 		int nSamples() const override { return samples_; };
 		bool diracLight() const override { return !soft_shadow_; }
-		std::tuple<bool, Ray, Rgb> illuminate(const Point3f &surface_p, float time) const override;
-		std::pair<bool, Ray> illumSample(const Point3f &surface_p, LSample &s, float time) const override;
-		std::tuple<Ray, float, Rgb> emitPhoton(float s_1, float s_2, float s_3, float s_4, float time) const override;
+		std::tuple<bool, Ray<float>, Rgb> illuminate(const Point3f &surface_p, float time) const override;
+		std::pair<bool, Ray<float>> illumSample(const Point3f &surface_p, LSample &s, float time) const override;
+		std::tuple<Ray<float>, float, Rgb> emitPhoton(float s_1, float s_2, float s_3, float s_4, float time) const override;
 		std::pair<Vec3f, Rgb> emitSample(LSample &s, float time) const override;
 		std::array<float, 3> emitPdf(const Vec3f &surface_n, const Vec3f &wo) const override;
 		bool isIesOk() const { return ies_ok_; };

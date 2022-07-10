@@ -48,9 +48,9 @@ class AcceleratorKdTreeMultiThread final : public Accelerator
 		struct Stack;
 		AcceleratorKdTreeMultiThread(Logger &logger, const std::vector<const Primitive *> &primitives, const Parameters &parameters);
 		~AcceleratorKdTreeMultiThread() override;
-		IntersectData intersect(const Ray &ray, float t_max) const override;
-		IntersectData intersectShadow(const Ray &ray, float t_max) const override;
-		IntersectData intersectTransparentShadow(const Ray &ray, int max_depth, float t_max, const Camera *camera) const override;
+		IntersectData intersect(const Ray<float> &ray, float t_max) const override;
+		IntersectData intersectShadow(const Ray<float> &ray, float t_max) const override;
+		IntersectData intersectTransparentShadow(const Ray<float> &ray, int max_depth, float t_max, const Camera *camera) const override;
 		Bound<float> getBound() const override { return tree_bound_; }
 
 		AcceleratorKdTreeMultiThread::Result buildTree(const std::vector<const Primitive *> &primitives, const Bound<float> &node_bound, const std::vector<uint32_t> &indices, int depth, uint32_t next_node_id, int bad_refines, const std::vector<Bound<float>> &bounds, const Parameters &parameters, const ClipPlane &clip_plane, const std::vector<PolyDouble> &polygons, const std::vector<uint32_t> &primitive_indices, std::atomic<int> &num_current_threads) const;
@@ -148,17 +148,17 @@ inline kdtree::Stats AcceleratorKdTreeMultiThread::Node::createInterior(Axis axi
 	return kd_stats;
 }
 
-inline IntersectData AcceleratorKdTreeMultiThread::intersect(const Ray &ray, float t_max) const
+inline IntersectData AcceleratorKdTreeMultiThread::intersect(const Ray<float> &ray, float t_max) const
 {
 	return kdtree::intersect<Node, Stack, kdtree::IntersectTestType::Nearest>(ray, t_max, nodes_, tree_bound_, 0, nullptr);
 }
 
-inline IntersectData AcceleratorKdTreeMultiThread::intersectShadow(const Ray &ray, float t_max) const
+inline IntersectData AcceleratorKdTreeMultiThread::intersectShadow(const Ray<float> &ray, float t_max) const
 {
 	return kdtree::intersect<Node, Stack, kdtree::IntersectTestType::Shadow>(ray, t_max, nodes_, tree_bound_, 0, nullptr);
 }
 
-inline IntersectData AcceleratorKdTreeMultiThread::intersectTransparentShadow(const Ray &ray, int max_depth, float t_max, const Camera *camera) const
+inline IntersectData AcceleratorKdTreeMultiThread::intersectTransparentShadow(const Ray<float> &ray, int max_depth, float t_max, const Camera *camera) const
 {
 	return kdtree::intersect<Node, Stack, kdtree::IntersectTestType::TransparentShadow>(ray, t_max, nodes_, tree_bound_, max_depth, camera);
 }
