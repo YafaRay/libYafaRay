@@ -40,8 +40,8 @@ class PrimitivePolygon final : public FacePrimitive
 		bool clippingSupport() const override { return true; }
 		PolyDouble::ClipResultWithBound clipToBound(Logger &logger, const std::array<Vec3d, 2> &bound, const ClipPlane &clip_plane, const PolyDouble &poly) const override;
 		PolyDouble::ClipResultWithBound clipToBound(Logger &logger, const std::array<Vec3d, 2> &bound, const ClipPlane &clip_plane, const PolyDouble &poly, const SquareMatrix<T, 4> &obj_to_world) const override;
-		Bound getBound() const override;
-		Bound getBound(const SquareMatrix<T, 4> &obj_to_world) const override;
+		Bound<T> getBound() const override;
+		Bound<T> getBound(const SquareMatrix<T, 4> &obj_to_world) const override;
 		Vec<T, 3> getGeometricNormal(const Uv<T> &uv, T time, bool) const override;
 		Vec<T, 3> getGeometricNormal(const Uv<T> &uv, T time, const SquareMatrix<T, 4> &obj_to_world) const override;
 		Vec<T, 3> getGeometricNormal(const SquareMatrix<T, 4> &obj_to_world) const;
@@ -190,14 +190,14 @@ inline std::pair<Point<T, 3>, Vec<T, 3>> PrimitivePolygon<T, N, MotionBlur>::sam
 }
 
 template <typename T, size_t N, MotionBlurType MotionBlur>
-inline Bound PrimitivePolygon<T, N, MotionBlur>::getBound() const
+inline Bound<T> PrimitivePolygon<T, N, MotionBlur>::getBound() const
 {
 	if constexpr(MotionBlur == MotionBlurType::Bezier) return getBoundTimeSteps();
 	else return FacePrimitive::getBound(getVerticesAsVector(0));
 }
 
 template <typename T, size_t N, MotionBlurType MotionBlur>
-inline Bound PrimitivePolygon<T, N, MotionBlur>::getBound(const SquareMatrix<T, 4> &obj_to_world) const
+inline Bound<T> PrimitivePolygon<T, N, MotionBlur>::getBound(const SquareMatrix<T, 4> &obj_to_world) const
 {
 	if constexpr(MotionBlur == MotionBlurType::Bezier) return getBoundTimeSteps(obj_to_world);
 	else return FacePrimitive::getBound(getVerticesAsVector(0, obj_to_world));

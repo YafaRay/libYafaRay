@@ -20,7 +20,10 @@
 
 namespace yafaray {
 
-Bound::Bound(const Bound &r, const Bound &l) :
+template class Bound<float>;
+
+template<typename T>
+Bound<T>::Bound(const Bound &r, const Bound &l) :
 	a_{{
 			std::min(r.a_[Axis::X], l.a_[Axis::X]),
 			std::min(r.a_[Axis::Y], l.a_[Axis::Y]),
@@ -35,9 +38,10 @@ Bound::Bound(const Bound &r, const Bound &l) :
 	//Empty
 }
 
-float Bound::vol() const
+template<typename T>
+T Bound<T>::vol() const
 {
-	const float ret = (g_[Axis::Y] - a_[Axis::Y]) * (g_[Axis::X] - a_[Axis::X]) * (g_[Axis::Z] - a_[Axis::Z]);
+	const T ret{(g_[Axis::Y] - a_[Axis::Y]) * (g_[Axis::X] - a_[Axis::X]) * (g_[Axis::Z] - a_[Axis::Z])};
 	return ret;
 }
 

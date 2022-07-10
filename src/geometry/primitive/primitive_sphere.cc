@@ -44,13 +44,13 @@ Primitive *SpherePrimitive::factory(const ParamMap &params, const Scene &scene, 
 	return new SpherePrimitive(center, radius, material, object);
 }
 
-Bound SpherePrimitive::getBound() const
+Bound<float> SpherePrimitive::getBound() const
 {
 	const Vec3f r{radius_ * 1.0001f};
 	return {center_ - r, center_ + r};
 }
 
-Bound SpherePrimitive::getBound(const Matrix4f &obj_to_world) const
+Bound<float> SpherePrimitive::getBound(const Matrix4f &obj_to_world) const
 {
 	const Vec3f r{radius_ * 1.0001f};
 	return {center_ - r, center_ + r};

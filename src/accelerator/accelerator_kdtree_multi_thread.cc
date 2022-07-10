@@ -60,7 +60,7 @@ AcceleratorKdTreeMultiThread::AcceleratorKdTreeMultiThread(Logger &logger, const
 	if(tree_build_parameters.max_depth_ > kdtree::kd_max_stack_global) tree_build_parameters.max_depth_ = kdtree::kd_max_stack_global; //to prevent our stack to overflow
 	//experiment: add penalty to cost ratio to reduce memory usage on huge scenes
 	if(log_leaves > 16.0) tree_build_parameters.cost_ratio_ += 0.25 * (log_leaves - 16.0);
-	std::vector<Bound> bounds;
+	std::vector<Bound<float>> bounds;
 	bounds.reserve(num_primitives);
 	if(num_primitives > 0) tree_bound_ = primitives.front()->getBound();
 	else tree_bound_ = {{{0.f, 0.f, 0.f}}, {{0.f, 0.f, 0.f}}};
@@ -69,7 +69,7 @@ AcceleratorKdTreeMultiThread::AcceleratorKdTreeMultiThread(Logger &logger, const
 	{
 		bounds.emplace_back(primitive->getBound());
 		/* calc tree bound. Remember to upgrade bound_t class... */
-		tree_bound_ = Bound(tree_bound_, bounds.back());
+		tree_bound_ = Bound<float>{tree_bound_, bounds.back()};
 	}
 	//slightly(!) increase tree bound to prevent errors with prims
 	//lying in a bound plane (still slight bug with trees where one dim. is 0)
@@ -106,7 +106,7 @@ AcceleratorKdTreeMultiThread::~AcceleratorKdTreeMultiThread()
 	and binning => O(n)
 */
 
-AcceleratorKdTreeMultiThread::SplitCost AcceleratorKdTreeMultiThread::pigeonMinCost(Logger &logger, float e_bonus, float cost_ratio, const std::vector<Bound> &bounds, const Bound &node_bound, const std::vector<uint32_t> &prim_indices)
+AcceleratorKdTreeMultiThread::SplitCost AcceleratorKdTreeMultiThread::pigeonMinCost(Logger &logger, float e_bonus, float cost_ratio, const std::vector<Bound<float>> &bounds, const Bound<float> &node_bound, const std::vector<uint32_t> &prim_indices)
 {
 	const auto num_prim_indices = static_cast<uint32_t>(prim_indices.size());
 	static constexpr int max_bin = 1024;
@@ -125,7 +125,7 @@ AcceleratorKdTreeMultiThread::SplitCost AcceleratorKdTreeMultiThread::pigeonMinC
 		// pigeonhole sort:
 		for(uint32_t prim_num = 0; prim_num < num_prim_indices; ++prim_num)
 		{
-			const Bound &bbox = bounds[prim_indices[prim_num]];
+			const Bound<float> &bbox = bounds[prim_indices[prim_num]];
 			const float t_low = bbox.a_[axis];
 			const float t_up  = bbox.g_[axis];
 			int b_left = static_cast<int>((t_low - min) * s);
@@ -252,7 +252,7 @@ AcceleratorKdTreeMultiThread::SplitCost AcceleratorKdTreeMultiThread::pigeonMinC
 	Cost function: Find the optimal split with SAH
 */
 
-AcceleratorKdTreeMultiThread::SplitCost AcceleratorKdTreeMultiThread::minimalCost(Logger &logger, float e_bonus, float cost_ratio, const Bound &node_bound, const std::vector<uint32_t> &indices, const std::vector<Bound> &bounds)
+AcceleratorKdTreeMultiThread::SplitCost AcceleratorKdTreeMultiThread::minimalCost(Logger &logger, float e_bonus, float cost_ratio, const Bound<float> &node_bound, const std::vector<uint32_t> &indices, const std::vector<Bound<float>> &bounds)
 {
 	const auto num_indices = static_cast<uint32_t>(indices.size());
 	const Vec3f node_bound_axes {{node_bound.length(Axis::X), node_bound.length(Axis::Y), node_bound.length(Axis::Z)}};
@@ -270,7 +270,7 @@ AcceleratorKdTreeMultiThread::SplitCost AcceleratorKdTreeMultiThread::minimalCos
 		edges_all_axes[axis_id].reserve(num_indices * 2);
 		for(const auto &index : indices)
 		{
-			const Bound &bbox = bounds[index];
+			const Bound<float> &bbox = bounds[index];
 			if(bbox.a_[axis] == bbox.g_[axis])
 			{
 				edges_all_axes[axis_id].emplace_back(kdtree::BoundEdge(bbox.a_[axis], index, kdtree::BoundEdge::EndBound::Both));
@@ -368,14 +368,14 @@ AcceleratorKdTreeMultiThread::SplitCost AcceleratorKdTreeMultiThread::minimalCos
 /*!
 	recursively build the Kd-tree
 */
-AcceleratorKdTreeMultiThread::Result AcceleratorKdTreeMultiThread::buildTree(const std::vector<const Primitive *> &primitives, const Bound &node_bound, const std::vector<uint32_t> &indices, int depth, uint32_t next_node_id, int bad_refines, const std::vector<Bound> &bounds, const Parameters &parameters, const ClipPlane &clip_plane, const std::vector<PolyDouble> &polygons, const std::vector<uint32_t> &primitive_indices, std::atomic<int> &num_current_threads) const
+AcceleratorKdTreeMultiThread::Result AcceleratorKdTreeMultiThread::buildTree(const std::vector<const Primitive *> &primitives, const Bound<float> &node_bound, const std::vector<uint32_t> &indices, int depth, uint32_t next_node_id, int bad_refines, const std::vector<Bound<float>> &bounds, const Parameters &parameters, const ClipPlane &clip_plane, const std::vector<PolyDouble> &polygons, const std::vector<uint32_t> &primitive_indices, std::atomic<int> &num_current_threads) const
 {
 	Result kd_tree_result;
 	buildTreeWorker(primitives, node_bound, indices, depth, next_node_id, bad_refines, bounds, parameters, clip_plane, polygons, primitive_indices, kd_tree_result, num_current_threads);
 	return kd_tree_result;
 }
 
-void AcceleratorKdTreeMultiThread::buildTreeWorker(const std::vector<const Primitive *> &primitives, const Bound &node_bound, const std::vector<uint32_t> &indices, int depth, uint32_t next_node_id, int bad_refines, const std::vector<Bound> &bounds, const Parameters &parameters, const ClipPlane &clip_plane, const std::vector<PolyDouble> &polygons, const std::vector<uint32_t> &primitive_indices, Result &result, std::atomic<int> &num_current_threads) const
+void AcceleratorKdTreeMultiThread::buildTreeWorker(const std::vector<const Primitive *> &primitives, const Bound<float> &node_bound, const std::vector<uint32_t> &indices, int depth, uint32_t next_node_id, int bad_refines, const std::vector<Bound<float>> &bounds, const Parameters &parameters, const ClipPlane &clip_plane, const std::vector<PolyDouble> &polygons, const std::vector<uint32_t> &primitive_indices, Result &result, std::atomic<int> &num_current_threads) const
 {
 	//Note: "indices" are:
 	// * primitive indices when not clipping primitives as polygons. In that case all primitive bounds are present using the same indexing as the complete primitive list
@@ -392,7 +392,7 @@ void AcceleratorKdTreeMultiThread::buildTreeWorker(const std::vector<const Primi
 	static constexpr int poly_clipping_threshold = 32;
 	std::vector<uint32_t> poly_indices;
 	std::vector<uint32_t> prim_indices;
-	std::vector<Bound> poly_bounds;
+	std::vector<Bound<float>> poly_bounds;
 	const auto num_indices = static_cast<uint32_t>(indices.size());
 	const bool do_poly_clipping = (num_indices <= poly_clipping_threshold && num_indices <= primitive_indices.size());
 	if(do_poly_clipping)
@@ -441,7 +441,7 @@ void AcceleratorKdTreeMultiThread::buildTreeWorker(const std::vector<const Primi
 		}
 		new_indices = std::reference_wrapper<const std::vector<uint32_t>>(poly_indices); //Using polygon indices instead of primitive indices now!
 		new_primitive_indices = std::reference_wrapper<const std::vector<uint32_t>>(prim_indices); //Only forwarding the primitive indices corresponding with currently existing polygons
-		new_bounds = std::reference_wrapper<const std::vector<Bound>>(poly_bounds); //Using polygon indices for bounds too, instead of primitive indices now.
+		new_bounds = std::reference_wrapper<const std::vector<Bound<float>>>(poly_bounds); //Using polygon indices for bounds too, instead of primitive indices now.
 	}
 #endif
 

@@ -40,7 +40,7 @@ class Accelerator
 		virtual IntersectData intersect(const Ray &ray, float t_max) const = 0;
 		virtual IntersectData intersectShadow(const Ray &ray, float t_max) const = 0;
 		virtual IntersectData intersectTransparentShadow(const Ray &ray, int max_depth, float dist, const Camera *camera) const = 0;
-		virtual Bound getBound() const = 0;
+		virtual Bound<float> getBound() const = 0;
 		std::pair<std::unique_ptr<const SurfacePoint>, float> intersect(const Ray &ray, const Camera *camera) const;
 		std::pair<bool, const Primitive *> isShadowed(const Ray &ray, float shadow_bias) const;
 		std::tuple<bool, Rgb, const Primitive *> isShadowedTransparentShadow(const Ray &ray, int max_depth, float shadow_bias, const Camera *camera) const;
@@ -51,7 +51,7 @@ class Accelerator
 		static bool primitiveIntersectionShadow(IntersectData &intersect_data, const Primitive *primitive, const Point3f &from, const Vec3f &dir, float t_min, float t_max, float time);
 		static bool primitiveIntersectionTransparentShadow(IntersectData &intersect_data, std::set<const Primitive *> &filtered, int &depth, int max_depth, const Primitive *primitive, const Camera *camera, const Point3f &from, const Vec3f &dir, float t_min, float t_max, float time);
 
-		static float calculateDynamicRayBias(const Bound::Cross &bound_cross) { return 0.1f * minRayDist() * std::abs(bound_cross.leave_ - bound_cross.enter_); } //!< empirical guesstimate for ray bias to avoid self intersections, calculated based on the length segment of the ray crossing the tree bound, to estimate the loss of precision caused by the (very roughly approximate) size of the primitive
+		static float calculateDynamicRayBias(const Bound<float>::Cross &bound_cross) { return 0.1f * minRayDist() * std::abs(bound_cross.leave_ - bound_cross.enter_); } //!< empirical guesstimate for ray bias to avoid self intersections, calculated based on the length segment of the ray crossing the tree bound, to estimate the loss of precision caused by the (very roughly approximate) size of the primitive
 
 	protected:
 		Logger &logger_;

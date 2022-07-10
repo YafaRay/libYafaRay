@@ -105,9 +105,9 @@ inline Stats Stats::operator += (const Stats &kd_stats)
 }
 
 template<typename NodeType, typename NodeStackType, IntersectTestType test_type>
-IntersectData intersect(const Ray &ray, float t_max, const std::vector<NodeType> &nodes, const Bound &tree_bound, int transparent_color_max_depth, const Camera *camera)
+IntersectData intersect(const Ray &ray, float t_max, const std::vector<NodeType> &nodes, const Bound<float> &tree_bound, int transparent_color_max_depth, const Camera *camera)
 {
-	const Bound::Cross cross{tree_bound.cross(ray, t_max)};
+	const Bound<float>::Cross cross{tree_bound.cross(ray, t_max)};
 	if(!cross.crossed_)
 	{ return {}; }
 	const Vec3f inv_dir{{math::inverse(ray.dir_[Axis::X]), math::inverse(ray.dir_[Axis::Y]), math::inverse(ray.dir_[Axis::Z])}};

@@ -72,7 +72,7 @@ void Scene::logInfoVerboseSuccessDisabled(Logger &logger, const std::string &pna
 	logger.logVerbose("Scene: ", "Added ", pname, " '", name, "' (", t, ")! [DISABLED]");
 }
 
-Scene::Scene(Logger &logger) : scene_bound_(std::make_unique<Bound>()), logger_(logger)
+Scene::Scene(Logger &logger) : scene_bound_(std::make_unique<Bound<float>>()), logger_(logger)
 {
 	creation_state_.changes_ = CreationState::Flags::CAll;
 	creation_state_.stack_.push_front(CreationState::Ready);
@@ -198,7 +198,7 @@ const Background *Scene::getBackground() const
 	return background_;
 }
 
-Bound Scene::getSceneBound() const
+Bound<float> Scene::getSceneBound() const
 {
 	return *scene_bound_;
 }

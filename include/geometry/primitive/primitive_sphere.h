@@ -29,7 +29,7 @@ namespace yafaray {
 
 class Scene;
 class ParamMap;
-class Bound;
+template<typename T> class Bound;
 class SurfacePoint;
 
 class SpherePrimitive final : public Primitive
@@ -39,8 +39,8 @@ class SpherePrimitive final : public Primitive
 		SpherePrimitive(const Point3f &centr, float rad, const std::unique_ptr<const Material> *material, const Object &base_object): center_(centr), radius_(rad), base_object_(base_object), material_(material) {}
 
 	private:
-		Bound getBound() const override;
-		Bound getBound(const Matrix4f &obj_to_world) const override;
+		Bound<float> getBound() const override;
+		Bound<float> getBound(const Matrix4f &obj_to_world) const override;
 		std::pair<float, Uv<float>> intersect(const Point3f &from, const Vec3f &dir, float time) const override;
 		std::pair<float, Uv<float>> intersect(const Point3f &from, const Vec3f &dir, float time, const Matrix4f &obj_to_world) const override;
 		std::unique_ptr<const SurfacePoint> getSurface(const RayDifferentials *ray_differentials, const Point3f &hit_point, float time, const Uv<float> &intersect_uv, const Camera *camera) const override;

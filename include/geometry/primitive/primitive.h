@@ -51,8 +51,8 @@ class Primitive
 	public:
 		virtual ~Primitive() = default;
 		/*! return the object bound in global ("world") coordinates */
-		virtual Bound getBound() const = 0;
-		virtual Bound getBound(const Matrix4f &obj_to_world) const = 0;
+		virtual Bound<float> getBound() const = 0;
+		virtual Bound<float> getBound(const Matrix4f &obj_to_world) const = 0;
 		virtual bool clippingSupport() const = 0;
 		virtual std::pair<float, Uv<float>> intersect(const Point3f &from, const Vec3f &dir, float time) const = 0;
 		virtual std::pair<float, Uv<float>> intersect(const Point3f &from, const Vec3f &dir, float time, const Matrix4f &obj_to_world) const = 0;

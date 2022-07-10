@@ -49,7 +49,7 @@ AcceleratorSimpleTest::AcceleratorSimpleTest(Logger &logger, const std::vector<c
 			obj_bound_it->second.bound_ = Bound(obj_bound_it->second.bound_, primitive_bound);
 			obj_bound_it->second.primitives_.emplace_back(primitive);
 		}
-		bound_ = Bound(bound_, primitive_bound);
+		bound_ = Bound<float>{bound_, primitive_bound};
 	}
 	for(const auto &[object, object_data] : objects_data_)
 	{
@@ -63,7 +63,7 @@ IntersectData AcceleratorSimpleTest::intersect(const Ray &ray, float t_max) cons
 	IntersectData intersect_data;
 	for(const auto &[object, object_data] : objects_data_)
 	{
-		if(const Bound::Cross cross{object_data.bound_.cross(ray, t_max)}; cross.crossed_)
+		if(const Bound<float>::Cross cross{object_data.bound_.cross(ray, t_max)}; cross.crossed_)
 		{
 			const float t_min = std::max(ray.tmin_, calculateDynamicRayBias(cross));
 			for(const auto &primitive : object_data.primitives_)
@@ -84,7 +84,7 @@ IntersectData AcceleratorSimpleTest::intersectShadow(const Ray &ray, float t_max
 	IntersectData intersect_data;
 	for(const auto &[object, object_data] : objects_data_)
 	{
-		if(const Bound::Cross cross{object_data.bound_.cross(ray, t_max)}; cross.crossed_)
+		if(const Bound<float>::Cross cross{object_data.bound_.cross(ray, t_max)}; cross.crossed_)
 		{
 			const float t_min = calculateDynamicRayBias(cross);
 			for(const auto &primitive : object_data.primitives_)
@@ -103,7 +103,7 @@ IntersectData AcceleratorSimpleTest::intersectTransparentShadow(const Ray &ray, 
 	IntersectData intersect_data;
 	for(const auto &[object, object_data] : objects_data_)
 	{
-		if(const Bound::Cross cross{object_data.bound_.cross(ray, t_max)}; cross.crossed_)
+		if(const Bound<float>::Cross cross{object_data.bound_.cross(ray, t_max)}; cross.crossed_)
 		{
 			const float t_min = std::max(ray.tmin_, calculateDynamicRayBias(cross));
 			for(const auto &primitive : object_data.primitives_)

@@ -75,18 +75,18 @@ class VolumeRegion
 
 		virtual Rgb tau(const Ray &ray, float step, float offset) const = 0;
 
-		Bound::Cross crossBound(const Ray &ray) const
+		Bound<float>::Cross crossBound(const Ray &ray) const
 		{
 			return b_box_.cross(ray, 10000.f);
 		}
 
-		Bound getBb() const { return b_box_; }
+		Bound<float> getBb() const { return b_box_; }
 
 		int att_grid_x_, att_grid_y_, att_grid_z_; // FIXME: un-hardcode
 		std::map<const Light *, float *> attenuation_grid_map_; // FIXME: un-hardcode
 
 	protected:
-		Bound b_box_;
+		Bound<float> b_box_;
 		Rgb s_a_, s_s_, l_e_;
 		bool have_s_a_, have_s_s_, have_l_e_;
 		float g_;

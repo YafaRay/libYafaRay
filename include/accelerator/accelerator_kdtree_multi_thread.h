@@ -51,15 +51,15 @@ class AcceleratorKdTreeMultiThread final : public Accelerator
 		IntersectData intersect(const Ray &ray, float t_max) const override;
 		IntersectData intersectShadow(const Ray &ray, float t_max) const override;
 		IntersectData intersectTransparentShadow(const Ray &ray, int max_depth, float t_max, const Camera *camera) const override;
-		Bound getBound() const override { return tree_bound_; }
+		Bound<float> getBound() const override { return tree_bound_; }
 
-		AcceleratorKdTreeMultiThread::Result buildTree(const std::vector<const Primitive *> &primitives, const Bound &node_bound, const std::vector<uint32_t> &indices, int depth, uint32_t next_node_id, int bad_refines, const std::vector<Bound> &bounds, const Parameters &parameters, const ClipPlane &clip_plane, const std::vector<PolyDouble> &polygons, const std::vector<uint32_t> &primitive_indices, std::atomic<int> &num_current_threads) const;
-		void buildTreeWorker(const std::vector<const Primitive *> &primitives, const Bound &node_bound, const std::vector<uint32_t> &indices, int depth, uint32_t next_node_id, int bad_refines, const std::vector<Bound> &bounds, const Parameters &parameters, const ClipPlane &clip_plane, const std::vector<PolyDouble> &polygons, const std::vector<uint32_t> &primitive_indices, Result &result, std::atomic<int> &num_current_threads) const;
-		static SplitCost pigeonMinCost(Logger &logger, float e_bonus, float cost_ratio, const std::vector<Bound> &bounds, const Bound &node_bound, const std::vector<uint32_t> &prim_indices);
-		static SplitCost minimalCost(Logger &logger, float e_bonus, float cost_ratio, const Bound &node_bound, const std::vector<uint32_t> &indices, const std::vector<Bound> &bounds);
+		AcceleratorKdTreeMultiThread::Result buildTree(const std::vector<const Primitive *> &primitives, const Bound<float> &node_bound, const std::vector<uint32_t> &indices, int depth, uint32_t next_node_id, int bad_refines, const std::vector<Bound<float>> &bounds, const Parameters &parameters, const ClipPlane &clip_plane, const std::vector<PolyDouble> &polygons, const std::vector<uint32_t> &primitive_indices, std::atomic<int> &num_current_threads) const;
+		void buildTreeWorker(const std::vector<const Primitive *> &primitives, const Bound<float> &node_bound, const std::vector<uint32_t> &indices, int depth, uint32_t next_node_id, int bad_refines, const std::vector<Bound<float>> &bounds, const Parameters &parameters, const ClipPlane &clip_plane, const std::vector<PolyDouble> &polygons, const std::vector<uint32_t> &primitive_indices, Result &result, std::atomic<int> &num_current_threads) const;
+		static SplitCost pigeonMinCost(Logger &logger, float e_bonus, float cost_ratio, const std::vector<Bound<float>> &bounds, const Bound<float> &node_bound, const std::vector<uint32_t> &prim_indices);
+		static SplitCost minimalCost(Logger &logger, float e_bonus, float cost_ratio, const Bound<float> &node_bound, const std::vector<uint32_t> &indices, const std::vector<Bound<float>> &bounds);
 
 		alignas(8) std::vector<Node> nodes_;
-		Bound tree_bound_; 	//!< overall space the tree encloses
+		Bound<float> tree_bound_; 	//!< overall space the tree encloses
 		std::atomic<int> num_current_threads_ { 0 };
 };
 

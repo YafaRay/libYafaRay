@@ -77,7 +77,7 @@ VolumeRegion::VolumeRegion(Logger &logger, const Rgb &sa, const Rgb &ss, const R
 
 Rgb DensityVolumeRegion::tau(const Ray &ray, float step_size, float offset) const
 {
-	Bound::Cross cross{crossBound(ray)};
+	Bound<float>::Cross cross{crossBound(ray)};
 	// ray doesn't hit the BB
 	if(!cross.crossed_) return Rgb{0.f};
 	if(ray.tmax_ < cross.enter_ && ray.tmax_ >= 0.f) return Rgb{0.f};

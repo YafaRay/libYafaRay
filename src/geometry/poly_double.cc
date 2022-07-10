@@ -106,7 +106,7 @@ PolyDouble::ClipResult PolyDouble::planeClip(Logger &logger, double pos, const C
 	return clip_result;
 }
 
-Bound PolyDouble::getBound(const PolyDouble &poly)
+Bound<float> PolyDouble::getBound(const PolyDouble &poly)
 {
 	Vec3d a, g;
 	for(const auto &axis : axis::spatial) a[axis] = g[axis] = poly[0][axis];
@@ -118,7 +118,7 @@ Bound PolyDouble::getBound(const PolyDouble &poly)
 			g[axis] = std::max(g[axis], poly[i][axis]);
 		}
 	}
-	Bound bound;
+	Bound<float> bound;
 	for(const auto &axis : axis::spatial)
 	{
 		bound.a_[axis] = static_cast<float>(a[axis]);
@@ -132,7 +132,7 @@ PolyDouble::ClipResultWithBound PolyDouble::planeClipWithBound(Logger &logger, d
 	ClipResultWithBound clip_result(planeClip(logger, pos, clip_plane, poly));
 	if(clip_result.clip_result_code_ == ClipResult::Code::Correct)
 	{
-		clip_result.box_ = std::make_unique<Bound>();
+		clip_result.box_ = std::make_unique<Bound<float>>();
 		*clip_result.box_ = getBound(clip_result.poly_);
 	}
 	return clip_result;
@@ -159,7 +159,7 @@ PolyDouble::ClipResultWithBound PolyDouble::boxClip(Logger &logger, const Vec3d 
 	}
 	if(clip_result.clip_result_code_ == ClipResult::Code::Correct)
 	{
-		clip_result.box_ = std::make_unique<Bound>();
+		clip_result.box_ = std::make_unique<Bound<float>>();
 		*clip_result.box_ = getBound(clip_result.poly_);
 	}
 	return clip_result;

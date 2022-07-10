@@ -68,16 +68,16 @@ AcceleratorKdTree::AcceleratorKdTree(Logger &logger, const std::vector<const Pri
 	if(max_depth_ > kd_max_stack_) max_depth_ = kd_max_stack_; //to prevent our stack to overflow
 	//experiment: add penalty to cost ratio to reduce memory usage on huge scenes
 	if(log_leaves > 16.0) cost_ratio_ += 0.25f * (log_leaves - 16.0);
-	all_bounds_ = std::unique_ptr<Bound[]>(new Bound[total_prims_ + prim_clip_thresh_ + 1]);
+	all_bounds_ = std::unique_ptr<Bound<float>[]>(new Bound<float>[total_prims_ + prim_clip_thresh_ + 1]);
 	if(logger_.isVerbose()) logger_.logVerbose("Kd-Tree: Getting primitive bounds...");
 	for(uint32_t i = 0; i < total_prims_; i++)
 	{
 		all_bounds_[i] = primitives[i]->getBound();
 		/* calc tree bound. Remember to upgrade bound_t class... */
-		if(i > 0) tree_bound_ = Bound(tree_bound_, all_bounds_[i]);
+		if(i > 0) tree_bound_ = Bound<float>{tree_bound_, all_bounds_[i]};
 		else tree_bound_ = all_bounds_[i];
 	}
-	if(total_prims_ == 0) tree_bound_ = Bound{{{0.f, 0.f, 0.f}}, {{0.f, 0.f, 0.f}}};
+	if(total_prims_ == 0) tree_bound_ = Bound<float>{{{0.f, 0.f, 0.f}}, {{0.f, 0.f, 0.f}}};
 	//slightly(!) increase tree bound to prevent errors with prims
 	//lying in a bound plane (still slight bug with trees where one dim. is 0)
 	for(const auto axis : axis::spatial)
@@ -135,7 +135,7 @@ AcceleratorKdTree::~AcceleratorKdTree()
 	and binning => O(n)
 */
 
-AcceleratorKdTree::SplitCost AcceleratorKdTree::pigeonMinCost(Logger &logger, float e_bonus, float cost_ratio, uint32_t num_prim_indices, const Bound *bounds, const Bound &node_bound, const uint32_t *prim_indices)
+AcceleratorKdTree::SplitCost AcceleratorKdTree::pigeonMinCost(Logger &logger, float e_bonus, float cost_ratio, uint32_t num_prim_indices, const Bound<float> *bounds, const Bound<float> &node_bound, const uint32_t *prim_indices)
 {
 	static constexpr int max_bin = 1024;
 	static constexpr int num_bins = max_bin + 1;
@@ -153,7 +153,7 @@ AcceleratorKdTree::SplitCost AcceleratorKdTree::pigeonMinCost(Logger &logger, fl
 		// pigeonhole sort:
 		for(uint32_t prim_num = 0; prim_num < num_prim_indices; ++prim_num)
 		{
-			const Bound &bbox = bounds[prim_indices[prim_num]];
+			const Bound<float> &bbox = bounds[prim_indices[prim_num]];
 			const float t_low = bbox.a_[axis];
 			const float t_up  = bbox.g_[axis];
 			int b_left = static_cast<int>((t_low - min) * s);
@@ -280,7 +280,7 @@ AcceleratorKdTree::SplitCost AcceleratorKdTree::pigeonMinCost(Logger &logger, fl
 	Cost function: Find the optimal split with SAH
 */
 
-AcceleratorKdTree::SplitCost AcceleratorKdTree::minimalCost(Logger &logger, float e_bonus, float cost_ratio, uint32_t num_indices, const Bound &node_bound, const uint32_t *prim_idx, const Bound *all_bounds, const Bound *all_bounds_general, const std::array<std::unique_ptr<kdtree::BoundEdge[]>, 3> &edges_all_axes, kdtree::Stats &kd_stats)
+AcceleratorKdTree::SplitCost AcceleratorKdTree::minimalCost(Logger &logger, float e_bonus, float cost_ratio, uint32_t num_indices, const Bound<float> &node_bound, const uint32_t *prim_idx, const Bound<float> *all_bounds, const Bound<float> *all_bounds_general, const std::array<std::unique_ptr<kdtree::BoundEdge[]>, 3> &edges_all_axes, kdtree::Stats &kd_stats)
 {
 	const std::array<float, 3> node_bound_axes {{node_bound.length(Axis::X), node_bound.length(Axis::Y), node_bound.length(Axis::Z)}};
 	const std::array<float, 3> inv_node_bound_axes { 1.f / node_bound_axes[0], 1.f / node_bound_axes[1], 1.f / node_bound_axes[2] };
@@ -295,7 +295,7 @@ AcceleratorKdTree::SplitCost AcceleratorKdTree::minimalCost(Logger &logger, floa
 		//test!
 		if(all_bounds != all_bounds_general) for(unsigned int i = 0; i < num_indices; i++)
 		{
-			const Bound &bbox = all_bounds[i];
+			const Bound<float> &bbox = all_bounds[i];
 			if(bbox.a_[axis] == bbox.g_[axis])
 			{
 				edges_all_axes[axis_id][num_edges] = kdtree::BoundEdge(bbox.a_[axis], i /* pn */, kdtree::BoundEdge::EndBound::Both);
@@ -311,7 +311,7 @@ AcceleratorKdTree::SplitCost AcceleratorKdTree::minimalCost(Logger &logger, floa
 		else for(unsigned int i = 0; i < num_indices; i++)
 		{
 			const int pn = prim_idx[i];
-			const Bound &bbox = all_bounds[pn];
+			const Bound<float> &bbox = all_bounds[pn];
 			if(bbox.a_[axis] == bbox.g_[axis])
 			{
 				edges_all_axes[axis_id][num_edges] = kdtree::BoundEdge(bbox.a_[axis], pn, kdtree::BoundEdge::EndBound::Both);
@@ -418,7 +418,7 @@ AcceleratorKdTree::SplitCost AcceleratorKdTree::minimalCost(Logger &logger, floa
 				2 when neither current nor subsequent split reduced cost
 */
 
-int AcceleratorKdTree::buildTree(uint32_t n_prims, const std::vector<const Primitive *> &original_primitives, const Bound &node_bound, uint32_t *prim_nums, uint32_t *left_prims, uint32_t *right_prims, const std::array<std::unique_ptr<kdtree::BoundEdge[]>, 3> &edges, uint32_t right_mem_size, int depth, int bad_refines)
+int AcceleratorKdTree::buildTree(uint32_t n_prims, const std::vector<const Primitive *> &original_primitives, const Bound<float> &node_bound, uint32_t *prim_nums, uint32_t *left_prims, uint32_t *right_prims, const std::array<std::unique_ptr<kdtree::BoundEdge[]>, 3> &edges, uint32_t right_mem_size, int depth, int bad_refines)
 {
 	if(next_free_node_ == allocated_nodes_count_)
 	{

@@ -33,7 +33,7 @@ class AcceleratorSimpleTest final : Accelerator
 	public:
 		struct ObjectData
 		{
-			Bound bound_;
+			Bound<float> bound_;
 			std::vector<const Primitive *> primitives_;
 		};
 		static const Accelerator * factory(Logger &logger, const std::vector<const Primitive *> &primitives, const ParamMap &params);
@@ -43,10 +43,10 @@ class AcceleratorSimpleTest final : Accelerator
 		IntersectData intersect(const Ray &ray, float t_max) const override;
 		IntersectData intersectShadow(const Ray &ray, float t_max) const override;
 		IntersectData intersectTransparentShadow(const Ray &ray, int max_depth, float dist, const Camera *camera) const override;
-		Bound getBound() const override { return bound_; }
+		Bound<float> getBound() const override { return bound_; }
 		const std::vector<const Primitive *> &primitives_;
 		std::map<const Object *, ObjectData> objects_data_;
-		Bound bound_;
+		Bound<float> bound_;
 };
 
 } //namespace yafaray

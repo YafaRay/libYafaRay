@@ -89,11 +89,11 @@ class PointKdTree
 			float s_; //!< the split val of parent node
 			Axis axis_; //!< the split axis of parent node
 		};
-		void buildTree(uint32_t start, uint32_t end, Bound &node_bound, const T **prims);
-		void buildTreeWorker(uint32_t start, uint32_t end, Bound &node_bound, const T **prims, int level, uint32_t &local_next_free_node, KdNode<T> *local_nodes);
+		void buildTree(uint32_t start, uint32_t end, Bound<float> &node_bound, const T **prims);
+		void buildTreeWorker(uint32_t start, uint32_t end, Bound<float> &node_bound, const T **prims, int level, uint32_t &local_next_free_node, KdNode<T> *local_nodes);
 		KdNode<T> *nodes_;
 		uint32_t n_elements_, next_free_node_;
-		Bound tree_bound_;
+		Bound<float> tree_bound_;
 		int max_level_threads_ = 0;  //max level where we will launch threads. We will try to launch at least as many threads as scene threads parameter
 		static constexpr inline unsigned int kd_max_stack_ = 64;
 		std::mutex mutx_;
@@ -132,13 +132,13 @@ PointKdTree<T>::PointKdTree(Logger &logger, const std::vector<T> &dat, const std
 }
 
 template<typename T>
-void PointKdTree<T>::buildTree(uint32_t start, uint32_t end, Bound &node_bound, const T **prims)
+void PointKdTree<T>::buildTree(uint32_t start, uint32_t end, Bound<float> &node_bound, const T **prims)
 {
 	buildTreeWorker(start, end, node_bound, prims, 0, next_free_node_, nodes_);
 }
 
 template<typename T>
-void PointKdTree<T>::buildTreeWorker(uint32_t start, uint32_t end, Bound &node_bound, const T **prims, int level, uint32_t &local_next_free_node, KdNode<T> *local_nodes)
+void PointKdTree<T>::buildTreeWorker(uint32_t start, uint32_t end, Bound<float> &node_bound, const T **prims, int level, uint32_t &local_next_free_node, KdNode<T> *local_nodes)
 {
 	++level;
 	if(end - start == 1)

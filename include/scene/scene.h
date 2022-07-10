@@ -62,7 +62,7 @@ template <typename T, size_t N> class Point;
 typedef Point<float, 3> Point3f;
 template <typename T, size_t N> class Vec;
 typedef Vec<float, 3> Vec3f;
-class Bound;
+template<typename T> class Bound;
 enum class DarkDetectionType : unsigned char;
 
 typedef unsigned int ObjId_t;
@@ -107,7 +107,7 @@ class Scene final
 
 		const Background *getBackground() const;
 		const ImageFilm *getImageFilm() const { return image_film_.get(); }
-		Bound getSceneBound() const;
+		Bound<float> getSceneBound() const;
 		int getNumThreads() const { return nthreads_; }
 		int getNumThreadsPhotons() const { return nthreads_photons_; }
 		AaNoiseParams getAaParameters() const { return aa_noise_params_; }
@@ -195,7 +195,7 @@ class Scene final
 			ObjId_t next_free_id_;
 			const std::unique_ptr<const Material> *current_material_ = nullptr;
 		} creation_state_;
-		std::unique_ptr<Bound> scene_bound_; //!< bounding box of all (finite) scene geometry
+		std::unique_ptr<Bound<float>> scene_bound_; //!< bounding box of all (finite) scene geometry
 		std::string scene_accelerator_;
 		std::unique_ptr<const Accelerator> accelerator_;
 		Object *current_object_ = nullptr;

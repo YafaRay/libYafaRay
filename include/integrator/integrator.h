@@ -117,7 +117,7 @@ class SurfaceIntegrator: public Integrator
 		AaNoiseParams aa_noise_params_;
 		EdgeToonParams edge_toon_params_;
 		MaskParams mask_params_;
-		Bound scene_bound_;
+		Bound<float> scene_bound_;
 		const RenderView *render_view_ = nullptr;
 		const VolumeIntegrator *vol_integrator_ = nullptr;
 		const Camera *camera_ = nullptr;

@@ -51,8 +51,8 @@ class FacePrimitive: public Primitive
 		template<typename T=bool> std::vector<Point3f> getVerticesAsVector(int time_step, const T &obj_to_world = {}) const;
 		template<typename T=bool> Point3f getVertex(size_t vertex_number, const std::array<float, 3> &bezier_factors, const T &obj_to_world = {}) const;
 		template<typename T=bool> Point3f getVertexAtTime(size_t vertex_number, float time, const T &obj_to_world = {}) const;
-		static Bound getBound(const std::vector<Point3f> &vertices);
-		template<typename T=bool> Bound getBoundTimeSteps(const T &obj_to_world = {}) const;
+		static Bound<float> getBound(const std::vector<Point3f> &vertices);
+		template<typename T=bool> Bound<float> getBoundTimeSteps(const T &obj_to_world = {}) const;
 		const Material *getMaterial() const override { return material_->get(); }
 		void setMaterial(const std::unique_ptr<const Material> *material) { material_ = material; }
 		const Object *getObject() const override { return &base_mesh_object_; }
@@ -138,7 +138,7 @@ inline std::vector<Point3f> FacePrimitive::getVerticesAsVector(int time_step, co
 	return result;
 }
 
-inline Bound FacePrimitive::getBound(const std::vector<Point3f> &vertices)
+inline Bound<float> FacePrimitive::getBound(const std::vector<Point3f> &vertices)
 {
 	Point3f min_point{vertices[0]};
 	Point3f max_point{vertices[0]};
@@ -155,7 +155,7 @@ inline Bound FacePrimitive::getBound(const std::vector<Point3f> &vertices)
 }
 
 template <typename T>
-inline Bound FacePrimitive::getBoundTimeSteps(const T &obj_to_world) const
+inline Bound<float> FacePrimitive::getBoundTimeSteps(const T &obj_to_world) const
 {
 	std::vector<Point3f> vertices;
 	vertices.reserve(numVertices() * base_mesh_object_.numTimeSteps());

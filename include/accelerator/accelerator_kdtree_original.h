@@ -52,23 +52,23 @@ class AcceleratorKdTree final : public Accelerator
 		IntersectData intersectShadow(const Ray &ray, float t_max) const override;
 		IntersectData intersectTransparentShadow(const Ray &ray, int max_depth, float t_max, const Camera *camera) const override;
 		//	bool IntersectO(const point3d_t &from, const vector3d_t &ray, float dist, Primitive **tr, float &Z) const;
-		Bound getBound() const override { return tree_bound_; }
+		Bound<float> getBound() const override { return tree_bound_; }
 
-		int buildTree(uint32_t n_prims, const std::vector<const Primitive *> &original_primitives, const Bound &node_bound, uint32_t *prim_nums, uint32_t *left_prims, uint32_t *right_prims, const std::array<std::unique_ptr<kdtree::BoundEdge[]>, 3> &edges, uint32_t right_mem_size, int depth, int bad_refines);
+		int buildTree(uint32_t n_prims, const std::vector<const Primitive *> &original_primitives, const Bound<float> &node_bound, uint32_t *prim_nums, uint32_t *left_prims, uint32_t *right_prims, const std::array<std::unique_ptr<kdtree::BoundEdge[]>, 3> &edges, uint32_t right_mem_size, int depth, int bad_refines);
 
-		static SplitCost pigeonMinCost(Logger &logger, float e_bonus, float cost_ratio, uint32_t num_prim_indices, const Bound *bounds, const Bound &node_bound, const uint32_t *prim_indices);
-		static SplitCost minimalCost(Logger &logger, float e_bonus, float cost_ratio, uint32_t num_indices, const Bound &node_bound, const uint32_t *prim_idx, const Bound *all_bounds, const Bound *all_bounds_general, const std::array<std::unique_ptr<kdtree::BoundEdge[]>, 3> &edges_all_axes, kdtree::Stats &kd_stats);
+		static SplitCost pigeonMinCost(Logger &logger, float e_bonus, float cost_ratio, uint32_t num_prim_indices, const Bound<float> *bounds, const Bound<float> &node_bound, const uint32_t *prim_indices);
+		static SplitCost minimalCost(Logger &logger, float e_bonus, float cost_ratio, uint32_t num_indices, const Bound<float> &node_bound, const uint32_t *prim_idx, const Bound<float> *all_bounds, const Bound<float> *all_bounds_general, const std::array<std::unique_ptr<kdtree::BoundEdge[]>, 3> &edges_all_axes, kdtree::Stats &kd_stats);
 
 		float cost_ratio_ = 0.8f; //!< node traversal cost divided by primitive intersection cost
 		float e_bonus_ = 0.33f; //!< empty bonus
 		uint32_t next_free_node_, allocated_nodes_count_, total_prims_;
 		int max_depth_ = 0;
 		unsigned int max_leaf_size_ = 1;
-		Bound tree_bound_; 	//!< overall space the tree encloses
+		Bound<float> tree_bound_; 	//!< overall space the tree encloses
 		MemoryArena prims_arena_;
 		std::vector<Node> nodes_;
 		// those are temporary actually, to keep argument counts bearable
-		std::unique_ptr<Bound[]> all_bounds_;
+		std::unique_ptr<Bound<float>[]> all_bounds_;
 #if PRIMITIVE_CLIPPING > 0
 		std::unique_ptr<ClipPlane[]> clip_; // indicate clip plane(s) for current level
 		std::vector<PolyDouble> cdata_; // clipping data...

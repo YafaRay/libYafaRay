@@ -28,7 +28,7 @@
 namespace yafaray {
 
 class Material;
-class Bound;
+template<typename T> class Bound;
 class SurfacePoint;
 template <typename T, size_t N> class Point;
 typedef Point<float, 3> Point3f;
@@ -39,8 +39,8 @@ class PrimitiveInstance : public Primitive
 {
 	public:
 		PrimitiveInstance(const Primitive *base_primitive, const ObjectInstance &base_instance) : base_instance_(base_instance), base_primitive_(base_primitive) { }
-		Bound getBound() const override;
-		Bound getBound(const Matrix4f &obj_to_world) const override;
+		Bound<float> getBound() const override;
+		Bound<float> getBound(const Matrix4f &obj_to_world) const override;
 		bool clippingSupport() const override { return base_primitive_->clippingSupport() && !base_instance_.hasMotionBlur(); }
 		PolyDouble::ClipResultWithBound clipToBound(Logger &logger, const std::array<Vec3d, 2> &bound, const ClipPlane &clip_plane, const PolyDouble &poly) const override;
 		PolyDouble::ClipResultWithBound clipToBound(Logger &logger, const std::array<Vec3d, 2> &bound, const ClipPlane &clip_plane, const PolyDouble &poly, const Matrix4f &obj_to_world) const override;
@@ -119,7 +119,7 @@ inline std::pair<Point3f, Vec3f> PrimitiveInstance::sample(const Uv<float> &uv, 
 	return base_primitive_->sample(uv, time, obj_to_world * base_instance_.getObjToWorldMatrixAtTime(time));
 }
 
-inline Bound PrimitiveInstance::getBound() const
+inline Bound<float> PrimitiveInstance::getBound() const
 {
 	const std::vector<const Matrix4f *> matrices = base_instance_.getObjToWorldMatrices();
 	Bound result{base_primitive_->getBound(*matrices[0])};
@@ -130,7 +130,7 @@ inline Bound PrimitiveInstance::getBound() const
 	return result;
 }
 
-inline Bound PrimitiveInstance::getBound(const Matrix4f &obj_to_world) const
+inline Bound<float> PrimitiveInstance::getBound(const Matrix4f &obj_to_world) const
 {
 	const std::vector<const Matrix4f *> matrices = base_instance_.getObjToWorldMatrices();
 	Bound result{base_primitive_->getBound(obj_to_world * *(matrices[0]))};

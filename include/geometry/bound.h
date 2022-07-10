@@ -1,7 +1,7 @@
 #pragma once
 /****************************************************************************
  *
- *      bound.h: Bound and tree api for general raytracing acceleration
+ *      bound.h: Bound<T> and tree api for general raytracing acceleration
  *      This is part of the libYafaRay package
  *      Copyright (C) 2002  Alejandro Conty Estévez
  *
@@ -26,6 +26,7 @@
 
 #include "ray.h"
 #include "geometry/matrix.h"
+#include <limits>
 
 namespace yafaray {
 
@@ -36,14 +37,17 @@ namespace yafaray {
  *
  */
 
+template<typename T>
 class Bound
 {
+	static_assert(std::is_arithmetic_v<T>, "This class can only be instantiated for arithmetic types like int, float, etc");
+
 	public:
 		struct Cross
 		{
 			bool crossed_ = false;
-			float enter_;
-			float leave_;
+			T enter_;
+			T leave_;
 		};
 		/*! Main constructor.
 		 * The box is defined by two points, this constructor just takes them.
@@ -51,14 +55,14 @@ class Bound
 		 * @param a is the low corner (minx,miny,minz)
 		 * @param g is the up corner (maxx,maxy,maxz)
 		 */
-		Bound(const Point3f &a, const Point3f &g) : a_{a}, g_{g} { }
-		Bound(Point3f &&a, Point3f &&g) : a_{std::move(a)}, g_{std::move(g)} { }
+		Bound<T>(const Point<T, 3> &a, const Point<T, 3> &g) : a_{a}, g_{g} { }
+		Bound<T>(Point<T, 3> &&a, Point<T, 3> &&g) : a_{std::move(a)}, g_{std::move(g)} { }
 		//! Default constructors and assignments
-		Bound() = default;
-		Bound(const Bound &bound) = default;
-		Bound(Bound &&bound) = default;
-		Bound& operator=(const Bound &bound) = default;
-		Bound& operator=(Bound &&bound) = default;
+		Bound<T>() = default;
+		Bound<T>(const Bound<T> &bound) = default;
+		Bound<T>(Bound<T> &&bound) = default;
+		Bound<T>& operator=(const Bound<T> &bound) = default;
+		Bound<T>& operator=(Bound<T> &&bound) = default;
 		/*! Two child constructor.
 		 * This creates a bound that includes the two given bounds. It's used when
 		 * building a bounding tree
@@ -66,28 +70,28 @@ class Bound
 		 * @param r is one child bound
 		 * @param l is another child bound
 		 */
-		Bound(const Bound &r, const Bound &l);
+		Bound<T>(const Bound<T> &r, const Bound<T> &l);
 		//! Returns true if the given ray crosses the bound
 		//bool cross(const point3d_t &from,const vector3d_t &ray) const;
 		//! Returns true if the given ray crosses the bound closer than dist
-		//bool cross(const point3d_t &from, const vector3d_t &ray, float dist) const;
-		//bool cross(const point3d_t &from, const vector3d_t &ray, float &where, float dist) const;
-		Cross cross(const Ray &ray, float t_max) const;
+		//bool cross(const point3d_t &from, const vector3d_t &ray, T dist) const;
+		//bool cross(const point3d_t &from, const vector3d_t &ray, T &where, T dist) const;
+		Cross cross(const Ray &ray, T t_max) const;
 		//! Returns the volume of the bound
-		float vol() const;
+		T vol() const;
 		//! Returns the length along a certain axis
-		float length(Axis axis) const { return g_[axis] - a_[axis]; }
+		T length(Axis axis) const { return g_[axis] - a_[axis]; }
 		//! Returns the longest length among all axes
-		float longestLength() const { return math::max(length(Axis::X), length(Axis::Y), length(Axis::Z)); }
+		T longestLength() const { return math::max(length(Axis::X), length(Axis::Y), length(Axis::Z)); }
 		//! Cuts the bound in a certain axis to have the given max value
-		void setAxisMax(Axis axis, float val) { g_[axis] = val;};
+		void setAxisMax(Axis axis, T val) { g_[axis] = val;};
 		//! Cuts the bound in a certain axis to have the given min value
-		void setAxisMin(Axis axis, float val) { a_[axis] = val;};
+		void setAxisMin(Axis axis, T val) { a_[axis] = val;};
 		//! Adjust bound size to include point p
-		void include(const Point3f &p);
-		void include(const Bound &b);
+		void include(const Point<T, 3> &p);
+		void include(const Bound<T> &b);
 		//! Returns true if the point is inside the bound
-		bool includes(const Point3f &pn) const
+		bool includes(const Point<T, 3> &pn) const
 		{
 			return ((pn[Axis::X] >= a_[Axis::X]) && (pn[Axis::X] <= g_[Axis::X]) &&
 					(pn[Axis::Y] >= a_[Axis::Y]) && (pn[Axis::Y] <= g_[Axis::Y]) &&
@@ -95,16 +99,17 @@ class Bound
 		};
 		Axis largestAxis() const
 		{
-			const Vec3f d{g_ - a_};
+			const Vec<T, 3> d{g_ - a_};
 			return (d[Axis::X] > d[Axis::Y]) ? ((d[Axis::X] > d[Axis::Z]) ? Axis::X : Axis::Z) : ((d[Axis::Y] > d[Axis::Z]) ? Axis::Y : Axis::Z);
 		}
 
 		//	protected: // Lynx; need these to be public.
 		//! Two points define the box
-		Point3f a_, g_;
+		Point<T, 3> a_, g_;
 };
 
-inline void Bound::include(const Point3f &p)
+template<typename T>
+inline void Bound<T>::include(const Point<T, 3> &p)
 {
 	a_ = {{
 			std::min(a_[Axis::X], p[Axis::X]),
@@ -118,26 +123,28 @@ inline void Bound::include(const Point3f &p)
 	}};
 }
 
-inline void Bound::include(const Bound &b)
+template<typename T>
+inline void Bound<T>::include(const Bound<T> &b)
 {
 	include(b.a_);
 	include(b.g_);
 }
 
-inline Bound::Cross Bound::cross(const Ray &ray, float t_max) const
+template<typename T>
+inline typename Bound<T>::Cross Bound<T>::cross(const Ray &ray, T t_max) const
 {
 	// Smits method
-	const Point3f p{ray.from_ - a_};
+	const Point<T, 3> p{ray.from_ - a_};
 	//infinity check initial values
-	float lmin = -1e38f;
-	float lmax = 1e38f;
+	T lmin{T{std::numeric_limits<T>::lowest()}};
+	T lmax{T{std::numeric_limits<T>::max()}};
 	for(const Axis axis : axis::spatial)
 	{
-		if(ray.dir_[axis] != 0.f)
+		if(ray.dir_[axis] != T{0})
 		{
-			const float inv_dir = 1.f / ray.dir_[axis];
-			float ltmin, ltmax;
-			if(inv_dir > 0.f)
+			const T inv_dir{T{1} / ray.dir_[axis]};
+			T ltmin, ltmax;
+			if(inv_dir > T{0})
 			{
 				ltmin = -p[axis] * inv_dir;
 				ltmax = ((g_[axis] - a_[axis]) - p[axis]) * inv_dir;
@@ -160,14 +167,15 @@ inline Bound::Cross Bound::cross(const Ray &ray, float t_max) const
 			if((lmax < 0) || (lmin > t_max)) return {};
 		}
 	}
-	if((lmin <= lmax) && (lmax >= 0.f) && (lmin <= t_max))
+	if((lmin <= lmax) && (lmax >= T{0}) && (lmin <= t_max))
 	{
 		return {true, lmin, lmax};
 	}
 	else return {};
 }
 
-inline Bound operator * (const Bound &b, const Matrix4f &m)
+template<typename T>
+inline Bound<T> operator * (const Bound<T> &b, const SquareMatrix<T, 4> &m)
 {
 	return { m * b.a_, m * b.g_ };
 }

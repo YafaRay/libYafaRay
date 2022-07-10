@@ -28,7 +28,7 @@
 namespace yafaray {
 
 struct ClipPlane;
-class Bound;
+template<typename T> class Bound;
 
 class PolyDouble
 {
@@ -45,7 +45,7 @@ class PolyDouble
 		static PolyDouble::ClipResultWithBound boxClip(Logger &logger, const Vec3d &b_max, const PolyDouble &poly, const Vec3d &b_min);
 	private:
 		static PolyDouble::ClipResult planeClip(Logger &logger, double pos, const ClipPlane &clip_plane, const PolyDouble &poly);
-		static Bound getBound(const PolyDouble &poly);
+		static Bound<float> getBound(const PolyDouble &poly);
 		std::array<Vec3d, 10> vertices_; //Limited to triangles + 6 clipping planes cuts, or to quads + 6 clipping planes (total 10 edges/vertices max)
 		int size_ = 0;
 };
@@ -70,7 +70,7 @@ struct PolyDouble::ClipResultWithBound : PolyDouble::ClipResult
 	ClipResultWithBound(ClipResultWithBound &&clip_result_with_bound) = default;
 	ClipResultWithBound& operator=(ClipResultWithBound&&) = default;
 	explicit ClipResultWithBound(ClipResult &&clip_result);
-	std::unique_ptr<Bound> box_;
+	std::unique_ptr<Bound<float>> box_;
 };
 
 

@@ -29,7 +29,7 @@
 namespace yafaray {
 
 class Primitive;
-class Bound;
+template<typename T> class Bound;
 enum class VisibilityFlags : unsigned int;
 
 class ObjectInstance final : public Object

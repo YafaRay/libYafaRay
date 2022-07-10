@@ -28,7 +28,7 @@ namespace yafaray {
 
 struct Photon;
 struct FoundPhoton;
-class Bound;
+template<typename T> class Bound;
 template <typename T, size_t N> class Point;
 typedef Point<float, 3> Point3f;
 
@@ -37,8 +37,8 @@ class HashGrid final
 {
 	public:
 		HashGrid() = default;
-		HashGrid(double cell_size, unsigned int grid_size, Bound b_box);
-		void setParm(double cell_size, unsigned int grid_size, Bound b_box);
+		HashGrid(double cell_size, unsigned int grid_size, Bound<float> b_box);
+		void setParm(double cell_size, unsigned int grid_size, Bound<float> b_box);
 		void clear(); //remove all the photons in the grid;
 		void updateGrid(); //build the hashgrid
 		void pushPhoton(Photon &&p);
@@ -53,7 +53,7 @@ class HashGrid final
 	public:
 		double cell_size_, inv_cell_size_;
 		unsigned int grid_size_;
-		Bound bounding_box_;
+		Bound<float> bounding_box_;
 		std::vector<Photon>photons_;
 		std::unique_ptr<std::unique_ptr<std::list<const Photon *>>[]> hash_grid_;
 };
