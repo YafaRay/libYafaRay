@@ -31,7 +31,7 @@ struct IntersectData
 {
 	bool isHit() const { return t_hit_ > 0.f; }
 	void setNoHit() { t_hit_ = 0.f; primitive_ = nullptr; }
-	float t_hit_ = 0.f;
+	alignas(8) float t_hit_ = 0.f;
 	Uv<float> uv_;
 	float t_max_ = std::numeric_limits<float>::max();
 	const Primitive *primitive_ = nullptr;

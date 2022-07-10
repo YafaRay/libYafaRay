@@ -30,7 +30,7 @@ namespace yafaray {
 
 const Accelerator * AcceleratorKdTreeMultiThread::factory(Logger &logger, const std::vector<const Primitive *> &primitives, const ParamMap &params)
 {
-	AcceleratorKdTreeMultiThread::Parameters parameters;
+	alignas(8) AcceleratorKdTreeMultiThread::Parameters parameters;
 
 	params.getParam("depth", parameters.max_depth_);
 	params.getParam("leaf_size", parameters.max_leaf_size_);
@@ -44,7 +44,7 @@ const Accelerator * AcceleratorKdTreeMultiThread::factory(Logger &logger, const 
 
 AcceleratorKdTreeMultiThread::AcceleratorKdTreeMultiThread(Logger &logger, const std::vector<const Primitive *> &primitives, const Parameters &parameters) : Accelerator(logger)
 {
-	Parameters tree_build_parameters = parameters;
+	alignas(8) Parameters tree_build_parameters{parameters};
 
 	const auto num_primitives = static_cast<uint32_t>(primitives.size());
 	logger_.logInfo("Kd-Tree MultiThread: Starting build (", num_primitives, " prims, cost_ratio:", parameters.cost_ratio_, " empty_bonus:", parameters.empty_bonus_, ") [using ", tree_build_parameters.num_threads_, " threads, min indices to spawn threads: ", tree_build_parameters.min_indices_to_spawn_threads_, "]");

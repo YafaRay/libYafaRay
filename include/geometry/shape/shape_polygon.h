@@ -47,7 +47,7 @@ class ShapePolygon final
 		template <typename K> static K interpolate(const Uv<T> &uv, const std::array<K, N> &t);
 
 	private:
-		std::array<Point<T, 3>, N> vertices_;
+		alignas(std::max(8UL, sizeof(T))) std::array<Point<T, 3>, N> vertices_;
 };
 
 using ShapeTriangle = ShapePolygon<float, 3>;

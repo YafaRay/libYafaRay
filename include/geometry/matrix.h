@@ -65,7 +65,7 @@ class SquareMatrix
 		template<typename MatrixType> static void subtractScaledRow(MatrixType& matrix, size_t row_a, size_t row_b, T factor);
 		template<typename MatrixType> static void divideRow(MatrixType& matrix, size_t row, T divisor);
 
-		std::array<std::array<T, N>, N> matrix_;
+		alignas(std::max(8UL, sizeof(T))) std::array<std::array<T, N>, N> matrix_;
 		bool invalid_ = false;
 };
 

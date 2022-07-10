@@ -45,7 +45,8 @@ class Ray
 		Ray<T>(const Point<T, 3> &from, const Vec<T, 3> &dir, T time, T tmin = T{0}, T tmax = {-1}) :
 				from_{from}, dir_{dir}, tmin_{tmin}, tmax_{tmax}, time_{time} { }
 		Ray<T>& operator=(Ray<T> &&ray) = default;
-		Point<T, 3> from_;
+
+		alignas(std::max(8UL, sizeof(T))) Point<T, 3> from_;
 		Vec<T, 3> dir_;
 		T tmin_{T{0}};
 		T tmax_{T{-1}};

@@ -65,7 +65,7 @@ class AcceleratorKdTreeMultiThread final : public Accelerator
 
 struct AcceleratorKdTreeMultiThread::Parameters
 {
-	alignas(8) int max_depth_ = 0;
+	int max_depth_ = 0;
 	int max_leaf_size_ = 1;
 	float cost_ratio_ = 0.8f; //!< node traversal cost divided by primitive intersection cost
 	float empty_bonus_ = 0.33f;
@@ -90,7 +90,7 @@ class AcceleratorKdTreeMultiThread::Node
 		bool isLeaf() const { return (flags_ & 3) == 3; }
 		uint32_t getRightChild() const { return (flags_ >> 2); }
 		void setRightChild(uint32_t i) { flags_ = (flags_ & 3) | (i << 2); }
-		alignas(8) std::vector<const Primitive *> primitives_; //!< leaf: list of primitives
+		std::vector<const Primitive *> primitives_; //!< leaf: list of primitives
 		uint32_t flags_; //!< 2bits: isLeaf, axis; 30bits: nprims (leaf) or index of right child
 		float division_; //!< interior: division plane position
 };
@@ -98,7 +98,7 @@ class AcceleratorKdTreeMultiThread::Node
 /*! Stack elements for the custom stack of the recursive traversal */
 struct AcceleratorKdTreeMultiThread::Stack
 {
-	alignas(8) const Node *node_; //!< pointer to far child
+	const Node *node_; //!< pointer to far child
 	float t_; //!< the entry/exit signed distance
 	Point3f point_; //!< the point coordinates of entry/exit point
 	int prev_stack_id_; //!< the pointer to the previous stack item
