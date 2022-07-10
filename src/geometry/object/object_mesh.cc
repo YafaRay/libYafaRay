@@ -18,8 +18,6 @@
 
 #include "geometry/object/object_mesh.h"
 #include "geometry/primitive/primitive_polygon.h"
-#include "geometry/primitive/primitive_triangle_bezier.h"
-#include "geometry/primitive/primitive_quad_bezier.h"
 #include "geometry/uv.h"
 #include "scene/scene.h"
 #include "common/logger.h"
@@ -93,13 +91,13 @@ void MeshObject::addFace(std::vector<int> &&vertices, std::vector<int> &&vertice
 	std::unique_ptr<FacePrimitive> face;
 	if(vertices.size() == 3)
 	{
-		if(hasMotionBlurBezier() && !ObjectBase::isBaseObject()) face = std::make_unique<TriangleBezierPrimitive>(std::move(vertices), std::move(vertices_uv), *this);
-		else face = std::make_unique<PrimitivePolygon<float, 3>>(std::move(vertices), std::move(vertices_uv), *this);
+		if(hasMotionBlurBezier() && !ObjectBase::isBaseObject()) face = std::make_unique<PrimitivePolygon<float, 3, MotionBlurType::Bezier>>(std::move(vertices), std::move(vertices_uv), *this);
+		else face = std::make_unique<PrimitivePolygon<float, 3, MotionBlurType::None>>(std::move(vertices), std::move(vertices_uv), *this);
 	}
 	else if(vertices.size() == 4)
 	{
-		if(hasMotionBlurBezier() && !ObjectBase::isBaseObject()) face = std::make_unique<QuadBezierPrimitive>(std::move(vertices), std::move(vertices_uv), *this);
-		else face = std::make_unique<PrimitivePolygon<float, 4>>(std::move(vertices), std::move(vertices_uv), *this);
+		if(hasMotionBlurBezier() && !ObjectBase::isBaseObject()) face = std::make_unique<PrimitivePolygon<float, 4, MotionBlurType::Bezier>>(std::move(vertices), std::move(vertices_uv), *this);
+		else face = std::make_unique<PrimitivePolygon<float, 4, MotionBlurType::None>>(std::move(vertices), std::move(vertices_uv), *this);
 	}
 	else return; //Other primitives are not supported
 	face->setMaterial(material);

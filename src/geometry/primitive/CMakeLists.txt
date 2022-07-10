@@ -22,6 +22,4 @@ target_sources(libyafaray4
 		primitive_instance.cc
 		primitive_sphere.cc
 		primitive_polygon.cc
-		primitive_triangle_bezier.cc
-		primitive_quad_bezier.cc
 )

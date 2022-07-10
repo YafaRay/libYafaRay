@@ -44,6 +44,8 @@ class Camera;
 class Rgb;
 class Light;
 
+enum class MotionBlurType : unsigned char { None, Bezier };
+
 class Primitive
 {
 	public:

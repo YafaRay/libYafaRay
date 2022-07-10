@@ -22,24 +22,26 @@
 
 namespace yafaray {
 
-template class PrimitivePolygon<float, 3>;
-template class PrimitivePolygon<float, 4>;
+template class PrimitivePolygon<float, 3, MotionBlurType::None>;
+template class PrimitivePolygon<float, 4, MotionBlurType::None>;
+template class PrimitivePolygon<float, 3, MotionBlurType::Bezier>;
+template class PrimitivePolygon<float, 4, MotionBlurType::Bezier>;
 
-template <typename T, size_t N>
-std::unique_ptr<const SurfacePoint> PrimitivePolygon<T, N>::getSurface(const RayDifferentials *ray_differentials, const Point<T, 3> &hit_point, T time, const Uv<T> &intersect_uv, const Camera *camera) const
+template <typename T, size_t N, MotionBlurType MotionBlur>
+std::unique_ptr<const SurfacePoint> PrimitivePolygon<T, N, MotionBlur>::getSurface(const RayDifferentials *ray_differentials, const Point<T, 3> &hit_point, T time, const Uv<T> &intersect_uv, const Camera *camera) const
 {
 	return getSurfacePolygon(ray_differentials, hit_point, time, intersect_uv, camera);
 }
 
-template <typename T, size_t N>
-std::unique_ptr<const SurfacePoint> PrimitivePolygon<T, N>::getSurface(const RayDifferentials *ray_differentials, const Point<T, 3> &hit_point, T time, const Uv<T> &intersect_uv, const Camera *camera, const SquareMatrix<T, 4> &obj_to_world) const
+template <typename T, size_t N, MotionBlurType MotionBlur>
+std::unique_ptr<const SurfacePoint> PrimitivePolygon<T, N, MotionBlur>::getSurface(const RayDifferentials *ray_differentials, const Point<T, 3> &hit_point, T time, const Uv<T> &intersect_uv, const Camera *camera, const SquareMatrix<T, 4> &obj_to_world) const
 {
 	return getSurfacePolygon(ray_differentials, hit_point, time, intersect_uv, camera, obj_to_world);
 }
 
-template <typename T, size_t N>
+template <typename T, size_t N, MotionBlurType MotionBlur>
 template<typename M>
-std::unique_ptr<const SurfacePoint> PrimitivePolygon<T, N>::getSurfacePolygon(const RayDifferentials *ray_differentials, const Point<T, 3> &hit_point, T time, const Uv<T> &intersect_uv, const Camera *camera, const M &obj_to_world) const
+std::unique_ptr<const SurfacePoint> PrimitivePolygon<T, N, MotionBlur>::getSurfacePolygon(const RayDifferentials *ray_differentials, const Point<T, 3> &hit_point, T time, const Uv<T> &intersect_uv, const Camera *camera, const M &obj_to_world) const
 {
 	auto sp{std::make_unique<SurfacePoint>(this)};
 	sp->time_ = time;
@@ -117,8 +119,8 @@ std::unique_ptr<const SurfacePoint> PrimitivePolygon<T, N>::getSurfacePolygon(co
 	return sp;
 }
 
-template <typename T, size_t N>
-PolyDouble::ClipResultWithBound PrimitivePolygon<T, N>::clipToBound(Logger &logger, const std::array<Vec3d, 2> &bound, const ClipPlane &clip_plane, const PolyDouble &poly) const
+template <typename T, size_t N, MotionBlurType MotionBlur>
+PolyDouble::ClipResultWithBound PrimitivePolygon<T, N, MotionBlur>::clipToBound(Logger &logger, const std::array<Vec3d, 2> &bound, const ClipPlane &clip_plane, const PolyDouble &poly) const
 {
 	if(clip_plane.pos_ != ClipPlane::Pos::None) // re-clip
 	{
@@ -135,8 +137,8 @@ PolyDouble::ClipResultWithBound PrimitivePolygon<T, N>::clipToBound(Logger &logg
 	return PolyDouble::boxClip(logger, bound[1], poly_triangle, bound[0]);
 }
 
-template <typename T, size_t N>
-PolyDouble::ClipResultWithBound PrimitivePolygon<T, N>::clipToBound(Logger &logger, const std::array<Vec3d, 2> &bound, const ClipPlane &clip_plane, const PolyDouble &poly, const SquareMatrix<T, 4> &obj_to_world) const
+template <typename T, size_t N, MotionBlurType MotionBlur>
+PolyDouble::ClipResultWithBound PrimitivePolygon<T, N, MotionBlur>::clipToBound(Logger &logger, const std::array<Vec3d, 2> &bound, const ClipPlane &clip_plane, const PolyDouble &poly, const SquareMatrix<T, 4> &obj_to_world) const
 {
 	if(clip_plane.pos_ != ClipPlane::Pos::None) // re-clip
 	{
