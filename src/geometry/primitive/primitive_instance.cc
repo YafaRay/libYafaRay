@@ -21,12 +21,12 @@
 
 namespace yafaray {
 
-std::unique_ptr<const SurfacePoint> PrimitiveInstance::getSurface(const RayDifferentials<float> *ray_differentials, const Point3f &hit_point, float time, const Uv<float> &intersect_uv, const Camera *camera) const
+std::unique_ptr<const SurfacePoint> PrimitiveInstance::getSurface(const RayDifferentials *ray_differentials, const Point3f &hit_point, float time, const Uv<float> &intersect_uv, const Camera *camera) const
 {
 	return base_primitive_->getSurface(ray_differentials, hit_point, time, intersect_uv, camera, base_instance_.getObjToWorldMatrixAtTime(time));
 }
 
-std::unique_ptr<const SurfacePoint> PrimitiveInstance::getSurface(const RayDifferentials<float> *ray_differentials, const Point3f &hit_point, float time, const Uv<float> &intersect_uv, const Camera *camera, const Matrix4f &obj_to_world) const
+std::unique_ptr<const SurfacePoint> PrimitiveInstance::getSurface(const RayDifferentials *ray_differentials, const Point3f &hit_point, float time, const Uv<float> &intersect_uv, const Camera *camera, const Matrix4f &obj_to_world) const
 {
 	return base_primitive_->getSurface(ray_differentials, hit_point, time, intersect_uv, camera, obj_to_world * base_instance_.getObjToWorldMatrixAtTime(time));
 }

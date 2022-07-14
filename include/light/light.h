@@ -32,7 +32,7 @@ class ParamMap;
 class Scene;
 class SurfacePoint;
 class Background;
-template<typename T> class Ray;
+class Ray;
 class Scene;
 template <typename T, size_t N> class Vec;
 typedef Vec<float, 3> Vec3f;
@@ -53,7 +53,7 @@ class Light
 		//! total energy emmitted during whole frame
 		[[nodiscard]] virtual Rgb totalEnergy() const = 0;
 		//! emit a photon
-		[[nodiscard]] virtual std::tuple<Ray<float>, float, Rgb> emitPhoton(float s_1, float s_2, float s_3, float s_4, float time) const = 0;
+		[[nodiscard]] virtual std::tuple<Ray, float, Rgb> emitPhoton(float s_1, float s_2, float s_3, float s_4, float time) const = 0;
 		//! create a sample of light emission, similar to emitPhoton, just more suited for bidirectional methods
 		/*! fill in s.dirPdf, s.areaPdf, s.col and s.flags, and s.sp if not nullptr */
 		[[nodiscard]] virtual std::pair<Vec3f, Rgb> emitSample(LSample &s, float time) const = 0;
@@ -61,14 +61,14 @@ class Light
 		[[nodiscard]] virtual bool diracLight() const = 0;
 		//! illuminate a given surface point, generating sample s, fill in s.sp if not nullptr; Set ray to test visibility by integrator
 		/*! fill in s.pdf, s.col and s.flags */
-		[[nodiscard]] virtual std::pair<bool, Ray<float>> illumSample(const Point3f &surface_p, LSample &s, float time) const = 0;
+		[[nodiscard]] virtual std::pair<bool, Ray> illumSample(const Point3f &surface_p, LSample &s, float time) const = 0;
 		//! illuminate a given surfance point; Set ray to test visibility by integrator. Only for dirac lights.
 		/*!	return false only if no light is emitted towards sp, e.g. outside cone angle of spot light	*/
-		[[nodiscard]] virtual std::tuple<bool, Ray<float>, Rgb> illuminate(const Point3f &surface_p, float time) const = 0;
+		[[nodiscard]] virtual std::tuple<bool, Ray, Rgb> illuminate(const Point3f &surface_p, float time) const = 0;
 		//! indicate whether the light can intersect with a ray (by the sphereIntersect function)
 		[[nodiscard]] virtual bool canIntersect() const { return false; }
 		//! sphereIntersect the light source with a ray, giving back distance, energy and 1/PDF
-		[[nodiscard]] virtual std::tuple<bool, float, Rgb> intersect(const Ray<float> &ray, float &t) const { return {}; }
+		[[nodiscard]] virtual std::tuple<bool, float, Rgb> intersect(const Ray &ray, float &t) const { return {}; }
 		//! get the pdf for sampling the incoming direction wi at surface point sp (illumSample!)
 		/*! this method requires an intersection point with the light (sp_light). Otherwise, use sphereIntersect() */
 		[[nodiscard]] virtual float illumPdf(const Point3f &surface_p, const Point3f &light_p, const Vec3f &light_ng) const { return 0.f; }

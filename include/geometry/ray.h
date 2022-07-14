@@ -25,41 +25,36 @@
 
 namespace yafaray {
 
-template<typename T>
 struct RayDifferentials
 {
-	RayDifferentials<T>() = default;
-	RayDifferentials<T>(const Point<T, 3> &xfrom, const Vec<T, 3> &xdir, const Point<T, 3> &yfrom, const Vec<T, 3> &ydir) : xfrom_(xfrom), yfrom_(yfrom), xdir_(xdir), ydir_(ydir) { }
-	Point<T, 3> xfrom_, yfrom_;
-	Vec<T, 3> xdir_, ydir_;
+	RayDifferentials() = default;
+	RayDifferentials(const Point3f &xfrom, const Vec3f &xdir, const Point3f &yfrom, const Vec3f &ydir) : xfrom_(xfrom), yfrom_(yfrom), xdir_(xdir), ydir_(ydir) { }
+	Point3f xfrom_, yfrom_;
+	Vec3f xdir_, ydir_;
 };
 
-template<typename T>
 class Ray
 {
 	public:
 		enum class DifferentialsCopy : unsigned char { No, FullCopy };
-		Ray<T>() = default;
-		Ray<T>(const Ray<T> &ray, DifferentialsCopy differentials_copy);
-		Ray<T>(Ray<T> &&ray) = default;
-		Ray<T>(const Point<T, 3> &from, const Vec<T, 3> &dir, T time, T tmin = T{0}, T tmax = {-1}) :
-				from_{from}, dir_{dir}, tmin_{tmin}, tmax_{tmax}, time_{time} { }
-		Ray<T>& operator=(Ray<T> &&ray) = default;
-
-		alignas(std::max(8UL, sizeof(T))) Point<T, 3> from_;
-		Vec<T, 3> dir_;
-		T tmin_{T{0}};
-		T tmax_{T{-1}};
-		T time_{T{0}}; //!< relative frame time (values between [0;1]) at which ray was generated
-		std::unique_ptr<RayDifferentials<T>> differentials_;
+		Ray() = default;
+		Ray(const Ray &ray, DifferentialsCopy differentials_copy);
+		Ray(Ray &&ray) = default;
+		Ray(const Point3f &f, const Vec3f &d, float time, float tmin = 0.f, float tmax = -1.f) :
+				from_{f}, dir_{d}, tmin_{tmin}, tmax_{tmax}, time_{time} { }
+		Ray& operator=(Ray&& ray) = default;
+		alignas(8) Point3f from_;
+		Vec3f dir_;
+		float tmin_ = 0.f, tmax_ = -1.f;
+		float time_ = 0.f; //!< relative frame time (values between [0;1]) at which ray was generated
+		std::unique_ptr<RayDifferentials> differentials_;
 };
 
-template<typename T>
-inline Ray<T>::Ray(const Ray<T> &ray, DifferentialsCopy differentials_copy) : Ray<T>{ray.from_, ray.dir_, ray.time_, ray.tmin_, ray.tmax_}
+inline Ray::Ray(const Ray &ray, DifferentialsCopy differentials_copy) : Ray{ray.from_, ray.dir_, ray.time_, ray.tmin_, ray.tmax_}
 {
 	if(differentials_copy == DifferentialsCopy::FullCopy && ray.differentials_)
 	{
-		differentials_ = std::make_unique<RayDifferentials<T>>(*ray.differentials_);
+		differentials_ = std::make_unique<RayDifferentials>(*ray.differentials_);
 	}
 }
 

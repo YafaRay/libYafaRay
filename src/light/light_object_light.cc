@@ -99,7 +99,7 @@ std::pair<Point3f, Vec3f> ObjectLight::sampleSurface(float s_1, float s_2, float
 
 Rgb ObjectLight::totalEnergy() const { return (double_sided_ ? 2.f * color_ * area_ : color_ * area_); }
 
-std::pair<bool, Ray<float>> ObjectLight::illumSample(const Point3f &surface_p, LSample &s, float time) const
+std::pair<bool, Ray> ObjectLight::illumSample(const Point3f &surface_p, LSample &s, float time) const
 {
 	if(photonOnly()) return {};
 	const auto [p, n]{sampleSurface(s.s_1_, s.s_2_, time)};
@@ -127,11 +127,11 @@ std::pair<bool, Ray<float>> ObjectLight::illumSample(const Point3f &surface_p, L
 		s.sp_->p_ = p;
 		s.sp_->n_ = s.sp_->ng_ = n;
 	}
-	Ray<float> ray{surface_p, std::move(ldir), time, 0.f, dist};
+	Ray ray{surface_p, std::move(ldir), time, 0.f, dist};
 	return {true, std::move(ray)};
 }
 
-std::tuple<Ray<float>, float, Rgb> ObjectLight::emitPhoton(float s_1, float s_2, float s_3, float s_4, float time) const
+std::tuple<Ray, float, Rgb> ObjectLight::emitPhoton(float s_1, float s_2, float s_3, float s_4, float time) const
 {
 	float ipdf = area_;
 	auto [p, n]{sampleSurface(s_3, s_4, 0.f)};
@@ -144,7 +144,7 @@ std::tuple<Ray<float>, float, Rgb> ObjectLight::emitPhoton(float s_1, float s_2,
 		else dir = sample::cosHemisphere(n, duv, s_1 * 2.f, s_2);
 	}
 	else dir = sample::cosHemisphere(n, duv, s_1, s_2);
-	Ray<float> ray{std::move(p), std::move(dir), time};
+	Ray ray{std::move(p), std::move(dir), time};
 	return {std::move(ray), ipdf, color_};
 }
 
@@ -170,7 +170,7 @@ std::pair<Vec3f, Rgb> ObjectLight::emitSample(LSample &s, float time) const
 	return {std::move(dir), color_};
 }
 
-std::tuple<bool, float, Rgb> ObjectLight::intersect(const Ray<float> &ray, float &t) const
+std::tuple<bool, float, Rgb> ObjectLight::intersect(const Ray &ray, float &t) const
 {
 	if(!accelerator_) return {};
 	const float t_max = (ray.tmax_ >= 0.f) ? ray.tmax_ : std::numeric_limits<float>::max();
@@ -239,7 +239,7 @@ Light * ObjectLight::factory(Logger &logger, const Scene &scene, const std::stri
 	return light;
 }
 
-std::tuple<bool, Ray<float>, Rgb> ObjectLight::illuminate(const Point3f &surface_p, float time) const
+std::tuple<bool, Ray, Rgb> ObjectLight::illuminate(const Point3f &surface_p, float time) const
 {
 	return {};
 }

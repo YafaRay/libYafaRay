@@ -28,7 +28,7 @@ namespace yafaray {
 
 struct PSample;
 class Light;
-template<typename T> class Ray;
+class Ray;
 class ParamMap;
 class Scene;
 class Logger;
@@ -39,8 +39,8 @@ class VolumeHandler
 	public:
 		static VolumeHandler *factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params);
 		explicit VolumeHandler(Logger &logger) : logger_(logger) { }
-		virtual Rgb transmittance(const Ray<float> &ray) const = 0;
-		virtual bool scatter(const Ray<float> &ray, Ray<float> &s_ray, PSample &s) const = 0;
+		virtual Rgb transmittance(const Ray &ray) const = 0;
+		virtual bool scatter(const Ray &ray, Ray &s_ray, PSample &s) const = 0;
 		virtual ~VolumeHandler() = default;
 
 	protected:
@@ -73,9 +73,9 @@ class VolumeRegion
 			return 1.f / (4.f * math::num_pi<>) * (1.f - k * k) / ((1.f - kcostheta) * (1.f - kcostheta));
 		}
 
-		virtual Rgb tau(const Ray<float> &ray, float step, float offset) const = 0;
+		virtual Rgb tau(const Ray &ray, float step, float offset) const = 0;
 
-		Bound<float>::Cross crossBound(const Ray<float> &ray) const
+		Bound<float>::Cross crossBound(const Ray &ray) const
 		{
 			return b_box_.cross(ray, 10000.f);
 		}
@@ -103,7 +103,7 @@ class DensityVolumeRegion : public VolumeRegion
 
 		virtual float density(const Point3f &p) const = 0;
 
-		Rgb tau(const Ray<float> &ray, float step_size, float offset) const override;
+		Rgb tau(const Ray &ray, float step_size, float offset) const override;
 
 		Rgb sigmaA(const Point3f &p, const Vec3f &v) const override
 		{

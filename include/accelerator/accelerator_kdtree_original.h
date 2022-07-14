@@ -47,10 +47,10 @@ class AcceleratorKdTree final : public Accelerator
 		AcceleratorKdTree(Logger &logger, const std::vector<const Primitive *> &primitives, int depth = 0, int leaf_size = 2,
 						  float cost_ratio = 0.35, float empty_bonus = 0.33);
 		~AcceleratorKdTree() override;
-		IntersectData intersect(const Ray<float> &ray, float t_max) const override;
+		IntersectData intersect(const Ray &ray, float t_max) const override;
 		//	bool IntersectDBG(const ray_t &ray, float dist, triangle_t **tr, float &Z) const;
-		IntersectData intersectShadow(const Ray<float> &ray, float t_max) const override;
-		IntersectData intersectTransparentShadow(const Ray<float> &ray, int max_depth, float t_max, const Camera *camera) const override;
+		IntersectData intersectShadow(const Ray &ray, float t_max) const override;
+		IntersectData intersectTransparentShadow(const Ray &ray, int max_depth, float t_max, const Camera *camera) const override;
 		//	bool IntersectO(const point3d_t &from, const vector3d_t &ray, float dist, Primitive **tr, float &Z) const;
 		Bound<float> getBound() const override { return tree_bound_; }
 
@@ -150,17 +150,17 @@ inline void AcceleratorKdTree::Node::createInterior(int axis, float d, kdtree::S
 	kd_stats.kd_inodes_++;
 }
 
-inline IntersectData AcceleratorKdTree::intersect(const Ray<float> &ray, float t_max) const
+inline IntersectData AcceleratorKdTree::intersect(const Ray &ray, float t_max) const
 {
 	return kdtree::intersect<Node, Stack, kdtree::IntersectTestType::Nearest>(ray, t_max, nodes_, tree_bound_, 0, nullptr);
 }
 
-inline IntersectData AcceleratorKdTree::intersectShadow(const Ray<float> &ray, float t_max) const
+inline IntersectData AcceleratorKdTree::intersectShadow(const Ray &ray, float t_max) const
 {
 	return kdtree::intersect<Node, Stack, kdtree::IntersectTestType::Shadow>(ray, t_max, nodes_, tree_bound_, 0, nullptr);
 }
 
-inline IntersectData AcceleratorKdTree::intersectTransparentShadow(const Ray<float> &ray, int max_depth, float t_max, const Camera *camera) const
+inline IntersectData AcceleratorKdTree::intersectTransparentShadow(const Ray &ray, int max_depth, float t_max, const Camera *camera) const
 {
 	return kdtree::intersect<Node, Stack, kdtree::IntersectTestType::TransparentShadow>(ray, t_max, nodes_, tree_bound_, max_depth, camera);
 }

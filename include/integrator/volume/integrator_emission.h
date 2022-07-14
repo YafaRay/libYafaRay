@@ -34,9 +34,9 @@ class EmissionIntegrator final : public VolumeIntegrator
 		std::string getShortName() const override { return "Em"; }
 		std::string getName() const override { return "Emission"; }
 		// optical thickness, absorption, attenuation, extinction
-		Rgb transmittance(RandomGenerator &random_generator, const Ray<float> &ray) const override;
+		Rgb transmittance(RandomGenerator &random_generator, const Ray &ray) const override;
 		// emission part
-		Rgb integrate(RandomGenerator &random_generator, const Ray<float> &ray, int additional_depth) const override;
+		Rgb integrate(RandomGenerator &random_generator, const Ray &ray, int additional_depth) const override;
 };
 
 } //namespace yafaray

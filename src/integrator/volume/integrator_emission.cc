@@ -25,14 +25,14 @@
 
 namespace yafaray {
 
-Rgb EmissionIntegrator::transmittance(RandomGenerator &random_generator, const Ray<float> &ray) const
+Rgb EmissionIntegrator::transmittance(RandomGenerator &random_generator, const Ray &ray) const
 {
 	Rgb result {1.f};
 	for(const auto &[vr_name, vr] : *volume_regions_) result *= vr->tau(ray, 0, 0);
 	return Rgb{math::exp(-result.getR()), math::exp(-result.getG()), math::exp(-result.getB())};
 }
 
-Rgb EmissionIntegrator::integrate(RandomGenerator &random_generator, const Ray<float> &ray, int additional_depth) const
+Rgb EmissionIntegrator::integrate(RandomGenerator &random_generator, const Ray &ray, int additional_depth) const
 {
 	int n = 10; // samples + 1 on the ray inside the volume
 	const bool hit = ray.tmax_ > 0.f;
@@ -49,7 +49,7 @@ Rgb EmissionIntegrator::integrate(RandomGenerator &random_generator, const Ray<f
 		Rgb tr(1.f);
 		for(int i = 0; i < n; ++i)
 		{
-			const Ray<float> step_ray{ray.from_ + (ray.dir_ * pos), ray.dir_, ray.time_, 0, step};
+			const Ray step_ray{ray.from_ + (ray.dir_ * pos), ray.dir_, ray.time_, 0, step};
 			const Rgb step_tau = vr->tau(step_ray, 0, 0);
 			tr *= Rgb(math::exp(-step_tau.getR()), math::exp(-step_tau.getG()), math::exp(-step_tau.getB()));
 			result += tr * vr->emission(step_ray.from_, step_ray.dir_);

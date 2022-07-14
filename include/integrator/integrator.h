@@ -41,7 +41,7 @@ namespace yafaray {
 class ParamMap;
 class Scene;
 class ProgressBar;
-template<typename T> class Ray;
+class Ray;
 class ColorLayers;
 class ImageFilm;
 class RenderView;
@@ -101,7 +101,7 @@ class Integrator
 class SurfaceIntegrator: public Integrator
 {
 	public:
-		virtual std::pair<Rgb, float> integrate(Ray<float> &ray, FastRandom &fast_random, RandomGenerator &random_generator, std::vector<int> &correlative_sample_number, ColorLayers *color_layers, int thread_id, int ray_level, bool chromatic_enabled, float wavelength, int additional_depth, const RayDivision &ray_division, const PixelSamplingData &pixel_sampling_data, unsigned int object_index_highest, unsigned int material_index_highest) const = 0; 	//!< chromatic_enabled indicates wether the full spectrum is calculated (true) or only a single wavelength (false). wavelength is the (normalized) wavelength being used when chromatic is false. The range is defined going from 400nm (0.0) to 700nm (1.0), although the widest range humans can perceive is ofteb given 380-780nm.
+		virtual std::pair<Rgb, float> integrate(Ray &ray, FastRandom &fast_random, RandomGenerator &random_generator, std::vector<int> &correlative_sample_number, ColorLayers *color_layers, int thread_id, int ray_level, bool chromatic_enabled, float wavelength, int additional_depth, const RayDivision &ray_division, const PixelSamplingData &pixel_sampling_data, unsigned int object_index_highest, unsigned int material_index_highest) const = 0; 	//!< chromatic_enabled indicates wether the full spectrum is calculated (true) or only a single wavelength (false). wavelength is the (normalized) wavelength being used when chromatic is false. The range is defined going from 400nm (0.0) to 700nm (1.0), although the widest range humans can perceive is ofteb given 380-780nm.
 		bool preprocess(FastRandom &fast_random, ImageFilm *image_film, const RenderView *render_view, const Scene &scene) override;
 
 	protected:
@@ -130,9 +130,9 @@ class SurfaceIntegrator: public Integrator
 class VolumeIntegrator: public Integrator
 {
 	public:
-		virtual Rgb transmittance(RandomGenerator &random_generator, const Ray<float> &ray) const = 0;
-		virtual Rgb integrate(RandomGenerator &random_generator, const Ray<float> &ray, int additional_depth) const = 0;
-		Rgb integrate(RandomGenerator &random_generator, const Ray<float> &ray) const { return integrate(random_generator, ray, 0); };
+		virtual Rgb transmittance(RandomGenerator &random_generator, const Ray &ray) const = 0;
+		virtual Rgb integrate(RandomGenerator &random_generator, const Ray &ray, int additional_depth) const = 0;
+		Rgb integrate(RandomGenerator &random_generator, const Ray &ray) const { return integrate(random_generator, ray, 0); };
 		bool preprocess(FastRandom &fast_random, ImageFilm *image_film, const RenderView *render_view, const Scene &scene) override;
 
 	protected:

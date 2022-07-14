@@ -46,9 +46,9 @@ class PrimitivePolygon final : public FacePrimitive
 		Vec<T, 3> getGeometricNormal(const Uv<T> &uv, T time, const SquareMatrix<T, 4> &obj_to_world) const override;
 		Vec<T, 3> getGeometricNormal(const SquareMatrix<T, 4> &obj_to_world) const;
 		Vec<T, 3> getGeometricNormal(bool = false) const;
-		std::unique_ptr<const SurfacePoint> getSurface(const RayDifferentials<T> *ray_differentials, const Point<T, 3> &hit_point, T time, const Uv<T> &intersect_uv, const Camera *camera) const override;
-		std::unique_ptr<const SurfacePoint> getSurface(const RayDifferentials<T> *ray_differentials, const Point<T, 3> &hit_point, T time, const Uv<T> &intersect_uv, const Camera *camera, const SquareMatrix<T, 4> &obj_to_world) const override;
-		template<typename M=bool> std::unique_ptr<const SurfacePoint> getSurfacePolygon(const RayDifferentials<T> *ray_differentials, const Point<T, 3> &hit_point, T time, const Uv<T> &intersect_uv, const Camera *camera, const M &obj_to_world = {}) const;
+		std::unique_ptr<const SurfacePoint> getSurface(const RayDifferentials *ray_differentials, const Point<T, 3> &hit_point, T time, const Uv<T> &intersect_uv, const Camera *camera) const override;
+		std::unique_ptr<const SurfacePoint> getSurface(const RayDifferentials *ray_differentials, const Point<T, 3> &hit_point, T time, const Uv<T> &intersect_uv, const Camera *camera, const SquareMatrix<T, 4> &obj_to_world) const override;
+		template<typename M=bool> std::unique_ptr<const SurfacePoint> getSurfacePolygon(const RayDifferentials *ray_differentials, const Point<T, 3> &hit_point, T time, const Uv<T> &intersect_uv, const Camera *camera, const M &obj_to_world = {}) const;
 		T surfaceArea(T time) const override;
 		T surfaceArea(T time, const SquareMatrix<T, 4> &obj_to_world) const override;
 		std::pair<Point<T, 3>, Vec<T, 3>> sample(const Uv<T> &uv, T time) const override;

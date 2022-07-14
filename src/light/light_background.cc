@@ -116,18 +116,18 @@ float BackgroundLight::calcInvPdf(float p_0, float p_1, float s)
 	return std::max(sigma_, math::mult_pi_by_2<> * sinSample(s) * clampZero(p_0 * p_1));
 }
 
-std::pair<bool, Ray<float>> BackgroundLight::illumSample(const Point3f &surface_p, LSample &s, float time) const
+std::pair<bool, Ray> BackgroundLight::illumSample(const Point3f &surface_p, LSample &s, float time) const
 {
 	if(photonOnly()) return {};
 	const auto [pdf, uv]{calcFromSample(s.s_1_, s.s_2_, false)};
 	s.pdf_ = pdf;
 	Vec3f dir{Texture::invSphereMap(uv)};
 	s.col_ = background_->eval(dir, true);
-	Ray<float> ray{surface_p, std::move(dir), time};
+	Ray ray{surface_p, std::move(dir), time};
 	return {true, std::move(ray)};
 }
 
-std::tuple<bool, float, Rgb> BackgroundLight::intersect(const Ray<float> &ray, float &) const
+std::tuple<bool, float, Rgb> BackgroundLight::intersect(const Ray &ray, float &) const
 {
 	const auto [ipdf, uv]{calcFromDir(abs_inter_ ? ray.dir_: -ray.dir_, true)};
 	const Point3f ray_dir{Texture::invSphereMap(uv)};
@@ -141,7 +141,7 @@ Rgb BackgroundLight::totalEnergy() const
 	return background_->eval({{0.5f, 0.5f, 0.5f}}, true) * world_pi_factor_;
 }
 
-std::tuple<Ray<float>, float, Rgb> BackgroundLight::emitPhoton(float s_1, float s_2, float s_3, float s_4, float time) const
+std::tuple<Ray, float, Rgb> BackgroundLight::emitPhoton(float s_1, float s_2, float s_3, float s_4, float time) const
 {
 	auto[dir, ipdf]{sampleDir(s_3, s_4, true)};
 	const Rgb pcol{background_->eval(dir, true)};
@@ -150,7 +150,7 @@ std::tuple<Ray<float>, float, Rgb> BackgroundLight::emitPhoton(float s_1, float 
 	const Uv<float> uv{Vec3f::shirleyDisk(s_1, s_2)};
 	const Vec3f offs{uv.u_ * coords.u_ + uv.v_ * coords.v_};
 	Point3f from{world_center_ + world_radius_ * (offs - dir)};
-	Ray<float> ray{std::move(from), std::move(dir), time};
+	Ray ray{std::move(from), std::move(dir), time};
 	return {std::move(ray), ipdf, pcol * a_pdf_};
 }
 
@@ -236,7 +236,7 @@ float BackgroundLight::sinSample(float s)
 	return math::sin(s * math::num_pi<>);
 }
 
-std::tuple<bool, Ray<float>, Rgb> BackgroundLight::illuminate(const Point3f &surface_p, float time) const
+std::tuple<bool, Ray, Rgb> BackgroundLight::illuminate(const Point3f &surface_p, float time) const
 {
 	return {};
 }

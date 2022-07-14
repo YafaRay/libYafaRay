@@ -67,7 +67,7 @@ bool SkyIntegrator::preprocess(FastRandom &fast_random, ImageFilm *image_film, c
 	return success;
 }
 
-Rgb SkyIntegrator::skyTau(const Ray<float> &ray) const
+Rgb SkyIntegrator::skyTau(const Ray &ray) const
 {
 	//std::cout << " ray.from: " << ray.from << " ray.dir: " << ray.dir << " ray.tmax: " << ray.tmax << " t0: " << t0 << " t1: " << t1 << std::endl;
 	/*
@@ -93,7 +93,7 @@ Rgb SkyIntegrator::skyTau(const Ray<float> &ray) const
 	//return Rgba(exp(-result.getR()), exp(-result.getG()), exp(-result.getB()));
 }
 
-Rgb SkyIntegrator::skyTau(const Ray<float> &ray, float beta, float alpha) const
+Rgb SkyIntegrator::skyTau(const Ray &ray, float beta, float alpha) const
 {
 	if(ray.tmax_ < 0.f) return Rgb{0.f};
 	const float s = ray.tmax_ * scale_;
@@ -103,7 +103,7 @@ Rgb SkyIntegrator::skyTau(const Ray<float> &ray, float beta, float alpha) const
 	//tauVal = Rgba(-beta / (alpha * cos_theta) * ( exp(-alpha * (h0 + cos_theta * s)) - exp(-alpha*h0) ));
 }
 
-Rgb SkyIntegrator::transmittance(RandomGenerator &random_generator, const Ray<float> &ray) const
+Rgb SkyIntegrator::transmittance(RandomGenerator &random_generator, const Ray &ray) const
 {
 	//return Rgba(0.f);
 	Rgb result = skyTau(ray, b_m_, alpha_m_);
@@ -111,7 +111,7 @@ Rgb SkyIntegrator::transmittance(RandomGenerator &random_generator, const Ray<fl
 	return Rgb(math::exp(-result.energy()));
 }
 
-Rgb SkyIntegrator::integrate(RandomGenerator &random_generator, const Ray<float> &ray, int additional_depth) const
+Rgb SkyIntegrator::integrate(RandomGenerator &random_generator, const Ray &ray, int additional_depth) const
 {
 	if(ray.tmax_ < 0.f) return Rgb{0.f};
 	const float s = ray.tmax_ * scale_;
@@ -128,7 +128,7 @@ Rgb SkyIntegrator::integrate(RandomGenerator &random_generator, const Ray<float>
 			const float x = math::sin(theta) * math::cos(phi);
 			const float y = math::sin(theta) * math::sin(phi);
 			const Vec3f w{{x, y, z}};
-			const Ray<float> bgray{{{0, 0, 0}}, w, ray.time_, 0, 1};
+			const Ray bgray{{{0, 0, 0}}, w, ray.time_, 0, 1};
 			const Rgb l_s = background_ ? background_->eval(bgray.dir_) : Rgb(0.f);
 			const float b_r_angular = b_r_ * 3 / (2 * math::num_pi<> * 8) * (1.0f + (w * (-ray.dir_)) * (w * (-ray.dir_)));
 			const float k = 0.67f;
@@ -153,7 +153,7 @@ Rgb SkyIntegrator::integrate(RandomGenerator &random_generator, const Ray<float>
 	Rgb i_r {0.f}, i_m {0.f};
 	while(pos < s)
 	{
-		const Ray<float> step_ray{ray.from_, ray.dir_, ray.time_, 0, pos / scale_};
+		const Ray step_ray{ray.from_, ray.dir_, ray.time_, 0, pos / scale_};
 		const float u_r = math::exp(-alpha_r_ * (h_0 + pos * cos_theta));
 		const float u_m = math::exp(-alpha_m_ * (h_0 + pos * cos_theta));
 		const Rgb tau_m = skyTau(step_ray, b_m_, alpha_m_);

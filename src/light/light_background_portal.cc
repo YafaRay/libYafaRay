@@ -101,7 +101,7 @@ std::pair<Point3f, Vec3f> BackgroundPortalLight::sampleSurface(float s_1, float 
 
 Rgb BackgroundPortalLight::totalEnergy() const
 {
-	Ray<float> wo;
+	Ray wo;
 	wo.from_ = world_center_;
 	Rgb energy{0.f};
 	for(int i = 0; i < 1000; ++i) //exaggerated?
@@ -117,7 +117,7 @@ Rgb BackgroundPortalLight::totalEnergy() const
 	return energy * math::div_1_by_pi<> * 0.001f;
 }
 
-std::pair<bool, Ray<float>> BackgroundPortalLight::illumSample(const Point3f &surface_p, LSample &s, float time) const
+std::pair<bool, Ray> BackgroundPortalLight::illumSample(const Point3f &surface_p, LSample &s, float time) const
 {
 	if(photonOnly()) return {};
 	const auto [p, n]{sampleSurface(s.s_1_, s.s_2_, time)};
@@ -139,16 +139,16 @@ std::pair<bool, Ray<float>> BackgroundPortalLight::illumSample(const Point3f &su
 		s.sp_->p_ = p;
 		s.sp_->n_ = s.sp_->ng_ = n;
 	}
-	Ray<float> ray{surface_p, std::move(ldir), time, 0.f, dist};
+	Ray ray{surface_p, std::move(ldir), time, 0.f, dist};
 	return {true, std::move(ray)};
 }
 
-std::tuple<Ray<float>, float, Rgb> BackgroundPortalLight::emitPhoton(float s_1, float s_2, float s_3, float s_4, float time) const
+std::tuple<Ray, float, Rgb> BackgroundPortalLight::emitPhoton(float s_1, float s_2, float s_3, float s_4, float time) const
 {
 	const auto [p, n]{sampleSurface(s_3, s_4, time)};
 	const Uv<Vec3f> duv{Vec3f::createCoordsSystem(n)};
 	const Vec3f dir{sample::cosHemisphere(n, duv, s_1, s_2)};
-	Ray<float> ray{p, -dir, time}; //FIXME: is it correct to use p or should we use the coordinates 0,0,0 for ray origin?
+	Ray ray{p, -dir, time}; //FIXME: is it correct to use p or should we use the coordinates 0,0,0 for ray origin?
 	return {std::move(ray), true, bg_->eval(-dir, true)};
 }
 
@@ -164,7 +164,7 @@ std::pair<Vec3f, Rgb> BackgroundPortalLight::emitSample(LSample &s, float time) 
 	return {-dir, bg_->eval(-dir, true)};
 }
 
-std::tuple<bool, float, Rgb> BackgroundPortalLight::intersect(const Ray<float> &ray, float &t) const
+std::tuple<bool, float, Rgb> BackgroundPortalLight::intersect(const Ray &ray, float &t) const
 {
 	if(!accelerator_) return {};
 	const float t_max = (ray.tmax_ >= 0.f) ? ray.tmax_ : std::numeric_limits<float>::max();
@@ -227,7 +227,7 @@ Light * BackgroundPortalLight::factory(Logger &logger, const Scene &scene, const
 	return light;
 }
 
-std::tuple<bool, Ray<float>, Rgb> BackgroundPortalLight::illuminate(const Point3f &surface_p, float time) const
+std::tuple<bool, Ray, Rgb> BackgroundPortalLight::illuminate(const Point3f &surface_p, float time) const
 {
 	return {};
 }

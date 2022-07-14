@@ -120,9 +120,9 @@ Uv<float> PerspectiveCamera::getLensUv(float r_1, float r_2) const
 	}
 }
 
-CameraRay<float> PerspectiveCamera::shootRay(float px, float py, const Uv<float> &uv) const
+CameraRay PerspectiveCamera::shootRay(float px, float py, const Uv<float> &uv) const
 {
-	Ray<float> ray{position_, vright_ * px + vup_ * py + vto_, 0.f};
+	Ray ray{position_, vright_ * px + vup_ * py + vto_, 0.f};
 	ray.dir_.normalize();
 	ray.tmin_ = near_plane_.rayIntersection(ray);
 	ray.tmax_ = far_plane_.rayIntersection(ray);
@@ -147,7 +147,7 @@ Point3f PerspectiveCamera::screenproject(const Point3f &p) const
 	return {{ 2.f * dx * focal_distance_ / dz, -2.f * dy * focal_distance_ / (dz * aspect_ratio_), 0.f }};
 }
 
-bool PerspectiveCamera::project(const Ray<float> &wo, float lu, float lv, float &u, float &v, float &pdf) const
+bool PerspectiveCamera::project(const Ray &wo, float lu, float lv, float &u, float &v, float &pdf) const
 {
 	// project wo to pixel plane:
 	const float dx = cam_x_ * wo.dir_;

@@ -53,7 +53,7 @@ void SunLight::init(Scene &scene)
 	e_pdf_ = math::num_pi<> * world_radius_ * world_radius_;
 }
 
-std::pair<bool, Ray<float>> SunLight::illumSample(const Point3f &surface_p, LSample &s, float time) const
+std::pair<bool, Ray> SunLight::illumSample(const Point3f &surface_p, LSample &s, float time) const
 {
 	if(photonOnly()) return {};
 	//sample direction uniformly inside cone:
@@ -61,11 +61,11 @@ std::pair<bool, Ray<float>> SunLight::illumSample(const Point3f &surface_p, LSam
 	s.col_ = col_pdf_;
 	// ipdf: inverse of uniform cone pdf; calculated in constructor.
 	s.pdf_ = pdf_;
-	Ray<float> ray{surface_p, std::move(dir), time};
+	Ray ray{surface_p, std::move(dir), time};
 	return {true, std::move(ray)};
 }
 
-std::tuple<bool, float, Rgb> SunLight::intersect(const Ray<float> &ray, float &t) const
+std::tuple<bool, float, Rgb> SunLight::intersect(const Ray &ray, float &t) const
 {
 	const float cosine = ray.dir_ * direction_;
 	if(cosine < cos_angle_) return {};
@@ -73,13 +73,13 @@ std::tuple<bool, float, Rgb> SunLight::intersect(const Ray<float> &ray, float &t
 	return {true, invpdf_, col_pdf_};
 }
 
-std::tuple<Ray<float>, float, Rgb> SunLight::emitPhoton(float s_1, float s_2, float s_3, float s_4, float time) const
+std::tuple<Ray, float, Rgb> SunLight::emitPhoton(float s_1, float s_2, float s_3, float s_4, float time) const
 {
 	const Vec3f ldir{sample::cone(direction_, duv_, cos_angle_, s_3, s_4)};
 	const Uv<Vec3f> duv_2{sample::minRot(direction_, duv_.u_, ldir)};
 	const Uv<float> uv{Vec3f::shirleyDisk(s_3, s_4)};
 	Point3f from{world_center_ + world_radius_ * (uv.u_ * duv_2.u_ + uv.v_ * duv_2.v_ + ldir)};
-	Ray<float> ray{std::move(from), -ldir, time};
+	Ray ray{std::move(from), -ldir, time};
 	return {std::move(ray), invpdf_, col_pdf_ * e_pdf_};
 }
 
@@ -116,7 +116,7 @@ Light * SunLight::factory(Logger &logger, const Scene &scene, const std::string 
 	return light;
 }
 
-std::tuple<bool, Ray<float>, Rgb> SunLight::illuminate(const Point3f &surface_p, float time) const
+std::tuple<bool, Ray, Rgb> SunLight::illuminate(const Point3f &surface_p, float time) const
 {
 	return {};
 }

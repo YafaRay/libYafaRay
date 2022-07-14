@@ -58,7 +58,7 @@ Uv<float> IesLight::getAngles(const Vec3f &dir, float costheta)
 	return {u, v};
 }
 
-std::tuple<bool, Ray<float>, Rgb> IesLight::illuminate(const Point3f &surface_p, float time) const
+std::tuple<bool, Ray, Rgb> IesLight::illuminate(const Point3f &surface_p, float time) const
 {
 	if(photonOnly()) return {};
 	Vec3f ldir{position_ - surface_p};
@@ -71,11 +71,11 @@ std::tuple<bool, Ray<float>, Rgb> IesLight::illuminate(const Point3f &surface_p,
 	if(cos_a < cos_end_) return {};
 	const Uv<float> uv{getAngles(ldir, cos_a)};
 	Rgb col{color_ * ies_data_->getRadiance(uv.u_, uv.v_) * i_dist_sqrt};
-	Ray<float> ray{surface_p, std::move(ldir), time, 0.f, dist};
+	Ray ray{surface_p, std::move(ldir), time, 0.f, dist};
 	return {true, std::move(ray), std::move(col)};
 }
 
-std::pair<bool, Ray<float>> IesLight::illumSample(const Point3f &surface_p, LSample &s, float time) const
+std::pair<bool, Ray> IesLight::illumSample(const Point3f &surface_p, LSample &s, float time) const
 {
 	if(photonOnly()) return {};
 	Vec3f ldir{position_ - surface_p};
@@ -92,18 +92,18 @@ std::pair<bool, Ray<float>> IesLight::illumSample(const Point3f &surface_p, LSam
 	if(rad == 0.f) return {};
 	s.col_ = color_ * i_dist_sqrt;
 	s.pdf_ = 1.f / rad;
-	Ray<float> ray{surface_p, std::move(dir), time, 0.f, dist};
+	Ray ray{surface_p, std::move(dir), time, 0.f, dist};
 	return {true, std::move(ray)};
 }
 
-std::tuple<Ray<float>, float, Rgb> IesLight::emitPhoton(float s_1, float s_2, float s_3, float s_4, float time) const
+std::tuple<Ray, float, Rgb> IesLight::emitPhoton(float s_1, float s_2, float s_3, float s_4, float time) const
 {
 	Vec3f dir{sample::cone(dir_, duv_, cos_end_, s_1, s_2)};
 	float cos_a = dir * dir_;
 	if(cos_a < cos_end_) return {};
 	const Uv<float> uv{getAngles(dir, cos_a)};
 	const float rad = ies_data_->getRadiance(uv.u_, uv.v_);
-	Ray<float> ray{position_, std::move(dir), time};
+	Ray ray{position_, std::move(dir), time};
 	return {std::move(ray), rad, color_};
 }
 

@@ -40,9 +40,9 @@ class AcceleratorSimpleTest final : Accelerator
 
 	private:
 		AcceleratorSimpleTest(Logger &logger, const std::vector<const Primitive *> &primitives);
-		IntersectData intersect(const Ray<float> &ray, float t_max) const override;
-		IntersectData intersectShadow(const Ray<float> &ray, float t_max) const override;
-		IntersectData intersectTransparentShadow(const Ray<float> &ray, int max_depth, float dist, const Camera *camera) const override;
+		IntersectData intersect(const Ray &ray, float t_max) const override;
+		IntersectData intersectShadow(const Ray &ray, float t_max) const override;
+		IntersectData intersectTransparentShadow(const Ray &ray, int max_depth, float dist, const Camera *camera) const override;
 		Bound<float> getBound() const override { return bound_; }
 		const std::vector<const Primitive *> &primitives_;
 		std::map<const Object *, ObjectData> objects_data_;

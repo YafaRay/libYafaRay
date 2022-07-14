@@ -105,7 +105,7 @@ inline Stats Stats::operator += (const Stats &kd_stats)
 }
 
 template<typename NodeType, typename NodeStackType, IntersectTestType test_type>
-IntersectData intersect(const Ray<float> &ray, float t_max, const std::vector<NodeType> &nodes, const Bound<float> &tree_bound, int transparent_color_max_depth, const Camera *camera)
+IntersectData intersect(const Ray &ray, float t_max, const std::vector<NodeType> &nodes, const Bound<float> &tree_bound, int transparent_color_max_depth, const Camera *camera)
 {
 	const Bound<float>::Cross cross{tree_bound.cross(ray, t_max)};
 	if(!cross.crossed_)

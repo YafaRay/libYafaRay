@@ -80,7 +80,7 @@ void TiledIntegrator::precalcDepths()
 		{
 			for(int j = 0; j < w; ++j)
 			{
-				CameraRay<float> camera_ray = camera_->shootRay(i, j, {0.5f, 0.5f});
+				CameraRay camera_ray = camera_->shootRay(i, j, {0.5f, 0.5f});
 				const auto [sp, tmax] = accelerator_->intersect(camera_ray.ray_, camera_);
 				if(tmax > max_depth_) max_depth_ = tmax;
 				if(tmax < min_depth_ && tmax >= 0.f) min_depth_ = tmax;
@@ -331,7 +331,7 @@ bool TiledIntegrator::renderTile(FastRandom &fast_random, std::vector<int> &corr
 				{
 					lens_uv = {hal.u_.getNext(), hal.v_.getNext()};
 				}
-				CameraRay<float> camera_ray = camera_->shootRay(static_cast<float>(j) + dx, static_cast<float>(i) + dy, lens_uv);
+				CameraRay camera_ray = camera_->shootRay(static_cast<float>(j) + dx, static_cast<float>(i) + dy, lens_uv);
 				if(!camera_ray.valid_)
 				{
 					image_film_->addSample({{j, i}}, dx, dy, &a, sample, aa_pass_number, inv_aa_max_possible_samples, &color_layers);
@@ -340,11 +340,11 @@ bool TiledIntegrator::renderTile(FastRandom &fast_random, std::vector<int> &corr
 				if(render_control_.getDifferentialRaysEnabled())
 				{
 					//setup ray differentials
-					camera_ray.ray_.differentials_ = std::make_unique<RayDifferentials<float>>();
-					const CameraRay<float> camera_diff_ray_x = camera_->shootRay(static_cast<float>(j) + 1 + dx, static_cast<float>(i) + dy, lens_uv);
+					camera_ray.ray_.differentials_ = std::make_unique<RayDifferentials>();
+					const CameraRay camera_diff_ray_x = camera_->shootRay(static_cast<float>(j) + 1 + dx, static_cast<float>(i) + dy, lens_uv);
 					camera_ray.ray_.differentials_->xfrom_ = camera_diff_ray_x.ray_.from_;
 					camera_ray.ray_.differentials_->xdir_ = camera_diff_ray_x.ray_.dir_;
-					const CameraRay<float> camera_diff_ray_y = camera_->shootRay(static_cast<float>(j) + dx, static_cast<float>(i) + 1 + dy, lens_uv);
+					const CameraRay camera_diff_ray_y = camera_->shootRay(static_cast<float>(j) + dx, static_cast<float>(i) + 1 + dy, lens_uv);
 					camera_ray.ray_.differentials_->yfrom_ = camera_diff_ray_y.ray_.from_;
 					camera_ray.ray_.differentials_->ydir_ = camera_diff_ray_y.ray_.dir_;
 				}
@@ -636,7 +636,7 @@ Rgb TiledIntegrator::sampleAmbientOcclusion(const Accelerator &accelerator, bool
 {
 	Rgb col{0.f};
 	const BsdfFlags mat_bsdfs = sp.mat_data_->bsdf_flags_;
-	Ray<float> light_ray{sp.p_, Vec3f{0.f}, sp.time_};
+	Ray light_ray{sp.p_, Vec3f{0.f}, sp.time_};
 	int n = ao_samples;//(int) ceilf(aoSamples*getSampleMultiplier());
 	if(ray_division.division_ > 1) n = std::max(1, n / ray_division.division_);
 	const unsigned int offs = n * pixel_sampling_data.sample_ + pixel_sampling_data.offset_;
@@ -682,7 +682,7 @@ Rgb TiledIntegrator::sampleAmbientOcclusion(const Accelerator &accelerator, bool
 	return col / static_cast<float>(n);
 }
 
-void TiledIntegrator::applyVolumetricEffects(Rgb &col, float &alpha, ColorLayers *color_layers, const Ray<float> &ray, RandomGenerator &random_generator, const VolumeIntegrator *volume_integrator, bool transparent_background)
+void TiledIntegrator::applyVolumetricEffects(Rgb &col, float &alpha, ColorLayers *color_layers, const Ray &ray, RandomGenerator &random_generator, const VolumeIntegrator *volume_integrator, bool transparent_background)
 {
 	const Rgb col_vol_transmittance = volume_integrator->transmittance(random_generator, ray);
 	const Rgb col_vol_integration = volume_integrator->integrate(random_generator, ray);
@@ -695,7 +695,7 @@ void TiledIntegrator::applyVolumetricEffects(Rgb &col, float &alpha, ColorLayers
 	col = (col * col_vol_transmittance) + col_vol_integration;
 }
 
-std::pair<Rgb, float> TiledIntegrator::background(const Ray<float> &ray, ColorLayers *color_layers, bool transparent_background, bool transparent_refracted_background, const Background *background, int ray_level)
+std::pair<Rgb, float> TiledIntegrator::background(const Ray &ray, ColorLayers *color_layers, bool transparent_background, bool transparent_refracted_background, const Background *background, int ray_level)
 {
 	if(transparent_background && (ray_level == 0 || transparent_refracted_background)) return {Rgb{0.f}, 0.f};
 	else if(background)

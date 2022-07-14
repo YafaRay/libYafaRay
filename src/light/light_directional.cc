@@ -57,7 +57,7 @@ void DirectionalLight::init(Scene &scene)
 }
 
 
-std::tuple<bool, Ray<float>, Rgb> DirectionalLight::illuminate(const Point3f &surface_p, float time) const
+std::tuple<bool, Ray, Rgb> DirectionalLight::illuminate(const Point3f &surface_p, float time) const
 {
 	if(photonOnly()) return {};
 	// check if the point is outside of the illuminated cylinder (non-infinite lights)
@@ -71,11 +71,11 @@ std::tuple<bool, Ray<float>, Rgb> DirectionalLight::illuminate(const Point3f &su
 		if(tmax <= 0.f) return {};
 	}
 	else tmax = -1.f;
-	Ray<float> ray{surface_p, direction_, time, 0.f, tmax};
+	Ray ray{surface_p, direction_, time, 0.f, tmax};
 	return {true, std::move(ray), color_};
 }
 
-std::pair<bool, Ray<float>> DirectionalLight::illumSample(const Point3f &surface_p, LSample &s, float time) const
+std::pair<bool, Ray> DirectionalLight::illumSample(const Point3f &surface_p, LSample &s, float time) const
 {
 	if(photonOnly()) return {};
 	s.pdf_ = 1.f;
@@ -83,13 +83,13 @@ std::pair<bool, Ray<float>> DirectionalLight::illumSample(const Point3f &surface
 	return {hit, std::move(ray)};
 }
 
-std::tuple<Ray<float>, float, Rgb> DirectionalLight::emitPhoton(float s_1, float s_2, float s_3, float s_4, float time) const
+std::tuple<Ray, float, Rgb> DirectionalLight::emitPhoton(float s_1, float s_2, float s_3, float s_4, float time) const
 {
 	const Uv<float> uv{Vec3f::shirleyDisk(s_1, s_2)};
 	Point3f from{position_ + radius_ * (uv.u_ * duv_.u_ + uv.v_ * duv_.v_)};
 	if(infinite_) from += direction_ * world_radius_;
 	const float ipdf = math::num_pi<> * radius_ * radius_; //4.0f * num_pi;
-	Ray<float> ray{std::move(from), -direction_, time};
+	Ray ray{std::move(from), -direction_, time};
 	return {std::move(ray), ipdf, color_};
 }
 
