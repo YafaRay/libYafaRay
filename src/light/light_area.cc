@@ -32,23 +32,17 @@ namespace yafaray {
 
 AreaLight::AreaLight(Logger &logger, const Point3f &c, const Vec3f &v_1, const Vec3f &v_2,
 					 const Rgb &col, float inte, int nsam, bool light_enabled, bool cast_shadows):
-		Light(logger), corner_(c), to_x_(v_1), to_y_(v_2), samples_(nsam)
+		Light(logger), area_quad_{{c, c + v_1, c + v_1 + v_2, c + v_2}}, to_x_(v_1), to_y_(v_2),
+		fnormal_{v_2 ^ v_1}, //f normal is "flipped" normal direction...
+		normal_{-fnormal_},
+		duv_{v_1.normalized(), normal_ ^ v_1.normalized()},
+		color_{col * inte * math::num_pi<>},
+		area_{fnormal_.normalized().length()},
+		inv_area_{1.f / area_},
+		samples_(nsam)
 {
 	light_enabled_ = light_enabled;
 	cast_shadows_ = cast_shadows;
-
-	fnormal_ = to_y_ ^ to_x_; //f normal is "flipped" normal direction...
-	color_ = col * inte * math::num_pi<>;
-	area_ = fnormal_.normalizeAndReturnLength();
-	inv_area_ = 1.f / area_;
-
-	normal_ = -fnormal_;
-	duv_.u_ = to_x_;
-	duv_.u_.normalize();
-	duv_.v_ = normal_ ^ duv_.u_;
-	c_2_ = corner_ + to_x_;
-	c_3_ = corner_ + (to_x_ + to_y_);
-	c_4_ = corner_ + to_y_;
 }
 
 void AreaLight::init(const Scene &scene)
@@ -67,7 +61,7 @@ std::pair<bool, Ray> AreaLight::illumSample(const Point3f &surface_p, LSample &s
 {
 	if(photonOnly()) return {};
 	//get point on area light and vector to surface point:
-	const Point3f p{corner_ + s.s_1_ * to_x_ + s.s_2_ * to_y_};
+	const Point3f p{area_quad_[0] + s.s_1_ * to_x_ + s.s_2_ * to_y_};
 	Vec3f ldir{p - surface_p};
 	//normalize vec and compute inverse square distance
 	const float dist_sqr = ldir.lengthSquared();
@@ -93,7 +87,7 @@ std::pair<bool, Ray> AreaLight::illumSample(const Point3f &surface_p, LSample &s
 std::tuple<Ray, float, Rgb> AreaLight::emitPhoton(float s_1, float s_2, float s_3, float s_4, float time) const
 {
 	const float ipdf = area_/*  * num_pi */; // really two num_pi?
-	Point3f from{corner_ + s_3 * to_x_ + s_4 * to_y_};
+	Point3f from{area_quad_[0] + s_3 * to_x_ + s_4 * to_y_};
 	Vec3f dir{sample::cosHemisphere(normal_, duv_, s_1, s_2)};
 	Ray ray{std::move(from), std::move(dir), time};
 	return {std::move(ray), ipdf, color_};
@@ -102,7 +96,7 @@ std::tuple<Ray, float, Rgb> AreaLight::emitPhoton(float s_1, float s_2, float s_
 std::pair<Vec3f, Rgb> AreaLight::emitSample(LSample &s, float time) const
 {
 	s.area_pdf_ = inv_area_ * math::num_pi<>;
-	s.sp_->p_ = corner_ + s.s_3_ * to_x_ + s.s_4_ * to_y_;
+	s.sp_->p_ = area_quad_[0] + s.s_3_ * to_x_ + s.s_4_ * to_y_;
 	const Vec3f dir{sample::cosHemisphere(normal_, duv_, s.s_1_, s.s_2_)};
 	s.sp_->n_ = s.sp_->ng_ = normal_;
 	s.dir_pdf_ = std::abs(normal_ * dir);
@@ -110,33 +104,14 @@ std::pair<Vec3f, Rgb> AreaLight::emitSample(LSample &s, float time) const
 	return {std::move(dir), color_}; // still not 100% sure this is correct without cosine...
 }
 
-bool AreaLight::triIntersect(const Point3f &a, const Point3f &b, const Point3f &c, const Ray &ray, float &t)
-{
-	const Vec3f edge_1{b - a};
-	const Vec3f edge_2{c - a};
-	const Vec3f pvec{ray.dir_ ^ edge_2};
-	const float det = edge_1 * pvec;
-	if(det == 0.f) return false;
-	const float inv_det = 1.f / det;
-	const Vec3f tvec{ray.from_ - a};
-	const float u = (tvec * pvec) * inv_det;
-	if(u < 0.f || u > 1.f) return false;
-	const Vec3f qvec{tvec ^ edge_1};
-	const float v = (ray.dir_ * qvec) * inv_det;
-	if((v < 0.f) || ((u + v) > 1.f)) return false;
-	t = edge_2 * qvec * inv_det;
-	return true;
-}
-
 std::tuple<bool, float, Rgb> AreaLight::intersect(const Ray &ray, float &t) const
 {
 	const float cos_angle = ray.dir_ * fnormal_;
-	//no light if point is behind area light (single sided!)
-	if(cos_angle <= 0.f
-		|| (!triIntersect(corner_, c_2_, c_3_, ray, t) && !triIntersect(corner_, c_3_, c_4_, ray, t))
-		|| t <= 1.0e-10f) return {};
-	// pdf = distance^2 / area * cos(norm, ldir); ipdf = 1/pdf;
-	const float ipdf = 1.f / (t * t) * area_ * cos_angle * math::div_1_by_pi<>;
+	if(cos_angle <= 0.f) return {}; //no light if point is behind area light (single sided!)
+	const auto intersect_data{area_quad_.intersect(ray.from_, ray.dir_)};
+	if(intersect_data.first <= 0.f) return {};
+	else t = intersect_data.first;
+	const float ipdf = 1.f / (t * t) * area_ * cos_angle * math::div_1_by_pi<>; // pdf = distance^2 / area * cos(norm, ldir); ipdf = 1/pdf;
 	return {true, ipdf, color_};
 }
 

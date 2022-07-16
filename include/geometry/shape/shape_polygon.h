@@ -39,6 +39,8 @@ class ShapePolygon final
 		explicit ShapePolygon<T, N>(const std::array<Point<T, 3>, N> &vertices) : vertices_(vertices) { }
 		ShapePolygon<T, N> &operator=(const ShapePolygon<T, N> &polygon) = default;
 		ShapePolygon<T, N> &operator=(ShapePolygon<T, N> &&polygon) = default;
+		Point<T, 3> &operator[](size_t vertex_number) { return vertices_[vertex_number]; }
+		const Point<T, 3> &operator[](size_t vertex_number) const { return vertices_[vertex_number]; }
 		std::pair<T, Uv<T>> intersect(const Point<T, 3> &from, const Vec<T, 3> &dir) const;
 		Vec<T, 3> calculateFaceNormal() const;
 		T surfaceArea() const;

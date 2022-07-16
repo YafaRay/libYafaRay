@@ -54,6 +54,7 @@ class Vec
 		constexpr Vec<T, N>(const std::array<T, N> &array): array_{array} { }
 		constexpr Vec<T, N>(std::array<T, N> &&array): array_{std::move(array)} { }
 		Vec<T, N> &normalize();
+		Vec<T, N> normalized() const;
 		constexpr void reflect(const Vec<T, N> &normal);
 		[[nodiscard]] T normalizeAndReturnLength();
 		[[nodiscard]] T normalizeAndReturnLengthSquared();
@@ -291,6 +292,14 @@ inline Vec<T, N> &Vec<T, N>::normalize()
 		for(auto &component : array_) component *= inverse_length;
 	}
 	return *this;
+}
+
+template <typename T, size_t N>
+inline Vec<T, N> Vec<T, N>::normalized() const
+{
+	Vec<T, N> result{*this};
+	result.normalize();
+	return result;
 }
 
 template <typename T, size_t N>

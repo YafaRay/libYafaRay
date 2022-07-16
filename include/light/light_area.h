@@ -23,6 +23,7 @@
 #include <common/logger.h>
 #include "light/light.h"
 #include "geometry/vector.h"
+#include "geometry/shape/shape_polygon.h"
 
 namespace yafaray {
 
@@ -48,15 +49,15 @@ class AreaLight final : public Light
 		float illumPdf(const Point3f &surface_p, const Point3f &light_p, const Vec3f &light_ng) const override;
 		std::array<float, 3> emitPdf(const Vec3f &surface_n, const Vec3f &wo) const override;
 		int nSamples() const override { return samples_; }
-		static bool triIntersect(const Point3f &a, const Point3f &b, const Point3f &c, const Ray &ray, float &t);
 
-		Point3f corner_, c_2_, c_3_, c_4_;
-		Vec3f to_x_, to_y_, normal_, fnormal_;
-		Uv<Vec3f> duv_; //!< directions for hemisampler (emitting photons)
-		Rgb color_; //!< includes intensity amplification! so...
-		int samples_;
+		const ShapePolygon<float, 4> area_quad_;
+		const Vec3f to_x_, to_y_;
+		const Vec3f fnormal_, normal_;
+		const Uv<Vec3f> duv_; //!< directions for hemisampler (emitting photons)
+		const Rgb color_; //!< includes intensity amplification! so...
+		const float area_, inv_area_;
+		const int samples_;
 		std::string object_name_;
-		float area_, inv_area_;
 };
 
 } //namespace yafaray
