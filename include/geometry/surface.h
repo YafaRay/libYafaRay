@@ -73,8 +73,6 @@ class SurfacePoint final
 		[[nodiscard]] float projectedPixelArea() const;
 		[[nodiscard]] std::array<Uv<float>, 2> getUVdifferentialsXY() const;
 		[[nodiscard]] std::unique_ptr<SurfaceDifferentials> calcSurfaceDifferentials(const RayDifferentials *ray_differentials) const;
-
-		[[nodiscard]] const MaterialData * initBsdf(const Camera *camera);
 		[[nodiscard]] Rgb eval(const Vec3f &wo, const Vec3f &wl, BsdfFlags types, bool force_eval = false) const;
 		[[nodiscard]] Rgb sample(const Vec3f &wo, Vec3f &wi, Sample &s, float &w, bool chromatic, float wavelength, const Camera *camera) const;
 		[[nodiscard]] Rgb sample(const Vec3f &wo, Vec3f *dir, Rgb &tcol, Sample &s, float *w, bool chromatic, float wavelength) const;
@@ -205,11 +203,6 @@ inline SurfacePoint &SurfacePoint::operator=(const SurfacePoint &sp)
 inline Vec3f SurfacePoint::normalFaceForward(const Vec3f &normal_geometry, const Vec3f &normal, const Vec3f &incoming_vector)
 {
 	return (normal_geometry * incoming_vector) < 0 ? -normal : normal;
-}
-
-inline const MaterialData * SurfacePoint::initBsdf(const Camera *camera)
-{
-	return primitive_->getMaterial()->initBsdf(*this, camera);
 }
 
 inline Rgb SurfacePoint::eval(const Vec3f &wo, const Vec3f &wl, BsdfFlags types, bool force_eval) const
