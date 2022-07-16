@@ -501,7 +501,14 @@ ImageOutput *Scene::createOutput(std::string &&name, ParamMap &&params)
 
 Texture *Scene::createTexture(std::string &&name, ParamMap &&params)
 {
-	return createMapItem<Texture>(logger_, std::move(name), "Texture", std::move(params), textures_, this);
+	Texture *texture = createMapItem<Texture>(logger_, std::move(name), "Texture", std::move(params), textures_, this);
+	InterpolationType texture_interpolation_type = texture->getInterpolationType();
+	if(!render_control_.getDifferentialRaysEnabled() && (texture_interpolation_type == InterpolationType::Trilinear || texture_interpolation_type == InterpolationType::Ewa))
+	{
+		if(logger_.isVerbose()) logger_.logVerbose("At least one texture using mipmaps interpolation, enabling ray differentials.");
+		render_control_.setDifferentialRaysEnabled(true);	//If there is at least one texture using mipmaps, then enable differential rays in the rendering process.
+	}
+	return texture;
 }
 
 const Background * Scene::createBackground(std::string &&name, ParamMap &&params)

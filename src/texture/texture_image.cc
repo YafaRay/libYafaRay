@@ -463,7 +463,7 @@ ImageTexture::ClipMode ImageTexture::string2Cliptype(const std::string &clipname
 	return tex_clipmode;
 }
 
-Texture * ImageTexture::factory(Logger &logger, Scene &scene, const std::string &name, const ParamMap &params)
+Texture * ImageTexture::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params)
 {
 	std::string image_name;
 	std::string interpolation_type_str;
@@ -505,11 +505,6 @@ Texture * ImageTexture::factory(Logger &logger, Scene &scene, const std::string 
 	if(interpolation_type == InterpolationType::Trilinear || interpolation_type == InterpolationType::Ewa)
 	{
 		tex->generateMipMaps();
-		if(!scene.getRenderControl().getDifferentialRaysEnabled())
-		{
-			if(logger.isVerbose()) logger.logVerbose("At least one texture using mipmaps interpolation, enabling ray differentials.");
-			scene.getRenderControl().setDifferentialRaysEnabled(true);	//If there is at least one texture using mipmaps, then enable differential rays in the rendering process.
-		}
 
 		/*//FIXME DAVID: TEST SAVING MIPMAPS. CAREFUL: IT COULD CAUSE CRASHES!
 		for(int i=0; i<=format->getHighestImgIndex(); ++i)

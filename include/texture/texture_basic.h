@@ -28,7 +28,7 @@ namespace yafaray {
 class CloudsTexture final : public Texture
 {
 	public:
-		static Texture *factory(Logger &logger, Scene &scene, const std::string &name, const ParamMap &params);
+		static Texture *factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params);
 
 	private:
 		enum class BiasType : unsigned char { None, Positive, Negative };
@@ -50,7 +50,7 @@ class CloudsTexture final : public Texture
 class MarbleTexture final : public Texture
 {
 	public:
-		static Texture *factory(Logger &logger, Scene &scene, const std::string &name, const ParamMap &params);
+		static Texture *factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params);
 
 	private:
 		MarbleTexture(Logger &logger, int oct, float sz, const Rgb &c_1, const Rgb &c_2,
@@ -70,7 +70,7 @@ class MarbleTexture final : public Texture
 class WoodTexture final : public Texture
 {
 	public:
-		static Texture *factory(Logger &logger, Scene &scene, const std::string &name, const ParamMap &params);
+		static Texture *factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params);
 
 	private:
 		WoodTexture(Logger &logger, int oct, float sz, const Rgb &c_1, const Rgb &c_2, float turb,
@@ -90,7 +90,7 @@ class WoodTexture final : public Texture
 class VoronoiTexture final : public Texture
 {
 	public:
-		static Texture *factory(Logger &logger, Scene &scene, const std::string &name, const ParamMap &params);
+		static Texture *factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params);
 
 	private:
 		enum class ColorMode : unsigned char { IntensityWithoutColor, Position, PositionOutline, PositionOutlineIntensity};
@@ -113,7 +113,7 @@ class VoronoiTexture final : public Texture
 class MusgraveTexture final : public Texture
 {
 	public:
-		static Texture *factory(Logger &logger, Scene &scene, const std::string &name, const ParamMap &params);
+		static Texture *factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params);
 
 	private:
 		MusgraveTexture(Logger &logger, const Rgb &c_1, const Rgb &c_2,
@@ -132,7 +132,7 @@ class MusgraveTexture final : public Texture
 class DistortedNoiseTexture final : public Texture
 {
 	public:
-		static Texture *factory(Logger &logger, Scene &scene, const std::string &name, const ParamMap &params);
+		static Texture *factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params);
 
 	private:
 		DistortedNoiseTexture(Logger &logger, const Rgb &c_1, const Rgb &c_2,
@@ -153,7 +153,7 @@ class DistortedNoiseTexture final : public Texture
 class RgbCubeTexture final : public Texture
 {
 	public:
-		static Texture *factory(Logger &logger, Scene &scene, const std::string &name, const ParamMap &params);
+		static Texture *factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params);
 
 	private:
 		explicit RgbCubeTexture(Logger &logger) : Texture(logger) { }
@@ -164,7 +164,7 @@ class RgbCubeTexture final : public Texture
 class BlendTexture final : public Texture
 {
 	public:
-		static Texture *factory(Logger &logger, Scene &scene, const std::string &name, const ParamMap &params);
+		static Texture *factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params);
 
 	private:
 		enum class ProgressionType : unsigned char { Linear, Quadratic, Easing, Diagonal, Spherical, QuadraticSphere, Radial };

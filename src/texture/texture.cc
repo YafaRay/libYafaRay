@@ -26,7 +26,7 @@
 
 namespace yafaray {
 
-Texture * Texture::factory(Logger &logger, Scene &scene, const std::string &name, const ParamMap &params)
+Texture * Texture::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params)
 {
 	if(logger.isDebug())
 	{

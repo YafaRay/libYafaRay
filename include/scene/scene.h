@@ -112,6 +112,7 @@ class Scene final
 		int getNumThreadsPhotons() const { return nthreads_photons_; }
 		AaNoiseParams getAaParameters() const { return aa_noise_params_; }
 		RenderControl &getRenderControl() { return render_control_; }
+		const RenderControl &getRenderControl() const { return render_control_; }
 		const std::unique_ptr<const Material> * getMaterial(const std::string &name) const;
 		Texture *getTexture(const std::string &name) const;
 		const Camera * getCamera(const std::string &name) const;

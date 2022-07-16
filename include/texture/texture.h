@@ -39,7 +39,7 @@ enum class InterpolationType : unsigned char { None, Bilinear, Bicubic, Trilinea
 class Texture
 {
 	public :
-		static Texture *factory(Logger &logger, Scene &scene, const std::string &name, const ParamMap &params);
+		static Texture *factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params);
 		explicit Texture(Logger &logger) : logger_(logger) { }
 		virtual ~Texture() = default;
 
