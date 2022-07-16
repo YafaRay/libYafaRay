@@ -76,7 +76,7 @@ class ImageFilm final
 			Mode mode_ = Mode::None;
 		};
 
-		static ImageFilm *factory(Logger &logger, const ParamMap &params, Scene *scene);
+		static ImageFilm *factory(Logger &logger, RenderControl &render_control, const ParamMap &params, const Scene *scene);
 		/*! imageFilm_t Constructor */
 		ImageFilm(Logger &logger, const Rect &rect, int num_threads, RenderControl &render_control, const Layers &layers, const std::map<std::string, std::unique_ptr<ImageOutput>> &outputs, float filter_size = 1.f, FilterType filt = FilterType::Box, int t_size = 32, ImageSplitter::TilesOrderType tiles_order_type = ImageSplitter::Linear);
 		/*! Initialize imageFilm for new rendering, i.e. set pixels black etc */

@@ -40,7 +40,7 @@ namespace yafaray {
 
 typedef float FilterFunction_t(float dx, float dy);
 
-ImageFilm * ImageFilm::factory(Logger &logger, const ParamMap &params, Scene *scene)
+ImageFilm * ImageFilm::factory(Logger &logger, RenderControl &render_control, const ParamMap &params, const Scene *scene)
 {
 	if(logger.isDebug())
 	{
@@ -105,7 +105,7 @@ ImageFilm * ImageFilm::factory(Logger &logger, const ParamMap &params, Scene *sc
 
 	const Rect rect{Point2i{{xstart, ystart}}, Size2i{{width, height}}};
 
-	auto film = new ImageFilm(logger, rect, scene->getNumThreads(), scene->getRenderControl(), *scene->getLayers(), scene->getOutputs(), filt_sz, type, tile_size, tiles_order_type);
+	auto film = new ImageFilm(logger, rect, scene->getNumThreads(), render_control, *scene->getLayers(), scene->getOutputs(), filt_sz, type, tile_size, tiles_order_type);
 
 	film->setImagesAutoSaveParams(images_autosave_params);
 	film->setFilmLoadSaveParams(film_load_save);

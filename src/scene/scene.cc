@@ -428,7 +428,7 @@ std::unique_ptr<const Material> * Scene::createMaterial(std::string &&name, Para
 }
 
 template <typename T>
-T *Scene::createMapItem(Logger &logger, std::string &&name, std::string &&class_name, ParamMap &&params, std::map<std::string, std::unique_ptr<T>> &map, Scene *scene, bool check_type_exists)
+T *Scene::createMapItem(Logger &logger, std::string &&name, std::string &&class_name, ParamMap &&params, std::map<std::string, std::unique_ptr<T>> &map, const Scene *scene, bool check_type_exists)
 {
 	if(map.find(name) != map.end())
 	{
@@ -455,7 +455,7 @@ T *Scene::createMapItem(Logger &logger, std::string &&name, std::string &&class_
 }
 
 template <typename T>
-std::shared_ptr<T> Scene::createMapItem(Logger &logger, std::string &&name, std::string &&class_name, ParamMap &&params, std::map<std::string, std::shared_ptr<T>> &map, Scene *scene, bool check_type_exists)
+std::shared_ptr<T> Scene::createMapItem(Logger &logger, std::string &&name, std::string &&class_name, ParamMap &&params, std::map<std::string, std::shared_ptr<T>> &map, const Scene *scene, bool check_type_exists)
 {
 	if(map.find(name) != map.end())
 	{
@@ -653,7 +653,7 @@ bool Scene::setupSceneRenderParams(Scene &scene, ParamMap &&params)
 	setMaskParams(params);
 	setEdgeToonParams(params);
 
-	image_film_ = std::unique_ptr<ImageFilm>(ImageFilm::factory(logger_, params, this));
+	image_film_ = std::unique_ptr<ImageFilm>(ImageFilm::factory(logger_, render_control_, params, this));
 
 	params.getParam("filter_type", name); // AA filter type
 	std::stringstream aa_settings;
