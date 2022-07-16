@@ -149,7 +149,7 @@ std::pair<Rgb, float> DirectLightIntegrator::integrate(Ray &ray, FastRandom &fas
 	return {std::move(col), alpha};
 }
 
-Integrator * DirectLightIntegrator::factory(Logger &logger, const ParamMap &params, const Scene &scene, RenderControl &render_control)
+Integrator * DirectLightIntegrator::factory(Logger &logger, RenderControl &render_control, const ParamMap &params, const Scene &scene)
 {
 	bool transparent_shadows = false;
 	bool caustics = false;

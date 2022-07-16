@@ -523,7 +523,25 @@ const Camera *Scene::createCamera(std::string &&name, ParamMap &&params)
 
 Integrator *Scene::createIntegrator(std::string &&name, ParamMap &&params)
 {
-	return createMapItem<Integrator>(logger_, std::move(name), "Integrator", std::move(params), integrators_, this);
+	if(integrators_.find(name) != integrators_.end())
+	{
+		logWarnExist(logger_, "Integrator", name); return nullptr;
+	}
+	std::string type;
+	if(! params.getParam("type", type))
+	{
+		logErrNoType(logger_, "Integrator", name, type);
+		return nullptr;
+	}
+	std::unique_ptr<Integrator> item(Integrator::factory(logger_, render_control_, *this, name, params));
+	if(item)
+	{
+		integrators_[name] = std::move(item);
+		if(logger_.isVerbose()) logInfoVerboseSuccess(logger_, "Integrator", name, type);
+		return integrators_[name].get();;
+	}
+	logErrOnCreate(logger_, "Integrator", name, type);
+	return nullptr;
 }
 
 VolumeRegion *Scene::createVolumeRegion(std::string &&name, ParamMap &&params)

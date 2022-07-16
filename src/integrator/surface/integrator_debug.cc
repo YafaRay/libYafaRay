@@ -88,7 +88,7 @@ std::pair<Rgb, float> DebugIntegrator::integrate(Ray &ray, FastRandom &fast_rand
 	return {Rgb{0.f}, 1.f};
 }
 
-Integrator * DebugIntegrator::factory(Logger &logger, const ParamMap &params, const Scene &scene, RenderControl &render_control)
+Integrator * DebugIntegrator::factory(Logger &logger, RenderControl &render_control, const ParamMap &params, const Scene &scene)
 {
 	int dt = 1;
 	bool pn = false;
