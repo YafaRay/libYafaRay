@@ -46,7 +46,7 @@ Rgb GradientBackground::eval(const Vec3f &dir, bool use_ibl_blur) const
 	return color;
 }
 
-const Background * GradientBackground::factory(Logger &logger, Scene &scene, const std::string &name, const ParamMap &params)
+const Background * GradientBackground::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params)
 {
 	Rgb gzenith, ghoriz, szenith(0.4f, 0.5f, 1.f), shoriz(1.f);
 	float p = 1.0;
@@ -80,10 +80,10 @@ const Background * GradientBackground::factory(Logger &logger, Scene &scene, con
 		bgp["with_diffuse"] = diff;
 		bgp["cast_shadows"] = cast_shadows;
 
-		Light *bglight = scene.createLight("GradientBackground_bgLight", std::move(bgp));
+		std::unique_ptr<Light> bglight{Light::factory(logger, scene, "light", std::move(bgp))};
 		bglight->setBackground(grad_bg);
+		grad_bg->addLight(std::move(bglight));
 	}
-
 	return grad_bg;
 }
 

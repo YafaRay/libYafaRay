@@ -76,7 +76,7 @@ Rgb TextureBackground::eval(const Vec3f &dir, bool use_ibl_blur) const
 	return power_ * ret;
 }
 
-const Background * TextureBackground::factory(Logger &logger, Scene &scene, const std::string &name, const ParamMap &params)
+const Background * TextureBackground::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params)
 {
 	std::string texname;
 	std::string mapping;
@@ -135,18 +135,15 @@ const Background * TextureBackground::factory(Logger &logger, Scene &scene, cons
 			if(logger.isVerbose()) logger.logVerbose("TextureBackground: background SmartIBL blurring done using mipmaps.");
 		}
 
-		Light *bglight = scene.createLight("textureBackground_bgLight", std::move(bgp));
-
+		std::unique_ptr<Light> bglight{Light::factory(logger, scene, "light", std::move(bgp))};
 		bglight->setBackground(tex_bg);
-
 		if(ibl_clamp_sampling > 0.f)
 		{
 			logger.logInfo("TextureBackground: using IBL sampling clamp=", ibl_clamp_sampling);
-
 			bglight->setClampIntersect(ibl_clamp_sampling);
 		}
+		tex_bg->addLight(std::move(bglight));
 	}
-
 	return tex_bg;
 }
 

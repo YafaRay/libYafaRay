@@ -56,21 +56,22 @@ bool RenderView::init(Logger &logger, const Scene &scene)
 	lights_.clear();
 	const std::vector<std::string> selected_lights_names = string::tokenize(light_names_, ";");
 
+	std::map<std::string, Light *> scene_lights{scene.getLights()};
 	if(selected_lights_names.empty())
 	{
-		for(const auto &[light_name, light] : scene.getLights()) lights_[light_name] = light.get();
+		lights_ = scene_lights;
 	}
 	else
 	{
 		for(const auto &light_name : selected_lights_names)
 		{
-			const Light *light = scene.getLight(light_name);
+			Light *light = findPointerInMap(scene_lights, light_name);
 			if(!light)
 			{
 				logger.logWarning("RenderView '", name_, "' init: view '", name_, "' could not find light '", light_name, "', skipping...");
 				continue;
 			}
-			lights_[light_name] = scene.getLight(light_name);
+			lights_[light_name] = light;
 		}
 	}
 	if(lights_.empty())

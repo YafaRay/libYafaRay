@@ -36,15 +36,18 @@ typedef Vec<float, 3> Vec3f;
 class Background
 {
 	public:
-		static const Background * factory(Logger &logger, Scene &scene, const std::string &name, const ParamMap &params);
-		explicit Background(Logger &logger) : logger_(logger) { }
-		virtual ~Background() = default;
+		static const Background * factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params);
+		explicit Background(Logger &logger);
+		virtual ~Background();
 		Rgb operator()(const Vec3f &dir) const { return operator()(dir, false); }
 		virtual Rgb operator()(const Vec3f &dir, bool use_ibl_blur) const { return eval(dir, use_ibl_blur); }
 		Rgb eval(const Vec3f &dir) const { return eval(dir, false); }
 		virtual Rgb eval(const Vec3f &dir, bool use_ibl_blur) const = 0;
+		void addLight(std::unique_ptr<Light> light);
+		std::vector<Light *> getLights() const;
 
 	protected:
+		std::vector<std::unique_ptr<Light>> lights_;
 		Logger &logger_;
 };
 

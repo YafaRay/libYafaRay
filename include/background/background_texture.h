@@ -33,7 +33,7 @@ class Texture;
 class TextureBackground final : public Background
 {
 	public:
-		static const Background * factory(Logger &logger, Scene &scene, const std::string &name, const ParamMap &params);
+		static const Background * factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params);
 
 	private:
 		enum Projection { Spherical = 0, Angular };

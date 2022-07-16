@@ -23,12 +23,13 @@
 #include "background/background_texture.h"
 #include "background/background_constant.h"
 #include "background/background_sunsky.h"
+#include "light/light.h"
 #include "common/param.h"
 #include "common/logger.h"
 
 namespace yafaray {
 
-const Background * Background::factory(Logger &logger, Scene &scene, const std::string &name, const ParamMap &params)
+const Background * Background::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params)
 {
 	if(logger.isDebug())
 	{
@@ -43,6 +44,26 @@ const Background * Background::factory(Logger &logger, Scene &scene, const std::
 	else if(type == "textureback") return TextureBackground::factory(logger, scene, name, params);
 	else if(type == "constant") return ConstantBackground::factory(logger, scene, name, params);
 	else return nullptr;
+}
+
+Background::Background(Logger &logger) : logger_(logger)
+{
+	//Empty
+}
+
+Background::~Background() = default;
+
+
+void Background::addLight(std::unique_ptr<Light> light)
+{
+	lights_.emplace_back(std::move(light));
+}
+
+std::vector<Light *> Background::getLights() const
+{
+	std::vector<Light *> result;
+	for(const auto &l : lights_) result.emplace_back(l.get());
+	return result;
 }
 
 } //namespace yafaray

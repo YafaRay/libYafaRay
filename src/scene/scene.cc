@@ -362,6 +362,17 @@ bool Scene::removeOutput(std::string &&name)
 	return true;
 }
 
+std::map<std::string, Light *> Scene::getLights() const
+{
+	std::map<std::string, Light *> result;
+	for(const auto &light : lights_) result[light.first] = light.second.get();
+	if(background_)
+	{
+		for(const auto light : background_->getLights()) result["background::" + light->getName()] = light;
+	}
+	return result;
+}
+
 Light *Scene::createLight(std::string &&name, ParamMap &&params)
 {
 	std::string pname = "Light";

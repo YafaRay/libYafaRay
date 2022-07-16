@@ -39,7 +39,7 @@ namespace yafaray {
 class DarkSkyBackground final : public Background
 {
 	public:
-		static const Background * factory(Logger &logger, Scene &scene, const std::string &name, const ParamMap &params);
+		static const Background * factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params);
 
 	private:
 		DarkSkyBackground(Logger &logger, const Point3f &dir, float turb, float pwr, float sky_bright, bool clamp, float av, float bv, float cv, float dv, float ev, float altitude, bool night, float exp, bool genc, ColorConv::ColorSpace cs);

@@ -36,7 +36,7 @@ namespace yafaray {
 class SunSkyBackground final : public Background
 {
 	public:
-		static const Background * factory(Logger &logger, Scene &scene, const std::string &name, const ParamMap &params);
+		static const Background * factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params);
 
 	private:
 		SunSkyBackground(Logger &logger, const Point3f &dir, float turb, float a_var, float b_var, float c_var, float d_var, float e_var, float pwr);

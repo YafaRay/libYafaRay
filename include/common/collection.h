@@ -51,6 +51,22 @@ class Collection
 };
 
 template <typename K, typename T>
+inline T* findPointerInMap(const std::map<K, T*> &map, const K &key)
+{
+	auto i = map.find(key);
+	if(i != map.end()) return i->second;
+	else return nullptr;
+}
+
+template <typename K, typename T>
+inline const T* findPointerInMap(const std::map<K, const T*> &map, const K &key)
+{
+	const auto i = map.find(key);
+	if(i != map.end()) return i->second;
+	else return nullptr;
+}
+
+template <typename K, typename T>
 inline T *Collection<K, T>::find(const K &key)
 {
 	auto i = items_.find(key);

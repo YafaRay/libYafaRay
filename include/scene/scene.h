@@ -122,7 +122,7 @@ class Scene final
 		std::shared_ptr<Image> getImage(const std::string &name) const;
 		const std::map<std::string, std::unique_ptr<RenderView>> &getRenderViews() const { return render_views_; }
 		const std::map<std::string, std::unique_ptr<VolumeRegion>> * getVolumeRegions() const { return &volume_regions_; }
-		const std::map<std::string, std::unique_ptr<Light>> &getLights() const { return lights_; }
+		std::map<std::string, Light *> getLights() const;
 
 		Light *createLight(std::string &&name, ParamMap &&params);
 		Texture *createTexture(std::string &&name, ParamMap &&params);

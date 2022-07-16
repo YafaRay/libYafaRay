@@ -196,7 +196,7 @@ Rgb DarkSkyBackground::eval(const Vec3f &dir, bool use_ibl_blur) const
 	return getSkyCol(dir) * power_;
 }
 
-const Background * DarkSkyBackground::factory(Logger &logger, Scene &scene, const std::string &name, const ParamMap &params)
+const Background * DarkSkyBackground::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params)
 {
 	Point3f dir{{1, 1, 1}};
 	float turb = 4.0;
@@ -285,9 +285,9 @@ const Background * DarkSkyBackground::factory(Logger &logger, Scene &scene, cons
 		p["with_caustic"] = caus;
 		p["with_diffuse"] = diff;
 
-		if(logger.isVerbose()) logger.logVerbose("DarkSky: Adding a \"Real Sun\"");
-
-		scene.createLight("DarkSky_RealSun", std::move(p));
+		if(logger.isVerbose()) logger.logVerbose("DarkSky: Adding background sun light");
+		std::unique_ptr<Light> bglight{Light::factory(logger, scene, "light_sun", std::move(p))};
+		dark_sky->addLight(std::move(bglight));
 	}
 
 	if(bgl)
@@ -299,11 +299,10 @@ const Background * DarkSkyBackground::factory(Logger &logger, Scene &scene, cons
 		bgp["with_diffuse"] = diff;
 		bgp["cast_shadows"] = cast_shadows;
 
-		if(logger.isVerbose()) logger.logVerbose("DarkSky: Adding background light");
-
-		Light *bglight = scene.createLight("DarkSky_bgLight", std::move(bgp));
-
+		if(logger.isVerbose()) logger.logVerbose("DarkSky: Adding background sky light");
+		std::unique_ptr<Light> bglight{Light::factory(logger, scene, "light_sky", std::move(bgp))};
 		bglight->setBackground(dark_sky);
+		dark_sky->addLight(std::move(bglight));
 	}
 
 	if(logger.isVerbose()) logger.logVerbose("DarkSky: End");
