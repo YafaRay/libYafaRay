@@ -38,7 +38,7 @@ class SunLight final : public Light
 
 	private:
 		SunLight(Logger &logger, Vec3f dir, const Rgb &col, float inte, float angle, int n_samples, bool b_light_enabled = true, bool b_cast_shadows = true);
-		void init(Scene &scene) override;
+		void init(const Scene &scene) override;
 		Rgb totalEnergy() const override { return color_ * e_pdf_; }
 		std::tuple<Ray, float, Rgb> emitPhoton(float s_1, float s_2, float s_3, float s_4, float time) const override;
 		bool diracLight() const override { return false; }

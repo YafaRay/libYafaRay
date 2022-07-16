@@ -62,7 +62,7 @@ void BackgroundPortalLight::initIs()
 	accelerator_ = std::unique_ptr<const Accelerator>(Accelerator::factory(logger_, primitives_, params));
 }
 
-void BackgroundPortalLight::init(Scene &scene)
+void BackgroundPortalLight::init(const Scene &scene)
 {
 	bg_ = scene.getBackground();
 	const Bound w = scene.getSceneBound();

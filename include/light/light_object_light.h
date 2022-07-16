@@ -43,7 +43,7 @@ class ObjectLight final : public Light
 
 	private:
 		ObjectLight(Logger &logger, const std::string &object_name, const Rgb &col, int sampl, bool dbl_s = false, bool light_enabled = true, bool cast_shadows = true);
-		void init(Scene &scene) override;
+		void init(const Scene &scene) override;
 		Rgb totalEnergy() const override;
 		std::tuple<Ray, float, Rgb> emitPhoton(float s_1, float s_2, float s_3, float s_4, float time) const override;
 		std::pair<Vec3f, Rgb> emitSample(LSample &s, float time) const override;

@@ -41,7 +41,7 @@ BackgroundLight::BackgroundLight(Logger &logger, int sampl, bool invert_intersec
 	background_ = nullptr;
 }
 
-void BackgroundLight::init(Scene &scene)
+void BackgroundLight::init(const Scene &scene)
 {
 	const int nv = max_vsamples_;
 	std::vector<float> fv(nv);

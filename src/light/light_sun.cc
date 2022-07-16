@@ -44,7 +44,7 @@ SunLight::SunLight(Logger &logger, Vec3f dir, const Rgb &col, float inte, float 
 	col_pdf_ = color_ * pdf_;
 }
 
-void SunLight::init(Scene &scene)
+void SunLight::init(const Scene &scene)
 {
 	// calculate necessary parameters for photon mapping
 	const Bound w = scene.getSceneBound();

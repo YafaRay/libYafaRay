@@ -64,7 +64,7 @@ void ObjectLight::initIs()
 	accelerator_ = std::unique_ptr<const Accelerator>(Accelerator::factory(logger_, primitives_, params));
 }
 
-void ObjectLight::init(Scene &scene)
+void ObjectLight::init(const Scene &scene)
 {
 	base_object_ = scene.getObject(object_name_);
 	if(base_object_)

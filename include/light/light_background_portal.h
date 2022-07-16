@@ -43,7 +43,7 @@ class BackgroundPortalLight final : public Light
 
 	private:
 		BackgroundPortalLight(Logger &logger, std::string object_name, int sampl, float pow, bool light_enabled = true, bool cast_shadows = true);
-		void init(Scene &scene) override;
+		void init(const Scene &scene) override;
 		Rgb totalEnergy() const override;
 		std::tuple<Ray, float, Rgb> emitPhoton(float s_1, float s_2, float s_3, float s_4, float time) const override;
 		std::pair<Vec3f, Rgb> emitSample(LSample &s, float time) const override;

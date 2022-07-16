@@ -51,7 +51,7 @@ AreaLight::AreaLight(Logger &logger, const Point3f &c, const Vec3f &v_1, const V
 	c_4_ = corner_ + to_y_;
 }
 
-void AreaLight::init(Scene &scene)
+void AreaLight::init(const Scene &scene)
 {
 	if(!object_name_.empty())
 	{

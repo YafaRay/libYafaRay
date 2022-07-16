@@ -38,7 +38,7 @@ class DirectionalLight final : public Light
 
 	private:
 		DirectionalLight(Logger &logger, const Point3f &pos, Vec3f dir, const Rgb &col, float inte, bool inf, float rad, bool b_light_enabled = true, bool b_cast_shadows = true);
-		void init(Scene &scene) override;
+		void init(const Scene &scene) override;
 		Rgb totalEnergy() const override { return color_ * radius_ * radius_ * math::num_pi<>; }
 		std::tuple<Ray, float, Rgb> emitPhoton(float s_1, float s_2, float s_3, float s_4, float time) const override;
 		std::pair<Vec3f, Rgb> emitSample(LSample &s, float time) const override;

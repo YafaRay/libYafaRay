@@ -49,7 +49,7 @@ class Light
 		Light(Logger &logger, Flags flags): flags_(flags), logger_(logger) { }
 		virtual ~Light() = default;
 		//! allow for preprocessing when scene loading has finished
-		virtual void init(Scene &scene) {}
+		virtual void init(const Scene &scene) {}
 		//! total energy emmitted during whole frame
 		[[nodiscard]] virtual Rgb totalEnergy() const = 0;
 		//! emit a photon

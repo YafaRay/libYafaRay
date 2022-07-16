@@ -41,7 +41,7 @@ DirectionalLight::DirectionalLight(Logger &logger, const Point3f &pos, Vec3f dir
 	major_axis_ = (d[Axis::X] > d[Axis::Y]) ? ((d[Axis::X] > d[Axis::Z]) ? 0 : 2) : ((d[Axis::Y] > d[Axis::Z]) ? 1 : 2);
 }
 
-void DirectionalLight::init(Scene &scene)
+void DirectionalLight::init(const Scene &scene)
 {
 	// calculate necessary parameters for photon mapping if the light
 	//  is set to illuminate the whole scene:

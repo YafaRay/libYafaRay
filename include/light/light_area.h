@@ -36,7 +36,7 @@ class AreaLight final : public Light
 
 	private:
 		AreaLight(Logger &logger, const Point3f &c, const Vec3f &v_1, const Vec3f &v_2, const Rgb &col, float inte, int nsam, bool light_enabled = true, bool cast_shadows = true);
-		void init(Scene &scene) override;
+		void init(const Scene &scene) override;
 		Rgb totalEnergy() const override;
 		std::tuple<Ray, float, Rgb> emitPhoton(float s_1, float s_2, float s_3, float s_4, float time) const override;
 		std::pair<Vec3f, Rgb> emitSample(LSample &s, float time) const override;

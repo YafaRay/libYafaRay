@@ -41,7 +41,7 @@ SphereLight::SphereLight(Logger &logger, const Point3f &c, float rad, const Rgb 
 	inv_area_ = 1.f / area_;
 }
 
-void SphereLight::init(Scene &scene)
+void SphereLight::init(const Scene &scene)
 {
 	if(!object_name_.empty())
 	{
