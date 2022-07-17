@@ -20,9 +20,6 @@
 #include "common/logger.h"
 #include "color/color_console.h"
 #include "math/math.h"
-//#include <iostream>
-//#include <string>
-//#include <iomanip>
 
 #ifdef _MSC_VER
 #include <algorithm>
@@ -55,6 +52,13 @@ void ProgressBar::setTag(const std::string &text)
 {
 	std::lock_guard<std::mutex> lock_guard(mutx_);
 	tag_ = text;
+	updateCallback();
+}
+
+void ProgressBar::setTag(std::string &&text)
+{
+	std::lock_guard<std::mutex> lock_guard(mutx_);
+	tag_ = std::move(text);
 	updateCallback();
 }
 

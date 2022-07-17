@@ -19,6 +19,7 @@
  */
 
 #include "scene/scene.h"
+#include "render/progress_bar.h"
 #include "accelerator/accelerator.h"
 #include "background/background.h"
 #include "camera/camera.h"
@@ -39,7 +40,6 @@
 #include "light/light.h"
 #include "material/material.h"
 #include "render/imagefilm.h"
-#include "render/progress_bar.h"
 #include "render/render_view.h"
 #include "texture/texture.h"
 #include "volume/volume.h"
@@ -187,7 +187,7 @@ Bound<float> Scene::getSceneBound() const
 	return *scene_bound_;
 }
 
-bool Scene::render()
+bool Scene::render(std::unique_ptr<ProgressBar> progress_bar)
 {
 	if(!image_film_)
 	{
@@ -199,6 +199,8 @@ bool Scene::render()
 		logger_.logError("Scene: No surface integrator, bailing out...");
 		return false;
 	}
+
+	render_control_.setProgressBar(std::move(progress_bar));
 
 	//if(creation_state_.changes_ != CreationState::Flags::CNone) //FIXME: handle better subsequent scene renders differently if previous render already complete
 	{
@@ -642,24 +644,6 @@ bool Scene::setupSceneRenderParams(Scene &scene, ParamMap &&params)
 	image_film_->setComputerNode(adv_computer_node);
 	image_film_->setBackgroundResampling(background_resampling);
 
-	return true;
-}
-
-bool Scene::setupSceneProgressBar(Scene &scene, std::shared_ptr<ProgressBar> &&progress_bar)
-{
-	if(logger_.isDebug())
-	{
-		logger_.logDebug("**Scene::setupSceneProgressBar");
-	}
-
-	if(progress_bar)
-	{
-		if(image_film_) image_film_->setProgressBar(progress_bar);
-		else logger_.logError("Scene: image film does not exist, cannot set progress bar");
-
-		if(surf_integrator_) surf_integrator_->setProgressBar(progress_bar);
-		else logger_.logError("Scene: integrator does not exist, cannot set progress bar");
-	}
 	return true;
 }
 

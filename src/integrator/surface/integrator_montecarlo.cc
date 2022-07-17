@@ -32,7 +32,6 @@
 #include "color/spectrum.h"
 #include "sampler/halton.h"
 #include "render/imagefilm.h"
-#include "render/progress_bar.h"
 #include "photon/photon.h"
 #include "sampler/sample.h"
 #include "sampler/sample_pdf1d.h"
@@ -524,7 +523,7 @@ void MonteCarloIntegrator::causticWorker(FastRandom &fast_random, unsigned int &
 		++curr;
 		if(curr % pb_step == 0)
 		{
-			intpb_->update();
+			render_control_.updateProgressBar();
 			if(render_control_.canceled()) { return; }
 		}
 		done = (curr >= n_caus_photons_thread);
@@ -539,7 +538,7 @@ bool MonteCarloIntegrator::createCausticMap(FastRandom &fast_random)
 {
 	if(photon_map_processing_ == PhotonsLoad)
 	{
-		intpb_->setTag("Loading caustic photon map from file...");
+		render_control_.setProgressBarTag("Loading caustic photon map from file...");
 		const std::string filename = image_film_->getFilmSavePath() + "_caustic.photonmap";
 		logger_.logInfo(getName(), ": Loading caustic photon map from: ", filename, ". If it does not match the scene you could have crashes and/or incorrect renders, USE WITH CARE!");
 		if(caustic_map_->load(filename))
@@ -590,9 +589,9 @@ bool MonteCarloIntegrator::createCausticMap(FastRandom &fast_random)
 		}
 
 		logger_.logInfo(getName(), ": Building caustics photon map...");
-		intpb_->init(128, logger_.getConsoleLogColorsEnabled());
+		render_control_.initProgressBar(128, logger_.getConsoleLogColorsEnabled());
 		const int pb_step = std::max(1U, n_caus_photons_ / 128);
-		intpb_->setTag("Building caustics photon map...");
+		render_control_.setProgressBarTag("Building caustics photon map...");
 
 		unsigned int curr = 0;
 
@@ -605,22 +604,22 @@ bool MonteCarloIntegrator::createCausticMap(FastRandom &fast_random)
 		for(int i = 0; i < num_threads_photons_; ++i) threads.emplace_back(&MonteCarloIntegrator::causticWorker, this, std::ref(fast_random), std::ref(curr), i, light_power_d_caustic.get(), lights_caustic, pb_step);
 		for(auto &t : threads) t.join();
 
-		intpb_->done();
-		intpb_->setTag("Caustic photon map built.");
+		render_control_.setProgressBarAsDone();
+		render_control_.setProgressBarTag("Caustic photon map built.");
 		if(logger_.isVerbose()) logger_.logVerbose(getName(), ": Done.");
 		logger_.logInfo(getName(), ": Shot ", curr, " caustic photons from ", num_lights_caustic, " light(s).");
 		if(logger_.isVerbose()) logger_.logVerbose(getName(), ": Stored caustic photons: ", caustic_map_->nPhotons());
 
 		if(caustic_map_->nPhotons() > 0)
 		{
-			intpb_->setTag("Building caustic photons kd-tree...");
+			render_control_.setProgressBarTag("Building caustic photons kd-tree...");
 			caustic_map_->updateTree();
 			if(logger_.isVerbose()) logger_.logVerbose(getName(), ": Done.");
 		}
 
 		if(photon_map_processing_ == PhotonsGenerateAndSave)
 		{
-			intpb_->setTag("Saving caustic photon map to file...");
+			render_control_.setProgressBarTag("Saving caustic photon map to file...");
 			std::string filename = image_film_->getFilmSavePath() + "_caustic.photonmap";
 			logger_.logInfo(getName(), ": Saving caustic photon map to: ", filename);
 			if(caustic_map_->save(filename) && logger_.isVerbose()) logger_.logVerbose(getName(), ": Caustic map saved.");

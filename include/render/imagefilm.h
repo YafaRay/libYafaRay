@@ -43,7 +43,6 @@ namespace yafaray {
 	Holds RGBA and Density (for actual bidirectional pathtracing implementation) buffers.
 */
 
-class ProgressBar;
 class Scene;
 class ImageOutput;
 class Rgb;
@@ -92,7 +91,7 @@ class ImageFilm final
 		/*! Indicate that all pixels inside the area have been sampled for this pass */
 		void finishArea(const RenderView *render_view, RenderControl &render_control, const RenderArea &a, const EdgeToonParams &edge_params);
 		/*! Output all pixels to the color output */
-		void flush(const RenderView *render_view, const RenderControl &render_control, const EdgeToonParams &edge_params, Flags flags = All);
+		void flush(const RenderView *render_view, RenderControl &render_control, const EdgeToonParams &edge_params, Flags flags = All);
 		void cleanup() { weights_.clear(); }
 		/*! query if sample (x,y) was flagged to need more samples.
 			IMPORTANT! You may only call this after you have called nextPass(true, ...), otherwise
@@ -114,8 +113,6 @@ class ImageFilm final
 		void setNumDensitySamples(int n) { num_density_samples_ = n; }
 		/*! Sets the adaptative AA sampling threshold */
 		void setAaThreshold(float thresh) { aa_noise_params_.threshold_ = thresh; }
-		/*! Sets a custom progress bar in the image film */
-		void setProgressBar(std::shared_ptr<ProgressBar> pb);
 		/*! The following methods set the strings used for the parameters badge rendering */
 		int getTotalPixels() const { return rect_.getArea(); };
 		void setAaNoiseParams(const AaNoiseParams &aa_noise_params) { aa_noise_params_ = aa_noise_params; };
@@ -140,8 +137,8 @@ class ImageFilm final
 		std::string getFilmPath() const;
 		bool imageFilmLoad(const std::string &filename);
 		void imageFilmLoadAllInFolder(RenderControl &render_control);
-		bool imageFilmSave();
-		void imageFilmFileBackup() const;
+		bool imageFilmSave(RenderControl &render_control);
+		void imageFilmFileBackup(RenderControl &render_control) const;
 		void setImagesAutoSaveParams(const AutoSaveParams &auto_save_params) { images_auto_save_params_ = auto_save_params; }
 		void setFilmLoadSaveParams(const FilmLoadSave &film_load_save) { film_load_save_ = film_load_save; }
 		std::string getFilmSavePath() const { return film_load_save_.path_; }
@@ -180,7 +177,6 @@ class ImageFilm final
 		const Layers &layers_;
 		const std::map<std::string, std::unique_ptr<ImageOutput>> &outputs_;
 		std::unique_ptr<ImageSplitter> splitter_;
-		std::shared_ptr<ProgressBar> progress_bar_;
 
 		AutoSaveParams images_auto_save_params_;
 		FilmLoadSave film_load_save_;

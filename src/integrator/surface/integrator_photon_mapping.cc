@@ -26,7 +26,6 @@
 #include "volume/volume.h"
 #include "color/color_layers.h"
 #include "common/param.h"
-#include "render/progress_bar.h"
 #include "sampler/halton.h"
 #include "sampler/sample_pdf1d.h"
 #include "light/light.h"
@@ -82,7 +81,7 @@ void PhotonIntegrator::preGatherWorker(PreGatherData *gdata, float ds_rad, int n
 		gdata->mutx_.lock();
 		start = gdata->fetched_;
 		end = gdata->fetched_ = std::min(total, start + 32);
-		gdata->pbar_->update(32);
+		gdata->render_control_.updateProgressBar(32);
 		gdata->mutx_.unlock();
 	}
 }
@@ -217,7 +216,7 @@ void PhotonIntegrator::diffuseWorker(FastRandom &fast_random, PreGatherData &pgd
 		++curr;
 		if(curr % pb_step == 0)
 		{
-			intpb_->update();
+			render_control_.updateProgressBar();
 			if(render_control_.canceled()) { return; }
 		}
 		done = (curr >= n_diffuse_photons_thread);
@@ -281,7 +280,7 @@ bool PhotonIntegrator::preprocess(FastRandom &fast_random, ImageFilm *image_film
 
 		if(use_photon_caustics_)
 		{
-			intpb_->setTag("Loading caustic photon map from file...");
+			render_control_.setProgressBarTag("Loading caustic photon map from file...");
 			const std::string filename = image_film_->getFilmSavePath() + "_caustic.photonmap";
 			logger_.logInfo(getName(), ": Loading caustic photon map from: ", filename, ". If it does not match the scene you could have crashes and/or incorrect renders, USE WITH CARE!");
 			if(caustic_map_->load(filename))
@@ -293,7 +292,7 @@ bool PhotonIntegrator::preprocess(FastRandom &fast_random, ImageFilm *image_film
 
 		if(use_photon_diffuse_)
 		{
-			intpb_->setTag("Loading diffuse photon map from file...");
+			render_control_.setProgressBarTag("Loading diffuse photon map from file...");
 			const std::string filename = image_film_->getFilmSavePath() + "_diffuse.photonmap";
 			logger_.logInfo(getName(), ": Loading diffuse photon map from: ", filename, ". If it does not match the scene you could have crashes and/or incorrect renders, USE WITH CARE!");
 			if(diffuse_map_->load(filename))
@@ -305,7 +304,7 @@ bool PhotonIntegrator::preprocess(FastRandom &fast_random, ImageFilm *image_film
 
 		if(use_photon_diffuse_ && final_gather_)
 		{
-			intpb_->setTag("Loading FG radiance photon map from file...");
+			render_control_.setProgressBarTag("Loading FG radiance photon map from file...");
 			const std::string filename = image_film_->getFilmSavePath() + "_fg_radiance.photonmap";
 			logger_.logInfo(getName(), ": Loading FG radiance photon map from: ", filename, ". If it does not match the scene you could have crashes and/or incorrect renders, USE WITH CARE!");
 			if(radiance_map_->load(filename))
@@ -398,7 +397,7 @@ bool PhotonIntegrator::preprocess(FastRandom &fast_random, ImageFilm *image_film
 	//shoot photons
 	unsigned int curr = 0;
 	// for radiance map:
-	PreGatherData pgdat(diffuse_map_.get());
+	PreGatherData pgdat(render_control_, diffuse_map_.get());
 
 	const std::vector<const Light *> lights_diffuse = render_view_->getLightsEmittingDiffusePhotons();
 	if(lights_diffuse.empty())
@@ -425,9 +424,9 @@ bool PhotonIntegrator::preprocess(FastRandom &fast_random, ImageFilm *image_film
 		//shoot photons
 		curr = 0;
 		logger_.logInfo(getName(), ": Building diffuse photon map...");
-		intpb_->init(128, logger_.getConsoleLogColorsEnabled());
+		render_control_.initProgressBar(128, logger_.getConsoleLogColorsEnabled());
 		const int pb_step = std::max(1U, n_diffuse_photons_ / 128);
-		intpb_->setTag("Building diffuse photon map...");
+		render_control_.setProgressBarTag("Building diffuse photon map...");
 		//Pregather diffuse photons
 		n_diffuse_photons_ = std::max((unsigned int) num_threads_photons_, (n_diffuse_photons_ / num_threads_photons_) * num_threads_photons_); //rounding the number of diffuse photons so it's a number divisible by the number of threads (distribute uniformly among the threads). At least 1 photon per thread
 		logger_.logParams(getName(), ": Shooting ", n_diffuse_photons_, " photons across ", num_threads_photons_, " threads (", (n_diffuse_photons_ / num_threads_photons_), " photons/thread)");
@@ -436,8 +435,8 @@ bool PhotonIntegrator::preprocess(FastRandom &fast_random, ImageFilm *image_film
 		for(int i = 0; i < num_threads_photons_; ++i) threads.emplace_back(&PhotonIntegrator::diffuseWorker, this, std::ref(fast_random), std::ref(pgdat), std::ref(curr), i, light_power_d_diffuse.get(), lights_diffuse, pb_step);
 		for(auto &t : threads) t.join();
 
-		intpb_->done();
-		intpb_->setTag("Diffuse photon map built.");
+		render_control_.setProgressBarAsDone();
+		render_control_.setProgressBarTag("Diffuse photon map built.");
 		if(logger_.isVerbose()) logger_.logVerbose(getName(), ": Diffuse photon map built.");
 		logger_.logInfo(getName(), ": Shot ", curr, " photons from ", num_lights_diffuse, " light(s)");
 
@@ -461,13 +460,13 @@ bool PhotonIntegrator::preprocess(FastRandom &fast_random, ImageFilm *image_film
 		if(num_threads_photons_ >= 2)
 		{
 			logger_.logInfo(getName(), ": Building diffuse photons kd-tree:");
-			intpb_->setTag("Building diffuse photons kd-tree...");
+			render_control_.setProgressBarTag("Building diffuse photons kd-tree...");
 			diffuse_map_build_kd_tree_thread = std::thread(&PhotonIntegrator::photonMapKdTreeWorker, diffuse_map_.get());
 		}
 		else
 		{
 			logger_.logInfo(getName(), ": Building diffuse photons kd-tree:");
-			intpb_->setTag("Building diffuse photons kd-tree...");
+			render_control_.setProgressBarTag("Building diffuse photons kd-tree...");
 			diffuse_map_->updateTree();
 			if(logger_.isVerbose()) logger_.logVerbose(getName(), ": Done.");
 		}
@@ -501,9 +500,9 @@ bool PhotonIntegrator::preprocess(FastRandom &fast_random, ImageFilm *image_film
 		}
 
 		logger_.logInfo(getName(), ": Building caustics photon map...");
-		intpb_->init(128, logger_.getConsoleLogColorsEnabled());
+		render_control_.initProgressBar(128, logger_.getConsoleLogColorsEnabled());
 		const int pb_step = std::max(1U, n_caus_photons_ / 128);
-		intpb_->setTag("Building caustics photon map...");
+		render_control_.setProgressBarTag("Building caustics photon map...");
 		//Pregather caustic photons
 
 		n_caus_photons_ = std::max((unsigned int) num_threads_photons_, (n_caus_photons_ / num_threads_photons_) * num_threads_photons_); //rounding the number of diffuse photons so it's a number divisible by the number of threads (distribute uniformly among the threads). At least 1 photon per thread
@@ -515,8 +514,8 @@ bool PhotonIntegrator::preprocess(FastRandom &fast_random, ImageFilm *image_film
 		for(int i = 0; i < num_threads_photons_; ++i) threads.emplace_back(&PhotonIntegrator::causticWorker, this, std::ref(fast_random), std::ref(curr), i, light_power_d_caustic.get(), lights_caustic, pb_step);
 		for(auto &t : threads) t.join();
 
-		intpb_->done();
-		intpb_->setTag("Caustics photon map built.");
+		render_control_.setProgressBarAsDone();
+		render_control_.setProgressBarTag("Caustics photon map built.");
 		logger_.logInfo(getName(), ": Shot ", curr, " caustic photons from ", num_lights_caustic, " light(s).");
 		if(logger_.isVerbose()) logger_.logVerbose(getName(), ": Stored caustic photons: ", caustic_map_->nPhotons());
 	}
@@ -531,13 +530,13 @@ bool PhotonIntegrator::preprocess(FastRandom &fast_random, ImageFilm *image_film
 		if(num_threads_photons_ >= 2)
 		{
 			logger_.logInfo(getName(), ": Building caustic photons kd-tree:");
-			intpb_->setTag("Building caustic photons kd-tree...");
+			render_control_.setProgressBarTag("Building caustic photons kd-tree...");
 			caustic_map_build_kd_tree_thread = std::thread(&PhotonIntegrator::photonMapKdTreeWorker, caustic_map_.get());
 		}
 		else
 		{
 			logger_.logInfo(getName(), ": Building caustic photons kd-tree:");
-			intpb_->setTag("Building caustic photons kd-tree...");
+			render_control_.setProgressBarTag("Building caustic photons kd-tree...");
 			caustic_map_->updateTree();
 			if(logger_.isVerbose()) logger_.logVerbose(getName(), ": Done.");
 		}
@@ -568,10 +567,8 @@ bool PhotonIntegrator::preprocess(FastRandom &fast_random, ImageFilm *image_film
 		// ================ //
 		int n_threads = num_threads_;
 		pgdat.radiance_vec_.resize(pgdat.rad_points_.size());
-		if(intpb_) pgdat.pbar_ = intpb_;
-		else pgdat.pbar_ = std::make_shared<ConsoleProgressBar>(80);
-		pgdat.pbar_->init(pgdat.rad_points_.size(), logger_.getConsoleLogColorsEnabled());
-		pgdat.pbar_->setTag("Pregathering radiance data for final gathering...");
+		pgdat.render_control_.initProgressBar(pgdat.rad_points_.size(), logger_.getConsoleLogColorsEnabled());
+		pgdat.render_control_.setProgressBarTag("Pregathering radiance data for final gathering...");
 
 		std::vector<std::thread> threads;
 		threads.reserve(n_threads);
@@ -579,8 +576,8 @@ bool PhotonIntegrator::preprocess(FastRandom &fast_random, ImageFilm *image_film
 		for(auto &t : threads) t.join();
 
 		radiance_map_->swapVector(pgdat.radiance_vec_);
-		pgdat.pbar_->done();
-		pgdat.pbar_->setTag("Pregathering radiance data done...");
+		pgdat.render_control_.setProgressBarAsDone();
+		pgdat.render_control_.setProgressBarTag("Pregathering radiance data done...");
 		if(logger_.isVerbose()) logger_.logVerbose(getName(), ": Radiance tree built... Updating the tree...");
 		radiance_map_->updateTree();
 		if(logger_.isVerbose()) logger_.logVerbose(getName(), ": Done.");
@@ -596,7 +593,7 @@ bool PhotonIntegrator::preprocess(FastRandom &fast_random, ImageFilm *image_film
 	{
 		if(use_photon_diffuse_)
 		{
-			intpb_->setTag("Saving diffuse photon map to file...");
+			render_control_.setProgressBarTag("Saving diffuse photon map to file...");
 			const std::string filename = image_film_->getFilmSavePath() + "_diffuse.photonmap";
 			logger_.logInfo(getName(), ": Saving diffuse photon map to: ", filename);
 			if(diffuse_map_->save(filename) && logger_.isVerbose()) logger_.logVerbose(getName(), ": Diffuse map saved.");
@@ -604,7 +601,7 @@ bool PhotonIntegrator::preprocess(FastRandom &fast_random, ImageFilm *image_film
 
 		if(use_photon_caustics_)
 		{
-			intpb_->setTag("Saving caustic photon map to file...");
+			render_control_.setProgressBarTag("Saving caustic photon map to file...");
 			const std::string filename = image_film_->getFilmSavePath() + "_caustic.photonmap";
 			logger_.logInfo(getName(), ": Saving caustic photon map to: ", filename);
 			if(caustic_map_->save(filename) && logger_.isVerbose()) logger_.logVerbose(getName(), ": Caustic map saved.");
@@ -612,7 +609,7 @@ bool PhotonIntegrator::preprocess(FastRandom &fast_random, ImageFilm *image_film
 
 		if(use_photon_diffuse_ && final_gather_)
 		{
-			intpb_->setTag("Saving FG radiance photon map to file...");
+			render_control_.setProgressBarTag("Saving FG radiance photon map to file...");
 			const std::string filename = image_film_->getFilmSavePath() + "_fg_radiance.photonmap";
 			logger_.logInfo(getName(), ": Saving FG radiance photon map to: ", filename);
 			if(radiance_map_->save(filename) && logger_.isVerbose()) logger_.logVerbose(getName(), ": FG radiance map saved.");

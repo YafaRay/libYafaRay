@@ -483,7 +483,7 @@ void ExportC::setupRender() noexcept
 	section_num_lines_ += 2;
 }
 
-void ExportC::render(std::shared_ptr<ProgressBar> &&progress_bar) noexcept
+void ExportC::render(std::unique_ptr<ProgressBar> progress_bar) noexcept
 {
 	file_ << "\t" << "/* Creating image output */\n";
 	file_ << "\t" << "yafaray_paramsSetString(yi, \"image_path\", \"./test01-output1.tga\");\n";

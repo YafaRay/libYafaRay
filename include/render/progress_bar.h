@@ -41,9 +41,10 @@ class ProgressBar
 		virtual void done();
 		//! method to pass some informative text to the progress bar in case needed
 		virtual void setTag(const std::string &text);
+		virtual void setTag(std::string &&text);
 		virtual std::string getTag() const { return tag_; }
 		virtual float getPercent() const;
-		virtual float getTotalSteps() const { return steps_total_; }
+		int getTotalSteps() const { return steps_total_; }
 		static std::string getName() { return "ProgressBar"; }
 
 	protected:

@@ -28,12 +28,11 @@ namespace yafaray {
 
 struct PreGatherData final
 {
-	explicit PreGatherData(PhotonMap *dm): diffuse_map_(dm), fetched_(0) {}
+	explicit PreGatherData(RenderControl &render_control, PhotonMap *dm): render_control_{render_control}, diffuse_map_(dm), fetched_(0) {}
+	RenderControl &render_control_;
 	PhotonMap *diffuse_map_;
-
 	std::vector<RadData> rad_points_;
 	std::vector<Photon> radiance_vec_;
-	std::shared_ptr<ProgressBar> pbar_;
 	volatile int fetched_;
 	std::mutex mutx_;
 };

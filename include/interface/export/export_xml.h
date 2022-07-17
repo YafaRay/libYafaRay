@@ -69,7 +69,7 @@ class ExportXml: public Interface
 		void clearAll() noexcept override; //!< clear the whole environment + scene, i.e. free (hopefully) all memory.
 		void clearOutputs() noexcept override { }
 		void setupRender() noexcept override;
-		void render(std::shared_ptr<ProgressBar> &&progress_bar) noexcept override; //!< render the scene...
+		void render(std::unique_ptr<ProgressBar> progress_bar) noexcept override; //!< render the scene...
 		void setColorSpace(const std::string& color_space_string, float gamma_val) noexcept;
 
 	protected:

@@ -17,7 +17,7 @@
  */
 
 #include "interface/interface.h"
-
+#include "render/progress_bar.h"
 #include <memory>
 #include <utility>
 #include "common/version_build_info.h"
@@ -27,7 +27,6 @@
 #include "render/imagefilm.h"
 #include "common/param.h"
 #include "image/image_output.h"
-#include "render/progress_bar.h"
 #if defined(_WIN32)
 #include <windows.h>
 #endif
@@ -340,10 +339,9 @@ void Interface::setupRender() noexcept
 	scene_->setupSceneRenderParams(*scene_, std::move(*params_));
 }
 
-void Interface::render(std::shared_ptr<ProgressBar> &&progress_bar) noexcept
+void Interface::render(std::unique_ptr<ProgressBar> progress_bar) noexcept
 {
-	if(!scene_->setupSceneProgressBar(*scene_, std::move(progress_bar))) return;
-	scene_->render();
+	scene_->render(std::move(progress_bar));
 }
 
 void Interface::enablePrintDateTime(bool value) noexcept

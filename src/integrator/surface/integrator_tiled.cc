@@ -36,7 +36,6 @@
 #include "sampler/halton.h"
 #include "render/imagefilm.h"
 #include "camera/camera.h"
-#include "render/progress_bar.h"
 #include "sampler/sample.h"
 #include "color/color_layers.h"
 #include "render/render_data.h"
@@ -143,7 +142,7 @@ bool TiledIntegrator::render(FastRandom &fast_random, unsigned int object_index_
 	pass_string << "Rendering pass 1 of " << std::max(1, aa_noise_params_.passes_) << "...";
 
 	logger_.logInfo(pass_string.str());
-	if(intpb_) intpb_->setTag(pass_string.str());
+	render_control_.setProgressBarTag(pass_string.str());
 
 	timer_->addEvent("rendert");
 	timer_->start("rendert");
@@ -155,7 +154,7 @@ bool TiledIntegrator::render(FastRandom &fast_random, unsigned int object_index_
 	{
 		pass_string.clear();
 		pass_string << "Combining ImageFilm files, skipping pass 1...";
-		if(intpb_) intpb_->setTag(pass_string.str());
+		render_control_.setProgressBarTag(pass_string.str());
 	}
 
 	logger_.logInfo(getName(), ": ", pass_string.str());

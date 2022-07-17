@@ -45,12 +45,12 @@ class RenderView;
 class ParamMap;
 class ImageFilm;
 class Format;
-class ProgressBar;
 template <typename T, size_t N> class SquareMatrix;
 typedef SquareMatrix<float, 4> Matrix4f;
 class Object;
 class Image;
 class Logger;
+class ProgressBar;
 
 class Interface
 {
@@ -113,7 +113,7 @@ class Interface
 		virtual void clearOutputs() noexcept;
 		virtual void clearAll() noexcept;
 		virtual void setupRender() noexcept;
-		virtual void render(std::shared_ptr<ProgressBar> &&progress_bar) noexcept; //!< render the scene...
+		virtual void render(std::unique_ptr<ProgressBar> progress_bar) noexcept; //!< render the scene...
 		virtual void defineLayer() noexcept;
 		virtual void cancel() noexcept;
 

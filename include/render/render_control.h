@@ -23,8 +23,11 @@
 #include "common/timer.h"
 #include <string>
 #include <mutex>
+#include <memory>
 
 namespace yafaray {
+
+class ProgressBar;
 
 class RenderControl final
 {
@@ -35,7 +38,6 @@ class RenderControl final
 		void setCanceled();
 		void setTotalPasses(int total_passes);
 		void setCurrentPass(int current_pass);
-		void setCurrentPassPercent(float current_pass_percent);
 		void setRenderInfo(const std::string &render_settings);
 		void setAaNoiseInfo(const std::string &aa_noise_settings);
 		bool inProgress() const;
@@ -49,6 +51,14 @@ class RenderControl final
 		std::string getAaNoiseInfo() const { return aa_noise_info_; }
 		void setDifferentialRaysEnabled(bool value) { ray_differentials_enabled_ = value; }
 		bool getDifferentialRaysEnabled() const { return ray_differentials_enabled_; }
+		void setProgressBar(std::unique_ptr<ProgressBar> progress_bar);
+		void updateProgressBar(int steps_increment = 1);
+		void setProgressBarTag(const std::string &text);
+		void setProgressBarTag(std::string &&text);
+		void initProgressBar(int steps_total, bool colors_enabled);
+		void setProgressBarAsDone();
+		std::string getProgressBarTag() const;
+		int getProgressBarTotalSteps() const;
 
 	private:
 		bool render_in_progress_ = false;
@@ -61,6 +71,7 @@ class RenderControl final
 		std::string render_info_;
 		std::string aa_noise_info_;
 		bool ray_differentials_enabled_ = false;  //!< By default, disable ray differential calculations. Only if at least one texture uses them, then enable differentials. This should avoid the (many) extra calculations when they are not necessary.
+		std::unique_ptr<ProgressBar> progress_bar_;
 		std::mutex mutx_;
 };
 

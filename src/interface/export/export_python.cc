@@ -389,7 +389,7 @@ void ExportPython::setupRender() noexcept
 	file_ << "yi.paramsClearAll()\n\n";
 }
 
-void ExportPython::render(std::shared_ptr<ProgressBar> &&progress_bar) noexcept
+void ExportPython::render(std::unique_ptr<ProgressBar> progress_bar) noexcept
 {
 	file_ << "# Creating image output #\n";
 	file_ << "yi.paramsSetString(\"image_path\", \"./test01-output1.tga\")\n";

@@ -30,7 +30,6 @@ namespace yafaray {
 
 class Logger;
 class Scene;
-class ProgressBar;
 class ImageFilm;
 class RenderView;
 class Accelerator;
@@ -44,7 +43,6 @@ class Integrator
 		//! this MUST be called before any other member function!
 		virtual bool render(FastRandom &fast_random, unsigned int object_index_highest, unsigned int material_index_highest) { return false; }
 		/*! do whatever is required to render the image, if suitable for integrating whole image */
-		void setProgressBar(std::shared_ptr<ProgressBar> pb) { intpb_ = std::move(pb); }
 		/*! gets called before the scene rendering (i.e. before first call to integrate)
 			\return false when preprocessing could not be done properly, true otherwise */
 		virtual bool preprocess(FastRandom &fast_random, ImageFilm *image_film, const RenderView *render_view, const Scene &scene);
@@ -66,7 +64,6 @@ class Integrator
 		std::string render_info_;
 		std::string aa_noise_info_;
 		const Accelerator *accelerator_;
-		std::shared_ptr<ProgressBar> intpb_;
 		Logger &logger_;
 };
 

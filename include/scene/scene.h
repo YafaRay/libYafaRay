@@ -47,7 +47,6 @@ class Object;
 class ImageFilm;
 class Scene;
 class ImageOutput;
-class ProgressBar;
 class Format;
 class ParamMap;
 class Integrator;
@@ -99,7 +98,7 @@ class Scene final
 		void createDefaultMaterial();
 		void clearNonObjects();
 		void clearAll();
-		bool render();
+		bool render(std::unique_ptr<ProgressBar> progress_bar);
 
 		const Background *getBackground() const;
 		const ImageFilm *getImageFilm() const { return image_film_.get(); }
@@ -137,7 +136,6 @@ class Scene final
 		std::map<std::string, std::unique_ptr<ImageOutput>> &getOutputs() { return outputs_; }
 		const std::map<std::string, std::unique_ptr<ImageOutput>> &getOutputs() const { return outputs_; }
 		bool setupSceneRenderParams(Scene &scene, ParamMap &&params);
-		bool setupSceneProgressBar(Scene &scene, std::shared_ptr<ProgressBar> &&progress_bar);
 		void defineLayer(ParamMap &&params);
 		void defineLayer(std::string &&layer_type_name, std::string &&image_type_name, std::string &&exported_image_type_name, std::string &&exported_image_name);
 		void defineLayer(LayerDef::Type layer_type, Image::Type image_type = Image::Type::None, Image::Type exported_image_type = Image::Type::None, const std::string &exported_image_name = "");

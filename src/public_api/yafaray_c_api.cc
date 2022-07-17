@@ -341,9 +341,9 @@ void yafaray_setupRender(yafaray_Interface_t *interface)
 
 void yafaray_render(yafaray_Interface_t *interface, yafaray_ProgressBarCallback_t monitor_callback, void *callback_data, yafaray_DisplayConsole_t progress_bar_display_console)
 {
-	std::shared_ptr<yafaray::ProgressBar> progress_bar;
-	if(progress_bar_display_console == YAFARAY_DISPLAY_CONSOLE_NORMAL) progress_bar = std::make_shared<yafaray::ConsoleProgressBar>(80, monitor_callback, callback_data);
-	else progress_bar = std::make_shared<yafaray::ProgressBar>(monitor_callback, callback_data);
+	std::unique_ptr<yafaray::ProgressBar> progress_bar;
+	if(progress_bar_display_console == YAFARAY_DISPLAY_CONSOLE_NORMAL) progress_bar = std::make_unique<yafaray::ConsoleProgressBar>(80, monitor_callback, callback_data);
+	else progress_bar = std::make_unique<yafaray::ProgressBar>(monitor_callback, callback_data);
 	reinterpret_cast<yafaray::Interface *>(interface)->render(std::move(progress_bar));
 }
 

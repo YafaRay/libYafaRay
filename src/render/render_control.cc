@@ -17,8 +17,49 @@
  */
 
 #include "render/render_control.h"
+#include "render/progress_bar.h"
 
 namespace yafaray {
+
+void RenderControl::setProgressBar(std::unique_ptr<ProgressBar> progress_bar)
+{
+	progress_bar_ = std::move(progress_bar);
+}
+
+void RenderControl::updateProgressBar(int steps_increment)
+{
+	progress_bar_->update(steps_increment);
+}
+
+void RenderControl::setProgressBarTag(const std::string &text)
+{
+	progress_bar_->setTag(text);
+}
+
+void RenderControl::setProgressBarTag(std::string &&text)
+{
+	progress_bar_->setTag(std::move(text));
+}
+
+void RenderControl::setProgressBarAsDone()
+{
+	progress_bar_->done();
+}
+
+std::string RenderControl::getProgressBarTag() const
+{
+	return progress_bar_->getTag();
+}
+
+int RenderControl::getProgressBarTotalSteps() const
+{
+	return progress_bar_->getTotalSteps();
+}
+
+void RenderControl::initProgressBar(int steps_total, bool colors_enabled)
+{
+	progress_bar_->init(steps_total, colors_enabled);
+}
 
 void RenderControl::setStarted()
 {
@@ -69,12 +110,6 @@ void RenderControl::setCurrentPass(int current_pass)
 {
 	std::lock_guard<std::mutex>lock_guard(mutx_);
 	current_pass_ = current_pass;
-}
-
-void RenderControl::setCurrentPassPercent(float current_pass_percent)
-{
-	std::lock_guard<std::mutex>lock_guard(mutx_);
-	current_pass_percent_ = current_pass_percent;
 }
 
 void RenderControl::setAaNoiseInfo(const std::string &aa_noise_settings)

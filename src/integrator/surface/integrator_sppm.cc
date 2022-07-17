@@ -24,7 +24,6 @@
 #include "geometry/surface.h"
 #include "volume/volume.h"
 #include "common/param.h"
-#include "render/progress_bar.h"
 #include "render/imagefilm.h"
 #include "sampler/sample_pdf1d.h"
 #include "light/light.h"
@@ -93,7 +92,7 @@ bool SppmIntegrator::render(FastRandom &fast_random, unsigned int object_index_h
 
 	pass_string << "Rendering pass 1 of " << std::max(1, pass_num_) << "...";
 	logger_.logInfo(getName(), ": ", pass_string.str());
-	if(intpb_) intpb_->setTag(pass_string.str());
+	render_control_.setProgressBarTag(pass_string.str());
 
 	timer_->addEvent("rendert");
 	timer_->start("rendert");
@@ -111,7 +110,7 @@ bool SppmIntegrator::render(FastRandom &fast_random, unsigned int object_index_h
 	{
 		pass_string.clear();
 		pass_string << "Loading film file, skipping pass 1...";
-		intpb_->setTag(pass_string.str());
+		render_control_.setProgressBarTag(pass_string.str());
 	}
 
 	logger_.logInfo(getName(), ": ", pass_string.str());
@@ -455,7 +454,7 @@ void SppmIntegrator::photonWorker(FastRandom &fast_random, unsigned int &total_p
 		++curr;
 		if(curr % pb_step == 0)
 		{
-			intpb_->update();
+			render_control_.updateProgressBar();
 			if(render_control_.canceled()) { return; }
 		}
 		done = (curr >= n_photons_thread);
@@ -515,16 +514,14 @@ void SppmIntegrator::prePass(FastRandom &fast_random, int samples, int offset, b
 	//shoot photons
 	unsigned int curr = 0;
 	RandomGenerator random_generator(rand() + offset * (4517) + 123);
-	std::string previous_progress_tag;
-	int previous_progress_total_steps = 0;
-	previous_progress_tag = intpb_->getTag();
-	previous_progress_total_steps = intpb_->getTotalSteps();
+	std::string previous_progress_tag = render_control_.getProgressBarTag();
+	int previous_progress_total_steps = render_control_.getProgressBarTotalSteps();
 
 	if(b_hashgrid_) logger_.logInfo(getName(), ": Building photon hashgrid...");
 	else logger_.logInfo(getName(), ": Building photon map...");
-	intpb_->init(128, logger_.getConsoleLogColorsEnabled());
+	render_control_.initProgressBar(128, logger_.getConsoleLogColorsEnabled());
 	const int pb_step = std::max(1U, n_photons_ / 128);
-	intpb_->setTag(previous_progress_tag + " - building photon map...");
+	render_control_.setProgressBarTag(previous_progress_tag + " - building photon map...");
 
 	n_photons_ = std::max((unsigned int) num_threads_photons_, (n_photons_ / num_threads_photons_) * num_threads_photons_); //rounding the number of diffuse photons so it's a number divisible by the number of threads (distribute uniformly among the threads). At least 1 photon per thread
 
@@ -535,8 +532,8 @@ void SppmIntegrator::prePass(FastRandom &fast_random, int samples, int offset, b
 	for(int i = 0; i < num_threads_photons_; ++i) threads.emplace_back(&SppmIntegrator::photonWorker, this, std::ref(fast_random), std::ref(curr), i, num_lights, light_power_d.get(), lights_, pb_step);
 	for(auto &t : threads) t.join();
 
-	intpb_->done();
-	intpb_->setTag(previous_progress_tag + " - photon map built.");
+	render_control_.setProgressBarAsDone();
+	render_control_.setProgressBarTag(previous_progress_tag + " - photon map built.");
 	if(logger_.isVerbose()) logger_.logVerbose(getName(), ":Photon map built.");
 	logger_.logInfo(getName(), ": Shot ", curr, " photons from ", num_lights, " light(s)");
 
@@ -578,11 +575,8 @@ void SppmIntegrator::prePass(FastRandom &fast_random, int samples, int offset, b
 	else
 		logger_.logInfo(getName(), ": PhotonMap building time: ", timer_->getTime("prepass"));
 
-	if(intpb_)
-	{
-		intpb_->setTag(previous_progress_tag);
-		intpb_->init(previous_progress_total_steps, logger_.getConsoleLogColorsEnabled());
-	}
+	render_control_.setProgressBarTag(previous_progress_tag);
+	render_control_.initProgressBar(previous_progress_total_steps, logger_.getConsoleLogColorsEnabled());
 	return;
 }
 
