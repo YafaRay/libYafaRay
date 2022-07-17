@@ -18,6 +18,7 @@
 
 target_sources(libyafaray4
 	PRIVATE
+		integrator_surface.cc
 		integrator_bidirectional.cc
 		integrator_debug.cc
 		integrator_direct_light.cc

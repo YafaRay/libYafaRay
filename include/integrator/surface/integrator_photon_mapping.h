@@ -41,7 +41,7 @@ struct PreGatherData final
 class PhotonIntegrator final : public MonteCarloIntegrator
 {
 	public:
-		static Integrator *factory(Logger &logger, RenderControl &render_control, const ParamMap &params, const Scene &scene);
+		static SurfaceIntegrator *factory(Logger &logger, RenderControl &render_control, const ParamMap &params, const Scene &scene);
 
 	private:
 		PhotonIntegrator(RenderControl &render_control, Logger &logger, unsigned int d_photons, unsigned int c_photons, bool transparent_shadows = false, int shadow_depth = 4, float ds_rad = 0.1f, float c_rad = 0.01f);

@@ -306,19 +306,30 @@ const Camera * ExportPython::createCamera(std::string &&name) noexcept
 	file_ << "yi.paramsClearAll()\n\n";
 	return nullptr;
 }
-const Background * ExportPython::createBackground(std::string &&name) noexcept
+
+const Background * ExportPython::defineBackground() noexcept
 {
 	writeParamMap(*params_);
 	params_->clear();
-	file_ << "yi.createBackground(\"" << name << "\")\n";
+	file_ << "yi.defineBackground()\n";
 	file_ << "yi.paramsClearAll()\n\n";
 	return nullptr;
 }
-Integrator *ExportPython::createIntegrator(std::string &&name) noexcept
+
+SurfaceIntegrator *ExportPython::defineSurfaceIntegrator() noexcept
 {
 	writeParamMap(*params_);
 	params_->clear();
-	file_ << "yi.createIntegrator(\"" << name << "\")\n";
+	file_ << "yi.defineSurfaceIntegrator()\n";
+	file_ << "yi.paramsClearAll()\n\n";
+	return nullptr;
+}
+
+VolumeIntegrator *ExportPython::defineVolumeIntegrator() noexcept
+{
+	writeParamMap(*params_);
+	params_->clear();
+	file_ << "yi.defineVolumeIntegrator()\n";
 	file_ << "yi.paramsClearAll()\n\n";
 	return nullptr;
 }

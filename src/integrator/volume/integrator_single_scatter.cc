@@ -396,7 +396,7 @@ Rgb SingleScatterIntegrator::integrate(RandomGenerator &random_generator, const 
 	return col;
 }
 
-Integrator * SingleScatterIntegrator::factory(Logger &logger, RenderControl &render_control, const ParamMap &params, const Scene &scene)
+VolumeIntegrator * SingleScatterIntegrator::factory(Logger &logger, RenderControl &render_control, const ParamMap &params, const Scene &scene)
 {
 	bool adapt = false;
 	bool opt = false;

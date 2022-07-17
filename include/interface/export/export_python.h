@@ -22,6 +22,7 @@
 
 #include "geometry/vector.h"
 #include "interface/interface.h"
+#include "integrator/surface/integrator_surface.h"
 #include <fstream>
 #include <iostream>
 #include <map>
@@ -58,8 +59,9 @@ class ExportPython: public Interface
 		Texture *createTexture(std::string &&name) noexcept override;
 		const Material *createMaterial(std::string &&name) noexcept override;
 		const Camera * createCamera(std::string &&name) noexcept override;
-		const Background * createBackground(std::string &&name) noexcept override;
-		Integrator *createIntegrator(std::string &&name) noexcept override;
+		const Background *defineBackground() noexcept override;
+		SurfaceIntegrator *defineSurfaceIntegrator() noexcept override;
+		VolumeIntegrator *defineVolumeIntegrator() noexcept override;
 		VolumeRegion *createVolumeRegion(std::string &&name) noexcept override;
 		RenderView *createRenderView(std::string &&name) noexcept override;
 		Image *createImage(std::string &&name) noexcept override;

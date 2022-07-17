@@ -34,7 +34,8 @@
 #include "geometry/uv.h"
 #include "image/image_manipulation.h"
 #include "image/image_output.h"
-#include "integrator/integrator.h"
+#include "integrator/surface/integrator_surface.h"
+#include "integrator/volume/integrator_volume.h"
 #include "light/light.h"
 #include "material/material.h"
 #include "render/imagefilm.h"
@@ -57,9 +58,9 @@ void Scene::logErrNoType(Logger &logger, const std::string &pname, const std::st
 	logger.logError("Scene: ", pname, " type '", type, "' not specified for \"", name, "\" node!");
 }
 
-void Scene::logErrOnCreate(Logger &logger, const std::string &pname, const std::string &name, const std::string &t)
+void Scene::logErrOnCreate(Logger &logger, const std::string &pname, const std::string &name, const std::string &type)
 {
-	logger.logError("Scene: ", "No ", pname, " could be constructed '", t, "'!");
+	if(type != "none") logger.logError("Scene: ", "No ", pname, " could be constructed '", type, "'!");
 }
 
 void Scene::logInfoVerboseSuccess(Logger &logger, const std::string &pname, const std::string &name, const std::string &t)
@@ -176,26 +177,9 @@ void Scene::setNumThreadsPhotons(int threads_photons)
 	logger_.logParams("Using for Photon Mapping [", nthreads_photons_, "] Threads.");
 }
 
-void Scene::setBackground(const Background *bg)
-{
-	background_ = bg;
-}
-
-void Scene::setSurfIntegrator(SurfaceIntegrator *s)
-{
-	surf_integrator_ = s;
-	creation_state_.changes_ |= CreationState::Flags::COther;
-}
-
-void Scene::setVolIntegrator(VolumeIntegrator *v)
-{
-	vol_integrator_ = v;
-	creation_state_.changes_ |= CreationState::Flags::COther;
-}
-
 const Background *Scene::getBackground() const
 {
-	return background_;
+	return background_.get();
 }
 
 Bound<float> Scene::getSceneBound() const
@@ -275,8 +259,6 @@ void Scene::clearNonObjects()
 	textures_.clear();
 	materials_.clear();
 	cameras_.clear();
-	backgrounds_.clear();
-	integrators_.clear();
 	volume_regions_.clear();
 	outputs_.clear();
 	render_views_.clear();
@@ -332,16 +314,6 @@ const Camera * Scene::getCamera(const std::string &name) const
 Light *Scene::getLight(const std::string &name) const
 {
 	return Scene::findMapItem<Light>(name, lights_);
-}
-
-const Background * Scene::getBackground(const std::string &name) const
-{
-	return Scene::findMapItem<const Background>(name, backgrounds_);
-}
-
-Integrator *Scene::getIntegrator(const std::string &name) const
-{
-	return Scene::findMapItem<Integrator>(name, integrators_);
 }
 
 ImageOutput *Scene::getOutput(const std::string &name) const
@@ -511,9 +483,42 @@ Texture *Scene::createTexture(std::string &&name, ParamMap &&params)
 	return texture;
 }
 
-const Background * Scene::createBackground(std::string &&name, ParamMap &&params)
+template <typename T>
+std::unique_ptr<T> Scene::defineItem(ParamMap &&params, std::string &&name, std::string &&class_name)
 {
-	return createMapItem<const Background>(logger_, std::move(name), "Background", std::move(params), backgrounds_, this);
+	std::string type;
+	if(! params.getParam("type", type))
+	{
+		logErrNoType(logger_, class_name, name, type);
+		return nullptr;
+	}
+	auto result{std::unique_ptr<T>{T::factory(logger_, *this, name, params)}};
+	if(result)
+	{
+		if(logger_.isVerbose()) logInfoVerboseSuccess(logger_, class_name, name, type);
+		return result;
+	}
+	logErrOnCreate(logger_, class_name, name, type);
+	return nullptr;
+}
+
+template <typename T>
+std::unique_ptr<T> Scene::defineIntegrator(ParamMap &&params, std::string &&name, std::string &&class_name)
+{
+	std::string type;
+	if(! params.getParam("type", type))
+	{
+		logErrNoType(logger_, class_name, name, type);
+		return nullptr;
+	}
+	auto result{std::unique_ptr<T>{T::factory(logger_, render_control_, *this, name, params)}};
+	if(result)
+	{
+		if(logger_.isVerbose()) logInfoVerboseSuccess(logger_, class_name, name, type);
+		return result;
+	}
+	else logErrOnCreate(logger_, class_name, name, type);
+	return nullptr;
 }
 
 const Camera *Scene::createCamera(std::string &&name, ParamMap &&params)
@@ -521,27 +526,22 @@ const Camera *Scene::createCamera(std::string &&name, ParamMap &&params)
 	return createMapItem<const Camera>(logger_, std::move(name), "Camera", std::move(params), cameras_, this);
 }
 
-Integrator *Scene::createIntegrator(std::string &&name, ParamMap &&params)
+const Background * Scene::defineBackground(ParamMap &&params)
 {
-	if(integrators_.find(name) != integrators_.end())
-	{
-		logWarnExist(logger_, "Integrator", name); return nullptr;
-	}
-	std::string type;
-	if(! params.getParam("type", type))
-	{
-		logErrNoType(logger_, "Integrator", name, type);
-		return nullptr;
-	}
-	std::unique_ptr<Integrator> item(Integrator::factory(logger_, render_control_, *this, name, params));
-	if(item)
-	{
-		integrators_[name] = std::move(item);
-		if(logger_.isVerbose()) logInfoVerboseSuccess(logger_, "Integrator", name, type);
-		return integrators_[name].get();;
-	}
-	logErrOnCreate(logger_, "Integrator", name, type);
-	return nullptr;
+	background_ = defineItem<const Background>(std::move(params), "background", "Background");
+	return background_.get();
+}
+
+SurfaceIntegrator *Scene::defineSurfaceIntegrator(ParamMap &&params)
+{
+	surf_integrator_ = defineIntegrator<SurfaceIntegrator>(std::move(params), "surface integrator", "SurfaceIntegrator");
+	return surf_integrator_.get();
+}
+
+VolumeIntegrator *Scene::defineVolumeIntegrator(ParamMap &&params)
+{
+	vol_integrator_ = defineIntegrator<VolumeIntegrator>(std::move(params), "volume integrator", "VolumeIntegrator");
+	return vol_integrator_.get();
 }
 
 VolumeRegion *Scene::createVolumeRegion(std::string &&name, ParamMap &&params)
@@ -582,41 +582,6 @@ bool Scene::setupSceneRenderParams(Scene &scene, ParamMap &&params)
 	int adv_base_sampling_offset = 0;
 	int adv_computer_node = 0;
 	bool background_resampling = true;  //If false, the background will not be resampled in subsequent adaptative AA passes
-
-	if(!params.getParam("integrator_name", name))
-	{
-		logger_.logError("Scene: ", "Specify an Integrator!!");
-		return false;
-	}
-	Integrator *integrator = getIntegrator(name);
-	if(!integrator)
-	{
-		logger_.logError("Scene: ", "Specify an _existing_ Integrator!!");
-		return false;
-	}
-	if(integrator->getType() != Integrator::Surface)
-	{
-		logger_.logError("Scene: ", "Integrator '", name, "' is not a surface integrator!");
-		return false;
-	}
-
-	Integrator *volume_integrator = nullptr;
-	if(params.getParam("volintegrator_name", name))
-	{
-		volume_integrator = getIntegrator(name);
-		if(volume_integrator && volume_integrator->getType() != Integrator::Volume)
-		{
-			logger_.logError("Scene: ", "Integrator '", name, "' is not a volume integrator!");
-			return false;
-		}
-	}
-
-	const Background *background = nullptr;
-	if(params.getParam("background_name", name))
-	{
-		background = getBackground(name);
-		if(!background) logger_.logError("Scene: ", "please specify an _existing_ Background!!");
-	}
 
 	params.getParam("AA_passes", aa_noise_params.passes_);
 	params.getParam("AA_minsamples", aa_noise_params.samples_);
@@ -664,12 +629,10 @@ bool Scene::setupSceneRenderParams(Scene &scene, ParamMap &&params)
 	else if(aa_dark_detection_type_string == "curve") aa_noise_params.dark_detection_type_ = AaNoiseParams::DarkDetectionType::Curve;
 	else aa_noise_params.dark_detection_type_ = AaNoiseParams::DarkDetectionType::None;
 
-	scene.setSurfIntegrator(static_cast<SurfaceIntegrator *>(integrator));
-	scene.setVolIntegrator(static_cast<VolumeIntegrator *>(volume_integrator));
+	creation_state_.changes_ |= CreationState::Flags::COther;
 	scene.setAntialiasing(std::move(aa_noise_params));
 	scene.setNumThreads(nthreads);
 	scene.setNumThreadsPhotons(nthreads_photons);
-	if(background) scene.setBackground(background);
 	scene.shadow_bias_auto_ = adv_auto_shadow_bias_enabled;
 	scene.shadow_bias_ = adv_shadow_bias_value;
 	scene.ray_min_dist_auto_ = adv_auto_min_raydist_enabled;
@@ -694,7 +657,7 @@ bool Scene::setupSceneProgressBar(Scene &scene, std::shared_ptr<ProgressBar> &&p
 		if(image_film_) image_film_->setProgressBar(progress_bar);
 		else logger_.logError("Scene: image film does not exist, cannot set progress bar");
 
-		if(getSurfIntegrator()) getSurfIntegrator()->setProgressBar(progress_bar);
+		if(surf_integrator_) surf_integrator_->setProgressBar(progress_bar);
 		else logger_.logError("Scene: integrator does not exist, cannot set progress bar");
 	}
 	return true;

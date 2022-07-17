@@ -23,50 +23,22 @@
 #ifndef YAFARAY_INTEGRATOR_H
 #define YAFARAY_INTEGRATOR_H
 
-#include "common/logger.h"
-#include "common/aa_noise_params.h"
-#include "common/mask_edge_toon_params.h"
-#include "geometry/bound.h"
-#include "color/color.h"
 #include <string>
 #include <memory>
-#include <map>
 
 namespace yafaray {
 
-/*!	Integrate the incoming light scattered by the surfaces
-	hit by a given ray
-*/
-
-class ParamMap;
+class Logger;
 class Scene;
 class ProgressBar;
-class Ray;
-class ColorLayers;
 class ImageFilm;
 class RenderView;
-class Camera;
-class RandomGenerator;
-struct RayDivision;
-struct PixelSamplingData;
-class VolumeRegion;
 class Accelerator;
-class Layers;
-class VolumeIntegrator;
-class Background;
-
-struct ColorLayerAccum
-{
-	explicit ColorLayerAccum(Rgba *color) : color_(color) { }
-	Rgba *color_;
-	Rgba accum_{0.f};
-};
+class FastRandom;
 
 class Integrator
 {
 	public:
-		static Integrator *factory(Logger &logger, RenderControl &render_control, const Scene &scene, const std::string &name, const ParamMap &params);
-
 		explicit Integrator(Logger &logger) : logger_(logger) { }
 		virtual ~Integrator() = default;
 		//! this MUST be called before any other member function!
@@ -96,49 +68,6 @@ class Integrator
 		const Accelerator *accelerator_;
 		std::shared_ptr<ProgressBar> intpb_;
 		Logger &logger_;
-};
-
-class SurfaceIntegrator: public Integrator
-{
-	public:
-		virtual std::pair<Rgb, float> integrate(Ray &ray, FastRandom &fast_random, RandomGenerator &random_generator, std::vector<int> &correlative_sample_number, ColorLayers *color_layers, int thread_id, int ray_level, bool chromatic_enabled, float wavelength, int additional_depth, const RayDivision &ray_division, const PixelSamplingData &pixel_sampling_data, unsigned int object_index_highest, unsigned int material_index_highest) const = 0; 	//!< chromatic_enabled indicates wether the full spectrum is calculated (true) or only a single wavelength (false). wavelength is the (normalized) wavelength being used when chromatic is false. The range is defined going from 400nm (0.0) to 700nm (1.0), although the widest range humans can perceive is ofteb given 380-780nm.
-		bool preprocess(FastRandom &fast_random, ImageFilm *image_film, const RenderView *render_view, const Scene &scene) override;
-
-	protected:
-		SurfaceIntegrator(RenderControl &render_control, Logger &logger) : Integrator(logger), render_control_(render_control) { }
-		Type getType() const override { return Surface; }
-
-	protected:
-		RenderControl &render_control_;
-		int num_threads_ = 1;
-		int num_threads_photons_ = 1;
-		bool shadow_bias_auto_ = true;  //enable automatic shadow bias calculation
-		bool ray_min_dist_auto_ = true;  //enable automatic ray minimum distance calculation
-		AaNoiseParams aa_noise_params_;
-		EdgeToonParams edge_toon_params_;
-		MaskParams mask_params_;
-		Bound<float> scene_bound_;
-		const RenderView *render_view_ = nullptr;
-		const VolumeIntegrator *vol_integrator_ = nullptr;
-		const Camera *camera_ = nullptr;
-		const Background *background_ = nullptr;
-		Timer *timer_ = nullptr;
-		ImageFilm *image_film_ = nullptr;
-		const Layers *layers_ = nullptr;
-};
-
-class VolumeIntegrator: public Integrator
-{
-	public:
-		virtual Rgb transmittance(RandomGenerator &random_generator, const Ray &ray) const = 0;
-		virtual Rgb integrate(RandomGenerator &random_generator, const Ray &ray, int additional_depth) const = 0;
-		Rgb integrate(RandomGenerator &random_generator, const Ray &ray) const { return integrate(random_generator, ray, 0); };
-		bool preprocess(FastRandom &fast_random, ImageFilm *image_film, const RenderView *render_view, const Scene &scene) override;
-
-	protected:
-		explicit VolumeIntegrator(Logger &logger) : Integrator(logger) { }
-		Type getType() const override { return Volume; }
-		const std::map<std::string, std::unique_ptr<VolumeRegion>> *volume_regions_ = nullptr;
 };
 
 } //namespace yafaray

@@ -60,7 +60,7 @@ struct GatherInfo final
 class SppmIntegrator final : public MonteCarloIntegrator
 {
 	public:
-		static Integrator *factory(Logger &logger, RenderControl &render_control, const ParamMap &params, const Scene &scene);
+		static SurfaceIntegrator *factory(Logger &logger, RenderControl &render_control, const ParamMap &params, const Scene &scene);
 
 	private:
 		SppmIntegrator(RenderControl &render_control, Logger &logger, unsigned int d_photons, int passnum, bool transparent_shadows, int shadow_depth);

@@ -24,6 +24,7 @@
 #include "geometry/uv.h"
 #include "geometry/vector.h"
 #include "public_api/yafaray_c_api.h"
+#include "integrator/surface/integrator_surface.h"
 #include <list>
 #include <memory>
 #include <string>
@@ -94,8 +95,9 @@ class Interface
 		virtual Texture *createTexture(std::string &&name) noexcept;
 		virtual const Material *createMaterial(std::string &&name) noexcept;
 		virtual const Camera * createCamera(std::string &&name) noexcept;
-		virtual const Background * createBackground(std::string &&name) noexcept;
-		virtual Integrator *createIntegrator(std::string &&name) noexcept;
+		virtual const Background *defineBackground() noexcept;
+		virtual SurfaceIntegrator *defineSurfaceIntegrator() noexcept;
+		virtual VolumeIntegrator *defineVolumeIntegrator() noexcept;
 		virtual VolumeRegion *createVolumeRegion(std::string &&name) noexcept;
 		virtual RenderView *createRenderView(std::string &&name) noexcept;
 		virtual Image *createImage(std::string &&name) noexcept;

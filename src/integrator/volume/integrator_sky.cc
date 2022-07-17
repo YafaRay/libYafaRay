@@ -192,7 +192,7 @@ float SkyIntegrator::mieScatter(float theta)
 	return (1.f - ((theta - 80.f) / 100.f)) * 0.1644f + ((theta - 80.f) / 100.f) * 0.1;
 }
 
-Integrator * SkyIntegrator::factory(Logger &logger, RenderControl &render_control, const ParamMap &params, const Scene &scene)
+VolumeIntegrator * SkyIntegrator::factory(Logger &logger, RenderControl &render_control, const ParamMap &params, const Scene &scene)
 {
 	float s_size = 1.f;
 	float a = .5f;

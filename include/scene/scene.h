@@ -92,10 +92,6 @@ class Scene final
 		ObjId_t getNextFreeId();
 		bool startObjects();
 		bool endObjects();
-		void setBackground(const Background *bg);
-		void setSurfIntegrator(SurfaceIntegrator *s);
-		SurfaceIntegrator *getSurfIntegrator() const { return surf_integrator_; }
-		void setVolIntegrator(VolumeIntegrator *v);
 		void setAntialiasing(AaNoiseParams &&aa_noise_params) { aa_noise_params_ = std::move(aa_noise_params); };
 		void setNumThreads(int threads);
 		void setNumThreadsPhotons(int threads_photons);
@@ -129,8 +125,9 @@ class Scene final
 		Texture *createTexture(std::string &&name, ParamMap &&params);
 		std::unique_ptr<const Material> *createMaterial(std::string &&name, ParamMap &&params, std::list<ParamMap> &&nodes_params);
 		const Camera *createCamera(std::string &&name, ParamMap &&params);
-		const Background *createBackground(std::string &&name, ParamMap &&params);
-		Integrator *createIntegrator(std::string &&name, ParamMap &&params);
+		const Background *defineBackground(ParamMap &&params);
+		SurfaceIntegrator *defineSurfaceIntegrator(ParamMap &&params);
+		VolumeIntegrator *defineVolumeIntegrator(ParamMap &&params);
 		VolumeRegion *createVolumeRegion(std::string &&name, ParamMap &&params);
 		RenderView *createRenderView(std::string &&name, ParamMap &&params);
 		std::shared_ptr<Image> createImage(std::string &&name, ParamMap &&params);
@@ -150,7 +147,7 @@ class Scene final
 		bool isShadowBiasAuto() const { return shadow_bias_auto_; }
 		float getRayMinDist() const { return ray_min_dist_; }
 		bool isRayMinDistAuto() const { return ray_min_dist_auto_; }
-		const VolumeIntegrator *getVolIntegrator() const { return vol_integrator_; }
+		const VolumeIntegrator *getVolIntegrator() const { return vol_integrator_.get(); }
 
 		unsigned int getMaterialIndexHighest() const { return material_index_highest_; }
 		unsigned int getMaterialIndexAuto() const { return material_index_auto_; }
@@ -159,7 +156,7 @@ class Scene final
 
 		static void logWarnExist(Logger &logger, const std::string &pname, const std::string &name);
 		static void logErrNoType(Logger &logger, const std::string &pname, const std::string &name, const std::string &type);
-		static void logErrOnCreate(Logger &logger, const std::string &pname, const std::string &name, const std::string &t);
+		static void logErrOnCreate(Logger &logger, const std::string &pname, const std::string &name, const std::string &type);
 		static void logInfoVerboseSuccess(Logger &logger, const std::string &pname, const std::string &name, const std::string &t);
 		static void logInfoVerboseSuccessDisabled(Logger &logger, const std::string &pname, const std::string &name, const std::string &t);
 
@@ -180,6 +177,8 @@ class Scene final
 	private:
 		template <typename T> static T *findMapItem(const std::string &name, const std::map<std::string, std::unique_ptr<T>> &map);
 		template <typename T> static std::shared_ptr<T> findMapItem(const std::string &name, const std::map<std::string, std::shared_ptr<T>> &map);
+		template <typename T> std::unique_ptr<T> defineItem(ParamMap &&params, std::string &&name, std::string &&class_name);
+		template <typename T> std::unique_ptr<T> defineIntegrator(ParamMap &&params, std::string &&name, std::string &&class_name);
 		void setMaskParams(const ParamMap &params);
 		void setEdgeToonParams(const ParamMap &params);
 		template <typename T> static T *createMapItem(Logger &logger, std::string &&name, std::string &&class_name, ParamMap &&params, std::map<std::string, std::unique_ptr<T>> &map, const Scene *scene, bool check_type_exists = true);
@@ -219,13 +218,11 @@ class Scene final
 		unsigned int object_index_highest_ = 1; //!< Highest object index used for the Normalized Object Index pass.
 		unsigned int object_index_auto_ = 1; //!< Object Index automatically generated for the object-index-auto render pass
 		std::unique_ptr<ImageFilm> image_film_;
-		const Background* background_ = nullptr;
-		SurfaceIntegrator *surf_integrator_ = nullptr;
-		VolumeIntegrator *vol_integrator_ = nullptr;
+		std::unique_ptr<const Background> background_;
+		std::unique_ptr<SurfaceIntegrator> surf_integrator_;
+		std::unique_ptr<VolumeIntegrator> vol_integrator_;
 		std::map<std::string, std::unique_ptr<Texture>> textures_;
 		std::map<std::string, std::unique_ptr<const Camera>> cameras_;
-		std::map<std::string, std::unique_ptr<const Background>> backgrounds_;
-		std::map<std::string, std::unique_ptr<Integrator>> integrators_;
 		std::map<std::string, std::unique_ptr<VolumeRegion>> volume_regions_;
 		std::map<std::string, std::unique_ptr<ImageOutput>> outputs_;
 		std::map<std::string, std::unique_ptr<RenderView>> render_views_;

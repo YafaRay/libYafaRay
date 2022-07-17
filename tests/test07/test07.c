@@ -318,7 +318,7 @@ int main()
 	yafaray_paramsSetString(yi, "type", "constant");
 	yafaray_paramsSetBool(yi, "with_caustic", YAFARAY_BOOL_TRUE);
 	yafaray_paramsSetBool(yi, "with_diffuse", YAFARAY_BOOL_TRUE);
-	yafaray_createBackground(yi, "world_background");
+	yafaray_defineBackground(yi);
 	yafaray_paramsClearAll(yi);
 
 	yafaray_paramsSetColor(yi, "AO_color", 0.9, 0.9, 0.9, 1);
@@ -335,7 +335,7 @@ int main()
 	yafaray_paramsSetString(yi, "type", "directlighting");
 	yafaray_paramsSetBool(yi, "time_forced", YAFARAY_BOOL_FALSE);
 	yafaray_paramsSetFloat(yi, "time_forced_value", 1.f);
-	yafaray_createIntegrator(yi, "default");
+	yafaray_defineSurfaceIntegrator(yi);
 	yafaray_paramsClearAll(yi);
 
 	yafaray_paramsSetString(yi, "exported_image_name", "Combined");
@@ -348,11 +348,9 @@ int main()
 	yafaray_paramsSetInt(yi, "AA_minsamples", 3);
 	yafaray_paramsSetInt(yi, "AA_passes", 1);
 	yafaray_paramsSetInt(yi, "AA_inc_samples", 1);
-	yafaray_paramsSetString(yi, "background_name", "world_background");
 	yafaray_paramsSetString(yi, "filter_type", "gauss");
 	yafaray_paramsSetFloat(yi, "AA_pixelwidth", 1.5);
 	yafaray_paramsSetString(yi, "scene_accelerator", "yafaray-kdtree-original");
-	yafaray_paramsSetString(yi, "integrator_name", "default");
 	yafaray_paramsSetInt(yi, "threads", 1);
 	yafaray_paramsSetInt(yi, "threads_photons", 1);
 	yafaray_paramsSetInt(yi, "width", 480);

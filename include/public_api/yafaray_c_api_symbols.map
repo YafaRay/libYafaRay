@@ -46,8 +46,9 @@ LIBYAFARAY_4.0.0 {
         yafaray_createTexture;
         yafaray_createMaterial;
         yafaray_createCamera;
-        yafaray_createBackground;
-        yafaray_createIntegrator;
+        yafaray_defineBackground;
+        yafaray_defineSurfaceIntegrator;
+        yafaray_defineVolumeIntegrator;
         yafaray_createVolumeRegion;
         yafaray_createRenderView;
         yafaray_createOutput;

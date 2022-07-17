@@ -20,7 +20,7 @@
 #ifndef YAFARAY_INTEGRATOR_TILED_H
 #define YAFARAY_INTEGRATOR_TILED_H
 
-#include "integrator/integrator.h"
+#include "integrator/surface/integrator_surface.h"
 #include "common/aa_noise_params.h"
 #include "color/color.h"
 #include <vector>

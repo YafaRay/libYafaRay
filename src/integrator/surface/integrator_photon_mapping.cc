@@ -759,7 +759,7 @@ Rgb PhotonIntegrator::finalGathering(FastRandom &fast_random, RandomGenerator &r
 	return path_col / (float)n_sampl;
 }
 
-Integrator * PhotonIntegrator::factory(Logger &logger, RenderControl &render_control, const ParamMap &params, const Scene &scene)
+SurfaceIntegrator * PhotonIntegrator::factory(Logger &logger, RenderControl &render_control, const ParamMap &params, const Scene &scene)
 {
 	bool transparent_shadows = false;
 	bool final_gather = true;

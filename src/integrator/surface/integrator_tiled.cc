@@ -24,6 +24,7 @@
  */
 
 #include "integrator/surface/integrator_tiled.h"
+#include "integrator/volume/integrator_volume.h"
 #include <cmath>
 #include <memory>
 #include "common/layers.h"

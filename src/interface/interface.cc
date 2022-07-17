@@ -197,8 +197,9 @@ Light *Interface::createLight(std::string &&name) noexcept { return scene_->crea
 Texture *Interface::createTexture(std::string &&name) noexcept { return scene_->createTexture(std::move(name), std::move(*params_)); }
 const Material *Interface::createMaterial(std::string &&name) noexcept { return scene_->createMaterial(std::move(name), std::move(*params_), std::move(nodes_params_))->get(); }
 const Camera * Interface::createCamera(std::string &&name) noexcept { return scene_->createCamera(std::move(name), std::move(*params_)); }
-const Background * Interface::createBackground(std::string &&name) noexcept { return scene_->createBackground(std::move(name), std::move(*params_)); }
-Integrator *Interface::createIntegrator(std::string &&name) noexcept { return scene_->createIntegrator(std::move(name), std::move(*params_)); }
+const Background *Interface::defineBackground() noexcept { return scene_->defineBackground(std::move(*params_)); }
+SurfaceIntegrator *Interface::defineSurfaceIntegrator() noexcept { return scene_->defineSurfaceIntegrator(std::move(*params_)); }
+VolumeIntegrator *Interface::defineVolumeIntegrator() noexcept { return scene_->defineVolumeIntegrator(std::move(*params_)); }
 VolumeRegion *Interface::createVolumeRegion(std::string &&name) noexcept { return scene_->createVolumeRegion(std::move(name), std::move(*params_)); }
 RenderView *Interface::createRenderView(std::string &&name) noexcept { return scene_->createRenderView(std::move(name), std::move(*params_)); }
 Image *Interface::createImage(std::string &&name) noexcept { return scene_->createImage(std::move(name), std::move(*params_)).get(); }

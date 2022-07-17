@@ -94,8 +94,9 @@ extern "C" {
 	YAFARAY_C_API_EXPORT yafaray_bool_t yafaray_createTexture(yafaray_Interface_t *interface, const char *name);
 	YAFARAY_C_API_EXPORT yafaray_bool_t yafaray_createMaterial(yafaray_Interface_t *interface, const char *name);
 	YAFARAY_C_API_EXPORT yafaray_bool_t yafaray_createCamera(yafaray_Interface_t *interface, const char *name);
-	YAFARAY_C_API_EXPORT yafaray_bool_t yafaray_createBackground(yafaray_Interface_t *interface, const char *name);
-	YAFARAY_C_API_EXPORT yafaray_bool_t yafaray_createIntegrator(yafaray_Interface_t *interface, const char *name);
+	YAFARAY_C_API_EXPORT yafaray_bool_t yafaray_defineBackground(yafaray_Interface_t *interface);
+	YAFARAY_C_API_EXPORT yafaray_bool_t yafaray_defineSurfaceIntegrator(yafaray_Interface_t *interface);
+	YAFARAY_C_API_EXPORT yafaray_bool_t yafaray_defineVolumeIntegrator(yafaray_Interface_t *interface);
 	YAFARAY_C_API_EXPORT yafaray_bool_t yafaray_createVolumeRegion(yafaray_Interface_t *interface, const char *name);
 	YAFARAY_C_API_EXPORT yafaray_bool_t yafaray_createRenderView(yafaray_Interface_t *interface, const char *name);
 	YAFARAY_C_API_EXPORT yafaray_bool_t yafaray_createOutput(yafaray_Interface_t *interface, const char *name);

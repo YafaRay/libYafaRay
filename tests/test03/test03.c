@@ -554,7 +554,7 @@ int main()
 	yafaray_paramsSetString(yi, "type", "constant");
 	yafaray_paramsSetBool(yi, "with_caustic", YAFARAY_BOOL_TRUE);
 	yafaray_paramsSetBool(yi, "with_diffuse", YAFARAY_BOOL_TRUE);
-	yafaray_createBackground(yi, "world_background");
+	yafaray_defineBackground(yi);
 	yafaray_paramsClearAll(yi);
 
 	yafaray_paramsSetColor(yi, "AO_color", 0.9, 0.9, 0.9, 1);
@@ -569,7 +569,7 @@ int main()
 	yafaray_paramsSetInt(yi, "shadowDepth", 2);
 	yafaray_paramsSetBool(yi, "transpShad", YAFARAY_BOOL_FALSE);
 	yafaray_paramsSetString(yi, "type", "directlighting");
-	yafaray_createIntegrator(yi, "default");
+	yafaray_defineSurfaceIntegrator(yi);
 	yafaray_paramsClearAll(yi);
 
 	yafaray_paramsSetString(yi, "exported_image_name", "Combined");
@@ -601,7 +601,6 @@ int main()
 	yafaray_paramsSetInt(yi, "adv_computer_node", 0);
 	yafaray_paramsSetFloat(yi, "adv_min_raydist_value", 5e-05);
 	yafaray_paramsSetFloat(yi, "adv_shadow_bias_value", 0.0005);
-	yafaray_paramsSetString(yi, "background_name", "world_background");
 	yafaray_paramsSetBool(yi, "background_resampling", YAFARAY_BOOL_TRUE);
 	yafaray_paramsSetInt(yi, "film_autosave_interval_passes", 1);
 	yafaray_paramsSetFloat(yi, "film_autosave_interval_seconds", 300);
@@ -612,7 +611,6 @@ int main()
 	yafaray_paramsSetInt(yi, "images_autosave_interval_passes", 1);
 	yafaray_paramsSetFloat(yi, "images_autosave_interval_seconds", 300);
 	yafaray_paramsSetString(yi, "images_autosave_interval_type", "none");
-	yafaray_paramsSetString(yi, "integrator_name", "default");
 	yafaray_paramsSetFloat(yi, "layer_faces_edge_smoothness", 0.5);
 	yafaray_paramsSetInt(yi, "layer_faces_edge_thickness", 1);
 	yafaray_paramsSetFloat(yi, "layer_faces_edge_threshold", 0.01);

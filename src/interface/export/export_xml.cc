@@ -286,18 +286,28 @@ const Camera * ExportXml::createCamera(std::string &&name) noexcept
 	file_ << "</camera>\n";
 	return nullptr;
 }
-const Background * ExportXml::createBackground(std::string &&name) noexcept
+
+const Background * ExportXml::defineBackground() noexcept
 {
-	file_ << "\n<background name=\"" << name << "\">\n";
+	file_ << "\n<background>\n";
 	writeParamMap(*params_);
 	file_ << "</background>\n";
 	return nullptr;
 }
-Integrator *ExportXml::createIntegrator(std::string &&name) noexcept
+
+SurfaceIntegrator *ExportXml::defineSurfaceIntegrator() noexcept
 {
-	file_ << "\n<integrator name=\"" << name << "\">\n";
+	file_ << "\n<surface_integrator>\n";
 	writeParamMap(*params_);
-	file_ << "</integrator>\n";
+	file_ << "</surface_integrator>\n";
+	return nullptr;
+}
+
+VolumeIntegrator *ExportXml::defineVolumeIntegrator() noexcept
+{
+	file_ << "\n<volume_integrator>\n";
+	writeParamMap(*params_);
+	file_ << "</volume_integrator>\n";
 	return nullptr;
 }
 

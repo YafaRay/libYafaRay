@@ -244,14 +244,19 @@ yafaray_bool_t yafaray_createCamera(yafaray_Interface_t *interface, const char *
 	return static_cast<yafaray_bool_t>(reinterpret_cast<yafaray::Interface *>(interface)->createCamera(name) != nullptr);
 }
 
-yafaray_bool_t yafaray_createBackground(yafaray_Interface_t *interface, const char *name)
+yafaray_bool_t yafaray_defineBackground(yafaray_Interface_t *interface)
 {
-	return static_cast<yafaray_bool_t>(reinterpret_cast<yafaray::Interface *>(interface)->createBackground(name) != nullptr);
+	return static_cast<yafaray_bool_t>(reinterpret_cast<yafaray::Interface *>(interface)->defineBackground() != nullptr);
 }
 
-yafaray_bool_t yafaray_createIntegrator(yafaray_Interface_t *interface, const char *name)
+yafaray_bool_t yafaray_defineSurfaceIntegrator(yafaray_Interface_t *interface)
 {
-	return static_cast<yafaray_bool_t>(reinterpret_cast<yafaray::Interface *>(interface)->createIntegrator(name) != nullptr);
+	return static_cast<yafaray_bool_t>(reinterpret_cast<yafaray::Interface *>(interface)->defineSurfaceIntegrator() != nullptr);
+}
+
+yafaray_bool_t yafaray_defineVolumeIntegrator(yafaray_Interface_t *interface)
+{
+	return static_cast<yafaray_bool_t>(reinterpret_cast<yafaray::Interface *>(interface)->defineVolumeIntegrator() != nullptr);
 }
 
 yafaray_bool_t yafaray_createVolumeRegion(yafaray_Interface_t *interface, const char *name)

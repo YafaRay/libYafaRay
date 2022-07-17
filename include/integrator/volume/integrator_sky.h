@@ -21,7 +21,7 @@
 #define YAFARAY_INTEGRATOR_SKY_H
 
 #include <math/random.h>
-#include "integrator/integrator.h"
+#include "integrator/volume/integrator_volume.h"
 
 namespace yafaray {
 
@@ -30,7 +30,7 @@ class Background;
 class SkyIntegrator : public VolumeIntegrator
 {
 	public:
-		static Integrator *factory(Logger &logger, RenderControl &render_control, const ParamMap &params, const Scene &scene);
+		static VolumeIntegrator *factory(Logger &logger, RenderControl &render_control, const ParamMap &params, const Scene &scene);
 
 	private:
 		SkyIntegrator(Logger &logger, float s_size, float a, float ss, float t);

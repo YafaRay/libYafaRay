@@ -21,7 +21,7 @@
 #define YAFARAY_INTEGRATOR_SINGLE_SCATTER_H
 
 
-#include "integrator/integrator.h"
+#include "integrator/volume/integrator_volume.h"
 #include <vector>
 #include "render/render_view.h"
 
@@ -35,7 +35,7 @@ class RandomGenerator;
 class SingleScatterIntegrator final : public VolumeIntegrator
 {
 	public:
-		static Integrator *factory(Logger &logger, RenderControl &render_control, const ParamMap &params, const Scene &scene);
+		static VolumeIntegrator *factory(Logger &logger, RenderControl &render_control, const ParamMap &params, const Scene &scene);
 
 	private:
 		SingleScatterIntegrator(Logger &logger, float s_size, bool adapt, bool opt);

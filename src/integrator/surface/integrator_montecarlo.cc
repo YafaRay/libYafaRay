@@ -19,6 +19,7 @@
  */
 
 #include "integrator/surface/integrator_montecarlo.h"
+#include "integrator/volume/integrator_volume.h"
 
 #include <memory>
 #include "geometry/surface.h"

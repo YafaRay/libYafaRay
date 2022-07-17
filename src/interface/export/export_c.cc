@@ -372,6 +372,7 @@ const Material *ExportC::createMaterial(std::string &&name) noexcept
 	if(section_num_lines_ >= section_max_lines_) file_ << sectionSplit();
 	return nullptr;
 }
+
 const Camera * ExportC::createCamera(std::string &&name) noexcept
 {
 	writeParamMap(*params_);
@@ -382,21 +383,34 @@ const Camera * ExportC::createCamera(std::string &&name) noexcept
 	if(section_num_lines_ >= section_max_lines_) file_ << sectionSplit();
 	return nullptr;
 }
-const Background * ExportC::createBackground(std::string &&name) noexcept
+
+const Background * ExportC::defineBackground() noexcept
 {
 	writeParamMap(*params_);
 	params_->clear();
-	file_ << "\t" << "yafaray_createBackground(yi, \"" << name << "\");\n";
+	file_ << "\t" << "yafaray_defineBackground(yi);\n";
 	file_ << "\t" << "yafaray_paramsClearAll(yi);\n\n";
 	section_num_lines_ += 2;
 	if(section_num_lines_ >= section_max_lines_) file_ << sectionSplit();
 	return nullptr;
 }
-Integrator *ExportC::createIntegrator(std::string &&name) noexcept
+
+SurfaceIntegrator *ExportC::defineSurfaceIntegrator() noexcept
 {
 	writeParamMap(*params_);
 	params_->clear();
-	file_ << "\t" << "yafaray_createIntegrator(yi, \"" << name << "\");\n";
+	file_ << "\t" << "yafaray_defineSurfaceIntegrator(yi);\n";
+	file_ << "\t" << "yafaray_paramsClearAll(yi);\n\n";
+	section_num_lines_ += 2;
+	if(section_num_lines_ >= section_max_lines_) file_ << sectionSplit();
+	return nullptr;
+}
+
+VolumeIntegrator *ExportC::defineVolumeIntegrator() noexcept
+{
+	writeParamMap(*params_);
+	params_->clear();
+	file_ << "\t" << "yafaray_defineVolumeIntegrator(yi);\n";
 	file_ << "\t" << "yafaray_paramsClearAll(yi);\n\n";
 	section_num_lines_ += 2;
 	if(section_num_lines_ >= section_max_lines_) file_ << sectionSplit();

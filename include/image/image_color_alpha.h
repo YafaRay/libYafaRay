@@ -38,8 +38,8 @@ class ImageColorAlpha final : public Image
 		Image::Optimization getOptimization() const override { return Image::Optimization::None; }
 		Rgba getColor(const Point2i &point) const override { return buffer_(point).getColor(); }
 		float getFloat(const Point2i &point) const override { return getColor(point).r_; }
-		void setColor(const Point2i &point, Rgba &&col) override { buffer_(point).setColor(std::move(col)); }
 		void setColor(const Point2i &point, const Rgba &col) override { buffer_(point).setColor(col); }
+		void setColor(const Point2i &point, Rgba &&col) override { buffer_(point).setColor(std::move(col)); }
 		void addColor(const Point2i &point, const Rgba &col) override { buffer_(point).addColor(col); }
 		void setFloat(const Point2i &point, float val) override { setColor(point, Rgba{val}); }
 		void addFloat(const Point2i &point, float val) override { addColor(point, Rgba{val}); }

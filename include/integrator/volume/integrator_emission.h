@@ -20,14 +20,14 @@
 #ifndef YAFARAY_INTEGRATOR_EMISSION_H
 #define YAFARAY_INTEGRATOR_EMISSION_H
 
-#include "integrator/integrator.h"
+#include "integrator/volume/integrator_volume.h"
 
 namespace yafaray {
 
 class EmissionIntegrator final : public VolumeIntegrator
 {
 	public:
-		static Integrator *factory(Logger &logger, RenderControl &render_control, const ParamMap &params, const Scene &scene);
+		static VolumeIntegrator *factory(Logger &logger, RenderControl &render_control, const ParamMap &params, const Scene &scene);
 
 	private:
 		explicit EmissionIntegrator(Logger &logger) : VolumeIntegrator(logger) { }
