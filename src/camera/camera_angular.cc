@@ -27,19 +27,73 @@
 
 namespace yafaray {
 
-AngularCamera::AngularCamera(Logger &logger, const Point3f &pos, const Point3f &look, const Point3f &up,
-							 int resx, int resy, float asp, float angle, float max_angle, bool circ, const Projection &projection,
-							 float const near_clip_distance, float const far_clip_distance) :
-		Camera(logger, pos, look, up, resx, resy, asp, near_clip_distance, far_clip_distance), max_radius_(max_angle / angle), circular_(circ), projection_(projection)
+AngularCamera::Params::Params(const ParamMap &param_map)
+{
+	std::string projection_string;
+
+	param_map.getParam("angle", angle_degrees_);
+	max_angle_degrees_ = angle_degrees_;
+	param_map.getParam("max_angle", max_angle_degrees_);
+	param_map.getParam("circular", circular_);
+	param_map.getParam("mirrored", mirrored_);
+	param_map.getParam("projection", projection_string);
+
+	if(projection_string == "orthographic") projection_ = Params::Projection::Orthographic;
+	else if(projection_string == "stereographic") projection_ = Params::Projection::Stereographic;
+	else if(projection_string == "equisolid_angle") projection_ = Params::Projection::EquisolidAngle;
+	else if(projection_string == "rectilinear") projection_ = Params::Projection::Rectilinear;
+	else projection_ = Params::Projection::Equidistant;
+}
+
+ParamMap AngularCamera::Params::getAsParamMap() const
+{
+	ParamMap result;
+	result["angle"] = angle_degrees_;
+	result["max_angle"] = max_angle_degrees_;
+	result["circular"] = circular_;
+	result["mirrored"] = mirrored_;
+	std::string projection_string;
+	switch(projection_)
+	{
+		case Params::Projection::Orthographic: projection_string = "orthographic"; break;
+		case Params::Projection::Stereographic: projection_string = "stereographic"; break;
+		case Params::Projection::EquisolidAngle: projection_string = "equisolid_angle"; break;
+		case Params::Projection::Rectilinear: projection_string = "rectilinear"; break;
+		default: projection_string = "equidistant"; break;
+	}
+	result["projection"] = projection_string;
+	return result;
+}
+
+ParamMap AngularCamera::getAsParamMap() const
+{
+	ParamMap result{Camera::params_.getAsParamMap()};
+	result.append(params_.getAsParamMap());
+	return result;
+}
+
+const Camera * AngularCamera::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map)
+{
+	Camera::Params camera_params;
+	camera_params.far_clip_distance_ = -1.0e38f;
+	camera_params.loadParamMap(param_map);
+	Params params{param_map};
+	auto cam = new AngularCamera(logger, camera_params, params);
+	if(params.mirrored_) cam->vright_ = -cam->vright_;
+	return cam;
+}
+
+AngularCamera::AngularCamera(Logger &logger, const Camera::Params &camera_params, const Params &params) : Camera{logger, camera_params},
+		params_{params}, angle_{params.angle_degrees_ * math::div_pi_by_180<>}, max_radius_{params.max_angle_degrees_ / params.angle_degrees_}
 {
 	// Initialize camera specific plane coordinates
 	setAxis(cam_x_, cam_y_, cam_z_);
 
-	if(projection == Projection::Orthographic) focal_length_ = 1.f / math::sin(angle);
-	else if(projection == Projection::Stereographic) focal_length_ = 1.f / 2.f / std::tan(angle / 2.f);
-	else if(projection == Projection::EquisolidAngle) focal_length_ = 1.f / 2.f / math::sin(angle / 2.f);
-	else if(projection == Projection::Rectilinear) focal_length_ = 1.f / std::tan(angle);
-	else focal_length_ = 1.f / angle; //By default, AngularProjection::Equidistant
+	if(params_.projection_ == Params::Projection::Orthographic) focal_length_ = 1.f / math::sin(angle_);
+	else if(params_.projection_ == Params::Projection::Stereographic) focal_length_ = 1.f / 2.f / std::tan(angle_ / 2.f);
+	else if(params_.projection_ == Params::Projection::EquisolidAngle) focal_length_ = 1.f / 2.f / math::sin(angle_ / 2.f);
+	else if(params_.projection_ == Params::Projection::Rectilinear) focal_length_ = 1.f / std::tan(angle_);
+	else focal_length_ = 1.f / angle_; //By default, AngularProjection::Equidistant
 }
 
 void AngularCamera::setAxis(const Vec3f &vx, const Vec3f &vy, const Vec3f &vz)
@@ -55,20 +109,20 @@ void AngularCamera::setAxis(const Vec3f &vx, const Vec3f &vy, const Vec3f &vz)
 
 CameraRay AngularCamera::shootRay(float px, float py, const Uv<float> &uv) const
 {
-	const float u = 1.f - 2.f * (px / static_cast<float>(resx_));
-	float v = 2.f * (py / static_cast<float>(resy_)) - 1.f;
+	const float u = 1.f - 2.f * (px / static_cast<float>(resX()));
+	float v = 2.f * (py / static_cast<float>(resY())) - 1.f;
 	v *= aspect_ratio_;
 	const float radius = math::sqrt(u * u + v * v);
 	Ray ray;
-	ray.from_ = position_;
-	if(circular_ && radius > max_radius_) { return {std::move(ray), false}; }
+	ray.from_ = Camera::params_.from_;
+	if(params_.circular_ && radius > max_radius_) { return {std::move(ray), false}; }
 	float theta = 0.f;
 	if(!((u == 0.f) && (v == 0.f))) theta = std::atan2(v, u);
 	float phi;
-	if(projection_ == Projection::Orthographic) phi = math::asin(radius / focal_length_);
-	else if(projection_ == Projection::Stereographic) phi = 2.f * std::atan(radius / (2.f * focal_length_));
-	else if(projection_ == Projection::EquisolidAngle) phi = 2.f * math::asin(radius / (2.f * focal_length_));
-	else if(projection_ == Projection::Rectilinear) phi = std::atan(radius / focal_length_);
+	if(params_.projection_ == Params::Projection::Orthographic) phi = math::asin(radius / focal_length_);
+	else if(params_.projection_ == Params::Projection::Stereographic) phi = 2.f * std::atan(radius / (2.f * focal_length_));
+	else if(params_.projection_ == Params::Projection::EquisolidAngle) phi = 2.f * math::asin(radius / (2.f * focal_length_));
+	else if(params_.projection_ == Params::Projection::Rectilinear) phi = std::atan(radius / focal_length_);
 	else phi = radius / focal_length_; //By default, AngularProjection::Equidistant
 	//float sp = sin(phi);
 	ray.dir_ = math::sin(phi) * (math::cos(theta) * vright_ + math::sin(theta) * vup_) + math::cos(phi) * vto_;
@@ -77,48 +131,10 @@ CameraRay AngularCamera::shootRay(float px, float py, const Uv<float> &uv) const
 	return {std::move(ray), true};
 }
 
-const Camera * AngularCamera::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params)
-{
-	Point3f from{{0, 1, 0}}, to{{0, 0, 0}}, up{{0, 1, 1}};
-	int resx = 320, resy = 200;
-	double aspect = 1.0, angle_degrees = 90, max_angle_degrees = 90;
-	Projection projection = Projection::Equidistant;
-	std::string projection_string;
-	bool circular = true, mirrored = false;
-	float near_clip = 0.0f, far_clip = -1.0e38f;
-	std::string view_name;
-
-	params.getParam("from", from);
-	params.getParam("to", to);
-	params.getParam("up", up);
-	params.getParam("resx", resx);
-	params.getParam("resy", resy);
-	params.getParam("aspect_ratio", aspect);
-	params.getParam("angle", angle_degrees);
-	max_angle_degrees = angle_degrees;
-	params.getParam("max_angle", max_angle_degrees);
-	params.getParam("circular", circular);
-	params.getParam("mirrored", mirrored);
-	params.getParam("projection", projection_string);
-	params.getParam("nearClip", near_clip);
-	params.getParam("farClip", far_clip);
-	params.getParam("view_name", view_name);
-
-	if(projection_string == "orthographic") projection = Projection::Orthographic;
-	else if(projection_string == "stereographic") projection = Projection::Stereographic;
-	else if(projection_string == "equisolid_angle") projection = Projection::EquisolidAngle;
-	else if(projection_string == "rectilinear") projection = Projection::Rectilinear;
-	else projection = Projection::Equidistant;
-
-	auto cam = new AngularCamera(logger, from, to, up, resx, resy, aspect, angle_degrees * math::div_pi_by_180<double>, max_angle_degrees * math::div_pi_by_180<double>, circular, projection, near_clip, far_clip);
-	if(mirrored) cam->vright_ = -cam->vright_;
-	return cam;
-}
-
 Point3f AngularCamera::screenproject(const Point3f &p) const
 {
 	//FIXME
-	Vec3f dir{p - position_};
+	Vec3f dir{p - Camera::params_.from_};
 	dir.normalize();
 	// project p to pixel plane:
 	const float dx = cam_x_ * dir;

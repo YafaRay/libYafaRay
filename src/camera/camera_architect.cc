@@ -25,27 +25,14 @@
 
 namespace yafaray {
 
-ArchitectCamera::ArchitectCamera(Logger &logger, const Point3f &pos, const Point3f &look, const Point3f &up,
-								 int resx, int resy, float aspect,
-								 float df, float ap, float dofd, BokehType bt, BkhBiasType bbt, float bro, float const near_clip_distance, float const far_clip_distance)
-	: PerspectiveCamera(logger, pos, look, up, resx, resy, aspect, df, ap, dofd, bt, bbt, bro, near_clip_distance, far_clip_distance)
+const Camera * ArchitectCamera::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map)
 {
-	// Initialize camera specific plane coordinates
-	setAxis(cam_x_, cam_y_, cam_z_);
+	return new ArchitectCamera(logger, param_map, param_map);
+}
 
-	int ns = (int)bkhtype_;
-	if((ns >= 3) && (ns <= 6))
-	{
-		float w = math::degToRad(bro), wi = math::mult_pi_by_2<> / static_cast<float>(ns);
-		ns = (ns + 2) * 2;
-		ls_.resize(ns);
-		for(int i = 0; i < ns; i += 2)
-		{
-			ls_[i] = math::cos(w);
-			ls_[i + 1] = math::sin(w);
-			w += wi;
-		}
-	}
+ArchitectCamera::ArchitectCamera(Logger &logger, const Camera::Params &camera_params, const PerspectiveCamera::Params &params)
+	: PerspectiveCamera(logger, camera_params, params)
+{
 }
 
 void ArchitectCamera::setAxis(const Vec3f &vx, const Vec3f &vy, const Vec3f &vz)
@@ -54,20 +41,20 @@ void ArchitectCamera::setAxis(const Vec3f &vx, const Vec3f &vy, const Vec3f &vz)
 	cam_y_ = vy;
 	cam_z_ = vz;
 
-	dof_rt_ = cam_x_ * aperture_; // for dof, premul with aperture
-	dof_up_ = cam_y_ * aperture_;
+	dof_rt_ = cam_x_ * params_.aperture_; // for dof, premul with aperture
+	dof_up_ = cam_y_ * params_.aperture_;
 
 	vright_ = cam_x_;
 	vup_ = aspect_ratio_ * Vec3f{{0.f, 0.f, -1.f}};
-	vto_ = (cam_z_ * focal_distance_) - 0.5f * (vup_ + vright_);
-	vup_ /= static_cast<float>(resy_);
-	vright_ /= static_cast<float>(resx_);
+	vto_ = (cam_z_ * params_.focal_distance_) - 0.5f * (vup_ + vright_);
+	vup_ /= static_cast<float>(resY());
+	vright_ /= static_cast<float>(resX());
 }
 
 Point3f ArchitectCamera::screenproject(const Point3f &p) const
 {
 	// FIXME
-	const Vec3f dir{p - position_};
+	const Vec3f dir{p - Camera::params_.from_};
 	// project p to pixel plane:
 	const Vec3f camy{{0.f, 0.f, 1.f}};
 	const Vec3f camz{camy ^ cam_x_};
@@ -78,52 +65,12 @@ Point3f ArchitectCamera::screenproject(const Point3f &p) const
 	float dz = dir * camz;
 
 	Point3f s;
-	s[Axis::Y] = 2 * dy * focal_distance_ / (dz * aspect_ratio_);
+	s[Axis::Y] = 2 * dy * params_.focal_distance_ / (dz * aspect_ratio_);
 	// Needs focal_distance correction
-	const float fod = focal_distance_ * camy * cam_y_ / (camx * cam_x_);
+	const float fod = params_.focal_distance_ * camy * cam_y_ / (camx * cam_x_);
 	s[Axis::X] = 2 * dx * fod / dz;
 	s[Axis::Z] = 0.f;
 	return s;
-}
-
-const Camera * ArchitectCamera::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params)
-{
-	std::string bkhtype = "disk1", bkhbias = "uniform";
-	Point3f from{{0, 1, 0}}, to{{0, 0, 0}}, up{{0, 1, 1}};
-	int resx = 320, resy = 200;
-	float aspect = 1, dfocal = 1, apt = 0, dofd = 0, bkhrot = 0;
-	float near_clip = 0.0f, far_clip = -1.0f;
-	std::string view_name;
-
-	params.getParam("from", from);
-	params.getParam("to", to);
-	params.getParam("up", up);
-	params.getParam("resx", resx);
-	params.getParam("resy", resy);
-	params.getParam("focal", dfocal);
-	params.getParam("aperture", apt);
-	params.getParam("dof_distance", dofd);
-	params.getParam("bokeh_type", bkhtype);
-	params.getParam("bokeh_bias", bkhbias);
-	params.getParam("bokeh_rotation", bkhrot);
-	params.getParam("aspect_ratio", aspect);
-	params.getParam("nearClip", near_clip);
-	params.getParam("farClip", far_clip);
-	params.getParam("view_name", view_name);
-
-	BokehType bt = BokehType::BkDisk1;
-	if(bkhtype == "disk2")			bt = BokehType::BkDisk2;
-	else if(bkhtype == "triangle")	bt = BokehType::BkTri;
-	else if(bkhtype == "square")	bt = BokehType::BkSqr;
-	else if(bkhtype == "pentagon")	bt = BokehType::BkPenta;
-	else if(bkhtype == "hexagon")	bt = BokehType::BkHexa;
-	else if(bkhtype == "ring")		bt = BokehType::BkRing;
-	// bokeh bias
-	BkhBiasType bbt = BkhBiasType::BbNone;
-	if(bkhbias == "center") 		bbt = BkhBiasType::BbCenter;
-	else if(bkhbias == "edge") 		bbt = BkhBiasType::BbEdge;
-
-	return new ArchitectCamera(logger, from, to, up, resx, resy, aspect, dfocal, apt, dofd, bt, bbt, bkhrot, near_clip, far_clip);
 }
 
 } //namespace yafaray

@@ -30,13 +30,10 @@ class Scene;
 class ArchitectCamera final : public PerspectiveCamera
 {
 	public:
-		static const Camera * factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params);
+		static const Camera * factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map);
 
 	private:
-		ArchitectCamera(Logger &logger, const Point3f &pos, const Point3f &look, const Point3f &up,
-						int resx, int resy, float aspect = 1,
-						float df = 1, float ap = 0, float dofd = 0, BokehType bt = BokehType::BkDisk1, BkhBiasType bbt = BkhBiasType::BbNone, float bro = 0,
-						float near_clip_distance = 0.0f, float far_clip_distance = 1e6f);
+		ArchitectCamera(Logger &logger, const Camera::Params &camera_params, const PerspectiveCamera::Params &params);
 		void setAxis(const Vec3f &vx, const Vec3f &vy, const Vec3f &vz) override;
 		Point3f screenproject(const Point3f &p) const override;
 };

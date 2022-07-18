@@ -30,16 +30,22 @@ class Scene;
 class OrthographicCamera final: public Camera
 {
 	public:
-		OrthographicCamera(Logger &logger, const Point3f &pos, const Point3f &look, const Point3f &up,
-						   int resx, int resy, float aspect, float scale,
-						   float near_clip_distance = 0.0f, float far_clip_distance = 1e6f);
+		struct Params
+		{
+			Params(const ParamMap &param_map);
+			ParamMap getAsParamMap() const;
+			float scale_ = 1.f;
+		};
+		static const Camera * factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map);
+
+	private:
+		OrthographicCamera(Logger &logger, const Camera::Params &camera_params, const Params &params);
+		ParamMap getAsParamMap() const override;
 		void setAxis(const Vec3f &vx, const Vec3f &vy, const Vec3f &vz) override;
 		CameraRay shootRay(float px, float py, const Uv<float> &uv) const override;
 		Point3f screenproject(const Point3f &p) const override;
 
-		static const Camera * factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params);
-	protected:
-		float scale_;
+		const Params params_;
 		Point3f pos_;
 };
 

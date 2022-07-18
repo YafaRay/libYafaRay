@@ -35,6 +35,7 @@ class Collection
 		bool empty() const { return items_.empty(); }
 		void set(const K &key, const T &item) { items_[key] = item; };
 		void clear() { items_.clear(); };
+		void append(const Collection<K, T> &collection) { items_.insert(collection.items_.begin(), collection.items_.end()); }
 		typename std::map<K, T>::iterator begin() { return items_.begin(); }
 		typename std::map<K, T>::iterator end() { return items_.end(); }
 		typename std::map<K, T>::const_iterator begin() const { return items_.begin(); }

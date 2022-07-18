@@ -30,12 +30,10 @@ class Scene;
 class EquirectangularCamera final : public Camera
 {
 	public:
-		static const Camera * factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params);
+		static const Camera * factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map);
 
 	private:
-		EquirectangularCamera(Logger &logger, const Point3f &pos, const Point3f &look, const Point3f &up,
-							  int resx, int resy, float aspect,
-							  float near_clip_distance = 0.0f, float far_clip_distance = 1e6f);
+		EquirectangularCamera(Logger &logger, const Camera::Params &camera_params);
 		void setAxis(const Vec3f &vx, const Vec3f &vy, const Vec3f &vz) override;
 		CameraRay shootRay(float px, float py, const Uv<float> &uv) const override;
 		Point3f screenproject(const Point3f &p) const override;

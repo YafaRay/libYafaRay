@@ -25,10 +25,12 @@
 
 namespace yafaray {
 
-EquirectangularCamera::EquirectangularCamera(Logger &logger, const Point3f &pos, const Point3f &look, const Point3f &up,
-											 int resx, int resy, float asp,
-											 float const near_clip_distance, float const far_clip_distance) :
-		Camera(logger, pos, look, up, resx, resy, asp, near_clip_distance, far_clip_distance)
+const Camera * EquirectangularCamera::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map)
+{
+	return new EquirectangularCamera(logger, param_map);
+}
+
+EquirectangularCamera::EquirectangularCamera(Logger &logger, const Camera::Params &camera_params) : Camera(logger, camera_params)
 {
 	// Initialize camera specific plane coordinates
 	setAxis(cam_x_, cam_y_, cam_z_);
@@ -48,9 +50,9 @@ void EquirectangularCamera::setAxis(const Vec3f &vx, const Vec3f &vy, const Vec3
 CameraRay EquirectangularCamera::shootRay(float px, float py, const Uv<float> &uv) const
 {
 	Ray ray;
-	ray.from_ = position_;
-	float u = 2.f * px / (float)resx_ - 1.f;
-	float v = 2.f * py / (float)resy_ - 1.f;
+	ray.from_ = Camera::params_.from_;
+	float u = 2.f * px / static_cast<float>(resX()) - 1.f;
+	float v = 2.f * py / static_cast<float>(resY()) - 1.f;
 	const float phi = math::num_pi<> * u;
 	const float theta = math::div_pi_by_2<> * v;
 	ray.dir_ = math::cos(theta) * (math::cos(phi) * vto_ + math::sin(phi) * vright_) + math::sin(theta) * vup_;
@@ -59,30 +61,10 @@ CameraRay EquirectangularCamera::shootRay(float px, float py, const Uv<float> &u
 	return {std::move(ray), true};
 }
 
-const Camera * EquirectangularCamera::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params)
-{
-	Point3f from{{0, 1, 0}}, to{{0, 0, 0}}, up{{0, 1, 1}};
-	int resx = 320, resy = 200;
-	double aspect = 1.0;
-	float near_clip = 0.0f, far_clip = -1.0e38f;
-	std::string view_name;
-
-	params.getParam("from", from);
-	params.getParam("to", to);
-	params.getParam("up", up);
-	params.getParam("resx", resx);
-	params.getParam("resy", resy);
-	params.getParam("aspect_ratio", aspect);
-	params.getParam("nearClip", near_clip);
-	params.getParam("farClip", far_clip);
-
-	return new EquirectangularCamera(logger, from, to, up, resx, resy, aspect, near_clip, far_clip);
-}
-
 Point3f EquirectangularCamera::screenproject(const Point3f &p) const
 {
 	//FIXME
-	Vec3f dir{p - position_};
+	Vec3f dir{p - Camera::params_.from_};
 	dir.normalize();
 
 	// project p to pixel plane:

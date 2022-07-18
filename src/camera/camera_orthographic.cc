@@ -25,9 +25,31 @@
 
 namespace yafaray {
 
-OrthographicCamera::OrthographicCamera(Logger &logger, const Point3f &pos, const Point3f &look, const Point3f &up,
-									   int resx, int resy, float aspect, float scale, float const near_clip_distance, float const far_clip_distance)
-	: Camera(logger, pos, look, up, resx, resy, aspect, near_clip_distance, far_clip_distance), scale_(scale)
+OrthographicCamera::Params::Params(const ParamMap &param_map)
+{
+	param_map.getParam("scale", scale_);
+}
+
+ParamMap OrthographicCamera::Params::getAsParamMap() const
+{
+	ParamMap result;
+	result["scale"] = scale_;
+	return result;
+}
+
+ParamMap OrthographicCamera::getAsParamMap() const
+{
+	ParamMap result{Camera::params_.getAsParamMap()};
+	result.append(params_.getAsParamMap());
+	return result;
+}
+
+const Camera * OrthographicCamera::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map)
+{
+	return new OrthographicCamera(logger, param_map, param_map);
+}
+
+OrthographicCamera::OrthographicCamera(Logger &logger, const Camera::Params &camera_params, const Params &params) : Camera{logger, camera_params}, params_{params}
 {
 	// Initialize camera specific plane coordinates
 	setAxis(cam_x_, cam_y_, cam_z_);
@@ -42,9 +64,9 @@ void OrthographicCamera::setAxis(const Vec3f &vx, const Vec3f &vy, const Vec3f &
 	vright_ = cam_x_;
 	vup_ = aspect_ratio_ * cam_y_;
 	vto_ = cam_z_;
-	pos_ = position_ - 0.5f * scale_ * (vup_ + vright_);
-	vup_     *= scale_ / (float)resy_;
-	vright_  *= scale_ / (float)resx_;
+	pos_ = Camera::params_.from_ - 0.5f * params_.scale_ * (vup_ + vright_);
+	vup_     *= params_.scale_ / static_cast<float>(resY());
+	vright_  *= params_.scale_ / static_cast<float>(resX());
 }
 
 
@@ -64,29 +86,7 @@ Point3f OrthographicCamera::screenproject(const Point3f &p) const
 	// Project p to pixel plane
 	const float dz = cam_z_ * dir;
 	const Vec3f proj{dir - dz * cam_z_};
-	return {{ 2.f * (proj * cam_x_ / scale_) - 1.f, -2.f * proj * cam_y_ / (aspect_ratio_ * scale_) + 1.f, 0.f }};
-}
-
-const Camera * OrthographicCamera::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params)
-{
-	Point3f from{{0, 1, 0}}, to{{0, 0, 0}}, up{{0, 1, 1}};
-	int resx = 320, resy = 200;
-	double aspect = 1.0, scale = 1.0;
-	float near_clip = 0.0f, far_clip = -1.0f;
-	std::string view_name;
-
-	params.getParam("from", from);
-	params.getParam("to", to);
-	params.getParam("up", up);
-	params.getParam("resx", resx);
-	params.getParam("resy", resy);
-	params.getParam("scale", scale);
-	params.getParam("aspect_ratio", aspect);
-	params.getParam("nearClip", near_clip);
-	params.getParam("farClip", far_clip);
-	params.getParam("view_name", view_name);
-
-	return new OrthographicCamera(logger, from, to, up, resx, resy, aspect, scale, near_clip, far_clip);
+	return {{ 2.f * (proj * cam_x_ / params_.scale_) - 1.f, -2.f * proj * cam_y_ / (aspect_ratio_ * params_.scale_) + 1.f, 0.f }};
 }
 
 } //namespace yafaray
