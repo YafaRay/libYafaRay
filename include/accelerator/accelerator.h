@@ -42,8 +42,8 @@ class Accelerator
 		virtual IntersectData intersectTransparentShadow(const Ray &ray, int max_depth, float dist, const Camera *camera) const = 0;
 		virtual Bound<float> getBound() const = 0;
 		std::pair<std::unique_ptr<const SurfacePoint>, float> intersect(const Ray &ray, const Camera *camera) const;
-		std::pair<bool, const Primitive *> isShadowed(const Ray &ray, float shadow_bias) const;
-		std::tuple<bool, Rgb, const Primitive *> isShadowedTransparentShadow(const Ray &ray, int max_depth, float shadow_bias, const Camera *camera) const;
+		std::pair<bool, const Primitive *> isShadowed(const Ray &ray) const;
+		std::tuple<bool, Rgb, const Primitive *> isShadowedTransparentShadow(const Ray &ray, int max_depth, const Camera *camera) const;
 
 		static constexpr inline float minRayDist() { return min_raydist_; }
 		static constexpr inline float shadowBias() { return shadow_bias_; }
@@ -73,7 +73,7 @@ inline std::pair<std::unique_ptr<const SurfacePoint>, float> Accelerator::inters
 	else return {nullptr, ray.tmax_};
 }
 
-inline std::pair<bool, const Primitive *> Accelerator::isShadowed(const Ray &ray, float shadow_bias) const
+inline std::pair<bool, const Primitive *> Accelerator::isShadowed(const Ray &ray) const
 {
 	Ray sray{ray, Ray::DifferentialsCopy::No};
 	sray.from_ += sray.dir_ * sray.tmin_;
@@ -83,7 +83,7 @@ inline std::pair<bool, const Primitive *> Accelerator::isShadowed(const Ray &ray
 	return {intersect_data.isHit(), intersect_data.primitive_};
 }
 
-inline std::tuple<bool, Rgb, const Primitive *> Accelerator::isShadowedTransparentShadow(const Ray &ray, int max_depth, float shadow_bias, const Camera *camera) const
+inline std::tuple<bool, Rgb, const Primitive *> Accelerator::isShadowedTransparentShadow(const Ray &ray, int max_depth, const Camera *camera) const
 {
 	Ray sray{ray, Ray::DifferentialsCopy::No}; //Should this function use Ray::DifferentialsAssignment::Copy ? If using copy it would be slower but would take into account texture mipmaps, although that's probably irrelevant for transparent shadows?
 	sray.from_ += sray.dir_ * sray.tmin_;

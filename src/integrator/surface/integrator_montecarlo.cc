@@ -107,8 +107,8 @@ Rgb MonteCarloIntegrator::diracLight(RandomGenerator &random_generator, ColorLay
 		const Primitive *shadow_casting_primitive = nullptr;
 		if(cast_shadows)
 		{
-			if(transparent_shadows_) std::tie(shadowed, scol, shadow_casting_primitive) = accelerator_->isShadowedTransparentShadow(light_ray, s_depth_, shadow_bias_, camera_);
-			else std::tie(shadowed, shadow_casting_primitive) = accelerator_->isShadowed(light_ray, shadow_bias_);
+			if(transparent_shadows_) std::tie(shadowed, scol, shadow_casting_primitive) = accelerator_->isShadowedTransparentShadow(light_ray, s_depth_, camera_);
+			else std::tie(shadowed, shadow_casting_primitive) = accelerator_->isShadowed(light_ray);
 		}
 		const float angle_light_normal = sp.getMaterial()->isFlat() ? 1.f : std::abs(sp.n_ * light_ray.dir_);	//If the material has the special attribute "isFlat()" then we will not multiply the surface reflection by the cosine of the angle between light and normal
 		if(!shadowed || color_layer_diffuse_no_shadow)
@@ -199,8 +199,8 @@ Rgb MonteCarloIntegrator::areaLightSampleLight(Halton &hal_2, Halton &hal_3, Ran
 			Rgb scol{0.f};
 			if(cast_shadows)
 			{
-				if(transparent_shadows_) std::tie(shadowed, scol, shadow_casting_primitive) = accelerator_->isShadowedTransparentShadow(light_ray, s_depth_, shadow_bias_, camera_);
-				else std::tie(shadowed, shadow_casting_primitive) = accelerator_->isShadowed(light_ray, shadow_bias_);
+				if(transparent_shadows_) std::tie(shadowed, scol, shadow_casting_primitive) = accelerator_->isShadowedTransparentShadow(light_ray, s_depth_, camera_);
+				else std::tie(shadowed, shadow_casting_primitive) = accelerator_->isShadowed(light_ray);
 			}
 			if((!shadowed && ls.pdf_ > 1e-6f) || layer_diffuse_no_shadow)
 			{
@@ -321,8 +321,8 @@ Rgb MonteCarloIntegrator::areaLightSampleMaterial(Halton &hal_2, Halton &hal_3, 
 				const Primitive *shadow_casting_primitive = nullptr;
 				if(cast_shadows)
 				{
-					if(transparent_shadows_) std::tie(shadowed, scol, shadow_casting_primitive) = accelerator_->isShadowedTransparentShadow(b_ray, s_depth_, shadow_bias_, camera_);
-					else std::tie(shadowed, shadow_casting_primitive) = accelerator_->isShadowed(b_ray, shadow_bias_);
+					if(transparent_shadows_) std::tie(shadowed, scol, shadow_casting_primitive) = accelerator_->isShadowedTransparentShadow(b_ray, s_depth_, camera_);
+					else std::tie(shadowed, shadow_casting_primitive) = accelerator_->isShadowed(b_ray);
 				}
 				if((!shadowed && light_pdf > 1e-6f) || layer_diffuse_no_shadow)
 				{

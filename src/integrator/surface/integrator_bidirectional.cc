@@ -786,8 +786,8 @@ Rgb BidirectionalIntegrator::evalPath(const Accelerator &accelerator, int s, int
 	bool shadowed = false;
 	Rgb scol {0.f};
 	const Primitive *shadow_casting_primitive = nullptr;
-	if(transparent_shadows_) std::tie(shadowed, scol, shadow_casting_primitive) = accelerator_->isShadowedTransparentShadow(con_ray, s_depth_, shadow_bias_, camera_);
-	else std::tie(shadowed, shadow_casting_primitive) = accelerator_->isShadowed(con_ray, shadow_bias_);
+	if(transparent_shadows_) std::tie(shadowed, scol, shadow_casting_primitive) = accelerator_->isShadowedTransparentShadow(con_ray, s_depth_, camera_);
+	else std::tie(shadowed, shadow_casting_primitive) = accelerator_->isShadowed(con_ray);
 	if(shadowed) return Rgb{0.f};
 	if(transparent_shadows_) c_uw *= scol;
 	return c_uw;
@@ -799,8 +799,8 @@ Rgb BidirectionalIntegrator::evalLPath(const Accelerator &accelerator, int t, co
 	bool shadowed = false;
 	Rgb scol {0.f};
 	const Primitive *shadow_casting_primitive = nullptr;
-	if(transparent_shadows_) std::tie(shadowed, scol, shadow_casting_primitive) = accelerator_->isShadowedTransparentShadow(l_ray, s_depth_, shadow_bias_, camera_);
-	else std::tie(shadowed, shadow_casting_primitive) = accelerator_->isShadowed(l_ray, shadow_bias_);
+	if(transparent_shadows_) std::tie(shadowed, scol, shadow_casting_primitive) = accelerator_->isShadowedTransparentShadow(l_ray, s_depth_, camera_);
+	else std::tie(shadowed, shadow_casting_primitive) = accelerator_->isShadowed(l_ray);
 	if(shadowed) return Rgb{0.f};
 	const PathVertex &z = pd.eye_path_[t - 1];
 	Rgb c_uw = lcol * pd.f_z_ * z.alpha_ * std::abs(z.sp_.n_ * l_ray.dir_); // f_y, cos_x0_f and r^2 computed in connectLPath...(light pdf)
@@ -823,8 +823,8 @@ Rgb BidirectionalIntegrator::evalPathE(const Accelerator &accelerator, int s, co
 	bool shadowed = false;
 	Rgb scol {0.f};
 	const Primitive *shadow_casting_primitive = nullptr;
-	if(transparent_shadows_) std::tie(shadowed, scol, shadow_casting_primitive) = accelerator_->isShadowedTransparentShadow(con_ray, s_depth_, shadow_bias_, camera_);
-	else std::tie(shadowed, shadow_casting_primitive) = accelerator_->isShadowed(con_ray, shadow_bias_);
+	if(transparent_shadows_) std::tie(shadowed, scol, shadow_casting_primitive) = accelerator_->isShadowedTransparentShadow(con_ray, s_depth_, camera_);
+	else std::tie(shadowed, shadow_casting_primitive) = accelerator_->isShadowed(con_ray);
 	if(shadowed) return Rgb{0.f};
 	//eval material
 	//Rgb f_y = y.sp.material->eval(state, y.sp, y.wi, pd.w_l_e, BSDF_ALL);

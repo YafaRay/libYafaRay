@@ -141,7 +141,7 @@ Rgb SingleScatterIntegrator::getInScatter(RandomGenerator &random_generator, con
 			{
 				// ...shadowed...
 				if(light_ray.tmax_ < 0.f) light_ray.tmax_ = 1e10;  // infinitely distant light
-				const auto [is_shadowed, primitive] = accelerator_->isShadowed(light_ray, shadow_bias_);
+				const auto [is_shadowed, primitive] = accelerator_->isShadowed(light_ray);
 				if(!is_shadowed)
 				{
 					float light_tr = 0.0f;
@@ -190,7 +190,7 @@ Rgb SingleScatterIntegrator::getInScatter(RandomGenerator &random_generator, con
 				{
 					// ...shadowed...
 					if(light_ray.tmax_ < 0.f) light_ray.tmax_ = 1e10;  // infinitely distant light
-					const auto [is_shadowed, primitive] = accelerator_->isShadowed(light_ray, shadow_bias_);
+					const auto [is_shadowed, primitive] = accelerator_->isShadowed(light_ray);
 					if(!is_shadowed)
 					{
 						ccol += ls.col_ / ls.pdf_;
