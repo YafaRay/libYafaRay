@@ -35,12 +35,25 @@ class RandomGenerator;
 class SingleScatterIntegrator final : public VolumeIntegrator
 {
 	public:
-		static VolumeIntegrator *factory(Logger &logger, RenderControl &render_control, const ParamMap &params, const Scene &scene);
+		inline static std::string getClassName() { return "SingleScatterIntegrator"; }
+		static std::pair<VolumeIntegrator *, ParamError> factory(Logger &logger, const ParamMap &param_map, const Scene &scene);
+		static std::string printMeta(const std::vector<std::string> &excluded_params) { return Params::meta_.print(excluded_params); }
 
 	private:
-		SingleScatterIntegrator(Logger &logger, float s_size, bool adapt, bool opt);
-		std::string getShortName() const override { return "SSc"; }
-		std::string getName() const override { return "SingleScatter"; }
+		[[nodiscard]] Type type() const override { return Type::SingleScatter; }
+		const struct Params
+		{
+			PARAM_INIT_PARENT(VolumeIntegrator);
+			PARAM_DECL(float , step_size_, 1.f, "stepSize", "");
+			PARAM_DECL(bool , adaptive_, false, "adaptive", "");
+			PARAM_DECL(bool , optimize_, false, "optimize", "");
+		} params_;
+		[[nodiscard]] ParamMap getAsParamMap(bool only_non_default) const override;
+
+	private:
+		SingleScatterIntegrator(Logger &logger, ParamError &param_error, const ParamMap &param_map);
+		[[nodiscard]] std::string getShortName() const override { return "SSc"; }
+		[[nodiscard]] std::string getName() const override { return "SingleScatter"; }
 		bool preprocess(FastRandom &fast_random, ImageFilm *image_film, const RenderView *render_view, const Scene &scene) override;
 		// optical thickness, absorption, attenuation, extinction
 		Rgb transmittance(RandomGenerator &random_generator, const Ray &ray) const override;
@@ -48,13 +61,10 @@ class SingleScatterIntegrator final : public VolumeIntegrator
 		Rgb integrate(RandomGenerator &random_generator, const Ray &ray, int additional_depth) const override;
 		Rgb getInScatter(RandomGenerator &random_generator, const Ray &step_ray, float current_step) const;
 
-		bool adaptive_;
-		bool optimize_;
-		float adaptive_step_size_;
+		const float adaptive_step_size_{params_.step_size_ * 100.0f};
 		std::vector<const Light *> lights_;
-		unsigned int vr_size_;
-		float i_vr_size_;
-		float step_size_;
+		unsigned int vr_size_{1};
+		float i_vr_size_{1.f};
 };
 
 } //namespace yafaray

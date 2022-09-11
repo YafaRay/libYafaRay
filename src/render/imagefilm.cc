@@ -28,7 +28,7 @@
 #include "format/format.h"
 #include "scene/scene.h"
 #include "common/file.h"
-#include "common/param.h"
+#include "param/param.h"
 #include "common/timer.h"
 #include "color/color_layers.h"
 #include "math/filter.h"
@@ -39,110 +39,95 @@ namespace yafaray {
 
 typedef float FilterFunction_t(float dx, float dy);
 
-ImageFilm * ImageFilm::factory(Logger &logger, RenderControl &render_control, const ParamMap &params, const Scene *scene)
+ImageFilm::Params::Params(ParamError &param_error, const ParamMap &param_map)
 {
-	if(logger.isDebug())
-	{
-		logger.logDebug("**ImageFilm::factory");
-		params.logContents(logger);
-	}
-	std::string name;
-	std::string tiles_order;
-	int width = 320, height = 240, xstart = 0, ystart = 0;
-	float filt_sz = 1.5;
-	int tile_size = 32;
-	std::string images_autosave_interval_type_string = "none";
-	ImageFilm::AutoSaveParams images_autosave_params;
-	std::string film_load_save_mode_str = "none";
-	std::string film_autosave_interval_type_str = "none";
-	ImageFilm::FilmLoadSave film_load_save;
-
-	params.getParam("AA_pixelwidth", filt_sz);
-	params.getParam("width", width); // width of rendered image
-	params.getParam("height", height); // height of rendered image
-	params.getParam("xstart", xstart); // x-offset (for cropped rendering)
-	params.getParam("ystart", ystart); // y-offset (for cropped rendering)
-	params.getParam("filter_type", name); // AA filter type
-	params.getParam("tile_size", tile_size); // Size of the render buckets or tiles
-	params.getParam("tiles_order", tiles_order); // Order of the render buckets or tiles
-	params.getParam("images_autosave_interval_type", images_autosave_interval_type_string);
-	params.getParam("images_autosave_interval_passes", images_autosave_params.interval_passes_);
-	params.getParam("images_autosave_interval_seconds", images_autosave_params.interval_seconds_);
-	params.getParam("film_load_save_mode", film_load_save_mode_str);
-	params.getParam("film_load_save_path", film_load_save.path_);
-	params.getParam("film_autosave_interval_type", film_autosave_interval_type_str);
-	params.getParam("film_autosave_interval_passes", film_load_save.auto_save_.interval_passes_);
-	params.getParam("film_autosave_interval_seconds", film_load_save.auto_save_.interval_seconds_);
-
-	if(logger.isDebug())logger.logDebug("Images autosave: ", images_autosave_interval_type_string, ", ", images_autosave_params.interval_passes_, ", ", images_autosave_params.interval_seconds_);
-
-	if(images_autosave_interval_type_string == "pass-interval") images_autosave_params.interval_type_ = ImageFilm::ImageFilm::AutoSaveParams::IntervalType::Pass;
-	else if(images_autosave_interval_type_string == "time-interval") images_autosave_params.interval_type_ = ImageFilm::AutoSaveParams::IntervalType::Time;
-	else images_autosave_params.interval_type_ = ImageFilm::AutoSaveParams::IntervalType::None;
-
-
-	if(logger.isDebug())logger.logDebug("ImageFilm load/save mode: ", film_load_save_mode_str, ", path:'", film_load_save.path_, "', interval: ", film_autosave_interval_type_str, ", ", film_load_save.auto_save_.interval_passes_, ", ", film_load_save.auto_save_.interval_seconds_);
-
-	if(film_load_save_mode_str == "load-save") film_load_save.mode_ = ImageFilm::FilmLoadSave::Mode::LoadAndSave;
-	else if(film_load_save_mode_str == "save") film_load_save.mode_ = ImageFilm::FilmLoadSave::Mode::Save;
-	else film_load_save.mode_ = ImageFilm::FilmLoadSave::Mode::None;
-
-	if(film_autosave_interval_type_str == "pass-interval") film_load_save.auto_save_.interval_type_ = ImageFilm::AutoSaveParams::IntervalType::Pass;
-	else if(film_autosave_interval_type_str == "time-interval") film_load_save.auto_save_.interval_type_ = ImageFilm::AutoSaveParams::IntervalType::Time;
-	else film_load_save.auto_save_.interval_type_ = ImageFilm::AutoSaveParams::IntervalType::None;
-
-	ImageFilm::FilterType type = ImageFilm::FilterType::Box;
-	if(name == "mitchell") type = ImageFilm::FilterType::Mitchell;
-	else if(name == "gauss") type = ImageFilm::FilterType::Gauss;
-	else if(name == "lanczos") type = ImageFilm::FilterType::Lanczos;
-	else if(name != "box") logger.logWarning("ImageFilm: ", "No AA filter defined defaulting to Box!");
-
-	ImageSplitter::TilesOrderType tiles_order_type = ImageSplitter::CentreRandom;
-	if(tiles_order == "linear") tiles_order_type = ImageSplitter::Linear;
-	else if(tiles_order == "random") tiles_order_type = ImageSplitter::Random;
-	else if(tiles_order != "centre" && logger.isVerbose()) logger.logVerbose("ImageFilm: ", "Defaulting to Centre tiles order."); // this is info imho not a warning
-
-	const Rect rect{Point2i{{xstart, ystart}}, Size2i{{width, height}}};
-
-	auto film = new ImageFilm(logger, rect, scene->getNumThreads(), render_control, *scene->getLayers(), scene->getOutputs(), filt_sz, type, tile_size, tiles_order_type);
-
-	film->setImagesAutoSaveParams(images_autosave_params);
-	film->setFilmLoadSaveParams(film_load_save);
-
-	if(images_autosave_params.interval_type_ == ImageFilm::AutoSaveParams::IntervalType::Pass) logger.logInfo("ImageFilm: ", "AutoSave partially rendered image every ", images_autosave_params.interval_passes_, " passes");
-
-	if(images_autosave_params.interval_type_ == ImageFilm::AutoSaveParams::IntervalType::Time) logger.logInfo("ImageFilm: ", "AutoSave partially rendered image every ", images_autosave_params.interval_seconds_, " seconds");
-
-	if(film_load_save.mode_ != ImageFilm::FilmLoadSave::Mode::Save) logger.logInfo("ImageFilm: ", "Enabling imageFilm file saving feature");
-	if(film_load_save.mode_ == ImageFilm::FilmLoadSave::Mode::LoadAndSave) logger.logInfo("ImageFilm: ", "Enabling imageFilm Loading feature. It will load and combine the ImageFilm files from the currently selected image output folder before start rendering, autodetecting each film format (binary/text) automatically. If they don't match exactly the scene, bad results could happen. Use WITH CARE!");
-
-	if(film_load_save.auto_save_.interval_type_ == ImageFilm::AutoSaveParams::IntervalType::Pass) logger.logInfo("ImageFilm: ", "AutoSave internal imageFilm every ", film_load_save.auto_save_.interval_passes_, " passes");
-
-	if(film_load_save.auto_save_.interval_type_ == ImageFilm::AutoSaveParams::IntervalType::Time) logger.logInfo("ImageFilm: ", "AutoSave internal imageFilm image every ", film_load_save.auto_save_.interval_seconds_, " seconds");
-
-	film->render_views_ = &scene->getRenderViews();
-	film->render_callbacks_ = &scene->getRenderCallbacks();
-	return film;
+	PARAM_LOAD(aa_pixel_width_);
+	PARAM_LOAD(width_);
+	PARAM_LOAD(height_);
+	PARAM_LOAD(start_x_);
+	PARAM_LOAD(start_y_);
+	PARAM_ENUM_LOAD(filter_type_);
+	PARAM_LOAD(tile_size_);
+	PARAM_ENUM_LOAD(tiles_order_);
+	PARAM_ENUM_LOAD(images_autosave_interval_type_);
+	PARAM_LOAD(images_autosave_interval_passes_);
+	PARAM_LOAD(images_autosave_interval_seconds_);
+	PARAM_ENUM_LOAD(film_load_save_mode_);
+	PARAM_LOAD(film_load_save_path_);
+	PARAM_ENUM_LOAD(film_autosave_interval_type_);
+	PARAM_LOAD(film_autosave_interval_passes_);
+	PARAM_LOAD(film_autosave_interval_seconds_);
 }
 
-ImageFilm::ImageFilm(Logger &logger, const Rect &rect, int num_threads, RenderControl &render_control, const Layers &layers, const std::map<std::string, std::unique_ptr<ImageOutput>> &outputs, float filter_size, FilterType filt, int t_size, ImageSplitter::TilesOrderType tiles_order_type) : rect_{rect}, tile_size_(t_size), tiles_order_(tiles_order_type), num_threads_(num_threads), layers_(layers), outputs_(outputs), flags_(rect.getSize()), weights_(rect.getSize()), filter_width_(filter_size * 0.5f), logger_(logger)
+ParamMap ImageFilm::Params::getAsParamMap(bool only_non_default) const
 {
-	estimate_density_ = false;
+	PARAM_SAVE_START;
+	PARAM_SAVE(aa_pixel_width_);
+	PARAM_SAVE(width_);
+	PARAM_SAVE(height_);
+	PARAM_SAVE(start_x_);
+	PARAM_SAVE(start_y_);
+	PARAM_ENUM_SAVE(filter_type_);
+	PARAM_SAVE(tile_size_);
+	PARAM_ENUM_SAVE(tiles_order_);
+	PARAM_ENUM_SAVE(images_autosave_interval_type_);
+	PARAM_SAVE(images_autosave_interval_passes_);
+	PARAM_SAVE(images_autosave_interval_seconds_);
+	PARAM_ENUM_SAVE(film_load_save_mode_);
+	PARAM_SAVE(film_load_save_path_);
+	PARAM_ENUM_SAVE(film_autosave_interval_type_);
+	PARAM_SAVE(film_autosave_interval_passes_);
+	PARAM_SAVE(film_autosave_interval_seconds_);
+	PARAM_SAVE_END;
+}
+
+ParamMap ImageFilm::getAsParamMap(bool only_non_default) const
+{
+	return params_.getAsParamMap(only_non_default);
+}
+
+std::pair<ImageFilm *, ParamError> ImageFilm::factory(Logger &logger, RenderControl &render_control, const ParamMap &param_map, const Scene *scene)
+{
+	if(logger.isDebug()) logger.logDebug("**" + getClassName() + "::factory 'raw' ParamMap\n" + param_map.logContents());
+	auto param_error{Params::meta_.check(param_map, {}, {})};
+	auto result {new ImageFilm(logger, param_error, render_control, *scene->getLayers(), scene->getOutputs(), &scene->getRenderViews(), &scene->getRenderCallbacks(), scene->getNumThreads(), param_map)};
+	if(param_error.flags_ != ParamError::Flags::Ok) logger.logWarning(param_error.print<ImageFilm>("ImageFilm", {}));
+	return {result, param_error};
+}
+
+ImageFilm::ImageFilm(Logger &logger, ParamError &param_error, RenderControl &render_control, const Layers &layers, const std::map<std::string, std::unique_ptr<ImageOutput>> &outputs, const std::map<std::string, std::unique_ptr<RenderView>> *render_views, const RenderCallbacks *render_callbacks, int num_threads, const ParamMap &param_map) : params_{param_error, param_map}, num_threads_(num_threads), layers_(layers), outputs_(outputs), render_views_{render_views}, render_callbacks_{render_callbacks}, logger_{logger}
+{
+	if(logger_.isDebug()) logger_.logDebug("**" + getClassName() + " params_:\n" + params_.getAsParamMap(true).print());
+	if(params_.images_autosave_interval_type_ == AutoSaveParams::IntervalType::Pass) logger_.logInfo(getClassName(), ": ", "AutoSave partially rendered image every ", params_.images_autosave_interval_passes_, " passes");
+
+	if(params_.images_autosave_interval_type_ == AutoSaveParams::IntervalType::Time) logger_.logInfo(getClassName(), ": ", "AutoSave partially rendered image every ", params_.images_autosave_interval_seconds_, " seconds");
+
+	if(params_.film_load_save_mode_ != FilmLoadSave::Mode::Save) logger_.logInfo(getClassName(), ": ", "Enabling imageFilm file saving feature");
+	if(params_.film_load_save_mode_ == FilmLoadSave::Mode::LoadAndSave) logger_.logInfo(getClassName(), ": ", "Enabling imageFilm Loading feature. It will load and combine the ImageFilm files from the currently selected image output folder before start rendering, autodetecting each film format (binary/text) automatically. If they don't match exactly the scene, bad results could happen. Use WITH CARE!");
+
+	if(params_.film_autosave_interval_type_ == AutoSaveParams::IntervalType::Pass) logger_.logInfo(getClassName(), ": ", "AutoSave internal imageFilm every ", params_.film_autosave_interval_passes_, " passes");
+
+	if(params_.film_autosave_interval_type_ == AutoSaveParams::IntervalType::Time) logger_.logInfo(getClassName(), ": ", "AutoSave internal imageFilm image every ", params_.film_autosave_interval_seconds_, " seconds");
+
 	// fill filter table:
-	FilterFunction_t *filter_function = nullptr;
-	switch(filt)
+	FilterFunction_t *filter_function;
+	switch(params_.filter_type_.value())
 	{
 		case ImageFilm::FilterType::Mitchell:
 			filter_function = math::filter::mitchell;
-			filter_width_ *= 2.6f; break;
+			filter_width_ *= 2.6f;
+			break;
 		case ImageFilm::FilterType::Lanczos:
-			filter_function = math::filter::lanczos2; break;
+			filter_function = math::filter::lanczos2;
+			break;
 		case ImageFilm::FilterType::Gauss:
 			filter_function = math::filter::gauss;
-			filter_width_ *= 2.f; break;
-		default:
+			filter_width_ *= 2.f;
+			break;
 		case ImageFilm::FilterType::Box:
-			filter_function = math::filter::box; break;
+		default:
+			filter_function = math::filter::box;
+			break;
 	}
 
 	filter_width_ = std::min(std::max(0.501f, filter_width_), 0.5f * max_filter_size_); // filter needs to cover at least the area of one pixel and no more than MAX_FILTER_SIZE/2
@@ -173,7 +158,12 @@ void ImageFilm::initLayersImages()
 	{
 		Image::Type image_type = layer.getImageType();
 		image_type = Image::imageTypeWithAlpha(image_type); //Alpha channel is needed in all images of the weight normalization process will cause problems
-		std::unique_ptr<Image> image(Image::factory(logger_, rect_.getSize(), image_type, Image::Optimization::None));
+		Image::Params image_params;
+		image_params.width_ = params_.width_;
+		image_params.height_ = params_.height_;
+		image_params.type_ = image_type;
+		image_params.image_optimization_ = Image::Optimization::None;
+		std::unique_ptr<Image> image(Image::factory(image_params));
 		film_image_layers_.set(layer_def, {std::move(image), layer});
 	}
 }
@@ -184,7 +174,12 @@ void ImageFilm::initLayersExportedImages()
 	{
 		Image::Type image_type = layer.getImageType();
 		image_type = Image::imageTypeWithAlpha(image_type); //Alpha channel is needed in all images of the weight normalization process will cause problems
-		std::unique_ptr<Image> image(Image::factory(logger_, rect_.getSize(), image_type, Image::Optimization::None));
+		Image::Params image_params;
+		image_params.width_ = params_.width_;
+		image_params.height_ = params_.height_;
+		image_params.type_ = image_type;
+		image_params.image_optimization_ = Image::Optimization::None;
+		std::unique_ptr<Image> image(Image::factory(image_params));
 		exported_image_layers_.set(layer_def, {std::move(image), layer});
 	}
 }
@@ -201,19 +196,19 @@ void ImageFilm::init(RenderControl &render_control, int num_passes)
 	// Clear density image
 	if(estimate_density_)
 	{
-		density_image_ = std::make_unique<ImageBuffer2D<Rgb>>(rect_.getSize());
+		density_image_ = std::make_unique<Buffer2D<Rgb>>(Size2i{{params_.width_, params_.height_}});
 	}
 
 	// Setup the bucket splitter
 	if(split_)
 	{
 		next_area_ = 0;
-		splitter_ = std::make_unique<ImageSplitter>(rect_.getWidth(), rect_.getHeight(), rect_.getPointStart()[Axis::X], rect_.getPointStart()[Axis::Y], tile_size_, tiles_order_, num_threads_);
+		splitter_ = std::make_unique<ImageSplitter>(params_.width_, params_.height_, params_.start_x_, params_.start_y_, params_.tile_size_, params_.tiles_order_, num_threads_);
 		area_cnt_ = splitter_->size();
 	}
 	else area_cnt_ = 1;
 
-	render_control.initProgressBar(rect_.getWidth() * rect_.getHeight(), logger_.getConsoleLogColorsEnabled());
+	render_control.initProgressBar(params_.width_ * params_.height_, logger_.getConsoleLogColorsEnabled());
 
 	cancel_ = false;
 	completed_cnt_ = 0;
@@ -245,7 +240,7 @@ void ImageFilm::init(RenderControl &render_control, int num_passes)
 		const Layers &layers = layers_.getLayersWithExportedImages();
 		for(const auto &[layer_type, layer] : layers)
 		{
-			render_callbacks_->notify_layer_(LayerDef::getName(layer_type).c_str(), layer.getExportedImageName().c_str(), rect_.getWidth(), rect_.getHeight(), layer.getNumExportedChannels(), render_callbacks_->notify_layer_data_);
+			render_callbacks_->notify_layer_(LayerDef::getName(layer_type).c_str(), layer.getExportedImageName().c_str(), params_.width_, params_.height_, layer.getNumExportedChannels(), render_callbacks_->notify_layer_data_);
 		}
 	}
 }
@@ -265,7 +260,7 @@ int ImageFilm::nextPass(const RenderView *render_view, RenderControl &render_con
 
 	if(render_control.inProgress())
 	{
-		if((images_auto_save_params_.interval_type_ == ImageFilm::AutoSaveParams::IntervalType::Pass) && (images_auto_save_params_.pass_counter_ >= images_auto_save_params_.interval_passes_))
+		if((images_auto_save_params_.interval_type_ == AutoSaveParams::IntervalType::Pass) && (images_auto_save_params_.pass_counter_ >= images_auto_save_params_.interval_passes_))
 		{
 			for(auto &[output_name, output] : outputs_)
 			{
@@ -273,7 +268,7 @@ int ImageFilm::nextPass(const RenderView *render_view, RenderControl &render_con
 			}
 		}
 
-		if((film_load_save_.mode_ == FilmLoadSave::Mode::LoadAndSave || film_load_save_.mode_ == FilmLoadSave::Mode::Save) && (film_load_save_.auto_save_.interval_type_ == ImageFilm::AutoSaveParams::IntervalType::Pass) && (film_load_save_.auto_save_.pass_counter_ >= film_load_save_.auto_save_.interval_passes_))
+		if((film_load_save_.mode_ == FilmLoadSave::Mode::LoadAndSave || film_load_save_.mode_ == FilmLoadSave::Mode::Save) && (film_load_save_.auto_save_.interval_type_ == AutoSaveParams::IntervalType::Pass) && (film_load_save_.auto_save_.pass_counter_ >= film_load_save_.auto_save_.interval_passes_))
 		{
 			imageFilmSave(render_control);
 				film_load_save_.auto_save_.pass_counter_ = 0;
@@ -293,9 +288,9 @@ int ImageFilm::nextPass(const RenderView *render_view, RenderControl &render_con
 
 	if(adaptive_aa && aa_noise_params_.threshold_ > 0.f)
 	{
-		for(int y = 0; y < rect_.getHeight(); ++y)
+		for(int y = 0; y < params_.height_; ++y)
 		{
-			for(int x = 0; x < rect_.getWidth(); ++x)
+			for(int x = 0; x < params_.width_; ++x)
 			{
 				const float weight = weights_({{x, y}}).getFloat();
 				if(weight > 0.f) flags_.set({{x, y}}, false);
@@ -303,9 +298,9 @@ int ImageFilm::nextPass(const RenderView *render_view, RenderControl &render_con
 			}
 		}
 
-		for(int y = 0; y < rect_.getHeight() - 1; ++y)
+		for(int y = 0; y < params_.height_ - 1; ++y)
 		{
-			for(int x = 0; x < rect_.getWidth() - 1; ++x)
+			for(int x = 0; x < params_.width_ - 1; ++x)
 			{
 				//We will only consider the Combined Pass (pass 0) for the AA additional sampling calculations.
 				const float weight = weights_({{x, y}}).getFloat();
@@ -355,7 +350,7 @@ int ImageFilm::nextPass(const RenderView *render_view, RenderControl &render_con
 					{
 						int xi = x + xd;
 						if(xi < 0) xi = 0;
-						else if(xi >= rect_.getWidth() - 1) xi = rect_.getWidth() - 2;
+						else if(xi >= params_.width_ - 1) xi = params_.width_ - 2;
 
 						const Rgba cx_0 = combined_image->getColor({{xi, y}}).normalized(weights_({{xi, y}}).getFloat());
 						const Rgba cx_1 = combined_image->getColor({{xi + 1, y}}).normalized(weights_({{xi + 1, y}}).getFloat());
@@ -367,7 +362,7 @@ int ImageFilm::nextPass(const RenderView *render_view, RenderControl &render_con
 					{
 						int yi = y + yd;
 						if(yi < 0) yi = 0;
-						else if(yi >= rect_.getHeight() - 1) yi = rect_.getHeight() - 2;
+						else if(yi >= params_.height_ - 1) yi = params_.height_ - 2;
 
 						const Rgba cy_0 = combined_image->getColor({{x, yi}}).normalized(weights_({{x, yi}}).getFloat());
 						const Rgba cy_1 = combined_image->getColor({{x, yi + 1}}).normalized(weights_({{x, yi + 1}}).getFloat());
@@ -383,11 +378,11 @@ int ImageFilm::nextPass(const RenderView *render_view, RenderControl &render_con
 							{
 								int xi = x + xd;
 								if(xi < 0) xi = 0;
-								else if(xi >= rect_.getWidth()) xi = rect_.getWidth() - 1;
+								else if(xi >= params_.width_) xi = params_.width_ - 1;
 
 								int yi = y + yd;
 								if(yi < 0) yi = 0;
-								else if(yi >= rect_.getHeight()) yi = rect_.getHeight() - 1;
+								else if(yi >= params_.height_) yi = params_.height_ - 1;
 
 								flags_.set({{xi, yi}}, true);
 							}
@@ -397,9 +392,9 @@ int ImageFilm::nextPass(const RenderView *render_view, RenderControl &render_con
 			}
 		}
 
-		for(int y = 0; y < rect_.getHeight(); ++y)
+		for(int y = 0; y < params_.height_; ++y)
 		{
-			for(int x = 0; x < rect_.getWidth(); ++x)
+			for(int x = 0; x < params_.width_; ++x)
 			{
 				if(flags_.get({{x, y}}))
 				{
@@ -416,7 +411,7 @@ int ImageFilm::nextPass(const RenderView *render_view, RenderControl &render_con
 	}
 	else
 	{
-		n_resample = rect_.getHeight() * rect_.getWidth();
+		n_resample = params_.height_ * params_.width_;
 	}
 
 	if(render_callbacks_ && render_callbacks_->flush_) render_callbacks_->flush_(render_view->getName().c_str(), render_callbacks_->flush_data_);
@@ -427,7 +422,7 @@ int ImageFilm::nextPass(const RenderView *render_view, RenderControl &render_con
 
 	logger_.logInfo(integrator_name, ": ", pass_string.str());
 
-	render_control.initProgressBar(rect_.getWidth() * rect_.getHeight(), logger_.getConsoleLogColorsEnabled());
+	render_control.initProgressBar(params_.width_ * params_.height_, logger_.getConsoleLogColorsEnabled());
 	render_control.setProgressBarTag(pass_string.str());
 	completed_cnt_ = 0;
 
@@ -462,10 +457,10 @@ bool ImageFilm::nextArea(const RenderView *render_view, const RenderControl &ren
 	else
 	{
 		if(area_cnt_) return false;
-		a.x_ = rect_.getPointStart()[Axis::X];
-		a.y_ = rect_.getPointStart()[Axis::Y];
-		a.w_ = rect_.getWidth();
-		a.h_ = rect_.getHeight();
+		a.x_ = params_.start_x_;
+		a.y_ = params_.start_y_;
+		a.w_ = params_.width_;
+		a.h_ = params_.height_;
 		a.sx_0_ = a.x_ + ifilterw;
 		a.sx_1_ = a.x_ + a.w_ - ifilterw;
 		a.sy_0_ = a.y_ + ifilterw;
@@ -479,26 +474,26 @@ bool ImageFilm::nextArea(const RenderView *render_view, const RenderControl &ren
 void ImageFilm::finishArea(const RenderView *render_view, RenderControl &render_control, const RenderArea &a, const EdgeToonParams &edge_params)
 {
 	std::lock_guard<std::mutex> lock_guard(out_mutex_);
-	const int end_x = a.x_ + a.w_ - rect_.getPointStart()[Axis::X];
-	const int end_y = a.y_ + a.h_ - rect_.getPointStart()[Axis::Y];
+	const int end_x = a.x_ + a.w_ - params_.start_x_;
+	const int end_y = a.y_ + a.h_ - params_.start_y_;
 
 	if(layers_.isDefined(LayerDef::DebugFacesEdges))
 	{
-		image_manipulation::generateDebugFacesEdges(film_image_layers_, a.x_ - rect_.getPointStart()[Axis::X], end_x, a.y_ - rect_.getPointStart()[Axis::Y], end_y, true, edge_params, weights_);
+		image_manipulation::generateDebugFacesEdges(film_image_layers_, a.x_ - params_.start_x_, end_x, a.y_ - params_.start_y_, end_y, true, edge_params, weights_);
 	}
 
 	if(layers_.isDefinedAny({LayerDef::DebugObjectsEdges, LayerDef::Toon}))
 	{
-		image_manipulation::generateToonAndDebugObjectEdges(film_image_layers_, a.x_ - rect_.getPointStart()[Axis::X], end_x, a.y_ - rect_.getPointStart()[Axis::Y], end_y, true, edge_params, weights_);
+		image_manipulation::generateToonAndDebugObjectEdges(film_image_layers_, a.x_ - params_.start_x_, end_x, a.y_ - params_.start_y_, end_y, true, edge_params, weights_);
 	}
 
 	for(const auto &[layer_def, image_layer] : film_image_layers_)
 	{
 		if(!image_layer.layer_.isExported()) continue;
 		const std::shared_ptr<Image> &image = image_layer.image_;
-		for(int j = a.y_ - rect_.getPointStart()[Axis::Y]; j < end_y; ++j)
+		for(int j = a.y_ - params_.start_y_; j < end_y; ++j)
 		{
-			for(int i = a.x_ - rect_.getPointStart()[Axis::X]; i < end_x; ++i)
+			for(int i = a.x_ - params_.start_x_; i < end_x; ++i)
 			{
 				const float weight = weights_({{i, j}}).getFloat();
 				Rgba color = (layer_def == LayerDef::AaSamples ? Rgba{weight} : image->getColor({{i, j}}).normalized(weight));
@@ -520,7 +515,7 @@ void ImageFilm::finishArea(const RenderView *render_view, RenderControl &render_
 		}
 	}
 
-	if(render_callbacks_ && render_callbacks_->flush_area_) render_callbacks_->flush_area_(render_view->getName().c_str(), a.id_, a.x_, a.y_, end_x + rect_.getPointStart()[Axis::X], end_y + rect_.getPointStart()[Axis::Y], render_callbacks_->flush_area_data_);
+	if(render_callbacks_ && render_callbacks_->flush_area_) render_callbacks_->flush_area_(render_view->getName().c_str(), a.id_, a.x_, a.y_, end_x + params_.start_x_, end_y + params_.start_y_, render_callbacks_->flush_area_data_);
 
 	if(render_control.inProgress())
 	{
@@ -534,14 +529,14 @@ void ImageFilm::finishArea(const RenderView *render_view, RenderControl &render_
 		if(film_load_save_.auto_save_.timer_ < 0.f) resetFilmAutoSaveTimer(); //to solve some strange very negative value when using yafaray-xml, race condition somewhere?
 		timer_.start("filmAutoSaveTimer");
 
-		if((images_auto_save_params_.interval_type_ == ImageFilm::AutoSaveParams::IntervalType::Time) && (images_auto_save_params_.timer_ > images_auto_save_params_.interval_seconds_))
+		if((images_auto_save_params_.interval_type_ == AutoSaveParams::IntervalType::Time) && (images_auto_save_params_.timer_ > images_auto_save_params_.interval_seconds_))
 		{
 			if(logger_.isDebug())logger_.logDebug("imagesAutoSaveTimer=", images_auto_save_params_.timer_);
 			flush(render_view, render_control, edge_params, All);
 			resetImagesAutoSaveTimer();
 		}
 
-		if((film_load_save_.mode_ == FilmLoadSave::Mode::LoadAndSave || film_load_save_.mode_ == FilmLoadSave::Mode::Save) && (film_load_save_.auto_save_.interval_type_ == ImageFilm::AutoSaveParams::IntervalType::Time) && (film_load_save_.auto_save_.timer_ > film_load_save_.auto_save_.interval_seconds_))
+		if((film_load_save_.mode_ == FilmLoadSave::Mode::LoadAndSave || film_load_save_.mode_ == FilmLoadSave::Mode::Save) && (film_load_save_.auto_save_.interval_type_ == AutoSaveParams::IntervalType::Time) && (film_load_save_.auto_save_.timer_ > film_load_save_.auto_save_.interval_seconds_))
 		{
 			if(logger_.isDebug())logger_.logDebug("filmAutoSaveTimer=", film_load_save_.auto_save_.timer_);
 			imageFilmSave(render_control);
@@ -562,24 +557,24 @@ void ImageFilm::flush(const RenderView *render_view, RenderControl &render_contr
 
 	float density_factor = 0.f;
 
-	if(estimate_density_ && num_density_samples_ > 0) density_factor = (float) (rect_.getWidth() * rect_.getHeight()) / (float) num_density_samples_;
+	if(estimate_density_ && num_density_samples_ > 0) density_factor = (float) (params_.width_ * params_.height_) / (float) num_density_samples_;
 
 	const Layers layers = layers_.getLayersWithImages();
 	if(layers.isDefined(LayerDef::DebugFacesEdges))
 	{
-		image_manipulation::generateDebugFacesEdges(film_image_layers_, 0, rect_.getWidth(), 0, rect_.getHeight(), false, edge_params, weights_);
+		image_manipulation::generateDebugFacesEdges(film_image_layers_, 0, params_.width_, 0, params_.height_, false, edge_params, weights_);
 	}
 	if(layers.isDefinedAny({LayerDef::DebugObjectsEdges, LayerDef::Toon}))
 	{
-		image_manipulation::generateToonAndDebugObjectEdges(film_image_layers_, 0, rect_.getWidth(), 0, rect_.getHeight(), false, edge_params, weights_);
+		image_manipulation::generateToonAndDebugObjectEdges(film_image_layers_, 0, params_.width_, 0, params_.height_, false, edge_params, weights_);
 	}
 	for(const auto &[layer_def, image_layer] : film_image_layers_)
 	{
 		if(!image_layer.layer_.isExported()) continue;
 		const std::shared_ptr<Image> &image = image_layer.image_;
-		for(int j = 0; j < rect_.getHeight(); j++)
+		for(int j = 0; j < params_.height_; j++)
 		{
-			for(int i = 0; i < rect_.getWidth(); i++)
+			for(int i = 0; i < params_.width_; i++)
 			{
 				const float weight = weights_({{i, j}}).getFloat();
 				Rgba color = (layer_def == LayerDef::AaSamples ? Rgba{weight} : image->getColor({{i, j}}).normalized(weight));
@@ -607,7 +602,7 @@ void ImageFilm::flush(const RenderView *render_view, RenderControl &render_contr
 	if(render_control.finished())
 	{
 		std::stringstream ss;
-		ss << printRenderStats(render_control, timer_, rect_.getSize());
+		ss << printRenderStats(render_control, timer_, Size2i{{params_.width_, params_.height_}});
 		ss << render_control.getAaNoiseInfo();
 		logger_.logParams("--------------------------------------------------------------------------------");
 		for(std::string line; std::getline(ss, line, '\n');) if(line != "" && line != "\n") logger_.logParams(line);
@@ -653,7 +648,7 @@ void ImageFilm::flush(const RenderView *render_view, RenderControl &render_contr
 
 bool ImageFilm::doMoreSamples(const Point2i &point) const
 {
-	return aa_noise_params_.threshold_ <= 0.f || flags_.get({{point[Axis::X] - rect_.getPointStart()[Axis::X], point[Axis::Y] - rect_.getPointStart()[Axis::Y]}});
+	return aa_noise_params_.threshold_ <= 0.f || flags_.get({{point[Axis::X] - params_.start_x_, point[Axis::Y] - params_.start_y_}});
 }
 
 /* CAUTION! Implemantation of this function needs to be thread safe for samples that
@@ -663,10 +658,10 @@ void ImageFilm::addSample(const Point2i &point, float dx, float dy, const Render
 {
 	// get filter extent and make sure we don't leave image area:
 	//FIXME: using for some reason an asymmetrical rounding function with a +0.5 bias. Using a standard rounding function would increase processing time due to increased filter applicable area and potentially causing more thread locks. Keeping this asymmetrical rounding for now to keep the original functionality, but probably something to be investigated and made better in the future.
-	const int dx_0 = std::max(rect_.getPointStart()[Axis::X] - point[Axis::X], roundToIntWithBias(static_cast<double>(dx) - filter_width_));
-	const int dx_1 = std::min(rect_.getPointEnd()[Axis::X] - point[Axis::X], roundToIntWithBias(static_cast<double>(dx) + filter_width_ - 1.0));
-	const int dy_0 = std::max(rect_.getPointStart()[Axis::Y] - point[Axis::Y], roundToIntWithBias(static_cast<double>(dy) - filter_width_));
-	const int dy_1 = std::min(rect_.getPointEnd()[Axis::Y] - point[Axis::Y], roundToIntWithBias(static_cast<double>(dy) + filter_width_ - 1.0));
+	const int dx_0 = std::max(params_.start_x_ - point[Axis::X], roundToIntWithBias(static_cast<double>(dx) - filter_width_));
+	const int dx_1 = std::min((params_.start_x_ + params_.width_ - 1) - point[Axis::X], roundToIntWithBias(static_cast<double>(dx) + filter_width_ - 1.0));
+	const int dy_0 = std::max(params_.start_y_ - point[Axis::Y], roundToIntWithBias(static_cast<double>(dy) - filter_width_));
+	const int dy_1 = std::min((params_.start_y_ + params_.height_ - 1) - point[Axis::Y], roundToIntWithBias(static_cast<double>(dy) + filter_width_ - 1.0));
 
 	// get indices in filter table
 	const double x_offs = dx - 0.5;
@@ -698,14 +693,14 @@ void ImageFilm::addSample(const Point2i &point, float dx, float dy, const Render
 			// get filter value at pixel (x,y)
 			const size_t offset = y_index[j - y_0] * filter_table_size_ + x_index[i - x_0];
 			const float filter_wt = filter_table_[offset];
-			weights_({{i - rect_.getPointStart()[Axis::X], j - rect_.getPointStart()[Axis::Y]}}).setFloat(weights_({{i - rect_.getPointStart()[Axis::X], j - rect_.getPointStart()[Axis::Y]}}).getFloat() + filter_wt);
+			weights_({{i - params_.start_x_, j - params_.start_y_}}).setFloat(weights_({{i - params_.start_x_, j - params_.start_y_}}).getFloat() + filter_wt);
 
 			// update pixel values with filtered sample contribution
 			for(auto &[layer_def, image_layer] : film_image_layers_)
 			{
 				Rgba col = color_layers ? (*color_layers)(layer_def) : Rgba{0.f};
 				col.clampProportionalRgb(aa_noise_params_.clamp_samples_);
-				image_layer.image_->addColor({{i - rect_.getPointStart()[Axis::X], j - rect_.getPointStart()[Axis::Y]}}, col * filter_wt);
+				image_layer.image_->addColor({{i - params_.start_x_, j - params_.start_y_}}, col * filter_wt);
 			}
 		}
 	}
@@ -718,10 +713,10 @@ void ImageFilm::addDensitySample(const Rgb &c, const Point2i &point, float dx, f
 
 	// get filter extent and make sure we don't leave image area:
 	//FIXME: using for some reason an asymmetrical rounding function with a +0.5 bias. Using a standard rounding function would increase processing time due to increased filter applicable area and potentially causing more thread locks. Keeping this asymmetrical rounding for now to keep the original functionality, but probably something to be investigated and made better in the future.
-	const int dx_0 = std::max(rect_.getPointStart()[Axis::X] - point[Axis::X], roundToIntWithBias(static_cast<double>(dx) - filter_width_));
-	const int dx_1 = std::min(rect_.getPointEnd()[Axis::X] - point[Axis::X], roundToIntWithBias(static_cast<double>(dx) + filter_width_ - 1.0));
-	const int dy_0 = std::max(rect_.getPointStart()[Axis::Y] - point[Axis::Y], roundToIntWithBias(static_cast<double>(dy) - filter_width_));
-	const int dy_1 = std::min(rect_.getPointEnd()[Axis::Y] - point[Axis::Y], roundToIntWithBias(static_cast<double>(dy) + filter_width_ - 1.0));
+	const int dx_0 = std::max(params_.start_x_ - point[Axis::X], roundToIntWithBias(static_cast<double>(dx) - filter_width_));
+	const int dx_1 = std::min((params_.start_x_ + params_.width_ - 1) - point[Axis::X], roundToIntWithBias(static_cast<double>(dx) + filter_width_ - 1.0));
+	const int dy_0 = std::max(params_.start_y_ - point[Axis::Y], roundToIntWithBias(static_cast<double>(dy) - filter_width_));
+	const int dy_1 = std::min((params_.start_y_ + params_.height_ - 1) - point[Axis::Y], roundToIntWithBias(static_cast<double>(dy) + filter_width_ - 1.0));
 
 	const double x_offs = dx - 0.5;
 	std::array<int, max_filter_size_ + 1> x_index;
@@ -749,7 +744,7 @@ void ImageFilm::addDensitySample(const Rgb &c, const Point2i &point, float dx, f
 		for(int i = x_0; i <= x_1; ++i)
 		{
 			const size_t offset = y_index[j - y_0] * filter_table_size_ + x_index[i - x_0];
-			Rgb &pixel = (*density_image_)({{i - rect_.getPointStart()[Axis::X], j - rect_.getPointStart()[Axis::Y]}});
+			Rgb &pixel = (*density_image_)({{i - params_.start_x_, j - params_.start_y_}});
 			pixel += c * filter_table_[offset];
 		}
 	}
@@ -760,7 +755,7 @@ void ImageFilm::setDensityEstimation(bool enable)
 {
 	if(enable)
 	{
-		if(!density_image_) density_image_ = std::make_unique<ImageBuffer2D<Rgb>>(rect_.getSize());
+		if(!density_image_) density_image_ = std::make_unique<Buffer2D<Rgb>>(Size2i{{params_.width_, params_.height_}});
 		else density_image_->clear();
 	}
 	else
@@ -823,49 +818,49 @@ bool ImageFilm::imageFilmLoad(const std::string &filename)
 
 	int filmload_check_w;
 	file.read<int>(filmload_check_w);
-	if(filmload_check_w != rect_.getWidth())
+	if(filmload_check_w != params_.width_)
 	{
-		logger_.logWarning("imageFilm: loading/reusing film check failed. Image width, expected=", rect_.getWidth(), ", in reused/loaded film=", filmload_check_w);
+		logger_.logWarning("imageFilm: loading/reusing film check failed. Image width, expected=", params_.width_, ", in reused/loaded film=", filmload_check_w);
 		return false;
 	}
 
 	int filmload_check_h;
 	file.read<int>(filmload_check_h);
-	if(filmload_check_h != rect_.getHeight())
+	if(filmload_check_h != params_.height_)
 	{
-		logger_.logWarning("imageFilm: loading/reusing film check failed. Image height, expected=", rect_.getHeight(), ", in reused/loaded film=", filmload_check_h);
+		logger_.logWarning("imageFilm: loading/reusing film check failed. Image height, expected=", params_.height_, ", in reused/loaded film=", filmload_check_h);
 		return false;
 	}
 
 	int filmload_check_cx_0;
 	file.read<int>(filmload_check_cx_0);
-	if(filmload_check_cx_0 != rect_.getPointStart()[Axis::X])
+	if(filmload_check_cx_0 != params_.start_x_)
 	{
-		logger_.logWarning("imageFilm: loading/reusing film check failed. Border cx0, expected=", rect_.getPointStart()[Axis::X], ", in reused/loaded film=", filmload_check_cx_0);
+		logger_.logWarning("imageFilm: loading/reusing film check failed. Border cx0, expected=", params_.start_x_, ", in reused/loaded film=", filmload_check_cx_0);
 		return false;
 	}
 
 	int filmload_check_cx_1;
 	file.read<int>(filmload_check_cx_1);
-	if(filmload_check_cx_1 != rect_.getPointEnd()[Axis::X])
+	if(filmload_check_cx_1 != (params_.start_x_ + params_.width_ - 1))
 	{
-		logger_.logWarning("imageFilm: loading/reusing film check failed. Border cx1, expected=", rect_.getPointEnd()[Axis::X], ", in reused/loaded film=", filmload_check_cx_1);
+		logger_.logWarning("imageFilm: loading/reusing film check failed. Border cx1, expected=", (params_.start_x_ + params_.width_ - 1), ", in reused/loaded film=", filmload_check_cx_1);
 		return false;
 	}
 
 	int filmload_check_cy_0;
 	file.read<int>(filmload_check_cy_0);
-	if(filmload_check_cy_0 != rect_.getPointStart()[Axis::Y])
+	if(filmload_check_cy_0 != params_.start_y_)
 	{
-		logger_.logWarning("imageFilm: loading/reusing film check failed. Border cy0, expected=", rect_.getPointStart()[Axis::Y], ", in reused/loaded film=", filmload_check_cy_0);
+		logger_.logWarning("imageFilm: loading/reusing film check failed. Border cy0, expected=", params_.start_y_, ", in reused/loaded film=", filmload_check_cy_0);
 		return false;
 	}
 
 	int filmload_check_cy_1;
 	file.read<int>(filmload_check_cy_1);
-	if(filmload_check_cy_1 != rect_.getPointEnd()[Axis::Y])
+	if(filmload_check_cy_1 != (params_.start_y_ + params_.height_ - 1))
 	{
-		logger_.logWarning("imageFilm: loading/reusing film check failed. Border cy1, expected=", rect_.getPointEnd()[Axis::Y], ", in reused/loaded film=", filmload_check_cy_1);
+		logger_.logWarning("imageFilm: loading/reusing film check failed. Border cy1, expected=", (params_.start_y_ + params_.height_ - 1), ", in reused/loaded film=", filmload_check_cy_1);
 		return false;
 	}
 
@@ -881,9 +876,9 @@ bool ImageFilm::imageFilmLoad(const std::string &filename)
 		return false;
 	}
 
-	for(int y = 0; y < rect_.getHeight(); ++y)
+	for(int y = 0; y < params_.height_; ++y)
 	{
-		for(int x = 0; x < rect_.getWidth(); ++x)
+		for(int x = 0; x < params_.width_; ++x)
 		{
 			float weight;
 			file.read<float>(weight);
@@ -893,9 +888,9 @@ bool ImageFilm::imageFilmLoad(const std::string &filename)
 
 	for(auto &[layer_def, image_layer] : film_image_layers_)
 	{
-		for(int y = 0; y < rect_.getHeight(); ++y)
+		for(int y = 0; y < params_.height_; ++y)
 		{
-			for(int x = 0; x < rect_.getWidth(); ++x)
+			for(int x = 0; x < params_.width_; ++x)
 			{
 				Rgba col;
 				file.read<float>(col.r_);
@@ -951,7 +946,8 @@ void ImageFilm::imageFilmLoadAllInFolder(RenderControl &render_control)
 	bool any_film_loaded = false;
 	for(const auto &film_file : film_file_paths_list)
 	{
-		auto loaded_film = std::make_unique<ImageFilm>(logger_, rect_, num_threads_, render_control, layers_, outputs_, 1.f, FilterType::Box);
+		ParamError param_error;
+		auto loaded_film = std::make_unique<ImageFilm>(logger_, param_error, render_control, layers_, outputs_, render_views_, render_callbacks_, num_threads_, params_.getAsParamMap(true));
 		if(!loaded_film->imageFilmLoad(film_file))
 		{
 			logger_.logWarning("ImageFilm: Could not load film file '", film_file, "'");
@@ -959,9 +955,9 @@ void ImageFilm::imageFilmLoadAllInFolder(RenderControl &render_control)
 		}
 		else any_film_loaded = true;
 
-		for(int i = 0; i < rect_.getWidth(); ++i)
+		for(int i = 0; i < params_.width_; ++i)
 		{
-			for(int j = 0; j < rect_.getHeight(); ++j)
+			for(int j = 0; j < params_.height_; ++j)
 			{
 				weights_({{i, j}}).setFloat(weights_({{i, j}}).getFloat() + loaded_film->weights_({{i, j}}).getFloat());
 			}
@@ -970,9 +966,9 @@ void ImageFilm::imageFilmLoadAllInFolder(RenderControl &render_control)
 		for(auto &[layer_def, image_layer] : film_image_layers_)
 		{
 			const ImageLayers &loaded_image_layers = loaded_film->film_image_layers_;
-			for(int i = 0; i < rect_.getWidth(); ++i)
+			for(int i = 0; i < params_.width_; ++i)
 			{
-				for(int j = 0; j < rect_.getHeight(); ++j)
+				for(int j = 0; j < params_.height_; ++j)
 				{
 					image_layer.image_->addColor({{i, j}}, loaded_image_layers(layer_def).image_->getColor({{i, j}}));
 				}
@@ -1004,29 +1000,29 @@ bool ImageFilm::imageFilmSave(RenderControl &render_control)
 	file.append<unsigned int>(computer_node_);
 	file.append<unsigned int>(base_sampling_offset_);
 	file.append<unsigned int>(sampling_offset_);
-	file.append<int>(rect_.getWidth());
-	file.append<int>(rect_.getHeight());
-	file.append<int>(rect_.getPointStart()[Axis::X]);
-	file.append<int>(rect_.getPointEnd()[Axis::X]);
-	file.append<int>(rect_.getPointStart()[Axis::Y]);
-	file.append<int>(rect_.getPointEnd()[Axis::Y]);
+	file.append<int>(params_.width_);
+	file.append<int>(params_.height_);
+	file.append<int>(params_.start_x_);
+	file.append<int>(params_.start_x_ + params_.width_ - 1);
+	file.append<int>(params_.start_y_);
+	file.append<int>(params_.start_y_ + params_.height_ - 1);
 	file.append<int>((int) film_image_layers_.size());
 
 	const int weights_w = weights_.getWidth();
-	if(weights_w != rect_.getWidth())
+	if(weights_w != params_.width_)
 	{
-		logger_.logWarning("ImageFilm saving problems, film weights width ", rect_.getWidth(), " different from internal 2D image width ", weights_w);
+		logger_.logWarning("ImageFilm saving problems, film weights width ", params_.width_, " different from internal 2D image width ", weights_w);
 		result_ok = false;
 	}
 	const int weights_h = weights_.getHeight();
-	if(weights_h != rect_.getHeight())
+	if(weights_h != params_.height_)
 	{
-		logger_.logWarning("ImageFilm saving problems, film weights height ", rect_.getHeight(), " different from internal 2D image height ", weights_h);
+		logger_.logWarning("ImageFilm saving problems, film weights height ", params_.height_, " different from internal 2D image height ", weights_h);
 		result_ok = false;
 	}
-	for(int y = 0; y < rect_.getHeight(); ++y)
+	for(int y = 0; y < params_.height_; ++y)
 	{
-		for(int x = 0; x < rect_.getWidth(); ++x)
+		for(int x = 0; x < params_.width_; ++x)
 		{
 			file.append<float>(weights_({{x, y}}).getFloat());
 		}
@@ -1035,22 +1031,22 @@ bool ImageFilm::imageFilmSave(RenderControl &render_control)
 	for(const auto &[layer_def, image_layer] : film_image_layers_)
 	{
 		const int img_w = image_layer.image_->getWidth();
-		if(img_w != rect_.getWidth())
+		if(img_w != params_.width_)
 		{
-			logger_.logWarning("ImageFilm saving problems, film width ", rect_.getWidth(), " different from internal 2D image width ", img_w);
+			logger_.logWarning("ImageFilm saving problems, film width ", params_.width_, " different from internal 2D image width ", img_w);
 			result_ok = false;
 			break;
 		}
 		const int img_h = image_layer.image_->getHeight();
-		if(img_h != rect_.getHeight())
+		if(img_h != params_.height_)
 		{
-			logger_.logWarning("ImageFilm saving problems, film height ", rect_.getHeight(), " different from internal 2D image height ", img_h);
+			logger_.logWarning("ImageFilm saving problems, film height ", params_.height_, " different from internal 2D image height ", img_h);
 			result_ok = false;
 			break;
 		}
-		for(int y = 0; y < rect_.getHeight(); ++y)
+		for(int y = 0; y < params_.height_; ++y)
 		{
-			for(int x = 0; x < rect_.getWidth(); ++x)
+			for(int x = 0; x < params_.width_; ++x)
 			{
 				const Rgba &col = image_layer.image_->getColor({{x, y}});
 				file.append<float>(col.r_);

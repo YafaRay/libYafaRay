@@ -21,7 +21,6 @@
  */
 
 #include "common/file.h"
-#include "common/logger.h"
 #include <sys/stat.h>
 #if defined(_WIN32)
 #include "common/string.h"
@@ -30,9 +29,6 @@
 #else //defined(_WIN32)
 #include <dirent.h>
 #endif //defined(_WIN32)
-#include <iostream>
-#include <ctime>
-#include <utility>
 
 namespace yafaray {
 

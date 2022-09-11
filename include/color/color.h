@@ -25,19 +25,12 @@
 #define YAFARAY_COLOR_H
 
 #include "math/math.h"
+#include "color/color_space.h"
 #include <array>
 #include <ostream>
 #include <string>
 
 namespace yafaray {
-
-enum class ColorSpace : unsigned char
-{
-	RawManualGamma	= 1,
-	LinearRgb		= 2,
-	Srgb			= 3,
-	XyzD65			= 4
-};
 
 class Rgb
 {
@@ -130,8 +123,6 @@ class Rgb
 		void rgbToHsl(float &h, float &s, float &l) const;
 		void hslToRgb(float h, float s, float l);
 
-		static std::string colorSpaceName(const ColorSpace &color_space);
-		static ColorSpace colorSpaceFromName(const std::string &color_space_name, const ColorSpace &default_color_space = ColorSpace::RawManualGamma);
 		static float linearRgbFromSRgb(float value_s_rgb);
 		static float sRgbFromLinearRgb(float value_linear_rgb);
 		static Rgb mix(const Rgb &a, const Rgb &b, float point);
@@ -206,6 +197,16 @@ class Rgba final : public Rgb
 
 		float a_ = 1.f;
 };
+
+inline constexpr bool operator == (const Rgb &col_1, const Rgb &col_2)
+{
+	return col_1.r_ == col_2.r_ && col_1.g_ == col_2.g_ && col_1.b_ == col_2.b_;
+}
+
+inline constexpr bool operator == (const Rgba &col_1, const Rgba &col_2)
+{
+	return col_1.r_ == col_2.r_ && col_1.g_ == col_2.g_ && col_1.b_ == col_2.b_ && col_1.a_ == col_2.a_;
+}
 
 inline void Rgb::expgamAdjust(float e, float g, bool clamp_rgb)
 {

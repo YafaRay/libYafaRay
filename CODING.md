@@ -36,7 +36,7 @@ astyle -r --mode=c --style=allman --indent-classes --indent=tab --keep-one-line-
 * Try using templating for generic functions as long as it does not cause performance problems
 * Do NOT use defines as a replacement for Enums!
 * Avoid global Enums as much as possible. Embed them within classes.
-* Avoid using directly Enums as simple global labels for simple variables of type int, etc. Use Enum class (name) : (type), and provide any variable using enums with the Enum class name, and provide methods to handle operators like &, etc.
+* Avoid using directly Enums as simple global labels for simple variables of enum_type int, etc. Use Enum class (name) : (enum_type), and provide any variable using enums with the Enum class name, and provide methods to handle operators like &, etc.
 * Avoid passing too many parameters to functions, if needed create a new Class or Struct and pass it.
 * Use structs only for very simple grouping of fully independent variables, without any inter-dependencies (no invariant)
 * Always try to add const (or better constexpr) to everything unless it really needs to change its internal state.
@@ -50,7 +50,7 @@ astyle -r --mode=c --style=allman --indent-classes --indent=tab --keep-one-line-
 * Keep multithreading in mind, use mutexes when needed, but avoid using them directly and use them with lock_guard if possible.
 * Try to embed all OS-specific code in dedicated classes so all #IFDEF, etc, are in that class and not contaminating the entire code.
 * Try to avoid "spaghetti code" and create more smaller classes with good defined relationships
-* Avoid adding too many dependencies to headers, use classes and enum:type forward declarations whenever possible.
+* Avoid adding too many dependencies to headers, use classes and enum:enum_type forward declarations whenever possible.
 * Avoid using "using" (except for yafaray namespace itself), for example write std::cout and not just cout. That way it's clear when we are using external libraries.
 * All class internal variables are to be named with trailing underscore (var_). It's ugly, and should be, because directly accessing class variables should be clearly visible (and discouraged as much as possible). From a design point of view it's better to use inline getters/setters instead, as it allows more flexibility in future changes to the class internals.
 * Also struct variables, even being public, are to be named with trailing underscore suffix (var_). The main reasons are: easier to make protected/private into fully encapsulated class in the future, safer initialization avoiding name clash with initializer arguments and safer refactoring/renaming of member variables

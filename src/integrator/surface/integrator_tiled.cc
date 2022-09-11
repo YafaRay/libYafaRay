@@ -25,8 +25,6 @@
 
 #include "integrator/surface/integrator_tiled.h"
 #include "integrator/volume/integrator_volume.h"
-#include <cmath>
-#include <memory>
 #include "common/layers.h"
 #include "background/background.h"
 #include "geometry/surface.h"
@@ -42,6 +40,8 @@
 #include "image/image_output.h"
 #include "accelerator/accelerator.h"
 #include "photon/photon.h"
+#include "param/param.h"
+#include "material/sample.h"
 
 namespace yafaray {
 
@@ -66,7 +66,7 @@ void TiledIntegrator::renderWorker(ThreadControl *control, FastRandom &fast_rand
 
 void TiledIntegrator::precalcDepths()
 {
-	if(camera_->getFarClip() > -1)
+	if(camera_->getFarClip() > -1.f)
 	{
 		min_depth_ = camera_->getNearClip();
 		max_depth_ = camera_->getFarClip();
@@ -311,7 +311,7 @@ bool TiledIntegrator::renderTile(FastRandom &fast_random, std::vector<int> &corr
 				color_layers.setDefaultColors();
 				pixel_sampling_data.sample_ = pass_offs + sample;
 
-				const float time = time_forced_ ? time_forced_value_ : math::addMod1(static_cast<float>(sample) * d_1, toff); //(0.5+(float)sample)*d1;
+				const float time = TiledIntegrator::params_.time_forced_ ? TiledIntegrator::params_.time_forced_value_ : math::addMod1(static_cast<float>(sample) * d_1, toff); //(0.5+(float)sample)*d1;
 				// the (1/n, Larcher&Pillichshammer-Seq.) only gives good coverage when total sample count is known
 				// hence we use scrambled (Sobol, van-der-Corput) for multipass AA  //!< the current (normalized) frame time  //FIXME, time not currently used in libYafaRay
 				pixel_sampling_data.time_ = time;
@@ -403,7 +403,7 @@ void TiledIntegrator::generateCommonLayers(ColorLayers *color_layers, const Surf
 {
 	if(color_layers)
 	{
-		if(flags::have(color_layers->getFlags(), LayerDef::Flags::DebugLayers))
+		if(color_layers->getFlags().has(LayerDef::Flags::DebugLayers))
 		{
 			if(Rgba *color_layer = color_layers->find(LayerDef::Uv))
 			{
@@ -492,7 +492,7 @@ void TiledIntegrator::generateCommonLayers(ColorLayers *color_layers, const Surf
 				}
 			}
 		}
-		if(flags::have(color_layers->getFlags(), LayerDef::Flags::BasicLayers))
+		if(color_layers->getFlags().has(LayerDef::Flags::BasicLayers))
 		{
 			if(Rgba *color_layer = color_layers->find(LayerDef::ReflectAll))
 			{
@@ -552,7 +552,7 @@ void TiledIntegrator::generateCommonLayers(ColorLayers *color_layers, const Surf
 				*color_layer = Rgba{sp.getMaterial()->getSubSurfaceColor(sp.mat_data_->node_tree_data_)};
 			}
 		}
-		if(flags::have(color_layers->getFlags(), LayerDef::Flags::IndexLayers))
+		if(color_layers->getFlags().has(LayerDef::Flags::IndexLayers))
 		{
 			if(Rgba *color_layer = color_layers->find(LayerDef::ObjIndexAbs))
 			{
@@ -663,7 +663,7 @@ Rgb TiledIntegrator::sampleAmbientOcclusion(const Accelerator &accelerator, bool
 							 Material::sampleClay(sp, wo, light_ray.dir_, s, w) :
 							 sp.sample(wo, light_ray.dir_, s, w, chromatic_enabled, wavelength, camera);
 		if(clay) s.pdf_ = 1.f;
-		if(flags::have(mat_bsdfs, BsdfFlags::Emit))
+		if(mat_bsdfs.has(BsdfFlags::Emit))
 		{
 			col += sp.emit(wo) * s.pdf_;
 		}

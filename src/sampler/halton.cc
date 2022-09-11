@@ -17,7 +17,6 @@
  */
 
 #include "sampler/halton.h"
-#include "geometry/vector.h"
 #include <vector>
 #include <array>
 

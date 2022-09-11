@@ -67,7 +67,7 @@ class Primitive
 		virtual std::pair<Point3f, Vec3f> sample(const Uv<float> &uv, float time) const = 0;
 		virtual std::pair<Point3f, Vec3f> sample(const Uv<float> &uv, float time, const Matrix4f &obj_to_world) const = 0;
 		virtual const Object *getObject() const = 0;
-		virtual VisibilityFlags getVisibility() const = 0;
+		virtual Visibility getVisibility() const = 0;
 		virtual unsigned int getObjectIndex() const = 0;
 		virtual unsigned int getObjectIndexAuto() const = 0;
 		virtual Rgb getObjectIndexAutoColor() const = 0;

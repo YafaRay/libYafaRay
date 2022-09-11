@@ -39,10 +39,45 @@ namespace yafaray {
 class DarkSkyBackground final : public Background
 {
 	public:
-		static const Background * factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params);
+		inline static std::string getClassName() { return "DarkSkyBackground"; }
+		static std::pair<Background *, ParamError> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params);
+		static std::string printMeta(const std::vector<std::string> &excluded_params) { return Params::meta_.print(excluded_params); }
 
 	private:
-		DarkSkyBackground(Logger &logger, const Point3f &dir, float turb, float pwr, float sky_bright, bool clamp, float av, float bv, float cv, float dv, float ev, float altitude, bool night, float exp, bool genc, ColorConv::ColorSpace cs);
+		struct ColorSpace : public Enum<ColorSpace>
+		{
+			inline static const EnumMap<decltype(type())> map_{{
+					{"CIE (E)", ColorConv::CieRgbECs, ""},
+					{"CIE (D50)", ColorConv::CieRgbD50Cs, ""},
+					{"sRGB (D65)", ColorConv::SRgbD65Cs, ""},
+					{"sRGB (D50)", ColorConv::SRgbD50Cs, ""},
+				}};
+		};
+		[[nodiscard]] Type type() const override { return Type::DarkSky; }
+		const struct Params
+		{
+			PARAM_INIT_PARENT(Background);
+			PARAM_DECL(Vec3f, from_, (Vec3f{{1, 1, 1}}), "from", "same as sunlight, position interpreted as direction");
+			PARAM_DECL(float , turb_, 4.f, "turbidity", "turbidity of atmosphere");
+			PARAM_DECL(float , altitude_, 0.f, "altitude", "");
+			PARAM_DECL(float , bright_, 1.f, "bright", "");
+			PARAM_DECL(float, exposure_, 1.f, "exposure", "");
+			PARAM_ENUM_DECL(ColorSpace, color_space_, ColorConv::CieRgbECs, "color_space", "");
+			PARAM_DECL(bool , night_, true, "night", "");
+			PARAM_DECL(bool , add_sun_, false, "add_sun", "automatically add real sunlight");
+			PARAM_DECL(float , sun_power_, 1.f, "sun_power", "sunlight power");
+			PARAM_DECL(bool , background_light_, false, "background_light", "");
+			PARAM_DECL(int, light_samples_, 8, "light_samples", "");
+			PARAM_DECL(bool , cast_shadows_sun_, true, "cast_shadows_sun", "");
+			PARAM_DECL(float, a_var_, 1.f, "a_var", "color variation parameters, default is normal");
+			PARAM_DECL(float, b_var_, 1.f, "b_var", "color variation parameters, default is normal");
+			PARAM_DECL(float, c_var_, 1.f, "c_var", "color variation parameters, default is normal");
+			PARAM_DECL(float, d_var_, 1.f, "d_var", "color variation parameters, default is normal");
+			PARAM_DECL(float, e_var_, 1.f, "e_var", "color variation parameters, default is normal");
+		} params_;
+		[[nodiscard]] ParamMap getAsParamMap(bool only_non_default) const override;
+
+		DarkSkyBackground(Logger &logger, ParamError &param_error, const ParamMap &param_map);
 		Rgb operator()(const Vec3f &dir, bool use_ibl_blur) const override;
 		Rgb eval(const Vec3f &dir, bool use_ibl_blur) const override;
 		Rgb getAttenuatedSunColor();
@@ -58,11 +93,9 @@ class DarkSkyBackground final : public Background
 		double t_, t_2_;
 		double zenith_Y_, zenith_x_, zenith_y_;
 		std::array<double, 6> perez_Y_, perez_x_, perez_y_;
+		float bright_;
 		float power_;
-		float sky_brightness_;
 		ColorConv color_conv_;
-		float alt_;
-		bool night_sky_;
 };
 
 } //namespace yafaray

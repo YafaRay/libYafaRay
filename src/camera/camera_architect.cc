@@ -21,18 +21,23 @@
  */
 
 #include "camera/camera_architect.h"
-#include "common/param.h"
+#include "param/param.h"
+#include "common/logger.h"
 
 namespace yafaray {
 
-const Camera * ArchitectCamera::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map)
+std::pair<Camera *, ParamError> ArchitectCamera::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map)
 {
-	return new ArchitectCamera(logger, param_map, param_map);
+	auto param_error{Params::meta_.check(param_map, {"type"}, {})};
+	auto result {new ArchitectCamera(logger, param_error, param_map)};
+	if(param_error.flags_ != ParamError::Flags::Ok) logger.logWarning(param_error.print<ArchitectCamera>(name, {"type"}));
+	return {result, param_error};
 }
 
-ArchitectCamera::ArchitectCamera(Logger &logger, const Camera::Params &camera_params, const PerspectiveCamera::Params &params)
-	: PerspectiveCamera(logger, camera_params, params)
+ArchitectCamera::ArchitectCamera(Logger &logger, ParamError &param_error, const ParamMap &param_map)
+	: PerspectiveCamera(logger, param_error, param_map)
 {
+	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + params_.getAsParamMap(true).print());
 }
 
 void ArchitectCamera::setAxis(const Vec3f &vx, const Vec3f &vy, const Vec3f &vz)

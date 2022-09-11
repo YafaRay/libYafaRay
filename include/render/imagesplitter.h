@@ -20,9 +20,9 @@
 #ifndef YAFARAY_IMAGESPLITTER_H
 #define YAFARAY_IMAGESPLITTER_H
 
-
+#include "common/enum.h"
+#include "common/enum_map.h"
 #include <vector>
-#include <cmath>
 
 namespace yafaray {
 
@@ -40,7 +40,15 @@ struct RenderArea
 class ImageSplitter final
 {
 	public:
-		enum TilesOrderType { Linear, Random, CentreRandom };
+		struct TilesOrderType : public Enum<TilesOrderType>
+		{
+			enum : decltype(type()) { CentreRandom, Linear, Random  };
+			inline static const EnumMap<decltype(type())> map_{{
+					{"centre", CentreRandom, ""},
+					{"linear", Linear, ""},
+					{"random", Random, ""},
+				}};
+		};
 		struct Region
 		{
 			int x_, y_, w_, h_;

@@ -56,7 +56,7 @@ class FacePrimitive: public Primitive
 		const Material *getMaterial() const override { return material_->get(); }
 		void setMaterial(const std::unique_ptr<const Material> *material) { material_ = material; }
 		const Object *getObject() const override { return &base_mesh_object_; }
-		VisibilityFlags getVisibility() const override { return base_mesh_object_.getVisibility(); }
+		Visibility getVisibility() const override { return base_mesh_object_.getVisibility(); }
 		unsigned int getObjectIndex() const override { return base_mesh_object_.getIndex(); }
 		unsigned int getObjectIndexAuto() const override { return base_mesh_object_.getIndexAuto(); }
 		Rgb getObjectIndexAutoColor() const override { return base_mesh_object_.getIndexAutoColor(); }

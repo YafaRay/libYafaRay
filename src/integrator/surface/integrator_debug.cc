@@ -20,41 +20,45 @@
 
 #include "integrator/surface/integrator_debug.h"
 #include "geometry/surface.h"
-#include "common/param.h"
+#include "param/param.h"
 #include "accelerator/accelerator.h"
 #include "render/imagesplitter.h"
 
 namespace yafaray {
 
-DebugIntegrator::DebugIntegrator(RenderControl &render_control, Logger &logger, SurfaceProperties dt) : TiledIntegrator(render_control, logger), debug_type_(dt)
+DebugIntegrator::Params::Params(ParamError &param_error, const ParamMap &param_map)
 {
-	render_info_ += "Debug integrator: '";
-	switch(dt)
-	{
-		case N:
-			render_info_ += "N";
-			break;
-		case DPdU:
-			render_info_ += "dPdU";
-			break;
-		case DPdV:
-			render_info_ += "dPdV";
-			break;
-		case Nu:
-			render_info_ += "NU";
-			break;
-		case Nv:
-			render_info_ += "NV";
-			break;
-		case DSdU:
-			render_info_ += "dSdU";
-			break;
-		case DSdV:
-			render_info_ += "dSdV";
-			break;
-	}
+	PARAM_ENUM_LOAD(debug_type_);
+	PARAM_LOAD(show_pn_);
+}
 
-	render_info_ += "' | ";
+ParamMap DebugIntegrator::Params::getAsParamMap(bool only_non_default) const
+{
+	PARAM_SAVE_START;
+	PARAM_ENUM_SAVE(debug_type_);
+	PARAM_SAVE(show_pn_);
+	PARAM_SAVE_END;
+}
+
+ParamMap DebugIntegrator::getAsParamMap(bool only_non_default) const
+{
+	ParamMap result{TiledIntegrator::getAsParamMap(only_non_default)};
+	result.append(params_.getAsParamMap(only_non_default));
+	return result;
+}
+
+std::pair<SurfaceIntegrator *, ParamError> DebugIntegrator::factory(Logger &logger, RenderControl &render_control, const ParamMap &param_map, const Scene &scene)
+{
+	auto param_error{Params::meta_.check(param_map, {"type"}, {})};
+	auto result {new DebugIntegrator(render_control, logger, param_error, param_map)};
+	if(param_error.flags_ != ParamError::Flags::Ok) logger.logWarning(param_error.print<DebugIntegrator>(getClassName(), {"type"}));
+	return {result, param_error};
+}
+
+DebugIntegrator::DebugIntegrator(RenderControl &render_control, Logger &logger, ParamError &param_error, const ParamMap &param_map) : TiledIntegrator(render_control, logger, param_error, param_map), params_{param_error, param_map}
+{
+	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + params_.getAsParamMap(true).print());
+	render_info_ += getClassName() + ": '" + params_.debug_type_.print() + "' | ";
 }
 
 bool DebugIntegrator::preprocess(FastRandom &fast_random, ImageFilm *image_film, const RenderView *render_view, const Scene &scene)
@@ -69,42 +73,25 @@ std::pair<Rgb, float> DebugIntegrator::integrate(Ray &ray, FastRandom &fast_rand
 	if(sp)
 	{
 		Rgb col {0.f};
-		if(debug_type_ == N)
-			col = Rgb((sp->n_[Axis::X] + 1.f) * .5f, (sp->n_[Axis::Y] + 1.f) * .5f, (sp->n_[Axis::Z] + 1.f) * .5f);
-		else if(debug_type_ == DPdU)
-			col = Rgb((sp->dp_.u_[Axis::X] + 1.f) * .5f, (sp->dp_.u_[Axis::Y] + 1.f) * .5f, (sp->dp_.u_[Axis::Z] + 1.f) * .5f);
-		else if(debug_type_ == DPdV)
-			col = Rgb((sp->dp_.v_[Axis::X] + 1.f) * .5f, (sp->dp_.v_[Axis::Y] + 1.f) * .5f, (sp->dp_.v_[Axis::Z] + 1.f) * .5f);
-		else if(debug_type_ == Nu)
-			col = Rgb((sp->uvn_.u_[Axis::X] + 1.f) * .5f, (sp->uvn_.u_[Axis::Y] + 1.f) * .5f, (sp->uvn_.u_[Axis::Z] + 1.f) * .5f);
-		else if(debug_type_ == Nv)
-			col = Rgb((sp->uvn_.v_[Axis::X] + 1.f) * .5f, (sp->uvn_.v_[Axis::Y] + 1.f) * .5f, (sp->uvn_.v_[Axis::Z] + 1.f) * .5f);
-		else if(debug_type_ == DSdU)
-			col = Rgb((sp->ds_.u_[Axis::X] + 1.f) * .5f, (sp->ds_.u_[Axis::Y] + 1.f) * .5f, (sp->ds_.u_[Axis::Z] + 1.f) * .5f);
-		else if(debug_type_ == DSdV)
-			col = Rgb((sp->ds_.v_[Axis::X] + 1.f) * .5f, (sp->ds_.v_[Axis::Y] + 1.f) * .5f, (sp->ds_.v_[Axis::Z] + 1.f) * .5f);
+		switch(params_.debug_type_.value())
+		{
+			case DebugType::N: col = Rgb((sp->n_[Axis::X] + 1.f) * .5f, (sp->n_[Axis::Y] + 1.f) * .5f, (sp->n_[Axis::Z] + 1.f) * .5f); break;
+			case DebugType::DPdU: col = Rgb((sp->dp_.u_[Axis::X] + 1.f) * .5f, (sp->dp_.u_[Axis::Y] + 1.f) * .5f, (sp->dp_.u_[Axis::Z] + 1.f) * .5f);
+				break;
+			case DebugType::DPdV: col = Rgb((sp->dp_.v_[Axis::X] + 1.f) * .5f, (sp->dp_.v_[Axis::Y] + 1.f) * .5f, (sp->dp_.v_[Axis::Z] + 1.f) * .5f);
+				break;
+			case DebugType::Nu: col = Rgb((sp->uvn_.u_[Axis::X] + 1.f) * .5f, (sp->uvn_.u_[Axis::Y] + 1.f) * .5f, (sp->uvn_.u_[Axis::Z] + 1.f) * .5f);
+				break;
+			case DebugType::Nv: col = Rgb((sp->uvn_.v_[Axis::X] + 1.f) * .5f, (sp->uvn_.v_[Axis::Y] + 1.f) * .5f, (sp->uvn_.v_[Axis::Z] + 1.f) * .5f);
+				break;
+			case DebugType::DSdU: col = Rgb((sp->ds_.u_[Axis::X] + 1.f) * .5f, (sp->ds_.u_[Axis::Y] + 1.f) * .5f, (sp->ds_.u_[Axis::Z] + 1.f) * .5f);
+				break;
+			case DebugType::DSdV: col = Rgb((sp->ds_.v_[Axis::X] + 1.f) * .5f, (sp->ds_.v_[Axis::Y] + 1.f) * .5f, (sp->ds_.v_[Axis::Z] + 1.f) * .5f);
+				break;
+		}
 		return {std::move(col), 1.f};
 	}
-	return {Rgb{0.f}, 1.f};
-}
-
-SurfaceIntegrator * DebugIntegrator::factory(Logger &logger, RenderControl &render_control, const ParamMap &params, const Scene &scene)
-{
-	int dt = 1;
-	bool pn = false;
-	bool time_forced = false;
-	float time_forced_value = 0.f;
-	params.getParam("debugType", dt);
-	params.getParam("showPN", pn);
-	params.getParam("time_forced", time_forced);
-	params.getParam("time_forced_value", time_forced_value);
-	std::cout << "debugType " << dt << std::endl;
-	auto inte = new DebugIntegrator(render_control, logger, static_cast<SurfaceProperties>(dt));
-	inte->show_pn_ = pn;
-	inte->time_forced_ = time_forced;
-	inte->time_forced_value_ = time_forced_value;
-
-	return inte;
+	else return {Rgb{0.f}, 1.f};
 }
 
 } //namespace yafaray

@@ -23,6 +23,7 @@
 #include "material/material.h"
 #include <map>
 #include <vector>
+#include <set>
 
 namespace yafaray {
 
@@ -33,7 +34,8 @@ class NodeTreeData;
 class NodeMaterial: public Material
 {
 	public:
-		explicit NodeMaterial(Logger &logger) : Material(logger) { }
+		inline static std::string getClassName() { return "NodeMaterial"; }
+		explicit NodeMaterial(Logger &logger, ParamError &param_error, const ParamMap &param_map) : Material{logger, param_error, param_map} { }
 
 	protected:
 		/** parse node shaders to fill nodeList */
@@ -41,7 +43,6 @@ class NodeMaterial: public Material
 		/* put nodes in evaluation order in "allSorted" given all root nodes;
 		   sets reqNodeMem to the amount of memory the node node_tree_data requires for evaluation of all nodes */
 		void evalBump(NodeTreeData &node_tree_data, SurfacePoint &sp, const ShaderNode *bump_shader_node, const Camera *camera) const;
-		size_t sizeNodesBytes() const { return (color_nodes_.size() + bump_nodes_.size()) * sizeof(NodeResult); }
 		static void evalNodes(const SurfacePoint &sp, const std::vector<const ShaderNode *> &nodes, NodeTreeData &node_tree_data, const Camera *camera);
 		static std::vector<const ShaderNode *> recursiveSolver(const ShaderNode *node);
 		static std::set<const ShaderNode *> recursiveFinder(const ShaderNode *node);
@@ -49,10 +50,24 @@ class NodeMaterial: public Material
 		static std::vector<const ShaderNode *> getNodeList(const ShaderNode *root, const std::vector<const ShaderNode *> &nodes_sorted);
 		/*! load nodes from parameter map list */
 		static std::map<std::string, std::unique_ptr<ShaderNode>> loadNodes(const std::list<ParamMap> &params_list, const Scene &scene, Logger &logger);
+		template <typename ShaderNodeType> static std::array<std::unique_ptr<ParamMeta>, ShaderNodeType::Size> initShaderNames(std::map<std::string, const ParamMeta *> &map);
 
 		std::map<std::string, std::unique_ptr<ShaderNode>> nodes_map_;
 		std::vector<const ShaderNode *> color_nodes_, bump_nodes_;
 };
+
+template <typename ShaderNodeType>
+inline std::array<std::unique_ptr<ParamMeta>, ShaderNodeType::Size> NodeMaterial::initShaderNames(std::map<std::string, const ParamMeta *> &map)
+{
+	std::array<std::unique_ptr<ParamMeta>, ShaderNodeType::Size> result;
+	for(size_t index = 0; index < ShaderNodeType::Size; ++index)
+	{
+		ShaderNodeType shader_node_type{static_cast<unsigned char>(index)};
+		const std::string shader_node_type_name{shader_node_type.print()};
+		result[index] = std::make_unique<ParamMeta>(shader_node_type_name, shader_node_type.printDescription(), std::string{""}, map);
+	}
+	return result;
+}
 
 } //namespace yafaray
 

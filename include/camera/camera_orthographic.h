@@ -30,22 +30,24 @@ class Scene;
 class OrthographicCamera final: public Camera
 {
 	public:
-		struct Params
-		{
-			Params(const ParamMap &param_map);
-			ParamMap getAsParamMap() const;
-			float scale_ = 1.f;
-		};
-		static const Camera * factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map);
+		inline static std::string getClassName() { return "OrthographicCamera"; }
+		static std::pair<Camera *, ParamError> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map);
+		static std::string printMeta(const std::vector<std::string> &excluded_params) { return Params::meta_.print(excluded_params); }
 
 	private:
-		OrthographicCamera(Logger &logger, const Camera::Params &camera_params, const Params &params);
-		ParamMap getAsParamMap() const override;
+		[[nodiscard]] Type type() const override { return Type::Orthographic; }
+		const struct Params
+		{
+			PARAM_INIT_PARENT(Camera);
+			PARAM_DECL(float, scale_, 1.f, "scale", "");
+		} params_;
+		[[nodiscard]] ParamMap getAsParamMap(bool only_non_default) const override;
+
+		OrthographicCamera(Logger &logger, ParamError &param_error, const ParamMap &param_map);
 		void setAxis(const Vec3f &vx, const Vec3f &vy, const Vec3f &vz) override;
 		CameraRay shootRay(float px, float py, const Uv<float> &uv) const override;
 		Point3f screenproject(const Point3f &p) const override;
 
-		const Params params_;
 		Point3f pos_;
 };
 

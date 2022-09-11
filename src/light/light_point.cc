@@ -22,23 +22,51 @@
 #include "geometry/surface.h"
 #include "sampler/sample.h"
 #include "geometry/ray.h"
-#include "common/param.h"
+#include "param/param.h"
 
 namespace yafaray {
 
-PointLight::PointLight(Logger &logger, const Point3f &pos, const Rgb &col, float inte, bool b_light_enabled, bool b_cast_shadows):
-		Light(logger, Light::Flags::Singular), position_(pos)
+PointLight::Params::Params(ParamError &param_error, const ParamMap &param_map)
 {
-	light_enabled_ = b_light_enabled;
-	cast_shadows_ = b_cast_shadows;
-	color_ = col * inte;
-	intensity_ = color_.energy();
+	PARAM_LOAD(from_);
+	PARAM_LOAD(color_);
+	PARAM_LOAD(power_);
+}
+
+ParamMap PointLight::Params::getAsParamMap(bool only_non_default) const
+{
+	PARAM_SAVE_START;
+	PARAM_SAVE(from_);
+	PARAM_SAVE(color_);
+	PARAM_SAVE(power_);
+	PARAM_SAVE_END;
+}
+
+ParamMap PointLight::getAsParamMap(bool only_non_default) const
+{
+	ParamMap result{Light::getAsParamMap(only_non_default)};
+	result.append(params_.getAsParamMap(only_non_default));
+	return result;
+}
+
+std::pair<Light *, ParamError> PointLight::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map)
+{
+	auto param_error{Params::meta_.check(param_map, {"type"}, {})};
+	auto result {new PointLight(logger, param_error, name, param_map)};
+	if(param_error.flags_ != ParamError::Flags::Ok) logger.logWarning(param_error.print<PointLight>(name, {"type"}));
+	return {result, param_error};
+}
+
+PointLight::PointLight(Logger &logger, ParamError &param_error, const std::string &name, const ParamMap &param_map):
+		Light{logger, param_error, name, param_map, Light::Flags::Singular}, params_{param_error, param_map}
+{
+	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + params_.getAsParamMap(true).print());
 }
 
 std::tuple<bool, Ray, Rgb> PointLight::illuminate(const Point3f &surface_p, float time) const
 {
 	if(photonOnly()) return {};
-	Vec3f ldir{position_ - surface_p};
+	Vec3f ldir{params_.from_ - surface_p};
 	const float dist_sqr = ldir[Axis::X] * ldir[Axis::X] + ldir[Axis::Y] * ldir[Axis::Y] + ldir[Axis::Z] * ldir[Axis::Z];
 	const float dist = math::sqrt(dist_sqr);
 	if(dist == 0.f) return {};
@@ -52,7 +80,7 @@ std::pair<bool, Ray> PointLight::illumSample(const Point3f &surface_p, LSample &
 {
 	if(photonOnly()) return {};
 	// bleh...
-	Vec3f ldir{position_ - surface_p};
+	Vec3f ldir{params_.from_ - surface_p};
 	float dist_sqr = ldir[Axis::X] * ldir[Axis::X] + ldir[Axis::Y] * ldir[Axis::Y] + ldir[Axis::Z] * ldir[Axis::Z];
 	float dist = math::sqrt(dist_sqr);
 	if(dist == 0.f) return {};
@@ -67,13 +95,13 @@ std::pair<bool, Ray> PointLight::illumSample(const Point3f &surface_p, LSample &
 std::tuple<Ray, float, Rgb> PointLight::emitPhoton(float s_1, float s_2, float s_3, float s_4, float time) const
 {
 	Vec3f dir{sample::sphere(s_1, s_2)};
-	Ray ray{position_, std::move(dir), time};
+	Ray ray{params_.from_, std::move(dir), time};
 	return {std::move(ray), 4.f * math::num_pi<>, color_};
 }
 
 std::pair<Vec3f, Rgb> PointLight::emitSample(LSample &s, float time) const
 {
-	s.sp_->p_ = position_;
+	s.sp_->p_ = params_.from_;
 	Vec3f dir{sample::sphere(s.s_1_, s.s_2_)};
 	s.flags_ = flags_;
 	s.dir_pdf_ = 0.25f;
@@ -87,36 +115,6 @@ std::array<float, 3> PointLight::emitPdf(const Vec3f &surface_n, const Vec3f &wo
 	const float dir_pdf = 0.25f;
 	const float cos_wo = 1.f;
 	return {area_pdf, dir_pdf, cos_wo};
-}
-
-Light * PointLight::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params)
-{
-	Point3f from{{0.f, 0.f, 0.f}};
-	Rgb color(1.0);
-	float power = 1.0;
-	bool light_enabled = true;
-	bool cast_shadows = true;
-	bool shoot_d = true;
-	bool shoot_c = true;
-	bool p_only = false;
-
-	params.getParam("from", from);
-	params.getParam("color", color);
-	params.getParam("power", power);
-	params.getParam("light_enabled", light_enabled);
-	params.getParam("cast_shadows", cast_shadows);
-	params.getParam("with_caustic", shoot_c);
-	params.getParam("with_diffuse", shoot_d);
-	params.getParam("photon_only", p_only);
-
-
-	auto light = new PointLight(logger, from, color, power, light_enabled, cast_shadows);
-
-	light->shoot_caustic_ = shoot_c;
-	light->shoot_diffuse_ = shoot_d;
-	light->photon_only_ = p_only;
-
-	return light;
 }
 
 } //namespace yafaray

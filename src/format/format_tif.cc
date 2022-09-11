@@ -22,11 +22,9 @@
 
 #include "format/format_tif.h"
 #include "common/logger.h"
-#include "common/param.h"
 #include "scene/scene.h"
 #include "color/color.h"
 #include "image/image_layers.h"
-#include "color/color_layers.h"
 
 #if defined(_WIN32)
 #include "common/string.h"
@@ -119,8 +117,13 @@ Image * TifFormat::loadFromFile(const std::string &name, const Image::Optimizati
 		logger_.logError(getFormatName(), ": Error reading TIFF file");
 		return nullptr;
 	}
-	const Image::Type type = Image::getTypeFromSettings(true, grayscale_);
-	auto image = Image::factory(logger_, {{static_cast<int>(w), static_cast<int>(h)}}, type, optimization);
+	Image::Params image_params;
+	image_params.width_ = static_cast<int>(w);
+	image_params.height_ = static_cast<int>(h);
+	image_params.type_ = Image::getTypeFromSettings(true, grayscale_);
+	image_params.image_optimization_ = optimization;
+	image_params.filename_ = name;
+	auto image = Image::factory(image_params);
 	int i = 0;
 	for(int y = static_cast<int>(h) - 1; y >= 0; y--)
 	{

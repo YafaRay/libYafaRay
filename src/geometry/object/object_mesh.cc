@@ -18,61 +18,63 @@
 
 #include "geometry/object/object_mesh.h"
 #include "geometry/primitive/primitive_polygon.h"
-#include "geometry/uv.h"
 #include "scene/scene.h"
 #include "common/logger.h"
-#include "common/param.h"
+#include "param/param.h"
 #include "math/interpolation.h"
 #include <array>
 #include <memory>
 
 namespace yafaray {
 
-Object * MeshObject::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params)
+MeshObject::Params::Params(ParamError &param_error, const ParamMap &param_map)
 {
-	if(logger.isDebug())
-	{
-		logger.logDebug("MeshObject::factory");
-		params.logContents(logger);
-	}
-	std::string light_name, visibility, base_object_name;
-	bool is_base_object = false, has_uv = false, has_orco = false;
-	int num_faces = 0, num_vertices = 0;
-	int object_index = 0;
-	bool motion_blur_bezier = false;
-	float time_range_start = 0.f;
-	float time_range_end = 1.f;
-	params.getParam("light_name", light_name);
-	params.getParam("visibility", visibility);
-	params.getParam("is_base_object", is_base_object);
-	params.getParam("object_index", object_index);
-	params.getParam("num_faces", num_faces);
-	params.getParam("num_vertices", num_vertices);
-	params.getParam("has_uv", has_uv);
-	params.getParam("has_orco", has_orco);
-	params.getParam("motion_blur_bezier", motion_blur_bezier);
-	params.getParam("time_range_start", time_range_start);
-	params.getParam("time_range_end", time_range_end);
-	auto object = new MeshObject(num_vertices, num_faces, has_uv, has_orco, motion_blur_bezier, time_range_start, time_range_end);
-	object->setName(name);
-	object->setLight(scene.getLight(light_name));
-	object->setVisibility(visibility::fromString(visibility));
-	object->useAsBaseObject(is_base_object);
-	object->setIndex(object_index);
-	return object;
+	PARAM_LOAD(num_faces_);
+	PARAM_LOAD(num_vertices_);
+	PARAM_LOAD(has_uv_);
+	PARAM_LOAD(has_orco_);
 }
 
-MeshObject::MeshObject(int num_vertices, int num_faces, bool has_uv, bool has_orco, bool motion_blur_bezier, float time_range_start, float time_range_end) : motion_blur_bezier_(motion_blur_bezier)
+ParamMap MeshObject::Params::getAsParamMap(bool only_non_default) const
 {
+	PARAM_SAVE_START;
+	PARAM_SAVE(num_faces_);
+	PARAM_SAVE(num_vertices_);
+	PARAM_SAVE(has_uv_);
+	PARAM_SAVE(has_orco_);
+	PARAM_SAVE_END;
+}
+
+ParamMap MeshObject::getAsParamMap(bool only_non_default) const
+{
+	ParamMap result{ObjectBase::getAsParamMap(only_non_default)};
+	result.append(params_.getAsParamMap(only_non_default));
+	return result;
+}
+
+std::pair<Object *, ParamError> MeshObject::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map)
+{
+	auto param_error{Params::meta_.check(param_map, {"type"}, {})};
+	auto object = new MeshObject(param_error, param_map);
+	if(param_error.flags_ != ParamError::Flags::Ok) logger.logWarning(param_error.print<MeshObject>(name, {"type"}));
+	object->setName(name);
+	object->setLight(scene.getLight(object->ObjectBase::params_.light_name_));
+	return {object, param_error};
+}
+
+MeshObject::MeshObject(ParamError &param_error, const ParamMap &param_map) : ObjectBase{param_error, param_map}, params_{param_error, param_map}
+{
+	//if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + params_.getAsParamMap(true).print());
+	const int num_faces = calculateNumFaces();
 	faces_.reserve(num_faces);
-	if(has_uv) uv_values_.reserve(num_vertices);
-	if(motion_blur_bezier) time_steps_.resize(3);
+	if(params_.has_uv_) uv_values_.reserve(params_.num_vertices_);
+	if(ObjectBase::params_.motion_blur_bezier_) time_steps_.resize(3);
 	for(size_t i = 0; i < time_steps_.size(); ++i)
 	{
 		const float time_factor_float = time_steps_.size() > 1 ? static_cast<float>(i) / static_cast<float>(time_steps_.size() - 1) : 0.f;
-		time_steps_[i].time_ = math::lerp(time_range_start, time_range_end, time_factor_float);
-		time_steps_[i].points_.reserve(num_vertices);
-		if(has_orco) time_steps_[i].orco_points_.reserve(num_vertices);
+		time_steps_[i].time_ = math::lerp(ObjectBase::params_.time_range_start_, ObjectBase::params_.time_range_end_, time_factor_float);
+		time_steps_[i].points_.reserve(params_.num_vertices_);
+		if(params_.has_orco_) time_steps_[i].orco_points_.reserve(params_.num_vertices_);
 	}
 }
 

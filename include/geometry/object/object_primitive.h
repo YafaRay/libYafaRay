@@ -29,12 +29,18 @@ namespace yafaray {
 class PrimitiveObject final : public ObjectBase
 {
 	public:
+		PrimitiveObject(ParamError &param_error, const ParamMap &param_map) : ObjectBase{param_error, param_map} { }
+		static std::string printMeta(const std::vector<std::string> &excluded_params) { return Params::meta_.print(excluded_params); }
 		void setPrimitive(const Primitive *primitive) { primitive_ = primitive; }
+
+	protected:
+ 		inline static std::string getClassName() { return "PrimitiveObject"; }
 		int numPrimitives() const override { return 1; }
 		std::vector<const Primitive *> getPrimitives() const override { return {primitive_}; }
 		bool calculateObject(const std::unique_ptr<const Material> *material) override { return true; }
 
 	private:
+		[[nodiscard]] Type type() const override { return Type::Sphere; }
 		const Primitive *primitive_ = nullptr;
 };
 

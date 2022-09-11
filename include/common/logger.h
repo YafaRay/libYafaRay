@@ -32,13 +32,11 @@
 #include <iomanip>
 #include <sstream>
 #include <unordered_map>
-#include <utility>
 #include <vector>
 #include <mutex>
 
 namespace yafaray {
 
-class PhotonMap;
 class Badge;
 struct ConsoleColor;
 class RenderControl;

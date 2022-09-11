@@ -40,7 +40,7 @@ std::vector<const Primitive *> ObjectInstance::getPrimitives() const
 	return result;
 }
 
-VisibilityFlags ObjectInstance::getVisibility() const
+Visibility ObjectInstance::getVisibility() const
 {
 	return primitive_instances_.front()->getVisibility();
 }

@@ -17,8 +17,8 @@
  *      Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-#ifndef YAFARAY_SCENE_H
-#define YAFARAY_SCENE_H
+#ifndef LIBYAFARAY_SCENE_H
+#define LIBYAFARAY_SCENE_H
 
 #include "common/aa_noise_params.h"
 #include "common/layers.h"
@@ -62,6 +62,7 @@ typedef Point<float, 3> Point3f;
 template <typename T, size_t N> class Vec;
 typedef Vec<float, 3> Vec3f;
 template<typename T> class Bound;
+struct ParamError;
 enum class DarkDetectionType : unsigned char;
 
 typedef unsigned int ObjId_t;
@@ -69,6 +70,7 @@ typedef unsigned int ObjId_t;
 class Scene final
 {
 	public:
+		inline static std::string getClassName() { return "Scene"; }
 		explicit Scene(Logger &logger);
 		Scene(const Scene &s) = delete;
 		~Scene();
@@ -107,38 +109,34 @@ class Scene final
 		int getNumThreadsPhotons() const { return nthreads_photons_; }
 		AaNoiseParams getAaParameters() const { return aa_noise_params_; }
 		RenderControl &getRenderControl() { return render_control_; }
-		const RenderControl &getRenderControl() const { return render_control_; }
 		const std::unique_ptr<const Material> * getMaterial(const std::string &name) const;
 		Texture *getTexture(const std::string &name) const;
 		const Camera * getCamera(const std::string &name) const;
 		Light *getLight(const std::string &name) const;
-		const Background * getBackground(const std::string &name) const;
-		Integrator *getIntegrator(const std::string &name) const;
 		ImageOutput *getOutput(const std::string &name) const;
 		std::shared_ptr<Image> getImage(const std::string &name) const;
 		const std::map<std::string, std::unique_ptr<RenderView>> &getRenderViews() const { return render_views_; }
 		const std::map<std::string, std::unique_ptr<VolumeRegion>> * getVolumeRegions() const { return &volume_regions_; }
 		std::map<std::string, Light *> getLights() const;
 
-		Light *createLight(std::string &&name, ParamMap &&params);
-		Texture *createTexture(std::string &&name, ParamMap &&params);
-		std::unique_ptr<const Material> *createMaterial(std::string &&name, ParamMap &&params, std::list<ParamMap> &&nodes_params);
-		const Camera *createCamera(std::string &&name, ParamMap &&params);
-		const Background *defineBackground(ParamMap &&params);
-		SurfaceIntegrator *defineSurfaceIntegrator(ParamMap &&params);
-		VolumeIntegrator *defineVolumeIntegrator(ParamMap &&params);
-		VolumeRegion *createVolumeRegion(std::string &&name, ParamMap &&params);
-		RenderView *createRenderView(std::string &&name, ParamMap &&params);
-		std::shared_ptr<Image> createImage(std::string &&name, ParamMap &&params);
-		ImageOutput *createOutput(std::string &&name, ParamMap &&params);
+		std::pair<Light *, ParamError> createLight(std::string &&name, ParamMap &&params);
+		std::pair<Texture *, ParamError> createTexture(std::string &&name, ParamMap &&params);
+		std::pair<std::unique_ptr<const Material> *, ParamError> createMaterial(std::string &&name, ParamMap &&params, std::list<ParamMap> &&nodes_params);
+		std::pair<Camera *, ParamError> createCamera(std::string &&name, ParamMap &&params);
+		std::pair<Background *, ParamError> defineBackground(ParamMap &&params);
+		std::pair<SurfaceIntegrator *, ParamError> defineSurfaceIntegrator(ParamMap &&params);
+		std::pair<VolumeIntegrator *, ParamError> defineVolumeIntegrator(ParamMap &&params);
+		std::pair<VolumeRegion *, ParamError> createVolumeRegion(std::string &&name, ParamMap &&params);
+		std::pair<RenderView *, ParamError> createRenderView(std::string &&name, ParamMap &&params);
+		std::pair<std::shared_ptr<Image>, ParamError> createImage(std::string &&name, ParamMap &&params);
+		std::pair<ImageOutput *, ParamError> createOutput(std::string &&name, ParamMap &&params);
 		bool removeOutput(std::string &&name);
 		void clearOutputs();
-		std::map<std::string, std::unique_ptr<ImageOutput>> &getOutputs() { return outputs_; }
 		const std::map<std::string, std::unique_ptr<ImageOutput>> &getOutputs() const { return outputs_; }
-		bool setupSceneRenderParams(Scene &scene, ParamMap &&params);
+		bool setupSceneRenderParams(Scene &scene, ParamMap &&param_map);
 		void defineLayer(ParamMap &&params);
 		void defineLayer(std::string &&layer_type_name, std::string &&image_type_name, std::string &&exported_image_type_name, std::string &&exported_image_name);
-		void defineLayer(LayerDef::Type layer_type, Image::Type image_type = Image::Type::None, Image::Type exported_image_type = Image::Type::None, const std::string &exported_image_name = "");
+		void defineLayer(LayerDef::Type layer_type, Image::Type image_type = Image::Type{Image::Type::None}, Image::Type exported_image_type = Image::Type{Image::Type::None}, const std::string &exported_image_name = "");
 		void clearLayers();
 		const Layers * getLayers() const { return &layers_; }
 		float getShadowBias() const { return shadow_bias_; }
@@ -147,14 +145,10 @@ class Scene final
 		bool isRayMinDistAuto() const { return ray_min_dist_auto_; }
 		const VolumeIntegrator *getVolIntegrator() const { return vol_integrator_.get(); }
 
-		unsigned int getMaterialIndexHighest() const { return material_index_highest_; }
 		unsigned int getMaterialIndexAuto() const { return material_index_auto_; }
-		unsigned int getObjectIndexHighest() const { return object_index_highest_; }
 		unsigned int getObjectIndexAuto() const { return object_index_auto_; }
 
 		static void logWarnExist(Logger &logger, const std::string &pname, const std::string &name);
-		static void logErrNoType(Logger &logger, const std::string &pname, const std::string &name, const std::string &type);
-		static void logErrOnCreate(Logger &logger, const std::string &pname, const std::string &name, const std::string &type);
 		static void logInfoVerboseSuccess(Logger &logger, const std::string &pname, const std::string &name, const std::string &t);
 		static void logInfoVerboseSuccessDisabled(Logger &logger, const std::string &pname, const std::string &name, const std::string &t);
 
@@ -175,12 +169,14 @@ class Scene final
 	private:
 		template <typename T> static T *findMapItem(const std::string &name, const std::map<std::string, std::unique_ptr<T>> &map);
 		template <typename T> static std::shared_ptr<T> findMapItem(const std::string &name, const std::map<std::string, std::shared_ptr<T>> &map);
-		template <typename T> std::unique_ptr<T> defineItem(ParamMap &&params, std::string &&name, std::string &&class_name);
-		template <typename T> std::unique_ptr<T> defineIntegrator(ParamMap &&params, std::string &&name, std::string &&class_name);
+		template <typename T>
+		std::pair<std::unique_ptr<T>, ParamError> defineItem(ParamMap &&params, std::string &&name, std::string &&class_name);
+		template <typename T>
+		std::pair<std::unique_ptr<T>, ParamError> defineSurfaceIntegrator(ParamMap &&params, std::string &&name, std::string &&class_name);
 		void setMaskParams(const ParamMap &params);
 		void setEdgeToonParams(const ParamMap &params);
-		template <typename T> static T *createMapItem(Logger &logger, std::string &&name, std::string &&class_name, ParamMap &&params, std::map<std::string, std::unique_ptr<T>> &map, const Scene *scene, bool check_type_exists = true);
-		template <typename T> static std::shared_ptr<T> createMapItem(Logger &logger, std::string &&name, std::string &&class_name, ParamMap &&params, std::map<std::string, std::shared_ptr<T>> &map, const Scene *scene, bool check_type_exists = true);
+		template <typename T> static std::pair<T *, ParamError> createMapItem(Logger &logger, std::string &&name, std::string &&class_name, ParamMap &&params, std::map<std::string, std::unique_ptr<T>> &map, const Scene *scene);
+		template <typename T> static std::pair<std::shared_ptr<T>, ParamError> createMapItem(Logger &logger, std::string &&name, std::string &&class_name, ParamMap &&params, std::map<std::string, std::shared_ptr<T>> &map, const Scene *scene);
 		void defineBasicLayers();
 		void defineDependentLayers(); //!< This function generates the basic/auxiliary layers. Must be called *after* defining all render layers with the defineLayer function.
 
@@ -216,11 +212,11 @@ class Scene final
 		unsigned int object_index_highest_ = 1; //!< Highest object index used for the Normalized Object Index pass.
 		unsigned int object_index_auto_ = 1; //!< Object Index automatically generated for the object-index-auto render pass
 		std::unique_ptr<ImageFilm> image_film_;
-		std::unique_ptr<const Background> background_;
+		std::unique_ptr<Background> background_;
 		std::unique_ptr<SurfaceIntegrator> surf_integrator_;
 		std::unique_ptr<VolumeIntegrator> vol_integrator_;
 		std::map<std::string, std::unique_ptr<Texture>> textures_;
-		std::map<std::string, std::unique_ptr<const Camera>> cameras_;
+		std::map<std::string, std::unique_ptr<Camera>> cameras_;
 		std::map<std::string, std::unique_ptr<VolumeRegion>> volume_regions_;
 		std::map<std::string, std::unique_ptr<ImageOutput>> outputs_;
 		std::map<std::string, std::unique_ptr<RenderView>> render_views_;
@@ -233,4 +229,4 @@ class Scene final
 
 } //namespace yafaray
 
-#endif // YAFARAY_SCENE_H
+#endif // LIBYAFARAY_SCENE_H

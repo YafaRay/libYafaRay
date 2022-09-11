@@ -19,33 +19,65 @@
  */
 
 #include "integrator/surface/integrator_sppm.h"
-
-#include <memory>
 #include "geometry/surface.h"
-#include "volume/volume.h"
-#include "common/param.h"
+#include "param/param.h"
 #include "render/imagefilm.h"
 #include "sampler/sample_pdf1d.h"
 #include "light/light.h"
+#include "camera/camera.h"
 #include "color/spectrum.h"
 #include "color/color_layers.h"
 #include "render/render_data.h"
-#include "accelerator/accelerator.h"
 #include "photon/photon.h"
+#include "render/render_control.h"
+#include "render/render_view.h"
+#include "photon/photon_sample.h"
+#include "volume/handler/volume_handler.h"
 
 namespace yafaray {
 
-SppmIntegrator::SppmIntegrator(RenderControl &render_control, Logger &logger, unsigned int d_photons, int passnum, bool transparent_shadows, int shadow_depth) : MonteCarloIntegrator(render_control, logger)
+SppmIntegrator::Params::Params(ParamError &param_error, const ParamMap &param_map)
 {
-	n_photons_ = d_photons;
-	pass_num_ = passnum;
-	totaln_photons_ = 0;
-	initial_factor_ = 1.f;
+	PARAM_LOAD(num_photons_);
+	PARAM_LOAD(num_passes_);
+	PARAM_LOAD(bounces_);
+	PARAM_LOAD(times_);
+	PARAM_LOAD(photon_radius_);
+	PARAM_LOAD(search_num_);
+	PARAM_LOAD(pm_ire_);
+}
 
-	s_depth_ = shadow_depth;
-	transparent_shadows_ = transparent_shadows;
-	b_hashgrid_ = false;
+ParamMap SppmIntegrator::Params::getAsParamMap(bool only_non_default) const
+{
+	PARAM_SAVE_START;
+	PARAM_SAVE(num_photons_);
+	PARAM_SAVE(num_passes_);
+	PARAM_SAVE(bounces_);
+	PARAM_SAVE(times_);
+	PARAM_SAVE(photon_radius_);
+	PARAM_SAVE(search_num_);
+	PARAM_SAVE(pm_ire_);
+	PARAM_SAVE_END;
+}
 
+ParamMap SppmIntegrator::getAsParamMap(bool only_non_default) const
+{
+	ParamMap result{MonteCarloIntegrator::getAsParamMap(only_non_default)};
+	result.append(params_.getAsParamMap(only_non_default));
+	return result;
+}
+
+std::pair<SurfaceIntegrator *, ParamError> SppmIntegrator::factory(Logger &logger, RenderControl &render_control, const ParamMap &param_map, const Scene &scene)
+{
+	auto param_error{Params::meta_.check(param_map, {"type"}, {})};
+	auto result {new SppmIntegrator(render_control, logger, param_error, param_map)};
+	if(param_error.flags_ != ParamError::Flags::Ok) logger.logWarning(param_error.print<SppmIntegrator>(getClassName(), {"type"}));
+	return {result, param_error};
+}
+
+SppmIntegrator::SppmIntegrator(RenderControl &render_control, Logger &logger, ParamError &param_error, const ParamMap &param_map) : MonteCarloIntegrator(render_control, logger, param_error, param_map), params_{param_error, param_map}
+{
+	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + params_.getAsParamMap(true).print());
 	caustic_map_ = std::make_unique<PhotonMap>(logger);
 	caustic_map_->setName("Caustic Photon Map");
 	diffuse_map_ = std::make_unique<PhotonMap>(logger);
@@ -62,12 +94,12 @@ bool SppmIntegrator::render(FastRandom &fast_random, unsigned int object_index_h
 {
 	std::stringstream pass_string;
 	std::stringstream aa_settings;
-	aa_settings << " passes=" << pass_num_ << " samples=" << aa_noise_params_.samples_ << " inc_samples=" << aa_noise_params_.inc_samples_;
+	aa_settings << " passes=" << params_.num_passes_ << " samples=" << aa_noise_params_.samples_ << " inc_samples=" << aa_noise_params_.inc_samples_;
 	aa_settings << " clamp=" << aa_noise_params_.clamp_samples_ << " ind.clamp=" << aa_noise_params_.clamp_indirect_;
 
 	aa_noise_info_ += aa_settings.str();
 
-	render_control_.setTotalPasses(pass_num_);	//passNum is total number of passes in SPPM
+	render_control_.setTotalPasses(params_.num_passes_);	//passNum is total number of passes in SPPM
 
 	aa_sample_multiplier_ = 1.f;
 	aa_light_sample_multiplier_ = 1.f;
@@ -80,17 +112,17 @@ bool SppmIntegrator::render(FastRandom &fast_random, unsigned int object_index_h
 
 	set << "SPPM  ";
 
-	if(transparent_shadows_)
+	if(MonteCarloIntegrator::params_.transparent_shadows_)
 	{
-		set << "ShadowDepth=" << s_depth_ << "  ";
+		set << "ShadowDepth=" << MonteCarloIntegrator::params_.shadow_depth_ << "  ";
 	}
-	set << "RayDepth=" << r_depth_ << "  ";
+	set << "RayDepth=" << MonteCarloIntegrator::params_.r_depth_ << "  ";
 
 	render_info_ += set.str();
 	if(logger_.isVerbose()) logger_.logVerbose(set.str());
 
 
-	pass_string << "Rendering pass 1 of " << std::max(1, pass_num_) << "...";
+	pass_string << "Rendering pass 1 of " << std::max(1, params_.num_passes_) << "...";
 	logger_.logInfo(getName(), ": ", pass_string.str());
 	render_control_.setProgressBarTag(pass_string.str());
 
@@ -103,7 +135,7 @@ bool SppmIntegrator::render(FastRandom &fast_random, unsigned int object_index_h
 	image_film_->resetFilmAutoSaveTimer();
 	timer_->addEvent("filmAutoSaveTimer");
 
-	image_film_->init(render_control_, pass_num_);
+	image_film_->init(render_control_, params_.num_passes_);
 	image_film_->setAaNoiseParams(aa_noise_params_);
 
 	if(render_control_.resumed())
@@ -138,7 +170,7 @@ bool SppmIntegrator::render(FastRandom &fast_random, unsigned int object_index_h
 
 	int hp_num = camera_->resX() * camera_->resY();
 	int pass_info = 1;
-	for(int i = 1; i < pass_num_; ++i) //progress pass, the offset start from 1 as it is 0 based.
+	for(int i = 1; i < params_.num_passes_; ++i) //progress pass, the offset start from 1 as it is 0 based.
 	{
 		if(render_control_.canceled()) break;
 		pass_info = i + 1;
@@ -162,7 +194,7 @@ bool SppmIntegrator::render(FastRandom &fast_random, unsigned int object_index_h
 
 	set << "Passes rendered: " << pass_info << "  ";
 
-	set << "\nPhotons=" << n_photons_ << " search=" << n_search_ << " radius=" << ds_radius_ << "(init.estim=" << initial_estimate << ") total photons=" << totaln_photons_ << "  ";
+	set << "\nPhotons=" << n_photons_ << " search=" << params_.search_num_ << " radius=" << params_.photon_radius_ << "(init.estim=" << initial_estimate << ") total photons=" << totaln_photons_ << "  ";
 
 	render_info_ += set.str();
 	if(logger_.isVerbose()) logger_.logVerbose(set.str());
@@ -200,7 +232,7 @@ bool SppmIntegrator::renderTile(FastRandom &fast_random, std::vector<int> &corre
 			for(int sample = 0; sample < n_samples; ++sample) //set n_samples = 1.
 			{
 				pixel_sampling_data.sample_ = pass_offs + sample;
-				const float time = time_forced_ ? time_forced_value_ : math::addMod1(static_cast<float>(sample) * d_1, toff); //(0.5+(float)sample)*d1;
+				const float time = TiledIntegrator::params_.time_forced_ ? TiledIntegrator::params_.time_forced_value_ : math::addMod1(static_cast<float>(sample) * d_1, toff); //(0.5+(float)sample)*d1;
 				// the (1/n, Larcher&Pillichshammer-Seq.) only gives good coverage when total sample count is known
 				// hence we use scrambled (Sobol, van-der-Corput) for multipass AA //!< the current (normalized) frame time  //FIXME, time not currently used in libYafaRay
 				pixel_sampling_data.time_ = time;
@@ -361,7 +393,7 @@ void SppmIntegrator::photonWorker(FastRandom &fast_random, unsigned int &total_p
 			logger_.logError(getName(), ": lightPDF sample error! ", s_l, "/", light_num);
 			return;
 		}
-		float time = time_forced_ ? time_forced_value_ : math::addMod1(static_cast<float>(curr) / static_cast<float>(n_photons_thread), s_2); //FIXME: maybe we should use an offset for time that is independent from the space-related samples as s_2 now
+		float time = TiledIntegrator::params_.time_forced_ ? TiledIntegrator::params_.time_forced_value_ : math::addMod1(static_cast<float>(curr) / static_cast<float>(n_photons_thread), s_2); //FIXME: maybe we should use an offset for time that is independent from the space-related samples as s_2 now
 		auto[ray, light_pdf, pcol]{tmplights[light_num]->emitPhoton(s_1, s_2, s_3, s_4, time)};
 		ray.tmin_ = ray_min_dist_;
 		ray.tmax_ = -1.f;
@@ -390,7 +422,7 @@ void SppmIntegrator::photonWorker(FastRandom &fast_random, unsigned int &total_p
 			std::tie(hit_curr, ray.tmax_) = accelerator_->intersect(ray, camera_);
 			if(!hit_curr) break;
 			Rgb transm(1.f);
-			if(material_prev && hit_prev && flags::have(mat_bsdfs_prev, BsdfFlags::Volumetric))
+			if(material_prev && hit_prev && mat_bsdfs_prev.has(BsdfFlags::Volumetric))
 			{
 				if(const VolumeHandler *vol = material_prev->getVolumeHandler(hit_prev->ng_ * ray.dir_ < 0))
 				{
@@ -401,7 +433,7 @@ void SppmIntegrator::photonWorker(FastRandom &fast_random, unsigned int &total_p
 			const BsdfFlags mat_bsdfs = hit_curr->mat_data_->bsdf_flags_;
 
 			//deposit photon on diffuse surface, now we only have one map for all, elimate directPhoton for we estimate it directly
-			if(!direct_photon && !caustic_photon && flags::have(mat_bsdfs, BsdfFlags::Diffuse))
+			if(!direct_photon && !caustic_photon && mat_bsdfs.has(BsdfFlags::Diffuse))
 			{
 				Photon np{wi, hit_curr->p_, pcol, ray.time_};// pcol used here
 				if(b_hashgrid_) photon_grid_.pushPhoton(std::move(np));
@@ -409,7 +441,7 @@ void SppmIntegrator::photonWorker(FastRandom &fast_random, unsigned int &total_p
 				nd_photon_stored++;
 			}
 			// add caustic photon
-			if(!direct_photon && caustic_photon && flags::have(mat_bsdfs, BsdfFlags::Diffuse | BsdfFlags::Glossy))
+			if(!direct_photon && caustic_photon && mat_bsdfs.has(BsdfFlags::Diffuse | BsdfFlags::Glossy))
 			{
 				Photon np{wi, hit_curr->p_, pcol, ray.time_};// pcol used here
 				if(b_hashgrid_) photon_grid_.pushPhoton(std::move(np));
@@ -418,7 +450,7 @@ void SppmIntegrator::photonWorker(FastRandom &fast_random, unsigned int &total_p
 			}
 
 			// need to break in the middle otherwise we scatter the photon and then discard it => redundant
-			if(n_bounces == max_bounces_) break;
+			if(n_bounces == params_.bounces_) break;
 
 			// scatter photon
 			const float s_5 = fast_random.getNextFloatNormalized(); // now should use this to see correctness
@@ -433,11 +465,11 @@ void SppmIntegrator::photonWorker(FastRandom &fast_random, unsigned int &total_p
 
 			pcol = sample.color_;
 
-			caustic_photon = (flags::have(sample.sampled_flags_, (BsdfFlags::Glossy | BsdfFlags::Specular | BsdfFlags::Dispersive)) && direct_photon) ||
-							 (flags::have(sample.sampled_flags_, (BsdfFlags::Glossy | BsdfFlags::Specular | BsdfFlags::Filter | BsdfFlags::Dispersive)) && caustic_photon);
-			direct_photon = flags::have(sample.sampled_flags_, BsdfFlags::Filter) && direct_photon;
+			caustic_photon = (sample.sampled_flags_.has((BsdfFlags::Glossy | BsdfFlags::Specular | BsdfFlags::Dispersive)) && direct_photon) ||
+							 (sample.sampled_flags_.has((BsdfFlags::Glossy | BsdfFlags::Specular | BsdfFlags::Filter | BsdfFlags::Dispersive)) && caustic_photon);
+			direct_photon = sample.sampled_flags_.has(BsdfFlags::Filter) && direct_photon;
 
-			if(chromatic_enabled && flags::have(sample.sampled_flags_, BsdfFlags::Dispersive))
+			if(chromatic_enabled && sample.sampled_flags_.has(BsdfFlags::Dispersive))
 			{
 				chromatic_enabled = false;
 				pcol *= spectrum::wl2Rgb(wavelength);
@@ -520,10 +552,10 @@ void SppmIntegrator::prePass(FastRandom &fast_random, int samples, int offset, b
 	if(b_hashgrid_) logger_.logInfo(getName(), ": Building photon hashgrid...");
 	else logger_.logInfo(getName(), ": Building photon map...");
 	render_control_.initProgressBar(128, logger_.getConsoleLogColorsEnabled());
-	const int pb_step = std::max(1U, n_photons_ / 128);
+	const int pb_step = std::max(1, n_photons_ / 128);
 	render_control_.setProgressBarTag(previous_progress_tag + " - building photon map...");
 
-	n_photons_ = std::max((unsigned int) num_threads_photons_, (n_photons_ / num_threads_photons_) * num_threads_photons_); //rounding the number of diffuse photons so it's a number divisible by the number of threads (distribute uniformly among the threads). At least 1 photon per thread
+	n_photons_ = std::max(num_threads_photons_, (n_photons_ / num_threads_photons_) * num_threads_photons_); //rounding the number of diffuse photons so it's a number divisible by the number of threads (distribute uniformly among the threads). At least 1 photon per thread
 
 	logger_.logParams(getName(), ": Shooting ", n_photons_, " photons across ", num_threads_photons_, " threads (", (n_photons_ / num_threads_photons_), " photons/thread)");
 
@@ -577,7 +609,6 @@ void SppmIntegrator::prePass(FastRandom &fast_random, int samples, int offset, b
 
 	render_control_.setProgressBarTag(previous_progress_tag);
 	render_control_.initProgressBar(previous_progress_total_steps, logger_.getConsoleLogColorsEnabled());
-	return;
 }
 
 //now it's a dummy function
@@ -589,7 +620,7 @@ std::pair<Rgb, float> SppmIntegrator::integrate(Ray &ray, FastRandom &fast_rando
 GatherInfo SppmIntegrator::traceGatherRay(Ray &ray, HitPoint &hp, FastRandom &fast_random, RandomGenerator &random_generator, ColorLayers *color_layers, int thread_id, int ray_level, bool chromatic_enabled, float wavelength, const RayDivision &ray_division, const PixelSamplingData &pixel_sampling_data, unsigned int object_index_highest, unsigned int material_index_highest)
 {
 	GatherInfo g_info;
-	float alpha = transp_background_ ? 0.f : 1.f;
+	float alpha = MonteCarloIntegrator::params_.transparent_background_ ? 0.f : 1.f;
 	const auto [sp, tmax] = accelerator_->intersect(ray, camera_);
 	ray.tmax_ = tmax;
 	if(sp)
@@ -602,11 +633,11 @@ GatherInfo SppmIntegrator::traceGatherRay(Ray &ray, HitPoint &hp, FastRandom &fa
 
 		const Rgb col_emit = sp->emit(wo);
 		g_info.constant_randiance_ += col_emit; //add only once, but FG seems add twice?
-		if(color_layers && flags::have(color_layers->getFlags(), LayerDef::Flags::BasicLayers))
+		if(color_layers && color_layers->getFlags().has(LayerDef::Flags::BasicLayers))
 		{
 			if(Rgba *color_layer = color_layers->find(LayerDef::Emit)) *color_layer += col_emit;
 		}
-		if(flags::have(mat_bsdfs, BsdfFlags::Diffuse))
+		if(mat_bsdfs.has(BsdfFlags::Diffuse))
 		{
 			g_info.constant_randiance_ += estimateAllDirectLight(random_generator, color_layers, chromatic_enabled, wavelength, *sp, wo, ray_division, pixel_sampling_data);
 		}
@@ -617,14 +648,14 @@ GatherInfo SppmIntegrator::traceGatherRay(Ray &ray, HitPoint &hp, FastRandom &fa
 		//if PM_IRE is on. we should estimate the initial radius using the photonMaps. (PM_IRE is only for the first pass, so not consume much time)
 		if(pm_ire_ && !hp.radius_setted_) // "waste" two gather here as it has two maps now. This make the logic simple.
 		{
-			float radius_1 = ds_radius_ * ds_radius_;
+			float radius_1 = params_.photon_radius_ * params_.photon_radius_;
 			float radius_2 = radius_1;
 			int n_gathered_1 = 0, n_gathered_2 = 0;
 
 			if(diffuse_map_->nPhotons() > 0)
-				n_gathered_1 = diffuse_map_->gather(sp->p_, gathered.get(), n_search_, radius_1);
+				n_gathered_1 = diffuse_map_->gather(sp->p_, gathered.get(), params_.search_num_, radius_1);
 			if(caustic_map_->nPhotons() > 0)
-				n_gathered_2 = caustic_map_->gather(sp->p_, gathered.get(), n_search_, radius_2);
+				n_gathered_2 = caustic_map_->gather(sp->p_, gathered.get(), params_.search_num_, radius_2);
 			if(n_gathered_1 > 0 || n_gathered_2 > 0) // it none photon gathered, we just skip.
 			{
 				if(radius_1 < radius_2) // we choose the smaller one to be the initial radius.
@@ -694,7 +725,7 @@ GatherInfo SppmIntegrator::traceGatherRay(Ray &ray, HitPoint &hp, FastRandom &fa
 			}
 
 			// gather caustics photons
-			if(flags::have(mat_bsdfs, BsdfFlags::Diffuse) && caustic_map_->ready())
+			if(mat_bsdfs.has(BsdfFlags::Diffuse) && caustic_map_->ready())
 			{
 
 				radius_2 = hp.radius_2_; //reset radius2 & nGathered
@@ -722,12 +753,12 @@ GatherInfo SppmIntegrator::traceGatherRay(Ray &ray, HitPoint &hp, FastRandom &fa
 		}
 
 		++ray_level; //FIXME: how set the ray_level in a better way?
-		if(ray_level <= (r_depth_ + additional_depth))
+		if(ray_level <= (MonteCarloIntegrator::params_.r_depth_ + additional_depth))
 		{
 			Halton hal_2(2);
 			Halton hal_3(3);
 			// dispersive effects with recursive raytracing:
-			if(flags::have(mat_bsdfs, BsdfFlags::Dispersive) && chromatic_enabled)
+			if(mat_bsdfs.has(BsdfFlags::Dispersive) && chromatic_enabled)
 			{
 				const int ray_samples_dispersive = ray_division.division_ > 1 ?
 												   std::max(1, initial_ray_samples_dispersive_ / ray_division.division_) :
@@ -759,7 +790,7 @@ GatherInfo SppmIntegrator::traceGatherRay(Ray &ray, HitPoint &hp, FastRandom &fa
 					Vec3f wi;
 					Rgb mcol = sp->sample(wo, wi, s, w, chromatic_enabled, wavelength_dispersive, camera_);
 
-					if(s.pdf_ > 1.0e-6f && flags::have(s.sampled_flags_, BsdfFlags::Dispersive))
+					if(s.pdf_ > 1.0e-6f && s.sampled_flags_.has(BsdfFlags::Dispersive))
 					{
 						const Rgb wl_col = spectrum::wl2Rgb(wavelength_dispersive);
 						ref_ray = {sp->p_, wi, ray.time_, ray_min_dist_};
@@ -773,7 +804,7 @@ GatherInfo SppmIntegrator::traceGatherRay(Ray &ray, HitPoint &hp, FastRandom &fa
 					}
 					cing += t_cing;
 				}
-				if(flags::have(mat_bsdfs, BsdfFlags::Volumetric))
+				if(mat_bsdfs.has(BsdfFlags::Volumetric))
 				{
 					if(const VolumeHandler *vol = sp->getMaterial()->getVolumeHandler(sp->ng_ * ref_ray.dir_ < 0))
 					{
@@ -786,7 +817,7 @@ GatherInfo SppmIntegrator::traceGatherRay(Ray &ray, HitPoint &hp, FastRandom &fa
 				g_info.photon_flux_ += cing.photon_flux_ * d_1;
 				g_info.photon_count_ += cing.photon_count_ * d_1;
 
-				if(color_layers && flags::have(color_layers->getFlags(), LayerDef::Flags::BasicLayers))
+				if(color_layers && color_layers->getFlags().has(LayerDef::Flags::BasicLayers))
 				{
 					if(Rgba *color_layer = color_layers->find(LayerDef::Trans))
 					{
@@ -796,7 +827,7 @@ GatherInfo SppmIntegrator::traceGatherRay(Ray &ray, HitPoint &hp, FastRandom &fa
 				}
 			}
 			// glossy reflection with recursive raytracing:  Pure GLOSSY material doesn't hold photons?
-			if(flags::have(mat_bsdfs, BsdfFlags::Glossy))
+			if(mat_bsdfs.has(BsdfFlags::Glossy))
 			{
 				const int ray_samples_glossy = ray_division.division_ > 1 ?
 											   std::max(1, initial_ray_samples_glossy_ / ray_division.division_) :
@@ -830,29 +861,29 @@ GatherInfo SppmIntegrator::traceGatherRay(Ray &ray, HitPoint &hp, FastRandom &fa
 					Vec3f wi;
 					Rgb mcol = sp->sample(wo, wi, s, W, chromatic_enabled, wavelength, camera_);
 
-					if(flags::have(mat_bsdfs, BsdfFlags::Reflect) && !flags::have(mat_bsdfs, BsdfFlags::Transmit))
+					if(mat_bsdfs.has(BsdfFlags::Reflect) && !mat_bsdfs.has(BsdfFlags::Transmit))
 					{
 						float w = 0.f;
 
 						Sample s(s_1, s_2, BsdfFlags::Glossy | BsdfFlags::Reflect);
 						const Rgb mcol = sp->sample(wo, wi, s, w, chromatic_enabled, wavelength, camera_);
 						Ray ref_ray{sp->p_, wi, ray.time_, ray_min_dist_};
-						if(flags::have(s.sampled_flags_, BsdfFlags::Reflect)) ref_ray.differentials_ = sp->reflectedRay(ray.differentials_.get(), ray.dir_, ref_ray.dir_);
-						else if(flags::have(s.sampled_flags_, BsdfFlags::Transmit)) ref_ray.differentials_ = sp->refractedRay(ray.differentials_.get(), ray.dir_, ref_ray.dir_, sp->getMaterial()->getMatIor());
+						if(s.sampled_flags_.has(BsdfFlags::Reflect)) ref_ray.differentials_ = sp->reflectedRay(ray.differentials_.get(), ray.dir_, ref_ray.dir_);
+						else if(s.sampled_flags_.has(BsdfFlags::Transmit)) ref_ray.differentials_ = sp->refractedRay(ray.differentials_.get(), ray.dir_, ref_ray.dir_, sp->getMaterial()->getMatIor());
 						//gcol += tmpColorPasses.probe_add(PASS_INT_GLOSSY_INDIRECT, (Rgb)integ * mcol * W, state.ray_level == 1);
 						GatherInfo trace_gather_ray = traceGatherRay(ref_ray, hp, fast_random, random_generator, nullptr, thread_id, ray_level, chromatic_enabled, wavelength, ray_division_new, pixel_sampling_data, object_index_highest, material_index_highest);
 						trace_gather_ray.photon_flux_ *= mcol * w;
 						trace_gather_ray.constant_randiance_ *= mcol * w;
 						gather_info += trace_gather_ray;
 					}
-					else if(flags::have(mat_bsdfs, BsdfFlags::Reflect) && flags::have(mat_bsdfs, BsdfFlags::Transmit))
+					else if(mat_bsdfs.has(BsdfFlags::Reflect) && mat_bsdfs.has(BsdfFlags::Transmit))
 					{
 						Sample s(s_1, s_2, BsdfFlags::Glossy | BsdfFlags::AllGlossy);
 						Rgb mcol[2];
 						float w[2];
 						Vec3f dir[2];
 						mcol[0] = sp->sample(wo, dir, mcol[1], s, w, chromatic_enabled, wavelength);
-						if(flags::have(s.sampled_flags_, BsdfFlags::Reflect) && !flags::have(s.sampled_flags_, BsdfFlags::Dispersive))
+						if(s.sampled_flags_.has(BsdfFlags::Reflect) && !s.sampled_flags_.has(BsdfFlags::Dispersive))
 						{
 							Ray ref_ray{sp->p_, dir[0], ray.time_, ray_min_dist_};
 							ref_ray.differentials_ = sp->reflectedRay(ray.differentials_.get(), ray.dir_, ref_ray.dir_);
@@ -867,7 +898,7 @@ GatherInfo SppmIntegrator::traceGatherRay(Ray &ray, HitPoint &hp, FastRandom &fa
 							gather_info += trace_gather_ray;
 						}
 
-						if(flags::have(s.sampled_flags_, BsdfFlags::Transmit))
+						if(s.sampled_flags_.has(BsdfFlags::Transmit))
 						{
 							Ray ref_ray{sp->p_, dir[1], ray.time_, ray_min_dist_};
 							ref_ray.differentials_ = sp->refractedRay(ray.differentials_.get(), ray.dir_, ref_ray.dir_, sp->getMaterial()->getMatIor());
@@ -883,13 +914,13 @@ GatherInfo SppmIntegrator::traceGatherRay(Ray &ray, HitPoint &hp, FastRandom &fa
 						}
 					}
 
-					else if(flags::have(s.sampled_flags_, BsdfFlags::Glossy))
+					else if(s.sampled_flags_.has(BsdfFlags::Glossy))
 					{
 						Ray ref_ray{sp->p_, wi, ray.time_, ray_min_dist_};
 						if(ray.differentials_)
 						{
-							if(flags::have(s.sampled_flags_, BsdfFlags::Reflect)) ref_ray.differentials_ = sp->reflectedRay(ray.differentials_.get(), ray.dir_, ref_ray.dir_);
-							else if(flags::have(s.sampled_flags_, BsdfFlags::Transmit)) ref_ray.differentials_ = sp->refractedRay(ray.differentials_.get(), ray.dir_, ref_ray.dir_, sp->getMaterial()->getMatIor());
+							if(s.sampled_flags_.has(BsdfFlags::Reflect)) ref_ray.differentials_ = sp->reflectedRay(ray.differentials_.get(), ray.dir_, ref_ray.dir_);
+							else if(s.sampled_flags_.has(BsdfFlags::Transmit)) ref_ray.differentials_ = sp->refractedRay(ray.differentials_.get(), ray.dir_, ref_ray.dir_, sp->getMaterial()->getMatIor());
 						}
 
 						GatherInfo trace_gather_ray = traceGatherRay(ref_ray, hp, fast_random, random_generator, nullptr, thread_id, ray_level, chromatic_enabled, wavelength, ray_division_new, pixel_sampling_data, object_index_highest, material_index_highest);
@@ -901,7 +932,7 @@ GatherInfo SppmIntegrator::traceGatherRay(Ray &ray, HitPoint &hp, FastRandom &fa
 						}
 						gather_info += trace_gather_ray;
 					}
-					if(flags::have(mat_bsdfs, BsdfFlags::Volumetric))
+					if(mat_bsdfs.has(BsdfFlags::Volumetric))
 					{
 						const Ray ref_ray{sp->p_, wi, ray.time_, ray_min_dist_};
 						if(const VolumeHandler *vol = sp->getMaterial()->getVolumeHandler(sp->ng_ * ref_ray.dir_ < 0))
@@ -915,7 +946,7 @@ GatherInfo SppmIntegrator::traceGatherRay(Ray &ray, HitPoint &hp, FastRandom &fa
 				g_info.constant_randiance_ += gather_info.constant_randiance_ * d_1;
 				g_info.photon_flux_ += gather_info.photon_flux_ * d_1;
 				g_info.photon_count_ += gather_info.photon_count_ * d_1;
-				if(color_layers && flags::have(color_layers->getFlags(), LayerDef::Flags::BasicLayers))
+				if(color_layers && color_layers->getFlags().has(LayerDef::Flags::BasicLayers))
 				{
 					if(Rgba *color_layer = color_layers->find(LayerDef::GlossyIndirect))
 					{
@@ -935,7 +966,7 @@ GatherInfo SppmIntegrator::traceGatherRay(Ray &ray, HitPoint &hp, FastRandom &fa
 				}
 			}
 			//...perfect specular reflection/refraction with recursive raytracing...
-			if(flags::have(mat_bsdfs, BsdfFlags::Specular | BsdfFlags::Filter))
+			if(mat_bsdfs.has(BsdfFlags::Specular | BsdfFlags::Filter))
 			{
 				const Specular specular = sp->getSpecular(ray_level, wo, chromatic_enabled, wavelength);
 				if(specular.reflect_)
@@ -943,7 +974,7 @@ GatherInfo SppmIntegrator::traceGatherRay(Ray &ray, HitPoint &hp, FastRandom &fa
 					Ray ref_ray{sp->p_, specular.reflect_->dir_, ray.time_, ray_min_dist_};
 					if(ray.differentials_) ref_ray.differentials_ = sp->reflectedRay(ray.differentials_.get(), ray.dir_, ref_ray.dir_); // compute the ray differentaitl
 					GatherInfo refg = traceGatherRay(ref_ray, hp, fast_random, random_generator, nullptr, thread_id, ray_level, chromatic_enabled, wavelength, ray_division, pixel_sampling_data, object_index_highest, material_index_highest);
-					if(flags::have(mat_bsdfs, BsdfFlags::Volumetric))
+					if(mat_bsdfs.has(BsdfFlags::Volumetric))
 					{
 						if(const VolumeHandler *vol = sp->getMaterial()->getVolumeHandler(sp->ng_ * ref_ray.dir_ < 0))
 						{
@@ -954,7 +985,7 @@ GatherInfo SppmIntegrator::traceGatherRay(Ray &ray, HitPoint &hp, FastRandom &fa
 					}
 					const Rgba col_radiance_reflect = refg.constant_randiance_ * Rgba(specular.reflect_->col_);
 					g_info.constant_randiance_ += col_radiance_reflect;
-					if(color_layers && flags::have(color_layers->getFlags(), LayerDef::Flags::BasicLayers))
+					if(color_layers && color_layers->getFlags().has(LayerDef::Flags::BasicLayers))
 					{
 						if(Rgba *color_layer = color_layers->find(LayerDef::ReflectPerfect)) *color_layer += col_radiance_reflect;
 					}
@@ -966,7 +997,7 @@ GatherInfo SppmIntegrator::traceGatherRay(Ray &ray, HitPoint &hp, FastRandom &fa
 					Ray ref_ray{sp->p_, specular.refract_->dir_, ray.time_, ray_min_dist_};
 					if(ray.differentials_) ref_ray.differentials_ = sp->refractedRay(ray.differentials_.get(), ray.dir_, ref_ray.dir_, sp->getMaterial()->getMatIor());
 					GatherInfo refg = traceGatherRay(ref_ray, hp, fast_random, random_generator, nullptr, thread_id, ray_level, chromatic_enabled, wavelength, ray_division, pixel_sampling_data, object_index_highest, material_index_highest);
-					if(flags::have(mat_bsdfs, BsdfFlags::Volumetric))
+					if(mat_bsdfs.has(BsdfFlags::Volumetric))
 					{
 						if(const VolumeHandler *vol = sp->getMaterial()->getVolumeHandler(sp->ng_ * ref_ray.dir_ < 0))
 						{
@@ -977,7 +1008,7 @@ GatherInfo SppmIntegrator::traceGatherRay(Ray &ray, HitPoint &hp, FastRandom &fa
 					}
 					const Rgba col_radiance_refract = refg.constant_randiance_ * Rgba(specular.refract_->col_);
 					g_info.constant_randiance_ += col_radiance_refract;
-					if(color_layers && flags::have(color_layers->getFlags(), LayerDef::Flags::BasicLayers))
+					if(color_layers && color_layers->getFlags().has(LayerDef::Flags::BasicLayers))
 					{
 						if(Rgba *color_layer = color_layers->find(LayerDef::RefractPerfect)) *color_layer += col_radiance_refract;
 					}
@@ -990,7 +1021,7 @@ GatherInfo SppmIntegrator::traceGatherRay(Ray &ray, HitPoint &hp, FastRandom &fa
 		if(color_layers)
 		{
 			generateCommonLayers(color_layers, *sp, mask_params_, object_index_highest, material_index_highest);
-			generateOcclusionLayers(color_layers, *accelerator_, chromatic_enabled, wavelength, ray_division, camera_, pixel_sampling_data, *sp, wo, ao_samples_, shadow_bias_auto_, shadow_bias_, ao_dist_, ao_col_, s_depth_);
+			generateOcclusionLayers(color_layers, *accelerator_, chromatic_enabled, wavelength, ray_division, camera_, pixel_sampling_data, *sp, wo, MonteCarloIntegrator::params_.ao_samples_, shadow_bias_auto_, shadow_bias_, MonteCarloIntegrator::params_.ao_distance_, MonteCarloIntegrator::params_.ao_color_, MonteCarloIntegrator::params_.shadow_depth_);
 			if(Rgba *color_layer = color_layers->find(LayerDef::DebugObjectTime))
 			{
 				const float col_combined_gray = g_info.constant_randiance_.col2Bri();
@@ -998,7 +1029,7 @@ GatherInfo SppmIntegrator::traceGatherRay(Ray &ray, HitPoint &hp, FastRandom &fa
 				else *color_layer += {0.f, col_combined_gray, 0.f, 1.f};
 			}
 		}
-		if(transp_refracted_background_)
+		if(MonteCarloIntegrator::params_.transparent_background_refraction_)
 		{
 			const float mat_alpha = sp->getAlpha(wo, camera_);
 			alpha = mat_alpha + (1.f - mat_alpha) * alpha;
@@ -1007,14 +1038,14 @@ GatherInfo SppmIntegrator::traceGatherRay(Ray &ray, HitPoint &hp, FastRandom &fa
 	}
 	else //nothing hit, return background
 	{
-		const auto [background_col, background_alpha] = background(ray, color_layers, transp_background_, transp_refracted_background_, background_, ray_level);
+		const auto [background_col, background_alpha] = background(ray, color_layers, MonteCarloIntegrator::params_.transparent_background_, MonteCarloIntegrator::params_.transparent_background_refraction_, background_, ray_level);
 		g_info.constant_randiance_ = Rgba{background_col};
 		alpha = background_alpha;
 	}
 
 	if(vol_integrator_)
 	{
-		applyVolumetricEffects(g_info.constant_randiance_, alpha, color_layers, ray, random_generator, vol_integrator_, transp_background_);
+		applyVolumetricEffects(g_info.constant_randiance_, alpha, color_layers, ray, random_generator, vol_integrator_, MonteCarloIntegrator::params_.transparent_background_);
 	}
 	g_info.constant_randiance_.a_ = alpha; // a small trick for just hold the alpha value.
 	return g_info;
@@ -1035,74 +1066,10 @@ void SppmIntegrator::initializePpm()
 		hp.acc_photon_count_ = 0;
 		hp.radius_2_ = (initial_radius * initial_factor_) * (initial_radius * initial_factor_);
 		hp.constant_randiance_ = Rgba(0.f);
-		hp.radius_setted_ = false;	   // the flag used for IRE
+		hp.radius_setted_ = false; // the flag used for IRE
 		hit_points_.emplace_back(hp);
 	}
 	if(b_hashgrid_) photon_grid_.setParm(initial_radius * 2.f, n_photons_, scene_bound_);
-}
-
-SurfaceIntegrator * SppmIntegrator::factory(Logger &logger, RenderControl &render_control, const ParamMap &params, const Scene &scene)
-{
-	bool transparent_shadows = false;
-	bool pm_ire = false;
-	int shadow_depth = 5; //may used when integrate Direct Light
-	int raydepth = 5;
-	int pass_num = 1000;
-	int num_photons = 500000;
-	int bounces = 5;
-	float times = 1.f;
-	int search_num = 100;
-	float ds_rad = 1.0f;
-	bool do_ao = false;
-	int ao_samples = 32;
-	double ao_dist = 1.0;
-	Rgb ao_col(1.f);
-	bool bg_transp = false;
-	bool bg_transp_refract = false;
-	bool time_forced = false;
-	float time_forced_value = 0.f;
-
-	params.getParam("transpShad", transparent_shadows);
-	params.getParam("shadowDepth", shadow_depth);
-	params.getParam("raydepth", raydepth);
-	params.getParam("photons", num_photons);
-	params.getParam("passNums", pass_num);
-	params.getParam("bounces", bounces);
-	params.getParam("times", times); // initial radius times
-
-	params.getParam("photonRadius", ds_rad);
-	params.getParam("searchNum", search_num);
-	params.getParam("pmIRE", pm_ire);
-
-	params.getParam("bg_transp", bg_transp);
-	params.getParam("bg_transp_refract", bg_transp_refract);
-	params.getParam("do_AO", do_ao);
-	params.getParam("AO_samples", ao_samples);
-	params.getParam("AO_distance", ao_dist);
-	params.getParam("AO_color", ao_col);
-	params.getParam("time_forced", time_forced);
-	params.getParam("time_forced_value", time_forced_value);
-
-	auto inte = new SppmIntegrator(render_control, logger, num_photons, pass_num, transparent_shadows, shadow_depth);
-	inte->r_depth_ = raydepth;
-	inte->max_bounces_ = bounces;
-	inte->initial_factor_ = times;
-
-	inte->ds_radius_ = ds_rad; // under tests enable now
-	inte->n_search_ = search_num;
-	inte->pm_ire_ = pm_ire;
-	// Background settings
-	inte->transp_background_ = bg_transp;
-	inte->transp_refracted_background_ = bg_transp_refract;
-	// AO settings
-	inte->use_ambient_occlusion_ = do_ao;
-	inte->ao_samples_ = ao_samples;
-	inte->ao_dist_ = ao_dist;
-	inte->ao_col_ = ao_col;
-	inte->time_forced_ = time_forced;
-	inte->time_forced_value_ = time_forced_value;
-
-	return inte;
 }
 
 } //namespace yafaray

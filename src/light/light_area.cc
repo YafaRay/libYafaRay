@@ -20,7 +20,7 @@
 
 #include "light/light_area.h"
 #include "geometry/surface.h"
-#include "common/param.h"
+#include "param/param.h"
 #include "scene/scene.h"
 #include "sampler/sample.h"
 #include "common/logger.h"
@@ -28,30 +28,58 @@
 
 namespace yafaray {
 
-//int hit_t1=0, hit_t2=0;
-
-AreaLight::AreaLight(Logger &logger, const Point3f &c, const Vec3f &v_1, const Vec3f &v_2,
-					 const Rgb &col, float inte, int nsam, bool light_enabled, bool cast_shadows):
-		Light(logger), area_quad_{{c, c + v_1, c + v_1 + v_2, c + v_2}}, to_x_(v_1), to_y_(v_2),
-		fnormal_{v_2 ^ v_1}, //f normal is "flipped" normal direction...
-		normal_{-fnormal_},
-		duv_{v_1.normalized(), normal_ ^ v_1.normalized()},
-		color_{col * inte * math::num_pi<>},
-		area_{fnormal_.normalized().length()},
-		inv_area_{1.f / area_},
-		samples_(nsam)
+AreaLight::Params::Params(ParamError &param_error, const ParamMap &param_map)
 {
-	light_enabled_ = light_enabled;
-	cast_shadows_ = cast_shadows;
+	PARAM_LOAD(corner_);
+	PARAM_LOAD(point_1_);
+	PARAM_LOAD(point_2_);
+	PARAM_LOAD(color_);
+	PARAM_LOAD(power_);
+	PARAM_LOAD(samples_);
+	PARAM_LOAD(object_name_);
+}
+
+ParamMap AreaLight::Params::getAsParamMap(bool only_non_default) const
+{
+	PARAM_SAVE_START;
+	PARAM_SAVE(corner_);
+	PARAM_SAVE(point_1_);
+	PARAM_SAVE(point_2_);
+	PARAM_SAVE(color_);
+	PARAM_SAVE(power_);
+	PARAM_SAVE(samples_);
+	PARAM_SAVE(object_name_);
+	PARAM_SAVE_END;
+}
+
+ParamMap AreaLight::getAsParamMap(bool only_non_default) const
+{
+	ParamMap result{Light::getAsParamMap(only_non_default)};
+	result.append(params_.getAsParamMap(only_non_default));
+	return result;
+}
+
+std::pair<Light *, ParamError> AreaLight::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map)
+{
+	auto param_error{Params::meta_.check(param_map, {"type"}, {})};
+	auto result {new AreaLight(logger, param_error, name, param_map)};
+	if(param_error.flags_ != ParamError::Flags::Ok) logger.logWarning(param_error.print<AreaLight>(name, {"type"}));
+	return {result, param_error};
+}
+
+AreaLight::AreaLight(Logger &logger, ParamError &param_error, const std::string &name, const ParamMap &param_map):
+		Light{logger, param_error, name, param_map, Flags::None}, params_{param_error, param_map}
+{
+	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + params_.getAsParamMap(true).print());
 }
 
 void AreaLight::init(const Scene &scene)
 {
-	if(!object_name_.empty())
+	if(!params_.object_name_.empty())
 	{
-		Object *obj = scene.getObject(object_name_);
+		Object *obj = scene.getObject(params_.object_name_);
 		if(obj) obj->setLight(this);
-		else logger_.logError("AreaLight: '" + name_ + "': associated object '" + object_name_ + "' could not be found!");
+		else logger_.logError("AreaLight: '" + name_ + "': associated object '" + params_.object_name_ + "' could not be found!");
 	}
 }
 
@@ -68,7 +96,7 @@ std::pair<bool, Ray> AreaLight::illumSample(const Point3f &surface_p, LSample &s
 	const float dist = math::sqrt(dist_sqr);
 	if(dist <= 0.f) return {};
 	ldir *= 1.f / dist;
-	const float cos_angle = ldir * fnormal_;
+	const float cos_angle = ldir * normal_flipped_;
 	//no light if point is behind area light (single sided!)
 	if(cos_angle <= 0.f) return {};
 	s.col_ = color_;
@@ -106,7 +134,7 @@ std::pair<Vec3f, Rgb> AreaLight::emitSample(LSample &s, float time) const
 
 std::tuple<bool, float, Rgb> AreaLight::intersect(const Ray &ray, float &t) const
 {
-	const float cos_angle = ray.dir_ * fnormal_;
+	const float cos_angle = ray.dir_ * normal_flipped_;
 	if(cos_angle <= 0.f) return {}; //no light if point is behind area light (single sided!)
 	const auto intersect_data{area_quad_.intersect(ray.from_, ray.dir_)};
 	if(intersect_data.first <= 0.f) return {};
@@ -119,7 +147,7 @@ float AreaLight::illumPdf(const Point3f &surface_p, const Point3f &light_p, cons
 {
 	Vec3f wi{light_p - surface_p};
 	float r_2 = wi.normalizeAndReturnLengthSquared();
-	float cos_n = wi * fnormal_;
+	float cos_n = wi * normal_flipped_;
 	return cos_n > 0 ? r_2 * math::num_pi<> / (area_ * cos_n) : 0.f;
 }
 
@@ -129,44 +157,6 @@ std::array<float, 3> AreaLight::emitPdf(const Vec3f &surface_n, const Vec3f &wo)
 	const float cos_wo = wo * surface_n;
 	const float dir_pdf = cos_wo > 0 ? cos_wo : 0.f;
 	return {area_pdf, dir_pdf, cos_wo};
-}
-
-Light * AreaLight::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params)
-{
-	Point3f corner{{0.f, 0.f, 0.f}};
-	Point3f p_1{{0.f, 0.f, 0.f}};
-	Point3f p_2{{0.f, 0.f, 0.f}};
-	Rgb color(1.0);
-	float power = 1.0;
-	int samples = 4;
-	std::string object_name;
-	bool light_enabled = true;
-	bool cast_shadows = true;
-	bool shoot_d = true;
-	bool shoot_c = true;
-	bool p_only = false;
-
-	params.getParam("corner", corner);
-	params.getParam("point1", p_1);
-	params.getParam("point2", p_2);
-	params.getParam("color", color);
-	params.getParam("power", power);
-	params.getParam("samples", samples);
-	params.getParam("object_name", object_name);
-	params.getParam("light_enabled", light_enabled);
-	params.getParam("cast_shadows", cast_shadows);
-	params.getParam("with_caustic", shoot_c);
-	params.getParam("with_diffuse", shoot_d);
-	params.getParam("photon_only", p_only);
-
-	auto light = new AreaLight(logger, corner, p_1 - corner, p_2 - corner, color, power, samples, light_enabled, cast_shadows);
-
-	light->object_name_ = object_name;
-	light->shoot_caustic_ = shoot_c;
-	light->shoot_diffuse_ = shoot_d;
-	light->photon_only_ = p_only;
-
-	return light;
 }
 
 std::tuple<bool, Ray, Rgb> AreaLight::illuminate(const Point3f &surface_p, float time) const

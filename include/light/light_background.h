@@ -35,10 +35,21 @@ class ParamMap;
 class BackgroundLight final : public Light
 {
 	public:
-		static Light *factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params);
+		inline static std::string getClassName() { return "BackgroundLight"; }
+		static std::pair<Light *, ParamError> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params);
+		static std::string printMeta(const std::vector<std::string> &excluded_params) { return Params::meta_.print(excluded_params); }
 
 	private:
-		BackgroundLight(Logger &logger, int sampl, bool invert_intersect = false, bool light_enabled = true, bool cast_shadows = true);
+		[[nodiscard]] Type type() const override { return Type::Background; }
+		const struct Params
+		{
+			PARAM_INIT_PARENT(Light);
+			PARAM_DECL(int, samples_, 16, "samples", "");
+			PARAM_DECL(bool, abs_intersect_, false, "abs_intersect", "");
+			PARAM_DECL(float, ibl_clamp_sampling_, false, "ibl_clamp_sampling", "A value higher than 0.f 'clamps' the light intersection colors to that value, to reduce light sampling noise at the expense of realism and inexact overall light (0.f disables clamping)");
+		} params_;
+		[[nodiscard]] ParamMap getAsParamMap(bool only_non_default) const override;
+		BackgroundLight(Logger &logger, ParamError &param_error, const std::string &name, const ParamMap &param_map);
 		void init(const Scene &scene) override;
 		Rgb totalEnergy() const override;
 		std::tuple<Ray, float, Rgb> emitPhoton(float s_1, float s_2, float s_3, float s_4, float time) const override;
@@ -48,7 +59,7 @@ class BackgroundLight final : public Light
 		std::tuple<bool, Ray, Rgb> illuminate(const Point3f &surface_p, float time) const override;
 		float illumPdf(const Point3f &surface_p, const Point3f &light_p, const Vec3f &light_ng) const override;
 		std::array<float, 3> emitPdf(const Vec3f &, const Vec3f &wo) const override;
-		int nSamples() const override { return samples_; }
+		int nSamples() const override { return params_.samples_; }
 		bool canIntersect() const override { return true; }
 		std::tuple<bool, float, Rgb> intersect(const Ray &ray, float &t) const override;
 		std::pair<Vec3f, float> sampleDir(float s_1, float s_2, bool inv = false) const;
@@ -64,12 +75,10 @@ class BackgroundLight final : public Light
 
 		std::vector<std::unique_ptr<Pdf1D>> u_dist_;
 		std::unique_ptr<Pdf1D> v_dist_;
-		int samples_;
 		Point3f world_center_;
 		float world_radius_;
 		float a_pdf_;
 		float world_pi_factor_;
-		bool abs_inter_;
 
 		static constexpr inline int max_vsamples_ = 360;
 		static constexpr inline int max_usamples_ = 720;

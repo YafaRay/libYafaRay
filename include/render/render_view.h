@@ -23,11 +23,13 @@
 #define YAFARAY_RENDER_VIEW_H
 
 #include "common/collection.h"
+#include "common/enum.h"
+#include "common/enum_map.h"
+#include "param/class_meta.h"
 #include <string>
-#include <utility>
 #include <vector>
 #include <memory>
-#include <common/logger.h>
+#include "common/logger.h"
 
 namespace yafaray {
 
@@ -39,23 +41,30 @@ class Scene;
 class RenderView final
 {
 	public:
-		static RenderView *factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params);
+		inline static std::string getClassName() { return "RenderView"; }
+		static std::pair<RenderView *, ParamError> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map);
+		static std::string printMeta(const std::vector<std::string> &excluded_params) { return Params::meta_.print(excluded_params); }
 		bool init(Logger &logger, const Scene &scene);
-		std::string getName() const { return name_; }
+		[[nodiscard]] std::string getName() const { return name_; }
 		const Camera *getCamera() const { return camera_; }
 		std::map<std::string, Light *> getLights() const { return lights_; }
-		bool isSpectral() const { return wavelength_ != 0.f; }
-		float getWaveLength() const { return wavelength_; }
+		bool isSpectral() const { return params_.wavelength_ != 0.f; }
+		float getWaveLength() const { return params_.wavelength_; }
 		std::vector<const Light *> getLightsVisible() const;
 		std::vector<const Light *> getLightsEmittingCausticPhotons() const;
 		std::vector<const Light *> getLightsEmittingDiffusePhotons() const;
 
 	private:
-		RenderView(std::string name, std::string camera_name, std::string light_names, float wavelength) : name_(std::move(name)), camera_name_(std::move(camera_name)), light_names_(std::move(light_names)), wavelength_(wavelength) { }
+		const struct Params
+		{
+			PARAM_INIT;
+			PARAM_DECL(std::string, camera_name_, "", "camera_name", "Name of the camera used for this render view");
+			PARAM_DECL(std::string, light_names_, "", "light_names", "Name of the lights, separated by a semicolon, used for this render view. If not specified, all lights will be included");
+			PARAM_DECL(float, wavelength_, 0.f, "wavelength", "Wavelength in nm used for this render view (NOT IMPLEMENTED YET). If set to 0.f regular color rendering will take place");
+		} params_;
+		[[nodiscard]] ParamMap getAsParamMap(bool only_non_default) const;
+		RenderView(Logger &logger, ParamError &param_error, const ParamMap &param_map);
 		std::string name_;
-		std::string camera_name_;
-		std::string light_names_;
-		float wavelength_ = 0.f;
 		const Camera *camera_ = nullptr;
 		std::map<std::string, Light *> lights_;
 };

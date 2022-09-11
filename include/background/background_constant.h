@@ -31,10 +31,20 @@ namespace yafaray {
 class ConstantBackground final : public Background
 {
 	public:
-		static const Background * factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params);
+		inline static std::string getClassName() { return "ConstantBackground"; }
+		static std::pair<Background *, ParamError> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params);
+		static std::string printMeta(const std::vector<std::string> &excluded_params) { return Params::meta_.print(excluded_params); }
 
 	private:
-		ConstantBackground(Logger &logger, Rgb col);
+		[[nodiscard]] Type type() const override { return Type::Constant; }
+		const struct Params
+		{
+			PARAM_INIT_PARENT(Background);
+			PARAM_DECL(Rgb, color_, Rgb{0.f}, "color", "");
+		} params_;
+		[[nodiscard]] ParamMap getAsParamMap(bool only_non_default) const override;
+
+		ConstantBackground(Logger &logger, ParamError &param_error, const ParamMap &param_map);
 		Rgb eval(const Vec3f &dir, bool use_ibl_blur) const override;
 
 		Rgb color_;

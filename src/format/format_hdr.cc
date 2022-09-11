@@ -23,11 +23,10 @@
 
 #include "format/format_hdr.h"
 #include "common/logger.h"
-#include "common/param.h"
+#include "param/param.h"
 #include "common/file.h"
 #include "scene/scene.h"
 #include "image/image_layers.h"
-#include "color/color_layers.h"
 
 #include <fstream>
 
@@ -50,8 +49,13 @@ Image * HdrFormat::loadFromFile(const std::string &name, const Image::Optimizati
 		File::close(fp);
 		return nullptr;
 	}
-	const Image::Type type = Image::getTypeFromSettings(true, grayscale_);
-	auto image = Image::factory(logger_, {{width, height}}, type, optimization);
+	Image::Params image_params;
+	image_params.width_ = width;
+	image_params.height_ = height;
+	image_params.type_ = Image::getTypeFromSettings(true, grayscale_);
+	image_params.image_optimization_ = optimization;
+	image_params.filename_ = name;
+	auto image = Image::factory(image_params);
 	const int scan_width = (header_.y_first_) ? width : height;
 	// run length encoding is not allowed so read flat and exit
 	if((scan_width < 8) || (scan_width > 0x7fff))

@@ -23,6 +23,7 @@ target_sources(libyafaray4
 		integrator_debug.cc
 		integrator_direct_light.cc
 		integrator_montecarlo.cc
+		integrator_photon_caustic.cc
 		integrator_path_tracer.cc
 		integrator_photon_mapping.cc
 		integrator_sppm.cc

@@ -29,14 +29,7 @@
 
 namespace yafaray {
 
-class SurfacePoint;
-class PhotonMap;
-class Background;
-struct RenderArea;
-struct MaskParams;
-template <typename T, size_t N> class Vec;
-typedef Vec<float, 3> Vec3f;
-enum class DarkDetectionType : unsigned char;
+class RenderArea;
 
 class ThreadControl final
 {
@@ -50,7 +43,8 @@ class ThreadControl final
 class TiledIntegrator : public SurfaceIntegrator
 {
 	public:
-		TiledIntegrator(RenderControl &render_control, Logger &logger) : SurfaceIntegrator(render_control, logger) { }
+		inline static std::string getClassName() { return "TiledIntegrator"; }
+		TiledIntegrator(RenderControl &render_control, Logger &logger, ParamError &param_error, const ParamMap &param_map) : SurfaceIntegrator{render_control, logger, param_error, param_map} { }
 		/*! Rendering prepasses to precalc suff in case needed */
 		virtual void prePass(FastRandom &fast_random, int samples, int offset, bool adaptive) { } //!< Called before the proper rendering of all the tiles starts
 		/*! do whatever is required to render the image; default implementation renders image in passes
@@ -77,14 +71,6 @@ class TiledIntegrator : public SurfaceIntegrator
 		float aa_indirect_sample_multiplier_ = 1.f;
 		float max_depth_; //!< Inverse of max depth from camera within the scene boundaries
 		float min_depth_; //!< Distance between camera and the closest object on the scene
-		bool use_ambient_occlusion_; //! Use ambient occlusion
-		int ao_samples_; //! Ambient occlusion samples
-		float ao_dist_; //! Ambient occlusion distance
-		Rgb ao_col_; //! Ambient occlusion color
-		int s_depth_; //! Shadow depth for transparent shadows
-		bool transparent_shadows_; //! Use transparent shadows
-		bool transp_background_; //! Render background as transparent
-		bool transp_refracted_background_; //! Render refractions of background as transparent
 };
 
 } //namespace yafaray

@@ -30,34 +30,45 @@ class Scene;
 class AngularCamera final : public Camera
 {
 	public:
-		struct Params
+		inline static std::string getClassName() { return "AngularCamera"; }
+		static std::pair<Camera *, ParamError> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map);
+		static std::string printMeta(const std::vector<std::string> &excluded_params) { return Params::meta_.print(excluded_params); }
+
+	private:
+		struct Projection : public Enum<Projection>  //Fish Eye Projections as defined in https://en.wikipedia.org/wiki/Fisheye_lens
 		{
-			Params(const ParamMap &param_map);
-			ParamMap getAsParamMap() const;
-			enum class Projection : unsigned char  //Fish Eye Projections as defined in https://en.wikipedia.org/wiki/Fisheye_lens
-			{
+			enum : decltype(type()){
 				Equidistant, //!<Default and used traditionally in YafaRay
 				Orthographic, //!<Orthographic projection where the centre of the image is enlarged/more defined at the cost of much more distorted edges. Angle should be 90º or less
 				Stereographic, //!<angle should be less than 180º
 				EquisolidAngle,
 				Rectilinear, //!<angle should be less than 90º
 			};
-			Projection projection_ = Projection::Equidistant;
-			float angle_degrees_ = 90.f;
-			float max_angle_degrees_ = 90;
-			bool circular_ = true;
-			bool mirrored_ = false;
+			inline static const EnumMap<decltype(type())> map_{{
+					{"equidistant", Equidistant, "Default and used traditionally in YafaRay"},
+					{"orthographic", Orthographic, "Orthographic projection where the centre of the image is enlarged/more defined at the cost of much more distorted edges. Angle should be 90º or less"},
+					{"stereographic", Stereographic, "angle should be less than 180º"},
+					{"equisolid_angle", EquisolidAngle, ""},
+					{"rectilinear", Rectilinear, "angle should be less than 90º"},
+				}};
 		};
-		static const Camera * factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map);
+		[[nodiscard]] Type type() const override { return Type::Angular; }
+		const struct Params
+		{
+			PARAM_INIT_PARENT(Camera);
+			PARAM_DECL(float, angle_degrees_, 90.f, "angle", "");
+			PARAM_DECL(float, max_angle_degrees_, 0.f, "max_angle", "If not specified it uses the value from '" + angle_degrees_meta_.name() + "'");
+			PARAM_DECL(bool, circular_, true, "circular", "");
+			PARAM_DECL(bool, mirrored_, false, "mirrored", "");
+			PARAM_ENUM_DECL(Projection, projection_, Projection::Equidistant, "projection", "");
+		} params_;
+		[[nodiscard]] ParamMap getAsParamMap(bool only_non_default) const override;
 
-	private:
-		AngularCamera(Logger &logger, const Camera::Params &camera_params, const Params &params);
-		ParamMap getAsParamMap() const override;
+		AngularCamera(Logger &logger, ParamError &param_error, const ParamMap &param_map);
 		void setAxis(const Vec3f &vx, const Vec3f &vy, const Vec3f &vz) override;
 		CameraRay shootRay(float px, float py, const Uv<float> &uv) const override;
 		Point3f screenproject(const Point3f &p) const override;
 
-		Params params_;
 		float focal_length_;
 		float angle_;
 		float max_radius_;

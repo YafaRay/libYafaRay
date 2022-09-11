@@ -32,42 +32,74 @@
 #ifdef HAVE_TIFF
 #include "format/format_tif.h"
 #endif
-#include "common/param.h"
+#include "param/param.h"
 #include "common/logger.h"
 
 namespace yafaray {
 
-Format * Format::factory(Logger &logger, const ParamMap &params)
-{
-	if(logger.isDebug())
-	{
-		logger.logDebug("**Format");
-		params.logContents(logger);
-	}
-
-	std::string type;
-	params.getParam("type", type);
-	type = string::toLower(type);
-
-	if(type == "tga" || type == "tpic") return new TgaFormat(logger);
-	else if(type == "hdr" || type == "pic") return new HdrFormat(logger);
+//Type map definitions conditionally defined. These defines are only available in this file and not in the header, so they *must* be defined here.
+const EnumMap<unsigned char> Format::Type::map_{{
+	{"tga", Tga, "TGA format"},
+	{"tpic", Tga, "TGA format, alternative file extension"},
+	{"hdr", Hdr, "HDR format"},
+	{"pic", Hdr, "HDR format, alternative file extension"},
 #ifdef HAVE_OPENEXR
-	else if(type == "exr") return new ExrFormat(logger);
+	{"exr", Exr, "EXR format"},
 #endif // HAVE_OPENEXR
 #ifdef HAVE_JPEG
-	else if(type == "jpg" || type == "jpeg") return new JpgFormat(logger);
+	{"jpg", Jpg, "JPEG format"},
+	{"jpeg", Jpg, "JPEG format, alternative file extension"},
 #endif // HAVE_JPEG
 #ifdef HAVE_PNG
-	else if(type == "png") return new PngFormat(logger);
+	{"png", Png, "PNG format"},
 #endif // HAVE_PNG
 #ifdef HAVE_TIFF
-	else if(type == "tif" || type == "tiff") return new TifFormat(logger);
+	{"tif", Tif, "TIFF format"},
+	{"tiff", Tif, "TIFF format, alternative file extension"},
 #endif // HAVE_TIFF
-	else
+}};
+
+Format::Params::Params(ParamError &param_error, const ParamMap &param_map)
+{
+}
+
+ParamMap Format::Params::getAsParamMap(bool only_non_default) const
+{
+	PARAM_SAVE_START;
+	PARAM_SAVE_END;
+}
+
+ParamMap Format::getAsParamMap(bool only_non_default) const
+{
+	ParamMap result{params_.getAsParamMap(only_non_default)};
+	result.setParam("type", type().print());
+	return result;
+}
+
+std::pair<Format *, ParamError> Format::factory(Logger &logger, const ParamMap &param_map)
+{
+	const Type type{ClassMeta::preprocessParamMap<Type>(logger, getClassName(), param_map)};
+	auto param_error{Params::meta_.check(param_map, {"type"}, {})};
+	Format *result = nullptr;
+	switch(type.value())
 	{
-		logger.logError("Cannot process file, libYafaRay has not been built with support for image file format '" + type + "'");
-		return nullptr;
+		case Type::Tga: result = new TgaFormat(logger, param_error, param_map); break;
+		case Type::Hdr: result = new HdrFormat(logger, param_error, param_map); break;
+#ifdef HAVE_OPENEXR
+		case Type::Exr: result = new ExrFormat(logger, param_error, param_map); break;
+#endif // HAVE_OPENEXR
+#ifdef HAVE_JPEG
+		case Type::Jpg: result = new JpgFormat(logger, param_error, param_map); break;
+#endif // HAVE_JPEG
+#ifdef HAVE_PNG
+		case Type::Png: result = new PngFormat(logger, param_error, param_map); break;
+#endif // HAVE_PNG
+#ifdef HAVE_TIFF
+		case Type::Tif: result = new TifFormat(logger, param_error, param_map); break;
+#endif // HAVE_TIFF
+		default: param_error.flags_ = ParamError::Flags::ErrorWhileCreating; break;
 	}
+	return {result, param_error};
 }
 
 Image * Format::loadFromMemory(const uint8_t *data, size_t size, const Image::Optimization &optimization, const ColorSpace &color_space, float gamma)

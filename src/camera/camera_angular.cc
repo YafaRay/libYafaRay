@@ -21,79 +21,64 @@
  */
 
 #include "camera/camera_angular.h"
-
-#include <cmath>
-#include "common/param.h"
+#include "param/param.h"
+#include "common/logger.h"
 
 namespace yafaray {
 
-AngularCamera::Params::Params(const ParamMap &param_map)
+AngularCamera::Params::Params(ParamError &param_error, const ParamMap &param_map)
 {
-	std::string projection_string;
-
-	param_map.getParam("angle", angle_degrees_);
+	PARAM_LOAD(angle_degrees_);
 	max_angle_degrees_ = angle_degrees_;
-	param_map.getParam("max_angle", max_angle_degrees_);
-	param_map.getParam("circular", circular_);
-	param_map.getParam("mirrored", mirrored_);
-	param_map.getParam("projection", projection_string);
-
-	if(projection_string == "orthographic") projection_ = Params::Projection::Orthographic;
-	else if(projection_string == "stereographic") projection_ = Params::Projection::Stereographic;
-	else if(projection_string == "equisolid_angle") projection_ = Params::Projection::EquisolidAngle;
-	else if(projection_string == "rectilinear") projection_ = Params::Projection::Rectilinear;
-	else projection_ = Params::Projection::Equidistant;
+	PARAM_LOAD(max_angle_degrees_);
+	PARAM_LOAD(circular_);
+	PARAM_LOAD(mirrored_);
+	PARAM_ENUM_LOAD(projection_);
 }
 
-ParamMap AngularCamera::Params::getAsParamMap() const
+ParamMap AngularCamera::Params::getAsParamMap(bool only_non_default) const
 {
-	ParamMap result;
-	result["angle"] = angle_degrees_;
-	result["max_angle"] = max_angle_degrees_;
-	result["circular"] = circular_;
-	result["mirrored"] = mirrored_;
-	std::string projection_string;
-	switch(projection_)
-	{
-		case Params::Projection::Orthographic: projection_string = "orthographic"; break;
-		case Params::Projection::Stereographic: projection_string = "stereographic"; break;
-		case Params::Projection::EquisolidAngle: projection_string = "equisolid_angle"; break;
-		case Params::Projection::Rectilinear: projection_string = "rectilinear"; break;
-		default: projection_string = "equidistant"; break;
-	}
-	result["projection"] = projection_string;
+	PARAM_SAVE_START;
+	PARAM_SAVE(angle_degrees_);
+	PARAM_SAVE(max_angle_degrees_);
+	PARAM_SAVE(circular_);
+	PARAM_SAVE(mirrored_);
+	PARAM_ENUM_SAVE(projection_);
+	PARAM_SAVE_END;
+}
+
+ParamMap AngularCamera::getAsParamMap(bool only_non_default) const
+{
+	ParamMap result{Camera::getAsParamMap(only_non_default)};
+	result.append(params_.getAsParamMap(only_non_default));
 	return result;
 }
 
-ParamMap AngularCamera::getAsParamMap() const
+std::pair<Camera *, ParamError> AngularCamera::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map)
 {
-	ParamMap result{Camera::params_.getAsParamMap()};
-	result.append(params_.getAsParamMap());
-	return result;
+
+	auto param_error{Params::meta_.check(param_map, {"type"}, {})};
+	auto result {new AngularCamera(logger, param_error, param_map)};
+	if(param_error.flags_ != ParamError::Flags::Ok) logger.logWarning(param_error.print<AngularCamera>(name, {"type"}));
+	return {result, param_error};
 }
 
-const Camera * AngularCamera::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map)
+AngularCamera::AngularCamera(Logger &logger, ParamError &param_error, const ParamMap &param_map) : Camera{logger, param_error, param_map},
+		params_{param_error, param_map}, angle_{params_.angle_degrees_ * math::div_pi_by_180<>}, max_radius_{params_.max_angle_degrees_ / params_.angle_degrees_}
 {
-	Camera::Params camera_params;
-	camera_params.far_clip_distance_ = -1.0e38f;
-	camera_params.loadParamMap(param_map);
-	Params params{param_map};
-	auto cam = new AngularCamera(logger, camera_params, params);
-	if(params.mirrored_) cam->vright_ = -cam->vright_;
-	return cam;
-}
-
-AngularCamera::AngularCamera(Logger &logger, const Camera::Params &camera_params, const Params &params) : Camera{logger, camera_params},
-		params_{params}, angle_{params.angle_degrees_ * math::div_pi_by_180<>}, max_radius_{params.max_angle_degrees_ / params.angle_degrees_}
-{
+	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + params_.getAsParamMap(true).print());
+	if(params_.mirrored_) vright_ = -vright_;
 	// Initialize camera specific plane coordinates
 	setAxis(cam_x_, cam_y_, cam_z_);
-
-	if(params_.projection_ == Params::Projection::Orthographic) focal_length_ = 1.f / math::sin(angle_);
-	else if(params_.projection_ == Params::Projection::Stereographic) focal_length_ = 1.f / 2.f / std::tan(angle_ / 2.f);
-	else if(params_.projection_ == Params::Projection::EquisolidAngle) focal_length_ = 1.f / 2.f / math::sin(angle_ / 2.f);
-	else if(params_.projection_ == Params::Projection::Rectilinear) focal_length_ = 1.f / std::tan(angle_);
-	else focal_length_ = 1.f / angle_; //By default, AngularProjection::Equidistant
+	switch(params_.projection_.value())
+	{
+		case Projection::Orthographic: focal_length_ = 1.f / math::sin(angle_); break;
+		case Projection::Stereographic: focal_length_ = 1.f / 2.f / std::tan(angle_ / 2.f); break;
+		case Projection::EquisolidAngle: focal_length_ = 1.f / 2.f / math::sin(angle_ / 2.f); break;
+		case Projection::Rectilinear: focal_length_ = 1.f / std::tan(angle_); break;
+		case Projection::Equidistant:
+		default: focal_length_ = 1.f / angle_; break;
+	}
 }
 
 void AngularCamera::setAxis(const Vec3f &vx, const Vec3f &vy, const Vec3f &vz)
@@ -119,11 +104,15 @@ CameraRay AngularCamera::shootRay(float px, float py, const Uv<float> &uv) const
 	float theta = 0.f;
 	if(!((u == 0.f) && (v == 0.f))) theta = std::atan2(v, u);
 	float phi;
-	if(params_.projection_ == Params::Projection::Orthographic) phi = math::asin(radius / focal_length_);
-	else if(params_.projection_ == Params::Projection::Stereographic) phi = 2.f * std::atan(radius / (2.f * focal_length_));
-	else if(params_.projection_ == Params::Projection::EquisolidAngle) phi = 2.f * math::asin(radius / (2.f * focal_length_));
-	else if(params_.projection_ == Params::Projection::Rectilinear) phi = std::atan(radius / focal_length_);
-	else phi = radius / focal_length_; //By default, AngularProjection::Equidistant
+	switch(params_.projection_.value())
+	{
+		case Projection::Orthographic: phi = math::asin(radius / focal_length_); break;
+		case Projection::Stereographic: phi = 2.f * std::atan(radius / (2.f * focal_length_)); break;
+		case Projection::EquisolidAngle: phi = 2.f * math::asin(radius / (2.f * focal_length_)); break;
+		case Projection::Rectilinear: phi = std::atan(radius / focal_length_); break;
+		case Projection::Equidistant:
+		default: phi = radius / focal_length_; break;
+	}
 	//float sp = sin(phi);
 	ray.dir_ = math::sin(phi) * (math::cos(theta) * vright_ + math::sin(theta) * vup_) + math::cos(phi) * vto_;
 	ray.tmin_ = near_plane_.rayIntersection(ray);

@@ -20,30 +20,103 @@
 
 #include "background/background_texture.h"
 #include "texture/texture_image.h"
-#include "common/param.h"
+#include "texture/mipmap_params.h"
+#include "param/param.h"
 #include "scene/scene.h"
 #include "light/light.h"
 #include "image/image_output.h"
 
 namespace yafaray {
 
-TextureBackground::TextureBackground(Logger &logger, const Texture *texture, Projection proj, float bpower, float rot, float ibl_blur) :
-		Background(logger), tex_(texture), project_(proj), power_(bpower), ibl_blur_mipmap_level_(math::pow(ibl_blur, 2.f))
+TextureBackground::Params::Params(ParamError &param_error, const ParamMap &param_map)
 {
-	rotation_ = 2.f * rot / 360.f;
+	PARAM_LOAD(rotation_);
+	PARAM_LOAD(ibl_blur_);
+	PARAM_LOAD(ibl_clamp_sampling_);
+	PARAM_ENUM_LOAD(projection_);
+	PARAM_LOAD(texture_name_);
+}
+
+ParamMap TextureBackground::Params::getAsParamMap(bool only_non_default) const
+{
+	PARAM_SAVE_START;
+	PARAM_SAVE(rotation_);
+	PARAM_SAVE(ibl_blur_);
+	PARAM_SAVE(ibl_clamp_sampling_);
+	PARAM_ENUM_SAVE(projection_);
+	PARAM_SAVE(texture_name_);
+	PARAM_SAVE_END;
+}
+
+ParamMap TextureBackground::getAsParamMap(bool only_non_default) const
+{
+	ParamMap result{Background::getAsParamMap(only_non_default)};
+	result.append(params_.getAsParamMap(only_non_default));
+	return result;
+}
+
+std::pair<Background *, ParamError> TextureBackground::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map)
+{
+	auto param_error{Params::meta_.check(param_map, {"type"}, {})};
+	std::string texname;
+	if(param_map.getParam(Params::texture_name_meta_, texname) == ParamError::Flags::ErrorTypeUnknownParam)
+	{
+		logger.logError("TextureBackground: No texture given for texture background!");
+		return {nullptr, {ParamError::Flags::ErrorWhileCreating}};
+	}
+	Texture *tex = scene.getTexture(texname);
+	if(!tex)
+	{
+		logger.logError("TextureBackground: Texture '", texname, "' for textureback not existant!");
+		return {nullptr, {ParamError::Flags::ErrorWhileCreating}};
+	}
+	auto background = new TextureBackground(logger, param_error, param_map, tex);
+	if(param_error.flags_ != ParamError::Flags::Ok) logger.logWarning(param_error.print<TextureBackground>(name, {"type"}));
+	if(background->Background::params_.ibl_)
+	{
+		if(background->params_.ibl_blur_ > 0.f)
+		{
+			logger.logInfo("TextureBackground: starting background SmartIBL blurring with IBL Blur factor=", background->params_.ibl_blur_);
+			tex->generateMipMaps();
+			if(logger.isVerbose()) logger.logVerbose("TextureBackground: background SmartIBL blurring done using mipmaps.");
+		}
+		ParamMap bgp;
+		bgp["type"] = std::string("bglight");
+		bgp["samples"] = background->Background::params_.ibl_samples_;
+		bgp["with_caustic"] = background->Background::params_.with_caustic_;
+		bgp["with_diffuse"] = background->Background::params_.with_diffuse_;
+		bgp["cast_shadows"] = background->Background::params_.cast_shadows_;
+		bgp["abs_intersect"] = false; //this used to be (pr == angular);  but that caused the IBL light to be in the wrong place (see http://www.yafaray.org/node/714) I don't understand why this was set that way, we should keep an eye on this.
+		bgp["ibl_clamp_sampling"] = background->params_.ibl_clamp_sampling_;
+		if(background->params_.ibl_clamp_sampling_ > 0.f)
+		{
+			logger.logParams("TextureBackground: using IBL sampling clamp=", background->params_.ibl_clamp_sampling_);
+		}
+		std::unique_ptr<Light> bglight{Light::factory(logger, scene, "light", bgp).first};
+		bglight->setBackground(background);
+		background->addLight(std::move(bglight));
+	}
+	return {background, param_error};
+}
+
+TextureBackground::TextureBackground(Logger &logger, ParamError &param_error, const ParamMap &param_map, const Texture *texture) :
+		Background{logger, param_error, param_map}, params_{param_error, param_map}, tex_(texture), ibl_blur_mipmap_level_(math::pow(params_.ibl_blur_, 2.f)),
+		rotation_{2.f * params_.rotation_ / 360.f}
+{
+	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + params_.getAsParamMap(true).print());
 	sin_r_ = math::sin(math::num_pi<> * rotation_);
 	cos_r_ = math::cos(math::num_pi<> * rotation_);
-	if(ibl_blur > 0.f)
+	if(params_.ibl_blur_ > 0.f)
 	{
 		with_ibl_blur_ = true;
-		ibl_blur_mipmap_level_ = ibl_blur * ibl_blur;
+		ibl_blur_mipmap_level_ = params_.ibl_blur_ * params_.ibl_blur_;
 	}
 }
 
 Rgb TextureBackground::eval(const Vec3f &dir, bool use_ibl_blur) const
 {
 	Uv<float> uv;
-	if(project_ == Angular)
+	if(params_.projection_ == Projection::Angular)
 	{
 		const Point3f p {{
 				dir[Axis::X] * cos_r_ + dir[Axis::Y] * sin_r_,
@@ -73,78 +146,7 @@ Rgb TextureBackground::eval(const Vec3f &dir, bool use_ibl_blur) const
 	if(ret.r_ < min_component) ret.r_ = min_component;
 	if(ret.g_ < min_component) ret.g_ = min_component;
 	if(ret.b_ < min_component) ret.b_ = min_component;
-	return power_ * ret;
-}
-
-const Background * TextureBackground::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params)
-{
-	std::string texname;
-	std::string mapping;
-	Projection pr = Spherical;
-	float power = 1.0, rot = 0.0;
-	bool ibl = false;
-	float ibl_blur = 0.f;
-	float ibl_clamp_sampling = 0.f;
-	int ibl_sam = 16;
-	bool caust = true;
-	bool diffuse = true;
-	bool cast_shadows = true;
-
-	if(!params.getParam("texture", texname))
-	{
-		logger.logError("TextureBackground: No texture given for texture background!");
-		return nullptr;
-	}
-
-	Texture *tex = scene.getTexture(texname);
-	if(!tex)
-	{
-		logger.logError("TextureBackground: Texture '", texname, "' for textureback not existant!");
-		return nullptr;
-	}
-	if(params.getParam("mapping", mapping))
-	{
-		if(mapping == "probe" || mapping == "angular") pr = Angular;
-	}
-	params.getParam("ibl", ibl);
-	params.getParam("smartibl_blur", ibl_blur);
-	params.getParam("ibl_clamp_sampling", ibl_clamp_sampling);
-	params.getParam("ibl_samples", ibl_sam);
-	params.getParam("power", power);
-	params.getParam("rotation", rot);
-	params.getParam("with_caustic", caust);
-	params.getParam("with_diffuse", diffuse);
-	params.getParam("cast_shadows", cast_shadows);
-
-	auto tex_bg = new TextureBackground(logger, tex, pr, power, rot, ibl_blur);
-
-	if(ibl)
-	{
-		ParamMap bgp;
-		bgp["type"] = std::string("bglight");
-		bgp["samples"] = ibl_sam;
-		bgp["with_caustic"] = caust;
-		bgp["with_diffuse"] = diffuse;
-		bgp["abs_intersect"] = false; //this used to be (pr == angular);  but that caused the IBL light to be in the wrong place (see http://www.yafaray.org/node/714) I don't understand why this was set that way, we should keep an eye on this.
-		bgp["cast_shadows"] = cast_shadows;
-
-		if(ibl_blur > 0.f)
-		{
-			logger.logInfo("TextureBackground: starting background SmartIBL blurring with IBL Blur factor=", ibl_blur);
-			tex->generateMipMaps();
-			if(logger.isVerbose()) logger.logVerbose("TextureBackground: background SmartIBL blurring done using mipmaps.");
-		}
-
-		std::unique_ptr<Light> bglight{Light::factory(logger, scene, "light", std::move(bgp))};
-		bglight->setBackground(tex_bg);
-		if(ibl_clamp_sampling > 0.f)
-		{
-			logger.logInfo("TextureBackground: using IBL sampling clamp=", ibl_clamp_sampling);
-			bglight->setClampIntersect(ibl_clamp_sampling);
-		}
-		tex_bg->addLight(std::move(bglight));
-	}
-	return tex_bg;
+	return Background::params_.power_ * ret;
 }
 
 } //namespace yafaray

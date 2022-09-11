@@ -22,6 +22,8 @@
 #include "image/image_layers.h"
 #include "common/mask_edge_toon_params.h"
 #include "common/logger.h"
+#include "image/image_pixel_types.h"
+#include "math/buffer_2d.h"
 #include <opencv2/photo/photo.hpp>
 
 namespace yafaray {
@@ -30,8 +32,13 @@ Image *image_manipulation_opencv::getDenoisedLdrImage(Logger &logger, const Imag
 {
 	if(!denoise_params.enabled_) return nullptr;
 
-	auto image_denoised = Image::factory(logger, image->getSize(), image->getType(), image->getOptimization());
-	if(!image_denoised) return image_denoised;
+	Image::Params image_params;
+	image_params.width_ = image->getWidth();
+	image_params.height_ = image->getHeight();
+	image_params.type_ = image->getType();
+	image_params.image_optimization_ = image->getOptimization();
+	auto image_denoised = Image::factory(image_params);
+	if(!image_denoised) return nullptr;
 
 	const int width = image_denoised->getWidth();
 	const int height = image_denoised->getHeight();
@@ -97,7 +104,7 @@ void edgeImageDetection(std::vector<cv::Mat> &image_mat, float edge_threshold, i
 	if(smoothness > 0.f) cv::GaussianBlur(image_mat.at(0), image_mat.at(0), cv::Size(3, 3), /*sigmaX=*/ smoothness);
 }
 
-void image_manipulation_opencv::generateDebugFacesEdges(ImageLayers &film_image_layers, int xstart, int width, int ystart, int height, bool drawborder, const EdgeToonParams &edge_params, const ImageBuffer2D<Gray> &weights)
+void image_manipulation_opencv::generateDebugFacesEdges(ImageLayers &film_image_layers, int xstart, int width, int ystart, int height, bool drawborder, const EdgeToonParams &edge_params, const Buffer2D<Gray> &weights)
 {
 	const Image *normal_image = film_image_layers(LayerDef::NormalGeom).image_.get();
 	const Image *z_depth_image = film_image_layers(LayerDef::ZDepthNorm).image_.get();
@@ -136,7 +143,7 @@ void image_manipulation_opencv::generateDebugFacesEdges(ImageLayers &film_image_
 	}
 }
 
-void image_manipulation_opencv::generateToonAndDebugObjectEdges(ImageLayers &film_image_layers, int xstart, int width, int ystart, int height, bool drawborder, const EdgeToonParams &edge_params, const ImageBuffer2D<Gray> &weights)
+void image_manipulation_opencv::generateToonAndDebugObjectEdges(ImageLayers &film_image_layers, int xstart, int width, int ystart, int height, bool drawborder, const EdgeToonParams &edge_params, const Buffer2D<Gray> &weights)
 {
 	const Image *normal_image = film_image_layers(LayerDef::NormalSmooth).image_.get();
 	const Image *z_depth_image = film_image_layers(LayerDef::ZDepthNorm).image_.get();
@@ -258,7 +265,12 @@ int image_manipulation_opencv::generateMipMaps(Logger &logger, std::vector<std::
 		const int w_2 = (w + 1) / 2;
 		const int h_2 = (h + 1) / 2;
 		++img_index;
-		images.emplace_back(Image::factory(logger, {{w_2, h_2}}, images[img_index - 1]->getType(), images[img_index - 1]->getOptimization()));
+		Image::Params image_params;
+		image_params.width_ = w_2;
+		image_params.height_ = h_2;
+		image_params.type_ = images[img_index - 1]->getType();
+		image_params.image_optimization_ = images[img_index - 1]->getOptimization();
+		images.emplace_back(Image::factory(image_params));
 
 		const cv::Mat b(h_2, w_2, CV_32FC4);
 		const cv::Mat_<cv::Vec4f> b_vec = b;

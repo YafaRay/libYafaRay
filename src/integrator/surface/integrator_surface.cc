@@ -24,33 +24,51 @@
 #include "integrator/surface/integrator_photon_mapping.h"
 #include "integrator/surface/integrator_sppm.h"
 #include "integrator/surface/integrator_debug.h"
-#include "common/param.h"
+#include "param/param.h"
 #include "render/imagesplitter.h"
 #include "scene/scene.h"
 #include "render/imagefilm.h"
 
 namespace yafaray {
 
-SurfaceIntegrator * SurfaceIntegrator::factory(Logger &logger, RenderControl &render_control, const Scene &scene, const std::string &name, const ParamMap &params)
+SurfaceIntegrator::Params::Params(ParamError &param_error, const ParamMap &param_map)
 {
-	if(logger.isDebug())
+	PARAM_LOAD(time_forced_);
+	PARAM_LOAD(time_forced_value_);
+}
+
+ParamMap SurfaceIntegrator::Params::getAsParamMap(bool only_non_default) const
+{
+	PARAM_SAVE_START;
+	PARAM_SAVE(time_forced_);
+	PARAM_SAVE(time_forced_value_);
+	PARAM_SAVE_END;
+}
+
+ParamMap SurfaceIntegrator::getAsParamMap(bool only_non_default) const
+{
+	ParamMap result{params_.getAsParamMap(only_non_default)};
+	result.setParam("type", type().print());
+	return result;
+}
+
+std::pair<SurfaceIntegrator *, ParamError> SurfaceIntegrator::factory(Logger &logger, RenderControl &render_control, const Scene &scene, const std::string &name, const ParamMap &param_map)
+{
+	const Type type{ClassMeta::preprocessParamMap<Type>(logger, getClassName(), param_map)};
+	switch(type.value())
 	{
-		logger.logDebug("**SurfaceIntegrator");
-		params.logContents(logger);
+		case Type::Bidirectional:
+		{
+			logger.logWarning("The Bidirectional integrator is UNSTABLE at the moment and needs to be improved. It might give unexpected and perhaps even incorrect render results. Use at your own risk.");
+			return BidirectionalIntegrator::factory(logger, render_control, param_map, scene);
+		}
+		case Type::Debug: return DebugIntegrator::factory(logger, render_control, param_map, scene);
+		case Type::DirectLight: return DirectLightIntegrator::factory(logger, render_control, param_map, scene);
+		case Type::Path: return PathIntegrator::factory(logger, render_control, param_map, scene);
+		case Type::Photon: return PhotonIntegrator::factory(logger, render_control, param_map, scene);
+		case Type::Sppm: return SppmIntegrator::factory(logger, render_control, param_map, scene);
+		default: return {nullptr, {ParamError::Flags::ErrorWhileCreating}};
 	}
-	std::string type;
-	params.getParam("type", type);
-	if(type == "bidirectional")
-	{
-		logger.logWarning("The Bidirectional integrator is UNSTABLE at the moment and needs to be improved. It might give unexpected and perhaps even incorrect render results. Use at your own risk.");
-		return BidirectionalIntegrator::factory(logger, render_control, params, scene);
-	}
-	else if(type == "DebugIntegrator") return DebugIntegrator::factory(logger, render_control, params, scene);
-	else if(type == "directlighting") return DirectLightIntegrator::factory(logger, render_control, params, scene);
-	else if(type == "pathtracing") return PathIntegrator::factory(logger, render_control, params, scene);
-	else if(type == "photonmapping") return PhotonIntegrator::factory(logger, render_control, params, scene);
-	else if(type == "SPPM") return SppmIntegrator::factory(logger, render_control, params, scene);
-	else return nullptr;
 }
 
 bool SurfaceIntegrator::preprocess(FastRandom &fast_random, ImageFilm *image_film, const RenderView *render_view, const Scene &scene)

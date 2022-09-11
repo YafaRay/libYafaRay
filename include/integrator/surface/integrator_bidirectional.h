@@ -36,7 +36,25 @@ class Pdf1D;
 class BidirectionalIntegrator final : public TiledIntegrator
 {
 	public:
-		static SurfaceIntegrator *factory(Logger &logger, RenderControl &render_control, const ParamMap &params, const Scene &scene);
+		inline static std::string getClassName() { return "BidirectionalIntegrator"; }
+		static std::pair<SurfaceIntegrator *, ParamError> factory(Logger &logger, RenderControl &render_control, const ParamMap &param_map, const Scene &scene);
+		static std::string printMeta(const std::vector<std::string> &excluded_params) { return Params::meta_.print(excluded_params); }
+
+	private:
+		[[nodiscard]] Type type() const override { return Type::Bidirectional; }
+		const struct Params
+		{
+			PARAM_INIT_PARENT(TiledIntegrator);
+			PARAM_DECL(bool, transparent_shadows_, false, "transpShad", "Use transparent shadows");
+			PARAM_DECL(int, shadow_depth_, 4, "shadowDepth", "Shadow depth for transparent shadows");
+			PARAM_DECL(bool, ao_, false, "do_AO", "Use ambient occlusion");
+			PARAM_DECL(int, ao_samples_, 32, "AO_samples", "Ambient occlusion samples");
+			PARAM_DECL(float, ao_distance_, 1.f, "AO_distance", "Ambient occlusion distance");
+			PARAM_DECL(Rgb, ao_color_, Rgb{1.f}, "AO_color", "Ambient occlusion color");
+			PARAM_DECL(bool, transparent_background_, false, "bg_transp", "Render background as transparent");
+			PARAM_DECL(bool, transparent_background_refraction_, false, "bg_transp_refract", "Render refractions of background as transparent");
+		} params_;
+		[[nodiscard]] ParamMap getAsParamMap(bool only_non_default) const override;
 		static constexpr inline int max_path_length_ = 32;
 		static constexpr inline int max_path_eval_length_ = 2 * max_path_length_ + 1;
 		static constexpr inline int min_path_length_ = 3;
@@ -45,9 +63,9 @@ class BidirectionalIntegrator final : public TiledIntegrator
 		struct PathData;
 		struct PathVertex;
 		struct PathEvalVertex;
-		BidirectionalIntegrator(RenderControl &render_control, Logger &logger, bool transparent_shadows = false, int shadow_depth = 4);
-		std::string getShortName() const override { return "BdPT"; }
-		std::string getName() const override { return "BidirectionalPathTracer"; }
+		BidirectionalIntegrator(RenderControl &render_control, Logger &logger, ParamError &param_error, const ParamMap &param_map);
+		[[nodiscard]] std::string getShortName() const override { return "BdPT"; }
+		[[nodiscard]] std::string getName() const override { return "BidirectionalPathTracer"; }
 		bool preprocess(FastRandom &fast_random, ImageFilm *image_film, const RenderView *render_view, const Scene &scene) override;
 		void cleanup() override;
 		std::pair<Rgb, float> integrate(Ray &ray, FastRandom &fast_random, RandomGenerator &random_generator, std::vector<int> &correlative_sample_number, ColorLayers *color_layers, int thread_id, int ray_level, bool chromatic_enabled, float wavelength, int additional_depth, const RayDivision &ray_division, const PixelSamplingData &pixel_sampling_data, unsigned int object_index_highest, unsigned int material_index_highest) const override;

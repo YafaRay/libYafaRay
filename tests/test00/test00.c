@@ -101,28 +101,25 @@ int main()
 	/* YafaRay standard rendering interface */
 	yi = yafaray_createInterface(YAFARAY_INTERFACE_FOR_RENDERING, "test00.xml", loggerCallback, &result_image, YAFARAY_DISPLAY_CONSOLE_NORMAL);
 	yafaray_setConsoleLogColorsEnabled(yi, YAFARAY_BOOL_TRUE);
-	yafaray_setConsoleVerbosityLevel(yi, YAFARAY_LOG_LEVEL_DEBUG);
+	yafaray_setConsoleVerbosityLevel(yi, YAFARAY_LOG_LEVEL_VERBOSE);
 
 	/* Creating scene */
 	yafaray_createScene(yi);
 	yafaray_paramsClearAll(yi);
 	{
 		/* Creating image from RAM or file */
-		const int tex_width = 200;
-		const int tex_height = 200;
 		yafaray_Image_t *image = NULL;
-		int i, j;
-
-		yafaray_paramsSetString(yi, "type", "ColorAlpha");
-		yafaray_paramsSetString(yi, "image_optimization", "none"); /* Note: only "none" allows more HDR values > 1.f */
-		yafaray_paramsSetInt(yi, "tex_width", tex_width);
-		yafaray_paramsSetInt(yi, "tex_height", tex_height);
+		yafaray_paramsSetString(yi, "type", "ColorAlpha"); /* Note: the specified type os overriden by the loaded image type
+		yafaray_paramsSetString(yi, "image_optimization", "none"); /* Note: only "none" allows high dynamic range values > 1.f */
 		yafaray_paramsSetString(yi, "filename", "tex.tga");
 		image = yafaray_createImage(yi, "Image01");
 		yafaray_paramsClearAll(yi);
 
-		for(i = 0; i < tex_width; ++i)
-			for(j = 0; j < tex_height; ++j)
+		const int tex_width = yafaray_getImageWidth(image);
+		const int tex_height = yafaray_getImageHeight(image);
+		int i, j;
+		for(i = 0; i < tex_width / 2; ++i) /*For this test example we overwrite half of the image width with a "rainbow"*/
+			for(j = 0; j < tex_height / 2; ++j) /*For this test example we overwrite half of the image height with a "rainbow"*/
 				yafaray_setImageColor(image, i, j, 0.01f * i, 0.01f * j, 0.01f * (i + j), 1.f);
 	}
 

@@ -31,19 +31,29 @@ class Object;
 class AcceleratorSimpleTest final : Accelerator
 {
 	public:
+		inline static std::string getClassName() { return "AcceleratorKdTree"; }
+		static std::pair<Accelerator *, ParamError> factory(Logger &logger, const std::vector<const Primitive *> &primitives, const ParamMap &params);
+		static std::string printMeta(const std::vector<std::string> &excluded_params) { return Params::meta_.print(excluded_params); }
+
+	private:
+		[[nodiscard]] Type type() const override { return Type::SimpleTest; }
+		const struct Params
+		{
+			PARAM_INIT_PARENT(Accelerator);
+		} params_;
+		[[nodiscard]] ParamMap getAsParamMap(bool only_non_default) const override;
+
 		struct ObjectData
 		{
 			Bound<float> bound_;
 			std::vector<const Primitive *> primitives_;
 		};
-		static const Accelerator * factory(Logger &logger, const std::vector<const Primitive *> &primitives, const ParamMap &params);
-
-	private:
-		AcceleratorSimpleTest(Logger &logger, const std::vector<const Primitive *> &primitives);
+		AcceleratorSimpleTest(Logger &logger, ParamError &param_error, const std::vector<const Primitive *> &primitives, const ParamMap &param_map);
 		IntersectData intersect(const Ray &ray, float t_max) const override;
 		IntersectData intersectShadow(const Ray &ray, float t_max) const override;
 		IntersectData intersectTransparentShadow(const Ray &ray, int max_depth, float dist, const Camera *camera) const override;
 		Bound<float> getBound() const override { return bound_; }
+
 		const std::vector<const Primitive *> &primitives_;
 		std::map<const Object *, ObjectData> objects_data_;
 		Bound<float> bound_;

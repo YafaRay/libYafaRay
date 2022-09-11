@@ -19,7 +19,7 @@
  */
 
 #include "render/render_view.h"
-#include "common/param.h"
+#include "param/param.h"
 #include "scene/scene.h"
 #include "common/string.h"
 #include "common/logger.h"
@@ -27,34 +27,52 @@
 
 namespace yafaray {
 
-RenderView * RenderView::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params)
+RenderView::Params::Params(ParamError &param_error, const ParamMap &param_map)
 {
-	if(logger.isDebug())
-	{
-		logger.logDebug("**RenderView");
-		params.logContents(logger);
-	}
-	std::string camera_name;
-	std::string light_names; //Separated by semicolon ";"
-	float wavelength = 0.f;
-	params.getParam("camera_name", camera_name);
-	params.getParam("light_names", light_names);
-	params.getParam("wavelength", wavelength);
+	PARAM_LOAD(camera_name_);
+	PARAM_LOAD(light_names_);
+	PARAM_LOAD(wavelength_);
+}
 
-	return new RenderView(name, camera_name, light_names, wavelength);
+ParamMap RenderView::Params::getAsParamMap(bool only_non_default) const
+{
+	PARAM_SAVE_START;
+	PARAM_SAVE(camera_name_);
+	PARAM_SAVE(light_names_);
+	PARAM_SAVE(wavelength_);
+	PARAM_SAVE_END;
+}
+
+ParamMap RenderView::getAsParamMap(bool only_non_default) const
+{
+	return params_.getAsParamMap(only_non_default);
+}
+
+std::pair<RenderView *, ParamError> RenderView::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map)
+{
+	if(logger.isDebug()) logger.logDebug("**" + getClassName() + "::factory 'raw' ParamMap\n" + param_map.logContents());
+	auto param_error{Params::meta_.check(param_map, {}, {})};
+	auto result {new RenderView(logger, param_error, param_map)};
+	if(param_error.flags_ != ParamError::Flags::Ok) logger.logWarning(param_error.print<RenderView>(name, {}));
+	return {result, param_error};
+}
+
+RenderView::RenderView(Logger &logger, ParamError &param_error, const ParamMap &param_map) : params_{param_error, param_map}
+{
+	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + params_.getAsParamMap(true).print());
 }
 
 bool RenderView::init(Logger &logger, const Scene &scene)
 {
-	camera_ = scene.getCamera(camera_name_);
+	camera_ = scene.getCamera(params_.camera_name_);
 	if(!camera_)
 	{
-		logger.logError("RenderView '", name_, "': Camera not found in the scene.");
+		logger.logError(getClassName() ,"'", name_, "': Camera not found in the scene.");
 		return false;
 	}
 
 	lights_.clear();
-	const std::vector<std::string> selected_lights_names = string::tokenize(light_names_, ";");
+	const std::vector<std::string> selected_lights_names = string::tokenize(params_.light_names_, ";");
 
 	std::map<std::string, Light *> scene_lights{scene.getLights()};
 	if(selected_lights_names.empty())
@@ -68,7 +86,7 @@ bool RenderView::init(Logger &logger, const Scene &scene)
 			Light *light = findPointerInMap(scene_lights, light_name);
 			if(!light)
 			{
-				logger.logWarning("RenderView '", name_, "' init: view '", name_, "' could not find light '", light_name, "', skipping...");
+				logger.logWarning(getClassName() ,"'", name_, "' init: view '", name_, "' could not find light '", light_name, "', skipping...");
 				continue;
 			}
 			lights_[light_name] = light;
@@ -76,7 +94,7 @@ bool RenderView::init(Logger &logger, const Scene &scene)
 	}
 	if(lights_.empty())
 	{
-		logger.logWarning("RenderView '", name_, "': Lights not found in the scene.");
+		logger.logWarning(getClassName() ,"'", name_, "': Lights not found in the scene.");
 	}
 	return true;
 }

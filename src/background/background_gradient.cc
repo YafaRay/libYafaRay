@@ -19,7 +19,7 @@
  */
 
 #include "background/background_gradient.h"
-#include "common/param.h"
+#include "param/param.h"
 #include "scene/scene.h"
 #include "light/light.h"
 #include "image/image_output.h"
@@ -27,9 +27,58 @@
 
 namespace yafaray {
 
-GradientBackground::GradientBackground(Logger &logger, const Rgb &gzcol, const Rgb &ghcol, const Rgb &szcol, const Rgb &shcol) :
-		Background(logger), gzenith_(gzcol), ghoriz_(ghcol), szenith_(szcol), shoriz_(shcol)
+GradientBackground::Params::Params(ParamError &param_error, const ParamMap &param_map)
 {
+	PARAM_LOAD(horizon_color_);
+	PARAM_LOAD(zenith_color_);
+	zenith_ground_color_ = zenith_color_;
+	horizon_ground_color_ = horizon_color_;
+	PARAM_LOAD(horizon_ground_color_);
+	PARAM_LOAD(zenith_ground_color_);
+}
+
+ParamMap GradientBackground::Params::getAsParamMap(bool only_non_default) const
+{
+	PARAM_SAVE_START;
+	PARAM_SAVE(horizon_color_);
+	PARAM_SAVE(zenith_color_);
+	PARAM_SAVE(horizon_ground_color_);
+	PARAM_SAVE(zenith_ground_color_);
+	PARAM_SAVE_END;
+}
+
+ParamMap GradientBackground::getAsParamMap(bool only_non_default) const
+{
+	ParamMap result{Background::getAsParamMap(only_non_default)};
+	result.append(params_.getAsParamMap(only_non_default));
+	return result;
+}
+
+std::pair<Background *, ParamError> GradientBackground::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map)
+{
+	auto param_error{Params::meta_.check(param_map, {"type"}, {})};
+	auto background = new GradientBackground(logger, param_error, param_map);
+	if(param_error.flags_ != ParamError::Flags::Ok) logger.logWarning(param_error.print<GradientBackground>(name, {"type"}));
+	if(background->Background::params_.ibl_)
+	{
+		ParamMap bgp;
+		bgp["type"] = std::string("bglight");
+		bgp["samples"] = background->Background::params_.ibl_samples_;
+		bgp["with_caustic"] = background->Background::params_.with_caustic_;
+		bgp["with_diffuse"] = background->Background::params_.with_diffuse_;
+		bgp["cast_shadows"] = background->Background::params_.cast_shadows_;
+
+		std::unique_ptr<Light> bglight{Light::factory(logger, scene, "light", bgp).first};
+		bglight->setBackground(background);
+		background->addLight(std::move(bglight));
+	}
+	return {background, param_error};
+}
+
+GradientBackground::GradientBackground(Logger &logger, ParamError &param_error, const ParamMap &param_map) :
+		Background{logger, param_error, param_map}, params_{param_error, param_map}, gzenith_{params_.zenith_ground_color_ * Background::params_.power_}, ghoriz_{params_.horizon_ground_color_ * Background::params_.power_}, szenith_{params_.zenith_color_ * Background::params_.power_}, shoriz_{params_.horizon_color_ * Background::params_.power_}
+{
+	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + params_.getAsParamMap(true).print());
 }
 
 Rgb GradientBackground::eval(const Vec3f &dir, bool use_ibl_blur) const
@@ -44,47 +93,6 @@ Rgb GradientBackground::eval(const Vec3f &dir, bool use_ibl_blur) const
 	}
 	if(color.minimum() < 1e-6f) color = Rgb(1e-5f);
 	return color;
-}
-
-const Background * GradientBackground::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params)
-{
-	Rgb gzenith, ghoriz, szenith(0.4f, 0.5f, 1.f), shoriz(1.f);
-	float p = 1.0;
-	bool bgl = false;
-	int bgl_sam = 16;
-	bool cast_shadows = true;
-	bool caus = true;
-	bool diff = true;
-
-	params.getParam("horizon_color", shoriz);
-	params.getParam("zenith_color", szenith);
-	gzenith = szenith;
-	ghoriz = shoriz;
-	params.getParam("horizon_ground_color", ghoriz);
-	params.getParam("zenith_ground_color", gzenith);
-	params.getParam("ibl", bgl);
-	params.getParam("ibl_samples", bgl_sam);
-	params.getParam("power", p);
-	params.getParam("cast_shadows", cast_shadows);
-	params.getParam("with_caustic", caus);
-	params.getParam("with_diffuse", diff);
-
-	auto grad_bg = new GradientBackground(logger, gzenith * p, ghoriz * p, szenith * p, shoriz * p);
-
-	if(bgl)
-	{
-		ParamMap bgp;
-		bgp["type"] = std::string("bglight");
-		bgp["samples"] = bgl_sam;
-		bgp["with_caustic"] = caus;
-		bgp["with_diffuse"] = diff;
-		bgp["cast_shadows"] = cast_shadows;
-
-		std::unique_ptr<Light> bglight{Light::factory(logger, scene, "light", std::move(bgp))};
-		bglight->setBackground(grad_bg);
-		grad_bg->addLight(std::move(bglight));
-	}
-	return grad_bg;
 }
 
 } //namespace yafaray

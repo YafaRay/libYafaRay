@@ -26,71 +26,65 @@
 #include "camera/camera_equirectangular.h"
 #include "camera/camera_orthographic.h"
 #include "camera/camera_perspective.h"
-#include "common/param.h"
+#include "param/param.h"
 #include "common/logger.h"
 
 namespace yafaray {
 
-Camera::Params::Params(const ParamMap &param_map)
+Camera::Params::Params(ParamError &param_error, const ParamMap &param_map)
 {
-	loadParamMap(param_map);
+	PARAM_LOAD(from_);
+	PARAM_LOAD(to_);
+	PARAM_LOAD(up_);
+	PARAM_LOAD(resx_);
+	PARAM_LOAD(resy_);
+	PARAM_LOAD(aspect_ratio_factor_);
+	PARAM_LOAD(near_clip_distance_);
+	PARAM_LOAD(far_clip_distance_);
 }
 
-void Camera::Params::loadParamMap(const ParamMap &param_map)
+ParamMap Camera::Params::getAsParamMap(bool only_non_default) const
 {
-	param_map.getParam("type", type_);
-	param_map.getParam("from", from_);
-	param_map.getParam("to", to_);
-	param_map.getParam("up", up_);
-	param_map.getParam("resx", resolution_[Axis::X]);
-	param_map.getParam("resy", resolution_[Axis::Y]);
-	param_map.getParam("aspect_ratio", aspect_ratio_factor_);
-	param_map.getParam("near_clip_distance", near_clip_distance_);
-	param_map.getParam("far_clip_distance", far_clip_distance_);
+	PARAM_SAVE_START;
+	PARAM_SAVE(from_);
+	PARAM_SAVE(to_);
+	PARAM_SAVE(up_);
+	PARAM_SAVE(resx_);
+	PARAM_SAVE(resy_);
+	PARAM_SAVE(aspect_ratio_factor_);
+	PARAM_SAVE(near_clip_distance_);
+	PARAM_SAVE(far_clip_distance_);
+	PARAM_SAVE_END;
 }
 
-ParamMap Camera::Params::getAsParamMap() const
+ParamMap Camera::getAsParamMap(bool only_non_default) const
 {
-	ParamMap param_map;
-	param_map["type"] = type_;
-	param_map["from"] = from_;
-	param_map["to"] = to_;
-	param_map["up"] = up_;
-	param_map["resx"] = resolution_[Axis::X];
-	param_map["resy"] = resolution_[Axis::Y];
-	param_map["aspect_ratio_factor"] = aspect_ratio_factor_;
-	param_map["near_clip_distance"] = near_clip_distance_;
-	param_map["far_clip_distance"] = far_clip_distance_;
-	return param_map;
+	ParamMap result{params_.getAsParamMap(only_non_default)};
+	result.setParam("type", type().print());
+	return result;
 }
 
-ParamMap Camera::getAsParamMap() const
+std::pair<Camera *, ParamError> Camera::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map)
 {
-	return params_.getAsParamMap();
-}
-
-const Camera * Camera::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map)
-{
-	if(logger.isDebug())
+	const Type type{ClassMeta::preprocessParamMap<Type>(logger, getClassName(), param_map)};
+	switch(type.value())
 	{
-		logger.logDebug("**Camera");
-		param_map.logContents(logger);
+		case Type::Angular: return AngularCamera::factory(logger, scene, name, param_map);
+		case Type::Perspective: return PerspectiveCamera::factory(logger, scene, name, param_map);
+		case Type::Architect: return ArchitectCamera::factory(logger, scene, name, param_map);
+		case Type::Orthographic: return OrthographicCamera::factory(logger, scene, name, param_map);
+		case Type::Equirectangular: return EquirectangularCamera::factory(logger, scene, name, param_map);
+		default: return {nullptr, {ParamError::Flags::ErrorWhileCreating}};
 	}
-	std::string type;
-	param_map.getParam("type", type);
-	if(type == "angular") return AngularCamera::factory(logger, scene, name, param_map);
-	else if(type == "perspective") return PerspectiveCamera::factory(logger, scene, name, param_map);
-	else if(type == "architect") return ArchitectCamera::factory(logger, scene, name, param_map);
-	else if(type == "orthographic") return OrthographicCamera::factory(logger, scene, name, param_map);
-	else if(type == "equirectangular") return EquirectangularCamera::factory(logger, scene, name, param_map);
-	else return nullptr;
 }
 
-Camera::Camera(Logger &logger, const Params &params) :
-		params_{params},
-		aspect_ratio_{params.aspect_ratio_factor_ * static_cast<float>(params.resolution_[Axis::Y]) / static_cast<float>(params.resolution_[Axis::X])},
+Camera::Camera(Logger &logger, ParamError &param_error, const ParamMap &param_map) :
+		params_{param_error, param_map},
+		aspect_ratio_{params_.aspect_ratio_factor_ * static_cast<float>(params_.resy_) / static_cast<float>(params_.resx_)},
 		logger_{logger}
 {
+	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + params_.getAsParamMap(true).print());
+
 	// Calculate and store camera axis
 	cam_y_ = params_.up_ - params_.from_;
 	cam_z_ = params_.to_ - params_.from_;

@@ -27,30 +27,31 @@
 
 namespace yafaray {
 
-class Background;
-struct Photon;
-template <typename T, size_t N> class Vec;
-typedef Vec<float, 3> Vec3f;
-class Light;
 class Pdf1D;
-class Material;
-class MaterialData;
-struct DirectionColor;
-class Accelerator;
 class Halton;
-
-enum PhotonMapProcessing
-{
-	PhotonsGenerateOnly,
-	PhotonsGenerateAndSave,
-	PhotonsLoad,
-	PhotonsReuse
-};
 
 class MonteCarloIntegrator: public TiledIntegrator
 {
 	public:
-		MonteCarloIntegrator(RenderControl &render_control, Logger &logger);
+		inline static std::string getClassName() { return "MonteCarloIntegrator"; }
+		static std::string printMeta(const std::vector<std::string> &excluded_params) { return Params::meta_.print(excluded_params); }
+
+	protected:
+		const struct Params
+		{
+			PARAM_INIT_PARENT(TiledIntegrator);
+			PARAM_DECL(int, r_depth_, 5, "raydepth", "Ray depth");
+			PARAM_DECL(bool, transparent_shadows_, false, "transpShad", "Use transparent shadows");
+			PARAM_DECL(int, shadow_depth_, 4, "shadowDepth", "Shadow depth for transparent shadows");
+			PARAM_DECL(bool, ao_, false, "do_AO", "Use ambient occlusion");
+			PARAM_DECL(int, ao_samples_, 32, "AO_samples", "Ambient occlusion samples");
+			PARAM_DECL(float, ao_distance_, 1.f, "AO_distance", "Ambient occlusion distance");
+			PARAM_DECL(Rgb, ao_color_, Rgb{1.f}, "AO_color", "Ambient occlusion color");
+			PARAM_DECL(bool, transparent_background_, false, "bg_transp", "Render background as transparent");
+			PARAM_DECL(bool, transparent_background_refraction_, false, "bg_transp_refract", "Render refractions of background as transparent");
+		} params_;
+		[[nodiscard]] ParamMap getAsParamMap(bool only_non_default) const override;
+		MonteCarloIntegrator(RenderControl &render_control, Logger &logger, ParamError &param_error, const ParamMap &param_map);
 
 	protected:
 		~MonteCarloIntegrator() override;
@@ -69,30 +70,11 @@ class MonteCarloIntegrator: public TiledIntegrator
 		Rgb diracLight(RandomGenerator &random_generator, ColorLayers *color_layers, const Light *light, const Vec3f &wo, const SurfacePoint &sp, bool cast_shadows, float time) const;
 		Rgb areaLightSampleLight(Halton &hal_2, Halton &hal_3, RandomGenerator &random_generator, ColorLayers *color_layers, const Light *light, const Vec3f &wo, const SurfacePoint &sp, bool cast_shadows, unsigned int num_samples, float inv_num_samples, float time) const;
 		Rgb areaLightSampleMaterial(Halton &hal_2, Halton &hal_3, RandomGenerator &random_generator, ColorLayers *color_layers, bool chromatic_enabled, float wavelength, const Light *light, const Vec3f &wo, const SurfacePoint &sp, bool cast_shadows, unsigned int num_samples, float inv_num_samples) const;
-		/*! Creates and prepares the caustic photon map */
-		bool createCausticMap(FastRandom &fast_random);
-		void causticWorker(FastRandom &fast_random, unsigned int &total_photons_shot, int thread_id, const Pdf1D *light_power_d_caustic, const std::vector<const Light *> &lights_caustic, int pb_step);
 		std::pair<Rgb, float> glossyReflectNoTransmit(FastRandom &fast_random, RandomGenerator &random_generator, std::vector<int> &correlative_sample_number, int thread_id, int ray_level, bool chromatic_enabled, float wavelength, const Ray &ray, const SurfacePoint &sp, BsdfFlags bsdfs, const Vec3f &wo, int additional_depth, const PixelSamplingData &pixel_sampling_data, const RayDivision &ray_division_new, float s_1, float s_2) const;
 		std::pair<Rgb, float> glossyTransmit(FastRandom &fast_random, RandomGenerator &random_generator, std::vector<int> &correlative_sample_number, int thread_id, int ray_level, bool chromatic_enabled, float wavelength, const Ray &ray, const SurfacePoint &sp, BsdfFlags bsdfs, int additional_depth, const PixelSamplingData &pixel_sampling_data, const RayDivision &ray_division_new, const Rgb &transmit_col, float w, const Vec3f &dir) const;
 		std::pair<Rgb, float> glossyReflect(FastRandom &fast_random, RandomGenerator &random_generator, std::vector<int> &correlative_sample_number, int thread_id, int ray_level, bool chromatic_enabled, float wavelength, const Ray &ray, const SurfacePoint &sp, BsdfFlags bsdfs, int additional_depth, const PixelSamplingData &pixel_sampling_data, const RayDivision &ray_division_new, const Rgb &reflect_color, float w, const Vec3f &dir) const;
-		/*! Estimates caustic photons for a given surface point */
-		static Rgb estimateCausticPhotons(const SurfacePoint &sp, const Vec3f &wo, const PhotonMap *caustic_map, float caustic_radius, int n_caus_search);
-		static Rgb causticPhotons(ColorLayers *color_layers, const Ray &ray, const SurfacePoint &sp, const Vec3f &wo, float clamp_indirect, const PhotonMap *caustic_map, float caustic_radius, int n_caus_search);
 
-		int r_depth_; //! Ray depth
-
-		bool use_photon_caustics_; //! Use photon caustics
-		unsigned int n_caus_photons_; //! Number of caustic photons (to be shoot but it should be the target
-		int n_caus_search_; //! Amount of caustic photons to be gathered in estimation
-		float caus_radius_; //! Caustic search radius for estimation
-		int caus_depth_; //! Caustic photons max path depth
-
-		PhotonMapProcessing photon_map_processing_ = PhotonsGenerateOnly;
-
-		int n_paths_; //! Number of samples for mc raytracing
-		int max_bounces_; //! Max. path depth for mc raytracing
 		std::vector<const Light *> lights_; //! An array containing all the visible scene lights
-		std::unique_ptr<PhotonMap> caustic_map_;
 
 		static constexpr inline int initial_ray_samples_dispersive_ = 8;
 		static constexpr inline int initial_ray_samples_glossy_ = 8;

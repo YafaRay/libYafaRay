@@ -18,52 +18,48 @@
 
 #include "geometry/object/object_curve.h"
 #include "common/logger.h"
-#include "common/param.h"
+#include "param/param.h"
 #include "scene/scene.h"
 
 namespace yafaray {
 
-Object * CurveObject::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params)
+CurveObject::Params::Params(ParamError &param_error, const ParamMap &param_map)
 {
-	if(logger.isDebug())
-	{
-		logger.logDebug("CurveObject::factory");
-		params.logContents(logger);
-	}
-	std::string light_name, visibility, base_object_name;
-	bool is_base_object = false, has_uv = false, has_orco = false;
-	int num_vertices = 0;
-	int object_index = 0;
-	float strand_start = 0.01f;
-	float strand_end = 0.01f;
-	float strand_shape = 0.f;
-	bool motion_blur_bezier = false;
-	float time_range_start = 0.f;
-	float time_range_end = 1.f;
-	params.getParam("light_name", light_name);
-	params.getParam("visibility", visibility);
-	params.getParam("is_base_object", is_base_object);
-	params.getParam("object_index", object_index);
-	params.getParam("num_vertices", num_vertices);
-	params.getParam("strand_start", strand_start);
-	params.getParam("strand_end", strand_end);
-	params.getParam("strand_shape", strand_shape);
-	params.getParam("has_uv", has_uv);
-	params.getParam("has_orco", has_orco);
-	params.getParam("motion_blur_bezier", motion_blur_bezier);
-	params.getParam("time_range_start", time_range_start);
-	params.getParam("time_range_end", time_range_end);
-	auto object = new CurveObject(num_vertices, strand_start, strand_end, strand_shape, has_uv, has_orco, motion_blur_bezier, time_range_start, time_range_end);
-	object->setName(name);
-	object->setLight(scene.getLight(light_name));
-	object->setVisibility(visibility::fromString(visibility));
-	object->useAsBaseObject(is_base_object);
-	object->setIndex(object_index);
-	return object;
+	PARAM_LOAD(strand_start_);
+	PARAM_LOAD(strand_end_);
+	PARAM_LOAD(strand_shape_);
 }
 
-CurveObject::CurveObject(int num_vertices, float strand_start, float strand_end, float strand_shape, bool has_uv, bool has_orco, bool motion_blur_bezier, float time_range_start, float time_range_end) : MeshObject(num_vertices, 2 * (num_vertices - 1), has_uv, has_orco, motion_blur_bezier, time_range_start, time_range_end), strand_start_(strand_start), strand_end_(strand_end), strand_shape_(strand_shape)
+ParamMap CurveObject::Params::getAsParamMap(bool only_non_default) const
 {
+	PARAM_SAVE_START;
+	PARAM_SAVE(strand_start_);
+	PARAM_SAVE(strand_end_);
+	PARAM_SAVE(strand_shape_);
+	PARAM_SAVE_END;
+}
+
+ParamMap CurveObject::getAsParamMap(bool only_non_default) const
+{
+	ParamMap result{MeshObject::getAsParamMap(only_non_default)};
+	result.append(params_.getAsParamMap(only_non_default));
+	return result;
+}
+
+std::pair<Object *, ParamError> CurveObject::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map)
+{
+	auto param_error{Params::meta_.check(param_map, {"type"}, {})};
+	auto object = new CurveObject(param_error, param_map);
+	if(param_error.flags_ != ParamError::Flags::Ok) logger.logWarning(param_error.print<CurveObject>(name, {"type"}));
+	object->setName(name);
+	object->setLight(scene.getLight(object->ObjectBase::params_.light_name_));
+	return {object, param_error};
+}
+
+CurveObject::CurveObject(ParamError &param_error, const ParamMap &param_map) :
+		MeshObject{param_error, param_map}, params_{param_error, param_map}
+{
+	//if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + params_.getAsParamMap(true).print());
 }
 
 bool CurveObject::calculateObject(const std::unique_ptr<const Material> *material)
@@ -78,13 +74,13 @@ bool CurveObject::calculateObject(const std::unique_ptr<const Material> *materia
 		{
 			const Point3f o{points[i]};
 			float r;//current radius
-			if(strand_shape_ < 0)
+			if(params_.strand_shape_ < 0)
 			{
-				r = strand_start_ + math::pow((float) i / (points_size - 1), 1 + strand_shape_) * (strand_end_ - strand_start_);
+				r = params_.strand_start_ + math::pow((float) i / (points_size - 1), 1 + params_.strand_shape_) * (params_.strand_end_ - params_.strand_start_);
 			}
 			else
 			{
-				r = strand_start_ + (1 - math::pow(((float) (points_size - i - 1)) / (points_size - 1), 1 - strand_shape_)) * (strand_end_ - strand_start_);
+				r = params_.strand_start_ + (1 - math::pow(((float) (points_size - i - 1)) / (points_size - 1), 1 - params_.strand_shape_)) * (params_.strand_end_ - params_.strand_start_);
 			}
 			// Last point keep previous tangent plane
 			if(i < points_size - 1)

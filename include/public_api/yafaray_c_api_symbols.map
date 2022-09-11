@@ -80,6 +80,8 @@ LIBYAFARAY_4.0.0 {
         yafaray_createImage;
         yafaray_setImageColor;
         yafaray_getImageColor;
+        yafaray_getImageWidth;
+        yafaray_getImageHeight;
         yafaray_setConsoleLogColorsEnabled;
         yafaray_getVersionMajor;
         yafaray_getVersionMinor;

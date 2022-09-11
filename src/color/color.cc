@@ -47,25 +47,4 @@ Rgba Rgba::mix(const Rgba &a, const Rgba &b, float point)
 	return math::lerpTruncated(b, a, point);
 }
 
-std::string Rgb::colorSpaceName(const ColorSpace &color_space)
-{
-	switch(color_space)
-	{
-		case ColorSpace::RawManualGamma: return "Raw_Manual_Gamma";
-		case ColorSpace::LinearRgb: return "LinearRGB";
-		case ColorSpace::Srgb: return "sRGB";
-		case ColorSpace::XyzD65: return "XYZ";
-		default: return "none/unknown";
-	}
-}
-
-ColorSpace Rgb::colorSpaceFromName(const std::string &color_space_name, const ColorSpace &default_color_space)
-{
-	if(color_space_name == "Raw_Manual_Gamma") return ColorSpace::RawManualGamma;
-	else if(color_space_name == "LinearRGB") return ColorSpace::LinearRgb;
-	else if(color_space_name == "sRGB") return ColorSpace::Srgb;
-	else if(color_space_name == "XYZ") return ColorSpace::XyzD65;
-	else return default_color_space;
-}
-
 } //namespace yafaray

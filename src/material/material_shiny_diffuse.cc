@@ -17,21 +17,106 @@
  */
 
 #include "material/material_shiny_diffuse.h"
-
-#include <memory>
-#include "common/param.h"
+#include "param/param.h"
 #include "sampler/sample.h"
 #include "shader/shader_node.h"
 #include "geometry/surface.h"
 #include "common/logger.h"
-#include "render/render_data.h"
+#include "material/sample.h"
 
 namespace yafaray {
 
-ShinyDiffuseMaterial::ShinyDiffuseMaterial(Logger &logger, const Rgb &diffuse_color, const Rgb &mirror_color, float diffuse_strength, float transparency_strength, float translucency_strength, float mirror_strength, float emit_strength, float transmit_filter_strength, VisibilityFlags visibility): NodeMaterial(logger), diffuse_color_(diffuse_color), emit_color_(emit_strength * diffuse_color), mirror_color_(mirror_color), mirror_strength_(mirror_strength), transparency_strength_(transparency_strength), translucency_strength_(translucency_strength), diffuse_strength_(diffuse_strength), emit_strength_(emit_strength), transmit_filter_strength_(transmit_filter_strength)
+ShinyDiffuseMaterial::Params::Params(ParamError &param_error, const ParamMap &param_map)
 {
-	visibility_ = visibility;
-	if(emit_strength > 0.f) bsdf_flags_ |= BsdfFlags::Emit;
+	PARAM_LOAD(diffuse_color_);
+	PARAM_LOAD(mirror_color_);
+	PARAM_LOAD(transparency_);
+	PARAM_LOAD(translucency_);
+	PARAM_LOAD(diffuse_reflect_);
+	PARAM_LOAD(specular_reflect_);
+	PARAM_LOAD(emit_);
+	PARAM_LOAD(fresnel_effect_);
+	PARAM_LOAD(ior_);
+	PARAM_LOAD(transmit_filter_);
+	PARAM_ENUM_LOAD(diffuse_brdf_);
+	PARAM_LOAD(sigma_);
+	PARAM_SHADERS_LOAD;
+}
+
+ParamMap ShinyDiffuseMaterial::Params::getAsParamMap(bool only_non_default) const
+{
+	PARAM_SAVE_START;
+	PARAM_SAVE(diffuse_color_);
+	PARAM_SAVE(mirror_color_);
+	PARAM_SAVE(transparency_);
+	PARAM_SAVE(translucency_);
+	PARAM_SAVE(diffuse_reflect_);
+	PARAM_SAVE(specular_reflect_);
+	PARAM_SAVE(emit_);
+	PARAM_SAVE(fresnel_effect_);
+	PARAM_SAVE(ior_);
+	PARAM_SAVE(transmit_filter_);
+	PARAM_ENUM_SAVE(diffuse_brdf_);
+	PARAM_SAVE(sigma_);
+	PARAM_SHADERS_SAVE;
+	PARAM_SAVE_END;
+}
+
+ParamMap ShinyDiffuseMaterial::getAsParamMap(bool only_non_default) const
+{
+	ParamMap result{Material::getAsParamMap(only_non_default)};
+	result.append(params_.getAsParamMap(only_non_default));
+	return result;
+}
+
+std::pair<Material *, ParamError> ShinyDiffuseMaterial::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map, const std::list<ParamMap> &nodes_param_maps)
+{
+	auto param_error{Params::meta_.check(param_map, {"type"}, {})};
+	auto mat = new ShinyDiffuseMaterial(logger, param_error, param_map);
+	mat->nodes_map_ = NodeMaterial::loadNodes(nodes_param_maps, scene, logger);
+	std::map<std::string, const ShaderNode *> root_nodes_map;
+	// Prepare our node list
+	for(size_t shader_index = 0; shader_index < mat->shaders_.size(); ++shader_index)
+	{
+		root_nodes_map[ShaderNodeType{static_cast<unsigned char>(shader_index)}.print()] = nullptr;
+	}
+	std::vector<const ShaderNode *> root_nodes_list;
+	if(!mat->nodes_map_.empty()) NodeMaterial::parseNodes(param_map, root_nodes_list, root_nodes_map, mat->nodes_map_, logger);
+	for(size_t shader_index = 0; shader_index < mat->shaders_.size(); ++shader_index)
+	{
+		mat->shaders_[shader_index] = root_nodes_map[ShaderNodeType{static_cast<unsigned char>(shader_index)}.print()];
+	}
+	// solve nodes order
+	if(!root_nodes_list.empty())
+	{
+		const std::vector<const ShaderNode *> nodes_sorted = NodeMaterial::solveNodesOrder(root_nodes_list, mat->nodes_map_, logger);
+		for(size_t shader_index = 0; shader_index < mat->shaders_.size(); ++shader_index)
+		{
+			if(mat->shaders_[shader_index])
+			{
+				if(ShaderNodeType{static_cast<unsigned char>(shader_index)}.isBump())
+				{
+					mat->bump_nodes_ = NodeMaterial::getNodeList(mat->shaders_[shader_index], nodes_sorted);
+				}
+				else
+				{
+					const std::vector<const ShaderNode *> shader_nodes_list = NodeMaterial::getNodeList(mat->shaders_[shader_index], nodes_sorted);
+					mat->color_nodes_.insert(mat->color_nodes_.end(), shader_nodes_list.begin(), shader_nodes_list.end());
+				}
+			}
+		}
+	}
+	mat->config();
+	if(param_error.flags_ != ParamError::Flags::Ok) logger.logWarning(param_error.print<ShinyDiffuseMaterial>(name, {"type"}));
+	return {mat, param_error};
+}
+
+ShinyDiffuseMaterial::ShinyDiffuseMaterial(Logger &logger, ParamError &param_error, const ParamMap &param_map) :
+		NodeMaterial{logger, param_error, param_map}, params_{param_error, param_map}
+{
+	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + params_.getAsParamMap(true).print());
+	if(params_.emit_ > 0.f) bsdf_flags_ |= BsdfFlags{BsdfFlags::Emit};
+	if(params_.diffuse_brdf_ == DiffuseBrdf::OrenNayar) initOrenNayar(params_.sigma_);
 }
 
 /*! ATTENTION! You *MUST* call this function before using the material, no matter
@@ -41,41 +126,41 @@ void ShinyDiffuseMaterial::config()
 {
 	n_bsdf_ = 0;
 	float acc = 1.f;
-	if(mirror_strength_ > 0.00001f || mirror_shader_)
+	if(params_.specular_reflect_ > 0.00001f || shaders_[ShaderNodeType::MirrorColor])
 	{
 		is_mirror_ = true;
-		if(mirror_shader_) components_view_independent_[0] = true;
-		else if(!has_fresnel_effect_) acc = 1.f - mirror_strength_;
-		bsdf_flags_ |= BsdfFlags::Specular | BsdfFlags::Reflect;
+		if(shaders_[ShaderNodeType::MirrorColor]) components_view_independent_[0] = true;
+		else if(!params_.fresnel_effect_) acc = 1.f - params_.specular_reflect_;
+		bsdf_flags_ |= BsdfFlags{BsdfFlags::Specular | BsdfFlags::Reflect};
 		c_flags_[n_bsdf_] = BsdfFlags::Specular | BsdfFlags::Reflect;
 		c_index_[n_bsdf_] = 0;
 		++n_bsdf_;
 	}
-	if(transparency_strength_ * acc > 0.00001f || transparency_shader_)
+	if(params_.transparency_ * acc > 0.00001f || shaders_[ShaderNodeType::Transparency])
 	{
 		is_transparent_ = true;
-		if(transparency_shader_) components_view_independent_[1] = true;
-		else acc *= 1.f - transparency_strength_;
-		bsdf_flags_ |= BsdfFlags::Transmit | BsdfFlags::Filter;
+		if(shaders_[ShaderNodeType::Transparency]) components_view_independent_[1] = true;
+		else acc *= 1.f - params_.transparency_;
+		bsdf_flags_ |= BsdfFlags{BsdfFlags::Transmit | BsdfFlags::Filter};
 		c_flags_[n_bsdf_] = BsdfFlags::Transmit | BsdfFlags::Filter;
 		c_index_[n_bsdf_] = 1;
 		++n_bsdf_;
 	}
-	if(translucency_strength_ * acc > 0.00001f || translucency_shader_)
+	if(params_.translucency_ * acc > 0.00001f || shaders_[ShaderNodeType::Translucency])
 	{
 		is_translucent_ = true;
-		if(translucency_shader_) components_view_independent_[2] = true;
-		else acc *= 1.f - transparency_strength_;
-		bsdf_flags_ |= BsdfFlags::Diffuse | BsdfFlags::Transmit;
+		if(shaders_[ShaderNodeType::Translucency]) components_view_independent_[2] = true;
+		else acc *= 1.f - params_.transparency_;
+		bsdf_flags_ |= BsdfFlags{BsdfFlags::Diffuse | BsdfFlags::Transmit};
 		c_flags_[n_bsdf_] = BsdfFlags::Diffuse | BsdfFlags::Transmit;
 		c_index_[n_bsdf_] = 2;
 		++n_bsdf_;
 	}
-	if(diffuse_strength_ * acc > 0.00001f)
+	if(params_.diffuse_reflect_ * acc > 0.00001f)
 	{
 		is_diffuse_ = true;
-		if(diffuse_shader_) components_view_independent_[3] = true;
-		bsdf_flags_ |= BsdfFlags::Diffuse | BsdfFlags::Reflect;
+		if(shaders_[ShaderNodeType::Diffuse]) components_view_independent_[3] = true;
+		bsdf_flags_ |= BsdfFlags{BsdfFlags::Diffuse | BsdfFlags::Reflect};
 		c_flags_[n_bsdf_] = BsdfFlags::Diffuse | BsdfFlags::Reflect;
 		c_index_[n_bsdf_] = 3;
 		++n_bsdf_;
@@ -89,20 +174,20 @@ void ShinyDiffuseMaterial::config()
 std::array<float, 4> ShinyDiffuseMaterial::getComponents(const std::array<bool, 4> &use_nodes, const NodeTreeData &node_tree_data) const
 {
 	std::array<float, 4> components;
-	if(is_mirror_) components[0] = use_nodes[0] ? mirror_shader_->getScalar(node_tree_data) : mirror_strength_;
+	if(is_mirror_) components[0] = use_nodes[0] ? shaders_[ShaderNodeType::MirrorColor]->getScalar(node_tree_data) : params_.specular_reflect_;
 	else components[0] = 0.f;
-	if(is_transparent_) components[1] = use_nodes[1] ? transparency_shader_->getScalar(node_tree_data) : transparency_strength_;
+	if(is_transparent_) components[1] = use_nodes[1] ? shaders_[ShaderNodeType::Transparency]->getScalar(node_tree_data) : params_.transparency_;
 	else components[1] = 0.f;
-	if(is_translucent_) components[2] = use_nodes[2] ? translucency_shader_->getScalar(node_tree_data) : translucency_strength_;
+	if(is_translucent_) components[2] = use_nodes[2] ? shaders_[ShaderNodeType::Translucency]->getScalar(node_tree_data) : params_.translucency_;
 	else components[2] = 0.f;
-	if(is_diffuse_) components[3] = diffuse_strength_;
+	if(is_diffuse_) components[3] = params_.diffuse_reflect_;
 	else components[3] = 0.f;
 	return components;
 }
 
 float ShinyDiffuseMaterial::getFresnelKr(const Vec3f &wo, const Vec3f &n, float current_ior_squared) const
 {
-	if(has_fresnel_effect_)
+	if(params_.fresnel_effect_)
 	{
 		const Vec3f N{((wo * n) < 0.f) ? -n : n};
 		const float c = wo * N;
@@ -134,7 +219,7 @@ std::array<float, 4> ShinyDiffuseMaterial::accumulate(const std::array<float, 4>
 const MaterialData * ShinyDiffuseMaterial::initBsdf(SurfacePoint &sp, const Camera *camera) const
 {
 	auto mat_data = new ShinyDiffuseMaterialData(bsdf_flags_, color_nodes_.size() + bump_nodes_.size());
-	if(bump_shader_) evalBump(mat_data->node_tree_data_, sp, bump_shader_, camera);
+	if(shaders_[ShaderNodeType::Bump]) evalBump(mat_data->node_tree_data_, sp, shaders_[ShaderNodeType::Bump], camera);
 	for(const auto &node : color_nodes_) node->eval(mat_data->node_tree_data_, sp, camera);
 	mat_data->components_ = getComponents(components_view_independent_, mat_data->node_tree_data_);
 	return mat_data;
@@ -149,7 +234,6 @@ void ShinyDiffuseMaterial::initOrenNayar(double sigma)
 	const double sigma_squared = sigma * sigma;
 	oren_nayar_a_ = 1.0 - 0.5 * (sigma_squared / (sigma_squared + 0.33));
 	oren_nayar_b_ = 0.45 * sigma_squared / (sigma_squared + 0.09);
-	use_oren_nayar_ = true;
 }
 
 /** Calculate Oren Nayar reflectance.
@@ -200,12 +284,12 @@ Rgb ShinyDiffuseMaterial::eval(const MaterialData *mat_data, const SurfacePoint 
 	const float cos_ng_wl = sp.ng_ * wl;
 	// face forward:
 	const Vec3f n{SurfacePoint::normalFaceForward(sp.ng_, sp.n_, wo)};
-	if(!flags::have(bsdfs, bsdf_flags_ & BsdfFlags::Diffuse)) return Rgb{0.f};
+	if(!bsdfs.has(bsdf_flags_ & BsdfFlags::Diffuse)) return Rgb{0.f};
 
 	float cur_ior_squared;
-	if(ior_shader_)
+	if(shaders_[ShaderNodeType::Ior])
 	{
-		cur_ior_squared = ior_ + ior_shader_->getScalar(mat_data->node_tree_data_);
+		cur_ior_squared = params_.ior_ + shaders_[ShaderNodeType::Ior]->getScalar(mat_data->node_tree_data_);
 		cur_ior_squared *= cur_ior_squared;
 	}
 	else cur_ior_squared = ior_squared_;
@@ -219,30 +303,30 @@ Rgb ShinyDiffuseMaterial::eval(const MaterialData *mat_data, const SurfacePoint 
 
 	if(transmit) // light comes from opposite side of surface
 	{
-		if(is_translucent_) return mat_data_specific->components_[2] * m_t * getShaderColor(diffuse_shader_, mat_data->node_tree_data_, diffuse_color_);
+		if(is_translucent_) return mat_data_specific->components_[2] * m_t * getShaderColor(shaders_[ShaderNodeType::Diffuse], mat_data->node_tree_data_, params_.diffuse_color_);
 	}
 
-	if(n * wl < 0.0 && !flat_material_) return Rgb{0.f};
+	if(n * wl < 0.0 && !Material::params_.flat_material_) return Rgb{0.f};
 	float m_d = m_t * (1.f - mat_data_specific->components_[2]) * mat_data_specific->components_[3];
 
-	if(use_oren_nayar_)
+	if(params_.diffuse_brdf_ == DiffuseBrdf::OrenNayar)
 	{
-		const double texture_sigma = getShaderScalar(sigma_oren_shader_, mat_data->node_tree_data_, 0.f);
-		const bool use_texture_sigma = static_cast<bool>(sigma_oren_shader_);
-		if(use_oren_nayar_) m_d *= orenNayar(wo, wl, n, use_texture_sigma, texture_sigma);
+		const double texture_sigma = getShaderScalar(shaders_[ShaderNodeType::SigmaOrenNayar], mat_data->node_tree_data_, 0.f);
+		const bool use_texture_sigma = static_cast<bool>(shaders_[ShaderNodeType::SigmaOrenNayar]);
+		if(params_.diffuse_brdf_ == DiffuseBrdf::OrenNayar) m_d *= orenNayar(wo, wl, n, use_texture_sigma, texture_sigma);
 	}
 
-	if(diffuse_refl_shader_) m_d *= diffuse_refl_shader_->getScalar(mat_data->node_tree_data_);
+	if(shaders_[ShaderNodeType::DiffuseReflect]) m_d *= shaders_[ShaderNodeType::DiffuseReflect]->getScalar(mat_data->node_tree_data_);
 
-	Rgb result = m_d * getShaderColor(diffuse_shader_, mat_data->node_tree_data_, diffuse_color_);
-	applyWireFrame(result, wireframe_shader_, mat_data->node_tree_data_, sp);
+	Rgb result = m_d * getShaderColor(shaders_[ShaderNodeType::Diffuse], mat_data->node_tree_data_, params_.diffuse_color_);
+	applyWireFrame(result, shaders_[ShaderNodeType::Wireframe], mat_data->node_tree_data_, sp);
 	return result;
 }
 
 Rgb ShinyDiffuseMaterial::emit(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3f &wo) const
 {
-	Rgb result = (diffuse_shader_ ? diffuse_shader_->getColor(mat_data->node_tree_data_) * emit_strength_ : emit_color_);
-	applyWireFrame(result, wireframe_shader_, mat_data->node_tree_data_, sp);
+	Rgb result = (shaders_[ShaderNodeType::Diffuse] ? shaders_[ShaderNodeType::Diffuse]->getColor(mat_data->node_tree_data_) * params_.emit_ : emit_color_);
+	applyWireFrame(result, shaders_[ShaderNodeType::Wireframe], mat_data->node_tree_data_, sp);
 	return result;
 }
 
@@ -252,9 +336,9 @@ Rgb ShinyDiffuseMaterial::sample(const MaterialData *mat_data, const SurfacePoin
 	const Vec3f n{SurfacePoint::normalFaceForward(sp.ng_, sp.n_, wo)};
 
 	float cur_ior_squared;
-	if(ior_shader_)
+	if(shaders_[ShaderNodeType::Ior])
 	{
-		cur_ior_squared = ior_ + ior_shader_->getScalar(mat_data->node_tree_data_);
+		cur_ior_squared = params_.ior_ + shaders_[ShaderNodeType::Ior]->getScalar(mat_data->node_tree_data_);
 		cur_ior_squared *= cur_ior_squared;
 	}
 	else cur_ior_squared = ior_squared_;
@@ -265,7 +349,7 @@ Rgb ShinyDiffuseMaterial::sample(const MaterialData *mat_data, const SurfacePoin
 
 	float sum = 0.f;
 	std::array<float, 4> val, width;
-	std::array<BsdfFlags, 4> choice;
+	std::array<BsdfFlags, 4> choice{BsdfFlags::None, BsdfFlags::None, BsdfFlags::None, BsdfFlags::None};
 	int n_match = 0, pick = -1;
 	for(int i = 0; i < n_bsdf_; ++i)
 	{
@@ -292,12 +376,12 @@ Rgb ShinyDiffuseMaterial::sample(const MaterialData *mat_data, const SurfacePoin
 	else s_1 = s.s_1_ / width[pick];
 
 	Rgb scolor(0.f);
-	switch(choice[pick])
+	switch(choice[pick].value())
 	{
 		case BsdfFlags::SpecularReflect:
 			wi = Vec3f::reflectDir(n, wo);
 			s.pdf_ = width[pick];
-			scolor = getShaderColor(mirror_color_shader_, mat_data->node_tree_data_, mirror_color_) * (accum_c[0]);
+			scolor = getShaderColor(shaders_[ShaderNodeType::MirrorColor], mat_data->node_tree_data_, params_.mirror_color_) * (accum_c[0]);
 			if(s.reverse_)
 			{
 				s.pdf_back_ = s.pdf_;
@@ -307,23 +391,23 @@ Rgb ShinyDiffuseMaterial::sample(const MaterialData *mat_data, const SurfacePoin
 			break;
 		case BsdfFlags::SpecularTransmit:
 			wi = -wo;
-			scolor = accum_c[1] * (transmit_filter_strength_ * getShaderColor(diffuse_shader_, mat_data->node_tree_data_, diffuse_color_) + Rgb(1.f - transmit_filter_strength_));
+			scolor = accum_c[1] * (params_.transmit_filter_ * getShaderColor(shaders_[ShaderNodeType::Diffuse], mat_data->node_tree_data_, params_.diffuse_color_) + Rgb(1.f - params_.transmit_filter_));
 			if(std::abs(wi * n) /*cos_n*/ < 1e-6) s.pdf_ = 0.f;
 			else s.pdf_ = width[pick];
 			break;
 		case BsdfFlags::Translucency:
 			wi = sample::cosHemisphere(-n, sp.uvn_, s_1, s.s_2_);
-			if(cos_ng_wo * (sp.ng_ * wi) /* cos_ng_wi */ < 0) scolor = accum_c[2] * getShaderColor(diffuse_shader_, mat_data->node_tree_data_, diffuse_color_);
+			if(cos_ng_wo * (sp.ng_ * wi) /* cos_ng_wi */ < 0) scolor = accum_c[2] * getShaderColor(shaders_[ShaderNodeType::Diffuse], mat_data->node_tree_data_, params_.diffuse_color_);
 			s.pdf_ = std::abs(wi * n) * width[pick]; break;
 		case BsdfFlags::DiffuseReflect:
 		default:
 			wi = sample::cosHemisphere(n, sp.uvn_, s_1, s.s_2_);
-			if(cos_ng_wo * (sp.ng_ * wi) /* cos_ng_wi */ > 0) scolor = accum_c[3] * getShaderColor(diffuse_shader_, mat_data->node_tree_data_, diffuse_color_);
+			if(cos_ng_wo * (sp.ng_ * wi) /* cos_ng_wi */ > 0) scolor = accum_c[3] * getShaderColor(shaders_[ShaderNodeType::Diffuse], mat_data->node_tree_data_, params_.diffuse_color_);
 
-			if(use_oren_nayar_)
+			if(params_.diffuse_brdf_ == DiffuseBrdf::OrenNayar)
 			{
-				const double texture_sigma = getShaderScalar(sigma_oren_shader_, mat_data->node_tree_data_, 0.f);
-				const bool use_texture_sigma = static_cast<bool>(sigma_oren_shader_);
+				const double texture_sigma = getShaderScalar(shaders_[ShaderNodeType::SigmaOrenNayar], mat_data->node_tree_data_, 0.f);
+				const bool use_texture_sigma = static_cast<bool>(shaders_[ShaderNodeType::SigmaOrenNayar]);
 				scolor *= orenNayar(wo, wi, n, use_texture_sigma, texture_sigma);
 			}
 			s.pdf_ = std::abs(wi * n) * width[pick]; break;
@@ -334,22 +418,22 @@ Rgb ShinyDiffuseMaterial::sample(const MaterialData *mat_data, const SurfacePoin
 	const float alpha = getAlpha(mat_data, sp, wo, camera);
 	w = w * (alpha) + 1.f * (1.f - alpha);
 
-	applyWireFrame(scolor, wireframe_shader_, mat_data->node_tree_data_, sp);
+	applyWireFrame(scolor, shaders_[ShaderNodeType::Wireframe], mat_data->node_tree_data_, sp);
 	return scolor;
 }
 
 float ShinyDiffuseMaterial::pdf(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3f &wo, const Vec3f &wi, BsdfFlags bsdfs) const
 {
-	if(!flags::have(bsdfs, BsdfFlags::Diffuse)) return 0.f;
+	if(!bsdfs.has(BsdfFlags::Diffuse)) return 0.f;
 
 	float pdf = 0.f;
 	const float cos_ng_wo = sp.ng_ * wo;
 	const Vec3f n{SurfacePoint::normalFaceForward(sp.ng_, sp.n_, wo)};
 
 	float cur_ior_squared;
-	if(ior_shader_)
+	if(shaders_[ShaderNodeType::Ior])
 	{
-		cur_ior_squared = ior_ + ior_shader_->getScalar(mat_data->node_tree_data_);
+		cur_ior_squared = params_.ior_ + shaders_[ShaderNodeType::Ior]->getScalar(mat_data->node_tree_data_);
 		cur_ior_squared *= cur_ior_squared;
 	}
 	else cur_ior_squared = ior_squared_;
@@ -362,11 +446,11 @@ float ShinyDiffuseMaterial::pdf(const MaterialData *mat_data, const SurfacePoint
 	int n_match = 0;
 	for(int i = 0; i < n_bsdf_; ++i)
 	{
-		if(flags::have(bsdfs, c_flags_[i]))
+		if(bsdfs.has(c_flags_[i]))
 		{
 			width = accum_c[c_index_[i]];
 			sum += width;
-			switch(c_flags_[i])
+			switch(c_flags_[i].value())
 			{
 				case BsdfFlags::Diffuse | BsdfFlags::Transmit:  // translucency (diffuse transmitt)
 					if(cos_ng_wo * (sp.ng_ * wi) /*cos_ng_wi*/ < 0) pdf += std::abs(wi * n) * width;
@@ -403,9 +487,9 @@ Specular ShinyDiffuseMaterial::getSpecular(int ray_level, const MaterialData *ma
 	const Vec3f n {backface ? -sp.n_ : sp.n_};
 	const Vec3f ng{backface ? -sp.ng_ : sp.ng_};
 	float cur_ior_squared;
-	if(ior_shader_)
+	if(shaders_[ShaderNodeType::Ior])
 	{
-		cur_ior_squared = ior_ + ior_shader_->getScalar(mat_data->node_tree_data_);
+		cur_ior_squared = params_.ior_ + shaders_[ShaderNodeType::Ior]->getScalar(mat_data->node_tree_data_);
 		cur_ior_squared *= cur_ior_squared;
 	}
 	else cur_ior_squared = ior_squared_;
@@ -414,10 +498,10 @@ Specular ShinyDiffuseMaterial::getSpecular(int ray_level, const MaterialData *ma
 	{
 		specular.refract_ = std::make_unique<DirectionColor>();
 		specular.refract_->dir_ = -wo;
-		const Rgb tcol = transmit_filter_strength_ * getShaderColor(diffuse_shader_, mat_data->node_tree_data_, diffuse_color_) + Rgb(1.f - transmit_filter_strength_);
+		const Rgb tcol = params_.transmit_filter_ * getShaderColor(shaders_[ShaderNodeType::Diffuse], mat_data->node_tree_data_, params_.diffuse_color_) + Rgb(1.f - params_.transmit_filter_);
 		const auto *mat_data_specific = static_cast<const ShinyDiffuseMaterialData *>(mat_data);
 		specular.refract_->col_ = (1.f - mat_data_specific->components_[0] * kr) * mat_data_specific->components_[1] * tcol;
-		applyWireFrame(specular.refract_->col_, wireframe_shader_, mat_data->node_tree_data_, sp);
+		applyWireFrame(specular.refract_->col_, shaders_[ShaderNodeType::Wireframe], mat_data->node_tree_data_, sp);
 	}
 	if(is_mirror_)
 	{
@@ -432,8 +516,8 @@ Specular ShinyDiffuseMaterial::getSpecular(int ray_level, const MaterialData *ma
 			specular.reflect_->dir_.normalize();
 		}
 		const auto *mat_data_specific = static_cast<const ShinyDiffuseMaterialData *>(mat_data);
-		specular.reflect_->col_ = getShaderColor(mirror_color_shader_, mat_data->node_tree_data_, mirror_color_) * (mat_data_specific->components_[0] * kr);
-		applyWireFrame(specular.reflect_->col_, wireframe_shader_, mat_data->node_tree_data_, sp);
+		specular.reflect_->col_ = getShaderColor(shaders_[ShaderNodeType::MirrorColor], mat_data->node_tree_data_, params_.mirror_color_) * (mat_data_specific->components_[0] * kr);
+		applyWireFrame(specular.reflect_->col_, shaders_[ShaderNodeType::Wireframe], mat_data->node_tree_data_, sp);
 	}
 	return specular;
 }
@@ -445,23 +529,23 @@ Rgb ShinyDiffuseMaterial::getTransparency(const MaterialData *mat_data, const Su
 	const Vec3f n{SurfacePoint::normalFaceForward(sp.ng_, sp.n_, wo)};
 
 	float cur_ior_squared;
-	if(ior_shader_)
+	if(shaders_[ShaderNodeType::Ior])
 	{
-		cur_ior_squared = ior_ + ior_shader_->getScalar(mat_data->node_tree_data_);
+		cur_ior_squared = params_.ior_ + shaders_[ShaderNodeType::Ior]->getScalar(mat_data->node_tree_data_);
 		cur_ior_squared *= cur_ior_squared;
 	}
 	else cur_ior_squared = ior_squared_;
 
 	const float kr = getFresnelKr(wo, n, cur_ior_squared);
 
-	if(is_mirror_) accum = 1.f - kr * getShaderScalar(mirror_shader_, mat_data->node_tree_data_, mirror_strength_);
+	if(is_mirror_) accum = 1.f - kr * getShaderScalar(shaders_[ShaderNodeType::MirrorColor], mat_data->node_tree_data_, params_.specular_reflect_);
 	if(is_transparent_) //uhm...should actually be true if this function gets called anyway...
 	{
-		accum *= transparency_shader_ ? transparency_shader_->getScalar(mat_data->node_tree_data_) * accum : transparency_strength_ * accum;
+		accum *= shaders_[ShaderNodeType::Transparency] ? shaders_[ShaderNodeType::Transparency]->getScalar(mat_data->node_tree_data_) * accum : params_.transparency_ * accum;
 	}
-	const Rgb tcol = transmit_filter_strength_ * getShaderColor(diffuse_shader_, mat_data->node_tree_data_, diffuse_color_) + Rgb(1.f - transmit_filter_strength_);
+	const Rgb tcol = params_.transmit_filter_ * getShaderColor(shaders_[ShaderNodeType::Diffuse], mat_data->node_tree_data_, params_.diffuse_color_) + Rgb(1.f - params_.transmit_filter_);
 	Rgb result = accum * tcol;
-	applyWireFrame(result, wireframe_shader_, mat_data->node_tree_data_, sp);
+	applyWireFrame(result, shaders_[ShaderNodeType::Wireframe], mat_data->node_tree_data_, sp);
 	return result;
 }
 
@@ -471,9 +555,9 @@ float ShinyDiffuseMaterial::getAlpha(const MaterialData *mat_data, const Surface
 	{
 		const Vec3f n{SurfacePoint::normalFaceForward(sp.ng_, sp.n_, wo)};
 		float cur_ior_squared;
-		if(ior_shader_)
+		if(shaders_[ShaderNodeType::Ior])
 		{
-			cur_ior_squared = ior_ + ior_shader_->getScalar(mat_data->node_tree_data_);
+			cur_ior_squared = params_.ior_ + shaders_[ShaderNodeType::Ior]->getScalar(mat_data->node_tree_data_);
 			cur_ior_squared *= cur_ior_squared;
 		}
 		else cur_ior_squared = ior_squared_;
@@ -481,211 +565,39 @@ float ShinyDiffuseMaterial::getAlpha(const MaterialData *mat_data, const Surface
 		const auto *mat_data_specific = static_cast<const ShinyDiffuseMaterialData *>(mat_data);
 		const float refl = (1.f - mat_data_specific->components_[0] * kr) * mat_data_specific->components_[1];
 		float result = 1.f - refl;
-		applyWireFrame(result, wireframe_shader_, mat_data->node_tree_data_, sp);
+		applyWireFrame(result, shaders_[ShaderNodeType::Wireframe], mat_data->node_tree_data_, sp);
 		return result;
 	}
 	else return 1.f;
 }
 
-Material *ShinyDiffuseMaterial::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params, const std::list<ParamMap> &nodes_params)
-{
-	/// Material Parameters
-	Rgb diffuse_color{1.f};
-	Rgb mirror_color{1.f};
-	float diffuse_strength = 1.f;
-	float transparency_strength = 0.f;
-	float translucency_strength = 0.f;
-	float mirror_strength = 0.f;
-	float emit_strength = 0.f;
-	bool has_fresnel_effect = false;
-	std::string s_visibility = "normal";
-	bool receive_shadows = true;
-	bool flat_material = false;
-	float ior = 1.33f;
-	float transmit_filter_strength = 1.f;
-	int mat_pass_index = 0;
-	int additionaldepth = 0;
-	float transparentbias_factor = 0.f;
-	bool transparentbias_multiply_raydepth = false;
-	float samplingfactor = 1.f;
-	float wire_frame_amount = 0.f;           //!< Wireframe shading amount
-	float wire_frame_thickness = 0.01f;      //!< Wireframe thickness
-	float wire_frame_exponent = 0.f;         //!< Wireframe exponent (0.f = solid, 1.f=linearly gradual, etc)
-	Rgb wire_frame_color = Rgb(1.f); //!< Wireframe shading color
-
-	params.getParam("color", diffuse_color);
-	params.getParam("mirror_color", mirror_color);
-	params.getParam("transparency", transparency_strength);
-	params.getParam("translucency", translucency_strength);
-	params.getParam("diffuse_reflect", diffuse_strength);
-	params.getParam("specular_reflect", mirror_strength);
-	params.getParam("emit", emit_strength);
-	params.getParam("IOR", ior);
-	params.getParam("fresnel_effect", has_fresnel_effect);
-	params.getParam("transmit_filter", transmit_filter_strength);
-
-	params.getParam("receive_shadows", receive_shadows);
-	params.getParam("flat_material", flat_material);
-	params.getParam("visibility", s_visibility);
-	params.getParam("mat_pass_index", mat_pass_index);
-	params.getParam("additionaldepth", additionaldepth);
-	params.getParam("transparentbias_factor", transparentbias_factor);
-	params.getParam("transparentbias_multiply_raydepth", transparentbias_multiply_raydepth);
-	params.getParam("samplingfactor", samplingfactor);
-
-	params.getParam("wireframe_amount", wire_frame_amount);
-	params.getParam("wireframe_thickness", wire_frame_thickness);
-	params.getParam("wireframe_exponent", wire_frame_exponent);
-	params.getParam("wireframe_color", wire_frame_color);
-
-	const VisibilityFlags visibility = visibility::fromString(s_visibility);
-
-	// !!remember to put diffuse multiplier in material itself!
-	auto mat = new ShinyDiffuseMaterial(logger, diffuse_color, mirror_color, diffuse_strength, transparency_strength, translucency_strength, mirror_strength, emit_strength, transmit_filter_strength, visibility);
-
-	mat->setIndex(mat_pass_index);
-	mat->receive_shadows_ = receive_shadows;
-	mat->flat_material_ = flat_material;
-	mat->additional_depth_ = additionaldepth;
-	mat->transparent_bias_factor_ = transparentbias_factor;
-	mat->transparent_bias_multiply_ray_depth_ = transparentbias_multiply_raydepth;
-
-	mat->wireframe_amount_ = wire_frame_amount;
-	mat->wireframe_thickness_ = wire_frame_thickness;
-	mat->wireframe_exponent_ = wire_frame_exponent;
-	mat->wireframe_color_ = wire_frame_color;
-
-	mat->setSamplingFactor(samplingfactor);
-
-	if(has_fresnel_effect)
-	{
-		mat->ior_ = ior;
-		mat->ior_squared_ = ior * ior;
-		mat->has_fresnel_effect_ = true;
-	}
-
-	std::string diffuse_brdf;
-	if(params.getParam("diffuse_brdf", diffuse_brdf))
-	{
-		if(diffuse_brdf == "oren_nayar")
-		{
-			double sigma = 0.1;
-			params.getParam("sigma", sigma);
-			mat->initOrenNayar(sigma);
-		}
-	}
-
-	/// Material Shader Nodes
-	std::map<std::string, const ShaderNode *> root_nodes_map;
-	// prepare shader nodes list
-	root_nodes_map["diffuse_shader"] = nullptr;
-	root_nodes_map["mirror_color_shader"] = nullptr;
-	root_nodes_map["bump_shader"] = nullptr;
-	root_nodes_map["mirror_shader"] = nullptr;
-	root_nodes_map["transparency_shader"] = nullptr;
-	root_nodes_map["translucency_shader"] = nullptr;
-	root_nodes_map["sigma_oren_shader"] = nullptr;
-	root_nodes_map["diffuse_refl_shader"] = nullptr;
-	root_nodes_map["IOR_shader"] = nullptr;
-	root_nodes_map["wireframe_shader"] = nullptr;
-
-	std::vector<const ShaderNode *> root_nodes_list;
-	mat->nodes_map_ = NodeMaterial::loadNodes(nodes_params, scene, logger);
-	if(!mat->nodes_map_.empty()) NodeMaterial::parseNodes(params, root_nodes_list, root_nodes_map, mat->nodes_map_, logger);
-
-	mat->diffuse_shader_ = root_nodes_map["diffuse_shader"];
-	mat->mirror_color_shader_ = root_nodes_map["mirror_color_shader"];
-	mat->bump_shader_ = root_nodes_map["bump_shader"];
-	mat->mirror_shader_ = root_nodes_map["mirror_shader"];
-	mat->transparency_shader_ = root_nodes_map["transparency_shader"];
-	mat->translucency_shader_ = root_nodes_map["translucency_shader"];
-	mat->sigma_oren_shader_ = root_nodes_map["sigma_oren_shader"];
-	mat->diffuse_refl_shader_ = root_nodes_map["diffuse_refl_shader"];
-	mat->ior_shader_ = root_nodes_map["IOR_shader"];
-	mat->wireframe_shader_ = root_nodes_map["wireframe_shader"];
-
-	// solve nodes order
-	if(!root_nodes_list.empty())
-	{
-		const std::vector<const ShaderNode *> nodes_sorted = NodeMaterial::solveNodesOrder(root_nodes_list, mat->nodes_map_, logger);
-		if(mat->diffuse_shader_)
-		{
-			const std::vector<const ShaderNode *> shader_nodes_list = NodeMaterial::getNodeList(mat->diffuse_shader_, nodes_sorted);
-			mat->color_nodes_.insert(mat->color_nodes_.end(), shader_nodes_list.begin(), shader_nodes_list.end());
-		}
-		if(mat->mirror_color_shader_)
-		{
-			const std::vector<const ShaderNode *> shader_nodes_list = NodeMaterial::getNodeList(mat->mirror_color_shader_, nodes_sorted);
-			mat->color_nodes_.insert(mat->color_nodes_.end(), shader_nodes_list.begin(), shader_nodes_list.end());
-		}
-		if(mat->mirror_shader_)
-		{
-			const std::vector<const ShaderNode *> shader_nodes_list = NodeMaterial::getNodeList(mat->mirror_shader_, nodes_sorted);
-			mat->color_nodes_.insert(mat->color_nodes_.end(), shader_nodes_list.begin(), shader_nodes_list.end());
-		}
-		if(mat->transparency_shader_)
-		{
-			const std::vector<const ShaderNode *> shader_nodes_list = NodeMaterial::getNodeList(mat->transparency_shader_, nodes_sorted);
-			mat->color_nodes_.insert(mat->color_nodes_.end(), shader_nodes_list.begin(), shader_nodes_list.end());
-		}
-		if(mat->translucency_shader_)
-		{
-			const std::vector<const ShaderNode *> shader_nodes_list = NodeMaterial::getNodeList(mat->translucency_shader_, nodes_sorted);
-			mat->color_nodes_.insert(mat->color_nodes_.end(), shader_nodes_list.begin(), shader_nodes_list.end());
-		}
-		if(mat->sigma_oren_shader_)
-		{
-			const std::vector<const ShaderNode *> shader_nodes_list = NodeMaterial::getNodeList(mat->sigma_oren_shader_, nodes_sorted);
-			mat->color_nodes_.insert(mat->color_nodes_.end(), shader_nodes_list.begin(), shader_nodes_list.end());
-		}
-		if(mat->diffuse_refl_shader_)
-		{
-			const std::vector<const ShaderNode *> shader_nodes_list = NodeMaterial::getNodeList(mat->diffuse_refl_shader_, nodes_sorted);
-			mat->color_nodes_.insert(mat->color_nodes_.end(), shader_nodes_list.begin(), shader_nodes_list.end());
-		}
-		if(mat->ior_shader_)
-		{
-			const std::vector<const ShaderNode *> shader_nodes_list = NodeMaterial::getNodeList(mat->ior_shader_, nodes_sorted);
-			mat->color_nodes_.insert(mat->color_nodes_.end(), shader_nodes_list.begin(), shader_nodes_list.end());
-		}
-		if(mat->wireframe_shader_)
-		{
-			const std::vector<const ShaderNode *> shader_nodes_list = NodeMaterial::getNodeList(mat->wireframe_shader_, nodes_sorted);
-			mat->color_nodes_.insert(mat->color_nodes_.end(), shader_nodes_list.begin(), shader_nodes_list.end());
-		}
-		if(mat->bump_shader_) mat->bump_nodes_ = NodeMaterial::getNodeList(mat->bump_shader_, nodes_sorted);
-	}
-	mat->config();
-	return mat;
-}
-
 Rgb ShinyDiffuseMaterial::getDiffuseColor(const NodeTreeData &node_tree_data) const
 {
-	if(is_diffuse_) return (diffuse_refl_shader_ ? diffuse_refl_shader_->getScalar(node_tree_data) : diffuse_strength_) * (diffuse_shader_ ? diffuse_shader_->getColor(node_tree_data) : diffuse_color_);
+	if(is_diffuse_) return (shaders_[ShaderNodeType::DiffuseReflect] ? shaders_[ShaderNodeType::DiffuseReflect]->getScalar(node_tree_data) : params_.diffuse_reflect_) * (shaders_[ShaderNodeType::Diffuse] ? shaders_[ShaderNodeType::Diffuse]->getColor(node_tree_data) : params_.diffuse_color_);
 	else return Rgb{0.f};
 }
 
 Rgb ShinyDiffuseMaterial::getGlossyColor(const NodeTreeData &node_tree_data) const
 {
-	if(is_mirror_) return (mirror_shader_ ? mirror_shader_->getScalar(node_tree_data) : mirror_strength_) * (mirror_color_shader_ ? mirror_color_shader_->getColor(node_tree_data) : mirror_color_);
+	if(is_mirror_) return (shaders_[ShaderNodeType::MirrorColor] ? shaders_[ShaderNodeType::MirrorColor]->getScalar(node_tree_data) : params_.specular_reflect_) * (shaders_[ShaderNodeType::MirrorColor] ? shaders_[ShaderNodeType::MirrorColor]->getColor(node_tree_data) : params_.mirror_color_);
 	else return Rgb{0.f};
 }
 
 Rgb ShinyDiffuseMaterial::getTransColor(const NodeTreeData &node_tree_data) const
 {
-	if(is_transparent_) return (transparency_shader_ ? transparency_shader_->getScalar(node_tree_data) : transparency_strength_) * (diffuse_shader_ ? diffuse_shader_->getColor(node_tree_data) : diffuse_color_);
+	if(is_transparent_) return (shaders_[ShaderNodeType::Transparency] ? shaders_[ShaderNodeType::Transparency]->getScalar(node_tree_data) : params_.transparency_) * (shaders_[ShaderNodeType::Diffuse] ? shaders_[ShaderNodeType::Diffuse]->getColor(node_tree_data) : params_.diffuse_color_);
 	else return Rgb{0.f};
 }
 
 Rgb ShinyDiffuseMaterial::getMirrorColor(const NodeTreeData &node_tree_data) const
 {
-	if(is_mirror_) return (mirror_shader_ ? mirror_shader_->getScalar(node_tree_data) : mirror_strength_) * (mirror_color_shader_ ? mirror_color_shader_->getColor(node_tree_data) : mirror_color_);
+	if(is_mirror_) return (shaders_[ShaderNodeType::MirrorColor] ? shaders_[ShaderNodeType::MirrorColor]->getScalar(node_tree_data) : params_.specular_reflect_) * (shaders_[ShaderNodeType::MirrorColor] ? shaders_[ShaderNodeType::MirrorColor]->getColor(node_tree_data) : params_.mirror_color_);
 	else return Rgb{0.f};
 }
 
 Rgb ShinyDiffuseMaterial::getSubSurfaceColor(const NodeTreeData &node_tree_data) const
 {
-	if(is_translucent_) return (translucency_shader_ ? translucency_shader_->getScalar(node_tree_data) : translucency_strength_) * (diffuse_shader_ ? diffuse_shader_->getColor(node_tree_data) : diffuse_color_);
+	if(is_translucent_) return (shaders_[ShaderNodeType::Translucency] ? shaders_[ShaderNodeType::Translucency]->getScalar(node_tree_data) : params_.translucency_) * (shaders_[ShaderNodeType::Diffuse] ? shaders_[ShaderNodeType::Diffuse]->getColor(node_tree_data) : params_.diffuse_color_);
 	else return Rgb{0.f};
 }
 

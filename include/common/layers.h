@@ -23,7 +23,6 @@
 
 #include "common/collection.h"
 #include "image/image.h"
-#include "common/flags.h"
 #include "common/layer.h"
 #include <set>
 #include <map>

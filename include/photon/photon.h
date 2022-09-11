@@ -20,7 +20,6 @@
 #ifndef YAFARAY_PHOTON_H
 #define YAFARAY_PHOTON_H
 
-#include <utility>
 
 
 #include "pkdtree.h"

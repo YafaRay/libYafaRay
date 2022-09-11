@@ -23,5 +23,4 @@ target_sources(libyafaray4
 		color_layers.cc
 		color_ramp.cc
 		spectrum.cc
-		color_conversion.cc
 )

@@ -1,5 +1,6 @@
 /****************************************************************************
- *      glass.cc: a dielectric material with dispersion, two trivial mats
+ *      material_glass.cc: a dielectric material with dispersion, two trivial mats
+ *
  *      This is part of the libYafaRay package
  *      Copyright (C) 2006  Mathias Wein
  *
@@ -19,54 +20,142 @@
  */
 
 #include "material/material_glass.h"
-
-#include <cmath>
-#include <memory>
 #include "shader/shader_node.h"
 #include "geometry/surface.h"
 #include "common/logger.h"
 #include "color/spectrum.h"
-#include "common/param.h"
-#include "render/render_data.h"
-#include "volume/volume.h"
+#include "param/param.h"
+#include "material/sample.h"
+#include "volume/handler/volume_handler.h"
 
 namespace yafaray {
 
-GlassMaterial::GlassMaterial(Logger &logger, float ior, Rgb filt_c, const Rgb &srcol, double disp_pow, bool fake_s, VisibilityFlags e_visibility):
-		NodeMaterial(logger), filter_color_(filt_c), specular_reflection_color_(srcol), fake_shadow_(fake_s), dispersion_power_(disp_pow)
+GlassMaterial::Params::Params(ParamError &param_error, const ParamMap &param_map)
 {
-	visibility_ = e_visibility;
-	ior_ = ior;
+	PARAM_LOAD(ior_);
+	PARAM_LOAD(filter_color_);
+	PARAM_LOAD(transmit_filter_);
+	PARAM_LOAD(mirror_color_);
+	PARAM_LOAD(dispersion_power_);
+	PARAM_LOAD(fake_shadows_);
+	PARAM_LOAD(absorption_color_);
+	PARAM_LOAD(absorption_dist_);
+	PARAM_SHADERS_LOAD;
+}
+
+ParamMap GlassMaterial::Params::getAsParamMap(bool only_non_default) const
+{
+	PARAM_SAVE_START;
+	PARAM_SAVE(ior_);
+	PARAM_SAVE(filter_color_);
+	PARAM_SAVE(transmit_filter_);
+	PARAM_SAVE(mirror_color_);
+	PARAM_SAVE(dispersion_power_);
+	PARAM_SAVE(fake_shadows_);
+	PARAM_SAVE(absorption_color_);
+	PARAM_SAVE(absorption_dist_);
+	PARAM_SHADERS_SAVE;
+	PARAM_SAVE_END;
+}
+
+ParamMap GlassMaterial::getAsParamMap(bool only_non_default) const
+{
+	ParamMap result{Material::getAsParamMap(only_non_default)};
+	result.append(params_.getAsParamMap(only_non_default));
+	return result;
+}
+
+std::pair<Material *, ParamError> GlassMaterial::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map, const std::list<ParamMap> &nodes_param_maps)
+{
+	auto param_error{Params::meta_.check(param_map, {"type"}, {})};
+	auto mat = new GlassMaterial(logger, param_error, param_map);
+	if(mat->params_.absorption_color_.r_ < 1.f || mat->params_.absorption_color_.g_ < 1.f || mat->params_.absorption_color_.b_ < 1.f)
+	{
+		//deprecated method:
+		Rgb sigma(0.f);
+		const float maxlog = math::log(1e38f);
+		sigma.r_ = (mat->params_.absorption_color_.r_ > 1e-38f) ? -math::log(mat->params_.absorption_color_.r_) : maxlog;
+		sigma.g_ = (mat->params_.absorption_color_.g_ > 1e-38f) ? -math::log(mat->params_.absorption_color_.g_) : maxlog;
+		sigma.b_ = (mat->params_.absorption_color_.b_ > 1e-38f) ? -math::log(mat->params_.absorption_color_.b_) : maxlog;
+		if(mat->params_.absorption_dist_ != 0.f) sigma *= 1.f / mat->params_.absorption_dist_;
+		mat->absorb_ = true;
+		mat->beer_sigma_a_ = sigma;
+		mat->bsdf_flags_ |= BsdfFlags{BsdfFlags::Volumetric};
+		// creat volume handler (backwards compatibility)
+		ParamMap map;
+		map["type"] = std::string("beer");
+		map["absorption_col"] = mat->params_.absorption_color_;
+		map["absorption_dist"] = Parameter(mat->params_.absorption_dist_);
+		mat->vol_i_ = std::unique_ptr<VolumeHandler>(VolumeHandler::factory(logger, scene, name, map).first);
+		mat->bsdf_flags_ |= BsdfFlags{BsdfFlags::Volumetric};
+	}
+	mat->nodes_map_ = NodeMaterial::loadNodes(nodes_param_maps, scene, logger);
+	std::map<std::string, const ShaderNode *> root_nodes_map;
+	// Prepare our node list
+	for(size_t shader_index = 0; shader_index < mat->shaders_.size(); ++shader_index)
+	{
+		root_nodes_map[ShaderNodeType{static_cast<unsigned char>(shader_index)}.print()] = nullptr;
+	}
+	std::vector<const ShaderNode *> root_nodes_list;
+	if(!mat->nodes_map_.empty()) NodeMaterial::parseNodes(param_map, root_nodes_list, root_nodes_map, mat->nodes_map_, logger);
+	for(size_t shader_index = 0; shader_index < mat->shaders_.size(); ++shader_index)
+	{
+		mat->shaders_[shader_index] = root_nodes_map[ShaderNodeType{static_cast<unsigned char>(shader_index)}.print()];
+	}
+	// solve nodes order
+	if(!root_nodes_list.empty())
+	{
+		const std::vector<const ShaderNode *> nodes_sorted = NodeMaterial::solveNodesOrder(root_nodes_list, mat->nodes_map_, logger);
+		for(size_t shader_index = 0; shader_index < mat->shaders_.size(); ++shader_index)
+		{
+			if(mat->shaders_[shader_index])
+			{
+				if(ShaderNodeType{static_cast<unsigned char>(shader_index)}.isBump())
+				{
+					mat->bump_nodes_ = NodeMaterial::getNodeList(mat->shaders_[shader_index], nodes_sorted);
+				}
+				else
+				{
+					const std::vector<const ShaderNode *> shader_nodes_list = NodeMaterial::getNodeList(mat->shaders_[shader_index], nodes_sorted);
+					mat->color_nodes_.insert(mat->color_nodes_.end(), shader_nodes_list.begin(), shader_nodes_list.end());
+				}
+			}
+		}
+	}
+	if(param_error.flags_ != ParamError::Flags::Ok) logger.logWarning(param_error.print<GlassMaterial>(name, {"type"}));
+	return {mat, param_error};
+}
+
+GlassMaterial::GlassMaterial(Logger &logger, ParamError &param_error, const ParamMap &param_map) :
+		NodeMaterial{logger, param_error, param_map}, params_{param_error, param_map}
+{
+	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + params_.getAsParamMap(true).print());
 	bsdf_flags_ = BsdfFlags::AllSpecular;
-	if(fake_s) bsdf_flags_ |= BsdfFlags::Filter;
-	tm_flags_ = fake_s ? BsdfFlags::Filter | BsdfFlags::Transmit : BsdfFlags::Specular | BsdfFlags::Transmit;
-	if(disp_pow > 0.0)
+	if(params_.fake_shadows_) bsdf_flags_ |= BsdfFlags{BsdfFlags::Filter};
+	transmit_flags_ = params_.fake_shadows_ ? BsdfFlags::Filter | BsdfFlags::Transmit : BsdfFlags::Specular | BsdfFlags::Transmit;
+	if(params_.dispersion_power_ > 0.0)
 	{
 		disperse_ = true;
-		spectrum::cauchyCoefficients(ior, disp_pow, cauchy_a_, cauchy_b_);
-		bsdf_flags_ |= BsdfFlags::Dispersive;
+		std::tie(cauchy_a_, cauchy_b_) = spectrum::cauchyCoefficients(params_.ior_, params_.dispersion_power_);
+		bsdf_flags_ |= BsdfFlags{BsdfFlags::Dispersive};
 	}
-
-	visibility_ = e_visibility;
 }
 
 const MaterialData * GlassMaterial::initBsdf(SurfacePoint &sp, const Camera *camera) const
 {
 	auto mat_data = new GlassMaterialData(bsdf_flags_, color_nodes_.size() + bump_nodes_.size());
-	if(bump_shader_) evalBump(mat_data->node_tree_data_, sp, bump_shader_, camera);
+	if(shaders_[ShaderNodeType::Bump]) evalBump(mat_data->node_tree_data_, sp, shaders_[ShaderNodeType::Bump], camera);
 	for(const auto &node : color_nodes_) node->eval(mat_data->node_tree_data_, sp, camera);
 	return mat_data;
 }
 
-#define MATCHES(bits, flags) ((bits & (flags)) == (flags))
-
 Rgb GlassMaterial::sample(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3f &wo, Vec3f &wi, Sample &s, float &w, bool chromatic, float wavelength, const Camera *camera) const
 {
-	if(!flags::have(s.flags_, BsdfFlags::Specular) && !(flags::have(s.flags_, bsdf_flags_ & BsdfFlags::Dispersive) && chromatic))
+	if(!s.flags_.has(BsdfFlags::Specular) && !(s.flags_.has(bsdf_flags_ & BsdfFlags::Dispersive) && chromatic))
 	{
 		s.pdf_ = 0.f;
 		Rgb scolor = Rgb(0.f);
-		applyWireFrame(scolor, wireframe_shader_, mat_data->node_tree_data_, sp);
+		applyWireFrame(scolor, shaders_[ShaderNodeType::Wireframe], mat_data->node_tree_data_, sp);
 		return scolor;
 	}
 	Vec3f refdir, n;
@@ -79,60 +168,60 @@ Rgb GlassMaterial::sample(const MaterialData *mat_data, const SurfacePoint &sp, 
 	// we need to sample dispersion
 	if(disperse_ && chromatic)
 	{
-		float cur_ior = ior_;
-		if(ior_shader_) cur_ior += ior_shader_->getScalar(mat_data->node_tree_data_);
+		float cur_ior = params_.ior_;
+		if(shaders_[ShaderNodeType::Ior]) cur_ior += shaders_[ShaderNodeType::Ior]->getScalar(mat_data->node_tree_data_);
 		float cur_cauchy_a = cauchy_a_;
 		float cur_cauchy_b = cauchy_b_;
 
-		if(ior_shader_) spectrum::cauchyCoefficients(cur_ior, dispersion_power_, cur_cauchy_a, cur_cauchy_b);
+		if(shaders_[ShaderNodeType::Ior]) std::tie(cur_cauchy_a, cur_cauchy_b) = spectrum::cauchyCoefficients(cur_ior, params_.dispersion_power_);
 		cur_ior = spectrum::getIor(wavelength, cur_cauchy_a, cur_cauchy_b);
 
 		if(Vec3f::refract(n, wo, refdir, cur_ior))
 		{
 			const auto [kr, kt]{Vec3f::fresnel(wo, n, cur_ior)};
 			const float p_kr = 0.01 + 0.99 * kr, p_kt = 0.01 + 0.99 * kt;
-			if(!flags::have(s.flags_, BsdfFlags::Specular) || s.s_1_ < p_kt)
+			if(!s.flags_.has(BsdfFlags::Specular) || s.s_1_ < p_kt)
 			{
 				wi = refdir;
-				s.pdf_ = (MATCHES(s.flags_, BsdfFlags::Specular | BsdfFlags::Reflect)) ? p_kt : 1.f;
+				s.pdf_ = s.flags_.has(BsdfFlags::Specular | BsdfFlags::Reflect) ? p_kt : 1.f;
 				s.sampled_flags_ = BsdfFlags::Dispersive | BsdfFlags::Transmit;
 				w = 1.f;
-				Rgb scolor = getShaderColor(filter_color_shader_, mat_data->node_tree_data_, filter_color_); // * (Kt/std::abs(sp.N*wi));
-				applyWireFrame(scolor, wireframe_shader_, mat_data->node_tree_data_, sp);
+				Rgb scolor = getShaderColor(shaders_[ShaderNodeType::FilterColor], mat_data->node_tree_data_, filter_color_); // * (Kt/std::abs(sp.N*wi));
+				applyWireFrame(scolor, shaders_[ShaderNodeType::Wireframe], mat_data->node_tree_data_, sp);
 				return scolor;
 			}
-			else if(MATCHES(s.flags_, BsdfFlags::Specular | BsdfFlags::Reflect))
+			else if(s.flags_.has(BsdfFlags::Specular | BsdfFlags::Reflect))
 			{
 				wi = wo;
 				wi.reflect(n);
 				s.pdf_ = p_kr;
 				s.sampled_flags_ = BsdfFlags::Specular | BsdfFlags::Reflect;
 				w = 1.f;
-				Rgb scolor = getShaderColor(mirror_color_shader_, mat_data->node_tree_data_, specular_reflection_color_); // * (Kr/std::abs(sp.N*wi));
-				applyWireFrame(scolor, wireframe_shader_, mat_data->node_tree_data_, sp);
+				Rgb scolor = getShaderColor(shaders_[ShaderNodeType::MirrorColor], mat_data->node_tree_data_, params_.mirror_color_); // * (Kr/std::abs(sp.N*wi));
+				applyWireFrame(scolor, shaders_[ShaderNodeType::Wireframe], mat_data->node_tree_data_, sp);
 				return scolor;
 			}
 		}
-		else if(MATCHES(s.flags_, BsdfFlags::Specular | BsdfFlags::Reflect)) //total inner reflection
+		else if(s.flags_.has(BsdfFlags::Specular | BsdfFlags::Reflect)) //total inner reflection
 		{
 			wi = wo;
 			wi.reflect(n);
 			s.sampled_flags_ = BsdfFlags::Specular | BsdfFlags::Reflect;
 			w = 1.f;
 			Rgb scolor{1.f}; //Rgb(1.f/std::abs(sp.N*wi));
-			applyWireFrame(scolor, wireframe_shader_, mat_data->node_tree_data_, sp);
+			applyWireFrame(scolor, shaders_[ShaderNodeType::Wireframe], mat_data->node_tree_data_, sp);
 			return scolor;
 		}
 	}
 	else // no dispersion calculation necessary, regardless of material settings
 	{
-		float cur_ior = ior_;
-		if(ior_shader_) cur_ior += ior_shader_->getScalar(mat_data->node_tree_data_);
+		float cur_ior = params_.ior_;
+		if(shaders_[ShaderNodeType::Ior]) cur_ior += shaders_[ShaderNodeType::Ior]->getScalar(mat_data->node_tree_data_);
 		if(disperse_ && chromatic)
 		{
 			float cur_cauchy_a = cauchy_a_;
 			float cur_cauchy_b = cauchy_b_;
-			if(ior_shader_) spectrum::cauchyCoefficients(cur_ior, dispersion_power_, cur_cauchy_a, cur_cauchy_b);
+			if(shaders_[ShaderNodeType::Ior]) std::tie(cur_cauchy_a, cur_cauchy_b) = spectrum::cauchyCoefficients(cur_ior, params_.dispersion_power_);
 			cur_ior = spectrum::getIor(wavelength, cur_cauchy_a, cur_cauchy_b);
 		}
 
@@ -140,22 +229,22 @@ Rgb GlassMaterial::sample(const MaterialData *mat_data, const SurfacePoint &sp, 
 		{
 			const auto [kr, kt]{Vec3f::fresnel(wo, n, cur_ior)};
 			float p_kr = 0.01 + 0.99 * kr, p_kt = 0.01 + 0.99 * kt;
-			if(s.s_1_ < p_kt && MATCHES(s.flags_, tm_flags_))
+			if(s.s_1_ < p_kt && s.flags_.has(transmit_flags_))
 			{
 				wi = refdir;
 				s.pdf_ = p_kt;
-				s.sampled_flags_ = tm_flags_;
+				s.sampled_flags_ = transmit_flags_;
 				if(s.reverse_)
 				{
 					s.pdf_back_ = s.pdf_; //wrong...need to calc fresnel explicitly!
-					s.col_back_ = getShaderColor(filter_color_shader_, mat_data->node_tree_data_, filter_color_);//*(Kt/std::abs(sp.N*wo));
+					s.col_back_ = getShaderColor(shaders_[ShaderNodeType::FilterColor], mat_data->node_tree_data_, filter_color_);//*(Kt/std::abs(sp.N*wo));
 				}
 				w = 1.f;
-				Rgb scolor = getShaderColor(filter_color_shader_, mat_data->node_tree_data_, filter_color_);//*(Kt/std::abs(sp.N*wi));
-				applyWireFrame(scolor, wireframe_shader_, mat_data->node_tree_data_, sp);
+				Rgb scolor = getShaderColor(shaders_[ShaderNodeType::FilterColor], mat_data->node_tree_data_, filter_color_);//*(Kt/std::abs(sp.N*wi));
+				applyWireFrame(scolor, shaders_[ShaderNodeType::Wireframe], mat_data->node_tree_data_, sp);
 				return scolor;
 			}
-			else if(MATCHES(s.flags_, BsdfFlags::Specular | BsdfFlags::Reflect)) //total inner reflection
+			else if(s.flags_.has(BsdfFlags::Specular | BsdfFlags::Reflect)) //total inner reflection
 			{
 				wi = wo;
 				wi.reflect(n);
@@ -164,15 +253,15 @@ Rgb GlassMaterial::sample(const MaterialData *mat_data, const SurfacePoint &sp, 
 				if(s.reverse_)
 				{
 					s.pdf_back_ = s.pdf_; //wrong...need to calc fresnel explicitly!
-					s.col_back_ = getShaderColor(mirror_color_shader_, mat_data->node_tree_data_, specular_reflection_color_);// * (Kr/std::abs(sp.N*wo));
+					s.col_back_ = getShaderColor(shaders_[ShaderNodeType::MirrorColor], mat_data->node_tree_data_, params_.mirror_color_);// * (Kr/std::abs(sp.N*wo));
 				}
 				w = 1.f;
-				Rgb scolor = getShaderColor(mirror_color_shader_, mat_data->node_tree_data_, specular_reflection_color_);// * (Kr/std::abs(sp.N*wi));
-				applyWireFrame(scolor, wireframe_shader_, mat_data->node_tree_data_, sp);
+				Rgb scolor = getShaderColor(shaders_[ShaderNodeType::MirrorColor], mat_data->node_tree_data_, params_.mirror_color_);// * (Kr/std::abs(sp.N*wi));
+				applyWireFrame(scolor, shaders_[ShaderNodeType::Wireframe], mat_data->node_tree_data_, sp);
 				return scolor;
 			}
 		}
-		else if(MATCHES(s.flags_, BsdfFlags::Specular | BsdfFlags::Reflect))//total inner reflection
+		else if(s.flags_.has(BsdfFlags::Specular | BsdfFlags::Reflect))//total inner reflection
 		{
 			wi = wo;
 			wi.reflect(n);
@@ -185,7 +274,7 @@ Rgb GlassMaterial::sample(const MaterialData *mat_data, const SurfacePoint &sp, 
 			}
 			w = 1.f;
 			Rgb scolor{1.f};//tir_col;
-			applyWireFrame(scolor, wireframe_shader_, mat_data->node_tree_data_, sp);
+			applyWireFrame(scolor, shaders_[ShaderNodeType::Wireframe], mat_data->node_tree_data_, sp);
 			return scolor;
 		}
 	}
@@ -196,9 +285,9 @@ Rgb GlassMaterial::sample(const MaterialData *mat_data, const SurfacePoint &sp, 
 Rgb GlassMaterial::getTransparency(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3f &wo, const Camera *camera) const
 {
 	const Vec3f n{SurfacePoint::normalFaceForward(sp.ng_, sp.n_, wo)};
-	const auto [kr, kt]{Vec3f::fresnel(wo, n, getShaderScalar(ior_shader_, mat_data->node_tree_data_, ior_))};
-	Rgb result = kt * getShaderColor(filter_color_shader_, mat_data->node_tree_data_, filter_color_);
-	applyWireFrame(result, wireframe_shader_, mat_data->node_tree_data_, sp);
+	const auto [kr, kt]{Vec3f::fresnel(wo, n, getShaderScalar(shaders_[ShaderNodeType::Ior], mat_data->node_tree_data_, params_.ior_))};
+	Rgb result = kt * getShaderColor(shaders_[ShaderNodeType::FilterColor], mat_data->node_tree_data_, filter_color_);
+	applyWireFrame(result, shaders_[ShaderNodeType::Wireframe], mat_data->node_tree_data_, sp);
 	return result;
 }
 
@@ -206,7 +295,7 @@ float GlassMaterial::getAlpha(const MaterialData *mat_data, const SurfacePoint &
 {
 	float alpha = 1.f - getTransparency(mat_data, sp, wo, camera).energy();
 	if(alpha < 0.f) alpha = 0.f;
-	applyWireFrame(alpha, wireframe_shader_, mat_data->node_tree_data_, sp);
+	applyWireFrame(alpha, shaders_[ShaderNodeType::Wireframe], mat_data->node_tree_data_, sp);
 	return alpha;
 }
 
@@ -226,14 +315,14 @@ Specular GlassMaterial::getSpecular(int ray_level, const MaterialData *mat_data,
 	//	vector3d_t N = SurfacePoint::normalFaceForward(sp.Ng, sp.N, wo);
 	Vec3f refdir;
 
-	float cur_ior = ior_;
-	if(ior_shader_) cur_ior += ior_shader_->getScalar(mat_data->node_tree_data_);
+	float cur_ior = params_.ior_;
+	if(shaders_[ShaderNodeType::Ior]) cur_ior += shaders_[ShaderNodeType::Ior]->getScalar(mat_data->node_tree_data_);
 
 	if(disperse_ && chromatic)
 	{
 		float cur_cauchy_a = cauchy_a_;
 		float cur_cauchy_b = cauchy_b_;
-		if(ior_shader_) spectrum::cauchyCoefficients(cur_ior, dispersion_power_, cur_cauchy_a, cur_cauchy_b);
+		if(shaders_[ShaderNodeType::Ior]) std::tie(cur_cauchy_a, cur_cauchy_b) = spectrum::cauchyCoefficients(cur_ior, params_.dispersion_power_);
 		cur_ior = spectrum::getIor(wavelength, cur_cauchy_a, cur_cauchy_b);
 	}
 
@@ -244,7 +333,7 @@ Specular GlassMaterial::getSpecular(int ray_level, const MaterialData *mat_data,
 		if(!chromatic || !disperse_)
 		{
 			specular.refract_ = std::make_unique<DirectionColor>();
-			specular.refract_->col_ = kt * getShaderColor(filter_color_shader_, mat_data->node_tree_data_, filter_color_);
+			specular.refract_->col_ = kt * getShaderColor(shaders_[ShaderNodeType::FilterColor], mat_data->node_tree_data_, filter_color_);
 			specular.refract_->dir_ = refdir;
 		}
 		//FIXME? If the above does not happen, in this case, we need to sample dispersion, i.e. not considered specular
@@ -256,19 +345,19 @@ Specular GlassMaterial::getSpecular(int ray_level, const MaterialData *mat_data,
 			specular.reflect_ = std::make_unique<DirectionColor>();
 			specular.reflect_->dir_ = wo;
 			specular.reflect_->dir_.reflect(n);
-			specular.reflect_->col_ = getShaderColor(mirror_color_shader_, mat_data->node_tree_data_, specular_reflection_color_) * kr;
+			specular.reflect_->col_ = getShaderColor(shaders_[ShaderNodeType::MirrorColor], mat_data->node_tree_data_, params_.mirror_color_) * kr;
 		}
 	}
 	else //total inner reflection
 	{
 		specular.reflect_ = std::make_unique<DirectionColor>();
-		specular.reflect_->col_ = getShaderColor(mirror_color_shader_, mat_data->node_tree_data_, specular_reflection_color_);
+		specular.reflect_->col_ = getShaderColor(shaders_[ShaderNodeType::MirrorColor], mat_data->node_tree_data_, params_.mirror_color_);
 		specular.reflect_->dir_ = wo;
 		specular.reflect_->dir_.reflect(n);
 	}
-	if(wireframe_thickness_ > 0.f && (specular.reflect_ || specular.refract_))
+	if(Material::params_.wireframe_thickness_ > 0.f && (specular.reflect_ || specular.refract_))
 	{
-		const float wire_frame_amount = wireframe_shader_ ? wireframe_shader_->getScalar(mat_data->node_tree_data_) * wireframe_amount_ : wireframe_amount_;
+		const float wire_frame_amount = shaders_[ShaderNodeType::Wireframe] ? shaders_[ShaderNodeType::Wireframe]->getScalar(mat_data->node_tree_data_) * Material::params_.wireframe_amount_ : Material::params_.wireframe_amount_;
 		if(wire_frame_amount > 0.f)
 		{
 			if(specular.reflect_) applyWireFrame(specular.reflect_->col_, wire_frame_amount, sp);
@@ -278,144 +367,14 @@ Specular GlassMaterial::getSpecular(int ray_level, const MaterialData *mat_data,
 	return specular;
 }
 
-float GlassMaterial::getMatIor() const
-{
-	return ior_;
-}
-
-Material *GlassMaterial::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params, const std::list<ParamMap> &nodes_params)
-{
-	double ior = 1.4;
-	double filt = 0.f;
-	double disp_power = 0.0;
-	Rgb filt_col(1.f), absorp(1.f), sr_col(1.f);
-	bool fake_shad = false;
-	std::string s_visibility = "normal";
-	int mat_pass_index = 0;
-	bool receive_shadows = true;
-	int additionaldepth = 0;
-	float samplingfactor = 1.f;
-	float wire_frame_amount = 0.f;           //!< Wireframe shading amount
-	float wire_frame_thickness = 0.01f;      //!< Wireframe thickness
-	float wire_frame_exponent = 0.f;         //!< Wireframe exponent (0.f = solid, 1.f=linearly gradual, etc)
-	Rgb wire_frame_color = Rgb(1.f); //!< Wireframe shading color
-
-	params.getParam("IOR", ior);
-	params.getParam("filter_color", filt_col);
-	params.getParam("transmit_filter", filt);
-	params.getParam("mirror_color", sr_col);
-	params.getParam("dispersion_power", disp_power);
-	params.getParam("fake_shadows", fake_shad);
-
-	params.getParam("receive_shadows", receive_shadows);
-	params.getParam("visibility", s_visibility);
-	params.getParam("mat_pass_index", mat_pass_index);
-	params.getParam("additionaldepth", additionaldepth);
-	params.getParam("samplingfactor", samplingfactor);
-
-	params.getParam("wireframe_amount", wire_frame_amount);
-	params.getParam("wireframe_thickness", wire_frame_thickness);
-	params.getParam("wireframe_exponent", wire_frame_exponent);
-	params.getParam("wireframe_color", wire_frame_color);
-
-	const VisibilityFlags visibility = visibility::fromString(s_visibility);
-
-	auto mat = new GlassMaterial(logger, ior, filt * filt_col + Rgb(1.f - filt), sr_col, disp_power, fake_shad, visibility);
-
-	mat->setIndex(mat_pass_index);
-	mat->receive_shadows_ = receive_shadows;
-	mat->additional_depth_ = additionaldepth;
-
-	mat->wireframe_amount_ = wire_frame_amount;
-	mat->wireframe_thickness_ = wire_frame_thickness;
-	mat->wireframe_exponent_ = wire_frame_exponent;
-	mat->wireframe_color_ = wire_frame_color;
-
-	mat->setSamplingFactor(samplingfactor);
-
-	if(params.getParam("absorption", absorp))
-	{
-		double dist = 1.f;
-		if(absorp.r_ < 1.f || absorp.g_ < 1.f || absorp.b_ < 1.f)
-		{
-			//deprecated method:
-			Rgb sigma(0.f);
-			if(params.getParam("absorption_dist", dist))
-			{
-				const float maxlog = math::log(1e38f);
-				sigma.r_ = (absorp.r_ > 1e-38f) ? -math::log(absorp.r_) : maxlog;
-				sigma.g_ = (absorp.g_ > 1e-38f) ? -math::log(absorp.g_) : maxlog;
-				sigma.b_ = (absorp.b_ > 1e-38f) ? -math::log(absorp.b_) : maxlog;
-				if(dist != 0.f) sigma *= 1.f / dist;
-			}
-			mat->absorb_ = true;
-			mat->beer_sigma_a_ = sigma;
-			mat->bsdf_flags_ |= BsdfFlags::Volumetric;
-			// creat volume handler (backwards compatibility)
-			ParamMap map;
-			map["type"] = std::string("beer");
-			map["absorption_col"] = absorp;
-			map["absorption_dist"] = Parameter(dist);
-			mat->vol_i_ = std::unique_ptr<VolumeHandler>(VolumeHandler::factory(logger, scene, name, map));
-			mat->bsdf_flags_ |= BsdfFlags::Volumetric;
-		}
-	}
-
-	std::map<std::string, const ShaderNode *> root_nodes_map;
-	// Prepare our node list
-	root_nodes_map["mirror_color_shader"] = nullptr;
-	root_nodes_map["bump_shader"] = nullptr;
-	root_nodes_map["filter_color_shader"] = nullptr;
-	root_nodes_map["IOR_shader"] = nullptr;
-	root_nodes_map["wireframe_shader"] = nullptr;
-
-	std::vector<const ShaderNode *> root_nodes_list;
-	mat->nodes_map_ = NodeMaterial::loadNodes(nodes_params, scene, logger);
-	if(!mat->nodes_map_.empty()) NodeMaterial::parseNodes(params, root_nodes_list, root_nodes_map, mat->nodes_map_, logger);
-
-	mat->mirror_color_shader_ = root_nodes_map["mirror_color_shader"];
-	mat->bump_shader_ = root_nodes_map["bump_shader"];
-	mat->filter_color_shader_ = root_nodes_map["filter_color_shader"];
-	mat->ior_shader_ = root_nodes_map["IOR_shader"];
-	mat->wireframe_shader_ = root_nodes_map["wireframe_shader"];
-
-	// solve nodes order
-	if(!root_nodes_list.empty())
-	{
-		const std::vector<const ShaderNode *> nodes_sorted = NodeMaterial::solveNodesOrder(root_nodes_list, mat->nodes_map_, logger);
-		if(mat->mirror_color_shader_)
-		{
-			const std::vector<const ShaderNode *> shader_nodes_list = NodeMaterial::getNodeList(mat->mirror_color_shader_, nodes_sorted);
-			mat->color_nodes_.insert(mat->color_nodes_.end(), shader_nodes_list.begin(), shader_nodes_list.end());
-		}
-		if(mat->filter_color_shader_)
-		{
-			const std::vector<const ShaderNode *> shader_nodes_list = NodeMaterial::getNodeList(mat->filter_color_shader_, nodes_sorted);
-			mat->color_nodes_.insert(mat->color_nodes_.end(), shader_nodes_list.begin(), shader_nodes_list.end());
-		}
-		if(mat->ior_shader_)
-		{
-			const std::vector<const ShaderNode *> shader_nodes_list = NodeMaterial::getNodeList(mat->ior_shader_, nodes_sorted);
-			mat->color_nodes_.insert(mat->color_nodes_.end(), shader_nodes_list.begin(), shader_nodes_list.end());
-		}
-		if(mat->wireframe_shader_)
-		{
-			const std::vector<const ShaderNode *> shader_nodes_list = NodeMaterial::getNodeList(mat->wireframe_shader_, nodes_sorted);
-			mat->color_nodes_.insert(mat->color_nodes_.end(), shader_nodes_list.begin(), shader_nodes_list.end());
-		}
-		if(mat->bump_shader_) mat->bump_nodes_ = NodeMaterial::getNodeList(mat->bump_shader_, nodes_sorted);
-	}
-	return mat;
-}
-
 Rgb GlassMaterial::getGlossyColor(const NodeTreeData &node_tree_data) const
 {
-	return mirror_color_shader_ ? mirror_color_shader_->getColor(node_tree_data) : specular_reflection_color_;
+	return shaders_[ShaderNodeType::MirrorColor] ? shaders_[ShaderNodeType::MirrorColor]->getColor(node_tree_data) : params_.mirror_color_;
 }
 
 Rgb GlassMaterial::getTransColor(const NodeTreeData &node_tree_data) const
 {
-	if(filter_color_shader_ || filter_color_.minimum() < .99f)	return (filter_color_shader_ ? filter_color_shader_->getColor(node_tree_data) : filter_color_);
+	if(shaders_[ShaderNodeType::FilterColor] || filter_color_.minimum() < .99f)	return (shaders_[ShaderNodeType::FilterColor] ? shaders_[ShaderNodeType::FilterColor]->getColor(node_tree_data) : filter_color_);
 	else
 	{
 		Rgb tmp_col = beer_sigma_a_;
@@ -426,47 +385,7 @@ Rgb GlassMaterial::getTransColor(const NodeTreeData &node_tree_data) const
 
 Rgb GlassMaterial::getMirrorColor(const NodeTreeData &node_tree_data) const
 {
-	return mirror_color_shader_ ? mirror_color_shader_->getColor(node_tree_data) : specular_reflection_color_;
-}
-
-Rgb MirrorMaterial::sample(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3f &wo, Vec3f &wi, Sample &s, float &w, bool chromatic, float wavelength, const Camera *camera) const
-{
-	wi = Vec3f::reflectDir(sp.n_, wo);
-	s.sampled_flags_ = BsdfFlags::Specular | BsdfFlags::Reflect;
-	w = 1.f;
-	return ref_col_ * (1.f / std::abs(sp.n_ * wi));
-}
-
-Specular MirrorMaterial::getSpecular(int ray_level, const MaterialData *mat_data, const SurfacePoint &sp, const Vec3f &wo, bool chromatic, float wavelength) const
-{
-	Specular specular;
-	specular.reflect_ = std::make_unique<DirectionColor>();
-	specular.reflect_->col_ = ref_col_;
-	const Vec3f n{SurfacePoint::normalFaceForward(sp.ng_, sp.n_, wo)};
-	specular.reflect_->dir_ = Vec3f::reflectDir(n, wo);
-	return specular;
-}
-
-Material *MirrorMaterial::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params, const std::list<ParamMap> &nodes_params)
-{
-	Rgb col(1.0);
-	float refl = 1.0;
-	params.getParam("color", col);
-	params.getParam("reflect", refl);
-	return new MirrorMaterial(logger, col, refl);
-}
-
-
-Rgb NullMaterial::sample(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3f &wo, Vec3f &wi, Sample &s, float &w, bool chromatic, float wavelength, const Camera *camera) const
-{
-	s.pdf_ = 0.f;
-	w = 0.f;
-	return Rgb{0.f};
-}
-
-Material *NullMaterial::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params, const std::list<ParamMap> &nodes_params)
-{
-	return new NullMaterial(logger);
+	return shaders_[ShaderNodeType::MirrorColor] ? shaders_[ShaderNodeType::MirrorColor]->getColor(node_tree_data) : params_.mirror_color_;
 }
 
 } //namespace yafaray

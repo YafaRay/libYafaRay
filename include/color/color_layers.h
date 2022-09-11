@@ -23,7 +23,6 @@
 
 #include "common/layers.h"
 #include "color/color.h"
-#include "common/flags.h"
 
 namespace yafaray {
 

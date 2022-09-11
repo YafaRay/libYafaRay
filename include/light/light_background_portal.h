@@ -39,10 +39,22 @@ class Accelerator;
 class BackgroundPortalLight final : public Light
 {
 	public:
-		static Light *factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params);
+		inline static std::string getClassName() { return "BackgroundPortalLight"; }
+		static std::pair<Light *, ParamError> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params);
+		static std::string printMeta(const std::vector<std::string> &excluded_params) { return Params::meta_.print(excluded_params); }
 
 	private:
-		BackgroundPortalLight(Logger &logger, std::string object_name, int sampl, float pow, bool light_enabled = true, bool cast_shadows = true);
+		[[nodiscard]] Type type() const override { return Type::BackgroundPortal; }
+		const struct Params
+		{
+			PARAM_INIT_PARENT(Light);
+			PARAM_DECL(int, samples_, 16, "samples", "");
+			PARAM_DECL(std::string, object_name_, "", "object_name", "");
+			PARAM_DECL(float, power_, 1.f, "power", "");
+			PARAM_DECL(float, ibl_clamp_sampling_, false, "ibl_clamp_sampling", "A value higher than 0.f 'clamps' the light intersection colors to that value, to reduce light sampling noise at the expense of realism and inexact overall light (0.f disables clamping)");
+		} params_;
+		[[nodiscard]] ParamMap getAsParamMap(bool only_non_default) const override;
+		BackgroundPortalLight(Logger &logger, ParamError &param_error, const std::string &name, const ParamMap &param_map);
 		void init(const Scene &scene) override;
 		Rgb totalEnergy() const override;
 		std::tuple<Ray, float, Rgb> emitPhoton(float s_1, float s_2, float s_3, float s_4, float time) const override;
@@ -51,7 +63,7 @@ class BackgroundPortalLight final : public Light
 		//bool illumSample(const surfacePoint_t &sp, float s1, float s2, Rgb &col, float &ipdf, ray_t &wi) const override;
 		std::pair<bool, Ray> illumSample(const Point3f &surface_p, LSample &s, float time) const override;
 		std::tuple<bool, Ray, Rgb> illuminate(const Point3f &surface_p, float time) const override;
-		int nSamples() const override { return samples_; }
+		int nSamples() const override { return params_.samples_; }
 		bool canIntersect() const override { return accelerator_ != nullptr /* false */ ; }
 		std::tuple<bool, float, Rgb> intersect(const Ray &ray, float &t) const override;
 		float illumPdf(const Point3f &surface_p, const Point3f &light_p, const Vec3f &light_ng) const override;
@@ -59,18 +71,15 @@ class BackgroundPortalLight final : public Light
 		void initIs();
 		std::pair<Point3f, Vec3f> sampleSurface(float s_1, float s_2, float time) const;
 
-		std::string object_name_;
 		std::unique_ptr<Pdf1D> area_dist_;
 		std::vector<const Primitive *> primitives_;
-		int samples_;
 		int num_primitives_; //!< gives the array size of uDist
 		float area_, inv_area_;
-		float power_;
 		Object *base_object_ = nullptr;
 		std::unique_ptr<const Accelerator> accelerator_;
 		const Background *bg_ = nullptr;
 		Point3f world_center_;
-		float a_pdf_;
+		float a_pdf_{0.f};
 };
 
 } //namespace yafaray

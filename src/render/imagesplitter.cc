@@ -48,13 +48,18 @@ ImageSplitter::ImageSplitter(int w, int h, int x_0, int y_0, int bsize, TilesOrd
 		}
 	}
 
-	switch(tilesorder_)
+	switch(tilesorder_.value())
 	{
-		case Random:		std::shuffle(regions_raw.begin(), regions_raw.end(), std::mt19937(std::random_device()()));
-		case CentreRandom:	std::shuffle(regions_.begin(), regions_.end(), std::mt19937(std::random_device()()));
+		case TilesOrderType::Random:
+			std::shuffle(regions_raw.begin(), regions_raw.end(), std::mt19937(std::random_device()()));
+			break;
+		case TilesOrderType::CentreRandom:
+			std::shuffle(regions_.begin(), regions_.end(), std::mt19937(std::random_device()()));
 			std::sort(regions_.begin(), regions_.end(), ImageSpliterCentreSorter(w, h, x_0, y_0));
-		case Linear:		break;
-		default:			break;
+			break;
+		case TilesOrderType::Linear:
+		default:
+			break;
 	}
 
 	std::vector<Region> regions_subdivided;
@@ -89,20 +94,22 @@ ImageSplitter::ImageSplitter(int w, int h, int x_0, int y_0, int bsize, TilesOrd
 		}
 	}
 
-	switch(tilesorder_)
+	switch(tilesorder_.value())
 	{
-		case Random:		std::shuffle(regions_.begin(), regions_.end(), std::mt19937(std::random_device()()));
+		case TilesOrderType::Random:
+			std::shuffle(regions_.begin(), regions_.end(), std::mt19937(std::random_device()()));
 			std::shuffle(regions_subdivided.begin(), regions_subdivided.end(), std::mt19937(std::random_device()()));
 			break;
-		case CentreRandom:	std::shuffle(regions_.begin(), regions_.end(), std::mt19937(std::random_device()()));
+		case TilesOrderType::CentreRandom:
+			std::shuffle(regions_.begin(), regions_.end(), std::mt19937(std::random_device()()));
 			std::sort(regions_.begin(), regions_.end(), ImageSpliterCentreSorter(w, h, x_0, y_0));
 			std::shuffle(regions_subdivided.begin(), regions_subdivided.end(), std::mt19937(std::random_device()()));
 			std::sort(regions_subdivided.begin(), regions_subdivided.end(), ImageSpliterCentreSorter(w, h, x_0, y_0));
 			break;
-		case Linear: 		break;
-		default:			break;
+		case TilesOrderType::Linear:
+		default:
+			break;
 	}
-
 	regions_.insert(regions_.end(), regions_subdivided.begin(), regions_subdivided.end());
 }
 

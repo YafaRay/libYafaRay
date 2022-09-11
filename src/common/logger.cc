@@ -22,9 +22,8 @@
  */
 #include "common/logger.h"
 #include "common/file.h"
-#include "common/badge.h"
+#include "image/badge.h"
 #include <algorithm>
-#include <cmath>
 #include <limits>
 
 namespace yafaray {

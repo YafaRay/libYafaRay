@@ -17,10 +17,11 @@
  *      Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-#ifndef YAFARAY_MATERIAL_BLEND_H
-#define YAFARAY_MATERIAL_BLEND_H
+#ifndef LIBYAFARAY_MATERIAL_BLEND_H
+#define LIBYAFARAY_MATERIAL_BLEND_H
 
 #include "material/material_node.h"
+#include "material/material_data.h"
 
 namespace yafaray {
 
@@ -47,10 +48,31 @@ class BlendMaterialData final : public MaterialData
 class BlendMaterial final : public NodeMaterial
 {
 	public:
-		static Material *factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params, const std::list<ParamMap> &nodes_params);
+		inline static std::string getClassName() { return "BlendMaterial"; }
+		static std::pair<Material *, ParamError> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map, const std::list<ParamMap> &nodes_param_maps);
+		static std::string printMeta(const std::vector<std::string> &excluded_params) { return Params::meta_.print(excluded_params); }
 
 	private:
-		BlendMaterial(Logger &logger, const std::unique_ptr<const Material> *material_1, const std::unique_ptr<const Material> *material_2, float blendv, VisibilityFlags visibility = VisibilityFlags::Visible | VisibilityFlags::CastsShadows);
+		[[nodiscard]] Type type() const override { return Type::Blend; }
+		struct ShaderNodeType : public Enum<ShaderNodeType>
+		{
+			enum : decltype(type()) { Blend, Wireframe, Size }; //Always leave the Size entry at the end!!
+			inline static const EnumMap<decltype(type())> map_{{
+				{"blend_shader", Blend, "Shader node for blend value (float)"},
+				{"wireframe_shader", Wireframe, "Shader node for wireframe shading (float)"},
+			}};
+			bool isBump() { return false; }
+		};
+		const struct Params
+		{
+			PARAM_INIT_PARENT(Material);
+			PARAM_DECL(std::string, material_1_name_, "", "material1", "Name of the first material, must be specified or the blend material exits with an error");
+			PARAM_DECL(std::string, material_2_name_, "", "material2", "Name of the second material, must be specified or the blend material exits with an error");
+			PARAM_DECL(float, blend_value_, 0.5f, "blend_value", "");
+			PARAM_SHADERS_DECL;
+		} params_;
+		[[nodiscard]] ParamMap getAsParamMap(bool only_non_default) const override;
+		BlendMaterial(Logger &logger, ParamError &param_error, const ParamMap &param_map, const std::unique_ptr<const Material> *material_1, const std::unique_ptr<const Material> *material_2);
 		const MaterialData * initBsdf(SurfacePoint &sp, const Camera *camera) const override;
 		Rgb eval(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3f &wo, const Vec3f &wl, BsdfFlags bsdfs, bool force_eval) const override;
 		Rgb sample(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3f &wo, Vec3f &wi, Sample &s, float &w, bool chromatic, float wavelength, const Camera *camera) const override;
@@ -67,14 +89,11 @@ class BlendMaterial final : public NodeMaterial
 		float getBlendVal(const NodeTreeData &node_tree_data) const;
 
 		const std::unique_ptr<const Material> *mat_1_ = nullptr, *mat_2_ = nullptr;
-		const ShaderNode *blend_shader_ = nullptr; //!< the shader node used for blending the materials
-		const ShaderNode *wireframe_shader_ = nullptr;     //!< Shader node for wireframe shading (float)
-		float blend_val_;
-		bool recalc_blend_;
-		float blended_ior_;
+		std::array<const ShaderNode *, static_cast<size_t>(ShaderNodeType::Size)> shaders_{initShaderArray<ShaderNodeType::Size>()};
+		float blended_ior_{1.f};
 };
 
 
 } //namespace yafaray
 
-#endif // YAFARAY_MATERIAL_BLEND_H
+#endif // LIBYAFARAY_MATERIAL_BLEND_H

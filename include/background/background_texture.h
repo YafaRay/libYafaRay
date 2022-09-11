@@ -33,18 +33,37 @@ class Texture;
 class TextureBackground final : public Background
 {
 	public:
-		static const Background * factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params);
+		inline static std::string getClassName() { return "TextureBackground"; }
+		static std::pair<Background *, ParamError> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params);
+		static std::string printMeta(const std::vector<std::string> &excluded_params) { return Params::meta_.print(excluded_params); }
 
 	private:
-		enum Projection { Spherical = 0, Angular };
-		TextureBackground(Logger &logger, const Texture *texture, Projection proj, float bpower, float rot, float ibl_blur);
+		struct Projection : public Enum<Projection>
+		{
+			enum : decltype(type()) { Spherical, Angular };
+			inline static const EnumMap<decltype(type())> map_{{
+					{"sphere", Spherical, ""},
+					{"angular", Angular, ""},
+				}};
+		};
+		[[nodiscard]] Type type() const override { return Type::Texture; }
+		const struct Params
+		{
+			PARAM_INIT_PARENT(Background);
+			PARAM_DECL(float, rotation_, 0.f, "rotation", "");
+			PARAM_DECL(float, ibl_blur_, 0.f, "smartibl_blur", "");
+			PARAM_DECL(float, ibl_clamp_sampling_, 0.f, "ibl_clamp_sampling", "A value higher than 0.f 'clamps' the light intersection colors to that value, to reduce light sampling noise at the expense of realism and inexact overall light (0.f disables clamping)");
+			PARAM_ENUM_DECL(Projection, projection_, Projection::Spherical, "mapping", "");
+			PARAM_DECL(std::string, texture_name_, "", "texture", "");
+		} params_;
+		[[nodiscard]] ParamMap getAsParamMap(bool only_non_default) const override;
+
+		TextureBackground(Logger &logger, ParamError &param_error, const ParamMap &param_map, const Texture *texture);
 		Rgb eval(const Vec3f &dir, bool use_ibl_blur) const override;
 
-		const Texture *tex_;
-		Projection project_;
-		float power_;
-		float rotation_;
+		const Texture *tex_ = nullptr;
 		float sin_r_, cos_r_;
+		float rotation_;
 		bool with_ibl_blur_ = false;
 		float ibl_blur_mipmap_level_; //Calculated based on the IBL_Blur parameter. As mipmap levels have half size each, this parameter is not linear
 };

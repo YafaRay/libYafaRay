@@ -18,8 +18,14 @@
 
 target_sources(libyafaray4
 	PRIVATE
-		noise_generator.cc
 		texture.cc
-		texture_basic.cc
 		texture_image.cc
+		texture_blend.cc
+		texture_distorted_noise.cc
+		texture_marble.cc
+		texture_musgrave.cc
+		texture_rgb_cube.cc
+		texture_voronoi.cc
+		texture_wood.cc
+		texture_clouds.cc
 )

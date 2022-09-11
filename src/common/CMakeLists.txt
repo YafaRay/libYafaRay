@@ -18,13 +18,11 @@
 
 target_sources(libyafaray4
 	PRIVATE
-		badge.cc
 		file.cc
 		layer_definitions.cc
 		layer.cc
 		layers.cc
 		logger.cc
-		param.cc
 		sysinfo.cc
 		timer.cc
 		version_build_info.cc

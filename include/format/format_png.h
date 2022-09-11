@@ -32,14 +32,16 @@ struct PngStructs;
 class PngFormat final : public Format
 {
 	public:
-		explicit PngFormat(Logger &logger) : Format(logger) { }
+		inline static std::string getClassName() { return "PngFormat"; }
+		explicit PngFormat(Logger &logger, ParamError &param_error, const ParamMap &param_map) : Format(logger, param_error, param_map) { }
 
 	private:
+		[[nodiscard]] Type type() const override { return Type::Png; }
 		std::string getFormatName() const override { return "PngFormat"; }
 		Image * loadFromFile(const std::string &name, const Image::Optimization &optimization, const ColorSpace &color_space, float gamma) override;
 		Image * loadFromMemory(const uint8_t *data, size_t size, const Image::Optimization &optimization, const ColorSpace &color_space, float gamma) override;
 		bool saveToFile(const std::string &name, const ImageLayer &image_layer, ColorSpace color_space, float gamma, bool alpha_premultiply) override;
-		Image * readFromStructs(const PngStructs &png_structs, const Image::Optimization &optimization, const ColorSpace &color_space, float gamma);
+		Image *readFromStructs(const PngStructs &png_structs, const Image::Optimization &optimization, const ColorSpace &color_space, float gamma, const std::string &filename);
 		bool fillReadStructs(uint8_t *sig, const PngStructs &png_structs);
 		bool fillWriteStructs(std::FILE *fp, unsigned int color_type, const PngStructs &png_structs, const Image *image);
 };

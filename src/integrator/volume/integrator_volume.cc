@@ -21,24 +21,38 @@
 #include "integrator/volume/integrator_sky.h"
 #include "integrator/volume/integrator_single_scatter.h"
 #include "integrator/volume/integrator_emission.h"
-#include "common/param.h"
+#include "param/param.h"
 #include "scene/scene.h"
 
 namespace yafaray {
 
-VolumeIntegrator * VolumeIntegrator::factory(Logger &logger, RenderControl &render_control, const Scene &scene, const std::string &name, const ParamMap &params)
+VolumeIntegrator::Params::Params(ParamError &param_error, const ParamMap &param_map)
 {
-	if(logger.isDebug())
+}
+
+ParamMap VolumeIntegrator::Params::getAsParamMap(bool only_non_default) const
+{
+	PARAM_SAVE_START;
+	PARAM_SAVE_END;
+}
+
+ParamMap VolumeIntegrator::getAsParamMap(bool only_non_default) const
+{
+	ParamMap result{params_.getAsParamMap(only_non_default)};
+	result.setParam("type", type().print());
+	return result;
+}
+
+std::pair<VolumeIntegrator *, ParamError> VolumeIntegrator::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map)
+{
+	const Type type{ClassMeta::preprocessParamMap<Type>(logger, getClassName(), param_map)};
+	switch(type.value())
 	{
-		logger.logDebug("**VolumeIntegrator");
-		params.logContents(logger);
+		case Type::Emission: return EmissionIntegrator::factory(logger, param_map, scene);
+		case Type::SingleScatter: return SingleScatterIntegrator::factory(logger, param_map, scene);
+		case Type::Sky: return SkyIntegrator::factory(logger, param_map, scene);
+		default: return {nullptr, {ParamError::Flags::ErrorWhileCreating}};
 	}
-	std::string type;
-	params.getParam("type", type);
-	if(type == "EmissionIntegrator") return EmissionIntegrator::factory(logger, render_control, params, scene);
-	else if(type == "SingleScatterIntegrator") return SingleScatterIntegrator::factory(logger, render_control, params, scene);
-	else if(type == "SkyIntegrator") return SkyIntegrator::factory(logger, render_control, params, scene);
-	else return nullptr;
 }
 
 bool VolumeIntegrator::preprocess(FastRandom &fast_random, ImageFilm *image_film, const RenderView *render_view, const Scene &scene)

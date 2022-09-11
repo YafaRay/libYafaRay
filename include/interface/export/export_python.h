@@ -84,7 +84,7 @@ class ExportPython: public Interface
 		int n_uvs_ = 0;
 		unsigned int next_obj_ = 0;
 		float gamma_ = 1.f;
-		ColorSpace color_space_ = ColorSpace::RawManualGamma;
+		ColorSpace color_space_{ColorSpace::Srgb};
 };
 
 } //namespace yafaray

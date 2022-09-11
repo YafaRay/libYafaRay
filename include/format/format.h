@@ -24,8 +24,10 @@
 #ifndef YAFARAY_FORMAT_H
 #define YAFARAY_FORMAT_H
 
+#include "param/class_meta.h"
+#include "common/enum.h"
 #include "image/image.h"
-#include "image/image_buffers.h"
+#include "image/image_pixel_types.h"
 #include <limits>
 
 namespace yafaray {
@@ -34,13 +36,15 @@ class ImageLayers;
 class ImageLayer;
 class ParamMap;
 class Scene;
-enum class ColorSpace : unsigned char;
 
 class Format
 {
 	public:
-		static Format *factory(Logger &logger, const ParamMap &params);
-		explicit Format(Logger &logger) : logger_(logger) { }
+		inline static std::string getClassName() { return "Format"; }
+		[[nodiscard]] virtual ParamMap getAsParamMap(bool only_non_default) const;
+		static std::pair<Format *, ParamError> factory(Logger &logger, const ParamMap &param_map);
+		static std::string printMeta(const std::vector<std::string> &excluded_params) { return Params::meta_.print(excluded_params); }
+		explicit Format(Logger &logger, ParamError &param_error, const ParamMap &param_map) : params_{param_error, param_map}, logger_{logger} { }
 		virtual ~Format() = default;
 		virtual Image *loadFromFile(const std::string &name, const Image::Optimization &optimization, const ColorSpace &color_space, float gamma) = 0;
 		virtual Image *loadFromMemory(const uint8_t *data, size_t size, const Image::Optimization &optimization, const ColorSpace &color_space, float gamma);
@@ -54,6 +58,17 @@ class Format
 		void setGrayScaleSetting(bool grayscale) { grayscale_ = grayscale; }
 
 	protected:
+		struct Type : public Enum<Type>
+		{
+			using Enum::Enum;
+			enum : decltype(type()) { None, Tga, Hdr, Exr, Jpg, Png, Tif };
+			static const EnumMap<decltype(type())> map_; //Type map definitions conditionally defined in the format.cc file
+		};
+		[[nodiscard]] virtual Type type() const = 0;
+		const struct Params
+		{
+			PARAM_INIT;
+		} params_;
 		bool grayscale_ = false; //!< Converts the information loaded from the texture RGB to grayscale to reduce memory usage for bump or mask textures, for example. Alpha is ignored in this case.
 		Logger &logger_;
 		static constexpr inline double inv_31_ = 1.0 / 31.0;

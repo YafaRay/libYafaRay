@@ -23,25 +23,55 @@
 #include "light/light_object_light.h"
 #include "background/background.h"
 #include "texture/texture.h"
-#include "common/param.h"
+#include "param/param.h"
 #include "scene/scene.h"
 #include "sampler/sample.h"
 #include "sampler/sample_pdf1d.h"
 #include "accelerator/accelerator.h"
-#include "geometry/surface.h"
-#include "geometry/object/object_mesh.h"
 #include "geometry/primitive/primitive_face.h"
-#include <limits>
 #include <memory>
 
 namespace yafaray {
 
-ObjectLight::ObjectLight(Logger &logger, const std::string &object_name, const Rgb &col, int sampl, bool dbl_s, bool light_enabled, bool cast_shadows):
-		Light(logger), object_name_(object_name), double_sided_(dbl_s), color_(col), samples_(sampl)
+ObjectLight::Params::Params(ParamError &param_error, const ParamMap &param_map)
 {
-	light_enabled_ = light_enabled;
-	cast_shadows_ = cast_shadows;
-	//initIs();
+	PARAM_LOAD(object_name_);
+	PARAM_LOAD(color_);
+	PARAM_LOAD(power_);
+	PARAM_LOAD(samples_);
+	PARAM_LOAD(double_sided_);
+}
+
+ParamMap ObjectLight::Params::getAsParamMap(bool only_non_default) const
+{
+	PARAM_SAVE_START;
+	PARAM_SAVE(object_name_);
+	PARAM_SAVE(color_);
+	PARAM_SAVE(power_);
+	PARAM_SAVE(samples_);
+	PARAM_SAVE(double_sided_);
+	PARAM_SAVE_END;
+}
+
+ParamMap ObjectLight::getAsParamMap(bool only_non_default) const
+{
+	ParamMap result{Light::getAsParamMap(only_non_default)};
+	result.append(params_.getAsParamMap(only_non_default));
+	return result;
+}
+
+std::pair<Light *, ParamError> ObjectLight::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map)
+{
+	auto param_error{Params::meta_.check(param_map, {"type"}, {})};
+	auto result {new ObjectLight(logger, param_error, name, param_map)};
+	if(param_error.flags_ != ParamError::Flags::Ok) logger.logWarning(param_error.print<ObjectLight>(name, {"type"}));
+	return {result, param_error};
+}
+
+ObjectLight::ObjectLight(Logger &logger, ParamError &param_error, const std::string &name, const ParamMap &param_map):
+		Light{logger, param_error, name, param_map, Flags::None}, params_{param_error, param_map}
+{
+	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + params_.getAsParamMap(true).print());
 }
 
 void ObjectLight::initIs()
@@ -61,19 +91,19 @@ void ObjectLight::initIs()
 	ParamMap params;
 	params["type"] = std::string("yafaray-kdtree-original"); //Do not remove the std::string(), entering directly a string literal can be confused with bool
 	params["depth"] = -1;
-	accelerator_ = std::unique_ptr<const Accelerator>(Accelerator::factory(logger_, primitives_, params));
+	accelerator_ = std::unique_ptr<const Accelerator>(Accelerator::factory(logger_, primitives_, params).first);
 }
 
 void ObjectLight::init(const Scene &scene)
 {
-	base_object_ = scene.getObject(object_name_);
+	base_object_ = scene.getObject(params_.object_name_);
 	if(base_object_)
 	{
 		initIs();
 		// tell the mesh that a meshlight is associated with it (not sure if this is the best place though):
 		base_object_->setLight(this);
 
-		if(logger_.isVerbose()) logger_.logVerbose("ObjectLight: primitives:", num_primitives_, ", double sided:", double_sided_, ", area:", area_, " color:", color_);
+		if(logger_.isVerbose()) logger_.logVerbose("ObjectLight: primitives:", num_primitives_, ", double sided:", params_.double_sided_, ", area:", area_, " color:", color_);
 	}
 }
 
@@ -97,7 +127,7 @@ std::pair<Point3f, Vec3f> ObjectLight::sampleSurface(float s_1, float s_2, float
 	//	++stats[primNum];
 }
 
-Rgb ObjectLight::totalEnergy() const { return (double_sided_ ? 2.f * color_ * area_ : color_ * area_); }
+Rgb ObjectLight::totalEnergy() const { return (params_.double_sided_ ? 2.f * color_ * area_ : color_ * area_); }
 
 std::pair<bool, Ray> ObjectLight::illumSample(const Point3f &surface_p, LSample &s, float time) const
 {
@@ -113,7 +143,7 @@ std::pair<bool, Ray> ObjectLight::illumSample(const Point3f &surface_p, LSample 
 	//no light if point is behind area light (single sided!)
 	if(cos_angle <= 0.f)
 	{
-		if(double_sided_) cos_angle = -cos_angle;
+		if(params_.double_sided_) cos_angle = -cos_angle;
 		else return {};
 	}
 	s.col_ = color_;
@@ -137,7 +167,7 @@ std::tuple<Ray, float, Rgb> ObjectLight::emitPhoton(float s_1, float s_2, float 
 	auto [p, n]{sampleSurface(s_3, s_4, 0.f)};
 	const Uv<Vec3f> duv{Vec3f::createCoordsSystem(n)};
 	Vec3f dir;
-	if(double_sided_)
+	if(params_.double_sided_)
 	{
 		ipdf *= 2.f;
 		if(s_1 > 0.5f) dir = sample::cosHemisphere(-n, duv, (s_1 - 0.5f) * 2.f, s_2);
@@ -155,7 +185,7 @@ std::pair<Vec3f, Rgb> ObjectLight::emitSample(LSample &s, float time) const
 	s.sp_->n_ = s.sp_->ng_;
 	const Uv<Vec3f> duv{Vec3f::createCoordsSystem(s.sp_->ng_)};
 	Vec3f dir;
-	if(double_sided_)
+	if(params_.double_sided_)
 	{
 		if(s.s_1_ > 0.5f) dir = sample::cosHemisphere(-s.sp_->ng_, duv, (s.s_1_ - 0.5f) * 2.f, s.s_2_);
 		else dir = sample::cosHemisphere(s.sp_->ng_, duv, s.s_1_ * 2.f, s.s_2_);
@@ -181,7 +211,7 @@ std::tuple<bool, float, Rgb> ObjectLight::intersect(const Ray &ray, float &t) co
 	float cos_angle = ray.dir_ * (-n);
 	if(cos_angle <= 0.f)
 	{
-		if(double_sided_) cos_angle = std::abs(cos_angle);
+		if(params_.double_sided_) cos_angle = std::abs(cos_angle);
 		else return {};
 	}
 	const float idist_sqr = 1.f / (t * t);
@@ -194,49 +224,15 @@ float ObjectLight::illumPdf(const Point3f &surface_p, const Point3f &light_p, co
 	Vec3f wo{surface_p - light_p};
 	const float r_2 = wo.normalizeAndReturnLengthSquared();
 	const float cos_n = wo * light_ng;
-	return cos_n > 0 ? r_2 * math::num_pi<> / (area_ * cos_n) : (double_sided_ ? r_2 * math::num_pi<> / (area_ * -cos_n) : 0.f);
+	return cos_n > 0 ? r_2 * math::num_pi<> / (area_ * cos_n) : (params_.double_sided_ ? r_2 * math::num_pi<> / (area_ * -cos_n) : 0.f);
 }
 
 std::array<float, 3> ObjectLight::emitPdf(const Vec3f &surface_n, const Vec3f &wo) const
 {
 	const float area_pdf = inv_area_ * math::num_pi<>;
 	const float cos_wo = wo * surface_n;
-	const float dir_pdf = cos_wo > 0.f ? (double_sided_ ? cos_wo * 0.5f : cos_wo) : (double_sided_ ? -cos_wo * 0.5f : 0.f);
+	const float dir_pdf = cos_wo > 0.f ? (params_.double_sided_ ? cos_wo * 0.5f : cos_wo) : (params_.double_sided_ ? -cos_wo * 0.5f : 0.f);
 	return {area_pdf, dir_pdf, cos_wo};
-}
-
-
-Light * ObjectLight::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params)
-{
-	bool double_s = false;
-	Rgb color(1.0);
-	double power = 1.0;
-	int samples = 4;
-	std::string object_name;
-	bool light_enabled = true;
-	bool cast_shadows = true;
-	bool shoot_d = true;
-	bool shoot_c = true;
-	bool p_only = false;
-
-	params.getParam("object_name", object_name);
-	params.getParam("color", color);
-	params.getParam("power", power);
-	params.getParam("samples", samples);
-	params.getParam("double_sided", double_s);
-	params.getParam("light_enabled", light_enabled);
-	params.getParam("cast_shadows", cast_shadows);
-	params.getParam("with_caustic", shoot_c);
-	params.getParam("with_diffuse", shoot_d);
-	params.getParam("photon_only", p_only);
-
-	auto light = new ObjectLight(logger, object_name, color * static_cast<float>(power) * math::num_pi<>, samples, double_s, light_enabled, cast_shadows);
-
-	light->shoot_caustic_ = shoot_c;
-	light->shoot_diffuse_ = shoot_d;
-	light->photon_only_ = p_only;
-
-	return light;
 }
 
 std::tuple<bool, Ray, Rgb> ObjectLight::illuminate(const Point3f &surface_p, float time) const

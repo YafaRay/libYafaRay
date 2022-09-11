@@ -19,13 +19,13 @@
 #include "interface/interface.h"
 #include "render/progress_bar.h"
 #include <memory>
-#include <utility>
 #include "common/version_build_info.h"
 #include "common/logger.h"
 #include "scene/scene.h"
 #include "geometry/matrix.h"
 #include "render/imagefilm.h"
-#include "common/param.h"
+#include "param/param.h"
+#include "param/param_error.h"
 #include "image/image_output.h"
 #if defined(_WIN32)
 #include <windows.h>
@@ -169,7 +169,7 @@ void Interface::paramsSetMatrix(std::string &&name, Matrix4f &&matrix, bool tran
 
 void Interface::setInputColorSpace(const std::string &color_space_string, float gamma_val) noexcept
 {
-	input_color_space_ = Rgb::colorSpaceFromName(color_space_string);
+	input_color_space_.initFromString(color_space_string);
 	input_gamma_ = gamma_val;
 }
 
@@ -192,20 +192,20 @@ void Interface::paramsEndList() noexcept
 }
 
 Object *Interface::createObject(std::string &&name) noexcept { return scene_->createObject(std::move(name), std::move(*params_)); }
-Light *Interface::createLight(std::string &&name) noexcept { return scene_->createLight(std::move(name), std::move(*params_)); }
-Texture *Interface::createTexture(std::string &&name) noexcept { return scene_->createTexture(std::move(name), std::move(*params_)); }
-const Material *Interface::createMaterial(std::string &&name) noexcept { return scene_->createMaterial(std::move(name), std::move(*params_), std::move(nodes_params_))->get(); }
-const Camera * Interface::createCamera(std::string &&name) noexcept { return scene_->createCamera(std::move(name), std::move(*params_)); }
-const Background *Interface::defineBackground() noexcept { return scene_->defineBackground(std::move(*params_)); }
-SurfaceIntegrator *Interface::defineSurfaceIntegrator() noexcept { return scene_->defineSurfaceIntegrator(std::move(*params_)); }
-VolumeIntegrator *Interface::defineVolumeIntegrator() noexcept { return scene_->defineVolumeIntegrator(std::move(*params_)); }
-VolumeRegion *Interface::createVolumeRegion(std::string &&name) noexcept { return scene_->createVolumeRegion(std::move(name), std::move(*params_)); }
-RenderView *Interface::createRenderView(std::string &&name) noexcept { return scene_->createRenderView(std::move(name), std::move(*params_)); }
-Image *Interface::createImage(std::string &&name) noexcept { return scene_->createImage(std::move(name), std::move(*params_)).get(); }
+Light *Interface::createLight(std::string &&name) noexcept { return scene_->createLight(std::move(name), std::move(*params_)).first; }
+Texture *Interface::createTexture(std::string &&name) noexcept { return scene_->createTexture(std::move(name), std::move(*params_)).first; }
+const Material *Interface::createMaterial(std::string &&name) noexcept { return scene_->createMaterial(std::move(name), std::move(*params_), std::move(nodes_params_)).first->get(); }
+const Camera * Interface::createCamera(std::string &&name) noexcept { return scene_->createCamera(std::move(name), std::move(*params_)).first; }
+const Background *Interface::defineBackground() noexcept { return scene_->defineBackground(std::move(*params_)).first; }
+SurfaceIntegrator *Interface::defineSurfaceIntegrator() noexcept { return scene_->defineSurfaceIntegrator(std::move(*params_)).first; }
+VolumeIntegrator *Interface::defineVolumeIntegrator() noexcept { return scene_->defineVolumeIntegrator(std::move(*params_)).first; }
+VolumeRegion *Interface::createVolumeRegion(std::string &&name) noexcept { return scene_->createVolumeRegion(std::move(name), std::move(*params_)).first; }
+RenderView *Interface::createRenderView(std::string &&name) noexcept { return scene_->createRenderView(std::move(name), std::move(*params_)).first; }
+Image *Interface::createImage(std::string &&name) noexcept { return scene_->createImage(std::move(name), std::move(*params_)).first.get(); }
 
 ImageOutput *Interface::createOutput(std::string &&name) noexcept
 {
-	return scene_->createOutput(std::move(name), std::move(*params_));
+	return scene_->createOutput(std::move(name), std::move(*params_)).first;
 }
 
 void Interface::setRenderNotifyViewCallback(yafaray_RenderNotifyViewCallback_t callback, void *callback_data) noexcept

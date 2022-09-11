@@ -44,7 +44,7 @@ int main()
 
 	yafaray_Interface_t *yi = yafaray_createInterface(YAFARAY_INTERFACE_FOR_RENDERING, NULL, NULL, NULL, YAFARAY_DISPLAY_CONSOLE_NORMAL);
 	yafaray_setConsoleLogColorsEnabled(yi, YAFARAY_BOOL_TRUE);
-	yafaray_setConsoleVerbosityLevel(yi, YAFARAY_LOG_LEVEL_DEBUG);
+	yafaray_setConsoleVerbosityLevel(yi, YAFARAY_LOG_LEVEL_VERBOSE);
 
 	yafaray_paramsSetString(yi, "type", "yafaray");
 	yafaray_createScene(yi);
@@ -59,12 +59,9 @@ int main()
 	yafaray_paramsSetFloat(yi, "adj_saturation", 1);
 	yafaray_paramsSetString(yi, "color_mode", "position");
 	yafaray_paramsSetString(yi, "distance_metric", "minkovsky");
-	yafaray_paramsSetFloat(yi, "ewa_max_anisotropy", 8);
-	yafaray_paramsSetBool(yi, "img_grayscale", YAFARAY_BOOL_FALSE);
 	yafaray_paramsSetFloat(yi, "intensity", 1);
 	yafaray_paramsSetFloat(yi, "mk_exponent", 2.5);
 	yafaray_paramsSetFloat(yi, "size", 1);
-	yafaray_paramsSetFloat(yi, "trilinear_level_bias", 0);
 	yafaray_paramsSetString(yi, "type", "voronoi");
 	yafaray_paramsSetFloat(yi, "weight1", 1);
 	yafaray_paramsSetFloat(yi, "weight2", 0);
@@ -3511,7 +3508,7 @@ int main()
 	yafaray_paramsSetInt(yi, "num_vertices", 4);
 	yafaray_paramsSetInt(yi, "object_index", 0);
 	yafaray_paramsSetString(yi, "type", "mesh");
-	yafaray_paramsSetString(yi, "visibility", "visible");
+	yafaray_paramsSetString(yi, "visibility", "normal");
 	yafaray_createObject(yi, "Plane");
 	yafaray_paramsClearAll(yi);
 
@@ -3532,7 +3529,7 @@ int main()
 	yafaray_paramsSetInt(yi, "num_vertices", 8);
 	yafaray_paramsSetInt(yi, "object_index", 0);
 	yafaray_paramsSetString(yi, "type", "mesh");
-	yafaray_paramsSetString(yi, "visibility", "visible");
+	yafaray_paramsSetString(yi, "visibility", "normal");
 	yafaray_createObject(yi, "Cube");
 	yafaray_paramsClearAll(yi);
 
@@ -3567,7 +3564,7 @@ int main()
 	yafaray_paramsSetInt(yi, "num_vertices", 482);
 	yafaray_paramsSetInt(yi, "object_index", 0);
 	yafaray_paramsSetString(yi, "type", "mesh");
-	yafaray_paramsSetString(yi, "visibility", "visible");
+	yafaray_paramsSetString(yi, "visibility", "normal");
 	yafaray_createObject(yi, "Sphere");
 	yafaray_paramsClearAll(yi);
 
@@ -5074,13 +5071,11 @@ int main()
 	yafaray_paramsSetFloat(yi, "c_var", 1);
 	yafaray_paramsSetBool(yi, "cast_shadows", YAFARAY_BOOL_TRUE);
 	yafaray_paramsSetBool(yi, "cast_shadows_sun", YAFARAY_BOOL_TRUE);
-	yafaray_paramsSetBool(yi, "clamp_rgb", YAFARAY_BOOL_FALSE);
 	yafaray_paramsSetString(yi, "color_space", "sRGB (D65)");
 	yafaray_paramsSetFloat(yi, "d_var", 1);
 	yafaray_paramsSetFloat(yi, "e_var", 1);
 	yafaray_paramsSetFloat(yi, "exposure", 1);
 	yafaray_paramsSetVector(yi, "from", 0.413174, 0.48503, 0.770736);
-	yafaray_paramsSetBool(yi, "gamma_enc", YAFARAY_BOOL_TRUE);
 	yafaray_paramsSetInt(yi, "light_samples", 1);
 	yafaray_paramsSetBool(yi, "night", YAFARAY_BOOL_FALSE);
 	yafaray_paramsSetFloat(yi, "power", 0.45);
@@ -5097,24 +5092,24 @@ int main()
 	yafaray_paramsSetBool(yi, "bg_transp", YAFARAY_BOOL_FALSE);
 	yafaray_paramsSetBool(yi, "bg_transp_refract", YAFARAY_BOOL_FALSE);
 	yafaray_paramsSetInt(yi, "bounces", 4);
-	yafaray_paramsSetInt(yi, "cPhotons", 500000);
-	yafaray_paramsSetFloat(yi, "causticRadius", 1);
+	yafaray_paramsSetInt(yi, "caustic_photons", 500000);
+	yafaray_paramsSetFloat(yi, "caustic_radius", 1);
 	yafaray_paramsSetInt(yi, "caustic_mix", 100);
 	yafaray_paramsSetBool(yi, "caustics", YAFARAY_BOOL_FALSE);
 	yafaray_paramsSetBool(yi, "diffuse", YAFARAY_BOOL_FALSE);
-	yafaray_paramsSetFloat(yi, "diffuseRadius", 1);
+	yafaray_paramsSetFloat(yi, "diffuse_radius", 1);
 	yafaray_paramsSetBool(yi, "do_AO", YAFARAY_BOOL_FALSE);
 	yafaray_paramsSetInt(yi, "fg_bounces", 3);
 	yafaray_paramsSetInt(yi, "fg_samples", 16);
 	yafaray_paramsSetBool(yi, "finalGather", YAFARAY_BOOL_TRUE);
 	yafaray_paramsSetString(yi, "photon_maps_processing", "generate-only");
-	yafaray_paramsSetInt(yi, "photons", 500000);
+	yafaray_paramsSetInt(yi, "diffuse_photons", 500000);
 	yafaray_paramsSetInt(yi, "raydepth", 10);
-	yafaray_paramsSetInt(yi, "search", 100);
+	yafaray_paramsSetInt(yi, "diffuse_search", 100);
 	yafaray_paramsSetInt(yi, "shadowDepth", 2);
 	yafaray_paramsSetBool(yi, "show_map", YAFARAY_BOOL_FALSE);
 	yafaray_paramsSetBool(yi, "transpShad", YAFARAY_BOOL_FALSE);
-	yafaray_paramsSetString(yi, "type", "directlighting");
+	yafaray_paramsSetString(yi, "type", "photonmapping");
 	yafaray_defineSurfaceIntegrator(yi);
 	yafaray_paramsClearAll(yi);
 

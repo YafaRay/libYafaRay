@@ -28,6 +28,7 @@
 #include "geometry/primitive/primitive.h"
 #include "color/color.h"
 #include "material/material.h"
+#include "material/material_data.h"
 #include "math/interpolation.h"
 
 namespace yafaray {

@@ -21,36 +21,41 @@
  */
 
 #include "camera/camera_orthographic.h"
-#include "common/param.h"
+#include "param/param.h"
+#include "common/logger.h"
 
 namespace yafaray {
 
-OrthographicCamera::Params::Params(const ParamMap &param_map)
+OrthographicCamera::Params::Params(ParamError &param_error, const ParamMap &param_map)
 {
-	param_map.getParam("scale", scale_);
+	PARAM_LOAD(scale_);
 }
 
-ParamMap OrthographicCamera::Params::getAsParamMap() const
+ParamMap OrthographicCamera::Params::getAsParamMap(bool only_non_default) const
 {
-	ParamMap result;
-	result["scale"] = scale_;
+	PARAM_SAVE_START;
+	PARAM_SAVE(scale_);
+	PARAM_SAVE_END;
+}
+
+ParamMap OrthographicCamera::getAsParamMap(bool only_non_default) const
+{
+	ParamMap result{Camera::getAsParamMap(only_non_default)};
+	result.append(params_.getAsParamMap(only_non_default));
 	return result;
 }
 
-ParamMap OrthographicCamera::getAsParamMap() const
+std::pair<Camera *, ParamError> OrthographicCamera::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map)
 {
-	ParamMap result{Camera::params_.getAsParamMap()};
-	result.append(params_.getAsParamMap());
-	return result;
+	auto param_error{Params::meta_.check(param_map, {"type"}, {})};
+	auto result {new OrthographicCamera(logger, param_error, param_map)};
+	if(param_error.flags_ != ParamError::Flags::Ok) logger.logWarning(param_error.print<OrthographicCamera>(name, {"type"}));
+	return {result, param_error};
 }
 
-const Camera * OrthographicCamera::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map)
+OrthographicCamera::OrthographicCamera(Logger &logger, ParamError &param_error, const ParamMap &param_map) : Camera{logger, param_error, param_map}, params_{param_error, param_map}
 {
-	return new OrthographicCamera(logger, param_map, param_map);
-}
-
-OrthographicCamera::OrthographicCamera(Logger &logger, const Camera::Params &camera_params, const Params &params) : Camera{logger, camera_params}, params_{params}
-{
+	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + params_.getAsParamMap(true).print());
 	// Initialize camera specific plane coordinates
 	setAxis(cam_x_, cam_y_, cam_z_);
 }

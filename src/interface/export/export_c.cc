@@ -20,7 +20,8 @@
 #include "common/logger.h"
 #include "scene/scene.h"
 #include "geometry/matrix.h"
-#include "common/param.h"
+#include "param/param.h"
+#include "render/progress_bar.h"
 
 namespace yafaray {
 
@@ -60,7 +61,7 @@ std::string ExportC::generateMain() const
 	ss << "{\n";
 	ss << "\t" << "yafaray_Interface_t *yi = yafaray_createInterface(YAFARAY_INTERFACE_FOR_RENDERING, NULL, NULL, NULL, YAFARAY_DISPLAY_CONSOLE_NORMAL);\n";
 	ss << "\t" << "yafaray_setConsoleLogColorsEnabled(yi, YAFARAY_BOOL_TRUE);\n";
-	ss << "\t" << "yafaray_setConsoleVerbosityLevel(yi, YAFARAY_LOG_LEVEL_DEBUG);\n\n";
+	ss << "\t" << "yafaray_setConsoleVerbosityLevel(yi, YAFARAY_LOG_LEVEL_VERBOSE);\n\n";
 	ss << generateSectionsCalls();
 	ss << "\n\t" << "yafaray_render(yi, NULL, NULL, YAFARAY_DISPLAY_CONSOLE_NORMAL);\n";
 	ss << "\n\t" << "yafaray_destroyInterface(yi);\n\n";
@@ -501,7 +502,7 @@ void ExportC::render(std::unique_ptr<ProgressBar> progress_bar) noexcept
 
 void ExportC::setColorSpace(const std::string& color_space_string, float gamma_val) noexcept
 {
-	color_space_ = Rgb::colorSpaceFromName(color_space_string, ColorSpace::Srgb);
+	color_space_.initFromString(color_space_string);
 	gamma_ = gamma_val;
 }
 

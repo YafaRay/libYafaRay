@@ -39,10 +39,23 @@ class Scene;
 class ObjectLight final : public Light
 {
 	public:
-		static Light *factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params);
+		inline static std::string getClassName() { return "ObjectLight"; }
+		static std::pair<Light *, ParamError> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params);
+		static std::string printMeta(const std::vector<std::string> &excluded_params) { return Params::meta_.print(excluded_params); }
 
 	private:
-		ObjectLight(Logger &logger, const std::string &object_name, const Rgb &col, int sampl, bool dbl_s = false, bool light_enabled = true, bool cast_shadows = true);
+		[[nodiscard]] Type type() const override { return Type::Object; }
+		const struct Params
+		{
+			PARAM_INIT_PARENT(Light);
+			PARAM_DECL(std::string, object_name_, "", "object_name", "");
+			PARAM_DECL(Rgb, color_, Rgb{0.f}, "color", "");
+			PARAM_DECL(float, power_, 1.f, "power", "");
+			PARAM_DECL(int, samples_, 4, "samples", "");
+			PARAM_DECL(bool, double_sided_, false, "double_sided", "");
+		} params_;
+		[[nodiscard]] ParamMap getAsParamMap(bool only_non_default) const override;
+		ObjectLight(Logger &logger, ParamError &param_error, const std::string &name, const ParamMap &param_map);
 		void init(const Scene &scene) override;
 		Rgb totalEnergy() const override;
 		std::tuple<Ray, float, Rgb> emitPhoton(float s_1, float s_2, float s_3, float s_4, float time) const override;
@@ -50,7 +63,7 @@ class ObjectLight final : public Light
 		bool diracLight() const override { return false; }
 		std::pair<bool, Ray> illumSample(const Point3f &surface_p, LSample &s, float time) const override;
 		std::tuple<bool, Ray, Rgb> illuminate(const Point3f &surface_p, float time) const override;
-		int nSamples() const override { return samples_; }
+		int nSamples() const override { return params_.samples_; }
 		bool canIntersect() const override { return accelerator_ != nullptr; }
 		std::tuple<bool, float, Rgb> intersect(const Ray &ray, float &t) const override;
 		float illumPdf(const Point3f &surface_p, const Point3f &light_p, const Vec3f &light_ng) const override;
@@ -58,12 +71,9 @@ class ObjectLight final : public Light
 		void initIs();
 		std::pair<Point3f, Vec3f> sampleSurface(float s_1, float s_2, float time) const;
 
-		std::string object_name_;
-		bool double_sided_;
-		Rgb color_;
+		const Rgb color_{params_.color_ * params_.power_ * math::num_pi<>};
 		std::unique_ptr<Pdf1D> area_dist_;
 		std::vector<const Primitive *> primitives_;
-		int samples_;
 		int num_primitives_; //!< gives the array size of uDist
 		float area_, inv_area_;
 		Object *base_object_ = nullptr;

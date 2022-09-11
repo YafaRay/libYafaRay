@@ -18,7 +18,6 @@
 
 #include "geometry/surface.h"
 #include "geometry/ray.h"
-#include "geometry/primitive/primitive.h"
 #include "math/interpolation.h"
 
 namespace yafaray {

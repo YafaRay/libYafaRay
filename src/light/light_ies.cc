@@ -25,27 +25,68 @@
 #include "sampler/sample.h"
 #include "light/light_ies_data.h"
 #include "geometry/ray.h"
-#include "common/param.h"
+#include "param/param.h"
 
 namespace yafaray {
 
-IesLight::IesLight(Logger &logger, const Point3f &from, const Point3f &to, const Rgb &col, float power, const std::string &ies_file, int smpls, bool s_sha, float ang, bool b_light_enabled, bool b_cast_shadows):
-		Light(logger, Light::Flags::Singular), position_(from), samples_(smpls), soft_shadow_(s_sha)
+IesLight::Params::Params(ParamError &param_error, const ParamMap &param_map)
 {
-	light_enabled_ = b_light_enabled;
-	cast_shadows_ = b_cast_shadows;
-	ies_data_ = std::make_unique<IesData>();
+	PARAM_LOAD(from_);
+	PARAM_LOAD(to_);
+	PARAM_LOAD(color_);
+	PARAM_LOAD(power_);
+	PARAM_LOAD(file_);
+	PARAM_LOAD(samples_);
+	PARAM_LOAD(soft_shadows_);
+	PARAM_LOAD(cone_angle_);
+}
 
-	if((ies_ok_ = ies_data_->parseIesFile(logger, ies_file)))
+ParamMap IesLight::Params::getAsParamMap(bool only_non_default) const
+{
+	PARAM_SAVE_START;
+	PARAM_SAVE(from_);
+	PARAM_SAVE(to_);
+	PARAM_SAVE(color_);
+	PARAM_SAVE(power_);
+	PARAM_SAVE(file_);
+	PARAM_SAVE(samples_);
+	PARAM_SAVE(soft_shadows_);
+	PARAM_SAVE(cone_angle_);
+	PARAM_SAVE_END;
+}
+
+ParamMap IesLight::getAsParamMap(bool only_non_default) const
+{
+	ParamMap result{Light::getAsParamMap(only_non_default)};
+	result.append(params_.getAsParamMap(only_non_default));
+	return result;
+}
+
+std::pair<Light *, ParamError> IesLight::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map)
+{
+	auto param_error{Params::meta_.check(param_map, {"type"}, {})};
+	auto result {new IesLight(logger, param_error, name, param_map)};
+	if(param_error.flags_ != ParamError::Flags::Ok) logger.logWarning(param_error.print<IesLight>(name, {"type"}));
+	if(!result->isIesOk()) return {nullptr, {ParamError::Flags::ErrorWhileCreating}};
+	return {result, param_error};
+}
+
+IesLight::IesLight(Logger &logger, ParamError &param_error, const std::string &name, const ParamMap &param_map):
+		Light{logger, param_error, name, param_map, Light::Flags::Singular}, params_{param_error, param_map},
+		ies_data_{std::make_unique<IesData>()},
+		ies_ok_{ies_data_->parseIesFile(logger, params_.file_)}
+{
+	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + params_.getAsParamMap(true).print());
+	if(ies_ok_)
 	{
-		ndir_ = (from - to);
+		ndir_ = (params_.from_ - params_.to_);
 		ndir_.normalize();
 		dir_ = -ndir_;
 
 		duv_ = Vec3f::createCoordsSystem(dir_);
 		cos_end_ = math::cos(ies_data_->getMaxVAngle());
 
-		color_ = col * power;
+		color_ = params_.color_ * params_.power_;
 		tot_energy_ = math::mult_pi_by_2<> * (1.f - 0.5f * cos_end_);
 	}
 }
@@ -61,7 +102,7 @@ Uv<float> IesLight::getAngles(const Vec3f &dir, float costheta)
 std::tuple<bool, Ray, Rgb> IesLight::illuminate(const Point3f &surface_p, float time) const
 {
 	if(photonOnly()) return {};
-	Vec3f ldir{position_ - surface_p};
+	Vec3f ldir{params_.from_ - surface_p};
 	const float dist_sqrt = ldir.lengthSquared();
 	const float dist = math::sqrt(dist_sqrt);
 	const float i_dist_sqrt = 1.f / dist_sqrt;
@@ -78,7 +119,7 @@ std::tuple<bool, Ray, Rgb> IesLight::illuminate(const Point3f &surface_p, float 
 std::pair<bool, Ray> IesLight::illumSample(const Point3f &surface_p, LSample &s, float time) const
 {
 	if(photonOnly()) return {};
-	Vec3f ldir{position_ - surface_p};
+	Vec3f ldir{params_.from_ - surface_p};
 	const float dist_sqrt = ldir.lengthSquared();
 	const float dist = math::sqrt(dist_sqrt);
 	const float i_dist_sqrt = 1.f / dist_sqrt;
@@ -103,13 +144,13 @@ std::tuple<Ray, float, Rgb> IesLight::emitPhoton(float s_1, float s_2, float s_3
 	if(cos_a < cos_end_) return {};
 	const Uv<float> uv{getAngles(dir, cos_a)};
 	const float rad = ies_data_->getRadiance(uv.u_, uv.v_);
-	Ray ray{position_, std::move(dir), time};
+	Ray ray{params_.from_, std::move(dir), time};
 	return {std::move(ray), rad, color_};
 }
 
 std::pair<Vec3f, Rgb> IesLight::emitSample(LSample &s, float time) const
 {
-	s.sp_->p_ = position_;
+	s.sp_->p_ = params_.from_;
 	s.flags_ = flags_;
 	Vec3f dir{sample::cone(dir_, duv_, cos_end_, s.s_3_, s.s_4_)};
 	const Uv<float> uv{getAngles(dir, dir * dir_)};
@@ -132,47 +173,6 @@ std::array<float, 3> IesLight::emitPdf(const Vec3f &surface_n, const Vec3f &wo) 
 		dir_pdf = (rad > 0.f) ? (tot_energy_ / rad) : 0.f;
 	}
 	return {area_pdf, dir_pdf, cos_wo};
-}
-
-Light * IesLight::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params)
-{
-	Point3f from{{0.f, 0.f, 0.f}};
-	Point3f to{{0.f, 0.f, -1.f}};
-	Rgb color(1.0);
-	float power = 1.0;
-	std::string file;
-	int sam = 16; //wild goose... sorry guess :D
-	bool s_sha = false;
-	float ang = 180.f; //full hemi
-	bool light_enabled = true;
-	bool cast_shadows = true;
-	bool shoot_d = true;
-	bool shoot_c = true;
-	bool p_only = false;
-
-	params.getParam("from", from);
-	params.getParam("to", to);
-	params.getParam("color", color);
-	params.getParam("power", power);
-	params.getParam("file", file);
-	params.getParam("samples", sam);
-	params.getParam("soft_shadows", s_sha);
-	params.getParam("cone_angle", ang);
-	params.getParam("light_enabled", light_enabled);
-	params.getParam("cast_shadows", cast_shadows);
-	params.getParam("with_caustic", shoot_c);
-	params.getParam("with_diffuse", shoot_d);
-	params.getParam("photon_only", p_only);
-
-	auto light = new IesLight(logger, from, to, color, power, file, sam, s_sha, ang, light_enabled, cast_shadows);
-
-	if(!light->isIesOk()) return nullptr;
-
-	light->shoot_caustic_ = shoot_c;
-	light->shoot_diffuse_ = shoot_d;
-	light->photon_only_ = p_only;
-
-	return light;
 }
 
 } //namespace yafaray

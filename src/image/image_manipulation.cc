@@ -54,7 +54,7 @@ Image *image_manipulation::getComposedImage(Logger &logger, const Image *image_1
 	const int height_2 = image_2->getHeight();
 	int width = width_1;
 	int height = height_1;
-	switch(position_image_2)
+	switch(position_image_2.value())
 	{
 		case Image::Position::Bottom:
 		case Image::Position::Top: height += height_2; break;
@@ -63,51 +63,55 @@ Image *image_manipulation::getComposedImage(Logger &logger, const Image *image_1
 		case Image::Position::Overlay: break;
 		default: return nullptr;
 	}
-	auto result = Image::factory(logger, {{width, height}}, image_1->getType(), image_1->getOptimization());
+	Image::Params image_params;
+	image_params.width_ = width;
+	image_params.height_ = height;
+	image_params.type_ = image_1->getType();
+	image_params.image_optimization_ = image_1->getOptimization();
+	auto result = Image::factory(image_params);
 
 	for(int x = 0; x < width; ++x)
 	{
 		for(int y = 0; y < height; ++y)
 		{
 			Rgba color;
-			if(position_image_2 == Image::Position::Top)
+			switch(position_image_2.value())
 			{
-				if(y < height_2 && x < width_2) color = image_2->getColor({{x, y}});
-				else if(y >= height_2) color = image_1->getColor({{x, y - height_2}});
-			}
-			else if(position_image_2 == Image::Position::Bottom)
-			{
-				if(y >= height_1 && x < width_2) color = image_2->getColor({{x, y - height_1}});
-				else if(y < height_1) color = image_1->getColor({{x, y}});
-			}
-			else if(position_image_2 == Image::Position::Left)
-			{
-				if(x < width_2 && y < height_2) color = image_2->getColor({{x, y}});
-				else if(x > width_2) color = image_1->getColor({{x - width_2, y}});
-			}
-			else if(position_image_2 == Image::Position::Right)
-			{
-				if(x >= width_1 && y < height_2) color = image_2->getColor({{x - width_1, y}});
-				else if(x < width_1) color = image_1->getColor({{x, y}});
-			}
-			else if(position_image_2 == Image::Position::Overlay)
-			{
-				if(x >= overlay_x && x < overlay_x + width_2 && y >= overlay_y && y < overlay_y + height_2) color = image_2->getColor({{x - overlay_x, y - overlay_y}});
-				else color = image_1->getColor({{x, y}});
+				case Image::Position::Bottom:
+					if(y >= height_1 && x < width_2) color = image_2->getColor({{x, y - height_1}});
+					else if(y < height_1) color = image_1->getColor({{x, y}});
+					break;
+				case Image::Position::Left:
+					if(x < width_2 && y < height_2) color = image_2->getColor({{x, y}});
+					else if(x > width_2) color = image_1->getColor({{x - width_2, y}});
+					break;
+				case Image::Position::Right:
+					if(x >= width_1 && y < height_2) color = image_2->getColor({{x - width_1, y}});
+					else if(x < width_1) color = image_1->getColor({{x, y}});
+					break;
+				case Image::Position::Overlay:
+					if(x >= overlay_x && x < overlay_x + width_2 && y >= overlay_y && y < overlay_y + height_2) color = image_2->getColor({{x - overlay_x, y - overlay_y}});
+					else color = image_1->getColor({{x, y}});
+					break;
+				case Image::Position::Top:
+				default:
+					if(y < height_2 && x < width_2) color = image_2->getColor({{x, y}});
+					else if(y >= height_2) color = image_1->getColor({{x, y - height_2}});
+					break;
 			}
 			result->setColor({{x, y}}, color);
 		}
 	}
 	return result;
 }
-void image_manipulation::generateDebugFacesEdges(ImageLayers &film_image_layers, int xstart, int width, int ystart, int height, bool drawborder, const EdgeToonParams &edge_params, const ImageBuffer2D<Gray> &weights)
+void image_manipulation::generateDebugFacesEdges(ImageLayers &film_image_layers, int xstart, int width, int ystart, int height, bool drawborder, const EdgeToonParams &edge_params, const Buffer2D<Gray> &weights)
 {
 #ifdef HAVE_OPENCV
 	image_manipulation_opencv::generateDebugFacesEdges(film_image_layers, xstart, width, ystart, height, drawborder, edge_params, weights);
 #endif //HAVE_OPENCV
 }
 
-void image_manipulation::generateToonAndDebugObjectEdges(ImageLayers &film_image_layers, int xstart, int width, int ystart, int height, bool drawborder, const EdgeToonParams &edge_params, const ImageBuffer2D<Gray> &weights)
+void image_manipulation::generateToonAndDebugObjectEdges(ImageLayers &film_image_layers, int xstart, int width, int ystart, int height, bool drawborder, const EdgeToonParams &edge_params, const Buffer2D<Gray> &weights)
 {
 #ifdef HAVE_OPENCV
 	image_manipulation_opencv::generateToonAndDebugObjectEdges(film_image_layers, xstart, width, ystart, height, drawborder, edge_params, weights);

@@ -18,55 +18,78 @@
  *      Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
+
 #include "geometry/primitive/primitive_sphere.h"
 #include "geometry/surface.h"
-#include "common/param.h"
+#include "param/param.h"
+#include "scene/scene.h"
 
 namespace yafaray {
 
-Primitive *SpherePrimitive::factory(const ParamMap &params, const Scene &scene, const Object &object)
+SpherePrimitive::Params::Params(ParamError &param_error, const ParamMap &param_map)
 {
-/*	if(logger_.isDebug())
-	{
-		logger.logDebug("**SpherePrimitive");
-		params.logContents();
-	}*/
-	Point3f center{{0.f, 0.f, 0.f}};
-	double radius(1.f);
+	PARAM_LOAD(center_);
+	PARAM_LOAD(radius_);
+	PARAM_LOAD(material_name_);
+}
+
+ParamMap SpherePrimitive::Params::getAsParamMap(bool only_non_default) const
+{
+	PARAM_SAVE_START;
+	PARAM_SAVE(center_);
+	PARAM_SAVE(radius_);
+	PARAM_SAVE(material_name_);
+	PARAM_SAVE_END;
+}
+
+ParamMap SpherePrimitive::getAsParamMap(bool only_non_default) const
+{
+	ParamMap result{params_.getAsParamMap(only_non_default)};
+	return result;
+}
+
+std::pair<SpherePrimitive *, ParamError> SpherePrimitive::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map, const Object &object)
+{
+	if(logger.isDebug()) logger.logDebug("**" + getClassName() + "::factory 'raw' ParamMap\n" + param_map.logContents());
+	auto param_error{Params::meta_.check(param_map, {"type"}, {})};
+	const Params params{param_error, param_map};
 	const std::unique_ptr<const Material> *material;
-	std::string matname;
-	params.getParam("center", center);
-	params.getParam("radius", radius);
-	params.getParam("material", matname);
-	if(matname.empty()) return nullptr;
-	material = scene.getMaterial(matname);
-	if(!material) return nullptr;
-	return new SpherePrimitive(center, radius, material, object);
+	if(params.material_name_.empty()) return {nullptr, {ParamError::Flags::ErrorWhileCreating}};
+	material = scene.getMaterial(params.material_name_);
+	if(!material) return {nullptr, {ParamError::Flags::ErrorWhileCreating}};
+	auto result {new SpherePrimitive(logger, param_error, params, material, object)};
+	if(param_error.flags_ != ParamError::Flags::Ok) logger.logWarning(param_error.print<SpherePrimitive>(name, {"type"}));
+	return {result, param_error};
+}
+
+SpherePrimitive::SpherePrimitive(Logger &logger, ParamError &param_error, Params params, const std::unique_ptr<const Material> *material, const Object &base_object) : params_{std::move(params)}, base_object_{base_object}, material_{material}
+{
+	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + params_.getAsParamMap(true).print());
 }
 
 Bound<float> SpherePrimitive::getBound() const
 {
-	const Vec3f r{radius_ * 1.0001f};
-	return {center_ - r, center_ + r};
+	const Vec3f r{params_.radius_ * 1.0001f};
+	return {params_.center_ - r, params_.center_ + r};
 }
 
 Bound<float> SpherePrimitive::getBound(const Matrix4f &obj_to_world) const
 {
-	const Vec3f r{radius_ * 1.0001f};
-	return {center_ - r, center_ + r};
+	const Vec3f r{params_.radius_ * 1.0001f};
+	return {params_.center_ - r, params_.center_ + r};
 }
 
 std::pair<float, Uv<float>> SpherePrimitive::intersect(const Point3f &from, const Vec3f &dir, float time) const
 {
-	const Vec3f vf{from - center_};
+	const Vec3f vf{from - params_.center_};
 	const float ea = dir * dir;
-	const float eb = 2.0 * (vf * dir);
-	const float ec = vf * vf - radius_ * radius_;
-	float osc = eb * eb - 4.0 * ea * ec;
+	const float eb = 2.f * (vf * dir);
+	const float ec = vf * vf - params_.radius_ * params_.radius_;
+	float osc = eb * eb - 4.f * ea * ec;
 	if(osc < 0) return {};
 	osc = math::sqrt(osc);
-	const float sol_1 = (-eb - osc) / (2.0 * ea);
-	const float sol_2 = (-eb + osc) / (2.0 * ea);
+	const float sol_1 = (-eb - osc) / (2.f * ea);
+	const float sol_2 = (-eb + osc) / (2.f * ea);
 	float sol = sol_1;
 	if(sol < 0.f) //used to be "< ray.tmin_", was that necessary?
 	{
@@ -79,15 +102,15 @@ std::pair<float, Uv<float>> SpherePrimitive::intersect(const Point3f &from, cons
 
 std::pair<float, Uv<float>> SpherePrimitive::intersect(const Point3f &from, const Vec3f &dir, float time, const Matrix4f &obj_to_world) const
 {
-	const Vec3f vf{from - center_};
+	const Vec3f vf{from - params_.center_};
 	const float ea = dir * dir;
-	const float eb = 2.0 * (vf * dir);
-	const float ec = vf * vf - radius_ * radius_;
-	float osc = eb * eb - 4.0 * ea * ec;
+	const float eb = 2.f * (vf * dir);
+	const float ec = vf * vf - params_.radius_ * params_.radius_;
+	float osc = eb * eb - 4.f * ea * ec;
 	if(osc < 0) return {};
 	osc = math::sqrt(osc);
-	const float sol_1 = (-eb - osc) / (2.0 * ea);
-	const float sol_2 = (-eb + osc) / (2.0 * ea);
+	const float sol_1 = (-eb - osc) / (2.f * ea);
+	const float sol_2 = (-eb + osc) / (2.f * ea);
 	float sol = sol_1;
 	if(sol < 0.f) //used to be "< ray.tmin_", was that necessary?
 	{
@@ -102,7 +125,7 @@ std::unique_ptr<const SurfacePoint> SpherePrimitive::getSurface(const RayDiffere
 {
 	auto sp = std::make_unique<SurfacePoint>(this);
 	sp->time_ = time;
-	Vec3f normal{hit_point - center_};
+	Vec3f normal{hit_point - params_.center_};
 	sp->orco_p_ = static_cast<Point3f>(normal);
 	normal.normalize();
 	sp->n_ = normal;
@@ -122,7 +145,7 @@ std::unique_ptr<const SurfacePoint> SpherePrimitive::getSurface(const RayDiffere
 {
 	auto sp = std::make_unique<SurfacePoint>(this);
 	sp->time_ = time;
-	Vec3f normal{hit_point - center_};
+	Vec3f normal{hit_point - params_.center_};
 	sp->orco_p_ = static_cast<Point3f>(normal);
 	normal.normalize();
 	sp->n_ = normal;

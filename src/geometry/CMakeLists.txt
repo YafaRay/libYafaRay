@@ -18,11 +18,10 @@
 
 target_sources(libyafaray4
 	PRIVATE
-		axis.cc
-		bound.cc
 		poly_double.cc
 		surface.cc
 		vector.cc
+		direction_color.cc
 )
 
 add_subdirectory(object)

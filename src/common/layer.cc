@@ -18,8 +18,6 @@
 
 #include "common/layers.h"
 #include "color/color.h"
-#include "common/param.h"
-#include "common/logger.h"
 #include <sstream>
 
 namespace yafaray {

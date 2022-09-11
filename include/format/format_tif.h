@@ -30,9 +30,11 @@ namespace yafaray {
 class TifFormat final : public Format
 {
 	public:
-		explicit TifFormat(Logger &logger) : Format(logger) { }
+		inline static std::string getClassName() { return "TifFormat"; }
+		explicit TifFormat(Logger &logger, ParamError &param_error, const ParamMap &param_map) : Format(logger, param_error, param_map) { }
 
 	private:
+		[[nodiscard]] Type type() const override { return Type::Tif; }
 		std::string getFormatName() const override { return "TifFormat"; }
 		Image * loadFromFile(const std::string &name, const Image::Optimization &optimization, const ColorSpace &color_space, float gamma) override;
 		bool saveToFile(const std::string &name, const ImageLayer &image_layer, ColorSpace color_space, float gamma, bool alpha_premultiply) override;

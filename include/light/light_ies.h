@@ -22,7 +22,7 @@
 #ifndef YAFARAY_LIGHT_IES_H
 #define YAFARAY_LIGHT_IES_H
 
-#include <common/logger.h>
+#include "common/logger.h"
 #include "light/light.h"
 #include "geometry/vector.h"
 
@@ -35,13 +35,29 @@ class IesData;
 class IesLight final : public Light
 {
 	public:
-		static Light *factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params);
+		inline static std::string getClassName() { return "IesLight"; }
+		static std::pair<Light *, ParamError> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params);
+		static std::string printMeta(const std::vector<std::string> &excluded_params) { return Params::meta_.print(excluded_params); }
 
 	private:
-		IesLight(Logger &logger, const Point3f &from, const Point3f &to, const Rgb &col, float power, const std::string &ies_file, int smpls, bool s_sha, float ang, bool b_light_enabled = true, bool b_cast_shadows = true);
+		[[nodiscard]] Type type() const override { return Type::Ies; }
+		const struct Params
+		{
+			PARAM_INIT_PARENT(Light);
+			PARAM_DECL(Vec3f, from_, Vec3f{0.f}, "from", "");
+			PARAM_DECL(Vec3f, to_, (Vec3f{{0.f, 0.f, -1.f}}), "to", "");
+			PARAM_DECL(Rgb, color_, Rgb{1.f}, "color", "");
+			PARAM_DECL(float, power_, 1.f, "power", "");
+			PARAM_DECL(std::string, file_, "", "file", "");
+			PARAM_DECL(int, samples_, 16, "samples", "");
+			PARAM_DECL(bool, soft_shadows_, false, "soft_shadows", "");
+			PARAM_DECL(float, cone_angle_, 180.f, "cone_angle", "Cone angle in degrees");
+		} params_;
+		[[nodiscard]] ParamMap getAsParamMap(bool only_non_default) const override;
+		IesLight(Logger &logger, ParamError &param_error, const std::string &name, const ParamMap &param_map);
 		Rgb totalEnergy() const override{ return color_ * tot_energy_;};
-		int nSamples() const override { return samples_; };
-		bool diracLight() const override { return !soft_shadow_; }
+		int nSamples() const override { return params_.samples_; };
+		bool diracLight() const override { return !params_.soft_shadows_; }
 		std::tuple<bool, Ray, Rgb> illuminate(const Point3f &surface_p, float time) const override;
 		std::pair<bool, Ray> illumSample(const Point3f &surface_p, LSample &s, float time) const override;
 		std::tuple<Ray, float, Rgb> emitPhoton(float s_1, float s_2, float s_3, float s_4, float time) const override;
@@ -50,14 +66,11 @@ class IesLight final : public Light
 		bool isIesOk() const { return ies_ok_; };
 		[[nodiscard]] static Uv<float> getAngles(const Vec3f &dir, float costheta);
 
-		Point3f position_;
 		Vec3f dir_; //!< orientation of the spot cone
 		Vec3f ndir_; //!< negative orientation (-dir)
 		Uv<Vec3f> duv_; //!< form a coordinate system with dir, to sample directions
 		float cos_end_; //<! cosStart is actually larger than cosEnd, because cos goes from +1 to -1
 		Rgb color_; //<! color, premulitplied by light intensity
-		int samples_;
-		bool soft_shadow_;
 		float tot_energy_;
 		std::unique_ptr<IesData> ies_data_;
 		bool ies_ok_;

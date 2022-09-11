@@ -20,26 +20,55 @@
 
 #include "light/light_background_portal.h"
 #include "background/background.h"
-#include "common/param.h"
+#include "param/param.h"
 #include "scene/scene.h"
 #include "sampler/sample.h"
 #include "accelerator/accelerator.h"
-#include "geometry/surface.h"
 #include "sampler/sample_pdf1d.h"
 #include "geometry/object/object_mesh.h"
 #include "geometry/primitive/primitive_face.h"
 #include <limits>
 #include <memory>
-#include <utility>
 
 namespace yafaray {
 
-BackgroundPortalLight::BackgroundPortalLight(Logger &logger, std::string object_name, int sampl, float pow, bool light_enabled, bool cast_shadows):
-		Light(logger), object_name_(std::move(object_name)), samples_(sampl), power_(pow)
+BackgroundPortalLight::Params::Params(ParamError &param_error, const ParamMap &param_map)
 {
-	light_enabled_ = light_enabled;
-	cast_shadows_ = cast_shadows;
-	a_pdf_ = 0.f;
+	PARAM_LOAD(samples_);
+	PARAM_LOAD(object_name_);
+	PARAM_LOAD(power_);
+	PARAM_LOAD(ibl_clamp_sampling_);
+}
+
+ParamMap BackgroundPortalLight::Params::getAsParamMap(bool only_non_default) const
+{
+	PARAM_SAVE_START;
+	PARAM_SAVE(samples_);
+	PARAM_SAVE(object_name_);
+	PARAM_SAVE(power_);
+	PARAM_SAVE(ibl_clamp_sampling_);
+	PARAM_SAVE_END;
+}
+
+ParamMap BackgroundPortalLight::getAsParamMap(bool only_non_default) const
+{
+	ParamMap result{Light::getAsParamMap(only_non_default)};
+	result.append(params_.getAsParamMap(only_non_default));
+	return result;
+}
+
+std::pair<Light *, ParamError> BackgroundPortalLight::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map)
+{
+	auto param_error{Params::meta_.check(param_map, {"type"}, {})};
+	auto result {new BackgroundPortalLight(logger, param_error, name, param_map)};
+	if(param_error.flags_ != ParamError::Flags::Ok) logger.logWarning(param_error.print<BackgroundPortalLight>(name, {"type"}));
+	return {result, param_error};
+}
+
+BackgroundPortalLight::BackgroundPortalLight(Logger &logger, ParamError &param_error, const std::string &name, const ParamMap &param_map):
+		Light{logger, param_error, name, param_map, Flags::None}, params_{param_error, param_map}
+{
+	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + params_.getAsParamMap(true).print());
 }
 
 void BackgroundPortalLight::initIs()
@@ -59,7 +88,7 @@ void BackgroundPortalLight::initIs()
 	ParamMap params;
 	params["type"] = std::string("yafaray-kdtree-original"); //Do not remove the std::string(), entering directly a string literal can be confused with bool
 	params["depth"] = -1;
-	accelerator_ = std::unique_ptr<const Accelerator>(Accelerator::factory(logger_, primitives_, params));
+	accelerator_ = std::unique_ptr<const Accelerator>(Accelerator::factory(logger_, primitives_, params).first);
 }
 
 void BackgroundPortalLight::init(const Scene &scene)
@@ -70,10 +99,10 @@ void BackgroundPortalLight::init(const Scene &scene)
 	a_pdf_ = world_radius * world_radius;
 
 	world_center_ = 0.5f * (w.a_ + w.g_);
-	base_object_ = scene.getObject(object_name_);
+	base_object_ = scene.getObject(params_.object_name_);
 	if(base_object_)
 	{
-		base_object_->setVisibility(VisibilityFlags::None);
+		base_object_->setVisibility(Visibility::None);
 		initIs();
 		if(logger_.isVerbose()) logger_.logVerbose("bgPortalLight: Triangles:", num_primitives_, ", Area:", area_);
 		base_object_->setLight(this);
@@ -130,7 +159,7 @@ std::pair<bool, Ray> BackgroundPortalLight::illumSample(const Point3f &surface_p
 	const float cos_angle = -(ldir * n);
 	//no light if point is behind area light (single sided!)
 	if(cos_angle <= 0.f) return {};
-	s.col_ = bg_->eval(ldir, true) * power_;
+	s.col_ = bg_->eval(ldir, true) * params_.power_;
 	// pdf = distance^2 / area * cos(norm, ldir);
 	s.pdf_ = dist_sqr * math::num_pi<> / (area_ * cos_angle);
 	s.flags_ = flags_;
@@ -176,8 +205,8 @@ std::tuple<bool, float, Rgb> BackgroundPortalLight::intersect(const Ray &ray, fl
 	if(cos_angle <= 0.f) return {};
 	const float idist_sqr = 1.f / (t * t);
 	const float ipdf = idist_sqr * area_ * cos_angle * math::div_1_by_pi<>;
-	Rgb col{bg_->eval(ray.dir_, true) * power_};
-	col.clampProportionalRgb(clamp_intersect_); //trick to reduce light sampling noise at the expense of realism and inexact overall light. 0.f disables clamping
+	Rgb col{bg_->eval(ray.dir_, true) * params_.power_};
+	col.clampProportionalRgb(params_.ibl_clamp_sampling_); //trick to reduce light sampling noise at the expense of realism and inexact overall light. 0.f disables clamping
 	return {true, ipdf, std::move(col)};
 }
 
@@ -195,36 +224,6 @@ std::array<float, 3> BackgroundPortalLight::emitPdf(const Vec3f &surface_n, cons
 	const float cos_wo = wo * surface_n;
 	const float dir_pdf = cos_wo > 0.f ? cos_wo : 0.f;
 	return {area_pdf, dir_pdf, cos_wo};
-}
-
-
-Light * BackgroundPortalLight::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params)
-{
-	int samples = 4;
-	std::string object_name;
-	float pow = 1.0f;
-	bool shoot_d = true;
-	bool shoot_c = true;
-	bool light_enabled = true;
-	bool cast_shadows = true;
-	bool p_only = false;
-
-	params.getParam("object_name", object_name);
-	params.getParam("samples", samples);
-	params.getParam("power", pow);
-	params.getParam("with_caustic", shoot_c);
-	params.getParam("with_diffuse", shoot_d);
-	params.getParam("photon_only", p_only);
-	params.getParam("light_enabled", light_enabled);
-	params.getParam("cast_shadows", cast_shadows);
-
-	auto light = new BackgroundPortalLight(logger, object_name, samples, pow, light_enabled, cast_shadows);
-
-	light->shoot_caustic_ = shoot_c;
-	light->shoot_diffuse_ = shoot_d;
-	light->photon_only_ = p_only;
-
-	return light;
 }
 
 std::tuple<bool, Ray, Rgb> BackgroundPortalLight::illuminate(const Point3f &surface_p, float time) const

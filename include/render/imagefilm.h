@@ -25,59 +25,44 @@
 #define YAFARAY_IMAGEFILM_H
 
 #include "public_api/yafaray_c_api.h"
+#include "common/enum.h"
+#include "common/enum_map.h"
+#include "param/class_meta.h"
 #include "imagesplitter.h"
 #include "common/aa_noise_params.h"
 #include "common/layers.h"
-#include "image/image_buffers.h"
+#include "image/image_pixel_types.h"
+#include "math/buffer_2d.h"
 #include "image/image_layers.h"
 #include "render/render_callbacks.h"
 #include "common/timer.h"
 #include "geometry/rect.h"
 #include <mutex>
 #include <atomic>
+#include <utility>
 
 namespace yafaray {
 
-/*!	This class recieves all rendered image samples.
-	You can see it as an enhanced render buffer;
-	Holds RGBA and Density (for actual bidirectional pathtracing implementation) buffers.
-*/
-
 class Scene;
 class ImageOutput;
-class Rgb;
 class ColorLayers;
-class ParamMap;
 class RenderControl;
 class Timer;
 class RenderView;
 struct EdgeToonParams;
 
+/*!	This class recieves all rendered image samples.
+	You can see it as an enhanced render buffer;
+	Holds RGBA and Density (for actual bidirectional pathtracing implementation) buffers.
+*/
 class ImageFilm final
 {
 	public:
-		enum class FilterType : unsigned char { Box, Mitchell, Gauss, Lanczos };
 		enum Flags : unsigned char { RegularImage = 1 << 0, Densityimage = 1 << 1, All = RegularImage | Densityimage };
-		struct AutoSaveParams
-		{
-			enum class IntervalType : unsigned char { None, Time, Pass };
-			double interval_seconds_ = 300.0;
-			int interval_passes_ = 1;
-			double timer_ = 0.0; //Internal timer for AutoSave
-			int pass_counter_ = 0; //Internal counter for AutoSave
-			IntervalType interval_type_ = IntervalType::None;
-		};
-		struct FilmLoadSave
-		{
-			enum class Mode : unsigned char { None, Save, LoadAndSave };
-			std::string path_ = "./";
-			AutoSaveParams auto_save_;
-			Mode mode_ = Mode::None;
-		};
-
-		static ImageFilm *factory(Logger &logger, RenderControl &render_control, const ParamMap &params, const Scene *scene);
-		/*! imageFilm_t Constructor */
-		ImageFilm(Logger &logger, const Rect &rect, int num_threads, RenderControl &render_control, const Layers &layers, const std::map<std::string, std::unique_ptr<ImageOutput>> &outputs, float filter_size = 1.f, FilterType filt = FilterType::Box, int t_size = 32, ImageSplitter::TilesOrderType tiles_order_type = ImageSplitter::Linear);
+		inline static std::string getClassName() { return "ImageFilm"; }
+		static std::pair<ImageFilm *, ParamError> factory(Logger &logger, RenderControl &render_control, const ParamMap &param_map, const Scene *scene);
+		ImageFilm(Logger &logger, ParamError &param_error, RenderControl &render_control, const Layers &layers, const std::map<std::string, std::unique_ptr<ImageOutput>> &outputs, const std::map<std::string, std::unique_ptr<RenderView>> *render_views, const RenderCallbacks *render_callbacks, int num_threads, const ParamMap &param_map);
+		static std::string printMeta(const std::vector<std::string> &excluded_params) { return Params::meta_.print(excluded_params); }
 		/*! Initialize imageFilm for new rendering, i.e. set pixels black etc */
 		void init(RenderControl &render_control, int num_passes = 0);
 		/*! Prepare for next pass, i.e. reset area_cnt, check if pixels need resample...
@@ -114,51 +99,108 @@ class ImageFilm final
 		/*! Sets the adaptative AA sampling threshold */
 		void setAaThreshold(float thresh) { aa_noise_params_.threshold_ = thresh; }
 		/*! The following methods set the strings used for the parameters badge rendering */
-		int getTotalPixels() const { return rect_.getArea(); };
+		int getTotalPixels() const { return params_.width_ * params_.height_; };
 		void setAaNoiseParams(const AaNoiseParams &aa_noise_params) { aa_noise_params_ = aa_noise_params; };
 		/*! Methods for rendering the parameters badge; Note that FreeType lib is needed to render text */
-		int getWidth() const { return rect_.getWidth(); }
-		int getHeight() const { return rect_.getHeight(); }
-		int getCx0() const { return rect_.getPointStart()[Axis::X]; }
-		int getCy0() const { return rect_.getPointStart()[Axis::Y]; }
-		Size2i getSize() const { return rect_.getSize(); }
-		Rect getRect() const { return rect_; }
-		int getTileSize() const { return tile_size_; }
+		int getWidth() const { return params_.width_; }
+		int getHeight() const { return params_.height_; }
+		int getCx0() const { return params_.start_x_; }
+		int getCy0() const { return params_.start_y_; }
+		Size2i getSize() const { return {{params_.width_, params_.height_}}; }
+		int getTileSize() const { return params_.tile_size_; }
 		float getWeight(const Point2i &point) const { return weights_(point).getFloat(); }
 		bool getBackgroundResampling() const { return background_resampling_; }
 		void setBackgroundResampling(bool background_resampling) { background_resampling_ = background_resampling; }
-		unsigned int getComputerNode() const { return computer_node_; }
 		unsigned int getBaseSamplingOffset() const { return base_sampling_offset_ + computer_node_ * 100000; } //We give to each computer node a "reserved space" of 100,000 samples
 		unsigned int getSamplingOffset() const { return sampling_offset_; }
 		void setComputerNode(unsigned int computer_node) { computer_node_ = computer_node; }
 		void setBaseSamplingOffset(unsigned int offset) { base_sampling_offset_ = offset; }
 		void setSamplingOffset(unsigned int offset) { sampling_offset_ = offset; }
+		std::string getFilmSavePath() const { return film_load_save_.path_; }
+		void resetImagesAutoSaveTimer() { images_auto_save_params_.timer_ = 0.0; }
+		void resetFilmAutoSaveTimer() { film_load_save_.auto_save_.timer_ = 0.0; }
+		const ImageLayers *getImageLayers() const { return &film_image_layers_; }
+		const ImageLayers *getExportedImageLayers() const { return &exported_image_layers_; }
+		Timer * getTimer() { return &timer_; }
+
+	private:
+		struct FilterType : public Enum<FilterType>
+		{
+			enum : decltype(type()) { Box, Mitchell, Gauss, Lanczos };
+			inline static const EnumMap<decltype(type())> map_{{
+					{"box", Box, ""},
+					{"mitchell", Mitchell, ""},
+					{"gauss", Gauss, ""},
+					{"lanczos", Lanczos, ""},
+				}};
+		};
+		struct AutoSaveParams
+		{
+			struct IntervalType : public Enum<IntervalType>
+			{
+				enum : decltype(type()) { None, Time, Pass };
+				inline static const EnumMap<decltype(type())> map_{{
+						{"none", None, ""},
+						{"time-interval", Time, ""},
+						{"pass-interval", Pass, ""},
+					}};
+			};
+			AutoSaveParams(float interval_seconds, int interval_passes, IntervalType interval_type) : interval_seconds_{interval_seconds}, interval_passes_{interval_passes}, interval_type_{interval_type} { }
+			double interval_seconds_ = 300.0;
+			int interval_passes_ = 1;
+			double timer_ = 0.0; //Internal timer for AutoSave
+			int pass_counter_ = 0; //Internal counter for AutoSave
+			IntervalType interval_type_{IntervalType::None};
+		};
+		struct FilmLoadSave
+		{
+			struct Mode : public Enum<Mode>
+			{
+				enum : decltype(type()) { None, Save, LoadAndSave };
+				inline static const EnumMap<decltype(type())> map_{{
+						{"none", None, ""},
+						{"save", Save, ""},
+						{"load-save", LoadAndSave, ""},
+					}};
+			};
+			FilmLoadSave(std::string path, AutoSaveParams auto_save_params, Mode mode) : path_{std::move(path)}, auto_save_{auto_save_params}, mode_{mode} { }
+			std::string path_ = "./";
+			AutoSaveParams auto_save_;
+			Mode mode_{Mode::None};
+		};
+		const struct Params
+		{
+			PARAM_INIT;
+			PARAM_DECL(float, aa_pixel_width_, 1.5f, "AA_pixelwidth", "");
+			PARAM_DECL(int, width_, 320, "width", "Width of rendered image");
+			PARAM_DECL(int, height_, 240, "height", "Height of rendered image");
+			PARAM_DECL(int, start_x_, 0, "xstart", "x-offset (for cropped rendering)");
+			PARAM_DECL(int, start_y_, 0, "ystart", "y-offset (for cropped rendering)");
+			PARAM_ENUM_DECL(FilterType, filter_type_, FilterType::Box, "filter_type", "AA filter type");
+			PARAM_DECL(int, tile_size_, 32, "tile_size", "Size of the render buckets or tiles");
+			PARAM_ENUM_DECL(ImageSplitter::TilesOrderType, tiles_order_, ImageSplitter::TilesOrderType::CentreRandom, "tiles_order", "Order of the render buckets or tiles");
+			PARAM_ENUM_DECL(AutoSaveParams::IntervalType, images_autosave_interval_type_, AutoSaveParams::IntervalType::None, "images_autosave_interval_type", "");
+			PARAM_DECL(int, images_autosave_interval_passes_, 1, "images_autosave_interval_passes", "");
+			PARAM_DECL(float, images_autosave_interval_seconds_, 300.f, "images_autosave_interval_seconds", "");
+			PARAM_ENUM_DECL(FilmLoadSave::Mode, film_load_save_mode_, FilmLoadSave::Mode::None, "film_load_save_mode", "");
+			PARAM_DECL(std::string, film_load_save_path_, "./", "film_load_save_path", "");
+			PARAM_ENUM_DECL(AutoSaveParams::IntervalType, film_autosave_interval_type_, AutoSaveParams::IntervalType::None, "film_autosave_interval_type", "");
+			PARAM_DECL(int, film_autosave_interval_passes_, 1, "film_autosave_interval_passes", "");
+			PARAM_DECL(float, film_autosave_interval_seconds_, 300.f, "film_autosave_interval_seconds", "");
+		} params_;
+		[[nodiscard]] ParamMap getAsParamMap(bool only_non_default) const;
 
 		std::string getFilmPath() const;
 		bool imageFilmLoad(const std::string &filename);
 		void imageFilmLoadAllInFolder(RenderControl &render_control);
 		bool imageFilmSave(RenderControl &render_control);
 		void imageFilmFileBackup(RenderControl &render_control) const;
-		void setImagesAutoSaveParams(const AutoSaveParams &auto_save_params) { images_auto_save_params_ = auto_save_params; }
-		void setFilmLoadSaveParams(const FilmLoadSave &film_load_save) { film_load_save_ = film_load_save; }
-		std::string getFilmSavePath() const { return film_load_save_.path_; }
-		void resetImagesAutoSaveTimer() { images_auto_save_params_.timer_ = 0.0; }
-		void resetFilmAutoSaveTimer() { film_load_save_.auto_save_.timer_ = 0.0; }
-
-		const ImageLayers *getImageLayers() const { return &film_image_layers_; }
-		const ImageLayers *getExportedImageLayers() const { return &exported_image_layers_; }
-		Timer * getTimer() { return &timer_; }
-
 		static std::string printRenderStats(const RenderControl &render_control, const Timer &timer, const Size2i &size);
 		static float darkThresholdCurveInterpolate(float pixel_brightness);
-
-	private:
 		void initLayersImages();
 		void initLayersExportedImages();
 		static int roundToIntWithBias(double val); //!< Asymmetrical rounding function with a +0.5 bias
-		Rect rect_;
-		int tile_size_;
-		ImageSplitter::TilesOrderType tiles_order_;
+
 		int num_threads_ = 1;
 		int n_passes_;
 		unsigned int computer_node_ = 0;	//Computer node in multi-computer render environments/render farms
@@ -178,19 +220,20 @@ class ImageFilm final
 		const std::map<std::string, std::unique_ptr<ImageOutput>> &outputs_;
 		std::unique_ptr<ImageSplitter> splitter_;
 
-		AutoSaveParams images_auto_save_params_;
-		FilmLoadSave film_load_save_;
+		AutoSaveParams images_auto_save_params_{params_.images_autosave_interval_seconds_, params_.images_autosave_interval_passes_, params_.images_autosave_interval_type_};
+		FilmLoadSave film_load_save_{params_.film_load_save_path_, {params_.film_autosave_interval_seconds_, params_.film_autosave_interval_passes_, params_.film_autosave_interval_type_}, params_.film_load_save_mode_};
 
 		// Thread mutes for shared access
 		std::mutex image_mutex_, out_mutex_, density_image_mutex_;
 
-		ImageBuffer2D<bool> flags_; //!< flags for adaptive AA sampling;
-		ImageBuffer2D<Gray> weights_;
+		Buffer2D<bool> flags_{{{params_.width_, params_.height_}}}; //!< flags for adaptive AA sampling;
+		Buffer2D<Gray> weights_{{{params_.width_, params_.height_}}};
 		ImageLayers film_image_layers_;
 		ImageLayers exported_image_layers_;
-		std::unique_ptr<ImageBuffer2D<Rgb>> density_image_; //!< storage for z-buffer channel
+		std::unique_ptr<Buffer2D<Rgb>> density_image_; //!< storage for z-buffer channel
 
-		float filter_width_, filter_table_scale_;
+		float filter_width_{params_.aa_pixel_width_ * 0.5f};
+		float filter_table_scale_;
 		static constexpr inline int max_filter_size_ = 8;
 		static constexpr inline int filter_table_size_ = 16;
 		static constexpr inline float filter_scale_ = 1.f / static_cast<float>(filter_table_size_);

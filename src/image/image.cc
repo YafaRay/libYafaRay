@@ -18,146 +18,151 @@
  */
 
 #include "image/image.h"
-#include "image/image_color_alpha.h"
-#include "image/image_color_alpha_optimized.h"
-#include "image/image_color_alpha_compressed.h"
-#include "image/image_color.h"
-#include "image/image_color_optimized.h"
-#include "image/image_color_compressed.h"
-#include "image/image_gray_alpha.h"
-#include "image/image_gray.h"
-#include "image/image_gray_optimized.h"
+#include "image/image_buffer.h"
 #include "common/file.h"
 #include "common/string.h"
 #include "format/format.h"
 #include "common/logger.h"
-#include "common/param.h"
+#include "param/param.h"
 
 namespace yafaray {
 
-Image * Image::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params)
+Image::Params::Params(ParamError &param_error, const ParamMap &param_map)
 {
-	if(logger.isDebug()) logger.logDebug("**Image::factory params");
-	int width = 100;
-	int height = 100;
-	std::string image_type_str = "ColorAlpha";
-	std::string image_optimization_str = "optimized";
-	std::string color_space_str = "Raw_Manual_Gamma";
-	double gamma = 1.0;
-	std::string filename;
-	params.getParam("type", image_type_str);
-	params.getParam("image_optimization", image_optimization_str);
-	params.getParam("filename", filename);
-	params.getParam("width", width);
-	params.getParam("height", height);
-	params.getParam("color_space", color_space_str);
-	params.getParam("gamma", gamma);
-	Image::Optimization optimization = Image::getOptimizationTypeFromName(image_optimization_str);
-	const Type type = Image::getTypeFromName(image_type_str);
-	ColorSpace color_space = Rgb::colorSpaceFromName(color_space_str);
+	PARAM_ENUM_LOAD(type_);
+	PARAM_LOAD(filename_);
+	PARAM_ENUM_LOAD(color_space_);
+	PARAM_LOAD(gamma_);
+	PARAM_ENUM_LOAD(image_optimization_);
+	PARAM_LOAD(width_);
+	PARAM_LOAD(height_);
+}
 
+ParamMap Image::Params::getAsParamMap(bool only_non_default) const
+{
+	PARAM_SAVE_START;
+	PARAM_ENUM_SAVE(type_);
+	PARAM_SAVE(filename_);
+	PARAM_ENUM_SAVE(color_space_);
+	PARAM_SAVE(gamma_);
+	PARAM_ENUM_SAVE(image_optimization_);
+	PARAM_SAVE(width_);
+	PARAM_SAVE(height_);
+	PARAM_SAVE_END;
+}
+
+ParamMap Image::getAsParamMap(bool only_non_default) const
+{
+	return params_.getAsParamMap(only_non_default);
+}
+
+Image * Image::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map)
+{
+	if(logger.isDebug()) logger.logDebug("**" + getClassName() + "::factory 'raw' ParamMap\n" + param_map.logContents());
+	auto param_error{Params::meta_.check(param_map, {}, {})};
+	std::string type_str;
+	param_map.getParam(Params::type_meta_, type_str);
+	const Type type{type_str};
+	Params params{param_error, param_map};
 	Image *image = nullptr;
-
-	if(filename.empty())
+	if(params.filename_.empty())
 	{
-		logger.logVerbose("Image '", name, "': creating empty image with width=", width, " height=", height);
+		logger.logVerbose("Image '", name, "': creating empty image with width=", params.width_, " height=", params.height_);
 	}
 	else
 	{
-		const Path path(filename);
+		const Path path(params.filename_);
 		ParamMap format_params;
 		format_params["type"] = string::toLower(path.getExtension());
-		std::unique_ptr<Format> format = std::unique_ptr<Format>(Format::factory(logger, format_params));
+		std::unique_ptr<Format> format = std::unique_ptr<Format>(Format::factory(logger, format_params).first);
 		if(format)
 		{
 			if(format->isHdr())
 			{
-				if(color_space != ColorSpace::LinearRgb && logger.isVerbose()) logger.logVerbose("Image: The image is a HDR/EXR file: forcing linear RGB and ignoring selected color space '", color_space_str, "' and the gamma setting.");
-				color_space = ColorSpace::LinearRgb;
-				if(image_optimization_str != "none" && logger.isVerbose()) logger.logVerbose("Image: The image is a HDR/EXR file: forcing texture optimization to 'none' and ignoring selected texture optimization '", image_optimization_str, "'");
-				optimization = Image::Optimization::None;
+				if(params.color_space_ != ColorSpace::LinearRgb && logger.isVerbose()) logger.logVerbose("Image: The image is a HDR/EXR file: forcing linear RGB and ignoring selected color space '", params.color_space_.print(), "' and the gamma setting.");
+				params.color_space_ = ColorSpace::LinearRgb;
+				if(params.image_optimization_ != Optimization::None && logger.isVerbose()) logger.logVerbose("Image: The image is a HDR/EXR file: forcing texture optimization to 'none' and ignoring selected texture optimization '", params.image_optimization_.print(), "'");
+				params.image_optimization_ = Image::Optimization::None;
 			}
 			if(type == Type::Gray || type == Type::GrayAlpha) format->setGrayScaleSetting(true);
-			image = format->loadFromFile(filename, optimization, color_space, gamma);
+			image = format->loadFromFile(params.filename_, params.image_optimization_, params.color_space_, params.gamma_);
 		}
 
 		if(image)
 		{
-			logger.logInfo("Image '", name, "': loaded from file '", filename, "'");
+			logger.logInfo("Image '", name, "': loaded from file '", params.filename_, "'");
 		}
 		else
 		{
-			logger.logError("Image '", name, "': Couldn't load from file '", filename, "', creating empty image with width=", width, " height=", height);
+			logger.logError("Image '", name, "': Couldn't load from file '", params.filename_, "', creating empty image with width=", params.width_, " height=", params.height_);
 		}
 	}
-	if(!image) image = Image::factory(logger, {{width, height}}, type, optimization);
-	if(image)
-	{
-		image->color_space_ = color_space;
-		image->gamma_ = gamma;
-	}
+	if(!image) image = Image::factory(params);
+	if(param_error.flags_ != ParamError::Flags::Ok) logger.logWarning(param_error.print<Image>(name, {}));
+	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + image->params_.getAsParamMap(true).print());
 	return image;
 }
 
-Image *Image::factory(Logger &logger, const Size2i &size, const Type &type, const Optimization &optimization)
+Image *Image::factory(const Params &params)
 {
-	//if(logger.isDebug()) logger.logDebug("**Image::factory");
-	if(type == Type::ColorAlpha)
+	switch(params.type_.value())
 	{
-		switch(optimization)
-		{
-			case Optimization::Optimized: return new ImageColorAlphaOptimized(size);
-			case Optimization::Compressed: return new ImageColorAlphaCompressed(size);
-			default: return new ImageColorAlpha(size);
-		}
+		case Type::Gray:
+			switch(params.image_optimization_.value())
+			{
+				case Optimization::Compressed:
+				case Optimization::Optimized:
+					return new ImageBuffer<Gray8>(params); //!< Optimized grayscale (8 bit/pixel) image buffer
+				default:
+					return new ImageBuffer<Gray>(params); //!< Grayscale float (32 bit/pixel) image buffer
+			}
+
+		case Type::GrayAlpha:
+			return new ImageBuffer<GrayAlpha>(params); //!< Grayscale with alpha float (64 bit/pixel) image buffer
+
+		case Type::Color:
+			switch(params.image_optimization_.value())
+			{
+				case Optimization::Optimized:
+					return new ImageBuffer<Rgb101010>(params); //!< Optimized Rgb (32 bit/pixel) image buffer
+				case Optimization::Compressed:
+					return new ImageBuffer<Rgb565>(params); //!< Compressed Rgb (16 bit/pixel) [LOSSY!] image buffer
+				default:
+					return new ImageBuffer<Rgb>(params); //!< Rgb float image buffer (96 bit/pixel)
+			}
+
+		case Type::ColorAlpha:
+		default:
+			switch(params.image_optimization_.value())
+			{
+				case Optimization::Optimized:
+					return new ImageBuffer<Rgba1010108>(params); //!< Optimized Rgba (40 bit/pixel) image buffer
+				case Optimization::Compressed:
+					return new ImageBuffer<Rgba7773>(params); //!< Compressed Rgba (24 bit/pixel) [LOSSY!] image buffer
+				default:
+					return new ImageBuffer<RgbAlpha>(params); //!< Rgba float image buffer (128 bit/pixel)
+			}
 	}
-	else if(type == Type::Color)
-	{
-		switch(optimization)
-		{
-			case Optimization::Optimized: return new ImageColorOptimized(size);
-			case Optimization::Compressed: return new ImageColorCompressed(size);
-			default: return new ImageColor(size);
-		}
-	}
-	else if(type == Type::GrayAlpha)
-	{
-		return new ImageGrayAlpha(size);
-	}
-	else if(type == Type::Gray)
-	{
-		switch(optimization)
-		{
-			case Optimization::Compressed:
-			case Optimization::Optimized: return new ImageGrayOptimized(size);
-			default: return new ImageGray(size);
-		}
-	}
-	else return nullptr;
 }
 
 Image::Type Image::imageTypeWithAlpha(Type image_type)
 {
-	switch(image_type)
+	switch(image_type.value())
 	{
-		case Type::Gray: return Type::GrayAlpha;
-		case Type::Color: return Type::ColorAlpha;
+		case Type::Gray: return Type{Type::GrayAlpha};
+		case Type::Color: return Type{Type::ColorAlpha};
 		default: return image_type;
 	}
 }
 
 Image::Type Image::getTypeFromName(const std::string &image_type_name)
 {
-	if(image_type_name == "ColorAlpha") return Type::ColorAlpha;
-	else if(image_type_name == "Color") return Type::Color;
-	else if(image_type_name == "GrayAlpha") return Type::GrayAlpha;
-	else if(image_type_name == "Gray") return Type::Gray;
-	else return Type::None;
+	return Type{image_type_name};
 }
 
 int Image::getNumChannels(const Type &image_type)
 {
-	switch(image_type)
+	switch(image_type.value())
 	{
 		case Type::ColorAlpha: return 4;
 		case Type::Color: return 3;
@@ -169,7 +174,7 @@ int Image::getNumChannels(const Type &image_type)
 
 bool Image::hasAlpha(const Type &image_type)
 {
-	switch(image_type)
+	switch(image_type.value())
 	{
 		case Type::Color:
 		case Type::Gray: return false;
@@ -181,7 +186,7 @@ bool Image::hasAlpha(const Type &image_type)
 
 bool Image::isGrayscale(const Type &image_type)
 {
-	switch(image_type)
+	switch(image_type.value())
 	{
 		case Type::Gray:
 		case Type::GrayAlpha: return true;
@@ -193,54 +198,29 @@ bool Image::isGrayscale(const Type &image_type)
 
 Image::Type Image::getTypeFromSettings(bool has_alpha, bool grayscale)
 {
-	Type type = grayscale ? Type::Gray : Type::Color;
+	Type type{grayscale ? Type::Gray : Type::Color};
 	if(has_alpha) type = Image::imageTypeWithAlpha(type);
 	return type;
 }
 
 Image::Optimization Image::getOptimizationTypeFromName(const std::string &optimization_type_name)
 {
-	//Optimized by default
-	if(optimization_type_name == "none") return Image::Optimization::None;
-	else if(optimization_type_name == "optimized") return Image::Optimization::Optimized;
-	else if(optimization_type_name == "compressed") return Image::Optimization::Compressed;
-	else return Image::Optimization::Optimized;
+	return Image::Optimization{optimization_type_name};
 }
 
 std::string Image::getOptimizationName(const Optimization &optimization_type)
 {
-	//Optimized by default
-	switch(optimization_type)
-	{
-		case Image::Optimization::None: return "none";
-		case Image::Optimization::Optimized: return "optimized";
-		case Image::Optimization::Compressed: return "compressed";
-		default: return "optimized";
-	}
+	return optimization_type.print();
 }
 
 std::string Image::getTypeNameLong(const Type &image_type)
 {
-	switch(image_type)
-	{
-		case Type::ColorAlpha: return "Color + Alpha [4 channels]";
-		case Type::Color: return "Color [3 channels]";
-		case Type::GrayAlpha: return "Gray + Alpha [2 channels]";
-		case Type::Gray: return "Gray [1 channel]";
-		default: return "unknown image type [0 channels]";
-	}
+	return image_type.printDescription();
 }
 
 std::string Image::getTypeNameShort(const Type &image_type)
 {
-	switch(image_type)
-	{
-		case Type::ColorAlpha: return "ColorAlpha";
-		case Type::Color: return "Color";
-		case Type::GrayAlpha: return "GrayAlpha";
-		case Type::Gray: return "Gray";
-		default: return "unknown";
-	}
+	return image_type.print();
 }
 
 

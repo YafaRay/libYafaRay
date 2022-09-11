@@ -21,7 +21,6 @@
 #include "common/logger.h"
 #include "common/version_build_info.h"
 #include "geometry/matrix.h"
-#include "geometry/uv.h"
 #include "image/image.h"
 #include "interface/export/export_c.h"
 #include "interface/export/export_python.h"
@@ -429,6 +428,19 @@ yafaray_bool_t yafaray_getImageColor(const yafaray_Image_t *image, int x, int y,
 	*alpha = color.a_;
 	return YAFARAY_BOOL_TRUE;
 }
+
+int yafaray_getImageWidth(const yafaray_Image_t *image)
+{
+	if(image) return reinterpret_cast<const yafaray::Image *>(image)->getWidth();
+	else return 0;
+}
+
+int yafaray_getImageHeight(const yafaray_Image_t *image)
+{
+	if(image) return reinterpret_cast<const yafaray::Image *>(image)->getHeight();
+	else return 0;
+}
+
 
 void yafaray_cancelRendering(yafaray_Interface_t *interface)
 {

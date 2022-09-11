@@ -19,57 +19,62 @@
  */
 
 #include "background/background_constant.h"
-#include "common/param.h"
+#include "param/param.h"
 #include "scene/scene.h"
 #include "light/light.h"
 #include "image/image_output.h"
 
 namespace yafaray {
 
-ConstantBackground::ConstantBackground(Logger &logger, Rgb col) : Background(logger), color_(col)
+ConstantBackground::Params::Params(ParamError &param_error, const ParamMap &param_map)
 {
+	PARAM_LOAD(color_);
+}
+
+ParamMap ConstantBackground::Params::getAsParamMap(bool only_non_default) const
+{
+	PARAM_SAVE_START;
+	PARAM_SAVE(color_);
+	PARAM_SAVE_END;
+}
+
+ParamMap ConstantBackground::getAsParamMap(bool only_non_default) const
+{
+	ParamMap result{Background::getAsParamMap(only_non_default)};
+	result.append(params_.getAsParamMap(only_non_default));
+	return result;
+}
+
+std::pair<Background *, ParamError> ConstantBackground::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map)
+{
+	auto param_error{Params::meta_.check(param_map, {"type"}, {})};
+	auto background = new ConstantBackground(logger, param_error, param_map);
+	if(param_error.flags_ != ParamError::Flags::Ok) logger.logWarning(param_error.print<ConstantBackground>(name, {"type"}));
+	if(background->Background::params_.ibl_)
+	{
+		ParamMap bgp;
+		bgp["type"] = std::string("bglight");
+		bgp["samples"] = background->Background::params_.ibl_samples_;
+		bgp["with_caustic"] = background->Background::params_.with_caustic_;
+		bgp["with_diffuse"] = background->Background::params_.with_diffuse_;
+		bgp["cast_shadows"] = background->Background::params_.cast_shadows_;
+
+		std::unique_ptr<Light> bglight{Light::factory(logger, scene, "light", bgp).first};
+		bglight->setBackground(background);
+		background->addLight(std::move(bglight));
+	}
+	return {background, param_error};
+}
+
+ConstantBackground::ConstantBackground(Logger &logger, ParamError &param_error, const ParamMap &param_map) :
+		Background{logger, param_error, param_map}, params_{param_error, param_map}, color_{params_.color_ * Background::params_.power_}
+{
+	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + params_.getAsParamMap(true).print());
 }
 
 Rgb ConstantBackground::eval(const Vec3f &dir, bool use_ibl_blur) const
 {
 	return color_;
-}
-
-const Background * ConstantBackground::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params)
-{
-	Rgb col(0.f);
-	float power = 1.0;
-	int ibl_sam = 16;
-	bool ibl = false;
-	bool cast_shadows = true;
-	bool caus = true;
-	bool diff = true;
-
-	params.getParam("color", col);
-	params.getParam("power", power);
-	params.getParam("ibl", ibl);
-	params.getParam("ibl_samples", ibl_sam);
-	params.getParam("cast_shadows", cast_shadows);
-	params.getParam("with_caustic", caus);
-	params.getParam("with_diffuse", diff);
-
-	auto const_bg = new ConstantBackground(logger, col * power);
-
-	if(ibl)
-	{
-		ParamMap bgp;
-		bgp["type"] = std::string("bglight");
-		bgp["samples"] = ibl_sam;
-		bgp["with_caustic"] = caus;
-		bgp["with_diffuse"] = diff;
-		bgp["cast_shadows"] = cast_shadows;
-
-		std::unique_ptr<Light> bglight{Light::factory(logger, scene, "light", std::move(bgp))};
-		bglight->setBackground(const_bg);
-		const_bg->addLight(std::move(bglight));
-	}
-
-	return const_bg;
 }
 
 } //namespace yafaray

@@ -17,59 +17,23 @@
  *      Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-#ifndef YAFARAY_SHADER_NODE_H
-#define YAFARAY_SHADER_NODE_H
+#ifndef LIBYAFARAY_SHADER_NODE_H
+#define LIBYAFARAY_SHADER_NODE_H
 
-#include "scene/scene.h"
-#include "color/color.h"
-#include "common/collection.h"
-#include <list>
-#include <map>
+#include "shader/node/node_tree_data.h"
+#include "geometry/dudv.h"
+#include "common/enum.h"
+#include "common/enum_map.h"
+#include "param/class_meta.h"
 
 namespace yafaray {
 
+class Scene;
 class ParamMap;
-class ShaderNode;
-class MaterialData;
-
-struct NodeResult final
-{
-	Rgba col_ {0.f};
-	float f_ = 0.f;
-};
-
-class NodeTreeData final
-{
-	public:
-		NodeTreeData() = default;
-		NodeTreeData(const NodeTreeData &node_tree_data) = default;
-		NodeTreeData(NodeTreeData &&node_tree_data) = default;
-		NodeTreeData &operator=(const NodeTreeData &node_tree_data) = default;
-		NodeTreeData &operator=(NodeTreeData &&node_tree_data) = default;
-		explicit NodeTreeData(size_t number_of_nodes) : node_results_(number_of_nodes) { }
-		const NodeResult &operator()(unsigned int id) const { return node_results_[id]; }
-		NodeResult &operator[](unsigned int id) { return node_results_[id]; }
-	private:
-		std::vector<NodeResult> node_results_;
-};
-
-class NodeFinder final : public Collection<std::string, const ShaderNode *>
-{
-	public:
-		explicit NodeFinder(const std::map<std::string, std::unique_ptr<ShaderNode>> &table) { for(const auto &[shader_name, shader] : table) items_[shader_name] = shader.get(); }
-};
-
-class DuDv final
-{
-	public:
-		DuDv(float du, float dv) : du_(du), dv_(dv) { }
-		float getDu() const { return du_; }
-		float getDv() const { return dv_; }
-
-	private:
-		float du_ = 0.f;
-		float dv_ = 0.f;
-};
+class Logger;
+class SurfacePoint;
+class Camera;
+class NodeFinder;
 
 /*!	shader nodes are as the name implies elements of a node based shading tree.
 	Note that a "shader" only associates a color or scalar with a surface point,
@@ -79,7 +43,10 @@ class DuDv final
 class ShaderNode
 {
 	public:
-		static ShaderNode *factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params);
+		inline static std::string getClassName() { return "ShaderNode"; }
+		static std::pair<ShaderNode *, ParamError> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map);
+		[[nodiscard]] virtual ParamMap getAsParamMap(bool only_non_default) const;
+		ShaderNode(Logger &logger, ParamError &param_error, const ParamMap &param_map);
 		virtual ~ShaderNode() = default;
 		unsigned int getId() const { return id_; }
 		void setId(unsigned int id) const { id_ = id; } //It is set as "const" but it actually modifies the (mutable) id_
@@ -110,10 +77,30 @@ class ShaderNode
 		DuDv getDuDv(const NodeTreeData &node_tree_data) const { return { node_tree_data(id_).col_.r_, node_tree_data(id_).col_.g_}; }
 		/* virtual void getDerivative(const surfacePoint_t &sp, float &du, float &dv) const {du=0.f, dv=0.f;} */
 
+	protected:
+		struct Type : public Enum<Type>
+		{
+			using Enum::Enum;
+			enum : decltype(type()) { None, Texture, Value, Mix, Layer };
+			inline static const EnumMap<decltype(type())> map_{{
+					{"texture_mapper", Texture, ""},
+					{"value", Value, ""},
+					{"mix", Mix, ""},
+					{"layer", Layer, ""},
+				}};
+		};
+		[[nodiscard]] virtual Type type() const = 0;
+		const struct Params
+		{
+			PARAM_INIT;
+			PARAM_DECL(std::string, name_, "", "name", "Name of the shader node");
+			PARAM_DECL(std::string, element_, "shader_node", "element", "The element parameter in shader nodes must be set to 'shader node'");
+		} params_;
+
 	private:
-		mutable unsigned int id_;
+		mutable unsigned int id_{0};
 };
 
 } //namespace yafaray
 
-#endif // YAFARAY_SHADER_NODE_H
+#endif // LIBYAFARAY_SHADER_NODE_H

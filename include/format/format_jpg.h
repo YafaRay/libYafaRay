@@ -31,9 +31,11 @@ namespace yafaray {
 class JpgFormat final : public Format
 {
 	public:
-		explicit JpgFormat(Logger &logger) : Format(logger) { }
+		inline static std::string getClassName() { return "JpgFormat"; }
+		explicit JpgFormat(Logger &logger, ParamError &param_error, const ParamMap &param_map) : Format(logger, param_error, param_map) { }
 
 	private:
+		[[nodiscard]] Type type() const override { return Type::Jpg; }
 		std::string getFormatName() const override { return "JpgFormat"; }
 		Image * loadFromFile(const std::string &name, const Image::Optimization &optimization, const ColorSpace &color_space, float gamma) override;
 		bool saveToFile(const std::string &name, const ImageLayer &image_layer, ColorSpace color_space, float gamma, bool alpha_premultiply) override;

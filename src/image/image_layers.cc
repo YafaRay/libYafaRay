@@ -17,7 +17,6 @@
  */
 
 #include "image/image_layers.h"
-#include "color/color_layers.h"
 
 namespace yafaray {
 

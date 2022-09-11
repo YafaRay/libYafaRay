@@ -35,8 +35,11 @@ class Material;
 class MeshObject : public ObjectBase
 {
 	public:
-		static Object *factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params);
-		MeshObject(int num_vertices, int num_faces, bool has_uv, bool has_orco, bool motion_blur_bezier, float time_range_start, float time_range_end);
+		inline static std::string getClassName() { return "MeshObject"; }
+		static std::pair<Object *, ParamError> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map);
+		static std::string printMeta(const std::vector<std::string> &excluded_params) { return Params::meta_.print(excluded_params); }
+		[[nodiscard]] ParamMap getAsParamMap(bool only_non_default) const override;
+		MeshObject(ParamError &param_error, const ParamMap &param_map);
 		~MeshObject() override;
 		/*! the number of primitives the object holds. Primitive is an element
 			that by definition can perform ray-triangle intersection */
@@ -63,11 +66,22 @@ class MeshObject : public ObjectBase
 		void setSmooth(bool smooth) override { is_smooth_ = smooth; }
 		bool smoothVerticesNormals(Logger &logger, float angle) override;
 		bool calculateObject(const std::unique_ptr<const Material> *material) override;
-		bool hasMotionBlurBezier() const { return motion_blur_bezier_; }
+		bool hasMotionBlurBezier() const { return ObjectBase::params_.motion_blur_bezier_; }
 		float getTimeRangeStart() const { return time_steps_.front().time_; }
 		float getTimeRangeEnd() const { return time_steps_.back().time_; }
 		int numTimeSteps() const { return static_cast<int>(time_steps_.size()); }
 		bool hasMotionBlur() const override { return hasMotionBlurBezier(); }
+
+	protected:
+		[[nodiscard]] Type type() const override { return Type::Mesh; }
+		const struct Params
+		{
+			PARAM_INIT_PARENT(ObjectBase);
+			PARAM_DECL(int , num_faces_, 0, "num_faces", "");
+			PARAM_DECL(int , num_vertices_, 0, "num_vertices", "");
+			PARAM_DECL(bool, has_uv_, false, "has_uv", "");
+			PARAM_DECL(bool, has_orco_, false, "has_orco", "");
+		} params_;
 
 	private:
 		struct TimeStepGeometry final
@@ -77,13 +91,13 @@ class MeshObject : public ObjectBase
 			std::vector<Point3f> orco_points_;
 			std::vector<Vec3f> vertices_normals_;
 		};
+		virtual int calculateNumFaces() const { return params_.num_faces_; }
 		void convertToBezierControlPoints();
 		static float getAngleSine(const std::array<int, 3> &triangle_indices, const std::vector<Point3f> &vertices);
 		std::vector<TimeStepGeometry> time_steps_{1};
 		std::vector<std::unique_ptr<FacePrimitive>> faces_;
 		std::vector<Uv<float>> uv_values_;
 		bool is_smooth_ = false;
-		bool motion_blur_bezier_ = false;
 };
 
 } //namespace yafaray

@@ -28,33 +28,55 @@
 #include "light/light_directional.h"
 #include "light/light_ies.h"
 #include "light/light_object_light.h"
-#include "common/param.h"
+#include "param/param.h"
 #include "common/logger.h"
 
 namespace yafaray {
 
-Light * Light::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params)
+Light::Params::Params(ParamError &param_error, const ParamMap &param_map)
 {
-	if(logger.isDebug())
+	PARAM_LOAD(light_enabled_);
+	PARAM_LOAD(cast_shadows_);
+	PARAM_LOAD(shoot_caustic_);
+	PARAM_LOAD(shoot_diffuse_);
+	PARAM_LOAD(photon_only_);
+}
+
+ParamMap Light::Params::getAsParamMap(bool only_non_default) const
+{
+	PARAM_SAVE_START;
+	PARAM_SAVE(light_enabled_);
+	PARAM_SAVE(cast_shadows_);
+	PARAM_SAVE(shoot_caustic_);
+	PARAM_SAVE(shoot_diffuse_);
+	PARAM_SAVE(photon_only_);
+	PARAM_SAVE_END;
+}
+
+ParamMap Light::getAsParamMap(bool only_non_default) const
+{
+	ParamMap result{params_.getAsParamMap(only_non_default)};
+	result.setParam("type", type().print());
+	return result;
+}
+
+std::pair<Light *, ParamError> Light::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map)
+{
+	const Type type{ClassMeta::preprocessParamMap<Type>(logger, getClassName(), param_map)};
+	switch(type.value())
 	{
-		logger.logDebug("**Light");
-		params.logContents(logger);
+		case Type::Area: return AreaLight::factory(logger, scene, name, param_map);
+		case Type::BackgroundPortal: return BackgroundPortalLight::factory(logger, scene, name, param_map);
+		case Type::Object: return ObjectLight::factory(logger, scene, name, param_map);
+		case Type::Background: return BackgroundLight::factory(logger, scene, name, param_map);
+		case Type::Directional: return DirectionalLight::factory(logger, scene, name, param_map);
+		case Type::Ies: return IesLight::factory(logger, scene, name, param_map);
+		case Type::Point: return PointLight::factory(logger, scene, name, param_map);
+		case Type::Sphere: return SphereLight::factory(logger, scene, name, param_map);
+		case Type::Spot: return SpotLight::factory(logger, scene, name, param_map);
+		case Type::Sun: return SunLight::factory(logger, scene, name, param_map);
+		default: return {nullptr, {ParamError::Flags::ErrorWhileCreating}};
 	}
-	std::string type;
-	params.getParam("type", type);
-	Light *light = nullptr;
-	if(type == "arealight") light = AreaLight::factory(logger, scene, name, params);
-	else if(type == "bgPortalLight") light = BackgroundPortalLight::factory(logger, scene, name, params);
-	else if(type == "meshlight" || type == "objectlight") light = ObjectLight::factory(logger, scene, name, params);
-	else if(type == "bglight") light = BackgroundLight::factory(logger, scene, name, params);
-	else if(type == "directional") light = DirectionalLight::factory(logger, scene, name, params);
-	else if(type == "ieslight") light = IesLight::factory(logger, scene, name, params);
-	else if(type == "pointlight") light = PointLight::factory(logger, scene, name, params);
-	else if(type == "spherelight") light = SphereLight::factory(logger, scene, name, params);
-	else if(type == "spotlight") light = SpotLight::factory(logger, scene, name, params);
-	else if(type == "sunlight") light = SunLight::factory(logger, scene, name, params);
-	if(light) light->setName(name);
-	return light;
 }
 
 } //namespace yafaray

@@ -21,7 +21,8 @@
 #define YAFARAY_ACCELERATOR_H
 
 #include "accelerator/intersect_data.h"
-#include "camera/camera.h"
+#include "param/class_meta.h"
+#include "common/enum.h"
 #include "geometry/primitive/primitive.h"
 #include "geometry/surface.h"
 #include <vector>
@@ -31,11 +32,16 @@
 
 namespace yafaray {
 
+class Camera;
+
 class Accelerator
 {
 	public:
-		static const Accelerator * factory(Logger &logger, const std::vector<const Primitive *> &primitives_list, const ParamMap &params);
-		explicit Accelerator(Logger &logger) : logger_(logger) { }
+		inline static std::string getClassName() { return "Accelerator"; }
+		static std::pair<Accelerator *, ParamError> factory(Logger &logger, const std::vector<const Primitive *> &primitives_list, const ParamMap &param_map);
+		[[nodiscard]] virtual ParamMap getAsParamMap(bool only_non_default) const;
+
+		explicit Accelerator(Logger &logger, ParamError &param_error, const ParamMap &param_map) : params_{param_error, param_map}, logger_{logger} { }
 		virtual ~Accelerator() = default;
 		virtual IntersectData intersect(const Ray &ray, float t_max) const = 0;
 		virtual IntersectData intersectShadow(const Ray &ray, float t_max) const = 0;
@@ -54,6 +60,21 @@ class Accelerator
 		static float calculateDynamicRayBias(const Bound<float>::Cross &bound_cross) { return 0.1f * minRayDist() * std::abs(bound_cross.leave_ - bound_cross.enter_); } //!< empirical guesstimate for ray bias to avoid self intersections, calculated based on the length segment of the ray crossing the tree bound, to estimate the loss of precision caused by the (very roughly approximate) size of the primitive
 
 	protected:
+		struct Type : public Enum<Type>
+		{
+			using Enum::Enum;
+			enum : decltype(type()) { None, SimpleTest, KdTreeOriginal, KdTreeMultiThread };
+			inline static const EnumMap<decltype(type())> map_{{
+					{"yafaray-simpletest", SimpleTest, ""},
+					{"yafaray-kdtree-original", KdTreeOriginal, ""},
+					{"yafaray-kdtree-multi-thread", KdTreeMultiThread, ""},
+				}};
+		};
+		[[nodiscard]] virtual Type type() const = 0;
+		const struct Params
+		{
+			PARAM_INIT;
+		} params_;
 		Logger &logger_;
 		static constexpr inline float min_raydist_ = 0.00005f;
 		static constexpr inline float shadow_bias_ = 0.0005f;
@@ -96,8 +117,8 @@ inline void Accelerator::primitiveIntersection(IntersectData &intersect_data, co
 {
 	auto [t_hit, uv]{primitive->intersect(from, dir, time)};
 	if(t_hit <= 0.f || t_hit < t_min || t_hit >= t_max) return;
-	if(const VisibilityFlags prim_visibility = primitive->getVisibility(); !flags::have(prim_visibility, VisibilityFlags::Visible)) return;
-	else if(const VisibilityFlags mat_visibility = primitive->getMaterial()->getVisibility(); !flags::have(mat_visibility, VisibilityFlags::Visible)) return;
+	if(const Visibility prim_visibility = primitive->getVisibility(); !prim_visibility.has(Visibility::Visible)) return;
+	else if(const Visibility mat_visibility = primitive->getMaterial()->getVisibility(); !mat_visibility.has(Visibility::Visible)) return;
 	intersect_data.t_hit_ = t_hit;
 	intersect_data.t_max_ = t_hit;
 	intersect_data.uv_ = std::move(uv);
@@ -108,8 +129,8 @@ inline bool Accelerator::primitiveIntersectionShadow(IntersectData &intersect_da
 {
 	auto [t_hit, uv]{primitive->intersect(from, dir, time)};
 	if(t_hit <= 0.f || t_hit < t_min || t_hit >= t_max) return false;
-	if(const VisibilityFlags prim_visibility = primitive->getVisibility(); !flags::have(prim_visibility, VisibilityFlags::CastsShadows)) return false;
-	else if(const VisibilityFlags mat_visibility = primitive->getMaterial()->getVisibility(); !flags::have(mat_visibility, VisibilityFlags::CastsShadows)) return false;
+	if(const Visibility prim_visibility = primitive->getVisibility(); !prim_visibility.has(Visibility::CastsShadows)) return false;
+	else if(const Visibility mat_visibility = primitive->getMaterial()->getVisibility(); !mat_visibility.has(Visibility::CastsShadows)) return false;
 	intersect_data.t_hit_ = t_hit;
 	intersect_data.t_max_ = t_hit;
 	intersect_data.uv_ = std::move(uv);
@@ -122,9 +143,9 @@ inline bool Accelerator::primitiveIntersectionTransparentShadow(IntersectData &i
 	auto [t_hit, uv]{primitive->intersect(from, dir, time)};
 	if(t_hit <= 0.f || t_hit < t_min || t_hit >= t_max) return false;
 	const Material *mat = nullptr;
-	if(const VisibilityFlags prim_visibility = primitive->getVisibility(); !flags::have(prim_visibility, VisibilityFlags::CastsShadows)) return false;
+	if(const Visibility prim_visibility = primitive->getVisibility(); !prim_visibility.has(Visibility::CastsShadows)) return false;
 	mat = primitive->getMaterial();
-	if(!flags::have(mat->getVisibility(),VisibilityFlags::CastsShadows)) return false;
+	if(!mat->getVisibility().has(Visibility::CastsShadows)) return false;
 	intersect_data.t_hit_ = t_hit;
 	intersect_data.t_max_ = t_hit;
 	intersect_data.uv_ = std::move(uv);

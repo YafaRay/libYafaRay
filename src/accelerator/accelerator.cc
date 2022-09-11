@@ -21,33 +21,38 @@
 #include "accelerator/accelerator_kdtree_multi_thread.h"
 #include "accelerator/accelerator_simple_test.h"
 #include "common/logger.h"
-#include "common/param.h"
-#include "render/render_data.h"
+#include "param/param.h"
 #include "integrator/integrator.h"
 
 namespace yafaray {
 
-const Accelerator * Accelerator::factory(Logger &logger, const std::vector<const Primitive *> &primitives_list, const ParamMap &params)
+Accelerator::Params::Params(ParamError &param_error, const ParamMap &param_map)
 {
-	if(logger.isDebug())
-	{
-		logger.logDebug("**Accelerator");
-		params.logContents(logger);
-	}
-	std::string type;
-	params.getParam("type", type);
-	const Accelerator *accelerator = nullptr;
-	if(type == "yafaray-kdtree-original") accelerator = AcceleratorKdTree::factory(logger, primitives_list, params);
-	if(type == "yafaray-kdtree-multi-thread") accelerator = AcceleratorKdTreeMultiThread::factory(logger, primitives_list, params);
-	else if(type == "yafaray-simpletest") accelerator = AcceleratorSimpleTest::factory(logger, primitives_list, params);
+}
 
-	if(accelerator) logger.logInfo("Accelerator type '", type, "' created.");
-	else
+ParamMap Accelerator::Params::getAsParamMap(bool only_non_default) const
+{
+	PARAM_SAVE_START;
+	PARAM_SAVE_END;
+}
+
+ParamMap Accelerator::getAsParamMap(bool only_non_default) const
+{
+	ParamMap result{params_.getAsParamMap(only_non_default)};
+	result.setParam("type", type().print());
+	return result;
+}
+
+std::pair<Accelerator *, ParamError> Accelerator::factory(Logger &logger, const std::vector<const Primitive *> &primitives_list, const ParamMap &param_map)
+{
+	const Type type{ClassMeta::preprocessParamMap<Type>(logger, getClassName(), param_map)};
+	switch(type.value())
 	{
-		logger.logWarning("Accelerator type '", type, "' could not be created, using standard single-thread KdTree instead.");
-		accelerator = AcceleratorKdTree::factory(logger, primitives_list, params);
+		case Type::SimpleTest: return AcceleratorSimpleTest::factory(logger, primitives_list, param_map);
+		case Type::KdTreeOriginal: return AcceleratorKdTree::factory(logger, primitives_list, param_map);
+		case Type::KdTreeMultiThread: return AcceleratorKdTreeMultiThread::factory(logger, primitives_list, param_map);
+		default: return {nullptr, {ParamError::Flags::ErrorWhileCreating}};
 	}
-	return accelerator;
 }
 
 } //namespace yafaray

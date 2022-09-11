@@ -30,10 +30,13 @@ class Scene;
 class ArchitectCamera final : public PerspectiveCamera
 {
 	public:
-		static const Camera * factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map);
+		inline static std::string getClassName() { return "ArchitectCamera"; }
+		static std::pair<Camera *, ParamError> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map);
+		static std::string printMeta(const std::vector<std::string> &excluded_params) { return Params::meta_.print(excluded_params); }
 
 	private:
-		ArchitectCamera(Logger &logger, const Camera::Params &camera_params, const PerspectiveCamera::Params &params);
+		[[nodiscard]] Type type() const override { return Type::Architect; }
+		ArchitectCamera(Logger &logger, ParamError &param_error, const ParamMap &param_map);
 		void setAxis(const Vec3f &vx, const Vec3f &vy, const Vec3f &vz) override;
 		Point3f screenproject(const Point3f &p) const override;
 };

@@ -22,11 +22,9 @@
 
 #include "format/format_exr.h"
 #include "common/logger.h"
-#include "common/param.h"
 #include "common/file.h"
-#include "image/image_buffers.h"
+#include "image/image_pixel_types.h"
 #include "image/image_layers.h"
-#include "color/color_layers.h"
 #include <ImfVersion.h>
 #include <ImfChannelList.h>
 #include <ImfArray.h>
@@ -342,18 +340,21 @@ Image * ExrFormat::loadFromFile(const std::string &name, const Image::Optimizati
 		CiStream istr(fp, name.c_str());
 		Imf::RgbaInputFile file(istr);
 		const Imath::Box2i dw = file.dataWindow();
-		const int width  = dw.max.x - dw.min.x + 1;
-		const int height = dw.max.y - dw.min.y + 1;
-		const Image::Type type = Image::getTypeFromSettings(true, grayscale_);
-		image = Image::factory(logger_, {{width, height}}, type, optimization);
+		Image::Params image_params;
+		image_params.width_ = dw.max.x - dw.min.x + 1;
+		image_params.height_ = dw.max.y - dw.min.y + 1;
+		image_params.type_ = Image::getTypeFromSettings(true, grayscale_);
+		image_params.image_optimization_ = optimization;
+		image_params.filename_ = name;
+		image = Image::factory(image_params);
 		Imf::Array2D<Imf::Rgba> pixels;
-		pixels.resizeErase(width, height);
-		file.setFrameBuffer(&pixels[0][0] - dw.min.y - dw.min.x * height, height, 1);
+		pixels.resizeErase(image_params.width_, image_params.height_);
+		file.setFrameBuffer(&pixels[0][0] - dw.min.y - dw.min.x * image_params.height_, image_params.height_, 1);
 		file.readPixels(dw.min.y, dw.max.y);
 
-		for(int i = 0; i < width; ++i)
+		for(int i = 0; i < image_params.width_; ++i)
 		{
-			for(int j = 0; j < height; ++j)
+			for(int j = 0; j < image_params.height_; ++j)
 			{
 				Rgba color;
 				color.r_ = pixels[i][j].r;

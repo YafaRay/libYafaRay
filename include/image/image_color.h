@@ -23,7 +23,7 @@
 #define YAFARAY_IMAGE_COLOR_H
 
 #include "image/image.h"
-#include "image/image_buffers.h"
+#include "image/image_pixel_types.h"
 
 namespace yafaray {
 
@@ -45,7 +45,7 @@ class ImageColor final : public Image
 		void addFloat(const Point2i &point, float val) override { addColor(point, Rgba{val}); }
 		void clear() override { buffer_.clear(); }
 
-		ImageBuffer2D<Rgb> buffer_;
+		Buffer2D<Rgb> buffer_;
 };
 
 } //namespace yafaray

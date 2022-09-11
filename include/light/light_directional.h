@@ -22,7 +22,7 @@
 #ifndef YAFARAY_LIGHT_DIRECTIONAL_H
 #define YAFARAY_LIGHT_DIRECTIONAL_H
 
-#include <common/logger.h>
+#include "common/logger.h"
 #include "light/light.h"
 #include "geometry/vector.h"
 
@@ -34,10 +34,24 @@ class Scene;
 class DirectionalLight final : public Light
 {
 	public:
-		static Light *factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params);
+		inline static std::string getClassName() { return "DirectionalLight"; }
+		static std::pair<Light *, ParamError> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params);
+		static std::string printMeta(const std::vector<std::string> &excluded_params) { return Params::meta_.print(excluded_params); }
 
 	private:
-		DirectionalLight(Logger &logger, const Point3f &pos, Vec3f dir, const Rgb &col, float inte, bool inf, float rad, bool b_light_enabled = true, bool b_cast_shadows = true);
+		[[nodiscard]] Type type() const override { return Type::Directional; }
+		const struct Params
+		{
+			PARAM_INIT_PARENT(Light);
+			PARAM_DECL(Vec3f, from_, Vec3f{0.f}, "from", "");
+			PARAM_DECL(Vec3f, direction_, (Vec3f{{0.f, 0.f, 1.f}}), "direction", "");
+			PARAM_DECL(Rgb, color_, Rgb{1.f}, "color", "");
+			PARAM_DECL(float, power_, 1.f, "power", "");
+			PARAM_DECL(float, radius_, 1.f, "radius", "");
+			PARAM_DECL(bool, infinite_, true, "infinite", "");
+		} params_;
+		[[nodiscard]] ParamMap getAsParamMap(bool only_non_default) const override;
+		DirectionalLight(Logger &logger, ParamError &param_error, const std::string &name, const ParamMap &param_map);
 		void init(const Scene &scene) override;
 		Rgb totalEnergy() const override { return color_ * radius_ * radius_ * math::num_pi<>; }
 		std::tuple<Ray, float, Rgb> emitPhoton(float s_1, float s_2, float s_3, float s_4, float time) const override;
@@ -46,16 +60,13 @@ class DirectionalLight final : public Light
 		std::pair<bool, Ray> illumSample(const Point3f &surface_p, LSample &s, float time) const override;
 		std::tuple<bool, Ray, Rgb> illuminate(const Point3f &surface_p, float time) const override;
 
-		Point3f position_;
-		Rgb color_;
-		Vec3f direction_;
-		Uv<Vec3f> duv_;
-		float intensity_;
-		float radius_;
-		float area_pdf_;
+		const Rgb color_{params_.color_ * params_.power_};
+		Point3f position_{params_.from_};
+		const Vec3f direction_{params_.direction_.normalized()};
+		Uv<Vec3f> duv_{Vec3f::createCoordsSystem(direction_)};
+		float radius_{params_.radius_};
+		float area_pdf_{1.f / (radius_ * radius_)};
 		float world_radius_;
-		bool infinite_;
-		int major_axis_; //!< the largest component of direction
 };
 
 } //namespace yafaray

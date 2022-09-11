@@ -27,11 +27,20 @@ int main()
 {
 	yafaray_Interface_t *yi = yafaray_createInterface(YAFARAY_INTERFACE_FOR_RENDERING, NULL, NULL, NULL, YAFARAY_DISPLAY_CONSOLE_NORMAL);
 	yafaray_setConsoleLogColorsEnabled(yi, YAFARAY_BOOL_TRUE);
-	yafaray_setConsoleVerbosityLevel(yi, YAFARAY_LOG_LEVEL_DEBUG);
+	yafaray_setConsoleVerbosityLevel(yi, YAFARAY_LOG_LEVEL_VERBOSE);
 
 	yafaray_paramsSetString(yi, "type", "yafaray");
 	yafaray_createScene(yi);
 	yafaray_paramsClearAll(yi);
+	yafaray_paramsSetString(yi, "color_space", "sRGB");
+	yafaray_paramsSetString(yi, "filename", "tex.hdr");
+	yafaray_paramsSetFloat(yi, "gamma", 1);
+	yafaray_paramsSetString(yi, "image_optimization", "optimized");
+	yafaray_createImage(yi, "Tex_image");
+	yafaray_paramsClearAll(yi);
+
+	yafaray_paramsSetString(yi, "image_name", "Tex_image");
+	yafaray_paramsSetString(yi, "type", "image");
 	yafaray_paramsSetBool(yi, "adj_clamp", YAFARAY_BOOL_TRUE);
 	yafaray_paramsSetFloat(yi, "adj_contrast", 1);
 	yafaray_paramsSetFloat(yi, "adj_hue", 0);
@@ -42,31 +51,20 @@ int main()
 	yafaray_paramsSetFloat(yi, "adj_saturation", 1);
 	yafaray_paramsSetBool(yi, "calc_alpha", YAFARAY_BOOL_FALSE);
 	yafaray_paramsSetString(yi, "clipping", "repeat");
-	yafaray_paramsSetString(yi, "color_space", "sRGB");
 	yafaray_paramsSetFloat(yi, "cropmax_x", 1);
 	yafaray_paramsSetFloat(yi, "cropmax_y", 1);
 	yafaray_paramsSetFloat(yi, "cropmin_x", 0);
 	yafaray_paramsSetFloat(yi, "cropmin_y", 0);
 	yafaray_paramsSetFloat(yi, "ewa_max_anisotropy", 8);
-	yafaray_paramsSetString(yi, "filename", "pixels_texture.tga");
-	yafaray_paramsSetFloat(yi, "gamma", 1);
-	yafaray_paramsSetString(yi, "image_optimization", "optimized");
-	yafaray_paramsSetBool(yi, "img_grayscale", YAFARAY_BOOL_FALSE);
 	yafaray_paramsSetString(yi, "interpolate", "bilinear");
 	yafaray_paramsSetBool(yi, "mirror_x", YAFARAY_BOOL_FALSE);
 	yafaray_paramsSetBool(yi, "mirror_y", YAFARAY_BOOL_FALSE);
 	yafaray_paramsSetBool(yi, "normalmap", YAFARAY_BOOL_FALSE);
 	yafaray_paramsSetBool(yi, "rot90", YAFARAY_BOOL_FALSE);
 	yafaray_paramsSetFloat(yi, "trilinear_level_bias", 0);
-	yafaray_paramsSetString(yi, "type", "image");
 	yafaray_paramsSetBool(yi, "use_alpha", YAFARAY_BOOL_FALSE);
 	yafaray_paramsSetInt(yi, "xrepeat", 1);
 	yafaray_paramsSetInt(yi, "yrepeat", 1);
-	yafaray_createImage(yi, "Tex_image");
-	yafaray_paramsClearAll(yi);
-
-	yafaray_paramsSetString(yi, "image_name", "Tex_image");
-	yafaray_paramsSetString(yi, "type", "image");
 	yafaray_createTexture(yi, "Tex");
 	yafaray_paramsClearAll(yi);
 
@@ -79,19 +77,25 @@ int main()
 	yafaray_paramsSetFloat(yi, "adj_mult_factor_red", 1);
 	yafaray_paramsSetFloat(yi, "adj_saturation", 1);
 	yafaray_paramsSetInt(yi, "depth", 0);
-	yafaray_paramsSetFloat(yi, "ewa_max_anisotropy", 8);
 	yafaray_paramsSetBool(yi, "hard", YAFARAY_BOOL_TRUE);
-	yafaray_paramsSetBool(yi, "img_grayscale", YAFARAY_BOOL_FALSE);
 	yafaray_paramsSetString(yi, "noise_type", "blender");
 	yafaray_paramsSetString(yi, "shape", "sin");
 	yafaray_paramsSetFloat(yi, "size", 0.25);
-	yafaray_paramsSetFloat(yi, "trilinear_level_bias", 0);
 	yafaray_paramsSetFloat(yi, "turbulence", 0);
 	yafaray_paramsSetString(yi, "type", "wood");
 	yafaray_paramsSetString(yi, "wood_type", "bands");
 	yafaray_createTexture(yi, "Texture");
 	yafaray_paramsClearAll(yi);
 
+	yafaray_paramsSetString(yi, "color_space", "sRGB");
+	yafaray_paramsSetString(yi, "filename", "tex.tga");
+	yafaray_paramsSetFloat(yi, "gamma", 1);
+	yafaray_paramsSetString(yi, "image_optimization", "optimized");
+	yafaray_createImage(yi, "Texture.001_image");
+	yafaray_paramsClearAll(yi);
+
+	yafaray_paramsSetString(yi, "image_name", "Texture.001_image");
+	yafaray_paramsSetString(yi, "type", "image");
 	yafaray_paramsSetBool(yi, "adj_clamp", YAFARAY_BOOL_TRUE);
 	yafaray_paramsSetFloat(yi, "adj_contrast", 1);
 	yafaray_paramsSetFloat(yi, "adj_hue", 0);
@@ -102,31 +106,20 @@ int main()
 	yafaray_paramsSetFloat(yi, "adj_saturation", 1);
 	yafaray_paramsSetBool(yi, "calc_alpha", YAFARAY_BOOL_FALSE);
 	yafaray_paramsSetString(yi, "clipping", "repeat");
-	yafaray_paramsSetString(yi, "color_space", "sRGB");
 	yafaray_paramsSetFloat(yi, "cropmax_x", 1);
 	yafaray_paramsSetFloat(yi, "cropmax_y", 1);
 	yafaray_paramsSetFloat(yi, "cropmin_x", 0);
 	yafaray_paramsSetFloat(yi, "cropmin_y", 0);
 	yafaray_paramsSetFloat(yi, "ewa_max_anisotropy", 8);
-	yafaray_paramsSetString(yi, "filename", "tex.tga");
-	yafaray_paramsSetFloat(yi, "gamma", 1);
-	yafaray_paramsSetString(yi, "image_optimization", "optimized");
-	yafaray_paramsSetBool(yi, "img_grayscale", YAFARAY_BOOL_FALSE);
 	yafaray_paramsSetString(yi, "interpolate", "bilinear");
 	yafaray_paramsSetBool(yi, "mirror_x", YAFARAY_BOOL_FALSE);
 	yafaray_paramsSetBool(yi, "mirror_y", YAFARAY_BOOL_FALSE);
 	yafaray_paramsSetBool(yi, "normalmap", YAFARAY_BOOL_FALSE);
 	yafaray_paramsSetBool(yi, "rot90", YAFARAY_BOOL_FALSE);
 	yafaray_paramsSetFloat(yi, "trilinear_level_bias", 0);
-	yafaray_paramsSetString(yi, "type", "image");
 	yafaray_paramsSetBool(yi, "use_alpha", YAFARAY_BOOL_FALSE);
 	yafaray_paramsSetInt(yi, "xrepeat", 1);
 	yafaray_paramsSetInt(yi, "yrepeat", 1);
-	yafaray_createImage(yi, "Texture.001_image");
-	yafaray_paramsClearAll(yi);
-
-	yafaray_paramsSetString(yi, "image_name", "Texture.001_image");
-	yafaray_paramsSetString(yi, "type", "image");
 	yafaray_createTexture(yi, "Texture.001");
 	yafaray_paramsClearAll(yi);
 
@@ -408,7 +401,7 @@ int main()
 	yafaray_paramsSetInt(yi, "num_vertices", 8);
 	yafaray_paramsSetInt(yi, "object_index", 0);
 	yafaray_paramsSetString(yi, "type", "mesh");
-	yafaray_paramsSetString(yi, "visibility", "visible");
+	yafaray_paramsSetString(yi, "visibility", "normal");
 	yafaray_createObject(yi, "Cube.002");
 	yafaray_paramsClearAll(yi);
 
@@ -443,7 +436,7 @@ int main()
 	yafaray_paramsSetInt(yi, "num_vertices", 8);
 	yafaray_paramsSetInt(yi, "object_index", 0);
 	yafaray_paramsSetString(yi, "type", "mesh");
-	yafaray_paramsSetString(yi, "visibility", "visible");
+	yafaray_paramsSetString(yi, "visibility", "normal");
 	yafaray_createObject(yi, "Cube.001");
 	yafaray_paramsClearAll(yi);
 
@@ -478,7 +471,7 @@ int main()
 	yafaray_paramsSetInt(yi, "num_vertices", 4);
 	yafaray_paramsSetInt(yi, "object_index", 0);
 	yafaray_paramsSetString(yi, "type", "mesh");
-	yafaray_paramsSetString(yi, "visibility", "visible");
+	yafaray_paramsSetString(yi, "visibility", "normal");
 	yafaray_createObject(yi, "Plane");
 	yafaray_paramsClearAll(yi);
 
@@ -499,7 +492,7 @@ int main()
 	yafaray_paramsSetInt(yi, "num_vertices", 8);
 	yafaray_paramsSetInt(yi, "object_index", 0);
 	yafaray_paramsSetString(yi, "type", "mesh");
-	yafaray_paramsSetString(yi, "visibility", "visible");
+	yafaray_paramsSetString(yi, "visibility", "normal");
 	yafaray_createObject(yi, "Cube");
 	yafaray_paramsClearAll(yi);
 
@@ -546,7 +539,6 @@ int main()
 	yafaray_paramsClearAll(yi);
 
 	yafaray_paramsSetBool(yi, "cast_shadows", YAFARAY_BOOL_TRUE);
-	yafaray_paramsSetBool(yi, "cast_shadows_sun", YAFARAY_BOOL_TRUE);
 	yafaray_paramsSetColor(yi, "color", 0.155663, 0.155663, 0.155663, 1);
 	yafaray_paramsSetBool(yi, "ibl", YAFARAY_BOOL_FALSE);
 	yafaray_paramsSetInt(yi, "ibl_samples", 16);

@@ -21,23 +21,98 @@
 #include "material/material_mask.h"
 #include "shader/shader_node.h"
 #include "texture/texture.h"
-#include "common/param.h"
-#include "render/render_data.h"
+#include "param/param.h"
+#include "scene/scene.h"
 
 namespace yafaray {
 
-MaskMaterial::MaskMaterial(Logger &logger, const std::unique_ptr<const Material> *material_1, const std::unique_ptr<const Material> *material_2, float thresh, VisibilityFlags visibility):
-		NodeMaterial(logger), mat_1_(material_1), mat_2_(material_2), threshold_(thresh)
+MaskMaterial::Params::Params(ParamError &param_error, const ParamMap &param_map)
 {
-	visibility_ = visibility;
+	PARAM_LOAD(material_1_name_);
+	PARAM_LOAD(material_2_name_);
+	PARAM_LOAD(threshold_);
+	PARAM_SHADERS_LOAD;
+}
+
+ParamMap MaskMaterial::Params::getAsParamMap(bool only_non_default) const
+{
+	PARAM_SAVE_START;
+	PARAM_SAVE(material_1_name_);
+	PARAM_SAVE(material_2_name_);
+	PARAM_SAVE(threshold_);
+	PARAM_SHADERS_SAVE;
+	PARAM_SAVE_END;
+}
+
+ParamMap MaskMaterial::getAsParamMap(bool only_non_default) const
+{
+	ParamMap result{Material::getAsParamMap(only_non_default)};
+	result.append(params_.getAsParamMap(only_non_default));
+	return result;
+}
+
+std::pair<Material *, ParamError> MaskMaterial::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map, const std::list<ParamMap> &nodes_param_maps)
+{
+	auto param_error{Params::meta_.check(param_map, {"type"}, {})};
+	std::string mat1_name;
+	if(param_map.getParam(Params::material_1_name_meta_.name(), mat1_name) != ParamError::Flags::Ok) return {nullptr, {ParamError::Flags::ErrorWhileCreating}};
+	const std::unique_ptr<const Material> *m_1 = scene.getMaterial(mat1_name);
+	std::string mat2_name;
+	if(param_map.getParam(Params::material_2_name_meta_.name(), mat2_name) != ParamError::Flags::Ok) return {nullptr, {ParamError::Flags::ErrorWhileCreating}};
+	const std::unique_ptr<const Material> *m_2 = scene.getMaterial(mat2_name);
+	if(!m_1 || !m_2) return {nullptr, {ParamError::Flags::ErrorWhileCreating}};
+
+	auto mat = new MaskMaterial(logger, param_error, param_map, m_1, m_2);
+
+	std::map<std::string, const ShaderNode *> root_nodes_map;
+	// Prepare our node list
+	for(size_t shader_index = 0; shader_index < mat->shaders_.size(); ++shader_index)
+	{
+		root_nodes_map[ShaderNodeType{static_cast<unsigned char>(shader_index)}.print()] = nullptr;
+	}
+	std::vector<const ShaderNode *> root_nodes_list;
+	if(!mat->nodes_map_.empty()) NodeMaterial::parseNodes(param_map, root_nodes_list, root_nodes_map, mat->nodes_map_, logger);
+	for(size_t shader_index = 0; shader_index < mat->shaders_.size(); ++shader_index)
+	{
+		mat->shaders_[shader_index] = root_nodes_map[ShaderNodeType{static_cast<unsigned char>(shader_index)}.print()];
+	}
+	// solve nodes order
+	if(!root_nodes_list.empty())
+	{
+		const std::vector<const ShaderNode *> nodes_sorted = NodeMaterial::solveNodesOrder(root_nodes_list, mat->nodes_map_, logger);
+		for(size_t shader_index = 0; shader_index < mat->shaders_.size(); ++shader_index)
+		{
+			if(mat->shaders_[shader_index])
+			{
+				if(ShaderNodeType{static_cast<unsigned char>(shader_index)}.isBump())
+				{
+					mat->bump_nodes_ = NodeMaterial::getNodeList(mat->shaders_[shader_index], nodes_sorted);
+				}
+				else
+				{
+					const std::vector<const ShaderNode *> shader_nodes_list = NodeMaterial::getNodeList(mat->shaders_[shader_index], nodes_sorted);
+					mat->color_nodes_.insert(mat->color_nodes_.end(), shader_nodes_list.begin(), shader_nodes_list.end());
+				}
+			}
+		}
+	}
+	if(param_error.flags_ != ParamError::Flags::Ok) logger.logWarning(param_error.print<MaskMaterial>(name, {"type"}));
+	return {mat, param_error};
+}
+
+MaskMaterial::MaskMaterial(Logger &logger, ParamError &param_error, const ParamMap &param_map, const std::unique_ptr<const Material> *material_1, const std::unique_ptr<const Material> *material_2) :
+		NodeMaterial{logger, param_error, param_map}, params_{param_error, param_map},
+		mat_1_{material_1}, mat_2_{material_2}
+{
+	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + params_.getAsParamMap(true).print());
 }
 
 const MaterialData * MaskMaterial::initBsdf(SurfacePoint &sp, const Camera *camera) const
 {
 	auto mat_data = new MaskMaterialData(bsdf_flags_, color_nodes_.size() + bump_nodes_.size());
 	evalNodes(sp, color_nodes_, mat_data->node_tree_data_, camera);
-	const float val = mask_->getScalar(mat_data->node_tree_data_); //mask->getFloat(sp.P);
-	mat_data->select_mat_2_ = val > threshold_;
+	const float val = shaders_[ShaderNodeType::Mask]->getScalar(mat_data->node_tree_data_); //mask->getFloat(sp.P);
+	mat_data->select_mat_2_ = val > params_.threshold_;
 	if(mat_data->select_mat_2_)
 	{
 		mat_data->mat_2_data_ = std::unique_ptr<const MaterialData>(mat_2_->get()->initBsdf(sp, camera));
@@ -115,53 +190,6 @@ float MaskMaterial::getAlpha(const MaterialData *mat_data, const SurfacePoint &s
 	if(mat_data_specific->select_mat_2_) alpha = mat_2_->get()->getAlpha(mat_data_specific->mat_2_data_.get(), sp, wo, camera);
 	else alpha = mat_1_->get()->getAlpha(mat_data_specific->mat_1_data_.get(), sp, wo, camera);
 	return alpha;
-}
-
-Material *MaskMaterial::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params, const std::list<ParamMap> &nodes_params)
-{
-	std::string mat1_name;
-	if(!params.getParam("material1", mat1_name)) return nullptr;
-	const std::unique_ptr<const Material> *material_1 = scene.getMaterial(mat1_name);
-	std::string mat2_name;
-	if(!params.getParam("material2", mat2_name)) return nullptr;
-	const std::unique_ptr<const Material> *material_2 = scene.getMaterial(mat2_name);
-	if(material_1 == nullptr || material_2 == nullptr) return nullptr;
-	//if(! params.getParam("mask", name) ) return nullptr;
-	//mask = scene.getTexture(*name);
-
-	double thresh = 0.5;
-	std::string s_visibility = "normal";
-	bool receive_shadows = true;
-	params.getParam("threshold", thresh);
-	params.getParam("receive_shadows", receive_shadows);
-	params.getParam("visibility", s_visibility);
-
-	const VisibilityFlags visibility = visibility::fromString(s_visibility);
-	auto mat = new MaskMaterial(logger, material_1, material_2, thresh, visibility);
-	mat->receive_shadows_ = receive_shadows;
-
-	std::vector<const ShaderNode *> root_nodes_list;
-	mat->nodes_map_ = NodeMaterial::loadNodes(nodes_params, scene, logger);
-	if(mat->nodes_map_.empty())
-	{
-		return nullptr;
-	}
-	else
-	{
-		std::string mask;
-		if(params.getParam("mask", mask))
-		{
-			const auto &i = mat->nodes_map_.find(mask);
-			if(i != mat->nodes_map_.end()) { mat->mask_ = i->second.get(); root_nodes_list.emplace_back(mat->mask_); }
-			else
-			{
-				logger.logError("MaskMat: Mask shader node '", mask, "' does not exist!");
-				return nullptr;
-			}
-		}
-	}
-	mat->color_nodes_ = NodeMaterial::solveNodesOrder(root_nodes_list, mat->nodes_map_, logger);
-	return mat;
 }
 
 } //namespace yafaray

@@ -28,6 +28,9 @@
 #include "color/color.h"
 #include "common/aa_noise_params.h"
 #include "common/mask_edge_toon_params.h"
+#include "common/enum.h"
+#include "common/enum_map.h"
+#include "param/class_meta.h"
 #include <vector>
 
 namespace yafaray {
@@ -48,15 +51,35 @@ struct RayDivision;
 class SurfaceIntegrator: public Integrator
 {
 	public:
-		static SurfaceIntegrator *factory(Logger &logger, RenderControl &render_control, const Scene &scene, const std::string &name, const ParamMap &params);
+		inline static std::string getClassName() { return "SurfaceIntegrator"; }
+		static std::pair<SurfaceIntegrator *, ParamError> factory(Logger &logger, RenderControl &render_control, const Scene &scene, const std::string &name, const ParamMap &param_map);
+		[[nodiscard]] virtual ParamMap getAsParamMap(bool only_non_default) const;
 		virtual std::pair<Rgb, float> integrate(Ray &ray, FastRandom &fast_random, RandomGenerator &random_generator, std::vector<int> &correlative_sample_number, ColorLayers *color_layers, int thread_id, int ray_level, bool chromatic_enabled, float wavelength, int additional_depth, const RayDivision &ray_division, const PixelSamplingData &pixel_sampling_data, unsigned int object_index_highest, unsigned int material_index_highest) const = 0; 	//!< chromatic_enabled indicates wether the full spectrum is calculated (true) or only a single wavelength (false). wavelength is the (normalized) wavelength being used when chromatic is false. The range is defined going from 400nm (0.0) to 700nm (1.0), although the widest range humans can perceive is ofteb given 380-780nm.
 		bool preprocess(FastRandom &fast_random, ImageFilm *image_film, const RenderView *render_view, const Scene &scene) override;
 
 	protected:
-		SurfaceIntegrator(RenderControl &render_control, Logger &logger) : Integrator(logger), render_control_(render_control) { }
-		Type getType() const override { return Surface; }
+		struct Type : public Enum<Type>
+		{
+			using Enum::Enum;
+			enum : decltype(type()) { None, Bidirectional, Debug, DirectLight, Path, Photon, Sppm };
+			inline static const EnumMap<decltype(type())> map_{{
+					{"bidirectional", Bidirectional, ""},
+					{"DebugIntegrator", Debug, ""},
+					{"directlighting", DirectLight, ""},
+					{"pathtracing", Path, ""},
+					{"photonmapping", Photon, ""},
+					{"SPPM", Sppm, ""},
+				}};
+		};
+		[[nodiscard]] virtual Type type() const = 0;
+		const struct Params
+		{
+			PARAM_INIT;
+			PARAM_DECL(bool, time_forced_, false, "time_forced", "");
+			PARAM_DECL(float, time_forced_value_, 0.f, "time_forced_value", "");
+		} params_;
+		SurfaceIntegrator(RenderControl &render_control, Logger &logger, ParamError &param_error, const ParamMap &param_map) : Integrator(logger), render_control_(render_control), params_{param_error, param_map} { }
 
-	protected:
 		RenderControl &render_control_;
 		int num_threads_ = 1;
 		int num_threads_photons_ = 1;

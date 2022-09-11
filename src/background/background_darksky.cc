@@ -28,7 +28,7 @@
 
 #include "background/background_darksky.h"
 #include "common/logger.h"
-#include "common/param.h"
+#include "param/param.h"
 #include "scene/scene.h"
 #include "light/light.h"
 #include "image/image_output.h"
@@ -37,25 +37,122 @@
 
 namespace yafaray {
 
-DarkSkyBackground::DarkSkyBackground(Logger &logger, const Point3f &dir, float turb, float pwr, float sky_bright, bool clamp, float av, float bv, float cv, float dv, float ev, float altitude, bool night, float exp, bool genc, ColorConv::ColorSpace cs) :
-		Background(logger), power_(pwr * sky_bright), sky_brightness_(sky_bright), color_conv_(clamp, genc, cs, exp), alt_(altitude), night_sky_(night)
+DarkSkyBackground::Params::Params(ParamError &param_error, const ParamMap &param_map)
 {
-	std::string act;
+	PARAM_LOAD(from_);
+	PARAM_LOAD(turb_);
+	PARAM_LOAD(altitude_);
+	PARAM_LOAD(bright_);
+	PARAM_LOAD(exposure_);
+	PARAM_LOAD(night_);
+	PARAM_ENUM_LOAD(color_space_);
+	PARAM_LOAD(add_sun_);
+	PARAM_LOAD(sun_power_);
+	PARAM_LOAD(background_light_);
+	PARAM_LOAD(light_samples_);
+	PARAM_LOAD(cast_shadows_sun_);
+	PARAM_LOAD(a_var_);
+	PARAM_LOAD(b_var_);
+	PARAM_LOAD(c_var_);
+	PARAM_LOAD(d_var_);
+	PARAM_LOAD(e_var_);
+}
 
-	sun_dir_ = dir;
-	sun_dir_[Axis::Z] += alt_;
+ParamMap DarkSkyBackground::Params::getAsParamMap(bool only_non_default) const
+{
+	PARAM_SAVE_START;
+	PARAM_SAVE(from_);
+	PARAM_SAVE(turb_);
+	PARAM_SAVE(altitude_);
+	PARAM_SAVE(bright_);
+	PARAM_SAVE(exposure_);
+	PARAM_SAVE(night_);
+	PARAM_ENUM_SAVE(color_space_);
+	PARAM_SAVE(add_sun_);
+	PARAM_SAVE(sun_power_);
+	PARAM_SAVE(background_light_);
+	PARAM_SAVE(light_samples_);
+	PARAM_SAVE(cast_shadows_sun_);
+	PARAM_SAVE(a_var_);
+	PARAM_SAVE(b_var_);
+	PARAM_SAVE(c_var_);
+	PARAM_SAVE(d_var_);
+	PARAM_SAVE(e_var_);
+	PARAM_SAVE_END;
+}
+
+ParamMap DarkSkyBackground::getAsParamMap(bool only_non_default) const
+{
+	ParamMap result{Background::getAsParamMap(only_non_default)};
+	result.append(params_.getAsParamMap(only_non_default));
+	return result;
+}
+
+std::pair<Background *, ParamError> DarkSkyBackground::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map)
+{
+	auto param_error{Params::meta_.check(param_map, {"type"}, {})};
+	auto background = new DarkSkyBackground(logger, param_error, param_map);
+	if(param_error.flags_ != ParamError::Flags::Ok) logger.logWarning(param_error.print<DarkSkyBackground>(name, {"type"}));
+	if(background->params_.add_sun_ && math::radToDeg(math::acos(background->params_.from_[Axis::Z])) < 100.0)
+	{
+		Vec3f d(background->params_.from_);
+		d.normalize();
+
+		Rgb suncol = background->getAttenuatedSunColor();
+		double angle = 0.5 * (2.0 - d[Axis::Z]);
+
+		if(logger.isVerbose()) logger.logVerbose("DarkSky: SunColor = ", suncol);
+
+		ParamMap bgp;
+		bgp["type"] = std::string("sunlight");
+		bgp["direction"] = d;
+		bgp["color"] = suncol;
+		bgp["angle"] = Parameter(angle);
+		bgp["power"] = Parameter(background->params_.sun_power_ * (background->params_.night_ ? 0.5f : 1.f));
+		bgp["samples"] = background->params_.light_samples_;
+		bgp["with_caustic"] = background->Background::params_.with_caustic_;
+		bgp["with_diffuse"] = background->Background::params_.with_diffuse_;
+		bgp["cast_shadows"] = background->Background::params_.cast_shadows_;
+
+		if(logger.isVerbose()) logger.logVerbose("DarkSky: Adding background sun light");
+		std::unique_ptr<Light> bglight{Light::factory(logger, scene, "light_sun", bgp).first};
+		background->addLight(std::move(bglight));
+	}
+	if(background->params_.background_light_)
+	{
+		ParamMap bgp;
+		bgp["type"] = std::string("bglight");
+		bgp["samples"] = background->params_.light_samples_;
+		bgp["with_caustic"] = background->Background::params_.with_caustic_;
+		bgp["with_diffuse"] = background->Background::params_.with_diffuse_;
+		bgp["cast_shadows"] = background->Background::params_.cast_shadows_;
+
+		if(logger.isVerbose()) logger.logVerbose("DarkSky: Adding background sky light");
+		std::unique_ptr<Light> bglight{Light::factory(logger, scene, "light_sky", bgp).first};
+		bglight->setBackground(background);
+		background->addLight(std::move(bglight));
+	}
+	if(logger.isVerbose()) logger.logVerbose("DarkSky: End");
+	return {background, param_error};
+}
+
+DarkSkyBackground::DarkSkyBackground(Logger &logger, ParamError &param_error, const ParamMap &param_map) :
+		Background{logger, param_error, param_map}, params_{param_error, param_map},
+		sun_dir_{params_.from_},
+		bright_{params_.bright_ * (params_.night_ ? 0.5f : 1.f)},
+		power_{Background::params_.power_ * bright_},
+		color_conv_{true, true, static_cast<ColorConv::ColorSpace>(params_.color_space_.value()), params_.exposure_}
+{
+	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + params_.getAsParamMap(true).print());
+	sun_dir_[Axis::Z] += params_.altitude_;
 	sun_dir_.normalize();
-
 	theta_s_ = math::acos(sun_dir_[Axis::Z]);
-
-	act = (night_sky_) ? "ON" : "OFF";
 	if(logger_.isVerbose())
 	{
-		logger_.logVerbose("DarkSky: Night mode [ ", act, " ]");
+		logger_.logVerbose("DarkSky: Night mode [ ", (params_.night_ ? "ON" : "OFF"), " ]");
 		logger_.logVerbose("DarkSky: Solar Declination in Degrees (", math::radToDeg(theta_s_), ")");
-		act = (clamp) ? "active." : "inactive.";
-		logger_.logVerbose("DarkSky: RGB Clamping ", act);
-		logger_.logVerbose("DarkSky: Altitude ", alt_);
+		logger_.logVerbose("DarkSky: RGB Clamping active.");
+		logger_.logVerbose("DarkSky: Altitude ", params_.altitude_);
 	}
 
 	cos_theta_s_ = math::cos(theta_s_);
@@ -64,8 +161,8 @@ DarkSkyBackground::DarkSkyBackground(Logger &logger, const Point3f &dir, float t
 	theta_2_ = theta_s_ * theta_s_;
 	theta_3_ = theta_2_ * theta_s_;
 
-	t_ = turb;
-	t_2_ = turb * turb;
+	t_ = params_.turb_;
+	t_2_ = params_.turb_ * params_.turb_;
 
 	const double chi = (0.44444444 - (t_ / 120.0)) * (math::num_pi<double> - (2.0 * theta_s_));
 
@@ -82,11 +179,11 @@ DarkSkyBackground::DarkSkyBackground(Logger &logger, const Point3f &dir, float t
 			(-0.04214 * theta_3_ + 0.08970 * theta_2_ - 0.04153 * theta_s_ + 0.00515) * t_ +
 			(0.15346 * theta_3_ - 0.26756 * theta_2_ + 0.06669 * theta_s_ + 0.26688);
 
-	perez_Y_[0] = ((0.17872 * t_) - 1.46303) * av;
-	perez_Y_[1] = ((-0.35540 * t_) + 0.42749) * bv;
-	perez_Y_[2] = ((-0.02266 * t_) + 5.32505) * cv;
-	perez_Y_[3] = ((0.12064 * t_) - 2.57705) * dv;
-	perez_Y_[4] = ((-0.06696 * t_) + 0.37027) * ev;
+	perez_Y_[0] = ((0.17872 * t_) - 1.46303) * params_.a_var_;
+	perez_Y_[1] = ((-0.35540 * t_) + 0.42749) * params_.b_var_;
+	perez_Y_[2] = ((-0.02266 * t_) + 5.32505) * params_.c_var_;
+	perez_Y_[3] = ((0.12064 * t_) - 2.57705) * params_.d_var_;
+	perez_Y_[4] = ((-0.06696 * t_) + 0.37027) * params_.e_var_;
 	perez_Y_[5] = prePerez(perez_Y_);
 
 	perez_x_[0] = ((-0.01925 * t_) - 0.25922);
@@ -108,7 +205,7 @@ Rgb DarkSkyBackground::getAttenuatedSunColor()
 {
 	Rgb light_color(1.0);
 	light_color = getSunColorFromSunRad();
-	if(night_sky_) light_color *= Rgb(0.8, 0.8, 1.0);
+	if(params_.night_) light_color *= Rgb(0.8, 0.8, 1.0);
 	return light_color;
 }
 
@@ -168,7 +265,7 @@ double DarkSkyBackground::perezFunction(const std::array<double, 6> &lam, double
 inline Rgb DarkSkyBackground::getSkyCol(const Vec3f &dir) const
 {
 	Vec3f iw {dir};
-	iw[Axis::Z] += alt_;
+	iw[Axis::Z] += params_.altitude_;
 	iw.normalize();
 
 	double cos_theta = iw[Axis::Z];
@@ -182,8 +279,8 @@ inline Rgb DarkSkyBackground::getSkyCol(const Vec3f &dir) const
 	const double Y = perezFunction(perez_Y_, cos_theta, gamma, cos_gamma_2, zenith_Y_) * 6.66666667e-5;
 
 	Rgb sky_col = color_conv_.fromxyY(x, y, Y);
-	if(night_sky_) sky_col *= Rgb(0.05, 0.05, 0.08);
-	return sky_col * sky_brightness_;
+	if(params_.night_) sky_col *= Rgb(0.05, 0.05, 0.08);
+	return sky_col * bright_;
 }
 
 Rgb DarkSkyBackground::operator()(const Vec3f &dir, bool use_ibl_blur) const
@@ -194,120 +291,6 @@ Rgb DarkSkyBackground::operator()(const Vec3f &dir, bool use_ibl_blur) const
 Rgb DarkSkyBackground::eval(const Vec3f &dir, bool use_ibl_blur) const
 {
 	return getSkyCol(dir) * power_;
-}
-
-const Background * DarkSkyBackground::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params)
-{
-	Point3f dir{{1, 1, 1}};
-	float turb = 4.0;
-	float altitude = 0.0;
-	int bgl_samples = 8;
-	float power = 1.0; //bgLight Power
-	float pw = 1.0;// sunLight power
-	float bright = 1.0;
-	bool add_sun = false;
-	bool bgl = false;
-	bool clamp = true;
-	bool night = false;
-	float av, bv, cv, dv, ev;
-	bool caus = true;
-	bool diff = true;
-	av = bv = cv = dv = ev = 1.0;
-	bool gamma_enc = true;
-	std::string cs = "CIE (E)";
-	float exp = 1.f;
-	bool cast_shadows = true;
-	bool cast_shadows_sun = true;
-
-	if(logger.isVerbose()) logger.logVerbose("DarkSky: Begin");
-
-	params.getParam("from", dir);
-	params.getParam("turbidity", turb);
-	params.getParam("altitude", altitude);
-	params.getParam("power", power);
-	params.getParam("bright", bright);
-
-	//params.getParam("clamp_rgb", clamp);
-	params.getParam("exposure", exp);
-	//params.getParam("gamma_enc", gammaEnc);
-	params.getParam("color_space", cs);
-
-	params.getParam("a_var", av); //Darkening or brightening towards horizon
-	params.getParam("b_var", bv); //Luminance gradient near the horizon
-	params.getParam("c_var", cv); //Relative intensity of circumsolar region
-	params.getParam("d_var", dv); //Width of circumsolar region
-	params.getParam("e_var", ev); //Relative backscattered light
-
-	params.getParam("add_sun", add_sun);
-	params.getParam("sun_power", pw);
-
-	params.getParam("background_light", bgl);
-	params.getParam("with_caustic", caus);
-	params.getParam("with_diffuse", diff);
-	params.getParam("light_samples", bgl_samples);
-	params.getParam("cast_shadows", cast_shadows);
-	params.getParam("cast_shadows_sun", cast_shadows_sun);
-
-	params.getParam("night", night);
-
-	ColorConv::ColorSpace color_s = ColorConv::CieRgbECs;
-	if(cs == "CIE (E)") color_s = ColorConv::CieRgbECs;
-	else if(cs == "CIE (D50)") color_s = ColorConv::CieRgbD50Cs;
-	else if(cs == "sRGB (D65)") color_s = ColorConv::SRgbD65Cs;
-	else if(cs == "sRGB (D50)") color_s = ColorConv::SRgbD50Cs;
-
-	if(night)
-	{
-		bright *= 0.5;
-		pw *= 0.5;
-	}
-
-	auto dark_sky = new DarkSkyBackground(logger, dir, turb, power, bright, clamp, av, bv, cv, dv, ev, altitude, night, exp, gamma_enc, color_s);
-
-	if(add_sun && math::radToDeg(math::acos(dir[Axis::Z])) < 100.0)
-	{
-		Vec3f d(dir);
-		d.normalize();
-
-		Rgb suncol = dark_sky->getAttenuatedSunColor();
-		double angle = 0.5 * (2.0 - d[Axis::Z]);
-
-		if(logger.isVerbose()) logger.logVerbose("DarkSky: SunColor = ", suncol);
-
-		ParamMap p;
-		p["type"] = std::string("sunlight");
-		p["direction"] = d;
-		p["color"] = suncol;
-		p["angle"] = Parameter(angle);
-		p["power"] = Parameter(pw);
-		p["samples"] = bgl_samples;
-		p["cast_shadows"] = cast_shadows_sun;
-		p["with_caustic"] = caus;
-		p["with_diffuse"] = diff;
-
-		if(logger.isVerbose()) logger.logVerbose("DarkSky: Adding background sun light");
-		std::unique_ptr<Light> bglight{Light::factory(logger, scene, "light_sun", std::move(p))};
-		dark_sky->addLight(std::move(bglight));
-	}
-
-	if(bgl)
-	{
-		ParamMap bgp;
-		bgp["type"] = std::string("bglight");
-		bgp["samples"] = bgl_samples;
-		bgp["with_caustic"] = caus;
-		bgp["with_diffuse"] = diff;
-		bgp["cast_shadows"] = cast_shadows;
-
-		if(logger.isVerbose()) logger.logVerbose("DarkSky: Adding background sky light");
-		std::unique_ptr<Light> bglight{Light::factory(logger, scene, "light_sky", std::move(bgp))};
-		bglight->setBackground(dark_sky);
-		dark_sky->addLight(std::move(bglight));
-	}
-
-	if(logger.isVerbose()) logger.logVerbose("DarkSky: End");
-
-	return dark_sky;
 }
 
 } //namespace yafaray

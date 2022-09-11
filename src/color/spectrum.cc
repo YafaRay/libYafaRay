@@ -564,18 +564,21 @@ Rgb fakeSpectrum(float p)
 // returns Cauchy coefficients for the reduced form equation n = A + B/lambda^2
 // used to calculate dispersion curve, disp_pw is the refractive index difference Nf-nC
 // may not be quite correct or accurate
-void cauchyCoefficients(float ior, float disp_pw, float &cauchy_a, float &cauchy_b)
+std::pair<float, float> cauchyCoefficients(float ior, float disp_pw)
 {
-	cauchy_a = cauchy_b = 0;
+	std::pair<float, float> cauchy_coefficients{0.f, 0.f};
 	if(disp_pw > 0)
 	{
 		// Fraunhofer line wavelengths, Hydrogen F, Helium d, Hydrogen C
-		const float l_f_2 = 486.13f * 486.13f, ld_2 = 587.56f * 587.56f, l_c_2 = 656.27f * 656.27f;
-		const float vd = (ior - 1.0) / disp_pw;    // Abbe number
-		cauchy_b = (l_c_2 - l_f_2) * vd;
-		if(cauchy_b != 0.0) cauchy_b = (l_f_2 * l_c_2 * (ior - 1.f)) / cauchy_b;
-		cauchy_a = ior - cauchy_b / ld_2;
+		const float l_f_2 = 486.13f * 486.13f;
+		const float ld_2 = 587.56f * 587.56f;
+		const float l_c_2 = 656.27f * 656.27f;
+		const float vd = (ior - 1.f) / disp_pw;    // Abbe number
+		cauchy_coefficients.second = (l_c_2 - l_f_2) * vd;
+		if(cauchy_coefficients.second != 0.f) cauchy_coefficients.second = (l_f_2 * l_c_2 * (ior - 1.f)) / cauchy_coefficients.second;
+		cauchy_coefficients.first = ior - cauchy_coefficients.second / ld_2;
 	}
+	return cauchy_coefficients;
 }
 
 // returns IOR and color at specified wavelength (not called with actual wavelength, but number in 0-1 range)

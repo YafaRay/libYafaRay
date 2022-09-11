@@ -38,39 +38,43 @@ namespace yafaray {
 class AcceleratorKdTreeMultiThread final : public Accelerator
 {
 	public:
-		static const Accelerator * factory(Logger &logger, const std::vector<const Primitive *> &primitives, const ParamMap &params);
+		inline static std::string getClassName() { return "AcceleratorKdTreeMultiThread"; }
+		static std::pair<Accelerator *, ParamError> factory(Logger &logger, const std::vector<const Primitive *> &primitives, const ParamMap &param_map);
+		static std::string printMeta(const std::vector<std::string> &excluded_params) { return Params::meta_.print(excluded_params); }
 
 	private:
-		struct Parameters;
+		[[nodiscard]] Type type() const override { return Type::KdTreeMultiThread; }
+		const struct Params
+		{
+			PARAM_INIT_PARENT(Accelerator);
+			PARAM_DECL(int, max_depth_, 0, "depth", "");
+			PARAM_DECL(int, max_leaf_size_, 1, "max_leaf_size_", "");
+			PARAM_DECL(float , cost_ratio_, 0.8f, "cost_ratio", "node traversal cost divided by primitive intersection cost");
+			PARAM_DECL(float , empty_bonus_, 0.33f, "empty_bonus", "");
+			PARAM_DECL(int, num_threads_, 1, "accelerator_threads", "");
+			PARAM_DECL(int, min_indices_to_spawn_threads_, 10000, "accelerator_min_indices_threads", "Only spawn threaded subtree building when the number of indices in the subtree is higher than this value to prevent slowdown due to very small subtree left indices");
+		} params_;
+		[[nodiscard]] ParamMap getAsParamMap(bool only_non_default) const override;
+
 		struct Result;
 		struct SplitCost;
 		class Node;
 		struct Stack;
-		AcceleratorKdTreeMultiThread(Logger &logger, const std::vector<const Primitive *> &primitives, const Parameters &parameters);
+		AcceleratorKdTreeMultiThread(Logger &logger, ParamError &param_error, const std::vector<const Primitive *> &primitives, const ParamMap &param_map);
 		~AcceleratorKdTreeMultiThread() override;
 		IntersectData intersect(const Ray &ray, float t_max) const override;
 		IntersectData intersectShadow(const Ray &ray, float t_max) const override;
 		IntersectData intersectTransparentShadow(const Ray &ray, int max_depth, float t_max, const Camera *camera) const override;
 		Bound<float> getBound() const override { return tree_bound_; }
 
-		AcceleratorKdTreeMultiThread::Result buildTree(const std::vector<const Primitive *> &primitives, const Bound<float> &node_bound, const std::vector<uint32_t> &indices, int depth, uint32_t next_node_id, int bad_refines, const std::vector<Bound<float>> &bounds, const Parameters &parameters, const ClipPlane &clip_plane, const std::vector<PolyDouble> &polygons, const std::vector<uint32_t> &primitive_indices, std::atomic<int> &num_current_threads) const;
-		void buildTreeWorker(const std::vector<const Primitive *> &primitives, const Bound<float> &node_bound, const std::vector<uint32_t> &indices, int depth, uint32_t next_node_id, int bad_refines, const std::vector<Bound<float>> &bounds, const Parameters &parameters, const ClipPlane &clip_plane, const std::vector<PolyDouble> &polygons, const std::vector<uint32_t> &primitive_indices, Result &result, std::atomic<int> &num_current_threads) const;
+		AcceleratorKdTreeMultiThread::Result buildTree(const std::vector<const Primitive *> &primitives, const Bound<float> &node_bound, const std::vector<uint32_t> &indices, int depth, uint32_t next_node_id, int bad_refines, const std::vector<Bound<float>> &bounds, const Params &parameters, const ClipPlane &clip_plane, const std::vector<PolyDouble> &polygons, const std::vector<uint32_t> &primitive_indices, std::atomic<int> &num_current_threads) const;
+		void buildTreeWorker(const std::vector<const Primitive *> &primitives, const Bound<float> &node_bound, const std::vector<uint32_t> &indices, int depth, uint32_t next_node_id, int bad_refines, const std::vector<Bound<float>> &bounds, const Params &parameters, const ClipPlane &clip_plane, const std::vector<PolyDouble> &polygons, const std::vector<uint32_t> &primitive_indices, Result &result, std::atomic<int> &num_current_threads) const;
 		static SplitCost pigeonMinCost(Logger &logger, float e_bonus, float cost_ratio, const std::vector<Bound<float>> &bounds, const Bound<float> &node_bound, const std::vector<uint32_t> &prim_indices);
 		static SplitCost minimalCost(Logger &logger, float e_bonus, float cost_ratio, const Bound<float> &node_bound, const std::vector<uint32_t> &indices, const std::vector<Bound<float>> &bounds);
 
 		alignas(8) std::vector<Node> nodes_;
 		Bound<float> tree_bound_; 	//!< overall space the tree encloses
 		std::atomic<int> num_current_threads_ { 0 };
-};
-
-struct AcceleratorKdTreeMultiThread::Parameters
-{
-	int max_depth_ = 0;
-	int max_leaf_size_ = 1;
-	float cost_ratio_ = 0.8f; //!< node traversal cost divided by primitive intersection cost
-	float empty_bonus_ = 0.33f;
-	int num_threads_ = 1;
-	int min_indices_to_spawn_threads_ = 10000; //Only spawn threaded subtree building when the number of indices in the subtree is higher than this value to prevent slowdown due to very small subtree left indices
 };
 
 // ============================================================

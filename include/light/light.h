@@ -20,10 +20,12 @@
 #ifndef YAFARAY_LIGHT_H
 #define YAFARAY_LIGHT_H
 
-#include "common/flags.h"
 #include "color/color.h"
+#include "common/logger.h"
+#include "common/enum.h"
+#include "common/enum_map.h"
+#include "param/class_meta.h"
 #include <sstream>
-#include <common/logger.h>
 #include <memory>
 
 namespace yafaray {
@@ -43,10 +45,21 @@ struct LSample;
 class Light
 {
 	public:
-		enum class Flags : unsigned int { None = 0, DiracDir = 1, Singular = 1 << 1 };
-		static Light *factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params);
-		explicit Light(Logger &logger) : logger_(logger) { }
-		Light(Logger &logger, Flags flags): flags_(flags), logger_(logger) { }
+		inline static std::string getClassName() { return "Light"; }
+		struct Flags : Enum<Flags>
+		{
+			using Enum::Enum;
+			enum : decltype(type()) { None = 0, DiracDir = 1, Singular = 1 << 1, All = DiracDir | Singular };
+			inline static const EnumMap<decltype(type())> map_{{
+					{"None", None, ""},
+					{"DiracDir", DiracDir, ""},
+					{"Singular", Singular, ""},
+					{"All", All, ""},
+				}};
+		};
+		static std::pair<Light *, ParamError> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map);
+		[[nodiscard]] virtual ParamMap getAsParamMap(bool only_non_default) const;
+		Light(Logger &logger, ParamError &param_error, std::string name, const ParamMap &param_map, Flags flags) : params_{param_error, param_map}, name_{std::move(name)}, flags_{flags}, logger_{logger} { }
 		virtual ~Light() = default;
 		//! allow for preprocessing when scene loading has finished
 		virtual void init(const Scene &scene) {}
@@ -80,30 +93,49 @@ class Light
 		//! This method must be called right after the factory is called on a background light or the light will fail
 		virtual void setBackground(const Background *bg) { background_ = bg; }
 		//! Enable/disable entire light source
-		[[nodiscard]] bool lightEnabled() const { return light_enabled_;}
-		[[nodiscard]] bool castShadows() const { return cast_shadows_; }
+		[[nodiscard]] bool lightEnabled() const { return params_.light_enabled_;}
+		[[nodiscard]] bool castShadows() const { return params_.cast_shadows_; }
 		//! checks if the light can shoot caustic photons (photonmap integrator)
-		[[nodiscard]] bool shootsCausticP() const { return shoot_caustic_; }
+		[[nodiscard]] bool shootsCausticP() const { return params_.shoot_caustic_; }
 		//! checks if the light can shoot diffuse photons (photonmap integrator)
-		[[nodiscard]] bool shootsDiffuseP() const { return shoot_diffuse_; }
+		[[nodiscard]] bool shootsDiffuseP() const { return params_.shoot_diffuse_; }
 		//! checks if the light is a photon-only light (only shoots photons, not illuminating)
-		[[nodiscard]] bool photonOnly() const { return photon_only_; }
-		//! sets clampIntersect value to reduce noise at the expense of realism and inexact overall lighting
-		void setClampIntersect(float clamp) { clamp_intersect_ = clamp; }
+		[[nodiscard]] bool photonOnly() const { return params_.photon_only_; }
 		[[nodiscard]] Flags getFlags() const { return flags_; }
-		[[nodiscard]] std::string getName() const { return name_; }
+		[[nodiscard]] [[nodiscard]] std::string getName() const { return name_; }
 		void setName(const std::string &name) { name_ = name; }
 
 	protected:
+		struct Type : public Enum<Type>
+		{
+			using Enum::Enum;
+			enum : decltype(type()) { None, Area, BackgroundPortal, Object, Background, Directional, Ies, Point, Sphere, Spot, Sun };
+			inline static const EnumMap<decltype(type())> map_{{
+					{"arealight", Area, ""},
+					{"bgPortalLight", BackgroundPortal, ""},
+					{"objectlight", Object, ""},
+					{"bglight", Background, ""},
+					{"directional", Directional, ""},
+					{"ieslight", Ies, ""},
+					{"pointlight", Point, ""},
+					{"spherelight", Sphere, ""},
+					{"spotlight", Spot, ""},
+					{"sunlight", Sun, ""},
+				}};
+		};
+		[[nodiscard]] virtual Type type() const = 0;
+		const struct Params
+		{
+			PARAM_INIT;
+			PARAM_DECL(bool, light_enabled_, true, "light_enabled", "Enable/disable light");
+			PARAM_DECL(bool, cast_shadows_, true, "cast_shadows", "Enable/disable if the light should cast direct shadows");
+			PARAM_DECL(bool, shoot_caustic_, true, "with_caustic", "Enable/disable if the light can shoot caustic photons (only for integrators using caustic photons)");
+			PARAM_DECL(bool, shoot_diffuse_, true, "with_diffuse", "Enable/disable if the light can shoot diffuse photons (only for integrators using diffuse photons)");
+			PARAM_DECL(bool, photon_only_, false, "photon_only", "Enable/disable if the light is a photon-only light (only shoots photons, not illuminating)");
+		} params_;
 		std::string name_;
-		Flags flags_;
+		Flags flags_{Flags::None};
 		const Background* background_ = nullptr;
-		bool light_enabled_; //!< enable/disable light
-		bool cast_shadows_; //!< enable/disable if the light should cast direct shadows
-		bool shoot_caustic_; //!<enable/disable if the light can shoot caustic photons (photonmap integrator)
-		bool shoot_diffuse_; //!<enable/disable if the light can shoot diffuse photons (photonmap integrator)
-		bool photon_only_; //!<enable/disable if the light is a photon-only light (only shoots photons, not illuminating)
-		float clamp_intersect_ = 0.f;	//!<trick to reduce light sampling noise at the expense of realism and inexact overall light. 0.f disables clamping
 		Logger &logger_;
 };
 
@@ -115,7 +147,7 @@ struct LSample
 	float dir_pdf_; //<! probability density for generating this sample direction (emitSample)
 	float area_pdf_; //<! probability density for generating this sample point on light surface (emitSample)
 	Rgb col_; //<! color of the generated sample
-	Light::Flags flags_; //<! flags of the sampled light source
+	Light::Flags flags_{Light::Flags::None}; //<! flags of the sampled light source
 	SurfacePoint *sp_ = nullptr; //!< surface point on the light source, may only be complete enough to call other light methods with it!
 };
 

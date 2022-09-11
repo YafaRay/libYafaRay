@@ -18,6 +18,7 @@
 
 target_sources(libyafaray4
 		PRIVATE
+		badge.cc
 		image.cc
 		image_layers.cc
 		image_output.cc

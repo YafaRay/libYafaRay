@@ -29,7 +29,6 @@
 #include "uv.h"
 #include <iomanip>
 #include <array>
-#include <numeric>
 
 namespace yafaray {
 
@@ -55,6 +54,7 @@ class Vec
 		constexpr Vec<T, N>(std::array<T, N> &&array): array_{std::move(array)} { }
 		Vec<T, N> &normalize();
 		Vec<T, N> normalized() const;
+		[[nodiscard]] std::pair<size_t, T> findLargestComponent() const;
 		constexpr void reflect(const Vec<T, N> &normal);
 		[[nodiscard]] T normalizeAndReturnLength();
 		[[nodiscard]] T normalizeAndReturnLengthSquared();
@@ -128,6 +128,25 @@ constexpr inline std::array<T, N> Vec<T, N>::makeArray(T val)
 	{
 		std::array<T, N> result{val, val, val, val};
 		std::fill(result.begin() + 4, result.end(), val);
+		return result;
+	}
+}
+
+template <typename T, size_t N>
+inline constexpr bool operator == (const Vec<T, N> &vec_a, const Vec<T, N> &vec_b)
+{
+	if constexpr (N == 2)
+	{
+		return vec_a[0] == vec_b[0] && vec_a[1] == vec_b[1];
+	}
+	else if constexpr (N == 3)
+	{
+		return vec_a[0] == vec_b[0] && vec_a[1] == vec_b[1] && vec_a[2] == vec_b[2];
+	}
+	else
+	{
+		bool result{vec_a[0] == vec_b[0] && vec_a[1] == vec_b[1] && vec_a[2] == vec_b[2] && vec_a[3] == vec_b[3]};
+		for(size_t i = 4; i < N; ++i) result = result && (vec_a[i] == vec_b[i]);
 		return result;
 	}
 }
@@ -300,6 +319,22 @@ inline Vec<T, N> Vec<T, N>::normalized() const
 	Vec<T, N> result{*this};
 	result.normalize();
 	return result;
+}
+
+template<typename T, size_t N>
+std::pair<size_t, T> Vec<T, N>::findLargestComponent() const
+{
+	size_t index_max_value{0};
+	T max_value{array_.front()};
+	for(size_t index = 1; index < N; ++index)
+	{
+		if(max_value < array_[index])
+		{
+			max_value = array_[index];
+			index_max_value = index;
+		}
+	}
+	return {index_max_value, max_value};
 }
 
 template <typename T, size_t N>

@@ -30,10 +30,23 @@ namespace yafaray {
 class GradientBackground final : public Background
 {
 	public:
-		static const Background * factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params);
+		inline static std::string getClassName() { return "GradientBackground"; }
+		static std::pair<Background *, ParamError> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params);
+		static std::string printMeta(const std::vector<std::string> &excluded_params) { return Params::meta_.print(excluded_params); }
 
 	private:
-		GradientBackground(Logger &logger, const Rgb &gzcol, const Rgb &ghcol, const Rgb &szcol, const Rgb &shcol);
+		[[nodiscard]] Type type() const override { return Type::Gradient; }
+		const struct Params
+		{
+			PARAM_INIT_PARENT(Background);
+			PARAM_DECL(Rgb, horizon_color_, Rgb{1.f}, "horizon_color", "");
+			PARAM_DECL(Rgb, zenith_color_, (Rgb{0.4f, 0.5f, 1.f}), "zenith_color", "");
+			PARAM_DECL(Rgb, horizon_ground_color_, Rgb{0.f}, "horizon_ground_color", "");
+			PARAM_DECL(Rgb, zenith_ground_color_, Rgb{0.f}, "zenith_ground_color", "");
+		} params_;
+		[[nodiscard]] ParamMap getAsParamMap(bool only_non_default) const override;
+
+		GradientBackground(Logger &logger, ParamError &param_error, const ParamMap &param_map);
 		Rgb eval(const Vec3f &dir, bool use_ibl_blur) const override;
 
 		Rgb gzenith_, ghoriz_, szenith_, shoriz_;

@@ -22,8 +22,6 @@
 
 #include "format/format_png.h"
 #include "color/color.h"
-#include "common/logger.h"
-#include "common/param.h"
 #include "common/file.h"
 #include "scene/scene.h"
 #include "image/image_layers.h"
@@ -122,7 +120,7 @@ Image * PngFormat::loadFromFile(const std::string &name, const Image::Optimizati
 	}
 	png_init_io(png_ptr, fp);
 	png_set_sig_bytes(png_ptr, 8);
-	auto image = readFromStructs(png_structs, optimization, color_space, gamma);
+	auto image = readFromStructs(png_structs, optimization, color_space, gamma, name);
 	File::close(fp);
 	if(logger_.isVerbose()) logger_.logVerbose(getFormatName(), ": Done.");
 	return image;
@@ -146,7 +144,7 @@ Image * PngFormat::loadFromMemory(const uint8_t *data, size_t size, const Image:
 	}
 	png_set_read_fn(png_ptr, static_cast<void *>(reader.get()), PngDataReader::readFromMem);
 	png_set_sig_bytes(png_ptr, 8);
-	auto image = readFromStructs(png_structs, optimization, color_space, gamma);
+	auto image = readFromStructs(png_structs, optimization, color_space, gamma, "");
 	return image;
 }
 
@@ -206,7 +204,7 @@ bool PngFormat::fillWriteStructs(std::FILE *fp, unsigned int color_type, const P
 	return true;
 }
 
-Image * PngFormat::readFromStructs(const PngStructs &png_structs, const Image::Optimization &optimization, const ColorSpace &color_space, float gamma)
+Image * PngFormat::readFromStructs(const PngStructs &png_structs, const Image::Optimization &optimization, const ColorSpace &color_space, float gamma, const std::string &filename)
 {
 	png_read_info(png_structs.png_ptr_, png_structs.info_ptr_);
 	png_uint_32 w, h;
@@ -243,7 +241,13 @@ Image * PngFormat::readFromStructs(const PngStructs &png_structs, const Image::O
 	// even 2,147,483,647 (max signed int positive value) pixels on one side is purpostrous
 	// at 1 channel, 8 bits per channel and the other side of 1 pixel wide the resulting image uses 2gb of memory
 	const Image::Type type = Image::getTypeFromSettings(has_alpha, (num_chan == 1 || grayscale_));
-	auto image = Image::factory(logger_, {{static_cast<int>(w), static_cast<int>(h)}}, type, optimization);
+	Image::Params image_params;
+	image_params.width_ = static_cast<int>(w);
+	image_params.height_ = static_cast<int>(h);
+	image_params.type_ = type;
+	image_params.image_optimization_ = optimization;
+	image_params.filename_ = filename;
+	auto image = Image::factory(image_params);
 	auto row_pointers = std::unique_ptr<png_bytep[]>(new png_bytep[h]);
 	int bit_mult = 1;
 	if(bit_depth == 16) bit_mult = 2;

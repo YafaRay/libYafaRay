@@ -27,12 +27,22 @@ namespace yafaray {
 class EmissionIntegrator final : public VolumeIntegrator
 {
 	public:
-		static VolumeIntegrator *factory(Logger &logger, RenderControl &render_control, const ParamMap &params, const Scene &scene);
+		inline static std::string getClassName() { return "EmissionIntegrator"; }
+		static std::pair<VolumeIntegrator *, ParamError> factory(Logger &logger, const ParamMap &params, const Scene &scene);
+		static std::string printMeta(const std::vector<std::string> &excluded_params) { return Params::meta_.print(excluded_params); }
 
 	private:
-		explicit EmissionIntegrator(Logger &logger) : VolumeIntegrator(logger) { }
-		std::string getShortName() const override { return "Em"; }
-		std::string getName() const override { return "Emission"; }
+		[[nodiscard]] Type type() const override { return Type::Emission; }
+		const struct Params
+		{
+			PARAM_INIT_PARENT(VolumeIntegrator);
+		} params_;
+		[[nodiscard]] ParamMap getAsParamMap(bool only_non_default) const override;
+
+	private:
+		explicit EmissionIntegrator(Logger &logger, ParamError &param_error, const ParamMap &param_map);
+		[[nodiscard]] std::string getShortName() const override { return "Em"; }
+		[[nodiscard]] std::string getName() const override { return "Emission"; }
 		// optical thickness, absorption, attenuation, extinction
 		Rgb transmittance(RandomGenerator &random_generator, const Ray &ray) const override;
 		// emission part

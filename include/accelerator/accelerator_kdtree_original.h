@@ -38,14 +38,28 @@ namespace yafaray {
 class AcceleratorKdTree final : public Accelerator
 {
 	public:
-		static const Accelerator * factory(Logger &logger, const std::vector<const Primitive *> &primitives, const ParamMap &params);
+		inline static std::string getClassName() { return "AcceleratorKdTree"; }
+		static std::pair<Accelerator *, ParamError> factory(Logger &logger, const std::vector<const Primitive *> &primitives, const ParamMap &params);
+		static std::string printMeta(const std::vector<std::string> &excluded_params) { return Params::meta_.print(excluded_params); }
 
 	private:
+		[[nodiscard]] Type type() const override { return Type::KdTreeOriginal; }
+		const struct Params
+		{
+			PARAM_INIT_PARENT(Accelerator);
+			PARAM_DECL(int, max_depth_, 0, "depth", "");
+			PARAM_DECL(int, max_leaf_size_, 1, "max_leaf_size_", "");
+			PARAM_DECL(float , cost_ratio_, 0.8f, "cost_ratio", "node traversal cost divided by primitive intersection cost");
+			PARAM_DECL(float , empty_bonus_, 0.33f, "empty_bonus", "");
+			PARAM_DECL(int, num_threads_, 1, "accelerator_threads", "");
+			PARAM_DECL(int, min_indices_to_spawn_threads_, 10000, "accelerator_min_indices_threads", "Only spawn threaded subtree building when the number of indices in the subtree is higher than this value to prevent slowdown due to very small subtree left indices");
+		} params_;
+		[[nodiscard]] ParamMap getAsParamMap(bool only_non_default) const override;
+
 		class Node;
 		struct Stack;
 		struct SplitCost;
-		AcceleratorKdTree(Logger &logger, const std::vector<const Primitive *> &primitives, int depth = 0, int leaf_size = 2,
-						  float cost_ratio = 0.35, float empty_bonus = 0.33);
+		AcceleratorKdTree(Logger &logger, ParamError &param_error, const std::vector<const Primitive *> &primitives, const ParamMap &param_map);
 		~AcceleratorKdTree() override;
 		IntersectData intersect(const Ray &ray, float t_max) const override;
 		//	bool IntersectDBG(const ray_t &ray, float dist, triangle_t **tr, float &Z) const;
@@ -59,11 +73,11 @@ class AcceleratorKdTree final : public Accelerator
 		static SplitCost pigeonMinCost(Logger &logger, float e_bonus, float cost_ratio, uint32_t num_prim_indices, const Bound<float> *bounds, const Bound<float> &node_bound, const uint32_t *prim_indices);
 		static SplitCost minimalCost(Logger &logger, float e_bonus, float cost_ratio, uint32_t num_indices, const Bound<float> &node_bound, const uint32_t *prim_idx, const Bound<float> *all_bounds, const Bound<float> *all_bounds_general, const std::array<std::unique_ptr<kdtree::BoundEdge[]>, 3> &edges_all_axes, kdtree::Stats &kd_stats);
 
-		float cost_ratio_ = 0.8f; //!< node traversal cost divided by primitive intersection cost
-		float e_bonus_ = 0.33f; //!< empty bonus
+		float cost_ratio_{params_.cost_ratio_}; //!< node traversal cost divided by primitive intersection cost
+		float e_bonus_{params_.empty_bonus_}; //!< empty bonus
 		uint32_t next_free_node_, allocated_nodes_count_, total_prims_;
-		int max_depth_ = 0;
-		unsigned int max_leaf_size_ = 1;
+		int max_depth_{params_.max_depth_};
+		unsigned int max_leaf_size_{static_cast<unsigned int>(params_.max_leaf_size_)};
 		Bound<float> tree_bound_; 	//!< overall space the tree encloses
 		MemoryArena prims_arena_;
 		std::vector<Node> nodes_;

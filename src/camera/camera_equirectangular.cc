@@ -21,17 +21,22 @@
  */
 
 #include "camera/camera_equirectangular.h"
-#include "common/param.h"
+#include "param/param.h"
+#include "common/logger.h"
 
 namespace yafaray {
 
-const Camera * EquirectangularCamera::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map)
+std::pair<Camera *, ParamError> EquirectangularCamera::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map)
 {
-	return new EquirectangularCamera(logger, param_map);
+	auto param_error{Params::meta_.check(param_map, {"type"}, {})};
+	auto result {new EquirectangularCamera(logger, param_error, param_map)};
+	if(param_error.flags_ != ParamError::Flags::Ok) logger.logWarning(param_error.print<EquirectangularCamera>(name, {"type"}));
+	return {result, param_error};
 }
 
-EquirectangularCamera::EquirectangularCamera(Logger &logger, const Camera::Params &camera_params) : Camera(logger, camera_params)
+EquirectangularCamera::EquirectangularCamera(Logger &logger, ParamError &param_error, const ParamMap &param_map) : Camera{logger, param_error, param_map}
 {
+	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + params_.getAsParamMap(true).print());
 	// Initialize camera specific plane coordinates
 	setAxis(cam_x_, cam_y_, cam_z_);
 }

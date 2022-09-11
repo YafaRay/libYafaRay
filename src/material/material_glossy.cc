@@ -22,40 +22,115 @@
 #include "shader/shader_node.h"
 #include "sampler/sample.h"
 #include "material/material_utils_microfacet.h"
-#include "common/param.h"
+#include "param/param.h"
 #include "geometry/surface.h"
 #include "common/logger.h"
-#include "render/render_data.h"
+#include "material/sample.h"
 
 namespace yafaray {
-
-GlossyMaterial::GlossyMaterial(Logger &logger, const Rgb &col, const Rgb &dcol, float reflect, float diff, float expo, bool as_diff, VisibilityFlags e_visibility):
-		NodeMaterial(logger), gloss_color_(col), diff_color_(dcol), exponent_(expo), reflectivity_(reflect), diffuse_(diff), as_diffuse_(as_diff)
+GlossyMaterial::Params::Params(ParamError &param_error, const ParamMap &param_map)
 {
-	visibility_ = e_visibility;
-	bsdf_flags_ = BsdfFlags::None;
+	PARAM_LOAD(glossy_color_);
+	PARAM_LOAD(diffuse_color_);
+	PARAM_LOAD(diffuse_reflect_);
+	PARAM_LOAD(glossy_reflect_);
+	PARAM_LOAD(as_diffuse_);
+	PARAM_LOAD(exponent_);
+	PARAM_LOAD(anisotropic_);
+	PARAM_LOAD(exp_u_);
+	PARAM_LOAD(exp_v_);
+	PARAM_ENUM_LOAD(diffuse_brdf_);
+	PARAM_LOAD(sigma_);
+	PARAM_SHADERS_LOAD;
+}
 
-	if(diff > 0)
+ParamMap GlossyMaterial::Params::getAsParamMap(bool only_non_default) const
+{
+	PARAM_SAVE_START;
+	PARAM_SAVE(glossy_color_);
+	PARAM_SAVE(diffuse_color_);
+	PARAM_SAVE(diffuse_reflect_);
+	PARAM_SAVE(glossy_reflect_);
+	PARAM_SAVE(as_diffuse_);
+	PARAM_SAVE(exponent_);
+	PARAM_SAVE(anisotropic_);
+	PARAM_SAVE(exp_u_);
+	PARAM_SAVE(exp_v_);
+	PARAM_ENUM_SAVE(diffuse_brdf_);
+	PARAM_SAVE(sigma_);
+	PARAM_SHADERS_SAVE;
+	PARAM_SAVE_END;
+}
+
+ParamMap GlossyMaterial::getAsParamMap(bool only_non_default) const
+{
+	ParamMap result{Material::getAsParamMap(only_non_default)};
+	result.append(params_.getAsParamMap(only_non_default));
+	return result;
+}
+
+std::pair<Material *, ParamError> GlossyMaterial::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map, const std::list<ParamMap> &nodes_param_maps)
+{
+	auto param_error{Params::meta_.check(param_map, {"type"}, {})};
+	auto mat = new GlossyMaterial(logger, param_error, param_map);
+	mat->nodes_map_ = NodeMaterial::loadNodes(nodes_param_maps, scene, logger);
+	std::map<std::string, const ShaderNode *> root_nodes_map;
+	// Prepare our node list
+	for(size_t shader_index = 0; shader_index < mat->shaders_.size(); ++shader_index)
+	{
+		root_nodes_map[ShaderNodeType{static_cast<unsigned char>(shader_index)}.print()] = nullptr;
+	}
+	std::vector<const ShaderNode *> root_nodes_list;
+	if(!mat->nodes_map_.empty()) NodeMaterial::parseNodes(param_map, root_nodes_list, root_nodes_map, mat->nodes_map_, logger);
+	for(size_t shader_index = 0; shader_index < mat->shaders_.size(); ++shader_index)
+	{
+		mat->shaders_[shader_index] = root_nodes_map[ShaderNodeType{static_cast<unsigned char>(shader_index)}.print()];
+	}
+	// solve nodes order
+	if(!root_nodes_list.empty())
+	{
+		const std::vector<const ShaderNode *> nodes_sorted = NodeMaterial::solveNodesOrder(root_nodes_list, mat->nodes_map_, logger);
+		for(size_t shader_index = 0; shader_index < mat->shaders_.size(); ++shader_index)
+		{
+			if(mat->shaders_[shader_index])
+			{
+				if(ShaderNodeType{static_cast<unsigned char>(shader_index)}.isBump())
+				{
+					mat->bump_nodes_ = NodeMaterial::getNodeList(mat->shaders_[shader_index], nodes_sorted);
+				}
+				else
+				{
+					const std::vector<const ShaderNode *> shader_nodes_list = NodeMaterial::getNodeList(mat->shaders_[shader_index], nodes_sorted);
+					mat->color_nodes_.insert(mat->color_nodes_.end(), shader_nodes_list.begin(), shader_nodes_list.end());
+				}
+			}
+		}
+	}
+	if(param_error.flags_ != ParamError::Flags::Ok) logger.logWarning(param_error.print<GlossyMaterial>(name, {"type"}));
+	return {mat, param_error};
+}
+
+GlossyMaterial::GlossyMaterial(Logger &logger, ParamError &param_error, const ParamMap &param_map) :
+		NodeMaterial{logger, param_error, param_map}, params_{param_error, param_map}
+{
+	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + params_.getAsParamMap(true).print());
+	if(params_.diffuse_reflect_ > 0)
 	{
 		bsdf_flags_ = BsdfFlags::Diffuse | BsdfFlags::Reflect;
 		with_diffuse_ = true;
 	}
-
-	oren_nayar_ = false;
-
-	bsdf_flags_ |= as_diffuse_ ? (BsdfFlags::Diffuse | BsdfFlags::Reflect) : (BsdfFlags::Glossy | BsdfFlags::Reflect);
-
-	visibility_ = e_visibility;
+	bsdf_flags_ |= params_.as_diffuse_ ? BsdfFlags{BsdfFlags::Diffuse | BsdfFlags::Reflect} : BsdfFlags{BsdfFlags::Glossy | BsdfFlags::Reflect};
+	if(params_.diffuse_brdf_ == DiffuseBrdf::OrenNayar) initOrenNayar(params_.sigma_);
 }
 
 const MaterialData * GlossyMaterial::initBsdf(SurfacePoint &sp, const Camera *camera) const
 {
 	auto mat_data = new GlossyMaterialData(bsdf_flags_, color_nodes_.size() + bump_nodes_.size());
-	if(bump_shader_) evalBump(mat_data->node_tree_data_, sp, bump_shader_, camera);
+	if(shaders_[ShaderNodeType::Bump]) evalBump(mat_data->node_tree_data_, sp, shaders_[ShaderNodeType::Bump], camera);
 
 	for(const auto &node : color_nodes_) node->eval(mat_data->node_tree_data_, sp, camera);
-	mat_data->m_diffuse_ = diffuse_;
-	mat_data->m_glossy_ = getShaderScalar(glossy_reflection_shader_, mat_data->node_tree_data_, reflectivity_);
+	mat_data->m_diffuse_ = params_.diffuse_reflect_;
+	mat_data->m_glossy_ = getShaderScalar(shaders_[ShaderNodeType::GlossyReflect], mat_data->node_tree_data_, params_.glossy_reflect_);
 	mat_data->p_diffuse_ = std::min(0.6f, 1.f - (mat_data->m_glossy_ / (mat_data->m_glossy_ + (1.f - mat_data->m_glossy_) * mat_data->m_diffuse_)));
 	return mat_data;
 }
@@ -65,7 +140,6 @@ void GlossyMaterial::initOrenNayar(double sigma)
 	const double sigma_2 = sigma * sigma;
 	oren_a_ = 1.0 - 0.5 * (sigma_2 / (sigma_2 + 0.33));
 	oren_b_ = 0.45 * sigma_2 / (sigma_2 + 0.09);
-	oren_nayar_ = true;
 }
 
 float GlossyMaterial::orenNayar(const Vec3f &wi, const Vec3f &wo, const Vec3f &n, bool use_texture_sigma, double texture_sigma) const
@@ -111,50 +185,50 @@ Rgb GlossyMaterial::eval(const MaterialData *mat_data, const SurfacePoint &sp, c
 {
 	if(!force_eval)	//If the flag force_eval = true then the next line will be skipped, necessary for the Glossy Direct render pass
 	{
-		if(!flags::have(bsdfs, BsdfFlags::Diffuse) || ((sp.ng_ * wl) * (sp.ng_ * wo)) < 0.f) return Rgb{0.f};
+		if(!bsdfs.has(BsdfFlags::Diffuse) || ((sp.ng_ * wl) * (sp.ng_ * wo)) < 0.f) return Rgb{0.f};
 	}
 
 	Rgb col(0.f);
-	const bool diffuse_flag = flags::have(bsdfs, BsdfFlags::Diffuse);
+	const bool diffuse_flag = bsdfs.has(BsdfFlags::Diffuse);
 	const Vec3f n{SurfacePoint::normalFaceForward(sp.ng_, sp.n_, wo)};
 
 	const float wi_n = std::abs(wl * n);
 	const float wo_n = std::abs(wo * n);
 
-	if((as_diffuse_ && diffuse_flag) || (!as_diffuse_ && flags::have(bsdfs, BsdfFlags::Glossy)))
+	if((params_.as_diffuse_ && diffuse_flag) || (!params_.as_diffuse_ && bsdfs.has(BsdfFlags::Glossy)))
 	{
 		const Vec3f h{(wo + wl).normalize()}; // half-angle
 		const float cos_wi_h = std::max(0.f, wl * h);
 		float glossy;
-		if(anisotropic_)
+		if(params_.anisotropic_)
 		{
 			const Vec3f hs{{h * sp.uvn_.u_, h * sp.uvn_.v_, h * n}};
 			const auto *mat_data_specific = static_cast<const GlossyMaterialData *>(mat_data);
-			glossy = microfacet::asAnisoD(hs, exp_u_, exp_v_) * microfacet::schlickFresnel(cos_wi_h, mat_data_specific->m_glossy_) / microfacet::asDivisor(cos_wi_h, wo_n, wi_n);
+			glossy = microfacet::asAnisoD(hs, params_.exp_u_, params_.exp_v_) * microfacet::schlickFresnel(cos_wi_h, mat_data_specific->m_glossy_) / microfacet::asDivisor(cos_wi_h, wo_n, wi_n);
 		}
 		else
 		{
 			const auto *mat_data_specific = static_cast<const GlossyMaterialData *>(mat_data);
-			glossy = microfacet::blinnD(h * n, getShaderScalar(exponent_shader_, mat_data->node_tree_data_, exponent_)) * microfacet::schlickFresnel(cos_wi_h, mat_data_specific->m_glossy_) / microfacet::asDivisor(cos_wi_h, wo_n, wi_n);
+			glossy = microfacet::blinnD(h * n, getShaderScalar(shaders_[ShaderNodeType::Exponent], mat_data->node_tree_data_, params_.exponent_)) * microfacet::schlickFresnel(cos_wi_h, mat_data_specific->m_glossy_) / microfacet::asDivisor(cos_wi_h, wo_n, wi_n);
 		}
-		col = glossy * getShaderColor(glossy_shader_, mat_data->node_tree_data_, gloss_color_);
+		col = glossy * getShaderColor(shaders_[ShaderNodeType::Glossy], mat_data->node_tree_data_, params_.glossy_color_);
 	}
 
 	if(with_diffuse_ && diffuse_flag)
 	{
 		const auto *mat_data_specific = static_cast<const GlossyMaterialData *>(mat_data);
-		Rgb add_col = mat_data_specific->m_diffuse_ * (1.f - mat_data_specific->m_glossy_) * getShaderColor(diffuse_shader_, mat_data->node_tree_data_, diff_color_);
-		if(diffuse_reflection_shader_) add_col *= diffuse_reflection_shader_->getScalar(mat_data->node_tree_data_);
-		if(oren_nayar_)
+		Rgb add_col = mat_data_specific->m_diffuse_ * (1.f - mat_data_specific->m_glossy_) * getShaderColor(shaders_[ShaderNodeType::Diffuse], mat_data->node_tree_data_, params_.diffuse_color_);
+		if(shaders_[ShaderNodeType::DiffuseReflect]) add_col *= shaders_[ShaderNodeType::DiffuseReflect]->getScalar(mat_data->node_tree_data_);
+		if(params_.diffuse_brdf_ == DiffuseBrdf::OrenNayar)
 		{
-			const double texture_sigma = getShaderScalar(sigma_oren_shader_, mat_data->node_tree_data_, 0.f);
-			const bool use_texture_sigma = static_cast<bool>(sigma_oren_shader_);
+			const double texture_sigma = getShaderScalar(shaders_[ShaderNodeType::SigmaOrenNayar], mat_data->node_tree_data_, 0.f);
+			const bool use_texture_sigma = static_cast<bool>(shaders_[ShaderNodeType::SigmaOrenNayar]);
 			add_col *= orenNayar(wl, wo, n, use_texture_sigma, texture_sigma);
 		}
 		col += add_col;
 		//diffuseReflect(wiN, woN, mat_data_specific->mGlossy, mat_data_specific->mDiffuse, (diffuseS ? diffuseS->getColor(mat_data->node_tree_data_) : diff_color)) * ((orenNayar)?OrenNayar(wi, wo, N):1.f);
 	}
-	applyWireFrame(col, wireframe_shader_, mat_data->node_tree_data_, sp);
+	applyWireFrame(col, shaders_[ShaderNodeType::Wireframe], mat_data->node_tree_data_, sp);
 	return col;
 }
 
@@ -170,8 +244,8 @@ Rgb GlossyMaterial::sample(const MaterialData *mat_data, const SurfacePoint &sp,
 	float s_1 = s.s_1_;
 	const auto *mat_data_specific = static_cast<const GlossyMaterialData *>(mat_data);
 	float cur_p_diffuse = mat_data_specific->p_diffuse_;
-	const bool use_glossy = as_diffuse_ ? flags::have(s.flags_, BsdfFlags::Diffuse) : flags::have(s.flags_, BsdfFlags::Glossy);
-	const bool use_diffuse = with_diffuse_ && flags::have(s.flags_, BsdfFlags::Diffuse);
+	const bool use_glossy = params_.as_diffuse_ ? s.flags_.has(BsdfFlags::Diffuse) : s.flags_.has(BsdfFlags::Glossy);
+	const bool use_diffuse = with_diffuse_ && s.flags_.has(BsdfFlags::Diffuse);
 	if(use_diffuse)
 	{
 		float s_p_diffuse = use_glossy ? cur_p_diffuse : 1.f;
@@ -182,7 +256,7 @@ Rgb GlossyMaterial::sample(const MaterialData *mat_data, const SurfacePoint &sp,
 			const float cos_ng_wi = sp.ng_ * wi;
 			if(cos_ng_wi * cos_ng_wo < 0.f)
 			{
-				applyWireFrame(scolor, wireframe_shader_, mat_data->node_tree_data_, sp);
+				applyWireFrame(scolor, shaders_[ShaderNodeType::Wireframe], mat_data->node_tree_data_, sp);
 				return scolor;
 			}
 			wi_n = std::abs(wi * n);
@@ -194,43 +268,43 @@ Rgb GlossyMaterial::sample(const MaterialData *mat_data, const SurfacePoint &sp,
 				const float cos_wo_h = wo * h;
 				const float cos_wi_h = std::abs(wi * h);
 				const float cos_n_h = n * h;
-				if(anisotropic_)
+				if(params_.anisotropic_)
 				{
 					const Vec3f hs{{h * sp.uvn_.u_, h * sp.uvn_.v_, cos_n_h}};
-					s.pdf_ = s.pdf_ * cur_p_diffuse + microfacet::asAnisoPdf(hs, cos_wo_h, exp_u_, exp_v_) * (1.f - cur_p_diffuse);
-					glossy = microfacet::asAnisoD(hs, exp_u_, exp_v_) * microfacet::schlickFresnel(cos_wi_h, mat_data_specific->m_glossy_) / microfacet::asDivisor(cos_wi_h, wo_n, wi_n);
+					s.pdf_ = s.pdf_ * cur_p_diffuse + microfacet::asAnisoPdf(hs, cos_wo_h, params_.exp_u_, params_.exp_v_) * (1.f - cur_p_diffuse);
+					glossy = microfacet::asAnisoD(hs, params_.exp_u_, params_.exp_v_) * microfacet::schlickFresnel(cos_wi_h, mat_data_specific->m_glossy_) / microfacet::asDivisor(cos_wi_h, wo_n, wi_n);
 				}
 				else
 				{
-					s.pdf_ = s.pdf_ * cur_p_diffuse + microfacet::blinnPdf(cos_n_h, cos_wo_h, getShaderScalar(exponent_shader_, mat_data->node_tree_data_, exponent_)) * (1.f - cur_p_diffuse);
-					glossy = microfacet::blinnD(cos_n_h, getShaderScalar(exponent_shader_, mat_data->node_tree_data_, exponent_)) * microfacet::schlickFresnel(cos_wi_h, mat_data_specific->m_glossy_) / microfacet::asDivisor(cos_wi_h, wo_n, wi_n);
+					s.pdf_ = s.pdf_ * cur_p_diffuse + microfacet::blinnPdf(cos_n_h, cos_wo_h, getShaderScalar(shaders_[ShaderNodeType::Exponent], mat_data->node_tree_data_, params_.exponent_)) * (1.f - cur_p_diffuse);
+					glossy = microfacet::blinnD(cos_n_h, getShaderScalar(shaders_[ShaderNodeType::Exponent], mat_data->node_tree_data_, params_.exponent_)) * microfacet::schlickFresnel(cos_wi_h, mat_data_specific->m_glossy_) / microfacet::asDivisor(cos_wi_h, wo_n, wi_n);
 				}
 			}
 			s.sampled_flags_ = BsdfFlags::Diffuse | BsdfFlags::Reflect;
 
-			if(!flags::have(s.flags_, BsdfFlags::Reflect))
+			if(!s.flags_.has(BsdfFlags::Reflect))
 			{
 				scolor = Rgb(0.f);
-				applyWireFrame(scolor, wireframe_shader_, mat_data->node_tree_data_, sp);
+				applyWireFrame(scolor, shaders_[ShaderNodeType::Wireframe], mat_data->node_tree_data_, sp);
 				return scolor;
 			}
 
-			scolor = glossy * getShaderColor(glossy_shader_, mat_data->node_tree_data_, gloss_color_);
+			scolor = glossy * getShaderColor(shaders_[ShaderNodeType::Glossy], mat_data->node_tree_data_, params_.glossy_color_);
 
 			if(use_diffuse)
 			{
-				Rgb add_col = microfacet::diffuseReflect(wi_n, wo_n, mat_data_specific->m_glossy_, mat_data_specific->m_diffuse_, getShaderColor(diffuse_shader_, mat_data->node_tree_data_, diff_color_));
-				if(diffuse_reflection_shader_) add_col *= diffuse_reflection_shader_->getScalar(mat_data->node_tree_data_);
-				if(oren_nayar_)
+				Rgb add_col = microfacet::diffuseReflect(wi_n, wo_n, mat_data_specific->m_glossy_, mat_data_specific->m_diffuse_, getShaderColor(shaders_[ShaderNodeType::Diffuse], mat_data->node_tree_data_, params_.diffuse_color_));
+				if(shaders_[ShaderNodeType::DiffuseReflect]) add_col *= shaders_[ShaderNodeType::DiffuseReflect]->getScalar(mat_data->node_tree_data_);
+				if(params_.diffuse_brdf_ == DiffuseBrdf::OrenNayar)
 				{
-					const double texture_sigma = getShaderScalar(sigma_oren_shader_, mat_data->node_tree_data_, 0.f);
-					const bool use_texture_sigma = static_cast<bool>(sigma_oren_shader_);
+					const double texture_sigma = getShaderScalar(shaders_[ShaderNodeType::SigmaOrenNayar], mat_data->node_tree_data_, 0.f);
+					const bool use_texture_sigma = static_cast<bool>(shaders_[ShaderNodeType::SigmaOrenNayar]);
 					add_col *= orenNayar(wi, wo, n, use_texture_sigma, texture_sigma);
 				}
 				scolor += add_col;
 			}
 			w = wi_n / (s.pdf_ * 0.99f + 0.01f);
-			applyWireFrame(scolor, wireframe_shader_, mat_data->node_tree_data_, sp);
+			applyWireFrame(scolor, shaders_[ShaderNodeType::Wireframe], mat_data->node_tree_data_, sp);
 			return scolor;
 		}
 		s_1 -= cur_p_diffuse;
@@ -240,9 +314,9 @@ Rgb GlossyMaterial::sample(const MaterialData *mat_data, const SurfacePoint &sp,
 	if(use_glossy)
 	{
 		float glossy = 0.f;
-		if(anisotropic_)
+		if(params_.anisotropic_)
 		{
-			const Vec3f hs{microfacet::asAnisoSample(s_1, s.s_2_, exp_u_, exp_v_)};
+			const Vec3f hs{microfacet::asAnisoSample(s_1, s.s_2_, params_.exp_u_, params_.exp_v_)};
 			Vec3f h{hs[Axis::X] * sp.uvn_.u_ + hs[Axis::Y] * sp.uvn_.v_ + hs[Axis::Z] * n};
 			float cos_wo_h = wo * h;
 			if(cos_wo_h < 0.f)
@@ -257,16 +331,16 @@ Rgb GlossyMaterial::sample(const MaterialData *mat_data, const SurfacePoint &sp,
 			if(cos_ng_wo * cos_ng_wi < 0.f)
 			{
 				scolor = Rgb(0.f);
-				applyWireFrame(scolor, wireframe_shader_, mat_data->node_tree_data_, sp);
+				applyWireFrame(scolor, shaders_[ShaderNodeType::Wireframe], mat_data->node_tree_data_, sp);
 				return scolor;
 			}
 			wi_n = std::abs(wi * n);
-			s.pdf_ = microfacet::asAnisoPdf(hs, cos_wo_h, exp_u_, exp_v_);
-			glossy = microfacet::asAnisoD(hs, exp_u_, exp_v_) * microfacet::schlickFresnel(cos_wo_h, mat_data_specific->m_glossy_) / microfacet::asDivisor(cos_wo_h, wo_n, wi_n);
+			s.pdf_ = microfacet::asAnisoPdf(hs, cos_wo_h, params_.exp_u_, params_.exp_v_);
+			glossy = microfacet::asAnisoD(hs, params_.exp_u_, params_.exp_v_) * microfacet::schlickFresnel(cos_wo_h, mat_data_specific->m_glossy_) / microfacet::asDivisor(cos_wo_h, wo_n, wi_n);
 		}
 		else
 		{
-			const Vec3f hs{microfacet::blinnSample(s_1, s.s_2_, getShaderScalar(exponent_shader_, mat_data->node_tree_data_, exponent_))};
+			const Vec3f hs{microfacet::blinnSample(s_1, s.s_2_, getShaderScalar(shaders_[ShaderNodeType::Exponent], mat_data->node_tree_data_, params_.exponent_))};
 			Vec3f h{hs[Axis::X] * sp.uvn_.u_ + hs[Axis::Y] * sp.uvn_.v_ + hs[Axis::Z] * n};
 			float cos_wo_h = wo * h;
 			if(cos_wo_h < 0.f)
@@ -281,33 +355,33 @@ Rgb GlossyMaterial::sample(const MaterialData *mat_data, const SurfacePoint &sp,
 			if(cos_ng_wo * cos_ng_wi < 0.f)
 			{
 				scolor = Rgb(0.f);
-				applyWireFrame(scolor, wireframe_shader_, mat_data->node_tree_data_, sp);
+				applyWireFrame(scolor, shaders_[ShaderNodeType::Wireframe], mat_data->node_tree_data_, sp);
 				return scolor;
 			}
 			wi_n = std::abs(wi * n);
 			const float cos_hn = h * n;
-			s.pdf_ = microfacet::blinnPdf(cos_hn, cos_wo_h, getShaderScalar(exponent_shader_, mat_data->node_tree_data_, exponent_));
-			glossy = microfacet::blinnD(cos_hn, getShaderScalar(exponent_shader_, mat_data->node_tree_data_, exponent_)) * microfacet::schlickFresnel(cos_wo_h, mat_data_specific->m_glossy_) / microfacet::asDivisor(cos_wo_h, wo_n, wi_n);
+			s.pdf_ = microfacet::blinnPdf(cos_hn, cos_wo_h, getShaderScalar(shaders_[ShaderNodeType::Exponent], mat_data->node_tree_data_, params_.exponent_));
+			glossy = microfacet::blinnD(cos_hn, getShaderScalar(shaders_[ShaderNodeType::Exponent], mat_data->node_tree_data_, params_.exponent_)) * microfacet::schlickFresnel(cos_wo_h, mat_data_specific->m_glossy_) / microfacet::asDivisor(cos_wo_h, wo_n, wi_n);
 		}
-		scolor = glossy * getShaderColor(glossy_shader_, mat_data->node_tree_data_, gloss_color_);
-		s.sampled_flags_ = as_diffuse_ ? BsdfFlags::Diffuse | BsdfFlags::Reflect : BsdfFlags::Glossy | BsdfFlags::Reflect;
+		scolor = glossy * getShaderColor(shaders_[ShaderNodeType::Glossy], mat_data->node_tree_data_, params_.glossy_color_);
+		s.sampled_flags_ = params_.as_diffuse_ ? BsdfFlags::Diffuse | BsdfFlags::Reflect : BsdfFlags::Glossy | BsdfFlags::Reflect;
 	}
 
 	if(use_diffuse)
 	{
-		Rgb add_col = microfacet::diffuseReflect(wi_n, wo_n, mat_data_specific->m_glossy_, mat_data_specific->m_diffuse_, getShaderColor(diffuse_shader_, mat_data->node_tree_data_, diff_color_));
-		if(diffuse_reflection_shader_) add_col *= diffuse_reflection_shader_->getScalar(mat_data->node_tree_data_);
-		if(oren_nayar_)
+		Rgb add_col = microfacet::diffuseReflect(wi_n, wo_n, mat_data_specific->m_glossy_, mat_data_specific->m_diffuse_, getShaderColor(shaders_[ShaderNodeType::Diffuse], mat_data->node_tree_data_, params_.diffuse_color_));
+		if(shaders_[ShaderNodeType::DiffuseReflect]) add_col *= shaders_[ShaderNodeType::DiffuseReflect]->getScalar(mat_data->node_tree_data_);
+		if(params_.diffuse_brdf_ == DiffuseBrdf::OrenNayar)
 		{
-			const double texture_sigma = getShaderScalar(sigma_oren_shader_, mat_data->node_tree_data_, 0.f);
-			const bool use_texture_sigma = static_cast<bool>(sigma_oren_shader_);
+			const double texture_sigma = getShaderScalar(shaders_[ShaderNodeType::SigmaOrenNayar], mat_data->node_tree_data_, 0.f);
+			const bool use_texture_sigma = static_cast<bool>(shaders_[ShaderNodeType::SigmaOrenNayar]);
 			add_col *= orenNayar(wi, wo, n, use_texture_sigma, texture_sigma);
 		}
 		s.pdf_ = wi_n * cur_p_diffuse + s.pdf_ * (1.f - cur_p_diffuse);
 		scolor += add_col;
 	}
 	w = wi_n / (s.pdf_ * 0.99f + 0.01f);
-	applyWireFrame(scolor, wireframe_shader_, mat_data->node_tree_data_, sp);
+	applyWireFrame(scolor, shaders_[ShaderNodeType::Wireframe], mat_data->node_tree_data_, sp);
 	return scolor;
 }
 
@@ -318,8 +392,8 @@ float GlossyMaterial::pdf(const MaterialData *mat_data, const SurfacePoint &sp, 
 	float pdf = 0.f;
 	const auto *mat_data_specific = static_cast<const GlossyMaterialData *>(mat_data);
 	const float cur_p_diffuse = mat_data_specific->p_diffuse_;
-	const bool use_glossy = as_diffuse_ ? flags::have(flags, BsdfFlags::Diffuse) : flags::have(flags, BsdfFlags::Glossy);
-	const bool use_diffuse = with_diffuse_ && flags::have(flags, BsdfFlags::Diffuse);
+	const bool use_glossy = params_.as_diffuse_ ? flags.has(BsdfFlags::Diffuse) : flags.has(BsdfFlags::Glossy);
+	const bool use_diffuse = with_diffuse_ && flags.has(BsdfFlags::Diffuse);
 	if(use_diffuse)
 	{
 		pdf = std::abs(wi * n);
@@ -328,12 +402,12 @@ float GlossyMaterial::pdf(const MaterialData *mat_data, const SurfacePoint &sp, 
 			const Vec3f h{(wi + wo).normalize()};
 			const float cos_wo_h = wo * h;
 			const float cos_n_h = n * h;
-			if(anisotropic_)
+			if(params_.anisotropic_)
 			{
 				const Vec3f hs{{h * sp.uvn_.u_, h * sp.uvn_.v_, cos_n_h}};
-				pdf = pdf * cur_p_diffuse + microfacet::asAnisoPdf(hs, cos_wo_h, exp_u_, exp_v_) * (1.f - cur_p_diffuse);
+				pdf = pdf * cur_p_diffuse + microfacet::asAnisoPdf(hs, cos_wo_h, params_.exp_u_, params_.exp_v_) * (1.f - cur_p_diffuse);
 			}
-			else pdf = pdf * cur_p_diffuse + microfacet::blinnPdf(cos_n_h, cos_wo_h, getShaderScalar(exponent_shader_, mat_data->node_tree_data_, exponent_)) * (1.f - cur_p_diffuse);
+			else pdf = pdf * cur_p_diffuse + microfacet::blinnPdf(cos_n_h, cos_wo_h, getShaderScalar(shaders_[ShaderNodeType::Exponent], mat_data->node_tree_data_, params_.exponent_)) * (1.f - cur_p_diffuse);
 		}
 		return pdf;
 	}
@@ -343,166 +417,25 @@ float GlossyMaterial::pdf(const MaterialData *mat_data, const SurfacePoint &sp, 
 		const Vec3f h{(wi + wo).normalize()};
 		const float cos_wo_h = wo * h;
 		const float cos_n_h = n * h;
-		if(anisotropic_)
+		if(params_.anisotropic_)
 		{
 			const Vec3f hs{{h * sp.uvn_.u_, h * sp.uvn_.v_, cos_n_h}};
-			pdf = microfacet::asAnisoPdf(hs, cos_wo_h, exp_u_, exp_v_);
+			pdf = microfacet::asAnisoPdf(hs, cos_wo_h, params_.exp_u_, params_.exp_v_);
 		}
-		else pdf = microfacet::blinnPdf(cos_n_h, cos_wo_h, getShaderScalar(exponent_shader_, mat_data->node_tree_data_, exponent_));
+		else pdf = microfacet::blinnPdf(cos_n_h, cos_wo_h, getShaderScalar(shaders_[ShaderNodeType::Exponent], mat_data->node_tree_data_, params_.exponent_));
 	}
 	return pdf;
 }
 
-Material *GlossyMaterial::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params, const std::list<ParamMap> &nodes_params)
-{
-	Rgb col(1.f), dcol(1.f);
-	float refl = 1.f;
-	float diff = 0.f;
-	float exponent = 50.f; //wild guess, do sth better
-	bool as_diff = true;
-	bool aniso = false;
-	std::string s_visibility = "normal";
-	int mat_pass_index = 0;
-	bool receive_shadows = true;
-	int additionaldepth = 0;
-	float samplingfactor = 1.f;
-	float wire_frame_amount = 0.f;           //!< Wireframe shading amount
-	float wire_frame_thickness = 0.01f;      //!< Wireframe thickness
-	float wire_frame_exponent = 0.f;         //!< Wireframe exponent (0.f = solid, 1.f=linearly gradual, etc)
-	Rgb wire_frame_color = Rgb(1.f); //!< Wireframe shading color
-
-	params.getParam("color", col);
-	params.getParam("diffuse_color", dcol);
-	params.getParam("diffuse_reflect", diff);
-	params.getParam("glossy_reflect", refl);
-	params.getParam("as_diffuse", as_diff);
-	params.getParam("exponent", exponent);
-	params.getParam("anisotropic", aniso);
-
-	params.getParam("receive_shadows", receive_shadows);
-	params.getParam("visibility", s_visibility);
-	params.getParam("mat_pass_index", mat_pass_index);
-	params.getParam("additionaldepth", additionaldepth);
-	params.getParam("samplingfactor", samplingfactor);
-
-	params.getParam("wireframe_amount", wire_frame_amount);
-	params.getParam("wireframe_thickness", wire_frame_thickness);
-	params.getParam("wireframe_exponent", wire_frame_exponent);
-	params.getParam("wireframe_color", wire_frame_color);
-
-	const VisibilityFlags visibility = visibility::fromString(s_visibility);
-
-	auto mat = new GlossyMaterial(logger, col, dcol, refl, diff, exponent, as_diff, visibility);
-
-	mat->setIndex(mat_pass_index);
-	mat->receive_shadows_ = receive_shadows;
-	mat->additional_depth_ = additionaldepth;
-
-	mat->wireframe_amount_ = wire_frame_amount;
-	mat->wireframe_thickness_ = wire_frame_thickness;
-	mat->wireframe_exponent_ = wire_frame_exponent;
-	mat->wireframe_color_ = wire_frame_color;
-
-	mat->setSamplingFactor(samplingfactor);
-
-	if(aniso)
-	{
-		float e_u = 50.0, e_v = 50.0;
-		params.getParam("exp_u", e_u);
-		params.getParam("exp_v", e_v);
-		mat->anisotropic_ = true;
-		mat->exp_u_ = e_u;
-		mat->exp_v_ = e_v;
-	}
-
-	std::string diffuse_brdf;
-	if(params.getParam("diffuse_brdf", diffuse_brdf))
-	{
-		if(diffuse_brdf == "Oren-Nayar")
-		{
-			double sigma = 0.1;
-			params.getParam("sigma", sigma);
-			mat->initOrenNayar(sigma);
-		}
-	}
-
-	std::map<std::string, const ShaderNode *> root_nodes_map;
-	// Prepare our node list
-	root_nodes_map["diffuse_shader"] = nullptr;
-	root_nodes_map["glossy_shader"] = nullptr;
-	root_nodes_map["glossy_reflect_shader"] = nullptr;
-	root_nodes_map["bump_shader"] = nullptr;
-	root_nodes_map["sigma_oren_shader"] = nullptr;
-	root_nodes_map["exponent_shader"] = nullptr;
-	root_nodes_map["wireframe_shader"] = nullptr;
-	root_nodes_map["diffuse_refl_shader"] = nullptr;
-
-	std::vector<const ShaderNode *> root_nodes_list;
-	mat->nodes_map_ = NodeMaterial::loadNodes(nodes_params, scene, logger);
-	if(!mat->nodes_map_.empty()) NodeMaterial::parseNodes(params, root_nodes_list, root_nodes_map, mat->nodes_map_, logger);
-
-	mat->diffuse_shader_ = root_nodes_map["diffuse_shader"];
-	mat->glossy_shader_ = root_nodes_map["glossy_shader"];
-	mat->glossy_reflection_shader_ = root_nodes_map["glossy_reflect_shader"];
-	mat->bump_shader_ = root_nodes_map["bump_shader"];
-	mat->sigma_oren_shader_ = root_nodes_map["sigma_oren_shader"];
-	mat->exponent_shader_ = root_nodes_map["exponent_shader"];
-	mat->wireframe_shader_ = root_nodes_map["wireframe_shader"];
-	mat->diffuse_reflection_shader_ = root_nodes_map["diffuse_refl_shader"];
-
-	// solve nodes order
-	if(!root_nodes_list.empty())
-	{
-		const std::vector<const ShaderNode *> nodes_sorted = NodeMaterial::solveNodesOrder(root_nodes_list, mat->nodes_map_, logger);
-		if(mat->diffuse_shader_)
-		{
-			const std::vector<const ShaderNode *> shader_nodes_list = NodeMaterial::getNodeList(mat->diffuse_shader_, nodes_sorted);
-			mat->color_nodes_.insert(mat->color_nodes_.end(), shader_nodes_list.begin(), shader_nodes_list.end());
-		}
-		if(mat->glossy_shader_)
-		{
-			const std::vector<const ShaderNode *> shader_nodes_list = NodeMaterial::getNodeList(mat->glossy_shader_, nodes_sorted);
-			mat->color_nodes_.insert(mat->color_nodes_.end(), shader_nodes_list.begin(), shader_nodes_list.end());
-		}
-		if(mat->glossy_reflection_shader_)
-		{
-			const std::vector<const ShaderNode *> shader_nodes_list = NodeMaterial::getNodeList(mat->glossy_reflection_shader_, nodes_sorted);
-			mat->color_nodes_.insert(mat->color_nodes_.end(), shader_nodes_list.begin(), shader_nodes_list.end());
-		}
-		if(mat->sigma_oren_shader_)
-		{
-			const std::vector<const ShaderNode *> shader_nodes_list = NodeMaterial::getNodeList(mat->sigma_oren_shader_, nodes_sorted);
-			mat->color_nodes_.insert(mat->color_nodes_.end(), shader_nodes_list.begin(), shader_nodes_list.end());
-		}
-		if(mat->exponent_shader_)
-		{
-			const std::vector<const ShaderNode *> shader_nodes_list = NodeMaterial::getNodeList(mat->exponent_shader_, nodes_sorted);
-			mat->color_nodes_.insert(mat->color_nodes_.end(), shader_nodes_list.begin(), shader_nodes_list.end());
-		}
-		if(mat->wireframe_shader_)
-		{
-			const std::vector<const ShaderNode *> shader_nodes_list = NodeMaterial::getNodeList(mat->wireframe_shader_, nodes_sorted);
-			mat->color_nodes_.insert(mat->color_nodes_.end(), shader_nodes_list.begin(), shader_nodes_list.end());
-		}
-		if(mat->diffuse_reflection_shader_)
-		{
-			const std::vector<const ShaderNode *> shader_nodes_list = NodeMaterial::getNodeList(mat->diffuse_reflection_shader_, nodes_sorted);
-			mat->color_nodes_.insert(mat->color_nodes_.end(), shader_nodes_list.begin(), shader_nodes_list.end());
-		}
-		if(mat->bump_shader_) mat->bump_nodes_ = NodeMaterial::getNodeList(mat->bump_shader_, nodes_sorted);
-	}
-	return mat;
-}
-
 Rgb GlossyMaterial::getDiffuseColor(const NodeTreeData &node_tree_data) const
 {
-	if(as_diffuse_ || with_diffuse_) return (diffuse_reflection_shader_ ? diffuse_reflection_shader_->getScalar(node_tree_data) : 1.f) * (diffuse_shader_ ? diffuse_shader_->getColor(node_tree_data) : diff_color_);
+	if(params_.as_diffuse_ || with_diffuse_) return (shaders_[ShaderNodeType::DiffuseReflect] ? shaders_[ShaderNodeType::DiffuseReflect]->getScalar(node_tree_data) : 1.f) * (shaders_[ShaderNodeType::Diffuse] ? shaders_[ShaderNodeType::Diffuse]->getColor(node_tree_data) : params_.diffuse_color_);
 	else return Rgb{0.f};
 }
 
 Rgb GlossyMaterial::getGlossyColor(const NodeTreeData &node_tree_data) const
 {
-	return (glossy_reflection_shader_ ? glossy_reflection_shader_->getScalar(node_tree_data) : reflectivity_) * (glossy_shader_ ? glossy_shader_->getColor(node_tree_data) : gloss_color_);
+	return (shaders_[ShaderNodeType::GlossyReflect] ? shaders_[ShaderNodeType::GlossyReflect]->getScalar(node_tree_data) : params_.glossy_reflect_) * (shaders_[ShaderNodeType::Glossy] ? shaders_[ShaderNodeType::Glossy]->getColor(node_tree_data) : params_.glossy_color_);
 }
 
 } //namespace yafaray

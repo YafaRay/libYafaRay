@@ -26,7 +26,7 @@
 #include "common/logger.h"
 #include "camera/camera.h"
 #include "render/imagefilm.h"
-#include "common/param.h"
+#include "param/param.h"
 #include "light/light.h"
 #include "material/material.h"
 #include "background/background.h"
@@ -34,6 +34,8 @@
 #include "sampler/sample_pdf1d.h"
 #include "render/render_data.h"
 #include "accelerator/accelerator.h"
+#include "render/render_view.h"
+#include "material/sample.h"
 
 namespace yafaray {
 
@@ -47,12 +49,52 @@ namespace yafaray {
 #define BIDIR_DEBUG 0
 #define BIDIR_DO_LIGHTIMAGE 1
 
-/*! class that holds some vertex y_i/z_i (depending on wether it is a light or camera path)
-*/
+BidirectionalIntegrator::Params::Params(ParamError &param_error, const ParamMap &param_map)
+{
+	PARAM_LOAD(transparent_shadows_);
+	PARAM_LOAD(shadow_depth_);
+	PARAM_LOAD(ao_);
+	PARAM_LOAD(ao_samples_);
+	PARAM_LOAD(ao_distance_);
+	PARAM_LOAD(ao_color_);
+	PARAM_LOAD(transparent_background_);
+	PARAM_LOAD(transparent_background_refraction_);
+}
+
+ParamMap BidirectionalIntegrator::Params::getAsParamMap(bool only_non_default) const
+{
+	PARAM_SAVE_START;
+	PARAM_SAVE(transparent_shadows_);
+	PARAM_SAVE(shadow_depth_);
+	PARAM_SAVE(ao_);
+	PARAM_SAVE(ao_samples_);
+	PARAM_SAVE(ao_distance_);
+	PARAM_SAVE(ao_color_);
+	PARAM_SAVE(transparent_background_);
+	PARAM_SAVE(transparent_background_refraction_);
+	PARAM_SAVE_END;
+}
+
+ParamMap BidirectionalIntegrator::getAsParamMap(bool only_non_default) const
+{
+	ParamMap result{TiledIntegrator::getAsParamMap(only_non_default)};
+	result.append(params_.getAsParamMap(only_non_default));
+	return result;
+}
+
+std::pair<SurfaceIntegrator *, ParamError> BidirectionalIntegrator::factory(Logger &logger, RenderControl &render_control, const ParamMap &param_map, const Scene &scene)
+{
+	auto param_error{Params::meta_.check(param_map, {"type"}, {})};
+	auto result {new BidirectionalIntegrator(render_control, logger, param_error, param_map)};
+	if(param_error.flags_ != ParamError::Flags::Ok) logger.logWarning(param_error.print<BidirectionalIntegrator>(getClassName(), {"type"}));
+	return {result, param_error};
+}
+
+/*! class that holds some vertex y_i/z_i (depending on wether it is a light or camera path)*/
 struct BidirectionalIntegrator::PathVertex
 {
 	SurfacePoint sp_;  //!< surface point at which the path vertex lies
-	BsdfFlags flags_;       //!< flags of the sampled BSDF component (not all components of the sp!)
+	BsdfFlags flags_{BsdfFlags::None};       //!< flags of the sampled BSDF component (not all components of the sp!)
 	Rgb alpha_;      //!< cumulative subpath weight; note that y_i/z_i stores alpha_i+1 !
 	Rgb f_s_;        //!< f(x_i-1, x_i, x_i+1), i.e. throughput from last to next path vertex
 	Vec3f wi_, wo_;  //!< sampled direction for next vertex (if available)
@@ -143,10 +185,9 @@ BidirectionalIntegrator::PathData::PathData()
 	path_.resize(1);
 }
 
-BidirectionalIntegrator::BidirectionalIntegrator(RenderControl &render_control, Logger &logger, bool transparent_shadows, int shadow_depth) : TiledIntegrator(render_control, logger)
+BidirectionalIntegrator::BidirectionalIntegrator(RenderControl &render_control, Logger &logger, ParamError &param_error, const ParamMap &param_map) : TiledIntegrator{render_control, logger, param_error, param_map}, params_{param_error, param_map}
 {
-	transparent_shadows_ = transparent_shadows;
-	s_depth_ = shadow_depth;
+	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + params_.getAsParamMap(true).print());
 }
 
 bool BidirectionalIntegrator::preprocess(FastRandom &fast_random, ImageFilm *image_film, const RenderView *render_view, const Scene &scene)
@@ -202,8 +243,8 @@ bool BidirectionalIntegrator::preprocess(FastRandom &fast_random, ImageFilm *ima
 	*/
 	std::stringstream set;
 	set << "Bidirectional  ";
-	if(transparent_shadows_) set << "ShadowDepth=" << s_depth_ << "  ";
-	if(use_ambient_occlusion_) set << "AO samples=" << ao_samples_ << " dist=" << ao_dist_ << "  ";
+	if(params_.transparent_shadows_) set << "ShadowDepth=" << params_.shadow_depth_ << "  ";
+	if(params_.ao_) set << "AO samples=" << params_.ao_samples_ << " dist=" << params_.ao_distance_ << "  ";
 	render_info_ += set.str();
 	return success;
 }
@@ -276,12 +317,12 @@ std::pair<Rgb, float> BidirectionalIntegrator::integrate(Ray &ray, FastRandom &f
 		vl.alpha_ = pcol / ls.area_pdf_; // as above, this should not contain the "light BSDF"...missing lightNumPdf!
 		vl.g_ = 0.f; //unused actually...
 		vl.qi_wo_ = vl.qi_wi_ = 1.f; // definitely no russian roulette here...
-		vl.cos_wo_ = flags::have(ls.flags_, Light::Flags::Singular) ? 1.0 : std::abs(vl.sp_.n_ * lray.dir_); //singularities have no surface, hence no normal
+		vl.cos_wo_ = ls.flags_.has(Light::Flags::Singular) ? 1.0 : std::abs(vl.sp_.n_ * lray.dir_); //singularities have no surface, hence no normal
 		vl.cos_wi_ = 1.f;
 		vl.pdf_wo_ = ls.dir_pdf_;
 		vl.pdf_wi_ = ls.area_pdf_; //store area PDF here, so we don't need extra members just for camera/eye vertices
 		//FIXME: this does not make any sense: vl.flags_ = ls.flags_; //store light flags in BSDF flags...same purpose though, check if delta function are involved
-		path_data.singular_l_ = flags::have(ls.flags_, Light::Flags::Singular);
+		path_data.singular_l_ = ls.flags_.has(Light::Flags::Singular);
 		// create lightPath
 		const int n_light = createPath(random_generator, *accelerator_, chromatic_enabled, wavelength, lray, path_data.light_path_, max_path_length_, camera_);
 		if(n_light > 1)
@@ -358,7 +399,7 @@ std::pair<Rgb, float> BidirectionalIntegrator::integrate(Ray &ray, FastRandom &f
 		if(color_layers)
 		{
 			generateCommonLayers(color_layers, *sp, mask_params_, object_index_highest, material_index_highest);
-			generateOcclusionLayers(color_layers, *accelerator_, chromatic_enabled, wavelength, ray_division, camera_, pixel_sampling_data, *sp, wo, ao_samples_, shadow_bias_auto_, shadow_bias_, ao_dist_, ao_col_, s_depth_);
+			generateOcclusionLayers(color_layers, *accelerator_, chromatic_enabled, wavelength, ray_division, camera_, pixel_sampling_data, *sp, wo, params_.ao_samples_, shadow_bias_auto_, shadow_bias_, params_.ao_distance_, params_.ao_color_, params_.shadow_depth_);
 			if(Rgba *color_layer = color_layers->find(LayerDef::DebugObjectTime))
 			{
 				const float col_combined_gray = col.col2Bri();
@@ -369,12 +410,12 @@ std::pair<Rgb, float> BidirectionalIntegrator::integrate(Ray &ray, FastRandom &f
 	}
 	else
 	{
-		std::tie(col, alpha) = background(ray, color_layers, transp_background_, transp_refracted_background_, background_, ray_level);
+		std::tie(col, alpha) = background(ray, color_layers, params_.transparent_background_, params_.transparent_background_refraction_, background_, ray_level);
 	}
 
 	if(vol_integrator_)
 	{
-		applyVolumetricEffects(col, alpha, color_layers, ray, random_generator, vol_integrator_, transp_background_);
+		applyVolumetricEffects(col, alpha, color_layers, ray, random_generator, vol_integrator_, params_.transparent_background_);
 	}
 	return {std::move(col), alpha};
 }
@@ -420,7 +461,7 @@ int BidirectionalIntegrator::createPath(RandomGenerator &random_generator, const
 			if(random_generator() > v.qi_wo_) break; // terminate path with russian roulette
 		}
 		else v.qi_wo_ = 1.f;
-		if(flags::have(s.sampled_flags_, BsdfFlags::Specular)) // specular surfaces need special treatment...
+		if(s.sampled_flags_.has(BsdfFlags::Specular)) // specular surfaces need special treatment...
 		{
 			// other materials don't return pdf_back and col_back yet
 			//v.pdf_wi = s.pdf;
@@ -434,7 +475,7 @@ int BidirectionalIntegrator::createPath(RandomGenerator &random_generator, const
 		}
 		if(v.qi_wi_ < 0 && logger_.isDebug())
 		{
-			logger_.logDebug(getName(), ": ", "v[", n_vert, "].qi_wi=", v.qi_wi_, " (", v.f_s_.col2Bri(), " ", v.cos_wi_, " ", v.pdf_wi_, ")\n", "\t", v.pdf_wo_, "  flags:", static_cast<unsigned int>(s.sampled_flags_));
+			logger_.logDebug(getName(), ": ", "v[", n_vert, "].qi_wi=", v.qi_wi_, " (", v.f_s_.col2Bri(), " ", v.cos_wi_, " ", v.pdf_wi_, ")\n", "\t", v.pdf_wo_, "  flags:", s.sampled_flags_.value());
 		}
 		v.flags_ = s.sampled_flags_;
 		v.wo_ = ray.dir_;
@@ -454,7 +495,7 @@ void BidirectionalIntegrator::copyLightSubpath(PathData &pd, int s, int t)
 		const PathVertex &v = pd.light_path_[i];
 		pd.path_[i].pdf_f_ = v.pdf_wo_ / v.cos_wo_;
 		pd.path_[i].pdf_b_ = v.pdf_wi_ / v.cos_wi_;
-		pd.path_[i].specular_ = flags::have(v.flags_, BsdfFlags::Specular);
+		pd.path_[i].specular_ = v.flags_.has(BsdfFlags::Specular);
 		pd.path_[i].g_ = v.g_;
 	}
 	pd.path_[s - 1].g_ = pd.light_path_[s - 1].g_;
@@ -467,7 +508,7 @@ void BidirectionalIntegrator::copyEyeSubpath(PathData &pd, int s, int t)
 		const PathVertex &v = pd.eye_path_[j];
 		pd.path_[i].pdf_f_ = v.pdf_wi_ / v.cos_wi_;
 		pd.path_[i].pdf_b_ = v.pdf_wo_ / v.cos_wo_;
-		pd.path_[i].specular_ = flags::have(v.flags_, BsdfFlags::Specular);
+		pd.path_[i].specular_ = v.flags_.has(BsdfFlags::Specular);
 		pd.path_[i].g_ = pd.eye_path_[j + 1].g_;
 	}
 }
@@ -569,14 +610,14 @@ std::tuple<bool, Ray, Rgb> BidirectionalIntegrator::connectLPath(PathData &pd, R
 	//FIXME DAVID: another series of horrible hacks to avoid uninitialized values and incorrect renders in bidir. However, this should be properly solved by implementing correctly the functions needed by bidir in the lights and materials, and correcting the bidir integrator itself...
 	ls.sp_->p_ = {{0.f, 0.f, 0.f}};
 	const auto [wo, scol]{light->emitSample(ls, l_ray.time_)};
-	ls.flags_ = static_cast<Light::Flags>(0xFFFFFFFF);
+	ls.flags_ = Light::Flags::All;
 	// get probabilities for generating light sample without a given surface point
 	const Vec3f vec{-l_ray.dir_};
 	const auto [area_pdf, dir_pdf, cos_wo]{light->emitPdf(sp_light.n_, vec)};
 	pd.path_[0].pdf_a_0_ = area_pdf * light_num_pdf;
 	pd.path_[0].pdf_f_ = dir_pdf / cos_wo;
-	pd.path_[0].specular_ = flags::have(ls.flags_, Light::Flags::DiracDir); //FIXME this has to be clarified
-	pd.singular_l_ = flags::have(ls.flags_, Light::Flags::Singular);
+	pd.path_[0].specular_ = ls.flags_.has(Light::Flags::DiracDir); //FIXME this has to be clarified
+	pd.singular_l_ = ls.flags_.has(Light::Flags::Singular);
 	pd.pdf_illum_ = ls.pdf_ * light_num_pdf;
 	pd.pdf_emit_ = pd.path_[0].pdf_a_0_ * (sp_light.p_ - z.sp_.p_).lengthSquared() / cos_wo;
 
@@ -786,10 +827,10 @@ Rgb BidirectionalIntegrator::evalPath(const Accelerator &accelerator, int s, int
 	bool shadowed = false;
 	Rgb scol {0.f};
 	const Primitive *shadow_casting_primitive = nullptr;
-	if(transparent_shadows_) std::tie(shadowed, scol, shadow_casting_primitive) = accelerator_->isShadowedTransparentShadow(con_ray, s_depth_, camera_);
+	if(params_.transparent_shadows_) std::tie(shadowed, scol, shadow_casting_primitive) = accelerator_->isShadowedTransparentShadow(con_ray, params_.shadow_depth_, camera_);
 	else std::tie(shadowed, shadow_casting_primitive) = accelerator_->isShadowed(con_ray);
 	if(shadowed) return Rgb{0.f};
-	if(transparent_shadows_) c_uw *= scol;
+	if(params_.transparent_shadows_) c_uw *= scol;
 	return c_uw;
 }
 
@@ -799,12 +840,12 @@ Rgb BidirectionalIntegrator::evalLPath(const Accelerator &accelerator, int t, co
 	bool shadowed = false;
 	Rgb scol {0.f};
 	const Primitive *shadow_casting_primitive = nullptr;
-	if(transparent_shadows_) std::tie(shadowed, scol, shadow_casting_primitive) = accelerator_->isShadowedTransparentShadow(l_ray, s_depth_, camera_);
+	if(params_.transparent_shadows_) std::tie(shadowed, scol, shadow_casting_primitive) = accelerator_->isShadowedTransparentShadow(l_ray, params_.shadow_depth_, camera_);
 	else std::tie(shadowed, shadow_casting_primitive) = accelerator_->isShadowed(l_ray);
 	if(shadowed) return Rgb{0.f};
 	const PathVertex &z = pd.eye_path_[t - 1];
 	Rgb c_uw = lcol * pd.f_z_ * z.alpha_ * std::abs(z.sp_.n_ * l_ray.dir_); // f_y, cos_x0_f and r^2 computed in connectLPath...(light pdf)
-	if(transparent_shadows_) c_uw *= scol;
+	if(params_.transparent_shadows_) c_uw *= scol;
 	// hence c_st is only cos_x1_b * f_z...like path tracing
 /*
 	static int dbg = 0;
@@ -823,14 +864,14 @@ Rgb BidirectionalIntegrator::evalPathE(const Accelerator &accelerator, int s, co
 	bool shadowed = false;
 	Rgb scol {0.f};
 	const Primitive *shadow_casting_primitive = nullptr;
-	if(transparent_shadows_) std::tie(shadowed, scol, shadow_casting_primitive) = accelerator_->isShadowedTransparentShadow(con_ray, s_depth_, camera_);
+	if(params_.transparent_shadows_) std::tie(shadowed, scol, shadow_casting_primitive) = accelerator_->isShadowedTransparentShadow(con_ray, params_.shadow_depth_, camera_);
 	else std::tie(shadowed, shadow_casting_primitive) = accelerator_->isShadowed(con_ray);
 	if(shadowed) return Rgb{0.f};
 	//eval material
 	//Rgb f_y = y.sp.material->eval(state, y.sp, y.wi, pd.w_l_e, BSDF_ALL);
 	//TODO:
 	Rgb c_uw = y.alpha_ * math::num_pi<> * pd.f_y_ * pd.path_[s].g_;
-	if(transparent_shadows_) c_uw *= scol;
+	if(params_.transparent_shadows_) c_uw *= scol;
 	return c_uw;
 }
 
@@ -888,45 +929,5 @@ Rgb BidirectionalIntegrator::evalPathE(const Accelerator &accelerator, int s, co
     }
     return col/lightNumPdf;
 } */
-
-SurfaceIntegrator * BidirectionalIntegrator::factory(Logger &logger, RenderControl &render_control, const ParamMap &params, const Scene &scene)
-{
-	bool do_ao = false;
-	int ao_samples = 32;
-	double ao_dist = 1.0;
-	Rgb ao_col(1.f);
-	bool bg_transp = false;
-	bool bg_transp_refract = false;
-	bool transparent_shadows = false;
-	int shadow_depth = 4;
-	bool time_forced = false;
-	float time_forced_value = 0.f;
-
-	params.getParam("transpShad", transparent_shadows);
-	params.getParam("shadowDepth", shadow_depth);
-	params.getParam("do_AO", do_ao);
-	params.getParam("AO_samples", ao_samples);
-	params.getParam("AO_distance", ao_dist);
-	params.getParam("AO_color", ao_col);
-	params.getParam("bg_transp", bg_transp);
-	params.getParam("bg_transp_refract", bg_transp_refract);
-
-	auto inte = new BidirectionalIntegrator(render_control, logger, transparent_shadows, shadow_depth);
-
-	// AO settings
-	inte->use_ambient_occlusion_ = do_ao;
-	inte->ao_samples_ = ao_samples;
-	inte->ao_dist_ = ao_dist;
-	inte->ao_col_ = ao_col;
-
-	inte->time_forced_ = time_forced;
-	inte->time_forced_value_ = time_forced_value;
-
-	// Background settings
-	inte->transp_background_ = bg_transp;
-	inte->transp_refracted_background_ = bg_transp_refract;
-
-	return inte;
-}
 
 } //namespace yafaray

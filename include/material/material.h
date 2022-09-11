@@ -17,13 +17,18 @@
  *      Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-#ifndef YAFARAY_MATERIAL_H
-#define YAFARAY_MATERIAL_H
+#ifndef LIBYAFARAY_MATERIAL_H
+#define LIBYAFARAY_MATERIAL_H
 
-#include "common/flags.h"
 #include "common/visibility.h"
 #include "shader/shader_node.h"
 #include "geometry/vector.h"
+#include "geometry/direction_color.h"
+#include "material/bsdf.h"
+#include "material/specular_data.h"
+#include "common/enum.h"
+#include "common/enum_map.h"
+#include "param/class_meta.h"
 #include <list>
 
 namespace yafaray {
@@ -34,57 +39,16 @@ class SurfacePoint;
 class VolumeHandler;
 struct Sample;
 struct PSample;
+class MaterialData;
 class Logger;
-
-enum class BsdfFlags : unsigned int
-{
-	None		= 0,
-	Specular	= 1 << 0,
-	Glossy		= 1 << 1,
-	Diffuse		= 1 << 2,
-	Dispersive	= 1 << 3,
-	Reflect		= 1 << 4,
-	Transmit	= 1 << 5,
-	Filter		= 1 << 6,
-	Emit		= 1 << 7,
-	Volumetric	= 1 << 8,
-	DiffuseReflect = Diffuse | Reflect,
-	SpecularReflect = Specular | Reflect,
-	SpecularTransmit = Transmit | Filter,
-	Translucency = Diffuse | Transmit,// translucency (diffuse transmitt)
-	AllSpecular = Specular | Reflect | Transmit,
-	AllGlossy = Glossy | Reflect | Transmit,
-	All = Specular | Glossy | Diffuse | Dispersive | Reflect | Transmit | Filter
-};
-
-class MaterialData
-{
-	public:
-		MaterialData(BsdfFlags bsdf_flags, size_t number_of_nodes) : bsdf_flags_(bsdf_flags), node_tree_data_(number_of_nodes) { }
-		MaterialData(BsdfFlags bsdf_flags, NodeTreeData node_tree_data) : bsdf_flags_(bsdf_flags), node_tree_data_{std::move(node_tree_data)} { }
-		virtual ~MaterialData() = default;
-		virtual std::unique_ptr<MaterialData> clone() const = 0;
-		BsdfFlags bsdf_flags_;
-		NodeTreeData node_tree_data_;
-};
-
-struct DirectionColor
-{
-	static std::unique_ptr<DirectionColor> blend(std::unique_ptr<DirectionColor> direction_color_1, std::unique_ptr<DirectionColor> direction_color_2, float blend_val);
-	Vec3f dir_;
-	Rgb col_;
-};
-
-struct Specular
-{
-	std::unique_ptr<DirectionColor> reflect_, refract_;
-};
 
 class Material
 {
 	public:
-		static const Material *factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params, const std::list<ParamMap> &nodes_params);
-		explicit Material(Logger &logger);
+		inline static std::string getClassName() { return "Material"; }
+		static std::pair<Material *, ParamError> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map, const std::list<ParamMap> &nodes_param_maps);
+		[[nodiscard]] virtual ParamMap getAsParamMap(bool only_non_default) const;
+		Material(Logger &logger, ParamError &param_error, const ParamMap &param_map);
 		virtual ~Material();
 
 		/*! Initialize the BSDF of a material. You must call this with the current surface point
@@ -146,26 +110,24 @@ class Material
 		virtual Rgb getTransColor(const NodeTreeData &node_tree_data) const { return Rgb{0.f}; }
 		virtual Rgb getMirrorColor(const NodeTreeData &node_tree_data) const { return Rgb{0.f}; }
 		virtual Rgb getSubSurfaceColor(const NodeTreeData &node_tree_data) const { return Rgb{0.f}; }
-		void setIndex(unsigned int new_mat_index) { index_ = new_mat_index; }
 		void setIndexAuto(unsigned int new_mat_index);
-		unsigned int getIndex() const { return index_; }
+		unsigned int getIndex() const { return params_.mat_pass_index_; }
 		unsigned int getIndexAuto() const { return index_auto_; }
 		Rgb getIndexAutoColor() const { return index_auto_color_; }
-		VisibilityFlags getVisibility() const { return visibility_; }
-		bool getReceiveShadows() const { return receive_shadows_; }
+		Visibility getVisibility() const { return params_.visibility_; }
+		bool getReceiveShadows() const { return params_.receive_shadows_; }
 
-		bool isFlat() const { return flat_material_; }
+		bool isFlat() const { return params_.flat_material_; }
 
 		int getAdditionalDepth() const { return additional_depth_; }
-		float getTransparentBiasFactor() const { return transparent_bias_factor_; }
-		bool getTransparentBiasMultiplyRayDepth() const { return transparent_bias_multiply_ray_depth_; }
+		float getTransparentBiasFactor() const { return params_.transparent_bias_factor_; }
+		bool getTransparentBiasMultiplyRayDepth() const { return params_.transparent_bias_multiply_raydepth_; }
 
 		template<typename T> void applyWireFrame(T &value, const ShaderNode *wireframe_shader, const NodeTreeData &node_tree_data, const SurfacePoint &sp) const;
 		void applyWireFrame(float &value, float wire_frame_amount, const SurfacePoint &sp) const;
 		void applyWireFrame(Rgb &col, float wire_frame_amount, const SurfacePoint &sp) const;
 		void applyWireFrame(Rgba &col, float wire_frame_amount, const SurfacePoint &sp) const;
-		void setSamplingFactor(float new_sampling_factor) { sampling_factor_ = new_sampling_factor; }
-		float getSamplingFactor() const { return sampling_factor_; }
+		float getSamplingFactor() const { return params_.sampling_factor_; }
 		static Rgb sampleClay(const SurfacePoint &sp, const Vec3f &wo, Vec3f &wi, Sample &s, float &w);
 		static Rgb getShaderColor(const ShaderNode *shader_node, const NodeTreeData &node_tree_data, const Rgb &color_without_shader)
 		{
@@ -181,70 +143,76 @@ class Material
 		}
 
 	protected:
+		struct Type : public Enum<Type>
+		{
+			using Enum::Enum;
+			enum : decltype(type()) { None, Blend, CoatedGlossy, Glass, Mirror, Null, Glossy, RoughGlass, ShinyDiffuse, Light, Mask };
+			inline static const EnumMap<decltype(type())> map_{{
+					{"blend_mat", Blend, ""},
+					{"coated_glossy", CoatedGlossy, ""},
+					{"glass", Glass, ""},
+					{"mirror", Mirror, ""},
+					{"null", Null, ""},
+					{"glossy", Glossy, ""},
+					{"rough_glass", RoughGlass, ""},
+					{"shinydiffusemat", ShinyDiffuse, ""},
+					{"light_mat", Light, ""},
+					{"mask_mat", Mask, ""},
+				}};
+		};
+		[[nodiscard]] virtual Type type() const = 0;
+		const struct Params
+		{
+			PARAM_INIT;
+			PARAM_DECL(bool, receive_shadows_, true, "receive_shadows", "If true, objects with this material receive shadows from other objects");
+			PARAM_DECL(bool, flat_material_, false, "flat_material", "Flat Material is a special non-photorealistic material that does not multiply the surface color by the cosine of the angle with the light, as happens in real life. Also, if receive_shadows is disabled, this flat material does no longer self-shadow. For special applications only, for example to fill cross sections in architectural drawings.");
+			PARAM_ENUM_DECL(Visibility, visibility_, Visibility::Normal, "visibility", "");
+			PARAM_DECL(int, mat_pass_index_, 0, "mat_pass_index", "Material index used in the material index render layer");
+			PARAM_DECL(int, additional_depth_, 0, "additionaldepth", "Per material additional ray depth, useful for certain materials like glass, so it is not needed to increase the entire scene ray depth for a slight performance improvement");
+			PARAM_DECL(float, transparent_bias_factor_, 0.f, "transparentbias_factor", "Per-material additional ray-bias setting for transparency (trick to avoid black areas due to insufficient depth when many transparent surfaces stacked). If >0.f this function is enabled and the result will no longer be realistic and may have artifacts");
+			PARAM_DECL(bool, transparent_bias_multiply_raydepth_, false, "transparentbias_multiply_raydepth", "Per-material additional ray-bias setting for transparency (trick to avoid black areas due to insufficient depth when many transparent surfaces stacked). If enabled the bias will be multiplied by the current ray depth so the first transparent surfaces are rendered better and subsequent surfaces might be skipped.");
+			PARAM_DECL(float, sampling_factor_, 1.f, "samplingfactor", "Per material sampling factor, to allow some materials to receive more samples than others");
+			PARAM_DECL(float, wireframe_amount_, 0.f, "wireframe_amount", "Wireframe shading amount");
+			PARAM_DECL(float, wireframe_thickness_, 0.01f, "wireframe_thickness", "Wireframe thickness");
+			PARAM_DECL(float, wireframe_exponent_, 0.f, "wireframe_exponent", "Wireframe exponent (0.0 = solid, 1.0 = linearly gradual, etc)");
+			PARAM_DECL(Rgb, wireframe_color_, Rgb{1.f}, "wireframe_color", "Wireframe shading color");
+		} params_;
 		/* small function to apply bump mapping to a surface point
 			you need to determine the partial derivatives for NU and NV first, e.g. from a shader node */
 		static void applyBump(SurfacePoint &sp, const DuDv &du_dv);
+		template <size_t N> static std::array<const ShaderNode *, N> initShaderArray();
 
 		BsdfFlags bsdf_flags_{BsdfFlags::None};
-		VisibilityFlags visibility_{VisibilityFlags::Visible | VisibilityFlags::CastsShadows};
-		bool receive_shadows_ = true; //!< enables/disables material reception of shadows.
 		std::unique_ptr<VolumeHandler> vol_i_; //!< volumetric handler for space inside material (opposed to surface normal)
 		std::unique_ptr<VolumeHandler> vol_o_; //!< volumetric handler for space outside ofmaterial (where surface normal points to)
-		int additional_depth_ = 0;	//!< Per-material additional ray-depth
-		float transparent_bias_factor_ = 0.f;	//!< Per-material additional ray-bias setting for transparency (trick to avoid black areas due to insufficient depth when many transparent surfaces stacked). If >0.f this function is enabled and the result will no longer be realistic and may have artifacts.
-		bool transparent_bias_multiply_ray_depth_ = false;	//!< Per-material additional ray-bias setting for transparency (trick to avoid black areas due to insufficient depth when many transparent surfaces stacked). If enabled the bias will be multiplied by the current ray depth so the first transparent surfaces are rendered better and subsequent surfaces might be skipped.
-
-		float wireframe_amount_ = 0.f;           //!< Wireframe shading amount
-		float wireframe_thickness_ = 0.01f;      //!< Wireframe thickness
-		float wireframe_exponent_ = 0.f;         //!< Wireframe exponent (0.f = solid, 1.f=linearly gradual, etc)
-		Rgb wireframe_color_ = Rgb(1.f); //!< Wireframe shading color
-
-		float sampling_factor_ = 1.f;	//!< Material sampling factor, to allow some materials to receive more samples than others
-
-		bool flat_material_ = false;		//!< Flat Material is a special non-photorealistic material that does not multiply the surface color by the cosine of the angle with the light, as happens in real life. Also, if receive_shadows is disabled, this flat material does no longer self-shadow. For special applications only.
-		unsigned int index_ = 1;	//!< Material Index for the material-index render pass
+		int additional_depth_{params_.additional_depth_};	//!< Per-material additional ray-depth
 		unsigned int index_auto_ = 1;	//!< Material Index automatically generated for the material-index-auto render pass
 		Rgb index_auto_color_{0.f};	//!< Material Index color automatically generated for the material-index-auto (color) render pass
 		Logger &logger_;
 };
 
+template <size_t N>
+std::array<const ShaderNode *, N> Material::initShaderArray()
+{
+	std::array<const ShaderNode *, N> result;
+	for(auto node : result) node = nullptr;
+	return result;
+}
+
 template<typename T>
 inline void Material::applyWireFrame(T &value, const ShaderNode *wireframe_shader, const NodeTreeData &node_tree_data, const SurfacePoint &sp) const
 {
-	if(wireframe_thickness_ > 0.f)
+	if(params_.wireframe_thickness_ > 0.f)
 	{
-		const float wire_frame_amount = wireframe_shader ? wireframe_shader->getScalar(node_tree_data) * wireframe_amount_ : wireframe_amount_;
+		const float wire_frame_amount = wireframe_shader ? wireframe_shader->getScalar(node_tree_data) * params_.wireframe_amount_ : params_.wireframe_amount_;
 		if(wire_frame_amount > 0.f) applyWireFrame(value, wire_frame_amount, sp);
 	}
 }
 
 template void Material::applyWireFrame<float>(float &value, const ShaderNode *wireframe_shader, const NodeTreeData &node_tree_data, const SurfacePoint &sp) const;
 template void Material::applyWireFrame<Rgb>(Rgb &value, const ShaderNode *wireframe_shader, const NodeTreeData &node_tree_data, const SurfacePoint &sp) const;
-template void Material::applyWireFrame<Rgba>(Rgba &value, const ShaderNode *wireframe_shader, const NodeTreeData &node_tree_data, const SurfacePoint &sp) const;
 
-
-struct Sample
-{
-	Sample(float s_1, float s_2, BsdfFlags sflags = BsdfFlags::All, bool revrs = false):
-			s_1_(s_1), s_2_(s_2), pdf_(0.f), flags_(sflags), sampled_flags_(BsdfFlags::None), reverse_(revrs) {}
-	float s_1_, s_2_;
-	float pdf_;
-	BsdfFlags flags_, sampled_flags_;
-	bool reverse_; //!< if true, the sample method shall return the probability/color for swapped incoming/outgoing dir
-	float pdf_back_;
-	Rgb col_back_;
-};
-
-struct PSample final : public Sample // << whats with the public?? structs inherit publicly by default *DarkTide
-{
-	PSample(float s_1, float s_2, float s_3, BsdfFlags sflags, const Rgb &l_col, const Rgb &transm = Rgb(1.f)):
-			Sample(s_1, s_2, sflags), s_3_(s_3), lcol_(l_col), alpha_(transm) {}
-	float s_3_;
-	const Rgb lcol_; //!< the photon color from last scattering
-	const Rgb alpha_; //!< the filter color between last scattering and this hit (not pre-applied to lcol!)
-	Rgb color_; //!< the new color after scattering, i.e. what will be lcol for next scatter.
-};
 
 } //namespace yafaray
 
-#endif // YAFARAY_MATERIAL_H
+#endif // LIBYAFARAY_MATERIAL_H

@@ -17,10 +17,10 @@
  *      Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-#ifndef YAFARAY_INTEGRATOR_PHOTON_MAPPING_H
-#define YAFARAY_INTEGRATOR_PHOTON_MAPPING_H
+#ifndef LIBYAFARAY_INTEGRATOR_PHOTON_MAPPING_H
+#define LIBYAFARAY_INTEGRATOR_PHOTON_MAPPING_H
 
-#include "integrator_montecarlo.h"
+#include "integrator_photon_caustic.h"
 #include "photon/photon.h"
 #include <vector>
 
@@ -37,35 +37,49 @@ struct PreGatherData final
 	std::mutex mutx_;
 };
 
-class PhotonIntegrator final : public MonteCarloIntegrator
+class PhotonIntegrator final : public CausticPhotonIntegrator
 {
 	public:
-		static SurfaceIntegrator *factory(Logger &logger, RenderControl &render_control, const ParamMap &params, const Scene &scene);
+		inline static std::string getClassName() { return "PhotonIntegrator"; }
+		static std::pair<SurfaceIntegrator *, ParamError> factory(Logger &logger, RenderControl &render_control, const ParamMap &params, const Scene &scene);
+		static std::string printMeta(const std::vector<std::string> &excluded_params) { return Params::meta_.print(excluded_params); }
 
 	private:
-		PhotonIntegrator(RenderControl &render_control, Logger &logger, unsigned int d_photons, unsigned int c_photons, bool transparent_shadows = false, int shadow_depth = 4, float ds_rad = 0.1f, float c_rad = 0.01f);
-		std::string getShortName() const override { return "PM"; }
-		std::string getName() const override { return "PhotonMap"; }
+		[[nodiscard]] Type type() const override { return Type::Photon; }
+		const struct Params
+		{
+			PARAM_INIT_PARENT(CausticPhotonIntegrator);
+			PARAM_DECL(bool, diffuse_, true, "diffuse", "Enable/disable diffuse photon processing");
+			PARAM_DECL(int , photons_diffuse_, 100000, "diffuse_photons", "Number of diffuse photons");
+			PARAM_DECL(float, diffuse_radius_, 0.1f, "diffuse_radius", "Diffuse photons search radius");
+			PARAM_DECL(int, num_photons_diffuse_search_, 50, "diffuse_search", "Num photons used for diffuse search");//FIXME DAVID: if caustic_mix not specified, the old code stated: "caustic_mix = diffuse_search;" by default However now that's not implemented because caustic_mix belongs to the parent class parameters. Is that really necessary??
+			PARAM_DECL(bool, final_gather_, true, "finalGather", "Enable final gathering for diffuse photons");
+			PARAM_DECL(int, fg_samples_, 32, "fg_samples", "Number of samples for Montecarlo raytracing");
+			PARAM_DECL(int, bounces_, 3, "bounces", "Max. path depth for Montecarlo raytracing");
+			PARAM_DECL(int, fg_bounces_, 2, "fg_bounces", "");
+			PARAM_DECL(float, gather_dist_, 0.2f, "fg_min_pathlen", "Minimum distance to terminate path tracing (unless gatherBounces is reached). If not specified it defaults to the value set in '" + diffuse_radius_meta_.name() + "'");
+			PARAM_DECL(bool, show_map_, false, "show_map", "Show radiance map");
+		} params_;
+		[[nodiscard]] ParamMap getAsParamMap(bool only_non_default) const override;
+
+	private:
+		PhotonIntegrator(RenderControl &render_control, Logger &logger, ParamError &param_error, const ParamMap &param_map);
+		[[nodiscard]] std::string getShortName() const override { return "PM"; }
+		[[nodiscard]] std::string getName() const override { return "PhotonMap"; }
 		bool preprocess(FastRandom &fast_random, ImageFilm *image_film, const RenderView *render_view, const Scene &scene) override;
 		std::pair<Rgb, float> integrate(Ray &ray, FastRandom &fast_random, RandomGenerator &random_generator, std::vector<int> &correlative_sample_number, ColorLayers *color_layers, int thread_id, int ray_level, bool chromatic_enabled, float wavelength, int additional_depth, const RayDivision &ray_division, const PixelSamplingData &pixel_sampling_data, unsigned int object_index_highest, unsigned int material_index_highest) const override;
 		void diffuseWorker(FastRandom &fast_random, PreGatherData &pgdat, unsigned int &total_photons_shot, int thread_id, const Pdf1D *light_power_d, const std::vector<const Light *> &lights_diffuse, int pb_step);
 		Rgb finalGathering(FastRandom &fast_random, RandomGenerator &random_generator, std::vector<int> &correlative_sample_number, int thread_id, bool chromatic_enabled, float wavelength, const SurfacePoint &sp, const Vec3f &wo, const RayDivision &ray_division, const PixelSamplingData &pixel_sampling_data) const;
-		void enableCaustics(const bool caustics) { use_photon_caustics_ = caustics; }
 		void enableDiffuse(const bool diffuse) { use_photon_diffuse_ = diffuse; }
 		static void preGatherWorker(PreGatherData *gdata, float ds_rad, int n_search);
 		static void photonMapKdTreeWorker(PhotonMap *photon_map);
 
-		bool use_photon_diffuse_; //!< enable/disable diffuse photon processing
-		bool final_gather_, show_map_;
-		unsigned int n_diffuse_photons_;
-		int n_diffuse_search_;
-		int gather_bounces_;
-		float ds_radius_; //!< diffuse search radius
-		float lookup_rad_; //!< square radius to lookup radiance photons, as infinity is no such good idea ;)
-		float gather_dist_; //!< minimum distance to terminate path tracing (unless gatherBounces is reached)
+		bool use_photon_diffuse_{params_.diffuse_}; //!< enable/disable diffuse photon processing
+		int photons_diffuse_{params_.photons_diffuse_}; //!< Number of diffuse photons
+		const float lookup_rad_{4.f * params_.diffuse_radius_ * params_.diffuse_radius_}; //!< square radius to lookup radiance photons, as infinity is no such good idea ;)
 		std::unique_ptr<PhotonMap> diffuse_map_, radiance_map_;
 };
 
 } //namespace yafaray
 
-#endif // YAFARAY_INTEGRATOR_PHOTON_MAPPING_H
+#endif // LIBYAFARAY_INTEGRATOR_PHOTON_MAPPING_H

@@ -18,56 +18,123 @@
  */
 
 #include "texture/texture.h"
-
-#include <cmath>
-#include "texture/texture_basic.h"
+#include "texture/texture_blend.h"
+#include "texture/texture_clouds.h"
+#include "texture/texture_distorted_noise.h"
+#include "texture/texture_marble.h"
+#include "texture/texture_musgrave.h"
+#include "texture/texture_rgb_cube.h"
+#include "texture/texture_voronoi.h"
+#include "texture/texture_wood.h"
 #include "texture/texture_image.h"
-#include "common/param.h"
+#include "param/param.h"
 
 namespace yafaray {
 
-Texture * Texture::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params)
+Texture::Params::Params(ParamError &param_error, const ParamMap &param_map)
 {
-	if(logger.isDebug())
+	PARAM_LOAD(adj_mult_factor_red_);
+	PARAM_LOAD(adj_mult_factor_green_);
+	PARAM_LOAD(adj_mult_factor_blue_);
+	PARAM_LOAD(adj_intensity_);
+	PARAM_LOAD(adj_contrast_);
+	PARAM_LOAD(adj_saturation_);
+	PARAM_LOAD(adj_hue_degrees_);
+	PARAM_LOAD(adj_clamp_);
+	PARAM_ENUM_LOAD(interpolation_type_);
+	PARAM_LOAD(ramp_num_items_);
+	PARAM_ENUM_LOAD(ramp_color_mode_);
+	PARAM_ENUM_LOAD(ramp_interpolation_);
+	PARAM_ENUM_LOAD(ramp_hue_interpolation_);
+}
+
+ParamMap Texture::Params::getAsParamMap(bool only_non_default) const
+{
+	PARAM_SAVE_START;
+	PARAM_SAVE(adj_mult_factor_red_);
+	PARAM_SAVE(adj_mult_factor_green_);
+	PARAM_SAVE(adj_mult_factor_blue_);
+	PARAM_SAVE(adj_intensity_);
+	PARAM_SAVE(adj_contrast_);
+	PARAM_SAVE(adj_saturation_);
+	PARAM_SAVE(adj_hue_degrees_);
+	PARAM_SAVE(adj_clamp_);
+	PARAM_ENUM_SAVE(interpolation_type_);
+	PARAM_SAVE(ramp_num_items_);
+	PARAM_ENUM_SAVE(ramp_color_mode_);
+	PARAM_ENUM_SAVE(ramp_interpolation_);
+	PARAM_ENUM_SAVE(ramp_hue_interpolation_);
+	PARAM_SAVE_END;
+}
+
+ParamMap Texture::getAsParamMap(bool only_non_default) const
+{
+	ParamMap result{params_.getAsParamMap(only_non_default)};
+	result.setParam("type", type().print());
+	const std::vector<ColorRampItem> &ramp_items{color_ramp_->getRamp()};
+	for(size_t i = 0; i < ramp_items.size(); ++i)
 	{
-		logger.logDebug("**Texture");
-		params.logContents(logger);
+		std::stringstream param_name;
+		param_name << "ramp_item_" << i << "_color";
+		result.setParam(param_name.str(), ramp_items[i].color());
+		param_name.str("");
+		param_name.clear();
+
+		param_name << "ramp_item_" << i << "_position";
+		result.setParam(param_name.str(), ramp_items[i].position());
+		param_name.str("");
+		param_name.clear();
 	}
-	std::string type;
-	params.getParam("type", type);
-	if(type == "blend") return BlendTexture::factory(logger, scene, name, params);
-	else if(type == "clouds") return CloudsTexture::factory(logger, scene, name, params);
-	else if(type == "marble") return MarbleTexture::factory(logger, scene, name, params);
-	else if(type == "wood") return WoodTexture::factory(logger, scene, name, params);
-	else if(type == "voronoi") return VoronoiTexture::factory(logger, scene, name, params);
-	else if(type == "musgrave") return MusgraveTexture::factory(logger, scene, name, params);
-	else if(type == "distorted_noise") return DistortedNoiseTexture::factory(logger, scene, name, params);
-	else if(type == "rgb_cube") return RgbCubeTexture::factory(logger, scene, name, params);
-	else if(type == "image") return ImageTexture::factory(logger, scene, name, params);
-	else return nullptr;
+	return result;
 }
 
-InterpolationType Texture::getInterpolationTypeFromName(const std::string &interpolation_type_name)
+std::pair<Texture *, ParamError> Texture::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map)
 {
-	// interpolation type, bilinear default
-	if(interpolation_type_name == "none") return InterpolationType::None;
-	else if(interpolation_type_name == "bicubic") return InterpolationType::Bicubic;
-	else if(interpolation_type_name == "mipmap_trilinear") return InterpolationType::Trilinear;
-	else if(interpolation_type_name == "mipmap_ewa") return InterpolationType::Ewa;
-	else return InterpolationType::Bilinear;
-}
-
-std::string Texture::getInterpolationTypeName(const InterpolationType &interpolation_type)
-{
-	// interpolation type, bilinear default
-	switch(interpolation_type)
+	const Type type{ClassMeta::preprocessParamMap<Type>(logger, getClassName(), param_map)};
+	switch(type.value())
 	{
-		case InterpolationType::None: return "none";
-		case InterpolationType::Bilinear: return "bilinear";
-		case InterpolationType::Bicubic: return "bicubic";
-		case InterpolationType::Trilinear: return "mipmap_trilinear";
-		case InterpolationType::Ewa: return "mipmap_ewa";
-		default: return "bilinear";
+		case Type::Blend: return BlendTexture::factory(logger, scene, name, param_map);
+		case Type::Clouds: return CloudsTexture::factory(logger, scene, name, param_map);
+		case Type::Marble: return MarbleTexture::factory(logger, scene, name, param_map);
+		case Type::Wood: return WoodTexture::factory(logger, scene, name, param_map);
+		case Type::Voronoi: return VoronoiTexture::factory(logger, scene, name, param_map);
+		case Type::Musgrave: return MusgraveTexture::factory(logger, scene, name, param_map);
+		case Type::DistortedNoise: return DistortedNoiseTexture::factory(logger, scene, name, param_map);
+		case Type::RgbCube: return RgbCubeTexture::factory(logger, scene, name, param_map);
+		case Type::Image: return ImageTexture::factory(logger, scene, name, param_map);
+		default: return {nullptr, {ParamError::Flags::ErrorWhileCreating}};
+	}
+}
+
+Texture::Texture(Logger &logger, ParamError &param_error, const ParamMap &param_map) : logger_(logger), params_{param_error, param_map}
+{
+	if(params_.ramp_num_items_ > 0)
+	{
+		color_ramp_ = std::make_unique<ColorRamp>(params_.ramp_color_mode_, params_.ramp_interpolation_, params_.ramp_hue_interpolation_);
+		for(int i = 0; i < params_.ramp_num_items_; ++i)
+		{
+			std::stringstream param_name;
+			Rgba color(0.f, 0.f, 0.f, 1.f);
+			float position = 0.f;
+			param_name << "ramp_item_" << i << "_color";
+			if(param_map.getParam(param_name.str(), color) == ParamError::Flags::ErrorWrongParamType)
+			{
+				param_error.flags_ |= ParamError::Flags{ParamError::Flags::ErrorWrongParamType};
+				param_error.wrong_type_params_.emplace_back(param_name.str());
+			}
+			param_name.str("");
+			param_name.clear();
+
+			param_name << "ramp_item_" << i << "_position";
+			if(param_map.getParam(param_name.str(), position) == ParamError::Flags::ErrorWrongParamType)
+			{
+				param_error.flags_ |= ParamError::Flags{ParamError::Flags::ErrorWrongParamType};
+				param_error.wrong_type_params_.emplace_back(param_name.str());
+			}
+			param_name.str("");
+			param_name.clear();
+			color_ramp_->addItem(color, position);
+		}
 	}
 }
 
@@ -132,66 +199,6 @@ Point3f Texture::invSphereMap(const Uv<float> &uv)
 	}};
 }
 
-void Texture::setAdjustments(float intensity, float contrast, float saturation, float hue, bool clamp, float factor_red, float factor_green, float factor_blue)
-{
-	adj_intensity_ = intensity;
-	adj_contrast_ = contrast;
-	adj_saturation_ = saturation;
-	adj_hue_ = hue / 60.f; //The value of the hue offset parameter is in degrees, but internally the HSV hue works in "units" where each unit is 60 degrees
-	adj_clamp_ = clamp;
-	adj_mult_factor_red_ = factor_red;
-	adj_mult_factor_green_ = factor_green;
-	adj_mult_factor_blue_ = factor_blue;
-
-	std::stringstream adjustments_stream;
-
-	if(intensity != 1.f)
-	{
-		adjustments_stream << " intensity=" << intensity;
-		adjustments_set_ = true;
-	}
-	if(contrast != 1.f)
-	{
-		adjustments_stream << " contrast=" << contrast;
-		adjustments_set_ = true;
-	}
-	if(saturation != 1.f)
-	{
-		adjustments_stream << " saturation=" << saturation;
-		adjustments_set_ = true;
-	}
-	if(hue != 0.f)
-	{
-		adjustments_stream << " hue offset=" << hue << "º";
-		adjustments_set_ = true;
-	}
-	if(factor_red != 1.f)
-	{
-		adjustments_stream << " factor_red=" << factor_red;
-		adjustments_set_ = true;
-	}
-	if(factor_green != 1.f)
-	{
-		adjustments_stream << " factor_green=" << factor_green;
-		adjustments_set_ = true;
-	}
-	if(factor_blue != 1.f)
-	{
-		adjustments_stream << " factor_blue=" << factor_blue;
-		adjustments_set_ = true;
-	}
-	if(clamp)
-	{
-		adjustments_stream << " clamping=true";
-		adjustments_set_ = true;
-	}
-
-	if(adjustments_set_)
-	{
-		if(logger_.isVerbose()) logger_.logVerbose("Texture: modified texture adjustment values:", adjustments_stream.str());
-	}
-}
-
 Rgba Texture::applyAdjustments(const Rgba &tex_col) const
 {
 	if(!adjustments_set_) return tex_col;
@@ -204,14 +211,14 @@ Rgba Texture::applyIntensityContrastAdjustments(const Rgba &tex_col) const
 
 	Rgba ret = tex_col;
 
-	if(adj_intensity_ != 1.f || adj_contrast_ != 1.f)
+	if(params_.adj_intensity_ != 1.f || params_.adj_contrast_ != 1.f)
 	{
-		ret.r_ = (tex_col.r_ - 0.5f) * adj_contrast_ + adj_intensity_ - 0.5f;
-		ret.g_ = (tex_col.g_ - 0.5f) * adj_contrast_ + adj_intensity_ - 0.5f;
-		ret.b_ = (tex_col.b_ - 0.5f) * adj_contrast_ + adj_intensity_ - 0.5f;
+		ret.r_ = (tex_col.r_ - 0.5f) * params_.adj_contrast_ + params_.adj_intensity_ - 0.5f;
+		ret.g_ = (tex_col.g_ - 0.5f) * params_.adj_contrast_ + params_.adj_intensity_ - 0.5f;
+		ret.b_ = (tex_col.b_ - 0.5f) * params_.adj_contrast_ + params_.adj_intensity_ - 0.5f;
 	}
 
-	if(adj_clamp_) ret.clampRgb0();
+	if(params_.adj_clamp_) ret.clampRgb0();
 
 	return ret;
 }
@@ -222,22 +229,22 @@ Rgba Texture::applyColorAdjustments(const Rgba &tex_col) const
 
 	Rgba ret = tex_col;
 
-	if(adj_mult_factor_red_ != 1.f) ret.r_ *= adj_mult_factor_red_;
-	if(adj_mult_factor_green_ != 1.f) ret.g_ *= adj_mult_factor_green_;
-	if(adj_mult_factor_blue_ != 1.f) ret.b_ *= adj_mult_factor_blue_;
+	if(params_.adj_mult_factor_red_ != 1.f) ret.r_ *= params_.adj_mult_factor_red_;
+	if(params_.adj_mult_factor_green_ != 1.f) ret.g_ *= params_.adj_mult_factor_green_;
+	if(params_.adj_mult_factor_blue_ != 1.f) ret.b_ *= params_.adj_mult_factor_blue_;
 
-	if(adj_clamp_) ret.clampRgb0();
+	if(params_.adj_clamp_) ret.clampRgb0();
 
-	if(adj_saturation_ != 1.f || adj_hue_ != 0.f)
+	if(params_.adj_saturation_ != 1.f || adj_hue_radians_ != 0.f)
 	{
 		float h = 0.f, s = 0.f, v = 0.f;
 		ret.rgbToHsv(h, s, v);
-		s *= adj_saturation_;
-		h += adj_hue_;
+		s *= params_.adj_saturation_;
+		h += adj_hue_radians_;
 		if(h < 0.f) h += 6.f;
 		else if(h > 6.f) h -= 6.f;
 		ret.hsvToRgb(h, s, v);
-		if(adj_clamp_) ret.clampRgb0();
+		if(params_.adj_clamp_) ret.clampRgb0();
 	}
 
 	return ret;
@@ -249,57 +256,18 @@ float Texture::applyIntensityContrastAdjustments(float tex_float) const
 
 	float ret = tex_float;
 
-	if(adj_intensity_ != 1.f || adj_contrast_ != 1.f)
+	if(params_.adj_intensity_ != 1.f || params_.adj_contrast_ != 1.f)
 	{
-		ret = (tex_float - 0.5f) * adj_contrast_ + adj_intensity_ - 0.5f;
+		ret = (tex_float - 0.5f) * params_.adj_contrast_ + params_.adj_intensity_ - 0.5f;
 	}
 
-	if(adj_clamp_)
+	if(params_.adj_clamp_)
 	{
 		if(ret < 0.f) ret = 0.f;
 		else if(ret > 1.f) ret = 1.f;
 	}
 
 	return ret;
-}
-
-void Texture::textureReadColorRamp(const ParamMap &params, Texture *tex)
-{
-	std::string mode_str, interpolation_str, hue_interpolation_str;
-	int ramp_num_items = 0;
-	params.getParam("ramp_color_mode", mode_str);
-	params.getParam("ramp_hue_interpolation", hue_interpolation_str);
-	params.getParam("ramp_interpolation", interpolation_str);
-	params.getParam("ramp_num_items", ramp_num_items);
-
-	if(ramp_num_items > 0)
-	{
-		tex->colorRampCreate(mode_str, interpolation_str, hue_interpolation_str);
-
-		for(int i = 0; i < ramp_num_items; ++i)
-		{
-			std::stringstream param_name;
-			Rgba color(0.f, 0.f, 0.f, 1.f);
-			float alpha = 1.f;
-			float position = 0.f;
-			param_name << "ramp_item_" << i << "_color";
-			params.getParam(param_name.str(), color);
-			param_name.str("");
-			param_name.clear();
-
-			param_name << "ramp_item_" << i << "_alpha";
-			params.getParam(param_name.str(), alpha);
-			param_name.str("");
-			param_name.clear();
-			color.a_ = alpha;
-
-			param_name << "ramp_item_" << i << "_position";
-			params.getParam(param_name.str(), position);
-			param_name.str("");
-			param_name.clear();
-			tex->colorRampAddItem(color, position);
-		}
-	}
 }
 
 } //namespace yafaray

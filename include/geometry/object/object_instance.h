@@ -30,11 +30,11 @@ namespace yafaray {
 
 class Primitive;
 template<typename T> class Bound;
-enum class VisibilityFlags : unsigned int;
 
 class ObjectInstance final : public Object
 {
 	public:
+		inline static std::string getClassName() { return "ObjectInstance"; }
 		void addPrimitives(const std::vector<const Primitive *> &base_primitives);
 		void addObjToWorldMatrix(const Matrix4f &obj_to_world, float time);
 		void addObjToWorldMatrix(Matrix4f &&obj_to_world, float time);
@@ -43,15 +43,14 @@ class ObjectInstance final : public Object
 		Matrix4f getObjToWorldMatrixAtTime(float time) const;
 		float getObjToWorldTime(int time_step) const { return time_steps_[time_step].time_; }
 
-		std::string getName() const override { return "instance"; }
+		[[nodiscard]] std::string getName() const override { return "instance"; }
 		void setName(const std::string &name) override { }
 		int numPrimitives() const override { return static_cast<int>(primitive_instances_.size()); }
 		std::vector<const Primitive *> getPrimitives() const override;
-		void setVisibility(VisibilityFlags visibility) override { }
+		void setVisibility(Visibility visibility) override { }
 		void useAsBaseObject(bool v) override { }
-		VisibilityFlags getVisibility() const override;
+		Visibility getVisibility() const override;
 		bool isBaseObject() const override { return false; }
-		void setIndex(unsigned int new_obj_index) override { }
 		void setIndexAuto(unsigned int new_obj_index) override { }
 		unsigned int getIndex() const override;
 		Rgb getIndexAutoColor() const override;

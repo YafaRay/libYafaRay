@@ -17,11 +17,12 @@
  *      Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-#ifndef YAFARAY_MATERIAL_SHINY_DIFFUSE_H
-#define YAFARAY_MATERIAL_SHINY_DIFFUSE_H
+#ifndef LIBYAFARAY_MATERIAL_SHINY_DIFFUSE_H
+#define LIBYAFARAY_MATERIAL_SHINY_DIFFUSE_H
 
-#include <common/logger.h>
+#include "common/logger.h"
 #include "material/material_node.h"
+#include "material/material_data.h"
 
 namespace yafaray {
 
@@ -49,10 +50,48 @@ class ShinyDiffuseMaterialData final : public MaterialData
 class ShinyDiffuseMaterial final : public NodeMaterial
 {
 	public:
-		static Material *factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params, const std::list<ParamMap> &nodes_params);
+		inline static std::string getClassName() { return "ShinyDiffuseMaterial"; }
+		static std::pair<Material *, ParamError> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map, const std::list<ParamMap> &nodes_param_maps);
+		static std::string printMeta(const std::vector<std::string> &excluded_params) { return Params::meta_.print(excluded_params); }
 
 	private:
-		ShinyDiffuseMaterial(Logger &logger, const Rgb &diffuse_color, const Rgb &mirror_color, float diffuse_strength, float transparency_strength = 0.0, float translucency_strength = 0.0, float mirror_strength = 0.0, float emit_strength = 0.0, float transmit_filter_strength = 1.0, VisibilityFlags visibility = VisibilityFlags::Visible | VisibilityFlags::CastsShadows);
+		[[nodiscard]] Type type() const override { return Type::ShinyDiffuse; }
+		struct ShaderNodeType : public Enum<ShaderNodeType>
+		{
+			enum : decltype(type()) { Bump, Wireframe, Diffuse, Glossy, Transparency, Translucency, Ior, Mirror, SigmaOrenNayar, DiffuseReflect, MirrorColor, Size }; //Always leave the Size entry at the end!!
+			inline static const EnumMap<decltype(type())> map_{{
+					{"bump_shader", Bump, ""},
+					{"wireframe_shader", Wireframe, "Shader node for wireframe shading (float)"},
+					{"diffuse_shader", Diffuse, ""},
+					{"IOR_shader", Ior, ""},
+					{"mirror_shader", Mirror, "Shader node for specular reflection strength (float)"},
+					{"sigma_oren_shader", SigmaOrenNayar, "Shader node for sigma in Oren Nayar material (float)"},
+					{"diffuse_refl_shader", DiffuseReflect, "Shader node for diffuse reflection strength (float)"},
+					{"mirror_color_shader", MirrorColor, "Shader node for specular reflection color"},
+					{"transparency_shader", Transparency, "Shader node for transparency strength (float)"},
+					{"translucency_shader", Translucency, "Shader node for translucency strength (float)"},
+				}};
+			bool isBump() const { return value() == Bump; }
+		};
+		const struct Params
+		{
+			PARAM_INIT_PARENT(Material);
+			PARAM_DECL(Rgb, diffuse_color_, Rgb{1.f}, "color", "BSDF Diffuse component color");
+			PARAM_DECL(Rgb, mirror_color_, Rgb{1.f}, "mirror_color", "BSDF Mirror component color");
+			PARAM_DECL(float, transparency_, 0.f, "transparency", "BSDF Transparency component strength when not textured");
+			PARAM_DECL(float, translucency_, 0.f, "translucency", "BSDF Translucency component strength when not textured");
+			PARAM_DECL(float, diffuse_reflect_, 1.f, "diffuse_reflect", "BSDF Diffuse component strength when not textured");
+			PARAM_DECL(float, specular_reflect_, 0.f, "specular_reflect", "Mirror strength. BSDF Specular reflection component strength when not textured");
+			PARAM_DECL(float, emit_, 0.f, "emit", "Light emission strength");
+			PARAM_DECL(bool, fresnel_effect_, false, "fresnel_effect", "To enable/disable the Fresnel specular effect");
+			PARAM_DECL(float, ior_, 1.33f, "IOR", "Index of refraction, used if the Fresnel effect is enabled");
+			PARAM_DECL(float, transmit_filter_, 1.f, "transmit_filter", "Determines how strong light passing through material gets tinted");
+			PARAM_ENUM_DECL(DiffuseBrdf, diffuse_brdf_, DiffuseBrdf::Lambertian, "diffuse_brdf", "");
+			PARAM_DECL(float, sigma_, 0.1f, "sigma", "Oren-Nayar sigma factor, used if diffuse BRDF is set to Oren-Nayar");
+			PARAM_SHADERS_DECL;
+		} params_;
+		[[nodiscard]] ParamMap getAsParamMap(bool only_non_default) const override;
+		ShinyDiffuseMaterial(Logger &logger, ParamError &param_error, const ParamMap &param_map);
 		const MaterialData * initBsdf(SurfacePoint &sp, const Camera *camera) const override;
 		Rgb eval(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3f &wo, const Vec3f &wl, BsdfFlags bsdfs, bool force_eval) const override;
 		Rgb sample(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3f &wo, Vec3f &wi, Sample &s, float &w, bool chromatic, float wavelength, const Camera *camera) const override;
@@ -80,43 +119,20 @@ class ShinyDiffuseMaterial final : public NodeMaterial
 		bool is_mirror_ = false;                       //!< Boolean value which is true if you have specular reflection component
 		bool is_diffuse_ = false;                      //!< Boolean value which is true if you have diffuse component
 
-		bool has_fresnel_effect_ = false;               //!< Boolean value which is true if you have Fresnel specular effect
-		float ior_ = 1.f;                              //!< IOR
-		float ior_squared_ = 1.f;                     //!< Squared IOR
+		const float ior_squared_{params_.ior_ * params_.ior_}; //!< Squared IOR
 
 		std::array<bool, 4> components_view_independent_{{false, false, false, false}};
-		const ShaderNode *diffuse_shader_ = nullptr;       //!< Shader node for diffuse color
-		const ShaderNode *bump_shader_ = nullptr;          //!< Shader node for bump
-		const ShaderNode *transparency_shader_ = nullptr;  //!< Shader node for transparency strength (float)
-		const ShaderNode *translucency_shader_ = nullptr;  //!< Shader node for translucency strength (float)
-		const ShaderNode *mirror_shader_ = nullptr;        //!< Shader node for specular reflection strength (float)
-		const ShaderNode *mirror_color_shader_ = nullptr;   //!< Shader node for specular reflection color
-		const ShaderNode *sigma_oren_shader_ = nullptr;     //!< Shader node for sigma in Oren Nayar material
-		const ShaderNode *diffuse_refl_shader_ = nullptr;   //!< Shader node for diffuse reflection strength (float)
-		const ShaderNode *ior_shader_ = nullptr;                 //!< Shader node for IOR value (float)
-		const ShaderNode *wireframe_shader_ = nullptr;     //!< Shader node for wireframe shading (float)
+		std::array<const ShaderNode *, static_cast<size_t>(ShaderNodeType::Size)> shaders_{initShaderArray<ShaderNodeType::Size>()};
 
-		Rgb diffuse_color_;              //!< BSDF Diffuse component color
-		Rgb emit_color_;                 //!< Emit color
-		Rgb mirror_color_;               //!< BSDF Mirror component color
-		float mirror_strength_;              //!< BSDF Specular reflection component strength when not textured
-		float transparency_strength_;        //!< BSDF Transparency component strength when not textured
-		float translucency_strength_;        //!< BSDF Translucency component strength when not textured
-		float diffuse_strength_;             //!< BSDF Diffuse component strength when not textured
-		float emit_strength_;                //!< Emit strength
-		float transmit_filter_strength_;      //!< determines how strong light passing through material gets tinted
-
-		bool use_oren_nayar_ = false;         //!< Use Oren Nayar reflectance (default Lambertian)
+		const Rgb emit_color_{params_.emit_ * params_.diffuse_color_}; //!< Emit color
 		float oren_nayar_a_ = 0.f;           //!< Oren Nayar A coefficient
 		float oren_nayar_b_ = 0.f;           //!< Oren Nayar B coefficient
-
 		int n_bsdf_ = 0;
-
-		BsdfFlags c_flags_[4];                   //!< list the BSDF components that are present
-		int c_index_[4];                      //!< list the index of the BSDF components (0=specular reflection, 1=specular transparency, 2=translucency, 3=diffuse reflection)
+		std::array<BsdfFlags, 4> c_flags_{BsdfFlags::None, BsdfFlags::None, BsdfFlags::None, BsdfFlags::None}; //!< list the BSDF components that are present
+		std::array<int, 4> c_index_; //!< list the index of the BSDF components (0=specular reflection, 1=specular transparency, 2=translucency, 3=diffuse reflection)
 };
 
 
 } //namespace yafaray
 
-#endif // YAFARAY_MATERIAL_SHINY_DIFFUSE_H
+#endif // LIBYAFARAY_MATERIAL_SHINY_DIFFUSE_H

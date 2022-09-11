@@ -21,84 +21,60 @@
  */
 
 #include "camera/camera_perspective.h"
-#include "common/param.h"
+#include "param/param.h"
+#include "common/logger.h"
 
 namespace yafaray {
 
-PerspectiveCamera::Params::Params(const ParamMap &param_map)
+PerspectiveCamera::Params::Params(ParamError &param_error, const ParamMap &param_map)
 {
-	std::string bokeh_type_string = "disk1", bokeh_bias_string = "none";
-	param_map.getParam("focal_distance", focal_distance_);
-	param_map.getParam("aperture", aperture_);
-	param_map.getParam("depth_of_field_distance", depth_of_field_distance_);
-	param_map.getParam("bokeh_type", bokeh_type_string);
-	param_map.getParam("bokeh_bias", bokeh_bias_string);
-	param_map.getParam("bokeh_rotation", bokeh_rotation_);
-
-	if(bokeh_type_string == "disk1") bokeh_type_ = Params::BokehType::Disk1;
-	else if(bokeh_type_string == "disk2") bokeh_type_ = Params::BokehType::Disk2;
-	else if(bokeh_type_string == "triangle") bokeh_type_ = Params::BokehType::Triangle;
-	else if(bokeh_type_string == "square") bokeh_type_ = Params::BokehType::Square;
-	else if(bokeh_type_string == "pentagon") bokeh_type_ = Params::BokehType::Pentagon;
-	else if(bokeh_type_string == "hexagon") bokeh_type_ = Params::BokehType::Hexagon;
-	else if(bokeh_type_string == "ring") bokeh_type_ = Params::BokehType::Ring;
-
-	if(bokeh_bias_string == "none") bokeh_bias_ = Params::BokehBias::None;
-	else if(bokeh_bias_string == "center") bokeh_bias_ = Params::BokehBias::Center;
-	else if(bokeh_bias_string == "edge") bokeh_bias_ = Params::BokehBias::Edge;
+	PARAM_LOAD(focal_distance_);
+	PARAM_LOAD(aperture_);
+	PARAM_LOAD(depth_of_field_distance_);
+	PARAM_ENUM_LOAD(bokeh_type_);
+	PARAM_ENUM_LOAD(bokeh_bias_);
+	PARAM_LOAD(bokeh_rotation_);
 }
 
-ParamMap PerspectiveCamera::Params::getAsParamMap() const
+ParamMap PerspectiveCamera::Params::getAsParamMap(bool only_non_default) const
 {
-	ParamMap result;
-	result["focal_distance"] = focal_distance_;
-	result["aperture"] = aperture_;
-	result["depth_of_field_distance"] = depth_of_field_distance_;
-	result["bokeh_rotation"] = bokeh_rotation_;
-	std::string bokeh_type_string, bokeh_bias_string;
-	switch(bokeh_type_)
-	{
-		case Params::BokehType::Disk2: bokeh_type_string = "disk2"; break;
-		case Params::BokehType::Triangle: bokeh_type_string = "triangle"; break;
-		case Params::BokehType::Square: bokeh_type_string = "square"; break;
-		case Params::BokehType::Pentagon: bokeh_type_string = "pentagon"; break;
-		case Params::BokehType::Hexagon: bokeh_type_string = "hexagon"; break;
-		case Params::BokehType::Ring: bokeh_type_string = "ring"; break;
-		default: bokeh_type_string = "disk1"; break;
-	}
-	result["bokeh_type"] = bokeh_type_string;
-	switch(bokeh_bias_)
-	{
-		case Params::BokehBias::Center: bokeh_bias_string = "center"; break;
-		case Params::BokehBias::Edge: bokeh_bias_string = "edge"; break;
-		default: bokeh_bias_string = "none"; break;
-	}
-	result["bokeh_bias"] = bokeh_bias_string;
+	PARAM_SAVE_START;
+	PARAM_SAVE(focal_distance_);
+	PARAM_SAVE(aperture_);
+	PARAM_SAVE(depth_of_field_distance_);
+	PARAM_SAVE(bokeh_rotation_);
+	PARAM_ENUM_SAVE(bokeh_type_);
+	PARAM_ENUM_SAVE(bokeh_bias_);
+	PARAM_SAVE_END;
+}
+
+ParamMap PerspectiveCamera::getAsParamMap(bool only_non_default) const
+{
+	ParamMap result{Camera::getAsParamMap(only_non_default)};
+	result.append(params_.getAsParamMap(only_non_default));
 	return result;
 }
 
-ParamMap PerspectiveCamera::getAsParamMap() const
+std::pair<Camera *, ParamError> PerspectiveCamera::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map)
 {
-	ParamMap result{Camera::params_.getAsParamMap()};
-	result.append(params_.getAsParamMap());
-	return result;
+	auto param_error{Params::meta_.check(param_map, {"type"}, {})};
+	auto result {new PerspectiveCamera(logger, param_error, param_map)};
+	if(param_error.flags_ != ParamError::Flags::Ok) logger.logWarning(param_error.print<PerspectiveCamera>(name, {"type"}));
+	return {result, param_error};
 }
 
-const Camera * PerspectiveCamera::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map)
+PerspectiveCamera::PerspectiveCamera(Logger &logger, ParamError &param_error, const ParamMap &param_map) :
+		Camera{logger, param_error, param_map}, params_{param_error, param_map}
 {
-	return new PerspectiveCamera(logger, param_map, param_map);
-}
+	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + params_.getAsParamMap(true).print());
 
-PerspectiveCamera::PerspectiveCamera(Logger &logger, const Camera::Params &camera_params, const Params &params) :
-		Camera{logger, camera_params}, params_{params}
-{
 	// Initialize camera specific plane coordinates
 	setAxis(cam_x_, cam_y_, cam_z_);
 
 	fdist_ = (Camera::params_.to_ - Camera::params_.from_).length();
 	a_pix_ = aspect_ratio_ / (params_.focal_distance_ * params_.focal_distance_);
 
-	int ns = static_cast<int>(params_.bokeh_type_);
+	int ns = params_.bokeh_type_.value();
 	if((ns >= 3) && (ns <= 6))
 	{
 		float w = math::degToRad(params_.bokeh_rotation_), wi = math::mult_pi_by_2<> / static_cast<float>(ns);
@@ -131,21 +107,21 @@ void PerspectiveCamera::setAxis(const Vec3f &vx, const Vec3f &vy, const Vec3f &v
 
 float PerspectiveCamera::biasDist(float r) const
 {
-	switch(params_.bokeh_bias_)
+	switch(params_.bokeh_bias_.value())
 	{
-		case Params::BokehBias::Center:
+		case BokehBias::Center:
 			return math::sqrt(math::sqrt(r) * r);
-		case Params::BokehBias::Edge:
+		case BokehBias::Edge:
 			return math::sqrt(1.f - r * r);
 		default:
-		case Params::BokehBias::None:
+		case BokehBias::None:
 			return math::sqrt(r);
 	}
 }
 
 Uv<float> PerspectiveCamera::sampleTsd(float r_1, float r_2) const
 {
-	const auto fn = static_cast<float>(params_.bokeh_type_);
+	const auto fn = static_cast<float>(params_.bokeh_type_.value());
 	int idx = static_cast<int>(r_1 * fn);
 	float r = (r_1 - (static_cast<float>(idx)) / fn) * fn;
 	r = biasDist(r);
@@ -161,23 +137,23 @@ Uv<float> PerspectiveCamera::sampleTsd(float r_1, float r_2) const
 
 Uv<float> PerspectiveCamera::getLensUv(float r_1, float r_2) const
 {
-	switch(params_.bokeh_type_)
+	switch(params_.bokeh_type_.value())
 	{
-		case Params::BokehType::Triangle:
-		case Params::BokehType::Square:
-		case Params::BokehType::Pentagon:
-		case Params::BokehType::Hexagon: return sampleTsd(r_1, r_2);
-		case Params::BokehType::Disk2:
-		case Params::BokehType::Ring:
+		case BokehType::Triangle:
+		case BokehType::Square:
+		case BokehType::Pentagon:
+		case BokehType::Hexagon: return sampleTsd(r_1, r_2);
+		case BokehType::Disk2:
+		case BokehType::Ring:
 		{
 			const float w = math::mult_pi_by_2<> * r_2;
-			const float r = (params_.bokeh_type_ == Params::BokehType::Ring) ?
+			const float r = (params_.bokeh_type_ == BokehType::Ring) ?
 					math::sqrt(0.707106781f + 0.292893218f) :
 					biasDist(r_1);
 			return {r * math::cos(w), r * math::sin(w)};
 		}
 		default:
-		case Params::BokehType::Disk1: return Vec3f::shirleyDisk(r_1, r_2);
+		case BokehType::Disk1: return Vec3f::shirleyDisk(r_1, r_2);
 	}
 }
 

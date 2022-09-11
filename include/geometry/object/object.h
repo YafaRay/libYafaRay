@@ -22,7 +22,7 @@
 
 #include "color/color.h"
 #include "common/visibility.h"
-#include <common/logger.h>
+#include "common/logger.h"
 #include <memory>
 #include <vector>
 
@@ -45,9 +45,9 @@ template <typename T> struct Uv;
 class Object
 {
 	public:
-		static Object *factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params);
+		inline static std::string getClassName() { return "Object"; }
 		virtual ~Object() = default;
-		virtual std::string getName() const = 0;
+		[[nodiscard]] virtual std::string getName() const = 0;
 		virtual void setName(const std::string &name) = 0;
 		/*! the number of primitives the object holds. Primitive is an element
 			that by definition can perform ray-triangle intersection */
@@ -55,14 +55,13 @@ class Object
 		/*! write the primitive pointers to the given array
 			\return number of written primitives */
 		virtual std::vector<const Primitive *> getPrimitives() const = 0;
-		virtual void setVisibility(VisibilityFlags visibility) = 0;
+		virtual void setVisibility(Visibility visibility) = 0;
 		/*! Indicates that this object should be used as base object for instances */
 		virtual void useAsBaseObject(bool v) = 0;
 		/*! Returns if this object should be used for rendering and/or shadows. */
-		virtual VisibilityFlags getVisibility() const = 0;
+		virtual Visibility getVisibility() const = 0;
 		/*! Returns if this object is used as base object for instances. */
 		virtual bool isBaseObject() const = 0;
-		virtual void setIndex(unsigned int new_obj_index) = 0;
 		virtual void setIndexAuto(unsigned int new_obj_index) = 0;
 		virtual unsigned int getIndex() const = 0;
 		virtual Rgb getIndexAutoColor() const = 0;

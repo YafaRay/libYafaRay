@@ -16,14 +16,5 @@
 #      Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 #
 
-target_sources(libyafaray4
-	PRIVATE
-		volume.cc
-		volume_exp_density.cc
-		volume_grid.cc
-		volume_noise.cc
-		volume_sky.cc
-		volume_uniform.cc
-		volumehandler_beer.cc
-		volumehandler_sss.cc
-)
+add_subdirectory(region)
+add_subdirectory(handler)

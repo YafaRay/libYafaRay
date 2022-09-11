@@ -20,49 +20,77 @@
 
 #include "light/light_directional.h"
 #include "geometry/surface.h"
-#include "common/param.h"
+#include "param/param.h"
 #include "scene/scene.h"
 #include "common/logger.h"
 #include "geometry/ray.h"
-#include "geometry/bound.h"
 
 namespace yafaray {
 
-DirectionalLight::DirectionalLight(Logger &logger, const Point3f &pos, Vec3f dir, const Rgb &col, float inte, bool inf, float rad, bool b_light_enabled, bool b_cast_shadows):
-		Light(logger, Light::Flags::DiracDir), position_(pos), direction_(dir), radius_(rad), infinite_(inf)
+DirectionalLight::Params::Params(ParamError &param_error, const ParamMap &param_map)
 {
-	light_enabled_ = b_light_enabled;
-	cast_shadows_ = b_cast_shadows;
-	color_ = col * inte;
-	intensity_ = color_.energy();
-	direction_.normalize();
-	duv_ = Vec3f::createCoordsSystem(direction_);
-	const Vec3f &d{direction_};
-	major_axis_ = (d[Axis::X] > d[Axis::Y]) ? ((d[Axis::X] > d[Axis::Z]) ? 0 : 2) : ((d[Axis::Y] > d[Axis::Z]) ? 1 : 2);
+	PARAM_LOAD(from_);
+	PARAM_LOAD(direction_);
+	PARAM_LOAD(color_);
+	PARAM_LOAD(power_);
+	PARAM_LOAD(radius_);
+	PARAM_LOAD(infinite_);
+}
+
+ParamMap DirectionalLight::Params::getAsParamMap(bool only_non_default) const
+{
+	PARAM_SAVE_START;
+	PARAM_SAVE(from_);
+	PARAM_SAVE(direction_);
+	PARAM_SAVE(color_);
+	PARAM_SAVE(power_);
+	PARAM_SAVE(radius_);
+	PARAM_SAVE(infinite_);
+	PARAM_SAVE_END;
+}
+
+ParamMap DirectionalLight::getAsParamMap(bool only_non_default) const
+{
+	ParamMap result{Light::getAsParamMap(only_non_default)};
+	result.append(params_.getAsParamMap(only_non_default));
+	return result;
+}
+
+std::pair<Light *, ParamError> DirectionalLight::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map)
+{
+	auto param_error{Params::meta_.check(param_map, {"type"}, {})};
+	auto result {new DirectionalLight(logger, param_error, name, param_map)};
+	if(param_error.flags_ != ParamError::Flags::Ok) logger.logWarning(param_error.print<DirectionalLight>(name, {"type"}));
+	return {result, param_error};
+}
+
+DirectionalLight::DirectionalLight(Logger &logger, ParamError &param_error, const std::string &name, const ParamMap &param_map):
+		Light{logger, param_error, name, param_map, Light::Flags::DiracDir}, params_{param_error, param_map}
+{
+	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + params_.getAsParamMap(true).print());
 }
 
 void DirectionalLight::init(const Scene &scene)
 {
 	// calculate necessary parameters for photon mapping if the light
 	//  is set to illuminate the whole scene:
-	Bound w = scene.getSceneBound();
+	const Bound w{scene.getSceneBound()};
 	world_radius_ = 0.5f * (w.g_ - w.a_).length();
-	if(infinite_)
+	if(params_.infinite_)
 	{
 		position_ = 0.5f * (w.a_ + w.g_);
 		radius_ = world_radius_;
+		area_pdf_ = 1.f / (radius_ * radius_); // Pi cancels out with our weird conventions :p
 	}
-	area_pdf_ = 1.f / (radius_ * radius_); // Pi cancels out with our weird conventions :p
 	if(logger_.isVerbose()) logger_.logVerbose("DirectionalLight: pos ", position_, " world radius: ", world_radius_);
 }
-
 
 std::tuple<bool, Ray, Rgb> DirectionalLight::illuminate(const Point3f &surface_p, float time) const
 {
 	if(photonOnly()) return {};
 	// check if the point is outside of the illuminated cylinder (non-infinite lights)
 	float tmax;
-	if(!infinite_)
+	if(!params_.infinite_)
 	{
 		const Vec3f vec{position_ - surface_p};
 		float dist = (direction_ ^ vec).length();
@@ -87,7 +115,7 @@ std::tuple<Ray, float, Rgb> DirectionalLight::emitPhoton(float s_1, float s_2, f
 {
 	const Uv<float> uv{Vec3f::shirleyDisk(s_1, s_2)};
 	Point3f from{position_ + radius_ * (uv.u_ * duv_.u_ + uv.v_ * duv_.v_)};
-	if(infinite_) from += direction_ * world_radius_;
+	if(params_.infinite_) from += direction_ * world_radius_;
 	const float ipdf = math::num_pi<> * radius_ * radius_; //4.0f * num_pi;
 	Ray ray{std::move(from), -direction_, time};
 	return {std::move(ray), ipdf, color_};
@@ -99,52 +127,10 @@ std::pair<Vec3f, Rgb> DirectionalLight::emitSample(LSample &s, float time) const
 	s.flags_ = flags_;
 	const Uv<float> uv{Vec3f::shirleyDisk(s.s_1_, s.s_2_)};
 	s.sp_->p_ = position_ + radius_ * (uv.u_ * duv_.u_ + uv.v_ * duv_.v_);
-	if(infinite_) s.sp_->p_ += direction_ * world_radius_;
+	if(params_.infinite_) s.sp_->p_ += direction_ * world_radius_;
 	s.area_pdf_ = area_pdf_;
 	s.dir_pdf_ = 1.f;
 	return {-direction_, color_};
-}
-
-Light * DirectionalLight::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params)
-{
-	Point3f from{{0.f, 0.f, 0.f}};
-	Point3f dir{{0.f, 0.f, 1.f}};
-	Rgb color(1.0);
-	float power = 1.0;
-	float rad = 1.0;
-	bool inf = true;
-	bool light_enabled = true;
-	bool cast_shadows = true;
-	bool shoot_d = true;
-	bool shoot_c = true;
-	bool p_only = false;
-
-	params.getParam("direction", dir);
-	params.getParam("color", color);
-	params.getParam("power", power);
-	params.getParam("infinite", inf);
-	params.getParam("light_enabled", light_enabled);
-	params.getParam("cast_shadows", cast_shadows);
-	params.getParam("with_caustic", shoot_c);
-	params.getParam("with_diffuse", shoot_d);
-	params.getParam("photon_only", p_only);
-
-	if(!inf)
-	{
-		if(!params.getParam("from", from))
-		{
-			if(params.getParam("position", from) && logger.isVerbose()) logger.logVerbose("DirectionalLight: Deprecated parameter 'position', use 'from' instead");
-		}
-		params.getParam("radius", rad);
-	}
-
-	auto light = new DirectionalLight(logger, from, dir, color, power, inf, rad, light_enabled, cast_shadows);
-
-	light->shoot_caustic_ = shoot_c;
-	light->shoot_diffuse_ = shoot_d;
-	light->photon_only_ = p_only;
-
-	return light;
 }
 
 } //namespace yafaray

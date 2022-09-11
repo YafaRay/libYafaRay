@@ -36,10 +36,31 @@ namespace yafaray {
 class SunSkyBackground final : public Background
 {
 	public:
-		static const Background * factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params);
+		inline static std::string getClassName() { return "SunSkyBackground"; }
+		static std::pair<Background *, ParamError> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params);
+		static std::string printMeta(const std::vector<std::string> &excluded_params) { return Params::meta_.print(excluded_params); }
 
 	private:
-		SunSkyBackground(Logger &logger, const Point3f &dir, float turb, float a_var, float b_var, float c_var, float d_var, float e_var, float pwr);
+		[[nodiscard]] Type type() const override { return Type::SunSky; }
+		const struct Params
+		{
+			PARAM_INIT_PARENT(Background);
+			PARAM_DECL(Vec3f, from_, (Vec3f{{1, 1, 1}}), "from", "same as sunlight, position interpreted as direction");
+			PARAM_DECL(float , turb_, 4.f, "turbidity", "turbidity of atmosphere");
+			PARAM_DECL(bool , add_sun_, false, "add_sun", "automatically add real sunlight");
+			PARAM_DECL(float , sun_power_, 1.f, "sun_power", "sunlight power");
+			PARAM_DECL(bool , background_light_, false, "background_light", "");
+			PARAM_DECL(int, light_samples_, 8, "light_samples", "");
+			PARAM_DECL(bool , cast_shadows_sun_, true, "cast_shadows_sun", "");
+			PARAM_DECL(float, a_var_, 1.f, "a_var", "color variation parameters, default is normal");
+			PARAM_DECL(float, b_var_, 1.f, "b_var", "color variation parameters, default is normal");
+			PARAM_DECL(float, c_var_, 1.f, "c_var", "color variation parameters, default is normal");
+			PARAM_DECL(float, d_var_, 1.f, "d_var", "color variation parameters, default is normal");
+			PARAM_DECL(float, e_var_, 1.f, "e_var", "color variation parameters, default is normal");
+		} params_;
+		[[nodiscard]] ParamMap getAsParamMap(bool only_non_default) const override;
+
+		SunSkyBackground(Logger &logger, ParamError &param_error, const ParamMap &param_map);
 		Rgb eval(const Vec3f &dir, bool use_ibl_blur) const override;
 		Rgb getSkyCol(const Vec3f &dir) const;
 		static Rgb computeAttenuatedSunlight(float theta, int turbidity);
@@ -51,7 +72,6 @@ class SunSkyBackground final : public Background
 		std::array<double, 5> perez_Y_, perez_x_, perez_y_;
 		double angleBetween(double thetav, double phiv) const;
 		double perezFunction(const std::array<double, 5> &lam, double theta, double gamma, double lvz) const;
-		float power_;
 };
 
 } //namespace yafaray

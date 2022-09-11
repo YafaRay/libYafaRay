@@ -26,7 +26,7 @@ namespace yafaray::spectrum
 {
 
 Rgb wl2RgbFromCie(float wl);
-void cauchyCoefficients(float ior, float disp_pw, float &cauchy_a, float &cauchy_b);
+std::pair<float, float> cauchyCoefficients(float ior, float disp_pw);
 Rgb wl2Xyz(float wl);
 
 inline float getIor(float w, float cauchy_a, float cauchy_b)

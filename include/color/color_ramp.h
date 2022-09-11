@@ -47,18 +47,49 @@ class ColorRampItem final
 class ColorRamp final
 {
 	public:
-		enum Mode { Rgb, Hsv, Hsl }; //Hsl not yet supported, using Hsv instead
-		enum Interpolation { Constant, Linear, Bspline, Cardinal, Ease }; //Bspline, Cardinal and Ease Not yet supported
-		enum HueInterpolation {	Near, Far, Clockwise, Counterclockwise };
+		struct Mode : public Enum<Mode>
+		{
+			using Enum::Enum;
+			enum : decltype(type()) { Rgb, Hsv, Hsl };
+			inline static const EnumMap<decltype(type())> map_{{
+					{"HSV", Hsv, ""},
+					{"RGB", Rgb, ""},
+					{"HSL", Hsl, ""},
+				}};
+		};
+		struct Interpolation : public Enum<Interpolation>
+		{
+			using Enum::Enum;
+			enum : decltype(type()) { Constant, Linear, Bspline, Cardinal, Ease }; //Bspline, Cardinal and Ease Not yet supported
+			inline static const EnumMap<decltype(type())> map_{{
+					{"LINEAR", Linear, ""},
+					{"CONSTANT", Constant, ""},
+					//{"B_SPLINE", Bspline, "Bspline not yet supported"},
+					//{"CARDINAL", Cardinal, "Cardinal not yet supported"},
+					//{"EASE", Ease, "Ease not yet supported"},
+				}};
+		};
+		struct HueInterpolation : public Enum<HueInterpolation>
+		{
+			using Enum::Enum;
+			enum : decltype(type()) { Near, Far, Clockwise, Counterclockwise };
+			inline static const EnumMap<decltype(type())> map_{{
+					{"NEAR", Near, ""},
+					{"FAR", Far, ""},
+					{"CW", Clockwise, ""},
+					{"CCW", Counterclockwise, ""},
+				}};
+		};
 
-		ColorRamp(const std::string &mode_str, const std::string &interpolation_str, const std::string &hue_interpolation_str);
+		ColorRamp(Mode mode, Interpolation interpolation, HueInterpolation hue_interpolation) : mode_{mode}, interpolation_{interpolation}, hue_interpolation_{hue_interpolation} { }
 		void addItem(const Rgba &color, float position);
 		Rgba getColorInterpolated(float pos) const;
+		const std::vector<ColorRampItem> &getRamp() const { return ramp_; }
 
 	private:
-		Mode mode_ = Rgb;
-		Interpolation interpolation_ = Linear;
-		HueInterpolation hue_interpolation_ = Near;
+		Mode mode_;
+		Interpolation interpolation_;
+		HueInterpolation hue_interpolation_;
 		std::vector<ColorRampItem> ramp_;
 };
 

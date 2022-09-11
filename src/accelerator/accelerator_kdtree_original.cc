@@ -17,38 +17,50 @@
  */
 
 #include "accelerator/accelerator_kdtree_original.h"
-#include "material/material.h"
 #include "common/logger.h"
-#include "geometry/surface.h"
-#include "geometry/primitive/primitive.h"
 #include "geometry/clip_plane.h"
-#include "common/param.h"
+#include "param/param.h"
 #include "image/image_output.h"
-#include <cmath>
 #include <cstring>
 
 namespace yafaray {
 
-const Accelerator * AcceleratorKdTree::factory(Logger &logger, const std::vector<const Primitive *> &primitives, const ParamMap &params)
+AcceleratorKdTree::Params::Params(ParamError &param_error, const ParamMap &param_map)
 {
-	int depth = 0;
-	int leaf_size = 1;
-	float cost_ratio = 0.8f;
-	float empty_bonus = 0.33f;
-
-	params.getParam("depth", depth);
-	params.getParam("leaf_size", leaf_size);
-	params.getParam("cost_ratio", cost_ratio);
-	params.getParam("empty_bonus", empty_bonus);
-
-	auto accelerator = new AcceleratorKdTree(logger, primitives, depth, leaf_size, cost_ratio, empty_bonus);
-	return accelerator;
+	PARAM_LOAD(max_depth_);
+	PARAM_LOAD(max_leaf_size_);
+	PARAM_LOAD(cost_ratio_);
+	PARAM_LOAD(empty_bonus_);
 }
 
-AcceleratorKdTree::AcceleratorKdTree(Logger &logger, const std::vector<const Primitive *> &primitives, int depth, int leaf_size,
-									 float cost_ratio, float empty_bonus)
-	: Accelerator(logger), cost_ratio_(cost_ratio), e_bonus_(empty_bonus), max_depth_(depth)
+ParamMap AcceleratorKdTree::Params::getAsParamMap(bool only_non_default) const
 {
+	PARAM_SAVE_START;
+	PARAM_SAVE(max_depth_);
+	PARAM_SAVE(max_leaf_size_);
+	PARAM_SAVE(cost_ratio_);
+	PARAM_SAVE(empty_bonus_);
+	PARAM_SAVE_END;
+}
+
+ParamMap AcceleratorKdTree::getAsParamMap(bool only_non_default) const
+{
+	ParamMap result{Accelerator::getAsParamMap(only_non_default)};
+	result.append(params_.getAsParamMap(only_non_default));
+	return result;
+}
+
+std::pair<Accelerator *, ParamError> AcceleratorKdTree::factory(Logger &logger, const std::vector<const Primitive *> &primitives, const ParamMap &param_map)
+{
+	auto param_error{Params::meta_.check(param_map, {"type"}, {})};
+	auto result {new AcceleratorKdTree(logger, param_error, primitives, param_map)};
+	if(param_error.flags_ != ParamError::Flags::Ok) logger.logWarning(param_error.print<AcceleratorKdTree>("", {"type"}));
+	return {result, param_error};
+}
+
+AcceleratorKdTree::AcceleratorKdTree(Logger &logger, ParamError &param_error, const std::vector<const Primitive *> &primitives, const ParamMap &param_map) : Accelerator{logger, param_error, param_map}, params_{param_error, param_map}
+{
+	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + params_.getAsParamMap(true).print());
 	total_prims_ = static_cast<uint32_t>(primitives.size());
 	logger_.logInfo("Kd-Tree: Starting build (", total_prims_, " prims, cr:", cost_ratio_, " eb:", e_bonus_, ")");
 	clock_t c_start, c_end;
@@ -58,13 +70,13 @@ AcceleratorKdTree::AcceleratorKdTree(Logger &logger, const std::vector<const Pri
 	nodes_.resize(allocated_nodes_count_);
 	if(max_depth_ <= 0 && total_prims_ > 0) max_depth_ = static_cast<int>(7.0f + 1.66f * math::log(static_cast<float>(total_prims_)));
 	const double log_leaves = 1.442695 * math::log(static_cast<double >(total_prims_)); // = base2 log
-	if(leaf_size <= 0)
+	if(max_leaf_size_ <= 0)
 	{
 		int mls = static_cast<int>(log_leaves - 16.0);
 		if(mls <= 0) mls = 1;
 		max_leaf_size_ = static_cast<unsigned int>(mls);
 	}
-	else max_leaf_size_ = static_cast<unsigned int>(leaf_size);
+	else max_leaf_size_ = static_cast<unsigned int>(max_leaf_size_);
 	if(max_depth_ > kd_max_stack_) max_depth_ = kd_max_stack_; //to prevent our stack to overflow
 	//experiment: add penalty to cost ratio to reduce memory usage on huge scenes
 	if(log_leaves > 16.0) cost_ratio_ += 0.25f * (log_leaves - 16.0);

@@ -35,7 +35,7 @@ int main()
 	/* YafaRay standard rendering interface */
 	yafaray_Interface_t *yi = yafaray_createInterface(YAFARAY_INTERFACE_FOR_RENDERING, "test04.xml", NULL, NULL, YAFARAY_DISPLAY_CONSOLE_NORMAL);
 	yafaray_setConsoleLogColorsEnabled(yi, YAFARAY_BOOL_TRUE);
-	yafaray_setConsoleVerbosityLevel(yi, YAFARAY_LOG_LEVEL_DEBUG);
+	yafaray_setConsoleVerbosityLevel(yi, YAFARAY_LOG_LEVEL_VERBOSE);
 
 	/* Creating scene */
 	yafaray_createScene(yi);
@@ -44,16 +44,12 @@ int main()
 	/* Creating images for textures */
 	yafaray_paramsSetString(yi, "type", "ColorAlpha");
 	yafaray_paramsSetString(yi, "image_optimization", "optimized");
-	yafaray_paramsSetInt(yi, "tex_width", 200);
-	yafaray_paramsSetInt(yi, "tex_height", 200);
 	yafaray_paramsSetString(yi, "filename", "tex.tga");
 	yafaray_createImage(yi, "ImageTGA");
 	yafaray_paramsClearAll(yi);
 
 	yafaray_paramsSetString(yi, "type", "ColorAlpha");
 	yafaray_paramsSetString(yi, "image_optimization", "none"); /* Note: only "none" allows HDR values > 1.f */
-	yafaray_paramsSetInt(yi, "tex_width", 200);
-	yafaray_paramsSetInt(yi, "tex_height", 200);
 	yafaray_paramsSetString(yi, "filename", "tex.hdr");
 	yafaray_createImage(yi, "ImageHDR");
 	yafaray_paramsClearAll(yi);

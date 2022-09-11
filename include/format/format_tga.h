@@ -24,22 +24,24 @@
 #ifndef YAFARAY_FORMAT_TGA_H
 #define YAFARAY_FORMAT_TGA_H
 
-#include "format.h"
+#include "format/format.h"
+#include "math/buffer_2d.h"
 
 namespace yafaray {
 
 class TgaFormat;
 struct TgaHeader;
-class RgbAlpha;
 
 typedef Rgba (TgaFormat::*ColorProcessor_t)(void *data);
 
 class TgaFormat final : public Format
 {
 	public:
-		explicit TgaFormat(Logger &logger) : Format(logger) { }
+		inline static std::string getClassName() { return "TgaFormat"; }
+		explicit TgaFormat(Logger &logger, ParamError &param_error, const ParamMap &param_map) : Format(logger, param_error, param_map) { }
 
 	private:
+		[[nodiscard]] Type type() const override { return Type::Tga; }
 		std::string getFormatName() const override { return "TgaFormat"; }
 		Image * loadFromFile(const std::string &name, const Image::Optimization &optimization, const ColorSpace &color_space, float gamma) override;
 		bool saveToFile(const std::string &name, const ImageLayer &image_layer, ColorSpace color_space, float gamma, bool alpha_premultiply) override;
@@ -61,7 +63,7 @@ class TgaFormat final : public Format
 
 		bool precheckFile(TgaHeader &header, const std::string &name, bool &is_gray, bool &is_rle, bool &has_color_map, uint8_t &alpha_bit_depth);
 
-		std::unique_ptr<ImageBuffer2D<RgbAlpha>> color_map_;
+		std::unique_ptr<Buffer2D<RgbAlpha>> color_map_;
 		size_t tot_pixels_;
 		size_t min_x_, max_x_, step_x_;
 		size_t min_y_, max_y_, step_y_;

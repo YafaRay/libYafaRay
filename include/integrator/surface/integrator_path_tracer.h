@@ -20,29 +20,48 @@
 #ifndef YAFARAY_INTEGRATOR_PATH_TRACER_H
 #define YAFARAY_INTEGRATOR_PATH_TRACER_H
 
-#include "render/render_view.h"
-#include "integrator_montecarlo.h"
+#include "integrator_photon_caustic.h"
 
 namespace yafaray {
 
-class PathIntegrator final : public MonteCarloIntegrator
+class PathIntegrator final : public CausticPhotonIntegrator
 {
 	public:
-		static SurfaceIntegrator *factory(Logger &logger, RenderControl &render_control, const ParamMap &params, const Scene &scene);
+		inline static std::string getClassName() { return "PathIntegrator"; }
+		static std::pair<SurfaceIntegrator *, ParamError> factory(Logger &logger, RenderControl &render_control, const ParamMap &params, const Scene &scene);
+		static std::string printMeta(const std::vector<std::string> &excluded_params) { return Params::meta_.print(excluded_params); }
 
 	private:
-		PathIntegrator(RenderControl &render_control, Logger &logger, bool transparent_shadows = false, int shadow_depth = 4);
-		std::string getShortName() const override { return "PT"; }
-		std::string getName() const override { return "PathTracer"; }
+		struct CausticType : public Enum<CausticType>
+		{
+			enum : decltype(type()) { None = 0, Path = 1 << 0, Photon = 1 << 1, Both = Path | Photon };
+			inline static const EnumMap<decltype(type())> map_{{
+					{"none", None, ""},
+					{"path", Path, ""},
+					{"photon", Photon, ""},
+					{"both", Both, ""},
+				}};
+		};
+		[[nodiscard]] Type type() const override { return Type::Path; }
+		const struct Params
+		{
+			PARAM_INIT_PARENT(CausticPhotonIntegrator);
+			PARAM_DECL(int, path_samples_, 32, "path_samples", "Number of samples for Montecarlo raytracing");
+			PARAM_DECL(int, bounces_, 3, "bounces", "Max. path depth for Montecarlo raytracing");
+			PARAM_DECL(int, russian_roulette_min_bounces_, 0, "russian_roulette_min_bounces", "Minimum number of bounces where russian roulette is not applied. Afterwards russian roulette will be used until the maximum selected bounces. If min_bounces >= max_bounces, then no russian roulette takes place");
+			PARAM_DECL(bool, no_recursive_, false, "no_recursive", "");
+			PARAM_ENUM_DECL(CausticType , caustic_type_, CausticType::Path, "caustic_type", "");
+		} params_;
+		[[nodiscard]] ParamMap getAsParamMap(bool only_non_default) const override;
+
+	private:
+		PathIntegrator(RenderControl &render_control, Logger &logger, ParamError &param_error, const ParamMap &param_map);
+		[[nodiscard]] std::string getShortName() const override { return "PT"; }
+		[[nodiscard]] std::string getName() const override { return "PathTracer"; }
 		bool preprocess(FastRandom &fast_random, ImageFilm *image_film, const RenderView *render_view, const Scene &scene) override;
 		std::pair<Rgb, float> integrate(Ray &ray, FastRandom &fast_random, RandomGenerator &random_generator, std::vector<int> &correlative_sample_number, ColorLayers *color_layers, int thread_id, int ray_level, bool chromatic_enabled, float wavelength, int additional_depth, const RayDivision &ray_division, const PixelSamplingData &pixel_sampling_data, unsigned int object_index_highest, unsigned int material_index_highest) const override;
-		enum class CausticType { None, Path, Photon, Both };
 
-		bool trace_caustics_; //!< use path tracing for caustics (determined by causticType)
-		bool no_recursive_;
-		float inv_n_paths_;
-		CausticType caustic_type_;
-		int russian_roulette_min_bounces_;  //!< minimum number of bounces where russian roulette is not applied. Afterwards russian roulette will be used until the maximum selected bounces. If min_bounces >= max_bounces, then no russian roulette takes place
+		const float inv_path_samples_{1.f / static_cast<float>(params_.path_samples_)};
 };
 
 } //namespace yafaray

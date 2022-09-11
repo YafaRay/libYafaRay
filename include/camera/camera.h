@@ -24,9 +24,10 @@
 #ifndef YAFARAY_CAMERA_H
 #define YAFARAY_CAMERA_H
 
-#include <memory>
-#include <utility>
 #include "geometry/plane.h"
+#include "common/enum.h"
+#include "common/enum_map.h"
+#include "param/class_meta.h"
 
 namespace yafaray {
 
@@ -54,33 +55,19 @@ struct CameraRay
 class Camera
 {
 	public:
-		struct Params
-		{
-			Params() = default;
-			Params(const ParamMap &param_map);
-			void loadParamMap(const ParamMap &param_map);
-			ParamMap getAsParamMap() const;
-			Point3f from_{{0, 1, 0}}; //!< Camera position
-			Point3f to_{{0, 0, 0}};
-			Point3f up_{{0, 1, 1}};
-			Size2i resolution_{{320, 200}}; //!< Camera resolution
-			float aspect_ratio_factor_ = 1.f;
-			float near_clip_distance_ = 0.f;
-			float far_clip_distance_ = -1.f;
-			std::string type_;
-		};
-		static const Camera * factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map);
-		Camera(Logger &logger, const Params &params);
+		inline static std::string getClassName() { return "Camera"; }
+		static std::pair<Camera *, ParamError> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map);
+		[[nodiscard]] virtual ParamMap getAsParamMap(bool only_non_default) const;
+		Camera(Logger &logger, ParamError &param_error, const ParamMap &param_map);
 		virtual ~Camera() = default;
-		virtual ParamMap getAsParamMap() const;
 		virtual void setAxis(const Vec3f &vx, const Vec3f &vy, const Vec3f &vz) = 0; //!< Set camera axis
 		/*! Shoot a new ray from the camera gived image pixel coordinates px,py and lense dof effect */
 		virtual CameraRay shootRay(float px, float py, const Uv<float> &uv) const = 0; //!< Shoot a new ray from the camera.
 		virtual Point3f screenproject(const Point3f &p) const = 0; //!< Get projection of point p into camera plane
 		virtual bool sampleLense() const { return false; } //!< Indicate whether the lense need to be sampled
 		virtual bool project(const Ray &wo, float lu, float lv, float &u, float &v, float &pdf) const { return false; }
-		int resX() const { return params_.resolution_[Axis::X]; } //!< Get camera X resolution
-		int resY() const { return params_.resolution_[Axis::Y]; } //!< Get camera Y resolution
+		int resX() const { return params_.resx_; } //!< Get camera X resolution
+		int resY() const { return params_.resy_; } //!< Get camera Y resolution
 		Point3f getPosition() const { return params_.from_; } //!< Get camera position
 		std::array<Vec3f, 3> getAxes() const { return {cam_x_, cam_y_, cam_z_}; } //!< Get camera axis
 		/*! Indicate whether the lense need to be sampled (u, v parameters of shootRay), i.e.
@@ -89,7 +76,31 @@ class Camera
 		float getFarClip() const { return params_.far_clip_distance_; }
 
 	protected:
-		const Params params_;
+		struct Type : public Enum<Type>
+		{
+			using Enum::Enum;
+			enum : decltype(type()) { None, Angular, Perspective, Architect, Orthographic, Equirectangular };
+			inline static const EnumMap<decltype(type())> map_{{
+					{"angular", Angular, ""},
+					{"perspective", Perspective, ""},
+					{"architect", Architect, ""},
+					{"orthographic", Orthographic, ""},
+					{"equirectangular", Equirectangular, ""},
+				}};
+		};
+		[[nodiscard]] virtual Type type() const = 0;
+		const struct Params
+		{
+			PARAM_INIT;
+			PARAM_DECL(Vec3f, from_, (Vec3f{{0, 1, 0}}), "from", "");
+			PARAM_DECL(Vec3f, to_, (Vec3f{{0, 0, 0}}), "to", "");
+			PARAM_DECL(Vec3f, up_, (Vec3f{{0, 1, 1}}), "up", "");
+			PARAM_DECL(int, resx_, 320, "resx", "Camera resolution X");
+			PARAM_DECL(int, resy_, 200, "resy", "Camera resolution Y");
+			PARAM_DECL(float, aspect_ratio_factor_, 1.f, "aspect_ratio_factor", "");
+			PARAM_DECL(float, near_clip_distance_, 0.f, "nearClip", "");
+			PARAM_DECL(float, far_clip_distance_, -1.f, "farClip", "");
+		} params_;
 		Vec3f cam_x_;	//!< Camera X axis
 		Vec3f cam_y_;	//!< Camera Y axis
 		Vec3f cam_z_;	//!< Camera Z axis

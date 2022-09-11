@@ -22,12 +22,10 @@
 
 #include "format/format_jpg.h"
 #include "common/logger.h"
-#include "common/param.h"
 #include "common/file.h"
 #include "scene/scene.h"
 #include "color/color.h"
 #include "image/image_layers.h"
-#include "color/color_layers.h"
 
 extern "C"
 {
@@ -201,16 +199,18 @@ Image * JpgFormat::loadFromFile(const std::string &name, const Image::Optimizati
 		File::close(fp);
 		return nullptr;
 	}
-	const int width = info.output_width;
-	const int height = info.output_height;
-	const Image::Type type = Image::getTypeFromSettings(false, grayscale_);
-	auto image = Image::factory(logger_, {{width, height}}, type, optimization);
-
-	auto *scanline = new uint8_t[width * info.output_components];
+	Image::Params image_params;
+	image_params.width_ = info.output_width;
+	image_params.height_ = info.output_height;
+	image_params.type_ = Image::getTypeFromSettings(false, grayscale_);
+	image_params.image_optimization_ = optimization;
+	image_params.filename_ = name;
+	auto image = Image::factory(image_params);
+	auto *scanline = new uint8_t[image_params.width_ * info.output_components];
 	for(int y = 0; info.output_scanline < info.output_height; ++y)
 	{
 		jpeg_read_scanlines(&info, &scanline, 1);
-		for(int x = 0; x < width; x++)
+		for(int x = 0; x < image_params.width_; x++)
 		{
 			Rgba color;
 			if(is_gray)

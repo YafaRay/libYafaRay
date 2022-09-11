@@ -22,7 +22,7 @@
 #ifndef YAFARAY_LIGHT_SUN_H
 #define YAFARAY_LIGHT_SUN_H
 
-#include <common/logger.h>
+#include "common/logger.h"
 #include "light/light.h"
 #include "geometry/vector.h"
 
@@ -34,10 +34,23 @@ class Scene;
 class SunLight final : public Light
 {
 	public:
-		static Light *factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params);
+		inline static std::string getClassName() { return "SunLight"; }
+		static std::pair<Light *, ParamError> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params);
+		static std::string printMeta(const std::vector<std::string> &excluded_params) { return Params::meta_.print(excluded_params); }
 
 	private:
-		SunLight(Logger &logger, Vec3f dir, const Rgb &col, float inte, float angle, int n_samples, bool b_light_enabled = true, bool b_cast_shadows = true);
+		[[nodiscard]] Type type() const override { return Type::Sun; }
+		const struct Params
+		{
+			PARAM_INIT_PARENT(Light);
+			PARAM_DECL(Vec3f, direction_, (Vec3f{{0.f, 0.f, 1.f}}), "direction", "");
+			PARAM_DECL(Rgb, color_, Rgb{1.f}, "color", "");
+			PARAM_DECL(float, power_, 1.f, "power", "");
+			PARAM_DECL(float, angle_, 0.27f, "angle", "Angular (half-)size of the real sun");
+			PARAM_DECL(int, samples_, 4, "samples", "");
+		} params_;
+		[[nodiscard]] ParamMap getAsParamMap(bool only_non_default) const override;
+		SunLight(Logger &logger, ParamError &param_error, const std::string &name, const ParamMap &param_map);
 		void init(const Scene &scene) override;
 		Rgb totalEnergy() const override { return color_ * e_pdf_; }
 		std::tuple<Ray, float, Rgb> emitPhoton(float s_1, float s_2, float s_3, float s_4, float time) const override;
@@ -47,15 +60,15 @@ class SunLight final : public Light
 		bool canIntersect() const override { return true; }
 		std::tuple<bool, float, Rgb> intersect(const Ray &ray, float &t) const override;
 		std::pair<Vec3f, Rgb> emitSample(LSample &s, float time) const override { return {}; }
-		int nSamples() const override { return samples_; }
+		int nSamples() const override { return params_.samples_; }
 
 		Point3f world_center_;
-		Rgb color_, col_pdf_;
-		Vec3f direction_;
-		Uv<Vec3f> duv_;
+		const Rgb color_{params_.color_ * params_.power_};
+		Rgb col_pdf_;
+		const Vec3f direction_{params_.direction_.normalized()};
+		const Uv<Vec3f> duv_{Vec3f::createCoordsSystem(params_.direction_)};
 		float pdf_, invpdf_;
-		double cos_angle_;
-		int samples_;
+		float cos_angle_;
 		float world_radius_;
 		float e_pdf_;
 };

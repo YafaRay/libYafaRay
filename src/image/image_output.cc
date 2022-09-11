@@ -19,11 +19,10 @@
 
 #include "image/image_output.h"
 
-#include <utility>
 #include "color/color_layers.h"
 #include "scene/scene.h"
 #include "common/logger.h"
-#include "common/param.h"
+#include "param/param.h"
 #include "common/layers.h"
 #include "common/file.h"
 #include "format/format.h"
@@ -33,12 +32,81 @@
 
 namespace yafaray {
 
-ImageOutput::ImageOutput(Logger &logger, std::string image_path, const DenoiseParams &denoise_params, std::string name, ColorSpace color_space, float gamma, bool with_alpha, bool alpha_premultiply, bool multi_layer) : name_(std::move(name)), image_path_(std::move(image_path)), color_space_(color_space), gamma_(gamma), with_alpha_(with_alpha), alpha_premultiply_(alpha_premultiply), multi_layer_(multi_layer), denoise_params_(denoise_params), badge_(logger), logger_(logger)
+ImageOutput::Params::Params(ParamError &param_error, const ParamMap &param_map)
 {
-	if(color_space == ColorSpace::RawManualGamma)
+	PARAM_LOAD(image_path_);
+	PARAM_ENUM_LOAD(color_space_);
+	PARAM_LOAD(gamma_);
+	PARAM_LOAD(alpha_channel_);
+	PARAM_LOAD(alpha_premultiply_);
+	PARAM_LOAD(multi_layer_);
+	PARAM_LOAD(denoise_enabled_);
+	PARAM_LOAD(denoise_h_lum_);
+	PARAM_LOAD(denoise_h_col_);
+	PARAM_LOAD(denoise_mix_);
+	PARAM_LOAD(logging_save_txt_);
+	PARAM_LOAD(logging_save_html_);
+	PARAM_ENUM_LOAD(badge_position_);
+	PARAM_LOAD(badge_draw_render_settings_);
+	PARAM_LOAD(badge_draw_aa_noise_settings_);
+	PARAM_LOAD(badge_author_);
+	PARAM_LOAD(badge_title_);
+	PARAM_LOAD(badge_contact_);
+	PARAM_LOAD(badge_comment_);
+	PARAM_LOAD(badge_icon_path_);
+	PARAM_LOAD(badge_font_path_);
+	PARAM_LOAD(badge_font_size_factor_);
+}
+
+ParamMap ImageOutput::Params::getAsParamMap(bool only_non_default) const
+{
+	PARAM_SAVE_START;
+	PARAM_SAVE(image_path_);
+	PARAM_ENUM_SAVE(color_space_);
+	PARAM_SAVE(gamma_);
+	PARAM_SAVE(alpha_channel_);
+	PARAM_SAVE(alpha_premultiply_);
+	PARAM_SAVE(multi_layer_);
+	PARAM_SAVE(denoise_enabled_);
+	PARAM_SAVE(denoise_h_lum_);
+	PARAM_SAVE(denoise_h_col_);
+	PARAM_SAVE(denoise_mix_);
+	PARAM_SAVE(logging_save_txt_);
+	PARAM_SAVE(logging_save_html_);
+	PARAM_ENUM_SAVE(badge_position_);
+	PARAM_SAVE(badge_draw_render_settings_);
+	PARAM_SAVE(badge_draw_aa_noise_settings_);
+	PARAM_SAVE(badge_author_);
+	PARAM_SAVE(badge_title_);
+	PARAM_SAVE(badge_contact_);
+	PARAM_SAVE(badge_comment_);
+	PARAM_SAVE(badge_icon_path_);
+	PARAM_SAVE(badge_font_path_);
+	PARAM_SAVE(badge_font_size_factor_);
+	PARAM_SAVE_END;
+}
+
+ParamMap ImageOutput::getAsParamMap(bool only_non_default) const
+{
+	return params_.getAsParamMap(only_non_default);
+}
+
+std::pair<ImageOutput *, ParamError> ImageOutput::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map)
+{
+	if(logger.isDebug()) logger.logDebug("**" + getClassName() + "::factory 'raw' ParamMap\n" + param_map.logContents());
+	auto param_error{Params::meta_.check(param_map, {}, {})};
+	auto result {new ImageOutput(logger, param_error, param_map)};
+	if(param_error.flags_ != ParamError::Flags::Ok) logger.logWarning(param_error.print<ImageOutput>(name, {}));
+	return {result, param_error};
+}
+
+ImageOutput::ImageOutput(Logger &logger, ParamError &param_error, const ParamMap &param_map) : params_{param_error, param_map}, logger_{logger}
+{
+	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + params_.getAsParamMap(true).print());
+	if(params_.color_space_ == ColorSpace::RawManualGamma)
 	{
 		//If the gamma is too close to 1.f, or negative, ignore gamma and do a pure linear RGB processing without gamma.
-		if(gamma <= 0 || std::abs(1.f - gamma) <= 0.001)
+		if(params_.gamma_ <= 0.f || std::abs(1.f - params_.gamma_) <= 0.001f)
 		{
 			color_space_ = ColorSpace::LinearRgb;
 			gamma_ = 1.f;
@@ -56,51 +124,6 @@ Image * ImageOutput::generateBadgeImage(const RenderControl &render_control, con
 	return badge_.generateImage(image_manipulation::printDenoiseParams(denoise_params_), render_control, timer);
 }
 
-void ImageOutput::setLoggingParams(const ParamMap &params)
-{
-	params.getParam("logging_save_txt", save_log_txt_);
-	params.getParam("logging_save_html", save_log_html_);
-}
-
-void ImageOutput::setBadgeParams(const ParamMap &params)
-{
-	badge_.setParams(params);
-}
-
-ImageOutput * ImageOutput::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params)
-{
-	if(logger.isDebug())
-	{
-		logger.logDebug("**ImageOutput");
-		params.logContents(logger);
-	}
-	std::string image_path;
-	std::string color_space_str = "Raw_Manual_Gamma";
-	float gamma = 1.f;
-	bool with_alpha = false;
-	bool alpha_premultiply = false;
-	bool multi_layer = true;
-	DenoiseParams denoise_params;
-
-	params.getParam("image_path", image_path);
-	params.getParam("color_space", color_space_str);
-	params.getParam("gamma", gamma);
-	params.getParam("alpha_channel", with_alpha);
-	params.getParam("alpha_premultiply", alpha_premultiply);
-	params.getParam("multi_layer", multi_layer);
-
-	params.getParam("denoise_enabled", denoise_params.enabled_);
-	params.getParam("denoise_h_lum", denoise_params.hlum_);
-	params.getParam("denoise_h_col", denoise_params.hcol_);
-	params.getParam("denoise_mix", denoise_params.mix_);
-
-	const ColorSpace color_space = Rgb::colorSpaceFromName(color_space_str);
-	auto output = new ImageOutput(logger, image_path, denoise_params, name, color_space, gamma, with_alpha, alpha_premultiply, multi_layer);
-	output->setLoggingParams(params);
-	output->setBadgeParams(params);
-	return output;
-}
-
 void ImageOutput::init(const Size2i &size, const ImageLayers *exported_image_layers, const std::map<std::string, std::unique_ptr<RenderView>> *render_views)
 {
 	image_layers_ = exported_image_layers;
@@ -110,24 +133,23 @@ void ImageOutput::init(const Size2i &size, const ImageLayers *exported_image_lay
 
 void ImageOutput::flush(const RenderControl &render_control, const Timer &timer)
 {
-	Path path(image_path_);
+	Path path(params_.image_path_);
 	std::string directory = path.getDirectory();
 	std::string base_name = path.getBaseName();
 	const std::string ext = path.getExtension();
 	const std::string view_name = current_render_view_->getName();
-	if(view_name != "") base_name += " (view " + view_name + ")";
-
+	if(!view_name.empty()) base_name += " (view " + view_name + ")";
 	ParamMap params;
 	params["type"] = ext;
-	std::unique_ptr<Format> format(Format::factory(logger_, params));
+	std::unique_ptr<Format> format(Format::factory(logger_, params).first);
 
 	if(format)
 	{
-		if(multi_layer_ && format->supportsMultiLayer())
+		if(params_.multi_layer_ && format->supportsMultiLayer())
 		{
 			if(view_name == current_render_view_->getName())
 			{
-				saveImageFile(image_path_, LayerDef::Combined, format.get(), render_control, timer); //This should not be necessary but Blender API seems to be limited and the API "load_from_file" function does not work (yet) with multilayered images, so I have to generate this extra combined pass file so it's displayed in the Blender window.
+				saveImageFile(params_.image_path_, LayerDef::Combined, format.get(), render_control, timer); //This should not be necessary but Blender API seems to be limited and the API "load_from_file" function does not work (yet) with multilayered images, so I have to generate this extra combined pass file so it's displayed in the Blender window.
 			}
 
 			if(!directory.empty()) directory += "/";
@@ -144,8 +166,8 @@ void ImageOutput::flush(const RenderControl &render_control, const Timer &timer)
 				const std::string exported_image_name = image_layer.layer_.getExportedImageName();
 				if(layer_def == LayerDef::Combined)
 				{
-					saveImageFile(image_path_, layer_def, format.get(), render_control, timer); //default imagehandler filename, when not using views nor passes and for reloading into Blender
-					logger_.setImagePath(image_path_); //to show the image in the HTML log output
+					saveImageFile(params_.image_path_, layer_def, format.get(), render_control, timer); //default imagehandler filename, when not using views nor passes and for reloading into Blender
+					logger_.setImagePath(params_.image_path_); //to show the image in the HTML log output
 				}
 
 				if(layer_def != LayerDef::Disabled && (image_layers_->size() > 1 || render_views_->size() > 1))
@@ -159,12 +181,12 @@ void ImageOutput::flush(const RenderControl &render_control, const Timer &timer)
 			}
 		}
 	}
-	if(save_log_txt_)
+	if(params_.logging_save_txt_)
 	{
 		std::string f_log_txt_name = directory + "/" + base_name + "_log.txt";
 		logger_.saveTxtLog(f_log_txt_name, badge_, render_control, timer);
 	}
-	if(save_log_html_)
+	if(params_.logging_save_html_)
 	{
 		std::string f_log_html_name = directory + "/" + base_name + "_log.html";
 		logger_.saveHtmlLog(f_log_html_name, badge_, render_control, timer);
@@ -208,9 +230,9 @@ void ImageOutput::saveImageFile(const std::string &filename, LayerDef::Type laye
 		if(image_denoised) image_layer.image_ = std::move(image_denoised);
 		else if(logger_.isVerbose()) logger_.logVerbose(name_, ": Denoise was not possible, saving image without denoise postprocessing.");
 	}
-	format->saveToFile(filename, image_layer, color_space_, gamma_, alpha_premultiply_);
+	format->saveToFile(filename, image_layer, color_space_, gamma_, params_.alpha_premultiply_);
 
-	if(with_alpha_ && !format->supportsAlpha())
+	if(params_.alpha_channel_ && !format->supportsAlpha())
 	{
 		Path file_path(filename);
 		std::string file_name_alpha = file_path.getBaseName() + "_alpha." + file_path.getExtension();
@@ -232,9 +254,9 @@ void ImageOutput::saveImageFileMultiChannel(const std::string &filename, Format 
 			std::unique_ptr<Image> image_layer_badge(image_manipulation::getComposedImage(logger_, image_layer.image_.get(), badge_image.get(), badge_image_position));
 			image_layers_badge.set(layer_def, {std::move(image_layer_badge), image_layer.layer_});
 		}
-		format->saveToFileMultiChannel(filename, image_layers_badge, color_space_, gamma_, alpha_premultiply_);
+		format->saveToFileMultiChannel(filename, image_layers_badge, color_space_, gamma_, params_.alpha_premultiply_);
 	}
-	else format->saveToFileMultiChannel(filename, *image_layers_, color_space_, gamma_, alpha_premultiply_);
+	else format->saveToFileMultiChannel(filename, *image_layers_, color_space_, gamma_, params_.alpha_premultiply_);
 }
 
 } //namespace yafaray

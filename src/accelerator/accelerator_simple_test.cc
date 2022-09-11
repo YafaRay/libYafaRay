@@ -19,18 +19,39 @@
 #include "accelerator/accelerator_simple_test.h"
 #include "geometry/primitive/primitive.h"
 #include "geometry/object/object.h"
-#include "material/material.h"
+#include "param/param.h"
 #include "common/logger.h"
 
 namespace yafaray {
 
-const Accelerator * AcceleratorSimpleTest::factory(Logger &logger, const std::vector<const Primitive *> &primitives, const ParamMap &params)
+AcceleratorSimpleTest::Params::Params(ParamError &param_error, const ParamMap &param_map)
 {
-	return new AcceleratorSimpleTest(logger, primitives);
 }
 
-AcceleratorSimpleTest::AcceleratorSimpleTest(Logger &logger, const std::vector<const Primitive *> &primitives) : Accelerator(logger), primitives_(primitives)
+ParamMap AcceleratorSimpleTest::Params::getAsParamMap(bool only_non_default) const
 {
+	PARAM_SAVE_START;
+	PARAM_SAVE_END;
+}
+
+ParamMap AcceleratorSimpleTest::getAsParamMap(bool only_non_default) const
+{
+	ParamMap result{Accelerator::getAsParamMap(only_non_default)};
+	result.append(params_.getAsParamMap(only_non_default));
+	return result;
+}
+
+std::pair<Accelerator *, ParamError> AcceleratorSimpleTest::factory(Logger &logger, const std::vector<const Primitive *> &primitives, const ParamMap &param_map)
+{
+	auto param_error{Params::meta_.check(param_map, {"type"}, {})};
+	auto result {new AcceleratorSimpleTest(logger, param_error, primitives, param_map)};
+	if(param_error.flags_ != ParamError::Flags::Ok) logger.logWarning(param_error.print<AcceleratorSimpleTest>("", {"type"}));
+	return {result, param_error};
+}
+
+AcceleratorSimpleTest::AcceleratorSimpleTest(Logger &logger, ParamError &param_error, const std::vector<const Primitive *> &primitives, const ParamMap &param_map) : Accelerator{logger, param_error, param_map}, params_{param_error, param_map}, primitives_(primitives)
+{
+	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + params_.getAsParamMap(true).print());
 	const size_t num_primitives = primitives_.size();
 	if(num_primitives > 0) bound_ = primitives.front()->getBound();
 	else bound_ = {{{0.f, 0.f, 0.f}}, {{0.f, 0.f, 0.f}}};

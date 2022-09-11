@@ -20,34 +20,64 @@
 
 #include "light/light_sphere.h"
 #include "geometry/surface.h"
-#include "common/param.h"
+#include "param/param.h"
 #include "scene/scene.h"
 #include "sampler/sample.h"
 #include "common/logger.h"
 #include "geometry/ray.h"
-#include "geometry/bound.h"
 
 namespace yafaray {
 
-SphereLight::SphereLight(Logger &logger, const Point3f &c, float rad, const Rgb &col, float inte, int nsam, bool b_light_enabled, bool b_cast_shadows):
-		Light(logger), center_(c), radius_(rad), samples_(nsam)
+SphereLight::Params::Params(ParamError &param_error, const ParamMap &param_map)
 {
-	light_enabled_ = b_light_enabled;
-	cast_shadows_ = b_cast_shadows;
-	color_ = col * inte;
-	square_radius_ = radius_ * radius_;
-	square_radius_epsilon_ = square_radius_ * 1.000003815; // ~0.2% larger radius squared
-	area_ = square_radius_ * 4.0 * math::num_pi<>;
-	inv_area_ = 1.f / area_;
+	PARAM_LOAD(from_);
+	PARAM_LOAD(color_);
+	PARAM_LOAD(power_);
+	PARAM_LOAD(radius_);
+	PARAM_LOAD(samples_);
+	PARAM_LOAD(object_name_);
+}
+
+ParamMap SphereLight::Params::getAsParamMap(bool only_non_default) const
+{
+	PARAM_SAVE_START;
+	PARAM_SAVE(from_);
+	PARAM_SAVE(color_);
+	PARAM_SAVE(power_);
+	PARAM_SAVE(radius_);
+	PARAM_SAVE(samples_);
+	PARAM_SAVE(object_name_);
+	PARAM_SAVE_END;
+}
+
+ParamMap SphereLight::getAsParamMap(bool only_non_default) const
+{
+	ParamMap result{Light::getAsParamMap(only_non_default)};
+	result.append(params_.getAsParamMap(only_non_default));
+	return result;
+}
+
+std::pair<Light *, ParamError> SphereLight::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map)
+{
+	auto param_error{Params::meta_.check(param_map, {"type"}, {})};
+	auto result {new SphereLight(logger, param_error, name, param_map)};
+	if(param_error.flags_ != ParamError::Flags::Ok) logger.logWarning(param_error.print<SphereLight>(name, {"type"}));
+	return {result, param_error};
+}
+
+SphereLight::SphereLight(Logger &logger, ParamError &param_error, const std::string &name, const ParamMap &param_map):
+		Light{logger, param_error, name, param_map, Light::Flags::DiracDir}, params_{param_error, param_map}
+{
+	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + params_.getAsParamMap(true).print());
 }
 
 void SphereLight::init(const Scene &scene)
 {
-	if(!object_name_.empty())
+	if(!params_.object_name_.empty())
 	{
-		Object *obj = scene.getObject(object_name_);
+		Object *obj = scene.getObject(params_.object_name_);
 		if(obj) obj->setLight(this);
-		else logger_.logError("SphereLight: '" + name_ + "': associated object '" + object_name_ + "' could not be found!");
+		else logger_.logError("SphereLight: '" + name_ + "': associated object '" + params_.object_name_ + "' could not be found!");
 	}
 }
 
@@ -76,7 +106,7 @@ std::pair<bool, Uv<float>> SphereLight::sphereIntersect(const Point3f &from, con
 std::pair<bool, Ray> SphereLight::illumSample(const Point3f &surface_p, LSample &s, float time) const
 {
 	if(photonOnly()) return {};
-	Vec3f cdir{center_ - surface_p};
+	Vec3f cdir{params_.from_ - surface_p};
 	const float dist_sqr = cdir.lengthSquared();
 	if(dist_sqr <= square_radius_) return {}; //only emit light on the outside!
 	const float dist = math::sqrt(dist_sqr);
@@ -85,7 +115,7 @@ std::pair<bool, Ray> SphereLight::illumSample(const Point3f &surface_p, LSample 
 	cdir *= 1.f / dist;
 	const Uv<Vec3f> duv{Vec3f::createCoordsSystem(cdir)};
 	Vec3f dir{sample::cone(cdir, duv, cos_alpha, s.s_1_, s.s_2_)};
-	const auto [hit, uv]{sphereIntersect(surface_p, dir, center_, square_radius_epsilon_)};
+	const auto [hit, uv]{sphereIntersect(surface_p, dir, params_.from_, square_radius_epsilon_)};
 	if(!hit)
 	{
 		return {};
@@ -96,7 +126,7 @@ std::pair<bool, Ray> SphereLight::illumSample(const Point3f &surface_p, LSample 
 	if(s.sp_)
 	{
 		s.sp_->p_ = surface_p + uv.u_ * dir;
-		s.sp_->n_ = s.sp_->ng_ = (s.sp_->p_ - center_).normalize();
+		s.sp_->n_ = s.sp_->ng_ = (s.sp_->p_ - params_.from_).normalize();
 	}
 	Ray ray{surface_p, std::move(dir), time, 0.f, uv.u_};
 	return {true, std::move(ray)};
@@ -104,9 +134,9 @@ std::pair<bool, Ray> SphereLight::illumSample(const Point3f &surface_p, LSample 
 
 std::tuple<bool, float, Rgb> SphereLight::intersect(const Ray &ray, float &) const
 {
-	if(const auto[hit, uv]{sphereIntersect(ray.from_, ray.dir_, center_, square_radius_)}; hit)
+	if(const auto[hit, uv]{sphereIntersect(ray.from_, ray.dir_, params_.from_, square_radius_)}; hit)
 	{
-		const Vec3f cdir{center_ - ray.from_};
+		const Vec3f cdir{params_.from_ - ray.from_};
 		const float dist_sqr = cdir.lengthSquared();
 		if(dist_sqr <= square_radius_) return {}; //only emit light on the outside!
 		const float idist_sqr = 1.f / (dist_sqr);
@@ -119,7 +149,7 @@ std::tuple<bool, float, Rgb> SphereLight::intersect(const Ray &ray, float &) con
 
 float SphereLight::illumPdf(const Point3f &surface_p, const Point3f &light_p, const Vec3f &) const
 {
-	Vec3f cdir{center_ - surface_p};
+	Vec3f cdir{params_.from_ - surface_p};
 	float dist_sqr = cdir.lengthSquared();
 	if(dist_sqr <= square_radius_) return 0.f; //only emit light on the outside!
 	float idist_sqr = 1.f / (dist_sqr);
@@ -139,7 +169,7 @@ std::array<float, 3> SphereLight::emitPdf(const Vec3f &surface_n, const Vec3f &w
 std::tuple<Ray, float, Rgb> SphereLight::emitPhoton(float s_1, float s_2, float s_3, float s_4, float time) const
 {
 	const Vec3f sdir{sample::sphere(s_3, s_4)};
-	Point3f from{center_ + radius_ * sdir};
+	Point3f from{params_.from_ + params_.radius_ * sdir};
 	const Uv<Vec3f> duv{Vec3f::createCoordsSystem(sdir)};
 	Vec3f dir{sample::cosHemisphere(sdir, duv, s_1, s_2)};
 	Ray ray{std::move(from), std::move(dir), time};
@@ -149,7 +179,7 @@ std::tuple<Ray, float, Rgb> SphereLight::emitPhoton(float s_1, float s_2, float 
 std::pair<Vec3f, Rgb> SphereLight::emitSample(LSample &s, float time) const
 {
 	const Vec3f sdir{sample::sphere(s.s_3_, s.s_4_)};
-	s.sp_->p_ = center_ + radius_ * sdir;
+	s.sp_->p_ = params_.from_ + params_.radius_ * sdir;
 	s.sp_->n_ = s.sp_->ng_ = sdir;
 	const Uv<Vec3f> duv{Vec3f::createCoordsSystem(sdir)};
 	Vec3f dir{sample::cosHemisphere(sdir, duv, s.s_1_, s.s_2_)};
@@ -157,42 +187,6 @@ std::pair<Vec3f, Rgb> SphereLight::emitSample(LSample &s, float time) const
 	s.area_pdf_ = inv_area_ * math::num_pi<>;
 	s.flags_ = flags_;
 	return {std::move(dir), color_};
-}
-
-Light * SphereLight::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params)
-{
-	Point3f from{{0.f, 0.f, 0.f}};
-	Rgb color(1.0);
-	float power = 1.0;
-	float radius = 1.f;
-	int samples = 4;
-	std::string object_name;
-	bool light_enabled = true;
-	bool cast_shadows = true;
-	bool shoot_d = true;
-	bool shoot_c = true;
-	bool p_only = false;
-
-	params.getParam("from", from);
-	params.getParam("color", color);
-	params.getParam("power", power);
-	params.getParam("radius", radius);
-	params.getParam("samples", samples);
-	params.getParam("object_name", object_name);
-	params.getParam("light_enabled", light_enabled);
-	params.getParam("cast_shadows", cast_shadows);
-	params.getParam("with_caustic", shoot_c);
-	params.getParam("with_diffuse", shoot_d);
-	params.getParam("photon_only", p_only);
-
-	auto light = new SphereLight(logger, from, radius, color, power, samples, light_enabled, cast_shadows);
-
-	light->object_name_ = object_name;
-	light->shoot_caustic_ = shoot_c;
-	light->shoot_diffuse_ = shoot_d;
-	light->photon_only_ = p_only;
-
-	return light;
 }
 
 std::tuple<bool, Ray, Rgb> SphereLight::illuminate(const Point3f &surface_p, float time) const

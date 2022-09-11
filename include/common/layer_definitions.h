@@ -22,18 +22,30 @@
 #define YAFARAY_LAYER_DEFINITIONS_H
 
 #include "image/image.h"
-#include "common/flags.h"
 #include <string>
 #include <array>
 #include <map>
-#include <utility>
 
 namespace yafaray {
 
 class LayerDef final
 {
 	public:
-		enum class Flags : unsigned int { None = 0, BasicLayers = 1 << 0, DepthLayers = 1 << 1, DiffuseLayers = 1 << 2, IndexLayers = 1 << 3, DebugLayers = 1 << 4, AoLayers = 1 << 5, ToonEdgeLayers = 1 << 6};
+		struct Flags : Enum<Flags, unsigned short>
+		{
+			using Enum::Enum;
+			enum : decltype(type()) { None = 0, BasicLayers = 1 << 0, DepthLayers = 1 << 1, DiffuseLayers = 1 << 2, IndexLayers = 1 << 3, DebugLayers = 1 << 4, AoLayers = 1 << 5, ToonEdgeLayers = 1 << 6 };
+			inline static const EnumMap<decltype(type())> map_{{
+					{"None", None, ""},
+					{"BasicLayers", BasicLayers, ""},
+					{"DepthLayers", DepthLayers, ""},
+					{"DiffuseLayers", DiffuseLayers, ""},
+					{"IndexLayers", IndexLayers, ""},
+					{"DebugLayers", DebugLayers, ""},
+					{"AoLayers", AoLayers, ""},
+					{"ToonEdgeLayers", ToonEdgeLayers, ""},
+				}};
+		};
 		enum Type : unsigned char
 		{
 			Combined = 0, //Combined should always have value 0 and be the first entry in the enum
@@ -112,7 +124,7 @@ class LayerDef final
 			ZDepthNorm,
 			Size //Size should always be the last entry in the enum!
 		};
-		LayerDef(Type type, std::string name, Flags flags, Image::Type default_image_type = Image::Type::Color, const Rgba &default_color = {0.f, 1.f}, bool apply_color_space = true) : type_(type), flags_(flags), name_(std::move(name)), default_color_(default_color), apply_color_space_(apply_color_space), default_image_type_(default_image_type) { }
+		LayerDef(Type type, std::string name, Flags flags, Image::Type default_image_type = Image::Type{Image::Type::Color}, const Rgba &default_color = {0.f, 1.f}, bool apply_color_space = true) : type_(type), flags_(flags), name_(std::move(name)), default_color_(default_color), apply_color_space_(apply_color_space), default_image_type_(default_image_type) { }
 		Type getType() const { return type_; }
 		Flags getFlags() const { return flags_; }
 		const std::string &getName() const { return name_; }
@@ -134,7 +146,7 @@ class LayerDef final
 		std::string name_ = "disabled";
 		Rgba default_color_{0.f, 1.f};
 		bool apply_color_space_ = true;
-		Image::Type default_image_type_ = Image::Type::None;
+		Image::Type default_image_type_{Image::Type::None};
 		static const std::array<LayerDef, LayerDef::Type::Size> definitions_array_;
 		static const std::map<std::string, Type> layer_name_map_; //!Dictionary name->layer
 };

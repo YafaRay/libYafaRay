@@ -20,21 +20,114 @@
  */
 
 #include "texture/texture_image.h"
-#include "common/string.h"
-#include "common/param.h"
+#include "texture/mipmap_params.h"
+#include "param/param.h"
 #include "scene/scene.h"
 #include "math/interpolation.h"
-#include "format/format.h"
 #include "common/file.h"
 #include "image/image_manipulation.h"
 
 namespace yafaray {
 
-const EwaWeightLut ImageTexture::ewa_weight_lut_;
+const ImageTexture::EwaWeightLut ImageTexture::ewa_weight_lut_;
 
-ImageTexture::ImageTexture(Logger &logger, std::shared_ptr<Image> image) : Texture(logger)
+ImageTexture::Params::Params(ParamError &param_error, const ParamMap &param_map)
 {
+	PARAM_ENUM_LOAD(clip_mode_);
+	PARAM_LOAD(image_name_);
+	PARAM_LOAD(gamma_);
+	PARAM_LOAD(exposure_adjust_);
+	PARAM_LOAD(normal_map_);
+	PARAM_LOAD(xrepeat_);
+	PARAM_LOAD(yrepeat_);
+	PARAM_LOAD(cropmin_x_);
+	PARAM_LOAD(cropmin_y_);
+	PARAM_LOAD(cropmax_x_);
+	PARAM_LOAD(cropmax_y_);
+	PARAM_LOAD(rot_90_);
+	PARAM_LOAD(even_tiles_);
+	PARAM_LOAD(odd_tiles_);
+	PARAM_LOAD(checker_dist_);
+	PARAM_LOAD(use_alpha_);
+	PARAM_LOAD(calc_alpha_);
+	PARAM_LOAD(mirror_x_);
+	PARAM_LOAD(mirror_y_);
+	PARAM_LOAD(trilinear_level_bias_);
+	PARAM_LOAD(ewa_max_anisotropy_);
+}
+
+ParamMap ImageTexture::Params::getAsParamMap(bool only_non_default) const
+{
+	PARAM_SAVE_START;
+	PARAM_ENUM_SAVE(clip_mode_);
+	PARAM_SAVE(image_name_);
+	PARAM_SAVE(gamma_);
+	PARAM_SAVE(exposure_adjust_);
+	PARAM_SAVE(normal_map_);
+	PARAM_SAVE(xrepeat_);
+	PARAM_SAVE(yrepeat_);
+	PARAM_SAVE(cropmin_x_);
+	PARAM_SAVE(cropmin_y_);
+	PARAM_SAVE(cropmax_x_);
+	PARAM_SAVE(cropmax_y_);
+	PARAM_SAVE(rot_90_);
+	PARAM_SAVE(even_tiles_);
+	PARAM_SAVE(odd_tiles_);
+	PARAM_SAVE(checker_dist_);
+	PARAM_SAVE(use_alpha_);
+	PARAM_SAVE(calc_alpha_);
+	PARAM_SAVE(mirror_x_);
+	PARAM_SAVE(mirror_y_);
+	PARAM_SAVE(trilinear_level_bias_);
+	PARAM_SAVE(ewa_max_anisotropy_);
+	PARAM_SAVE_END;
+}
+
+ParamMap ImageTexture::getAsParamMap(bool only_non_default) const
+{
+	ParamMap result{Texture::getAsParamMap(only_non_default)};
+	result.append(params_.getAsParamMap(only_non_default));
+	return result;
+}
+
+std::pair<Texture *, ParamError> ImageTexture::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map)
+{
+	auto param_error{Params::meta_.check(param_map, {"type"}, {"ramp_item_"})};
+	std::string image_name;
+	param_map.getParam(Params::image_name_meta_, image_name);
+	if(image_name.empty())
+	{
+		logger.logError("ImageTexture: Required argument image_name not found for image texture");
+		return {nullptr, {ParamError::Flags::ErrorWhileCreating}};
+	}
+	std::shared_ptr<Image> image = scene.getImage(image_name);
+	if(!image)
+	{
+		logger.logError("ImageTexture: Couldn't load image file, dropping texture.");
+		return {nullptr, {ParamError::Flags::ErrorWhileCreating}};
+	}
+	auto result {new ImageTexture(logger, param_error, param_map, image)};
+	if(param_error.flags_ != ParamError::Flags::Ok) logger.logWarning(param_error.print<ImageTexture>(name, {"type"}));
+	return {result, param_error};
+}
+
+ImageTexture::ImageTexture(Logger &logger, ParamError &param_error, const ParamMap &param_map, std::shared_ptr<Image> image) : Texture{logger, param_error, param_map}, params_{param_error, param_map}
+{
+	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + params_.getAsParamMap(true).print());
+	original_image_file_gamma_ = image->getGamma();
+	original_image_file_color_space_ = image->getColorSpace();
 	images_.emplace_back(std::move(image));
+	if(Texture::params_.interpolation_type_ == InterpolationType::Trilinear || Texture::params_.interpolation_type_ == InterpolationType::Ewa)
+	{
+		generateMipMaps();
+		/*//FIXME DAVID: TEST SAVING MIPMAPS. CAREFUL: IT COULD CAUSE CRASHES!
+		for(int i=0; i<=format->getHighestImgIndex(); ++i)
+		{
+			std::stringstream ss;
+			ss << "//tmp//saved_mipmap_" << ihname << "_global" << i;
+			format->saveToFile(ss.str(), i);
+		}*/
+	}
 }
 
 std::array<int, 3> ImageTexture::resolution() const
@@ -44,7 +137,7 @@ std::array<int, 3> ImageTexture::resolution() const
 
 Rgba ImageTexture::interpolateImage(const Point3f &p, const MipMapParams *mipmap_params) const
 {
-	switch(interpolation_type_)
+	switch(Texture::params_.interpolation_type_.value())
 	{
 		case InterpolationType::None: return noInterpolation(p);
 		case InterpolationType::Bicubic: return bicubicInterpolation(p);
@@ -52,10 +145,11 @@ Rgba ImageTexture::interpolateImage(const Point3f &p, const MipMapParams *mipmap
 			if(mipmap_params) return mipMapsTrilinearInterpolation(p, mipmap_params);
 			else return bilinearInterpolation(p);
 		case InterpolationType::Ewa:
-			if(mipmap_params) return mipMapsEwaInterpolation(p, ewa_max_anisotropy_, mipmap_params);
+			if(mipmap_params) return mipMapsEwaInterpolation(p, params_.ewa_max_anisotropy_, mipmap_params);
 			else return bilinearInterpolation(p);
-		default: //By default use Bilinear
-		case InterpolationType::Bilinear: return bilinearInterpolation(p);
+		//By default use Bilinear
+		case InterpolationType::Bilinear:
+		default: return bilinearInterpolation(p);
 	}
 }
 
@@ -86,12 +180,12 @@ std::pair<Point3f, bool> ImageTexture::doMapping(const Point3f &tex_point) const
 	bool outside = false;
 	Point3f mapped{0.5f * tex_point + Vec3f{0.5f} }; //FIXME DAVID: does the Vec3 portion make sense?
 	// repeat, only valid for REPEAT clipmode
-	if(tex_clip_mode_ == ClipMode::Repeat)
+	if(params_.clip_mode_ == ClipMode::Repeat)
 	{
-		if(xrepeat_ > 1) mapped[Axis::X] *= static_cast<float>(xrepeat_);
-		if(yrepeat_ > 1) mapped[Axis::Y] *= static_cast<float>(yrepeat_);
-		if(mirror_x_ && static_cast<int>(ceilf(mapped[Axis::X])) % 2 == 0) mapped[Axis::X] = -mapped[Axis::X];
-		if(mirror_y_ && static_cast<int>(ceilf(mapped[Axis::Y])) % 2 == 0) mapped[Axis::Y] = -mapped[Axis::Y];
+		if(params_.xrepeat_ > 1) mapped[Axis::X] *= static_cast<float>(params_.xrepeat_);
+		if(params_.yrepeat_ > 1) mapped[Axis::Y] *= static_cast<float>(params_.yrepeat_);
+		if(params_.mirror_x_ && static_cast<int>(ceilf(mapped[Axis::X])) % 2 == 0) mapped[Axis::X] = -mapped[Axis::X];
+		if(params_.mirror_y_ && static_cast<int>(ceilf(mapped[Axis::Y])) % 2 == 0) mapped[Axis::Y] = -mapped[Axis::Y];
 		if(mapped[Axis::X] > 1.f) mapped[Axis::X] -= std::trunc(mapped[Axis::X]);
 		else if(mapped[Axis::X] < 0.f)
 			mapped[Axis::X] += 1.f - std::trunc(mapped[Axis::X]);
@@ -99,11 +193,11 @@ std::pair<Point3f, bool> ImageTexture::doMapping(const Point3f &tex_point) const
 		else if(mapped[Axis::Y] < 0.f)
 			mapped[Axis::Y] += 1.f - std::trunc(mapped[Axis::Y]);
 	}
-	if(cropx_) mapped[Axis::X] = cropminx_ + mapped[Axis::X] * (cropmaxx_ - cropminx_);
-	if(cropy_) mapped[Axis::Y] = cropminy_ + mapped[Axis::Y] * (cropmaxy_ - cropminy_);
-	if(rot_90_) std::swap(mapped[Axis::X], mapped[Axis::Y]);
+	if(crop_x_) mapped[Axis::X] = params_.cropmin_x_ + mapped[Axis::X] * (params_.cropmax_x_ - params_.cropmin_x_);
+	if(crop_y_) mapped[Axis::Y] = params_.cropmin_y_ + mapped[Axis::Y] * (params_.cropmax_y_ - params_.cropmin_y_);
+	if(params_.rot_90_) std::swap(mapped[Axis::X], mapped[Axis::Y]);
 
-	switch(tex_clip_mode_)
+	switch(params_.clip_mode_.value())
 	{
 		case ClipMode::ClipCube:
 		{
@@ -117,21 +211,21 @@ std::pair<Point3f, bool> ImageTexture::doMapping(const Point3f &tex_point) const
 			const float ys = std::floor(mapped[Axis::Y]);
 			mapped[Axis::X] -= xs;
 			mapped[Axis::Y] -= ys;
-			if(!checker_odd_ && !(static_cast<int>(xs + ys) & 1))
+			if(!params_.odd_tiles_ && !(static_cast<int>(xs + ys) & 1))
 			{
 				outside = true;
 				break;
 			}
-			if(!checker_even_ && (static_cast<int>(xs + ys) & 1))
+			if(!params_.even_tiles_ && (static_cast<int>(xs + ys) & 1))
 			{
 				outside = true;
 				break;
 			}
 			// scale around center, (0.5, 0.5)
-			if(checker_dist_ < 1.f)
+			if(params_.checker_dist_ < 1.f)
 			{
-				mapped[Axis::X] = (mapped[Axis::X] - 0.5f) / (1.f - checker_dist_) + 0.5f;
-				mapped[Axis::Y] = (mapped[Axis::Y] - 0.5f) / (1.f - checker_dist_) + 0.5f;
+				mapped[Axis::X] = (mapped[Axis::X] - 0.5f) / (1.f - params_.checker_dist_) + 0.5f;
+				mapped[Axis::Y] = (mapped[Axis::Y] - 0.5f) / (1.f - params_.checker_dist_) + 0.5f;
 			}
 			// continue to TCL_CLIP
 		}
@@ -155,13 +249,6 @@ std::pair<Point3f, bool> ImageTexture::doMapping(const Point3f &tex_point) const
 		case ClipMode::Repeat: outside = false; break;
 	}
 	return {std::move(mapped), outside };
-}
-
-void ImageTexture::setCrop(float minx, float miny, float maxx, float maxy)
-{
-	cropminx_ = minx, cropmaxx_ = maxx, cropminy_ = miny, cropmaxy_ = maxy;
-	cropx_ = ((cropminx_ != 0.0) || (cropmaxx_ != 1.0));
-	cropy_ = ((cropminy_ != 0.0) || (cropmaxy_ != 1.0));
 }
 
 void ImageTexture::findTextureInterpolationCoordinates(int &coord_0, int &coord_1, int &coord_2, int &coord_3, float &coord_decimal_part, float coord_float, int resolution, bool repeat, bool mirror)
@@ -234,8 +321,8 @@ Rgba ImageTexture::noInterpolation(const Point3f &p, int mipmap_level) const
 
 	int x_0, x_1, x_2, x_3, y_0, y_1, y_2, y_3;
 	float dx, dy;
-	findTextureInterpolationCoordinates(x_0, x_1, x_2, x_3, dx, xf, resx, tex_clip_mode_ == ClipMode::Repeat, mirror_x_);
-	findTextureInterpolationCoordinates(y_0, y_1, y_2, y_3, dy, yf, resy, tex_clip_mode_ == ClipMode::Repeat, mirror_y_);
+	findTextureInterpolationCoordinates(x_0, x_1, x_2, x_3, dx, xf, resx, params_.clip_mode_ == ClipMode::Repeat, params_.mirror_x_);
+	findTextureInterpolationCoordinates(y_0, y_1, y_2, y_3, dy, yf, resy, params_.clip_mode_ == ClipMode::Repeat, params_.mirror_y_);
 	return images_.at(mipmap_level)->getColor({{x_1, y_1}});
 }
 
@@ -249,8 +336,8 @@ Rgba ImageTexture::bilinearInterpolation(const Point3f &p, int mipmap_level) con
 
 	int x_0, x_1, x_2, x_3, y_0, y_1, y_2, y_3;
 	float dx, dy;
-	findTextureInterpolationCoordinates(x_0, x_1, x_2, x_3, dx, xf, resx, tex_clip_mode_ == ClipMode::Repeat, mirror_x_);
-	findTextureInterpolationCoordinates(y_0, y_1, y_2, y_3, dy, yf, resy, tex_clip_mode_ == ClipMode::Repeat, mirror_y_);
+	findTextureInterpolationCoordinates(x_0, x_1, x_2, x_3, dx, xf, resx, params_.clip_mode_ == ClipMode::Repeat, params_.mirror_x_);
+	findTextureInterpolationCoordinates(y_0, y_1, y_2, y_3, dy, yf, resy, params_.clip_mode_ == ClipMode::Repeat, params_.mirror_y_);
 
 	const Rgba c_11 = images_.at(mipmap_level)->getColor({{x_1, y_1}});
 	const Rgba c_21 = images_.at(mipmap_level)->getColor({{x_2, y_1}});
@@ -275,8 +362,8 @@ Rgba ImageTexture::bicubicInterpolation(const Point3f &p, int mipmap_level) cons
 
 	int x_0, x_1, x_2, x_3, y_0, y_1, y_2, y_3;
 	float dx, dy;
-	findTextureInterpolationCoordinates(x_0, x_1, x_2, x_3, dx, xf, resx, tex_clip_mode_ == ClipMode::Repeat, mirror_x_);
-	findTextureInterpolationCoordinates(y_0, y_1, y_2, y_3, dy, yf, resy, tex_clip_mode_ == ClipMode::Repeat, mirror_y_);
+	findTextureInterpolationCoordinates(x_0, x_1, x_2, x_3, dx, xf, resx, params_.clip_mode_ == ClipMode::Repeat, params_.mirror_x_);
+	findTextureInterpolationCoordinates(y_0, y_1, y_2, y_3, dy, yf, resy, params_.clip_mode_ == ClipMode::Repeat, params_.mirror_y_);
 
 	const Rgba c_00 = images_.at(mipmap_level)->getColor({{x_0, y_0}});
 	const Rgba c_01 = images_.at(mipmap_level)->getColor({{x_0, y_1}});
@@ -314,7 +401,7 @@ Rgba ImageTexture::mipMapsTrilinearInterpolation(const Point3f &p, const MipMapP
 
 	if(mipmap_params->force_image_level_ > 0.f) mipmap_level = mipmap_params->force_image_level_ * static_cast<float>(images_.size() - 1);
 
-	mipmap_level += trilinear_level_bias_;
+	mipmap_level += params_.trilinear_level_bias_;
 
 	mipmap_level = std::min(std::max(0.f, mipmap_level), static_cast<float>(images_.size() - 1));
 
@@ -436,7 +523,7 @@ Rgba ImageTexture::ewaEllipticCalculation(const Point3f &p, float ds_0, float dt
 	return sum_col;
 }
 
-EwaWeightLut::EwaWeightLut() noexcept
+ImageTexture::EwaWeightLut::EwaWeightLut() noexcept
 {
 	for(int i = 0; i < num_items_; ++i)
 	{
@@ -449,133 +536,6 @@ EwaWeightLut::EwaWeightLut() noexcept
 void ImageTexture::generateMipMaps()
 {
 	image_manipulation::generateMipMaps(logger_, images_);
-}
-
-ImageTexture::ClipMode ImageTexture::string2Cliptype(const std::string &clipname)
-{
-	// default "repeat"
-	ImageTexture::ClipMode	tex_clipmode = ImageTexture::ClipMode::Repeat;
-	if(clipname.empty()) return tex_clipmode;
-	if(clipname == "extend")		tex_clipmode = ImageTexture::ClipMode::Extend;
-	else if(clipname == "clip")		tex_clipmode = ImageTexture::ClipMode::Clip;
-	else if(clipname == "clipcube")	tex_clipmode = ImageTexture::ClipMode::ClipCube;
-	else if(clipname == "checker")	tex_clipmode = ImageTexture::ClipMode::Checker;
-	return tex_clipmode;
-}
-
-Texture * ImageTexture::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params)
-{
-	std::string image_name;
-	std::string interpolation_type_str;
-	double gamma = 1.0;
-	double expadj = 0.0;
-	bool normalmap = false;
-	params.getParam("interpolate", interpolation_type_str);
-	params.getParam("gamma", gamma);
-	params.getParam("exposure_adjust", expadj);
-	params.getParam("normalmap", normalmap);
-	params.getParam("image_name", image_name);
-
-	const InterpolationType interpolation_type = getInterpolationTypeFromName(interpolation_type_str);
-
-	if(image_name.empty())
-	{
-		logger.logError("ImageTexture: Required argument image_name not found for image texture");
-		return nullptr;
-	}
-
-	std::shared_ptr<Image> image = scene.getImage(image_name);
-	if(!image)
-	{
-		logger.logError("ImageTexture: Couldn't load image file, dropping texture.");
-		return nullptr;
-	}
-
-	auto tex = new ImageTexture(logger, image);
-	if(!tex) //FIXME: this will never be true, replace by exception handling??
-	{
-		logger.logError("ImageTexture: Couldn't create image texture.");
-		return nullptr;
-	}
-
-	tex->original_image_file_color_space_ = image->getColorSpace();
-	tex->original_image_file_gamma_ = image->getGamma();
-
-	tex->interpolation_type_ = interpolation_type;
-	if(interpolation_type == InterpolationType::Trilinear || interpolation_type == InterpolationType::Ewa)
-	{
-		tex->generateMipMaps();
-
-		/*//FIXME DAVID: TEST SAVING MIPMAPS. CAREFUL: IT COULD CAUSE CRASHES!
-		for(int i=0; i<=format->getHighestImgIndex(); ++i)
-		{
-			std::stringstream ss;
-			ss << "//tmp//saved_mipmap_" << ihname << "_global" << i;
-			format->saveToFile(ss.str(), i);
-		}*/
-	}
-
-	// setup image
-	bool rot_90 = false;
-	bool even_tiles = false, odd_tiles = true;
-	bool use_alpha = true, calc_alpha = false;
-	int xrep = 1, yrep = 1;
-	double minx = 0.0, miny = 0.0, maxx = 1.0, maxy = 1.0;
-	double cdist = 0.0;
-	std::string clipmode;
-	bool mirror_x = false;
-	bool mirror_y = false;
-	float intensity = 1.f, contrast = 1.f, saturation = 1.f, hue = 0.f, factor_red = 1.f, factor_green = 1.f, factor_blue = 1.f;
-	bool clamp = false;
-	float trilinear_level_bias = 0.f;
-	float ewa_max_anisotropy = 8.f;
-
-	params.getParam("xrepeat", xrep);
-	params.getParam("yrepeat", yrep);
-	params.getParam("cropmin_x", minx);
-	params.getParam("cropmin_y", miny);
-	params.getParam("cropmax_x", maxx);
-	params.getParam("cropmax_y", maxy);
-	params.getParam("rot90", rot_90);
-	params.getParam("clipping", clipmode);
-	params.getParam("even_tiles", even_tiles);
-	params.getParam("odd_tiles", odd_tiles);
-	params.getParam("checker_dist", cdist);
-	params.getParam("use_alpha", use_alpha);
-	params.getParam("calc_alpha", calc_alpha);
-	params.getParam("mirror_x", mirror_x);
-	params.getParam("mirror_y", mirror_y);
-	params.getParam("trilinear_level_bias", trilinear_level_bias);
-	params.getParam("ewa_max_anisotropy", ewa_max_anisotropy);
-
-	params.getParam("adj_mult_factor_red", factor_red);
-	params.getParam("adj_mult_factor_green", factor_green);
-	params.getParam("adj_mult_factor_blue", factor_blue);
-	params.getParam("adj_intensity", intensity);
-	params.getParam("adj_contrast", contrast);
-	params.getParam("adj_saturation", saturation);
-	params.getParam("adj_hue", hue);
-	params.getParam("adj_clamp", clamp);
-
-	tex->xrepeat_ = xrep;
-	tex->yrepeat_ = yrep;
-	tex->rot_90_ = rot_90;
-	tex->setCrop(minx, miny, maxx, maxy);
-	tex->calc_alpha_ = calc_alpha;
-	tex->normalmap_ = normalmap;
-	tex->tex_clip_mode_ = string2Cliptype(clipmode);
-	tex->checker_even_ = even_tiles;
-	tex->checker_odd_ = odd_tiles;
-	tex->checker_dist_ = cdist;
-	tex->mirror_x_ = mirror_x;
-	tex->mirror_y_ = mirror_y;
-
-	tex->setAdjustments(intensity, contrast, saturation, hue, clamp, factor_red, factor_green, factor_blue);
-
-	tex->trilinear_level_bias_ = trilinear_level_bias;
-	tex->ewa_max_anisotropy_ = ewa_max_anisotropy;
-
-	return tex;
 }
 
 } //namespace yafaray

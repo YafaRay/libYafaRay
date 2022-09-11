@@ -24,10 +24,9 @@
 
 #include <memory>
 #include "format/format_tga_util.h"
-#include "common/logger.h"
-#include "common/param.h"
+#include "param/param.h"
 #include "common/file.h"
-#include "image/image_buffers.h"
+#include "image/image_pixel_types.h"
 #include "image/image_layers.h"
 #include "scene/scene.h"
 
@@ -301,12 +300,18 @@ Image * TgaFormat::loadFromFile(const std::string &name, const Image::Optimizati
 	const bool has_alpha = (alpha_bit_depth != 0 || header.cm_entry_bit_depth_ == 32);
 	Image::Type type = Image::getTypeFromSettings(has_alpha, grayscale_);
 	if(!has_alpha && !grayscale_ && (header.cm_entry_bit_depth_ == 16 || header.cm_entry_bit_depth_ == 32 || header.bit_depth_ == 16 || header.bit_depth_ == 32)) type = Image::Type::ColorAlpha;
-	auto image = Image::factory(logger_, {{header.width_, header.height_}}, type, optimization);
+	Image::Params image_params;
+	image_params.width_ = header.width_;
+	image_params.height_ = header.height_;
+	image_params.type_ = type;
+	image_params.image_optimization_ = optimization;
+	image_params.filename_ = name;
+	auto image = Image::factory(image_params);
 	color_map_ = nullptr;
 	// Read the colormap if needed
 	if(has_color_map)
 	{
-		color_map_ = std::make_unique<ImageBuffer2D<RgbAlpha>>(Size2i{{header.cm_number_of_entries_, 1}});
+		color_map_ = std::make_unique<Buffer2D<RgbAlpha>>(Size2i{{header.cm_number_of_entries_, 1}});
 		switch(header.cm_entry_bit_depth_)
 		{
 			case 15:

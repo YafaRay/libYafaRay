@@ -20,7 +20,7 @@
 
 #include "light/light_sun.h"
 #include "sampler/sample.h"
-#include "common/param.h"
+#include "param/param.h"
 #include "scene/scene.h"
 #include "geometry/ray.h"
 #include "geometry/bound.h"
@@ -28,18 +28,50 @@
 
 namespace yafaray {
 
-SunLight::SunLight(Logger &logger, Vec3f dir, const Rgb &col, float inte, float angle, int n_samples, bool b_light_enabled, bool b_cast_shadows):
-		Light(logger), direction_(dir), samples_(n_samples)
+SunLight::Params::Params(ParamError &param_error, const ParamMap &param_map)
 {
-	light_enabled_ = b_light_enabled;
-	cast_shadows_ = b_cast_shadows;
-	color_ = col * inte;
-	direction_.normalize();
-	duv_ = Vec3f::createCoordsSystem(dir);
+	PARAM_LOAD(direction_);
+	PARAM_LOAD(color_);
+	PARAM_LOAD(power_);
+	PARAM_LOAD(angle_);
+	PARAM_LOAD(samples_);
+}
+
+ParamMap SunLight::Params::getAsParamMap(bool only_non_default) const
+{
+	PARAM_SAVE_START;
+	PARAM_SAVE(direction_);
+	PARAM_SAVE(color_);
+	PARAM_SAVE(power_);
+	PARAM_SAVE(angle_);
+	PARAM_SAVE(samples_);
+	PARAM_SAVE_END;
+}
+
+ParamMap SunLight::getAsParamMap(bool only_non_default) const
+{
+	ParamMap result{Light::getAsParamMap(only_non_default)};
+	result.append(params_.getAsParamMap(only_non_default));
+	return result;
+}
+
+std::pair<Light *, ParamError> SunLight::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map)
+{
+	auto param_error{Params::meta_.check(param_map, {"type"}, {})};
+	auto result {new SunLight(logger, param_error, name, param_map)};
+	if(param_error.flags_ != ParamError::Flags::Ok) logger.logWarning(param_error.print<SunLight>(name, {"type"}));
+	return {result, param_error};
+}
+
+SunLight::SunLight(Logger &logger, ParamError &param_error, const std::string &name, const ParamMap &param_map):
+		Light{logger, param_error, name, param_map, Light::Flags::None}, params_{param_error, param_map}
+{
+	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + params_.getAsParamMap(true).print());
+	float angle{params_.angle_};
 	if(angle > 80.f) angle = 80.f;
 	cos_angle_ = math::cos(math::degToRad(angle));
 	invpdf_ = math::mult_pi_by_2<> * (1.f - cos_angle_);
-	pdf_ = 1.0 / invpdf_;
+	pdf_ = 1.f / invpdf_;
 	pdf_ = std::min(pdf_, math::sqrt(std::numeric_limits<float>::max())); //Using the square root of the maximum possible float value when the invpdf_ is zero, because there are calculations in the integrators squaring the pdf value and it could be overflowing (NaN) in that case.
 	col_pdf_ = color_ * pdf_;
 }
@@ -81,39 +113,6 @@ std::tuple<Ray, float, Rgb> SunLight::emitPhoton(float s_1, float s_2, float s_3
 	Point3f from{world_center_ + world_radius_ * (uv.u_ * duv_2.u_ + uv.v_ * duv_2.v_ + ldir)};
 	Ray ray{std::move(from), -ldir, time};
 	return {std::move(ray), invpdf_, col_pdf_ * e_pdf_};
-}
-
-Light * SunLight::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params)
-{
-	Point3f dir{{0.f, 0.f, 1.f}};
-	Rgb color(1.0);
-	float power = 1.0;
-	float angle = 0.27; //angular (half-)size of the real sun;
-	int samples = 4;
-	bool light_enabled = true;
-	bool cast_shadows = true;
-	bool shoot_d = true;
-	bool shoot_c = true;
-	bool p_only = false;
-
-	params.getParam("direction", dir);
-	params.getParam("color", color);
-	params.getParam("power", power);
-	params.getParam("angle", angle);
-	params.getParam("samples", samples);
-	params.getParam("light_enabled", light_enabled);
-	params.getParam("cast_shadows", cast_shadows);
-	params.getParam("with_caustic", shoot_c);
-	params.getParam("with_diffuse", shoot_d);
-	params.getParam("photon_only", p_only);
-
-	auto light = new SunLight(logger, dir, color, power, angle, samples, light_enabled, cast_shadows);
-
-	light->shoot_caustic_ = shoot_c;
-	light->shoot_diffuse_ = shoot_d;
-	light->photon_only_ = p_only;
-
-	return light;
 }
 
 std::tuple<bool, Ray, Rgb> SunLight::illuminate(const Point3f &surface_p, float time) const

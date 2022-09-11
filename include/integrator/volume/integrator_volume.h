@@ -24,12 +24,14 @@
 #define LIBYAFARAY_INTEGRATOR_VOLUME_H
 
 #include "integrator/integrator.h"
+#include "common/enum.h"
+#include "common/enum_map.h"
+#include "param/class_meta.h"
 #include <map>
 #include <memory>
 
 namespace yafaray {
 
-class RenderControl;
 class Ray;
 class RandomGenerator;
 class Rgb;
@@ -39,15 +41,33 @@ class VolumeRegion;
 class VolumeIntegrator: public Integrator
 {
 	public:
-		static VolumeIntegrator *factory(Logger &logger, RenderControl &render_control, const Scene &scene, const std::string &name, const ParamMap &params);
+		inline static std::string getClassName() { return "VolumeIntegrator"; }
+		static std::pair<VolumeIntegrator *, ParamError> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map);
+		static std::string printMeta(const std::vector<std::string> &excluded_params) { return Params::meta_.print(excluded_params); }
+		bool preprocess(FastRandom &fast_random, ImageFilm *image_film, const RenderView *render_view, const Scene &scene) override;
+		Rgb integrate(RandomGenerator &random_generator, const Ray &ray) const;
 		virtual Rgb transmittance(RandomGenerator &random_generator, const Ray &ray) const = 0;
 		virtual Rgb integrate(RandomGenerator &random_generator, const Ray &ray, int additional_depth) const = 0;
-		Rgb integrate(RandomGenerator &random_generator, const Ray &ray) const;
-		bool preprocess(FastRandom &fast_random, ImageFilm *image_film, const RenderView *render_view, const Scene &scene) override;
 
 	protected:
-		explicit VolumeIntegrator(Logger &logger) : Integrator(logger) { }
-		Type getType() const override { return Volume; }
+		struct Type : public Enum<Type>
+		{
+			using Enum::Enum;
+			enum : decltype(type()) { None, Emission, SingleScatter, Sky };
+			inline static const EnumMap<decltype(type())> map_{{
+					{"none", None, ""},
+					{"EmissionIntegrator", Emission, ""},
+					{"SingleScatterIntegrator", SingleScatter, ""},
+					{"SkyIntegrator", Sky, ""},
+				}};
+		};
+		[[nodiscard]] virtual Type type() const = 0;
+		const struct Params
+		{
+			PARAM_INIT;
+		} params_;
+		[[nodiscard]] virtual ParamMap getAsParamMap(bool only_non_default) const;
+		explicit VolumeIntegrator(Logger &logger, ParamError &param_error, const ParamMap &param_map) : Integrator{logger}, params_{param_error, param_map} { }
 		const std::map<std::string, std::unique_ptr<VolumeRegion>> *volume_regions_ = nullptr;
 };
 

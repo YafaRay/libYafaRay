@@ -31,19 +31,42 @@ class Light;
 class DebugIntegrator final : public TiledIntegrator
 {
 	public:
-		static SurfaceIntegrator *factory(Logger &logger, RenderControl &render_control, const ParamMap &params, const Scene &scene);
+		inline static std::string getClassName() { return "DebugIntegrator"; }
+		static std::pair<SurfaceIntegrator *, ParamError> factory(Logger &logger, RenderControl &render_control, const ParamMap &params, const Scene &scene);
+		static std::string printMeta(const std::vector<std::string> &excluded_params) { return Params::meta_.print(excluded_params); }
 
 	private:
-		enum SurfaceProperties {N = 1, DPdU = 2, DPdV = 3, Nu = 4, Nv = 5, DSdU = 6, DSdV = 7};
-		DebugIntegrator(RenderControl &render_control, Logger &logger, SurfaceProperties dt);
-		std::string getShortName() const override { return "DBG"; }
-		std::string getName() const override { return "DebugIntegrator"; }
+		struct DebugType : public Enum<DebugType>
+		{
+			using Enum::Enum;
+			enum : decltype(type()) {N = 1, DPdU = 2, DPdV = 3, Nu = 4, Nv = 5, DSdU = 6, DSdV = 7};
+			inline static const EnumMap<decltype(type())> map_{{
+					{"N", N, ""},
+					{"dPdU", DPdU, ""},
+					{"dPdV", DPdV, ""},
+					{"NU", Nu, ""},
+					{"NV", Nv, ""},
+					{"dSdU", DSdU, ""},
+					{"dSdV", DSdV, ""},
+				}};
+		};
+		[[nodiscard]] Type type() const override { return Type::Debug; }
+		const struct Params
+		{
+			PARAM_INIT_PARENT(TiledIntegrator);
+			PARAM_ENUM_DECL(DebugType, debug_type_, DebugType::N, "debugType", "");
+			PARAM_DECL(bool , show_pn_, false, "showPN", "");
+		} params_;
+		[[nodiscard]] ParamMap getAsParamMap(bool only_non_default) const override;
+
+	private:
+		DebugIntegrator(RenderControl &render_control, Logger &logger, ParamError &param_error, const ParamMap &param_map);
+		[[nodiscard]] std::string getShortName() const override { return "DBG"; }
+		[[nodiscard]] std::string getName() const override { return "DebugIntegrator"; }
 		bool preprocess(FastRandom &fast_random, ImageFilm *image_film, const RenderView *render_view, const Scene &scene) override;
 		std::pair<Rgb, float> integrate(Ray &ray, FastRandom &fast_random, RandomGenerator &random_generator, std::vector<int> &correlative_sample_number, ColorLayers *color_layers, int thread_id, int ray_level, bool chromatic_enabled, float wavelength, int additional_depth, const RayDivision &ray_division, const PixelSamplingData &pixel_sampling_data, unsigned int object_index_highest, unsigned int material_index_highest) const override;
 
 		std::vector<const Light *> lights_;
-		SurfaceProperties debug_type_;
-		bool show_pn_;
 };
 
 } //namespace yafaray

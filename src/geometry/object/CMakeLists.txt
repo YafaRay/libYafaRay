@@ -18,7 +18,6 @@
 
 target_sources(libyafaray4
 	PRIVATE
-		object.cc
 		object_base.cc
 		object_curve.cc
 		object_mesh.cc

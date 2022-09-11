@@ -19,11 +19,12 @@
  *      Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-#ifndef YAFARAY_MATERIAL_COATED_GLOSSY_H
-#define YAFARAY_MATERIAL_COATED_GLOSSY_H
+#ifndef LIBYAFARAY_MATERIAL_COATED_GLOSSY_H
+#define LIBYAFARAY_MATERIAL_COATED_GLOSSY_H
 
-#include <common/logger.h>
+#include "common/logger.h"
 #include "material/material_node.h"
+#include "material/material_data.h"
 
 namespace yafaray {
 
@@ -43,10 +44,52 @@ class CoatedGlossyMaterialData final : public MaterialData
 class CoatedGlossyMaterial final : public NodeMaterial
 {
 	public:
-		static Material *factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params, const std::list<ParamMap> &nodes_params);
+		inline static std::string getClassName() { return "CoatedGlossyMaterial"; }
+		static std::pair<Material *, ParamError> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map, const std::list<ParamMap> &nodes_param_maps);
+		static std::string printMeta(const std::vector<std::string> &excluded_params) { return Params::meta_.print(excluded_params); }
 
 	private:
-		CoatedGlossyMaterial(Logger &logger, const Rgb &col, const Rgb &dcol, const Rgb &mir_col, float mirror_strength, float reflect, float diff, float ior, float expo, bool as_diff, VisibilityFlags e_visibility = VisibilityFlags::Visible | VisibilityFlags::CastsShadows);
+		[[nodiscard]] Type type() const override { return Type::CoatedGlossy; }
+		struct ShaderNodeType : public Enum<ShaderNodeType>
+		{
+			enum : decltype(type()) { Bump, Wireframe, Diffuse, Glossy, GlossyReflect, Exponent, Ior, Mirror, SigmaOrenNayar, DiffuseReflect, MirrorColor, Size }; //Always leave the Size entry at the end!!
+			inline static const EnumMap<decltype(type())> map_{{
+				{"bump_shader", Bump, ""},
+				{"wireframe_shader", Wireframe, "Shader node for wireframe shading (float)"},
+				{"diffuse_shader", Diffuse, ""},
+				{"glossy_shader", Glossy, ""},
+				{"glossy_reflect_shader", GlossyReflect, ""},
+				{"exponent_shader", Exponent, ""},
+				{"IOR_shader", Ior, ""},
+				{"mirror_shader", Mirror, "Shader node for specular reflection strength (float)"},
+				{"sigma_oren_shader", SigmaOrenNayar, "Shader node for sigma in Oren Nayar material (float)"},
+				{"diffuse_refl_shader", DiffuseReflect, "Shader node for diffuse reflection strength (float)"},
+				{"mirror_color_shader", MirrorColor, "Shader node for specular reflection color"},
+			}};
+			bool isBump() const { return value() == Bump; }
+		};
+		const struct Params
+		{
+			PARAM_INIT_PARENT(Material);
+			PARAM_DECL(Rgb, glossy_color_, Rgb{1.f}, "color", "");
+			PARAM_DECL(Rgb, diffuse_color_, Rgb{1.f}, "diffuse_color", "");
+			PARAM_DECL(float, diffuse_reflect_, 0.f, "diffuse_reflect", "");
+			PARAM_DECL(float, glossy_reflect_, 1.f, "glossy_reflect", "");
+			PARAM_DECL(bool , as_diffuse_, true, "as_diffuse", "");
+			PARAM_DECL(float, exponent_, 50.f, "exponent", ""); // This comment was in the old factory code, not sure what it means: "wild guess, do sth better"
+			PARAM_DECL(bool , anisotropic_, false, "anisotropic", "");
+			PARAM_DECL(float, ior_, 1.4f, "IOR", "Index of refraction, with a minimum of 1.0000001");
+			PARAM_DECL(Rgb, mirror_color_, Rgb{1.f}, "mirror_color", "");
+			PARAM_DECL(float, specular_reflect_, 0.f, "specular_reflect", "Mirror strength. BSDF Specular reflection component strength when not textured");
+			PARAM_DECL(float, exp_u_, 50.f, "exp_u", "");
+			PARAM_DECL(float, exp_v_, 50.f, "exp_v", "");
+			PARAM_ENUM_DECL(DiffuseBrdf, diffuse_brdf_, DiffuseBrdf::Lambertian, "diffuse_brdf", "");
+			PARAM_DECL(float, sigma_, 0.1f, "sigma", "Oren-Nayar sigma factor, used if diffuse BRDF is set to Oren-Nayar");
+			PARAM_SHADERS_DECL;
+		} params_;
+		[[nodiscard]] ParamMap getAsParamMap(bool only_non_default) const override;
+		enum BsdfComponent : char { ComponentSpecular = 0, ComponentGlossy = 1, ComponentDiffuse = 2 };
+		CoatedGlossyMaterial(Logger &logger, ParamError &param_error, const ParamMap &param_map);
 		const MaterialData * initBsdf(SurfacePoint &sp, const Camera *camera) const override;
 		Rgb eval(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3f &wo, const Vec3f &wi, BsdfFlags bsdfs, bool force_eval) const override;
 		Rgb sample(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3f &wo, Vec3f &wi, Sample &s, float &w, bool chromatic, float wavelength, const Camera *camera) const override;
@@ -59,30 +102,14 @@ class CoatedGlossyMaterial final : public NodeMaterial
 		void initOrenNayar(double sigma);
 		float orenNayar(const Vec3f &wi, const Vec3f &wo, const Vec3f &n, bool use_texture_sigma, double texture_sigma) const;
 
-		const ShaderNode *diffuse_shader_ = nullptr;
-		const ShaderNode *glossy_shader_ = nullptr;
-		const ShaderNode *glossy_reflection_shader_ = nullptr;
-		const ShaderNode *bump_shader_ = nullptr;
-		const ShaderNode *ior_shader_ = nullptr;
-		const ShaderNode *exponent_shader_ = nullptr;
-		const ShaderNode *wireframe_shader_ = nullptr;     //!< Shader node for wireframe shading (float)
-		const ShaderNode *mirror_shader_ = nullptr;        //!< Shader node for specular reflection strength (float)
-		const ShaderNode *mirror_color_shader_ = nullptr;   //!< Shader node for specular reflection color
-		const ShaderNode *sigma_oren_shader_ = nullptr;     //!< Shader node for sigma in Oren Nayar material
-		const ShaderNode *diffuse_reflection_shader_ = nullptr;   //!< Shader node for diffuse reflection strength (float)
-		Rgb gloss_color_, diff_color_, mirror_color_; //!< color of glossy base
-		float mirror_strength_;              //!< BSDF Specular reflection component strength when not textured
-		float ior_;
-		float exponent_, exp_u_, exp_v_;
-		float reflectivity_;
-		float diffuse_;
-		bool as_diffuse_, with_diffuse_ = false, anisotropic_ = false;
-		BsdfFlags c_flags_[3];
-		int n_bsdf_;
-		bool oren_nayar_;
-		float oren_a_, oren_b_;
+		std::array<const ShaderNode *, static_cast<size_t>(ShaderNodeType::Size)> shaders_{initShaderArray<ShaderNodeType::Size>()};
+		const float ior_{std::max(1.0000001f, params_.ior_)};
+		std::array<BsdfFlags, 3> c_flags_{BsdfFlags::None, BsdfFlags::None, BsdfFlags::None};
+		int n_bsdf_ = 0;
+		float oren_a_ = 0.f, oren_b_ = 0.f;
+		bool with_diffuse_ = false;
 };
 
 } //namespace yafaray
 
-#endif // YAFARAY_MATERIAL_COATED_GLOSSY_H
+#endif // LIBYAFARAY_MATERIAL_COATED_GLOSSY_H

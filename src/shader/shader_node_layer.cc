@@ -17,48 +17,113 @@
  */
 
 #include "shader/shader_node_layer.h"
-#include "common/param.h"
+#include "shader/node/node_finder.h"
+#include "math/interpolation.h"
+#include "param/param.h"
 #include "common/logger.h"
 
 namespace yafaray {
 
-LayerNode::LayerNode(Flags flags, float col_fac, float var_fac, float def_val, const Rgba &def_col, BlendMode blend_mode):
-		flags_(flags), colfac_(col_fac), valfac_(var_fac), default_val_(def_val),
-		default_col_(def_col), blend_mode_(blend_mode)
-{}
+LayerNode::Params::Params(ParamError &param_error, const ParamMap &param_map)
+{
+	PARAM_LOAD(input_);
+	PARAM_LOAD(upper_layer_);
+	PARAM_LOAD(upper_color_);
+	PARAM_LOAD(upper_value_);
+	PARAM_LOAD(def_col_);
+	PARAM_LOAD(colfac_);
+	PARAM_LOAD(def_val_);
+	PARAM_LOAD(valfac_);
+	PARAM_LOAD(do_color_);
+	PARAM_LOAD(do_scalar_);
+	PARAM_LOAD(color_input_);
+	PARAM_LOAD(use_alpha_);
+	PARAM_LOAD(no_rgb_);
+	PARAM_LOAD(stencil_);
+	PARAM_LOAD(negative_);
+	PARAM_ENUM_LOAD(blend_mode_);
+}
+
+ParamMap LayerNode::Params::getAsParamMap(bool only_non_default) const
+{
+	PARAM_SAVE_START;
+	PARAM_SAVE(input_);
+	PARAM_SAVE(upper_layer_);
+	PARAM_SAVE(upper_color_);
+	PARAM_SAVE(upper_value_);
+	PARAM_SAVE(def_col_);
+	PARAM_SAVE(colfac_);
+	PARAM_SAVE(def_val_);
+	PARAM_SAVE(valfac_);
+	PARAM_SAVE(do_color_);
+	PARAM_SAVE(do_scalar_);
+	PARAM_SAVE(color_input_);
+	PARAM_SAVE(use_alpha_);
+	PARAM_SAVE(no_rgb_);
+	PARAM_SAVE(stencil_);
+	PARAM_SAVE(negative_);
+	PARAM_ENUM_SAVE(blend_mode_);
+	PARAM_SAVE_END;
+}
+
+ParamMap LayerNode::getAsParamMap(bool only_non_default) const
+{
+	ParamMap result{ShaderNode::getAsParamMap(only_non_default)};
+	result.append(params_.getAsParamMap(only_non_default));
+	return result;
+}
+
+std::pair<ShaderNode *, ParamError> LayerNode::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map)
+{
+	auto param_error{Params::meta_.check(param_map, {"type"}, {})};
+	auto result {new LayerNode(logger, param_error, param_map)};
+	if(param_error.flags_ != ParamError::Flags::Ok) logger.logWarning(param_error.print<LayerNode>(name, {"type"}));
+	return {result, param_error};
+}
+
+LayerNode::LayerNode(Logger &logger, ParamError &param_error, const ParamMap &param_map) :
+		ShaderNode{logger, param_error, param_map}, params_{param_error, param_map}
+{
+	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + params_.getAsParamMap(true).print());
+	//logger.logParams(getAsParamMap(false).print()); //TEST CODE ONLY, REMOVE!!
+	if(params_.no_rgb_) flags_ |= Flags{Flags::RgbToInt};
+	if(params_.stencil_) flags_ |= Flags{Flags::Stencil};
+	if(params_.negative_) flags_ |= Flags{Flags::Negative};
+	if(params_.use_alpha_) flags_ |= Flags{Flags::AlphaMix};
+}
 
 void LayerNode::eval(NodeTreeData &node_tree_data, const SurfacePoint &sp, const Camera *camera) const
 {
 	Rgba texcolor;
 	float tin = 0.f, ta = 1.f;
 	// == get result of upper layer (or base values) ==
-	Rgba rcol = (upper_layer_) ? upper_layer_->getColor(node_tree_data) : upper_col_;
-	float rval = (upper_layer_) ? upper_layer_->getScalar(node_tree_data) : upper_val_;
+	Rgba rcol = (upper_layer_) ? upper_layer_->getColor(node_tree_data) : params_.upper_color_;
+	float rval = (upper_layer_) ? upper_layer_->getScalar(node_tree_data) : params_.upper_value_;
 	float stencil_tin = rcol.a_;
 
 	// == get texture input color ==
-	bool tex_rgb = color_input_;
+	bool tex_rgb = params_.color_input_;
 
-	if(color_input_)
+	if(params_.color_input_)
 	{
 		texcolor = input_->getColor(node_tree_data);
 		ta = texcolor.a_;
 	}
 	else tin = input_->getScalar(node_tree_data);
 
-	if(flags::have(flags_, Flags::RgbToInt))
+	if(flags_.has(Flags::RgbToInt))
 	{
 		tin = texcolor.col2Bri();
 		tex_rgb = false;
 	}
 
-	if(flags::have(flags_, Flags::Negative))
+	if(flags_.has(Flags::Negative))
 	{
 		if(tex_rgb) texcolor = Rgba(1.f) - texcolor;
 		tin = 1.f - tin;
 	}
 
-	if(flags::have(flags_, Flags::Stencil))
+	if(flags_.has(Flags::Stencil))
 	{
 		if(tex_rgb) // only scalar input affects stencil...?
 		{
@@ -75,9 +140,9 @@ void LayerNode::eval(NodeTreeData &node_tree_data, const SurfacePoint &sp, const
 	}
 
 	// color type modulation
-	if(do_color_)
+	if(params_.do_color_)
 	{
-		if(!tex_rgb) texcolor = default_col_;
+		if(!tex_rgb) texcolor = params_.def_col_;
 		else tin = ta;
 
 		float tin_truncated_range;
@@ -85,19 +150,19 @@ void LayerNode::eval(NodeTreeData &node_tree_data, const SurfacePoint &sp, const
 		else if(tin < 0.f) tin_truncated_range = 0.f;
 		else tin_truncated_range = tin;
 
-		rcol = Rgba{textureRgbBlend(texcolor, rcol, tin_truncated_range, stencil_tin * colfac_, blend_mode_)};
+		rcol = Rgba{textureRgbBlend(texcolor, rcol, tin_truncated_range, stencil_tin * params_.colfac_, params_.blend_mode_)};
 		rcol.clampRgb0();
 	}
 
 	// intensity type modulation
-	if(do_scalar_)
+	if(params_.do_scalar_)
 	{
 		if(tex_rgb)
 		{
-			if(use_alpha_)
+			if(params_.use_alpha_)
 			{
 				tin = ta;
-				if(flags::have(flags_, Flags::Negative)) tin = 1.f - tin;
+				if(flags_.has(Flags::Negative)) tin = 1.f - tin;
 			}
 			else
 			{
@@ -105,7 +170,7 @@ void LayerNode::eval(NodeTreeData &node_tree_data, const SurfacePoint &sp, const
 			}
 		}
 
-		rval = textureValueBlend(default_val_, rval, tin, stencil_tin * valfac_, blend_mode_);
+		rval = textureValueBlend(params_.def_val_, rval, tin, stencil_tin * params_.valfac_, params_.blend_mode_);
 		if(rval < 0.f) rval = 0.f;
 	}
 	rcol.a_ = stencil_tin;
@@ -130,7 +195,7 @@ void LayerNode::evalDerivative(NodeTreeData &node_tree_data, const SurfacePoint 
 	float tdu = texcolor.r_;
 	float tdv = texcolor.g_;
 
-	if(flags::have(flags_, Flags::Negative))
+	if(flags_.has(Flags::Negative))
 	{
 		tdu = -tdu;
 		tdv = -tdv;
@@ -145,13 +210,12 @@ void LayerNode::evalDerivative(NodeTreeData &node_tree_data, const SurfacePoint 
 
 bool LayerNode::configInputs(Logger &logger, const ParamMap &params, const NodeFinder &find)
 {
-	std::string name;
-	if(params.getParam("input", name))
+	if(!params_.input_.empty())
 	{
-		input_ = find(name);
+		input_ = find(params_.input_);
 		if(!input_)
 		{
-			logger.logWarning("LayerNode: Couldn't get input ", name);
+			logger.logWarning("LayerNode: Couldn't get input ", params_.input_);
 			return false;
 		}
 	}
@@ -161,24 +225,13 @@ bool LayerNode::configInputs(Logger &logger, const ParamMap &params, const NodeF
 		return false;
 	}
 
-	if(params.getParam("upper_layer", name))
+	if(!params_.upper_layer_.empty())
 	{
-		upper_layer_ = find(name);
+		upper_layer_ = find(params_.upper_layer_);
 		if(!upper_layer_)
 		{
-			if(logger.isVerbose()) logger.logVerbose("LayerNode: Couldn't get upper_layer ", name);
+			if(logger.isVerbose()) logger.logVerbose("LayerNode: Couldn't get upper_layer ", params_.upper_layer_);
 			return false;
-		}
-	}
-	else
-	{
-		if(!params.getParam("upper_color", upper_col_))
-		{
-			upper_col_ = Rgba{0.f};
-		}
-		if(!params.getParam("upper_value", upper_val_))
-		{
-			upper_val_ = 0.f;
 		}
 	}
 	return true;
@@ -194,7 +247,7 @@ std::vector<const ShaderNode *> LayerNode::getDependencies() const
 
 Rgb LayerNode::textureRgbBlend(const Rgb &tex, const Rgb &out, float fact, float facg, BlendMode blend_mode)
 {
-	switch(blend_mode)
+	switch(blend_mode.value())
 	{
 		case BlendMode::Mult:
 			fact *= facg;
@@ -245,12 +298,11 @@ Rgb LayerNode::textureRgbBlend(const Rgb &tex, const Rgb &out, float fact, float
 			return col;
 		}
 
-			//case BlendMode::Mix:
+		case BlendMode::Mix:
 		default:
 			fact *= facg;
 			return fact * tex + (1.f - fact) * out;
 	}
-
 }
 
 float LayerNode::textureValueBlend(float tex, float out, float fact, float facg, BlendMode blend_mode, bool flip)
@@ -259,7 +311,7 @@ float LayerNode::textureValueBlend(float tex, float out, float fact, float facg,
 	float facm = 1.f - fact;
 	if(flip) std::swap(fact, facm);
 
-	switch(blend_mode)
+	switch(blend_mode.value())
 	{
 		case BlendMode::Mult:
 			facm = 1.f - facg;
@@ -299,53 +351,6 @@ float LayerNode::textureValueBlend(float tex, float out, float fact, float facg,
 		default:
 			return fact * tex + facm * out;
 	}
-}
-
-ShaderNode * LayerNode::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params)
-{
-	Rgb def_col(1.f);
-	bool do_color = true, do_scalar = false, color_input = true, use_alpha = false;
-	bool stencil = false, no_rgb = false, negative = false;
-	double def_val = 1.0, colfac = 1.0, valfac = 1.0;
-	std::string blend_mode_str;
-
-	params.getParam("def_col", def_col);
-	params.getParam("colfac", colfac);
-	params.getParam("def_val", def_val);
-	params.getParam("valfac", valfac);
-	params.getParam("do_color", do_color);
-	params.getParam("do_scalar", do_scalar);
-	params.getParam("color_input", color_input);
-	params.getParam("use_alpha", use_alpha);
-	params.getParam("noRGB", no_rgb);
-	params.getParam("stencil", stencil);
-	params.getParam("negative", negative);
-	params.getParam("blend_mode", blend_mode_str);
-
-	Flags flags = Flags::None;
-	if(no_rgb) flags |= Flags::RgbToInt;
-	if(stencil) flags |= Flags::Stencil;
-	if(negative) flags |= Flags::Negative;
-	if(use_alpha) flags |= Flags::AlphaMix;
-
-	BlendMode blend_mode = BlendMode::Mix;
-	if(blend_mode_str == "add") blend_mode = BlendMode::Add;
-	else if(blend_mode_str == "multiply") blend_mode = BlendMode::Mult;
-	else if(blend_mode_str == "subtract") blend_mode = BlendMode::Sub;
-	else if(blend_mode_str == "screen") blend_mode = BlendMode::Screen;
-	else if(blend_mode_str == "divide") blend_mode = BlendMode::Div;
-	else if(blend_mode_str == "difference") blend_mode = BlendMode::Diff;
-	else if(blend_mode_str == "darken") blend_mode = BlendMode::Dark;
-	else if(blend_mode_str == "lighten") blend_mode = BlendMode::Light;
-	//else if(blend_mode_str == "overlay") blend_mode = BlendMode::Overlay;
-
-	auto node = new LayerNode(flags, colfac, valfac, def_val, Rgba{def_col}, blend_mode);
-	node->do_color_ = do_color;
-	node->do_scalar_ = do_scalar;
-	node->color_input_ = color_input;
-	node->use_alpha_ = use_alpha;
-
-	return node;
 }
 
 } //namespace yafaray

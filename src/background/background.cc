@@ -24,29 +24,55 @@
 #include "background/background_constant.h"
 #include "background/background_sunsky.h"
 #include "light/light.h"
-#include "common/param.h"
+#include "param/param.h"
 #include "common/logger.h"
 
 namespace yafaray {
 
-const Background * Background::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params)
+Background::Params::Params(ParamError &param_error, const ParamMap &param_map)
 {
-	if(logger.isDebug())
-	{
-		logger.logDebug("**Background");
-		params.logContents(logger);
-	}
-	std::string type;
-	params.getParam("type", type);
-	if(type == "darksky") return DarkSkyBackground::factory(logger, scene, name, params);
-	else if(type == "gradientback") return GradientBackground::factory(logger, scene, name, params);
-	else if(type == "sunsky") return SunSkyBackground::factory(logger, scene, name, params);
-	else if(type == "textureback") return TextureBackground::factory(logger, scene, name, params);
-	else if(type == "constant") return ConstantBackground::factory(logger, scene, name, params);
-	else return nullptr;
+	PARAM_LOAD(power_);
+	PARAM_LOAD(ibl_);
+	PARAM_LOAD(ibl_samples_);
+	PARAM_LOAD(with_caustic_);
+	PARAM_LOAD(with_diffuse_);
+	PARAM_LOAD(cast_shadows_);
 }
 
-Background::Background(Logger &logger) : logger_(logger)
+ParamMap Background::Params::getAsParamMap(bool only_non_default) const
+{
+	PARAM_SAVE_START;
+	PARAM_SAVE(power_);
+	PARAM_SAVE(ibl_);
+	PARAM_SAVE(ibl_samples_);
+	PARAM_SAVE(with_caustic_);
+	PARAM_SAVE(with_diffuse_);
+	PARAM_SAVE(cast_shadows_);
+	PARAM_SAVE_END;
+}
+
+ParamMap Background::getAsParamMap(bool only_non_default) const
+{
+	ParamMap result{params_.getAsParamMap(only_non_default)};
+	result.setParam("type", type().print());
+	return result;
+}
+
+std::pair<Background *, ParamError> Background::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map)
+{
+	const Type type{ClassMeta::preprocessParamMap<Type>(logger, getClassName(), param_map)};
+	switch(type.value())
+	{
+		case Type::DarkSky: return DarkSkyBackground::factory(logger, scene, name, param_map);
+		case Type::Gradient: return GradientBackground::factory(logger, scene, name, param_map);
+		case Type::SunSky: return SunSkyBackground::factory(logger, scene, name, param_map);
+		case Type::Texture: return TextureBackground::factory(logger, scene, name, param_map);
+		case Type::Constant: return ConstantBackground::factory(logger, scene, name, param_map);
+		default: return {nullptr, {ParamError::Flags::ErrorWhileCreating}};
+	}
+}
+
+Background::Background(Logger &logger, ParamError &param_error, const ParamMap &param_map) : params_{param_error, param_map}, logger_(logger)
 {
 	//Empty
 }

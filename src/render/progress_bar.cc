@@ -17,7 +17,6 @@
  */
 
 #include "render/progress_bar.h"
-#include "common/logger.h"
 #include "color/color_console.h"
 #include "math/math.h"
 

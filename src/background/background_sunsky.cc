@@ -19,11 +19,9 @@
  */
 
 #include "background/background_sunsky.h"
-
-#include <cmath>
 #include "color/spectrum_sun.h"
 #include "common/logger.h"
-#include "common/param.h"
+#include "param/param.h"
 #include "scene/scene.h"
 #include "light/light.h"
 #include "image/image_output.h"
@@ -36,17 +34,103 @@ namespace yafaray {
 // based on the actual code by Brian Smits
 // and a thread on gamedev.net on skycolor algorithms
 
-
-SunSkyBackground::SunSkyBackground(Logger &logger, const Point3f &dir, float turb, float a_var, float b_var, float c_var, float d_var, float e_var, float pwr) : Background(logger), power_(pwr)
+SunSkyBackground::Params::Params(ParamError &param_error, const ParamMap &param_map)
 {
-	sun_dir_ = dir;
+	PARAM_LOAD(from_);
+	PARAM_LOAD(turb_);
+	PARAM_LOAD(add_sun_);
+	PARAM_LOAD(sun_power_);
+	PARAM_LOAD(background_light_);
+	PARAM_LOAD(light_samples_);
+	PARAM_LOAD(cast_shadows_sun_);
+	PARAM_LOAD(a_var_);
+	PARAM_LOAD(b_var_);
+	PARAM_LOAD(c_var_);
+	PARAM_LOAD(d_var_);
+	PARAM_LOAD(e_var_);
+}
+
+ParamMap SunSkyBackground::Params::getAsParamMap(bool only_non_default) const
+{
+	PARAM_SAVE_START;
+	PARAM_SAVE(from_);
+	PARAM_SAVE(turb_);
+	PARAM_SAVE(add_sun_);
+	PARAM_SAVE(sun_power_);
+	PARAM_SAVE(background_light_);
+	PARAM_SAVE(light_samples_);
+	PARAM_SAVE(cast_shadows_sun_);
+	PARAM_SAVE(a_var_);
+	PARAM_SAVE(b_var_);
+	PARAM_SAVE(c_var_);
+	PARAM_SAVE(d_var_);
+	PARAM_SAVE(e_var_);
+	PARAM_SAVE_END;
+}
+
+ParamMap SunSkyBackground::getAsParamMap(bool only_non_default) const
+{
+	ParamMap result{Background::getAsParamMap(only_non_default)};
+	result.append(params_.getAsParamMap(only_non_default));
+	return result;
+}
+
+std::pair<Background *, ParamError> SunSkyBackground::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map)
+{
+	auto param_error{Params::meta_.check(param_map, {"type"}, {})};
+	auto background = new SunSkyBackground(logger, param_error, param_map);
+	if(param_error.flags_ != ParamError::Flags::Ok) logger.logWarning(param_error.print<SunSkyBackground>(name, {"type"}));
+	if(background->params_.background_light_)
+	{
+		ParamMap bgp;
+		bgp["type"] = std::string("bglight");
+		bgp["samples"] = background->params_.light_samples_;
+		bgp["with_caustic"] = background->Background::params_.with_caustic_;
+		bgp["with_diffuse"] = background->Background::params_.with_diffuse_;
+		bgp["cast_shadows"] = background->Background::params_.cast_shadows_;
+
+		std::unique_ptr<Light> bglight{Light::factory(logger, scene, "light_sky", bgp).first};
+		bglight->setBackground(background);
+		background->addLight(std::move(bglight));
+	}
+	if(background->params_.add_sun_)
+	{
+		Rgb suncol = computeAttenuatedSunlight(math::acos(std::abs(background->params_.from_[Axis::Z])), background->params_.turb_);//(*new_sunsky)(vector3d_t(dir.x, dir.y, dir.z));
+		const double angle = 0.27;
+		const double cos_angle = math::cos(math::degToRad(angle));
+		const float invpdf = (2.f * math::num_pi<> * (1.f - cos_angle));
+		suncol *= invpdf * background->Background::params_.power_;
+
+		if(logger.isVerbose()) logger.logVerbose("Sunsky: sun color = ", suncol);
+
+		ParamMap bgp;
+		bgp["type"] = std::string("sunlight");
+		bgp["direction"] = background->params_.from_;
+		bgp["color"] = suncol;
+		bgp["angle"] = Parameter(angle);
+		bgp["power"] = Parameter(background->params_.sun_power_);
+		bgp["cast_shadows"] = background->params_.cast_shadows_sun_;
+		bgp["with_caustic"] = background->Background::params_.with_caustic_;
+		bgp["with_diffuse"] = background->Background::params_.with_diffuse_;
+
+		std::unique_ptr<Light> bglight{Light::factory(logger, scene, "light_sun", bgp).first};
+		bglight->setBackground(background);
+		background->addLight(std::move(bglight));
+	}
+	return {background, param_error};
+}
+
+SunSkyBackground::SunSkyBackground(Logger &logger, ParamError &param_error, const ParamMap &param_map) :
+		Background{logger, param_error, param_map}, params_{param_error, param_map}, sun_dir_{params_.from_}
+{
+	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + params_.getAsParamMap(true).print());
 	sun_dir_.normalize();
 	theta_s_ = math::acos(sun_dir_[Axis::Z]);
 	theta_2_ = theta_s_ * theta_s_;
 	theta_3_ = theta_2_ * theta_s_;
 	phi_s_ = std::atan2(sun_dir_[Axis::Y], sun_dir_[Axis::X]);
-	t_ = turb;
-	t_2_ = turb * turb;
+	t_ = params_.turb_;
+	t_2_ = params_.turb_ * params_.turb_;
 	const double chi = (4.0 / 9.0 - t_ / 120.0) * (math::num_pi<double> - 2.0 * theta_s_);
 	zenith_Y_ = (4.0453 * t_ - 4.9710) * std::tan(chi) - 0.2155 * t_ + 2.4192;
 	zenith_Y_ *= 1000;  // conversion from kcd/m^2 to cd/m^2
@@ -59,23 +143,23 @@ SunSkyBackground::SunSkyBackground(Logger &logger, const Point3f &dir, float tur
 				(-0.04214 * theta_3_ + 0.08970 * theta_2_ - 0.04153 * theta_s_ + 0.00516) * t_ +
 				(0.15346 * theta_3_ - 0.26756 * theta_2_ + 0.06670 * theta_s_ + 0.26688);
 
-	perez_Y_[0] = (0.17872 * t_ - 1.46303) * a_var;
-	perez_Y_[1] = (-0.35540 * t_ + 0.42749) * b_var;
-	perez_Y_[2] = (-0.02266 * t_ + 5.32505) * c_var;
-	perez_Y_[3] = (0.12064 * t_ - 2.57705) * d_var;
-	perez_Y_[4] = (-0.06696 * t_ + 0.37027) * e_var;
+	perez_Y_[0] = (0.17872 * t_ - 1.46303) * params_.a_var_;
+	perez_Y_[1] = (-0.35540 * t_ + 0.42749) * params_.b_var_;
+	perez_Y_[2] = (-0.02266 * t_ + 5.32505) * params_.c_var_;
+	perez_Y_[3] = (0.12064 * t_ - 2.57705) * params_.d_var_;
+	perez_Y_[4] = (-0.06696 * t_ + 0.37027) * params_.e_var_;
 
-	perez_x_[0] = (-0.01925 * t_ - 0.25922) * a_var;
-	perez_x_[1] = (-0.06651 * t_ + 0.00081) * b_var;
-	perez_x_[2] = (-0.00041 * t_ + 0.21247) * c_var;
-	perez_x_[3] = (-0.06409 * t_ - 0.89887) * d_var;
-	perez_x_[4] = (-0.00325 * t_ + 0.04517) * e_var;
+	perez_x_[0] = (-0.01925 * t_ - 0.25922) * params_.a_var_;
+	perez_x_[1] = (-0.06651 * t_ + 0.00081) * params_.b_var_;
+	perez_x_[2] = (-0.00041 * t_ + 0.21247) * params_.c_var_;
+	perez_x_[3] = (-0.06409 * t_ - 0.89887) * params_.d_var_;
+	perez_x_[4] = (-0.00325 * t_ + 0.04517) * params_.e_var_;
 
-	perez_y_[0] = (-0.01669 * t_ - 0.26078) * a_var;
-	perez_y_[1] = (-0.09495 * t_ + 0.00921) * b_var;
-	perez_y_[2] = (-0.00792 * t_ + 0.21023) * c_var;
-	perez_y_[3] = (-0.04405 * t_ - 1.65369) * d_var;
-	perez_y_[4] = (-0.01092 * t_ + 0.05291) * e_var;
+	perez_y_[0] = (-0.01669 * t_ - 0.26078) * params_.a_var_;
+	perez_y_[1] = (-0.09495 * t_ + 0.00921) * params_.b_var_;
+	perez_y_[2] = (-0.00792 * t_ + 0.21023) * params_.c_var_;
+	perez_y_[3] = (-0.04405 * t_ - 1.65369) * params_.d_var_;
+	perez_y_[4] = (-0.01092 * t_ + 0.05291) * params_.e_var_;
 }
 
 double SunSkyBackground::perezFunction(const std::array<double, 5> &lam, double theta, double gamma, double lvz) const
@@ -166,7 +250,7 @@ inline Rgb SunSkyBackground::getSkyCol(const Vec3f &dir) const
 
 Rgb SunSkyBackground::eval(const Vec3f &dir, bool use_ibl_blur) const
 {
-	return power_ * getSkyCol(dir);
+	return Background::params_.power_ * getSkyCol(dir);
 }
 
 Rgb SunSkyBackground::computeAttenuatedSunlight(float theta, int turbidity)
@@ -223,87 +307,6 @@ Rgb SunSkyBackground::computeAttenuatedSunlight(float theta, int turbidity)
 			-0.969256f * sun_xyz.r_ + 1.875992f * sun_xyz.g_ + 0.041556f * sun_xyz.b_,
 			0.055648f * sun_xyz.r_ - 0.204043f * sun_xyz.g_ + 1.057311f * sun_xyz.b_
 	};
-}
-
-const Background * SunSkyBackground::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params)
-{
-	Point3f dir{{1, 1, 1}};	// same as sunlight, position interpreted as direction
-	float turb = 4.0;	// turbidity of atmosphere
-	bool add_sun = false;	// automatically add real sunlight
-	bool bgl = false;
-	int bgl_samples = 8;
-	double power = 1.0;
-	float pw = 1.0;	// sunlight power
-	float av, bv, cv, dv, ev;
-	av = bv = cv = dv = ev = 1.0;	// color variation parameters, default is normal
-	bool cast_shadows = true;
-	bool cast_shadows_sun = true;
-	bool caus = true;
-	bool diff = true;
-
-	params.getParam("from", dir);
-	params.getParam("turbidity", turb);
-	params.getParam("power", power);
-
-	// new color variation parameters
-	params.getParam("a_var", av);
-	params.getParam("b_var", bv);
-	params.getParam("c_var", cv);
-	params.getParam("d_var", dv);
-	params.getParam("e_var", ev);
-
-	// create sunlight with correct color and position?
-	params.getParam("add_sun", add_sun);
-	params.getParam("sun_power", pw);
-
-	params.getParam("background_light", bgl);
-	params.getParam("light_samples", bgl_samples);
-	params.getParam("cast_shadows", cast_shadows);
-	params.getParam("cast_shadows_sun", cast_shadows_sun);
-
-	params.getParam("with_caustic", caus);
-	params.getParam("with_diffuse", diff);
-
-	auto new_sunsky = new SunSkyBackground(logger, dir, turb, av, bv, cv, dv, ev, power);
-
-	if(bgl)
-	{
-		ParamMap bgp;
-		bgp["type"] = std::string("bglight");
-		bgp["samples"] = bgl_samples;
-		bgp["cast_shadows"] = cast_shadows;
-		bgp["with_caustic"] = caus;
-		bgp["with_diffuse"] = diff;
-
-		std::unique_ptr<Light> bglight{Light::factory(logger, scene, "light_sky", std::move(bgp))};
-		new_sunsky->addLight(std::move(bglight));
-	}
-
-	if(add_sun)
-	{
-		Rgb suncol = computeAttenuatedSunlight(math::acos(std::abs(dir[Axis::Z])), turb);//(*new_sunsky)(vector3d_t(dir.x, dir.y, dir.z));
-		const double angle = 0.27;
-		const double cos_angle = math::cos(math::degToRad(angle));
-		const float invpdf = (2.f * math::num_pi<> * (1.f - cos_angle));
-		suncol *= invpdf * power;
-
-		if(logger.isVerbose()) logger.logVerbose("Sunsky: sun color = ", suncol);
-
-		ParamMap p;
-		p["type"] = std::string("sunlight");
-		p["direction"] = dir;
-		p["color"] = suncol;
-		p["angle"] = Parameter(angle);
-		p["power"] = Parameter(pw);
-		p["cast_shadows"] = cast_shadows_sun;
-		p["with_caustic"] = caus;
-		p["with_diffuse"] = diff;
-
-		std::unique_ptr<Light> bglight{Light::factory(logger, scene, "light_sun", std::move(p))};
-		new_sunsky->addLight(std::move(bglight));
-	}
-
-	return new_sunsky;
 }
 
 } //namespace yafaray

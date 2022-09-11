@@ -27,5 +27,7 @@ target_sources(libyafaray4
 		material_node.cc
 		material_rough_glass.cc
 		material_shiny_diffuse.cc
-		material_simple.cc
+		material_light.cc
+		material_mirror.cc
+		material_null.cc
 )

@@ -18,8 +18,6 @@
  */
 
 #include "material/material.h"
-
-#include <memory>
 #include "material/material_blend.h"
 #include "material/material_mask.h"
 #include "material/material_rough_glass.h"
@@ -27,43 +25,90 @@
 #include "material/material_glass.h"
 #include "material/material_glossy.h"
 #include "material/material_coated_glossy.h"
-#include "material/material_simple.h"
+#include "material/material_light.h"
+#include "material/material_mirror.h"
+#include "material/material_null.h"
 #include "geometry/surface.h"
-#include "common/param.h"
+#include "param/param.h"
 #include "sampler/sample.h"
 #include "sampler/halton.h"
 #include "common/logger.h"
-#include "volume/volume.h"
 #include "math/interpolation.h"
+#include "scene/scene.h"
+#include "material/sample.h"
+#include "photon/photon_sample.h"
+#include "volume/handler/volume_handler.h"
 
 namespace yafaray {
 
-const Material *Material::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params, const std::list<ParamMap> &nodes_params)
+Material::Params::Params(ParamError &param_error, const ParamMap &param_map)
 {
-	if(logger.isDebug())
-	{
-		logger.logDebug("**Material");
-		params.logContents(logger);
-	}
-	std::string type;
-	params.getParam("type", type);
-	Material *material = nullptr;
-	if(type == "blend_mat") material = BlendMaterial::factory(logger, scene, name, params, nodes_params);
-	else if(type == "coated_glossy") material = CoatedGlossyMaterial::factory(logger, scene, name, params, nodes_params);
-	else if(type == "glass") material = GlassMaterial::factory(logger, scene, name, params, nodes_params);
-	else if(type == "mirror") material = MirrorMaterial::factory(logger, scene, name, params, nodes_params);
-	else if(type == "null") material = NullMaterial::factory(logger, scene, name, params, nodes_params);
-	else if(type == "glossy") material = GlossyMaterial::factory(logger, scene, name, params, nodes_params);
-	else if(type == "rough_glass") material = RoughGlassMaterial::factory(logger, scene, name, params, nodes_params);
-	else if(type == "shinydiffusemat") material = ShinyDiffuseMaterial::factory(logger, scene, name, params, nodes_params);
-	else if(type == "light_mat") material = LightMaterial::factory(logger, scene, name, params, nodes_params);
-	else if(type == "mask_mat") material = MaskMaterial::factory(logger, scene, name, params, nodes_params);
-	material->setIndexAuto(scene.getMaterialIndexAuto());
-	return material;
+	PARAM_LOAD(receive_shadows_);
+	PARAM_LOAD(flat_material_);
+	PARAM_ENUM_LOAD(visibility_);
+	PARAM_LOAD(mat_pass_index_);
+	PARAM_LOAD(additional_depth_);
+	PARAM_LOAD(transparent_bias_factor_);
+	PARAM_LOAD(transparent_bias_multiply_raydepth_);
+	PARAM_LOAD(sampling_factor_);
+	PARAM_LOAD(wireframe_amount_);
+	PARAM_LOAD(wireframe_thickness_);
+	PARAM_LOAD(wireframe_exponent_);
+	PARAM_LOAD(wireframe_color_);
 }
 
-Material::Material(Logger &logger) : logger_(logger)
+ParamMap Material::Params::getAsParamMap(bool only_non_default) const
 {
+	PARAM_SAVE_START;
+	PARAM_SAVE(receive_shadows_);
+	PARAM_SAVE(flat_material_);
+	PARAM_ENUM_SAVE(visibility_);
+	PARAM_SAVE(mat_pass_index_);
+	PARAM_SAVE(additional_depth_);
+	PARAM_SAVE(transparent_bias_factor_);
+	PARAM_SAVE(transparent_bias_multiply_raydepth_);
+	PARAM_SAVE(sampling_factor_);
+	PARAM_SAVE(wireframe_amount_);
+	PARAM_SAVE(wireframe_thickness_);
+	PARAM_SAVE(wireframe_exponent_);
+	PARAM_SAVE(wireframe_color_);
+	PARAM_SAVE_END;
+}
+
+ParamMap Material::getAsParamMap(bool only_non_default) const
+{
+	ParamMap result{params_.getAsParamMap(only_non_default)};
+	result.setParam("type", type().print());
+	return result;
+}
+
+std::pair<Material *, ParamError> Material::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map, const std::list<ParamMap> &nodes_param_maps)
+{
+	const Type type{ClassMeta::preprocessParamMap<Type>(logger, getClassName(), param_map)};
+	std::pair<Material *, ParamError> result{nullptr, {ParamError::Flags::ErrorWhileCreating}};
+	switch(type.value())
+	{
+		case Type::Blend: result = BlendMaterial::factory(logger, scene, name, param_map, nodes_param_maps); break;
+		case Type::CoatedGlossy: result = CoatedGlossyMaterial::factory(logger, scene, name, param_map, nodes_param_maps); break;
+		case Type::Glass: result = GlassMaterial::factory(logger, scene, name, param_map, nodes_param_maps); break;
+		case Type::Mirror: result = MirrorMaterial::factory(logger, scene, name, param_map, nodes_param_maps); break;
+		case Type::Null: result = NullMaterial::factory(logger, scene, name, param_map, nodes_param_maps); break;
+		case Type::Glossy: result = GlossyMaterial::factory(logger, scene, name, param_map, nodes_param_maps); break;
+		case Type::RoughGlass: result = RoughGlassMaterial::factory(logger, scene, name, param_map, nodes_param_maps); break;
+		case Type::ShinyDiffuse: result = ShinyDiffuseMaterial::factory(logger, scene, name, param_map, nodes_param_maps); break;
+		case Type::Light: result = LightMaterial::factory(logger, scene, name, param_map, nodes_param_maps); break;
+		case Type::Mask: result = MaskMaterial::factory(logger, scene, name, param_map, nodes_param_maps); break;
+		default: break;
+	}
+	result.first->setIndexAuto(scene.getMaterialIndexAuto());
+	return result;
+}
+
+Material::Material(Logger &logger, ParamError &param_error, const ParamMap &param_map) :
+		params_{param_error, param_map},
+		logger_{logger}
+{
+	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + params_.getAsParamMap(true).print());
 }
 
 void Material::setIndexAuto(unsigned int new_mat_index)
@@ -81,10 +126,7 @@ void Material::setIndexAuto(unsigned int new_mat_index)
 	index_auto_color_ = Rgb(r, g, b);
 }
 
-Material::~Material()
-{
-	//Destructor definition done here and not in material.h to avoid compilation problems with std::unique_ptr
-}
+Material::~Material() = default; //Destructor definition done here and not in material.h to avoid compilation problems with std::unique_ptr
 
 Rgb Material::sampleClay(const SurfacePoint &sp, const Vec3f &wo, Vec3f &wi, Sample &s, float &w)
 {
@@ -99,11 +141,11 @@ Rgb Material::sampleClay(const SurfacePoint &sp, const Vec3f &wo, Vec3f &wi, Sam
 void Material::applyWireFrame(float &value, float wire_frame_amount, const SurfacePoint &sp) const
 {
 	const float dist = sp.getDistToNearestEdge();
-	if(dist <= wireframe_thickness_)
+	if(dist <= params_.wireframe_thickness_)
 	{
-		if(wireframe_exponent_ > 0.f)
+		if(params_.wireframe_exponent_ > 0.f)
 		{
-			wire_frame_amount *= math::pow((wireframe_thickness_ - dist) / wireframe_thickness_, wireframe_exponent_);
+			wire_frame_amount *= math::pow((params_.wireframe_thickness_ - dist) / params_.wireframe_thickness_, params_.wireframe_exponent_);
 		}
 		value = value * (1.f - wire_frame_amount);
 	}
@@ -112,12 +154,12 @@ void Material::applyWireFrame(float &value, float wire_frame_amount, const Surfa
 void Material::applyWireFrame(Rgb &col, float wire_frame_amount, const SurfacePoint &sp) const
 {
 	const float dist = sp.getDistToNearestEdge();
-	if(dist <= wireframe_thickness_)
+	if(dist <= params_.wireframe_thickness_)
 	{
-		const Rgb wire_frame_col = wireframe_color_ * wire_frame_amount;
-		if(wireframe_exponent_ > 0.f)
+		const Rgb wire_frame_col = params_.wireframe_color_ * wire_frame_amount;
+		if(params_.wireframe_exponent_ > 0.f)
 		{
-			wire_frame_amount *= math::pow((wireframe_thickness_ - dist) / wireframe_thickness_, wireframe_exponent_);
+			wire_frame_amount *= math::pow((params_.wireframe_thickness_ - dist) / params_.wireframe_thickness_, params_.wireframe_exponent_);
 		}
 		col.blend(wire_frame_col, wire_frame_amount);
 	}
@@ -126,12 +168,12 @@ void Material::applyWireFrame(Rgb &col, float wire_frame_amount, const SurfacePo
 void Material::applyWireFrame(Rgba &col, float wire_frame_amount, const SurfacePoint &sp) const
 {
 	const float dist = sp.getDistToNearestEdge();
-	if(dist <= wireframe_thickness_)
+	if(dist <= params_.wireframe_thickness_)
 	{
-		const Rgb wire_frame_col = wireframe_color_ * wire_frame_amount;
-		if(wireframe_exponent_ > 0.f)
+		const Rgb wire_frame_col = params_.wireframe_color_ * wire_frame_amount;
+		if(params_.wireframe_exponent_ > 0.f)
 		{
-			wire_frame_amount *= math::pow((wireframe_thickness_ - dist) / wireframe_thickness_, wireframe_exponent_);
+			wire_frame_amount *= math::pow((params_.wireframe_thickness_ - dist) / params_.wireframe_thickness_, params_.wireframe_exponent_);
 		}
 		col.blend(Rgba{wire_frame_col}, wire_frame_amount);
 		col.a_ = wire_frame_amount;
@@ -159,7 +201,7 @@ bool Material::scatterPhoton(const MaterialData *mat_data, const SurfacePoint &s
 
 Rgb Material::getReflectivity(FastRandom &fast_random, const MaterialData *mat_data, const SurfacePoint &sp, BsdfFlags flags, bool chromatic, float wavelength, const Camera *camera) const
 {
-	if(!flags::have(flags, (BsdfFlags::Transmit | BsdfFlags::Reflect) & bsdf_flags_)) return Rgb{0.f};
+	if(!flags.has((BsdfFlags::Transmit | BsdfFlags::Reflect) & bsdf_flags_)) return Rgb{0.f};
 	Rgb total(0.f);
 	for(int i = 0; i < 16; ++i)
 	{
@@ -184,34 +226,6 @@ void Material::applyBump(SurfacePoint &sp, const DuDv &du_dv)
 	sp.n_ = (sp.uvn_.u_ ^ sp.uvn_.v_).normalize();
 	sp.uvn_.u_.normalize();
 	sp.uvn_.v_ = (sp.n_ ^ sp.uvn_.u_).normalize();
-}
-
-std::unique_ptr<DirectionColor> DirectionColor::blend(std::unique_ptr<DirectionColor> direction_color_1, std::unique_ptr<DirectionColor> direction_color_2, float blend_val)
-{
-	if(blend_val <= 0.f) return direction_color_1;
-	else if(blend_val >= 1.f) return direction_color_2;
-	if(direction_color_1 && direction_color_2)
-	{
-		auto direction_color_blend = std::make_unique<DirectionColor>();
-		direction_color_blend->col_ = math::lerp(direction_color_1->col_, direction_color_2->col_, blend_val);
-		direction_color_blend->dir_ = (direction_color_1->dir_ + direction_color_2->dir_).normalize();
-		return direction_color_blend;
-	}
-	else if(direction_color_1)
-	{
-		auto direction_color_blend = std::make_unique<DirectionColor>();
-		direction_color_blend->col_ = math::lerp(direction_color_1->col_, Rgb{0.f}, blend_val);
-		direction_color_blend->dir_ = direction_color_1->dir_.normalize();
-		return direction_color_blend;
-	}
-	else if(direction_color_2)
-	{
-		auto direction_color_blend = std::make_unique<DirectionColor>();
-		direction_color_blend->col_ = math::lerp(Rgb{0.f}, direction_color_2->col_, blend_val);
-		direction_color_blend->dir_ = direction_color_2->dir_.normalize();
-		return direction_color_blend;
-	}
-	return nullptr;
 }
 
 } //namespace yafaray

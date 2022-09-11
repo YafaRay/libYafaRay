@@ -20,37 +20,23 @@
 #ifndef YAFARAY_VISIBILITY_H
 #define YAFARAY_VISIBILITY_H
 
-#include "common/flags.h"
+#include "common/enum.h"
+#include "common/enum_map.h"
 #include <string>
 
 namespace yafaray {
 
-enum class VisibilityFlags : unsigned int
+struct Visibility : public Enum<Visibility>
 {
-	None = 0, Visible = 1 << 0, CastsShadows = 1 << 1,
+	using Enum::Enum;
+	enum : decltype(type()) { None = 0, Visible = 1 << 0, CastsShadows = 1 << 1, Normal = Visible | CastsShadows };
+	inline static const EnumMap<decltype(type())> map_{{
+			{"normal", Normal, ""},
+			{"invisible", None, ""},
+			{"shadow_only", CastsShadows, ""},
+			{"no_shadows", Visible, ""},
+		}};
 };
-
-namespace visibility
-{
-
-inline VisibilityFlags fromString(const std::string &str)
-{
-	if(str == "normal") return VisibilityFlags::Visible | VisibilityFlags::CastsShadows; // NOLINT(bugprone-branch-clone)
-	else if(str == "invisible") return VisibilityFlags::None;
-	else if(str == "shadow_only") return VisibilityFlags::CastsShadows;
-	else if(str == "no_shadows") return VisibilityFlags::Visible;
-	else return VisibilityFlags::Visible | VisibilityFlags::CastsShadows;
-}
-
-inline std::string toString(VisibilityFlags visibility)
-{
-	if(flags::have(visibility, VisibilityFlags::Visible) && flags::have(visibility, VisibilityFlags::CastsShadows)) return "normal";
-	else if(flags::have(visibility, VisibilityFlags::CastsShadows)) return "shadow_only";
-	else if(flags::have(visibility, VisibilityFlags::Visible)) return "no_shadows";
-	else return "invisible";
-}
-
-} //namespace visibility
 
 } //namespace yafaray
 

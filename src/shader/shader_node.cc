@@ -18,26 +18,52 @@
  */
 
 #include "shader/shader_node.h"
-#include "shader/shader_node_basic.h"
+#include "shader/shader_node_texture.h"
 #include "shader/shader_node_layer.h"
-#include "common/param.h"
+#include "shader/shader_node_mix.h"
+#include "shader/shader_node_value.h"
+#include "param/param.h"
 
 namespace yafaray {
 
-ShaderNode * ShaderNode::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params)
+ShaderNode::Params::Params(ParamError &param_error, const ParamMap &param_map)
 {
-	if(logger.isDebug())
+	PARAM_LOAD(name_);
+	PARAM_LOAD(element_);
+}
+
+ParamMap ShaderNode::Params::getAsParamMap(bool only_non_default) const
+{
+	PARAM_SAVE_START;
+	PARAM_SAVE(name_);
+	PARAM_SAVE(element_);
+	PARAM_SAVE_END;
+}
+
+ParamMap ShaderNode::getAsParamMap(bool only_non_default) const
+{
+	ParamMap result{params_.getAsParamMap(only_non_default)};
+	result.setParam("type", type().print());
+	return result;
+}
+
+std::pair<ShaderNode *, ParamError> ShaderNode::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map)
+{
+	const Type type{ClassMeta::preprocessParamMap<Type>(logger, getClassName(), param_map)};
+	switch(type.value())
 	{
-		logger.logDebug("**ShaderNode");
-		params.logContents(logger);
+		case Type::Texture: return TextureMapperNode::factory(logger, scene, name, param_map);
+		case Type::Value: return ValueNode::factory(logger, scene, name, param_map);
+		case Type::Mix: return MixNode::factory(logger, scene, name, param_map);
+		case Type::Layer: return LayerNode::factory(logger, scene, name, param_map);
+		default: return {nullptr, {ParamError::Flags::ErrorWhileCreating}};
 	}
-	std::string type;
-	params.getParam("type", type);
-	if(type == "texture_mapper") return TextureMapperNode::factory(logger, scene, name, params);
-	else if(type == "value") return ValueNode::factory(logger, scene, name, params);
-	else if(type == "mix") return MixNode::factory(logger, scene, name, params);
-	else if(type == "layer") return LayerNode::factory(logger, scene, name, params);
-	else return nullptr;
+}
+
+ShaderNode::ShaderNode(Logger &logger, ParamError &param_error, const ParamMap &param_map) :
+		params_{param_error, param_map}
+{
+	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + params_.getAsParamMap(true).print());
 }
 
 } //namespace yafaray

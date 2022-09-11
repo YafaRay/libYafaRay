@@ -20,7 +20,8 @@
 #include "common/logger.h"
 #include "scene/scene.h"
 #include "geometry/matrix.h"
-#include "common/param.h"
+#include "param/param.h"
+#include "render/progress_bar.h"
 
 namespace yafaray {
 
@@ -408,7 +409,7 @@ void ExportPython::render(std::unique_ptr<ProgressBar> progress_bar) noexcept
 
 void ExportPython::setColorSpace(const std::string& color_space_string, float gamma_val) noexcept
 {
-	color_space_ = Rgb::colorSpaceFromName(color_space_string, ColorSpace::Srgb);
+	color_space_.initFromString(color_space_string);
 	gamma_ = gamma_val;
 }
 

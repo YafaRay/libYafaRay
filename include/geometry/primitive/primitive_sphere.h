@@ -35,10 +35,20 @@ class SurfacePoint;
 class SpherePrimitive final : public Primitive
 {
 	public:
-		static Primitive *factory(const ParamMap &params, const Scene &scene, const Object &object);
-		SpherePrimitive(const Point3f &centr, float rad, const std::unique_ptr<const Material> *material, const Object &base_object): center_(centr), radius_(rad), base_object_(base_object), material_(material) {}
+		inline static std::string getClassName() { return "CurveObject"; }
+		static std::pair<SpherePrimitive *, ParamError> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map, const Object &object);
+		static std::string printMeta(const std::vector<std::string> &excluded_params) { return Params::meta_.print(excluded_params); }
 
 	private:
+		struct Params
+		{
+			PARAM_INIT;
+			PARAM_DECL(Vec3f , center_, Vec3f{0.f}, "center", "");
+			PARAM_DECL(float , radius_, 1.f, "radius", "");
+			PARAM_DECL(std::string , material_name_, "", "material", "");
+		} params_;
+		[[nodiscard]] ParamMap getAsParamMap(bool only_non_default) const;
+		SpherePrimitive(Logger &logger, ParamError &param_error, Params params, const std::unique_ptr<const Material> *material, const Object &base_object);
 		Bound<float> getBound() const override;
 		Bound<float> getBound(const Matrix4f &obj_to_world) const override;
 		std::pair<float, Uv<float>> intersect(const Point3f &from, const Vec3f &dir, float time) const override;
@@ -53,7 +63,7 @@ class SpherePrimitive final : public Primitive
 		std::pair<Point3f, Vec3f> sample(const Uv<float> &uv, float time) const override;
 		std::pair<Point3f, Vec3f> sample(const Uv<float> &uv, float time, const Matrix4f &obj_to_world) const override;
 		const Object *getObject() const override { return &base_object_; }
-		VisibilityFlags getVisibility() const override { return base_object_.getVisibility(); }
+		Visibility getVisibility() const override { return base_object_.getVisibility(); }
 		bool clippingSupport() const override { return false; }
 		float getDistToNearestEdge(const Uv<float> &uv, const Uv<Vec3f> &dp_abs) const override { return 0.f; }
 		unsigned int getObjectIndex() const override { return base_object_.getIndex(); }
@@ -62,8 +72,6 @@ class SpherePrimitive final : public Primitive
 		const Light *getObjectLight() const override { return base_object_.getLight(); }
 		bool hasObjectMotionBlur() const override { return base_object_.hasMotionBlur(); }
 
-		Point3f center_;
-		float radius_;
 		const Object &base_object_;
 		const std::unique_ptr<const Material> *material_ = nullptr;
 };

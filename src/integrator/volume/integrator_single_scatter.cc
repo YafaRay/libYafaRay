@@ -19,23 +19,50 @@
 #include "integrator/volume/integrator_single_scatter.h"
 #include "geometry/surface.h"
 #include "common/logger.h"
-#include "volume/volume.h"
 #include "scene/scene.h"
 #include "background/background.h"
 #include "light/light.h"
-#include "common/param.h"
-#include "render/render_data.h"
+#include "param/param.h"
 #include "accelerator/accelerator.h"
+#include "volume/region/volume_region.h"
 
 namespace yafaray {
 
-SingleScatterIntegrator::SingleScatterIntegrator(Logger &logger, float s_size, bool adapt, bool opt) : VolumeIntegrator(logger)
+SingleScatterIntegrator::Params::Params(ParamError &param_error, const ParamMap &param_map)
 {
-	adaptive_ = adapt;
-	step_size_ = s_size;
-	optimize_ = opt;
-	adaptive_step_size_ = s_size * 100.0f;
-	logger_.logParams("SingleScatter: stepSize: ", step_size_, " adaptive: ", adaptive_, " optimize: ", optimize_);
+	PARAM_LOAD(step_size_);
+	PARAM_LOAD(adaptive_);
+	PARAM_LOAD(optimize_);
+}
+
+ParamMap SingleScatterIntegrator::Params::getAsParamMap(bool only_non_default) const
+{
+	PARAM_SAVE_START;
+	PARAM_SAVE(step_size_);
+	PARAM_SAVE(adaptive_);
+	PARAM_SAVE(optimize_);
+	PARAM_SAVE_END;
+}
+
+ParamMap SingleScatterIntegrator::getAsParamMap(bool only_non_default) const
+{
+	ParamMap result{VolumeIntegrator::getAsParamMap(only_non_default)};
+	result.append(params_.getAsParamMap(only_non_default));
+	return result;
+}
+
+std::pair<VolumeIntegrator *, ParamError> SingleScatterIntegrator::factory(Logger &logger, const ParamMap &param_map, const Scene &scene)
+{
+	auto param_error{Params::meta_.check(param_map, {"type"}, {})};
+	auto result {new SingleScatterIntegrator(logger, param_error, param_map)};
+	if(param_error.flags_ != ParamError::Flags::Ok) logger.logWarning(param_error.print<SingleScatterIntegrator>(getClassName(), {"type"}));
+	return {result, param_error};
+}
+
+SingleScatterIntegrator::SingleScatterIntegrator(Logger &logger, ParamError &param_error, const ParamMap &param_map) : VolumeIntegrator(logger, param_error, param_map), params_{param_error, param_map}
+{
+	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + params_.getAsParamMap(true).print());
+	logger_.logParams("SingleScatter: stepSize: ", params_.step_size_, " adaptive: ", params_.adaptive_, " optimize: ", params_.optimize_);
 }
 
 bool SingleScatterIntegrator::preprocess(FastRandom &fast_random, ImageFilm *image_film, const RenderView *render_view, const Scene &scene)
@@ -45,7 +72,7 @@ bool SingleScatterIntegrator::preprocess(FastRandom &fast_random, ImageFilm *ima
 	lights_ = render_view->getLightsVisible();
 	vr_size_ = volume_regions_->size();
 	i_vr_size_ = 1.f / static_cast<float>(vr_size_);
-	if(optimize_)
+	if(params_.optimize_)
 	{
 		for(const auto &[vr_name, vr] : *volume_regions_)
 		{
@@ -87,7 +114,7 @@ bool SingleScatterIntegrator::preprocess(FastRandom &fast_random, ImageFilm *ima
 								{
 									for(const auto &[v_2_name, v_2] : *volume_regions_)
 									{
-										lightstep_tau += v_2->tau(light_ray, step_size_, 0.0f);
+										lightstep_tau += v_2->tau(light_ray, params_.step_size_, 0.0f);
 									}
 								}
 
@@ -113,7 +140,7 @@ bool SingleScatterIntegrator::preprocess(FastRandom &fast_random, ImageFilm *ima
 									Rgb lightstep_tau{0.f};
 									for(const auto &[v_2_name, v_2] : *volume_regions_)
 									{
-										lightstep_tau += v_2->tau(light_ray, step_size_, 0.0f);
+										lightstep_tau += v_2->tau(light_ray, params_.step_size_, 0.0f);
 									}
 									light_tr += math::exp(-lightstep_tau.energy());
 								}
@@ -146,7 +173,7 @@ Rgb SingleScatterIntegrator::getInScatter(RandomGenerator &random_generator, con
 				{
 					float light_tr = 0.0f;
 					// replace lightTr with precalculated attenuation
-					if(optimize_)
+					if(params_.optimize_)
 					{
 						// replaced by
 						for(const auto &[vr_name, vr] : *volume_regions_)
@@ -196,7 +223,7 @@ Rgb SingleScatterIntegrator::getInScatter(RandomGenerator &random_generator, con
 						ccol += ls.col_ / ls.pdf_;
 
 						// replace lightTr with precalculated attenuation
-						if(optimize_)
+						if(params_.optimize_)
 						{
 							// replaced by
 							for(const auto &[vr_name, vr] : *volume_regions_)
@@ -249,7 +276,7 @@ Rgb SingleScatterIntegrator::transmittance(RandomGenerator &random_generator, co
 		if(cross.crossed_)
 		{
 			const float random_value = random_generator();
-			const Rgb optical_thickness = vr->tau(ray, step_size_, random_value);
+			const Rgb optical_thickness = vr->tau(ray, params_.step_size_, random_value);
 			tr *= Rgb{math::exp(-optical_thickness.energy())};
 		}
 	}
@@ -275,37 +302,37 @@ Rgb SingleScatterIntegrator::integrate(RandomGenerator &random_generator, const 
 	float dist = t_1 - t_0;
 	if(dist < 1e-3f) return Rgb{0.f};
 
-	float pos = t_0 - random_generator() * step_size_; // start position of ray marching
+	float pos = t_0 - random_generator() * params_.step_size_; // start position of ray marching
 	dist = t_1 - pos;
-	const int samples = dist / step_size_ + 1;
+	const int samples = dist / params_.step_size_ + 1;
 	std::vector<float> density_samples;
 	std::vector<float> accum_density;
 	int adaptive_resolution = 1;
-	if(adaptive_)
+	if(params_.adaptive_)
 	{
-		adaptive_resolution = adaptive_step_size_ / step_size_;
+		adaptive_resolution = adaptive_step_size_ / params_.step_size_;
 		density_samples.resize(samples);
 		accum_density.resize(samples);
 		accum_density.at(0) = 0.f;
 		for(int i = 0; i < samples; ++i)
 		{
-			const Point3f p{ray.from_ + (step_size_ * i + pos) * ray.dir_};
+			const Point3f p{ray.from_ + (params_.step_size_ * i + pos) * ray.dir_};
 			float density = 0;
 			for(const auto &[vr_name, vr] : *volume_regions_)
 			{
 				density += vr->sigmaT(p, {}).energy();
 			}
 			density_samples.at(i) = density;
-			if(i > 0) accum_density.at(i) = accum_density.at(i - 1) + density * step_size_;
+			if(i > 0) accum_density.at(i) = accum_density.at(i - 1) + density * params_.step_size_;
 		}
 	}
 	constexpr float adapt_thresh = .01f;
 	bool adapt_now = false;
-	float current_step = step_size_;
+	float current_step = params_.step_size_;
 	int step_length = 1;
 	int step_to_stop_adapt = -1;
 	Rgb tr_tmp(1.f); // transmissivity during ray marching
-	if(adaptive_)
+	if(params_.adaptive_)
 	{
 		current_step = adaptive_step_size_;
 		step_length = adaptive_resolution;
@@ -315,7 +342,7 @@ Rgb SingleScatterIntegrator::integrate(RandomGenerator &random_generator, const 
 	Rgb col {0.f};
 	for(int step_sample = 0; step_sample < samples; step_sample += step_length)
 	{
-		if(adaptive_)
+		if(params_.adaptive_)
 		{
 			if(!adapt_now)
 			{
@@ -325,12 +352,12 @@ Rgb SingleScatterIntegrator::integrate(RandomGenerator &random_generator, const 
 					adapt_now = true;
 					step_length = 1;
 					step_to_stop_adapt = step_sample + lookahead_samples;
-					current_step = step_size_;
+					current_step = params_.step_size_;
 				}
 			}
 		}
 		const Ray step_ray{ray.from_ + (ray.dir_ * pos), ray.dir_, ray.time_, 0, current_step};
-		if(adaptive_)
+		if(params_.adaptive_)
 		{
 			step_tau = Rgb{accum_density.at(step_sample)};
 		}
@@ -346,7 +373,7 @@ Rgb SingleScatterIntegrator::integrate(RandomGenerator &random_generator, const 
 			}
 		}
 		tr_tmp = Rgb{math::exp(-step_tau.energy())};
-		if(optimize_ && tr_tmp.energy() < 1e-3f)
+		if(params_.optimize_ && tr_tmp.energy() < 1e-3f)
 		{
 			const float random_val = random_generator();
 			if(random_val < 0.5f) break;
@@ -362,7 +389,7 @@ Rgb SingleScatterIntegrator::integrate(RandomGenerator &random_generator, const 
 			}
 		}
 		// with a sigma_s close to 0, no light can be scattered -> computation can be skipped
-		if(optimize_ && sigma_s < 1e-3f)
+		if(params_.optimize_ && sigma_s < 1e-3f)
 		{
 			const float random_val = random_generator();
 			if(random_val < 0.5f)
@@ -373,7 +400,7 @@ Rgb SingleScatterIntegrator::integrate(RandomGenerator &random_generator, const 
 			sigma_s = sigma_s / random_val;
 		}
 		col += tr_tmp * getInScatter(random_generator, step_ray, current_step) * sigma_s * current_step;
-		if(adaptive_)
+		if(params_.adaptive_)
 		{
 			if(adapt_now && step_sample >= step_to_stop_adapt)
 			{
@@ -394,17 +421,6 @@ Rgb SingleScatterIntegrator::integrate(RandomGenerator &random_generator, const 
 		pos += current_step;
 	}
 	return col;
-}
-
-VolumeIntegrator * SingleScatterIntegrator::factory(Logger &logger, RenderControl &render_control, const ParamMap &params, const Scene &scene)
-{
-	bool adapt = false;
-	bool opt = false;
-	float s_size = 1.f;
-	params.getParam("stepSize", s_size);
-	params.getParam("adaptive", adapt);
-	params.getParam("optimize", opt);
-	return new SingleScatterIntegrator(logger, s_size, adapt, opt);
 }
 
 } //namespace yafaray

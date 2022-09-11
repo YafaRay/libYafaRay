@@ -109,6 +109,29 @@ class Bound
 };
 
 template<typename T>
+inline Bound<T>::Bound(const Bound &r, const Bound &l) :
+		a_{{
+				   std::min(r.a_[Axis::X], l.a_[Axis::X]),
+				   std::min(r.a_[Axis::Y], l.a_[Axis::Y]),
+				   std::min(r.a_[Axis::Z], l.a_[Axis::Z])
+		   }},
+		g_{{
+				   std::max(r.g_[Axis::X], l.g_[Axis::X]),
+				   std::max(r.g_[Axis::Y], l.g_[Axis::Y]),
+				   std::max(r.g_[Axis::Z], l.g_[Axis::Z])
+		   }}
+{
+	//Empty
+}
+
+template<typename T>
+inline T Bound<T>::vol() const
+{
+	const T ret{(g_[Axis::Y] - a_[Axis::Y]) * (g_[Axis::X] - a_[Axis::X]) * (g_[Axis::Z] - a_[Axis::Z])};
+	return ret;
+}
+
+template<typename T>
 inline void Bound<T>::include(const Point<T, 3> &p)
 {
 	a_ = {{

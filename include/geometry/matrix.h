@@ -23,7 +23,7 @@
 #ifndef YAFARAY_MATRIX4_H
 #define YAFARAY_MATRIX4_H
 
-#include "vector.h"
+#include "geometry/vector.h"
 #include <iostream>
 
 namespace yafaray {
@@ -65,7 +65,7 @@ class SquareMatrix
 		template<typename MatrixType> static void subtractScaledRow(MatrixType& matrix, size_t row_a, size_t row_b, T factor);
 		template<typename MatrixType> static void divideRow(MatrixType& matrix, size_t row, T divisor);
 
-		alignas(std::max(8UL, sizeof(T))) std::array<std::array<T, N>, N> matrix_;
+		alignas(std::max(size_t{8}, sizeof(T))) std::array<std::array<T, N>, N> matrix_;
 		bool invalid_ = false;
 };
 
@@ -306,6 +306,15 @@ inline void SquareMatrix<T, N>::scale(const Vec<T, N - 1> &vec)
 	for(size_t i = 0; i < N - 1; ++i)
 		for(size_t j = 0; j < N - 1; ++j)
 			matrix_[i][j] *= vec[j];
+}
+
+template <typename T, size_t N>
+inline constexpr bool operator == (const SquareMatrix<T, N> &matrix_a, const SquareMatrix<T, N> &matrix_b)
+{
+	for(size_t i = 0; i < N - 1; ++i)
+		for(size_t j = 0; j < N - 1; ++j)
+			if(matrix_a[i][j] != matrix_b[i][j]) return false;
+	return true;
 }
 
 template<typename T, size_t N>

@@ -25,21 +25,59 @@
 #include "geometry/ray.h"
 #include "sampler/sample.h"
 #include "sampler/sample_pdf1d.h"
-#include "common/param.h"
+#include "param/param.h"
 
 namespace yafaray {
 
-SpotLight::SpotLight(Logger &logger, const Point3f &from, const Point3f &to, const Rgb &col, float power, float angle, float falloff, bool s_sha, int smpl, float ssfuzzy, bool b_light_enabled, bool b_cast_shadows):
-		Light(logger, Light::Flags::Singular), position_(from), soft_shadows_(s_sha), shadow_fuzzy_(ssfuzzy), samples_(smpl)
+SpotLight::Params::Params(ParamError &param_error, const ParamMap &param_map)
 {
-	light_enabled_ = b_light_enabled;
-	cast_shadows_ = b_cast_shadows;
-	ndir_ = (from - to).normalize();
-	dir_ = -ndir_;
-	color_ = col * power;
-	duv_ = Vec3f::createCoordsSystem(dir_);
-	double rad_angle = math::degToRad(angle);
-	double rad_inner_angle = rad_angle * (1.f - falloff);
+	PARAM_LOAD(from_);
+	PARAM_LOAD(to_);
+	PARAM_LOAD(color_);
+	PARAM_LOAD(power_);
+	PARAM_LOAD(cone_angle_);
+	PARAM_LOAD(falloff_);
+	PARAM_LOAD(soft_shadows_);
+	PARAM_LOAD(shadow_fuzzyness_);
+	PARAM_LOAD(samples_);
+}
+
+ParamMap SpotLight::Params::getAsParamMap(bool only_non_default) const
+{
+	PARAM_SAVE_START;
+	PARAM_SAVE(from_);
+	PARAM_SAVE(to_);
+	PARAM_SAVE(color_);
+	PARAM_SAVE(power_);
+	PARAM_SAVE(cone_angle_);
+	PARAM_SAVE(falloff_);
+	PARAM_SAVE(soft_shadows_);
+	PARAM_SAVE(shadow_fuzzyness_);
+	PARAM_SAVE(samples_);
+	PARAM_SAVE_END;
+}
+
+ParamMap SpotLight::getAsParamMap(bool only_non_default) const
+{
+	ParamMap result{Light::getAsParamMap(only_non_default)};
+	result.append(params_.getAsParamMap(only_non_default));
+	return result;
+}
+
+std::pair<Light *, ParamError> SpotLight::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map)
+{
+	auto param_error{Params::meta_.check(param_map, {"type"}, {})};
+	auto result {new SpotLight(logger, param_error, name, param_map)};
+	if(param_error.flags_ != ParamError::Flags::Ok) logger.logWarning(param_error.print<SpotLight>(name, {"type"}));
+	return {result, param_error};
+}
+
+SpotLight::SpotLight(Logger &logger, ParamError &param_error, const std::string &name, const ParamMap &param_map):
+		Light{logger, param_error, name, param_map, Flags::Singular}, params_{param_error, param_map}
+{
+	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + params_.getAsParamMap(true).print());
+	const float rad_angle{math::degToRad(params_.cone_angle_)};
+	const float rad_inner_angle{rad_angle * (1.f - params_.falloff_)};
 	cos_start_ = math::cos(rad_inner_angle);
 	cos_end_ = math::cos(rad_angle);
 	icos_diff_ = 1.f / (cos_start_ - cos_end_);
@@ -75,7 +113,7 @@ Rgb SpotLight::totalEnergy() const
 std::tuple<bool, Ray, Rgb> SpotLight::illuminate(const Point3f &surface_p, float time) const
 {
 	if(photonOnly()) return {};
-	Vec3f ldir{position_ - surface_p};
+	Vec3f ldir{params_.from_ - surface_p};
 	const float dist_sqr = ldir * ldir;
 	const float dist = math::sqrt(dist_sqr);
 	if(dist == 0.f) return {};
@@ -96,14 +134,14 @@ std::tuple<bool, Ray, Rgb> SpotLight::illuminate(const Point3f &surface_p, float
 std::pair<bool, Ray> SpotLight::illumSample(const Point3f &surface_p, LSample &s, float time) const
 {
 	if(photonOnly()) return {};
-	Vec3f ldir{position_ - surface_p};
+	Vec3f ldir{params_.from_ - surface_p};
 	const float dist_sqr = ldir * ldir;
 	if(dist_sqr == 0.f) return {};
 	const float dist = math::sqrt(dist_sqr);
 	ldir *= 1.f / dist; //normalize
 	const float cos_a = ndir_ * ldir;
 	if(cos_a < cos_end_) return {}; //outside cone
-	Vec3f dir{sample::cone(ldir, duv_, cos_end_, s.s_1_ * shadow_fuzzy_, s.s_2_ * shadow_fuzzy_)};
+	Vec3f dir{sample::cone(ldir, duv_, cos_end_, s.s_1_ * params_.shadow_fuzzyness_, s.s_2_ * params_.shadow_fuzzyness_)};
 	if(cos_a >= cos_start_) // not affected by falloff
 	{
 		s.col_ = color_;
@@ -134,7 +172,7 @@ std::tuple<Ray, float, Rgb> SpotLight::emitPhoton(float s_1, float s_2, float s_
 	{
 		Vec3f dir{sample::cone(dir_, duv_, cos_start_, s_1, s_2)};
 		const float ipdf = math::mult_pi_by_2<> * (1.f - cos_start_) / interv_1_;
-		Ray ray{position_, std::move(dir), time};
+		Ray ray{params_.from_, std::move(dir), time};
 		return {std::move(ray), ipdf, color_};
 	}
 	else // sample in the falloff area
@@ -147,14 +185,14 @@ std::tuple<Ray, float, Rgb> SpotLight::emitPhoton(float s_1, float s_2, float s_
 		const float t_1 = math::mult_pi_by_2<> * s_1;
 		Vec3f dir{(duv_.u_ * math::cos(t_1) + duv_.v_ * math::sin(t_1)) * (float)sin_ang + dir_ * (float)cos_ang};
 		Rgb col{color_ * spdf * pdf_->integral()}; // scale is just the actual falloff function, since spdf is func * invIntegral...
-		Ray ray{position_, std::move(dir), time};
+		Ray ray{params_.from_, std::move(dir), time};
 		return {std::move(ray), ipdf, std::move(col)};
 	}
 }
 
 std::pair<Vec3f, Rgb> SpotLight::emitSample(LSample &s, float time) const
 {
-	s.sp_->p_ = position_;
+	s.sp_->p_ = params_.from_;
 	s.area_pdf_ = 1.f;
 	s.flags_ = flags_;
 	if(s.s_3_ <= interv_1_) // sample from cone not affected by falloff:
@@ -200,10 +238,10 @@ std::tuple<bool, float, Rgb> SpotLight::intersect(const Ray &ray, float &t) cons
 {
 	const float cos_a = dir_ * ray.dir_;
 	if(cos_a == 0.f) return {};
-	t = (dir_ * (position_ - ray.from_)) / cos_a;
+	t = (dir_ * (params_.from_ - ray.from_)) / cos_a;
 	if(t < 0.f) return {};
 	const Point3f p{ray.from_ + t * ray.dir_};
-	if(dir_ * (p - position_) == 0.f)
+	if(dir_ * (p - params_.from_) == 0.f)
 	{
 		if(p * p <= 1e-2f)
 		{
@@ -222,46 +260,6 @@ std::tuple<bool, float, Rgb> SpotLight::intersect(const Ray &ray, float &t) cons
 		}
 	}
 	return {};
-}
-
-Light * SpotLight::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params)
-{
-	Point3f from{{0.f, 0.f, 0.f}};
-	Point3f to{{0.f, 0.f, -1.f}};
-	Rgb color(1.0);
-	float power = 1.0;
-	float angle = 45, falloff = 0.15;
-	bool p_only = false;
-	bool soft_shadows = false;
-	int smpl = 8;
-	float ssfuzzy = 1.f;
-	bool light_enabled = true;
-	bool cast_shadows = true;
-	bool shoot_d = true;
-	bool shoot_c = true;
-
-	params.getParam("from", from);
-	params.getParam("to", to);
-	params.getParam("color", color);
-	params.getParam("power", power);
-	params.getParam("cone_angle", angle);
-	params.getParam("blend", falloff);
-	params.getParam("photon_only", p_only);
-	params.getParam("soft_shadows", soft_shadows);
-	params.getParam("shadowFuzzyness", ssfuzzy);
-	params.getParam("samples", smpl);
-	params.getParam("light_enabled", light_enabled);
-	params.getParam("cast_shadows", cast_shadows);
-	params.getParam("with_caustic", shoot_c);
-	params.getParam("with_diffuse", shoot_d);
-
-	auto light = new SpotLight(logger, from, to, color, power, angle, falloff, soft_shadows, smpl, ssfuzzy, light_enabled, cast_shadows);
-
-	light->shoot_caustic_ = shoot_c;
-	light->shoot_diffuse_ = shoot_d;
-	light->photon_only_ = p_only;
-
-	return light;
 }
 
 } //namespace yafaray

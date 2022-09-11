@@ -20,8 +20,9 @@
 #ifndef YAFARAY_MATERIAL_MASK_H
 #define YAFARAY_MATERIAL_MASK_H
 
-#include <common/logger.h>
+#include "common/logger.h"
 #include "material/material_node.h"
+#include "material/material_data.h"
 
 namespace yafaray {
 
@@ -46,10 +47,30 @@ class MaskMaterialData final : public MaterialData
 class MaskMaterial final : public NodeMaterial
 {
 	public:
-		static Material *factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params, const std::list<ParamMap> &nodes_params);
+		inline static std::string getClassName() { return "MaskMaterial"; }
+		static std::pair<Material *, ParamError> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map, const std::list<ParamMap> &nodes_param_maps);
+		static std::string printMeta(const std::vector<std::string> &excluded_params) { return Params::meta_.print(excluded_params); }
 
 	private:
-		MaskMaterial(Logger &logger, const std::unique_ptr<const Material> *material_1, const std::unique_ptr<const Material> *material_2, float thresh, VisibilityFlags visibility = VisibilityFlags::Visible | VisibilityFlags::CastsShadows);
+		[[nodiscard]] Type type() const override { return Type::Mask; }
+		struct ShaderNodeType : public Enum<ShaderNodeType>
+		{
+			enum : decltype(type()) { Mask, Size }; //Always leave the Size entry at the end!!
+			inline static const EnumMap<decltype(type())> map_{{
+				{"mask_shader", Mask, "Shader node for mask value (float)"},
+			}};
+			bool isBump() { return false; }
+		};
+		const struct Params
+		{
+			PARAM_INIT_PARENT(Material);
+			PARAM_DECL(std::string, material_1_name_, "", "material1", "Name of the first material, must be specified or the blend material exits with an error");
+			PARAM_DECL(std::string, material_2_name_, "", "material2", "Name of the second material, must be specified or the blend material exits with an error");
+			PARAM_DECL(float, threshold_, 0.5f, "threshold", "");
+			PARAM_SHADERS_DECL;
+		} params_;
+		[[nodiscard]] ParamMap getAsParamMap(bool only_non_default) const override;
+		MaskMaterial(Logger &logger, ParamError &param_error, const ParamMap &param_map, const std::unique_ptr<const Material> *material_1, const std::unique_ptr<const Material> *material_2);
 		const MaterialData * initBsdf(SurfacePoint &sp, const Camera *camera) const override;
 		Rgb eval(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3f &wo, const Vec3f &wi, BsdfFlags bsdfs, bool force_eval) const override;
 		Rgb sample(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3f &wo, Vec3f &wi, Sample &s, float &w, bool chromatic, float wavelength, const Camera *camera) const override;
@@ -62,8 +83,7 @@ class MaskMaterial final : public NodeMaterial
 
 		const std::unique_ptr<const Material> *mat_1_ = nullptr;
 		const std::unique_ptr<const Material> *mat_2_ = nullptr;
-		ShaderNode *mask_ = nullptr;
-		float threshold_;
+		std::array<const ShaderNode *, static_cast<size_t>(ShaderNodeType::Size)> shaders_{initShaderArray<ShaderNodeType::Size>()};
 };
 
 } //namespace yafaray

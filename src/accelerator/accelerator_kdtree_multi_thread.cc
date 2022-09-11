@@ -18,39 +18,60 @@
 
 #include "accelerator/accelerator_kdtree_multi_thread.h"
 #include "common/logger.h"
-#include "common/param.h"
+#include "param/param.h"
 #include "geometry/clip_plane.h"
 #include "geometry/primitive/primitive.h"
-#include "geometry/surface.h"
 #include "image/image_output.h"
-#include "material/material.h"
 #include <thread>
 
 namespace yafaray {
 
-const Accelerator * AcceleratorKdTreeMultiThread::factory(Logger &logger, const std::vector<const Primitive *> &primitives, const ParamMap &params)
+AcceleratorKdTreeMultiThread::Params::Params(ParamError &param_error, const ParamMap &param_map)
 {
-	alignas(8) AcceleratorKdTreeMultiThread::Parameters parameters;
-
-	params.getParam("depth", parameters.max_depth_);
-	params.getParam("leaf_size", parameters.max_leaf_size_);
-	params.getParam("cost_ratio", parameters.cost_ratio_);
-	params.getParam("empty_bonus", parameters.empty_bonus_);
-	params.getParam("accelerator_threads", parameters.num_threads_);
-	params.getParam("accelerator_min_indices_threads", parameters.min_indices_to_spawn_threads_);
-
-	return new AcceleratorKdTreeMultiThread(logger, primitives, parameters);
+	PARAM_LOAD(max_depth_);
+	PARAM_LOAD(max_leaf_size_);
+	PARAM_LOAD(cost_ratio_);
+	PARAM_LOAD(empty_bonus_);
+	PARAM_LOAD(num_threads_);
+	PARAM_LOAD(min_indices_to_spawn_threads_);
 }
 
-AcceleratorKdTreeMultiThread::AcceleratorKdTreeMultiThread(Logger &logger, const std::vector<const Primitive *> &primitives, const Parameters &parameters) : Accelerator(logger)
+ParamMap AcceleratorKdTreeMultiThread::Params::getAsParamMap(bool only_non_default) const
 {
-	alignas(8) Parameters tree_build_parameters{parameters};
+	PARAM_SAVE_START;
+	PARAM_SAVE(max_depth_);
+	PARAM_SAVE(max_leaf_size_);
+	PARAM_SAVE(cost_ratio_);
+	PARAM_SAVE(empty_bonus_);
+	PARAM_SAVE(num_threads_);
+	PARAM_SAVE(min_indices_to_spawn_threads_);
+	PARAM_SAVE_END;
+}
 
+ParamMap AcceleratorKdTreeMultiThread::getAsParamMap(bool only_non_default) const
+{
+	ParamMap result{Accelerator::getAsParamMap(only_non_default)};
+	result.append(params_.getAsParamMap(only_non_default));
+	return result;
+}
+
+std::pair<Accelerator *, ParamError> AcceleratorKdTreeMultiThread::factory(Logger &logger, const std::vector<const Primitive *> &primitives, const ParamMap &param_map)
+{
+	auto param_error{Params::meta_.check(param_map, {"type"}, {})};
+	auto result {new AcceleratorKdTreeMultiThread(logger, param_error, primitives, param_map)};
+	if(param_error.flags_ != ParamError::Flags::Ok) logger.logWarning(param_error.print<AcceleratorKdTreeMultiThread>("", {"type"}));
+	return {result, param_error};
+}
+
+AcceleratorKdTreeMultiThread::AcceleratorKdTreeMultiThread(Logger &logger, ParamError &param_error, const std::vector<const Primitive *> &primitives, const ParamMap &param_map) : Accelerator{logger, param_error, param_map}, params_{param_error, param_map}
+{
+	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + params_.getAsParamMap(true).print());
 	const auto num_primitives = static_cast<uint32_t>(primitives.size());
-	logger_.logInfo("Kd-Tree MultiThread: Starting build (", num_primitives, " prims, cost_ratio:", parameters.cost_ratio_, " empty_bonus:", parameters.empty_bonus_, ") [using ", tree_build_parameters.num_threads_, " threads, min indices to spawn threads: ", tree_build_parameters.min_indices_to_spawn_threads_, "]");
+	logger_.logInfo("Kd-Tree MultiThread: Starting build (", num_primitives, " prims, cost_ratio:", params_.cost_ratio_, " empty_bonus:", params_.empty_bonus_, ") [using ", params_.num_threads_, " threads, min indices to spawn threads: ", params_.min_indices_to_spawn_threads_, "]");
 	clock_t clock_start = clock();
+	Params tree_build_parameters{params_};
 	if(tree_build_parameters.max_depth_ <= 0) tree_build_parameters.max_depth_ = static_cast<int>(7.0f + 1.66f * math::log(static_cast<float>(num_primitives)));
-	const double log_leaves = 1.442695 * math::log(static_cast<double >(num_primitives)); // = base2 log
+	const double log_leaves = 1.442695 * math::log(static_cast<double>(num_primitives)); // = base2 log
 	if(tree_build_parameters.max_leaf_size_ <= 0)
 	{
 		int mls = static_cast<int>(log_leaves - 16.0);
@@ -368,14 +389,14 @@ AcceleratorKdTreeMultiThread::SplitCost AcceleratorKdTreeMultiThread::minimalCos
 /*!
 	recursively build the Kd-tree
 */
-AcceleratorKdTreeMultiThread::Result AcceleratorKdTreeMultiThread::buildTree(const std::vector<const Primitive *> &primitives, const Bound<float> &node_bound, const std::vector<uint32_t> &indices, int depth, uint32_t next_node_id, int bad_refines, const std::vector<Bound<float>> &bounds, const Parameters &parameters, const ClipPlane &clip_plane, const std::vector<PolyDouble> &polygons, const std::vector<uint32_t> &primitive_indices, std::atomic<int> &num_current_threads) const
+AcceleratorKdTreeMultiThread::Result AcceleratorKdTreeMultiThread::buildTree(const std::vector<const Primitive *> &primitives, const Bound<float> &node_bound, const std::vector<uint32_t> &indices, int depth, uint32_t next_node_id, int bad_refines, const std::vector<Bound<float>> &bounds, const Params &parameters, const ClipPlane &clip_plane, const std::vector<PolyDouble> &polygons, const std::vector<uint32_t> &primitive_indices, std::atomic<int> &num_current_threads) const
 {
 	Result kd_tree_result;
 	buildTreeWorker(primitives, node_bound, indices, depth, next_node_id, bad_refines, bounds, parameters, clip_plane, polygons, primitive_indices, kd_tree_result, num_current_threads);
 	return kd_tree_result;
 }
 
-void AcceleratorKdTreeMultiThread::buildTreeWorker(const std::vector<const Primitive *> &primitives, const Bound<float> &node_bound, const std::vector<uint32_t> &indices, int depth, uint32_t next_node_id, int bad_refines, const std::vector<Bound<float>> &bounds, const Parameters &parameters, const ClipPlane &clip_plane, const std::vector<PolyDouble> &polygons, const std::vector<uint32_t> &primitive_indices, Result &result, std::atomic<int> &num_current_threads) const
+void AcceleratorKdTreeMultiThread::buildTreeWorker(const std::vector<const Primitive *> &primitives, const Bound<float> &node_bound, const std::vector<uint32_t> &indices, int depth, uint32_t next_node_id, int bad_refines, const std::vector<Bound<float>> &bounds, const Params &parameters, const ClipPlane &clip_plane, const std::vector<PolyDouble> &polygons, const std::vector<uint32_t> &primitive_indices, Result &result, std::atomic<int> &num_current_threads) const
 {
 	//Note: "indices" are:
 	// * primitive indices when not clipping primitives as polygons. In that case all primitive bounds are present using the same indexing as the complete primitive list

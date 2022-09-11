@@ -26,6 +26,7 @@
 
 namespace yafaray {
 
+class PhotonMap;
 class RandomGenerator;
 
 struct HitPoint final // actually are per-pixel variable, use to record the sppm's shared statistics
@@ -60,12 +61,29 @@ struct GatherInfo final
 class SppmIntegrator final : public MonteCarloIntegrator
 {
 	public:
-		static SurfaceIntegrator *factory(Logger &logger, RenderControl &render_control, const ParamMap &params, const Scene &scene);
+		inline static std::string getClassName() { return "SppmIntegrator"; }
+		static std::pair<SurfaceIntegrator *, ParamError> factory(Logger &logger, RenderControl &render_control, const ParamMap &params, const Scene &scene);
+		static std::string printMeta(const std::vector<std::string> &excluded_params) { return Params::meta_.print(excluded_params); }
 
 	private:
-		SppmIntegrator(RenderControl &render_control, Logger &logger, unsigned int d_photons, int passnum, bool transparent_shadows, int shadow_depth);
-		std::string getShortName() const override { return "SPPM"; }
-		std::string getName() const override { return "SPPM"; }
+		[[nodiscard]] Type type() const override { return Type::Sppm; }
+		const struct Params
+		{
+			PARAM_INIT_PARENT(TiledIntegrator);
+			PARAM_DECL(int , num_photons_, 500000, "photons", "Number of photons to scatter");
+			PARAM_DECL(int , num_passes_, 1000, "passNums", "Number of passes");
+			PARAM_DECL(int , bounces_, 5, "bounces", "");
+			PARAM_DECL(float , times_, 1.f, "times", "");
+			PARAM_DECL(float , photon_radius_, 1.f, "photonRadius", "Used to do initial radius estimate");
+			PARAM_DECL(int , search_num_, 10, "searchNum", "Now used to do initial radius estimate");
+			PARAM_DECL(bool , pm_ire_, false, "pmIRE", "Flag to say if using PM for initial radius estimate");
+		} params_;
+		[[nodiscard]] ParamMap getAsParamMap(bool only_non_default) const override;
+
+	private:
+		SppmIntegrator(RenderControl &render_control, Logger &logger, ParamError &param_error, const ParamMap &param_map);
+		[[nodiscard]] std::string getShortName() const override { return "SPPM"; }
+		[[nodiscard]] std::string getName() const override { return "SPPM"; }
 		bool render(FastRandom &fast_random, unsigned int object_index_highest, unsigned int material_index_highest) override;
 		/*! render a tile; only required by default implementation of render() */
 		bool renderTile(FastRandom &fast_random, std::vector<int> &correlative_sample_number, const RenderArea &a, int n_samples, int offset, bool adaptive, int thread_id, int aa_pass_number, unsigned int object_index_highest, unsigned int material_index_highest) override;
@@ -80,21 +98,19 @@ class SppmIntegrator final : public MonteCarloIntegrator
 		GatherInfo traceGatherRay(Ray &ray, HitPoint &hp, FastRandom &fast_random, RandomGenerator &random_generator, ColorLayers *color_layers, int thread_id, int ray_level, bool chromatic_enabled, float wavelength, const RayDivision &ray_division, const PixelSamplingData &pixel_sampling_data, unsigned int object_index_highest, unsigned int material_index_highest);
 		void photonWorker(FastRandom &fast_random, unsigned int &total_photons_shot, int thread_id, int num_d_lights, const Pdf1D *light_power_d, const std::vector<const Light *> &tmplights, int pb_step);
 
-		HashGrid  photon_grid_; // the hashgrid for holding photons
-		unsigned int n_photons_; //photon number to scatter
-		float ds_radius_; // used to do initial radius estimate
-		int n_search_;// now used to do initial radius estimate
-		int pass_num_; // the progressive pass number
-		float initial_factor_; // used to time the initial radius
-		uint64_t totaln_photons_; // amount of total photons that have been emited, used to normalize photon energy
-		bool pm_ire_; // flag to  say if using PM for initial radius estimate
-		bool b_hashgrid_; // flag to choose using hashgrid or not.
-		Halton hal_1_{2, 0}, hal_2_{3, 0}, hal_3_{5, 0}, hal_4_{7, 0}; // halton sequence to do
-		std::vector<HitPoint>hit_points_; // per-pixel refine data
-		unsigned int n_refined_; // Debug info: Refined pixel per pass
-		int n_max_gathered_ = 0; //Just for statistical information about max number of gathered photons
+		HashGrid photon_grid_; //!< the hashgrid for holding photons
+		bool pm_ire_{params_.pm_ire_}; // flag to  say if using PM for initial radius estimate
+		int n_photons_{params_.num_photons_}; //!< Number of photons to scatter
+		float initial_factor_{1.f}; //!< used to time the initial radius
+		uint64_t totaln_photons_{0}; //!< amount of total photons that have been emited, used to normalize photon energy
+		bool b_hashgrid_{false}; //!< flag to choose using hashgrid or not.
+		Halton hal_1_{2, 0}, hal_2_{3, 0}, hal_3_{5, 0}, hal_4_{7, 0}; //!< halton sequence to do
+		std::vector<HitPoint>hit_points_; //!< per-pixel refine data
+		unsigned int n_refined_; //!< Debug info: Refined pixel per pass
+		int n_max_gathered_ = 0; //!< Just for statistical information about max number of gathered photons
+		std::unique_ptr<PhotonMap> caustic_map_;
 		std::unique_ptr<PhotonMap> diffuse_map_;
-		static constexpr inline int n_max_gather_ = 1000; //used to gather all the photon in the radius. seems could get a better way to do that
+		static constexpr inline int n_max_gather_ = 1000; //!< used to gather all the photon in the radius. FIXME seems could get a better way to do that
 		std::mutex mutex_;
 };
 

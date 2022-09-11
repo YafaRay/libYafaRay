@@ -17,13 +17,16 @@
  *      Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-#ifndef YAFARAY_TEXTURE_H
-#define YAFARAY_TEXTURE_H
+#ifndef LIBYAFARAY_TEXTURE_H
+#define LIBYAFARAY_TEXTURE_H
 
 #include "color/color.h"
 #include "color/color_ramp.h"
 #include "geometry/vector.h"
 #include "common/logger.h"
+#include "common/enum.h"
+#include "common/enum_map.h"
+#include "param/class_meta.h"
 #include <memory>
 #include <sstream>
 
@@ -34,13 +37,26 @@ class Scene;
 class MipMapParams;
 class Logger;
 
-enum class InterpolationType : unsigned char { None, Bilinear, Bicubic, Trilinear, Ewa };
+struct InterpolationType : public Enum<InterpolationType>
+{
+	using Enum::Enum;
+	enum : decltype(type()) { Bilinear, Bicubic, Trilinear, Ewa, None };
+	inline static const EnumMap<decltype(type())> map_{{
+			{"bilinear", Bilinear, "Bilinear interpolation (recommended default)"},
+			{"bicubic", Bicubic, "Bicubic interpolation (slower but better quality than bilinear)"},
+			{"mipmap_trilinear", Trilinear, "For trilinear mipmaps interpolation (to avoid aliasing in far distances)"},
+			{"mipmap_ewa", Ewa, "For EWA mipmaps interpolation (to avoid aliasing in far distances). Slower but better quality than trilinear"},
+			{"none", None, "No interpolation, not recommended for production"},
+		}};
+};
 
 class Texture
 {
-	public :
-		static Texture *factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params);
-		explicit Texture(Logger &logger) : logger_(logger) { }
+	public:
+		inline static std::string getClassName() { return "Texture"; }
+		static std::pair<Texture *, ParamError> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map);
+		[[nodiscard]] virtual ParamMap getAsParamMap(bool only_non_default) const;
+		Texture(Logger &logger, ParamError &param_error, const ParamMap &param_map);
 		virtual ~Texture() = default;
 
 		/* indicate wether the the texture is discrete (e.g. image map) or continuous */
@@ -60,37 +76,66 @@ class Texture
 		/* gives the number of values in each dimension for discrete textures. Returns resolution of the texture, last coordinate z/depth is for 3D textures (not currently implemented) */
 		virtual std::array<int, 3> resolution() const { return {0, 0, 0}; };
 		virtual void generateMipMaps() {}
-		void setAdjustments(float intensity, float contrast, float saturation, float hue, bool clamp, float factor_red, float factor_green, float factor_blue);
 		Rgba applyAdjustments(const Rgba &tex_col) const;
 		Rgba applyIntensityContrastAdjustments(const Rgba &tex_col) const;
 		float applyIntensityContrastAdjustments(float tex_float) const;
 		Rgba applyColorAdjustments(const Rgba &tex_col) const;
-		void colorRampCreate(const std::string &mode_str, const std::string &interpolation_str, const std::string &hue_interpolation_str) { color_ramp_ = std::make_unique<ColorRamp>(mode_str, interpolation_str, hue_interpolation_str); }
-		void colorRampAddItem(const Rgba &color, float position) { if(color_ramp_) color_ramp_->addItem(color, position); }
-		InterpolationType getInterpolationType() const { return interpolation_type_; }
-		static InterpolationType getInterpolationTypeFromName(const std::string &interpolation_type_name);
-		static std::string getInterpolationTypeName(const InterpolationType &interpolation_type);
+		InterpolationType getInterpolationType() const { return params_.interpolation_type_; }
 		static Uv<float> angMap(const Point3f &p);
 		static void tubeMap(const Point3f &p, float &u, float &v);
 		static Uv<float> sphereMap(const Point3f &p);
 		static Point3f invSphereMap(const Uv<float> &uv);
 
 	protected:
-		static void textureReadColorRamp(const ParamMap &params, Texture *tex);
-		float adj_intensity_ = 1.f;
-		float adj_contrast_ = 1.f;
-		float adj_saturation_ = 1.f;
-		float adj_hue_ = 0.f;
-		bool adj_clamp_ = false;
-		float adj_mult_factor_red_ = 1.f;
-		float adj_mult_factor_green_ = 1.f;
-		float adj_mult_factor_blue_ = 1.f;
-		bool adjustments_set_ = false;
+		struct Type : public Enum<Type>
+		{
+			using Enum::Enum;
+			enum : decltype(type()) { None, Blend, Clouds, Marble, Wood, Voronoi, Musgrave, DistortedNoise, RgbCube, Image };
+			inline static const EnumMap<decltype(type())> map_{{
+					{"blend", Blend, ""},
+					{"clouds", Clouds, ""},
+					{"marble", Marble, ""},
+					{"wood", Wood, ""},
+					{"voronoi", Voronoi, ""},
+					{"musgrave", Musgrave, ""},
+					{"distorted_noise", DistortedNoise, ""},
+					{"rgb_cube", RgbCube, ""},
+					{"image", Image, ""},
+				}};
+		};
+		[[nodiscard]] virtual Type type() const = 0;
+		const struct Params
+		{
+			PARAM_INIT;
+			PARAM_DECL(float, adj_mult_factor_red_, 1.f, "adj_mult_factor_red", "");
+			PARAM_DECL(float, adj_mult_factor_green_, 1.f, "adj_mult_factor_green", "");
+			PARAM_DECL(float, adj_mult_factor_blue_, 1.f, "adj_mult_factor_blue", "");
+			PARAM_DECL(float, adj_intensity_, 1.f, "adj_intensity", "");
+			PARAM_DECL(float, adj_contrast_, 1.f, "adj_contrast", "");
+			PARAM_DECL(float, adj_saturation_, 1.f, "adj_saturation", "");
+			PARAM_DECL(float, adj_hue_degrees_, 0.f, "adj_hue", "");
+			PARAM_DECL(bool, adj_clamp_, false, "adj_clamp", "");
+			PARAM_ENUM_DECL(InterpolationType, interpolation_type_, InterpolationType::Bilinear, "interpolate", "Interpolation type (currently only used in image textures)");
+			PARAM_DECL(int, ramp_num_items_, 0, "ramp_num_items", "Number of items in color ramp. Ramp disabled if this value is zero. If this is non-zero, then add also the ramp items with additional entries 'ramp_item_(num)_color (color)' and 'ramp_item_(num)_position (float)'");
+			PARAM_ENUM_DECL(ColorRamp::Mode, ramp_color_mode_, ColorRamp::Mode::Rgb, "ramp_color_mode", "");
+			PARAM_ENUM_DECL(ColorRamp::Interpolation, ramp_interpolation_, ColorRamp::Interpolation::Linear, "ramp_interpolation", "");
+			PARAM_ENUM_DECL(ColorRamp::HueInterpolation, ramp_hue_interpolation_, ColorRamp::HueInterpolation::Near, "ramp_hue_interpolation", "");
+		} params_;
+		const float adj_hue_radians_{params_.adj_hue_degrees_ / 60.f};
+		const bool adjustments_set_{
+				CHECK_PARAM_NOT_DEFAULT(adj_mult_factor_red_) ||
+				CHECK_PARAM_NOT_DEFAULT(adj_mult_factor_green_) ||
+				CHECK_PARAM_NOT_DEFAULT(adj_mult_factor_blue_) ||
+				CHECK_PARAM_NOT_DEFAULT(adj_intensity_) ||
+				CHECK_PARAM_NOT_DEFAULT(adj_contrast_) ||
+				CHECK_PARAM_NOT_DEFAULT(adj_saturation_) ||
+				CHECK_PARAM_NOT_DEFAULT(adj_hue_degrees_) ||
+				CHECK_PARAM_NOT_DEFAULT(adj_clamp_)
+		};
 		std::unique_ptr<ColorRamp> color_ramp_;
 		Logger &logger_;
-		InterpolationType interpolation_type_ = InterpolationType::Bilinear;
 };
 
 } //namespace yafaray
 
-#endif // YAFARAY_TEXTURE_H
+#endif // LIBYAFARAY_TEXTURE_H

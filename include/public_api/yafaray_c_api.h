@@ -128,6 +128,8 @@ extern "C" {
 	YAFARAY_C_API_EXPORT yafaray_Image_t *yafaray_createImage(yafaray_Interface_t *interface, const char *name);
 	YAFARAY_C_API_EXPORT yafaray_bool_t yafaray_setImageColor(yafaray_Image_t *image, int x, int y, float red, float green, float blue, float alpha);
 	YAFARAY_C_API_EXPORT yafaray_bool_t yafaray_getImageColor(const yafaray_Image_t *image, int x, int y, float *red, float *green, float *blue, float *alpha);
+	YAFARAY_C_API_EXPORT int yafaray_getImageWidth(const yafaray_Image_t *image);
+	YAFARAY_C_API_EXPORT int yafaray_getImageHeight(const yafaray_Image_t *image);
 	YAFARAY_C_API_EXPORT void yafaray_setConsoleLogColorsEnabled(yafaray_Interface_t *interface, yafaray_bool_t colors_enabled);
 	YAFARAY_C_API_EXPORT int yafaray_getVersionMajor();
 	YAFARAY_C_API_EXPORT int yafaray_getVersionMinor();

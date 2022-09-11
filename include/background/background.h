@@ -21,7 +21,11 @@
 #define YAFARAY_BACKGROUND_H
 
 #include "color/color.h"
+#include "common/enum.h"
+#include "common/enum_map.h"
+#include "param/class_meta.h"
 #include <memory>
+#include <vector>
 
 namespace yafaray {
 
@@ -36,8 +40,10 @@ typedef Vec<float, 3> Vec3f;
 class Background
 {
 	public:
-		static const Background * factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params);
-		explicit Background(Logger &logger);
+		inline static std::string getClassName() { return "Background"; }
+		static std::pair<Background *, ParamError> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map);
+		[[nodiscard]] virtual ParamMap getAsParamMap(bool only_non_default) const;
+		explicit Background(Logger &logger, ParamError &param_error, const ParamMap &param_map);
 		virtual ~Background();
 		Rgb operator()(const Vec3f &dir) const { return operator()(dir, false); }
 		virtual Rgb operator()(const Vec3f &dir, bool use_ibl_blur) const { return eval(dir, use_ibl_blur); }
@@ -47,6 +53,29 @@ class Background
 		std::vector<Light *> getLights() const;
 
 	protected:
+		struct Type : public Enum<Type>
+		{
+			using Enum::Enum;
+			enum : decltype(type()) { None, DarkSky, Gradient, SunSky, Texture, Constant };
+			inline static const EnumMap<decltype(type())> map_{{
+					{"darksky", DarkSky, ""},
+					{"gradientback", Gradient, ""},
+					{"sunsky", SunSky, ""},
+					{"textureback", Texture, ""},
+					{"constant", Constant, ""},
+				}};
+		};
+		[[nodiscard]] virtual Type type() const = 0;
+		const struct Params
+		{
+			PARAM_INIT;
+			PARAM_DECL(float, power_, 1.f, "power", "");
+			PARAM_DECL(bool , ibl_, false, "ibl", "");
+			PARAM_DECL(int, ibl_samples_, 16, "ibl_samples", "");
+			PARAM_DECL(bool, with_caustic_, true, "with_caustic", "");
+			PARAM_DECL(bool, with_diffuse_, true, "with_diffuse", "");
+			PARAM_DECL(bool, cast_shadows_, true, "cast_shadows", "");
+		} params_;
 		std::vector<std::unique_ptr<Light>> lights_;
 		Logger &logger_;
 };

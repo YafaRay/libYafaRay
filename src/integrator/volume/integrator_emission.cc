@@ -17,13 +17,45 @@
  */
 
 #include "integrator/volume/integrator_emission.h"
-#include "volume/volume.h"
 #include "scene/scene.h"
 #include "material/material.h"
 #include "background/background.h"
 #include "light/light.h"
+#include "volume/handler/volume_handler.h"
+#include "volume/region/volume_region.h"
 
 namespace yafaray {
+
+EmissionIntegrator::Params::Params(ParamError &param_error, const ParamMap &param_map)
+{
+}
+
+ParamMap EmissionIntegrator::Params::getAsParamMap(bool only_non_default) const
+{
+	PARAM_SAVE_START;
+	PARAM_SAVE_END;
+}
+
+ParamMap EmissionIntegrator::getAsParamMap(bool only_non_default) const
+{
+	ParamMap result{VolumeIntegrator::getAsParamMap(only_non_default)};
+	result.append(params_.getAsParamMap(only_non_default));
+	return result;
+}
+
+std::pair<VolumeIntegrator *, ParamError> EmissionIntegrator::factory(Logger &logger, const ParamMap &param_map, const Scene &scene)
+{
+	auto param_error{Params::meta_.check(param_map, {"type"}, {})};
+	auto result {new EmissionIntegrator(logger, param_error, param_map)};
+	if(param_error.flags_ != ParamError::Flags::Ok) logger.logWarning(param_error.print<EmissionIntegrator>(getClassName(), {"type"}));
+	return {result, param_error};
+}
+
+EmissionIntegrator::EmissionIntegrator(Logger &logger, ParamError &param_error, const ParamMap &param_map) : VolumeIntegrator(logger, param_error, param_map), params_{param_error, param_map}
+{
+	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + params_.getAsParamMap(true).print());
+	//render_info_ += getClassName() + ": '" + params_.debug_type_.print() + "' | ";
+}
 
 Rgb EmissionIntegrator::transmittance(RandomGenerator &random_generator, const Ray &ray) const
 {
@@ -58,11 +90,6 @@ Rgb EmissionIntegrator::integrate(RandomGenerator &random_generator, const Ray &
 		result *= step;
 	}
 	return result;
-}
-
-VolumeIntegrator * EmissionIntegrator::factory(Logger &logger, RenderControl &render_control, const ParamMap &params, const Scene &scene)
-{
-	return new EmissionIntegrator(logger);
 }
 
 } //namespace yafaray

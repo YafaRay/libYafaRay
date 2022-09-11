@@ -21,23 +21,31 @@
 
 #include "integrator/surface/integrator_direct_light.h"
 #include "geometry/surface.h"
-#include "common/param.h"
+#include "param/param.h"
 #include "color/color_layers.h"
-#include "accelerator/accelerator.h"
 #include "render/imagesplitter.h"
+#include "render/render_view.h"
+#include "common/timer.h"
 
 namespace yafaray {
-
-DirectLightIntegrator::DirectLightIntegrator(RenderControl &render_control, Logger &logger, bool transparent_shadows, int shadow_depth, int ray_depth) : MonteCarloIntegrator(render_control, logger)
+ParamMap DirectLightIntegrator::getAsParamMap(bool only_non_default) const
 {
-	caus_radius_ = 0.25;
-	caus_depth_ = 10;
-	n_caus_photons_ = 100000;
-	n_caus_search_ = 100;
-	transparent_shadows_ = transparent_shadows;
-	use_photon_caustics_ = false;
-	s_depth_ = shadow_depth;
-	r_depth_ = ray_depth;
+	ParamMap result{CausticPhotonIntegrator::getAsParamMap(only_non_default)};
+	result.append(params_.getAsParamMap(only_non_default));
+	return result;
+}
+
+std::pair<SurfaceIntegrator *, ParamError> DirectLightIntegrator::factory(Logger &logger, RenderControl &render_control, const ParamMap &param_map, const Scene &scene)
+{
+	auto param_error{Params::meta_.check(param_map, {"type"}, {})};
+	auto result {new DirectLightIntegrator(render_control, logger, param_error, param_map)};
+	if(param_error.flags_ != ParamError::Flags::Ok) logger.logWarning(param_error.print<DirectLightIntegrator>(getClassName(), {"type"}));
+	return {result, param_error};
+}
+
+DirectLightIntegrator::DirectLightIntegrator(RenderControl &render_control, Logger &logger, ParamError &param_error, const ParamMap &param_map) : CausticPhotonIntegrator(render_control, logger, param_error, param_map)
+{
+	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + params_.getAsParamMap(true).print());
 }
 
 bool DirectLightIntegrator::preprocess(FastRandom &fast_random, ImageFilm *image_film, const RenderView *render_view, const Scene &scene)
@@ -50,33 +58,33 @@ bool DirectLightIntegrator::preprocess(FastRandom &fast_random, ImageFilm *image
 
 	set << "Direct Light  ";
 
-	if(transparent_shadows_)
+	if(MonteCarloIntegrator::params_.transparent_shadows_)
 	{
-		set << "ShadowDepth=" << s_depth_ << "  ";
+		set << "ShadowDepth=" << MonteCarloIntegrator::params_.shadow_depth_ << "  ";
 	}
-	set << "RayDepth=" << r_depth_ << "  ";
+	set << "RayDepth=" << MonteCarloIntegrator::params_.r_depth_ << "  ";
 
-	if(use_ambient_occlusion_)
+	if(MonteCarloIntegrator::params_.ao_)
 	{
-		set << "AO samples=" << ao_samples_ << " dist=" << ao_dist_ << "  ";
+		set << "AO samples=" << MonteCarloIntegrator::params_.ao_samples_ << " dist=" << MonteCarloIntegrator::params_.ao_distance_ << "  ";
 	}
 
 	lights_ = render_view->getLightsVisible();
 
-	if(use_photon_caustics_)
+	if(CausticPhotonIntegrator::params_.use_photon_caustics_)
 	{
 		success = success && createCausticMap(fast_random);
-		set << "\nCaustic photons=" << n_caus_photons_ << " search=" << n_caus_search_ << " radius=" << caus_radius_ << " depth=" << caus_depth_ << "  ";
+		set << "\nCaustic photons=" << n_caus_photons_ << " search=" << CausticPhotonIntegrator::params_.n_caus_search_ << " radius=" << CausticPhotonIntegrator::params_.caus_radius_ << " depth=" << CausticPhotonIntegrator::params_.caus_depth_ << "  ";
 
-		if(photon_map_processing_ == PhotonsLoad)
+		if(photon_map_processing_ == PhotonMapProcessing::Load)
 		{
 			set << " (loading photon maps from file)";
 		}
-		else if(photon_map_processing_ == PhotonsReuse)
+		else if(photon_map_processing_ == PhotonMapProcessing::Reuse)
 		{
 			set << " (reusing photon maps from memory)";
 		}
-		else if(photon_map_processing_ == PhotonsGenerateAndSave) set << " (saving photon maps to file)";
+		else if(photon_map_processing_ == PhotonMapProcessing::GenerateAndSave) set << " (saving photon maps to file)";
 	}
 
 	timer_->stop("prepass");
@@ -105,23 +113,23 @@ std::pair<Rgb, float> DirectLightIntegrator::integrate(Ray &ray, FastRandom &fas
 		const BsdfFlags mat_bsdfs = sp->mat_data_->bsdf_flags_;
 		const Vec3f wo{-ray.dir_};
 		additional_depth = std::max(additional_depth, sp->getMaterial()->getAdditionalDepth());
-		if(flags::have(mat_bsdfs, BsdfFlags::Emit))
+		if(mat_bsdfs.has(BsdfFlags::Emit))
 		{
 			const Rgb col_emit = sp->emit(wo);
 			col += col_emit;
-			if(color_layers && flags::have(color_layers->getFlags(), LayerDef::Flags::BasicLayers))
+			if(color_layers && color_layers->getFlags().has(LayerDef::Flags::BasicLayers))
 			{
 				if(Rgba *color_layer = color_layers->find(LayerDef::Emit)) *color_layer = Rgba{col_emit};
 			}
 		}
-		if(flags::have(mat_bsdfs, BsdfFlags::Diffuse))
+		if(mat_bsdfs.has(BsdfFlags::Diffuse))
 		{
 			col += estimateAllDirectLight(random_generator, color_layers, chromatic_enabled, wavelength, *sp, wo, ray_division, pixel_sampling_data);
-			if(use_photon_caustics_)
+			if(CausticPhotonIntegrator::params_.use_photon_caustics_)
 			{
-				col += causticPhotons(color_layers, ray, *sp, wo, aa_noise_params_.clamp_indirect_, caustic_map_.get(), caus_radius_, n_caus_search_);
+				col += causticPhotons(color_layers, ray, *sp, wo, aa_noise_params_.clamp_indirect_, caustic_map_.get(), CausticPhotonIntegrator::params_.caus_radius_, CausticPhotonIntegrator::params_.n_caus_search_);
 			}
-			if(use_ambient_occlusion_) col += sampleAmbientOcclusion(*accelerator_, chromatic_enabled, wavelength, *sp, wo, ray_division, camera_, pixel_sampling_data, transparent_shadows_, false, ao_samples_, shadow_bias_auto_, shadow_bias_, ao_dist_, ao_col_, s_depth_);
+			if(MonteCarloIntegrator::params_.ao_) col += sampleAmbientOcclusion(*accelerator_, chromatic_enabled, wavelength, *sp, wo, ray_division, camera_, pixel_sampling_data, MonteCarloIntegrator::params_.transparent_shadows_, false, MonteCarloIntegrator::params_.ao_samples_, shadow_bias_auto_, shadow_bias_, MonteCarloIntegrator::params_.ao_distance_, MonteCarloIntegrator::params_.ao_color_, MonteCarloIntegrator::params_.shadow_depth_);
 		}
 		const auto [raytrace_col, raytrace_alpha]{recursiveRaytrace(fast_random, random_generator, correlative_sample_number, color_layers, thread_id, ray_level + 1, chromatic_enabled, wavelength, ray, mat_bsdfs, *sp, wo, additional_depth, ray_division, pixel_sampling_data)};
 		col += raytrace_col;
@@ -129,7 +137,7 @@ std::pair<Rgb, float> DirectLightIntegrator::integrate(Ray &ray, FastRandom &fas
 		if(color_layers)
 		{
 			generateCommonLayers(color_layers, *sp, mask_params_, object_index_highest, material_index_highest);
-			generateOcclusionLayers(color_layers, *accelerator_, chromatic_enabled, wavelength, ray_division, camera_, pixel_sampling_data, *sp, wo, ao_samples_, shadow_bias_auto_, shadow_bias_, ao_dist_, ao_col_, s_depth_);
+			generateOcclusionLayers(color_layers, *accelerator_, chromatic_enabled, wavelength, ray_division, camera_, pixel_sampling_data, *sp, wo, MonteCarloIntegrator::params_.ao_samples_, shadow_bias_auto_, shadow_bias_, MonteCarloIntegrator::params_.ao_distance_, MonteCarloIntegrator::params_.ao_color_, MonteCarloIntegrator::params_.shadow_depth_);
 			if(Rgba *color_layer = color_layers->find(LayerDef::DebugObjectTime))
 			{
 				const float col_combined_gray = col.col2Bri();
@@ -140,74 +148,13 @@ std::pair<Rgb, float> DirectLightIntegrator::integrate(Ray &ray, FastRandom &fas
 	}
 	else // Nothing hit, return background if any
 	{
-		std::tie(col, alpha) = background(ray, color_layers, transp_background_, transp_refracted_background_, background_, ray_level);
+		std::tie(col, alpha) = background(ray, color_layers, MonteCarloIntegrator::params_.transparent_background_, MonteCarloIntegrator::params_.transparent_background_refraction_, background_, ray_level);
 	}
 	if(vol_integrator_)
 	{
-		applyVolumetricEffects(col, alpha, color_layers, ray, random_generator, vol_integrator_, transp_background_);
+		applyVolumetricEffects(col, alpha, color_layers, ray, random_generator, vol_integrator_, MonteCarloIntegrator::params_.transparent_background_);
 	}
 	return {std::move(col), alpha};
-}
-
-SurfaceIntegrator * DirectLightIntegrator::factory(Logger &logger, RenderControl &render_control, const ParamMap &params, const Scene &scene)
-{
-	bool transparent_shadows = false;
-	bool caustics = false;
-	bool do_ao = false;
-	int shadow_depth = 5;
-	int raydepth = 5, c_depth = 10;
-	int search = 100, photons = 500000;
-	int ao_samples = 32;
-	double c_rad = 0.25;
-	double ao_dist = 1.0;
-	Rgb ao_col(1.f);
-	bool bg_transp = false;
-	bool bg_transp_refract = false;
-	bool time_forced = false;
-	float time_forced_value = 0.f;
-	std::string photon_maps_processing_str = "generate";
-	params.getParam("raydepth", raydepth);
-	params.getParam("transpShad", transparent_shadows);
-	params.getParam("shadowDepth", shadow_depth);
-	params.getParam("caustics", caustics);
-	params.getParam("photons", photons);
-	params.getParam("caustic_mix", search);
-	params.getParam("caustic_depth", c_depth);
-	params.getParam("caustic_radius", c_rad);
-	params.getParam("do_AO", do_ao);
-	params.getParam("AO_samples", ao_samples);
-	params.getParam("AO_distance", ao_dist);
-	params.getParam("AO_color", ao_col);
-	params.getParam("bg_transp", bg_transp);
-	params.getParam("bg_transp_refract", bg_transp_refract);
-	params.getParam("photon_maps_processing", photon_maps_processing_str);
-	params.getParam("time_forced", time_forced);
-	params.getParam("time_forced_value", time_forced_value);
-
-	auto inte = new DirectLightIntegrator(render_control, logger, transparent_shadows, shadow_depth, raydepth);
-	// caustic settings
-	inte->use_photon_caustics_ = caustics;
-	inte->n_caus_photons_ = photons;
-	inte->n_caus_search_ = search;
-	inte->caus_depth_ = c_depth;
-	inte->caus_radius_ = c_rad;
-	// AO settings
-	inte->use_ambient_occlusion_ = do_ao;
-	inte->ao_samples_ = ao_samples;
-	inte->ao_dist_ = ao_dist;
-	inte->ao_col_ = ao_col;
-	// Background settings
-	inte->transp_background_ = bg_transp;
-	inte->transp_refracted_background_ = bg_transp_refract;
-	inte->time_forced_ = time_forced;
-	inte->time_forced_value_ = time_forced_value;
-
-	if(photon_maps_processing_str == "generate-save") inte->photon_map_processing_ = PhotonsGenerateAndSave;
-	else if(photon_maps_processing_str == "load") inte->photon_map_processing_ = PhotonsLoad;
-	else if(photon_maps_processing_str == "reuse-previous") inte->photon_map_processing_ = PhotonsReuse;
-	else inte->photon_map_processing_ = PhotonsGenerateOnly;
-
-	return inte;
 }
 
 } //namespace yafaray
