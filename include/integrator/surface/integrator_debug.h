@@ -58,10 +58,7 @@ class DebugIntegrator final : public TiledIntegrator
 			PARAM_DECL(bool , show_pn_, false, "showPN", "");
 		} params_;
 		[[nodiscard]] ParamMap getAsParamMap(bool only_non_default) const override;
-
-	private:
 		DebugIntegrator(RenderControl &render_control, Logger &logger, ParamError &param_error, const ParamMap &param_map);
-		[[nodiscard]] std::string getShortName() const override { return "DBG"; }
 		[[nodiscard]] std::string getName() const override { return "DebugIntegrator"; }
 		bool preprocess(FastRandom &fast_random, ImageFilm *image_film, const RenderView *render_view, const Scene &scene) override;
 		std::pair<Rgb, float> integrate(Ray &ray, FastRandom &fast_random, RandomGenerator &random_generator, std::vector<int> &correlative_sample_number, ColorLayers *color_layers, int thread_id, int ray_level, bool chromatic_enabled, float wavelength, int additional_depth, const RayDivision &ray_division, const PixelSamplingData &pixel_sampling_data, unsigned int object_index_highest, unsigned int material_index_highest) const override;

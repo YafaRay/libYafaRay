@@ -23,7 +23,6 @@
 #ifndef LIBYAFARAY_INTEGRATOR_VOLUME_H
 #define LIBYAFARAY_INTEGRATOR_VOLUME_H
 
-#include "integrator/integrator.h"
 #include "common/enum.h"
 #include "common/enum_map.h"
 #include "param/class_meta.h"
@@ -37,14 +36,21 @@ class RandomGenerator;
 class Rgb;
 class ParamMap;
 class VolumeRegion;
+class Scene;
+class ImageFilm;
+class RenderView;
+class Accelerator;
+class FastRandom;
 
-class VolumeIntegrator: public Integrator
+class VolumeIntegrator
 {
 	public:
 		inline static std::string getClassName() { return "VolumeIntegrator"; }
 		static std::pair<VolumeIntegrator *, ParamError> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map);
+		[[nodiscard]] virtual ParamMap getAsParamMap(bool only_non_default) const;
+		virtual ~VolumeIntegrator() = default;
 		static std::string printMeta(const std::vector<std::string> &excluded_params) { return Params::meta_.print(excluded_params); }
-		bool preprocess(FastRandom &fast_random, ImageFilm *image_film, const RenderView *render_view, const Scene &scene) override;
+		virtual bool preprocess(FastRandom &fast_random, ImageFilm *image_film, const RenderView *render_view, const Scene &scene);
 		Rgb integrate(RandomGenerator &random_generator, const Ray &ray) const;
 		virtual Rgb transmittance(RandomGenerator &random_generator, const Ray &ray) const = 0;
 		virtual Rgb integrate(RandomGenerator &random_generator, const Ray &ray, int additional_depth) const = 0;
@@ -66,9 +72,10 @@ class VolumeIntegrator: public Integrator
 		{
 			PARAM_INIT;
 		} params_;
-		[[nodiscard]] virtual ParamMap getAsParamMap(bool only_non_default) const;
-		explicit VolumeIntegrator(Logger &logger, ParamError &param_error, const ParamMap &param_map) : Integrator{logger}, params_{param_error, param_map} { }
+		explicit VolumeIntegrator(Logger &logger, ParamError &param_error, const ParamMap &param_map) : params_{param_error, param_map}, logger_{logger} { }
+
 		const std::map<std::string, std::unique_ptr<VolumeRegion>> *volume_regions_ = nullptr;
+		Logger &logger_;
 };
 
 } //namespace yafaray

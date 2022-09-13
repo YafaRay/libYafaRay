@@ -57,9 +57,8 @@ std::pair<VolumeIntegrator *, ParamError> VolumeIntegrator::factory(Logger &logg
 
 bool VolumeIntegrator::preprocess(FastRandom &fast_random, ImageFilm *image_film, const RenderView *render_view, const Scene &scene)
 {
-	bool success = Integrator::preprocess(fast_random, image_film, render_view, scene);
 	volume_regions_ = scene.getVolumeRegions();
-	return success && static_cast<bool>(volume_regions_);
+	return static_cast<bool>(volume_regions_);
 }
 
 Rgb VolumeIntegrator::integrate(RandomGenerator &random_generator, const Ray &ray) const

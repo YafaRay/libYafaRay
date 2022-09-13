@@ -68,6 +68,8 @@ SingleScatterIntegrator::SingleScatterIntegrator(Logger &logger, ParamError &par
 bool SingleScatterIntegrator::preprocess(FastRandom &fast_random, ImageFilm *image_film, const RenderView *render_view, const Scene &scene)
 {
 	bool success = VolumeIntegrator::preprocess(fast_random, image_film, render_view, scene);
+	accelerator_ = scene.getAccelerator();
+	if(!accelerator_) return false;
 	logger_.logInfo("SingleScatter: Preprocessing...");
 	lights_ = render_view->getLightsVisible();
 	vr_size_ = volume_regions_->size();
@@ -105,7 +107,7 @@ bool SingleScatterIntegrator::preprocess(FastRandom &fast_random, ImageFilm *ima
 							if(light->diracLight())
 							{
 								auto[hit, light_ray, lcol]{light->illuminate(p, 0.f)}; //FIXME: what time to use?
-								light_ray.tmin_ = shadow_bias_;
+								light_ray.tmin_ = scene.getShadowBias();
 								if(light_ray.tmax_ < 0.f) light_ray.tmax_ = 1e10f;  // infinitely distant light
 
 								// transmittance from the point p in the volume to the light (i.e. how much light reaches p)
@@ -133,7 +135,7 @@ bool SingleScatterIntegrator::preprocess(FastRandom &fast_random, ImageFilm *ima
 									ls.s_2_ = 0.5f; //(*state.random_generator)();
 
 									auto[hit, light_ray]{light->illumSample(p, ls, 0.f)}; //FIXME: what time to use?
-									light_ray.tmin_ = shadow_bias_;
+									light_ray.tmin_ = scene.getShadowBias();
 									if(light_ray.tmax_ < 0.f) light_ray.tmax_ = 1e10f;  // infinitely distant light
 
 									// transmittance from the point p in the volume to the light (i.e. how much light reaches p)

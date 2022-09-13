@@ -79,10 +79,7 @@ class SppmIntegrator final : public MonteCarloIntegrator
 			PARAM_DECL(bool , pm_ire_, false, "pmIRE", "Flag to say if using PM for initial radius estimate");
 		} params_;
 		[[nodiscard]] ParamMap getAsParamMap(bool only_non_default) const override;
-
-	private:
 		SppmIntegrator(RenderControl &render_control, Logger &logger, ParamError &param_error, const ParamMap &param_map);
-		[[nodiscard]] std::string getShortName() const override { return "SPPM"; }
 		[[nodiscard]] std::string getName() const override { return "SPPM"; }
 		bool render(FastRandom &fast_random, unsigned int object_index_highest, unsigned int material_index_highest) override;
 		/*! render a tile; only required by default implementation of render() */

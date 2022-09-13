@@ -73,7 +73,10 @@ std::pair<SurfaceIntegrator *, ParamError> SurfaceIntegrator::factory(Logger &lo
 
 bool SurfaceIntegrator::preprocess(FastRandom &fast_random, ImageFilm *image_film, const RenderView *render_view, const Scene &scene)
 {
-	bool success = Integrator::preprocess(fast_random, image_film, render_view, scene);
+	accelerator_ = scene.getAccelerator();
+	if(!accelerator_) return false;
+	shadow_bias_ = scene.getShadowBias();
+	ray_min_dist_ = scene.getRayMinDist();
 	num_threads_ = scene.getNumThreads();
 	num_threads_photons_ = scene.getNumThreadsPhotons();
 	shadow_bias_auto_ = scene.isShadowBiasAuto();
@@ -89,7 +92,7 @@ bool SurfaceIntegrator::preprocess(FastRandom &fast_random, ImageFilm *image_fil
 	timer_ = image_film->getTimer();
 	vol_integrator_ = scene.getVolIntegrator();
 	scene_bound_ = scene.getSceneBound();
-	return success && static_cast<bool>(layers_) && static_cast<bool>(image_film) && static_cast<bool>(render_view_) && static_cast<bool>(camera_) && static_cast<bool>(timer_);
+	return static_cast<bool>(layers_) && static_cast<bool>(image_film) && static_cast<bool>(render_view_) && static_cast<bool>(camera_) && static_cast<bool>(timer_);
 }
 
 } //namespace yafaray

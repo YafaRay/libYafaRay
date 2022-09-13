@@ -22,7 +22,6 @@
 #include "accelerator/accelerator_simple_test.h"
 #include "common/logger.h"
 #include "param/param.h"
-#include "integrator/integrator.h"
 
 namespace yafaray {
 

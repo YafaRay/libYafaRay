@@ -38,11 +38,7 @@ class EmissionIntegrator final : public VolumeIntegrator
 			PARAM_INIT_PARENT(VolumeIntegrator);
 		} params_;
 		[[nodiscard]] ParamMap getAsParamMap(bool only_non_default) const override;
-
-	private:
 		explicit EmissionIntegrator(Logger &logger, ParamError &param_error, const ParamMap &param_map);
-		[[nodiscard]] std::string getShortName() const override { return "Em"; }
-		[[nodiscard]] std::string getName() const override { return "Emission"; }
 		// optical thickness, absorption, attenuation, extinction
 		Rgb transmittance(RandomGenerator &random_generator, const Ray &ray) const override;
 		// emission part

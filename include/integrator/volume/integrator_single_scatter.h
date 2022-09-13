@@ -49,11 +49,7 @@ class SingleScatterIntegrator final : public VolumeIntegrator
 			PARAM_DECL(bool , optimize_, false, "optimize", "");
 		} params_;
 		[[nodiscard]] ParamMap getAsParamMap(bool only_non_default) const override;
-
-	private:
 		SingleScatterIntegrator(Logger &logger, ParamError &param_error, const ParamMap &param_map);
-		[[nodiscard]] std::string getShortName() const override { return "SSc"; }
-		[[nodiscard]] std::string getName() const override { return "SingleScatter"; }
 		bool preprocess(FastRandom &fast_random, ImageFilm *image_film, const RenderView *render_view, const Scene &scene) override;
 		// optical thickness, absorption, attenuation, extinction
 		Rgb transmittance(RandomGenerator &random_generator, const Ray &ray) const override;
@@ -65,6 +61,7 @@ class SingleScatterIntegrator final : public VolumeIntegrator
 		std::vector<const Light *> lights_;
 		unsigned int vr_size_{1};
 		float i_vr_size_{1.f};
+		const Accelerator *accelerator_ = nullptr;
 };
 
 } //namespace yafaray

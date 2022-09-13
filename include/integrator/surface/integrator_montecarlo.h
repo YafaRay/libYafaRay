@@ -52,8 +52,6 @@ class MonteCarloIntegrator: public TiledIntegrator
 		} params_;
 		[[nodiscard]] ParamMap getAsParamMap(bool only_non_default) const override;
 		MonteCarloIntegrator(RenderControl &render_control, Logger &logger, ParamError &param_error, const ParamMap &param_map);
-
-	protected:
 		~MonteCarloIntegrator() override;
 		/*! Estimates direct light from all sources in a mc fashion and completing MIS (Multiple Importance Sampling) for a given surface point */
 		Rgb estimateAllDirectLight(RandomGenerator &random_generator, ColorLayers *color_layers, bool chromatic_enabled, float wavelength, const SurfacePoint &sp, const Vec3f &wo, const RayDivision &ray_division, const PixelSamplingData &pixel_sampling_data) const;

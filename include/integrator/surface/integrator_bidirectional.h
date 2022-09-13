@@ -58,13 +58,10 @@ class BidirectionalIntegrator final : public TiledIntegrator
 		static constexpr inline int max_path_length_ = 32;
 		static constexpr inline int max_path_eval_length_ = 2 * max_path_length_ + 1;
 		static constexpr inline int min_path_length_ = 3;
-
-	private:
 		struct PathData;
 		struct PathVertex;
 		struct PathEvalVertex;
 		BidirectionalIntegrator(RenderControl &render_control, Logger &logger, ParamError &param_error, const ParamMap &param_map);
-		[[nodiscard]] std::string getShortName() const override { return "BdPT"; }
 		[[nodiscard]] std::string getName() const override { return "BidirectionalPathTracer"; }
 		bool preprocess(FastRandom &fast_random, ImageFilm *image_film, const RenderView *render_view, const Scene &scene) override;
 		void cleanup() override;
