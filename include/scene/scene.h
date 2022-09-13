@@ -116,7 +116,7 @@ class Scene final
 		ImageOutput *getOutput(const std::string &name) const;
 		std::shared_ptr<Image> getImage(const std::string &name) const;
 		const std::map<std::string, std::unique_ptr<RenderView>> &getRenderViews() const { return render_views_; }
-		const std::map<std::string, std::unique_ptr<VolumeRegion>> * getVolumeRegions() const { return &volume_regions_; }
+		const std::map<std::string, std::unique_ptr<VolumeRegion>> &getVolumeRegions() const { return volume_regions_; }
 		std::map<std::string, Light *> getLights() const;
 
 		std::pair<Light *, ParamError> createLight(std::string &&name, ParamMap &&params);

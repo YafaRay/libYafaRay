@@ -38,11 +38,14 @@ class EmissionIntegrator final : public VolumeIntegrator
 			PARAM_INIT_PARENT(VolumeIntegrator);
 		} params_;
 		[[nodiscard]] ParamMap getAsParamMap(bool only_non_default) const override;
-		explicit EmissionIntegrator(Logger &logger, ParamError &param_error, const ParamMap &param_map);
+		explicit EmissionIntegrator(Logger &logger, ParamError &param_error, const ParamMap &param_map, const std::map<std::string, std::unique_ptr<VolumeRegion>> &volume_regions);
+		bool preprocess(FastRandom &fast_random, ImageFilm *image_film, const RenderView *render_view, const Scene &scene) override { return true; }
 		// optical thickness, absorption, attenuation, extinction
 		Rgb transmittance(RandomGenerator &random_generator, const Ray &ray) const override;
 		// emission part
 		Rgb integrate(RandomGenerator &random_generator, const Ray &ray, int additional_depth) const override;
+
+		const std::map<std::string, std::unique_ptr<VolumeRegion>> &volume_regions_;
 };
 
 } //namespace yafaray

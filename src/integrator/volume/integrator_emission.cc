@@ -46,12 +46,12 @@ ParamMap EmissionIntegrator::getAsParamMap(bool only_non_default) const
 std::pair<VolumeIntegrator *, ParamError> EmissionIntegrator::factory(Logger &logger, const ParamMap &param_map, const Scene &scene)
 {
 	auto param_error{Params::meta_.check(param_map, {"type"}, {})};
-	auto result {new EmissionIntegrator(logger, param_error, param_map)};
+	auto result {new EmissionIntegrator(logger, param_error, param_map, scene.getVolumeRegions())};
 	if(param_error.flags_ != ParamError::Flags::Ok) logger.logWarning(param_error.print<EmissionIntegrator>(getClassName(), {"type"}));
 	return {result, param_error};
 }
 
-EmissionIntegrator::EmissionIntegrator(Logger &logger, ParamError &param_error, const ParamMap &param_map) : VolumeIntegrator(logger, param_error, param_map), params_{param_error, param_map}
+EmissionIntegrator::EmissionIntegrator(Logger &logger, ParamError &param_error, const ParamMap &param_map, const std::map<std::string, std::unique_ptr<VolumeRegion>> &volume_regions) : VolumeIntegrator(logger, param_error, param_map), volume_regions_{volume_regions}, params_{param_error, param_map}
 {
 	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + params_.getAsParamMap(true).print());
 	//render_info_ += getClassName() + ": '" + params_.debug_type_.print() + "' | ";
@@ -60,7 +60,7 @@ EmissionIntegrator::EmissionIntegrator(Logger &logger, ParamError &param_error, 
 Rgb EmissionIntegrator::transmittance(RandomGenerator &random_generator, const Ray &ray) const
 {
 	Rgb result {1.f};
-	for(const auto &[vr_name, vr] : *volume_regions_) result *= vr->tau(ray, 0, 0);
+	for(const auto &[vr_name, vr] : volume_regions_) result *= vr->tau(ray, 0, 0);
 	return Rgb{math::exp(-result.getR()), math::exp(-result.getG()), math::exp(-result.getB())};
 }
 
@@ -69,7 +69,7 @@ Rgb EmissionIntegrator::integrate(RandomGenerator &random_generator, const Ray &
 	int n = 10; // samples + 1 on the ray inside the volume
 	const bool hit = ray.tmax_ > 0.f;
 	Rgb result {0.f};
-	for(const auto &[vr_name, vr] : *volume_regions_)
+	for(const auto &[vr_name, vr] : volume_regions_)
 	{
 		Bound<float>::Cross cross{vr->crossBound(ray)};
 		if(!cross.crossed_) continue;

@@ -54,12 +54,12 @@ ParamMap SingleScatterIntegrator::getAsParamMap(bool only_non_default) const
 std::pair<VolumeIntegrator *, ParamError> SingleScatterIntegrator::factory(Logger &logger, const ParamMap &param_map, const Scene &scene)
 {
 	auto param_error{Params::meta_.check(param_map, {"type"}, {})};
-	auto result {new SingleScatterIntegrator(logger, param_error, param_map)};
+	auto result {new SingleScatterIntegrator(logger, param_error, param_map, scene.getVolumeRegions())};
 	if(param_error.flags_ != ParamError::Flags::Ok) logger.logWarning(param_error.print<SingleScatterIntegrator>(getClassName(), {"type"}));
 	return {result, param_error};
 }
 
-SingleScatterIntegrator::SingleScatterIntegrator(Logger &logger, ParamError &param_error, const ParamMap &param_map) : VolumeIntegrator(logger, param_error, param_map), params_{param_error, param_map}
+SingleScatterIntegrator::SingleScatterIntegrator(Logger &logger, ParamError &param_error, const ParamMap &param_map, const std::map<std::string, std::unique_ptr<VolumeRegion>> &volume_regions) : VolumeIntegrator(logger, param_error, param_map), volume_regions_{volume_regions}, params_{param_error, param_map}
 {
 	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + params_.getAsParamMap(true).print());
 	logger_.logParams("SingleScatter: stepSize: ", params_.step_size_, " adaptive: ", params_.adaptive_, " optimize: ", params_.optimize_);
@@ -67,16 +67,13 @@ SingleScatterIntegrator::SingleScatterIntegrator(Logger &logger, ParamError &par
 
 bool SingleScatterIntegrator::preprocess(FastRandom &fast_random, ImageFilm *image_film, const RenderView *render_view, const Scene &scene)
 {
-	bool success = VolumeIntegrator::preprocess(fast_random, image_film, render_view, scene);
 	accelerator_ = scene.getAccelerator();
 	if(!accelerator_) return false;
 	logger_.logInfo("SingleScatter: Preprocessing...");
 	lights_ = render_view->getLightsVisible();
-	vr_size_ = volume_regions_->size();
-	i_vr_size_ = 1.f / static_cast<float>(vr_size_);
 	if(params_.optimize_)
 	{
-		for(const auto &[vr_name, vr] : *volume_regions_)
+		for(const auto &[vr_name, vr] : volume_regions_)
 		{
 			const Bound bb{vr->getBb()};
 			const int x_size = vr->att_grid_x_;
@@ -114,7 +111,7 @@ bool SingleScatterIntegrator::preprocess(FastRandom &fast_random, ImageFilm *ima
 								Rgb lightstep_tau{0.f};
 								if(hit)
 								{
-									for(const auto &[v_2_name, v_2] : *volume_regions_)
+									for(const auto &[v_2_name, v_2] : volume_regions_)
 									{
 										lightstep_tau += v_2->tau(light_ray, params_.step_size_, 0.0f);
 									}
@@ -140,7 +137,7 @@ bool SingleScatterIntegrator::preprocess(FastRandom &fast_random, ImageFilm *ima
 
 									// transmittance from the point p in the volume to the light (i.e. how much light reaches p)
 									Rgb lightstep_tau{0.f};
-									for(const auto &[v_2_name, v_2] : *volume_regions_)
+									for(const auto &[v_2_name, v_2] : volume_regions_)
 									{
 										lightstep_tau += v_2->tau(light_ray, params_.step_size_, 0.0f);
 									}
@@ -155,7 +152,7 @@ bool SingleScatterIntegrator::preprocess(FastRandom &fast_random, ImageFilm *ima
 			}
 		}
 	}
-	return success;
+	return true;
 }
 
 Rgb SingleScatterIntegrator::getInScatter(RandomGenerator &random_generator, const Ray &step_ray, float current_step) const
@@ -178,7 +175,7 @@ Rgb SingleScatterIntegrator::getInScatter(RandomGenerator &random_generator, con
 					if(params_.optimize_)
 					{
 						// replaced by
-						for(const auto &[vr_name, vr] : *volume_regions_)
+						for(const auto &[vr_name, vr] : volume_regions_)
 						{
 							const Bound<float>::Cross cross{vr->crossBound(light_ray)};
 							if(cross.crossed_) light_tr += vr->attenuation(step_ray.from_, light);
@@ -188,7 +185,7 @@ Rgb SingleScatterIntegrator::getInScatter(RandomGenerator &random_generator, con
 					{
 						// replaced by
 						Rgb lightstep_tau(0.f);
-						for(const auto &[vr_name, vr] : *volume_regions_)
+						for(const auto &[vr_name, vr] : volume_regions_)
 						{
 							const Bound<float>::Cross cross{vr->crossBound(light_ray)};
 							if(cross.crossed_) lightstep_tau += vr->tau(light_ray, current_step, 0.f);
@@ -228,7 +225,7 @@ Rgb SingleScatterIntegrator::getInScatter(RandomGenerator &random_generator, con
 						if(params_.optimize_)
 						{
 							// replaced by
-							for(const auto &[vr_name, vr] : *volume_regions_)
+							for(const auto &[vr_name, vr] : volume_regions_)
 							{
 								const Bound<float>::Cross cross{vr->crossBound(light_ray)};
 								if(cross.crossed_)
@@ -242,7 +239,7 @@ Rgb SingleScatterIntegrator::getInScatter(RandomGenerator &random_generator, con
 						{
 							// replaced by
 							Rgb lightstep_tau(0.f);
-							for(const auto &[vr_name, vr] : *volume_regions_)
+							for(const auto &[vr_name, vr] : volume_regions_)
 							{
 								const Bound<float>::Cross cross{vr->crossBound(light_ray)};
 								if(cross.crossed_)
@@ -270,9 +267,9 @@ Rgb SingleScatterIntegrator::getInScatter(RandomGenerator &random_generator, con
 
 Rgb SingleScatterIntegrator::transmittance(RandomGenerator &random_generator, const Ray &ray) const
 {
-	if(vr_size_ == 0) return Rgb{1.f};
+	if(volume_regions_.empty()) return Rgb{1.f};
 	Rgb tr{1.f};
-	for(const auto &[vr_name, vr] : *volume_regions_)
+	for(const auto &[vr_name, vr] : volume_regions_)
 	{
 		const Bound<float>::Cross cross{vr->crossBound(ray)};
 		if(cross.crossed_)
@@ -287,11 +284,11 @@ Rgb SingleScatterIntegrator::transmittance(RandomGenerator &random_generator, co
 
 Rgb SingleScatterIntegrator::integrate(RandomGenerator &random_generator, const Ray &ray, int additional_depth) const
 {
-	if(vr_size_ == 0) return Rgb{0.f};
+	if(volume_regions_.empty()) return Rgb{0.f};
 	const bool hit = (ray.tmax_ > 0.f);
 	float t_0 = 1e10f, t_1 = -1e10f;
 	// find min t0 and max t1
-	for(const auto &[vr_name, vr] : *volume_regions_)
+	for(const auto &[vr_name, vr] : volume_regions_)
 	{
 		Bound<float>::Cross cross{vr->crossBound(ray)};
 		if(!cross.crossed_) continue;
@@ -320,7 +317,7 @@ Rgb SingleScatterIntegrator::integrate(RandomGenerator &random_generator, const 
 		{
 			const Point3f p{ray.from_ + (params_.step_size_ * i + pos) * ray.dir_};
 			float density = 0;
-			for(const auto &[vr_name, vr] : *volume_regions_)
+			for(const auto &[vr_name, vr] : volume_regions_)
 			{
 				density += vr->sigmaT(p, {}).energy();
 			}
@@ -365,7 +362,7 @@ Rgb SingleScatterIntegrator::integrate(RandomGenerator &random_generator, const 
 		}
 		else
 		{
-			for(const auto &[vr_name, vr] : *volume_regions_)
+			for(const auto &[vr_name, vr] : volume_regions_)
 			{
 				const Bound<float>::Cross cross{vr->crossBound(step_ray)};
 				if(cross.crossed_)
@@ -382,7 +379,7 @@ Rgb SingleScatterIntegrator::integrate(RandomGenerator &random_generator, const 
 			tr_tmp = tr_tmp / random_val;
 		}
 		float sigma_s = 0.0f;
-		for(const auto &[vr_name, vr] : *volume_regions_)
+		for(const auto &[vr_name, vr] : volume_regions_)
 		{
 			const Bound<float>::Cross cross{vr->crossBound(step_ray)};
 			if(cross.crossed_)

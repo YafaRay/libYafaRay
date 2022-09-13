@@ -45,7 +45,7 @@ class SkyIntegrator : public VolumeIntegrator
 			PARAM_DECL(float , turbidity_, 3.f, "turbidity", "");
 		} params_;
 		[[nodiscard]] ParamMap getAsParamMap(bool only_non_default) const override;
-		SkyIntegrator(Logger &logger, ParamError &param_error, const ParamMap &param_map);
+		SkyIntegrator(Logger &logger, ParamError &param_error, const ParamMap &param_map, const std::map<std::string, std::unique_ptr<VolumeRegion>> &volume_regions);
 		bool preprocess(FastRandom &fast_random, ImageFilm *image_film, const RenderView *render_view, const Scene &scene) override;
 		// optical thickness, absorption, attenuation, extinction
 		Rgb transmittance(RandomGenerator &random_generator, const Ray &ray) const override;

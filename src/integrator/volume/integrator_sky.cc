@@ -54,12 +54,12 @@ ParamMap SkyIntegrator::getAsParamMap(bool only_non_default) const
 std::pair<VolumeIntegrator *, ParamError> SkyIntegrator::factory(Logger &logger, const ParamMap &param_map, const Scene &scene)
 {
 	auto param_error{Params::meta_.check(param_map, {"type"}, {})};
-	auto result {new SkyIntegrator(logger, param_error, param_map)};
+	auto result {new SkyIntegrator(logger, param_error, param_map, scene.getVolumeRegions())};
 	if(param_error.flags_ != ParamError::Flags::Ok) logger.logWarning(param_error.print<SkyIntegrator>(getClassName(), {"type"}));
 	return {result, param_error};
 }
 
-SkyIntegrator::SkyIntegrator(Logger &logger, ParamError &param_error, const ParamMap &param_map) : VolumeIntegrator(logger, param_error, param_map), params_{param_error, param_map}
+SkyIntegrator::SkyIntegrator(Logger &logger, ParamError &param_error, const ParamMap &param_map, const std::map<std::string, std::unique_ptr<VolumeRegion>> &volume_regions) : VolumeIntegrator(logger, param_error, param_map), params_{param_error, param_map}
 {
 	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + params_.getAsParamMap(true).print());
 
@@ -89,10 +89,8 @@ SkyIntegrator::SkyIntegrator(Logger &logger, ParamError &param_error, const Para
 
 bool SkyIntegrator::preprocess(FastRandom &fast_random, ImageFilm *image_film, const RenderView *render_view, const Scene &scene)
 {
-	bool success = VolumeIntegrator::preprocess(fast_random, image_film, render_view, scene);
 	background_ = scene.getBackground();
-	success = success && static_cast<bool>(background_);
-	return success;
+	return static_cast<bool>(background_);
 }
 
 /*//FIXME: sigma_t is unused at the moment for some reason, and this function is also unused.

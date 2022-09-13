@@ -50,7 +50,7 @@ class VolumeIntegrator
 		[[nodiscard]] virtual ParamMap getAsParamMap(bool only_non_default) const;
 		virtual ~VolumeIntegrator() = default;
 		static std::string printMeta(const std::vector<std::string> &excluded_params) { return Params::meta_.print(excluded_params); }
-		virtual bool preprocess(FastRandom &fast_random, ImageFilm *image_film, const RenderView *render_view, const Scene &scene);
+		virtual bool preprocess(FastRandom &fast_random, ImageFilm *image_film, const RenderView *render_view, const Scene &scene) = 0;
 		Rgb integrate(RandomGenerator &random_generator, const Ray &ray) const;
 		virtual Rgb transmittance(RandomGenerator &random_generator, const Ray &ray) const = 0;
 		virtual Rgb integrate(RandomGenerator &random_generator, const Ray &ray, int additional_depth) const = 0;
@@ -74,7 +74,6 @@ class VolumeIntegrator
 		} params_;
 		explicit VolumeIntegrator(Logger &logger, ParamError &param_error, const ParamMap &param_map) : params_{param_error, param_map}, logger_{logger} { }
 
-		const std::map<std::string, std::unique_ptr<VolumeRegion>> *volume_regions_ = nullptr;
 		Logger &logger_;
 };
 
