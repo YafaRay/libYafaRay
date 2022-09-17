@@ -109,7 +109,7 @@ int main()
 	{
 		/* Creating image from RAM or file */
 		yafaray_Image_t *image = NULL;
-		yafaray_paramsSetString(yi, "type", "ColorAlpha"); /* Note: the specified type os overriden by the loaded image type
+		yafaray_paramsSetString(yi, "type", "ColorAlpha"); /* Note: the specified type os overriden by the loaded image type */
 		yafaray_paramsSetString(yi, "image_optimization", "none"); /* Note: only "none" allows high dynamic range values > 1.f */
 		yafaray_paramsSetString(yi, "filename", "tex.tga");
 		image = yafaray_createImage(yi, "Image01");
