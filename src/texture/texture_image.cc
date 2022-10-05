@@ -35,7 +35,6 @@ ImageTexture::Params::Params(ParamError &param_error, const ParamMap &param_map)
 {
 	PARAM_ENUM_LOAD(clip_mode_);
 	PARAM_LOAD(image_name_);
-	PARAM_LOAD(gamma_);
 	PARAM_LOAD(exposure_adjust_);
 	PARAM_LOAD(normal_map_);
 	PARAM_LOAD(xrepeat_);
@@ -61,7 +60,6 @@ ParamMap ImageTexture::Params::getAsParamMap(bool only_non_default) const
 	PARAM_SAVE_START;
 	PARAM_ENUM_SAVE(clip_mode_);
 	PARAM_SAVE(image_name_);
-	PARAM_SAVE(gamma_);
 	PARAM_SAVE(exposure_adjust_);
 	PARAM_SAVE(normal_map_);
 	PARAM_SAVE(xrepeat_);

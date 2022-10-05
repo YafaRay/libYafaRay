@@ -54,7 +54,6 @@ class ImageTexture final : public Texture
 			PARAM_INIT_PARENT(Texture);
 			PARAM_ENUM_DECL(ClipMode, clip_mode_, ClipMode::Repeat, "clipping", "Clip mode");
 			PARAM_DECL(std::string , image_name_, false, "image_name", "");
-			PARAM_DECL(float , gamma_, 1.f, "gamma", "");
 			PARAM_DECL(float , exposure_adjust_, 0.f, "exposure_adjust", "");
 			PARAM_DECL(bool , normal_map_, false, "normalmap", "");
 			PARAM_DECL(int , xrepeat_, 1, "xrepeat", "");
