@@ -79,13 +79,13 @@ inline void Stats::outputLog(Logger &logger, uint32_t num_primitives, int max_le
 {
 	if(logger.isVerbose())
 	{
-		logger.logVerbose("Kd-Tree MultiThread: Primitives in tree: ", num_primitives);
-		logger.logVerbose("Kd-Tree MultiThread: Interior nodes: ", kd_inodes_, " / ", "leaf nodes: ", kd_leaves_
+		logger.logVerbose("Kd-Tree Stats: Primitives in tree: ", num_primitives);
+		logger.logVerbose("Kd-Tree Stats: Interior nodes: ", kd_inodes_, " / ", "leaf nodes: ", kd_leaves_
 						  , " (empty: ", empty_kd_leaves_, " = ", 100.f * static_cast<float>(empty_kd_leaves_) / kd_leaves_, "%)");
-		logger.logVerbose("Kd-Tree MultiThread: Leaf prims: ", kd_prims_, " (", static_cast<float>(kd_prims_) / num_primitives, " x prims in tree, leaf size: ", max_leaf_size, ")");
-		logger.logVerbose("Kd-Tree MultiThread: => ", static_cast<float>(kd_prims_) / (kd_leaves_ - empty_kd_leaves_), " prims per non-empty leaf");
-		logger.logVerbose("Kd-Tree MultiThread: Leaves due to depth limit/bad splits: ", depth_limit_reached_, "/", num_bad_splits_);
-		logger.logVerbose("Kd-Tree MultiThread: clipped primitives: ", clip_, " (", bad_clip_, " bad clips, ", null_clip_, " null clips)");
+		logger.logVerbose("Kd-Tree Stats: Leaf prims: ", kd_prims_, " (", static_cast<float>(kd_prims_) / num_primitives, " x prims in tree, leaf size: ", max_leaf_size, ")");
+		logger.logVerbose("Kd-Tree Stats: => ", static_cast<float>(kd_prims_) / (kd_leaves_ - empty_kd_leaves_), " prims per non-empty leaf");
+		logger.logVerbose("Kd-Tree Stats: Leaves due to depth limit/bad splits: ", depth_limit_reached_, "/", num_bad_splits_);
+		logger.logVerbose("Kd-Tree Stats: clipped primitives: ", clip_, " (", bad_clip_, " bad clips, ", null_clip_, " null clips)");
 	}
 }
 
