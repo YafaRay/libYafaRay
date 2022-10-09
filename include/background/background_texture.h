@@ -19,8 +19,8 @@
  *      Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-#ifndef YAFARAY_BACKGROUND_TEXTURE_H
-#define YAFARAY_BACKGROUND_TEXTURE_H
+#ifndef LIBYAFARAY_BACKGROUND_TEXTURE_H
+#define LIBYAFARAY_BACKGROUND_TEXTURE_H
 
 #include <memory>
 #include "background.h"
@@ -34,10 +34,13 @@ class TextureBackground final : public Background
 {
 	public:
 		inline static std::string getClassName() { return "TextureBackground"; }
-		static std::pair<Background *, ParamError> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params);
+		static std::pair<std::unique_ptr<Background>, ParamError> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params);
 		static std::string printMeta(const std::vector<std::string> &excluded_params) { return Params::meta_.print(excluded_params); }
+		TextureBackground(Logger &logger, ParamError &param_error, const ParamMap &param_map, const Texture *texture);
 
 	private:
+		using ThisClassType_t = TextureBackground;
+		using ParentClassType_t = Background;
 		struct Projection : public Enum<Projection>
 		{
 			enum : ValueType_t { Spherical, Angular };
@@ -49,7 +52,7 @@ class TextureBackground final : public Background
 		[[nodiscard]] Type type() const override { return Type::Texture; }
 		const struct Params
 		{
-			PARAM_INIT_PARENT(Background);
+			PARAM_INIT_PARENT(ParentClassType_t);
 			PARAM_DECL(float, rotation_, 0.f, "rotation", "");
 			PARAM_DECL(float, ibl_blur_, 0.f, "smartibl_blur", "");
 			PARAM_DECL(float, ibl_clamp_sampling_, 0.f, "ibl_clamp_sampling", "A value higher than 0.f 'clamps' the light intersection colors to that value, to reduce light sampling noise at the expense of realism and inexact overall light (0.f disables clamping)");
@@ -58,7 +61,6 @@ class TextureBackground final : public Background
 		} params_;
 		[[nodiscard]] ParamMap getAsParamMap(bool only_non_default) const override;
 
-		TextureBackground(Logger &logger, ParamError &param_error, const ParamMap &param_map, const Texture *texture);
 		Rgb eval(const Vec3f &dir, bool use_ibl_blur) const override;
 
 		const Texture *tex_ = nullptr;

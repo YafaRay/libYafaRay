@@ -385,7 +385,7 @@ const Camera * ExportC::createCamera(std::string &&name) noexcept
 	return nullptr;
 }
 
-const Background * ExportC::defineBackground() noexcept
+ParamError ExportC::defineBackground() noexcept
 {
 	writeParamMap(*params_);
 	params_->clear();
@@ -393,7 +393,7 @@ const Background * ExportC::defineBackground() noexcept
 	file_ << "\t" << "yafaray_paramsClearAll(yi);\n\n";
 	section_num_lines_ += 2;
 	if(section_num_lines_ >= section_max_lines_) file_ << sectionSplit();
-	return nullptr;
+	return {ParamError::Flags::Ok};
 }
 
 SurfaceIntegrator *ExportC::defineSurfaceIntegrator() noexcept

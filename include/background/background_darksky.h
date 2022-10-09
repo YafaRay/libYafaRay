@@ -26,8 +26,8 @@
  *      Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-#ifndef YAFARAY_BACKGROUND_DARKSKY_H
-#define YAFARAY_BACKGROUND_DARKSKY_H
+#ifndef LIBYAFARAY_BACKGROUND_DARKSKY_H
+#define LIBYAFARAY_BACKGROUND_DARKSKY_H
 
 #include <memory>
 #include "background.h"
@@ -40,10 +40,13 @@ class DarkSkyBackground final : public Background
 {
 	public:
 		inline static std::string getClassName() { return "DarkSkyBackground"; }
-		static std::pair<Background *, ParamError> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params);
+		static std::pair<std::unique_ptr<Background>, ParamError> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params);
 		static std::string printMeta(const std::vector<std::string> &excluded_params) { return Params::meta_.print(excluded_params); }
+		DarkSkyBackground(Logger &logger, ParamError &param_error, const ParamMap &param_map);
 
 	private:
+		using ThisClassType_t = DarkSkyBackground;
+		using ParentClassType_t = Background;
 		struct ColorSpace : public Enum<ColorSpace>
 		{
 			inline static const EnumMap<ValueType_t> map_{{
@@ -56,7 +59,7 @@ class DarkSkyBackground final : public Background
 		[[nodiscard]] Type type() const override { return Type::DarkSky; }
 		const struct Params
 		{
-			PARAM_INIT_PARENT(Background);
+			PARAM_INIT_PARENT(ParentClassType_t);
 			PARAM_DECL(Vec3f, from_, (Vec3f{{1, 1, 1}}), "from", "same as sunlight, position interpreted as direction");
 			PARAM_DECL(float , turb_, 4.f, "turbidity", "turbidity of atmosphere");
 			PARAM_DECL(float , altitude_, 0.f, "altitude", "");
@@ -77,7 +80,6 @@ class DarkSkyBackground final : public Background
 		} params_;
 		[[nodiscard]] ParamMap getAsParamMap(bool only_non_default) const override;
 
-		DarkSkyBackground(Logger &logger, ParamError &param_error, const ParamMap &param_map);
 		Rgb operator()(const Vec3f &dir, bool use_ibl_blur) const override;
 		Rgb eval(const Vec3f &dir, bool use_ibl_blur) const override;
 		Rgb getAttenuatedSunColor();
@@ -100,4 +102,4 @@ class DarkSkyBackground final : public Background
 
 } //namespace yafaray
 
-#endif // YAFARAY_BACKGROUND_DARKSKY_H
+#endif // LIBYAFARAY_BACKGROUND_DARKSKY_H

@@ -308,13 +308,13 @@ const Camera * ExportPython::createCamera(std::string &&name) noexcept
 	return nullptr;
 }
 
-const Background * ExportPython::defineBackground() noexcept
+ParamError ExportPython::defineBackground() noexcept
 {
 	writeParamMap(*params_);
 	params_->clear();
 	file_ << "yi.defineBackground()\n";
 	file_ << "yi.paramsClearAll()\n\n";
-	return nullptr;
+	return {ParamError::Flags::Ok};
 }
 
 SurfaceIntegrator *ExportPython::defineSurfaceIntegrator() noexcept

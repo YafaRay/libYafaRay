@@ -40,16 +40,16 @@ ParamMap ConstantBackground::Params::getAsParamMap(bool only_non_default) const
 
 ParamMap ConstantBackground::getAsParamMap(bool only_non_default) const
 {
-	ParamMap result{Background::getAsParamMap(only_non_default)};
+	ParamMap result{ParentClassType_t::getAsParamMap(only_non_default)};
 	result.append(params_.getAsParamMap(only_non_default));
 	return result;
 }
 
-std::pair<Background *, ParamError> ConstantBackground::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map)
+std::pair<std::unique_ptr<Background>, ParamError> ConstantBackground::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map)
 {
 	auto param_error{Params::meta_.check(param_map, {"type"}, {})};
-	auto background = new ConstantBackground(logger, param_error, param_map);
-	if(param_error.flags_ != ParamError::Flags::Ok) logger.logWarning(param_error.print<ConstantBackground>(name, {"type"}));
+	auto background{std::make_unique<ThisClassType_t>(logger, param_error, param_map)};
+	if(param_error.flags_ != ParamError::Flags::Ok) logger.logWarning(param_error.print<ThisClassType_t>(name, {"type"}));
 	if(background->Background::params_.ibl_)
 	{
 		ParamMap bgp;
@@ -60,14 +60,14 @@ std::pair<Background *, ParamError> ConstantBackground::factory(Logger &logger, 
 		bgp["cast_shadows"] = background->Background::params_.cast_shadows_;
 
 		std::unique_ptr<Light> bglight{Light::factory(logger, scene, "light", bgp).first};
-		bglight->setBackground(background);
+		bglight->setBackground(background.get());
 		background->addLight(std::move(bglight));
 	}
-	return {background, param_error};
+	return {std::move(background), param_error};
 }
 
 ConstantBackground::ConstantBackground(Logger &logger, ParamError &param_error, const ParamMap &param_map) :
-		Background{logger, param_error, param_map}, params_{param_error, param_map}, color_{params_.color_ * Background::params_.power_}
+		ParentClassType_t{logger, param_error, param_map}, params_{param_error, param_map}, color_{params_.color_ * Background::params_.power_}
 {
 	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + params_.getAsParamMap(true).print());
 }

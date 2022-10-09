@@ -486,11 +486,18 @@ std::pair<Camera *, ParamError> Scene::createCamera(std::string &&name, ParamMap
 	return createMapItem<Camera>(logger_, std::move(name), "Camera", std::move(params), cameras_, this);
 }
 
-std::pair<Background *, ParamError> Scene::defineBackground(ParamMap &&params)
+ParamError Scene::defineBackground(ParamMap &&params)
 {
-	auto result = defineItem<Background>(std::move(params), "background", "Background");
-	background_ = std::move(result.first);
-	return {background_.get(), result.second};
+	auto factory{Background::factory(logger_, *this, "background", params)};
+	if(factory.first)
+	{
+		std::string type;
+		params.getParam("type", type);
+		if(logger_.isVerbose()) logInfoVerboseSuccess(logger_, Background::getClassName(), "background", type);
+		background_ = std::move(factory.first);
+		return factory.second;
+	}
+	return ParamError{ParamError::Flags::ErrorWhileCreating};
 }
 
 std::pair<SurfaceIntegrator *, ParamError> Scene::defineSurfaceIntegrator(ParamMap &&params)

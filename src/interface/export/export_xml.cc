@@ -288,12 +288,12 @@ const Camera * ExportXml::createCamera(std::string &&name) noexcept
 	return nullptr;
 }
 
-const Background * ExportXml::defineBackground() noexcept
+ParamError ExportXml::defineBackground() noexcept
 {
 	file_ << "\n<background>\n";
 	writeParamMap(*params_);
 	file_ << "</background>\n";
-	return nullptr;
+	return {ParamError::Flags::Ok};
 }
 
 SurfaceIntegrator *ExportXml::defineSurfaceIntegrator() noexcept

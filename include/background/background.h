@@ -17,8 +17,8 @@
  *      Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-#ifndef YAFARAY_BACKGROUND_H
-#define YAFARAY_BACKGROUND_H
+#ifndef LIBYAFARAY_BACKGROUND_H
+#define LIBYAFARAY_BACKGROUND_H
 
 #include "color/color.h"
 #include "common/enum.h"
@@ -41,7 +41,7 @@ class Background
 {
 	public:
 		inline static std::string getClassName() { return "Background"; }
-		static std::pair<Background *, ParamError> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map);
+		static std::pair<std::unique_ptr<Background>, ParamError> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map);
 		[[nodiscard]] virtual ParamMap getAsParamMap(bool only_non_default) const;
 		explicit Background(Logger &logger, ParamError &param_error, const ParamMap &param_map);
 		virtual ~Background();
@@ -82,4 +82,4 @@ class Background
 
 } //namespace yafaray
 
-#endif // YAFARAY_BACKGROUND_H
+#endif // LIBYAFARAY_BACKGROUND_H

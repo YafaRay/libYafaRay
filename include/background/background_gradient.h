@@ -19,8 +19,8 @@
  *      Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-#ifndef YAFARAY_BACKGROUND_GRADIENT_H
-#define YAFARAY_BACKGROUND_GRADIENT_H
+#ifndef LIBYAFARAY_BACKGROUND_GRADIENT_H
+#define LIBYAFARAY_BACKGROUND_GRADIENT_H
 
 #include "background.h"
 #include "color/color.h"
@@ -31,14 +31,17 @@ class GradientBackground final : public Background
 {
 	public:
 		inline static std::string getClassName() { return "GradientBackground"; }
-		static std::pair<Background *, ParamError> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params);
+		static std::pair<std::unique_ptr<Background>, ParamError> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params);
 		static std::string printMeta(const std::vector<std::string> &excluded_params) { return Params::meta_.print(excluded_params); }
+		GradientBackground(Logger &logger, ParamError &param_error, const ParamMap &param_map);
 
 	private:
+		using ThisClassType_t = GradientBackground;
+		using ParentClassType_t = Background;
 		[[nodiscard]] Type type() const override { return Type::Gradient; }
 		const struct Params
 		{
-			PARAM_INIT_PARENT(Background);
+			PARAM_INIT_PARENT(ParentClassType_t);
 			PARAM_DECL(Rgb, horizon_color_, Rgb{1.f}, "horizon_color", "");
 			PARAM_DECL(Rgb, zenith_color_, (Rgb{0.4f, 0.5f, 1.f}), "zenith_color", "");
 			PARAM_DECL(Rgb, horizon_ground_color_, Rgb{0.f}, "horizon_ground_color", "");
@@ -46,7 +49,6 @@ class GradientBackground final : public Background
 		} params_;
 		[[nodiscard]] ParamMap getAsParamMap(bool only_non_default) const override;
 
-		GradientBackground(Logger &logger, ParamError &param_error, const ParamMap &param_map);
 		Rgb eval(const Vec3f &dir, bool use_ibl_blur) const override;
 
 		Rgb gzenith_, ghoriz_, szenith_, shoriz_;
@@ -54,4 +56,4 @@ class GradientBackground final : public Background
 
 } //namespace yafaray
 
-#endif // YAFARAY_BACKGROUND_GRADIENT_H
+#endif // LIBYAFARAY_BACKGROUND_GRADIENT_H

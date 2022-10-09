@@ -83,16 +83,16 @@ ParamMap DarkSkyBackground::Params::getAsParamMap(bool only_non_default) const
 
 ParamMap DarkSkyBackground::getAsParamMap(bool only_non_default) const
 {
-	ParamMap result{Background::getAsParamMap(only_non_default)};
+	ParamMap result{ParentClassType_t::getAsParamMap(only_non_default)};
 	result.append(params_.getAsParamMap(only_non_default));
 	return result;
 }
 
-std::pair<Background *, ParamError> DarkSkyBackground::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map)
+std::pair<std::unique_ptr<Background>, ParamError> DarkSkyBackground::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map)
 {
 	auto param_error{Params::meta_.check(param_map, {"type"}, {})};
-	auto background = new DarkSkyBackground(logger, param_error, param_map);
-	if(param_error.flags_ != ParamError::Flags::Ok) logger.logWarning(param_error.print<DarkSkyBackground>(name, {"type"}));
+	auto background{std::make_unique<ThisClassType_t>(logger, param_error, param_map)};
+	if(param_error.flags_ != ParamError::Flags::Ok) logger.logWarning(param_error.print<ThisClassType_t>(name, {"type"}));
 	if(background->params_.add_sun_ && math::radToDeg(math::acos(background->params_.from_[Axis::Z])) < 100.0)
 	{
 		Vec3f d(background->params_.from_);
@@ -129,15 +129,15 @@ std::pair<Background *, ParamError> DarkSkyBackground::factory(Logger &logger, c
 
 		if(logger.isVerbose()) logger.logVerbose("DarkSky: Adding background sky light");
 		std::unique_ptr<Light> bglight{Light::factory(logger, scene, "light_sky", bgp).first};
-		bglight->setBackground(background);
+		bglight->setBackground(background.get());
 		background->addLight(std::move(bglight));
 	}
 	if(logger.isVerbose()) logger.logVerbose("DarkSky: End");
-	return {background, param_error};
+	return {std::move(background), param_error};
 }
 
 DarkSkyBackground::DarkSkyBackground(Logger &logger, ParamError &param_error, const ParamMap &param_map) :
-		Background{logger, param_error, param_map}, params_{param_error, param_map},
+		ParentClassType_t{logger, param_error, param_map}, params_{param_error, param_map},
 		sun_dir_{params_.from_},
 		bright_{params_.bright_ * (params_.night_ ? 0.5f : 1.f)},
 		power_{Background::params_.power_ * bright_},

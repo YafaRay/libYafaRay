@@ -27,6 +27,7 @@
 #include "interface/export/export_xml.h"
 #include "interface/interface.h"
 #include "render/progress_bar.h"
+#include "param/param_error.h"
 #include <cstring>
 
 yafaray_Interface_t *yafaray_createInterface(yafaray_Interface_Type_t interface_type, const char *exported_file_path, const yafaray_LoggerCallback_t logger_callback, void *callback_data, yafaray_DisplayConsole_t display_console)
@@ -245,7 +246,7 @@ yafaray_bool_t yafaray_createCamera(yafaray_Interface_t *interface, const char *
 
 yafaray_bool_t yafaray_defineBackground(yafaray_Interface_t *interface)
 {
-	return static_cast<yafaray_bool_t>(reinterpret_cast<yafaray::Interface *>(interface)->defineBackground() != nullptr);
+	return static_cast<yafaray_bool_t>(reinterpret_cast<yafaray::Interface *>(interface)->defineBackground().flags_ == yafaray::ParamError::Flags::Ok);
 }
 
 yafaray_bool_t yafaray_defineSurfaceIntegrator(yafaray_Interface_t *interface)

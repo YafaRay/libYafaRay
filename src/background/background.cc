@@ -58,7 +58,7 @@ ParamMap Background::getAsParamMap(bool only_non_default) const
 	return result;
 }
 
-std::pair<Background *, ParamError> Background::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map)
+std::pair<std::unique_ptr<Background>, ParamError> Background::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map)
 {
 	const Type type{ClassMeta::preprocessParamMap<Type>(logger, getClassName(), param_map)};
 	switch(type.value())
@@ -68,7 +68,7 @@ std::pair<Background *, ParamError> Background::factory(Logger &logger, const Sc
 		case Type::SunSky: return SunSkyBackground::factory(logger, scene, name, param_map);
 		case Type::Texture: return TextureBackground::factory(logger, scene, name, param_map);
 		case Type::Constant: return ConstantBackground::factory(logger, scene, name, param_map);
-		default: return {nullptr, {ParamError::Flags::ErrorWhileCreating}};
+		default: return {nullptr, ParamError{ParamError::Flags::ErrorWhileCreating}};
 	}
 }
 

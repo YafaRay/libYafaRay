@@ -59,7 +59,7 @@ class ExportPython: public Interface
 		Texture *createTexture(std::string &&name) noexcept override;
 		const Material *createMaterial(std::string &&name) noexcept override;
 		const Camera * createCamera(std::string &&name) noexcept override;
-		const Background *defineBackground() noexcept override;
+		ParamError defineBackground() noexcept override;
 		SurfaceIntegrator *defineSurfaceIntegrator() noexcept override;
 		VolumeIntegrator *defineVolumeIntegrator() noexcept override;
 		VolumeRegion *createVolumeRegion(std::string &&name) noexcept override;

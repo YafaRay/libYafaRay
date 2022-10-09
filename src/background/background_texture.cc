@@ -50,12 +50,12 @@ ParamMap TextureBackground::Params::getAsParamMap(bool only_non_default) const
 
 ParamMap TextureBackground::getAsParamMap(bool only_non_default) const
 {
-	ParamMap result{Background::getAsParamMap(only_non_default)};
+	ParamMap result{ParentClassType_t::getAsParamMap(only_non_default)};
 	result.append(params_.getAsParamMap(only_non_default));
 	return result;
 }
 
-std::pair<Background *, ParamError> TextureBackground::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map)
+std::pair<std::unique_ptr<Background>, ParamError> TextureBackground::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map)
 {
 	auto param_error{Params::meta_.check(param_map, {"type"}, {})};
 	std::string texname;
@@ -70,8 +70,8 @@ std::pair<Background *, ParamError> TextureBackground::factory(Logger &logger, c
 		logger.logError("TextureBackground: Texture '", texname, "' for textureback not existant!");
 		return {nullptr, {ParamError::Flags::ErrorWhileCreating}};
 	}
-	auto background = new TextureBackground(logger, param_error, param_map, tex);
-	if(param_error.flags_ != ParamError::Flags::Ok) logger.logWarning(param_error.print<TextureBackground>(name, {"type"}));
+	auto background{std::make_unique<ThisClassType_t>(logger, param_error, param_map, tex)};
+	if(param_error.flags_ != ParamError::Flags::Ok) logger.logWarning(param_error.print<ThisClassType_t>(name, {"type"}));
 	if(background->Background::params_.ibl_)
 	{
 		if(background->params_.ibl_blur_ > 0.f)
@@ -93,14 +93,14 @@ std::pair<Background *, ParamError> TextureBackground::factory(Logger &logger, c
 			logger.logParams("TextureBackground: using IBL sampling clamp=", background->params_.ibl_clamp_sampling_);
 		}
 		std::unique_ptr<Light> bglight{Light::factory(logger, scene, "light", bgp).first};
-		bglight->setBackground(background);
+		bglight->setBackground(background.get());
 		background->addLight(std::move(bglight));
 	}
-	return {background, param_error};
+	return {std::move(background), param_error};
 }
 
 TextureBackground::TextureBackground(Logger &logger, ParamError &param_error, const ParamMap &param_map, const Texture *texture) :
-		Background{logger, param_error, param_map}, params_{param_error, param_map}, tex_(texture), ibl_blur_mipmap_level_(math::pow(params_.ibl_blur_, 2.f)),
+		ParentClassType_t{logger, param_error, param_map}, params_{param_error, param_map}, tex_(texture), ibl_blur_mipmap_level_(math::pow(params_.ibl_blur_, 2.f)),
 		rotation_{2.f * params_.rotation_ / 360.f}
 {
 	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + params_.getAsParamMap(true).print());

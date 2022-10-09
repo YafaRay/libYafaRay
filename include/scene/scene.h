@@ -123,7 +123,7 @@ class Scene final
 		std::pair<Texture *, ParamError> createTexture(std::string &&name, ParamMap &&params);
 		std::pair<std::unique_ptr<const Material> *, ParamError> createMaterial(std::string &&name, ParamMap &&params, std::list<ParamMap> &&nodes_params);
 		std::pair<Camera *, ParamError> createCamera(std::string &&name, ParamMap &&params);
-		std::pair<Background *, ParamError> defineBackground(ParamMap &&params);
+		ParamError defineBackground(ParamMap &&params);
 		std::pair<SurfaceIntegrator *, ParamError> defineSurfaceIntegrator(ParamMap &&params);
 		std::pair<VolumeIntegrator *, ParamError> defineVolumeIntegrator(ParamMap &&params);
 		std::pair<VolumeRegion *, ParamError> createVolumeRegion(std::string &&name, ParamMap &&params);
