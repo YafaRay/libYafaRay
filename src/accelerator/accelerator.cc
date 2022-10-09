@@ -42,7 +42,7 @@ ParamMap Accelerator::getAsParamMap(bool only_non_default) const
 	return result;
 }
 
-std::pair<Accelerator *, ParamError> Accelerator::factory(Logger &logger, const std::vector<const Primitive *> &primitives_list, const ParamMap &param_map)
+std::pair<std::unique_ptr<Accelerator>, ParamError> Accelerator::factory(Logger &logger, const std::vector<const Primitive *> &primitives_list, const ParamMap &param_map)
 {
 	const Type type{ClassMeta::preprocessParamMap<Type>(logger, getClassName(), param_map)};
 	switch(type.value())

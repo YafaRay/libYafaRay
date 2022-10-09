@@ -39,8 +39,10 @@ class AcceleratorKdTreeMultiThread final : public Accelerator
 {
 	public:
 		inline static std::string getClassName() { return "AcceleratorKdTreeMultiThread"; }
-		static std::pair<Accelerator *, ParamError> factory(Logger &logger, const std::vector<const Primitive *> &primitives, const ParamMap &param_map);
+		static std::pair<std::unique_ptr<Accelerator>, ParamError> factory(Logger &logger, const std::vector<const Primitive *> &primitives, const ParamMap &param_map);
 		static std::string printMeta(const std::vector<std::string> &excluded_params) { return Params::meta_.print(excluded_params); }
+		AcceleratorKdTreeMultiThread(Logger &logger, ParamError &param_error, const std::vector<const Primitive *> &primitives, const ParamMap &param_map);
+		~AcceleratorKdTreeMultiThread() override;
 
 	private:
 		using ThisClassType_t = AcceleratorKdTreeMultiThread;
@@ -62,8 +64,6 @@ class AcceleratorKdTreeMultiThread final : public Accelerator
 		struct SplitCost;
 		class Node;
 		struct Stack;
-		AcceleratorKdTreeMultiThread(Logger &logger, ParamError &param_error, const std::vector<const Primitive *> &primitives, const ParamMap &param_map);
-		~AcceleratorKdTreeMultiThread() override;
 		IntersectData intersect(const Ray &ray, float t_max) const override;
 		IntersectData intersectShadow(const Ray &ray, float t_max) const override;
 		IntersectData intersectTransparentShadow(const Ray &ray, int max_depth, float t_max, const Camera *camera) const override;

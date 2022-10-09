@@ -38,7 +38,7 @@ class Accelerator
 {
 	public:
 		inline static std::string getClassName() { return "Accelerator"; }
-		static std::pair<Accelerator *, ParamError> factory(Logger &logger, const std::vector<const Primitive *> &primitives_list, const ParamMap &param_map);
+		static std::pair<std::unique_ptr<Accelerator>, ParamError> factory(Logger &logger, const std::vector<const Primitive *> &primitives_list, const ParamMap &param_map);
 		[[nodiscard]] virtual ParamMap getAsParamMap(bool only_non_default) const;
 
 		explicit Accelerator(Logger &logger, ParamError &param_error, const ParamMap &param_map) : params_{param_error, param_map}, logger_{logger} { }

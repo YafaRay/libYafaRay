@@ -1028,7 +1028,7 @@ bool Scene::updateObjects()
 	params["type"] = scene_accelerator_;
 	params["accelerator_threads"] = getNumThreads();
 
-	accelerator_ = std::unique_ptr<const Accelerator>(Accelerator::factory(logger_, primitives, params).first);
+	accelerator_ = Accelerator::factory(logger_, primitives, params).first;
 	*scene_bound_ = accelerator_->getBound();
 	if(logger_.isVerbose()) logger_.logVerbose("Scene: New scene bound is: ", "(", scene_bound_->a_[Axis::X], ", ", scene_bound_->a_[Axis::Y], ", ", scene_bound_->a_[Axis::Z], "), (", scene_bound_->g_[Axis::X], ", ", scene_bound_->g_[Axis::Y], ", ", scene_bound_->g_[Axis::Z], ")");
 

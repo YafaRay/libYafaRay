@@ -28,12 +28,13 @@ namespace yafaray {
 
 class Object;
 
-class AcceleratorSimpleTest final : Accelerator
+class AcceleratorSimpleTest final : public Accelerator
 {
 	public:
 		inline static std::string getClassName() { return "AcceleratorKdTree"; }
-		static std::pair<Accelerator *, ParamError> factory(Logger &logger, const std::vector<const Primitive *> &primitives, const ParamMap &params);
+		static std::pair<std::unique_ptr<Accelerator>, ParamError> factory(Logger &logger, const std::vector<const Primitive *> &primitives, const ParamMap &params);
 		static std::string printMeta(const std::vector<std::string> &excluded_params) { return Params::meta_.print(excluded_params); }
+		AcceleratorSimpleTest(Logger &logger, ParamError &param_error, const std::vector<const Primitive *> &primitives, const ParamMap &param_map);
 
 	private:
 		using ThisClassType_t = AcceleratorSimpleTest;
@@ -50,7 +51,6 @@ class AcceleratorSimpleTest final : Accelerator
 			Bound<float> bound_;
 			std::vector<const Primitive *> primitives_;
 		};
-		AcceleratorSimpleTest(Logger &logger, ParamError &param_error, const std::vector<const Primitive *> &primitives, const ParamMap &param_map);
 		IntersectData intersect(const Ray &ray, float t_max) const override;
 		IntersectData intersectShadow(const Ray &ray, float t_max) const override;
 		IntersectData intersectTransparentShadow(const Ray &ray, int max_depth, float dist, const Camera *camera) const override;

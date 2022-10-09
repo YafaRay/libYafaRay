@@ -39,8 +39,10 @@ class AcceleratorKdTree final : public Accelerator
 {
 	public:
 		inline static std::string getClassName() { return "AcceleratorKdTree"; }
-		static std::pair<Accelerator *, ParamError> factory(Logger &logger, const std::vector<const Primitive *> &primitives, const ParamMap &params);
+		static std::pair<std::unique_ptr<Accelerator>, ParamError> factory(Logger &logger, const std::vector<const Primitive *> &primitives, const ParamMap &params);
 		static std::string printMeta(const std::vector<std::string> &excluded_params) { return Params::meta_.print(excluded_params); }
+		AcceleratorKdTree(Logger &logger, ParamError &param_error, const std::vector<const Primitive *> &primitives, const ParamMap &param_map);
+		~AcceleratorKdTree() override;
 
 	private:
 		using ThisClassType_t = AcceleratorKdTree;
@@ -61,8 +63,6 @@ class AcceleratorKdTree final : public Accelerator
 		class Node;
 		struct Stack;
 		struct SplitCost;
-		AcceleratorKdTree(Logger &logger, ParamError &param_error, const std::vector<const Primitive *> &primitives, const ParamMap &param_map);
-		~AcceleratorKdTree() override;
 		IntersectData intersect(const Ray &ray, float t_max) const override;
 		//	bool IntersectDBG(const ray_t &ray, float dist, triangle_t **tr, float &Z) const;
 		IntersectData intersectShadow(const Ray &ray, float t_max) const override;

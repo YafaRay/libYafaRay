@@ -55,12 +55,12 @@ ParamMap AcceleratorKdTreeMultiThread::getAsParamMap(bool only_non_default) cons
 	return result;
 }
 
-std::pair<Accelerator *, ParamError> AcceleratorKdTreeMultiThread::factory(Logger &logger, const std::vector<const Primitive *> &primitives, const ParamMap &param_map)
+std::pair<std::unique_ptr<Accelerator>, ParamError> AcceleratorKdTreeMultiThread::factory(Logger &logger, const std::vector<const Primitive *> &primitives, const ParamMap &param_map)
 {
 	auto param_error{Params::meta_.check(param_map, {"type"}, {})};
-	auto result {new ThisClassType_t(logger, param_error, primitives, param_map)};
+	auto result {std::make_unique<ThisClassType_t>(logger, param_error, primitives, param_map)};
 	if(param_error.flags_ != ParamError::Flags::Ok) logger.logWarning(param_error.print<ThisClassType_t>("", {"type"}));
-	return {result, param_error};
+	return {std::move(result), param_error};
 }
 
 AcceleratorKdTreeMultiThread::AcceleratorKdTreeMultiThread(Logger &logger, ParamError &param_error, const std::vector<const Primitive *> &primitives, const ParamMap &param_map) : ParentClassType_t{logger, param_error, param_map}, params_{param_error, param_map}
