@@ -101,7 +101,7 @@ std::pair<std::unique_ptr<Background>, ParamError> DarkSkyBackground::factory(Lo
 		Rgb suncol = background->getAttenuatedSunColor();
 		double angle = 0.5 * (2.0 - d[Axis::Z]);
 
-		if(logger.isVerbose()) logger.logVerbose("DarkSky: SunColor = ", suncol);
+		if(logger.isVerbose()) logger.logVerbose(getClassName(), ": SunColor = ", suncol);
 
 		ParamMap bgp;
 		bgp["type"] = std::string("sunlight");
@@ -110,11 +110,11 @@ std::pair<std::unique_ptr<Background>, ParamError> DarkSkyBackground::factory(Lo
 		bgp["angle"] = Parameter(angle);
 		bgp["power"] = Parameter(background->params_.sun_power_ * (background->params_.night_ ? 0.5f : 1.f));
 		bgp["samples"] = background->params_.light_samples_;
-		bgp["with_caustic"] = background->Background::params_.with_caustic_;
-		bgp["with_diffuse"] = background->Background::params_.with_diffuse_;
-		bgp["cast_shadows"] = background->Background::params_.cast_shadows_;
+		bgp["with_caustic"] = background->ParentClassType_t::params_.with_caustic_;
+		bgp["with_diffuse"] = background->ParentClassType_t::params_.with_diffuse_;
+		bgp["cast_shadows"] = background->ParentClassType_t::params_.cast_shadows_;
 
-		if(logger.isVerbose()) logger.logVerbose("DarkSky: Adding background sun light");
+		if(logger.isVerbose()) logger.logVerbose(getClassName(), ": Adding background sun light");
 		std::unique_ptr<Light> bglight{Light::factory(logger, scene, "light_sun", bgp).first};
 		background->addLight(std::move(bglight));
 	}
@@ -123,25 +123,21 @@ std::pair<std::unique_ptr<Background>, ParamError> DarkSkyBackground::factory(Lo
 		ParamMap bgp;
 		bgp["type"] = std::string("bglight");
 		bgp["samples"] = background->params_.light_samples_;
-		bgp["with_caustic"] = background->Background::params_.with_caustic_;
-		bgp["with_diffuse"] = background->Background::params_.with_diffuse_;
-		bgp["cast_shadows"] = background->Background::params_.cast_shadows_;
+		bgp["with_caustic"] = background->ParentClassType_t::params_.with_caustic_;
+		bgp["with_diffuse"] = background->ParentClassType_t::params_.with_diffuse_;
+		bgp["cast_shadows"] = background->ParentClassType_t::params_.cast_shadows_;
 
-		if(logger.isVerbose()) logger.logVerbose("DarkSky: Adding background sky light");
+		if(logger.isVerbose()) logger.logVerbose(getClassName(), ": Adding background sky light");
 		std::unique_ptr<Light> bglight{Light::factory(logger, scene, "light_sky", bgp).first};
 		bglight->setBackground(background.get());
 		background->addLight(std::move(bglight));
 	}
-	if(logger.isVerbose()) logger.logVerbose("DarkSky: End");
+	if(logger.isVerbose()) logger.logVerbose(getClassName(), ": End");
 	return {std::move(background), param_error};
 }
 
 DarkSkyBackground::DarkSkyBackground(Logger &logger, ParamError &param_error, const ParamMap &param_map) :
-		ParentClassType_t{logger, param_error, param_map}, params_{param_error, param_map},
-		sun_dir_{params_.from_},
-		bright_{params_.bright_ * (params_.night_ ? 0.5f : 1.f)},
-		power_{Background::params_.power_ * bright_},
-		color_conv_{true, true, static_cast<ColorConv::ColorSpace>(params_.color_space_.value()), params_.exposure_}
+		ParentClassType_t{logger, param_error, param_map}, params_{param_error, param_map}
 {
 	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + params_.getAsParamMap(true).print());
 	sun_dir_[Axis::Z] += params_.altitude_;
@@ -149,10 +145,10 @@ DarkSkyBackground::DarkSkyBackground(Logger &logger, ParamError &param_error, co
 	theta_s_ = math::acos(sun_dir_[Axis::Z]);
 	if(logger_.isVerbose())
 	{
-		logger_.logVerbose("DarkSky: Night mode [ ", (params_.night_ ? "ON" : "OFF"), " ]");
-		logger_.logVerbose("DarkSky: Solar Declination in Degrees (", math::radToDeg(theta_s_), ")");
-		logger_.logVerbose("DarkSky: RGB Clamping active.");
-		logger_.logVerbose("DarkSky: Altitude ", params_.altitude_);
+		logger_.logVerbose(getClassName(), ": Night mode [ ", (params_.night_ ? "ON" : "OFF"), " ]");
+		logger_.logVerbose(getClassName(), ": Solar Declination in Degrees (", math::radToDeg(theta_s_), ")");
+		logger_.logVerbose(getClassName(), ": RGB Clamping active.");
+		logger_.logVerbose(getClassName(), ": Altitude ", params_.altitude_);
 	}
 
 	cos_theta_s_ = math::cos(theta_s_);

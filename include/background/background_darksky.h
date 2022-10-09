@@ -79,7 +79,6 @@ class DarkSkyBackground final : public Background
 			PARAM_DECL(float, e_var_, 1.f, "e_var", "color variation parameters, default is normal");
 		} params_;
 		[[nodiscard]] ParamMap getAsParamMap(bool only_non_default) const override;
-
 		Rgb operator()(const Vec3f &dir, bool use_ibl_blur) const override;
 		Rgb eval(const Vec3f &dir, bool use_ibl_blur) const override;
 		Rgb getAttenuatedSunColor();
@@ -88,16 +87,16 @@ class DarkSkyBackground final : public Background
 		Rgb getSunColorFromSunRad();
 		static double perezFunction(const std::array<double, 6> &lam, double cos_theta, double gamma, double cos_gamma, double lvz);
 
-		Vec3f sun_dir_;
+		Vec3f sun_dir_{params_.from_};
 		double theta_s_;
 		double theta_2_, theta_3_;
 		double cos_theta_s_, cos_theta_2_;
 		double t_, t_2_;
 		double zenith_Y_, zenith_x_, zenith_y_;
 		std::array<double, 6> perez_Y_, perez_x_, perez_y_;
-		float bright_;
-		float power_;
-		ColorConv color_conv_;
+		const float bright_{params_.bright_ * (params_.night_ ? 0.5f : 1.f)};
+		const float power_{ParentClassType_t::params_.power_ * bright_};
+		const ColorConv color_conv_{true, true, static_cast<ColorConv::ColorSpace>(params_.color_space_.value()), params_.exposure_};
 };
 
 } //namespace yafaray

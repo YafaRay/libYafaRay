@@ -48,10 +48,12 @@ class GradientBackground final : public Background
 			PARAM_DECL(Rgb, zenith_ground_color_, Rgb{0.f}, "zenith_ground_color", "");
 		} params_;
 		[[nodiscard]] ParamMap getAsParamMap(bool only_non_default) const override;
-
 		Rgb eval(const Vec3f &dir, bool use_ibl_blur) const override;
 
-		Rgb gzenith_, ghoriz_, szenith_, shoriz_;
+		const Rgb gzenith_{params_.zenith_ground_color_ * ParentClassType_t::params_.power_};
+		const Rgb ghoriz_{params_.horizon_ground_color_ * ParentClassType_t::params_.power_};
+		const Rgb szenith_{params_.zenith_color_ * ParentClassType_t::params_.power_};
+		const Rgb shoriz_{params_.horizon_color_ * ParentClassType_t::params_.power_};
 };
 
 } //namespace yafaray

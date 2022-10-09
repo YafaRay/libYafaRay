@@ -59,14 +59,14 @@ std::pair<std::unique_ptr<Background>, ParamError> GradientBackground::factory(L
 	auto param_error{Params::meta_.check(param_map, {"type"}, {})};
 	auto background{std::make_unique<ThisClassType_t>(logger, param_error, param_map)};
 	if(param_error.flags_ != ParamError::Flags::Ok) logger.logWarning(param_error.print<ThisClassType_t>(name, {"type"}));
-	if(background->Background::params_.ibl_)
+	if(background->ParentClassType_t::params_.ibl_)
 	{
 		ParamMap bgp;
 		bgp["type"] = std::string("bglight");
-		bgp["samples"] = background->Background::params_.ibl_samples_;
-		bgp["with_caustic"] = background->Background::params_.with_caustic_;
-		bgp["with_diffuse"] = background->Background::params_.with_diffuse_;
-		bgp["cast_shadows"] = background->Background::params_.cast_shadows_;
+		bgp["samples"] = background->ParentClassType_t::params_.ibl_samples_;
+		bgp["with_caustic"] = background->ParentClassType_t::params_.with_caustic_;
+		bgp["with_diffuse"] = background->ParentClassType_t::params_.with_diffuse_;
+		bgp["cast_shadows"] = background->ParentClassType_t::params_.cast_shadows_;
 
 		std::unique_ptr<Light> bglight{Light::factory(logger, scene, "light", bgp).first};
 		bglight->setBackground(background.get());
@@ -76,7 +76,7 @@ std::pair<std::unique_ptr<Background>, ParamError> GradientBackground::factory(L
 }
 
 GradientBackground::GradientBackground(Logger &logger, ParamError &param_error, const ParamMap &param_map) :
-		ParentClassType_t{logger, param_error, param_map}, params_{param_error, param_map}, gzenith_{params_.zenith_ground_color_ * Background::params_.power_}, ghoriz_{params_.horizon_ground_color_ * Background::params_.power_}, szenith_{params_.zenith_color_ * Background::params_.power_}, shoriz_{params_.horizon_color_ * Background::params_.power_}
+		ParentClassType_t{logger, param_error, param_map}, params_{param_error, param_map}
 {
 	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + params_.getAsParamMap(true).print());
 }

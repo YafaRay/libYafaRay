@@ -46,10 +46,9 @@ class ConstantBackground final : public Background
 			PARAM_DECL(Rgb, color_, Rgb{0.f}, "color", "");
 		} params_;
 		[[nodiscard]] ParamMap getAsParamMap(bool only_non_default) const override;
-
 		Rgb eval(const Vec3f &dir, bool use_ibl_blur) const override;
 
-		Rgb color_;
+		const Rgb color_{params_.color_ * ParentClassType_t::params_.power_};
 };
 
 } //namespace yafaray

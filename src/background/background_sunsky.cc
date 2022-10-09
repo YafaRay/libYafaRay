@@ -85,9 +85,9 @@ std::pair<std::unique_ptr<Background>, ParamError> SunSkyBackground::factory(Log
 		ParamMap bgp;
 		bgp["type"] = std::string("bglight");
 		bgp["samples"] = background->params_.light_samples_;
-		bgp["with_caustic"] = background->Background::params_.with_caustic_;
-		bgp["with_diffuse"] = background->Background::params_.with_diffuse_;
-		bgp["cast_shadows"] = background->Background::params_.cast_shadows_;
+		bgp["with_caustic"] = background->ParentClassType_t::params_.with_caustic_;
+		bgp["with_diffuse"] = background->ParentClassType_t::params_.with_diffuse_;
+		bgp["cast_shadows"] = background->ParentClassType_t::params_.cast_shadows_;
 
 		std::unique_ptr<Light> bglight{Light::factory(logger, scene, "light_sky", bgp).first};
 		bglight->setBackground(background.get());
@@ -99,7 +99,7 @@ std::pair<std::unique_ptr<Background>, ParamError> SunSkyBackground::factory(Log
 		const double angle = 0.27;
 		const double cos_angle = math::cos(math::degToRad(angle));
 		const float invpdf = (2.f * math::num_pi<> * (1.f - cos_angle));
-		suncol *= invpdf * background->Background::params_.power_;
+		suncol *= invpdf * background->ParentClassType_t::params_.power_;
 
 		if(logger.isVerbose()) logger.logVerbose("Sunsky: sun color = ", suncol);
 
@@ -110,8 +110,8 @@ std::pair<std::unique_ptr<Background>, ParamError> SunSkyBackground::factory(Log
 		bgp["angle"] = Parameter(angle);
 		bgp["power"] = Parameter(background->params_.sun_power_);
 		bgp["cast_shadows"] = background->params_.cast_shadows_sun_;
-		bgp["with_caustic"] = background->Background::params_.with_caustic_;
-		bgp["with_diffuse"] = background->Background::params_.with_diffuse_;
+		bgp["with_caustic"] = background->ParentClassType_t::params_.with_caustic_;
+		bgp["with_diffuse"] = background->ParentClassType_t::params_.with_diffuse_;
 
 		std::unique_ptr<Light> bglight{Light::factory(logger, scene, "light_sun", bgp).first};
 		bglight->setBackground(background.get());
@@ -121,7 +121,7 @@ std::pair<std::unique_ptr<Background>, ParamError> SunSkyBackground::factory(Log
 }
 
 SunSkyBackground::SunSkyBackground(Logger &logger, ParamError &param_error, const ParamMap &param_map) :
-		ParentClassType_t{logger, param_error, param_map}, params_{param_error, param_map}, sun_dir_{params_.from_}
+		ParentClassType_t{logger, param_error, param_map}, params_{param_error, param_map}
 {
 	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + params_.getAsParamMap(true).print());
 	sun_dir_.normalize();
@@ -250,7 +250,7 @@ inline Rgb SunSkyBackground::getSkyCol(const Vec3f &dir) const
 
 Rgb SunSkyBackground::eval(const Vec3f &dir, bool use_ibl_blur) const
 {
-	return Background::params_.power_ * getSkyCol(dir);
+	return ParentClassType_t::params_.power_ * getSkyCol(dir);
 }
 
 Rgb SunSkyBackground::computeAttenuatedSunlight(float theta, int turbidity)

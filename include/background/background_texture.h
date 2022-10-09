@@ -65,9 +65,9 @@ class TextureBackground final : public Background
 
 		const Texture *tex_ = nullptr;
 		float sin_r_, cos_r_;
-		float rotation_;
+		const float rotation_{2.f * params_.rotation_ / 360.f};
 		bool with_ibl_blur_ = false;
-		float ibl_blur_mipmap_level_; //Calculated based on the IBL_Blur parameter. As mipmap levels have half size each, this parameter is not linear
+		float ibl_blur_mipmap_level_{math::pow(params_.ibl_blur_, 2.f)}; //Calculated based on the IBL_Blur parameter. As mipmap levels have half size each, this parameter is not linear
 };
 
 } //namespace yafaray
