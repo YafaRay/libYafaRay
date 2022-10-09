@@ -50,7 +50,7 @@ ParamMap AcceleratorKdTreeMultiThread::Params::getAsParamMap(bool only_non_defau
 
 ParamMap AcceleratorKdTreeMultiThread::getAsParamMap(bool only_non_default) const
 {
-	ParamMap result{Accelerator::getAsParamMap(only_non_default)};
+	ParamMap result{ParentClassType_t::getAsParamMap(only_non_default)};
 	result.append(params_.getAsParamMap(only_non_default));
 	return result;
 }
@@ -58,16 +58,16 @@ ParamMap AcceleratorKdTreeMultiThread::getAsParamMap(bool only_non_default) cons
 std::pair<Accelerator *, ParamError> AcceleratorKdTreeMultiThread::factory(Logger &logger, const std::vector<const Primitive *> &primitives, const ParamMap &param_map)
 {
 	auto param_error{Params::meta_.check(param_map, {"type"}, {})};
-	auto result {new AcceleratorKdTreeMultiThread(logger, param_error, primitives, param_map)};
-	if(param_error.flags_ != ParamError::Flags::Ok) logger.logWarning(param_error.print<AcceleratorKdTreeMultiThread>("", {"type"}));
+	auto result {new ThisClassType_t(logger, param_error, primitives, param_map)};
+	if(param_error.flags_ != ParamError::Flags::Ok) logger.logWarning(param_error.print<ThisClassType_t>("", {"type"}));
 	return {result, param_error};
 }
 
-AcceleratorKdTreeMultiThread::AcceleratorKdTreeMultiThread(Logger &logger, ParamError &param_error, const std::vector<const Primitive *> &primitives, const ParamMap &param_map) : Accelerator{logger, param_error, param_map}, params_{param_error, param_map}
+AcceleratorKdTreeMultiThread::AcceleratorKdTreeMultiThread(Logger &logger, ParamError &param_error, const std::vector<const Primitive *> &primitives, const ParamMap &param_map) : ParentClassType_t{logger, param_error, param_map}, params_{param_error, param_map}
 {
 	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + params_.getAsParamMap(true).print());
 	const auto num_primitives = static_cast<uint32_t>(primitives.size());
-	logger_.logInfo("Kd-Tree MultiThread: Starting build (", num_primitives, " prims, cost_ratio:", params_.cost_ratio_, " empty_bonus:", params_.empty_bonus_, ") [using ", params_.num_threads_, " threads, min indices to spawn threads: ", params_.min_indices_to_spawn_threads_, "]");
+	logger_.logInfo(getClassName(), ": Starting build (", num_primitives, " prims, cost_ratio:", params_.cost_ratio_, " empty_bonus:", params_.empty_bonus_, ") [using ", params_.num_threads_, " threads, min indices to spawn threads: ", params_.min_indices_to_spawn_threads_, "]");
 	clock_t clock_start = clock();
 	Params tree_build_parameters{params_};
 	if(tree_build_parameters.max_depth_ <= 0) tree_build_parameters.max_depth_ = static_cast<int>(7.0f + 1.66f * math::log(static_cast<float>(num_primitives)));
@@ -85,7 +85,7 @@ AcceleratorKdTreeMultiThread::AcceleratorKdTreeMultiThread(Logger &logger, Param
 	bounds.reserve(num_primitives);
 	if(num_primitives > 0) tree_bound_ = primitives.front()->getBound();
 	else tree_bound_ = {{{0.f, 0.f, 0.f}}, {{0.f, 0.f, 0.f}}};
-	if(logger_.isVerbose()) logger_.logVerbose("Kd-Tree MultiThread: Getting primitive bounds...");
+	if(logger_.isVerbose()) logger_.logVerbose(getClassName(), ": Getting primitive bounds...");
 	for(const auto &primitive : primitives)
 	{
 		bounds.emplace_back(primitive->getBound());
@@ -99,18 +99,18 @@ AcceleratorKdTreeMultiThread::AcceleratorKdTreeMultiThread(Logger &logger, Param
 		const double offset = (tree_bound_.g_[axis] - tree_bound_.a_[axis]) * 0.001;
 		tree_bound_.a_[axis] -= static_cast<float>(offset), tree_bound_.g_[axis] += static_cast<float>(offset);
 	}
-	if(logger_.isVerbose()) logger_.logVerbose("Kd-Tree MultiThread: Done.");
+	if(logger_.isVerbose()) logger_.logVerbose(getClassName(), ": Done.");
 	std::vector<uint32_t> prim_indices(num_primitives);
 	for(uint32_t prim_num = 0; prim_num < num_primitives; prim_num++) prim_indices[prim_num] = prim_num;
-	if(logger_.isVerbose()) logger_.logVerbose("Kd-Tree MultiThread: Starting recursive build...");
+	if(logger_.isVerbose()) logger_.logVerbose(getClassName(), ": Starting recursive build...");
 	Result kd_tree_result = buildTree(primitives, tree_bound_, prim_indices, 0, 0, 0, bounds, tree_build_parameters, ClipPlane(ClipPlane::Pos::None), {}, {}, num_current_threads_);
 	nodes_ = std::move(kd_tree_result.nodes_);
 	//print some stats:
 	const clock_t clock_elapsed = clock() - clock_start;
 	if(logger_.isVerbose())
 	{
-		logger_.logVerbose("Kd-Tree MultiThread: CPU total clocks (in seconds): ", static_cast<float>(clock_elapsed) / static_cast<float>(CLOCKS_PER_SEC), "s (actual CPU work, including the work done by all threads added together)");
-		logger_.logVerbose("Kd-Tree MultiThread: used/allocated nodes: ", nodes_.size(), "/", nodes_.capacity()
+		logger_.logVerbose(getClassName(), ": CPU total clocks (in seconds): ", static_cast<float>(clock_elapsed) / static_cast<float>(CLOCKS_PER_SEC), "s (actual CPU work, including the work done by all threads added together)");
+		logger_.logVerbose(getClassName(), ": used/allocated nodes: ", nodes_.size(), "/", nodes_.capacity()
 				 , " (", 100.f * static_cast<float>(nodes_.size()) / nodes_.capacity(), "%)");
 	}
 	kd_tree_result.stats_.outputLog(logger, num_primitives, tree_build_parameters.max_leaf_size_);
@@ -118,7 +118,7 @@ AcceleratorKdTreeMultiThread::AcceleratorKdTreeMultiThread(Logger &logger, Param
 
 AcceleratorKdTreeMultiThread::~AcceleratorKdTreeMultiThread()
 {
-	if(logger_.isVerbose()) logger_.logVerbose("Kd-Tree MultiThread: Done");
+	if(logger_.isVerbose()) logger_.logVerbose(getClassName(), ": Done");
 }
 
 // ============================================================

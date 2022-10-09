@@ -36,10 +36,12 @@ class AcceleratorSimpleTest final : Accelerator
 		static std::string printMeta(const std::vector<std::string> &excluded_params) { return Params::meta_.print(excluded_params); }
 
 	private:
+		using ThisClassType_t = AcceleratorSimpleTest;
+		using ParentClassType_t = Accelerator;
 		[[nodiscard]] Type type() const override { return Type::SimpleTest; }
 		const struct Params
 		{
-			PARAM_INIT_PARENT(Accelerator);
+			PARAM_INIT_PARENT(ParentClassType_t);
 		} params_;
 		[[nodiscard]] ParamMap getAsParamMap(bool only_non_default) const override;
 

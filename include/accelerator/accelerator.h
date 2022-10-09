@@ -17,8 +17,8 @@
  *      Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-#ifndef YAFARAY_ACCELERATOR_H
-#define YAFARAY_ACCELERATOR_H
+#ifndef LIBYAFARAY_ACCELERATOR_H
+#define LIBYAFARAY_ACCELERATOR_H
 
 #include "accelerator/intersect_data.h"
 #include "param/class_meta.h"
@@ -163,4 +163,4 @@ inline bool Accelerator::primitiveIntersectionTransparentShadow(IntersectData &i
 }
 
 } //namespace yafaray
-#endif    //YAFARAY_ACCELERATOR_H
+#endif    //LIBYAFARAY_ACCELERATOR_H

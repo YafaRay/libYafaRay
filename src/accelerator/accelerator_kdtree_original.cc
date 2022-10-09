@@ -45,7 +45,7 @@ ParamMap AcceleratorKdTree::Params::getAsParamMap(bool only_non_default) const
 
 ParamMap AcceleratorKdTree::getAsParamMap(bool only_non_default) const
 {
-	ParamMap result{Accelerator::getAsParamMap(only_non_default)};
+	ParamMap result{ParentClassType_t::getAsParamMap(only_non_default)};
 	result.append(params_.getAsParamMap(only_non_default));
 	return result;
 }
@@ -53,16 +53,16 @@ ParamMap AcceleratorKdTree::getAsParamMap(bool only_non_default) const
 std::pair<Accelerator *, ParamError> AcceleratorKdTree::factory(Logger &logger, const std::vector<const Primitive *> &primitives, const ParamMap &param_map)
 {
 	auto param_error{Params::meta_.check(param_map, {"type"}, {})};
-	auto result {new AcceleratorKdTree(logger, param_error, primitives, param_map)};
-	if(param_error.flags_ != ParamError::Flags::Ok) logger.logWarning(param_error.print<AcceleratorKdTree>("", {"type"}));
+	auto result {new ThisClassType_t(logger, param_error, primitives, param_map)};
+	if(param_error.flags_ != ParamError::Flags::Ok) logger.logWarning(param_error.print<ThisClassType_t>("", {"type"}));
 	return {result, param_error};
 }
 
-AcceleratorKdTree::AcceleratorKdTree(Logger &logger, ParamError &param_error, const std::vector<const Primitive *> &primitives, const ParamMap &param_map) : Accelerator{logger, param_error, param_map}, params_{param_error, param_map}
+AcceleratorKdTree::AcceleratorKdTree(Logger &logger, ParamError &param_error, const std::vector<const Primitive *> &primitives, const ParamMap &param_map) : ParentClassType_t{logger, param_error, param_map}, params_{param_error, param_map}
 {
 	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + params_.getAsParamMap(true).print());
 	total_prims_ = static_cast<uint32_t>(primitives.size());
-	logger_.logInfo("Kd-Tree: Starting build (", total_prims_, " prims, cr:", cost_ratio_, " eb:", e_bonus_, ")");
+	logger_.logInfo(getClassName(), ": Starting build (", total_prims_, " prims, cr:", cost_ratio_, " eb:", e_bonus_, ")");
 	clock_t c_start, c_end;
 	c_start = clock();
 	next_free_node_ = 0;
@@ -81,7 +81,7 @@ AcceleratorKdTree::AcceleratorKdTree(Logger &logger, ParamError &param_error, co
 	//experiment: add penalty to cost ratio to reduce memory usage on huge scenes
 	if(log_leaves > 16.0) cost_ratio_ += 0.25f * (log_leaves - 16.0);
 	all_bounds_ = std::unique_ptr<Bound<float>[]>(new Bound<float>[total_prims_ + prim_clip_thresh_ + 1]);
-	if(logger_.isVerbose()) logger_.logVerbose("Kd-Tree: Getting primitive bounds...");
+	if(logger_.isVerbose()) logger_.logVerbose(getClassName(), ": Getting primitive bounds...");
 	for(uint32_t i = 0; i < total_prims_; i++)
 	{
 		all_bounds_[i] = primitives[i]->getBound();
@@ -97,7 +97,7 @@ AcceleratorKdTree::AcceleratorKdTree(Logger &logger, ParamError &param_error, co
 		const double offset = (tree_bound_.g_[axis] - tree_bound_.a_[axis]) * 0.001;
 		tree_bound_.a_[axis] -= static_cast<float>(offset), tree_bound_.g_[axis] += static_cast<float>(offset);
 	}
-	if(logger_.isVerbose()) logger_.logVerbose("Kd-Tree: Done.");
+	if(logger_.isVerbose()) logger_.logVerbose(getClassName(), ": Done.");
 	// get working memory for tree construction
 	std::array<std::unique_ptr<kdtree::BoundEdge[]>, 3> edges;
 	const uint32_t r_mem_size = 3 * total_prims_;
@@ -114,7 +114,7 @@ AcceleratorKdTree::AcceleratorKdTree(Logger &logger, ParamError &param_error, co
 	for(int i = 0; i < max_depth_ + 2; i++) clip_[i].pos_ = ClipPlane::Pos::None;
 #endif
 	/* build tree */
-	if(logger_.isVerbose()) logger_.logVerbose("Kd-Tree: Starting recursive build...");
+	if(logger_.isVerbose()) logger_.logVerbose(getClassName(), ": Starting recursive build...");
 	buildTree(total_prims_, primitives, tree_bound_, left_prims.get(),
 			  left_prims.get(), right_prims.get(), edges, // <= working memory
 	          r_mem_size, 0, 0);
@@ -123,22 +123,22 @@ AcceleratorKdTree::AcceleratorKdTree(Logger &logger, ParamError &param_error, co
 	c_end = clock() - c_start;
 	if(logger_.isVerbose())
 	{
-		logger_.logVerbose("Kd-Tree: Stats (", static_cast<float>(c_end) / static_cast<float>(CLOCKS_PER_SEC), "s)");
-		logger_.logVerbose("Kd-Tree: used/allocated nodes: ", next_free_node_, "/", allocated_nodes_count_
+		logger_.logVerbose(getClassName(), ": Stats (", static_cast<float>(c_end) / static_cast<float>(CLOCKS_PER_SEC), "s)");
+		logger_.logVerbose(getClassName(), ": used/allocated nodes: ", next_free_node_, "/", allocated_nodes_count_
 				 , " (", 100.f * static_cast<float>(next_free_node_) / allocated_nodes_count_, "%)");
-		logger_.logVerbose("Kd-Tree: Primitives in tree: ", total_prims_);
-		logger_.logVerbose("Kd-Tree: Interior nodes: ", kd_stats_.kd_inodes_, " / ", "leaf nodes: ", kd_stats_.kd_leaves_
+		logger_.logVerbose(getClassName(), ": Primitives in tree: ", total_prims_);
+		logger_.logVerbose(getClassName(), ": Interior nodes: ", kd_stats_.kd_inodes_, " / ", "leaf nodes: ", kd_stats_.kd_leaves_
 				 , " (empty: ", kd_stats_.empty_kd_leaves_, " = ", 100.f * static_cast<float>(kd_stats_.empty_kd_leaves_) / kd_stats_.kd_leaves_, "%)");
-		logger_.logVerbose("Kd-Tree: Leaf prims: ", kd_stats_.kd_prims_, " (", static_cast<float>(kd_stats_.kd_prims_) / total_prims_, " x prims in tree, leaf size: ", max_leaf_size_, ")");
-		logger_.logVerbose("Kd-Tree: => ", static_cast<float>(kd_stats_.kd_prims_) / (kd_stats_.kd_leaves_ - kd_stats_.empty_kd_leaves_), " prims per non-empty leaf");
-		logger_.logVerbose("Kd-Tree: Leaves due to depth limit/bad splits: ", kd_stats_.depth_limit_reached_, "/", kd_stats_.num_bad_splits_);
-		logger_.logVerbose("Kd-Tree: clipped primitives: ", kd_stats_.clip_, " (", kd_stats_.bad_clip_, " bad clips, ", kd_stats_.null_clip_, " null clips)");
+		logger_.logVerbose(getClassName(), ": Leaf prims: ", kd_stats_.kd_prims_, " (", static_cast<float>(kd_stats_.kd_prims_) / total_prims_, " x prims in tree, leaf size: ", max_leaf_size_, ")");
+		logger_.logVerbose(getClassName(), ": => ", static_cast<float>(kd_stats_.kd_prims_) / (kd_stats_.kd_leaves_ - kd_stats_.empty_kd_leaves_), " prims per non-empty leaf");
+		logger_.logVerbose(getClassName(), ": Leaves due to depth limit/bad splits: ", kd_stats_.depth_limit_reached_, "/", kd_stats_.num_bad_splits_);
+		logger_.logVerbose(getClassName(), ": clipped primitives: ", kd_stats_.clip_, " (", kd_stats_.bad_clip_, " bad clips, ", kd_stats_.null_clip_, " null clips)");
 	}
 }
 
 AcceleratorKdTree::~AcceleratorKdTree()
 {
-	if(logger_.isVerbose()) logger_.logVerbose("Kd-Tree: Done");
+	if(logger_.isVerbose()) logger_.logVerbose(getClassName(), ": Done");
 }
 
 // ============================================================

@@ -36,7 +36,7 @@ ParamMap AcceleratorSimpleTest::Params::getAsParamMap(bool only_non_default) con
 
 ParamMap AcceleratorSimpleTest::getAsParamMap(bool only_non_default) const
 {
-	ParamMap result{Accelerator::getAsParamMap(only_non_default)};
+	ParamMap result{ParentClassType_t::getAsParamMap(only_non_default)};
 	result.append(params_.getAsParamMap(only_non_default));
 	return result;
 }
@@ -44,12 +44,12 @@ ParamMap AcceleratorSimpleTest::getAsParamMap(bool only_non_default) const
 std::pair<Accelerator *, ParamError> AcceleratorSimpleTest::factory(Logger &logger, const std::vector<const Primitive *> &primitives, const ParamMap &param_map)
 {
 	auto param_error{Params::meta_.check(param_map, {"type"}, {})};
-	auto result {new AcceleratorSimpleTest(logger, param_error, primitives, param_map)};
-	if(param_error.flags_ != ParamError::Flags::Ok) logger.logWarning(param_error.print<AcceleratorSimpleTest>("", {"type"}));
+	auto result {new ThisClassType_t(logger, param_error, primitives, param_map)};
+	if(param_error.flags_ != ParamError::Flags::Ok) logger.logWarning(param_error.print<ThisClassType_t>("", {"type"}));
 	return {result, param_error};
 }
 
-AcceleratorSimpleTest::AcceleratorSimpleTest(Logger &logger, ParamError &param_error, const std::vector<const Primitive *> &primitives, const ParamMap &param_map) : Accelerator{logger, param_error, param_map}, params_{param_error, param_map}, primitives_(primitives)
+AcceleratorSimpleTest::AcceleratorSimpleTest(Logger &logger, ParamError &param_error, const std::vector<const Primitive *> &primitives, const ParamMap &param_map) : ParentClassType_t{logger, param_error, param_map}, params_{param_error, param_map}, primitives_(primitives)
 {
 	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + params_.getAsParamMap(true).print());
 	const size_t num_primitives = primitives_.size();
@@ -74,9 +74,9 @@ AcceleratorSimpleTest::AcceleratorSimpleTest(Logger &logger, ParamError &param_e
 	}
 	for(const auto &[object, object_data] : objects_data_)
 	{
-		if(logger_.isVerbose()) logger_.logVerbose("AcceleratorSimpleTest: Primitives in object '", (object)->getName(), "': ", object_data.primitives_.size(), ", bound: (", object_data.bound_.a_, ", ", object_data.bound_.g_, ")");
+		if(logger_.isVerbose()) logger_.logVerbose(getClassName(), ": Primitives in object '", (object)->getName(), "': ", object_data.primitives_.size(), ", bound: (", object_data.bound_.a_, ", ", object_data.bound_.g_, ")");
 	}
-	if(logger_.isVerbose()) logger_.logVerbose("AcceleratorSimpleTest: Objects: ", objects_data_.size(), ", primitives in tree: ", num_primitives, ", bound: (", bound_.a_, ", ", bound_.g_, ")");
+	if(logger_.isVerbose()) logger_.logVerbose(getClassName(), ": Objects: ", objects_data_.size(), ", primitives in tree: ", num_primitives, ", bound: (", bound_.a_, ", ", bound_.g_, ")");
 }
 
 IntersectData AcceleratorSimpleTest::intersect(const Ray &ray, float t_max) const

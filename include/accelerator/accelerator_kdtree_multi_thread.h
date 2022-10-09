@@ -43,10 +43,12 @@ class AcceleratorKdTreeMultiThread final : public Accelerator
 		static std::string printMeta(const std::vector<std::string> &excluded_params) { return Params::meta_.print(excluded_params); }
 
 	private:
+		using ThisClassType_t = AcceleratorKdTreeMultiThread;
+		using ParentClassType_t = Accelerator;
 		[[nodiscard]] Type type() const override { return Type::KdTreeMultiThread; }
 		const struct Params
 		{
-			PARAM_INIT_PARENT(Accelerator);
+			PARAM_INIT_PARENT(ParentClassType_t);
 			PARAM_DECL(int, max_depth_, 0, "depth", "");
 			PARAM_DECL(int, max_leaf_size_, 1, "max_leaf_size_", "");
 			PARAM_DECL(float , cost_ratio_, 0.8f, "cost_ratio", "node traversal cost divided by primitive intersection cost");
