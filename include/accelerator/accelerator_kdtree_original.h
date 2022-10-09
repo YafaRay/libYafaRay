@@ -17,8 +17,8 @@
  *      Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-#ifndef YAFARAY_ACCELERATOR_KDTREE_H
-#define YAFARAY_ACCELERATOR_KDTREE_H
+#ifndef LIBYAFARAY_ACCELERATOR_KDTREE_ORIGINAL_H
+#define LIBYAFARAY_ACCELERATOR_KDTREE_ORIGINAL_H
 
 #include "accelerator/accelerator.h"
 #include "accelerator/accelerator_kdtree_common.h"
@@ -183,4 +183,4 @@ inline IntersectData AcceleratorKdTree::intersectTransparentShadow(const Ray &ra
 
 } //namespace yafaray
 
-#endif    //YAFARAY_ACCELERATOR_KDTREE_H
+#endif    //LIBYAFARAY_ACCELERATOR_KDTREE_ORIGINAL_H

@@ -17,8 +17,8 @@
  *      Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-#ifndef YAFARAY_ACCELERATOR_SIMPLE_TEST_H
-#define YAFARAY_ACCELERATOR_SIMPLE_TEST_H
+#ifndef LIBYAFARAY_ACCELERATOR_SIMPLE_TEST_H
+#define LIBYAFARAY_ACCELERATOR_SIMPLE_TEST_H
 
 #include "accelerator.h"
 #include "geometry/bound.h"
@@ -63,4 +63,4 @@ class AcceleratorSimpleTest final : public Accelerator
 
 } //namespace yafaray
 
-#endif //YAFARAY_ACCELERATOR_SIMPLE_TEST_H
+#endif //LIBYAFARAY_ACCELERATOR_SIMPLE_TEST_H
