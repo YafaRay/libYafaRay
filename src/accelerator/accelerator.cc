@@ -50,7 +50,7 @@ std::pair<std::unique_ptr<Accelerator>, ParamError> Accelerator::factory(Logger 
 		case Type::SimpleTest: return AcceleratorSimpleTest::factory(logger, primitives_list, param_map);
 		case Type::KdTreeOriginal: return AcceleratorKdTree::factory(logger, primitives_list, param_map);
 		case Type::KdTreeMultiThread: return AcceleratorKdTreeMultiThread::factory(logger, primitives_list, param_map);
-		default: return {nullptr, {ParamError::Flags::ErrorWhileCreating}};
+		default: return {nullptr, ParamError{ParamError::Flags::ErrorWhileCreating}};
 	}
 }
 
