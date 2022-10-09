@@ -29,8 +29,8 @@ namespace yafaray {
 struct Visibility : public Enum<Visibility>
 {
 	using Enum::Enum;
-	enum : decltype(type()) { None = 0, Visible = 1 << 0, CastsShadows = 1 << 1, Normal = Visible | CastsShadows };
-	inline static const EnumMap<decltype(type())> map_{{
+	enum : ValueType_t { None = 0, Visible = 1 << 0, CastsShadows = 1 << 1, Normal = Visible | CastsShadows };
+	inline static const EnumMap<ValueType_t> map_{{
 			{"normal", Normal, ""},
 			{"invisible", None, ""},
 			{"shadow_only", CastsShadows, ""},

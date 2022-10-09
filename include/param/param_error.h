@@ -33,7 +33,7 @@ struct ParamError
 	struct Flags : Enum<Flags>
 	{
 		using Enum::Enum;
-		enum : decltype(type())
+		enum : ValueType_t
 		{
 			Ok = 0,
 			ErrorTypeUnknownParam = 1 << 0,
@@ -44,7 +44,7 @@ struct ParamError
 			ErrorAlreadyExists = 1 << 5,
 			ErrorWhileCreating = 1 << 6,
 		};
-		inline static const EnumMap<decltype(type())> map_{{
+		inline static const EnumMap<ValueType_t> map_{{
 				{"None", Ok, ""},
 				{"ErrorTypeUnknownParam", ErrorTypeUnknownParam, ""},
 				{"WarningUnknownParam", WarningUnknownParam, ""},

@@ -146,8 +146,8 @@ class Material
 		struct Type : public Enum<Type>
 		{
 			using Enum::Enum;
-			enum : decltype(type()) { None, Blend, CoatedGlossy, Glass, Mirror, Null, Glossy, RoughGlass, ShinyDiffuse, Light, Mask };
-			inline static const EnumMap<decltype(type())> map_{{
+			enum : ValueType_t { None, Blend, CoatedGlossy, Glass, Mirror, Null, Glossy, RoughGlass, ShinyDiffuse, Light, Mask };
+			inline static const EnumMap<ValueType_t> map_{{
 					{"blend_mat", Blend, ""},
 					{"coated_glossy", CoatedGlossy, ""},
 					{"glass", Glass, ""},

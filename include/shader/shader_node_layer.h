@@ -35,8 +35,8 @@ class LayerNode final : public ShaderNode
 		struct Flags : Enum<Flags>
 		{
 			using Enum::Enum;
-			enum : decltype(type()) { None = 0, RgbToInt = 1 << 0, Stencil = 1 << 1, Negative = 1 << 2, AlphaMix = 1 << 3 };
-			inline static const EnumMap<decltype(type())> map_{{
+			enum : ValueType_t { None = 0, RgbToInt = 1 << 0, Stencil = 1 << 1, Negative = 1 << 2, AlphaMix = 1 << 3 };
+			inline static const EnumMap<ValueType_t> map_{{
 					{"None", None, ""},
 					{"RgbToInt", RgbToInt, ""},
 					{"Stencil", Stencil, ""},
@@ -47,8 +47,8 @@ class LayerNode final : public ShaderNode
 		struct BlendMode : Enum<BlendMode>
 		{
 			using Enum::Enum;
-			enum : decltype(type()) { Mix, Add, Mult, Sub, Screen, Div, Diff, Dark, Light };
-			inline static const EnumMap<decltype(type())> map_{{
+			enum : ValueType_t { Mix, Add, Mult, Sub, Screen, Div, Diff, Dark, Light };
+			inline static const EnumMap<ValueType_t> map_{{
 					{"mix", Mix, ""},
 					{"add", Add, ""},
 					{"multiply", Mult, ""},

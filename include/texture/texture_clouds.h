@@ -35,8 +35,8 @@ class CloudsTexture final : public Texture
 	private:
 		struct BiasType : public Enum<BiasType>
 		{
-			enum : decltype(type()) { None, Positive, Negative };
-			inline static const EnumMap<decltype(type())> map_{{
+			enum : ValueType_t { None, Positive, Negative };
+			inline static const EnumMap<ValueType_t> map_{{
 					{"none", None, ""},
 					{"positive", Positive, ""},
 					{"negative", Negative, ""},

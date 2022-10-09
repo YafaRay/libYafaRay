@@ -28,14 +28,14 @@ namespace yafaray {
 struct ColorSpace : public Enum<ColorSpace>
 {
 	using Enum::Enum; using Enum::operator=; using Enum::operator==;
-	enum : decltype(type())
+	enum : ValueType_t
 	{
 		RawManualGamma	= 1,
 		LinearRgb		= 2,
 		Srgb			= 3,
 		XyzD65			= 4
 	};
-	inline static const EnumMap<decltype(type())> map_{{
+	inline static const EnumMap<ValueType_t> map_{{
 			{"Raw_Manual_Gamma", RawManualGamma, ""},
 			{"LinearRGB", LinearRgb, ""},
 			{"sRGB", Srgb, ""},

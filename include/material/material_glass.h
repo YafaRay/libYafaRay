@@ -46,8 +46,8 @@ class GlassMaterial final : public NodeMaterial
 		[[nodiscard]] Type type() const override { return Type::Glass; }
 		struct ShaderNodeType : public Enum<ShaderNodeType>
 		{
-			enum : decltype(type()) { Bump, Wireframe, MirrorColor, FilterColor, Ior, Size }; //Always leave the Size entry at the end!!
-			inline static const EnumMap<decltype(type())> map_{{
+			enum : ValueType_t { Bump, Wireframe, MirrorColor, FilterColor, Ior, Size }; //Always leave the Size entry at the end!!
+			inline static const EnumMap<ValueType_t> map_{{
 					{"bump_shader", Bump, ""},
 					{"wireframe_shader", Wireframe, "Shader node for wireframe shading (float)"},
 					{"mirror_color_shader", MirrorColor, ""},

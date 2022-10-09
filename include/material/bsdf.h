@@ -25,7 +25,7 @@ namespace yafaray {
 struct BsdfFlags : Enum<BsdfFlags, unsigned short>
 {
 	using Enum::Enum; using Enum::operator=;
-	enum : decltype(type())
+	enum : ValueType_t
 	{
 		None		= 0,
 		Specular	= 1 << 0,
@@ -45,7 +45,7 @@ struct BsdfFlags : Enum<BsdfFlags, unsigned short>
 		AllGlossy = Glossy | Reflect | Transmit,
 		All = Specular | Glossy | Diffuse | Dispersive | Reflect | Transmit | Filter
 	};
-	inline static const EnumMap<decltype(type())> map_{{
+	inline static const EnumMap<ValueType_t> map_{{
 			{"None", None, ""},
 			{"Specular", Specular, ""},
 			{"Glossy", Glossy, ""},
@@ -69,8 +69,8 @@ struct BsdfFlags : Enum<BsdfFlags, unsigned short>
 
 struct DiffuseBrdf : public Enum<DiffuseBrdf>
 {
-	enum : decltype(type()) { Lambertian, OrenNayar };
-	inline static const EnumMap<decltype(type())> map_{{
+	enum : ValueType_t { Lambertian, OrenNayar };
+	inline static const EnumMap<ValueType_t> map_{{
 			{"lambertian", Lambertian, ""},
 			{"oren_nayar", OrenNayar, ""},
 		}};

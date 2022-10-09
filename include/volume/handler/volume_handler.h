@@ -45,8 +45,8 @@ class VolumeHandler
 		struct Type : public Enum<Type>
 		{
 			using Enum::Enum;
-			enum : decltype(type()) { None, Beer, Sss };
-			inline static const EnumMap<decltype(type())> map_{{
+			enum : ValueType_t { None, Beer, Sss };
+			inline static const EnumMap<ValueType_t> map_{{
 					{"beer", Beer, ""},
 					{"sss", Sss, ""},
 				}};

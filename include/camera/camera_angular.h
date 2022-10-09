@@ -37,14 +37,14 @@ class AngularCamera final : public Camera
 	private:
 		struct Projection : public Enum<Projection>  //Fish Eye Projections as defined in https://en.wikipedia.org/wiki/Fisheye_lens
 		{
-			enum : decltype(type()){
+			enum : ValueType_t{
 				Equidistant, //!<Default and used traditionally in YafaRay
 				Orthographic, //!<Orthographic projection where the centre of the image is enlarged/more defined at the cost of much more distorted edges. Angle should be 90º or less
 				Stereographic, //!<angle should be less than 180º
 				EquisolidAngle,
 				Rectilinear, //!<angle should be less than 90º
 			};
-			inline static const EnumMap<decltype(type())> map_{{
+			inline static const EnumMap<ValueType_t> map_{{
 					{"equidistant", Equidistant, "Default and used traditionally in YafaRay"},
 					{"orthographic", Orthographic, "Orthographic projection where the centre of the image is enlarged/more defined at the cost of much more distorted edges. Angle should be 90º or less"},
 					{"stereographic", Stereographic, "angle should be less than 180º"},

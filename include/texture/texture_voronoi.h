@@ -35,8 +35,8 @@ class VoronoiTexture final : public Texture
 	private:
 		struct ColorMode : public Enum<ColorMode>
 		{
-			enum : decltype(type()) { IntensityWithoutColor, Position, PositionOutline, PositionOutlineIntensity };
-			inline static const EnumMap<decltype(type())> map_{{
+			enum : ValueType_t { IntensityWithoutColor, Position, PositionOutline, PositionOutlineIntensity };
+			inline static const EnumMap<ValueType_t> map_{{
 					{"intensity-without-color", IntensityWithoutColor, ""},
 					{"position", Position, ""},
 					{"position-outline", PositionOutline, ""},

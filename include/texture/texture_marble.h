@@ -35,8 +35,8 @@ class MarbleTexture final : public Texture
 	private:
 		struct Shape : public Enum<Shape>
 		{
-			enum : decltype(type()) {Sin, Saw, Tri};
-			inline static const EnumMap<decltype(type())> map_{{
+			enum : ValueType_t {Sin, Saw, Tri};
+			inline static const EnumMap<ValueType_t> map_{{
 					{"sin", Sin, ""},
 					{"saw", Saw, ""},
 					{"tri", Tri, ""},

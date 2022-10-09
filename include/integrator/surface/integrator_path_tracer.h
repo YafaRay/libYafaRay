@@ -34,8 +34,8 @@ class PathIntegrator final : public CausticPhotonIntegrator
 	private:
 		struct CausticType : public Enum<CausticType>
 		{
-			enum : decltype(type()) { None = 0, Path = 1 << 0, Photon = 1 << 1, Both = Path | Photon };
-			inline static const EnumMap<decltype(type())> map_{{
+			enum : ValueType_t { None = 0, Path = 1 << 0, Photon = 1 << 1, Both = Path | Photon };
+			inline static const EnumMap<ValueType_t> map_{{
 					{"none", None, ""},
 					{"path", Path, ""},
 					{"photon", Photon, ""},

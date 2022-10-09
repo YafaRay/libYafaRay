@@ -55,8 +55,8 @@ class MaskMaterial final : public NodeMaterial
 		[[nodiscard]] Type type() const override { return Type::Mask; }
 		struct ShaderNodeType : public Enum<ShaderNodeType>
 		{
-			enum : decltype(type()) { Mask, Size }; //Always leave the Size entry at the end!!
-			inline static const EnumMap<decltype(type())> map_{{
+			enum : ValueType_t { Mask, Size }; //Always leave the Size entry at the end!!
+			inline static const EnumMap<ValueType_t> map_{{
 				{"mask_shader", Mask, "Shader node for mask value (float)"},
 			}};
 			bool isBump() { return false; }

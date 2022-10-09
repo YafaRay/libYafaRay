@@ -36,8 +36,8 @@ class Badge
 	public:
 		struct Position : public Enum<Position>
 		{
-			enum : decltype(type()) { None, Top, Bottom };
-			inline static const EnumMap<decltype(type())> map_{{
+			enum : ValueType_t { None, Top, Bottom };
+			inline static const EnumMap<ValueType_t> map_{{
 					{"none", None, ""},
 					{"top", Top, ""},
 					{"bottom", Bottom, ""},

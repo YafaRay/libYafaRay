@@ -35,8 +35,8 @@ class WoodTexture final : public Texture
 	private:
 		struct Shape : public Enum<Shape>
 		{
-			enum : decltype(type()) { Sin, Saw, Tri };
-			inline static const EnumMap<decltype(type())> map_{{
+			enum : ValueType_t { Sin, Saw, Tri };
+			inline static const EnumMap<ValueType_t> map_{{
 					{"sin", Sin, ""},
 					{"saw", Saw, ""},
 					{"tri", Tri, ""},
@@ -44,8 +44,8 @@ class WoodTexture final : public Texture
 		};
 		struct WoodType : public Enum<WoodType>
 		{
-			enum : decltype(type()) { Bands, Rings };
-			inline static const EnumMap<decltype(type())> map_{{
+			enum : ValueType_t { Bands, Rings };
+			inline static const EnumMap<ValueType_t> map_{{
 					{"bands", Bands, ""},
 					{"rings", Rings, ""},
 				}};

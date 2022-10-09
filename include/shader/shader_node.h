@@ -81,8 +81,8 @@ class ShaderNode
 		struct Type : public Enum<Type>
 		{
 			using Enum::Enum;
-			enum : decltype(type()) { None, Texture, Value, Mix, Layer };
-			inline static const EnumMap<decltype(type())> map_{{
+			enum : ValueType_t { None, Texture, Value, Mix, Layer };
+			inline static const EnumMap<ValueType_t> map_{{
 					{"texture_mapper", Texture, ""},
 					{"value", Value, ""},
 					{"mix", Mix, ""},

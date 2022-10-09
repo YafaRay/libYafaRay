@@ -29,8 +29,8 @@ class NoiseGenerator
 	public:
 		struct NoiseType : public Enum<NoiseType>
 		{
-			enum : decltype(type()) { Blender, PerlinStandard, PerlinImproved, Cell, VoronoiF1, VoronoiF2, VoronoiF3, VoronoiF4, VoronoiF2F1, VoronoiCrackle };
-			inline static const EnumMap<decltype(type())> map_{{
+			enum : ValueType_t { Blender, PerlinStandard, PerlinImproved, Cell, VoronoiF1, VoronoiF2, VoronoiF3, VoronoiF4, VoronoiF2F1, VoronoiCrackle };
+			inline static const EnumMap<ValueType_t> map_{{
 					{"blender", Blender, ""},
 					{"stdperlin", PerlinStandard, ""},
 					{"newperlin", PerlinImproved, ""},

@@ -50,8 +50,8 @@ class ObjectBase : public Object
 		struct Type : public Enum<Type>
 		{
 			using Enum::Enum;
-			enum : decltype(type()) { None, Mesh, Curve, Sphere };
-			inline static const EnumMap<decltype(type())> map_{{
+			enum : ValueType_t { None, Mesh, Curve, Sphere };
+			inline static const EnumMap<ValueType_t> map_{{
 					{"mesh", Mesh, ""},
 					{"curve", Curve, ""},
 					{"sphere", Sphere, ""},

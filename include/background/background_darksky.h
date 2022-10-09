@@ -46,7 +46,7 @@ class DarkSkyBackground final : public Background
 	private:
 		struct ColorSpace : public Enum<ColorSpace>
 		{
-			inline static const EnumMap<decltype(type())> map_{{
+			inline static const EnumMap<ValueType_t> map_{{
 					{"CIE (E)", ColorConv::CieRgbECs, ""},
 					{"CIE (D50)", ColorConv::CieRgbD50Cs, ""},
 					{"sRGB (D65)", ColorConv::SRgbD65Cs, ""},

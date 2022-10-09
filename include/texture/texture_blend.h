@@ -34,8 +34,8 @@ class BlendTexture final : public Texture
 	private:
 		struct BlendType : public Enum<BlendType>
 		{
-			enum : decltype(type()) { Linear, Quadratic, Easing, Diagonal, Spherical, QuadraticSphere, Radial };
-			inline static const EnumMap<decltype(type())> map_{{
+			enum : ValueType_t { Linear, Quadratic, Easing, Diagonal, Spherical, QuadraticSphere, Radial };
+			inline static const EnumMap<ValueType_t> map_{{
 					{"linear", Linear, "Linear progression"},
 					{"quadratic", Quadratic, "Quadratic progression"},
 					{"easing", Easing, "'Easing' progression"},

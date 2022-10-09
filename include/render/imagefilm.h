@@ -126,8 +126,8 @@ class ImageFilm final
 	private:
 		struct FilterType : public Enum<FilterType>
 		{
-			enum : decltype(type()) { Box, Mitchell, Gauss, Lanczos };
-			inline static const EnumMap<decltype(type())> map_{{
+			enum : ValueType_t { Box, Mitchell, Gauss, Lanczos };
+			inline static const EnumMap<ValueType_t> map_{{
 					{"box", Box, ""},
 					{"mitchell", Mitchell, ""},
 					{"gauss", Gauss, ""},
@@ -138,8 +138,8 @@ class ImageFilm final
 		{
 			struct IntervalType : public Enum<IntervalType>
 			{
-				enum : decltype(type()) { None, Time, Pass };
-				inline static const EnumMap<decltype(type())> map_{{
+				enum : ValueType_t { None, Time, Pass };
+				inline static const EnumMap<ValueType_t> map_{{
 						{"none", None, ""},
 						{"time-interval", Time, ""},
 						{"pass-interval", Pass, ""},
@@ -156,8 +156,8 @@ class ImageFilm final
 		{
 			struct Mode : public Enum<Mode>
 			{
-				enum : decltype(type()) { None, Save, LoadAndSave };
-				inline static const EnumMap<decltype(type())> map_{{
+				enum : ValueType_t { None, Save, LoadAndSave };
+				inline static const EnumMap<ValueType_t> map_{{
 						{"none", None, ""},
 						{"save", Save, ""},
 						{"load-save", LoadAndSave, ""},

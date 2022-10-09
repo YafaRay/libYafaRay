@@ -35,8 +35,8 @@ class VoronoiNoiseGenerator final : public NoiseGenerator
 	public:
 		struct DMetricType : public Enum<DMetricType>
 		{
-			enum : decltype(type()) { DistReal, DistSquared, DistManhattan, DistChebychev, DistMinkovskyHalf, DistMinkovskyFour, DistMinkovsky };
-			inline static const EnumMap<decltype(type())> map_{{
+			enum : ValueType_t { DistReal, DistSquared, DistManhattan, DistChebychev, DistMinkovskyHalf, DistMinkovskyFour, DistMinkovsky };
+			inline static const EnumMap<ValueType_t> map_{{
 					{"real", DistReal, ""},
 					{"squared", DistSquared, ""},
 					{"manhattan", DistManhattan, ""},

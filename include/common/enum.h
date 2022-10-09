@@ -51,7 +51,7 @@ class Enum
 		constexpr bool operator!=(Enum an_enum) const;
 		constexpr bool operator==(T value) const;
 		constexpr bool operator!=(T value) const;
-		static T type() { return {}; } //!< This is only so derived classes can reference the type of the value_ member. The returned value does not matter.
+		using ValueType_t = T;
 
 	private:
 		T value_{0};

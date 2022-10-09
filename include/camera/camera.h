@@ -79,8 +79,8 @@ class Camera
 		struct Type : public Enum<Type>
 		{
 			using Enum::Enum;
-			enum : decltype(type()) { None, Angular, Perspective, Architect, Orthographic, Equirectangular };
-			inline static const EnumMap<decltype(type())> map_{{
+			enum : ValueType_t { None, Angular, Perspective, Architect, Orthographic, Equirectangular };
+			inline static const EnumMap<ValueType_t> map_{{
 					{"angular", Angular, ""},
 					{"perspective", Perspective, ""},
 					{"architect", Architect, ""},

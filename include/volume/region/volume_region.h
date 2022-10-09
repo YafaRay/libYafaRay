@@ -70,8 +70,8 @@ class VolumeRegion
 		struct Type : public Enum<Type>
 		{
 			using Enum::Enum;
-			enum : decltype(type()) { None, ExpDensity, Grid, Noise, Sky, Uniform };
-			inline static const EnumMap<decltype(type())> map_{{
+			enum : ValueType_t { None, ExpDensity, Grid, Noise, Sky, Uniform };
+			inline static const EnumMap<ValueType_t> map_{{
 					{"ExpDensityVolume", ExpDensity, ""},
 					{"GridVolume", Grid, ""},
 					{"NoiseVolume", Noise, ""},

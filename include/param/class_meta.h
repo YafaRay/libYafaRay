@@ -44,7 +44,7 @@ inline static ClassMeta meta_{parent_class::Params::meta_};
 #define PARAM_DECL(type, name, default_val, api_name, api_desc) type name{name##meta_.getDefault<type>()}; \
 inline static const ParamMeta name##meta_{api_name, api_desc, type{default_val}, meta_.map_}
 
-#define PARAM_ENUM_DECL(enum_type, name, default_val, api_name, api_desc) enum_type name{name##meta_.getDefault<decltype(enum_type::type())>()}; \
+#define PARAM_ENUM_DECL(enum_type, name, default_val, api_name, api_desc) enum_type name{name##meta_.getDefault<enum_type::ValueType_t>()}; \
 inline static const ParamMeta name##meta_{api_name, api_desc, default_val, meta_.map_, &enum_type::map_}
 
 #define PARAM_SHADERS_DECL inline static const std::array<std::unique_ptr<ParamMeta>, ShaderNodeType::Size> shader_node_names_meta_{initShaderNames<ShaderNodeType>(meta_.map_)}; \

@@ -34,8 +34,8 @@ class LayerDef final
 		struct Flags : Enum<Flags, unsigned short>
 		{
 			using Enum::Enum;
-			enum : decltype(type()) { None = 0, BasicLayers = 1 << 0, DepthLayers = 1 << 1, DiffuseLayers = 1 << 2, IndexLayers = 1 << 3, DebugLayers = 1 << 4, AoLayers = 1 << 5, ToonEdgeLayers = 1 << 6 };
-			inline static const EnumMap<decltype(type())> map_{{
+			enum : ValueType_t { None = 0, BasicLayers = 1 << 0, DepthLayers = 1 << 1, DiffuseLayers = 1 << 2, IndexLayers = 1 << 3, DebugLayers = 1 << 4, AoLayers = 1 << 5, ToonEdgeLayers = 1 << 6 };
+			inline static const EnumMap<ValueType_t> map_{{
 					{"None", None, ""},
 					{"BasicLayers", BasicLayers, ""},
 					{"DepthLayers", DepthLayers, ""},

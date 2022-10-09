@@ -39,8 +39,8 @@ class DebugIntegrator final : public TiledIntegrator
 		struct DebugType : public Enum<DebugType>
 		{
 			using Enum::Enum;
-			enum : decltype(type()) {N = 1, DPdU = 2, DPdV = 3, Nu = 4, Nv = 5, DSdU = 6, DSdV = 7};
-			inline static const EnumMap<decltype(type())> map_{{
+			enum : ValueType_t {N = 1, DPdU = 2, DPdV = 3, Nu = 4, Nv = 5, DSdU = 6, DSdV = 7};
+			inline static const EnumMap<ValueType_t> map_{{
 					{"N", N, ""},
 					{"dPdU", DPdU, ""},
 					{"dPdV", DPdV, ""},

@@ -46,8 +46,8 @@ class MixNode : public ShaderNode
 		struct BlendMode : Enum<BlendMode>
 		{
 			using Enum::Enum;
-			enum : decltype(type()) { Mix, Add, Mult, Sub, Screen, Div, Diff, Dark, Light, Overlay };
-			inline static const EnumMap<decltype(type())> map_{{
+			enum : ValueType_t { Mix, Add, Mult, Sub, Screen, Div, Diff, Dark, Light, Overlay };
+			inline static const EnumMap<ValueType_t> map_{{
 					{"mix", Mix, ""},
 					{"add", Add, ""},
 					{"multiply", Mult, ""},

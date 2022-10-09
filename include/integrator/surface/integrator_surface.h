@@ -76,8 +76,8 @@ class SurfaceIntegrator
 		struct Type : public Enum<Type>
 		{
 			using Enum::Enum;
-			enum : decltype(type()) { None, Bidirectional, Debug, DirectLight, Path, Photon, Sppm };
-			inline static const EnumMap<decltype(type())> map_{{
+			enum : ValueType_t { None, Bidirectional, Debug, DirectLight, Path, Photon, Sppm };
+			inline static const EnumMap<ValueType_t> map_{{
 					{"bidirectional", Bidirectional, ""},
 					{"DebugIntegrator", Debug, ""},
 					{"directlighting", DirectLight, ""},

@@ -40,8 +40,8 @@ class Logger;
 struct InterpolationType : public Enum<InterpolationType>
 {
 	using Enum::Enum;
-	enum : decltype(type()) { Bilinear, Bicubic, Trilinear, Ewa, None };
-	inline static const EnumMap<decltype(type())> map_{{
+	enum : ValueType_t { Bilinear, Bicubic, Trilinear, Ewa, None };
+	inline static const EnumMap<ValueType_t> map_{{
 			{"bilinear", Bilinear, "Bilinear interpolation (recommended default)"},
 			{"bicubic", Bicubic, "Bicubic interpolation (slower but better quality than bilinear)"},
 			{"mipmap_trilinear", Trilinear, "For trilinear mipmaps interpolation (to avoid aliasing in far distances)"},
@@ -90,8 +90,8 @@ class Texture
 		struct Type : public Enum<Type>
 		{
 			using Enum::Enum;
-			enum : decltype(type()) { None, Blend, Clouds, Marble, Wood, Voronoi, Musgrave, DistortedNoise, RgbCube, Image };
-			inline static const EnumMap<decltype(type())> map_{{
+			enum : ValueType_t { None, Blend, Clouds, Marble, Wood, Voronoi, Musgrave, DistortedNoise, RgbCube, Image };
+			inline static const EnumMap<ValueType_t> map_{{
 					{"blend", Blend, ""},
 					{"clouds", Clouds, ""},
 					{"marble", Marble, ""},

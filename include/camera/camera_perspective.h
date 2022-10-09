@@ -38,8 +38,8 @@ class PerspectiveCamera : public Camera
 	protected:
 		struct BokehType : public Enum<BokehType>
 		{
-			enum : decltype(type()) { Disk1, Disk2, Triangle, Square, Pentagon, Hexagon, Ring };
-			inline static const EnumMap<decltype(type())> map_{{
+			enum : ValueType_t { Disk1, Disk2, Triangle, Square, Pentagon, Hexagon, Ring };
+			inline static const EnumMap<ValueType_t> map_{{
 					{"disk1", Disk1, ""},
 					{"disk2", Disk2, ""},
 					{"triangle", Triangle, ""},
@@ -51,8 +51,8 @@ class PerspectiveCamera : public Camera
 		};
 		struct BokehBias : public Enum<BokehBias>
 		{
-			enum : decltype(type()) { None, Center, Edge };
-			inline static const EnumMap<decltype(type())> map_{{
+			enum : ValueType_t { None, Center, Edge };
+			inline static const EnumMap<ValueType_t> map_{{
 					{"none", None, ""},
 					{"center", Center, ""},
 					{"edge", Edge, ""},

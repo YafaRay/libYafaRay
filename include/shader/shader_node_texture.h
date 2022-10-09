@@ -37,8 +37,8 @@ class TextureMapperNode final : public ShaderNode
 		struct Coords : Enum<Coords>
 		{
 			using Enum::Enum;
-			enum : decltype(type()) { Uv, Global, Orco, Transformed, Normal, Reflect, Window, Stick, Stress, Tangent };
-			inline static const EnumMap<decltype(type())> map_{{
+			enum : ValueType_t { Uv, Global, Orco, Transformed, Normal, Reflect, Window, Stick, Stress, Tangent };
+			inline static const EnumMap<ValueType_t> map_{{
 					{"uv", Uv, ""},
 					{"global", Global, ""},
 					{"orco", Orco, ""},
@@ -54,8 +54,8 @@ class TextureMapperNode final : public ShaderNode
 		struct Projection : Enum<Projection>
 		{
 			using Enum::Enum;
-			enum : decltype(type()) { Plain, Cube, Tube, Sphere };
-			inline static const EnumMap<decltype(type())> map_{{
+			enum : ValueType_t { Plain, Cube, Tube, Sphere };
+			inline static const EnumMap<ValueType_t> map_{{
 					{"plain", Plain, ""},
 					{"cube", Cube, ""},
 					{"tube", Tube, ""},

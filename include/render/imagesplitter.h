@@ -42,8 +42,8 @@ class ImageSplitter final
 	public:
 		struct TilesOrderType : public Enum<TilesOrderType>
 		{
-			enum : decltype(type()) { CentreRandom, Linear, Random  };
-			inline static const EnumMap<decltype(type())> map_{{
+			enum : ValueType_t { CentreRandom, Linear, Random  };
+			inline static const EnumMap<ValueType_t> map_{{
 					{"centre", CentreRandom, ""},
 					{"linear", Linear, ""},
 					{"random", Random, ""},

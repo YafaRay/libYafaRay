@@ -56,8 +56,8 @@ class BlendMaterial final : public NodeMaterial
 		[[nodiscard]] Type type() const override { return Type::Blend; }
 		struct ShaderNodeType : public Enum<ShaderNodeType>
 		{
-			enum : decltype(type()) { Blend, Wireframe, Size }; //Always leave the Size entry at the end!!
-			inline static const EnumMap<decltype(type())> map_{{
+			enum : ValueType_t { Blend, Wireframe, Size }; //Always leave the Size entry at the end!!
+			inline static const EnumMap<ValueType_t> map_{{
 				{"blend_shader", Blend, "Shader node for blend value (float)"},
 				{"wireframe_shader", Wireframe, "Shader node for wireframe shading (float)"},
 			}};

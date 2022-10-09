@@ -40,8 +40,8 @@ class TextureBackground final : public Background
 	private:
 		struct Projection : public Enum<Projection>
 		{
-			enum : decltype(type()) { Spherical, Angular };
-			inline static const EnumMap<decltype(type())> map_{{
+			enum : ValueType_t { Spherical, Angular };
+			inline static const EnumMap<ValueType_t> map_{{
 					{"sphere", Spherical, ""},
 					{"angular", Angular, ""},
 				}};

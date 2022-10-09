@@ -49,8 +49,8 @@ class Light
 		struct Flags : Enum<Flags>
 		{
 			using Enum::Enum;
-			enum : decltype(type()) { None = 0, DiracDir = 1, Singular = 1 << 1, All = DiracDir | Singular };
-			inline static const EnumMap<decltype(type())> map_{{
+			enum : ValueType_t { None = 0, DiracDir = 1, Singular = 1 << 1, All = DiracDir | Singular };
+			inline static const EnumMap<ValueType_t> map_{{
 					{"None", None, ""},
 					{"DiracDir", DiracDir, ""},
 					{"Singular", Singular, ""},
@@ -109,8 +109,8 @@ class Light
 		struct Type : public Enum<Type>
 		{
 			using Enum::Enum;
-			enum : decltype(type()) { None, Area, BackgroundPortal, Object, Background, Directional, Ies, Point, Sphere, Spot, Sun };
-			inline static const EnumMap<decltype(type())> map_{{
+			enum : ValueType_t { None, Area, BackgroundPortal, Object, Background, Directional, Ies, Point, Sphere, Spot, Sun };
+			inline static const EnumMap<ValueType_t> map_{{
 					{"arealight", Area, ""},
 					{"bgPortalLight", BackgroundPortal, ""},
 					{"objectlight", Object, ""},

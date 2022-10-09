@@ -38,8 +38,8 @@ class MusgraveTexture final : public Texture
 	private:
 		struct MusgraveType : public Enum<MusgraveType>
 		{
-			enum : decltype(type()) { Fbm, MultiFractal, HeteroTerrain, HybridDmf, RidgedDmf };
-			inline static const EnumMap<decltype(type())> map_{{
+			enum : ValueType_t { Fbm, MultiFractal, HeteroTerrain, HybridDmf, RidgedDmf };
+			inline static const EnumMap<ValueType_t> map_{{
 					{"fBm", Fbm, ""},
 					{"multifractal", MultiFractal, ""},
 					{"heteroterrain", HeteroTerrain, ""},

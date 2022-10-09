@@ -59,8 +59,8 @@ class VolumeIntegrator
 		struct Type : public Enum<Type>
 		{
 			using Enum::Enum;
-			enum : decltype(type()) { None, Emission, SingleScatter, Sky };
-			inline static const EnumMap<decltype(type())> map_{{
+			enum : ValueType_t { None, Emission, SingleScatter, Sky };
+			inline static const EnumMap<ValueType_t> map_{{
 					{"none", None, ""},
 					{"EmissionIntegrator", Emission, ""},
 					{"SingleScatterIntegrator", SingleScatter, ""},

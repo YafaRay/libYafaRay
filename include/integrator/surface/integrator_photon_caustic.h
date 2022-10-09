@@ -33,8 +33,8 @@ class PhotonMap;
 struct PhotonMapProcessing : public Enum<PhotonMapProcessing>
 {
 	using Enum::Enum;
-	enum : decltype(type()) { GenerateOnly, GenerateAndSave, Load, Reuse };
-	inline static const EnumMap<decltype(type())> map_{{
+	enum : ValueType_t { GenerateOnly, GenerateAndSave, Load, Reuse };
+	inline static const EnumMap<ValueType_t> map_{{
 			{"generate-only", GenerateOnly, ""},
 			{"generate-save", GenerateAndSave, ""},
 			{"load", Load, ""},

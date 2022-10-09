@@ -52,8 +52,8 @@ class Image
 		struct Type : public Enum<Type>
 		{
 			using Enum::Enum;
-			enum : decltype(type()) { None, Gray, GrayAlpha, Color, ColorAlpha };
-			inline static const EnumMap<decltype(type())> map_{{
+			enum : ValueType_t { None, Gray, GrayAlpha, Color, ColorAlpha };
+			inline static const EnumMap<ValueType_t> map_{{
 					{"Gray", Gray, "Gray [1 channel]"},
 					{"GrayAlpha", GrayAlpha, "Gray + Alpha [2 channels]"},
 					{"Color", Color, "Color [3 channels]"},
@@ -63,8 +63,8 @@ class Image
 		struct Optimization : public Enum<Optimization>
 		{
 			using Enum::Enum;
-			enum : decltype(type()) { None, Optimized, Compressed };
-			inline static const EnumMap<decltype(type())> map_{{
+			enum : ValueType_t { None, Optimized, Compressed };
+			inline static const EnumMap<ValueType_t> map_{{
 					{"none", None, ""},
 					{"optimized", Optimized, ""},
 					{"compressed", Compressed, ""},
@@ -73,8 +73,8 @@ class Image
 		struct Position : public Enum<Position>
 		{
 			using Enum::Enum;
-			enum : decltype(type()) { None, Top, Bottom, Left, Right, Overlay };
-			inline static const EnumMap<decltype(type())> map_{{
+			enum : ValueType_t { None, Top, Bottom, Left, Right, Overlay };
+			inline static const EnumMap<ValueType_t> map_{{
 					{"top", Top, ""},
 					{"bottom", Bottom, ""},
 					{"left", Left, ""},

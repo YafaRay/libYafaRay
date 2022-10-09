@@ -56,8 +56,8 @@ class Background
 		struct Type : public Enum<Type>
 		{
 			using Enum::Enum;
-			enum : decltype(type()) { None, DarkSky, Gradient, SunSky, Texture, Constant };
-			inline static const EnumMap<decltype(type())> map_{{
+			enum : ValueType_t { None, DarkSky, Gradient, SunSky, Texture, Constant };
+			inline static const EnumMap<ValueType_t> map_{{
 					{"darksky", DarkSky, ""},
 					{"gradientback", Gradient, ""},
 					{"sunsky", SunSky, ""},

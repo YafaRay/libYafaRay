@@ -61,8 +61,8 @@ class Format
 		struct Type : public Enum<Type>
 		{
 			using Enum::Enum;
-			enum : decltype(type()) { None, Tga, Hdr, Exr, Jpg, Png, Tif };
-			static const EnumMap<decltype(type())> map_; //Type map definitions conditionally defined in the format.cc file
+			enum : ValueType_t { None, Tga, Hdr, Exr, Jpg, Png, Tif };
+			static const EnumMap<ValueType_t> map_; //Type map definitions conditionally defined in the format.cc file
 		};
 		[[nodiscard]] virtual Type type() const = 0;
 		const struct Params

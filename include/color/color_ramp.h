@@ -50,8 +50,8 @@ class ColorRamp final
 		struct Mode : public Enum<Mode>
 		{
 			using Enum::Enum;
-			enum : decltype(type()) { Rgb, Hsv, Hsl };
-			inline static const EnumMap<decltype(type())> map_{{
+			enum : ValueType_t { Rgb, Hsv, Hsl };
+			inline static const EnumMap<ValueType_t> map_{{
 					{"HSV", Hsv, ""},
 					{"RGB", Rgb, ""},
 					{"HSL", Hsl, ""},
@@ -60,8 +60,8 @@ class ColorRamp final
 		struct Interpolation : public Enum<Interpolation>
 		{
 			using Enum::Enum;
-			enum : decltype(type()) { Constant, Linear, Bspline, Cardinal, Ease }; //Bspline, Cardinal and Ease Not yet supported
-			inline static const EnumMap<decltype(type())> map_{{
+			enum : ValueType_t { Constant, Linear, Bspline, Cardinal, Ease }; //Bspline, Cardinal and Ease Not yet supported
+			inline static const EnumMap<ValueType_t> map_{{
 					{"LINEAR", Linear, ""},
 					{"CONSTANT", Constant, ""},
 					//{"B_SPLINE", Bspline, "Bspline not yet supported"},
@@ -72,8 +72,8 @@ class ColorRamp final
 		struct HueInterpolation : public Enum<HueInterpolation>
 		{
 			using Enum::Enum;
-			enum : decltype(type()) { Near, Far, Clockwise, Counterclockwise };
-			inline static const EnumMap<decltype(type())> map_{{
+			enum : ValueType_t { Near, Far, Clockwise, Counterclockwise };
+			inline static const EnumMap<ValueType_t> map_{{
 					{"NEAR", Near, ""},
 					{"FAR", Far, ""},
 					{"CW", Clockwise, ""},

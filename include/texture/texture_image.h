@@ -39,8 +39,8 @@ class ImageTexture final : public Texture
 	private:
 		struct ClipMode : public Enum<ClipMode>
 		{
-			enum : decltype(type()) { Extend, Clip, ClipCube, Repeat, Checker };
-			inline static const EnumMap<decltype(type())> map_{{
+			enum : ValueType_t { Extend, Clip, ClipCube, Repeat, Checker };
+			inline static const EnumMap<ValueType_t> map_{{
 					{"extend", Extend, ""},
 					{"clip", Clip, ""},
 					{"clipcube", ClipCube, ""},
