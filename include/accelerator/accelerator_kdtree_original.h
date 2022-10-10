@@ -37,6 +37,8 @@ namespace yafaray {
 */
 class AcceleratorKdTree final : public Accelerator
 {
+		using ThisClassType_t = AcceleratorKdTree; using ParentClassType_t = Accelerator;
+
 	public:
 		inline static std::string getClassName() { return "AcceleratorKdTree"; }
 		static std::pair<std::unique_ptr<Accelerator>, ParamError> factory(Logger &logger, const std::vector<const Primitive *> &primitives, const ParamMap &params);
@@ -45,8 +47,6 @@ class AcceleratorKdTree final : public Accelerator
 		~AcceleratorKdTree() override;
 
 	private:
-		using ThisClassType_t = AcceleratorKdTree;
-		using ParentClassType_t = Accelerator;
 		[[nodiscard]] Type type() const override { return Type::KdTreeOriginal; }
 		const struct Params
 		{

@@ -38,6 +38,8 @@ namespace yafaray {
 
 class DarkSkyBackground final : public Background
 {
+		using ThisClassType_t = DarkSkyBackground; using ParentClassType_t = Background;
+
 	public:
 		inline static std::string getClassName() { return "DarkSkyBackground"; }
 		static std::pair<std::unique_ptr<Background>, ParamError> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params);
@@ -45,8 +47,6 @@ class DarkSkyBackground final : public Background
 		DarkSkyBackground(Logger &logger, ParamError &param_error, const ParamMap &param_map);
 
 	private:
-		using ThisClassType_t = DarkSkyBackground;
-		using ParentClassType_t = Background;
 		struct ColorSpace : public Enum<ColorSpace>
 		{
 			inline static const EnumMap<ValueType_t> map_{{

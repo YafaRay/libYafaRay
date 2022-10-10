@@ -30,6 +30,8 @@ namespace yafaray {
 
 class ConstantBackground final : public Background
 {
+		using ThisClassType_t = ConstantBackground; using ParentClassType_t = Background;
+
 	public:
 		inline static std::string getClassName() { return "ConstantBackground"; }
 		static std::pair<std::unique_ptr<Background>, ParamError> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params);
@@ -37,8 +39,6 @@ class ConstantBackground final : public Background
 		ConstantBackground(Logger &logger, ParamError &param_error, const ParamMap &param_map);
 
 	private:
-		using ThisClassType_t = ConstantBackground;
-		using ParentClassType_t = Background;
 		[[nodiscard]] Type type() const override { return Type::Constant; }
 		const struct Params
 		{

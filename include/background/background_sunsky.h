@@ -35,6 +35,8 @@ namespace yafaray {
 
 class SunSkyBackground final : public Background
 {
+		using ThisClassType_t = SunSkyBackground; using ParentClassType_t = Background;
+
 	public:
 		inline static std::string getClassName() { return "SunSkyBackground"; }
 		static std::pair<std::unique_ptr<Background>, ParamError> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params);
@@ -42,8 +44,6 @@ class SunSkyBackground final : public Background
 		SunSkyBackground(Logger &logger, ParamError &param_error, const ParamMap &param_map);
 
 	private:
-		using ThisClassType_t = SunSkyBackground;
-		using ParentClassType_t = Background;
 		[[nodiscard]] Type type() const override { return Type::SunSky; }
 		const struct Params
 		{

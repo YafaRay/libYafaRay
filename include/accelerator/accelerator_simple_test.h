@@ -30,6 +30,8 @@ class Object;
 
 class AcceleratorSimpleTest final : public Accelerator
 {
+		using ThisClassType_t = AcceleratorSimpleTest; using ParentClassType_t = Accelerator;
+
 	public:
 		inline static std::string getClassName() { return "AcceleratorKdTree"; }
 		static std::pair<std::unique_ptr<Accelerator>, ParamError> factory(Logger &logger, const std::vector<const Primitive *> &primitives, const ParamMap &params);
@@ -37,8 +39,6 @@ class AcceleratorSimpleTest final : public Accelerator
 		AcceleratorSimpleTest(Logger &logger, ParamError &param_error, const std::vector<const Primitive *> &primitives, const ParamMap &param_map);
 
 	private:
-		using ThisClassType_t = AcceleratorSimpleTest;
-		using ParentClassType_t = Accelerator;
 		[[nodiscard]] Type type() const override { return Type::SimpleTest; }
 		const struct Params
 		{

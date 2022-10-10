@@ -29,6 +29,8 @@ namespace yafaray {
 
 class GradientBackground final : public Background
 {
+		using ThisClassType_t = GradientBackground; using ParentClassType_t = Background;
+
 	public:
 		inline static std::string getClassName() { return "GradientBackground"; }
 		static std::pair<std::unique_ptr<Background>, ParamError> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params);
@@ -36,8 +38,6 @@ class GradientBackground final : public Background
 		GradientBackground(Logger &logger, ParamError &param_error, const ParamMap &param_map);
 
 	private:
-		using ThisClassType_t = GradientBackground;
-		using ParentClassType_t = Background;
 		[[nodiscard]] Type type() const override { return Type::Gradient; }
 		const struct Params
 		{

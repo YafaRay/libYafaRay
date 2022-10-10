@@ -32,6 +32,8 @@ class Texture;
 
 class TextureBackground final : public Background
 {
+		using ThisClassType_t = TextureBackground; using ParentClassType_t = Background;
+
 	public:
 		inline static std::string getClassName() { return "TextureBackground"; }
 		static std::pair<std::unique_ptr<Background>, ParamError> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params);
@@ -39,8 +41,6 @@ class TextureBackground final : public Background
 		TextureBackground(Logger &logger, ParamError &param_error, const ParamMap &param_map, const Texture *texture);
 
 	private:
-		using ThisClassType_t = TextureBackground;
-		using ParentClassType_t = Background;
 		struct Projection : public Enum<Projection>
 		{
 			enum : ValueType_t { Spherical, Angular };
