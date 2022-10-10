@@ -17,8 +17,8 @@
  *      Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-#ifndef YAFARAY_INTEGRATOR_DIRECT_LIGHT_H
-#define YAFARAY_INTEGRATOR_DIRECT_LIGHT_H
+#ifndef LIBYAFARAY_INTEGRATOR_DIRECT_LIGHT_H
+#define LIBYAFARAY_INTEGRATOR_DIRECT_LIGHT_H
 
 #include "integrator_photon_caustic.h"
 
@@ -26,15 +26,17 @@ namespace yafaray {
 
 class DirectLightIntegrator final : public CausticPhotonIntegrator
 {
+		using ThisClassType_t = DirectLightIntegrator; using ParentClassType_t = CausticPhotonIntegrator;
+
 	public:
 		inline static std::string getClassName() { return "DirectLightIntegrator"; }
-		static std::pair<SurfaceIntegrator *, ParamError> factory(Logger &logger, RenderControl &render_control, const ParamMap &params, const Scene &scene);
+		static std::pair<std::unique_ptr<SurfaceIntegrator>, ParamError> factory(Logger &logger, RenderControl &render_control, const ParamMap &params, const Scene &scene);
 		static std::string printMeta(const std::vector<std::string> &excluded_params) { return Params::meta_.print(excluded_params); }
+		DirectLightIntegrator(RenderControl &render_control, Logger &logger, ParamError &param_error, const ParamMap &param_map);
+		[[nodiscard]] ParamMap getAsParamMap(bool only_non_default) const override;
 
 	private:
 		[[nodiscard]] Type type() const override { return Type::DirectLight; }
-		[[nodiscard]] ParamMap getAsParamMap(bool only_non_default) const override;
-		DirectLightIntegrator(RenderControl &render_control, Logger &logger, ParamError &param_error, const ParamMap &param_map);
 		[[nodiscard]] std::string getName() const override { return "DirectLight"; }
 		bool preprocess(FastRandom &fast_random, ImageFilm *image_film, const RenderView *render_view, const Scene &scene) override;
 		std::pair<Rgb, float> integrate(Ray &ray, FastRandom &fast_random, RandomGenerator &random_generator, std::vector<int> &correlative_sample_number, ColorLayers *color_layers, int thread_id, int ray_level, bool chromatic_enabled, float wavelength, int additional_depth, const RayDivision &ray_division, const PixelSamplingData &pixel_sampling_data, unsigned int object_index_highest, unsigned int material_index_highest) const override;

@@ -52,7 +52,7 @@ ParamMap SurfaceIntegrator::getAsParamMap(bool only_non_default) const
 	return result;
 }
 
-std::pair<SurfaceIntegrator *, ParamError> SurfaceIntegrator::factory(Logger &logger, RenderControl &render_control, const Scene &scene, const std::string &name, const ParamMap &param_map)
+std::pair<std::unique_ptr<SurfaceIntegrator>, ParamError> SurfaceIntegrator::factory(Logger &logger, RenderControl &render_control, const Scene &scene, const ParamMap &param_map)
 {
 	const Type type{ClassMeta::preprocessParamMap<Type>(logger, getClassName(), param_map)};
 	switch(type.value())
@@ -67,7 +67,7 @@ std::pair<SurfaceIntegrator *, ParamError> SurfaceIntegrator::factory(Logger &lo
 		case Type::Path: return PathIntegrator::factory(logger, render_control, param_map, scene);
 		case Type::Photon: return PhotonIntegrator::factory(logger, render_control, param_map, scene);
 		case Type::Sppm: return SppmIntegrator::factory(logger, render_control, param_map, scene);
-		default: return {nullptr, {ParamError::Flags::ErrorWhileCreating}};
+		default: return {nullptr, ParamError{ParamError::Flags::ErrorWhileCreating}};
 	}
 }
 

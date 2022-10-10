@@ -19,8 +19,8 @@
  *      Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-#ifndef YAFARAY_INTEGRATOR_MONTECARLO_H
-#define YAFARAY_INTEGRATOR_MONTECARLO_H
+#ifndef LIBYAFARAY_INTEGRATOR_MONTECARLO_H
+#define LIBYAFARAY_INTEGRATOR_MONTECARLO_H
 
 #include "integrator_tiled.h"
 #include "color/color.h"
@@ -32,6 +32,8 @@ class Halton;
 
 class MonteCarloIntegrator: public TiledIntegrator
 {
+		using ThisClassType_t = MonteCarloIntegrator; using ParentClassType_t = TiledIntegrator;
+
 	public:
 		inline static std::string getClassName() { return "MonteCarloIntegrator"; }
 		static std::string printMeta(const std::vector<std::string> &excluded_params) { return Params::meta_.print(excluded_params); }
@@ -39,7 +41,7 @@ class MonteCarloIntegrator: public TiledIntegrator
 	protected:
 		const struct Params
 		{
-			PARAM_INIT_PARENT(TiledIntegrator);
+			PARAM_INIT_PARENT(ParentClassType_t);
 			PARAM_DECL(int, r_depth_, 5, "raydepth", "Ray depth");
 			PARAM_DECL(bool, transparent_shadows_, false, "transpShad", "Use transparent shadows");
 			PARAM_DECL(int, shadow_depth_, 4, "shadowDepth", "Shadow depth for transparent shadows");

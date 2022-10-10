@@ -56,7 +56,8 @@ struct ParamError
 	};
 	template<typename T>
 	[[nodiscard]] std::string print(const std::string &name, const std::vector<std::string> &excluded_params) const;
-	[[nodiscard]] bool notOk() const { return flags_ != Flags::Ok; }
+	[[nodiscard]] bool isOk() const { return flags_ == Flags::Ok; }
+	[[nodiscard]] bool notOk() const { return !isOk(); }
 	[[nodiscard]] bool hasError() const;
 	[[nodiscard]] bool hasWarning() const;
 	void merge(const ParamError &param_error);

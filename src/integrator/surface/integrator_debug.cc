@@ -42,17 +42,17 @@ ParamMap DebugIntegrator::Params::getAsParamMap(bool only_non_default) const
 
 ParamMap DebugIntegrator::getAsParamMap(bool only_non_default) const
 {
-	ParamMap result{TiledIntegrator::getAsParamMap(only_non_default)};
+	ParamMap result{ParentClassType_t::getAsParamMap(only_non_default)};
 	result.append(params_.getAsParamMap(only_non_default));
 	return result;
 }
 
-std::pair<SurfaceIntegrator *, ParamError> DebugIntegrator::factory(Logger &logger, RenderControl &render_control, const ParamMap &param_map, const Scene &scene)
+std::pair<std::unique_ptr<SurfaceIntegrator>, ParamError> DebugIntegrator::factory(Logger &logger, RenderControl &render_control, const ParamMap &param_map, const Scene &scene)
 {
 	auto param_error{Params::meta_.check(param_map, {"type"}, {})};
-	auto result {new DebugIntegrator(render_control, logger, param_error, param_map)};
-	if(param_error.flags_ != ParamError::Flags::Ok) logger.logWarning(param_error.print<DebugIntegrator>(getClassName(), {"type"}));
-	return {result, param_error};
+	auto integrator {std::make_unique<ThisClassType_t>(render_control, logger, param_error, param_map)};
+	if(param_error.flags_ != ParamError::Flags::Ok) logger.logWarning(param_error.print<ThisClassType_t>(getClassName(), {"type"}));
+	return {std::move(integrator), param_error};
 }
 
 DebugIntegrator::DebugIntegrator(RenderControl &render_control, Logger &logger, ParamError &param_error, const ParamMap &param_map) : TiledIntegrator(render_control, logger, param_error, param_map), params_{param_error, param_map}

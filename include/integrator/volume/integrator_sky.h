@@ -17,8 +17,8 @@
  *      Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-#ifndef YAFARAY_INTEGRATOR_SKY_H
-#define YAFARAY_INTEGRATOR_SKY_H
+#ifndef LIBYAFARAY_INTEGRATOR_SKY_H
+#define LIBYAFARAY_INTEGRATOR_SKY_H
 
 #include <math/random.h>
 #include "integrator/volume/integrator_volume.h"
@@ -29,23 +29,25 @@ class Background;
 
 class SkyIntegrator : public VolumeIntegrator
 {
+		using ThisClassType_t = SkyIntegrator; using ParentClassType_t = VolumeIntegrator;
+
 	public:
 		inline static std::string getClassName() { return "SkyIntegrator"; }
-		static std::pair<VolumeIntegrator *, ParamError> factory(Logger &logger, const ParamMap &params, const Scene &scene);
+		static std::pair<std::unique_ptr<VolumeIntegrator>, ParamError> factory(Logger &logger, const ParamMap &params, const Scene &scene);
 		static std::string printMeta(const std::vector<std::string> &excluded_params) { return Params::meta_.print(excluded_params); }
+		SkyIntegrator(Logger &logger, ParamError &param_error, const ParamMap &param_map, const std::map<std::string, std::unique_ptr<VolumeRegion>> &volume_regions);
+		[[nodiscard]] ParamMap getAsParamMap(bool only_non_default) const override;
 
 	private:
 		[[nodiscard]] Type type() const override { return Type::Sky; }
 		const struct Params
 		{
-			PARAM_INIT_PARENT(VolumeIntegrator);
+			PARAM_INIT_PARENT(ParentClassType_t);
 			PARAM_DECL(float , step_size_, 1.f, "stepSize", "");
 			PARAM_DECL(float , scale_, 0.1f, "sigma_t", "Actually it is the scale_ variable in the code. It's unclear what this parameter actually means in the code at the moment"); //"Beta in the paper, more or less the thickness coefficient");//FIXME DAVID: it seems to be unused in the code (using the scale_ variable instead for some reason?) or even worse, used with uninitialized values. Not sure why is this the case, but I'm removing its usage from the code completely for now
 			PARAM_DECL(float , alpha_, 0.5f, "alpha", "Steepness of the exponential density");
 			PARAM_DECL(float , turbidity_, 3.f, "turbidity", "");
 		} params_;
-		[[nodiscard]] ParamMap getAsParamMap(bool only_non_default) const override;
-		SkyIntegrator(Logger &logger, ParamError &param_error, const ParamMap &param_map, const std::map<std::string, std::unique_ptr<VolumeRegion>> &volume_regions);
 		bool preprocess(FastRandom &fast_random, ImageFilm *image_film, const RenderView *render_view, const Scene &scene) override;
 		// optical thickness, absorption, attenuation, extinction
 		Rgb transmittance(RandomGenerator &random_generator, const Ray &ray) const override;
@@ -64,4 +66,4 @@ class SkyIntegrator : public VolumeIntegrator
 
 } //namespace yafaray
 
-#endif // YAFARAY_INTEGRATOR_SKY_H
+#endif // LIBYAFARAY_INTEGRATOR_SKY_H

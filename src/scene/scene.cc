@@ -453,34 +453,6 @@ std::pair<Texture *, ParamError> Scene::createTexture(std::string &&name, ParamM
 	return result;
 }
 
-template <typename T>
-std::pair<std::unique_ptr<T>, ParamError> Scene::defineItem(ParamMap &&params, std::string &&name, std::string &&class_name)
-{
-	auto factory{T::factory(logger_, *this, name, params)};
-	if(factory.first)
-	{
-		std::string type;
-		params.getParam("type", type);
-		if(logger_.isVerbose()) logInfoVerboseSuccess(logger_, class_name, name, type);
-		return {std::unique_ptr<T>{factory.first}, ParamError{factory.second}};
-	}
-	return {nullptr, ParamError{ParamError::Flags::ErrorWhileCreating}};
-}
-
-template <typename T>
-std::pair<std::unique_ptr<T>, ParamError> Scene::defineSurfaceIntegrator(ParamMap &&params, std::string &&name, std::string &&class_name)
-{
-	auto factory{T::factory(logger_, render_control_, *this, name, params)};
-	if(factory.first)
-	{
-		std::string type;
-		params.getParam("type", type);
-		if(logger_.isVerbose()) logInfoVerboseSuccess(logger_, class_name, name, type);
-		return {std::unique_ptr<T>{factory.first}, ParamError{}};
-	}
-	return {nullptr, ParamError{ParamError::Flags::ErrorWhileCreating}};
-}
-
 std::pair<Camera *, ParamError> Scene::createCamera(std::string &&name, ParamMap &&params)
 {
 	return createMapItem<Camera>(logger_, std::move(name), "Camera", std::move(params), cameras_, this);
@@ -489,30 +461,28 @@ std::pair<Camera *, ParamError> Scene::createCamera(std::string &&name, ParamMap
 ParamError Scene::defineBackground(ParamMap &&params)
 {
 	auto factory{Background::factory(logger_, *this, "background", params)};
-	if(factory.first)
-	{
-		std::string type;
-		params.getParam("type", type);
-		if(logger_.isVerbose()) logInfoVerboseSuccess(logger_, Background::getClassName(), "background", type);
-		background_ = std::move(factory.first);
-		return factory.second;
-	}
-	return ParamError{ParamError::Flags::ErrorWhileCreating};
-}
-
-std::pair<SurfaceIntegrator *, ParamError> Scene::defineSurfaceIntegrator(ParamMap &&params)
-{
-	auto result = defineSurfaceIntegrator<SurfaceIntegrator>(std::move(params), "surface integrator", "SurfaceIntegrator");
+	if(logger_.isVerbose() && factory.first) logInfoVerboseSuccess(logger_, factory.first->getClassName(), "", factory.first->type().print());
 	//logger_.logParams(result.first->getAsParamMap(true).print()); //TEST CODE ONLY, REMOVE!!
-	surf_integrator_ = std::move(result.first);
-	return {surf_integrator_.get(), result.second};
+	background_ = std::move(factory.first);
+	return factory.second;
 }
 
-std::pair<VolumeIntegrator *, ParamError> Scene::defineVolumeIntegrator(ParamMap &&params)
+ParamError Scene::defineSurfaceIntegrator(ParamMap &&params)
 {
-	auto result = defineItem<VolumeIntegrator>(std::move(params), "volume integrator", "VolumeIntegrator");
-	vol_integrator_ = std::move(result.first);
-	return {vol_integrator_.get(), result.second};
+	auto factory{SurfaceIntegrator::factory(logger_, render_control_, *this, params)};
+	if(logger_.isVerbose() && factory.first) logInfoVerboseSuccess(logger_, factory.first->getClassName(), "", factory.first->type().print());
+	//logger_.logParams(result.first->getAsParamMap(true).print()); //TEST CODE ONLY, REMOVE!!
+	surf_integrator_ = std::move(factory.first);
+	return factory.second;
+}
+
+ParamError Scene::defineVolumeIntegrator(ParamMap &&params)
+{
+	auto factory{VolumeIntegrator::factory(logger_, *this, params)};
+	if(logger_.isVerbose() && factory.first) logInfoVerboseSuccess(logger_, factory.first->getClassName(), "", factory.first->type().print());
+	//logger_.logParams(result.first->getAsParamMap(true).print()); //TEST CODE ONLY, REMOVE!!
+	vol_integrator_ = std::move(factory.first);
+	return factory.second;
 }
 
 std::pair<VolumeRegion *, ParamError> Scene::createVolumeRegion(std::string &&name, ParamMap &&params)

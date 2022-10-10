@@ -17,8 +17,8 @@
  *      Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-#ifndef YAFARAY_INTEGRATOR_SINGLE_SCATTER_H
-#define YAFARAY_INTEGRATOR_SINGLE_SCATTER_H
+#ifndef LIBYAFARAY_INTEGRATOR_SINGLE_SCATTER_H
+#define LIBYAFARAY_INTEGRATOR_SINGLE_SCATTER_H
 
 
 #include "integrator/volume/integrator_volume.h"
@@ -34,22 +34,24 @@ class RandomGenerator;
 
 class SingleScatterIntegrator final : public VolumeIntegrator
 {
+		using ThisClassType_t = SingleScatterIntegrator; using ParentClassType_t = VolumeIntegrator;
+
 	public:
 		inline static std::string getClassName() { return "SingleScatterIntegrator"; }
-		static std::pair<VolumeIntegrator *, ParamError> factory(Logger &logger, const ParamMap &param_map, const Scene &scene);
+		static std::pair<std::unique_ptr<VolumeIntegrator>, ParamError> factory(Logger &logger, const ParamMap &param_map, const Scene &scene);
 		static std::string printMeta(const std::vector<std::string> &excluded_params) { return Params::meta_.print(excluded_params); }
+		SingleScatterIntegrator(Logger &logger, ParamError &param_error, const ParamMap &param_map, const std::map<std::string, std::unique_ptr<VolumeRegion>> &volume_regions);
+		[[nodiscard]] ParamMap getAsParamMap(bool only_non_default) const override;
 
 	private:
 		[[nodiscard]] Type type() const override { return Type::SingleScatter; }
 		const struct Params
 		{
-			PARAM_INIT_PARENT(VolumeIntegrator);
+			PARAM_INIT_PARENT(ParentClassType_t);
 			PARAM_DECL(float , step_size_, 1.f, "stepSize", "");
 			PARAM_DECL(bool , adaptive_, false, "adaptive", "");
 			PARAM_DECL(bool , optimize_, false, "optimize", "");
 		} params_;
-		[[nodiscard]] ParamMap getAsParamMap(bool only_non_default) const override;
-		SingleScatterIntegrator(Logger &logger, ParamError &param_error, const ParamMap &param_map, const std::map<std::string, std::unique_ptr<VolumeRegion>> &volume_regions);
 		bool preprocess(FastRandom &fast_random, ImageFilm *image_film, const RenderView *render_view, const Scene &scene) override;
 		// optical thickness, absorption, attenuation, extinction
 		Rgb transmittance(RandomGenerator &random_generator, const Ray &ray) const override;
@@ -65,4 +67,4 @@ class SingleScatterIntegrator final : public VolumeIntegrator
 
 } //namespace yafaray
 
-#endif // YAFARAY_INTEGRATOR_SINGLE_SCATTER_H
+#endif // LIBYAFARAY_INTEGRATOR_SINGLE_SCATTER_H

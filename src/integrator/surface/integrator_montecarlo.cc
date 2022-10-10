@@ -69,7 +69,7 @@ ParamMap MonteCarloIntegrator::Params::getAsParamMap(bool only_non_default) cons
 
 ParamMap MonteCarloIntegrator::getAsParamMap(bool only_non_default) const
 {
-	ParamMap result{TiledIntegrator::getAsParamMap(only_non_default)};
+	ParamMap result{ParentClassType_t::getAsParamMap(only_non_default)};
 	result.append(params_.getAsParamMap(only_non_default));
 	return result;
 }

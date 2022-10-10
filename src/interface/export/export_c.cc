@@ -393,10 +393,10 @@ ParamError ExportC::defineBackground() noexcept
 	file_ << "\t" << "yafaray_paramsClearAll(yi);\n\n";
 	section_num_lines_ += 2;
 	if(section_num_lines_ >= section_max_lines_) file_ << sectionSplit();
-	return {ParamError::Flags::Ok};
+	return {};
 }
 
-SurfaceIntegrator *ExportC::defineSurfaceIntegrator() noexcept
+ParamError ExportC::defineSurfaceIntegrator() noexcept
 {
 	writeParamMap(*params_);
 	params_->clear();
@@ -404,10 +404,10 @@ SurfaceIntegrator *ExportC::defineSurfaceIntegrator() noexcept
 	file_ << "\t" << "yafaray_paramsClearAll(yi);\n\n";
 	section_num_lines_ += 2;
 	if(section_num_lines_ >= section_max_lines_) file_ << sectionSplit();
-	return nullptr;
+	return {};
 }
 
-VolumeIntegrator *ExportC::defineVolumeIntegrator() noexcept
+ParamError ExportC::defineVolumeIntegrator() noexcept
 {
 	writeParamMap(*params_);
 	params_->clear();
@@ -415,7 +415,7 @@ VolumeIntegrator *ExportC::defineVolumeIntegrator() noexcept
 	file_ << "\t" << "yafaray_paramsClearAll(yi);\n\n";
 	section_num_lines_ += 2;
 	if(section_num_lines_ >= section_max_lines_) file_ << sectionSplit();
-	return nullptr;
+	return {};
 }
 
 VolumeRegion *ExportC::createVolumeRegion(std::string &&name) noexcept

@@ -46,17 +46,17 @@ ParamMap SingleScatterIntegrator::Params::getAsParamMap(bool only_non_default) c
 
 ParamMap SingleScatterIntegrator::getAsParamMap(bool only_non_default) const
 {
-	ParamMap result{VolumeIntegrator::getAsParamMap(only_non_default)};
+	ParamMap result{ParentClassType_t::getAsParamMap(only_non_default)};
 	result.append(params_.getAsParamMap(only_non_default));
 	return result;
 }
 
-std::pair<VolumeIntegrator *, ParamError> SingleScatterIntegrator::factory(Logger &logger, const ParamMap &param_map, const Scene &scene)
+std::pair<std::unique_ptr<VolumeIntegrator>, ParamError> SingleScatterIntegrator::factory(Logger &logger, const ParamMap &param_map, const Scene &scene)
 {
 	auto param_error{Params::meta_.check(param_map, {"type"}, {})};
-	auto result {new SingleScatterIntegrator(logger, param_error, param_map, scene.getVolumeRegions())};
-	if(param_error.flags_ != ParamError::Flags::Ok) logger.logWarning(param_error.print<SingleScatterIntegrator>(getClassName(), {"type"}));
-	return {result, param_error};
+	auto integrator {std::make_unique<ThisClassType_t>(logger, param_error, param_map, scene.getVolumeRegions())};
+	if(param_error.flags_ != ParamError::Flags::Ok) logger.logWarning(param_error.print<ThisClassType_t>(getClassName(), {"type"}));
+	return {std::move(integrator), param_error};
 }
 
 SingleScatterIntegrator::SingleScatterIntegrator(Logger &logger, ParamError &param_error, const ParamMap &param_map, const std::map<std::string, std::unique_ptr<VolumeRegion>> &volume_regions) : VolumeIntegrator(logger, param_error, param_map), volume_regions_{volume_regions}, params_{param_error, param_map}

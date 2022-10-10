@@ -39,16 +39,20 @@ struct PreGatherData final
 
 class PhotonIntegrator final : public CausticPhotonIntegrator
 {
+		using ThisClassType_t = PhotonIntegrator; using ParentClassType_t = CausticPhotonIntegrator;
+
 	public:
 		inline static std::string getClassName() { return "PhotonIntegrator"; }
-		static std::pair<SurfaceIntegrator *, ParamError> factory(Logger &logger, RenderControl &render_control, const ParamMap &params, const Scene &scene);
+		static std::pair<std::unique_ptr<SurfaceIntegrator>, ParamError> factory(Logger &logger, RenderControl &render_control, const ParamMap &params, const Scene &scene);
 		static std::string printMeta(const std::vector<std::string> &excluded_params) { return Params::meta_.print(excluded_params); }
+		PhotonIntegrator(RenderControl &render_control, Logger &logger, ParamError &param_error, const ParamMap &param_map);
+		[[nodiscard]] ParamMap getAsParamMap(bool only_non_default) const override;
 
 	private:
 		[[nodiscard]] Type type() const override { return Type::Photon; }
 		const struct Params
 		{
-			PARAM_INIT_PARENT(CausticPhotonIntegrator);
+			PARAM_INIT_PARENT(ParentClassType_t);
 			PARAM_DECL(bool, diffuse_, true, "diffuse", "Enable/disable diffuse photon processing");
 			PARAM_DECL(int , photons_diffuse_, 100000, "diffuse_photons", "Number of diffuse photons");
 			PARAM_DECL(float, diffuse_radius_, 0.1f, "diffuse_radius", "Diffuse photons search radius");
@@ -60,8 +64,6 @@ class PhotonIntegrator final : public CausticPhotonIntegrator
 			PARAM_DECL(float, gather_dist_, 0.2f, "fg_min_pathlen", "Minimum distance to terminate path tracing (unless gatherBounces is reached). If not specified it defaults to the value set in '" + diffuse_radius_meta_.name() + "'");
 			PARAM_DECL(bool, show_map_, false, "show_map", "Show radiance map");
 		} params_;
-		[[nodiscard]] ParamMap getAsParamMap(bool only_non_default) const override;
-		PhotonIntegrator(RenderControl &render_control, Logger &logger, ParamError &param_error, const ParamMap &param_map);
 		[[nodiscard]] std::string getName() const override { return "PhotonMap"; }
 		bool preprocess(FastRandom &fast_random, ImageFilm *image_film, const RenderView *render_view, const Scene &scene) override;
 		std::pair<Rgb, float> integrate(Ray &ray, FastRandom &fast_random, RandomGenerator &random_generator, std::vector<int> &correlative_sample_number, ColorLayers *color_layers, int thread_id, int ray_level, bool chromatic_enabled, float wavelength, int additional_depth, const RayDivision &ray_division, const PixelSamplingData &pixel_sampling_data, unsigned int object_index_highest, unsigned int material_index_highest) const override;

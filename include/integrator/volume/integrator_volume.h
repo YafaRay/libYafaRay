@@ -44,9 +44,11 @@ class FastRandom;
 
 class VolumeIntegrator
 {
+	protected: struct Type;
 	public:
 		inline static std::string getClassName() { return "VolumeIntegrator"; }
-		static std::pair<VolumeIntegrator *, ParamError> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map);
+		[[nodiscard]] virtual Type type() const = 0;
+		static std::pair<std::unique_ptr<VolumeIntegrator>, ParamError> factory(Logger &logger, const Scene &scene, const ParamMap &param_map);
 		[[nodiscard]] virtual ParamMap getAsParamMap(bool only_non_default) const;
 		virtual ~VolumeIntegrator() = default;
 		static std::string printMeta(const std::vector<std::string> &excluded_params) { return Params::meta_.print(excluded_params); }
@@ -67,7 +69,6 @@ class VolumeIntegrator
 					{"SkyIntegrator", Sky, ""},
 				}};
 		};
-		[[nodiscard]] virtual Type type() const = 0;
 		const struct Params
 		{
 			PARAM_INIT;

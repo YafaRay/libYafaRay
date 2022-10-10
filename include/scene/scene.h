@@ -124,8 +124,8 @@ class Scene final
 		std::pair<std::unique_ptr<const Material> *, ParamError> createMaterial(std::string &&name, ParamMap &&params, std::list<ParamMap> &&nodes_params);
 		std::pair<Camera *, ParamError> createCamera(std::string &&name, ParamMap &&params);
 		ParamError defineBackground(ParamMap &&params);
-		std::pair<SurfaceIntegrator *, ParamError> defineSurfaceIntegrator(ParamMap &&params);
-		std::pair<VolumeIntegrator *, ParamError> defineVolumeIntegrator(ParamMap &&params);
+		ParamError defineSurfaceIntegrator(ParamMap &&params);
+		ParamError defineVolumeIntegrator(ParamMap &&params);
 		std::pair<VolumeRegion *, ParamError> createVolumeRegion(std::string &&name, ParamMap &&params);
 		std::pair<RenderView *, ParamError> createRenderView(std::string &&name, ParamMap &&params);
 		std::pair<std::shared_ptr<Image>, ParamError> createImage(std::string &&name, ParamMap &&params);
@@ -169,10 +169,6 @@ class Scene final
 	private:
 		template <typename T> static T *findMapItem(const std::string &name, const std::map<std::string, std::unique_ptr<T>> &map);
 		template <typename T> static std::shared_ptr<T> findMapItem(const std::string &name, const std::map<std::string, std::shared_ptr<T>> &map);
-		template <typename T>
-		std::pair<std::unique_ptr<T>, ParamError> defineItem(ParamMap &&params, std::string &&name, std::string &&class_name);
-		template <typename T>
-		std::pair<std::unique_ptr<T>, ParamError> defineSurfaceIntegrator(ParamMap &&params, std::string &&name, std::string &&class_name);
 		void setMaskParams(const ParamMap &params);
 		void setEdgeToonParams(const ParamMap &params);
 		template <typename T> static std::pair<T *, ParamError> createMapItem(Logger &logger, std::string &&name, std::string &&class_name, ParamMap &&params, std::map<std::string, std::unique_ptr<T>> &map, const Scene *scene);

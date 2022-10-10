@@ -17,8 +17,8 @@
  *      Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-#ifndef YAFARAY_INTEGRATOR_SPPM_H
-#define YAFARAY_INTEGRATOR_SPPM_H
+#ifndef LIBYAFARAY_INTEGRATOR_SPPM_H
+#define LIBYAFARAY_INTEGRATOR_SPPM_H
 
 #include "integrator_montecarlo.h"
 #include "photon/hashgrid.h"
@@ -60,16 +60,20 @@ struct GatherInfo final
 
 class SppmIntegrator final : public MonteCarloIntegrator
 {
+		using ThisClassType_t = SppmIntegrator; using ParentClassType_t = MonteCarloIntegrator;
+
 	public:
 		inline static std::string getClassName() { return "SppmIntegrator"; }
-		static std::pair<SurfaceIntegrator *, ParamError> factory(Logger &logger, RenderControl &render_control, const ParamMap &params, const Scene &scene);
+		static std::pair<std::unique_ptr<SurfaceIntegrator>, ParamError> factory(Logger &logger, RenderControl &render_control, const ParamMap &params, const Scene &scene);
 		static std::string printMeta(const std::vector<std::string> &excluded_params) { return Params::meta_.print(excluded_params); }
+		SppmIntegrator(RenderControl &render_control, Logger &logger, ParamError &param_error, const ParamMap &param_map);
+		[[nodiscard]] ParamMap getAsParamMap(bool only_non_default) const override;
 
 	private:
 		[[nodiscard]] Type type() const override { return Type::Sppm; }
 		const struct Params
 		{
-			PARAM_INIT_PARENT(TiledIntegrator);
+			PARAM_INIT_PARENT(ParentClassType_t);
 			PARAM_DECL(int , num_photons_, 500000, "photons", "Number of photons to scatter");
 			PARAM_DECL(int , num_passes_, 1000, "passNums", "Number of passes");
 			PARAM_DECL(int , bounces_, 5, "bounces", "");
@@ -78,8 +82,6 @@ class SppmIntegrator final : public MonteCarloIntegrator
 			PARAM_DECL(int , search_num_, 10, "searchNum", "Now used to do initial radius estimate");
 			PARAM_DECL(bool , pm_ire_, false, "pmIRE", "Flag to say if using PM for initial radius estimate");
 		} params_;
-		[[nodiscard]] ParamMap getAsParamMap(bool only_non_default) const override;
-		SppmIntegrator(RenderControl &render_control, Logger &logger, ParamError &param_error, const ParamMap &param_map);
 		[[nodiscard]] std::string getName() const override { return "SPPM"; }
 		bool render(FastRandom &fast_random, unsigned int object_index_highest, unsigned int material_index_highest) override;
 		/*! render a tile; only required by default implementation of render() */

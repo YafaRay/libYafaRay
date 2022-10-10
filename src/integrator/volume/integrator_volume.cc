@@ -43,7 +43,7 @@ ParamMap VolumeIntegrator::getAsParamMap(bool only_non_default) const
 	return result;
 }
 
-std::pair<VolumeIntegrator *, ParamError> VolumeIntegrator::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map)
+std::pair<std::unique_ptr<VolumeIntegrator>, ParamError> VolumeIntegrator::factory(Logger &logger, const Scene &scene, const ParamMap &param_map)
 {
 	const Type type{ClassMeta::preprocessParamMap<Type>(logger, getClassName(), param_map)};
 	switch(type.value())
@@ -51,7 +51,7 @@ std::pair<VolumeIntegrator *, ParamError> VolumeIntegrator::factory(Logger &logg
 		case Type::Emission: return EmissionIntegrator::factory(logger, param_map, scene);
 		case Type::SingleScatter: return SingleScatterIntegrator::factory(logger, param_map, scene);
 		case Type::Sky: return SkyIntegrator::factory(logger, param_map, scene);
-		default: return {nullptr, {ParamError::Flags::ErrorWhileCreating}};
+		default: return {nullptr, ParamError{ParamError::Flags::ErrorWhileCreating}};
 	}
 }
 

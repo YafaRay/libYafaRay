@@ -17,8 +17,8 @@
  *      Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-#ifndef YAFARAY_INTEGRATOR_EMISSION_H
-#define YAFARAY_INTEGRATOR_EMISSION_H
+#ifndef LIBYAFARAY_INTEGRATOR_EMISSION_H
+#define LIBYAFARAY_INTEGRATOR_EMISSION_H
 
 #include "integrator/volume/integrator_volume.h"
 
@@ -26,19 +26,21 @@ namespace yafaray {
 
 class EmissionIntegrator final : public VolumeIntegrator
 {
+		using ThisClassType_t = EmissionIntegrator; using ParentClassType_t = VolumeIntegrator;
+
 	public:
 		inline static std::string getClassName() { return "EmissionIntegrator"; }
-		static std::pair<VolumeIntegrator *, ParamError> factory(Logger &logger, const ParamMap &params, const Scene &scene);
+		static std::pair<std::unique_ptr<VolumeIntegrator>, ParamError> factory(Logger &logger, const ParamMap &params, const Scene &scene);
 		static std::string printMeta(const std::vector<std::string> &excluded_params) { return Params::meta_.print(excluded_params); }
+		explicit EmissionIntegrator(Logger &logger, ParamError &param_error, const ParamMap &param_map, const std::map<std::string, std::unique_ptr<VolumeRegion>> &volume_regions);
+		[[nodiscard]] ParamMap getAsParamMap(bool only_non_default) const override;
 
 	private:
 		[[nodiscard]] Type type() const override { return Type::Emission; }
 		const struct Params
 		{
-			PARAM_INIT_PARENT(VolumeIntegrator);
+			PARAM_INIT_PARENT(ParentClassType_t);
 		} params_;
-		[[nodiscard]] ParamMap getAsParamMap(bool only_non_default) const override;
-		explicit EmissionIntegrator(Logger &logger, ParamError &param_error, const ParamMap &param_map, const std::map<std::string, std::unique_ptr<VolumeRegion>> &volume_regions);
 		bool preprocess(FastRandom &fast_random, ImageFilm *image_film, const RenderView *render_view, const Scene &scene) override { return true; }
 		// optical thickness, absorption, attenuation, extinction
 		Rgb transmittance(RandomGenerator &random_generator, const Ray &ray) const override;
@@ -50,4 +52,4 @@ class EmissionIntegrator final : public VolumeIntegrator
 
 } //namespace yafaray
 
-#endif // YAFARAY_INTEGRATOR_EMISSION_H
+#endif // LIBYAFARAY_INTEGRATOR_EMISSION_H

@@ -17,8 +17,8 @@
  *      Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-#ifndef YAFARAY_INTEGRATOR_TILED_H
-#define YAFARAY_INTEGRATOR_TILED_H
+#ifndef LIBYAFARAY_INTEGRATOR_TILED_H
+#define LIBYAFARAY_INTEGRATOR_TILED_H
 
 #include "integrator/surface/integrator_surface.h"
 #include "common/aa_noise_params.h"
@@ -75,4 +75,4 @@ class TiledIntegrator : public SurfaceIntegrator
 
 } //namespace yafaray
 
-#endif // YAFARAY_INTEGRATOR_TILED_H
+#endif // LIBYAFARAY_INTEGRATOR_TILED_H

@@ -293,23 +293,23 @@ ParamError ExportXml::defineBackground() noexcept
 	file_ << "\n<background>\n";
 	writeParamMap(*params_);
 	file_ << "</background>\n";
-	return {ParamError::Flags::Ok};
+	return {};
 }
 
-SurfaceIntegrator *ExportXml::defineSurfaceIntegrator() noexcept
+ParamError ExportXml::defineSurfaceIntegrator() noexcept
 {
 	file_ << "\n<surface_integrator>\n";
 	writeParamMap(*params_);
 	file_ << "</surface_integrator>\n";
-	return nullptr;
+	return {};
 }
 
-VolumeIntegrator *ExportXml::defineVolumeIntegrator() noexcept
+ParamError ExportXml::defineVolumeIntegrator() noexcept
 {
 	file_ << "\n<volume_integrator>\n";
 	writeParamMap(*params_);
 	file_ << "</volume_integrator>\n";
-	return nullptr;
+	return {};
 }
 
 VolumeRegion *ExportXml::createVolumeRegion(std::string &&name) noexcept

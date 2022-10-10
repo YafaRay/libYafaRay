@@ -54,9 +54,11 @@ class FastRandom;
 
 class SurfaceIntegrator
 {
+	protected: struct Type;
 	public:
 		inline static std::string getClassName() { return "SurfaceIntegrator"; }
-		static std::pair<SurfaceIntegrator *, ParamError> factory(Logger &logger, RenderControl &render_control, const Scene &scene, const std::string &name, const ParamMap &param_map);
+		[[nodiscard]] virtual Type type() const = 0;
+		static std::pair<std::unique_ptr<SurfaceIntegrator>, ParamError> factory(Logger &logger, RenderControl &render_control, const Scene &scene, const ParamMap &param_map);
 		[[nodiscard]] virtual ParamMap getAsParamMap(bool only_non_default) const;
 		virtual ~SurfaceIntegrator() = default;
 		/*! do whatever is required to render the image, if suitable for integrating whole image */
@@ -86,7 +88,6 @@ class SurfaceIntegrator
 					{"SPPM", Sppm, ""},
 				}};
 		};
-		[[nodiscard]] virtual Type type() const = 0;
 		const struct Params
 		{
 			PARAM_INIT;

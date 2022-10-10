@@ -17,8 +17,8 @@
  *      Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-#ifndef YAFARAY_INTEGRATOR_PATH_TRACER_H
-#define YAFARAY_INTEGRATOR_PATH_TRACER_H
+#ifndef LIBYAFARAY_INTEGRATOR_PATH_TRACER_H
+#define LIBYAFARAY_INTEGRATOR_PATH_TRACER_H
 
 #include "integrator_photon_caustic.h"
 
@@ -26,10 +26,14 @@ namespace yafaray {
 
 class PathIntegrator final : public CausticPhotonIntegrator
 {
+		using ThisClassType_t = PathIntegrator; using ParentClassType_t = CausticPhotonIntegrator;
+
 	public:
 		inline static std::string getClassName() { return "PathIntegrator"; }
-		static std::pair<SurfaceIntegrator *, ParamError> factory(Logger &logger, RenderControl &render_control, const ParamMap &params, const Scene &scene);
+		static std::pair<std::unique_ptr<SurfaceIntegrator>, ParamError> factory(Logger &logger, RenderControl &render_control, const ParamMap &params, const Scene &scene);
 		static std::string printMeta(const std::vector<std::string> &excluded_params) { return Params::meta_.print(excluded_params); }
+		PathIntegrator(RenderControl &render_control, Logger &logger, ParamError &param_error, const ParamMap &param_map);
+		[[nodiscard]] ParamMap getAsParamMap(bool only_non_default) const override;
 
 	private:
 		struct CausticType : public Enum<CausticType>
@@ -45,15 +49,13 @@ class PathIntegrator final : public CausticPhotonIntegrator
 		[[nodiscard]] Type type() const override { return Type::Path; }
 		const struct Params
 		{
-			PARAM_INIT_PARENT(CausticPhotonIntegrator);
+			PARAM_INIT_PARENT(ParentClassType_t);
 			PARAM_DECL(int, path_samples_, 32, "path_samples", "Number of samples for Montecarlo raytracing");
 			PARAM_DECL(int, bounces_, 3, "bounces", "Max. path depth for Montecarlo raytracing");
 			PARAM_DECL(int, russian_roulette_min_bounces_, 0, "russian_roulette_min_bounces", "Minimum number of bounces where russian roulette is not applied. Afterwards russian roulette will be used until the maximum selected bounces. If min_bounces >= max_bounces, then no russian roulette takes place");
 			PARAM_DECL(bool, no_recursive_, false, "no_recursive", "");
 			PARAM_ENUM_DECL(CausticType , caustic_type_, CausticType::Path, "caustic_type", "");
 		} params_;
-		[[nodiscard]] ParamMap getAsParamMap(bool only_non_default) const override;
-		PathIntegrator(RenderControl &render_control, Logger &logger, ParamError &param_error, const ParamMap &param_map);
 		[[nodiscard]] std::string getName() const override { return "PathTracer"; }
 		bool preprocess(FastRandom &fast_random, ImageFilm *image_film, const RenderView *render_view, const Scene &scene) override;
 		std::pair<Rgb, float> integrate(Ray &ray, FastRandom &fast_random, RandomGenerator &random_generator, std::vector<int> &correlative_sample_number, ColorLayers *color_layers, int thread_id, int ray_level, bool chromatic_enabled, float wavelength, int additional_depth, const RayDivision &ray_division, const PixelSamplingData &pixel_sampling_data, unsigned int object_index_highest, unsigned int material_index_highest) const override;

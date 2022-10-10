@@ -314,25 +314,25 @@ ParamError ExportPython::defineBackground() noexcept
 	params_->clear();
 	file_ << "yi.defineBackground()\n";
 	file_ << "yi.paramsClearAll()\n\n";
-	return {ParamError::Flags::Ok};
+	return {};
 }
 
-SurfaceIntegrator *ExportPython::defineSurfaceIntegrator() noexcept
+ParamError ExportPython::defineSurfaceIntegrator() noexcept
 {
 	writeParamMap(*params_);
 	params_->clear();
 	file_ << "yi.defineSurfaceIntegrator()\n";
 	file_ << "yi.paramsClearAll()\n\n";
-	return nullptr;
+	return {};
 }
 
-VolumeIntegrator *ExportPython::defineVolumeIntegrator() noexcept
+ParamError ExportPython::defineVolumeIntegrator() noexcept
 {
 	writeParamMap(*params_);
 	params_->clear();
 	file_ << "yi.defineVolumeIntegrator()\n";
 	file_ << "yi.paramsClearAll()\n\n";
-	return nullptr;
+	return {};
 }
 
 VolumeRegion *ExportPython::createVolumeRegion(std::string &&name) noexcept

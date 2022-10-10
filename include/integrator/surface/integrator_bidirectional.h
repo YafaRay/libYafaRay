@@ -17,8 +17,8 @@
  *      Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-#ifndef YAFARAY_INTEGRATOR_BIDIRECTIONAL_H
-#define YAFARAY_INTEGRATOR_BIDIRECTIONAL_H
+#ifndef LIBYAFARAY_INTEGRATOR_BIDIRECTIONAL_H
+#define LIBYAFARAY_INTEGRATOR_BIDIRECTIONAL_H
 
 
 #include "integrator_tiled.h"
@@ -35,16 +35,20 @@ class Pdf1D;
 
 class BidirectionalIntegrator final : public TiledIntegrator
 {
+		using ThisClassType_t = BidirectionalIntegrator; using ParentClassType_t = TiledIntegrator;
+
 	public:
 		inline static std::string getClassName() { return "BidirectionalIntegrator"; }
-		static std::pair<SurfaceIntegrator *, ParamError> factory(Logger &logger, RenderControl &render_control, const ParamMap &param_map, const Scene &scene);
+		static std::pair<std::unique_ptr<SurfaceIntegrator>, ParamError> factory(Logger &logger, RenderControl &render_control, const ParamMap &param_map, const Scene &scene);
 		static std::string printMeta(const std::vector<std::string> &excluded_params) { return Params::meta_.print(excluded_params); }
+		BidirectionalIntegrator(RenderControl &render_control, Logger &logger, ParamError &param_error, const ParamMap &param_map);
+		[[nodiscard]] ParamMap getAsParamMap(bool only_non_default) const override;
 
 	private:
 		[[nodiscard]] Type type() const override { return Type::Bidirectional; }
 		const struct Params
 		{
-			PARAM_INIT_PARENT(TiledIntegrator);
+			PARAM_INIT_PARENT(ParentClassType_t);
 			PARAM_DECL(bool, transparent_shadows_, false, "transpShad", "Use transparent shadows");
 			PARAM_DECL(int, shadow_depth_, 4, "shadowDepth", "Shadow depth for transparent shadows");
 			PARAM_DECL(bool, ao_, false, "do_AO", "Use ambient occlusion");
@@ -54,14 +58,12 @@ class BidirectionalIntegrator final : public TiledIntegrator
 			PARAM_DECL(bool, transparent_background_, false, "bg_transp", "Render background as transparent");
 			PARAM_DECL(bool, transparent_background_refraction_, false, "bg_transp_refract", "Render refractions of background as transparent");
 		} params_;
-		[[nodiscard]] ParamMap getAsParamMap(bool only_non_default) const override;
 		static constexpr inline int max_path_length_ = 32;
 		static constexpr inline int max_path_eval_length_ = 2 * max_path_length_ + 1;
 		static constexpr inline int min_path_length_ = 3;
 		struct PathData;
 		struct PathVertex;
 		struct PathEvalVertex;
-		BidirectionalIntegrator(RenderControl &render_control, Logger &logger, ParamError &param_error, const ParamMap &param_map);
 		[[nodiscard]] std::string getName() const override { return "BidirectionalPathTracer"; }
 		bool preprocess(FastRandom &fast_random, ImageFilm *image_film, const RenderView *render_view, const Scene &scene) override;
 		void cleanup() override;
@@ -92,4 +94,4 @@ class BidirectionalIntegrator final : public TiledIntegrator
 
 } //namespace yafaray
 
-#endif // YAFARAY_INTEGRATOR_BIDIRECTIONAL_H
+#endif // LIBYAFARAY_INTEGRATOR_BIDIRECTIONAL_H

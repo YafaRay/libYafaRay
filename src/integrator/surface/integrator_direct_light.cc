@@ -30,17 +30,17 @@
 namespace yafaray {
 ParamMap DirectLightIntegrator::getAsParamMap(bool only_non_default) const
 {
-	ParamMap result{CausticPhotonIntegrator::getAsParamMap(only_non_default)};
+	ParamMap result{ParentClassType_t::getAsParamMap(only_non_default)};
 	result.append(params_.getAsParamMap(only_non_default));
 	return result;
 }
 
-std::pair<SurfaceIntegrator *, ParamError> DirectLightIntegrator::factory(Logger &logger, RenderControl &render_control, const ParamMap &param_map, const Scene &scene)
+std::pair<std::unique_ptr<SurfaceIntegrator>, ParamError> DirectLightIntegrator::factory(Logger &logger, RenderControl &render_control, const ParamMap &param_map, const Scene &scene)
 {
 	auto param_error{Params::meta_.check(param_map, {"type"}, {})};
-	auto result {new DirectLightIntegrator(render_control, logger, param_error, param_map)};
-	if(param_error.flags_ != ParamError::Flags::Ok) logger.logWarning(param_error.print<DirectLightIntegrator>(getClassName(), {"type"}));
-	return {result, param_error};
+	auto integrator {std::make_unique<ThisClassType_t>(render_control, logger, param_error, param_map)};
+	if(param_error.flags_ != ParamError::Flags::Ok) logger.logWarning(param_error.print<ThisClassType_t>(getClassName(), {"type"}));
+	return {std::move(integrator), param_error};
 }
 
 DirectLightIntegrator::DirectLightIntegrator(RenderControl &render_control, Logger &logger, ParamError &param_error, const ParamMap &param_map) : CausticPhotonIntegrator(render_control, logger, param_error, param_map)

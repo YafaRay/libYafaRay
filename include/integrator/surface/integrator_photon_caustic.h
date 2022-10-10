@@ -20,8 +20,8 @@
  *      Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-#ifndef YAFARAY_INTEGRATOR_PHOTON_CAUSTIC_H
-#define YAFARAY_INTEGRATOR_PHOTON_CAUSTIC_H
+#ifndef LIBYAFARAY_INTEGRATOR_PHOTON_CAUSTIC_H
+#define LIBYAFARAY_INTEGRATOR_PHOTON_CAUSTIC_H
 
 #include "integrator_montecarlo.h"
 #include "color/color.h"
@@ -44,6 +44,8 @@ struct PhotonMapProcessing : public Enum<PhotonMapProcessing>
 
 class CausticPhotonIntegrator: public MonteCarloIntegrator
 {
+		using ThisClassType_t = CausticPhotonIntegrator; using ParentClassType_t = MonteCarloIntegrator;
+
 	public:
 		inline static std::string getClassName() { return "CausticPhotonIntegrator"; }
 		static std::string printMeta(const std::vector<std::string> &excluded_params) { return Params::meta_.print(excluded_params); }
@@ -51,7 +53,7 @@ class CausticPhotonIntegrator: public MonteCarloIntegrator
 	protected:
 		const struct Params
 		{
-			PARAM_INIT_PARENT(MonteCarloIntegrator);
+			PARAM_INIT_PARENT(ParentClassType_t);
 			PARAM_DECL(bool, use_photon_caustics_, false, "caustics", "Use photon caustics");
 			PARAM_DECL(int, n_caus_photons_, 500000, "caustic_photons", "Number of caustic photons to be shoot but it should be the target");
 			PARAM_DECL(int, n_caus_search_, 50, "caustic_mix", "Amount of caustic photons to be gathered in estimation");

@@ -96,8 +96,8 @@ class Interface
 		virtual const Material *createMaterial(std::string &&name) noexcept;
 		virtual const Camera * createCamera(std::string &&name) noexcept;
 		virtual ParamError defineBackground() noexcept;
-		virtual SurfaceIntegrator *defineSurfaceIntegrator() noexcept;
-		virtual VolumeIntegrator *defineVolumeIntegrator() noexcept;
+		virtual ParamError defineSurfaceIntegrator() noexcept;
+		virtual ParamError defineVolumeIntegrator() noexcept;
 		virtual VolumeRegion *createVolumeRegion(std::string &&name) noexcept;
 		virtual RenderView *createRenderView(std::string &&name) noexcept;
 		virtual Image *createImage(std::string &&name) noexcept;
