@@ -50,7 +50,7 @@ std::pair<Object *, ParamError> CurveObject::factory(Logger &logger, const Scene
 {
 	auto param_error{Params::meta_.check(param_map, {"type"}, {})};
 	auto object = new CurveObject(param_error, param_map);
-	if(param_error.flags_ != ParamError::Flags::Ok) logger.logWarning(param_error.print<CurveObject>(name, {"type"}));
+	if(param_error.notOk()) logger.logWarning(param_error.print<CurveObject>(name, {"type"}));
 	object->setName(name);
 	object->setLight(scene.getLight(object->ObjectBase::params_.light_name_));
 	return {object, param_error};

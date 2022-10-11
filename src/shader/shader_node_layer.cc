@@ -77,7 +77,7 @@ std::pair<ShaderNode *, ParamError> LayerNode::factory(Logger &logger, const Sce
 {
 	auto param_error{Params::meta_.check(param_map, {"type"}, {})};
 	auto result {new LayerNode(logger, param_error, param_map)};
-	if(param_error.flags_ != ParamError::Flags::Ok) logger.logWarning(param_error.print<LayerNode>(name, {"type"}));
+	if(param_error.notOk()) logger.logWarning(param_error.print<LayerNode>(name, {"type"}));
 	return {result, param_error};
 }
 

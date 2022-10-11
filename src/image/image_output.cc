@@ -96,7 +96,7 @@ std::pair<ImageOutput *, ParamError> ImageOutput::factory(Logger &logger, const 
 	if(logger.isDebug()) logger.logDebug("**" + getClassName() + "::factory 'raw' ParamMap\n" + param_map.logContents());
 	auto param_error{Params::meta_.check(param_map, {}, {})};
 	auto result {new ImageOutput(logger, param_error, param_map)};
-	if(param_error.flags_ != ParamError::Flags::Ok) logger.logWarning(param_error.print<ImageOutput>(name, {}));
+	if(param_error.notOk()) logger.logWarning(param_error.print<ImageOutput>(name, {}));
 	return {result, param_error};
 }
 

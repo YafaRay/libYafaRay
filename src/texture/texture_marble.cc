@@ -60,7 +60,7 @@ std::pair<Texture *, ParamError> MarbleTexture::factory(Logger &logger, const Sc
 {
 	auto param_error{Params::meta_.check(param_map, {"type"}, {"ramp_item_"})};
 	auto result {new MarbleTexture(logger, param_error, param_map)};
-	if(param_error.flags_ != ParamError::Flags::Ok) logger.logWarning(param_error.print<MarbleTexture>(name, {"type"}));
+	if(param_error.notOk()) logger.logWarning(param_error.print<MarbleTexture>(name, {"type"}));
 	return {result, param_error};
 }
 

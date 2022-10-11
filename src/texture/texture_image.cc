@@ -105,7 +105,7 @@ std::pair<Texture *, ParamError> ImageTexture::factory(Logger &logger, const Sce
 		return {nullptr, {ParamError::Flags::ErrorWhileCreating}};
 	}
 	auto result {new ImageTexture(logger, param_error, param_map, image)};
-	if(param_error.flags_ != ParamError::Flags::Ok) logger.logWarning(param_error.print<ImageTexture>(name, {"type"}));
+	if(param_error.notOk()) logger.logWarning(param_error.print<ImageTexture>(name, {"type"}));
 	return {result, param_error};
 }
 

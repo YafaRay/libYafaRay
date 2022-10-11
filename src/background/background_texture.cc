@@ -71,7 +71,7 @@ std::pair<std::unique_ptr<Background>, ParamError> TextureBackground::factory(Lo
 		return {nullptr, {ParamError::Flags::ErrorWhileCreating}};
 	}
 	auto background{std::make_unique<ThisClassType_t>(logger, param_error, param_map, tex)};
-	if(param_error.flags_ != ParamError::Flags::Ok) logger.logWarning(param_error.print<ThisClassType_t>(name, {"type"}));
+	if(param_error.notOk()) logger.logWarning(param_error.print<ThisClassType_t>(name, {"type"}));
 	if(background->ParentClassType_t::params_.ibl_)
 	{
 		if(background->params_.ibl_blur_ > 0.f)

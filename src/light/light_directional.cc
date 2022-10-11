@@ -60,7 +60,7 @@ std::pair<Light *, ParamError> DirectionalLight::factory(Logger &logger, const S
 {
 	auto param_error{Params::meta_.check(param_map, {"type"}, {})};
 	auto result {new DirectionalLight(logger, param_error, name, param_map)};
-	if(param_error.flags_ != ParamError::Flags::Ok) logger.logWarning(param_error.print<DirectionalLight>(name, {"type"}));
+	if(param_error.notOk()) logger.logWarning(param_error.print<DirectionalLight>(name, {"type"}));
 	return {result, param_error};
 }
 

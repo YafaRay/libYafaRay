@@ -59,7 +59,7 @@ std::pair<Camera *, ParamError> AngularCamera::factory(Logger &logger, const Sce
 
 	auto param_error{Params::meta_.check(param_map, {"type"}, {})};
 	auto result {new AngularCamera(logger, param_error, param_map)};
-	if(param_error.flags_ != ParamError::Flags::Ok) logger.logWarning(param_error.print<AngularCamera>(name, {"type"}));
+	if(param_error.notOk()) logger.logWarning(param_error.print<AngularCamera>(name, {"type"}));
 	return {result, param_error};
 }
 

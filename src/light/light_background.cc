@@ -59,7 +59,7 @@ std::pair<Light *, ParamError> BackgroundLight::factory(Logger &logger, const Sc
 {
 	auto param_error{Params::meta_.check(param_map, {"type"}, {})};
 	auto result {new BackgroundLight(logger, param_error, name, param_map)};
-	if(param_error.flags_ != ParamError::Flags::Ok) logger.logWarning(param_error.print<BackgroundLight>(name, {"type"}));
+	if(param_error.notOk()) logger.logWarning(param_error.print<BackgroundLight>(name, {"type"}));
 	return {result, param_error};
 }
 

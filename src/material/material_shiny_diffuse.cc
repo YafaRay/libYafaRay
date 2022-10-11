@@ -107,7 +107,7 @@ std::pair<Material *, ParamError> ShinyDiffuseMaterial::factory(Logger &logger, 
 		}
 	}
 	mat->config();
-	if(param_error.flags_ != ParamError::Flags::Ok) logger.logWarning(param_error.print<ShinyDiffuseMaterial>(name, {"type"}));
+	if(param_error.notOk()) logger.logWarning(param_error.print<ShinyDiffuseMaterial>(name, {"type"}));
 	return {mat, param_error};
 }
 

@@ -123,7 +123,7 @@ std::pair<Material *, ParamError> RoughGlassMaterial::factory(Logger &logger, co
 			}
 		}
 	}
-	if(param_error.flags_ != ParamError::Flags::Ok) logger.logWarning(param_error.print<RoughGlassMaterial>(name, {"type"}));
+	if(param_error.notOk()) logger.logWarning(param_error.print<RoughGlassMaterial>(name, {"type"}));
 	return {mat, param_error};
 }
 

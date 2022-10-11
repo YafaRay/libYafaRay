@@ -107,14 +107,14 @@ std::map<std::string, std::unique_ptr<ShaderNode>> NodeMaterial::loadNodes(const
 	for(const auto &param_map : params_list)
 	{
 		std::string element;
-		if(param_map.getParam("element", element) == ParamError::Flags::Ok)
+		if(param_map.getParam("element", element).isOk())
 		{
 			if(element != "shader_node") continue;
 		}
 		else logger.logWarning("NodeMaterial: No element type given; assuming shader node");
 
 		std::string name;
-		if(param_map.getParam("name", name) != ParamError::Flags::Ok)
+		if(param_map.getParam("name", name).notOk())
 		{
 			logger.logError("NodeMaterial: Name of shader node not specified!");
 			error = true;
@@ -129,7 +129,7 @@ std::map<std::string, std::unique_ptr<ShaderNode>> NodeMaterial::loadNodes(const
 		}
 
 		std::string type;
-		if(param_map.getParam("type", type) != ParamError::Flags::Ok)
+		if(param_map.getParam("type", type).notOk())
 		{
 			logger.logError("NodeMaterial: Type of shader node not specified!");
 			error = true;
@@ -173,7 +173,7 @@ void NodeMaterial::parseNodes(const ParamMap &params, std::vector<const ShaderNo
 	for(auto &[shader_name, shader] : root_nodes_map)
 	{
 		std::string name;
-		if(params.getParam(shader_name, name) == ParamError::Flags::Ok)
+		if(params.getParam(shader_name, name).isOk())
 		{
 			const auto node_found = shaders_table.find(name);
 			if(node_found != shaders_table.end())

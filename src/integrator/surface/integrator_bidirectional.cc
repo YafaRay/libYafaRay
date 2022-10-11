@@ -86,7 +86,7 @@ std::pair<std::unique_ptr<SurfaceIntegrator>, ParamError> BidirectionalIntegrato
 {
 	auto param_error{Params::meta_.check(param_map, {"type"}, {})};
 	auto integrator {std::make_unique<ThisClassType_t>(render_control, logger, param_error, param_map)};
-	if(param_error.flags_ != ParamError::Flags::Ok) logger.logWarning(param_error.print<ThisClassType_t>(getClassName(), {"type"}));
+	if(param_error.notOk()) logger.logWarning(param_error.print<ThisClassType_t>(getClassName(), {"type"}));
 	return {std::move(integrator), param_error};
 }
 

@@ -47,7 +47,7 @@ std::pair<VolumeRegion *, ParamError> ExpDensityVolumeRegion::factory(Logger &lo
 {
 	auto param_error{Params::meta_.check(param_map, {"type"}, {})};
 	auto result {new ExpDensityVolumeRegion(logger, param_error, param_map)};
-	if(param_error.flags_ != ParamError::Flags::Ok) logger.logWarning(param_error.print<ExpDensityVolumeRegion>(name, {"type"}));
+	if(param_error.notOk()) logger.logWarning(param_error.print<ExpDensityVolumeRegion>(name, {"type"}));
 	return {result, param_error};
 }
 

@@ -49,7 +49,7 @@ std::pair<VolumeHandler *, ParamError> SssVolumeHandler::factory(Logger &logger,
 {
 	auto param_error{Params::meta_.check(param_map, {"type"}, {})};
 	auto result {new SssVolumeHandler(logger, param_error, param_map)};
-	if(param_error.flags_ != ParamError::Flags::Ok) logger.logWarning(param_error.print<SssVolumeHandler>(name, {"type"}));
+	if(param_error.notOk()) logger.logWarning(param_error.print<SssVolumeHandler>(name, {"type"}));
 	return {result, param_error};
 }
 

@@ -58,7 +58,7 @@ std::pair<SpherePrimitive *, ParamError> SpherePrimitive::factory(Logger &logger
 	material = scene.getMaterial(params.material_name_);
 	if(!material) return {nullptr, {ParamError::Flags::ErrorWhileCreating}};
 	auto result {new SpherePrimitive(logger, param_error, params, material, object)};
-	if(param_error.flags_ != ParamError::Flags::Ok) logger.logWarning(param_error.print<SpherePrimitive>(name, {"type"}));
+	if(param_error.notOk()) logger.logWarning(param_error.print<SpherePrimitive>(name, {"type"}));
 	return {result, param_error};
 }
 

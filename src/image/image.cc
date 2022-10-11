@@ -98,7 +98,7 @@ Image * Image::factory(Logger &logger, const Scene &scene, const std::string &na
 		}
 	}
 	if(!image) image = Image::factory(params);
-	if(param_error.flags_ != ParamError::Flags::Ok) logger.logWarning(param_error.print<Image>(name, {}));
+	if(param_error.notOk()) logger.logWarning(param_error.print<Image>(name, {}));
 	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + image->params_.getAsParamMap(true).print());
 	return image;
 }

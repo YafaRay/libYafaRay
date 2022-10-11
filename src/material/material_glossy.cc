@@ -106,7 +106,7 @@ std::pair<Material *, ParamError> GlossyMaterial::factory(Logger &logger, const 
 			}
 		}
 	}
-	if(param_error.flags_ != ParamError::Flags::Ok) logger.logWarning(param_error.print<GlossyMaterial>(name, {"type"}));
+	if(param_error.notOk()) logger.logWarning(param_error.print<GlossyMaterial>(name, {"type"}));
 	return {mat, param_error};
 }
 

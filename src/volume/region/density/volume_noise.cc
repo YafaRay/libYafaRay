@@ -66,7 +66,7 @@ std::pair<VolumeRegion *, ParamError> NoiseVolumeRegion::factory(Logger &logger,
 		return {nullptr, {ParamError::Flags::ErrorWhileCreating}};
 	}
 	auto result {new NoiseVolumeRegion(logger, param_error, param_map, texture)};
-	if(param_error.flags_ != ParamError::Flags::Ok) logger.logWarning(param_error.print<NoiseVolumeRegion>(name, {"type"}));
+	if(param_error.notOk()) logger.logWarning(param_error.print<NoiseVolumeRegion>(name, {"type"}));
 	return {result, param_error};
 }
 

@@ -67,7 +67,7 @@ std::pair<ShaderNode *, ParamError> TextureMapperNode::factory(Logger &logger, c
 {
 	auto param_error{Params::meta_.check(param_map, {"type"}, {})};
 	std::string texname;
-	if(param_map.getParam(Params::texture_meta_.name(), texname) != ParamError::Flags::Ok)
+	if(param_map.getParam(Params::texture_meta_.name(), texname).notOk())
 	{
 		logger.logError("TextureMapper: No texture given for texture mapper!");
 		return {nullptr, {ParamError::Flags::ErrorWhileCreating}};
@@ -79,7 +79,7 @@ std::pair<ShaderNode *, ParamError> TextureMapperNode::factory(Logger &logger, c
 		return {nullptr, {ParamError::Flags::ErrorWhileCreating}};
 	}
 	auto result {new TextureMapperNode(logger, param_error, param_map, tex)};
-	if(param_error.flags_ != ParamError::Flags::Ok) logger.logWarning(param_error.print<TextureMapperNode>(name, {"type"}));
+	if(param_error.notOk()) logger.logWarning(param_error.print<TextureMapperNode>(name, {"type"}));
 	return {result, param_error};
 }
 

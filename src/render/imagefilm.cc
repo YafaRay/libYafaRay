@@ -91,7 +91,7 @@ std::pair<ImageFilm *, ParamError> ImageFilm::factory(Logger &logger, RenderCont
 	if(logger.isDebug()) logger.logDebug("**" + getClassName() + "::factory 'raw' ParamMap\n" + param_map.logContents());
 	auto param_error{Params::meta_.check(param_map, {}, {})};
 	auto result {new ImageFilm(logger, param_error, render_control, *scene->getLayers(), scene->getOutputs(), &scene->getRenderViews(), &scene->getRenderCallbacks(), scene->getNumThreads(), param_map)};
-	if(param_error.flags_ != ParamError::Flags::Ok) logger.logWarning(param_error.print<ImageFilm>("ImageFilm", {}));
+	if(param_error.notOk()) logger.logWarning(param_error.print<ImageFilm>("ImageFilm", {}));
 	return {result, param_error};
 }
 

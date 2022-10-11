@@ -91,7 +91,7 @@ std::pair<ShaderNode *, ParamError> MixNode::factory(Logger &logger, const Scene
 		case BlendMode::Mix:
 		default: result = new MixNode(logger, param_error, param_map); break;
 	}
-	if(param_error.flags_ != ParamError::Flags::Ok) logger.logWarning(param_error.print<MixNode>(name, {"type"}));
+	if(param_error.notOk()) logger.logWarning(param_error.print<MixNode>(name, {"type"}));
 	return {result, param_error};
 }
 

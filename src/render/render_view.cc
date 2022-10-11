@@ -53,7 +53,7 @@ std::pair<RenderView *, ParamError> RenderView::factory(Logger &logger, const Sc
 	if(logger.isDebug()) logger.logDebug("**" + getClassName() + "::factory 'raw' ParamMap\n" + param_map.logContents());
 	auto param_error{Params::meta_.check(param_map, {}, {})};
 	auto result {new RenderView(logger, param_error, param_map)};
-	if(param_error.flags_ != ParamError::Flags::Ok) logger.logWarning(param_error.print<RenderView>(name, {}));
+	if(param_error.notOk()) logger.logWarning(param_error.print<RenderView>(name, {}));
 	return {result, param_error};
 }
 

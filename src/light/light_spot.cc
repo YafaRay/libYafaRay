@@ -68,7 +68,7 @@ std::pair<Light *, ParamError> SpotLight::factory(Logger &logger, const Scene &s
 {
 	auto param_error{Params::meta_.check(param_map, {"type"}, {})};
 	auto result {new SpotLight(logger, param_error, name, param_map)};
-	if(param_error.flags_ != ParamError::Flags::Ok) logger.logWarning(param_error.print<SpotLight>(name, {"type"}));
+	if(param_error.notOk()) logger.logWarning(param_error.print<SpotLight>(name, {"type"}));
 	return {result, param_error};
 }
 

@@ -53,13 +53,17 @@ struct ParamError
 				{"ErrorAlreadyExists", ErrorAlreadyExists, ""},
 				{"ErrorWhileCreating", ErrorWhileCreating, ""},
 			}};
+		[[nodiscard]] bool isOk() const { return value() == Ok; }
+		[[nodiscard]] bool notOk() const { return !isOk(); }
+		[[nodiscard]] bool hasError() const;
+		[[nodiscard]] bool hasWarning() const;
 	};
 	template<typename T>
 	[[nodiscard]] std::string print(const std::string &name, const std::vector<std::string> &excluded_params) const;
-	[[nodiscard]] bool isOk() const { return flags_ == Flags::Ok; }
-	[[nodiscard]] bool notOk() const { return !isOk(); }
-	[[nodiscard]] bool hasError() const;
-	[[nodiscard]] bool hasWarning() const;
+	[[nodiscard]] bool isOk() const { return flags_.isOk(); }
+	[[nodiscard]] bool notOk() const { return flags_.notOk(); }
+	[[nodiscard]] bool hasError() const { return flags_.hasError(); }
+	[[nodiscard]] bool hasWarning() const { return flags_.hasWarning(); }
 	void merge(const ParamError &param_error);
 	Flags flags_{Flags::Ok};
 	std::vector<std::string> unknown_params_{};
@@ -67,19 +71,19 @@ struct ParamError
 	std::vector<std::pair<std::string, std::string>> unknown_enum_{};
 };
 
-inline bool ParamError::hasError() const
+inline bool ParamError::Flags::hasError() const
 {
-	return flags_.has(Flags::ErrorTypeUnknownParam)
-		|| flags_.has(Flags::ErrorWrongParamType)
-		|| flags_.has(Flags::ErrorAlreadyExists)
-		|| flags_.has(Flags::ErrorWhileCreating);
+	return has(Flags::ErrorTypeUnknownParam)
+		|| has(Flags::ErrorWrongParamType)
+		|| has(Flags::ErrorAlreadyExists)
+		|| has(Flags::ErrorWhileCreating);
 }
 
-inline bool ParamError::hasWarning() const
+inline bool ParamError::Flags::hasWarning() const
 {
-	return flags_.has(Flags::WarningUnknownParam)
-		|| flags_.has(Flags::WarningUnknownEnumOption)
-		|| flags_.has(Flags::WarningParamNotSet);
+	return has(Flags::WarningUnknownParam)
+		|| has(Flags::WarningUnknownEnumOption)
+		|| has(Flags::WarningParamNotSet);
 }
 
 inline void ParamError::merge(const ParamError &param_error)

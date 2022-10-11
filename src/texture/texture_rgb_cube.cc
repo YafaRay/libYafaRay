@@ -46,7 +46,7 @@ std::pair<Texture *, ParamError> RgbCubeTexture::factory(Logger &logger, const S
 {
 	auto param_error{Params::meta_.check(param_map, {"type"}, {"ramp_item_"})};
 	auto result {new RgbCubeTexture(logger, param_error, param_map)};
-	if(param_error.flags_ != ParamError::Flags::Ok) logger.logWarning(param_error.print<RgbCubeTexture>(name, {"type"}));
+	if(param_error.notOk()) logger.logWarning(param_error.print<RgbCubeTexture>(name, {"type"}));
 	return {result, param_error};
 }
 

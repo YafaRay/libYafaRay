@@ -45,7 +45,7 @@ std::pair<std::unique_ptr<Accelerator>, ParamError> AcceleratorSimpleTest::facto
 {
 	auto param_error{Params::meta_.check(param_map, {"type"}, {})};
 	auto accelerator {std::make_unique<ThisClassType_t>(logger, param_error, primitives, param_map)};
-	if(param_error.flags_ != ParamError::Flags::Ok) logger.logWarning(param_error.print<ThisClassType_t>("", {"type"}));
+	if(param_error.notOk()) logger.logWarning(param_error.print<ThisClassType_t>("", {"type"}));
 	return {std::move(accelerator), param_error};
 }
 

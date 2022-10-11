@@ -55,10 +55,10 @@ std::pair<Material *, ParamError> MaskMaterial::factory(Logger &logger, const Sc
 {
 	auto param_error{Params::meta_.check(param_map, {"type"}, {})};
 	std::string mat1_name;
-	if(param_map.getParam(Params::material_1_name_meta_.name(), mat1_name) != ParamError::Flags::Ok) return {nullptr, {ParamError::Flags::ErrorWhileCreating}};
+	if(param_map.getParam(Params::material_1_name_meta_.name(), mat1_name).notOk()) return {nullptr, {ParamError::Flags::ErrorWhileCreating}};
 	const std::unique_ptr<const Material> *m_1 = scene.getMaterial(mat1_name);
 	std::string mat2_name;
-	if(param_map.getParam(Params::material_2_name_meta_.name(), mat2_name) != ParamError::Flags::Ok) return {nullptr, {ParamError::Flags::ErrorWhileCreating}};
+	if(param_map.getParam(Params::material_2_name_meta_.name(), mat2_name).notOk()) return {nullptr, {ParamError::Flags::ErrorWhileCreating}};
 	const std::unique_ptr<const Material> *m_2 = scene.getMaterial(mat2_name);
 	if(!m_1 || !m_2) return {nullptr, {ParamError::Flags::ErrorWhileCreating}};
 
@@ -96,7 +96,7 @@ std::pair<Material *, ParamError> MaskMaterial::factory(Logger &logger, const Sc
 			}
 		}
 	}
-	if(param_error.flags_ != ParamError::Flags::Ok) logger.logWarning(param_error.print<MaskMaterial>(name, {"type"}));
+	if(param_error.notOk()) logger.logWarning(param_error.print<MaskMaterial>(name, {"type"}));
 	return {mat, param_error};
 }
 

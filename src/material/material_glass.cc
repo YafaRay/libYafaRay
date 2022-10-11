@@ -122,7 +122,7 @@ std::pair<Material *, ParamError> GlassMaterial::factory(Logger &logger, const S
 			}
 		}
 	}
-	if(param_error.flags_ != ParamError::Flags::Ok) logger.logWarning(param_error.print<GlassMaterial>(name, {"type"}));
+	if(param_error.notOk()) logger.logWarning(param_error.print<GlassMaterial>(name, {"type"}));
 	return {mat, param_error};
 }
 
