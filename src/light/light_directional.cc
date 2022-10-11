@@ -51,21 +51,21 @@ ParamMap DirectionalLight::Params::getAsParamMap(bool only_non_default) const
 
 ParamMap DirectionalLight::getAsParamMap(bool only_non_default) const
 {
-	ParamMap result{Light::getAsParamMap(only_non_default)};
+	ParamMap result{ParentClassType_t::getAsParamMap(only_non_default)};
 	result.append(params_.getAsParamMap(only_non_default));
 	return result;
 }
 
-std::pair<Light *, ParamError> DirectionalLight::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map)
+std::pair<std::unique_ptr<Light>, ParamError> DirectionalLight::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map)
 {
 	auto param_error{Params::meta_.check(param_map, {"type"}, {})};
-	auto result {new DirectionalLight(logger, param_error, name, param_map)};
-	if(param_error.notOk()) logger.logWarning(param_error.print<DirectionalLight>(name, {"type"}));
-	return {result, param_error};
+	auto light {std::make_unique<ThisClassType_t>(logger, param_error, name, param_map)};
+	if(param_error.notOk()) logger.logWarning(param_error.print<ThisClassType_t>(name, {"type"}));
+	return {std::move(light), param_error};
 }
 
 DirectionalLight::DirectionalLight(Logger &logger, ParamError &param_error, const std::string &name, const ParamMap &param_map):
-		Light{logger, param_error, name, param_map, Light::Flags::DiracDir}, params_{param_error, param_map}
+		ParentClassType_t{logger, param_error, name, param_map, Flags::DiracDir}, params_{param_error, param_map}
 {
 	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + params_.getAsParamMap(true).print());
 }

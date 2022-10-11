@@ -119,7 +119,7 @@ class Scene final
 		const std::map<std::string, std::unique_ptr<VolumeRegion>> &getVolumeRegions() const { return volume_regions_; }
 		std::map<std::string, Light *> getLights() const;
 
-		std::pair<Light *, ParamError> createLight(std::string &&name, ParamMap &&params);
+		std::pair<size_t, ParamError> createLight(std::string &&name, ParamMap &&params);
 		std::pair<Texture *, ParamError> createTexture(std::string &&name, ParamMap &&params);
 		std::pair<std::unique_ptr<const Material> *, ParamError> createMaterial(std::string &&name, ParamMap &&params, std::list<ParamMap> &&nodes_params);
 		std::pair<Camera *, ParamError> createCamera(std::string &&name, ParamMap &&params);

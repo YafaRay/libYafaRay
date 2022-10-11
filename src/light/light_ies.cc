@@ -57,22 +57,22 @@ ParamMap IesLight::Params::getAsParamMap(bool only_non_default) const
 
 ParamMap IesLight::getAsParamMap(bool only_non_default) const
 {
-	ParamMap result{Light::getAsParamMap(only_non_default)};
+	ParamMap result{ParentClassType_t::getAsParamMap(only_non_default)};
 	result.append(params_.getAsParamMap(only_non_default));
 	return result;
 }
 
-std::pair<Light *, ParamError> IesLight::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map)
+std::pair<std::unique_ptr<Light>, ParamError> IesLight::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map)
 {
 	auto param_error{Params::meta_.check(param_map, {"type"}, {})};
-	auto result {new IesLight(logger, param_error, name, param_map)};
-	if(param_error.notOk()) logger.logWarning(param_error.print<IesLight>(name, {"type"}));
-	if(!result->isIesOk()) return {nullptr, {ParamError::Flags::ErrorWhileCreating}};
-	return {result, param_error};
+	auto light {std::make_unique<ThisClassType_t>(logger, param_error, name, param_map)};
+	if(param_error.notOk()) logger.logWarning(param_error.print<ThisClassType_t>(name, {"type"}));
+	if(!light->isIesOk()) return {nullptr, {ParamError::Flags::ErrorWhileCreating}};
+	return {std::move(light), param_error};
 }
 
 IesLight::IesLight(Logger &logger, ParamError &param_error, const std::string &name, const ParamMap &param_map):
-		Light{logger, param_error, name, param_map, Light::Flags::Singular}, params_{param_error, param_map},
+		ParentClassType_t{logger, param_error, name, param_map, Flags::Singular}, params_{param_error, param_map},
 		ies_data_{std::make_unique<IesData>()},
 		ies_ok_{ies_data_->parseIesFile(logger, params_.file_)}
 {

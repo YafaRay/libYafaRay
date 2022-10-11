@@ -271,13 +271,13 @@ void ExportPython::writeParamList(int indent) noexcept
 	file_ << "yi.paramsEndList()\n";
 }
 
-Light *ExportPython::createLight(std::string &&name) noexcept
+std::pair<size_t, ParamError> ExportPython::createLight(std::string &&name) noexcept
 {
 	writeParamMap(*params_);
 	params_->clear();
 	file_ << "yi.createLight(\"" << name << "\")\n";
 	file_ << "yi.paramsClearAll()\n\n";
-	return nullptr;
+	return {};
 }
 
 Texture *ExportPython::createTexture(std::string &&name) noexcept

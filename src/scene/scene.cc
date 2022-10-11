@@ -338,25 +338,26 @@ std::map<std::string, Light *> Scene::getLights() const
 	return result;
 }
 
-std::pair<Light *, ParamError> Scene::createLight(std::string &&name, ParamMap &&params)
+std::pair<size_t, ParamError> Scene::createLight(std::string &&name, ParamMap &&params)
 {
 	std::string pname = "Light";
 	if(lights_.find(name) != lights_.end())
 	{
-		logWarnExist(logger_, pname, name); return {nullptr, {ParamError::Flags::ErrorAlreadyExists}};
+		logWarnExist(logger_, pname, name); return {0, {ParamError::Flags::ErrorAlreadyExists}};
 	}
-	auto light = std::unique_ptr<Light>(Light::factory(logger_, *this, name, params).first);
+	auto [light, param_error] {Light::factory(logger_, *this, name, params)};
 	if(light)
 	{
-		lights_[name] = std::move(light);
-		std::string type;
-		params.getParam("type", type);
-		if(logger_.isVerbose() && lights_[name]->lightEnabled()) logInfoVerboseSuccess(logger_, pname, name, type);
-		else if(logger_.isVerbose()) logInfoVerboseSuccessDisabled(logger_, pname, name, type);
+		if(logger_.isVerbose())
+		{
+			if(light->lightEnabled()) logInfoVerboseSuccess(logger_, pname, name, light->type().print());
+			else logInfoVerboseSuccessDisabled(logger_, pname, name, light->type().print());
+		}
 		creation_state_.changes_ |= CreationState::Flags::CLight;
-		return {lights_[name].get(), {}};
+		lights_[name] = std::move(light);
+		return {lights_.size() - 1, param_error}; //FIXME: this is just a placeholder for now for future LightID, although this will not work while we still use std::map for lights_
 	}
-	return {nullptr, {ParamError::Flags::ErrorWhileCreating}};
+	return {0, {ParamError::Flags::ErrorWhileCreating}};
 }
 
 std::pair<std::unique_ptr<const Material> *, ParamError> Scene::createMaterial(std::string &&name, ParamMap &&params, std::list<ParamMap> &&nodes_params)

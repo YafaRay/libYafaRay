@@ -59,7 +59,7 @@ std::pair<std::unique_ptr<Background>, ParamError> ConstantBackground::factory(L
 		bgp["with_diffuse"] = background->ParentClassType_t::params_.with_diffuse_;
 		bgp["cast_shadows"] = background->ParentClassType_t::params_.cast_shadows_;
 
-		std::unique_ptr<Light> bglight{Light::factory(logger, scene, "light", bgp).first};
+		auto bglight{Light::factory(logger, scene, "light", bgp).first};
 		bglight->setBackground(background.get());
 		background->addLight(std::move(bglight));
 	}

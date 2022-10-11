@@ -19,8 +19,8 @@
  *      Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-#ifndef YAFARAY_LIGHT_IES_DATA_H
-#define YAFARAY_LIGHT_IES_DATA_H
+#ifndef LIBYAFARAY_LIGHT_IES_DATA_H
+#define LIBYAFARAY_LIGHT_IES_DATA_H
 
 #include <fstream>
 #include "common/logger.h"
@@ -362,4 +362,4 @@ bool IesData::parseIesFile(Logger &logger, const std::string &file)
 
 } //namespace yafaray
 
-#endif //YAFARAY_LIGHT_IES_DATA_H
+#endif //LIBYAFARAY_LIGHT_IES_DATA_H

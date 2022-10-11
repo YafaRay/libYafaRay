@@ -19,8 +19,8 @@
  *      Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-#ifndef YAFARAY_LIGHT_SUN_H
-#define YAFARAY_LIGHT_SUN_H
+#ifndef LIBYAFARAY_LIGHT_SUN_H
+#define LIBYAFARAY_LIGHT_SUN_H
 
 #include "common/logger.h"
 #include "light/light.h"
@@ -33,24 +33,26 @@ class Scene;
 
 class SunLight final : public Light
 {
+		using ThisClassType_t = SunLight; using ParentClassType_t = Light;
+
 	public:
 		inline static std::string getClassName() { return "SunLight"; }
-		static std::pair<Light *, ParamError> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params);
+		static std::pair<std::unique_ptr<Light>, ParamError> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params);
 		static std::string printMeta(const std::vector<std::string> &excluded_params) { return Params::meta_.print(excluded_params); }
+		[[nodiscard]] ParamMap getAsParamMap(bool only_non_default) const override;
+		SunLight(Logger &logger, ParamError &param_error, const std::string &name, const ParamMap &param_map);
 
 	private:
 		[[nodiscard]] Type type() const override { return Type::Sun; }
 		const struct Params
 		{
-			PARAM_INIT_PARENT(Light);
+			PARAM_INIT_PARENT(ParentClassType_t);
 			PARAM_DECL(Vec3f, direction_, (Vec3f{{0.f, 0.f, 1.f}}), "direction", "");
 			PARAM_DECL(Rgb, color_, Rgb{1.f}, "color", "");
 			PARAM_DECL(float, power_, 1.f, "power", "");
 			PARAM_DECL(float, angle_, 0.27f, "angle", "Angular (half-)size of the real sun");
 			PARAM_DECL(int, samples_, 4, "samples", "");
 		} params_;
-		[[nodiscard]] ParamMap getAsParamMap(bool only_non_default) const override;
-		SunLight(Logger &logger, ParamError &param_error, const std::string &name, const ParamMap &param_map);
 		void init(const Scene &scene) override;
 		Rgb totalEnergy() const override { return color_ * e_pdf_; }
 		std::tuple<Ray, float, Rgb> emitPhoton(float s_1, float s_2, float s_3, float s_4, float time) const override;
@@ -75,4 +77,4 @@ class SunLight final : public Light
 
 } //namespace yafaray
 
-#endif // YAFARAY_LIGHT_SUN_H
+#endif // LIBYAFARAY_LIGHT_SUN_H

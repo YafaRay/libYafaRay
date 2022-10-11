@@ -115,7 +115,7 @@ std::pair<std::unique_ptr<Background>, ParamError> DarkSkyBackground::factory(Lo
 		bgp["cast_shadows"] = background->ParentClassType_t::params_.cast_shadows_;
 
 		if(logger.isVerbose()) logger.logVerbose(getClassName(), ": Adding background sun light");
-		std::unique_ptr<Light> bglight{Light::factory(logger, scene, "light_sun", bgp).first};
+		auto bglight{Light::factory(logger, scene, "light_sun", bgp).first};
 		background->addLight(std::move(bglight));
 	}
 	if(background->params_.background_light_)
@@ -128,7 +128,7 @@ std::pair<std::unique_ptr<Background>, ParamError> DarkSkyBackground::factory(Lo
 		bgp["cast_shadows"] = background->ParentClassType_t::params_.cast_shadows_;
 
 		if(logger.isVerbose()) logger.logVerbose(getClassName(), ": Adding background sky light");
-		std::unique_ptr<Light> bglight{Light::factory(logger, scene, "light_sky", bgp).first};
+		auto bglight{Light::factory(logger, scene, "light_sky", bgp).first};
 		bglight->setBackground(background.get());
 		background->addLight(std::move(bglight));
 	}

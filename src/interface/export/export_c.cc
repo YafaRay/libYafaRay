@@ -339,7 +339,7 @@ void ExportC::writeParamList(int indent) noexcept
 	++section_num_lines_;
 }
 
-Light *ExportC::createLight(std::string &&name) noexcept
+std::pair<size_t, ParamError> ExportC::createLight(std::string &&name) noexcept
 {
 	writeParamMap(*params_);
 	params_->clear();
@@ -347,7 +347,7 @@ Light *ExportC::createLight(std::string &&name) noexcept
 	file_ << "\t" << "yafaray_paramsClearAll(yi);\n\n";
 	section_num_lines_ += 2;
 	if(section_num_lines_ >= section_max_lines_) file_ << sectionSplit();
-	return nullptr;
+	return {};
 }
 
 Texture *ExportC::createTexture(std::string &&name) noexcept

@@ -91,7 +91,7 @@ class Interface
 		virtual void paramsEndList() noexcept; 	//!< revert to writing to normal paramMap
 		virtual void setCurrentMaterial(std::string &&name) noexcept;
 		virtual Object *createObject(std::string &&name) noexcept;
-		virtual Light *createLight(std::string &&name) noexcept;
+		virtual std::pair<size_t, ParamError> createLight(std::string &&name) noexcept;
 		virtual Texture *createTexture(std::string &&name) noexcept;
 		virtual const Material *createMaterial(std::string &&name) noexcept;
 		virtual const Camera * createCamera(std::string &&name) noexcept;

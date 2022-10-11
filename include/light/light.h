@@ -44,8 +44,10 @@ struct LSample;
 
 class Light
 {
+	protected: struct Type;
 	public:
 		inline static std::string getClassName() { return "Light"; }
+		[[nodiscard]] virtual Type type() const = 0;
 		struct Flags : Enum<Flags>
 		{
 			using Enum::Enum;
@@ -57,7 +59,7 @@ class Light
 					{"All", All, ""},
 				}};
 		};
-		static std::pair<Light *, ParamError> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map);
+		static std::pair<std::unique_ptr<Light>, ParamError> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map);
 		[[nodiscard]] virtual ParamMap getAsParamMap(bool only_non_default) const;
 		Light(Logger &logger, ParamError &param_error, std::string name, const ParamMap &param_map, Flags flags) : params_{param_error, param_map}, name_{std::move(name)}, flags_{flags}, logger_{logger} { }
 		virtual ~Light() = default;
@@ -123,7 +125,6 @@ class Light
 					{"sunlight", Sun, ""},
 				}};
 		};
-		[[nodiscard]] virtual Type type() const = 0;
 		const struct Params
 		{
 			PARAM_INIT;

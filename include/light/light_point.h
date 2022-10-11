@@ -19,8 +19,8 @@
  *      Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-#ifndef YAFARAY_LIGHT_POINT_H
-#define YAFARAY_LIGHT_POINT_H
+#ifndef LIBYAFARAY_LIGHT_POINT_H
+#define LIBYAFARAY_LIGHT_POINT_H
 
 #include "common/logger.h"
 #include "light/light.h"
@@ -33,22 +33,24 @@ class Scene;
 
 class PointLight final : public Light
 {
+		using ThisClassType_t = PointLight; using ParentClassType_t = Light;
+
 	public:
 		inline static std::string getClassName() { return "PointLight"; }
-		static std::pair<Light *, ParamError> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params);
+		static std::pair<std::unique_ptr<Light>, ParamError> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params);
 		static std::string printMeta(const std::vector<std::string> &excluded_params) { return Params::meta_.print(excluded_params); }
+		[[nodiscard]] ParamMap getAsParamMap(bool only_non_default) const override;
+		PointLight(Logger &logger, ParamError &param_error, const std::string &name, const ParamMap &param_map);
 
 	private:
 		[[nodiscard]] Type type() const override { return Type::Point; }
 		const struct Params
 		{
-			PARAM_INIT_PARENT(Light);
+			PARAM_INIT_PARENT(ParentClassType_t);
 			PARAM_DECL(Vec3f, from_, Vec3f{0.f}, "from", "");
 			PARAM_DECL(Rgb, color_, Rgb{1.f}, "color", "");
 			PARAM_DECL(float, power_, 1.f, "power", "");
 		} params_;
-		[[nodiscard]] ParamMap getAsParamMap(bool only_non_default) const override;
-		PointLight(Logger &logger, ParamError &param_error, const std::string &name, const ParamMap &param_map);
 		Rgb totalEnergy() const override { return color_ * 4.0f * math::num_pi<>; }
 		std::tuple<Ray, float, Rgb> emitPhoton(float s_1, float s_2, float s_3, float s_4, float time) const override;
 		std::pair<Vec3f, Rgb> emitSample(LSample &s, float time) const override;
@@ -62,6 +64,6 @@ class PointLight final : public Light
 
 } //namespace yafaray
 
-#endif // YAFARAY_LIGHT_POINT_H
+#endif // LIBYAFARAY_LIGHT_POINT_H
 
 

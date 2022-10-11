@@ -226,7 +226,7 @@ yafaray_bool_t yafaray_createObject(yafaray_Interface_t *interface, const char *
 
 yafaray_bool_t yafaray_createLight(yafaray_Interface_t *interface, const char *name)
 {
-	return static_cast<yafaray_bool_t>(reinterpret_cast<yafaray::Interface *>(interface)->createLight(name) != nullptr);
+	return static_cast<yafaray_bool_t>(reinterpret_cast<yafaray::Interface *>(interface)->createLight(name).second.isOk());
 }
 
 yafaray_bool_t yafaray_createTexture(yafaray_Interface_t *interface, const char *name)

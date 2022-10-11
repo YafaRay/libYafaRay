@@ -19,8 +19,8 @@
  *      Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-#ifndef YAFARAY_LIGHT_MESHLIGHT_H
-#define YAFARAY_LIGHT_MESHLIGHT_H
+#ifndef LIBYAFARAY_LIGHT_OBJECT_LIGHT_H
+#define LIBYAFARAY_LIGHT_OBJECT_LIGHT_H
 
 #include "light/light.h"
 #include "light_ies.h"
@@ -38,24 +38,26 @@ class Scene;
 
 class ObjectLight final : public Light
 {
+		using ThisClassType_t = ObjectLight; using ParentClassType_t = Light;
+
 	public:
 		inline static std::string getClassName() { return "ObjectLight"; }
-		static std::pair<Light *, ParamError> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params);
+		static std::pair<std::unique_ptr<Light>, ParamError> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params);
 		static std::string printMeta(const std::vector<std::string> &excluded_params) { return Params::meta_.print(excluded_params); }
+		[[nodiscard]] ParamMap getAsParamMap(bool only_non_default) const override;
+		ObjectLight(Logger &logger, ParamError &param_error, const std::string &name, const ParamMap &param_map);
 
 	private:
 		[[nodiscard]] Type type() const override { return Type::Object; }
 		const struct Params
 		{
-			PARAM_INIT_PARENT(Light);
+			PARAM_INIT_PARENT(ParentClassType_t);
 			PARAM_DECL(std::string, object_name_, "", "object_name", "");
 			PARAM_DECL(Rgb, color_, Rgb{0.f}, "color", "");
 			PARAM_DECL(float, power_, 1.f, "power", "");
 			PARAM_DECL(int, samples_, 4, "samples", "");
 			PARAM_DECL(bool, double_sided_, false, "double_sided", "");
 		} params_;
-		[[nodiscard]] ParamMap getAsParamMap(bool only_non_default) const override;
-		ObjectLight(Logger &logger, ParamError &param_error, const std::string &name, const ParamMap &param_map);
 		void init(const Scene &scene) override;
 		Rgb totalEnergy() const override;
 		std::tuple<Ray, float, Rgb> emitPhoton(float s_1, float s_2, float s_3, float s_4, float time) const override;
@@ -82,4 +84,4 @@ class ObjectLight final : public Light
 
 } //namespace yafaray
 
-#endif // YAFARAY_LIGHT_MESHLIGHT_H
+#endif // LIBYAFARAY_LIGHT_OBJECT_LIGHT_H

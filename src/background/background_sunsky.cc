@@ -89,7 +89,7 @@ std::pair<std::unique_ptr<Background>, ParamError> SunSkyBackground::factory(Log
 		bgp["with_diffuse"] = background->ParentClassType_t::params_.with_diffuse_;
 		bgp["cast_shadows"] = background->ParentClassType_t::params_.cast_shadows_;
 
-		std::unique_ptr<Light> bglight{Light::factory(logger, scene, "light_sky", bgp).first};
+		auto bglight{Light::factory(logger, scene, "light_sky", bgp).first};
 		bglight->setBackground(background.get());
 		background->addLight(std::move(bglight));
 	}
@@ -113,7 +113,7 @@ std::pair<std::unique_ptr<Background>, ParamError> SunSkyBackground::factory(Log
 		bgp["with_caustic"] = background->ParentClassType_t::params_.with_caustic_;
 		bgp["with_diffuse"] = background->ParentClassType_t::params_.with_diffuse_;
 
-		std::unique_ptr<Light> bglight{Light::factory(logger, scene, "light_sun", bgp).first};
+		auto bglight{Light::factory(logger, scene, "light_sun", bgp).first};
 		bglight->setBackground(background.get());
 		background->addLight(std::move(bglight));
 	}

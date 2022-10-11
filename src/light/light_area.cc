@@ -54,21 +54,21 @@ ParamMap AreaLight::Params::getAsParamMap(bool only_non_default) const
 
 ParamMap AreaLight::getAsParamMap(bool only_non_default) const
 {
-	ParamMap result{Light::getAsParamMap(only_non_default)};
+	ParamMap result{ParentClassType_t::getAsParamMap(only_non_default)};
 	result.append(params_.getAsParamMap(only_non_default));
 	return result;
 }
 
-std::pair<Light *, ParamError> AreaLight::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map)
+std::pair<std::unique_ptr<Light>, ParamError> AreaLight::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map)
 {
 	auto param_error{Params::meta_.check(param_map, {"type"}, {})};
-	auto result {new AreaLight(logger, param_error, name, param_map)};
-	if(param_error.notOk()) logger.logWarning(param_error.print<AreaLight>(name, {"type"}));
-	return {result, param_error};
+	auto light {std::make_unique<ThisClassType_t>(logger, param_error, name, param_map)};
+	if(param_error.notOk()) logger.logWarning(param_error.print<ThisClassType_t>(name, {"type"}));
+	return {std::move(light), param_error};
 }
 
 AreaLight::AreaLight(Logger &logger, ParamError &param_error, const std::string &name, const ParamMap &param_map):
-		Light{logger, param_error, name, param_map, Flags::None}, params_{param_error, param_map}
+		ParentClassType_t{logger, param_error, name, param_map, Flags::None}, params_{param_error, param_map}
 {
 	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + params_.getAsParamMap(true).print());
 }
@@ -102,7 +102,7 @@ std::pair<bool, Ray> AreaLight::illumSample(const Point3f &surface_p, LSample &s
 	s.col_ = color_;
 	// pdf = distance^2 / area * cos(norm, ldir);
 	s.pdf_ = dist_sqr * math::num_pi<> / (area_ * cos_angle);
-	s.flags_ = Light::Flags::None; // no delta functions...
+	s.flags_ = Flags::None; // no delta functions...
 	if(s.sp_)
 	{
 		s.sp_->p_ = p;
@@ -128,7 +128,7 @@ std::pair<Vec3f, Rgb> AreaLight::emitSample(LSample &s, float time) const
 	const Vec3f dir{sample::cosHemisphere(normal_, duv_, s.s_1_, s.s_2_)};
 	s.sp_->n_ = s.sp_->ng_ = normal_;
 	s.dir_pdf_ = std::abs(normal_ * dir);
-	s.flags_ = Light::Flags::None; // no delta functions...
+	s.flags_ = Flags::None; // no delta functions...
 	return {std::move(dir), color_}; // still not 100% sure this is correct without cosine...
 }
 

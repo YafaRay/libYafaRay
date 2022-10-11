@@ -19,8 +19,8 @@
  *      Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-#ifndef YAFARAY_LIGHT_SPOT_H
-#define YAFARAY_LIGHT_SPOT_H
+#ifndef LIBYAFARAY_LIGHT_SPOT_H
+#define LIBYAFARAY_LIGHT_SPOT_H
 
 #include "light/light.h"
 #include "geometry/vector.h"
@@ -31,16 +31,20 @@ class Pdf1D;
 
 class SpotLight final : public Light
 {
+		using ThisClassType_t = SpotLight; using ParentClassType_t = Light;
+
 	public:
 		inline static std::string getClassName() { return "SpotLight"; }
-		static std::pair<Light *, ParamError> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params);
+		static std::pair<std::unique_ptr<Light>, ParamError> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params);
 		static std::string printMeta(const std::vector<std::string> &excluded_params) { return Params::meta_.print(excluded_params); }
+		[[nodiscard]] ParamMap getAsParamMap(bool only_non_default) const override;
+		SpotLight(Logger &logger, ParamError &param_error, const std::string &name, const ParamMap &param_map);
 
 	private:
 		[[nodiscard]] Type type() const override { return Type::Spot; }
 		const struct Params
 		{
-			PARAM_INIT_PARENT(Light);
+			PARAM_INIT_PARENT(ParentClassType_t);
 			PARAM_DECL(Vec3f, from_, Vec3f{0.f}, "from", "");
 			PARAM_DECL(Vec3f, to_, (Vec3f{{0.f, 0.f, -1.f}}), "to", "");
 			PARAM_DECL(Rgb, color_, Rgb{1.f}, "color", "");
@@ -51,8 +55,6 @@ class SpotLight final : public Light
 			PARAM_DECL(float , shadow_fuzzyness_, 1.f, "shadowFuzzyness", "");
 			PARAM_DECL(int , samples_, 8, "samples", "");
 		} params_;
-		[[nodiscard]] ParamMap getAsParamMap(bool only_non_default) const override;
-		SpotLight(Logger &logger, ParamError &param_error, const std::string &name, const ParamMap &param_map);
 		Rgb totalEnergy() const override;
 		std::tuple<Ray, float, Rgb> emitPhoton(float s_1, float s_2, float s_3, float s_4, float time) const override;
 		std::pair<Vec3f, Rgb> emitSample(LSample &s, float time) const override;
@@ -76,4 +78,4 @@ class SpotLight final : public Light
 
 } //namespace yafaray
 
-#endif // YAFARAY_LIGHT_SPOT_H
+#endif // LIBYAFARAY_LIGHT_SPOT_H

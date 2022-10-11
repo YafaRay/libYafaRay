@@ -60,7 +60,7 @@ ParamMap Light::getAsParamMap(bool only_non_default) const
 	return result;
 }
 
-std::pair<Light *, ParamError> Light::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map)
+std::pair<std::unique_ptr<Light>, ParamError> Light::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map)
 {
 	const Type type{ClassMeta::preprocessParamMap<Type>(logger, getClassName(), param_map)};
 	switch(type.value())

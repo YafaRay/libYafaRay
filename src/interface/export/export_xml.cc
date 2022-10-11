@@ -256,12 +256,12 @@ void ExportXml::writeParamList(int indent) noexcept
 	}
 }
 
-Light *ExportXml::createLight(std::string &&name) noexcept
+std::pair<size_t, ParamError> ExportXml::createLight(std::string &&name) noexcept
 {
 	file_ << "\n<light name=\"" << name << "\">\n";
 	writeParamMap(*params_);
 	file_ << "</light>\n";
-	return nullptr;
+	return {};
 }
 
 Texture *ExportXml::createTexture(std::string &&name) noexcept

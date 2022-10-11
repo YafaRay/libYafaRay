@@ -55,7 +55,7 @@ class ExportC: public Interface
 		bool smoothVerticesNormals(std::string &&name, double angle) noexcept override;
 		void setCurrentMaterial(std::string &&name) noexcept override;
 		Object *createObject(std::string &&name) noexcept override;
-		Light *createLight(std::string &&name) noexcept override;
+		std::pair<size_t, ParamError> createLight(std::string &&name) noexcept override;
 		Texture *createTexture(std::string &&name) noexcept override;
 		const Material *createMaterial(std::string &&name) noexcept override;
 		const Camera * createCamera(std::string &&name) noexcept override;

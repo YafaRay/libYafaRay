@@ -19,8 +19,8 @@
  *      Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-#ifndef YAFARAY_LIGHT_IES_H
-#define YAFARAY_LIGHT_IES_H
+#ifndef LIBYAFARAY_LIGHT_IES_H
+#define LIBYAFARAY_LIGHT_IES_H
 
 #include "common/logger.h"
 #include "light/light.h"
@@ -34,16 +34,20 @@ class IesData;
 
 class IesLight final : public Light
 {
+		using ThisClassType_t = IesLight; using ParentClassType_t = Light;
+
 	public:
 		inline static std::string getClassName() { return "IesLight"; }
-		static std::pair<Light *, ParamError> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params);
+		static std::pair<std::unique_ptr<Light>, ParamError> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params);
 		static std::string printMeta(const std::vector<std::string> &excluded_params) { return Params::meta_.print(excluded_params); }
+		[[nodiscard]] ParamMap getAsParamMap(bool only_non_default) const override;
+		IesLight(Logger &logger, ParamError &param_error, const std::string &name, const ParamMap &param_map);
 
 	private:
 		[[nodiscard]] Type type() const override { return Type::Ies; }
 		const struct Params
 		{
-			PARAM_INIT_PARENT(Light);
+			PARAM_INIT_PARENT(ParentClassType_t);
 			PARAM_DECL(Vec3f, from_, Vec3f{0.f}, "from", "");
 			PARAM_DECL(Vec3f, to_, (Vec3f{{0.f, 0.f, -1.f}}), "to", "");
 			PARAM_DECL(Rgb, color_, Rgb{1.f}, "color", "");
@@ -53,8 +57,6 @@ class IesLight final : public Light
 			PARAM_DECL(bool, soft_shadows_, false, "soft_shadows", "");
 			PARAM_DECL(float, cone_angle_, 180.f, "cone_angle", "Cone angle in degrees");
 		} params_;
-		[[nodiscard]] ParamMap getAsParamMap(bool only_non_default) const override;
-		IesLight(Logger &logger, ParamError &param_error, const std::string &name, const ParamMap &param_map);
 		Rgb totalEnergy() const override{ return color_ * tot_energy_;};
 		int nSamples() const override { return params_.samples_; };
 		bool diracLight() const override { return !params_.soft_shadows_; }
@@ -78,4 +80,4 @@ class IesLight final : public Light
 
 } //namespace yafaray
 
-#endif // YAFARAY_LIGHT_IES_H
+#endif // LIBYAFARAY_LIGHT_IES_H
