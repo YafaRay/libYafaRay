@@ -348,7 +348,7 @@ std::pair<size_t, ParamError> Scene::createLight(std::string &&name, ParamMap &&
 		lights_[name] = std::move(light);
 		return {lights_.size() - 1, param_error}; //FIXME: this is just a placeholder for now for future LightID, although this will not work while we still use std::map for lights_
 	}
-	return {0, {ParamError::Flags::ErrorWhileCreating}};
+	return {0, ParamError{ParamError::Flags::ErrorWhileCreating}};
 }
 
 std::pair<std::unique_ptr<const Material> *, ParamError> Scene::createMaterial(std::string &&name, ParamMap &&params, std::list<ParamMap> &&nodes_params)
@@ -409,7 +409,7 @@ std::pair<size_t, ParamError> Scene::createMapItemItemId(Logger &logger, std::st
 		map[name] = std::move(item);
 		return {map.size() - 1, param_error}; //FIXME: this is just a placeholder for now for future ItemID, although this will not work while we still use std::map for items
 	}
-	return {0, {ParamError::Flags::ErrorWhileCreating}};
+	return {0, ParamError{ParamError::Flags::ErrorWhileCreating}};
 }
 
 template <typename T>
@@ -426,7 +426,7 @@ std::pair<T *, ParamError> Scene::createMapItemPointer(Logger &logger, std::stri
 		map[name] = std::move(item);
 		return {map.at(name).get(), param_error}; //FIXME: this is just a placeholder for now for future ItemID, although this will not work while we still use std::map for items
 	}
-	return {0, {ParamError::Flags::ErrorWhileCreating}};
+	return {nullptr, ParamError{ParamError::Flags::ErrorWhileCreating}};
 }
 
 std::pair<ImageOutput *, ParamError> Scene::createOutput(std::string &&name, ParamMap &&params)
@@ -897,7 +897,7 @@ std::pair<size_t, ParamError> Scene::createObject(std::string &&name, ParamMap &
 	if(objects_.find(name) != objects_.end())
 	{
 		logWarnExist(logger_, Object::getClassName(), name);
-		return {0, {ParamError::Flags::ErrorWhileCreating}};
+		return {0, ParamError{ParamError::Flags::ErrorWhileCreating}};
 	}
 	auto [object, param_error]{ObjectBase::factory(logger_, *this, name, params)};
 	if(object)
@@ -913,7 +913,7 @@ std::pair<size_t, ParamError> Scene::createObject(std::string &&name, ParamMap &
 		objects_[name] = std::move(object);
 		return {objects_.size() - 1, param_error}; //FIXME: this is just a placeholder for now for future LightID, although this will not work while we still use std::map for objects
 	}
-	return {0, {ParamError::Flags::ErrorWhileCreating}};
+	return {0, ParamError{ParamError::Flags::ErrorWhileCreating}};
 }
 
 Object *Scene::getObject(const std::string &name) const
