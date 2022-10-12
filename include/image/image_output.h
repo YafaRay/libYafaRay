@@ -48,7 +48,7 @@ class ImageOutput final
 		void setRenderView(const RenderView *render_view) { current_render_view_ = render_view; }
 		[[nodiscard]] std::string getName() const { return name_; }
 		std::string printBadge(const RenderControl &render_control, const Timer &timer) const;
-		Image * generateBadgeImage(const RenderControl &render_control, const Timer &timer) const;
+		std::unique_ptr<Image> generateBadgeImage(const RenderControl &render_control, const Timer &timer) const;
 
 	private:
 		const struct Params

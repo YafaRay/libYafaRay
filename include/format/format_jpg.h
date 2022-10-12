@@ -37,7 +37,7 @@ class JpgFormat final : public Format
 	private:
 		[[nodiscard]] Type type() const override { return Type::Jpg; }
 		std::string getFormatName() const override { return "JpgFormat"; }
-		Image * loadFromFile(const std::string &name, const Image::Optimization &optimization, const ColorSpace &color_space, float gamma) override;
+		std::unique_ptr<Image> loadFromFile(const std::string &name, const Image::Optimization &optimization, const ColorSpace &color_space, float gamma) override;
 		bool saveToFile(const std::string &name, const ImageLayer &image_layer, ColorSpace color_space, float gamma, bool alpha_premultiply) override;
 		bool supportsAlpha() const override { return false; }
 		bool saveAlphaChannelOnlyToFile(const std::string &name, const ImageLayer &image_layer) override;

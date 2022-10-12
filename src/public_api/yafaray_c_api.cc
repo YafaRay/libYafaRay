@@ -405,7 +405,7 @@ void yafaray_setInputColorSpace(yafaray_Interface_t *interface, const char *colo
 
 yafaray_Image_t *yafaray_createImage(yafaray_Interface_t *interface, const char *name)
 {
-	return reinterpret_cast<yafaray_Image_t *>(reinterpret_cast<yafaray::Interface *>(interface)->createImage(name));
+	return reinterpret_cast<yafaray_Image_t *>(reinterpret_cast<yafaray::Interface *>(interface)->createImage(name).first);
 }
 
 yafaray_bool_t yafaray_setImageColor(yafaray_Image_t *image, int x, int y, float red, float green, float blue, float alpha)

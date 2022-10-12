@@ -56,7 +56,7 @@ ParamMap Image::getAsParamMap(bool only_non_default) const
 	return params_.getAsParamMap(only_non_default);
 }
 
-Image * Image::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map)
+std::pair<std::unique_ptr<Image>, ParamError> Image::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map)
 {
 	if(logger.isDebug()) logger.logDebug("**" + getClassName() + "::factory 'raw' ParamMap\n" + param_map.logContents());
 	auto param_error{Params::meta_.check(param_map, {}, {})};
@@ -64,7 +64,7 @@ Image * Image::factory(Logger &logger, const Scene &scene, const std::string &na
 	param_map.getParam(Params::type_meta_, type_str);
 	const Type type{type_str};
 	Params params{param_error, param_map};
-	Image *image = nullptr;
+	std::unique_ptr<Image> image;
 	if(params.filename_.empty())
 	{
 		logger.logVerbose("Image '", name, "': creating empty image with width=", params.width_, " height=", params.height_);
@@ -100,10 +100,10 @@ Image * Image::factory(Logger &logger, const Scene &scene, const std::string &na
 	if(!image) image = Image::factory(params);
 	if(param_error.notOk()) logger.logWarning(param_error.print<Image>(name, {}));
 	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + image->params_.getAsParamMap(true).print());
-	return image;
+	return {std::move(image), param_error};
 }
 
-Image *Image::factory(const Params &params)
+std::unique_ptr<Image> Image::factory(const Params &params)
 {
 	switch(params.type_.value())
 	{
@@ -112,23 +112,23 @@ Image *Image::factory(const Params &params)
 			{
 				case Optimization::Compressed:
 				case Optimization::Optimized:
-					return new ImageBuffer<Gray8>(params); //!< Optimized grayscale (8 bit/pixel) image buffer
+					return std::make_unique<ImageBuffer<Gray8>>(params); //!< Optimized grayscale (8 bit/pixel) image buffer
 				default:
-					return new ImageBuffer<Gray>(params); //!< Grayscale float (32 bit/pixel) image buffer
+					return std::make_unique<ImageBuffer<Gray>>(params); //!< Grayscale float (32 bit/pixel) image buffer
 			}
 
 		case Type::GrayAlpha:
-			return new ImageBuffer<GrayAlpha>(params); //!< Grayscale with alpha float (64 bit/pixel) image buffer
+			return std::make_unique<ImageBuffer<GrayAlpha>>(params); //!< Grayscale with alpha float (64 bit/pixel) image buffer
 
 		case Type::Color:
 			switch(params.image_optimization_.value())
 			{
 				case Optimization::Optimized:
-					return new ImageBuffer<Rgb101010>(params); //!< Optimized Rgb (32 bit/pixel) image buffer
+					return std::make_unique<ImageBuffer<Rgb101010>>(params); //!< Optimized Rgb (32 bit/pixel) image buffer
 				case Optimization::Compressed:
-					return new ImageBuffer<Rgb565>(params); //!< Compressed Rgb (16 bit/pixel) [LOSSY!] image buffer
+					return std::make_unique<ImageBuffer<Rgb565>>(params); //!< Compressed Rgb (16 bit/pixel) [LOSSY!] image buffer
 				default:
-					return new ImageBuffer<Rgb>(params); //!< Rgb float image buffer (96 bit/pixel)
+					return std::make_unique<ImageBuffer<Rgb>>(params); //!< Rgb float image buffer (96 bit/pixel)
 			}
 
 		case Type::ColorAlpha:
@@ -136,11 +136,11 @@ Image *Image::factory(const Params &params)
 			switch(params.image_optimization_.value())
 			{
 				case Optimization::Optimized:
-					return new ImageBuffer<Rgba1010108>(params); //!< Optimized Rgba (40 bit/pixel) image buffer
+					return std::make_unique<ImageBuffer<Rgba1010108>>(params); //!< Optimized Rgba (40 bit/pixel) image buffer
 				case Optimization::Compressed:
-					return new ImageBuffer<Rgba7773>(params); //!< Compressed Rgba (24 bit/pixel) [LOSSY!] image buffer
+					return std::make_unique<ImageBuffer<Rgba7773>>(params); //!< Compressed Rgba (24 bit/pixel) [LOSSY!] image buffer
 				default:
-					return new ImageBuffer<RgbAlpha>(params); //!< Rgba float image buffer (128 bit/pixel)
+					return std::make_unique<ImageBuffer<RgbAlpha>>(params); //!< Rgba float image buffer (128 bit/pixel)
 			}
 	}
 }

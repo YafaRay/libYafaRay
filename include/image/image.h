@@ -47,7 +47,7 @@ class Image
 {
 	public:
 		inline static std::string getClassName() { return "Image"; }
-		static Image *factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map);
+		static std::pair<std::unique_ptr<Image>, ParamError> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map);
 		static std::string printMeta(const std::vector<std::string> &excluded_params) { return Params::meta_.print(excluded_params); }
 		struct Type : public Enum<Type>
 		{
@@ -94,7 +94,7 @@ class Image
 			PARAM_DECL(int, height_, 100, "height", "Image height (overriden by the loaded image type if '" + filename_meta_.name() + "' is used)");
 		} params_;
 		[[nodiscard]] virtual ParamMap getAsParamMap(bool only_non_default) const;
-		static Image *factory(const Params &params);
+		static std::unique_ptr<Image> factory(const Params &params);
 		explicit Image(Params params) : params_{std::move(params)} { }
 		virtual ~Image() = default;
 		virtual Type getType() const = 0;

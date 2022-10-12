@@ -156,14 +156,14 @@ void ImageFilm::initLayersImages()
 {
 	for(const auto &[layer_def, layer] : layers_.getLayersWithImages())
 	{
-		Image::Type image_type = layer.getImageType();
+		auto image_type{layer.getImageType()};
 		image_type = Image::imageTypeWithAlpha(image_type); //Alpha channel is needed in all images of the weight normalization process will cause problems
 		Image::Params image_params;
 		image_params.width_ = params_.width_;
 		image_params.height_ = params_.height_;
 		image_params.type_ = image_type;
 		image_params.image_optimization_ = Image::Optimization::None;
-		std::unique_ptr<Image> image(Image::factory(image_params));
+		auto image{Image::factory(image_params)};
 		film_image_layers_.set(layer_def, {std::move(image), layer});
 	}
 }
@@ -172,14 +172,14 @@ void ImageFilm::initLayersExportedImages()
 {
 	for(const auto &[layer_def, layer]: layers_.getLayersWithExportedImages())
 	{
-		Image::Type image_type = layer.getImageType();
+		auto image_type{layer.getImageType()};
 		image_type = Image::imageTypeWithAlpha(image_type); //Alpha channel is needed in all images of the weight normalization process will cause problems
 		Image::Params image_params;
 		image_params.width_ = params_.width_;
 		image_params.height_ = params_.height_;
 		image_params.type_ = image_type;
 		image_params.image_optimization_ = Image::Optimization::None;
-		std::unique_ptr<Image> image(Image::factory(image_params));
+		auto image{Image::factory(image_params)};
 		exported_image_layers_.set(layer_def, {std::move(image), layer});
 	}
 }
@@ -280,7 +280,7 @@ int ImageFilm::nextPass(const RenderView *render_view, RenderControl &render_con
 	if(n_pass_ == 0) flags_.fill(true);
 	else flags_.fill(false);
 	const int variance_half_edge = aa_noise_params_.variance_edge_size_ / 2;
-	std::shared_ptr<Image> combined_image = film_image_layers_(LayerDef::Combined).image_;
+	auto combined_image{film_image_layers_(LayerDef::Combined).image_};
 
 	float aa_thresh_scaled = aa_noise_params_.threshold_;
 
@@ -490,7 +490,7 @@ void ImageFilm::finishArea(const RenderView *render_view, RenderControl &render_
 	for(const auto &[layer_def, image_layer] : film_image_layers_)
 	{
 		if(!image_layer.layer_.isExported()) continue;
-		const std::shared_ptr<Image> &image = image_layer.image_;
+		const auto &image{image_layer.image_};
 		for(int j = a.y_ - params_.start_y_; j < end_y; ++j)
 		{
 			for(int i = a.x_ - params_.start_x_; i < end_x; ++i)
@@ -571,7 +571,7 @@ void ImageFilm::flush(const RenderView *render_view, RenderControl &render_contr
 	for(const auto &[layer_def, image_layer] : film_image_layers_)
 	{
 		if(!image_layer.layer_.isExported()) continue;
-		const std::shared_ptr<Image> &image = image_layer.image_;
+		const auto &image{image_layer.image_};
 		for(int j = 0; j < params_.height_; j++)
 		{
 			for(int i = 0; i < params_.width_; i++)

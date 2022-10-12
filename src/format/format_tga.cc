@@ -274,7 +274,7 @@ bool TgaFormat::precheckFile(TgaHeader &header, const std::string &name, bool &i
 	return true;
 }
 
-Image * TgaFormat::loadFromFile(const std::string &name, const Image::Optimization &optimization, const ColorSpace &color_space, float gamma)
+std::unique_ptr<Image> TgaFormat::loadFromFile(const std::string &name, const Image::Optimization &optimization, const ColorSpace &color_space, float gamma)
 {
 	std::FILE *fp = File::open(name, "rb");
 	logger_.logInfo(getFormatName(), ": Loading image \"", name, "\"...");
@@ -356,21 +356,21 @@ Image * TgaFormat::loadFromFile(const std::string &name, const Image::Optimizati
 		switch(header.bit_depth_)
 		{
 			case 8: // Indexed color using ColorMap LUT or grayscale map
-				if(is_gray)readRleImage<uint8_t>(fp, &TgaFormat::processGray8, image, color_space, gamma);
-				else readRleImage<uint8_t>(fp, &TgaFormat::processColor8, image, color_space, gamma);
+				if(is_gray)readRleImage<uint8_t>(fp, &TgaFormat::processGray8, image.get(), color_space, gamma);
+				else readRleImage<uint8_t>(fp, &TgaFormat::processColor8, image.get(), color_space, gamma);
 				break;
 			case 15:
-				readRleImage<uint16_t>(fp, &TgaFormat::processColor15, image, color_space, gamma);
+				readRleImage<uint16_t>(fp, &TgaFormat::processColor15, image.get(), color_space, gamma);
 				break;
 			case 16:
-				if(is_gray) readRleImage<uint16_t>(fp, &TgaFormat::processGray16, image, color_space, gamma);
-				else readRleImage<uint16_t>(fp, &TgaFormat::processColor16, image, color_space, gamma);
+				if(is_gray) readRleImage<uint16_t>(fp, &TgaFormat::processGray16, image.get(), color_space, gamma);
+				else readRleImage<uint16_t>(fp, &TgaFormat::processColor16, image.get(), color_space, gamma);
 				break;
 			case 24:
-				readRleImage<TgaPixelRgb>(fp, &TgaFormat::processColor24, image, color_space, gamma);
+				readRleImage<TgaPixelRgb>(fp, &TgaFormat::processColor24, image.get(), color_space, gamma);
 				break;
 			case 32:
-				readRleImage<TgaPixelRgba>(fp, &TgaFormat::processColor32, image, color_space, gamma);
+				readRleImage<TgaPixelRgba>(fp, &TgaFormat::processColor32, image.get(), color_space, gamma);
 				break;
 		}
 	}
@@ -379,21 +379,21 @@ Image * TgaFormat::loadFromFile(const std::string &name, const Image::Optimizati
 		switch(header.bit_depth_)
 		{
 			case 8: // Indexed color using ColorMap LUT or grayscale map
-				if(is_gray) readDirectImage<uint8_t>(fp, &TgaFormat::processGray8, image, color_space, gamma);
-				else readDirectImage<uint8_t>(fp, &TgaFormat::processColor8, image, color_space, gamma);
+				if(is_gray) readDirectImage<uint8_t>(fp, &TgaFormat::processGray8, image.get(), color_space, gamma);
+				else readDirectImage<uint8_t>(fp, &TgaFormat::processColor8, image.get(), color_space, gamma);
 				break;
 			case 15:
-				readDirectImage<uint16_t>(fp, &TgaFormat::processColor15, image, color_space, gamma);
+				readDirectImage<uint16_t>(fp, &TgaFormat::processColor15, image.get(), color_space, gamma);
 				break;
 			case 16:
-				if(is_gray) readDirectImage<uint16_t>(fp, &TgaFormat::processGray16, image, color_space, gamma);
-				else readDirectImage<uint16_t>(fp, &TgaFormat::processColor16, image, color_space, gamma);
+				if(is_gray) readDirectImage<uint16_t>(fp, &TgaFormat::processGray16, image.get(), color_space, gamma);
+				else readDirectImage<uint16_t>(fp, &TgaFormat::processColor16, image.get(), color_space, gamma);
 				break;
 			case 24:
-				readDirectImage<TgaPixelRgb>(fp, &TgaFormat::processColor24, image, color_space, gamma);
+				readDirectImage<TgaPixelRgb>(fp, &TgaFormat::processColor24, image.get(), color_space, gamma);
 				break;
 			case 32:
-				readDirectImage<TgaPixelRgba>(fp, &TgaFormat::processColor32, image, color_space, gamma);
+				readDirectImage<TgaPixelRgba>(fp, &TgaFormat::processColor32, image.get(), color_space, gamma);
 				break;
 		}
 	}

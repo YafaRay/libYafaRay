@@ -36,12 +36,12 @@ template <typename T> class Buffer2D;
 
 namespace image_manipulation
 {
-	Image *getDenoisedLdrImage(Logger &logger, const Image *image, const DenoiseParams &denoise_params);
-	Image *getComposedImage(Logger &logger, const Image *image_1, const Image *image_2, const Image::Position &position_image_2, int overlay_x = 0, int overlay_y = 0);
+	std::unique_ptr<Image> getDenoisedLdrImage(Logger &logger, const Image *image, const DenoiseParams &denoise_params);
+	std::unique_ptr<Image> getComposedImage(Logger &logger, const Image *image_1, const Image *image_2, const Image::Position &position_image_2, int overlay_x = 0, int overlay_y = 0);
 	bool drawTextInImage(Logger &logger, Image *image, const std::string &text_utf_8, float font_size_factor, const std::string &font_path);
 	void generateDebugFacesEdges(ImageLayers &film_image_layers, int xstart, int width, int ystart, int height, bool drawborder, const EdgeToonParams &edge_params, const Buffer2D<Gray> &weights);
 	void generateToonAndDebugObjectEdges(ImageLayers &film_image_layers, int xstart, int width, int ystart, int height, bool drawborder, const EdgeToonParams &edge_params, const Buffer2D<Gray> &weights);
-	int generateMipMaps(Logger &logger, std::vector<std::shared_ptr<Image>> &images);
+	std::vector<std::unique_ptr<const Image>> generateMipMaps(Logger &logger, const Image *image);
 	std::string printDenoiseParams(const DenoiseParams &denoise_params);
 	void logWarningsMissingLibraries(Logger &logger);
 }

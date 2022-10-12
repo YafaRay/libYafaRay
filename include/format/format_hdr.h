@@ -39,7 +39,7 @@ class HdrFormat final : public Format
 	private:
 		[[nodiscard]] Type type() const override { return Type::Hdr; }
 		std::string getFormatName() const override { return "HdrFormat"; }
-		Image * loadFromFile(const std::string &name, const Image::Optimization &optimization, const ColorSpace &color_space, float gamma) override;
+		std::unique_ptr<Image> loadFromFile(const std::string &name, const Image::Optimization &optimization, const ColorSpace &color_space, float gamma) override;
 		bool saveToFile(const std::string &name, const ImageLayer &image_layer, ColorSpace color_space, float gamma, bool alpha_premultiply) override;
 		bool isHdr() const override { return true; }
 		bool writeHeader(std::ofstream &file, const Image *image) const;

@@ -28,7 +28,7 @@
 
 namespace yafaray {
 
-Image *image_manipulation_opencv::getDenoisedLdrImage(Logger &logger, const Image *image, const DenoiseParams &denoise_params)
+std::unique_ptr<Image> image_manipulation_opencv::getDenoisedLdrImage(Logger &logger, const Image *image, const DenoiseParams &denoise_params)
 {
 	if(!denoise_params.enabled_) return nullptr;
 
@@ -234,13 +234,12 @@ void image_manipulation_opencv::generateToonAndDebugObjectEdges(ImageLayers &fil
 	}
 }
 
-int image_manipulation_opencv::generateMipMaps(Logger &logger, std::vector<std::shared_ptr<Image>> &images)
+std::vector<std::unique_ptr<const Image>> image_manipulation_opencv::generateMipMaps(Logger &logger, const Image *image)
 {
-	if(images.empty()) return 0;
-	int img_index = 0;
+	if(!image) return {};
 	//bool blur_seamless = true;
-	int w = images.at(0)->getWidth();
-	int h = images.at(0)->getHeight();
+	int w = image->getWidth();
+	int h = image->getHeight();
 
 	if(logger.isVerbose()) logger.logVerbose("Format: generating mipmaps for texture of resolution [", w, " x ", h, "]");
 
@@ -251,7 +250,7 @@ int image_manipulation_opencv::generateMipMaps(Logger &logger, std::vector<std::
 	{
 		for(int i = 0; i < w; ++i)
 		{
-			Rgba color = images[img_index]->getColor({{i, j}});
+			Rgba color = image->getColor({{i, j}});
 			a_vec(j, i)[0] = color.getR();
 			a_vec(j, i)[1] = color.getG();
 			a_vec(j, i)[2] = color.getB();
@@ -260,17 +259,17 @@ int image_manipulation_opencv::generateMipMaps(Logger &logger, std::vector<std::
 	}
 
 	//Mipmap generation using the temporary full float buffer to reduce information loss
+	std::vector<std::unique_ptr<const Image>> mipmaps;
 	while(w > 1 || h > 1)
 	{
 		const int w_2 = (w + 1) / 2;
 		const int h_2 = (h + 1) / 2;
-		++img_index;
 		Image::Params image_params;
 		image_params.width_ = w_2;
 		image_params.height_ = h_2;
-		image_params.type_ = images[img_index - 1]->getType();
-		image_params.image_optimization_ = images[img_index - 1]->getOptimization();
-		images.emplace_back(Image::factory(image_params));
+		image_params.type_ = image->getType();
+		image_params.image_optimization_ = image->getOptimization();
+		auto mipmap{Image::factory(image_params)};
 
 		const cv::Mat b(h_2, w_2, CV_32FC4);
 		const cv::Mat_<cv::Vec4f> b_vec = b;
@@ -285,16 +284,17 @@ int image_manipulation_opencv::generateMipMaps(Logger &logger, std::vector<std::
 				tmp_col.g_ = b_vec(j, i)[1];
 				tmp_col.b_ = b_vec(j, i)[2];
 				tmp_col.a_ = b_vec(j, i)[3];
-				images[img_index]->setColor({{i, j}}, tmp_col);
+				mipmap->setColor({{i, j}}, tmp_col);
 			}
 		}
 		w = w_2;
 		h = h_2;
-		if(logger.isDebug())logger.logDebug("Format: generated mipmap ", img_index, " [", w_2, " x ", h_2, "]");
+		if(logger.isDebug())logger.logDebug("Format: generated mipmap ", mipmaps.size(), " [", w_2, " x ", h_2, "]");
+		mipmaps.emplace_back(std::move(mipmap));
 	}
 
-	if(logger.isVerbose()) logger.logVerbose("Format: mipmap generation done: ", img_index, " mipmaps generated.");
-	return img_index;
+	if(logger.isVerbose()) logger.logVerbose("Format: mipmap generation done: ", mipmaps.size(), " mipmaps generated.");
+	return mipmaps;
 }
 
 

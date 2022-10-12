@@ -32,7 +32,7 @@
 
 namespace yafaray {
 
-Image * HdrFormat::loadFromFile(const std::string &name, const Image::Optimization &optimization, const ColorSpace &color_space, float gamma)
+std::unique_ptr<Image> HdrFormat::loadFromFile(const std::string &name, const Image::Optimization &optimization, const ColorSpace &color_space, float gamma)
 {
 	std::FILE *fp = File::open(name, "rb");
 	logger_.logInfo(getFormatName(), ": Loading image \"", name, "\"...");
@@ -62,7 +62,7 @@ Image * HdrFormat::loadFromFile(const std::string &name, const Image::Optimizati
 	{
 		for(int y = header_.min_[0]; y != header_.max_[0]; y += header_.step_[0])
 		{
-			if(!readOrle(fp, y, scan_width, image, color_space, gamma))
+			if(!readOrle(fp, y, scan_width, image.get(), color_space, gamma))
 			{
 				logger_.logError(getFormatName(), ": An error has occurred while reading uncompressed scanline...");
 				File::close(fp);
@@ -96,7 +96,7 @@ Image * HdrFormat::loadFromFile(const std::string &name, const Image::Optimizati
 				File::close(fp);
 				return nullptr;
 			}
-			if(!readArle(fp, y, pix.getArleCount(), image, color_space, gamma))
+			if(!readArle(fp, y, pix.getArleCount(), image.get(), color_space, gamma))
 			{
 				logger_.logError(getFormatName(), ": An error has occurred while reading ARLE scanline...");
 				File::close(fp);
@@ -107,7 +107,7 @@ Image * HdrFormat::loadFromFile(const std::string &name, const Image::Optimizati
 		{
 			// rewind the read pixel to start reading from the begining of the scanline
 			std::fseek(fp, static_cast<long int>(-sizeof(RgbePixel)), SEEK_CUR);
-			if(!readOrle(fp, y, scan_width, image, color_space, gamma))
+			if(!readOrle(fp, y, scan_width, image.get(), color_space, gamma))
 			{
 				logger_.logError(getFormatName(), ": An error has occurred while reading RLE scanline...");
 				File::close(fp);

@@ -24,11 +24,11 @@
 namespace yafaray::image_manipulation_opencv
 {
 
-	Image *getDenoisedLdrImage(Logger &logger, const Image *image, const DenoiseParams &denoise_params);
+	std::unique_ptr<Image> getDenoisedLdrImage(Logger &logger, const Image *image, const DenoiseParams &denoise_params);
 	void generateDebugFacesEdges(int xstart, int width, int ystart, int height, bool drawborder, const EdgeToonParams &edge_params);
 	void generateDebugFacesEdges(ImageLayers &film_image_layers, int xstart, int width, int ystart, int height, bool drawborder, const EdgeToonParams &edge_params, const Buffer2D<Gray> &weights);
 	void generateToonAndDebugObjectEdges(ImageLayers &film_image_layers, int xstart, int width, int ystart, int height, bool drawborder, const EdgeToonParams &edge_params, const Buffer2D<Gray> &weights);
-	int generateMipMaps(Logger &logger, std::vector<std::shared_ptr<Image>> &images);
+	std::vector<std::unique_ptr<const Image>> generateMipMaps(Logger &logger, const Image *image);
 
 } //namespace yafaray::image_manipulation_opencv
 

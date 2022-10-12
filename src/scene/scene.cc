@@ -281,14 +281,6 @@ T *Scene::findMapItem(const std::string &name, const std::map<std::string, std::
 	else return nullptr;
 }
 
-template <typename T>
-std::shared_ptr<T> Scene::findMapItem(const std::string &name, const std::map<std::string, std::shared_ptr<T>> &map)
-{
-	auto i = map.find(name);
-	if(i != map.end()) return i->second;
-	else return nullptr;
-}
-
 const std::unique_ptr<const Material> * Scene::getMaterial(const std::string &name) const
 {
 	return Scene::findMapItem<std::unique_ptr<const Material>>(name, materials_);
@@ -314,7 +306,7 @@ ImageOutput *Scene::getOutput(const std::string &name) const
 	return Scene::findMapItem<ImageOutput>(name, outputs_);
 }
 
-std::shared_ptr<Image> Scene::getImage(const std::string &name) const
+Image *Scene::getImage(const std::string &name) const
 {
 	return Scene::findMapItem<Image>(name, images_);
 }
@@ -421,22 +413,20 @@ std::pair<size_t, ParamError> Scene::createMapItemNew(Logger &logger, std::strin
 }
 
 template <typename T>
-std::pair<std::shared_ptr<T>, ParamError> Scene::createMapItem(Logger &logger, std::string &&name, std::string &&class_name, ParamMap &&params, std::map<std::string, std::shared_ptr<T>> &map, const Scene *scene)
+std::pair<T *, ParamError> Scene::createMapItemPointer(Logger &logger, std::string &&name, ParamMap &&params, std::map<std::string, std::unique_ptr<T>> &map, const Scene *scene)
 {
 	if(map.find(name) != map.end())
 	{
-		logWarnExist(logger, class_name, name); return {nullptr, {ParamError::Flags::ErrorAlreadyExists}};
+		logWarnExist(logger, T::getClassName(), name); return {0, {ParamError::Flags::ErrorAlreadyExists}};
 	}
-	std::shared_ptr<T> item(T::factory(logger, *scene, name, params));
+	auto [item, param_error]{T::factory(logger, *scene, name, params)};
 	if(item)
 	{
+		if(logger.isVerbose()) logInfoVerboseSuccess(logger, T::getClassName(), name, item->getType().print());
 		map[name] = std::move(item);
-		std::string type;
-		params.getParam("type", type);
-		if(logger.isVerbose()) logInfoVerboseSuccess(logger, class_name, name, type);
-		return {map[name], {}};
+		return {map.at(name).get(), param_error}; //FIXME: this is just a placeholder for now for future ItemID, although this will not work while we still use std::map for items
 	}
-	return {nullptr, {ParamError::Flags::ErrorWhileCreating}};
+	return {0, {ParamError::Flags::ErrorWhileCreating}};
 }
 
 std::pair<ImageOutput *, ParamError> Scene::createOutput(std::string &&name, ParamMap &&params)
@@ -512,9 +502,9 @@ std::pair<RenderView *, ParamError> Scene::createRenderView(std::string &&name, 
 	return createMapItem<RenderView>(logger_, std::move(name), std::move(params), render_views_, this);
 }
 
-std::pair<std::shared_ptr<Image>, ParamError> Scene::createImage(std::string &&name, ParamMap &&params)
+std::pair<Image *, ParamError> Scene::createImage(std::string &&name, ParamMap &&params)
 {
-	return createMapItem<Image>(logger_, std::move(name), "Image", std::move(params), images_, this);
+	return createMapItemPointer<Image>(logger_, std::move(name), std::move(params), images_, this);
 }
 
 /*! setup the scene for rendering (set camera, background, integrator, create image film,

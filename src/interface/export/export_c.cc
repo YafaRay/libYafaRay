@@ -451,7 +451,7 @@ RenderView *ExportC::createRenderView(std::string &&name) noexcept
 	return nullptr;
 }
 
-Image *ExportC::createImage(std::string &&name) noexcept
+std::pair<Image *, ParamError> ExportC::createImage(std::string &&name) noexcept
 {
 	writeParamMap(*params_);
 	params_->clear();
@@ -459,7 +459,7 @@ Image *ExportC::createImage(std::string &&name) noexcept
 	file_ << "\t" << "yafaray_paramsClearAll(yi);\n\n";
 	section_num_lines_ += 2;
 	if(section_num_lines_ >= section_max_lines_) file_ << sectionSplit();
-	return nullptr;
+	return {};
 }
 
 std::pair<size_t, ParamError> ExportC::createObject(std::string &&name) noexcept

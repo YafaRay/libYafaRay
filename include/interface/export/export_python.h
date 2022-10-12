@@ -64,7 +64,7 @@ class ExportPython: public Interface
 		ParamError defineVolumeIntegrator() noexcept override;
 		VolumeRegion *createVolumeRegion(std::string &&name) noexcept override;
 		RenderView *createRenderView(std::string &&name) noexcept override;
-		Image *createImage(std::string &&name) noexcept override;
+		std::pair<Image *, ParamError> createImage(std::string &&name) noexcept override;
 		ImageOutput *createOutput(std::string &&name) noexcept override;
 		void clearAll() noexcept override; //!< clear the whole environment + scene, i.e. free (hopefully) all memory.
 		void clearOutputs() noexcept override { }

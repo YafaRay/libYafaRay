@@ -119,7 +119,7 @@ std::string ImageOutput::printBadge(const RenderControl &render_control, const T
 	return badge_.print(image_manipulation::printDenoiseParams(denoise_params_), render_control, timer);
 }
 
-Image * ImageOutput::generateBadgeImage(const RenderControl &render_control, const Timer &timer) const
+std::unique_ptr<Image> ImageOutput::generateBadgeImage(const RenderControl &render_control, const Timer &timer) const
 {
 	return badge_.generateImage(image_manipulation::printDenoiseParams(denoise_params_), render_control, timer);
 }
@@ -203,7 +203,7 @@ void ImageOutput::saveImageFile(const std::string &filename, LayerDef::Type laye
 	if(render_control.inProgress()) logger_.logInfo(name_, ": Autosaving partial render (", math::roundFloatPrecision(render_control.currentPassPercent(), 0.01), "% of pass ", render_control.currentPass(), " of ", render_control.totalPasses(), ") file as \"", filename, "\"...  ", image_manipulation::printDenoiseParams(denoise_params_));
 	else logger_.logInfo(name_, ": Saving file as \"", filename, "\"...  ", image_manipulation::printDenoiseParams(denoise_params_));
 
-	std::shared_ptr<Image> image = (*image_layers_)(layer_type).image_;
+	auto image{(*image_layers_)(layer_type).image_};
 	if(!image)
 	{
 		logger_.logWarning(name_, ": Image does not exist (it is null) and could not be saved.");
@@ -212,10 +212,10 @@ void ImageOutput::saveImageFile(const std::string &filename, LayerDef::Type laye
 
 	if(badge_.getPosition() != Badge::Position::None)
 	{
-		const std::unique_ptr<Image> badge_image(generateBadgeImage(render_control, timer));
-		Image::Position badge_image_position = Image::Position::Bottom;
+		const auto badge_image{generateBadgeImage(render_control, timer)};
+		auto badge_image_position{Image::Position::Bottom};
 		if(badge_.getPosition() == Badge::Position::Top) badge_image_position = Image::Position::Top;
-		image = std::shared_ptr<Image>(image_manipulation::getComposedImage(logger_, image.get(), badge_image.get(), badge_image_position));
+		image = image_manipulation::getComposedImage(logger_, image.get(), badge_image.get(), badge_image_position);
 		if(!image)
 		{
 			logger_.logWarning(name_, ": Image could not be composed with badge and could not be saved.");
@@ -226,7 +226,7 @@ void ImageOutput::saveImageFile(const std::string &filename, LayerDef::Type laye
 	ImageLayer image_layer { image, Layer(layer_type) };
 	if(denoiseEnabled())
 	{
-		std::unique_ptr<Image> image_denoised(image_manipulation::getDenoisedLdrImage(logger_, image.get(), denoise_params_));
+		auto image_denoised{image_manipulation::getDenoisedLdrImage(logger_, image.get(), denoise_params_)};
 		if(image_denoised) image_layer.image_ = std::move(image_denoised);
 		else if(logger_.isVerbose()) logger_.logVerbose(name_, ": Denoise was not possible, saving image without denoise postprocessing.");
 	}
@@ -245,13 +245,13 @@ void ImageOutput::saveImageFileMultiChannel(const std::string &filename, Format 
 {
 	if(badge_.getPosition() != Badge::Position::None)
 	{
-		std::unique_ptr<Image> badge_image(generateBadgeImage(render_control, timer));
-		Image::Position badge_image_position = Image::Position::Bottom;
+		auto badge_image{generateBadgeImage(render_control, timer)};
+		auto badge_image_position{Image::Position::Bottom};
 		if(badge_.getPosition() == Badge::Position::Top) badge_image_position = Image::Position::Top;
 		ImageLayers image_layers_badge;
 		for(const auto &[layer_def, image_layer] : *image_layers_)
 		{
-			std::unique_ptr<Image> image_layer_badge(image_manipulation::getComposedImage(logger_, image_layer.image_.get(), badge_image.get(), badge_image_position));
+			auto image_layer_badge{image_manipulation::getComposedImage(logger_, image_layer.image_.get(), badge_image.get(), badge_image_position)};
 			image_layers_badge.set(layer_def, {std::move(image_layer_badge), image_layer.layer_});
 		}
 		format->saveToFileMultiChannel(filename, image_layers_badge, color_space_, gamma_, params_.alpha_premultiply_);

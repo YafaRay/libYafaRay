@@ -75,7 +75,7 @@ class ImageTexture final : public Texture
 		} params_;
 		[[nodiscard]] ParamMap getAsParamMap(bool only_non_default) const override;
 		class EwaWeightLut;
-		ImageTexture(Logger &logger, ParamError &param_error, const ParamMap &param_map, std::shared_ptr<Image> image);
+		ImageTexture(Logger &logger, ParamError &param_error, const ParamMap &param_map, const Image *image);
 		bool discrete() const override { return true; }
 		bool isThreeD() const override { return false; }
 		bool isNormalmap() const override { return params_.normal_map_; }
@@ -92,11 +92,13 @@ class ImageTexture final : public Texture
 		std::pair<Point3f, bool> doMapping(const Point3f &tex_point) const;
 		Rgba interpolateImage(const Point3f &p, const MipMapParams *mipmap_params) const;
 		static void findTextureInterpolationCoordinates(int &coord_0, int &coord_1, int &coord_2, int &coord_3, float &coord_decimal_part, float coord_float, int resolution, bool repeat, bool mirror);
+		const Image *getImageFromMipMapLevel(int mipmap_level = 0) const;
 
 		//bool grayscale_ = false;	//!< Converts the information loaded from the texture RGB to grayscale to reduce memory usage for bump or mask textures, for example. Alpha is ignored in this case. //TODO: to implement at some point
 		const bool crop_x_{(params_.cropmin_x_ != 0.f) || (params_.cropmax_x_ != 1.f)};
 		const bool crop_y_{(params_.cropmin_y_ != 0.f) || (params_.cropmax_y_ != 1.f)};
-		std::vector<std::shared_ptr<Image>> images_;
+		const Image *image_ = nullptr;
+		std::vector<std::unique_ptr<const Image>> mipmaps_;
 		float original_image_file_gamma_ = 1.f;
 		ColorSpace original_image_file_color_space_ = ColorSpace::RawManualGamma;
 		static const EwaWeightLut ewa_weight_lut_;

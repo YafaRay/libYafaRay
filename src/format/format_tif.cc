@@ -94,7 +94,7 @@ bool TifFormat::saveToFile(const std::string &name, const ImageLayer &image_laye
 	return true;
 }
 
-Image * TifFormat::loadFromFile(const std::string &name, const Image::Optimization &optimization, const ColorSpace &color_space, float gamma)
+std::unique_ptr<Image> TifFormat::loadFromFile(const std::string &name, const Image::Optimization &optimization, const ColorSpace &color_space, float gamma)
 {
 #if defined(_WIN32)
 	std::wstring wname = string::utf8ToWutf16Le(name);

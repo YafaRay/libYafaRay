@@ -27,7 +27,7 @@
 
 namespace yafaray {
 
-Image *image_manipulation::getDenoisedLdrImage(Logger &logger, const Image *image, const DenoiseParams &denoise_params)
+std::unique_ptr<Image> image_manipulation::getDenoisedLdrImage(Logger &logger, const Image *image, const DenoiseParams &denoise_params)
 {
 #ifdef HAVE_OPENCV
 	return image_manipulation_opencv::getDenoisedLdrImage(logger, image, denoise_params);
@@ -45,7 +45,7 @@ bool image_manipulation::drawTextInImage(Logger &logger, Image *image, const std
 #endif //HAVE_FREETYPE
 }
 
-Image *image_manipulation::getComposedImage(Logger &logger, const Image *image_1, const Image *image_2, const Image::Position &position_image_2, int overlay_x, int overlay_y)
+std::unique_ptr<Image> image_manipulation::getComposedImage(Logger &logger, const Image *image_1, const Image *image_2, const Image::Position &position_image_2, int overlay_x, int overlay_y)
 {
 	if(!image_1 || !image_2) return nullptr;
 	const int width_1 = image_1->getWidth();
@@ -118,15 +118,15 @@ void image_manipulation::generateToonAndDebugObjectEdges(ImageLayers &film_image
 #endif //HAVE_OPENCV
 }
 
-int image_manipulation::generateMipMaps(Logger &logger, std::vector<std::shared_ptr<Image>> &images)
+std::vector<std::unique_ptr<const Image>> image_manipulation::generateMipMaps(Logger &logger, const Image *image)
 {
 #ifdef HAVE_OPENCV
-	const int mipmaps_generated = image_manipulation_opencv::generateMipMaps(logger, images);
-	if(logger.isVerbose()) logger.logVerbose("Format: mipmap generation done: ", mipmaps_generated, " mipmaps generated.");
-	return mipmaps_generated;
+	auto mipmaps{image_manipulation_opencv::generateMipMaps(logger, image)};
+	if(logger.isVerbose()) logger.logVerbose("Format: mipmap generation done: ", mipmaps.size(), " mipmaps generated.");
+	return mipmaps;
 #else
 	logger.logWarning("Format: cannot generate mipmaps, YafaRay was not built with OpenCV support which is needed for mipmap processing.");
-	return 0;
+	return {};
 #endif
 }
 

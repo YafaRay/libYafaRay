@@ -94,7 +94,7 @@ bool PngFormat::saveToFile(const std::string &name, const ImageLayer &image_laye
 	return true;
 }
 
-Image * PngFormat::loadFromFile(const std::string &name, const Image::Optimization &optimization, const ColorSpace &color_space, float gamma)
+std::unique_ptr<Image> PngFormat::loadFromFile(const std::string &name, const Image::Optimization &optimization, const ColorSpace &color_space, float gamma)
 {
 	std::FILE *fp = File::open(name, "rb");
 	logger_.logInfo(getFormatName(), ": Loading image \"", name, "\"...");
@@ -126,7 +126,7 @@ Image * PngFormat::loadFromFile(const std::string &name, const Image::Optimizati
 	return image;
 }
 
-Image * PngFormat::loadFromMemory(const uint8_t *data, size_t size, const Image::Optimization &optimization, const ColorSpace &color_space, float gamma)
+std::unique_ptr<Image> PngFormat::loadFromMemory(const uint8_t *data, size_t size, const Image::Optimization &optimization, const ColorSpace &color_space, float gamma)
 {
 	auto reader = std::make_unique<PngDataReader>(data, size);
 	uint8_t signature[8];
@@ -204,7 +204,7 @@ bool PngFormat::fillWriteStructs(std::FILE *fp, unsigned int color_type, const P
 	return true;
 }
 
-Image * PngFormat::readFromStructs(const PngStructs &png_structs, const Image::Optimization &optimization, const ColorSpace &color_space, float gamma, const std::string &filename)
+std::unique_ptr<Image> PngFormat::readFromStructs(const PngStructs &png_structs, const Image::Optimization &optimization, const ColorSpace &color_space, float gamma, const std::string &filename)
 {
 	png_read_info(png_structs.png_ptr_, png_structs.info_ptr_);
 	png_uint_32 w, h;

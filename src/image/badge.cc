@@ -92,7 +92,7 @@ std::string Badge::print(const std::string &denoise_params, const RenderControl 
 	return ss_badge.str();
 }
 
-Image * Badge::generateImage(const std::string &denoise_params, const RenderControl &render_control, const Timer &timer) const
+std::unique_ptr<Image> Badge::generateImage(const std::string &denoise_params, const RenderControl &render_control, const Timer &timer) const
 {
 	if(position_ == Badge::Position::None) return nullptr;
 	std::stringstream ss_badge;
@@ -115,7 +115,7 @@ Image * Badge::generateImage(const std::string &denoise_params, const RenderCont
 	badge_params.image_optimization_ = Image::Optimization::None;
 	auto badge_image= Image::factory(badge_params);
 
-	const bool badge_text_ok = image_manipulation::drawTextInImage(logger_, badge_image, ss_badge.str(), getFontSizeFactor(), getFontPath());
+	const bool badge_text_ok = image_manipulation::drawTextInImage(logger_, badge_image.get(), ss_badge.str(), getFontSizeFactor(), getFontPath());
 	if(!badge_text_ok) logger_.logError("Badge text could not be generated!");
 
 	std::unique_ptr<Image> logo;
@@ -128,7 +128,7 @@ Image * Badge::generateImage(const std::string &denoise_params, const RenderCont
 		ParamMap logo_image_params;
 		logo_image_params["type"] = icon_extension;
 		auto logo_format = std::unique_ptr<Format>(Format::factory(logger_, logo_image_params).first);
-		if(logo_format) logo = std::unique_ptr<Image>(logo_format->loadFromFile(getIconPath(), Image::Optimization::None, ColorSpace::Srgb, 1.f));
+		if(logo_format) logo = logo_format->loadFromFile(getIconPath(), Image::Optimization::None, ColorSpace::Srgb, 1.f);
 		if(!logo_format || !logo) logger_.logWarning("Badge: custom params badge icon '", getIconPath(), "' could not be loaded. Using default YafaRay icon.");
 	}
 
@@ -137,7 +137,7 @@ Image * Badge::generateImage(const std::string &denoise_params, const RenderCont
 		ParamMap logo_image_params;
 		logo_image_params["type"] = std::string("png");
 		auto logo_format = std::unique_ptr<Format>(Format::factory(logger_, logo_image_params).first);
-		if(logo_format) logo = std::unique_ptr<Image>(logo_format->loadFromMemory(logo::yafaray_tiny.data(), logo::yafaray_tiny.size(), Image::Optimization::None, ColorSpace::Srgb, 1.f));
+		if(logo_format) logo = logo_format->loadFromMemory(logo::yafaray_tiny.data(), logo::yafaray_tiny.size(), Image::Optimization::None, ColorSpace::Srgb, 1.f);
 	}
 
 	if(logo)

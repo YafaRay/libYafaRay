@@ -58,7 +58,7 @@ class Badge
 		bool drawRenderSettings() const { return draw_render_settings_; }
 		void setImageSize(const Size2i &size) { image_size_ = size; }
 		std::string print(const std::string &denoise_params, const RenderControl &render_control, const Timer &timer) const;
-		Image *generateImage(const std::string &denoise_params, const RenderControl &render_control, const Timer &timer) const;
+		std::unique_ptr<Image> generateImage(const std::string &denoise_params, const RenderControl &render_control, const Timer &timer) const;
 
 	protected:
 		Size2i image_size_{0};

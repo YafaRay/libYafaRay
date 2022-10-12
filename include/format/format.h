@@ -46,8 +46,8 @@ class Format
 		static std::string printMeta(const std::vector<std::string> &excluded_params) { return Params::meta_.print(excluded_params); }
 		explicit Format(Logger &logger, ParamError &param_error, const ParamMap &param_map) : params_{param_error, param_map}, logger_{logger} { }
 		virtual ~Format() = default;
-		virtual Image *loadFromFile(const std::string &name, const Image::Optimization &optimization, const ColorSpace &color_space, float gamma) = 0;
-		virtual Image *loadFromMemory(const uint8_t *data, size_t size, const Image::Optimization &optimization, const ColorSpace &color_space, float gamma);
+		virtual std::unique_ptr<Image> loadFromFile(const std::string &name, const Image::Optimization &optimization, const ColorSpace &color_space, float gamma) = 0;
+		virtual std::unique_ptr<Image> loadFromMemory(const uint8_t *data, size_t size, const Image::Optimization &optimization, const ColorSpace &color_space, float gamma);
 		virtual bool saveToFile(const std::string &name, const ImageLayer &image_layer, ColorSpace color_space, float gamma, bool alpha_premultiply) = 0;
 		virtual bool saveAlphaChannelOnlyToFile(const std::string &name, const ImageLayer &image_layer) { return false; }
 		virtual bool saveToFileMultiChannel(const std::string &name, const ImageLayers &image_layers, ColorSpace color_space, float gamma, bool alpha_premultiply) { return false; };

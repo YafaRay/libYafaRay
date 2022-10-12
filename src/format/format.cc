@@ -102,7 +102,7 @@ std::pair<Format *, ParamError> Format::factory(Logger &logger, const ParamMap &
 	return {result, param_error};
 }
 
-Image * Format::loadFromMemory(const uint8_t *data, size_t size, const Image::Optimization &optimization, const ColorSpace &color_space, float gamma)
+std::unique_ptr<Image> Format::loadFromMemory(const uint8_t *data, size_t size, const Image::Optimization &optimization, const ColorSpace &color_space, float gamma)
 {
 	return nullptr;
 }

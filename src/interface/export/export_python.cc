@@ -362,13 +362,13 @@ RenderView *ExportPython::createRenderView(std::string &&name) noexcept
 	return nullptr;
 }
 
-Image *ExportPython::createImage(std::string &&name) noexcept
+std::pair<Image *, ParamError> ExportPython::createImage(std::string &&name) noexcept
 {
 	writeParamMap(*params_);
 	params_->clear();
 	file_ << "yi.createImage(\"" << name << "\")\n";
 	file_ << "yi.paramsClearAll()\n\n";
-	return nullptr;
+	return {};
 }
 
 std::pair<size_t, ParamError> ExportPython::createObject(std::string &&name) noexcept
