@@ -17,8 +17,8 @@
  *      Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-#ifndef YAFARAY_PRIMITIVE_SPHERE_H
-#define YAFARAY_PRIMITIVE_SPHERE_H
+#ifndef LIBYAFARAY_PRIMITIVE_SPHERE_H
+#define LIBYAFARAY_PRIMITIVE_SPHERE_H
 
 #include "primitive.h"
 #include "geometry/vector.h"
@@ -36,8 +36,10 @@ class SpherePrimitive final : public Primitive
 {
 	public:
 		inline static std::string getClassName() { return "CurveObject"; }
-		static std::pair<SpherePrimitive *, ParamError> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map, const Object &object);
+		static std::pair<std::unique_ptr<Primitive>, ParamError> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map, const Object &object);
 		static std::string printMeta(const std::vector<std::string> &excluded_params) { return Params::meta_.print(excluded_params); }
+		[[nodiscard]] ParamMap getAsParamMap(bool only_non_default) const;
+		SpherePrimitive(Logger &logger, ParamError &param_error, const ParamMap &param_map, const std::unique_ptr<const Material> *material, const Object &base_object);
 
 	private:
 		struct Params
@@ -47,8 +49,6 @@ class SpherePrimitive final : public Primitive
 			PARAM_DECL(float , radius_, 1.f, "radius", "");
 			PARAM_DECL(std::string , material_name_, "", "material", "");
 		} params_;
-		[[nodiscard]] ParamMap getAsParamMap(bool only_non_default) const;
-		SpherePrimitive(Logger &logger, ParamError &param_error, Params params, const std::unique_ptr<const Material> *material, const Object &base_object);
 		Bound<float> getBound() const override;
 		Bound<float> getBound(const Matrix4f &obj_to_world) const override;
 		std::pair<float, Uv<float>> intersect(const Point3f &from, const Vec3f &dir, float time) const override;
@@ -78,4 +78,4 @@ class SpherePrimitive final : public Primitive
 
 } //namespace yafaray
 
-#endif //YAFARAY_PRIMITIVE_SPHERE_H
+#endif //LIBYAFARAY_PRIMITIVE_SPHERE_H

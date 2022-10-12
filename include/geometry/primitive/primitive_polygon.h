@@ -17,8 +17,8 @@
  *      Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-#ifndef YAFARAY_PRIMITIVE_POLYGON_H
-#define YAFARAY_PRIMITIVE_POLYGON_H
+#ifndef LIBYAFARAY_PRIMITIVE_POLYGON_H
+#define LIBYAFARAY_PRIMITIVE_POLYGON_H
 
 #include "geometry/primitive/primitive_face.h"
 #include "geometry/shape/shape_polygon.h"
@@ -257,4 +257,4 @@ inline ShapePolygon<T, N> PrimitivePolygon<T, N, MotionBlur>::getShapeAtTime(T t
 
 } //namespace yafaray
 
-#endif //YAFARAY_PRIMITIVE_POLYGON_H
+#endif //LIBYAFARAY_PRIMITIVE_POLYGON_H

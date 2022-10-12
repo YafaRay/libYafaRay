@@ -75,9 +75,9 @@ std::pair<std::unique_ptr<Object>, ParamError> ObjectBase::factory(Logger &logge
 			//FIXME DAVID: probably will need to work on a better parameter error handling considering that both an object and a primitive are involved and the check needs to be done for both
 			ParamError param_error;
 			auto primitive_object{std::make_unique<PrimitiveObject>(param_error, param_map)};
-			auto primitive{SpherePrimitive::factory(logger, scene, name, param_map, *primitive_object)};
-			param_error.merge(primitive.second);
-			primitive_object->setPrimitive(primitive.first);
+			auto [primitive, primitive_param_error]{SpherePrimitive::factory(logger, scene, name, param_map, *primitive_object)};
+			param_error.merge(primitive_param_error);
+			primitive_object->setPrimitive(std::move(primitive));
 			result = {std::move(primitive_object), param_error};
 			break;
 		}

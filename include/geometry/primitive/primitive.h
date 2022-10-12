@@ -17,8 +17,8 @@
  *      Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-#ifndef YAFARAY_PRIMITIVE_H
-#define YAFARAY_PRIMITIVE_H
+#ifndef LIBYAFARAY_PRIMITIVE_H
+#define LIBYAFARAY_PRIMITIVE_H
 
 #include "common/visibility.h"
 #include "geometry/poly_double.h"
@@ -79,4 +79,4 @@ class Primitive
 
 } //namespace yafaray
 
-#endif // YAFARAY_PRIMITIVE_H
+#endif // LIBYAFARAY_PRIMITIVE_H

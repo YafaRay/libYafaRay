@@ -17,8 +17,8 @@
  *      Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-#ifndef YAFARAY_PRIMITIVE_INSTANCE_H
-#define YAFARAY_PRIMITIVE_INSTANCE_H
+#ifndef LIBYAFARAY_PRIMITIVE_INSTANCE_H
+#define LIBYAFARAY_PRIMITIVE_INSTANCE_H
 
 #include "color/color.h"
 #include "geometry/object/object_instance.h"
@@ -143,4 +143,4 @@ inline Bound<float> PrimitiveInstance::getBound(const Matrix4f &obj_to_world) co
 
 } //namespace yafaray
 
-#endif //YAFARAY_PRIMITIVE_INSTANCE_H
+#endif //LIBYAFARAY_PRIMITIVE_INSTANCE_H

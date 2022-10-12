@@ -17,8 +17,8 @@
  *      Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-#ifndef YAFARAY_PRIMITIVE_FACE_H
-#define YAFARAY_PRIMITIVE_FACE_H
+#ifndef LIBYAFARAY_PRIMITIVE_FACE_H
+#define LIBYAFARAY_PRIMITIVE_FACE_H
 
 #include "primitive.h"
 #include "geometry/vector.h"
@@ -173,4 +173,4 @@ std::ostream &operator<<(std::ostream &out, const FacePrimitive &face);
 
 } //namespace yafaray
 
-#endif //YAFARAY_PRIMITIVE_FACE_H
+#endif //LIBYAFARAY_PRIMITIVE_FACE_H

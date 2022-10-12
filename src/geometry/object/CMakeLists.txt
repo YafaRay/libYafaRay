@@ -22,4 +22,5 @@ target_sources(libyafaray4
 		object_curve.cc
 		object_mesh.cc
 		object_instance.cc
+		object_primitive.cc
 )

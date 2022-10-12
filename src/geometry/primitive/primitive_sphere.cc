@@ -48,7 +48,7 @@ ParamMap SpherePrimitive::getAsParamMap(bool only_non_default) const
 	return result;
 }
 
-std::pair<SpherePrimitive *, ParamError> SpherePrimitive::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map, const Object &object)
+std::pair<std::unique_ptr<Primitive>, ParamError> SpherePrimitive::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map, const Object &object)
 {
 	if(logger.isDebug()) logger.logDebug("**" + getClassName() + "::factory 'raw' ParamMap\n" + param_map.logContents());
 	auto param_error{Params::meta_.check(param_map, {"type"}, {})};
@@ -57,12 +57,12 @@ std::pair<SpherePrimitive *, ParamError> SpherePrimitive::factory(Logger &logger
 	if(params.material_name_.empty()) return {nullptr, {ParamError::Flags::ErrorWhileCreating}};
 	material = scene.getMaterial(params.material_name_);
 	if(!material) return {nullptr, {ParamError::Flags::ErrorWhileCreating}};
-	auto result {new SpherePrimitive(logger, param_error, params, material, object)};
+	auto primitive {std::make_unique<SpherePrimitive>(logger, param_error, param_map, material, object)};
 	if(param_error.notOk()) logger.logWarning(param_error.print<SpherePrimitive>(name, {"type"}));
-	return {result, param_error};
+	return {std::move(primitive), param_error};
 }
 
-SpherePrimitive::SpherePrimitive(Logger &logger, ParamError &param_error, Params params, const std::unique_ptr<const Material> *material, const Object &base_object) : params_{std::move(params)}, base_object_{base_object}, material_{material}
+SpherePrimitive::SpherePrimitive(Logger &logger, ParamError &param_error, const ParamMap &param_map, const std::unique_ptr<const Material> *material, const Object &base_object) : params_{param_error, param_map}, base_object_{base_object}, material_{material}
 {
 	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + params_.getAsParamMap(true).print());
 }
