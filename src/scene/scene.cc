@@ -396,7 +396,7 @@ std::pair<T *, ParamError> Scene::createMapItem(Logger &logger, std::string &&na
 }
 
 template <typename T>
-std::pair<size_t, ParamError> Scene::createMapItemNew(Logger &logger, std::string &&name, ParamMap &&params, std::map<std::string, std::unique_ptr<T>> &map, const Scene *scene)
+std::pair<size_t, ParamError> Scene::createMapItemItemId(Logger &logger, std::string &&name, ParamMap &&params, std::map<std::string, std::unique_ptr<T>> &map, const Scene *scene)
 {
 	if(map.find(name) != map.end())
 	{
@@ -462,7 +462,7 @@ std::pair<Texture *, ParamError> Scene::createTexture(std::string &&name, ParamM
 
 std::pair<size_t, ParamError> Scene::createCamera(std::string &&name, ParamMap &&params)
 {
-	return createMapItemNew<Camera>(logger_, std::move(name), std::move(params), cameras_, this);
+	return createMapItemItemId<Camera>(logger_, std::move(name), std::move(params), cameras_, this);
 }
 
 ParamError Scene::defineBackground(ParamMap &&params)
