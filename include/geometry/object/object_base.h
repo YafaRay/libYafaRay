@@ -17,8 +17,8 @@
  *      Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-#ifndef YAFARAY_OBJECT_BASE_H
-#define YAFARAY_OBJECT_BASE_H
+#ifndef LIBYAFARAY_OBJECT_BASE_H
+#define LIBYAFARAY_OBJECT_BASE_H
 
 #include "geometry/object/object.h"
 #include "param/class_meta.h"
@@ -28,9 +28,13 @@ namespace yafaray {
 
 class ObjectBase : public Object
 {
+		using ThisClassType_t = ObjectBase; using ParentClassType_t = Object;
+
+	protected: struct Type;
 	public:
 		inline static std::string getClassName() { return "ObjectBase"; }
-		static std::pair<Object *, ParamError> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map);
+		[[nodiscard]] virtual Type type() const = 0;
+		static std::pair<std::unique_ptr<Object>, ParamError> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map);
 		[[nodiscard]] virtual ParamMap getAsParamMap(bool only_non_default) const;
 		ObjectBase(ParamError &param_error, const ParamMap &param_map);
 		[[nodiscard]] std::string getName() const override { return name_; }
@@ -57,7 +61,6 @@ class ObjectBase : public Object
 					{"sphere", Sphere, ""},
 				}};
 		};
-		[[nodiscard]] virtual Type type() const = 0;
 		const struct Params
 		{
 			PARAM_INIT;
@@ -81,4 +84,4 @@ class ObjectBase : public Object
 
 } //namespace yafaray
 
-#endif //YAFARAY_OBJECT_BASE_H
+#endif //LIBYAFARAY_OBJECT_BASE_H

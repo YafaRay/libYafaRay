@@ -17,8 +17,8 @@
  *      Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-#ifndef YAFARAY_OBJECT_MESH_H
-#define YAFARAY_OBJECT_MESH_H
+#ifndef LIBYAFARAY_OBJECT_MESH_H
+#define LIBYAFARAY_OBJECT_MESH_H
 
 #include "object_base.h"
 #include "geometry/vector.h"
@@ -34,9 +34,11 @@ class Material;
 
 class MeshObject : public ObjectBase
 {
+		using ThisClassType_t = MeshObject; using ParentClassType_t = ObjectBase;
+
 	public:
 		inline static std::string getClassName() { return "MeshObject"; }
-		static std::pair<Object *, ParamError> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map);
+		static std::pair<std::unique_ptr<Object>, ParamError> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map);
 		static std::string printMeta(const std::vector<std::string> &excluded_params) { return Params::meta_.print(excluded_params); }
 		[[nodiscard]] ParamMap getAsParamMap(bool only_non_default) const override;
 		MeshObject(ParamError &param_error, const ParamMap &param_map);
@@ -76,7 +78,7 @@ class MeshObject : public ObjectBase
 		[[nodiscard]] Type type() const override { return Type::Mesh; }
 		const struct Params
 		{
-			PARAM_INIT_PARENT(ObjectBase);
+			PARAM_INIT_PARENT(ParentClassType_t);
 			PARAM_DECL(int , num_faces_, 0, "num_faces", "");
 			PARAM_DECL(int , num_vertices_, 0, "num_vertices", "");
 			PARAM_DECL(bool, has_uv_, false, "has_uv", "");
@@ -102,5 +104,5 @@ class MeshObject : public ObjectBase
 
 } //namespace yafaray
 
-#endif //YAFARAY_OBJECT_MESH_H
+#endif //LIBYAFARAY_OBJECT_MESH_H
 

@@ -17,8 +17,8 @@
  *      Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-#ifndef YAFARAY_OBJECT_PRIMITIVE_H
-#define YAFARAY_OBJECT_PRIMITIVE_H
+#ifndef LIBYAFARAY_OBJECT_PRIMITIVE_H
+#define LIBYAFARAY_OBJECT_PRIMITIVE_H
 
 #include "object_base.h"
 
@@ -28,6 +28,8 @@ namespace yafaray {
 	consist of just one primitive like spheres etc. */
 class PrimitiveObject final : public ObjectBase
 {
+		using ThisClassType_t = PrimitiveObject; using ParentClassType_t = ObjectBase;
+
 	public:
 		PrimitiveObject(ParamError &param_error, const ParamMap &param_map) : ObjectBase{param_error, param_map} { }
 		static std::string printMeta(const std::vector<std::string> &excluded_params) { return Params::meta_.print(excluded_params); }
@@ -46,4 +48,4 @@ class PrimitiveObject final : public ObjectBase
 
 } //namespace yafaray
 
-#endif //YAFARAY_OBJECT_PRIMITIVE_H
+#endif //LIBYAFARAY_OBJECT_PRIMITIVE_H

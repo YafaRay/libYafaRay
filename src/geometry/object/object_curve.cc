@@ -41,30 +41,30 @@ ParamMap CurveObject::Params::getAsParamMap(bool only_non_default) const
 
 ParamMap CurveObject::getAsParamMap(bool only_non_default) const
 {
-	ParamMap result{MeshObject::getAsParamMap(only_non_default)};
+	ParamMap result{ParentClassType_t::getAsParamMap(only_non_default)};
 	result.append(params_.getAsParamMap(only_non_default));
 	return result;
 }
 
-std::pair<Object *, ParamError> CurveObject::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map)
+std::pair<std::unique_ptr<Object>, ParamError> CurveObject::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map)
 {
 	auto param_error{Params::meta_.check(param_map, {"type"}, {})};
-	auto object = new CurveObject(param_error, param_map);
-	if(param_error.notOk()) logger.logWarning(param_error.print<CurveObject>(name, {"type"}));
+	auto object{std::make_unique<ThisClassType_t>(param_error, param_map)};
+	if(param_error.notOk()) logger.logWarning(param_error.print<ThisClassType_t>(name, {"type"}));
 	object->setName(name);
 	object->setLight(scene.getLight(object->ObjectBase::params_.light_name_));
-	return {object, param_error};
+	return {std::move(object), param_error};
 }
 
 CurveObject::CurveObject(ParamError &param_error, const ParamMap &param_map) :
-		MeshObject{param_error, param_map}, params_{param_error, param_map}
+		ParentClassType_t{param_error, param_map}, params_{param_error, param_map}
 {
 	//if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + params_.getAsParamMap(true).print());
 }
 
 bool CurveObject::calculateObject(const std::unique_ptr<const Material> *material)
 {
-	const int points_size = MeshObject::numVertices(0);
+	const int points_size = ParentClassType_t::numVertices(0);
 	for(int time_step = 0; time_step < numTimeSteps(); ++time_step)
 	{
 		const std::vector<Point3f> &points = getPoints(time_step);
@@ -126,7 +126,7 @@ bool CurveObject::calculateObject(const std::unique_ptr<const Material> *materia
 	}
 	// Close top
 	addFace({i, 2 * i + points_size, 2 * i + points_size + 1}, {iv, iv, iv}, material);
-	return MeshObject::calculateObject(material);
+	return ParentClassType_t::calculateObject(material);
 }
 
 

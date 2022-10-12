@@ -90,7 +90,7 @@ class Interface
 		virtual void paramsPushList() noexcept; 	//!< push new list item in paramList (e.g. new shader node description)
 		virtual void paramsEndList() noexcept; 	//!< revert to writing to normal paramMap
 		virtual void setCurrentMaterial(std::string &&name) noexcept;
-		virtual Object *createObject(std::string &&name) noexcept;
+		virtual std::pair<size_t, ParamError> createObject(std::string &&name) noexcept;
 		virtual std::pair<size_t, ParamError> createLight(std::string &&name) noexcept;
 		virtual Texture *createTexture(std::string &&name) noexcept;
 		virtual const Material *createMaterial(std::string &&name) noexcept;

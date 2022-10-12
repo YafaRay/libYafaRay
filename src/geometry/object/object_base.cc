@@ -58,10 +58,10 @@ ParamMap ObjectBase::getAsParamMap(bool only_non_default) const
 	return result;
 }
 
-std::pair<Object *, ParamError> ObjectBase::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map)
+std::pair<std::unique_ptr<Object>, ParamError> ObjectBase::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map)
 {
 	const Type type{ClassMeta::preprocessParamMap<Type>(logger, getClassName(), param_map)};
-	std::pair<Object *, ParamError> result {nullptr, {ParamError::Flags::ErrorWhileCreating}};
+	std::pair<std::unique_ptr<Object>, ParamError> result {nullptr, {ParamError::Flags::ErrorWhileCreating}};
 	switch(type.value())
 	{
 		case Type::Mesh:
@@ -74,11 +74,11 @@ std::pair<Object *, ParamError> ObjectBase::factory(Logger &logger, const Scene 
 		{
 			//FIXME DAVID: probably will need to work on a better parameter error handling considering that both an object and a primitive are involved and the check needs to be done for both
 			ParamError param_error;
-			auto primitive_object{new PrimitiveObject{param_error, param_map}};
+			auto primitive_object{std::make_unique<PrimitiveObject>(param_error, param_map)};
 			auto primitive{SpherePrimitive::factory(logger, scene, name, param_map, *primitive_object)};
 			param_error.merge(primitive.second);
 			primitive_object->setPrimitive(primitive.first);
-			result.first = primitive_object;
+			result = {std::move(primitive_object), param_error};
 			break;
 		}
 	}

@@ -371,7 +371,7 @@ Image *ExportPython::createImage(std::string &&name) noexcept
 	return nullptr;
 }
 
-Object *ExportPython::createObject(std::string &&name) noexcept
+std::pair<size_t, ParamError> ExportPython::createObject(std::string &&name) noexcept
 {
 	n_uvs_ = 0;
 	writeParamMap(*params_);
@@ -379,7 +379,7 @@ Object *ExportPython::createObject(std::string &&name) noexcept
 	file_ << "yi.createObject(\"" << name << "\")\n";
 	file_ << "yi.paramsClearAll()\n\n";
 	++next_obj_;
-	return nullptr;
+	return {next_obj_ - 1, ParamError{}};
 }
 
 void ExportPython::setupRender() noexcept

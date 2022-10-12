@@ -462,7 +462,7 @@ Image *ExportC::createImage(std::string &&name) noexcept
 	return nullptr;
 }
 
-Object *ExportC::createObject(std::string &&name) noexcept
+std::pair<size_t, ParamError> ExportC::createObject(std::string &&name) noexcept
 {
 	n_uvs_ = 0;
 	writeParamMap(*params_);
@@ -472,7 +472,7 @@ Object *ExportC::createObject(std::string &&name) noexcept
 	section_num_lines_ += 2;
 	if(section_num_lines_ >= section_max_lines_) file_ << sectionSplit();
 	++next_obj_;
-	return nullptr;
+	return {next_obj_ - 1, ParamError{}};
 }
 
 void ExportC::setupRender() noexcept

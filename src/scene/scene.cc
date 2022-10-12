@@ -902,29 +902,28 @@ int Scene::addUv(Uv<float> &&uv)
 	return current_object_->addUvValue(std::move(uv));
 }
 
-Object *Scene::createObject(std::string &&name, ParamMap &&params)
-{
-	std::string pname = "Object";
+std::pair<size_t, ParamError> Scene::createObject(std::string &&name, ParamMap &&params)
+{	std::string pname = "Object";
 	if(objects_.find(name) != objects_.end())
 	{
-		logWarnExist(logger_, pname, name);
-		return nullptr;
+		logWarnExist(logger_, Object::getClassName(), name);
+		return {0, {ParamError::Flags::ErrorWhileCreating}};
 	}
-	auto factory{ObjectBase::factory(logger_, *this, name, params)};
-	if(factory.first)
+	auto [object, param_error]{ObjectBase::factory(logger_, *this, name, params)};
+	if(object)
 	{
 		creation_state_.changes_ |= CreationState::Flags::CGeom;
-		factory.first->setName(name);
+		object->setName(name);
 		++object_index_auto_;
-		objects_[name] = std::unique_ptr<Object>(factory.first);
 		std::string type;
 		params.getParam("type", type);
 		if(logger_.isVerbose()) logInfoVerboseSuccess(logger_, pname, name, type);
 		creation_state_.stack_.push_front(CreationState::Object);
-		current_object_ = factory.first;
-		return factory.first;
+		current_object_ = object.get();
+		objects_[name] = std::move(object);
+		return {objects_.size() - 1, param_error}; //FIXME: this is just a placeholder for now for future LightID, although this will not work while we still use std::map for objects
 	}
-	return nullptr;
+	return {0, {ParamError::Flags::ErrorWhileCreating}};
 }
 
 Object *Scene::getObject(const std::string &name) const

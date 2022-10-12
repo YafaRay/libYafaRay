@@ -47,38 +47,38 @@ ParamMap MeshObject::Params::getAsParamMap(bool only_non_default) const
 
 ParamMap MeshObject::getAsParamMap(bool only_non_default) const
 {
-	ParamMap result{ObjectBase::getAsParamMap(only_non_default)};
+	ParamMap result{ParentClassType_t::getAsParamMap(only_non_default)};
 	result.append(params_.getAsParamMap(only_non_default));
 	return result;
 }
 
-std::pair<Object *, ParamError> MeshObject::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map)
+std::pair<std::unique_ptr<Object>, ParamError> MeshObject::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map)
 {
 	auto param_error{Params::meta_.check(param_map, {"type"}, {})};
-	auto object = new MeshObject(param_error, param_map);
-	if(param_error.notOk()) logger.logWarning(param_error.print<MeshObject>(name, {"type"}));
+	auto object{std::make_unique<ThisClassType_t>(param_error, param_map)};
+	if(param_error.notOk()) logger.logWarning(param_error.print<ThisClassType_t>(name, {"type"}));
 	object->setName(name);
-	object->setLight(scene.getLight(object->ObjectBase::params_.light_name_));
-	return {object, param_error};
+	object->setLight(scene.getLight(object->ParentClassType_t::params_.light_name_));
+	return {std::move(object), param_error};
 }
 
-MeshObject::MeshObject(ParamError &param_error, const ParamMap &param_map) : ObjectBase{param_error, param_map}, params_{param_error, param_map}
+MeshObject::MeshObject(ParamError &param_error, const ParamMap &param_map) : ParentClassType_t{param_error, param_map}, params_{param_error, param_map}
 {
 	//if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + params_.getAsParamMap(true).print());
 	const int num_faces = calculateNumFaces();
 	faces_.reserve(num_faces);
 	if(params_.has_uv_) uv_values_.reserve(params_.num_vertices_);
-	if(ObjectBase::params_.motion_blur_bezier_) time_steps_.resize(3);
+	if(ParentClassType_t::params_.motion_blur_bezier_) time_steps_.resize(3);
 	for(size_t i = 0; i < time_steps_.size(); ++i)
 	{
 		const float time_factor_float = time_steps_.size() > 1 ? static_cast<float>(i) / static_cast<float>(time_steps_.size() - 1) : 0.f;
-		time_steps_[i].time_ = math::lerp(ObjectBase::params_.time_range_start_, ObjectBase::params_.time_range_end_, time_factor_float);
+		time_steps_[i].time_ = math::lerp(ParentClassType_t::params_.time_range_start_, ParentClassType_t::params_.time_range_end_, time_factor_float);
 		time_steps_[i].points_.reserve(params_.num_vertices_);
 		if(params_.has_orco_) time_steps_[i].orco_points_.reserve(params_.num_vertices_);
 	}
 }
 
-MeshObject::~MeshObject() = default;
+MeshObject::~MeshObject() = default; //This "default" custom destructor seems unnecessary but do not remove it, this is to prevent a compilation error
 
 void MeshObject::addFace(std::unique_ptr<FacePrimitive> &&face)
 {
@@ -93,12 +93,12 @@ void MeshObject::addFace(std::vector<int> &&vertices, std::vector<int> &&vertice
 	std::unique_ptr<FacePrimitive> face;
 	if(vertices.size() == 3)
 	{
-		if(hasMotionBlurBezier() && !ObjectBase::isBaseObject()) face = std::make_unique<PrimitivePolygon<float, 3, MotionBlurType::Bezier>>(std::move(vertices), std::move(vertices_uv), *this);
+		if(hasMotionBlurBezier() && !ParentClassType_t::isBaseObject()) face = std::make_unique<PrimitivePolygon<float, 3, MotionBlurType::Bezier>>(std::move(vertices), std::move(vertices_uv), *this);
 		else face = std::make_unique<PrimitivePolygon<float, 3, MotionBlurType::None>>(std::move(vertices), std::move(vertices_uv), *this);
 	}
 	else if(vertices.size() == 4)
 	{
-		if(hasMotionBlurBezier() && !ObjectBase::isBaseObject()) face = std::make_unique<PrimitivePolygon<float, 4, MotionBlurType::Bezier>>(std::move(vertices), std::move(vertices_uv), *this);
+		if(hasMotionBlurBezier() && !ParentClassType_t::isBaseObject()) face = std::make_unique<PrimitivePolygon<float, 4, MotionBlurType::Bezier>>(std::move(vertices), std::move(vertices_uv), *this);
 		else face = std::make_unique<PrimitivePolygon<float, 4, MotionBlurType::None>>(std::move(vertices), std::move(vertices_uv), *this);
 	}
 	else return; //Other primitives are not supported

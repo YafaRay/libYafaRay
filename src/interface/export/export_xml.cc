@@ -346,7 +346,7 @@ Image *ExportXml::createImage(std::string &&name) noexcept
 	return nullptr;
 }
 
-Object *ExportXml::createObject(std::string &&name) noexcept
+std::pair<size_t, ParamError> ExportXml::createObject(std::string &&name) noexcept
 {
 	n_uvs_ = 0;
 	file_ << "\n<object>\n";
@@ -354,7 +354,7 @@ Object *ExportXml::createObject(std::string &&name) noexcept
 	writeParamMap(*params_, 2);
 	file_ << "\t</object_parameters>\n";
 	++next_obj_;
-	return nullptr;
+	return {next_obj_ - 1, ParamError{}};
 }
 
 void ExportXml::setupRender() noexcept

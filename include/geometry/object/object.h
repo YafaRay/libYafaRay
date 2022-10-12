@@ -17,8 +17,8 @@
  *      Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-#ifndef YAFARAY_OBJECT_H
-#define YAFARAY_OBJECT_H
+#ifndef LIBYAFARAY_OBJECT_H
+#define LIBYAFARAY_OBJECT_H
 
 #include "color/color.h"
 #include "common/visibility.h"
@@ -89,4 +89,4 @@ class Object
 
 } //namespace yafaray
 
-#endif //YAFARAY_OBJECT_H
+#endif //LIBYAFARAY_OBJECT_H

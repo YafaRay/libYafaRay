@@ -191,7 +191,7 @@ void Interface::paramsEndList() noexcept
 	cparams_ = params_.get();
 }
 
-Object *Interface::createObject(std::string &&name) noexcept { return scene_->createObject(std::move(name), std::move(*params_)); }
+std::pair<size_t, ParamError> Interface::createObject(std::string &&name) noexcept { return scene_->createObject(std::move(name), std::move(*params_)); }
 std::pair<size_t, ParamError> Interface::createLight(std::string &&name) noexcept { return scene_->createLight(std::move(name), std::move(*params_)); }
 Texture *Interface::createTexture(std::string &&name) noexcept { return scene_->createTexture(std::move(name), std::move(*params_)).first; }
 const Material *Interface::createMaterial(std::string &&name) noexcept { return scene_->createMaterial(std::move(name), std::move(*params_), std::move(nodes_params_)).first->get(); }

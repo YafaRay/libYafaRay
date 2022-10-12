@@ -80,7 +80,7 @@ class Scene final
 		bool addFace(std::vector<int> &&vert_indices, std::vector<int> &&uv_indices = {});
 		int addUv(Uv<float> &&uv);
 		bool smoothVerticesNormals(std::string &&name, float angle);
-		Object *createObject(std::string &&name, ParamMap &&params);
+		std::pair<size_t, ParamError> createObject(std::string &&name, ParamMap &&params);
 		bool endObject();
 		int createInstance();
 		bool addInstanceObject(int instance_id, std::string &&base_object_name);

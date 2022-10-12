@@ -17,8 +17,8 @@
  *      Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-#ifndef YAFARAY_OBJECT_INSTANCE_H
-#define YAFARAY_OBJECT_INSTANCE_H
+#ifndef LIBYAFARAY_OBJECT_INSTANCE_H
+#define LIBYAFARAY_OBJECT_INSTANCE_H
 
 #include "geometry/object/object.h"
 #include "geometry/matrix.h"
@@ -33,6 +33,8 @@ template<typename T> class Bound;
 
 class ObjectInstance final : public Object
 {
+		using ThisClassType_t = ObjectInstance; using ParentClassType_t = Object;
+
 	public:
 		inline static std::string getClassName() { return "ObjectInstance"; }
 		void addPrimitives(const std::vector<const Primitive *> &base_primitives);
@@ -103,4 +105,4 @@ inline Matrix4f ObjectInstance::getObjToWorldMatrixAtTime(float time) const
 
 } //namespace yafaray
 
-#endif //YAFARAY_OBJECT_INSTANCE_H
+#endif //LIBYAFARAY_OBJECT_INSTANCE_H
