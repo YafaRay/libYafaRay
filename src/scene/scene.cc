@@ -373,7 +373,7 @@ std::pair<std::unique_ptr<const Material> *, ParamError> Scene::createMaterial(s
 		if(logger_.isVerbose()) logInfoVerboseSuccess(logger_, pname, name, type);
 		return {materials_[name].get(), {}};
 	}
-	return {nullptr, {ParamError::Flags::ErrorWhileCreating}};
+	return {nullptr, ParamError{ParamError::Flags::ErrorWhileCreating}};
 }
 
 template <typename T>
@@ -392,7 +392,7 @@ std::pair<T *, ParamError> Scene::createMapItem(Logger &logger, std::string &&na
 		if(logger.isVerbose()) logInfoVerboseSuccess(logger, T::getClassName(), name, type);
 		return {map[name].get(), {}};
 	}
-	return {nullptr, {ParamError::Flags::ErrorWhileCreating}};
+	return {nullptr, ParamError{ParamError::Flags::ErrorWhileCreating}};
 }
 
 template <typename T>
@@ -445,7 +445,7 @@ std::pair<ImageOutput *, ParamError> Scene::createOutput(std::string &&name, Par
 		if(logger_.isVerbose()) logInfoVerboseSuccess(logger_, class_name, name, type);
 		return {outputs_[name].get(), {}};
 	}
-	return {nullptr, {ParamError::Flags::ErrorWhileCreating}};
+	return {nullptr, ParamError{ParamError::Flags::ErrorWhileCreating}};
 }
 
 std::pair<Texture *, ParamError> Scene::createTexture(std::string &&name, ParamMap &&params)

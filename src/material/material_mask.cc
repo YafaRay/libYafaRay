@@ -55,12 +55,12 @@ std::pair<Material *, ParamError> MaskMaterial::factory(Logger &logger, const Sc
 {
 	auto param_error{Params::meta_.check(param_map, {"type"}, {})};
 	std::string mat1_name;
-	if(param_map.getParam(Params::material_1_name_meta_.name(), mat1_name).notOk()) return {nullptr, {ParamError::Flags::ErrorWhileCreating}};
+	if(param_map.getParam(Params::material_1_name_meta_.name(), mat1_name).notOk()) return {nullptr, ParamError{ParamError::Flags::ErrorWhileCreating}};
 	const std::unique_ptr<const Material> *m_1 = scene.getMaterial(mat1_name);
 	std::string mat2_name;
-	if(param_map.getParam(Params::material_2_name_meta_.name(), mat2_name).notOk()) return {nullptr, {ParamError::Flags::ErrorWhileCreating}};
+	if(param_map.getParam(Params::material_2_name_meta_.name(), mat2_name).notOk()) return {nullptr, ParamError{ParamError::Flags::ErrorWhileCreating}};
 	const std::unique_ptr<const Material> *m_2 = scene.getMaterial(mat2_name);
-	if(!m_1 || !m_2) return {nullptr, {ParamError::Flags::ErrorWhileCreating}};
+	if(!m_1 || !m_2) return {nullptr, ParamError{ParamError::Flags::ErrorWhileCreating}};
 
 	auto mat = new MaskMaterial(logger, param_error, param_map, m_1, m_2);
 

@@ -96,13 +96,13 @@ std::pair<Texture *, ParamError> ImageTexture::factory(Logger &logger, const Sce
 	if(image_name.empty())
 	{
 		logger.logError("ImageTexture: Required argument image_name not found for image texture");
-		return {nullptr, {ParamError::Flags::ErrorWhileCreating}};
+		return {nullptr, ParamError{ParamError::Flags::ErrorWhileCreating}};
 	}
 	const Image *image{scene.getImage(image_name)};
 	if(!image)
 	{
 		logger.logError("ImageTexture: Couldn't load image file, dropping texture.");
-		return {nullptr, {ParamError::Flags::ErrorWhileCreating}};
+		return {nullptr, ParamError{ParamError::Flags::ErrorWhileCreating}};
 	}
 	auto result {new ImageTexture(logger, param_error, param_map, image)};
 	if(param_error.notOk()) logger.logWarning(param_error.print<ImageTexture>(name, {"type"}));

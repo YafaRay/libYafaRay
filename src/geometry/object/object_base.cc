@@ -61,7 +61,7 @@ ParamMap ObjectBase::getAsParamMap(bool only_non_default) const
 std::pair<std::unique_ptr<Object>, ParamError> ObjectBase::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map)
 {
 	const Type type{ClassMeta::preprocessParamMap<Type>(logger, getClassName(), param_map)};
-	std::pair<std::unique_ptr<Object>, ParamError> result {nullptr, {ParamError::Flags::ErrorWhileCreating}};
+	std::pair<std::unique_ptr<Object>, ParamError> result {nullptr, ParamError{ParamError::Flags::ErrorWhileCreating}};
 	switch(type.value())
 	{
 		case Type::Mesh:
@@ -87,7 +87,7 @@ std::pair<std::unique_ptr<Object>, ParamError> ObjectBase::factory(Logger &logge
 		result.first->setIndexAuto(scene.getObjectIndexAuto());
 		return result;
 	}
-	else return {nullptr, {ParamError::Flags::ErrorTypeUnknownParam}};
+	else return {nullptr, ParamError{ParamError::Flags::ErrorTypeUnknownParam}};
 }
 
 ObjectBase::ObjectBase(ParamError &param_error, const ParamMap &param_map) : params_{param_error, param_map}

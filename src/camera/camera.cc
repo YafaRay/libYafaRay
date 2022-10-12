@@ -74,7 +74,7 @@ std::pair<std::unique_ptr<Camera>, ParamError> Camera::factory(Logger &logger, c
 		case Type::Architect: return ArchitectCamera::factory(logger, scene, name, param_map);
 		case Type::Orthographic: return OrthographicCamera::factory(logger, scene, name, param_map);
 		case Type::Equirectangular: return EquirectangularCamera::factory(logger, scene, name, param_map);
-		default: return {nullptr, {ParamError::Flags::ErrorWhileCreating}};
+		default: return {nullptr, ParamError{ParamError::Flags::ErrorWhileCreating}};
 	}
 }
 

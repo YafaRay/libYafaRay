@@ -62,13 +62,13 @@ std::pair<std::unique_ptr<Background>, ParamError> TextureBackground::factory(Lo
 	if(param_map.getParam(Params::texture_name_meta_, texname) == ParamError::Flags::ErrorTypeUnknownParam)
 	{
 		logger.logError(getClassName(), ": No texture given for texture background!");
-		return {nullptr, {ParamError::Flags::ErrorWhileCreating}};
+		return {nullptr, ParamError{ParamError::Flags::ErrorWhileCreating}};
 	}
 	Texture *tex = scene.getTexture(texname);
 	if(!tex)
 	{
 		logger.logError(getClassName(), ": Texture '", texname, "' for textureback not existant!");
-		return {nullptr, {ParamError::Flags::ErrorWhileCreating}};
+		return {nullptr, ParamError{ParamError::Flags::ErrorWhileCreating}};
 	}
 	auto background{std::make_unique<ThisClassType_t>(logger, param_error, param_map, tex)};
 	if(param_error.notOk()) logger.logWarning(param_error.print<ThisClassType_t>(name, {"type"}));

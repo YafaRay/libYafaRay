@@ -102,7 +102,7 @@ std::pair<Texture *, ParamError> Texture::factory(Logger &logger, const Scene &s
 		case Type::DistortedNoise: return DistortedNoiseTexture::factory(logger, scene, name, param_map);
 		case Type::RgbCube: return RgbCubeTexture::factory(logger, scene, name, param_map);
 		case Type::Image: return ImageTexture::factory(logger, scene, name, param_map);
-		default: return {nullptr, {ParamError::Flags::ErrorWhileCreating}};
+		default: return {nullptr, ParamError{ParamError::Flags::ErrorWhileCreating}};
 	}
 }
 
