@@ -17,8 +17,8 @@
  *      Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-#ifndef YAFARAY_CAMERA_ARCHITECT_H
-#define YAFARAY_CAMERA_ARCHITECT_H
+#ifndef LIBYAFARAY_CAMERA_ARCHITECT_H
+#define LIBYAFARAY_CAMERA_ARCHITECT_H
 
 #include "camera/camera_perspective.h"
 
@@ -29,18 +29,20 @@ class Scene;
 
 class ArchitectCamera final : public PerspectiveCamera
 {
+		using ThisClassType_t = ArchitectCamera; using ParentClassType_t = PerspectiveCamera;
+
 	public:
 		inline static std::string getClassName() { return "ArchitectCamera"; }
-		static std::pair<Camera *, ParamError> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map);
+		static std::pair<std::unique_ptr<Camera>, ParamError> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map);
 		static std::string printMeta(const std::vector<std::string> &excluded_params) { return Params::meta_.print(excluded_params); }
+		ArchitectCamera(Logger &logger, ParamError &param_error, const ParamMap &param_map);
 
 	private:
 		[[nodiscard]] Type type() const override { return Type::Architect; }
-		ArchitectCamera(Logger &logger, ParamError &param_error, const ParamMap &param_map);
 		void setAxis(const Vec3f &vx, const Vec3f &vy, const Vec3f &vz) override;
 		Point3f screenproject(const Point3f &p) const override;
 };
 
 } //namespace yafaray
 
-#endif // YAFARAY_CAMERA_ARCHITECT_H
+#endif // LIBYAFARAY_CAMERA_ARCHITECT_H

@@ -17,8 +17,8 @@
  *      Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-#ifndef YAFARAY_CAMERA_PERSPECTIVE_H
-#define YAFARAY_CAMERA_PERSPECTIVE_H
+#ifndef LIBYAFARAY_CAMERA_PERSPECTIVE_H
+#define LIBYAFARAY_CAMERA_PERSPECTIVE_H
 
 #include "camera/camera.h"
 #include <vector>
@@ -30,10 +30,14 @@ class Scene;
 
 class PerspectiveCamera : public Camera
 {
+		using ThisClassType_t = PerspectiveCamera; using ParentClassType_t = Camera;
+
 	public:
 		inline static std::string getClassName() { return "PerspectiveCamera"; }
-		static std::pair<Camera *, ParamError> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map);
+		static std::pair<std::unique_ptr<Camera>, ParamError> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map);
 		static std::string printMeta(const std::vector<std::string> &excluded_params) { return Params::meta_.print(excluded_params); }
+		[[nodiscard]] ParamMap getAsParamMap(bool only_non_default) const override;
+		PerspectiveCamera(Logger &logger, ParamError &param_error, const ParamMap &param_map);
 
 	protected:
 		struct BokehType : public Enum<BokehType>
@@ -61,7 +65,7 @@ class PerspectiveCamera : public Camera
 		[[nodiscard]] Type type() const override { return Type::Perspective; }
 		const struct Params
 		{
-			PARAM_INIT_PARENT(Camera);
+			PARAM_INIT_PARENT(ParentClassType_t);
 			PARAM_DECL(float, focal_distance_, 1.f, "focal", "");
 			PARAM_DECL(float, aperture_, 0.f, "aperture", "");
 			PARAM_DECL(float, depth_of_field_distance_, 0.f, "dof_distance", "");
@@ -69,9 +73,6 @@ class PerspectiveCamera : public Camera
 			PARAM_ENUM_DECL(BokehType, bokeh_type_, BokehType::Disk1, "bokeh_type", "");
 			PARAM_ENUM_DECL(BokehBias, bokeh_bias_, BokehBias::None, "bokeh_bias", "");
 		} params_;
-		[[nodiscard]] ParamMap getAsParamMap(bool only_non_default) const override;
-
-		PerspectiveCamera(Logger &logger, ParamError &param_error, const ParamMap &param_map);
 		void setAxis(const Vec3f &vx, const Vec3f &vy, const Vec3f &vz) override;
 		CameraRay shootRay(float px, float py, const Uv<float> &uv) const override;
 		bool sampleLense() const override;
@@ -89,4 +90,4 @@ class PerspectiveCamera : public Camera
 
 } //namespace yafaray
 
-#endif // YAFARAY_CAMERA_PERSPECTIVE_H
+#endif // LIBYAFARAY_CAMERA_PERSPECTIVE_H

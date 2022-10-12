@@ -374,7 +374,7 @@ const Material *ExportC::createMaterial(std::string &&name) noexcept
 	return nullptr;
 }
 
-const Camera * ExportC::createCamera(std::string &&name) noexcept
+std::pair<size_t, ParamError> ExportC::createCamera(std::string &&name) noexcept
 {
 	writeParamMap(*params_);
 	params_->clear();
@@ -382,7 +382,7 @@ const Camera * ExportC::createCamera(std::string &&name) noexcept
 	file_ << "\t" << "yafaray_paramsClearAll(yi);\n\n";
 	section_num_lines_ += 2;
 	if(section_num_lines_ >= section_max_lines_) file_ << sectionSplit();
-	return nullptr;
+	return {};
 }
 
 ParamError ExportC::defineBackground() noexcept

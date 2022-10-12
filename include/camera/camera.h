@@ -21,8 +21,8 @@
  *
  */
 
-#ifndef YAFARAY_CAMERA_H
-#define YAFARAY_CAMERA_H
+#ifndef LIBYAFARAY_CAMERA_H
+#define LIBYAFARAY_CAMERA_H
 
 #include "geometry/plane.h"
 #include "common/enum.h"
@@ -54,9 +54,11 @@ struct CameraRay
 
 class Camera
 {
+	protected: struct Type;
 	public:
 		inline static std::string getClassName() { return "Camera"; }
-		static std::pair<Camera *, ParamError> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map);
+		[[nodiscard]] virtual Type type() const = 0;
+		static std::pair<std::unique_ptr<Camera>, ParamError> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map);
 		[[nodiscard]] virtual ParamMap getAsParamMap(bool only_non_default) const;
 		Camera(Logger &logger, ParamError &param_error, const ParamMap &param_map);
 		virtual ~Camera() = default;
@@ -88,7 +90,6 @@ class Camera
 					{"equirectangular", Equirectangular, ""},
 				}};
 		};
-		[[nodiscard]] virtual Type type() const = 0;
 		const struct Params
 		{
 			PARAM_INIT;
@@ -115,4 +116,4 @@ class Camera
 
 } //namespace yafaray
 
-#endif // YAFARAY_CAMERA_H
+#endif // LIBYAFARAY_CAMERA_H

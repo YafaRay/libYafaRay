@@ -50,17 +50,17 @@ ParamMap PerspectiveCamera::Params::getAsParamMap(bool only_non_default) const
 
 ParamMap PerspectiveCamera::getAsParamMap(bool only_non_default) const
 {
-	ParamMap result{Camera::getAsParamMap(only_non_default)};
+	ParamMap result{ParentClassType_t::getAsParamMap(only_non_default)};
 	result.append(params_.getAsParamMap(only_non_default));
 	return result;
 }
 
-std::pair<Camera *, ParamError> PerspectiveCamera::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map)
+std::pair<std::unique_ptr<Camera>, ParamError> PerspectiveCamera::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map)
 {
 	auto param_error{Params::meta_.check(param_map, {"type"}, {})};
-	auto result {new PerspectiveCamera(logger, param_error, param_map)};
-	if(param_error.notOk()) logger.logWarning(param_error.print<PerspectiveCamera>(name, {"type"}));
-	return {result, param_error};
+	auto camera {std::make_unique<ThisClassType_t>(logger, param_error, param_map)};
+	if(param_error.notOk()) logger.logWarning(param_error.print<ThisClassType_t>(name, {"type"}));
+	return {std::move(camera), param_error};
 }
 
 PerspectiveCamera::PerspectiveCamera(Logger &logger, ParamError &param_error, const ParamMap &param_map) :
@@ -71,7 +71,7 @@ PerspectiveCamera::PerspectiveCamera(Logger &logger, ParamError &param_error, co
 	// Initialize camera specific plane coordinates
 	setAxis(cam_x_, cam_y_, cam_z_);
 
-	fdist_ = (Camera::params_.to_ - Camera::params_.from_).length();
+	fdist_ = (ParentClassType_t::params_.to_ - ParentClassType_t::params_.from_).length();
 	a_pix_ = aspect_ratio_ / (params_.focal_distance_ * params_.focal_distance_);
 
 	int ns = params_.bokeh_type_.value();
@@ -159,7 +159,7 @@ Uv<float> PerspectiveCamera::getLensUv(float r_1, float r_2) const
 
 CameraRay PerspectiveCamera::shootRay(float px, float py, const Uv<float> &uv) const
 {
-	Ray ray{Camera::params_.from_, vright_ * px + vup_ * py + vto_, 0.f};
+	Ray ray{ParentClassType_t::params_.from_, vright_ * px + vup_ * py + vto_, 0.f};
 	ray.dir_.normalize();
 	ray.tmin_ = near_plane_.rayIntersection(ray);
 	ray.tmax_ = far_plane_.rayIntersection(ray);
@@ -176,7 +176,7 @@ CameraRay PerspectiveCamera::shootRay(float px, float py, const Uv<float> &uv) c
 
 Point3f PerspectiveCamera::screenproject(const Point3f &p) const
 {
-	const Vec3f dir{p - Camera::params_.from_};
+	const Vec3f dir{p - ParentClassType_t::params_.from_};
 	// project p to pixel plane:
 	const float dx = dir * cam_x_;
 	const float dy = dir * cam_y_;

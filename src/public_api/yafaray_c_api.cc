@@ -241,7 +241,7 @@ yafaray_bool_t yafaray_createMaterial(yafaray_Interface_t *interface, const char
 
 yafaray_bool_t yafaray_createCamera(yafaray_Interface_t *interface, const char *name)
 {
-	return static_cast<yafaray_bool_t>(reinterpret_cast<yafaray::Interface *>(interface)->createCamera(name) != nullptr);
+	return static_cast<yafaray_bool_t>(reinterpret_cast<yafaray::Interface *>(interface)->createCamera(name).second.isOk());
 }
 
 yafaray_bool_t yafaray_defineBackground(yafaray_Interface_t *interface)

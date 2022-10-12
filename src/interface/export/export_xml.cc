@@ -280,12 +280,12 @@ const Material *ExportXml::createMaterial(std::string &&name) noexcept
 	file_ << "</material>\n";
 	return nullptr;
 }
-const Camera * ExportXml::createCamera(std::string &&name) noexcept
+std::pair<size_t, ParamError> ExportXml::createCamera(std::string &&name) noexcept
 {
 	file_ << "\n<camera name=\"" << name << "\">\n";
 	writeParamMap(*params_);
 	file_ << "</camera>\n";
-	return nullptr;
+	return {};
 }
 
 ParamError ExportXml::defineBackground() noexcept

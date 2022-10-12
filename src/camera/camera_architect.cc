@@ -26,16 +26,16 @@
 
 namespace yafaray {
 
-std::pair<Camera *, ParamError> ArchitectCamera::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map)
+std::pair<std::unique_ptr<Camera>, ParamError> ArchitectCamera::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map)
 {
 	auto param_error{Params::meta_.check(param_map, {"type"}, {})};
-	auto result {new ArchitectCamera(logger, param_error, param_map)};
-	if(param_error.notOk()) logger.logWarning(param_error.print<ArchitectCamera>(name, {"type"}));
-	return {result, param_error};
+	auto camera {std::make_unique<ThisClassType_t>(logger, param_error, param_map)};
+	if(param_error.notOk()) logger.logWarning(param_error.print<ThisClassType_t>(name, {"type"}));
+	return {std::move(camera), param_error};
 }
 
 ArchitectCamera::ArchitectCamera(Logger &logger, ParamError &param_error, const ParamMap &param_map)
-	: PerspectiveCamera(logger, param_error, param_map)
+	: ParentClassType_t(logger, param_error, param_map)
 {
 	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + params_.getAsParamMap(true).print());
 }

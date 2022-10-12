@@ -340,18 +340,17 @@ std::map<std::string, Light *> Scene::getLights() const
 
 std::pair<size_t, ParamError> Scene::createLight(std::string &&name, ParamMap &&params)
 {
-	std::string pname = "Light";
 	if(lights_.find(name) != lights_.end())
 	{
-		logWarnExist(logger_, pname, name); return {0, {ParamError::Flags::ErrorAlreadyExists}};
+		logWarnExist(logger_, Light::getClassName(), name); return {0, {ParamError::Flags::ErrorAlreadyExists}};
 	}
 	auto [light, param_error] {Light::factory(logger_, *this, name, params)};
 	if(light)
 	{
 		if(logger_.isVerbose())
 		{
-			if(light->lightEnabled()) logInfoVerboseSuccess(logger_, pname, name, light->type().print());
-			else logInfoVerboseSuccessDisabled(logger_, pname, name, light->type().print());
+			if(light->lightEnabled()) logInfoVerboseSuccess(logger_, Light::getClassName(), name, light->type().print());
+			else logInfoVerboseSuccessDisabled(logger_, Light::getClassName(), name, light->type().print());
 		}
 		creation_state_.changes_ |= CreationState::Flags::CLight;
 		lights_[name] = std::move(light);
@@ -386,11 +385,11 @@ std::pair<std::unique_ptr<const Material> *, ParamError> Scene::createMaterial(s
 }
 
 template <typename T>
-std::pair<T *, ParamError> Scene::createMapItem(Logger &logger, std::string &&name, std::string &&class_name, ParamMap &&params, std::map<std::string, std::unique_ptr<T>> &map, const Scene *scene)
+std::pair<T *, ParamError> Scene::createMapItem(Logger &logger, std::string &&name, ParamMap &&params, std::map<std::string, std::unique_ptr<T>> &map, const Scene *scene)
 {
 	if(map.find(name) != map.end())
 	{
-		logWarnExist(logger, class_name, name); return {nullptr, {ParamError::Flags::ErrorAlreadyExists}};
+		logWarnExist(logger, T::getClassName(), name); return {nullptr, {ParamError::Flags::ErrorAlreadyExists}};
 	}
 	std::unique_ptr<T> item(T::factory(logger, *scene, name, params).first);
 	if(item)
@@ -398,10 +397,27 @@ std::pair<T *, ParamError> Scene::createMapItem(Logger &logger, std::string &&na
 		map[name] = std::move(item);
 		std::string type;
 		params.getParam("type", type);
-		if(logger.isVerbose()) logInfoVerboseSuccess(logger, class_name, name, type);
+		if(logger.isVerbose()) logInfoVerboseSuccess(logger, T::getClassName(), name, type);
 		return {map[name].get(), {}};
 	}
 	return {nullptr, {ParamError::Flags::ErrorWhileCreating}};
+}
+
+template <typename T>
+std::pair<size_t, ParamError> Scene::createMapItemNew(Logger &logger, std::string &&name, ParamMap &&params, std::map<std::string, std::unique_ptr<T>> &map, const Scene *scene)
+{
+	if(map.find(name) != map.end())
+	{
+		logWarnExist(logger, T::getClassName(), name); return {0, {ParamError::Flags::ErrorAlreadyExists}};
+	}
+	auto [item, param_error]{T::factory(logger, *scene, name, params)};
+	if(item)
+	{
+		if(logger.isVerbose()) logInfoVerboseSuccess(logger, T::getClassName(), name, item->type().print());
+		map[name] = std::move(item);
+		return {map.size() - 1, param_error}; //FIXME: this is just a placeholder for now for future ItemID, although this will not work while we still use std::map for items
+	}
+	return {0, {ParamError::Flags::ErrorWhileCreating}};
 }
 
 template <typename T>
@@ -444,7 +460,7 @@ std::pair<ImageOutput *, ParamError> Scene::createOutput(std::string &&name, Par
 
 std::pair<Texture *, ParamError> Scene::createTexture(std::string &&name, ParamMap &&params)
 {
-	auto result = createMapItem<Texture>(logger_, std::move(name), "Texture", std::move(params), textures_, this);
+	auto result = createMapItem<Texture>(logger_, std::move(name), std::move(params), textures_, this);
 	InterpolationType texture_interpolation_type = result.first->getInterpolationType();
 	if(!render_control_.getDifferentialRaysEnabled() && (texture_interpolation_type == InterpolationType::Trilinear || texture_interpolation_type == InterpolationType::Ewa))
 	{
@@ -454,9 +470,9 @@ std::pair<Texture *, ParamError> Scene::createTexture(std::string &&name, ParamM
 	return result;
 }
 
-std::pair<Camera *, ParamError> Scene::createCamera(std::string &&name, ParamMap &&params)
+std::pair<size_t, ParamError> Scene::createCamera(std::string &&name, ParamMap &&params)
 {
-	return createMapItem<Camera>(logger_, std::move(name), "Camera", std::move(params), cameras_, this);
+	return createMapItemNew<Camera>(logger_, std::move(name), std::move(params), cameras_, this);
 }
 
 ParamError Scene::defineBackground(ParamMap &&params)
@@ -488,12 +504,12 @@ ParamError Scene::defineVolumeIntegrator(ParamMap &&params)
 
 std::pair<VolumeRegion *, ParamError> Scene::createVolumeRegion(std::string &&name, ParamMap &&params)
 {
-	return createMapItem<VolumeRegion>(logger_, std::move(name), "VolumeRegion", std::move(params), volume_regions_, this);
+	return createMapItem<VolumeRegion>(logger_, std::move(name), std::move(params), volume_regions_, this);
 }
 
 std::pair<RenderView *, ParamError> Scene::createRenderView(std::string &&name, ParamMap &&params)
 {
-	return createMapItem<RenderView>(logger_, std::move(name), "RenderView", std::move(params), render_views_, this);
+	return createMapItem<RenderView>(logger_, std::move(name), std::move(params), render_views_, this);
 }
 
 std::pair<std::shared_ptr<Image>, ParamError> Scene::createImage(std::string &&name, ParamMap &&params)

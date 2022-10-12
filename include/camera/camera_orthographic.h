@@ -17,8 +17,8 @@
  *      Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-#ifndef YAFARAY_CAMERA_ORTHOGRAPHIC_H
-#define YAFARAY_CAMERA_ORTHOGRAPHIC_H
+#ifndef LIBYAFARAY_CAMERA_ORTHOGRAPHIC_H
+#define LIBYAFARAY_CAMERA_ORTHOGRAPHIC_H
 
 #include "camera/camera.h"
 
@@ -29,21 +29,22 @@ class Scene;
 
 class OrthographicCamera final: public Camera
 {
+		using ThisClassType_t = OrthographicCamera; using ParentClassType_t = Camera;
+
 	public:
 		inline static std::string getClassName() { return "OrthographicCamera"; }
-		static std::pair<Camera *, ParamError> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map);
+		static std::pair<std::unique_ptr<Camera>, ParamError> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map);
 		static std::string printMeta(const std::vector<std::string> &excluded_params) { return Params::meta_.print(excluded_params); }
+		[[nodiscard]] ParamMap getAsParamMap(bool only_non_default) const override;
+		OrthographicCamera(Logger &logger, ParamError &param_error, const ParamMap &param_map);
 
 	private:
 		[[nodiscard]] Type type() const override { return Type::Orthographic; }
 		const struct Params
 		{
-			PARAM_INIT_PARENT(Camera);
+			PARAM_INIT_PARENT(ParentClassType_t);
 			PARAM_DECL(float, scale_, 1.f, "scale", "");
 		} params_;
-		[[nodiscard]] ParamMap getAsParamMap(bool only_non_default) const override;
-
-		OrthographicCamera(Logger &logger, ParamError &param_error, const ParamMap &param_map);
 		void setAxis(const Vec3f &vx, const Vec3f &vy, const Vec3f &vz) override;
 		CameraRay shootRay(float px, float py, const Uv<float> &uv) const override;
 		Point3f screenproject(const Point3f &p) const override;
@@ -53,4 +54,4 @@ class OrthographicCamera final: public Camera
 
 } //namespace yafaray
 
-#endif // YAFARAY_CAMERA_ORTHOGRAPHIC_H
+#endif // LIBYAFARAY_CAMERA_ORTHOGRAPHIC_H

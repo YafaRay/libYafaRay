@@ -122,7 +122,7 @@ class Scene final
 		std::pair<size_t, ParamError> createLight(std::string &&name, ParamMap &&params);
 		std::pair<Texture *, ParamError> createTexture(std::string &&name, ParamMap &&params);
 		std::pair<std::unique_ptr<const Material> *, ParamError> createMaterial(std::string &&name, ParamMap &&params, std::list<ParamMap> &&nodes_params);
-		std::pair<Camera *, ParamError> createCamera(std::string &&name, ParamMap &&params);
+		std::pair<size_t, ParamError> createCamera(std::string &&name, ParamMap &&params);
 		ParamError defineBackground(ParamMap &&params);
 		ParamError defineSurfaceIntegrator(ParamMap &&params);
 		ParamError defineVolumeIntegrator(ParamMap &&params);
@@ -171,7 +171,8 @@ class Scene final
 		template <typename T> static std::shared_ptr<T> findMapItem(const std::string &name, const std::map<std::string, std::shared_ptr<T>> &map);
 		void setMaskParams(const ParamMap &params);
 		void setEdgeToonParams(const ParamMap &params);
-		template <typename T> static std::pair<T *, ParamError> createMapItem(Logger &logger, std::string &&name, std::string &&class_name, ParamMap &&params, std::map<std::string, std::unique_ptr<T>> &map, const Scene *scene);
+		template <typename T> static std::pair<T *, ParamError> createMapItem(Logger &logger, std::string &&name, ParamMap &&params, std::map<std::string, std::unique_ptr<T>> &map, const Scene *scene);
+		template <typename T> static std::pair<size_t, ParamError> createMapItemNew(Logger &logger, std::string &&name, ParamMap &&params, std::map<std::string, std::unique_ptr<T>> &map, const Scene *scene);
 		template <typename T> static std::pair<std::shared_ptr<T>, ParamError> createMapItem(Logger &logger, std::string &&name, std::string &&class_name, ParamMap &&params, std::map<std::string, std::shared_ptr<T>> &map, const Scene *scene);
 		void defineBasicLayers();
 		void defineDependentLayers(); //!< This function generates the basic/auxiliary layers. Must be called *after* defining all render layers with the defineLayer function.

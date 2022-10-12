@@ -26,15 +26,15 @@
 
 namespace yafaray {
 
-std::pair<Camera *, ParamError> EquirectangularCamera::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map)
+std::pair<std::unique_ptr<Camera>, ParamError> EquirectangularCamera::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map)
 {
 	auto param_error{Params::meta_.check(param_map, {"type"}, {})};
-	auto result {new EquirectangularCamera(logger, param_error, param_map)};
-	if(param_error.notOk()) logger.logWarning(param_error.print<EquirectangularCamera>(name, {"type"}));
-	return {result, param_error};
+	auto camera {std::make_unique<ThisClassType_t>(logger, param_error, param_map)};
+	if(param_error.notOk()) logger.logWarning(param_error.print<ThisClassType_t>(name, {"type"}));
+	return {std::move(camera), param_error};
 }
 
-EquirectangularCamera::EquirectangularCamera(Logger &logger, ParamError &param_error, const ParamMap &param_map) : Camera{logger, param_error, param_map}
+EquirectangularCamera::EquirectangularCamera(Logger &logger, ParamError &param_error, const ParamMap &param_map) : ParentClassType_t{logger, param_error, param_map}
 {
 	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + params_.getAsParamMap(true).print());
 	// Initialize camera specific plane coordinates
@@ -55,7 +55,7 @@ void EquirectangularCamera::setAxis(const Vec3f &vx, const Vec3f &vy, const Vec3
 CameraRay EquirectangularCamera::shootRay(float px, float py, const Uv<float> &uv) const
 {
 	Ray ray;
-	ray.from_ = Camera::params_.from_;
+	ray.from_ = ParentClassType_t::params_.from_;
 	float u = 2.f * px / static_cast<float>(resX()) - 1.f;
 	float v = 2.f * py / static_cast<float>(resY()) - 1.f;
 	const float phi = math::num_pi<> * u;
@@ -69,7 +69,7 @@ CameraRay EquirectangularCamera::shootRay(float px, float py, const Uv<float> &u
 Point3f EquirectangularCamera::screenproject(const Point3f &p) const
 {
 	//FIXME
-	Vec3f dir{p - Camera::params_.from_};
+	Vec3f dir{p - ParentClassType_t::params_.from_};
 	dir.normalize();
 
 	// project p to pixel plane:

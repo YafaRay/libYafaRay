@@ -94,7 +94,7 @@ class Interface
 		virtual std::pair<size_t, ParamError> createLight(std::string &&name) noexcept;
 		virtual Texture *createTexture(std::string &&name) noexcept;
 		virtual const Material *createMaterial(std::string &&name) noexcept;
-		virtual const Camera * createCamera(std::string &&name) noexcept;
+		virtual std::pair<size_t, ParamError> createCamera(std::string &&name) noexcept;
 		virtual ParamError defineBackground() noexcept;
 		virtual ParamError defineSurfaceIntegrator() noexcept;
 		virtual ParamError defineVolumeIntegrator() noexcept;

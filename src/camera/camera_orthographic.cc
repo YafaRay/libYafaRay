@@ -40,20 +40,20 @@ ParamMap OrthographicCamera::Params::getAsParamMap(bool only_non_default) const
 
 ParamMap OrthographicCamera::getAsParamMap(bool only_non_default) const
 {
-	ParamMap result{Camera::getAsParamMap(only_non_default)};
+	ParamMap result{ParentClassType_t::getAsParamMap(only_non_default)};
 	result.append(params_.getAsParamMap(only_non_default));
 	return result;
 }
 
-std::pair<Camera *, ParamError> OrthographicCamera::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map)
+std::pair<std::unique_ptr<Camera>, ParamError> OrthographicCamera::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map)
 {
 	auto param_error{Params::meta_.check(param_map, {"type"}, {})};
-	auto result {new OrthographicCamera(logger, param_error, param_map)};
-	if(param_error.notOk()) logger.logWarning(param_error.print<OrthographicCamera>(name, {"type"}));
-	return {result, param_error};
+	auto camera {std::make_unique<ThisClassType_t>(logger, param_error, param_map)};
+	if(param_error.notOk()) logger.logWarning(param_error.print<ThisClassType_t>(name, {"type"}));
+	return {std::move(camera), param_error};
 }
 
-OrthographicCamera::OrthographicCamera(Logger &logger, ParamError &param_error, const ParamMap &param_map) : Camera{logger, param_error, param_map}, params_{param_error, param_map}
+OrthographicCamera::OrthographicCamera(Logger &logger, ParamError &param_error, const ParamMap &param_map) : ParentClassType_t{logger, param_error, param_map}, params_{param_error, param_map}
 {
 	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + params_.getAsParamMap(true).print());
 	// Initialize camera specific plane coordinates
@@ -69,7 +69,7 @@ void OrthographicCamera::setAxis(const Vec3f &vx, const Vec3f &vy, const Vec3f &
 	vright_ = cam_x_;
 	vup_ = aspect_ratio_ * cam_y_;
 	vto_ = cam_z_;
-	pos_ = Camera::params_.from_ - 0.5f * params_.scale_ * (vup_ + vright_);
+	pos_ = ParentClassType_t::params_.from_ - 0.5f * params_.scale_ * (vup_ + vright_);
 	vup_     *= params_.scale_ / static_cast<float>(resY());
 	vright_  *= params_.scale_ / static_cast<float>(resX());
 }

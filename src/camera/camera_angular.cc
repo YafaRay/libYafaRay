@@ -49,21 +49,20 @@ ParamMap AngularCamera::Params::getAsParamMap(bool only_non_default) const
 
 ParamMap AngularCamera::getAsParamMap(bool only_non_default) const
 {
-	ParamMap result{Camera::getAsParamMap(only_non_default)};
+	ParamMap result{ParentClassType_t::getAsParamMap(only_non_default)};
 	result.append(params_.getAsParamMap(only_non_default));
 	return result;
 }
 
-std::pair<Camera *, ParamError> AngularCamera::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map)
+std::pair<std::unique_ptr<Camera>, ParamError> AngularCamera::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map)
 {
-
 	auto param_error{Params::meta_.check(param_map, {"type"}, {})};
-	auto result {new AngularCamera(logger, param_error, param_map)};
-	if(param_error.notOk()) logger.logWarning(param_error.print<AngularCamera>(name, {"type"}));
-	return {result, param_error};
+	auto camera {std::make_unique<ThisClassType_t>(logger, param_error, param_map)};
+	if(param_error.notOk()) logger.logWarning(param_error.print<ThisClassType_t>(name, {"type"}));
+	return {std::move(camera), param_error};
 }
 
-AngularCamera::AngularCamera(Logger &logger, ParamError &param_error, const ParamMap &param_map) : Camera{logger, param_error, param_map},
+AngularCamera::AngularCamera(Logger &logger, ParamError &param_error, const ParamMap &param_map) : ParentClassType_t{logger, param_error, param_map},
 		params_{param_error, param_map}, angle_{params_.angle_degrees_ * math::div_pi_by_180<>}, max_radius_{params_.max_angle_degrees_ / params_.angle_degrees_}
 {
 	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + params_.getAsParamMap(true).print());
@@ -99,7 +98,7 @@ CameraRay AngularCamera::shootRay(float px, float py, const Uv<float> &uv) const
 	v *= aspect_ratio_;
 	const float radius = math::sqrt(u * u + v * v);
 	Ray ray;
-	ray.from_ = Camera::params_.from_;
+	ray.from_ = ParentClassType_t::params_.from_;
 	if(params_.circular_ && radius > max_radius_) { return {std::move(ray), false}; }
 	float theta = 0.f;
 	if(!((u == 0.f) && (v == 0.f))) theta = std::atan2(v, u);
@@ -123,7 +122,7 @@ CameraRay AngularCamera::shootRay(float px, float py, const Uv<float> &uv) const
 Point3f AngularCamera::screenproject(const Point3f &p) const
 {
 	//FIXME
-	Vec3f dir{p - Camera::params_.from_};
+	Vec3f dir{p - ParentClassType_t::params_.from_};
 	dir.normalize();
 	// project p to pixel plane:
 	const float dx = cam_x_ * dir;
