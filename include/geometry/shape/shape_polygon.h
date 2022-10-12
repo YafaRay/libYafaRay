@@ -54,9 +54,6 @@ class ShapePolygon final
 		alignas(std::max(size_t{8}, sizeof(T))) std::array<Point<T, 3>, N> vertices_;
 };
 
-using ShapeTriangle = ShapePolygon<float, 3>;
-using ShapeQuad = ShapePolygon<float, 4>;
-
 template <typename T, size_t N>
 inline Vec<T, 3> ShapePolygon<T, N>::calculateFaceNormal() const
 {
