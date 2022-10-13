@@ -127,7 +127,7 @@ std::unique_ptr<Image> Badge::generateImage(const std::string &denoise_params, c
 		std::transform(icon_extension.begin(), icon_extension.end(), icon_extension.begin(), ::tolower);
 		ParamMap logo_image_params;
 		logo_image_params["type"] = icon_extension;
-		auto logo_format = std::unique_ptr<Format>(Format::factory(logger_, logo_image_params).first);
+		auto logo_format{Format::factory(logger_, logo_image_params).first};
 		if(logo_format) logo = logo_format->loadFromFile(getIconPath(), Image::Optimization::None, ColorSpace::Srgb, 1.f);
 		if(!logo_format || !logo) logger_.logWarning("Badge: custom params badge icon '", getIconPath(), "' could not be loaded. Using default YafaRay icon.");
 	}
@@ -136,7 +136,7 @@ std::unique_ptr<Image> Badge::generateImage(const std::string &denoise_params, c
 	{
 		ParamMap logo_image_params;
 		logo_image_params["type"] = std::string("png");
-		auto logo_format = std::unique_ptr<Format>(Format::factory(logger_, logo_image_params).first);
+		auto logo_format{Format::factory(logger_, logo_image_params).first};
 		if(logo_format) logo = logo_format->loadFromMemory(logo::yafaray_tiny.data(), logo::yafaray_tiny.size(), Image::Optimization::None, ColorSpace::Srgb, 1.f);
 	}
 

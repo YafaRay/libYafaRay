@@ -21,8 +21,8 @@
  *
  */
 
-#ifndef YAFARAY_FORMAT_PNG_UTIL_H
-#define YAFARAY_FORMAT_PNG_UTIL_H
+#ifndef LIBYAFARAY_FORMAT_PNG_UTIL_H
+#define LIBYAFARAY_FORMAT_PNG_UTIL_H
 
 namespace yafaray {
 
@@ -62,4 +62,4 @@ inline void PngDataReader::readFromMem(png_structp png_ptr, png_bytep buffer, pn
 
 } //namespace yafaray
 
-#endif // YAFARAY_FORMAT_PNG_UTIL_H
+#endif // LIBYAFARAY_FORMAT_PNG_UTIL_H

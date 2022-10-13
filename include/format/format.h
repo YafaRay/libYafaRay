@@ -21,8 +21,8 @@
  *
  */
 
-#ifndef YAFARAY_FORMAT_H
-#define YAFARAY_FORMAT_H
+#ifndef LIBYAFARAY_FORMAT_H
+#define LIBYAFARAY_FORMAT_H
 
 #include "param/class_meta.h"
 #include "common/enum.h"
@@ -42,7 +42,7 @@ class Format
 	public:
 		inline static std::string getClassName() { return "Format"; }
 		[[nodiscard]] virtual ParamMap getAsParamMap(bool only_non_default) const;
-		static std::pair<Format *, ParamError> factory(Logger &logger, const ParamMap &param_map);
+		static std::pair<std::unique_ptr<Format>, ParamError> factory(Logger &logger, const ParamMap &param_map);
 		static std::string printMeta(const std::vector<std::string> &excluded_params) { return Params::meta_.print(excluded_params); }
 		explicit Format(Logger &logger, ParamError &param_error, const ParamMap &param_map) : params_{param_error, param_map}, logger_{logger} { }
 		virtual ~Format() = default;

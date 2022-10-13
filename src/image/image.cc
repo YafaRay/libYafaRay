@@ -74,7 +74,7 @@ std::pair<std::unique_ptr<Image>, ParamError> Image::factory(Logger &logger, con
 		const Path path(params.filename_);
 		ParamMap format_params;
 		format_params["type"] = string::toLower(path.getExtension());
-		std::unique_ptr<Format> format = std::unique_ptr<Format>(Format::factory(logger, format_params).first);
+		auto format{Format::factory(logger, format_params).first};
 		if(format)
 		{
 			if(format->isHdr())

@@ -21,8 +21,8 @@
  *
  */
 
-#ifndef YAFARAY_FORMAT_TGA_H
-#define YAFARAY_FORMAT_TGA_H
+#ifndef LIBYAFARAY_FORMAT_TGA_H
+#define LIBYAFARAY_FORMAT_TGA_H
 
 #include "format/format.h"
 #include "math/buffer_2d.h"
@@ -72,4 +72,4 @@ class TgaFormat final : public Format
 
 } //namespace yafaray
 
-#endif // YAFARAY_FORMAT_TGA_H
+#endif // LIBYAFARAY_FORMAT_TGA_H

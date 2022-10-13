@@ -21,8 +21,8 @@
  *
  */
 
-#ifndef YAFARAY_FORMAT_JPG_H
-#define YAFARAY_FORMAT_JPG_H
+#ifndef LIBYAFARAY_FORMAT_JPG_H
+#define LIBYAFARAY_FORMAT_JPG_H
 
 #include "format/format.h"
 
@@ -45,4 +45,4 @@ class JpgFormat final : public Format
 
 } //namespace yafaray
 
-#endif // YAFARAY_FORMAT_JPG_H
+#endif // LIBYAFARAY_FORMAT_JPG_H

@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef YAFARAY_FORMAT_HDR_H
-#define YAFARAY_FORMAT_HDR_H
+#ifndef LIBYAFARAY_FORMAT_HDR_H
+#define LIBYAFARAY_FORMAT_HDR_H
 
 #include "format/format.h"
 #include "format/format_hdr_util.h"
@@ -53,4 +53,4 @@ class HdrFormat final : public Format
 
 } //namespace yafaray
 
-#endif // YAFARAY_FORMAT_HDR_H
+#endif // LIBYAFARAY_FORMAT_HDR_H

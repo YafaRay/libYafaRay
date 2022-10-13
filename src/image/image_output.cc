@@ -141,7 +141,7 @@ void ImageOutput::flush(const RenderControl &render_control, const Timer &timer)
 	if(!view_name.empty()) base_name += " (view " + view_name + ")";
 	ParamMap params;
 	params["type"] = ext;
-	std::unique_ptr<Format> format(Format::factory(logger_, params).first);
+	auto format{Format::factory(logger_, params).first};
 
 	if(format)
 	{

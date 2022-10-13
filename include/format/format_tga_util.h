@@ -21,8 +21,8 @@
  *
  */
 
-#ifndef YAFARAY_FORMAT_TGA_UTIL_H
-#define YAFARAY_FORMAT_TGA_UTIL_H
+#ifndef LIBYAFARAY_FORMAT_TGA_UTIL_H
+#define LIBYAFARAY_FORMAT_TGA_UTIL_H
 
 #include "color/color.h"
 
@@ -146,4 +146,4 @@ struct TgaPixelRgba
 
 } //namespace yafaray
 
-#endif // YAFARAY_FORMAT_TGA_UTIL_H
+#endif // LIBYAFARAY_FORMAT_TGA_UTIL_H

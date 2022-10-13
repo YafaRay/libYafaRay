@@ -21,8 +21,8 @@
  *
  */
 
-#ifndef YAFARAY_FORMAT_EXR_H
-#define YAFARAY_FORMAT_EXR_H
+#ifndef LIBYAFARAY_FORMAT_EXR_H
+#define LIBYAFARAY_FORMAT_EXR_H
 
 #include "format/format.h"
 
@@ -46,4 +46,4 @@ class ExrFormat final : public Format
 
 } //namespace yafaray
 
-#endif // YAFARAY_FORMAT_EXR_H
+#endif // LIBYAFARAY_FORMAT_EXR_H

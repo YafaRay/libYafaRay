@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef YAFARAY_FORMAT_HDR_UTIL_H
-#define YAFARAY_FORMAT_HDR_UTIL_H
+#ifndef LIBYAFARAY_FORMAT_HDR_UTIL_H
+#define LIBYAFARAY_FORMAT_HDR_UTIL_H
 
 #include "color/color.h"
 #include "common/string.h"
@@ -118,4 +118,4 @@ inline void RgbePixel::setScanlineStart(int w)
 
 } //namespace yafaray
 
-#endif // YAFARAY_FORMAT_HDR_UTIL_H
+#endif // LIBYAFARAY_FORMAT_HDR_UTIL_H

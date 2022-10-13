@@ -63,7 +63,7 @@ Format::Params::Params(ParamError &param_error, const ParamMap &param_map)
 {
 }
 
-ParamMap Format::Params::getAsParamMap(bool only_non_default) const
+ParamMap Format::Params::getAsParamMap(bool /*only_non_default*/) const
 {
 	PARAM_SAVE_START;
 	PARAM_SAVE_END;
@@ -76,30 +76,30 @@ ParamMap Format::getAsParamMap(bool only_non_default) const
 	return result;
 }
 
-std::pair<Format *, ParamError> Format::factory(Logger &logger, const ParamMap &param_map)
+std::pair<std::unique_ptr<Format>, ParamError> Format::factory(Logger &logger, const ParamMap &param_map)
 {
 	const Type type{ClassMeta::preprocessParamMap<Type>(logger, getClassName(), param_map)};
 	auto param_error{Params::meta_.check(param_map, {"type"}, {})};
-	Format *result = nullptr;
+	std::unique_ptr<Format> format;
 	switch(type.value())
 	{
-		case Type::Tga: result = new TgaFormat(logger, param_error, param_map); break;
-		case Type::Hdr: result = new HdrFormat(logger, param_error, param_map); break;
+		case Type::Tga: format = std::make_unique<TgaFormat>(logger, param_error, param_map); break;
+		case Type::Hdr: format = std::make_unique<HdrFormat>(logger, param_error, param_map); break;
 #ifdef HAVE_OPENEXR
-		case Type::Exr: result = new ExrFormat(logger, param_error, param_map); break;
+		case Type::Exr: format = std::make_unique<ExrFormat>(logger, param_error, param_map); break;
 #endif // HAVE_OPENEXR
 #ifdef HAVE_JPEG
-		case Type::Jpg: result = new JpgFormat(logger, param_error, param_map); break;
+		case Type::Jpg: format = std::make_unique<JpgFormat>(logger, param_error, param_map); break;
 #endif // HAVE_JPEG
 #ifdef HAVE_PNG
-		case Type::Png: result = new PngFormat(logger, param_error, param_map); break;
+		case Type::Png: format = std::make_unique<PngFormat>(logger, param_error, param_map); break;
 #endif // HAVE_PNG
 #ifdef HAVE_TIFF
-		case Type::Tif: result = new TifFormat(logger, param_error, param_map); break;
+		case Type::Tif: format = std::make_unique<TifFormat>(logger, param_error, param_map); break;
 #endif // HAVE_TIFF
 		default: param_error.flags_ = ParamError::Flags::ErrorWhileCreating; break;
 	}
-	return {result, param_error};
+	return {std::move(format), param_error};
 }
 
 std::unique_ptr<Image> Format::loadFromMemory(const uint8_t *data, size_t size, const Image::Optimization &optimization, const ColorSpace &color_space, float gamma)

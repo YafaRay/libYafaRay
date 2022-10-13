@@ -20,8 +20,8 @@
  *
  */
 
-#ifndef YAFARAY_FORMAT_TIF_H
-#define YAFARAY_FORMAT_TIF_H
+#ifndef LIBYAFARAY_FORMAT_TIF_H
+#define LIBYAFARAY_FORMAT_TIF_H
 
 #include "format.h"
 
@@ -42,4 +42,4 @@ class TifFormat final : public Format
 
 } //namespace yafaray
 
-#endif // YAFARAY_FORMAT_TIF_H
+#endif // LIBYAFARAY_FORMAT_TIF_H

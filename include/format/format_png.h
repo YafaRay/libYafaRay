@@ -20,8 +20,8 @@
  *
  */
 
-#ifndef YAFARAY_FORMAT_PNG_H
-#define YAFARAY_FORMAT_PNG_H
+#ifndef LIBYAFARAY_FORMAT_PNG_H
+#define LIBYAFARAY_FORMAT_PNG_H
 
 #include "format/format.h"
 
@@ -48,4 +48,4 @@ class PngFormat final : public Format
 
 } //namespace yafaray
 
-#endif // YAFARAY_FORMAT_PNG_H
+#endif // LIBYAFARAY_FORMAT_PNG_H
