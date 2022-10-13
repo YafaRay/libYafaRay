@@ -27,8 +27,6 @@ namespace yafaray {
 // Blender noise, similar to Perlin's
 class BlenderNoiseGenerator final : public NoiseGenerator
 {
-	public:
-		BlenderNoiseGenerator() = default;
 	private:
 		float operator()(const Point3f &pt) const override;
 		// offset texture point coordinates by one

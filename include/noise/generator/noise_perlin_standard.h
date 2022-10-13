@@ -26,9 +26,6 @@ namespace yafaray {
 
 class StdPerlinNoiseGenerator final : public NoiseGenerator
 {
-	public:
-		StdPerlinNoiseGenerator() = default;
-
 	private:
 		float operator()(const Point3f &pt) const override;
 		static std::pair<std::array<int, 2>, std::array<float, 2>> setup(int i, const std::array<float, 3> &vec);

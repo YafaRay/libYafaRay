@@ -17,8 +17,8 @@
  *      Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-#ifndef LIBYAFARAY_NOISE_MUSGRAVE_H
-#define LIBYAFARAY_NOISE_MUSGRAVE_H
+#ifndef LIBYAFARAY_MUSGRAVE_H
+#define LIBYAFARAY_MUSGRAVE_H
 
 #include <cstddef>
 
@@ -35,11 +35,10 @@ typedef Point<float, 3> Point3f;
 class Musgrave
 {
 	public:
-		Musgrave() = default;
 		virtual ~Musgrave() = default;
 		virtual float operator()(const Point3f &pt) const = 0;
 };
 
 } //namespace yafaray
 
-#endif //LIBYAFARAY_NOISE_MUSGRAVE_H
+#endif //LIBYAFARAY_MUSGRAVE_H

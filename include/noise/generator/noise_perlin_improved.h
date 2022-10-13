@@ -28,9 +28,6 @@ namespace yafaray {
 // Improved Perlin noise, based on Java reference code by Ken Perlin himself.
 class NewPerlinNoiseGenerator final : public NoiseGenerator
 {
-	public:
-		NewPerlinNoiseGenerator() = default;
-
 	private:
 		float operator()(const Point3f &pt) const override;
 		static float fade(float t) { return t * t * t * (t * (t * 6 - 15) + 10); }

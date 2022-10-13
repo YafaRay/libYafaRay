@@ -17,8 +17,8 @@
  *      Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-#ifndef YAFARAY_NOISE_GENERATOR_H
-#define YAFARAY_NOISE_GENERATOR_H
+#ifndef LIBYAFARAY_NOISE_GENERATOR_H
+#define LIBYAFARAY_NOISE_GENERATOR_H
 
 #include "param/class_meta.h"
 
@@ -43,7 +43,6 @@ class NoiseGenerator
 					{"voronoi_crackle", VoronoiCrackle, ""},
 				}};
 		};
-		NoiseGenerator() = default;
 		virtual ~NoiseGenerator() = default;
 		static std::unique_ptr<NoiseGenerator> newNoise(const NoiseType &noise_type);
 		virtual float operator()(const Point3f &pt) const = 0;
@@ -60,4 +59,4 @@ class NoiseGenerator
 
 } //namespace yafaray
 
-#endif  //YAFARAY_NOISE_GENERATOR_H
+#endif  //LIBYAFARAY_NOISE_GENERATOR_H

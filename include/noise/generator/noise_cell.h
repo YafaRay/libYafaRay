@@ -26,9 +26,6 @@ namespace yafaray {
 
 class CellNoiseGenerator final : public NoiseGenerator
 {
-	public:
-		CellNoiseGenerator() = default;
-
 	private:
 		float operator()(const Point3f &pt) const override;
 };
