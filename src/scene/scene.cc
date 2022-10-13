@@ -436,14 +436,12 @@ std::pair<ImageOutput *, ParamError> Scene::createOutput(std::string &&name, Par
 	{
 		logWarnExist(logger_, class_name, name); return {nullptr, {ParamError::Flags::ErrorAlreadyExists}};
 	}
-	std::unique_ptr<ImageOutput> item(ImageOutput::factory(logger_, *this, name, params).first);
-	if(item)
+	auto [output, param_error]{ImageOutput::factory(logger_, *this, name, params)};
+	if(output)
 	{
-		outputs_[name] = std::move(item);
-		std::string type;
-		params.getParam("type", type);
-		if(logger_.isVerbose()) logInfoVerboseSuccess(logger_, class_name, name, type);
-		return {outputs_[name].get(), {}};
+		if(logger_.isVerbose()) logInfoVerboseSuccess(logger_, class_name, name, "");
+		outputs_[name] = std::move(output);
+		return {outputs_[name].get(), param_error};
 	}
 	return {nullptr, ParamError{ParamError::Flags::ErrorWhileCreating}};
 }

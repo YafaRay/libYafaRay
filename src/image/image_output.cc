@@ -91,13 +91,13 @@ ParamMap ImageOutput::getAsParamMap(bool only_non_default) const
 	return params_.getAsParamMap(only_non_default);
 }
 
-std::pair<ImageOutput *, ParamError> ImageOutput::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map)
+std::pair<std::unique_ptr<ImageOutput>, ParamError> ImageOutput::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map)
 {
 	if(logger.isDebug()) logger.logDebug("**" + getClassName() + "::factory 'raw' ParamMap\n" + param_map.logContents());
 	auto param_error{Params::meta_.check(param_map, {}, {})};
-	auto result {new ImageOutput(logger, param_error, param_map)};
+	auto output {std::make_unique<ImageOutput>(logger, param_error, param_map)};
 	if(param_error.notOk()) logger.logWarning(param_error.print<ImageOutput>(name, {}));
-	return {result, param_error};
+	return {std::move(output), param_error};
 }
 
 ImageOutput::ImageOutput(Logger &logger, ParamError &param_error, const ParamMap &param_map) : params_{param_error, param_map}, logger_{logger}
