@@ -264,12 +264,12 @@ std::pair<size_t, ParamError> ExportXml::createLight(std::string &&name) noexcep
 	return {};
 }
 
-Texture *ExportXml::createTexture(std::string &&name) noexcept
+std::pair<size_t, ParamError> ExportXml::createTexture(std::string &&name) noexcept
 {
 	file_ << "\n<texture name=\"" << name << "\">\n";
 	writeParamMap(*params_);
 	file_ << "</texture>\n";
-	return nullptr;
+	return {};
 }
 
 const Material *ExportXml::createMaterial(std::string &&name) noexcept

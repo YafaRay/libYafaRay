@@ -120,7 +120,7 @@ class Scene final
 		std::map<std::string, Light *> getLights() const;
 
 		std::pair<size_t, ParamError> createLight(std::string &&name, ParamMap &&params);
-		std::pair<Texture *, ParamError> createTexture(std::string &&name, ParamMap &&params);
+		std::pair<size_t, ParamError> createTexture(std::string &&name, ParamMap &&params);
 		std::pair<std::unique_ptr<const Material> *, ParamError> createMaterial(std::string &&name, ParamMap &&params, std::list<ParamMap> &&nodes_params);
 		std::pair<size_t, ParamError> createCamera(std::string &&name, ParamMap &&params);
 		ParamError defineBackground(ParamMap &&params);

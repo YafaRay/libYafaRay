@@ -280,13 +280,13 @@ std::pair<size_t, ParamError> ExportPython::createLight(std::string &&name) noex
 	return {};
 }
 
-Texture *ExportPython::createTexture(std::string &&name) noexcept
+std::pair<size_t, ParamError> ExportPython::createTexture(std::string &&name) noexcept
 {
 	writeParamMap(*params_);
 	params_->clear();
 	file_ << "yi.createTexture(\"" << name << "\")\n";
 	file_ << "yi.paramsClearAll()\n\n";
-	return nullptr;
+	return {};
 }
 
 const Material *ExportPython::createMaterial(std::string &&name) noexcept

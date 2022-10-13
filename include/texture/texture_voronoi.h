@@ -27,10 +27,14 @@ namespace yafaray {
 
 class VoronoiTexture final : public Texture
 {
+		using ThisClassType_t = VoronoiTexture; using ParentClassType_t = Texture;
+
 	public:
 		inline static std::string getClassName() { return "VoronoiTexture"; }
-		static std::pair<Texture *, ParamError> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params);
+		static std::pair<std::unique_ptr<Texture>, ParamError> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params);
 		static std::string printMeta(const std::vector<std::string> &excluded_params) { return Params::meta_.print(excluded_params); }
+		[[nodiscard]] ParamMap getAsParamMap(bool only_non_default) const override;
+		VoronoiTexture(Logger &logger, ParamError &param_error, const ParamMap &param_map);
 
 	private:
 		struct ColorMode : public Enum<ColorMode>
@@ -46,7 +50,7 @@ class VoronoiTexture final : public Texture
 		[[nodiscard]] Type type() const override { return Type::Voronoi; }
 		const struct Params
 		{
-			PARAM_INIT_PARENT(Texture);
+			PARAM_INIT_PARENT(ParentClassType_t);
 			PARAM_ENUM_DECL(VoronoiNoiseGenerator::DMetricType, distance_metric_, VoronoiNoiseGenerator::DMetricType::DistReal, "distance_metric", "");
 			PARAM_ENUM_DECL(ColorMode, color_mode_, ColorMode::IntensityWithoutColor, "color_mode", "");
 			PARAM_DECL(Rgb, color_1_, Rgb{0.f}, "color1", "");
@@ -59,8 +63,6 @@ class VoronoiTexture final : public Texture
 			PARAM_DECL(float, mk_exponent_, 2.5f, "mk_exponent", "Minkovsky exponent");
 			PARAM_DECL(float, intensity_, 1.f, "intensity", "Intensity scale");
 		} params_;
-		[[nodiscard]] ParamMap getAsParamMap(bool only_non_default) const override;
-		VoronoiTexture(Logger &logger, ParamError &param_error, const ParamMap &param_map);
 		Rgba getColor(const Point3f &p, const MipMapParams *mipmap_params) const override;
 		float getFloat(const Point3f &p, const MipMapParams *mipmap_params) const override;
 

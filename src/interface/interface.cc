@@ -193,7 +193,7 @@ void Interface::paramsEndList() noexcept
 
 std::pair<size_t, ParamError> Interface::createObject(std::string &&name) noexcept { return scene_->createObject(std::move(name), std::move(*params_)); }
 std::pair<size_t, ParamError> Interface::createLight(std::string &&name) noexcept { return scene_->createLight(std::move(name), std::move(*params_)); }
-Texture *Interface::createTexture(std::string &&name) noexcept { return scene_->createTexture(std::move(name), std::move(*params_)).first; }
+std::pair<size_t, ParamError> Interface::createTexture(std::string &&name) noexcept { return scene_->createTexture(std::move(name), std::move(*params_)); }
 const Material *Interface::createMaterial(std::string &&name) noexcept { return scene_->createMaterial(std::move(name), std::move(*params_), std::move(nodes_params_)).first->get(); }
 std::pair<size_t, ParamError> Interface::createCamera(std::string &&name) noexcept { return scene_->createCamera(std::move(name), std::move(*params_)); }
 ParamError Interface::defineBackground() noexcept { return scene_->defineBackground(std::move(*params_)); }

@@ -231,7 +231,7 @@ yafaray_bool_t yafaray_createLight(yafaray_Interface_t *interface, const char *n
 
 yafaray_bool_t yafaray_createTexture(yafaray_Interface_t *interface, const char *name)
 {
-	return static_cast<yafaray_bool_t>(reinterpret_cast<yafaray::Interface *>(interface)->createTexture(name) != nullptr);
+	return static_cast<yafaray_bool_t>(reinterpret_cast<yafaray::Interface *>(interface)->createTexture(name).second.isOk());
 }
 
 yafaray_bool_t yafaray_createMaterial(yafaray_Interface_t *interface, const char *name)

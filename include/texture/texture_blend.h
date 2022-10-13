@@ -26,10 +26,14 @@ namespace yafaray {
 
 class BlendTexture final : public Texture
 {
+		using ThisClassType_t = BlendTexture; using ParentClassType_t = Texture;
+
 	public:
 		inline static std::string getClassName() { return "BlendTexture"; }
-		static std::pair<Texture *, ParamError> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map);
+		static std::pair<std::unique_ptr<Texture>, ParamError> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map);
 		static std::string printMeta(const std::vector<std::string> &excluded_params) { return Params::meta_.print(excluded_params); }
+		[[nodiscard]] ParamMap getAsParamMap(bool only_non_default) const override;
+		BlendTexture(Logger &logger, ParamError &param_error, const ParamMap &param_map);
 
 	private:
 		struct BlendType : public Enum<BlendType>
@@ -48,12 +52,10 @@ class BlendTexture final : public Texture
 		[[nodiscard]] Type type() const override { return Type::Blend; }
 		const struct Params
 		{
-			PARAM_INIT_PARENT(Texture);
+			PARAM_INIT_PARENT(ParentClassType_t);
 			PARAM_ENUM_DECL(BlendType, blend_type_, BlendType::Linear, "blend_type", "Blend type for blend texture");
 			PARAM_DECL(bool, use_flip_axis_, false, "use_flip_axis", "");
 		} params_;
-		[[nodiscard]] ParamMap getAsParamMap(bool only_non_default) const override;
-		BlendTexture(Logger &logger, ParamError &param_error, const ParamMap &param_map);
 		Rgba getColor(const Point3f &p, const MipMapParams *mipmap_params) const override;
 		float getFloat(const Point3f &p, const MipMapParams *mipmap_params) const override;
 };

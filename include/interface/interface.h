@@ -92,7 +92,7 @@ class Interface
 		virtual void setCurrentMaterial(std::string &&name) noexcept;
 		virtual std::pair<size_t, ParamError> createObject(std::string &&name) noexcept;
 		virtual std::pair<size_t, ParamError> createLight(std::string &&name) noexcept;
-		virtual Texture *createTexture(std::string &&name) noexcept;
+		virtual std::pair<size_t, ParamError> createTexture(std::string &&name) noexcept;
 		virtual const Material *createMaterial(std::string &&name) noexcept;
 		virtual std::pair<size_t, ParamError> createCamera(std::string &&name) noexcept;
 		virtual ParamError defineBackground() noexcept;

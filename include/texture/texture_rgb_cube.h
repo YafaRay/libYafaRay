@@ -30,19 +30,21 @@ namespace yafaray {
 
 class RgbCubeTexture final : public Texture
 {
+		using ThisClassType_t = RgbCubeTexture; using ParentClassType_t = Texture;
+
 	public:
 		inline static std::string getClassName() { return "RgbCubeTexture"; }
-		static std::pair<Texture *, ParamError> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params);
+		static std::pair<std::unique_ptr<Texture>, ParamError> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params);
 		static std::string printMeta(const std::vector<std::string> &excluded_params) { return Params::meta_.print(excluded_params); }
+		[[nodiscard]] ParamMap getAsParamMap(bool only_non_default) const override;
+		explicit RgbCubeTexture(Logger &logger, ParamError &param_error, const ParamMap &param_map);
 
 	private:
 		[[nodiscard]] Type type() const override { return Type::RgbCube; }
 		const struct Params
 		{
-			PARAM_INIT_PARENT(Texture);
+			PARAM_INIT_PARENT(ParentClassType_t);
 		} params_;
-		[[nodiscard]] ParamMap getAsParamMap(bool only_non_default) const override;
-		explicit RgbCubeTexture(Logger &logger, ParamError &param_error, const ParamMap &param_map);
 		Rgba getColor(const Point3f &p, const MipMapParams *mipmap_params) const override;
 		float getFloat(const Point3f &p, const MipMapParams *mipmap_params) const override;
 };

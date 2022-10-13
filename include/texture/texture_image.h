@@ -31,10 +31,14 @@ namespace yafaray {
 
 class ImageTexture final : public Texture
 {
+		using ThisClassType_t = ImageTexture; using ParentClassType_t = Texture;
+
 	public:
 		inline static std::string getClassName() { return "ImageTexture"; }
-		static std::pair<Texture *, ParamError> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params);
+		static std::pair<std::unique_ptr<Texture>, ParamError> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params);
 		static std::string printMeta(const std::vector<std::string> &excluded_params) { return Params::meta_.print(excluded_params); }
+		[[nodiscard]] ParamMap getAsParamMap(bool only_non_default) const override;
+		ImageTexture(Logger &logger, ParamError &param_error, const ParamMap &param_map, const Image *image);
 
 	private:
 		struct ClipMode : public Enum<ClipMode>
@@ -51,7 +55,7 @@ class ImageTexture final : public Texture
 		[[nodiscard]] Type type() const override { return Type::Image; }
 		const struct Params
 		{
-			PARAM_INIT_PARENT(Texture);
+			PARAM_INIT_PARENT(ParentClassType_t);
 			PARAM_ENUM_DECL(ClipMode, clip_mode_, ClipMode::Repeat, "clipping", "Clip mode");
 			PARAM_DECL(std::string , image_name_, false, "image_name", "");
 			PARAM_DECL(float , exposure_adjust_, 0.f, "exposure_adjust", "");
@@ -73,9 +77,6 @@ class ImageTexture final : public Texture
 			PARAM_DECL(float , trilinear_level_bias_, 0.f, "trilinear_level_bias", "Manually specified delta to be added/subtracted from the calculated mipmap level. Negative values will choose higher resolution mipmaps than calculated, reducing the blurry artifacts at the cost of increasing texture noise. Positive values will choose lower resolution mipmaps than calculated. Default (and recommended) is 0.0 to use the calculated mipmaps as-is.");
 			PARAM_DECL(float , ewa_max_anisotropy_, 8.f, "ewa_max_anisotropy", "Maximum anisotropy allowed for mipmap EWA algorithm. Higher values give better quality in textures seen from an angle, but render will be slower. Lower values will give more speed but lower quality in textures seen in an angle.");
 		} params_;
-		[[nodiscard]] ParamMap getAsParamMap(bool only_non_default) const override;
-		class EwaWeightLut;
-		ImageTexture(Logger &logger, ParamError &param_error, const ParamMap &param_map, const Image *image);
 		bool discrete() const override { return true; }
 		bool isThreeD() const override { return false; }
 		bool isNormalmap() const override { return params_.normal_map_; }
@@ -101,6 +102,7 @@ class ImageTexture final : public Texture
 		std::vector<std::unique_ptr<const Image>> mipmaps_;
 		float original_image_file_gamma_ = 1.f;
 		ColorSpace original_image_file_color_space_ = ColorSpace::RawManualGamma;
+		class EwaWeightLut;
 		static const EwaWeightLut ewa_weight_lut_;
 };
 

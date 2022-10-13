@@ -25,15 +25,18 @@
 
 namespace yafaray {
 
-class NoiseGenerator;
 class Musgrave;
 
 class MusgraveTexture final : public Texture
 {
+		using ThisClassType_t = MusgraveTexture; using ParentClassType_t = Texture;
+
 	public:
 		inline static std::string getClassName() { return "MusgraveTexture"; }
-		static std::pair<Texture *, ParamError> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params);
+		static std::pair<std::unique_ptr<Texture>, ParamError> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params);
 		static std::string printMeta(const std::vector<std::string> &excluded_params) { return Params::meta_.print(excluded_params); }
+		[[nodiscard]] ParamMap getAsParamMap(bool only_non_default) const override;
+		MusgraveTexture(Logger &logger, ParamError &param_error, const ParamMap &param_map);
 
 	private:
 		struct MusgraveType : public Enum<MusgraveType>
@@ -50,7 +53,7 @@ class MusgraveTexture final : public Texture
 		[[nodiscard]] Type type() const override { return Type::Musgrave; }
 		const struct Params
 		{
-			PARAM_INIT_PARENT(Texture);
+			PARAM_INIT_PARENT(ParentClassType_t);
 			PARAM_ENUM_DECL(MusgraveType, musgrave_type_, MusgraveType::Fbm, "musgrave_type", "");
 			PARAM_ENUM_DECL(NoiseGenerator::NoiseType, noise_type_, NoiseGenerator::NoiseType::PerlinImproved, "noise_type", "");
 			PARAM_DECL(Rgb, color_1_, Rgb{0.f}, "color1", "");
@@ -63,8 +66,6 @@ class MusgraveTexture final : public Texture
 			PARAM_DECL(float , intensity_, 1.f, "intensity", "");
 			PARAM_DECL(float, size_, 1.f, "size", "");
 		} params_;
-		[[nodiscard]] ParamMap getAsParamMap(bool only_non_default) const override;
-		MusgraveTexture(Logger &logger, ParamError &param_error, const ParamMap &param_map);
 		Rgba getColor(const Point3f &p, const MipMapParams *mipmap_params) const override;
 		float getFloat(const Point3f &p, const MipMapParams *mipmap_params) const override;
 

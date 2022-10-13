@@ -52,9 +52,11 @@ struct InterpolationType : public Enum<InterpolationType>
 
 class Texture
 {
+	protected: struct Type;
 	public:
 		inline static std::string getClassName() { return "Texture"; }
-		static std::pair<Texture *, ParamError> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map);
+		[[nodiscard]] virtual Type type() const = 0;
+		static std::pair<std::unique_ptr<Texture>, ParamError> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map);
 		[[nodiscard]] virtual ParamMap getAsParamMap(bool only_non_default) const;
 		Texture(Logger &logger, ParamError &param_error, const ParamMap &param_map);
 		virtual ~Texture() = default;
@@ -103,7 +105,6 @@ class Texture
 					{"image", Image, ""},
 				}};
 		};
-		[[nodiscard]] virtual Type type() const = 0;
 		const struct Params
 		{
 			PARAM_INIT;

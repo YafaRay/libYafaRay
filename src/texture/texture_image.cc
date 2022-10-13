@@ -83,12 +83,12 @@ ParamMap ImageTexture::Params::getAsParamMap(bool only_non_default) const
 
 ParamMap ImageTexture::getAsParamMap(bool only_non_default) const
 {
-	ParamMap result{Texture::getAsParamMap(only_non_default)};
+	ParamMap result{ParentClassType_t::getAsParamMap(only_non_default)};
 	result.append(params_.getAsParamMap(only_non_default));
 	return result;
 }
 
-std::pair<Texture *, ParamError> ImageTexture::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map)
+std::pair<std::unique_ptr<Texture>, ParamError> ImageTexture::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map)
 {
 	auto param_error{Params::meta_.check(param_map, {"type"}, {"ramp_item_"})};
 	std::string image_name;
@@ -104,12 +104,12 @@ std::pair<Texture *, ParamError> ImageTexture::factory(Logger &logger, const Sce
 		logger.logError("ImageTexture: Couldn't load image file, dropping texture.");
 		return {nullptr, ParamError{ParamError::Flags::ErrorWhileCreating}};
 	}
-	auto result {new ImageTexture(logger, param_error, param_map, image)};
-	if(param_error.notOk()) logger.logWarning(param_error.print<ImageTexture>(name, {"type"}));
-	return {result, param_error};
+	auto texture {std::make_unique<ThisClassType_t>(logger, param_error, param_map, image)};
+	if(param_error.notOk()) logger.logWarning(param_error.print<ThisClassType_t>(name, {"type"}));
+	return {std::move(texture), param_error};
 }
 
-ImageTexture::ImageTexture(Logger &logger, ParamError &param_error, const ParamMap &param_map, const Image *image) : Texture{logger, param_error, param_map}, params_{param_error, param_map}, image_{image}
+ImageTexture::ImageTexture(Logger &logger, ParamError &param_error, const ParamMap &param_map, const Image *image) : ParentClassType_t{logger, param_error, param_map}, params_{param_error, param_map}, image_{image}
 {
 	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + params_.getAsParamMap(true).print());
 	original_image_file_gamma_ = image->getGamma();

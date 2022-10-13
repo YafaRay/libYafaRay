@@ -27,10 +27,14 @@ namespace yafaray {
 
 class WoodTexture final : public Texture
 {
+		using ThisClassType_t = WoodTexture; using ParentClassType_t = Texture;
+
 	public:
 		inline static std::string getClassName() { return "WoodTexture"; }
-		static std::pair<Texture *, ParamError> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params);
+		static std::pair<std::unique_ptr<Texture>, ParamError> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params);
 		static std::string printMeta(const std::vector<std::string> &excluded_params) { return Params::meta_.print(excluded_params); }
+		[[nodiscard]] ParamMap getAsParamMap(bool only_non_default) const override;
+		WoodTexture(Logger &logger, ParamError &param_error, const ParamMap &param_map);
 
 	private:
 		struct Shape : public Enum<Shape>
@@ -53,7 +57,7 @@ class WoodTexture final : public Texture
 		[[nodiscard]] Type type() const override { return Type::Wood; }
 		const struct Params
 		{
-			PARAM_INIT_PARENT(Texture);
+			PARAM_INIT_PARENT(ParentClassType_t);
 			PARAM_ENUM_DECL(WoodType, wood_type_, WoodType::Bands, "wood_type", "");
 			PARAM_ENUM_DECL(Shape, shape_, Shape::Sin, "shape", "");
 			PARAM_ENUM_DECL(NoiseGenerator::NoiseType, noise_type_, NoiseGenerator::NoiseType::PerlinImproved, "noise_type", "");
@@ -64,8 +68,6 @@ class WoodTexture final : public Texture
 			PARAM_DECL(float, size_, 1.f, "size", "");
 			PARAM_DECL(bool , hard_, false, "hard", "");
 		} params_;
-		[[nodiscard]] ParamMap getAsParamMap(bool only_non_default) const override;
-		WoodTexture(Logger &logger, ParamError &param_error, const ParamMap &param_map);
 		Rgba getColor(const Point3f &p, const MipMapParams *mipmap_params) const override;
 		float getFloat(const Point3f &p, const MipMapParams *mipmap_params) const override;
 

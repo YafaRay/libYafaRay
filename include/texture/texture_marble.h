@@ -27,10 +27,14 @@ namespace yafaray {
 
 class MarbleTexture final : public Texture
 {
+		using ThisClassType_t = MarbleTexture; using ParentClassType_t = Texture;
+
 	public:
 		inline static std::string getClassName() { return "MarbleTexture"; }
-		static std::pair<Texture *, ParamError> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params);
+		static std::pair<std::unique_ptr<Texture>, ParamError> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params);
 		static std::string printMeta(const std::vector<std::string> &excluded_params) { return Params::meta_.print(excluded_params); }
+		[[nodiscard]] ParamMap getAsParamMap(bool only_non_default) const override;
+		MarbleTexture(Logger &logger, ParamError &param_error, const ParamMap &param_map);
 
 	private:
 		struct Shape : public Enum<Shape>
@@ -45,7 +49,7 @@ class MarbleTexture final : public Texture
 		[[nodiscard]] Type type() const override { return Type::Marble; }
 		const struct Params
 		{
-			PARAM_INIT_PARENT(Texture);
+			PARAM_INIT_PARENT(ParentClassType_t);
 			PARAM_ENUM_DECL(Shape, shape_, Shape::Sin, "shape", "");
 			PARAM_ENUM_DECL(NoiseGenerator::NoiseType, noise_type_, NoiseGenerator::NoiseType::PerlinImproved, "noise_type", "");
 			PARAM_DECL(Rgb, color_1_, Rgb{0.f}, "color1", "");
@@ -56,8 +60,6 @@ class MarbleTexture final : public Texture
 			PARAM_DECL(float, sharpness_, 1.f, "sharpness", "");
 			PARAM_DECL(float, turbulence_, 1.f, "turbulence", "");
 		} params_;
-		[[nodiscard]] ParamMap getAsParamMap(bool only_non_default) const override;
-		MarbleTexture(Logger &logger, ParamError &param_error, const ParamMap &param_map);
 
 		Rgba getColor(const Point3f &p, const MipMapParams *mipmap_params) const override;
 		float getFloat(const Point3f &p, const MipMapParams *mipmap_params) const override;
