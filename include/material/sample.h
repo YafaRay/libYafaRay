@@ -17,8 +17,8 @@
  *      Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-#ifndef LIBYAFARAY_MATERIAL_SAMPLE_H
-#define LIBYAFARAY_MATERIAL_SAMPLE_H
+#ifndef LIBYAFARAY_SAMPLE_H
+#define LIBYAFARAY_SAMPLE_H
 
 namespace yafaray {
 
@@ -36,4 +36,4 @@ struct Sample
 
 } //namespace yafaray
 
-#endif //LIBYAFARAY_MATERIAL_SAMPLE_H
+#endif //LIBYAFARAY_SAMPLE_H

@@ -76,54 +76,54 @@ ParamMap CoatedGlossyMaterial::Params::getAsParamMap(bool only_non_default) cons
 
 ParamMap CoatedGlossyMaterial::getAsParamMap(bool only_non_default) const
 {
-	ParamMap result{Material::getAsParamMap(only_non_default)};
+	ParamMap result{ParentClassType_t::getAsParamMap(only_non_default)};
 	result.append(params_.getAsParamMap(only_non_default));
 	return result;
 }
 
-std::pair<Material *, ParamError> CoatedGlossyMaterial::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map, const std::list<ParamMap> &nodes_param_maps)
+std::pair<std::unique_ptr<Material>, ParamError> CoatedGlossyMaterial::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map, const std::list<ParamMap> &nodes_param_maps)
 {
 	auto param_error{Params::meta_.check(param_map, {"type"}, {})};
-	auto mat = new CoatedGlossyMaterial(logger, param_error, param_map);
-	mat->nodes_map_ = NodeMaterial::loadNodes(nodes_param_maps, scene, logger);
+	auto material{std::make_unique<ThisClassType_t>(logger, param_error, param_map)};
+	material->nodes_map_ = NodeMaterial::loadNodes(nodes_param_maps, scene, logger);
 	std::map<std::string, const ShaderNode *> root_nodes_map;
 	// Prepare our node list
-	for(size_t shader_index = 0; shader_index < mat->shaders_.size(); ++shader_index)
+	for(size_t shader_index = 0; shader_index < material->shaders_.size(); ++shader_index)
 	{
 		root_nodes_map[ShaderNodeType{static_cast<unsigned char>(shader_index)}.print()] = nullptr;
 	}
 	std::vector<const ShaderNode *> root_nodes_list;
-	if(!mat->nodes_map_.empty()) NodeMaterial::parseNodes(param_map, root_nodes_list, root_nodes_map, mat->nodes_map_, logger);
-	for(size_t shader_index = 0; shader_index < mat->shaders_.size(); ++shader_index)
+	if(!material->nodes_map_.empty()) NodeMaterial::parseNodes(param_map, root_nodes_list, root_nodes_map, material->nodes_map_, logger);
+	for(size_t shader_index = 0; shader_index < material->shaders_.size(); ++shader_index)
 	{
-		mat->shaders_[shader_index] = root_nodes_map[ShaderNodeType{static_cast<unsigned char>(shader_index)}.print()];
+		material->shaders_[shader_index] = root_nodes_map[ShaderNodeType{static_cast<unsigned char>(shader_index)}.print()];
 	}
 	// solve nodes order
 	if(!root_nodes_list.empty())
 	{
-		const std::vector<const ShaderNode *> nodes_sorted = NodeMaterial::solveNodesOrder(root_nodes_list, mat->nodes_map_, logger);
-		for(size_t shader_index = 0; shader_index < mat->shaders_.size(); ++shader_index)
+		const std::vector<const ShaderNode *> nodes_sorted = NodeMaterial::solveNodesOrder(root_nodes_list, material->nodes_map_, logger);
+		for(size_t shader_index = 0; shader_index < material->shaders_.size(); ++shader_index)
 		{
-			if(mat->shaders_[shader_index])
+			if(material->shaders_[shader_index])
 			{
 				if(ShaderNodeType{static_cast<unsigned char>(shader_index)}.isBump())
 				{
-					mat->bump_nodes_ = NodeMaterial::getNodeList(mat->shaders_[shader_index], nodes_sorted);
+					material->bump_nodes_ = NodeMaterial::getNodeList(material->shaders_[shader_index], nodes_sorted);
 				}
 				else
 				{
-					const std::vector<const ShaderNode *> shader_nodes_list = NodeMaterial::getNodeList(mat->shaders_[shader_index], nodes_sorted);
-					mat->color_nodes_.insert(mat->color_nodes_.end(), shader_nodes_list.begin(), shader_nodes_list.end());
+					const std::vector<const ShaderNode *> shader_nodes_list = NodeMaterial::getNodeList(material->shaders_[shader_index], nodes_sorted);
+					material->color_nodes_.insert(material->color_nodes_.end(), shader_nodes_list.begin(), shader_nodes_list.end());
 				}
 			}
 		}
 	}
 	if(param_error.notOk()) logger.logWarning(param_error.print<CoatedGlossyMaterial>(name, {"type"}));
-	return {mat, param_error};
+	return {std::move(material), param_error};
 }
 
 CoatedGlossyMaterial::CoatedGlossyMaterial(Logger &logger, ParamError &param_error, const ParamMap &param_map) :
-		NodeMaterial{logger, param_error, param_map}, params_{param_error, param_map}
+		ParentClassType_t{logger, param_error, param_map}, params_{param_error, param_map}
 {
 	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + params_.getAsParamMap(true).print());
 	c_flags_[BsdfComponent::ComponentSpecular] = (BsdfFlags::Specular | BsdfFlags::Reflect);

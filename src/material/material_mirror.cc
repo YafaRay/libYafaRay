@@ -45,21 +45,21 @@ ParamMap MirrorMaterial::Params::getAsParamMap(bool only_non_default) const
 
 ParamMap MirrorMaterial::getAsParamMap(bool only_non_default) const
 {
-	ParamMap result{Material::getAsParamMap(only_non_default)};
+	ParamMap result{ParentClassType_t::getAsParamMap(only_non_default)};
 	result.append(params_.getAsParamMap(only_non_default));
 	return result;
 }
 
-std::pair<Material *, ParamError> MirrorMaterial::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map, const std::list<ParamMap> &nodes_param_maps)
+std::pair<std::unique_ptr<Material>, ParamError> MirrorMaterial::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map, const std::list<ParamMap> &nodes_param_maps)
 {
 	auto param_error{Params::meta_.check(param_map, {"type"}, {})};
-	auto mat = new MirrorMaterial(logger, param_error, param_map);
+	auto material{std::make_unique<ThisClassType_t>(logger, param_error, param_map)};
 	if(param_error.notOk()) logger.logWarning(param_error.print<MirrorMaterial>(name, {"type"}));
-	return {mat, param_error};
+	return {std::move(material), param_error};
 }
 
 MirrorMaterial::MirrorMaterial(Logger &logger, ParamError &param_error, const ParamMap &param_map) :
-		Material{logger, param_error, param_map}, params_{param_error, param_map}
+		ParentClassType_t{logger, param_error, param_map}, params_{param_error, param_map}
 {
 	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + params_.getAsParamMap(true).print());
 	bsdf_flags_ = BsdfFlags::Specular;

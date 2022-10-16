@@ -44,9 +44,11 @@ class Logger;
 
 class Material
 {
+	protected: struct Type;
 	public:
 		inline static std::string getClassName() { return "Material"; }
-		static std::pair<Material *, ParamError> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map, const std::list<ParamMap> &nodes_param_maps);
+		[[nodiscard]] virtual Type type() const = 0;
+		static std::pair<std::unique_ptr<Material>, ParamError> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map, const std::list<ParamMap> &nodes_param_maps);
 		[[nodiscard]] virtual ParamMap getAsParamMap(bool only_non_default) const;
 		Material(Logger &logger, ParamError &param_error, const ParamMap &param_map);
 		virtual ~Material();
@@ -160,7 +162,6 @@ class Material
 					{"mask_mat", Mask, ""},
 				}};
 		};
-		[[nodiscard]] virtual Type type() const = 0;
 		const struct Params
 		{
 			PARAM_INIT;

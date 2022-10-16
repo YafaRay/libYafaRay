@@ -17,8 +17,8 @@
  *      Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-#ifndef YAFARAY_MATERIAL_NODE_H
-#define YAFARAY_MATERIAL_NODE_H
+#ifndef LIBYAFARAY_MATERIAL_NODE_H
+#define LIBYAFARAY_MATERIAL_NODE_H
 
 #include "material/material.h"
 #include <map>
@@ -71,4 +71,4 @@ inline std::array<std::unique_ptr<ParamMeta>, ShaderNodeType::Size> NodeMaterial
 
 } //namespace yafaray
 
-#endif // YAFARAY_MATERIAL_NODE_H
+#endif // LIBYAFARAY_MATERIAL_NODE_H

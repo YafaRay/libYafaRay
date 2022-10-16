@@ -362,16 +362,14 @@ std::pair<std::unique_ptr<const Material> *, ParamError> Scene::createMaterial(s
 	{
 		materials_[name] = std::make_unique<std::unique_ptr<const Material>>();
 	}
-	auto material = std::unique_ptr<const Material>(Material::factory(logger_, *this, name, params, nodes_params).first);
+	auto [material, param_error]{Material::factory(logger_, *this, name, params, nodes_params)};
 	if(material)
 	{
 		creation_state_.changes_ |= CreationState::Flags::CMaterial;
 		++material_index_auto_;
+		if(logger_.isVerbose()) logInfoVerboseSuccess(logger_, pname, name, material->type().print());
 		*(materials_[name]) = std::move(material);
-		std::string type;
-		params.getParam("type", type);
-		if(logger_.isVerbose()) logInfoVerboseSuccess(logger_, pname, name, type);
-		return {materials_[name].get(), {}};
+		return {materials_[name].get(), param_error};
 	}
 	return {nullptr, ParamError{ParamError::Flags::ErrorWhileCreating}};
 }

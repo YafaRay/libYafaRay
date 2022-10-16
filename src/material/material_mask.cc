@@ -46,12 +46,12 @@ ParamMap MaskMaterial::Params::getAsParamMap(bool only_non_default) const
 
 ParamMap MaskMaterial::getAsParamMap(bool only_non_default) const
 {
-	ParamMap result{Material::getAsParamMap(only_non_default)};
+	ParamMap result{ParentClassType_t::getAsParamMap(only_non_default)};
 	result.append(params_.getAsParamMap(only_non_default));
 	return result;
 }
 
-std::pair<Material *, ParamError> MaskMaterial::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map, const std::list<ParamMap> &nodes_param_maps)
+std::pair<std::unique_ptr<Material>, ParamError> MaskMaterial::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map, const std::list<ParamMap> &nodes_param_maps)
 {
 	auto param_error{Params::meta_.check(param_map, {"type"}, {})};
 	std::string mat1_name;
@@ -62,46 +62,46 @@ std::pair<Material *, ParamError> MaskMaterial::factory(Logger &logger, const Sc
 	const std::unique_ptr<const Material> *m_2 = scene.getMaterial(mat2_name);
 	if(!m_1 || !m_2) return {nullptr, ParamError{ParamError::Flags::ErrorWhileCreating}};
 
-	auto mat = new MaskMaterial(logger, param_error, param_map, m_1, m_2);
+	auto material{std::make_unique<ThisClassType_t>(logger, param_error, param_map, m_1, m_2)};
 
 	std::map<std::string, const ShaderNode *> root_nodes_map;
 	// Prepare our node list
-	for(size_t shader_index = 0; shader_index < mat->shaders_.size(); ++shader_index)
+	for(size_t shader_index = 0; shader_index < material->shaders_.size(); ++shader_index)
 	{
 		root_nodes_map[ShaderNodeType{static_cast<unsigned char>(shader_index)}.print()] = nullptr;
 	}
 	std::vector<const ShaderNode *> root_nodes_list;
-	if(!mat->nodes_map_.empty()) NodeMaterial::parseNodes(param_map, root_nodes_list, root_nodes_map, mat->nodes_map_, logger);
-	for(size_t shader_index = 0; shader_index < mat->shaders_.size(); ++shader_index)
+	if(!material->nodes_map_.empty()) NodeMaterial::parseNodes(param_map, root_nodes_list, root_nodes_map, material->nodes_map_, logger);
+	for(size_t shader_index = 0; shader_index < material->shaders_.size(); ++shader_index)
 	{
-		mat->shaders_[shader_index] = root_nodes_map[ShaderNodeType{static_cast<unsigned char>(shader_index)}.print()];
+		material->shaders_[shader_index] = root_nodes_map[ShaderNodeType{static_cast<unsigned char>(shader_index)}.print()];
 	}
 	// solve nodes order
 	if(!root_nodes_list.empty())
 	{
-		const std::vector<const ShaderNode *> nodes_sorted = NodeMaterial::solveNodesOrder(root_nodes_list, mat->nodes_map_, logger);
-		for(size_t shader_index = 0; shader_index < mat->shaders_.size(); ++shader_index)
+		const std::vector<const ShaderNode *> nodes_sorted = NodeMaterial::solveNodesOrder(root_nodes_list, material->nodes_map_, logger);
+		for(size_t shader_index = 0; shader_index < material->shaders_.size(); ++shader_index)
 		{
-			if(mat->shaders_[shader_index])
+			if(material->shaders_[shader_index])
 			{
 				if(ShaderNodeType{static_cast<unsigned char>(shader_index)}.isBump())
 				{
-					mat->bump_nodes_ = NodeMaterial::getNodeList(mat->shaders_[shader_index], nodes_sorted);
+					material->bump_nodes_ = NodeMaterial::getNodeList(material->shaders_[shader_index], nodes_sorted);
 				}
 				else
 				{
-					const std::vector<const ShaderNode *> shader_nodes_list = NodeMaterial::getNodeList(mat->shaders_[shader_index], nodes_sorted);
-					mat->color_nodes_.insert(mat->color_nodes_.end(), shader_nodes_list.begin(), shader_nodes_list.end());
+					const std::vector<const ShaderNode *> shader_nodes_list = NodeMaterial::getNodeList(material->shaders_[shader_index], nodes_sorted);
+					material->color_nodes_.insert(material->color_nodes_.end(), shader_nodes_list.begin(), shader_nodes_list.end());
 				}
 			}
 		}
 	}
 	if(param_error.notOk()) logger.logWarning(param_error.print<MaskMaterial>(name, {"type"}));
-	return {mat, param_error};
+	return {std::move(material), param_error};
 }
 
 MaskMaterial::MaskMaterial(Logger &logger, ParamError &param_error, const ParamMap &param_map, const std::unique_ptr<const Material> *material_1, const std::unique_ptr<const Material> *material_2) :
-		NodeMaterial{logger, param_error, param_map}, params_{param_error, param_map},
+		ParentClassType_t{logger, param_error, param_map}, params_{param_error, param_map},
 		mat_1_{material_1}, mat_2_{material_2}
 {
 	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + params_.getAsParamMap(true).print());

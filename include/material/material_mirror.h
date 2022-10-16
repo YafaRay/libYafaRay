@@ -20,8 +20,8 @@
  *      Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-#ifndef YAFARAY_MATERIAL_MIRROR_H
-#define YAFARAY_MATERIAL_MIRROR_H
+#ifndef LIBYAFARAY_MATERIAL_MIRROR_H
+#define LIBYAFARAY_MATERIAL_MIRROR_H
 
 #include "material/material_node.h"
 #include "material/material_data.h"
@@ -37,21 +37,23 @@ class MirrorMaterialData final : public MaterialData
 
 class MirrorMaterial final : public Material
 {
+		using ThisClassType_t = MirrorMaterial; using ParentClassType_t = Material;
+
 	public:
 		inline static std::string getClassName() { return "MirrorMaterial"; }
-		static std::pair<Material *, ParamError> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map, const std::list<ParamMap> &nodes_param_maps);
+		static std::pair<std::unique_ptr<Material>, ParamError> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map, const std::list<ParamMap> &nodes_param_maps);
 		static std::string printMeta(const std::vector<std::string> &excluded_params) { return Params::meta_.print(excluded_params); }
+		[[nodiscard]] ParamMap getAsParamMap(bool only_non_default) const override;
+		MirrorMaterial(Logger &logger, ParamError &param_error, const ParamMap &param_map);
 
 	private:
 		[[nodiscard]] Type type() const override { return Type::Mirror; }
 		const struct Params
 		{
-			PARAM_INIT_PARENT(Material);
+			PARAM_INIT_PARENT(ParentClassType_t);
 			PARAM_DECL(Rgb, color_, Rgb{1.f}, "color", "");
 			PARAM_DECL(float , reflect_, 1.f, "reflect", "");
 		} params_;
-		[[nodiscard]] ParamMap getAsParamMap(bool only_non_default) const override;
-		MirrorMaterial(Logger &logger, ParamError &param_error, const ParamMap &param_map);
 		const MaterialData * initBsdf(SurfacePoint &sp, const Camera *camera) const override { return new MirrorMaterialData(bsdf_flags_, 0); }
 		Rgb eval(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3f &wo, const Vec3f &wl, BsdfFlags bsdfs, bool force_eval) const override {return Rgb(0.0);}
 		Rgb sample(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3f &wo, Vec3f &wi, Sample &s, float &w, bool chromatic, float wavelength, const Camera *camera) const override;
@@ -61,4 +63,4 @@ class MirrorMaterial final : public Material
 
 } //namespace yafaray
 
-#endif // YAFARAY_MATERIAL_MIRROR_H
+#endif // LIBYAFARAY_MATERIAL_MIRROR_H
