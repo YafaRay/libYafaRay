@@ -34,13 +34,13 @@ ParamMap DensityVolumeRegion::Params::getAsParamMap(bool only_non_default) const
 
 ParamMap DensityVolumeRegion::getAsParamMap(bool only_non_default) const
 {
-	ParamMap result{VolumeRegion::getAsParamMap(only_non_default)};
+	ParamMap result{ParentClassType_t::getAsParamMap(only_non_default)};
 	result.append(params_.getAsParamMap(only_non_default));
 	return result;
 }
 
 DensityVolumeRegion::DensityVolumeRegion(Logger &logger, ParamError &param_error, const ParamMap &param_map) :
-		VolumeRegion{logger, param_error, param_map}, params_{param_error, param_map}
+		ParentClassType_t{logger, param_error, param_map}, params_{param_error, param_map}
 {
 	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + params_.getAsParamMap(true).print());
 }

@@ -26,20 +26,22 @@ namespace yafaray {
 
 class SkyVolumeRegion final : public VolumeRegion
 {
+		using ThisClassType_t = SkyVolumeRegion; using ParentClassType_t = VolumeRegion;
+
 	public:
 		inline static std::string getClassName() { return "SkyVolumeRegion"; }
-		static std::pair<VolumeRegion *, ParamError> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map);
+		static std::pair<std::unique_ptr<VolumeRegion>, ParamError> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map);
 		static std::string printMeta(const std::vector<std::string> &excluded_params) { return Params::meta_.print(excluded_params); }
+		[[nodiscard]] ParamMap getAsParamMap(bool only_non_default) const override;
+		SkyVolumeRegion(Logger &logger, ParamError &param_error, const ParamMap &param_map);
 
 	private:
 		[[nodiscard]] Type type() const override { return Type::Sky; }
 		const struct Params
 		{
-			PARAM_INIT_PARENT(VolumeRegion);
+			PARAM_INIT_PARENT(ParentClassType_t);
 			//FIXME DAVID: in SkyVolume some parameters from VolumeRegion are NOT used: s_a_ = Rgb(0.f); s_s_ = Rgb(0.f); g_ = 0.f;
 		} params_;
-		[[nodiscard]] ParamMap getAsParamMap(bool only_non_default) const override;
-		SkyVolumeRegion(Logger &logger, ParamError &param_error, const ParamMap &param_map);
 		float p(const Vec3f &w_l, const Vec3f &w_s) const override;
 		float phaseRayleigh(const Vec3f &w_l, const Vec3f &w_s) const;
 		float phaseMie(const Vec3f &w_l, const Vec3f &w_s) const;

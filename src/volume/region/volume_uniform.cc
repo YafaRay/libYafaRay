@@ -35,24 +35,24 @@ ParamMap UniformVolumeRegion::Params::getAsParamMap(bool only_non_default) const
 
 ParamMap UniformVolumeRegion::getAsParamMap(bool only_non_default) const
 {
-	ParamMap result{VolumeRegion::getAsParamMap(only_non_default)};
+	ParamMap result{ParentClassType_t::getAsParamMap(only_non_default)};
 	result.append(params_.getAsParamMap(only_non_default));
 	return result;
 }
 
-std::pair<VolumeRegion *, ParamError> UniformVolumeRegion::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map)
+std::pair<std::unique_ptr<VolumeRegion>, ParamError> UniformVolumeRegion::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map)
 {
 	auto param_error{Params::meta_.check(param_map, {"type"}, {})};
-	auto result {new UniformVolumeRegion(logger, param_error, param_map)};
-	if(param_error.notOk()) logger.logWarning(param_error.print<UniformVolumeRegion>(name, {"type"}));
-	return {result, param_error};
+	auto volume_region {std::make_unique<ThisClassType_t>(logger, param_error, param_map)};
+	if(param_error.notOk()) logger.logWarning(param_error.print<ThisClassType_t>(name, {"type"}));
+	return {std::move(volume_region), param_error};
 }
 
 UniformVolumeRegion::UniformVolumeRegion(Logger &logger, ParamError &param_error, const ParamMap &param_map) :
-		VolumeRegion{logger, param_error, param_map}, params_{param_error, param_map}
+		ParentClassType_t{logger, param_error, param_map}, params_{param_error, param_map}
 {
 	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + params_.getAsParamMap(true).print());
-	if(logger_.isVerbose()) logger_.logVerbose(getClassName() + ": Vol.[", s_a_, ", ", s_s_, ", ", l_e_, ", ", b_box_.a_, ", ", b_box_.g_, ", ", VolumeRegion::params_.att_grid_scale_, "]");
+	if(logger_.isVerbose()) logger_.logVerbose(getClassName() + ": Vol.[", s_a_, ", ", s_s_, ", ", l_e_, ", ", b_box_.a_, ", ", b_box_.g_, ", ", ParentClassType_t::params_.att_grid_scale_, "]");
 }
 
 Rgb UniformVolumeRegion::sigmaA(const Point3f &p, const Vec3f &v) const

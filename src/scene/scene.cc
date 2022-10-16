@@ -488,9 +488,9 @@ ParamError Scene::defineVolumeIntegrator(ParamMap &&params)
 	return factory.second;
 }
 
-std::pair<VolumeRegion *, ParamError> Scene::createVolumeRegion(std::string &&name, ParamMap &&params)
+std::pair<size_t, ParamError> Scene::createVolumeRegion(std::string &&name, ParamMap &&params)
 {
-	return createMapItem<VolumeRegion>(logger_, std::move(name), std::move(params), volume_regions_, this);
+	return createMapItemItemId<VolumeRegion>(logger_, std::move(name), std::move(params), volume_regions_, this);
 }
 
 std::pair<RenderView *, ParamError> Scene::createRenderView(std::string &&name, ParamMap &&params)

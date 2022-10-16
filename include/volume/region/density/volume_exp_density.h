@@ -26,21 +26,23 @@ namespace yafaray {
 
 class ExpDensityVolumeRegion final : public DensityVolumeRegion
 {
+		using ThisClassType_t = ExpDensityVolumeRegion; using ParentClassType_t = DensityVolumeRegion;
+
 	public:
 		inline static std::string getClassName() { return "ExpDensityVolumeRegion"; }
-		static std::pair<VolumeRegion *, ParamError> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map);
+		static std::pair<std::unique_ptr<VolumeRegion>, ParamError> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map);
 		static std::string printMeta(const std::vector<std::string> &excluded_params) { return Params::meta_.print(excluded_params); }
+		[[nodiscard]] ParamMap getAsParamMap(bool only_non_default) const override;
+		ExpDensityVolumeRegion(Logger &logger, ParamError &param_error, const ParamMap &param_map);
 
 	private:
 		[[nodiscard]] Type type() const override { return Type::ExpDensity; }
 		const struct Params
 		{
-			PARAM_INIT_PARENT(DensityVolumeRegion);
+			PARAM_INIT_PARENT(ParentClassType_t);
 			PARAM_DECL(float, a_, 1.f, "a", "");
 			PARAM_DECL(float, b_, 1.f, "b", "");
 		} params_;
-		[[nodiscard]] ParamMap getAsParamMap(bool only_non_default) const override;
-		ExpDensityVolumeRegion(Logger &logger, ParamError &param_error, const ParamMap &param_map);
 		float density(const Point3f &p) const override;
 };
 

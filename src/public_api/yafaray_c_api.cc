@@ -261,7 +261,7 @@ yafaray_bool_t yafaray_defineVolumeIntegrator(yafaray_Interface_t *interface)
 
 yafaray_bool_t yafaray_createVolumeRegion(yafaray_Interface_t *interface, const char *name)
 {
-	return static_cast<yafaray_bool_t>(reinterpret_cast<yafaray::Interface *>(interface)->createVolumeRegion(name) != nullptr);
+	return static_cast<yafaray_bool_t>(reinterpret_cast<yafaray::Interface *>(interface)->createVolumeRegion(name).second.isOk());
 }
 
 yafaray_bool_t yafaray_createRenderView(yafaray_Interface_t *interface, const char *name)

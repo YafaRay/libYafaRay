@@ -199,7 +199,7 @@ std::pair<size_t, ParamError> Interface::createCamera(std::string &&name) noexce
 ParamError Interface::defineBackground() noexcept { return scene_->defineBackground(std::move(*params_)); }
 ParamError Interface::defineSurfaceIntegrator() noexcept { return scene_->defineSurfaceIntegrator(std::move(*params_)); }
 ParamError Interface::defineVolumeIntegrator() noexcept { return scene_->defineVolumeIntegrator(std::move(*params_)); }
-VolumeRegion *Interface::createVolumeRegion(std::string &&name) noexcept { return scene_->createVolumeRegion(std::move(name), std::move(*params_)).first; }
+std::pair<size_t, ParamError> Interface::createVolumeRegion(std::string &&name) noexcept { return scene_->createVolumeRegion(std::move(name), std::move(*params_)); }
 RenderView *Interface::createRenderView(std::string &&name) noexcept { return scene_->createRenderView(std::move(name), std::move(*params_)).first; }
 std::pair<Image *, ParamError> Interface::createImage(std::string &&name) noexcept { return scene_->createImage(std::move(name), std::move(*params_)); }
 

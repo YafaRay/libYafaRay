@@ -35,21 +35,21 @@ ParamMap SkyVolumeRegion::Params::getAsParamMap(bool only_non_default) const
 
 ParamMap SkyVolumeRegion::getAsParamMap(bool only_non_default) const
 {
-	ParamMap result{VolumeRegion::getAsParamMap(only_non_default)};
+	ParamMap result{ParentClassType_t::getAsParamMap(only_non_default)};
 	result.append(params_.getAsParamMap(only_non_default));
 	return result;
 }
 
-std::pair<VolumeRegion *, ParamError> SkyVolumeRegion::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map)
+std::pair<std::unique_ptr<VolumeRegion>, ParamError> SkyVolumeRegion::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map)
 {
 	auto param_error{Params::meta_.check(param_map, {"type"}, {})};
-	auto result {new SkyVolumeRegion(logger, param_error, param_map)};
-	if(param_error.notOk()) logger.logWarning(param_error.print<SkyVolumeRegion>(name, {"type"}));
-	return {result, param_error};
+	auto volume_region {std::make_unique<ThisClassType_t>(logger, param_error, param_map)};
+	if(param_error.notOk()) logger.logWarning(param_error.print<ThisClassType_t>(name, {"type"}));
+	return {std::move(volume_region), param_error};
 }
 
 SkyVolumeRegion::SkyVolumeRegion(Logger &logger, ParamError &param_error, const ParamMap &param_map) :
-		VolumeRegion{logger, param_error, param_map}, params_{param_error, param_map}
+		ParentClassType_t{logger, param_error, param_map}, params_{param_error, param_map}
 {
 	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + params_.getAsParamMap(true).print());
 	if(logger_.isVerbose()) logger_.logVerbose(getClassName() + ": Vol. [", s_ray_, ", ", s_mie_, ", ", l_e_, "]");
@@ -106,7 +106,7 @@ float SkyVolumeRegion::phaseRayleigh(const Vec3f &w_l, const Vec3f &w_s) const
 
 float SkyVolumeRegion::phaseMie(const Vec3f &w_l, const Vec3f &w_s) const
 {
-	float k = 1.55f * VolumeRegion::params_.g_ - .55f * VolumeRegion::params_.g_ * VolumeRegion::params_.g_ * VolumeRegion::params_.g_;
+	float k = 1.55f * ParentClassType_t::params_.g_ - .55f * ParentClassType_t::params_.g_ * ParentClassType_t::params_.g_ * ParentClassType_t::params_.g_;
 	float kcostheta = k * (w_l * w_s);
 	return 1.f / (4.f * math::num_pi<>) * (1.f - k * k) / ((1.f - kcostheta) * (1.f - kcostheta)) * s_mie_.energy();
 }

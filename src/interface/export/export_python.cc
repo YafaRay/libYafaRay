@@ -335,13 +335,13 @@ ParamError ExportPython::defineVolumeIntegrator() noexcept
 	return {};
 }
 
-VolumeRegion *ExportPython::createVolumeRegion(std::string &&name) noexcept
+std::pair<size_t, ParamError> ExportPython::createVolumeRegion(std::string &&name) noexcept
 {
 	writeParamMap(*params_);
 	params_->clear();
 	file_ << "yi.createVolumeRegion(\"" << name << "\")\n";
 	file_ << "yi.paramsClearAll()\n\n";
-	return nullptr;
+	return {};
 }
 
 ImageOutput *ExportPython::createOutput(std::string &&name) noexcept

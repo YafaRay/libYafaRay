@@ -98,7 +98,7 @@ class Interface
 		virtual ParamError defineBackground() noexcept;
 		virtual ParamError defineSurfaceIntegrator() noexcept;
 		virtual ParamError defineVolumeIntegrator() noexcept;
-		virtual VolumeRegion *createVolumeRegion(std::string &&name) noexcept;
+		virtual std::pair<size_t, ParamError> createVolumeRegion(std::string &&name) noexcept;
 		virtual RenderView *createRenderView(std::string &&name) noexcept;
 		virtual std::pair<Image *, ParamError> createImage(std::string &&name) noexcept;
 		virtual ImageOutput *createOutput(std::string &&name) noexcept;

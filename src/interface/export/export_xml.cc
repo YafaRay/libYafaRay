@@ -312,12 +312,12 @@ ParamError ExportXml::defineVolumeIntegrator() noexcept
 	return {};
 }
 
-VolumeRegion *ExportXml::createVolumeRegion(std::string &&name) noexcept
+std::pair<size_t, ParamError> ExportXml::createVolumeRegion(std::string &&name) noexcept
 {
 	file_ << "\n<volumeregion name=\"" << name << "\">\n";
 	writeParamMap(*params_);
 	file_ << "</volumeregion>\n";
-	return nullptr;
+	return {};
 }
 
 ImageOutput *ExportXml::createOutput(std::string &&name) noexcept

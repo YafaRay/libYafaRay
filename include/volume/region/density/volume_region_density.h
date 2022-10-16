@@ -26,12 +26,14 @@ namespace yafaray {
 
 class DensityVolumeRegion : public VolumeRegion
 {
+		using ThisClassType_t = DensityVolumeRegion; using ParentClassType_t = VolumeRegion;
+
 	protected:
 		DensityVolumeRegion(Logger &logger, ParamError &param_error, const ParamMap &param_map);
 		static std::string printMeta(const std::vector<std::string> &excluded_params) { return Params::meta_.print(excluded_params); }
 		const struct Params
 		{
-			PARAM_INIT_PARENT(VolumeRegion);
+			PARAM_INIT_PARENT(ParentClassType_t);
 		} params_;
 		[[nodiscard]] ParamMap getAsParamMap(bool only_non_default) const override;
 

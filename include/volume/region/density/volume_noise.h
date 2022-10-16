@@ -28,23 +28,25 @@ class Texture;
 
 class NoiseVolumeRegion final : public DensityVolumeRegion
 {
+		using ThisClassType_t = NoiseVolumeRegion; using ParentClassType_t = DensityVolumeRegion;
+
 	public:
 		inline static std::string getClassName() { return "NoiseVolumeRegion"; }
-		static std::pair<VolumeRegion *, ParamError> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map);
+		static std::pair<std::unique_ptr<VolumeRegion>, ParamError> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map);
 		static std::string printMeta(const std::vector<std::string> &excluded_params) { return Params::meta_.print(excluded_params); }
+		[[nodiscard]] ParamMap getAsParamMap(bool only_non_default) const override;
+		NoiseVolumeRegion(Logger &logger, ParamError &param_error, const ParamMap &param_map, const Texture *noise);
 
 	private:
 		[[nodiscard]] Type type() const override { return Type::Noise; }
 		const struct Params
 		{
-			PARAM_INIT_PARENT(DensityVolumeRegion);
+			PARAM_INIT_PARENT(ParentClassType_t);
 			PARAM_DECL(float, sharpness_, 1.f, "sharpness", "");
 			PARAM_DECL(float, density_, 1.f, "density", "");
 			PARAM_DECL(float, cover_, 1.f, "cover", "");
 			PARAM_DECL(std::string, texture_, "", "texture", "");
 		} params_;
-		[[nodiscard]] ParamMap getAsParamMap(bool only_non_default) const override;
-		NoiseVolumeRegion(Logger &logger, ParamError &param_error, const ParamMap &param_map, const Texture *noise);
 		float density(const Point3f &p) const override;
 
 		const Texture *tex_dist_noise_ = nullptr;

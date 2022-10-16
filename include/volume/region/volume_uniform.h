@@ -26,19 +26,21 @@ namespace yafaray {
 
 class UniformVolumeRegion : public VolumeRegion
 {
+		using ThisClassType_t = UniformVolumeRegion; using ParentClassType_t = VolumeRegion;
+
 	public:
 		inline static std::string getClassName() { return "UniformVolumeRegion"; }
-		static std::pair<VolumeRegion *, ParamError> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map);
+		static std::pair<std::unique_ptr<VolumeRegion>, ParamError> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map);
 		static std::string printMeta(const std::vector<std::string> &excluded_params) { return Params::meta_.print(excluded_params); }
+		[[nodiscard]] ParamMap getAsParamMap(bool only_non_default) const override;
+		UniformVolumeRegion(Logger &logger, ParamError &param_error, const ParamMap &param_map);
 
 	private:
 		[[nodiscard]] Type type() const override { return Type::Uniform; }
 		const struct Params
 		{
-			PARAM_INIT_PARENT(VolumeRegion);
+			PARAM_INIT_PARENT(ParentClassType_t);
 		} params_;
-		[[nodiscard]] ParamMap getAsParamMap(bool only_non_default) const override;
-		UniformVolumeRegion(Logger &logger, ParamError &param_error, const ParamMap &param_map);
 		Rgb sigmaA(const Point3f &p, const Vec3f &v) const override;
 		Rgb sigmaS(const Point3f &p, const Vec3f &v) const override;
 		Rgb emission(const Point3f &p, const Vec3f &v) const override;

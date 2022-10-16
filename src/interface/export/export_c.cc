@@ -418,7 +418,7 @@ ParamError ExportC::defineVolumeIntegrator() noexcept
 	return {};
 }
 
-VolumeRegion *ExportC::createVolumeRegion(std::string &&name) noexcept
+std::pair<size_t, ParamError> ExportC::createVolumeRegion(std::string &&name) noexcept
 {
 	writeParamMap(*params_);
 	params_->clear();
@@ -426,7 +426,7 @@ VolumeRegion *ExportC::createVolumeRegion(std::string &&name) noexcept
 	file_ << "\t" << "yafaray_paramsClearAll(yi);\n\n";
 	section_num_lines_ += 2;
 	if(section_num_lines_ >= section_max_lines_) file_ << sectionSplit();
-	return nullptr;
+	return {};
 }
 
 ImageOutput *ExportC::createOutput(std::string &&name) noexcept

@@ -26,22 +26,24 @@ namespace yafaray {
 
 class GridVolumeRegion final : public DensityVolumeRegion
 {
+		using ThisClassType_t = GridVolumeRegion; using ParentClassType_t = DensityVolumeRegion;
+
 	public:
 		inline static std::string getClassName() { return "GridVolumeRegion"; }
-		static std::pair<VolumeRegion *, ParamError> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map);
+		static std::pair<std::unique_ptr<VolumeRegion>, ParamError> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map);
 		static std::string printMeta(const std::vector<std::string> &excluded_params) { return Params::meta_.print(excluded_params); }
+		[[nodiscard]] ParamMap getAsParamMap(bool only_non_default) const override;
+		GridVolumeRegion(Logger &logger, ParamError &param_error, const ParamMap &param_map);
+		~GridVolumeRegion() override;
 
 	private:
 		[[nodiscard]] Type type() const override { return Type::Grid; }
 		const struct Params
 		{
-			PARAM_INIT_PARENT(DensityVolumeRegion);
+			PARAM_INIT_PARENT(ParentClassType_t);
 			PARAM_DECL(std::string, density_file_, "", "density_file", "Path to the *.df3 density file (in POVRay density_file format)"); //For more information about the POVRay density_file format refer to: https://www.povray.org/documentation/view/3.6.1/374/
 			//FIXME DAVID: att_grid_scale_ not used
 		} params_;
-		[[nodiscard]] ParamMap getAsParamMap(bool only_non_default) const override;
-		GridVolumeRegion(Logger &logger, ParamError &param_error, const ParamMap &param_map);
-		~GridVolumeRegion() override;
 		float density(const Point3f &p) const override;
 
 		float ***grid_ = nullptr;
