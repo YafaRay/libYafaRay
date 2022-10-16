@@ -558,7 +558,7 @@ bool Scene::setupSceneRenderParams(Scene &scene, ParamMap &&param_map)
 	setMaskParams(param_map);
 	setEdgeToonParams(param_map);
 
-	image_film_ = std::unique_ptr<ImageFilm>(ImageFilm::factory(logger_, render_control_, param_map, this).first);
+	image_film_ = ImageFilm::factory(logger_, render_control_, param_map, this).first;
 
 	param_map.getParam("filter_type", name); // AA filter type
 	std::stringstream aa_settings;

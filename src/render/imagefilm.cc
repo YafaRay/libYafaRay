@@ -86,13 +86,13 @@ ParamMap ImageFilm::getAsParamMap(bool only_non_default) const
 	return params_.getAsParamMap(only_non_default);
 }
 
-std::pair<ImageFilm *, ParamError> ImageFilm::factory(Logger &logger, RenderControl &render_control, const ParamMap &param_map, const Scene *scene)
+std::pair<std::unique_ptr<ImageFilm>, ParamError> ImageFilm::factory(Logger &logger, RenderControl &render_control, const ParamMap &param_map, const Scene *scene)
 {
 	if(logger.isDebug()) logger.logDebug("**" + getClassName() + "::factory 'raw' ParamMap\n" + param_map.logContents());
 	auto param_error{Params::meta_.check(param_map, {}, {})};
-	auto result {new ImageFilm(logger, param_error, render_control, *scene->getLayers(), scene->getOutputs(), &scene->getRenderViews(), &scene->getRenderCallbacks(), scene->getNumThreads(), param_map)};
+	auto result {std::make_unique<ImageFilm>(logger, param_error, render_control, *scene->getLayers(), scene->getOutputs(), &scene->getRenderViews(), &scene->getRenderCallbacks(), scene->getNumThreads(), param_map)};
 	if(param_error.notOk()) logger.logWarning(param_error.print<ImageFilm>("ImageFilm", {}));
-	return {result, param_error};
+	return {std::move(result), param_error};
 }
 
 ImageFilm::ImageFilm(Logger &logger, ParamError &param_error, RenderControl &render_control, const Layers &layers, const std::map<std::string, std::unique_ptr<ImageOutput>> &outputs, const std::map<std::string, std::unique_ptr<RenderView>> *render_views, const RenderCallbacks *render_callbacks, int num_threads, const ParamMap &param_map) : params_{param_error, param_map}, num_threads_(num_threads), layers_(layers), outputs_(outputs), render_views_{render_views}, render_callbacks_{render_callbacks}, logger_{logger}

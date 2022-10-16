@@ -21,8 +21,8 @@
  *
  */
 
-#ifndef YAFARAY_IMAGEFILM_H
-#define YAFARAY_IMAGEFILM_H
+#ifndef LIBYAFARAY_IMAGEFILM_H
+#define LIBYAFARAY_IMAGEFILM_H
 
 #include "public_api/yafaray_c_api.h"
 #include "common/enum.h"
@@ -60,7 +60,7 @@ class ImageFilm final
 	public:
 		enum Flags : unsigned char { RegularImage = 1 << 0, Densityimage = 1 << 1, All = RegularImage | Densityimage };
 		inline static std::string getClassName() { return "ImageFilm"; }
-		static std::pair<ImageFilm *, ParamError> factory(Logger &logger, RenderControl &render_control, const ParamMap &param_map, const Scene *scene);
+		static std::pair<std::unique_ptr<ImageFilm>, ParamError> factory(Logger &logger, RenderControl &render_control, const ParamMap &param_map, const Scene *scene);
 		ImageFilm(Logger &logger, ParamError &param_error, RenderControl &render_control, const Layers &layers, const std::map<std::string, std::unique_ptr<ImageOutput>> &outputs, const std::map<std::string, std::unique_ptr<RenderView>> *render_views, const RenderCallbacks *render_callbacks, int num_threads, const ParamMap &param_map);
 		static std::string printMeta(const std::vector<std::string> &excluded_params) { return Params::meta_.print(excluded_params); }
 		/*! Initialize imageFilm for new rendering, i.e. set pixels black etc */
@@ -254,4 +254,4 @@ inline int ImageFilm::roundToIntWithBias(double val)
 
 } //namespace yafaray
 
-#endif // YAFARAY_IMAGEFILM_H
+#endif // LIBYAFARAY_IMAGEFILM_H
