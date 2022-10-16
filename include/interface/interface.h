@@ -101,7 +101,7 @@ class Interface
 		virtual std::pair<size_t, ParamError> createVolumeRegion(std::string &&name) noexcept;
 		virtual std::pair<size_t, ParamError> createRenderView(std::string &&name) noexcept;
 		virtual std::pair<Image *, ParamError> createImage(std::string &&name) noexcept;
-		virtual ImageOutput *createOutput(std::string &&name) noexcept;
+		virtual std::pair<size_t, ParamError> createOutput(std::string &&name) noexcept;
 		void setRenderNotifyViewCallback(yafaray_RenderNotifyViewCallback_t callback, void *callback_data) noexcept;
 		void setRenderNotifyLayerCallback(yafaray_RenderNotifyLayerCallback_t callback, void *callback_data) noexcept;
 		void setRenderPutPixelCallback(yafaray_RenderPutPixelCallback_t callback, void *callback_data) noexcept;

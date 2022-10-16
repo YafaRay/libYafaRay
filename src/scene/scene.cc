@@ -427,21 +427,21 @@ std::pair<T *, ParamError> Scene::createMapItemPointer(Logger &logger, std::stri
 	return {nullptr, ParamError{ParamError::Flags::ErrorWhileCreating}};
 }
 
-std::pair<ImageOutput *, ParamError> Scene::createOutput(std::string &&name, ParamMap &&params)
+std::pair<size_t, ParamError> Scene::createOutput(std::string &&name, ParamMap &&params)
 {
 	std::string class_name = "ColorOutput";
 	if(outputs_.find(name) != outputs_.end())
 	{
-		logWarnExist(logger_, class_name, name); return {nullptr, {ParamError::Flags::ErrorAlreadyExists}};
+		logWarnExist(logger_, class_name, name); return {0, ParamError{ParamError::Flags::ErrorAlreadyExists}};
 	}
 	auto [output, param_error]{ImageOutput::factory(logger_, *this, name, params)};
 	if(output)
 	{
 		if(logger_.isVerbose()) logInfoVerboseSuccess(logger_, class_name, name, "");
 		outputs_[name] = std::move(output);
-		return {outputs_[name].get(), param_error};
+		return {outputs_.size() - 1, param_error};
 	}
-	return {nullptr, ParamError{ParamError::Flags::ErrorWhileCreating}};
+	return {0, ParamError{ParamError::Flags::ErrorWhileCreating}};
 }
 
 std::pair<size_t, ParamError> Scene::createTexture(std::string &&name, ParamMap &&params)

@@ -202,11 +202,7 @@ ParamError Interface::defineVolumeIntegrator() noexcept { return scene_->defineV
 std::pair<size_t, ParamError> Interface::createVolumeRegion(std::string &&name) noexcept { return scene_->createVolumeRegion(std::move(name), std::move(*params_)); }
 std::pair<size_t, ParamError> Interface::createRenderView(std::string &&name) noexcept { return scene_->createRenderView(std::move(name), std::move(*params_)); }
 std::pair<Image *, ParamError> Interface::createImage(std::string &&name) noexcept { return scene_->createImage(std::move(name), std::move(*params_)); }
-
-ImageOutput *Interface::createOutput(std::string &&name) noexcept
-{
-	return scene_->createOutput(std::move(name), std::move(*params_)).first;
-}
+std::pair<size_t, ParamError> Interface::createOutput(std::string &&name) noexcept { return scene_->createOutput(std::move(name), std::move(*params_)); }
 
 void Interface::setRenderNotifyViewCallback(yafaray_RenderNotifyViewCallback_t callback, void *callback_data) noexcept
 {

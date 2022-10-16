@@ -320,12 +320,12 @@ std::pair<size_t, ParamError> ExportXml::createVolumeRegion(std::string &&name) 
 	return {};
 }
 
-ImageOutput *ExportXml::createOutput(std::string &&name) noexcept
+std::pair<size_t, ParamError> ExportXml::createOutput(std::string &&name) noexcept
 {
 	file_ << "\n<output name=\"" << name << "\">\n";
 	writeParamMap(*params_);
 	file_ << "</output>\n";
-	return nullptr;
+	return {};
 }
 
 std::pair<size_t, ParamError> ExportXml::createRenderView(std::string &&name) noexcept

@@ -271,7 +271,7 @@ yafaray_bool_t yafaray_createRenderView(yafaray_Interface_t *interface, const ch
 
 yafaray_bool_t yafaray_createOutput(yafaray_Interface_t *interface, const char *name)
 {
-	return static_cast<yafaray_bool_t>(reinterpret_cast<yafaray::Interface *>(interface)->createOutput(name) != nullptr);
+	return static_cast<yafaray_bool_t>(reinterpret_cast<yafaray::Interface *>(interface)->createOutput(name).second.isOk());
 }
 
 void yafaray_setRenderNotifyViewCallback(yafaray_Interface_t *interface, yafaray_RenderNotifyViewCallback_t callback, void *callback_data)

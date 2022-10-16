@@ -129,7 +129,7 @@ class Scene final
 		std::pair<size_t, ParamError> createVolumeRegion(std::string &&name, ParamMap &&params);
 		std::pair<size_t, ParamError> createRenderView(std::string &&name, ParamMap &&params);
 		std::pair<Image *, ParamError> createImage(std::string &&name, ParamMap &&params);
-		std::pair<ImageOutput *, ParamError> createOutput(std::string &&name, ParamMap &&params);
+		std::pair<size_t, ParamError> createOutput(std::string &&name, ParamMap &&params);
 		bool removeOutput(std::string &&name);
 		void clearOutputs();
 		const std::map<std::string, std::unique_ptr<ImageOutput>> &getOutputs() const { return outputs_; }
