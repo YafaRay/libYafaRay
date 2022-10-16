@@ -28,21 +28,23 @@ class MaterialData;
 
 class BeerVolumeHandler : public VolumeHandler
 {
+		using ThisClassType_t = BeerVolumeHandler; using ParentClassType_t = VolumeHandler;
+
 	public:
 		inline static std::string getClassName() { return "BeerVolumeHandler"; }
-		static std::pair<VolumeHandler *, ParamError> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map);
+		static std::pair<std::unique_ptr<VolumeHandler>, ParamError> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map);
 		static std::string printMeta(const std::vector<std::string> &excluded_params) { return Params::meta_.print(excluded_params); }
+		[[nodiscard]] ParamMap getAsParamMap(bool only_non_default) const override;
+		BeerVolumeHandler(Logger &logger, ParamError &param_error, const ParamMap &param_map);
 
 	protected:
 		[[nodiscard]] Type type() const override { return Type::Beer; }
 		const struct Params
 		{
-			PARAM_INIT_PARENT(VolumeHandler);
+			PARAM_INIT_PARENT(ParentClassType_t);
 			PARAM_DECL(Rgb, absorption_col_, Rgb{0.5f}, "absorption_col", "");
 			PARAM_DECL(float, absorption_dist_, 1.f, "absorption_dist", "");
 		} params_;
-		[[nodiscard]] ParamMap getAsParamMap(bool only_non_default) const override;
-		BeerVolumeHandler(Logger &logger, ParamError &param_error, const ParamMap &param_map);
 
 	private:
 		Rgb transmittance(const Ray &ray) const override;

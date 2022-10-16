@@ -45,23 +45,23 @@ ParamMap SssVolumeHandler::getAsParamMap(bool only_non_default) const
 	return result;
 }
 
-std::pair<VolumeHandler *, ParamError> SssVolumeHandler::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map)
+std::pair<std::unique_ptr<VolumeHandler>, ParamError> SssVolumeHandler::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map)
 {
 	auto param_error{Params::meta_.check(param_map, {"type"}, {})};
-	auto result {new SssVolumeHandler(logger, param_error, param_map)};
-	if(param_error.notOk()) logger.logWarning(param_error.print<SssVolumeHandler>(name, {"type"}));
-	return {result, param_error};
+	auto volume_handler {std::make_unique<ThisClassType_t>(logger, param_error, param_map)};
+	if(param_error.notOk()) logger.logWarning(param_error.print<ThisClassType_t>(name, {"type"}));
+	return {std::move(volume_handler), param_error};
 }
 
 SssVolumeHandler::SssVolumeHandler(Logger &logger, ParamError &param_error, const ParamMap &param_map) :
-		BeerVolumeHandler{logger, param_error, param_map}, params_{param_error, param_map}
+		ParentClassType_t{logger, param_error, param_map}, params_{param_error, param_map}
 {
 	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + params_.getAsParamMap(true).print());
 }
 
 bool SssVolumeHandler::scatter(const Ray &ray, Ray &s_ray, PSample &s) const
 {
-	float dist = -BeerVolumeHandler::params_.absorption_dist_ * math::log(s.s_1_);
+	float dist = -ParentClassType_t::params_.absorption_dist_ * math::log(s.s_1_);
 	if(dist >= ray.tmax_) return false;
 	s_ray.from_ = ray.from_ + dist * ray.dir_;
 	s_ray.dir_ = sample::sphere(s.s_2_, s.s_3_);
