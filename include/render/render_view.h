@@ -49,7 +49,7 @@ class RenderView final
 		bool init(Logger &logger, const Scene &scene);
 		[[nodiscard]] std::string getName() const { return name_; }
 		const Camera *getCamera() const { return camera_; }
-		std::map<std::string, Light *> getLights() const { return lights_; }
+		std::map<std::string, const Light *> getLights() const { return lights_; }
 		bool isSpectral() const { return params_.wavelength_ != 0.f; }
 		float getWaveLength() const { return params_.wavelength_; }
 		std::vector<const Light *> getLightsVisible() const;
@@ -66,7 +66,7 @@ class RenderView final
 		} params_;
 		std::string name_;
 		const Camera *camera_ = nullptr;
-		std::map<std::string, Light *> lights_;
+		std::map<std::string, const Light *> lights_;
 };
 
 } //namespace yafaray
