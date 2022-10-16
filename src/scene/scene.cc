@@ -493,9 +493,20 @@ std::pair<size_t, ParamError> Scene::createVolumeRegion(std::string &&name, Para
 	return createMapItemItemId<VolumeRegion>(logger_, std::move(name), std::move(params), volume_regions_, this);
 }
 
-std::pair<RenderView *, ParamError> Scene::createRenderView(std::string &&name, ParamMap &&params)
+std::pair<size_t, ParamError> Scene::createRenderView(std::string &&name, ParamMap &&params)
 {
-	return createMapItem<RenderView>(logger_, std::move(name), std::move(params), render_views_, this);
+	if(render_views_.find(name) != render_views_.end())
+	{
+		logWarnExist(logger_, RenderView::getClassName(), name); return {0, {ParamError::Flags::ErrorAlreadyExists}};
+	}
+	auto [item, param_error]{RenderView::factory(logger_, *this, name, params)};
+	if(item)
+	{
+		if(logger_.isVerbose()) logInfoVerboseSuccess(logger_, RenderView::getClassName(), name, "");
+		render_views_[name] = std::move(item);
+		return {render_views_.size() - 1, param_error}; //FIXME: this is just a placeholder for now for future ItemID, although this will not work while we still use std::map for items
+	}
+	return {0, ParamError{ParamError::Flags::ErrorWhileCreating}};
 }
 
 std::pair<Image *, ParamError> Scene::createImage(std::string &&name, ParamMap &&params)

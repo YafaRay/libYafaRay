@@ -63,7 +63,7 @@ class ExportXml: public Interface
 		ParamError defineSurfaceIntegrator() noexcept override;
 		ParamError defineVolumeIntegrator() noexcept override;
 		std::pair<size_t, ParamError> createVolumeRegion(std::string &&name) noexcept override;
-		RenderView *createRenderView(std::string &&name) noexcept override;
+		std::pair<size_t, ParamError> createRenderView(std::string &&name) noexcept override;
 		std::pair<Image *, ParamError> createImage(std::string &&name) noexcept override;
 		ImageOutput *createOutput(std::string &&name) noexcept override;
 		void clearAll() noexcept override; //!< clear the whole environment + scene, i.e. free (hopefully) all memory.

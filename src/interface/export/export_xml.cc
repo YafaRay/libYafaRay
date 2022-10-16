@@ -328,14 +328,14 @@ ImageOutput *ExportXml::createOutput(std::string &&name) noexcept
 	return nullptr;
 }
 
-RenderView *ExportXml::createRenderView(std::string &&name) noexcept
+std::pair<size_t, ParamError> ExportXml::createRenderView(std::string &&name) noexcept
 {
 	std::string render_view_name{name};
 	if(render_view_name.empty()) render_view_name = "render_view";
 	file_ << "\n<render_view name=\"" << render_view_name << "\">\n";
 	writeParamMap(*params_);
 	file_ << "</render_view>\n";
-	return nullptr;
+	return {};
 }
 
 std::pair<Image *, ParamError> ExportXml::createImage(std::string &&name) noexcept

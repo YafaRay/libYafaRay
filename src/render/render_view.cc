@@ -48,13 +48,13 @@ ParamMap RenderView::getAsParamMap(bool only_non_default) const
 	return params_.getAsParamMap(only_non_default);
 }
 
-std::pair<RenderView *, ParamError> RenderView::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map)
+std::pair<std::unique_ptr<RenderView>, ParamError> RenderView::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map)
 {
 	if(logger.isDebug()) logger.logDebug("**" + getClassName() + "::factory 'raw' ParamMap\n" + param_map.logContents());
 	auto param_error{Params::meta_.check(param_map, {}, {})};
-	auto result {new RenderView(logger, param_error, param_map)};
+	auto render_view {std::make_unique<RenderView>(logger, param_error, param_map)};
 	if(param_error.notOk()) logger.logWarning(param_error.print<RenderView>(name, {}));
-	return {result, param_error};
+	return {std::move(render_view), param_error};
 }
 
 RenderView::RenderView(Logger &logger, ParamError &param_error, const ParamMap &param_map) : params_{param_error, param_map}

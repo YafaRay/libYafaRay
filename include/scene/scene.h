@@ -127,7 +127,7 @@ class Scene final
 		ParamError defineSurfaceIntegrator(ParamMap &&params);
 		ParamError defineVolumeIntegrator(ParamMap &&params);
 		std::pair<size_t, ParamError> createVolumeRegion(std::string &&name, ParamMap &&params);
-		std::pair<RenderView *, ParamError> createRenderView(std::string &&name, ParamMap &&params);
+		std::pair<size_t, ParamError> createRenderView(std::string &&name, ParamMap &&params);
 		std::pair<Image *, ParamError> createImage(std::string &&name, ParamMap &&params);
 		std::pair<ImageOutput *, ParamError> createOutput(std::string &&name, ParamMap &&params);
 		bool removeOutput(std::string &&name);

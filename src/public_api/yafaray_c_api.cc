@@ -266,7 +266,7 @@ yafaray_bool_t yafaray_createVolumeRegion(yafaray_Interface_t *interface, const 
 
 yafaray_bool_t yafaray_createRenderView(yafaray_Interface_t *interface, const char *name)
 {
-	return static_cast<yafaray_bool_t>(reinterpret_cast<yafaray::Interface *>(interface)->createRenderView(name) != nullptr);
+	return static_cast<yafaray_bool_t>(reinterpret_cast<yafaray::Interface *>(interface)->createRenderView(name).second.isOk());
 }
 
 yafaray_bool_t yafaray_createOutput(yafaray_Interface_t *interface, const char *name)

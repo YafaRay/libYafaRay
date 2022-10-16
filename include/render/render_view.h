@@ -19,8 +19,8 @@
  *
  */
 
-#ifndef YAFARAY_RENDER_VIEW_H
-#define YAFARAY_RENDER_VIEW_H
+#ifndef LIBYAFARAY_RENDER_VIEW_H
+#define LIBYAFARAY_RENDER_VIEW_H
 
 #include "common/collection.h"
 #include "common/enum.h"
@@ -42,8 +42,10 @@ class RenderView final
 {
 	public:
 		inline static std::string getClassName() { return "RenderView"; }
-		static std::pair<RenderView *, ParamError> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map);
+		static std::pair<std::unique_ptr<RenderView>, ParamError> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map);
 		static std::string printMeta(const std::vector<std::string> &excluded_params) { return Params::meta_.print(excluded_params); }
+		[[nodiscard]] ParamMap getAsParamMap(bool only_non_default) const;
+		RenderView(Logger &logger, ParamError &param_error, const ParamMap &param_map);
 		bool init(Logger &logger, const Scene &scene);
 		[[nodiscard]] std::string getName() const { return name_; }
 		const Camera *getCamera() const { return camera_; }
@@ -62,8 +64,6 @@ class RenderView final
 			PARAM_DECL(std::string, light_names_, "", "light_names", "Name of the lights, separated by a semicolon, used for this render view. If not specified, all lights will be included");
 			PARAM_DECL(float, wavelength_, 0.f, "wavelength", "Wavelength in nm used for this render view (NOT IMPLEMENTED YET). If set to 0.f regular color rendering will take place");
 		} params_;
-		[[nodiscard]] ParamMap getAsParamMap(bool only_non_default) const;
-		RenderView(Logger &logger, ParamError &param_error, const ParamMap &param_map);
 		std::string name_;
 		const Camera *camera_ = nullptr;
 		std::map<std::string, Light *> lights_;
@@ -71,4 +71,4 @@ class RenderView final
 
 } //namespace yafaray
 
-#endif //YAFARAY_RENDER_VIEW_H
+#endif //LIBYAFARAY_RENDER_VIEW_H
