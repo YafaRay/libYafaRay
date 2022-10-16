@@ -31,17 +31,17 @@ std::unique_ptr<NoiseGenerator> NoiseGenerator::newNoise(const NoiseType &noise_
 {
 	switch(noise_type.value())
 	{
-		case NoiseType::Blender: return std::unique_ptr<NoiseGenerator>(new BlenderNoiseGenerator());
-		case NoiseType::PerlinStandard: return std::unique_ptr<NoiseGenerator>(new StdPerlinNoiseGenerator());
+		case NoiseType::Blender: return std::make_unique<BlenderNoiseGenerator>();
+		case NoiseType::PerlinStandard: return std::make_unique<StdPerlinNoiseGenerator>();
 		case NoiseType::VoronoiF1:
 		case NoiseType::VoronoiF2:
 		case NoiseType::VoronoiF3:
 		case NoiseType::VoronoiF4:
 		case NoiseType::VoronoiF2F1:
-		case NoiseType::VoronoiCrackle: return std::unique_ptr<NoiseGenerator>(new VoronoiNoiseGenerator{noise_type, {VoronoiNoiseGenerator::DMetricType::DistReal}, 2.5f});
-		case NoiseType::Cell: return std::unique_ptr<NoiseGenerator>(new CellNoiseGenerator());
+		case NoiseType::VoronoiCrackle: return std::make_unique<VoronoiNoiseGenerator>(noise_type, VoronoiNoiseGenerator::DMetricType{VoronoiNoiseGenerator::DMetricType::DistReal}, 2.5f);
+		case NoiseType::Cell: return std::make_unique<CellNoiseGenerator>();
 		case NoiseType::PerlinImproved:
-		default: return std::unique_ptr<NoiseGenerator>(new NewPerlinNoiseGenerator());
+		default: return std::make_unique<NewPerlinNoiseGenerator>();
 	}
 }
 

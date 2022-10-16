@@ -29,7 +29,7 @@ void ObjectInstance::addPrimitives(const std::vector<const Primitive *> &base_pr
 	primitive_instances_.reserve(base_primitives.size());
 	for(const auto &primitive : base_primitives)
 	{
-		primitive_instances_.emplace_back(new PrimitiveInstance(primitive, *this));
+		primitive_instances_.emplace_back(std::make_unique<PrimitiveInstance>(primitive, *this));
 	}
 }
 
