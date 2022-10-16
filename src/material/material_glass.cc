@@ -86,7 +86,7 @@ std::pair<std::unique_ptr<Material>, ParamError> GlassMaterial::factory(Logger &
 		map["type"] = std::string("beer");
 		map["absorption_col"] = material->params_.absorption_color_;
 		map["absorption_dist"] = Parameter(material->params_.absorption_dist_);
-		material->vol_i_ = std::unique_ptr<VolumeHandler>(VolumeHandler::factory(logger, scene, name, map).first);
+		material->vol_i_ = VolumeHandler::factory(logger, scene, name, map).first;
 		material->bsdf_flags_ |= BsdfFlags{BsdfFlags::Volumetric};
 	}
 	material->nodes_map_ = NodeMaterial::loadNodes(nodes_param_maps, scene, logger);
