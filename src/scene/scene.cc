@@ -453,7 +453,7 @@ std::pair<size_t, ParamError> Scene::createTexture(std::string &&name, ParamMap 
 		if(logger_.isVerbose()) logger_.logVerbose("At least one texture using mipmaps interpolation, enabling ray differentials.");
 		render_control_.setDifferentialRaysEnabled(true);	//If there is at least one texture using mipmaps, then enable differential rays in the rendering process.
 	}
-	return {textures_.size(), result.second}; //FIXME: this is just a placeholder for now for future ItemID, although this will not work while we still use std::map for items
+	return {textures_.size() - 1, result.second}; //FIXME: this is just a placeholder for now for future ItemID, although this will not work while we still use std::map for items
 }
 
 std::pair<size_t, ParamError> Scene::createCamera(std::string &&name, ParamMap &&params)
