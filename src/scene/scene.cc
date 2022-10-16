@@ -291,7 +291,7 @@ Texture *Scene::getTexture(const std::string &name) const
 	return Scene::findMapItem<Texture>(name, textures_);
 }
 
-const Camera * Scene::getCamera(const std::string &name) const
+const Camera *Scene::getCamera(const std::string &name) const
 {
 	return Scene::findMapItem<Camera>(name, cameras_);
 }
@@ -301,19 +301,19 @@ const Light *Scene::getLight(const std::string &name) const
 	return Scene::findMapItem<Light>(name, lights_);
 }
 
-ImageOutput *Scene::getOutput(const std::string &name) const
+const ImageOutput *Scene::getOutput(const std::string &name) const
 {
 	return Scene::findMapItem<ImageOutput>(name, outputs_);
 }
 
-Image *Scene::getImage(const std::string &name) const
+const Image *Scene::getImage(const std::string &name) const
 {
 	return Scene::findMapItem<Image>(name, images_);
 }
 
 bool Scene::removeOutput(std::string &&name)
 {
-	ImageOutput *output = getOutput(name);
+	const ImageOutput *output = getOutput(name);
 	if(!output) return false;
 	outputs_.erase(name);
 	return true;

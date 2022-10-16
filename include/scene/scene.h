@@ -111,10 +111,10 @@ class Scene final
 		RenderControl &getRenderControl() { return render_control_; }
 		const std::unique_ptr<const Material> * getMaterial(const std::string &name) const;
 		Texture *getTexture(const std::string &name) const;
-		const Camera * getCamera(const std::string &name) const;
+		const Camera *getCamera(const std::string &name) const;
 		const Light *getLight(const std::string &name) const;
-		ImageOutput *getOutput(const std::string &name) const;
-		Image *getImage(const std::string &name) const;
+		const ImageOutput *getOutput(const std::string &name) const;
+		const Image *getImage(const std::string &name) const;
 		const std::map<std::string, std::unique_ptr<RenderView>> &getRenderViews() const { return render_views_; }
 		const std::map<std::string, std::unique_ptr<VolumeRegion>> &getVolumeRegions() const { return volume_regions_; }
 		std::map<std::string, const Light *> getLights() const;
