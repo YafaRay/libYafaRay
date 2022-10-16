@@ -59,7 +59,7 @@ class Material
 			like texture lookups etc.
 			\param bsdf_types returns flags for all bsdf components the material has
 		 */
-		virtual const MaterialData * initBsdf(SurfacePoint &sp, const Camera *camera) const = 0;
+		virtual std::unique_ptr<const MaterialData> initBsdf(SurfacePoint &sp, const Camera *camera) const = 0;
 
 		/*! evaluate the BSDF for the given components.
 				@param types the types of BSDFs to be evaluated (e.g. diffuse only, or diffuse and glossy) */

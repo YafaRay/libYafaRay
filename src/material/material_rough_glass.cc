@@ -141,9 +141,9 @@ RoughGlassMaterial::RoughGlassMaterial(Logger &logger, ParamError &param_error, 
 	}
 }
 
-const MaterialData * RoughGlassMaterial::initBsdf(SurfacePoint &sp, const Camera *camera) const
+std::unique_ptr<const MaterialData> RoughGlassMaterial::initBsdf(SurfacePoint &sp, const Camera *camera) const
 {
-	auto mat_data = new RoughGlassMaterialData(bsdf_flags_, color_nodes_.size() + bump_nodes_.size());
+	auto mat_data{std::make_unique<MaterialData_t>(bsdf_flags_, color_nodes_.size() + bump_nodes_.size())};
 	if(shaders_[ShaderNodeType::Bump]) evalBump(mat_data->node_tree_data_, sp, shaders_[ShaderNodeType::Bump], camera);
 	for(const auto &node : color_nodes_) node->eval(mat_data->node_tree_data_, sp, camera);
 	return mat_data;

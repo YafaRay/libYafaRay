@@ -47,7 +47,7 @@ class BlendMaterialData final : public MaterialData
 
 class BlendMaterial final : public NodeMaterial
 {
-		using ThisClassType_t = BlendMaterial; using ParentClassType_t = NodeMaterial;
+		using ThisClassType_t = BlendMaterial; using ParentClassType_t = NodeMaterial; using MaterialData_t = BlendMaterialData;
 
 	public:
 		inline static std::string getClassName() { return "BlendMaterial"; }
@@ -75,7 +75,7 @@ class BlendMaterial final : public NodeMaterial
 			PARAM_DECL(float, blend_value_, 0.5f, "blend_value", "");
 			PARAM_SHADERS_DECL;
 		} params_;
-		const MaterialData * initBsdf(SurfacePoint &sp, const Camera *camera) const override;
+		std::unique_ptr<const MaterialData> initBsdf(SurfacePoint &sp, const Camera *camera) const override;
 		Rgb eval(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3f &wo, const Vec3f &wl, BsdfFlags bsdfs, bool force_eval) const override;
 		Rgb sample(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3f &wo, Vec3f &wi, Sample &s, float &w, bool chromatic, float wavelength, const Camera *camera) const override;
 		Rgb sample(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3f &wo, Vec3f *dir, Rgb &tcol, Sample &s, float *w, bool chromatic, float wavelength) const override;

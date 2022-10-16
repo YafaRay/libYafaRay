@@ -37,7 +37,7 @@ class MirrorMaterialData final : public MaterialData
 
 class MirrorMaterial final : public Material
 {
-		using ThisClassType_t = MirrorMaterial; using ParentClassType_t = Material;
+		using ThisClassType_t = MirrorMaterial; using ParentClassType_t = Material; using MaterialData_t = MirrorMaterialData;
 
 	public:
 		inline static std::string getClassName() { return "MirrorMaterial"; }
@@ -54,7 +54,7 @@ class MirrorMaterial final : public Material
 			PARAM_DECL(Rgb, color_, Rgb{1.f}, "color", "");
 			PARAM_DECL(float , reflect_, 1.f, "reflect", "");
 		} params_;
-		const MaterialData * initBsdf(SurfacePoint &sp, const Camera *camera) const override { return new MirrorMaterialData(bsdf_flags_, 0); }
+		std::unique_ptr<const MaterialData> initBsdf(SurfacePoint &sp, const Camera *camera) const override { return std::make_unique<MaterialData_t>(bsdf_flags_, 0); }
 		Rgb eval(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3f &wo, const Vec3f &wl, BsdfFlags bsdfs, bool force_eval) const override {return Rgb(0.0);}
 		Rgb sample(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3f &wo, Vec3f &wi, Sample &s, float &w, bool chromatic, float wavelength, const Camera *camera) const override;
 		Specular getSpecular(int ray_level, const MaterialData *mat_data, const SurfacePoint &sp, const Vec3f &wo, bool chromatic, float wavelength) const override;

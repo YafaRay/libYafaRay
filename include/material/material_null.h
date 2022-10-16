@@ -38,7 +38,7 @@ class NullMaterialData final : public MaterialData
 
 class NullMaterial final : public Material
 {
-		using ThisClassType_t = NullMaterial; using ParentClassType_t = Material;
+		using ThisClassType_t = NullMaterial; using ParentClassType_t = Material; using MaterialData_t = NullMaterialData;
 
 	public:
 		inline static std::string getClassName() { return "NullMaterial"; }
@@ -53,7 +53,7 @@ class NullMaterial final : public Material
 		{
 			PARAM_INIT_PARENT(ParentClassType_t);
 		} params_;
-		const MaterialData * initBsdf(SurfacePoint &sp, const Camera *camera) const override { return new NullMaterialData(bsdf_flags_, 0); }
+		std::unique_ptr<const MaterialData> initBsdf(SurfacePoint &sp, const Camera *camera) const override { return std::make_unique<MaterialData_t>(bsdf_flags_, 0); }
 		Rgb eval(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3f &wo, const Vec3f &wl, BsdfFlags bsdfs, bool force_eval) const override {return Rgb(0.0);}
 		Rgb sample(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3f &wo, Vec3f &wi, Sample &s, float &w, bool chromatic, float wavelength, const Camera *camera) const override;
 };

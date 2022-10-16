@@ -37,7 +37,7 @@ class GlassMaterialData final : public MaterialData
 
 class GlassMaterial final : public NodeMaterial
 {
-		using ThisClassType_t = GlassMaterial; using ParentClassType_t = NodeMaterial;
+		using ThisClassType_t = GlassMaterial; using ParentClassType_t = NodeMaterial; using MaterialData_t = GlassMaterialData;
 
 	public:
 		inline static std::string getClassName() { return "GlassMaterial"; }
@@ -73,7 +73,7 @@ class GlassMaterial final : public NodeMaterial
 			PARAM_DECL(float, absorption_dist_, 1.f, "absorption_dist", "");
 			PARAM_SHADERS_DECL;
 		} params_;
-		const MaterialData * initBsdf(SurfacePoint &sp, const Camera *camera) const override;
+		std::unique_ptr<const MaterialData> initBsdf(SurfacePoint &sp, const Camera *camera) const override;
 		Rgb eval(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3f &wo, const Vec3f &wl, BsdfFlags bsdfs, bool force_eval) const override {return Rgb(0.0);}
 		Rgb sample(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3f &wo, Vec3f &wi, Sample &s, float &w, bool chromatic, float wavelength, const Camera *camera) const override;
 		float pdf(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3f &wo, const Vec3f &wi, BsdfFlags bsdfs) const override {return 0.f;}

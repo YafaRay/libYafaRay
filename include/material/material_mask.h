@@ -46,7 +46,7 @@ class MaskMaterialData final : public MaterialData
 
 class MaskMaterial final : public NodeMaterial
 {
-		using ThisClassType_t = MaskMaterial; using ParentClassType_t = NodeMaterial;
+		using ThisClassType_t = MaskMaterial; using ParentClassType_t = NodeMaterial; using MaterialData_t = MaskMaterialData;
 
 	public:
 		inline static std::string getClassName() { return "MaskMaterial"; }
@@ -73,7 +73,7 @@ class MaskMaterial final : public NodeMaterial
 			PARAM_DECL(float, threshold_, 0.5f, "threshold", "");
 			PARAM_SHADERS_DECL;
 		} params_;
-		const MaterialData * initBsdf(SurfacePoint &sp, const Camera *camera) const override;
+		std::unique_ptr<const MaterialData> initBsdf(SurfacePoint &sp, const Camera *camera) const override;
 		Rgb eval(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3f &wo, const Vec3f &wi, BsdfFlags bsdfs, bool force_eval) const override;
 		Rgb sample(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3f &wo, Vec3f &wi, Sample &s, float &w, bool chromatic, float wavelength, const Camera *camera) const override;
 		float pdf(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3f &wo, const Vec3f &wi, BsdfFlags bsdfs) const override;

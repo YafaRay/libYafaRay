@@ -39,7 +39,7 @@ class LightMaterialData final : public MaterialData
 
 class LightMaterial final : public Material
 {
-		using ThisClassType_t = LightMaterial; using ParentClassType_t = Material;
+		using ThisClassType_t = LightMaterial; using ParentClassType_t = Material; using MaterialData_t = LightMaterialData;
 
 	public:
 		inline static std::string getClassName() { return "LightMaterial"; }
@@ -57,7 +57,7 @@ class LightMaterial final : public Material
 			PARAM_DECL(float, power_, 1.f, "power", "");
 			PARAM_DECL(bool , double_sided_, false, "double_sided", "");
 		} params_;
-		const MaterialData * initBsdf(SurfacePoint &sp, const Camera *camera) const override { return new LightMaterialData(bsdf_flags_, 0); }
+		std::unique_ptr<const MaterialData> initBsdf(SurfacePoint &sp, const Camera *camera) const override { return std::make_unique<MaterialData_t>(bsdf_flags_, 0); }
 		Rgb eval(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3f &wo, const Vec3f &wl, BsdfFlags bsdfs, bool force_eval) const override { return Rgb{0.0}; }
 		Rgb sample(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3f &wo, Vec3f &wi, Sample &s, float &w, bool chromatic, float wavelength, const Camera *camera) const override;
 		Rgb emit(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3f &wo) const override;

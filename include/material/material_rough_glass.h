@@ -34,7 +34,7 @@ class RoughGlassMaterialData final : public MaterialData
 
 class RoughGlassMaterial final : public NodeMaterial
 {
-		using ThisClassType_t = RoughGlassMaterial; using ParentClassType_t = NodeMaterial;
+		using ThisClassType_t = RoughGlassMaterial; using ParentClassType_t = NodeMaterial; using MaterialData_t = RoughGlassMaterialData;
 
 	public:
 		inline static std::string getClassName() { return "RoughGlassMaterial"; }
@@ -72,7 +72,7 @@ class RoughGlassMaterial final : public NodeMaterial
 			PARAM_DECL(float, absorption_dist_, 1.f, "absorption_dist", "");
 			PARAM_SHADERS_DECL;
 		} params_;
-		const MaterialData * initBsdf(SurfacePoint &sp, const Camera *camera) const override;
+		std::unique_ptr<const MaterialData> initBsdf(SurfacePoint &sp, const Camera *camera) const override;
 		Rgb sample(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3f &wo, Vec3f &wi, Sample &s, float &w, bool chromatic, float wavelength, const Camera *camera) const override;
 		Rgb sample(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3f &wo, Vec3f *dir, Rgb &tcol, Sample &s, float *w, bool chromatic, float wavelength) const override;
 		Rgb eval(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3f &wo, const Vec3f &wi, BsdfFlags bsdfs, bool force_eval) const override { return Rgb{0.f}; }

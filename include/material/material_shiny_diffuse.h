@@ -49,7 +49,7 @@ class ShinyDiffuseMaterialData final : public MaterialData
 
 class ShinyDiffuseMaterial final : public NodeMaterial
 {
-		using ThisClassType_t = ShinyDiffuseMaterial; using ParentClassType_t = NodeMaterial;
+		using ThisClassType_t = ShinyDiffuseMaterial; using ParentClassType_t = NodeMaterial; using MaterialData_t = ShinyDiffuseMaterialData;
 
 	public:
 		inline static std::string getClassName() { return "ShinyDiffuseMaterial"; }
@@ -94,7 +94,7 @@ class ShinyDiffuseMaterial final : public NodeMaterial
 			PARAM_DECL(float, sigma_, 0.1f, "sigma", "Oren-Nayar sigma factor, used if diffuse BRDF is set to Oren-Nayar");
 			PARAM_SHADERS_DECL;
 		} params_;
-		const MaterialData * initBsdf(SurfacePoint &sp, const Camera *camera) const override;
+		std::unique_ptr<const MaterialData> initBsdf(SurfacePoint &sp, const Camera *camera) const override;
 		Rgb eval(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3f &wo, const Vec3f &wl, BsdfFlags bsdfs, bool force_eval) const override;
 		Rgb sample(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3f &wo, Vec3f &wi, Sample &s, float &w, bool chromatic, float wavelength, const Camera *camera) const override;
 		float pdf(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3f &wo, const Vec3f &wi, BsdfFlags bsdfs) const override;

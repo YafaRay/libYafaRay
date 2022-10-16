@@ -123,9 +123,9 @@ GlossyMaterial::GlossyMaterial(Logger &logger, ParamError &param_error, const Pa
 	if(params_.diffuse_brdf_ == DiffuseBrdf::OrenNayar) initOrenNayar(params_.sigma_);
 }
 
-const MaterialData * GlossyMaterial::initBsdf(SurfacePoint &sp, const Camera *camera) const
+std::unique_ptr<const MaterialData> GlossyMaterial::initBsdf(SurfacePoint &sp, const Camera *camera) const
 {
-	auto mat_data = new GlossyMaterialData(bsdf_flags_, color_nodes_.size() + bump_nodes_.size());
+	auto mat_data{std::make_unique<MaterialData_t>(bsdf_flags_, color_nodes_.size() + bump_nodes_.size())};
 	if(shaders_[ShaderNodeType::Bump]) evalBump(mat_data->node_tree_data_, sp, shaders_[ShaderNodeType::Bump], camera);
 
 	for(const auto &node : color_nodes_) node->eval(mat_data->node_tree_data_, sp, camera);
@@ -203,12 +203,12 @@ Rgb GlossyMaterial::eval(const MaterialData *mat_data, const SurfacePoint &sp, c
 		if(params_.anisotropic_)
 		{
 			const Vec3f hs{{h * sp.uvn_.u_, h * sp.uvn_.v_, h * n}};
-			const auto *mat_data_specific = static_cast<const GlossyMaterialData *>(mat_data);
+			const auto *mat_data_specific = static_cast<const MaterialData_t *>(mat_data);
 			glossy = microfacet::asAnisoD(hs, params_.exp_u_, params_.exp_v_) * microfacet::schlickFresnel(cos_wi_h, mat_data_specific->m_glossy_) / microfacet::asDivisor(cos_wi_h, wo_n, wi_n);
 		}
 		else
 		{
-			const auto *mat_data_specific = static_cast<const GlossyMaterialData *>(mat_data);
+			const auto *mat_data_specific = static_cast<const MaterialData_t *>(mat_data);
 			glossy = microfacet::blinnD(h * n, getShaderScalar(shaders_[ShaderNodeType::Exponent], mat_data->node_tree_data_, params_.exponent_)) * microfacet::schlickFresnel(cos_wi_h, mat_data_specific->m_glossy_) / microfacet::asDivisor(cos_wi_h, wo_n, wi_n);
 		}
 		col = glossy * getShaderColor(shaders_[ShaderNodeType::Glossy], mat_data->node_tree_data_, params_.glossy_color_);
@@ -216,7 +216,7 @@ Rgb GlossyMaterial::eval(const MaterialData *mat_data, const SurfacePoint &sp, c
 
 	if(with_diffuse_ && diffuse_flag)
 	{
-		const auto *mat_data_specific = static_cast<const GlossyMaterialData *>(mat_data);
+		const auto *mat_data_specific = static_cast<const MaterialData_t *>(mat_data);
 		Rgb add_col = mat_data_specific->m_diffuse_ * (1.f - mat_data_specific->m_glossy_) * getShaderColor(shaders_[ShaderNodeType::Diffuse], mat_data->node_tree_data_, params_.diffuse_color_);
 		if(shaders_[ShaderNodeType::DiffuseReflect]) add_col *= shaders_[ShaderNodeType::DiffuseReflect]->getScalar(mat_data->node_tree_data_);
 		if(params_.diffuse_brdf_ == DiffuseBrdf::OrenNayar)
@@ -242,7 +242,7 @@ Rgb GlossyMaterial::sample(const MaterialData *mat_data, const SurfacePoint &sp,
 	const float wo_n = std::abs(wo * n);
 	Rgb scolor(0.f);
 	float s_1 = s.s_1_;
-	const auto *mat_data_specific = static_cast<const GlossyMaterialData *>(mat_data);
+	const auto *mat_data_specific = static_cast<const MaterialData_t *>(mat_data);
 	float cur_p_diffuse = mat_data_specific->p_diffuse_;
 	const bool use_glossy = params_.as_diffuse_ ? s.flags_.has(BsdfFlags::Diffuse) : s.flags_.has(BsdfFlags::Glossy);
 	const bool use_diffuse = with_diffuse_ && s.flags_.has(BsdfFlags::Diffuse);
@@ -390,7 +390,7 @@ float GlossyMaterial::pdf(const MaterialData *mat_data, const SurfacePoint &sp, 
 	if((sp.ng_ * wo) * (sp.ng_ * wi) < 0.f) return 0.f;
 	const Vec3f n{SurfacePoint::normalFaceForward(sp.ng_, sp.n_, wo)};
 	float pdf = 0.f;
-	const auto *mat_data_specific = static_cast<const GlossyMaterialData *>(mat_data);
+	const auto *mat_data_specific = static_cast<const MaterialData_t *>(mat_data);
 	const float cur_p_diffuse = mat_data_specific->p_diffuse_;
 	const bool use_glossy = params_.as_diffuse_ ? flags.has(BsdfFlags::Diffuse) : flags.has(BsdfFlags::Glossy);
 	const bool use_diffuse = with_diffuse_ && flags.has(BsdfFlags::Diffuse);

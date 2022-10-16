@@ -216,9 +216,9 @@ std::array<float, 4> ShinyDiffuseMaterial::accumulate(const std::array<float, 4>
 	return accum;
 }
 
-const MaterialData * ShinyDiffuseMaterial::initBsdf(SurfacePoint &sp, const Camera *camera) const
+std::unique_ptr<const MaterialData> ShinyDiffuseMaterial::initBsdf(SurfacePoint &sp, const Camera *camera) const
 {
-	auto mat_data = new ShinyDiffuseMaterialData(bsdf_flags_, color_nodes_.size() + bump_nodes_.size());
+	auto mat_data{std::make_unique<MaterialData_t>(bsdf_flags_, color_nodes_.size() + bump_nodes_.size())};
 	if(shaders_[ShaderNodeType::Bump]) evalBump(mat_data->node_tree_data_, sp, shaders_[ShaderNodeType::Bump], camera);
 	for(const auto &node : color_nodes_) node->eval(mat_data->node_tree_data_, sp, camera);
 	mat_data->components_ = getComponents(components_view_independent_, mat_data->node_tree_data_);
@@ -296,7 +296,7 @@ Rgb ShinyDiffuseMaterial::eval(const MaterialData *mat_data, const SurfacePoint 
 
 	const float kr = getFresnelKr(wo, n, cur_ior_squared);
 
-	const auto *mat_data_specific = static_cast<const ShinyDiffuseMaterialData *>(mat_data);
+	const auto *mat_data_specific = static_cast<const MaterialData_t *>(mat_data);
 	const float m_t = (1.f - kr * mat_data_specific->components_[0]) * (1.f - mat_data_specific->components_[1]);
 
 	const bool transmit = (cos_ng_wo * cos_ng_wl) < 0.f;
@@ -344,7 +344,7 @@ Rgb ShinyDiffuseMaterial::sample(const MaterialData *mat_data, const SurfacePoin
 	else cur_ior_squared = ior_squared_;
 
 	const float kr = getFresnelKr(wo, n, cur_ior_squared);
-	const auto *mat_data_specific = static_cast<const ShinyDiffuseMaterialData *>(mat_data);
+	const auto *mat_data_specific = static_cast<const MaterialData_t *>(mat_data);
 	const std::array<float, 4> accum_c = accumulate(mat_data_specific->components_, kr);
 
 	float sum = 0.f;
@@ -440,7 +440,7 @@ float ShinyDiffuseMaterial::pdf(const MaterialData *mat_data, const SurfacePoint
 
 	const float kr = getFresnelKr(wo, n, cur_ior_squared);
 
-	const auto *mat_data_specific = static_cast<const ShinyDiffuseMaterialData *>(mat_data);
+	const auto *mat_data_specific = static_cast<const MaterialData_t *>(mat_data);
 	const std::array<float, 4> accum_c = accumulate(mat_data_specific->components_, kr);
 	float sum = 0.f, width;
 	int n_match = 0;
@@ -499,7 +499,7 @@ Specular ShinyDiffuseMaterial::getSpecular(int ray_level, const MaterialData *ma
 		specular.refract_ = std::make_unique<DirectionColor>();
 		specular.refract_->dir_ = -wo;
 		const Rgb tcol = params_.transmit_filter_ * getShaderColor(shaders_[ShaderNodeType::Diffuse], mat_data->node_tree_data_, params_.diffuse_color_) + Rgb(1.f - params_.transmit_filter_);
-		const auto *mat_data_specific = static_cast<const ShinyDiffuseMaterialData *>(mat_data);
+		const auto *mat_data_specific = static_cast<const MaterialData_t *>(mat_data);
 		specular.refract_->col_ = (1.f - mat_data_specific->components_[0] * kr) * mat_data_specific->components_[1] * tcol;
 		applyWireFrame(specular.refract_->col_, shaders_[ShaderNodeType::Wireframe], mat_data->node_tree_data_, sp);
 	}
@@ -515,7 +515,7 @@ Specular ShinyDiffuseMaterial::getSpecular(int ray_level, const MaterialData *ma
 			specular.reflect_->dir_ += (0.01f - cos_wi_ng) * ng;
 			specular.reflect_->dir_.normalize();
 		}
-		const auto *mat_data_specific = static_cast<const ShinyDiffuseMaterialData *>(mat_data);
+		const auto *mat_data_specific = static_cast<const MaterialData_t *>(mat_data);
 		specular.reflect_->col_ = getShaderColor(shaders_[ShaderNodeType::MirrorColor], mat_data->node_tree_data_, params_.mirror_color_) * (mat_data_specific->components_[0] * kr);
 		applyWireFrame(specular.reflect_->col_, shaders_[ShaderNodeType::Wireframe], mat_data->node_tree_data_, sp);
 	}
@@ -562,7 +562,7 @@ float ShinyDiffuseMaterial::getAlpha(const MaterialData *mat_data, const Surface
 		}
 		else cur_ior_squared = ior_squared_;
 		const float kr = getFresnelKr(wo, n, cur_ior_squared);
-		const auto *mat_data_specific = static_cast<const ShinyDiffuseMaterialData *>(mat_data);
+		const auto *mat_data_specific = static_cast<const MaterialData_t *>(mat_data);
 		const float refl = (1.f - mat_data_specific->components_[0] * kr) * mat_data_specific->components_[1];
 		float result = 1.f - refl;
 		applyWireFrame(result, shaders_[ShaderNodeType::Wireframe], mat_data->node_tree_data_, sp);

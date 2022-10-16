@@ -115,7 +115,7 @@ std::unique_ptr<const SurfacePoint> PrimitivePolygon<T, N, MotionBlur>::getSurfa
 			{{sp->uvn_.u_ * sp->dp_.u_, sp->uvn_.v_ * sp->dp_.u_, sp->n_ * sp->dp_.u_}},
 			{{sp->uvn_.u_ * sp->dp_.v_, sp->uvn_.v_ * sp->dp_.v_, sp->n_ * sp->dp_.v_}}
 	};
-	sp->mat_data_ = std::unique_ptr<const MaterialData>(sp->getMaterial()->initBsdf(*sp, camera));
+	sp->mat_data_ = sp->getMaterial()->initBsdf(*sp, camera);
 	return sp;
 }
 
