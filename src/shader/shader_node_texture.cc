@@ -58,12 +58,12 @@ ParamMap TextureMapperNode::Params::getAsParamMap(bool only_non_default) const
 
 ParamMap TextureMapperNode::getAsParamMap(bool only_non_default) const
 {
-	ParamMap result{ShaderNode::getAsParamMap(only_non_default)};
+	ParamMap result{ParentClassType_t::getAsParamMap(only_non_default)};
 	result.append(params_.getAsParamMap(only_non_default));
 	return result;
 }
 
-std::pair<ShaderNode *, ParamError> TextureMapperNode::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map)
+std::pair<std::unique_ptr<ShaderNode>, ParamError> TextureMapperNode::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map)
 {
 	auto param_error{Params::meta_.check(param_map, {"type"}, {})};
 	std::string texname;
@@ -78,13 +78,13 @@ std::pair<ShaderNode *, ParamError> TextureMapperNode::factory(Logger &logger, c
 		logger.logError("TextureMapper: texture '", texname, "' does not exist!");
 		return {nullptr, ParamError{ParamError::Flags::ErrorWhileCreating}};
 	}
-	auto result {new TextureMapperNode(logger, param_error, param_map, tex)};
-	if(param_error.notOk()) logger.logWarning(param_error.print<TextureMapperNode>(name, {"type"}));
-	return {result, param_error};
+	auto shader_node {std::make_unique<TextureMapperNode>(logger, param_error, param_map, tex)};
+	if(param_error.notOk()) logger.logWarning(param_error.print<ThisClassType_t>(name, {"type"}));
+	return {std::move(shader_node), param_error};
 }
 
 TextureMapperNode::TextureMapperNode(Logger &logger, ParamError &param_error, const ParamMap &param_map, const Texture *texture) :
-		ShaderNode{logger, param_error, param_map}, params_{param_error, param_map}, tex_(texture)
+		ParentClassType_t{logger, param_error, param_map}, params_{param_error, param_map}, tex_(texture)
 {
 	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + params_.getAsParamMap(true).print());
 	//logger.logParams(getAsParamMap(false).print()); //TEST CODE ONLY, REMOVE!!

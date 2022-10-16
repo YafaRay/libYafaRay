@@ -17,8 +17,8 @@
  *      Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-#ifndef YAFARAY_NODE_RESULT_H
-#define YAFARAY_NODE_RESULT_H
+#ifndef LIBYAFARAY_NODE_RESULT_H
+#define LIBYAFARAY_NODE_RESULT_H
 
 #include "color/color.h"
 
@@ -32,4 +32,4 @@ struct NodeResult final
 
 } //namespace yafaray
 
-#endif //YAFARAY_NODE_RESULT_H
+#endif //LIBYAFARAY_NODE_RESULT_H

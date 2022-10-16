@@ -26,13 +26,17 @@ namespace yafaray {
 
 class MixNode : public ShaderNode
 {
+		using ThisClassType_t = MixNode; using ParentClassType_t = ShaderNode;
+
 	public:
 		inline static std::string getClassName() { return "MixNode"; }
-		static std::pair<ShaderNode *, ParamError> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map);
+		static std::pair<std::unique_ptr<ShaderNode>, ParamError> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map);
 		static std::string printMeta(const std::vector<std::string> &excluded_params) { return Params::meta_.print(excluded_params); }
+		[[nodiscard]] ParamMap getAsParamMap(bool only_non_default) const override;
+		void eval(NodeTreeData &node_tree_data, const SurfacePoint &sp, const Camera *camera) const override;
+		MixNode(Logger &logger, ParamError &param_error, const ParamMap &param_map);
 
 	protected:
-		MixNode(Logger &logger, ParamError &param_error, const ParamMap &param_map);
 		struct Inputs
 		{
 			Inputs(NodeResult input_1, NodeResult input_2, float factor) : in_1_{std::move(input_1)}, in_2_{std::move(input_2)}, factor_{factor} { }
@@ -63,7 +67,7 @@ class MixNode : public ShaderNode
 		[[nodiscard]] Type type() const override { return Type::Mix; }
 		const struct Params
 		{
-			PARAM_INIT_PARENT(ShaderNode);
+			PARAM_INIT_PARENT(ParentClassType_t);
 			PARAM_DECL(std::string, input_1_, "", "input1", "");
 			PARAM_DECL(Rgba, color_1_, Rgba{0.f}, "color1", "");
 			PARAM_DECL(float, value_1_, 0.f, "value1", "");
@@ -74,8 +78,6 @@ class MixNode : public ShaderNode
 			PARAM_DECL(float, factor_, 0.5f, "cfactor", "");
 			PARAM_ENUM_DECL(BlendMode, blend_mode_, BlendMode::Mix, "blend_mode", "");
 		} params_;
-		[[nodiscard]] ParamMap getAsParamMap(bool only_non_default) const override;
-		void eval(NodeTreeData &node_tree_data, const SurfacePoint &sp, const Camera *camera) const override;
 		bool configInputs(Logger &logger, const ParamMap &params, const NodeFinder &find) override;
 		std::vector<const ShaderNode *> getDependencies() const override;
 

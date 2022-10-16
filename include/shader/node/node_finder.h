@@ -17,8 +17,8 @@
  *      Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-#ifndef YAFARAY_NODE_FINDER_H
-#define YAFARAY_NODE_FINDER_H
+#ifndef LIBYAFARAY_NODE_FINDER_H
+#define LIBYAFARAY_NODE_FINDER_H
 
 #include "common/collection.h"
 #include <string>
@@ -36,4 +36,4 @@ class NodeFinder final : public Collection<std::string, const ShaderNode *>
 
 } //namespace yafaray
 
-#endif //YAFARAY_NODE_FINDER_H
+#endif //LIBYAFARAY_NODE_FINDER_H

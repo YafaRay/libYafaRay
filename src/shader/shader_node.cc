@@ -47,7 +47,7 @@ ParamMap ShaderNode::getAsParamMap(bool only_non_default) const
 	return result;
 }
 
-std::pair<ShaderNode *, ParamError> ShaderNode::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map)
+std::pair<std::unique_ptr<ShaderNode>, ParamError> ShaderNode::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map)
 {
 	const Type type{ClassMeta::preprocessParamMap<Type>(logger, getClassName(), param_map)};
 	switch(type.value())

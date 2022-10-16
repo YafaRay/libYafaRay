@@ -26,10 +26,14 @@ namespace yafaray {
 
 class LayerNode final : public ShaderNode
 {
+		using ThisClassType_t = LayerNode; using ParentClassType_t = ShaderNode;
+
 	public:
 		inline static std::string getClassName() { return "LayerNode"; }
-		static std::pair<ShaderNode *, ParamError> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map);
+		static std::pair<std::unique_ptr<ShaderNode>, ParamError> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map);
 		static std::string printMeta(const std::vector<std::string> &excluded_params) { return Params::meta_.print(excluded_params); }
+		[[nodiscard]] ParamMap getAsParamMap(bool only_non_default) const override;
+		LayerNode(Logger &logger, ParamError &param_error, const ParamMap &param_map);
 
 	private:
 		struct Flags : Enum<Flags>
@@ -63,7 +67,7 @@ class LayerNode final : public ShaderNode
 		[[nodiscard]] Type type() const override { return Type::Layer; }
 		const struct Params
 		{
-			PARAM_INIT_PARENT(ShaderNode);
+			PARAM_INIT_PARENT(ParentClassType_t);
 			PARAM_DECL(std::string, input_, "", "input", "");
 			PARAM_DECL(std::string, upper_layer_, "", "upper_layer", "");
 			PARAM_DECL(Rgba, upper_color_, Rgba{0.f}, "upper_color", "");
@@ -81,11 +85,8 @@ class LayerNode final : public ShaderNode
 			PARAM_DECL(bool, negative_, false, "negative", "");
 			PARAM_ENUM_DECL(BlendMode, blend_mode_, BlendMode::Mix, "blend_mode", "");
 		} params_;
-		[[nodiscard]] ParamMap getAsParamMap(bool only_non_default) const override;
 		static Rgb textureRgbBlend(const Rgb &tex, const Rgb &out, float fact, float facg, BlendMode blend_mode);
 		static float textureValueBlend(float tex, float out, float fact, float facg, BlendMode blend_mode, bool flip = false);
-
-		LayerNode(Logger &logger, ParamError &param_error, const ParamMap &param_map);
 		void eval(NodeTreeData &node_tree_data, const SurfacePoint &sp, const Camera *camera) const override;
 		void evalDerivative(NodeTreeData &node_tree_data, const SurfacePoint &sp, const Camera *camera) const override;
 		bool configInputs(Logger &logger, const ParamMap &params, const NodeFinder &find) override;

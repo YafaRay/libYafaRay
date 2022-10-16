@@ -17,8 +17,8 @@
  *      Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-#ifndef YAFARAY_NODE_TREE_DATA_H
-#define YAFARAY_NODE_TREE_DATA_H
+#ifndef LIBYAFARAY_NODE_TREE_DATA_H
+#define LIBYAFARAY_NODE_TREE_DATA_H
 
 #include "shader/node/node_result.h"
 #include <vector>
@@ -42,4 +42,4 @@ class NodeTreeData final
 
 } //namespace yafaray
 
-#endif //YAFARAY_NODE_TREE_DATA_H
+#endif //LIBYAFARAY_NODE_TREE_DATA_H

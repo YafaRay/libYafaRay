@@ -28,10 +28,14 @@ namespace yafaray {
 
 class TextureMapperNode final : public ShaderNode
 {
+		using ThisClassType_t = TextureMapperNode; using ParentClassType_t = ShaderNode;
+
 	public:
 		inline static std::string getClassName() { return "TextureMapperNode"; }
-		static std::pair<ShaderNode *, ParamError> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map);
+		static std::pair<std::unique_ptr<ShaderNode>, ParamError> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map);
 		static std::string printMeta(const std::vector<std::string> &excluded_params) { return Params::meta_.print(excluded_params); }
+		[[nodiscard]] ParamMap getAsParamMap(bool only_non_default) const override;
+		explicit TextureMapperNode(Logger &logger, ParamError &param_error, const ParamMap &param_map, const Texture *texture);
 
 	private:
 		struct Coords : Enum<Coords>
@@ -65,7 +69,7 @@ class TextureMapperNode final : public ShaderNode
 		[[nodiscard]] Type type() const override { return Type::Texture; }
 		const struct Params
 		{
-			PARAM_INIT_PARENT(ShaderNode);
+			PARAM_INIT_PARENT(ParentClassType_t);
 			PARAM_DECL(std::string, texture_, "", "texture", "");
 			PARAM_DECL(Matrix4f, transform_, Matrix4f{1.f}, "transform", "");
 			PARAM_DECL(Vec3f, scale_, Vec3f{1.f}, "scale", "");
@@ -78,8 +82,6 @@ class TextureMapperNode final : public ShaderNode
 			PARAM_ENUM_DECL(Coords, texco_, Coords::Global, "texco", "");
 			PARAM_ENUM_DECL(Projection, mapping_, Projection::Plain, "mapping", "");
 		} params_;
-		[[nodiscard]] ParamMap getAsParamMap(bool only_non_default) const override;
-		explicit TextureMapperNode(Logger &logger, ParamError &param_error, const ParamMap &param_map, const Texture *texture);
 		void eval(NodeTreeData &node_tree_data, const SurfacePoint &sp, const Camera *camera) const override;
 		void evalDerivative(NodeTreeData &node_tree_data, const SurfacePoint &sp, const Camera *camera) const override;
 		bool configInputs(Logger &logger, const ParamMap &params, const NodeFinder &find) override { return true; };

@@ -17,8 +17,8 @@
  *      Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-#ifndef YAFARAY_SHADER_NODE_VALUE_H
-#define YAFARAY_SHADER_NODE_VALUE_H
+#ifndef LIBYAFARAY_SHADER_NODE_VALUE_H
+#define LIBYAFARAY_SHADER_NODE_VALUE_H
 
 #include "shader/shader_node.h"
 
@@ -26,22 +26,24 @@ namespace yafaray {
 
 class ValueNode final : public ShaderNode
 {
+		using ThisClassType_t = ValueNode; using ParentClassType_t = ShaderNode;
+
 	public:
 		inline static std::string getClassName() { return "ValueNode"; }
-		static std::pair<ShaderNode *, ParamError> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map);
+		static std::pair<std::unique_ptr<ShaderNode>, ParamError> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map);
 		static std::string printMeta(const std::vector<std::string> &excluded_params) { return Params::meta_.print(excluded_params); }
+		[[nodiscard]] ParamMap getAsParamMap(bool only_non_default) const override;
+		ValueNode(Logger &logger, ParamError &param_error, const ParamMap &param_map);
 
 	private:
 		[[nodiscard]] Type type() const override { return Type::Value; }
 		const struct Params
 		{
-			PARAM_INIT_PARENT(ShaderNode);
+			PARAM_INIT_PARENT(ParentClassType_t);
 			PARAM_DECL(Rgb, color_, Rgb{1.f}, "color", "");
 			PARAM_DECL(float, value_, 1.f, "scalar", "");
 			PARAM_DECL(float, alpha_, 1.f, "alpha", "");
 		} params_;
-		[[nodiscard]] ParamMap getAsParamMap(bool only_non_default) const override;
-		ValueNode(Logger &logger, ParamError &param_error, const ParamMap &param_map);
 		void eval(NodeTreeData &node_tree_data, const SurfacePoint &sp, const Camera *camera) const override;
 		bool configInputs(Logger &logger, const ParamMap &params, const NodeFinder &find) override { return true; };
 
@@ -50,4 +52,4 @@ class ValueNode final : public ShaderNode
 
 } //namespace yafaray
 
-#endif // YAFARAY_SHADER_NODE_VALUE_H
+#endif // LIBYAFARAY_SHADER_NODE_VALUE_H

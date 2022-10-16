@@ -17,8 +17,8 @@
  *      Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-#ifndef YAFARAY_SHADER_NODE_MIX_SUB_H
-#define YAFARAY_SHADER_NODE_MIX_SUB_H
+#ifndef LIBYAFARAY_SHADER_NODE_MIX_SUB_H
+#define LIBYAFARAY_SHADER_NODE_MIX_SUB_H
 
 #include "shader/shader_node_mix.h"
 
@@ -39,4 +39,4 @@ class SubNode: public MixNode
 
 } //namespace yafaray
 
-#endif // YAFARAY_SHADER_NODE_MIX_SUB_H
+#endif // LIBYAFARAY_SHADER_NODE_MIX_SUB_H

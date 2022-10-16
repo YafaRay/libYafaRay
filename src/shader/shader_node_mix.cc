@@ -65,38 +65,38 @@ ParamMap MixNode::Params::getAsParamMap(bool only_non_default) const
 
 ParamMap MixNode::getAsParamMap(bool only_non_default) const
 {
-	ParamMap result{ShaderNode::getAsParamMap(only_non_default)};
+	ParamMap result{ParentClassType_t::getAsParamMap(only_non_default)};
 	result.append(params_.getAsParamMap(only_non_default));
 	return result;
 }
 
-std::pair<ShaderNode *, ParamError> MixNode::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map)
+std::pair<std::unique_ptr<ShaderNode>, ParamError> MixNode::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map)
 {
 	auto param_error{Params::meta_.check(param_map, {"type"}, {})};
-	ShaderNode *result = nullptr;
+	std::unique_ptr<ShaderNode> shader_node;
 	std::string blend_mode_str;
 	param_map.getParam(Params::blend_mode_meta_.name(), blend_mode_str);
 	const BlendMode blend_mode{blend_mode_str};
 	switch(blend_mode.value())
 	{
-		case BlendMode::Mult: result = new MultNode(logger, param_error, param_map); break;
-		case BlendMode::Screen: result = new ScreenNode(logger, param_error, param_map); break;
-		case BlendMode::Sub: result = new SubNode(logger, param_error, param_map); break;
-		case BlendMode::Add: result = new AddNode(logger, param_error, param_map); break;
+		case BlendMode::Mult: shader_node = std::make_unique<MultNode>(logger, param_error, param_map); break;
+		case BlendMode::Screen: shader_node = std::make_unique<ScreenNode>(logger, param_error, param_map); break;
+		case BlendMode::Sub: shader_node = std::make_unique<SubNode>(logger, param_error, param_map); break;
+		case BlendMode::Add: shader_node = std::make_unique<AddNode>(logger, param_error, param_map); break;
 			//case BlendMode::Div: result = DivNode(logger, param_error, param_map); break; //FIXME Why isn't there a DivNode?
-		case BlendMode::Diff: result = new DiffNode(logger, param_error, param_map); break;
-		case BlendMode::Dark: result = new DarkNode(logger, param_error, param_map); break;
-		case BlendMode::Light: result = new LightNode(logger, param_error, param_map); break;
-		case BlendMode::Overlay: result = new OverlayNode(logger, param_error, param_map); break;
+		case BlendMode::Diff: shader_node = std::make_unique<DiffNode>(logger, param_error, param_map); break;
+		case BlendMode::Dark: shader_node = std::make_unique<DarkNode>(logger, param_error, param_map); break;
+		case BlendMode::Light: shader_node = std::make_unique<LightNode>(logger, param_error, param_map); break;
+		case BlendMode::Overlay: shader_node = std::make_unique<OverlayNode>(logger, param_error, param_map); break;
 		case BlendMode::Mix:
-		default: result = new MixNode(logger, param_error, param_map); break;
+		default: shader_node = std::make_unique<MixNode>(logger, param_error, param_map); break;
 	}
-	if(param_error.notOk()) logger.logWarning(param_error.print<MixNode>(name, {"type"}));
-	return {result, param_error};
+	if(param_error.notOk()) logger.logWarning(param_error.print<ThisClassType_t>(name, {"type"}));
+	return {std::move(shader_node), param_error};
 }
 
 MixNode::MixNode(Logger &logger, ParamError &param_error, const ParamMap &param_map) :
-		ShaderNode{logger, param_error, param_map}, params_{param_error, param_map}
+		ParentClassType_t{logger, param_error, param_map}, params_{param_error, param_map}
 {
 	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + params_.getAsParamMap(true).print());
 }
