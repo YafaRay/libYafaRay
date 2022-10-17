@@ -53,8 +53,8 @@ class FacePrimitive: public Primitive
 		template<typename T=bool> Point3f getVertexAtTime(size_t vertex_number, float time, const T &obj_to_world = {}) const;
 		static Bound<float> getBound(const std::vector<Point3f> &vertices);
 		template<typename T=bool> Bound<float> getBoundTimeSteps(const T &obj_to_world = {}) const;
-		const Material *getMaterial() const override { return material_->get(); }
-		void setMaterial(const std::unique_ptr<const Material> *material) { material_ = material; }
+		const Material *getMaterial() const override { return base_mesh_object_.getMaterial(material_id_); }
+		void setMaterial(size_t material_id) { material_id_ = material_id; }
 		const Object *getObject() const override { return &base_mesh_object_; }
 		Visibility getVisibility() const override { return base_mesh_object_.getVisibility(); }
 		unsigned int getObjectIndex() const override { return base_mesh_object_.getIndex(); }
@@ -65,7 +65,7 @@ class FacePrimitive: public Primitive
 
 	protected:
 		alignas(8) const MeshObject &base_mesh_object_;
-		const std::unique_ptr<const Material> *material_ = nullptr;
+		size_t material_id_{0};
 		alignas(8) std::vector<int> vertices_; //!< indices in point array, referenced in mesh.
 		std::vector<int> vertices_normals_; //!< indices in normal array, if mesh is smoothed.
 		std::vector<int> vertex_uvs_; //!< indices in uv array, if mesh has explicit uv.

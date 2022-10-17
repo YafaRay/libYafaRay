@@ -100,7 +100,6 @@ std::pair<std::unique_ptr<Material>, ParamError> Material::factory(Logger &logge
 		case Type::Mask: result = MaskMaterial::factory(logger, scene, name, param_map, nodes_param_maps); break;
 		default: break;
 	}
-	result.first->setIndexAuto(scene.getMaterialIndexAuto());
 	return result;
 }
 

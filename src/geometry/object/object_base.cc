@@ -74,7 +74,7 @@ std::pair<std::unique_ptr<Object>, ParamError> ObjectBase::factory(Logger &logge
 		{
 			//FIXME DAVID: probably will need to work on a better parameter error handling considering that both an object and a primitive are involved and the check needs to be done for both
 			ParamError param_error;
-			auto primitive_object{std::make_unique<PrimitiveObject>(param_error, param_map)};
+			auto primitive_object{std::make_unique<PrimitiveObject>(param_error, param_map, scene.getMaterials())};
 			auto [primitive, primitive_param_error]{SpherePrimitive::factory(logger, scene, name, param_map, *primitive_object)};
 			param_error.merge(primitive_param_error);
 			primitive_object->setPrimitive(std::move(primitive));
@@ -90,7 +90,7 @@ std::pair<std::unique_ptr<Object>, ParamError> ObjectBase::factory(Logger &logge
 	else return {nullptr, ParamError{ParamError::Flags::ErrorTypeUnknownParam}};
 }
 
-ObjectBase::ObjectBase(ParamError &param_error, const ParamMap &param_map) : params_{param_error, param_map}
+ObjectBase::ObjectBase(ParamError &param_error, const ParamMap &param_map, const std::vector<std::unique_ptr<Material>> &materials) : params_{param_error, param_map}, materials_{materials}
 {
 	//if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + params_.getAsParamMap(true).print());
 }

@@ -194,7 +194,7 @@ void Interface::paramsEndList() noexcept
 std::pair<size_t, ParamError> Interface::createObject(std::string &&name) noexcept { return scene_->createObject(std::move(name), std::move(*params_)); }
 std::pair<size_t, ParamError> Interface::createLight(std::string &&name) noexcept { return scene_->createLight(std::move(name), std::move(*params_)); }
 std::pair<size_t, ParamError> Interface::createTexture(std::string &&name) noexcept { return scene_->createTexture(std::move(name), std::move(*params_)); }
-const Material *Interface::createMaterial(std::string &&name) noexcept { return scene_->createMaterial(std::move(name), std::move(*params_), std::move(nodes_params_)).first->get(); }
+std::pair<size_t, ParamError> Interface::createMaterial(std::string &&name) noexcept { return scene_->createMaterial(std::move(name), std::move(*params_), std::move(nodes_params_)); }
 std::pair<size_t, ParamError> Interface::createCamera(std::string &&name) noexcept { return scene_->createCamera(std::move(name), std::move(*params_)); }
 ParamError Interface::defineBackground() noexcept { return scene_->defineBackground(std::move(*params_)); }
 ParamError Interface::defineSurfaceIntegrator() noexcept { return scene_->defineSurfaceIntegrator(std::move(*params_)); }
@@ -290,14 +290,14 @@ void Interface::cancel() noexcept
 	logger_->logWarning("Interface: Render canceled by user.");
 }
 
-void Interface::setCurrentMaterial(const std::unique_ptr<const Material> *material) noexcept
+void Interface::setCurrentMaterial(size_t material_id) noexcept
 {
-	if(scene_) scene_->setCurrentMaterial(material);
+	if(scene_) scene_->setCurrentMaterial(material_id);
 }
 
 void Interface::setCurrentMaterial(std::string &&name) noexcept
 {
-	if(scene_) scene_->setCurrentMaterial(scene_->getMaterial(std::string(name)));
+	if(scene_) scene_->setCurrentMaterial(scene_->getMaterial(std::string(name)).first);
 }
 
 void Interface::printDebug(const std::string &msg) const noexcept

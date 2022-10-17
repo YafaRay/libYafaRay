@@ -96,7 +96,7 @@ class Scene final
 		void setAntialiasing(AaNoiseParams &&aa_noise_params) { aa_noise_params_ = std::move(aa_noise_params); };
 		void setNumThreads(int threads);
 		void setNumThreadsPhotons(int threads_photons);
-		void setCurrentMaterial(const std::unique_ptr<const Material> *material);
+		void setCurrentMaterial(size_t material_id);
 		void createDefaultMaterial();
 		void clearNonObjects();
 		void clearAll();
@@ -109,7 +109,8 @@ class Scene final
 		int getNumThreadsPhotons() const { return nthreads_photons_; }
 		AaNoiseParams getAaParameters() const { return aa_noise_params_; }
 		RenderControl &getRenderControl() { return render_control_; }
-		const std::unique_ptr<const Material> * getMaterial(const std::string &name) const;
+		std::pair<size_t, ParamError::Flags> getMaterial(const std::string &name) const;
+		const std::vector<std::unique_ptr<Material>> &getMaterials() const { return materials_; }
 		Texture *getTexture(const std::string &name) const;
 		const Camera *getCamera(const std::string &name) const;
 		const Light *getLight(const std::string &name) const;
@@ -121,7 +122,7 @@ class Scene final
 
 		std::pair<size_t, ParamError> createLight(std::string &&name, ParamMap &&params);
 		std::pair<size_t, ParamError> createTexture(std::string &&name, ParamMap &&params);
-		std::pair<std::unique_ptr<const Material> *, ParamError> createMaterial(std::string &&name, ParamMap &&params, std::list<ParamMap> &&nodes_params);
+		std::pair<size_t, ParamError> createMaterial(std::string &&name, ParamMap &&params, std::list<ParamMap> &&nodes_params);
 		std::pair<size_t, ParamError> createCamera(std::string &&name, ParamMap &&params);
 		ParamError defineBackground(ParamMap &&params);
 		ParamError defineSurfaceIntegrator(ParamMap &&params);
@@ -145,7 +146,7 @@ class Scene final
 		bool isRayMinDistAuto() const { return ray_min_dist_auto_; }
 		const VolumeIntegrator *getVolIntegrator() const { return vol_integrator_.get(); }
 
-		unsigned int getMaterialIndexAuto() const { return material_index_auto_; }
+		unsigned int getMaterialIndexAuto() const { return materials_.size(); }
 		unsigned int getObjectIndexAuto() const { return object_index_auto_; }
 
 		static void logWarnExist(Logger &logger, const std::string &pname, const std::string &name);
@@ -183,7 +184,7 @@ class Scene final
 			std::list<State> stack_;
 			unsigned int changes_;
 			ObjId_t next_free_id_;
-			const std::unique_ptr<const Material> *current_material_ = nullptr;
+			size_t current_material_ = 0;
 		} creation_state_;
 		std::unique_ptr<Bound<float>> scene_bound_; //!< bounding box of all (finite) scene geometry
 		std::string scene_accelerator_;
@@ -192,7 +193,8 @@ class Scene final
 		std::map<std::string, std::unique_ptr<Object>> objects_;
 		std::vector<std::unique_ptr<ObjectInstance>> instances_;
 		std::map<std::string, std::unique_ptr<Light>> lights_;
-		std::map<std::string, std::unique_ptr<std::unique_ptr<const Material>>> materials_;
+		std::vector<std::unique_ptr<Material>> materials_;
+		std::map<std::string, size_t> material_names_;
 		RenderControl render_control_;
 		Logger &logger_;
 
@@ -203,10 +205,9 @@ class Scene final
 		bool shadow_bias_auto_ = true; //enable automatic shadow bias calculation
 		float ray_min_dist_ = 1.0e-5f;  //ray minimum distance
 		bool ray_min_dist_auto_ = true;  //enable automatic ray minimum distance calculation
-		unsigned int material_index_highest_ = 1; //!< Highest material index used for the Normalized Material Index pass.
-		unsigned int material_index_auto_ = 1; //!< Material Index automatically generated for the material-index-auto render pass
 		unsigned int object_index_highest_ = 1; //!< Highest object index used for the Normalized Object Index pass.
 		unsigned int object_index_auto_ = 1; //!< Object Index automatically generated for the object-index-auto render pass
+		size_t material_id_default_ = 0;
 		std::unique_ptr<ImageFilm> image_film_;
 		std::unique_ptr<Background> background_;
 		std::unique_ptr<SurfaceIntegrator> surf_integrator_;

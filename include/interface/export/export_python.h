@@ -57,7 +57,7 @@ class ExportPython: public Interface
 		std::pair<size_t, ParamError> createObject(std::string &&name) noexcept override;
 		std::pair<size_t, ParamError> createLight(std::string &&name) noexcept override;
 		std::pair<size_t, ParamError> createTexture(std::string &&name) noexcept override;
-		const Material *createMaterial(std::string &&name) noexcept override;
+		std::pair<size_t, ParamError> createMaterial(std::string &&name) noexcept override;
 		std::pair<size_t, ParamError> createCamera(std::string &&name) noexcept override;
 		ParamError defineBackground() noexcept override;
 		ParamError defineSurfaceIntegrator() noexcept override;

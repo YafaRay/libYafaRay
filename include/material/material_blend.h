@@ -54,7 +54,7 @@ class BlendMaterial final : public NodeMaterial
 		static std::pair<std::unique_ptr<Material>, ParamError> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map, const std::list<ParamMap> &nodes_param_maps);
 		static std::string printMeta(const std::vector<std::string> &excluded_params) { return Params::meta_.print(excluded_params); }
 		[[nodiscard]] ParamMap getAsParamMap(bool only_non_default) const override;
-		BlendMaterial(Logger &logger, ParamError &param_error, const ParamMap &param_map, const std::unique_ptr<const Material> *material_1, const std::unique_ptr<const Material> *material_2);
+		BlendMaterial(Logger &logger, ParamError &param_error, const ParamMap &param_map, size_t material_1_id, size_t material_2_id, const std::vector<std::unique_ptr<Material>> &materials);
 
 	private:
 		[[nodiscard]] Type type() const override { return Type::Blend; }
@@ -90,7 +90,9 @@ class BlendMaterial final : public NodeMaterial
 		const VolumeHandler *getVolumeHandler(bool inside) const override;
 		float getBlendVal(const NodeTreeData &node_tree_data) const;
 
-		const std::unique_ptr<const Material> *mat_1_ = nullptr, *mat_2_ = nullptr;
+		size_t material_1_id_{0};
+		size_t material_2_id_{0};
+		const std::vector<std::unique_ptr<Material>> &materials_;
 		std::array<const ShaderNode *, static_cast<size_t>(ShaderNodeType::Size)> shaders_{initShaderArray<ShaderNodeType::Size>()};
 		float blended_ior_{1.f};
 };

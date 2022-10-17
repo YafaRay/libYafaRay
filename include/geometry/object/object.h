@@ -69,15 +69,15 @@ class Object
 		virtual const Light *getLight() const = 0;
 		/*! set a light source to be associated with this object */
 		virtual void setLight(const Light *light) = 0;
-		virtual bool calculateObject(const std::unique_ptr<const Material> *material) = 0;
-		bool calculateObject() { return calculateObject(nullptr); }
+		virtual bool calculateObject(size_t material_id) = 0;
+		bool calculateObject() { return calculateObject(0); }
 
 		/* Mesh-related interface functions below, only for Mesh objects */
 		virtual int lastVertexId(int time_step) const { return -1; }
 		virtual void addPoint(Point3f &&p, int time_step) { }
 		virtual void addOrcoPoint(Point3f &&p, int time_step) { }
 		virtual void addVertexNormal(Vec3f &&n, int time_step) { }
-		virtual void addFace(std::vector<int> &&vertices, std::vector<int> &&vertices_uv, const std::unique_ptr<const Material> *material) { }
+		virtual void addFace(std::vector<int> &&vertices, std::vector<int> &&vertices_uv, size_t material_id) { }
 		virtual int addUvValue(Uv<float> &&uv) { return -1; }
 		virtual bool hasVerticesNormals(int time_step) const { return false; }
 		virtual int numVerticesNormals(int time_step) const { return 0; }

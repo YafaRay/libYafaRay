@@ -49,20 +49,20 @@ ParamMap CurveObject::getAsParamMap(bool only_non_default) const
 std::pair<std::unique_ptr<Object>, ParamError> CurveObject::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map)
 {
 	auto param_error{Params::meta_.check(param_map, {"type"}, {})};
-	auto object{std::make_unique<ThisClassType_t>(param_error, param_map)};
+	auto object{std::make_unique<ThisClassType_t>(param_error, param_map, scene.getMaterials())};
 	if(param_error.notOk()) logger.logWarning(param_error.print<ThisClassType_t>(name, {"type"}));
 	object->setName(name);
 	object->setLight(scene.getLight(object->ObjectBase::params_.light_name_));
 	return {std::move(object), param_error};
 }
 
-CurveObject::CurveObject(ParamError &param_error, const ParamMap &param_map) :
-		ParentClassType_t{param_error, param_map}, params_{param_error, param_map}
+CurveObject::CurveObject(ParamError &param_error, const ParamMap &param_map, const std::vector<std::unique_ptr<Material>> &materials) :
+		ParentClassType_t{param_error, param_map, materials}, params_{param_error, param_map}
 {
 	//if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + params_.getAsParamMap(true).print());
 }
 
-bool CurveObject::calculateObject(const std::unique_ptr<const Material> *material)
+bool CurveObject::calculateObject(size_t material_id)
 {
 	const int points_size = ParentClassType_t::numVertices(0);
 	for(int time_step = 0; time_step < numTimeSteps(); ++time_step)
@@ -115,18 +115,18 @@ bool CurveObject::calculateObject(const std::unique_ptr<const Material> *materia
 		const int b_2 = a_2 + 2;
 		const int b_3 = b_2 + 1;
 		// Close bottom
-		if(i == 0) addFace({a_1, a_3, a_2}, {iu, iu, iu}, material);
+		if(i == 0) addFace({a_1, a_3, a_2}, {iu, iu, iu}, material_id);
 		// Fill and strand UVs
-		addFace({a_1, b_2, b_1}, {iu, iv, iv}, material);
-		addFace({a_1, a_2, b_2}, {iu, iu, iv}, material);
-		addFace({a_2, b_3, b_2}, {iu, iv, iv}, material);
-		addFace({a_2, a_3, b_3}, {iu, iu, iv}, material);
-		addFace({b_3, a_3, a_1}, {iv, iu, iu}, material);
-		addFace({b_3, a_1, b_1}, {iv, iu, iv}, material);
+		addFace({a_1, b_2, b_1}, {iu, iv, iv}, material_id);
+		addFace({a_1, a_2, b_2}, {iu, iu, iv}, material_id);
+		addFace({a_2, b_3, b_2}, {iu, iv, iv}, material_id);
+		addFace({a_2, a_3, b_3}, {iu, iu, iv}, material_id);
+		addFace({b_3, a_3, a_1}, {iv, iu, iu}, material_id);
+		addFace({b_3, a_1, b_1}, {iv, iu, iv}, material_id);
 	}
 	// Close top
-	addFace({i, 2 * i + points_size, 2 * i + points_size + 1}, {iv, iv, iv}, material);
-	return ParentClassType_t::calculateObject(material);
+	addFace({i, 2 * i + points_size, 2 * i + points_size + 1}, {iv, iv, iv}, material_id);
+	return ParentClassType_t::calculateObject(material_id);
 }
 
 

@@ -22,7 +22,7 @@
 
 #include "primitive.h"
 #include "geometry/vector.h"
-#include "geometry/object/object.h"
+#include "geometry/object/object_primitive.h"
 #include "camera/camera.h"
 
 namespace yafaray {
@@ -36,10 +36,10 @@ class SpherePrimitive final : public Primitive
 {
 	public:
 		inline static std::string getClassName() { return "CurveObject"; }
-		static std::pair<std::unique_ptr<Primitive>, ParamError> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map, const Object &object);
+		static std::pair<std::unique_ptr<Primitive>, ParamError> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map, const PrimitiveObject &object);
 		static std::string printMeta(const std::vector<std::string> &excluded_params) { return Params::meta_.print(excluded_params); }
 		[[nodiscard]] ParamMap getAsParamMap(bool only_non_default) const;
-		SpherePrimitive(Logger &logger, ParamError &param_error, const ParamMap &param_map, const std::unique_ptr<const Material> *material, const Object &base_object);
+		SpherePrimitive(Logger &logger, ParamError &param_error, const ParamMap &param_map, size_t material_id, const PrimitiveObject &base_object);
 
 	private:
 		struct Params
@@ -55,7 +55,7 @@ class SpherePrimitive final : public Primitive
 		std::pair<float, Uv<float>> intersect(const Point3f &from, const Vec3f &dir, float time, const Matrix4f &obj_to_world) const override;
 		std::unique_ptr<const SurfacePoint> getSurface(const RayDifferentials *ray_differentials, const Point3f &hit_point, float time, const Uv<float> &intersect_uv, const Camera *camera) const override;
 		std::unique_ptr<const SurfacePoint> getSurface(const RayDifferentials *ray_differentials, const Point3f &hit_point, float time, const Uv<float> &intersect_uv, const Camera *camera, const Matrix4f &obj_to_world) const override;
-		const Material *getMaterial() const override { return material_->get(); }
+		const Material *getMaterial() const override { return base_object_.getMaterial(material_id_); }
 		float surfaceArea(float time) const override;
 		float surfaceArea(float time, const Matrix4f &obj_to_world) const override;
 		Vec3f getGeometricNormal(const Uv<float> &uv, float time, bool) const override;
@@ -72,8 +72,8 @@ class SpherePrimitive final : public Primitive
 		const Light *getObjectLight() const override { return base_object_.getLight(); }
 		bool hasObjectMotionBlur() const override { return base_object_.hasMotionBlur(); }
 
-		const Object &base_object_;
-		const std::unique_ptr<const Material> *material_ = nullptr;
+		const PrimitiveObject &base_object_;
+		size_t material_id_{0};
 };
 
 } //namespace yafaray

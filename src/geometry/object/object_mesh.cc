@@ -55,14 +55,14 @@ ParamMap MeshObject::getAsParamMap(bool only_non_default) const
 std::pair<std::unique_ptr<Object>, ParamError> MeshObject::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map)
 {
 	auto param_error{Params::meta_.check(param_map, {"type"}, {})};
-	auto object{std::make_unique<ThisClassType_t>(param_error, param_map)};
+	auto object{std::make_unique<ThisClassType_t>(param_error, param_map, scene.getMaterials())};
 	if(param_error.notOk()) logger.logWarning(param_error.print<ThisClassType_t>(name, {"type"}));
 	object->setName(name);
 	object->setLight(scene.getLight(object->ParentClassType_t::params_.light_name_));
 	return {std::move(object), param_error};
 }
 
-MeshObject::MeshObject(ParamError &param_error, const ParamMap &param_map) : ParentClassType_t{param_error, param_map}, params_{param_error, param_map}
+MeshObject::MeshObject(ParamError &param_error, const ParamMap &param_map, const std::vector<std::unique_ptr<Material>> &materials) : ParentClassType_t{param_error, param_map, materials}, params_{param_error, param_map}
 {
 	//if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + params_.getAsParamMap(true).print());
 	const int num_faces = calculateNumFaces();
@@ -88,7 +88,7 @@ void MeshObject::addFace(std::unique_ptr<FacePrimitive> &&face)
 	}
 }
 
-void MeshObject::addFace(std::vector<int> &&vertices, std::vector<int> &&vertices_uv, const std::unique_ptr<const Material> *material)
+void MeshObject::addFace(std::vector<int> &&vertices, std::vector<int> &&vertices_uv, size_t material_id)
 {
 	std::unique_ptr<FacePrimitive> face;
 	if(vertices.size() == 3)
@@ -102,12 +102,12 @@ void MeshObject::addFace(std::vector<int> &&vertices, std::vector<int> &&vertice
 		else face = std::make_unique<PrimitivePolygon<float, 4, MotionBlurType::None>>(std::move(vertices), std::move(vertices_uv), *this);
 	}
 	else return; //Other primitives are not supported
-	face->setMaterial(material);
+	face->setMaterial(material_id);
 	if(hasVerticesNormals(0)) face->generateInitialVerticesNormalsIndices();
 	addFace(std::move(face));
 }
 
-bool MeshObject::calculateObject(const std::unique_ptr<const Material> *)
+bool MeshObject::calculateObject(size_t)
 {
 	if(hasMotionBlurBezier()) convertToBezierControlPoints();
 	faces_.shrink_to_fit();

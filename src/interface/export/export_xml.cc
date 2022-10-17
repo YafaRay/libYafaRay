@@ -272,13 +272,13 @@ std::pair<size_t, ParamError> ExportXml::createTexture(std::string &&name) noexc
 	return {};
 }
 
-const Material *ExportXml::createMaterial(std::string &&name) noexcept
+std::pair<size_t, ParamError> ExportXml::createMaterial(std::string &&name) noexcept
 {
 	file_ << "\n<material name=\"" << name << "\">\n";
 	writeParamMap(*params_);
 	writeParamList(1);
 	file_ << "</material>\n";
-	return nullptr;
+	return {};
 }
 std::pair<size_t, ParamError> ExportXml::createCamera(std::string &&name) noexcept
 {

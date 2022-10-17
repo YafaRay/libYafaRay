@@ -94,14 +94,14 @@ void Scene::createDefaultMaterial()
 	std::list<ParamMap> nodes_params;
 	//Note: keep the std::string or the parameter will be created incorrectly as a bool
 	param_map["type"] = std::string("shinydiffusemat");
-	const std::unique_ptr<const Material> *material = createMaterial("YafaRay_Default_Material", std::move(param_map), std::move(nodes_params)).first;
-	setCurrentMaterial(material);
+	material_id_default_ = createMaterial("YafaRay_Default_Material", std::move(param_map), std::move(nodes_params)).first;
+	setCurrentMaterial(material_id_default_);
 }
 
-void Scene::setCurrentMaterial(const std::unique_ptr<const Material> *material)
+void Scene::setCurrentMaterial(size_t material_id)
 {
-	if(material) creation_state_.current_material_ = material;
-	else creation_state_.current_material_ = getMaterial("YafaRay_Default_Material");
+	if(materials_[material_id]) creation_state_.current_material_ = material_id;
+	else creation_state_.current_material_ = material_id_default_;
 }
 
 bool Scene::startObjects()
@@ -223,7 +223,7 @@ bool Scene::render(std::unique_ptr<ProgressBar> progress_bar)
 				return false;
 			}
 			render_control_.setStarted();
-			success = surf_integrator_->render(fast_random, object_index_highest_, material_index_highest_);
+			success = surf_integrator_->render(fast_random, object_index_highest_, materials_.size() - 1);
 			if(!success)
 			{
 				logger_.logError("Scene: Rendering process failed, exiting...");
@@ -281,9 +281,11 @@ T *Scene::findMapItem(const std::string &name, const std::map<std::string, std::
 	else return nullptr;
 }
 
-const std::unique_ptr<const Material> * Scene::getMaterial(const std::string &name) const
+std::pair<size_t, ParamError::Flags> Scene::getMaterial(const std::string &name) const
 {
-	return Scene::findMapItem<std::unique_ptr<const Material>>(name, materials_);
+	auto i = material_names_.find(name);
+	if(i != material_names_.end()) return {i->second, ParamError::Flags::Ok};
+	else return {0, ParamError::Flags::ErrorNotFound};
 }
 
 Texture *Scene::getTexture(const std::string &name) const
@@ -351,27 +353,30 @@ std::pair<size_t, ParamError> Scene::createLight(std::string &&name, ParamMap &&
 	return {0, ParamError{ParamError::Flags::ErrorWhileCreating}};
 }
 
-std::pair<std::unique_ptr<const Material> *, ParamError> Scene::createMaterial(std::string &&name, ParamMap &&params, std::list<ParamMap> &&nodes_params)
+std::pair<size_t, ParamError> Scene::createMaterial(std::string &&name, ParamMap &&params, std::list<ParamMap> &&nodes_params)
 {
-	std::string pname = "Material";
-	if(materials_.find(name) != materials_.end())
+	bool replace_existing{false};
+	const auto material_names_it{material_names_.find(name)};
+	if(material_names_it != material_names_.end())
 	{
-		logger_.logDebug("Scene: ", pname, " \"", name, "\" already exists, replacing.");
-	}
-	else
-	{
-		materials_[name] = std::make_unique<std::unique_ptr<const Material>>();
+		logger_.logDebug("Scene: ", Material::getClassName(), " \"", name, "\" already exists, replacing.");
+		replace_existing = true;
 	}
 	auto [material, param_error]{Material::factory(logger_, *this, name, params, nodes_params)};
 	if(material)
 	{
 		creation_state_.changes_ |= CreationState::Flags::CMaterial;
-		++material_index_auto_;
-		if(logger_.isVerbose()) logInfoVerboseSuccess(logger_, pname, name, material->type().print());
-		*(materials_[name]) = std::move(material);
-		return {materials_[name].get(), param_error};
+		const size_t material_id { replace_existing ? material_names_it->second : materials_.size()};
+		if(logger_.isVerbose()) logInfoVerboseSuccess(logger_, Material::getClassName(), name, material->type().print());
+		if(replace_existing) materials_[material_id] = std::move(material);
+		else
+		{
+			materials_.emplace_back(std::move(material));
+			material_names_[name] = material_id;
+		}
+		return {material_id, param_error};
 	}
-	return {nullptr, ParamError{ParamError::Flags::ErrorWhileCreating}};
+	return {0, ParamError{ParamError::Flags::ErrorWhileCreating}};
 }
 
 template <typename T>
@@ -1026,12 +1031,6 @@ bool Scene::updateObjects()
 	for(const auto &[object_name, object] : objects_)
 	{
 		if(object_index_highest_ < object->getIndex()) object_index_highest_ = object->getIndex();
-	}
-
-	material_index_highest_ = 1;
-	for(const auto &[material_name, material] : materials_)
-	{
-		if(material_index_highest_ < material->get()->getIndex()) material_index_highest_ = material->get()->getIndex();
 	}
 
 	if(shadow_bias_auto_) shadow_bias_ = Accelerator::shadowBias();

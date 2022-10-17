@@ -59,7 +59,7 @@ class ObjectInstance final : public Object
 		unsigned int getIndexAuto() const override;
 		const Light *getLight() const override;
 		void setLight(const Light *light) override { }
-		bool calculateObject(const std::unique_ptr<const Material> *material) override { return false; }
+		bool calculateObject(size_t material_id) override { return false; }
 		bool hasMotionBlur() const override { return time_steps_.size() > 2; }
 
 	private:

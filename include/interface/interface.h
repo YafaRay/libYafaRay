@@ -93,7 +93,7 @@ class Interface
 		virtual std::pair<size_t, ParamError> createObject(std::string &&name) noexcept;
 		virtual std::pair<size_t, ParamError> createLight(std::string &&name) noexcept;
 		virtual std::pair<size_t, ParamError> createTexture(std::string &&name) noexcept;
-		virtual const Material *createMaterial(std::string &&name) noexcept;
+		virtual std::pair<size_t, ParamError> createMaterial(std::string &&name) noexcept;
 		virtual std::pair<size_t, ParamError> createCamera(std::string &&name) noexcept;
 		virtual ParamError defineBackground() noexcept;
 		virtual ParamError defineSurfaceIntegrator() noexcept;
@@ -130,7 +130,7 @@ class Interface
 		void setInputColorSpace(const std::string &color_space_string, float gamma_val) noexcept;
 
 	protected:
-		virtual void setCurrentMaterial(const std::unique_ptr<const Material> *material) noexcept;
+		virtual void setCurrentMaterial(size_t material_id) noexcept;
 		std::unique_ptr<Logger> logger_;
 		std::unique_ptr<ParamMap> params_;
 		std::list<ParamMap> nodes_params_; //! for materials that need to define a whole shader tree etc.

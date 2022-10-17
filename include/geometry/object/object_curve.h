@@ -38,7 +38,7 @@ class CurveObject final : public MeshObject
 		static std::pair<std::unique_ptr<Object>, ParamError> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params);
 		static std::string printMeta(const std::vector<std::string> &excluded_params) { return Params::meta_.print(excluded_params); }
 		[[nodiscard]] ParamMap getAsParamMap(bool only_non_default) const override;
-		CurveObject(ParamError &param_error, const ParamMap &param_map);
+		CurveObject(ParamError &param_error, const ParamMap &param_map, const std::vector<std::unique_ptr<Material>> &materials);
 
 	private:
 		[[nodiscard]] Type type() const override { return Type::Curve; }
@@ -49,7 +49,7 @@ class CurveObject final : public MeshObject
 			PARAM_DECL(float , strand_end_, 0.01f, "strand_end", "");
 			PARAM_DECL(float , strand_shape_, 0.f, "strand_shape", "");
 		} params_;
-		bool calculateObject(const std::unique_ptr<const Material> *material) override;
+		bool calculateObject(size_t material_id) override;
 		virtual int calculateNumFaces() const override { return 2 * (MeshObject::params_.num_vertices_ - 1); }
 };
 

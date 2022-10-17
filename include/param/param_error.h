@@ -43,6 +43,7 @@ struct ParamError
 			WarningUnknownEnumOption = 1 << 4,
 			ErrorAlreadyExists = 1 << 5,
 			ErrorWhileCreating = 1 << 6,
+			ErrorNotFound = 1 << 7,
 		};
 		inline static const EnumMap<ValueType_t> map_{{
 				{"None", Ok, ""},
@@ -52,6 +53,7 @@ struct ParamError
 				{"WarningUnknownEnumOption", WarningUnknownEnumOption, ""},
 				{"ErrorAlreadyExists", ErrorAlreadyExists, ""},
 				{"ErrorWhileCreating", ErrorWhileCreating, ""},
+				{"ErrorNotFound", ErrorNotFound, ""},
 			}};
 		[[nodiscard]] bool isOk() const { return value() == Ok; }
 		[[nodiscard]] bool notOk() const { return !isOk(); }
@@ -76,7 +78,8 @@ inline bool ParamError::Flags::hasError() const
 	return has(Flags::ErrorTypeUnknownParam)
 		|| has(Flags::ErrorWrongParamType)
 		|| has(Flags::ErrorAlreadyExists)
-		|| has(Flags::ErrorWhileCreating);
+		|| has(Flags::ErrorWhileCreating)
+		|| has(Flags::ErrorNotFound);
 }
 
 inline bool ParamError::Flags::hasWarning() const

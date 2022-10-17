@@ -54,15 +54,15 @@ ParamMap MaskMaterial::getAsParamMap(bool only_non_default) const
 std::pair<std::unique_ptr<Material>, ParamError> MaskMaterial::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map, const std::list<ParamMap> &nodes_param_maps)
 {
 	auto param_error{Params::meta_.check(param_map, {"type"}, {})};
-	std::string mat1_name;
-	if(param_map.getParam(Params::material_1_name_meta_.name(), mat1_name).notOk()) return {nullptr, ParamError{ParamError::Flags::ErrorWhileCreating}};
-	const std::unique_ptr<const Material> *m_1 = scene.getMaterial(mat1_name);
-	std::string mat2_name;
-	if(param_map.getParam(Params::material_2_name_meta_.name(), mat2_name).notOk()) return {nullptr, ParamError{ParamError::Flags::ErrorWhileCreating}};
-	const std::unique_ptr<const Material> *m_2 = scene.getMaterial(mat2_name);
-	if(!m_1 || !m_2) return {nullptr, ParamError{ParamError::Flags::ErrorWhileCreating}};
+	std::string mat_1_name;
+	if(param_map.getParam(Params::material_1_name_meta_.name(), mat_1_name).notOk()) return {nullptr, ParamError{ParamError::Flags::ErrorWhileCreating}};
+	const auto [mat_1_id, mat_1_error]{scene.getMaterial(mat_1_name)};
+	std::string mat_2_name;
+	if(param_map.getParam(Params::material_2_name_meta_.name(), mat_2_name).notOk()) return {nullptr, ParamError{ParamError::Flags::ErrorWhileCreating}};
+	const auto [mat_2_id, mat_2_error]{scene.getMaterial(mat_2_name)};
+	if(mat_1_error.hasError() || mat_2_error.hasError()) return {nullptr, ParamError{ParamError::Flags::ErrorWhileCreating}};
 
-	auto material{std::make_unique<ThisClassType_t>(logger, param_error, param_map, m_1, m_2)};
+	auto material{std::make_unique<ThisClassType_t>(logger, param_error, param_map, mat_1_id, mat_2_id, scene.getMaterials())};
 
 	std::map<std::string, const ShaderNode *> root_nodes_map;
 	// Prepare our node list
@@ -100,9 +100,9 @@ std::pair<std::unique_ptr<Material>, ParamError> MaskMaterial::factory(Logger &l
 	return {std::move(material), param_error};
 }
 
-MaskMaterial::MaskMaterial(Logger &logger, ParamError &param_error, const ParamMap &param_map, const std::unique_ptr<const Material> *material_1, const std::unique_ptr<const Material> *material_2) :
+MaskMaterial::MaskMaterial(Logger &logger, ParamError &param_error, const ParamMap &param_map, size_t material_1_id, size_t material_2_id, const std::vector<std::unique_ptr<Material>> &materials) :
 		ParentClassType_t{logger, param_error, param_map}, params_{param_error, param_map},
-		mat_1_{material_1}, mat_2_{material_2}
+		material_1_id_{material_1_id}, material_2_id_{material_2_id}, materials_{materials}
 {
 	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + params_.getAsParamMap(true).print());
 }
@@ -115,12 +115,12 @@ std::unique_ptr<const MaterialData> MaskMaterial::initBsdf(SurfacePoint &sp, con
 	mat_data->select_mat_2_ = val > params_.threshold_;
 	if(mat_data->select_mat_2_)
 	{
-		mat_data->mat_2_data_ = mat_2_->get()->initBsdf(sp, camera);
+		mat_data->mat_2_data_ = materials_[material_2_id_]->initBsdf(sp, camera);
 		mat_data->bsdf_flags_ = mat_data->mat_2_data_->bsdf_flags_;
 	}
 	else
 	{
-		mat_data->mat_1_data_ = mat_1_->get()->initBsdf(sp, camera);
+		mat_data->mat_1_data_ = materials_[material_1_id_]->initBsdf(sp, camera);
 		mat_data->bsdf_flags_ = mat_data->mat_1_data_->bsdf_flags_;
 	}
 	return mat_data;
@@ -130,8 +130,8 @@ Rgb MaskMaterial::eval(const MaterialData *mat_data, const SurfacePoint &sp, con
 {
 	const auto *mat_data_specific = static_cast<const MaterialData_t *>(mat_data);
 	Rgb col;
-	if(mat_data_specific->select_mat_2_) col = mat_2_->get()->eval(mat_data_specific->mat_2_data_.get(), sp, wo, wl, bsdfs);
-	else col = mat_1_->get()->eval(mat_data_specific->mat_1_data_.get(), sp, wo, wl, bsdfs);
+	if(mat_data_specific->select_mat_2_) col = materials_[material_2_id_]->eval(mat_data_specific->mat_2_data_.get(), sp, wo, wl, bsdfs);
+	else col = materials_[material_1_id_]->eval(mat_data_specific->mat_1_data_.get(), sp, wo, wl, bsdfs);
 	return col;
 }
 
@@ -139,8 +139,8 @@ Rgb MaskMaterial::sample(const MaterialData *mat_data, const SurfacePoint &sp, c
 {
 	const auto *mat_data_specific = static_cast<const MaterialData_t *>(mat_data);
 	Rgb col;
-	if(mat_data_specific->select_mat_2_) col = mat_2_->get()->sample(mat_data_specific->mat_2_data_.get(), sp, wo, wi, s, w, chromatic, wavelength, camera);
-	else col = mat_1_->get()->sample(mat_data_specific->mat_1_data_.get(), sp, wo, wi, s, w, chromatic, wavelength, camera);
+	if(mat_data_specific->select_mat_2_) col = materials_[material_2_id_]->sample(mat_data_specific->mat_2_data_.get(), sp, wo, wi, s, w, chromatic, wavelength, camera);
+	else col = materials_[material_1_id_]->sample(mat_data_specific->mat_1_data_.get(), sp, wo, wi, s, w, chromatic, wavelength, camera);
 	return col;
 }
 
@@ -148,29 +148,29 @@ float MaskMaterial::pdf(const MaterialData *mat_data, const SurfacePoint &sp, co
 {
 	float pdf;
 	const auto *mat_data_specific = static_cast<const MaterialData_t *>(mat_data);
-	if(mat_data_specific->select_mat_2_) pdf = mat_2_->get()->pdf(mat_data_specific->mat_2_data_.get(), sp, wo, wi, bsdfs);
-	else pdf = mat_1_->get()->pdf(mat_data_specific->mat_1_data_.get(), sp, wo, wi, bsdfs);
+	if(mat_data_specific->select_mat_2_) pdf = materials_[material_2_id_]->pdf(mat_data_specific->mat_2_data_.get(), sp, wo, wi, bsdfs);
+	else pdf = materials_[material_1_id_]->pdf(mat_data_specific->mat_1_data_.get(), sp, wo, wi, bsdfs);
 	return pdf;
 }
 
 bool MaskMaterial::isTransparent() const
 {
-	return mat_1_->get()->isTransparent() || mat_2_->get()->isTransparent();
+	return materials_[material_1_id_]->isTransparent() || materials_[material_2_id_]->isTransparent();
 }
 
 Rgb MaskMaterial::getTransparency(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3f &wo, const Camera *camera) const
 {
 	const auto *mat_data_specific = static_cast<const MaterialData_t *>(mat_data);
-	if(mat_data_specific->select_mat_2_) return mat_2_->get()->getTransparency(mat_data_specific->mat_2_data_.get(), sp, wo, camera);
-	else return mat_1_->get()->getTransparency(mat_data_specific->mat_1_data_.get(), sp, wo, camera);
+	if(mat_data_specific->select_mat_2_) return materials_[material_2_id_]->getTransparency(mat_data_specific->mat_2_data_.get(), sp, wo, camera);
+	else return materials_[material_1_id_]->getTransparency(mat_data_specific->mat_1_data_.get(), sp, wo, camera);
 }
 
 Specular MaskMaterial::getSpecular(int ray_level, const MaterialData *mat_data, const SurfacePoint &sp, const Vec3f &wo, bool chromatic, float wavelength) const
 {
 	const auto *mat_data_specific = static_cast<const MaterialData_t *>(mat_data);
 	Specular specular;
-	if(mat_data_specific->select_mat_2_) specular = mat_2_->get()->getSpecular(ray_level, mat_data_specific->mat_2_data_.get(), sp, wo, chromatic, wavelength);
-	else specular = mat_1_->get()->getSpecular(ray_level, mat_data_specific->mat_1_data_.get(), sp, wo, chromatic, wavelength);
+	if(mat_data_specific->select_mat_2_) specular = materials_[material_2_id_]->getSpecular(ray_level, mat_data_specific->mat_2_data_.get(), sp, wo, chromatic, wavelength);
+	else specular = materials_[material_1_id_]->getSpecular(ray_level, mat_data_specific->mat_1_data_.get(), sp, wo, chromatic, wavelength);
 	return specular;
 }
 
@@ -178,8 +178,8 @@ Rgb MaskMaterial::emit(const MaterialData *mat_data, const SurfacePoint &sp, con
 {
 	const auto *mat_data_specific = static_cast<const MaterialData_t *>(mat_data);
 	Rgb col;
-	if(mat_data_specific->select_mat_2_) col = mat_2_->get()->emit(mat_data_specific->mat_2_data_.get(), sp, wo);
-	else col = mat_1_->get()->emit(mat_data_specific->mat_1_data_.get(), sp, wo);
+	if(mat_data_specific->select_mat_2_) col = materials_[material_2_id_]->emit(mat_data_specific->mat_2_data_.get(), sp, wo);
+	else col = materials_[material_1_id_]->emit(mat_data_specific->mat_1_data_.get(), sp, wo);
 	return col;
 }
 
@@ -187,8 +187,8 @@ float MaskMaterial::getAlpha(const MaterialData *mat_data, const SurfacePoint &s
 {
 	const auto *mat_data_specific = static_cast<const MaterialData_t *>(mat_data);
 	float alpha;
-	if(mat_data_specific->select_mat_2_) alpha = mat_2_->get()->getAlpha(mat_data_specific->mat_2_data_.get(), sp, wo, camera);
-	else alpha = mat_1_->get()->getAlpha(mat_data_specific->mat_1_data_.get(), sp, wo, camera);
+	if(mat_data_specific->select_mat_2_) alpha = materials_[material_2_id_]->getAlpha(mat_data_specific->mat_2_data_.get(), sp, wo, camera);
+	else alpha = materials_[material_1_id_]->getAlpha(mat_data_specific->mat_1_data_.get(), sp, wo, camera);
 	return alpha;
 }
 

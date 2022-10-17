@@ -361,7 +361,7 @@ std::pair<size_t, ParamError> ExportC::createTexture(std::string &&name) noexcep
 	return {};
 }
 
-const Material *ExportC::createMaterial(std::string &&name) noexcept
+std::pair<size_t, ParamError> ExportC::createMaterial(std::string &&name) noexcept
 {
 	writeParamMap(*params_);
 	writeParamList(1);
@@ -371,7 +371,7 @@ const Material *ExportC::createMaterial(std::string &&name) noexcept
 	file_ << "\t" << "yafaray_paramsClearAll(yi);\n\n";
 	section_num_lines_ += 2;
 	if(section_num_lines_ >= section_max_lines_) file_ << sectionSplit();
-	return nullptr;
+	return {};
 }
 
 std::pair<size_t, ParamError> ExportC::createCamera(std::string &&name) noexcept

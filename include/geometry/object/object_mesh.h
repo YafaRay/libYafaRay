@@ -41,7 +41,7 @@ class MeshObject : public ObjectBase
 		static std::pair<std::unique_ptr<Object>, ParamError> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map);
 		static std::string printMeta(const std::vector<std::string> &excluded_params) { return Params::meta_.print(excluded_params); }
 		[[nodiscard]] ParamMap getAsParamMap(bool only_non_default) const override;
-		MeshObject(ParamError &param_error, const ParamMap &param_map);
+		MeshObject(ParamError &param_error, const ParamMap &param_map, const std::vector<std::unique_ptr<Material>> &materials);
 		~MeshObject() override;
 		/*! the number of primitives the object holds. Primitive is an element
 			that by definition can perform ray-triangle intersection */
@@ -54,7 +54,7 @@ class MeshObject : public ObjectBase
 		int numVertices(int time_step) const override { return static_cast<int>(time_steps_[time_step].points_.size()); }
 		int numVerticesNormals(int time_step) const override { return static_cast<int>(time_steps_[time_step].vertices_normals_.size()); }
 		void addFace(std::unique_ptr<FacePrimitive> &&face);
-		void addFace(std::vector<int> &&vertices, std::vector<int> &&vertices_uv, const std::unique_ptr<const Material> *material) override;
+		void addFace(std::vector<int> &&vertices, std::vector<int> &&vertices_uv, size_t material_id) override;
 		const std::vector<Point3f> &getPoints(int time_step) const { return time_steps_[time_step].points_; }
 		const std::vector<Uv<float>> &getUvValues() const { return uv_values_; }
 		bool hasOrco(int time_step) const { return !time_steps_[time_step].orco_points_.empty(); }
@@ -67,7 +67,7 @@ class MeshObject : public ObjectBase
 		int addUvValue(Uv<float> &&uv) override { uv_values_.emplace_back(uv); return static_cast<int>(uv_values_.size()) - 1; }
 		void setSmooth(bool smooth) override { is_smooth_ = smooth; }
 		bool smoothVerticesNormals(Logger &logger, float angle) override;
-		bool calculateObject(const std::unique_ptr<const Material> *material) override;
+		bool calculateObject(size_t material_id) override;
 		bool hasMotionBlurBezier() const { return ObjectBase::params_.motion_blur_bezier_; }
 		float getTimeRangeStart() const { return time_steps_.front().time_; }
 		float getTimeRangeEnd() const { return time_steps_.back().time_; }

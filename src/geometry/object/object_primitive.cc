@@ -21,7 +21,7 @@
 
 namespace yafaray {
 
-PrimitiveObject::PrimitiveObject(ParamError &param_error, const ParamMap &param_map) : ObjectBase{param_error, param_map}
+PrimitiveObject::PrimitiveObject(ParamError &param_error, const ParamMap &param_map, const std::vector<std::unique_ptr<Material>> &materials) : ObjectBase{param_error, param_map, materials}
 {
 	//Empty
 }
