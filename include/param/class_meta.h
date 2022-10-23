@@ -50,18 +50,18 @@ inline static const ParamMeta name##meta_{api_name, api_desc, default_val, meta_
 #define PARAM_SHADERS_DECL inline static const std::array<std::unique_ptr<ParamMeta>, ShaderNodeType::Size> shader_node_names_meta_{initShaderNames<ShaderNodeType>(meta_.map_)}; \
 std::array<std::string, ShaderNodeType::Size> shader_node_names_
 
-#define PARAM_LOAD(param_name) if(param_map.getParam(param_name##meta_, param_name) == ResultFlags::ErrorWrongParamType) { \
-param_result.flags_ |= ResultFlags{ResultFlags::ErrorWrongParamType}; \
+#define PARAM_LOAD(param_name) if(param_map.getParam(param_name##meta_, param_name) == YAFARAY_RESULT_ERROR_WRONG_PARAM_TYPE) { \
+param_result.flags_ |= ResultFlags{YAFARAY_RESULT_ERROR_WRONG_PARAM_TYPE}; \
 param_result.wrong_type_params_.emplace_back(param_name##meta_.name()); }
 
-#define PARAM_ENUM_LOAD(param_name) if(param_map.getEnumParam(param_name##meta_, param_name) == ResultFlags::ErrorWrongParamType) { \
-param_result.flags_ |= ResultFlags{ResultFlags::ErrorWrongParamType}; \
+#define PARAM_ENUM_LOAD(param_name) if(param_map.getEnumParam(param_name##meta_, param_name) == YAFARAY_RESULT_ERROR_WRONG_PARAM_TYPE) { \
+param_result.flags_ |= ResultFlags{YAFARAY_RESULT_ERROR_WRONG_PARAM_TYPE}; \
 param_result.wrong_type_params_.emplace_back(param_name##meta_.name()); }
 
 #define PARAM_SHADERS_LOAD for(size_t index = 0; index < shader_node_names_.size(); ++index) { \
 const std::string shader_node_type_name{ShaderNodeType{static_cast<unsigned char>(index)}.print()}; \
-if(param_map.getParam(shader_node_type_name, shader_node_names_[index]) == ResultFlags::ErrorWrongParamType) { \
-	param_result.flags_ |= ResultFlags{ResultFlags::ErrorWrongParamType}; \
+if(param_map.getParam(shader_node_type_name, shader_node_names_[index]) == YAFARAY_RESULT_ERROR_WRONG_PARAM_TYPE) { \
+	param_result.flags_ |= ResultFlags{YAFARAY_RESULT_ERROR_WRONG_PARAM_TYPE}; \
 	param_result.wrong_type_params_.emplace_back(shader_node_type_name); \
 }}
 
@@ -142,13 +142,13 @@ inline TypeEnumClass ClassMeta::preprocessParamMap(Logger &logger, const std::st
 	std::string type_str;
 	ParamResult type_error{param_map.getParam("type", type_str)};
 	TypeEnumClass type;
-	if(!type.initFromString(type_str)) type_error.flags_ |= ResultFlags::WarningUnknownEnumOption;
+	if(!type.initFromString(type_str)) type_error.flags_ |= YAFARAY_RESULT_WARNING_UNKNOWN_ENUM_OPTION;
 	if(type_error.notOk())
 	{
 		std::string warning_message{class_name + ": error in parameter 'type' (string): "};
-		if(type_error.flags_.has(ResultFlags::WarningParamNotSet)) warning_message.append("It has not been set. ");
-		if(type_error.flags_.has(ResultFlags::ErrorWrongParamType)) warning_message.append("It has been set with an incorrect type, it should be String. ");
-		if(type_error.flags_.has(ResultFlags::WarningUnknownEnumOption)) warning_message.append("The option '" + type_str + "' is unknown. ");
+		if(type_error.flags_.has(YAFARAY_RESULT_WARNING_PARAM_NOT_SET)) warning_message.append("It has not been set. ");
+		if(type_error.flags_.has(YAFARAY_RESULT_ERROR_WRONG_PARAM_TYPE)) warning_message.append("It has been set with an incorrect type, it should be String. ");
+		if(type_error.flags_.has(YAFARAY_RESULT_WARNING_UNKNOWN_ENUM_OPTION)) warning_message.append("The option '" + type_str + "' is unknown. ");
 		warning_message.append("Valid types: \n" + TypeEnumClass::map_.print(TypeEnumClass::None));
 		logger.logError(warning_message);
 	}

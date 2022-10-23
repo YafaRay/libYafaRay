@@ -26,20 +26,20 @@ template class SceneItems<Material>;
 template <typename T>
 std::pair<size_t, ResultFlags> SceneItems<T>::add(const std::string &name, std::unique_ptr<T> item)
 {
-	if(!item) return {0, ResultFlags::ErrorWhileCreating};
+	if(!item) return {0, YAFARAY_RESULT_ERROR_WHILE_CREATING};
 	auto [id, result_flags]{findIdFromName(name)};
-	if(result_flags == ResultFlags::ErrorNotFound)
+	if(result_flags == YAFARAY_RESULT_ERROR_NOT_FOUND)
 	{
 		id = items_.size();
 		items_.emplace_back(std::move(item));
 		names_.emplace_back(name);
-		result_flags = ResultFlags::Ok;
+		result_flags = YAFARAY_RESULT_OK;
 	}
 	else
 	{
 		items_[id] = std::move(item);
 		names_[id] = name;
-		result_flags = ResultFlags::WarningOverwritten;
+		result_flags = YAFARAY_RESULT_WARNING_OVERWRITTEN;
 	}
 	items_[id]->setId(id);
 	names_to_id_[name] = id;
@@ -49,20 +49,20 @@ std::pair<size_t, ResultFlags> SceneItems<T>::add(const std::string &name, std::
 template <typename T>
 ResultFlags SceneItems<T>::rename(size_t id, const std::string &name)
 {
-	if(id >= items_.size()) return ResultFlags::ErrorNotFound;
+	if(id >= items_.size()) return YAFARAY_RESULT_ERROR_NOT_FOUND;
 	else
 	{
-		if(findIdFromName(name).second == ResultFlags::ErrorNotFound)
+		if(findIdFromName(name).second == YAFARAY_RESULT_ERROR_NOT_FOUND)
 		{
 			auto map_entry_extracted{names_to_id_.extract(names_[id])};
 			map_entry_extracted.key() = name;
 			names_to_id_.insert(std::move(map_entry_extracted));
 			names_[id] = name;
-			return ResultFlags::Ok;
+			return YAFARAY_RESULT_OK;
 		}
 		else
 		{
-			return ResultFlags::ErrorDuplicatedName;
+			return YAFARAY_RESULT_ERROR_DUPLICATED_NAME;
 		}
 	}
 }
@@ -74,15 +74,15 @@ ResultFlags SceneItems<T>::disable(const std::string &name)
 	if(it != names_to_id_.end())
 	{
 		names_to_id_.erase(it);
-		return ResultFlags::Ok;
+		return YAFARAY_RESULT_OK;
 	}
-	else return ResultFlags::ErrorNotFound;
+	else return YAFARAY_RESULT_ERROR_NOT_FOUND;
 }
 
 template <typename T>
 ResultFlags SceneItems<T>::disable(size_t id)
 {
-	if(id >= items_.size()) return ResultFlags::ErrorNotFound;
+	if(id >= items_.size()) return YAFARAY_RESULT_ERROR_NOT_FOUND;
 	else return disable(names_[id]);
 }
 
@@ -90,22 +90,22 @@ template <typename T>
 std::pair<size_t, ResultFlags> SceneItems<T>::findIdFromName(const std::string &name) const
 {
 	auto it = names_to_id_.find(name);
-	if(it != names_to_id_.end()) return {it->second, ResultFlags::Ok};
-	else return {0, ResultFlags::ErrorNotFound};
+	if(it != names_to_id_.end()) return {it->second, YAFARAY_RESULT_OK};
+	else return {0, YAFARAY_RESULT_ERROR_NOT_FOUND};
 }
 
 template <typename T>
 std::pair<std::string, ResultFlags> SceneItems<T>::findNameFromId(size_t id) const
 {
-	if(id >= items_.size()) return {{}, ResultFlags::ErrorNotFound};
-	else return {names_[id], ResultFlags::Ok};
+	if(id >= items_.size()) return {{}, YAFARAY_RESULT_ERROR_NOT_FOUND};
+	else return {names_[id], YAFARAY_RESULT_OK};
 }
 
 template <typename T>
 std::pair<T *, ResultFlags> SceneItems<T>::getById(size_t id) const
 {
-	if(id >= items_.size()) return {nullptr, ResultFlags::ErrorNotFound};
-	else return {items_[id].get(), ResultFlags::Ok};
+	if(id >= items_.size()) return {nullptr, YAFARAY_RESULT_ERROR_NOT_FOUND};
+	else return {items_[id].get(), YAFARAY_RESULT_OK};
 }
 
 template <typename T>

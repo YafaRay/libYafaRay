@@ -56,7 +56,7 @@ std::pair<std::unique_ptr<ShaderNode>, ParamResult> ShaderNode::factory(Logger &
 		case Type::Value: return ValueNode::factory(logger, scene, name, param_map);
 		case Type::Mix: return MixNode::factory(logger, scene, name, param_map);
 		case Type::Layer: return LayerNode::factory(logger, scene, name, param_map);
-		default: return {nullptr, ParamResult{ResultFlags::ErrorWhileCreating}};
+		default: return {nullptr, ParamResult{YAFARAY_RESULT_ERROR_WHILE_CREATING}};
 	}
 }
 

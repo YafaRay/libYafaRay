@@ -67,7 +67,7 @@ std::pair<std::unique_ptr<SurfaceIntegrator>, ParamResult> SurfaceIntegrator::fa
 		case Type::Path: return PathIntegrator::factory(logger, render_control, param_map, scene);
 		case Type::Photon: return PhotonIntegrator::factory(logger, render_control, param_map, scene);
 		case Type::Sppm: return SppmIntegrator::factory(logger, render_control, param_map, scene);
-		default: return {nullptr, ParamResult{ResultFlags::ErrorWhileCreating}};
+		default: return {nullptr, ParamResult{YAFARAY_RESULT_ERROR_WHILE_CREATING}};
 	}
 }
 

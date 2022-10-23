@@ -47,7 +47,7 @@ std::pair<std::unique_ptr<VolumeHandler>, ParamResult> VolumeHandler::factory(Lo
 	{
 		case Type::Beer: return BeerVolumeHandler::factory(logger, scene, name, param_map);
 		case Type::Sss: return SssVolumeHandler::factory(logger, scene, name, param_map);
-		default: return {nullptr, ParamResult{ResultFlags::ErrorWhileCreating}};
+		default: return {nullptr, ParamResult{YAFARAY_RESULT_ERROR_WHILE_CREATING}};
 	}
 }
 

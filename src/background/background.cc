@@ -68,7 +68,7 @@ std::pair<std::unique_ptr<Background>, ParamResult> Background::factory(Logger &
 		case Type::SunSky: return SunSkyBackground::factory(logger, scene, name, param_map);
 		case Type::Texture: return TextureBackground::factory(logger, scene, name, param_map);
 		case Type::Constant: return ConstantBackground::factory(logger, scene, name, param_map);
-		default: return {nullptr, ParamResult{ResultFlags::ErrorWhileCreating}};
+		default: return {nullptr, ParamResult{YAFARAY_RESULT_ERROR_WHILE_CREATING}};
 	}
 }
 

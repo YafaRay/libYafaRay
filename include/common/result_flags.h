@@ -7,6 +7,7 @@
 
 #include "common/enum.h"
 #include "common/enum_map.h"
+#include "public_api/yafaray_c_api.h"
 #include <string>
 #include <vector>
 #include <sstream>
@@ -16,33 +17,20 @@ namespace yafaray {
 struct ResultFlags : Enum<ResultFlags, int>
 {
 	using Enum::Enum;
-	enum : ValueType_t
-	{
-		Ok = 0,
-		ErrorTypeUnknownParam = 1 << 0,
-		WarningUnknownParam = 1 << 1,
-		WarningParamNotSet = 1 << 2,
-		ErrorWrongParamType = 1 << 3,
-		WarningUnknownEnumOption = 1 << 4,
-		ErrorAlreadyExists = 1 << 5,
-		ErrorWhileCreating = 1 << 6,
-		ErrorNotFound = 1 << 7,
-		WarningOverwritten = 1 << 8,
-		ErrorDuplicatedName = 1 << 9,
-	};
 	inline static const EnumMap<ValueType_t> map_{{
-			{"None", Ok, ""},
-			{"ErrorTypeUnknownParam", ErrorTypeUnknownParam, ""},
-			{"WarningUnknownParam", WarningUnknownParam, ""},
-			{"ErrorWrongParamType", ErrorWrongParamType, ""},
-			{"WarningUnknownEnumOption", WarningUnknownEnumOption, ""},
-			{"ErrorAlreadyExists", ErrorAlreadyExists, ""},
-			{"ErrorWhileCreating", ErrorWhileCreating, ""},
-			{"ErrorNotFound", ErrorNotFound, ""},
-			{"WarningOverwritten", WarningOverwritten, ""},
-			{"ErrorDuplicatedName", ErrorDuplicatedName, ""},
+			{"Ok", YAFARAY_RESULT_OK, ""},
+			{"ErrorTypeUnknownParam", YAFARAY_RESULT_ERROR_TYPE_UNKNOWN_PARAM, ""},
+			{"WarningUnknownParam", YAFARAY_RESULT_WARNING_UNKNOWN_PARAM, ""},
+			{"WarningParamNotSet", YAFARAY_RESULT_WARNING_PARAM_NOT_SET, ""},
+			{"ErrorWrongParamType", YAFARAY_RESULT_ERROR_WRONG_PARAM_TYPE, ""},
+			{"WarningUnknownEnumOption", YAFARAY_RESULT_WARNING_UNKNOWN_ENUM_OPTION, ""},
+			{"ErrorAlreadyExists", YAFARAY_RESULT_ERROR_ALREADY_EXISTS, ""},
+			{"ErrorWhileCreating", YAFARAY_RESULT_ERROR_WHILE_CREATING, ""},
+			{"ErrorNotFound", YAFARAY_RESULT_ERROR_NOT_FOUND, ""},
+			{"WarningOverwritten", YAFARAY_RESULT_WARNING_OVERWRITTEN, ""},
+			{"ErrorDuplicatedName", YAFARAY_RESULT_ERROR_DUPLICATED_NAME, ""},
 		}};
-	[[nodiscard]] bool isOk() const { return value() == Ok; }
+	[[nodiscard]] bool isOk() const { return value() == YAFARAY_RESULT_OK; }
 	[[nodiscard]] bool notOk() const { return !isOk(); }
 	[[nodiscard]] bool hasError() const;
 	[[nodiscard]] bool hasWarning() const;
@@ -50,20 +38,20 @@ struct ResultFlags : Enum<ResultFlags, int>
 
 inline bool ResultFlags::hasError() const
 {
-	return has(ResultFlags::ErrorTypeUnknownParam)
-		|| has(ResultFlags::ErrorWrongParamType)
-		|| has(ResultFlags::ErrorAlreadyExists)
-		|| has(ResultFlags::ErrorWhileCreating)
-		|| has(ResultFlags::ErrorNotFound)
-		|| has(ResultFlags::ErrorDuplicatedName);
+	return has(YAFARAY_RESULT_ERROR_TYPE_UNKNOWN_PARAM)
+		|| has(YAFARAY_RESULT_ERROR_WRONG_PARAM_TYPE)
+		|| has(YAFARAY_RESULT_ERROR_ALREADY_EXISTS)
+		|| has(YAFARAY_RESULT_ERROR_WHILE_CREATING)
+		|| has(YAFARAY_RESULT_ERROR_NOT_FOUND)
+		|| has(YAFARAY_RESULT_ERROR_DUPLICATED_NAME);
 }
 
 inline bool ResultFlags::hasWarning() const
 {
-	return has(ResultFlags::WarningUnknownParam)
-		|| has(ResultFlags::WarningUnknownEnumOption)
-		|| has(ResultFlags::WarningParamNotSet)
-		|| has(ResultFlags::WarningOverwritten);
+	return has(YAFARAY_RESULT_WARNING_UNKNOWN_PARAM)
+		|| has(YAFARAY_RESULT_WARNING_UNKNOWN_ENUM_OPTION)
+		|| has(YAFARAY_RESULT_WARNING_PARAM_NOT_SET)
+		|| has(YAFARAY_RESULT_WARNING_OVERWRITTEN);
 }
 
 } //namespace yafaray

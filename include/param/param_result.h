@@ -34,7 +34,7 @@ struct ParamResult
 	[[nodiscard]] bool hasError() const { return flags_.hasError(); }
 	[[nodiscard]] bool hasWarning() const { return flags_.hasWarning(); }
 	void merge(const ParamResult &param_result);
-	ResultFlags flags_{ResultFlags::Ok};
+	ResultFlags flags_{YAFARAY_RESULT_OK};
 	std::vector<std::string> unknown_params_{};
 	std::vector<std::string> wrong_type_params_{};
 	std::vector<std::pair<std::string, std::string>> unknown_enum_{};

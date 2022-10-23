@@ -67,7 +67,7 @@ std::pair<std::unique_ptr<Light>, ParamResult> IesLight::factory(Logger &logger,
 	auto param_result{Params::meta_.check(param_map, {"type"}, {})};
 	auto light {std::make_unique<ThisClassType_t>(logger, param_result, name, param_map)};
 	if(param_result.notOk()) logger.logWarning(param_result.print<ThisClassType_t>(name, {"type"}));
-	if(!light->isIesOk()) return {nullptr, ParamResult{ResultFlags::ErrorWhileCreating}};
+	if(!light->isIesOk()) return {nullptr, ParamResult{YAFARAY_RESULT_ERROR_WHILE_CREATING}};
 	return {std::move(light), param_result};
 }
 

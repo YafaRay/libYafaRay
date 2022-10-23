@@ -86,7 +86,7 @@ ParamMap Material::getAsParamMap(bool only_non_default) const
 std::pair<std::unique_ptr<Material>, ParamResult> Material::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map, const std::list<ParamMap> &nodes_param_maps)
 {
 	const Type type{ClassMeta::preprocessParamMap<Type>(logger, getClassName(), param_map)};
-	std::pair<std::unique_ptr<Material>, ParamResult> result{nullptr, ParamResult{ResultFlags::ErrorWhileCreating}};
+	std::pair<std::unique_ptr<Material>, ParamResult> result{nullptr, ParamResult{YAFARAY_RESULT_ERROR_WHILE_CREATING}};
 	switch(type.value())
 	{
 		case Type::Blend: result = BlendMaterial::factory(logger, scene, name, param_map, nodes_param_maps); break;

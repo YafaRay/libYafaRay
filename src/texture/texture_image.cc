@@ -96,13 +96,13 @@ std::pair<std::unique_ptr<Texture>, ParamResult> ImageTexture::factory(Logger &l
 	if(image_name.empty())
 	{
 		logger.logError("ImageTexture: Required argument image_name not found for image texture");
-		return {nullptr, ParamResult{ResultFlags::ErrorWhileCreating}};
+		return {nullptr, ParamResult{YAFARAY_RESULT_ERROR_WHILE_CREATING}};
 	}
 	const Image *image{scene.getImage(image_name)};
 	if(!image)
 	{
 		logger.logError("ImageTexture: Couldn't load image file, dropping texture.");
-		return {nullptr, ParamResult{ResultFlags::ErrorWhileCreating}};
+		return {nullptr, ParamResult{YAFARAY_RESULT_ERROR_WHILE_CREATING}};
 	}
 	auto texture {std::make_unique<ThisClassType_t>(logger, param_result, param_map, image)};
 	if(param_result.notOk()) logger.logWarning(param_result.print<ThisClassType_t>(name, {"type"}));

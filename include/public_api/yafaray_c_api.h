@@ -16,8 +16,8 @@
  *      Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-#ifndef YAFARAY_C_API_H
-#define YAFARAY_C_API_H
+#ifndef LIBYAFARAY_YAFARAY_C_API_H
+#define LIBYAFARAY_YAFARAY_C_API_H
 
 #include "yafaray_c_api_export.h"
 
@@ -36,6 +36,20 @@ extern "C" {
 	typedef enum { YAFARAY_DISPLAY_CONSOLE_HIDDEN, YAFARAY_DISPLAY_CONSOLE_NORMAL } yafaray_DisplayConsole_t;
 	typedef enum { YAFARAY_INTERFACE_FOR_RENDERING, YAFARAY_INTERFACE_EXPORT_XML, YAFARAY_INTERFACE_EXPORT_C, YAFARAY_INTERFACE_EXPORT_PYTHON } yafaray_Interface_Type_t;
 	typedef enum { YAFARAY_BOOL_FALSE = 0, YAFARAY_BOOL_TRUE = 1 } yafaray_bool_t;
+	typedef enum
+	{
+		YAFARAY_RESULT_OK = 0,
+		YAFARAY_RESULT_ERROR_TYPE_UNKNOWN_PARAM = 1 << 0,
+		YAFARAY_RESULT_WARNING_UNKNOWN_PARAM = 1 << 1,
+		YAFARAY_RESULT_WARNING_PARAM_NOT_SET = 1 << 2,
+		YAFARAY_RESULT_ERROR_WRONG_PARAM_TYPE = 1 << 3,
+		YAFARAY_RESULT_WARNING_UNKNOWN_ENUM_OPTION = 1 << 4,
+		YAFARAY_RESULT_ERROR_ALREADY_EXISTS = 1 << 5,
+		YAFARAY_RESULT_ERROR_WHILE_CREATING = 1 << 6,
+		YAFARAY_RESULT_ERROR_NOT_FOUND = 1 << 7,
+		YAFARAY_RESULT_WARNING_OVERWRITTEN = 1 << 8,
+		YAFARAY_RESULT_ERROR_DUPLICATED_NAME = 1 << 9,
+	} yafaray_result_flags_t;
 
 	/* Callback definitions for the C API - FIXME: Should we care about the function call convention being the same for libYafaRay and its client(s)? */
 	typedef void (*yafaray_RenderNotifyViewCallback_t)(const char *view_name, void *callback_data);
@@ -145,4 +159,4 @@ extern "C" {
 }
 #endif
 
-#endif /* YAFARAY_C_API_H */
+#endif /* LIBYAFARAY_YAFARAY_C_API_H */

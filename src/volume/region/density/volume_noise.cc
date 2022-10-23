@@ -57,13 +57,13 @@ std::pair<std::unique_ptr<VolumeRegion>, ParamResult> NoiseVolumeRegion::factory
 	if(tex_name.empty())
 	{
 		if(logger.isVerbose()) logger.logVerbose(getClassName() + ": Noise texture not set, the volume region won't be created.");
-		return {nullptr, ParamResult{ResultFlags::ErrorWhileCreating}};
+		return {nullptr, ParamResult{YAFARAY_RESULT_ERROR_WHILE_CREATING}};
 	}
 	const Texture *texture{scene.getTexture(tex_name)};
 	if(!texture)
 	{
 		if(logger.isVerbose()) logger.logVerbose(getClassName() + ": Noise texture '", tex_name, "' couldn't be found, the volume region won't be created.");
-		return {nullptr, ParamResult{ResultFlags::ErrorWhileCreating}};
+		return {nullptr, ParamResult{YAFARAY_RESULT_ERROR_WHILE_CREATING}};
 	}
 	auto volume_region {std::make_unique<ThisClassType_t>(logger, param_result, param_map, texture)};
 	if(param_result.notOk()) logger.logWarning(param_result.print<ThisClassType_t>(name, {"type"}));

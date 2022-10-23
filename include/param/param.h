@@ -101,8 +101,8 @@ class ParamMap : public Collection<std::string, Parameter>
 		ResultFlags getParam(const std::string &name, T &val) const
 		{
 			auto i{find(name)};
-			if(i) return i->getVal(val) ? ResultFlags::Ok : ResultFlags::ErrorWrongParamType;
-			else return ResultFlags::WarningParamNotSet;
+			if(i) return i->getVal(val) ? YAFARAY_RESULT_OK : YAFARAY_RESULT_ERROR_WRONG_PARAM_TYPE;
+			else return YAFARAY_RESULT_WARNING_PARAM_NOT_SET;
 		}
 		template <typename T>
 		ResultFlags getParam(const ParamMeta &param_meta, T &val) const

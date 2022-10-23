@@ -60,12 +60,12 @@ std::pair<std::unique_ptr<Material>, ParamResult> BlendMaterial::factory(Logger 
 {
 	auto param_result{Params::meta_.check(param_map, {"type"}, {})};
 	std::string mat_1_name;
-	if(param_map.getParam(Params::material_1_name_meta_.name(), mat_1_name).notOk()) return {nullptr, ParamResult{ResultFlags::ErrorWhileCreating}};
+	if(param_map.getParam(Params::material_1_name_meta_.name(), mat_1_name).notOk()) return {nullptr, ParamResult{YAFARAY_RESULT_ERROR_WHILE_CREATING}};
 	const auto [mat_1_id, mat_1_error]{scene.getMaterial(mat_1_name)};
 	std::string mat_2_name;
-	if(param_map.getParam(Params::material_2_name_meta_.name(), mat_2_name).notOk()) return {nullptr, ParamResult{ResultFlags::ErrorWhileCreating}};
+	if(param_map.getParam(Params::material_2_name_meta_.name(), mat_2_name).notOk()) return {nullptr, ParamResult{YAFARAY_RESULT_ERROR_WHILE_CREATING}};
 	const auto [mat_2_id, mat_2_error]{scene.getMaterial(mat_2_name)};
-	if(mat_1_error.hasError() || mat_2_error.hasError()) return {nullptr, ParamResult{ResultFlags::ErrorWhileCreating}};
+	if(mat_1_error.hasError() || mat_2_error.hasError()) return {nullptr, ParamResult{YAFARAY_RESULT_ERROR_WHILE_CREATING}};
 
 	auto material{std::make_unique<ThisClassType_t>(logger, param_result, param_map, mat_1_id, mat_2_id, scene.getMaterials())};
 	material->nodes_map_ = NodeMaterial::loadNodes(nodes_param_maps, scene, logger);

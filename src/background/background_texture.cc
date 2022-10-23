@@ -59,16 +59,16 @@ std::pair<std::unique_ptr<Background>, ParamResult> TextureBackground::factory(L
 {
 	auto param_result{Params::meta_.check(param_map, {"type"}, {})};
 	std::string texname;
-	if(param_map.getParam(Params::texture_name_meta_, texname) == ResultFlags::ErrorTypeUnknownParam)
+	if(param_map.getParam(Params::texture_name_meta_, texname) == YAFARAY_RESULT_ERROR_TYPE_UNKNOWN_PARAM)
 	{
 		logger.logError(getClassName(), ": No texture given for texture background!");
-		return {nullptr, ParamResult{ResultFlags::ErrorWhileCreating}};
+		return {nullptr, ParamResult{YAFARAY_RESULT_ERROR_WHILE_CREATING}};
 	}
 	Texture *tex = scene.getTexture(texname);
 	if(!tex)
 	{
 		logger.logError(getClassName(), ": Texture '", texname, "' for textureback not existant!");
-		return {nullptr, ParamResult{ResultFlags::ErrorWhileCreating}};
+		return {nullptr, ParamResult{YAFARAY_RESULT_ERROR_WHILE_CREATING}};
 	}
 	auto background{std::make_unique<ThisClassType_t>(logger, param_result, param_map, tex)};
 	if(param_result.notOk()) logger.logWarning(param_result.print<ThisClassType_t>(name, {"type"}));

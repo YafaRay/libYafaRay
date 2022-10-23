@@ -61,7 +61,7 @@ ParamMap ObjectBase::getAsParamMap(bool only_non_default) const
 std::pair<std::unique_ptr<Object>, ParamResult> ObjectBase::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map)
 {
 	const Type type{ClassMeta::preprocessParamMap<Type>(logger, getClassName(), param_map)};
-	std::pair<std::unique_ptr<Object>, ParamResult> result {nullptr, ParamResult{ResultFlags::ErrorWhileCreating}};
+	std::pair<std::unique_ptr<Object>, ParamResult> result {nullptr, ParamResult{YAFARAY_RESULT_ERROR_WHILE_CREATING}};
 	switch(type.value())
 	{
 		case Type::Mesh:
@@ -87,7 +87,7 @@ std::pair<std::unique_ptr<Object>, ParamResult> ObjectBase::factory(Logger &logg
 		result.first->setIndexAuto(scene.getObjectIndexAuto());
 		return result;
 	}
-	else return {nullptr, ParamResult{ResultFlags::ErrorTypeUnknownParam}};
+	else return {nullptr, ParamResult{YAFARAY_RESULT_ERROR_TYPE_UNKNOWN_PARAM}};
 }
 
 ObjectBase::ObjectBase(ParamResult &param_result, const ParamMap &param_map, const SceneItems<Material> &materials) : params_{param_result, param_map}, materials_{materials}

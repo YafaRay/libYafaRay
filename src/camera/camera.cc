@@ -74,7 +74,7 @@ std::pair<std::unique_ptr<Camera>, ParamResult> Camera::factory(Logger &logger, 
 		case Type::Architect: return ArchitectCamera::factory(logger, scene, name, param_map);
 		case Type::Orthographic: return OrthographicCamera::factory(logger, scene, name, param_map);
 		case Type::Equirectangular: return EquirectangularCamera::factory(logger, scene, name, param_map);
-		default: return {nullptr, ParamResult{ResultFlags::ErrorWhileCreating}};
+		default: return {nullptr, ParamResult{YAFARAY_RESULT_ERROR_WHILE_CREATING}};
 	}
 }
 

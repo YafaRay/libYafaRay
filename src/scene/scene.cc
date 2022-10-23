@@ -334,7 +334,7 @@ std::pair<size_t, ParamResult> Scene::createLight(std::string &&name, ParamMap &
 {
 	if(lights_.find(name) != lights_.end())
 	{
-		logWarnExist(logger_, Light::getClassName(), name); return {0, {ResultFlags::ErrorAlreadyExists}};
+		logWarnExist(logger_, Light::getClassName(), name); return {0, {YAFARAY_RESULT_ERROR_ALREADY_EXISTS}};
 	}
 	auto [light, param_result] {Light::factory(logger_, *this, name, params)};
 	if(light)
@@ -348,16 +348,16 @@ std::pair<size_t, ParamResult> Scene::createLight(std::string &&name, ParamMap &
 		lights_[name] = std::move(light);
 		return {lights_.size() - 1, param_result}; //FIXME: this is just a placeholder for now for future LightID, although this will not work while we still use std::map for lights_
 	}
-	return {0, ParamResult{ResultFlags::ErrorWhileCreating}};
+	return {0, ParamResult{YAFARAY_RESULT_ERROR_WHILE_CREATING}};
 }
 
 std::pair<size_t, ParamResult> Scene::createMaterial(std::string &&name, ParamMap &&params, std::list<ParamMap> &&nodes_params)
 {
 	auto [material, param_result]{Material::factory(logger_, *this, name, params, nodes_params)};
-	if(param_result.hasError()) return {0, ParamResult{ResultFlags::ErrorWhileCreating}};
+	if(param_result.hasError()) return {0, ParamResult{YAFARAY_RESULT_ERROR_WHILE_CREATING}};
 	if(logger_.isVerbose()) logInfoVerboseSuccess(logger_, Material::getClassName(), name, material->type().print());
 	auto [material_id, result_flags]{materials_.add(name, std::move(material))};
-	if(result_flags == ResultFlags::WarningOverwritten) logger_.logDebug("Scene: ", Material::getClassName(), " \"", name, "\" already exists, replacing.");
+	if(result_flags == YAFARAY_RESULT_WARNING_OVERWRITTEN) logger_.logDebug("Scene: ", Material::getClassName(), " \"", name, "\" already exists, replacing.");
 	param_result.flags_ |= result_flags;
 	return {material_id, param_result};
 }
@@ -367,7 +367,7 @@ std::pair<T *, ParamResult> Scene::createMapItem(Logger &logger, std::string &&n
 {
 	if(map.find(name) != map.end())
 	{
-		logWarnExist(logger, T::getClassName(), name); return {nullptr, {ResultFlags::ErrorAlreadyExists}};
+		logWarnExist(logger, T::getClassName(), name); return {nullptr, {YAFARAY_RESULT_ERROR_ALREADY_EXISTS}};
 	}
 	std::unique_ptr<T> item(T::factory(logger, *scene, name, params).first);
 	if(item)
@@ -378,7 +378,7 @@ std::pair<T *, ParamResult> Scene::createMapItem(Logger &logger, std::string &&n
 		if(logger.isVerbose()) logInfoVerboseSuccess(logger, T::getClassName(), name, type);
 		return {map[name].get(), {}};
 	}
-	return {nullptr, ParamResult{ResultFlags::ErrorWhileCreating}};
+	return {nullptr, ParamResult{YAFARAY_RESULT_ERROR_WHILE_CREATING}};
 }
 
 template <typename T>
@@ -386,7 +386,7 @@ std::pair<size_t, ParamResult> Scene::createMapItemItemId(Logger &logger, std::s
 {
 	if(map.find(name) != map.end())
 	{
-		logWarnExist(logger, T::getClassName(), name); return {0, {ResultFlags::ErrorAlreadyExists}};
+		logWarnExist(logger, T::getClassName(), name); return {0, {YAFARAY_RESULT_ERROR_ALREADY_EXISTS}};
 	}
 	auto [item, param_result]{T::factory(logger, *scene, name, params)};
 	if(item)
@@ -395,7 +395,7 @@ std::pair<size_t, ParamResult> Scene::createMapItemItemId(Logger &logger, std::s
 		map[name] = std::move(item);
 		return {map.size() - 1, param_result}; //FIXME: this is just a placeholder for now for future ItemID, although this will not work while we still use std::map for items
 	}
-	return {0, ParamResult{ResultFlags::ErrorWhileCreating}};
+	return {0, ParamResult{YAFARAY_RESULT_ERROR_WHILE_CREATING}};
 }
 
 template <typename T>
@@ -403,7 +403,7 @@ std::pair<T *, ParamResult> Scene::createMapItemPointer(Logger &logger, std::str
 {
 	if(map.find(name) != map.end())
 	{
-		logWarnExist(logger, T::getClassName(), name); return {0, {ResultFlags::ErrorAlreadyExists}};
+		logWarnExist(logger, T::getClassName(), name); return {0, {YAFARAY_RESULT_ERROR_ALREADY_EXISTS}};
 	}
 	auto [item, param_result]{T::factory(logger, *scene, name, params)};
 	if(item)
@@ -412,7 +412,7 @@ std::pair<T *, ParamResult> Scene::createMapItemPointer(Logger &logger, std::str
 		map[name] = std::move(item);
 		return {map.at(name).get(), param_result}; //FIXME: this is just a placeholder for now for future ItemID, although this will not work while we still use std::map for items
 	}
-	return {nullptr, ParamResult{ResultFlags::ErrorWhileCreating}};
+	return {nullptr, ParamResult{YAFARAY_RESULT_ERROR_WHILE_CREATING}};
 }
 
 std::pair<size_t, ParamResult> Scene::createOutput(std::string &&name, ParamMap &&params)
@@ -420,7 +420,7 @@ std::pair<size_t, ParamResult> Scene::createOutput(std::string &&name, ParamMap 
 	std::string class_name = "ColorOutput";
 	if(outputs_.find(name) != outputs_.end())
 	{
-		logWarnExist(logger_, class_name, name); return {0, ParamResult{ResultFlags::ErrorAlreadyExists}};
+		logWarnExist(logger_, class_name, name); return {0, ParamResult{YAFARAY_RESULT_ERROR_ALREADY_EXISTS}};
 	}
 	auto [output, param_result]{ImageOutput::factory(logger_, *this, name, params)};
 	if(output)
@@ -429,7 +429,7 @@ std::pair<size_t, ParamResult> Scene::createOutput(std::string &&name, ParamMap 
 		outputs_[name] = std::move(output);
 		return {outputs_.size() - 1, param_result};
 	}
-	return {0, ParamResult{ResultFlags::ErrorWhileCreating}};
+	return {0, ParamResult{YAFARAY_RESULT_ERROR_WHILE_CREATING}};
 }
 
 std::pair<size_t, ParamResult> Scene::createTexture(std::string &&name, ParamMap &&params)
@@ -485,7 +485,7 @@ std::pair<size_t, ParamResult> Scene::createRenderView(std::string &&name, Param
 {
 	if(render_views_.find(name) != render_views_.end())
 	{
-		logWarnExist(logger_, RenderView::getClassName(), name); return {0, {ResultFlags::ErrorAlreadyExists}};
+		logWarnExist(logger_, RenderView::getClassName(), name); return {0, {YAFARAY_RESULT_ERROR_ALREADY_EXISTS}};
 	}
 	auto [item, param_result]{RenderView::factory(logger_, *this, name, params)};
 	if(item)
@@ -494,7 +494,7 @@ std::pair<size_t, ParamResult> Scene::createRenderView(std::string &&name, Param
 		render_views_[name] = std::move(item);
 		return {render_views_.size() - 1, param_result}; //FIXME: this is just a placeholder for now for future ItemID, although this will not work while we still use std::map for items
 	}
-	return {0, ParamResult{ResultFlags::ErrorWhileCreating}};
+	return {0, ParamResult{YAFARAY_RESULT_ERROR_WHILE_CREATING}};
 }
 
 std::pair<Image *, ParamResult> Scene::createImage(std::string &&name, ParamMap &&params)
@@ -892,7 +892,7 @@ std::pair<size_t, ParamResult> Scene::createObject(std::string &&name, ParamMap 
 	if(objects_.find(name) != objects_.end())
 	{
 		logWarnExist(logger_, Object::getClassName(), name);
-		return {0, ParamResult{ResultFlags::ErrorWhileCreating}};
+		return {0, ParamResult{YAFARAY_RESULT_ERROR_WHILE_CREATING}};
 	}
 	auto [object, param_result]{ObjectBase::factory(logger_, *this, name, params)};
 	if(object)
@@ -908,7 +908,7 @@ std::pair<size_t, ParamResult> Scene::createObject(std::string &&name, ParamMap 
 		objects_[name] = std::move(object);
 		return {objects_.size() - 1, param_result}; //FIXME: this is just a placeholder for now for future LightID, although this will not work while we still use std::map for objects
 	}
-	return {0, ParamResult{ResultFlags::ErrorWhileCreating}};
+	return {0, ParamResult{YAFARAY_RESULT_ERROR_WHILE_CREATING}};
 }
 
 Object *Scene::getObject(const std::string &name) const
