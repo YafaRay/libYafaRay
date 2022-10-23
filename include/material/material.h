@@ -40,6 +40,7 @@ class VolumeHandler;
 struct Sample;
 struct PSample;
 class MaterialData;
+template <typename T> class SceneItems;
 class Logger;
 
 class Material
@@ -48,9 +49,9 @@ class Material
 	public:
 		inline static std::string getClassName() { return "Material"; }
 		[[nodiscard]] virtual Type type() const = 0;
-		static std::pair<std::unique_ptr<Material>, ParamError> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map, const std::list<ParamMap> &nodes_param_maps, size_t id);
+		static std::pair<std::unique_ptr<Material>, ParamError> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map, const std::list<ParamMap> &nodes_param_maps);
 		[[nodiscard]] virtual ParamMap getAsParamMap(bool only_non_default) const;
-		Material(Logger &logger, ParamError &param_error, const ParamMap &param_map, size_t id);
+		Material(Logger &logger, ParamError &param_error, const ParamMap &param_map, const SceneItems <Material> &materials);
 		virtual ~Material();
 
 		/*! Initialize the BSDF of a material. You must call this with the current surface point
@@ -113,7 +114,9 @@ class Material
 		virtual Rgb getMirrorColor(const NodeTreeData &node_tree_data) const { return Rgb{0.f}; }
 		virtual Rgb getSubSurfaceColor(const NodeTreeData &node_tree_data) const { return Rgb{0.f}; }
 		unsigned int getPassIndex() const { return params_.mat_pass_index_; }
-		unsigned int getId() const { return id_; }
+		size_t getId() const { return id_; }
+		void setId(size_t id);
+		std::string getName() const;
 		Rgb getPassIndexAutoColor() const { return index_auto_color_; }
 		Visibility getVisibility() const { return params_.visibility_; }
 		bool getReceiveShadows() const { return params_.receive_shadows_; }
@@ -182,12 +185,13 @@ class Material
 		static void applyBump(SurfacePoint &sp, const DuDv &du_dv);
 		template <size_t N> static std::array<const ShaderNode *, N> initShaderArray();
 
-		const size_t id_{0}; //!< Material Id within the scene
-		const Rgb index_auto_color_{Rgb::pseudoRandomDistinctFromIndex(id_ + 1)}; //!< Material Index color automatically generated for the material-index-auto (color) render pass
+		size_t id_{0}; //!< Material Id within the scene
+		Rgb index_auto_color_{0.f}; //!< Material Index color automatically generated for the material-index-auto (color) render pass
 		BsdfFlags bsdf_flags_{BsdfFlags::None};
 		std::unique_ptr<VolumeHandler> vol_i_; //!< volumetric handler for space inside material (opposed to surface normal)
 		std::unique_ptr<VolumeHandler> vol_o_; //!< volumetric handler for space outside ofmaterial (where surface normal points to)
 		int additional_depth_{params_.additional_depth_};	//!< Per-material additional ray-depth
+		const SceneItems<Material> &materials_;
 		Logger &logger_;
 };
 

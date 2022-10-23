@@ -51,7 +51,7 @@ std::pair<std::unique_ptr<VolumeIntegrator>, ParamError> VolumeIntegrator::facto
 		case Type::Emission: return EmissionIntegrator::factory(logger, param_map, scene);
 		case Type::SingleScatter: return SingleScatterIntegrator::factory(logger, param_map, scene);
 		case Type::Sky: return SkyIntegrator::factory(logger, param_map, scene);
-		default: return {nullptr, ParamError{ParamError::Flags::ErrorWhileCreating}};
+		default: return {nullptr, ParamError{ResultFlags::ErrorWhileCreating}};
 	}
 }
 

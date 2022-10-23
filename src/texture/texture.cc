@@ -102,7 +102,7 @@ std::pair<std::unique_ptr<Texture>, ParamError> Texture::factory(Logger &logger,
 		case Type::DistortedNoise: return DistortedNoiseTexture::factory(logger, scene, name, param_map);
 		case Type::RgbCube: return RgbCubeTexture::factory(logger, scene, name, param_map);
 		case Type::Image: return ImageTexture::factory(logger, scene, name, param_map);
-		default: return {nullptr, ParamError{ParamError::Flags::ErrorWhileCreating}};
+		default: return {nullptr, ParamError{ResultFlags::ErrorWhileCreating}};
 	}
 }
 
@@ -117,18 +117,18 @@ Texture::Texture(Logger &logger, ParamError &param_error, const ParamMap &param_
 			Rgba color(0.f, 0.f, 0.f, 1.f);
 			float position = 0.f;
 			param_name << "ramp_item_" << i << "_color";
-			if(param_map.getParam(param_name.str(), color) == ParamError::Flags::ErrorWrongParamType)
+			if(param_map.getParam(param_name.str(), color) == ResultFlags::ErrorWrongParamType)
 			{
-				param_error.flags_ |= ParamError::Flags{ParamError::Flags::ErrorWrongParamType};
+				param_error.flags_ |= ResultFlags{ResultFlags::ErrorWrongParamType};
 				param_error.wrong_type_params_.emplace_back(param_name.str());
 			}
 			param_name.str("");
 			param_name.clear();
 
 			param_name << "ramp_item_" << i << "_position";
-			if(param_map.getParam(param_name.str(), position) == ParamError::Flags::ErrorWrongParamType)
+			if(param_map.getParam(param_name.str(), position) == ResultFlags::ErrorWrongParamType)
 			{
-				param_error.flags_ |= ParamError::Flags{ParamError::Flags::ErrorWrongParamType};
+				param_error.flags_ |= ResultFlags{ResultFlags::ErrorWrongParamType};
 				param_error.wrong_type_params_.emplace_back(param_name.str());
 			}
 			param_name.str("");

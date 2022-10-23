@@ -17,12 +17,12 @@
  *      Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-#ifndef YAFARAY_PARAM_H
-#define YAFARAY_PARAM_H
+#ifndef LIBYAFARAY_PARAM_H
+#define LIBYAFARAY_PARAM_H
 
 #include "common/collection.h"
+#include "common/result_flags.h"
 #include "param/param_meta.h"
-#include "param/param_error.h"
 #include <map>
 #include <vector>
 #include <string>
@@ -98,27 +98,27 @@ class ParamMap : public Collection<std::string, Parameter>
 	public:
 		//! template function to get a value, available types are those of parameter_t::getVal()
 		template <typename T>
-		ParamError::Flags getParam(const std::string &name, T &val) const
+		ResultFlags getParam(const std::string &name, T &val) const
 		{
 			auto i{find(name)};
-			if(i) return i->getVal(val) ? ParamError::Flags::Ok : ParamError::Flags::ErrorWrongParamType;
-			else return ParamError::Flags::WarningParamNotSet;
+			if(i) return i->getVal(val) ? ResultFlags::Ok : ResultFlags::ErrorWrongParamType;
+			else return ResultFlags::WarningParamNotSet;
 		}
 		template <typename T>
-		ParamError::Flags getParam(const ParamMeta &param_meta, T &val) const
+		ResultFlags getParam(const ParamMeta &param_meta, T &val) const
 		{
 			return getParam(param_meta.name(), val);
 		}
 		template <typename T>
-		ParamError::Flags getEnumParam(const std::string &name, T &val) const
+		ResultFlags getEnumParam(const std::string &name, T &val) const
 		{
 			std::string val_str;
-			const ParamError::Flags result{getParam(name, val_str)};
+			const ResultFlags result{getParam(name, val_str)};
 			val.initFromString(val_str);
 			return result;
 		}
 		template <typename T>
-		ParamError::Flags getEnumParam(const ParamMeta &param_meta, T &val) const
+		ResultFlags getEnumParam(const ParamMeta &param_meta, T &val) const
 		{
 			return getEnumParam(param_meta.name(), val);
 		}
@@ -137,4 +137,4 @@ class ParamMap : public Collection<std::string, Parameter>
 };
 
 } //namespace yafaray
-#endif // YAFARAY_PARAM_H
+#endif // LIBYAFARAY_PARAM_H

@@ -56,7 +56,7 @@ std::pair<std::unique_ptr<ShaderNode>, ParamError> ShaderNode::factory(Logger &l
 		case Type::Value: return ValueNode::factory(logger, scene, name, param_map);
 		case Type::Mix: return MixNode::factory(logger, scene, name, param_map);
 		case Type::Layer: return LayerNode::factory(logger, scene, name, param_map);
-		default: return {nullptr, ParamError{ParamError::Flags::ErrorWhileCreating}};
+		default: return {nullptr, ParamError{ResultFlags::ErrorWhileCreating}};
 	}
 }
 

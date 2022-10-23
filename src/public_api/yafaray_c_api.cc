@@ -27,7 +27,6 @@
 #include "interface/export/export_xml.h"
 #include "interface/interface.h"
 #include "render/progress_bar.h"
-#include "param/param_error.h"
 #include <cstring>
 
 yafaray_Interface_t *yafaray_createInterface(yafaray_Interface_Type_t interface_type, const char *exported_file_path, const yafaray_LoggerCallback_t logger_callback, void *callback_data, yafaray_DisplayConsole_t display_console)

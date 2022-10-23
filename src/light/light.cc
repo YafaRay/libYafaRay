@@ -75,7 +75,7 @@ std::pair<std::unique_ptr<Light>, ParamError> Light::factory(Logger &logger, con
 		case Type::Sphere: return SphereLight::factory(logger, scene, name, param_map);
 		case Type::Spot: return SpotLight::factory(logger, scene, name, param_map);
 		case Type::Sun: return SunLight::factory(logger, scene, name, param_map);
-		default: return {nullptr, ParamError{ParamError::Flags::ErrorWhileCreating}};
+		default: return {nullptr, ParamError{ResultFlags::ErrorWhileCreating}};
 	}
 }
 

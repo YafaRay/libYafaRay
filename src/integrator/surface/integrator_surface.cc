@@ -67,7 +67,7 @@ std::pair<std::unique_ptr<SurfaceIntegrator>, ParamError> SurfaceIntegrator::fac
 		case Type::Path: return PathIntegrator::factory(logger, render_control, param_map, scene);
 		case Type::Photon: return PhotonIntegrator::factory(logger, render_control, param_map, scene);
 		case Type::Sppm: return SppmIntegrator::factory(logger, render_control, param_map, scene);
-		default: return {nullptr, ParamError{ParamError::Flags::ErrorWhileCreating}};
+		default: return {nullptr, ParamError{ResultFlags::ErrorWhileCreating}};
 	}
 }
 

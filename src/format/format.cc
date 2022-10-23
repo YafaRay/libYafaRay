@@ -97,7 +97,7 @@ std::pair<std::unique_ptr<Format>, ParamError> Format::factory(Logger &logger, c
 #ifdef HAVE_TIFF
 		case Type::Tif: format = std::make_unique<TifFormat>(logger, param_error, param_map); break;
 #endif // HAVE_TIFF
-		default: param_error.flags_ = ParamError::Flags::ErrorWhileCreating; break;
+		default: param_error.flags_ = ResultFlags::ErrorWhileCreating; break;
 	}
 	return {std::move(format), param_error};
 }

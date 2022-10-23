@@ -48,7 +48,7 @@ ParamError ClassMeta::check(const ParamMap &param_map, const std::vector<std::st
 		const auto param_meta{find(param_name)};
 		if(!param_meta)
 		{
-			param_error.flags_ |= ParamError::Flags{ParamError::Flags::WarningUnknownParam};
+			param_error.flags_ |= ResultFlags{ResultFlags::WarningUnknownParam};
 			param_error.unknown_params_.emplace_back(param_name);
 			continue;
 		}
@@ -58,7 +58,7 @@ ParamError ClassMeta::check(const ParamMap &param_map, const std::vector<std::st
 			param.getVal(param_value_str);
 			if(!param_meta->enumContains(param_value_str))
 			{
-				param_error.flags_ |= ParamError::Flags{ParamError::Flags::WarningUnknownEnumOption};
+				param_error.flags_ |= ResultFlags{ResultFlags::WarningUnknownEnumOption};
 				param_error.unknown_enum_.emplace_back(std::pair<std::string, std::string>{param_name, param_value_str});
 				continue;
 			}

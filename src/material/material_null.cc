@@ -27,6 +27,7 @@
 #include "color/spectrum.h"
 #include "param/param.h"
 #include "material/sample.h"
+#include "scene/scene.h"
 
 namespace yafaray {
 
@@ -47,16 +48,16 @@ ParamMap NullMaterial::getAsParamMap(bool only_non_default) const
 	return result;
 }
 
-std::pair<std::unique_ptr<Material>, ParamError> NullMaterial::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map, const std::list<ParamMap> &nodes_param_maps, size_t id)
+std::pair<std::unique_ptr<Material>, ParamError> NullMaterial::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map, const std::list<ParamMap> &nodes_param_maps)
 {
 	auto param_error{Params::meta_.check(param_map, {"type"}, {})};
-	auto material{std::make_unique<ThisClassType_t>(logger, param_error, param_map, id)};
+	auto material{std::make_unique<ThisClassType_t>(logger, param_error, param_map, scene.getMaterials())};
 	if(param_error.notOk()) logger.logWarning(param_error.print<ThisClassType_t>(name, {"type"}));
 	return {std::move(material), param_error};
 }
 
-NullMaterial::NullMaterial(Logger &logger, ParamError &param_error, const ParamMap &param_map, size_t id) :
-		ParentClassType_t{logger, param_error, param_map, id}, params_{param_error, param_map}
+NullMaterial::NullMaterial(Logger &logger, ParamError &param_error, const ParamMap &param_map, const SceneItems <Material> &materials) :
+		ParentClassType_t{logger, param_error, param_map, materials}, params_{param_error, param_map}
 {
 	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + params_.getAsParamMap(true).print());
 }

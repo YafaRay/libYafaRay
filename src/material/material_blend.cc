@@ -27,6 +27,7 @@
 #include "scene/scene.h"
 #include "material/sample.h"
 #include "photon/photon_sample.h"
+#include "scene/scene.h"
 
 namespace yafaray {
 
@@ -55,18 +56,18 @@ ParamMap BlendMaterial::getAsParamMap(bool only_non_default) const
 	return result;
 }
 
-std::pair<std::unique_ptr<Material>, ParamError> BlendMaterial::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map, const std::list<ParamMap> &nodes_param_maps, size_t id)
+std::pair<std::unique_ptr<Material>, ParamError> BlendMaterial::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map, const std::list<ParamMap> &nodes_param_maps)
 {
 	auto param_error{Params::meta_.check(param_map, {"type"}, {})};
 	std::string mat_1_name;
-	if(param_map.getParam(Params::material_1_name_meta_.name(), mat_1_name).notOk()) return {nullptr, ParamError{ParamError::Flags::ErrorWhileCreating}};
+	if(param_map.getParam(Params::material_1_name_meta_.name(), mat_1_name).notOk()) return {nullptr, ParamError{ResultFlags::ErrorWhileCreating}};
 	const auto [mat_1_id, mat_1_error]{scene.getMaterial(mat_1_name)};
 	std::string mat_2_name;
-	if(param_map.getParam(Params::material_2_name_meta_.name(), mat_2_name).notOk()) return {nullptr, ParamError{ParamError::Flags::ErrorWhileCreating}};
+	if(param_map.getParam(Params::material_2_name_meta_.name(), mat_2_name).notOk()) return {nullptr, ParamError{ResultFlags::ErrorWhileCreating}};
 	const auto [mat_2_id, mat_2_error]{scene.getMaterial(mat_2_name)};
-	if(mat_1_error.hasError() || mat_2_error.hasError()) return {nullptr, ParamError{ParamError::Flags::ErrorWhileCreating}};
+	if(mat_1_error.hasError() || mat_2_error.hasError()) return {nullptr, ParamError{ResultFlags::ErrorWhileCreating}};
 
-	auto material{std::make_unique<ThisClassType_t>(logger, param_error, param_map, mat_1_id, mat_2_id, scene.getMaterials(), id)};
+	auto material{std::make_unique<ThisClassType_t>(logger, param_error, param_map, mat_1_id, mat_2_id, scene.getMaterials())};
 	material->nodes_map_ = NodeMaterial::loadNodes(nodes_param_maps, scene, logger);
 	std::map<std::string, const ShaderNode *> root_nodes_map;
 	// Prepare our node list
@@ -104,13 +105,13 @@ std::pair<std::unique_ptr<Material>, ParamError> BlendMaterial::factory(Logger &
 	return {std::move(material), param_error};
 }
 
-BlendMaterial::BlendMaterial(Logger &logger, ParamError &param_error, const ParamMap &param_map, size_t material_1_id, size_t material_2_id, const std::vector<std::unique_ptr<Material>> &materials, size_t id) :
-		ParentClassType_t{logger, param_error, param_map, id}, params_{param_error, param_map},
+BlendMaterial::BlendMaterial(Logger &logger, ParamError &param_error, const ParamMap &param_map, size_t material_1_id, size_t material_2_id, const SceneItems<Material> &materials) :
+		ParentClassType_t{logger, param_error, param_map, materials}, params_{param_error, param_map},
 		material_1_id_{material_1_id}, material_2_id_{material_2_id}, materials_{materials}
 {
 	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + params_.getAsParamMap(true).print());
-	blended_ior_ = (materials_[material_1_id_]->getMatIor() + materials_[material_2_id_]->getMatIor()) * 0.5f;
-	additional_depth_ = std::max(materials_[material_1_id_]->getAdditionalDepth(), materials_[material_2_id_]->getAdditionalDepth());
+	blended_ior_ = (materials_.getById(material_1_id_).first->getMatIor() + materials_.getById(material_2_id_).first->getMatIor()) * 0.5f;
+	additional_depth_ = std::max(materials_.getById(material_1_id_).first->getAdditionalDepth(), materials_.getById(material_2_id_).first->getAdditionalDepth());
 }
 
 inline float BlendMaterial::getBlendVal(const NodeTreeData &node_tree_data) const
@@ -125,9 +126,9 @@ std::unique_ptr<const MaterialData> BlendMaterial::initBsdf(SurfacePoint &sp, co
 	evalNodes(sp, color_nodes_, mat_data->node_tree_data_, camera);
 	const float blend_val = getBlendVal(mat_data->node_tree_data_);
 	SurfacePoint sp_1 {sp};
-	mat_data->mat_1_data_ = materials_[material_1_id_]->initBsdf(sp_1, camera);
+	mat_data->mat_1_data_ = materials_.getById(material_1_id_).first->initBsdf(sp_1, camera);
 	SurfacePoint sp_2 {sp};
-	mat_data->mat_2_data_ = materials_[material_2_id_]->initBsdf(sp_2, camera);
+	mat_data->mat_2_data_ = materials_.getById(material_2_id_).first->initBsdf(sp_2, camera);
 	sp = SurfacePoint{sp_1, sp_2, blend_val};
 	mat_data->bsdf_flags_ = mat_data->mat_1_data_->bsdf_flags_ | mat_data->mat_2_data_->bsdf_flags_;
 	//todo: bump mapping blending
@@ -138,8 +139,8 @@ Rgb BlendMaterial::eval(const MaterialData *mat_data, const SurfacePoint &sp, co
 {
 	const float blend_val = getBlendVal(mat_data->node_tree_data_);
 	const auto *mat_data_specific = static_cast<const MaterialData_t *>(mat_data);
-	const Rgb col_1 = materials_[material_1_id_]->eval(mat_data_specific->mat_1_data_.get(), sp, wo, wl, bsdfs);
-	const Rgb col_2 = materials_[material_2_id_]->eval(mat_data_specific->mat_2_data_.get(), sp, wo, wl, bsdfs);
+	const Rgb col_1 = materials_.getById(material_1_id_).first->eval(mat_data_specific->mat_1_data_.get(), sp, wo, wl, bsdfs);
+	const Rgb col_2 = materials_.getById(material_2_id_).first->eval(mat_data_specific->mat_2_data_.get(), sp, wo, wl, bsdfs);
 	Rgb col_blend = math::lerp(col_1, col_2, blend_val);
 	applyWireFrame(col_blend, shaders_[ShaderNodeType::Wireframe], mat_data->node_tree_data_, sp);
 	return col_blend;
@@ -160,13 +161,13 @@ Rgb BlendMaterial::sample(const MaterialData *mat_data, const SurfacePoint &sp, 
 	const auto *mat_data_specific = static_cast<const MaterialData_t *>(mat_data);
 	if(s.flags_.has(mat_data_specific->mat_1_data_->bsdf_flags_))
 	{
-		col_1 = materials_[material_1_id_]->sample(mat_data_specific->mat_1_data_.get(), sp, wo, wi_1, s_1, w_1, chromatic, wavelength, camera);
+		col_1 = materials_.getById(material_1_id_).first->sample(mat_data_specific->mat_1_data_.get(), sp, wo, wi_1, s_1, w_1, chromatic, wavelength, camera);
 		mat_1_sampled = true;
 	}
 
 	if(s.flags_.has(mat_data_specific->mat_2_data_->bsdf_flags_))
 	{
-		col_2 = materials_[material_2_id_]->sample(mat_data_specific->mat_2_data_.get(), sp, wo, wi_2, s_2, w_2, chromatic, wavelength, camera);
+		col_2 = materials_.getById(material_2_id_).first->sample(mat_data_specific->mat_2_data_.get(), sp, wo, wi_2, s_2, w_2, chromatic, wavelength, camera);
 		mat_2_sampled = true;
 	}
 
@@ -224,12 +225,12 @@ Rgb BlendMaterial::sample(const MaterialData *mat_data, const SurfacePoint &sp, 
 	const float blend_val = getBlendVal(mat_data->node_tree_data_);
 	const auto *mat_data_specific = static_cast<const MaterialData_t *>(mat_data);
 	Rgb col;
-	if(blend_val <= 0.f) col = materials_[material_1_id_]->sample(mat_data_specific->mat_1_data_.get(), sp, wo, dir, tcol, s, w, chromatic, wavelength);
-	else if(blend_val >= 1.f) col = materials_[material_2_id_]->sample(mat_data_specific->mat_2_data_.get(), sp, wo, dir, tcol, s, w, chromatic, wavelength);
+	if(blend_val <= 0.f) col = materials_.getById(material_1_id_).first->sample(mat_data_specific->mat_1_data_.get(), sp, wo, dir, tcol, s, w, chromatic, wavelength);
+	else if(blend_val >= 1.f) col = materials_.getById(material_2_id_).first->sample(mat_data_specific->mat_2_data_.get(), sp, wo, dir, tcol, s, w, chromatic, wavelength);
 	else
 	{
-		const Rgb col_1 = materials_[material_1_id_]->sample(mat_data_specific->mat_1_data_.get(), sp, wo, dir, tcol, s, w, chromatic, wavelength);
-		const Rgb col_2 = materials_[material_2_id_]->sample(mat_data_specific->mat_2_data_.get(), sp, wo, dir, tcol, s, w, chromatic, wavelength);
+		const Rgb col_1 = materials_.getById(material_1_id_).first->sample(mat_data_specific->mat_1_data_.get(), sp, wo, dir, tcol, s, w, chromatic, wavelength);
+		const Rgb col_2 = materials_.getById(material_2_id_).first->sample(mat_data_specific->mat_2_data_.get(), sp, wo, dir, tcol, s, w, chromatic, wavelength);
 		col = math::lerp(col_1, col_2, blend_val);
 	}
 	applyWireFrame(col, shaders_[ShaderNodeType::Wireframe], mat_data->node_tree_data_, sp);
@@ -240,8 +241,8 @@ float BlendMaterial::pdf(const MaterialData *mat_data, const SurfacePoint &sp, c
 {
 	const float blend_val = getBlendVal(mat_data->node_tree_data_);
 	const auto *mat_data_specific = static_cast<const MaterialData_t *>(mat_data);
-	const float pdf_1 = materials_[material_1_id_]->pdf(mat_data_specific->mat_1_data_.get(), sp, wo, wi, bsdfs);
-	const float pdf_2 = materials_[material_2_id_]->pdf(mat_data_specific->mat_2_data_.get(), sp, wo, wi, bsdfs);
+	const float pdf_1 = materials_.getById(material_1_id_).first->pdf(mat_data_specific->mat_1_data_.get(), sp, wo, wi, bsdfs);
+	const float pdf_2 = materials_.getById(material_2_id_).first->pdf(mat_data_specific->mat_2_data_.get(), sp, wo, wi, bsdfs);
 	const float pdf_blend = math::lerp(pdf_1, pdf_2, blend_val);
 	return pdf_blend;
 }
@@ -250,8 +251,8 @@ Specular BlendMaterial::getSpecular(int ray_level, const MaterialData *mat_data,
 {
 	const float blend_val = getBlendVal(mat_data->node_tree_data_);
 	const auto *mat_data_specific = static_cast<const MaterialData_t *>(mat_data);
-	Specular specular_1 = materials_[material_1_id_]->getSpecular(ray_level, mat_data_specific->mat_1_data_.get(), sp, wo, chromatic, wavelength);
-	Specular specular_2 = materials_[material_2_id_]->getSpecular(ray_level, mat_data_specific->mat_2_data_.get(), sp, wo, chromatic, wavelength);
+	Specular specular_1 = materials_.getById(material_1_id_).first->getSpecular(ray_level, mat_data_specific->mat_1_data_.get(), sp, wo, chromatic, wavelength);
+	Specular specular_2 = materials_.getById(material_2_id_).first->getSpecular(ray_level, mat_data_specific->mat_2_data_.get(), sp, wo, chromatic, wavelength);
 	Specular specular_blend;
 	specular_blend.reflect_ = DirectionColor::blend(std::move(specular_1.reflect_), std::move(specular_2.reflect_), blend_val);
 	specular_blend.refract_ = DirectionColor::blend(std::move(specular_1.refract_), std::move(specular_2.refract_), blend_val);
@@ -274,15 +275,15 @@ float BlendMaterial::getMatIor() const
 
 bool BlendMaterial::isTransparent() const
 {
-	return materials_[material_1_id_]->isTransparent() || materials_[material_2_id_]->isTransparent();
+	return materials_.getById(material_1_id_).first->isTransparent() || materials_.getById(material_2_id_).first->isTransparent();
 }
 
 Rgb BlendMaterial::getTransparency(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3f &wo, const Camera *camera) const
 {
 	const float blend_val = getBlendVal(mat_data->node_tree_data_);
 	const auto *mat_data_specific = static_cast<const MaterialData_t *>(mat_data);
-	const Rgb col_1 = materials_[material_1_id_]->getTransparency(mat_data_specific->mat_1_data_.get(), sp, wo, camera);
-	const Rgb col_2 = materials_[material_2_id_]->getTransparency(mat_data_specific->mat_2_data_.get(), sp, wo, camera);
+	const Rgb col_1 = materials_.getById(material_1_id_).first->getTransparency(mat_data_specific->mat_1_data_.get(), sp, wo, camera);
+	const Rgb col_2 = materials_.getById(material_2_id_).first->getTransparency(mat_data_specific->mat_2_data_.get(), sp, wo, camera);
 	Rgb col_blend = math::lerp(col_1, col_2, blend_val);
 	applyWireFrame(col_blend, shaders_[ShaderNodeType::Wireframe], mat_data->node_tree_data_, sp);
 	return col_blend;
@@ -294,8 +295,8 @@ float BlendMaterial::getAlpha(const MaterialData *mat_data, const SurfacePoint &
 	float result = 1.f;
 	if(isTransparent())
 	{
-		const float al_1 = materials_[material_1_id_]->getAlpha(mat_data_specific->mat_1_data_.get(), sp, wo, camera);
-		const float al_2 = materials_[material_2_id_]->getAlpha(mat_data_specific->mat_2_data_.get(), sp, wo, camera);
+		const float al_1 = materials_.getById(material_1_id_).first->getAlpha(mat_data_specific->mat_1_data_.get(), sp, wo, camera);
+		const float al_2 = materials_.getById(material_2_id_).first->getAlpha(mat_data_specific->mat_2_data_.get(), sp, wo, camera);
 		result = std::min(al_1, al_2);
 	}
 	applyWireFrame(result, shaders_[ShaderNodeType::Wireframe], mat_data->node_tree_data_, sp);
@@ -306,8 +307,8 @@ Rgb BlendMaterial::emit(const MaterialData *mat_data, const SurfacePoint &sp, co
 {
 	const float blend_val = getBlendVal(mat_data->node_tree_data_);
 	const auto *mat_data_specific = static_cast<const MaterialData_t *>(mat_data);
-	const Rgb col_1 = materials_[material_1_id_]->emit(mat_data_specific->mat_1_data_.get(), sp, wo);
-	const Rgb col_2 = materials_[material_2_id_]->emit(mat_data_specific->mat_2_data_.get(), sp, wo);
+	const Rgb col_1 = materials_.getById(material_1_id_).first->emit(mat_data_specific->mat_1_data_.get(), sp, wo);
+	const Rgb col_2 = materials_.getById(material_2_id_).first->emit(mat_data_specific->mat_2_data_.get(), sp, wo);
 	Rgb col_blend = math::lerp(col_1, col_2, blend_val);
 	applyWireFrame(col_blend, shaders_[ShaderNodeType::Wireframe], mat_data->node_tree_data_, sp);
 	return col_blend;
@@ -317,10 +318,10 @@ bool BlendMaterial::scatterPhoton(const MaterialData *mat_data, const SurfacePoi
 {
 	const float blend_val = getBlendVal(mat_data->node_tree_data_);
 	const auto *mat_data_specific = static_cast<const MaterialData_t *>(mat_data);
-	const bool scattered_1 = materials_[material_1_id_]->scatterPhoton(mat_data_specific->mat_1_data_.get(), sp, wi, wo, s, chromatic, wavelength, camera);
+	const bool scattered_1 = materials_.getById(material_1_id_).first->scatterPhoton(mat_data_specific->mat_1_data_.get(), sp, wi, wo, s, chromatic, wavelength, camera);
 	const Rgb col_1 = s.color_;
 	const float pdf_1 = s.pdf_;
-	const bool scattered_2 = materials_[material_2_id_]->scatterPhoton(mat_data_specific->mat_2_data_.get(), sp, wi, wo, s, chromatic, wavelength, camera);
+	const bool scattered_2 = materials_.getById(material_2_id_).first->scatterPhoton(mat_data_specific->mat_2_data_.get(), sp, wi, wo, s, chromatic, wavelength, camera);
 	const Rgb col_2 = s.color_;
 	const float pdf_2 = s.pdf_;
 	s.color_ = math::lerp(col_1, col_2, blend_val);
@@ -330,8 +331,8 @@ bool BlendMaterial::scatterPhoton(const MaterialData *mat_data, const SurfacePoi
 
 const VolumeHandler *BlendMaterial::getVolumeHandler(bool inside) const
 {
-	const VolumeHandler *vol_1 = materials_[material_1_id_]->getVolumeHandler(inside);
-	const VolumeHandler *vol_2 = materials_[material_2_id_]->getVolumeHandler(inside);
+	const VolumeHandler *vol_1 = materials_.getById(material_1_id_).first->getVolumeHandler(inside);
+	const VolumeHandler *vol_2 = materials_.getById(material_2_id_).first->getVolumeHandler(inside);
 	if(vol_1 && vol_2)
 	{
 		if(params_.blend_value_ <= 0.5f) return vol_1;

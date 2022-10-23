@@ -56,7 +56,7 @@ std::pair<std::unique_ptr<Object>, ParamError> CurveObject::factory(Logger &logg
 	return {std::move(object), param_error};
 }
 
-CurveObject::CurveObject(ParamError &param_error, const ParamMap &param_map, const std::vector<std::unique_ptr<Material>> &materials) :
+CurveObject::CurveObject(ParamError &param_error, const ParamMap &param_map, const SceneItems<Material> &materials) :
 		ParentClassType_t{param_error, param_map, materials}, params_{param_error, param_map}
 {
 	//if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + params_.getAsParamMap(true).print());

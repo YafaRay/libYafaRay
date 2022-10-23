@@ -57,13 +57,13 @@ std::pair<std::unique_ptr<VolumeRegion>, ParamError> NoiseVolumeRegion::factory(
 	if(tex_name.empty())
 	{
 		if(logger.isVerbose()) logger.logVerbose(getClassName() + ": Noise texture not set, the volume region won't be created.");
-		return {nullptr, ParamError{ParamError::Flags::ErrorWhileCreating}};
+		return {nullptr, ParamError{ResultFlags::ErrorWhileCreating}};
 	}
 	const Texture *texture{scene.getTexture(tex_name)};
 	if(!texture)
 	{
 		if(logger.isVerbose()) logger.logVerbose(getClassName() + ": Noise texture '", tex_name, "' couldn't be found, the volume region won't be created.");
-		return {nullptr, ParamError{ParamError::Flags::ErrorWhileCreating}};
+		return {nullptr, ParamError{ResultFlags::ErrorWhileCreating}};
 	}
 	auto volume_region {std::make_unique<ThisClassType_t>(logger, param_error, param_map, texture)};
 	if(param_error.notOk()) logger.logWarning(param_error.print<ThisClassType_t>(name, {"type"}));

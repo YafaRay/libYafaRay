@@ -61,7 +61,7 @@ ParamMap ObjectBase::getAsParamMap(bool only_non_default) const
 std::pair<std::unique_ptr<Object>, ParamError> ObjectBase::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map)
 {
 	const Type type{ClassMeta::preprocessParamMap<Type>(logger, getClassName(), param_map)};
-	std::pair<std::unique_ptr<Object>, ParamError> result {nullptr, ParamError{ParamError::Flags::ErrorWhileCreating}};
+	std::pair<std::unique_ptr<Object>, ParamError> result {nullptr, ParamError{ResultFlags::ErrorWhileCreating}};
 	switch(type.value())
 	{
 		case Type::Mesh:
@@ -87,10 +87,10 @@ std::pair<std::unique_ptr<Object>, ParamError> ObjectBase::factory(Logger &logge
 		result.first->setIndexAuto(scene.getObjectIndexAuto());
 		return result;
 	}
-	else return {nullptr, ParamError{ParamError::Flags::ErrorTypeUnknownParam}};
+	else return {nullptr, ParamError{ResultFlags::ErrorTypeUnknownParam}};
 }
 
-ObjectBase::ObjectBase(ParamError &param_error, const ParamMap &param_map, const std::vector<std::unique_ptr<Material>> &materials) : params_{param_error, param_map}, materials_{materials}
+ObjectBase::ObjectBase(ParamError &param_error, const ParamMap &param_map, const SceneItems<Material> &materials) : params_{param_error, param_map}, materials_{materials}
 {
 	//if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + params_.getAsParamMap(true).print());
 }

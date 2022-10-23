@@ -68,7 +68,7 @@ std::pair<std::unique_ptr<Background>, ParamError> Background::factory(Logger &l
 		case Type::SunSky: return SunSkyBackground::factory(logger, scene, name, param_map);
 		case Type::Texture: return TextureBackground::factory(logger, scene, name, param_map);
 		case Type::Constant: return ConstantBackground::factory(logger, scene, name, param_map);
-		default: return {nullptr, ParamError{ParamError::Flags::ErrorWhileCreating}};
+		default: return {nullptr, ParamError{ResultFlags::ErrorWhileCreating}};
 	}
 }
 

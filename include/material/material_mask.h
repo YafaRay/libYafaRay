@@ -20,9 +20,9 @@
 #ifndef LIBYAFARAY_MATERIAL_MASK_H
 #define LIBYAFARAY_MATERIAL_MASK_H
 
-#include "common/logger.h"
 #include "material/material_node.h"
 #include "material/material_data.h"
+#include "scene/scene_items.h"
 
 namespace yafaray {
 
@@ -50,10 +50,10 @@ class MaskMaterial final : public NodeMaterial
 
 	public:
 		inline static std::string getClassName() { return "MaskMaterial"; }
-		static std::pair<std::unique_ptr<Material>, ParamError> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map, const std::list<ParamMap> &nodes_param_maps, size_t id);
+		static std::pair<std::unique_ptr<Material>, ParamError> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map, const std::list<ParamMap> &nodes_param_maps);
 		static std::string printMeta(const std::vector<std::string> &excluded_params) { return Params::meta_.print(excluded_params); }
 		[[nodiscard]] ParamMap getAsParamMap(bool only_non_default) const override;
-		MaskMaterial(Logger &logger, ParamError &param_error, const ParamMap &param_map, size_t material_1_id, size_t material_2_id, const std::vector<std::unique_ptr<Material>> &materials, size_t id);
+		MaskMaterial(Logger &logger, ParamError &param_error, const ParamMap &param_map, size_t material_1_id, size_t material_2_id, const SceneItems<Material> &materials);
 
 	private:
 		[[nodiscard]] Type type() const override { return Type::Mask; }
@@ -85,7 +85,7 @@ class MaskMaterial final : public NodeMaterial
 
 		size_t material_1_id_{0};
 		size_t material_2_id_{0};
-		const std::vector<std::unique_ptr<Material>> &materials_;
+		const SceneItems<Material> &materials_;
 		std::array<const ShaderNode *, static_cast<size_t>(ShaderNodeType::Size)> shaders_{initShaderArray<ShaderNodeType::Size>()};
 };
 

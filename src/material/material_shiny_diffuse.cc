@@ -23,6 +23,7 @@
 #include "geometry/surface.h"
 #include "common/logger.h"
 #include "material/sample.h"
+#include "scene/scene.h"
 
 namespace yafaray {
 
@@ -69,10 +70,10 @@ ParamMap ShinyDiffuseMaterial::getAsParamMap(bool only_non_default) const
 	return result;
 }
 
-std::pair<std::unique_ptr<Material>, ParamError> ShinyDiffuseMaterial::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map, const std::list<ParamMap> &nodes_param_maps, size_t id)
+std::pair<std::unique_ptr<Material>, ParamError> ShinyDiffuseMaterial::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map, const std::list<ParamMap> &nodes_param_maps)
 {
 	auto param_error{Params::meta_.check(param_map, {"type"}, {})};
-	auto material{std::make_unique<ThisClassType_t>(logger, param_error, param_map, id)};
+	auto material{std::make_unique<ThisClassType_t>(logger, param_error, param_map, scene.getMaterials())};
 	material->nodes_map_ = NodeMaterial::loadNodes(nodes_param_maps, scene, logger);
 	std::map<std::string, const ShaderNode *> root_nodes_map;
 	// Prepare our node list
@@ -111,8 +112,8 @@ std::pair<std::unique_ptr<Material>, ParamError> ShinyDiffuseMaterial::factory(L
 	return {std::move(material), param_error};
 }
 
-ShinyDiffuseMaterial::ShinyDiffuseMaterial(Logger &logger, ParamError &param_error, const ParamMap &param_map, size_t id) :
-		ParentClassType_t{logger, param_error, param_map, id}, params_{param_error, param_map}
+ShinyDiffuseMaterial::ShinyDiffuseMaterial(Logger &logger, ParamError &param_error, const ParamMap &param_map, const SceneItems <Material> &materials) :
+		ParentClassType_t{logger, param_error, param_map, materials}, params_{param_error, param_map}
 {
 	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + params_.getAsParamMap(true).print());
 	if(params_.emit_ > 0.f) bsdf_flags_ |= BsdfFlags{BsdfFlags::Emit};

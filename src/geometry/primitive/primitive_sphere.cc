@@ -53,9 +53,9 @@ std::pair<std::unique_ptr<Primitive>, ParamError> SpherePrimitive::factory(Logge
 	if(logger.isDebug()) logger.logDebug("**" + getClassName() + "::factory 'raw' ParamMap\n" + param_map.logContents());
 	auto param_error{Params::meta_.check(param_map, {"type"}, {})};
 	const Params params{param_error, param_map};
-	if(params.material_name_.empty()) return {nullptr, ParamError{ParamError::Flags::ErrorWhileCreating}};
+	if(params.material_name_.empty()) return {nullptr, ParamError{ResultFlags::ErrorWhileCreating}};
 	const auto [material_id, material_error]{scene.getMaterial(params.material_name_)};
-	if(material_error.hasError()) return {nullptr, ParamError{ParamError::Flags::ErrorWhileCreating}};
+	if(material_error.hasError()) return {nullptr, ParamError{ResultFlags::ErrorWhileCreating}};
 	auto primitive {std::make_unique<SpherePrimitive>(logger, param_error, param_map, material_id, object)};
 	if(param_error.notOk()) logger.logWarning(param_error.print<SpherePrimitive>(name, {"type"}));
 	return {std::move(primitive), param_error};

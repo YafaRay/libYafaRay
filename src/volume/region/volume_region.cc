@@ -75,7 +75,7 @@ std::pair<std::unique_ptr<VolumeRegion>, ParamError> VolumeRegion::factory(Logge
 		case Type::Noise: return NoiseVolumeRegion::factory(logger, scene, name, param_map);
 		case Type::Sky: return SkyVolumeRegion::factory(logger, scene, name, param_map);
 		case Type::Uniform: return UniformVolumeRegion::factory(logger, scene, name, param_map);
-		default: return {nullptr, ParamError{ParamError::Flags::ErrorWhileCreating}};
+		default: return {nullptr, ParamError{ResultFlags::ErrorWhileCreating}};
 	}
 }
 

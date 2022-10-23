@@ -41,7 +41,7 @@ class MeshObject : public ObjectBase
 		static std::pair<std::unique_ptr<Object>, ParamError> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map);
 		static std::string printMeta(const std::vector<std::string> &excluded_params) { return Params::meta_.print(excluded_params); }
 		[[nodiscard]] ParamMap getAsParamMap(bool only_non_default) const override;
-		MeshObject(ParamError &param_error, const ParamMap &param_map, const std::vector<std::unique_ptr<Material>> &materials);
+		MeshObject(ParamError &param_error, const ParamMap &param_map, const SceneItems<Material> &materials);
 		~MeshObject() override;
 		/*! the number of primitives the object holds. Primitive is an element
 			that by definition can perform ray-triangle intersection */

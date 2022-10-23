@@ -67,7 +67,7 @@ std::pair<std::unique_ptr<Light>, ParamError> IesLight::factory(Logger &logger, 
 	auto param_error{Params::meta_.check(param_map, {"type"}, {})};
 	auto light {std::make_unique<ThisClassType_t>(logger, param_error, name, param_map)};
 	if(param_error.notOk()) logger.logWarning(param_error.print<ThisClassType_t>(name, {"type"}));
-	if(!light->isIesOk()) return {nullptr, ParamError{ParamError::Flags::ErrorWhileCreating}};
+	if(!light->isIesOk()) return {nullptr, ParamError{ResultFlags::ErrorWhileCreating}};
 	return {std::move(light), param_error};
 }
 

@@ -22,72 +22,23 @@
 #ifndef LIBYAFARAY_PARAM_ERROR_H
 #define LIBYAFARAY_PARAM_ERROR_H
 
-#include <string>
-#include <vector>
-#include <sstream>
+#include "common/result_flags.h"
 
 namespace yafaray {
 
 struct ParamError
 {
-	struct Flags : Enum<Flags>
-	{
-		using Enum::Enum;
-		enum : ValueType_t
-		{
-			Ok = 0,
-			ErrorTypeUnknownParam = 1 << 0,
-			WarningUnknownParam = 1 << 1,
-			WarningParamNotSet = 1 << 2,
-			ErrorWrongParamType = 1 << 3,
-			WarningUnknownEnumOption = 1 << 4,
-			ErrorAlreadyExists = 1 << 5,
-			ErrorWhileCreating = 1 << 6,
-			ErrorNotFound = 1 << 7,
-		};
-		inline static const EnumMap<ValueType_t> map_{{
-				{"None", Ok, ""},
-				{"ErrorTypeUnknownParam", ErrorTypeUnknownParam, ""},
-				{"WarningUnknownParam", WarningUnknownParam, ""},
-				{"ErrorWrongParamType", ErrorWrongParamType, ""},
-				{"WarningUnknownEnumOption", WarningUnknownEnumOption, ""},
-				{"ErrorAlreadyExists", ErrorAlreadyExists, ""},
-				{"ErrorWhileCreating", ErrorWhileCreating, ""},
-				{"ErrorNotFound", ErrorNotFound, ""},
-			}};
-		[[nodiscard]] bool isOk() const { return value() == Ok; }
-		[[nodiscard]] bool notOk() const { return !isOk(); }
-		[[nodiscard]] bool hasError() const;
-		[[nodiscard]] bool hasWarning() const;
-	};
-	template<typename T>
-	[[nodiscard]] std::string print(const std::string &name, const std::vector<std::string> &excluded_params) const;
+	template<typename T> [[nodiscard]] std::string print(const std::string &name, const std::vector<std::string> &excluded_params) const;
 	[[nodiscard]] bool isOk() const { return flags_.isOk(); }
 	[[nodiscard]] bool notOk() const { return flags_.notOk(); }
 	[[nodiscard]] bool hasError() const { return flags_.hasError(); }
 	[[nodiscard]] bool hasWarning() const { return flags_.hasWarning(); }
 	void merge(const ParamError &param_error);
-	Flags flags_{Flags::Ok};
+	ResultFlags flags_{ResultFlags::Ok};
 	std::vector<std::string> unknown_params_{};
 	std::vector<std::string> wrong_type_params_{};
 	std::vector<std::pair<std::string, std::string>> unknown_enum_{};
 };
-
-inline bool ParamError::Flags::hasError() const
-{
-	return has(Flags::ErrorTypeUnknownParam)
-		|| has(Flags::ErrorWrongParamType)
-		|| has(Flags::ErrorAlreadyExists)
-		|| has(Flags::ErrorWhileCreating)
-		|| has(Flags::ErrorNotFound);
-}
-
-inline bool ParamError::Flags::hasWarning() const
-{
-	return has(Flags::WarningUnknownParam)
-		|| has(Flags::WarningUnknownEnumOption)
-		|| has(Flags::WarningParamNotSet);
-}
 
 inline void ParamError::merge(const ParamError &param_error)
 {

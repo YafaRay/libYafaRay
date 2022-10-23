@@ -100,7 +100,7 @@ void Scene::createDefaultMaterial()
 
 void Scene::setCurrentMaterial(size_t material_id)
 {
-	if(materials_[material_id]) creation_state_.current_material_ = material_id;
+	if(materials_.getById(material_id).second.isOk()) creation_state_.current_material_ = material_id;
 	else creation_state_.current_material_ = material_id_default_;
 }
 
@@ -223,7 +223,7 @@ bool Scene::render(std::unique_ptr<ProgressBar> progress_bar)
 				return false;
 			}
 			render_control_.setStarted();
-			success = surf_integrator_->render(fast_random, object_index_highest_, materials_.size() - 1);
+			success = surf_integrator_->render(fast_random, object_index_highest_, material_index_highest_);
 			if(!success)
 			{
 				logger_.logError("Scene: Rendering process failed, exiting...");
@@ -281,11 +281,9 @@ T *Scene::findMapItem(const std::string &name, const std::map<std::string, std::
 	else return nullptr;
 }
 
-std::pair<size_t, ParamError::Flags> Scene::getMaterial(const std::string &name) const
+std::pair<size_t, ResultFlags> Scene::getMaterial(const std::string &name) const
 {
-	auto i = material_names_.find(name);
-	if(i != material_names_.end()) return {i->second, ParamError::Flags::Ok};
-	else return {0, ParamError::Flags::ErrorNotFound};
+	return materials_.findIdFromName(name);
 }
 
 Texture *Scene::getTexture(const std::string &name) const
@@ -336,7 +334,7 @@ std::pair<size_t, ParamError> Scene::createLight(std::string &&name, ParamMap &&
 {
 	if(lights_.find(name) != lights_.end())
 	{
-		logWarnExist(logger_, Light::getClassName(), name); return {0, {ParamError::Flags::ErrorAlreadyExists}};
+		logWarnExist(logger_, Light::getClassName(), name); return {0, {ResultFlags::ErrorAlreadyExists}};
 	}
 	auto [light, param_error] {Light::factory(logger_, *this, name, params)};
 	if(light)
@@ -350,33 +348,18 @@ std::pair<size_t, ParamError> Scene::createLight(std::string &&name, ParamMap &&
 		lights_[name] = std::move(light);
 		return {lights_.size() - 1, param_error}; //FIXME: this is just a placeholder for now for future LightID, although this will not work while we still use std::map for lights_
 	}
-	return {0, ParamError{ParamError::Flags::ErrorWhileCreating}};
+	return {0, ParamError{ResultFlags::ErrorWhileCreating}};
 }
 
 std::pair<size_t, ParamError> Scene::createMaterial(std::string &&name, ParamMap &&params, std::list<ParamMap> &&nodes_params)
 {
-	bool replace_existing{false};
-	const auto material_names_it{material_names_.find(name)};
-	if(material_names_it != material_names_.end())
-	{
-		logger_.logDebug("Scene: ", Material::getClassName(), " \"", name, "\" already exists, replacing.");
-		replace_existing = true;
-	}
-	const size_t material_id { replace_existing ? material_names_it->second : materials_.size()};
-	auto [material, param_error]{Material::factory(logger_, *this, name, params, nodes_params, material_id)};
-	if(material)
-	{
-		creation_state_.changes_ |= CreationState::Flags::CMaterial;
-		if(logger_.isVerbose()) logInfoVerboseSuccess(logger_, Material::getClassName(), name, material->type().print());
-		if(replace_existing) materials_[material_id] = std::move(material);
-		else
-		{
-			materials_.emplace_back(std::move(material));
-			material_names_[name] = material_id;
-		}
-		return {material_id, param_error};
-	}
-	return {material_id, ParamError{ParamError::Flags::ErrorWhileCreating}};
+	auto [material, param_error]{Material::factory(logger_, *this, name, params, nodes_params)};
+	if(param_error.hasError()) return {0, ParamError{ResultFlags::ErrorWhileCreating}};
+	if(logger_.isVerbose()) logInfoVerboseSuccess(logger_, Material::getClassName(), name, material->type().print());
+	auto [material_id, result_flags]{materials_.add(name, std::move(material))};
+	if(result_flags == ResultFlags::WarningOverwritten) logger_.logDebug("Scene: ", Material::getClassName(), " \"", name, "\" already exists, replacing.");
+	param_error.flags_ |= result_flags;
+	return {material_id, param_error};
 }
 
 template <typename T>
@@ -384,7 +367,7 @@ std::pair<T *, ParamError> Scene::createMapItem(Logger &logger, std::string &&na
 {
 	if(map.find(name) != map.end())
 	{
-		logWarnExist(logger, T::getClassName(), name); return {nullptr, {ParamError::Flags::ErrorAlreadyExists}};
+		logWarnExist(logger, T::getClassName(), name); return {nullptr, {ResultFlags::ErrorAlreadyExists}};
 	}
 	std::unique_ptr<T> item(T::factory(logger, *scene, name, params).first);
 	if(item)
@@ -395,7 +378,7 @@ std::pair<T *, ParamError> Scene::createMapItem(Logger &logger, std::string &&na
 		if(logger.isVerbose()) logInfoVerboseSuccess(logger, T::getClassName(), name, type);
 		return {map[name].get(), {}};
 	}
-	return {nullptr, ParamError{ParamError::Flags::ErrorWhileCreating}};
+	return {nullptr, ParamError{ResultFlags::ErrorWhileCreating}};
 }
 
 template <typename T>
@@ -403,7 +386,7 @@ std::pair<size_t, ParamError> Scene::createMapItemItemId(Logger &logger, std::st
 {
 	if(map.find(name) != map.end())
 	{
-		logWarnExist(logger, T::getClassName(), name); return {0, {ParamError::Flags::ErrorAlreadyExists}};
+		logWarnExist(logger, T::getClassName(), name); return {0, {ResultFlags::ErrorAlreadyExists}};
 	}
 	auto [item, param_error]{T::factory(logger, *scene, name, params)};
 	if(item)
@@ -412,7 +395,7 @@ std::pair<size_t, ParamError> Scene::createMapItemItemId(Logger &logger, std::st
 		map[name] = std::move(item);
 		return {map.size() - 1, param_error}; //FIXME: this is just a placeholder for now for future ItemID, although this will not work while we still use std::map for items
 	}
-	return {0, ParamError{ParamError::Flags::ErrorWhileCreating}};
+	return {0, ParamError{ResultFlags::ErrorWhileCreating}};
 }
 
 template <typename T>
@@ -420,7 +403,7 @@ std::pair<T *, ParamError> Scene::createMapItemPointer(Logger &logger, std::stri
 {
 	if(map.find(name) != map.end())
 	{
-		logWarnExist(logger, T::getClassName(), name); return {0, {ParamError::Flags::ErrorAlreadyExists}};
+		logWarnExist(logger, T::getClassName(), name); return {0, {ResultFlags::ErrorAlreadyExists}};
 	}
 	auto [item, param_error]{T::factory(logger, *scene, name, params)};
 	if(item)
@@ -429,7 +412,7 @@ std::pair<T *, ParamError> Scene::createMapItemPointer(Logger &logger, std::stri
 		map[name] = std::move(item);
 		return {map.at(name).get(), param_error}; //FIXME: this is just a placeholder for now for future ItemID, although this will not work while we still use std::map for items
 	}
-	return {nullptr, ParamError{ParamError::Flags::ErrorWhileCreating}};
+	return {nullptr, ParamError{ResultFlags::ErrorWhileCreating}};
 }
 
 std::pair<size_t, ParamError> Scene::createOutput(std::string &&name, ParamMap &&params)
@@ -437,7 +420,7 @@ std::pair<size_t, ParamError> Scene::createOutput(std::string &&name, ParamMap &
 	std::string class_name = "ColorOutput";
 	if(outputs_.find(name) != outputs_.end())
 	{
-		logWarnExist(logger_, class_name, name); return {0, ParamError{ParamError::Flags::ErrorAlreadyExists}};
+		logWarnExist(logger_, class_name, name); return {0, ParamError{ResultFlags::ErrorAlreadyExists}};
 	}
 	auto [output, param_error]{ImageOutput::factory(logger_, *this, name, params)};
 	if(output)
@@ -446,7 +429,7 @@ std::pair<size_t, ParamError> Scene::createOutput(std::string &&name, ParamMap &
 		outputs_[name] = std::move(output);
 		return {outputs_.size() - 1, param_error};
 	}
-	return {0, ParamError{ParamError::Flags::ErrorWhileCreating}};
+	return {0, ParamError{ResultFlags::ErrorWhileCreating}};
 }
 
 std::pair<size_t, ParamError> Scene::createTexture(std::string &&name, ParamMap &&params)
@@ -502,7 +485,7 @@ std::pair<size_t, ParamError> Scene::createRenderView(std::string &&name, ParamM
 {
 	if(render_views_.find(name) != render_views_.end())
 	{
-		logWarnExist(logger_, RenderView::getClassName(), name); return {0, {ParamError::Flags::ErrorAlreadyExists}};
+		logWarnExist(logger_, RenderView::getClassName(), name); return {0, {ResultFlags::ErrorAlreadyExists}};
 	}
 	auto [item, param_error]{RenderView::factory(logger_, *this, name, params)};
 	if(item)
@@ -511,7 +494,7 @@ std::pair<size_t, ParamError> Scene::createRenderView(std::string &&name, ParamM
 		render_views_[name] = std::move(item);
 		return {render_views_.size() - 1, param_error}; //FIXME: this is just a placeholder for now for future ItemID, although this will not work while we still use std::map for items
 	}
-	return {0, ParamError{ParamError::Flags::ErrorWhileCreating}};
+	return {0, ParamError{ResultFlags::ErrorWhileCreating}};
 }
 
 std::pair<Image *, ParamError> Scene::createImage(std::string &&name, ParamMap &&params)
@@ -909,7 +892,7 @@ std::pair<size_t, ParamError> Scene::createObject(std::string &&name, ParamMap &
 	if(objects_.find(name) != objects_.end())
 	{
 		logWarnExist(logger_, Object::getClassName(), name);
-		return {0, ParamError{ParamError::Flags::ErrorWhileCreating}};
+		return {0, ParamError{ResultFlags::ErrorWhileCreating}};
 	}
 	auto [object, param_error]{ObjectBase::factory(logger_, *this, name, params)};
 	if(object)
@@ -925,7 +908,7 @@ std::pair<size_t, ParamError> Scene::createObject(std::string &&name, ParamMap &
 		objects_[name] = std::move(object);
 		return {objects_.size() - 1, param_error}; //FIXME: this is just a placeholder for now for future LightID, although this will not work while we still use std::map for objects
 	}
-	return {0, ParamError{ParamError::Flags::ErrorWhileCreating}};
+	return {0, ParamError{ResultFlags::ErrorWhileCreating}};
 }
 
 Object *Scene::getObject(const std::string &name) const
@@ -1031,6 +1014,13 @@ bool Scene::updateObjects()
 	for(const auto &[object_name, object] : objects_)
 	{
 		if(object_index_highest_ < object->getIndex()) object_index_highest_ = object->getIndex();
+	}
+
+	material_index_highest_ = 1;
+	for(size_t material_id = 0; material_id < materials_.size(); ++material_id)
+	{
+		const unsigned int material_pass_index{materials_.getById(material_id).first->getPassIndex()};
+		if(material_index_highest_ < material_pass_index) material_index_highest_ = material_pass_index;
 	}
 
 	if(shadow_bias_auto_) shadow_bias_ = Accelerator::shadowBias();

@@ -20,6 +20,7 @@
 #ifndef LIBYAFARAY_SCENE_H
 #define LIBYAFARAY_SCENE_H
 
+#include "scene/scene_items.h"
 #include "common/aa_noise_params.h"
 #include "common/layers.h"
 #include "common/mask_edge_toon_params.h"
@@ -109,8 +110,8 @@ class Scene final
 		int getNumThreadsPhotons() const { return nthreads_photons_; }
 		AaNoiseParams getAaParameters() const { return aa_noise_params_; }
 		RenderControl &getRenderControl() { return render_control_; }
-		std::pair<size_t, ParamError::Flags> getMaterial(const std::string &name) const;
-		const std::vector<std::unique_ptr<Material>> &getMaterials() const { return materials_; }
+		std::pair<size_t, ResultFlags> getMaterial(const std::string &name) const;
+		const SceneItems<Material> &getMaterials() const { return materials_; }
 		Texture *getTexture(const std::string &name) const;
 		const Camera *getCamera(const std::string &name) const;
 		const Light *getLight(const std::string &name) const;
@@ -146,7 +147,7 @@ class Scene final
 		bool isRayMinDistAuto() const { return ray_min_dist_auto_; }
 		const VolumeIntegrator *getVolIntegrator() const { return vol_integrator_.get(); }
 
-		unsigned int getMaterialIndexAuto() const { return materials_.size(); }
+		unsigned int getMaterialIndexAuto() const { return materials_.nextAvailableId(); }
 		unsigned int getObjectIndexAuto() const { return object_index_auto_; }
 
 		static void logWarnExist(Logger &logger, const std::string &pname, const std::string &name);
@@ -193,8 +194,7 @@ class Scene final
 		std::map<std::string, std::unique_ptr<Object>> objects_;
 		std::vector<std::unique_ptr<ObjectInstance>> instances_;
 		std::map<std::string, std::unique_ptr<Light>> lights_;
-		std::vector<std::unique_ptr<Material>> materials_;
-		std::map<std::string, size_t> material_names_;
+		SceneItems<Material> materials_;
 		RenderControl render_control_;
 		Logger &logger_;
 
@@ -206,6 +206,7 @@ class Scene final
 		float ray_min_dist_ = 1.0e-5f;  //ray minimum distance
 		bool ray_min_dist_auto_ = true;  //enable automatic ray minimum distance calculation
 		unsigned int object_index_highest_ = 1; //!< Highest object index used for the Normalized Object Index pass.
+		unsigned int material_index_highest_ = 1; //!< Highest material index used for the Normalized Object Index pass.
 		unsigned int object_index_auto_ = 1; //!< Object Index automatically generated for the object-index-auto render pass
 		size_t material_id_default_ = 0;
 		std::unique_ptr<ImageFilm> image_film_;

@@ -21,6 +21,7 @@
 #define LIBYAFARAY_OBJECT_BASE_H
 
 #include "geometry/object/object.h"
+#include "scene/scene_items.h"
 #include "param/class_meta.h"
 #include "common/enum.h"
 
@@ -36,7 +37,7 @@ class ObjectBase : public Object
 		[[nodiscard]] virtual Type type() const = 0;
 		static std::pair<std::unique_ptr<Object>, ParamError> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map);
 		[[nodiscard]] virtual ParamMap getAsParamMap(bool only_non_default) const;
-		ObjectBase(ParamError &param_error, const ParamMap &param_map, const std::vector<std::unique_ptr<Material>> &materials);
+		ObjectBase(ParamError &param_error, const ParamMap &param_map, const SceneItems<Material> &materials);
 		[[nodiscard]] std::string getName() const override { return name_; }
 		void setName(const std::string &name) override { name_ = name; }
 		void setVisibility(Visibility visibility) override { visibility_ = visibility; }
@@ -49,7 +50,7 @@ class ObjectBase : public Object
 		unsigned int getIndexAuto() const override { return index_auto_; }
 		const Light *getLight() const override { return light_; }
 		void setLight(const Light *light) override { light_ = light; }
-		const Material *getMaterial(size_t material_id) const { return materials_[material_id].get(); }
+		const Material *getMaterial(size_t material_id) const { return materials_.getById(material_id).first; }
 
 	protected:
 		struct Type : public Enum<Type>
@@ -77,7 +78,7 @@ class ObjectBase : public Object
 	private:
 		std::string name_;
 		const Light *light_ = nullptr;
-		const std::vector<std::unique_ptr<Material>> &materials_;
+		const SceneItems<Material> &materials_;
 		Visibility visibility_{params_.visibility_};
 		bool is_base_object_{params_.is_base_object_};
 		unsigned int index_auto_ = 1; //!< Object Index automatically generated for the object-index-auto render pass

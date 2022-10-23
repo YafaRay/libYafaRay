@@ -70,13 +70,13 @@ std::pair<std::unique_ptr<ShaderNode>, ParamError> TextureMapperNode::factory(Lo
 	if(param_map.getParam(Params::texture_meta_.name(), texname).notOk())
 	{
 		logger.logError("TextureMapper: No texture given for texture mapper!");
-		return {nullptr, ParamError{ParamError::Flags::ErrorWhileCreating}};
+		return {nullptr, ParamError{ResultFlags::ErrorWhileCreating}};
 	}
 	const Texture *tex = scene.getTexture(texname);
 	if(!tex)
 	{
 		logger.logError("TextureMapper: texture '", texname, "' does not exist!");
-		return {nullptr, ParamError{ParamError::Flags::ErrorWhileCreating}};
+		return {nullptr, ParamError{ResultFlags::ErrorWhileCreating}};
 	}
 	auto shader_node {std::make_unique<TextureMapperNode>(logger, param_error, param_map, tex)};
 	if(param_error.notOk()) logger.logWarning(param_error.print<ThisClassType_t>(name, {"type"}));
