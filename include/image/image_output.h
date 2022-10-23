@@ -41,10 +41,10 @@ class ImageOutput final
 {
 	public:
 		inline static std::string getClassName() { return "ImageOutput"; }
-		static std::pair<std::unique_ptr<ImageOutput>, ParamError> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map);
+		static std::pair<std::unique_ptr<ImageOutput>, ParamResult> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map);
 		static std::string printMeta(const std::vector<std::string> &excluded_params) { return Params::meta_.print(excluded_params); }
 		[[nodiscard]] ParamMap getAsParamMap(bool only_non_default) const;
-		ImageOutput(Logger &logger, ParamError &param_error, const ParamMap &param_map);
+		ImageOutput(Logger &logger, ParamResult &param_result, const ParamMap &param_map);
 		void flush(const RenderControl &render_control, const Timer &timer);
 		void init(const Size2i &size, const ImageLayers *exported_image_layers, const std::map<std::string, std::unique_ptr<RenderView>> *render_views);
 		void setRenderView(const RenderView *render_view) { current_render_view_ = render_view; }

@@ -19,40 +19,40 @@
  *
  */
 
-#ifndef LIBYAFARAY_PARAM_ERROR_H
-#define LIBYAFARAY_PARAM_ERROR_H
+#ifndef LIBYAFARAY_PARAM_RESULT_H
+#define LIBYAFARAY_PARAM_RESULT_H
 
 #include "common/result_flags.h"
 
 namespace yafaray {
 
-struct ParamError
+struct ParamResult
 {
 	template<typename T> [[nodiscard]] std::string print(const std::string &name, const std::vector<std::string> &excluded_params) const;
 	[[nodiscard]] bool isOk() const { return flags_.isOk(); }
 	[[nodiscard]] bool notOk() const { return flags_.notOk(); }
 	[[nodiscard]] bool hasError() const { return flags_.hasError(); }
 	[[nodiscard]] bool hasWarning() const { return flags_.hasWarning(); }
-	void merge(const ParamError &param_error);
+	void merge(const ParamResult &param_result);
 	ResultFlags flags_{ResultFlags::Ok};
 	std::vector<std::string> unknown_params_{};
 	std::vector<std::string> wrong_type_params_{};
 	std::vector<std::pair<std::string, std::string>> unknown_enum_{};
 };
 
-inline void ParamError::merge(const ParamError &param_error)
+inline void ParamResult::merge(const ParamResult &param_result)
 {
-	flags_ |= param_error.flags_;
-	unknown_params_.insert(unknown_params_.end(), param_error.unknown_params_.begin(), param_error.unknown_params_.end());
+	flags_ |= param_result.flags_;
+	unknown_params_.insert(unknown_params_.end(), param_result.unknown_params_.begin(), param_result.unknown_params_.end());
 	std::sort(unknown_params_.begin(), unknown_params_.end());
-	wrong_type_params_.insert(wrong_type_params_.end(), param_error.wrong_type_params_.begin(), param_error.wrong_type_params_.end());
+	wrong_type_params_.insert(wrong_type_params_.end(), param_result.wrong_type_params_.begin(), param_result.wrong_type_params_.end());
 	std::sort(wrong_type_params_.begin(), wrong_type_params_.end());
-	unknown_enum_.insert(unknown_enum_.end(), param_error.unknown_enum_.begin(), param_error.unknown_enum_.end());
+	unknown_enum_.insert(unknown_enum_.end(), param_result.unknown_enum_.begin(), param_result.unknown_enum_.end());
 	std::sort(unknown_enum_.begin(), unknown_enum_.end());
 }
 
 template <typename T>
-inline std::string ParamError::print(const std::string &name, const std::vector<std::string> &excluded_params) const
+inline std::string ParamResult::print(const std::string &name, const std::vector<std::string> &excluded_params) const
 {
 	std::stringstream ss;
 	ss << T::getClassName() << " '" + name + "':";
@@ -97,4 +97,4 @@ inline std::string ParamError::print(const std::string &name, const std::vector<
 
 } //namespace yafaray
 
-#endif //LIBYAFARAY_PARAM_ERROR_H
+#endif //LIBYAFARAY_PARAM_RESULT_H

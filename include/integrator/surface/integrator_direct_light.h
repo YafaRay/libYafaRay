@@ -30,9 +30,9 @@ class DirectLightIntegrator final : public CausticPhotonIntegrator
 
 	public:
 		inline static std::string getClassName() { return "DirectLightIntegrator"; }
-		static std::pair<std::unique_ptr<SurfaceIntegrator>, ParamError> factory(Logger &logger, RenderControl &render_control, const ParamMap &params, const Scene &scene);
+		static std::pair<std::unique_ptr<SurfaceIntegrator>, ParamResult> factory(Logger &logger, RenderControl &render_control, const ParamMap &params, const Scene &scene);
 		static std::string printMeta(const std::vector<std::string> &excluded_params) { return Params::meta_.print(excluded_params); }
-		DirectLightIntegrator(RenderControl &render_control, Logger &logger, ParamError &param_error, const ParamMap &param_map);
+		DirectLightIntegrator(RenderControl &render_control, Logger &logger, ParamResult &param_result, const ParamMap &param_map);
 		[[nodiscard]] ParamMap getAsParamMap(bool only_non_default) const override;
 
 	private:

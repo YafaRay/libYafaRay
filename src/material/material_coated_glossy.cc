@@ -36,7 +36,7 @@ namespace yafaray {
 	(dielectric) perfectly specular coating. This is to simulate surfaces like
 	metallic paint */
 
-CoatedGlossyMaterial::Params::Params(ParamError &param_error, const ParamMap &param_map)
+CoatedGlossyMaterial::Params::Params(ParamResult &param_result, const ParamMap &param_map)
 {
 	PARAM_LOAD(glossy_color_);
 	PARAM_LOAD(diffuse_color_);
@@ -82,10 +82,10 @@ ParamMap CoatedGlossyMaterial::getAsParamMap(bool only_non_default) const
 	return result;
 }
 
-std::pair<std::unique_ptr<Material>, ParamError> CoatedGlossyMaterial::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map, const std::list<ParamMap> &nodes_param_maps)
+std::pair<std::unique_ptr<Material>, ParamResult> CoatedGlossyMaterial::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map, const std::list<ParamMap> &nodes_param_maps)
 {
-	auto param_error{Params::meta_.check(param_map, {"type"}, {})};
-	auto material{std::make_unique<ThisClassType_t>(logger, param_error, param_map, scene.getMaterials())};
+	auto param_result{Params::meta_.check(param_map, {"type"}, {})};
+	auto material{std::make_unique<ThisClassType_t>(logger, param_result, param_map, scene.getMaterials())};
 	material->nodes_map_ = NodeMaterial::loadNodes(nodes_param_maps, scene, logger);
 	std::map<std::string, const ShaderNode *> root_nodes_map;
 	// Prepare our node list
@@ -119,12 +119,12 @@ std::pair<std::unique_ptr<Material>, ParamError> CoatedGlossyMaterial::factory(L
 			}
 		}
 	}
-	if(param_error.notOk()) logger.logWarning(param_error.print<CoatedGlossyMaterial>(name, {"type"}));
-	return {std::move(material), param_error};
+	if(param_result.notOk()) logger.logWarning(param_result.print<CoatedGlossyMaterial>(name, {"type"}));
+	return {std::move(material), param_result};
 }
 
-CoatedGlossyMaterial::CoatedGlossyMaterial(Logger &logger, ParamError &param_error, const ParamMap &param_map, const SceneItems <Material> &materials) :
-		ParentClassType_t{logger, param_error, param_map, materials}, params_{param_error, param_map}
+CoatedGlossyMaterial::CoatedGlossyMaterial(Logger &logger, ParamResult &param_result, const ParamMap &param_map, const SceneItems <Material> &materials) :
+		ParentClassType_t{logger, param_result, param_map, materials}, params_{param_result, param_map}
 {
 	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + params_.getAsParamMap(true).print());
 	c_flags_[BsdfComponent::ComponentSpecular] = (BsdfFlags::Specular | BsdfFlags::Reflect);

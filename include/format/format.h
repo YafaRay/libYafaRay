@@ -42,9 +42,9 @@ class Format
 	public:
 		inline static std::string getClassName() { return "Format"; }
 		[[nodiscard]] virtual ParamMap getAsParamMap(bool only_non_default) const;
-		static std::pair<std::unique_ptr<Format>, ParamError> factory(Logger &logger, const ParamMap &param_map);
+		static std::pair<std::unique_ptr<Format>, ParamResult> factory(Logger &logger, const ParamMap &param_map);
 		static std::string printMeta(const std::vector<std::string> &excluded_params) { return Params::meta_.print(excluded_params); }
-		explicit Format(Logger &logger, ParamError &param_error, const ParamMap &param_map) : params_{param_error, param_map}, logger_{logger} { }
+		explicit Format(Logger &logger, ParamResult &param_result, const ParamMap &param_map) : params_{param_result, param_map}, logger_{logger} { }
 		virtual ~Format() = default;
 		virtual std::unique_ptr<Image> loadFromFile(const std::string &name, const Image::Optimization &optimization, const ColorSpace &color_space, float gamma) = 0;
 		virtual std::unique_ptr<Image> loadFromMemory(const uint8_t *data, size_t size, const Image::Optimization &optimization, const ColorSpace &color_space, float gamma);

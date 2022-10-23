@@ -24,7 +24,7 @@
 
 namespace yafaray {
 
-AcceleratorSimpleTest::Params::Params(ParamError &param_error, const ParamMap &param_map)
+AcceleratorSimpleTest::Params::Params(ParamResult &param_result, const ParamMap &param_map)
 {
 }
 
@@ -41,15 +41,15 @@ ParamMap AcceleratorSimpleTest::getAsParamMap(bool only_non_default) const
 	return result;
 }
 
-std::pair<std::unique_ptr<Accelerator>, ParamError> AcceleratorSimpleTest::factory(Logger &logger, const std::vector<const Primitive *> &primitives, const ParamMap &param_map)
+std::pair<std::unique_ptr<Accelerator>, ParamResult> AcceleratorSimpleTest::factory(Logger &logger, const std::vector<const Primitive *> &primitives, const ParamMap &param_map)
 {
-	auto param_error{Params::meta_.check(param_map, {"type"}, {})};
-	auto accelerator {std::make_unique<ThisClassType_t>(logger, param_error, primitives, param_map)};
-	if(param_error.notOk()) logger.logWarning(param_error.print<ThisClassType_t>("", {"type"}));
-	return {std::move(accelerator), param_error};
+	auto param_result{Params::meta_.check(param_map, {"type"}, {})};
+	auto accelerator {std::make_unique<ThisClassType_t>(logger, param_result, primitives, param_map)};
+	if(param_result.notOk()) logger.logWarning(param_result.print<ThisClassType_t>("", {"type"}));
+	return {std::move(accelerator), param_result};
 }
 
-AcceleratorSimpleTest::AcceleratorSimpleTest(Logger &logger, ParamError &param_error, const std::vector<const Primitive *> &primitives, const ParamMap &param_map) : ParentClassType_t{logger, param_error, param_map}, params_{param_error, param_map}, primitives_(primitives)
+AcceleratorSimpleTest::AcceleratorSimpleTest(Logger &logger, ParamResult &param_result, const std::vector<const Primitive *> &primitives, const ParamMap &param_map) : ParentClassType_t{logger, param_result, param_map}, params_{param_result, param_map}, primitives_(primitives)
 {
 	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + params_.getAsParamMap(true).print());
 	const size_t num_primitives = primitives_.size();

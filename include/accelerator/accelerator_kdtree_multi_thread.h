@@ -41,9 +41,9 @@ class AcceleratorKdTreeMultiThread final : public Accelerator
 
 	public:
 		inline static std::string getClassName() { return "AcceleratorKdTreeMultiThread"; }
-		static std::pair<std::unique_ptr<Accelerator>, ParamError> factory(Logger &logger, const std::vector<const Primitive *> &primitives, const ParamMap &param_map);
+		static std::pair<std::unique_ptr<Accelerator>, ParamResult> factory(Logger &logger, const std::vector<const Primitive *> &primitives, const ParamMap &param_map);
 		static std::string printMeta(const std::vector<std::string> &excluded_params) { return Params::meta_.print(excluded_params); }
-		AcceleratorKdTreeMultiThread(Logger &logger, ParamError &param_error, const std::vector<const Primitive *> &primitives, const ParamMap &param_map);
+		AcceleratorKdTreeMultiThread(Logger &logger, ParamResult &param_result, const std::vector<const Primitive *> &primitives, const ParamMap &param_map);
 		~AcceleratorKdTreeMultiThread() override;
 
 	private:

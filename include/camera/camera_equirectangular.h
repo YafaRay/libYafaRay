@@ -33,9 +33,9 @@ class EquirectangularCamera final : public Camera
 
 	public:
 		inline static std::string getClassName() { return "EquirectangularCamera"; }
-		static std::pair<std::unique_ptr<Camera>, ParamError> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map);
+		static std::pair<std::unique_ptr<Camera>, ParamResult> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map);
 		static std::string printMeta(const std::vector<std::string> &excluded_params) { return Params::meta_.print(excluded_params); }
-		EquirectangularCamera(Logger &logger, ParamError &param_error, const ParamMap &param_map);
+		EquirectangularCamera(Logger &logger, ParamResult &param_result, const ParamMap &param_map);
 
 	private:
 		[[nodiscard]] Type type() const override { return Type::Equirectangular; }

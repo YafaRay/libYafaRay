@@ -39,7 +39,7 @@ namespace yafaray {
 
 typedef float FilterFunction_t(float dx, float dy);
 
-ImageFilm::Params::Params(ParamError &param_error, const ParamMap &param_map)
+ImageFilm::Params::Params(ParamResult &param_result, const ParamMap &param_map)
 {
 	PARAM_LOAD(aa_pixel_width_);
 	PARAM_LOAD(width_);
@@ -86,16 +86,16 @@ ParamMap ImageFilm::getAsParamMap(bool only_non_default) const
 	return params_.getAsParamMap(only_non_default);
 }
 
-std::pair<std::unique_ptr<ImageFilm>, ParamError> ImageFilm::factory(Logger &logger, RenderControl &render_control, const ParamMap &param_map, const Scene *scene)
+std::pair<std::unique_ptr<ImageFilm>, ParamResult> ImageFilm::factory(Logger &logger, RenderControl &render_control, const ParamMap &param_map, const Scene *scene)
 {
 	if(logger.isDebug()) logger.logDebug("**" + getClassName() + "::factory 'raw' ParamMap\n" + param_map.logContents());
-	auto param_error{Params::meta_.check(param_map, {}, {})};
-	auto result {std::make_unique<ImageFilm>(logger, param_error, render_control, *scene->getLayers(), scene->getOutputs(), &scene->getRenderViews(), &scene->getRenderCallbacks(), scene->getNumThreads(), param_map)};
-	if(param_error.notOk()) logger.logWarning(param_error.print<ImageFilm>("ImageFilm", {}));
-	return {std::move(result), param_error};
+	auto param_result{Params::meta_.check(param_map, {}, {})};
+	auto result {std::make_unique<ImageFilm>(logger, param_result, render_control, *scene->getLayers(), scene->getOutputs(), &scene->getRenderViews(), &scene->getRenderCallbacks(), scene->getNumThreads(), param_map)};
+	if(param_result.notOk()) logger.logWarning(param_result.print<ImageFilm>("ImageFilm", {}));
+	return {std::move(result), param_result};
 }
 
-ImageFilm::ImageFilm(Logger &logger, ParamError &param_error, RenderControl &render_control, const Layers &layers, const std::map<std::string, std::unique_ptr<ImageOutput>> &outputs, const std::map<std::string, std::unique_ptr<RenderView>> *render_views, const RenderCallbacks *render_callbacks, int num_threads, const ParamMap &param_map) : params_{param_error, param_map}, num_threads_(num_threads), layers_(layers), outputs_(outputs), render_views_{render_views}, render_callbacks_{render_callbacks}, logger_{logger}
+ImageFilm::ImageFilm(Logger &logger, ParamResult &param_result, RenderControl &render_control, const Layers &layers, const std::map<std::string, std::unique_ptr<ImageOutput>> &outputs, const std::map<std::string, std::unique_ptr<RenderView>> *render_views, const RenderCallbacks *render_callbacks, int num_threads, const ParamMap &param_map) : params_{param_result, param_map}, num_threads_(num_threads), layers_(layers), outputs_(outputs), render_views_{render_views}, render_callbacks_{render_callbacks}, logger_{logger}
 {
 	if(logger_.isDebug()) logger_.logDebug("**" + getClassName() + " params_:\n" + params_.getAsParamMap(true).print());
 	if(params_.images_autosave_interval_type_ == AutoSaveParams::IntervalType::Pass) logger_.logInfo(getClassName(), ": ", "AutoSave partially rendered image every ", params_.images_autosave_interval_passes_, " passes");
@@ -946,8 +946,8 @@ void ImageFilm::imageFilmLoadAllInFolder(RenderControl &render_control)
 	bool any_film_loaded = false;
 	for(const auto &film_file : film_file_paths_list)
 	{
-		ParamError param_error;
-		auto loaded_film = std::make_unique<ImageFilm>(logger_, param_error, render_control, layers_, outputs_, render_views_, render_callbacks_, num_threads_, params_.getAsParamMap(true));
+		ParamResult param_result;
+		auto loaded_film = std::make_unique<ImageFilm>(logger_, param_result, render_control, layers_, outputs_, render_views_, render_callbacks_, num_threads_, params_.getAsParamMap(true));
 		if(!loaded_film->imageFilmLoad(film_file))
 		{
 			logger_.logWarning("ImageFilm: Could not load film file '", film_file, "'");

@@ -31,7 +31,7 @@ namespace yafaray {
 
 const ImageTexture::EwaWeightLut ImageTexture::ewa_weight_lut_;
 
-ImageTexture::Params::Params(ParamError &param_error, const ParamMap &param_map)
+ImageTexture::Params::Params(ParamResult &param_result, const ParamMap &param_map)
 {
 	PARAM_ENUM_LOAD(clip_mode_);
 	PARAM_LOAD(image_name_);
@@ -88,28 +88,28 @@ ParamMap ImageTexture::getAsParamMap(bool only_non_default) const
 	return result;
 }
 
-std::pair<std::unique_ptr<Texture>, ParamError> ImageTexture::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map)
+std::pair<std::unique_ptr<Texture>, ParamResult> ImageTexture::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map)
 {
-	auto param_error{Params::meta_.check(param_map, {"type"}, {"ramp_item_"})};
+	auto param_result{Params::meta_.check(param_map, {"type"}, {"ramp_item_"})};
 	std::string image_name;
 	param_map.getParam(Params::image_name_meta_, image_name);
 	if(image_name.empty())
 	{
 		logger.logError("ImageTexture: Required argument image_name not found for image texture");
-		return {nullptr, ParamError{ResultFlags::ErrorWhileCreating}};
+		return {nullptr, ParamResult{ResultFlags::ErrorWhileCreating}};
 	}
 	const Image *image{scene.getImage(image_name)};
 	if(!image)
 	{
 		logger.logError("ImageTexture: Couldn't load image file, dropping texture.");
-		return {nullptr, ParamError{ResultFlags::ErrorWhileCreating}};
+		return {nullptr, ParamResult{ResultFlags::ErrorWhileCreating}};
 	}
-	auto texture {std::make_unique<ThisClassType_t>(logger, param_error, param_map, image)};
-	if(param_error.notOk()) logger.logWarning(param_error.print<ThisClassType_t>(name, {"type"}));
-	return {std::move(texture), param_error};
+	auto texture {std::make_unique<ThisClassType_t>(logger, param_result, param_map, image)};
+	if(param_result.notOk()) logger.logWarning(param_result.print<ThisClassType_t>(name, {"type"}));
+	return {std::move(texture), param_result};
 }
 
-ImageTexture::ImageTexture(Logger &logger, ParamError &param_error, const ParamMap &param_map, const Image *image) : ParentClassType_t{logger, param_error, param_map}, params_{param_error, param_map}, image_{image}
+ImageTexture::ImageTexture(Logger &logger, ParamResult &param_result, const ParamMap &param_map, const Image *image) : ParentClassType_t{logger, param_result, param_map}, params_{param_result, param_map}, image_{image}
 {
 	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + params_.getAsParamMap(true).print());
 	original_image_file_gamma_ = image->getGamma();

@@ -31,7 +31,7 @@
 
 namespace yafaray {
 
-GlassMaterial::Params::Params(ParamError &param_error, const ParamMap &param_map)
+GlassMaterial::Params::Params(ParamResult &param_result, const ParamMap &param_map)
 {
 	PARAM_LOAD(ior_);
 	PARAM_LOAD(filter_color_);
@@ -66,10 +66,10 @@ ParamMap GlassMaterial::getAsParamMap(bool only_non_default) const
 	return result;
 }
 
-std::pair<std::unique_ptr<Material>, ParamError> GlassMaterial::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map, const std::list<ParamMap> &nodes_param_maps)
+std::pair<std::unique_ptr<Material>, ParamResult> GlassMaterial::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map, const std::list<ParamMap> &nodes_param_maps)
 {
-	auto param_error{Params::meta_.check(param_map, {"type"}, {})};
-	auto material{std::make_unique<ThisClassType_t>(logger, param_error, param_map, scene.getMaterials())};
+	auto param_result{Params::meta_.check(param_map, {"type"}, {})};
+	auto material{std::make_unique<ThisClassType_t>(logger, param_result, param_map, scene.getMaterials())};
 	if(material->params_.absorption_color_.r_ < 1.f || material->params_.absorption_color_.g_ < 1.f || material->params_.absorption_color_.b_ < 1.f)
 	{
 		//deprecated method:
@@ -123,12 +123,12 @@ std::pair<std::unique_ptr<Material>, ParamError> GlassMaterial::factory(Logger &
 			}
 		}
 	}
-	if(param_error.notOk()) logger.logWarning(param_error.print<GlassMaterial>(name, {"type"}));
-	return {std::move(material), param_error};
+	if(param_result.notOk()) logger.logWarning(param_result.print<GlassMaterial>(name, {"type"}));
+	return {std::move(material), param_result};
 }
 
-GlassMaterial::GlassMaterial(Logger &logger, ParamError &param_error, const ParamMap &param_map, const SceneItems <Material> &materials) :
-		ParentClassType_t{logger, param_error, param_map, materials}, params_{param_error, param_map}
+GlassMaterial::GlassMaterial(Logger &logger, ParamResult &param_result, const ParamMap &param_map, const SceneItems <Material> &materials) :
+		ParentClassType_t{logger, param_result, param_map, materials}, params_{param_result, param_map}
 {
 	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + params_.getAsParamMap(true).print());
 	bsdf_flags_ = BsdfFlags::AllSpecular;

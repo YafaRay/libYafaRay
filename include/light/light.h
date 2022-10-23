@@ -59,9 +59,9 @@ class Light
 					{"All", All, ""},
 				}};
 		};
-		static std::pair<std::unique_ptr<Light>, ParamError> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map);
+		static std::pair<std::unique_ptr<Light>, ParamResult> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map);
 		[[nodiscard]] virtual ParamMap getAsParamMap(bool only_non_default) const;
-		Light(Logger &logger, ParamError &param_error, std::string name, const ParamMap &param_map, Flags flags) : params_{param_error, param_map}, name_{std::move(name)}, flags_{flags}, logger_{logger} { }
+		Light(Logger &logger, ParamResult &param_result, std::string name, const ParamMap &param_map, Flags flags) : params_{param_result, param_map}, name_{std::move(name)}, flags_{flags}, logger_{logger} { }
 		virtual ~Light() = default;
 		//! allow for preprocessing when scene loading has finished
 		virtual void init(const Scene &scene) {}

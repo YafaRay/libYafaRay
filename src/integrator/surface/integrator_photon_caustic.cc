@@ -43,7 +43,7 @@
 
 namespace yafaray {
 
-CausticPhotonIntegrator::Params::Params(ParamError &param_error, const ParamMap &param_map)
+CausticPhotonIntegrator::Params::Params(ParamResult &param_result, const ParamMap &param_map)
 {
 	PARAM_LOAD(use_photon_caustics_);
 	PARAM_LOAD(n_caus_photons_);
@@ -73,7 +73,7 @@ ParamMap CausticPhotonIntegrator::getAsParamMap(bool only_non_default) const
 }
 
 //Constructor and destructor defined here to avoid issues with std::unique_ptr<Pdf1D> being Pdf1D incomplete in the header (forward declaration)
-CausticPhotonIntegrator::CausticPhotonIntegrator(RenderControl &render_control, Logger &logger, ParamError &param_error, const ParamMap &param_map) : MonteCarloIntegrator(render_control, logger, param_error, param_map), params_{param_error, param_map}
+CausticPhotonIntegrator::CausticPhotonIntegrator(RenderControl &render_control, Logger &logger, ParamResult &param_result, const ParamMap &param_map) : MonteCarloIntegrator(render_control, logger, param_result, param_map), params_{param_result, param_map}
 {
 	caustic_map_ = std::make_unique<PhotonMap>(logger);
 	caustic_map_->setName("Caustic Photon Map");

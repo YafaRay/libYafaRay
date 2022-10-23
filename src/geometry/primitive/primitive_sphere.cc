@@ -26,7 +26,7 @@
 
 namespace yafaray {
 
-SpherePrimitive::Params::Params(ParamError &param_error, const ParamMap &param_map)
+SpherePrimitive::Params::Params(ParamResult &param_result, const ParamMap &param_map)
 {
 	PARAM_LOAD(center_);
 	PARAM_LOAD(radius_);
@@ -48,20 +48,20 @@ ParamMap SpherePrimitive::getAsParamMap(bool only_non_default) const
 	return result;
 }
 
-std::pair<std::unique_ptr<Primitive>, ParamError> SpherePrimitive::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map, const PrimitiveObject &object)
+std::pair<std::unique_ptr<Primitive>, ParamResult> SpherePrimitive::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map, const PrimitiveObject &object)
 {
 	if(logger.isDebug()) logger.logDebug("**" + getClassName() + "::factory 'raw' ParamMap\n" + param_map.logContents());
-	auto param_error{Params::meta_.check(param_map, {"type"}, {})};
-	const Params params{param_error, param_map};
-	if(params.material_name_.empty()) return {nullptr, ParamError{ResultFlags::ErrorWhileCreating}};
+	auto param_result{Params::meta_.check(param_map, {"type"}, {})};
+	const Params params{param_result, param_map};
+	if(params.material_name_.empty()) return {nullptr, ParamResult{ResultFlags::ErrorWhileCreating}};
 	const auto [material_id, material_error]{scene.getMaterial(params.material_name_)};
-	if(material_error.hasError()) return {nullptr, ParamError{ResultFlags::ErrorWhileCreating}};
-	auto primitive {std::make_unique<SpherePrimitive>(logger, param_error, param_map, material_id, object)};
-	if(param_error.notOk()) logger.logWarning(param_error.print<SpherePrimitive>(name, {"type"}));
-	return {std::move(primitive), param_error};
+	if(material_error.hasError()) return {nullptr, ParamResult{ResultFlags::ErrorWhileCreating}};
+	auto primitive {std::make_unique<SpherePrimitive>(logger, param_result, param_map, material_id, object)};
+	if(param_result.notOk()) logger.logWarning(param_result.print<SpherePrimitive>(name, {"type"}));
+	return {std::move(primitive), param_result};
 }
 
-SpherePrimitive::SpherePrimitive(Logger &logger, ParamError &param_error, const ParamMap &param_map, size_t material_id, const PrimitiveObject &base_object) : params_{param_error, param_map}, base_object_{base_object}, material_id_{material_id}
+SpherePrimitive::SpherePrimitive(Logger &logger, ParamResult &param_result, const ParamMap &param_map, size_t material_id, const PrimitiveObject &base_object) : params_{param_result, param_map}, base_object_{base_object}, material_id_{material_id}
 {
 	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + params_.getAsParamMap(true).print());
 }

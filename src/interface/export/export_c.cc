@@ -339,7 +339,7 @@ void ExportC::writeParamList(int indent) noexcept
 	++section_num_lines_;
 }
 
-std::pair<size_t, ParamError> ExportC::createLight(std::string &&name) noexcept
+std::pair<size_t, ParamResult> ExportC::createLight(std::string &&name) noexcept
 {
 	writeParamMap(*params_);
 	params_->clear();
@@ -350,7 +350,7 @@ std::pair<size_t, ParamError> ExportC::createLight(std::string &&name) noexcept
 	return {};
 }
 
-std::pair<size_t, ParamError> ExportC::createTexture(std::string &&name) noexcept
+std::pair<size_t, ParamResult> ExportC::createTexture(std::string &&name) noexcept
 {
 	writeParamMap(*params_);
 	params_->clear();
@@ -361,7 +361,7 @@ std::pair<size_t, ParamError> ExportC::createTexture(std::string &&name) noexcep
 	return {};
 }
 
-std::pair<size_t, ParamError> ExportC::createMaterial(std::string &&name) noexcept
+std::pair<size_t, ParamResult> ExportC::createMaterial(std::string &&name) noexcept
 {
 	writeParamMap(*params_);
 	writeParamList(1);
@@ -374,7 +374,7 @@ std::pair<size_t, ParamError> ExportC::createMaterial(std::string &&name) noexce
 	return {};
 }
 
-std::pair<size_t, ParamError> ExportC::createCamera(std::string &&name) noexcept
+std::pair<size_t, ParamResult> ExportC::createCamera(std::string &&name) noexcept
 {
 	writeParamMap(*params_);
 	params_->clear();
@@ -385,7 +385,7 @@ std::pair<size_t, ParamError> ExportC::createCamera(std::string &&name) noexcept
 	return {};
 }
 
-ParamError ExportC::defineBackground() noexcept
+ParamResult ExportC::defineBackground() noexcept
 {
 	writeParamMap(*params_);
 	params_->clear();
@@ -396,7 +396,7 @@ ParamError ExportC::defineBackground() noexcept
 	return {};
 }
 
-ParamError ExportC::defineSurfaceIntegrator() noexcept
+ParamResult ExportC::defineSurfaceIntegrator() noexcept
 {
 	writeParamMap(*params_);
 	params_->clear();
@@ -407,7 +407,7 @@ ParamError ExportC::defineSurfaceIntegrator() noexcept
 	return {};
 }
 
-ParamError ExportC::defineVolumeIntegrator() noexcept
+ParamResult ExportC::defineVolumeIntegrator() noexcept
 {
 	writeParamMap(*params_);
 	params_->clear();
@@ -418,7 +418,7 @@ ParamError ExportC::defineVolumeIntegrator() noexcept
 	return {};
 }
 
-std::pair<size_t, ParamError> ExportC::createVolumeRegion(std::string &&name) noexcept
+std::pair<size_t, ParamResult> ExportC::createVolumeRegion(std::string &&name) noexcept
 {
 	writeParamMap(*params_);
 	params_->clear();
@@ -429,7 +429,7 @@ std::pair<size_t, ParamError> ExportC::createVolumeRegion(std::string &&name) no
 	return {};
 }
 
-std::pair<size_t, ParamError> ExportC::createOutput(std::string &&name) noexcept
+std::pair<size_t, ParamResult> ExportC::createOutput(std::string &&name) noexcept
 {
 	writeParamMap(*params_);
 	params_->clear();
@@ -440,7 +440,7 @@ std::pair<size_t, ParamError> ExportC::createOutput(std::string &&name) noexcept
 	return {};
 }
 
-std::pair<size_t, ParamError> ExportC::createRenderView(std::string &&name) noexcept
+std::pair<size_t, ParamResult> ExportC::createRenderView(std::string &&name) noexcept
 {
 	writeParamMap(*params_);
 	params_->clear();
@@ -451,7 +451,7 @@ std::pair<size_t, ParamError> ExportC::createRenderView(std::string &&name) noex
 	return {};
 }
 
-std::pair<Image *, ParamError> ExportC::createImage(std::string &&name) noexcept
+std::pair<Image *, ParamResult> ExportC::createImage(std::string &&name) noexcept
 {
 	writeParamMap(*params_);
 	params_->clear();
@@ -462,7 +462,7 @@ std::pair<Image *, ParamError> ExportC::createImage(std::string &&name) noexcept
 	return {};
 }
 
-std::pair<size_t, ParamError> ExportC::createObject(std::string &&name) noexcept
+std::pair<size_t, ParamResult> ExportC::createObject(std::string &&name) noexcept
 {
 	n_uvs_ = 0;
 	writeParamMap(*params_);
@@ -472,7 +472,7 @@ std::pair<size_t, ParamError> ExportC::createObject(std::string &&name) noexcept
 	section_num_lines_ += 2;
 	if(section_num_lines_ >= section_max_lines_) file_ << sectionSplit();
 	++next_obj_;
-	return {next_obj_ - 1, ParamError{}};
+	return {next_obj_ - 1, ParamResult{}};
 }
 
 void ExportC::setupRender() noexcept

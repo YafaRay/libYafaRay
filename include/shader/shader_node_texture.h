@@ -32,10 +32,10 @@ class TextureMapperNode final : public ShaderNode
 
 	public:
 		inline static std::string getClassName() { return "TextureMapperNode"; }
-		static std::pair<std::unique_ptr<ShaderNode>, ParamError> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map);
+		static std::pair<std::unique_ptr<ShaderNode>, ParamResult> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map);
 		static std::string printMeta(const std::vector<std::string> &excluded_params) { return Params::meta_.print(excluded_params); }
 		[[nodiscard]] ParamMap getAsParamMap(bool only_non_default) const override;
-		explicit TextureMapperNode(Logger &logger, ParamError &param_error, const ParamMap &param_map, const Texture *texture);
+		explicit TextureMapperNode(Logger &logger, ParamResult &param_result, const ParamMap &param_map, const Texture *texture);
 
 	private:
 		struct Coords : Enum<Coords>

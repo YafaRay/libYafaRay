@@ -38,10 +38,10 @@ class Accelerator
 {
 	public:
 		inline static std::string getClassName() { return "Accelerator"; }
-		static std::pair<std::unique_ptr<Accelerator>, ParamError> factory(Logger &logger, const std::vector<const Primitive *> &primitives_list, const ParamMap &param_map);
+		static std::pair<std::unique_ptr<Accelerator>, ParamResult> factory(Logger &logger, const std::vector<const Primitive *> &primitives_list, const ParamMap &param_map);
 		[[nodiscard]] virtual ParamMap getAsParamMap(bool only_non_default) const;
 
-		explicit Accelerator(Logger &logger, ParamError &param_error, const ParamMap &param_map) : params_{param_error, param_map}, logger_{logger} { }
+		explicit Accelerator(Logger &logger, ParamResult &param_result, const ParamMap &param_map) : params_{param_result, param_map}, logger_{logger} { }
 		virtual ~Accelerator() = default;
 		virtual IntersectData intersect(const Ray &ray, float t_max) const = 0;
 		virtual IntersectData intersectShadow(const Ray &ray, float t_max) const = 0;

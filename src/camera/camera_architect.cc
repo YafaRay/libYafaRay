@@ -26,16 +26,16 @@
 
 namespace yafaray {
 
-std::pair<std::unique_ptr<Camera>, ParamError> ArchitectCamera::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map)
+std::pair<std::unique_ptr<Camera>, ParamResult> ArchitectCamera::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map)
 {
-	auto param_error{Params::meta_.check(param_map, {"type"}, {})};
-	auto camera {std::make_unique<ThisClassType_t>(logger, param_error, param_map)};
-	if(param_error.notOk()) logger.logWarning(param_error.print<ThisClassType_t>(name, {"type"}));
-	return {std::move(camera), param_error};
+	auto param_result{Params::meta_.check(param_map, {"type"}, {})};
+	auto camera {std::make_unique<ThisClassType_t>(logger, param_result, param_map)};
+	if(param_result.notOk()) logger.logWarning(param_result.print<ThisClassType_t>(name, {"type"}));
+	return {std::move(camera), param_result};
 }
 
-ArchitectCamera::ArchitectCamera(Logger &logger, ParamError &param_error, const ParamMap &param_map)
-	: ParentClassType_t(logger, param_error, param_map)
+ArchitectCamera::ArchitectCamera(Logger &logger, ParamResult &param_result, const ParamMap &param_map)
+	: ParentClassType_t(logger, param_result, param_map)
 {
 	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + params_.getAsParamMap(true).print());
 }

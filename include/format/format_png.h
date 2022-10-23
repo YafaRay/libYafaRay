@@ -33,7 +33,7 @@ class PngFormat final : public Format
 {
 	public:
 		inline static std::string getClassName() { return "PngFormat"; }
-		explicit PngFormat(Logger &logger, ParamError &param_error, const ParamMap &param_map) : Format(logger, param_error, param_map) { }
+		explicit PngFormat(Logger &logger, ParamResult &param_result, const ParamMap &param_map) : Format(logger, param_result, param_map) { }
 
 	private:
 		[[nodiscard]] Type type() const override { return Type::Png; }

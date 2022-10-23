@@ -36,9 +36,9 @@ class VolumeRegion
 	public:
 		inline static std::string getClassName() { return "VolumeRegion"; }
 		[[nodiscard]] virtual Type type() const = 0;
-		static std::pair<std::unique_ptr<VolumeRegion>, ParamError> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map);
+		static std::pair<std::unique_ptr<VolumeRegion>, ParamResult> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map);
 		[[nodiscard]] virtual ParamMap getAsParamMap(bool only_non_default) const;
-		VolumeRegion(Logger &logger, ParamError &param_error, const ParamMap &param_map);
+		VolumeRegion(Logger &logger, ParamResult &param_result, const ParamMap &param_map);
 		virtual ~VolumeRegion() = default;
 
 		virtual Rgb sigmaA(const Point3f &p, const Vec3f &v) const = 0;

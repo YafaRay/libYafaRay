@@ -22,7 +22,7 @@
 
 namespace yafaray {
 
-ExpDensityVolumeRegion::Params::Params(ParamError &param_error, const ParamMap &param_map)
+ExpDensityVolumeRegion::Params::Params(ParamResult &param_result, const ParamMap &param_map)
 {
 	PARAM_LOAD(a_);
 	PARAM_LOAD(b_);
@@ -43,16 +43,16 @@ ParamMap ExpDensityVolumeRegion::getAsParamMap(bool only_non_default) const
 	return result;
 }
 
-std::pair<std::unique_ptr<VolumeRegion>, ParamError> ExpDensityVolumeRegion::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map)
+std::pair<std::unique_ptr<VolumeRegion>, ParamResult> ExpDensityVolumeRegion::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map)
 {
-	auto param_error{Params::meta_.check(param_map, {"type"}, {})};
-	auto volume_region {std::make_unique<ThisClassType_t>(logger, param_error, param_map)};
-	if(param_error.notOk()) logger.logWarning(param_error.print<ThisClassType_t>(name, {"type"}));
-	return {std::move(volume_region), param_error};
+	auto param_result{Params::meta_.check(param_map, {"type"}, {})};
+	auto volume_region {std::make_unique<ThisClassType_t>(logger, param_result, param_map)};
+	if(param_result.notOk()) logger.logWarning(param_result.print<ThisClassType_t>(name, {"type"}));
+	return {std::move(volume_region), param_result};
 }
 
-ExpDensityVolumeRegion::ExpDensityVolumeRegion(Logger &logger, ParamError &param_error, const ParamMap &param_map) :
-		ParentClassType_t{logger, param_error, param_map}, params_{param_error, param_map}
+ExpDensityVolumeRegion::ExpDensityVolumeRegion(Logger &logger, ParamResult &param_result, const ParamMap &param_map) :
+		ParentClassType_t{logger, param_result, param_map}, params_{param_result, param_map}
 {
 	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + params_.getAsParamMap(true).print());
 	if(logger_.isVerbose()) logger_.logVerbose(getClassName() + " vol: ", s_a_, " ", s_s_, " ", l_e_, " ", params_.a_, " ", params_.b_);

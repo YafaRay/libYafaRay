@@ -47,7 +47,7 @@ class Image
 {
 	public:
 		inline static std::string getClassName() { return "Image"; }
-		static std::pair<std::unique_ptr<Image>, ParamError> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map);
+		static std::pair<std::unique_ptr<Image>, ParamResult> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map);
 		static std::string printMeta(const std::vector<std::string> &excluded_params) { return Params::meta_.print(excluded_params); }
 		struct Type : public Enum<Type>
 		{

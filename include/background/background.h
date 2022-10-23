@@ -43,9 +43,9 @@ class Background
 	public:
 		inline static std::string getClassName() { return "Background"; }
 		[[nodiscard]] virtual Type type() const = 0;
-		static std::pair<std::unique_ptr<Background>, ParamError> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map);
+		static std::pair<std::unique_ptr<Background>, ParamResult> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map);
 		[[nodiscard]] virtual ParamMap getAsParamMap(bool only_non_default) const;
-		explicit Background(Logger &logger, ParamError &param_error, const ParamMap &param_map);
+		explicit Background(Logger &logger, ParamResult &param_result, const ParamMap &param_map);
 		virtual ~Background();
 		Rgb operator()(const Vec3f &dir) const { return operator()(dir, false); }
 		virtual Rgb operator()(const Vec3f &dir, bool use_ibl_blur) const { return eval(dir, use_ibl_blur); }

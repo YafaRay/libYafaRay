@@ -256,7 +256,7 @@ void ExportXml::writeParamList(int indent) noexcept
 	}
 }
 
-std::pair<size_t, ParamError> ExportXml::createLight(std::string &&name) noexcept
+std::pair<size_t, ParamResult> ExportXml::createLight(std::string &&name) noexcept
 {
 	file_ << "\n<light name=\"" << name << "\">\n";
 	writeParamMap(*params_);
@@ -264,7 +264,7 @@ std::pair<size_t, ParamError> ExportXml::createLight(std::string &&name) noexcep
 	return {};
 }
 
-std::pair<size_t, ParamError> ExportXml::createTexture(std::string &&name) noexcept
+std::pair<size_t, ParamResult> ExportXml::createTexture(std::string &&name) noexcept
 {
 	file_ << "\n<texture name=\"" << name << "\">\n";
 	writeParamMap(*params_);
@@ -272,7 +272,7 @@ std::pair<size_t, ParamError> ExportXml::createTexture(std::string &&name) noexc
 	return {};
 }
 
-std::pair<size_t, ParamError> ExportXml::createMaterial(std::string &&name) noexcept
+std::pair<size_t, ParamResult> ExportXml::createMaterial(std::string &&name) noexcept
 {
 	file_ << "\n<material name=\"" << name << "\">\n";
 	writeParamMap(*params_);
@@ -280,7 +280,7 @@ std::pair<size_t, ParamError> ExportXml::createMaterial(std::string &&name) noex
 	file_ << "</material>\n";
 	return {};
 }
-std::pair<size_t, ParamError> ExportXml::createCamera(std::string &&name) noexcept
+std::pair<size_t, ParamResult> ExportXml::createCamera(std::string &&name) noexcept
 {
 	file_ << "\n<camera name=\"" << name << "\">\n";
 	writeParamMap(*params_);
@@ -288,7 +288,7 @@ std::pair<size_t, ParamError> ExportXml::createCamera(std::string &&name) noexce
 	return {};
 }
 
-ParamError ExportXml::defineBackground() noexcept
+ParamResult ExportXml::defineBackground() noexcept
 {
 	file_ << "\n<background>\n";
 	writeParamMap(*params_);
@@ -296,7 +296,7 @@ ParamError ExportXml::defineBackground() noexcept
 	return {};
 }
 
-ParamError ExportXml::defineSurfaceIntegrator() noexcept
+ParamResult ExportXml::defineSurfaceIntegrator() noexcept
 {
 	file_ << "\n<surface_integrator>\n";
 	writeParamMap(*params_);
@@ -304,7 +304,7 @@ ParamError ExportXml::defineSurfaceIntegrator() noexcept
 	return {};
 }
 
-ParamError ExportXml::defineVolumeIntegrator() noexcept
+ParamResult ExportXml::defineVolumeIntegrator() noexcept
 {
 	file_ << "\n<volume_integrator>\n";
 	writeParamMap(*params_);
@@ -312,7 +312,7 @@ ParamError ExportXml::defineVolumeIntegrator() noexcept
 	return {};
 }
 
-std::pair<size_t, ParamError> ExportXml::createVolumeRegion(std::string &&name) noexcept
+std::pair<size_t, ParamResult> ExportXml::createVolumeRegion(std::string &&name) noexcept
 {
 	file_ << "\n<volumeregion name=\"" << name << "\">\n";
 	writeParamMap(*params_);
@@ -320,7 +320,7 @@ std::pair<size_t, ParamError> ExportXml::createVolumeRegion(std::string &&name) 
 	return {};
 }
 
-std::pair<size_t, ParamError> ExportXml::createOutput(std::string &&name) noexcept
+std::pair<size_t, ParamResult> ExportXml::createOutput(std::string &&name) noexcept
 {
 	file_ << "\n<output name=\"" << name << "\">\n";
 	writeParamMap(*params_);
@@ -328,7 +328,7 @@ std::pair<size_t, ParamError> ExportXml::createOutput(std::string &&name) noexce
 	return {};
 }
 
-std::pair<size_t, ParamError> ExportXml::createRenderView(std::string &&name) noexcept
+std::pair<size_t, ParamResult> ExportXml::createRenderView(std::string &&name) noexcept
 {
 	std::string render_view_name{name};
 	if(render_view_name.empty()) render_view_name = "render_view";
@@ -338,7 +338,7 @@ std::pair<size_t, ParamError> ExportXml::createRenderView(std::string &&name) no
 	return {};
 }
 
-std::pair<Image *, ParamError> ExportXml::createImage(std::string &&name) noexcept
+std::pair<Image *, ParamResult> ExportXml::createImage(std::string &&name) noexcept
 {
 	file_ << "\n<image name=\"" << name << "\">\n";
 	writeParamMap(*params_);
@@ -346,7 +346,7 @@ std::pair<Image *, ParamError> ExportXml::createImage(std::string &&name) noexce
 	return {};
 }
 
-std::pair<size_t, ParamError> ExportXml::createObject(std::string &&name) noexcept
+std::pair<size_t, ParamResult> ExportXml::createObject(std::string &&name) noexcept
 {
 	n_uvs_ = 0;
 	file_ << "\n<object>\n";
@@ -354,7 +354,7 @@ std::pair<size_t, ParamError> ExportXml::createObject(std::string &&name) noexce
 	writeParamMap(*params_, 2);
 	file_ << "\t</object_parameters>\n";
 	++next_obj_;
-	return {next_obj_ - 1, ParamError{}};
+	return {next_obj_ - 1, ParamResult{}};
 }
 
 void ExportXml::setupRender() noexcept

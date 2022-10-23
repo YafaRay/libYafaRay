@@ -26,7 +26,7 @@
 
 namespace yafaray {
 
-VolumeIntegrator::Params::Params(ParamError &param_error, const ParamMap &param_map)
+VolumeIntegrator::Params::Params(ParamResult &param_result, const ParamMap &param_map)
 {
 }
 
@@ -43,7 +43,7 @@ ParamMap VolumeIntegrator::getAsParamMap(bool only_non_default) const
 	return result;
 }
 
-std::pair<std::unique_ptr<VolumeIntegrator>, ParamError> VolumeIntegrator::factory(Logger &logger, const Scene &scene, const ParamMap &param_map)
+std::pair<std::unique_ptr<VolumeIntegrator>, ParamResult> VolumeIntegrator::factory(Logger &logger, const Scene &scene, const ParamMap &param_map)
 {
 	const Type type{ClassMeta::preprocessParamMap<Type>(logger, getClassName(), param_map)};
 	switch(type.value())
@@ -51,7 +51,7 @@ std::pair<std::unique_ptr<VolumeIntegrator>, ParamError> VolumeIntegrator::facto
 		case Type::Emission: return EmissionIntegrator::factory(logger, param_map, scene);
 		case Type::SingleScatter: return SingleScatterIntegrator::factory(logger, param_map, scene);
 		case Type::Sky: return SkyIntegrator::factory(logger, param_map, scene);
-		default: return {nullptr, ParamError{ResultFlags::ErrorWhileCreating}};
+		default: return {nullptr, ParamResult{ResultFlags::ErrorWhileCreating}};
 	}
 }
 

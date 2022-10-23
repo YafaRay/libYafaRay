@@ -26,7 +26,7 @@
 
 namespace yafaray {
 
-ConstantBackground::Params::Params(ParamError &param_error, const ParamMap &param_map)
+ConstantBackground::Params::Params(ParamResult &param_result, const ParamMap &param_map)
 {
 	PARAM_LOAD(color_);
 }
@@ -45,11 +45,11 @@ ParamMap ConstantBackground::getAsParamMap(bool only_non_default) const
 	return result;
 }
 
-std::pair<std::unique_ptr<Background>, ParamError> ConstantBackground::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map)
+std::pair<std::unique_ptr<Background>, ParamResult> ConstantBackground::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map)
 {
-	auto param_error{Params::meta_.check(param_map, {"type"}, {})};
-	auto background{std::make_unique<ThisClassType_t>(logger, param_error, param_map)};
-	if(param_error.notOk()) logger.logWarning(param_error.print<ThisClassType_t>(name, {"type"}));
+	auto param_result{Params::meta_.check(param_map, {"type"}, {})};
+	auto background{std::make_unique<ThisClassType_t>(logger, param_result, param_map)};
+	if(param_result.notOk()) logger.logWarning(param_result.print<ThisClassType_t>(name, {"type"}));
 	if(background->ParentClassType_t::params_.ibl_)
 	{
 		ParamMap bgp;
@@ -63,11 +63,11 @@ std::pair<std::unique_ptr<Background>, ParamError> ConstantBackground::factory(L
 		bglight->setBackground(background.get());
 		background->addLight(std::move(bglight));
 	}
-	return {std::move(background), param_error};
+	return {std::move(background), param_result};
 }
 
-ConstantBackground::ConstantBackground(Logger &logger, ParamError &param_error, const ParamMap &param_map) :
-		ParentClassType_t{logger, param_error, param_map}, params_{param_error, param_map}
+ConstantBackground::ConstantBackground(Logger &logger, ParamResult &param_result, const ParamMap &param_map) :
+		ParentClassType_t{logger, param_result, param_map}, params_{param_result, param_map}
 {
 	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + params_.getAsParamMap(true).print());
 }

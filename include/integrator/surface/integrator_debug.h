@@ -34,9 +34,9 @@ class DebugIntegrator final : public TiledIntegrator
 
 	public:
 		inline static std::string getClassName() { return "DebugIntegrator"; }
-		static std::pair<std::unique_ptr<SurfaceIntegrator>, ParamError> factory(Logger &logger, RenderControl &render_control, const ParamMap &params, const Scene &scene);
+		static std::pair<std::unique_ptr<SurfaceIntegrator>, ParamResult> factory(Logger &logger, RenderControl &render_control, const ParamMap &params, const Scene &scene);
 		static std::string printMeta(const std::vector<std::string> &excluded_params) { return Params::meta_.print(excluded_params); }
-		DebugIntegrator(RenderControl &render_control, Logger &logger, ParamError &param_error, const ParamMap &param_map);
+		DebugIntegrator(RenderControl &render_control, Logger &logger, ParamResult &param_result, const ParamMap &param_map);
 		[[nodiscard]] ParamMap getAsParamMap(bool only_non_default) const override;
 
 	private:

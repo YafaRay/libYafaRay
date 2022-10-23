@@ -37,7 +37,7 @@
 
 namespace yafaray {
 
-DarkSkyBackground::Params::Params(ParamError &param_error, const ParamMap &param_map)
+DarkSkyBackground::Params::Params(ParamResult &param_result, const ParamMap &param_map)
 {
 	PARAM_LOAD(from_);
 	PARAM_LOAD(turb_);
@@ -88,11 +88,11 @@ ParamMap DarkSkyBackground::getAsParamMap(bool only_non_default) const
 	return result;
 }
 
-std::pair<std::unique_ptr<Background>, ParamError> DarkSkyBackground::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map)
+std::pair<std::unique_ptr<Background>, ParamResult> DarkSkyBackground::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map)
 {
-	auto param_error{Params::meta_.check(param_map, {"type"}, {})};
-	auto background{std::make_unique<ThisClassType_t>(logger, param_error, param_map)};
-	if(param_error.notOk()) logger.logWarning(param_error.print<ThisClassType_t>(name, {"type"}));
+	auto param_result{Params::meta_.check(param_map, {"type"}, {})};
+	auto background{std::make_unique<ThisClassType_t>(logger, param_result, param_map)};
+	if(param_result.notOk()) logger.logWarning(param_result.print<ThisClassType_t>(name, {"type"}));
 	if(background->params_.add_sun_ && math::radToDeg(math::acos(background->params_.from_[Axis::Z])) < 100.0)
 	{
 		Vec3f d(background->params_.from_);
@@ -133,11 +133,11 @@ std::pair<std::unique_ptr<Background>, ParamError> DarkSkyBackground::factory(Lo
 		background->addLight(std::move(bglight));
 	}
 	if(logger.isVerbose()) logger.logVerbose(getClassName(), ": End");
-	return {std::move(background), param_error};
+	return {std::move(background), param_result};
 }
 
-DarkSkyBackground::DarkSkyBackground(Logger &logger, ParamError &param_error, const ParamMap &param_map) :
-		ParentClassType_t{logger, param_error, param_map}, params_{param_error, param_map}
+DarkSkyBackground::DarkSkyBackground(Logger &logger, ParamResult &param_result, const ParamMap &param_map) :
+		ParentClassType_t{logger, param_result, param_map}, params_{param_result, param_map}
 {
 	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + params_.getAsParamMap(true).print());
 	sun_dir_[Axis::Z] += params_.altitude_;

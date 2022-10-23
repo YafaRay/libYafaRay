@@ -22,7 +22,7 @@
 
 namespace yafaray {
 
-DensityVolumeRegion::Params::Params(ParamError &param_error, const ParamMap &param_map)
+DensityVolumeRegion::Params::Params(ParamResult &param_result, const ParamMap &param_map)
 {
 }
 
@@ -39,8 +39,8 @@ ParamMap DensityVolumeRegion::getAsParamMap(bool only_non_default) const
 	return result;
 }
 
-DensityVolumeRegion::DensityVolumeRegion(Logger &logger, ParamError &param_error, const ParamMap &param_map) :
-		ParentClassType_t{logger, param_error, param_map}, params_{param_error, param_map}
+DensityVolumeRegion::DensityVolumeRegion(Logger &logger, ParamResult &param_result, const ParamMap &param_map) :
+		ParentClassType_t{logger, param_result, param_map}, params_{param_result, param_map}
 {
 	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + params_.getAsParamMap(true).print());
 }

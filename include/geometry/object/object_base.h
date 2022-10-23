@@ -35,9 +35,9 @@ class ObjectBase : public Object
 	public:
 		inline static std::string getClassName() { return "ObjectBase"; }
 		[[nodiscard]] virtual Type type() const = 0;
-		static std::pair<std::unique_ptr<Object>, ParamError> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map);
+		static std::pair<std::unique_ptr<Object>, ParamResult> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map);
 		[[nodiscard]] virtual ParamMap getAsParamMap(bool only_non_default) const;
-		ObjectBase(ParamError &param_error, const ParamMap &param_map, const SceneItems<Material> &materials);
+		ObjectBase(ParamResult &param_result, const ParamMap &param_map, const SceneItems<Material> &materials);
 		[[nodiscard]] std::string getName() const override { return name_; }
 		void setName(const std::string &name) override { name_ = name; }
 		void setVisibility(Visibility visibility) override { visibility_ = visibility; }

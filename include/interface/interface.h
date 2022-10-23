@@ -90,18 +90,18 @@ class Interface
 		virtual void paramsPushList() noexcept; 	//!< push new list item in paramList (e.g. new shader node description)
 		virtual void paramsEndList() noexcept; 	//!< revert to writing to normal paramMap
 		virtual void setCurrentMaterial(std::string &&name) noexcept;
-		virtual std::pair<size_t, ParamError> createObject(std::string &&name) noexcept;
-		virtual std::pair<size_t, ParamError> createLight(std::string &&name) noexcept;
-		virtual std::pair<size_t, ParamError> createTexture(std::string &&name) noexcept;
-		virtual std::pair<size_t, ParamError> createMaterial(std::string &&name) noexcept;
-		virtual std::pair<size_t, ParamError> createCamera(std::string &&name) noexcept;
-		virtual ParamError defineBackground() noexcept;
-		virtual ParamError defineSurfaceIntegrator() noexcept;
-		virtual ParamError defineVolumeIntegrator() noexcept;
-		virtual std::pair<size_t, ParamError> createVolumeRegion(std::string &&name) noexcept;
-		virtual std::pair<size_t, ParamError> createRenderView(std::string &&name) noexcept;
-		virtual std::pair<Image *, ParamError> createImage(std::string &&name) noexcept;
-		virtual std::pair<size_t, ParamError> createOutput(std::string &&name) noexcept;
+		virtual std::pair<size_t, ParamResult> createObject(std::string &&name) noexcept;
+		virtual std::pair<size_t, ParamResult> createLight(std::string &&name) noexcept;
+		virtual std::pair<size_t, ParamResult> createTexture(std::string &&name) noexcept;
+		virtual std::pair<size_t, ParamResult> createMaterial(std::string &&name) noexcept;
+		virtual std::pair<size_t, ParamResult> createCamera(std::string &&name) noexcept;
+		virtual ParamResult defineBackground() noexcept;
+		virtual ParamResult defineSurfaceIntegrator() noexcept;
+		virtual ParamResult defineVolumeIntegrator() noexcept;
+		virtual std::pair<size_t, ParamResult> createVolumeRegion(std::string &&name) noexcept;
+		virtual std::pair<size_t, ParamResult> createRenderView(std::string &&name) noexcept;
+		virtual std::pair<Image *, ParamResult> createImage(std::string &&name) noexcept;
+		virtual std::pair<size_t, ParamResult> createOutput(std::string &&name) noexcept;
 		void setRenderNotifyViewCallback(yafaray_RenderNotifyViewCallback_t callback, void *callback_data) noexcept;
 		void setRenderNotifyLayerCallback(yafaray_RenderNotifyLayerCallback_t callback, void *callback_data) noexcept;
 		void setRenderPutPixelCallback(yafaray_RenderPutPixelCallback_t callback, void *callback_data) noexcept;

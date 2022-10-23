@@ -42,7 +42,7 @@
 
 namespace yafaray {
 
-Material::Params::Params(ParamError &param_error, const ParamMap &param_map)
+Material::Params::Params(ParamResult &param_result, const ParamMap &param_map)
 {
 	PARAM_LOAD(receive_shadows_);
 	PARAM_LOAD(flat_material_);
@@ -83,10 +83,10 @@ ParamMap Material::getAsParamMap(bool only_non_default) const
 	return result;
 }
 
-std::pair<std::unique_ptr<Material>, ParamError> Material::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map, const std::list<ParamMap> &nodes_param_maps)
+std::pair<std::unique_ptr<Material>, ParamResult> Material::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map, const std::list<ParamMap> &nodes_param_maps)
 {
 	const Type type{ClassMeta::preprocessParamMap<Type>(logger, getClassName(), param_map)};
-	std::pair<std::unique_ptr<Material>, ParamError> result{nullptr, ParamError{ResultFlags::ErrorWhileCreating}};
+	std::pair<std::unique_ptr<Material>, ParamResult> result{nullptr, ParamResult{ResultFlags::ErrorWhileCreating}};
 	switch(type.value())
 	{
 		case Type::Blend: result = BlendMaterial::factory(logger, scene, name, param_map, nodes_param_maps); break;
@@ -104,8 +104,8 @@ std::pair<std::unique_ptr<Material>, ParamError> Material::factory(Logger &logge
 	return result;
 }
 
-Material::Material(Logger &logger, ParamError &param_error, const ParamMap &param_map, const SceneItems <Material> &materials) :
-		params_{param_error, param_map}, materials_{materials}, logger_{logger}
+Material::Material(Logger &logger, ParamResult &param_result, const ParamMap &param_map, const SceneItems <Material> &materials) :
+		params_{param_result, param_map}, materials_{materials}, logger_{logger}
 {
 	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " " + getName() + " params_:\n" + params_.getAsParamMap(true).print());
 }

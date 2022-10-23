@@ -28,7 +28,7 @@
 
 namespace yafaray {
 
-SphereLight::Params::Params(ParamError &param_error, const ParamMap &param_map)
+SphereLight::Params::Params(ParamResult &param_result, const ParamMap &param_map)
 {
 	PARAM_LOAD(from_);
 	PARAM_LOAD(color_);
@@ -57,16 +57,16 @@ ParamMap SphereLight::getAsParamMap(bool only_non_default) const
 	return result;
 }
 
-std::pair<std::unique_ptr<Light>, ParamError> SphereLight::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map)
+std::pair<std::unique_ptr<Light>, ParamResult> SphereLight::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map)
 {
-	auto param_error{Params::meta_.check(param_map, {"type"}, {})};
-	auto light {std::make_unique<ThisClassType_t>(logger, param_error, name, param_map)};
-	if(param_error.notOk()) logger.logWarning(param_error.print<ThisClassType_t>(name, {"type"}));
-	return {std::move(light), param_error};
+	auto param_result{Params::meta_.check(param_map, {"type"}, {})};
+	auto light {std::make_unique<ThisClassType_t>(logger, param_result, name, param_map)};
+	if(param_result.notOk()) logger.logWarning(param_result.print<ThisClassType_t>(name, {"type"}));
+	return {std::move(light), param_result};
 }
 
-SphereLight::SphereLight(Logger &logger, ParamError &param_error, const std::string &name, const ParamMap &param_map):
-		ParentClassType_t{logger, param_error, name, param_map, Flags::DiracDir}, params_{param_error, param_map}
+SphereLight::SphereLight(Logger &logger, ParamResult &param_result, const std::string &name, const ParamMap &param_map):
+		ParentClassType_t{logger, param_result, name, param_map, Flags::DiracDir}, params_{param_result, param_map}
 {
 	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + params_.getAsParamMap(true).print());
 }

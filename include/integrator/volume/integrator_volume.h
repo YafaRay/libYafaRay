@@ -48,7 +48,7 @@ class VolumeIntegrator
 	public:
 		inline static std::string getClassName() { return "VolumeIntegrator"; }
 		[[nodiscard]] virtual Type type() const = 0;
-		static std::pair<std::unique_ptr<VolumeIntegrator>, ParamError> factory(Logger &logger, const Scene &scene, const ParamMap &param_map);
+		static std::pair<std::unique_ptr<VolumeIntegrator>, ParamResult> factory(Logger &logger, const Scene &scene, const ParamMap &param_map);
 		[[nodiscard]] virtual ParamMap getAsParamMap(bool only_non_default) const;
 		virtual ~VolumeIntegrator() = default;
 		static std::string printMeta(const std::vector<std::string> &excluded_params) { return Params::meta_.print(excluded_params); }
@@ -73,7 +73,7 @@ class VolumeIntegrator
 		{
 			PARAM_INIT;
 		} params_;
-		explicit VolumeIntegrator(Logger &logger, ParamError &param_error, const ParamMap &param_map) : params_{param_error, param_map}, logger_{logger} { }
+		explicit VolumeIntegrator(Logger &logger, ParamResult &param_result, const ParamMap &param_map) : params_{param_result, param_map}, logger_{logger} { }
 
 		Logger &logger_;
 };

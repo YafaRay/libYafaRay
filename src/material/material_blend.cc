@@ -31,7 +31,7 @@
 
 namespace yafaray {
 
-BlendMaterial::Params::Params(ParamError &param_error, const ParamMap &param_map)
+BlendMaterial::Params::Params(ParamResult &param_result, const ParamMap &param_map)
 {
 	PARAM_LOAD(material_1_name_);
 	PARAM_LOAD(material_2_name_);
@@ -56,18 +56,18 @@ ParamMap BlendMaterial::getAsParamMap(bool only_non_default) const
 	return result;
 }
 
-std::pair<std::unique_ptr<Material>, ParamError> BlendMaterial::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map, const std::list<ParamMap> &nodes_param_maps)
+std::pair<std::unique_ptr<Material>, ParamResult> BlendMaterial::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map, const std::list<ParamMap> &nodes_param_maps)
 {
-	auto param_error{Params::meta_.check(param_map, {"type"}, {})};
+	auto param_result{Params::meta_.check(param_map, {"type"}, {})};
 	std::string mat_1_name;
-	if(param_map.getParam(Params::material_1_name_meta_.name(), mat_1_name).notOk()) return {nullptr, ParamError{ResultFlags::ErrorWhileCreating}};
+	if(param_map.getParam(Params::material_1_name_meta_.name(), mat_1_name).notOk()) return {nullptr, ParamResult{ResultFlags::ErrorWhileCreating}};
 	const auto [mat_1_id, mat_1_error]{scene.getMaterial(mat_1_name)};
 	std::string mat_2_name;
-	if(param_map.getParam(Params::material_2_name_meta_.name(), mat_2_name).notOk()) return {nullptr, ParamError{ResultFlags::ErrorWhileCreating}};
+	if(param_map.getParam(Params::material_2_name_meta_.name(), mat_2_name).notOk()) return {nullptr, ParamResult{ResultFlags::ErrorWhileCreating}};
 	const auto [mat_2_id, mat_2_error]{scene.getMaterial(mat_2_name)};
-	if(mat_1_error.hasError() || mat_2_error.hasError()) return {nullptr, ParamError{ResultFlags::ErrorWhileCreating}};
+	if(mat_1_error.hasError() || mat_2_error.hasError()) return {nullptr, ParamResult{ResultFlags::ErrorWhileCreating}};
 
-	auto material{std::make_unique<ThisClassType_t>(logger, param_error, param_map, mat_1_id, mat_2_id, scene.getMaterials())};
+	auto material{std::make_unique<ThisClassType_t>(logger, param_result, param_map, mat_1_id, mat_2_id, scene.getMaterials())};
 	material->nodes_map_ = NodeMaterial::loadNodes(nodes_param_maps, scene, logger);
 	std::map<std::string, const ShaderNode *> root_nodes_map;
 	// Prepare our node list
@@ -101,12 +101,12 @@ std::pair<std::unique_ptr<Material>, ParamError> BlendMaterial::factory(Logger &
 			}
 		}
 	}
-	if(param_error.notOk()) logger.logWarning(param_error.print<BlendMaterial>(name, {"type"}));
-	return {std::move(material), param_error};
+	if(param_result.notOk()) logger.logWarning(param_result.print<BlendMaterial>(name, {"type"}));
+	return {std::move(material), param_result};
 }
 
-BlendMaterial::BlendMaterial(Logger &logger, ParamError &param_error, const ParamMap &param_map, size_t material_1_id, size_t material_2_id, const SceneItems<Material> &materials) :
-		ParentClassType_t{logger, param_error, param_map, materials}, params_{param_error, param_map},
+BlendMaterial::BlendMaterial(Logger &logger, ParamResult &param_result, const ParamMap &param_map, size_t material_1_id, size_t material_2_id, const SceneItems<Material> &materials) :
+		ParentClassType_t{logger, param_result, param_map, materials}, params_{param_result, param_map},
 		material_1_id_{material_1_id}, material_2_id_{material_2_id}, materials_{materials}
 {
 	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + params_.getAsParamMap(true).print());

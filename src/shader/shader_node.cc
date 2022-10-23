@@ -26,7 +26,7 @@
 
 namespace yafaray {
 
-ShaderNode::Params::Params(ParamError &param_error, const ParamMap &param_map)
+ShaderNode::Params::Params(ParamResult &param_result, const ParamMap &param_map)
 {
 	PARAM_LOAD(name_);
 	PARAM_LOAD(element_);
@@ -47,7 +47,7 @@ ParamMap ShaderNode::getAsParamMap(bool only_non_default) const
 	return result;
 }
 
-std::pair<std::unique_ptr<ShaderNode>, ParamError> ShaderNode::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map)
+std::pair<std::unique_ptr<ShaderNode>, ParamResult> ShaderNode::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map)
 {
 	const Type type{ClassMeta::preprocessParamMap<Type>(logger, getClassName(), param_map)};
 	switch(type.value())
@@ -56,12 +56,12 @@ std::pair<std::unique_ptr<ShaderNode>, ParamError> ShaderNode::factory(Logger &l
 		case Type::Value: return ValueNode::factory(logger, scene, name, param_map);
 		case Type::Mix: return MixNode::factory(logger, scene, name, param_map);
 		case Type::Layer: return LayerNode::factory(logger, scene, name, param_map);
-		default: return {nullptr, ParamError{ResultFlags::ErrorWhileCreating}};
+		default: return {nullptr, ParamResult{ResultFlags::ErrorWhileCreating}};
 	}
 }
 
-ShaderNode::ShaderNode(Logger &logger, ParamError &param_error, const ParamMap &param_map) :
-		params_{param_error, param_map}
+ShaderNode::ShaderNode(Logger &logger, ParamResult &param_result, const ParamMap &param_map) :
+		params_{param_result, param_map}
 {
 	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + params_.getAsParamMap(true).print());
 }

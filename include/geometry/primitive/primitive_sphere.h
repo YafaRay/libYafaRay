@@ -36,10 +36,10 @@ class SpherePrimitive final : public Primitive
 {
 	public:
 		inline static std::string getClassName() { return "CurveObject"; }
-		static std::pair<std::unique_ptr<Primitive>, ParamError> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map, const PrimitiveObject &object);
+		static std::pair<std::unique_ptr<Primitive>, ParamResult> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map, const PrimitiveObject &object);
 		static std::string printMeta(const std::vector<std::string> &excluded_params) { return Params::meta_.print(excluded_params); }
 		[[nodiscard]] ParamMap getAsParamMap(bool only_non_default) const;
-		SpherePrimitive(Logger &logger, ParamError &param_error, const ParamMap &param_map, size_t material_id, const PrimitiveObject &base_object);
+		SpherePrimitive(Logger &logger, ParamResult &param_result, const ParamMap &param_map, size_t material_id, const PrimitiveObject &base_object);
 
 	private:
 		struct Params

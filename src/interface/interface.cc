@@ -190,18 +190,18 @@ void Interface::paramsEndList() noexcept
 	cparams_ = params_.get();
 }
 
-std::pair<size_t, ParamError> Interface::createObject(std::string &&name) noexcept { return scene_->createObject(std::move(name), std::move(*params_)); }
-std::pair<size_t, ParamError> Interface::createLight(std::string &&name) noexcept { return scene_->createLight(std::move(name), std::move(*params_)); }
-std::pair<size_t, ParamError> Interface::createTexture(std::string &&name) noexcept { return scene_->createTexture(std::move(name), std::move(*params_)); }
-std::pair<size_t, ParamError> Interface::createMaterial(std::string &&name) noexcept { return scene_->createMaterial(std::move(name), std::move(*params_), std::move(nodes_params_)); }
-std::pair<size_t, ParamError> Interface::createCamera(std::string &&name) noexcept { return scene_->createCamera(std::move(name), std::move(*params_)); }
-ParamError Interface::defineBackground() noexcept { return scene_->defineBackground(std::move(*params_)); }
-ParamError Interface::defineSurfaceIntegrator() noexcept { return scene_->defineSurfaceIntegrator(std::move(*params_)); }
-ParamError Interface::defineVolumeIntegrator() noexcept { return scene_->defineVolumeIntegrator(std::move(*params_)); }
-std::pair<size_t, ParamError> Interface::createVolumeRegion(std::string &&name) noexcept { return scene_->createVolumeRegion(std::move(name), std::move(*params_)); }
-std::pair<size_t, ParamError> Interface::createRenderView(std::string &&name) noexcept { return scene_->createRenderView(std::move(name), std::move(*params_)); }
-std::pair<Image *, ParamError> Interface::createImage(std::string &&name) noexcept { return scene_->createImage(std::move(name), std::move(*params_)); }
-std::pair<size_t, ParamError> Interface::createOutput(std::string &&name) noexcept { return scene_->createOutput(std::move(name), std::move(*params_)); }
+std::pair<size_t, ParamResult> Interface::createObject(std::string &&name) noexcept { return scene_->createObject(std::move(name), std::move(*params_)); }
+std::pair<size_t, ParamResult> Interface::createLight(std::string &&name) noexcept { return scene_->createLight(std::move(name), std::move(*params_)); }
+std::pair<size_t, ParamResult> Interface::createTexture(std::string &&name) noexcept { return scene_->createTexture(std::move(name), std::move(*params_)); }
+std::pair<size_t, ParamResult> Interface::createMaterial(std::string &&name) noexcept { return scene_->createMaterial(std::move(name), std::move(*params_), std::move(nodes_params_)); }
+std::pair<size_t, ParamResult> Interface::createCamera(std::string &&name) noexcept { return scene_->createCamera(std::move(name), std::move(*params_)); }
+ParamResult Interface::defineBackground() noexcept { return scene_->defineBackground(std::move(*params_)); }
+ParamResult Interface::defineSurfaceIntegrator() noexcept { return scene_->defineSurfaceIntegrator(std::move(*params_)); }
+ParamResult Interface::defineVolumeIntegrator() noexcept { return scene_->defineVolumeIntegrator(std::move(*params_)); }
+std::pair<size_t, ParamResult> Interface::createVolumeRegion(std::string &&name) noexcept { return scene_->createVolumeRegion(std::move(name), std::move(*params_)); }
+std::pair<size_t, ParamResult> Interface::createRenderView(std::string &&name) noexcept { return scene_->createRenderView(std::move(name), std::move(*params_)); }
+std::pair<Image *, ParamResult> Interface::createImage(std::string &&name) noexcept { return scene_->createImage(std::move(name), std::move(*params_)); }
+std::pair<size_t, ParamResult> Interface::createOutput(std::string &&name) noexcept { return scene_->createOutput(std::move(name), std::move(*params_)); }
 
 void Interface::setRenderNotifyViewCallback(yafaray_RenderNotifyViewCallback_t callback, void *callback_data) noexcept
 {

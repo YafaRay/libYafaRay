@@ -42,10 +42,10 @@ class RenderView final
 {
 	public:
 		inline static std::string getClassName() { return "RenderView"; }
-		static std::pair<std::unique_ptr<RenderView>, ParamError> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map);
+		static std::pair<std::unique_ptr<RenderView>, ParamResult> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map);
 		static std::string printMeta(const std::vector<std::string> &excluded_params) { return Params::meta_.print(excluded_params); }
 		[[nodiscard]] ParamMap getAsParamMap(bool only_non_default) const;
-		RenderView(Logger &logger, ParamError &param_error, const ParamMap &param_map);
+		RenderView(Logger &logger, ParamResult &param_result, const ParamMap &param_map);
 		bool init(Logger &logger, const Scene &scene);
 		[[nodiscard]] std::string getName() const { return name_; }
 		const Camera *getCamera() const { return camera_; }

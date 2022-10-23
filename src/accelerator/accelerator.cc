@@ -25,7 +25,7 @@
 
 namespace yafaray {
 
-Accelerator::Params::Params(ParamError &param_error, const ParamMap &param_map)
+Accelerator::Params::Params(ParamResult &param_result, const ParamMap &param_map)
 {
 }
 
@@ -42,7 +42,7 @@ ParamMap Accelerator::getAsParamMap(bool only_non_default) const
 	return result;
 }
 
-std::pair<std::unique_ptr<Accelerator>, ParamError> Accelerator::factory(Logger &logger, const std::vector<const Primitive *> &primitives_list, const ParamMap &param_map)
+std::pair<std::unique_ptr<Accelerator>, ParamResult> Accelerator::factory(Logger &logger, const std::vector<const Primitive *> &primitives_list, const ParamMap &param_map)
 {
 	const Type type{ClassMeta::preprocessParamMap<Type>(logger, getClassName(), param_map)};
 	switch(type.value())
@@ -50,7 +50,7 @@ std::pair<std::unique_ptr<Accelerator>, ParamError> Accelerator::factory(Logger 
 		case Type::SimpleTest: return AcceleratorSimpleTest::factory(logger, primitives_list, param_map);
 		case Type::KdTreeOriginal: return AcceleratorKdTree::factory(logger, primitives_list, param_map);
 		case Type::KdTreeMultiThread: return AcceleratorKdTreeMultiThread::factory(logger, primitives_list, param_map);
-		default: return {nullptr, ParamError{ResultFlags::ErrorWhileCreating}};
+		default: return {nullptr, ParamResult{ResultFlags::ErrorWhileCreating}};
 	}
 }
 

@@ -56,9 +56,9 @@ class Texture
 	public:
 		inline static std::string getClassName() { return "Texture"; }
 		[[nodiscard]] virtual Type type() const = 0;
-		static std::pair<std::unique_ptr<Texture>, ParamError> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map);
+		static std::pair<std::unique_ptr<Texture>, ParamResult> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map);
 		[[nodiscard]] virtual ParamMap getAsParamMap(bool only_non_default) const;
-		Texture(Logger &logger, ParamError &param_error, const ParamMap &param_map);
+		Texture(Logger &logger, ParamResult &param_result, const ParamMap &param_map);
 		virtual ~Texture() = default;
 
 		/* indicate wether the the texture is discrete (e.g. image map) or continuous */

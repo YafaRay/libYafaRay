@@ -31,7 +31,7 @@
 
 namespace yafaray {
 
-Texture::Params::Params(ParamError &param_error, const ParamMap &param_map)
+Texture::Params::Params(ParamResult &param_result, const ParamMap &param_map)
 {
 	PARAM_LOAD(adj_mult_factor_red_);
 	PARAM_LOAD(adj_mult_factor_green_);
@@ -88,7 +88,7 @@ ParamMap Texture::getAsParamMap(bool only_non_default) const
 	return result;
 }
 
-std::pair<std::unique_ptr<Texture>, ParamError> Texture::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map)
+std::pair<std::unique_ptr<Texture>, ParamResult> Texture::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map)
 {
 	const Type type{ClassMeta::preprocessParamMap<Type>(logger, getClassName(), param_map)};
 	switch(type.value())
@@ -102,11 +102,11 @@ std::pair<std::unique_ptr<Texture>, ParamError> Texture::factory(Logger &logger,
 		case Type::DistortedNoise: return DistortedNoiseTexture::factory(logger, scene, name, param_map);
 		case Type::RgbCube: return RgbCubeTexture::factory(logger, scene, name, param_map);
 		case Type::Image: return ImageTexture::factory(logger, scene, name, param_map);
-		default: return {nullptr, ParamError{ResultFlags::ErrorWhileCreating}};
+		default: return {nullptr, ParamResult{ResultFlags::ErrorWhileCreating}};
 	}
 }
 
-Texture::Texture(Logger &logger, ParamError &param_error, const ParamMap &param_map) : logger_(logger), params_{param_error, param_map}
+Texture::Texture(Logger &logger, ParamResult &param_result, const ParamMap &param_map) : logger_(logger), params_{param_result, param_map}
 {
 	if(params_.ramp_num_items_ > 0)
 	{
@@ -119,8 +119,8 @@ Texture::Texture(Logger &logger, ParamError &param_error, const ParamMap &param_
 			param_name << "ramp_item_" << i << "_color";
 			if(param_map.getParam(param_name.str(), color) == ResultFlags::ErrorWrongParamType)
 			{
-				param_error.flags_ |= ResultFlags{ResultFlags::ErrorWrongParamType};
-				param_error.wrong_type_params_.emplace_back(param_name.str());
+				param_result.flags_ |= ResultFlags{ResultFlags::ErrorWrongParamType};
+				param_result.wrong_type_params_.emplace_back(param_name.str());
 			}
 			param_name.str("");
 			param_name.clear();
@@ -128,8 +128,8 @@ Texture::Texture(Logger &logger, ParamError &param_error, const ParamMap &param_
 			param_name << "ramp_item_" << i << "_position";
 			if(param_map.getParam(param_name.str(), position) == ResultFlags::ErrorWrongParamType)
 			{
-				param_error.flags_ |= ResultFlags{ResultFlags::ErrorWrongParamType};
-				param_error.wrong_type_params_.emplace_back(param_name.str());
+				param_result.flags_ |= ResultFlags{ResultFlags::ErrorWrongParamType};
+				param_result.wrong_type_params_.emplace_back(param_name.str());
 			}
 			param_name.str("");
 			param_name.clear();

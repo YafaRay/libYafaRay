@@ -62,7 +62,7 @@ class CausticPhotonIntegrator: public MonteCarloIntegrator
 			PARAM_ENUM_DECL(PhotonMapProcessing, photon_map_processing_, PhotonMapProcessing::GenerateOnly, "photon_maps_processing", "");
 		} params_;
 		[[nodiscard]] ParamMap getAsParamMap(bool only_non_default) const override;
-		CausticPhotonIntegrator(RenderControl &render_control, Logger &logger, ParamError &param_error, const ParamMap &param_map);
+		CausticPhotonIntegrator(RenderControl &render_control, Logger &logger, ParamResult &param_result, const ParamMap &param_map);
 		~CausticPhotonIntegrator() override;
 		void enableCaustics(const bool caustics) { use_photon_caustics_ = caustics; }
 		/*! Creates and prepares the caustic photon map */

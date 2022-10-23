@@ -49,9 +49,9 @@ class Material
 	public:
 		inline static std::string getClassName() { return "Material"; }
 		[[nodiscard]] virtual Type type() const = 0;
-		static std::pair<std::unique_ptr<Material>, ParamError> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map, const std::list<ParamMap> &nodes_param_maps);
+		static std::pair<std::unique_ptr<Material>, ParamResult> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map, const std::list<ParamMap> &nodes_param_maps);
 		[[nodiscard]] virtual ParamMap getAsParamMap(bool only_non_default) const;
-		Material(Logger &logger, ParamError &param_error, const ParamMap &param_map, const SceneItems <Material> &materials);
+		Material(Logger &logger, ParamResult &param_result, const ParamMap &param_map, const SceneItems <Material> &materials);
 		virtual ~Material();
 
 		/*! Initialize the BSDF of a material. You must call this with the current surface point

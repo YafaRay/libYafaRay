@@ -58,7 +58,7 @@ class SurfaceIntegrator
 	public:
 		inline static std::string getClassName() { return "SurfaceIntegrator"; }
 		[[nodiscard]] virtual Type type() const = 0;
-		static std::pair<std::unique_ptr<SurfaceIntegrator>, ParamError> factory(Logger &logger, RenderControl &render_control, const Scene &scene, const ParamMap &param_map);
+		static std::pair<std::unique_ptr<SurfaceIntegrator>, ParamResult> factory(Logger &logger, RenderControl &render_control, const Scene &scene, const ParamMap &param_map);
 		[[nodiscard]] virtual ParamMap getAsParamMap(bool only_non_default) const;
 		virtual ~SurfaceIntegrator() = default;
 		/*! do whatever is required to render the image, if suitable for integrating whole image */
@@ -94,7 +94,7 @@ class SurfaceIntegrator
 			PARAM_DECL(bool, time_forced_, false, "time_forced", "");
 			PARAM_DECL(float, time_forced_value_, 0.f, "time_forced_value", "");
 		} params_;
-		SurfaceIntegrator(RenderControl &render_control, Logger &logger, ParamError &param_error, const ParamMap &param_map) : render_control_(render_control), params_{param_error, param_map}, logger_{logger} { }
+		SurfaceIntegrator(RenderControl &render_control, Logger &logger, ParamResult &param_result, const ParamMap &param_map) : render_control_(render_control), params_{param_result, param_map}, logger_{logger} { }
 
 		RenderControl &render_control_;
 		int num_threads_ = 1;

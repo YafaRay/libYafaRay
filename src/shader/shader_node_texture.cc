@@ -24,7 +24,7 @@
 
 namespace yafaray {
 
-TextureMapperNode::Params::Params(ParamError &param_error, const ParamMap &param_map)
+TextureMapperNode::Params::Params(ParamResult &param_result, const ParamMap &param_map)
 {
 	PARAM_LOAD(texture_);
 	PARAM_LOAD(transform_);
@@ -63,28 +63,28 @@ ParamMap TextureMapperNode::getAsParamMap(bool only_non_default) const
 	return result;
 }
 
-std::pair<std::unique_ptr<ShaderNode>, ParamError> TextureMapperNode::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map)
+std::pair<std::unique_ptr<ShaderNode>, ParamResult> TextureMapperNode::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map)
 {
-	auto param_error{Params::meta_.check(param_map, {"type"}, {})};
+	auto param_result{Params::meta_.check(param_map, {"type"}, {})};
 	std::string texname;
 	if(param_map.getParam(Params::texture_meta_.name(), texname).notOk())
 	{
 		logger.logError("TextureMapper: No texture given for texture mapper!");
-		return {nullptr, ParamError{ResultFlags::ErrorWhileCreating}};
+		return {nullptr, ParamResult{ResultFlags::ErrorWhileCreating}};
 	}
 	const Texture *tex = scene.getTexture(texname);
 	if(!tex)
 	{
 		logger.logError("TextureMapper: texture '", texname, "' does not exist!");
-		return {nullptr, ParamError{ResultFlags::ErrorWhileCreating}};
+		return {nullptr, ParamResult{ResultFlags::ErrorWhileCreating}};
 	}
-	auto shader_node {std::make_unique<TextureMapperNode>(logger, param_error, param_map, tex)};
-	if(param_error.notOk()) logger.logWarning(param_error.print<ThisClassType_t>(name, {"type"}));
-	return {std::move(shader_node), param_error};
+	auto shader_node {std::make_unique<TextureMapperNode>(logger, param_result, param_map, tex)};
+	if(param_result.notOk()) logger.logWarning(param_result.print<ThisClassType_t>(name, {"type"}));
+	return {std::move(shader_node), param_result};
 }
 
-TextureMapperNode::TextureMapperNode(Logger &logger, ParamError &param_error, const ParamMap &param_map, const Texture *texture) :
-		ParentClassType_t{logger, param_error, param_map}, params_{param_error, param_map}, tex_(texture)
+TextureMapperNode::TextureMapperNode(Logger &logger, ParamResult &param_result, const ParamMap &param_map, const Texture *texture) :
+		ParentClassType_t{logger, param_result, param_map}, params_{param_result, param_map}, tex_(texture)
 {
 	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + params_.getAsParamMap(true).print());
 	//logger.logParams(getAsParamMap(false).print()); //TEST CODE ONLY, REMOVE!!

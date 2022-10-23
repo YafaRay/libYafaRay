@@ -36,9 +36,9 @@ class VolumeHandler
 	public:
 		inline static std::string getClassName() { return "VolumeHandler"; }
 		[[nodiscard]] virtual Type type() const = 0;
-		static std::pair<std::unique_ptr<VolumeHandler>, ParamError> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map);
+		static std::pair<std::unique_ptr<VolumeHandler>, ParamResult> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map);
 		[[nodiscard]] virtual ParamMap getAsParamMap(bool only_non_default) const;
-		VolumeHandler(Logger &logger, ParamError &param_error, const ParamMap &param_map);
+		VolumeHandler(Logger &logger, ParamResult &param_result, const ParamMap &param_map);
 		virtual Rgb transmittance(const Ray &ray) const = 0;
 		virtual bool scatter(const Ray &ray, Ray &s_ray, PSample &s) const = 0;
 		virtual ~VolumeHandler() = default;

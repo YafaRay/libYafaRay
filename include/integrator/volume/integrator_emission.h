@@ -30,9 +30,9 @@ class EmissionIntegrator final : public VolumeIntegrator
 
 	public:
 		inline static std::string getClassName() { return "EmissionIntegrator"; }
-		static std::pair<std::unique_ptr<VolumeIntegrator>, ParamError> factory(Logger &logger, const ParamMap &params, const Scene &scene);
+		static std::pair<std::unique_ptr<VolumeIntegrator>, ParamResult> factory(Logger &logger, const ParamMap &params, const Scene &scene);
 		static std::string printMeta(const std::vector<std::string> &excluded_params) { return Params::meta_.print(excluded_params); }
-		explicit EmissionIntegrator(Logger &logger, ParamError &param_error, const ParamMap &param_map, const std::map<std::string, std::unique_ptr<VolumeRegion>> &volume_regions);
+		explicit EmissionIntegrator(Logger &logger, ParamResult &param_result, const ParamMap &param_map, const std::map<std::string, std::unique_ptr<VolumeRegion>> &volume_regions);
 		[[nodiscard]] ParamMap getAsParamMap(bool only_non_default) const override;
 
 	private:

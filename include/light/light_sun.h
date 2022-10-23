@@ -37,10 +37,10 @@ class SunLight final : public Light
 
 	public:
 		inline static std::string getClassName() { return "SunLight"; }
-		static std::pair<std::unique_ptr<Light>, ParamError> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params);
+		static std::pair<std::unique_ptr<Light>, ParamResult> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params);
 		static std::string printMeta(const std::vector<std::string> &excluded_params) { return Params::meta_.print(excluded_params); }
 		[[nodiscard]] ParamMap getAsParamMap(bool only_non_default) const override;
-		SunLight(Logger &logger, ParamError &param_error, const std::string &name, const ParamMap &param_map);
+		SunLight(Logger &logger, ParamResult &param_result, const std::string &name, const ParamMap &param_map);
 
 	private:
 		[[nodiscard]] Type type() const override { return Type::Sun; }

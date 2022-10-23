@@ -31,7 +31,7 @@
 
 namespace yafaray {
 
-SurfaceIntegrator::Params::Params(ParamError &param_error, const ParamMap &param_map)
+SurfaceIntegrator::Params::Params(ParamResult &param_result, const ParamMap &param_map)
 {
 	PARAM_LOAD(time_forced_);
 	PARAM_LOAD(time_forced_value_);
@@ -52,7 +52,7 @@ ParamMap SurfaceIntegrator::getAsParamMap(bool only_non_default) const
 	return result;
 }
 
-std::pair<std::unique_ptr<SurfaceIntegrator>, ParamError> SurfaceIntegrator::factory(Logger &logger, RenderControl &render_control, const Scene &scene, const ParamMap &param_map)
+std::pair<std::unique_ptr<SurfaceIntegrator>, ParamResult> SurfaceIntegrator::factory(Logger &logger, RenderControl &render_control, const Scene &scene, const ParamMap &param_map)
 {
 	const Type type{ClassMeta::preprocessParamMap<Type>(logger, getClassName(), param_map)};
 	switch(type.value())
@@ -67,7 +67,7 @@ std::pair<std::unique_ptr<SurfaceIntegrator>, ParamError> SurfaceIntegrator::fac
 		case Type::Path: return PathIntegrator::factory(logger, render_control, param_map, scene);
 		case Type::Photon: return PhotonIntegrator::factory(logger, render_control, param_map, scene);
 		case Type::Sppm: return SppmIntegrator::factory(logger, render_control, param_map, scene);
-		default: return {nullptr, ParamError{ResultFlags::ErrorWhileCreating}};
+		default: return {nullptr, ParamResult{ResultFlags::ErrorWhileCreating}};
 	}
 }
 

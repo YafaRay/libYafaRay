@@ -25,7 +25,7 @@
 
 namespace yafaray {
 
-AcceleratorKdTree::Params::Params(ParamError &param_error, const ParamMap &param_map)
+AcceleratorKdTree::Params::Params(ParamResult &param_result, const ParamMap &param_map)
 {
 	PARAM_LOAD(max_depth_);
 	PARAM_LOAD(max_leaf_size_);
@@ -50,15 +50,15 @@ ParamMap AcceleratorKdTree::getAsParamMap(bool only_non_default) const
 	return result;
 }
 
-std::pair<std::unique_ptr<Accelerator>, ParamError> AcceleratorKdTree::factory(Logger &logger, const std::vector<const Primitive *> &primitives, const ParamMap &param_map)
+std::pair<std::unique_ptr<Accelerator>, ParamResult> AcceleratorKdTree::factory(Logger &logger, const std::vector<const Primitive *> &primitives, const ParamMap &param_map)
 {
-	auto param_error{Params::meta_.check(param_map, {"type"}, {})};
-	auto accelerator {std::make_unique<ThisClassType_t>(logger, param_error, primitives, param_map)};
-	if(param_error.notOk()) logger.logWarning(param_error.print<ThisClassType_t>("", {"type"}));
-	return {std::move(accelerator), param_error};
+	auto param_result{Params::meta_.check(param_map, {"type"}, {})};
+	auto accelerator {std::make_unique<ThisClassType_t>(logger, param_result, primitives, param_map)};
+	if(param_result.notOk()) logger.logWarning(param_result.print<ThisClassType_t>("", {"type"}));
+	return {std::move(accelerator), param_result};
 }
 
-AcceleratorKdTree::AcceleratorKdTree(Logger &logger, ParamError &param_error, const std::vector<const Primitive *> &primitives, const ParamMap &param_map) : ParentClassType_t{logger, param_error, param_map}, params_{param_error, param_map}
+AcceleratorKdTree::AcceleratorKdTree(Logger &logger, ParamResult &param_result, const std::vector<const Primitive *> &primitives, const ParamMap &param_map) : ParentClassType_t{logger, param_result, param_map}, params_{param_result, param_map}
 {
 	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + params_.getAsParamMap(true).print());
 	total_prims_ = static_cast<uint32_t>(primitives.size());

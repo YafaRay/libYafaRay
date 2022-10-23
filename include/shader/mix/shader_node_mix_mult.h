@@ -28,7 +28,7 @@ namespace yafaray {
 class MultNode: public MixNode
 {
 	public:
-		MultNode(Logger &logger, ParamError &param_error, const ParamMap &param_map) : MixNode{logger, param_error, param_map} { }
+		MultNode(Logger &logger, ParamResult &param_result, const ParamMap &param_map) : MixNode{logger, param_result, param_map} { }
 		void eval(NodeTreeData &node_tree_data, const SurfacePoint &sp, const Camera *camera) const override
 		{
 			Inputs inputs = getInputs(node_tree_data);

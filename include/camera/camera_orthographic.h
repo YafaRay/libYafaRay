@@ -33,10 +33,10 @@ class OrthographicCamera final: public Camera
 
 	public:
 		inline static std::string getClassName() { return "OrthographicCamera"; }
-		static std::pair<std::unique_ptr<Camera>, ParamError> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map);
+		static std::pair<std::unique_ptr<Camera>, ParamResult> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map);
 		static std::string printMeta(const std::vector<std::string> &excluded_params) { return Params::meta_.print(excluded_params); }
 		[[nodiscard]] ParamMap getAsParamMap(bool only_non_default) const override;
-		OrthographicCamera(Logger &logger, ParamError &param_error, const ParamMap &param_map);
+		OrthographicCamera(Logger &logger, ParamResult &param_result, const ParamMap &param_map);
 
 	private:
 		[[nodiscard]] Type type() const override { return Type::Orthographic; }

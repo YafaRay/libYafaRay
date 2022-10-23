@@ -33,9 +33,9 @@ class GradientBackground final : public Background
 
 	public:
 		inline static std::string getClassName() { return "GradientBackground"; }
-		static std::pair<std::unique_ptr<Background>, ParamError> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params);
+		static std::pair<std::unique_ptr<Background>, ParamResult> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params);
 		static std::string printMeta(const std::vector<std::string> &excluded_params) { return Params::meta_.print(excluded_params); }
-		GradientBackground(Logger &logger, ParamError &param_error, const ParamMap &param_map);
+		GradientBackground(Logger &logger, ParamResult &param_result, const ParamMap &param_map);
 
 	private:
 		[[nodiscard]] Type type() const override { return Type::Gradient; }

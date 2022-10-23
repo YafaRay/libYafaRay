@@ -24,7 +24,7 @@
 
 #include "param/param_meta.h"
 #include "param/param.h"
-#include "param/param_error.h"
+#include "param/param_result.h"
 #include "common/logger.h"
 #include <vector>
 
@@ -33,11 +33,11 @@ namespace yafaray {
 class ParamMap;
 
 #define PARAM_INIT Params() = default; \
-Params(ParamError &param_error, const ParamMap &param_map); \
+Params(ParamResult &param_result, const ParamMap &param_map); \
 ParamMap getAsParamMap(bool only_non_default) const; \
 inline static ClassMeta meta_
 
-#define PARAM_INIT_PARENT(parent_class) Params(ParamError &param_error, const ParamMap &param_map); \
+#define PARAM_INIT_PARENT(parent_class) Params(ParamResult &param_result, const ParamMap &param_map); \
 ParamMap getAsParamMap(bool only_non_default) const; \
 inline static ClassMeta meta_{parent_class::Params::meta_};
 
@@ -51,18 +51,18 @@ inline static const ParamMeta name##meta_{api_name, api_desc, default_val, meta_
 std::array<std::string, ShaderNodeType::Size> shader_node_names_
 
 #define PARAM_LOAD(param_name) if(param_map.getParam(param_name##meta_, param_name) == ResultFlags::ErrorWrongParamType) { \
-param_error.flags_ |= ResultFlags{ResultFlags::ErrorWrongParamType}; \
-param_error.wrong_type_params_.emplace_back(param_name##meta_.name()); }
+param_result.flags_ |= ResultFlags{ResultFlags::ErrorWrongParamType}; \
+param_result.wrong_type_params_.emplace_back(param_name##meta_.name()); }
 
 #define PARAM_ENUM_LOAD(param_name) if(param_map.getEnumParam(param_name##meta_, param_name) == ResultFlags::ErrorWrongParamType) { \
-param_error.flags_ |= ResultFlags{ResultFlags::ErrorWrongParamType}; \
-param_error.wrong_type_params_.emplace_back(param_name##meta_.name()); }
+param_result.flags_ |= ResultFlags{ResultFlags::ErrorWrongParamType}; \
+param_result.wrong_type_params_.emplace_back(param_name##meta_.name()); }
 
 #define PARAM_SHADERS_LOAD for(size_t index = 0; index < shader_node_names_.size(); ++index) { \
 const std::string shader_node_type_name{ShaderNodeType{static_cast<unsigned char>(index)}.print()}; \
 if(param_map.getParam(shader_node_type_name, shader_node_names_[index]) == ResultFlags::ErrorWrongParamType) { \
-	param_error.flags_ |= ResultFlags{ResultFlags::ErrorWrongParamType}; \
-	param_error.wrong_type_params_.emplace_back(shader_node_type_name); \
+	param_result.flags_ |= ResultFlags{ResultFlags::ErrorWrongParamType}; \
+	param_result.wrong_type_params_.emplace_back(shader_node_type_name); \
 }}
 
 #define PARAM_SAVE_START ParamMap param_map
@@ -81,7 +81,7 @@ struct ClassMeta
 {
 	[[nodiscard]] const ParamMeta *find(const std::string &name) const;
 	[[nodiscard]] std::string print(const std::vector<std::string> &excluded_params) const;
-	[[nodiscard]] ParamError check(const ParamMap &param_map, const std::vector<std::string> &excluded_params, const std::vector<std::string> &excluded_params_starting_with) const;
+	[[nodiscard]] ParamResult check(const ParamMap &param_map, const std::vector<std::string> &excluded_params, const std::vector<std::string> &excluded_params_starting_with) const;
 	template <typename TypeEnumClass> [[nodiscard]] static TypeEnumClass preprocessParamMap(Logger &logger, const std::string &class_name, const ParamMap &param_map);
 	std::map<std::string, const ParamMeta *> map_;
 };
@@ -140,7 +140,7 @@ inline TypeEnumClass ClassMeta::preprocessParamMap(Logger &logger, const std::st
 {
 	if(logger.isDebug()) logger.logDebug("**" + class_name + "::factory 'raw' ParamMap\n" + param_map.logContents());
 	std::string type_str;
-	ParamError type_error{param_map.getParam("type", type_str)};
+	ParamResult type_error{param_map.getParam("type", type_str)};
 	TypeEnumClass type;
 	if(!type.initFromString(type_str)) type_error.flags_ |= ResultFlags::WarningUnknownEnumOption;
 	if(type_error.notOk())

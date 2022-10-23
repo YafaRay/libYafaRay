@@ -32,7 +32,7 @@
 
 namespace yafaray {
 
-ImageOutput::Params::Params(ParamError &param_error, const ParamMap &param_map)
+ImageOutput::Params::Params(ParamResult &param_result, const ParamMap &param_map)
 {
 	PARAM_LOAD(image_path_);
 	PARAM_ENUM_LOAD(color_space_);
@@ -91,16 +91,16 @@ ParamMap ImageOutput::getAsParamMap(bool only_non_default) const
 	return params_.getAsParamMap(only_non_default);
 }
 
-std::pair<std::unique_ptr<ImageOutput>, ParamError> ImageOutput::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map)
+std::pair<std::unique_ptr<ImageOutput>, ParamResult> ImageOutput::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map)
 {
 	if(logger.isDebug()) logger.logDebug("**" + getClassName() + "::factory 'raw' ParamMap\n" + param_map.logContents());
-	auto param_error{Params::meta_.check(param_map, {}, {})};
-	auto output {std::make_unique<ImageOutput>(logger, param_error, param_map)};
-	if(param_error.notOk()) logger.logWarning(param_error.print<ImageOutput>(name, {}));
-	return {std::move(output), param_error};
+	auto param_result{Params::meta_.check(param_map, {}, {})};
+	auto output {std::make_unique<ImageOutput>(logger, param_result, param_map)};
+	if(param_result.notOk()) logger.logWarning(param_result.print<ImageOutput>(name, {}));
+	return {std::move(output), param_result};
 }
 
-ImageOutput::ImageOutput(Logger &logger, ParamError &param_error, const ParamMap &param_map) : params_{param_error, param_map}, logger_{logger}
+ImageOutput::ImageOutput(Logger &logger, ParamResult &param_result, const ParamMap &param_map) : params_{param_result, param_map}, logger_{logger}
 {
 	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + params_.getAsParamMap(true).print());
 	if(params_.color_space_ == ColorSpace::RawManualGamma)

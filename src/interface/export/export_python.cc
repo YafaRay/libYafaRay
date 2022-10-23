@@ -271,7 +271,7 @@ void ExportPython::writeParamList(int indent) noexcept
 	file_ << "yi.paramsEndList()\n";
 }
 
-std::pair<size_t, ParamError> ExportPython::createLight(std::string &&name) noexcept
+std::pair<size_t, ParamResult> ExportPython::createLight(std::string &&name) noexcept
 {
 	writeParamMap(*params_);
 	params_->clear();
@@ -280,7 +280,7 @@ std::pair<size_t, ParamError> ExportPython::createLight(std::string &&name) noex
 	return {};
 }
 
-std::pair<size_t, ParamError> ExportPython::createTexture(std::string &&name) noexcept
+std::pair<size_t, ParamResult> ExportPython::createTexture(std::string &&name) noexcept
 {
 	writeParamMap(*params_);
 	params_->clear();
@@ -289,7 +289,7 @@ std::pair<size_t, ParamError> ExportPython::createTexture(std::string &&name) no
 	return {};
 }
 
-std::pair<size_t, ParamError> ExportPython::createMaterial(std::string &&name) noexcept
+std::pair<size_t, ParamResult> ExportPython::createMaterial(std::string &&name) noexcept
 {
 	writeParamMap(*params_);
 	writeParamList(1);
@@ -299,7 +299,7 @@ std::pair<size_t, ParamError> ExportPython::createMaterial(std::string &&name) n
 	file_ << "yi.paramsClearAll()\n\n";
 	return {};
 }
-std::pair<size_t, ParamError> ExportPython::createCamera(std::string &&name) noexcept
+std::pair<size_t, ParamResult> ExportPython::createCamera(std::string &&name) noexcept
 {
 	writeParamMap(*params_);
 	params_->clear();
@@ -308,7 +308,7 @@ std::pair<size_t, ParamError> ExportPython::createCamera(std::string &&name) noe
 	return {};
 }
 
-ParamError ExportPython::defineBackground() noexcept
+ParamResult ExportPython::defineBackground() noexcept
 {
 	writeParamMap(*params_);
 	params_->clear();
@@ -317,7 +317,7 @@ ParamError ExportPython::defineBackground() noexcept
 	return {};
 }
 
-ParamError ExportPython::defineSurfaceIntegrator() noexcept
+ParamResult ExportPython::defineSurfaceIntegrator() noexcept
 {
 	writeParamMap(*params_);
 	params_->clear();
@@ -326,7 +326,7 @@ ParamError ExportPython::defineSurfaceIntegrator() noexcept
 	return {};
 }
 
-ParamError ExportPython::defineVolumeIntegrator() noexcept
+ParamResult ExportPython::defineVolumeIntegrator() noexcept
 {
 	writeParamMap(*params_);
 	params_->clear();
@@ -335,7 +335,7 @@ ParamError ExportPython::defineVolumeIntegrator() noexcept
 	return {};
 }
 
-std::pair<size_t, ParamError> ExportPython::createVolumeRegion(std::string &&name) noexcept
+std::pair<size_t, ParamResult> ExportPython::createVolumeRegion(std::string &&name) noexcept
 {
 	writeParamMap(*params_);
 	params_->clear();
@@ -344,7 +344,7 @@ std::pair<size_t, ParamError> ExportPython::createVolumeRegion(std::string &&nam
 	return {};
 }
 
-std::pair<size_t, ParamError> ExportPython::createOutput(std::string &&name) noexcept
+std::pair<size_t, ParamResult> ExportPython::createOutput(std::string &&name) noexcept
 {
 	writeParamMap(*params_);
 	params_->clear();
@@ -353,7 +353,7 @@ std::pair<size_t, ParamError> ExportPython::createOutput(std::string &&name) noe
 	return {};
 }
 
-std::pair<size_t, ParamError> ExportPython::createRenderView(std::string &&name) noexcept
+std::pair<size_t, ParamResult> ExportPython::createRenderView(std::string &&name) noexcept
 {
 	writeParamMap(*params_);
 	params_->clear();
@@ -362,7 +362,7 @@ std::pair<size_t, ParamError> ExportPython::createRenderView(std::string &&name)
 	return {};
 }
 
-std::pair<Image *, ParamError> ExportPython::createImage(std::string &&name) noexcept
+std::pair<Image *, ParamResult> ExportPython::createImage(std::string &&name) noexcept
 {
 	writeParamMap(*params_);
 	params_->clear();
@@ -371,7 +371,7 @@ std::pair<Image *, ParamError> ExportPython::createImage(std::string &&name) noe
 	return {};
 }
 
-std::pair<size_t, ParamError> ExportPython::createObject(std::string &&name) noexcept
+std::pair<size_t, ParamResult> ExportPython::createObject(std::string &&name) noexcept
 {
 	n_uvs_ = 0;
 	writeParamMap(*params_);
@@ -379,7 +379,7 @@ std::pair<size_t, ParamError> ExportPython::createObject(std::string &&name) noe
 	file_ << "yi.createObject(\"" << name << "\")\n";
 	file_ << "yi.paramsClearAll()\n\n";
 	++next_obj_;
-	return {next_obj_ - 1, ParamError{}};
+	return {next_obj_ - 1, ParamResult{}};
 }
 
 void ExportPython::setupRender() noexcept

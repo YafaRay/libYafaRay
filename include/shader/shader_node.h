@@ -46,9 +46,9 @@ class ShaderNode
 	public:
 		inline static std::string getClassName() { return "ShaderNode"; }
 		[[nodiscard]] virtual Type type() const = 0;
-		static std::pair<std::unique_ptr<ShaderNode>, ParamError> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map);
+		static std::pair<std::unique_ptr<ShaderNode>, ParamResult> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map);
 		[[nodiscard]] virtual ParamMap getAsParamMap(bool only_non_default) const;
-		ShaderNode(Logger &logger, ParamError &param_error, const ParamMap &param_map);
+		ShaderNode(Logger &logger, ParamResult &param_result, const ParamMap &param_map);
 		virtual ~ShaderNode() = default;
 		unsigned int getId() const { return id_; }
 		void setId(unsigned int id) const { id_ = id; } //It is set as "const" but it actually modifies the (mutable) id_

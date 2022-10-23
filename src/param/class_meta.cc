@@ -22,9 +22,9 @@
 
 namespace yafaray {
 
-ParamError ClassMeta::check(const ParamMap &param_map, const std::vector<std::string> &excluded_params, const std::vector<std::string> &excluded_params_starting_with) const
+ParamResult ClassMeta::check(const ParamMap &param_map, const std::vector<std::string> &excluded_params, const std::vector<std::string> &excluded_params_starting_with) const
 {
-	ParamError param_error;
+	ParamResult param_result;
 	for(const auto &[param_name, param] : param_map)
 	{
 		bool skip_param = false;
@@ -48,8 +48,8 @@ ParamError ClassMeta::check(const ParamMap &param_map, const std::vector<std::st
 		const auto param_meta{find(param_name)};
 		if(!param_meta)
 		{
-			param_error.flags_ |= ResultFlags{ResultFlags::WarningUnknownParam};
-			param_error.unknown_params_.emplace_back(param_name);
+			param_result.flags_ |= ResultFlags{ResultFlags::WarningUnknownParam};
+			param_result.unknown_params_.emplace_back(param_name);
 			continue;
 		}
 		else if(param_meta->isEnum())
@@ -58,13 +58,13 @@ ParamError ClassMeta::check(const ParamMap &param_map, const std::vector<std::st
 			param.getVal(param_value_str);
 			if(!param_meta->enumContains(param_value_str))
 			{
-				param_error.flags_ |= ResultFlags{ResultFlags::WarningUnknownEnumOption};
-				param_error.unknown_enum_.emplace_back(std::pair<std::string, std::string>{param_name, param_value_str});
+				param_result.flags_ |= ResultFlags{ResultFlags::WarningUnknownEnumOption};
+				param_result.unknown_enum_.emplace_back(std::pair<std::string, std::string>{param_name, param_value_str});
 				continue;
 			}
 		}
 	}
-	return param_error;
+	return param_result;
 }
 
 } //namespace yafaray

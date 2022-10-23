@@ -31,7 +31,7 @@
 
 namespace yafaray {
 
-Camera::Params::Params(ParamError &param_error, const ParamMap &param_map)
+Camera::Params::Params(ParamResult &param_result, const ParamMap &param_map)
 {
 	PARAM_LOAD(from_);
 	PARAM_LOAD(to_);
@@ -64,7 +64,7 @@ ParamMap Camera::getAsParamMap(bool only_non_default) const
 	return result;
 }
 
-std::pair<std::unique_ptr<Camera>, ParamError> Camera::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map)
+std::pair<std::unique_ptr<Camera>, ParamResult> Camera::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map)
 {
 	const Type type{ClassMeta::preprocessParamMap<Type>(logger, getClassName(), param_map)};
 	switch(type.value())
@@ -74,12 +74,12 @@ std::pair<std::unique_ptr<Camera>, ParamError> Camera::factory(Logger &logger, c
 		case Type::Architect: return ArchitectCamera::factory(logger, scene, name, param_map);
 		case Type::Orthographic: return OrthographicCamera::factory(logger, scene, name, param_map);
 		case Type::Equirectangular: return EquirectangularCamera::factory(logger, scene, name, param_map);
-		default: return {nullptr, ParamError{ResultFlags::ErrorWhileCreating}};
+		default: return {nullptr, ParamResult{ResultFlags::ErrorWhileCreating}};
 	}
 }
 
-Camera::Camera(Logger &logger, ParamError &param_error, const ParamMap &param_map) :
-		params_{param_error, param_map},
+Camera::Camera(Logger &logger, ParamResult &param_result, const ParamMap &param_map) :
+		params_{param_result, param_map},
 		aspect_ratio_{params_.aspect_ratio_factor_ * static_cast<float>(params_.resy_) / static_cast<float>(params_.resx_)},
 		logger_{logger}
 {

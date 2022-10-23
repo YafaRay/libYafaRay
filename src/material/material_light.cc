@@ -31,7 +31,7 @@
 
 namespace yafaray {
 
-LightMaterial::Params::Params(ParamError &param_error, const ParamMap &param_map)
+LightMaterial::Params::Params(ParamResult &param_result, const ParamMap &param_map)
 {
 	PARAM_LOAD(color_);
 	PARAM_LOAD(power_);
@@ -54,16 +54,16 @@ ParamMap LightMaterial::getAsParamMap(bool only_non_default) const
 	return result;
 }
 
-std::pair<std::unique_ptr<Material>, ParamError> LightMaterial::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map, const std::list<ParamMap> &nodes_param_maps)
+std::pair<std::unique_ptr<Material>, ParamResult> LightMaterial::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map, const std::list<ParamMap> &nodes_param_maps)
 {
-	auto param_error{Params::meta_.check(param_map, {"type"}, {})};
-	auto material{std::make_unique<ThisClassType_t>(logger, param_error, param_map, scene.getMaterials())};
-	if(param_error.notOk()) logger.logWarning(param_error.print<LightMaterial>(name, {"type"}));
-	return {std::move(material), param_error};
+	auto param_result{Params::meta_.check(param_map, {"type"}, {})};
+	auto material{std::make_unique<ThisClassType_t>(logger, param_result, param_map, scene.getMaterials())};
+	if(param_result.notOk()) logger.logWarning(param_result.print<LightMaterial>(name, {"type"}));
+	return {std::move(material), param_result};
 }
 
-LightMaterial::LightMaterial(Logger &logger, ParamError &param_error, const ParamMap &param_map, const SceneItems <Material> &materials) :
-		ParentClassType_t{logger, param_error, param_map, materials}, params_{param_error, param_map}
+LightMaterial::LightMaterial(Logger &logger, ParamResult &param_result, const ParamMap &param_map, const SceneItems <Material> &materials) :
+		ParentClassType_t{logger, param_result, param_map, materials}, params_{param_result, param_map}
 {
 	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + params_.getAsParamMap(true).print());
 	bsdf_flags_ = BsdfFlags::Emit;

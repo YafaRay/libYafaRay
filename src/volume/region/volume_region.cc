@@ -26,7 +26,7 @@
 
 namespace yafaray {
 
-VolumeRegion::Params::Params(ParamError &param_error, const ParamMap &param_map)
+VolumeRegion::Params::Params(ParamResult &param_result, const ParamMap &param_map)
 {
 	PARAM_LOAD(sigma_s_);
 	PARAM_LOAD(sigma_a_);
@@ -65,7 +65,7 @@ ParamMap VolumeRegion::getAsParamMap(bool only_non_default) const
 	return result;
 }
 
-std::pair<std::unique_ptr<VolumeRegion>, ParamError> VolumeRegion::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map)
+std::pair<std::unique_ptr<VolumeRegion>, ParamResult> VolumeRegion::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map)
 {
 	const Type type{ClassMeta::preprocessParamMap<Type>(logger, getClassName(), param_map)};
 	switch(type.value())
@@ -75,12 +75,12 @@ std::pair<std::unique_ptr<VolumeRegion>, ParamError> VolumeRegion::factory(Logge
 		case Type::Noise: return NoiseVolumeRegion::factory(logger, scene, name, param_map);
 		case Type::Sky: return SkyVolumeRegion::factory(logger, scene, name, param_map);
 		case Type::Uniform: return UniformVolumeRegion::factory(logger, scene, name, param_map);
-		default: return {nullptr, ParamError{ResultFlags::ErrorWhileCreating}};
+		default: return {nullptr, ParamResult{ResultFlags::ErrorWhileCreating}};
 	}
 }
 
-VolumeRegion::VolumeRegion(Logger &logger, ParamError &param_error, const ParamMap &param_map) :
-		params_{param_error, param_map}, logger_{logger}
+VolumeRegion::VolumeRegion(Logger &logger, ParamResult &param_result, const ParamMap &param_map) :
+		params_{param_result, param_map}, logger_{logger}
 {
 }
 

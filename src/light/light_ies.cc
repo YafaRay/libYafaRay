@@ -29,7 +29,7 @@
 
 namespace yafaray {
 
-IesLight::Params::Params(ParamError &param_error, const ParamMap &param_map)
+IesLight::Params::Params(ParamResult &param_result, const ParamMap &param_map)
 {
 	PARAM_LOAD(from_);
 	PARAM_LOAD(to_);
@@ -62,17 +62,17 @@ ParamMap IesLight::getAsParamMap(bool only_non_default) const
 	return result;
 }
 
-std::pair<std::unique_ptr<Light>, ParamError> IesLight::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map)
+std::pair<std::unique_ptr<Light>, ParamResult> IesLight::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map)
 {
-	auto param_error{Params::meta_.check(param_map, {"type"}, {})};
-	auto light {std::make_unique<ThisClassType_t>(logger, param_error, name, param_map)};
-	if(param_error.notOk()) logger.logWarning(param_error.print<ThisClassType_t>(name, {"type"}));
-	if(!light->isIesOk()) return {nullptr, ParamError{ResultFlags::ErrorWhileCreating}};
-	return {std::move(light), param_error};
+	auto param_result{Params::meta_.check(param_map, {"type"}, {})};
+	auto light {std::make_unique<ThisClassType_t>(logger, param_result, name, param_map)};
+	if(param_result.notOk()) logger.logWarning(param_result.print<ThisClassType_t>(name, {"type"}));
+	if(!light->isIesOk()) return {nullptr, ParamResult{ResultFlags::ErrorWhileCreating}};
+	return {std::move(light), param_result};
 }
 
-IesLight::IesLight(Logger &logger, ParamError &param_error, const std::string &name, const ParamMap &param_map):
-		ParentClassType_t{logger, param_error, name, param_map, Flags::Singular}, params_{param_error, param_map},
+IesLight::IesLight(Logger &logger, ParamResult &param_result, const std::string &name, const ParamMap &param_map):
+		ParentClassType_t{logger, param_result, name, param_map, Flags::Singular}, params_{param_result, param_map},
 		ies_data_{std::make_unique<IesData>()},
 		ies_ok_{ies_data_->parseIesFile(logger, params_.file_)}
 {

@@ -24,7 +24,7 @@
 
 namespace yafaray {
 
-LayerNode::Params::Params(ParamError &param_error, const ParamMap &param_map)
+LayerNode::Params::Params(ParamResult &param_result, const ParamMap &param_map)
 {
 	PARAM_LOAD(input_);
 	PARAM_LOAD(upper_layer_);
@@ -73,16 +73,16 @@ ParamMap LayerNode::getAsParamMap(bool only_non_default) const
 	return result;
 }
 
-std::pair<std::unique_ptr<ShaderNode>, ParamError> LayerNode::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map)
+std::pair<std::unique_ptr<ShaderNode>, ParamResult> LayerNode::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map)
 {
-	auto param_error{Params::meta_.check(param_map, {"type"}, {})};
-	auto shader_node {std::make_unique<ThisClassType_t>(logger, param_error, param_map)};
-	if(param_error.notOk()) logger.logWarning(param_error.print<ThisClassType_t>(name, {"type"}));
-	return {std::move(shader_node), param_error};
+	auto param_result{Params::meta_.check(param_map, {"type"}, {})};
+	auto shader_node {std::make_unique<ThisClassType_t>(logger, param_result, param_map)};
+	if(param_result.notOk()) logger.logWarning(param_result.print<ThisClassType_t>(name, {"type"}));
+	return {std::move(shader_node), param_result};
 }
 
-LayerNode::LayerNode(Logger &logger, ParamError &param_error, const ParamMap &param_map) :
-		ParentClassType_t{logger, param_error, param_map}, params_{param_error, param_map}
+LayerNode::LayerNode(Logger &logger, ParamResult &param_result, const ParamMap &param_map) :
+		ParentClassType_t{logger, param_result, param_map}, params_{param_result, param_map}
 {
 	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + params_.getAsParamMap(true).print());
 	//logger.logParams(getAsParamMap(false).print()); //TEST CODE ONLY, REMOVE!!

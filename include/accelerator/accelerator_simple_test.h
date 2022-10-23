@@ -34,9 +34,9 @@ class AcceleratorSimpleTest final : public Accelerator
 
 	public:
 		inline static std::string getClassName() { return "AcceleratorKdTree"; }
-		static std::pair<std::unique_ptr<Accelerator>, ParamError> factory(Logger &logger, const std::vector<const Primitive *> &primitives, const ParamMap &params);
+		static std::pair<std::unique_ptr<Accelerator>, ParamResult> factory(Logger &logger, const std::vector<const Primitive *> &primitives, const ParamMap &params);
 		static std::string printMeta(const std::vector<std::string> &excluded_params) { return Params::meta_.print(excluded_params); }
-		AcceleratorSimpleTest(Logger &logger, ParamError &param_error, const std::vector<const Primitive *> &primitives, const ParamMap &param_map);
+		AcceleratorSimpleTest(Logger &logger, ParamResult &param_result, const std::vector<const Primitive *> &primitives, const ParamMap &param_map);
 
 	private:
 		[[nodiscard]] Type type() const override { return Type::SimpleTest; }

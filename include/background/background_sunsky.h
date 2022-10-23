@@ -39,9 +39,9 @@ class SunSkyBackground final : public Background
 
 	public:
 		inline static std::string getClassName() { return "SunSkyBackground"; }
-		static std::pair<std::unique_ptr<Background>, ParamError> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params);
+		static std::pair<std::unique_ptr<Background>, ParamResult> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params);
 		static std::string printMeta(const std::vector<std::string> &excluded_params) { return Params::meta_.print(excluded_params); }
-		SunSkyBackground(Logger &logger, ParamError &param_error, const ParamMap &param_map);
+		SunSkyBackground(Logger &logger, ParamResult &param_result, const ParamMap &param_map);
 
 	private:
 		[[nodiscard]] Type type() const override { return Type::SunSky; }

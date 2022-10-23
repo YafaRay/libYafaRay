@@ -35,15 +35,15 @@ ParamMap DirectLightIntegrator::getAsParamMap(bool only_non_default) const
 	return result;
 }
 
-std::pair<std::unique_ptr<SurfaceIntegrator>, ParamError> DirectLightIntegrator::factory(Logger &logger, RenderControl &render_control, const ParamMap &param_map, const Scene &scene)
+std::pair<std::unique_ptr<SurfaceIntegrator>, ParamResult> DirectLightIntegrator::factory(Logger &logger, RenderControl &render_control, const ParamMap &param_map, const Scene &scene)
 {
-	auto param_error{Params::meta_.check(param_map, {"type"}, {})};
-	auto integrator {std::make_unique<ThisClassType_t>(render_control, logger, param_error, param_map)};
-	if(param_error.notOk()) logger.logWarning(param_error.print<ThisClassType_t>(getClassName(), {"type"}));
-	return {std::move(integrator), param_error};
+	auto param_result{Params::meta_.check(param_map, {"type"}, {})};
+	auto integrator {std::make_unique<ThisClassType_t>(render_control, logger, param_result, param_map)};
+	if(param_result.notOk()) logger.logWarning(param_result.print<ThisClassType_t>(getClassName(), {"type"}));
+	return {std::move(integrator), param_result};
 }
 
-DirectLightIntegrator::DirectLightIntegrator(RenderControl &render_control, Logger &logger, ParamError &param_error, const ParamMap &param_map) : CausticPhotonIntegrator(render_control, logger, param_error, param_map)
+DirectLightIntegrator::DirectLightIntegrator(RenderControl &render_control, Logger &logger, ParamResult &param_result, const ParamMap &param_map) : CausticPhotonIntegrator(render_control, logger, param_result, param_map)
 {
 	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + params_.getAsParamMap(true).print());
 }

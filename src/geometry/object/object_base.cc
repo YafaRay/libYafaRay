@@ -27,7 +27,7 @@
 
 namespace yafaray {
 
-ObjectBase::Params::Params(ParamError &param_error, const ParamMap &param_map)
+ObjectBase::Params::Params(ParamResult &param_result, const ParamMap &param_map)
 {
 	PARAM_LOAD(light_name_);
 	PARAM_ENUM_LOAD(visibility_);
@@ -58,10 +58,10 @@ ParamMap ObjectBase::getAsParamMap(bool only_non_default) const
 	return result;
 }
 
-std::pair<std::unique_ptr<Object>, ParamError> ObjectBase::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map)
+std::pair<std::unique_ptr<Object>, ParamResult> ObjectBase::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map)
 {
 	const Type type{ClassMeta::preprocessParamMap<Type>(logger, getClassName(), param_map)};
-	std::pair<std::unique_ptr<Object>, ParamError> result {nullptr, ParamError{ResultFlags::ErrorWhileCreating}};
+	std::pair<std::unique_ptr<Object>, ParamResult> result {nullptr, ParamResult{ResultFlags::ErrorWhileCreating}};
 	switch(type.value())
 	{
 		case Type::Mesh:
@@ -73,12 +73,12 @@ std::pair<std::unique_ptr<Object>, ParamError> ObjectBase::factory(Logger &logge
 		case Type::Sphere:
 		{
 			//FIXME DAVID: probably will need to work on a better parameter error handling considering that both an object and a primitive are involved and the check needs to be done for both
-			ParamError param_error;
-			auto primitive_object{std::make_unique<PrimitiveObject>(param_error, param_map, scene.getMaterials())};
-			auto [primitive, primitive_param_error]{SpherePrimitive::factory(logger, scene, name, param_map, *primitive_object)};
-			param_error.merge(primitive_param_error);
+			ParamResult param_result;
+			auto primitive_object{std::make_unique<PrimitiveObject>(param_result, param_map, scene.getMaterials())};
+			auto [primitive, primitive_param_result]{SpherePrimitive::factory(logger, scene, name, param_map, *primitive_object)};
+			param_result.merge(primitive_param_result);
 			primitive_object->setPrimitive(std::move(primitive));
-			result = {std::move(primitive_object), param_error};
+			result = {std::move(primitive_object), param_result};
 			break;
 		}
 	}
@@ -87,10 +87,10 @@ std::pair<std::unique_ptr<Object>, ParamError> ObjectBase::factory(Logger &logge
 		result.first->setIndexAuto(scene.getObjectIndexAuto());
 		return result;
 	}
-	else return {nullptr, ParamError{ResultFlags::ErrorTypeUnknownParam}};
+	else return {nullptr, ParamResult{ResultFlags::ErrorTypeUnknownParam}};
 }
 
-ObjectBase::ObjectBase(ParamError &param_error, const ParamMap &param_map, const SceneItems<Material> &materials) : params_{param_error, param_map}, materials_{materials}
+ObjectBase::ObjectBase(ParamResult &param_result, const ParamMap &param_map, const SceneItems<Material> &materials) : params_{param_result, param_map}, materials_{materials}
 {
 	//if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + params_.getAsParamMap(true).print());
 }

@@ -28,7 +28,7 @@
 
 namespace yafaray {
 
-TextureBackground::Params::Params(ParamError &param_error, const ParamMap &param_map)
+TextureBackground::Params::Params(ParamResult &param_result, const ParamMap &param_map)
 {
 	PARAM_LOAD(rotation_);
 	PARAM_LOAD(ibl_blur_);
@@ -55,23 +55,23 @@ ParamMap TextureBackground::getAsParamMap(bool only_non_default) const
 	return result;
 }
 
-std::pair<std::unique_ptr<Background>, ParamError> TextureBackground::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map)
+std::pair<std::unique_ptr<Background>, ParamResult> TextureBackground::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map)
 {
-	auto param_error{Params::meta_.check(param_map, {"type"}, {})};
+	auto param_result{Params::meta_.check(param_map, {"type"}, {})};
 	std::string texname;
 	if(param_map.getParam(Params::texture_name_meta_, texname) == ResultFlags::ErrorTypeUnknownParam)
 	{
 		logger.logError(getClassName(), ": No texture given for texture background!");
-		return {nullptr, ParamError{ResultFlags::ErrorWhileCreating}};
+		return {nullptr, ParamResult{ResultFlags::ErrorWhileCreating}};
 	}
 	Texture *tex = scene.getTexture(texname);
 	if(!tex)
 	{
 		logger.logError(getClassName(), ": Texture '", texname, "' for textureback not existant!");
-		return {nullptr, ParamError{ResultFlags::ErrorWhileCreating}};
+		return {nullptr, ParamResult{ResultFlags::ErrorWhileCreating}};
 	}
-	auto background{std::make_unique<ThisClassType_t>(logger, param_error, param_map, tex)};
-	if(param_error.notOk()) logger.logWarning(param_error.print<ThisClassType_t>(name, {"type"}));
+	auto background{std::make_unique<ThisClassType_t>(logger, param_result, param_map, tex)};
+	if(param_result.notOk()) logger.logWarning(param_result.print<ThisClassType_t>(name, {"type"}));
 	if(background->ParentClassType_t::params_.ibl_)
 	{
 		if(background->params_.ibl_blur_ > 0.f)
@@ -96,11 +96,11 @@ std::pair<std::unique_ptr<Background>, ParamError> TextureBackground::factory(Lo
 		bglight->setBackground(background.get());
 		background->addLight(std::move(bglight));
 	}
-	return {std::move(background), param_error};
+	return {std::move(background), param_result};
 }
 
-TextureBackground::TextureBackground(Logger &logger, ParamError &param_error, const ParamMap &param_map, const Texture *texture) :
-		ParentClassType_t{logger, param_error, param_map}, params_{param_error, param_map}, tex_{texture}
+TextureBackground::TextureBackground(Logger &logger, ParamResult &param_result, const ParamMap &param_map, const Texture *texture) :
+		ParentClassType_t{logger, param_result, param_map}, params_{param_result, param_map}, tex_{texture}
 {
 	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + params_.getAsParamMap(true).print());
 	sin_r_ = math::sin(math::num_pi<> * rotation_);

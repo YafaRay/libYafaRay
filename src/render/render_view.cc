@@ -27,7 +27,7 @@
 
 namespace yafaray {
 
-RenderView::Params::Params(ParamError &param_error, const ParamMap &param_map)
+RenderView::Params::Params(ParamResult &param_result, const ParamMap &param_map)
 {
 	PARAM_LOAD(camera_name_);
 	PARAM_LOAD(light_names_);
@@ -48,16 +48,16 @@ ParamMap RenderView::getAsParamMap(bool only_non_default) const
 	return params_.getAsParamMap(only_non_default);
 }
 
-std::pair<std::unique_ptr<RenderView>, ParamError> RenderView::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map)
+std::pair<std::unique_ptr<RenderView>, ParamResult> RenderView::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map)
 {
 	if(logger.isDebug()) logger.logDebug("**" + getClassName() + "::factory 'raw' ParamMap\n" + param_map.logContents());
-	auto param_error{Params::meta_.check(param_map, {}, {})};
-	auto render_view {std::make_unique<RenderView>(logger, param_error, param_map)};
-	if(param_error.notOk()) logger.logWarning(param_error.print<RenderView>(name, {}));
-	return {std::move(render_view), param_error};
+	auto param_result{Params::meta_.check(param_map, {}, {})};
+	auto render_view {std::make_unique<RenderView>(logger, param_result, param_map)};
+	if(param_result.notOk()) logger.logWarning(param_result.print<RenderView>(name, {}));
+	return {std::move(render_view), param_result};
 }
 
-RenderView::RenderView(Logger &logger, ParamError &param_error, const ParamMap &param_map) : params_{param_error, param_map}
+RenderView::RenderView(Logger &logger, ParamResult &param_result, const ParamMap &param_map) : params_{param_result, param_map}
 {
 	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + params_.getAsParamMap(true).print());
 }

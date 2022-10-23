@@ -54,18 +54,18 @@ class ExportC: public Interface
 		int addUv(Uv<float> &&uv) noexcept override;
 		bool smoothVerticesNormals(std::string &&name, double angle) noexcept override;
 		void setCurrentMaterial(std::string &&name) noexcept override;
-		std::pair<size_t, ParamError> createObject(std::string &&name) noexcept override;
-		std::pair<size_t, ParamError> createLight(std::string &&name) noexcept override;
-		std::pair<size_t, ParamError> createTexture(std::string &&name) noexcept override;
-		std::pair<size_t, ParamError> createMaterial(std::string &&name) noexcept override;
-		std::pair<size_t, ParamError> createCamera(std::string &&name) noexcept override;
-		ParamError defineBackground() noexcept override;
-		ParamError defineSurfaceIntegrator() noexcept override;
-		ParamError defineVolumeIntegrator() noexcept override;
-		std::pair<size_t, ParamError> createVolumeRegion(std::string &&name) noexcept override;
-		std::pair<size_t, ParamError> createRenderView(std::string &&name) noexcept override;
-		std::pair<Image *, ParamError> createImage(std::string &&name) noexcept override;
-		std::pair<size_t, ParamError> createOutput(std::string &&name) noexcept override;
+		std::pair<size_t, ParamResult> createObject(std::string &&name) noexcept override;
+		std::pair<size_t, ParamResult> createLight(std::string &&name) noexcept override;
+		std::pair<size_t, ParamResult> createTexture(std::string &&name) noexcept override;
+		std::pair<size_t, ParamResult> createMaterial(std::string &&name) noexcept override;
+		std::pair<size_t, ParamResult> createCamera(std::string &&name) noexcept override;
+		ParamResult defineBackground() noexcept override;
+		ParamResult defineSurfaceIntegrator() noexcept override;
+		ParamResult defineVolumeIntegrator() noexcept override;
+		std::pair<size_t, ParamResult> createVolumeRegion(std::string &&name) noexcept override;
+		std::pair<size_t, ParamResult> createRenderView(std::string &&name) noexcept override;
+		std::pair<Image *, ParamResult> createImage(std::string &&name) noexcept override;
+		std::pair<size_t, ParamResult> createOutput(std::string &&name) noexcept override;
 		void clearAll() noexcept override; //!< clear the whole environment + scene, i.e. free (hopefully) all memory.
 		void clearOutputs() noexcept override { }
 		void setupRender() noexcept override;

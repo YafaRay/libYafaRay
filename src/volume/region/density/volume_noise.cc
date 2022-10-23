@@ -24,7 +24,7 @@
 
 namespace yafaray {
 
-NoiseVolumeRegion::Params::Params(ParamError &param_error, const ParamMap &param_map)
+NoiseVolumeRegion::Params::Params(ParamResult &param_result, const ParamMap &param_map)
 {
 	PARAM_LOAD(sharpness_);
 	PARAM_LOAD(density_);
@@ -49,29 +49,29 @@ ParamMap NoiseVolumeRegion::getAsParamMap(bool only_non_default) const
 	return result;
 }
 
-std::pair<std::unique_ptr<VolumeRegion>, ParamError> NoiseVolumeRegion::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map)
+std::pair<std::unique_ptr<VolumeRegion>, ParamResult> NoiseVolumeRegion::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map)
 {
-	auto param_error{Params::meta_.check(param_map, {"type"}, {})};
+	auto param_result{Params::meta_.check(param_map, {"type"}, {})};
 	std::string tex_name;
 	param_map.getParam(Params::texture_meta_.name(), tex_name);
 	if(tex_name.empty())
 	{
 		if(logger.isVerbose()) logger.logVerbose(getClassName() + ": Noise texture not set, the volume region won't be created.");
-		return {nullptr, ParamError{ResultFlags::ErrorWhileCreating}};
+		return {nullptr, ParamResult{ResultFlags::ErrorWhileCreating}};
 	}
 	const Texture *texture{scene.getTexture(tex_name)};
 	if(!texture)
 	{
 		if(logger.isVerbose()) logger.logVerbose(getClassName() + ": Noise texture '", tex_name, "' couldn't be found, the volume region won't be created.");
-		return {nullptr, ParamError{ResultFlags::ErrorWhileCreating}};
+		return {nullptr, ParamResult{ResultFlags::ErrorWhileCreating}};
 	}
-	auto volume_region {std::make_unique<ThisClassType_t>(logger, param_error, param_map, texture)};
-	if(param_error.notOk()) logger.logWarning(param_error.print<ThisClassType_t>(name, {"type"}));
-	return {std::move(volume_region), param_error};
+	auto volume_region {std::make_unique<ThisClassType_t>(logger, param_result, param_map, texture)};
+	if(param_result.notOk()) logger.logWarning(param_result.print<ThisClassType_t>(name, {"type"}));
+	return {std::move(volume_region), param_result};
 }
 
-NoiseVolumeRegion::NoiseVolumeRegion(Logger &logger, ParamError &param_error, const ParamMap &param_map, const Texture *texture) :
-		ParentClassType_t{logger, param_error, param_map}, params_{param_error, param_map}, tex_dist_noise_{texture}
+NoiseVolumeRegion::NoiseVolumeRegion(Logger &logger, ParamResult &param_result, const ParamMap &param_map, const Texture *texture) :
+		ParentClassType_t{logger, param_result, param_map}, params_{param_result, param_map}, tex_dist_noise_{texture}
 {
 	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + params_.getAsParamMap(true).print());
 }

@@ -33,10 +33,10 @@ class AngularCamera final : public Camera
 
 	public:
 		inline static std::string getClassName() { return "AngularCamera"; }
-		static std::pair<std::unique_ptr<Camera>, ParamError> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map);
+		static std::pair<std::unique_ptr<Camera>, ParamResult> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map);
 		static std::string printMeta(const std::vector<std::string> &excluded_params) { return Params::meta_.print(excluded_params); }
 		[[nodiscard]] ParamMap getAsParamMap(bool only_non_default) const override;
-		AngularCamera(Logger &logger, ParamError &param_error, const ParamMap &param_map);
+		AngularCamera(Logger &logger, ParamResult &param_result, const ParamMap &param_map);
 
 	private:
 		struct Projection : public Enum<Projection>  //Fish Eye Projections as defined in https://en.wikipedia.org/wiki/Fisheye_lens

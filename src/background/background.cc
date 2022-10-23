@@ -29,7 +29,7 @@
 
 namespace yafaray {
 
-Background::Params::Params(ParamError &param_error, const ParamMap &param_map)
+Background::Params::Params(ParamResult &param_result, const ParamMap &param_map)
 {
 	PARAM_LOAD(power_);
 	PARAM_LOAD(ibl_);
@@ -58,7 +58,7 @@ ParamMap Background::getAsParamMap(bool only_non_default) const
 	return result;
 }
 
-std::pair<std::unique_ptr<Background>, ParamError> Background::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map)
+std::pair<std::unique_ptr<Background>, ParamResult> Background::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map)
 {
 	const Type type{ClassMeta::preprocessParamMap<Type>(logger, getClassName(), param_map)};
 	switch(type.value())
@@ -68,11 +68,11 @@ std::pair<std::unique_ptr<Background>, ParamError> Background::factory(Logger &l
 		case Type::SunSky: return SunSkyBackground::factory(logger, scene, name, param_map);
 		case Type::Texture: return TextureBackground::factory(logger, scene, name, param_map);
 		case Type::Constant: return ConstantBackground::factory(logger, scene, name, param_map);
-		default: return {nullptr, ParamError{ResultFlags::ErrorWhileCreating}};
+		default: return {nullptr, ParamResult{ResultFlags::ErrorWhileCreating}};
 	}
 }
 
-Background::Background(Logger &logger, ParamError &param_error, const ParamMap &param_map) : params_{param_error, param_map}, logger_(logger)
+Background::Background(Logger &logger, ParamResult &param_result, const ParamMap &param_map) : params_{param_result, param_map}, logger_(logger)
 {
 	//Empty
 }

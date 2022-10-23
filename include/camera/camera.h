@@ -58,9 +58,9 @@ class Camera
 	public:
 		inline static std::string getClassName() { return "Camera"; }
 		[[nodiscard]] virtual Type type() const = 0;
-		static std::pair<std::unique_ptr<Camera>, ParamError> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map);
+		static std::pair<std::unique_ptr<Camera>, ParamResult> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map);
 		[[nodiscard]] virtual ParamMap getAsParamMap(bool only_non_default) const;
-		Camera(Logger &logger, ParamError &param_error, const ParamMap &param_map);
+		Camera(Logger &logger, ParamResult &param_result, const ParamMap &param_map);
 		virtual ~Camera() = default;
 		virtual void setAxis(const Vec3f &vx, const Vec3f &vy, const Vec3f &vz) = 0; //!< Set camera axis
 		/*! Shoot a new ray from the camera gived image pixel coordinates px,py and lense dof effect */

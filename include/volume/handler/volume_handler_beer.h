@@ -32,10 +32,10 @@ class BeerVolumeHandler : public VolumeHandler
 
 	public:
 		inline static std::string getClassName() { return "BeerVolumeHandler"; }
-		static std::pair<std::unique_ptr<VolumeHandler>, ParamError> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map);
+		static std::pair<std::unique_ptr<VolumeHandler>, ParamResult> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map);
 		static std::string printMeta(const std::vector<std::string> &excluded_params) { return Params::meta_.print(excluded_params); }
 		[[nodiscard]] ParamMap getAsParamMap(bool only_non_default) const override;
-		BeerVolumeHandler(Logger &logger, ParamError &param_error, const ParamMap &param_map);
+		BeerVolumeHandler(Logger &logger, ParamResult &param_result, const ParamMap &param_map);
 
 	protected:
 		[[nodiscard]] Type type() const override { return Type::Beer; }

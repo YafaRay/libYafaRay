@@ -38,7 +38,7 @@ class TgaFormat final : public Format
 {
 	public:
 		inline static std::string getClassName() { return "TgaFormat"; }
-		explicit TgaFormat(Logger &logger, ParamError &param_error, const ParamMap &param_map) : Format(logger, param_error, param_map) { }
+		explicit TgaFormat(Logger &logger, ParamResult &param_result, const ParamMap &param_map) : Format(logger, param_result, param_map) { }
 
 	private:
 		[[nodiscard]] Type type() const override { return Type::Tga; }

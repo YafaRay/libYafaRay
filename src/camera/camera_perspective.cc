@@ -26,7 +26,7 @@
 
 namespace yafaray {
 
-PerspectiveCamera::Params::Params(ParamError &param_error, const ParamMap &param_map)
+PerspectiveCamera::Params::Params(ParamResult &param_result, const ParamMap &param_map)
 {
 	PARAM_LOAD(focal_distance_);
 	PARAM_LOAD(aperture_);
@@ -55,16 +55,16 @@ ParamMap PerspectiveCamera::getAsParamMap(bool only_non_default) const
 	return result;
 }
 
-std::pair<std::unique_ptr<Camera>, ParamError> PerspectiveCamera::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map)
+std::pair<std::unique_ptr<Camera>, ParamResult> PerspectiveCamera::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map)
 {
-	auto param_error{Params::meta_.check(param_map, {"type"}, {})};
-	auto camera {std::make_unique<ThisClassType_t>(logger, param_error, param_map)};
-	if(param_error.notOk()) logger.logWarning(param_error.print<ThisClassType_t>(name, {"type"}));
-	return {std::move(camera), param_error};
+	auto param_result{Params::meta_.check(param_map, {"type"}, {})};
+	auto camera {std::make_unique<ThisClassType_t>(logger, param_result, param_map)};
+	if(param_result.notOk()) logger.logWarning(param_result.print<ThisClassType_t>(name, {"type"}));
+	return {std::move(camera), param_result};
 }
 
-PerspectiveCamera::PerspectiveCamera(Logger &logger, ParamError &param_error, const ParamMap &param_map) :
-		Camera{logger, param_error, param_map}, params_{param_error, param_map}
+PerspectiveCamera::PerspectiveCamera(Logger &logger, ParamResult &param_result, const ParamMap &param_map) :
+		Camera{logger, param_result, param_map}, params_{param_result, param_map}
 {
 	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + params_.getAsParamMap(true).print());
 

@@ -43,10 +43,10 @@ class LightMaterial final : public Material
 
 	public:
 		inline static std::string getClassName() { return "LightMaterial"; }
-		static std::pair<std::unique_ptr<Material>, ParamError> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map, const std::list<ParamMap> &nodes_param_maps);
+		static std::pair<std::unique_ptr<Material>, ParamResult> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map, const std::list<ParamMap> &nodes_param_maps);
 		static std::string printMeta(const std::vector<std::string> &excluded_params) { return Params::meta_.print(excluded_params); }
 		[[nodiscard]] ParamMap getAsParamMap(bool only_non_default) const override;
-		LightMaterial(Logger &logger, ParamError &param_error, const ParamMap &param_map, const SceneItems <Material> &materials);
+		LightMaterial(Logger &logger, ParamResult &param_result, const ParamMap &param_map, const SceneItems <Material> &materials);
 
 	private:
 		[[nodiscard]] Type type() const override { return Type::Light; }

@@ -29,7 +29,7 @@ class DensityVolumeRegion : public VolumeRegion
 		using ThisClassType_t = DensityVolumeRegion; using ParentClassType_t = VolumeRegion;
 
 	protected:
-		DensityVolumeRegion(Logger &logger, ParamError &param_error, const ParamMap &param_map);
+		DensityVolumeRegion(Logger &logger, ParamResult &param_result, const ParamMap &param_map);
 		static std::string printMeta(const std::vector<std::string> &excluded_params) { return Params::meta_.print(excluded_params); }
 		const struct Params
 		{

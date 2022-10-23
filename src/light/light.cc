@@ -33,7 +33,7 @@
 
 namespace yafaray {
 
-Light::Params::Params(ParamError &param_error, const ParamMap &param_map)
+Light::Params::Params(ParamResult &param_result, const ParamMap &param_map)
 {
 	PARAM_LOAD(light_enabled_);
 	PARAM_LOAD(cast_shadows_);
@@ -60,7 +60,7 @@ ParamMap Light::getAsParamMap(bool only_non_default) const
 	return result;
 }
 
-std::pair<std::unique_ptr<Light>, ParamError> Light::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map)
+std::pair<std::unique_ptr<Light>, ParamResult> Light::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map)
 {
 	const Type type{ClassMeta::preprocessParamMap<Type>(logger, getClassName(), param_map)};
 	switch(type.value())
@@ -75,7 +75,7 @@ std::pair<std::unique_ptr<Light>, ParamError> Light::factory(Logger &logger, con
 		case Type::Sphere: return SphereLight::factory(logger, scene, name, param_map);
 		case Type::Spot: return SpotLight::factory(logger, scene, name, param_map);
 		case Type::Sun: return SunLight::factory(logger, scene, name, param_map);
-		default: return {nullptr, ParamError{ResultFlags::ErrorWhileCreating}};
+		default: return {nullptr, ParamResult{ResultFlags::ErrorWhileCreating}};
 	}
 }
 

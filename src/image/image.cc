@@ -27,7 +27,7 @@
 
 namespace yafaray {
 
-Image::Params::Params(ParamError &param_error, const ParamMap &param_map)
+Image::Params::Params(ParamResult &param_result, const ParamMap &param_map)
 {
 	PARAM_ENUM_LOAD(type_);
 	PARAM_LOAD(filename_);
@@ -56,14 +56,14 @@ ParamMap Image::getAsParamMap(bool only_non_default) const
 	return params_.getAsParamMap(only_non_default);
 }
 
-std::pair<std::unique_ptr<Image>, ParamError> Image::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map)
+std::pair<std::unique_ptr<Image>, ParamResult> Image::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map)
 {
 	if(logger.isDebug()) logger.logDebug("**" + getClassName() + "::factory 'raw' ParamMap\n" + param_map.logContents());
-	auto param_error{Params::meta_.check(param_map, {}, {})};
+	auto param_result{Params::meta_.check(param_map, {}, {})};
 	std::string type_str;
 	param_map.getParam(Params::type_meta_, type_str);
 	const Type type{type_str};
-	Params params{param_error, param_map};
+	Params params{param_result, param_map};
 	std::unique_ptr<Image> image;
 	if(params.filename_.empty())
 	{
@@ -98,9 +98,9 @@ std::pair<std::unique_ptr<Image>, ParamError> Image::factory(Logger &logger, con
 		}
 	}
 	if(!image) image = Image::factory(params);
-	if(param_error.notOk()) logger.logWarning(param_error.print<Image>(name, {}));
+	if(param_result.notOk()) logger.logWarning(param_result.print<Image>(name, {}));
 	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + image->params_.getAsParamMap(true).print());
-	return {std::move(image), param_error};
+	return {std::move(image), param_result};
 }
 
 std::unique_ptr<Image> Image::factory(const Params &params)
