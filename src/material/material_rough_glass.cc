@@ -66,10 +66,10 @@ ParamMap RoughGlassMaterial::getAsParamMap(bool only_non_default) const
 	return result;
 }
 
-std::pair<std::unique_ptr<Material>, ParamError> RoughGlassMaterial::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map, const std::list<ParamMap> &nodes_param_maps)
+std::pair<std::unique_ptr<Material>, ParamError> RoughGlassMaterial::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map, const std::list<ParamMap> &nodes_param_maps, size_t id)
 {
 	auto param_error{Params::meta_.check(param_map, {"type"}, {})};
-	auto material{std::make_unique<ThisClassType_t>(logger, param_error, param_map)};
+	auto material{std::make_unique<ThisClassType_t>(logger, param_error, param_map, id)};
 	if(material->params_.absorption_color_.r_ < 1.f || material->params_.absorption_color_.g_ < 1.f || material->params_.absorption_color_.b_ < 1.f)
 	{
 		//deprecated method:
@@ -127,8 +127,8 @@ std::pair<std::unique_ptr<Material>, ParamError> RoughGlassMaterial::factory(Log
 	return {std::move(material), param_error};
 }
 
-RoughGlassMaterial::RoughGlassMaterial(Logger &logger, ParamError &param_error, const ParamMap &param_map) :
-		ParentClassType_t{logger, param_error, param_map}, params_{param_error, param_map}
+RoughGlassMaterial::RoughGlassMaterial(Logger &logger, ParamError &param_error, const ParamMap &param_map, size_t id) :
+		ParentClassType_t{logger, param_error, param_map, id}, params_{param_error, param_map}
 {
 	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + params_.getAsParamMap(true).print());
 	bsdf_flags_ = BsdfFlags::AllGlossy;

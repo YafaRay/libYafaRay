@@ -572,19 +572,19 @@ void TiledIntegrator::generateCommonLayers(ColorLayers *color_layers, const Surf
 			}
 			if(Rgba *color_layer = color_layers->find(LayerDef::MatIndexAbs))
 			{
-				*color_layer = Rgba{static_cast<float>(sp.getMaterial()->getIndex())};
+				*color_layer = Rgba{static_cast<float>(sp.getMaterial()->getPassIndex())};
 			}
 			if(Rgba *color_layer = color_layers->find(LayerDef::MatIndexNorm))
 			{
-				*color_layer = Rgba{static_cast<float>(sp.getMaterial()->getIndex()) / material_index_highest};
+				*color_layer = Rgba{static_cast<float>(sp.getMaterial()->getPassIndex()) / material_index_highest};
 			}
 			if(Rgba *color_layer = color_layers->find(LayerDef::MatIndexAuto))
 			{
-				*color_layer = Rgba{sp.getMaterial()->getIndexAutoColor()};
+				*color_layer = Rgba{sp.getMaterial()->getPassIndexAutoColor()};
 			}
 			if(Rgba *color_layer = color_layers->find(LayerDef::MatIndexAutoAbs))
 			{
-				*color_layer = Rgba{static_cast<float>(sp.getMaterial()->getIndexAuto())};
+				*color_layer = Rgba{static_cast<float>(sp.getMaterial()->getId() + 1)};
 			}
 			if(Rgba *color_layer = color_layers->find(LayerDef::ObjIndexMask))
 			{
@@ -603,7 +603,7 @@ void TiledIntegrator::generateCommonLayers(ColorLayers *color_layers, const Surf
 			}
 			if(Rgba *color_layer = color_layers->find(LayerDef::MatIndexMask))
 			{
-				if(sp.getMaterial()->getIndex() == mask_params.mat_index_) *color_layer = Rgba(1.f);
+				if(sp.getMaterial()->getPassIndex() == mask_params.mat_index_) *color_layer = Rgba(1.f);
 			}
 			if(Rgba *color_layer = color_layers->find(LayerDef::MatIndexMaskAll))
 			{

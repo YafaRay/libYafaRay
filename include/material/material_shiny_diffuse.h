@@ -53,10 +53,10 @@ class ShinyDiffuseMaterial final : public NodeMaterial
 
 	public:
 		inline static std::string getClassName() { return "ShinyDiffuseMaterial"; }
-		static std::pair<std::unique_ptr<Material>, ParamError> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map, const std::list<ParamMap> &nodes_param_maps);
+		static std::pair<std::unique_ptr<Material>, ParamError> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map, const std::list<ParamMap> &nodes_param_maps, size_t id);
 		static std::string printMeta(const std::vector<std::string> &excluded_params) { return Params::meta_.print(excluded_params); }
 		[[nodiscard]] ParamMap getAsParamMap(bool only_non_default) const override;
-		ShinyDiffuseMaterial(Logger &logger, ParamError &param_error, const ParamMap &param_map);
+		ShinyDiffuseMaterial(Logger &logger, ParamError &param_error, const ParamMap &param_map, size_t id);
 
 	private:
 		[[nodiscard]] Type type() const override { return Type::ShinyDiffuse; }

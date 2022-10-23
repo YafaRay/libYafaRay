@@ -362,11 +362,11 @@ std::pair<size_t, ParamError> Scene::createMaterial(std::string &&name, ParamMap
 		logger_.logDebug("Scene: ", Material::getClassName(), " \"", name, "\" already exists, replacing.");
 		replace_existing = true;
 	}
-	auto [material, param_error]{Material::factory(logger_, *this, name, params, nodes_params)};
+	const size_t material_id { replace_existing ? material_names_it->second : materials_.size()};
+	auto [material, param_error]{Material::factory(logger_, *this, name, params, nodes_params, material_id)};
 	if(material)
 	{
 		creation_state_.changes_ |= CreationState::Flags::CMaterial;
-		const size_t material_id { replace_existing ? material_names_it->second : materials_.size()};
 		if(logger_.isVerbose()) logInfoVerboseSuccess(logger_, Material::getClassName(), name, material->type().print());
 		if(replace_existing) materials_[material_id] = std::move(material);
 		else
@@ -376,7 +376,7 @@ std::pair<size_t, ParamError> Scene::createMaterial(std::string &&name, ParamMap
 		}
 		return {material_id, param_error};
 	}
-	return {0, ParamError{ParamError::Flags::ErrorWhileCreating}};
+	return {material_id, ParamError{ParamError::Flags::ErrorWhileCreating}};
 }
 
 template <typename T>

@@ -35,7 +35,7 @@ class NodeMaterial: public Material
 {
 	public:
 		inline static std::string getClassName() { return "NodeMaterial"; }
-		explicit NodeMaterial(Logger &logger, ParamError &param_error, const ParamMap &param_map) : Material{logger, param_error, param_map} { }
+		explicit NodeMaterial(Logger &logger, ParamError &param_error, const ParamMap &param_map, size_t id) : Material{logger, param_error, param_map, id} { }
 
 	protected:
 		/** parse node shaders to fill nodeList */

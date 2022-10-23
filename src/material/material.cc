@@ -82,47 +82,32 @@ ParamMap Material::getAsParamMap(bool only_non_default) const
 	return result;
 }
 
-std::pair<std::unique_ptr<Material>, ParamError> Material::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map, const std::list<ParamMap> &nodes_param_maps)
+std::pair<std::unique_ptr<Material>, ParamError> Material::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map, const std::list<ParamMap> &nodes_param_maps, size_t id)
 {
 	const Type type{ClassMeta::preprocessParamMap<Type>(logger, getClassName(), param_map)};
 	std::pair<std::unique_ptr<Material>, ParamError> result{nullptr, ParamError{ParamError::Flags::ErrorWhileCreating}};
 	switch(type.value())
 	{
-		case Type::Blend: result = BlendMaterial::factory(logger, scene, name, param_map, nodes_param_maps); break;
-		case Type::CoatedGlossy: result = CoatedGlossyMaterial::factory(logger, scene, name, param_map, nodes_param_maps); break;
-		case Type::Glass: result = GlassMaterial::factory(logger, scene, name, param_map, nodes_param_maps); break;
-		case Type::Mirror: result = MirrorMaterial::factory(logger, scene, name, param_map, nodes_param_maps); break;
-		case Type::Null: result = NullMaterial::factory(logger, scene, name, param_map, nodes_param_maps); break;
-		case Type::Glossy: result = GlossyMaterial::factory(logger, scene, name, param_map, nodes_param_maps); break;
-		case Type::RoughGlass: result = RoughGlassMaterial::factory(logger, scene, name, param_map, nodes_param_maps); break;
-		case Type::ShinyDiffuse: result = ShinyDiffuseMaterial::factory(logger, scene, name, param_map, nodes_param_maps); break;
-		case Type::Light: result = LightMaterial::factory(logger, scene, name, param_map, nodes_param_maps); break;
-		case Type::Mask: result = MaskMaterial::factory(logger, scene, name, param_map, nodes_param_maps); break;
+		case Type::Blend: result = BlendMaterial::factory(logger, scene, name, param_map, nodes_param_maps, id); break;
+		case Type::CoatedGlossy: result = CoatedGlossyMaterial::factory(logger, scene, name, param_map, nodes_param_maps, id); break;
+		case Type::Glass: result = GlassMaterial::factory(logger, scene, name, param_map, nodes_param_maps, id); break;
+		case Type::Mirror: result = MirrorMaterial::factory(logger, scene, name, param_map, nodes_param_maps, id); break;
+		case Type::Null: result = NullMaterial::factory(logger, scene, name, param_map, nodes_param_maps, id); break;
+		case Type::Glossy: result = GlossyMaterial::factory(logger, scene, name, param_map, nodes_param_maps, id); break;
+		case Type::RoughGlass: result = RoughGlassMaterial::factory(logger, scene, name, param_map, nodes_param_maps, id); break;
+		case Type::ShinyDiffuse: result = ShinyDiffuseMaterial::factory(logger, scene, name, param_map, nodes_param_maps, id); break;
+		case Type::Light: result = LightMaterial::factory(logger, scene, name, param_map, nodes_param_maps, id); break;
+		case Type::Mask: result = MaskMaterial::factory(logger, scene, name, param_map, nodes_param_maps, id); break;
 		default: break;
 	}
 	return result;
 }
 
-Material::Material(Logger &logger, ParamError &param_error, const ParamMap &param_map) :
+Material::Material(Logger &logger, ParamError &param_error, const ParamMap &param_map, size_t id) :
 		params_{param_error, param_map},
-		logger_{logger}
+		id_{id}, logger_{logger}
 {
 	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + params_.getAsParamMap(true).print());
-}
-
-void Material::setIndexAuto(unsigned int new_mat_index)
-{
-	index_auto_ = new_mat_index;
-	srand(index_auto_);
-	float r, g, b;
-	do
-	{
-		r = static_cast<float>(rand() % 8) / 8.f;
-		g = static_cast<float>(rand() % 8) / 8.f;
-		b = static_cast<float>(rand() % 8) / 8.f;
-	}
-	while(r + g + b < 0.5f);
-	index_auto_color_ = Rgb(r, g, b);
 }
 
 Material::~Material() = default; //Destructor definition done here and not in material.h to avoid compilation problems with std::unique_ptr

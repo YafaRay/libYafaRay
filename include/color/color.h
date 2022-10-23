@@ -127,6 +127,7 @@ class Rgb
 		static float sRgbFromLinearRgb(float value_linear_rgb);
 		static Rgb mix(const Rgb &a, const Rgb &b, float point);
 		static float maxAbsDiff(const Rgb &a, const Rgb &b);
+		static Rgb pseudoRandomDistinctFromIndex(unsigned int index);
 
 		float r_ = 0.f;
 		float g_ = 0.f;
@@ -538,6 +539,20 @@ inline Rgba Rgba::normalized(float weight) const
 {
 	if(weight != 0.f) return *this / weight;	//Changed from if(weight > 0.f) to if(weight != 0.f) because lanczos and mitchell filters, as they have a negative lobe, sometimes generate pixels with all negative values and also negative weight. Having if(weight > 0.f) caused such pixels to be incorrectly set to 0,0,0,0 and were shown as black dots (with alpha=0). Options are: clipping the filter output to values >=0, but they would lose ability to sharpen the image. Other option (applied here) is to allow negative values and normalize them correctly. This solves a problem stated in http://yafaray.org/node/712 but perhaps could cause other artifacts? We have to keep an eye on this to decide the best option.
 	else return Rgba{0.f};
+}
+
+inline Rgb Rgb::pseudoRandomDistinctFromIndex(unsigned int index)
+{
+	srand(index);
+	float r, g, b;
+	do
+	{
+		r = static_cast<float>(rand() % 8) / 8.f;
+		g = static_cast<float>(rand() % 8) / 8.f;
+		b = static_cast<float>(rand() % 8) / 8.f;
+	}
+	while(r + g + b < 0.5f);
+	return {r, g, b};
 }
 
 } //namespace yafaray

@@ -51,7 +51,7 @@ ParamMap MaskMaterial::getAsParamMap(bool only_non_default) const
 	return result;
 }
 
-std::pair<std::unique_ptr<Material>, ParamError> MaskMaterial::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map, const std::list<ParamMap> &nodes_param_maps)
+std::pair<std::unique_ptr<Material>, ParamError> MaskMaterial::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map, const std::list<ParamMap> &nodes_param_maps, size_t id)
 {
 	auto param_error{Params::meta_.check(param_map, {"type"}, {})};
 	std::string mat_1_name;
@@ -62,7 +62,7 @@ std::pair<std::unique_ptr<Material>, ParamError> MaskMaterial::factory(Logger &l
 	const auto [mat_2_id, mat_2_error]{scene.getMaterial(mat_2_name)};
 	if(mat_1_error.hasError() || mat_2_error.hasError()) return {nullptr, ParamError{ParamError::Flags::ErrorWhileCreating}};
 
-	auto material{std::make_unique<ThisClassType_t>(logger, param_error, param_map, mat_1_id, mat_2_id, scene.getMaterials())};
+	auto material{std::make_unique<ThisClassType_t>(logger, param_error, param_map, mat_1_id, mat_2_id, scene.getMaterials(), id)};
 
 	std::map<std::string, const ShaderNode *> root_nodes_map;
 	// Prepare our node list
@@ -100,8 +100,8 @@ std::pair<std::unique_ptr<Material>, ParamError> MaskMaterial::factory(Logger &l
 	return {std::move(material), param_error};
 }
 
-MaskMaterial::MaskMaterial(Logger &logger, ParamError &param_error, const ParamMap &param_map, size_t material_1_id, size_t material_2_id, const std::vector<std::unique_ptr<Material>> &materials) :
-		ParentClassType_t{logger, param_error, param_map}, params_{param_error, param_map},
+MaskMaterial::MaskMaterial(Logger &logger, ParamError &param_error, const ParamMap &param_map, size_t material_1_id, size_t material_2_id, const std::vector<std::unique_ptr<Material>> &materials, size_t id) :
+		ParentClassType_t{logger, param_error, param_map, id}, params_{param_error, param_map},
 		material_1_id_{material_1_id}, material_2_id_{material_2_id}, materials_{materials}
 {
 	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + params_.getAsParamMap(true).print());
