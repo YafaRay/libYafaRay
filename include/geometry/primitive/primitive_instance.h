@@ -38,17 +38,17 @@ class Scene;
 class PrimitiveInstance : public Primitive
 {
 	public:
-		PrimitiveInstance(const Primitive *base_primitive, const ObjectInstance &base_instance) : base_instance_(base_instance), base_primitive_(base_primitive) { }
+		PrimitiveInstance(const Primitive &base_primitive, const ObjectInstance &base_instance) : base_instance_(base_instance), base_primitive_(base_primitive) { }
 		Bound<float> getBound() const override;
 		Bound<float> getBound(const Matrix4f &obj_to_world) const override;
-		bool clippingSupport() const override { return base_primitive_->clippingSupport() && !base_instance_.hasMotionBlur(); }
+		bool clippingSupport() const override { return base_primitive_.clippingSupport() && !base_instance_.hasMotionBlur(); }
 		PolyDouble::ClipResultWithBound clipToBound(Logger &logger, const std::array<Vec3d, 2> &bound, const ClipPlane &clip_plane, const PolyDouble &poly) const override;
 		PolyDouble::ClipResultWithBound clipToBound(Logger &logger, const std::array<Vec3d, 2> &bound, const ClipPlane &clip_plane, const PolyDouble &poly, const Matrix4f &obj_to_world) const override;
 		std::pair<float, Uv<float>> intersect(const Point3f &from, const Vec3f &dir, float time) const override;
 		std::pair<float, Uv<float>> intersect(const Point3f &from, const Vec3f &dir, float time, const Matrix4f &obj_to_world) const override;
 		std::unique_ptr<const SurfacePoint> getSurface(const RayDifferentials *ray_differentials, const Point3f &hit_point, float time, const Uv<float> &intersect_uv, const Camera *camera) const override;
 		std::unique_ptr<const SurfacePoint> getSurface(const RayDifferentials *ray_differentials, const Point3f &hit_point, float time, const Uv<float> &intersect_uv, const Camera *camera, const Matrix4f &obj_to_world) const override;
-		const Material *getMaterial() const override { return base_primitive_->getMaterial(); }
+		const Material *getMaterial() const override { return base_primitive_.getMaterial(); }
 		float surfaceArea(float time) const override;
 		float surfaceArea(float time, const Matrix4f &obj_to_world) const override;
 		Vec3f getGeometricNormal(const Uv<float> &uv, float time, bool) const override;
@@ -56,76 +56,76 @@ class PrimitiveInstance : public Primitive
 		std::pair<Point3f, Vec3f> sample(const Uv<float> &uv, float time) const override;
 		std::pair<Point3f, Vec3f> sample(const Uv<float> &uv, float time, const Matrix4f &obj_to_world) const override;
 		const Object *getObject() const override { return &base_instance_; }
-		Visibility getVisibility() const override { return base_primitive_->getVisibility(); }
-		unsigned int getObjectIndex() const override { return base_primitive_->getObjectIndex(); }
-		unsigned int getObjectIndexAuto() const override { return base_primitive_->getObjectIndexAuto(); }
-		Rgb getObjectIndexAutoColor() const override { return base_primitive_->getObjectIndexAutoColor(); }
-		const Light *getObjectLight() const override { return base_primitive_->getObjectLight(); }
-		bool hasObjectMotionBlur() const override { return base_primitive_->hasObjectMotionBlur(); }
-		float getDistToNearestEdge(const Uv<float> &uv, const Uv<Vec3f> &dp_abs) const override { return base_primitive_->getDistToNearestEdge(uv, dp_abs); }
+		Visibility getVisibility() const override { return base_primitive_.getVisibility(); }
+		unsigned int getObjectIndex() const override { return base_primitive_.getObjectIndex(); }
+		unsigned int getObjectIndexAuto() const override { return base_primitive_.getObjectIndexAuto(); }
+		Rgb getObjectIndexAutoColor() const override { return base_primitive_.getObjectIndexAutoColor(); }
+		const Light *getObjectLight() const override { return base_primitive_.getObjectLight(); }
+		bool hasObjectMotionBlur() const override { return base_primitive_.hasObjectMotionBlur(); }
+		float getDistToNearestEdge(const Uv<float> &uv, const Uv<Vec3f> &dp_abs) const override { return base_primitive_.getDistToNearestEdge(uv, dp_abs); }
 
 	private:
 		const ObjectInstance &base_instance_;
-		const Primitive *base_primitive_ = nullptr;
+		const Primitive &base_primitive_;
 };
 
 inline PolyDouble::ClipResultWithBound PrimitiveInstance::clipToBound(Logger &logger, const std::array<Vec3d, 2> &bound, const ClipPlane &clip_plane, const PolyDouble &poly) const
 {
-	return base_primitive_->clipToBound(logger, bound, clip_plane, poly, base_instance_.getObjToWorldMatrix(0));
+	return base_primitive_.clipToBound(logger, bound, clip_plane, poly, base_instance_.getObjToWorldMatrix(0));
 }
 
 inline PolyDouble::ClipResultWithBound PrimitiveInstance::clipToBound(Logger &logger, const std::array<Vec3d, 2> &bound, const ClipPlane &clip_plane, const PolyDouble &poly, const Matrix4f &obj_to_world) const
 {
-	return base_primitive_->clipToBound(logger, bound, clip_plane, poly, obj_to_world * base_instance_.getObjToWorldMatrix(0));
+	return base_primitive_.clipToBound(logger, bound, clip_plane, poly, obj_to_world * base_instance_.getObjToWorldMatrix(0));
 }
 
 inline std::pair<float, Uv<float>> PrimitiveInstance::intersect(const Point3f &from, const Vec3f &dir, float time) const
 {
-	return base_primitive_->intersect(from, dir, time, base_instance_.getObjToWorldMatrixAtTime(time));
+	return base_primitive_.intersect(from, dir, time, base_instance_.getObjToWorldMatrixAtTime(time));
 }
 
 inline std::pair<float, Uv<float>> PrimitiveInstance::intersect(const Point3f &from, const Vec3f &dir, float time, const Matrix4f &obj_to_world) const
 {
-	return base_primitive_->intersect(from, dir, time, obj_to_world * base_instance_.getObjToWorldMatrixAtTime(time));
+	return base_primitive_.intersect(from, dir, time, obj_to_world * base_instance_.getObjToWorldMatrixAtTime(time));
 }
 
 inline float PrimitiveInstance::surfaceArea(float time) const
 {
-	return base_primitive_->surfaceArea(time, base_instance_.getObjToWorldMatrixAtTime(time));
+	return base_primitive_.surfaceArea(time, base_instance_.getObjToWorldMatrixAtTime(time));
 }
 
 inline float PrimitiveInstance::surfaceArea(float time, const Matrix4f &obj_to_world) const
 {
-	return base_primitive_->surfaceArea(time, obj_to_world * base_instance_.getObjToWorldMatrixAtTime(time));
+	return base_primitive_.surfaceArea(time, obj_to_world * base_instance_.getObjToWorldMatrixAtTime(time));
 }
 
 inline Vec3f PrimitiveInstance::getGeometricNormal(const Uv<float> &uv, float time, bool) const
 {
-	return base_primitive_->getGeometricNormal(uv, time, base_instance_.getObjToWorldMatrixAtTime(time));
+	return base_primitive_.getGeometricNormal(uv, time, base_instance_.getObjToWorldMatrixAtTime(time));
 }
 
 inline Vec3f PrimitiveInstance::getGeometricNormal(const Uv<float> &uv, float time, const Matrix4f &obj_to_world) const
 {
-	return base_primitive_->getGeometricNormal(uv, time, obj_to_world * base_instance_.getObjToWorldMatrixAtTime(time));
+	return base_primitive_.getGeometricNormal(uv, time, obj_to_world * base_instance_.getObjToWorldMatrixAtTime(time));
 }
 
 inline std::pair<Point3f, Vec3f> PrimitiveInstance::sample(const Uv<float> &uv, float time) const
 {
-	return base_primitive_->sample(uv, time, base_instance_.getObjToWorldMatrixAtTime(time));
+	return base_primitive_.sample(uv, time, base_instance_.getObjToWorldMatrixAtTime(time));
 }
 
 inline std::pair<Point3f, Vec3f> PrimitiveInstance::sample(const Uv<float> &uv, float time, const Matrix4f &obj_to_world) const
 {
-	return base_primitive_->sample(uv, time, obj_to_world * base_instance_.getObjToWorldMatrixAtTime(time));
+	return base_primitive_.sample(uv, time, obj_to_world * base_instance_.getObjToWorldMatrixAtTime(time));
 }
 
 inline Bound<float> PrimitiveInstance::getBound() const
 {
 	const std::vector<const Matrix4f *> matrices = base_instance_.getObjToWorldMatrices();
-	Bound result{base_primitive_->getBound(*matrices[0])};
+	Bound result{base_primitive_.getBound(*matrices[0])};
 	for(size_t i = 1; i < matrices.size(); ++i)
 	{
-		result.include(base_primitive_->getBound(*matrices[i]));
+		result.include(base_primitive_.getBound(*matrices[i]));
 	}
 	return result;
 }
@@ -133,10 +133,10 @@ inline Bound<float> PrimitiveInstance::getBound() const
 inline Bound<float> PrimitiveInstance::getBound(const Matrix4f &obj_to_world) const
 {
 	const std::vector<const Matrix4f *> matrices = base_instance_.getObjToWorldMatrices();
-	Bound result{base_primitive_->getBound(obj_to_world * *(matrices[0]))};
+	Bound result{base_primitive_.getBound(obj_to_world * *(matrices[0]))};
 	for(size_t i = 1; i < matrices.size(); ++i)
 	{
-		result.include(base_primitive_->getBound(obj_to_world * *(matrices[i])));
+		result.include(base_primitive_.getBound(obj_to_world * *(matrices[i])));
 	}
 	return result;
 }
