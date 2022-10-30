@@ -50,7 +50,6 @@ class Scene;
 class ImageOutput;
 class Format;
 class ParamMap;
-class Integrator;
 class SurfaceIntegrator;
 class VolumeIntegrator;
 class SurfacePoint;

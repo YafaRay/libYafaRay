@@ -37,7 +37,6 @@ class Texture;
 class Material;
 class Camera;
 class Background;
-class Integrator;
 class VolumeRegion;
 class Scene;
 class ImageOutput;
