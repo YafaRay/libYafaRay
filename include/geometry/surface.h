@@ -87,7 +87,7 @@ class SurfacePoint final
 		[[nodiscard]] Rgb getObjectIndexAutoColor() const { if(primitive_) return primitive_->getObjectIndexAutoColor(); else return Rgb{0.f}; }
 		[[nodiscard]] const Material *getMaterial() const { if(primitive_) return primitive_->getMaterial(); else return nullptr; }
 		[[nodiscard]] const Light *getLight() const { if(primitive_) return primitive_->getObjectLight(); else return nullptr; }
-		[[nodiscard]] bool hasMotionBlur() const { if(primitive_) return primitive_->hasObjectMotionBlur(); else return false; }
+		[[nodiscard]] bool hasMotionBlur() const { if(primitive_) return primitive_->hasMotionBlur(); else return false; }
 
 		alignas(8) std::unique_ptr<const MaterialData> mat_data_;
 		std::unique_ptr<const SurfaceDifferentials> differentials_; //!< Surface Differentials for mipmaps calculations

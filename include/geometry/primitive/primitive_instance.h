@@ -35,13 +35,13 @@ typedef Point<float, 3> Point3f;
 class ParamMap;
 class Scene;
 
-class PrimitiveInstance : public Primitive
+class PrimitiveInstance final : public Primitive
 {
 	public:
 		PrimitiveInstance(const Primitive &base_primitive, const Instance &base_instance) : base_instance_(base_instance), base_primitive_(base_primitive) { }
 		Bound<float> getBound() const override;
 		Bound<float> getBound(const Matrix4f &obj_to_world) const override;
-		bool clippingSupport() const override { return base_primitive_.clippingSupport() && !base_instance_.hasMotionBlur(); }
+		bool clippingSupport() const override { return base_primitive_.clippingSupport() && !hasMotionBlur(); }
 		PolyDouble::ClipResultWithBound clipToBound(Logger &logger, const std::array<Vec3d, 2> &bound, const ClipPlane &clip_plane, const PolyDouble &poly) const override;
 		PolyDouble::ClipResultWithBound clipToBound(Logger &logger, const std::array<Vec3d, 2> &bound, const ClipPlane &clip_plane, const PolyDouble &poly, const Matrix4f &obj_to_world) const override;
 		std::pair<float, Uv<float>> intersect(const Point3f &from, const Vec3f &dir, float time) const override;
@@ -61,7 +61,7 @@ class PrimitiveInstance : public Primitive
 		unsigned int getObjectIndexAuto() const override { return base_primitive_.getObjectIndexAuto(); }
 		Rgb getObjectIndexAutoColor() const override { return base_primitive_.getObjectIndexAutoColor(); }
 		const Light *getObjectLight() const override { return base_primitive_.getObjectLight(); }
-		bool hasObjectMotionBlur() const override { return base_primitive_.hasObjectMotionBlur(); }
+		bool hasMotionBlur() const override { return base_instance_.hasMotionBlur(); }
 		float getDistToNearestEdge(const Uv<float> &uv, const Uv<Vec3f> &dp_abs) const override { return base_primitive_.getDistToNearestEdge(uv, dp_abs); }
 
 	private:

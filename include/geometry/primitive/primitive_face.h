@@ -61,7 +61,7 @@ class FacePrimitive: public Primitive
 		unsigned int getObjectIndexAuto() const override { return base_mesh_object_.getIndexAuto(); }
 		Rgb getObjectIndexAutoColor() const override { return base_mesh_object_.getIndexAutoColor(); }
 		const Light *getObjectLight() const override { return base_mesh_object_.getLight(); }
-		bool hasObjectMotionBlur() const override { return base_mesh_object_.hasMotionBlur(); }
+		bool hasMotionBlur() const override { return base_mesh_object_.hasMotionBlur(); }
 
 	protected:
 		alignas(8) const MeshObject &base_mesh_object_;

@@ -70,7 +70,7 @@ class SpherePrimitive final : public Primitive
 		unsigned int getObjectIndexAuto() const override { return base_object_.getIndexAuto(); }
 		Rgb getObjectIndexAutoColor() const override { return base_object_.getIndexAutoColor(); }
 		const Light *getObjectLight() const override { return base_object_.getLight(); }
-		bool hasObjectMotionBlur() const override { return base_object_.hasMotionBlur(); }
+		bool hasMotionBlur() const override { return base_object_.hasMotionBlur(); }
 
 		const PrimitiveObject &base_object_;
 		size_t material_id_{0};

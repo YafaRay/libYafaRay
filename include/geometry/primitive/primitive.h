@@ -71,7 +71,7 @@ class Primitive
 		virtual unsigned int getObjectIndexAuto() const = 0;
 		virtual Rgb getObjectIndexAutoColor() const = 0;
 		virtual const Light *getObjectLight() const = 0;
-		virtual bool hasObjectMotionBlur() const = 0;
+		virtual bool hasMotionBlur() const = 0;
 		virtual PolyDouble::ClipResultWithBound clipToBound(Logger &logger, const std::array<Vec3d, 2> &bound, const ClipPlane &clip_plane, const PolyDouble &poly) const;
 		virtual PolyDouble::ClipResultWithBound clipToBound(Logger &logger, const std::array<Vec3d, 2> &bound, const ClipPlane &clip_plane, const PolyDouble &poly, const Matrix4f &obj_to_world) const;
 };
