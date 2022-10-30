@@ -20,7 +20,7 @@
 #ifndef LIBYAFARAY_OBJECT_MESH_H
 #define LIBYAFARAY_OBJECT_MESH_H
 
-#include "object_base.h"
+#include "object.h"
 #include "geometry/vector.h"
 #include "geometry/uv.h"
 #include <vector>
@@ -32,9 +32,9 @@ template <typename T> struct Uv;
 class FacePrimitive;
 class Material;
 
-class MeshObject : public ObjectBase
+class MeshObject : public Object
 {
-		using ThisClassType_t = MeshObject; using ParentClassType_t = ObjectBase;
+		using ThisClassType_t = MeshObject; using ParentClassType_t = Object;
 
 	public:
 		inline static std::string getClassName() { return "MeshObject"; }
@@ -42,7 +42,7 @@ class MeshObject : public ObjectBase
 		static std::string printMeta(const std::vector<std::string> &excluded_params) { return Params::meta_.print(excluded_params); }
 		[[nodiscard]] ParamMap getAsParamMap(bool only_non_default) const override;
 		MeshObject(ParamResult &param_result, const ParamMap &param_map, const SceneItems<Material> &materials);
-		~MeshObject() override;
+		~MeshObject();
 		/*! the number of primitives the object holds. Primitive is an element
 			that by definition can perform ray-triangle intersection */
 		int numPrimitives() const override { return static_cast<int>(faces_.size()); }
@@ -68,7 +68,7 @@ class MeshObject : public ObjectBase
 		void setSmooth(bool smooth) override { is_smooth_ = smooth; }
 		bool smoothVerticesNormals(Logger &logger, float angle) override;
 		bool calculateObject(size_t material_id) override;
-		bool hasMotionBlurBezier() const { return ObjectBase::params_.motion_blur_bezier_; }
+		bool hasMotionBlurBezier() const { return Object::params_.motion_blur_bezier_; }
 		float getTimeRangeStart() const { return time_steps_.front().time_; }
 		float getTimeRangeEnd() const { return time_steps_.back().time_; }
 		int numTimeSteps() const { return static_cast<int>(time_steps_.size()); }

@@ -20,15 +20,15 @@
 #ifndef LIBYAFARAY_OBJECT_PRIMITIVE_H
 #define LIBYAFARAY_OBJECT_PRIMITIVE_H
 
-#include "object_base.h"
+#include "object.h"
 
 namespace yafaray {
 
 /*! simple "container" to handle primitives as objects, for objects that
 	consist of just one primitive like spheres etc. */
-class PrimitiveObject final : public ObjectBase
+class PrimitiveObject final : public Object
 {
-		using ThisClassType_t = PrimitiveObject; using ParentClassType_t = ObjectBase;
+		using ThisClassType_t = PrimitiveObject; using ParentClassType_t = Object;
 
 	public:
 		PrimitiveObject(ParamResult &param_result, const ParamMap &param_map, const SceneItems<Material> &materials);

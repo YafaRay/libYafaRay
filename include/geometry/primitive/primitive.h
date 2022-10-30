@@ -39,7 +39,6 @@ template <typename T, size_t N> class SquareMatrix;
 typedef SquareMatrix<float, 4> Matrix4f;
 template <typename T, size_t N> class Vec;
 typedef Vec<float, 3> Vec3f;
-class Object;
 class Camera;
 class Rgb;
 class Light;
@@ -66,7 +65,7 @@ class Primitive
 		virtual Vec3f getGeometricNormal(const Uv<float> &uv, float time, const Matrix4f &obj_to_world) const = 0;
 		virtual std::pair<Point3f, Vec3f> sample(const Uv<float> &uv, float time) const = 0;
 		virtual std::pair<Point3f, Vec3f> sample(const Uv<float> &uv, float time, const Matrix4f &obj_to_world) const = 0;
-		virtual const Object *getObject() const = 0;
+		virtual uintptr_t getObjectHandle() const = 0;
 		virtual Visibility getVisibility() const = 0;
 		virtual unsigned int getObjectIndex() const = 0;
 		virtual unsigned int getObjectIndexAuto() const = 0;

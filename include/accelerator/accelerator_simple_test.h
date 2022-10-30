@@ -26,8 +26,6 @@
 
 namespace yafaray {
 
-class Object;
-
 class AcceleratorSimpleTest final : public Accelerator
 {
 		using ThisClassType_t = AcceleratorSimpleTest; using ParentClassType_t = Accelerator;
@@ -57,7 +55,7 @@ class AcceleratorSimpleTest final : public Accelerator
 		Bound<float> getBound() const override { return bound_; }
 
 		const std::vector<const Primitive *> &primitives_;
-		std::map<const Object *, ObjectData> objects_data_;
+		std::map<uintptr_t, ObjectData> object_handles_;
 		Bound<float> bound_;
 };
 

@@ -52,7 +52,7 @@ std::pair<std::unique_ptr<CurveObject>, ParamResult> CurveObject::factory(Logger
 	auto object{std::make_unique<ThisClassType_t>(param_result, param_map, scene.getMaterials())};
 	if(param_result.notOk()) logger.logWarning(param_result.print<ThisClassType_t>(name, {"type"}));
 	object->setName(name);
-	object->setLight(scene.getLight(object->ObjectBase::params_.light_name_));
+	object->setLight(scene.getLight(object->Object::params_.light_name_));
 	return {std::move(object), param_result};
 }
 

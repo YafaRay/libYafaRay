@@ -21,7 +21,7 @@
 #define LIBYAFARAY_PRIMITIVE_INSTANCE_H
 
 #include "color/color.h"
-#include "geometry/object/object_instance.h"
+#include "geometry/instance.h"
 #include "primitive.h"
 #include <array>
 
@@ -38,7 +38,7 @@ class Scene;
 class PrimitiveInstance : public Primitive
 {
 	public:
-		PrimitiveInstance(const Primitive &base_primitive, const ObjectInstance &base_instance) : base_instance_(base_instance), base_primitive_(base_primitive) { }
+		PrimitiveInstance(const Primitive &base_primitive, const Instance &base_instance) : base_instance_(base_instance), base_primitive_(base_primitive) { }
 		Bound<float> getBound() const override;
 		Bound<float> getBound(const Matrix4f &obj_to_world) const override;
 		bool clippingSupport() const override { return base_primitive_.clippingSupport() && !base_instance_.hasMotionBlur(); }
@@ -55,7 +55,7 @@ class PrimitiveInstance : public Primitive
 		Vec3f getGeometricNormal(const Uv<float> &uv, float time, const Matrix4f &obj_to_world) const override;
 		std::pair<Point3f, Vec3f> sample(const Uv<float> &uv, float time) const override;
 		std::pair<Point3f, Vec3f> sample(const Uv<float> &uv, float time, const Matrix4f &obj_to_world) const override;
-		const Object *getObject() const override { return &base_instance_; }
+		uintptr_t getObjectHandle() const override { return reinterpret_cast<uintptr_t>(&base_instance_); }
 		Visibility getVisibility() const override { return base_primitive_.getVisibility(); }
 		unsigned int getObjectIndex() const override { return base_primitive_.getObjectIndex(); }
 		unsigned int getObjectIndexAuto() const override { return base_primitive_.getObjectIndexAuto(); }
@@ -65,7 +65,7 @@ class PrimitiveInstance : public Primitive
 		float getDistToNearestEdge(const Uv<float> &uv, const Uv<Vec3f> &dp_abs) const override { return base_primitive_.getDistToNearestEdge(uv, dp_abs); }
 
 	private:
-		const ObjectInstance &base_instance_;
+		const Instance &base_instance_;
 		const Primitive &base_primitive_;
 };
 

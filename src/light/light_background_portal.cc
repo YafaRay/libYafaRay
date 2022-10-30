@@ -73,8 +73,8 @@ BackgroundPortalLight::BackgroundPortalLight(Logger &logger, ParamResult &param_
 
 void BackgroundPortalLight::initIs()
 {
-	num_primitives_ = base_object_->numPrimitives();
-	primitives_ = base_object_->getPrimitives();
+	num_primitives_ = object_->numPrimitives();
+	primitives_ = object_->getPrimitives();
 	std::vector<float> areas(num_primitives_);
 	double total_area = 0.0;
 	for(int i = 0; i < num_primitives_; ++i)
@@ -99,13 +99,13 @@ void BackgroundPortalLight::init(const Scene &scene)
 	a_pdf_ = world_radius * world_radius;
 
 	world_center_ = 0.5f * (w.a_ + w.g_);
-	base_object_ = scene.getObjectBase(params_.object_name_);
-	if(base_object_)
+	object_ = scene.getObject(params_.object_name_);
+	if(object_)
 	{
-		base_object_->setVisibility(Visibility::None);
+		object_->setVisibility(Visibility::None);
 		initIs();
 		if(logger_.isVerbose()) logger_.logVerbose("bgPortalLight: Triangles:", num_primitives_, ", Area:", area_);
-		base_object_->setLight(this);
+		object_->setLight(this);
 	}
 }
 

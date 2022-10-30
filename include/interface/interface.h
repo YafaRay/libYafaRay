@@ -46,7 +46,6 @@ class ImageFilm;
 class Format;
 template <typename T, size_t N> class SquareMatrix;
 typedef SquareMatrix<float, 4> Matrix4f;
-class Object;
 class Image;
 class Logger;
 class ProgressBar;

@@ -55,7 +55,7 @@ class FacePrimitive: public Primitive
 		template<typename T=bool> Bound<float> getBoundTimeSteps(const T &obj_to_world = {}) const;
 		const Material *getMaterial() const override { return base_mesh_object_.getMaterial(material_id_); }
 		void setMaterial(size_t material_id) { material_id_ = material_id; }
-		const Object *getObject() const override { return &base_mesh_object_; }
+		uintptr_t getObjectHandle() const override { return reinterpret_cast<uintptr_t>(&base_mesh_object_); }
 		Visibility getVisibility() const override { return base_mesh_object_.getVisibility(); }
 		unsigned int getObjectIndex() const override { return base_mesh_object_.getIndex(); }
 		unsigned int getObjectIndexAuto() const override { return base_mesh_object_.getIndexAuto(); }

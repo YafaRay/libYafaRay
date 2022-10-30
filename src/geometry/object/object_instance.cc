@@ -18,13 +18,12 @@
 
 #include "common/visibility.h"
 #include "geometry/matrix.h"
-#include "geometry/object/object.h"
-#include "geometry/object/object_instance.h"
+#include "geometry/instance.h"
 #include "geometry/primitive/primitive_instance.h"
 
 namespace yafaray {
 
-void ObjectInstance::addPrimitives(const std::vector<const Primitive *> &base_primitives)
+void Instance::addPrimitives(const std::vector<const Primitive *> &base_primitives)
 {
 	primitive_instances_.reserve(base_primitives.size());
 	for(const auto &primitive : base_primitives)
@@ -33,14 +32,14 @@ void ObjectInstance::addPrimitives(const std::vector<const Primitive *> &base_pr
 	}
 }
 
-std::vector<const Primitive *> ObjectInstance::getPrimitives() const
+std::vector<const Primitive *> Instance::getPrimitives() const
 {
 	std::vector<const Primitive *> result;
 	for(const auto &primitive_instance : primitive_instances_) result.emplace_back(primitive_instance.get());
 	return result;
 }
 
-std::vector<const Matrix4f *> ObjectInstance::getObjToWorldMatrices() const
+std::vector<const Matrix4f *> Instance::getObjToWorldMatrices() const
 {
 	std::vector<const Matrix4f *> result;
 	for(const auto &time_step : time_steps_)

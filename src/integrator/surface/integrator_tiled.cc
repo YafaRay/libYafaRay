@@ -28,7 +28,6 @@
 #include "common/layers.h"
 #include "background/background.h"
 #include "geometry/surface.h"
-#include "geometry/object/object.h"
 #include "geometry/primitive/primitive.h"
 #include "common/timer.h"
 #include "sampler/halton.h"

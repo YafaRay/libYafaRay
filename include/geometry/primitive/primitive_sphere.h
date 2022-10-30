@@ -62,7 +62,7 @@ class SpherePrimitive final : public Primitive
 		Vec3f getGeometricNormal(const Uv<float> &uv, float time, const Matrix4f &obj_to_world) const override;
 		std::pair<Point3f, Vec3f> sample(const Uv<float> &uv, float time) const override;
 		std::pair<Point3f, Vec3f> sample(const Uv<float> &uv, float time, const Matrix4f &obj_to_world) const override;
-		const Object *getObject() const override { return &base_object_; }
+		uintptr_t getObjectHandle() const override { return reinterpret_cast<uintptr_t>(&base_object_); }
 		Visibility getVisibility() const override { return base_object_.getVisibility(); }
 		bool clippingSupport() const override { return false; }
 		float getDistToNearestEdge(const Uv<float> &uv, const Uv<Vec3f> &dp_abs) const override { return 0.f; }

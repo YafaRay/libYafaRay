@@ -24,7 +24,6 @@
 #define YAFARAY_SURFACE_H
 
 #include "geometry/vector.h"
-#include "geometry/object/object.h"
 #include "geometry/primitive/primitive.h"
 #include "color/color.h"
 #include "material/material.h"
@@ -33,7 +32,6 @@
 
 namespace yafaray {
 class Light;
-class Object;
 class Ray;
 template <typename T, size_t N> class Vec;
 typedef Vec<float, 3> Vec3f;

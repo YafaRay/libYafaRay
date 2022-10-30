@@ -16,7 +16,7 @@
  *      Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-#include "geometry/object/object_base.h"
+#include "geometry/object/object.h"
 #include "geometry/object/object_mesh.h"
 #include "geometry/object/object_curve.h"
 #include "geometry/object/object_primitive.h"
@@ -27,7 +27,7 @@
 
 namespace yafaray {
 
-ObjectBase::Params::Params(ParamResult &param_result, const ParamMap &param_map)
+Object::Params::Params(ParamResult &param_result, const ParamMap &param_map)
 {
 	PARAM_LOAD(light_name_);
 	PARAM_ENUM_LOAD(visibility_);
@@ -38,7 +38,7 @@ ObjectBase::Params::Params(ParamResult &param_result, const ParamMap &param_map)
 	PARAM_LOAD(time_range_end_);
 }
 
-ParamMap ObjectBase::Params::getAsParamMap(bool only_non_default) const
+ParamMap Object::Params::getAsParamMap(bool only_non_default) const
 {
 	PARAM_SAVE_START;
 	PARAM_SAVE(light_name_);
@@ -51,17 +51,17 @@ ParamMap ObjectBase::Params::getAsParamMap(bool only_non_default) const
 	PARAM_SAVE_END;
 }
 
-ParamMap ObjectBase::getAsParamMap(bool only_non_default) const
+ParamMap Object::getAsParamMap(bool only_non_default) const
 {
 	ParamMap result{params_.getAsParamMap(only_non_default)};
 	result.setParam("type", type().print());
 	return result;
 }
 
-std::pair<std::unique_ptr<ObjectBase>, ParamResult> ObjectBase::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map)
+std::pair<std::unique_ptr<Object>, ParamResult> Object::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map)
 {
 	const Type type{ClassMeta::preprocessParamMap<Type>(logger, getClassName(), param_map)};
-	std::pair<std::unique_ptr<ObjectBase>, ParamResult> result {nullptr, ParamResult{YAFARAY_RESULT_ERROR_WHILE_CREATING}};
+	std::pair<std::unique_ptr<Object>, ParamResult> result {nullptr, ParamResult{YAFARAY_RESULT_ERROR_WHILE_CREATING}};
 	switch(type.value())
 	{
 		case Type::Mesh:
@@ -90,12 +90,12 @@ std::pair<std::unique_ptr<ObjectBase>, ParamResult> ObjectBase::factory(Logger &
 	else return {nullptr, ParamResult{YAFARAY_RESULT_ERROR_TYPE_UNKNOWN_PARAM}};
 }
 
-ObjectBase::ObjectBase(ParamResult &param_result, const ParamMap &param_map, const SceneItems<Material> &materials) : params_{param_result, param_map}, materials_{materials}
+Object::Object(ParamResult &param_result, const ParamMap &param_map, const SceneItems<Material> &materials) : params_{param_result, param_map}, materials_{materials}
 {
 	//if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + params_.getAsParamMap(true).print());
 }
 
-void ObjectBase::setIndexAuto(unsigned int new_obj_index)
+void Object::setIndexAuto(unsigned int new_obj_index)
 {
 	index_auto_ = new_obj_index;
 	srand(index_auto_);

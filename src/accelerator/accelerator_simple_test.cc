@@ -18,7 +18,6 @@
 
 #include "accelerator/accelerator_simple_test.h"
 #include "geometry/primitive/primitive.h"
-#include "geometry/object/object.h"
 #include "param/param.h"
 #include "common/logger.h"
 
@@ -58,12 +57,12 @@ AcceleratorSimpleTest::AcceleratorSimpleTest(Logger &logger, ParamResult &param_
 	for(const auto &primitive : primitives)
 	{
 		const Bound primitive_bound{primitive->getBound()};
-		const Object *object = primitive->getObject();
-		const auto &obj_bound_it = objects_data_.find(object);
-		if(obj_bound_it == objects_data_.end())
+		const uintptr_t object_handle{primitive->getObjectHandle()};
+		const auto &obj_bound_it{object_handles_.find(object_handle)};
+		if(obj_bound_it == object_handles_.end())
 		{
-			objects_data_[object].bound_ = primitive_bound;
-			objects_data_[object].primitives_.emplace_back(primitive);
+			object_handles_[object_handle].bound_ = primitive_bound;
+			object_handles_[object_handle].primitives_.emplace_back(primitive);
 		}
 		else
 		{
@@ -72,17 +71,17 @@ AcceleratorSimpleTest::AcceleratorSimpleTest(Logger &logger, ParamResult &param_
 		}
 		bound_ = Bound<float>{bound_, primitive_bound};
 	}
-	for(const auto &[object, object_data] : objects_data_)
+	for(const auto &[object_handle, object_data] : object_handles_)
 	{
-		if(logger_.isVerbose()) logger_.logVerbose(getClassName(), ": Primitives in object '", (object)->getName(), "': ", object_data.primitives_.size(), ", bound: (", object_data.bound_.a_, ", ", object_data.bound_.g_, ")");
+		if(logger_.isVerbose()) logger_.logVerbose(getClassName(), ": Primitives in object handle'", object_handle, "': ", object_data.primitives_.size(), ", bound: (", object_data.bound_.a_, ", ", object_data.bound_.g_, ")");
 	}
-	if(logger_.isVerbose()) logger_.logVerbose(getClassName(), ": Objects: ", objects_data_.size(), ", primitives in tree: ", num_primitives, ", bound: (", bound_.a_, ", ", bound_.g_, ")");
+	if(logger_.isVerbose()) logger_.logVerbose(getClassName(), ": Objects: ", object_handles_.size(), ", primitives in tree: ", num_primitives, ", bound: (", bound_.a_, ", ", bound_.g_, ")");
 }
 
 IntersectData AcceleratorSimpleTest::intersect(const Ray &ray, float t_max) const
 {
 	IntersectData intersect_data;
-	for(const auto &[object, object_data] : objects_data_)
+	for(const auto &[object, object_data] : object_handles_)
 	{
 		if(const Bound<float>::Cross cross{object_data.bound_.cross(ray, t_max)}; cross.crossed_)
 		{
@@ -103,7 +102,7 @@ IntersectData AcceleratorSimpleTest::intersect(const Ray &ray, float t_max) cons
 IntersectData AcceleratorSimpleTest::intersectShadow(const Ray &ray, float t_max) const
 {
 	IntersectData intersect_data;
-	for(const auto &[object, object_data] : objects_data_)
+	for(const auto &[object, object_data] : object_handles_)
 	{
 		if(const Bound<float>::Cross cross{object_data.bound_.cross(ray, t_max)}; cross.crossed_)
 		{
@@ -122,7 +121,7 @@ IntersectData AcceleratorSimpleTest::intersectTransparentShadow(const Ray &ray, 
 	std::set<const Primitive *> filtered;
 	int depth = 0;
 	IntersectData intersect_data;
-	for(const auto &[object, object_data] : objects_data_)
+	for(const auto &[object, object_data] : object_handles_)
 	{
 		if(const Bound<float>::Cross cross{object_data.bound_.cross(ray, t_max)}; cross.crossed_)
 		{

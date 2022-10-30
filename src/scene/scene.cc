@@ -29,8 +29,8 @@
 #include "common/version_build_info.h"
 #include "format/format.h"
 #include "geometry/matrix.h"
-#include "geometry/object/object_base.h"
-#include "geometry/object/object_instance.h"
+#include "geometry/object/object.h"
+#include "geometry/instance.h"
 #include "geometry/primitive/primitive.h"
 #include "geometry/uv.h"
 #include "image/image_manipulation.h"
@@ -831,7 +831,7 @@ bool Scene::smoothVerticesNormals(std::string &&name, float angle)
 {
 	if(logger_.isDebug()) logger_.logDebug("Scene::smoothVerticesNormals) PR(name) PR(angle");
 	//if(creation_state_.stack_.front() != CreationState::Geometry) return false;
-	ObjectBase *object;
+	Object *object;
 	if(!name.empty())
 	{
 		auto it = objects_.find(name);
@@ -888,13 +888,13 @@ int Scene::addUv(Uv<float> &&uv)
 }
 
 std::pair<size_t, ParamResult> Scene::createObject(std::string &&name, ParamMap &&params)
-{	std::string pname = "Object";
+{
 	if(objects_.find(name) != objects_.end())
 	{
 		logWarnExist(logger_, Object::getClassName(), name);
 		return {0, ParamResult{YAFARAY_RESULT_ERROR_WHILE_CREATING}};
 	}
-	auto [object, param_result]{ObjectBase::factory(logger_, *this, name, params)};
+	auto [object, param_result]{Object::factory(logger_, *this, name, params)};
 	if(object)
 	{
 		creation_state_.changes_ |= CreationState::Flags::CGeom;
@@ -902,7 +902,7 @@ std::pair<size_t, ParamResult> Scene::createObject(std::string &&name, ParamMap 
 		++object_index_auto_;
 		std::string type;
 		params.getParam("type", type);
-		if(logger_.isVerbose()) logInfoVerboseSuccess(logger_, pname, name, type);
+		if(logger_.isVerbose()) logInfoVerboseSuccess(logger_, Object::getClassName(), name, type);
 		creation_state_.stack_.push_front(CreationState::Object);
 		current_object_ = object.get();
 		objects_[name] = std::move(object);
@@ -911,22 +911,22 @@ std::pair<size_t, ParamResult> Scene::createObject(std::string &&name, ParamMap 
 	return {0, ParamResult{YAFARAY_RESULT_ERROR_WHILE_CREATING}};
 }
 
-ObjectBase *Scene::getObjectBase(const std::string &name) const
+Object *Scene::getObject(const std::string &name) const
 {
-	auto oi = objects_.find(name);
-	if(oi != objects_.end()) return oi->second.get();
+	auto object{objects_.find(name)};
+	if(object != objects_.end()) return object->second.get();
 	else return nullptr;
 }
 
 int Scene::createInstance()
 {
-	instances_.emplace_back(std::make_unique<ObjectInstance>());
+	instances_.emplace_back(std::make_unique<Instance>());
 	return static_cast<int>(instances_.size()) - 1;
 }
 
-bool Scene::addInstanceObject(int instance_id, std::string &&base_object_name)
+bool Scene::addInstanceObject(int instance_id, std::string &&object_name)
 {
-	const ObjectBase *object = getObjectBase(base_object_name);
+	const Object *object{getObject(object_name)};
 	if(!object) return false;
 	else
 	{
@@ -937,11 +937,11 @@ bool Scene::addInstanceObject(int instance_id, std::string &&base_object_name)
 
 bool Scene::addInstanceOfInstance(int instance_id, size_t base_instance_id)
 {
-	const ObjectInstance *object_instance = instances_[base_instance_id].get();
-	if(!object_instance) return false;
+	const Instance *instance{instances_[base_instance_id].get()};
+	if(!instance) return false;
 	else
 	{
-		instances_[instance_id]->addPrimitives(object_instance->getPrimitives());
+		instances_[instance_id]->addPrimitives(instance->getPrimitives());
 		return true;
 	}
 }
@@ -954,7 +954,7 @@ bool Scene::addInstanceMatrix(int instance_id, Matrix4f &&obj_to_world, float ti
 
 /*bool Scene::addInstance(const std::string &base_object_name, const Matrix4 &obj_to_world)
 {
-	const Object *base_object = objects_.find(base_object_name)->second.get();
+	const Object *object = objects_.find(base_object_name)->second.get();
 	if(objects_.find(base_object_name) == objects_.end())
 	{
 		logger_.logError("Base mesh for instance doesn't exist ", base_object_name);

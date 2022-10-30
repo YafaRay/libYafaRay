@@ -76,8 +76,8 @@ ObjectLight::ObjectLight(Logger &logger, ParamResult &param_result, const std::s
 
 void ObjectLight::initIs()
 {
-	num_primitives_ = base_object_->numPrimitives();
-	primitives_ = base_object_->getPrimitives();
+	num_primitives_ = object_->numPrimitives();
+	primitives_ = object_->getPrimitives();
 	std::vector<float> areas(num_primitives_);
 	double total_area = 0.0;
 	for(int i = 0; i < num_primitives_; ++i)
@@ -96,12 +96,12 @@ void ObjectLight::initIs()
 
 void ObjectLight::init(const Scene &scene)
 {
-	base_object_ = scene.getObjectBase(params_.object_name_);
-	if(base_object_)
+	object_ = scene.getObject(params_.object_name_);
+	if(object_)
 	{
 		initIs();
 		// tell the mesh that a meshlight is associated with it (not sure if this is the best place though):
-		base_object_->setLight(this);
+		object_->setLight(this);
 
 		if(logger_.isVerbose()) logger_.logVerbose("ObjectLight: primitives:", num_primitives_, ", double sided:", params_.double_sided_, ", area:", area_, " color:", color_);
 	}

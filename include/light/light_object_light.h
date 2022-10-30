@@ -29,7 +29,7 @@
 
 namespace yafaray {
 
-class ObjectBase;
+class Object;
 class Primitive;
 class Accelerator;
 class Pdf1D;
@@ -78,7 +78,7 @@ class ObjectLight final : public Light
 		std::vector<const Primitive *> primitives_;
 		int num_primitives_; //!< gives the array size of uDist
 		float area_, inv_area_;
-		ObjectBase *base_object_ = nullptr;
+		Object *object_ = nullptr;
 		std::unique_ptr<const Accelerator> accelerator_;
 };
 

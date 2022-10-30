@@ -34,8 +34,8 @@
 
 namespace yafaray {
 
-class ObjectBase;
-class ObjectInstance;
+class Object;
+class Instance;
 class Light;
 class Material;
 class VolumeHandler;
@@ -82,11 +82,11 @@ class Scene final
 		std::pair<size_t, ParamResult> createObject(std::string &&name, ParamMap &&params);
 		bool endObject();
 		int createInstance();
-		bool addInstanceObject(int instance_id, std::string &&base_object_name);
+		bool addInstanceObject(int instance_id, std::string &&object_name);
 		bool addInstanceOfInstance(int instance_id, size_t base_instance_id);
 		bool addInstanceMatrix(int instance_id, Matrix4f &&obj_to_world, float time);
 		bool updateObjects();
-		ObjectBase *getObjectBase(const std::string &name) const;
+		Object *getObject(const std::string &name) const;
 		const Accelerator *getAccelerator() const { return accelerator_.get(); }
 
 		ObjId_t getNextFreeId();
@@ -188,9 +188,9 @@ class Scene final
 		std::unique_ptr<Bound<float>> scene_bound_; //!< bounding box of all (finite) scene geometry
 		std::string scene_accelerator_;
 		std::unique_ptr<const Accelerator> accelerator_;
-		ObjectBase *current_object_ = nullptr;
-		std::map<std::string, std::unique_ptr<ObjectBase>> objects_;
-		std::vector<std::unique_ptr<ObjectInstance>> instances_;
+		Object *current_object_ = nullptr;
+		std::map<std::string, std::unique_ptr<Object>> objects_;
+		std::vector<std::unique_ptr<Instance>> instances_;
 		std::map<std::string, std::unique_ptr<Light>> lights_;
 		SceneItems<Material> materials_;
 		RenderControl render_control_;

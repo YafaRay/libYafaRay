@@ -17,10 +17,9 @@
  *      Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-#ifndef LIBYAFARAY_OBJECT_INSTANCE_H
-#define LIBYAFARAY_OBJECT_INSTANCE_H
+#ifndef LIBYAFARAY_INSTANCE_H
+#define LIBYAFARAY_INSTANCE_H
 
-#include "geometry/object/object.h"
 #include "geometry/matrix.h"
 #include "math/interpolation.h"
 #include <memory>
@@ -31,22 +30,17 @@ namespace yafaray {
 class Primitive;
 template<typename T> class Bound;
 
-class ObjectInstance final : public Object
+class Instance final
 {
-		using ThisClassType_t = ObjectInstance; using ParentClassType_t = Object;
+		using ThisClassType_t = Instance;
 
 	public:
-		inline static std::string getClassName() { return "ObjectInstance"; }
+		inline static std::string getClassName() { return "Instance"; }
 		void addPrimitives(const std::vector<const Primitive *> &base_primitives);
-		void addObjToWorldMatrix(const Matrix4f &obj_to_world, float time);
 		void addObjToWorldMatrix(Matrix4f &&obj_to_world, float time);
 		std::vector<const Matrix4f *> getObjToWorldMatrices() const;
 		const Matrix4f &getObjToWorldMatrix(int time_step) const { return time_steps_[time_step].obj_to_world_; }
 		Matrix4f getObjToWorldMatrixAtTime(float time) const;
-		float getObjToWorldTime(int time_step) const { return time_steps_[time_step].time_; }
-
-		[[nodiscard]] std::string getName() const override { return "instance"; }
-		int numPrimitives() const { return static_cast<int>(primitive_instances_.size()); }
 		std::vector<const Primitive *> getPrimitives() const;
 		bool hasMotionBlur() const { return time_steps_.size() > 2; }
 
@@ -62,17 +56,12 @@ class ObjectInstance final : public Object
 		std::vector<std::unique_ptr<const Primitive>> primitive_instances_;
 };
 
-inline void ObjectInstance::addObjToWorldMatrix(const Matrix4f &obj_to_world, float time)
-{
-	time_steps_.emplace_back(TimeStepGeometry{obj_to_world, time});
-}
-
-inline void ObjectInstance::addObjToWorldMatrix(Matrix4f &&obj_to_world, float time)
+inline void Instance::addObjToWorldMatrix(Matrix4f &&obj_to_world, float time)
 {
 	time_steps_.emplace_back(TimeStepGeometry{std::move(obj_to_world), time});
 }
 
-inline Matrix4f ObjectInstance::getObjToWorldMatrixAtTime(float time) const
+inline Matrix4f Instance::getObjToWorldMatrixAtTime(float time) const
 {
 	if(hasMotionBlur())
 	{
@@ -93,4 +82,4 @@ inline Matrix4f ObjectInstance::getObjToWorldMatrixAtTime(float time) const
 
 } //namespace yafaray
 
-#endif //LIBYAFARAY_OBJECT_INSTANCE_H
+#endif //LIBYAFARAY_INSTANCE_H
