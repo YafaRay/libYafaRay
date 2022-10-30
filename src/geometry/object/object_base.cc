@@ -58,10 +58,10 @@ ParamMap ObjectBase::getAsParamMap(bool only_non_default) const
 	return result;
 }
 
-std::pair<std::unique_ptr<Object>, ParamResult> ObjectBase::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map)
+std::pair<std::unique_ptr<ObjectBase>, ParamResult> ObjectBase::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map)
 {
 	const Type type{ClassMeta::preprocessParamMap<Type>(logger, getClassName(), param_map)};
-	std::pair<std::unique_ptr<Object>, ParamResult> result {nullptr, ParamResult{YAFARAY_RESULT_ERROR_WHILE_CREATING}};
+	std::pair<std::unique_ptr<ObjectBase>, ParamResult> result {nullptr, ParamResult{YAFARAY_RESULT_ERROR_WHILE_CREATING}};
 	switch(type.value())
 	{
 		case Type::Mesh:

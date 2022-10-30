@@ -40,31 +40,6 @@ std::vector<const Primitive *> ObjectInstance::getPrimitives() const
 	return result;
 }
 
-Visibility ObjectInstance::getVisibility() const
-{
-	return primitive_instances_.front()->getVisibility();
-}
-
-unsigned int ObjectInstance::getIndex() const
-{
-	return primitive_instances_.front()->getObjectIndex();
-}
-
-Rgb ObjectInstance::getIndexAutoColor() const
-{
-	return primitive_instances_.front()->getObjectIndexAutoColor();
-}
-
-unsigned int ObjectInstance::getIndexAuto() const
-{
-	return primitive_instances_.front()->getObjectIndexAuto();
-}
-
-const Light *ObjectInstance::getLight() const
-{
-	return primitive_instances_.front()->getObjectLight();
-}
-
 std::vector<const Matrix4f *> ObjectInstance::getObjToWorldMatrices() const
 {
 	std::vector<const Matrix4f *> result;

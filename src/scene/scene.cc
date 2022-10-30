@@ -831,7 +831,7 @@ bool Scene::smoothVerticesNormals(std::string &&name, float angle)
 {
 	if(logger_.isDebug()) logger_.logDebug("Scene::smoothVerticesNormals) PR(name) PR(angle");
 	//if(creation_state_.stack_.front() != CreationState::Geometry) return false;
-	Object *object;
+	ObjectBase *object;
 	if(!name.empty())
 	{
 		auto it = objects_.find(name);
@@ -911,7 +911,7 @@ std::pair<size_t, ParamResult> Scene::createObject(std::string &&name, ParamMap 
 	return {0, ParamResult{YAFARAY_RESULT_ERROR_WHILE_CREATING}};
 }
 
-Object *Scene::getObject(const std::string &name) const
+ObjectBase *Scene::getObjectBase(const std::string &name) const
 {
 	auto oi = objects_.find(name);
 	if(oi != objects_.end()) return oi->second.get();
@@ -926,7 +926,7 @@ int Scene::createInstance()
 
 bool Scene::addInstanceObject(int instance_id, std::string &&base_object_name)
 {
-	const Object *object = getObject(base_object_name);
+	const ObjectBase *object = getObjectBase(base_object_name);
 	if(!object) return false;
 	else
 	{
@@ -937,11 +937,11 @@ bool Scene::addInstanceObject(int instance_id, std::string &&base_object_name)
 
 bool Scene::addInstanceOfInstance(int instance_id, size_t base_instance_id)
 {
-	const Object *object = instances_[base_instance_id].get();
-	if(!object) return false;
+	const ObjectInstance *object_instance = instances_[base_instance_id].get();
+	if(!object_instance) return false;
 	else
 	{
-		instances_[instance_id]->addPrimitives(object->getPrimitives());
+		instances_[instance_id]->addPrimitives(object_instance->getPrimitives());
 		return true;
 	}
 }

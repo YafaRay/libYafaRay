@@ -28,7 +28,7 @@
 
 namespace yafaray {
 
-class Object;
+class ObjectBase;
 class Primitive;
 class Pdf1D;
 class ParamMap;
@@ -77,7 +77,7 @@ class BackgroundPortalLight final : public Light
 		std::vector<const Primitive *> primitives_;
 		int num_primitives_; //!< gives the array size of uDist
 		float area_, inv_area_;
-		Object *base_object_ = nullptr;
+		ObjectBase *base_object_ = nullptr;
 		std::unique_ptr<const Accelerator> accelerator_;
 		const Background *bg_ = nullptr;
 		Point3f world_center_;

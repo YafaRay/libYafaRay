@@ -24,8 +24,6 @@
 #include "common/aa_noise_params.h"
 #include "common/layers.h"
 #include "common/mask_edge_toon_params.h"
-#include "geometry/object/object.h"
-#include "geometry/object/object_instance.h"
 #include "image/image.h"
 #include "render/render_callbacks.h"
 #include "render/render_control.h"
@@ -36,6 +34,8 @@
 
 namespace yafaray {
 
+class ObjectBase;
+class ObjectInstance;
 class Light;
 class Material;
 class VolumeHandler;
@@ -44,7 +44,6 @@ class Texture;
 class Camera;
 class Background;
 class ShaderNode;
-class Object;
 class ImageFilm;
 class Scene;
 class ImageOutput;
@@ -87,7 +86,7 @@ class Scene final
 		bool addInstanceOfInstance(int instance_id, size_t base_instance_id);
 		bool addInstanceMatrix(int instance_id, Matrix4f &&obj_to_world, float time);
 		bool updateObjects();
-		Object *getObject(const std::string &name) const;
+		ObjectBase *getObjectBase(const std::string &name) const;
 		const Accelerator *getAccelerator() const { return accelerator_.get(); }
 
 		ObjId_t getNextFreeId();
@@ -189,8 +188,8 @@ class Scene final
 		std::unique_ptr<Bound<float>> scene_bound_; //!< bounding box of all (finite) scene geometry
 		std::string scene_accelerator_;
 		std::unique_ptr<const Accelerator> accelerator_;
-		Object *current_object_ = nullptr;
-		std::map<std::string, std::unique_ptr<Object>> objects_;
+		ObjectBase *current_object_ = nullptr;
+		std::map<std::string, std::unique_ptr<ObjectBase>> objects_;
 		std::vector<std::unique_ptr<ObjectInstance>> instances_;
 		std::map<std::string, std::unique_ptr<Light>> lights_;
 		SceneItems<Material> materials_;

@@ -52,7 +52,7 @@ ParamMap MeshObject::getAsParamMap(bool only_non_default) const
 	return result;
 }
 
-std::pair<std::unique_ptr<Object>, ParamResult> MeshObject::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map)
+std::pair<std::unique_ptr<MeshObject>, ParamResult> MeshObject::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map)
 {
 	auto param_result{Params::meta_.check(param_map, {"type"}, {})};
 	auto object{std::make_unique<ThisClassType_t>(param_result, param_map, scene.getMaterials())};

@@ -99,7 +99,7 @@ void BackgroundPortalLight::init(const Scene &scene)
 	a_pdf_ = world_radius * world_radius;
 
 	world_center_ = 0.5f * (w.a_ + w.g_);
-	base_object_ = scene.getObject(params_.object_name_);
+	base_object_ = scene.getObjectBase(params_.object_name_);
 	if(base_object_)
 	{
 		base_object_->setVisibility(Visibility::None);

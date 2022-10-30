@@ -96,7 +96,7 @@ void ObjectLight::initIs()
 
 void ObjectLight::init(const Scene &scene)
 {
-	base_object_ = scene.getObject(params_.object_name_);
+	base_object_ = scene.getObjectBase(params_.object_name_);
 	if(base_object_)
 	{
 		initIs();

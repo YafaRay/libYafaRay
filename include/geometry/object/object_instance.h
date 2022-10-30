@@ -46,21 +46,9 @@ class ObjectInstance final : public Object
 		float getObjToWorldTime(int time_step) const { return time_steps_[time_step].time_; }
 
 		[[nodiscard]] std::string getName() const override { return "instance"; }
-		void setName(const std::string &name) override { }
-		int numPrimitives() const override { return static_cast<int>(primitive_instances_.size()); }
-		std::vector<const Primitive *> getPrimitives() const override;
-		void setVisibility(Visibility visibility) override { }
-		void useAsBaseObject(bool v) override { }
-		Visibility getVisibility() const override;
-		bool isBaseObject() const override { return false; }
-		void setIndexAuto(unsigned int new_obj_index) override { }
-		unsigned int getIndex() const override;
-		Rgb getIndexAutoColor() const override;
-		unsigned int getIndexAuto() const override;
-		const Light *getLight() const override;
-		void setLight(const Light *light) override { }
-		bool calculateObject(size_t material_id) override { return false; }
-		bool hasMotionBlur() const override { return time_steps_.size() > 2; }
+		int numPrimitives() const { return static_cast<int>(primitive_instances_.size()); }
+		std::vector<const Primitive *> getPrimitives() const;
+		bool hasMotionBlur() const { return time_steps_.size() > 2; }
 
 	private:
 		struct TimeStepGeometry final

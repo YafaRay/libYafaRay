@@ -25,6 +25,8 @@
 #include "sampler/sample.h"
 #include "common/logger.h"
 #include "geometry/ray.h"
+#include "geometry/object/object_base.h"
+#include "geometry/object/object_instance.h"
 
 namespace yafaray {
 
@@ -75,7 +77,7 @@ void SphereLight::init(const Scene &scene)
 {
 	if(!params_.object_name_.empty())
 	{
-		Object *obj = scene.getObject(params_.object_name_);
+		ObjectBase *obj = scene.getObjectBase(params_.object_name_);
 		if(obj) obj->setLight(this);
 		else logger_.logError("SphereLight: '" + name_ + "': associated object '" + params_.object_name_ + "' could not be found!");
 	}

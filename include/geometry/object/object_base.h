@@ -35,22 +35,47 @@ class ObjectBase : public Object
 	public:
 		inline static std::string getClassName() { return "ObjectBase"; }
 		[[nodiscard]] virtual Type type() const = 0;
-		static std::pair<std::unique_ptr<Object>, ParamResult> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map);
+		static std::pair<std::unique_ptr<ObjectBase>, ParamResult> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map);
 		[[nodiscard]] virtual ParamMap getAsParamMap(bool only_non_default) const;
 		ObjectBase(ParamResult &param_result, const ParamMap &param_map, const SceneItems<Material> &materials);
 		[[nodiscard]] std::string getName() const override { return name_; }
-		void setName(const std::string &name) override { name_ = name; }
-		void setVisibility(Visibility visibility) override { visibility_ = visibility; }
-		void useAsBaseObject(bool v) override { is_base_object_ = v; }
-		Visibility getVisibility() const override { return visibility_; }
-		bool isBaseObject() const override { return is_base_object_; }
-		void setIndexAuto(unsigned int new_obj_index) override;
-		unsigned int getIndex() const override { return params_.object_index_; }
-		Rgb getIndexAutoColor() const override { return index_auto_color_; }
-		unsigned int getIndexAuto() const override { return index_auto_; }
-		const Light *getLight() const override { return light_; }
-		void setLight(const Light *light) override { light_ = light; }
+		void setName(const std::string &name) { name_ = name; }
+		void setVisibility(Visibility visibility) { visibility_ = visibility; }
+		/*! Indicates that this object should be used as base object for instances */
+		void useAsBaseObject(bool v) { is_base_object_ = v; }
+		/*! Returns if this object should be used for rendering and/or shadows. */
+		Visibility getVisibility() const { return visibility_; }
+		/*! Returns if this object is used as base object for instances. */
+		bool isBaseObject() const { return is_base_object_; }
+		void setIndexAuto(unsigned int new_obj_index);
+		unsigned int getIndex() const { return params_.object_index_; }
+		Rgb getIndexAutoColor() const { return index_auto_color_; }
+		unsigned int getIndexAuto() const { return index_auto_; }
+		const Light *getLight() const { return light_; }
+		void setLight(const Light *light) { light_ = light; }
 		const Material *getMaterial(size_t material_id) const { return materials_.getById(material_id).first; }
+		virtual bool calculateObject(size_t material_id) = 0;
+		bool calculateObject() { return calculateObject(0); }
+		/*! the number of primitives the object holds. Primitive is an element
+			that by definition can perform ray-triangle intersection */
+		virtual int numPrimitives() const = 0;
+		/*! write the primitive pointers to the given array
+			\return number of written primitives */
+		virtual std::vector<const Primitive *> getPrimitives() const = 0;
+		virtual bool hasMotionBlur() const { return false; }
+
+		/* Mesh-related interface functions below, only for Mesh objects */
+		virtual int lastVertexId(int time_step) const { return -1; }
+		virtual void addPoint(Point3f &&p, int time_step) { }
+		virtual void addOrcoPoint(Point3f &&p, int time_step) { }
+		virtual void addVertexNormal(Vec3f &&n, int time_step) { }
+		virtual void addFace(std::vector<int> &&vertices, std::vector<int> &&vertices_uv, size_t material_id) { }
+		virtual int addUvValue(Uv<float> &&uv) { return -1; }
+		virtual bool hasVerticesNormals(int time_step) const { return false; }
+		virtual int numVerticesNormals(int time_step) const { return 0; }
+		virtual int numVertices(int time_step) const { return 0; }
+		virtual void setSmooth(bool smooth) { }
+		virtual bool smoothVerticesNormals(Logger &logger, float angle) { return false; }
 
 	protected:
 		struct Type : public Enum<Type>

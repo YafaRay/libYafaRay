@@ -48,43 +48,6 @@ class Object
 		inline static std::string getClassName() { return "Object"; }
 		virtual ~Object() = default;
 		[[nodiscard]] virtual std::string getName() const = 0;
-		virtual void setName(const std::string &name) = 0;
-		/*! the number of primitives the object holds. Primitive is an element
-			that by definition can perform ray-triangle intersection */
-		virtual int numPrimitives() const = 0;
-		/*! write the primitive pointers to the given array
-			\return number of written primitives */
-		virtual std::vector<const Primitive *> getPrimitives() const = 0;
-		virtual void setVisibility(Visibility visibility) = 0;
-		/*! Indicates that this object should be used as base object for instances */
-		virtual void useAsBaseObject(bool v) = 0;
-		/*! Returns if this object should be used for rendering and/or shadows. */
-		virtual Visibility getVisibility() const = 0;
-		/*! Returns if this object is used as base object for instances. */
-		virtual bool isBaseObject() const = 0;
-		virtual void setIndexAuto(unsigned int new_obj_index) = 0;
-		virtual unsigned int getIndex() const = 0;
-		virtual Rgb getIndexAutoColor() const = 0;
-		virtual unsigned int getIndexAuto() const = 0;
-		virtual const Light *getLight() const = 0;
-		/*! set a light source to be associated with this object */
-		virtual void setLight(const Light *light) = 0;
-		virtual bool calculateObject(size_t material_id) = 0;
-		bool calculateObject() { return calculateObject(0); }
-
-		/* Mesh-related interface functions below, only for Mesh objects */
-		virtual int lastVertexId(int time_step) const { return -1; }
-		virtual void addPoint(Point3f &&p, int time_step) { }
-		virtual void addOrcoPoint(Point3f &&p, int time_step) { }
-		virtual void addVertexNormal(Vec3f &&n, int time_step) { }
-		virtual void addFace(std::vector<int> &&vertices, std::vector<int> &&vertices_uv, size_t material_id) { }
-		virtual int addUvValue(Uv<float> &&uv) { return -1; }
-		virtual bool hasVerticesNormals(int time_step) const { return false; }
-		virtual int numVerticesNormals(int time_step) const { return 0; }
-		virtual int numVertices(int time_step) const { return 0; }
-		virtual void setSmooth(bool smooth) { }
-		virtual bool smoothVerticesNormals(Logger &logger, float angle) { return false; }
-		virtual bool hasMotionBlur() const { return false; }
 };
 
 } //namespace yafaray
