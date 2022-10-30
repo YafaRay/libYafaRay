@@ -196,7 +196,7 @@ bool Scene::render(std::unique_ptr<ProgressBar> progress_bar)
 	//if(creation_state_.changes_ != CreationState::Flags::CNone) //FIXME: handle better subsequent scene renders differently if previous render already complete
 	{
 		if(creation_state_.changes_ & CreationState::Flags::CGeom) updateObjects();
-		for(auto &[light_name, light] : lights_) light->init(*this);
+		for(auto &[light_name, light] : getLights()) light->init(*this);
 		for(auto &[output_name, output] : outputs_)
 		{
 			output->init(image_film_->getSize(), image_film_->getExportedImageLayers(), &render_views_);
@@ -322,6 +322,17 @@ bool Scene::removeOutput(std::string &&name)
 std::map<std::string, const Light *> Scene::getLights() const
 {
 	std::map<std::string, const Light *> result;
+	for(const auto &light : lights_) result[light.first] = light.second.get();
+	if(background_)
+	{
+		for(const auto light : background_->getLights()) result["background::" + light->getName()] = light;
+	}
+	return result;
+}
+
+std::map<std::string, Light *> Scene::getLights()
+{
+	std::map<std::string, Light *> result;
 	for(const auto &light : lights_) result[light.first] = light.second.get();
 	if(background_)
 	{

@@ -167,6 +167,7 @@ class Scene final
 		const RenderCallbacks &getRenderCallbacks() const { return render_callbacks_; }
 
 	private:
+		std::map<std::string, Light *> getLights();
 		template <typename T> static T *findMapItem(const std::string &name, const std::map<std::string, std::unique_ptr<T>> &map);
 		void setMaskParams(const ParamMap &params);
 		void setEdgeToonParams(const ParamMap &params);
