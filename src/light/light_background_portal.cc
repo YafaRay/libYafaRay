@@ -73,8 +73,8 @@ BackgroundPortalLight::BackgroundPortalLight(Logger &logger, ParamResult &param_
 
 void BackgroundPortalLight::initIs()
 {
-	num_primitives_ = object_->numPrimitives();
 	primitives_ = object_->getPrimitives();
+	num_primitives_ = primitives_.size();
 	std::vector<float> areas(num_primitives_);
 	double total_area = 0.0;
 	for(int i = 0; i < num_primitives_; ++i)

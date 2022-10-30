@@ -43,9 +43,6 @@ class MeshObject : public Object
 		[[nodiscard]] ParamMap getAsParamMap(bool only_non_default) const override;
 		MeshObject(ParamResult &param_result, const ParamMap &param_map, const SceneItems<Material> &materials);
 		~MeshObject();
-		/*! the number of primitives the object holds. Primitive is an element
-			that by definition can perform ray-triangle intersection */
-		int numPrimitives() const override { return static_cast<int>(faces_.size()); }
 		std::vector<const Primitive *> getPrimitives() const override;
 		int lastVertexId(int time_step) const override { return numVertices(time_step) - 1; }
 		Vec3f getVertexNormal(int index, int time_step) const { return time_steps_[time_step].vertices_normals_[index]; }

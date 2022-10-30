@@ -37,7 +37,6 @@ class PrimitiveObject final : public Object
 
 	protected:
  		inline static std::string getClassName() { return "PrimitiveObject"; }
-		int numPrimitives() const override { return 1; }
 		std::vector<const Primitive *> getPrimitives() const override { return {primitive_.get()}; }
 		bool calculateObject(size_t material_id) override { return true; }
 

@@ -61,9 +61,6 @@ class Object
 		const Material *getMaterial(size_t material_id) const { return materials_.getById(material_id).first; }
 		virtual bool calculateObject(size_t material_id) = 0;
 		bool calculateObject() { return calculateObject(0); }
-		/*! the number of primitives the object holds. Primitive is an element
-			that by definition can perform ray-triangle intersection */
-		virtual int numPrimitives() const = 0;
 		/*! write the primitive pointers to the given array
 			\return number of written primitives */
 		virtual std::vector<const Primitive *> getPrimitives() const = 0;
