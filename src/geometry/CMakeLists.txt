@@ -22,6 +22,7 @@ target_sources(libyafaray4
 		surface.cc
 		vector.cc
 		direction_color.cc
+		instance.cc
 )
 
 add_subdirectory(object)
