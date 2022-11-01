@@ -24,11 +24,11 @@
 
 #include "light/light.h"
 #include "geometry/vector.h"
+#include "geometry/object/object.h"
 #include <vector>
 
 namespace yafaray {
 
-class Object;
 class Primitive;
 class Pdf1D;
 class ParamMap;
@@ -75,9 +75,8 @@ class BackgroundPortalLight final : public Light
 
 		std::unique_ptr<Pdf1D> area_dist_;
 		std::vector<const Primitive *> primitives_;
-		int num_primitives_; //!< gives the array size of uDist
+		size_t num_primitives_; //!< gives the array size of uDist
 		float area_, inv_area_;
-		Object *object_ = nullptr;
 		std::unique_ptr<const Accelerator> accelerator_;
 		const Background *bg_ = nullptr;
 		Point3f world_center_;

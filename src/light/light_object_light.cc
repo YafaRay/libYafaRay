@@ -76,11 +76,10 @@ ObjectLight::ObjectLight(Logger &logger, ParamResult &param_result, const std::s
 
 void ObjectLight::initIs()
 {
-	primitives_ = object_->getPrimitives();
 	num_primitives_ = primitives_.size();
 	std::vector<float> areas(num_primitives_);
 	double total_area = 0.0;
-	for(int i = 0; i < num_primitives_; ++i)
+	for(size_t i = 0; i < num_primitives_; ++i)
 	{
 		areas[i] = primitives_[i]->surfaceArea(0.f);
 		total_area += areas[i];
@@ -96,15 +95,13 @@ void ObjectLight::initIs()
 
 void ObjectLight::init(Scene &scene)
 {
-	const auto [object, object_id, object_result]{scene.getObject(params_.object_name_)};
-	object_ = object;
-	if(object_)
+	auto [object, object_id, object_result]{scene.getObject(params_.object_name_)};
+	if(object)
 	{
+		primitives_ = object->getPrimitives();
 		initIs();
-		// tell the mesh that a meshlight is associated with it (not sure if this is the best place though):
-		object_->setLight(this);
-
-		if(logger_.isVerbose()) logger_.logVerbose("ObjectLight: primitives:", num_primitives_, ", double sided:", params_.double_sided_, ", area:", area_, " color:", color_);
+		object->setLight(this);
+		if(logger_.isVerbose()) logger_.logVerbose(getClassName(), ": primitives:", num_primitives_, ", double sided:", params_.double_sided_, ", area:", area_, " color:", color_);
 	}
 }
 
@@ -113,7 +110,7 @@ std::pair<Point3f, Vec3f> ObjectLight::sampleSurface(float s_1, float s_2, float
 	const auto [prim_num, prim_pdf]{area_dist_->dSample(s_1)};
 	if(prim_num >= area_dist_->size())
 	{
-		logger_.logWarning("ObjectLight: Sampling error!");
+		logger_.logWarning(getClassName(), ": Sampling error!");
 		return {};
 	}
 	float delta = area_dist_->cdf(prim_num);

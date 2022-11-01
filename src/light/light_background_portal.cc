@@ -73,11 +73,10 @@ BackgroundPortalLight::BackgroundPortalLight(Logger &logger, ParamResult &param_
 
 void BackgroundPortalLight::initIs()
 {
-	primitives_ = object_->getPrimitives();
 	num_primitives_ = primitives_.size();
 	std::vector<float> areas(num_primitives_);
 	double total_area = 0.0;
-	for(int i = 0; i < num_primitives_; ++i)
+	for(size_t i = 0; i < num_primitives_; ++i)
 	{
 		areas[i] = primitives_[i]->surfaceArea(0.f);
 		total_area += areas[i];
@@ -99,14 +98,14 @@ void BackgroundPortalLight::init(Scene &scene)
 	a_pdf_ = world_radius * world_radius;
 
 	world_center_ = 0.5f * (w.a_ + w.g_);
-	const auto [object, object_id, object_result]{scene.getObject(params_.object_name_)};
-	object_ = object;
-	if(object_)
+	auto [object, object_id, object_result]{scene.getObject(params_.object_name_)};
+	if(object)
 	{
-		object_->setVisibility(Visibility::None);
+		object->setVisibility(Visibility::None);
+		primitives_ = object->getPrimitives();
 		initIs();
 		if(logger_.isVerbose()) logger_.logVerbose(getClassName(), ": Triangles:", num_primitives_, ", Area:", area_);
-		object_->setLight(this);
+		object->setLight(this);
 	}
 }
 
@@ -138,10 +137,10 @@ Rgb BackgroundPortalLight::totalEnergy() const
 	{
 		wo.dir_ = sample::sphere(((float) i + 0.5f) / 1000.f, sample::riVdC(i));
 		const Rgb col = bg_->eval(wo.dir_, true);
-		for(int j = 0; j < num_primitives_; j++)
+		for(const auto primitive : primitives_)
 		{
-			float cos_n = -wo.dir_ * primitives_[j]->getGeometricNormal({}, 0.f, false); //not 100% sure about sign yet...
-			if(cos_n > 0) energy += col * cos_n * primitives_[j]->surfaceArea(0.f);
+			float cos_n = -wo.dir_ * primitive->getGeometricNormal({}, 0.f, false); //not 100% sure about sign yet...
+			if(cos_n > 0) energy += col * cos_n * primitive->surfaceArea(0.f);
 		}
 	}
 	return energy * math::div_1_by_pi<> * 0.001f;
