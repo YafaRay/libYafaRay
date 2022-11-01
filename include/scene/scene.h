@@ -85,8 +85,10 @@ class Scene final
 		bool addInstanceObject(int instance_id, std::string &&object_name);
 		bool addInstanceOfInstance(int instance_id, size_t base_instance_id);
 		bool addInstanceMatrix(int instance_id, Matrix4f &&obj_to_world, float time);
+		std::pair<const Instance *, ResultFlags> getInstance(size_t instance_id) const;
 		bool updateObjects();
 		std::tuple<Object *, size_t, ResultFlags> getObject(const std::string &name) const;
+		std::pair<Object *, ResultFlags> getObject(size_t object_id) const;
 		const SceneItems<Object> &getObjects() const { return objects_; }
 		const Accelerator *getAccelerator() const { return accelerator_.get(); }
 

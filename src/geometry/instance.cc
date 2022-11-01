@@ -20,18 +20,19 @@
 #include "geometry/object/object.h"
 #include "geometry/instance.h"
 #include "geometry/primitive/primitive_instance.h"
+#include "scene/scene.h"
 
 namespace yafaray {
 
-void Instance::addObject(const Object *object)
+void Instance::addObject(size_t object_id)
 {
-	objects_.emplace_back(object);
+	objects_.emplace_back(object_id);
 }
 
-void Instance::addInstance(const Instance *instance)
+void Instance::addInstance(size_t instance_id)
 {
-	if(instance == this) return; //FIXME DAVID: do proper error handling and better even, do proper graph management of dependencies!
-	instances_.emplace_back(instance);
+	//if(instance_id == id_) return; //FIXME DAVID: do proper error handling and better even, do proper graph management of dependencies!
+	instances_.emplace_back(instance_id);
 }
 
 std::vector<const PrimitiveInstance *> Instance::getPrimitives() const
@@ -51,11 +52,12 @@ std::vector<const Matrix4f *> Instance::getObjToWorldMatrices() const
 	return result;
 }
 
-void Instance::updatePrimitives()
+void Instance::updatePrimitives(const Scene &scene)
 {
 	primitives_.clear();
-	for(const auto object : objects_)
+	for(const auto object_id : objects_)
 	{
+		const auto [object, object_result]{scene.getObject(object_id)};
 		if(!object) continue;
 		const auto &primitives{object->getPrimitives()};
 		for(const auto &primitive : primitives)
@@ -63,8 +65,9 @@ void Instance::updatePrimitives()
 			if(primitive) primitives_.emplace_back(std::make_unique<PrimitiveInstance>(*primitive, *this));
 		}
 	}
-	for(const auto instance : instances_)
+	for(const auto instance_id : instances_)
 	{
+		const auto [instance, instance_result]{scene.getInstance(instance_id)};
 		if(!instance) continue;
 		const auto &primitives{instance->getPrimitives()};
 		for(const auto &primitive : primitives)

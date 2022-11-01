@@ -29,6 +29,7 @@ namespace yafaray {
 
 class PrimitiveInstance;
 class Object;
+class Scene;
 template<typename T> class Bound;
 
 class Instance final
@@ -37,13 +38,13 @@ class Instance final
 
 	public:
 		inline static std::string getClassName() { return "Instance"; }
-		void addObject(const Object *object);
-		void addInstance(const Instance *instance);
+		void addObject(size_t object_id);
+		void addInstance(size_t instance_id);
 		void addObjToWorldMatrix(Matrix4f &&obj_to_world, float time);
 		std::vector<const Matrix4f *> getObjToWorldMatrices() const;
 		const Matrix4f &getObjToWorldMatrix(int time_step) const { return time_steps_[time_step].obj_to_world_; }
 		Matrix4f getObjToWorldMatrixAtTime(float time) const;
-		void updatePrimitives();
+		void updatePrimitives(const Scene &scene);
 		std::vector<const PrimitiveInstance *> getPrimitives() const;
 		bool hasMotionBlur() const { return time_steps_.size() > 2; }
 
@@ -56,8 +57,8 @@ class Instance final
 			float time_ = 0.f;
 		};
 		std::vector<TimeStepGeometry> time_steps_;
-		std::vector<const Object *> objects_;
-		std::vector<const Instance *> instances_;
+		std::vector<size_t> objects_;
+		std::vector<size_t> instances_;
 		std::vector<std::unique_ptr<const PrimitiveInstance>> primitives_;
 };
 

@@ -944,6 +944,11 @@ std::tuple<Object *, size_t, ResultFlags> Scene::getObject(const std::string &na
 	return objects_.getByName(name);
 }
 
+std::pair<Object *, ResultFlags> Scene::getObject(size_t object_id) const
+{
+	return objects_.getById(object_id);
+}
+
 int Scene::createInstance()
 {
 	instances_.emplace_back(std::make_unique<Instance>());
@@ -952,28 +957,26 @@ int Scene::createInstance()
 
 bool Scene::addInstanceObject(int instance_id, std::string &&object_name)
 {
+	if(instance_id >= instances_.size()) return false;
 	const auto [object, object_id, object_result]{objects_.getByName(object_name)};
 	if(!object || object_result == YAFARAY_RESULT_ERROR_NOT_FOUND) return false;
 	else
 	{
-		instances_[instance_id]->addObject(object);
+		instances_[instance_id]->addObject(object_id);
 		return true;
 	}
 }
 
 bool Scene::addInstanceOfInstance(int instance_id, size_t base_instance_id)
 {
-	const Instance *instance{instances_[base_instance_id].get()};
-	if(!instance) return false;
-	else
-	{
-		instances_[instance_id]->addInstance(instance);
-		return true;
-	}
+	if(instance_id >= instances_.size() || base_instance_id >= instances_.size()) return false;
+	instances_[instance_id]->addInstance(base_instance_id);
+	return true;
 }
 
 bool Scene::addInstanceMatrix(int instance_id, Matrix4f &&obj_to_world, float time)
 {
+	if(instance_id >= instances_.size()) return false;
 	instances_[instance_id]->addObjToWorldMatrix(std::move(obj_to_world), time);
 	return true;
 }
@@ -1021,7 +1024,7 @@ bool Scene::updateObjects()
 		//if(object->getVisibility() == Visibility::Invisible) continue; //FIXME
 		//if(object->isBaseObject()) continue; //FIXME
 		if(!instance) continue;
-		instance->updatePrimitives();
+		instance->updatePrimitives(*this);
 		const auto prims = instance->getPrimitives();
 		primitives.insert(primitives.end(), prims.begin(), prims.end());
 	}
@@ -1055,6 +1058,11 @@ bool Scene::updateObjects()
 
 	logger_.logInfo("Scene: total scene dimensions: X=", scene_bound_->length(Axis::X), ", y=", scene_bound_->length(Axis::Y), ", z=", scene_bound_->length(Axis::Z), ", volume=", scene_bound_->vol(), ", Shadow Bias=", shadow_bias_, (shadow_bias_auto_ ? " (auto)" : ""), ", Ray Min Dist=", ray_min_dist_, (ray_min_dist_auto_ ? " (auto)" : ""));
 	return true;
+}
+std::pair<const Instance *, ResultFlags> Scene::getInstance(size_t instance_id) const
+{
+	if(instance_id >= instances_.size()) return {nullptr, YAFARAY_RESULT_ERROR_NOT_FOUND};
+	else return {instances_[instance_id].get(), YAFARAY_RESULT_OK};
 }
 
 } //namespace yafaray
