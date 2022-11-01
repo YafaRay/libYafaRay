@@ -45,7 +45,7 @@ ObjectLight::Params::Params(ParamResult &param_result, const ParamMap &param_map
 ParamMap ObjectLight::Params::getAsParamMap(bool only_non_default) const
 {
 	PARAM_SAVE_START;
-	PARAM_SAVE(object_name_);
+	//PARAM_SAVE(object_name_);
 	PARAM_SAVE(color_);
 	PARAM_SAVE(power_);
 	PARAM_SAVE(samples_);
@@ -57,21 +57,23 @@ ParamMap ObjectLight::getAsParamMap(bool only_non_default) const
 {
 	ParamMap result{ParentClassType_t::getAsParamMap(only_non_default)};
 	result.append(params_.getAsParamMap(only_non_default));
+	result.setParam(Params::object_name_meta_, objects_.findNameFromId(object_id_).first);
 	return result;
 }
 
 std::pair<std::unique_ptr<Light>, ParamResult> ObjectLight::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map)
 {
 	auto param_result{Params::meta_.check(param_map, {"type"}, {})};
-	auto light {std::make_unique<ThisClassType_t>(logger, param_result, name, param_map)};
+	auto light {std::make_unique<ThisClassType_t>(logger, param_result, name, param_map, scene.getObjects())};
 	if(param_result.notOk()) logger.logWarning(param_result.print<ThisClassType_t>(name, {"type"}));
 	return {std::move(light), param_result};
 }
 
-ObjectLight::ObjectLight(Logger &logger, ParamResult &param_result, const std::string &name, const ParamMap &param_map):
-		ParentClassType_t{logger, param_result, name, param_map, Flags::None}, params_{param_result, param_map}
+ObjectLight::ObjectLight(Logger &logger, ParamResult &param_result, const std::string &name, const ParamMap &param_map, const SceneItems<Object> &objects):
+		ParentClassType_t{logger, param_result, name, param_map, Flags::None}, params_{param_result, param_map}, objects_{objects}
 {
 	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + params_.getAsParamMap(true).print());
+	object_id_ = objects_.findIdFromName(params_.object_name_).first;
 }
 
 void ObjectLight::initIs()
@@ -95,7 +97,7 @@ void ObjectLight::initIs()
 
 void ObjectLight::init(Scene &scene)
 {
-	auto [object, object_id, object_result]{scene.getObject(params_.object_name_)};
+	auto [object, object_result]{scene.getObject(object_id_)};
 	if(object)
 	{
 		primitives_ = object->getPrimitives();

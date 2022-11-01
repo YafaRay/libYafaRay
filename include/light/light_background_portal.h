@@ -24,7 +24,6 @@
 
 #include "light/light.h"
 #include "geometry/vector.h"
-#include "geometry/object/object.h"
 #include <vector>
 
 namespace yafaray {
@@ -35,6 +34,8 @@ class ParamMap;
 class Scene;
 class Background;
 class Accelerator;
+class Object;
+template <typename T> class SceneItems;
 
 class BackgroundPortalLight final : public Light
 {
@@ -45,7 +46,7 @@ class BackgroundPortalLight final : public Light
 		static std::pair<std::unique_ptr<Light>, ParamResult> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params);
 		static std::string printMeta(const std::vector<std::string> &excluded_params) { return Params::meta_.print(excluded_params); }
 		[[nodiscard]] ParamMap getAsParamMap(bool only_non_default) const override;
-		BackgroundPortalLight(Logger &logger, ParamResult &param_result, const std::string &name, const ParamMap &param_map);
+		BackgroundPortalLight(Logger &logger, ParamResult &param_result, const std::string &name, const ParamMap &param_map, const SceneItems<Object> &objects);
 
 	private:
 		[[nodiscard]] Type type() const override { return Type::BackgroundPortal; }
@@ -73,6 +74,8 @@ class BackgroundPortalLight final : public Light
 		void initIs();
 		std::pair<Point3f, Vec3f> sampleSurface(float s_1, float s_2, float time) const;
 
+		size_t object_id_{0};
+		const SceneItems<Object> &objects_;
 		std::unique_ptr<Pdf1D> area_dist_;
 		std::vector<const Primitive *> primitives_;
 		size_t num_primitives_; //!< gives the array size of uDist

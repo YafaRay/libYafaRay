@@ -35,6 +35,7 @@ class Accelerator;
 class Pdf1D;
 class ParamMap;
 class Scene;
+template <typename T> class SceneItems;
 
 class ObjectLight final : public Light
 {
@@ -45,7 +46,7 @@ class ObjectLight final : public Light
 		static std::pair<std::unique_ptr<Light>, ParamResult> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params);
 		static std::string printMeta(const std::vector<std::string> &excluded_params) { return Params::meta_.print(excluded_params); }
 		[[nodiscard]] ParamMap getAsParamMap(bool only_non_default) const override;
-		ObjectLight(Logger &logger, ParamResult &param_result, const std::string &name, const ParamMap &param_map);
+		ObjectLight(Logger &logger, ParamResult &param_result, const std::string &name, const ParamMap &param_map, const SceneItems<Object> &objects);
 
 	private:
 		[[nodiscard]] Type type() const override { return Type::Object; }
@@ -73,6 +74,8 @@ class ObjectLight final : public Light
 		void initIs();
 		std::pair<Point3f, Vec3f> sampleSurface(float s_1, float s_2, float time) const;
 
+		size_t object_id_{0};
+		const SceneItems<Object> &objects_;
 		const Rgb color_{params_.color_ * params_.power_ * math::num_pi<>};
 		std::unique_ptr<Pdf1D> area_dist_;
 		std::vector<const Primitive *> primitives_;
