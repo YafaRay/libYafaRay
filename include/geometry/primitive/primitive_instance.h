@@ -57,8 +57,8 @@ class PrimitiveInstance final : public Primitive
 		std::pair<Point3f, Vec3f> sample(const Uv<float> &uv, float time, const Matrix4f &obj_to_world) const override;
 		uintptr_t getObjectHandle() const override { return reinterpret_cast<uintptr_t>(&base_instance_); }
 		Visibility getVisibility() const override { return base_primitive_.getVisibility(); }
-		unsigned int getObjectIndex() const override { return base_primitive_.getObjectIndex(); }
-		unsigned int getObjectIndexAuto() const override { return base_primitive_.getObjectIndexAuto(); }
+		int getObjectIndex() const override { return base_primitive_.getObjectIndex(); }
+		size_t getObjectId() const override { return base_primitive_.getObjectId(); }
 		Rgb getObjectIndexAutoColor() const override { return base_primitive_.getObjectIndexAutoColor(); }
 		const Light *getObjectLight() const override { return base_primitive_.getObjectLight(); }
 		bool hasMotionBlur() const override { return base_instance_.hasMotionBlur(); }

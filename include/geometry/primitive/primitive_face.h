@@ -57,8 +57,8 @@ class FacePrimitive: public Primitive
 		void setMaterial(size_t material_id) { material_id_ = material_id; }
 		uintptr_t getObjectHandle() const override { return reinterpret_cast<uintptr_t>(&base_mesh_object_); }
 		Visibility getVisibility() const override { return base_mesh_object_.getVisibility(); }
-		unsigned int getObjectIndex() const override { return base_mesh_object_.getIndex(); }
-		unsigned int getObjectIndexAuto() const override { return base_mesh_object_.getIndexAuto(); }
+		int getObjectIndex() const override { return base_mesh_object_.getPassIndex(); }
+		size_t getObjectId() const override { return base_mesh_object_.getId(); }
 		Rgb getObjectIndexAutoColor() const override { return base_mesh_object_.getIndexAutoColor(); }
 		const Light *getObjectLight() const override { return base_mesh_object_.getLight(); }
 		bool hasMotionBlur() const override { return base_mesh_object_.hasMotionBlur(); }

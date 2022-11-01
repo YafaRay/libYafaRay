@@ -202,8 +202,8 @@ class Scene final
 		bool shadow_bias_auto_ = true; //enable automatic shadow bias calculation
 		float ray_min_dist_ = 1.0e-5f;  //ray minimum distance
 		bool ray_min_dist_auto_ = true;  //enable automatic ray minimum distance calculation
-		unsigned int object_index_highest_ = 1; //!< Highest object index used for the Normalized Object Index pass.
-		unsigned int material_index_highest_ = 1; //!< Highest material index used for the Normalized Object Index pass.
+		int object_index_highest_ = 1; //!< Highest object index used for the Normalized Object Index pass.
+		int material_index_highest_ = 1; //!< Highest material index used for the Normalized Object Index pass.
 		size_t material_id_default_ = 0;
 		std::unique_ptr<ImageFilm> image_film_;
 		std::unique_ptr<Background> background_;

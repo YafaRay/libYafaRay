@@ -31,6 +31,7 @@ class Scene;
 class Material;
 class Light;
 class Primitive;
+template <typename T> class SceneItems;
 
 class Object
 {
@@ -42,11 +43,10 @@ class Object
 		[[nodiscard]] virtual Type type() const = 0;
 		static std::pair<std::unique_ptr<Object>, ParamResult> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map);
 		[[nodiscard]] virtual ParamMap getAsParamMap(bool only_non_default) const;
-		Object(ParamResult &param_result, const ParamMap &param_map, const SceneItems<Material> &materials);
-		[[nodiscard]] std::string getName() const { return name_; }
+		Object(ParamResult &param_result, const ParamMap &param_map, const SceneItems <Object> &objects, const SceneItems<Material> &materials);
+		[[nodiscard]] std::string getName() const;
 		size_t getId() const { return id_; }
 		void setId(size_t id);
-		void setName(const std::string &name) { name_ = name; }
 		void setVisibility(Visibility visibility) { visibility_ = visibility; }
 		/*! Indicates that this object should be used as base object for instances */
 		void useAsBaseObject(bool v) { is_base_object_ = v; }
@@ -54,9 +54,8 @@ class Object
 		Visibility getVisibility() const { return visibility_; }
 		/*! Returns if this object is used as base object for instances. */
 		bool isBaseObject() const { return is_base_object_; }
-		unsigned int getIndex() const { return params_.object_index_; }
+		int getPassIndex() const { return params_.object_index_; }
 		Rgb getIndexAutoColor() const { return index_auto_color_; }
-		unsigned int getIndexAuto() const { return index_auto_; }
 		const Light *getLight() const { return light_; }
 		void setLight(const Light *light) { light_ = light; }
 		const Material *getMaterial(size_t material_id) const { return materials_.getById(material_id).first; }
@@ -105,12 +104,11 @@ class Object
 
 	private:
 		size_t id_{0};
-		std::string name_;
 		const Light *light_ = nullptr;
+		const SceneItems<Object> &objects_;
 		const SceneItems<Material> &materials_;
 		Visibility visibility_{params_.visibility_};
 		bool is_base_object_{params_.is_base_object_};
-		unsigned int index_auto_ = 1; //!< Object Index automatically generated for the object-index-auto render pass
 		Rgb index_auto_color_{0.f}; //!< Object Index color automatically generated for the object-index-auto color render pass
 };
 

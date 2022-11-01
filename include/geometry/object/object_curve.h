@@ -38,7 +38,7 @@ class CurveObject final : public MeshObject
 		static std::pair<std::unique_ptr<CurveObject>, ParamResult> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params);
 		static std::string printMeta(const std::vector<std::string> &excluded_params) { return Params::meta_.print(excluded_params); }
 		[[nodiscard]] ParamMap getAsParamMap(bool only_non_default) const override;
-		CurveObject(ParamResult &param_result, const ParamMap &param_map, const SceneItems<Material> &materials);
+		CurveObject(ParamResult &param_result, const ParamMap &param_map, const SceneItems <Object> &objects, const SceneItems<Material> &materials);
 
 	private:
 		[[nodiscard]] Type type() const override { return Type::Curve; }

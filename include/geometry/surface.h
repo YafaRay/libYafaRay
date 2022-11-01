@@ -82,8 +82,8 @@ class SurfacePoint final
 		[[nodiscard]] Rgb emit(const Vec3f &wo) const;
 		[[nodiscard]] float getAlpha(const Vec3f &wo, const Camera *camera) const;
 		[[nodiscard]] bool scatterPhoton(const Vec3f &wi, Vec3f &wo, PSample &s, bool chromatic, float wavelength, const Camera *camera) const;
-		[[nodiscard]] unsigned int getObjectIndex() const { if(primitive_) return primitive_->getObjectIndex(); else return 0; }
-		[[nodiscard]] unsigned int getObjectIndexAuto() const { if(primitive_) return primitive_->getObjectIndexAuto(); else return 0; }
+		[[nodiscard]] int getObjectIndex() const { if(primitive_) return primitive_->getObjectIndex(); else return 0; }
+		[[nodiscard]] size_t getObjectId() const { if(primitive_) return primitive_->getObjectId(); else return 0; }
 		[[nodiscard]] Rgb getObjectIndexAutoColor() const { if(primitive_) return primitive_->getObjectIndexAutoColor(); else return Rgb{0.f}; }
 		[[nodiscard]] const Material *getMaterial() const { if(primitive_) return primitive_->getMaterial(); else return nullptr; }
 		[[nodiscard]] const Light *getLight() const { if(primitive_) return primitive_->getObjectLight(); else return nullptr; }

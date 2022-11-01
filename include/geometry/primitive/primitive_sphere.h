@@ -66,8 +66,8 @@ class SpherePrimitive final : public Primitive
 		Visibility getVisibility() const override { return base_object_.getVisibility(); }
 		bool clippingSupport() const override { return false; }
 		float getDistToNearestEdge(const Uv<float> &uv, const Uv<Vec3f> &dp_abs) const override { return 0.f; }
-		unsigned int getObjectIndex() const override { return base_object_.getIndex(); }
-		unsigned int getObjectIndexAuto() const override { return base_object_.getIndexAuto(); }
+		int getObjectIndex() const override { return base_object_.getPassIndex(); }
+		size_t getObjectId() const override { return base_object_.getId(); }
 		Rgb getObjectIndexAutoColor() const override { return base_object_.getIndexAutoColor(); }
 		const Light *getObjectLight() const override { return base_object_.getLight(); }
 		bool hasMotionBlur() const override { return base_object_.hasMotionBlur(); }

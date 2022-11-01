@@ -55,14 +55,13 @@ ParamMap MeshObject::getAsParamMap(bool only_non_default) const
 std::pair<std::unique_ptr<MeshObject>, ParamResult> MeshObject::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map)
 {
 	auto param_result{Params::meta_.check(param_map, {"type"}, {})};
-	auto object{std::make_unique<ThisClassType_t>(param_result, param_map, scene.getMaterials())};
+	auto object{std::make_unique<ThisClassType_t>(param_result, param_map, scene.getObjects(), scene.getMaterials())};
 	if(param_result.notOk()) logger.logWarning(param_result.print<ThisClassType_t>(name, {"type"}));
-	object->setName(name);
 	object->setLight(scene.getLight(object->ParentClassType_t::params_.light_name_));
 	return {std::move(object), param_result};
 }
 
-MeshObject::MeshObject(ParamResult &param_result, const ParamMap &param_map, const SceneItems<Material> &materials) : ParentClassType_t{param_result, param_map, materials}, params_{param_result, param_map}
+MeshObject::MeshObject(ParamResult &param_result, const ParamMap &param_map, const SceneItems <Object> &objects, const SceneItems<Material> &materials) : ParentClassType_t{param_result, param_map, objects, materials}, params_{param_result, param_map}
 {
 	//if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + params_.getAsParamMap(true).print());
 	const int num_faces = calculateNumFaces();

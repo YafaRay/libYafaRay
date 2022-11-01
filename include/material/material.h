@@ -113,7 +113,7 @@ class Material
 		virtual Rgb getTransColor(const NodeTreeData &node_tree_data) const { return Rgb{0.f}; }
 		virtual Rgb getMirrorColor(const NodeTreeData &node_tree_data) const { return Rgb{0.f}; }
 		virtual Rgb getSubSurfaceColor(const NodeTreeData &node_tree_data) const { return Rgb{0.f}; }
-		unsigned int getPassIndex() const { return params_.mat_pass_index_; }
+		int getPassIndex() const { return params_.mat_pass_index_; }
 		size_t getId() const { return id_; }
 		void setId(size_t id);
 		std::string getName() const;

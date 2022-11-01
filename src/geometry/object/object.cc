@@ -74,7 +74,7 @@ std::pair<std::unique_ptr<Object>, ParamResult> Object::factory(Logger &logger, 
 		{
 			//FIXME DAVID: probably will need to work on a better parameter error handling considering that both an object and a primitive are involved and the check needs to be done for both
 			ParamResult param_result;
-			auto primitive_object{std::make_unique<PrimitiveObject>(param_result, param_map, scene.getMaterials())};
+			auto primitive_object{std::make_unique<PrimitiveObject>(param_result, param_map, scene.getObjects(), scene.getMaterials())};
 			auto [primitive, primitive_param_result]{SpherePrimitive::factory(logger, scene, name, param_map, *primitive_object)};
 			param_result.merge(primitive_param_result);
 			primitive_object->setPrimitive(std::move(primitive));
@@ -86,7 +86,7 @@ std::pair<std::unique_ptr<Object>, ParamResult> Object::factory(Logger &logger, 
 	else return {nullptr, ParamResult{YAFARAY_RESULT_ERROR_TYPE_UNKNOWN_PARAM}};
 }
 
-Object::Object(ParamResult &param_result, const ParamMap &param_map, const SceneItems<Material> &materials) : params_{param_result, param_map}, materials_{materials}
+Object::Object(ParamResult &param_result, const ParamMap &param_map, const SceneItems <Object> &objects, const SceneItems<Material> &materials) : params_{param_result, param_map}, objects_{objects}, materials_{materials}
 {
 	//if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + params_.getAsParamMap(true).print());
 }
@@ -95,6 +95,11 @@ void Object::setId(size_t id)
 {
 	id_ = id;
 	index_auto_color_ = Rgb::pseudoRandomDistinctFromIndex(id + 1);
+}
+
+std::string Object::getName() const
+{
+	return objects_.findNameFromId(id_).first;
 }
 
 } //namespace yafaray

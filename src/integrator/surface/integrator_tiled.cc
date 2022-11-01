@@ -567,7 +567,7 @@ void TiledIntegrator::generateCommonLayers(ColorLayers *color_layers, const Surf
 			}
 			if(Rgba *color_layer = color_layers->find(LayerDef::ObjIndexAutoAbs))
 			{
-				*color_layer = Rgba{static_cast<float>(sp.getObjectIndexAuto())};
+				*color_layer = Rgba{static_cast<float>(sp.getObjectId() + 1)};
 			}
 			if(Rgba *color_layer = color_layers->find(LayerDef::MatIndexAbs))
 			{

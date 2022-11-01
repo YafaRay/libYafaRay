@@ -31,7 +31,7 @@ class PrimitiveObject final : public Object
 		using ThisClassType_t = PrimitiveObject; using ParentClassType_t = Object;
 
 	public:
-		PrimitiveObject(ParamResult &param_result, const ParamMap &param_map, const SceneItems<Material> &materials);
+		PrimitiveObject(ParamResult &param_result, const ParamMap &param_map, const SceneItems <Object> &objects, const SceneItems<Material> &materials);
 		static std::string printMeta(const std::vector<std::string> &excluded_params) { return Params::meta_.print(excluded_params); }
 		void setPrimitive(std::unique_ptr<const Primitive> primitive) { primitive_ = std::move(primitive); }
 

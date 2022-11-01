@@ -929,7 +929,6 @@ std::pair<size_t, ParamResult> Scene::createObject(std::string &&name, ParamMap 
 	if(new_object)
 	{
 		creation_state_.changes_ |= CreationState::Flags::CGeom;
-		new_object->setName(name);
 		if(logger_.isVerbose()) logInfoVerboseSuccess(logger_, Object::getClassName(), name, new_object->type().print());
 		creation_state_.stack_.push_front(CreationState::Object);
 		const auto [new_object_id, adding_result]{objects_.add(name, std::move(new_object))};
@@ -1041,13 +1040,13 @@ bool Scene::updateObjects()
 	object_index_highest_ = 1;
 	for(const auto &object : objects_)
 	{
-		if(object_index_highest_ < object->getIndex()) object_index_highest_ = object->getIndex();
+		if(object_index_highest_ < object->getPassIndex()) object_index_highest_ = object->getPassIndex();
 	}
 
 	material_index_highest_ = 1;
 	for(size_t material_id = 0; material_id < materials_.size(); ++material_id)
 	{
-		const unsigned int material_pass_index{materials_.getById(material_id).first->getPassIndex()};
+		const int material_pass_index{materials_.getById(material_id).first->getPassIndex()};
 		if(material_index_highest_ < material_pass_index) material_index_highest_ = material_pass_index;
 	}
 
