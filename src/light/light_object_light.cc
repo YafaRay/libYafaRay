@@ -94,9 +94,10 @@ void ObjectLight::initIs()
 	accelerator_ = Accelerator::factory(logger_, primitives_, params).first;
 }
 
-void ObjectLight::init(const Scene &scene)
+void ObjectLight::init(Scene &scene)
 {
-	object_ = scene.getObject(params_.object_name_);
+	const auto [object, object_id, object_result]{scene.getObject(params_.object_name_)};
+	object_ = object;
 	if(object_)
 	{
 		initIs();

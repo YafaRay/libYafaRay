@@ -70,7 +70,7 @@ DirectionalLight::DirectionalLight(Logger &logger, ParamResult &param_result, co
 	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + params_.getAsParamMap(true).print());
 }
 
-void DirectionalLight::init(const Scene &scene)
+void DirectionalLight::init(Scene &scene)
 {
 	// calculate necessary parameters for photon mapping if the light
 	//  is set to illuminate the whole scene:

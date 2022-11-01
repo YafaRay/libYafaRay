@@ -834,26 +834,40 @@ bool Scene::endObject()
 {
 	if(logger_.isDebug()) logger_.logDebug("Scene::endObject");
 	if(creation_state_.stack_.front() != CreationState::Object) return false;
-	const bool result = current_object_->calculateObject(creation_state_.current_material_);
+	auto[object, object_result]{objects_.getById(current_object_)};
+	const bool result{object->calculateObject(creation_state_.current_material_)};
 	creation_state_.stack_.pop_front();
 	return result;
 }
 
 bool Scene::smoothVerticesNormals(std::string &&name, float angle)
 {
-	if(logger_.isDebug()) logger_.logDebug("Scene::smoothVerticesNormals) PR(name) PR(angle");
+	/*if(name.empty())
+	{
+		logger_.logWarning("Scene::smoothVerticesNormals: object name not specified, skipping...");
+		return false;
+	}*/
 	//if(creation_state_.stack_.front() != CreationState::Geometry) return false;
 	Object *object;
-	if(!name.empty())
+	if(name.empty())
 	{
-		auto it = objects_.find(name);
-		if(it == objects_.end()) return false;
-		object = it->second.get();
+		auto [obj, obj_result]{objects_.getById(current_object_)};
+		if(obj_result == YAFARAY_RESULT_ERROR_NOT_FOUND)
+		{
+			logger_.logWarning("Scene::smoothVerticesNormals: current object id '", current_object_, "' not found, skipping...");
+			return false;
+		}
+		object = obj;
 	}
 	else
 	{
-		object = current_object_;
-		if(!object) return false;
+		auto [obj, obj_id, obj_result]{objects_.getByName(name)};
+		if(obj_result == YAFARAY_RESULT_ERROR_NOT_FOUND)
+		{
+			logger_.logWarning("Scene::smoothVerticesNormals: object name '", name, "' not found, skipping...");
+			return false;
+		}
+		object = obj;
 	}
 
 	if(object->hasVerticesNormals(0) && object->numVerticesNormals(0) == object->numVertices(0))
@@ -868,66 +882,67 @@ int Scene::addVertex(Point3f &&p, int time_step)
 {
 	//if(logger_.isDebug()) logger.logDebug("Scene::addVertex) PR(p");
 	if(creation_state_.stack_.front() != CreationState::Object) return -1;
-	current_object_->addPoint(std::move(p), time_step);
-	return current_object_->lastVertexId(time_step);
+	auto[object, object_result]{objects_.getById(current_object_)};
+	object->addPoint(std::move(p), time_step);
+	return object->lastVertexId(time_step);
 }
 
 int Scene::addVertex(Point3f &&p, Point3f &&orco, int time_step)
 {
 	if(creation_state_.stack_.front() != CreationState::Object) return -1;
-	current_object_->addPoint(std::move(p), time_step);
-	current_object_->addOrcoPoint(std::move(orco), time_step);
-	return current_object_->lastVertexId(time_step);
+	auto[object, object_result]{objects_.getById(current_object_)};
+	object->addPoint(std::move(p), time_step);
+	object->addOrcoPoint(std::move(orco), time_step);
+	return object->lastVertexId(time_step);
 }
 
 void Scene::addVertexNormal(Vec3f &&n, int time_step)
 {
 	if(creation_state_.stack_.front() != CreationState::Object) return;
-	current_object_->addVertexNormal(std::move(n), time_step);
+	auto[object, object_result]{objects_.getById(current_object_)};
+	object->addVertexNormal(std::move(n), time_step);
 }
 
 bool Scene::addFace(std::vector<int> &&vert_indices, std::vector<int> &&uv_indices)
 {
 	if(creation_state_.stack_.front() != CreationState::Object) return false;
-	current_object_->addFace(std::move(vert_indices), std::move(uv_indices), creation_state_.current_material_);
+	auto[object, object_result]{objects_.getById(current_object_)};
+	object->addFace(std::move(vert_indices), std::move(uv_indices), creation_state_.current_material_);
 	return true;
 }
 
 int Scene::addUv(Uv<float> &&uv)
 {
 	if(creation_state_.stack_.front() != CreationState::Object) return false;
-	return current_object_->addUvValue(std::move(uv));
+	auto[object, object_result]{objects_.getById(current_object_)};
+	return object->addUvValue(std::move(uv));
 }
 
 std::pair<size_t, ParamResult> Scene::createObject(std::string &&name, ParamMap &&params)
 {
-	if(objects_.find(name) != objects_.end())
+	const auto [existing_object, existing_object_id, existing_object_result]{objects_.getByName(name)};
+	if(existing_object)
 	{
-		logWarnExist(logger_, Object::getClassName(), name);
-		return {0, ParamResult{YAFARAY_RESULT_ERROR_WHILE_CREATING}};
+		if(logger_.isVerbose()) logger_.logWarning(Object::getClassName(), ": object with name '", name, "' already exists, overwriting with new object.");
 	}
-	auto [object, param_result]{Object::factory(logger_, *this, name, params)};
-	if(object)
+	auto [new_object, param_result]{Object::factory(logger_, *this, name, params)};
+	if(new_object)
 	{
 		creation_state_.changes_ |= CreationState::Flags::CGeom;
-		object->setName(name);
-		++object_index_auto_;
-		std::string type;
-		params.getParam("type", type);
-		if(logger_.isVerbose()) logInfoVerboseSuccess(logger_, Object::getClassName(), name, type);
+		new_object->setName(name);
+		if(logger_.isVerbose()) logInfoVerboseSuccess(logger_, Object::getClassName(), name, new_object->type().print());
 		creation_state_.stack_.push_front(CreationState::Object);
-		current_object_ = object.get();
-		objects_[name] = std::move(object);
-		return {objects_.size() - 1, param_result}; //FIXME: this is just a placeholder for now for future LightID, although this will not work while we still use std::map for objects
+		const auto [new_object_id, adding_result]{objects_.add(name, std::move(new_object))};
+		current_object_ = new_object_id;
+		param_result.flags_ |= adding_result;
+		return {current_object_, param_result};
 	}
-	return {0, ParamResult{YAFARAY_RESULT_ERROR_WHILE_CREATING}};
+	else return {0, ParamResult{YAFARAY_RESULT_ERROR_WHILE_CREATING}};
 }
 
-Object *Scene::getObject(const std::string &name) const
+std::tuple<Object *, size_t, ResultFlags> Scene::getObject(const std::string &name) const
 {
-	auto object{objects_.find(name)};
-	if(object != objects_.end()) return object->second.get();
-	else return nullptr;
+	return objects_.getByName(name);
 }
 
 int Scene::createInstance()
@@ -938,8 +953,8 @@ int Scene::createInstance()
 
 bool Scene::addInstanceObject(int instance_id, std::string &&object_name)
 {
-	const Object *object{getObject(object_name)};
-	if(!object) return false;
+	const auto [object, object_id, object_result]{objects_.getByName(object_name)};
+	if(!object || object_result == YAFARAY_RESULT_ERROR_NOT_FOUND) return false;
 	else
 	{
 		instances_[instance_id]->addObject(object);
@@ -996,7 +1011,7 @@ bool Scene::addInstanceMatrix(int instance_id, Matrix4f &&obj_to_world, float ti
 bool Scene::updateObjects()
 {
 	std::vector<const Primitive *> primitives;
-	for(const auto &[object_name, object] : objects_)
+	for(const auto &object : objects_)
 	{
 		if(!object || object->getVisibility() == Visibility::None || object->isBaseObject()) continue;
 		const auto prims = object->getPrimitives();
@@ -1024,7 +1039,7 @@ bool Scene::updateObjects()
 	if(logger_.isVerbose()) logger_.logVerbose("Scene: New scene bound is: ", "(", scene_bound_->a_[Axis::X], ", ", scene_bound_->a_[Axis::Y], ", ", scene_bound_->a_[Axis::Z], "), (", scene_bound_->g_[Axis::X], ", ", scene_bound_->g_[Axis::Y], ", ", scene_bound_->g_[Axis::Z], ")");
 
 	object_index_highest_ = 1;
-	for(const auto &[object_name, object] : objects_)
+	for(const auto &object : objects_)
 	{
 		if(object_index_highest_ < object->getIndex()) object_index_highest_ = object->getIndex();
 	}

@@ -82,11 +82,7 @@ std::pair<std::unique_ptr<Object>, ParamResult> Object::factory(Logger &logger, 
 			break;
 		}
 	}
-	if(result.first)
-	{
-		result.first->setIndexAuto(scene.getObjectIndexAuto());
-		return result;
-	}
+	if(result.first) return result;
 	else return {nullptr, ParamResult{YAFARAY_RESULT_ERROR_TYPE_UNKNOWN_PARAM}};
 }
 
@@ -95,19 +91,10 @@ Object::Object(ParamResult &param_result, const ParamMap &param_map, const Scene
 	//if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + params_.getAsParamMap(true).print());
 }
 
-void Object::setIndexAuto(unsigned int new_obj_index)
+void Object::setId(size_t id)
 {
-	index_auto_ = new_obj_index;
-	srand(index_auto_);
-	float r, g, b;
-	do
-	{
-		r = static_cast<float>(rand() % 8) / 8.f;
-		g = static_cast<float>(rand() % 8) / 8.f;
-		b = static_cast<float>(rand() % 8) / 8.f;
-	}
-	while(r + g + b < 0.5f);
-	index_auto_color_ = Rgb(r, g, b);
+	id_ = id;
+	index_auto_color_ = Rgb::pseudoRandomDistinctFromIndex(id + 1);
 }
 
 } //namespace yafaray

@@ -44,6 +44,8 @@ class Object
 		[[nodiscard]] virtual ParamMap getAsParamMap(bool only_non_default) const;
 		Object(ParamResult &param_result, const ParamMap &param_map, const SceneItems<Material> &materials);
 		[[nodiscard]] std::string getName() const { return name_; }
+		size_t getId() const { return id_; }
+		void setId(size_t id);
 		void setName(const std::string &name) { name_ = name; }
 		void setVisibility(Visibility visibility) { visibility_ = visibility; }
 		/*! Indicates that this object should be used as base object for instances */
@@ -52,7 +54,6 @@ class Object
 		Visibility getVisibility() const { return visibility_; }
 		/*! Returns if this object is used as base object for instances. */
 		bool isBaseObject() const { return is_base_object_; }
-		void setIndexAuto(unsigned int new_obj_index);
 		unsigned int getIndex() const { return params_.object_index_; }
 		Rgb getIndexAutoColor() const { return index_auto_color_; }
 		unsigned int getIndexAuto() const { return index_auto_; }
@@ -103,6 +104,7 @@ class Object
 		} params_;
 
 	private:
+		size_t id_{0};
 		std::string name_;
 		const Light *light_ = nullptr;
 		const SceneItems<Material> &materials_;

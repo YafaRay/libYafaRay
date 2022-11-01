@@ -18,10 +18,12 @@
 
 #include "scene/scene_items.h"
 #include "material/material.h"
+#include "geometry/object/object.h"
 
 namespace yafaray {
 
 template class SceneItems<Material>;
+template class SceneItems<Object>;
 
 template <typename T>
 std::pair<size_t, ResultFlags> SceneItems<T>::add(const std::string &name, std::unique_ptr<T> item)
@@ -106,6 +108,16 @@ std::pair<T *, ResultFlags> SceneItems<T>::getById(size_t id) const
 {
 	if(id >= items_.size()) return {nullptr, YAFARAY_RESULT_ERROR_NOT_FOUND};
 	else return {items_[id].get(), YAFARAY_RESULT_OK};
+}
+
+template<typename T>
+std::tuple<T *, size_t, ResultFlags> SceneItems<T>::getByName(const std::string &name) const
+{
+	auto [id, result]{findIdFromName(name)};
+	if(result == YAFARAY_RESULT_ERROR_NOT_FOUND) return {nullptr, id, result};
+	auto [ptr, ptr_result]{getById(id)};
+	result |= ptr_result;
+	return {ptr, id, result};
 }
 
 template <typename T>

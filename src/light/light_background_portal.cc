@@ -91,7 +91,7 @@ void BackgroundPortalLight::initIs()
 	accelerator_ = Accelerator::factory(logger_, primitives_, params).first;
 }
 
-void BackgroundPortalLight::init(const Scene &scene)
+void BackgroundPortalLight::init(Scene &scene)
 {
 	bg_ = scene.getBackground();
 	const Bound w = scene.getSceneBound();
@@ -99,12 +99,13 @@ void BackgroundPortalLight::init(const Scene &scene)
 	a_pdf_ = world_radius * world_radius;
 
 	world_center_ = 0.5f * (w.a_ + w.g_);
-	object_ = scene.getObject(params_.object_name_);
+	const auto [object, object_id, object_result]{scene.getObject(params_.object_name_)};
+	object_ = object;
 	if(object_)
 	{
 		object_->setVisibility(Visibility::None);
 		initIs();
-		if(logger_.isVerbose()) logger_.logVerbose("bgPortalLight: Triangles:", num_primitives_, ", Area:", area_);
+		if(logger_.isVerbose()) logger_.logVerbose(getClassName(), ": Triangles:", num_primitives_, ", Area:", area_);
 		object_->setLight(this);
 	}
 }

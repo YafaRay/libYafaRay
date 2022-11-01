@@ -52,7 +52,7 @@ class BackgroundLight final : public Light
 			PARAM_DECL(bool, abs_intersect_, false, "abs_intersect", "");
 			PARAM_DECL(float, ibl_clamp_sampling_, false, "ibl_clamp_sampling", "A value higher than 0.f 'clamps' the light intersection colors to that value, to reduce light sampling noise at the expense of realism and inexact overall light (0.f disables clamping)");
 		} params_;
-		void init(const Scene &scene) override;
+		void init(Scene &scene) override;
 		Rgb totalEnergy() const override;
 		std::tuple<Ray, float, Rgb> emitPhoton(float s_1, float s_2, float s_3, float s_4, float time) const override;
 		std::pair<Vec3f, Rgb> emitSample(LSample &s, float time) const override;

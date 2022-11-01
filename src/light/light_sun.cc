@@ -76,7 +76,7 @@ SunLight::SunLight(Logger &logger, ParamResult &param_result, const std::string 
 	col_pdf_ = color_ * pdf_;
 }
 
-void SunLight::init(const Scene &scene)
+void SunLight::init(Scene &scene)
 {
 	// calculate necessary parameters for photon mapping
 	const Bound w = scene.getSceneBound();

@@ -41,8 +41,12 @@ class SceneItems final
 		[[nodiscard]] std::pair<size_t, ResultFlags> findIdFromName(const std::string &name) const;
 		[[nodiscard]] std::pair<std::string, ResultFlags> findNameFromId(size_t id) const;
 		[[nodiscard]] std::pair<T *, ResultFlags> getById(size_t id) const;
+		[[nodiscard]] std::tuple<T *, size_t, ResultFlags> getByName(const std::string &name) const;
 		[[nodiscard]] size_t size() const { return items_.size(); }
-		[[nodiscard]] size_t nextAvailableId() const { return size(); }
+		typename std::vector<std::unique_ptr<T>>::iterator begin() { return items_.begin(); }
+		typename std::vector<std::unique_ptr<T>>::iterator end() { return items_.end(); }
+		typename std::vector<std::unique_ptr<T>>::const_iterator begin() const { return items_.begin(); }
+		typename std::vector<std::unique_ptr<T>>::const_iterator end() const { return items_.end(); }
 		void clear();
 
 	private:

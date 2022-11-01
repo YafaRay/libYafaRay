@@ -64,7 +64,7 @@ class Light
 		Light(Logger &logger, ParamResult &param_result, std::string name, const ParamMap &param_map, Flags flags) : params_{param_result, param_map}, name_{std::move(name)}, flags_{flags}, logger_{logger} { }
 		virtual ~Light() = default;
 		//! allow for preprocessing when scene loading has finished
-		virtual void init(const Scene &scene) {}
+		virtual void init(Scene &scene) {}
 		//! total energy emmitted during whole frame
 		[[nodiscard]] virtual Rgb totalEnergy() const = 0;
 		//! emit a photon

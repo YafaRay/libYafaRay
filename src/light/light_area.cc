@@ -75,12 +75,12 @@ AreaLight::AreaLight(Logger &logger, ParamResult &param_result, const std::strin
 	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + params_.getAsParamMap(true).print());
 }
 
-void AreaLight::init(const Scene &scene)
+void AreaLight::init(Scene &scene)
 {
 	if(!params_.object_name_.empty())
 	{
-		Object *obj = scene.getObject(params_.object_name_);
-		if(obj) obj->setLight(this);
+		const auto [object, object_id, object_result]{scene.getObject(params_.object_name_)};
+		if(object) object->setLight(this);
 		else logger_.logError("AreaLight: '" + name_ + "': associated object '" + params_.object_name_ + "' could not be found!");
 	}
 }

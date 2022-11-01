@@ -69,7 +69,7 @@ BackgroundLight::BackgroundLight(Logger &logger, ParamResult &param_result, cons
 	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + params_.getAsParamMap(true).print());
 }
 
-void BackgroundLight::init(const Scene &scene)
+void BackgroundLight::init(Scene &scene)
 {
 	const int nv = max_vsamples_;
 	std::vector<float> fv(nv);

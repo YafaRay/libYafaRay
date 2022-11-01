@@ -86,7 +86,8 @@ class Scene final
 		bool addInstanceOfInstance(int instance_id, size_t base_instance_id);
 		bool addInstanceMatrix(int instance_id, Matrix4f &&obj_to_world, float time);
 		bool updateObjects();
-		Object *getObject(const std::string &name) const;
+		std::tuple<Object *, size_t, ResultFlags> getObject(const std::string &name) const;
+		const SceneItems<Object> &getObjects() const { return objects_; }
 		const Accelerator *getAccelerator() const { return accelerator_.get(); }
 
 		ObjId_t getNextFreeId();
@@ -145,9 +146,6 @@ class Scene final
 		bool isRayMinDistAuto() const { return ray_min_dist_auto_; }
 		const VolumeIntegrator *getVolIntegrator() const { return vol_integrator_.get(); }
 
-		unsigned int getMaterialIndexAuto() const { return materials_.nextAvailableId(); }
-		unsigned int getObjectIndexAuto() const { return object_index_auto_; }
-
 		static void logWarnExist(Logger &logger, const std::string &pname, const std::string &name);
 		static void logInfoVerboseSuccess(Logger &logger, const std::string &pname, const std::string &name, const std::string &t);
 		static void logInfoVerboseSuccessDisabled(Logger &logger, const std::string &pname, const std::string &name, const std::string &t);
@@ -189,8 +187,8 @@ class Scene final
 		std::unique_ptr<Bound<float>> scene_bound_; //!< bounding box of all (finite) scene geometry
 		std::string scene_accelerator_;
 		std::unique_ptr<const Accelerator> accelerator_;
-		Object *current_object_ = nullptr;
-		std::map<std::string, std::unique_ptr<Object>> objects_;
+		size_t current_object_{0};
+		SceneItems<Object> objects_;
 		std::vector<std::unique_ptr<Instance>> instances_;
 		std::map<std::string, std::unique_ptr<Light>> lights_;
 		SceneItems<Material> materials_;
@@ -206,7 +204,6 @@ class Scene final
 		bool ray_min_dist_auto_ = true;  //enable automatic ray minimum distance calculation
 		unsigned int object_index_highest_ = 1; //!< Highest object index used for the Normalized Object Index pass.
 		unsigned int material_index_highest_ = 1; //!< Highest material index used for the Normalized Object Index pass.
-		unsigned int object_index_auto_ = 1; //!< Object Index automatically generated for the object-index-auto render pass
 		size_t material_id_default_ = 0;
 		std::unique_ptr<ImageFilm> image_film_;
 		std::unique_ptr<Background> background_;
