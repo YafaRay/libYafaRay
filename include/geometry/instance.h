@@ -27,7 +27,8 @@
 
 namespace yafaray {
 
-class Primitive;
+class PrimitiveInstance;
+class Object;
 template<typename T> class Bound;
 
 class Instance final
@@ -36,12 +37,14 @@ class Instance final
 
 	public:
 		inline static std::string getClassName() { return "Instance"; }
-		void addPrimitives(const std::vector<const Primitive *> &base_primitives);
+		void addObject(const Object *object);
+		void addInstance(const Instance *instance);
 		void addObjToWorldMatrix(Matrix4f &&obj_to_world, float time);
 		std::vector<const Matrix4f *> getObjToWorldMatrices() const;
 		const Matrix4f &getObjToWorldMatrix(int time_step) const { return time_steps_[time_step].obj_to_world_; }
 		Matrix4f getObjToWorldMatrixAtTime(float time) const;
-		std::vector<const Primitive *> getPrimitives() const;
+		void updatePrimitives();
+		std::vector<const PrimitiveInstance *> getPrimitives() const;
 		bool hasMotionBlur() const { return time_steps_.size() > 2; }
 
 	private:
@@ -53,7 +56,9 @@ class Instance final
 			float time_ = 0.f;
 		};
 		std::vector<TimeStepGeometry> time_steps_;
-		std::vector<std::unique_ptr<const Primitive>> primitive_instances_;
+		std::vector<const Object *> objects_;
+		std::vector<const Instance *> instances_;
+		std::vector<std::unique_ptr<const PrimitiveInstance>> primitives_;
 };
 
 inline void Instance::addObjToWorldMatrix(Matrix4f &&obj_to_world, float time)

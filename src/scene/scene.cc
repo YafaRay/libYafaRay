@@ -32,6 +32,7 @@
 #include "geometry/object/object.h"
 #include "geometry/instance.h"
 #include "geometry/primitive/primitive.h"
+#include "geometry/primitive/primitive_instance.h"
 #include "geometry/uv.h"
 #include "image/image_manipulation.h"
 #include "image/image_output.h"
@@ -941,7 +942,7 @@ bool Scene::addInstanceObject(int instance_id, std::string &&object_name)
 	if(!object) return false;
 	else
 	{
-		instances_[instance_id]->addPrimitives(object->getPrimitives());
+		instances_[instance_id]->addObject(object);
 		return true;
 	}
 }
@@ -952,7 +953,7 @@ bool Scene::addInstanceOfInstance(int instance_id, size_t base_instance_id)
 	if(!instance) return false;
 	else
 	{
-		instances_[instance_id]->addPrimitives(instance->getPrimitives());
+		instances_[instance_id]->addInstance(instance);
 		return true;
 	}
 }
@@ -997,15 +998,16 @@ bool Scene::updateObjects()
 	std::vector<const Primitive *> primitives;
 	for(const auto &[object_name, object] : objects_)
 	{
-		if(object->getVisibility() == Visibility::None) continue;
-		if(object->isBaseObject()) continue;
+		if(!object || object->getVisibility() == Visibility::None || object->isBaseObject()) continue;
 		const auto prims = object->getPrimitives();
 		primitives.insert(primitives.end(), prims.begin(), prims.end());
 	}
-	for(const auto &instance : instances_)
+	for(auto &instance : instances_)
 	{
 		//if(object->getVisibility() == Visibility::Invisible) continue; //FIXME
 		//if(object->isBaseObject()) continue; //FIXME
+		if(!instance) continue;
+		instance->updatePrimitives();
 		const auto prims = instance->getPrimitives();
 		primitives.insert(primitives.end(), prims.begin(), prims.end());
 	}

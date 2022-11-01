@@ -16,26 +16,28 @@
  *      Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-#include "common/visibility.h"
 #include "geometry/matrix.h"
+#include "geometry/object/object.h"
 #include "geometry/instance.h"
 #include "geometry/primitive/primitive_instance.h"
 
 namespace yafaray {
 
-void Instance::addPrimitives(const std::vector<const Primitive *> &base_primitives)
+void Instance::addObject(const Object *object)
 {
-	primitive_instances_.reserve(base_primitives.size());
-	for(const auto &primitive : base_primitives)
-	{
-		if(primitive) primitive_instances_.emplace_back(std::make_unique<PrimitiveInstance>(*primitive, *this));
-	}
+	objects_.emplace_back(object);
 }
 
-std::vector<const Primitive *> Instance::getPrimitives() const
+void Instance::addInstance(const Instance *instance)
 {
-	std::vector<const Primitive *> result;
-	for(const auto &primitive_instance : primitive_instances_) result.emplace_back(primitive_instance.get());
+	if(instance == this) return; //FIXME DAVID: do proper error handling and better even, do proper graph management of dependencies!
+	instances_.emplace_back(instance);
+}
+
+std::vector<const PrimitiveInstance *> Instance::getPrimitives() const
+{
+	std::vector<const PrimitiveInstance *> result;
+	for(const auto &primitive_instance : primitives_) result.emplace_back(primitive_instance.get());
 	return result;
 }
 
@@ -47,6 +49,31 @@ std::vector<const Matrix4f *> Instance::getObjToWorldMatrices() const
 		result.emplace_back(&time_step.obj_to_world_);
 	}
 	return result;
+}
+
+void Instance::updatePrimitives()
+{
+	primitives_.clear();
+	for(const auto object : objects_)
+	{
+		if(!object) continue;
+		const auto &primitives{object->getPrimitives()};
+		for(const auto &primitive : primitives)
+		{
+			if(primitive) primitives_.emplace_back(std::make_unique<PrimitiveInstance>(*primitive, *this));
+		}
+	}
+	for(const auto instance : instances_)
+	{
+		if(!instance) continue;
+		const auto &primitives{instance->getPrimitives()};
+		for(const auto &primitive : primitives)
+		{
+			if(primitive) primitives_.emplace_back(std::make_unique<PrimitiveInstance>(*primitive, *this));
+		}
+		//auto primitives{instance->getPrimitives()};
+		//result.insert(result.end(),std::make_move_iterator(primitives.begin()), std::make_move_iterator(primitives.end())); //To append std::vector of std::unique_ptr if needed...
+	}
 }
 
 } //namespace yafaray
