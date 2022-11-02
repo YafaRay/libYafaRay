@@ -32,8 +32,8 @@
  *
  */
 
-#ifndef YAFARAY_MATH_H
-#define YAFARAY_MATH_H
+#ifndef LIBYAFARAY_MATH_H
+#define LIBYAFARAY_MATH_H
 
 #include <cmath>
 #include <algorithm>
@@ -41,6 +41,8 @@
 
 namespace yafaray::math
 {
+template<typename T> static inline constexpr T invalid {std::numeric_limits<T>::max()}; //For some operations where we need to consider certain values as "invalid" (for example similar to the "-1" result but for unsigned integers or floats) we can set a "libYafaRay-specific" criteria that the maxium value of that particular type can be considered as an invalid value. We could use that for, for example, large float values or unsigned "-1" equivalent.
+
 template<typename T = float> static inline constexpr T num_e {2.7182818284590452353602874713527L}; // Number e
 template<typename T = float> static inline constexpr T log2e {1.4426950408889634073599246810019L};
 template<typename T = float> static inline constexpr T log10e {0.43429448190325182765112891891661L};
@@ -308,4 +310,4 @@ inline constexpr T addMod1(const T &a, const T &b) noexcept
 
 } //namespace yafaray::math
 
-#endif // YAFARAY_MATH_H
+#endif // LIBYAFARAY_MATH_H
