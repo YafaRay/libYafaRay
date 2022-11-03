@@ -26,13 +26,13 @@ namespace yafaray {
 
 void Instance::addObject(size_t object_id)
 {
-	objects_.emplace_back(object_id);
+	objects_.pushBack(object_id);
 }
 
 void Instance::addInstance(size_t instance_id)
 {
 	//if(instance_id == id_) return; //FIXME DAVID: do proper error handling and better even, do proper graph management of dependencies!
-	instances_.emplace_back(instance_id);
+	instances_.pushBack(instance_id);
 }
 
 std::vector<const PrimitiveInstance *> Instance::getPrimitives() const
@@ -55,8 +55,10 @@ std::vector<const Matrix4f *> Instance::getObjToWorldMatrices() const
 void Instance::updatePrimitives(const Scene &scene)
 {
 	primitives_.clear();
-	for(const auto object_id : objects_)
+	unsigned short num_objects{objects_.size()};
+	for(unsigned short i = 0; i < num_objects; ++i)
 	{
+		const size_t object_id{objects_.get(i).first};
 		const auto [object, object_result]{scene.getObject(object_id)};
 		if(!object) continue;
 		const auto &primitives{object->getPrimitives()};
@@ -65,8 +67,10 @@ void Instance::updatePrimitives(const Scene &scene)
 			if(primitive) primitives_.emplace_back(std::make_unique<PrimitiveInstance>(*primitive, *this));
 		}
 	}
-	for(const auto instance_id : instances_)
+	unsigned short num_instances{instances_.size()};
+	for(unsigned short i = 0; i < num_instances; ++i)
 	{
+		const size_t instance_id{instances_.get(i).first};
 		const auto [instance, instance_result]{scene.getInstance(instance_id)};
 		if(!instance) continue;
 		const auto &primitives{instance->getPrimitives()};
