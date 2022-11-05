@@ -24,15 +24,14 @@
 
 namespace yafaray {
 
-void Instance::addObject(size_t object_id)
+void Instance::addObject(int object_id)
 {
-	base_ids_.emplace_back(BaseId{static_cast<int>(object_id), false});
+	base_ids_.emplace_back(BaseId{object_id, BaseId::Type::Object});
 }
 
-void Instance::addInstance(size_t instance_id)
+void Instance::addInstance(int instance_id)
 {
-	//if(instance_id == id_) return; //FIXME DAVID: do proper error handling and better even, do proper graph management of dependencies!
-	base_ids_.emplace_back(BaseId{static_cast<int>(instance_id), true});
+	base_ids_.emplace_back(BaseId{instance_id, BaseId::Type::Instance});
 }
 
 std::vector<const PrimitiveInstance *> Instance::getPrimitives() const
@@ -52,24 +51,13 @@ std::vector<const Matrix4f *> Instance::getObjToWorldMatrices() const
 	return result;
 }
 
-void Instance::updatePrimitives(const Scene &scene)
+bool Instance::updatePrimitives(const Scene &scene)
 {
 	primitives_.clear();
+	bool result{true};
 	for(const auto &base_id : base_ids_)
 	{
-		if(base_id.is_instance_)
-		{
-			const auto [instance, instance_result]{scene.getInstance(base_id.id_)};
-			if(!instance) continue;
-			const auto &primitives{instance->getPrimitives()};
-			for(const auto &primitive: primitives)
-			{
-				if(primitive) primitives_.emplace_back(std::make_unique<PrimitiveInstance>(*primitive, *this));
-			}
-			//auto primitives{instance->getPrimitives()};
-			//result.insert(result.end(),std::make_move_iterator(primitives.begin()), std::make_move_iterator(primitives.end())); //To append std::vector of std::unique_ptr if needed...
-		}
-		else
+		if(base_id.base_id_type_ == BaseId::Type::Object)
 		{
 			const auto [object, object_result]{scene.getObject(base_id.id_)};
 			if(!object) continue;
@@ -79,7 +67,24 @@ void Instance::updatePrimitives(const Scene &scene)
 				if(primitive) primitives_.emplace_back(std::make_unique<PrimitiveInstance>(*primitive, *this));
 			}
 		}
+		else
+		{
+			const auto [instance, instance_result]{scene.getInstance(base_id.id_)};
+			if(!instance || instance == this)
+			{
+				result = false;
+				continue; //FIXME DAVID: do proper recursion error handling and better even, do proper graph management of dependencies!
+			}
+			const auto &primitives{instance->getPrimitives()};
+			for(const auto &primitive: primitives)
+			{
+				if(primitive) primitives_.emplace_back(std::make_unique<PrimitiveInstance>(*primitive, *this));
+			}
+			//auto primitives{instance->getPrimitives()};
+			//result.insert(result.end(),std::make_move_iterator(primitives.begin()), std::make_move_iterator(primitives.end())); //To append std::vector of std::unique_ptr if needed...
+		}
 	}
+	return result;
 }
 
 } //namespace yafaray

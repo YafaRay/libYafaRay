@@ -1016,17 +1016,22 @@ bool Scene::updateObjects()
 	for(const auto &object : objects_)
 	{
 		if(!object || object->getVisibility() == Visibility::None || object->isBaseObject()) continue;
-		const auto prims = object->getPrimitives();
-		primitives.insert(primitives.end(), prims.begin(), prims.end());
+		const auto object_primitives{object->getPrimitives()};
+		primitives.insert(primitives.end(), object_primitives.begin(), object_primitives.end());
 	}
 	for(auto &instance : instances_)
 	{
 		//if(object->getVisibility() == Visibility::Invisible) continue; //FIXME
 		//if(object->isBaseObject()) continue; //FIXME
 		if(!instance) continue;
-		instance->updatePrimitives(*this);
-		const auto prims = instance->getPrimitives();
-		primitives.insert(primitives.end(), prims.begin(), prims.end());
+		const bool instance_primitives_result{instance->updatePrimitives(*this)};
+		if(!instance_primitives_result)
+		{
+			logger_.logWarning("Scene: Instance, could not update primitives, maybe recursion problem..."); //FIXME: add instance id to the logged warning
+			continue;
+		}
+		const auto instance_primitives{instance->getPrimitives()};
+		primitives.insert(primitives.end(), instance_primitives.begin(), instance_primitives.end());
 	}
 	if(primitives.empty())
 	{

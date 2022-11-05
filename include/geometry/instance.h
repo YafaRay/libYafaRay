@@ -28,9 +28,7 @@
 namespace yafaray {
 
 class PrimitiveInstance;
-class Object;
 class Scene;
-template<typename T> class Bound;
 
 class Instance final
 {
@@ -38,20 +36,19 @@ class Instance final
 
 	public:
 		inline static std::string getClassName() { return "Instance"; }
-		void addObject(size_t object_id);
-		void addInstance(size_t instance_id);
+		void addObject(int object_id);
+		void addInstance(int instance_id);
 		void addObjToWorldMatrix(Matrix4f &&obj_to_world, float time);
 		std::vector<const Matrix4f *> getObjToWorldMatrices() const;
 		const Matrix4f &getObjToWorldMatrix(int time_step) const { return time_steps_[time_step].obj_to_world_; }
 		Matrix4f getObjToWorldMatrixAtTime(float time) const;
-		void updatePrimitives(const Scene &scene);
+		[[nodiscard]] bool updatePrimitives(const Scene &scene);
 		std::vector<const PrimitiveInstance *> getPrimitives() const;
 		bool hasMotionBlur() const { return time_steps_.size() > 2; }
 
 	private:
 		struct TimeStepGeometry final
 		{
-			TimeStepGeometry(Matrix4f &&obj_to_world, float time) : obj_to_world_{obj_to_world}, time_{time} { }
 			Matrix4f obj_to_world_;
 			float time_ = 0.f;
 		};
@@ -59,7 +56,7 @@ class Instance final
 		struct BaseId
 		{
 			int id_{0};
-			bool is_instance_{false};
+			enum class Type : char {Object, Instance} base_id_type_{Type::Object};
 		};
 		std::vector<BaseId> base_ids_;
 		std::vector<std::unique_ptr<const PrimitiveInstance>> primitives_;
@@ -67,7 +64,7 @@ class Instance final
 
 inline void Instance::addObjToWorldMatrix(Matrix4f &&obj_to_world, float time)
 {
-	time_steps_.emplace_back(TimeStepGeometry{std::move(obj_to_world), time});
+	time_steps_.emplace_back(TimeStepGeometry{obj_to_world, time});
 }
 
 inline Matrix4f Instance::getObjToWorldMatrixAtTime(float time) const
