@@ -119,7 +119,7 @@ void ExportXml::setCurrentMaterial(std::string &&name) noexcept
 	}
 }
 
-bool ExportXml::addFace(const FaceIndices &face_indices) noexcept
+bool ExportXml::addFace(const FaceIndices<int> &face_indices) noexcept
 {
 	file_ << "\t<f";
 	const int num_vertices{face_indices.numVertices()};

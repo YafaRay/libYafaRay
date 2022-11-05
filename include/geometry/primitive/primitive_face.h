@@ -36,7 +36,7 @@ class FacePrimitive: public Primitive
 {
 	public:
 		//Note: some methods have an unused last bool argument which is used as a dummy argument for later template specialization to be used (or not) for Matrix4 obj_to_world operations
-		FacePrimitive(const FaceIndices &face_indices, const MeshObject &mesh_object);
+		FacePrimitive(const FaceIndices<int> &face_indices, const MeshObject &mesh_object);
 		//In the following functions "vertex_number" is the vertex number in the face: 0, 1, 2 in triangles, 0, 1, 2, 3 in quads, etc
 		Point3f getVertex(int vertex_number, int time_step, const Matrix4f &obj_to_world) const;
 		Point3f getVertex(int vertex_number, int time_step, bool = false) const;
@@ -45,8 +45,8 @@ class FacePrimitive: public Primitive
 		Point3f getOrcoVertex(int vertex_number, int time_step) const; //!< Get face original coordinates (orco) vertex in instance objects
 		Uv<float> getVertexUv(int vertex_number) const; //!< Get face vertex Uv<float>
 		int numVertices() const { return indices_.numVertices(); }
-		FaceIndices &getFaceIndices() { return indices_; }
-		const FaceIndices &getFaceIndices() const { return indices_; }
+		FaceIndices<int> &getFaceIndices() { return indices_; }
+		const FaceIndices<int> &getFaceIndices() const { return indices_; }
 		void generateInitialVerticesNormalsIndices();
 		template<typename T=bool> std::vector<Point3f> getVerticesAsVector(int time_step, const T &obj_to_world = {}) const;
 		template<typename T=bool> Point3f getVertex(int vertex_number, const std::array<float, 3> &bezier_factors, const T &obj_to_world = {}) const;
@@ -66,10 +66,10 @@ class FacePrimitive: public Primitive
 	protected:
 		const MeshObject &base_mesh_object_;
 		size_t material_id_{0};
-		FaceIndices indices_;
+		FaceIndices<int> indices_;
 };
 
-inline FacePrimitive::FacePrimitive(const FaceIndices &face_indices, const MeshObject &mesh_object) : base_mesh_object_{mesh_object}, indices_{face_indices}
+inline FacePrimitive::FacePrimitive(const FaceIndices<int> &face_indices, const MeshObject &mesh_object) : base_mesh_object_{mesh_object}, indices_{face_indices}
 {
 }
 

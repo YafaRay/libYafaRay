@@ -22,11 +22,12 @@
 
 namespace yafaray {
 
+template <typename IndexType>
 struct VertexIndices
 {
-	int vertex_{math::invalid<int>}; //!< index in point array, referenced in mesh.
-	int normal_{math::invalid<int>}; //!< index in normal array, if mesh is smoothed.//!< indices in normal array, if mesh is smoothed.
-	int uv_{math::invalid<int>}; //!< index in uv array, if mesh has explicit uv.
+	IndexType vertex_{math::invalid<IndexType>}; //!< index in point array, referenced in mesh.
+	IndexType normal_{math::invalid<IndexType>}; //!< index in normal array, if mesh is smoothed.//!< indices in normal array, if mesh is smoothed.
+	IndexType uv_{math::invalid<IndexType>}; //!< index in uv array, if mesh has explicit uv.
 };
 
 } //namespace yafaray

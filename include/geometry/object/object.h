@@ -31,7 +31,7 @@ class Scene;
 class Material;
 class Light;
 class Primitive;
-class FaceIndices;
+template <typename IndexType> class FaceIndices;
 template <typename T> class SceneItems;
 
 class Object
@@ -71,7 +71,7 @@ class Object
 		virtual void addPoint(Point3f &&p, int time_step) { }
 		virtual void addOrcoPoint(Point3f &&p, int time_step) { }
 		virtual void addVertexNormal(Vec3f &&n, int time_step) { }
-		virtual void addFace(const FaceIndices &face_indices, size_t material_id) { }
+		virtual void addFace(const FaceIndices<int> &face_indices, size_t material_id) { }
 		virtual int addUvValue(Uv<float> &&uv) { return -1; }
 		virtual bool hasVerticesNormals(int time_step) const { return false; }
 		virtual int numVerticesNormals(int time_step) const { return 0; }

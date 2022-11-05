@@ -50,7 +50,7 @@ class ExportC: public Interface
 		int addVertex(Point3f &&vertex, int time_step) noexcept override; //!< add vertex to mesh; returns index to be used for addTriangle/addQuad
 		int addVertex(Point3f &&vertex, Point3f &&orco, int time_step) noexcept override; //!< add vertex with Orco to mesh; returns index to be used for addTriangle/addQuad
 		void addVertexNormal(Vec3f &&normal, int time_step) noexcept override; //!< add vertex normal to mesh; the vertex that will be attached to is the last one inserted by addVertex method
-		bool addFace(const FaceIndices &face_indices) noexcept override;
+		bool addFace(const FaceIndices<int> &face_indices) noexcept override;
 		int addUv(Uv<float> &&uv) noexcept override;
 		bool smoothVerticesNormals(std::string &&name, double angle) noexcept override;
 		void setCurrentMaterial(std::string &&name) noexcept override;

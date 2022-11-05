@@ -179,7 +179,7 @@ void ExportC::setCurrentMaterial(std::string &&name) noexcept
 	}
 }
 
-bool ExportC::addFace(const FaceIndices &face_indices) noexcept
+bool ExportC::addFace(const FaceIndices<int> &face_indices) noexcept
 {
 	const int num_vertices{face_indices.numVertices()};
 	const bool has_uv{face_indices.hasUv()};

@@ -35,7 +35,7 @@
 namespace yafaray {
 
 class Object;
-class FaceIndices;
+template <typename IndexType> class FaceIndices;
 class Instance;
 class Light;
 class Material;
@@ -77,7 +77,7 @@ class Scene final
 		int addVertex(Point3f &&p, int time_step);
 		int addVertex(Point3f &&p, Point3f &&orco, int time_step);
 		void addVertexNormal(Vec3f &&n, int time_step);
-		bool addFace(const FaceIndices &face_indices);
+		bool addFace(const FaceIndices<int> &face_indices);
 		int addUv(Uv<float> &&uv);
 		bool smoothVerticesNormals(std::string &&name, float angle);
 		std::pair<size_t, ParamResult> createObject(std::string &&name, ParamMap &&params);

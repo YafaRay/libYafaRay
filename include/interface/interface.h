@@ -33,7 +33,7 @@
 namespace yafaray {
 
 class Light;
-class FaceIndices;
+template <typename IndexType> class FaceIndices;
 class Texture;
 class Material;
 class Camera;
@@ -69,7 +69,7 @@ class Interface
 		virtual int addVertex(Point3f &&vertex, int time_step) noexcept; //!< add vertex to mesh; returns index to be used for addTriangle/addQuad
 		virtual int addVertex(Point3f &&vertex, Point3f &&orco, int time_step) noexcept; //!< add vertex with Orco to mesh; returns index to be used for addTriangle/addQuad
 		virtual void addVertexNormal(Vec3f &&normal, int time_step) noexcept; //!< add vertex normal to mesh; the vertex that will be attached to is the last one inserted by addVertex method
-		virtual bool addFace(const FaceIndices &face_indices) noexcept; //!< add a mesh face given vertex indices and optionally uv_indices
+		virtual bool addFace(const FaceIndices<int> &face_indices) noexcept; //!< add a mesh face given vertex indices and optionally uv_indices
 		virtual int addUv(Uv<float> &&uv) noexcept; //!< add a UV coordinate pair; returns index to be used for addTriangle/addQuad
 		virtual bool smoothVerticesNormals(std::string &&name, double angle) noexcept; //!< smooth vertex normals of mesh with given ID and angle (in degrees)
 		virtual int createInstance() noexcept;

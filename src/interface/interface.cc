@@ -97,7 +97,7 @@ void Interface::addVertexNormal(Vec3f &&normal, int time_step) noexcept
 	scene_->addVertexNormal(std::move(normal), time_step);
 }
 
-bool Interface::addFace(const FaceIndices &face_indices) noexcept
+bool Interface::addFace(const FaceIndices<int> &face_indices) noexcept
 {
 	return scene_->addFace(face_indices);
 }

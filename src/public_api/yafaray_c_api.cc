@@ -107,39 +107,39 @@ void yafaray_addNormalTimeStep(yafaray_Interface_t *interface, float nx, float n
 
 yafaray_bool_t yafaray_addTriangle(yafaray_Interface_t *interface, int a, int b, int c)
 {
-	return static_cast<yafaray_bool_t>(reinterpret_cast<yafaray::Interface *>(interface)->addFace(yafaray::FaceIndices{{
-		yafaray::VertexIndices{a},
-		yafaray::VertexIndices{b},
-		yafaray::VertexIndices{c},
+	return static_cast<yafaray_bool_t>(reinterpret_cast<yafaray::Interface *>(interface)->addFace(yafaray::FaceIndices<int>{{
+		yafaray::VertexIndices<int>{a},
+		yafaray::VertexIndices<int>{b},
+		yafaray::VertexIndices<int>{c},
 	}}));
 }
 
 yafaray_bool_t yafaray_addTriangleWithUv(yafaray_Interface_t *interface, int a, int b, int c, int uv_a, int uv_b, int uv_c)
 {
-	return static_cast<yafaray_bool_t>(reinterpret_cast<yafaray::Interface *>(interface)->addFace(yafaray::FaceIndices{{
-		yafaray::VertexIndices{a, yafaray::math::invalid<int>, uv_a},
-		yafaray::VertexIndices{b, yafaray::math::invalid<int>, uv_b},
-		yafaray::VertexIndices{c, yafaray::math::invalid<int>, uv_c},
+	return static_cast<yafaray_bool_t>(reinterpret_cast<yafaray::Interface *>(interface)->addFace(yafaray::FaceIndices<int>{{
+		yafaray::VertexIndices<int>{a, yafaray::math::invalid<int>, uv_a},
+		yafaray::VertexIndices<int>{b, yafaray::math::invalid<int>, uv_b},
+		yafaray::VertexIndices<int>{c, yafaray::math::invalid<int>, uv_c},
 	}}));
 }
 
 yafaray_bool_t yafaray_addQuad(yafaray_Interface_t *interface, int a, int b, int c, int d)
 {
-	return static_cast<yafaray_bool_t>(reinterpret_cast<yafaray::Interface *>(interface)->addFace(yafaray::FaceIndices{{
-		yafaray::VertexIndices{a},
-		yafaray::VertexIndices{b},
-		yafaray::VertexIndices{c},
-		yafaray::VertexIndices{d},
+	return static_cast<yafaray_bool_t>(reinterpret_cast<yafaray::Interface *>(interface)->addFace(yafaray::FaceIndices<int>{{
+		yafaray::VertexIndices<int>{a},
+		yafaray::VertexIndices<int>{b},
+		yafaray::VertexIndices<int>{c},
+		yafaray::VertexIndices<int>{d},
 	}}));
 }
 
 yafaray_bool_t yafaray_addQuadWithUv(yafaray_Interface_t *interface, int a, int b, int c, int d, int uv_a, int uv_b, int uv_c, int uv_d)
 {
-	return static_cast<yafaray_bool_t>(reinterpret_cast<yafaray::Interface *>(interface)->addFace(yafaray::FaceIndices{{
-		yafaray::VertexIndices{a, yafaray::math::invalid<int>, uv_a},
-		yafaray::VertexIndices{b, yafaray::math::invalid<int>, uv_b},
-		yafaray::VertexIndices{c, yafaray::math::invalid<int>, uv_c},
-		yafaray::VertexIndices{d, yafaray::math::invalid<int>, uv_d},
+	return static_cast<yafaray_bool_t>(reinterpret_cast<yafaray::Interface *>(interface)->addFace(yafaray::FaceIndices<int>{{
+		yafaray::VertexIndices<int>{a, yafaray::math::invalid<int>, uv_a},
+		yafaray::VertexIndices<int>{b, yafaray::math::invalid<int>, uv_b},
+		yafaray::VertexIndices<int>{c, yafaray::math::invalid<int>, uv_c},
+		yafaray::VertexIndices<int>{d, yafaray::math::invalid<int>, uv_d},
 	}}));
 }
 

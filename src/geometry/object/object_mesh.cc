@@ -87,7 +87,7 @@ void MeshObject::addFace(std::unique_ptr<FacePrimitive> &&face)
 	}
 }
 
-void MeshObject::addFace(const FaceIndices &face_indices, size_t material_id)
+void MeshObject::addFace(const FaceIndices<int> &face_indices, size_t material_id)
 {
 	std::unique_ptr<FacePrimitive> face;
 	if(face_indices.isQuad())
@@ -153,7 +153,7 @@ bool MeshObject::smoothVerticesNormals(Logger &logger, float angle)
 			for(auto &face : faces_)
 			{
 				const Vec3f n{face->getGeometricNormal({0.f, 0.f}, static_cast<float>(time_step) / static_cast<float>(numTimeSteps()), false)};
-				const FaceIndices &indices{face->getFaceIndices()};
+				const FaceIndices<int> &indices{face->getFaceIndices()};
 				const int num_indices{indices.numVertices()};
 				for(int vertex_number = 0; vertex_number < num_indices; ++vertex_number)
 				{
@@ -233,7 +233,7 @@ bool MeshObject::smoothVerticesNormals(Logger &logger, float angle)
 						}
 					}
 					// set vertex normal to idx
-					FaceIndices &face_indices{point_face->getFaceIndices()};
+					FaceIndices<int> &face_indices{point_face->getFaceIndices()};
 					bool smooth_ok = false;
 					const int num_vertices{face_indices.numVertices()};
 					for(int vertex_number = 0; vertex_number < num_vertices; ++vertex_number)

@@ -115,17 +115,17 @@ bool CurveObject::calculateObject(size_t material_id)
 		const int b_2 = a_2 + 2;
 		const int b_3 = b_2 + 1;
 		// Close bottom
-		if(i == 0) addFace(FaceIndices{{VertexIndices{a_1, iu}, VertexIndices{a_3, iu}, VertexIndices{a_2, iu}}}, material_id);
+		if(i == 0) addFace(FaceIndices<int>{{VertexIndices<int>{a_1, iu}, VertexIndices<int>{a_3, iu}, VertexIndices<int>{a_2, iu}}}, material_id);
 		// Fill and strand UVs
-		addFace(FaceIndices{{VertexIndices{a_1, iu}, VertexIndices{b_2, iv}, VertexIndices{b_1, iv}}}, material_id);
-		addFace(FaceIndices{{VertexIndices{a_1, iu}, VertexIndices{b_2, iu}, VertexIndices{b_2, iv}}}, material_id);
-		addFace(FaceIndices{{VertexIndices{a_2, iu}, VertexIndices{b_3, iv}, VertexIndices{b_2, iv}}}, material_id);
-		addFace(FaceIndices{{VertexIndices{a_2, iu}, VertexIndices{a_3, iu}, VertexIndices{b_3, iv}}}, material_id);
-		addFace(FaceIndices{{VertexIndices{b_3, iv}, VertexIndices{a_3, iu}, VertexIndices{a_1, iu}}}, material_id);
-		addFace(FaceIndices{{VertexIndices{b_3, iv}, VertexIndices{a_1, iu}, VertexIndices{b_1, iv}}}, material_id);
+		addFace(FaceIndices<int>{{VertexIndices<int>{a_1, iu}, VertexIndices<int>{b_2, iv}, VertexIndices<int>{b_1, iv}}}, material_id);
+		addFace(FaceIndices<int>{{VertexIndices<int>{a_1, iu}, VertexIndices<int>{b_2, iu}, VertexIndices<int>{b_2, iv}}}, material_id);
+		addFace(FaceIndices<int>{{VertexIndices<int>{a_2, iu}, VertexIndices<int>{b_3, iv}, VertexIndices<int>{b_2, iv}}}, material_id);
+		addFace(FaceIndices<int>{{VertexIndices<int>{a_2, iu}, VertexIndices<int>{a_3, iu}, VertexIndices<int>{b_3, iv}}}, material_id);
+		addFace(FaceIndices<int>{{VertexIndices<int>{b_3, iv}, VertexIndices<int>{a_3, iu}, VertexIndices<int>{a_1, iu}}}, material_id);
+		addFace(FaceIndices<int>{{VertexIndices<int>{b_3, iv}, VertexIndices<int>{a_1, iu}, VertexIndices<int>{b_1, iv}}}, material_id);
 	}
 	// Close top
-	addFace(FaceIndices{{VertexIndices{i, iv}, VertexIndices{2 * i + points_size, iv}, VertexIndices{2 * i + points_size + 1, iv}}}, material_id);
+	addFace(FaceIndices<int>{{VertexIndices<int>{i, iv}, VertexIndices<int>{2 * i + points_size, iv}, VertexIndices<int>{2 * i + points_size + 1, iv}}}, material_id);
 	return ParentClassType_t::calculateObject(material_id);
 }
 
