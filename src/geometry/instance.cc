@@ -26,13 +26,13 @@ namespace yafaray {
 
 void Instance::addObject(size_t object_id)
 {
-	objects_.pushBack(object_id);
+	base_ids_.emplace_back(BaseId{static_cast<int>(object_id), false});
 }
 
 void Instance::addInstance(size_t instance_id)
 {
 	//if(instance_id == id_) return; //FIXME DAVID: do proper error handling and better even, do proper graph management of dependencies!
-	instances_.pushBack(instance_id);
+	base_ids_.emplace_back(BaseId{static_cast<int>(instance_id), true});
 }
 
 std::vector<const PrimitiveInstance *> Instance::getPrimitives() const
@@ -55,31 +55,30 @@ std::vector<const Matrix4f *> Instance::getObjToWorldMatrices() const
 void Instance::updatePrimitives(const Scene &scene)
 {
 	primitives_.clear();
-	unsigned short num_objects{objects_.size()};
-	for(unsigned short i = 0; i < num_objects; ++i)
+	for(const auto &base_id : base_ids_)
 	{
-		const size_t object_id{objects_.get(i).first};
-		const auto [object, object_result]{scene.getObject(object_id)};
-		if(!object) continue;
-		const auto &primitives{object->getPrimitives()};
-		for(const auto &primitive : primitives)
+		if(base_id.is_instance_)
 		{
-			if(primitive) primitives_.emplace_back(std::make_unique<PrimitiveInstance>(*primitive, *this));
+			const auto [instance, instance_result]{scene.getInstance(base_id.id_)};
+			if(!instance) continue;
+			const auto &primitives{instance->getPrimitives()};
+			for(const auto &primitive: primitives)
+			{
+				if(primitive) primitives_.emplace_back(std::make_unique<PrimitiveInstance>(*primitive, *this));
+			}
+			//auto primitives{instance->getPrimitives()};
+			//result.insert(result.end(),std::make_move_iterator(primitives.begin()), std::make_move_iterator(primitives.end())); //To append std::vector of std::unique_ptr if needed...
 		}
-	}
-	unsigned short num_instances{instances_.size()};
-	for(unsigned short i = 0; i < num_instances; ++i)
-	{
-		const size_t instance_id{instances_.get(i).first};
-		const auto [instance, instance_result]{scene.getInstance(instance_id)};
-		if(!instance) continue;
-		const auto &primitives{instance->getPrimitives()};
-		for(const auto &primitive : primitives)
+		else
 		{
-			if(primitive) primitives_.emplace_back(std::make_unique<PrimitiveInstance>(*primitive, *this));
+			const auto [object, object_result]{scene.getObject(base_id.id_)};
+			if(!object) continue;
+			const auto &primitives{object->getPrimitives()};
+			for(const auto &primitive: primitives)
+			{
+				if(primitive) primitives_.emplace_back(std::make_unique<PrimitiveInstance>(*primitive, *this));
+			}
 		}
-		//auto primitives{instance->getPrimitives()};
-		//result.insert(result.end(),std::make_move_iterator(primitives.begin()), std::make_move_iterator(primitives.end())); //To append std::vector of std::unique_ptr if needed...
 	}
 }
 

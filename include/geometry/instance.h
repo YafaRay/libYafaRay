@@ -22,7 +22,6 @@
 
 #include "geometry/matrix.h"
 #include "math/interpolation.h"
-#include "math/dynamic_array.h"
 #include <memory>
 #include <vector>
 
@@ -52,14 +51,17 @@ class Instance final
 	private:
 		struct TimeStepGeometry final
 		{
-			TimeStepGeometry(const Matrix4f &obj_to_world, float time) : obj_to_world_{obj_to_world}, time_{time} { }
-			TimeStepGeometry(Matrix4f &&obj_to_world, float time) : obj_to_world_{std::move(obj_to_world)}, time_{time} { }
+			TimeStepGeometry(Matrix4f &&obj_to_world, float time) : obj_to_world_{obj_to_world}, time_{time} { }
 			Matrix4f obj_to_world_;
 			float time_ = 0.f;
 		};
 		std::vector<TimeStepGeometry> time_steps_;
-		DynamicArray<size_t, unsigned short> objects_; //Limited to 65536 objects, should be more than enough
-		DynamicArray<size_t, unsigned short> instances_; //Limited to 65536 instances, should be more than enough
+		struct BaseId
+		{
+			int id_{0};
+			bool is_instance_{false};
+		};
+		std::vector<BaseId> base_ids_;
 		std::vector<std::unique_ptr<const PrimitiveInstance>> primitives_;
 };
 
