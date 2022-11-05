@@ -320,6 +320,8 @@ int main()
 	yafaray_paramsSetInt(yi, "raydepth", 2);
 	yafaray_paramsSetInt(yi, "shadowDepth", 2);
 	yafaray_paramsSetBool(yi, "transpShad", YAFARAY_BOOL_FALSE);
+	yafaray_paramsSetBool(yi, "time_forced", YAFARAY_BOOL_FALSE);
+	yafaray_paramsSetFloat(yi, "time_forced_value", 0.1f);
 	yafaray_paramsSetString(yi, "type", "directlighting");
 	yafaray_defineSurfaceIntegrator(yi);
 	yafaray_paramsClearAll(yi);

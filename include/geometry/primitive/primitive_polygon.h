@@ -37,7 +37,7 @@ class PrimitivePolygon final : public FacePrimitive
 	private:
 		std::pair<T, Uv<T>> intersect(const Point<T, 3> &from, const Vec<T, 3> &dir, T time) const override;
 		std::pair<T, Uv<T>> intersect(const Point<T, 3> &from, const Vec<T, 3> &dir, T time, const SquareMatrix<T, 4> &obj_to_world) const override;
-		bool clippingSupport() const override { return true; }
+		bool clippingSupport() const override { return !hasMotionBlur(); }
 		PolyDouble::ClipResultWithBound clipToBound(Logger &logger, const std::array<Vec3d, 2> &bound, const ClipPlane &clip_plane, const PolyDouble &poly) const override;
 		PolyDouble::ClipResultWithBound clipToBound(Logger &logger, const std::array<Vec3d, 2> &bound, const ClipPlane &clip_plane, const PolyDouble &poly, const SquareMatrix<T, 4> &obj_to_world) const override;
 		Bound<T> getBound() const override;
