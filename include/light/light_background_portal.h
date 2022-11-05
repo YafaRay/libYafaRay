@@ -74,7 +74,7 @@ class BackgroundPortalLight final : public Light
 		void initIs();
 		std::pair<Point3f, Vec3f> sampleSurface(float s_1, float s_2, float time) const;
 
-		size_t object_id_{0};
+		size_t object_id_{math::invalid<size_t>};
 		const SceneItems<Object> &objects_;
 		std::unique_ptr<Pdf1D> area_dist_;
 		std::vector<const Primitive *> primitives_;

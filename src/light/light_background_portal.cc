@@ -70,7 +70,6 @@ BackgroundPortalLight::BackgroundPortalLight(Logger &logger, ParamResult &param_
 		ParentClassType_t{logger, param_result, name, param_map, Flags::None}, params_{param_result, param_map}, objects_{objects}
 {
 	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + params_.getAsParamMap(true).print());
-	object_id_ = objects_.findIdFromName(params_.object_name_).first;
 }
 
 void BackgroundPortalLight::initIs()
@@ -100,6 +99,8 @@ void BackgroundPortalLight::init(Scene &scene)
 	a_pdf_ = world_radius * world_radius;
 
 	world_center_ = 0.5f * (w.a_ + w.g_);
+
+	if(object_id_ == math::invalid<size_t>) object_id_ = objects_.findIdFromName(params_.object_name_).first;
 	auto [object, object_result]{scene.getObject(object_id_)};
 	if(object)
 	{

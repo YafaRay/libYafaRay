@@ -74,7 +74,7 @@ class ObjectLight final : public Light
 		void initIs();
 		std::pair<Point3f, Vec3f> sampleSurface(float s_1, float s_2, float time) const;
 
-		size_t object_id_{0};
+		size_t object_id_{math::invalid<size_t>};
 		const SceneItems<Object> &objects_;
 		const Rgb color_{params_.color_ * params_.power_ * math::num_pi<>};
 		std::unique_ptr<Pdf1D> area_dist_;

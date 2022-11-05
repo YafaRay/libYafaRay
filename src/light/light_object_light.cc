@@ -73,7 +73,6 @@ ObjectLight::ObjectLight(Logger &logger, ParamResult &param_result, const std::s
 		ParentClassType_t{logger, param_result, name, param_map, Flags::None}, params_{param_result, param_map}, objects_{objects}
 {
 	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + params_.getAsParamMap(true).print());
-	object_id_ = objects_.findIdFromName(params_.object_name_).first;
 }
 
 void ObjectLight::initIs()
@@ -97,6 +96,7 @@ void ObjectLight::initIs()
 
 void ObjectLight::init(Scene &scene)
 {
+	if(object_id_ == math::invalid<size_t>) object_id_ = objects_.findIdFromName(params_.object_name_).first;
 	auto [object, object_result]{scene.getObject(object_id_)};
 	if(object)
 	{
