@@ -32,7 +32,7 @@ class PrimitivePolygon final : public FacePrimitive
 	static_assert(std::is_arithmetic_v<T>, "This class can only be instantiated for arithmetic types like int, T, etc");
 
 	public:
-		PrimitivePolygon<T, N, MotionBlur>(std::vector<int> &&vertices_indices, std::vector<int> &&vertices_uv_indices, const MeshObject &mesh_object);
+		PrimitivePolygon<T, N, MotionBlur>(const FaceIndices &face_indices, const MeshObject &mesh_object);
 
 	private:
 		std::pair<T, Uv<T>> intersect(const Point<T, 3> &from, const Vec<T, 3> &dir, T time) const override;
@@ -64,7 +64,7 @@ class PrimitivePolygon final : public FacePrimitive
 };
 
 template <typename T, size_t N, MotionBlurType MotionBlur>
-inline PrimitivePolygon<T, N, MotionBlur>::PrimitivePolygon(std::vector<int> &&vertices_indices, std::vector<int> &&vertices_uv_indices, const MeshObject &mesh_object) : FacePrimitive{std::move(vertices_indices), std::move(vertices_uv_indices), mesh_object},
+inline PrimitivePolygon<T, N, MotionBlur>::PrimitivePolygon(const FaceIndices &face_indices, const MeshObject &mesh_object) : FacePrimitive{face_indices, mesh_object},
 	face_normal_geometric_{ ShapePolygon<T, N>{getVerticesAsArray(0)}.calculateFaceNormal()}
 {
 }

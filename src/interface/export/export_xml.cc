@@ -20,6 +20,7 @@
 #include "common/logger.h"
 #include "scene/scene.h"
 #include "geometry/matrix.h"
+#include "geometry/primitive/face_indices.h"
 #include "param/param.h"
 #include "render/progress_bar.h"
 #include "common/version_build_info.h"
@@ -118,20 +119,22 @@ void ExportXml::setCurrentMaterial(std::string &&name) noexcept
 	}
 }
 
-bool ExportXml::addFace(std::vector<int> &&vertices, std::vector<int> &&uv_indices) noexcept
+bool ExportXml::addFace(const FaceIndices &face_indices) noexcept
 {
 	file_ << "\t<f";
-	const size_t num_vertices = vertices.size();
-	for(size_t i = 0; i < num_vertices; ++i)
+	const int num_vertices{face_indices.numVertices()};
+	for(int i = 0; i < num_vertices; ++i)
 	{
 		const unsigned char vertex_char = 'a' + i;
-		file_ << " " << vertex_char << "=\"" << vertices[i] << "\"";
+		file_ << " " << vertex_char << "=\"" << face_indices[i].vertex_ << "\"";
 	}
-	const size_t num_uv = uv_indices.size();
-	for(size_t i = 0; i < num_uv; ++i)
+	if(face_indices.hasUv())
 	{
-		const unsigned char vertex_char = 'a' + i;
-		file_ << " uv_" << vertex_char << "=\"" << uv_indices[i] << "\"";
+		for(size_t i = 0; i < num_vertices; ++i)
+		{
+			const unsigned char vertex_char = 'a' + i;
+			file_ << " uv_" << vertex_char << "=\"" << face_indices[i].uv_ << "\"";
+		}
 	}
 	file_ << "/>\n";
 	return true;

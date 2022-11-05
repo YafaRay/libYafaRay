@@ -87,20 +87,19 @@ void MeshObject::addFace(std::unique_ptr<FacePrimitive> &&face)
 	}
 }
 
-void MeshObject::addFace(std::vector<int> &&vertices, std::vector<int> &&vertices_uv, size_t material_id)
+void MeshObject::addFace(const FaceIndices &face_indices, size_t material_id)
 {
 	std::unique_ptr<FacePrimitive> face;
-	if(vertices.size() == 3)
+	if(face_indices.isQuad())
 	{
-		if(hasMotionBlurBezier() && !ParentClassType_t::isBaseObject()) face = std::make_unique<PrimitivePolygon<float, 3, MotionBlurType::Bezier>>(std::move(vertices), std::move(vertices_uv), *this);
-		else face = std::make_unique<PrimitivePolygon<float, 3, MotionBlurType::None>>(std::move(vertices), std::move(vertices_uv), *this);
+		if(hasMotionBlurBezier() && !ParentClassType_t::isBaseObject()) face = std::make_unique<PrimitivePolygon<float, 4, MotionBlurType::Bezier>>(face_indices, *this);
+		else face = std::make_unique<PrimitivePolygon<float, 4, MotionBlurType::None>>(face_indices, *this);
 	}
-	else if(vertices.size() == 4)
+	else
 	{
-		if(hasMotionBlurBezier() && !ParentClassType_t::isBaseObject()) face = std::make_unique<PrimitivePolygon<float, 4, MotionBlurType::Bezier>>(std::move(vertices), std::move(vertices_uv), *this);
-		else face = std::make_unique<PrimitivePolygon<float, 4, MotionBlurType::None>>(std::move(vertices), std::move(vertices_uv), *this);
+		if(hasMotionBlurBezier() && !ParentClassType_t::isBaseObject()) face = std::make_unique<PrimitivePolygon<float, 3, MotionBlurType::Bezier>>(face_indices, *this);
+		else face = std::make_unique<PrimitivePolygon<float, 3, MotionBlurType::None>>(face_indices, *this);
 	}
-	else return; //Other primitives are not supported
 	face->setMaterial(material_id);
 	if(hasVerticesNormals(0)) face->generateInitialVerticesNormalsIndices();
 	addFace(std::move(face));
@@ -147,18 +146,18 @@ bool MeshObject::smoothVerticesNormals(Logger &logger, float angle)
 	const size_t points_size = numVertices(0);
 	for(auto &time_step : time_steps_) time_step.vertices_normals_.resize(points_size, {{0, 0, 0}});
 
-	if(angle >= 180)
+	if(angle >= 180.f)
 	{
 		for(int time_step = 0; time_step < numTimeSteps(); ++time_step)
 		{
 			for(auto &face : faces_)
 			{
 				const Vec3f n{face->getGeometricNormal({0.f, 0.f}, static_cast<float>(time_step) / static_cast<float>(numTimeSteps()), false)};
-				const std::vector<int> &vert_indices = face->getVerticesIndices();
-				const size_t num_indices = vert_indices.size();
-				for(size_t relative_vertex = 0; relative_vertex < num_indices; ++relative_vertex)
+				const FaceIndices &indices{face->getFaceIndices()};
+				const int num_indices{indices.numVertices()};
+				for(int vertex_number = 0; vertex_number < num_indices; ++vertex_number)
 				{
-					time_steps_[time_step].vertices_normals_[vert_indices[relative_vertex]] += n * getAngleSine({vert_indices[relative_vertex], vert_indices[(relative_vertex + 1) % num_indices], vert_indices[(relative_vertex + 2) % num_indices]}, time_steps_[time_step].points_);
+					time_steps_[time_step].vertices_normals_[indices[vertex_number].vertex_] += n * getAngleSine({indices[vertex_number].vertex_, indices[(vertex_number + 1) % num_indices].vertex_, indices[(vertex_number + 2) % num_indices].vertex_}, time_steps_[time_step].points_);
 				}
 				face->generateInitialVerticesNormalsIndices();
 			}
@@ -175,12 +174,12 @@ bool MeshObject::smoothVerticesNormals(Logger &logger, float angle)
 			std::vector<std::vector<float>> points_angles_sines(points_size);
 			for(auto &face : faces_)
 			{
-				const std::vector<int> vert_indices = face->getVerticesIndices();
-				const size_t num_indices = vert_indices.size();
-				for(size_t relative_vertex = 0; relative_vertex < num_indices; ++relative_vertex)
+				const FaceIndices indices{face->getFaceIndices()};
+				const int num_indices{indices.numVertices()};
+				for(int vertex_number = 0; vertex_number < num_indices; ++vertex_number)
 				{
-					points_angles_sines[vert_indices[relative_vertex]].emplace_back(getAngleSine({vert_indices[relative_vertex], vert_indices[(relative_vertex + 1) % num_indices], vert_indices[(relative_vertex + 2) % num_indices]}, time_steps_[time_step].points_));
-					points_faces[vert_indices[relative_vertex]].emplace_back(face.get());
+					points_angles_sines[indices[vertex_number].vertex_].emplace_back(getAngleSine({indices[vertex_number].vertex_, indices[(vertex_number + 1) % num_indices].vertex_, indices[(vertex_number + 2) % num_indices].vertex_}, time_steps_[time_step].points_));
+					points_faces[indices[vertex_number].vertex_].emplace_back(face.get());
 				}
 			}
 			for(size_t point_id = 0; point_id < points_size; ++point_id)
@@ -210,7 +209,7 @@ bool MeshObject::smoothVerticesNormals(Logger &logger, float angle)
 						}
 						k++;
 					}
-					int normal_idx = -1;
+					int normal_idx{math::invalid<int>};
 					if(smooth)
 					{
 						vertex_normal.normalize();
@@ -225,7 +224,7 @@ bool MeshObject::smoothVerticesNormals(Logger &logger, float angle)
 							}
 						}
 						// create new if none found
-						if(normal_idx == -1)
+						if(normal_idx == math::invalid<int>)
 						{
 							normal_idx = static_cast<int>(time_steps_[time_step].vertices_normals_.size());
 							vertex_normals.emplace_back(vertex_normal);
@@ -234,25 +233,19 @@ bool MeshObject::smoothVerticesNormals(Logger &logger, float angle)
 						}
 					}
 					// set vertex normal to idx
-					const std::vector<int> vertices_indices = point_face->getVerticesIndices();
-					std::vector<int> normals_indices = point_face->getVerticesNormalsIndices();
-					if(normals_indices.empty()) normals_indices = std::vector<int>(vertices_indices.size());
+					FaceIndices &face_indices{point_face->getFaceIndices()};
 					bool smooth_ok = false;
-					const size_t num_vertices = vertices_indices.size();
-					for(size_t relative_vertex = 0; relative_vertex < num_vertices; ++relative_vertex)
+					const int num_vertices{face_indices.numVertices()};
+					for(int vertex_number = 0; vertex_number < num_vertices; ++vertex_number)
 					{
-						if(vertices_indices[relative_vertex] == static_cast<int>(point_id))
+						if(face_indices[vertex_number].vertex_ == static_cast<int>(point_id))
 						{
-							normals_indices[relative_vertex] = normal_idx;
+							face_indices[vertex_number].normal_ = normal_idx;
 							smooth_ok = true;
 							break;
 						}
 					}
-					if(smooth_ok)
-					{
-						point_face->setVerticesNormalsIndices(std::move(normals_indices));
-						j++;
-					}
+					if(smooth_ok) ++j;
 					else
 					{
 						logger.logError("Mesh smoothing error!");

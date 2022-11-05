@@ -20,6 +20,7 @@
 #include "common/logger.h"
 #include "scene/scene.h"
 #include "geometry/matrix.h"
+#include "geometry/primitive/face_indices.h"
 #include "param/param.h"
 #include "render/progress_bar.h"
 
@@ -125,24 +126,32 @@ void ExportPython::setCurrentMaterial(std::string &&name) noexcept
 	}
 }
 
-bool ExportPython::addFace(std::vector<int> &&vertices, std::vector<int> &&uv_indices) noexcept
+bool ExportPython::addFace(const FaceIndices &face_indices) noexcept
 {
-	const size_t num_vertices = vertices.size();
-	const size_t num_uv = uv_indices.size();
-	if(num_vertices == 3 && num_uv == 0) file_ << "yi.addTriangle(";
-	else if(num_vertices == 3 && num_uv == 3) file_ << "yi.addTriangleWithUv(";
-	else if(num_vertices == 4 && num_uv == 0) file_ << "yi.addQuad(";
-	else if(num_vertices == 4 && num_uv == 4) file_ << "yi.addQuadWithUv(";
-	else return false;
+	const int num_vertices{face_indices.numVertices()};
+	const bool has_uv{face_indices.hasUv()};
+	if(has_uv)
+	{
+		if(num_vertices == 3) file_ << "yi.addTriangleWithUv(";
+		else file_ << "yi.addQuadWithUv(";
+	}
+	else
+	{
+		if(num_vertices == 3) file_ << "yi.addTriangle(";
+		else file_ << "yi.addQuad(";
+	}
 
-	for(size_t i = 0; i < num_vertices; ++i)
+	for(int i = 0; i < num_vertices; ++i)
 	{
 		if(i > 0) file_ << ", ";
-		file_ << vertices[i];
+		file_ << face_indices[i].vertex_;
 	}
-	for(size_t i = 0; i < num_uv; ++i)
+	if(has_uv)
 	{
-		file_ << ", " << uv_indices[i];
+		for(int i = 0; i < num_vertices; ++i)
+		{
+			file_ << ", " << face_indices[i].uv_;
+		}
 	}
 	file_ << ")\n";
 	return true;

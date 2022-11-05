@@ -21,6 +21,8 @@
 #include "common/logger.h"
 #include "common/version_build_info.h"
 #include "geometry/matrix.h"
+#include "geometry/primitive/face_indices.h"
+#include "math/math.h"
 #include "image/image.h"
 #include "interface/export/export_c.h"
 #include "interface/export/export_python.h"
@@ -105,22 +107,40 @@ void yafaray_addNormalTimeStep(yafaray_Interface_t *interface, float nx, float n
 
 yafaray_bool_t yafaray_addTriangle(yafaray_Interface_t *interface, int a, int b, int c)
 {
-	return static_cast<yafaray_bool_t>(reinterpret_cast<yafaray::Interface *>(interface)->addFace({a, b, c}, {}));
+	return static_cast<yafaray_bool_t>(reinterpret_cast<yafaray::Interface *>(interface)->addFace(yafaray::FaceIndices{{
+		yafaray::VertexIndices{a},
+		yafaray::VertexIndices{b},
+		yafaray::VertexIndices{c},
+	}}));
 }
 
 yafaray_bool_t yafaray_addTriangleWithUv(yafaray_Interface_t *interface, int a, int b, int c, int uv_a, int uv_b, int uv_c)
 {
-	return static_cast<yafaray_bool_t>(reinterpret_cast<yafaray::Interface *>(interface)->addFace({a, b, c}, {uv_a, uv_b, uv_c}));
+	return static_cast<yafaray_bool_t>(reinterpret_cast<yafaray::Interface *>(interface)->addFace(yafaray::FaceIndices{{
+		yafaray::VertexIndices{a, yafaray::math::invalid<int>, uv_a},
+		yafaray::VertexIndices{b, yafaray::math::invalid<int>, uv_b},
+		yafaray::VertexIndices{c, yafaray::math::invalid<int>, uv_c},
+	}}));
 }
 
 yafaray_bool_t yafaray_addQuad(yafaray_Interface_t *interface, int a, int b, int c, int d)
 {
-	return static_cast<yafaray_bool_t>(reinterpret_cast<yafaray::Interface *>(interface)->addFace({a, b, c, d}, {}));
+	return static_cast<yafaray_bool_t>(reinterpret_cast<yafaray::Interface *>(interface)->addFace(yafaray::FaceIndices{{
+		yafaray::VertexIndices{a},
+		yafaray::VertexIndices{b},
+		yafaray::VertexIndices{c},
+		yafaray::VertexIndices{d},
+	}}));
 }
 
 yafaray_bool_t yafaray_addQuadWithUv(yafaray_Interface_t *interface, int a, int b, int c, int d, int uv_a, int uv_b, int uv_c, int uv_d)
 {
-	return static_cast<yafaray_bool_t>(reinterpret_cast<yafaray::Interface *>(interface)->addFace({a, b, c, d}, {uv_a, uv_b, uv_c, uv_d}));
+	return static_cast<yafaray_bool_t>(reinterpret_cast<yafaray::Interface *>(interface)->addFace(yafaray::FaceIndices{{
+		yafaray::VertexIndices{a, yafaray::math::invalid<int>, uv_a},
+		yafaray::VertexIndices{b, yafaray::math::invalid<int>, uv_b},
+		yafaray::VertexIndices{c, yafaray::math::invalid<int>, uv_c},
+		yafaray::VertexIndices{d, yafaray::math::invalid<int>, uv_d},
+	}}));
 }
 
 int yafaray_addUv(yafaray_Interface_t *interface, float u, float v) //!< add a UV coordinate pair; returns index to be used for addTriangle/addQuad

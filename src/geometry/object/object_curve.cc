@@ -20,6 +20,7 @@
 #include "common/logger.h"
 #include "param/param.h"
 #include "scene/scene.h"
+#include "geometry/primitive/face_indices.h"
 
 namespace yafaray {
 
@@ -114,17 +115,17 @@ bool CurveObject::calculateObject(size_t material_id)
 		const int b_2 = a_2 + 2;
 		const int b_3 = b_2 + 1;
 		// Close bottom
-		if(i == 0) addFace({a_1, a_3, a_2}, {iu, iu, iu}, material_id);
+		if(i == 0) addFace(FaceIndices{{VertexIndices{a_1, iu}, VertexIndices{a_3, iu}, VertexIndices{a_2, iu}}}, material_id);
 		// Fill and strand UVs
-		addFace({a_1, b_2, b_1}, {iu, iv, iv}, material_id);
-		addFace({a_1, a_2, b_2}, {iu, iu, iv}, material_id);
-		addFace({a_2, b_3, b_2}, {iu, iv, iv}, material_id);
-		addFace({a_2, a_3, b_3}, {iu, iu, iv}, material_id);
-		addFace({b_3, a_3, a_1}, {iv, iu, iu}, material_id);
-		addFace({b_3, a_1, b_1}, {iv, iu, iv}, material_id);
+		addFace(FaceIndices{{VertexIndices{a_1, iu}, VertexIndices{b_2, iv}, VertexIndices{b_1, iv}}}, material_id);
+		addFace(FaceIndices{{VertexIndices{a_1, iu}, VertexIndices{b_2, iu}, VertexIndices{b_2, iv}}}, material_id);
+		addFace(FaceIndices{{VertexIndices{a_2, iu}, VertexIndices{b_3, iv}, VertexIndices{b_2, iv}}}, material_id);
+		addFace(FaceIndices{{VertexIndices{a_2, iu}, VertexIndices{a_3, iu}, VertexIndices{b_3, iv}}}, material_id);
+		addFace(FaceIndices{{VertexIndices{b_3, iv}, VertexIndices{a_3, iu}, VertexIndices{a_1, iu}}}, material_id);
+		addFace(FaceIndices{{VertexIndices{b_3, iv}, VertexIndices{a_1, iu}, VertexIndices{b_1, iv}}}, material_id);
 	}
 	// Close top
-	addFace({i, 2 * i + points_size, 2 * i + points_size + 1}, {iv, iv, iv}, material_id);
+	addFace(FaceIndices{{VertexIndices{i, iv}, VertexIndices{2 * i + points_size, iv}, VertexIndices{2 * i + points_size + 1, iv}}}, material_id);
 	return ParentClassType_t::calculateObject(material_id);
 }
 
