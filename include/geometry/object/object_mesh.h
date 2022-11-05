@@ -42,7 +42,7 @@ class MeshObject : public Object
 		static std::string printMeta(const std::vector<std::string> &excluded_params) { return Params::meta_.print(excluded_params); }
 		[[nodiscard]] ParamMap getAsParamMap(bool only_non_default) const override;
 		MeshObject(ParamResult &param_result, const ParamMap &param_map, const SceneItems <Object> &objects, const SceneItems<Material> &materials);
-		~MeshObject();
+		~MeshObject() override;
 		std::vector<const Primitive *> getPrimitives() const override;
 		int lastVertexId(int time_step) const override { return numVertices(time_step) - 1; }
 		Vec3f getVertexNormal(int index, int time_step) const { return time_steps_[time_step].vertices_normals_[index]; }
