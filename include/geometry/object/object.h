@@ -49,9 +49,8 @@ class Object
 		[[nodiscard]] std::string getName() const;
 		size_t getId() const { return id_; }
 		void setId(size_t id);
-		void setVisibility(Visibility visibility) { visibility_ = visibility; }
 		/*! Returns if this object should be used for rendering and/or shadows. */
-		Visibility getVisibility() const { return visibility_; }
+		Visibility getVisibility() const { return params_.visibility_; }
 		/*! Returns if this object is used as base object for instances. */
 		bool isBaseObject() const { return params_.is_base_object_; }
 		int getPassIndex() const { return params_.object_index_; }
@@ -107,7 +106,6 @@ class Object
 		const Light *light_ = nullptr;
 		const SceneItems<Object> &objects_;
 		const SceneItems<Material> &materials_;
-		Visibility visibility_{params_.visibility_};
 		Rgb index_auto_color_{0.f}; //!< Object Index color automatically generated for the object-index-auto color render pass
 };
 

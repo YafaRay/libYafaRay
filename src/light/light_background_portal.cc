@@ -102,10 +102,9 @@ void BackgroundPortalLight::init(Scene &scene)
 	world_center_ = 0.5f * (w.a_ + w.g_);
 
 	if(object_id_ == math::invalid<size_t>) object_id_ = objects_.findIdFromName(params_.object_name_).first;
-	auto [object, object_result]{scene.getObject(object_id_)};
+	const auto [object, object_result]{scene.getObject(object_id_)};
 	if(object)
 	{
-		object->setVisibility(Visibility::None);
 		primitives_ = object->getPrimitives();
 		initIs();
 		if(logger_.isVerbose()) logger_.logVerbose(getClassName(), ": number of primitives: ", primitives_.size(), ", area: ", area_);
