@@ -77,6 +77,7 @@ class BackgroundLight final : public Light
 
 		std::vector<std::unique_ptr<Pdf1D>> u_dist_;
 		std::unique_ptr<Pdf1D> v_dist_;
+		const Background *background_{nullptr};
 		Point3f world_center_;
 		float world_radius_;
 		float a_pdf_;

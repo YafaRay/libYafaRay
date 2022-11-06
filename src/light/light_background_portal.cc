@@ -74,10 +74,10 @@ BackgroundPortalLight::BackgroundPortalLight(Logger &logger, ParamResult &param_
 
 void BackgroundPortalLight::initIs()
 {
-	num_primitives_ = primitives_.size();
-	std::vector<float> areas(num_primitives_);
+	const size_t num_primitives{primitives_.size()};
+	std::vector<float> areas(num_primitives);
 	double total_area = 0.0;
-	for(size_t i = 0; i < num_primitives_; ++i)
+	for(size_t i = 0; i < num_primitives; ++i)
 	{
 		areas[i] = primitives_[i]->surfaceArea(0.f);
 		total_area += areas[i];
@@ -93,10 +93,11 @@ void BackgroundPortalLight::initIs()
 
 void BackgroundPortalLight::init(Scene &scene)
 {
-	bg_ = scene.getBackground();
+	background_ = scene.getBackground();
 	const Bound w = scene.getSceneBound();
+	/* FIXME: this is unused for some reason, removing from members and commenting this out. What is this supposed to do?
 	const float world_radius = 0.5f * (w.g_ - w.a_).length();
-	a_pdf_ = world_radius * world_radius;
+	a_pdf_ = world_radius * world_radius; */
 
 	world_center_ = 0.5f * (w.a_ + w.g_);
 
@@ -107,7 +108,7 @@ void BackgroundPortalLight::init(Scene &scene)
 		object->setVisibility(Visibility::None);
 		primitives_ = object->getPrimitives();
 		initIs();
-		if(logger_.isVerbose()) logger_.logVerbose(getClassName(), ": Triangles:", num_primitives_, ", Area:", area_);
+		if(logger_.isVerbose()) logger_.logVerbose(getClassName(), ": number of primitives: ", primitives_.size(), ", area: ", area_);
 		object->setLight(this);
 	}
 }
@@ -139,7 +140,7 @@ Rgb BackgroundPortalLight::totalEnergy() const
 	for(int i = 0; i < 1000; ++i) //exaggerated?
 	{
 		wo.dir_ = sample::sphere(((float) i + 0.5f) / 1000.f, sample::riVdC(i));
-		const Rgb col = bg_->eval(wo.dir_, true);
+		const Rgb col = background_->eval(wo.dir_, true);
 		for(const auto primitive : primitives_)
 		{
 			float cos_n = -wo.dir_ * primitive->getGeometricNormal({}, 0.f, false); //not 100% sure about sign yet...
@@ -162,7 +163,7 @@ std::pair<bool, Ray> BackgroundPortalLight::illumSample(const Point3f &surface_p
 	const float cos_angle = -(ldir * n);
 	//no light if point is behind area light (single sided!)
 	if(cos_angle <= 0.f) return {};
-	s.col_ = bg_->eval(ldir, true) * params_.power_;
+	s.col_ = background_->eval(ldir, true) * params_.power_;
 	// pdf = distance^2 / area * cos(norm, ldir);
 	s.pdf_ = dist_sqr * math::num_pi<> / (area_ * cos_angle);
 	s.flags_ = flags_;
@@ -171,7 +172,7 @@ std::pair<bool, Ray> BackgroundPortalLight::illumSample(const Point3f &surface_p
 		s.sp_->p_ = p;
 		s.sp_->n_ = s.sp_->ng_ = n;
 	}
-	Ray ray{surface_p, std::move(ldir), time, 0.f, dist};
+	Ray ray{surface_p, ldir, time, 0.f, dist};
 	return {true, std::move(ray)};
 }
 
@@ -181,7 +182,7 @@ std::tuple<Ray, float, Rgb> BackgroundPortalLight::emitPhoton(float s_1, float s
 	const Uv<Vec3f> duv{Vec3f::createCoordsSystem(n)};
 	const Vec3f dir{sample::cosHemisphere(n, duv, s_1, s_2)};
 	Ray ray{p, -dir, time}; //FIXME: is it correct to use p or should we use the coordinates 0,0,0 for ray origin?
-	return {std::move(ray), true, bg_->eval(-dir, true)};
+	return {std::move(ray), true, background_->eval(-dir, true)};
 }
 
 std::pair<Vec3f, Rgb> BackgroundPortalLight::emitSample(LSample &s, float time) const
@@ -193,7 +194,7 @@ std::pair<Vec3f, Rgb> BackgroundPortalLight::emitSample(LSample &s, float time) 
 	Vec3f dir{sample::cosHemisphere(s.sp_->ng_, duv, s.s_1_, s.s_2_)};
 	s.dir_pdf_ = std::abs(s.sp_->ng_ * dir);
 	s.flags_ = flags_;
-	return {-dir, bg_->eval(-dir, true)};
+	return {-dir, background_->eval(-dir, true)};
 }
 
 std::tuple<bool, float, Rgb> BackgroundPortalLight::intersect(const Ray &ray, float &t) const
@@ -208,9 +209,9 @@ std::tuple<bool, float, Rgb> BackgroundPortalLight::intersect(const Ray &ray, fl
 	if(cos_angle <= 0.f) return {};
 	const float idist_sqr = 1.f / (t * t);
 	const float ipdf = idist_sqr * area_ * cos_angle * math::div_1_by_pi<>;
-	Rgb col{bg_->eval(ray.dir_, true) * params_.power_};
+	Rgb col{background_->eval(ray.dir_, true) * params_.power_};
 	col.clampProportionalRgb(params_.ibl_clamp_sampling_); //trick to reduce light sampling noise at the expense of realism and inexact overall light. 0.f disables clamping
-	return {true, ipdf, std::move(col)};
+	return {true, ipdf, col};
 }
 
 float BackgroundPortalLight::illumPdf(const Point3f &surface_p, const Point3f &light_p, const Vec3f &light_ng) const

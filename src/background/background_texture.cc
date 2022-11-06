@@ -93,7 +93,6 @@ std::pair<std::unique_ptr<Background>, ParamResult> TextureBackground::factory(L
 			logger.logParams(getClassName(), ": using IBL sampling clamp=", background->params_.ibl_clamp_sampling_);
 		}
 		auto bglight{Light::factory(logger, scene, "light", bgp).first};
-		bglight->setBackground(background.get());
 		background->addLight(std::move(bglight));
 	}
 	return {std::move(background), param_result};

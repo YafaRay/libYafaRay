@@ -92,10 +92,9 @@ class Light
 		[[nodiscard]] virtual std::array<float, 3> emitPdf(const Vec3f &surface_n, const Vec3f &wo) const { return {0.f, 0.f, 0.f}; }
 		//! (preferred) number of samples for direct lighting
 		[[nodiscard]] virtual int nSamples() const { return 8; }
-		//! This method must be called right after the factory is called on a background light or the light will fail
-		virtual void setBackground(const Background *bg) { background_ = bg; }
-		//! Enable/disable entire light source
+		//! Check whether the light is enabled
 		[[nodiscard]] bool lightEnabled() const { return params_.light_enabled_;}
+		//! Check whether the light casts shadows
 		[[nodiscard]] bool castShadows() const { return params_.cast_shadows_; }
 		//! checks if the light can shoot caustic photons (photonmap integrator)
 		[[nodiscard]] bool shootsCausticP() const { return params_.shoot_caustic_; }
@@ -105,7 +104,6 @@ class Light
 		[[nodiscard]] bool photonOnly() const { return params_.photon_only_; }
 		[[nodiscard]] Flags getFlags() const { return flags_; }
 		[[nodiscard]] [[nodiscard]] std::string getName() const { return name_; }
-		void setName(const std::string &name) { name_ = name; }
 
 	protected:
 		struct Type : public Enum<Type>
@@ -136,7 +134,6 @@ class Light
 		} params_;
 		std::string name_;
 		Flags flags_{Flags::None};
-		const Background* background_ = nullptr;
 		Logger &logger_;
 };
 

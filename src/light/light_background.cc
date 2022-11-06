@@ -71,6 +71,7 @@ BackgroundLight::BackgroundLight(Logger &logger, ParamResult &param_result, cons
 
 void BackgroundLight::init(Scene &scene)
 {
+	background_ = scene.getBackground();
 	const int nv = max_vsamples_;
 	std::vector<float> fv(nv);
 	const float inv_nv = 1.f / static_cast<float>(nv);

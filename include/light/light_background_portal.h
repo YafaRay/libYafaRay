@@ -78,12 +78,10 @@ class BackgroundPortalLight final : public Light
 		const SceneItems<Object> &objects_;
 		std::unique_ptr<Pdf1D> area_dist_;
 		std::vector<const Primitive *> primitives_;
-		size_t num_primitives_; //!< gives the array size of uDist
+		const Background *background_{nullptr};
 		float area_, inv_area_;
 		std::unique_ptr<const Accelerator> accelerator_;
-		const Background *bg_ = nullptr;
 		Point3f world_center_;
-		float a_pdf_{0.f};
 };
 
 } //namespace yafaray

@@ -90,7 +90,6 @@ std::pair<std::unique_ptr<Background>, ParamResult> SunSkyBackground::factory(Lo
 		bgp["cast_shadows"] = background->ParentClassType_t::params_.cast_shadows_;
 
 		auto bglight{Light::factory(logger, scene, "light_sky", bgp).first};
-		bglight->setBackground(background.get());
 		background->addLight(std::move(bglight));
 	}
 	if(background->params_.add_sun_)
@@ -114,7 +113,6 @@ std::pair<std::unique_ptr<Background>, ParamResult> SunSkyBackground::factory(Lo
 		bgp["with_diffuse"] = background->ParentClassType_t::params_.with_diffuse_;
 
 		auto bglight{Light::factory(logger, scene, "light_sun", bgp).first};
-		bglight->setBackground(background.get());
 		background->addLight(std::move(bglight));
 	}
 	return {std::move(background), param_result};

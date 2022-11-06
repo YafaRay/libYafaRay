@@ -129,7 +129,6 @@ std::pair<std::unique_ptr<Background>, ParamResult> DarkSkyBackground::factory(L
 
 		if(logger.isVerbose()) logger.logVerbose(getClassName(), ": Adding background sky light");
 		auto bglight{Light::factory(logger, scene, "light_sky", bgp).first};
-		bglight->setBackground(background.get());
 		background->addLight(std::move(bglight));
 	}
 	if(logger.isVerbose()) logger.logVerbose(getClassName(), ": End");

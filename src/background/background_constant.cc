@@ -60,7 +60,6 @@ std::pair<std::unique_ptr<Background>, ParamResult> ConstantBackground::factory(
 		bgp["cast_shadows"] = background->ParentClassType_t::params_.cast_shadows_;
 
 		auto bglight{Light::factory(logger, scene, "light", bgp).first};
-		bglight->setBackground(background.get());
 		background->addLight(std::move(bglight));
 	}
 	return {std::move(background), param_result};
