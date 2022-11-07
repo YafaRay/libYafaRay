@@ -116,14 +116,16 @@ class Scene final
 		const SceneItems<Material> &getMaterials() const { return materials_; }
 		Texture *getTexture(const std::string &name) const;
 		const Camera *getCamera(const std::string &name) const;
-		const Light *getLight(const std::string &name) const;
 		const ImageOutput *getOutput(const std::string &name) const;
 		const Image *getImage(const std::string &name) const;
 		const std::map<std::string, std::unique_ptr<RenderView>> &getRenderViews() const { return render_views_; }
 		const std::map<std::string, std::unique_ptr<VolumeRegion>> &getVolumeRegions() const { return volume_regions_; }
-		std::map<std::string, const Light *> getLights() const;
-
+		const SceneItems<Light> &getLights() const { return lights_; }
+		SceneItems<Light> &getLights() { return lights_; }
+		std::tuple<Light *, size_t, ResultFlags> getLight(const std::string &name) const;
+		std::pair<Light *, ResultFlags> getLight(size_t object_id) const;
 		std::pair<size_t, ParamResult> createLight(std::string &&name, ParamMap &&params);
+		bool disableLight(const std::string &name);
 		std::pair<size_t, ParamResult> createTexture(std::string &&name, ParamMap &&params);
 		std::pair<size_t, ParamResult> createMaterial(std::string &&name, ParamMap &&params, std::list<ParamMap> &&nodes_params);
 		std::pair<size_t, ParamResult> createCamera(std::string &&name, ParamMap &&params);
@@ -168,7 +170,6 @@ class Scene final
 		const RenderCallbacks &getRenderCallbacks() const { return render_callbacks_; }
 
 	private:
-		std::map<std::string, Light *> getLights();
 		template <typename T> static T *findMapItem(const std::string &name, const std::map<std::string, std::unique_ptr<T>> &map);
 		void setMaskParams(const ParamMap &params);
 		void setEdgeToonParams(const ParamMap &params);
@@ -193,7 +194,7 @@ class Scene final
 		size_t current_object_{0};
 		SceneItems<Object> objects_;
 		std::vector<std::unique_ptr<Instance>> instances_;
-		std::map<std::string, std::unique_ptr<Light>> lights_;
+		SceneItems<Light> lights_;
 		SceneItems<Material> materials_;
 		RenderControl render_control_;
 		Logger &logger_;

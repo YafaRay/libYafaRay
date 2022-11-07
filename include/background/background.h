@@ -36,6 +36,7 @@ class Rgb;
 class Logger;
 template <typename T, size_t N> class Vec;
 typedef Vec<float, 3> Vec3f;
+template <typename T> class SceneItems;
 
 class Background
 {
@@ -43,16 +44,14 @@ class Background
 	public:
 		inline static std::string getClassName() { return "Background"; }
 		[[nodiscard]] virtual Type type() const = 0;
-		static std::pair<std::unique_ptr<Background>, ParamResult> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map);
+		static std::pair<std::unique_ptr<Background>, ParamResult> factory(Logger &logger, Scene &scene, const std::string &name, const ParamMap &param_map);
 		[[nodiscard]] virtual ParamMap getAsParamMap(bool only_non_default) const;
-		explicit Background(Logger &logger, ParamResult &param_result, const ParamMap &param_map);
+		Background(Logger &logger, ParamResult &param_result, SceneItems<Light> &lights, const ParamMap &param_map);
 		virtual ~Background();
 		Rgb operator()(const Vec3f &dir) const { return operator()(dir, false); }
 		virtual Rgb operator()(const Vec3f &dir, bool use_ibl_blur) const { return eval(dir, use_ibl_blur); }
 		Rgb eval(const Vec3f &dir) const { return eval(dir, false); }
 		virtual Rgb eval(const Vec3f &dir, bool use_ibl_blur) const = 0;
-		void addLight(std::unique_ptr<Light> light);
-		std::vector<Light *> getLights() const;
 
 	protected:
 		struct Type : public Enum<Type>
@@ -77,7 +76,7 @@ class Background
 			PARAM_DECL(bool, with_diffuse_, true, "with_diffuse", "");
 			PARAM_DECL(bool, cast_shadows_, true, "cast_shadows", "");
 		} params_;
-		std::vector<std::unique_ptr<Light>> lights_;
+		SceneItems<Light> &lights_;
 		Logger &logger_;
 };
 

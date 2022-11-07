@@ -58,7 +58,7 @@ ParamMap Background::getAsParamMap(bool only_non_default) const
 	return result;
 }
 
-std::pair<std::unique_ptr<Background>, ParamResult> Background::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map)
+std::pair<std::unique_ptr<Background>, ParamResult> Background::factory(Logger &logger, Scene &scene, const std::string &name, const ParamMap &param_map)
 {
 	const Type type{ClassMeta::preprocessParamMap<Type>(logger, getClassName(), param_map)};
 	switch(type.value())
@@ -72,24 +72,11 @@ std::pair<std::unique_ptr<Background>, ParamResult> Background::factory(Logger &
 	}
 }
 
-Background::Background(Logger &logger, ParamResult &param_result, const ParamMap &param_map) : params_{param_result, param_map}, logger_(logger)
+Background::Background(Logger &logger, ParamResult &param_result, SceneItems<Light> &lights, const ParamMap &param_map) : params_{param_result, param_map}, lights_{lights}, logger_{logger}
 {
 	//Empty
 }
 
 Background::~Background() = default;
-
-
-void Background::addLight(std::unique_ptr<Light> light)
-{
-	lights_.emplace_back(std::move(light));
-}
-
-std::vector<Light *> Background::getLights() const
-{
-	std::vector<Light *> result;
-	for(const auto &l : lights_) result.emplace_back(l.get());
-	return result;
-}
 
 } //namespace yafaray

@@ -75,10 +75,10 @@ ParamMap SunSkyBackground::getAsParamMap(bool only_non_default) const
 	return result;
 }
 
-std::pair<std::unique_ptr<Background>, ParamResult> SunSkyBackground::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map)
+std::pair<std::unique_ptr<Background>, ParamResult> SunSkyBackground::factory(Logger &logger, Scene &scene, const std::string &name, const ParamMap &param_map)
 {
 	auto param_result{Params::meta_.check(param_map, {"type"}, {})};
-	auto background{std::make_unique<ThisClassType_t>(logger, param_result, param_map)};
+	auto background{std::make_unique<ThisClassType_t>(logger, param_result, scene.getLights(), param_map)};
 	if(param_result.notOk()) logger.logWarning(param_result.print<ThisClassType_t>(name, {"type"}));
 	if(background->params_.background_light_)
 	{
@@ -88,9 +88,7 @@ std::pair<std::unique_ptr<Background>, ParamResult> SunSkyBackground::factory(Lo
 		bgp["with_caustic"] = background->ParentClassType_t::params_.with_caustic_;
 		bgp["with_diffuse"] = background->ParentClassType_t::params_.with_diffuse_;
 		bgp["cast_shadows"] = background->ParentClassType_t::params_.cast_shadows_;
-
-		auto bglight{Light::factory(logger, scene, "light_sky", bgp).first};
-		background->addLight(std::move(bglight));
+		scene.createLight(ThisClassType_t::lightSkyName(), std::move(bgp));
 	}
 	if(background->params_.add_sun_)
 	{
@@ -100,7 +98,7 @@ std::pair<std::unique_ptr<Background>, ParamResult> SunSkyBackground::factory(Lo
 		const float invpdf = (2.f * math::num_pi<> * (1.f - cos_angle));
 		suncol *= invpdf * background->ParentClassType_t::params_.power_;
 
-		if(logger.isVerbose()) logger.logVerbose("Sunsky: sun color = ", suncol);
+		if(logger.isVerbose()) logger.logVerbose(getClassName(), ": sun color = ", suncol);
 
 		ParamMap bgp;
 		bgp["type"] = std::string("sunlight");
@@ -111,15 +109,13 @@ std::pair<std::unique_ptr<Background>, ParamResult> SunSkyBackground::factory(Lo
 		bgp["cast_shadows"] = background->params_.cast_shadows_sun_;
 		bgp["with_caustic"] = background->ParentClassType_t::params_.with_caustic_;
 		bgp["with_diffuse"] = background->ParentClassType_t::params_.with_diffuse_;
-
-		auto bglight{Light::factory(logger, scene, "light_sun", bgp).first};
-		background->addLight(std::move(bglight));
+		scene.createLight(ThisClassType_t::lightSunName(), std::move(bgp));
 	}
 	return {std::move(background), param_result};
 }
 
-SunSkyBackground::SunSkyBackground(Logger &logger, ParamResult &param_result, const ParamMap &param_map) :
-		ParentClassType_t{logger, param_result, param_map}, params_{param_result, param_map}
+SunSkyBackground::SunSkyBackground(Logger &logger, ParamResult &param_result, SceneItems<Light> &lights, const ParamMap &param_map) :
+		ParentClassType_t{logger, param_result, lights, param_map}, params_{param_result, param_map}
 {
 	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + params_.getAsParamMap(true).print());
 	sun_dir_.normalize();
@@ -158,6 +154,12 @@ SunSkyBackground::SunSkyBackground(Logger &logger, ParamResult &param_result, co
 	perez_y_[2] = (-0.00792 * t_ + 0.21023) * params_.c_var_;
 	perez_y_[3] = (-0.04405 * t_ - 1.65369) * params_.d_var_;
 	perez_y_[4] = (-0.01092 * t_ + 0.05291) * params_.e_var_;
+}
+
+SunSkyBackground::~SunSkyBackground()
+{
+	lights_.disable(lightSkyName());
+	lights_.disable(lightSunName());
 }
 
 double SunSkyBackground::perezFunction(const std::array<double, 5> &lam, double theta, double gamma, double lvz) const

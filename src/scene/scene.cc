@@ -197,7 +197,10 @@ bool Scene::render(std::unique_ptr<ProgressBar> progress_bar)
 	//if(creation_state_.changes_ != CreationState::Flags::CNone) //FIXME: handle better subsequent scene renders differently if previous render already complete
 	{
 		if(creation_state_.changes_ & CreationState::Flags::CGeom) updateObjects();
-		for(auto &[light_name, light] : getLights()) light->init(*this);
+		for(auto &[light, light_name, light_enabled] : lights_)
+		{
+			if(light && light_enabled) light->init(*this);
+		}
 		for(auto &[output_name, output] : outputs_)
 		{
 			output->init(image_film_->getSize(), image_film_->getExportedImageLayers(), &render_views_);
@@ -297,9 +300,14 @@ const Camera *Scene::getCamera(const std::string &name) const
 	return Scene::findMapItem<Camera>(name, cameras_);
 }
 
-const Light *Scene::getLight(const std::string &name) const
+std::tuple<Light *, size_t, ResultFlags> Scene::getLight(const std::string &name) const
 {
-	return Scene::findMapItem<Light>(name, lights_);
+	return lights_.getByName(name);
+}
+
+std::pair<Light *, ResultFlags> Scene::getLight(size_t light_id) const
+{
+	return lights_.getById(light_id);
 }
 
 const ImageOutput *Scene::getOutput(const std::string &name) const
@@ -320,47 +328,23 @@ bool Scene::removeOutput(std::string &&name)
 	return true;
 }
 
-std::map<std::string, const Light *> Scene::getLights() const
-{
-	std::map<std::string, const Light *> result;
-	for(const auto &light : lights_) result[light.first] = light.second.get();
-	if(background_)
-	{
-		for(const auto light : background_->getLights()) result["background::" + light->getName()] = light;
-	}
-	return result;
-}
-
-std::map<std::string, Light *> Scene::getLights()
-{
-	std::map<std::string, Light *> result;
-	for(const auto &light : lights_) result[light.first] = light.second.get();
-	if(background_)
-	{
-		for(const auto light : background_->getLights()) result["background::" + light->getName()] = light;
-	}
-	return result;
-}
-
 std::pair<size_t, ParamResult> Scene::createLight(std::string &&name, ParamMap &&params)
 {
-	if(lights_.find(name) != lights_.end())
+	const auto [existing_light, existing_light_id, existing_light_result]{lights_.getByName(name)};
+	if(existing_light)
 	{
-		logWarnExist(logger_, Light::getClassName(), name); return {0, {YAFARAY_RESULT_ERROR_ALREADY_EXISTS}};
+		if(logger_.isVerbose()) logger_.logWarning(Light::getClassName(), ": light with name '", name, "' already exists, overwriting with new light.");
 	}
-	auto [light, param_result] {Light::factory(logger_, *this, name, params)};
-	if(light)
+	auto [new_light, param_result]{Light::factory(logger_, *this, name, params)};
+	if(new_light)
 	{
-		if(logger_.isVerbose())
-		{
-			if(light->lightEnabled()) logInfoVerboseSuccess(logger_, Light::getClassName(), name, light->type().print());
-			else logInfoVerboseSuccessDisabled(logger_, Light::getClassName(), name, light->type().print());
-		}
 		creation_state_.changes_ |= CreationState::Flags::CLight;
-		lights_[name] = std::move(light);
-		return {lights_.size() - 1, param_result}; //FIXME: this is just a placeholder for now for future LightID, although this will not work while we still use std::map for lights_
+		if(logger_.isVerbose()) logInfoVerboseSuccess(logger_, Light::getClassName(), name, new_light->type().print());
+		const auto [new_light_id, adding_result]{lights_.add(name, std::move(new_light))};
+		param_result.flags_ |= adding_result;
+		return {new_light_id, param_result};
 	}
-	return {0, ParamResult{YAFARAY_RESULT_ERROR_WHILE_CREATING}};
+	else return {0, ParamResult{YAFARAY_RESULT_ERROR_WHILE_CREATING}};
 }
 
 std::pair<size_t, ParamResult> Scene::createMaterial(std::string &&name, ParamMap &&params, std::list<ParamMap> &&nodes_params)
@@ -1013,21 +997,22 @@ bool Scene::addInstanceMatrix(int instance_id, Matrix4f &&obj_to_world, float ti
 bool Scene::updateObjects()
 {
 	std::vector<const Primitive *> primitives;
-	for(const auto &object : objects_)
+	for(const auto &[object, object_name, object_enabled] : objects_)
 	{
-		if(!object || object->getVisibility() == Visibility::None || object->isBaseObject()) continue;
+		if(!object || !object_enabled || object->getVisibility() == Visibility::None || object->isBaseObject()) continue;
 		const auto object_primitives{object->getPrimitives()};
 		primitives.insert(primitives.end(), object_primitives.begin(), object_primitives.end());
 	}
-	for(auto &instance : instances_)
+	for(size_t instance_id = 0; instance_id < instances_.size(); ++instance_id)
 	{
 		//if(object->getVisibility() == Visibility::Invisible) continue; //FIXME
 		//if(object->isBaseObject()) continue; //FIXME
+		auto instance{instances_[instance_id].get()};
 		if(!instance) continue;
 		const bool instance_primitives_result{instance->updatePrimitives(*this)};
 		if(!instance_primitives_result)
 		{
-			logger_.logWarning("Scene: Instance, could not update primitives, maybe recursion problem..."); //FIXME: add instance id to the logged warning
+			logger_.logWarning(getClassName(), ": Instance id=", instance_id, " could not update primitives, maybe recursion problem...");
 			continue;
 		}
 		const auto instance_primitives{instance->getPrimitives()};
@@ -1046,7 +1031,7 @@ bool Scene::updateObjects()
 	if(logger_.isVerbose()) logger_.logVerbose("Scene: New scene bound is: ", "(", scene_bound_->a_[Axis::X], ", ", scene_bound_->a_[Axis::Y], ", ", scene_bound_->a_[Axis::Z], "), (", scene_bound_->g_[Axis::X], ", ", scene_bound_->g_[Axis::Y], ", ", scene_bound_->g_[Axis::Z], ")");
 
 	object_index_highest_ = 1;
-	for(const auto &object : objects_)
+	for(const auto &[object, object_name, object_enabled] : objects_)
 	{
 		if(object_index_highest_ < object->getPassIndex()) object_index_highest_ = object->getPassIndex();
 	}
@@ -1068,6 +1053,12 @@ std::pair<const Instance *, ResultFlags> Scene::getInstance(size_t instance_id) 
 {
 	if(instance_id >= instances_.size()) return {nullptr, YAFARAY_RESULT_ERROR_NOT_FOUND};
 	else return {instances_[instance_id].get(), YAFARAY_RESULT_OK};
+}
+
+bool Scene::disableLight(const std::string &name)
+{
+	const auto result{lights_.disable(name)};
+	return result.isOk();
 }
 
 } //namespace yafaray

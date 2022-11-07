@@ -21,6 +21,7 @@
 #include "background/background_constant.h"
 #include "param/param.h"
 #include "scene/scene.h"
+#include "scene/scene_items.h"
 #include "light/light.h"
 #include "image/image_output.h"
 
@@ -45,10 +46,10 @@ ParamMap ConstantBackground::getAsParamMap(bool only_non_default) const
 	return result;
 }
 
-std::pair<std::unique_ptr<Background>, ParamResult> ConstantBackground::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map)
+std::pair<std::unique_ptr<Background>, ParamResult> ConstantBackground::factory(Logger &logger, Scene &scene, const std::string &name, const ParamMap &param_map)
 {
 	auto param_result{Params::meta_.check(param_map, {"type"}, {})};
-	auto background{std::make_unique<ThisClassType_t>(logger, param_result, param_map)};
+	auto background{std::make_unique<ThisClassType_t>(logger, param_result, scene.getLights(), param_map)};
 	if(param_result.notOk()) logger.logWarning(param_result.print<ThisClassType_t>(name, {"type"}));
 	if(background->ParentClassType_t::params_.ibl_)
 	{
@@ -58,17 +59,20 @@ std::pair<std::unique_ptr<Background>, ParamResult> ConstantBackground::factory(
 		bgp["with_caustic"] = background->ParentClassType_t::params_.with_caustic_;
 		bgp["with_diffuse"] = background->ParentClassType_t::params_.with_diffuse_;
 		bgp["cast_shadows"] = background->ParentClassType_t::params_.cast_shadows_;
-
-		auto bglight{Light::factory(logger, scene, "light", bgp).first};
-		background->addLight(std::move(bglight));
+		scene.createLight(ThisClassType_t::lightName(), std::move(bgp));
 	}
 	return {std::move(background), param_result};
 }
 
-ConstantBackground::ConstantBackground(Logger &logger, ParamResult &param_result, const ParamMap &param_map) :
-		ParentClassType_t{logger, param_result, param_map}, params_{param_result, param_map}
+ConstantBackground::ConstantBackground(Logger &logger, ParamResult &param_result, SceneItems<Light> &lights, const ParamMap &param_map) :
+		ParentClassType_t{logger, param_result, lights, param_map}, params_{param_result, param_map}
 {
 	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + params_.getAsParamMap(true).print());
+}
+
+ConstantBackground::~ConstantBackground()
+{
+	lights_.disable(lightName());
 }
 
 Rgb ConstantBackground::eval(const Vec3f &dir, bool use_ibl_blur) const

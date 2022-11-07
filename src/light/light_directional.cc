@@ -59,13 +59,13 @@ ParamMap DirectionalLight::getAsParamMap(bool only_non_default) const
 std::pair<std::unique_ptr<Light>, ParamResult> DirectionalLight::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map)
 {
 	auto param_result{Params::meta_.check(param_map, {"type"}, {})};
-	auto light {std::make_unique<ThisClassType_t>(logger, param_result, name, param_map)};
+	auto light {std::make_unique<ThisClassType_t>(logger, param_result, param_map, scene.getLights())};
 	if(param_result.notOk()) logger.logWarning(param_result.print<ThisClassType_t>(name, {"type"}));
 	return {std::move(light), param_result};
 }
 
-DirectionalLight::DirectionalLight(Logger &logger, ParamResult &param_result, const std::string &name, const ParamMap &param_map):
-		ParentClassType_t{logger, param_result, name, param_map, Flags::DiracDir}, params_{param_result, param_map}
+DirectionalLight::DirectionalLight(Logger &logger, ParamResult &param_result, const ParamMap &param_map, const SceneItems<Light> &lights):
+		ParentClassType_t{logger, param_result, param_map, Flags::DiracDir, lights}, params_{param_result, param_map}
 {
 	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + params_.getAsParamMap(true).print());
 }
@@ -82,7 +82,7 @@ void DirectionalLight::init(Scene &scene)
 		radius_ = world_radius_;
 		area_pdf_ = 1.f / (radius_ * radius_); // Pi cancels out with our weird conventions :p
 	}
-	if(logger_.isVerbose()) logger_.logVerbose("DirectionalLight: pos ", position_, " world radius: ", world_radius_);
+	if(logger_.isVerbose()) logger_.logVerbose(getClassName(), ": pos ", position_, " world radius: ", world_radius_);
 }
 
 std::tuple<bool, Ray, Rgb> DirectionalLight::illuminate(const Point3f &surface_p, float time) const

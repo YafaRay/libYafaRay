@@ -31,6 +31,14 @@
 namespace yafaray {
 
 template <typename T>
+struct SceneItem final
+{
+	std::unique_ptr<T> item_;
+	std::string name_;
+	bool enabled_{true};
+};
+
+template <typename T>
 class SceneItems final
 {
 	public:
@@ -42,16 +50,15 @@ class SceneItems final
 		[[nodiscard]] std::pair<std::string, ResultFlags> findNameFromId(size_t id) const;
 		[[nodiscard]] std::pair<T *, ResultFlags> getById(size_t id) const;
 		[[nodiscard]] std::tuple<T *, size_t, ResultFlags> getByName(const std::string &name) const;
-		[[nodiscard]] size_t size() const { return items_.size(); }
-		typename std::vector<std::unique_ptr<T>>::iterator begin() { return items_.begin(); }
-		typename std::vector<std::unique_ptr<T>>::iterator end() { return items_.end(); }
-		typename std::vector<std::unique_ptr<T>>::const_iterator begin() const { return items_.begin(); }
-		typename std::vector<std::unique_ptr<T>>::const_iterator end() const { return items_.end(); }
+		[[nodiscard]] size_t size() const { return scene_items_.size(); }
+		typename std::vector<SceneItem<T>>::iterator begin() { return scene_items_.begin(); }
+		typename std::vector<SceneItem<T>>::iterator end() { return scene_items_.end(); }
+		typename std::vector<SceneItem<T>>::const_iterator begin() const { return scene_items_.begin(); }
+		typename std::vector<SceneItem<T>>::const_iterator end() const { return scene_items_.end(); }
 		void clear();
 
 	private:
-		std::vector<std::unique_ptr<T>> items_;
-		std::vector<std::string> names_;
+		std::vector<SceneItem<T>> scene_items_;
 		std::map<std::string, size_t> names_to_id_;
 };
 

@@ -23,6 +23,7 @@
 #include "sampler/sample.h"
 #include "geometry/ray.h"
 #include "param/param.h"
+#include "scene/scene.h"
 
 namespace yafaray {
 
@@ -52,13 +53,13 @@ ParamMap PointLight::getAsParamMap(bool only_non_default) const
 std::pair<std::unique_ptr<Light>, ParamResult> PointLight::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map)
 {
 	auto param_result{Params::meta_.check(param_map, {"type"}, {})};
-	auto light {std::make_unique<ThisClassType_t>(logger, param_result, name, param_map)};
+	auto light {std::make_unique<ThisClassType_t>(logger, param_result, param_map, scene.getLights())};
 	if(param_result.notOk()) logger.logWarning(param_result.print<ThisClassType_t>(name, {"type"}));
 	return {std::move(light), param_result};
 }
 
-PointLight::PointLight(Logger &logger, ParamResult &param_result, const std::string &name, const ParamMap &param_map):
-		ParentClassType_t{logger, param_result, name, param_map, Flags::Singular}, params_{param_result, param_map}
+PointLight::PointLight(Logger &logger, ParamResult &param_result, const ParamMap &param_map, const SceneItems<Light> &lights):
+		ParentClassType_t{logger, param_result, param_map, Flags::Singular, lights}, params_{param_result, param_map}
 {
 	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + params_.getAsParamMap(true).print());
 }

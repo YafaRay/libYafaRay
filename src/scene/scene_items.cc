@@ -19,11 +19,13 @@
 #include "scene/scene_items.h"
 #include "material/material.h"
 #include "geometry/object/object.h"
+#include "light/light.h"
 
 namespace yafaray {
 
 template class SceneItems<Material>;
 template class SceneItems<Object>;
+template class SceneItems<Light>;
 
 template <typename T>
 std::pair<size_t, ResultFlags> SceneItems<T>::add(const std::string &name, std::unique_ptr<T> item)
@@ -32,18 +34,16 @@ std::pair<size_t, ResultFlags> SceneItems<T>::add(const std::string &name, std::
 	auto [id, result_flags]{findIdFromName(name)};
 	if(result_flags == YAFARAY_RESULT_ERROR_NOT_FOUND)
 	{
-		id = items_.size();
-		items_.emplace_back(std::move(item));
-		names_.emplace_back(name);
+		id = scene_items_.size();
+		scene_items_.emplace_back(SceneItem<T>{std::move(item), name, true});
 		result_flags = YAFARAY_RESULT_OK;
 	}
 	else
 	{
-		items_[id] = std::move(item);
-		names_[id] = name;
+		scene_items_[id] = {std::move(item), name, true};
 		result_flags = YAFARAY_RESULT_WARNING_OVERWRITTEN;
 	}
-	items_[id]->setId(id);
+	scene_items_[id].item_->setId(id);
 	names_to_id_[name] = id;
 	return {id, result_flags};
 }
@@ -51,20 +51,17 @@ std::pair<size_t, ResultFlags> SceneItems<T>::add(const std::string &name, std::
 template <typename T>
 ResultFlags SceneItems<T>::rename(size_t id, const std::string &name)
 {
-	if(id >= items_.size()) return YAFARAY_RESULT_ERROR_NOT_FOUND;
+	if(id >= scene_items_.size()) return YAFARAY_RESULT_ERROR_NOT_FOUND;
 	else
 	{
-		if(findIdFromName(name).second == YAFARAY_RESULT_ERROR_NOT_FOUND)
-		{
-			auto map_entry_extracted{names_to_id_.extract(names_[id])};
-			map_entry_extracted.key() = name;
-			names_to_id_.insert(std::move(map_entry_extracted));
-			names_[id] = name;
-			return YAFARAY_RESULT_OK;
-		}
+		if(findIdFromName(name).second != YAFARAY_RESULT_ERROR_NOT_FOUND) return YAFARAY_RESULT_ERROR_DUPLICATED_NAME;
 		else
 		{
-			return YAFARAY_RESULT_ERROR_DUPLICATED_NAME;
+			auto map_entry_extracted{names_to_id_.extract(scene_items_[id].name_)};
+			map_entry_extracted.key() = name;
+			names_to_id_.insert(std::move(map_entry_extracted));
+			scene_items_[id].name_ = name;
+			return YAFARAY_RESULT_OK;
 		}
 	}
 }
@@ -72,11 +69,11 @@ ResultFlags SceneItems<T>::rename(size_t id, const std::string &name)
 template <typename T>
 ResultFlags SceneItems<T>::disable(const std::string &name)
 {
-	auto it = names_to_id_.find(name);
+	const auto it{names_to_id_.find(name)};
 	if(it != names_to_id_.end())
 	{
-		names_to_id_.erase(it);
-		return YAFARAY_RESULT_OK;
+		const auto id{it->second};
+		return disable(id);
 	}
 	else return YAFARAY_RESULT_ERROR_NOT_FOUND;
 }
@@ -84,8 +81,12 @@ ResultFlags SceneItems<T>::disable(const std::string &name)
 template <typename T>
 ResultFlags SceneItems<T>::disable(size_t id)
 {
-	if(id >= items_.size()) return YAFARAY_RESULT_ERROR_NOT_FOUND;
-	else return disable(names_[id]);
+	if(id >= scene_items_.size()) return YAFARAY_RESULT_ERROR_NOT_FOUND;
+	else
+	{
+		scene_items_[id].enabled_ = false;
+		return YAFARAY_RESULT_OK;
+	}
 }
 
 template <typename T>
@@ -99,15 +100,15 @@ std::pair<size_t, ResultFlags> SceneItems<T>::findIdFromName(const std::string &
 template <typename T>
 std::pair<std::string, ResultFlags> SceneItems<T>::findNameFromId(size_t id) const
 {
-	if(id >= items_.size()) return {{}, YAFARAY_RESULT_ERROR_NOT_FOUND};
-	else return {names_[id], YAFARAY_RESULT_OK};
+	if(id >= scene_items_.size()) return {{}, YAFARAY_RESULT_ERROR_NOT_FOUND};
+	else return {scene_items_[id].name_, YAFARAY_RESULT_OK};
 }
 
 template <typename T>
 std::pair<T *, ResultFlags> SceneItems<T>::getById(size_t id) const
 {
-	if(id >= items_.size()) return {nullptr, YAFARAY_RESULT_ERROR_NOT_FOUND};
-	else return {items_[id].get(), YAFARAY_RESULT_OK};
+	if(id >= scene_items_.size()) return {nullptr, YAFARAY_RESULT_ERROR_NOT_FOUND};
+	else return {scene_items_[id].item_.get(), YAFARAY_RESULT_OK};
 }
 
 template<typename T>
@@ -124,8 +125,7 @@ template <typename T>
 void SceneItems<T>::clear()
 {
 	names_to_id_.clear();
-	names_.clear();
-	items_.clear();
+	scene_items_.clear();
 }
 
 } //namespace yafaray

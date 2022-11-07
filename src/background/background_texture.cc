@@ -55,7 +55,7 @@ ParamMap TextureBackground::getAsParamMap(bool only_non_default) const
 	return result;
 }
 
-std::pair<std::unique_ptr<Background>, ParamResult> TextureBackground::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map)
+std::pair<std::unique_ptr<Background>, ParamResult> TextureBackground::factory(Logger &logger, Scene &scene, const std::string &name, const ParamMap &param_map)
 {
 	auto param_result{Params::meta_.check(param_map, {"type"}, {})};
 	std::string texname;
@@ -70,7 +70,7 @@ std::pair<std::unique_ptr<Background>, ParamResult> TextureBackground::factory(L
 		logger.logError(getClassName(), ": Texture '", texname, "' for textureback not existant!");
 		return {nullptr, ParamResult{YAFARAY_RESULT_ERROR_WHILE_CREATING}};
 	}
-	auto background{std::make_unique<ThisClassType_t>(logger, param_result, param_map, tex)};
+	auto background{std::make_unique<ThisClassType_t>(logger, param_result, scene.getLights(), param_map, tex)};
 	if(param_result.notOk()) logger.logWarning(param_result.print<ThisClassType_t>(name, {"type"}));
 	if(background->ParentClassType_t::params_.ibl_)
 	{
@@ -92,14 +92,13 @@ std::pair<std::unique_ptr<Background>, ParamResult> TextureBackground::factory(L
 		{
 			logger.logParams(getClassName(), ": using IBL sampling clamp=", background->params_.ibl_clamp_sampling_);
 		}
-		auto bglight{Light::factory(logger, scene, "light", bgp).first};
-		background->addLight(std::move(bglight));
+		scene.createLight(ThisClassType_t::lightName(), std::move(bgp));
 	}
 	return {std::move(background), param_result};
 }
 
-TextureBackground::TextureBackground(Logger &logger, ParamResult &param_result, const ParamMap &param_map, const Texture *texture) :
-		ParentClassType_t{logger, param_result, param_map}, params_{param_result, param_map}, tex_{texture}
+TextureBackground::TextureBackground(Logger &logger, ParamResult &param_result, SceneItems<Light> &lights, const ParamMap &param_map, const Texture *texture) :
+		ParentClassType_t{logger, param_result, lights, param_map}, params_{param_result, param_map}, tex_{texture}
 {
 	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + params_.getAsParamMap(true).print());
 	sin_r_ = math::sin(math::num_pi<> * rotation_);
@@ -109,6 +108,11 @@ TextureBackground::TextureBackground(Logger &logger, ParamResult &param_result, 
 		with_ibl_blur_ = true;
 		ibl_blur_mipmap_level_ = params_.ibl_blur_ * params_.ibl_blur_;
 	}
+}
+
+TextureBackground::~TextureBackground()
+{
+	lights_.disable(lightName());
 }
 
 Rgb TextureBackground::eval(const Vec3f &dir, bool use_ibl_blur) const

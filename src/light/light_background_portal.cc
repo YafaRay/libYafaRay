@@ -61,13 +61,13 @@ ParamMap BackgroundPortalLight::getAsParamMap(bool only_non_default) const
 std::pair<std::unique_ptr<Light>, ParamResult> BackgroundPortalLight::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map)
 {
 	auto param_result{Params::meta_.check(param_map, {"type"}, {})};
-	auto light {std::make_unique<ThisClassType_t>(logger, param_result, name, param_map, scene.getObjects())};
+	auto light {std::make_unique<ThisClassType_t>(logger, param_result, name, param_map, scene.getObjects(), scene.getLights())};
 	if(param_result.notOk()) logger.logWarning(param_result.print<ThisClassType_t>(name, {"type"}));
 	return {std::move(light), param_result};
 }
 
-BackgroundPortalLight::BackgroundPortalLight(Logger &logger, ParamResult &param_result, const std::string &name, const ParamMap &param_map, const SceneItems<Object> &objects):
-		ParentClassType_t{logger, param_result, name, param_map, Flags::None}, params_{param_result, param_map}, objects_{objects}
+BackgroundPortalLight::BackgroundPortalLight(Logger &logger, ParamResult &param_result, const std::string &name, const ParamMap &param_map, const SceneItems<Object> &objects, const SceneItems<Light> &lights):
+		ParentClassType_t{logger, param_result, param_map, Flags::None, lights}, params_{param_result, param_map}, objects_{objects}
 {
 	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + params_.getAsParamMap(true).print());
 }

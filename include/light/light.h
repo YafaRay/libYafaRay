@@ -17,8 +17,8 @@
  *      Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-#ifndef YAFARAY_LIGHT_H
-#define YAFARAY_LIGHT_H
+#ifndef LIBYAFARAY_LIGHT_H
+#define LIBYAFARAY_LIGHT_H
 
 #include "color/color.h"
 #include "common/logger.h"
@@ -36,6 +36,7 @@ class SurfacePoint;
 class Background;
 class Ray;
 class Scene;
+template <typename T> class SceneItems;
 template <typename T, size_t N> class Vec;
 typedef Vec<float, 3> Vec3f;
 template <typename T, size_t N> class Point;
@@ -61,8 +62,10 @@ class Light
 		};
 		static std::pair<std::unique_ptr<Light>, ParamResult> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map);
 		[[nodiscard]] virtual ParamMap getAsParamMap(bool only_non_default) const;
-		Light(Logger &logger, ParamResult &param_result, std::string name, const ParamMap &param_map, Flags flags) : params_{param_result, param_map}, name_{std::move(name)}, flags_{flags}, logger_{logger} { }
+		Light(Logger &logger, ParamResult &param_result, const ParamMap &param_map, Flags flags, const SceneItems<Light> &lights) : params_{param_result, param_map}, lights_{lights}, flags_{flags}, logger_{logger} { }
 		virtual ~Light() = default;
+		void setId(size_t id) { id_ = id; }
+		[[nodiscard]] size_t getId() const { return id_; }
 		//! allow for preprocessing when scene loading has finished
 		virtual void init(Scene &scene) {}
 		//! total energy emmitted during whole frame
@@ -103,7 +106,7 @@ class Light
 		//! checks if the light is a photon-only light (only shoots photons, not illuminating)
 		[[nodiscard]] bool photonOnly() const { return params_.photon_only_; }
 		[[nodiscard]] Flags getFlags() const { return flags_; }
-		[[nodiscard]] [[nodiscard]] std::string getName() const { return name_; }
+		[[nodiscard]] [[nodiscard]] std::string getName() const;
 
 	protected:
 		struct Type : public Enum<Type>
@@ -132,7 +135,8 @@ class Light
 			PARAM_DECL(bool, shoot_diffuse_, true, "with_diffuse", "Enable/disable if the light can shoot diffuse photons (only for integrators using diffuse photons)");
 			PARAM_DECL(bool, photon_only_, false, "photon_only", "Enable/disable if the light is a photon-only light (only shoots photons, not illuminating)");
 		} params_;
-		std::string name_;
+		size_t id_{0};
+		const SceneItems<Light> &lights_;
 		Flags flags_{Flags::None};
 		Logger &logger_;
 };
@@ -151,4 +155,4 @@ struct LSample
 
 } //namespace yafaray
 
-#endif // YAFARAY_LIGHT_H
+#endif // LIBYAFARAY_LIGHT_H

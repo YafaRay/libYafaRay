@@ -88,10 +88,10 @@ ParamMap DarkSkyBackground::getAsParamMap(bool only_non_default) const
 	return result;
 }
 
-std::pair<std::unique_ptr<Background>, ParamResult> DarkSkyBackground::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map)
+std::pair<std::unique_ptr<Background>, ParamResult> DarkSkyBackground::factory(Logger &logger, Scene &scene, const std::string &name, const ParamMap &param_map)
 {
 	auto param_result{Params::meta_.check(param_map, {"type"}, {})};
-	auto background{std::make_unique<ThisClassType_t>(logger, param_result, param_map)};
+	auto background{std::make_unique<ThisClassType_t>(logger, param_result, scene.getLights(), param_map)};
 	if(param_result.notOk()) logger.logWarning(param_result.print<ThisClassType_t>(name, {"type"}));
 	if(background->params_.add_sun_ && math::radToDeg(math::acos(background->params_.from_[Axis::Z])) < 100.0)
 	{
@@ -115,8 +115,7 @@ std::pair<std::unique_ptr<Background>, ParamResult> DarkSkyBackground::factory(L
 		bgp["cast_shadows"] = background->ParentClassType_t::params_.cast_shadows_;
 
 		if(logger.isVerbose()) logger.logVerbose(getClassName(), ": Adding background sun light");
-		auto bglight{Light::factory(logger, scene, "light_sun", bgp).first};
-		background->addLight(std::move(bglight));
+		scene.createLight(ThisClassType_t::lightSunName(), std::move(bgp));
 	}
 	if(background->params_.background_light_)
 	{
@@ -128,15 +127,14 @@ std::pair<std::unique_ptr<Background>, ParamResult> DarkSkyBackground::factory(L
 		bgp["cast_shadows"] = background->ParentClassType_t::params_.cast_shadows_;
 
 		if(logger.isVerbose()) logger.logVerbose(getClassName(), ": Adding background sky light");
-		auto bglight{Light::factory(logger, scene, "light_sky", bgp).first};
-		background->addLight(std::move(bglight));
+		scene.createLight(ThisClassType_t::lightSkyName(), std::move(bgp));
 	}
 	if(logger.isVerbose()) logger.logVerbose(getClassName(), ": End");
 	return {std::move(background), param_result};
 }
 
-DarkSkyBackground::DarkSkyBackground(Logger &logger, ParamResult &param_result, const ParamMap &param_map) :
-		ParentClassType_t{logger, param_result, param_map}, params_{param_result, param_map}
+DarkSkyBackground::DarkSkyBackground(Logger &logger, ParamResult &param_result, SceneItems<Light> &lights, const ParamMap &param_map) :
+		ParentClassType_t{logger, param_result, lights, param_map}, params_{param_result, param_map}
 {
 	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + params_.getAsParamMap(true).print());
 	sun_dir_[Axis::Z] += params_.altitude_;
@@ -194,6 +192,12 @@ DarkSkyBackground::DarkSkyBackground(Logger &logger, ParamResult &param_result, 
 	perez_y_[3] = ((-0.04405 * t_) - 1.65369);
 	perez_y_[4] = ((-0.01092 * t_) + 0.05291);
 	perez_y_[5] = prePerez(perez_y_);
+}
+
+DarkSkyBackground::~DarkSkyBackground()
+{
+	lights_.disable(lightSkyName());
+	lights_.disable(lightSunName());
 }
 
 Rgb DarkSkyBackground::getAttenuatedSunColor()

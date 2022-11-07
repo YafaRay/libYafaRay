@@ -42,9 +42,12 @@ class DarkSkyBackground final : public Background
 
 	public:
 		inline static std::string getClassName() { return "DarkSkyBackground"; }
-		static std::pair<std::unique_ptr<Background>, ParamResult> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params);
+		static std::pair<std::unique_ptr<Background>, ParamResult> factory(Logger &logger, Scene &scene, const std::string &name, const ParamMap &params);
 		static std::string printMeta(const std::vector<std::string> &excluded_params) { return Params::meta_.print(excluded_params); }
-		DarkSkyBackground(Logger &logger, ParamResult &param_result, const ParamMap &param_map);
+		DarkSkyBackground(Logger &logger, ParamResult &param_result, SceneItems<Light> &lights, const ParamMap &param_map);
+		~DarkSkyBackground() override;
+		static std::string lightSkyName(){ return "background::light_sky"; }
+		static std::string lightSunName(){ return "background::light_sun"; }
 
 	private:
 		struct ColorSpace : public Enum<ColorSpace>

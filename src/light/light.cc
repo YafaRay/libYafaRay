@@ -28,6 +28,7 @@
 #include "light/light_directional.h"
 #include "light/light_ies.h"
 #include "light/light_object_light.h"
+#include "scene/scene_items.h"
 #include "param/param.h"
 #include "common/logger.h"
 
@@ -77,6 +78,11 @@ std::pair<std::unique_ptr<Light>, ParamResult> Light::factory(Logger &logger, co
 		case Type::Sun: return SunLight::factory(logger, scene, name, param_map);
 		default: return {nullptr, ParamResult{YAFARAY_RESULT_ERROR_WHILE_CREATING}};
 	}
+}
+
+std::string Light::getName() const
+{
+	return lights_.findNameFromId(id_).first;
 }
 
 } //namespace yafaray
