@@ -158,8 +158,8 @@ SunSkyBackground::SunSkyBackground(Logger &logger, ParamResult &param_result, Sc
 
 SunSkyBackground::~SunSkyBackground()
 {
-	lights_.disable(lightSkyName());
-	lights_.disable(lightSunName());
+	std::ignore = lights_.disable(lightSkyName());
+	std::ignore = lights_.disable(lightSunName());
 }
 
 double SunSkyBackground::perezFunction(const std::array<double, 5> &lam, double theta, double gamma, double lvz) const

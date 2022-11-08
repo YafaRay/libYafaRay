@@ -72,7 +72,7 @@ ConstantBackground::ConstantBackground(Logger &logger, ParamResult &param_result
 
 ConstantBackground::~ConstantBackground()
 {
-	lights_.disable(lightName());
+	std::ignore = lights_.disable(lightName());
 }
 
 Rgb ConstantBackground::eval(const Vec3f &dir, bool use_ibl_blur) const

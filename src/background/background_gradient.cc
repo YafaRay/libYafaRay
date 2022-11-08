@@ -80,7 +80,7 @@ GradientBackground::GradientBackground(Logger &logger, ParamResult &param_result
 
 GradientBackground::~GradientBackground()
 {
-	lights_.disable(lightName());
+	std::ignore = lights_.disable(lightName());
 }
 
 Rgb GradientBackground::eval(const Vec3f &dir, bool use_ibl_blur) const

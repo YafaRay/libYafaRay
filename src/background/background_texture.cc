@@ -112,7 +112,7 @@ TextureBackground::TextureBackground(Logger &logger, ParamResult &param_result, 
 
 TextureBackground::~TextureBackground()
 {
-	lights_.disable(lightName());
+	std::ignore = lights_.disable(lightName());
 }
 
 Rgb TextureBackground::eval(const Vec3f &dir, bool use_ibl_blur) const

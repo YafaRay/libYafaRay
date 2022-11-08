@@ -38,7 +38,7 @@ class ConstantBackground final : public Background
 		static std::string printMeta(const std::vector<std::string> &excluded_params) { return Params::meta_.print(excluded_params); }
 		ConstantBackground(Logger &logger, ParamResult &param_result, SceneItems<Light> &lights, const ParamMap &param_map);
 		~ConstantBackground() override;
-		static std::string lightName(){ return "background::light"; }
+		static std::string lightName(){ return getClassName() + "::light"; }
 
 	private:
 		[[nodiscard]] Type type() const override { return Type::Constant; }

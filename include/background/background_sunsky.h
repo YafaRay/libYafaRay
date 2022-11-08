@@ -43,8 +43,8 @@ class SunSkyBackground final : public Background
 		static std::string printMeta(const std::vector<std::string> &excluded_params) { return Params::meta_.print(excluded_params); }
 		SunSkyBackground(Logger &logger, ParamResult &param_result, SceneItems<Light> &lights, const ParamMap &param_map);
 		~SunSkyBackground() override;
-		static std::string lightSkyName(){ return "background::light_sky"; }
-		static std::string lightSunName(){ return "background::light_sun"; }
+		static std::string lightSkyName(){ return getClassName() + "::light_sky"; }
+		static std::string lightSunName(){ return getClassName() + "::light_sun"; }
 
 	private:
 		[[nodiscard]] Type type() const override { return Type::SunSky; }

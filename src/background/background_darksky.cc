@@ -196,8 +196,8 @@ DarkSkyBackground::DarkSkyBackground(Logger &logger, ParamResult &param_result, 
 
 DarkSkyBackground::~DarkSkyBackground()
 {
-	lights_.disable(lightSkyName());
-	lights_.disable(lightSunName());
+	std::ignore = lights_.disable(lightSkyName());
+	std::ignore = lights_.disable(lightSunName());
 }
 
 Rgb DarkSkyBackground::getAttenuatedSunColor()
