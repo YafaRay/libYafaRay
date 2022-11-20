@@ -731,7 +731,7 @@ void Scene::setMaskParams(const ParamMap &params)
 	mask_params.invert_ = mask_invert;
 	mask_params.only_ = mask_only;
 
-	setMaskParams(mask_params);
+	mask_params_ = mask_params;
 }
 
 void Scene::setEdgeToonParams(const ParamMap &params)
@@ -769,7 +769,7 @@ void Scene::setEdgeToonParams(const ParamMap &params)
 	edge_params.face_thickness_ = faces_edge_thickness;
 	edge_params.face_threshold_ = faces_edge_threshold;
 	edge_params.face_smoothness_ = faces_edge_smoothness;
-	setEdgeToonParams(edge_params);
+	edge_toon_params_ = edge_params;
 }
 
 void Scene::setRenderNotifyViewCallback(yafaray_RenderNotifyViewCallback_t callback, void *callback_data)

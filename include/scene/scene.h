@@ -96,7 +96,7 @@ class Scene final
 		ObjId_t getNextFreeId();
 		bool startObjects();
 		bool endObjects();
-		void setAntialiasing(AaNoiseParams &&aa_noise_params) { aa_noise_params_ = std::move(aa_noise_params); };
+		void setAntialiasing(AaNoiseParams &&aa_noise_params) { aa_noise_params_ = aa_noise_params; };
 		void setNumThreads(int threads);
 		void setNumThreadsPhotons(int threads_photons);
 		void setCurrentMaterial(size_t material_id);
@@ -155,10 +155,8 @@ class Scene final
 		static void logInfoVerboseSuccess(Logger &logger, const std::string &pname, const std::string &name, const std::string &t);
 		static void logInfoVerboseSuccessDisabled(Logger &logger, const std::string &pname, const std::string &name, const std::string &t);
 
-		const MaskParams &getMaskParams() const { return mask_params_; }
-		void setMaskParams(const MaskParams &mask_params) { mask_params_ = mask_params; }
-		const EdgeToonParams &getEdgeToonParams() const { return edge_toon_params_; }
-		void setEdgeToonParams(const EdgeToonParams &edge_toon_params) { edge_toon_params_ = edge_toon_params; }
+		MaskParams getMaskParams() const { return mask_params_; }
+		EdgeToonParams getEdgeToonParams() const { return edge_toon_params_; }
 
 		void setRenderNotifyViewCallback(yafaray_RenderNotifyViewCallback_t callback, void *callback_data);
 		void setRenderNotifyLayerCallback(yafaray_RenderNotifyLayerCallback_t callback, void *callback_data);
@@ -189,17 +187,6 @@ class Scene final
 			size_t current_material_ = 0;
 		} creation_state_;
 		std::unique_ptr<Bound<float>> scene_bound_; //!< bounding box of all (finite) scene geometry
-		std::string scene_accelerator_;
-		std::unique_ptr<const Accelerator> accelerator_;
-		size_t current_object_{0};
-		SceneItems<Object> objects_;
-		std::vector<std::unique_ptr<Instance>> instances_;
-		SceneItems<Light> lights_;
-		SceneItems<Material> materials_;
-		RenderControl render_control_;
-		Logger &logger_;
-
-		AaNoiseParams aa_noise_params_;
 		int nthreads_ = 1;
 		int nthreads_photons_ = 1;
 		float shadow_bias_ = 1.0e-4f;  //shadow bias to apply to shadows to avoid self-shadow artifacts
@@ -209,10 +196,18 @@ class Scene final
 		int object_index_highest_ = 1; //!< Highest object index used for the Normalized Object Index pass.
 		int material_index_highest_ = 1; //!< Highest material index used for the Normalized Object Index pass.
 		size_t material_id_default_ = 0;
+		size_t current_object_{0};
+		std::string scene_accelerator_;
+		std::unique_ptr<const Accelerator> accelerator_;
+		RenderControl render_control_;
 		std::unique_ptr<ImageFilm> image_film_;
 		std::unique_ptr<Background> background_;
 		std::unique_ptr<SurfaceIntegrator> surf_integrator_;
 		std::unique_ptr<VolumeIntegrator> vol_integrator_;
+		std::vector<std::unique_ptr<Instance>> instances_;
+		SceneItems<Object> objects_;
+		SceneItems<Light> lights_;
+		SceneItems<Material> materials_;
 		std::map<std::string, std::unique_ptr<Texture>> textures_;
 		std::map<std::string, std::unique_ptr<Camera>> cameras_;
 		std::map<std::string, std::unique_ptr<VolumeRegion>> volume_regions_;
@@ -220,9 +215,11 @@ class Scene final
 		std::map<std::string, std::unique_ptr<RenderView>> render_views_;
 		std::map<std::string, std::unique_ptr<Image>> images_;
 		Layers layers_;
+		AaNoiseParams aa_noise_params_;
 		MaskParams mask_params_;
 		EdgeToonParams edge_toon_params_;
 		RenderCallbacks render_callbacks_;
+		Logger &logger_;
 };
 
 } //namespace yafaray
