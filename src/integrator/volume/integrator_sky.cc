@@ -59,7 +59,7 @@ std::pair<std::unique_ptr<VolumeIntegrator>, ParamResult> SkyIntegrator::factory
 	return {std::move(integrator), param_result};
 }
 
-SkyIntegrator::SkyIntegrator(Logger &logger, ParamResult &param_result, const ParamMap &param_map, const std::map<std::string, std::unique_ptr<VolumeRegion>> &volume_regions) : VolumeIntegrator(logger, param_result, param_map), params_{param_result, param_map}
+SkyIntegrator::SkyIntegrator(Logger &logger, ParamResult &param_result, const ParamMap &param_map, const SceneItems<VolumeRegion> &volume_regions) : VolumeIntegrator(logger, param_result, param_map), params_{param_result, param_map}
 {
 	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + params_.getAsParamMap(true).print());
 

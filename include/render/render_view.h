@@ -40,8 +40,12 @@ class Scene;
 
 class RenderView final
 {
+	private: struct Type;
 	public:
 		inline static std::string getClassName() { return "RenderView"; }
+		static Type type() ;
+		void setId(size_t id) { id_ = id; }
+		[[nodiscard]] size_t getId() const { return id_; }
 		static std::pair<std::unique_ptr<RenderView>, ParamResult> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map);
 		static std::string printMeta(const std::vector<std::string> &excluded_params) { return Params::meta_.print(excluded_params); }
 		[[nodiscard]] ParamMap getAsParamMap(bool only_non_default) const;
@@ -57,6 +61,14 @@ class RenderView final
 		std::vector<const Light *> getLightsEmittingDiffusePhotons() const;
 
 	private:
+		struct Type : public Enum<Type>
+		{
+			using Enum::Enum;
+			enum : ValueType_t { RenderView };
+			inline static const EnumMap<ValueType_t> map_{{
+					{"RenderView", RenderView, ""},
+				}};
+		};
 		const struct Params
 		{
 			PARAM_INIT;
@@ -64,6 +76,7 @@ class RenderView final
 			PARAM_DECL(std::string, light_names_, "", "light_names", "Name of the lights, separated by a semicolon, used for this render view. If not specified, all lights will be included");
 			PARAM_DECL(float, wavelength_, 0.f, "wavelength", "Wavelength in nm used for this render view (NOT IMPLEMENTED YET). If set to 0.f regular color rendering will take place");
 		} params_;
+		size_t id_{0};
 		std::string name_;
 		const Camera *camera_ = nullptr;
 		std::map<std::string, const Light *> lights_;

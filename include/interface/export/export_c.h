@@ -64,7 +64,7 @@ class ExportC: public Interface
 		ParamResult defineVolumeIntegrator() noexcept override;
 		std::pair<size_t, ParamResult> createVolumeRegion(std::string &&name) noexcept override;
 		std::pair<size_t, ParamResult> createRenderView(std::string &&name) noexcept override;
-		std::pair<Image *, ParamResult> createImage(std::string &&name) noexcept override;
+		std::pair<size_t, ParamResult> createImage(std::string &&name) noexcept override;
 		std::pair<size_t, ParamResult> createOutput(std::string &&name) noexcept override;
 		void clearAll() noexcept override; //!< clear the whole environment + scene, i.e. free (hopefully) all memory.
 		void clearOutputs() noexcept override { }

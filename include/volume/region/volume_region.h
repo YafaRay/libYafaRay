@@ -40,6 +40,8 @@ class VolumeRegion
 		[[nodiscard]] virtual ParamMap getAsParamMap(bool only_non_default) const;
 		VolumeRegion(Logger &logger, ParamResult &param_result, const ParamMap &param_map);
 		virtual ~VolumeRegion() = default;
+		void setId(size_t id) { id_ = id; }
+		[[nodiscard]] size_t getId() const { return id_; }
 
 		virtual Rgb sigmaA(const Point3f &p, const Vec3f &v) const = 0;
 		virtual Rgb sigmaS(const Point3f &p, const Vec3f &v) const = 0;
@@ -96,6 +98,7 @@ class VolumeRegion
 			PARAM_DECL(float, max_z_, 0.f, "maxZ", "");
 			PARAM_DECL(int, att_grid_scale_, 5, "attgridScale", "");
 		} params_;
+		size_t id_{0};
 		const Rgb s_a_{params_.sigma_a_};
 		const Rgb s_s_{params_.sigma_s_};
 		const Rgb l_e_{params_.l_e_};

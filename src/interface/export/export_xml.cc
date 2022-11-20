@@ -341,7 +341,7 @@ std::pair<size_t, ParamResult> ExportXml::createRenderView(std::string &&name) n
 	return {};
 }
 
-std::pair<Image *, ParamResult> ExportXml::createImage(std::string &&name) noexcept
+std::pair<size_t, ParamResult> ExportXml::createImage(std::string &&name) noexcept
 {
 	file_ << "\n<image name=\"" << name << "\">\n";
 	writeParamMap(*params_);

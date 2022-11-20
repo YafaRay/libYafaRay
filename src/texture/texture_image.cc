@@ -98,7 +98,7 @@ std::pair<std::unique_ptr<Texture>, ParamResult> ImageTexture::factory(Logger &l
 		logger.logError("ImageTexture: Required argument image_name not found for image texture");
 		return {nullptr, ParamResult{YAFARAY_RESULT_ERROR_WHILE_CREATING}};
 	}
-	const Image *image{scene.getImage(image_name)};
+	const Image *image{std::get<0>(scene.getImage(image_name))};
 	if(!image)
 	{
 		logger.logError("ImageTexture: Couldn't load image file, dropping texture.");

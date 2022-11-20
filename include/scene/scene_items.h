@@ -51,6 +51,7 @@ class SceneItems final
 		[[nodiscard]] std::pair<T *, ResultFlags> getById(size_t id) const;
 		[[nodiscard]] std::tuple<T *, size_t, ResultFlags> getByName(const std::string &name) const;
 		[[nodiscard]] size_t size() const { return scene_items_.size(); }
+		[[nodiscard]] bool empty() const { return scene_items_.empty(); }
 		typename std::vector<SceneItem<T>>::iterator begin() { return scene_items_.begin(); }
 		typename std::vector<SceneItem<T>>::iterator end() { return scene_items_.end(); }
 		typename std::vector<SceneItem<T>>::const_iterator begin() const { return scene_items_.begin(); }

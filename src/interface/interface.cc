@@ -200,7 +200,7 @@ ParamResult Interface::defineSurfaceIntegrator() noexcept { return scene_->defin
 ParamResult Interface::defineVolumeIntegrator() noexcept { return scene_->defineVolumeIntegrator(std::move(*params_)); }
 std::pair<size_t, ParamResult> Interface::createVolumeRegion(std::string &&name) noexcept { return scene_->createVolumeRegion(std::move(name), std::move(*params_)); }
 std::pair<size_t, ParamResult> Interface::createRenderView(std::string &&name) noexcept { return scene_->createRenderView(std::move(name), std::move(*params_)); }
-std::pair<Image *, ParamResult> Interface::createImage(std::string &&name) noexcept { return scene_->createImage(std::move(name), std::move(*params_)); }
+std::pair<size_t, ParamResult> Interface::createImage(std::string &&name) noexcept { return scene_->createImage(std::move(name), std::move(*params_)); }
 std::pair<size_t, ParamResult> Interface::createOutput(std::string &&name) noexcept { return scene_->createOutput(std::move(name), std::move(*params_)); }
 
 void Interface::setRenderNotifyViewCallback(yafaray_RenderNotifyViewCallback_t callback, void *callback_data) noexcept
@@ -264,9 +264,9 @@ std::string Interface::printViewsTable() const noexcept
 	{
 		std::stringstream ss;
 		const auto &views = scene_->getRenderViews();
-		for(const auto &[view_name, view] : views)
+		for(const auto &view : views)
 		{
-			ss << view_name << '\n';
+			ss << view.name_ << '\n';
 		}
 		return ss.str();
 	}
@@ -275,7 +275,7 @@ std::string Interface::printViewsTable() const noexcept
 
 bool Interface::removeOutput(std::string &&name) noexcept
 {
-	return scene_->removeOutput(std::move(name));
+	return scene_->disableOutput(std::move(name));
 }
 
 void Interface::clearOutputs() noexcept

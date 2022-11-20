@@ -19,8 +19,8 @@
  *
  */
 
-#ifndef YAFARAY_IMAGE_BUFFER_H
-#define YAFARAY_IMAGE_BUFFER_H
+#ifndef LIBYAFARAY_IMAGE_BUFFER_H
+#define LIBYAFARAY_IMAGE_BUFFER_H
 
 #include "image/image.h"
 #include "math/buffer_2d.h"
@@ -35,7 +35,7 @@ class ImageBuffer final : public Image
 		explicit ImageBuffer(const Params &params) : Image{params} { }
 
 	private:
-		Type getType() const override;
+		Type type() const override;
 		Optimization getOptimization() const override;
 		Rgba getColor(const Point2i &point) const override;
 		float getFloat(const Point2i &point) const override;
@@ -50,7 +50,7 @@ class ImageBuffer final : public Image
 };
 
 template <typename T>
-inline Image::Type ImageBuffer<T>::getType() const
+inline Image::Type ImageBuffer<T>::type() const
 {
 	if constexpr (std::is_same_v<T, Rgb>) return Type{Type::Color};
 	else if constexpr (std::is_same_v<T, RgbAlpha> || std::is_same_v<T, Rgba7773> || std::is_same_v<T, Rgba1010108>) return Type{Type::ColorAlpha};
@@ -124,4 +124,4 @@ inline void ImageBuffer<T>::clear()
 
 } //namespace yafaray
 
-#endif //YAFARAY_IMAGE_BUFFER_H
+#endif //LIBYAFARAY_IMAGE_BUFFER_H

@@ -64,10 +64,10 @@ RenderView::RenderView(Logger &logger, ParamResult &param_result, const ParamMap
 
 bool RenderView::init(Logger &logger, const Scene &scene)
 {
-	camera_ = scene.getCamera(params_.camera_name_);
+	camera_ = std::get<0>(scene.getCamera(params_.camera_name_));
 	if(!camera_)
 	{
-		logger.logError(getClassName() ,"'", name_, "': Camera not found in the scene.");
+		logger.logError(getClassName() ,"'", name_, "': Camera '", params_.camera_name_, "' not found in the scene.");
 		return false;
 	}
 
@@ -130,6 +130,11 @@ std::vector<const Light *> RenderView::getLightsEmittingDiffusePhotons() const
 		if(light->lightEnabled() && light->shootsDiffuseP()) result.emplace_back(light);
 	}
 	return result;
+}
+
+RenderView::Type RenderView::type()
+{
+	return Type::RenderView;
 }
 
 } //namespace yafaray

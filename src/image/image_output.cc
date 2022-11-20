@@ -124,7 +124,7 @@ std::unique_ptr<Image> ImageOutput::generateBadgeImage(const RenderControl &rend
 	return badge_.generateImage(image_manipulation::printDenoiseParams(denoise_params_), render_control, timer);
 }
 
-void ImageOutput::init(const Size2i &size, const ImageLayers *exported_image_layers, const std::map<std::string, std::unique_ptr<RenderView>> *render_views)
+void ImageOutput::init(const Size2i &size, const ImageLayers *exported_image_layers, const SceneItems<RenderView> *render_views)
 {
 	image_layers_ = exported_image_layers;
 	render_views_ = render_views;
@@ -257,6 +257,11 @@ void ImageOutput::saveImageFileMultiChannel(const std::string &filename, Format 
 		format->saveToFileMultiChannel(filename, image_layers_badge, color_space_, gamma_, params_.alpha_premultiply_);
 	}
 	else format->saveToFileMultiChannel(filename, *image_layers_, color_space_, gamma_, params_.alpha_premultiply_);
+}
+
+ImageOutput::Type ImageOutput::type()
+{
+	return Type::ImageOutput;
 }
 
 } //namespace yafaray

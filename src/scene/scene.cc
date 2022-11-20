@@ -50,19 +50,9 @@
 
 namespace yafaray {
 
-void Scene::logWarnExist(Logger &logger, const std::string &pname, const std::string &name)
-{
-	logger.logWarning("Scene: Sorry, ", pname, " \"", name, "\" already exists!");
-}
-
 void Scene::logInfoVerboseSuccess(Logger &logger, const std::string &pname, const std::string &name, const std::string &t)
 {
 	logger.logVerbose("Scene: ", "Added ", pname, " '", name, "' (", t, ")!");
-}
-
-void Scene::logInfoVerboseSuccessDisabled(Logger &logger, const std::string &pname, const std::string &name, const std::string &t)
-{
-	logger.logVerbose("Scene: ", "Added ", pname, " '", name, "' (", t, ")! [DISABLED]");
 }
 
 Scene::Scene(Logger &logger) : scene_bound_(std::make_unique<Bound<float>>()), logger_(logger)
@@ -201,25 +191,25 @@ bool Scene::render(std::unique_ptr<ProgressBar> progress_bar)
 		{
 			if(light && light_enabled) light->init(*this);
 		}
-		for(auto &[output_name, output] : outputs_)
+		for(auto &output : outputs_)
 		{
-			output->init(image_film_->getSize(), image_film_->getExportedImageLayers(), &render_views_);
+			output.item_->init(image_film_->getSize(), image_film_->getExportedImageLayers(), &render_views_);
 		}
 
-		for(auto &[render_view_name, render_view] : render_views_)
+		for(auto &render_view : render_views_)
 		{
-			for(auto &[output_name, output] : outputs_) output->setRenderView(render_view.get());
+			for(auto &output : outputs_) output.item_->setRenderView(render_view.item_.get());
 			std::stringstream inte_settings;
-			bool success = render_view->init(logger_, *this);
+			bool success = render_view.item_->init(logger_, *this);
 			if(!success)
 			{
-				logger_.logWarning("Scene: No cameras or lights found at RenderView ", render_view_name, "', skipping this RenderView...");
+				logger_.logWarning("Scene: No cameras or lights found at RenderView ", render_view.name_, "', skipping this RenderView...");
 				continue;
 			}
 
 			FastRandom fast_random;
-			success = surf_integrator_->preprocess(fast_random, image_film_.get(), render_view.get(), *this);
-			if(vol_integrator_) success = success && vol_integrator_->preprocess(fast_random, image_film_.get(), render_view.get(), *this);
+			success = surf_integrator_->preprocess(fast_random, image_film_.get(), render_view.item_.get(), *this);
+			if(vol_integrator_) success = success && vol_integrator_->preprocess(fast_random, image_film_.get(), render_view.item_.get(), *this);
 
 			if(!success)
 			{
@@ -236,7 +226,7 @@ bool Scene::render(std::unique_ptr<ProgressBar> progress_bar)
 			render_control_.setRenderInfo(surf_integrator_->getRenderInfo());
 			render_control_.setAaNoiseInfo(surf_integrator_->getAaNoiseInfo());
 			surf_integrator_->cleanup();
-			image_film_->flush(render_view.get(), render_control_, getEdgeToonParams());
+			image_film_->flush(render_view.item_.get(), render_control_, getEdgeToonParams());
 			render_control_.setFinished();
 			image_film_->cleanup();
 		}
@@ -277,27 +267,14 @@ void Scene::clearLayers()
 	layers_.clear();
 }
 
-template <typename T>
-T *Scene::findMapItem(const std::string &name, const std::map<std::string, std::unique_ptr<T>> &map)
-{
-	auto i = map.find(name);
-	if(i != map.end()) return i->second.get();
-	else return nullptr;
-}
-
 std::pair<size_t, ResultFlags> Scene::getMaterial(const std::string &name) const
 {
 	return materials_.findIdFromName(name);
 }
 
-Texture *Scene::getTexture(const std::string &name) const
+std::tuple<Camera *, size_t, ResultFlags> Scene::getCamera(const std::string &name) const
 {
-	return Scene::findMapItem<Texture>(name, textures_);
-}
-
-const Camera *Scene::getCamera(const std::string &name) const
-{
-	return Scene::findMapItem<Camera>(name, cameras_);
+	return cameras_.getByName(name);
 }
 
 std::tuple<Light *, size_t, ResultFlags> Scene::getLight(const std::string &name) const
@@ -310,41 +287,35 @@ std::pair<Light *, ResultFlags> Scene::getLight(size_t light_id) const
 	return lights_.getById(light_id);
 }
 
-const ImageOutput *Scene::getOutput(const std::string &name) const
+std::tuple<Texture *, size_t, ResultFlags> Scene::getTexture(const std::string &name) const
 {
-	return Scene::findMapItem<ImageOutput>(name, outputs_);
+	return textures_.getByName(name);
 }
 
-const Image *Scene::getImage(const std::string &name) const
+std::pair<Texture *, ResultFlags> Scene::getTexture(size_t texture_id) const
 {
-	return Scene::findMapItem<Image>(name, images_);
+	return textures_.getById(texture_id);
 }
 
-bool Scene::removeOutput(std::string &&name)
+std::pair<size_t, ResultFlags> Scene::getOutput(const std::string &name) const
 {
-	const ImageOutput *output = getOutput(name);
-	if(!output) return false;
-	outputs_.erase(name);
-	return true;
+	return outputs_.findIdFromName(name);
+}
+
+std::tuple<Image *, size_t, ResultFlags> Scene::getImage(const std::string &name) const
+{
+	return images_.getByName(name);
+}
+
+bool Scene::disableOutput(std::string &&name)
+{
+	const auto result{outputs_.disable(name)};
+	return result.isOk();
 }
 
 std::pair<size_t, ParamResult> Scene::createLight(std::string &&name, ParamMap &&params)
 {
-	const auto [existing_light, existing_light_id, existing_light_result]{lights_.getByName(name)};
-	if(existing_light)
-	{
-		if(logger_.isVerbose()) logger_.logWarning(Light::getClassName(), ": light with name '", name, "' already exists, overwriting with new light.");
-	}
-	auto [new_light, param_result]{Light::factory(logger_, *this, name, params)};
-	if(new_light)
-	{
-		creation_state_.changes_ |= CreationState::Flags::CLight;
-		if(logger_.isVerbose()) logInfoVerboseSuccess(logger_, Light::getClassName(), name, new_light->type().print());
-		const auto [new_light_id, adding_result]{lights_.add(name, std::move(new_light))};
-		param_result.flags_ |= adding_result;
-		return {new_light_id, param_result};
-	}
-	else return {0, ParamResult{YAFARAY_RESULT_ERROR_WHILE_CREATING}};
+	return createSceneItem<Light>(logger_, std::move(name), std::move(params), lights_, CreationState::Flags::CLight);
 }
 
 std::pair<size_t, ParamResult> Scene::createMaterial(std::string &&name, ParamMap &&params, std::list<ParamMap> &&nodes_params)
@@ -359,90 +330,45 @@ std::pair<size_t, ParamResult> Scene::createMaterial(std::string &&name, ParamMa
 }
 
 template <typename T>
-std::pair<T *, ParamResult> Scene::createMapItem(Logger &logger, std::string &&name, ParamMap &&params, std::map<std::string, std::unique_ptr<T>> &map, const Scene *scene)
+std::pair<size_t, ParamResult> Scene::createSceneItem(Logger &logger, std::string &&name, ParamMap &&params, SceneItems<T> &map, CreationState::Flags creation_flags)
 {
-	if(map.find(name) != map.end())
+	const auto [existing_item, existing_item_id, existing_item_result]{map.getByName(name)};
+	if(existing_item)
 	{
-		logWarnExist(logger, T::getClassName(), name); return {nullptr, {YAFARAY_RESULT_ERROR_ALREADY_EXISTS}};
+		if(logger.isVerbose()) logger.logWarning(T::getClassName(), ": item with name '", name, "' already exists, overwriting with new item.");
 	}
-	std::unique_ptr<T> item(T::factory(logger, *scene, name, params).first);
-	if(item)
+	auto [new_item, param_result]{T::factory(logger, *this, name, params)};
+	if(new_item)
 	{
-		map[name] = std::move(item);
-		std::string type;
-		params.getParam("type", type);
-		if(logger.isVerbose()) logInfoVerboseSuccess(logger, T::getClassName(), name, type);
-		return {map[name].get(), {}};
+		if(logger.isVerbose()) logInfoVerboseSuccess(logger, T::getClassName(), name, new_item->type().print());
+		const auto [new_item_id, adding_result]{map.add(name, std::move(new_item))};
+		param_result.flags_ |= adding_result;
+		creation_state_.changes_ |= creation_flags;
+		return {new_item_id, param_result};
 	}
-	return {nullptr, ParamResult{YAFARAY_RESULT_ERROR_WHILE_CREATING}};
-}
-
-template <typename T>
-std::pair<size_t, ParamResult> Scene::createMapItemItemId(Logger &logger, std::string &&name, ParamMap &&params, std::map<std::string, std::unique_ptr<T>> &map, const Scene *scene)
-{
-	if(map.find(name) != map.end())
-	{
-		logWarnExist(logger, T::getClassName(), name); return {0, {YAFARAY_RESULT_ERROR_ALREADY_EXISTS}};
-	}
-	auto [item, param_result]{T::factory(logger, *scene, name, params)};
-	if(item)
-	{
-		if(logger.isVerbose()) logInfoVerboseSuccess(logger, T::getClassName(), name, item->type().print());
-		map[name] = std::move(item);
-		return {map.size() - 1, param_result}; //FIXME: this is just a placeholder for now for future ItemID, although this will not work while we still use std::map for items
-	}
-	return {0, ParamResult{YAFARAY_RESULT_ERROR_WHILE_CREATING}};
-}
-
-template <typename T>
-std::pair<T *, ParamResult> Scene::createMapItemPointer(Logger &logger, std::string &&name, ParamMap &&params, std::map<std::string, std::unique_ptr<T>> &map, const Scene *scene)
-{
-	if(map.find(name) != map.end())
-	{
-		logWarnExist(logger, T::getClassName(), name); return {0, {YAFARAY_RESULT_ERROR_ALREADY_EXISTS}};
-	}
-	auto [item, param_result]{T::factory(logger, *scene, name, params)};
-	if(item)
-	{
-		if(logger.isVerbose()) logInfoVerboseSuccess(logger, T::getClassName(), name, item->getType().print());
-		map[name] = std::move(item);
-		return {map.at(name).get(), param_result}; //FIXME: this is just a placeholder for now for future ItemID, although this will not work while we still use std::map for items
-	}
-	return {nullptr, ParamResult{YAFARAY_RESULT_ERROR_WHILE_CREATING}};
+	else return {0, ParamResult{YAFARAY_RESULT_ERROR_WHILE_CREATING}};
 }
 
 std::pair<size_t, ParamResult> Scene::createOutput(std::string &&name, ParamMap &&params)
 {
-	std::string class_name = "ColorOutput";
-	if(outputs_.find(name) != outputs_.end())
-	{
-		logWarnExist(logger_, class_name, name); return {0, ParamResult{YAFARAY_RESULT_ERROR_ALREADY_EXISTS}};
-	}
-	auto [output, param_result]{ImageOutput::factory(logger_, *this, name, params)};
-	if(output)
-	{
-		if(logger_.isVerbose()) logInfoVerboseSuccess(logger_, class_name, name, "");
-		outputs_[name] = std::move(output);
-		return {outputs_.size() - 1, param_result};
-	}
-	return {0, ParamResult{YAFARAY_RESULT_ERROR_WHILE_CREATING}};
+	return createSceneItem<ImageOutput>(logger_, std::move(name), std::move(params), outputs_);
 }
 
 std::pair<size_t, ParamResult> Scene::createTexture(std::string &&name, ParamMap &&params)
 {
-	auto result{createMapItem<Texture>(logger_, std::move(name), std::move(params), textures_, this)};
-	InterpolationType texture_interpolation_type = result.first->getInterpolationType();
+	auto result{createSceneItem<Texture>(logger_, std::move(name), std::move(params), textures_, CreationState::Flags::CNone)};
+	InterpolationType texture_interpolation_type = textures_.getById(result.first).first->getInterpolationType();
 	if(!render_control_.getDifferentialRaysEnabled() && (texture_interpolation_type == InterpolationType::Trilinear || texture_interpolation_type == InterpolationType::Ewa))
 	{
 		if(logger_.isVerbose()) logger_.logVerbose("At least one texture using mipmaps interpolation, enabling ray differentials.");
 		render_control_.setDifferentialRaysEnabled(true);	//If there is at least one texture using mipmaps, then enable differential rays in the rendering process.
 	}
-	return {textures_.size() - 1, result.second}; //FIXME: this is just a placeholder for now for future ItemID, although this will not work while we still use std::map for items
+	return result;
 }
 
 std::pair<size_t, ParamResult> Scene::createCamera(std::string &&name, ParamMap &&params)
 {
-	return createMapItemItemId<Camera>(logger_, std::move(name), std::move(params), cameras_, this);
+	return createSceneItem<Camera>(logger_, std::move(name), std::move(params), cameras_);
 }
 
 ParamResult Scene::defineBackground(ParamMap &&params)
@@ -474,28 +400,17 @@ ParamResult Scene::defineVolumeIntegrator(ParamMap &&params)
 
 std::pair<size_t, ParamResult> Scene::createVolumeRegion(std::string &&name, ParamMap &&params)
 {
-	return createMapItemItemId<VolumeRegion>(logger_, std::move(name), std::move(params), volume_regions_, this);
+	return createSceneItem<VolumeRegion>(logger_, std::move(name), std::move(params), volume_regions_);
 }
 
 std::pair<size_t, ParamResult> Scene::createRenderView(std::string &&name, ParamMap &&params)
 {
-	if(render_views_.find(name) != render_views_.end())
-	{
-		logWarnExist(logger_, RenderView::getClassName(), name); return {0, {YAFARAY_RESULT_ERROR_ALREADY_EXISTS}};
-	}
-	auto [item, param_result]{RenderView::factory(logger_, *this, name, params)};
-	if(item)
-	{
-		if(logger_.isVerbose()) logInfoVerboseSuccess(logger_, RenderView::getClassName(), name, "");
-		render_views_[name] = std::move(item);
-		return {render_views_.size() - 1, param_result}; //FIXME: this is just a placeholder for now for future ItemID, although this will not work while we still use std::map for items
-	}
-	return {0, ParamResult{YAFARAY_RESULT_ERROR_WHILE_CREATING}};
+	return createSceneItem<RenderView>(logger_, std::move(name), std::move(params), render_views_);
 }
 
-std::pair<Image *, ParamResult> Scene::createImage(std::string &&name, ParamMap &&params)
+std::pair<size_t, ParamResult> Scene::createImage(std::string &&name, ParamMap &&params)
 {
-	return createMapItemPointer<Image>(logger_, std::move(name), std::move(params), images_, this);
+	return createSceneItem<Image>(logger_, std::move(name), std::move(params), images_);
 }
 
 /*! setup the scene for rendering (set camera, background, integrator, create image film,

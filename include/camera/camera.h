@@ -62,6 +62,8 @@ class Camera
 		[[nodiscard]] virtual ParamMap getAsParamMap(bool only_non_default) const;
 		Camera(Logger &logger, ParamResult &param_result, const ParamMap &param_map);
 		virtual ~Camera() = default;
+		void setId(size_t id) { id_ = id; }
+		[[nodiscard]] size_t getId() const { return id_; }
 		virtual void setAxis(const Vec3f &vx, const Vec3f &vy, const Vec3f &vz) = 0; //!< Set camera axis
 		/*! Shoot a new ray from the camera gived image pixel coordinates px,py and lense dof effect */
 		virtual CameraRay shootRay(float px, float py, const Uv<float> &uv) const = 0; //!< Shoot a new ray from the camera.
@@ -102,6 +104,7 @@ class Camera
 			PARAM_DECL(float, near_clip_distance_, 0.f, "nearClip", "");
 			PARAM_DECL(float, far_clip_distance_, -1.f, "farClip", "");
 		} params_;
+		size_t id_{0};
 		Vec3f cam_x_;	//!< Camera X axis
 		Vec3f cam_y_;	//!< Camera Y axis
 		Vec3f cam_z_;	//!< Camera Z axis

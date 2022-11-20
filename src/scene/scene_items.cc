@@ -19,13 +19,24 @@
 #include "scene/scene_items.h"
 #include "material/material.h"
 #include "geometry/object/object.h"
+#include "texture/texture.h"
+#include "image/image_output.h"
+#include "render/render_view.h"
+#include "camera/camera.h"
 #include "light/light.h"
+#include "volume/region/volume_region.h"
 
 namespace yafaray {
 
 template class SceneItems<Material>;
 template class SceneItems<Object>;
 template class SceneItems<Light>;
+template class SceneItems<Texture>;
+template class SceneItems<RenderView>;
+template class SceneItems<Camera>;
+template class SceneItems<ImageOutput>;
+template class SceneItems<VolumeRegion>;
+template class SceneItems<Image>;
 
 template <typename T>
 std::pair<size_t, ResultFlags> SceneItems<T>::add(const std::string &name, std::unique_ptr<T> item)

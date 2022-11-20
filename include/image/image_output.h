@@ -36,23 +36,36 @@ namespace yafaray {
 class RenderView;
 class ColorLayers;
 class Format;
+template <typename T> class SceneItems;
 
 class ImageOutput final
 {
+	private: struct Type;
 	public:
 		inline static std::string getClassName() { return "ImageOutput"; }
+		static Type type() ;
+		void setId(size_t id) { id_ = id; }
+		[[nodiscard]] size_t getId() const { return id_; }
 		static std::pair<std::unique_ptr<ImageOutput>, ParamResult> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map);
 		static std::string printMeta(const std::vector<std::string> &excluded_params) { return Params::meta_.print(excluded_params); }
 		[[nodiscard]] ParamMap getAsParamMap(bool only_non_default) const;
 		ImageOutput(Logger &logger, ParamResult &param_result, const ParamMap &param_map);
 		void flush(const RenderControl &render_control, const Timer &timer);
-		void init(const Size2i &size, const ImageLayers *exported_image_layers, const std::map<std::string, std::unique_ptr<RenderView>> *render_views);
+		void init(const Size2i &size, const ImageLayers *exported_image_layers, const SceneItems<RenderView> *render_views);
 		void setRenderView(const RenderView *render_view) { current_render_view_ = render_view; }
 		[[nodiscard]] std::string getName() const { return name_; }
 		std::string printBadge(const RenderControl &render_control, const Timer &timer) const;
 		std::unique_ptr<Image> generateBadgeImage(const RenderControl &render_control, const Timer &timer) const;
 
 	private:
+		struct Type : public Enum<Type>
+		{
+			using Enum::Enum;
+			enum : ValueType_t { ImageOutput };
+			inline static const EnumMap<ValueType_t> map_{{
+					{"ImageOutput", ImageOutput, ""},
+				}};
+		};
 		const struct Params
 		{
 			PARAM_INIT;
@@ -84,13 +97,14 @@ class ImageOutput final
 		void saveImageFile(const std::string &filename, LayerDef::Type layer_type, Format *format, const RenderControl &render_control, const Timer &timer);
 		void saveImageFileMultiChannel(const std::string &filename, Format *format, const RenderControl &render_control, const Timer &timer);
 
+		size_t id_{0};
 		std::string name_ = "out";
 		ColorSpace color_space_{params_.color_space_};
 		float gamma_{params_.gamma_};
 		const DenoiseParams denoise_params_{params_.denoise_enabled_, params_.denoise_h_lum_, params_.denoise_h_col_, params_.denoise_mix_};
 		const ImageLayers *image_layers_ = nullptr;
 		const RenderView *current_render_view_ = nullptr;
-		const std::map<std::string, std::unique_ptr<RenderView>> *render_views_ = nullptr;
+		const SceneItems<RenderView> *render_views_ = nullptr;
 		Logger &logger_;
 		Badge badge_{
 			logger_,

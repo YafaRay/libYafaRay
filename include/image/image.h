@@ -19,8 +19,8 @@
  *
  */
 
-#ifndef YAFARAY_IMAGE_H
-#define YAFARAY_IMAGE_H
+#ifndef LIBYAFARAY_IMAGE_H
+#define LIBYAFARAY_IMAGE_H
 
 #include "color/color.h"
 #include "geometry/rect.h"
@@ -46,7 +46,11 @@ struct DenoiseParams
 class Image
 {
 	public:
+		struct Type;
 		inline static std::string getClassName() { return "Image"; }
+		virtual Type type() const = 0;
+		void setId(size_t id) { id_ = id; }
+		[[nodiscard]] size_t getId() const { return id_; }
 		static std::pair<std::unique_ptr<Image>, ParamResult> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map);
 		static std::string printMeta(const std::vector<std::string> &excluded_params) { return Params::meta_.print(excluded_params); }
 		struct Type : public Enum<Type>
@@ -97,7 +101,6 @@ class Image
 		static std::unique_ptr<Image> factory(const Params &params);
 		explicit Image(Params params) : params_{std::move(params)} { }
 		virtual ~Image() = default;
-		virtual Type getType() const = 0;
 		virtual Optimization getOptimization() const = 0;
 		virtual Rgba getColor(const Point2i &point) const = 0;
 		virtual float getFloat(const Point2i &point) const = 0;
@@ -110,10 +113,10 @@ class Image
 		int getWidth() const { return params_.width_; }
 		int getHeight() const { return params_.height_; }
 		Size2i getSize() const { return {{getWidth(), getHeight()}}; }
-		std::string getTypeName() const { return getTypeNameLong(getType()); }
-		int getNumChannels() const { return getNumChannels(getType()); }
-		bool hasAlpha() const { return hasAlpha(getType()); }
-		bool isGrayscale() const { return isGrayscale(getType()); }
+		std::string getTypeName() const { return getTypeNameLong(type()); }
+		int getNumChannels() const { return getNumChannels(type()); }
+		bool hasAlpha() const { return hasAlpha(type()); }
+		bool isGrayscale() const { return isGrayscale(type()); }
 		ColorSpace getColorSpace() const { return params_.color_space_; }
 		float getGamma() const { return params_.gamma_; }
 
@@ -127,8 +130,10 @@ class Image
 		static bool hasAlpha(const Type &image_type);
 		static bool isGrayscale(const Type &image_type);
 		static Type getTypeFromSettings(bool has_alpha, bool grayscale);
+
+		size_t id_{0};
 };
 
 } //namespace yafaray
 
-#endif // YAFARAY_IMAGE_H
+#endif // LIBYAFARAY_IMAGE_H

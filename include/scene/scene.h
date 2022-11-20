@@ -114,18 +114,21 @@ class Scene final
 		RenderControl &getRenderControl() { return render_control_; }
 		std::pair<size_t, ResultFlags> getMaterial(const std::string &name) const;
 		const SceneItems<Material> &getMaterials() const { return materials_; }
-		Texture *getTexture(const std::string &name) const;
-		const Camera *getCamera(const std::string &name) const;
-		const ImageOutput *getOutput(const std::string &name) const;
-		const Image *getImage(const std::string &name) const;
-		const std::map<std::string, std::unique_ptr<RenderView>> &getRenderViews() const { return render_views_; }
-		const std::map<std::string, std::unique_ptr<VolumeRegion>> &getVolumeRegions() const { return volume_regions_; }
+		std::tuple<Camera *, size_t, ResultFlags> getCamera(const std::string &name) const;
+		std::pair<size_t, ResultFlags> getOutput(const std::string &name) const;
+		std::tuple<Image *, size_t, ResultFlags> getImage(const std::string &name) const;
+		const SceneItems<RenderView> &getRenderViews() const { return render_views_; }
+		const SceneItems<VolumeRegion> &getVolumeRegions() const { return volume_regions_; }
 		const SceneItems<Light> &getLights() const { return lights_; }
 		SceneItems<Light> &getLights() { return lights_; }
 		std::tuple<Light *, size_t, ResultFlags> getLight(const std::string &name) const;
 		std::pair<Light *, ResultFlags> getLight(size_t object_id) const;
 		std::pair<size_t, ParamResult> createLight(std::string &&name, ParamMap &&params);
 		bool disableLight(const std::string &name);
+		const SceneItems<Texture> &getTextures() const { return textures_; }
+		SceneItems<Texture> &getTextures() { return textures_; }
+		std::tuple<Texture *, size_t, ResultFlags> getTexture(const std::string &name) const;
+		std::pair<Texture *, ResultFlags> getTexture(size_t object_id) const;
 		std::pair<size_t, ParamResult> createTexture(std::string &&name, ParamMap &&params);
 		std::pair<size_t, ParamResult> createMaterial(std::string &&name, ParamMap &&params, std::list<ParamMap> &&nodes_params);
 		std::pair<size_t, ParamResult> createCamera(std::string &&name, ParamMap &&params);
@@ -134,11 +137,11 @@ class Scene final
 		ParamResult defineVolumeIntegrator(ParamMap &&params);
 		std::pair<size_t, ParamResult> createVolumeRegion(std::string &&name, ParamMap &&params);
 		std::pair<size_t, ParamResult> createRenderView(std::string &&name, ParamMap &&params);
-		std::pair<Image *, ParamResult> createImage(std::string &&name, ParamMap &&params);
+		std::pair<size_t, ParamResult> createImage(std::string &&name, ParamMap &&params);
 		std::pair<size_t, ParamResult> createOutput(std::string &&name, ParamMap &&params);
-		bool removeOutput(std::string &&name);
+		bool disableOutput(std::string &&name);
 		void clearOutputs();
-		const std::map<std::string, std::unique_ptr<ImageOutput>> &getOutputs() const { return outputs_; }
+		const SceneItems<ImageOutput> &getOutputs() const { return outputs_; }
 		bool setupSceneRenderParams(Scene &scene, ParamMap &&param_map);
 		void defineLayer(ParamMap &&params);
 		void defineLayer(std::string &&layer_type_name, std::string &&image_type_name, std::string &&exported_image_type_name, std::string &&exported_image_name);
@@ -151,9 +154,7 @@ class Scene final
 		bool isRayMinDistAuto() const { return ray_min_dist_auto_; }
 		const VolumeIntegrator *getVolIntegrator() const { return vol_integrator_.get(); }
 
-		static void logWarnExist(Logger &logger, const std::string &pname, const std::string &name);
 		static void logInfoVerboseSuccess(Logger &logger, const std::string &pname, const std::string &name, const std::string &t);
-		static void logInfoVerboseSuccessDisabled(Logger &logger, const std::string &pname, const std::string &name, const std::string &t);
 
 		MaskParams getMaskParams() const { return mask_params_; }
 		EdgeToonParams getEdgeToonParams() const { return edge_toon_params_; }
@@ -168,15 +169,6 @@ class Scene final
 		const RenderCallbacks &getRenderCallbacks() const { return render_callbacks_; }
 
 	private:
-		template <typename T> static T *findMapItem(const std::string &name, const std::map<std::string, std::unique_ptr<T>> &map);
-		void setMaskParams(const ParamMap &params);
-		void setEdgeToonParams(const ParamMap &params);
-		template <typename T> static std::pair<T *, ParamResult> createMapItem(Logger &logger, std::string &&name, ParamMap &&params, std::map<std::string, std::unique_ptr<T>> &map, const Scene *scene);
-		template <typename T> static std::pair<size_t, ParamResult> createMapItemItemId(Logger &logger, std::string &&name, ParamMap &&params, std::map<std::string, std::unique_ptr<T>> &map, const Scene *scene);
-		template <typename T> static std::pair<T *, ParamResult> createMapItemPointer(Logger &logger, std::string &&name, ParamMap &&params, std::map<std::string, std::unique_ptr<T>> &map, const Scene *scene);
-		void defineBasicLayers();
-		void defineDependentLayers(); //!< This function generates the basic/auxiliary layers. Must be called *after* defining all render layers with the defineLayer function.
-
 		struct CreationState
 		{
 			enum State { Ready, Geometry, Object };
@@ -185,7 +177,14 @@ class Scene final
 			unsigned int changes_;
 			ObjId_t next_free_id_;
 			size_t current_material_ = 0;
-		} creation_state_;
+		};
+		void setMaskParams(const ParamMap &params);
+		void setEdgeToonParams(const ParamMap &params);
+		template <typename T> std::pair<size_t, ParamResult> createSceneItem(Logger &logger, std::string &&name, ParamMap &&params, SceneItems<T> &map, CreationState::Flags creation_flags = CreationState::Flags::CNone);
+		void defineBasicLayers();
+		void defineDependentLayers(); //!< This function generates the basic/auxiliary layers. Must be called *after* defining all render layers with the defineLayer function.
+
+		CreationState creation_state_;
 		std::unique_ptr<Bound<float>> scene_bound_; //!< bounding box of all (finite) scene geometry
 		int nthreads_ = 1;
 		int nthreads_photons_ = 1;
@@ -208,12 +207,12 @@ class Scene final
 		SceneItems<Object> objects_;
 		SceneItems<Light> lights_;
 		SceneItems<Material> materials_;
-		std::map<std::string, std::unique_ptr<Texture>> textures_;
-		std::map<std::string, std::unique_ptr<Camera>> cameras_;
-		std::map<std::string, std::unique_ptr<VolumeRegion>> volume_regions_;
-		std::map<std::string, std::unique_ptr<ImageOutput>> outputs_;
-		std::map<std::string, std::unique_ptr<RenderView>> render_views_;
-		std::map<std::string, std::unique_ptr<Image>> images_;
+		SceneItems<Texture> textures_;
+		SceneItems<Camera> cameras_;
+		SceneItems<VolumeRegion> volume_regions_;
+		SceneItems<ImageOutput> outputs_;
+		SceneItems<RenderView> render_views_;
+		SceneItems<Image> images_;
 		Layers layers_;
 		AaNoiseParams aa_noise_params_;
 		MaskParams mask_params_;

@@ -64,13 +64,13 @@ std::pair<std::unique_ptr<Background>, ParamResult> TextureBackground::factory(L
 		logger.logError(getClassName(), ": No texture given for texture background!");
 		return {nullptr, ParamResult{YAFARAY_RESULT_ERROR_WHILE_CREATING}};
 	}
-	Texture *tex = scene.getTexture(texname);
-	if(!tex)
+	auto [tex, tex_id, tex_result]{scene.getTexture(texname)};
+	if(!tex_result.isOk())
 	{
 		logger.logError(getClassName(), ": Texture '", texname, "' for textureback not existant!");
 		return {nullptr, ParamResult{YAFARAY_RESULT_ERROR_WHILE_CREATING}};
 	}
-	auto background{std::make_unique<ThisClassType_t>(logger, param_result, scene.getLights(), param_map, tex)};
+	auto background{std::make_unique<ThisClassType_t>(logger, param_result, scene.getLights(), param_map, tex_id, scene.getTextures())};
 	if(param_result.notOk()) logger.logWarning(param_result.print<ThisClassType_t>(name, {"type"}));
 	if(background->ParentClassType_t::params_.ibl_)
 	{
@@ -97,8 +97,8 @@ std::pair<std::unique_ptr<Background>, ParamResult> TextureBackground::factory(L
 	return {std::move(background), param_result};
 }
 
-TextureBackground::TextureBackground(Logger &logger, ParamResult &param_result, SceneItems<Light> &lights, const ParamMap &param_map, const Texture *texture) :
-		ParentClassType_t{logger, param_result, lights, param_map}, params_{param_result, param_map}, tex_{texture}
+TextureBackground::TextureBackground(Logger &logger, ParamResult &param_result, SceneItems <Light> &lights, const ParamMap &param_map, size_t texture_id, const SceneItems <Texture> &textures) :
+		ParentClassType_t{logger, param_result, lights, param_map}, params_{param_result, param_map}, texture_id_{texture_id}, textures_{textures}
 {
 	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + params_.getAsParamMap(true).print());
 	sin_r_ = math::sin(math::num_pi<> * rotation_);
@@ -140,9 +140,9 @@ Rgb TextureBackground::eval(const Vec3f &dir, bool use_ibl_blur) const
 	if(with_ibl_blur_ && use_ibl_blur)
 	{
 		const MipMapParams mip_map_params {ibl_blur_mipmap_level_};
-		ret = tex_->getColor({{uv.u_, uv.v_, 0.f}}, &mip_map_params);
+		ret = textures_.getById(texture_id_).first->getColor({{uv.u_, uv.v_, 0.f}}, &mip_map_params);
 	}
-	else ret = tex_->getColor({{uv.u_, uv.v_, 0.f}});
+	else ret = textures_.getById(texture_id_).first->getColor({{uv.u_, uv.v_, 0.f}});
 
 	const float min_component = 1.0e-5f;
 	if(ret.r_ < min_component) ret.r_ = min_component;

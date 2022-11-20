@@ -371,7 +371,7 @@ std::pair<size_t, ParamResult> ExportPython::createRenderView(std::string &&name
 	return {};
 }
 
-std::pair<Image *, ParamResult> ExportPython::createImage(std::string &&name) noexcept
+std::pair<size_t, ParamResult> ExportPython::createImage(std::string &&name) noexcept
 {
 	writeParamMap(*params_);
 	params_->clear();

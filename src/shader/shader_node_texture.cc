@@ -72,7 +72,7 @@ std::pair<std::unique_ptr<ShaderNode>, ParamResult> TextureMapperNode::factory(L
 		logger.logError("TextureMapper: No texture given for texture mapper!");
 		return {nullptr, ParamResult{YAFARAY_RESULT_ERROR_WHILE_CREATING}};
 	}
-	const Texture *tex = scene.getTexture(texname);
+	const Texture *tex{std::get<0>(scene.getTexture(texname))};
 	if(!tex)
 	{
 		logger.logError("TextureMapper: texture '", texname, "' does not exist!");

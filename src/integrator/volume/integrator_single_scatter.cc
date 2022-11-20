@@ -59,7 +59,7 @@ std::pair<std::unique_ptr<VolumeIntegrator>, ParamResult> SingleScatterIntegrato
 	return {std::move(integrator), param_result};
 }
 
-SingleScatterIntegrator::SingleScatterIntegrator(Logger &logger, ParamResult &param_result, const ParamMap &param_map, const std::map<std::string, std::unique_ptr<VolumeRegion>> &volume_regions) : VolumeIntegrator(logger, param_result, param_map), volume_regions_{volume_regions}, params_{param_result, param_map}
+SingleScatterIntegrator::SingleScatterIntegrator(Logger &logger, ParamResult &param_result, const ParamMap &param_map, const SceneItems<VolumeRegion> &volume_regions) : VolumeIntegrator(logger, param_result, param_map), volume_regions_{volume_regions}, params_{param_result, param_map}
 {
 	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + params_.getAsParamMap(true).print());
 	logger_.logParams("SingleScatter: stepSize: ", params_.step_size_, " adaptive: ", params_.adaptive_, " optimize: ", params_.optimize_);
@@ -73,12 +73,12 @@ bool SingleScatterIntegrator::preprocess(FastRandom &fast_random, ImageFilm *ima
 	lights_ = render_view->getLightsVisible();
 	if(params_.optimize_)
 	{
-		for(const auto &[vr_name, vr] : volume_regions_)
+		for(const auto &vr : volume_regions_)
 		{
-			const Bound bb{vr->getBb()};
-			const int x_size = vr->att_grid_x_;
-			const int y_size = vr->att_grid_y_;
-			const int z_size = vr->att_grid_z_;
+			const Bound bb{vr.item_->getBb()};
+			const int x_size = vr.item_->att_grid_x_;
+			const int y_size = vr.item_->att_grid_y_;
+			const int z_size = vr.item_->att_grid_z_;
 			const float x_size_inv = 1.f / (float)x_size;
 			const float y_size_inv = 1.f / (float)y_size;
 			const float z_size_inv = 1.f / (float)z_size;
@@ -88,7 +88,7 @@ bool SingleScatterIntegrator::preprocess(FastRandom &fast_random, ImageFilm *ima
 			for(const auto &light : lights_)
 			{
 				auto *attenuation_grid = static_cast<float *>(malloc(x_size * y_size * z_size * sizeof(float)));
-				vr->attenuation_grid_map_[light] = attenuation_grid;
+				vr.item_->attenuation_grid_map_[light] = attenuation_grid;
 				for(int z = 0; z < z_size; ++z)
 				{
 					for(int y = 0; y < y_size; ++y)
@@ -111,9 +111,9 @@ bool SingleScatterIntegrator::preprocess(FastRandom &fast_random, ImageFilm *ima
 								Rgb lightstep_tau{0.f};
 								if(hit)
 								{
-									for(const auto &[v_2_name, v_2] : volume_regions_)
+									for(const auto &v_2 : volume_regions_)
 									{
-										lightstep_tau += v_2->tau(light_ray, params_.step_size_, 0.0f);
+										lightstep_tau += v_2.item_->tau(light_ray, params_.step_size_, 0.0f);
 									}
 								}
 
@@ -137,9 +137,9 @@ bool SingleScatterIntegrator::preprocess(FastRandom &fast_random, ImageFilm *ima
 
 									// transmittance from the point p in the volume to the light (i.e. how much light reaches p)
 									Rgb lightstep_tau{0.f};
-									for(const auto &[v_2_name, v_2] : volume_regions_)
+									for(const auto &v_2 : volume_regions_)
 									{
-										lightstep_tau += v_2->tau(light_ray, params_.step_size_, 0.0f);
+										lightstep_tau += v_2.item_->tau(light_ray, params_.step_size_, 0.0f);
 									}
 									light_tr += math::exp(-lightstep_tau.energy());
 								}
@@ -175,20 +175,20 @@ Rgb SingleScatterIntegrator::getInScatter(RandomGenerator &random_generator, con
 					if(params_.optimize_)
 					{
 						// replaced by
-						for(const auto &[vr_name, vr] : volume_regions_)
+						for(const auto &vr : volume_regions_)
 						{
-							const Bound<float>::Cross cross{vr->crossBound(light_ray)};
-							if(cross.crossed_) light_tr += vr->attenuation(step_ray.from_, light);
+							const Bound<float>::Cross cross{vr.item_->crossBound(light_ray)};
+							if(cross.crossed_) light_tr += vr.item_->attenuation(step_ray.from_, light);
 						}
 					}
 					else
 					{
 						// replaced by
 						Rgb lightstep_tau(0.f);
-						for(const auto &[vr_name, vr] : volume_regions_)
+						for(const auto &vr : volume_regions_)
 						{
-							const Bound<float>::Cross cross{vr->crossBound(light_ray)};
-							if(cross.crossed_) lightstep_tau += vr->tau(light_ray, current_step, 0.f);
+							const Bound<float>::Cross cross{vr.item_->crossBound(light_ray)};
+							if(cross.crossed_) lightstep_tau += vr.item_->tau(light_ray, current_step, 0.f);
 						}
 						// transmittance from the point p in the volume to the light (i.e. how much light reaches p)
 						light_tr = math::exp(-lightstep_tau.energy());
@@ -225,12 +225,12 @@ Rgb SingleScatterIntegrator::getInScatter(RandomGenerator &random_generator, con
 						if(params_.optimize_)
 						{
 							// replaced by
-							for(const auto &[vr_name, vr] : volume_regions_)
+							for(const auto &vr : volume_regions_)
 							{
-								const Bound<float>::Cross cross{vr->crossBound(light_ray)};
+								const Bound<float>::Cross cross{vr.item_->crossBound(light_ray)};
 								if(cross.crossed_)
 								{
-									light_tr += vr->attenuation(step_ray.from_, light);
+									light_tr += vr.item_->attenuation(step_ray.from_, light);
 									break;
 								}
 							}
@@ -239,12 +239,12 @@ Rgb SingleScatterIntegrator::getInScatter(RandomGenerator &random_generator, con
 						{
 							// replaced by
 							Rgb lightstep_tau(0.f);
-							for(const auto &[vr_name, vr] : volume_regions_)
+							for(const auto &vr : volume_regions_)
 							{
-								const Bound<float>::Cross cross{vr->crossBound(light_ray)};
+								const Bound<float>::Cross cross{vr.item_->crossBound(light_ray)};
 								if(cross.crossed_)
 								{
-									lightstep_tau += vr->tau(light_ray, current_step * 4.f, 0.0f);
+									lightstep_tau += vr.item_->tau(light_ray, current_step * 4.f, 0.0f);
 								}
 							}
 							// transmittance from the point p in the volume to the light (i.e. how much light reaches p)
@@ -269,13 +269,13 @@ Rgb SingleScatterIntegrator::transmittance(RandomGenerator &random_generator, co
 {
 	if(volume_regions_.empty()) return Rgb{1.f};
 	Rgb tr{1.f};
-	for(const auto &[vr_name, vr] : volume_regions_)
+	for(const auto &vr : volume_regions_)
 	{
-		const Bound<float>::Cross cross{vr->crossBound(ray)};
+		const Bound<float>::Cross cross{vr.item_->crossBound(ray)};
 		if(cross.crossed_)
 		{
 			const float random_value = random_generator();
-			const Rgb optical_thickness = vr->tau(ray, params_.step_size_, random_value);
+			const Rgb optical_thickness = vr.item_->tau(ray, params_.step_size_, random_value);
 			tr *= Rgb{math::exp(-optical_thickness.energy())};
 		}
 	}
@@ -288,9 +288,9 @@ Rgb SingleScatterIntegrator::integrate(RandomGenerator &random_generator, const 
 	const bool hit = (ray.tmax_ > 0.f);
 	float t_0 = 1e10f, t_1 = -1e10f;
 	// find min t0 and max t1
-	for(const auto &[vr_name, vr] : volume_regions_)
+	for(const auto &vr : volume_regions_)
 	{
-		Bound<float>::Cross cross{vr->crossBound(ray)};
+		Bound<float>::Cross cross{vr.item_->crossBound(ray)};
 		if(!cross.crossed_) continue;
 		if(hit && ray.tmax_ < cross.enter_) continue;
 		if(cross.enter_ < 0.f) cross.enter_ = 0.f;
@@ -317,9 +317,9 @@ Rgb SingleScatterIntegrator::integrate(RandomGenerator &random_generator, const 
 		{
 			const Point3f p{ray.from_ + (params_.step_size_ * i + pos) * ray.dir_};
 			float density = 0;
-			for(const auto &[vr_name, vr] : volume_regions_)
+			for(const auto &vr : volume_regions_)
 			{
-				density += vr->sigmaT(p, {}).energy();
+				density += vr.item_->sigmaT(p, {}).energy();
 			}
 			density_samples.at(i) = density;
 			if(i > 0) accum_density.at(i) = accum_density.at(i - 1) + density * params_.step_size_;
@@ -362,12 +362,12 @@ Rgb SingleScatterIntegrator::integrate(RandomGenerator &random_generator, const 
 		}
 		else
 		{
-			for(const auto &[vr_name, vr] : volume_regions_)
+			for(const auto &vr : volume_regions_)
 			{
-				const Bound<float>::Cross cross{vr->crossBound(step_ray)};
+				const Bound<float>::Cross cross{vr.item_->crossBound(step_ray)};
 				if(cross.crossed_)
 				{
-					step_tau += vr->sigmaT(step_ray.from_, step_ray.dir_) * current_step;
+					step_tau += vr.item_->sigmaT(step_ray.from_, step_ray.dir_) * current_step;
 				}
 			}
 		}
@@ -379,12 +379,12 @@ Rgb SingleScatterIntegrator::integrate(RandomGenerator &random_generator, const 
 			tr_tmp = tr_tmp / random_val;
 		}
 		float sigma_s = 0.0f;
-		for(const auto &[vr_name, vr] : volume_regions_)
+		for(const auto &vr : volume_regions_)
 		{
-			const Bound<float>::Cross cross{vr->crossBound(step_ray)};
+			const Bound<float>::Cross cross{vr.item_->crossBound(step_ray)};
 			if(cross.crossed_)
 			{
-				sigma_s += vr->sigmaS(step_ray.from_, step_ray.dir_).energy();
+				sigma_s += vr.item_->sigmaS(step_ray.from_, step_ray.dir_).energy();
 			}
 		}
 		// with a sigma_s close to 0, no light can be scattered -> computation can be skipped

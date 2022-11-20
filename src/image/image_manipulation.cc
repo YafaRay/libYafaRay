@@ -66,7 +66,7 @@ std::unique_ptr<Image> image_manipulation::getComposedImage(Logger &logger, cons
 	Image::Params image_params;
 	image_params.width_ = width;
 	image_params.height_ = height;
-	image_params.type_ = image_1->getType();
+	image_params.type_ = image_1->type();
 	image_params.image_optimization_ = image_1->getOptimization();
 	auto result = Image::factory(image_params);
 

@@ -95,7 +95,7 @@ std::pair<std::unique_ptr<ImageFilm>, ParamResult> ImageFilm::factory(Logger &lo
 	return {std::move(result), param_result};
 }
 
-ImageFilm::ImageFilm(Logger &logger, ParamResult &param_result, RenderControl &render_control, const Layers &layers, const std::map<std::string, std::unique_ptr<ImageOutput>> &outputs, const std::map<std::string, std::unique_ptr<RenderView>> *render_views, const RenderCallbacks *render_callbacks, int num_threads, const ParamMap &param_map) : params_{param_result, param_map}, num_threads_(num_threads), layers_(layers), outputs_(outputs), render_views_{render_views}, render_callbacks_{render_callbacks}, logger_{logger}
+ImageFilm::ImageFilm(Logger &logger, ParamResult &param_result, RenderControl &render_control, const Layers &layers, const SceneItems<ImageOutput> &outputs, const SceneItems<RenderView> *render_views, const RenderCallbacks *render_callbacks, int num_threads, const ParamMap &param_map) : params_{param_result, param_map}, num_threads_(num_threads), layers_(layers), outputs_(outputs), render_views_{render_views}, render_callbacks_{render_callbacks}, logger_{logger}
 {
 	if(logger_.isDebug()) logger_.logDebug("**" + getClassName() + " params_:\n" + params_.getAsParamMap(true).print());
 	if(params_.images_autosave_interval_type_ == AutoSaveParams::IntervalType::Pass) logger_.logInfo(getClassName(), ": ", "AutoSave partially rendered image every ", params_.images_autosave_interval_passes_, " passes");
@@ -230,9 +230,9 @@ void ImageFilm::init(RenderControl &render_control, int num_passes)
 
 	if(render_callbacks_ && render_callbacks_->notify_view_)
 	{
-		for(const auto &[render_view_name, render_view]: *render_views_)
+		for(const auto &render_view: *render_views_)
 		{
-			render_callbacks_->notify_view_(render_view_name.c_str(), render_callbacks_->notify_view_data_);
+			render_callbacks_->notify_view_(render_view.name_.c_str(), render_callbacks_->notify_view_data_);
 		}
 	}
 	if(render_callbacks_ && render_callbacks_->notify_layer_)
@@ -262,9 +262,9 @@ int ImageFilm::nextPass(const RenderView *render_view, RenderControl &render_con
 	{
 		if((images_auto_save_params_.interval_type_ == AutoSaveParams::IntervalType::Pass) && (images_auto_save_params_.pass_counter_ >= images_auto_save_params_.interval_passes_))
 		{
-			for(auto &[output_name, output] : outputs_)
+			for(auto &output : outputs_)
 			{
-				if(output) flush(render_view, render_control, edge_params, All);
+				if(output.item_) flush(render_view, render_control, edge_params, All);
 			}
 		}
 
@@ -609,24 +609,24 @@ void ImageFilm::flush(const RenderView *render_view, RenderControl &render_contr
 		logger_.logParams("--------------------------------------------------------------------------------");
 	}
 
-	for(auto &[output_name, output] : outputs_)
+	for(auto &output : outputs_)
 	{
-		if(output)
+		if(output.item_)
 		{
 			std::stringstream pass_string;
-			pass_string << "Flushing output '" << output_name << "' and saving image files.";
+			pass_string << "Flushing output '" << output.name_ << "' and saving image files.";
 			logger_.logInfo(pass_string.str());
 			if(render_control.finished())
 			{
 				std::stringstream ss;
-				ss << output->printBadge(render_control, timer_);
+				ss << output.item_->printBadge(render_control, timer_);
 				//logger_.logParams("--------------------------------------------------------------------------------");
 				for(std::string line; std::getline(ss, line, '\n');) if(line != "" && line != "\n") logger_.logParams(line);
 				//logger_.logParams("--------------------------------------------------------------------------------");
 			}
 			std::string old_tag{render_control.getProgressBarTag()};
 			render_control.setProgressBarTag(pass_string.str());
-			output->flush(render_control, timer_);
+			output.item_->flush(render_control, timer_);
 			render_control.setProgressBarTag(old_tag);
 		}
 	}

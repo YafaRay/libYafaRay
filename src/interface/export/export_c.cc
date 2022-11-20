@@ -460,7 +460,7 @@ std::pair<size_t, ParamResult> ExportC::createRenderView(std::string &&name) noe
 	return {};
 }
 
-std::pair<Image *, ParamResult> ExportC::createImage(std::string &&name) noexcept
+std::pair<size_t, ParamResult> ExportC::createImage(std::string &&name) noexcept
 {
 	writeParamMap(*params_);
 	params_->clear();

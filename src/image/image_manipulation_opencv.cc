@@ -35,7 +35,7 @@ std::unique_ptr<Image> image_manipulation_opencv::getDenoisedLdrImage(Logger &lo
 	Image::Params image_params;
 	image_params.width_ = image->getWidth();
 	image_params.height_ = image->getHeight();
-	image_params.type_ = image->getType();
+	image_params.type_ = image->type();
 	image_params.image_optimization_ = image->getOptimization();
 	auto image_denoised = Image::factory(image_params);
 	if(!image_denoised) return nullptr;
@@ -267,7 +267,7 @@ std::vector<std::unique_ptr<const Image>> image_manipulation_opencv::generateMip
 		Image::Params image_params;
 		image_params.width_ = w_2;
 		image_params.height_ = h_2;
-		image_params.type_ = image->getType();
+		image_params.type_ = image->type();
 		image_params.image_optimization_ = image->getOptimization();
 		auto mipmap{Image::factory(image_params)};
 

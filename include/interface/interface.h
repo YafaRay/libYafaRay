@@ -99,7 +99,7 @@ class Interface
 		virtual ParamResult defineVolumeIntegrator() noexcept;
 		virtual std::pair<size_t, ParamResult> createVolumeRegion(std::string &&name) noexcept;
 		virtual std::pair<size_t, ParamResult> createRenderView(std::string &&name) noexcept;
-		virtual std::pair<Image *, ParamResult> createImage(std::string &&name) noexcept;
+		virtual std::pair<size_t, ParamResult> createImage(std::string &&name) noexcept;
 		virtual std::pair<size_t, ParamResult> createOutput(std::string &&name) noexcept;
 		void setRenderNotifyViewCallback(yafaray_RenderNotifyViewCallback_t callback, void *callback_data) noexcept;
 		void setRenderNotifyLayerCallback(yafaray_RenderNotifyLayerCallback_t callback, void *callback_data) noexcept;

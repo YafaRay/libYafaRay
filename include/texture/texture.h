@@ -60,6 +60,8 @@ class Texture
 		[[nodiscard]] virtual ParamMap getAsParamMap(bool only_non_default) const;
 		Texture(Logger &logger, ParamResult &param_result, const ParamMap &param_map);
 		virtual ~Texture() = default;
+		void setId(size_t id) { id_ = id; }
+		[[nodiscard]] size_t getId() const { return id_; }
 
 		/* indicate wether the the texture is discrete (e.g. image map) or continuous */
 		virtual bool discrete() const { return false; }
@@ -133,6 +135,7 @@ class Texture
 				CHECK_PARAM_NOT_DEFAULT(adj_hue_degrees_) ||
 				CHECK_PARAM_NOT_DEFAULT(adj_clamp_)
 		};
+		size_t id_{0};
 		std::unique_ptr<ColorRamp> color_ramp_;
 		Logger &logger_;
 };

@@ -26,6 +26,7 @@
 namespace yafaray {
 
 class Background;
+template <typename T> class SceneItems;
 
 class SkyIntegrator : public VolumeIntegrator
 {
@@ -35,7 +36,7 @@ class SkyIntegrator : public VolumeIntegrator
 		inline static std::string getClassName() { return "SkyIntegrator"; }
 		static std::pair<std::unique_ptr<VolumeIntegrator>, ParamResult> factory(Logger &logger, const ParamMap &params, const Scene &scene);
 		static std::string printMeta(const std::vector<std::string> &excluded_params) { return Params::meta_.print(excluded_params); }
-		SkyIntegrator(Logger &logger, ParamResult &param_result, const ParamMap &param_map, const std::map<std::string, std::unique_ptr<VolumeRegion>> &volume_regions);
+		SkyIntegrator(Logger &logger, ParamResult &param_result, const ParamMap &param_map, const SceneItems<VolumeRegion> &volume_regions);
 		[[nodiscard]] ParamMap getAsParamMap(bool only_non_default) const override;
 
 	private:
