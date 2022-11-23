@@ -27,6 +27,7 @@
 #include <map>
 #include <vector>
 #include <tuple>
+#include <set>
 
 namespace yafaray {
 
@@ -52,15 +53,19 @@ class SceneItems final
 		[[nodiscard]] std::tuple<T *, size_t, ResultFlags> getByName(const std::string &name) const;
 		[[nodiscard]] size_t size() const { return scene_items_.size(); }
 		[[nodiscard]] bool empty() const { return scene_items_.empty(); }
+		[[nodiscard]] bool modified() const { return !modified_items_.empty(); }
+		[[nodiscard]] const std::set<size_t> &modifiedList() const { return modified_items_; }
 		typename std::vector<SceneItem<T>>::iterator begin() { return scene_items_.begin(); }
 		typename std::vector<SceneItem<T>>::iterator end() { return scene_items_.end(); }
 		typename std::vector<SceneItem<T>>::const_iterator begin() const { return scene_items_.begin(); }
 		typename std::vector<SceneItem<T>>::const_iterator end() const { return scene_items_.end(); }
+		void clearModifiedList() { modified_items_.clear(); }
 		void clear();
 
 	private:
 		std::vector<SceneItem<T>> scene_items_;
 		std::map<std::string, size_t> names_to_id_;
+		std::set<size_t> modified_items_;
 };
 
 } //namespace yafaray

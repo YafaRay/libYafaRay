@@ -56,6 +56,7 @@ std::pair<size_t, ResultFlags> SceneItems<T>::add(const std::string &name, std::
 	}
 	scene_items_[id].item_->setId(id);
 	names_to_id_[name] = id;
+	modified_items_.insert(id);
 	return {id, result_flags};
 }
 
@@ -96,6 +97,7 @@ ResultFlags SceneItems<T>::disable(size_t id)
 	else
 	{
 		scene_items_[id].enabled_ = false;
+		modified_items_.insert(id);
 		return YAFARAY_RESULT_OK;
 	}
 }
@@ -137,6 +139,7 @@ void SceneItems<T>::clear()
 {
 	names_to_id_.clear();
 	scene_items_.clear();
+	clearModifiedList();
 }
 
 } //namespace yafaray
