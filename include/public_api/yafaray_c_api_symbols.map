@@ -8,9 +8,6 @@ LIBYAFARAY_4.0.0 {
         yafaray_createScene;
         yafaray_getSceneFilmWidth;
         yafaray_getSceneFilmHeight;
-        yafaray_startGeometry;
-        yafaray_endGeometry;
-        yafaray_getNextFreeId;
         yafaray_endObject;
         yafaray_addVertex;
         yafaray_addVertexTimeStep;

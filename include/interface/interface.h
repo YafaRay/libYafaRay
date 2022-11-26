@@ -62,9 +62,6 @@ class Interface
 		virtual int getSceneFilmHeight() const noexcept;
 		std::string printLayersTable() const noexcept;
 		std::string printViewsTable() const noexcept;
-		virtual bool startGeometry() noexcept; //!< call before creating geometry; only meshes and vmaps can be created in this state
-		virtual bool endGeometry() noexcept; //!< call after creating geometry;
-		virtual unsigned int getNextFreeId() noexcept;
 		virtual bool endObject() noexcept; //!< end current mesh and return to geometry state
 		virtual int addVertex(Point3f &&vertex, int time_step) noexcept; //!< add vertex to mesh; returns index to be used for addTriangle/addQuad
 		virtual int addVertex(Point3f &&vertex, Point3f &&orco, int time_step) noexcept; //!< add vertex with Orco to mesh; returns index to be used for addTriangle/addQuad

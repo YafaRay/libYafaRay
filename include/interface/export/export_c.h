@@ -39,9 +39,6 @@ class ExportC: public Interface
 		int getSceneFilmWidth() const noexcept override { return 0; }
 		int getSceneFilmHeight() const noexcept override { return 0; }
 		void defineLayer() noexcept override;
-		bool startGeometry() noexcept override;
-		bool endGeometry() noexcept override;
-		unsigned int getNextFreeId() noexcept override;
 		bool endObject() noexcept override;
 		int createInstance() noexcept override;
 		bool addInstanceObject(int instance_id, std::string &&base_object_name) noexcept override;

@@ -70,9 +70,6 @@ extern "C" {
 	YAFARAY_C_API_EXPORT void yafaray_createScene(yafaray_Interface_t *interface);
 	YAFARAY_C_API_EXPORT int yafaray_getSceneFilmWidth(const yafaray_Interface_t *interface);
 	YAFARAY_C_API_EXPORT int yafaray_getSceneFilmHeight(const yafaray_Interface_t *interface);
-	YAFARAY_C_API_EXPORT yafaray_bool_t yafaray_startGeometry(yafaray_Interface_t *interface);
-	YAFARAY_C_API_EXPORT yafaray_bool_t yafaray_endGeometry(yafaray_Interface_t *interface);
-	YAFARAY_C_API_EXPORT unsigned int yafaray_getNextFreeId(yafaray_Interface_t *interface);
 	YAFARAY_C_API_EXPORT yafaray_bool_t yafaray_endObject(yafaray_Interface_t *interface);
 	YAFARAY_C_API_EXPORT int yafaray_addVertex(yafaray_Interface_t *interface, float x, float y, float z);
 	YAFARAY_C_API_EXPORT int yafaray_addVertexTimeStep(yafaray_Interface_t *interface, float x, float y, float z, int time_step);

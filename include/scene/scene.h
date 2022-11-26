@@ -93,9 +93,6 @@ class Scene final
 		const SceneItems<Object> &getObjects() const { return objects_; }
 		const Accelerator *getAccelerator() const { return accelerator_.get(); }
 
-		ObjId_t getNextFreeId();
-		bool startObjects();
-		bool endObjects();
 		void setAntialiasing(AaNoiseParams &&aa_noise_params) { aa_noise_params_ = aa_noise_params; };
 		void setNumThreads(int threads);
 		void setNumThreadsPhotons(int threads_photons);
@@ -169,22 +166,13 @@ class Scene final
 		const RenderCallbacks &getRenderCallbacks() const { return render_callbacks_; }
 
 	private:
-		struct CreationState
-		{
-			enum State { Ready, Geometry, Object };
-			enum Flags { CNone = 0, CGeom = 1, CLight = 1 << 1, CMaterial = 1 << 2, COther = 1 << 3, CAll = CGeom | CLight | CMaterial | COther };
-			std::list<State> stack_;
-			unsigned int changes_;
-			ObjId_t next_free_id_;
-			size_t current_material_ = 0;
-		};
 		void setMaskParams(const ParamMap &params);
 		void setEdgeToonParams(const ParamMap &params);
-		template <typename T> std::pair<size_t, ParamResult> createSceneItem(Logger &logger, std::string &&name, ParamMap &&params, SceneItems<T> &map, CreationState::Flags creation_flags = CreationState::Flags::CNone);
+		template <typename T> std::pair<size_t, ParamResult> createSceneItem(Logger &logger, std::string &&name, ParamMap &&params, SceneItems<T> &map);
 		void defineBasicLayers();
 		void defineDependentLayers(); //!< This function generates the basic/auxiliary layers. Must be called *after* defining all render layers with the defineLayer function.
 
-		CreationState creation_state_;
+		size_t current_material_ = 0;
 		std::unique_ptr<Bound<float>> scene_bound_; //!< bounding box of all (finite) scene geometry
 		int nthreads_ = 1;
 		int nthreads_photons_ = 1;

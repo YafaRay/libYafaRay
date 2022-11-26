@@ -71,15 +71,6 @@ void ExportXml::defineLayer() noexcept
 	file_ << "</layer>\n";
 }
 
-bool ExportXml::startGeometry() noexcept { return true; }
-
-bool ExportXml::endGeometry() noexcept { return true; }
-
-unsigned int ExportXml::getNextFreeId() noexcept
-{
-	return ++next_obj_;
-}
-
 bool ExportXml::endObject() noexcept
 {
 	file_ << "</object>\n";

@@ -154,9 +154,6 @@ int main()
 	yafaray_createMaterial(yi, "MaterialTGA");
 	yafaray_paramsClearAll(yi);
 
-	/* Creating geometric objects in the scene */
-	yafaray_startGeometry(yi);
-
 	/* Creating a geometric object */
 	yafaray_paramsSetBool(yi, "has_orco", 1);
 	yafaray_paramsSetString(yi, "type", "mesh");
@@ -186,9 +183,6 @@ int main()
 	yafaray_addTriangle(yi, 0, 6, 4);
 	yafaray_addTriangle(yi, 5, 7, 3);
 	yafaray_addTriangle(yi, 5, 3, 1);
-
-	/* Ending definition of geometric objects */
-	yafaray_endGeometry(yi);
 
 	/* Creating light/lamp */
 	yafaray_paramsSetString(yi, "type", "pointlight");

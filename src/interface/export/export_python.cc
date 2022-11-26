@@ -78,15 +78,6 @@ void ExportPython::defineLayer() noexcept
 	file_ << "yi.paramsClearAll()\n\n";
 }
 
-bool ExportPython::startGeometry() noexcept { return true; }
-
-bool ExportPython::endGeometry() noexcept { return true; }
-
-unsigned int ExportPython::getNextFreeId() noexcept
-{
-	return ++next_obj_;
-}
-
 bool ExportPython::endObject() noexcept
 {
 	file_ << "yi.endObject()\n";

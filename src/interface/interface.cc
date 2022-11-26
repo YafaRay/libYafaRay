@@ -74,15 +74,6 @@ void Interface::defineLayer() noexcept
 	scene_->defineLayer(std::move(*params_));
 }
 
-bool Interface::startGeometry() noexcept { return scene_->startObjects(); }
-
-bool Interface::endGeometry() noexcept { return scene_->endObjects(); }
-
-unsigned int Interface::getNextFreeId() noexcept
-{
-	return scene_->getNextFreeId();
-}
-
 bool Interface::endObject() noexcept { return scene_->endObject(); }
 
 int Interface::addVertex(Point3f &&vertex, int time_step) noexcept { return scene_->addVertex(std::move(vertex), time_step); }

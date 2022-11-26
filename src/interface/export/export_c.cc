@@ -123,15 +123,6 @@ void ExportC::defineLayer() noexcept
 	section_num_lines_ += 2;
 }
 
-bool ExportC::startGeometry() noexcept { return true; }
-
-bool ExportC::endGeometry() noexcept { return true; }
-
-unsigned int ExportC::getNextFreeId() noexcept
-{
-	return ++next_obj_;
-}
-
 bool ExportC::endObject() noexcept
 {
 	file_ << "\t" << "yafaray_endObject(yi);\n";

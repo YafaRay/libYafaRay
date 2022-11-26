@@ -56,20 +56,6 @@ void yafaray_createScene(yafaray_Interface_t *interface)
 	reinterpret_cast<yafaray::Interface *>(interface)->createScene();
 }
 
-yafaray_bool_t yafaray_startGeometry(yafaray_Interface_t *interface) //!< call before creating geometry; only meshes and vmaps can be created in this state
-{
-	return static_cast<yafaray_bool_t>(reinterpret_cast<yafaray::Interface *>(interface)->startGeometry());
-}
-yafaray_bool_t yafaray_endGeometry(yafaray_Interface_t *interface) //!< call after creating geometry;
-{
-	return static_cast<yafaray_bool_t>(reinterpret_cast<yafaray::Interface *>(interface)->endGeometry());
-}
-
-unsigned int yafaray_getNextFreeId(yafaray_Interface_t *interface)
-{
-	return reinterpret_cast<yafaray::Interface *>(interface)->getNextFreeId();
-}
-
 yafaray_bool_t yafaray_endObject(yafaray_Interface_t *interface) //!< end current mesh and return to geometry state
 {
 	return static_cast<yafaray_bool_t>(reinterpret_cast<yafaray::Interface *>(interface)->endObject());

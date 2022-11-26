@@ -45,7 +45,6 @@
 #include "texture/texture.h"
 #include "param/param_result.h"
 #include "volume/region/volume_region.h"
-#include <limits>
 #include <memory>
 
 namespace yafaray {
@@ -57,9 +56,6 @@ void Scene::logInfoVerboseSuccess(Logger &logger, const std::string &pname, cons
 
 Scene::Scene(Logger &logger) : scene_bound_(std::make_unique<Bound<float>>()), logger_(logger)
 {
-	creation_state_.changes_ = CreationState::Flags::CAll;
-	creation_state_.stack_.push_front(CreationState::Ready);
-	creation_state_.next_free_id_ = std::numeric_limits<int>::max();
 	logger_.logInfo("LibYafaRay (", buildinfo::getVersionString(), buildinfo::getBuildTypeSuffix(), ")", " ", buildinfo::getBuildOs(), " ", buildinfo::getBuildArchitectureBits(), "bit (", buildinfo::getBuildCompiler(), ")");
 	logger_.logDebug("LibYafaRay build details:");
 	if(logger_.isDebug())
@@ -91,31 +87,8 @@ void Scene::createDefaultMaterial()
 
 void Scene::setCurrentMaterial(size_t material_id)
 {
-	if(materials_.getById(material_id).second.isOk()) creation_state_.current_material_ = material_id;
-	else creation_state_.current_material_ = material_id_default_;
-}
-
-bool Scene::startObjects()
-{
-	if(creation_state_.stack_.front() != CreationState::Ready) return false;
-	creation_state_.stack_.push_front(CreationState::Geometry);
-	return true;
-}
-
-bool Scene::endObjects()
-{
-	if(creation_state_.stack_.front() != CreationState::Geometry) return false;
-	// in case objects share arrays, so they all need to be updated
-	// after each object change, uncomment the below block again:
-	// don't forget to update the mesh object iterators!
-	/*	for(auto i=meshes.begin();
-			 i!=meshes.end(); ++i)
-		{
-			objData_t &dat = (*i).second;
-			dat.obj->setContext(dat.points.begin(), dat.normals.begin() );
-		}*/
-	creation_state_.stack_.pop_front();
-	return true;
+	if(materials_.getById(material_id).second.isOk()) current_material_ = material_id;
+	else current_material_ = material_id_default_;
 }
 
 void Scene::setNumThreads(int threads)
@@ -186,7 +159,7 @@ bool Scene::render(std::unique_ptr<ProgressBar> progress_bar)
 
 	//if(creation_state_.changes_ != CreationState::Flags::CNone) //FIXME: handle better subsequent scene renders differently if previous render already complete
 	{
-		if(creation_state_.changes_ & CreationState::Flags::CGeom) updateObjects();
+		/*if(objects_.modified())*/ updateObjects();
 		for(auto &[light, light_name, light_enabled] : lights_)
 		{
 			if(light && light_enabled) light->init(*this);
@@ -216,6 +189,17 @@ bool Scene::render(std::unique_ptr<ProgressBar> progress_bar)
 				logger_.logError("Scene: Preprocessing process failed, exiting...");
 				return false;
 			}
+
+			objects_.clearModifiedList();
+			lights_.clearModifiedList();
+			materials_.clearModifiedList();
+			textures_.clearModifiedList();
+			cameras_.clearModifiedList();
+			volume_regions_.clearModifiedList();
+			outputs_.clearModifiedList();
+			render_views_.clearModifiedList();
+			images_.clearModifiedList();
+
 			render_control_.setStarted();
 			success = surf_integrator_->render(fast_random, object_index_highest_, material_index_highest_);
 			if(!success)
@@ -231,13 +215,7 @@ bool Scene::render(std::unique_ptr<ProgressBar> progress_bar)
 			image_film_->cleanup();
 		}
 	}
-	creation_state_.changes_ = CreationState::Flags::CNone;
 	return true;
-}
-
-ObjId_t Scene::getNextFreeId()
-{
-	return --creation_state_.next_free_id_;
 }
 
 void Scene::clearNonObjects()
@@ -315,7 +293,7 @@ bool Scene::disableOutput(std::string &&name)
 
 std::pair<size_t, ParamResult> Scene::createLight(std::string &&name, ParamMap &&params)
 {
-	return createSceneItem<Light>(logger_, std::move(name), std::move(params), lights_, CreationState::Flags::CLight);
+	return createSceneItem<Light>(logger_, std::move(name), std::move(params), lights_);
 }
 
 std::pair<size_t, ParamResult> Scene::createMaterial(std::string &&name, ParamMap &&params, std::list<ParamMap> &&nodes_params)
@@ -330,7 +308,7 @@ std::pair<size_t, ParamResult> Scene::createMaterial(std::string &&name, ParamMa
 }
 
 template <typename T>
-std::pair<size_t, ParamResult> Scene::createSceneItem(Logger &logger, std::string &&name, ParamMap &&params, SceneItems<T> &map, CreationState::Flags creation_flags)
+std::pair<size_t, ParamResult> Scene::createSceneItem(Logger &logger, std::string &&name, ParamMap &&params, SceneItems<T> &map)
 {
 	const auto [existing_item, existing_item_id, existing_item_result]{map.getByName(name)};
 	if(existing_item)
@@ -343,7 +321,6 @@ std::pair<size_t, ParamResult> Scene::createSceneItem(Logger &logger, std::strin
 		if(logger.isVerbose()) logInfoVerboseSuccess(logger, T::getClassName(), name, new_item->type().print());
 		const auto [new_item_id, adding_result]{map.add(name, std::move(new_item))};
 		param_result.flags_ |= adding_result;
-		creation_state_.changes_ |= creation_flags;
 		return {new_item_id, param_result};
 	}
 	else return {0, ParamResult{YAFARAY_RESULT_ERROR_WHILE_CREATING}};
@@ -356,7 +333,7 @@ std::pair<size_t, ParamResult> Scene::createOutput(std::string &&name, ParamMap 
 
 std::pair<size_t, ParamResult> Scene::createTexture(std::string &&name, ParamMap &&params)
 {
-	auto result{createSceneItem<Texture>(logger_, std::move(name), std::move(params), textures_, CreationState::Flags::CNone)};
+	auto result{createSceneItem<Texture>(logger_, std::move(name), std::move(params), textures_)};
 	InterpolationType texture_interpolation_type = textures_.getById(result.first).first->getInterpolationType();
 	if(!render_control_.getDifferentialRaysEnabled() && (texture_interpolation_type == InterpolationType::Trilinear || texture_interpolation_type == InterpolationType::Ewa))
 	{
@@ -479,7 +456,6 @@ bool Scene::setupSceneRenderParams(Scene &scene, ParamMap &&param_map)
 	else if(aa_dark_detection_type_string == "curve") aa_noise_params.dark_detection_type_ = AaNoiseParams::DarkDetectionType::Curve;
 	else aa_noise_params.dark_detection_type_ = AaNoiseParams::DarkDetectionType::None;
 
-	creation_state_.changes_ |= CreationState::Flags::COther;
 	scene.setAntialiasing(std::move(aa_noise_params));
 	scene.setNumThreads(nthreads);
 	scene.setNumThreadsPhotons(nthreads_photons);
@@ -732,10 +708,8 @@ void Scene::setRenderHighlightAreaCallback(yafaray_RenderHighlightAreaCallback_t
 bool Scene::endObject()
 {
 	if(logger_.isDebug()) logger_.logDebug("Scene::endObject");
-	if(creation_state_.stack_.front() != CreationState::Object) return false;
 	auto[object, object_result]{objects_.getById(current_object_)};
-	const bool result{object->calculateObject(creation_state_.current_material_)};
-	creation_state_.stack_.pop_front();
+	const bool result{object->calculateObject(current_material_)};
 	return result;
 }
 
@@ -779,8 +753,6 @@ bool Scene::smoothVerticesNormals(std::string &&name, float angle)
 
 int Scene::addVertex(Point3f &&p, int time_step)
 {
-	//if(logger_.isDebug()) logger.logDebug("Scene::addVertex) PR(p");
-	if(creation_state_.stack_.front() != CreationState::Object) return -1;
 	auto[object, object_result]{objects_.getById(current_object_)};
 	object->addPoint(std::move(p), time_step);
 	return object->lastVertexId(time_step);
@@ -788,7 +760,6 @@ int Scene::addVertex(Point3f &&p, int time_step)
 
 int Scene::addVertex(Point3f &&p, Point3f &&orco, int time_step)
 {
-	if(creation_state_.stack_.front() != CreationState::Object) return -1;
 	auto[object, object_result]{objects_.getById(current_object_)};
 	object->addPoint(std::move(p), time_step);
 	object->addOrcoPoint(std::move(orco), time_step);
@@ -797,45 +768,26 @@ int Scene::addVertex(Point3f &&p, Point3f &&orco, int time_step)
 
 void Scene::addVertexNormal(Vec3f &&n, int time_step)
 {
-	if(creation_state_.stack_.front() != CreationState::Object) return;
 	auto[object, object_result]{objects_.getById(current_object_)};
 	object->addVertexNormal(std::move(n), time_step);
 }
 
 bool Scene::addFace(const FaceIndices<int> &face_indices)
 {
-	if(creation_state_.stack_.front() != CreationState::Object) return false;
 	auto[object, object_result]{objects_.getById(current_object_)};
-	object->addFace(face_indices, creation_state_.current_material_);
+	object->addFace(face_indices, current_material_);
 	return true;
 }
 
 int Scene::addUv(Uv<float> &&uv)
 {
-	if(creation_state_.stack_.front() != CreationState::Object) return false;
 	auto[object, object_result]{objects_.getById(current_object_)};
 	return object->addUvValue(std::move(uv));
 }
 
 std::pair<size_t, ParamResult> Scene::createObject(std::string &&name, ParamMap &&params)
 {
-	const auto [existing_object, existing_object_id, existing_object_result]{objects_.getByName(name)};
-	if(existing_object)
-	{
-		if(logger_.isVerbose()) logger_.logWarning(Object::getClassName(), ": object with name '", name, "' already exists, overwriting with new object.");
-	}
-	auto [new_object, param_result]{Object::factory(logger_, *this, name, params)};
-	if(new_object)
-	{
-		creation_state_.changes_ |= CreationState::Flags::CGeom;
-		if(logger_.isVerbose()) logInfoVerboseSuccess(logger_, Object::getClassName(), name, new_object->type().print());
-		creation_state_.stack_.push_front(CreationState::Object);
-		const auto [new_object_id, adding_result]{objects_.add(name, std::move(new_object))};
-		current_object_ = new_object_id;
-		param_result.flags_ |= adding_result;
-		return {current_object_, param_result};
-	}
-	else return {0, ParamResult{YAFARAY_RESULT_ERROR_WHILE_CREATING}};
+	return createSceneItem<Object>(logger_, std::move(name), std::move(params), objects_);
 }
 
 std::tuple<Object *, size_t, ResultFlags> Scene::getObject(const std::string &name) const
@@ -879,35 +831,6 @@ bool Scene::addInstanceMatrix(int instance_id, Matrix4f &&obj_to_world, float ti
 	instances_[instance_id]->addObjToWorldMatrix(std::move(obj_to_world), time);
 	return true;
 }
-
-/*bool Scene::addInstance(const std::string &base_object_name, const Matrix4 &obj_to_world)
-{
-	const Object *object = objects_.find(base_object_name)->second.get();
-	if(objects_.find(base_object_name) == objects_.end())
-	{
-		logger_.logError("Base mesh for instance doesn't exist ", base_object_name);
-		return false;
-	}
-	int id = getNextFreeId();
-	if(id > 0)
-	{
-		const std::string instance_name = base_object_name + "-" + std::to_string(id);
-		if(logger_.isDebug())logger_.logDebug("  Instance: ", instance_name, " base_object_name=", base_object_name);
-		std::vector<const Primitive *> primitives;
-		for(const auto &[object_name, object] : objects_)
-		{
-			if(object->getVisibility() == Visibility::Invisible) continue;
-			const auto prims = object->getPrimitives();
-			primitives.insert(primitives.end(), prims.begin(), prims.end());
-		}
-		auto instances = std::make_unique<Instance>();
-		instances->addPrimitives(primitives);
-		instances->addObjToWorldMatrix(obj_to_world, 0); //FIXME set proper time for each time step!
-		instances_[instance_name] = std::move(instances);
-		return true;
-	}
-	else return false;
-}*/
 
 bool Scene::updateObjects()
 {
@@ -964,6 +887,7 @@ bool Scene::updateObjects()
 	logger_.logInfo("Scene: total scene dimensions: X=", scene_bound_->length(Axis::X), ", y=", scene_bound_->length(Axis::Y), ", z=", scene_bound_->length(Axis::Z), ", volume=", scene_bound_->vol(), ", Shadow Bias=", shadow_bias_, (shadow_bias_auto_ ? " (auto)" : ""), ", Ray Min Dist=", ray_min_dist_, (ray_min_dist_auto_ ? " (auto)" : ""));
 	return true;
 }
+
 std::pair<const Instance *, ResultFlags> Scene::getInstance(size_t instance_id) const
 {
 	if(instance_id >= instances_.size()) return {nullptr, YAFARAY_RESULT_ERROR_NOT_FOUND};
