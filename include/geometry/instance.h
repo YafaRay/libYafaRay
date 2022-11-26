@@ -36,11 +36,11 @@ class Instance final
 
 	public:
 		inline static std::string getClassName() { return "Instance"; }
-		void addObject(int object_id);
-		void addInstance(int instance_id);
+		void addObject(size_t object_id);
+		void addInstance(size_t instance_id);
 		void addObjToWorldMatrix(Matrix4f &&obj_to_world, float time);
 		std::vector<const Matrix4f *> getObjToWorldMatrices() const;
-		const Matrix4f &getObjToWorldMatrix(int time_step) const { return time_steps_[time_step].obj_to_world_; }
+		const Matrix4f &getObjToWorldMatrix(unsigned char time_step) const { return time_steps_[time_step].obj_to_world_; }
 		Matrix4f getObjToWorldMatrixAtTime(float time) const;
 		[[nodiscard]] bool updatePrimitives(const Scene &scene);
 		std::vector<const PrimitiveInstance *> getPrimitives() const;
@@ -55,7 +55,7 @@ class Instance final
 		std::vector<TimeStepGeometry> time_steps_;
 		struct BaseId
 		{
-			int id_{0};
+			size_t id_{0};
 			enum class Type : char {Object, Instance} base_id_type_{Type::Object};
 		};
 		std::vector<BaseId> base_ids_;

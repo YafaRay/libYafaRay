@@ -74,18 +74,18 @@ class Scene final
 		explicit Scene(Logger &logger);
 		Scene(const Scene &s) = delete;
 		~Scene();
-		int addVertex(Point3f &&p, int time_step);
-		int addVertex(Point3f &&p, Point3f &&orco, int time_step);
-		void addVertexNormal(Vec3f &&n, int time_step);
-		bool addFace(const FaceIndices<int> &face_indices);
-		int addUv(Uv<float> &&uv);
-		bool smoothVerticesNormals(std::string &&name, float angle);
+		int addVertex(size_t object_id, Point3f &&p, unsigned char time_step);
+		int addVertex(size_t object_id, Point3f &&p, Point3f &&orco, unsigned char time_step);
+		void addVertexNormal(size_t object_id, Vec3f &&n, unsigned char time_step);
+		bool addFace(size_t object_id, const FaceIndices<int> &face_indices, size_t material_id);
+		int addUv(size_t object_id, Uv<float> &&uv);
+		bool smoothVerticesNormals(size_t object_id, float angle);
 		std::pair<size_t, ParamResult> createObject(std::string &&name, ParamMap &&params);
-		bool endObject();
-		int createInstance();
-		bool addInstanceObject(int instance_id, std::string &&object_name);
-		bool addInstanceOfInstance(int instance_id, size_t base_instance_id);
-		bool addInstanceMatrix(int instance_id, Matrix4f &&obj_to_world, float time);
+		bool initObject(size_t object_id, size_t material_id);
+		size_t createInstance();
+		bool addInstanceObject(size_t instance_id, size_t object_id);
+		bool addInstanceOfInstance(size_t instance_id, size_t base_instance_id);
+		bool addInstanceMatrix(size_t instance_id, Matrix4f &&obj_to_world, float time);
 		std::pair<const Instance *, ResultFlags> getInstance(size_t instance_id) const;
 		bool updateObjects();
 		std::tuple<Object *, size_t, ResultFlags> getObject(const std::string &name) const;
@@ -96,7 +96,6 @@ class Scene final
 		void setAntialiasing(AaNoiseParams &&aa_noise_params) { aa_noise_params_ = aa_noise_params; };
 		void setNumThreads(int threads);
 		void setNumThreadsPhotons(int threads_photons);
-		void setCurrentMaterial(size_t material_id);
 		void createDefaultMaterial();
 		void clearNonObjects();
 		void clearAll();
@@ -113,6 +112,9 @@ class Scene final
 		const SceneItems<Material> &getMaterials() const { return materials_; }
 		std::tuple<Camera *, size_t, ResultFlags> getCamera(const std::string &name) const;
 		std::pair<size_t, ResultFlags> getOutput(const std::string &name) const;
+		std::pair<Size2i, bool> getImageSize(size_t image_id) const;
+		std::pair<Rgba, bool> getImageColor(size_t image_id, const Point2i &point) const;
+		bool setImageColor(size_t image_id, const Point2i &point, const Rgba &col);
 		std::tuple<Image *, size_t, ResultFlags> getImage(const std::string &name) const;
 		const SceneItems<RenderView> &getRenderViews() const { return render_views_; }
 		const SceneItems<VolumeRegion> &getVolumeRegions() const { return volume_regions_; }
@@ -156,13 +158,13 @@ class Scene final
 		MaskParams getMaskParams() const { return mask_params_; }
 		EdgeToonParams getEdgeToonParams() const { return edge_toon_params_; }
 
-		void setRenderNotifyViewCallback(yafaray_RenderNotifyViewCallback_t callback, void *callback_data);
-		void setRenderNotifyLayerCallback(yafaray_RenderNotifyLayerCallback_t callback, void *callback_data);
-		void setRenderPutPixelCallback(yafaray_RenderPutPixelCallback_t callback, void *callback_data);
-		void setRenderHighlightPixelCallback(yafaray_RenderHighlightPixelCallback_t callback, void *callback_data);
-		void setRenderFlushAreaCallback(yafaray_RenderFlushAreaCallback_t callback, void *callback_data);
-		void setRenderFlushCallback(yafaray_RenderFlushCallback_t callback, void *callback_data);
-		void setRenderHighlightAreaCallback(yafaray_RenderHighlightAreaCallback_t callback, void *callback_data);
+		void setRenderNotifyViewCallback(yafaray_RenderNotifyViewCallback callback, void *callback_data);
+		void setRenderNotifyLayerCallback(yafaray_RenderNotifyLayerCallback callback, void *callback_data);
+		void setRenderPutPixelCallback(yafaray_RenderPutPixelCallback callback, void *callback_data);
+		void setRenderHighlightPixelCallback(yafaray_RenderHighlightPixelCallback callback, void *callback_data);
+		void setRenderFlushAreaCallback(yafaray_RenderFlushAreaCallback callback, void *callback_data);
+		void setRenderFlushCallback(yafaray_RenderFlushCallback callback, void *callback_data);
+		void setRenderHighlightAreaCallback(yafaray_RenderHighlightAreaCallback callback, void *callback_data);
 		const RenderCallbacks &getRenderCallbacks() const { return render_callbacks_; }
 
 	private:
@@ -172,7 +174,6 @@ class Scene final
 		void defineBasicLayers();
 		void defineDependentLayers(); //!< This function generates the basic/auxiliary layers. Must be called *after* defining all render layers with the defineLayer function.
 
-		size_t current_material_ = 0;
 		std::unique_ptr<Bound<float>> scene_bound_; //!< bounding box of all (finite) scene geometry
 		int nthreads_ = 1;
 		int nthreads_photons_ = 1;
@@ -183,7 +184,6 @@ class Scene final
 		int object_index_highest_ = 1; //!< Highest object index used for the Normalized Object Index pass.
 		int material_index_highest_ = 1; //!< Highest material index used for the Normalized Object Index pass.
 		size_t material_id_default_ = 0;
-		size_t current_object_{0};
 		std::string scene_accelerator_;
 		std::unique_ptr<const Accelerator> accelerator_;
 		RenderControl render_control_;

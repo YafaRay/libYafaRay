@@ -27,7 +27,7 @@
 
 namespace yafaray {
 
-ExportXml::ExportXml(const char *fname, const ::yafaray_LoggerCallback_t logger_callback, void *callback_data, ::yafaray_DisplayConsole_t logger_display_console) : Interface(logger_callback, callback_data, logger_display_console), file_name_(std::string(fname))
+ExportXml::ExportXml(const char *fname, const ::yafaray_LoggerCallback logger_callback, void *callback_data, ::yafaray_DisplayConsole logger_display_console) : Interface(logger_callback, callback_data, logger_display_console), file_name_(std::string(fname))
 {
 	file_.open(file_name_.c_str());
 	if(!file_.is_open())
@@ -71,13 +71,13 @@ void ExportXml::defineLayer() noexcept
 	file_ << "</layer>\n";
 }
 
-bool ExportXml::endObject() noexcept
+bool ExportXml::initObject(size_t object_id, size_t material_id) noexcept
 {
 	file_ << "</object>\n";
 	return true;
 }
 
-int ExportXml::addVertex(Point3f &&vertex, int time_step) noexcept
+int ExportXml::addVertex(size_t object_id, Point3f &&vertex, unsigned char time_step) noexcept
 {
 	file_ << "\t<p x=\"" << vertex[Axis::X] << "\" y=\"" << vertex[Axis::Y] << "\" z=\"" << vertex[Axis::Z];
 	if(time_step > 0) file_ << "\" t=\"" << time_step;
@@ -85,7 +85,7 @@ int ExportXml::addVertex(Point3f &&vertex, int time_step) noexcept
 	return 0;
 }
 
-int ExportXml::addVertex(Point3f &&vertex, Point3f &&orco, int time_step) noexcept
+int ExportXml::addVertex(size_t object_id, Point3f &&vertex, Point3f &&orco, unsigned char time_step) noexcept
 {
 	file_ << "\t<p x=\"" << vertex[Axis::X] << "\" y=\"" << vertex[Axis::Y] << "\" z=\"" << vertex[Axis::Z]
 			  << "\" ox=\"" << orco[Axis::X] << "\" oy=\"" << orco[Axis::Y] << "\" oz=\"" << orco[Axis::Z];
@@ -94,23 +94,14 @@ int ExportXml::addVertex(Point3f &&vertex, Point3f &&orco, int time_step) noexce
 	return 0;
 }
 
-void ExportXml::addVertexNormal(Vec3f &&normal, int time_step) noexcept
+void ExportXml::addVertexNormal(size_t object_id, Vec3f &&normal, unsigned char time_step) noexcept
 {
 	file_ << "\t<n x=\"" << normal[Axis::X] << "\" y=\"" << normal[Axis::Y] << "\" z=\"" << normal[Axis::Z];
 	if(time_step > 0) file_ << "\" t=\"" << time_step;
 	file_ << "\"/>\n";
 }
 
-void ExportXml::setCurrentMaterial(std::string &&name) noexcept
-{
-	if(name != current_material_) //need to set current material
-	{
-		file_ << "\t<set_material sval=\"" << name << "\"/>\n";
-		current_material_ = std::move(name);
-	}
-}
-
-bool ExportXml::addFace(const FaceIndices<int> &face_indices) noexcept
+bool ExportXml::addFace(size_t object_id, const FaceIndices<int> &face_indices, size_t material_id) noexcept
 {
 	file_ << "\t<f";
 	const int num_vertices{face_indices.numVertices()};
@@ -131,15 +122,15 @@ bool ExportXml::addFace(const FaceIndices<int> &face_indices) noexcept
 	return true;
 }
 
-int ExportXml::addUv(Uv<float> &&uv) noexcept
+int ExportXml::addUv(size_t object_id, Uv<float> &&uv) noexcept
 {
 	file_ << "\t<uv u=\"" << uv.u_ << "\" v=\"" << uv.v_ << "\"/>\n";
 	return n_uvs_++;
 }
 
-bool ExportXml::smoothVerticesNormals(std::string &&name, double angle) noexcept
+bool ExportXml::smoothVerticesNormals(size_t object_id, double angle) noexcept
 {
-	file_ << "<smooth object_name=\"" << name << "\" angle=\"" << angle << "\"/>\n";
+	file_ << "<smooth object_id=\"" << object_id << "\" angle=\"" << angle << "\"/>\n";
 	return true;
 }
 
@@ -203,25 +194,25 @@ void ExportXml::writeParam(const std::string &name, const Parameter &param, std:
 	}
 }
 
-int ExportXml::createInstance() noexcept
+size_t ExportXml::createInstance() noexcept
 {
 	file_ << "\n<createInstance></createInstance>\n";
 	return current_instance_id_++;
 }
 
-bool ExportXml::addInstanceObject(int instance_id, std::string &&base_object_name) noexcept
+bool ExportXml::addInstanceObject(size_t instance_id, size_t base_object_id) noexcept
 {
-	file_ << "\n<addInstanceObject instance_id=\"" << instance_id << "\" base_object_name=\"" << base_object_name << "\"></addInstanceObject>\n";
+	file_ << "\n<addInstanceObject instance_id=\"" << instance_id << "\" base_object_id=\"" << base_object_id << "\"></addInstanceObject>\n";
 	return true;
 }
 
-bool ExportXml::addInstanceOfInstance(int instance_id, size_t base_instance_id) noexcept
+bool ExportXml::addInstanceOfInstance(size_t instance_id, size_t base_instance_id) noexcept
 {
 	file_ << "\n<addInstanceOfInstance instance_id=\"" << instance_id << "\" base_instance_id=\"" << base_instance_id << "\"></addInstanceOfInstance>\n";
 	return true;
 }
 
-bool ExportXml::addInstanceMatrix(int instance_id, Matrix4f &&obj_to_world, float time) noexcept
+bool ExportXml::addInstanceMatrix(size_t instance_id, Matrix4f &&obj_to_world, float time) noexcept
 {
 	file_ << "\n<addInstanceMatrix instance_id=\"" << instance_id << "\" time=\"" << time << "\">\n\t";
 	writeMatrix("transform", obj_to_world, file_);

@@ -82,13 +82,6 @@ void Scene::createDefaultMaterial()
 	//Note: keep the std::string or the parameter will be created incorrectly as a bool
 	param_map["type"] = std::string("shinydiffusemat");
 	material_id_default_ = createMaterial("YafaRay_Default_Material", std::move(param_map), std::move(nodes_params)).first;
-	setCurrentMaterial(material_id_default_);
-}
-
-void Scene::setCurrentMaterial(size_t material_id)
-{
-	if(materials_.getById(material_id).second.isOk()) current_material_ = material_id;
-	else current_material_ = material_id_default_;
 }
 
 void Scene::setNumThreads(int threads)
@@ -247,7 +240,9 @@ void Scene::clearLayers()
 
 std::pair<size_t, ResultFlags> Scene::getMaterial(const std::string &name) const
 {
-	return materials_.findIdFromName(name);
+	const auto [material_id, material_result]{materials_.findIdFromName(name)};
+	if(material_result.notOk()) return {material_id_default_, material_result};
+	else return {material_id, material_result};
 }
 
 std::tuple<Camera *, size_t, ResultFlags> Scene::getCamera(const std::string &name) const
@@ -299,7 +294,7 @@ std::pair<size_t, ParamResult> Scene::createLight(std::string &&name, ParamMap &
 std::pair<size_t, ParamResult> Scene::createMaterial(std::string &&name, ParamMap &&params, std::list<ParamMap> &&nodes_params)
 {
 	auto [material, param_result]{Material::factory(logger_, *this, name, params, nodes_params)};
-	if(param_result.hasError()) return {0, ParamResult{YAFARAY_RESULT_ERROR_WHILE_CREATING}};
+	if(param_result.hasError()) return {material_id_default_, ParamResult{YAFARAY_RESULT_ERROR_WHILE_CREATING}};
 	if(logger_.isVerbose()) logInfoVerboseSuccess(logger_, Material::getClassName(), name, material->type().print());
 	auto [material_id, result_flags]{materials_.add(name, std::move(material))};
 	if(result_flags == YAFARAY_RESULT_WARNING_OVERWRITTEN) logger_.logDebug("Scene: ", Material::getClassName(), " \"", name, "\" already exists, replacing.");
@@ -663,86 +658,64 @@ void Scene::setEdgeToonParams(const ParamMap &params)
 	edge_toon_params_ = edge_params;
 }
 
-void Scene::setRenderNotifyViewCallback(yafaray_RenderNotifyViewCallback_t callback, void *callback_data)
+void Scene::setRenderNotifyViewCallback(yafaray_RenderNotifyViewCallback callback, void *callback_data)
 {
 	render_callbacks_.notify_view_ = callback;
 	render_callbacks_.notify_view_data_ = callback_data;
 }
 
-void Scene::setRenderNotifyLayerCallback(yafaray_RenderNotifyLayerCallback_t callback, void *callback_data)
+void Scene::setRenderNotifyLayerCallback(yafaray_RenderNotifyLayerCallback callback, void *callback_data)
 {
 	render_callbacks_.notify_layer_ = callback;
 	render_callbacks_.notify_layer_data_ = callback_data;
 }
 
-void Scene::setRenderPutPixelCallback(yafaray_RenderPutPixelCallback_t callback, void *callback_data)
+void Scene::setRenderPutPixelCallback(yafaray_RenderPutPixelCallback callback, void *callback_data)
 {
 	render_callbacks_.put_pixel_ = callback;
 	render_callbacks_.put_pixel_data_ = callback_data;
 }
 
-void Scene::setRenderHighlightPixelCallback(yafaray_RenderHighlightPixelCallback_t callback, void *callback_data)
+void Scene::setRenderHighlightPixelCallback(yafaray_RenderHighlightPixelCallback callback, void *callback_data)
 {
 	render_callbacks_.highlight_pixel_ = callback;
 	render_callbacks_.highlight_pixel_data_ = callback_data;
 }
 
-void Scene::setRenderFlushAreaCallback(yafaray_RenderFlushAreaCallback_t callback, void *callback_data)
+void Scene::setRenderFlushAreaCallback(yafaray_RenderFlushAreaCallback callback, void *callback_data)
 {
 	render_callbacks_.flush_area_ = callback;
 	render_callbacks_.flush_area_data_ = callback_data;
 }
 
-void Scene::setRenderFlushCallback(yafaray_RenderFlushCallback_t callback, void *callback_data)
+void Scene::setRenderFlushCallback(yafaray_RenderFlushCallback callback, void *callback_data)
 {
 	render_callbacks_.flush_ = callback;
 	render_callbacks_.flush_data_ = callback_data;
 }
 
-void Scene::setRenderHighlightAreaCallback(yafaray_RenderHighlightAreaCallback_t callback, void *callback_data)
+void Scene::setRenderHighlightAreaCallback(yafaray_RenderHighlightAreaCallback callback, void *callback_data)
 {
 	render_callbacks_.highlight_area_ = callback;
 	render_callbacks_.highlight_area_data_ = callback_data;
 }
 
-bool Scene::endObject()
+bool Scene::initObject(size_t object_id, size_t material_id)
 {
-	if(logger_.isDebug()) logger_.logDebug("Scene::endObject");
-	auto[object, object_result]{objects_.getById(current_object_)};
-	const bool result{object->calculateObject(current_material_)};
+	if(logger_.isDebug()) logger_.logDebug("Scene::initObject");
+	auto[object, object_result]{objects_.getById(object_id)};
+	const bool result{object->calculateObject(material_id)};
 	return result;
 }
 
-bool Scene::smoothVerticesNormals(std::string &&name, float angle)
+bool Scene::smoothVerticesNormals(size_t object_id, float angle)
 {
-	/*if(name.empty())
+	auto [object, object_result]{objects_.getById(object_id)};
+	if(object_result == YAFARAY_RESULT_ERROR_NOT_FOUND)
 	{
-		logger_.logWarning("Scene::smoothVerticesNormals: object name not specified, skipping...");
+		logger_.logWarning("Scene::smoothVerticesNormals: object id '", object_id, "' not found, skipping...");
 		return false;
-	}*/
-	//if(creation_state_.stack_.front() != CreationState::Geometry) return false;
-	Object *object;
-	if(name.empty())
-	{
-		auto [obj, obj_result]{objects_.getById(current_object_)};
-		if(obj_result == YAFARAY_RESULT_ERROR_NOT_FOUND)
-		{
-			logger_.logWarning("Scene::smoothVerticesNormals: current object id '", current_object_, "' not found, skipping...");
-			return false;
-		}
-		object = obj;
 	}
-	else
-	{
-		auto [obj, obj_id, obj_result]{objects_.getByName(name)};
-		if(obj_result == YAFARAY_RESULT_ERROR_NOT_FOUND)
-		{
-			logger_.logWarning("Scene::smoothVerticesNormals: object name '", name, "' not found, skipping...");
-			return false;
-		}
-		object = obj;
-	}
-
 	if(object->hasVerticesNormals(0) && object->numVerticesNormals(0) == object->numVertices(0))
 	{
 		object->setSmooth(true);
@@ -751,37 +724,37 @@ bool Scene::smoothVerticesNormals(std::string &&name, float angle)
 	else return object->smoothVerticesNormals(logger_, angle);
 }
 
-int Scene::addVertex(Point3f &&p, int time_step)
+int Scene::addVertex(size_t object_id, Point3f &&p, unsigned char time_step)
 {
-	auto[object, object_result]{objects_.getById(current_object_)};
+	auto[object, object_result]{objects_.getById(object_id)};
 	object->addPoint(std::move(p), time_step);
 	return object->lastVertexId(time_step);
 }
 
-int Scene::addVertex(Point3f &&p, Point3f &&orco, int time_step)
+int Scene::addVertex(size_t object_id, Point3f &&p, Point3f &&orco, unsigned char time_step)
 {
-	auto[object, object_result]{objects_.getById(current_object_)};
+	auto[object, object_result]{objects_.getById(object_id)};
 	object->addPoint(std::move(p), time_step);
 	object->addOrcoPoint(std::move(orco), time_step);
 	return object->lastVertexId(time_step);
 }
 
-void Scene::addVertexNormal(Vec3f &&n, int time_step)
+void Scene::addVertexNormal(size_t object_id, Vec3f &&n, unsigned char time_step)
 {
-	auto[object, object_result]{objects_.getById(current_object_)};
+	auto[object, object_result]{objects_.getById(object_id)};
 	object->addVertexNormal(std::move(n), time_step);
 }
 
-bool Scene::addFace(const FaceIndices<int> &face_indices)
+bool Scene::addFace(size_t object_id, const FaceIndices<int> &face_indices, size_t material_id)
 {
-	auto[object, object_result]{objects_.getById(current_object_)};
-	object->addFace(face_indices, current_material_);
+	auto[object, object_result]{objects_.getById(object_id)};
+	object->addFace(face_indices, material_id);
 	return true;
 }
 
-int Scene::addUv(Uv<float> &&uv)
+int Scene::addUv(size_t object_id, Uv<float> &&uv)
 {
-	auto[object, object_result]{objects_.getById(current_object_)};
+	auto[object, object_result]{objects_.getById(object_id)};
 	return object->addUvValue(std::move(uv));
 }
 
@@ -800,16 +773,16 @@ std::pair<Object *, ResultFlags> Scene::getObject(size_t object_id) const
 	return objects_.getById(object_id);
 }
 
-int Scene::createInstance()
+size_t Scene::createInstance()
 {
 	instances_.emplace_back(std::make_unique<Instance>());
-	return static_cast<int>(instances_.size()) - 1;
+	return instances_.size() - 1;
 }
 
-bool Scene::addInstanceObject(int instance_id, std::string &&object_name)
+bool Scene::addInstanceObject(size_t instance_id, size_t object_id)
 {
 	if(instance_id >= instances_.size()) return false;
-	const auto [object, object_id, object_result]{objects_.getByName(object_name)};
+	const auto [object, object_result]{objects_.getById(object_id)};
 	if(!object || object_result == YAFARAY_RESULT_ERROR_NOT_FOUND) return false;
 	else
 	{
@@ -818,14 +791,14 @@ bool Scene::addInstanceObject(int instance_id, std::string &&object_name)
 	}
 }
 
-bool Scene::addInstanceOfInstance(int instance_id, size_t base_instance_id)
+bool Scene::addInstanceOfInstance(size_t instance_id, size_t base_instance_id)
 {
 	if(instance_id >= instances_.size() || base_instance_id >= instances_.size()) return false;
 	instances_[instance_id]->addInstance(base_instance_id);
 	return true;
 }
 
-bool Scene::addInstanceMatrix(int instance_id, Matrix4f &&obj_to_world, float time)
+bool Scene::addInstanceMatrix(size_t instance_id, Matrix4f &&obj_to_world, float time)
 {
 	if(instance_id >= instances_.size()) return false;
 	instances_[instance_id]->addObjToWorldMatrix(std::move(obj_to_world), time);
@@ -898,6 +871,30 @@ bool Scene::disableLight(const std::string &name)
 {
 	const auto result{lights_.disable(name)};
 	return result.isOk();
+}
+
+std::pair<Rgba, bool> Scene::getImageColor(size_t image_id, const Point2i &point) const
+{
+	const auto [image, image_result]{images_.getById(image_id)};
+	if(image_result.notOk()) return {};
+	if(point[Axis::X] < 0 || point[Axis::X] >= image->getWidth() || point[Axis::Y] < 0 || point[Axis::Y] >= image->getHeight()) return {};
+	return {image->getColor(point), true};
+}
+
+bool Scene::setImageColor(size_t image_id, const Point2i &point, const Rgba &col)
+{
+	auto [image, image_result]{images_.getById(image_id)};
+	if(image_result.notOk()) return {};
+	if(point[Axis::X] < 0 || point[Axis::X] >= image->getWidth() || point[Axis::Y] < 0 || point[Axis::Y] >= image->getHeight()) return {};
+	image->setColor(point, col);
+	return true;
+}
+
+std::pair<Size2i, bool> Scene::getImageSize(size_t image_id) const
+{
+	auto [image, image_result]{images_.getById(image_id)};
+	if(image_result.notOk()) return {};
+	return {image->getSize(), true};
 }
 
 } //namespace yafaray

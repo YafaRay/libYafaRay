@@ -20,6 +20,7 @@
 #define LIBYAFARAY_YAFARAY_C_API_H
 
 #include "yafaray_c_api_export.h"
+#include <stddef.h>
 
 #define YAFARAY_C_API_VERSION_MAJOR 4
 
@@ -28,14 +29,13 @@ extern "C" {
 #endif
 
 	/* Opaque structs/objects pointers */
-	typedef struct yafaray_Interface yafaray_Interface_t;
-	typedef struct yafaray_Image yafaray_Image_t;
+	typedef struct yafaray_Interface yafaray_Interface;
 
 	/* Basic enums */
-	typedef enum { YAFARAY_LOG_LEVEL_MUTE = 0, YAFARAY_LOG_LEVEL_ERROR, YAFARAY_LOG_LEVEL_WARNING, YAFARAY_LOG_LEVEL_PARAMS, YAFARAY_LOG_LEVEL_INFO, YAFARAY_LOG_LEVEL_VERBOSE, YAFARAY_LOG_LEVEL_DEBUG } yafaray_LogLevel_t;
-	typedef enum { YAFARAY_DISPLAY_CONSOLE_HIDDEN, YAFARAY_DISPLAY_CONSOLE_NORMAL } yafaray_DisplayConsole_t;
-	typedef enum { YAFARAY_INTERFACE_FOR_RENDERING, YAFARAY_INTERFACE_EXPORT_XML, YAFARAY_INTERFACE_EXPORT_C, YAFARAY_INTERFACE_EXPORT_PYTHON } yafaray_Interface_Type_t;
-	typedef enum { YAFARAY_BOOL_FALSE = 0, YAFARAY_BOOL_TRUE = 1 } yafaray_bool_t;
+	typedef enum { YAFARAY_LOG_LEVEL_MUTE = 0, YAFARAY_LOG_LEVEL_ERROR, YAFARAY_LOG_LEVEL_WARNING, YAFARAY_LOG_LEVEL_PARAMS, YAFARAY_LOG_LEVEL_INFO, YAFARAY_LOG_LEVEL_VERBOSE, YAFARAY_LOG_LEVEL_DEBUG } yafaray_LogLevel;
+	typedef enum { YAFARAY_DISPLAY_CONSOLE_HIDDEN, YAFARAY_DISPLAY_CONSOLE_NORMAL } yafaray_DisplayConsole;
+	typedef enum { YAFARAY_INTERFACE_FOR_RENDERING, YAFARAY_INTERFACE_EXPORT_XML, YAFARAY_INTERFACE_EXPORT_C, YAFARAY_INTERFACE_EXPORT_PYTHON } yafaray_InterfaceType;
+	typedef enum { YAFARAY_BOOL_FALSE = 0, YAFARAY_BOOL_TRUE = 1 } yafaray_Bool;
 	typedef enum
 	{
 		YAFARAY_RESULT_OK = 0,
@@ -49,106 +49,108 @@ extern "C" {
 		YAFARAY_RESULT_ERROR_NOT_FOUND = 1 << 7,
 		YAFARAY_RESULT_WARNING_OVERWRITTEN = 1 << 8,
 		YAFARAY_RESULT_ERROR_DUPLICATED_NAME = 1 << 9,
-	} yafaray_result_flags_t;
+	} yafaray_ResultFlags;
 
 	/* Callback definitions for the C API - FIXME: Should we care about the function call convention being the same for libYafaRay and its client(s)? */
-	typedef void (*yafaray_RenderNotifyViewCallback_t)(const char *view_name, void *callback_data);
-	typedef void (*yafaray_RenderNotifyLayerCallback_t)(const char *internal_layer_name, const char *exported_layer_name, int width, int height, int exported_channels, void *callback_data);
-	typedef void (*yafaray_RenderPutPixelCallback_t)(const char *view_name, const char *layer_name, int x, int y, float r, float g, float b, float a, void *callback_data);
-	typedef void (*yafaray_RenderFlushAreaCallback_t)(const char *view_name, int area_id, int x_0, int y_0, int x_1, int y_1, void *callback_data);
-	typedef void (*yafaray_RenderFlushCallback_t)(const char *view_name, void *callback_data);
-	typedef void (*yafaray_RenderHighlightAreaCallback_t)(const char *view_name, int area_id, int x_0, int y_0, int x_1, int y_1, void *callback_data);
-	typedef void (*yafaray_RenderHighlightPixelCallback_t)(const char *view_name, int x, int y, float r, float g, float b, float a, void *callback_data);
-	typedef void (*yafaray_ProgressBarCallback_t)(int steps_total, int steps_done, const char *tag, void *callback_data);
-	typedef void (*yafaray_LoggerCallback_t)(yafaray_LogLevel_t log_level, long datetime, const char *time_of_day, const char *description, void *callback_data);
+	typedef void (*yafaray_RenderNotifyViewCallback)(const char *view_name, void *callback_data);
+	typedef void (*yafaray_RenderNotifyLayerCallback)(const char *internal_layer_name, const char *exported_layer_name, int width, int height, int exported_channels, void *callback_data);
+	typedef void (*yafaray_RenderPutPixelCallback)(const char *view_name, const char *layer_name, int x, int y, float r, float g, float b, float a, void *callback_data);
+	typedef void (*yafaray_RenderFlushAreaCallback)(const char *view_name, int area_id, int x_0, int y_0, int x_1, int y_1, void *callback_data);
+	typedef void (*yafaray_RenderFlushCallback)(const char *view_name, void *callback_data);
+	typedef void (*yafaray_RenderHighlightAreaCallback)(const char *view_name, int area_id, int x_0, int y_0, int x_1, int y_1, void *callback_data);
+	typedef void (*yafaray_RenderHighlightPixelCallback)(const char *view_name, int x, int y, float r, float g, float b, float a, void *callback_data);
+	typedef void (*yafaray_ProgressBarCallback)(int steps_total, int steps_done, const char *tag, void *callback_data);
+	typedef void (*yafaray_LoggerCallback)(yafaray_LogLevel log_level, size_t datetime, const char *time_of_day, const char *description, void *callback_data);
 
 	/* C API Public functions.
 	 * In the source code the YafaRay developers *MUST* ensure that each of them appears in the Exported Symbols Map file with the correct annotated version */
-	YAFARAY_C_API_EXPORT yafaray_Interface_t *yafaray_createInterface(yafaray_Interface_Type_t interface_type, const char *exported_file_path, yafaray_LoggerCallback_t logger_callback, void *callback_data, yafaray_DisplayConsole_t display_console);
-	YAFARAY_C_API_EXPORT void yafaray_destroyInterface(yafaray_Interface_t *interface);
-	YAFARAY_C_API_EXPORT void yafaray_setLoggingCallback(yafaray_Interface_t *interface, yafaray_LoggerCallback_t logger_callback, void *callback_data);
-	YAFARAY_C_API_EXPORT void yafaray_createScene(yafaray_Interface_t *interface);
-	YAFARAY_C_API_EXPORT int yafaray_getSceneFilmWidth(const yafaray_Interface_t *interface);
-	YAFARAY_C_API_EXPORT int yafaray_getSceneFilmHeight(const yafaray_Interface_t *interface);
-	YAFARAY_C_API_EXPORT yafaray_bool_t yafaray_endObject(yafaray_Interface_t *interface);
-	YAFARAY_C_API_EXPORT int yafaray_addVertex(yafaray_Interface_t *interface, float x, float y, float z);
-	YAFARAY_C_API_EXPORT int yafaray_addVertexTimeStep(yafaray_Interface_t *interface, float x, float y, float z, int time_step);
-	YAFARAY_C_API_EXPORT int yafaray_addVertexWithOrco(yafaray_Interface_t *interface, float x, float y, float z, float ox, float oy, float oz);
-	YAFARAY_C_API_EXPORT int yafaray_addVertexWithOrcoTimeStep(yafaray_Interface_t *interface, float x, float y, float z, float ox, float oy, float oz, int time_step);
-	YAFARAY_C_API_EXPORT void yafaray_addNormal(yafaray_Interface_t *interface, float nx, float ny, float nz);
-	YAFARAY_C_API_EXPORT void yafaray_addNormalTimeStep(yafaray_Interface_t *interface, float nx, float ny, float nz, int time_step);
-	YAFARAY_C_API_EXPORT yafaray_bool_t yafaray_addTriangle(yafaray_Interface_t *interface, int a, int b, int c);
-	YAFARAY_C_API_EXPORT yafaray_bool_t yafaray_addTriangleWithUv(yafaray_Interface_t *interface, int a, int b, int c, int uv_a, int uv_b, int uv_c);
-	YAFARAY_C_API_EXPORT yafaray_bool_t yafaray_addQuad(yafaray_Interface_t *interface, int a, int b, int c, int d);
-	YAFARAY_C_API_EXPORT yafaray_bool_t yafaray_addQuadWithUv(yafaray_Interface_t *interface, int a, int b, int c, int d, int uv_a, int uv_b, int uv_c, int uv_d);
-	YAFARAY_C_API_EXPORT int yafaray_addUv(yafaray_Interface_t *interface, float u, float v);
-	YAFARAY_C_API_EXPORT yafaray_bool_t yafaray_smoothMesh(yafaray_Interface_t *interface, const char *name, float angle);
-	YAFARAY_C_API_EXPORT int yafaray_createInstance(yafaray_Interface_t *interface);
-	YAFARAY_C_API_EXPORT yafaray_bool_t yafaray_addInstanceObject(yafaray_Interface_t *interface, int instance_id, const char *base_object_name);
-	YAFARAY_C_API_EXPORT yafaray_bool_t yafaray_addInstanceOfInstance(yafaray_Interface_t *interface, int instance_id, int base_instance_id);
-	YAFARAY_C_API_EXPORT yafaray_bool_t yafaray_addInstanceMatrix(yafaray_Interface_t *interface, int instance_id, float m_00, float m_01, float m_02, float m_03, float m_10, float m_11, float m_12, float m_13, float m_20, float m_21, float m_22, float m_23, float m_30, float m_31, float m_32, float m_33, float time);
-	YAFARAY_C_API_EXPORT yafaray_bool_t yafaray_addInstanceMatrixArray(yafaray_Interface_t *interface, int instance_id, const float *obj_to_world, float time);
-	YAFARAY_C_API_EXPORT void yafaray_paramsSetVector(yafaray_Interface_t *interface, const char *name, float x, float y, float z);
-	YAFARAY_C_API_EXPORT void yafaray_paramsSetString(yafaray_Interface_t *interface, const char *name, const char *s);
-	YAFARAY_C_API_EXPORT void yafaray_paramsSetBool(yafaray_Interface_t *interface, const char *name, yafaray_bool_t b);
-	YAFARAY_C_API_EXPORT void yafaray_paramsSetInt(yafaray_Interface_t *interface, const char *name, int i);
-	YAFARAY_C_API_EXPORT void yafaray_paramsSetFloat(yafaray_Interface_t *interface, const char *name, float f);
-	YAFARAY_C_API_EXPORT void yafaray_paramsSetColor(yafaray_Interface_t *interface, const char *name, float r, float g, float b, float a);
-	YAFARAY_C_API_EXPORT void yafaray_paramsSetMatrix(yafaray_Interface_t *interface, const char *name, float m_00, float m_01, float m_02, float m_03, float m_10, float m_11, float m_12, float m_13, float m_20, float m_21, float m_22, float m_23, float m_30, float m_31, float m_32, float m_33, yafaray_bool_t transpose);
-	YAFARAY_C_API_EXPORT void yafaray_paramsSetMatrixArray(yafaray_Interface_t *interface, const char *name, const float *matrix, yafaray_bool_t transpose);
-	YAFARAY_C_API_EXPORT void yafaray_paramsClearAll(yafaray_Interface_t *interface);
-	YAFARAY_C_API_EXPORT void yafaray_paramsPushList(yafaray_Interface_t *interface);
-	YAFARAY_C_API_EXPORT void yafaray_paramsEndList(yafaray_Interface_t *interface);
-	YAFARAY_C_API_EXPORT void yafaray_setCurrentMaterial(yafaray_Interface_t *interface, const char *name);
-	YAFARAY_C_API_EXPORT yafaray_bool_t yafaray_createObject(yafaray_Interface_t *interface, const char *name);
-	YAFARAY_C_API_EXPORT yafaray_bool_t yafaray_createLight(yafaray_Interface_t *interface, const char *name);
-	YAFARAY_C_API_EXPORT yafaray_bool_t yafaray_createTexture(yafaray_Interface_t *interface, const char *name);
-	YAFARAY_C_API_EXPORT yafaray_bool_t yafaray_createMaterial(yafaray_Interface_t *interface, const char *name);
-	YAFARAY_C_API_EXPORT yafaray_bool_t yafaray_createCamera(yafaray_Interface_t *interface, const char *name);
-	YAFARAY_C_API_EXPORT yafaray_bool_t yafaray_defineBackground(yafaray_Interface_t *interface);
-	YAFARAY_C_API_EXPORT yafaray_bool_t yafaray_defineSurfaceIntegrator(yafaray_Interface_t *interface);
-	YAFARAY_C_API_EXPORT yafaray_bool_t yafaray_defineVolumeIntegrator(yafaray_Interface_t *interface);
-	YAFARAY_C_API_EXPORT yafaray_bool_t yafaray_createVolumeRegion(yafaray_Interface_t *interface, const char *name);
-	YAFARAY_C_API_EXPORT yafaray_bool_t yafaray_createRenderView(yafaray_Interface_t *interface, const char *name);
-	YAFARAY_C_API_EXPORT yafaray_bool_t yafaray_createOutput(yafaray_Interface_t *interface, const char *name);
-	YAFARAY_C_API_EXPORT void yafaray_setRenderNotifyViewCallback(yafaray_Interface_t *interface, yafaray_RenderNotifyViewCallback_t callback, void *callback_data);
-	YAFARAY_C_API_EXPORT void yafaray_setRenderNotifyLayerCallback(yafaray_Interface_t *interface, yafaray_RenderNotifyLayerCallback_t callback, void *callback_data);
-	YAFARAY_C_API_EXPORT void yafaray_setRenderPutPixelCallback(yafaray_Interface_t *interface, yafaray_RenderPutPixelCallback_t callback, void *callback_data);
-	YAFARAY_C_API_EXPORT void yafaray_setRenderHighlightPixelCallback(yafaray_Interface_t *interface, yafaray_RenderHighlightPixelCallback_t callback, void *callback_data);
-	YAFARAY_C_API_EXPORT void yafaray_setRenderFlushAreaCallback(yafaray_Interface_t *interface, yafaray_RenderFlushAreaCallback_t callback, void *callback_data);
-	YAFARAY_C_API_EXPORT void yafaray_setRenderFlushCallback(yafaray_Interface_t *interface, yafaray_RenderFlushCallback_t callback, void *callback_data);
-	YAFARAY_C_API_EXPORT void yafaray_setRenderHighlightAreaCallback(yafaray_Interface_t *interface, yafaray_RenderHighlightAreaCallback_t callback, void *callback_data);
-	YAFARAY_C_API_EXPORT yafaray_bool_t yafaray_removeOutput(yafaray_Interface_t *interface, const char *name);
-	YAFARAY_C_API_EXPORT void yafaray_clearOutputs(yafaray_Interface_t *interface);
-	YAFARAY_C_API_EXPORT void yafaray_clearAll(yafaray_Interface_t *interface);
-	YAFARAY_C_API_EXPORT void yafaray_setupRender(yafaray_Interface_t *interface);
-	YAFARAY_C_API_EXPORT void yafaray_render(yafaray_Interface_t *interface, yafaray_ProgressBarCallback_t monitor_callback, void *callback_data, yafaray_DisplayConsole_t progress_bar_display_console);
-	YAFARAY_C_API_EXPORT void yafaray_defineLayer(yafaray_Interface_t *interface);
-	YAFARAY_C_API_EXPORT void yafaray_enablePrintDateTime(yafaray_Interface_t *interface, yafaray_bool_t value);
-	YAFARAY_C_API_EXPORT void yafaray_setConsoleVerbosityLevel(yafaray_Interface_t *interface, yafaray_LogLevel_t log_level);
-	YAFARAY_C_API_EXPORT void yafaray_setLogVerbosityLevel(yafaray_Interface_t *interface, yafaray_LogLevel_t log_level);
-	YAFARAY_C_API_EXPORT yafaray_LogLevel_t yafaray_logLevelFromString(const char *log_level_string);
-	YAFARAY_C_API_EXPORT void yafaray_printDebug(yafaray_Interface_t *interface, const char *msg);
-	YAFARAY_C_API_EXPORT void yafaray_printVerbose(yafaray_Interface_t *interface, const char *msg);
-	YAFARAY_C_API_EXPORT void yafaray_printInfo(yafaray_Interface_t *interface, const char *msg);
-	YAFARAY_C_API_EXPORT void yafaray_printParams(yafaray_Interface_t *interface, const char *msg);
-	YAFARAY_C_API_EXPORT void yafaray_printWarning(yafaray_Interface_t *interface, const char *msg);
-	YAFARAY_C_API_EXPORT void yafaray_printError(yafaray_Interface_t *interface, const char *msg);
-	YAFARAY_C_API_EXPORT void yafaray_cancelRendering(yafaray_Interface_t *interface);
-	YAFARAY_C_API_EXPORT void yafaray_setInputColorSpace(yafaray_Interface_t *interface, const char *color_space_string, float gamma_val);
-	YAFARAY_C_API_EXPORT yafaray_Image_t *yafaray_createImage(yafaray_Interface_t *interface, const char *name);
-	YAFARAY_C_API_EXPORT yafaray_bool_t yafaray_setImageColor(yafaray_Image_t *image, int x, int y, float red, float green, float blue, float alpha);
-	YAFARAY_C_API_EXPORT yafaray_bool_t yafaray_getImageColor(const yafaray_Image_t *image, int x, int y, float *red, float *green, float *blue, float *alpha);
-	YAFARAY_C_API_EXPORT int yafaray_getImageWidth(const yafaray_Image_t *image);
-	YAFARAY_C_API_EXPORT int yafaray_getImageHeight(const yafaray_Image_t *image);
-	YAFARAY_C_API_EXPORT void yafaray_setConsoleLogColorsEnabled(yafaray_Interface_t *interface, yafaray_bool_t colors_enabled);
+	YAFARAY_C_API_EXPORT yafaray_Interface *yafaray_createInterface(yafaray_InterfaceType interface_type, const char *exported_file_path, yafaray_LoggerCallback logger_callback, void *callback_data, yafaray_DisplayConsole display_console);
+	YAFARAY_C_API_EXPORT void yafaray_destroyInterface(yafaray_Interface *interface);
+	YAFARAY_C_API_EXPORT void yafaray_setLoggingCallback(yafaray_Interface *interface, yafaray_LoggerCallback logger_callback, void *callback_data);
+	YAFARAY_C_API_EXPORT void yafaray_createScene(yafaray_Interface *interface);
+	YAFARAY_C_API_EXPORT int yafaray_getSceneFilmWidth(const yafaray_Interface *interface);
+	YAFARAY_C_API_EXPORT int yafaray_getSceneFilmHeight(const yafaray_Interface *interface);
+	YAFARAY_C_API_EXPORT yafaray_Bool yafaray_initObject(yafaray_Interface *interface, size_t object_id, size_t material_id);
+	YAFARAY_C_API_EXPORT size_t yafaray_addVertex(yafaray_Interface *interface, size_t object_id, double x, double y, double z);
+	YAFARAY_C_API_EXPORT size_t yafaray_addVertexTimeStep(yafaray_Interface *interface, size_t object_id, double x, double y, double z, unsigned char time_step);
+	YAFARAY_C_API_EXPORT size_t yafaray_addVertexWithOrco(yafaray_Interface *interface, size_t object_id, double x, double y, double z, double ox, double oy, double oz);
+	YAFARAY_C_API_EXPORT size_t yafaray_addVertexWithOrcoTimeStep(yafaray_Interface *interface, size_t object_id, double x, double y, double z, double ox, double oy, double oz, unsigned char time_step);
+	YAFARAY_C_API_EXPORT void yafaray_addNormal(yafaray_Interface *interface, size_t object_id, double nx, double ny, double nz);
+	YAFARAY_C_API_EXPORT void yafaray_addNormalTimeStep(yafaray_Interface *interface, size_t object_id, double nx, double ny, double nz, unsigned char time_step);
+	YAFARAY_C_API_EXPORT yafaray_Bool yafaray_addTriangle(yafaray_Interface *interface, size_t object_id, size_t a, size_t b, size_t c, size_t material_id);
+	YAFARAY_C_API_EXPORT yafaray_Bool yafaray_addTriangleWithUv(yafaray_Interface *interface, size_t object_id, size_t a, size_t b, size_t c, size_t uv_a, size_t uv_b, size_t uv_c, size_t material_id);
+	YAFARAY_C_API_EXPORT yafaray_Bool yafaray_addQuad(yafaray_Interface *interface, size_t object_id, size_t a, size_t b, size_t c, size_t d, size_t material_id);
+	YAFARAY_C_API_EXPORT yafaray_Bool yafaray_addQuadWithUv(yafaray_Interface *interface, size_t object_id, size_t a, size_t b, size_t c, size_t d, size_t uv_a, size_t uv_b, size_t uv_c, size_t uv_d, size_t material_id);
+	YAFARAY_C_API_EXPORT size_t yafaray_addUv(yafaray_Interface *interface, size_t object_id, double u, double v);
+	YAFARAY_C_API_EXPORT yafaray_Bool yafaray_smoothObjectMesh(yafaray_Interface *interface, size_t object_id, double angle);
+	YAFARAY_C_API_EXPORT size_t yafaray_createInstance(yafaray_Interface *interface);
+	YAFARAY_C_API_EXPORT yafaray_Bool yafaray_addInstanceObject(yafaray_Interface *interface, size_t instance_id, size_t base_object_id);
+	YAFARAY_C_API_EXPORT yafaray_Bool yafaray_addInstanceOfInstance(yafaray_Interface *interface, size_t instance_id, size_t base_instance_id);
+	YAFARAY_C_API_EXPORT yafaray_Bool yafaray_addInstanceMatrix(yafaray_Interface *interface, size_t instance_id, double m_00, double m_01, double m_02, double m_03, double m_10, double m_11, double m_12, double m_13, double m_20, double m_21, double m_22, double m_23, double m_30, double m_31, double m_32, double m_33, float time);
+	YAFARAY_C_API_EXPORT yafaray_Bool yafaray_addInstanceMatrixArray(yafaray_Interface *interface, size_t instance_id, const double *obj_to_world, float time);
+	YAFARAY_C_API_EXPORT void yafaray_paramsSetVector(yafaray_Interface *interface, const char *name, double x, double y, double z);
+	YAFARAY_C_API_EXPORT void yafaray_paramsSetString(yafaray_Interface *interface, const char *name, const char *s);
+	YAFARAY_C_API_EXPORT void yafaray_paramsSetBool(yafaray_Interface *interface, const char *name, yafaray_Bool b);
+	YAFARAY_C_API_EXPORT void yafaray_paramsSetInt(yafaray_Interface *interface, const char *name, int i);
+	YAFARAY_C_API_EXPORT void yafaray_paramsSetFloat(yafaray_Interface *interface, const char *name, double f);
+	YAFARAY_C_API_EXPORT void yafaray_paramsSetColor(yafaray_Interface *interface, const char *name, double r, double g, double b, double a);
+	YAFARAY_C_API_EXPORT void yafaray_paramsSetMatrix(yafaray_Interface *interface, const char *name, double m_00, double m_01, double m_02, double m_03, double m_10, double m_11, double m_12, double m_13, double m_20, double m_21, double m_22, double m_23, double m_30, double m_31, double m_32, double m_33, yafaray_Bool transpose);
+	YAFARAY_C_API_EXPORT void yafaray_paramsSetMatrixArray(yafaray_Interface *interface, const char *name, const double *matrix, yafaray_Bool transpose);
+	YAFARAY_C_API_EXPORT void yafaray_paramsClearAll(yafaray_Interface *interface);
+	YAFARAY_C_API_EXPORT void yafaray_paramsPushList(yafaray_Interface *interface);
+	YAFARAY_C_API_EXPORT void yafaray_paramsEndList(yafaray_Interface *interface);
+	YAFARAY_C_API_EXPORT yafaray_ResultFlags yafaray_getObjectId(yafaray_Interface *interface, const char *name, size_t *id_obtained);
+	YAFARAY_C_API_EXPORT yafaray_ResultFlags yafaray_getMaterialId(yafaray_Interface *interface, const char *name, size_t *id_obtained);
+	YAFARAY_C_API_EXPORT yafaray_ResultFlags yafaray_createObject(yafaray_Interface *interface, const char *name, size_t *id_obtained);
+	YAFARAY_C_API_EXPORT yafaray_ResultFlags yafaray_createLight(yafaray_Interface *interface, const char *name);
+	YAFARAY_C_API_EXPORT yafaray_ResultFlags yafaray_createTexture(yafaray_Interface *interface, const char *name);
+	YAFARAY_C_API_EXPORT yafaray_ResultFlags yafaray_createMaterial(yafaray_Interface *interface, const char *name, size_t *id_obtained);
+	YAFARAY_C_API_EXPORT yafaray_ResultFlags yafaray_createCamera(yafaray_Interface *interface, const char *name);
+	YAFARAY_C_API_EXPORT yafaray_ResultFlags yafaray_defineBackground(yafaray_Interface *interface);
+	YAFARAY_C_API_EXPORT yafaray_ResultFlags yafaray_defineSurfaceIntegrator(yafaray_Interface *interface);
+	YAFARAY_C_API_EXPORT yafaray_ResultFlags yafaray_defineVolumeIntegrator(yafaray_Interface *interface);
+	YAFARAY_C_API_EXPORT yafaray_ResultFlags yafaray_createVolumeRegion(yafaray_Interface *interface, const char *name);
+	YAFARAY_C_API_EXPORT yafaray_ResultFlags yafaray_createRenderView(yafaray_Interface *interface, const char *name);
+	YAFARAY_C_API_EXPORT yafaray_ResultFlags yafaray_createOutput(yafaray_Interface *interface, const char *name);
+	YAFARAY_C_API_EXPORT void yafaray_setRenderNotifyViewCallback(yafaray_Interface *interface, yafaray_RenderNotifyViewCallback callback, void *callback_data);
+	YAFARAY_C_API_EXPORT void yafaray_setRenderNotifyLayerCallback(yafaray_Interface *interface, yafaray_RenderNotifyLayerCallback callback, void *callback_data);
+	YAFARAY_C_API_EXPORT void yafaray_setRenderPutPixelCallback(yafaray_Interface *interface, yafaray_RenderPutPixelCallback callback, void *callback_data);
+	YAFARAY_C_API_EXPORT void yafaray_setRenderHighlightPixelCallback(yafaray_Interface *interface, yafaray_RenderHighlightPixelCallback callback, void *callback_data);
+	YAFARAY_C_API_EXPORT void yafaray_setRenderFlushAreaCallback(yafaray_Interface *interface, yafaray_RenderFlushAreaCallback callback, void *callback_data);
+	YAFARAY_C_API_EXPORT void yafaray_setRenderFlushCallback(yafaray_Interface *interface, yafaray_RenderFlushCallback callback, void *callback_data);
+	YAFARAY_C_API_EXPORT void yafaray_setRenderHighlightAreaCallback(yafaray_Interface *interface, yafaray_RenderHighlightAreaCallback callback, void *callback_data);
+	YAFARAY_C_API_EXPORT yafaray_Bool yafaray_removeOutput(yafaray_Interface *interface, const char *name);
+	YAFARAY_C_API_EXPORT void yafaray_clearOutputs(yafaray_Interface *interface);
+	YAFARAY_C_API_EXPORT void yafaray_clearAll(yafaray_Interface *interface);
+	YAFARAY_C_API_EXPORT void yafaray_setupRender(yafaray_Interface *interface);
+	YAFARAY_C_API_EXPORT void yafaray_render(yafaray_Interface *interface, yafaray_ProgressBarCallback monitor_callback, void *callback_data, yafaray_DisplayConsole progress_bar_display_console);
+	YAFARAY_C_API_EXPORT void yafaray_defineLayer(yafaray_Interface *interface);
+	YAFARAY_C_API_EXPORT void yafaray_enablePrintDateTime(yafaray_Interface *interface, yafaray_Bool value);
+	YAFARAY_C_API_EXPORT void yafaray_setConsoleVerbosityLevel(yafaray_Interface *interface, yafaray_LogLevel log_level);
+	YAFARAY_C_API_EXPORT void yafaray_setLogVerbosityLevel(yafaray_Interface *interface, yafaray_LogLevel log_level);
+	YAFARAY_C_API_EXPORT yafaray_LogLevel yafaray_logLevelFromString(const char *log_level_string);
+	YAFARAY_C_API_EXPORT void yafaray_printDebug(yafaray_Interface *interface, const char *msg);
+	YAFARAY_C_API_EXPORT void yafaray_printVerbose(yafaray_Interface *interface, const char *msg);
+	YAFARAY_C_API_EXPORT void yafaray_printInfo(yafaray_Interface *interface, const char *msg);
+	YAFARAY_C_API_EXPORT void yafaray_printParams(yafaray_Interface *interface, const char *msg);
+	YAFARAY_C_API_EXPORT void yafaray_printWarning(yafaray_Interface *interface, const char *msg);
+	YAFARAY_C_API_EXPORT void yafaray_printError(yafaray_Interface *interface, const char *msg);
+	YAFARAY_C_API_EXPORT void yafaray_cancelRendering(yafaray_Interface *interface);
+	YAFARAY_C_API_EXPORT void yafaray_setInputColorSpace(yafaray_Interface *interface, const char *color_space_string, float gamma_val);
+	YAFARAY_C_API_EXPORT yafaray_ResultFlags yafaray_getImageId(yafaray_Interface *interface, const char *name, size_t *id_obtained);
+	YAFARAY_C_API_EXPORT yafaray_ResultFlags yafaray_createImage(yafaray_Interface *interface, const char *name, size_t *id_obtained);
+	YAFARAY_C_API_EXPORT yafaray_Bool yafaray_setImageColor(yafaray_Interface *interface, size_t image_id, int x, int y, float red, float green, float blue, float alpha);
+	YAFARAY_C_API_EXPORT yafaray_Bool yafaray_getImageColor(yafaray_Interface *interface, size_t image_id, int x, int y, float *red, float *green, float *blue, float *alpha);
+	YAFARAY_C_API_EXPORT int yafaray_getImageWidth(yafaray_Interface *interface, size_t image_id);
+	YAFARAY_C_API_EXPORT int yafaray_getImageHeight(yafaray_Interface *interface, size_t image_id);
+	YAFARAY_C_API_EXPORT void yafaray_setConsoleLogColorsEnabled(yafaray_Interface *interface, yafaray_Bool colors_enabled);
 	YAFARAY_C_API_EXPORT int yafaray_getVersionMajor();
 	YAFARAY_C_API_EXPORT int yafaray_getVersionMinor();
 	YAFARAY_C_API_EXPORT int yafaray_getVersionPatch();
 	/* The following functions return a text string where memory is allocated by libYafaRay itself. Do not free the char* directly with free, use "yafaray_deallocateCharPointer" to free them instead to ensure proper deallocation. */
 	YAFARAY_C_API_EXPORT char *yafaray_getVersionString();
-	YAFARAY_C_API_EXPORT char *yafaray_getLayersTable(const yafaray_Interface_t *interface);
-	YAFARAY_C_API_EXPORT char *yafaray_getViewsTable(const yafaray_Interface_t *interface);
+	YAFARAY_C_API_EXPORT char *yafaray_getLayersTable(const yafaray_Interface *interface);
+	YAFARAY_C_API_EXPORT char *yafaray_getViewsTable(const yafaray_Interface *interface);
 	YAFARAY_C_API_EXPORT void yafaray_deallocateCharPointer(char *string_pointer_to_deallocate);
 
 

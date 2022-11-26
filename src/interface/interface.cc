@@ -32,7 +32,7 @@
 
 namespace yafaray {
 
-Interface::Interface(const ::yafaray_LoggerCallback_t logger_callback, void *callback_data, ::yafaray_DisplayConsole_t logger_display_console)
+Interface::Interface(const ::yafaray_LoggerCallback logger_callback, void *callback_data, ::yafaray_DisplayConsole logger_display_console)
 {
 	logger_ = std::make_unique<Logger>(logger_callback, callback_data, logger_display_console);
 	params_ = std::make_unique<ParamMap>();
@@ -42,7 +42,7 @@ Interface::Interface(const ::yafaray_LoggerCallback_t logger_callback, void *cal
 #endif
 }
 
-void Interface::setLoggingCallback(const ::yafaray_LoggerCallback_t logger_callback, void *callback_data)
+void Interface::setLoggingCallback(const ::yafaray_LoggerCallback logger_callback, void *callback_data)
 {
 	logger_->setCallback(logger_callback, callback_data);
 }
@@ -74,45 +74,45 @@ void Interface::defineLayer() noexcept
 	scene_->defineLayer(std::move(*params_));
 }
 
-bool Interface::endObject() noexcept { return scene_->endObject(); }
+bool Interface::initObject(size_t object_id, size_t material_id) noexcept { return scene_->initObject(object_id, material_id); }
 
-int Interface::addVertex(Point3f &&vertex, int time_step) noexcept { return scene_->addVertex(std::move(vertex), time_step); }
+int Interface::addVertex(size_t object_id, Point3f &&vertex, unsigned char time_step) noexcept { return scene_->addVertex(object_id, std::move(vertex), time_step); }
 
-int Interface::addVertex(Point3f &&vertex, Point3f &&orco, int time_step) noexcept
+int Interface::addVertex(size_t object_id, Point3f &&vertex, Point3f &&orco, unsigned char time_step) noexcept
 {
-	return scene_->addVertex(std::move(vertex), std::move(orco), time_step);
+	return scene_->addVertex(object_id, std::move(vertex), std::move(orco), time_step);
 }
 
-void Interface::addVertexNormal(Vec3f &&normal, int time_step) noexcept
+void Interface::addVertexNormal(size_t object_id, Vec3f &&normal, unsigned char time_step) noexcept
 {
-	scene_->addVertexNormal(std::move(normal), time_step);
+	scene_->addVertexNormal(object_id, std::move(normal), time_step);
 }
 
-bool Interface::addFace(const FaceIndices<int> &face_indices) noexcept
+bool Interface::addFace(size_t object_id, const FaceIndices<int> &face_indices, size_t material_id) noexcept
 {
-	return scene_->addFace(face_indices);
+	return scene_->addFace(object_id, face_indices, material_id);
 }
 
-int Interface::addUv(Uv<float> &&uv) noexcept { return scene_->addUv(std::move(uv)); }
+int Interface::addUv(size_t object_id, Uv<float> &&uv) noexcept { return scene_->addUv(object_id, std::move(uv)); }
 
-bool Interface::smoothVerticesNormals(std::string &&name, double angle) noexcept { return scene_->smoothVerticesNormals(std::move(name), angle); }
+bool Interface::smoothVerticesNormals(size_t object_id, double angle) noexcept { return scene_->smoothVerticesNormals(object_id, angle); }
 
-int Interface::createInstance() noexcept
+size_t Interface::createInstance() noexcept
 {
 	return scene_->createInstance();
 }
 
-bool Interface::addInstanceObject(int instance_id, std::string &&base_object_name) noexcept
+bool Interface::addInstanceObject(size_t instance_id, size_t base_object_id) noexcept
 {
-	return scene_->addInstanceObject(instance_id, std::move(base_object_name));
+	return scene_->addInstanceObject(instance_id, base_object_id);
 }
 
-bool Interface::addInstanceOfInstance(int instance_id, size_t base_instance_id) noexcept
+bool Interface::addInstanceOfInstance(size_t instance_id, size_t base_instance_id) noexcept
 {
 	return scene_->addInstanceOfInstance(instance_id, base_instance_id);
 }
 
-bool Interface::addInstanceMatrix(int instance_id, Matrix4f &&obj_to_world, float time) noexcept
+bool Interface::addInstanceMatrix(size_t instance_id, Matrix4f &&obj_to_world, float time) noexcept
 {
 	return scene_->addInstanceMatrix(instance_id, std::move(obj_to_world), time);
 }
@@ -181,6 +181,32 @@ void Interface::paramsEndList() noexcept
 	cparams_ = params_.get();
 }
 
+std::pair<size_t, ResultFlags> Interface::getImageId(std::string &&name) noexcept
+{
+	if(scene_)
+	{
+		const auto [image, image_id, image_result]{scene_->getImage(name)};
+		return {image_id, image_result};
+	}
+	else return {0, YAFARAY_RESULT_ERROR_NOT_FOUND};
+}
+
+std::pair<size_t, ResultFlags> Interface::getObjectId(std::string &&name) noexcept
+{
+	if(scene_)
+	{
+		const auto [object, object_id, object_result]{scene_->getObject(name)};
+		return {object_id, object_result};
+	}
+	else return {0, YAFARAY_RESULT_ERROR_NOT_FOUND};
+}
+
+std::pair<size_t, ResultFlags> Interface::getMaterialId(std::string &&name) noexcept
+{
+	if(scene_) return scene_->getMaterial(name);
+	else return {0, YAFARAY_RESULT_ERROR_NOT_FOUND};
+}
+
 std::pair<size_t, ParamResult> Interface::createObject(std::string &&name) noexcept { return scene_->createObject(std::move(name), std::move(*params_)); }
 std::pair<size_t, ParamResult> Interface::createLight(std::string &&name) noexcept { return scene_->createLight(std::move(name), std::move(*params_)); }
 std::pair<size_t, ParamResult> Interface::createTexture(std::string &&name) noexcept { return scene_->createTexture(std::move(name), std::move(*params_)); }
@@ -194,37 +220,37 @@ std::pair<size_t, ParamResult> Interface::createRenderView(std::string &&name) n
 std::pair<size_t, ParamResult> Interface::createImage(std::string &&name) noexcept { return scene_->createImage(std::move(name), std::move(*params_)); }
 std::pair<size_t, ParamResult> Interface::createOutput(std::string &&name) noexcept { return scene_->createOutput(std::move(name), std::move(*params_)); }
 
-void Interface::setRenderNotifyViewCallback(yafaray_RenderNotifyViewCallback_t callback, void *callback_data) noexcept
+void Interface::setRenderNotifyViewCallback(yafaray_RenderNotifyViewCallback callback, void *callback_data) noexcept
 {
 	if(scene_) scene_->setRenderNotifyViewCallback(callback, callback_data);
 }
 
-void Interface::setRenderNotifyLayerCallback(yafaray_RenderNotifyLayerCallback_t callback, void *callback_data) noexcept
+void Interface::setRenderNotifyLayerCallback(yafaray_RenderNotifyLayerCallback callback, void *callback_data) noexcept
 {
 	if(scene_) scene_->setRenderNotifyLayerCallback(callback, callback_data);
 }
 
-void Interface::setRenderPutPixelCallback(yafaray_RenderPutPixelCallback_t callback, void *callback_data) noexcept
+void Interface::setRenderPutPixelCallback(yafaray_RenderPutPixelCallback callback, void *callback_data) noexcept
 {
 	if(scene_) scene_->setRenderPutPixelCallback(callback, callback_data);
 }
 
-void Interface::setRenderHighlightPixelCallback(yafaray_RenderHighlightPixelCallback_t callback, void *callback_data) noexcept
+void Interface::setRenderHighlightPixelCallback(yafaray_RenderHighlightPixelCallback callback, void *callback_data) noexcept
 {
 	if(scene_) scene_->setRenderHighlightPixelCallback(callback, callback_data);
 }
 
-void Interface::setRenderFlushAreaCallback(yafaray_RenderFlushAreaCallback_t callback, void *callback_data) noexcept
+void Interface::setRenderFlushAreaCallback(yafaray_RenderFlushAreaCallback callback, void *callback_data) noexcept
 {
 	if(scene_) scene_->setRenderFlushAreaCallback(callback, callback_data);
 }
 
-void Interface::setRenderFlushCallback(yafaray_RenderFlushCallback_t callback, void *callback_data) noexcept
+void Interface::setRenderFlushCallback(yafaray_RenderFlushCallback callback, void *callback_data) noexcept
 {
 	if(scene_) scene_->setRenderFlushCallback(callback, callback_data);
 }
 
-void Interface::setRenderHighlightAreaCallback(yafaray_RenderHighlightAreaCallback_t callback, void *callback_data) noexcept
+void Interface::setRenderHighlightAreaCallback(yafaray_RenderHighlightAreaCallback callback, void *callback_data) noexcept
 {
 	if(scene_) scene_->setRenderHighlightAreaCallback(callback, callback_data);
 }
@@ -280,16 +306,6 @@ void Interface::cancel() noexcept
 	logger_->logWarning("Interface: Render canceled by user.");
 }
 
-void Interface::setCurrentMaterial(size_t material_id) noexcept
-{
-	if(scene_) scene_->setCurrentMaterial(material_id);
-}
-
-void Interface::setCurrentMaterial(std::string &&name) noexcept
-{
-	if(scene_) scene_->setCurrentMaterial(scene_->getMaterial(std::string(name)).first);
-}
-
 void Interface::printDebug(const std::string &msg) const noexcept
 {
 	if(logger_->isDebug())logger_->logDebug(msg);
@@ -335,12 +351,12 @@ void Interface::enablePrintDateTime(bool value) noexcept
 	logger_->enablePrintDateTime(value);
 }
 
-void Interface::setConsoleVerbosityLevel(const ::yafaray_LogLevel_t &log_level) noexcept
+void Interface::setConsoleVerbosityLevel(const ::yafaray_LogLevel &log_level) noexcept
 {
 	logger_->setConsoleMasterVerbosity(log_level);
 }
 
-void Interface::setLogVerbosityLevel(const ::yafaray_LogLevel_t &log_level) noexcept
+void Interface::setLogVerbosityLevel(const ::yafaray_LogLevel &log_level) noexcept
 {
 	logger_->setLogMasterVerbosity(log_level);
 }
@@ -348,6 +364,20 @@ void Interface::setLogVerbosityLevel(const ::yafaray_LogLevel_t &log_level) noex
 void Interface::setConsoleLogColorsEnabled(bool console_log_colors_enabled) const noexcept
 {
 	logger_->setConsoleLogColorsEnabled(console_log_colors_enabled);
+}
+
+std::pair<Rgba, bool> Interface::getImageColor(size_t image_id, const Point2i &point) const
+{
+	return scene_->getImageColor(image_id, point);
+}
+
+bool Interface::setImageColor(size_t image_id, const Point2i &point, const Rgba &col)
+{
+	return scene_->setImageColor(image_id, point, col);
+}
+std::pair<Size2i, bool> Interface::getImageSize(size_t image_id) const
+{
+	return scene_->getImageSize(image_id);
 }
 
 } //namespace yafaray

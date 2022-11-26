@@ -8,7 +8,7 @@ LIBYAFARAY_4.0.0 {
         yafaray_createScene;
         yafaray_getSceneFilmWidth;
         yafaray_getSceneFilmHeight;
-        yafaray_endObject;
+        yafaray_initObject;
         yafaray_addVertex;
         yafaray_addVertexTimeStep;
         yafaray_addVertexWithOrco;
@@ -20,7 +20,7 @@ LIBYAFARAY_4.0.0 {
         yafaray_addQuad;
         yafaray_addQuadWithUv;
         yafaray_addUv;
-        yafaray_smoothMesh;
+        yafaray_smoothObjectMesh;
         yafaray_createInstance;
         yafaray_addInstanceObject;
         yafaray_addInstanceOfInstance;
@@ -37,7 +37,8 @@ LIBYAFARAY_4.0.0 {
         yafaray_paramsClearAll;
         yafaray_paramsPushList;
         yafaray_paramsEndList;
-        yafaray_setCurrentMaterial;
+        yafaray_getObjectId;
+        yafaray_getMaterialId;
         yafaray_createObject;
         yafaray_createLight;
         yafaray_createTexture;
@@ -74,6 +75,7 @@ LIBYAFARAY_4.0.0 {
         yafaray_printError;
         yafaray_cancelRendering;
         yafaray_setInputColorSpace;
+        yafaray_getImageId;
         yafaray_createImage;
         yafaray_setImageColor;
         yafaray_getImageColor;

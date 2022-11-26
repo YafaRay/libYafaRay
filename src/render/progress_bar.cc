@@ -66,7 +66,7 @@ void ProgressBar::updateCallback()
 	if(progress_bar_callback_) progress_bar_callback_(steps_total_, steps_done_, tag_.c_str(), callback_data_);
 }
 
-ConsoleProgressBar::ConsoleProgressBar(int cwidth, yafaray_ProgressBarCallback_t monitor_callback, void *callback_data): ProgressBar(monitor_callback, callback_data), width_(cwidth)
+ConsoleProgressBar::ConsoleProgressBar(int cwidth, yafaray_ProgressBarCallback monitor_callback, void *callback_data): ProgressBar(monitor_callback, callback_data), width_(cwidth)
 {
 	total_bar_len_ = width_ - 22;
 }

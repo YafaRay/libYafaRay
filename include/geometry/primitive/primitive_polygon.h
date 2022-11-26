@@ -54,10 +54,10 @@ class PrimitivePolygon final : public FacePrimitive
 		std::pair<Point<T, 3>, Vec<T, 3>> sample(const Uv<T> &uv, T time) const override;
 		std::pair<Point<T, 3>, Vec<T, 3>> sample(const Uv<T> &uv, T time, const SquareMatrix<T, 4> &obj_to_world) const override;
 		T getDistToNearestEdge(const Uv<T> &uv, const Uv<Vec<T, 3>> &dp_abs) const override { return ShapePolygon<T, N>::getDistToNearestEdge(uv, dp_abs); }
-		template <typename M=bool> std::array<Point<T, 3>, N> getVerticesAsArray(int time_step, const M &obj_to_world = {}) const;
+		template <typename M=bool> std::array<Point<T, 3>, N> getVerticesAsArray(unsigned char time_step, const M &obj_to_world = {}) const;
 		template <typename M=bool> std::array<Point<T, 3>, N> getVerticesAsArray(const std::array<T, 3> &bezier_factors, const M &obj_to_world = {}) const;
-		std::array<Point<T, 3>, N> getOrcoVertices(int time_step) const;
-		template <typename M=bool> std::array<Vec<T, 3>, N> getVerticesNormals(int time_step, const Vec<T, 3> &surface_normal_world, const M &obj_to_world = {}) const;
+		std::array<Point<T, 3>, N> getOrcoVertices(unsigned char time_step) const;
+		template <typename M=bool> std::array<Vec<T, 3>, N> getVerticesNormals(unsigned char time_step, const Vec<T, 3> &surface_normal_world, const M &obj_to_world = {}) const;
 		std::array<Uv<T>, N> getVerticesUvs() const;
 		template <typename M=bool> ShapePolygon<T, N> getShapeAtTime(T time, const M &obj_to_world = {}) const;
 		Vec<T, 3> face_normal_geometric_;
@@ -71,7 +71,7 @@ inline PrimitivePolygon<T, N, MotionBlur>::PrimitivePolygon(const FaceIndices<in
 
 template <typename T, size_t N, MotionBlurType MotionBlur>
 template <typename M>
-inline std::array<Point<T, 3>, N> PrimitivePolygon<T, N, MotionBlur>::getVerticesAsArray(int time_step, const M &obj_to_world) const
+inline std::array<Point<T, 3>, N> PrimitivePolygon<T, N, MotionBlur>::getVerticesAsArray(unsigned char time_step, const M &obj_to_world) const
 {
 	if constexpr(N == 3)
 	{
@@ -98,7 +98,7 @@ inline std::array<Point<T, 3>, N> PrimitivePolygon<T, N, MotionBlur>::getVertice
 }
 
 template <typename T, size_t N, MotionBlurType MotionBlur>
-inline std::array<Point<T, 3>, N> PrimitivePolygon<T, N, MotionBlur>::getOrcoVertices(int time_step) const
+inline std::array<Point<T, 3>, N> PrimitivePolygon<T, N, MotionBlur>::getOrcoVertices(unsigned char time_step) const
 {
 	if constexpr(N == 3)
 	{
@@ -112,7 +112,7 @@ inline std::array<Point<T, 3>, N> PrimitivePolygon<T, N, MotionBlur>::getOrcoVer
 
 template <typename T, size_t N, MotionBlurType MotionBlur>
 template <typename M>
-inline std::array<Vec<T, 3>, N> PrimitivePolygon<T, N, MotionBlur>::getVerticesNormals(int time_step, const Vec<T, 3> &surface_normal_world, const M &obj_to_world) const
+inline std::array<Vec<T, 3>, N> PrimitivePolygon<T, N, MotionBlur>::getVerticesNormals(unsigned char time_step, const Vec<T, 3> &surface_normal_world, const M &obj_to_world) const
 {
 	if constexpr(N == 3)
 	{

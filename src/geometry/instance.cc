@@ -24,12 +24,12 @@
 
 namespace yafaray {
 
-void Instance::addObject(int object_id)
+void Instance::addObject(size_t object_id)
 {
 	base_ids_.emplace_back(BaseId{object_id, BaseId::Type::Object});
 }
 
-void Instance::addInstance(int instance_id)
+void Instance::addInstance(size_t instance_id)
 {
 	base_ids_.emplace_back(BaseId{instance_id, BaseId::Type::Instance});
 }

@@ -66,15 +66,15 @@ class Object
 		virtual bool hasMotionBlur() const { return false; }
 
 		/* Mesh-related interface functions below, only for Mesh objects */
-		virtual int lastVertexId(int time_step) const { return -1; }
-		virtual void addPoint(Point3f &&p, int time_step) { }
-		virtual void addOrcoPoint(Point3f &&p, int time_step) { }
-		virtual void addVertexNormal(Vec3f &&n, int time_step) { }
+		virtual int lastVertexId(unsigned char time_step) const { return -1; }
+		virtual void addPoint(Point3f &&p, unsigned char time_step) { }
+		virtual void addOrcoPoint(Point3f &&p, unsigned char time_step) { }
+		virtual void addVertexNormal(Vec3f &&n, unsigned char time_step) { }
 		virtual void addFace(const FaceIndices<int> &face_indices, size_t material_id) { }
 		virtual int addUvValue(Uv<float> &&uv) { return -1; }
-		virtual bool hasVerticesNormals(int time_step) const { return false; }
-		virtual int numVerticesNormals(int time_step) const { return 0; }
-		virtual int numVertices(int time_step) const { return 0; }
+		virtual bool hasVerticesNormals(unsigned char time_step) const { return false; }
+		virtual int numVerticesNormals(unsigned char time_step) const { return 0; }
+		virtual int numVertices(unsigned char time_step) const { return 0; }
 		virtual void setSmooth(bool smooth) { }
 		virtual bool smoothVerticesNormals(Logger &logger, float angle) { return false; }
 

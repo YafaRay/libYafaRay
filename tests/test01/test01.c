@@ -22,11 +22,12 @@
  */
 
 #include "yafaray_c_api.h"
-#define NULL 0
 
 int main()
 {
-	yafaray_Interface_t *yi = yafaray_createInterface(YAFARAY_INTERFACE_FOR_RENDERING, NULL, NULL, NULL, YAFARAY_DISPLAY_CONSOLE_NORMAL);
+	size_t material_id = 0;
+	size_t object_id = 0;
+	yafaray_Interface *yi = yafaray_createInterface(YAFARAY_INTERFACE_FOR_RENDERING, NULL, NULL, NULL, YAFARAY_DISPLAY_CONSOLE_NORMAL);
 	yafaray_setConsoleLogColorsEnabled(yi, YAFARAY_BOOL_TRUE);
 	yafaray_setConsoleVerbosityLevel(yi, YAFARAY_LOG_LEVEL_VERBOSE);
 
@@ -36,7 +37,7 @@ int main()
 	yafaray_paramsSetString(yi, "filename", "tex.tif");
 	yafaray_paramsSetFloat(yi, "gamma", 1);
 	yafaray_paramsSetString(yi, "image_optimization", "optimized");
-	yafaray_createImage(yi, "Texture.005_image");
+	yafaray_createImage(yi, "Texture.005_image", NULL);
 	yafaray_paramsClearAll(yi);
 
 	yafaray_paramsSetString(yi, "image_name", "Texture.005_image");
@@ -72,7 +73,7 @@ int main()
 	yafaray_paramsSetString(yi, "filename", "tex.tga");
 	yafaray_paramsSetFloat(yi, "gamma", 1);
 	yafaray_paramsSetString(yi, "image_optimization", "optimized");
-	yafaray_createImage(yi, "Texture.004_image");
+	yafaray_createImage(yi, "Texture.004_image", NULL);
 	yafaray_paramsClearAll(yi);
 
 	yafaray_paramsSetString(yi, "image_name", "Texture.004_image");
@@ -108,7 +109,7 @@ int main()
 	yafaray_paramsSetString(yi, "filename", "tex.png");
 	yafaray_paramsSetFloat(yi, "gamma", 1);
 	yafaray_paramsSetString(yi, "image_optimization", "optimized");
-	yafaray_createImage(yi, "Texture.003_image");
+	yafaray_createImage(yi, "Texture.003_image", NULL);
 	yafaray_paramsClearAll(yi);
 
 	yafaray_paramsSetString(yi, "image_name", "Texture.003_image");
@@ -144,7 +145,7 @@ int main()
 	yafaray_paramsSetString(yi, "filename", "tex.jpg");
 	yafaray_paramsSetFloat(yi, "gamma", 1);
 	yafaray_paramsSetString(yi, "image_optimization", "optimized");
-	yafaray_createImage(yi, "Texture.002_image");
+	yafaray_createImage(yi, "Texture.002_image", NULL);
 	yafaray_paramsClearAll(yi);
 
 	yafaray_paramsSetString(yi, "image_name", "Texture.002_image");
@@ -180,7 +181,7 @@ int main()
 	yafaray_paramsSetString(yi, "filename", "tex.hdr");
 	yafaray_paramsSetFloat(yi, "gamma", 1);
 	yafaray_paramsSetString(yi, "image_optimization", "optimized");
-	yafaray_createImage(yi, "Texture.001_image");
+	yafaray_createImage(yi, "Texture.001_image", NULL);
 	yafaray_paramsClearAll(yi);
 
 	yafaray_paramsSetString(yi, "image_name", "Texture.001_image");
@@ -216,7 +217,7 @@ int main()
 	yafaray_paramsSetString(yi, "filename", "tex.exr");
 	yafaray_paramsSetFloat(yi, "gamma", 1);
 	yafaray_paramsSetString(yi, "image_optimization", "optimized");
-	yafaray_createImage(yi, "Texture_image");
+	yafaray_createImage(yi, "Texture_image", NULL);
 	yafaray_paramsClearAll(yi);
 
 	yafaray_paramsSetString(yi, "image_name", "Texture_image");
@@ -251,7 +252,7 @@ int main()
 	yafaray_paramsSetColor(yi, "color", 0.8, 0.8, 0.8, 1);
 	yafaray_paramsSetString(yi, "type", "shinydiffusemat");
 	yafaray_paramsEndList(yi);
-	yafaray_createMaterial(yi, "defaultMat");
+	yafaray_createMaterial(yi, "defaultMat", NULL);
 	yafaray_paramsClearAll(yi);
 
 	yafaray_paramsSetFloat(yi, "IOR", 1.8);
@@ -309,7 +310,7 @@ int main()
 		yafaray_paramsSetString(yi, "texture", "Texture.005");
 		yafaray_paramsSetString(yi, "type", "texture_mapper");
 	yafaray_paramsEndList(yi);
-	yafaray_createMaterial(yi, "Material.008");
+	yafaray_createMaterial(yi, "Material.008", NULL);
 	yafaray_paramsClearAll(yi);
 
 	yafaray_paramsSetFloat(yi, "IOR", 1.8);
@@ -367,7 +368,7 @@ int main()
 		yafaray_paramsSetString(yi, "texture", "Texture.004");
 		yafaray_paramsSetString(yi, "type", "texture_mapper");
 	yafaray_paramsEndList(yi);
-	yafaray_createMaterial(yi, "Material.007");
+	yafaray_createMaterial(yi, "Material.007", NULL);
 	yafaray_paramsClearAll(yi);
 
 	yafaray_paramsSetFloat(yi, "IOR", 1.5);
@@ -425,7 +426,7 @@ int main()
 		yafaray_paramsSetString(yi, "texture", "Texture.003");
 		yafaray_paramsSetString(yi, "type", "texture_mapper");
 	yafaray_paramsEndList(yi);
-	yafaray_createMaterial(yi, "Material.006");
+	yafaray_createMaterial(yi, "Material.006", NULL);
 	yafaray_paramsClearAll(yi);
 
 	yafaray_paramsSetFloat(yi, "IOR", 1.8);
@@ -483,7 +484,7 @@ int main()
 		yafaray_paramsSetString(yi, "texture", "Texture.002");
 		yafaray_paramsSetString(yi, "type", "texture_mapper");
 	yafaray_paramsEndList(yi);
-	yafaray_createMaterial(yi, "Material.005");
+	yafaray_createMaterial(yi, "Material.005", NULL);
 	yafaray_paramsClearAll(yi);
 
 	yafaray_paramsSetFloat(yi, "IOR", 1.8);
@@ -541,7 +542,7 @@ int main()
 		yafaray_paramsSetString(yi, "texture", "Texture.001");
 		yafaray_paramsSetString(yi, "type", "texture_mapper");
 	yafaray_paramsEndList(yi);
-	yafaray_createMaterial(yi, "Material.004");
+	yafaray_createMaterial(yi, "Material.004", NULL);
 	yafaray_paramsClearAll(yi);
 
 	yafaray_paramsSetFloat(yi, "IOR", 1.8);
@@ -599,7 +600,7 @@ int main()
 		yafaray_paramsSetString(yi, "texture", "Texture");
 		yafaray_paramsSetString(yi, "type", "texture_mapper");
 	yafaray_paramsEndList(yi);
-	yafaray_createMaterial(yi, "Material.003");
+	yafaray_createMaterial(yi, "Material.003", NULL);
 	yafaray_paramsClearAll(yi);
 
 	yafaray_paramsSetFloat(yi, "IOR", 1.8);
@@ -626,7 +627,7 @@ int main()
 	yafaray_paramsSetFloat(yi, "wireframe_exponent", 0);
 	yafaray_paramsSetFloat(yi, "wireframe_thickness", 0.01);
 	yafaray_paramsEndList(yi);
-	yafaray_createMaterial(yi, "Material.002");
+	yafaray_createMaterial(yi, "Material.002", NULL);
 	yafaray_paramsClearAll(yi);
 
 	yafaray_paramsSetBool(yi, "cast_shadows", YAFARAY_BOOL_TRUE);
@@ -649,25 +650,25 @@ int main()
 	yafaray_paramsSetInt(yi, "object_index", 5);
 	yafaray_paramsSetString(yi, "type", "mesh");
 	yafaray_paramsSetString(yi, "visibility", "normal");
-	yafaray_createObject(yi, "Cube.005");
+	yafaray_createObject(yi, "Cube.005", &object_id);
 	yafaray_paramsClearAll(yi);
 
-	yafaray_addVertexWithOrco(yi, -4.40469, 1.44162, 1.00136e-05, -1, -1, -1);
-	yafaray_addVertexWithOrco(yi, -4.40469, 1.44162, 2.00001, -1, -1, 1);
-	yafaray_addVertexWithOrco(yi, -4.40469, 3.44162, 1.00136e-05, -1, 1, -1);
-	yafaray_addVertexWithOrco(yi, -4.40469, 3.44162, 2.00001, -1, 1, 1);
-	yafaray_addVertexWithOrco(yi, -2.40468, 1.44162, 1.00136e-05, 1, -1, -1);
-	yafaray_addVertexWithOrco(yi, -2.40468, 1.44162, 2.00001, 1, -1, 1);
-	yafaray_addVertexWithOrco(yi, -2.40468, 3.44162, 1.00136e-05, 1, 1, -1);
-	yafaray_addVertexWithOrco(yi, -2.40468, 3.44162, 2.00001, 1, 1, 1);
-	yafaray_setCurrentMaterial(yi, "Material.008");
-	yafaray_addQuad(yi, 2, 0, 1, 3);
-	yafaray_addQuad(yi, 3, 7, 6, 2);
-	yafaray_addQuad(yi, 7, 5, 4, 6);
-	yafaray_addQuad(yi, 0, 4, 5, 1);
-	yafaray_addQuad(yi, 0, 2, 6, 4);
-	yafaray_addQuad(yi, 5, 7, 3, 1);
-	yafaray_endObject(yi);
+	yafaray_addVertexWithOrco(yi, object_id, -4.40469, 1.44162, 1.00136e-05, -1, -1, -1);
+	yafaray_addVertexWithOrco(yi, object_id, -4.40469, 1.44162, 2.00001, -1, -1, 1);
+	yafaray_addVertexWithOrco(yi, object_id, -4.40469, 3.44162, 1.00136e-05, -1, 1, -1);
+	yafaray_addVertexWithOrco(yi, object_id, -4.40469, 3.44162, 2.00001, -1, 1, 1);
+	yafaray_addVertexWithOrco(yi, object_id, -2.40468, 1.44162, 1.00136e-05, 1, -1, -1);
+	yafaray_addVertexWithOrco(yi, object_id, -2.40468, 1.44162, 2.00001, 1, -1, 1);
+	yafaray_addVertexWithOrco(yi, object_id, -2.40468, 3.44162, 1.00136e-05, 1, 1, -1);
+	yafaray_addVertexWithOrco(yi, object_id, -2.40468, 3.44162, 2.00001, 1, 1, 1);
+	yafaray_getMaterialId(yi, "Material.008", &material_id);
+	yafaray_addQuad(yi, object_id, 2, 0, 1, 3, material_id);
+	yafaray_addQuad(yi, object_id, 3, 7, 6, 2, material_id);
+	yafaray_addQuad(yi, object_id, 7, 5, 4, 6, material_id);
+	yafaray_addQuad(yi, object_id, 0, 4, 5, 1, material_id);
+	yafaray_addQuad(yi, object_id, 0, 2, 6, 4, material_id);
+	yafaray_addQuad(yi, object_id, 5, 7, 3, 1, material_id);
+	yafaray_initObject(yi, object_id, material_id);
 	yafaray_paramsClearAll(yi);
 
 	yafaray_paramsSetBool(yi, "has_orco", YAFARAY_BOOL_TRUE);
@@ -678,25 +679,25 @@ int main()
 	yafaray_paramsSetInt(yi, "object_index", 4);
 	yafaray_paramsSetString(yi, "type", "mesh");
 	yafaray_paramsSetString(yi, "visibility", "normal");
-	yafaray_createObject(yi, "Cube.004");
+	yafaray_createObject(yi, "Cube.004", &object_id);
 	yafaray_paramsClearAll(yi);
 
-	yafaray_addVertexWithOrco(yi, 3.26859, -0.393062, 1.00136e-05, -1, -1, -1);
-	yafaray_addVertexWithOrco(yi, 3.26859, -0.393062, 2.00001, -1, -1, 1);
-	yafaray_addVertexWithOrco(yi, 3.26859, 1.60694, 1.00136e-05, -1, 1, -1);
-	yafaray_addVertexWithOrco(yi, 3.26859, 1.60694, 2.00001, -1, 1, 1);
-	yafaray_addVertexWithOrco(yi, 5.26859, -0.393062, 1.00136e-05, 1, -1, -1);
-	yafaray_addVertexWithOrco(yi, 5.26859, -0.393062, 2.00001, 1, -1, 1);
-	yafaray_addVertexWithOrco(yi, 5.26859, 1.60694, 1.00136e-05, 1, 1, -1);
-	yafaray_addVertexWithOrco(yi, 5.26859, 1.60694, 2.00001, 1, 1, 1);
-	yafaray_setCurrentMaterial(yi, "Material.007");
-	yafaray_addQuad(yi, 2, 0, 1, 3);
-	yafaray_addQuad(yi, 3, 7, 6, 2);
-	yafaray_addQuad(yi, 7, 5, 4, 6);
-	yafaray_addQuad(yi, 0, 4, 5, 1);
-	yafaray_addQuad(yi, 0, 2, 6, 4);
-	yafaray_addQuad(yi, 5, 7, 3, 1);
-	yafaray_endObject(yi);
+	yafaray_addVertexWithOrco(yi, object_id, 3.26859, -0.393062, 1.00136e-05, -1, -1, -1);
+	yafaray_addVertexWithOrco(yi, object_id, 3.26859, -0.393062, 2.00001, -1, -1, 1);
+	yafaray_addVertexWithOrco(yi, object_id, 3.26859, 1.60694, 1.00136e-05, -1, 1, -1);
+	yafaray_addVertexWithOrco(yi, object_id, 3.26859, 1.60694, 2.00001, -1, 1, 1);
+	yafaray_addVertexWithOrco(yi, object_id, 5.26859, -0.393062, 1.00136e-05, 1, -1, -1);
+	yafaray_addVertexWithOrco(yi, object_id, 5.26859, -0.393062, 2.00001, 1, -1, 1);
+	yafaray_addVertexWithOrco(yi, object_id, 5.26859, 1.60694, 1.00136e-05, 1, 1, -1);
+	yafaray_addVertexWithOrco(yi, object_id, 5.26859, 1.60694, 2.00001, 1, 1, 1);
+	yafaray_getMaterialId(yi, "Material.007", &material_id);
+	yafaray_addQuad(yi, object_id, 2, 0, 1, 3, material_id);
+	yafaray_addQuad(yi, object_id, 3, 7, 6, 2, material_id);
+	yafaray_addQuad(yi, object_id, 7, 5, 4, 6, material_id);
+	yafaray_addQuad(yi, object_id, 0, 4, 5, 1, material_id);
+	yafaray_addQuad(yi, object_id, 0, 2, 6, 4, material_id);
+	yafaray_addQuad(yi, object_id, 5, 7, 3, 1, material_id);
+	yafaray_initObject(yi, object_id, material_id);
 	yafaray_paramsClearAll(yi);
 
 	yafaray_paramsSetBool(yi, "has_orco", YAFARAY_BOOL_TRUE);
@@ -707,25 +708,25 @@ int main()
 	yafaray_paramsSetInt(yi, "object_index", 3);
 	yafaray_paramsSetString(yi, "type", "mesh");
 	yafaray_paramsSetString(yi, "visibility", "normal");
-	yafaray_createObject(yi, "Cube.003");
+	yafaray_createObject(yi, "Cube.003", &object_id);
 	yafaray_paramsClearAll(yi);
 
-	yafaray_addVertexWithOrco(yi, -0.635578, 3.54144, 1.00136e-05, -1, -1, -1);
-	yafaray_addVertexWithOrco(yi, -0.635578, 3.54144, 2.00001, -1, -1, 1);
-	yafaray_addVertexWithOrco(yi, -0.635578, 5.54144, 1.00136e-05, -1, 1, -1);
-	yafaray_addVertexWithOrco(yi, -0.635578, 5.54144, 2.00001, -1, 1, 1);
-	yafaray_addVertexWithOrco(yi, 1.36442, 3.54144, 1.00136e-05, 1, -1, -1);
-	yafaray_addVertexWithOrco(yi, 1.36442, 3.54144, 2.00001, 1, -1, 1);
-	yafaray_addVertexWithOrco(yi, 1.36442, 5.54144, 1.00136e-05, 1, 1, -1);
-	yafaray_addVertexWithOrco(yi, 1.36442, 5.54144, 2.00001, 1, 1, 1);
-	yafaray_setCurrentMaterial(yi, "Material.006");
-	yafaray_addQuad(yi, 2, 0, 1, 3);
-	yafaray_addQuad(yi, 3, 7, 6, 2);
-	yafaray_addQuad(yi, 7, 5, 4, 6);
-	yafaray_addQuad(yi, 0, 4, 5, 1);
-	yafaray_addQuad(yi, 0, 2, 6, 4);
-	yafaray_addQuad(yi, 5, 7, 3, 1);
-	yafaray_endObject(yi);
+	yafaray_addVertexWithOrco(yi, object_id, -0.635578, 3.54144, 1.00136e-05, -1, -1, -1);
+	yafaray_addVertexWithOrco(yi, object_id, -0.635578, 3.54144, 2.00001, -1, -1, 1);
+	yafaray_addVertexWithOrco(yi, object_id, -0.635578, 5.54144, 1.00136e-05, -1, 1, -1);
+	yafaray_addVertexWithOrco(yi, object_id, -0.635578, 5.54144, 2.00001, -1, 1, 1);
+	yafaray_addVertexWithOrco(yi, object_id, 1.36442, 3.54144, 1.00136e-05, 1, -1, -1);
+	yafaray_addVertexWithOrco(yi, object_id, 1.36442, 3.54144, 2.00001, 1, -1, 1);
+	yafaray_addVertexWithOrco(yi, object_id, 1.36442, 5.54144, 1.00136e-05, 1, 1, -1);
+	yafaray_addVertexWithOrco(yi, object_id, 1.36442, 5.54144, 2.00001, 1, 1, 1);
+	yafaray_getMaterialId(yi, "Material.006", &material_id);
+	yafaray_addQuad(yi, object_id, 2, 0, 1, 3, material_id);
+	yafaray_addQuad(yi, object_id, 3, 7, 6, 2, material_id);
+	yafaray_addQuad(yi, object_id, 7, 5, 4, 6, material_id);
+	yafaray_addQuad(yi, object_id, 0, 4, 5, 1, material_id);
+	yafaray_addQuad(yi, object_id, 0, 2, 6, 4, material_id);
+	yafaray_addQuad(yi, object_id, 5, 7, 3, 1, material_id);
+	yafaray_initObject(yi, object_id, material_id);
 	yafaray_paramsClearAll(yi);
 
 	yafaray_paramsSetBool(yi, "has_orco", YAFARAY_BOOL_TRUE);
@@ -736,31 +737,31 @@ int main()
 	yafaray_paramsSetInt(yi, "object_index", 2);
 	yafaray_paramsSetString(yi, "type", "mesh");
 	yafaray_paramsSetString(yi, "visibility", "normal");
-	yafaray_createObject(yi, "Cube.002");
+	yafaray_createObject(yi, "Cube.002", &object_id);
 	yafaray_paramsClearAll(yi);
 
-	yafaray_addVertexWithOrco(yi, -0.635578, -0.393062, 1.00136e-05, -1, -1, -1);
-	yafaray_addVertexWithOrco(yi, -0.635578, -0.393062, 2.00001, -1, -1, 1);
-	yafaray_addVertexWithOrco(yi, -0.635578, 1.60694, 1.00136e-05, -1, 1, -1);
-	yafaray_addVertexWithOrco(yi, -0.635578, 1.60694, 2.00001, -1, 1, 1);
-	yafaray_addVertexWithOrco(yi, 1.36442, -0.393062, 1.00136e-05, 1, -1, -1);
-	yafaray_addVertexWithOrco(yi, 1.36442, -0.393062, 2.00001, 1, -1, 1);
-	yafaray_addVertexWithOrco(yi, 1.36442, 1.60694, 1.00136e-05, 1, 1, -1);
-	yafaray_addVertexWithOrco(yi, 1.36442, 1.60694, 2.00001, 1, 1, 1);
-	yafaray_setCurrentMaterial(yi, "Material.005");
-	yafaray_addTriangle(yi, 2, 0, 1);
-	yafaray_addTriangle(yi, 2, 1, 3);
-	yafaray_addTriangle(yi, 3, 7, 6);
-	yafaray_addTriangle(yi, 3, 6, 2);
-	yafaray_addTriangle(yi, 7, 5, 4);
-	yafaray_addTriangle(yi, 7, 4, 6);
-	yafaray_addTriangle(yi, 0, 4, 5);
-	yafaray_addTriangle(yi, 0, 5, 1);
-	yafaray_addTriangle(yi, 0, 2, 6);
-	yafaray_addTriangle(yi, 0, 6, 4);
-	yafaray_addTriangle(yi, 5, 7, 3);
-	yafaray_addTriangle(yi, 5, 3, 1);
-	yafaray_endObject(yi);
+	yafaray_addVertexWithOrco(yi, object_id, -0.635578, -0.393062, 1.00136e-05, -1, -1, -1);
+	yafaray_addVertexWithOrco(yi, object_id, -0.635578, -0.393062, 2.00001, -1, -1, 1);
+	yafaray_addVertexWithOrco(yi, object_id, -0.635578, 1.60694, 1.00136e-05, -1, 1, -1);
+	yafaray_addVertexWithOrco(yi, object_id, -0.635578, 1.60694, 2.00001, -1, 1, 1);
+	yafaray_addVertexWithOrco(yi, object_id, 1.36442, -0.393062, 1.00136e-05, 1, -1, -1);
+	yafaray_addVertexWithOrco(yi, object_id, 1.36442, -0.393062, 2.00001, 1, -1, 1);
+	yafaray_addVertexWithOrco(yi, object_id, 1.36442, 1.60694, 1.00136e-05, 1, 1, -1);
+	yafaray_addVertexWithOrco(yi, object_id, 1.36442, 1.60694, 2.00001, 1, 1, 1);
+	yafaray_getMaterialId(yi, "Material.005", &material_id);
+	yafaray_addTriangle(yi, object_id, 2, 0, 1, material_id);
+	yafaray_addTriangle(yi, object_id, 2, 1, 3, material_id);
+	yafaray_addTriangle(yi, object_id, 3, 7, 6, material_id);
+	yafaray_addTriangle(yi, object_id, 3, 6, 2, material_id);
+	yafaray_addTriangle(yi, object_id, 7, 5, 4, material_id);
+	yafaray_addTriangle(yi, object_id, 7, 4, 6, material_id);
+	yafaray_addTriangle(yi, object_id, 0, 4, 5, material_id);
+	yafaray_addTriangle(yi, object_id, 0, 5, 1, material_id);
+	yafaray_addTriangle(yi, object_id, 0, 2, 6, material_id);
+	yafaray_addTriangle(yi, object_id, 0, 6, 4, material_id);
+	yafaray_addTriangle(yi, object_id, 5, 7, 3, material_id);
+	yafaray_addTriangle(yi, object_id, 5, 3, 1, material_id);
+	yafaray_initObject(yi, object_id, material_id);
 	yafaray_paramsClearAll(yi);
 
 	yafaray_paramsSetBool(yi, "has_orco", YAFARAY_BOOL_TRUE);
@@ -771,31 +772,31 @@ int main()
 	yafaray_paramsSetInt(yi, "object_index", 1);
 	yafaray_paramsSetString(yi, "type", "mesh");
 	yafaray_paramsSetString(yi, "visibility", "normal");
-	yafaray_createObject(yi, "Cube.001");
+	yafaray_createObject(yi, "Cube.001", &object_id);
 	yafaray_paramsClearAll(yi);
 
-	yafaray_addVertexWithOrco(yi, -0.635578, -3.81854, 1.00136e-05, -1, -1, -1);
-	yafaray_addVertexWithOrco(yi, -0.635578, -3.81854, 2.00001, -1, -1, 1);
-	yafaray_addVertexWithOrco(yi, -0.635578, -1.81854, 1.00136e-05, -1, 1, -1);
-	yafaray_addVertexWithOrco(yi, -0.635578, -1.81854, 2.00001, -1, 1, 1);
-	yafaray_addVertexWithOrco(yi, 1.36442, -3.81854, 1.00136e-05, 1, -1, -1);
-	yafaray_addVertexWithOrco(yi, 1.36442, -3.81854, 2.00001, 1, -1, 1);
-	yafaray_addVertexWithOrco(yi, 1.36442, -1.81854, 1.00136e-05, 1, 1, -1);
-	yafaray_addVertexWithOrco(yi, 1.36442, -1.81854, 2.00001, 1, 1, 1);
-	yafaray_setCurrentMaterial(yi, "Material.004");
-	yafaray_addTriangle(yi, 2, 0, 1);
-	yafaray_addTriangle(yi, 2, 1, 3);
-	yafaray_addTriangle(yi, 3, 7, 6);
-	yafaray_addTriangle(yi, 3, 6, 2);
-	yafaray_addTriangle(yi, 7, 5, 4);
-	yafaray_addTriangle(yi, 7, 4, 6);
-	yafaray_addTriangle(yi, 0, 4, 5);
-	yafaray_addTriangle(yi, 0, 5, 1);
-	yafaray_addTriangle(yi, 0, 2, 6);
-	yafaray_addTriangle(yi, 0, 6, 4);
-	yafaray_addTriangle(yi, 5, 7, 3);
-	yafaray_addTriangle(yi, 5, 3, 1);
-	yafaray_endObject(yi);
+	yafaray_addVertexWithOrco(yi, object_id, -0.635578, -3.81854, 1.00136e-05, -1, -1, -1);
+	yafaray_addVertexWithOrco(yi, object_id, -0.635578, -3.81854, 2.00001, -1, -1, 1);
+	yafaray_addVertexWithOrco(yi, object_id, -0.635578, -1.81854, 1.00136e-05, -1, 1, -1);
+	yafaray_addVertexWithOrco(yi, object_id, -0.635578, -1.81854, 2.00001, -1, 1, 1);
+	yafaray_addVertexWithOrco(yi, object_id, 1.36442, -3.81854, 1.00136e-05, 1, -1, -1);
+	yafaray_addVertexWithOrco(yi, object_id, 1.36442, -3.81854, 2.00001, 1, -1, 1);
+	yafaray_addVertexWithOrco(yi, object_id, 1.36442, -1.81854, 1.00136e-05, 1, 1, -1);
+	yafaray_addVertexWithOrco(yi, object_id, 1.36442, -1.81854, 2.00001, 1, 1, 1);
+	yafaray_getMaterialId(yi, "Material.004", &material_id);
+	yafaray_addTriangle(yi, object_id, 2, 0, 1, material_id);
+	yafaray_addTriangle(yi, object_id, 2, 1, 3, material_id);
+	yafaray_addTriangle(yi, object_id, 3, 7, 6, material_id);
+	yafaray_addTriangle(yi, object_id, 3, 6, 2, material_id);
+	yafaray_addTriangle(yi, object_id, 7, 5, 4, material_id);
+	yafaray_addTriangle(yi, object_id, 7, 4, 6, material_id);
+	yafaray_addTriangle(yi, object_id, 0, 4, 5, material_id);
+	yafaray_addTriangle(yi, object_id, 0, 5, 1, material_id);
+	yafaray_addTriangle(yi, object_id, 0, 2, 6, material_id);
+	yafaray_addTriangle(yi, object_id, 0, 6, 4, material_id);
+	yafaray_addTriangle(yi, object_id, 5, 7, 3, material_id);
+	yafaray_addTriangle(yi, object_id, 5, 3, 1, material_id);
+	yafaray_initObject(yi, object_id, material_id);
 	yafaray_paramsClearAll(yi);
 
 	yafaray_paramsSetBool(yi, "has_orco", YAFARAY_BOOL_TRUE);
@@ -806,31 +807,31 @@ int main()
 	yafaray_paramsSetInt(yi, "object_index", 0);
 	yafaray_paramsSetString(yi, "type", "mesh");
 	yafaray_paramsSetString(yi, "visibility", "normal");
-	yafaray_createObject(yi, "Cube");
+	yafaray_createObject(yi, "Cube", &object_id);
 	yafaray_paramsClearAll(yi);
 
-	yafaray_addVertexWithOrco(yi, -5.01096, -1.94285, 1.00136e-05, -1, -1, -1);
-	yafaray_addVertexWithOrco(yi, -5.01096, -1.94285, 2.00001, -1, -1, 1);
-	yafaray_addVertexWithOrco(yi, -5.01096, 0.0571451, 1.00136e-05, -1, 1, -1);
-	yafaray_addVertexWithOrco(yi, -5.01096, 0.0571451, 2.00001, -1, 1, 1);
-	yafaray_addVertexWithOrco(yi, -3.01096, -1.94285, 1.00136e-05, 1, -1, -1);
-	yafaray_addVertexWithOrco(yi, -3.01096, -1.94285, 2.00001, 1, -1, 1);
-	yafaray_addVertexWithOrco(yi, -3.01096, 0.0571451, 1.00136e-05, 1, 1, -1);
-	yafaray_addVertexWithOrco(yi, -3.01096, 0.0571451, 2.00001, 1, 1, 1);
-	yafaray_setCurrentMaterial(yi, "Material.003");
-	yafaray_addTriangle(yi, 2, 0, 1);
-	yafaray_addTriangle(yi, 2, 1, 3);
-	yafaray_addTriangle(yi, 3, 7, 6);
-	yafaray_addTriangle(yi, 3, 6, 2);
-	yafaray_addTriangle(yi, 7, 5, 4);
-	yafaray_addTriangle(yi, 7, 4, 6);
-	yafaray_addTriangle(yi, 0, 4, 5);
-	yafaray_addTriangle(yi, 0, 5, 1);
-	yafaray_addTriangle(yi, 0, 2, 6);
-	yafaray_addTriangle(yi, 0, 6, 4);
-	yafaray_addTriangle(yi, 5, 7, 3);
-	yafaray_addTriangle(yi, 5, 3, 1);
-	yafaray_endObject(yi);
+	yafaray_addVertexWithOrco(yi, object_id, -5.01096, -1.94285, 1.00136e-05, -1, -1, -1);
+	yafaray_addVertexWithOrco(yi, object_id, -5.01096, -1.94285, 2.00001, -1, -1, 1);
+	yafaray_addVertexWithOrco(yi, object_id, -5.01096, 0.0571451, 1.00136e-05, -1, 1, -1);
+	yafaray_addVertexWithOrco(yi, object_id, -5.01096, 0.0571451, 2.00001, -1, 1, 1);
+	yafaray_addVertexWithOrco(yi, object_id, -3.01096, -1.94285, 1.00136e-05, 1, -1, -1);
+	yafaray_addVertexWithOrco(yi, object_id, -3.01096, -1.94285, 2.00001, 1, -1, 1);
+	yafaray_addVertexWithOrco(yi, object_id, -3.01096, 0.0571451, 1.00136e-05, 1, 1, -1);
+	yafaray_addVertexWithOrco(yi, object_id, -3.01096, 0.0571451, 2.00001, 1, 1, 1);
+	yafaray_getMaterialId(yi, "Material.003", &material_id);
+	yafaray_addTriangle(yi, object_id, 2, 0, 1, material_id);
+	yafaray_addTriangle(yi, object_id, 2, 1, 3, material_id);
+	yafaray_addTriangle(yi, object_id, 3, 7, 6, material_id);
+	yafaray_addTriangle(yi, object_id, 3, 6, 2, material_id);
+	yafaray_addTriangle(yi, object_id, 7, 5, 4, material_id);
+	yafaray_addTriangle(yi, object_id, 7, 4, 6, material_id);
+	yafaray_addTriangle(yi, object_id, 0, 4, 5, material_id);
+	yafaray_addTriangle(yi, object_id, 0, 5, 1, material_id);
+	yafaray_addTriangle(yi, object_id, 0, 2, 6, material_id);
+	yafaray_addTriangle(yi, object_id, 0, 6, 4, material_id);
+	yafaray_addTriangle(yi, object_id, 5, 7, 3, material_id);
+	yafaray_addTriangle(yi, object_id, 5, 3, 1, material_id);
+	yafaray_initObject(yi, object_id, material_id);
 	yafaray_paramsClearAll(yi);
 
 	yafaray_paramsSetBool(yi, "has_orco", YAFARAY_BOOL_FALSE);
@@ -841,17 +842,17 @@ int main()
 	yafaray_paramsSetInt(yi, "object_index", 0);
 	yafaray_paramsSetString(yi, "type", "mesh");
 	yafaray_paramsSetString(yi, "visibility", "normal");
-	yafaray_createObject(yi, "Plane");
+	yafaray_createObject(yi, "Plane", &object_id);
 	yafaray_paramsClearAll(yi);
 
-	yafaray_addVertex(yi, -10, -10, 0);
-	yafaray_addVertex(yi, 10, -10, 0);
-	yafaray_addVertex(yi, -10, 10, 0);
-	yafaray_addVertex(yi, 10, 10, 0);
-	yafaray_setCurrentMaterial(yi, "Material.002");
-	yafaray_addTriangle(yi, 0, 1, 3);
-	yafaray_addTriangle(yi, 0, 3, 2);
-	yafaray_endObject(yi);
+	yafaray_addVertex(yi, object_id, -10, -10, 0);
+	yafaray_addVertex(yi, object_id, 10, -10, 0);
+	yafaray_addVertex(yi, object_id, -10, 10, 0);
+	yafaray_addVertex(yi, object_id, 10, 10, 0);
+	yafaray_getMaterialId(yi, "Material.002", &material_id);
+	yafaray_addTriangle(yi, object_id, 0, 1, 3, material_id);
+	yafaray_addTriangle(yi, object_id, 0, 3, 2, material_id);
+	yafaray_initObject(yi, object_id, material_id);
 	yafaray_paramsClearAll(yi);
 
 	yafaray_paramsSetFloat(yi, "aperture", 0);

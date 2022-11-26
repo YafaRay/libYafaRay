@@ -66,7 +66,7 @@ CurveObject::CurveObject(ParamResult &param_result, const ParamMap &param_map, c
 bool CurveObject::calculateObject(size_t material_id)
 {
 	const int points_size = ParentClassType_t::numVertices(0);
-	for(int time_step = 0; time_step < numTimeSteps(); ++time_step)
+	for(unsigned char time_step = 0; time_step < numTimeSteps(); ++time_step)
 	{
 		const std::vector<Point3f> &points = getPoints(time_step);
 		// Vertex extruding

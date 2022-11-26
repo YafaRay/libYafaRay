@@ -217,12 +217,12 @@ std::string Logger::htmlColorFromLevel(int v_level)
 	}
 }
 
-void Logger::setConsoleMasterVerbosity(const ::yafaray_LogLevel_t &log_level)
+void Logger::setConsoleMasterVerbosity(const ::yafaray_LogLevel &log_level)
 {
 	console_master_verbosity_level_ = std::max(static_cast<int>(YAFARAY_LOG_LEVEL_MUTE), std::min(static_cast<int>(log_level), static_cast<int>(YAFARAY_LOG_LEVEL_DEBUG)));
 }
 
-void Logger::setLogMasterVerbosity(const ::yafaray_LogLevel_t &log_level)
+void Logger::setLogMasterVerbosity(const ::yafaray_LogLevel &log_level)
 {
 	log_master_verbosity_level_ = std::max(static_cast<int>(YAFARAY_LOG_LEVEL_MUTE), std::min(static_cast<int>(log_level), static_cast<int>(YAFARAY_LOG_LEVEL_DEBUG)));
 }
@@ -321,9 +321,9 @@ void Logger::statsIncrementBucket(const std::string &stat_name, double stat_valu
 	statsAdd(stat_name, increment_amount, index);
 }
 
-::yafaray_LogLevel_t Logger::getMaxLogLevel() const
+::yafaray_LogLevel Logger::getMaxLogLevel() const
 {
-	return static_cast<::yafaray_LogLevel_t>(std::max(console_master_verbosity_level_, log_master_verbosity_level_));
+	return static_cast<::yafaray_LogLevel>(std::max(console_master_verbosity_level_, log_master_verbosity_level_));
 }
 
 } //namespace yafaray

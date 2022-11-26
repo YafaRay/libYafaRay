@@ -34,23 +34,22 @@ class Parameter;
 class ExportC: public Interface
 {
 	public:
-		explicit ExportC(const char *fname, ::yafaray_LoggerCallback_t logger_callback = nullptr, void *callback_data = nullptr, ::yafaray_DisplayConsole_t logger_display_console = YAFARAY_DISPLAY_CONSOLE_NORMAL);
+		explicit ExportC(const char *fname, ::yafaray_LoggerCallback logger_callback = nullptr, void *callback_data = nullptr, ::yafaray_DisplayConsole logger_display_console = YAFARAY_DISPLAY_CONSOLE_NORMAL);
 		void createScene() noexcept override;
 		int getSceneFilmWidth() const noexcept override { return 0; }
 		int getSceneFilmHeight() const noexcept override { return 0; }
 		void defineLayer() noexcept override;
-		bool endObject() noexcept override;
-		int createInstance() noexcept override;
-		bool addInstanceObject(int instance_id, std::string &&base_object_name) noexcept override;
-		bool addInstanceOfInstance(int instance_id, size_t base_instance_id) noexcept override;
-		bool addInstanceMatrix(int instance_id, Matrix4f &&obj_to_world, float time) noexcept override;
-		int addVertex(Point3f &&vertex, int time_step) noexcept override; //!< add vertex to mesh; returns index to be used for addTriangle/addQuad
-		int addVertex(Point3f &&vertex, Point3f &&orco, int time_step) noexcept override; //!< add vertex with Orco to mesh; returns index to be used for addTriangle/addQuad
-		void addVertexNormal(Vec3f &&normal, int time_step) noexcept override; //!< add vertex normal to mesh; the vertex that will be attached to is the last one inserted by addVertex method
-		bool addFace(const FaceIndices<int> &face_indices) noexcept override;
-		int addUv(Uv<float> &&uv) noexcept override;
-		bool smoothVerticesNormals(std::string &&name, double angle) noexcept override;
-		void setCurrentMaterial(std::string &&name) noexcept override;
+		bool initObject(size_t object_id, size_t material_id) noexcept override;
+		size_t createInstance() noexcept override;
+		bool addInstanceObject(size_t instance_id, size_t base_object_id) noexcept override;
+		bool addInstanceOfInstance(size_t instance_id, size_t base_instance_id) noexcept override;
+		bool addInstanceMatrix(size_t instance_id, Matrix4f &&obj_to_world, float time) noexcept override;
+		int addVertex(size_t object_id, Point3f &&vertex, unsigned char time_step) noexcept override; //!< add vertex to mesh; returns index to be used for addTriangle/addQuad
+		int addVertex(size_t object_id, Point3f &&vertex, Point3f &&orco, unsigned char time_step) noexcept override; //!< add vertex with Orco to mesh; returns index to be used for addTriangle/addQuad
+		void addVertexNormal(size_t object_id, Vec3f &&normal, unsigned char time_step) noexcept override; //!< add vertex normal to mesh; the vertex that will be attached to is the last one inserted by addVertex method
+		bool addFace(size_t object_id, const FaceIndices<int> &face_indices, size_t material_id) noexcept override;
+		int addUv(size_t object_id, Uv<float> &&uv) noexcept override;
+		bool smoothVerticesNormals(size_t object_id, double angle) noexcept override;
 		std::pair<size_t, ParamResult> createObject(std::string &&name) noexcept override;
 		std::pair<size_t, ParamResult> createLight(std::string &&name) noexcept override;
 		std::pair<size_t, ParamResult> createTexture(std::string &&name) noexcept override;

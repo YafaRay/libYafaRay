@@ -44,9 +44,9 @@ void flushAreaCallback(const char *view_name, int area_id, int x_0, int y_0, int
 void flushCallback(const char *view_name, void *callback_data);
 void highlightCallback(const char *view_name, int area_id, int x_0, int y_0, int x_1, int y_1, void *callback_data);
 void monitorCallback(int steps_total, int steps_done, const char *tag, void *callback_data);
-void loggerCallback(yafaray_LogLevel_t log_level, long datetime, const char *time_of_day, const char *description, void *callback_data);
+void loggerCallback(yafaray_LogLevel log_level, size_t datetime, const char *time_of_day, const char *description, void *callback_data);
 
-yafaray_Interface_t *yi = NULL;
+yafaray_Interface *yi = NULL;
 
 #ifdef _WIN32
 BOOL WINAPI ctrlCHandler_global(DWORD signal)
@@ -70,6 +70,8 @@ void ctrlCHandler_global(int signal)
 
 int main()
 {
+	size_t material_id = 0;
+	size_t object_id = 0;
 	struct ResultImage result_image;
 	size_t result_image_size_bytes;
 	int total_steps = 0;
@@ -108,19 +110,19 @@ int main()
 	yafaray_paramsClearAll(yi);
 	{
 		/* Creating image from RAM or file */
-		yafaray_Image_t *image = NULL;
 		yafaray_paramsSetString(yi, "type", "ColorAlpha"); /* Note: the specified type os overriden by the loaded image type */
 		yafaray_paramsSetString(yi, "image_optimization", "none"); /* Note: only "none" allows high dynamic range values > 1.f */
 		yafaray_paramsSetString(yi, "filename", "tex.tga");
-		image = yafaray_createImage(yi, "Image01");
+		size_t image_id;
+		yafaray_createImage(yi, "Image01", &image_id);
 		yafaray_paramsClearAll(yi);
 
-		const int tex_width = yafaray_getImageWidth(image);
-		const int tex_height = yafaray_getImageHeight(image);
+		const int tex_width = yafaray_getImageWidth(yi, image_id);
+		const int tex_height = yafaray_getImageHeight(yi, image_id);
 		int i, j;
 		for(i = 0; i < tex_width / 2; ++i) /*For this test example we overwrite half of the image width with a "rainbow"*/
 			for(j = 0; j < tex_height / 2; ++j) /*For this test example we overwrite half of the image height with a "rainbow"*/
-				yafaray_setImageColor(image, i, j, 0.01f * i, 0.01f * j, 0.01f * (i + j), 1.f);
+				yafaray_setImageColor(yi, image_id, i, j, 0.01f * i, 0.01f * j, 0.01f * (i + j), 1.f);
 	}
 
 	/* Creating texture from image */
@@ -151,38 +153,37 @@ int main()
 	yafaray_paramsEndList(yi);
 	/* Actual material creation */
 	yafaray_paramsSetString(yi, "diffuse_shader", "diff_layer0");
-	yafaray_createMaterial(yi, "MaterialTGA");
+	yafaray_createMaterial(yi, "MaterialTGA", &material_id);
 	yafaray_paramsClearAll(yi);
 
 	/* Creating a geometric object */
 	yafaray_paramsSetBool(yi, "has_orco", 1);
 	yafaray_paramsSetString(yi, "type", "mesh");
-	yafaray_createObject(yi, "Cube");
+	yafaray_createObject(yi, "Cube", &object_id);
 	yafaray_paramsClearAll(yi);
 	/* Creating vertices for the object */
-	yafaray_addVertexWithOrco(yi, -4.f, 1.5f, 0.f, -1.f, -1.f, -1);
-	yafaray_addVertexWithOrco(yi, -4.f, 1.5f, 2.f, -1.f, -1.f, 1);
-	yafaray_addVertexWithOrco(yi, -4.f, 3.5f, 0.f, -1.f, 1.f, -1);
-	yafaray_addVertexWithOrco(yi, -4.f, 3.5f, 2.f, -1.f, 1.f, 1);
-	yafaray_addVertexWithOrco(yi, -2.f, 1.5f, 0.f, 1.f, -1.f, -1);
-	yafaray_addVertexWithOrco(yi, -2.f, 1.5f, 2.f, 1.f, -1.f, 1);
-	yafaray_addVertexWithOrco(yi, -2.f, 3.5f, 0.f, 1.f, 1.f, -1);
-	yafaray_addVertexWithOrco(yi, -2.f, 3.5f, 2.f, 1.f, 1.f, 1);
-	/* Setting up material for the faces (each face or group of faces can have different materials assigned) */
-	yafaray_setCurrentMaterial(yi, "MaterialTGA");
-	/* Adding faces indicating the vertices indices used in each face */
-	yafaray_addTriangle(yi, 2, 0, 1);
-	yafaray_addTriangle(yi, 2, 1, 3);
-	yafaray_addTriangle(yi, 3, 7, 6);
-	yafaray_addTriangle(yi, 3, 6, 2);
-	yafaray_addTriangle(yi, 7, 5, 4);
-	yafaray_addTriangle(yi, 7, 4, 6);
-	yafaray_addTriangle(yi, 0, 4, 5);
-	yafaray_addTriangle(yi, 0, 5, 1);
-	yafaray_addTriangle(yi, 0, 2, 6);
-	yafaray_addTriangle(yi, 0, 6, 4);
-	yafaray_addTriangle(yi, 5, 7, 3);
-	yafaray_addTriangle(yi, 5, 3, 1);
+	yafaray_addVertexWithOrco(yi, object_id, -4.f, 1.5f, 0.f, -1.f, -1.f, -1);
+	yafaray_addVertexWithOrco(yi, object_id, -4.f, 1.5f, 2.f, -1.f, -1.f, 1);
+	yafaray_addVertexWithOrco(yi, object_id, -4.f, 3.5f, 0.f, -1.f, 1.f, -1);
+	yafaray_addVertexWithOrco(yi, object_id, -4.f, 3.5f, 2.f, -1.f, 1.f, 1);
+	yafaray_addVertexWithOrco(yi, object_id, -2.f, 1.5f, 0.f, 1.f, -1.f, -1);
+	yafaray_addVertexWithOrco(yi, object_id, -2.f, 1.5f, 2.f, 1.f, -1.f, 1);
+	yafaray_addVertexWithOrco(yi, object_id, -2.f, 3.5f, 0.f, 1.f, 1.f, -1);
+	yafaray_addVertexWithOrco(yi, object_id, -2.f, 3.5f, 2.f, 1.f, 1.f, 1);
+
+	/* Adding faces indicating the vertices indices used in each face and the material used for each face */
+	yafaray_addTriangle(yi, object_id, 2, 0, 1, material_id);
+	yafaray_addTriangle(yi, object_id, 2, 1, 3, material_id);
+	yafaray_addTriangle(yi, object_id, 3, 7, 6, material_id);
+	yafaray_addTriangle(yi, object_id, 3, 6, 2, material_id);
+	yafaray_addTriangle(yi, object_id, 7, 5, 4, material_id);
+	yafaray_addTriangle(yi, object_id, 7, 4, 6, material_id);
+	yafaray_addTriangle(yi, object_id, 0, 4, 5, material_id);
+	yafaray_addTriangle(yi, object_id, 0, 5, 1, material_id);
+	yafaray_addTriangle(yi, object_id, 0, 2, 6, material_id);
+	yafaray_addTriangle(yi, object_id, 0, 6, 4, material_id);
+	yafaray_addTriangle(yi, object_id, 5, 7, 3, material_id);
+	yafaray_addTriangle(yi, object_id, 5, 3, 1, material_id);
 
 	/* Creating light/lamp */
 	yafaray_paramsSetString(yi, "type", "pointlight");
@@ -328,7 +329,7 @@ void monitorCallback(int steps_total, int steps_done, const char *tag, void *cal
 	printf("**** monitorCallback steps_total=%d, steps_done=%d, tag='%s', callback_data=%p\n", steps_total, steps_done, tag, callback_data);
 }
 
-void loggerCallback(yafaray_LogLevel_t log_level, long datetime, const char *time_of_day, const char *description, void *callback_data)
+void loggerCallback(yafaray_LogLevel log_level, size_t datetime, const char *time_of_day, const char *description, void *callback_data)
 {
 	printf("**** loggerCallback log_level=%d, datetime=%ld, time_of_day='%s', description='%s', callback_data=%p\n", log_level, datetime, time_of_day, description, callback_data);
 }

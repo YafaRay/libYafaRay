@@ -23,19 +23,19 @@
 
 struct RenderCallbacks final
 {
-	yafaray_RenderNotifyViewCallback_t notify_view_ = nullptr;
+	yafaray_RenderNotifyViewCallback notify_view_ = nullptr;
 	void *notify_view_data_ = nullptr;
-	yafaray_RenderNotifyLayerCallback_t notify_layer_ = nullptr;
+	yafaray_RenderNotifyLayerCallback notify_layer_ = nullptr;
 	void *notify_layer_data_ = nullptr;
-	yafaray_RenderPutPixelCallback_t put_pixel_ = nullptr;
+	yafaray_RenderPutPixelCallback put_pixel_ = nullptr;
 	void *put_pixel_data_ = nullptr;
-	yafaray_RenderHighlightPixelCallback_t highlight_pixel_ = nullptr;
+	yafaray_RenderHighlightPixelCallback highlight_pixel_ = nullptr;
 	void *highlight_pixel_data_ = nullptr;
-	yafaray_RenderFlushAreaCallback_t flush_area_ = nullptr;
+	yafaray_RenderFlushAreaCallback flush_area_ = nullptr;
 	void *flush_area_data_ = nullptr;
-	yafaray_RenderFlushCallback_t flush_ = nullptr;
+	yafaray_RenderFlushCallback flush_ = nullptr;
 	void *flush_data_ = nullptr;
-	yafaray_RenderHighlightAreaCallback_t highlight_area_ = nullptr;
+	yafaray_RenderHighlightAreaCallback highlight_area_ = nullptr;
 	void *highlight_area_data_ = nullptr;
 };
 

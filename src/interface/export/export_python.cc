@@ -26,7 +26,7 @@
 
 namespace yafaray {
 
-ExportPython::ExportPython(const char *fname, const ::yafaray_LoggerCallback_t logger_callback, void *callback_data, ::yafaray_DisplayConsole_t logger_display_console) : Interface(logger_callback, callback_data, logger_display_console), file_name_(std::string(fname))
+ExportPython::ExportPython(const char *fname, const ::yafaray_LoggerCallback logger_callback, void *callback_data, ::yafaray_DisplayConsole logger_display_console) : Interface(logger_callback, callback_data, logger_display_console), file_name_(std::string(fname))
 {
 	file_.open(file_name_.c_str());
 	if(!file_.is_open())
@@ -78,14 +78,14 @@ void ExportPython::defineLayer() noexcept
 	file_ << "yi.paramsClearAll()\n\n";
 }
 
-bool ExportPython::endObject() noexcept
+bool ExportPython::initObject(size_t object_id, size_t material_id) noexcept
 {
-	file_ << "yi.endObject()\n";
+	file_ << "yi.initObject()\n";
 	file_ << "yi.paramsClearAll()\n\n";
 	return true;
 }
 
-int ExportPython::addVertex(Point3f &&vertex, int time_step) noexcept
+int ExportPython::addVertex(size_t object_id, Point3f &&vertex, unsigned char time_step) noexcept
 {
 	file_ << "yi.addVertex(" << vertex[Axis::X] << ", " << vertex[Axis::Y] << ", " << vertex[Axis::Z];
 	if(time_step > 0) file_ << ", " << time_step;
@@ -93,7 +93,7 @@ int ExportPython::addVertex(Point3f &&vertex, int time_step) noexcept
 	return 0;
 }
 
-int ExportPython::addVertex(Point3f &&vertex, Point3f &&orco, int time_step) noexcept
+int ExportPython::addVertex(size_t object_id, Point3f &&vertex, Point3f &&orco, unsigned char time_step) noexcept
 {
 	file_ << "yi.addVertexWithOrco(" << vertex[Axis::X] << ", " << vertex[Axis::Y] << ", " << vertex[Axis::Z] << ", " << orco[Axis::X] << ", " << orco[Axis::Y] << ", " << orco[Axis::Z];
 	if(time_step > 0) file_ << ", " << time_step;
@@ -101,23 +101,14 @@ int ExportPython::addVertex(Point3f &&vertex, Point3f &&orco, int time_step) noe
 	return 0;
 }
 
-void ExportPython::addVertexNormal(Vec3f &&normal, int time_step) noexcept
+void ExportPython::addVertexNormal(size_t object_id, Vec3f &&normal, unsigned char time_step) noexcept
 {
 	file_ << "yi.addNormal(" << normal[Axis::X] << ", " << normal[Axis::Y] << ", " << normal[Axis::Z];
 	if(time_step > 0) file_ << ", " << time_step;
 	file_ << ")\n";
 }
 
-void ExportPython::setCurrentMaterial(std::string &&name) noexcept
-{
-	if(name != current_material_) //need to set current material
-	{
-		file_ << "yi.setCurrentMaterial(\"" << name << "\")\n";
-		current_material_ = std::move(name);
-	}
-}
-
-bool ExportPython::addFace(const FaceIndices<int> &face_indices) noexcept
+bool ExportPython::addFace(size_t object_id, const FaceIndices<int> &face_indices, size_t material_id) noexcept
 {
 	const int num_vertices{face_indices.numVertices()};
 	const bool has_uv{face_indices.hasUv()};
@@ -148,15 +139,15 @@ bool ExportPython::addFace(const FaceIndices<int> &face_indices) noexcept
 	return true;
 }
 
-int ExportPython::addUv(Uv<float> &&uv) noexcept
+int ExportPython::addUv(size_t object_id, Uv<float> &&uv) noexcept
 {
 	file_ << "yi.addUv(" << uv.u_ << ", " << uv.v_ << ")\n";
 	return n_uvs_++;
 }
 
-bool ExportPython::smoothVerticesNormals(std::string &&name, double angle) noexcept
+bool ExportPython::smoothVerticesNormals(size_t object_id, double angle) noexcept
 {
-	file_ << "yi.smoothMesh(\"" << name << "\", " << angle << ")\n";
+	file_ << "yi.smoothObjectMesh(\"" << object_id << "\", " << angle << ")\n";
 	return true;
 }
 
@@ -224,25 +215,25 @@ void ExportPython::writeParam(const std::string &name, const Parameter &param, s
 	}
 }
 
-int ExportPython::createInstance() noexcept
+size_t ExportPython::createInstance() noexcept
 {
 	file_ << "yi.createInstance()\n";
 	return current_instance_id_++;
 }
 
-bool ExportPython::addInstanceObject(int instance_id, std::string &&base_object_name) noexcept
+bool ExportPython::addInstanceObject(size_t instance_id, size_t base_object_id) noexcept
 {
-	file_ << "yi.addInstanceObject(" << instance_id << ", \"" << base_object_name << "\")\n"; //FIXME Should I use the variable name "instance_id" for export instead?
+	file_ << "yi.addInstanceObject(" << instance_id << ", \"" << base_object_id << "\")\n"; //FIXME Should I use the variable name "instance_id" for export instead?
 	return true;
 }
 
-bool ExportPython::addInstanceOfInstance(int instance_id, size_t base_instance_id) noexcept
+bool ExportPython::addInstanceOfInstance(size_t instance_id, size_t base_instance_id) noexcept
 {
 	file_ << "yi.addInstanceOfInstance(" << instance_id << ", " << base_instance_id << ")\n"; //FIXME Should I use the variable name "instance_id" for export instead?
 	return true;
 }
 
-bool ExportPython::addInstanceMatrix(int instance_id, Matrix4f &&obj_to_world, float time) noexcept
+bool ExportPython::addInstanceMatrix(size_t instance_id, Matrix4f &&obj_to_world, float time) noexcept
 {
 	file_ << "yi.addInstanceMatrix(" << instance_id << ", "; //FIXME Should I use the variable name "instance_id" for export instead?
 	writeMatrix(obj_to_world, file_);

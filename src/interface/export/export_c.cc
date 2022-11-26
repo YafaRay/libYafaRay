@@ -26,7 +26,7 @@
 
 namespace yafaray {
 
-ExportC::ExportC(const char *fname, const ::yafaray_LoggerCallback_t logger_callback, void *callback_data, ::yafaray_DisplayConsole_t logger_display_console) : Interface(logger_callback, callback_data, logger_display_console), file_name_(std::string(fname))
+ExportC::ExportC(const char *fname, const ::yafaray_LoggerCallback logger_callback, void *callback_data, ::yafaray_DisplayConsole logger_display_console) : Interface(logger_callback, callback_data, logger_display_console), file_name_(std::string(fname))
 {
 	file_.open(file_name_.c_str());
 	if(!file_.is_open())
@@ -50,7 +50,6 @@ std::string ExportC::generateHeader()
 	ss << "/* To run the executable */\n";
 	ss << "/* LD_LIBRARY_PATH=(path to folder with libyafaray libs) ./libyafaray_example_executable */\n\n";
 	ss << "#include <yafaray_c_api.h>\n";
-	ss << "#define NULL 0\n\n";
 	ss << "void section_0(yafaray_Interface_t *yi)\n{\n";
 	return ss.str();
 }
@@ -61,7 +60,7 @@ std::string ExportC::generateMain() const
 	ss << "int main()\n";
 	ss << "{\n";
 	ss << "\t" << "yafaray_Interface_t *yi = yafaray_createInterface(YAFARAY_INTERFACE_FOR_RENDERING, NULL, NULL, NULL, YAFARAY_DISPLAY_CONSOLE_NORMAL);\n";
-	ss << "\t" << "yafaray_setConsoleLogColorsEnabled(yi, YAFARAY_BOOL_TRUE);\n";
+	ss << "\t" << "yafaray_setConsoleLogColorsEnabled(yi, true);\n";
 	ss << "\t" << "yafaray_setConsoleVerbosityLevel(yi, YAFARAY_LOG_LEVEL_VERBOSE);\n\n";
 	ss << generateSectionsCalls();
 	ss << "\n\t" << "yafaray_render(yi, NULL, NULL, YAFARAY_DISPLAY_CONSOLE_NORMAL);\n";
@@ -123,7 +122,7 @@ void ExportC::defineLayer() noexcept
 	section_num_lines_ += 2;
 }
 
-bool ExportC::endObject() noexcept
+bool ExportC::initObject(size_t object_id, size_t material_id) noexcept
 {
 	file_ << "\t" << "yafaray_endObject(yi);\n";
 	file_ << "\t" << "yafaray_paramsClearAll(yi);\n\n";
@@ -131,7 +130,7 @@ bool ExportC::endObject() noexcept
 	return true;
 }
 
-int ExportC::addVertex(Point3f &&vertex, int time_step) noexcept
+int ExportC::addVertex(size_t object_id, Point3f &&vertex, unsigned char time_step) noexcept
 {
 	file_ << "\t" << "yafaray_addVertex(yi, " << vertex[Axis::X] << ", " << vertex[Axis::Y] << ", " << vertex[Axis::Z];
 	if(time_step > 0) file_ << ", " << time_step;
@@ -141,7 +140,7 @@ int ExportC::addVertex(Point3f &&vertex, int time_step) noexcept
 	return 0;
 }
 
-int ExportC::addVertex(Point3f &&vertex, Point3f &&orco, int time_step) noexcept
+int ExportC::addVertex(size_t object_id, Point3f &&vertex, Point3f &&orco, unsigned char time_step) noexcept
 {
 	file_ << "\t" << "yafaray_addVertexWithOrco(yi, " << vertex[Axis::X] << ", " << vertex[Axis::Y] << ", " << vertex[Axis::Z] << ", " << orco[Axis::X] << ", " << orco[Axis::Y] << ", " << orco[Axis::Z];
 	if(time_step > 0) file_ << ", " << time_step;
@@ -151,7 +150,7 @@ int ExportC::addVertex(Point3f &&vertex, Point3f &&orco, int time_step) noexcept
 	return 0;
 }
 
-void ExportC::addVertexNormal(Vec3f &&normal, int time_step) noexcept
+void ExportC::addVertexNormal(size_t object_id, Vec3f &&normal, unsigned char time_step) noexcept
 {
 	file_ << "\t" << "yafaray_addNormal(yi, " << normal[Axis::X] << ", " << normal[Axis::Y] << ", " << normal[Axis::Z];
 	if(time_step > 0) file_ << ", " << time_step;
@@ -160,17 +159,7 @@ void ExportC::addVertexNormal(Vec3f &&normal, int time_step) noexcept
 	if(section_num_lines_ >= section_max_lines_) file_ << sectionSplit();
 }
 
-void ExportC::setCurrentMaterial(std::string &&name) noexcept
-{
-	if(name != current_material_) //need to set current material
-	{
-		file_ << "\t" << "yafaray_setCurrentMaterial(yi, \"" << name << "\");\n";
-		current_material_ = std::move(name);
-		++section_num_lines_;
-	}
-}
-
-bool ExportC::addFace(const FaceIndices<int> &face_indices) noexcept
+bool ExportC::addFace(size_t object_id, const FaceIndices<int> &face_indices, size_t material_id) noexcept
 {
 	const int num_vertices{face_indices.numVertices()};
 	const bool has_uv{face_indices.hasUv()};
@@ -203,7 +192,7 @@ bool ExportC::addFace(const FaceIndices<int> &face_indices) noexcept
 	return true;
 }
 
-int ExportC::addUv(Uv<float> &&uv) noexcept
+int ExportC::addUv(size_t object_id, Uv<float> &&uv) noexcept
 {
 	file_ << "\t" << "yafaray_addUv(yi, " << uv.u_ << ", " << uv.v_ << ");\n";
 	++section_num_lines_;
@@ -211,9 +200,9 @@ int ExportC::addUv(Uv<float> &&uv) noexcept
 	return n_uvs_++;
 }
 
-bool ExportC::smoothVerticesNormals(std::string &&name, double angle) noexcept
+bool ExportC::smoothVerticesNormals(size_t object_id, double angle) noexcept
 {
-	file_ << "\t" << "yafaray_smoothMesh(yi, \"" << name << "\", " << angle << ");\n\n";
+	file_ << "\t" << "yafaray_smoothObjectMesh(yi, \"" << object_id << "\", " << angle << ");\n\n";
 	++section_num_lines_;
 	if(section_num_lines_ >= section_max_lines_) file_ << sectionSplit();
 	return true;
@@ -241,7 +230,7 @@ void ExportC::writeParam(const std::string &name, const Parameter &param, std::o
 	{
 		bool b = false;
 		param.getVal(b);
-		file << "yafaray_paramsSetBool(yi, \"" << name << "\", " << (b ? "YAFARAY_BOOL_TRUE" : "YAFARAY_BOOL_FALSE") << ");\n";
+		file << "yafaray_paramsSetBool(yi, \"" << name << "\", " << (b ? "true" : "false") << ");\n";
 	}
 	else if(type == Parameter::Type::Float)
 	{
@@ -274,7 +263,7 @@ void ExportC::writeParam(const std::string &name, const Parameter &param, std::o
 		param.getVal(m);
 		file << "yafaray_paramsSetMatrix(yi, ";
 		writeMatrix(m, file);
-		file << ", YAFARAY_BOOL_FALSE);\n";
+		file << ", false);\n";
 	}
 	else
 	{
@@ -282,7 +271,7 @@ void ExportC::writeParam(const std::string &name, const Parameter &param, std::o
 	}
 }
 
-int ExportC::createInstance() noexcept
+size_t ExportC::createInstance() noexcept
 {
 	file_ << "\t" << "yafaray_createInstance(yi);\n";
 	++section_num_lines_;
@@ -290,15 +279,15 @@ int ExportC::createInstance() noexcept
 	return current_instance_id_++;
 }
 
-bool ExportC::addInstanceObject(int instance_id, std::string &&base_object_name) noexcept
+bool ExportC::addInstanceObject(size_t instance_id, size_t base_object_id) noexcept
 {
-	file_ << "\t" << "yafaray_addInstanceObject(yi, " << instance_id << ", \"" << base_object_name << "\");\n"; //FIXME Should I use the variable name "instance_id" for export instead?
+	file_ << "\t" << "yafaray_addInstanceObject(yi, " << instance_id << ", \"" << base_object_id << "\");\n"; //FIXME Should I use the variable name "instance_id" for export instead?
 	++section_num_lines_;
 	if(section_num_lines_ >= section_max_lines_) file_ << sectionSplit();
 	return true;
 }
 
-bool ExportC::addInstanceOfInstance(int instance_id, size_t base_instance_id) noexcept
+bool ExportC::addInstanceOfInstance(size_t instance_id, size_t base_instance_id) noexcept
 {
 	file_ << "\t" << "yafaray_addInstanceOfInstance(yi, " << instance_id << ", " << base_instance_id << ");\n"; //FIXME Should I use the variable name "instance_id" for export instead?
 	++section_num_lines_;
@@ -306,7 +295,7 @@ bool ExportC::addInstanceOfInstance(int instance_id, size_t base_instance_id) no
 	return true;
 }
 
-bool ExportC::addInstanceMatrix(int instance_id, Matrix4f &&obj_to_world, float time) noexcept
+bool ExportC::addInstanceMatrix(size_t instance_id, Matrix4f &&obj_to_world, float time) noexcept
 {
 	file_ << "\t" << "yafaray_addInstanceMatrix(yi, " << instance_id << ", "; //FIXME Should I use the variable name "instance_id" for export instead?
 	writeMatrix(obj_to_world, file_);

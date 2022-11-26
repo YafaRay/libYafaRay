@@ -44,23 +44,23 @@ class MeshObject : public Object
 		MeshObject(ParamResult &param_result, const ParamMap &param_map, const SceneItems <Object> &objects, const SceneItems<Material> &materials);
 		~MeshObject() override;
 		std::vector<const Primitive *> getPrimitives() const override;
-		int lastVertexId(int time_step) const override { return numVertices(time_step) - 1; }
-		Vec3f getVertexNormal(int index, int time_step) const { return time_steps_[time_step].vertices_normals_[index]; }
-		Point3f getVertex(int index, int time_step) const { return time_steps_[time_step].points_[index]; }
-		Point3f getOrcoVertex(int index, int time_step) const { return time_steps_[time_step].orco_points_[index]; }
-		int numVertices(int time_step) const override { return static_cast<int>(time_steps_[time_step].points_.size()); }
-		int numVerticesNormals(int time_step) const override { return static_cast<int>(time_steps_[time_step].vertices_normals_.size()); }
+		int lastVertexId(unsigned char time_step) const override { return numVertices(time_step) - 1; }
+		Vec3f getVertexNormal(int index, unsigned char time_step) const { return time_steps_[time_step].vertices_normals_[index]; }
+		Point3f getVertex(int index, unsigned char time_step) const { return time_steps_[time_step].points_[index]; }
+		Point3f getOrcoVertex(int index, unsigned char time_step) const { return time_steps_[time_step].orco_points_[index]; }
+		int numVertices(unsigned char time_step) const override { return static_cast<int>(time_steps_[time_step].points_.size()); }
+		int numVerticesNormals(unsigned char time_step) const override { return static_cast<int>(time_steps_[time_step].vertices_normals_.size()); }
 		void addFace(std::unique_ptr<FacePrimitive> &&face);
 		void addFace(const FaceIndices<int> &face_indices, size_t material_id) override;
-		const std::vector<Point3f> &getPoints(int time_step) const { return time_steps_[time_step].points_; }
+		const std::vector<Point3f> &getPoints(unsigned char time_step) const { return time_steps_[time_step].points_; }
 		const std::vector<Uv<float>> &getUvValues() const { return uv_values_; }
-		bool hasOrco(int time_step) const { return !time_steps_[time_step].orco_points_.empty(); }
+		bool hasOrco(unsigned char time_step) const { return !time_steps_[time_step].orco_points_.empty(); }
 		bool hasUv() const { return !uv_values_.empty(); }
 		bool isSmooth() const { return is_smooth_; }
-		bool hasVerticesNormals(int time_step) const override { return !time_steps_[time_step].vertices_normals_.empty(); }
-		void addPoint(Point3f &&p, int time_step) override { time_steps_[time_step].points_.emplace_back(p); }
-		void addOrcoPoint(Point3f &&p, int time_step) override { time_steps_[time_step].orco_points_.emplace_back(p); }
-		void addVertexNormal(Vec3f &&n, int time_step) override;
+		bool hasVerticesNormals(unsigned char time_step) const override { return !time_steps_[time_step].vertices_normals_.empty(); }
+		void addPoint(Point3f &&p, unsigned char time_step) override { time_steps_[time_step].points_.emplace_back(p); }
+		void addOrcoPoint(Point3f &&p, unsigned char time_step) override { time_steps_[time_step].orco_points_.emplace_back(p); }
+		void addVertexNormal(Vec3f &&n, unsigned char time_step) override;
 		int addUvValue(Uv<float> &&uv) override { uv_values_.emplace_back(uv); return static_cast<int>(uv_values_.size()) - 1; }
 		void setSmooth(bool smooth) override { is_smooth_ = smooth; }
 		bool smoothVerticesNormals(Logger &logger, float angle) override;

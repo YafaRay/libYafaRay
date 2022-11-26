@@ -42,6 +42,7 @@ class SquareMatrix
 		explicit SquareMatrix(const std::array<std::array<T, N>, N> &source) : matrix_{source} { }
 		explicit SquareMatrix(std::array<std::array<T, N>, N> &&source) : matrix_{std::move(source)} { }
 		explicit SquareMatrix(const T *source);
+		explicit SquareMatrix(const double *source);
 		SquareMatrix<T, N> &operator=(const SquareMatrix<T, N> &matrix) = default;
 		SquareMatrix<T, N> &operator=(SquareMatrix<T, N> &&matrix) = default;
 		/*! attention, this function can cause the matrix to become invalid!
@@ -155,6 +156,14 @@ inline SquareMatrix<T, N>::SquareMatrix(const T init)
 
 template<typename T, size_t N>
 inline SquareMatrix<T, N>::SquareMatrix(const T *source)
+{
+	for(size_t i = 0; i < N; ++i)
+		for(size_t j = 0; j < N; ++j)
+			matrix_[i][j] = source[N * i + j];
+}
+
+template<typename T, size_t N>
+inline SquareMatrix<T, N>::SquareMatrix(const double *source)
 {
 	for(size_t i = 0; i < N; ++i)
 		for(size_t j = 0; j < N; ++j)

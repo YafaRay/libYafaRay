@@ -54,25 +54,25 @@ class ProgressBar;
 class Interface
 {
 	public:
-		explicit Interface( ::yafaray_LoggerCallback_t logger_callback = nullptr, void *callback_data = nullptr, ::yafaray_DisplayConsole_t logger_display_console = YAFARAY_DISPLAY_CONSOLE_NORMAL);
+		explicit Interface(::yafaray_LoggerCallback logger_callback = nullptr, void *callback_data = nullptr, ::yafaray_DisplayConsole logger_display_console = YAFARAY_DISPLAY_CONSOLE_NORMAL);
 		virtual ~Interface() noexcept;
-		void setLoggingCallback( ::yafaray_LoggerCallback_t logger_callback, void *callback_data);
+		void setLoggingCallback(::yafaray_LoggerCallback logger_callback, void *callback_data);
 		virtual void createScene() noexcept;
 		virtual int getSceneFilmWidth() const noexcept;
 		virtual int getSceneFilmHeight() const noexcept;
 		std::string printLayersTable() const noexcept;
 		std::string printViewsTable() const noexcept;
-		virtual bool endObject() noexcept; //!< end current mesh and return to geometry state
-		virtual int addVertex(Point3f &&vertex, int time_step) noexcept; //!< add vertex to mesh; returns index to be used for addTriangle/addQuad
-		virtual int addVertex(Point3f &&vertex, Point3f &&orco, int time_step) noexcept; //!< add vertex with Orco to mesh; returns index to be used for addTriangle/addQuad
-		virtual void addVertexNormal(Vec3f &&normal, int time_step) noexcept; //!< add vertex normal to mesh; the vertex that will be attached to is the last one inserted by addVertex method
-		virtual bool addFace(const FaceIndices<int> &face_indices) noexcept; //!< add a mesh face given vertex indices and optionally uv_indices
-		virtual int addUv(Uv<float> &&uv) noexcept; //!< add a UV coordinate pair; returns index to be used for addTriangle/addQuad
-		virtual bool smoothVerticesNormals(std::string &&name, double angle) noexcept; //!< smooth vertex normals of mesh with given ID and angle (in degrees)
-		virtual int createInstance() noexcept;
-		virtual bool addInstanceObject(int instance_id, std::string &&base_object_name) noexcept;
-		virtual bool addInstanceOfInstance(int instance_id, size_t base_instance_id) noexcept;
-		virtual bool addInstanceMatrix(int instance_id, Matrix4f &&obj_to_world, float time) noexcept;
+		virtual bool initObject(size_t object_id, size_t material_id) noexcept; //!< initialize/calculate object. The material_id might parameter be used or not depending on the type of object
+		virtual int addVertex(size_t object_id, Point3f &&vertex, unsigned char time_step) noexcept; //!< add vertex to mesh; returns index to be used for addTriangle/addQuad
+		virtual int addVertex(size_t object_id, Point3f &&vertex, Point3f &&orco, unsigned char time_step) noexcept; //!< add vertex with Orco to mesh; returns index to be used for addTriangle/addQuad
+		virtual void addVertexNormal(size_t object_id, Vec3f &&normal, unsigned char time_step) noexcept; //!< add vertex normal to mesh; the vertex that will be attached to is the last one inserted by addVertex method
+		virtual bool addFace(size_t object_id, const FaceIndices<int> &face_indices, size_t material_id) noexcept; //!< add a mesh face given vertex indices and optionally uv_indices
+		virtual int addUv(size_t object_id, Uv<float> &&uv) noexcept; //!< add a UV coordinate pair; returns index to be used for addTriangle/addQuad
+		virtual bool smoothVerticesNormals(size_t object_id, double angle) noexcept; //!< smooth vertex normals of mesh with given ID and angle (in degrees)
+		virtual size_t createInstance() noexcept;
+		virtual bool addInstanceObject(size_t instance_id, size_t base_object_id) noexcept;
+		virtual bool addInstanceOfInstance(size_t instance_id, size_t base_instance_id) noexcept;
+		virtual bool addInstanceMatrix(size_t instance_id, Matrix4f &&obj_to_world, float time) noexcept;
 		virtual void paramsSetVector(std::string &&name, Vec3f &&v) noexcept;
 		virtual void paramsSetString(std::string &&name, std::string &&s) noexcept;
 		virtual void paramsSetBool(std::string &&name, bool b) noexcept;
@@ -85,7 +85,12 @@ class Interface
 		virtual void paramsClearAll() noexcept; 	//!< clear the paramMap and paramList
 		virtual void paramsPushList() noexcept; 	//!< push new list item in paramList (e.g. new shader node description)
 		virtual void paramsEndList() noexcept; 	//!< revert to writing to normal paramMap
-		virtual void setCurrentMaterial(std::string &&name) noexcept;
+		std::pair<Size2i, bool> getImageSize(size_t image_id) const;
+		std::pair<Rgba, bool> getImageColor(size_t image_id, const Point2i &point) const;
+		bool setImageColor(size_t image_id, const Point2i &point, const Rgba &col);
+		std::pair<size_t, ResultFlags> getImageId(std::string &&name) noexcept;
+		std::pair<size_t, ResultFlags> getObjectId(std::string &&name) noexcept;
+		std::pair<size_t, ResultFlags> getMaterialId(std::string &&name) noexcept;
 		virtual std::pair<size_t, ParamResult> createObject(std::string &&name) noexcept;
 		virtual std::pair<size_t, ParamResult> createLight(std::string &&name) noexcept;
 		virtual std::pair<size_t, ParamResult> createTexture(std::string &&name) noexcept;
@@ -98,13 +103,13 @@ class Interface
 		virtual std::pair<size_t, ParamResult> createRenderView(std::string &&name) noexcept;
 		virtual std::pair<size_t, ParamResult> createImage(std::string &&name) noexcept;
 		virtual std::pair<size_t, ParamResult> createOutput(std::string &&name) noexcept;
-		void setRenderNotifyViewCallback(yafaray_RenderNotifyViewCallback_t callback, void *callback_data) noexcept;
-		void setRenderNotifyLayerCallback(yafaray_RenderNotifyLayerCallback_t callback, void *callback_data) noexcept;
-		void setRenderPutPixelCallback(yafaray_RenderPutPixelCallback_t callback, void *callback_data) noexcept;
-		void setRenderHighlightPixelCallback(yafaray_RenderHighlightPixelCallback_t callback, void *callback_data) noexcept;
-		void setRenderFlushAreaCallback(yafaray_RenderFlushAreaCallback_t callback, void *callback_data) noexcept;
-		void setRenderFlushCallback(yafaray_RenderFlushCallback_t callback, void *callback_data) noexcept;
-		void setRenderHighlightAreaCallback(yafaray_RenderHighlightAreaCallback_t callback, void *callback_data) noexcept;
+		void setRenderNotifyViewCallback(yafaray_RenderNotifyViewCallback callback, void *callback_data) noexcept;
+		void setRenderNotifyLayerCallback(yafaray_RenderNotifyLayerCallback callback, void *callback_data) noexcept;
+		void setRenderPutPixelCallback(yafaray_RenderPutPixelCallback callback, void *callback_data) noexcept;
+		void setRenderHighlightPixelCallback(yafaray_RenderHighlightPixelCallback callback, void *callback_data) noexcept;
+		void setRenderFlushAreaCallback(yafaray_RenderFlushAreaCallback callback, void *callback_data) noexcept;
+		void setRenderFlushCallback(yafaray_RenderFlushCallback callback, void *callback_data) noexcept;
+		void setRenderHighlightAreaCallback(yafaray_RenderHighlightAreaCallback callback, void *callback_data) noexcept;
 		bool removeOutput(std::string &&name) noexcept;
 		virtual void clearOutputs() noexcept;
 		virtual void clearAll() noexcept;
@@ -114,8 +119,8 @@ class Interface
 		virtual void cancel() noexcept;
 
 		void enablePrintDateTime(bool value) noexcept;
-		void setConsoleVerbosityLevel(const ::yafaray_LogLevel_t &log_level) noexcept;
-		void setLogVerbosityLevel(const ::yafaray_LogLevel_t &log_level) noexcept;
+		void setConsoleVerbosityLevel(const ::yafaray_LogLevel &log_level) noexcept;
+		void setLogVerbosityLevel(const ::yafaray_LogLevel &log_level) noexcept;
 		void printDebug(const std::string &msg) const noexcept;
 		void printVerbose(const std::string &msg) const noexcept;
 		void printInfo(const std::string &msg) const noexcept;
@@ -126,7 +131,6 @@ class Interface
 		void setInputColorSpace(const std::string &color_space_string, float gamma_val) noexcept;
 
 	protected:
-		virtual void setCurrentMaterial(size_t material_id) noexcept;
 		std::unique_ptr<Logger> logger_;
 		std::unique_ptr<ParamMap> params_;
 		std::list<ParamMap> nodes_params_; //! for materials that need to define a whole shader tree etc.
