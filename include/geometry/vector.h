@@ -20,8 +20,8 @@
  *      Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  *
  */
-#ifndef YAFARAY_VECTOR_H
-#define YAFARAY_VECTOR_H
+#ifndef LIBYAFARAY_VECTOR_H
+#define LIBYAFARAY_VECTOR_H
 
 #include "math/math.h"
 #include "math/random.h"
@@ -29,6 +29,7 @@
 #include "uv.h"
 #include <iomanip>
 #include <array>
+#include <sstream>
 
 namespace yafaray {
 
@@ -568,4 +569,4 @@ inline std::string Vec<T, N>::print() const
 
 } //namespace yafaray
 
-#endif // YAFARAY_VECTOR_H
+#endif // LIBYAFARAY_VECTOR_H
