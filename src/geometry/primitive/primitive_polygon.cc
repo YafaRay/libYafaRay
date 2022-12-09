@@ -22,11 +22,6 @@
 
 namespace yafaray {
 
-template class PrimitivePolygon<float, 3, MotionBlurType::None>;
-template class PrimitivePolygon<float, 4, MotionBlurType::None>;
-template class PrimitivePolygon<float, 3, MotionBlurType::Bezier>;
-template class PrimitivePolygon<float, 4, MotionBlurType::Bezier>;
-
 template <typename T, size_t N, MotionBlurType MotionBlur>
 std::unique_ptr<const SurfacePoint> PrimitivePolygon<T, N, MotionBlur>::getSurface(const RayDifferentials *ray_differentials, const Point<T, 3> &hit_point, T time, const Uv<T> &intersect_uv, const Camera *camera) const
 {
@@ -154,5 +149,11 @@ PolyDouble::ClipResultWithBound PrimitivePolygon<T, N, MotionBlur>::clipToBound(
 	for(const auto &vert : vertices) poly_triangle.addVertex({{vert[Axis::X], vert[Axis::Y], vert[Axis::Z]}});
 	return PolyDouble::boxClip(logger, bound[1], poly_triangle, bound[0]);
 }
+
+//Important: to avoid undefined symbols in CLang, always keep the template explicit specializations **at the end** of the source file!
+template class PrimitivePolygon<float, 3, MotionBlurType::None>;
+template class PrimitivePolygon<float, 4, MotionBlurType::None>;
+template class PrimitivePolygon<float, 3, MotionBlurType::Bezier>;
+template class PrimitivePolygon<float, 4, MotionBlurType::Bezier>;
 
 } //namespace yafaray

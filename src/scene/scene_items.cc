@@ -28,16 +28,6 @@
 
 namespace yafaray {
 
-template class SceneItems<Material>;
-template class SceneItems<Object>;
-template class SceneItems<Light>;
-template class SceneItems<Texture>;
-template class SceneItems<RenderView>;
-template class SceneItems<Camera>;
-template class SceneItems<ImageOutput>;
-template class SceneItems<VolumeRegion>;
-template class SceneItems<Image>;
-
 template <typename T>
 std::pair<size_t, ResultFlags> SceneItems<T>::add(const std::string &name, std::unique_ptr<T> item)
 {
@@ -141,5 +131,16 @@ void SceneItems<T>::clear()
 	scene_items_.clear();
 	clearModifiedList();
 }
+
+//Important: to avoid undefined symbols in CLang, always keep the template explicit specializations **at the end** of the source file!
+template class SceneItems<Material>;
+template class SceneItems<Object>;
+template class SceneItems<Light>;
+template class SceneItems<Texture>;
+template class SceneItems<RenderView>;
+template class SceneItems<Camera>;
+template class SceneItems<ImageOutput>;
+template class SceneItems<VolumeRegion>;
+template class SceneItems<Image>;
 
 } //namespace yafaray
