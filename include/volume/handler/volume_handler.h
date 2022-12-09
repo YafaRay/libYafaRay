@@ -23,6 +23,7 @@
 #include "common/enum.h"
 #include "common/enum_map.h"
 #include "param/class_meta.h"
+#include <memory>
 
 namespace yafaray {
 

@@ -21,6 +21,7 @@
 #define LIBYAFARAY_NOISE_GENERATOR_H
 
 #include "param/class_meta.h"
+#include <memory>
 
 namespace yafaray {
 

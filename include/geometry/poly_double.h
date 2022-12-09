@@ -17,11 +17,12 @@
  *      Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-#ifndef YAFARAY_POLY_DOUBLE_H
-#define YAFARAY_POLY_DOUBLE_H
+#ifndef LIBYAFARAY_POLY_DOUBLE_H
+#define LIBYAFARAY_POLY_DOUBLE_H
 
 #include "geometry/vector.h"
 #include "common/logger.h"
+#include <memory>
 #include <vector>
 #include <array>
 
@@ -76,4 +77,4 @@ struct PolyDouble::ClipResultWithBound : PolyDouble::ClipResult
 
 } //namespace yafaray
 
-#endif //YAFARAY_POLY_DOUBLE_H
+#endif //LIBYAFARAY_POLY_DOUBLE_H
