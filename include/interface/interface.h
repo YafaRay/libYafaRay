@@ -54,9 +54,9 @@ class ProgressBar;
 class Interface
 {
 	public:
-		explicit Interface(::yafaray_LoggerCallback logger_callback = nullptr, void *callback_data = nullptr, ::yafaray_DisplayConsole logger_display_console = YAFARAY_DISPLAY_CONSOLE_NORMAL);
+		explicit Interface(::yafaray_LoggerCallback logger_callback = nullptr, void *callback_data = nullptr, ::yafaray_DisplayConsole logger_display_console = YAFARAY_DISPLAY_CONSOLE_NORMAL) noexcept;
 		virtual ~Interface() noexcept;
-		void setLoggingCallback(::yafaray_LoggerCallback logger_callback, void *callback_data);
+		void setLoggingCallback(::yafaray_LoggerCallback logger_callback, void *callback_data) noexcept;
 		virtual void createScene() noexcept;
 		virtual int getSceneFilmWidth() const noexcept;
 		virtual int getSceneFilmHeight() const noexcept;
@@ -85,9 +85,9 @@ class Interface
 		virtual void paramsClearAll() noexcept; 	//!< clear the paramMap and paramList
 		virtual void paramsPushList() noexcept; 	//!< push new list item in paramList (e.g. new shader node description)
 		virtual void paramsEndList() noexcept; 	//!< revert to writing to normal paramMap
-		std::pair<Size2i, bool> getImageSize(size_t image_id) const;
-		std::pair<Rgba, bool> getImageColor(size_t image_id, const Point2i &point) const;
-		bool setImageColor(size_t image_id, const Point2i &point, const Rgba &col);
+		std::pair<Size2i, bool> getImageSize(size_t image_id) const noexcept;
+		std::pair<Rgba, bool> getImageColor(size_t image_id, const Point2i &point) const noexcept;
+		bool setImageColor(size_t image_id, const Point2i &point, const Rgba &col) noexcept;
 		std::pair<size_t, ResultFlags> getImageId(std::string &&name) noexcept;
 		std::pair<size_t, ResultFlags> getObjectId(std::string &&name) noexcept;
 		std::pair<size_t, ResultFlags> getMaterialId(std::string &&name) noexcept;

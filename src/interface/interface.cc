@@ -32,7 +32,7 @@
 
 namespace yafaray {
 
-Interface::Interface(const ::yafaray_LoggerCallback logger_callback, void *callback_data, ::yafaray_DisplayConsole logger_display_console)
+Interface::Interface(const ::yafaray_LoggerCallback logger_callback, void *callback_data, ::yafaray_DisplayConsole logger_display_console) noexcept
 {
 	logger_ = std::make_unique<Logger>(logger_callback, callback_data, logger_display_console);
 	params_ = std::make_unique<ParamMap>();
@@ -42,7 +42,7 @@ Interface::Interface(const ::yafaray_LoggerCallback logger_callback, void *callb
 #endif
 }
 
-void Interface::setLoggingCallback(const ::yafaray_LoggerCallback logger_callback, void *callback_data)
+void Interface::setLoggingCallback(const ::yafaray_LoggerCallback logger_callback, void *callback_data) noexcept
 {
 	logger_->setCallback(logger_callback, callback_data);
 }
@@ -366,16 +366,17 @@ void Interface::setConsoleLogColorsEnabled(bool console_log_colors_enabled) cons
 	logger_->setConsoleLogColorsEnabled(console_log_colors_enabled);
 }
 
-std::pair<Rgba, bool> Interface::getImageColor(size_t image_id, const Point2i &point) const
+std::pair<Rgba, bool> Interface::getImageColor(size_t image_id, const Point2i &point) const noexcept
 {
 	return scene_->getImageColor(image_id, point);
 }
 
-bool Interface::setImageColor(size_t image_id, const Point2i &point, const Rgba &col)
+bool Interface::setImageColor(size_t image_id, const Point2i &point, const Rgba &col) noexcept
 {
 	return scene_->setImageColor(image_id, point, col);
 }
-std::pair<Size2i, bool> Interface::getImageSize(size_t image_id) const
+
+std::pair<Size2i, bool> Interface::getImageSize(size_t image_id) const noexcept
 {
 	return scene_->getImageSize(image_id);
 }
