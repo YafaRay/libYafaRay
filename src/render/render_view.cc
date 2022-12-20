@@ -37,7 +37,7 @@ RenderView::Params::Params(ParamResult &param_result, const ParamMap &param_map)
 ParamMap RenderView::Params::getAsParamMap(bool only_non_default) const
 {
 	PARAM_SAVE_START;
-	PARAM_SAVE(camera_name_);
+	//PARAM_SAVE(camera_name_);
 	PARAM_SAVE(light_names_);
 	PARAM_SAVE(wavelength_);
 	PARAM_SAVE_END;
@@ -45,27 +45,36 @@ ParamMap RenderView::Params::getAsParamMap(bool only_non_default) const
 
 ParamMap RenderView::getAsParamMap(bool only_non_default) const
 {
-	return params_.getAsParamMap(only_non_default);
+	ParamMap result{params_.getAsParamMap(only_non_default)};
+	result.setParam(Params::camera_name_meta_, cameras_.findNameFromId(camera_id_).first);
+	return result;
 }
 
 std::pair<std::unique_ptr<RenderView>, ParamResult> RenderView::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map)
 {
 	if(logger.isDebug()) logger.logDebug("**" + getClassName() + "::factory 'raw' ParamMap\n" + param_map.logContents());
 	auto param_result{Params::meta_.check(param_map, {}, {})};
-	auto render_view {std::make_unique<RenderView>(logger, param_result, param_map)};
+	std::string camera_name;
+	if(param_map.getParam(Params::camera_name_meta_.name(), camera_name).notOk())
+	{
+		logger.logError("RenderView: No camera name provided!");
+		return {nullptr, ParamResult{YAFARAY_RESULT_ERROR_WHILE_CREATING}};
+	}
+	const auto [camera, camera_id, camera_result]{scene.getCamera(camera_name)};
+	auto render_view {std::make_unique<RenderView>(logger, param_result, param_map, scene.getCameras(), camera_id)};
 	if(param_result.notOk()) logger.logWarning(param_result.print<RenderView>(name, {}));
 	return {std::move(render_view), param_result};
 }
 
-RenderView::RenderView(Logger &logger, ParamResult &param_result, const ParamMap &param_map) : params_{param_result, param_map}
+RenderView::RenderView(Logger &logger, ParamResult &param_result, const ParamMap &param_map, const SceneItems<Camera> &cameras, size_t camera_id) : params_{param_result, param_map}, camera_id_{camera_id}, cameras_{cameras}
 {
 	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + params_.getAsParamMap(true).print());
 }
 
 bool RenderView::init(Logger &logger, const Scene &scene)
 {
-	camera_ = std::get<0>(scene.getCamera(params_.camera_name_));
-	if(!camera_)
+	const Camera *camera{cameras_.getById(camera_id_).first};
+	if(!camera)
 	{
 		logger.logError(getClassName() ,"'", name_, "': Camera '", params_.camera_name_, "' not found in the scene.");
 		return false;
@@ -135,6 +144,11 @@ std::vector<const Light *> RenderView::getLightsEmittingDiffusePhotons() const
 RenderView::Type RenderView::type()
 {
 	return Type::RenderView;
+}
+
+const Camera *RenderView::getCamera() const
+{
+	return cameras_.getById(camera_id_).first;
 }
 
 } //namespace yafaray

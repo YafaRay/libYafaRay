@@ -33,6 +33,8 @@
 
 namespace yafaray {
 
+template <typename T> class SceneItems;
+
 class Camera;
 class Light;
 class ParamMap;
@@ -49,10 +51,10 @@ class RenderView final
 		static std::pair<std::unique_ptr<RenderView>, ParamResult> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map);
 		static std::string printMeta(const std::vector<std::string> &excluded_params) { return Params::meta_.print(excluded_params); }
 		[[nodiscard]] ParamMap getAsParamMap(bool only_non_default) const;
-		RenderView(Logger &logger, ParamResult &param_result, const ParamMap &param_map);
+		RenderView(Logger &logger, ParamResult &param_result, const ParamMap &param_map, const SceneItems<Camera> &cameras, size_t camera_id);
 		bool init(Logger &logger, const Scene &scene);
 		[[nodiscard]] std::string getName() const { return name_; }
-		const Camera *getCamera() const { return camera_; }
+		const Camera *getCamera() const;
 		std::map<std::string, const Light *> getLights() const { return lights_; }
 		bool isSpectral() const { return params_.wavelength_ != 0.f; }
 		float getWaveLength() const { return params_.wavelength_; }
@@ -78,7 +80,8 @@ class RenderView final
 		} params_;
 		size_t id_{0};
 		std::string name_;
-		const Camera *camera_ = nullptr;
+		size_t camera_id_{math::invalid<size_t>};
+		const SceneItems<Camera> &cameras_;
 		std::map<std::string, const Light *> lights_;
 };
 

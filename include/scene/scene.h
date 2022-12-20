@@ -128,6 +128,8 @@ class Scene final
 		SceneItems<Texture> &getTextures() { return textures_; }
 		const SceneItems<Image> &getImages() const { return images_; }
 		SceneItems<Image> &getImages() { return images_; }
+		const SceneItems<Camera> &getCameras() const { return cameras_; }
+		SceneItems<Camera> &getCameras() { return cameras_; }
 		std::tuple<Texture *, size_t, ResultFlags> getTexture(const std::string &name) const;
 		std::pair<Texture *, ResultFlags> getTexture(size_t object_id) const;
 		std::pair<size_t, ParamResult> createTexture(std::string &&name, ParamMap &&params);
