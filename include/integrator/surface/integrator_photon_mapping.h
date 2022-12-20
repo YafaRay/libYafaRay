@@ -33,7 +33,7 @@ struct PreGatherData final
 	PhotonMap *diffuse_map_;
 	std::vector<RadData> rad_points_;
 	std::vector<Photon> radiance_vec_;
-	volatile int fetched_;
+	int fetched_;
 	std::mutex mutx_;
 };
 

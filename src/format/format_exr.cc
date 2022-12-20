@@ -30,7 +30,7 @@
 #include <ImfArray.h>
 #include <IexThrowErrnoExc.h>
 
-//Ugly trick to allow using old OpenEXR v2.2 while building using C++17 standard
+//Ugly trick to allow using old OpenEXR v2.2 while building using C++17 standard or higher
 #define throw(...)
 #include <ImfOutputFile.h>
 #include <ImfRgbaFile.h>

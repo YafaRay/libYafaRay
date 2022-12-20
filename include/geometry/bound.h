@@ -55,14 +55,14 @@ class Bound
 		 * @param a is the low corner (minx,miny,minz)
 		 * @param g is the up corner (maxx,maxy,maxz)
 		 */
-		Bound<T>(const Point<T, 3> &a, const Point<T, 3> &g) : a_{a}, g_{g} { }
-		Bound<T>(Point<T, 3> &&a, Point<T, 3> &&g) : a_{std::move(a)}, g_{std::move(g)} { }
+		Bound(const Point<T, 3> &a, const Point<T, 3> &g) : a_{a}, g_{g} { }
+		Bound(Point<T, 3> &&a, Point<T, 3> &&g) : a_{std::move(a)}, g_{std::move(g)} { }
 		//! Default constructors and assignments
-		Bound<T>() = default;
-		Bound<T>(const Bound<T> &bound) = default;
-		Bound<T>(Bound<T> &&bound) = default;
-		Bound<T>& operator=(const Bound<T> &bound) = default;
-		Bound<T>& operator=(Bound<T> &&bound) = default;
+		Bound() = default;
+		Bound(const Bound<T> &bound) = default;
+		Bound(Bound<T> &&bound) = default;
+		Bound& operator=(const Bound<T> &bound) = default;
+		Bound& operator=(Bound<T> &&bound) = default;
 		/*! Two child constructor.
 		 * This creates a bound that includes the two given bounds. It's used when
 		 * building a bounding tree
@@ -70,7 +70,7 @@ class Bound
 		 * @param r is one child bound
 		 * @param l is another child bound
 		 */
-		Bound<T>(const Bound<T> &r, const Bound<T> &l);
+		Bound(const Bound<T> &r, const Bound<T> &l);
 		//! Returns true if the given ray crosses the bound
 		//bool cross(const point3d_t &from,const vector3d_t &ray) const;
 		//! Returns true if the given ray crosses the bound closer than dist

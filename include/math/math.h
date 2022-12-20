@@ -90,13 +90,13 @@ template<typename T> inline constexpr T radToDeg(T rad) noexcept
 
 template <typename T> inline constexpr T min(T a, T b, T c) noexcept
 {
-	static_assert(std::is_pod<T>::value, "This function can only be instantiated for simple 'plain old data' types");
+	static_assert(std::is_standard_layout<T>::value && std::is_trivial<T>::value, "This function can only be instantiated for simple 'plain old data' types");
 	return std::min(a, std::min(b, c));
 }
 
 template <typename T> inline constexpr T max(T a, T b, T c) noexcept
 {
-	static_assert(std::is_pod<T>::value, "This function can only be instantiated for simple 'plain old data' types");
+	static_assert(std::is_standard_layout<T>::value && std::is_trivial<T>::value, "This function can only be instantiated for simple 'plain old data' types");
 	return std::max(a, std::max(b, c));
 }
 

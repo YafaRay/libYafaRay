@@ -33,12 +33,12 @@ class ShapePolygon final
 	static_assert(std::is_arithmetic_v<T>, "This class can only be instantiated for arithmetic types like int, T, etc");
 
 	public:
-		ShapePolygon<T, N>(const ShapePolygon<T, N> &polygon) = default;
-		ShapePolygon<T, N>(ShapePolygon<T, N> &&polygon) = default;
-		explicit ShapePolygon<T, N>(std::array<Point<T, 3>, N> &&vertices) : vertices_(std::move(vertices)) { }
-		explicit ShapePolygon<T, N>(const std::array<Point<T, 3>, N> &vertices) : vertices_(vertices) { }
-		ShapePolygon<T, N> &operator=(const ShapePolygon<T, N> &polygon) = default;
-		ShapePolygon<T, N> &operator=(ShapePolygon<T, N> &&polygon) = default;
+		ShapePolygon(const ShapePolygon<T, N> &polygon) = default;
+		ShapePolygon(ShapePolygon<T, N> &&polygon) = default;
+		explicit ShapePolygon(std::array<Point<T, 3>, N> &&vertices) : vertices_(std::move(vertices)) { }
+		explicit ShapePolygon(const std::array<Point<T, 3>, N> &vertices) : vertices_(vertices) { }
+		ShapePolygon &operator=(const ShapePolygon<T, N> &polygon) = default;
+		ShapePolygon &operator=(ShapePolygon<T, N> &&polygon) = default;
 		Point<T, 3> &operator[](int vertex_number) { return vertices_[vertex_number]; }
 		const Point<T, 3> &operator[](int vertex_number) const { return vertices_[vertex_number]; }
 		std::pair<T, Uv<T>> intersect(const Point<T, 3> &from, const Vec<T, 3> &dir) const;

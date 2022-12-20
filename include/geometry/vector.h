@@ -45,7 +45,7 @@ class Vec
 	static_assert(std::is_arithmetic_v<T>, "This class can only be instantiated for arithmetic types like int, float, etc");
 
 	public:
-		Vec<T, N>() = default;
+		Vec() = default;
 		constexpr Vec<T, N>(const Vec<T, N> &vec) = default;
 		constexpr Vec<T, N>(Vec<T, N> &&vec) = default;
 		constexpr Vec<T, N> &operator = (const Vec<T, N> &vec) = default;

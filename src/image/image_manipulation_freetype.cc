@@ -134,7 +134,7 @@ bool image_manipulation_freetype::drawTextInImage(Logger &logger, Image *image, 
 		// Load glyph image into the slot (erase previous one)
 		if(FT_Load_Char(face, ch, FT_LOAD_DEFAULT))
 		{
-			logger.logError("Badge: FreeType Couldn't load the glyph image for: '", ch, "'!");
+			logger.logError("Badge: FreeType Couldn't load the glyph image for character code: ", static_cast<int>(ch), "!");
 			continue;
 		}
 

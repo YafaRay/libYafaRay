@@ -82,13 +82,13 @@ class File final
 
 template <typename T> bool File::read(T &value) const
 {
-	static_assert(std::is_pod<T>::value, "T must be a plain old data (POD) type like char, int32_t, float, etc");
+	static_assert(std::is_standard_layout<T>::value && std::is_trivial<T>::value, "T must be a plain old data (POD) type like char, int32_t, float, etc");
 	return File::read((char *)&value, sizeof(T));
 }
 
 template <typename T> bool File::append(const T &value)
 {
-	static_assert(std::is_pod<T>::value, "T must be a plain old data (POD) type like char, int32_t, float, etc");
+	static_assert(std::is_standard_layout<T>::value && std::is_trivial<T>::value, "T must be a plain old data (POD) type like char, int32_t, float, etc");
 	return File::append((const char *)&value, sizeof(T));
 }
 

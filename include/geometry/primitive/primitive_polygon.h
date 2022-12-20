@@ -32,7 +32,7 @@ class PrimitivePolygon final : public FacePrimitive
 	static_assert(std::is_arithmetic_v<T>, "This class can only be instantiated for arithmetic types like int, T, etc");
 
 	public:
-		PrimitivePolygon<T, N, MotionBlur>(const FaceIndices<int> &face_indices, const MeshObject &mesh_object);
+		PrimitivePolygon(const FaceIndices<int> &face_indices, const MeshObject &mesh_object);
 
 	private:
 		std::pair<T, Uv<T>> intersect(const Point<T, 3> &from, const Vec<T, 3> &dir, T time) const override;
