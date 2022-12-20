@@ -26,6 +26,8 @@
 
 namespace yafaray {
 
+template <typename T> class SceneItems;
+
 class TextureMapperNode final : public ShaderNode
 {
 		using ThisClassType_t = TextureMapperNode; using ParentClassType_t = ShaderNode;
@@ -35,7 +37,7 @@ class TextureMapperNode final : public ShaderNode
 		static std::pair<std::unique_ptr<ShaderNode>, ParamResult> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map);
 		static std::string printMeta(const std::vector<std::string> &excluded_params) { return Params::meta_.print(excluded_params); }
 		[[nodiscard]] ParamMap getAsParamMap(bool only_non_default) const override;
-		explicit TextureMapperNode(Logger &logger, ParamResult &param_result, const ParamMap &param_map, const Texture *texture);
+		explicit TextureMapperNode(Logger &logger, ParamResult &param_result, const ParamMap &param_map, const SceneItems<Texture> &textures, size_t texture_id);
 
 	private:
 		struct Coords : Enum<Coords>
@@ -98,7 +100,8 @@ class TextureMapperNode final : public ShaderNode
 		const int map_z_{std::max(0, std::min(3, params_.proj_z_))};
 		Point3f p_du_, p_dv_, p_dw_;
 		float d_u_, d_v_, d_w_;
-		const Texture *tex_ = nullptr;
+		size_t texture_id_{math::invalid<size_t>};
+		const SceneItems<Texture> &textures_;
 		float bump_strength_{params_.bump_strength_};
 		const Vec3f offset_{2.f * params_.offset_}; //Offset need to be doubled due to -1..1 texture standardized which results in a 2 wide width/height
 };

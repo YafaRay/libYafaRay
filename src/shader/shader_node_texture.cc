@@ -42,7 +42,7 @@ TextureMapperNode::Params::Params(ParamResult &param_result, const ParamMap &par
 ParamMap TextureMapperNode::Params::getAsParamMap(bool only_non_default) const
 {
 	PARAM_SAVE_START;
-	PARAM_SAVE(texture_);
+	//PARAM_SAVE(texture_);
 	PARAM_SAVE(transform_);
 	PARAM_SAVE(scale_);
 	PARAM_SAVE(offset_);
@@ -60,6 +60,7 @@ ParamMap TextureMapperNode::getAsParamMap(bool only_non_default) const
 {
 	ParamMap result{ParentClassType_t::getAsParamMap(only_non_default)};
 	result.append(params_.getAsParamMap(only_non_default));
+	result.setParam(Params::texture_meta_, textures_.findNameFromId(texture_id_).first);
 	return result;
 }
 
@@ -72,28 +73,29 @@ std::pair<std::unique_ptr<ShaderNode>, ParamResult> TextureMapperNode::factory(L
 		logger.logError("TextureMapper: No texture given for texture mapper!");
 		return {nullptr, ParamResult{YAFARAY_RESULT_ERROR_WHILE_CREATING}};
 	}
-	const Texture *tex{std::get<0>(scene.getTexture(texname))};
-	if(!tex)
+	const auto [texture, texture_id, texture_result]{scene.getTexture(texname)};
+	if(!texture)
 	{
 		logger.logError("TextureMapper: texture '", texname, "' does not exist!");
 		return {nullptr, ParamResult{YAFARAY_RESULT_ERROR_WHILE_CREATING}};
 	}
-	auto shader_node {std::make_unique<TextureMapperNode>(logger, param_result, param_map, tex)};
+	auto shader_node {std::make_unique<TextureMapperNode>(logger, param_result, param_map, scene.getTextures(), texture_id)};
 	if(param_result.notOk()) logger.logWarning(param_result.print<ThisClassType_t>(name, {"type"}));
 	return {std::move(shader_node), param_result};
 }
 
-TextureMapperNode::TextureMapperNode(Logger &logger, ParamResult &param_result, const ParamMap &param_map, const Texture *texture) :
-		ParentClassType_t{logger, param_result, param_map}, params_{param_result, param_map}, tex_(texture)
+TextureMapperNode::TextureMapperNode(Logger &logger, ParamResult &param_result, const ParamMap &param_map, const SceneItems<Texture> &textures, size_t texture_id) :
+		ParentClassType_t{logger, param_result, param_map}, params_{param_result, param_map}, texture_id_{texture_id}, textures_{textures}
 {
 	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + params_.getAsParamMap(true).print());
 	//logger.logParams(getAsParamMap(false).print()); //TEST CODE ONLY, REMOVE!!
-	if(tex_->discrete())
+	const Texture *texture{textures_.getById(texture_id_).first};
+	if(texture->discrete())
 	{
-		const auto [u, v, w] = tex_->resolution();
+		const auto [u, v, w] = texture->resolution();
 		d_u_ = 1.f / static_cast<float>(u);
 		d_v_ = 1.f / static_cast<float>(v);
-		if(tex_->isThreeD()) d_w_ = 1.f / static_cast<float>(w);
+		if(texture->isThreeD()) d_w_ = 1.f / static_cast<float>(w);
 		else d_w_ = 0.f;
 	}
 	else
@@ -107,7 +109,7 @@ TextureMapperNode::TextureMapperNode(Logger &logger, ParamResult &param_result, 
 	p_dw_ = {{0.f, 0.f, d_w_}};
 
 	bump_strength_ /= params_.scale_.length();
-	if(!tex_->isNormalmap()) bump_strength_ /= 100.0f;
+	if(!texture->isNormalmap()) bump_strength_ /= 100.0f;
 }
 
 // Map the texture to a cylinder
@@ -212,7 +214,8 @@ void TextureMapperNode::eval(NodeTreeData &node_tree_data, const SurfacePoint &s
 {
 	std::unique_ptr<const MipMapParams> mip_map_params;
 	auto [texpt, ng] = getCoords(sp, camera);
-	if((tex_->getInterpolationType() == InterpolationType::Trilinear || tex_->getInterpolationType() == InterpolationType::Ewa) && sp.differentials_)
+	const Texture *texture{textures_.getById(texture_id_).first};
+	if((texture->getInterpolationType() == InterpolationType::Trilinear || texture->getInterpolationType() == InterpolationType::Ewa) && sp.differentials_)
 	{
 		const Point3f texpt_orig {texpt};
 		texpt = doMapping(texpt_orig, ng);
@@ -226,8 +229,8 @@ void TextureMapperNode::eval(NodeTreeData &node_tree_data, const SurfacePoint &s
 	}
 	else texpt = doMapping(texpt, ng);
 	node_tree_data[getId()] = {
-			tex_->getColor(texpt, mip_map_params.get()),
-			params_.do_scalar_ ? tex_->getFloat(texpt, mip_map_params.get()) : 0.f
+			texture->getColor(texpt, mip_map_params.get()),
+			params_.do_scalar_ ? texture->getFloat(texpt, mip_map_params.get()) : 0.f
 	};
 }
 
@@ -237,15 +240,16 @@ void TextureMapperNode::evalDerivative(NodeTreeData &node_tree_data, const Surfa
 {
 	float du = 0.0f, dv = 0.0f;
 	auto [texpt, ng] = getCoords(sp, camera);
-	if(tex_->discrete() && sp.has_uv_ && params_.texco_.value() == Coords::Uv)
+	const Texture *texture{textures_.getById(texture_id_).first};
+	if(texture->discrete() && sp.has_uv_ && params_.texco_.value() == Coords::Uv)
 	{
 		texpt = doMapping(texpt, ng);
 		Vec3f norm;
 
-		if(tex_->isNormalmap())
+		if(texture->isNormalmap())
 		{
 			// Get color from normal map texture
-			const Rgba color = tex_->getRawColor(texpt);
+			const Rgba color = texture->getRawColor(texpt);
 			// Assign normal map RGB colors to vector norm
 			norm = {{ color.getR(), color.getG(), color.getB() }};
 			norm = (2.f * norm) - Vec3f{1.f}; //FIXME DAVID: does the Vec3 portion make sense?
@@ -260,8 +264,8 @@ void TextureMapperNode::evalDerivative(NodeTreeData &node_tree_data, const Surfa
 			const Point3f i_1{texpt + p_du_};
 			const Point3f j_0{texpt - p_dv_};
 			const Point3f j_1{texpt + p_dv_};
-			const float dfdu = (tex_->getFloat(i_0) - tex_->getFloat(i_1)) / d_u_;
-			const float dfdv = (tex_->getFloat(j_0) - tex_->getFloat(j_1)) / d_v_;
+			const float dfdu = (texture->getFloat(i_0) - texture->getFloat(i_1)) / d_u_;
+			const float dfdv = (texture->getFloat(j_0) - texture->getFloat(j_1)) / d_v_;
 
 			// now we got the derivative in UV-space, but need it in shading space:
 			Vec3f vec_u{sp.ds_.u_};
@@ -284,12 +288,12 @@ void TextureMapperNode::evalDerivative(NodeTreeData &node_tree_data, const Surfa
 	}
 	else
 	{
-		if(tex_->isNormalmap())
+		if(texture->isNormalmap())
 		{
 			texpt = doMapping(texpt, ng);
 
 			// Get color from normal map texture
-			const Rgba color = tex_->getRawColor(texpt);
+			const Rgba color = texture->getRawColor(texpt);
 
 			// Assign normal map RGB colors to vector norm
 			Vec3f norm {{color.getR(), color.getG(), color.getB() }};
@@ -318,8 +322,8 @@ void TextureMapperNode::evalDerivative(NodeTreeData &node_tree_data, const Surfa
 			const Point3f j_0{doMapping(texpt - d_v_ * sp.uvn_.v_, ng)};
 			const Point3f j_1{doMapping(texpt + d_v_ * sp.uvn_.v_, ng)};
 
-			du = (tex_->getFloat(i_0) - tex_->getFloat(i_1)) / d_u_;
-			dv = (tex_->getFloat(j_0) - tex_->getFloat(j_1)) / d_v_;
+			du = (texture->getFloat(i_0) - texture->getFloat(i_1)) / d_u_;
+			dv = (texture->getFloat(j_0) - texture->getFloat(j_1)) / d_v_;
 			du *= bump_strength_;
 			dv *= bump_strength_;
 
