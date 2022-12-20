@@ -59,7 +59,7 @@ ParamMap ImageTexture::Params::getAsParamMap(bool only_non_default) const
 {
 	PARAM_SAVE_START;
 	PARAM_ENUM_SAVE(clip_mode_);
-	PARAM_SAVE(image_name_);
+	//PARAM_SAVE(image_name_);
 	PARAM_SAVE(exposure_adjust_);
 	PARAM_SAVE(normal_map_);
 	PARAM_SAVE(xrepeat_);
@@ -85,6 +85,7 @@ ParamMap ImageTexture::getAsParamMap(bool only_non_default) const
 {
 	ParamMap result{ParentClassType_t::getAsParamMap(only_non_default)};
 	result.append(params_.getAsParamMap(only_non_default));
+	result.setParam(Params::image_name_meta_, images_.findNameFromId(image_id_).first);
 	return result;
 }
 
@@ -98,20 +99,21 @@ std::pair<std::unique_ptr<Texture>, ParamResult> ImageTexture::factory(Logger &l
 		logger.logError("ImageTexture: Required argument image_name not found for image texture");
 		return {nullptr, ParamResult{YAFARAY_RESULT_ERROR_WHILE_CREATING}};
 	}
-	const Image *image{std::get<0>(scene.getImage(image_name))};
+	const auto [image, image_id, image_result]{scene.getImage(image_name)};
 	if(!image)
 	{
 		logger.logError("ImageTexture: Couldn't load image file, dropping texture.");
 		return {nullptr, ParamResult{YAFARAY_RESULT_ERROR_WHILE_CREATING}};
 	}
-	auto texture {std::make_unique<ThisClassType_t>(logger, param_result, param_map, image)};
+	auto texture {std::make_unique<ThisClassType_t>(logger, param_result, param_map, scene.getImages(), image_id)};
 	if(param_result.notOk()) logger.logWarning(param_result.print<ThisClassType_t>(name, {"type"}));
 	return {std::move(texture), param_result};
 }
 
-ImageTexture::ImageTexture(Logger &logger, ParamResult &param_result, const ParamMap &param_map, const Image *image) : ParentClassType_t{logger, param_result, param_map}, params_{param_result, param_map}, image_{image}
+ImageTexture::ImageTexture(Logger &logger, ParamResult &param_result, const ParamMap &param_map, const SceneItems<Image> &images, size_t image_id) : ParentClassType_t{logger, param_result, param_map}, params_{param_result, param_map}, image_id_{image_id}, images_{images}
 {
 	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + params_.getAsParamMap(true).print());
+	const Image *image{images.getById(image_id_).first};
 	original_image_file_gamma_ = image->getGamma();
 	original_image_file_color_space_ = image->getColorSpace();
 	if(Texture::params_.interpolation_type_ == InterpolationType::Trilinear || Texture::params_.interpolation_type_ == InterpolationType::Ewa)
@@ -129,7 +131,7 @@ ImageTexture::ImageTexture(Logger &logger, ParamResult &param_result, const Para
 
 const Image *ImageTexture::getImageFromMipMapLevel(int mipmap_level) const
 {
-	if(mipmap_level <= 0) return image_;
+	if(mipmap_level <= 0) return images_.getById(image_id_).first;
 	const size_t mipmap_index = mipmap_level - 1;
 	const size_t mipmap_last_index = mipmaps_.size() - 1;
 	if(mipmap_index >= mipmap_last_index) return mipmaps_.back().get();
@@ -138,7 +140,8 @@ const Image *ImageTexture::getImageFromMipMapLevel(int mipmap_level) const
 
 std::array<int, 3> ImageTexture::resolution() const
 {
-	return {image_->getWidth(), image_->getHeight(), 0 };
+	const Image *image{images_.getById(image_id_).first};
+	return {image->getWidth(), image->getHeight(), 0 };
 }
 
 Rgba ImageTexture::interpolateImage(const Point3f &p, const MipMapParams *mipmap_params) const
@@ -404,8 +407,9 @@ Rgba ImageTexture::bicubicInterpolation(const Point3f &p, int mipmap_level) cons
 
 Rgba ImageTexture::mipMapsTrilinearInterpolation(const Point3f &p, const MipMapParams *mipmap_params) const
 {
-	const float ds = std::max(std::abs(mipmap_params->ds_dx_), std::abs(mipmap_params->ds_dy_)) * image_->getWidth();
-	const float dt = std::max(std::abs(mipmap_params->dt_dx_), std::abs(mipmap_params->dt_dy_)) * image_->getHeight();
+	const Image *image{images_.getById(image_id_).first};
+	const float ds = std::max(std::abs(mipmap_params->ds_dx_), std::abs(mipmap_params->ds_dy_)) * image->getWidth();
+	const float dt = std::max(std::abs(mipmap_params->dt_dx_), std::abs(mipmap_params->dt_dy_)) * image->getHeight();
 	float mipmap_level = 0.5f * math::log2(ds * ds + dt * dt);
 
 	if(mipmap_params->force_image_level_ > 0.f) mipmap_level = mipmap_params->force_image_level_ * static_cast<float>(mipmaps_.size());
@@ -474,7 +478,8 @@ Rgba ImageTexture::ewaEllipticCalculation(const Point3f &p, float ds_0, float dt
 {
 	if(mipmap_level >= mipmaps_.size())
 	{
-		return mipmaps_.back()->getColor({{math::mod(static_cast<int>(p[Axis::X]), image_->getWidth()), math::mod(static_cast<int>(p[Axis::Y]), image_->getHeight())}});
+		const Image *image{images_.getById(image_id_).first};
+		return mipmaps_.back()->getColor({{math::mod(static_cast<int>(p[Axis::X]), image->getWidth()), math::mod(static_cast<int>(p[Axis::Y]), image->getHeight())}});
 	}
 
 	const Image *image{getImageFromMipMapLevel(mipmap_level)};
@@ -545,7 +550,7 @@ ImageTexture::EwaWeightLut::EwaWeightLut() noexcept
 
 void ImageTexture::generateMipMaps()
 {
-	mipmaps_ = image_manipulation::generateMipMaps(logger_, image_);
+	mipmaps_ = image_manipulation::generateMipMaps(logger_, images_.getById(image_id_).first);
 }
 
 } //namespace yafaray

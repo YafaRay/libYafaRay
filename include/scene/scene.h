@@ -126,6 +126,8 @@ class Scene final
 		bool disableLight(const std::string &name);
 		const SceneItems<Texture> &getTextures() const { return textures_; }
 		SceneItems<Texture> &getTextures() { return textures_; }
+		const SceneItems<Image> &getImages() const { return images_; }
+		SceneItems<Image> &getImages() { return images_; }
 		std::tuple<Texture *, size_t, ResultFlags> getTexture(const std::string &name) const;
 		std::pair<Texture *, ResultFlags> getTexture(size_t object_id) const;
 		std::pair<size_t, ParamResult> createTexture(std::string &&name, ParamMap &&params);

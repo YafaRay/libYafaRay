@@ -29,6 +29,8 @@
 
 namespace yafaray {
 
+template <typename T> class SceneItems;
+
 class ImageTexture final : public Texture
 {
 		using ThisClassType_t = ImageTexture; using ParentClassType_t = Texture;
@@ -38,7 +40,7 @@ class ImageTexture final : public Texture
 		static std::pair<std::unique_ptr<Texture>, ParamResult> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params);
 		static std::string printMeta(const std::vector<std::string> &excluded_params) { return Params::meta_.print(excluded_params); }
 		[[nodiscard]] ParamMap getAsParamMap(bool only_non_default) const override;
-		ImageTexture(Logger &logger, ParamResult &param_result, const ParamMap &param_map, const Image *image);
+		ImageTexture(Logger &logger, ParamResult &param_result, const ParamMap &param_map, const SceneItems<Image> &images, size_t image_id);
 
 	private:
 		struct ClipMode : public Enum<ClipMode>
@@ -98,7 +100,8 @@ class ImageTexture final : public Texture
 		//bool grayscale_ = false;	//!< Converts the information loaded from the texture RGB to grayscale to reduce memory usage for bump or mask textures, for example. Alpha is ignored in this case. //TODO: to implement at some point
 		const bool crop_x_{(params_.cropmin_x_ != 0.f) || (params_.cropmax_x_ != 1.f)};
 		const bool crop_y_{(params_.cropmin_y_ != 0.f) || (params_.cropmax_y_ != 1.f)};
-		const Image *image_ = nullptr;
+		size_t image_id_{math::invalid<size_t>};
+		const SceneItems<Image> &images_;
 		std::vector<std::unique_ptr<const Image>> mipmaps_;
 		float original_image_file_gamma_ = 1.f;
 		ColorSpace original_image_file_color_space_ = ColorSpace::RawManualGamma;
