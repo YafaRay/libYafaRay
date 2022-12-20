@@ -25,6 +25,7 @@
 namespace yafaray {
 
 class Texture;
+template <typename T> class SceneItems;
 
 class NoiseVolumeRegion final : public DensityVolumeRegion
 {
@@ -35,7 +36,7 @@ class NoiseVolumeRegion final : public DensityVolumeRegion
 		static std::pair<std::unique_ptr<VolumeRegion>, ParamResult> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map);
 		static std::string printMeta(const std::vector<std::string> &excluded_params) { return Params::meta_.print(excluded_params); }
 		[[nodiscard]] ParamMap getAsParamMap(bool only_non_default) const override;
-		NoiseVolumeRegion(Logger &logger, ParamResult &param_result, const ParamMap &param_map, const Texture *noise);
+		NoiseVolumeRegion(Logger &logger, ParamResult &param_result, const ParamMap &param_map, const SceneItems<Texture> &textures, size_t texture_id);
 
 	private:
 		[[nodiscard]] Type type() const override { return Type::Noise; }
@@ -49,7 +50,8 @@ class NoiseVolumeRegion final : public DensityVolumeRegion
 		} params_;
 		float density(const Point3f &p) const override;
 
-		const Texture *tex_dist_noise_ = nullptr;
+		size_t texture_id_{math::invalid<size_t>};
+		const SceneItems<Texture> &textures_;
 		const float sharpness_{params_.sharpness_ * params_.sharpness_};
 };
 

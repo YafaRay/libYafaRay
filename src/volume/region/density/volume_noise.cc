@@ -38,7 +38,7 @@ ParamMap NoiseVolumeRegion::Params::getAsParamMap(bool only_non_default) const
 	PARAM_SAVE(sharpness_);
 	PARAM_SAVE(density_);
 	PARAM_SAVE(cover_);
-	PARAM_SAVE(texture_);
+	//PARAM_SAVE(texture_);
 	PARAM_SAVE_END;
 }
 
@@ -46,6 +46,7 @@ ParamMap NoiseVolumeRegion::getAsParamMap(bool only_non_default) const
 {
 	ParamMap result{ParentClassType_t::getAsParamMap(only_non_default)};
 	result.append(params_.getAsParamMap(only_non_default));
+	result.setParam(Params::texture_meta_, textures_.findNameFromId(texture_id_).first);
 	return result;
 }
 
@@ -59,26 +60,26 @@ std::pair<std::unique_ptr<VolumeRegion>, ParamResult> NoiseVolumeRegion::factory
 		if(logger.isVerbose()) logger.logVerbose(getClassName() + ": Noise texture not set, the volume region won't be created.");
 		return {nullptr, ParamResult{YAFARAY_RESULT_ERROR_WHILE_CREATING}};
 	}
-	const Texture *texture{std::get<0>(scene.getTexture(tex_name))};
+	const auto [texture, texture_id, texture_result]{scene.getTexture(tex_name)};
 	if(!texture)
 	{
 		if(logger.isVerbose()) logger.logVerbose(getClassName() + ": Noise texture '", tex_name, "' couldn't be found, the volume region won't be created.");
 		return {nullptr, ParamResult{YAFARAY_RESULT_ERROR_WHILE_CREATING}};
 	}
-	auto volume_region {std::make_unique<ThisClassType_t>(logger, param_result, param_map, texture)};
+	auto volume_region {std::make_unique<ThisClassType_t>(logger, param_result, param_map, scene.getTextures(), texture_id)};
 	if(param_result.notOk()) logger.logWarning(param_result.print<ThisClassType_t>(name, {"type"}));
 	return {std::move(volume_region), param_result};
 }
 
-NoiseVolumeRegion::NoiseVolumeRegion(Logger &logger, ParamResult &param_result, const ParamMap &param_map, const Texture *texture) :
-		ParentClassType_t{logger, param_result, param_map}, params_{param_result, param_map}, tex_dist_noise_{texture}
+NoiseVolumeRegion::NoiseVolumeRegion(Logger &logger, ParamResult &param_result, const ParamMap &param_map, const SceneItems<Texture> &textures, size_t texture_id) :
+		ParentClassType_t{logger, param_result, param_map}, params_{param_result, param_map}, texture_id_{texture_id}, textures_{textures}
 {
 	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + params_.getAsParamMap(true).print());
 }
 
 float NoiseVolumeRegion::density(const Point3f &p) const
 {
-	float d = tex_dist_noise_->getColor(p * 0.1f).energy();
+	float d = textures_.getById(texture_id_).first->getColor(p * 0.1f).energy();
 
 	d = 1.0f / (1.0f + math::exp(sharpness_ * (1.0f - params_.cover_ - d)));
 	d *= params_.density_;
