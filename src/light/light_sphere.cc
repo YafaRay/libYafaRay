@@ -78,7 +78,7 @@ void SphereLight::init(Scene &scene)
 	if(!params_.object_name_.empty())
 	{
 		const auto [object, object_id, object_result]{scene.getObject(params_.object_name_)};
-		if(object) object->setLight(this);
+		if(object) object->setLight(id_);
 		else logger_.logError(getClassName(), ": '" + getName() + "': associated object '" + params_.object_name_ + "' could not be found!");
 	}
 }

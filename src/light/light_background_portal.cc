@@ -108,7 +108,7 @@ void BackgroundPortalLight::init(Scene &scene)
 		primitives_ = object->getPrimitives();
 		initIs();
 		if(logger_.isVerbose()) logger_.logVerbose(getClassName(), ": number of primitives: ", primitives_.size(), ", area: ", area_);
-		object->setLight(this);
+		object->setLight(id_);
 	}
 }
 

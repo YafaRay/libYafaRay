@@ -44,7 +44,7 @@ class Object
 		[[nodiscard]] virtual Type type() const = 0;
 		static std::pair<std::unique_ptr<Object>, ParamResult> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map);
 		[[nodiscard]] virtual ParamMap getAsParamMap(bool only_non_default) const;
-		Object(ParamResult &param_result, const ParamMap &param_map, const SceneItems <Object> &objects, const SceneItems<Material> &materials);
+		Object(ParamResult &param_result, const ParamMap &param_map, const SceneItems <Object> &objects, const SceneItems<Material> &materials, const SceneItems<Light> &lights);
 		virtual ~Object() = default;
 		[[nodiscard]] std::string getName() const;
 		size_t getId() const { return id_; }
@@ -55,8 +55,8 @@ class Object
 		bool isBaseObject() const { return params_.is_base_object_; }
 		int getPassIndex() const { return params_.object_index_; }
 		Rgb getIndexAutoColor() const { return index_auto_color_; }
-		const Light *getLight() const { return light_; }
-		void setLight(const Light *light) { light_ = light; }
+		const Light *getLight() const { return lights_.getById(light_id_).first; }
+		void setLight(size_t light_id) { light_id_ = light_id; }
 		const Material *getMaterial(size_t material_id) const { return materials_.getById(material_id).first; }
 		virtual bool calculateObject(size_t material_id) = 0;
 		bool calculateObject() { return calculateObject(0); }
@@ -103,9 +103,10 @@ class Object
 
 	private:
 		size_t id_{0};
-		const Light *light_ = nullptr;
 		const SceneItems<Object> &objects_;
 		const SceneItems<Material> &materials_;
+		const SceneItems<Light> &lights_;
+		size_t light_id_{math::invalid<size_t>};
 		Rgb index_auto_color_{0.f}; //!< Object Index color automatically generated for the object-index-auto color render pass
 };
 

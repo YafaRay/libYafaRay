@@ -41,7 +41,7 @@ Object::Params::Params(ParamResult &param_result, const ParamMap &param_map)
 ParamMap Object::Params::getAsParamMap(bool only_non_default) const
 {
 	PARAM_SAVE_START;
-	PARAM_SAVE(light_name_);
+	//PARAM_SAVE(light_name_);
 	PARAM_ENUM_SAVE(visibility_);
 	PARAM_SAVE(is_base_object_);
 	PARAM_SAVE(object_index_);
@@ -55,6 +55,7 @@ ParamMap Object::getAsParamMap(bool only_non_default) const
 {
 	ParamMap result{params_.getAsParamMap(only_non_default)};
 	result.setParam("type", type().print());
+	result.setParam(Params::light_name_meta_, lights_.findNameFromId(light_id_).first);
 	return result;
 }
 
@@ -74,7 +75,7 @@ std::pair<std::unique_ptr<Object>, ParamResult> Object::factory(Logger &logger, 
 		{
 			//FIXME DAVID: probably will need to work on a better parameter error handling considering that both an object and a primitive are involved and the check needs to be done for both
 			ParamResult param_result;
-			auto primitive_object{std::make_unique<PrimitiveObject>(param_result, param_map, scene.getObjects(), scene.getMaterials())};
+			auto primitive_object{std::make_unique<PrimitiveObject>(param_result, param_map, scene.getObjects(), scene.getMaterials(), scene.getLights())};
 			auto [primitive, primitive_param_result]{SpherePrimitive::factory(logger, scene, name, param_map, *primitive_object)};
 			param_result.merge(primitive_param_result);
 			primitive_object->setPrimitive(std::move(primitive));
@@ -86,7 +87,7 @@ std::pair<std::unique_ptr<Object>, ParamResult> Object::factory(Logger &logger, 
 	else return {nullptr, ParamResult{YAFARAY_RESULT_ERROR_TYPE_UNKNOWN_PARAM}};
 }
 
-Object::Object(ParamResult &param_result, const ParamMap &param_map, const SceneItems <Object> &objects, const SceneItems<Material> &materials) : params_{param_result, param_map}, objects_{objects}, materials_{materials}
+Object::Object(ParamResult &param_result, const ParamMap &param_map, const SceneItems <Object> &objects, const SceneItems<Material> &materials, const SceneItems<Light> &lights) : params_{param_result, param_map}, objects_{objects}, materials_{materials}, lights_{lights}
 {
 	//if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + params_.getAsParamMap(true).print());
 }

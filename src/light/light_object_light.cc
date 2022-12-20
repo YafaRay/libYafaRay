@@ -102,7 +102,7 @@ void ObjectLight::init(Scene &scene)
 	{
 		primitives_ = object->getPrimitives();
 		initIs();
-		object->setLight(this);
+		object->setLight(id_);
 		if(logger_.isVerbose()) logger_.logVerbose(getClassName(), ": primitives:", num_primitives_, ", double sided:", params_.double_sided_, ", area:", area_, " color:", color_);
 	}
 }
