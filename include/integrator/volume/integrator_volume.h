@@ -26,6 +26,8 @@
 #include "common/enum.h"
 #include "common/enum_map.h"
 #include "param/class_meta.h"
+#include "scene/scene_items.h"
+#include "render/renderer.h"
 #include <map>
 #include <memory>
 
@@ -48,11 +50,11 @@ class VolumeIntegrator
 	public:
 		inline static std::string getClassName() { return "VolumeIntegrator"; }
 		[[nodiscard]] virtual Type type() const = 0;
-		static std::pair<std::unique_ptr<VolumeIntegrator>, ParamResult> factory(Logger &logger, const Scene &scene, const ParamMap &param_map);
+		static std::pair<std::unique_ptr<VolumeIntegrator>, ParamResult> factory(Logger &logger, const yafaray::SceneItems<VolumeRegion> &volume_regions, const ParamMap &param_map);
 		[[nodiscard]] virtual ParamMap getAsParamMap(bool only_non_default) const;
 		virtual ~VolumeIntegrator() = default;
 		static std::string printMeta(const std::vector<std::string> &excluded_params) { return Params::meta_.print(excluded_params); }
-		virtual bool preprocess(FastRandom &fast_random, ImageFilm *image_film, const RenderView *render_view, const Scene &scene) = 0;
+		virtual bool preprocess(FastRandom &fast_random, ImageFilm *image_film, const RenderView *render_view, const Scene &scene, const Renderer &renderer) = 0;
 		Rgb integrate(RandomGenerator &random_generator, const Ray &ray) const;
 		virtual Rgb transmittance(RandomGenerator &random_generator, const Ray &ray) const = 0;
 		virtual Rgb integrate(RandomGenerator &random_generator, const Ray &ray, int additional_depth) const = 0;

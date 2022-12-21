@@ -21,7 +21,6 @@
 #include "scene/scene.h"
 #include "accelerator/accelerator.h"
 #include "background/background.h"
-#include "camera/camera.h"
 #include "common/logger.h"
 #include "param/param.h"
 #include "geometry/matrix.h"
@@ -30,7 +29,7 @@
 #include "geometry/primitive/primitive.h"
 #include "geometry/primitive/primitive_instance.h"
 #include "geometry/uv.h"
-#include "image/image_output.h"
+#include "image/image.h"
 #include "light/light.h"
 #include "material/material.h"
 #include "texture/texture.h"
@@ -41,17 +40,13 @@
 
 namespace yafaray {
 
-void Scene::logInfoVerboseSuccess(Logger &logger, const std::string &pname, const std::string &name, const std::string &t)
-{
-	logger.logVerbose("Scene: ", "Added ", pname, " '", name, "' (", t, ")!");
-}
-
 Scene::Scene(Logger &logger, const std::string &name, const ParamMap &param_map) : name_{name}, scene_bound_{std::make_unique<Bound<float>>()}, logger_{logger}
 {
 	createDefaultMaterial();
 	int nthreads = -1;
 	param_map.getParam("threads", nthreads); // number of threads, -1 = auto detection
 	setNumThreads(nthreads);
+	param_map.getParam("scene_accelerator", scene_accelerator_);
 }
 
 //This is just to avoid compilation error "error: invalid application of ‘sizeof’ to incomplete type ‘yafaray::Accelerator’" because the destructor needs to know the type of any shared_ptr or unique_ptr objects
@@ -81,11 +76,6 @@ std::pair<size_t, ResultFlags> Scene::getMaterial(const std::string &name) const
 	const auto [material_id, material_result]{materials_.findIdFromName(name)};
 	if(material_result.notOk()) return {material_id_default_, material_result};
 	else return {material_id, material_result};
-}
-
-std::tuple<Camera *, size_t, ResultFlags> Scene::getCamera(const std::string &name) const
-{
-	return cameras_.getByName(name);
 }
 
 std::tuple<Light *, size_t, ResultFlags> Scene::getLight(const std::string &name) const
@@ -122,9 +112,12 @@ std::pair<size_t, ParamResult> Scene::createMaterial(const std::string &name, co
 {
 	auto [material, param_result]{Material::factory(logger_, *this, name, param_map, param_map_list_nodes)};
 	if(param_result.hasError()) return {material_id_default_, ParamResult{YAFARAY_RESULT_ERROR_WHILE_CREATING}};
-	if(logger_.isVerbose()) logInfoVerboseSuccess(logger_, Material::getClassName(), name, material->type().print());
+	if(logger_.isVerbose())
+	{
+		logger_.logVerbose(getClassName(), "'", this->name(), "': Added ", material->getClassName(), " '", name, "' (", material->type().print(), ")!");
+	}
 	auto [material_id, result_flags]{materials_.add(name, std::move(material))};
-	if(result_flags == YAFARAY_RESULT_WARNING_OVERWRITTEN) logger_.logDebug("Scene: ", Material::getClassName(), " \"", name, "\" already exists, replacing.");
+	if(result_flags == YAFARAY_RESULT_WARNING_OVERWRITTEN) logger_.logDebug(getClassName(), "'", this->name(), "': ", material->getClassName(), " \"", name, "\" already exists, replacing.");
 	param_result.flags_ |= result_flags;
 	return {material_id, param_result};
 }
@@ -135,12 +128,15 @@ std::pair<size_t, ParamResult> Scene::createSceneItem(Logger &logger, const std:
 	const auto [existing_item, existing_item_id, existing_item_result]{map.getByName(name)};
 	if(existing_item)
 	{
-		if(logger.isVerbose()) logger.logWarning(T::getClassName(), ": item with name '", name, "' already exists, overwriting with new item.");
+		if(logger.isVerbose()) logger.logWarning(T::getClassName(), "'", this->name(), "': item with name '", name, "' already exists, overwriting with new item.");
 	}
 	auto [new_item, param_result]{T::factory(logger, *this, name, param_map)};
 	if(new_item)
 	{
-		if(logger.isVerbose()) logInfoVerboseSuccess(logger, T::getClassName(), name, new_item->type().print());
+		if(logger.isVerbose())
+		{
+			logger.logVerbose(getClassName(), "'", this->name(), "': Added ", new_item->getClassName(), " '", name, "' (", new_item->type().print(), ")!");
+		}
 		const auto [new_item_id, adding_result]{map.add(name, std::move(new_item))};
 		param_result.flags_ |= adding_result;
 		return {new_item_id, param_result};
@@ -154,18 +150,16 @@ std::pair<size_t, ParamResult> Scene::createTexture(const std::string &name, con
 	return result;
 }
 
-std::pair<size_t, ParamResult> Scene::createCamera(const std::string &name, const ParamMap &param_map)
-{
-	return createSceneItem<Camera>(logger_, name, param_map, cameras_);
-}
-
 ParamResult Scene::defineBackground(const ParamMap &param_map)
 {
-	auto factory{Background::factory(logger_, *this, "background", param_map)};
-	if(logger_.isVerbose() && factory.first) logInfoVerboseSuccess(logger_, factory.first->getClassName(), "", factory.first->type().print());
+	auto [background, background_result]{Background::factory(logger_, *this, "background", param_map)};
+	if(logger_.isVerbose() && background)
+	{
+		logger_.logVerbose(getClassName(), "'", this->name(), "': Added ", background->getClassName(), " '", "", "' (", background->type().print(), ")!");
+	}
 	//logger_.logParams(result.first->getAsParamMap(true).print()); //TEST CODE ONLY, REMOVE!!
-	background_ = std::move(factory.first);
-	return factory.second;
+	background_ = std::move(background);
+	return background_result;
 }
 
 std::pair<size_t, ParamResult> Scene::createVolumeRegion(const std::string &name, const ParamMap &param_map)
@@ -180,7 +174,7 @@ std::pair<size_t, ParamResult> Scene::createImage(const std::string &name, const
 
 bool Scene::initObject(size_t object_id, size_t material_id)
 {
-	if(logger_.isDebug()) logger_.logDebug("Scene::initObject");
+	if(logger_.isDebug()) logger_.logDebug(getClassName(), "'", name(), "'::initObject");
 	auto[object, object_result]{objects_.getById(object_id)};
 	const bool result{object->calculateObject(material_id)};
 	return result;
@@ -191,7 +185,7 @@ bool Scene::smoothVerticesNormals(size_t object_id, float angle)
 	auto [object, object_result]{objects_.getById(object_id)};
 	if(object_result == YAFARAY_RESULT_ERROR_NOT_FOUND)
 	{
-		logger_.logWarning("Scene::smoothVerticesNormals: object id '", object_id, "' not found, skipping...");
+		logger_.logWarning(getClassName(), "'", name(), "'::smoothVerticesNormals: object id '", object_id, "' not found, skipping...");
 		return false;
 	}
 	if(object->hasVerticesNormals(0) && object->numVerticesNormals(0) == object->numVertices(0))
@@ -283,7 +277,7 @@ bool Scene::addInstanceMatrix(size_t instance_id, Matrix4f &&obj_to_world, float
 	return true;
 }
 
-bool Scene::updateObjects()
+bool Scene::init()
 {
 	std::vector<const Primitive *> primitives;
 	for(const auto &[object, object_name, object_enabled] : objects_)
@@ -301,7 +295,7 @@ bool Scene::updateObjects()
 		const bool instance_primitives_result{instance->updatePrimitives(*this)};
 		if(!instance_primitives_result)
 		{
-			logger_.logWarning(getClassName(), ": Instance id=", instance_id, " could not update primitives, maybe recursion problem...");
+			logger_.logWarning(getClassName(), "'", name(), "': Instance id=", instance_id, " could not update primitives, maybe recursion problem...");
 			continue;
 		}
 		const auto instance_primitives{instance->getPrimitives()};
@@ -309,7 +303,7 @@ bool Scene::updateObjects()
 	}
 	if(primitives.empty())
 	{
-		logger_.logWarning("Scene: Scene is empty...");
+		logger_.logWarning(getClassName(), "'", name(), "': Scene is empty...");
 	}
 	ParamMap params;
 	params["type"] = scene_accelerator_;
@@ -317,7 +311,7 @@ bool Scene::updateObjects()
 
 	accelerator_ = Accelerator::factory(logger_, primitives, params).first;
 	*scene_bound_ = accelerator_->getBound();
-	if(logger_.isVerbose()) logger_.logVerbose("Scene: New scene bound is: ", "(", scene_bound_->a_[Axis::X], ", ", scene_bound_->a_[Axis::Y], ", ", scene_bound_->a_[Axis::Z], "), (", scene_bound_->g_[Axis::X], ", ", scene_bound_->g_[Axis::Y], ", ", scene_bound_->g_[Axis::Z], ")");
+	if(logger_.isVerbose()) logger_.logVerbose(getClassName(), "'", name(), "': New scene bound is: ", "(", scene_bound_->a_[Axis::X], ", ", scene_bound_->a_[Axis::Y], ", ", scene_bound_->a_[Axis::Z], "), (", scene_bound_->g_[Axis::X], ", ", scene_bound_->g_[Axis::Y], ", ", scene_bound_->g_[Axis::Z], ")");
 
 	object_index_highest_ = 1;
 	for(const auto &[object, object_name, object_enabled] : objects_)
@@ -331,15 +325,8 @@ bool Scene::updateObjects()
 		const int material_pass_index{materials_.getById(material_id).first->getPassIndex()};
 		if(material_index_highest_ < material_pass_index) material_index_highest_ = material_pass_index;
 	}
-/* FIXME
-	if(shadow_bias_auto_) shadow_bias_ = Accelerator::shadowBias();
-	if(ray_min_dist_auto_) ray_min_dist_ = Accelerator::minRayDist();
-*/
 
-/* FIXME
-	logger_.logInfo("Scene: total scene dimensions: X=", scene_bound_->length(Axis::X), ", y=", scene_bound_->length(Axis::Y), ", z=", scene_bound_->length(Axis::Z), ", volume=", scene_bound_->vol(), ", Shadow Bias=", shadow_bias_, (shadow_bias_auto_ ? " (auto)" : ""), ", Ray Min Dist=", ray_min_dist_, (ray_min_dist_auto_ ? " (auto)" : ""));
-*/
-	logger_.logInfo("Scene: total scene dimensions: X=", scene_bound_->length(Axis::X), ", y=", scene_bound_->length(Axis::Y), ", z=", scene_bound_->length(Axis::Z), ", volume=", scene_bound_->vol());
+	logger_.logInfo(getClassName(), "'", name(), "': total scene dimensions: X=", scene_bound_->length(Axis::X), ", y=", scene_bound_->length(Axis::Y), ", z=", scene_bound_->length(Axis::Z), ", volume=", scene_bound_->vol());
 
 	mipmap_interpolation_required_ = false;
 	for(size_t texture_id = 0; texture_id < textures_.size(); ++texture_id)
@@ -347,11 +334,23 @@ bool Scene::updateObjects()
 		const InterpolationType texture_interpolation_type{textures_.getById(texture_id).first->getInterpolationType()};
 		if(texture_interpolation_type == InterpolationType::Trilinear || texture_interpolation_type == InterpolationType::Ewa)
 		{
-			if(logger_.isVerbose()) logger_.logVerbose("At least one texture using mipmaps interpolation.");
+			if(logger_.isVerbose()) logger_.logVerbose(getClassName(), "'", name(), "': At least one texture using mipmaps interpolation, ray differentials will be enabled.");
 			mipmap_interpolation_required_ = true;
 			break;
 		}
 	}
+
+	for(auto &[light, light_name, light_enabled] : lights_)
+	{
+		if(light && light_enabled) light->init(*this);
+	}
+
+	objects_.clearModifiedList();
+	lights_.clearModifiedList();
+	materials_.clearModifiedList();
+	textures_.clearModifiedList();
+	volume_regions_.clearModifiedList();
+	images_.clearModifiedList();
 	return true;
 }
 

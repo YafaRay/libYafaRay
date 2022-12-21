@@ -33,7 +33,6 @@ class Material;
 class VolumeHandler;
 class VolumeRegion;
 class Texture;
-class Camera;
 class Background;
 class ShaderNode;
 class ImageFilm;
@@ -67,7 +66,6 @@ class Scene final
 	public:
 		inline static std::string getClassName() { return "Scene"; }
 		Scene(Logger &logger, const std::string &name, const ParamMap &param_map);
-		Scene(const Scene &s) = delete;
 		~Scene();
 		std::string name() const { return name_; }
 		int getNumThreads() const { return nthreads_; }
@@ -84,7 +82,7 @@ class Scene final
 		bool addInstanceOfInstance(size_t instance_id, size_t base_instance_id);
 		bool addInstanceMatrix(size_t instance_id, Matrix4f &&obj_to_world, float time);
 		std::pair<const Instance *, ResultFlags> getInstance(size_t instance_id) const;
-		bool updateObjects();
+		bool init();
 		std::tuple<Object *, size_t, ResultFlags> getObject(const std::string &name) const;
 		std::pair<Object *, ResultFlags> getObject(size_t object_id) const;
 		const SceneItems<Object> &getObjects() const { return objects_; }
@@ -94,7 +92,6 @@ class Scene final
 		Bound<float> getSceneBound() const;
 		std::pair<size_t, ResultFlags> getMaterial(const std::string &name) const;
 		const SceneItems<Material> &getMaterials() const { return materials_; }
-		std::tuple<Camera *, size_t, ResultFlags> getCamera(const std::string &name) const;
 		std::pair<Size2i, bool> getImageSize(size_t image_id) const;
 		std::pair<Rgba, bool> getImageColor(size_t image_id, const Point2i &point) const;
 		bool setImageColor(size_t image_id, const Point2i &point, const Rgba &col);
@@ -110,18 +107,16 @@ class Scene final
 		SceneItems<Texture> &getTextures() { return textures_; }
 		const SceneItems<Image> &getImages() const { return images_; }
 		SceneItems<Image> &getImages() { return images_; }
-		const SceneItems<Camera> &getCameras() const { return cameras_; }
-		SceneItems<Camera> &getCameras() { return cameras_; }
 		std::tuple<Texture *, size_t, ResultFlags> getTexture(const std::string &name) const;
 		std::pair<Texture *, ResultFlags> getTexture(size_t object_id) const;
 		std::pair<size_t, ParamResult> createTexture(const std::string &name, const ParamMap &param_map);
 		std::pair<size_t, ParamResult> createMaterial(const std::string &name, const ParamMap &param_map, const std::list<ParamMap> &param_map_list_nodes);
-		std::pair<size_t, ParamResult> createCamera(const std::string &name, const ParamMap &param_map);
 		ParamResult defineBackground(const ParamMap &param_map);
 		std::pair<size_t, ParamResult> createVolumeRegion(const std::string &name, const ParamMap &param_map);
 		std::pair<size_t, ParamResult> createImage(const std::string &name, const ParamMap &param_map);
-		static void logInfoVerboseSuccess(Logger &logger, const std::string &pname, const std::string &name, const std::string &t);
 		bool mipMapInterpolationRequired() const { return mipmap_interpolation_required_; }
+		size_t getObjectIndexHighest() const { return object_index_highest_; }
+		size_t getMaterialIndexHighest() const { return material_index_highest_; }
 
 	private:
 		void setNumThreads(int threads);
@@ -142,7 +137,6 @@ class Scene final
 		SceneItems<Light> lights_;
 		SceneItems<Material> materials_;
 		SceneItems<Texture> textures_;
-		SceneItems<Camera> cameras_;
 		SceneItems<VolumeRegion> volume_regions_;
 		SceneItems<Image> images_;
 		Logger &logger_;

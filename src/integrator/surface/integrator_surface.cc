@@ -52,7 +52,7 @@ ParamMap SurfaceIntegrator::getAsParamMap(bool only_non_default) const
 	return result;
 }
 
-std::pair<std::unique_ptr<SurfaceIntegrator>, ParamResult> SurfaceIntegrator::factory(Logger &logger, RenderControl &render_control, const Scene &scene, const ParamMap &param_map)
+std::pair<std::unique_ptr<SurfaceIntegrator>, ParamResult> SurfaceIntegrator::factory(Logger &logger, RenderControl &render_control, const ParamMap &param_map)
 {
 	const Type type{ClassMeta::preprocessParamMap<Type>(logger, getClassName(), param_map)};
 	switch(type.value())
@@ -60,37 +60,37 @@ std::pair<std::unique_ptr<SurfaceIntegrator>, ParamResult> SurfaceIntegrator::fa
 		case Type::Bidirectional:
 		{
 			logger.logWarning("The Bidirectional integrator is UNSTABLE at the moment and needs to be improved. It might give unexpected and perhaps even incorrect render results. Use at your own risk.");
-			return BidirectionalIntegrator::factory(logger, render_control, param_map, scene);
+			return BidirectionalIntegrator::factory(logger, render_control, param_map);
 		}
-		case Type::Debug: return DebugIntegrator::factory(logger, render_control, param_map, scene);
-		case Type::DirectLight: return DirectLightIntegrator::factory(logger, render_control, param_map, scene);
-		case Type::Path: return PathIntegrator::factory(logger, render_control, param_map, scene);
-		case Type::Photon: return PhotonIntegrator::factory(logger, render_control, param_map, scene);
-		case Type::Sppm: return SppmIntegrator::factory(logger, render_control, param_map, scene);
+		case Type::Debug: return DebugIntegrator::factory(logger, render_control, param_map);
+		case Type::DirectLight: return DirectLightIntegrator::factory(logger, render_control, param_map);
+		case Type::Path: return PathIntegrator::factory(logger, render_control, param_map);
+		case Type::Photon: return PhotonIntegrator::factory(logger, render_control, param_map);
+		case Type::Sppm: return SppmIntegrator::factory(logger, render_control, param_map);
 		default: return {nullptr, ParamResult{YAFARAY_RESULT_ERROR_WHILE_CREATING}};
 	}
 }
 
-bool SurfaceIntegrator::preprocess(FastRandom &fast_random, ImageFilm *image_film, const RenderView *render_view, const Scene &scene)
+bool SurfaceIntegrator::preprocess(FastRandom &fast_random, ImageFilm *image_film, const RenderView *render_view, const Scene &scene, const Renderer &renderer)
 {
 	accelerator_ = scene.getAccelerator();
 	if(!accelerator_) return false;
-	shadow_bias_ = scene.getShadowBias();
-	ray_min_dist_ = scene.getRayMinDist();
-	num_threads_ = scene.getNumThreads();
-	num_threads_photons_ = scene.getNumThreadsPhotons();
-	shadow_bias_auto_ = scene.isShadowBiasAuto();
-	ray_min_dist_auto_ = scene.isRayMinDistAuto();
-	layers_ = scene.getLayers();
+	shadow_bias_ = renderer.getShadowBias();
+	ray_min_dist_ = renderer.getRayMinDist();
+	num_threads_ = renderer.getNumThreads();
+	num_threads_photons_ = renderer.getNumThreadsPhotons();
+	shadow_bias_auto_ = renderer.isShadowBiasAuto();
+	ray_min_dist_auto_ = renderer.isRayMinDistAuto();
+	layers_ = renderer.getLayers();
 	image_film_ = image_film;
 	render_view_ = render_view;
 	camera_ = render_view->getCamera();
 	background_ = scene.getBackground();
-	aa_noise_params_ = scene.getAaParameters();
-	edge_toon_params_ = scene.getEdgeToonParams();
-	mask_params_ = scene.getMaskParams();
+	aa_noise_params_ = renderer.getAaParameters();
+	edge_toon_params_ = renderer.getEdgeToonParams();
+	mask_params_ = renderer.getMaskParams();
 	timer_ = image_film->getTimer();
-	vol_integrator_ = scene.getVolIntegrator();
+	vol_integrator_ = renderer.getVolIntegrator();
 	scene_bound_ = scene.getSceneBound();
 	return static_cast<bool>(layers_) && static_cast<bool>(image_film) && static_cast<bool>(render_view_) && static_cast<bool>(camera_) && static_cast<bool>(timer_);
 }

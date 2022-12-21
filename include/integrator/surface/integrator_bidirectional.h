@@ -23,6 +23,7 @@
 
 #include "integrator_tiled.h"
 #include "color/color.h"
+#include "render/renderer.h"
 #include <map>
 #include <atomic>
 
@@ -39,7 +40,7 @@ class BidirectionalIntegrator final : public TiledIntegrator
 
 	public:
 		inline static std::string getClassName() { return "BidirectionalIntegrator"; }
-		static std::pair<std::unique_ptr<SurfaceIntegrator>, ParamResult> factory(Logger &logger, RenderControl &render_control, const ParamMap &param_map, const Scene &scene);
+		static std::pair<std::unique_ptr<SurfaceIntegrator>, ParamResult> factory(Logger &logger, RenderControl &render_control, const ParamMap &param_map);
 		static std::string printMeta(const std::vector<std::string> &excluded_params) { return Params::meta_.print(excluded_params); }
 		BidirectionalIntegrator(RenderControl &render_control, Logger &logger, ParamResult &param_result, const ParamMap &param_map);
 		[[nodiscard]] ParamMap getAsParamMap(bool only_non_default) const override;
@@ -65,7 +66,7 @@ class BidirectionalIntegrator final : public TiledIntegrator
 		struct PathVertex;
 		struct PathEvalVertex;
 		[[nodiscard]] std::string getName() const override { return "BidirectionalPathTracer"; }
-		bool preprocess(FastRandom &fast_random, ImageFilm *image_film, const RenderView *render_view, const Scene &scene) override;
+		bool preprocess(FastRandom &fast_random, ImageFilm *image_film, const RenderView *render_view, const Scene &scene, const Renderer &renderer) override;
 		void cleanup() override;
 		std::pair<Rgb, float> integrate(Ray &ray, FastRandom &fast_random, RandomGenerator &random_generator, std::vector<int> &correlative_sample_number, ColorLayers *color_layers, int thread_id, int ray_level, bool chromatic_enabled, float wavelength, int additional_depth, const RayDivision &ray_division, const PixelSamplingData &pixel_sampling_data, unsigned int object_index_highest, unsigned int material_index_highest) const override;
 		int createPath(RandomGenerator &random_generator, const Accelerator &accelerator, bool chromatic_enabled, float wavelength, const Ray &start, std::vector<PathVertex> &path, int max_len, const Camera *camera) const;

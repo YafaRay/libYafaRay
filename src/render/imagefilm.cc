@@ -86,16 +86,16 @@ ParamMap ImageFilm::getAsParamMap(bool only_non_default) const
 	return params_.getAsParamMap(only_non_default);
 }
 
-std::pair<std::unique_ptr<ImageFilm>, ParamResult> ImageFilm::factory(Logger &logger, RenderControl &render_control, const ParamMap &param_map, const Scene *scene)
+std::pair<std::unique_ptr<ImageFilm>, ParamResult> ImageFilm::factory(Logger &logger, RenderControl &render_control, const ParamMap &param_map, const Renderer &renderer)
 {
 	if(logger.isDebug()) logger.logDebug("**" + getClassName() + "::factory 'raw' ParamMap\n" + param_map.logContents());
 	auto param_result{Params::meta_.check(param_map, {}, {})};
-	auto result {std::make_unique<ImageFilm>(logger, param_result, render_control, *scene->getLayers(), scene->getOutputs(), &scene->getRenderViews(), &scene->getRenderCallbacks(), scene->getNumThreads(), param_map)};
+	auto result {std::make_unique<ImageFilm>(logger, param_result, render_control, *renderer.getLayers(), renderer.getOutputs(), renderer.getRenderViews(), &renderer.getRenderCallbacks(), renderer.getNumThreads(), param_map)};
 	if(param_result.notOk()) logger.logWarning(param_result.print<ImageFilm>("ImageFilm", {}));
 	return {std::move(result), param_result};
 }
 
-ImageFilm::ImageFilm(Logger &logger, ParamResult &param_result, RenderControl &render_control, const Layers &layers, const SceneItems<ImageOutput> &outputs, const SceneItems<RenderView> *render_views, const RenderCallbacks *render_callbacks, int num_threads, const ParamMap &param_map) : params_{param_result, param_map}, num_threads_(num_threads), layers_(layers), outputs_(outputs), render_views_{render_views}, render_callbacks_{render_callbacks}, logger_{logger}
+ImageFilm::ImageFilm(Logger &logger, ParamResult &param_result, RenderControl &render_control, const Layers &layers, const SceneItems<ImageOutput> &outputs, const SceneItems<RenderView> &render_views, const RenderCallbacks *render_callbacks, int num_threads, const ParamMap &param_map) : params_{param_result, param_map}, num_threads_(num_threads), layers_(layers), outputs_(outputs), render_views_{render_views}, render_callbacks_{render_callbacks}, logger_{logger}
 {
 	if(logger_.isDebug()) logger_.logDebug("**" + getClassName() + " params_:\n" + params_.getAsParamMap(true).print());
 	if(params_.images_autosave_interval_type_ == AutoSaveParams::IntervalType::Pass) logger_.logInfo(getClassName(), ": ", "AutoSave partially rendered image every ", params_.images_autosave_interval_passes_, " passes");
@@ -230,7 +230,7 @@ void ImageFilm::init(RenderControl &render_control, int num_passes)
 
 	if(render_callbacks_ && render_callbacks_->notify_view_)
 	{
-		for(const auto &render_view: *render_views_)
+		for(const auto &render_view: render_views_)
 		{
 			render_callbacks_->notify_view_(render_view.name_.c_str(), render_callbacks_->notify_view_data_);
 		}

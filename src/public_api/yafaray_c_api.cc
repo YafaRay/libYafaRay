@@ -1,19 +1,19 @@
 /****************************************************************************
- *      This is part of the libYafaRay package
+ *   This is part of the libYafaRay package
  *
- *      This library is free software; you can redistribute it and/or
- *      modify it under the terms of the GNU Lesser General Public
- *      License as published by the Free Software Foundation; either
- *      version 2.1 of the License, or (at your option) any later version.
+ *   This library is free software; you can redistribute it and/or
+ *   modify it under the terms of the GNU Lesser General Public
+ *   License as published by the Free Software Foundation; either
+ *   version 2.1 of the License, or (at your option) any later version.
  *
- *      This library is distributed in the hope that it will be useful,
- *      but WITHOUT ANY WARRANTY; without even the implied warranty of
- *      MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- *      Lesser General Public License for more details.
+ *   This library is distributed in the hope that it will be useful,
+ *   but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+ *   Lesser General Public License for more details.
  *
- *      You should have received a copy of the GNU Lesser General Public
- *      License along with this library; if not, write to the Free Software
- *      Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+ *   You should have received a copy of the GNU Lesser General Public
+ *   License along with this library; if not, write to the Free Software
+ *   Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
 #include "public_api/yafaray_c_api.h"
@@ -23,12 +23,11 @@
 #include "geometry/matrix.h"
 #include "geometry/primitive/face_indices.h"
 #include "math/math.h"
-#include "image/image.h"
 #include "render/progress_bar.h"
 #include "scene/scene.h"
 #include "param/param.h"
 #include "render/renderer.h"
-#include "geometry/matrix.h"
+#include "render/imagefilm.h"
 #include <cstring>
 
 /*yafaray_Scene *yafaray_createInterface(yafaray_InterfaceType interface_type, const char *exported_file_path, const yafaray_LoggerCallback logger_callback, void *callback_data, yafaray_DisplayConsole display_console)
@@ -57,9 +56,9 @@ void yafaray_destroyLogger(yafaray_Logger *logger)
 	delete reinterpret_cast<yafaray::Logger *>(logger);
 }
 
-yafaray_Scene *yafaray_createScene(yafaray_Logger *logger)
+yafaray_Scene *yafaray_createScene(yafaray_Logger *logger, const char *name, const yafaray_ParamMap *param_map)
 {
-	auto scene{new yafaray::Scene(*reinterpret_cast<yafaray::Logger *>(logger))};
+	auto scene{new yafaray::Scene(*reinterpret_cast<yafaray::Logger *>(logger), name, *reinterpret_cast<const yafaray::ParamMap *>(param_map))};
 	return reinterpret_cast<yafaray_Scene *>(scene);
 }
 
@@ -90,9 +89,9 @@ void yafaray_destroyParamMapList(yafaray_ParamMapList *param_map_list)
 	delete reinterpret_cast<std::list<yafaray::ParamMap> *>(param_map_list);
 }
 
-yafaray_Renderer *yafaray_createRenderer(yafaray_Scene *scene, yafaray_DisplayConsole display_console, yafaray_ParamMap *param_map)
+yafaray_Renderer *yafaray_createRenderer(yafaray_Logger *logger, const yafaray_Scene *scene, const char *name, yafaray_DisplayConsole display_console, yafaray_ParamMap *param_map)
 {
-	auto renderer{new yafaray::Renderer(reinterpret_cast<yafaray::Scene *>(scene), display_console, param_map)};
+	auto renderer{new yafaray::Renderer(*reinterpret_cast<yafaray::Logger *>(logger), name, *reinterpret_cast<const yafaray::Scene *>(scene), *reinterpret_cast<const yafaray::ParamMap *>(param_map), display_console)};
 	return reinterpret_cast<yafaray_Renderer *>(renderer);
 }
 
@@ -254,9 +253,9 @@ void paramsSetMatrix(yafaray::ParamMap &param_map, const std::string &name, yafa
 	else param_map[std::string(name)] = std::move(matrix);
 }
 
-void yafaray_paramsSetMatrix(yafaray_ParamMap *param_map, const char *name, float m_00, float m_01, float m_02, float m_03, float m_10, float m_11, float m_12, float m_13, float m_20, float m_21, float m_22, float m_23, float m_30, float m_31, float m_32, float m_33, yafaray_Bool transpose)
+void yafaray_paramsSetMatrix(yafaray_ParamMap *param_map, const char *name, double m_00, double m_01, double m_02, double m_03, double m_10, double m_11, double m_12, double m_13, double m_20, double m_21, double m_22, double m_23, double m_30, double m_31, double m_32, double m_33, yafaray_Bool transpose)
 {
-	paramsSetMatrix(*reinterpret_cast<yafaray::ParamMap *>(param_map), name, yafaray::Matrix4f{std::array<std::array<float, 4>, 4>{{{m_00, m_01, m_02, m_03}, {m_10, m_11, m_12, m_13}, {m_20, m_21, m_22, m_23}, {m_30, m_31, m_32, m_33}}}}, transpose);
+	paramsSetMatrix(*reinterpret_cast<yafaray::ParamMap *>(param_map), name, yafaray::Matrix4f{std::array<std::array<float, 4>, 4>{{{static_cast<float>(m_00), static_cast<float>(m_01), static_cast<float>(m_02), static_cast<float>(m_03) }, {static_cast<float>(m_10), static_cast<float>(m_11), static_cast<float>(m_12), static_cast<float>(m_13) }, {static_cast<float>(m_20), static_cast<float>(m_21), static_cast<float>(m_22), static_cast<float>(m_23) }, {static_cast<float>(m_30), static_cast<float>(m_31), static_cast<float>(m_32), static_cast<float>(m_33) }}}}, transpose);
 }
 
 void yafaray_paramsSetMatrixArray(yafaray_ParamMap *param_map, const char *name, const double *matrix, yafaray_Bool transpose)
@@ -269,14 +268,14 @@ void yafaray_paramsClearAll(yafaray_ParamMap *param_map) 	//!< clear the paramMa
 	reinterpret_cast<yafaray::ParamMap *>(param_map)->clear();
 }
 
-yafaray_ResultFlags yafaray_getObjectId(yafaray_Scene *scene, const char *name, size_t *id_obtained)
+yafaray_ResultFlags yafaray_getObjectId(yafaray_Scene *scene, size_t *id_obtained, const char *name)
 {
 	auto [object, object_id, object_result]{reinterpret_cast<yafaray::Scene *>(scene)->getObject(name)};
 	if(id_obtained) *id_obtained = object_id;
 	return static_cast<yafaray_ResultFlags>(object_result.value());
 }
 
-yafaray_ResultFlags yafaray_getMaterialId(yafaray_Scene *scene, const char *name, size_t *id_obtained)
+yafaray_ResultFlags yafaray_getMaterialId(yafaray_Scene *scene, size_t *id_obtained, const char *name)
 {
 	auto [material_id, material_result]{reinterpret_cast<yafaray::Scene *>(scene)->getMaterial(name)};
 	if(id_obtained) *id_obtained = material_id;
@@ -309,9 +308,9 @@ yafaray_ResultFlags yafaray_createMaterial(yafaray_Scene *scene, size_t *id_obta
 	return static_cast<yafaray_ResultFlags>(creation_result.second.flags_.value());
 }
 
-yafaray_ResultFlags yafaray_createCamera(yafaray_Scene *scene, const char *name, const yafaray_ParamMap *param_map)
+yafaray_ResultFlags yafaray_createCamera(yafaray_Renderer *renderer, const char *name, const yafaray_ParamMap *param_map)
 {
-	auto creation_result{reinterpret_cast<yafaray::Scene *>(scene)->createCamera(name, *reinterpret_cast<const yafaray::ParamMap *>(param_map))};
+	auto creation_result{reinterpret_cast<yafaray::Renderer *>(renderer)->createCamera(name, *reinterpret_cast<const yafaray::ParamMap *>(param_map))};
 	return static_cast<yafaray_ResultFlags>(creation_result.second.flags_.value());
 }
 
@@ -321,15 +320,15 @@ yafaray_ResultFlags yafaray_defineBackground(yafaray_Scene *scene, const yafaray
 	return static_cast<yafaray_ResultFlags>(creation_result.flags_.value());
 }
 
-yafaray_ResultFlags yafaray_defineSurfaceIntegrator(yafaray_Scene *scene, const yafaray_ParamMap *param_map)
+yafaray_ResultFlags yafaray_defineSurfaceIntegrator(yafaray_Renderer *renderer, const yafaray_ParamMap *param_map)
 {
-	auto creation_result{reinterpret_cast<yafaray::Scene *>(scene)->defineSurfaceIntegrator(*reinterpret_cast<const yafaray::ParamMap *>(param_map))};
+	auto creation_result{reinterpret_cast<yafaray::Renderer *>(renderer)->defineSurfaceIntegrator(*reinterpret_cast<const yafaray::ParamMap *>(param_map))};
 	return static_cast<yafaray_ResultFlags>(creation_result.flags_.value());
 }
 
-yafaray_ResultFlags yafaray_defineVolumeIntegrator(yafaray_Scene *scene, const yafaray_ParamMap *param_map)
+yafaray_ResultFlags yafaray_defineVolumeIntegrator(yafaray_Renderer *renderer, const yafaray_Scene *scene, const yafaray_ParamMap *param_map)
 {
-	auto creation_result{reinterpret_cast<yafaray::Scene *>(scene)->defineVolumeIntegrator(*reinterpret_cast<const yafaray::ParamMap *>(param_map))};
+	auto creation_result{reinterpret_cast<yafaray::Renderer *>(renderer)->defineVolumeIntegrator(*reinterpret_cast<const yafaray::Scene *>(scene), *reinterpret_cast<const yafaray::ParamMap *>(param_map))};
 	return static_cast<yafaray_ResultFlags>(creation_result.flags_.value());
 }
 
@@ -388,17 +387,21 @@ void yafaray_setRenderHighlightAreaCallback(yafaray_Renderer *renderer, yafaray_
 
 int yafaray_getRendererWidth(const yafaray_Renderer *renderer)
 {
-	return reinterpret_cast<const yafaray::Renderer *>(renderer)->getSceneFilmWidth();
+	const auto image_film{reinterpret_cast<const yafaray::Renderer *>(renderer)->getImageFilm()};
+	if(image_film) return image_film->getWidth();
+	else return 0;
 }
 
 int yafaray_getRendererHeight(const yafaray_Renderer *renderer)
 {
-	return reinterpret_cast<const yafaray::Renderer *>(renderer)->getSceneFilmHeight();
+	const auto image_film{reinterpret_cast<const yafaray::Renderer *>(renderer)->getImageFilm()};
+	if(image_film) return image_film->getHeight();
+	else return 0;
 }
 
 yafaray_Bool yafaray_removeOutput(yafaray_Renderer *renderer, const char *name)
 {
-	return static_cast<yafaray_Bool>(reinterpret_cast<yafaray::Renderer *>(renderer)->removeOutput(name));
+	return static_cast<yafaray_Bool>(reinterpret_cast<yafaray::Renderer *>(renderer)->disableOutput(name));
 }
 
 void yafaray_clearOutputs(yafaray_Renderer *renderer)
@@ -408,20 +411,20 @@ void yafaray_clearOutputs(yafaray_Renderer *renderer)
 
 void yafaray_setupRender(yafaray_Scene *scene, yafaray_Renderer *renderer, const yafaray_ParamMap *param_map)
 {
-	reinterpret_cast<yafaray::Scene *>(scene)->setupRender();
+	reinterpret_cast<yafaray::Renderer *>(renderer)->setupSceneRenderParams(*reinterpret_cast<yafaray::Scene *>(scene), *reinterpret_cast<const yafaray::ParamMap *>(param_map));
 }
 
-void yafaray_render(yafaray_Renderer *renderer, yafaray_ProgressBarCallback monitor_callback, void *callback_data, yafaray_DisplayConsole progress_bar_display_console)
+void yafaray_render(yafaray_Renderer *renderer, const yafaray_Scene *scene, yafaray_ProgressBarCallback monitor_callback, void *callback_data, yafaray_DisplayConsole progress_bar_display_console)
 {
 	std::unique_ptr<yafaray::ProgressBar> progress_bar;
 	if(progress_bar_display_console == YAFARAY_DISPLAY_CONSOLE_NORMAL) progress_bar = std::make_unique<yafaray::ConsoleProgressBar>(80, monitor_callback, callback_data);
 	else progress_bar = std::make_unique<yafaray::ProgressBar>(monitor_callback, callback_data);
-	reinterpret_cast<yafaray::Renderer *>(renderer)->render(std::move(progress_bar));
+	reinterpret_cast<yafaray::Renderer *>(renderer)->render(std::move(progress_bar), *reinterpret_cast<const yafaray::Scene *>(scene));
 }
 
 void yafaray_defineLayer(yafaray_Renderer *renderer, const yafaray_ParamMap *param_map)
 {
-	reinterpret_cast<yafaray::Renderer *>(renderer)->defineLayer();
+	reinterpret_cast<yafaray::Renderer *>(renderer)->defineLayer(*reinterpret_cast<const yafaray::ParamMap *>(param_map));
 }
 
 void yafaray_enablePrintDateTime(yafaray_Logger *logger, yafaray_Bool value)
@@ -515,9 +518,10 @@ int yafaray_getImageHeight(yafaray_Scene *scene, size_t image_id)
 	return static_cast<yafaray_Bool>(reinterpret_cast<yafaray::Scene *>(scene)->getImageSize(image_id).first[yafaray::Axis::Y]);
 }
 
-void yafaray_cancelRendering(yafaray_Renderer *renderer)
+void yafaray_cancelRendering(yafaray_Logger *logger, yafaray_Renderer *renderer)
 {
-	reinterpret_cast<yafaray::Renderer *>(renderer)->cancel();
+	if(renderer) reinterpret_cast<yafaray::Renderer *>(renderer)->getRenderControl().setCanceled();
+	reinterpret_cast<yafaray::Logger *>(logger)->logWarning("Interface: Render canceled by user.");
 }
 
 void yafaray_setConsoleLogColorsEnabled(yafaray_Logger *logger, yafaray_Bool colors_enabled)
@@ -548,12 +552,22 @@ char *yafaray_getVersionString()
 
 char *yafaray_getLayersTable(const yafaray_Renderer *renderer)
 {
-	return createCharString(reinterpret_cast<const yafaray::Renderer *>(renderer)->printLayersTable());
+	return createCharString(reinterpret_cast<const yafaray::Renderer *>(renderer)->getLayers()->printExportedTable());
 }
 
 char *yafaray_getViewsTable(const yafaray_Renderer *renderer)
 {
-	return createCharString(reinterpret_cast<const yafaray::Renderer *>(renderer)->printViewsTable());
+	if(renderer)
+	{
+		std::stringstream ss;
+		const auto &views = reinterpret_cast<const yafaray::Renderer *>(renderer)->getRenderViews();
+		for(const auto &view : views)
+		{
+			ss << view.name_ << '\n';
+		}
+		return createCharString(ss.str());
+	}
+	else return createCharString("");
 }
 
 void yafaray_destroyCharString(char *string)

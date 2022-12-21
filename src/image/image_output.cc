@@ -91,7 +91,7 @@ ParamMap ImageOutput::getAsParamMap(bool only_non_default) const
 	return params_.getAsParamMap(only_non_default);
 }
 
-std::pair<std::unique_ptr<ImageOutput>, ParamResult> ImageOutput::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map)
+std::pair<std::unique_ptr<ImageOutput>, ParamResult> ImageOutput::factory(Logger &logger, const std::string &name, const ParamMap &param_map)
 {
 	if(logger.isDebug()) logger.logDebug("**" + getClassName() + "::factory 'raw' ParamMap\n" + param_map.logContents());
 	auto param_result{Params::meta_.check(param_map, {}, {})};

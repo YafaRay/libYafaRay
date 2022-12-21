@@ -31,6 +31,7 @@
 #include "image/image_output.h"
 #include "scene/scene.h"
 #include "accelerator/accelerator.h"
+#include "camera/camera.h"
 
 namespace yafaray {
 
@@ -49,6 +50,9 @@ Renderer::Renderer(Logger &logger, const std::string &name, const Scene &scene, 
 	render_control_.setDifferentialRaysEnabled(false);	//By default, disable ray differential calculations. Only if at least one texture uses them, then enable differentials.
 	image_manipulation::logWarningsMissingLibraries(logger_);
 }
+
+//This is just to avoid compilation error "error: invalid application of ‘sizeof’ to incomplete type, because the destructor needs to know the type of any shared_ptr or unique_ptr objects
+Renderer::~Renderer() = default;
 
 void Renderer::setNumThreads(int threads)
 {
@@ -91,78 +95,69 @@ void Renderer::setNumThreadsPhotons(int threads_photons)
 	logger_.logParams("Renderer '", name(), "' using for Photon Mapping [", nthreads_photons_, "] Threads.");
 }
 
-bool Renderer::render(std::unique_ptr<ProgressBar> progress_bar)
+bool Renderer::render(std::unique_ptr<ProgressBar> progress_bar, const Scene &scene)
 {
 	if(!image_film_)
 	{
-		logger_.logError("Scene: No ImageFilm present, bailing out...");
+		logger_.logError(getClassName(), "'", name(), "': No ImageFilm present, bailing out...");
 		return false;
 	}
 	if(!surf_integrator_)
 	{
-		logger_.logError("Scene: No surface integrator, bailing out...");
+		logger_.logError(getClassName(), "'", name(), "': No surface integrator, bailing out...");
 		return false;
 	}
 
 	render_control_.setProgressBar(std::move(progress_bar));
 
-	//if(creation_state_.changes_ != CreationState::Flags::CNone) //FIXME: handle better subsequent scene renders differently if previous render already complete
+	for(auto &output : outputs_)
 	{
-		/*if(objects_.modified())*/ updateObjects();
-		for(auto &[light, light_name, light_enabled] : lights_)
+		output.item_->init(image_film_->getSize(), image_film_->getExportedImageLayers(), &render_views_);
+	}
+
+	for(auto &render_view : render_views_)
+	{
+		for(auto &output : outputs_) output.item_->setRenderView(render_view.item_.get());
+		std::stringstream inte_settings;
+		bool success = render_view.item_->init(logger_, scene);
+		if(!success)
 		{
-			if(light && light_enabled) light->init(*this);
+			logger_.logWarning(getClassName(), "'", name(), "': No cameras or lights found at RenderView ", render_view.name_, "', skipping this RenderView...");
+			continue;
 		}
-		for(auto &output : outputs_)
+
+		FastRandom fast_random;
+		success = surf_integrator_->preprocess(fast_random, image_film_.get(), render_view.item_.get(), scene, *this);
+		if(vol_integrator_) success = success && vol_integrator_->preprocess(fast_random, image_film_.get(), render_view.item_.get(), scene, *this);
+
+		if(!success)
 		{
-			output.item_->init(image_film_->getSize(), image_film_->getExportedImageLayers(), &render_views_);
+			logger_.logError(getClassName(), "'", name(), "': Preprocessing process failed, exiting...");
+			return false;
 		}
 
-		for(auto &render_view : render_views_)
+		cameras_.clearModifiedList();
+		outputs_.clearModifiedList();
+		render_views_.clearModifiedList();
+
+		if(shadow_bias_auto_) shadow_bias_ = Accelerator::shadowBias();
+		if(ray_min_dist_auto_) ray_min_dist_ = Accelerator::minRayDist();
+		logger_.logInfo(getClassName(), "'", name(), "': Shadow Bias=", shadow_bias_, (shadow_bias_auto_ ? " (auto)" : ""), ", Ray Min Dist=", ray_min_dist_, (ray_min_dist_auto_ ? " (auto)" : ""));
+
+		render_control_.setDifferentialRaysEnabled(scene.mipMapInterpolationRequired());
+		render_control_.setStarted();
+		success = surf_integrator_->render(fast_random, scene.getObjectIndexHighest(), scene.getMaterialIndexHighest());
+		if(!success)
 		{
-			for(auto &output : outputs_) output.item_->setRenderView(render_view.item_.get());
-			std::stringstream inte_settings;
-			bool success = render_view.item_->init(logger_, *this);
-			if(!success)
-			{
-				logger_.logWarning("Scene: No cameras or lights found at RenderView ", render_view.name_, "', skipping this RenderView...");
-				continue;
-			}
-
-			FastRandom fast_random;
-			success = surf_integrator_->preprocess(fast_random, image_film_.get(), render_view.item_.get(), *this);
-			if(vol_integrator_) success = success && vol_integrator_->preprocess(fast_random, image_film_.get(), render_view.item_.get(), *this);
-
-			if(!success)
-			{
-				logger_.logError("Scene: Preprocessing process failed, exiting...");
-				return false;
-			}
-
-			objects_.clearModifiedList();
-			lights_.clearModifiedList();
-			materials_.clearModifiedList();
-			textures_.clearModifiedList();
-			cameras_.clearModifiedList();
-			volume_regions_.clearModifiedList();
-			outputs_.clearModifiedList();
-			render_views_.clearModifiedList();
-			images_.clearModifiedList();
-
-			render_control_.setStarted();
-			success = surf_integrator_->render(fast_random, object_index_highest_, material_index_highest_);
-			if(!success)
-			{
-				logger_.logError("Scene: Rendering process failed, exiting...");
-				return false;
-			}
-			render_control_.setRenderInfo(surf_integrator_->getRenderInfo());
-			render_control_.setAaNoiseInfo(surf_integrator_->getAaNoiseInfo());
-			surf_integrator_->cleanup();
-			image_film_->flush(render_view.item_.get(), render_control_, getEdgeToonParams());
-			render_control_.setFinished();
-			image_film_->cleanup();
+			logger_.logError(getClassName(), "'", name(), "': Rendering process failed, exiting...");
+			return false;
 		}
+		render_control_.setRenderInfo(surf_integrator_->getRenderInfo());
+		render_control_.setAaNoiseInfo(surf_integrator_->getAaNoiseInfo());
+		surf_integrator_->cleanup();
+		image_film_->flush(render_view.item_.get(), render_control_, getEdgeToonParams());
+		render_control_.setFinished();
+		image_film_->cleanup();
 	}
 	return true;
 }
@@ -190,30 +185,36 @@ bool Renderer::disableOutput(const std::string &name)
 
 std::pair<size_t, ParamResult> Renderer::createOutput(const std::string &name, const ParamMap &param_map)
 {
-	return createSceneItem<ImageOutput>(logger_, name, param_map, outputs_);
+	return createRendererItem<ImageOutput>(logger_, name, param_map, outputs_);
 }
 
 ParamResult Renderer::defineSurfaceIntegrator(const ParamMap &param_map)
 {
-	auto factory{SurfaceIntegrator::factory(logger_, render_control_, *this, param_map)};
-	if(logger_.isVerbose() && factory.first) logInfoVerboseSuccess(logger_, factory.first->getClassName(), "", factory.first->type().print());
+	auto [surface_integrator, surface_integrator_result]{SurfaceIntegrator::factory(logger_, render_control_, param_map)};
+	if(logger_.isVerbose() && surface_integrator)
+	{
+		logger_.logVerbose("Renderer '", name(), "': Added ", surface_integrator->getClassName(), " '", this->name(), "' (", surface_integrator->type().print(), ")!");
+	}
 	//logger_.logParams(result.first->getAsParamMap(true).print()); //TEST CODE ONLY, REMOVE!!
-	surf_integrator_ = std::move(factory.first);
-	return factory.second;
+	surf_integrator_ = std::move(surface_integrator);
+	return surface_integrator_result;
 }
 
-ParamResult Renderer::defineVolumeIntegrator(const ParamMap &param_map)
+ParamResult Renderer::defineVolumeIntegrator(const Scene &scene, const ParamMap &param_map)
 {
-	auto factory{VolumeIntegrator::factory(logger_, *this, param_map)};
-	if(logger_.isVerbose() && factory.first) logInfoVerboseSuccess(logger_, factory.first->getClassName(), "", factory.first->type().print());
+	auto [volume_integrator, volume_integrator_result]{VolumeIntegrator::factory(logger_, scene.getVolumeRegions(), param_map)};
+	if(logger_.isVerbose() && volume_integrator)
+	{
+		logger_.logVerbose("Renderer '", name(), "': Added ", volume_integrator->getClassName(), " '", this->name(), "' (", volume_integrator->type().print(), ")!");
+	}
 	//logger_.logParams(result.first->getAsParamMap(true).print()); //TEST CODE ONLY, REMOVE!!
-	vol_integrator_ = std::move(factory.first);
-	return factory.second;
+	vol_integrator_ = std::move(volume_integrator);
+	return volume_integrator_result;
 }
 
 std::pair<size_t, ParamResult> Renderer::createRenderView(const std::string &name, const ParamMap &param_map)
 {
-	return createSceneItem<RenderView>(logger_, name, param_map, render_views_);
+	return createRendererItem<RenderView>(logger_, name, param_map, render_views_);
 }
 
 /*! setup the scene for rendering (set camera, background, integrator, create image film,
@@ -221,7 +222,7 @@ std::pair<size_t, ParamResult> Renderer::createRenderView(const std::string &nam
 	attention: since this function creates an image film and asigns it to the scene,
 	you need to delete it before deleting the scene!
 */
-bool Renderer::setupSceneRenderParams(Scene &scene, ParamMap &&param_map)
+bool Renderer::setupSceneRenderParams(Scene &scene, const ParamMap &param_map)
 {
 	if(logger_.isDebug()) logger_.logDebug("**Renderer::setupSceneRenderParams 'raw' ParamMap\n" + param_map.logContents());
 	std::string name;
@@ -264,14 +265,13 @@ bool Renderer::setupSceneRenderParams(Scene &scene, ParamMap &&param_map)
 	param_map.getParam("adv_min_raydist_value", adv_min_raydist_value);
 	param_map.getParam("adv_base_sampling_offset", adv_base_sampling_offset); //Base sampling offset, in case of multi-computer rendering each should have a different offset so they don't "repeat" the same samples (user configurable)
 	param_map.getParam("adv_computer_node", adv_computer_node); //Computer node in multi-computer render environments/render farms
-	param_map.getParam("scene_accelerator", scene_accelerator_); //Computer node in multi-computer render environments/render farms
 
 	defineBasicLayers();
 	defineDependentLayers();
 	setMaskParams(param_map);
 	setEdgeToonParams(param_map);
 
-	image_film_ = ImageFilm::factory(logger_, render_control_, param_map, this).first;
+	image_film_ = ImageFilm::factory(logger_, render_control_, param_map, *this).first;
 
 	param_map.getParam("filter_type", name); // AA filter type
 	std::stringstream aa_settings;
@@ -320,7 +320,7 @@ void Renderer::defineLayer(LayerDef::Type layer_type, Image::Type image_type, Im
 {
 	if(layer_type == LayerDef::Disabled)
 	{
-		logger_.logWarning("Scene: cannot create layer '", LayerDef::getName(layer_type), "' of unknown or disabled layer type");
+		logger_.logWarning(getClassName(), "'", name(), "': cannot create layer '", LayerDef::getName(layer_type), "' of unknown or disabled layer type");
 		return;
 	}
 
@@ -330,16 +330,16 @@ void Renderer::defineLayer(LayerDef::Type layer_type, Image::Type image_type, Im
 		   existing_layer->getImageType() == image_type &&
 		   existing_layer->getExportedImageType() == exported_image_type) return;
 
-		if(logger_.isDebug())logger_.logDebug("Scene: had previously defined: ", existing_layer->print());
+		if(logger_.isDebug())logger_.logDebug(getClassName(), "'", name(), "': had previously defined: ", existing_layer->print());
 		if(image_type == Image::Type::None && existing_layer->getImageType() != Image::Type::None)
 		{
-			if(logger_.isDebug())logger_.logDebug("Scene: the layer '", LayerDef::getName(layer_type), "' had previously a defined internal image which cannot be removed.");
+			if(logger_.isDebug())logger_.logDebug(getClassName(), "'", name(), "': the layer '", LayerDef::getName(layer_type), "' had previously a defined internal image which cannot be removed.");
 		}
 		else existing_layer->setImageType(image_type);
 
 		if(exported_image_type == Image::Type::None && existing_layer->getExportedImageType() != Image::Type::None)
 		{
-			if(logger_.isDebug())logger_.logDebug("Scene: the layer '", LayerDef::getName(layer_type), "' was previously an exported layer and cannot be changed into an internal layer now.");
+			if(logger_.isDebug())logger_.logDebug(getClassName(), "'", name(), "': the layer '", LayerDef::getName(layer_type), "' was previously an exported layer and cannot be changed into an internal layer now.");
 		}
 		else
 		{
@@ -347,13 +347,13 @@ void Renderer::defineLayer(LayerDef::Type layer_type, Image::Type image_type, Im
 			existing_layer->setExportedImageName(exported_image_name);
 		}
 		existing_layer->setType(layer_type);
-		logger_.logInfo("Scene: layer redefined: " + existing_layer->print());
+		logger_.logInfo(getClassName(), "'", name(), "': layer redefined: " + existing_layer->print());
 	}
 	else
 	{
 		Layer new_layer(layer_type, image_type, exported_image_type, exported_image_name);
 		layers_.set(layer_type, new_layer);
-		logger_.logInfo("Scene: layer defined: ", new_layer.print());
+		logger_.logInfo(getClassName(), "'", name(), "': layer defined: ", new_layer.print());
 	}
 }
 
@@ -529,6 +529,41 @@ void Renderer::setRenderHighlightAreaCallback(yafaray_RenderHighlightAreaCallbac
 {
 	render_callbacks_.highlight_area_ = callback;
 	render_callbacks_.highlight_area_data_ = callback_data;
+}
+
+template <typename T>
+std::pair<size_t, ParamResult> Renderer::createRendererItem(Logger &logger, const std::string &name, const ParamMap &param_map, SceneItems<T> &map)
+{
+	const auto [existing_item, existing_item_id, existing_item_result]{map.getByName(name)};
+	if(existing_item)
+	{
+		if(logger.isVerbose()) logger.logWarning(getClassName(), "'", this->name(), "': item with name '", name, "' already exists, overwriting with new item.");
+	}
+	std::unique_ptr<T> new_item;
+	ParamResult param_result;
+	if constexpr (std::is_same_v<T, RenderView>) std::tie(new_item, param_result) = T::factory(logger, *this, name, param_map);
+	else std::tie(new_item, param_result) = T::factory(logger, name, param_map);
+	if(new_item)
+	{
+		if(logger.isVerbose())
+		{
+			logger.logVerbose(getClassName(), "'", this->name(), "': Added ", new_item->getClassName(), " '", name, "' (", new_item->type().print(), ")!");
+		}
+		const auto [new_item_id, adding_result]{map.add(name, std::move(new_item))};
+		param_result.flags_ |= adding_result;
+		return {new_item_id, param_result};
+	}
+	else return {0, ParamResult{YAFARAY_RESULT_ERROR_WHILE_CREATING}};
+}
+
+std::pair<size_t, ParamResult> Renderer::createCamera(const std::string &name, const ParamMap &param_map)
+{
+	return createRendererItem<Camera>(logger_, name, param_map, cameras_);
+}
+
+std::tuple<Camera *, size_t, ResultFlags> Renderer::getCamera(const std::string &name) const
+{
+	return cameras_.getByName(name);
 }
 
 } //namespace yafaray

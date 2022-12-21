@@ -51,10 +51,10 @@ ParamMap SkyIntegrator::getAsParamMap(bool only_non_default) const
 	return result;
 }
 
-std::pair<std::unique_ptr<VolumeIntegrator>, ParamResult> SkyIntegrator::factory(Logger &logger, const ParamMap &param_map, const Scene &scene)
+std::pair<std::unique_ptr<VolumeIntegrator>, ParamResult> SkyIntegrator::factory(Logger &logger, const ParamMap &param_map, const SceneItems<VolumeRegion> &volume_regions)
 {
 	auto param_result{Params::meta_.check(param_map, {"type"}, {})};
-	auto integrator {std::make_unique<ThisClassType_t>(logger, param_result, param_map, scene.getVolumeRegions())};
+	auto integrator {std::make_unique<ThisClassType_t>(logger, param_result, param_map, volume_regions)};
 	if(param_result.notOk()) logger.logWarning(param_result.print<ThisClassType_t>(getClassName(), {"type"}));
 	return {std::move(integrator), param_result};
 }
@@ -87,7 +87,7 @@ SkyIntegrator::SkyIntegrator(Logger &logger, ParamResult &param_result, const Pa
 	logger_.logParams("SkyIntegrator: b_m: ", b_m_, " b_r: ", b_r_);
 }
 
-bool SkyIntegrator::preprocess(FastRandom &fast_random, ImageFilm *image_film, const RenderView *render_view, const Scene &scene)
+bool SkyIntegrator::preprocess(FastRandom &fast_random, ImageFilm *image_film, const RenderView *render_view, const Scene &scene, const Renderer &renderer)
 {
 	background_ = scene.getBackground();
 	return static_cast<bool>(background_);

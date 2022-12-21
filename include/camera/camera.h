@@ -58,7 +58,7 @@ class Camera
 	public:
 		inline static std::string getClassName() { return "Camera"; }
 		[[nodiscard]] virtual Type type() const = 0;
-		static std::pair<std::unique_ptr<Camera>, ParamResult> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map);
+		static std::pair<std::unique_ptr<Camera>, ParamResult> factory(Logger &logger, const std::string &name, const ParamMap &param_map);
 		[[nodiscard]] virtual ParamMap getAsParamMap(bool only_non_default) const;
 		Camera(Logger &logger, ParamResult &param_result, const ParamMap &param_map);
 		virtual ~Camera() = default;

@@ -76,7 +76,7 @@ ParamMap PhotonIntegrator::getAsParamMap(bool only_non_default) const
 	return result;
 }
 
-std::pair<std::unique_ptr<SurfaceIntegrator>, ParamResult> PhotonIntegrator::factory(Logger &logger, RenderControl &render_control, const ParamMap &param_map, const Scene &scene)
+std::pair<std::unique_ptr<SurfaceIntegrator>, ParamResult> PhotonIntegrator::factory(Logger &logger, RenderControl &render_control, const ParamMap &param_map)
 {
 	auto param_result{Params::meta_.check(param_map, {"type"}, {})};
 	auto integrator {std::make_unique<ThisClassType_t>(render_control, logger, param_result, param_map)};
@@ -271,9 +271,9 @@ void PhotonIntegrator::photonMapKdTreeWorker(PhotonMap *photon_map)
 	photon_map->updateTree();
 }
 
-bool PhotonIntegrator::preprocess(FastRandom &fast_random, ImageFilm *image_film, const RenderView *render_view, const Scene &scene)
+bool PhotonIntegrator::preprocess(FastRandom &fast_random, ImageFilm *image_film, const RenderView *render_view, const Scene &scene, const Renderer &renderer)
 {
-	bool success = SurfaceIntegrator::preprocess(fast_random, image_film, render_view, scene);
+	bool success = SurfaceIntegrator::preprocess(fast_random, image_film, render_view, scene, renderer);
 
 	std::stringstream set;
 

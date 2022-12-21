@@ -46,7 +46,7 @@ class ImageOutput final
 		static Type type() ;
 		void setId(size_t id) { id_ = id; }
 		[[nodiscard]] size_t getId() const { return id_; }
-		static std::pair<std::unique_ptr<ImageOutput>, ParamResult> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map);
+		static std::pair<std::unique_ptr<ImageOutput>, ParamResult> factory(Logger &logger, const std::string &name, const ParamMap &param_map);
 		static std::string printMeta(const std::vector<std::string> &excluded_params) { return Params::meta_.print(excluded_params); }
 		[[nodiscard]] ParamMap getAsParamMap(bool only_non_default) const;
 		ImageOutput(Logger &logger, ParamResult &param_result, const ParamMap &param_map);

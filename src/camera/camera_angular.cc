@@ -54,7 +54,7 @@ ParamMap AngularCamera::getAsParamMap(bool only_non_default) const
 	return result;
 }
 
-std::pair<std::unique_ptr<Camera>, ParamResult> AngularCamera::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map)
+std::pair<std::unique_ptr<Camera>, ParamResult> AngularCamera::factory(Logger &logger, const std::string &name, const ParamMap &param_map)
 {
 	auto param_result{Params::meta_.check(param_map, {"type"}, {})};
 	auto camera {std::make_unique<ThisClassType_t>(logger, param_result, param_map)};
@@ -62,8 +62,8 @@ std::pair<std::unique_ptr<Camera>, ParamResult> AngularCamera::factory(Logger &l
 	return {std::move(camera), param_result};
 }
 
-AngularCamera::AngularCamera(Logger &logger, ParamResult &param_result, const ParamMap &param_map) : ParentClassType_t{logger, param_result, param_map},
-																									params_{param_result, param_map}, angle_{params_.angle_degrees_ * math::div_pi_by_180<>}, max_radius_{params_.max_angle_degrees_ / params_.angle_degrees_}
+AngularCamera::AngularCamera(Logger &logger, ParamResult &param_result, const ParamMap &param_map) :
+ParentClassType_t{logger, param_result, param_map}, params_{param_result, param_map}, angle_{params_.angle_degrees_ * math::div_pi_by_180<>}, max_radius_{params_.max_angle_degrees_ / params_.angle_degrees_}
 {
 	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + params_.getAsParamMap(true).print());
 	if(params_.mirrored_) vright_ = -vright_;

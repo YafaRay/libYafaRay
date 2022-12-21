@@ -26,10 +26,10 @@
 #include "common/enum.h"
 #include "common/enum_map.h"
 #include "param/class_meta.h"
+#include "common/logger.h"
 #include <string>
 #include <vector>
 #include <memory>
-#include "common/logger.h"
 
 namespace yafaray {
 
@@ -38,6 +38,7 @@ template <typename T> class SceneItems;
 class Camera;
 class Light;
 class ParamMap;
+class Renderer;
 class Scene;
 
 class RenderView final
@@ -48,7 +49,7 @@ class RenderView final
 		static Type type() ;
 		void setId(size_t id) { id_ = id; }
 		[[nodiscard]] size_t getId() const { return id_; }
-		static std::pair<std::unique_ptr<RenderView>, ParamResult> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map);
+		static std::pair<std::unique_ptr<RenderView>, ParamResult> factory(Logger &logger, const Renderer &renderer, const std::string &name, const ParamMap &param_map);
 		static std::string printMeta(const std::vector<std::string> &excluded_params) { return Params::meta_.print(excluded_params); }
 		[[nodiscard]] ParamMap getAsParamMap(bool only_non_default) const;
 		RenderView(Logger &logger, ParamResult &param_result, const ParamMap &param_map, const SceneItems<Camera> &cameras, size_t camera_id);

@@ -67,7 +67,7 @@ ParamMap SppmIntegrator::getAsParamMap(bool only_non_default) const
 	return result;
 }
 
-std::pair<std::unique_ptr<SurfaceIntegrator>, ParamResult> SppmIntegrator::factory(Logger &logger, RenderControl &render_control, const ParamMap &param_map, const Scene &scene)
+std::pair<std::unique_ptr<SurfaceIntegrator>, ParamResult> SppmIntegrator::factory(Logger &logger, RenderControl &render_control, const ParamMap &param_map)
 {
 	auto param_result{Params::meta_.check(param_map, {"type"}, {})};
 	auto integrator {std::make_unique<ThisClassType_t>(render_control, logger, param_result, param_map)};
@@ -84,9 +84,9 @@ SppmIntegrator::SppmIntegrator(RenderControl &render_control, Logger &logger, Pa
 	diffuse_map_->setName("Diffuse Photon Map");
 }
 
-bool SppmIntegrator::preprocess(FastRandom &fast_random, ImageFilm *image_film, const RenderView *render_view, const Scene &scene)
+bool SppmIntegrator::preprocess(FastRandom &fast_random, ImageFilm *image_film, const RenderView *render_view, const Scene &scene, const Renderer &renderer)
 {
-	bool success = SurfaceIntegrator::preprocess(fast_random, image_film, render_view, scene);
+	bool success = SurfaceIntegrator::preprocess(fast_random, image_film, render_view, scene, renderer);
 	return success;
 }
 

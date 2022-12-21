@@ -45,7 +45,7 @@ ParamMap OrthographicCamera::getAsParamMap(bool only_non_default) const
 	return result;
 }
 
-std::pair<std::unique_ptr<Camera>, ParamResult> OrthographicCamera::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map)
+std::pair<std::unique_ptr<Camera>, ParamResult> OrthographicCamera::factory(Logger &logger, const std::string &name, const ParamMap &param_map)
 {
 	auto param_result{Params::meta_.check(param_map, {"type"}, {})};
 	auto camera {std::make_unique<ThisClassType_t>(logger, param_result, param_map)};

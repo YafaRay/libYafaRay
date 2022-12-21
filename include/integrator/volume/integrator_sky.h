@@ -22,6 +22,7 @@
 
 #include <math/random.h>
 #include "integrator/volume/integrator_volume.h"
+#include "render/renderer.h"
 
 namespace yafaray {
 
@@ -34,7 +35,7 @@ class SkyIntegrator : public VolumeIntegrator
 
 	public:
 		inline static std::string getClassName() { return "SkyIntegrator"; }
-		static std::pair<std::unique_ptr<VolumeIntegrator>, ParamResult> factory(Logger &logger, const ParamMap &params, const Scene &scene);
+		static std::pair<std::unique_ptr<VolumeIntegrator>, ParamResult> factory(Logger &logger, const ParamMap &params, const SceneItems<VolumeRegion> &volume_regions);
 		static std::string printMeta(const std::vector<std::string> &excluded_params) { return Params::meta_.print(excluded_params); }
 		SkyIntegrator(Logger &logger, ParamResult &param_result, const ParamMap &param_map, const SceneItems<VolumeRegion> &volume_regions);
 		[[nodiscard]] ParamMap getAsParamMap(bool only_non_default) const override;
@@ -49,7 +50,7 @@ class SkyIntegrator : public VolumeIntegrator
 			PARAM_DECL(float , alpha_, 0.5f, "alpha", "Steepness of the exponential density");
 			PARAM_DECL(float , turbidity_, 3.f, "turbidity", "");
 		} params_;
-		bool preprocess(FastRandom &fast_random, ImageFilm *image_film, const RenderView *render_view, const Scene &scene) override;
+		bool preprocess(FastRandom &fast_random, ImageFilm *image_film, const RenderView *render_view, const Scene &scene, const Renderer &renderer) override;
 		// optical thickness, absorption, attenuation, extinction
 		Rgb transmittance(RandomGenerator &random_generator, const Ray &ray) const override;
 		// emission and in-scattering

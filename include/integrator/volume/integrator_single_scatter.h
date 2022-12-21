@@ -39,7 +39,7 @@ class SingleScatterIntegrator final : public VolumeIntegrator
 
 	public:
 		inline static std::string getClassName() { return "SingleScatterIntegrator"; }
-		static std::pair<std::unique_ptr<VolumeIntegrator>, ParamResult> factory(Logger &logger, const ParamMap &param_map, const Scene &scene);
+		static std::pair<std::unique_ptr<VolumeIntegrator>, ParamResult> factory(Logger &logger, const ParamMap &param_map, const SceneItems<VolumeRegion> &volume_regions);
 		static std::string printMeta(const std::vector<std::string> &excluded_params) { return Params::meta_.print(excluded_params); }
 		SingleScatterIntegrator(Logger &logger, ParamResult &param_result, const ParamMap &param_map, const SceneItems<VolumeRegion> &volume_regions);
 		[[nodiscard]] ParamMap getAsParamMap(bool only_non_default) const override;
@@ -53,7 +53,7 @@ class SingleScatterIntegrator final : public VolumeIntegrator
 			PARAM_DECL(bool , adaptive_, false, "adaptive", "");
 			PARAM_DECL(bool , optimize_, false, "optimize", "");
 		} params_;
-		bool preprocess(FastRandom &fast_random, ImageFilm *image_film, const RenderView *render_view, const Scene &scene) override;
+		bool preprocess(FastRandom &fast_random, ImageFilm *image_film, const RenderView *render_view, const Scene &scene, const Renderer &renderer) override;
 		// optical thickness, absorption, attenuation, extinction
 		Rgb transmittance(RandomGenerator &random_generator, const Ray &ray) const override;
 		// emission and in-scattering

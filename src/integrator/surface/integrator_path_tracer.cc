@@ -28,6 +28,7 @@
 #include "common/timer.h"
 #include "material/sample.h"
 #include "volume/handler/volume_handler.h"
+#include "render/renderer.h"
 
 namespace yafaray {
 
@@ -60,7 +61,7 @@ ParamMap PathIntegrator::getAsParamMap(bool only_non_default) const
 	return result;
 }
 
-std::pair<std::unique_ptr<SurfaceIntegrator>, ParamResult> PathIntegrator::factory(Logger &logger, RenderControl &render_control, const ParamMap &param_map, const Scene &scene)
+std::pair<std::unique_ptr<SurfaceIntegrator>, ParamResult> PathIntegrator::factory(Logger &logger, RenderControl &render_control, const ParamMap &param_map)
 {
 	auto param_result{Params::meta_.check(param_map, {"type"}, {})};
 	auto integrator {std::make_unique<ThisClassType_t>(render_control, logger, param_result, param_map)};
@@ -73,9 +74,9 @@ PathIntegrator::PathIntegrator(RenderControl &render_control, Logger &logger, Pa
 	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + params_.getAsParamMap(true).print());
 }
 
-bool PathIntegrator::preprocess(FastRandom &fast_random, ImageFilm *image_film, const RenderView *render_view, const Scene &scene)
+bool PathIntegrator::preprocess(FastRandom &fast_random, ImageFilm *image_film, const RenderView *render_view, const Scene &scene, const Renderer &renderer)
 {
-	bool success = SurfaceIntegrator::preprocess(fast_random, image_film, render_view, scene);
+	bool success = SurfaceIntegrator::preprocess(fast_random, image_film, render_view, scene, renderer);
 	std::stringstream set;
 
 	timer_->addEvent("prepass");

@@ -42,17 +42,20 @@ class VolumeIntegrator;
 class SurfacePoint;
 class ImageOutput;
 class RenderView;
+class Camera;
 enum class DarkDetectionType : unsigned char;
 
 class Renderer final
 {
 	public:
+		inline static std::string getClassName() { return "Renderer"; }
 		Renderer(Logger &logger, const std::string &name, const Scene &scene, const ParamMap &param_map, ::yafaray_DisplayConsole display_console);
+		~Renderer();
 		void setAntialiasing(AaNoiseParams &&aa_noise_params) { aa_noise_params_ = aa_noise_params; };
 		void setNumThreads(int threads);
 		void setNumThreadsPhotons(int threads_photons);
 		std::string name() const { return name_; }
-		bool render(std::unique_ptr<ProgressBar> progress_bar);
+		bool render(std::unique_ptr<ProgressBar> progress_bar, const Scene &scene);
 		const ImageFilm *getImageFilm() const { return image_film_.get(); }
 		int getNumThreads() const { return nthreads_; }
 		int getNumThreadsPhotons() const { return nthreads_photons_; }
@@ -65,7 +68,7 @@ class Renderer final
 		bool disableOutput(const std::string &name);
 		void clearOutputs();
 		const SceneItems<ImageOutput> &getOutputs() const { return outputs_; }
-		bool setupSceneRenderParams(Scene &scene, ParamMap &&param_map);
+		bool setupSceneRenderParams(Scene &scene, const ParamMap &param_map);
 		void defineLayer(const ParamMap &param_map);
 		void defineLayer(std::string &&layer_type_name, std::string &&image_type_name, std::string &&exported_image_type_name, std::string &&exported_image_name);
 		void defineLayer(LayerDef::Type layer_type, Image::Type image_type = Image::Type{Image::Type::None}, Image::Type exported_image_type = Image::Type{Image::Type::None}, const std::string &exported_image_name = "");
@@ -88,14 +91,19 @@ class Renderer final
 		void setRenderHighlightAreaCallback(yafaray_RenderHighlightAreaCallback callback, void *callback_data);
 		const RenderCallbacks &getRenderCallbacks() const { return render_callbacks_; }
 		ParamResult defineSurfaceIntegrator(const ParamMap &param_map);
-		ParamResult defineVolumeIntegrator(const ParamMap &param_map);
+		ParamResult defineVolumeIntegrator(const Scene &scene, const ParamMap &param_map);
 		const VolumeIntegrator *getVolIntegrator() const { return vol_integrator_.get(); }
+		std::pair<size_t, ParamResult> createCamera(const std::string &name, const ParamMap &param_map);
+		std::tuple<Camera *, size_t, ResultFlags> getCamera(const std::string &name) const;
+		const SceneItems<Camera> &getCameras() const { return cameras_; }
+		SceneItems<Camera> &getCameras() { return cameras_; }
 
 	private:
 		void setMaskParams(const ParamMap &params);
 		void setEdgeToonParams(const ParamMap &params);
 		void defineBasicLayers();
 		void defineDependentLayers(); //!< This function generates the basic/auxiliary layers. Must be called *after* defining all render layers with the defineLayer function.
+		template <typename T> std::pair<size_t, ParamResult> createRendererItem(Logger &logger, const std::string &name, const ParamMap &param_map, SceneItems<T> &map);
 
 		std::string name_{"Renderer"};
 		int nthreads_ = 1;
@@ -110,6 +118,7 @@ class Renderer final
 		std::unique_ptr<VolumeIntegrator> vol_integrator_;
 		SceneItems<ImageOutput> outputs_;
 		SceneItems<RenderView> render_views_;
+		SceneItems<Camera> cameras_;
 		Layers layers_;
 		AaNoiseParams aa_noise_params_;
 		MaskParams mask_params_;

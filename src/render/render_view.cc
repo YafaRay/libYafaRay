@@ -24,6 +24,7 @@
 #include "common/string.h"
 #include "common/logger.h"
 #include "light/light.h"
+#include "render/renderer.h"
 
 namespace yafaray {
 
@@ -50,7 +51,7 @@ ParamMap RenderView::getAsParamMap(bool only_non_default) const
 	return result;
 }
 
-std::pair<std::unique_ptr<RenderView>, ParamResult> RenderView::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map)
+std::pair<std::unique_ptr<RenderView>, ParamResult> RenderView::factory(Logger &logger, const Renderer &renderer, const std::string &name, const ParamMap &param_map)
 {
 	if(logger.isDebug()) logger.logDebug("**" + getClassName() + "::factory 'raw' ParamMap\n" + param_map.logContents());
 	auto param_result{Params::meta_.check(param_map, {}, {})};
@@ -60,8 +61,8 @@ std::pair<std::unique_ptr<RenderView>, ParamResult> RenderView::factory(Logger &
 		logger.logError("RenderView: No camera name provided!");
 		return {nullptr, ParamResult{YAFARAY_RESULT_ERROR_WHILE_CREATING}};
 	}
-	const auto [camera, camera_id, camera_result]{scene.getCamera(camera_name)};
-	auto render_view {std::make_unique<RenderView>(logger, param_result, param_map, scene.getCameras(), camera_id)};
+	const auto [camera, camera_id, camera_result]{renderer.getCamera(camera_name)};
+	auto render_view {std::make_unique<RenderView>(logger, param_result, param_map, renderer.getCameras(), camera_id)};
 	if(param_result.notOk()) logger.logWarning(param_result.print<RenderView>(name, {}));
 	return {std::move(render_view), param_result};
 }

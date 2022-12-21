@@ -64,16 +64,16 @@ ParamMap Camera::getAsParamMap(bool only_non_default) const
 	return result;
 }
 
-std::pair<std::unique_ptr<Camera>, ParamResult> Camera::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map)
+std::pair<std::unique_ptr<Camera>, ParamResult> Camera::factory(Logger &logger, const std::string &name, const ParamMap &param_map)
 {
 	const Type type{ClassMeta::preprocessParamMap<Type>(logger, getClassName(), param_map)};
 	switch(type.value())
 	{
-		case Type::Angular: return AngularCamera::factory(logger, scene, name, param_map);
-		case Type::Perspective: return PerspectiveCamera::factory(logger, scene, name, param_map);
-		case Type::Architect: return ArchitectCamera::factory(logger, scene, name, param_map);
-		case Type::Orthographic: return OrthographicCamera::factory(logger, scene, name, param_map);
-		case Type::Equirectangular: return EquirectangularCamera::factory(logger, scene, name, param_map);
+		case Type::Angular: return AngularCamera::factory(logger, name, param_map);
+		case Type::Perspective: return PerspectiveCamera::factory(logger, name, param_map);
+		case Type::Architect: return ArchitectCamera::factory(logger, name, param_map);
+		case Type::Orthographic: return OrthographicCamera::factory(logger, name, param_map);
+		case Type::Equirectangular: return EquirectangularCamera::factory(logger, name, param_map);
 		default: return {nullptr, ParamResult{YAFARAY_RESULT_ERROR_WHILE_CREATING}};
 	}
 }
