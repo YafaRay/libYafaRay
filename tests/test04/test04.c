@@ -35,7 +35,7 @@ int main()
 	printf("Using libYafaRay version (%d.%d.%d)\n", yafaray_getVersionMajor(), yafaray_getVersionMinor(), yafaray_getVersionPatch());
 
 	/* YafaRay standard rendering interface */
-	yafaray_Interface *yi = yafaray_createInterface(YAFARAY_INTERFACE_FOR_RENDERING, "test04.xml", NULL, NULL, YAFARAY_DISPLAY_CONSOLE_NORMAL);
+	yafaray_Scene *yi = yafaray_createInterface(YAFARAY_INTERFACE_FOR_RENDERING, "test04.xml", NULL, NULL, YAFARAY_DISPLAY_CONSOLE_NORMAL);
 	yafaray_setConsoleLogColorsEnabled(yi, YAFARAY_BOOL_TRUE);
 	yafaray_setConsoleVerbosityLevel(yi, YAFARAY_LOG_LEVEL_VERBOSE);
 

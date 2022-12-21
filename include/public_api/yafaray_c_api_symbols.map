@@ -2,12 +2,18 @@
 
 LIBYAFARAY_4.0.0 {
     global:
-        yafaray_createInterface;
-        yafaray_destroyInterface;
-        yafaray_setLoggingCallback;
+        yafaray_createLogger;
+        yafaray_destroyLogger;
         yafaray_createScene;
-        yafaray_getSceneFilmWidth;
-        yafaray_getSceneFilmHeight;
+        yafaray_destroyScene;
+        yafaray_createParamMap;
+        yafaray_destroyParamMap;
+        yafaray_createParamMapList;
+        yafaray_destroyParamMapList;
+        yafaray_createRenderer;
+        yafaray_destroyRenderer;
+        yafaray_getRendererWidth;
+        yafaray_getRendererHeight;
         yafaray_initObject;
         yafaray_addVertex;
         yafaray_addVertexTimeStep;
@@ -35,8 +41,7 @@ LIBYAFARAY_4.0.0 {
         yafaray_paramsSetMatrix;
         yafaray_paramsSetMatrixArray;
         yafaray_paramsClearAll;
-        yafaray_paramsPushList;
-        yafaray_paramsEndList;
+        yafaray_paramsListAddMap;
         yafaray_getObjectId;
         yafaray_getMaterialId;
         yafaray_createObject;
@@ -59,7 +64,6 @@ LIBYAFARAY_4.0.0 {
         yafaray_setRenderHighlightAreaCallback;
         yafaray_removeOutput;
         yafaray_clearOutputs;
-        yafaray_clearAll;
         yafaray_setupRender;
         yafaray_render;
         yafaray_defineLayer;
@@ -88,7 +92,7 @@ LIBYAFARAY_4.0.0 {
         yafaray_getVersionString;
         yafaray_getLayersTable;
         yafaray_getViewsTable;
-        yafaray_deallocateCharPointer;
+        yafaray_destroyCharString;
 
     local:
         *;

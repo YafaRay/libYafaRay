@@ -249,4 +249,10 @@ std::string ParamMap::logContents() const
 	return ss.str();
 }
 
+void ParamMap::setInputColorSpace(const std::string &color_space_string, float gamma_val)
+{
+	input_color_space_.initFromString(color_space_string);
+	input_gamma_ = gamma_val;
+}
+
 } //namespace yafaray

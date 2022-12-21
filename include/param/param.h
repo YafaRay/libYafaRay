@@ -107,7 +107,15 @@ class ParamMap : public Collection<std::string, Parameter>
 		template <typename T>
 		ResultFlags getParam(const ParamMeta &param_meta, T &val) const
 		{
-			return getParam(param_meta.name(), val);
+			if constexpr (std::is_same_v<T, Rgb> || std::is_same_v<T, Rgba>)
+			{
+				Rgba col;
+				const auto result{getParam(param_meta.name(), col)};
+				col.colorSpaceFromLinearRgb(input_color_space_, input_gamma_);
+				val = static_cast<T>(col);
+				return result;
+			}
+			else return getParam(param_meta.name(), val);
 		}
 		template <typename T>
 		ResultFlags getEnumParam(const std::string &name, T &val) const
@@ -125,7 +133,13 @@ class ParamMap : public Collection<std::string, Parameter>
 		template <typename T>
 		void setParam(const std::string param_name, const T &val)
 		{
-			items_[param_name] = val;
+			if constexpr (std::is_same_v<T, Rgb> || std::is_same_v<T, Rgba>)
+			{
+				T col{val};
+				col.linearRgbFromColorSpace(input_color_space_, input_gamma_);
+				items_[param_name] = col;
+			}
+			else items_[param_name] = val;
 		}
 		template <typename T>
 		void setParam(const ParamMeta &param_meta, const T &val)
@@ -134,6 +148,11 @@ class ParamMap : public Collection<std::string, Parameter>
 		}
 		std::string print() const;
 		std::string logContents() const;
+		void setInputColorSpace(const std::string &color_space_string, float gamma_val);
+
+	private:
+		float input_gamma_{1.f};
+		ColorSpace input_color_space_{ColorSpace::RawManualGamma};
 };
 
 } //namespace yafaray

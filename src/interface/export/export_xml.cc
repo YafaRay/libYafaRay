@@ -241,7 +241,7 @@ void ExportXml::writeParamList(int indent) noexcept
 	}
 }
 
-std::pair<size_t, ParamResult> ExportXml::createLight(std::string &&name) noexcept
+std::pair<size_t, ParamResult> ExportXml::createLight(const std::string &name) noexcept
 {
 	file_ << "\n<light name=\"" << name << "\">\n";
 	writeParamMap(*params_);
@@ -249,7 +249,7 @@ std::pair<size_t, ParamResult> ExportXml::createLight(std::string &&name) noexce
 	return {};
 }
 
-std::pair<size_t, ParamResult> ExportXml::createTexture(std::string &&name) noexcept
+std::pair<size_t, ParamResult> ExportXml::createTexture(const std::string &name) noexcept
 {
 	file_ << "\n<texture name=\"" << name << "\">\n";
 	writeParamMap(*params_);
@@ -257,7 +257,7 @@ std::pair<size_t, ParamResult> ExportXml::createTexture(std::string &&name) noex
 	return {};
 }
 
-std::pair<size_t, ParamResult> ExportXml::createMaterial(std::string &&name) noexcept
+std::pair<size_t, ParamResult> ExportXml::createMaterial(const std::string &name) noexcept
 {
 	file_ << "\n<material name=\"" << name << "\">\n";
 	writeParamMap(*params_);
@@ -265,7 +265,7 @@ std::pair<size_t, ParamResult> ExportXml::createMaterial(std::string &&name) noe
 	file_ << "</material>\n";
 	return {};
 }
-std::pair<size_t, ParamResult> ExportXml::createCamera(std::string &&name) noexcept
+std::pair<size_t, ParamResult> ExportXml::createCamera(const std::string &name) noexcept
 {
 	file_ << "\n<camera name=\"" << name << "\">\n";
 	writeParamMap(*params_);
@@ -297,7 +297,7 @@ ParamResult ExportXml::defineVolumeIntegrator() noexcept
 	return {};
 }
 
-std::pair<size_t, ParamResult> ExportXml::createVolumeRegion(std::string &&name) noexcept
+std::pair<size_t, ParamResult> ExportXml::createVolumeRegion(const std::string &name) noexcept
 {
 	file_ << "\n<volumeregion name=\"" << name << "\">\n";
 	writeParamMap(*params_);
@@ -305,7 +305,7 @@ std::pair<size_t, ParamResult> ExportXml::createVolumeRegion(std::string &&name)
 	return {};
 }
 
-std::pair<size_t, ParamResult> ExportXml::createOutput(std::string &&name) noexcept
+std::pair<size_t, ParamResult> ExportXml::createOutput(const std::string &name) noexcept
 {
 	file_ << "\n<output name=\"" << name << "\">\n";
 	writeParamMap(*params_);
@@ -313,7 +313,7 @@ std::pair<size_t, ParamResult> ExportXml::createOutput(std::string &&name) noexc
 	return {};
 }
 
-std::pair<size_t, ParamResult> ExportXml::createRenderView(std::string &&name) noexcept
+std::pair<size_t, ParamResult> ExportXml::createRenderView(const std::string &name) noexcept
 {
 	std::string render_view_name{name};
 	if(render_view_name.empty()) render_view_name = "render_view";
@@ -323,7 +323,7 @@ std::pair<size_t, ParamResult> ExportXml::createRenderView(std::string &&name) n
 	return {};
 }
 
-std::pair<size_t, ParamResult> ExportXml::createImage(std::string &&name) noexcept
+std::pair<size_t, ParamResult> ExportXml::createImage(const std::string &name) noexcept
 {
 	file_ << "\n<image name=\"" << name << "\">\n";
 	writeParamMap(*params_);
@@ -331,7 +331,7 @@ std::pair<size_t, ParamResult> ExportXml::createImage(std::string &&name) noexce
 	return {};
 }
 
-std::pair<size_t, ParamResult> ExportXml::createObject(std::string &&name) noexcept
+std::pair<size_t, ParamResult> ExportXml::createObject(const std::string &name) noexcept
 {
 	n_uvs_ = 0;
 	file_ << "\n<object>\n";

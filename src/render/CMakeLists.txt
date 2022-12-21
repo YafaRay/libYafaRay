@@ -23,4 +23,5 @@ target_sources(libyafaray4
 		progress_bar.cc
 		render_control.cc
 		render_view.cc
+		renderer.cc
 )

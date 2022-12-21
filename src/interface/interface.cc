@@ -117,38 +117,38 @@ bool Interface::addInstanceMatrix(size_t instance_id, Matrix4f &&obj_to_world, f
 	return scene_->addInstanceMatrix(instance_id, std::move(obj_to_world), time);
 }
 
-void Interface::paramsSetVector(std::string &&name, Vec3f &&v) noexcept
+void Interface::paramsSetVector(const std::string &name, Vec3f &&v) noexcept
 {
 	(*cparams_)[name] = Parameter{std::move(v)};
 }
 
-void Interface::paramsSetString(std::string &&name, std::string &&s) noexcept
+void Interface::paramsSetString(const std::string &name, std::string &&s) noexcept
 {
 	(*cparams_)[name] = Parameter(std::move(s));
 }
 
-void Interface::paramsSetBool(std::string &&name, bool b) noexcept
+void Interface::paramsSetBool(const std::string &name, bool b) noexcept
 {
 	(*cparams_)[std::string(name)] = b;
 }
 
-void Interface::paramsSetInt(std::string &&name, int i) noexcept
+void Interface::paramsSetInt(const std::string &name, int i) noexcept
 {
 	(*cparams_)[std::string(name)] = i;
 }
 
-void Interface::paramsSetFloat(std::string &&name, double f) noexcept
+void Interface::paramsSetFloat(const std::string &name, double f) noexcept
 {
 	(*cparams_)[std::string(name)] = Parameter{f};
 }
 
-void Interface::paramsSetColor(std::string &&name, Rgba &&col) noexcept
+void Interface::paramsSetColor(const std::string &name, Rgba &&col) noexcept
 {
 	col.linearRgbFromColorSpace(input_color_space_, input_gamma_);
 	(*cparams_)[std::string(name)] = std::move(col);
 }
 
-void Interface::paramsSetMatrix(std::string &&name, Matrix4f &&matrix, bool transpose) noexcept
+void Interface::paramsSetMatrix(const std::string &name, Matrix4f &&matrix, bool transpose) noexcept
 {
 	if(transpose)
 	{
@@ -181,7 +181,7 @@ void Interface::paramsEndList() noexcept
 	cparams_ = params_.get();
 }
 
-std::pair<size_t, ResultFlags> Interface::getImageId(std::string &&name) noexcept
+std::pair<size_t, ResultFlags> Interface::getImageId(const std::string &name) noexcept
 {
 	if(scene_)
 	{
@@ -191,7 +191,7 @@ std::pair<size_t, ResultFlags> Interface::getImageId(std::string &&name) noexcep
 	else return {0, YAFARAY_RESULT_ERROR_NOT_FOUND};
 }
 
-std::pair<size_t, ResultFlags> Interface::getObjectId(std::string &&name) noexcept
+std::pair<size_t, ResultFlags> Interface::getObjectId(const std::string &name) noexcept
 {
 	if(scene_)
 	{
@@ -201,24 +201,24 @@ std::pair<size_t, ResultFlags> Interface::getObjectId(std::string &&name) noexce
 	else return {0, YAFARAY_RESULT_ERROR_NOT_FOUND};
 }
 
-std::pair<size_t, ResultFlags> Interface::getMaterialId(std::string &&name) noexcept
+std::pair<size_t, ResultFlags> Interface::getMaterialId(const std::string &name) noexcept
 {
 	if(scene_) return scene_->getMaterial(name);
 	else return {0, YAFARAY_RESULT_ERROR_NOT_FOUND};
 }
 
-std::pair<size_t, ParamResult> Interface::createObject(std::string &&name) noexcept { return scene_->createObject(std::move(name), std::move(*params_)); }
-std::pair<size_t, ParamResult> Interface::createLight(std::string &&name) noexcept { return scene_->createLight(std::move(name), std::move(*params_)); }
-std::pair<size_t, ParamResult> Interface::createTexture(std::string &&name) noexcept { return scene_->createTexture(std::move(name), std::move(*params_)); }
-std::pair<size_t, ParamResult> Interface::createMaterial(std::string &&name) noexcept { return scene_->createMaterial(std::move(name), std::move(*params_), std::move(nodes_params_)); }
-std::pair<size_t, ParamResult> Interface::createCamera(std::string &&name) noexcept { return scene_->createCamera(std::move(name), std::move(*params_)); }
+std::pair<size_t, ParamResult> Interface::createObject(const std::string &name) noexcept { return scene_->createObject(std::move(name), std::move(*params_)); }
+std::pair<size_t, ParamResult> Interface::createLight(const std::string &name) noexcept { return scene_->createLight(std::move(name), std::move(*params_)); }
+std::pair<size_t, ParamResult> Interface::createTexture(const std::string &name) noexcept { return scene_->createTexture(std::move(name), std::move(*params_)); }
+std::pair<size_t, ParamResult> Interface::createMaterial(const std::string &name) noexcept { return scene_->createMaterial(std::move(name), std::move(*params_), std::move(nodes_params_)); }
+std::pair<size_t, ParamResult> Interface::createCamera(const std::string &name) noexcept { return scene_->createCamera(std::move(name), std::move(*params_)); }
 ParamResult Interface::defineBackground() noexcept { return scene_->defineBackground(std::move(*params_)); }
 ParamResult Interface::defineSurfaceIntegrator() noexcept { return scene_->defineSurfaceIntegrator(std::move(*params_)); }
 ParamResult Interface::defineVolumeIntegrator() noexcept { return scene_->defineVolumeIntegrator(std::move(*params_)); }
-std::pair<size_t, ParamResult> Interface::createVolumeRegion(std::string &&name) noexcept { return scene_->createVolumeRegion(std::move(name), std::move(*params_)); }
-std::pair<size_t, ParamResult> Interface::createRenderView(std::string &&name) noexcept { return scene_->createRenderView(std::move(name), std::move(*params_)); }
-std::pair<size_t, ParamResult> Interface::createImage(std::string &&name) noexcept { return scene_->createImage(std::move(name), std::move(*params_)); }
-std::pair<size_t, ParamResult> Interface::createOutput(std::string &&name) noexcept { return scene_->createOutput(std::move(name), std::move(*params_)); }
+std::pair<size_t, ParamResult> Interface::createVolumeRegion(const std::string &name) noexcept { return scene_->createVolumeRegion(std::move(name), std::move(*params_)); }
+std::pair<size_t, ParamResult> Interface::createRenderView(const std::string &name) noexcept { return scene_->createRenderView(std::move(name), std::move(*params_)); }
+std::pair<size_t, ParamResult> Interface::createImage(const std::string &name) noexcept { return scene_->createImage(std::move(name), std::move(*params_)); }
+std::pair<size_t, ParamResult> Interface::createOutput(const std::string &name) noexcept { return scene_->createOutput(std::move(name), std::move(*params_)); }
 
 void Interface::setRenderNotifyViewCallback(yafaray_RenderNotifyViewCallback callback, void *callback_data) noexcept
 {
@@ -290,7 +290,7 @@ std::string Interface::printViewsTable() const noexcept
 	else return "";
 }
 
-bool Interface::removeOutput(std::string &&name) noexcept
+bool Interface::removeOutput(const std::string &name) noexcept
 {
 	return scene_->disableOutput(std::move(name));
 }

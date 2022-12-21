@@ -262,7 +262,7 @@ void ExportPython::writeParamList(int indent) noexcept
 	file_ << "yi.paramsEndList()\n";
 }
 
-std::pair<size_t, ParamResult> ExportPython::createLight(std::string &&name) noexcept
+std::pair<size_t, ParamResult> ExportPython::createLight(const std::string &name) noexcept
 {
 	writeParamMap(*params_);
 	params_->clear();
@@ -271,7 +271,7 @@ std::pair<size_t, ParamResult> ExportPython::createLight(std::string &&name) noe
 	return {};
 }
 
-std::pair<size_t, ParamResult> ExportPython::createTexture(std::string &&name) noexcept
+std::pair<size_t, ParamResult> ExportPython::createTexture(const std::string &name) noexcept
 {
 	writeParamMap(*params_);
 	params_->clear();
@@ -280,7 +280,7 @@ std::pair<size_t, ParamResult> ExportPython::createTexture(std::string &&name) n
 	return {};
 }
 
-std::pair<size_t, ParamResult> ExportPython::createMaterial(std::string &&name) noexcept
+std::pair<size_t, ParamResult> ExportPython::createMaterial(const std::string &name) noexcept
 {
 	writeParamMap(*params_);
 	writeParamList(1);
@@ -290,7 +290,7 @@ std::pair<size_t, ParamResult> ExportPython::createMaterial(std::string &&name) 
 	file_ << "yi.paramsClearAll()\n\n";
 	return {};
 }
-std::pair<size_t, ParamResult> ExportPython::createCamera(std::string &&name) noexcept
+std::pair<size_t, ParamResult> ExportPython::createCamera(const std::string &name) noexcept
 {
 	writeParamMap(*params_);
 	params_->clear();
@@ -326,7 +326,7 @@ ParamResult ExportPython::defineVolumeIntegrator() noexcept
 	return {};
 }
 
-std::pair<size_t, ParamResult> ExportPython::createVolumeRegion(std::string &&name) noexcept
+std::pair<size_t, ParamResult> ExportPython::createVolumeRegion(const std::string &name) noexcept
 {
 	writeParamMap(*params_);
 	params_->clear();
@@ -335,7 +335,7 @@ std::pair<size_t, ParamResult> ExportPython::createVolumeRegion(std::string &&na
 	return {};
 }
 
-std::pair<size_t, ParamResult> ExportPython::createOutput(std::string &&name) noexcept
+std::pair<size_t, ParamResult> ExportPython::createOutput(const std::string &name) noexcept
 {
 	writeParamMap(*params_);
 	params_->clear();
@@ -344,7 +344,7 @@ std::pair<size_t, ParamResult> ExportPython::createOutput(std::string &&name) no
 	return {};
 }
 
-std::pair<size_t, ParamResult> ExportPython::createRenderView(std::string &&name) noexcept
+std::pair<size_t, ParamResult> ExportPython::createRenderView(const std::string &name) noexcept
 {
 	writeParamMap(*params_);
 	params_->clear();
@@ -353,7 +353,7 @@ std::pair<size_t, ParamResult> ExportPython::createRenderView(std::string &&name
 	return {};
 }
 
-std::pair<size_t, ParamResult> ExportPython::createImage(std::string &&name) noexcept
+std::pair<size_t, ParamResult> ExportPython::createImage(const std::string &name) noexcept
 {
 	writeParamMap(*params_);
 	params_->clear();
@@ -362,7 +362,7 @@ std::pair<size_t, ParamResult> ExportPython::createImage(std::string &&name) noe
 	return {};
 }
 
-std::pair<size_t, ParamResult> ExportPython::createObject(std::string &&name) noexcept
+std::pair<size_t, ParamResult> ExportPython::createObject(const std::string &name) noexcept
 {
 	n_uvs_ = 0;
 	writeParamMap(*params_);

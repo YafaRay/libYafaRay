@@ -50,18 +50,18 @@ class ExportC: public Interface
 		bool addFace(size_t object_id, const FaceIndices<int> &face_indices, size_t material_id) noexcept override;
 		int addUv(size_t object_id, Uv<float> &&uv) noexcept override;
 		bool smoothVerticesNormals(size_t object_id, double angle) noexcept override;
-		std::pair<size_t, ParamResult> createObject(std::string &&name) noexcept override;
-		std::pair<size_t, ParamResult> createLight(std::string &&name) noexcept override;
-		std::pair<size_t, ParamResult> createTexture(std::string &&name) noexcept override;
-		std::pair<size_t, ParamResult> createMaterial(std::string &&name) noexcept override;
-		std::pair<size_t, ParamResult> createCamera(std::string &&name) noexcept override;
+		std::pair<size_t, ParamResult> createObject(const std::string &name) noexcept override;
+		std::pair<size_t, ParamResult> createLight(const std::string &name) noexcept override;
+		std::pair<size_t, ParamResult> createTexture(const std::string &name) noexcept override;
+		std::pair<size_t, ParamResult> createMaterial(const std::string &name) noexcept override;
+		std::pair<size_t, ParamResult> createCamera(const std::string &name) noexcept override;
 		ParamResult defineBackground() noexcept override;
 		ParamResult defineSurfaceIntegrator() noexcept override;
 		ParamResult defineVolumeIntegrator() noexcept override;
-		std::pair<size_t, ParamResult> createVolumeRegion(std::string &&name) noexcept override;
-		std::pair<size_t, ParamResult> createRenderView(std::string &&name) noexcept override;
-		std::pair<size_t, ParamResult> createImage(std::string &&name) noexcept override;
-		std::pair<size_t, ParamResult> createOutput(std::string &&name) noexcept override;
+		std::pair<size_t, ParamResult> createVolumeRegion(const std::string &name) noexcept override;
+		std::pair<size_t, ParamResult> createRenderView(const std::string &name) noexcept override;
+		std::pair<size_t, ParamResult> createImage(const std::string &name) noexcept override;
+		std::pair<size_t, ParamResult> createOutput(const std::string &name) noexcept override;
 		void clearAll() noexcept override; //!< clear the whole environment + scene, i.e. free (hopefully) all memory.
 		void clearOutputs() noexcept override { }
 		void setupRender() noexcept override;

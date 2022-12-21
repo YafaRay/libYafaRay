@@ -22,8 +22,8 @@
  *      Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-#ifndef YAFARAY_LOGGER_H
-#define YAFARAY_LOGGER_H
+#ifndef LIBYAFARAY_LOGGER_H
+#define LIBYAFARAY_LOGGER_H
 
 #include "public_api/yafaray_c_api.h"
 #include "color/color_console.h"

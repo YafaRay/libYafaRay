@@ -24,94 +24,139 @@
 #include "geometry/primitive/face_indices.h"
 #include "math/math.h"
 #include "image/image.h"
-#include "interface/export/export_c.h"
-#include "interface/export/export_python.h"
-#include "interface/export/export_xml.h"
-#include "interface/interface.h"
 #include "render/progress_bar.h"
+#include "scene/scene.h"
+#include "param/param.h"
+#include "render/renderer.h"
+#include "geometry/matrix.h"
 #include <cstring>
 
-yafaray_Interface *yafaray_createInterface(yafaray_InterfaceType interface_type, const char *exported_file_path, const yafaray_LoggerCallback logger_callback, void *callback_data, yafaray_DisplayConsole display_console)
+/*yafaray_Scene *yafaray_createInterface(yafaray_InterfaceType interface_type, const char *exported_file_path, const yafaray_LoggerCallback logger_callback, void *callback_data, yafaray_DisplayConsole display_console)
 {
 	yafaray::Interface *interface;
 	if(interface_type == YAFARAY_INTERFACE_EXPORT_XML) interface = new yafaray::ExportXml(exported_file_path, logger_callback, callback_data, display_console);
 	else if(interface_type == YAFARAY_INTERFACE_EXPORT_C) interface = new yafaray::ExportC(exported_file_path, logger_callback, callback_data, display_console);
 	else if(interface_type == YAFARAY_INTERFACE_EXPORT_PYTHON) interface = new yafaray::ExportPython(exported_file_path, logger_callback, callback_data, display_console);
 	else interface = new yafaray::Interface(logger_callback, callback_data, display_console);
-	return reinterpret_cast<yafaray_Interface *>(interface);
+	return reinterpret_cast<yafaray_Scene *>(interface);
 }
 
-void yafaray_destroyInterface(yafaray_Interface *interface)
+void yafaray_destroyInterface(yafaray_Scene *scene)
 {
-	delete reinterpret_cast<yafaray::Interface *>(interface);
+	delete reinterpret_cast<yafaray::Scene *>(scene);
+}*/
+
+yafaray_Logger *yafaray_createLogger(yafaray_LoggerCallback logger_callback, void *callback_data, yafaray_DisplayConsole display_console)
+{
+	auto logger{new yafaray::Logger(logger_callback, callback_data, display_console)};
+	return reinterpret_cast<yafaray_Logger *>(logger);
 }
 
-void yafaray_setLoggingCallback(yafaray_Interface *interface, const yafaray_LoggerCallback logger_callback, void *callback_data)
+void yafaray_destroyLogger(yafaray_Logger *logger)
 {
-	reinterpret_cast<yafaray::Interface *>(interface)->setLoggingCallback(logger_callback, callback_data);
+	delete reinterpret_cast<yafaray::Logger *>(logger);
 }
 
-void yafaray_createScene(yafaray_Interface *interface)
+yafaray_Scene *yafaray_createScene(yafaray_Logger *logger)
 {
-	reinterpret_cast<yafaray::Interface *>(interface)->createScene();
+	auto scene{new yafaray::Scene(*reinterpret_cast<yafaray::Logger *>(logger))};
+	return reinterpret_cast<yafaray_Scene *>(scene);
 }
 
-yafaray_Bool yafaray_initObject(yafaray_Interface *interface, size_t object_id, size_t material_id) //!< initialize object. The material_id may or may not be used by the object depending on the type of the object
+void yafaray_destroyScene(yafaray_Scene *scene)
 {
-	return static_cast<yafaray_Bool>(reinterpret_cast<yafaray::Interface *>(interface)->initObject(object_id, material_id));
+	delete reinterpret_cast<yafaray::Scene *>(scene);
 }
 
-size_t yafaray_addVertex(yafaray_Interface *interface, size_t object_id, double x, double y, double z) //!< add vertex to mesh; returns index to be used for addTriangle/addQuad
+yafaray_ParamMap *yafaray_createParamMap()
 {
-	return reinterpret_cast<yafaray::Interface *>(interface)->addVertex(object_id, {{static_cast<float>(x), static_cast<float>(y), static_cast<float>(z)}}, 0);
+	auto param_map{new yafaray::ParamMap()};
+	return reinterpret_cast<yafaray_ParamMap *>(param_map);
 }
 
-size_t yafaray_addVertexTimeStep(yafaray_Interface *interface, size_t object_id, double x, double y, double z, unsigned char time_step) //!< add vertex to mesh; returns index to be used for addTriangle/addQuad
+void yafaray_destroyParamMap(yafaray_ParamMap *param_map)
 {
-	return reinterpret_cast<yafaray::Interface *>(interface)->addVertex(object_id, {{static_cast<float>(x), static_cast<float>(y), static_cast<float>(z)}}, time_step);
+	delete reinterpret_cast<yafaray::ParamMap *>(param_map);
 }
 
-size_t yafaray_addVertexWithOrco(yafaray_Interface *interface, size_t object_id, double x, double y, double z, double ox, double oy, double oz) //!< add vertex with Orco to mesh; returns index to be used for addTriangle/addQuad
+yafaray_ParamMapList *yafaray_createParamMapList()
 {
-	return reinterpret_cast<yafaray::Interface *>(interface)->addVertex(object_id, {{static_cast<float>(x), static_cast<float>(y), static_cast<float>(z)}}, {{static_cast<float>(ox), static_cast<float>(oy), static_cast<float>(oz)}}, 0);
+	auto param_map_list{new std::list<yafaray::ParamMap>()};
+	return reinterpret_cast<yafaray_ParamMapList *>(param_map_list);
 }
 
-size_t yafaray_addVertexWithOrcoTimeStep(yafaray_Interface *interface, size_t object_id, double x, double y, double z, double ox, double oy, double oz, unsigned char time_step) //!< add vertex with Orco to mesh; returns index to be used for addTriangle/addQuad
+void yafaray_destroyParamMapList(yafaray_ParamMapList *param_map_list)
 {
-	return reinterpret_cast<yafaray::Interface *>(interface)->addVertex(object_id, {{static_cast<float>(x), static_cast<float>(y), static_cast<float>(z)}}, {{static_cast<float>(ox), static_cast<float>(oy), static_cast<float>(oz)}}, time_step);
+	delete reinterpret_cast<std::list<yafaray::ParamMap> *>(param_map_list);
 }
 
-void yafaray_addNormal(yafaray_Interface *interface, size_t object_id, double nx, double ny, double nz) //!< add vertex normal to mesh; the vertex that will be attached to is the last one inserted by addVertex method
+yafaray_Renderer *yafaray_createRenderer(yafaray_Scene *scene, yafaray_DisplayConsole display_console, yafaray_ParamMap *param_map)
 {
-	reinterpret_cast<yafaray::Interface *>(interface)->addVertexNormal(object_id, {{static_cast<float>(nx), static_cast<float>(ny), static_cast<float>(nz)}}, 0);
+	auto renderer{new yafaray::Renderer(reinterpret_cast<yafaray::Scene *>(scene), display_console, param_map)};
+	return reinterpret_cast<yafaray_Renderer *>(renderer);
 }
 
-void yafaray_addNormalTimeStep(yafaray_Interface *interface, size_t object_id, double nx, double ny, double nz, unsigned char time_step) //!< add vertex normal to mesh; the vertex that will be attached to is the last one inserted by addVertex method
+void yafaray_destroyRenderer(yafaray_Renderer *renderer)
 {
-	reinterpret_cast<yafaray::Interface *>(interface)->addVertexNormal(object_id, {{static_cast<float>(nx), static_cast<float>(ny), static_cast<float>(nz)}}, time_step);
+	delete reinterpret_cast<yafaray::Renderer *>(renderer);
 }
 
-yafaray_Bool yafaray_addTriangle(yafaray_Interface *interface, size_t object_id, size_t a, size_t b, size_t c, size_t material_id)
+yafaray_Bool yafaray_initObject(yafaray_Scene *scene, size_t object_id, size_t material_id) //!< initialize object. The material_id may or may not be used by the object depending on the type of the object
 {
-	return static_cast<yafaray_Bool>(reinterpret_cast<yafaray::Interface *>(interface)->addFace(object_id, yafaray::FaceIndices<int>{{
+	return static_cast<yafaray_Bool>(reinterpret_cast<yafaray::Scene *>(scene)->initObject(object_id, material_id));
+}
+
+size_t yafaray_addVertex(yafaray_Scene *scene, size_t object_id, double x, double y, double z) //!< add vertex to mesh; returns index to be used for addTriangle/addQuad
+{
+	return reinterpret_cast<yafaray::Scene *>(scene)->addVertex(object_id, {{static_cast<float>(x), static_cast<float>(y), static_cast<float>(z)}}, 0);
+}
+
+size_t yafaray_addVertexTimeStep(yafaray_Scene *scene, size_t object_id, double x, double y, double z, unsigned char time_step) //!< add vertex to mesh; returns index to be used for addTriangle/addQuad
+{
+	return reinterpret_cast<yafaray::Scene *>(scene)->addVertex(object_id, {{static_cast<float>(x), static_cast<float>(y), static_cast<float>(z)}}, time_step);
+}
+
+size_t yafaray_addVertexWithOrco(yafaray_Scene *scene, size_t object_id, double x, double y, double z, double ox, double oy, double oz) //!< add vertex with Orco to mesh; returns index to be used for addTriangle/addQuad
+{
+	return reinterpret_cast<yafaray::Scene *>(scene)->addVertex(object_id, {{static_cast<float>(x), static_cast<float>(y), static_cast<float>(z)}}, {{static_cast<float>(ox), static_cast<float>(oy), static_cast<float>(oz)}}, 0);
+}
+
+size_t yafaray_addVertexWithOrcoTimeStep(yafaray_Scene *scene, size_t object_id, double x, double y, double z, double ox, double oy, double oz, unsigned char time_step) //!< add vertex with Orco to mesh; returns index to be used for addTriangle/addQuad
+{
+	return reinterpret_cast<yafaray::Scene *>(scene)->addVertex(object_id, {{static_cast<float>(x), static_cast<float>(y), static_cast<float>(z)}}, {{static_cast<float>(ox), static_cast<float>(oy), static_cast<float>(oz)}}, time_step);
+}
+
+void yafaray_addNormal(yafaray_Scene *scene, size_t object_id, double nx, double ny, double nz) //!< add vertex normal to mesh; the vertex that will be attached to is the last one inserted by addVertex method
+{
+	reinterpret_cast<yafaray::Scene *>(scene)->addVertexNormal(object_id, {{static_cast<float>(nx), static_cast<float>(ny), static_cast<float>(nz)}}, 0);
+}
+
+void yafaray_addNormalTimeStep(yafaray_Scene *scene, size_t object_id, double nx, double ny, double nz, unsigned char time_step) //!< add vertex normal to mesh; the vertex that will be attached to is the last one inserted by addVertex method
+{
+	reinterpret_cast<yafaray::Scene *>(scene)->addVertexNormal(object_id, {{static_cast<float>(nx), static_cast<float>(ny), static_cast<float>(nz)}}, time_step);
+}
+
+yafaray_Bool yafaray_addTriangle(yafaray_Scene *scene, size_t object_id, size_t a, size_t b, size_t c, size_t material_id)
+{
+	return static_cast<yafaray_Bool>(reinterpret_cast<yafaray::Scene *>(scene)->addFace(object_id, yafaray::FaceIndices<int>{{
 		yafaray::VertexIndices<int>{static_cast<int>(a)},
 		yafaray::VertexIndices<int>{static_cast<int>(b)},
 		yafaray::VertexIndices<int>{static_cast<int>(c)},
 	}}, material_id));
 }
 
-yafaray_Bool yafaray_addTriangleWithUv(yafaray_Interface *interface, size_t object_id, size_t a, size_t b, size_t c, size_t uv_a, size_t uv_b, size_t uv_c, size_t material_id)
+yafaray_Bool yafaray_addTriangleWithUv(yafaray_Scene *scene, size_t object_id, size_t a, size_t b, size_t c, size_t uv_a, size_t uv_b, size_t uv_c, size_t material_id)
 {
-	return static_cast<yafaray_Bool>(reinterpret_cast<yafaray::Interface *>(interface)->addFace(object_id, yafaray::FaceIndices<int>{{
+	return static_cast<yafaray_Bool>(reinterpret_cast<yafaray::Scene *>(scene)->addFace(object_id, yafaray::FaceIndices<int>{{
 		yafaray::VertexIndices<int>{static_cast<int>(a), yafaray::math::invalid<int>, static_cast<int>(uv_a)},
 		yafaray::VertexIndices<int>{static_cast<int>(b), yafaray::math::invalid<int>, static_cast<int>(uv_b)},
 		yafaray::VertexIndices<int>{static_cast<int>(c), yafaray::math::invalid<int>, static_cast<int>(uv_c)},
 	}}, material_id));
 }
 
-yafaray_Bool yafaray_addQuad(yafaray_Interface *interface, size_t object_id, size_t a, size_t b, size_t c, size_t d, size_t material_id)
+yafaray_Bool yafaray_addQuad(yafaray_Scene *scene, size_t object_id, size_t a, size_t b, size_t c, size_t d, size_t material_id)
 {
-	return static_cast<yafaray_Bool>(reinterpret_cast<yafaray::Interface *>(interface)->addFace(object_id, yafaray::FaceIndices<int>{{
+	return static_cast<yafaray_Bool>(reinterpret_cast<yafaray::Scene *>(scene)->addFace(object_id, yafaray::FaceIndices<int>{{
 		yafaray::VertexIndices<int>{static_cast<int>(a)},
 		yafaray::VertexIndices<int>{static_cast<int>(b)},
 		yafaray::VertexIndices<int>{static_cast<int>(c)},
@@ -119,9 +164,9 @@ yafaray_Bool yafaray_addQuad(yafaray_Interface *interface, size_t object_id, siz
 	}}, material_id));
 }
 
-yafaray_Bool yafaray_addQuadWithUv(yafaray_Interface *interface, size_t object_id, size_t a, size_t b, size_t c, size_t d, size_t uv_a, size_t uv_b, size_t uv_c, size_t uv_d, size_t material_id)
+yafaray_Bool yafaray_addQuadWithUv(yafaray_Scene *scene, size_t object_id, size_t a, size_t b, size_t c, size_t d, size_t uv_a, size_t uv_b, size_t uv_c, size_t uv_d, size_t material_id)
 {
-	return static_cast<yafaray_Bool>(reinterpret_cast<yafaray::Interface *>(interface)->addFace(object_id, yafaray::FaceIndices<int>{{
+	return static_cast<yafaray_Bool>(reinterpret_cast<yafaray::Scene *>(scene)->addFace(object_id, yafaray::FaceIndices<int>{{
 		yafaray::VertexIndices<int>{static_cast<int>(a), yafaray::math::invalid<int>, static_cast<int>(uv_a)},
 		yafaray::VertexIndices<int>{static_cast<int>(b), yafaray::math::invalid<int>, static_cast<int>(uv_b)},
 		yafaray::VertexIndices<int>{static_cast<int>(c), yafaray::math::invalid<int>, static_cast<int>(uv_c)},
@@ -129,329 +174,329 @@ yafaray_Bool yafaray_addQuadWithUv(yafaray_Interface *interface, size_t object_i
 	}}, material_id));
 }
 
-size_t yafaray_addUv(yafaray_Interface *interface, size_t object_id, double u, double v) //!< add a UV coordinate pair; returns index to be used for addTriangle/addQuad
+size_t yafaray_addUv(yafaray_Scene *scene, size_t object_id, double u, double v) //!< add a UV coordinate pair; returns index to be used for addTriangle/addQuad
 {
-	return reinterpret_cast<yafaray::Interface *>(interface)->addUv(object_id, {static_cast<float>(u), static_cast<float>(v)});
+	return reinterpret_cast<yafaray::Scene *>(scene)->addUv(object_id, {static_cast<float>(u), static_cast<float>(v)});
 }
 
-yafaray_Bool yafaray_smoothObjectMesh(yafaray_Interface *interface, size_t object_id, double angle) //!< smooth vertex normals of mesh with given ID and angle (in degrees)
+yafaray_Bool yafaray_smoothObjectMesh(yafaray_Scene *scene, size_t object_id, double angle) //!< smooth vertex normals of mesh with given ID and angle (in degrees)
 {
-	return static_cast<yafaray_Bool>(reinterpret_cast<yafaray::Interface *>(interface)->smoothVerticesNormals(object_id, angle));
+	return static_cast<yafaray_Bool>(reinterpret_cast<yafaray::Scene *>(scene)->smoothVerticesNormals(object_id, angle));
 }
 
-size_t yafaray_createInstance(yafaray_Interface *interface)
+size_t yafaray_createInstance(yafaray_Scene *scene)
 {
-	return reinterpret_cast<yafaray::Interface *>(interface)->createInstance();
+	return reinterpret_cast<yafaray::Scene *>(scene)->createInstance();
 }
 
-yafaray_Bool yafaray_addInstanceObject(yafaray_Interface *interface, size_t instance_id, size_t base_object_id)
+yafaray_Bool yafaray_addInstanceObject(yafaray_Scene *scene, size_t instance_id, size_t base_object_id)
 {
-	return static_cast<yafaray_Bool>(reinterpret_cast<yafaray::Interface *>(interface)->addInstanceObject(instance_id, base_object_id));
+	return static_cast<yafaray_Bool>(reinterpret_cast<yafaray::Scene *>(scene)->addInstanceObject(instance_id, base_object_id));
 }
 
-yafaray_Bool yafaray_addInstanceOfInstance(yafaray_Interface *interface, size_t instance_id, size_t base_instance_id)
+yafaray_Bool yafaray_addInstanceOfInstance(yafaray_Scene *scene, size_t instance_id, size_t base_instance_id)
 {
-	return static_cast<yafaray_Bool>(reinterpret_cast<yafaray::Interface *>(interface)->addInstanceOfInstance(instance_id, base_instance_id));
+	return static_cast<yafaray_Bool>(reinterpret_cast<yafaray::Scene *>(scene)->addInstanceOfInstance(instance_id, base_instance_id));
 }
 
-yafaray_Bool yafaray_addInstanceMatrix(yafaray_Interface *interface, size_t instance_id, double m_00, double m_01, double m_02, double m_03, double m_10, double m_11, double m_12, double m_13, double m_20, double m_21, double m_22, double m_23, double m_30, double m_31, double m_32, double m_33, float time)
+yafaray_Bool yafaray_addInstanceMatrix(yafaray_Scene *scene, size_t instance_id, double m_00, double m_01, double m_02, double m_03, double m_10, double m_11, double m_12, double m_13, double m_20, double m_21, double m_22, double m_23, double m_30, double m_31, double m_32, double m_33, float time)
 {
-	return static_cast<yafaray_Bool>(reinterpret_cast<yafaray::Interface *>(interface)->addInstanceMatrix(instance_id, yafaray::Matrix4f{std::array<std::array<float, 4>, 4>{{{static_cast<float>(m_00), static_cast<float>(m_01), static_cast<float>(m_02), static_cast<float>(m_03)}, {static_cast<float>(m_10), static_cast<float>(m_11), static_cast<float>(m_12), static_cast<float>(m_13)}, {static_cast<float>(m_20), static_cast<float>(m_21), static_cast<float>(m_22), static_cast<float>(m_23)}, {static_cast<float>(m_30), static_cast<float>(m_31), static_cast<float>(m_32), static_cast<float>(m_33)}}}}, time));
+	return static_cast<yafaray_Bool>(reinterpret_cast<yafaray::Scene *>(scene)->addInstanceMatrix(instance_id, yafaray::Matrix4f{std::array<std::array<float, 4>, 4>{{{static_cast<float>(m_00), static_cast<float>(m_01), static_cast<float>(m_02), static_cast<float>(m_03)}, {static_cast<float>(m_10), static_cast<float>(m_11), static_cast<float>(m_12), static_cast<float>(m_13)}, {static_cast<float>(m_20), static_cast<float>(m_21), static_cast<float>(m_22), static_cast<float>(m_23)}, {static_cast<float>(m_30), static_cast<float>(m_31), static_cast<float>(m_32), static_cast<float>(m_33)}}}}, time));
 }
 
-yafaray_Bool yafaray_addInstanceMatrixArray(yafaray_Interface *interface, size_t instance_id, const double *obj_to_world, float time)
+yafaray_Bool yafaray_addInstanceMatrixArray(yafaray_Scene *scene, size_t instance_id, const double *obj_to_world, float time)
 {
-	return static_cast<yafaray_Bool>(reinterpret_cast<yafaray::Interface *>(interface)->addInstanceMatrix(instance_id, yafaray::Matrix4f{obj_to_world}, time));
+	return static_cast<yafaray_Bool>(reinterpret_cast<yafaray::Scene *>(scene)->addInstanceMatrix(instance_id, yafaray::Matrix4f{obj_to_world}, time));
 }
 
-void yafaray_paramsSetVector(yafaray_Interface *interface, const char *name, double x, double y, double z)
+void yafaray_paramsSetVector(yafaray_ParamMap *param_map, const char *name, double x, double y, double z)
 {
-	reinterpret_cast<yafaray::Interface *>(interface)->paramsSetVector(name, {{static_cast<float>(x), static_cast<float>(y), static_cast<float>(z)}});
+	auto params{*reinterpret_cast<yafaray::ParamMap *>(param_map)};
+	params[std::string(name)] = yafaray::Vec3f{{static_cast<float>(x), static_cast<float>(y), static_cast<float>(z)}};
 }
 
-void yafaray_paramsSetString(yafaray_Interface *interface, const char *name, const char *s)
+void yafaray_paramsSetString(yafaray_ParamMap *param_map, const char *name, const char *s)
 {
-	reinterpret_cast<yafaray::Interface *>(interface)->paramsSetString(name, s);
+	auto params{*reinterpret_cast<yafaray::ParamMap *>(param_map)};
+	params[std::string(name)] = std::string(s);
 }
 
-void yafaray_paramsSetBool(yafaray_Interface *interface, const char *name, yafaray_Bool b)
+void yafaray_paramsSetBool(yafaray_ParamMap *param_map, const char *name, yafaray_Bool b)
 {
-	reinterpret_cast<yafaray::Interface *>(interface)->paramsSetBool(name, b);
+	auto params{*reinterpret_cast<yafaray::ParamMap *>(param_map)};
+	params[std::string(name)] = b;
 }
 
-void yafaray_paramsSetInt(yafaray_Interface *interface, const char *name, int i)
+void yafaray_paramsSetInt(yafaray_ParamMap *param_map, const char *name, int i)
 {
-	reinterpret_cast<yafaray::Interface *>(interface)->paramsSetInt(name, i);
+	auto params{*reinterpret_cast<yafaray::ParamMap *>(param_map)};
+	params[std::string(name)] = i;
 }
 
-void yafaray_paramsSetFloat(yafaray_Interface *interface, const char *name, double f)
+void yafaray_paramsSetFloat(yafaray_ParamMap *param_map, const char *name, double f)
 {
-	reinterpret_cast<yafaray::Interface *>(interface)->paramsSetFloat(name, f);
+	auto params{*reinterpret_cast<yafaray::ParamMap *>(param_map)};
+	params[std::string(name)] = yafaray::Parameter{f};
 }
 
-void yafaray_paramsSetColor(yafaray_Interface *interface, const char *name, double r, double g, double b, double a)
+void yafaray_paramsSetColor(yafaray_ParamMap *param_map, const char *name, double r, double g, double b, double a)
 {
-	reinterpret_cast<yafaray::Interface *>(interface)->paramsSetColor(name, yafaray::Rgba{static_cast<float>(r), static_cast<float>(g), static_cast<float>(b), static_cast<float>(a)});
+	auto params{*reinterpret_cast<yafaray::ParamMap *>(param_map)};
+	params[std::string(name)] = yafaray::Rgba{static_cast<float>(r), static_cast<float>(g), static_cast<float>(b), static_cast<float>(a)};
 }
 
-void yafaray_paramsSetMatrix(yafaray_Interface *interface, const char *name, float m_00, float m_01, float m_02, float m_03, float m_10, float m_11, float m_12, float m_13, float m_20, float m_21, float m_22, float m_23, float m_30, float m_31, float m_32, float m_33, yafaray_Bool transpose)
+void paramsSetMatrix(yafaray::ParamMap &param_map, const std::string &name, yafaray::Matrix4f &&matrix, bool transpose) noexcept
 {
-	reinterpret_cast<yafaray::Interface *>(interface)->paramsSetMatrix(name, yafaray::Matrix4f{std::array<std::array<float, 4>, 4>{{{m_00, m_01, m_02, m_03}, {m_10, m_11, m_12, m_13}, {m_20, m_21, m_22, m_23}, {m_30, m_31, m_32, m_33}}}}, transpose);
+	if(transpose)
+	{
+		param_map[std::string(name)] = std::move(matrix.transpose());
+	}
+	else param_map[std::string(name)] = std::move(matrix);
 }
 
-void yafaray_paramsSetMatrixArray(yafaray_Interface *interface, const char *name, const double *matrix, yafaray_Bool transpose)
+void yafaray_paramsSetMatrix(yafaray_ParamMap *param_map, const char *name, float m_00, float m_01, float m_02, float m_03, float m_10, float m_11, float m_12, float m_13, float m_20, float m_21, float m_22, float m_23, float m_30, float m_31, float m_32, float m_33, yafaray_Bool transpose)
 {
-	reinterpret_cast<yafaray::Interface *>(interface)->paramsSetMatrix(name, yafaray::Matrix4f{matrix}, transpose);
+	paramsSetMatrix(*reinterpret_cast<yafaray::ParamMap *>(param_map), name, yafaray::Matrix4f{std::array<std::array<float, 4>, 4>{{{m_00, m_01, m_02, m_03}, {m_10, m_11, m_12, m_13}, {m_20, m_21, m_22, m_23}, {m_30, m_31, m_32, m_33}}}}, transpose);
 }
 
-void yafaray_paramsClearAll(yafaray_Interface *interface) 	//!< clear the paramMap and paramList
+void yafaray_paramsSetMatrixArray(yafaray_ParamMap *param_map, const char *name, const double *matrix, yafaray_Bool transpose)
 {
-	reinterpret_cast<yafaray::Interface *>(interface)->paramsClearAll();
+	paramsSetMatrix(*reinterpret_cast<yafaray::ParamMap *>(param_map), name, yafaray::Matrix4f{matrix}, transpose);
 }
 
-void yafaray_paramsPushList(yafaray_Interface *interface) 	//!< push new list item in paramList (e.g. new shader node description)
+void yafaray_paramsClearAll(yafaray_ParamMap *param_map) 	//!< clear the paramMap and paramList
 {
-	reinterpret_cast<yafaray::Interface *>(interface)->paramsPushList();
+	reinterpret_cast<yafaray::ParamMap *>(param_map)->clear();
 }
 
-void yafaray_paramsEndList(yafaray_Interface *interface) 	//!< revert to writing to normal paramMap
+yafaray_ResultFlags yafaray_getObjectId(yafaray_Scene *scene, const char *name, size_t *id_obtained)
 {
-	reinterpret_cast<yafaray::Interface *>(interface)->paramsEndList();
+	auto [object, object_id, object_result]{reinterpret_cast<yafaray::Scene *>(scene)->getObject(name)};
+	if(id_obtained) *id_obtained = object_id;
+	return static_cast<yafaray_ResultFlags>(object_result.value());
 }
 
-yafaray_ResultFlags yafaray_getObjectId(yafaray_Interface *interface, const char *name, size_t *id_obtained)
+yafaray_ResultFlags yafaray_getMaterialId(yafaray_Scene *scene, const char *name, size_t *id_obtained)
 {
-	auto result{reinterpret_cast<yafaray::Interface *>(interface)->getObjectId(name)};
-	if(id_obtained) *id_obtained = result.first;
-	return static_cast<yafaray_ResultFlags>(result.second.value());
+	auto [material_id, material_result]{reinterpret_cast<yafaray::Scene *>(scene)->getMaterial(name)};
+	if(id_obtained) *id_obtained = material_id;
+	return static_cast<yafaray_ResultFlags>(material_result.value());
 }
 
-yafaray_ResultFlags yafaray_getMaterialId(yafaray_Interface *interface, const char *name, size_t *id_obtained)
+yafaray_ResultFlags yafaray_createObject(yafaray_Scene *scene, size_t *id_obtained, const char *name, const yafaray_ParamMap *param_map)
 {
-	auto result{reinterpret_cast<yafaray::Interface *>(interface)->getMaterialId(name)};
-	if(id_obtained) *id_obtained = result.first;
-	return static_cast<yafaray_ResultFlags>(result.second.value());
-}
-
-yafaray_ResultFlags yafaray_createObject(yafaray_Interface *interface, const char *name, size_t *id_obtained)
-{
-	auto creation_result{reinterpret_cast<yafaray::Interface *>(interface)->createObject(name)};
+	auto creation_result{reinterpret_cast<yafaray::Scene *>(scene)->createObject(name, *reinterpret_cast<const yafaray::ParamMap *>(param_map))};
 	if(id_obtained) *id_obtained = creation_result.first;
 	return static_cast<yafaray_ResultFlags>(creation_result.second.flags_.value());
 }
 
-yafaray_ResultFlags yafaray_createLight(yafaray_Interface *interface, const char *name)
+yafaray_ResultFlags yafaray_createLight(yafaray_Scene *scene, const char *name, const yafaray_ParamMap *param_map)
 {
-	auto creation_result{reinterpret_cast<yafaray::Interface *>(interface)->createLight(name)};
+	auto creation_result{reinterpret_cast<yafaray::Scene *>(scene)->createLight(name, *reinterpret_cast<const yafaray::ParamMap *>(param_map))};
 	return static_cast<yafaray_ResultFlags>(creation_result.second.flags_.value());
 }
 
-yafaray_ResultFlags yafaray_createTexture(yafaray_Interface *interface, const char *name)
+yafaray_ResultFlags yafaray_createTexture(yafaray_Scene *scene, const char *name, const yafaray_ParamMap *param_map)
 {
-	auto creation_result{reinterpret_cast<yafaray::Interface *>(interface)->createTexture(name)};
+	auto creation_result{reinterpret_cast<yafaray::Scene *>(scene)->createTexture(name, *reinterpret_cast<const yafaray::ParamMap *>(param_map))};
 	return static_cast<yafaray_ResultFlags>(creation_result.second.flags_.value());
 }
 
-yafaray_ResultFlags yafaray_createMaterial(yafaray_Interface *interface, const char *name, size_t *id_obtained)
+yafaray_ResultFlags yafaray_createMaterial(yafaray_Scene *scene, size_t *id_obtained, const char *name, const yafaray_ParamMap *param_map, const yafaray_ParamMapList *param_map_list_nodes)
 {
-	auto creation_result{reinterpret_cast<yafaray::Interface *>(interface)->createMaterial(name)};
+	auto creation_result{reinterpret_cast<yafaray::Scene *>(scene)->createMaterial(name, *reinterpret_cast<const yafaray::ParamMap *>(param_map), *reinterpret_cast<const std::list<yafaray::ParamMap> *>(param_map_list_nodes))};
 	if(id_obtained) *id_obtained = creation_result.first;
 	return static_cast<yafaray_ResultFlags>(creation_result.second.flags_.value());
 }
 
-yafaray_ResultFlags yafaray_createCamera(yafaray_Interface *interface, const char *name)
+yafaray_ResultFlags yafaray_createCamera(yafaray_Scene *scene, const char *name, const yafaray_ParamMap *param_map)
 {
-	auto creation_result{reinterpret_cast<yafaray::Interface *>(interface)->createCamera(name)};
+	auto creation_result{reinterpret_cast<yafaray::Scene *>(scene)->createCamera(name, *reinterpret_cast<const yafaray::ParamMap *>(param_map))};
 	return static_cast<yafaray_ResultFlags>(creation_result.second.flags_.value());
 }
 
-yafaray_ResultFlags yafaray_defineBackground(yafaray_Interface *interface)
+yafaray_ResultFlags yafaray_defineBackground(yafaray_Scene *scene, const yafaray_ParamMap *param_map)
 {
-	auto creation_result{reinterpret_cast<yafaray::Interface *>(interface)->defineBackground()};
+	auto creation_result{reinterpret_cast<yafaray::Scene *>(scene)->defineBackground(*reinterpret_cast<const yafaray::ParamMap *>(param_map))};
 	return static_cast<yafaray_ResultFlags>(creation_result.flags_.value());
 }
 
-yafaray_ResultFlags yafaray_defineSurfaceIntegrator(yafaray_Interface *interface)
+yafaray_ResultFlags yafaray_defineSurfaceIntegrator(yafaray_Scene *scene, const yafaray_ParamMap *param_map)
 {
-	auto creation_result{reinterpret_cast<yafaray::Interface *>(interface)->defineSurfaceIntegrator()};
+	auto creation_result{reinterpret_cast<yafaray::Scene *>(scene)->defineSurfaceIntegrator(*reinterpret_cast<const yafaray::ParamMap *>(param_map))};
 	return static_cast<yafaray_ResultFlags>(creation_result.flags_.value());
 }
 
-yafaray_ResultFlags yafaray_defineVolumeIntegrator(yafaray_Interface *interface)
+yafaray_ResultFlags yafaray_defineVolumeIntegrator(yafaray_Scene *scene, const yafaray_ParamMap *param_map)
 {
-	auto creation_result{reinterpret_cast<yafaray::Interface *>(interface)->defineVolumeIntegrator()};
+	auto creation_result{reinterpret_cast<yafaray::Scene *>(scene)->defineVolumeIntegrator(*reinterpret_cast<const yafaray::ParamMap *>(param_map))};
 	return static_cast<yafaray_ResultFlags>(creation_result.flags_.value());
 }
 
-yafaray_ResultFlags yafaray_createVolumeRegion(yafaray_Interface *interface, const char *name)
+yafaray_ResultFlags yafaray_createVolumeRegion(yafaray_Scene *scene, const char *name, const yafaray_ParamMap *param_map)
 {
-	auto creation_result{reinterpret_cast<yafaray::Interface *>(interface)->createVolumeRegion(name)};
+	auto creation_result{reinterpret_cast<yafaray::Scene *>(scene)->createVolumeRegion(name, *reinterpret_cast<const yafaray::ParamMap *>(param_map))};
 	return static_cast<yafaray_ResultFlags>(creation_result.second.flags_.value());
 }
 
-yafaray_ResultFlags yafaray_createRenderView(yafaray_Interface *interface, const char *name)
+yafaray_ResultFlags yafaray_createRenderView(yafaray_Renderer *renderer, const char *name, const yafaray_ParamMap *param_map)
 {
-	auto creation_result{reinterpret_cast<yafaray::Interface *>(interface)->createRenderView(name)};
+	auto creation_result{reinterpret_cast<yafaray::Renderer *>(renderer)->createRenderView(name, *reinterpret_cast<const yafaray::ParamMap *>(param_map))};
 	return static_cast<yafaray_ResultFlags>(creation_result.second.flags_.value());
 }
 
-yafaray_ResultFlags yafaray_createOutput(yafaray_Interface *interface, const char *name)
+yafaray_ResultFlags yafaray_createOutput(yafaray_Renderer *renderer, const char *name, const yafaray_ParamMap *param_map)
 {
-	auto creation_result{reinterpret_cast<yafaray::Interface *>(interface)->createOutput(name)};
+	auto creation_result{reinterpret_cast<yafaray::Renderer *>(renderer)->createOutput(name, *reinterpret_cast<const yafaray::ParamMap *>(param_map))};
 	return static_cast<yafaray_ResultFlags>(creation_result.second.flags_.value());
 }
 
-void yafaray_setRenderNotifyViewCallback(yafaray_Interface *interface, yafaray_RenderNotifyViewCallback callback, void *callback_data)
+void yafaray_setRenderNotifyViewCallback(yafaray_Renderer *renderer, yafaray_RenderNotifyViewCallback callback, void *callback_data)
 {
-	reinterpret_cast<yafaray::Interface *>(interface)->setRenderNotifyViewCallback(callback, callback_data);
+	reinterpret_cast<yafaray::Renderer *>(renderer)->setRenderNotifyViewCallback(callback, callback_data);
 }
 
-void yafaray_setRenderNotifyLayerCallback(yafaray_Interface *interface, yafaray_RenderNotifyLayerCallback callback, void *callback_data)
+void yafaray_setRenderNotifyLayerCallback(yafaray_Renderer *renderer, yafaray_RenderNotifyLayerCallback callback, void *callback_data)
 {
-	reinterpret_cast<yafaray::Interface *>(interface)->setRenderNotifyLayerCallback(callback, callback_data);
+	reinterpret_cast<yafaray::Renderer *>(renderer)->setRenderNotifyLayerCallback(callback, callback_data);
 }
 
-void yafaray_setRenderPutPixelCallback(yafaray_Interface *interface, yafaray_RenderPutPixelCallback callback, void *callback_data)
+void yafaray_setRenderPutPixelCallback(yafaray_Renderer *renderer, yafaray_RenderPutPixelCallback callback, void *callback_data)
 {
-	reinterpret_cast<yafaray::Interface *>(interface)->setRenderPutPixelCallback(callback, callback_data);
+	reinterpret_cast<yafaray::Renderer *>(renderer)->setRenderPutPixelCallback(callback, callback_data);
 }
 
-void yafaray_setRenderHighlightPixelCallback(yafaray_Interface *interface, yafaray_RenderHighlightPixelCallback callback, void *callback_data)
+void yafaray_setRenderHighlightPixelCallback(yafaray_Renderer *renderer, yafaray_RenderHighlightPixelCallback callback, void *callback_data)
 {
-	reinterpret_cast<yafaray::Interface *>(interface)->setRenderHighlightPixelCallback(callback, callback_data);
+	reinterpret_cast<yafaray::Renderer *>(renderer)->setRenderHighlightPixelCallback(callback, callback_data);
 }
 
-void yafaray_setRenderFlushAreaCallback(yafaray_Interface *interface, yafaray_RenderFlushAreaCallback callback, void *callback_data)
+void yafaray_setRenderFlushAreaCallback(yafaray_Renderer *renderer, yafaray_RenderFlushAreaCallback callback, void *callback_data)
 {
-	reinterpret_cast<yafaray::Interface *>(interface)->setRenderFlushAreaCallback(callback, callback_data);
+	reinterpret_cast<yafaray::Renderer *>(renderer)->setRenderFlushAreaCallback(callback, callback_data);
 }
 
-void yafaray_setRenderFlushCallback(yafaray_Interface *interface, yafaray_RenderFlushCallback callback, void *callback_data)
+void yafaray_setRenderFlushCallback(yafaray_Renderer *renderer, yafaray_RenderFlushCallback callback, void *callback_data)
 {
-	reinterpret_cast<yafaray::Interface *>(interface)->setRenderFlushCallback(callback, callback_data);
+	reinterpret_cast<yafaray::Renderer *>(renderer)->setRenderFlushCallback(callback, callback_data);
 }
 
-void yafaray_setRenderHighlightAreaCallback(yafaray_Interface *interface, yafaray_RenderHighlightAreaCallback callback, void *callback_data)
+void yafaray_setRenderHighlightAreaCallback(yafaray_Renderer *renderer, yafaray_RenderHighlightAreaCallback callback, void *callback_data)
 {
-	reinterpret_cast<yafaray::Interface *>(interface)->setRenderHighlightAreaCallback(callback, callback_data);
+	reinterpret_cast<yafaray::Renderer *>(renderer)->setRenderHighlightAreaCallback(callback, callback_data);
 }
 
-int yafaray_getSceneFilmWidth(const yafaray_Interface *interface)
+int yafaray_getRendererWidth(const yafaray_Renderer *renderer)
 {
-	return reinterpret_cast<const yafaray::Interface *>(interface)->getSceneFilmWidth();
+	return reinterpret_cast<const yafaray::Renderer *>(renderer)->getSceneFilmWidth();
 }
 
-int yafaray_getSceneFilmHeight(const yafaray_Interface *interface)
+int yafaray_getRendererHeight(const yafaray_Renderer *renderer)
 {
-	return reinterpret_cast<const yafaray::Interface *>(interface)->getSceneFilmHeight();
+	return reinterpret_cast<const yafaray::Renderer *>(renderer)->getSceneFilmHeight();
 }
 
-yafaray_Bool yafaray_removeOutput(yafaray_Interface *interface, const char *name)
+yafaray_Bool yafaray_removeOutput(yafaray_Renderer *renderer, const char *name)
 {
-	return static_cast<yafaray_Bool>(reinterpret_cast<yafaray::Interface *>(interface)->removeOutput(name));
+	return static_cast<yafaray_Bool>(reinterpret_cast<yafaray::Renderer *>(renderer)->removeOutput(name));
 }
 
-void yafaray_clearOutputs(yafaray_Interface *interface)
+void yafaray_clearOutputs(yafaray_Renderer *renderer)
 {
-	reinterpret_cast<yafaray::Interface *>(interface)->clearOutputs();
+	reinterpret_cast<yafaray::Renderer *>(renderer)->clearOutputs();
 }
 
-void yafaray_clearAll(yafaray_Interface *interface)
+void yafaray_setupRender(yafaray_Scene *scene, yafaray_Renderer *renderer, const yafaray_ParamMap *param_map)
 {
-	reinterpret_cast<yafaray::Interface *>(interface)->clearAll();
+	reinterpret_cast<yafaray::Scene *>(scene)->setupRender();
 }
 
-void yafaray_setupRender(yafaray_Interface *interface)
-{
-	reinterpret_cast<yafaray::Interface *>(interface)->setupRender();
-}
-
-void yafaray_render(yafaray_Interface *interface, yafaray_ProgressBarCallback monitor_callback, void *callback_data, yafaray_DisplayConsole progress_bar_display_console)
+void yafaray_render(yafaray_Renderer *renderer, yafaray_ProgressBarCallback monitor_callback, void *callback_data, yafaray_DisplayConsole progress_bar_display_console)
 {
 	std::unique_ptr<yafaray::ProgressBar> progress_bar;
 	if(progress_bar_display_console == YAFARAY_DISPLAY_CONSOLE_NORMAL) progress_bar = std::make_unique<yafaray::ConsoleProgressBar>(80, monitor_callback, callback_data);
 	else progress_bar = std::make_unique<yafaray::ProgressBar>(monitor_callback, callback_data);
-	reinterpret_cast<yafaray::Interface *>(interface)->render(std::move(progress_bar));
+	reinterpret_cast<yafaray::Renderer *>(renderer)->render(std::move(progress_bar));
 }
 
-void yafaray_defineLayer(yafaray_Interface *interface)
+void yafaray_defineLayer(yafaray_Renderer *renderer, const yafaray_ParamMap *param_map)
 {
-	reinterpret_cast<yafaray::Interface *>(interface)->defineLayer();
+	reinterpret_cast<yafaray::Renderer *>(renderer)->defineLayer();
 }
 
-void yafaray_enablePrintDateTime(yafaray_Interface *interface, yafaray_Bool value)
+void yafaray_enablePrintDateTime(yafaray_Logger *logger, yafaray_Bool value)
 {
-	reinterpret_cast<yafaray::Interface *>(interface)->enablePrintDateTime(value);
+	reinterpret_cast<yafaray::Logger *>(logger)->enablePrintDateTime(value);
 }
 
-void yafaray_setConsoleVerbosityLevel(yafaray_Interface *interface, yafaray_LogLevel log_level)
+void yafaray_setConsoleVerbosityLevel(yafaray_Logger *logger, yafaray_LogLevel log_level)
 {
-	reinterpret_cast<yafaray::Interface *>(interface)->setConsoleVerbosityLevel(log_level);
+	reinterpret_cast<yafaray::Logger *>(logger)->setConsoleMasterVerbosity(log_level);
 }
 
-void yafaray_setLogVerbosityLevel(yafaray_Interface *interface, yafaray_LogLevel log_level)
+void yafaray_setLogVerbosityLevel(yafaray_Logger *logger, yafaray_LogLevel log_level)
 {
-	reinterpret_cast<yafaray::Interface *>(interface)->setLogVerbosityLevel(log_level);
+	reinterpret_cast<yafaray::Logger *>(logger)->setLogMasterVerbosity(log_level);
 }
 
 /*! Console Printing wrappers to report in color with yafaray's own console coloring */
-void yafaray_printDebug(yafaray_Interface *interface, const char *msg)
+void yafaray_printDebug(yafaray_Logger *logger, const char *msg)
 {
-	reinterpret_cast<yafaray::Interface *>(interface)->printDebug(msg);
+	reinterpret_cast<yafaray::Logger *>(logger)->logDebug(msg);
 }
 
-void yafaray_printVerbose(yafaray_Interface *interface, const char *msg)
+void yafaray_printVerbose(yafaray_Logger *logger, const char *msg)
 {
-	reinterpret_cast<yafaray::Interface *>(interface)->printVerbose(msg);
+	reinterpret_cast<yafaray::Logger *>(logger)->logVerbose(msg);
 }
 
-void yafaray_printInfo(yafaray_Interface *interface, const char *msg)
+void yafaray_printInfo(yafaray_Logger *logger, const char *msg)
 {
-	reinterpret_cast<yafaray::Interface *>(interface)->printInfo(msg);
+	reinterpret_cast<yafaray::Logger *>(logger)->logInfo(msg);
 }
 
-void yafaray_printParams(yafaray_Interface *interface, const char *msg)
+void yafaray_printParams(yafaray_Logger *logger, const char *msg)
 {
-	reinterpret_cast<yafaray::Interface *>(interface)->printParams(msg);
+	reinterpret_cast<yafaray::Logger *>(logger)->logParams(msg);
 }
 
-void yafaray_printWarning(yafaray_Interface *interface, const char *msg)
+void yafaray_printWarning(yafaray_Logger *logger, const char *msg)
 {
-	reinterpret_cast<yafaray::Interface *>(interface)->printWarning(msg);
+	reinterpret_cast<yafaray::Logger *>(logger)->logWarning(msg);
 }
 
-void yafaray_printError(yafaray_Interface *interface, const char *msg)
+void yafaray_printError(yafaray_Logger *logger, const char *msg)
 {
-	reinterpret_cast<yafaray::Interface *>(interface)->printError(msg);
+	reinterpret_cast<yafaray::Logger *>(logger)->logError(msg);
 }
 
-void yafaray_setInputColorSpace(yafaray_Interface *interface, const char *color_space_string, float gamma_val)
+void yafaray_setInputColorSpace(yafaray_ParamMap *param_map, const char *color_space_string, float gamma_val)
 {
-	reinterpret_cast<yafaray::Interface *>(interface)->setInputColorSpace(color_space_string, gamma_val);
+	reinterpret_cast<yafaray::ParamMap *>(param_map)->setInputColorSpace(color_space_string, gamma_val);
 }
 
-yafaray_ResultFlags yafaray_getImageId(yafaray_Interface *interface, const char *name, size_t *id_obtained)
+yafaray_ResultFlags yafaray_getImageId(yafaray_Scene *scene, const char *name, size_t *id_obtained)
 {
-	auto result{reinterpret_cast<yafaray::Interface *>(interface)->getImageId(name)};
-	if(id_obtained) *id_obtained = result.first;
-	return static_cast<yafaray_ResultFlags>(result.second.value());
+	auto [image, image_id, image_result]{reinterpret_cast<yafaray::Scene *>(scene)->getImage(name)};
+	if(id_obtained) *id_obtained = image_id;
+	return static_cast<yafaray_ResultFlags>(image_result.value());
 }
 
-yafaray_ResultFlags yafaray_createImage(yafaray_Interface *interface, const char *name, size_t *id_obtained)
+yafaray_ResultFlags yafaray_createImage(yafaray_Scene *scene, const char *name, size_t *id_obtained, const yafaray_ParamMap *param_map)
 {
-	auto creation_result{reinterpret_cast<yafaray::Interface *>(interface)->createImage(name)};
+	auto creation_result{reinterpret_cast<yafaray::Scene *>(scene)->createImage(name, *reinterpret_cast<const yafaray::ParamMap *>(param_map))};
 	if(id_obtained) *id_obtained = creation_result.first;
 	return static_cast<yafaray_ResultFlags>(creation_result.second.flags_.value());
 }
 
-yafaray_Bool yafaray_setImageColor(yafaray_Interface *interface, size_t image_id, int x, int y, float red, float green, float blue, float alpha)
+yafaray_Bool yafaray_setImageColor(yafaray_Scene *scene, size_t image_id, int x, int y, float red, float green, float blue, float alpha)
 {
-	return static_cast<yafaray_Bool>(reinterpret_cast<yafaray::Interface *>(interface)->setImageColor(image_id, {{x, y}}, {red, green, blue, alpha}));
+	return static_cast<yafaray_Bool>(reinterpret_cast<yafaray::Scene *>(scene)->setImageColor(image_id, {{x, y}}, {red, green, blue, alpha}));
 }
 
-yafaray_Bool yafaray_getImageColor(yafaray_Interface *interface, size_t image_id, int x, int y, float *red, float *green, float *blue, float *alpha)
+yafaray_Bool yafaray_getImageColor(yafaray_Scene *scene, size_t image_id, int x, int y, float *red, float *green, float *blue, float *alpha)
 {
-	const auto [color, result_ok]{reinterpret_cast<yafaray::Interface *>(interface)->getImageColor(image_id, {{x, y}})};
+	const auto [color, result_ok]{reinterpret_cast<yafaray::Scene *>(scene)->getImageColor(image_id, {{x, y}})};
 	if(!result_ok) return YAFARAY_BOOL_FALSE;
 	*red = color.r_;
 	*green = color.g_;
@@ -460,24 +505,24 @@ yafaray_Bool yafaray_getImageColor(yafaray_Interface *interface, size_t image_id
 	return YAFARAY_BOOL_TRUE;
 }
 
-int yafaray_getImageWidth(yafaray_Interface *interface, size_t image_id)
+int yafaray_getImageWidth(yafaray_Scene *scene, size_t image_id)
 {
-	return static_cast<yafaray_Bool>(reinterpret_cast<yafaray::Interface *>(interface)->getImageSize(image_id).first[yafaray::Axis::X]);
+	return static_cast<yafaray_Bool>(reinterpret_cast<yafaray::Scene *>(scene)->getImageSize(image_id).first[yafaray::Axis::X]);
 }
 
-int yafaray_getImageHeight(yafaray_Interface *interface, size_t image_id)
+int yafaray_getImageHeight(yafaray_Scene *scene, size_t image_id)
 {
-	return static_cast<yafaray_Bool>(reinterpret_cast<yafaray::Interface *>(interface)->getImageSize(image_id).first[yafaray::Axis::Y]);
+	return static_cast<yafaray_Bool>(reinterpret_cast<yafaray::Scene *>(scene)->getImageSize(image_id).first[yafaray::Axis::Y]);
 }
 
-void yafaray_cancelRendering(yafaray_Interface *interface)
+void yafaray_cancelRendering(yafaray_Renderer *renderer)
 {
-	reinterpret_cast<yafaray::Interface *>(interface)->cancel();
+	reinterpret_cast<yafaray::Renderer *>(renderer)->cancel();
 }
 
-void yafaray_setConsoleLogColorsEnabled(yafaray_Interface *interface, yafaray_Bool colors_enabled)
+void yafaray_setConsoleLogColorsEnabled(yafaray_Logger *logger, yafaray_Bool colors_enabled)
 {
-	reinterpret_cast<yafaray::Interface *>(interface)->setConsoleLogColorsEnabled(colors_enabled);
+	reinterpret_cast<yafaray::Logger *>(logger)->setConsoleLogColorsEnabled(colors_enabled);
 }
 
 yafaray_LogLevel yafaray_logLevelFromString(const char *log_level_string)
@@ -489,30 +534,29 @@ int yafaray_getVersionMajor() { return yafaray::buildinfo::getVersionMajor(); }
 int yafaray_getVersionMinor() { return yafaray::buildinfo::getVersionMinor(); }
 int yafaray_getVersionPatch() { return yafaray::buildinfo::getVersionPatch(); }
 
-char *createCString(const std::string &std_string)
+char *createCharString(const std::string &std_string)
 {
-	const size_t string_size = std_string.size();
-	char *c_string = new char[string_size + 1];
+	auto c_string{new char[std_string.size() + 1]};
 	std::strcpy(c_string, std_string.c_str());
 	return c_string;
 }
 
 char *yafaray_getVersionString()
 {
-	return createCString(yafaray::buildinfo::getVersionString());
+	return createCharString(yafaray::buildinfo::getVersionString());
 }
 
-char *yafaray_getLayersTable(const yafaray_Interface *interface)
+char *yafaray_getLayersTable(const yafaray_Renderer *renderer)
 {
-	return createCString(reinterpret_cast<const yafaray::Interface *>(interface)->printLayersTable());
+	return createCharString(reinterpret_cast<const yafaray::Renderer *>(renderer)->printLayersTable());
 }
 
-char *yafaray_getViewsTable(const yafaray_Interface *interface)
+char *yafaray_getViewsTable(const yafaray_Renderer *renderer)
 {
-	return createCString(reinterpret_cast<const yafaray::Interface *>(interface)->printViewsTable());
+	return createCharString(reinterpret_cast<const yafaray::Renderer *>(renderer)->printViewsTable());
 }
 
-void yafaray_deallocateCharPointer(char *string_pointer_to_deallocate)
+void yafaray_destroyCharString(char *string)
 {
-	delete[] string_pointer_to_deallocate;
+	delete[] string;
 }
