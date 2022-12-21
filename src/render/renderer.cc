@@ -222,7 +222,7 @@ std::pair<size_t, ParamResult> Renderer::createRenderView(const std::string &nam
 	attention: since this function creates an image film and asigns it to the scene,
 	you need to delete it before deleting the scene!
 */
-bool Renderer::setupSceneRenderParams(Scene &scene, const ParamMap &param_map)
+bool Renderer::setupSceneRenderParams(const ParamMap &param_map)
 {
 	if(logger_.isDebug()) logger_.logDebug("**Renderer::setupSceneRenderParams 'raw' ParamMap\n" + param_map.logContents());
 	std::string name;

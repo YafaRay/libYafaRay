@@ -84,6 +84,16 @@ yafaray_ParamMapList *yafaray_createParamMapList()
 	return reinterpret_cast<yafaray_ParamMapList *>(param_map_list);
 }
 
+void yafaray_addParamMapToList(yafaray_ParamMapList *param_map_list, const yafaray_ParamMap *param_map)
+{
+	reinterpret_cast<std::list<yafaray::ParamMap> *>(param_map_list)->emplace_back(*reinterpret_cast<const yafaray::ParamMap *>(param_map));
+}
+
+void yafaray_clearParamMapList(yafaray_ParamMapList *param_map_list)
+{
+	reinterpret_cast<std::list<yafaray::ParamMap> *>(param_map_list)->clear();
+}
+
 void yafaray_destroyParamMapList(yafaray_ParamMapList *param_map_list)
 {
 	delete reinterpret_cast<std::list<yafaray::ParamMap> *>(param_map_list);
@@ -208,39 +218,39 @@ yafaray_Bool yafaray_addInstanceMatrixArray(yafaray_Scene *scene, size_t instanc
 	return static_cast<yafaray_Bool>(reinterpret_cast<yafaray::Scene *>(scene)->addInstanceMatrix(instance_id, yafaray::Matrix4f{obj_to_world}, time));
 }
 
-void yafaray_paramsSetVector(yafaray_ParamMap *param_map, const char *name, double x, double y, double z)
+void yafaray_setParamMapVector(yafaray_ParamMap *param_map, const char *name, double x, double y, double z)
 {
-	auto params{*reinterpret_cast<yafaray::ParamMap *>(param_map)};
+	auto &params{*reinterpret_cast<yafaray::ParamMap *>(param_map)};
 	params[std::string(name)] = yafaray::Vec3f{{static_cast<float>(x), static_cast<float>(y), static_cast<float>(z)}};
 }
 
-void yafaray_paramsSetString(yafaray_ParamMap *param_map, const char *name, const char *s)
+void yafaray_setParamMapString(yafaray_ParamMap *param_map, const char *name, const char *s)
 {
-	auto params{*reinterpret_cast<yafaray::ParamMap *>(param_map)};
+	auto &params{*reinterpret_cast<yafaray::ParamMap *>(param_map)};
 	params[std::string(name)] = std::string(s);
 }
 
-void yafaray_paramsSetBool(yafaray_ParamMap *param_map, const char *name, yafaray_Bool b)
+void yafaray_setParamMapBool(yafaray_ParamMap *param_map, const char *name, yafaray_Bool b)
 {
-	auto params{*reinterpret_cast<yafaray::ParamMap *>(param_map)};
+	auto &params{*reinterpret_cast<yafaray::ParamMap *>(param_map)};
 	params[std::string(name)] = b;
 }
 
-void yafaray_paramsSetInt(yafaray_ParamMap *param_map, const char *name, int i)
+void yafaray_setParamMapInt(yafaray_ParamMap *param_map, const char *name, int i)
 {
-	auto params{*reinterpret_cast<yafaray::ParamMap *>(param_map)};
+	auto &params{*reinterpret_cast<yafaray::ParamMap *>(param_map)};
 	params[std::string(name)] = i;
 }
 
-void yafaray_paramsSetFloat(yafaray_ParamMap *param_map, const char *name, double f)
+void yafaray_setParamMapFloat(yafaray_ParamMap *param_map, const char *name, double f)
 {
-	auto params{*reinterpret_cast<yafaray::ParamMap *>(param_map)};
+	auto &params{*reinterpret_cast<yafaray::ParamMap *>(param_map)};
 	params[std::string(name)] = yafaray::Parameter{f};
 }
 
-void yafaray_paramsSetColor(yafaray_ParamMap *param_map, const char *name, double r, double g, double b, double a)
+void yafaray_setParamMapColor(yafaray_ParamMap *param_map, const char *name, double r, double g, double b, double a)
 {
-	auto params{*reinterpret_cast<yafaray::ParamMap *>(param_map)};
+	auto &params{*reinterpret_cast<yafaray::ParamMap *>(param_map)};
 	params[std::string(name)] = yafaray::Rgba{static_cast<float>(r), static_cast<float>(g), static_cast<float>(b), static_cast<float>(a)};
 }
 
@@ -253,17 +263,17 @@ void paramsSetMatrix(yafaray::ParamMap &param_map, const std::string &name, yafa
 	else param_map[std::string(name)] = std::move(matrix);
 }
 
-void yafaray_paramsSetMatrix(yafaray_ParamMap *param_map, const char *name, double m_00, double m_01, double m_02, double m_03, double m_10, double m_11, double m_12, double m_13, double m_20, double m_21, double m_22, double m_23, double m_30, double m_31, double m_32, double m_33, yafaray_Bool transpose)
+void yafaray_setParamMapMatrix(yafaray_ParamMap *param_map, const char *name, double m_00, double m_01, double m_02, double m_03, double m_10, double m_11, double m_12, double m_13, double m_20, double m_21, double m_22, double m_23, double m_30, double m_31, double m_32, double m_33, yafaray_Bool transpose)
 {
 	paramsSetMatrix(*reinterpret_cast<yafaray::ParamMap *>(param_map), name, yafaray::Matrix4f{std::array<std::array<float, 4>, 4>{{{static_cast<float>(m_00), static_cast<float>(m_01), static_cast<float>(m_02), static_cast<float>(m_03) }, {static_cast<float>(m_10), static_cast<float>(m_11), static_cast<float>(m_12), static_cast<float>(m_13) }, {static_cast<float>(m_20), static_cast<float>(m_21), static_cast<float>(m_22), static_cast<float>(m_23) }, {static_cast<float>(m_30), static_cast<float>(m_31), static_cast<float>(m_32), static_cast<float>(m_33) }}}}, transpose);
 }
 
-void yafaray_paramsSetMatrixArray(yafaray_ParamMap *param_map, const char *name, const double *matrix, yafaray_Bool transpose)
+void yafaray_setParamMapMatrixArray(yafaray_ParamMap *param_map, const char *name, const double *matrix, yafaray_Bool transpose)
 {
 	paramsSetMatrix(*reinterpret_cast<yafaray::ParamMap *>(param_map), name, yafaray::Matrix4f{matrix}, transpose);
 }
 
-void yafaray_paramsClearAll(yafaray_ParamMap *param_map) 	//!< clear the paramMap and paramList
+void yafaray_clearParamMap(yafaray_ParamMap *param_map) 	//!< clear the paramMap and paramList
 {
 	reinterpret_cast<yafaray::ParamMap *>(param_map)->clear();
 }
@@ -411,7 +421,10 @@ void yafaray_clearOutputs(yafaray_Renderer *renderer)
 
 void yafaray_setupRender(yafaray_Scene *scene, yafaray_Renderer *renderer, const yafaray_ParamMap *param_map)
 {
-	reinterpret_cast<yafaray::Renderer *>(renderer)->setupSceneRenderParams(*reinterpret_cast<yafaray::Scene *>(scene), *reinterpret_cast<const yafaray::ParamMap *>(param_map));
+	auto yaf_scene{reinterpret_cast<yafaray::Scene *>(scene)};
+	auto yaf_renderer{reinterpret_cast<yafaray::Renderer *>(renderer)};
+	yaf_renderer->setupSceneRenderParams(*reinterpret_cast<const yafaray::ParamMap *>(param_map));
+	yaf_scene->init();
 }
 
 void yafaray_render(yafaray_Renderer *renderer, const yafaray_Scene *scene, yafaray_ProgressBarCallback monitor_callback, void *callback_data, yafaray_DisplayConsole progress_bar_display_console)

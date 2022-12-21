@@ -68,7 +68,7 @@ class Renderer final
 		bool disableOutput(const std::string &name);
 		void clearOutputs();
 		const SceneItems<ImageOutput> &getOutputs() const { return outputs_; }
-		bool setupSceneRenderParams(Scene &scene, const ParamMap &param_map);
+		bool setupSceneRenderParams(const ParamMap &param_map);
 		void defineLayer(const ParamMap &param_map);
 		void defineLayer(std::string &&layer_type_name, std::string &&image_type_name, std::string &&exported_image_type_name, std::string &&exported_image_name);
 		void defineLayer(LayerDef::Type layer_type, Image::Type image_type = Image::Type{Image::Type::None}, Image::Type exported_image_type = Image::Type{Image::Type::None}, const std::string &exported_image_name = "");

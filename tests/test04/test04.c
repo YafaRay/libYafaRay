@@ -41,62 +41,62 @@ int main()
 
 	/* Creating scene */
 	yafaray_createScene(yi);
-	yafaray_paramsClearAll(yi);
+	yafaray_clearParamMap(param_map);
 
 	/* Creating images for textures */
-	yafaray_paramsSetString(yi, "type", "ColorAlpha");
-	yafaray_paramsSetString(yi, "image_optimization", "optimized");
-	yafaray_paramsSetString(yi, "filename", "tex.tga");
+	yafaray_setParamMapString(yi, "type", "ColorAlpha");
+	yafaray_setParamMapString(yi, "image_optimization", "optimized");
+	yafaray_setParamMapString(yi, "filename", "tex.tga");
 	yafaray_createImage(yi, "ImageTGA", NULL);
-	yafaray_paramsClearAll(yi);
+	yafaray_clearParamMap(param_map);
 
-	yafaray_paramsSetString(yi, "type", "ColorAlpha");
-	yafaray_paramsSetString(yi, "image_optimization", "none"); /* Note: only "none" allows HDR values > 1.f */
-	yafaray_paramsSetString(yi, "filename", "tex.hdr");
+	yafaray_setParamMapString(yi, "type", "ColorAlpha");
+	yafaray_setParamMapString(yi, "image_optimization", "none"); /* Note: only "none" allows HDR values > 1.f */
+	yafaray_setParamMapString(yi, "filename", "tex.hdr");
 	yafaray_createImage(yi, "ImageHDR", NULL);
-	yafaray_paramsClearAll(yi);
+	yafaray_clearParamMap(param_map);
 
 	/* Creating textures from images */
-	yafaray_paramsSetString(yi, "type", "image");
-	yafaray_paramsSetString(yi, "image_name", "ImageTGA");
+	yafaray_setParamMapString(yi, "type", "image");
+	yafaray_setParamMapString(yi, "image_name", "ImageTGA");
 	yafaray_createTexture(yi, "TextureTGA");
-	yafaray_paramsClearAll(yi);
+	yafaray_clearParamMap(param_map);
 
-	yafaray_paramsSetString(yi, "type", "image");
-	yafaray_paramsSetString(yi, "image_name", "ImageHDR");
+	yafaray_setParamMapString(yi, "type", "image");
+	yafaray_setParamMapString(yi, "image_name", "ImageHDR");
 	yafaray_createTexture(yi, "TextureHDR");
-	yafaray_paramsClearAll(yi);
+	yafaray_clearParamMap(param_map);
 
 	/* Creating material */
 	/* General material parameters */
-	yafaray_paramsSetString(yi, "type", "shinydiffusemat");
-	yafaray_paramsSetColor(yi, "color", 1.f, 1.f, 1.f, 1.f);
+	yafaray_setParamMapString(yi, "type", "shinydiffusemat");
+	yafaray_setParamMapColor(yi, "color", 1.f, 1.f, 1.f, 1.f);
 	/* Shader tree definition */
-	yafaray_paramsPushList(yi);
-	yafaray_paramsSetString(yi, "element", "shader_node");
-	yafaray_paramsSetString(yi, "name", "diff_layer0");
-	yafaray_paramsSetString(yi, "input", "map0");
-	yafaray_paramsSetString(yi, "type", "layer");
-	yafaray_paramsSetString(yi, "blend_mode", "mix");
-	yafaray_paramsSetColor(yi, "upper_color", 1.f,1.f,1.f,1.f);
-	yafaray_paramsPushList(yi);
-	yafaray_paramsSetString(yi, "element", "shader_node");
-	yafaray_paramsSetString(yi, "name", "map0");
-	yafaray_paramsSetString(yi, "type", "texture_mapper");
-	yafaray_paramsSetString(yi, "mapping", "cube");
-	yafaray_paramsSetString(yi, "texco", "orco");
-	yafaray_paramsSetString(yi, "texture", "TextureTGA");
+	yafaray_addParamMapToList(param_map_list, param_map);
+	yafaray_setParamMapString(yi, "element", "shader_node");
+	yafaray_setParamMapString(yi, "name", "diff_layer0");
+	yafaray_setParamMapString(yi, "input", "map0");
+	yafaray_setParamMapString(yi, "type", "layer");
+	yafaray_setParamMapString(yi, "blend_mode", "mix");
+	yafaray_setParamMapColor(yi, "upper_color", 1.f,1.f,1.f,1.f);
+	yafaray_addParamMapToList(param_map_list, param_map);
+	yafaray_setParamMapString(yi, "element", "shader_node");
+	yafaray_setParamMapString(yi, "name", "map0");
+	yafaray_setParamMapString(yi, "type", "texture_mapper");
+	yafaray_setParamMapString(yi, "mapping", "cube");
+	yafaray_setParamMapString(yi, "texco", "orco");
+	yafaray_setParamMapString(yi, "texture", "TextureTGA");
 	yafaray_paramsEndList(yi);
 	/* Actual material creation */
-	yafaray_paramsSetString(yi, "diffuse_shader", "diff_layer0");
+	yafaray_setParamMapString(yi, "diffuse_shader", "diff_layer0");
 	yafaray_createMaterial(yi, "MaterialDynamic", NULL);
-	yafaray_paramsClearAll(yi);
+	yafaray_clearParamMap(param_map);
 
 	/* Creating a geometric object */
-	yafaray_paramsSetBool(yi, "has_orco", 1);
-	yafaray_paramsSetString(yi, "type", "mesh");
+	yafaray_setParamMapBool(yi, "has_orco", 1);
+	yafaray_setParamMapString(yi, "type", "mesh");
 	yafaray_createObject(yi, "Cube", &object_id);
-	yafaray_paramsClearAll(yi);
+	yafaray_clearParamMap(param_map);
 	/* Creating vertices for the object */
 	yafaray_addVertexWithOrco(yi, object_id, -4.f, 1.5f, 0.f, -1.f, -1.f, -1);
 	yafaray_addVertexWithOrco(yi, object_id, -4.f, 1.5f, 2.f, -1.f, -1.f, 1);
@@ -123,55 +123,55 @@ int main()
 	yafaray_addTriangle(yi, object_id, 5, 3, 1, material_id);
 
 	/* Creating light/lamp */
-	yafaray_paramsSetString(yi, "type", "pointlight");
-	yafaray_paramsSetColor(yi, "color", 1.f, 1.f, 1.f, 1.f);
-	yafaray_paramsSetVector(yi, "from", 5.3f, -4.9f, 8.9f);
-	yafaray_paramsSetFloat(yi, "power", 150.f);
+	yafaray_setParamMapString(yi, "type", "pointlight");
+	yafaray_setParamMapColor(yi, "color", 1.f, 1.f, 1.f, 1.f);
+	yafaray_setParamMapVector(yi, "from", 5.3f, -4.9f, 8.9f);
+	yafaray_setParamMapFloat(yi, "power", 150.f);
 	yafaray_createLight(yi, "light_1");
-	yafaray_paramsClearAll(yi);
+	yafaray_clearParamMap(param_map);
 
 	/* Creating scene background */
-	yafaray_paramsSetString(yi, "type", "constant");
-	yafaray_paramsSetColor(yi, "color", 1.f, 1.f, 1.f, 1.f);
+	yafaray_setParamMapString(yi, "type", "constant");
+	yafaray_setParamMapColor(yi, "color", 1.f, 1.f, 1.f, 1.f);
 	yafaray_defineBackground(yi);
-	yafaray_paramsClearAll(yi);
+	yafaray_clearParamMap(param_map);
 
 	/* Creating camera */
-	yafaray_paramsSetString(yi, "type", "perspective");
-	yafaray_paramsSetInt(yi, "resx", width);
-	yafaray_paramsSetInt(yi, "resy", height);
-	yafaray_paramsSetFloat(yi, "focal", 1.1f);
-	yafaray_paramsSetVector(yi, "from", 8.6f, -7.2f, 8.1f);
-	yafaray_paramsSetVector(yi, "to", 8.0f, -6.7f, 7.6f);
-	yafaray_paramsSetVector(yi, "up", 8.3f, -6.8f, 9.f);
+	yafaray_setParamMapString(yi, "type", "perspective");
+	yafaray_setParamMapInt(yi, "resx", width);
+	yafaray_setParamMapInt(yi, "resy", height);
+	yafaray_setParamMapFloat(yi, "focal", 1.1f);
+	yafaray_setParamMapVector(yi, "from", 8.6f, -7.2f, 8.1f);
+	yafaray_setParamMapVector(yi, "to", 8.0f, -6.7f, 7.6f);
+	yafaray_setParamMapVector(yi, "up", 8.3f, -6.8f, 9.f);
 	yafaray_createCamera(yi, "cam_1");
-	yafaray_paramsClearAll(yi);
+	yafaray_clearParamMap(param_map);
 
 	/* Creating scene view */
-	yafaray_paramsSetString(yi, "camera_name", "cam_1");
+	yafaray_setParamMapString(yi, "camera_name", "cam_1");
 	yafaray_createRenderView(yi, "view_1");
-	yafaray_paramsClearAll(yi);
+	yafaray_clearParamMap(param_map);
 
 	/* Creating surface integrator */
-	yafaray_paramsSetString(yi, "type", "directlighting");
+	yafaray_setParamMapString(yi, "type", "directlighting");
 	yafaray_defineSurfaceIntegrator(yi);
-	yafaray_paramsClearAll(yi);
+	yafaray_clearParamMap(param_map);
 
 	/* Setting up render parameters */
-	yafaray_paramsSetString(yi, "scene_accelerator", "yafaray-kdtree-original");
-	yafaray_paramsSetInt(yi, "width", width);
-	yafaray_paramsSetInt(yi, "height", height);
-	yafaray_paramsSetInt(yi, "AA_minsamples", 1);
-	yafaray_paramsSetInt(yi, "AA_passes", 1);
-	yafaray_paramsSetInt(yi, "threads", 1);
-	yafaray_paramsSetInt(yi, "threads_photons", 1);
+	yafaray_setParamMapString(yi, "scene_accelerator", "yafaray-kdtree-original");
+	yafaray_setParamMapInt(yi, "width", width);
+	yafaray_setParamMapInt(yi, "height", height);
+	yafaray_setParamMapInt(yi, "AA_minsamples", 1);
+	yafaray_setParamMapInt(yi, "AA_passes", 1);
+	yafaray_setParamMapInt(yi, "threads", 1);
+	yafaray_setParamMapInt(yi, "threads_photons", 1);
 	yafaray_setupRender(yi);
-	yafaray_paramsClearAll(yi);
+	yafaray_clearParamMap(param_map);
 
 	/* Creating image output */
-	yafaray_paramsSetString(yi, "image_path", "./test04-output1.tga");
+	yafaray_setParamMapString(yi, "image_path", "./test04-output1.tga");
 	yafaray_createOutput(yi, "output1_tga");
-	yafaray_paramsClearAll(yi);
+	yafaray_clearParamMap(param_map);
 
 	/* Rendering */
 	yafaray_render(yi, NULL, NULL, YAFARAY_DISPLAY_CONSOLE_NORMAL);
@@ -179,34 +179,34 @@ int main()
 
 	/* Modifying (replacing) material */
 	/* General material parameters */
-	yafaray_paramsSetString(yi, "type", "shinydiffusemat");
-	yafaray_paramsSetColor(yi, "color", 1.f, 1.f, 1.f, 1.f);
+	yafaray_setParamMapString(yi, "type", "shinydiffusemat");
+	yafaray_setParamMapColor(yi, "color", 1.f, 1.f, 1.f, 1.f);
 	/* Shader tree definition */
-	yafaray_paramsPushList(yi);
-	yafaray_paramsSetString(yi, "element", "shader_node");
-	yafaray_paramsSetString(yi, "name", "diff_layer0");
-	yafaray_paramsSetString(yi, "input", "map0");
-	yafaray_paramsSetString(yi, "type", "layer");
-	yafaray_paramsSetString(yi, "blend_mode", "mix");
-	yafaray_paramsSetColor(yi, "upper_color", 1.f,1.f,1.f,1.f);
-	yafaray_paramsPushList(yi);
-	yafaray_paramsSetString(yi, "element", "shader_node");
-	yafaray_paramsSetString(yi, "name", "map0");
-	yafaray_paramsSetString(yi, "type", "texture_mapper");
-	yafaray_paramsSetString(yi, "mapping", "cube");
-	yafaray_paramsSetString(yi, "texco", "orco");
-	yafaray_paramsSetString(yi, "texture", "TextureHDR");
+	yafaray_addParamMapToList(param_map_list, param_map);
+	yafaray_setParamMapString(yi, "element", "shader_node");
+	yafaray_setParamMapString(yi, "name", "diff_layer0");
+	yafaray_setParamMapString(yi, "input", "map0");
+	yafaray_setParamMapString(yi, "type", "layer");
+	yafaray_setParamMapString(yi, "blend_mode", "mix");
+	yafaray_setParamMapColor(yi, "upper_color", 1.f,1.f,1.f,1.f);
+	yafaray_addParamMapToList(param_map_list, param_map);
+	yafaray_setParamMapString(yi, "element", "shader_node");
+	yafaray_setParamMapString(yi, "name", "map0");
+	yafaray_setParamMapString(yi, "type", "texture_mapper");
+	yafaray_setParamMapString(yi, "mapping", "cube");
+	yafaray_setParamMapString(yi, "texco", "orco");
+	yafaray_setParamMapString(yi, "texture", "TextureHDR");
 	yafaray_paramsEndList(yi);
 	/* Actual material creation */
-	yafaray_paramsSetString(yi, "diffuse_shader", "diff_layer0");
+	yafaray_setParamMapString(yi, "diffuse_shader", "diff_layer0");
 	yafaray_createMaterial(yi, "MaterialDynamic", NULL);
-	yafaray_paramsClearAll(yi);
+	yafaray_clearParamMap(param_map);
 
 	/* Using another image output */
 	yafaray_clearOutputs(yi);
-	yafaray_paramsSetString(yi, "image_path", "./test04-output2.tga");
+	yafaray_setParamMapString(yi, "image_path", "./test04-output2.tga");
 	yafaray_createOutput(yi, "output2_tga");
-	yafaray_paramsClearAll(yi);
+	yafaray_clearParamMap(param_map);
 
 	/* Rendering modified scene */
 	yafaray_render(yi, NULL, NULL, YAFARAY_DISPLAY_CONSOLE_NORMAL);

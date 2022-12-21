@@ -95,7 +95,7 @@ void ExportC::createScene() noexcept
 	writeParamMap(*params_);
 	params_->clear();
 	file_ << "\t" << "yafaray_createScene(yi);\n";
-	file_ << "\t" << "yafaray_paramsClearAll(yi);\n";
+	file_ << "\t" << "yafaray_clearParamMap(param_map);\n";
 	section_num_lines_ += 2;
 }
 
@@ -118,14 +118,14 @@ void ExportC::defineLayer() noexcept
 	writeParamMap(*params_);
 	params_->clear();
 	file_ << "\t" << "yafaray_defineLayer(yi);\n";
-	file_ << "\t" << "yafaray_paramsClearAll(yi);\n\n";
+	file_ << "\t" << "yafaray_clearParamMap(param_map);\n\n";
 	section_num_lines_ += 2;
 }
 
 bool ExportC::initObject(size_t object_id, size_t material_id) noexcept
 {
 	file_ << "\t" << "yafaray_endObject(yi);\n";
-	file_ << "\t" << "yafaray_paramsClearAll(yi);\n\n";
+	file_ << "\t" << "yafaray_clearParamMap(param_map);\n\n";
 	section_num_lines_ += 2;
 	return true;
 }
@@ -224,44 +224,44 @@ void ExportC::writeParam(const std::string &name, const Parameter &param, std::o
 	{
 		int i = 0;
 		param.getVal(i);
-		file << "yafaray_paramsSetInt(yi, \"" << name << "\", " << i << ");\n";
+		file << "yafaray_setParamMapInt(yi, \"" << name << "\", " << i << ");\n";
 	}
 	else if(type == Parameter::Type::Bool)
 	{
 		bool b = false;
 		param.getVal(b);
-		file << "yafaray_paramsSetBool(yi, \"" << name << "\", " << (b ? "true" : "false") << ");\n";
+		file << "yafaray_setParamMapBool(yi, \"" << name << "\", " << (b ? "true" : "false") << ");\n";
 	}
 	else if(type == Parameter::Type::Float)
 	{
 		double f = 0.0;
 		param.getVal(f);
-		file << "yafaray_paramsSetFloat(yi, \"" << name << "\", " << f << ");\n";
+		file << "yafaray_setParamMapFloat(yi, \"" << name << "\", " << f << ");\n";
 	}
 	else if(type == Parameter::Type::String)
 	{
 		std::string s;
 		param.getVal(s);
-		file << "yafaray_paramsSetString(yi, \"" << name << "\", \"" << s << "\");\n";
+		file << "yafaray_setParamMapString(yi, \"" << name << "\", \"" << s << "\");\n";
 	}
 	else if(type == Parameter::Type::Vector)
 	{
 		Point3f p{{0.f, 0.f, 0.f}};
 		param.getVal(p);
-		file << "yafaray_paramsSetVector(yi, \"" << name << "\", " << p[Axis::X] << ", " << p[Axis::Y] << ", " << p[Axis::Z] << ");\n";
+		file << "yafaray_setParamMapVector(yi, \"" << name << "\", " << p[Axis::X] << ", " << p[Axis::Y] << ", " << p[Axis::Z] << ");\n";
 	}
 	else if(type == Parameter::Type::Color)
 	{
 		Rgba c(0.f);
 		param.getVal(c);
 		c.colorSpaceFromLinearRgb(color_space, gamma);    //Color values are encoded to the desired color space before saving them to the XML file
-		file << "yafaray_paramsSetColor(yi, \"" << name << "\", " << c.r_ << ", " << c.g_ << ", " << c.b_ << ", " << c.a_ << ");\n";
+		file << "yafaray_setParamMapColor(yi, \"" << name << "\", " << c.r_ << ", " << c.g_ << ", " << c.b_ << ", " << c.a_ << ");\n";
 	}
 	else if(type == Parameter::Type::Matrix)
 	{
 		Matrix4f m;
 		param.getVal(m);
-		file << "yafaray_paramsSetMatrix(yi, ";
+		file << "yafaray_setParamMapMatrix(yi, ";
 		writeMatrix(m, file);
 		file << ", false);\n";
 	}
@@ -321,7 +321,7 @@ void ExportC::writeParamList(int indent) noexcept
 	const std::string tabs(indent, '\t');
 	for(const auto &param : nodes_params_)
 	{
-		file_ << tabs << "yafaray_paramsPushList(yi);\n";
+		file_ << tabs << "yafaray_addParamMapToList(param_map_list, param_map);\n";
 		writeParamMap(param, indent + 1);
 	}
 	file_ << tabs << "yafaray_paramsEndList(yi);\n";
@@ -333,7 +333,7 @@ std::pair<size_t, ParamResult> ExportC::createLight(const std::string &name) noe
 	writeParamMap(*params_);
 	params_->clear();
 	file_ << "\t" << "yafaray_createLight(yi, \"" << name << "\");\n";
-	file_ << "\t" << "yafaray_paramsClearAll(yi);\n\n";
+	file_ << "\t" << "yafaray_clearParamMap(param_map);\n\n";
 	section_num_lines_ += 2;
 	if(section_num_lines_ >= section_max_lines_) file_ << sectionSplit();
 	return {};
@@ -344,7 +344,7 @@ std::pair<size_t, ParamResult> ExportC::createTexture(const std::string &name) n
 	writeParamMap(*params_);
 	params_->clear();
 	file_ << "\t" << "yafaray_createTexture(yi, \"" << name << "\");\n";
-	file_ << "\t" << "yafaray_paramsClearAll(yi);\n\n";
+	file_ << "\t" << "yafaray_clearParamMap(param_map);\n\n";
 	section_num_lines_ += 2;
 	if(section_num_lines_ >= section_max_lines_) file_ << sectionSplit();
 	return {};
@@ -357,7 +357,7 @@ std::pair<size_t, ParamResult> ExportC::createMaterial(const std::string &name) 
 	params_->clear();
 	nodes_params_.clear();
 	file_ << "\t" << "yafaray_createMaterial(yi, \"" << name << "\");\n";
-	file_ << "\t" << "yafaray_paramsClearAll(yi);\n\n";
+	file_ << "\t" << "yafaray_clearParamMap(param_map);\n\n";
 	section_num_lines_ += 2;
 	if(section_num_lines_ >= section_max_lines_) file_ << sectionSplit();
 	return {};
@@ -368,7 +368,7 @@ std::pair<size_t, ParamResult> ExportC::createCamera(const std::string &name) no
 	writeParamMap(*params_);
 	params_->clear();
 	file_ << "\t" << "yafaray_createCamera(yi, \"" << name << "\");\n";
-	file_ << "\t" << "yafaray_paramsClearAll(yi);\n\n";
+	file_ << "\t" << "yafaray_clearParamMap(param_map);\n\n";
 	section_num_lines_ += 2;
 	if(section_num_lines_ >= section_max_lines_) file_ << sectionSplit();
 	return {};
@@ -379,7 +379,7 @@ ParamResult ExportC::defineBackground() noexcept
 	writeParamMap(*params_);
 	params_->clear();
 	file_ << "\t" << "yafaray_defineBackground(yi);\n";
-	file_ << "\t" << "yafaray_paramsClearAll(yi);\n\n";
+	file_ << "\t" << "yafaray_clearParamMap(param_map);\n\n";
 	section_num_lines_ += 2;
 	if(section_num_lines_ >= section_max_lines_) file_ << sectionSplit();
 	return {};
@@ -390,7 +390,7 @@ ParamResult ExportC::defineSurfaceIntegrator() noexcept
 	writeParamMap(*params_);
 	params_->clear();
 	file_ << "\t" << "yafaray_defineSurfaceIntegrator(yi);\n";
-	file_ << "\t" << "yafaray_paramsClearAll(yi);\n\n";
+	file_ << "\t" << "yafaray_clearParamMap(param_map);\n\n";
 	section_num_lines_ += 2;
 	if(section_num_lines_ >= section_max_lines_) file_ << sectionSplit();
 	return {};
@@ -401,7 +401,7 @@ ParamResult ExportC::defineVolumeIntegrator() noexcept
 	writeParamMap(*params_);
 	params_->clear();
 	file_ << "\t" << "yafaray_defineVolumeIntegrator(yi);\n";
-	file_ << "\t" << "yafaray_paramsClearAll(yi);\n\n";
+	file_ << "\t" << "yafaray_clearParamMap(param_map);\n\n";
 	section_num_lines_ += 2;
 	if(section_num_lines_ >= section_max_lines_) file_ << sectionSplit();
 	return {};
@@ -412,7 +412,7 @@ std::pair<size_t, ParamResult> ExportC::createVolumeRegion(const std::string &na
 	writeParamMap(*params_);
 	params_->clear();
 	file_ << "\t" << "yafaray_createVolumeRegion(yi, \"" << name << "\");\n";
-	file_ << "\t" << "yafaray_paramsClearAll(yi);\n\n";
+	file_ << "\t" << "yafaray_clearParamMap(param_map);\n\n";
 	section_num_lines_ += 2;
 	if(section_num_lines_ >= section_max_lines_) file_ << sectionSplit();
 	return {};
@@ -423,7 +423,7 @@ std::pair<size_t, ParamResult> ExportC::createOutput(const std::string &name) no
 	writeParamMap(*params_);
 	params_->clear();
 	file_ << "\t" << "yafaray_createOutput(yi, \"" << name << "\");\n";
-	file_ << "\t" << "yafaray_paramsClearAll(yi);\n\n";
+	file_ << "\t" << "yafaray_clearParamMap(param_map);\n\n";
 	section_num_lines_ += 2;
 	if(section_num_lines_ >= section_max_lines_) file_ << sectionSplit();
 	return {};
@@ -434,7 +434,7 @@ std::pair<size_t, ParamResult> ExportC::createRenderView(const std::string &name
 	writeParamMap(*params_);
 	params_->clear();
 	file_ << "\t" << "yafaray_createRenderView(yi, \"" << name << "\");\n";
-	file_ << "\t" << "yafaray_paramsClearAll(yi);\n\n";
+	file_ << "\t" << "yafaray_clearParamMap(param_map);\n\n";
 	section_num_lines_ += 2;
 	if(section_num_lines_ >= section_max_lines_) file_ << sectionSplit();
 	return {};
@@ -445,7 +445,7 @@ std::pair<size_t, ParamResult> ExportC::createImage(const std::string &name) noe
 	writeParamMap(*params_);
 	params_->clear();
 	file_ << "\t" << "yafaray_createImage(yi, \"" << name << "\");\n";
-	file_ << "\t" << "yafaray_paramsClearAll(yi);\n\n";
+	file_ << "\t" << "yafaray_clearParamMap(param_map);\n\n";
 	section_num_lines_ += 2;
 	if(section_num_lines_ >= section_max_lines_) file_ << sectionSplit();
 	return {};
@@ -457,7 +457,7 @@ std::pair<size_t, ParamResult> ExportC::createObject(const std::string &name) no
 	writeParamMap(*params_);
 	params_->clear();
 	file_ << "\t" << "yafaray_createObject(yi, \"" << name << "\");\n";
-	file_ << "\t" << "yafaray_paramsClearAll(yi);\n\n";
+	file_ << "\t" << "yafaray_clearParamMap(param_map);\n\n";
 	section_num_lines_ += 2;
 	if(section_num_lines_ >= section_max_lines_) file_ << sectionSplit();
 	++next_obj_;
@@ -469,18 +469,18 @@ void ExportC::setupRender() noexcept
 	writeParamMap(*params_);
 	params_->clear();
 	file_ << "\t" << "yafaray_setupRender(yi);\n";
-	file_ << "\t" << "yafaray_paramsClearAll(yi);\n\n";
+	file_ << "\t" << "yafaray_clearParamMap(param_map);\n\n";
 	section_num_lines_ += 2;
 }
 
 void ExportC::render(std::unique_ptr<ProgressBar> progress_bar) noexcept
 {
 	file_ << "\t" << "/* Creating image output */\n";
-	file_ << "\t" << "yafaray_paramsSetString(yi, \"image_path\", \"./test01-output1.tga\");\n";
-	file_ << "\t" << "yafaray_paramsSetString(yi, \"color_space\", \"sRGB\");\n";
-	file_ << "\t" << "yafaray_paramsSetString(yi, \"badge_position\", \"top\");\n";
+	file_ << "\t" << "yafaray_setParamMapString(yi, \"image_path\", \"./test01-output1.tga\");\n";
+	file_ << "\t" << "yafaray_setParamMapString(yi, \"color_space\", \"sRGB\");\n";
+	file_ << "\t" << "yafaray_setParamMapString(yi, \"badge_position\", \"top\");\n";
 	file_ << "\t" << "yafaray_createOutput(yi, \"output1_tga\");\n";
-	file_ << "\t" << "yafaray_paramsClearAll(yi);\n";
+	file_ << "\t" << "yafaray_clearParamMap(param_map);\n";
 	file_ << "}\n\n";
 	params_->clear();
 	nodes_params_.clear();
