@@ -62,7 +62,7 @@ class ImageFilm final
 	public:
 		enum Flags : unsigned char { RegularImage = 1 << 0, Densityimage = 1 << 1, All = RegularImage | Densityimage };
 		inline static std::string getClassName() { return "ImageFilm"; }
-		static std::pair<std::unique_ptr<ImageFilm>, ParamResult> factory(Logger &logger, RenderControl &render_control, const ParamMap &param_map, int num_threads);
+		static std::pair<ImageFilm *, ParamResult> factory(Logger &logger, RenderControl &render_control, const ParamMap &param_map, int num_threads);
 		ImageFilm(Logger &logger, ParamResult &param_result, RenderControl &render_control, int num_threads, const ParamMap &param_map);
 		std::string name() const { return name_; }
 		static std::string printMeta(const std::vector<std::string> &excluded_params) { return Params::meta_.print(excluded_params); }

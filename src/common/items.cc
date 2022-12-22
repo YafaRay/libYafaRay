@@ -28,6 +28,34 @@
 
 namespace yafaray {
 
+
+template <typename T>
+template <typename K>
+std::pair<size_t, ParamResult> Items<T>::createItem(Logger &logger, K &items_container, Items<T> &map, const std::string &name, const ParamMap &param_map)
+{
+
+	const auto [existing_item, existing_item_id, existing_item_result]{map.getByName(name)};
+	if(existing_item)
+	{
+		if(logger.isVerbose()) logger.logWarning(items_container->getClassName(), "'", items_container->name(), "': item with name '", name, "' already exists, overwriting with new item.");
+	}
+	std::unique_ptr<T> new_item;
+	ParamResult param_result;
+	if constexpr (std::is_same_v<T, RenderView>) std::tie(new_item, param_result) = T::factory(logger, *items_container, name, param_map);
+	else std::tie(new_item, param_result) = T::factory(logger, name, param_map);
+	if(new_item)
+	{
+		if(logger.isVerbose())
+		{
+			logger.logVerbose(items_container->getClassName(), "'", items_container->name(), "': Added ", new_item->getClassName(), " '", name, "' (", new_item->type().print(), ")!");
+		}
+		const auto [new_item_id, adding_result]{map.add(name, std::move(new_item))};
+		param_result.flags_ |= adding_result;
+		return {new_item_id, param_result};
+	}
+	else return {0, {YAFARAY_RESULT_ERROR_WHILE_CREATING}};
+}
+
 template <typename T>
 std::pair<size_t, ResultFlags> Items<T>::add(const std::string &name, std::unique_ptr<T> item)
 {

@@ -86,11 +86,11 @@ ParamMap ImageFilm::getAsParamMap(bool only_non_default) const
 	return params_.getAsParamMap(only_non_default);
 }
 
-std::pair<std::unique_ptr<ImageFilm>, ParamResult> ImageFilm::factory(Logger &logger, RenderControl &render_control, const ParamMap &param_map, int num_threads)
+std::pair<ImageFilm *, ParamResult> ImageFilm::factory(Logger &logger, RenderControl &render_control, const ParamMap &param_map, int num_threads)
 {
 	if(logger.isDebug()) logger.logDebug("**" + getClassName() + "::factory 'raw' ParamMap\n" + param_map.logContents());
 	auto param_result{Params::meta_.check(param_map, {}, {})};
-	auto result {std::make_unique<ImageFilm>(logger, param_result, render_control, num_threads, param_map)};
+	auto result {new ImageFilm(logger, param_result, render_control, num_threads, param_map)};
 	if(param_result.notOk()) logger.logWarning(param_result.print<ImageFilm>("ImageFilm", {}));
 	return {std::move(result), param_result};
 }
@@ -1371,7 +1371,8 @@ bool ImageFilm::disableOutput(const std::string &name)
 
 std::pair<size_t, ParamResult> ImageFilm::createOutput(const std::string &name, const ParamMap &param_map)
 {
-	return createRendererItem<ImageOutput>(logger_, name, param_map, outputs_);
+	auto result{Items<ImageOutput>::createItem<ImageFilm>(logger_, *this, outputs_, name, param_map)};
+	return result;
 }
 
 } //namespace yafaray

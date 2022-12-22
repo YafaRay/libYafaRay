@@ -120,7 +120,6 @@ class Scene final
 
 	private:
 		void setNumThreads(int threads);
-		template <typename T> std::pair<size_t, ParamResult> createSceneItem(Logger &logger, const std::string &name, const ParamMap &param_map, Items<T> &map);
 
 		std::string name_{"Renderer"};
 		int nthreads_ = 1;

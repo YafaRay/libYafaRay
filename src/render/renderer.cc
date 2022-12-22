@@ -183,7 +183,8 @@ ParamResult Renderer::defineVolumeIntegrator(const Scene &scene, const ParamMap 
 
 std::pair<size_t, ParamResult> Renderer::createRenderView(const std::string &name, const ParamMap &param_map)
 {
-	return createRendererItem<RenderView>(logger_, name, param_map, render_views_);
+	auto result{Items<RenderView>::createItem<Renderer>(logger_, *this, render_views_, name, param_map)};
+	return result;
 }
 
 /*! setup the scene for rendering (set camera, background, integrator, create image film,
@@ -266,34 +267,9 @@ bool Renderer::setupSceneRenderParams(const ParamMap &param_map)
 	return true;
 }
 
-template <typename T>
-std::pair<size_t, ParamResult> Renderer::createRendererItem(Logger &logger, const std::string &name, const ParamMap &param_map, Items<T> &map)
-{
-	const auto [existing_item, existing_item_id, existing_item_result]{map.getByName(name)};
-	if(existing_item)
-	{
-		if(logger.isVerbose()) logger.logWarning(getClassName(), "'", this->name(), "': item with name '", name, "' already exists, overwriting with new item.");
-	}
-	std::unique_ptr<T> new_item;
-	ParamResult param_result;
-	if constexpr (std::is_same_v<T, RenderView>) std::tie(new_item, param_result) = T::factory(logger, *this, name, param_map);
-	else std::tie(new_item, param_result) = T::factory(logger, name, param_map);
-	if(new_item)
-	{
-		if(logger.isVerbose())
-		{
-			logger.logVerbose(getClassName(), "'", this->name(), "': Added ", new_item->getClassName(), " '", name, "' (", new_item->type().print(), ")!");
-		}
-		const auto [new_item_id, adding_result]{map.add(name, std::move(new_item))};
-		param_result.flags_ |= adding_result;
-		return {new_item_id, param_result};
-	}
-	else return {0, ParamResult{YAFARAY_RESULT_ERROR_WHILE_CREATING}};
-}
-
 std::pair<size_t, ParamResult> Renderer::createCamera(const std::string &name, const ParamMap &param_map)
 {
-	return createRendererItem<Camera>(logger_, name, param_map, cameras_);
+	return Items<Camera>::createItem<Renderer>(logger_, *this, cameras_, name, param_map);
 }
 
 std::tuple<Camera *, size_t, ResultFlags> Renderer::getCamera(const std::string &name) const

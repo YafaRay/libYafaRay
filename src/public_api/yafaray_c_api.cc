@@ -58,8 +58,7 @@ void yafaray_destroyLogger(yafaray_Logger *logger)
 
 yafaray_Film *yafaray_createFilm(yafaray_Logger *logger, yafaray_Renderer *renderer, const char *name, const yafaray_ParamMap *param_map, int num_threads)
 {
-	FIXME
-	auto image_film{new yafaray::ImageFilm(*reinterpret_cast<yafaray::Logger *>(logger), reinterpret_cast<yafaray::Renderer *>(renderer)->getRenderControl(), *reinterpret_cast<const yafaray::ParamMap *>(param_map), num_threads)};
+	auto [image_film, image_film_result]{yafaray::ImageFilm::factory(*reinterpret_cast<yafaray::Logger *>(logger), reinterpret_cast<yafaray::Renderer *>(renderer)->getRenderControl(), *reinterpret_cast<const yafaray::ParamMap *>(param_map), num_threads)};
 	return reinterpret_cast<yafaray_Film *>(image_film);
 }
 
@@ -429,12 +428,12 @@ void yafaray_setupRender(yafaray_Scene *scene, yafaray_Renderer *renderer, const
 	yaf_scene->init();
 }
 
-void yafaray_render(yafaray_Renderer *renderer, const yafaray_Scene *scene, yafaray_ProgressBarCallback monitor_callback, void *callback_data, yafaray_DisplayConsole progress_bar_display_console)
+void yafaray_render(yafaray_Renderer *renderer, yafaray_Film *film, const yafaray_Scene *scene, yafaray_ProgressBarCallback monitor_callback, void *callback_data, yafaray_DisplayConsole progress_bar_display_console)
 {
 	std::unique_ptr<yafaray::ProgressBar> progress_bar;
 	if(progress_bar_display_console == YAFARAY_DISPLAY_CONSOLE_NORMAL) progress_bar = std::make_unique<yafaray::ConsoleProgressBar>(80, monitor_callback, callback_data);
 	else progress_bar = std::make_unique<yafaray::ProgressBar>(monitor_callback, callback_data);
-	reinterpret_cast<yafaray::Renderer *>(renderer)->render(image_film, std::move(progress_bar), *reinterpret_cast<const yafaray::Scene *>(scene));
+	reinterpret_cast<yafaray::Renderer *>(renderer)->render(*reinterpret_cast<yafaray::ImageFilm *>(film), std::move(progress_bar), *reinterpret_cast<const yafaray::Scene *>(scene));
 }
 
 void yafaray_defineLayer(yafaray_Film *film, const yafaray_ParamMap *param_map)

@@ -35,12 +35,10 @@ namespace yafaray {
 
 class Scene;
 class ImageFilm;
-class ImageOutput;
 class Format;
 class SurfaceIntegrator;
 class VolumeIntegrator;
 class SurfacePoint;
-class ImageOutput;
 class RenderView;
 class Camera;
 enum class DarkDetectionType : unsigned char;
@@ -73,8 +71,6 @@ class Renderer final
 		const Items<Camera> &getCameras() const { return cameras_; }
 
 	private:
-		template <typename T> std::pair<size_t, ParamResult> createRendererItem(Logger &logger, const std::string &name, const ParamMap &param_map, Items<T> &map);
-
 		std::string name_{"Renderer"};
 		int nthreads_ = 1;
 		int nthreads_photons_ = 1;

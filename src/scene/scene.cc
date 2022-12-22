@@ -105,7 +105,8 @@ std::tuple<Image *, size_t, ResultFlags> Scene::getImage(const std::string &name
 
 std::pair<size_t, ParamResult> Scene::createLight(const std::string &name, const ParamMap &param_map)
 {
-	return createSceneItem<Light>(logger_, name, param_map, lights_);
+	auto result{Items<Light>::createItem<Scene>(logger_, *this, lights_, name, param_map)};
+	return result;
 }
 
 std::pair<size_t, ParamResult> Scene::createMaterial(const std::string &name, const ParamMap &param_map, const std::list<ParamMap> &param_map_list_nodes)
@@ -122,31 +123,10 @@ std::pair<size_t, ParamResult> Scene::createMaterial(const std::string &name, co
 	return {material_id, param_result};
 }
 
-template <typename T>
-std::pair<size_t, ParamResult> Scene::createSceneItem(Logger &logger, const std::string &name, const ParamMap &param_map, Items<T> &map)
-{
-	const auto [existing_item, existing_item_id, existing_item_result]{map.getByName(name)};
-	if(existing_item)
-	{
-		if(logger.isVerbose()) logger.logWarning(T::getClassName(), "'", this->name(), "': item with name '", name, "' already exists, overwriting with new item.");
-	}
-	auto [new_item, param_result]{T::factory(logger, *this, name, param_map)};
-	if(new_item)
-	{
-		if(logger.isVerbose())
-		{
-			logger.logVerbose(getClassName(), "'", this->name(), "': Added ", new_item->getClassName(), " '", name, "' (", new_item->type().print(), ")!");
-		}
-		const auto [new_item_id, adding_result]{map.add(name, std::move(new_item))};
-		param_result.flags_ |= adding_result;
-		return {new_item_id, param_result};
-	}
-	else return {0, ParamResult{YAFARAY_RESULT_ERROR_WHILE_CREATING}};
-}
 
 std::pair<size_t, ParamResult> Scene::createTexture(const std::string &name, const ParamMap &param_map)
 {
-	auto result{createSceneItem<Texture>(logger_, name, param_map, textures_)};
+	auto result{Items<Texture>::createItem<Scene>(logger_, *this, textures_, name, param_map)};
 	return result;
 }
 
@@ -164,12 +144,14 @@ ParamResult Scene::defineBackground(const ParamMap &param_map)
 
 std::pair<size_t, ParamResult> Scene::createVolumeRegion(const std::string &name, const ParamMap &param_map)
 {
-	return createSceneItem<VolumeRegion>(logger_, name, param_map, volume_regions_);
+	auto result{Items<VolumeRegion>::createItem<Scene>(logger_, *this, volume_regions_, name, param_map)};
+	return result;
 }
 
 std::pair<size_t, ParamResult> Scene::createImage(const std::string &name, const ParamMap &param_map)
 {
-	return createSceneItem<Image>(logger_, name, param_map, images_);
+	auto result{Items<Image>::createItem<Scene>(logger_, *this, images_, name, param_map)};
+	return result;
 }
 
 bool Scene::initObject(size_t object_id, size_t material_id)
@@ -232,7 +214,8 @@ int Scene::addUv(size_t object_id, Uv<float> &&uv)
 
 std::pair<size_t, ParamResult> Scene::createObject(const std::string &name, const ParamMap &param_map)
 {
-	return createSceneItem<Object>(logger_, name, param_map, objects_);
+	auto result{Items<Object>::createItem<Scene>(logger_, *this, objects_, name, param_map)};
+	return result;
 }
 
 std::tuple<Object *, size_t, ResultFlags> Scene::getObject(const std::string &name) const
