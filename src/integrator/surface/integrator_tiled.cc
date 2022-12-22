@@ -146,8 +146,7 @@ bool TiledIntegrator::render(FastRandom &fast_random, unsigned int object_index_
 	timer_->addEvent("rendert");
 	timer_->start("rendert");
 
-	image_film_->init(render_control_, aa_noise_params_.passes_);
-	image_film_->setAaNoiseParams(aa_noise_params_);
+	image_film_->init(render_control_, render_view_);
 
 	if(render_control_.resumed())
 	{
@@ -186,8 +185,6 @@ bool TiledIntegrator::render(FastRandom &fast_random, unsigned int object_index_
 
 		logger_.logInfo(getName(), ": Sample multiplier = ", aa_sample_multiplier_, ", Light Sample multiplier = ", aa_light_sample_multiplier_, ", Indirect Sample multiplier = ", aa_indirect_sample_multiplier_);
 
-		image_film_->setAaNoiseParams(aa_noise_params_);
-
 		if(resampled_pixels <= 0.f && !aa_threshold_changed)
 		{
 			logger_.logInfo(getName(), ": in previous pass there were 0 pixels to be resampled and the AA threshold did not change, so this pass resampling check and rendering will be skipped.");
@@ -195,7 +192,6 @@ bool TiledIntegrator::render(FastRandom &fast_random, unsigned int object_index_
 		}
 		else
 		{
-			image_film_->setAaThreshold(aa_noise_params_.threshold_);
 			resampled_pixels = image_film_->nextPass(render_view_, render_control_, true, getName(), edge_toon_params_);
 			aa_threshold_changed = false;
 		}

@@ -17,15 +17,22 @@
  *      Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-#ifndef YAFARAY_AA_NOISE_PARAMS_H
-#define YAFARAY_AA_NOISE_PARAMS_H
+#ifndef LIBYAFARAY_AA_NOISE_PARAMS_H
+#define LIBYAFARAY_AA_NOISE_PARAMS_H
 
 namespace yafaray {
 
 struct AaNoiseParams
 {
-	enum class DarkDetectionType : unsigned char { None, Linear, Curve };
-
+	struct DarkDetectionType : public Enum<DarkDetectionType>
+	{
+		enum : ValueType_t { None, Linear, Curve };
+		inline static const EnumMap<ValueType_t> map_{{
+				{"none", None, ""},
+				{"linear", Linear, ""},
+				{"curve", Curve, ""},
+			}};
+	};
 	int samples_ = 1;
 	int passes_ = 1;
 	int inc_samples_ = 1; //!< sample count for additional passes
@@ -35,7 +42,7 @@ struct AaNoiseParams
 	float light_sample_multiplier_factor_ = 1.f;
 	float indirect_sample_multiplier_factor_ = 1.f;
 	bool detect_color_noise_ = false;
-	DarkDetectionType dark_detection_type_ = DarkDetectionType::None;
+	DarkDetectionType dark_detection_type_{DarkDetectionType::None};
 	float dark_threshold_factor_ = 0.f;
 	int variance_edge_size_ = 10;
 	int variance_pixels_ = 0;
@@ -45,4 +52,4 @@ struct AaNoiseParams
 
 } //namespace yafaray
 
-#endif //YAFARAY_AA_NOISE_PARAMS_H
+#endif //LIBYAFARAY_AA_NOISE_PARAMS_H

@@ -56,9 +56,9 @@ void yafaray_destroyLogger(yafaray_Logger *logger)
 	delete reinterpret_cast<yafaray::Logger *>(logger);
 }
 
-yafaray_Film *yafaray_createFilm(yafaray_Logger *logger, yafaray_Renderer *renderer, const char *name, const yafaray_ParamMap *param_map, int num_threads)
+yafaray_Film *yafaray_createFilm(yafaray_Logger *logger, yafaray_Renderer *renderer, const char *name, const yafaray_ParamMap *param_map)
 {
-	auto [image_film, image_film_result]{yafaray::ImageFilm::factory(*reinterpret_cast<yafaray::Logger *>(logger), reinterpret_cast<yafaray::Renderer *>(renderer)->getRenderControl(), *reinterpret_cast<const yafaray::ParamMap *>(param_map), num_threads)};
+	auto [image_film, image_film_result]{yafaray::ImageFilm::factory(*reinterpret_cast<yafaray::Logger *>(logger), reinterpret_cast<yafaray::Renderer *>(renderer)->getRenderControl(), *reinterpret_cast<const yafaray::ParamMap *>(param_map))};
 	return reinterpret_cast<yafaray_Film *>(image_film);
 }
 

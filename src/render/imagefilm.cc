@@ -86,16 +86,16 @@ ParamMap ImageFilm::getAsParamMap(bool only_non_default) const
 	return params_.getAsParamMap(only_non_default);
 }
 
-std::pair<ImageFilm *, ParamResult> ImageFilm::factory(Logger &logger, RenderControl &render_control, const ParamMap &param_map, int num_threads)
+std::pair<ImageFilm *, ParamResult> ImageFilm::factory(Logger &logger, RenderControl &render_control, const ParamMap &param_map)
 {
 	if(logger.isDebug()) logger.logDebug("**" + getClassName() + "::factory 'raw' ParamMap\n" + param_map.logContents());
 	auto param_result{Params::meta_.check(param_map, {}, {})};
-	auto result {new ImageFilm(logger, param_result, render_control, num_threads, param_map)};
+	auto result {new ImageFilm(logger, param_result, render_control, param_map)};
 	if(param_result.notOk()) logger.logWarning(param_result.print<ImageFilm>("ImageFilm", {}));
 	return {std::move(result), param_result};
 }
 
-ImageFilm::ImageFilm(Logger &logger, ParamResult &param_result, RenderControl &render_control, int num_threads, const ParamMap &param_map) : params_{param_result, param_map}, num_threads_(num_threads), logger_{logger}
+ImageFilm::ImageFilm(Logger &logger, ParamResult &param_result, RenderControl &render_control, const ParamMap &param_map) : params_{param_result, param_map}, logger_{logger}
 {
 	if(logger_.isDebug()) logger_.logDebug("**" + getClassName() + " params_:\n" + params_.getAsParamMap(true).print());
 	if(params_.images_autosave_interval_type_ == AutoSaveParams::IntervalType::Pass) logger_.logInfo(getClassName(), ": ", "AutoSave partially rendered image every ", params_.images_autosave_interval_passes_, " passes");
@@ -144,13 +144,10 @@ ImageFilm::ImageFilm(Logger &logger, ParamResult &param_result, RenderControl &r
 
 	filter_table_scale_ = 0.9999f * filter_table_size_ / filter_width_;
 	area_cnt_ = 0;
-
-	aa_noise_params_.detect_color_noise_ = false;
-	aa_noise_params_.dark_threshold_factor_ = 0.f;
-	aa_noise_params_.variance_edge_size_ = 10;
-	aa_noise_params_.variance_pixels_ = 0;
-	aa_noise_params_.clamp_samples_ = 0.f;
 }
+
+//This is just to avoid compilation error "error: invalid application of ‘sizeof’ to incomplete type, because the destructor needs to know the type of any shared_ptr or unique_ptr objects
+ImageFilm::~ImageFilm() = default;
 
 void ImageFilm::initLayersImages()
 {
@@ -184,14 +181,24 @@ void ImageFilm::initLayersExportedImages()
 	}
 }
 
-void ImageFilm::init(RenderControl &render_control, int num_passes)
+void ImageFilm::init(RenderControl &render_control, const RenderView *render_view)
 {
+	defineBasicLayers();
+	defineDependentLayers();
+
 	//Creation of the image buffers for the render passes
 	film_image_layers_.clear();
 	exported_image_layers_.clear();
 	initLayersImages();
 	//If there are any ImageOutputs, creation of the image buffers for the image outputs exported images
-	if(!outputs_.empty()) initLayersExportedImages();
+	if(!outputs_.empty())
+	{
+		initLayersExportedImages();
+		for(auto &output : outputs_)
+		{
+			output.item_->init(getSize(), getExportedImageLayers(), render_view);
+		}
+	}
 
 	// Clear density image
 	if(estimate_density_)
@@ -203,7 +210,7 @@ void ImageFilm::init(RenderControl &render_control, int num_passes)
 	if(split_)
 	{
 		next_area_ = 0;
-		splitter_ = std::make_unique<ImageSplitter>(params_.width_, params_.height_, params_.start_x_, params_.start_y_, params_.tile_size_, params_.tiles_order_, num_threads_);
+		splitter_ = std::make_unique<ImageSplitter>(params_.width_, params_.height_, params_.start_x_, params_.start_y_, params_.tile_size_, params_.tiles_order_, params_.threads_);
 		area_cnt_ = splitter_->size();
 	}
 	else area_cnt_ = 1;
@@ -213,7 +220,6 @@ void ImageFilm::init(RenderControl &render_control, int num_passes)
 	cancel_ = false;
 	completed_cnt_ = 0;
 	n_pass_ = 1;
-	n_passes_ = num_passes;
 
 	images_auto_save_params_.pass_counter_ = 0;
 	film_load_save_.auto_save_.pass_counter_ = 0;
@@ -264,7 +270,7 @@ int ImageFilm::nextPass(const RenderView *render_view, RenderControl &render_con
 		{
 			for(auto &output : outputs_)
 			{
-				if(output.item_) flush(render_view, render_control, edge_params, All);
+				if(output.item_) flush(render_view, render_control, All);
 			}
 		}
 
@@ -279,14 +285,14 @@ int ImageFilm::nextPass(const RenderView *render_view, RenderControl &render_con
 
 	if(n_pass_ == 0) flags_.fill(true);
 	else flags_.fill(false);
-	const int variance_half_edge = aa_noise_params_.variance_edge_size_ / 2;
+	const int variance_half_edge = params_.aa_variance_edge_size_ / 2;
 	auto combined_image{film_image_layers_(LayerDef::Combined).image_};
 
-	float aa_thresh_scaled = aa_noise_params_.threshold_;
+	float aa_thresh_scaled = params_.aa_threshold_;
 
 	int n_resample = 0;
 
-	if(adaptive_aa && aa_noise_params_.threshold_ > 0.f)
+	if(adaptive_aa && params_.aa_threshold_ > 0.f)
 	{
 		for(int y = 0; y < params_.height_; ++y)
 		{
@@ -308,39 +314,39 @@ int ImageFilm::nextPass(const RenderView *render_view, RenderControl &render_con
 				if(sampling_factor_image_pass)
 				{
 					mat_sample_factor = weight > 0.f ? sampling_factor_image_pass->getFloat({{x, y}}) / weight : 1.f;
-					if(!background_resampling_ && mat_sample_factor == 0.f) continue;
+					if(!params_.background_resampling_ && mat_sample_factor == 0.f) continue;
 				}
 
 				const Rgba pix_col = combined_image->getColor({{x, y}}).normalized(weight);
 				const float pix_col_bri = pix_col.abscol2Bri();
 
-				if(aa_noise_params_.dark_detection_type_ == AaNoiseParams::DarkDetectionType::Linear && aa_noise_params_.dark_threshold_factor_ > 0.f)
+				if(params_.aa_dark_detection_type_ == AaNoiseParams::DarkDetectionType::Linear && params_.aa_dark_threshold_factor_ > 0.f)
 				{
-					if(aa_noise_params_.dark_threshold_factor_ > 0.f) aa_thresh_scaled = aa_noise_params_.threshold_ * ((1.f - aa_noise_params_.dark_threshold_factor_) + (pix_col_bri * aa_noise_params_.dark_threshold_factor_));
+					if(params_.aa_dark_threshold_factor_ > 0.f) aa_thresh_scaled = params_.aa_threshold_ * ((1.f - params_.aa_dark_threshold_factor_) + (pix_col_bri * params_.aa_dark_threshold_factor_));
 				}
-				else if(aa_noise_params_.dark_detection_type_ == AaNoiseParams::DarkDetectionType::Curve)
+				else if(params_.aa_dark_detection_type_ == AaNoiseParams::DarkDetectionType::Curve)
 				{
 					aa_thresh_scaled = darkThresholdCurveInterpolate(pix_col_bri);
 				}
 
-				if(pix_col.colorDifference(combined_image->getColor({{x + 1, y}}).normalized(weights_({{x + 1, y}}).getFloat()), aa_noise_params_.detect_color_noise_) >= aa_thresh_scaled)
+				if(pix_col.colorDifference(combined_image->getColor({{x + 1, y}}).normalized(weights_({{x + 1, y}}).getFloat()), params_.aa_detect_color_noise_) >= aa_thresh_scaled)
 				{
 					flags_.set({{x, y}}, true); flags_.set({{x + 1, y}}, true);
 				}
-				if(pix_col.colorDifference(combined_image->getColor({{x, y + 1}}).normalized(weights_({{x, y + 1}}).getFloat()), aa_noise_params_.detect_color_noise_) >= aa_thresh_scaled)
+				if(pix_col.colorDifference(combined_image->getColor({{x, y + 1}}).normalized(weights_({{x, y + 1}}).getFloat()), params_.aa_detect_color_noise_) >= aa_thresh_scaled)
 				{
 					flags_.set({{x, y}}, true); flags_.set({{x, y + 1}}, true);
 				}
-				if(pix_col.colorDifference(combined_image->getColor({{x + 1, y + 1}}).normalized(weights_({{x + 1, y + 1}}).getFloat()), aa_noise_params_.detect_color_noise_) >= aa_thresh_scaled)
+				if(pix_col.colorDifference(combined_image->getColor({{x + 1, y + 1}}).normalized(weights_({{x + 1, y + 1}}).getFloat()), params_.aa_detect_color_noise_) >= aa_thresh_scaled)
 				{
 					flags_.set({{x, y}}, true); flags_.set({{x + 1, y + 1}}, true);
 				}
-				if(x > 0 && pix_col.colorDifference(combined_image->getColor({{x - 1, y + 1}}).normalized(weights_({{x - 1, y + 1}}).getFloat()), aa_noise_params_.detect_color_noise_) >= aa_thresh_scaled)
+				if(x > 0 && pix_col.colorDifference(combined_image->getColor({{x - 1, y + 1}}).normalized(weights_({{x - 1, y + 1}}).getFloat()), params_.aa_detect_color_noise_) >= aa_thresh_scaled)
 				{
 					flags_.set({{x, y}}, true); flags_.set({{x - 1, y + 1}}, true);
 				}
 
-				if(aa_noise_params_.variance_pixels_ > 0)
+				if(params_.aa_variance_pixels_ > 0)
 				{
 					int variance_x = 0, variance_y = 0;//, pixelcount = 0;
 
@@ -355,7 +361,7 @@ int ImageFilm::nextPass(const RenderView *render_view, RenderControl &render_con
 						const Rgba cx_0 = combined_image->getColor({{xi, y}}).normalized(weights_({{xi, y}}).getFloat());
 						const Rgba cx_1 = combined_image->getColor({{xi + 1, y}}).normalized(weights_({{xi + 1, y}}).getFloat());
 
-						if(cx_0.colorDifference(cx_1, aa_noise_params_.detect_color_noise_) >= aa_thresh_scaled) ++variance_x;
+						if(cx_0.colorDifference(cx_1, params_.aa_detect_color_noise_) >= aa_thresh_scaled) ++variance_x;
 					}
 
 					for(int yd = -variance_half_edge; yd < variance_half_edge - 1 ; ++yd)
@@ -367,10 +373,10 @@ int ImageFilm::nextPass(const RenderView *render_view, RenderControl &render_con
 						const Rgba cy_0 = combined_image->getColor({{x, yi}}).normalized(weights_({{x, yi}}).getFloat());
 						const Rgba cy_1 = combined_image->getColor({{x, yi + 1}}).normalized(weights_({{x, yi + 1}}).getFloat());
 
-						if(cy_0.colorDifference(cy_1, aa_noise_params_.detect_color_noise_) >= aa_thresh_scaled) ++variance_y;
+						if(cy_0.colorDifference(cy_1, params_.aa_detect_color_noise_) >= aa_thresh_scaled) ++variance_y;
 					}
 
-					if(variance_x + variance_y >= aa_noise_params_.variance_pixels_)
+					if(variance_x + variance_y >= params_.aa_variance_pixels_)
 					{
 						for(int xd = -variance_half_edge; xd < variance_half_edge; ++xd)
 						{
@@ -418,7 +424,7 @@ int ImageFilm::nextPass(const RenderView *render_view, RenderControl &render_con
 
 	if(render_control.resumed()) pass_string << "Film loaded + ";
 
-	pass_string << "Rendering pass " << n_pass_ << " of " << n_passes_ << ", resampling " << n_resample << " pixels.";
+	pass_string << "Rendering pass " << n_pass_ << " of " << params_.aa_passes_ << ", resampling " << n_resample << " pixels.";
 
 	logger_.logInfo(integrator_name, ": ", pass_string.str());
 
@@ -532,7 +538,7 @@ void ImageFilm::finishArea(const RenderView *render_view, RenderControl &render_
 		if((images_auto_save_params_.interval_type_ == AutoSaveParams::IntervalType::Time) && (images_auto_save_params_.timer_ > images_auto_save_params_.interval_seconds_))
 		{
 			if(logger_.isDebug())logger_.logDebug("imagesAutoSaveTimer=", images_auto_save_params_.timer_);
-			flush(render_view, render_control, edge_params, All);
+			flush(render_view, render_control, All);
 			resetImagesAutoSaveTimer();
 		}
 
@@ -548,7 +554,7 @@ void ImageFilm::finishArea(const RenderView *render_view, RenderControl &render_
 	else render_control.updateProgressBar(a.w_ * a.h_);
 }
 
-void ImageFilm::flush(const RenderView *render_view, RenderControl &render_control, const EdgeToonParams &edge_params, Flags flags)
+void ImageFilm::flush(const RenderView *render_view, RenderControl &render_control, Flags flags)
 {
 	if(render_control.finished())
 	{
@@ -562,11 +568,11 @@ void ImageFilm::flush(const RenderView *render_view, RenderControl &render_contr
 	const Layers layers = layers_.getLayersWithImages();
 	if(layers.isDefined(LayerDef::DebugFacesEdges))
 	{
-		image_manipulation::generateDebugFacesEdges(film_image_layers_, 0, params_.width_, 0, params_.height_, false, edge_params, weights_);
+		image_manipulation::generateDebugFacesEdges(film_image_layers_, 0, params_.width_, 0, params_.height_, false, getEdgeToonParams(), weights_);
 	}
 	if(layers.isDefinedAny({LayerDef::DebugObjectsEdges, LayerDef::Toon}))
 	{
-		image_manipulation::generateToonAndDebugObjectEdges(film_image_layers_, 0, params_.width_, 0, params_.height_, false, edge_params, weights_);
+		image_manipulation::generateToonAndDebugObjectEdges(film_image_layers_, 0, params_.width_, 0, params_.height_, false, getEdgeToonParams(), weights_);
 	}
 	for(const auto &[layer_def, image_layer] : film_image_layers_)
 	{
@@ -648,7 +654,7 @@ void ImageFilm::flush(const RenderView *render_view, RenderControl &render_contr
 
 bool ImageFilm::doMoreSamples(const Point2i &point) const
 {
-	return aa_noise_params_.threshold_ <= 0.f || flags_.get({{point[Axis::X] - params_.start_x_, point[Axis::Y] - params_.start_y_}});
+	return params_.aa_threshold_ <= 0.f || flags_.get({{point[Axis::X] - params_.start_x_, point[Axis::Y] - params_.start_y_}});
 }
 
 /* CAUTION! Implemantation of this function needs to be thread safe for samples that
@@ -699,7 +705,7 @@ void ImageFilm::addSample(const Point2i &point, float dx, float dy, const Render
 			for(auto &[layer_def, image_layer] : film_image_layers_)
 			{
 				Rgba col = color_layers ? (*color_layers)(layer_def) : Rgba{0.f};
-				col.clampProportionalRgb(aa_noise_params_.clamp_samples_);
+				col.clampProportionalRgb(params_.aa_clamp_samples_);
 				image_layer.image_->addColor({{i - params_.start_x_, j - params_.start_y_}}, col * filter_wt);
 			}
 		}
@@ -787,7 +793,7 @@ std::string ImageFilm::getFilmPath() const
 {
 	std::string film_path = film_load_save_.path_;
 	std::stringstream node;
-	node << std::setfill('0') << std::setw(4) << computer_node_;
+	node << std::setfill('0') << std::setw(4) << params_.computer_node_;
 	film_path += " - node " + node.str();
 	film_path += ".film";
 	return film_path;
@@ -812,8 +818,8 @@ bool ImageFilm::imageFilmLoad(const std::string &filename)
 		file.close();
 		return false;
 	}
-	file.read<unsigned int>(computer_node_);
-	file.read<unsigned int>(base_sampling_offset_);
+	//FIXME DAVID file.read<unsigned int>(params_.computer_node_);
+	//FIXME DAVID file.read<unsigned int>(params_.base_sampling_offset_);
 	file.read<unsigned int>(sampling_offset_);
 
 	int filmload_check_w;
@@ -947,7 +953,7 @@ void ImageFilm::imageFilmLoadAllInFolder(RenderControl &render_control)
 	for(const auto &film_file : film_file_paths_list)
 	{
 		ParamResult param_result;
-		auto loaded_film = std::make_unique<ImageFilm>(logger_, param_result, render_control, num_threads_, params_.getAsParamMap(true));
+		auto loaded_film = std::make_unique<ImageFilm>(logger_, param_result, render_control, params_.getAsParamMap(true));
 		if(!loaded_film->imageFilmLoad(film_file))
 		{
 			logger_.logWarning("ImageFilm: Could not load film file '", film_file, "'");
@@ -975,7 +981,7 @@ void ImageFilm::imageFilmLoadAllInFolder(RenderControl &render_control)
 			}
 		}
 		if(sampling_offset_ < loaded_film->sampling_offset_) sampling_offset_ = loaded_film->sampling_offset_;
-		if(base_sampling_offset_ < loaded_film->base_sampling_offset_) base_sampling_offset_ = loaded_film->base_sampling_offset_;
+		//FIXME DAVID if(params_.base_sampling_offset_ < loaded_film->params_.base_sampling_offset_) params_.base_sampling_offset_ = loaded_film->params_.base_sampling_offset_;
 		if(logger_.isVerbose()) logger_.logVerbose("ImageFilm: loaded film '", film_file, "'");
 	}
 	if(any_film_loaded) render_control.setResumed();
@@ -997,8 +1003,8 @@ bool ImageFilm::imageFilmSave(RenderControl &render_control)
 	File file(film_path);
 	file.open("wb");
 	file.append(std::string("YAF_FILMv4_0_0"));
-	file.append<unsigned int>(computer_node_);
-	file.append<unsigned int>(base_sampling_offset_);
+	file.append<unsigned int>(params_.computer_node_);
+	file.append<unsigned int>(params_.base_sampling_offset_);
 	file.append<unsigned int>(sampling_offset_);
 	file.append<int>(params_.width_);
 	file.append<int>(params_.height_);
@@ -1250,65 +1256,6 @@ void ImageFilm::defineDependentLayers()
 				break;
 		}
 	}
-}
-
-void ImageFilm::setMaskParams(const ParamMap &params)
-{
-	std::string external_pass, internal_pass;
-	int mask_obj_index = 0, mask_mat_index = 0;
-	bool mask_invert = false;
-	bool mask_only = false;
-
-	params.getParam("layer_mask_obj_index", mask_obj_index);
-	params.getParam("layer_mask_mat_index", mask_mat_index);
-	params.getParam("layer_mask_invert", mask_invert);
-	params.getParam("layer_mask_only", mask_only);
-
-	MaskParams mask_params;
-	mask_params.obj_index_ = mask_obj_index;
-	mask_params.mat_index_ = mask_mat_index;
-	mask_params.invert_ = mask_invert;
-	mask_params.only_ = mask_only;
-
-	mask_params_ = mask_params;
-}
-
-void ImageFilm::setEdgeToonParams(const ParamMap &params)
-{
-	Rgb toon_edge_color(0.f);
-	int object_edge_thickness = 2;
-	float object_edge_threshold = 0.3f;
-	float object_edge_smoothness = 0.75f;
-	float toon_pre_smooth = 3.f;
-	float toon_quantization = 0.1f;
-	float toon_post_smooth = 3.f;
-	int faces_edge_thickness = 1;
-	float faces_edge_threshold = 0.01f;
-	float faces_edge_smoothness = 0.5f;
-
-	params.getParam("layer_toon_edge_color", toon_edge_color);
-	params.getParam("layer_object_edge_thickness", object_edge_thickness);
-	params.getParam("layer_object_edge_threshold", object_edge_threshold);
-	params.getParam("layer_object_edge_smoothness", object_edge_smoothness);
-	params.getParam("layer_toon_pre_smooth", toon_pre_smooth);
-	params.getParam("layer_toon_quantization", toon_quantization);
-	params.getParam("layer_toon_post_smooth", toon_post_smooth);
-	params.getParam("layer_faces_edge_thickness", faces_edge_thickness);
-	params.getParam("layer_faces_edge_threshold", faces_edge_threshold);
-	params.getParam("layer_faces_edge_smoothness", faces_edge_smoothness);
-
-	EdgeToonParams edge_params;
-	edge_params.thickness_ = object_edge_thickness;
-	edge_params.threshold_ = object_edge_threshold;
-	edge_params.smoothness_ = object_edge_smoothness;
-	edge_params.toon_color_ = toon_edge_color;
-	edge_params.toon_pre_smooth_ = toon_pre_smooth;
-	edge_params.toon_quantization_ = toon_quantization;
-	edge_params.toon_post_smooth_ = toon_post_smooth;
-	edge_params.face_thickness_ = faces_edge_thickness;
-	edge_params.face_threshold_ = faces_edge_threshold;
-	edge_params.face_smoothness_ = faces_edge_smoothness;
-	edge_toon_params_ = edge_params;
 }
 
 void ImageFilm::setRenderNotifyViewCallback(yafaray_RenderNotifyViewCallback callback, void *callback_data)

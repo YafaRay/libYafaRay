@@ -25,6 +25,9 @@
 #include "camera/camera.h"
 #include "light/light.h"
 #include "volume/region/volume_region.h"
+#include "render/imagefilm.h"
+#include "render/renderer.h"
+#include "scene/scene.h"
 
 namespace yafaray {
 
@@ -37,17 +40,17 @@ std::pair<size_t, ParamResult> Items<T>::createItem(Logger &logger, K &items_con
 	const auto [existing_item, existing_item_id, existing_item_result]{map.getByName(name)};
 	if(existing_item)
 	{
-		if(logger.isVerbose()) logger.logWarning(items_container->getClassName(), "'", items_container->name(), "': item with name '", name, "' already exists, overwriting with new item.");
+		if(logger.isVerbose()) logger.logWarning(items_container.getClassName(), "'", items_container.name(), "': item with name '", name, "' already exists, overwriting with new item.");
 	}
 	std::unique_ptr<T> new_item;
 	ParamResult param_result;
-	if constexpr (std::is_same_v<T, RenderView>) std::tie(new_item, param_result) = T::factory(logger, *items_container, name, param_map);
+	if constexpr (std::is_same_v<T, RenderView> || std::is_same_v<T, Light> || std::is_same_v<T, Texture> || std::is_same_v<T, Image> || std::is_same_v<T, VolumeRegion> || std::is_same_v<T, Object>) std::tie(new_item, param_result) = T::factory(logger, items_container, name, param_map);
 	else std::tie(new_item, param_result) = T::factory(logger, name, param_map);
 	if(new_item)
 	{
 		if(logger.isVerbose())
 		{
-			logger.logVerbose(items_container->getClassName(), "'", items_container->name(), "': Added ", new_item->getClassName(), " '", name, "' (", new_item->type().print(), ")!");
+			logger.logVerbose(items_container.getClassName(), "'", items_container.name(), "': Added ", new_item->getClassName(), " '", name, "' (", new_item->type().print(), ")!");
 		}
 		const auto [new_item_id, adding_result]{map.add(name, std::move(new_item))};
 		param_result.flags_ |= adding_result;
@@ -170,5 +173,13 @@ template class Items<Camera>;
 template class Items<ImageOutput>;
 template class Items<VolumeRegion>;
 template class Items<Image>;
+template std::pair<size_t, ParamResult> Items<ImageOutput>::createItem<ImageFilm>(Logger &logger, ImageFilm &items_container, Items<ImageOutput> &map, const std::string &name, const ParamMap &param_map);
+template std::pair<size_t, ParamResult> Items<RenderView>::createItem<Renderer>(Logger &logger, Renderer &items_container, Items<RenderView> &map, const std::string &name, const ParamMap &param_map);
+template std::pair<size_t, ParamResult> Items<Camera>::createItem<Renderer>(Logger &logger, Renderer &items_container, Items<Camera> &map, const std::string &name, const ParamMap &param_map);
+template std::pair<size_t, ParamResult> Items<Light>::createItem<Scene>(Logger &logger, Scene &items_container, Items<Light> &map, const std::string &name, const ParamMap &param_map);
+template std::pair<size_t, ParamResult> Items<Texture>::createItem<Scene>(Logger &logger, Scene &items_container, Items<Texture> &map, const std::string &name, const ParamMap &param_map);
+template std::pair<size_t, ParamResult> Items<VolumeRegion>::createItem<Scene>(Logger &logger, Scene &items_container, Items<VolumeRegion> &map, const std::string &name, const ParamMap &param_map);
+template std::pair<size_t, ParamResult> Items<Image>::createItem<Scene>(Logger &logger, Scene &items_container, Items<Image> &map, const std::string &name, const ParamMap &param_map);
+template std::pair<size_t, ParamResult> Items<Object>::createItem<Scene>(Logger &logger, Scene &items_container, Items<Object> &map, const std::string &name, const ParamMap &param_map);
 
 } //namespace yafaray

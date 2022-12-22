@@ -105,15 +105,9 @@ bool Renderer::render(ImageFilm &image_film, std::unique_ptr<ProgressBar> progre
 
 	render_control_.setProgressBar(std::move(progress_bar));
 
-	for(auto &output : outputs_)
-	{
-		output.item_->init(image_film.getSize(), image_film.getExportedImageLayers(), &render_views_);
-	}
-
 	for(auto &[render_view, render_view_name, render_view_enabled] : render_views_)
 	{
 		if(!render_view_enabled) continue;
-		for(auto &output : outputs_) output.item_->setRenderView(render_view.get());
 		std::stringstream inte_settings;
 		bool success = render_view->init(logger_, scene);
 		if(!success)
@@ -133,7 +127,7 @@ bool Renderer::render(ImageFilm &image_film, std::unique_ptr<ProgressBar> progre
 		}
 
 		cameras_.clearModifiedList();
-		outputs_.clearModifiedList();
+		//outputs_.clearModifiedList();
 		render_views_.clearModifiedList();
 
 		if(shadow_bias_auto_) shadow_bias_ = Accelerator::shadowBias();
@@ -151,7 +145,7 @@ bool Renderer::render(ImageFilm &image_film, std::unique_ptr<ProgressBar> progre
 		render_control_.setRenderInfo(surf_integrator_->getRenderInfo());
 		render_control_.setAaNoiseInfo(surf_integrator_->getAaNoiseInfo());
 		surf_integrator_->cleanup();
-		image_film.flush(render_view.get(), render_control_, getEdgeToonParams());
+		image_film.flush(render_view.get(), render_control_);
 		render_control_.setFinished();
 	}
 	return true;
@@ -195,74 +189,32 @@ std::pair<size_t, ParamResult> Renderer::createRenderView(const std::string &nam
 bool Renderer::setupSceneRenderParams(const ParamMap &param_map)
 {
 	if(logger_.isDebug()) logger_.logDebug("**Renderer::setupSceneRenderParams 'raw' ParamMap\n" + param_map.logContents());
-	std::string name;
-	std::string aa_dark_detection_type_string = "none";
-	AaNoiseParams aa_noise_params;
 	int nthreads = -1, nthreads_photons = -1;
 	bool adv_auto_shadow_bias_enabled = true;
 	float adv_shadow_bias_value = Accelerator::shadowBias();
 	bool adv_auto_min_raydist_enabled = true;
 	float adv_min_raydist_value = Accelerator::minRayDist();
-	int adv_base_sampling_offset = 0;
-	int adv_computer_node = 0;
-	bool background_resampling = true;  //If false, the background will not be resampled in subsequent adaptative AA passes
 
-	param_map.getParam("AA_passes", aa_noise_params.passes_);
-	param_map.getParam("AA_minsamples", aa_noise_params.samples_);
-	aa_noise_params.inc_samples_ = aa_noise_params.samples_;
-	param_map.getParam("AA_inc_samples", aa_noise_params.inc_samples_);
-	param_map.getParam("AA_threshold", aa_noise_params.threshold_);
-	param_map.getParam("AA_resampled_floor", aa_noise_params.resampled_floor_);
-	param_map.getParam("AA_sample_multiplier_factor", aa_noise_params.sample_multiplier_factor_);
-	param_map.getParam("AA_light_sample_multiplier_factor", aa_noise_params.light_sample_multiplier_factor_);
-	param_map.getParam("AA_indirect_sample_multiplier_factor", aa_noise_params.indirect_sample_multiplier_factor_);
-	param_map.getParam("AA_detect_color_noise", aa_noise_params.detect_color_noise_);
-	param_map.getParam("AA_dark_detection_type", aa_dark_detection_type_string);
-	param_map.getParam("AA_dark_threshold_factor", aa_noise_params.dark_threshold_factor_);
-	param_map.getParam("AA_variance_edge_size", aa_noise_params.variance_edge_size_);
-	param_map.getParam("AA_variance_pixels", aa_noise_params.variance_pixels_);
-	param_map.getParam("AA_clamp_samples", aa_noise_params.clamp_samples_);
-	param_map.getParam("AA_clamp_indirect", aa_noise_params.clamp_indirect_);
 	param_map.getParam("threads", nthreads); // number of threads, -1 = auto detection
-	param_map.getParam("background_resampling", background_resampling);
-
 	nthreads_photons = nthreads;	//if no "threads_photons" parameter exists, make "nthreads_photons" equal to render threads
-
 	param_map.getParam("threads_photons", nthreads_photons); // number of threads for photon mapping, -1 = auto detection
 	param_map.getParam("adv_auto_shadow_bias_enabled", adv_auto_shadow_bias_enabled);
 	param_map.getParam("adv_shadow_bias_value", adv_shadow_bias_value);
 	param_map.getParam("adv_auto_min_raydist_enabled", adv_auto_min_raydist_enabled);
 	param_map.getParam("adv_min_raydist_value", adv_min_raydist_value);
-	param_map.getParam("adv_base_sampling_offset", adv_base_sampling_offset); //Base sampling offset, in case of multi-computer rendering each should have a different offset so they don't "repeat" the same samples (user configurable)
-	param_map.getParam("adv_computer_node", adv_computer_node); //Computer node in multi-computer render environments/render farms
 
-	defineBasicLayers();
-	defineDependentLayers();
-	setMaskParams(param_map);
-	setEdgeToonParams(param_map);
-
-	image_film_ = ImageFilm::factory(logger_, render_control_, param_map).first;
-
+/*	FIXME DAVID
 	param_map.getParam("filter_type", name); // AA filter type
 	std::stringstream aa_settings;
 	aa_settings << "AA Settings (" << ((!name.empty()) ? name : "box") << "): Tile size=" << image_film_->getTileSize();
-	render_control_.setAaNoiseInfo(aa_settings.str());
+	render_control_.setAaNoiseInfo(aa_settings.str());*/
 
-	if(aa_dark_detection_type_string == "linear") aa_noise_params.dark_detection_type_ = AaNoiseParams::DarkDetectionType::Linear;
-	else if(aa_dark_detection_type_string == "curve") aa_noise_params.dark_detection_type_ = AaNoiseParams::DarkDetectionType::Curve;
-	else aa_noise_params.dark_detection_type_ = AaNoiseParams::DarkDetectionType::None;
-
-	setAntialiasing(std::move(aa_noise_params));
 	setNumThreads(nthreads);
 	setNumThreadsPhotons(nthreads_photons);
 	shadow_bias_auto_ = adv_auto_shadow_bias_enabled;
 	shadow_bias_ = adv_shadow_bias_value;
 	ray_min_dist_auto_ = adv_auto_min_raydist_enabled;
 	ray_min_dist_ = adv_min_raydist_value;
-	if(logger_.isDebug())logger_.logDebug("adv_base_sampling_offset=", adv_base_sampling_offset);
-	image_film_->setBaseSamplingOffset(adv_base_sampling_offset);
-	image_film_->setComputerNode(adv_computer_node);
-	image_film_->setBackgroundResampling(background_resampling);
 
 	return true;
 }

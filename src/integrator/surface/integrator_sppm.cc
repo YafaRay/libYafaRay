@@ -135,8 +135,7 @@ bool SppmIntegrator::render(FastRandom &fast_random, unsigned int object_index_h
 	image_film_->resetFilmAutoSaveTimer();
 	timer_->addEvent("filmAutoSaveTimer");
 
-	image_film_->init(render_control_, params_.num_passes_);
-	image_film_->setAaNoiseParams(aa_noise_params_);
+	image_film_->init(render_control_, render_view_);
 
 	if(render_control_.resumed())
 	{

@@ -17,8 +17,8 @@
  *      Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-#ifndef YAFARAY_MASK_EDGE_TOON_PARAMS_H
-#define YAFARAY_MASK_EDGE_TOON_PARAMS_H
+#ifndef LIBYAFARAY_MASK_EDGE_TOON_PARAMS_H
+#define LIBYAFARAY_MASK_EDGE_TOON_PARAMS_H
 
 #include "color/color.h"
 
@@ -26,8 +26,8 @@ namespace yafaray {
 
 struct MaskParams
 {
-	unsigned int obj_index_; //!Object Index used for masking in/out in the Mask Render Layers
-	unsigned int mat_index_; //!Material Index used for masking in/out in the Mask Render Layers
+	int obj_index_; //!Object Index used for masking in/out in the Mask Render Layers
+	int mat_index_; //!Material Index used for masking in/out in the Mask Render Layers
 	bool invert_ = false; //!False=mask in, True=mask out
 	bool only_ = false; //!False=rendered image is masked, True=only the mask is shown without rendered image
 };

@@ -23,11 +23,8 @@
 #define LIBYAFARAY_ITEMS_H
 
 #include "result_flags.h"
-#include <c++/11/memory>
-#include <c++/11/map>
-#include <c++/11/vector>
-#include <c++/11/tuple>
-#include <c++/11/set>
+#include <set>
+#include <memory>
 
 namespace yafaray {
 

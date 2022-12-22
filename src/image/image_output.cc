@@ -124,10 +124,10 @@ std::unique_ptr<Image> ImageOutput::generateBadgeImage(const RenderControl &rend
 	return badge_.generateImage(image_manipulation::printDenoiseParams(denoise_params_), render_control, timer);
 }
 
-void ImageOutput::init(const Size2i &size, const ImageLayers *exported_image_layers, const Items<RenderView> *render_views)
+void ImageOutput::init(const Size2i &size, const ImageLayers *exported_image_layers, const RenderView *render_view)
 {
 	image_layers_ = exported_image_layers;
-	render_views_ = render_views;
+	render_view_ = render_view;
 	badge_.setImageSize(size);
 }
 
@@ -137,7 +137,7 @@ void ImageOutput::flush(const RenderControl &render_control, const Timer &timer)
 	std::string directory = path.getDirectory();
 	std::string base_name = path.getBaseName();
 	const std::string ext = path.getExtension();
-	const std::string view_name = current_render_view_->getName();
+	const std::string view_name = render_view_->getName();
 	if(!view_name.empty()) base_name += " (view " + view_name + ")";
 	ParamMap params;
 	params["type"] = ext;
@@ -147,7 +147,7 @@ void ImageOutput::flush(const RenderControl &render_control, const Timer &timer)
 	{
 		if(params_.multi_layer_ && format->supportsMultiLayer())
 		{
-			if(view_name == current_render_view_->getName())
+			if(view_name == render_view_->getName())
 			{
 				saveImageFile(params_.image_path_, LayerDef::Combined, format.get(), render_control, timer); //This should not be necessary but Blender API seems to be limited and the API "load_from_file" function does not work (yet) with multilayered images, so I have to generate this extra combined pass file so it's displayed in the Blender window.
 			}
@@ -170,7 +170,7 @@ void ImageOutput::flush(const RenderControl &render_control, const Timer &timer)
 					logger_.setImagePath(params_.image_path_); //to show the image in the HTML log output
 				}
 
-				if(layer_def != LayerDef::Disabled && (image_layers_->size() > 1 || render_views_->size() > 1))
+				if(layer_def != LayerDef::Disabled && (image_layers_->size() > 1))
 				{
 					const std::string layer_type_name = LayerDef::getName(layer_def);
 					std::string fname_pass = directory + base_name + " [" + layer_type_name;

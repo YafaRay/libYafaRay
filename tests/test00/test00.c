@@ -120,6 +120,37 @@ int main()
 	yafaray_clearParamMap(param_map);
 	renderer = yafaray_createRenderer(logger, scene, "renderer", YAFARAY_DISPLAY_CONSOLE_NORMAL, param_map);
 
+	/* Creating film */
+	yafaray_clearParamMap(param_map);
+	yafaray_setParamMapInt(param_map, "width", result_image.width_);
+	yafaray_setParamMapInt(param_map, "height", result_image.height_);
+	yafaray_setParamMapString(param_map, "film_load_save_mode", "load-save");
+	/*yafaray_setParamMapString(yi, "film_load_save_path", "???");*/
+	yafaray_setParamMapInt(param_map, "AA_minsamples", 50);
+	yafaray_setParamMapInt(param_map, "AA_passes", 2);
+	yafaray_setParamMapInt(param_map, "threads", -1);
+	yafaray_Film *film = yafaray_createFilm(logger, renderer, "film", param_map);
+
+	/* Creating film image outputs */
+	yafaray_clearParamMap(param_map);
+	yafaray_setParamMapString(param_map, "image_path", "./test00-output1.tga");
+	yafaray_createOutput(film, "output1_tga", param_map);
+
+	yafaray_clearParamMap(param_map);
+	yafaray_setParamMapString(param_map, "image_path", "./test00-output2.tga");
+	yafaray_setParamMapString(param_map, "color_space", "Raw_Manual_Gamma");
+	yafaray_setParamMapFloat(param_map, "gamma", 4.0);
+	yafaray_setParamMapBool(param_map, "denoise_enabled", YAFARAY_BOOL_TRUE);
+	yafaray_createOutput(film, "output2_tga", param_map);
+
+	/* Setting up Film callbacks, must be done before yafaray_setupRender() */
+	yafaray_setRenderNotifyViewCallback(film, notifyViewCallback, (void *) &result_image);
+	yafaray_setNotifyLayerCallback(film, notifyLayerCallback, (void *) &result_image);
+	yafaray_setPutPixelCallback(film, putPixelCallback, (void *) &result_image);
+	yafaray_setFlushAreaCallback(film, flushAreaCallback, (void *) &result_image);
+	yafaray_setFlushCallback(film, flushCallback, (void *) &result_image);
+	yafaray_setHighlightAreaCallback(film, highlightCallback, (void *) &result_image);
+
 	/* Creating image from RAM or file */
 	yafaray_clearParamMap(param_map);
 	yafaray_setParamMapString(param_map, "type", "ColorAlpha"); /* Note: the specified type os overriden by the loaded image type */
@@ -225,45 +256,19 @@ int main()
 	yafaray_setParamMapString(param_map, "camera_name", "cam_1");
 	yafaray_createRenderView(renderer, "view_1", param_map);
 
-	/* Creating image outputs */
-	yafaray_clearParamMap(param_map);
-	yafaray_setParamMapString(param_map, "image_path", "./test00-output1.tga");
-	yafaray_createOutput(renderer, "output1_tga", param_map);
-
-	yafaray_clearParamMap(param_map);
-	yafaray_setParamMapString(param_map, "image_path", "./test00-output2.tga");
-	yafaray_setParamMapString(param_map, "color_space", "Raw_Manual_Gamma");
-	yafaray_setParamMapFloat(param_map, "gamma", 4.0);
-	yafaray_setParamMapBool(param_map, "denoise_enabled", YAFARAY_BOOL_TRUE);
-	yafaray_createOutput(renderer, "output2_tga", param_map);
-
 	/* Creating surface integrator */
 	yafaray_clearParamMap(param_map);
 	/*yafaray_setParamMapString(yi, "type", "directlighting");*/
 	yafaray_setParamMapString(param_map, "type", "photonmapping");
 	yafaray_defineSurfaceIntegrator(renderer, param_map);
 
-	/* Setting up Film callbacks, must be done before yafaray_setupRender() */
-	yafaray_setRenderNotifyViewCallback(renderer, notifyViewCallback, (void *) &result_image);
-	yafaray_setNotifyLayerCallback(renderer, notifyLayerCallback, (void *) &result_image);
-	yafaray_setPutPixelCallback(renderer, putPixelCallback, (void *) &result_image);
-	yafaray_setFlushAreaCallback(renderer, flushAreaCallback, (void *) &result_image);
-	yafaray_setFlushCallback(renderer, flushCallback, (void *) &result_image);
-	yafaray_setHighlightAreaCallback(renderer, highlightCallback, (void *) &result_image);
-
 	/* Setting up render parameters */
 	yafaray_clearParamMap(param_map);
-	yafaray_setParamMapInt(param_map, "width", result_image.width_);
-	yafaray_setParamMapInt(param_map, "height", result_image.height_);
-	yafaray_setParamMapString(param_map, "film_load_save_mode", "load-save");
-	/*yafaray_setParamMapString(yi, "film_load_save_path", "???");*/
-	yafaray_setParamMapInt(param_map, "AA_minsamples", 50);
-	yafaray_setParamMapInt(param_map, "AA_passes", 2);
 	yafaray_setParamMapInt(param_map, "threads", -1);
 	yafaray_setParamMapInt(param_map, "threads_photons", -1);
 	yafaray_setupRender(scene, renderer, param_map);
 
-	layers_string = yafaray_getLayersTable(renderer);
+	layers_string = yafaray_getLayersTable(film);
 	views_string = yafaray_getViewsTable(renderer);
 	printf("** Layers defined:\n%s\n", layers_string);
 	printf("** Views defined:\n%s\n", views_string);
@@ -271,12 +276,13 @@ int main()
 	yafaray_destroyCharString(views_string);
 
 	/* Rendering */
-	yafaray_render(renderer, scene, monitorCallback, &total_steps, YAFARAY_DISPLAY_CONSOLE_NORMAL);
+	yafaray_render(renderer, film, scene, monitorCallback, &total_steps, YAFARAY_DISPLAY_CONSOLE_NORMAL);
 	printf("END: total_steps = %d\n", total_steps);
 
 	/* Destruction/deallocation */
 	yafaray_destroyRenderer(renderer);
 	yafaray_destroyScene(scene);
+	yafaray_destroyFilm(film);
 	yafaray_destroyLogger(logger);
 	yafaray_destroyParamMapList(param_map_list);
 	yafaray_destroyParamMap(param_map);

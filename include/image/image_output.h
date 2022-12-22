@@ -51,8 +51,7 @@ class ImageOutput final
 		[[nodiscard]] ParamMap getAsParamMap(bool only_non_default) const;
 		ImageOutput(Logger &logger, ParamResult &param_result, const ParamMap &param_map);
 		void flush(const RenderControl &render_control, const Timer &timer);
-		void init(const Size2i &size, const ImageLayers *exported_image_layers, const Items<RenderView> *render_views);
-		void setRenderView(const RenderView *render_view) { current_render_view_ = render_view; }
+		void init(const Size2i &size, const ImageLayers *exported_image_layers, const RenderView *render_view);
 		[[nodiscard]] std::string getName() const { return name_; }
 		std::string printBadge(const RenderControl &render_control, const Timer &timer) const;
 		std::unique_ptr<Image> generateBadgeImage(const RenderControl &render_control, const Timer &timer) const;
@@ -103,8 +102,7 @@ class ImageOutput final
 		float gamma_{params_.gamma_};
 		const DenoiseParams denoise_params_{params_.denoise_enabled_, params_.denoise_h_lum_, params_.denoise_h_col_, params_.denoise_mix_};
 		const ImageLayers *image_layers_ = nullptr;
-		const RenderView *current_render_view_ = nullptr;
-		const Items<RenderView> *render_views_ = nullptr;
+		const RenderView *render_view_ = nullptr;
 		Logger &logger_;
 		Badge badge_{
 			logger_,
