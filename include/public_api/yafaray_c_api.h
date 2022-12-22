@@ -73,6 +73,8 @@ extern "C" {
 	YAFARAY_C_API_EXPORT void yafaray_destroyInterface(yafaray_Scene *scene);*/
 	YAFARAY_C_API_EXPORT yafaray_Logger *yafaray_createLogger(yafaray_LoggerCallback logger_callback, void *callback_data, yafaray_DisplayConsole display_console);
 	YAFARAY_C_API_EXPORT void yafaray_destroyLogger(yafaray_Logger *logger);
+	YAFARAY_C_API_EXPORT yafaray_Film *yafaray_createFilm(yafaray_Logger *logger, yafaray_Renderer *renderer, const char *name, const yafaray_ParamMap *param_map);
+	YAFARAY_C_API_EXPORT void yafaray_destroyFilm(yafaray_Film *film);
 	YAFARAY_C_API_EXPORT yafaray_Scene *yafaray_createScene(yafaray_Logger *logger, const char *name, const yafaray_ParamMap *param_map);
 	YAFARAY_C_API_EXPORT void yafaray_destroyScene(yafaray_Scene *scene);
 	YAFARAY_C_API_EXPORT yafaray_ParamMap *yafaray_createParamMap();
@@ -82,8 +84,8 @@ extern "C" {
 	YAFARAY_C_API_EXPORT void yafaray_destroyParamMapList(yafaray_ParamMapList *param_map_list);
 	YAFARAY_C_API_EXPORT yafaray_Renderer *yafaray_createRenderer(yafaray_Logger *logger, const yafaray_Scene *scene, const char *name, yafaray_DisplayConsole display_console, yafaray_ParamMap *param_map);
 	YAFARAY_C_API_EXPORT void yafaray_destroyRenderer(yafaray_Renderer *renderer);
-	YAFARAY_C_API_EXPORT int yafaray_getRendererWidth(const yafaray_Renderer *renderer);
-	YAFARAY_C_API_EXPORT int yafaray_getRendererHeight(const yafaray_Renderer *renderer);
+	YAFARAY_C_API_EXPORT int yafaray_getFilmWidth(const yafaray_Renderer *renderer);
+	YAFARAY_C_API_EXPORT int yafaray_getFilmHeight(const yafaray_Renderer *renderer);
 	YAFARAY_C_API_EXPORT yafaray_Bool yafaray_initObject(yafaray_Scene *scene, size_t object_id, size_t material_id);
 	YAFARAY_C_API_EXPORT size_t yafaray_addVertex(yafaray_Scene *scene, size_t object_id, double x, double y, double z);
 	YAFARAY_C_API_EXPORT size_t yafaray_addVertexTimeStep(yafaray_Scene *scene, size_t object_id, double x, double y, double z, unsigned char time_step);
@@ -124,19 +126,17 @@ extern "C" {
 	YAFARAY_C_API_EXPORT yafaray_ResultFlags yafaray_defineVolumeIntegrator(yafaray_Renderer *renderer, const yafaray_ParamMap *param_map);
 	YAFARAY_C_API_EXPORT yafaray_ResultFlags yafaray_createVolumeRegion(yafaray_Scene *scene, const char *name, const yafaray_ParamMap *param_map);
 	YAFARAY_C_API_EXPORT yafaray_ResultFlags yafaray_createRenderView(yafaray_Renderer *renderer, const char *name, const yafaray_ParamMap *param_map);
-	YAFARAY_C_API_EXPORT yafaray_ResultFlags yafaray_createOutput(yafaray_Renderer *renderer, const char *name, const yafaray_ParamMap *param_map);
-	YAFARAY_C_API_EXPORT void yafaray_setRenderNotifyViewCallback(yafaray_Renderer *renderer, yafaray_RenderNotifyViewCallback callback, void *callback_data);
-	YAFARAY_C_API_EXPORT void yafaray_setRenderNotifyLayerCallback(yafaray_Renderer *renderer, yafaray_RenderNotifyLayerCallback callback, void *callback_data);
-	YAFARAY_C_API_EXPORT void yafaray_setRenderPutPixelCallback(yafaray_Renderer *renderer, yafaray_RenderPutPixelCallback callback, void *callback_data);
-	YAFARAY_C_API_EXPORT void yafaray_setRenderHighlightPixelCallback(yafaray_Renderer *renderer, yafaray_RenderHighlightPixelCallback callback, void *callback_data);
-	YAFARAY_C_API_EXPORT void yafaray_setRenderFlushAreaCallback(yafaray_Renderer *renderer, yafaray_RenderFlushAreaCallback callback, void *callback_data);
-	YAFARAY_C_API_EXPORT void yafaray_setRenderFlushCallback(yafaray_Renderer *renderer, yafaray_RenderFlushCallback callback, void *callback_data);
-	YAFARAY_C_API_EXPORT void yafaray_setRenderHighlightAreaCallback(yafaray_Renderer *renderer, yafaray_RenderHighlightAreaCallback callback, void *callback_data);
-	YAFARAY_C_API_EXPORT yafaray_Bool yafaray_removeOutput(yafaray_Renderer *renderer, const char *name);
-	YAFARAY_C_API_EXPORT void yafaray_clearOutputs(yafaray_Renderer *renderer);
+	YAFARAY_C_API_EXPORT yafaray_ResultFlags yafaray_createOutput(yafaray_Film *film, const char *name, const yafaray_ParamMap *param_map);
+	YAFARAY_C_API_EXPORT void yafaray_setRenderNotifyViewCallback(yafaray_Film *film, yafaray_RenderNotifyViewCallback callback, void *callback_data);
+	YAFARAY_C_API_EXPORT void yafaray_setNotifyLayerCallback(yafaray_Film *film, yafaray_RenderNotifyLayerCallback callback, void *callback_data);
+	YAFARAY_C_API_EXPORT void yafaray_setPutPixelCallback(yafaray_Film *film, yafaray_RenderPutPixelCallback callback, void *callback_data);
+	YAFARAY_C_API_EXPORT void yafaray_setHighlightPixelCallback(yafaray_Film *film, yafaray_RenderHighlightPixelCallback callback, void *callback_data);
+	YAFARAY_C_API_EXPORT void yafaray_setFlushAreaCallback(yafaray_Film *film, yafaray_RenderFlushAreaCallback callback, void *callback_data);
+	YAFARAY_C_API_EXPORT void yafaray_setFlushCallback(yafaray_Film *film, yafaray_RenderFlushCallback callback, void *callback_data);
+	YAFARAY_C_API_EXPORT void yafaray_setHighlightAreaCallback(yafaray_Film *film, yafaray_RenderHighlightAreaCallback callback, void *callback_data);
 	YAFARAY_C_API_EXPORT void yafaray_setupRender(yafaray_Scene *scene, yafaray_Renderer *renderer, const yafaray_ParamMap *param_map);
 	YAFARAY_C_API_EXPORT void yafaray_render(yafaray_Renderer *renderer, const yafaray_Scene *scene, yafaray_ProgressBarCallback monitor_callback, void *callback_data, yafaray_DisplayConsole progress_bar_display_console);
-	YAFARAY_C_API_EXPORT void yafaray_defineLayer(yafaray_Renderer *renderer, const yafaray_ParamMap *param_map);
+	YAFARAY_C_API_EXPORT void yafaray_defineLayer(yafaray_Film *film, const yafaray_ParamMap *param_map);
 	YAFARAY_C_API_EXPORT void yafaray_enablePrintDateTime(yafaray_Logger *logger, yafaray_Bool value);
 	YAFARAY_C_API_EXPORT void yafaray_setConsoleVerbosityLevel(yafaray_Logger *logger, yafaray_LogLevel log_level);
 	YAFARAY_C_API_EXPORT void yafaray_setLogVerbosityLevel(yafaray_Logger *logger, yafaray_LogLevel log_level);
@@ -161,7 +161,7 @@ extern "C" {
 	YAFARAY_C_API_EXPORT int yafaray_getVersionPatch();
 	/* The following functions return a char string where memory is allocated by libYafaRay itself. Do not free the char* directly with free, use "yafaray_destroyCharString" to free them instead to ensure proper deallocation. */
 	YAFARAY_C_API_EXPORT char *yafaray_getVersionString();
-	YAFARAY_C_API_EXPORT char *yafaray_getLayersTable(const yafaray_Renderer *renderer);
+	YAFARAY_C_API_EXPORT char *yafaray_getLayersTable(const yafaray_Film *film);
 	YAFARAY_C_API_EXPORT char *yafaray_getViewsTable(const yafaray_Renderer *renderer);
 	YAFARAY_C_API_EXPORT void yafaray_destroyCharString(char *string);
 

@@ -62,8 +62,9 @@ class ImageFilm final
 	public:
 		enum Flags : unsigned char { RegularImage = 1 << 0, Densityimage = 1 << 1, All = RegularImage | Densityimage };
 		inline static std::string getClassName() { return "ImageFilm"; }
-		static std::pair<std::unique_ptr<ImageFilm>, ParamResult> factory(Logger &logger, RenderControl &render_control, const ParamMap &param_map, const Renderer &renderer);
-		ImageFilm(Logger &logger, ParamResult &param_result, RenderControl &render_control, const Layers &layers, const Items<ImageOutput> &outputs, const Items<RenderView> &render_views, const RenderCallbacks *render_callbacks, int num_threads, const ParamMap &param_map);
+		static std::pair<std::unique_ptr<ImageFilm>, ParamResult> factory(Logger &logger, RenderControl &render_control, const ParamMap &param_map, int num_threads);
+		ImageFilm(Logger &logger, ParamResult &param_result, RenderControl &render_control, int num_threads, const ParamMap &param_map);
+		std::string name() const { return name_; }
 		static std::string printMeta(const std::vector<std::string> &excluded_params) { return Params::meta_.print(excluded_params); }
 		/*! Initialize imageFilm for new rendering, i.e. set pixels black etc */
 		void init(RenderControl &render_control, int num_passes = 0);
@@ -124,6 +125,25 @@ class ImageFilm final
 		const ImageLayers *getExportedImageLayers() const { return &exported_image_layers_; }
 		const Layers * getLayers() const { return &layers_; }
 		Timer * getTimer() { return &timer_; }
+		void defineLayer(const ParamMap &param_map);
+		void defineLayer(std::string &&layer_type_name, std::string &&image_type_name, std::string &&exported_image_type_name, std::string &&exported_image_name);
+		void defineLayer(LayerDef::Type layer_type, Image::Type image_type = Image::Type{Image::Type::None}, Image::Type exported_image_type = Image::Type{Image::Type::None}, const std::string &exported_image_name = "");
+		const Items<ImageOutput> &getOutputs() const { return outputs_; }
+		MaskParams getMaskParams() const { return mask_params_; }
+		EdgeToonParams getEdgeToonParams() const { return edge_toon_params_; }
+		AaNoiseParams getAaParameters() const { return aa_noise_params_; }
+		std::pair<size_t, ParamResult> createOutput(const std::string &name, const ParamMap &param_map);
+		std::pair<size_t, ResultFlags> getOutput(const std::string &name) const;
+		bool disableOutput(const std::string &name);
+		void clearOutputs();
+
+		void setRenderNotifyViewCallback(yafaray_RenderNotifyViewCallback callback, void *callback_data);
+		void setRenderNotifyLayerCallback(yafaray_RenderNotifyLayerCallback callback, void *callback_data);
+		void setRenderPutPixelCallback(yafaray_RenderPutPixelCallback callback, void *callback_data);
+		void setRenderHighlightPixelCallback(yafaray_RenderHighlightPixelCallback callback, void *callback_data);
+		void setRenderFlushAreaCallback(yafaray_RenderFlushAreaCallback callback, void *callback_data);
+		void setRenderFlushCallback(yafaray_RenderFlushCallback callback, void *callback_data);
+		void setRenderHighlightAreaCallback(yafaray_RenderHighlightAreaCallback callback, void *callback_data);
 
 	private:
 		struct FilterType : public Enum<FilterType>
@@ -202,7 +222,12 @@ class ImageFilm final
 		void initLayersImages();
 		void initLayersExportedImages();
 		static int roundToIntWithBias(double val); //!< Asymmetrical rounding function with a +0.5 bias
+		void setMaskParams(const ParamMap &params);
+		void setEdgeToonParams(const ParamMap &params);
+		void defineBasicLayers();
+		void defineDependentLayers(); //!< This function generates the basic/auxiliary layers. Must be called *after* defining all render layers with the defineLayer function.
 
+		std::string name_{"Imagefilm"};
 		int num_threads_ = 1;
 		int n_passes_;
 		unsigned int computer_node_ = 0;	//Computer node in multi-computer render environments/render farms
@@ -218,8 +243,9 @@ class ImageFilm final
 		bool estimate_density_ = false;
 		int num_density_samples_ = 0;
 		AaNoiseParams aa_noise_params_;
-		const Layers &layers_;
-		const Items<ImageOutput> &outputs_;
+		MaskParams mask_params_;
+		EdgeToonParams edge_toon_params_;
+		Layers layers_;
 		std::unique_ptr<ImageSplitter> splitter_;
 
 		AutoSaveParams images_auto_save_params_{params_.images_autosave_interval_seconds_, params_.images_autosave_interval_passes_, params_.images_autosave_interval_type_};
@@ -241,10 +267,10 @@ class ImageFilm final
 		static constexpr inline float filter_scale_ = 1.f / static_cast<float>(filter_table_size_);
 		alignas(16) std::array<float, filter_table_size_ * filter_table_size_> filter_table_;
 
-		Logger &logger_;
-		const Items<RenderView> &render_views_;
-		const RenderCallbacks *render_callbacks_ = nullptr;
+		Items<ImageOutput> outputs_;
+		RenderCallbacks render_callbacks_;
 		Timer timer_;
+		Logger &logger_;
 };
 
 inline int ImageFilm::roundToIntWithBias(double val)

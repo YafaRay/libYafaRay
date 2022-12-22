@@ -245,11 +245,11 @@ int main()
 
 	/* Setting up Film callbacks, must be done before yafaray_setupRender() */
 	yafaray_setRenderNotifyViewCallback(renderer, notifyViewCallback, (void *) &result_image);
-	yafaray_setRenderNotifyLayerCallback(renderer, notifyLayerCallback, (void *) &result_image);
-	yafaray_setRenderPutPixelCallback(renderer, putPixelCallback, (void *) &result_image);
-	yafaray_setRenderFlushAreaCallback(renderer, flushAreaCallback, (void *) &result_image);
-	yafaray_setRenderFlushCallback(renderer, flushCallback, (void *) &result_image);
-	yafaray_setRenderHighlightAreaCallback(renderer, highlightCallback, (void *) &result_image);
+	yafaray_setNotifyLayerCallback(renderer, notifyLayerCallback, (void *) &result_image);
+	yafaray_setPutPixelCallback(renderer, putPixelCallback, (void *) &result_image);
+	yafaray_setFlushAreaCallback(renderer, flushAreaCallback, (void *) &result_image);
+	yafaray_setFlushCallback(renderer, flushCallback, (void *) &result_image);
+	yafaray_setHighlightAreaCallback(renderer, highlightCallback, (void *) &result_image);
 
 	/* Setting up render parameters */
 	yafaray_clearParamMap(param_map);

@@ -56,6 +56,18 @@ void yafaray_destroyLogger(yafaray_Logger *logger)
 	delete reinterpret_cast<yafaray::Logger *>(logger);
 }
 
+yafaray_Film *yafaray_createFilm(yafaray_Logger *logger, yafaray_Renderer *renderer, const char *name, const yafaray_ParamMap *param_map, int num_threads)
+{
+	FIXME
+	auto image_film{new yafaray::ImageFilm(*reinterpret_cast<yafaray::Logger *>(logger), reinterpret_cast<yafaray::Renderer *>(renderer)->getRenderControl(), *reinterpret_cast<const yafaray::ParamMap *>(param_map), num_threads)};
+	return reinterpret_cast<yafaray_Film *>(image_film);
+}
+
+void yafaray_destroyFilm(yafaray_Film *film)
+{
+	delete reinterpret_cast<yafaray::ImageFilm *>(film);
+}
+
 yafaray_Scene *yafaray_createScene(yafaray_Logger *logger, const char *name, const yafaray_ParamMap *param_map)
 {
 	auto scene{new yafaray::Scene(*reinterpret_cast<yafaray::Logger *>(logger), name, *reinterpret_cast<const yafaray::ParamMap *>(param_map))};
@@ -354,69 +366,59 @@ yafaray_ResultFlags yafaray_createRenderView(yafaray_Renderer *renderer, const c
 	return static_cast<yafaray_ResultFlags>(creation_result.second.flags_.value());
 }
 
-yafaray_ResultFlags yafaray_createOutput(yafaray_Renderer *renderer, const char *name, const yafaray_ParamMap *param_map)
+yafaray_ResultFlags yafaray_createOutput(yafaray_Film *film, const char *name, const yafaray_ParamMap *param_map)
 {
-	auto creation_result{reinterpret_cast<yafaray::Renderer *>(renderer)->createOutput(name, *reinterpret_cast<const yafaray::ParamMap *>(param_map))};
+	auto creation_result{reinterpret_cast<yafaray::ImageFilm *>(film)->createOutput(name, *reinterpret_cast<const yafaray::ParamMap *>(param_map))};
 	return static_cast<yafaray_ResultFlags>(creation_result.second.flags_.value());
 }
 
-void yafaray_setRenderNotifyViewCallback(yafaray_Renderer *renderer, yafaray_RenderNotifyViewCallback callback, void *callback_data)
+void yafaray_setRenderNotifyViewCallback(yafaray_Film *film, yafaray_RenderNotifyViewCallback callback, void *callback_data)
 {
-	reinterpret_cast<yafaray::Renderer *>(renderer)->setRenderNotifyViewCallback(callback, callback_data);
+	reinterpret_cast<yafaray::ImageFilm *>(film)->setRenderNotifyViewCallback(callback, callback_data);
 }
 
-void yafaray_setRenderNotifyLayerCallback(yafaray_Renderer *renderer, yafaray_RenderNotifyLayerCallback callback, void *callback_data)
+void yafaray_setNotifyLayerCallback(yafaray_Film *film, yafaray_RenderNotifyLayerCallback callback, void *callback_data)
 {
-	reinterpret_cast<yafaray::Renderer *>(renderer)->setRenderNotifyLayerCallback(callback, callback_data);
+	reinterpret_cast<yafaray::ImageFilm *>(film)->setRenderNotifyLayerCallback(callback, callback_data);
 }
 
-void yafaray_setRenderPutPixelCallback(yafaray_Renderer *renderer, yafaray_RenderPutPixelCallback callback, void *callback_data)
+void yafaray_setPutPixelCallback(yafaray_Film *film, yafaray_RenderPutPixelCallback callback, void *callback_data)
 {
-	reinterpret_cast<yafaray::Renderer *>(renderer)->setRenderPutPixelCallback(callback, callback_data);
+	reinterpret_cast<yafaray::ImageFilm *>(film)->setRenderPutPixelCallback(callback, callback_data);
 }
 
-void yafaray_setRenderHighlightPixelCallback(yafaray_Renderer *renderer, yafaray_RenderHighlightPixelCallback callback, void *callback_data)
+void yafaray_setHighlightPixelCallback(yafaray_Film *film, yafaray_RenderHighlightPixelCallback callback, void *callback_data)
 {
-	reinterpret_cast<yafaray::Renderer *>(renderer)->setRenderHighlightPixelCallback(callback, callback_data);
+	reinterpret_cast<yafaray::ImageFilm *>(film)->setRenderHighlightPixelCallback(callback, callback_data);
 }
 
-void yafaray_setRenderFlushAreaCallback(yafaray_Renderer *renderer, yafaray_RenderFlushAreaCallback callback, void *callback_data)
+void yafaray_setFlushAreaCallback(yafaray_Film *film, yafaray_RenderFlushAreaCallback callback, void *callback_data)
 {
-	reinterpret_cast<yafaray::Renderer *>(renderer)->setRenderFlushAreaCallback(callback, callback_data);
+	reinterpret_cast<yafaray::ImageFilm *>(film)->setRenderFlushAreaCallback(callback, callback_data);
 }
 
-void yafaray_setRenderFlushCallback(yafaray_Renderer *renderer, yafaray_RenderFlushCallback callback, void *callback_data)
+void yafaray_setFlushCallback(yafaray_Film *film, yafaray_RenderFlushCallback callback, void *callback_data)
 {
-	reinterpret_cast<yafaray::Renderer *>(renderer)->setRenderFlushCallback(callback, callback_data);
+	reinterpret_cast<yafaray::ImageFilm *>(film)->setRenderFlushCallback(callback, callback_data);
 }
 
-void yafaray_setRenderHighlightAreaCallback(yafaray_Renderer *renderer, yafaray_RenderHighlightAreaCallback callback, void *callback_data)
+void yafaray_setHighlightAreaCallback(yafaray_Film *film, yafaray_RenderHighlightAreaCallback callback, void *callback_data)
 {
-	reinterpret_cast<yafaray::Renderer *>(renderer)->setRenderHighlightAreaCallback(callback, callback_data);
+	reinterpret_cast<yafaray::ImageFilm *>(film)->setRenderHighlightAreaCallback(callback, callback_data);
 }
 
-int yafaray_getRendererWidth(const yafaray_Renderer *renderer)
+int yafaray_getFilmWidth(const yafaray_Film *film)
 {
-	const auto image_film{reinterpret_cast<const yafaray::Renderer *>(renderer)->getImageFilm()};
+	const auto image_film{reinterpret_cast<const yafaray::ImageFilm *>(film)};
 	if(image_film) return image_film->getWidth();
 	else return 0;
 }
 
-int yafaray_getRendererHeight(const yafaray_Renderer *renderer)
+int yafaray_getFilmHeight(const yafaray_Film *film)
 {
-	const auto image_film{reinterpret_cast<const yafaray::Renderer *>(renderer)->getImageFilm()};
+	const auto image_film{reinterpret_cast<const yafaray::ImageFilm *>(film)};
 	if(image_film) return image_film->getHeight();
 	else return 0;
-}
-
-yafaray_Bool yafaray_removeOutput(yafaray_Renderer *renderer, const char *name)
-{
-	return static_cast<yafaray_Bool>(reinterpret_cast<yafaray::Renderer *>(renderer)->disableOutput(name));
-}
-
-void yafaray_clearOutputs(yafaray_Renderer *renderer)
-{
-	reinterpret_cast<yafaray::Renderer *>(renderer)->clearOutputs();
 }
 
 void yafaray_setupRender(yafaray_Scene *scene, yafaray_Renderer *renderer, const yafaray_ParamMap *param_map)
@@ -435,9 +437,9 @@ void yafaray_render(yafaray_Renderer *renderer, const yafaray_Scene *scene, yafa
 	reinterpret_cast<yafaray::Renderer *>(renderer)->render(image_film, std::move(progress_bar), *reinterpret_cast<const yafaray::Scene *>(scene));
 }
 
-void yafaray_defineLayer(yafaray_Renderer *renderer, const yafaray_ParamMap *param_map)
+void yafaray_defineLayer(yafaray_Film *film, const yafaray_ParamMap *param_map)
 {
-	reinterpret_cast<yafaray::Renderer *>(renderer)->defineLayer(*reinterpret_cast<const yafaray::ParamMap *>(param_map));
+	reinterpret_cast<yafaray::ImageFilm *>(film)->defineLayer(*reinterpret_cast<const yafaray::ParamMap *>(param_map));
 }
 
 void yafaray_enablePrintDateTime(yafaray_Logger *logger, yafaray_Bool value)
@@ -563,9 +565,9 @@ char *yafaray_getVersionString()
 	return createCharString(yafaray::buildinfo::getVersionString());
 }
 
-char *yafaray_getLayersTable(const yafaray_Renderer *renderer)
+char *yafaray_getLayersTable(const yafaray_Film *film)
 {
-	return createCharString(reinterpret_cast<const yafaray::Renderer *>(renderer)->getLayers()->printExportedTable());
+	return createCharString(reinterpret_cast<const yafaray::ImageFilm *>(film)->getLayers()->printExportedTable());
 }
 
 char *yafaray_getViewsTable(const yafaray_Renderer *renderer)
