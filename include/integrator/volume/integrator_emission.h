@@ -43,7 +43,7 @@ class EmissionIntegrator final : public VolumeIntegrator
 		{
 			PARAM_INIT_PARENT(ParentClassType_t);
 		} params_;
-		bool preprocess(FastRandom &fast_random, ImageFilm *image_film, const RenderView *render_view, const Scene &scene, const Renderer &renderer) override { return true; }
+		bool preprocess(const RenderView *render_view, const Scene &scene, const Renderer &renderer) override { return true; }
 		// optical thickness, absorption, attenuation, extinction
 		Rgb transmittance(RandomGenerator &random_generator, const Ray &ray) const override;
 		// emission part

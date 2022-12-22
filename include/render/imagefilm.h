@@ -79,7 +79,6 @@ class ImageFilm final
 		void finishArea(const RenderView *render_view, RenderControl &render_control, const RenderArea &a, const EdgeToonParams &edge_params);
 		/*! Output all pixels to the color output */
 		void flush(const RenderView *render_view, RenderControl &render_control, const EdgeToonParams &edge_params, Flags flags = All);
-		void cleanup() { weights_.clear(); }
 		/*! query if sample (x,y) was flagged to need more samples.
 			IMPORTANT! You may only call this after you have called nextPass(true, ...), otherwise
 			no such flags have been created !! */
@@ -123,6 +122,7 @@ class ImageFilm final
 		void resetFilmAutoSaveTimer() { film_load_save_.auto_save_.timer_ = 0.0; }
 		const ImageLayers *getImageLayers() const { return &film_image_layers_; }
 		const ImageLayers *getExportedImageLayers() const { return &exported_image_layers_; }
+		const Layers * getLayers() const { return &layers_; }
 		Timer * getTimer() { return &timer_; }
 
 	private:

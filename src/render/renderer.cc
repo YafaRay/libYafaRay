@@ -95,13 +95,8 @@ void Renderer::setNumThreadsPhotons(int threads_photons)
 	logger_.logParams("Renderer '", name(), "' using for Photon Mapping [", nthreads_photons_, "] Threads.");
 }
 
-bool Renderer::render(std::unique_ptr<ProgressBar> progress_bar, const Scene &scene)
+bool Renderer::render(ImageFilm &image_film, std::unique_ptr<ProgressBar> progress_bar, const Scene &scene)
 {
-	if(!image_film_)
-	{
-		logger_.logError(getClassName(), "'", name(), "': No ImageFilm present, bailing out...");
-		return false;
-	}
 	if(!surf_integrator_)
 	{
 		logger_.logError(getClassName(), "'", name(), "': No surface integrator, bailing out...");
@@ -112,23 +107,24 @@ bool Renderer::render(std::unique_ptr<ProgressBar> progress_bar, const Scene &sc
 
 	for(auto &output : outputs_)
 	{
-		output.item_->init(image_film_->getSize(), image_film_->getExportedImageLayers(), &render_views_);
+		output.item_->init(image_film.getSize(), image_film.getExportedImageLayers(), &render_views_);
 	}
 
-	for(auto &render_view : render_views_)
+	for(auto &[render_view, render_view_name, render_view_enabled] : render_views_)
 	{
-		for(auto &output : outputs_) output.item_->setRenderView(render_view.item_.get());
+		if(!render_view_enabled) continue;
+		for(auto &output : outputs_) output.item_->setRenderView(render_view.get());
 		std::stringstream inte_settings;
-		bool success = render_view.item_->init(logger_, scene);
+		bool success = render_view->init(logger_, scene);
 		if(!success)
 		{
-			logger_.logWarning(getClassName(), "'", name(), "': No cameras or lights found at RenderView ", render_view.name_, "', skipping this RenderView...");
+			logger_.logWarning(getClassName(), "'", name(), "': No cameras or lights found at RenderView ", render_view_name, "', skipping this RenderView...");
 			continue;
 		}
 
 		FastRandom fast_random;
-		success = surf_integrator_->preprocess(fast_random, image_film_.get(), render_view.item_.get(), scene, *this);
-		if(vol_integrator_) success = success && vol_integrator_->preprocess(fast_random, image_film_.get(), render_view.item_.get(), scene, *this);
+		success = surf_integrator_->preprocess(fast_random, &image_film, render_view.get(), scene, *this);
+		if(vol_integrator_) success = success && vol_integrator_->preprocess(render_view.get(), scene, *this);
 
 		if(!success)
 		{
@@ -155,9 +151,8 @@ bool Renderer::render(std::unique_ptr<ProgressBar> progress_bar, const Scene &sc
 		render_control_.setRenderInfo(surf_integrator_->getRenderInfo());
 		render_control_.setAaNoiseInfo(surf_integrator_->getAaNoiseInfo());
 		surf_integrator_->cleanup();
-		image_film_->flush(render_view.item_.get(), render_control_, getEdgeToonParams());
+		image_film.flush(render_view.get(), render_control_, getEdgeToonParams());
 		render_control_.setFinished();
-		image_film_->cleanup();
 	}
 	return true;
 }
@@ -165,11 +160,6 @@ bool Renderer::render(std::unique_ptr<ProgressBar> progress_bar, const Scene &sc
 void Renderer::clearOutputs()
 {
 	outputs_.clear();
-}
-
-void Renderer::clearLayers()
-{
-	layers_.clear();
 }
 
 std::pair<size_t, ResultFlags> Renderer::getOutput(const std::string &name) const

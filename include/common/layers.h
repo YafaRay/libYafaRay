@@ -18,8 +18,8 @@
  *
  */
 
-#ifndef YAFARAY_LAYERS_H
-#define YAFARAY_LAYERS_H
+#ifndef LIBYAFARAY_LAYERS_H
+#define LIBYAFARAY_LAYERS_H
 
 #include "common/collection.h"
 #include "image/image.h"
@@ -50,4 +50,4 @@ inline bool Layers::isDefined(LayerDef::Type type) const
 
 } //namespace yafaray
 
-#endif // YAFARAY_LAYERS_H
+#endif // LIBYAFARAY_LAYERS_H

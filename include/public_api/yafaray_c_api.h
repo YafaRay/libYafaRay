@@ -34,6 +34,7 @@ extern "C" {
 	typedef struct yafaray_ParamMap yafaray_ParamMap;
 	typedef struct yafaray_ParamMapList yafaray_ParamMapList;
 	typedef struct yafaray_Renderer yafaray_Renderer;
+	typedef struct yafaray_Film yafaray_Film;
 
 	/* Basic enums */
 	typedef enum { YAFARAY_LOG_LEVEL_MUTE = 0, YAFARAY_LOG_LEVEL_ERROR, YAFARAY_LOG_LEVEL_WARNING, YAFARAY_LOG_LEVEL_PARAMS, YAFARAY_LOG_LEVEL_INFO, YAFARAY_LOG_LEVEL_VERBOSE, YAFARAY_LOG_LEVEL_DEBUG } yafaray_LogLevel;

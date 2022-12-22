@@ -55,8 +55,7 @@ class Renderer final
 		void setNumThreads(int threads);
 		void setNumThreadsPhotons(int threads_photons);
 		std::string name() const { return name_; }
-		bool render(std::unique_ptr<ProgressBar> progress_bar, const Scene &scene);
-		const ImageFilm *getImageFilm() const { return image_film_.get(); }
+		bool render(ImageFilm &image_film, std::unique_ptr<ProgressBar> progress_bar, const Scene &scene);
 		int getNumThreads() const { return nthreads_; }
 		int getNumThreadsPhotons() const { return nthreads_photons_; }
 		AaNoiseParams getAaParameters() const { return aa_noise_params_; }
@@ -72,8 +71,6 @@ class Renderer final
 		void defineLayer(const ParamMap &param_map);
 		void defineLayer(std::string &&layer_type_name, std::string &&image_type_name, std::string &&exported_image_type_name, std::string &&exported_image_name);
 		void defineLayer(LayerDef::Type layer_type, Image::Type image_type = Image::Type{Image::Type::None}, Image::Type exported_image_type = Image::Type{Image::Type::None}, const std::string &exported_image_name = "");
-		void clearLayers();
-		const Layers * getLayers() const { return &layers_; }
 		float getShadowBias() const { return shadow_bias_; }
 		bool isShadowBiasAuto() const { return shadow_bias_auto_; }
 		float getRayMinDist() const { return ray_min_dist_; }
@@ -96,7 +93,6 @@ class Renderer final
 		std::pair<size_t, ParamResult> createCamera(const std::string &name, const ParamMap &param_map);
 		std::tuple<Camera *, size_t, ResultFlags> getCamera(const std::string &name) const;
 		const Items<Camera> &getCameras() const { return cameras_; }
-		Items<Camera> &getCameras() { return cameras_; }
 
 	private:
 		void setMaskParams(const ParamMap &params);
@@ -113,7 +109,6 @@ class Renderer final
 		float ray_min_dist_ = 1.0e-5f;  //ray minimum distance
 		bool ray_min_dist_auto_ = true;  //enable automatic ray minimum distance calculation
 		RenderControl render_control_;
-		std::unique_ptr<ImageFilm> image_film_;
 		std::unique_ptr<SurfaceIntegrator> surf_integrator_;
 		std::unique_ptr<VolumeIntegrator> vol_integrator_;
 		Items<ImageOutput> outputs_;

@@ -92,7 +92,7 @@ bool SurfaceIntegrator::preprocess(FastRandom &fast_random, ImageFilm *image_fil
 	timer_ = image_film->getTimer();
 	vol_integrator_ = renderer.getVolIntegrator();
 	scene_bound_ = scene.getSceneBound();
-	return static_cast<bool>(layers_) && static_cast<bool>(image_film) && static_cast<bool>(render_view_) && static_cast<bool>(camera_) && static_cast<bool>(timer_);
+	return static_cast<bool>(layers_) && static_cast<bool>(render_view_) && static_cast<bool>(camera_) && static_cast<bool>(timer_);
 }
 
 } //namespace yafaray

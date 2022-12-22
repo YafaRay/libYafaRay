@@ -432,7 +432,7 @@ void yafaray_render(yafaray_Renderer *renderer, const yafaray_Scene *scene, yafa
 	std::unique_ptr<yafaray::ProgressBar> progress_bar;
 	if(progress_bar_display_console == YAFARAY_DISPLAY_CONSOLE_NORMAL) progress_bar = std::make_unique<yafaray::ConsoleProgressBar>(80, monitor_callback, callback_data);
 	else progress_bar = std::make_unique<yafaray::ProgressBar>(monitor_callback, callback_data);
-	reinterpret_cast<yafaray::Renderer *>(renderer)->render(std::move(progress_bar), *reinterpret_cast<const yafaray::Scene *>(scene));
+	reinterpret_cast<yafaray::Renderer *>(renderer)->render(image_film, std::move(progress_bar), *reinterpret_cast<const yafaray::Scene *>(scene));
 }
 
 void yafaray_defineLayer(yafaray_Renderer *renderer, const yafaray_ParamMap *param_map)
