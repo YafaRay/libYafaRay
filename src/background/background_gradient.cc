@@ -72,7 +72,7 @@ std::pair<std::unique_ptr<Background>, ParamResult> GradientBackground::factory(
 	return {std::move(background), param_result};
 }
 
-GradientBackground::GradientBackground(Logger &logger, ParamResult &param_result, SceneItems<Light> &lights, const ParamMap &param_map) :
+GradientBackground::GradientBackground(Logger &logger, ParamResult &param_result, Items<Light> &lights, const ParamMap &param_map) :
 		ParentClassType_t{logger, param_result, lights, param_map}, params_{param_result, param_map}
 {
 	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + params_.getAsParamMap(true).print());

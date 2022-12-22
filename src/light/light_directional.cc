@@ -64,7 +64,7 @@ std::pair<std::unique_ptr<Light>, ParamResult> DirectionalLight::factory(Logger 
 	return {std::move(light), param_result};
 }
 
-DirectionalLight::DirectionalLight(Logger &logger, ParamResult &param_result, const ParamMap &param_map, const SceneItems<Light> &lights):
+DirectionalLight::DirectionalLight(Logger &logger, ParamResult &param_result, const ParamMap &param_map, const Items<Light> &lights):
 		ParentClassType_t{logger, param_result, param_map, Flags::DiracDir, lights}, params_{param_result, param_map}
 {
 	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + params_.getAsParamMap(true).print());

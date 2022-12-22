@@ -26,7 +26,7 @@
 #include "common/enum.h"
 #include "common/enum_map.h"
 #include "param/class_meta.h"
-#include "scene/scene_items.h"
+#include "common/items.h"
 #include "render/renderer.h"
 #include <map>
 #include <memory>
@@ -50,7 +50,7 @@ class VolumeIntegrator
 	public:
 		inline static std::string getClassName() { return "VolumeIntegrator"; }
 		[[nodiscard]] virtual Type type() const = 0;
-		static std::pair<std::unique_ptr<VolumeIntegrator>, ParamResult> factory(Logger &logger, const yafaray::SceneItems<VolumeRegion> &volume_regions, const ParamMap &param_map);
+		static std::pair<std::unique_ptr<VolumeIntegrator>, ParamResult> factory(Logger &logger, const yafaray::Items<VolumeRegion> &volume_regions, const ParamMap &param_map);
 		[[nodiscard]] virtual ParamMap getAsParamMap(bool only_non_default) const;
 		virtual ~VolumeIntegrator() = default;
 		static std::string printMeta(const std::vector<std::string> &excluded_params) { return Params::meta_.print(excluded_params); }

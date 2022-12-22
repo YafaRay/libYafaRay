@@ -67,7 +67,7 @@ std::pair<std::unique_ptr<RenderView>, ParamResult> RenderView::factory(Logger &
 	return {std::move(render_view), param_result};
 }
 
-RenderView::RenderView(Logger &logger, ParamResult &param_result, const ParamMap &param_map, const SceneItems<Camera> &cameras, size_t camera_id) : params_{param_result, param_map}, camera_id_{camera_id}, cameras_{cameras}
+RenderView::RenderView(Logger &logger, ParamResult &param_result, const ParamMap &param_map, const Items<Camera> &cameras, size_t camera_id) : params_{param_result, param_map}, camera_id_{camera_id}, cameras_{cameras}
 {
 	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + params_.getAsParamMap(true).print());
 }

@@ -66,7 +66,7 @@ std::pair<std::unique_ptr<Light>, ParamResult> BackgroundPortalLight::factory(Lo
 	return {std::move(light), param_result};
 }
 
-BackgroundPortalLight::BackgroundPortalLight(Logger &logger, ParamResult &param_result, const std::string &name, const ParamMap &param_map, const SceneItems<Object> &objects, const SceneItems<Light> &lights):
+BackgroundPortalLight::BackgroundPortalLight(Logger &logger, ParamResult &param_result, const std::string &name, const ParamMap &param_map, const Items<Object> &objects, const Items<Light> &lights):
 		ParentClassType_t{logger, param_result, param_map, Flags::None, lights}, params_{param_result, param_map}, objects_{objects}
 {
 	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + params_.getAsParamMap(true).print());

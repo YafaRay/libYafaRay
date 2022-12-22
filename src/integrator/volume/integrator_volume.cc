@@ -43,7 +43,7 @@ ParamMap VolumeIntegrator::getAsParamMap(bool only_non_default) const
 	return result;
 }
 
-std::pair<std::unique_ptr<VolumeIntegrator>, ParamResult> VolumeIntegrator::factory(Logger &logger, const SceneItems <VolumeRegion> &volume_regions, const ParamMap &param_map)
+std::pair<std::unique_ptr<VolumeIntegrator>, ParamResult> VolumeIntegrator::factory(Logger &logger, const Items <VolumeRegion> &volume_regions, const ParamMap &param_map)
 {
 	const Type type{ClassMeta::preprocessParamMap<Type>(logger, getClassName(), param_map)};
 	switch(type.value())

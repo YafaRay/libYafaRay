@@ -19,6 +19,7 @@
 target_sources(libyafaray4
 	PRIVATE
 		file.cc
+		items.cc
 		layer_definitions.cc
 		layer.cc
 		layers.cc

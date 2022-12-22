@@ -105,7 +105,7 @@ std::pair<std::unique_ptr<Material>, ParamResult> BlendMaterial::factory(Logger 
 	return {std::move(material), param_result};
 }
 
-BlendMaterial::BlendMaterial(Logger &logger, ParamResult &param_result, const ParamMap &param_map, size_t material_1_id, size_t material_2_id, const SceneItems<Material> &materials) :
+BlendMaterial::BlendMaterial(Logger &logger, ParamResult &param_result, const ParamMap &param_map, size_t material_1_id, size_t material_2_id, const Items<Material> &materials) :
 		ParentClassType_t{logger, param_result, param_map, materials}, params_{param_result, param_map},
 		material_1_id_{material_1_id}, material_2_id_{material_2_id}, materials_{materials}
 {

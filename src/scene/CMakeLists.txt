@@ -18,6 +18,5 @@
 
 target_sources(libyafaray4
 	PRIVATE
-		scene_items.cc
 		scene.cc
 )

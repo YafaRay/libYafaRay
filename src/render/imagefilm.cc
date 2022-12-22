@@ -95,7 +95,7 @@ std::pair<std::unique_ptr<ImageFilm>, ParamResult> ImageFilm::factory(Logger &lo
 	return {std::move(result), param_result};
 }
 
-ImageFilm::ImageFilm(Logger &logger, ParamResult &param_result, RenderControl &render_control, const Layers &layers, const SceneItems<ImageOutput> &outputs, const SceneItems<RenderView> &render_views, const RenderCallbacks *render_callbacks, int num_threads, const ParamMap &param_map) : params_{param_result, param_map}, num_threads_(num_threads), layers_(layers), outputs_(outputs), render_views_{render_views}, render_callbacks_{render_callbacks}, logger_{logger}
+ImageFilm::ImageFilm(Logger &logger, ParamResult &param_result, RenderControl &render_control, const Layers &layers, const Items<ImageOutput> &outputs, const Items<RenderView> &render_views, const RenderCallbacks *render_callbacks, int num_threads, const ParamMap &param_map) : params_{param_result, param_map}, num_threads_(num_threads), layers_(layers), outputs_(outputs), render_views_{render_views}, render_callbacks_{render_callbacks}, logger_{logger}
 {
 	if(logger_.isDebug()) logger_.logDebug("**" + getClassName() + " params_:\n" + params_.getAsParamMap(true).print());
 	if(params_.images_autosave_interval_type_ == AutoSaveParams::IntervalType::Pass) logger_.logInfo(getClassName(), ": ", "AutoSave partially rendered image every ", params_.images_autosave_interval_passes_, " passes");

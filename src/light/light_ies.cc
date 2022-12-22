@@ -72,7 +72,7 @@ std::pair<std::unique_ptr<Light>, ParamResult> IesLight::factory(Logger &logger,
 	return {std::move(light), param_result};
 }
 
-IesLight::IesLight(Logger &logger, ParamResult &param_result, const ParamMap &param_map, const SceneItems<Light> &lights):
+IesLight::IesLight(Logger &logger, ParamResult &param_result, const ParamMap &param_map, const Items<Light> &lights):
 		ParentClassType_t{logger, param_result, param_map, Flags::Singular, lights}, params_{param_result, param_map},
 		ies_data_{std::make_unique<IesData>()},
 		ies_ok_{ies_data_->parseIesFile(logger, params_.file_)}

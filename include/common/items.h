@@ -19,20 +19,20 @@
  *
  */
 
-#ifndef LIBYAFARAY_SCENE_ITEMS_H
-#define LIBYAFARAY_SCENE_ITEMS_H
+#ifndef LIBYAFARAY_ITEMS_H
+#define LIBYAFARAY_ITEMS_H
 
-#include "common/result_flags.h"
-#include <memory>
-#include <map>
-#include <vector>
-#include <tuple>
-#include <set>
+#include "result_flags.h"
+#include <c++/11/memory>
+#include <c++/11/map>
+#include <c++/11/vector>
+#include <c++/11/tuple>
+#include <c++/11/set>
 
 namespace yafaray {
 
 template <typename T>
-struct SceneItem final
+struct Item final
 {
 	std::unique_ptr<T> item_;
 	std::string name_;
@@ -40,7 +40,7 @@ struct SceneItem final
 };
 
 template <typename T>
-class SceneItems final
+class Items final
 {
 	public:
 		[[nodiscard]] std::pair<size_t, ResultFlags> add(const std::string &name, std::unique_ptr<T> item); //!< Add a unique_ptr to the list of items. Requires T to have a method "T::setId" to modify the Id in the item itself according to the Id determined during the addition
@@ -51,23 +51,23 @@ class SceneItems final
 		[[nodiscard]] std::pair<std::string, ResultFlags> findNameFromId(size_t id) const;
 		[[nodiscard]] std::pair<T *, ResultFlags> getById(size_t id) const;
 		[[nodiscard]] std::tuple<T *, size_t, ResultFlags> getByName(const std::string &name) const;
-		[[nodiscard]] size_t size() const { return scene_items_.size(); }
-		[[nodiscard]] bool empty() const { return scene_items_.empty(); }
+		[[nodiscard]] size_t size() const { return items_.size(); }
+		[[nodiscard]] bool empty() const { return items_.empty(); }
 		[[nodiscard]] bool modified() const { return !modified_items_.empty(); }
 		[[nodiscard]] const std::set<size_t> &modifiedList() const { return modified_items_; }
-		typename std::vector<SceneItem<T>>::iterator begin() { return scene_items_.begin(); }
-		typename std::vector<SceneItem<T>>::iterator end() { return scene_items_.end(); }
-		typename std::vector<SceneItem<T>>::const_iterator begin() const { return scene_items_.begin(); }
-		typename std::vector<SceneItem<T>>::const_iterator end() const { return scene_items_.end(); }
+		typename std::vector<Item<T>>::iterator begin() { return items_.begin(); }
+		typename std::vector<Item<T>>::iterator end() { return items_.end(); }
+		typename std::vector<Item<T>>::const_iterator begin() const { return items_.begin(); }
+		typename std::vector<Item<T>>::const_iterator end() const { return items_.end(); }
 		void clearModifiedList() { modified_items_.clear(); }
 		void clear();
 
 	private:
-		std::vector<SceneItem<T>> scene_items_;
+		std::vector<Item<T>> items_;
 		std::map<std::string, size_t> names_to_id_;
 		std::set<size_t> modified_items_;
 };
 
 } //namespace yafaray
 
-#endif //LIBYAFARAY_SCENE_ITEMS_H
+#endif //LIBYAFARAY_ITEMS_H

@@ -69,7 +69,7 @@ std::pair<std::unique_ptr<Light>, ParamResult> ObjectLight::factory(Logger &logg
 	return {std::move(light), param_result};
 }
 
-ObjectLight::ObjectLight(Logger &logger, ParamResult &param_result, const std::string &name, const ParamMap &param_map, const SceneItems<Object> &objects, const SceneItems<Light> &lights):
+ObjectLight::ObjectLight(Logger &logger, ParamResult &param_result, const std::string &name, const ParamMap &param_map, const Items<Object> &objects, const Items<Light> &lights):
 		ParentClassType_t{logger, param_result, param_map, Flags::None, lights}, params_{param_result, param_map}, objects_{objects}
 {
 	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + params_.getAsParamMap(true).print());

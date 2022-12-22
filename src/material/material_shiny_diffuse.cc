@@ -112,7 +112,7 @@ std::pair<std::unique_ptr<Material>, ParamResult> ShinyDiffuseMaterial::factory(
 	return {std::move(material), param_result};
 }
 
-ShinyDiffuseMaterial::ShinyDiffuseMaterial(Logger &logger, ParamResult &param_result, const ParamMap &param_map, const SceneItems <Material> &materials) :
+ShinyDiffuseMaterial::ShinyDiffuseMaterial(Logger &logger, ParamResult &param_result, const ParamMap &param_map, const Items <Material> &materials) :
 		ParentClassType_t{logger, param_result, param_map, materials}, params_{param_result, param_map}
 {
 	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + params_.getAsParamMap(true).print());

@@ -16,7 +16,7 @@
  *      Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-#include "scene/scene_items.h"
+#include "common/items.h"
 #include "material/material.h"
 #include "geometry/object/object.h"
 #include "texture/texture.h"
@@ -29,47 +29,47 @@
 namespace yafaray {
 
 template <typename T>
-std::pair<size_t, ResultFlags> SceneItems<T>::add(const std::string &name, std::unique_ptr<T> item)
+std::pair<size_t, ResultFlags> Items<T>::add(const std::string &name, std::unique_ptr<T> item)
 {
 	if(!item) return {0, YAFARAY_RESULT_ERROR_WHILE_CREATING};
 	auto [id, result_flags]{findIdFromName(name)};
 	if(result_flags == YAFARAY_RESULT_ERROR_NOT_FOUND)
 	{
-		id = scene_items_.size();
-		scene_items_.emplace_back(SceneItem<T>{std::move(item), name, true});
+		id = items_.size();
+		items_.emplace_back(Item<T>{std::move(item), name, true});
 		result_flags = YAFARAY_RESULT_OK;
 	}
 	else
 	{
-		scene_items_[id] = {std::move(item), name, true};
+		items_[id] = {std::move(item), name, true};
 		result_flags = YAFARAY_RESULT_WARNING_OVERWRITTEN;
 	}
-	scene_items_[id].item_->setId(id);
+	items_[id].item_->setId(id);
 	names_to_id_[name] = id;
 	modified_items_.insert(id);
 	return {id, result_flags};
 }
 
 template <typename T>
-ResultFlags SceneItems<T>::rename(size_t id, const std::string &name)
+ResultFlags Items<T>::rename(size_t id, const std::string &name)
 {
-	if(id >= scene_items_.size()) return YAFARAY_RESULT_ERROR_NOT_FOUND;
+	if(id >= items_.size()) return YAFARAY_RESULT_ERROR_NOT_FOUND;
 	else
 	{
 		if(findIdFromName(name).second != YAFARAY_RESULT_ERROR_NOT_FOUND) return YAFARAY_RESULT_ERROR_DUPLICATED_NAME;
 		else
 		{
-			auto map_entry_extracted{names_to_id_.extract(scene_items_[id].name_)};
+			auto map_entry_extracted{names_to_id_.extract(items_[id].name_)};
 			map_entry_extracted.key() = name;
 			names_to_id_.insert(std::move(map_entry_extracted));
-			scene_items_[id].name_ = name;
+			items_[id].name_ = name;
 			return YAFARAY_RESULT_OK;
 		}
 	}
 }
 
 template <typename T>
-ResultFlags SceneItems<T>::disable(const std::string &name)
+ResultFlags Items<T>::disable(const std::string &name)
 {
 	const auto it{names_to_id_.find(name)};
 	if(it != names_to_id_.end())
@@ -81,19 +81,19 @@ ResultFlags SceneItems<T>::disable(const std::string &name)
 }
 
 template <typename T>
-ResultFlags SceneItems<T>::disable(size_t id)
+ResultFlags Items<T>::disable(size_t id)
 {
-	if(id >= scene_items_.size()) return YAFARAY_RESULT_ERROR_NOT_FOUND;
+	if(id >= items_.size()) return YAFARAY_RESULT_ERROR_NOT_FOUND;
 	else
 	{
-		scene_items_[id].enabled_ = false;
+		items_[id].enabled_ = false;
 		modified_items_.insert(id);
 		return YAFARAY_RESULT_OK;
 	}
 }
 
 template <typename T>
-std::pair<size_t, ResultFlags> SceneItems<T>::findIdFromName(const std::string &name) const
+std::pair<size_t, ResultFlags> Items<T>::findIdFromName(const std::string &name) const
 {
 	auto it = names_to_id_.find(name);
 	if(it != names_to_id_.end()) return {it->second, YAFARAY_RESULT_OK};
@@ -101,21 +101,21 @@ std::pair<size_t, ResultFlags> SceneItems<T>::findIdFromName(const std::string &
 }
 
 template <typename T>
-std::pair<std::string, ResultFlags> SceneItems<T>::findNameFromId(size_t id) const
+std::pair<std::string, ResultFlags> Items<T>::findNameFromId(size_t id) const
 {
-	if(id >= scene_items_.size()) return {{}, YAFARAY_RESULT_ERROR_NOT_FOUND};
-	else return {scene_items_[id].name_, YAFARAY_RESULT_OK};
+	if(id >= items_.size()) return {{}, YAFARAY_RESULT_ERROR_NOT_FOUND};
+	else return {items_[id].name_, YAFARAY_RESULT_OK};
 }
 
 template <typename T>
-std::pair<T *, ResultFlags> SceneItems<T>::getById(size_t id) const
+std::pair<T *, ResultFlags> Items<T>::getById(size_t id) const
 {
-	if(id >= scene_items_.size()) return {nullptr, YAFARAY_RESULT_ERROR_NOT_FOUND};
-	else return {scene_items_[id].item_.get(), YAFARAY_RESULT_OK};
+	if(id >= items_.size()) return {nullptr, YAFARAY_RESULT_ERROR_NOT_FOUND};
+	else return {items_[id].item_.get(), YAFARAY_RESULT_OK};
 }
 
 template<typename T>
-std::tuple<T *, size_t, ResultFlags> SceneItems<T>::getByName(const std::string &name) const
+std::tuple<T *, size_t, ResultFlags> Items<T>::getByName(const std::string &name) const
 {
 	auto [id, result]{findIdFromName(name)};
 	if(result == YAFARAY_RESULT_ERROR_NOT_FOUND) return {nullptr, id, result};
@@ -125,22 +125,22 @@ std::tuple<T *, size_t, ResultFlags> SceneItems<T>::getByName(const std::string 
 }
 
 template <typename T>
-void SceneItems<T>::clear()
+void Items<T>::clear()
 {
 	names_to_id_.clear();
-	scene_items_.clear();
+	items_.clear();
 	clearModifiedList();
 }
 
 //Important: to avoid undefined symbols in CLang, always keep the template explicit specializations **at the end** of the source file!
-template class SceneItems<Material>;
-template class SceneItems<Object>;
-template class SceneItems<Light>;
-template class SceneItems<Texture>;
-template class SceneItems<RenderView>;
-template class SceneItems<Camera>;
-template class SceneItems<ImageOutput>;
-template class SceneItems<VolumeRegion>;
-template class SceneItems<Image>;
+template class Items<Material>;
+template class Items<Object>;
+template class Items<Light>;
+template class Items<Texture>;
+template class Items<RenderView>;
+template class Items<Camera>;
+template class Items<ImageOutput>;
+template class Items<VolumeRegion>;
+template class Items<Image>;
 
 } //namespace yafaray

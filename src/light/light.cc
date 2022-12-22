@@ -28,7 +28,7 @@
 #include "light/light_directional.h"
 #include "light/light_ies.h"
 #include "light/light_object_light.h"
-#include "scene/scene_items.h"
+#include "common/items.h"
 #include "param/param.h"
 #include "common/logger.h"
 

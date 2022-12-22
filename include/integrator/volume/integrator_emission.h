@@ -24,7 +24,7 @@
 
 namespace yafaray {
 
-template <typename T> class SceneItems;
+template <typename T> class Items;
 
 class EmissionIntegrator final : public VolumeIntegrator
 {
@@ -32,9 +32,9 @@ class EmissionIntegrator final : public VolumeIntegrator
 
 	public:
 		inline static std::string getClassName() { return "EmissionIntegrator"; }
-		static std::pair<std::unique_ptr<VolumeIntegrator>, ParamResult> factory(Logger &logger, const ParamMap &params, const SceneItems<VolumeRegion> &volume_regions);
+		static std::pair<std::unique_ptr<VolumeIntegrator>, ParamResult> factory(Logger &logger, const ParamMap &params, const Items<VolumeRegion> &volume_regions);
 		static std::string printMeta(const std::vector<std::string> &excluded_params) { return Params::meta_.print(excluded_params); }
-		explicit EmissionIntegrator(Logger &logger, ParamResult &param_result, const ParamMap &param_map, const SceneItems<VolumeRegion> &volume_regions);
+		explicit EmissionIntegrator(Logger &logger, ParamResult &param_result, const ParamMap &param_map, const Items<VolumeRegion> &volume_regions);
 		[[nodiscard]] ParamMap getAsParamMap(bool only_non_default) const override;
 
 	private:
@@ -49,7 +49,7 @@ class EmissionIntegrator final : public VolumeIntegrator
 		// emission part
 		Rgb integrate(RandomGenerator &random_generator, const Ray &ray, int additional_depth) const override;
 
-		const SceneItems<VolumeRegion> &volume_regions_;
+		const Items<VolumeRegion> &volume_regions_;
 };
 
 } //namespace yafaray

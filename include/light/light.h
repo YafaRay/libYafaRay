@@ -36,7 +36,7 @@ class SurfacePoint;
 class Background;
 class Ray;
 class Scene;
-template <typename T> class SceneItems;
+template <typename T> class Items;
 template <typename T, size_t N> class Vec;
 typedef Vec<float, 3> Vec3f;
 template <typename T, size_t N> class Point;
@@ -62,7 +62,7 @@ class Light
 		};
 		static std::pair<std::unique_ptr<Light>, ParamResult> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map);
 		[[nodiscard]] virtual ParamMap getAsParamMap(bool only_non_default) const;
-		Light(Logger &logger, ParamResult &param_result, const ParamMap &param_map, Flags flags, const SceneItems<Light> &lights) : params_{param_result, param_map}, lights_{lights}, flags_{flags}, logger_{logger} { }
+		Light(Logger &logger, ParamResult &param_result, const ParamMap &param_map, Flags flags, const Items<Light> &lights) : params_{param_result, param_map}, lights_{lights}, flags_{flags}, logger_{logger} { }
 		virtual ~Light() = default;
 		void setId(size_t id) { id_ = id; }
 		[[nodiscard]] size_t getId() const { return id_; }
@@ -136,7 +136,7 @@ class Light
 			PARAM_DECL(bool, photon_only_, false, "photon_only", "Enable/disable if the light is a photon-only light (only shoots photons, not illuminating)");
 		} params_;
 		size_t id_{0};
-		const SceneItems<Light> &lights_;
+		const Items<Light> &lights_;
 		Flags flags_{Flags::None};
 		Logger &logger_;
 };

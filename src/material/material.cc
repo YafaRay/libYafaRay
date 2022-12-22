@@ -28,7 +28,7 @@
 #include "material/material_light.h"
 #include "material/material_mirror.h"
 #include "material/material_null.h"
-#include "scene/scene_items.h"
+#include "common/items.h"
 #include "geometry/surface.h"
 #include "param/param.h"
 #include "sampler/sample.h"
@@ -104,7 +104,7 @@ std::pair<std::unique_ptr<Material>, ParamResult> Material::factory(Logger &logg
 	return result;
 }
 
-Material::Material(Logger &logger, ParamResult &param_result, const ParamMap &param_map, const SceneItems <Material> &materials) :
+Material::Material(Logger &logger, ParamResult &param_result, const ParamMap &param_map, const Items <Material> &materials) :
 		params_{param_result, param_map}, materials_{materials}, logger_{logger}
 {
 	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " " + getName() + " params_:\n" + params_.getAsParamMap(true).print());

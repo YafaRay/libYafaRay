@@ -51,7 +51,7 @@ class RenderControl;
 class Timer;
 class RenderView;
 struct EdgeToonParams;
-template <typename T> class SceneItems;
+template <typename T> class Items;
 
 /*!	This class recieves all rendered image samples.
 	You can see it as an enhanced render buffer;
@@ -63,7 +63,7 @@ class ImageFilm final
 		enum Flags : unsigned char { RegularImage = 1 << 0, Densityimage = 1 << 1, All = RegularImage | Densityimage };
 		inline static std::string getClassName() { return "ImageFilm"; }
 		static std::pair<std::unique_ptr<ImageFilm>, ParamResult> factory(Logger &logger, RenderControl &render_control, const ParamMap &param_map, const Renderer &renderer);
-		ImageFilm(Logger &logger, ParamResult &param_result, RenderControl &render_control, const Layers &layers, const SceneItems<ImageOutput> &outputs, const SceneItems<RenderView> &render_views, const RenderCallbacks *render_callbacks, int num_threads, const ParamMap &param_map);
+		ImageFilm(Logger &logger, ParamResult &param_result, RenderControl &render_control, const Layers &layers, const Items<ImageOutput> &outputs, const Items<RenderView> &render_views, const RenderCallbacks *render_callbacks, int num_threads, const ParamMap &param_map);
 		static std::string printMeta(const std::vector<std::string> &excluded_params) { return Params::meta_.print(excluded_params); }
 		/*! Initialize imageFilm for new rendering, i.e. set pixels black etc */
 		void init(RenderControl &render_control, int num_passes = 0);
@@ -219,7 +219,7 @@ class ImageFilm final
 		int num_density_samples_ = 0;
 		AaNoiseParams aa_noise_params_;
 		const Layers &layers_;
-		const SceneItems<ImageOutput> &outputs_;
+		const Items<ImageOutput> &outputs_;
 		std::unique_ptr<ImageSplitter> splitter_;
 
 		AutoSaveParams images_auto_save_params_{params_.images_autosave_interval_seconds_, params_.images_autosave_interval_passes_, params_.images_autosave_interval_type_};
@@ -242,7 +242,7 @@ class ImageFilm final
 		alignas(16) std::array<float, filter_table_size_ * filter_table_size_> filter_table_;
 
 		Logger &logger_;
-		const SceneItems<RenderView> &render_views_;
+		const Items<RenderView> &render_views_;
 		const RenderCallbacks *render_callbacks_ = nullptr;
 		Timer timer_;
 };

@@ -63,7 +63,7 @@ std::pair<std::unique_ptr<Light>, ParamResult> SunLight::factory(Logger &logger,
 	return {std::move(light), param_result};
 }
 
-SunLight::SunLight(Logger &logger, ParamResult &param_result, const ParamMap &param_map, const SceneItems<Light> &lights):
+SunLight::SunLight(Logger &logger, ParamResult &param_result, const ParamMap &param_map, const Items<Light> &lights):
 		ParentClassType_t{logger, param_result, param_map, Flags::None, lights}, params_{param_result, param_map}
 {
 	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + params_.getAsParamMap(true).print());

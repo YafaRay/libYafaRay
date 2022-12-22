@@ -43,7 +43,7 @@ ParamMap EmissionIntegrator::getAsParamMap(bool only_non_default) const
 	return result;
 }
 
-std::pair<std::unique_ptr<VolumeIntegrator>, ParamResult> EmissionIntegrator::factory(Logger &logger, const ParamMap &param_map, const SceneItems<VolumeRegion> &volume_regions)
+std::pair<std::unique_ptr<VolumeIntegrator>, ParamResult> EmissionIntegrator::factory(Logger &logger, const ParamMap &param_map, const Items<VolumeRegion> &volume_regions)
 {
 	auto param_result{Params::meta_.check(param_map, {"type"}, {})};
 	auto integrator {std::make_unique<ThisClassType_t>(logger, param_result, param_map, volume_regions)};
@@ -51,7 +51,7 @@ std::pair<std::unique_ptr<VolumeIntegrator>, ParamResult> EmissionIntegrator::fa
 	return {std::move(integrator), param_result};
 }
 
-EmissionIntegrator::EmissionIntegrator(Logger &logger, ParamResult &param_result, const ParamMap &param_map, const SceneItems<VolumeRegion> &volume_regions) : VolumeIntegrator(logger, param_result, param_map), volume_regions_{volume_regions}, params_{param_result, param_map}
+EmissionIntegrator::EmissionIntegrator(Logger &logger, ParamResult &param_result, const ParamMap &param_map, const Items<VolumeRegion> &volume_regions) : VolumeIntegrator(logger, param_result, param_map), volume_regions_{volume_regions}, params_{param_result, param_map}
 {
 	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + params_.getAsParamMap(true).print());
 	//render_info_ += getClassName() + ": '" + params_.debug_type_.print() + "' | ";

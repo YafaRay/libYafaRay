@@ -36,7 +36,7 @@ class Rgb;
 class Logger;
 template <typename T, size_t N> class Vec;
 typedef Vec<float, 3> Vec3f;
-template <typename T> class SceneItems;
+template <typename T> class Items;
 
 class Background
 {
@@ -46,7 +46,7 @@ class Background
 		[[nodiscard]] virtual Type type() const = 0;
 		static std::pair<std::unique_ptr<Background>, ParamResult> factory(Logger &logger, Scene &scene, const std::string &name, const ParamMap &param_map);
 		[[nodiscard]] virtual ParamMap getAsParamMap(bool only_non_default) const;
-		Background(Logger &logger, ParamResult &param_result, SceneItems<Light> &lights, const ParamMap &param_map);
+		Background(Logger &logger, ParamResult &param_result, Items<Light> &lights, const ParamMap &param_map);
 		virtual ~Background();
 		Rgb operator()(const Vec3f &dir) const { return operator()(dir, false); }
 		virtual Rgb operator()(const Vec3f &dir, bool use_ibl_blur) const { return eval(dir, use_ibl_blur); }
@@ -76,7 +76,7 @@ class Background
 			PARAM_DECL(bool, with_diffuse_, true, "with_diffuse", "");
 			PARAM_DECL(bool, cast_shadows_, true, "cast_shadows", "");
 		} params_;
-		SceneItems<Light> &lights_;
+		Items<Light> &lights_;
 		Logger &logger_;
 };
 

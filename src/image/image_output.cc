@@ -124,7 +124,7 @@ std::unique_ptr<Image> ImageOutput::generateBadgeImage(const RenderControl &rend
 	return badge_.generateImage(image_manipulation::printDenoiseParams(denoise_params_), render_control, timer);
 }
 
-void ImageOutput::init(const Size2i &size, const ImageLayers *exported_image_layers, const SceneItems<RenderView> *render_views)
+void ImageOutput::init(const Size2i &size, const ImageLayers *exported_image_layers, const Items<RenderView> *render_views)
 {
 	image_layers_ = exported_image_layers;
 	render_views_ = render_views;

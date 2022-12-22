@@ -62,7 +62,7 @@ std::pair<std::unique_ptr<MeshObject>, ParamResult> MeshObject::factory(Logger &
 	return {std::move(object), param_result};
 }
 
-MeshObject::MeshObject(ParamResult &param_result, const ParamMap &param_map, const SceneItems <Object> &objects, const SceneItems<Material> &materials, const SceneItems<Light> &lights) : ParentClassType_t{param_result, param_map, objects, materials, lights}, params_{param_result, param_map}
+MeshObject::MeshObject(ParamResult &param_result, const ParamMap &param_map, const Items <Object> &objects, const Items<Material> &materials, const Items<Light> &lights) : ParentClassType_t{param_result, param_map, objects, materials, lights}, params_{param_result, param_map}
 {
 	//if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + params_.getAsParamMap(true).print());
 	const int num_faces = calculateNumFaces();

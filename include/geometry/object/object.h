@@ -20,7 +20,7 @@
 #ifndef LIBYAFARAY_OBJECT_H
 #define LIBYAFARAY_OBJECT_H
 
-#include "scene/scene_items.h"
+#include "common/items.h"
 #include "param/class_meta.h"
 #include "common/enum.h"
 #include "common/visibility.h"
@@ -32,7 +32,7 @@ class Material;
 class Light;
 class Primitive;
 template <typename IndexType> class FaceIndices;
-template <typename T> class SceneItems;
+template <typename T> class Items;
 
 class Object
 {
@@ -44,7 +44,7 @@ class Object
 		[[nodiscard]] virtual Type type() const = 0;
 		static std::pair<std::unique_ptr<Object>, ParamResult> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map);
 		[[nodiscard]] virtual ParamMap getAsParamMap(bool only_non_default) const;
-		Object(ParamResult &param_result, const ParamMap &param_map, const SceneItems <Object> &objects, const SceneItems<Material> &materials, const SceneItems<Light> &lights);
+		Object(ParamResult &param_result, const ParamMap &param_map, const Items <Object> &objects, const Items<Material> &materials, const Items<Light> &lights);
 		virtual ~Object() = default;
 		[[nodiscard]] std::string getName() const;
 		size_t getId() const { return id_; }
@@ -103,9 +103,9 @@ class Object
 
 	private:
 		size_t id_{0};
-		const SceneItems<Object> &objects_;
-		const SceneItems<Material> &materials_;
-		const SceneItems<Light> &lights_;
+		const Items<Object> &objects_;
+		const Items<Material> &materials_;
+		const Items<Light> &lights_;
 		size_t light_id_{math::invalid<size_t>};
 		Rgb index_auto_color_{0.f}; //!< Object Index color automatically generated for the object-index-auto color render pass
 };

@@ -97,7 +97,7 @@ std::pair<std::unique_ptr<Background>, ParamResult> TextureBackground::factory(L
 	return {std::move(background), param_result};
 }
 
-TextureBackground::TextureBackground(Logger &logger, ParamResult &param_result, SceneItems <Light> &lights, const ParamMap &param_map, size_t texture_id, const SceneItems <Texture> &textures) :
+TextureBackground::TextureBackground(Logger &logger, ParamResult &param_result, Items <Light> &lights, const ParamMap &param_map, size_t texture_id, const Items <Texture> &textures) :
 		ParentClassType_t{logger, param_result, lights, param_map}, params_{param_result, param_map}, texture_id_{texture_id}, textures_{textures}
 {
 	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + params_.getAsParamMap(true).print());

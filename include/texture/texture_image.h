@@ -29,7 +29,7 @@
 
 namespace yafaray {
 
-template <typename T> class SceneItems;
+template <typename T> class Items;
 
 class ImageTexture final : public Texture
 {
@@ -40,7 +40,7 @@ class ImageTexture final : public Texture
 		static std::pair<std::unique_ptr<Texture>, ParamResult> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params);
 		static std::string printMeta(const std::vector<std::string> &excluded_params) { return Params::meta_.print(excluded_params); }
 		[[nodiscard]] ParamMap getAsParamMap(bool only_non_default) const override;
-		ImageTexture(Logger &logger, ParamResult &param_result, const ParamMap &param_map, const SceneItems<Image> &images, size_t image_id);
+		ImageTexture(Logger &logger, ParamResult &param_result, const ParamMap &param_map, const Items<Image> &images, size_t image_id);
 
 	private:
 		struct ClipMode : public Enum<ClipMode>
@@ -101,7 +101,7 @@ class ImageTexture final : public Texture
 		const bool crop_x_{(params_.cropmin_x_ != 0.f) || (params_.cropmax_x_ != 1.f)};
 		const bool crop_y_{(params_.cropmin_y_ != 0.f) || (params_.cropmax_y_ != 1.f)};
 		size_t image_id_{math::invalid<size_t>};
-		const SceneItems<Image> &images_;
+		const Items<Image> &images_;
 		std::vector<std::unique_ptr<const Image>> mipmaps_;
 		float original_image_file_gamma_ = 1.f;
 		ColorSpace original_image_file_color_space_ = ColorSpace::RawManualGamma;

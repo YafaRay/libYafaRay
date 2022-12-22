@@ -20,7 +20,7 @@
 #ifndef LIBYAFARAY_SCENE_H
 #define LIBYAFARAY_SCENE_H
 
-#include "scene/scene_items.h"
+#include "common/items.h"
 #include <list>
 
 namespace yafaray {
@@ -85,28 +85,28 @@ class Scene final
 		bool init();
 		std::tuple<Object *, size_t, ResultFlags> getObject(const std::string &name) const;
 		std::pair<Object *, ResultFlags> getObject(size_t object_id) const;
-		const SceneItems<Object> &getObjects() const { return objects_; }
+		const Items<Object> &getObjects() const { return objects_; }
 		const Accelerator *getAccelerator() const { return accelerator_.get(); }
 		void createDefaultMaterial();
 		const Background *getBackground() const;
 		Bound<float> getSceneBound() const;
 		std::pair<size_t, ResultFlags> getMaterial(const std::string &name) const;
-		const SceneItems<Material> &getMaterials() const { return materials_; }
+		const Items<Material> &getMaterials() const { return materials_; }
 		std::pair<Size2i, bool> getImageSize(size_t image_id) const;
 		std::pair<Rgba, bool> getImageColor(size_t image_id, const Point2i &point) const;
 		bool setImageColor(size_t image_id, const Point2i &point, const Rgba &col);
 		std::tuple<Image *, size_t, ResultFlags> getImage(const std::string &name) const;
-		const SceneItems<VolumeRegion> &getVolumeRegions() const { return volume_regions_; }
-		const SceneItems<Light> &getLights() const { return lights_; }
-		SceneItems<Light> &getLights() { return lights_; }
+		const Items<VolumeRegion> &getVolumeRegions() const { return volume_regions_; }
+		const Items<Light> &getLights() const { return lights_; }
+		Items<Light> &getLights() { return lights_; }
 		std::tuple<Light *, size_t, ResultFlags> getLight(const std::string &name) const;
 		std::pair<Light *, ResultFlags> getLight(size_t object_id) const;
 		std::pair<size_t, ParamResult> createLight(const std::string &name, const ParamMap &param_map);
 		bool disableLight(const std::string &name);
-		const SceneItems<Texture> &getTextures() const { return textures_; }
-		SceneItems<Texture> &getTextures() { return textures_; }
-		const SceneItems<Image> &getImages() const { return images_; }
-		SceneItems<Image> &getImages() { return images_; }
+		const Items<Texture> &getTextures() const { return textures_; }
+		Items<Texture> &getTextures() { return textures_; }
+		const Items<Image> &getImages() const { return images_; }
+		Items<Image> &getImages() { return images_; }
 		std::tuple<Texture *, size_t, ResultFlags> getTexture(const std::string &name) const;
 		std::pair<Texture *, ResultFlags> getTexture(size_t object_id) const;
 		std::pair<size_t, ParamResult> createTexture(const std::string &name, const ParamMap &param_map);
@@ -120,7 +120,7 @@ class Scene final
 
 	private:
 		void setNumThreads(int threads);
-		template <typename T> std::pair<size_t, ParamResult> createSceneItem(Logger &logger, const std::string &name, const ParamMap &param_map, SceneItems<T> &map);
+		template <typename T> std::pair<size_t, ParamResult> createSceneItem(Logger &logger, const std::string &name, const ParamMap &param_map, Items<T> &map);
 
 		std::string name_{"Renderer"};
 		int nthreads_ = 1;
@@ -133,12 +133,12 @@ class Scene final
 		std::unique_ptr<const Accelerator> accelerator_;
 		std::unique_ptr<Background> background_;
 		std::vector<std::unique_ptr<Instance>> instances_;
-		SceneItems<Object> objects_;
-		SceneItems<Light> lights_;
-		SceneItems<Material> materials_;
-		SceneItems<Texture> textures_;
-		SceneItems<VolumeRegion> volume_regions_;
-		SceneItems<Image> images_;
+		Items<Object> objects_;
+		Items<Light> lights_;
+		Items<Material> materials_;
+		Items<Texture> textures_;
+		Items<VolumeRegion> volume_regions_;
+		Items<Image> images_;
 		Logger &logger_;
 };
 

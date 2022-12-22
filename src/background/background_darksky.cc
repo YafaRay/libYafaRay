@@ -133,7 +133,7 @@ std::pair<std::unique_ptr<Background>, ParamResult> DarkSkyBackground::factory(L
 	return {std::move(background), param_result};
 }
 
-DarkSkyBackground::DarkSkyBackground(Logger &logger, ParamResult &param_result, SceneItems<Light> &lights, const ParamMap &param_map) :
+DarkSkyBackground::DarkSkyBackground(Logger &logger, ParamResult &param_result, Items<Light> &lights, const ParamMap &param_map) :
 		ParentClassType_t{logger, param_result, lights, param_map}, params_{param_result, param_map}
 {
 	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + params_.getAsParamMap(true).print());

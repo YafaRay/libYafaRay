@@ -87,7 +87,7 @@ std::pair<std::unique_ptr<Object>, ParamResult> Object::factory(Logger &logger, 
 	else return {nullptr, ParamResult{YAFARAY_RESULT_ERROR_TYPE_UNKNOWN_PARAM}};
 }
 
-Object::Object(ParamResult &param_result, const ParamMap &param_map, const SceneItems <Object> &objects, const SceneItems<Material> &materials, const SceneItems<Light> &lights) : params_{param_result, param_map}, objects_{objects}, materials_{materials}, lights_{lights}
+Object::Object(ParamResult &param_result, const ParamMap &param_map, const Items <Object> &objects, const Items<Material> &materials, const Items<Light> &lights) : params_{param_result, param_map}, objects_{objects}, materials_{materials}, lights_{lights}
 {
 	//if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + params_.getAsParamMap(true).print());
 }

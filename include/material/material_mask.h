@@ -22,7 +22,7 @@
 
 #include "material/material_node.h"
 #include "material/material_data.h"
-#include "scene/scene_items.h"
+#include "common/items.h"
 
 namespace yafaray {
 
@@ -53,7 +53,7 @@ class MaskMaterial final : public NodeMaterial
 		static std::pair<std::unique_ptr<Material>, ParamResult> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map, const std::list<ParamMap> &nodes_param_maps);
 		static std::string printMeta(const std::vector<std::string> &excluded_params) { return Params::meta_.print(excluded_params); }
 		[[nodiscard]] ParamMap getAsParamMap(bool only_non_default) const override;
-		MaskMaterial(Logger &logger, ParamResult &param_result, const ParamMap &param_map, size_t material_1_id, size_t material_2_id, const SceneItems<Material> &materials);
+		MaskMaterial(Logger &logger, ParamResult &param_result, const ParamMap &param_map, size_t material_1_id, size_t material_2_id, const Items<Material> &materials);
 
 	private:
 		[[nodiscard]] Type type() const override { return Type::Mask; }
@@ -85,7 +85,7 @@ class MaskMaterial final : public NodeMaterial
 
 		size_t material_1_id_{0};
 		size_t material_2_id_{0};
-		const SceneItems<Material> &materials_;
+		const Items<Material> &materials_;
 		std::array<const ShaderNode *, static_cast<size_t>(ShaderNodeType::Size)> shaders_{initShaderArray<ShaderNodeType::Size>()};
 };
 

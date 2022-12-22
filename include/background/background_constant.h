@@ -36,7 +36,7 @@ class ConstantBackground final : public Background
 		inline static std::string getClassName() { return "ConstantBackground"; }
 		static std::pair<std::unique_ptr<Background>, ParamResult> factory(Logger &logger, Scene &scene, const std::string &name, const ParamMap &params);
 		static std::string printMeta(const std::vector<std::string> &excluded_params) { return Params::meta_.print(excluded_params); }
-		ConstantBackground(Logger &logger, ParamResult &param_result, SceneItems<Light> &lights, const ParamMap &param_map);
+		ConstantBackground(Logger &logger, ParamResult &param_result, Items<Light> &lights, const ParamMap &param_map);
 		~ConstantBackground() override;
 		static std::string lightName(){ return getClassName() + "::light"; }
 

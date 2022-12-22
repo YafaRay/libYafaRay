@@ -40,7 +40,7 @@ class VolumeHandler;
 struct Sample;
 struct PSample;
 class MaterialData;
-template <typename T> class SceneItems;
+template <typename T> class Items;
 class Logger;
 
 class Material
@@ -51,7 +51,7 @@ class Material
 		[[nodiscard]] virtual Type type() const = 0;
 		static std::pair<std::unique_ptr<Material>, ParamResult> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map, const std::list<ParamMap> &nodes_param_maps);
 		[[nodiscard]] virtual ParamMap getAsParamMap(bool only_non_default) const;
-		Material(Logger &logger, ParamResult &param_result, const ParamMap &param_map, const SceneItems <Material> &materials);
+		Material(Logger &logger, ParamResult &param_result, const ParamMap &param_map, const Items <Material> &materials);
 		virtual ~Material();
 
 		/*! Initialize the BSDF of a material. You must call this with the current surface point
@@ -191,7 +191,7 @@ class Material
 		std::unique_ptr<VolumeHandler> vol_i_; //!< volumetric handler for space inside material (opposed to surface normal)
 		std::unique_ptr<VolumeHandler> vol_o_; //!< volumetric handler for space outside ofmaterial (where surface normal points to)
 		int additional_depth_{params_.additional_depth_};	//!< Per-material additional ray-depth
-		const SceneItems<Material> &materials_;
+		const Items<Material> &materials_;
 		Logger &logger_;
 };
 

@@ -35,7 +35,7 @@ class GradientBackground final : public Background
 		inline static std::string getClassName() { return "GradientBackground"; }
 		static std::pair<std::unique_ptr<Background>, ParamResult> factory(Logger &logger, Scene &scene, const std::string &name, const ParamMap &params);
 		static std::string printMeta(const std::vector<std::string> &excluded_params) { return Params::meta_.print(excluded_params); }
-		GradientBackground(Logger &logger, ParamResult &param_result, SceneItems<Light> &lights, const ParamMap &param_map);
+		GradientBackground(Logger &logger, ParamResult &param_result, Items<Light> &lights, const ParamMap &param_map);
 		~GradientBackground() override;
 		static std::string lightName(){ return "background::light"; }
 

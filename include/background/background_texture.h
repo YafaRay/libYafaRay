@@ -38,7 +38,7 @@ class TextureBackground final : public Background
 		inline static std::string getClassName() { return "TextureBackground"; }
 		static std::pair<std::unique_ptr<Background>, ParamResult> factory(Logger &logger, Scene &scene, const std::string &name, const ParamMap &params);
 		static std::string printMeta(const std::vector<std::string> &excluded_params) { return Params::meta_.print(excluded_params); }
-		TextureBackground(Logger &logger, ParamResult &param_result, SceneItems <Light> &lights, const ParamMap &param_map, size_t texture_id, const SceneItems <Texture> &textures);
+		TextureBackground(Logger &logger, ParamResult &param_result, Items<Light> &lights, const ParamMap &param_map, size_t texture_id, const Items<Texture> &textures);
 		~TextureBackground() override;
 		static std::string lightName(){ return "background::light"; }
 
@@ -70,7 +70,7 @@ class TextureBackground final : public Background
 		const float rotation_{2.f * params_.rotation_ / 360.f};
 		bool with_ibl_blur_ = false;
 		float ibl_blur_mipmap_level_{math::pow(params_.ibl_blur_, 2.f)}; //Calculated based on the IBL_Blur parameter. As mipmap levels have half size each, this parameter is not linear
-		const SceneItems<Texture> &textures_;
+		const Items<Texture> &textures_;
 };
 
 } //namespace yafaray

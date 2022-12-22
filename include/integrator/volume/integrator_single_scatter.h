@@ -31,7 +31,7 @@ class VolumeRegion;
 class Light;
 class Rgb;
 class RandomGenerator;
-template <typename T> class SceneItems;
+template <typename T> class Items;
 
 class SingleScatterIntegrator final : public VolumeIntegrator
 {
@@ -39,9 +39,9 @@ class SingleScatterIntegrator final : public VolumeIntegrator
 
 	public:
 		inline static std::string getClassName() { return "SingleScatterIntegrator"; }
-		static std::pair<std::unique_ptr<VolumeIntegrator>, ParamResult> factory(Logger &logger, const ParamMap &param_map, const SceneItems<VolumeRegion> &volume_regions);
+		static std::pair<std::unique_ptr<VolumeIntegrator>, ParamResult> factory(Logger &logger, const ParamMap &param_map, const Items<VolumeRegion> &volume_regions);
 		static std::string printMeta(const std::vector<std::string> &excluded_params) { return Params::meta_.print(excluded_params); }
-		SingleScatterIntegrator(Logger &logger, ParamResult &param_result, const ParamMap &param_map, const SceneItems<VolumeRegion> &volume_regions);
+		SingleScatterIntegrator(Logger &logger, ParamResult &param_result, const ParamMap &param_map, const Items<VolumeRegion> &volume_regions);
 		[[nodiscard]] ParamMap getAsParamMap(bool only_non_default) const override;
 
 	private:
@@ -63,7 +63,7 @@ class SingleScatterIntegrator final : public VolumeIntegrator
 		const float adaptive_step_size_{params_.step_size_ * 100.0f};
 		std::vector<const Light *> lights_;
 		const Accelerator *accelerator_ = nullptr;
-		const SceneItems<VolumeRegion> &volume_regions_;
+		const Items<VolumeRegion> &volume_regions_;
 };
 
 } //namespace yafaray

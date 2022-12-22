@@ -71,7 +71,7 @@ std::pair<std::unique_ptr<VolumeRegion>, ParamResult> NoiseVolumeRegion::factory
 	return {std::move(volume_region), param_result};
 }
 
-NoiseVolumeRegion::NoiseVolumeRegion(Logger &logger, ParamResult &param_result, const ParamMap &param_map, const SceneItems<Texture> &textures, size_t texture_id) :
+NoiseVolumeRegion::NoiseVolumeRegion(Logger &logger, ParamResult &param_result, const ParamMap &param_map, const Items<Texture> &textures, size_t texture_id) :
 		ParentClassType_t{logger, param_result, param_map}, params_{param_result, param_map}, texture_id_{texture_id}, textures_{textures}
 {
 	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + params_.getAsParamMap(true).print());

@@ -21,7 +21,7 @@
 
 namespace yafaray {
 
-PrimitiveObject::PrimitiveObject(ParamResult &param_result, const ParamMap &param_map, const SceneItems <Object> &objects, const SceneItems<Material> &materials, const SceneItems<Light> &lights) : Object{param_result, param_map, objects, materials, lights}
+PrimitiveObject::PrimitiveObject(ParamResult &param_result, const ParamMap &param_map, const Items <Object> &objects, const Items<Material> &materials, const Items<Light> &lights) : Object{param_result, param_map, objects, materials, lights}
 {
 	//Empty
 }

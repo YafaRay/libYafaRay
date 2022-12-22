@@ -123,7 +123,7 @@ std::pair<size_t, ParamResult> Scene::createMaterial(const std::string &name, co
 }
 
 template <typename T>
-std::pair<size_t, ParamResult> Scene::createSceneItem(Logger &logger, const std::string &name, const ParamMap &param_map, SceneItems<T> &map)
+std::pair<size_t, ParamResult> Scene::createSceneItem(Logger &logger, const std::string &name, const ParamMap &param_map, Items<T> &map)
 {
 	const auto [existing_item, existing_item_id, existing_item_result]{map.getByName(name)};
 	if(existing_item)

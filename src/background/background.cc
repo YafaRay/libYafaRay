@@ -72,7 +72,7 @@ std::pair<std::unique_ptr<Background>, ParamResult> Background::factory(Logger &
 	}
 }
 
-Background::Background(Logger &logger, ParamResult &param_result, SceneItems<Light> &lights, const ParamMap &param_map) : params_{param_result, param_map}, lights_{lights}, logger_{logger}
+Background::Background(Logger &logger, ParamResult &param_result, Items<Light> &lights, const ParamMap &param_map) : params_{param_result, param_map}, lights_{lights}, logger_{logger}
 {
 	//Empty
 }

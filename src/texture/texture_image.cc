@@ -110,7 +110,7 @@ std::pair<std::unique_ptr<Texture>, ParamResult> ImageTexture::factory(Logger &l
 	return {std::move(texture), param_result};
 }
 
-ImageTexture::ImageTexture(Logger &logger, ParamResult &param_result, const ParamMap &param_map, const SceneItems<Image> &images, size_t image_id) : ParentClassType_t{logger, param_result, param_map}, params_{param_result, param_map}, image_id_{image_id}, images_{images}
+ImageTexture::ImageTexture(Logger &logger, ParamResult &param_result, const ParamMap &param_map, const Items<Image> &images, size_t image_id) : ParentClassType_t{logger, param_result, param_map}, params_{param_result, param_map}, image_id_{image_id}, images_{images}
 {
 	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + params_.getAsParamMap(true).print());
 	const Image *image{images.getById(image_id_).first};
