@@ -53,7 +53,7 @@ extern "C" {
 		YAFARAY_RESULT_ERROR_WHILE_CREATING = 1 << 6,
 		YAFARAY_RESULT_ERROR_NOT_FOUND = 1 << 7,
 		YAFARAY_RESULT_WARNING_OVERWRITTEN = 1 << 8,
-		YAFARAY_RESULT_ERROR_DUPLICATED_NAME = 1 << 9,
+		YAFARAY_RESULT_ERROR_DUPLICATED_NAME = 1 << 9
 	} yafaray_ResultFlags;
 
 	/* Callback definitions for the C API - FIXME: Should we care about the function call convention being the same for libYafaRay and its client(s)? */

@@ -71,14 +71,24 @@ void ctrlCHandler_global(int signal)
 
 int main()
 {
+	yafaray_ParamMap *param_map = NULL;
+	yafaray_ParamMapList *param_map_list = NULL;
+	yafaray_Scene *scene = NULL;
+	yafaray_Film *film = NULL;
+	FILE *fp = NULL;
 	size_t material_id = 0;
 	size_t object_id = 0;
+	size_t image_id = 0;
 	struct ResultImage result_image;
-	size_t result_image_size_bytes;
+	size_t result_image_size_bytes = 0;
 	int total_steps = 0;
 	char *version_string = NULL;
 	char *layers_string = NULL;
 	char *views_string = NULL;
+	int tex_width = 0;
+	int tex_height = 0;
+	int i = 0;
+	int j = 0;
 
 	printf("***** Test client 'test00' for libYafaRay *****\n");
 	printf("Using libYafaRay version (%d.%d.%d)\n", yafaray_getVersionMajor(), yafaray_getVersionMinor(), yafaray_getVersionPatch());
@@ -108,13 +118,13 @@ int main()
 	yafaray_setConsoleVerbosityLevel(logger, YAFARAY_LOG_LEVEL_VERBOSE);
 
 	/* Creating param map and param map list */
-	yafaray_ParamMap *param_map = yafaray_createParamMap();
-	yafaray_ParamMapList *param_map_list = yafaray_createParamMapList();
+	param_map = yafaray_createParamMap();
+	param_map_list = yafaray_createParamMapList();
 
 	/* Creating scene */
 	yafaray_clearParamMap(param_map);
 	yafaray_setParamMapString(param_map, "scene_accelerator", "yafaray-kdtree-original");
-	yafaray_Scene *scene = yafaray_createScene(logger, "scene", param_map);
+	scene = yafaray_createScene(logger, "scene", param_map);
 
 	/* Creating renderer */
 	yafaray_clearParamMap(param_map);
@@ -129,7 +139,7 @@ int main()
 	yafaray_setParamMapInt(param_map, "AA_minsamples", 50);
 	yafaray_setParamMapInt(param_map, "AA_passes", 2);
 	yafaray_setParamMapInt(param_map, "threads", -1);
-	yafaray_Film *film = yafaray_createFilm(logger, renderer, "film", param_map);
+	film = yafaray_createFilm(logger, renderer, "film", param_map);
 
 	/* Creating film image outputs */
 	yafaray_clearParamMap(param_map);
@@ -156,11 +166,9 @@ int main()
 	yafaray_setParamMapString(param_map, "type", "ColorAlpha"); /* Note: the specified type os overriden by the loaded image type */
 	yafaray_setParamMapString(param_map, "image_optimization", "none"); /* Note: only "none" allows high dynamic range values > 1.f */
 	yafaray_setParamMapString(param_map, "filename", "tex.tga");
-	size_t image_id;
 	yafaray_createImage(scene, "Image01", &image_id, param_map);
-	const int tex_width = yafaray_getImageWidth(scene, image_id);
-	const int tex_height = yafaray_getImageHeight(scene, image_id);
-	int i, j;
+	tex_width = yafaray_getImageWidth(scene, image_id);
+	tex_height = yafaray_getImageHeight(scene, image_id);
 	for(i = 0; i < tex_width / 2; ++i) /*For this test example we overwrite half of the image width with a "rainbow"*/
 		for(j = 0; j < tex_height / 2; ++j) /*For this test example we overwrite half of the image height with a "rainbow"*/
 			yafaray_setImageColor(scene, image_id, i, j, 0.01f * i, 0.01f * j, 0.01f * (i + j), 1.f);
@@ -288,7 +296,7 @@ int main()
 	yafaray_destroyParamMap(param_map);
 
 	/* Saving rendered image */
-	FILE *fp = fopen("test.ppm", "wb");
+	fp = fopen("test.ppm", "wb");
 	fprintf(fp, "P6 %d %d %d ", result_image.width_, result_image.height_, 255);
 	fwrite(result_image.data_, result_image_size_bytes, 1, fp);
 	fclose(fp);

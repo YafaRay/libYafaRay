@@ -21,6 +21,13 @@ set_target_properties(yafaray_test00 PROPERTIES C_STANDARD 90 C_STANDARD_REQUIRE
 target_link_libraries(yafaray_test00 PRIVATE libyafaray4)
 target_include_directories(yafaray_test00 PRIVATE ${PROJECT_BINARY_DIR}/include)
 
+# To check strict ANSI C89/C90 API compliance
+if(MSVC)
+	target_compile_options(yafaray_test00 PRIVATE /W4 /WX)
+else()
+	target_compile_options(yafaray_test00 PRIVATE -Wall -Wextra -Wpedantic -pedantic -Wno-unused-parameter)
+endif()
+
 install(TARGETS yafaray_test00
 		RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
 		LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
