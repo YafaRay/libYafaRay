@@ -91,8 +91,8 @@ template <typename ColorType> void TgaFormat::readColorMap(std::FILE *fp, TgaHea
 
 template <typename ColorType> void TgaFormat::readRleImage(std::FILE *fp, ColorProcessor_t cp, Image *image, const ColorSpace &color_space, float gamma)
 {
-	size_t y = min_y_;
-	size_t x = min_x_;
+	int y = min_y_;
+	int x = min_x_;
 	while(!std::feof(fp) && y != max_y_)
 	{
 		uint8_t pack_desc = 0;
@@ -122,9 +122,9 @@ template <typename ColorType> void TgaFormat::readDirectImage(FILE *fp, ColorPro
 	auto color_type = std::unique_ptr<ColorType[]>(new ColorType[tot_pixels_]);
 	std::fread(color_type.get(), sizeof(ColorType), tot_pixels_, fp);
 	size_t i = 0;
-	for(size_t y = min_y_; y != max_y_; y += step_y_)
+	for(int y = min_y_; y != max_y_; y += step_y_)
 	{
-		for(size_t x = min_x_; x != max_x_; x += step_x_)
+		for(int x = min_x_; x != max_x_; x += step_x_)
 		{
 			Rgba color = (this->*cp)(&color_type[i]);
 			color.linearRgbFromColorSpace(color_space, gamma);

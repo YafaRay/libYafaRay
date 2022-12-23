@@ -47,6 +47,8 @@ METHODDEF(void) jpgErrorMessage_global(j_common_ptr info)
 
 struct JpgErrorManager
 {
+#pragma warning(disable: 4324)
+#pragma warning(disable: 4611)
 	struct ::jpeg_error_mgr pub_;
 	jmp_buf setjmp_buffer_;
 };

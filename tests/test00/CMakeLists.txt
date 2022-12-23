@@ -23,7 +23,7 @@ target_include_directories(yafaray_test00 PRIVATE ${PROJECT_BINARY_DIR}/include)
 
 # To check strict ANSI C89/C90 API compliance
 if(CMAKE_C_COMPILER_ID STREQUAL "MSVC")
-	target_compile_options(yafaray_test00 PRIVATE /W4 /WX)
+	target_compile_options(yafaray_test00 PRIVATE /W4 /wd4100) # /WX would turn warnings as errors
 else()
 	target_compile_options(yafaray_test00 PRIVATE -Wall -Wextra -Wpedantic -pedantic -Wno-unused-parameter)
 endif()

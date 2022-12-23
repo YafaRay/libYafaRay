@@ -148,6 +148,7 @@ std::unique_ptr<Image> PngFormat::loadFromMemory(const uint8_t *data, size_t siz
 	return image;
 }
 
+#pragma warning(disable: 4611)
 bool PngFormat::fillReadStructs(uint8_t *sig, const PngStructs &png_structs)
 {
 	if(png_sig_cmp(sig, 0, 8))
@@ -155,12 +156,14 @@ bool PngFormat::fillReadStructs(uint8_t *sig, const PngStructs &png_structs)
 		logger_.logError(getFormatName(), ": Data is not from a PNG image!");
 		return false;
 	}
-	if(!(png_structs.png_ptr_ = png_create_read_struct(PNG_LIBPNG_VER_STRING, nullptr, nullptr, nullptr)))
+	png_structs.png_ptr_ = png_create_read_struct(PNG_LIBPNG_VER_STRING, nullptr, nullptr, nullptr);
+	if(!png_structs.png_ptr_)
 	{
 		logger_.logError(getFormatName(), ": Allocation of png struct failed!");
 		return false;
 	}
-	if(!(png_structs.info_ptr_ = png_create_info_struct(png_structs.png_ptr_)))
+	png_structs.info_ptr_ = png_create_info_struct(png_structs.png_ptr_);
+	if(!png_structs.info_ptr_)
 	{
 		png_destroy_read_struct(&png_structs.png_ptr_, nullptr, nullptr);
 		logger_.logError(getFormatName(), ": Allocation of png info failed!");
@@ -177,12 +180,14 @@ bool PngFormat::fillReadStructs(uint8_t *sig, const PngStructs &png_structs)
 
 bool PngFormat::fillWriteStructs(std::FILE *fp, unsigned int color_type, const PngStructs &png_structs, const Image *image)
 {
-	if(!(png_structs.png_ptr_ = png_create_write_struct(PNG_LIBPNG_VER_STRING, nullptr, nullptr, nullptr)))
+	png_structs.png_ptr_ = png_create_write_struct(PNG_LIBPNG_VER_STRING, nullptr, nullptr, nullptr);
+	if(!png_structs.png_ptr_)
 	{
 		logger_.logError(getFormatName(), ": Allocation of png struct failed!");
 		return false;
 	}
-	if(!(png_structs.info_ptr_ = png_create_info_struct(png_structs.png_ptr_)))
+	png_structs.info_ptr_ = png_create_info_struct(png_structs.png_ptr_);
+	if(!png_structs.info_ptr_)
 	{
 		png_destroy_read_struct(&png_structs.png_ptr_, nullptr, nullptr);
 		logger_.logError(getFormatName(), ": Allocation of png info failed!");

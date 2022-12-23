@@ -109,15 +109,15 @@ namespace yafaray::sample
 
 [[nodiscard]] inline float riS(unsigned int i, unsigned int r = 0)
 {
-	for(unsigned int v = 1 << 31; i; i >>= 1, v ^= v >> 1)
-		if(i & 1) r ^= v;
+	for(unsigned int v = 1U << 31; i; i >>= 1, v ^= v >> 1)
+		if(i & 1U) r ^= v;
 	return std::max(0.f, std::min(1.f, (static_cast<float>(static_cast<double>(r) * math::sample_mult_ratio<double>))));
 }
 
 [[nodiscard]] inline float riLp(unsigned int i, unsigned int r = 0)
 {
-	for(unsigned int v = 1 << 31; i; i >>= 1, v |= v >> 1)
-		if(i & 1) r ^= v;
+	for(unsigned int v = 1U << 31; i; i >>= 1, v |= v >> 1)
+		if(i & 1U) r ^= v;
 	return std::max(0.f, std::min(1.f, (static_cast<float>(static_cast<double>(r) * math::sample_mult_ratio<double>))));
 }
 

@@ -52,10 +52,10 @@ yafaray_Renderer *renderer = NULL;
 #ifdef _WIN32
 BOOL WINAPI ctrlCHandler_global(DWORD signal)
 {
-	yafaray_printWarning(yi, "CTRL+C pressed, cancelling.\n");
-	if(yi)
+	yafaray_printWarning(logger, "CTRL+C pressed, cancelling.\n");
+	if(renderer)
 	{
-		yafaray_cancelRendering(yi);
+		yafaray_cancelRendering(logger, renderer);
 		return TRUE;
 	}
 	else exit(1);

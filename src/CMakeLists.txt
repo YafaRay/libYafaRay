@@ -23,13 +23,13 @@ set_target_properties(libyafaray4 PROPERTIES CXX_VISIBILITY_PRESET hidden VISIBI
 target_include_directories(libyafaray4 PRIVATE ${PROJECT_SOURCE_DIR}/include ${PROJECT_BINARY_DIR}/include)
 target_include_directories(libyafaray4 INTERFACE $<INSTALL_INTERFACE:include>)
 
-# To check strict compliance
+# To check strict compliance (with some exceptions that might be tuned over time to make it even more strict)
 if(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
-	target_compile_options(libyafaray4 PRIVATE /W4 /WX)
+	target_compile_options(libyafaray4 PRIVATE /W4 /wd4100) # /wd4267 /wd4244 /wd4305 /wd4996) # /WX would turn warnings as errors
 elseif(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
-	target_compile_options(libyafaray4 PRIVATE -Wall -Wextra -Wpedantic -pedantic -Wno-unused-parameter -Wno-unused-local-typedef -Wno-keyword-macro)
+	target_compile_options(libyafaray4 PRIVATE -Wall -Wextra -Wpedantic -pedantic -Wno-unused-parameter -Wno-unused-local-typedef -Wno-keyword-macro -Wno-unused)
 else()
-	target_compile_options(libyafaray4 PRIVATE -Wall -Wextra -Wpedantic -pedantic -Wno-unused-parameter -Wno-unused-local-typedefs)
+	target_compile_options(libyafaray4 PRIVATE -Wall -Wextra -Wpedantic -pedantic -Wno-unused-parameter -Wno-unused-local-typedefs -Wno-unused -Wno-maybe-uninitialized)
 endif()
 
 add_subdirectory(accelerator)

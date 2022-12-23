@@ -106,7 +106,7 @@ std::unique_ptr<Image> HdrFormat::loadFromFile(const std::string &name, const Im
 		else // Original RLE schema encoding or raw without compression
 		{
 			// rewind the read pixel to start reading from the begining of the scanline
-			std::fseek(fp, static_cast<long int>(-sizeof(RgbePixel)), SEEK_CUR);
+			std::fseek(fp, -static_cast<long int>(sizeof(RgbePixel)), SEEK_CUR);
 			if(!readOrle(fp, y, scan_width, image.get(), color_space, gamma))
 			{
 				logger_.logError(getFormatName(), ": An error has occurred while reading RLE scanline...");

@@ -65,8 +65,8 @@ class TgaFormat final : public Format
 
 		std::unique_ptr<Buffer2D<RgbAlpha>> color_map_;
 		size_t tot_pixels_;
-		size_t min_x_, max_x_, step_x_;
-		size_t min_y_, max_y_, step_y_;
+		int min_x_, max_x_, step_x_;
+		int min_y_, max_y_, step_y_;
 
 };
 

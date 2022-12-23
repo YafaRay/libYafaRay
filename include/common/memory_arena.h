@@ -65,9 +65,10 @@ class MemoryArena
 		}
 	private:
 		// MemoryArena Private Data
-		alignas(8) uint32_t cur_block_pos_, block_size_;
+		alignas(8) uint32_t cur_block_pos_;
+		uint32_t block_size_;
 		char *current_block_;
-		alignas(8) std::vector<char *> used_blocks_, available_blocks_;
+		std::vector<char *> used_blocks_, available_blocks_;
 };
 
 } //namespace yafaray

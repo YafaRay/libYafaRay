@@ -264,8 +264,12 @@ class ImageFilm final
 		AutoSaveParams images_auto_save_params_{params_.images_autosave_interval_seconds_, params_.images_autosave_interval_passes_, params_.images_autosave_interval_type_};
 		FilmLoadSave film_load_save_{params_.film_load_save_path_, {params_.film_autosave_interval_seconds_, params_.film_autosave_interval_passes_, params_.film_autosave_interval_type_}, params_.film_load_save_mode_};
 
-		// Thread mutes for shared access
-		std::mutex image_mutex_, out_mutex_, density_image_mutex_;
+		static constexpr inline int max_filter_size_ = 8;
+		static constexpr inline int filter_table_size_ = 16;
+		static constexpr inline float filter_scale_ = 1.f / static_cast<float>(filter_table_size_);
+		alignas(16) std::array<float, filter_table_size_ * filter_table_size_> filter_table_;
+
+		std::mutex image_mutex_, out_mutex_, density_image_mutex_; // Thread mutes for shared access
 
 		Buffer2D<bool> flags_{{{params_.width_, params_.height_}}}; //!< flags for adaptive AA sampling;
 		Buffer2D<Gray> weights_{{{params_.width_, params_.height_}}};
@@ -275,10 +279,6 @@ class ImageFilm final
 
 		float filter_width_{params_.aa_pixel_width_ * 0.5f};
 		float filter_table_scale_;
-		static constexpr inline int max_filter_size_ = 8;
-		static constexpr inline int filter_table_size_ = 16;
-		static constexpr inline float filter_scale_ = 1.f / static_cast<float>(filter_table_size_);
-		alignas(16) std::array<float, filter_table_size_ * filter_table_size_> filter_table_;
 
 		Items<ImageOutput> outputs_;
 		RenderCallbacks render_callbacks_;
