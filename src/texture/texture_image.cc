@@ -236,7 +236,7 @@ std::pair<Point3f, bool> ImageTexture::doMapping(const Point3f &tex_point) const
 				mapped[Axis::X] = (mapped[Axis::X] - 0.5f) / (1.f - params_.checker_dist_) + 0.5f;
 				mapped[Axis::Y] = (mapped[Axis::Y] - 0.5f) / (1.f - params_.checker_dist_) + 0.5f;
 			}
-			// continue to TCL_CLIP
+			[[fallthrough]]; // no break, fallthrough to Clip
 		}
 		case ClipMode::Clip:
 		{
@@ -252,7 +252,7 @@ std::pair<Point3f, bool> ImageTexture::doMapping(const Point3f &tex_point) const
 			if(mapped[Axis::Y] > 0.99999f) mapped[Axis::Y] = 0.99999f;
 			else if(mapped[Axis::Y] < 0.f)
 				mapped[Axis::Y] = 0.f;
-			// no break, fall thru to TEX_REPEAT
+			[[fallthrough]]; // no break, fallthrough to Repeat
 		}
 		default:
 		case ClipMode::Repeat: outside = false; break;

@@ -59,7 +59,7 @@ std::pair<std::unique_ptr<VolumeIntegrator>, ParamResult> SingleScatterIntegrato
 	return {std::move(integrator), param_result};
 }
 
-SingleScatterIntegrator::SingleScatterIntegrator(Logger &logger, ParamResult &param_result, const ParamMap &param_map, const Items<VolumeRegion> &volume_regions) : VolumeIntegrator(logger, param_result, param_map), volume_regions_{volume_regions}, params_{param_result, param_map}
+SingleScatterIntegrator::SingleScatterIntegrator(Logger &logger, ParamResult &param_result, const ParamMap &param_map, const Items<VolumeRegion> &volume_regions) : VolumeIntegrator(logger, param_result, param_map), params_{param_result, param_map}, volume_regions_{volume_regions}
 {
 	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + params_.getAsParamMap(true).print());
 	logger_.logParams("SingleScatter: stepSize: ", params_.step_size_, " adaptive: ", params_.adaptive_, " optimize: ", params_.optimize_);

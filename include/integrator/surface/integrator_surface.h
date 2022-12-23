@@ -95,7 +95,7 @@ class SurfaceIntegrator
 			PARAM_DECL(bool, time_forced_, false, "time_forced", "");
 			PARAM_DECL(float, time_forced_value_, 0.f, "time_forced_value", "");
 		} params_;
-		SurfaceIntegrator(RenderControl &render_control, Logger &logger, ParamResult &param_result, const ParamMap &param_map) : render_control_(render_control), params_{param_result, param_map}, logger_{logger} { }
+		SurfaceIntegrator(RenderControl &render_control, Logger &logger, ParamResult &param_result, const ParamMap &param_map) : params_{param_result, param_map}, render_control_{render_control}, logger_{logger} { }
 
 		RenderControl &render_control_;
 		int num_threads_ = 1;

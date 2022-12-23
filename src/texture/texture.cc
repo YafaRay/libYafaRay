@@ -106,7 +106,7 @@ std::pair<std::unique_ptr<Texture>, ParamResult> Texture::factory(Logger &logger
 	}
 }
 
-Texture::Texture(Logger &logger, ParamResult &param_result, const ParamMap &param_map) : logger_(logger), params_{param_result, param_map}
+Texture::Texture(Logger &logger, ParamResult &param_result, const ParamMap &param_map) : params_{param_result, param_map}, logger_{logger}
 {
 	if(params_.ramp_num_items_ > 0)
 	{

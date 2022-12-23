@@ -23,6 +23,15 @@ set_target_properties(libyafaray4 PROPERTIES CXX_VISIBILITY_PRESET hidden VISIBI
 target_include_directories(libyafaray4 PRIVATE ${PROJECT_SOURCE_DIR}/include ${PROJECT_BINARY_DIR}/include)
 target_include_directories(libyafaray4 INTERFACE $<INSTALL_INTERFACE:include>)
 
+# To check strict compliance
+if(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
+	target_compile_options(libyafaray4 PRIVATE /W4 /WX)
+elseif(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+	target_compile_options(libyafaray4 PRIVATE -Wall -Wextra -Wpedantic -pedantic -Wno-unused-parameter -Wno-unused-local-typedef -Wno-keyword-macro)
+else()
+	target_compile_options(libyafaray4 PRIVATE -Wall -Wextra -Wpedantic -pedantic -Wno-unused-parameter -Wno-unused-local-typedefs)
+endif()
+
 add_subdirectory(accelerator)
 add_subdirectory(background)
 add_subdirectory(color)

@@ -39,7 +39,7 @@ inline static ClassMeta meta_
 
 #define PARAM_INIT_PARENT(parent_class) Params(ParamResult &param_result, const ParamMap &param_map); \
 ParamMap getAsParamMap(bool only_non_default) const; \
-inline static ClassMeta meta_{parent_class::Params::meta_};
+inline static ClassMeta meta_{parent_class::Params::meta_}
 
 #define PARAM_DECL(type, name, default_val, api_name, api_desc) type name{name##meta_.getDefault<type>()}; \
 inline static const ParamMeta name##meta_{api_name, api_desc, type{default_val}, meta_.map_}

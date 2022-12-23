@@ -50,7 +50,7 @@ std::pair<std::unique_ptr<VolumeIntegrator>, ParamResult> VolumeIntegrator::fact
 	{
 		case Type::Emission: return EmissionIntegrator::factory(logger, param_map, volume_regions);
 		case Type::SingleScatter: return SingleScatterIntegrator::factory(logger, param_map, volume_regions);
-		case Type::Sky: return SkyIntegrator::factory(logger, param_map, volume_regions);
+		case Type::Sky: return SkyIntegrator::factory(logger, param_map);
 		default: return {nullptr, ParamResult{YAFARAY_RESULT_ERROR_WHILE_CREATING}};
 	}
 }

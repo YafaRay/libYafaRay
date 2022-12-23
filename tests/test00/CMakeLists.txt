@@ -22,7 +22,7 @@ target_link_libraries(yafaray_test00 PRIVATE libyafaray4)
 target_include_directories(yafaray_test00 PRIVATE ${PROJECT_BINARY_DIR}/include)
 
 # To check strict ANSI C89/C90 API compliance
-if(MSVC)
+if(CMAKE_C_COMPILER_ID STREQUAL "MSVC")
 	target_compile_options(yafaray_test00 PRIVATE /W4 /WX)
 else()
 	target_compile_options(yafaray_test00 PRIVATE -Wall -Wextra -Wpedantic -pedantic -Wno-unused-parameter)

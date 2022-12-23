@@ -247,28 +247,26 @@ std::vector<const ShaderNode *> LayerNode::getDependencies() const
 
 Rgb LayerNode::textureRgbBlend(const Rgb &tex, const Rgb &out, float fact, float facg, BlendMode blend_mode)
 {
+	fact *= facg;
 	switch(blend_mode.value())
 	{
 		case BlendMode::Mult:
-			fact *= facg;
 			return (Rgb(1.f - facg) + fact * tex) * out;
 
 		case BlendMode::Screen:
 		{
 			const Rgb white(1.0);
-			fact *= facg;
 			return white - (Rgb(1.f - facg) + fact * (white - tex)) * (white - out);
 		}
 
 		case BlendMode::Sub:
-			fact = -fact;
+			return out - fact * tex;
+
 		case BlendMode::Add:
-			fact *= facg;
-			return fact * tex + out;
+			return out + fact * tex;
 
 		case BlendMode::Div:
 		{
-			fact *= facg;
 			Rgb itex(tex);
 			itex.invertRgb();
 			return (1.f - fact) * out + fact * out * itex;
@@ -276,7 +274,6 @@ Rgb LayerNode::textureRgbBlend(const Rgb &tex, const Rgb &out, float fact, float
 
 		case BlendMode::Diff:
 		{
-			fact *= facg;
 			Rgb tmo(tex - out);
 			tmo.absRgb();
 			return (1.f - fact) * out + fact * tmo;
@@ -284,7 +281,6 @@ Rgb LayerNode::textureRgbBlend(const Rgb &tex, const Rgb &out, float fact, float
 
 		case BlendMode::Dark:
 		{
-			fact *= facg;
 			Rgb col(fact * tex);
 			col.darkenRgb(out);
 			return col;
@@ -292,7 +288,6 @@ Rgb LayerNode::textureRgbBlend(const Rgb &tex, const Rgb &out, float fact, float
 
 		case BlendMode::Light:
 		{
-			fact *= facg;
 			Rgb col(fact * tex);
 			col.lightenRgb(out);
 			return col;
@@ -300,7 +295,6 @@ Rgb LayerNode::textureRgbBlend(const Rgb &tex, const Rgb &out, float fact, float
 
 		case BlendMode::Mix:
 		default:
-			fact *= facg;
 			return fact * tex + (1.f - fact) * out;
 	}
 }
@@ -322,13 +316,14 @@ float LayerNode::textureValueBlend(float tex, float out, float fact, float facg,
 			return 1.f - (facm + fact * (1.f - tex)) * (1.f - out);
 
 		case BlendMode::Sub:
-			fact = -fact;
+			return out - fact * tex;
+
 		case BlendMode::Add:
-			return fact * tex + out;
+			return out + fact * tex;
 
 		case BlendMode::Div:
 			if(tex == 0.f) return 0.f;
-			return facm * out + fact * out / tex;
+			else return facm * out + fact * out / tex;
 
 		case BlendMode::Diff:
 			return facm * out + fact * std::abs(tex - out);

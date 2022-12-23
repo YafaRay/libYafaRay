@@ -51,15 +51,15 @@ ParamMap SkyIntegrator::getAsParamMap(bool only_non_default) const
 	return result;
 }
 
-std::pair<std::unique_ptr<VolumeIntegrator>, ParamResult> SkyIntegrator::factory(Logger &logger, const ParamMap &param_map, const Items<VolumeRegion> &volume_regions)
+std::pair<std::unique_ptr<VolumeIntegrator>, ParamResult> SkyIntegrator::factory(Logger &logger, const ParamMap &param_map)
 {
 	auto param_result{Params::meta_.check(param_map, {"type"}, {})};
-	auto integrator {std::make_unique<ThisClassType_t>(logger, param_result, param_map, volume_regions)};
+	auto integrator {std::make_unique<ThisClassType_t>(logger, param_result, param_map)};
 	if(param_result.notOk()) logger.logWarning(param_result.print<ThisClassType_t>(getClassName(), {"type"}));
 	return {std::move(integrator), param_result};
 }
 
-SkyIntegrator::SkyIntegrator(Logger &logger, ParamResult &param_result, const ParamMap &param_map, const Items<VolumeRegion> &volume_regions) : VolumeIntegrator(logger, param_result, param_map), params_{param_result, param_map}
+SkyIntegrator::SkyIntegrator(Logger &logger, ParamResult &param_result, const ParamMap &param_map) : VolumeIntegrator(logger, param_result, param_map), params_{param_result, param_map}
 {
 	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + params_.getAsParamMap(true).print());
 

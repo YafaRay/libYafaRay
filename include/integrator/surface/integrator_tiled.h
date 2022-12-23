@@ -29,7 +29,7 @@
 
 namespace yafaray {
 
-class RenderArea;
+struct RenderArea;
 
 class ThreadControl final
 {

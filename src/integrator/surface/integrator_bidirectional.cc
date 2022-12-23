@@ -610,7 +610,7 @@ std::tuple<bool, Ray, Rgb> BidirectionalIntegrator::connectLPath(PathData &pd, R
 
 	//FIXME DAVID: another series of horrible hacks to avoid uninitialized values and incorrect renders in bidir. However, this should be properly solved by implementing correctly the functions needed by bidir in the lights and materials, and correcting the bidir integrator itself...
 	ls.sp_->p_ = {{0.f, 0.f, 0.f}};
-	const auto [wo, scol]{light->emitSample(ls, l_ray.time_)};
+	/*const auto [wo, scol]*/ std::ignore = light->emitSample(ls, l_ray.time_);
 	ls.flags_ = Light::Flags::All;
 	// get probabilities for generating light sample without a given surface point
 	const Vec3f vec{-l_ray.dir_};

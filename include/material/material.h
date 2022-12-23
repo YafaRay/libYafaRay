@@ -199,7 +199,7 @@ template <size_t N>
 std::array<const ShaderNode *, N> Material::initShaderArray()
 {
 	std::array<const ShaderNode *, N> result;
-	for(auto node : result) node = nullptr;
+	std::fill(result.begin(), result.end(), nullptr);
 	return result;
 }
 
