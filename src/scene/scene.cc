@@ -105,7 +105,7 @@ std::tuple<Image *, size_t, ResultFlags> Scene::getImage(const std::string &name
 
 std::pair<size_t, ParamResult> Scene::createLight(const std::string &name, const ParamMap &param_map)
 {
-	auto result{Items<Light>::createItem<Scene>(logger_, *this, lights_, name, param_map)};
+	auto result{Items<Light>::createItem<Scene>(logger_, lights_, name, param_map, *this)};
 	return result;
 }
 
@@ -126,7 +126,7 @@ std::pair<size_t, ParamResult> Scene::createMaterial(const std::string &name, co
 
 std::pair<size_t, ParamResult> Scene::createTexture(const std::string &name, const ParamMap &param_map)
 {
-	auto result{Items<Texture>::createItem<Scene>(logger_, *this, textures_, name, param_map)};
+	auto result{Items<Texture>::createItem<Scene>(logger_, textures_, name, param_map, *this)};
 	return result;
 }
 
@@ -144,13 +144,13 @@ ParamResult Scene::defineBackground(const ParamMap &param_map)
 
 std::pair<size_t, ParamResult> Scene::createVolumeRegion(const std::string &name, const ParamMap &param_map)
 {
-	auto result{Items<VolumeRegion>::createItem<Scene>(logger_, *this, volume_regions_, name, param_map)};
+	auto result{Items<VolumeRegion>::createItem<Scene>(logger_, volume_regions_, name, param_map, *this)};
 	return result;
 }
 
 std::pair<size_t, ParamResult> Scene::createImage(const std::string &name, const ParamMap &param_map)
 {
-	auto result{Items<Image>::createItem<Scene>(logger_, *this, images_, name, param_map)};
+	auto result{Items<Image>::createItem<Scene>(logger_, images_, name, param_map, *this)};
 	return result;
 }
 
@@ -214,7 +214,7 @@ int Scene::addUv(size_t object_id, Uv<float> &&uv)
 
 std::pair<size_t, ParamResult> Scene::createObject(const std::string &name, const ParamMap &param_map)
 {
-	auto result{Items<Object>::createItem<Scene>(logger_, *this, objects_, name, param_map)};
+	auto result{Items<Object>::createItem<Scene>(logger_, objects_, name, param_map, *this)};
 	return result;
 }
 

@@ -34,7 +34,7 @@ namespace yafaray {
 
 template <typename T>
 template <typename K>
-std::pair<size_t, ParamResult> Items<T>::createItem(Logger &logger, K &items_container, Items<T> &map, const std::string &name, const ParamMap &param_map)
+std::pair<size_t, ParamResult> Items<T>::createItem(Logger &logger, Items <T> &map, const std::string &name, const ParamMap &param_map, const K &items_container)
 {
 
 	const auto [existing_item, existing_item_id, existing_item_result]{map.getByName(name)};
@@ -173,13 +173,13 @@ template class Items<Camera>;
 template class Items<ImageOutput>;
 template class Items<VolumeRegion>;
 template class Items<Image>;
-template std::pair<size_t, ParamResult> Items<ImageOutput>::createItem<ImageFilm>(Logger &logger, ImageFilm &items_container, Items<ImageOutput> &map, const std::string &name, const ParamMap &param_map);
-template std::pair<size_t, ParamResult> Items<RenderView>::createItem<Renderer>(Logger &logger, Renderer &items_container, Items<RenderView> &map, const std::string &name, const ParamMap &param_map);
-template std::pair<size_t, ParamResult> Items<Camera>::createItem<Renderer>(Logger &logger, Renderer &items_container, Items<Camera> &map, const std::string &name, const ParamMap &param_map);
-template std::pair<size_t, ParamResult> Items<Light>::createItem<Scene>(Logger &logger, Scene &items_container, Items<Light> &map, const std::string &name, const ParamMap &param_map);
-template std::pair<size_t, ParamResult> Items<Texture>::createItem<Scene>(Logger &logger, Scene &items_container, Items<Texture> &map, const std::string &name, const ParamMap &param_map);
-template std::pair<size_t, ParamResult> Items<VolumeRegion>::createItem<Scene>(Logger &logger, Scene &items_container, Items<VolumeRegion> &map, const std::string &name, const ParamMap &param_map);
-template std::pair<size_t, ParamResult> Items<Image>::createItem<Scene>(Logger &logger, Scene &items_container, Items<Image> &map, const std::string &name, const ParamMap &param_map);
-template std::pair<size_t, ParamResult> Items<Object>::createItem<Scene>(Logger &logger, Scene &items_container, Items<Object> &map, const std::string &name, const ParamMap &param_map);
+template std::pair<size_t, ParamResult> Items<ImageOutput>::createItem<ImageFilm>(Logger &logger, Items<ImageOutput> &map, const std::string &name, const ParamMap &param_map, const ImageFilm &items_container);
+template std::pair<size_t, ParamResult> Items<RenderView>::createItem<Renderer>(Logger &logger, Items<RenderView> &map, const std::string &name, const ParamMap &param_map, const Renderer &items_container);
+template std::pair<size_t, ParamResult> Items<Camera>::createItem<Renderer>(Logger &logger, Items<Camera> &map, const std::string &name, const ParamMap &param_map, const Renderer &items_container);
+template std::pair<size_t, ParamResult> Items<Light>::createItem<Scene>(Logger &logger, Items<Light> &map, const std::string &name, const ParamMap &param_map, const Scene &items_container);
+template std::pair<size_t, ParamResult> Items<Texture>::createItem<Scene>(Logger &logger, Items<Texture> &map, const std::string &name, const ParamMap &param_map, const Scene &items_container);
+template std::pair<size_t, ParamResult> Items<VolumeRegion>::createItem<Scene>(Logger &logger, Items<VolumeRegion> &map, const std::string &name, const ParamMap &param_map, const Scene &items_container);
+template std::pair<size_t, ParamResult> Items<Image>::createItem<Scene>(Logger &logger, Items<Image> &map, const std::string &name, const ParamMap &param_map, const Scene &items_container);
+template std::pair<size_t, ParamResult> Items<Object>::createItem<Scene>(Logger &logger, Items<Object> &map, const std::string &name, const ParamMap &param_map, const Scene &items_container);
 
 } //namespace yafaray

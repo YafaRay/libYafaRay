@@ -177,7 +177,7 @@ ParamResult Renderer::defineVolumeIntegrator(const Scene &scene, const ParamMap 
 
 std::pair<size_t, ParamResult> Renderer::createRenderView(const std::string &name, const ParamMap &param_map)
 {
-	auto result{Items<RenderView>::createItem<Renderer>(logger_, *this, render_views_, name, param_map)};
+	auto result{Items<RenderView>::createItem<Renderer>(logger_, render_views_, name, param_map, *this)};
 	return result;
 }
 
@@ -221,7 +221,7 @@ bool Renderer::setupSceneRenderParams(const ParamMap &param_map)
 
 std::pair<size_t, ParamResult> Renderer::createCamera(const std::string &name, const ParamMap &param_map)
 {
-	return Items<Camera>::createItem<Renderer>(logger_, *this, cameras_, name, param_map);
+	return Items<Camera>::createItem<Renderer>(logger_, cameras_, name, param_map, *this);
 }
 
 std::tuple<Camera *, size_t, ResultFlags> Renderer::getCamera(const std::string &name) const

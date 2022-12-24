@@ -1318,7 +1318,7 @@ bool ImageFilm::disableOutput(const std::string &name)
 
 std::pair<size_t, ParamResult> ImageFilm::createOutput(const std::string &name, const ParamMap &param_map)
 {
-	auto result{Items<ImageOutput>::createItem<ImageFilm>(logger_, *this, outputs_, name, param_map)};
+	auto result{Items<ImageOutput>::createItem<ImageFilm>(logger_, outputs_, name, param_map, *this)};
 	return result;
 }
 

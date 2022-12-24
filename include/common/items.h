@@ -44,7 +44,7 @@ template <typename T>
 class Items final
 {
 	public:
-		template <typename K> [[nodiscard]] static std::pair<size_t, ParamResult> createItem(Logger &logger, K &items_container, Items<T> &map, const std::string &name, const ParamMap &param_map);
+		template <typename K> [[nodiscard]] static std::pair<size_t, ParamResult> createItem(Logger &logger, Items <T> &map, const std::string &name, const ParamMap &param_map, const K &items_container);
 		[[nodiscard]] std::pair<size_t, ResultFlags> add(const std::string &name, std::unique_ptr<T> item); //!< Add a unique_ptr to the list of items. Requires T to have a method "T::setId" to modify the Id in the item itself according to the Id determined during the addition
 		[[nodiscard]] ResultFlags rename(size_t id, const std::string &name);
 		[[nodiscard]] ResultFlags disable(const std::string &name);
