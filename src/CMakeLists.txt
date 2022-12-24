@@ -27,9 +27,9 @@ target_include_directories(libyafaray4 INTERFACE $<INSTALL_INTERFACE:include>)
 if(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
 	target_compile_options(libyafaray4 PRIVATE /W4 /wd4100) # /wd4267 /wd4244 /wd4305 /wd4996) # /WX would turn warnings as errors
 elseif(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
-	target_compile_options(libyafaray4 PRIVATE -Wall -Wextra -Wpedantic -pedantic -Wno-unused-parameter -Wno-unused-local-typedef -Wno-keyword-macro -Wno-unused)
+	target_compile_options(libyafaray4 PRIVATE -Wall -Wextra -Wpedantic -pedantic -Wno-unused-parameter -Wno-unused-local-typedef -Wno-keyword-macro -Wno-unused -Wno-unknown-pragmas)
 else()
-	target_compile_options(libyafaray4 PRIVATE -Wall -Wextra -Wpedantic -pedantic -Wno-unused-parameter -Wno-unused-local-typedefs -Wno-unused -Wno-maybe-uninitialized)
+	target_compile_options(libyafaray4 PRIVATE -Wall -Wextra -Wpedantic -pedantic -Wno-unused-parameter -Wno-unused-local-typedefs -Wno-unused -Wno-maybe-uninitialized -Wno-unknown-pragmas)
 endif()
 
 add_subdirectory(accelerator)
