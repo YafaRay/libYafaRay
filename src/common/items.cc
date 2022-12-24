@@ -102,8 +102,8 @@ ResultFlags Items<T>::rename(size_t id, const std::string &name)
 template <typename T>
 ResultFlags Items<T>::disable(const std::string &name)
 {
-	const auto it{names_to_id_.find(name)};
-	if(it != names_to_id_.end())
+	if(items_.empty()) return YAFARAY_RESULT_ERROR_NOT_FOUND;
+	else if(const auto it{names_to_id_.find(name)}; it != names_to_id_.end())
 	{
 		const auto id{it->second};
 		return disable(id);
@@ -114,7 +114,7 @@ ResultFlags Items<T>::disable(const std::string &name)
 template <typename T>
 ResultFlags Items<T>::disable(size_t id)
 {
-	if(id >= items_.size()) return YAFARAY_RESULT_ERROR_NOT_FOUND;
+	if(items_.empty() || id >= items_.size()) return YAFARAY_RESULT_ERROR_NOT_FOUND;
 	else
 	{
 		items_[id].enabled_ = false;
