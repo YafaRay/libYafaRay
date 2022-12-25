@@ -41,6 +41,25 @@ typedef float FilterFunction_t(float dx, float dy);
 
 ImageFilm::Params::Params(ParamResult &param_result, const ParamMap &param_map)
 {
+	PARAM_LOAD(aa_passes_);
+	PARAM_LOAD(aa_samples_);
+	PARAM_LOAD(aa_inc_samples_);
+	PARAM_LOAD(aa_threshold_);
+	PARAM_LOAD(aa_resampled_floor_);
+	PARAM_LOAD(aa_sample_multiplier_factor_);
+	PARAM_LOAD(aa_light_sample_multiplier_factor_);
+	PARAM_LOAD(aa_indirect_sample_multiplier_factor_);
+	PARAM_LOAD(aa_detect_color_noise_);
+	PARAM_ENUM_LOAD(aa_dark_detection_type_);
+	PARAM_LOAD(aa_dark_threshold_factor_);
+	PARAM_LOAD(aa_variance_edge_size_);
+	PARAM_LOAD(aa_variance_pixels_);
+	PARAM_LOAD(aa_clamp_samples_);
+	PARAM_LOAD(aa_clamp_indirect_);
+	PARAM_LOAD(threads_);
+	PARAM_LOAD(background_resampling_);
+	PARAM_LOAD(base_sampling_offset_);
+	PARAM_LOAD(computer_node_);
 	PARAM_LOAD(aa_pixel_width_);
 	PARAM_LOAD(width_);
 	PARAM_LOAD(height_);
@@ -57,11 +76,44 @@ ImageFilm::Params::Params(ParamResult &param_result, const ParamMap &param_map)
 	PARAM_ENUM_LOAD(film_autosave_interval_type_);
 	PARAM_LOAD(film_autosave_interval_passes_);
 	PARAM_LOAD(film_autosave_interval_seconds_);
+	PARAM_LOAD(layer_mask_obj_index_);
+	PARAM_LOAD(layer_mask_mat_index_);
+	PARAM_LOAD(layer_mask_invert);
+	PARAM_LOAD(layer_mask_only_);
+	PARAM_LOAD(layer_toon_edge_color_);
+	PARAM_LOAD(layer_object_edge_thickness_);
+	PARAM_LOAD(layer_object_edge_threshold_);
+	PARAM_LOAD(layer_object_edge_smoothness_);
+	PARAM_LOAD(layer_toon_pre_smooth_);
+	PARAM_LOAD(layer_toon_quantization_);
+	PARAM_LOAD(layer_toon_post_smooth_);
+	PARAM_LOAD(layer_faces_edge_thickness_);
+	PARAM_LOAD(layer_faces_edge_threshold_);
+	PARAM_LOAD(layer_faces_edge_smoothness_);
 }
 
 ParamMap ImageFilm::Params::getAsParamMap(bool only_non_default) const
 {
 	PARAM_SAVE_START;
+	PARAM_SAVE(aa_passes_);
+	PARAM_SAVE(aa_samples_);
+	PARAM_SAVE(aa_inc_samples_);
+	PARAM_SAVE(aa_threshold_);
+	PARAM_SAVE(aa_resampled_floor_);
+	PARAM_SAVE(aa_sample_multiplier_factor_);
+	PARAM_SAVE(aa_light_sample_multiplier_factor_);
+	PARAM_SAVE(aa_indirect_sample_multiplier_factor_);
+	PARAM_SAVE(aa_detect_color_noise_);
+	PARAM_ENUM_SAVE(aa_dark_detection_type_);
+	PARAM_SAVE(aa_dark_threshold_factor_);
+	PARAM_SAVE(aa_variance_edge_size_);
+	PARAM_SAVE(aa_variance_pixels_);
+	PARAM_SAVE(aa_clamp_samples_);
+	PARAM_SAVE(aa_clamp_indirect_);
+	PARAM_SAVE(threads_);
+	PARAM_SAVE(background_resampling_);
+	PARAM_SAVE(base_sampling_offset_);
+	PARAM_SAVE(computer_node_);
 	PARAM_SAVE(aa_pixel_width_);
 	PARAM_SAVE(width_);
 	PARAM_SAVE(height_);
@@ -78,6 +130,20 @@ ParamMap ImageFilm::Params::getAsParamMap(bool only_non_default) const
 	PARAM_ENUM_SAVE(film_autosave_interval_type_);
 	PARAM_SAVE(film_autosave_interval_passes_);
 	PARAM_SAVE(film_autosave_interval_seconds_);
+	PARAM_SAVE(layer_mask_obj_index_);
+	PARAM_SAVE(layer_mask_mat_index_);
+	PARAM_SAVE(layer_mask_invert);
+	PARAM_SAVE(layer_mask_only_);
+	PARAM_SAVE(layer_toon_edge_color_);
+	PARAM_SAVE(layer_object_edge_thickness_);
+	PARAM_SAVE(layer_object_edge_threshold_);
+	PARAM_SAVE(layer_object_edge_smoothness_);
+	PARAM_SAVE(layer_toon_pre_smooth_);
+	PARAM_SAVE(layer_toon_quantization_);
+	PARAM_SAVE(layer_toon_post_smooth_);
+	PARAM_SAVE(layer_faces_edge_thickness_);
+	PARAM_SAVE(layer_faces_edge_threshold_);
+	PARAM_SAVE(layer_faces_edge_smoothness_);
 	PARAM_SAVE_END;
 }
 
