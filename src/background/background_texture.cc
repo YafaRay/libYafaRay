@@ -55,7 +55,7 @@ ParamMap TextureBackground::getAsParamMap(bool only_non_default) const
 	return result;
 }
 
-std::pair<std::unique_ptr<Background>, ParamResult> TextureBackground::factory(Logger &logger, const std::string &name, const Scene &scene, const ParamMap &param_map)
+std::pair<std::unique_ptr<Background>, ParamResult> TextureBackground::factory(Logger &logger, const std::string &name, const ParamMap &param_map, const Items<Texture> &textures)
 {
 	auto param_result{Params::meta_.check(param_map, {"type"}, {})};
 	std::string texname;
@@ -64,13 +64,13 @@ std::pair<std::unique_ptr<Background>, ParamResult> TextureBackground::factory(L
 		logger.logError(getClassName(), ": No texture given for texture background!");
 		return {nullptr, ParamResult{YAFARAY_RESULT_ERROR_WHILE_CREATING}};
 	}
-	auto [tex, tex_id, tex_result]{scene.getTexture(texname)};
+	auto [tex, tex_id, tex_result]{textures.getByName(texname)};
 	if(!tex_result.isOk())
 	{
 		logger.logError(getClassName(), ": Texture '", texname, "' does not exist!");
 		return {nullptr, ParamResult{YAFARAY_RESULT_ERROR_WHILE_CREATING}};
 	}
-	auto background{std::make_unique<ThisClassType_t>(logger, param_result, param_map, tex_id, scene.getTextures())};
+	auto background{std::make_unique<ThisClassType_t>(logger, param_result, param_map, tex_id, textures)};
 	if(param_result.notOk()) logger.logWarning(param_result.print<ThisClassType_t>(name, {"type"}));
 	return {std::move(background), param_result};
 }

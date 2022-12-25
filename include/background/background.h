@@ -34,6 +34,7 @@ class Scene;
 class Light;
 class Rgb;
 class Logger;
+class Texture;
 template <typename T, size_t N> class Vec;
 typedef Vec<float, 3> Vec3f;
 template <typename T> class Items;
@@ -44,7 +45,7 @@ class Background
 	public:
 		inline static std::string getClassName() { return "Background"; }
 		[[nodiscard]] virtual Type type() const = 0;
-		static std::pair<std::unique_ptr<Background>, ParamResult> factory(Logger &logger, const std::string &name, const Scene &scene, const ParamMap &param_map);
+		static std::pair<std::unique_ptr<Background>, ParamResult> factory(Logger &logger, const std::string &name, const ParamMap &param_map, const Items<Texture> &textures);
 		[[nodiscard]] virtual ParamMap getAsParamMap(bool only_non_default) const;
 		Background(Logger &logger, ParamResult &param_result, const ParamMap &param_map);
 		Rgb operator()(const Vec3f &dir) const { return operator()(dir, false); }

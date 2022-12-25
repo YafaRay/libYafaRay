@@ -36,7 +36,7 @@ class TextureBackground final : public Background
 
 	public:
 		inline static std::string getClassName() { return "TextureBackground"; }
-		static std::pair<std::unique_ptr<Background>, ParamResult> factory(Logger &logger, const std::string &name, const Scene &scene, const ParamMap &params);
+		static std::pair<std::unique_ptr<Background>, ParamResult> factory(Logger &logger, const std::string &name, const ParamMap &params, const Items<Texture> &textures);
 		static std::string printMeta(const std::vector<std::string> &excluded_params) { return Params::meta_.print(excluded_params); }
 		TextureBackground(Logger &logger, ParamResult &param_result, const ParamMap &param_map, size_t texture_id, const Items <Texture> &textures);
 		std::vector<std::pair<std::string, ParamMap>> getRequestedIblLights() const override;

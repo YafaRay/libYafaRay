@@ -136,7 +136,7 @@ ParamResult Scene::defineBackground(const ParamMap &param_map)
 	{
 		for(const auto &[ibl_light_name, ibl_light_param_map] : background_->getRequestedIblLights()) disableLight(ibl_light_name);
 	}
-	auto [background, background_result]{Background::factory(logger_, "background", *this, param_map)};
+	auto [background, background_result]{Background::factory(logger_, "background", param_map, getTextures())};
 	if(!background)
 	{
 		logger_.logError(getClassName(), "'", this->name(), "': background could not be created!");
