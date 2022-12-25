@@ -79,7 +79,8 @@ class Texture
 
 		/* gives the number of values in each dimension for discrete textures. Returns resolution of the texture, last coordinate z/depth is for 3D textures (not currently implemented) */
 		virtual std::array<int, 3> resolution() const { return {0, 0, 0}; };
-		virtual void generateMipMaps() {}
+		virtual void useMipMaps() {}
+		virtual void updateMipMaps() {}
 		Rgba applyAdjustments(const Rgba &tex_col) const;
 		Rgba applyIntensityContrastAdjustments(const Rgba &tex_col) const;
 		float applyIntensityContrastAdjustments(float tex_float) const;

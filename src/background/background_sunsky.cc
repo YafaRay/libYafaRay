@@ -75,47 +75,16 @@ ParamMap SunSkyBackground::getAsParamMap(bool only_non_default) const
 	return result;
 }
 
-std::pair<std::unique_ptr<Background>, ParamResult> SunSkyBackground::factory(Logger &logger, Scene &scene, const std::string &name, const ParamMap &param_map)
+std::pair<std::unique_ptr<Background>, ParamResult> SunSkyBackground::factory(Logger &logger, const std::string &name, const ParamMap &param_map)
 {
 	auto param_result{Params::meta_.check(param_map, {"type"}, {})};
-	auto background{std::make_unique<ThisClassType_t>(logger, param_result, scene.getLights(), param_map)};
+	auto background{std::make_unique<ThisClassType_t>(logger, param_result, param_map)};
 	if(param_result.notOk()) logger.logWarning(param_result.print<ThisClassType_t>(name, {"type"}));
-	if(background->params_.background_light_)
-	{
-		ParamMap bgp;
-		bgp["type"] = std::string("bglight");
-		bgp["samples"] = background->params_.light_samples_;
-		bgp["with_caustic"] = background->ParentClassType_t::params_.with_caustic_;
-		bgp["with_diffuse"] = background->ParentClassType_t::params_.with_diffuse_;
-		bgp["cast_shadows"] = background->ParentClassType_t::params_.cast_shadows_;
-		scene.createLight(ThisClassType_t::lightSkyName(), std::move(bgp));
-	}
-	if(background->params_.add_sun_)
-	{
-		Rgb suncol = computeAttenuatedSunlight(math::acos(std::abs(background->params_.from_[Axis::Z])), background->params_.turb_);//(*new_sunsky)(vector3d_t(dir.x, dir.y, dir.z));
-		const double angle = 0.27;
-		const double cos_angle = math::cos(math::degToRad(angle));
-		const float invpdf = (2.f * math::num_pi<> * (1.f - cos_angle));
-		suncol *= invpdf * background->ParentClassType_t::params_.power_;
-
-		if(logger.isVerbose()) logger.logVerbose(getClassName(), ": sun color = ", suncol);
-
-		ParamMap bgp;
-		bgp["type"] = std::string("sunlight");
-		bgp["direction"] = background->params_.from_;
-		bgp["color"] = suncol;
-		bgp["angle"] = Parameter(angle);
-		bgp["power"] = Parameter(background->params_.sun_power_);
-		bgp["cast_shadows"] = background->params_.cast_shadows_sun_;
-		bgp["with_caustic"] = background->ParentClassType_t::params_.with_caustic_;
-		bgp["with_diffuse"] = background->ParentClassType_t::params_.with_diffuse_;
-		scene.createLight(ThisClassType_t::lightSunName(), std::move(bgp));
-	}
 	return {std::move(background), param_result};
 }
 
-SunSkyBackground::SunSkyBackground(Logger &logger, ParamResult &param_result, Items<Light> &lights, const ParamMap &param_map) :
-		ParentClassType_t{logger, param_result, lights, param_map}, params_{param_result, param_map}
+SunSkyBackground::SunSkyBackground(Logger &logger, ParamResult &param_result, const ParamMap &param_map) :
+		ParentClassType_t{logger, param_result, param_map}, params_{param_result, param_map}
 {
 	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + params_.getAsParamMap(true).print());
 	sun_dir_.normalize();
@@ -154,12 +123,6 @@ SunSkyBackground::SunSkyBackground(Logger &logger, ParamResult &param_result, It
 	perez_y_[2] = (-0.00792 * t_ + 0.21023) * params_.c_var_;
 	perez_y_[3] = (-0.04405 * t_ - 1.65369) * params_.d_var_;
 	perez_y_[4] = (-0.01092 * t_ + 0.05291) * params_.e_var_;
-}
-
-SunSkyBackground::~SunSkyBackground()
-{
-	std::ignore = lights_.disable(lightSkyName());
-	std::ignore = lights_.disable(lightSunName());
 }
 
 double SunSkyBackground::perezFunction(const std::array<double, 5> &lam, double theta, double gamma, double lvz) const
@@ -307,6 +270,40 @@ Rgb SunSkyBackground::computeAttenuatedSunlight(float theta, int turbidity)
 			-0.969256f * sun_xyz.r_ + 1.875992f * sun_xyz.g_ + 0.041556f * sun_xyz.b_,
 			0.055648f * sun_xyz.r_ - 0.204043f * sun_xyz.g_ + 1.057311f * sun_xyz.b_
 	};
+}
+
+std::vector<std::pair<std::string, ParamMap>> SunSkyBackground::getRequestedIblLights() const
+{
+	std::vector<std::pair<std::string, ParamMap>> requested_lights;
+	if(params_.background_light_)
+	{
+		ParamMap bgp;
+		bgp["type"] = std::string("bglight");
+		bgp["samples"] = params_.light_samples_;
+		bgp["with_caustic"] = ParentClassType_t::params_.with_caustic_;
+		bgp["with_diffuse"] = ParentClassType_t::params_.with_diffuse_;
+		bgp["cast_shadows"] = ParentClassType_t::params_.cast_shadows_;
+		requested_lights.emplace_back(ThisClassType_t::lightSkyName(), std::move(bgp));
+	}
+	if(params_.add_sun_)
+	{
+		Rgb suncol = computeAttenuatedSunlight(math::acos(std::abs(params_.from_[Axis::Z])), params_.turb_);//(*new_sunsky)(vector3d_t(dir.x, dir.y, dir.z));
+		const double angle = 0.27;
+		const double cos_angle = math::cos(math::degToRad(angle));
+		const float invpdf = (2.f * math::num_pi<> * (1.f - cos_angle));
+		suncol *= invpdf * ParentClassType_t::params_.power_;
+		ParamMap bgp;
+		bgp["type"] = std::string("sunlight");
+		bgp["direction"] = params_.from_;
+		bgp["color"] = suncol;
+		bgp["angle"] = Parameter(angle);
+		bgp["power"] = Parameter(params_.sun_power_);
+		bgp["cast_shadows"] = params_.cast_shadows_sun_;
+		bgp["with_caustic"] = ParentClassType_t::params_.with_caustic_;
+		bgp["with_diffuse"] = ParentClassType_t::params_.with_diffuse_;
+		requested_lights.emplace_back(ThisClassType_t::lightSunName(), std::move(bgp));
+	}
+	return requested_lights;
 }
 
 } //namespace yafaray

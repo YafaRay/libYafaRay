@@ -308,6 +308,13 @@ inline constexpr T addMod1(const T &a, const T &b) noexcept
 	return s > 1 ? s - 1 : s;
 }
 
+//! A simple clamp function that forces the result to be in a certain range
+template<typename T>
+inline constexpr T clamp(const T &value, T min, T max) noexcept
+{
+	return std::max(min, std::min(value, max));
+}
+
 } //namespace yafaray::math
 
 #endif // LIBYAFARAY_MATH_H

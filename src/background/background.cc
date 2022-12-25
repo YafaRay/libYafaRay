@@ -58,25 +58,23 @@ ParamMap Background::getAsParamMap(bool only_non_default) const
 	return result;
 }
 
-std::pair<std::unique_ptr<Background>, ParamResult> Background::factory(Logger &logger, Scene &scene, const std::string &name, const ParamMap &param_map)
+std::pair<std::unique_ptr<Background>, ParamResult> Background::factory(Logger &logger, const std::string &name, const Scene &scene, const ParamMap &param_map)
 {
 	const Type type{ClassMeta::preprocessParamMap<Type>(logger, getClassName(), param_map)};
 	switch(type.value())
 	{
-		case Type::DarkSky: return DarkSkyBackground::factory(logger, scene, name, param_map);
-		case Type::Gradient: return GradientBackground::factory(logger, scene, name, param_map);
-		case Type::SunSky: return SunSkyBackground::factory(logger, scene, name, param_map);
-		case Type::Texture: return TextureBackground::factory(logger, scene, name, param_map);
-		case Type::Constant: return ConstantBackground::factory(logger, scene, name, param_map);
+		case Type::DarkSky: return DarkSkyBackground::factory(logger, name, param_map);
+		case Type::Gradient: return GradientBackground::factory(logger, name, param_map);
+		case Type::SunSky: return SunSkyBackground::factory(logger, name, param_map);
+		case Type::Texture: return TextureBackground::factory(logger, name, scene, param_map);
+		case Type::Constant: return ConstantBackground::factory(logger, name, param_map);
 		default: return {nullptr, ParamResult{YAFARAY_RESULT_ERROR_WHILE_CREATING}};
 	}
 }
 
-Background::Background(Logger &logger, ParamResult &param_result, Items<Light> &lights, const ParamMap &param_map) : params_{param_result, param_map}, lights_{lights}, logger_{logger}
+Background::Background(Logger &logger, ParamResult &param_result, const ParamMap &param_map) : params_{param_result, param_map}, logger_{logger}
 {
 	//Empty
 }
-
-Background::~Background() = default;
 
 } //namespace yafaray

@@ -44,14 +44,16 @@ class Background
 	public:
 		inline static std::string getClassName() { return "Background"; }
 		[[nodiscard]] virtual Type type() const = 0;
-		static std::pair<std::unique_ptr<Background>, ParamResult> factory(Logger &logger, Scene &scene, const std::string &name, const ParamMap &param_map);
+		static std::pair<std::unique_ptr<Background>, ParamResult> factory(Logger &logger, const std::string &name, const Scene &scene, const ParamMap &param_map);
 		[[nodiscard]] virtual ParamMap getAsParamMap(bool only_non_default) const;
-		Background(Logger &logger, ParamResult &param_result, Items<Light> &lights, const ParamMap &param_map);
-		virtual ~Background();
+		Background(Logger &logger, ParamResult &param_result, const ParamMap &param_map);
 		Rgb operator()(const Vec3f &dir) const { return operator()(dir, false); }
 		virtual Rgb operator()(const Vec3f &dir, bool use_ibl_blur) const { return eval(dir, use_ibl_blur); }
 		Rgb eval(const Vec3f &dir) const { return eval(dir, false); }
 		virtual Rgb eval(const Vec3f &dir, bool use_ibl_blur) const = 0;
+		virtual bool usesIblBlur() const { return false; }
+		virtual size_t getTextureId() const { return math::invalid<size_t>; }
+		virtual std::vector<std::pair<std::string, ParamMap>> getRequestedIblLights() const = 0;
 
 	protected:
 		struct Type : public Enum<Type>
@@ -76,7 +78,6 @@ class Background
 			PARAM_DECL(bool, with_diffuse_, true, "with_diffuse", "");
 			PARAM_DECL(bool, cast_shadows_, true, "cast_shadows", "");
 		} params_;
-		Items<Light> &lights_;
 		Logger &logger_;
 };
 

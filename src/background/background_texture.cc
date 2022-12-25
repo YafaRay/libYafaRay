@@ -55,7 +55,7 @@ ParamMap TextureBackground::getAsParamMap(bool only_non_default) const
 	return result;
 }
 
-std::pair<std::unique_ptr<Background>, ParamResult> TextureBackground::factory(Logger &logger, Scene &scene, const std::string &name, const ParamMap &param_map)
+std::pair<std::unique_ptr<Background>, ParamResult> TextureBackground::factory(Logger &logger, const std::string &name, const Scene &scene, const ParamMap &param_map)
 {
 	auto param_result{Params::meta_.check(param_map, {"type"}, {})};
 	std::string texname;
@@ -67,38 +67,16 @@ std::pair<std::unique_ptr<Background>, ParamResult> TextureBackground::factory(L
 	auto [tex, tex_id, tex_result]{scene.getTexture(texname)};
 	if(!tex_result.isOk())
 	{
-		logger.logError(getClassName(), ": Texture '", texname, "' for textureback not existant!");
+		logger.logError(getClassName(), ": Texture '", texname, "' does not exist!");
 		return {nullptr, ParamResult{YAFARAY_RESULT_ERROR_WHILE_CREATING}};
 	}
-	auto background{std::make_unique<ThisClassType_t>(logger, param_result, scene.getLights(), param_map, tex_id, scene.getTextures())};
+	auto background{std::make_unique<ThisClassType_t>(logger, param_result, param_map, tex_id, scene.getTextures())};
 	if(param_result.notOk()) logger.logWarning(param_result.print<ThisClassType_t>(name, {"type"}));
-	if(background->ParentClassType_t::params_.ibl_)
-	{
-		if(background->params_.ibl_blur_ > 0.f)
-		{
-			logger.logInfo(getClassName(), ": starting background SmartIBL blurring with IBL Blur factor=", background->params_.ibl_blur_);
-			tex->generateMipMaps();
-			if(logger.isVerbose()) logger.logVerbose(getClassName(), ": background SmartIBL blurring done using mipmaps.");
-		}
-		ParamMap bgp;
-		bgp["type"] = std::string("bglight");
-		bgp["samples"] = background->ParentClassType_t::params_.ibl_samples_;
-		bgp["with_caustic"] = background->ParentClassType_t::params_.with_caustic_;
-		bgp["with_diffuse"] = background->ParentClassType_t::params_.with_diffuse_;
-		bgp["cast_shadows"] = background->ParentClassType_t::params_.cast_shadows_;
-		bgp["abs_intersect"] = false; //this used to be (pr == angular);  but that caused the IBL light to be in the wrong place (see http://www.yafaray.org/node/714) I don't understand why this was set that way, we should keep an eye on this.
-		bgp["ibl_clamp_sampling"] = background->params_.ibl_clamp_sampling_;
-		if(background->params_.ibl_clamp_sampling_ > 0.f)
-		{
-			logger.logParams(getClassName(), ": using IBL sampling clamp=", background->params_.ibl_clamp_sampling_);
-		}
-		scene.createLight(ThisClassType_t::lightName(), std::move(bgp));
-	}
 	return {std::move(background), param_result};
 }
 
-TextureBackground::TextureBackground(Logger &logger, ParamResult &param_result, Items <Light> &lights, const ParamMap &param_map, size_t texture_id, const Items <Texture> &textures) :
-		ParentClassType_t{logger, param_result, lights, param_map}, params_{param_result, param_map}, texture_id_{texture_id}, textures_{textures}
+TextureBackground::TextureBackground(Logger &logger, ParamResult &param_result, const ParamMap &param_map, size_t texture_id, const Items <Texture> &textures) :
+		ParentClassType_t{logger, param_result, param_map}, params_{param_result, param_map}, texture_id_{texture_id}, textures_{textures}
 {
 	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + params_.getAsParamMap(true).print());
 	sin_r_ = math::sin(math::num_pi<> * rotation_);
@@ -108,11 +86,6 @@ TextureBackground::TextureBackground(Logger &logger, ParamResult &param_result, 
 		with_ibl_blur_ = true;
 		ibl_blur_mipmap_level_ = params_.ibl_blur_ * params_.ibl_blur_;
 	}
-}
-
-TextureBackground::~TextureBackground()
-{
-	std::ignore = lights_.disable(lightName());
 }
 
 Rgb TextureBackground::eval(const Vec3f &dir, bool use_ibl_blur) const
@@ -149,6 +122,23 @@ Rgb TextureBackground::eval(const Vec3f &dir, bool use_ibl_blur) const
 	if(ret.g_ < min_component) ret.g_ = min_component;
 	if(ret.b_ < min_component) ret.b_ = min_component;
 	return ParentClassType_t::params_.power_ * ret;
+}
+
+std::vector<std::pair<std::string, ParamMap>> TextureBackground::getRequestedIblLights() const
+{
+	if(ParentClassType_t::params_.ibl_)
+	{
+		ParamMap bgp;
+		bgp["type"] = std::string("bglight");
+		bgp["samples"] = ParentClassType_t::params_.ibl_samples_;
+		bgp["with_caustic"] = ParentClassType_t::params_.with_caustic_;
+		bgp["with_diffuse"] = ParentClassType_t::params_.with_diffuse_;
+		bgp["cast_shadows"] = ParentClassType_t::params_.cast_shadows_;
+		bgp["abs_intersect"] = false; //this used to be (pr == angular);  but that caused the IBL light to be in the wrong place (see http://www.yafaray.org/node/714) I don't understand why this was set that way, we should keep an eye on this.
+		bgp["ibl_clamp_sampling"] = params_.ibl_clamp_sampling_;
+		return {{ThisClassType_t::lightName(), std::move(bgp)}};
+	}
+	else return {};
 }
 
 } //namespace yafaray

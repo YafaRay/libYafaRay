@@ -36,11 +36,12 @@ class TextureBackground final : public Background
 
 	public:
 		inline static std::string getClassName() { return "TextureBackground"; }
-		static std::pair<std::unique_ptr<Background>, ParamResult> factory(Logger &logger, Scene &scene, const std::string &name, const ParamMap &params);
+		static std::pair<std::unique_ptr<Background>, ParamResult> factory(Logger &logger, const std::string &name, const Scene &scene, const ParamMap &params);
 		static std::string printMeta(const std::vector<std::string> &excluded_params) { return Params::meta_.print(excluded_params); }
-		TextureBackground(Logger &logger, ParamResult &param_result, Items<Light> &lights, const ParamMap &param_map, size_t texture_id, const Items<Texture> &textures);
-		~TextureBackground() override;
-		static std::string lightName(){ return "background::light"; }
+		TextureBackground(Logger &logger, ParamResult &param_result, const ParamMap &param_map, size_t texture_id, const Items <Texture> &textures);
+		std::vector<std::pair<std::string, ParamMap>> getRequestedIblLights() const override;
+		bool usesIblBlur() const override { return ParentClassType_t::params_.ibl_ && params_.ibl_blur_ > 0.f; }
+		size_t getTextureId() const override { return texture_id_; }
 
 	private:
 		struct Projection : public Enum<Projection>
@@ -62,8 +63,8 @@ class TextureBackground final : public Background
 			PARAM_DECL(std::string, texture_name_, "", "texture", "");
 		} params_;
 		[[nodiscard]] ParamMap getAsParamMap(bool only_non_default) const override;
-
 		Rgb eval(const Vec3f &dir, bool use_ibl_blur) const override;
+		static std::string lightName(){ return "background::light"; }
 
 		size_t texture_id_{0};
 		float sin_r_, cos_r_;

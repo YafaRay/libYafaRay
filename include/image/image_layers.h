@@ -18,8 +18,8 @@
  *
  */
 
-#ifndef YAFARAY_IMAGE_LAYERS_H
-#define YAFARAY_IMAGE_LAYERS_H
+#ifndef LIBYAFARAY_IMAGE_LAYERS_H
+#define LIBYAFARAY_IMAGE_LAYERS_H
 
 #include <memory>
 #include "common/layers.h"
@@ -47,4 +47,4 @@ class ImageLayers final : public Collection<LayerDef::Type, ImageLayer>  //Actua
 
 } //namespace yafaray
 
-#endif //YAFARAY_IMAGE_LAYERS_H
+#endif //LIBYAFARAY_IMAGE_LAYERS_H

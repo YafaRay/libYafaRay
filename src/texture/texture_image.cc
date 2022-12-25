@@ -26,6 +26,8 @@
 #include "math/interpolation.h"
 #include "common/file.h"
 #include "image/image_manipulation.h"
+//#include "format/format.h"
+//#include "image/image_layers.h"
 
 namespace yafaray {
 
@@ -118,7 +120,7 @@ ImageTexture::ImageTexture(Logger &logger, ParamResult &param_result, const Para
 	original_image_file_color_space_ = image->getColorSpace();
 	if(Texture::params_.interpolation_type_ == InterpolationType::Trilinear || Texture::params_.interpolation_type_ == InterpolationType::Ewa)
 	{
-		generateMipMaps();
+		updateMipMaps();
 		/*//FIXME DAVID: TEST SAVING MIPMAPS. CAREFUL: IT COULD CAUSE CRASHES!
 		for(int i=0; i<=format->getHighestImgIndex(); ++i)
 		{
@@ -129,7 +131,7 @@ ImageTexture::ImageTexture(Logger &logger, ParamResult &param_result, const Para
 	}
 }
 
-const Image *ImageTexture::getImageFromMipMapLevel(int mipmap_level) const
+const Image *ImageTexture::getImageFromMipMapLevel(size_t mipmap_level) const
 {
 	if(mipmap_level <= 0) return images_.getById(image_id_).first;
 	const size_t mipmap_index = mipmap_level - 1;
@@ -320,7 +322,7 @@ void ImageTexture::findTextureInterpolationCoordinates(int &coord_0, int &coord_
 	}
 }
 
-Rgba ImageTexture::noInterpolation(const Point3f &p, int mipmap_level) const
+Rgba ImageTexture::noInterpolation(const Point3f &p, size_t mipmap_level) const
 {
 	const Image *image{getImageFromMipMapLevel(mipmap_level)};
 	const int resx = image->getWidth();
@@ -336,7 +338,7 @@ Rgba ImageTexture::noInterpolation(const Point3f &p, int mipmap_level) const
 	return image->getColor({{x_1, y_1}});
 }
 
-Rgba ImageTexture::bilinearInterpolation(const Point3f &p, int mipmap_level) const
+Rgba ImageTexture::bilinearInterpolation(const Point3f &p, size_t mipmap_level) const
 {
 	const Image *image{getImageFromMipMapLevel(mipmap_level)};
 	const int resx = image->getWidth();
@@ -363,7 +365,7 @@ Rgba ImageTexture::bilinearInterpolation(const Point3f &p, int mipmap_level) con
 	return (w_11 * c_11) + (w_12 * c_12) + (w_21 * c_21) + (w_22 * c_22);
 }
 
-Rgba ImageTexture::bicubicInterpolation(const Point3f &p, int mipmap_level) const
+Rgba ImageTexture::bicubicInterpolation(const Point3f &p, size_t mipmap_level) const
 {
 	const Image *image{getImageFromMipMapLevel(mipmap_level)};
 	const int resx = image->getWidth();
@@ -411,15 +413,12 @@ Rgba ImageTexture::mipMapsTrilinearInterpolation(const Point3f &p, const MipMapP
 	const float ds = std::max(std::abs(mipmap_params->ds_dx_), std::abs(mipmap_params->ds_dy_)) * image->getWidth();
 	const float dt = std::max(std::abs(mipmap_params->dt_dx_), std::abs(mipmap_params->dt_dy_)) * image->getHeight();
 	float mipmap_level = 0.5f * math::log2(ds * ds + dt * dt);
-
 	if(mipmap_params->force_image_level_ > 0.f) mipmap_level = mipmap_params->force_image_level_ * static_cast<float>(mipmaps_.size());
-
 	mipmap_level += params_.trilinear_level_bias_;
 
-	mipmap_level = std::min(std::max(0.f, mipmap_level), static_cast<float>(mipmaps_.size()));
-
-	const int mipmap_level_a = static_cast<int>(std::floor(mipmap_level));
-	const int mipmap_level_b = static_cast<int>(std::ceil(mipmap_level));
+	mipmap_level = math::clamp(mipmap_level, 0.f, static_cast<float>(mipmaps_.size()));
+	const size_t mipmap_level_a{static_cast<size_t>(std::floor(mipmap_level))};
+	const size_t mipmap_level_b{static_cast<size_t>(std::ceil(mipmap_level))};
 	const float mipmap_level_delta = mipmap_level - static_cast<float>(mipmap_level_a);
 
 	Rgba col = bilinearInterpolation(p, mipmap_level_a);
@@ -456,14 +455,12 @@ Rgba ImageTexture::mipMapsEwaInterpolation(const Point3f &p, float max_anisotrop
 		dt_1 *= scale;
 		minor_length *= scale;
 	}
-
 	if(minor_length <= 0.f) return bilinearInterpolation(p);
 
 	float mipmap_level = static_cast<float>(mipmaps_.size()) - 1.f + math::log2(minor_length);
-	mipmap_level = std::min(std::max(0.f, mipmap_level), static_cast<float>(mipmaps_.size()));
-
-	const int mipmap_level_a = static_cast<int>(std::floor(mipmap_level));
-	const int mipmap_level_b = static_cast<int>(std::ceil(mipmap_level));
+	mipmap_level = math::clamp(mipmap_level, 0.f, static_cast<float>(mipmaps_.size()));
+	const size_t mipmap_level_a{static_cast<size_t>(std::floor(mipmap_level))};
+	const size_t mipmap_level_b{static_cast<size_t>(std::ceil(mipmap_level))};
 	const float mipmap_level_delta = mipmap_level - static_cast<float>(mipmap_level_a);
 
 	Rgba col = ewaEllipticCalculation(p, ds_0, dt_0, ds_1, dt_1, mipmap_level_a);
@@ -474,7 +471,7 @@ Rgba ImageTexture::mipMapsEwaInterpolation(const Point3f &p, float max_anisotrop
 	return col;
 }
 
-Rgba ImageTexture::ewaEllipticCalculation(const Point3f &p, float ds_0, float dt_0, float ds_1, float dt_1, int mipmap_level) const
+Rgba ImageTexture::ewaEllipticCalculation(const Point3f &p, float ds_0, float dt_0, float ds_1, float dt_1, size_t mipmap_level) const
 {
 	if(mipmap_level >= mipmaps_.size())
 	{
@@ -548,9 +545,22 @@ ImageTexture::EwaWeightLut::EwaWeightLut() noexcept
 	}
 }
 
-void ImageTexture::generateMipMaps()
+void ImageTexture::updateMipMaps()
 {
-	mipmaps_ = image_manipulation::generateMipMaps(logger_, images_.getById(image_id_).first);
+	if(use_mipmaps_ && (mipmaps_.empty() || mipmaps_image_id_ != image_id_))
+	{
+		mipmaps_ = image_manipulation::generateMipMaps(logger_, images_.getById(image_id_).first);
+/*		//FIXME DAVID: TEST SAVING MIPMAPS. CAREFUL: IT COULD CAUSE CRASHES!
+		for(size_t mipmap_id = 0; mipmap_id < mipmaps_.size(); ++mipmap_id)
+		{
+			std::stringstream ss;
+			ss << "//tmp//saved_mipmap_texture_id_" << id_ << "_mipmap_id_" << mipmap_id;
+			ParamMap param_map;
+			param_map["type"] = "tga";
+			auto image_file_format{Format::factory(logger_, param_map).first};
+			image_file_format->saveToFile(ss.str(), ImageLayer{mipmaps_[mipmap_id], Layer{}}, ColorSpace::LinearRgb, 1.f, false);
+		}*/
+	}
 }
 
 } //namespace yafaray

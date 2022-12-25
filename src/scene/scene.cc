@@ -132,13 +132,27 @@ std::pair<size_t, ParamResult> Scene::createTexture(const std::string &name, con
 
 ParamResult Scene::defineBackground(const ParamMap &param_map)
 {
-	auto [background, background_result]{Background::factory(logger_, *this, "background", param_map)};
-	if(logger_.isVerbose() && background)
+	if(background_)
+	{
+		for(const auto &[ibl_light_name, ibl_light_param_map] : background_->getRequestedIblLights()) disableLight(ibl_light_name);
+	}
+	auto [background, background_result]{Background::factory(logger_, "background", *this, param_map)};
+	if(!background)
+	{
+		logger_.logError(getClassName(), "'", this->name(), "': background could not be created!");
+		return background_result;
+	}
+	else if(logger_.isVerbose())
 	{
 		logger_.logVerbose(getClassName(), "'", this->name(), "': Added ", background->getClassName(), " '", "", "' (", background->type().print(), ")!");
 	}
 	//logger_.logParams(result.first->getAsParamMap(true).print()); //TEST CODE ONLY, REMOVE!!
 	background_ = std::move(background);
+	if(background_->usesIblBlur()) textures_.getById(background->getTextureId()).first->useMipMaps();
+	for(const auto &[ibl_light_name, ibl_light_param_map] : background_->getRequestedIblLights())
+	{
+		createLight(ibl_light_name, ibl_light_param_map);
+	}
 	return background_result;
 }
 
@@ -287,6 +301,10 @@ bool Scene::init()
 	if(primitives.empty())
 	{
 		logger_.logWarning(getClassName(), "'", name(), "': Scene is empty...");
+	}
+	for(auto &texture : textures_)
+	{
+		texture.item_->updateMipMaps();
 	}
 	ParamMap params;
 	params["type"] = scene_accelerator_;

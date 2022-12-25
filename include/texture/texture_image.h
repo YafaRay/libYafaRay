@@ -85,23 +85,26 @@ class ImageTexture final : public Texture
 		Rgba getColor(const Point3f &p, const MipMapParams *mipmap_params) const override;
 		Rgba getRawColor(const Point3f &p, const MipMapParams *mipmap_params) const override;
 		std::array<int, 3> resolution() const override;
-		void generateMipMaps() override;
-		Rgba noInterpolation(const Point3f &p, int mipmap_level = 0) const;
-		Rgba bilinearInterpolation(const Point3f &p, int mipmap_level = 0) const;
-		Rgba bicubicInterpolation(const Point3f &p, int mipmap_level = 0) const;
+		void useMipMaps() override { use_mipmaps_ = true; }
+		void updateMipMaps() override;
+		Rgba noInterpolation(const Point3f &p, size_t mipmap_level = 0) const;
+		Rgba bilinearInterpolation(const Point3f &p, size_t mipmap_level = 0) const;
+		Rgba bicubicInterpolation(const Point3f &p, size_t mipmap_level = 0) const;
 		Rgba mipMapsTrilinearInterpolation(const Point3f &p, const MipMapParams *mipmap_params) const;
 		Rgba mipMapsEwaInterpolation(const Point3f &p, float max_anisotropy, const MipMapParams *mipmap_params) const;
-		Rgba ewaEllipticCalculation(const Point3f &p, float ds_0, float dt_0, float ds_1, float dt_1, int mipmap_level = 0) const;
+		Rgba ewaEllipticCalculation(const Point3f &p, float ds_0, float dt_0, float ds_1, float dt_1, size_t mipmap_level = 0) const;
 		std::pair<Point3f, bool> doMapping(const Point3f &tex_point) const;
 		Rgba interpolateImage(const Point3f &p, const MipMapParams *mipmap_params) const;
 		static void findTextureInterpolationCoordinates(int &coord_0, int &coord_1, int &coord_2, int &coord_3, float &coord_decimal_part, float coord_float, int resolution, bool repeat, bool mirror);
-		const Image *getImageFromMipMapLevel(int mipmap_level = 0) const;
+		const Image *getImageFromMipMapLevel(size_t mipmap_level = 0) const;
 
 		//bool grayscale_ = false;	//!< Converts the information loaded from the texture RGB to grayscale to reduce memory usage for bump or mask textures, for example. Alpha is ignored in this case. //TODO: to implement at some point
 		const bool crop_x_{(params_.cropmin_x_ != 0.f) || (params_.cropmax_x_ != 1.f)};
 		const bool crop_y_{(params_.cropmin_y_ != 0.f) || (params_.cropmax_y_ != 1.f)};
 		size_t image_id_{math::invalid<size_t>};
 		const Items<Image> &images_;
+		bool use_mipmaps_{Texture::params_.interpolation_type_ == InterpolationType::Trilinear || Texture::params_.interpolation_type_ == InterpolationType::Ewa};
+		size_t mipmaps_image_id_{math::invalid<size_t>};
 		std::vector<std::unique_ptr<const Image>> mipmaps_;
 		float original_image_file_gamma_ = 1.f;
 		ColorSpace original_image_file_color_space_ = ColorSpace::RawManualGamma;

@@ -39,12 +39,10 @@ class SunSkyBackground final : public Background
 
 	public:
 		inline static std::string getClassName() { return "SunSkyBackground"; }
-		static std::pair<std::unique_ptr<Background>, ParamResult> factory(Logger &logger, Scene &scene, const std::string &name, const ParamMap &params);
+		static std::pair<std::unique_ptr<Background>, ParamResult> factory(Logger &logger, const std::string &name, const ParamMap &params);
 		static std::string printMeta(const std::vector<std::string> &excluded_params) { return Params::meta_.print(excluded_params); }
-		SunSkyBackground(Logger &logger, ParamResult &param_result, Items<Light> &lights, const ParamMap &param_map);
-		~SunSkyBackground() override;
-		static std::string lightSkyName(){ return getClassName() + "::light_sky"; }
-		static std::string lightSunName(){ return getClassName() + "::light_sun"; }
+		SunSkyBackground(Logger &logger, ParamResult &param_result, const ParamMap &param_map);
+		std::vector<std::pair<std::string, ParamMap>> getRequestedIblLights() const override;
 
 	private:
 		[[nodiscard]] Type type() const override { return Type::SunSky; }
@@ -65,10 +63,11 @@ class SunSkyBackground final : public Background
 			PARAM_DECL(float, e_var_, 1.f, "e_var", "color variation parameters, default is normal");
 		} params_;
 		[[nodiscard]] ParamMap getAsParamMap(bool only_non_default) const override;
-
 		Rgb eval(const Vec3f &dir, bool use_ibl_blur) const override;
 		Rgb getSkyCol(const Vec3f &dir) const;
 		static Rgb computeAttenuatedSunlight(float theta, int turbidity);
+		static std::string lightSkyName(){ return getClassName() + "::light_sky"; }
+		static std::string lightSunName(){ return getClassName() + "::light_sun"; }
 
 		Vec3f sun_dir_{params_.from_};
 		double theta_s_, phi_s_;	// sun coords

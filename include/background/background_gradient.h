@@ -33,11 +33,10 @@ class GradientBackground final : public Background
 
 	public:
 		inline static std::string getClassName() { return "GradientBackground"; }
-		static std::pair<std::unique_ptr<Background>, ParamResult> factory(Logger &logger, Scene &scene, const std::string &name, const ParamMap &params);
+		static std::pair<std::unique_ptr<Background>, ParamResult> factory(Logger &logger, const std::string &name, const ParamMap &params);
 		static std::string printMeta(const std::vector<std::string> &excluded_params) { return Params::meta_.print(excluded_params); }
-		GradientBackground(Logger &logger, ParamResult &param_result, Items<Light> &lights, const ParamMap &param_map);
-		~GradientBackground() override;
-		static std::string lightName(){ return "background::light"; }
+		GradientBackground(Logger &logger, ParamResult &param_result, const ParamMap &param_map);
+		std::vector<std::pair<std::string, ParamMap>> getRequestedIblLights() const override;
 
 	private:
 		[[nodiscard]] Type type() const override { return Type::Gradient; }
@@ -51,6 +50,7 @@ class GradientBackground final : public Background
 		} params_;
 		[[nodiscard]] ParamMap getAsParamMap(bool only_non_default) const override;
 		Rgb eval(const Vec3f &dir, bool use_ibl_blur) const override;
+		static std::string lightName(){ return "background::light"; }
 
 		const Rgb gzenith_{params_.zenith_ground_color_ * ParentClassType_t::params_.power_};
 		const Rgb ghoriz_{params_.horizon_ground_color_ * ParentClassType_t::params_.power_};
