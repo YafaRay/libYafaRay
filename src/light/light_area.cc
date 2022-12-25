@@ -75,14 +75,16 @@ AreaLight::AreaLight(Logger &logger, ParamResult &param_result, const ParamMap &
 	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + params_.getAsParamMap(true).print());
 }
 
-void AreaLight::init(Scene &scene)
+size_t AreaLight::init(const Scene &scene)
 {
 	if(!params_.object_name_.empty())
 	{
 		const auto [object, object_id, object_result]{scene.getObject(params_.object_name_)};
-		if(object) object->setLight(id_);
+		if(object) return object_id;
 		else logger_.logError(getClassName(), ": '" + getName() + "': associated object '" + params_.object_name_ + "' could not be found!");
 	}
+	else logger_.logError(getClassName(), ": '" + getName() + "': no associated object specified!");
+	return math::invalid<size_t>;
 }
 
 Rgb AreaLight::totalEnergy() const { return color_ * area_; }

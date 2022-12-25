@@ -76,13 +76,14 @@ SunLight::SunLight(Logger &logger, ParamResult &param_result, const ParamMap &pa
 	col_pdf_ = color_ * pdf_;
 }
 
-void SunLight::init(Scene &scene)
+size_t SunLight::init(const Scene &scene)
 {
 	// calculate necessary parameters for photon mapping
 	const Bound w = scene.getSceneBound();
 	world_radius_ = 0.5f * (w.g_ - w.a_).length();
 	world_center_ = 0.5f * (w.a_ + w.g_);
 	e_pdf_ = math::num_pi<> * world_radius_ * world_radius_;
+	return math::invalid<size_t>;
 }
 
 std::pair<bool, Ray> SunLight::illumSample(const Point3f &surface_p, LSample &s, float time) const

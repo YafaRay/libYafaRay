@@ -73,14 +73,16 @@ SphereLight::SphereLight(Logger &logger, ParamResult &param_result, const ParamM
 	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + params_.getAsParamMap(true).print());
 }
 
-void SphereLight::init(Scene &scene)
+size_t SphereLight::init(const Scene &scene)
 {
 	if(!params_.object_name_.empty())
 	{
 		const auto [object, object_id, object_result]{scene.getObject(params_.object_name_)};
-		if(object) object->setLight(id_);
+		if(object) return object_id;
 		else logger_.logError(getClassName(), ": '" + getName() + "': associated object '" + params_.object_name_ + "' could not be found!");
 	}
+	else logger_.logError(getClassName(), ": '" + getName() + "': no associated object specified!");
+	return math::invalid<size_t>;
 }
 
 Rgb SphereLight::totalEnergy() const { return color_ * area_ /* * num_pi */; }

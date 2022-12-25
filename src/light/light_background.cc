@@ -69,7 +69,7 @@ BackgroundLight::BackgroundLight(Logger &logger, ParamResult &param_result, cons
 	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + params_.getAsParamMap(true).print());
 }
 
-void BackgroundLight::init(Scene &scene)
+size_t BackgroundLight::init(const Scene &scene)
 {
 	background_ = scene.getBackground();
 	const int nv = max_vsamples_;
@@ -98,6 +98,7 @@ void BackgroundLight::init(Scene &scene)
 	world_radius_ = 0.5f * (w.g_ - w.a_).length();
 	a_pdf_ = world_radius_ * world_radius_;
 	world_pi_factor_ = math::mult_pi_by_2<> * a_pdf_;
+	return math::invalid<size_t>;
 }
 
 inline std::pair<float, Uv<float>> BackgroundLight::calcFromSample(float s_1, float s_2, bool inv) const

@@ -78,22 +78,22 @@ std::pair<size_t, ResultFlags> Scene::getMaterial(const std::string &name) const
 	else return {material_id, material_result};
 }
 
-std::tuple<Light *, size_t, ResultFlags> Scene::getLight(const std::string &name) const
+std::tuple<const Light *, size_t, ResultFlags> Scene::getLight(const std::string &name) const
 {
 	return lights_.getByName(name);
 }
 
-std::pair<Light *, ResultFlags> Scene::getLight(size_t light_id) const
+std::pair<const Light *, ResultFlags> Scene::getLight(size_t light_id) const
 {
 	return lights_.getById(light_id);
 }
 
-std::tuple<Texture *, size_t, ResultFlags> Scene::getTexture(const std::string &name) const
+std::tuple<const Texture *, size_t, ResultFlags> Scene::getTexture(const std::string &name) const
 {
 	return textures_.getByName(name);
 }
 
-std::pair<Texture *, ResultFlags> Scene::getTexture(size_t texture_id) const
+std::pair<const Texture *, ResultFlags> Scene::getTexture(size_t texture_id) const
 {
 	return textures_.getById(texture_id);
 }
@@ -232,12 +232,12 @@ std::pair<size_t, ParamResult> Scene::createObject(const std::string &name, cons
 	return result;
 }
 
-std::tuple<Object *, size_t, ResultFlags> Scene::getObject(const std::string &name) const
+std::tuple<const Object *, size_t, ResultFlags> Scene::getObject(const std::string &name) const
 {
 	return objects_.getByName(name);
 }
 
-std::pair<Object *, ResultFlags> Scene::getObject(size_t object_id) const
+std::pair<const Object *, ResultFlags> Scene::getObject(size_t object_id) const
 {
 	return objects_.getById(object_id);
 }
@@ -318,6 +318,7 @@ bool Scene::init()
 	for(const auto &[object, object_name, object_enabled] : objects_)
 	{
 		if(object_index_highest_ < object->getPassIndex()) object_index_highest_ = object->getPassIndex();
+		object->setLight(math::invalid<size_t>);
 	}
 
 	material_index_highest_ = 1;
@@ -343,7 +344,11 @@ bool Scene::init()
 
 	for(auto &[light, light_name, light_enabled] : lights_)
 	{
-		if(light && light_enabled) light->init(*this);
+		if(light && light_enabled)
+		{
+			const size_t object_id{light->init(*this)};
+			if(object_id != math::invalid<size_t>) objects_.getById(object_id).first->setLight(light->getId());
+		}
 	}
 
 	objects_.clearModifiedList();

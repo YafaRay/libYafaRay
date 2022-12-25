@@ -91,7 +91,7 @@ void BackgroundPortalLight::initIs()
 	accelerator_ = Accelerator::factory(logger_, primitives_, params).first;
 }
 
-void BackgroundPortalLight::init(Scene &scene)
+size_t BackgroundPortalLight::init(const Scene &scene)
 {
 	background_ = scene.getBackground();
 	const Bound w = scene.getSceneBound();
@@ -108,7 +108,12 @@ void BackgroundPortalLight::init(Scene &scene)
 		primitives_ = object->getPrimitives();
 		initIs();
 		if(logger_.isVerbose()) logger_.logVerbose(getClassName(), ": number of primitives: ", primitives_.size(), ", area: ", area_);
-		object->setLight(id_);
+		return object_id_;
+	}
+	else
+	{
+		logger_.logError(getClassName(), ": '" + getName() + "': associated object '" + params_.object_name_ + "' could not be found!");
+		return math::invalid<size_t>;
 	}
 }
 

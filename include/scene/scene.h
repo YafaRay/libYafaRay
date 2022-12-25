@@ -83,8 +83,8 @@ class Scene final
 		bool addInstanceMatrix(size_t instance_id, Matrix4f &&obj_to_world, float time);
 		std::pair<const Instance *, ResultFlags> getInstance(size_t instance_id) const;
 		bool init();
-		std::tuple<Object *, size_t, ResultFlags> getObject(const std::string &name) const;
-		std::pair<Object *, ResultFlags> getObject(size_t object_id) const;
+		std::tuple<const Object *, size_t, ResultFlags> getObject(const std::string &name) const;
+		std::pair<const Object *, ResultFlags> getObject(size_t object_id) const;
 		const Items<Object> &getObjects() const { return objects_; }
 		const Accelerator *getAccelerator() const { return accelerator_.get(); }
 		void createDefaultMaterial();
@@ -99,16 +99,16 @@ class Scene final
 		const Items<VolumeRegion> &getVolumeRegions() const { return volume_regions_; }
 		const Items<Light> &getLights() const { return lights_; }
 		Items<Light> &getLights() { return lights_; }
-		std::tuple<Light *, size_t, ResultFlags> getLight(const std::string &name) const;
-		std::pair<Light *, ResultFlags> getLight(size_t object_id) const;
+		std::tuple<const Light *, size_t, ResultFlags> getLight(const std::string &name) const;
+		std::pair<const Light *, ResultFlags> getLight(size_t object_id) const;
 		std::pair<size_t, ParamResult> createLight(const std::string &name, const ParamMap &param_map);
 		bool disableLight(const std::string &name);
 		const Items<Texture> &getTextures() const { return textures_; }
 		Items<Texture> &getTextures() { return textures_; }
 		const Items<Image> &getImages() const { return images_; }
 		Items<Image> &getImages() { return images_; }
-		std::tuple<Texture *, size_t, ResultFlags> getTexture(const std::string &name) const;
-		std::pair<Texture *, ResultFlags> getTexture(size_t object_id) const;
+		std::tuple<const Texture *, size_t, ResultFlags> getTexture(const std::string &name) const;
+		std::pair<const Texture *, ResultFlags> getTexture(size_t object_id) const;
 		std::pair<size_t, ParamResult> createTexture(const std::string &name, const ParamMap &param_map);
 		std::pair<size_t, ParamResult> createMaterial(const std::string &name, const ParamMap &param_map, const std::list<ParamMap> &param_map_list_nodes);
 		ParamResult defineBackground(const ParamMap &param_map);

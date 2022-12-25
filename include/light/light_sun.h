@@ -53,7 +53,7 @@ class SunLight final : public Light
 			PARAM_DECL(float, angle_, 0.27f, "angle", "Angular (half-)size of the real sun");
 			PARAM_DECL(int, samples_, 4, "samples", "");
 		} params_;
-		void init(Scene &scene) override;
+		size_t init(const Scene &scene) override;
 		Rgb totalEnergy() const override { return color_ * e_pdf_; }
 		std::tuple<Ray, float, Rgb> emitPhoton(float s_1, float s_2, float s_3, float s_4, float time) const override;
 		bool diracLight() const override { return false; }

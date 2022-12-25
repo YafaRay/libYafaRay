@@ -94,7 +94,7 @@ void ObjectLight::initIs()
 	accelerator_ = Accelerator::factory(logger_, primitives_, params).first;
 }
 
-void ObjectLight::init(Scene &scene)
+size_t ObjectLight::init(const Scene &scene)
 {
 	if(object_id_ == math::invalid<size_t>) object_id_ = objects_.findIdFromName(params_.object_name_).first;
 	auto [object, object_result]{scene.getObject(object_id_)};
@@ -102,8 +102,13 @@ void ObjectLight::init(Scene &scene)
 	{
 		primitives_ = object->getPrimitives();
 		initIs();
-		object->setLight(id_);
 		if(logger_.isVerbose()) logger_.logVerbose(getClassName(), ": primitives:", num_primitives_, ", double sided:", params_.double_sided_, ", area:", area_, " color:", color_);
+		return object_id_;
+	}
+	else
+	{
+		logger_.logError(getClassName(), ": '" + getName() + "': associated object '" + params_.object_name_ + "' could not be found!");
+		return math::invalid<size_t>;
 	}
 }
 

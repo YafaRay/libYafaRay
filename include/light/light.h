@@ -66,8 +66,8 @@ class Light
 		virtual ~Light() = default;
 		void setId(size_t id) { id_ = id; }
 		[[nodiscard]] size_t getId() const { return id_; }
-		//! allow for preprocessing when scene loading has finished
-		virtual void init(Scene &scene) {}
+		//! allow for preprocessing when scene loading has finished. Returns object_id in lights linked to objects
+		virtual size_t init(const Scene &scene) { return math::invalid<size_t>; }
 		//! total energy emmitted during whole frame
 		[[nodiscard]] virtual Rgb totalEnergy() const = 0;
 		//! emit a photon

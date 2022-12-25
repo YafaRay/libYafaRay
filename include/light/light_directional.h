@@ -54,7 +54,7 @@ class DirectionalLight final : public Light
 			PARAM_DECL(float, radius_, 1.f, "radius", "");
 			PARAM_DECL(bool, infinite_, true, "infinite", "");
 		} params_;
-		void init(Scene &scene) override;
+		size_t init(const Scene &scene) override;
 		Rgb totalEnergy() const override { return color_ * radius_ * radius_ * math::num_pi<>; }
 		std::tuple<Ray, float, Rgb> emitPhoton(float s_1, float s_2, float s_3, float s_4, float time) const override;
 		std::pair<Vec3f, Rgb> emitSample(LSample &s, float time) const override;
