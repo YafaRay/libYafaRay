@@ -39,7 +39,7 @@ class EquirectangularCamera final : public Camera
 
 	private:
 		[[nodiscard]] Type type() const override { return Type::Equirectangular; }
-		void setAxis(const Vec3f &vx, const Vec3f &vy, const Vec3f &vz) override;
+		void setAxis(const Vec3f &vx, const Vec3f &vy, const Vec3f &vz);
 		CameraRay shootRay(float px, float py, const Uv<float> &uv) const override;
 		Point3f screenproject(const Point3f &p) const override;
 };

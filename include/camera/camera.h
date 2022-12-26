@@ -24,26 +24,12 @@
 #ifndef LIBYAFARAY_CAMERA_H
 #define LIBYAFARAY_CAMERA_H
 
-#include "geometry/plane.h"
 #include "common/enum.h"
 #include "common/enum_map.h"
 #include "param/class_meta.h"
+#include "geometry/plane.h"
 
 namespace yafaray {
-
-class ParamMap;
-class Scene;
-
-template <typename T, size_t N> class Vec;
-typedef Vec<float, 3> Vec3f;
-template <typename T, size_t N> class Point;
-typedef Point<float, 3> Point3f;
-class Logger;
-
-//! Camera base class.
-/*!
- Camera base class used by all camera types.
-*/
 
 struct CameraRay
 {
@@ -61,21 +47,16 @@ class Camera
 		static std::pair<std::unique_ptr<Camera>, ParamResult> factory(Logger &logger, const std::string &name, const ParamMap &param_map);
 		[[nodiscard]] virtual ParamMap getAsParamMap(bool only_non_default) const;
 		Camera(Logger &logger, ParamResult &param_result, const ParamMap &param_map);
-		virtual ~Camera() = default;
+		virtual ~Camera() = default; //Needed for proper destruction of derived classes
 		void setId(size_t id) { id_ = id; }
 		[[nodiscard]] size_t getId() const { return id_; }
-		virtual void setAxis(const Vec3f &vx, const Vec3f &vy, const Vec3f &vz) = 0; //!< Set camera axis
-		/*! Shoot a new ray from the camera gived image pixel coordinates px,py and lense dof effect */
 		virtual CameraRay shootRay(float px, float py, const Uv<float> &uv) const = 0; //!< Shoot a new ray from the camera.
 		virtual Point3f screenproject(const Point3f &p) const = 0; //!< Get projection of point p into camera plane
-		virtual bool sampleLense() const { return false; } //!< Indicate whether the lense need to be sampled
+		virtual bool sampleLens() const { return false; } //!< Indicate whether the lens needs to be sampled
 		virtual bool project(const Ray &wo, float lu, float lv, float &u, float &v, float &pdf) const { return false; }
 		int resX() const { return params_.resx_; } //!< Get camera X resolution
 		int resY() const { return params_.resy_; } //!< Get camera Y resolution
-		Point3f getPosition() const { return params_.from_; } //!< Get camera position
 		std::array<Vec3f, 3> getAxes() const { return {cam_x_, cam_y_, cam_z_}; } //!< Get camera axis
-		/*! Indicate whether the lense need to be sampled (u, v parameters of shootRay), i.e.
-			DOF-like effects. When false, no lense samples need to be computed */
 		float getNearClip() const { return params_.near_clip_distance_; }
 		float getFarClip() const { return params_.far_clip_distance_; }
 

@@ -206,7 +206,7 @@ bool SppmIntegrator::renderTile(FastRandom &fast_random, std::vector<int> &corre
 {
 	const int camera_res_x = camera_->resX();
 	RandomGenerator random_generator(rand() + offset * (camera_res_x * a.y_ + a.x_) + 123);
-	const bool sample_lns = camera_->sampleLense();
+	const bool sample_lns = camera_->sampleLens();
 	const int pass_offs = offset, end_x = a.x_ + a.w_, end_y = a.y_ + a.h_;
 	int aa_max_possible_samples = aa_noise_params_.samples_;
 	for(int i = 1; i < aa_noise_params_.passes_; ++i)

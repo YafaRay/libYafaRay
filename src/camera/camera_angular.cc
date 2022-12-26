@@ -57,7 +57,7 @@ ParamMap AngularCamera::getAsParamMap(bool only_non_default) const
 std::pair<std::unique_ptr<Camera>, ParamResult> AngularCamera::factory(Logger &logger, const std::string &name, const ParamMap &param_map)
 {
 	auto param_result{Params::meta_.check(param_map, {"type"}, {})};
-	auto camera {std::make_unique<ThisClassType_t>(logger, param_result, param_map)};
+	auto camera {std::make_unique<AngularCamera>(logger, param_result, param_map)};
 	if(param_result.notOk()) logger.logWarning(param_result.print<ThisClassType_t>(name, {"type"}));
 	return {std::move(camera), param_result};
 }

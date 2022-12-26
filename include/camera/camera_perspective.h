@@ -73,17 +73,18 @@ class PerspectiveCamera : public Camera
 			PARAM_ENUM_DECL(BokehType, bokeh_type_, BokehType::Disk1, "bokeh_type", "");
 			PARAM_ENUM_DECL(BokehBias, bokeh_bias_, BokehBias::None, "bokeh_bias", "");
 		} params_;
-		void setAxis(const Vec3f &vx, const Vec3f &vy, const Vec3f &vz) override;
 		CameraRay shootRay(float px, float py, const Uv<float> &uv) const override;
-		bool sampleLense() const override;
+		bool sampleLens() const override;
 		Point3f screenproject(const Point3f &p) const override;
 		bool project(const Ray &wo, float lu, float lv, float &u, float &v, float &pdf) const override;
 		float biasDist(float r) const;
 		Uv<float> sampleTsd(float r_1, float r_2) const;
 		Uv<float> getLensUv(float r_1, float r_2) const;
+		virtual void setAxis(const Vec3f &vx, const Vec3f &vy, const Vec3f &vz);
 
 		Vec3f dof_up_, dof_rt_;
-		float fdist_;
+
+	private:
 		float a_pix_;
 		std::vector<float> ls_;
 };

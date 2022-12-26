@@ -58,7 +58,7 @@ ParamMap PerspectiveCamera::getAsParamMap(bool only_non_default) const
 std::pair<std::unique_ptr<Camera>, ParamResult> PerspectiveCamera::factory(Logger &logger, const std::string &name, const ParamMap &param_map)
 {
 	auto param_result{Params::meta_.check(param_map, {"type"}, {})};
-	auto camera {std::make_unique<ThisClassType_t>(logger, param_result, param_map)};
+	auto camera {std::make_unique<PerspectiveCamera>(logger, param_result, param_map)};
 	if(param_result.notOk()) logger.logWarning(param_result.print<ThisClassType_t>(name, {"type"}));
 	return {std::move(camera), param_result};
 }
@@ -71,7 +71,6 @@ PerspectiveCamera::PerspectiveCamera(Logger &logger, ParamResult &param_result, 
 	// Initialize camera specific plane coordinates
 	setAxis(cam_x_, cam_y_, cam_z_);
 
-	fdist_ = (ParentClassType_t::params_.to_ - ParentClassType_t::params_.from_).length();
 	a_pix_ = aspect_ratio_ / (params_.focal_distance_ * params_.focal_distance_);
 
 	int ns = params_.bokeh_type_.value();
@@ -205,6 +204,6 @@ bool PerspectiveCamera::project(const Ray &wo, float lu, float lv, float &u, flo
 	return true;
 }
 
-bool PerspectiveCamera::sampleLense() const { return params_.aperture_ != 0; }
+bool PerspectiveCamera::sampleLens() const { return params_.aperture_ != 0; }
 
 } //namespace yafaray

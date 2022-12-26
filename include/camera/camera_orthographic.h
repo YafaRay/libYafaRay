@@ -45,7 +45,7 @@ class OrthographicCamera final: public Camera
 			PARAM_INIT_PARENT(ParentClassType_t);
 			PARAM_DECL(float, scale_, 1.f, "scale", "");
 		} params_;
-		void setAxis(const Vec3f &vx, const Vec3f &vy, const Vec3f &vz) override;
+		void setAxis(const Vec3f &vx, const Vec3f &vy, const Vec3f &vz);
 		CameraRay shootRay(float px, float py, const Uv<float> &uv) const override;
 		Point3f screenproject(const Point3f &p) const override;
 

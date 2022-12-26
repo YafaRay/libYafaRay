@@ -66,7 +66,7 @@ class AngularCamera final : public Camera
 			PARAM_DECL(bool, mirrored_, false, "mirrored", "");
 			PARAM_ENUM_DECL(Projection, projection_, Projection::Equidistant, "projection", "");
 		} params_;
-		void setAxis(const Vec3f &vx, const Vec3f &vy, const Vec3f &vz) override;
+		void setAxis(const Vec3f &vx, const Vec3f &vy, const Vec3f &vz);
 		CameraRay shootRay(float px, float py, const Uv<float> &uv) const override;
 		Point3f screenproject(const Point3f &p) const override;
 

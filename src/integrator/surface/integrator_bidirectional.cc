@@ -116,7 +116,7 @@ struct BidirectionalIntegrator::PathEvalVertex
 	union
 	{
 		float pdf_f_;    //!< pdf of sampling forward direction (x_i->x_i+1) given the backward direction
-		float pdf_a_k_;  //!< in case of lense vertex we have area pdf here, there is no forward path segment
+		float pdf_a_k_;  //!< in case of lens vertex we have area pdf here, there is no forward path segment
 	};
 	union
 	{
