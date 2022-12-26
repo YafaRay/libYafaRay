@@ -48,6 +48,7 @@ class Background
 		static std::pair<std::unique_ptr<Background>, ParamResult> factory(Logger &logger, const std::string &name, const ParamMap &param_map, const Items<Texture> &textures);
 		[[nodiscard]] virtual ParamMap getAsParamMap(bool only_non_default) const;
 		Background(Logger &logger, ParamResult &param_result, const ParamMap &param_map);
+		virtual ~Background() = default; //Needed for proper destruction of derived classes
 		Rgb operator()(const Vec3f &dir) const { return operator()(dir, false); }
 		virtual Rgb operator()(const Vec3f &dir, bool use_ibl_blur) const { return eval(dir, use_ibl_blur); }
 		Rgb eval(const Vec3f &dir) const { return eval(dir, false); }
