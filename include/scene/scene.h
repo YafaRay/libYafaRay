@@ -104,11 +104,8 @@ class Scene final
 		std::pair<size_t, ParamResult> createLight(const std::string &name, const ParamMap &param_map);
 		bool disableLight(const std::string &name);
 		const Items<Texture> &getTextures() const { return textures_; }
-		Items<Texture> &getTextures() { return textures_; }
 		const Items<Image> &getImages() const { return images_; }
-		Items<Image> &getImages() { return images_; }
 		std::tuple<const Texture *, size_t, ResultFlags> getTexture(const std::string &name) const;
-		std::pair<const Texture *, ResultFlags> getTexture(size_t object_id) const;
 		std::pair<size_t, ParamResult> createTexture(const std::string &name, const ParamMap &param_map);
 		std::pair<size_t, ParamResult> createMaterial(const std::string &name, const ParamMap &param_map, const std::list<ParamMap> &param_map_list_nodes);
 		ParamResult defineBackground(const ParamMap &param_map);

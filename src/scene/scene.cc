@@ -93,11 +93,6 @@ std::tuple<const Texture *, size_t, ResultFlags> Scene::getTexture(const std::st
 	return textures_.getByName(name);
 }
 
-std::pair<const Texture *, ResultFlags> Scene::getTexture(size_t texture_id) const
-{
-	return textures_.getById(texture_id);
-}
-
 std::tuple<Image *, size_t, ResultFlags> Scene::getImage(const std::string &name) const
 {
 	return images_.getByName(name);
