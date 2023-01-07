@@ -83,6 +83,7 @@ size_t DirectionalLight::init(const Scene &scene)
 		area_pdf_ = 1.f / (radius_ * radius_); // Pi cancels out with our weird conventions :p
 	}
 	if(logger_.isVerbose()) logger_.logVerbose(getClassName(), ": pos ", position_, " world radius: ", world_radius_);
+	return math::invalid<size_t>;
 }
 
 std::tuple<bool, Ray, Rgb> DirectionalLight::illuminate(const Point3f &surface_p, float time) const
