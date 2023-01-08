@@ -27,6 +27,7 @@
 #include "image/image_output.h"
 #include "format/format.h"
 #include "scene/scene.h"
+#include "camera/camera.h"
 #include "common/file.h"
 #include "param/param.h"
 #include "common/timer.h"
@@ -152,16 +153,16 @@ ParamMap ImageFilm::getAsParamMap(bool only_non_default) const
 	return params_.getAsParamMap(only_non_default);
 }
 
-std::pair<ImageFilm *, ParamResult> ImageFilm::factory(Logger &logger, RenderControl &render_control, const ParamMap &param_map)
+std::pair<ImageFilm *, ParamResult> ImageFilm::factory(Logger &logger, RenderControl &render_control, const std::string &name, const ParamMap &param_map)
 {
 	if(logger.isDebug()) logger.logDebug("**" + getClassName() + "::factory 'raw' ParamMap\n" + param_map.logContents());
 	auto param_result{Params::meta_.check(param_map, {}, {})};
-	auto result {new ImageFilm(logger, param_result, render_control, param_map)};
+	auto result {new ImageFilm(logger, param_result, render_control, name, param_map)};
 	if(param_result.notOk()) logger.logWarning(param_result.print<ImageFilm>("ImageFilm", {}));
 	return {std::move(result), param_result};
 }
 
-ImageFilm::ImageFilm(Logger &logger, ParamResult &param_result, RenderControl &render_control, const ParamMap &param_map) : params_{param_result, param_map}, logger_{logger}
+ImageFilm::ImageFilm(Logger &logger, ParamResult &param_result, RenderControl &render_control, const std::string &name, const ParamMap &param_map) : params_{param_result, param_map}, logger_{logger}
 {
 	if(logger_.isDebug()) logger_.logDebug("**" + getClassName() + " params_:\n" + params_.getAsParamMap(true).print());
 	if(params_.images_autosave_interval_type_ == AutoSaveParams::IntervalType::Pass) logger_.logInfo(getClassName(), ": ", "AutoSave partially rendered image every ", params_.images_autosave_interval_passes_, " passes");
@@ -247,7 +248,7 @@ void ImageFilm::initLayersExportedImages()
 	}
 }
 
-void ImageFilm::init(RenderControl &render_control, const RenderView *render_view)
+void ImageFilm::init(RenderControl &render_control)
 {
 	defineBasicLayers();
 	defineDependentLayers();
@@ -262,7 +263,7 @@ void ImageFilm::init(RenderControl &render_control, const RenderView *render_vie
 		initLayersExportedImages();
 		for(auto &output : outputs_)
 		{
-			output.item_->init(getSize(), getExportedImageLayers(), render_view->getName());
+			output.item_->init(getSize(), getExportedImageLayers(), getName());
 		}
 	}
 
@@ -300,13 +301,6 @@ void ImageFilm::init(RenderControl &render_control, const RenderView *render_vie
 	if(film_load_save_.mode_ == FilmLoadSave::Mode::LoadAndSave) imageFilmLoadAllInFolder(render_control);	//Load all the existing Film in the images output folder, combining them together. It will load only the Film files with the same "base name" as the output image film (including file name, computer node name and frame) to allow adding samples to animations.
 	if(film_load_save_.mode_ == FilmLoadSave::Mode::LoadAndSave || film_load_save_.mode_ == FilmLoadSave::Mode::Save) imageFilmFileBackup(render_control); //If the imageFilm is set to Save, at the start rename the previous film file as a "backup" just in case the user has made a mistake and wants to get the previous film back.
 
-/*	if(render_callbacks_.notify_view_)
-	{
-		for(const auto &render_view: render_views_)
-		{
-			render_callbacks_.notify_view_(render_view.name_.c_str(), render_callbacks_.notify_view_data_);
-		}
-	}*/
 	if(render_callbacks_.notify_layer_)
 	{
 		const Layers &layers = layers_.getLayersWithExportedImages();
@@ -317,7 +311,7 @@ void ImageFilm::init(RenderControl &render_control, const RenderView *render_vie
 	}
 }
 
-int ImageFilm::nextPass(const RenderView *render_view, RenderControl &render_control, bool adaptive_aa, const std::string &integrator_name, const EdgeToonParams &edge_params, bool skip_nrender_layer)
+int ImageFilm::nextPass(RenderControl &render_control, bool adaptive_aa, const std::string &integrator_name, const EdgeToonParams &edge_params, bool skip_nrender_layer)
 {
 	next_area_ = 0;
 	n_pass_++;
@@ -336,7 +330,7 @@ int ImageFilm::nextPass(const RenderView *render_view, RenderControl &render_con
 		{
 			for(auto &output : outputs_)
 			{
-				if(output.item_) flush(render_view, render_control, All);
+				if(output.item_) flush(render_control, All);
 			}
 		}
 
@@ -475,7 +469,7 @@ int ImageFilm::nextPass(const RenderView *render_view, RenderControl &render_con
 					{
 						const float weight = weights_({{x, y}}).getFloat();
 						const Rgba col = combined_image->getColor({{x, y}}).normalized(weight);
-						render_callbacks_.highlight_pixel_(render_view->getName().c_str(), x, y, col.r_, col.g_, col.b_, col.a_, render_callbacks_.highlight_pixel_data_);
+						render_callbacks_.highlight_pixel_(x, y, col.r_, col.g_, col.b_, col.a_, render_callbacks_.highlight_pixel_data_);
 					}
 				}
 			}
@@ -486,7 +480,7 @@ int ImageFilm::nextPass(const RenderView *render_view, RenderControl &render_con
 		n_resample = params_.height_ * params_.width_;
 	}
 
-	if(render_callbacks_.flush_) render_callbacks_.flush_(render_view->getName().c_str(), render_callbacks_.flush_data_);
+	if(render_callbacks_.flush_) render_callbacks_.flush_(render_callbacks_.flush_data_);
 
 	if(render_control.resumed()) pass_string << "Film loaded + ";
 
@@ -501,7 +495,7 @@ int ImageFilm::nextPass(const RenderView *render_view, RenderControl &render_con
 	return n_resample;
 }
 
-bool ImageFilm::nextArea(const RenderView *render_view, const RenderControl &render_control, RenderArea &a)
+bool ImageFilm::nextArea(const RenderControl &render_control, RenderArea &a)
 {
 	if(cancel_) return false;
 
@@ -521,7 +515,7 @@ bool ImageFilm::nextArea(const RenderView *render_view, const RenderControl &ren
 			{
 				const int end_x = a.x_ + a.w_;
 				const int end_y = a.y_ + a.h_;
-				render_callbacks_.highlight_area_(render_view->getName().c_str(), a.id_, a.x_, a.y_, end_x, end_y, render_callbacks_.highlight_area_data_);
+				render_callbacks_.highlight_area_(a.id_, a.x_, a.y_, end_x, end_y, render_callbacks_.highlight_area_data_);
 			}
 			return true;
 		}
@@ -543,7 +537,7 @@ bool ImageFilm::nextArea(const RenderView *render_view, const RenderControl &ren
 	return false;
 }
 
-void ImageFilm::finishArea(const RenderView *render_view, RenderControl &render_control, const RenderArea &a, const EdgeToonParams &edge_params)
+void ImageFilm::finishArea(RenderControl &render_control, const RenderArea &a, const EdgeToonParams &edge_params)
 {
 	std::lock_guard<std::mutex> lock_guard(out_mutex_);
 	const int end_x = a.x_ + a.w_ - params_.start_x_;
@@ -581,13 +575,13 @@ void ImageFilm::finishArea(const RenderView *render_view, RenderControl &render_
 				exported_image_layers_.setColor({{i, j}}, color, layer_def);
 				if(render_callbacks_.put_pixel_)
 				{
-					render_callbacks_.put_pixel_(render_view->getName().c_str(), LayerDef::getName(layer_def).c_str(), i, j, color.r_, color.g_, color.b_, color.a_, render_callbacks_.put_pixel_data_);
+					render_callbacks_.put_pixel_(LayerDef::getName(layer_def).c_str(), i, j, color.r_, color.g_, color.b_, color.a_, render_callbacks_.put_pixel_data_);
 				}
 			}
 		}
 	}
 
-	if(render_callbacks_.flush_area_) render_callbacks_.flush_area_(render_view->getName().c_str(), a.id_, a.x_, a.y_, end_x + params_.start_x_, end_y + params_.start_y_, render_callbacks_.flush_area_data_);
+	if(render_callbacks_.flush_area_) render_callbacks_.flush_area_(a.id_, a.x_, a.y_, end_x + params_.start_x_, end_y + params_.start_y_, render_callbacks_.flush_area_data_);
 
 	if(render_control.inProgress())
 	{
@@ -604,7 +598,7 @@ void ImageFilm::finishArea(const RenderView *render_view, RenderControl &render_
 		if((images_auto_save_params_.interval_type_ == AutoSaveParams::IntervalType::Time) && (images_auto_save_params_.timer_ > images_auto_save_params_.interval_seconds_))
 		{
 			if(logger_.isDebug())logger_.logDebug("imagesAutoSaveTimer=", images_auto_save_params_.timer_);
-			flush(render_view, render_control, All);
+			flush(render_control, All);
 			resetImagesAutoSaveTimer();
 		}
 
@@ -620,11 +614,11 @@ void ImageFilm::finishArea(const RenderView *render_view, RenderControl &render_
 	else render_control.updateProgressBar(a.w_ * a.h_);
 }
 
-void ImageFilm::flush(const RenderView *render_view, RenderControl &render_control, Flags flags)
+void ImageFilm::flush(RenderControl &render_control, Flags flags)
 {
 	if(render_control.finished())
 	{
-		logger_.logInfo("imageFilm: Flushing buffer (View '", render_view->getName(), "')...");
+		logger_.logInfo("imageFilm: Flushing buffer (View '", getName(), "')...");
 	}
 
 	float density_factor = 0.f;
@@ -663,13 +657,13 @@ void ImageFilm::flush(const RenderView *render_view, RenderControl &render_contr
 				exported_image_layers_.setColor({{i, j}}, color, layer_def);
 				if(render_callbacks_.put_pixel_)
 				{
-					render_callbacks_.put_pixel_(render_view->getName().c_str(), LayerDef::getName(layer_def).c_str(), i, j, color.r_, color.g_, color.b_, color.a_, render_callbacks_.put_pixel_data_);
+					render_callbacks_.put_pixel_(LayerDef::getName(layer_def).c_str(), i, j, color.r_, color.g_, color.b_, color.a_, render_callbacks_.put_pixel_data_);
 				}
 			}
 		}
 	}
 
-	if(render_callbacks_.flush_) render_callbacks_.flush_(render_view->getName().c_str(), render_callbacks_.flush_data_);
+	if(render_callbacks_.flush_) render_callbacks_.flush_(render_callbacks_.flush_data_);
 
 	if(render_control.finished())
 	{
@@ -1019,7 +1013,7 @@ void ImageFilm::imageFilmLoadAllInFolder(RenderControl &render_control)
 	for(const auto &film_file : film_file_paths_list)
 	{
 		ParamResult param_result;
-		auto loaded_film = std::make_unique<ImageFilm>(logger_, param_result, render_control, params_.getAsParamMap(true));
+		auto loaded_film = std::make_unique<ImageFilm>(logger_, param_result, render_control, film_file, params_.getAsParamMap(true));
 		if(!loaded_film->imageFilmLoad(film_file))
 		{
 			logger_.logWarning("ImageFilm: Could not load film file '", film_file, "'");
@@ -1214,7 +1208,7 @@ void ImageFilm::defineLayer(LayerDef::Type layer_type, Image::Type image_type, I
 {
 	if(layer_type == LayerDef::Disabled)
 	{
-		logger_.logWarning(getClassName(), "'", name(), "': cannot create layer '", LayerDef::getName(layer_type), "' of unknown or disabled layer type");
+		logger_.logWarning(getClassName(), "'", getName(), "': cannot create layer '", LayerDef::getName(layer_type), "' of unknown or disabled layer type");
 		return;
 	}
 
@@ -1224,16 +1218,16 @@ void ImageFilm::defineLayer(LayerDef::Type layer_type, Image::Type image_type, I
 		   existing_layer->getImageType() == image_type &&
 		   existing_layer->getExportedImageType() == exported_image_type) return;
 
-		if(logger_.isDebug())logger_.logDebug(getClassName(), "'", name(), "': had previously defined: ", existing_layer->print());
+		if(logger_.isDebug())logger_.logDebug(getClassName(), "'", getName(), "': had previously defined: ", existing_layer->print());
 		if(image_type == Image::Type::None && existing_layer->getImageType() != Image::Type::None)
 		{
-			if(logger_.isDebug())logger_.logDebug(getClassName(), "'", name(), "': the layer '", LayerDef::getName(layer_type), "' had previously a defined internal image which cannot be removed.");
+			if(logger_.isDebug())logger_.logDebug(getClassName(), "'", getName(), "': the layer '", LayerDef::getName(layer_type), "' had previously a defined internal image which cannot be removed.");
 		}
 		else existing_layer->setImageType(image_type);
 
 		if(exported_image_type == Image::Type::None && existing_layer->getExportedImageType() != Image::Type::None)
 		{
-			if(logger_.isDebug())logger_.logDebug(getClassName(), "'", name(), "': the layer '", LayerDef::getName(layer_type), "' was previously an exported layer and cannot be changed into an internal layer now.");
+			if(logger_.isDebug())logger_.logDebug(getClassName(), "'", getName(), "': the layer '", LayerDef::getName(layer_type), "' was previously an exported layer and cannot be changed into an internal layer now.");
 		}
 		else
 		{
@@ -1241,13 +1235,13 @@ void ImageFilm::defineLayer(LayerDef::Type layer_type, Image::Type image_type, I
 			existing_layer->setExportedImageName(exported_image_name);
 		}
 		existing_layer->setType(layer_type);
-		logger_.logInfo(getClassName(), "'", name(), "': layer redefined: " + existing_layer->print());
+		logger_.logInfo(getClassName(), "'", getName(), "': layer redefined: " + existing_layer->print());
 	}
 	else
 	{
 		Layer new_layer(layer_type, image_type, exported_image_type, exported_image_name);
 		layers_.set(layer_type, new_layer);
-		logger_.logInfo(getClassName(), "'", name(), "': layer defined: ", new_layer.print());
+		logger_.logInfo(getClassName(), "'", getName(), "': layer defined: ", new_layer.print());
 	}
 }
 
@@ -1324,12 +1318,6 @@ void ImageFilm::defineDependentLayers()
 	}
 }
 
-void ImageFilm::setRenderNotifyViewCallback(yafaray_RenderNotifyViewCallback callback, void *callback_data)
-{
-	render_callbacks_.notify_view_ = callback;
-	render_callbacks_.notify_view_data_ = callback_data;
-}
-
 void ImageFilm::setRenderNotifyLayerCallback(yafaray_RenderNotifyLayerCallback callback, void *callback_data)
 {
 	render_callbacks_.notify_layer_ = callback;
@@ -1386,6 +1374,18 @@ std::pair<size_t, ParamResult> ImageFilm::createOutput(const std::string &name, 
 {
 	auto result{Items<ImageOutput>::createItem<ImageFilm>(logger_, outputs_, name, param_map, *this)};
 	return result;
+}
+
+ParamResult ImageFilm::defineCamera(const std::string &name, const ParamMap &param_map)
+{
+	auto [camera, camera_integrator_result]{Camera::factory(logger_, name, param_map)};
+	if(logger_.isVerbose() && camera)
+	{
+		logger_.logVerbose(getClassName(), " '", getName(), "': Added ", camera->getClassName(), " '", name, "' (", camera->type().print(), ")!");
+	}
+	//logger_.logParams(result.first->getAsParamMap(true).print()); //TEST CODE ONLY, REMOVE!!
+	camera_ = std::move(camera);
+	return camera_integrator_result;
 }
 
 } //namespace yafaray

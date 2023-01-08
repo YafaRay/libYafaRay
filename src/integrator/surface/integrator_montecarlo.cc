@@ -75,7 +75,7 @@ ParamMap MonteCarloIntegrator::getAsParamMap(bool only_non_default) const
 }
 
 //Constructor and destructor defined here to avoid issues with std::unique_ptr<Pdf1D> being Pdf1D incomplete in the header (forward declaration)
-MonteCarloIntegrator::MonteCarloIntegrator(RenderControl &render_control, Logger &logger, ParamResult &param_result, const ParamMap &param_map) : TiledIntegrator(render_control, logger, param_result, param_map), params_{param_result, param_map}
+MonteCarloIntegrator::MonteCarloIntegrator(RenderControl &render_control, Logger &logger, ParamResult &param_result, const std::string &name, const ParamMap &param_map) : ParentClassType_t(render_control, logger, param_result, name, param_map), params_{param_result, param_map}
 {
 }
 
@@ -85,7 +85,7 @@ Rgb MonteCarloIntegrator::estimateAllDirectLight(RandomGenerator &random_generat
 {
 	Rgb col{0.f};
 	unsigned int loffs = 0;
-	for(const auto &light : lights_)
+	for(const auto &light : getLights())
 	{
 		col += doLightEstimation(random_generator, color_layers, chromatic_enabled, wavelength, light, sp, wo, loffs, ray_division, pixel_sampling_data);
 		++loffs;
@@ -99,12 +99,12 @@ Rgb MonteCarloIntegrator::estimateAllDirectLight(RandomGenerator &random_generat
 
 Rgb MonteCarloIntegrator::estimateOneDirectLight(RandomGenerator &random_generator, std::vector<int> &correlative_sample_number, int thread_id, bool chromatic_enabled, float wavelength, const SurfacePoint &sp, const Vec3f &wo, int n, const RayDivision &ray_division, const PixelSamplingData &pixel_sampling_data) const
 {
-	const int num_lights = lights_.size();
+	const int num_lights = numLights();
 	if(num_lights == 0) return Rgb{0.f};
 	Halton hal_2(2, image_film_->getBaseSamplingOffset() + correlative_sample_number[thread_id] - 1); //Probably with this change the parameter "n" is no longer necessary, but I will keep it just in case I have to revert this change!
 	const int lnum = std::min(static_cast<int>(hal_2.getNext() * static_cast<float>(num_lights)), num_lights - 1);
 	++correlative_sample_number[thread_id];
-	return doLightEstimation(random_generator, nullptr, chromatic_enabled, wavelength, lights_[lnum], sp, wo, lnum, ray_division, pixel_sampling_data) * num_lights;
+	return doLightEstimation(random_generator, nullptr, chromatic_enabled, wavelength, getLight(lnum), sp, wo, lnum, ray_division, pixel_sampling_data) * num_lights;
 }
 
 Rgb MonteCarloIntegrator::diracLight(RandomGenerator &random_generator, ColorLayers *color_layers, const Light *light, const Vec3f &wo, const SurfacePoint &sp, bool cast_shadows, float time) const

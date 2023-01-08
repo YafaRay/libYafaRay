@@ -51,14 +51,12 @@ LIBYAFARAY_4.0.0 {
         yafaray_createLight;
         yafaray_createTexture;
         yafaray_createMaterial;
-        yafaray_createCamera;
+        yafaray_defineCamera;
         yafaray_defineBackground;
         yafaray_defineSurfaceIntegrator;
         yafaray_defineVolumeIntegrator;
         yafaray_createVolumeRegion;
-        yafaray_createRenderView;
         yafaray_createOutput;
-        yafaray_setRenderNotifyViewCallback;
         yafaray_setNotifyLayerCallback;
         yafaray_setPutPixelCallback;
         yafaray_setHighlightPixelCallback;
@@ -92,7 +90,6 @@ LIBYAFARAY_4.0.0 {
         yafaray_getVersionPatch;
         yafaray_getVersionString;
         yafaray_getLayersTable;
-        yafaray_getViewsTable;
         yafaray_destroyCharString;
 
     local:

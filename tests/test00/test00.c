@@ -37,12 +37,11 @@ struct ResultImage
     char *data_;
 };
 
-void notifyViewCallback(const char *view_name, void *callback_data);
 void notifyLayerCallback(const char *internal_layer_name, const char *exported_layer_name, int width, int height, int layer_exported_channels, void *callback_data);
-void putPixelCallback(const char *view_name, const char *layer_name, int x, int y, float r, float g, float b, float a, void *callback_data);
-void flushAreaCallback(const char *view_name, int area_id, int x_0, int y_0, int x_1, int y_1, void *callback_data);
-void flushCallback(const char *view_name, void *callback_data);
-void highlightCallback(const char *view_name, int area_id, int x_0, int y_0, int x_1, int y_1, void *callback_data);
+void putPixelCallback(const char *layer_name, int x, int y, float r, float g, float b, float a, void *callback_data);
+void flushAreaCallback(int area_id, int x_0, int y_0, int x_1, int y_1, void *callback_data);
+void flushCallback(void *callback_data);
+void highlightCallback(int area_id, int x_0, int y_0, int x_1, int y_1, void *callback_data);
 void monitorCallback(int steps_total, int steps_done, const char *tag, void *callback_data);
 void loggerCallback(yafaray_LogLevel log_level, size_t datetime, const char *time_of_day, const char *description, void *callback_data);
 
@@ -84,7 +83,6 @@ int main()
 	int total_steps = 0;
 	char *version_string = NULL;
 	char *layers_string = NULL;
-	char *views_string = NULL;
 	int tex_width = 0;
 	int tex_height = 0;
 	int i = 0;
@@ -154,7 +152,6 @@ int main()
 	yafaray_createOutput(film, "output2_tga", param_map);
 
 	/* Setting up Film callbacks, must be done before yafaray_setupRender() */
-	yafaray_setRenderNotifyViewCallback(film, notifyViewCallback, (void *) &result_image);
 	yafaray_setNotifyLayerCallback(film, notifyLayerCallback, (void *) &result_image);
 	yafaray_setPutPixelCallback(film, putPixelCallback, (void *) &result_image);
 	yafaray_setFlushAreaCallback(film, flushAreaCallback, (void *) &result_image);
@@ -257,12 +254,7 @@ int main()
 	yafaray_setParamMapVector(param_map, "from", 8.6f, -7.2f, 8.1f);
 	yafaray_setParamMapVector(param_map, "to", 8.0f, -6.7f, 7.6f);
 	yafaray_setParamMapVector(param_map, "up", 8.3f, -6.8f, 9.f);
-	yafaray_createCamera(renderer, "cam_1", param_map);
-
-	/* Creating scene view */
-	yafaray_clearParamMap(param_map);
-	yafaray_setParamMapString(param_map, "camera_name", "cam_1");
-	yafaray_createRenderView(renderer, "view_1", param_map);
+	yafaray_defineCamera(film, "cam_1", param_map);
 
 	/* Creating surface integrator */
 	yafaray_clearParamMap(param_map);
@@ -277,11 +269,8 @@ int main()
 	yafaray_setupRender(scene, renderer, param_map);
 
 	layers_string = yafaray_getLayersTable(film);
-	views_string = yafaray_getViewsTable(renderer);
 	printf("** Layers defined:\n%s\n", layers_string);
-	printf("** Views defined:\n%s\n", views_string);
 	yafaray_destroyCharString(layers_string);
-	yafaray_destroyCharString(views_string);
 
 	/* Rendering */
 	yafaray_render(renderer, film, scene, monitorCallback, &total_steps, YAFARAY_DISPLAY_CONSOLE_NORMAL);
@@ -311,19 +300,14 @@ float forceRange01(float value)
 	else return value;
 }
 
-void notifyViewCallback(const char *view_name, void *callback_data)
-{
-	printf("**** notifyViewCallback view_name='%s', callback_data=%p\n", view_name, callback_data);
-}
-
 void notifyLayerCallback(const char *internal_layer_name, const char *exported_layer_name, int width, int height, int layer_exported_channels, void *callback_data)
 {
 	printf("**** notifyLayerCallback internal_layer_name='%s', exported_layer_name='%s', width=%d, height=%d, layer_exported_channels=%d, callback_data=%p\n", internal_layer_name, exported_layer_name, width, height, layer_exported_channels, callback_data);
 }
 
-void putPixelCallback(const char *view_name, const char *layer_name, int x, int y, float r, float g, float b, float a, void *callback_data)
+void putPixelCallback(const char *layer_name, int x, int y, float r, float g, float b, float a, void *callback_data)
 {
-	if(x % 100 == 0 && y % 100 == 0) printf("**** putPixelCallback view_name='%s', layer_name='%s', x=%d, y=%d, rgba={%f,%f,%f,%f}, callback_data=%p\n", view_name, layer_name, x, y, r, g, b, a, callback_data);
+	if(x % 100 == 0 && y % 100 == 0) printf("**** putPixelCallback layer_name='%s', x=%d, y=%d, rgba={%f,%f,%f,%f}, callback_data=%p\n", layer_name, x, y, r, g, b, a, callback_data);
 	if(strcmp(layer_name, "combined") == 0)
 	{
 		struct ResultImage *result_image = (struct ResultImage *) callback_data;
@@ -335,19 +319,19 @@ void putPixelCallback(const char *view_name, const char *layer_name, int x, int 
 	}
 }
 
-void flushAreaCallback(const char *view_name, int area_id, int x_0, int y_0, int x_1, int y_1, void *callback_data)
+void flushAreaCallback(int area_id, int x_0, int y_0, int x_1, int y_1, void *callback_data)
 {
-	printf("**** flushAreaCallback view_name='%s', area_id=%d, x_0=%d, y_0=%d, x_1=%d, y_1=%d, callback_data=%p\n", view_name, area_id, x_0, y_0, x_1, y_1, callback_data);
+	printf("**** flushAreaCallback area_id=%d, x_0=%d, y_0=%d, x_1=%d, y_1=%d, callback_data=%p\n", area_id, x_0, y_0, x_1, y_1, callback_data);
 }
 
-void flushCallback(const char *view_name, void *callback_data)
+void flushCallback(void *callback_data)
 {
-	printf("**** flushCallback view_name='%s', callback_data=%p\n", view_name, callback_data);
+	printf("**** flushCallback callback_data=%p\n", callback_data);
 }
 
-void highlightCallback(const char *view_name, int area_id, int x_0, int y_0, int x_1, int y_1, void *callback_data)
+void highlightCallback(int area_id, int x_0, int y_0, int x_1, int y_1, void *callback_data)
 {
-	printf("**** highlightCallback view_name='%s', area_id=%d, x_0=%d, y_0=%d, x_1=%d, y_1=%d, callback_data=%p\n", view_name, area_id, x_0, y_0, x_1, y_1, callback_data);
+	printf("**** highlightCallback area_id=%d, x_0=%d, y_0=%d, x_1=%d, y_1=%d, callback_data=%p\n", area_id, x_0, y_0, x_1, y_1, callback_data);
 }
 
 void monitorCallback(int steps_total, int steps_done, const char *tag, void *callback_data)

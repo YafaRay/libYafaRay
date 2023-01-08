@@ -67,7 +67,7 @@ class Scene final
 		inline static std::string getClassName() { return "Scene"; }
 		Scene(Logger &logger, const std::string &name, const ParamMap &param_map);
 		~Scene();
-		std::string name() const { return name_; }
+		std::string getName() const { return name_; }
 		int getNumThreads() const { return nthreads_; }
 		int addVertex(size_t object_id, Point3f &&p, unsigned char time_step);
 		int addVertex(size_t object_id, Point3f &&p, Point3f &&orco, unsigned char time_step);

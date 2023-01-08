@@ -23,7 +23,6 @@
 #include "color/color_layers.h"
 #include "sampler/sample.h"
 #include "sampler/halton.h"
-#include "render/render_view.h"
 #include "render/render_data.h"
 #include "common/timer.h"
 #include "material/sample.h"
@@ -61,28 +60,26 @@ ParamMap PathIntegrator::getAsParamMap(bool only_non_default) const
 	return result;
 }
 
-std::pair<std::unique_ptr<SurfaceIntegrator>, ParamResult> PathIntegrator::factory(Logger &logger, RenderControl &render_control, const ParamMap &param_map)
+std::pair<std::unique_ptr<SurfaceIntegrator>, ParamResult> PathIntegrator::factory(Logger &logger, RenderControl &render_control, const std::string &name, const ParamMap &param_map)
 {
 	auto param_result{Params::meta_.check(param_map, {"type"}, {})};
-	auto integrator {std::make_unique<ThisClassType_t>(render_control, logger, param_result, param_map)};
+	auto integrator {std::make_unique<ThisClassType_t>(render_control, logger, param_result, name, param_map)};
 	if(param_result.notOk()) logger.logWarning(param_result.print<ThisClassType_t>(getClassName(), {"type"}));
 	return {std::move(integrator), param_result};
 }
 
-PathIntegrator::PathIntegrator(RenderControl &render_control, Logger &logger, ParamResult &param_result, const ParamMap &param_map) : CausticPhotonIntegrator(render_control, logger, param_result, param_map), params_{param_result, param_map}
+PathIntegrator::PathIntegrator(RenderControl &render_control, Logger &logger, ParamResult &param_result, const std::string &name, const ParamMap &param_map) : ParentClassType_t(render_control, logger, param_result, name, param_map), params_{param_result, param_map}
 {
 	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + params_.getAsParamMap(true).print());
 }
 
-bool PathIntegrator::preprocess(FastRandom &fast_random, ImageFilm *image_film, const RenderView *render_view, const Scene &scene, const Renderer &renderer)
+bool PathIntegrator::preprocess(FastRandom &fast_random, ImageFilm *image_film, const Scene &scene, const Renderer &renderer)
 {
-	bool success = SurfaceIntegrator::preprocess(fast_random, image_film, render_view, scene, renderer);
+	bool success = SurfaceIntegrator::preprocess(fast_random, image_film, scene, renderer);
 	std::stringstream set;
 
 	timer_->addEvent("prepass");
 	timer_->start("prepass");
-
-	lights_ = render_view->getLightsVisible();
 
 	set << "Path Tracing  ";
 

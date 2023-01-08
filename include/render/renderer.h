@@ -25,7 +25,6 @@
 #include "public_api/yafaray_c_api.h"
 #include "render/render_callbacks.h"
 #include "render/render_control.h"
-#include "render/render_view.h"
 #include "common/aa_noise_params.h"
 #include "common/mask_edge_toon_params.h"
 #include "common/layers.h"
@@ -39,8 +38,8 @@ class Format;
 class SurfaceIntegrator;
 class VolumeIntegrator;
 class SurfacePoint;
-class RenderView;
 class Camera;
+class Light;
 enum class DarkDetectionType : unsigned char;
 
 class Renderer final
@@ -51,13 +50,11 @@ class Renderer final
 		~Renderer();
 		void setNumThreads(int threads);
 		void setNumThreadsPhotons(int threads_photons);
-		std::string name() const { return name_; }
+		std::string getName() const { return name_; }
 		bool render(ImageFilm &image_film, std::unique_ptr<ProgressBar> progress_bar, const Scene &scene);
 		int getNumThreads() const { return nthreads_; }
 		int getNumThreadsPhotons() const { return nthreads_photons_; }
 		RenderControl &getRenderControl() { return render_control_; }
-		const Items<RenderView> &getRenderViews() const { return render_views_; }
-		std::pair<size_t, ParamResult> createRenderView(const std::string &name, const ParamMap &param_map);
 		bool setupSceneRenderParams(const ParamMap &param_map);
 		float getShadowBias() const { return shadow_bias_; }
 		bool isShadowBiasAuto() const { return shadow_bias_auto_; }
@@ -66,9 +63,7 @@ class Renderer final
 		ParamResult defineSurfaceIntegrator(const ParamMap &param_map);
 		ParamResult defineVolumeIntegrator(const Scene &scene, const ParamMap &param_map);
 		const VolumeIntegrator *getVolIntegrator() const { return vol_integrator_.get(); }
-		std::pair<size_t, ParamResult> createCamera(const std::string &name, const ParamMap &param_map);
-		std::tuple<Camera *, size_t, ResultFlags> getCamera(const std::string &name) const;
-		const Items<Camera> &getCameras() const { return cameras_; }
+		std::vector<const Light *> getLightsVisible() const;
 
 	private:
 		std::string name_{"Renderer"};
@@ -81,8 +76,6 @@ class Renderer final
 		RenderControl render_control_;
 		std::unique_ptr<SurfaceIntegrator> surf_integrator_;
 		std::unique_ptr<VolumeIntegrator> vol_integrator_;
-		Items<RenderView> render_views_;
-		Items<Camera> cameras_;
 		Logger &logger_;
 };
 

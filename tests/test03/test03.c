@@ -532,7 +532,7 @@ int main()
 	yafaray_setParamMapVector(yi, "to", 6.82627, -5.89697, 4.89842);
 	yafaray_setParamMapString(yi, "type", "perspective");
 	yafaray_setParamMapVector(yi, "up", 7.16376, -6.19517, 6.23901);
-	yafaray_createCamera(yi, "Camera");
+	yafaray_defineCamera(yi, "Camera");
 	yafaray_clearParamMap(param_map);
 
 	yafaray_setParamMapString(yi, "camera_name", "Camera");

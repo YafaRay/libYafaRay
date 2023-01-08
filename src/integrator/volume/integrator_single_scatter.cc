@@ -65,12 +65,12 @@ SingleScatterIntegrator::SingleScatterIntegrator(Logger &logger, ParamResult &pa
 	logger_.logParams("SingleScatter: stepSize: ", params_.step_size_, " adaptive: ", params_.adaptive_, " optimize: ", params_.optimize_);
 }
 
-bool SingleScatterIntegrator::preprocess(const RenderView *render_view, const Scene &scene, const Renderer &renderer)
+bool SingleScatterIntegrator::preprocess(const Scene &scene, const Renderer &renderer)
 {
 	accelerator_ = scene.getAccelerator();
 	if(!accelerator_) return false;
 	logger_.logInfo("SingleScatter: Preprocessing...");
-	lights_ = render_view->getLightsVisible();
+	lights_ = renderer.getLightsVisible();
 	if(params_.optimize_)
 	{
 		for(const auto &vr : volume_regions_)

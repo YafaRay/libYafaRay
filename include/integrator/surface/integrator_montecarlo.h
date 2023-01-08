@@ -53,7 +53,7 @@ class MonteCarloIntegrator: public TiledIntegrator
 			PARAM_DECL(bool, transparent_background_refraction_, false, "bg_transp_refract", "Render refractions of background as transparent");
 		} params_;
 		[[nodiscard]] ParamMap getAsParamMap(bool only_non_default) const override;
-		MonteCarloIntegrator(RenderControl &render_control, Logger &logger, ParamResult &param_result, const ParamMap &param_map);
+		MonteCarloIntegrator(RenderControl &render_control, Logger &logger, ParamResult &param_result, const std::string &name, const ParamMap &param_map);
 		~MonteCarloIntegrator() override;
 		/*! Estimates direct light from all sources in a mc fashion and completing MIS (Multiple Importance Sampling) for a given surface point */
 		Rgb estimateAllDirectLight(RandomGenerator &random_generator, ColorLayers *color_layers, bool chromatic_enabled, float wavelength, const SurfacePoint &sp, const Vec3f &wo, const RayDivision &ray_division, const PixelSamplingData &pixel_sampling_data) const;
@@ -73,8 +73,7 @@ class MonteCarloIntegrator: public TiledIntegrator
 		std::pair<Rgb, float> glossyReflectNoTransmit(FastRandom &fast_random, RandomGenerator &random_generator, std::vector<int> &correlative_sample_number, int thread_id, int ray_level, bool chromatic_enabled, float wavelength, const Ray &ray, const SurfacePoint &sp, BsdfFlags bsdfs, const Vec3f &wo, int additional_depth, const PixelSamplingData &pixel_sampling_data, const RayDivision &ray_division_new, float s_1, float s_2) const;
 		std::pair<Rgb, float> glossyTransmit(FastRandom &fast_random, RandomGenerator &random_generator, std::vector<int> &correlative_sample_number, int thread_id, int ray_level, bool chromatic_enabled, float wavelength, const Ray &ray, const SurfacePoint &sp, BsdfFlags bsdfs, int additional_depth, const PixelSamplingData &pixel_sampling_data, const RayDivision &ray_division_new, const Rgb &transmit_col, float w, const Vec3f &dir) const;
 		std::pair<Rgb, float> glossyReflect(FastRandom &fast_random, RandomGenerator &random_generator, std::vector<int> &correlative_sample_number, int thread_id, int ray_level, bool chromatic_enabled, float wavelength, const Ray &ray, const SurfacePoint &sp, BsdfFlags bsdfs, int additional_depth, const PixelSamplingData &pixel_sampling_data, const RayDivision &ray_division_new, const Rgb &reflect_color, float w, const Vec3f &dir) const;
-
-		std::vector<const Light *> lights_; //! An array containing all the visible scene lights
+ //! An array containing all the visible scene lights
 
 		static constexpr inline int initial_ray_samples_dispersive_ = 8;
 		static constexpr inline int initial_ray_samples_glossy_ = 8;

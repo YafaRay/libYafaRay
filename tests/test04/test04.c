@@ -144,7 +144,7 @@ int main()
 	yafaray_setParamMapVector(yi, "from", 8.6f, -7.2f, 8.1f);
 	yafaray_setParamMapVector(yi, "to", 8.0f, -6.7f, 7.6f);
 	yafaray_setParamMapVector(yi, "up", 8.3f, -6.8f, 9.f);
-	yafaray_createCamera(yi, "cam_1");
+	yafaray_defineCamera(yi, "cam_1");
 	yafaray_clearParamMap(param_map);
 
 	/* Creating scene view */

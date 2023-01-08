@@ -21,7 +21,6 @@
 #include "geometry/object/object.h"
 #include "texture/texture.h"
 #include "image/image_output.h"
-#include "render/render_view.h"
 #include "camera/camera.h"
 #include "light/light.h"
 #include "volume/region/volume_region.h"
@@ -40,17 +39,17 @@ std::pair<size_t, ParamResult> Items<T>::createItem(Logger &logger, Items <T> &m
 	const auto [existing_item, existing_item_id, existing_item_result]{map.getByName(name)};
 	if(existing_item)
 	{
-		if(logger.isVerbose()) logger.logWarning(items_container.getClassName(), "'", items_container.name(), "': item with name '", name, "' already exists, overwriting with new item.");
+		if(logger.isVerbose()) logger.logWarning(items_container.getClassName(), "'", items_container.getName(), "': item with name '", name, "' already exists, overwriting with new item.");
 	}
 	std::unique_ptr<T> new_item;
 	ParamResult param_result;
-	if constexpr (std::is_same_v<T, RenderView> || std::is_same_v<T, Light> || std::is_same_v<T, Texture> || std::is_same_v<T, Image> || std::is_same_v<T, VolumeRegion> || std::is_same_v<T, Object>) std::tie(new_item, param_result) = T::factory(logger, items_container, name, param_map);
+	if constexpr (std::is_same_v<T, Light> || std::is_same_v<T, Texture> || std::is_same_v<T, Image> || std::is_same_v<T, VolumeRegion> || std::is_same_v<T, Object>) std::tie(new_item, param_result) = T::factory(logger, items_container, name, param_map);
 	else std::tie(new_item, param_result) = T::factory(logger, name, param_map);
 	if(new_item)
 	{
 		if(logger.isVerbose())
 		{
-			logger.logVerbose(items_container.getClassName(), "'", items_container.name(), "': Added ", new_item->getClassName(), " '", name, "' (", new_item->type().print(), ")!");
+			logger.logVerbose(items_container.getClassName(), "'", items_container.getName(), "': Added ", new_item->getClassName(), " '", name, "' (", new_item->type().print(), ")!");
 		}
 		const auto [new_item_id, adding_result]{map.add(name, std::move(new_item))};
 		param_result.flags_ |= adding_result;
@@ -168,13 +167,11 @@ template class Items<Material>;
 template class Items<Object>;
 template class Items<Light>;
 template class Items<Texture>;
-template class Items<RenderView>;
 template class Items<Camera>;
 template class Items<ImageOutput>;
 template class Items<VolumeRegion>;
 template class Items<Image>;
 template std::pair<size_t, ParamResult> Items<ImageOutput>::createItem<ImageFilm>(Logger &logger, Items<ImageOutput> &map, const std::string &name, const ParamMap &param_map, const ImageFilm &items_container);
-template std::pair<size_t, ParamResult> Items<RenderView>::createItem<Renderer>(Logger &logger, Items<RenderView> &map, const std::string &name, const ParamMap &param_map, const Renderer &items_container);
 template std::pair<size_t, ParamResult> Items<Camera>::createItem<Renderer>(Logger &logger, Items<Camera> &map, const std::string &name, const ParamMap &param_map, const Renderer &items_container);
 template std::pair<size_t, ParamResult> Items<Light>::createItem<Scene>(Logger &logger, Items<Light> &map, const std::string &name, const ParamMap &param_map, const Scene &items_container);
 template std::pair<size_t, ParamResult> Items<Texture>::createItem<Scene>(Logger &logger, Items<Texture> &map, const std::string &name, const ParamMap &param_map, const Scene &items_container);

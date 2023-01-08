@@ -34,7 +34,6 @@
 #include "sampler/sample_pdf1d.h"
 #include "render/render_data.h"
 #include "accelerator/accelerator.h"
-#include "render/render_view.h"
 #include "material/sample.h"
 #include "render/renderer.h"
 
@@ -83,10 +82,10 @@ ParamMap BidirectionalIntegrator::getAsParamMap(bool only_non_default) const
 	return result;
 }
 
-std::pair<std::unique_ptr<SurfaceIntegrator>, ParamResult> BidirectionalIntegrator::factory(Logger &logger, RenderControl &render_control, const ParamMap &param_map)
+std::pair<std::unique_ptr<SurfaceIntegrator>, ParamResult> BidirectionalIntegrator::factory(Logger &logger, RenderControl &render_control, const std::string &name, const ParamMap &param_map)
 {
 	auto param_result{Params::meta_.check(param_map, {"type"}, {})};
-	auto integrator {std::make_unique<ThisClassType_t>(render_control, logger, param_result, param_map)};
+	auto integrator {std::make_unique<ThisClassType_t>(render_control, logger, param_result, name, param_map)};
 	if(param_result.notOk()) logger.logWarning(param_result.print<ThisClassType_t>(getClassName(), {"type"}));
 	return {std::move(integrator), param_result};
 }
@@ -186,27 +185,24 @@ BidirectionalIntegrator::PathData::PathData()
 	path_.resize(1);
 }
 
-BidirectionalIntegrator::BidirectionalIntegrator(RenderControl &render_control, Logger &logger, ParamResult &param_result, const ParamMap &param_map) : TiledIntegrator{render_control, logger, param_result, param_map}, params_{param_result, param_map}
+BidirectionalIntegrator::BidirectionalIntegrator(RenderControl &render_control, Logger &logger, ParamResult &param_result, const std::string &name, const ParamMap &param_map) : ParentClassType_t{render_control, logger, param_result, name, param_map}, params_{param_result, param_map}
 {
 	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + params_.getAsParamMap(true).print());
 }
 
-bool BidirectionalIntegrator::preprocess(FastRandom &fast_random, ImageFilm *image_film, const RenderView *render_view, const Scene &scene, const Renderer &renderer)
+bool BidirectionalIntegrator::preprocess(FastRandom &fast_random, ImageFilm *image_film, const Scene &scene, const Renderer &renderer)
 {
-	bool success = SurfaceIntegrator::preprocess(fast_random, image_film, render_view, scene, renderer);
+	bool success = SurfaceIntegrator::preprocess(fast_random, image_film, scene, renderer);
 	n_paths_ = 0;
-	// initialize userdata (todo!)
-	lights_ = render_view->getLightsVisible();
-	const int num_lights = lights_.size();
-	f_num_lights_ = 1.f / static_cast<float>(num_lights);
-	std::vector<float> energies(num_lights);
-	for(int i = 0; i < num_lights; ++i) energies[i] = lights_[i]->totalEnergy().energy();
+	f_num_lights_ = 1.f / static_cast<float>(numLights());
+	std::vector<float> energies(numLights());
+	for(size_t i = 0; i < numLights(); ++i) energies[i] = getLight(i)->totalEnergy().energy();
 	light_power_d_ = std::make_unique<Pdf1D>(energies);
-	for(int i = 0; i < num_lights; ++i) inv_light_power_d_[lights_[i]] = light_power_d_->function(i) * light_power_d_->invIntegral();
+	for(int i = 0; i < numLights(); ++i) inv_light_power_d_[getLight(i)] = light_power_d_->function(i) * light_power_d_->invIntegral();
 	if(logger_.isDebug())
 	{
-		for(int i = 0; i < num_lights; ++i)logger_.logDebug(getName(), ": ", energies[i], " (", light_power_d_->function(i), ") ");
-		logger_.logDebug(getName(), ": preprocess(): lights: ", num_lights, " invIntegral:", light_power_d_->invIntegral());
+		for(size_t i = 0; i < numLights(); ++i)logger_.logDebug(getName(), ": ", energies[i], " (", light_power_d_->function(i), ") ");
+		logger_.logDebug(getName(), ": preprocess(): lights: ", numLights(), " invIntegral:", light_power_d_->invIntegral());
 	}
 	//nPaths = 0;
 	image_film_->setDensityEstimation(true);
@@ -294,14 +290,14 @@ std::pair<Rgb, float> BidirectionalIntegrator::integrate(Ray &ray, FastRandom &f
 		Ray lray;
 		lray.tmin_ = ray_min_dist_;
 		lray.tmax_ = -1.f;
-		auto [light_num, light_num_pdf]{lights_.size() > 0 ? light_power_d_->dSample(random_generator()) : std::pair<int, float>{-1, 0.f}};
+		auto [light_num, light_num_pdf]{numLights() > 0 ? light_power_d_->dSample(random_generator()) : std::pair<int, float>{-1, 0.f}};
 		light_num_pdf *= f_num_lights_;
 		LSample ls;
 		ls.s_1_ = random_generator(), ls.s_2_ = random_generator(), ls.s_3_ = random_generator(), ls.s_4_ = random_generator();
 		ls.sp_ = &vl.sp_;
 		auto [dir, pcol]{
-			lights_.size() > 0 ?
-			lights_[light_num]->emitSample(ls, lray.time_) :
+			numLights() > 0 ?
+			getLight(light_num)->emitSample(ls, lray.time_) :
 			std::pair<Vec3f, Rgb>{Vec3f{std::move(lray.dir_)}, Rgb{0.f}}
 		};
 		lray.dir_ = std::move(dir);
@@ -328,7 +324,7 @@ std::pair<Rgb, float> BidirectionalIntegrator::integrate(Ray &ray, FastRandom &f
 		const int n_light = createPath(random_generator, *accelerator_, chromatic_enabled, wavelength, lray, path_data.light_path_, max_path_length_, camera_);
 		if(n_light > 1)
 		{
-			path_data.pdf_illum_ = lights_[light_num]->illumPdf(path_data.light_path_[1].sp_.p_, vl.sp_.p_, vl.sp_.ng_) * light_num_pdf;
+			path_data.pdf_illum_ = getLight(light_num)->illumPdf(path_data.light_path_[1].sp_.p_, vl.sp_.p_, vl.sp_.ng_) * light_num_pdf;
 			path_data.pdf_emit_ = ls.area_pdf_ * path_data.light_path_[1].ds_ / vl.cos_wo_;
 		}
 		path_data.path_.resize(n_eye + n_light + 1); //FIXME why +1?
@@ -387,7 +383,7 @@ std::pair<Rgb, float> BidirectionalIntegrator::integrate(Ray &ray, FastRandom &f
 			path_data.pdf_emit_ = o_pdf_emit;
 			// light paths with one vertices are handled by classic direct light sampling (like regular path tracing)
 			// hence we start with s=2 here. currently the sampling probability is the same though, so weights are unaffected
-			path_data.light_ = lights_.size() > 0 ? lights_[light_num] : nullptr;
+			path_data.light_ = numLights() > 0 ? getLight(light_num) : nullptr;
 			for(int s = 2; s <= n_light; ++s)
 			{
 				clearPath(path_data.path_, s, t);
@@ -586,13 +582,13 @@ bool BidirectionalIntegrator::connectPaths(PathData &pd, int s, int t)
 std::tuple<bool, Ray, Rgb> BidirectionalIntegrator::connectLPath(PathData &pd, RandomGenerator &random_generator, bool chromatic_enabled, float wavelength, int t) const
 {
 	// create light sample with direct lighting strategy:
-	const int n_lights_i = lights_.size();
+	const int n_lights_i = numLights();
 	if(n_lights_i == 0) return {};
 	const PathVertex &z = pd.eye_path_[t - 1];
 	auto [lnum, light_num_pdf]{light_power_d_->dSample(random_generator())};
 	light_num_pdf *= f_num_lights_;
 	if(lnum > n_lights_i - 1) lnum = n_lights_i - 1;
-	const Light *light = lights_[lnum];
+	const Light *light{getLight(lnum)};
 	SurfacePoint sp_light;
 
 	//== use illumSample, no matter what...s1/s2 is only set when required ==

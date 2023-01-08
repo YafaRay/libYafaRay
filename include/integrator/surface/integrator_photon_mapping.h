@@ -43,9 +43,9 @@ class PhotonIntegrator final : public CausticPhotonIntegrator
 
 	public:
 		inline static std::string getClassName() { return "PhotonIntegrator"; }
-		static std::pair<std::unique_ptr<SurfaceIntegrator>, ParamResult> factory(Logger &logger, RenderControl &render_control, const ParamMap &params);
+		static std::pair<std::unique_ptr<SurfaceIntegrator>, ParamResult> factory(Logger &logger, RenderControl &render_control, const std::string &name, const ParamMap &params);
 		static std::string printMeta(const std::vector<std::string> &excluded_params) { return Params::meta_.print(excluded_params); }
-		PhotonIntegrator(RenderControl &render_control, Logger &logger, ParamResult &param_result, const ParamMap &param_map);
+		PhotonIntegrator(RenderControl &render_control, Logger &logger, ParamResult &param_result, const std::string &name, const ParamMap &param_map);
 		[[nodiscard]] ParamMap getAsParamMap(bool only_non_default) const override;
 
 	private:
@@ -64,8 +64,7 @@ class PhotonIntegrator final : public CausticPhotonIntegrator
 			PARAM_DECL(float, gather_dist_, 0.2f, "fg_min_pathlen", "Minimum distance to terminate path tracing (unless gatherBounces is reached). If not specified it defaults to the value set in '" + diffuse_radius_meta_.name() + "'");
 			PARAM_DECL(bool, show_map_, false, "show_map", "Show radiance map");
 		} params_;
-		[[nodiscard]] std::string getName() const override { return "PhotonMap"; }
-		bool preprocess(FastRandom &fast_random, ImageFilm *image_film, const RenderView *render_view, const Scene &scene, const Renderer &renderer) override;
+		bool preprocess(FastRandom &fast_random, ImageFilm *image_film, const Scene &scene, const Renderer &renderer) override;
 		std::pair<Rgb, float> integrate(Ray &ray, FastRandom &fast_random, RandomGenerator &random_generator, std::vector<int> &correlative_sample_number, ColorLayers *color_layers, int thread_id, int ray_level, bool chromatic_enabled, float wavelength, int additional_depth, const RayDivision &ray_division, const PixelSamplingData &pixel_sampling_data, unsigned int object_index_highest, unsigned int material_index_highest) const override;
 		void diffuseWorker(FastRandom &fast_random, PreGatherData &pgdat, unsigned int &total_photons_shot, int thread_id, const Pdf1D *light_power_d, const std::vector<const Light *> &lights_diffuse, int pb_step);
 		Rgb finalGathering(FastRandom &fast_random, RandomGenerator &random_generator, std::vector<int> &correlative_sample_number, int thread_id, bool chromatic_enabled, float wavelength, const SurfacePoint &sp, const Vec3f &wo, const RayDivision &ray_division, const PixelSamplingData &pixel_sampling_data) const;

@@ -30,7 +30,6 @@
 #include "render/render_data.h"
 #include "photon/photon.h"
 #include "render/render_control.h"
-#include "render/render_view.h"
 #include "photon/photon_sample.h"
 #include "volume/handler/volume_handler.h"
 
@@ -67,15 +66,15 @@ ParamMap SppmIntegrator::getAsParamMap(bool only_non_default) const
 	return result;
 }
 
-std::pair<std::unique_ptr<SurfaceIntegrator>, ParamResult> SppmIntegrator::factory(Logger &logger, RenderControl &render_control, const ParamMap &param_map)
+std::pair<std::unique_ptr<SurfaceIntegrator>, ParamResult> SppmIntegrator::factory(Logger &logger, RenderControl &render_control, const std::string &name, const ParamMap &param_map)
 {
 	auto param_result{Params::meta_.check(param_map, {"type"}, {})};
-	auto integrator {std::make_unique<ThisClassType_t>(render_control, logger, param_result, param_map)};
+	auto integrator {std::make_unique<ThisClassType_t>(render_control, logger, param_result, name, param_map)};
 	if(param_result.notOk()) logger.logWarning(param_result.print<ThisClassType_t>(getClassName(), {"type"}));
 	return {std::move(integrator), param_result};
 }
 
-SppmIntegrator::SppmIntegrator(RenderControl &render_control, Logger &logger, ParamResult &param_result, const ParamMap &param_map) : MonteCarloIntegrator(render_control, logger, param_result, param_map), params_{param_result, param_map}
+SppmIntegrator::SppmIntegrator(RenderControl &render_control, Logger &logger, ParamResult &param_result, const std::string &name, const ParamMap &param_map) : ParentClassType_t(render_control, logger, param_result, name, param_map), params_{param_result, param_map}
 {
 	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + params_.getAsParamMap(true).print());
 	caustic_map_ = std::make_unique<PhotonMap>(logger);
@@ -84,9 +83,9 @@ SppmIntegrator::SppmIntegrator(RenderControl &render_control, Logger &logger, Pa
 	diffuse_map_->setName("Diffuse Photon Map");
 }
 
-bool SppmIntegrator::preprocess(FastRandom &fast_random, ImageFilm *image_film, const RenderView *render_view, const Scene &scene, const Renderer &renderer)
+bool SppmIntegrator::preprocess(FastRandom &fast_random, ImageFilm *image_film, const Scene &scene, const Renderer &renderer)
 {
-	bool success = SurfaceIntegrator::preprocess(fast_random, image_film, render_view, scene, renderer);
+	bool success = SurfaceIntegrator::preprocess(fast_random, image_film, scene, renderer);
 	return success;
 }
 
@@ -135,7 +134,7 @@ bool SppmIntegrator::render(FastRandom &fast_random, unsigned int object_index_h
 	image_film_->resetFilmAutoSaveTimer();
 	timer_->addEvent("filmAutoSaveTimer");
 
-	image_film_->init(render_control_, render_view_);
+	image_film_->init(render_control_);
 
 	if(render_control_.resumed())
 	{
@@ -173,7 +172,7 @@ bool SppmIntegrator::render(FastRandom &fast_random, unsigned int object_index_h
 	{
 		if(render_control_.canceled()) break;
 		pass_info = i + 1;
-		image_film_->nextPass(render_view_, render_control_, false, getName(), edge_toon_params_);
+		image_film_->nextPass(render_control_, false, getName(), edge_toon_params_);
 		n_refined_ = 0;
 		renderPass(fast_random, correlative_sample_number, 1, acum_aa_samples, false, i, object_index_highest, material_index_highest); // offset are only related to the passNum, since we alway have only one sample.
 		acum_aa_samples += 1;
@@ -503,8 +502,7 @@ void SppmIntegrator::photonWorker(FastRandom &fast_random, unsigned int &total_p
 //photon pass, scatter photon
 void SppmIntegrator::prePass(FastRandom &fast_random, int samples, int offset, bool adaptive)
 {
-	lights_ = render_view_->getLightsVisible();
-	if(lights_.empty()) return;
+	if(getLights().empty()) return;
 
 	timer_->addEvent("prepass");
 	timer_->start("prepass");
@@ -527,19 +525,19 @@ void SppmIntegrator::prePass(FastRandom &fast_random, int samples, int offset, b
 
 	//background do not emit photons, or it is merged into normal light?
 
-	const int num_lights = lights_.size();
+	const int num_lights = numLights();
 	const auto f_num_lights = static_cast<float>(num_lights);
 	std::vector<float> energies(num_lights);
-	for(int i = 0; i < num_lights; ++i) energies[i] = lights_[i]->totalEnergy().energy();
+	for(int i = 0; i < num_lights; ++i) energies[i] = getLight(i)->totalEnergy().energy();
 	auto light_power_d = std::make_unique<Pdf1D>(energies);
 	if(logger_.isVerbose()) logger_.logVerbose(getName(), ": Light(s) photon color testing for photon map:");
 
 	for(int i = 0; i < num_lights; ++i)
 	{
-		auto[ray, light_pdf, pcol]{lights_[i]->emitPhoton(.5, .5, .5, .5, 0.f)}; //FIXME: what time to use?
+		auto[ray, light_pdf, pcol]{getLight(i)->emitPhoton(.5, .5, .5, .5, 0.f)}; //FIXME: what time to use?
 		const float light_num_pdf = light_power_d->function(i) * light_power_d->invIntegral();
 		pcol *= f_num_lights * light_pdf / light_num_pdf; //remember that lightPdf is the inverse of the pdf, hence *=...
-		if(logger_.isVerbose()) logger_.logVerbose(getName(), ": Light [", lights_[i]->getName(), "] Photon col:", pcol, " | lnpdf: ", light_num_pdf);
+		if(logger_.isVerbose()) logger_.logVerbose(getName(), ": Light [", getLight(i)->getName(), "] Photon col:", pcol, " | lnpdf: ", light_num_pdf);
 	}
 
 	//shoot photons
@@ -560,7 +558,7 @@ void SppmIntegrator::prePass(FastRandom &fast_random, int samples, int offset, b
 
 	std::vector<std::thread> threads;
 	threads.reserve(num_threads_photons_);
-	for(int i = 0; i < num_threads_photons_; ++i) threads.emplace_back(&SppmIntegrator::photonWorker, this, std::ref(fast_random), std::ref(curr), i, num_lights, light_power_d.get(), lights_, pb_step);
+	for(int i = 0; i < num_threads_photons_; ++i) threads.emplace_back(&SppmIntegrator::photonWorker, this, std::ref(fast_random), std::ref(curr), i, num_lights, light_power_d.get(), getLights(), pb_step);
 	for(auto &t : threads) t.join();
 
 	render_control_.setProgressBarAsDone();

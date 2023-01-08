@@ -367,7 +367,7 @@ std::pair<size_t, ParamResult> ExportC::createCamera(const std::string &name) no
 {
 	writeParamMap(*params_);
 	params_->clear();
-	file_ << "\t" << "yafaray_createCamera(yi, \"" << name << "\");\n";
+	file_ << "\t" << "yafaray_defineCamera(yi, \"" << name << "\");\n";
 	file_ << "\t" << "yafaray_clearParamMap(param_map);\n\n";
 	section_num_lines_ += 2;
 	if(section_num_lines_ >= section_max_lines_) file_ << sectionSplit();

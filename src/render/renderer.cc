@@ -27,7 +27,6 @@
 #include "integrator/volume/integrator_volume.h"
 #include "image/image_manipulation.h"
 #include "render/imagefilm.h"
-#include "render/render_view.h"
 #include "image/image_output.h"
 #include "scene/scene.h"
 #include "accelerator/accelerator.h"
@@ -69,7 +68,7 @@ void Renderer::setNumThreads(int threads)
 		if(logger_.isVerbose()) logger_.logVerbose("Automatic Detection of Threads: Inactive.");
 	}
 
-	logger_.logParams("Renderer '", name(), "' using [", nthreads_, "] Threads.");
+	logger_.logParams("Renderer '", getName(), "' using [", nthreads_, "] Threads.");
 
 	std::stringstream set;
 	set << "CPU threads=" << nthreads_ << std::endl;
@@ -92,71 +91,55 @@ void Renderer::setNumThreadsPhotons(int threads_photons)
 		if(logger_.isVerbose()) logger_.logVerbose("Automatic Detection of Threads for Photon Mapping: Inactive.");
 	}
 
-	logger_.logParams("Renderer '", name(), "' using for Photon Mapping [", nthreads_photons_, "] Threads.");
+	logger_.logParams("Renderer '", getName(), "' using for Photon Mapping [", nthreads_photons_, "] Threads.");
 }
 
 bool Renderer::render(ImageFilm &image_film, std::unique_ptr<ProgressBar> progress_bar, const Scene &scene)
 {
 	if(!surf_integrator_)
 	{
-		logger_.logError(getClassName(), "'", name(), "': No surface integrator, bailing out...");
+		logger_.logError(getClassName(), "'", getName(), "': No surface integrator, bailing out...");
 		return false;
 	}
 
 	render_control_.setProgressBar(std::move(progress_bar));
 
-	for(auto &[render_view, render_view_name, render_view_enabled] : render_views_)
+	FastRandom fast_random;
+	bool success = surf_integrator_->preprocess(fast_random, &image_film, scene, *this);
+	if(vol_integrator_) success = success && vol_integrator_->preprocess(scene, *this);
+
+	if(!success)
 	{
-		if(!render_view_enabled) continue;
-		std::stringstream inte_settings;
-		bool success = render_view->init(logger_, scene);
-		if(!success)
-		{
-			logger_.logWarning(getClassName(), "'", name(), "': No cameras or lights found at RenderView ", render_view_name, "', skipping this RenderView...");
-			continue;
-		}
-
-		FastRandom fast_random;
-		success = surf_integrator_->preprocess(fast_random, &image_film, render_view.get(), scene, *this);
-		if(vol_integrator_) success = success && vol_integrator_->preprocess(render_view.get(), scene, *this);
-
-		if(!success)
-		{
-			logger_.logError(getClassName(), "'", name(), "': Preprocessing process failed, exiting...");
-			return false;
-		}
-
-		cameras_.clearModifiedList();
-		//outputs_.clearModifiedList();
-		render_views_.clearModifiedList();
-
-		if(shadow_bias_auto_) shadow_bias_ = Accelerator::shadowBias();
-		if(ray_min_dist_auto_) ray_min_dist_ = Accelerator::minRayDist();
-		logger_.logInfo(getClassName(), "'", name(), "': Shadow Bias=", shadow_bias_, (shadow_bias_auto_ ? " (auto)" : ""), ", Ray Min Dist=", ray_min_dist_, (ray_min_dist_auto_ ? " (auto)" : ""));
-
-		render_control_.setDifferentialRaysEnabled(scene.mipMapInterpolationRequired());
-		render_control_.setStarted();
-		success = surf_integrator_->render(fast_random, scene.getObjectIndexHighest(), scene.getMaterialIndexHighest());
-		if(!success)
-		{
-			logger_.logError(getClassName(), "'", name(), "': Rendering process failed, exiting...");
-			return false;
-		}
-		render_control_.setRenderInfo(surf_integrator_->getRenderInfo());
-		render_control_.setAaNoiseInfo(surf_integrator_->getAaNoiseInfo());
-		surf_integrator_->cleanup();
-		image_film.flush(render_view.get(), render_control_);
-		render_control_.setFinished();
+		logger_.logError(getClassName(), "'", getName(), "': Preprocessing process failed, exiting...");
+		return false;
 	}
+
+	if(shadow_bias_auto_) shadow_bias_ = Accelerator::shadowBias();
+	if(ray_min_dist_auto_) ray_min_dist_ = Accelerator::minRayDist();
+	logger_.logInfo(getClassName(), "'", getName(), "': Shadow Bias=", shadow_bias_, (shadow_bias_auto_ ? " (auto)" : ""), ", Ray Min Dist=", ray_min_dist_, (ray_min_dist_auto_ ? " (auto)" : ""));
+
+	render_control_.setDifferentialRaysEnabled(scene.mipMapInterpolationRequired());
+	render_control_.setStarted();
+	success = surf_integrator_->render(fast_random, scene.getObjectIndexHighest(), scene.getMaterialIndexHighest());
+	if(!success)
+	{
+		logger_.logError(getClassName(), "'", getName(), "': Rendering process failed, exiting...");
+		return false;
+	}
+	render_control_.setRenderInfo(surf_integrator_->getRenderInfo());
+	render_control_.setAaNoiseInfo(surf_integrator_->getAaNoiseInfo());
+	surf_integrator_->cleanup();
+	image_film.flush(render_control_, ImageFilm::All);
+	render_control_.setFinished();
 	return true;
 }
 
 ParamResult Renderer::defineSurfaceIntegrator(const ParamMap &param_map)
 {
-	auto [surface_integrator, surface_integrator_result]{SurfaceIntegrator::factory(logger_, render_control_, param_map)};
+	auto [surface_integrator, surface_integrator_result]{SurfaceIntegrator::factory(logger_, render_control_, "SurfaceIntegrator", param_map)}; //FIXME, set a specific name
 	if(logger_.isVerbose() && surface_integrator)
 	{
-		logger_.logVerbose("Renderer '", name(), "': Added ", surface_integrator->getClassName(), " '", this->name(), "' (", surface_integrator->type().print(), ")!");
+		logger_.logVerbose("Renderer '", getName(), "': Added ", surface_integrator->getClassName(), " '", this->getName(), "' (", surface_integrator->type().print(), ")!");
 	}
 	//logger_.logParams(result.first->getAsParamMap(true).print()); //TEST CODE ONLY, REMOVE!!
 	surf_integrator_ = std::move(surface_integrator);
@@ -168,17 +151,11 @@ ParamResult Renderer::defineVolumeIntegrator(const Scene &scene, const ParamMap 
 	auto [volume_integrator, volume_integrator_result]{VolumeIntegrator::factory(logger_, scene.getVolumeRegions(), param_map)};
 	if(logger_.isVerbose() && volume_integrator)
 	{
-		logger_.logVerbose("Renderer '", name(), "': Added ", volume_integrator->getClassName(), " '", this->name(), "' (", volume_integrator->type().print(), ")!");
+		logger_.logVerbose("Renderer '", getName(), "': Added ", volume_integrator->getClassName(), " '", this->getName(), "' (", volume_integrator->type().print(), ")!");
 	}
 	//logger_.logParams(result.first->getAsParamMap(true).print()); //TEST CODE ONLY, REMOVE!!
 	vol_integrator_ = std::move(volume_integrator);
 	return volume_integrator_result;
-}
-
-std::pair<size_t, ParamResult> Renderer::createRenderView(const std::string &name, const ParamMap &param_map)
-{
-	auto result{Items<RenderView>::createItem<Renderer>(logger_, render_views_, name, param_map, *this)};
-	return result;
 }
 
 /*! setup the scene for rendering (set camera, background, integrator, create image film,
@@ -219,14 +196,9 @@ bool Renderer::setupSceneRenderParams(const ParamMap &param_map)
 	return true;
 }
 
-std::pair<size_t, ParamResult> Renderer::createCamera(const std::string &name, const ParamMap &param_map)
+std::vector<const Light *> Renderer::getLightsVisible() const
 {
-	return Items<Camera>::createItem<Renderer>(logger_, cameras_, name, param_map, *this);
-}
-
-std::tuple<Camera *, size_t, ResultFlags> Renderer::getCamera(const std::string &name) const
-{
-	return cameras_.getByName(name);
+	return surf_integrator_->getLights();
 }
 
 } //namespace yafaray

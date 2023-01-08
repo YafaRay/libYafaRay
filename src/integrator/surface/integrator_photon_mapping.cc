@@ -31,7 +31,6 @@
 #include "render/render_data.h"
 #include "math/interpolation.h"
 #include "render/render_control.h"
-#include "render/render_view.h"
 #include "material/sample.h"
 #include "photon/photon_sample.h"
 #include "volume/handler/volume_handler.h"
@@ -76,10 +75,10 @@ ParamMap PhotonIntegrator::getAsParamMap(bool only_non_default) const
 	return result;
 }
 
-std::pair<std::unique_ptr<SurfaceIntegrator>, ParamResult> PhotonIntegrator::factory(Logger &logger, RenderControl &render_control, const ParamMap &param_map)
+std::pair<std::unique_ptr<SurfaceIntegrator>, ParamResult> PhotonIntegrator::factory(Logger &logger, RenderControl &render_control, const std::string &name, const ParamMap &param_map)
 {
 	auto param_result{Params::meta_.check(param_map, {"type"}, {})};
-	auto integrator {std::make_unique<ThisClassType_t>(render_control, logger, param_result, param_map)};
+	auto integrator {std::make_unique<PhotonIntegrator>(render_control, logger, param_result, name, param_map)};
 	if(param_result.notOk()) logger.logWarning(param_result.print<ThisClassType_t>(getClassName(), {"type"}));
 	return {std::move(integrator), param_result};
 }
@@ -133,7 +132,7 @@ void PhotonIntegrator::preGatherWorker(PreGatherData *gdata, float ds_rad, int n
 	}
 }
 
-PhotonIntegrator::PhotonIntegrator(RenderControl &render_control, Logger &logger, ParamResult &param_result, const ParamMap &param_map) : CausticPhotonIntegrator(render_control, logger, param_result, param_map), params_{param_result, param_map}
+PhotonIntegrator::PhotonIntegrator(RenderControl &render_control, Logger &logger, ParamResult &param_result, const std::string &name, const ParamMap &param_map) : ParentClassType_t(render_control, logger, param_result, name, param_map), params_{param_result, param_map}
 {
 	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + params_.getAsParamMap(true).print());
 	diffuse_map_ = std::make_unique<PhotonMap>(logger);
@@ -271,9 +270,9 @@ void PhotonIntegrator::photonMapKdTreeWorker(PhotonMap *photon_map)
 	photon_map->updateTree();
 }
 
-bool PhotonIntegrator::preprocess(FastRandom &fast_random, ImageFilm *image_film, const RenderView *render_view, const Scene &scene, const Renderer &renderer)
+bool PhotonIntegrator::preprocess(FastRandom &fast_random, ImageFilm *image_film, const Scene &scene, const Renderer &renderer)
 {
-	bool success = SurfaceIntegrator::preprocess(fast_random, image_film, render_view, scene, renderer);
+	bool success = SurfaceIntegrator::preprocess(fast_random, image_film, scene, renderer);
 
 	std::stringstream set;
 
@@ -289,8 +288,6 @@ bool PhotonIntegrator::preprocess(FastRandom &fast_random, ImageFilm *image_film
 		set << "ShadowDepth=" << MonteCarloIntegrator::params_.shadow_depth_ << "  ";
 	}
 	set << "RayDepth=" << MonteCarloIntegrator::params_.r_depth_ << "  ";
-
-	lights_ = render_view_->getLightsVisible();
 
 	if(CausticPhotonIntegrator::params_.use_photon_caustics_)
 	{
@@ -434,7 +431,7 @@ bool PhotonIntegrator::preprocess(FastRandom &fast_random, ImageFilm *image_film
 	// for radiance map:
 	PreGatherData pgdat(render_control_, diffuse_map_.get());
 
-	const std::vector<const Light *> lights_diffuse = render_view_->getLightsEmittingDiffusePhotons();
+	const auto lights_diffuse{getLightsEmittingDiffusePhotons()};
 	if(lights_diffuse.empty())
 	{
 		logger_.logWarning(getName(), ": No lights found that can shoot diffuse photons, disabling Diffuse photon processing");
@@ -507,7 +504,7 @@ bool PhotonIntegrator::preprocess(FastRandom &fast_random, ImageFilm *image_film
 		}
 	}
 
-	const std::vector<const Light *> lights_caustic = render_view_->getLightsEmittingCausticPhotons();
+	const auto lights_caustic{getLightsEmittingCausticPhotons()};
 	if(lights_caustic.empty())
 	{
 		logger_.logWarning(getName(), ": No lights found that can shoot caustic photons, disabling Caustic photon processing");

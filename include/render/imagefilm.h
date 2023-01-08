@@ -49,7 +49,6 @@ class ImageOutput;
 class ColorLayers;
 class RenderControl;
 class Timer;
-class RenderView;
 struct EdgeToonParams;
 template <typename T> class Items;
 
@@ -62,25 +61,25 @@ class ImageFilm final
 	public:
 		enum Flags : unsigned char { RegularImage = 1 << 0, Densityimage = 1 << 1, All = RegularImage | Densityimage };
 		inline static std::string getClassName() { return "ImageFilm"; }
-		static std::pair<ImageFilm *, ParamResult> factory(Logger &logger, RenderControl &render_control, const ParamMap &param_map);
-		ImageFilm(Logger &logger, ParamResult &param_result, RenderControl &render_control, const ParamMap &param_map);
+		static std::pair<ImageFilm *, ParamResult> factory(Logger &logger, RenderControl &render_control, const std::string &name, const ParamMap &param_map);
+		ImageFilm(Logger &logger, ParamResult &param_result, RenderControl &render_control, const std::string &name, const ParamMap &param_map);
 		~ImageFilm();
-		std::string name() const { return name_; }
+		std::string getName() const { return name_; }
 		static std::string printMeta(const std::vector<std::string> &excluded_params) { return Params::meta_.print(excluded_params); }
 		/*! Initialize imageFilm for new rendering, i.e. set pixels black etc */
-		void init(RenderControl &render_control, const RenderView *render_view);
+		void init(RenderControl &render_control);
 		/*! Prepare for next pass, i.e. reset area_cnt, check if pixels need resample...
 			\param adaptive_aa if true, flag pixels to be resampled
 			\param threshold color threshold for adaptive antialiasing */
-		int nextPass(const RenderView *render_view, RenderControl &render_control, bool adaptive_aa, const std::string &integrator_name, const EdgeToonParams &edge_params, bool skip_nrender_layer = false);
+		int nextPass(RenderControl &render_control, bool adaptive_aa, const std::string &integrator_name, const EdgeToonParams &edge_params, bool skip_nrender_layer = false);
 		/*! Return the next area to be rendered
 			CAUTION! This method MUST be threadsafe!
 			\return false if no area is left to be handed out, true otherwise */
-		bool nextArea(const RenderView *render_view, const RenderControl &render_control, RenderArea &a);
+		bool nextArea(const RenderControl &render_control, RenderArea &a);
 		/*! Indicate that all pixels inside the area have been sampled for this pass */
-		void finishArea(const RenderView *render_view, RenderControl &render_control, const RenderArea &a, const EdgeToonParams &edge_params);
+		void finishArea(RenderControl &render_control, const RenderArea &a, const EdgeToonParams &edge_params);
 		/*! Output all pixels to the color output */
-		void flush(const RenderView *render_view, RenderControl &render_control, Flags flags = All);
+		void flush(RenderControl &render_control, Flags flags);
 		/*! query if sample (x,y) was flagged to need more samples.
 			IMPORTANT! You may only call this after you have called nextPass(true, ...), otherwise
 			no such flags have been created !! */
@@ -123,12 +122,12 @@ class ImageFilm final
 		MaskParams getMaskParams() const { return mask_params_; }
 		EdgeToonParams getEdgeToonParams() const { return edge_toon_params_; }
 		AaNoiseParams getAaParameters() const { return aa_noise_params_; }
+		ParamResult defineCamera(const std::string &name, const ParamMap &param_map);
+		const Camera *getCamera() const { return camera_.get(); }
 		std::pair<size_t, ParamResult> createOutput(const std::string &name, const ParamMap &param_map);
 		std::pair<size_t, ResultFlags> getOutput(const std::string &name) const;
 		bool disableOutput(const std::string &name);
 		void clearOutputs();
-
-		void setRenderNotifyViewCallback(yafaray_RenderNotifyViewCallback callback, void *callback_data);
 		void setRenderNotifyLayerCallback(yafaray_RenderNotifyLayerCallback callback, void *callback_data);
 		void setRenderPutPixelCallback(yafaray_RenderPutPixelCallback callback, void *callback_data);
 		void setRenderHighlightPixelCallback(yafaray_RenderHighlightPixelCallback callback, void *callback_data);
@@ -280,6 +279,7 @@ class ImageFilm final
 		float filter_width_{params_.aa_pixel_width_ * 0.5f};
 		float filter_table_scale_;
 
+		std::unique_ptr<Camera> camera_;
 		Items<ImageOutput> outputs_;
 		RenderCallbacks render_callbacks_;
 		Timer timer_;

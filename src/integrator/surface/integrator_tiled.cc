@@ -48,7 +48,7 @@ void TiledIntegrator::renderWorker(ThreadControl *control, FastRandom &fast_rand
 {
 	RenderArea a;
 
-	while(image_film_->nextArea(render_view_, render_control_, a))
+	while(image_film_->nextArea(render_control_, a))
 	{
 		if(render_control_.canceled()) break;
 		renderTile(fast_random, correlative_sample_number, a, samples, offset, adaptive, thread_id, aa_pass, object_index_highest, material_index_highest);
@@ -146,7 +146,7 @@ bool TiledIntegrator::render(FastRandom &fast_random, unsigned int object_index_
 	timer_->addEvent("rendert");
 	timer_->start("rendert");
 
-	image_film_->init(render_control_, render_view_);
+	image_film_->init(render_control_);
 
 	if(render_control_.resumed())
 	{
@@ -188,11 +188,11 @@ bool TiledIntegrator::render(FastRandom &fast_random, unsigned int object_index_
 		if(resampled_pixels <= 0.f && !aa_threshold_changed)
 		{
 			logger_.logInfo(getName(), ": in previous pass there were 0 pixels to be resampled and the AA threshold did not change, so this pass resampling check and rendering will be skipped.");
-			image_film_->nextPass(render_view_, render_control_, true, getName(), edge_toon_params_, /*skipNextPass=*/true);
+			image_film_->nextPass(render_control_, true, getName(), edge_toon_params_, /*skipNextPass=*/true);
 		}
 		else
 		{
-			resampled_pixels = image_film_->nextPass(render_view_, render_control_, true, getName(), edge_toon_params_);
+			resampled_pixels = image_film_->nextPass(render_control_, true, getName(), edge_toon_params_);
 			aa_threshold_changed = false;
 		}
 
@@ -244,7 +244,7 @@ bool TiledIntegrator::renderPass(FastRandom &fast_random, std::vector<int> &corr
 		tc.c_.wait(lk);
 		for(const auto &area : tc.areas_)
 		{
-			image_film_->finishArea(render_view_, render_control_, area, edge_toon_params_);
+			image_film_->finishArea(render_control_, area, edge_toon_params_);
 		}
 		tc.areas_.clear();
 	}

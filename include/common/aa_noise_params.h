@@ -20,6 +20,9 @@
 #ifndef LIBYAFARAY_AA_NOISE_PARAMS_H
 #define LIBYAFARAY_AA_NOISE_PARAMS_H
 
+#include "common/enum.h"
+#include "common/enum_map.h"
+
 namespace yafaray {
 
 struct AaNoiseParams

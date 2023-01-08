@@ -57,13 +57,12 @@ extern "C" {
 	} yafaray_ResultFlags;
 
 	/* Callback definitions for the C API - FIXME: Should we care about the function call convention being the same for libYafaRay and its client(s)? */
-	typedef void (*yafaray_RenderNotifyViewCallback)(const char *view_name, void *callback_data);
 	typedef void (*yafaray_RenderNotifyLayerCallback)(const char *internal_layer_name, const char *exported_layer_name, int width, int height, int exported_channels, void *callback_data);
-	typedef void (*yafaray_RenderPutPixelCallback)(const char *view_name, const char *layer_name, int x, int y, float r, float g, float b, float a, void *callback_data);
-	typedef void (*yafaray_RenderFlushAreaCallback)(const char *view_name, int area_id, int x_0, int y_0, int x_1, int y_1, void *callback_data);
-	typedef void (*yafaray_RenderFlushCallback)(const char *view_name, void *callback_data);
-	typedef void (*yafaray_RenderHighlightAreaCallback)(const char *view_name, int area_id, int x_0, int y_0, int x_1, int y_1, void *callback_data);
-	typedef void (*yafaray_RenderHighlightPixelCallback)(const char *view_name, int x, int y, float r, float g, float b, float a, void *callback_data);
+	typedef void (*yafaray_RenderPutPixelCallback)(const char *layer_name, int x, int y, float r, float g, float b, float a, void *callback_data);
+	typedef void (*yafaray_RenderFlushAreaCallback)(int area_id, int x_0, int y_0, int x_1, int y_1, void *callback_data);
+	typedef void (*yafaray_RenderFlushCallback)(void *callback_data);
+	typedef void (*yafaray_RenderHighlightAreaCallback)(int area_id, int x_0, int y_0, int x_1, int y_1, void *callback_data);
+	typedef void (*yafaray_RenderHighlightPixelCallback)(int x, int y, float r, float g, float b, float a, void *callback_data);
 	typedef void (*yafaray_ProgressBarCallback)(int steps_total, int steps_done, const char *tag, void *callback_data);
 	typedef void (*yafaray_LoggerCallback)(yafaray_LogLevel log_level, size_t datetime, const char *time_of_day, const char *description, void *callback_data);
 
@@ -120,14 +119,12 @@ extern "C" {
 	YAFARAY_C_API_EXPORT yafaray_ResultFlags yafaray_createLight(yafaray_Scene *scene, const char *name, const yafaray_ParamMap *param_map);
 	YAFARAY_C_API_EXPORT yafaray_ResultFlags yafaray_createTexture(yafaray_Scene *scene, const char *name, const yafaray_ParamMap *param_map);
 	YAFARAY_C_API_EXPORT yafaray_ResultFlags yafaray_createMaterial(yafaray_Scene *scene, size_t *id_obtained, const char *name, const yafaray_ParamMap *param_map, const yafaray_ParamMapList *param_map_list_nodes);
-	YAFARAY_C_API_EXPORT yafaray_ResultFlags yafaray_createCamera(yafaray_Renderer *renderer, const char *name, const yafaray_ParamMap *param_map);
+	YAFARAY_C_API_EXPORT yafaray_ResultFlags yafaray_defineCamera(yafaray_Film *film, const char *name, const yafaray_ParamMap *param_map);
 	YAFARAY_C_API_EXPORT yafaray_ResultFlags yafaray_defineBackground(yafaray_Scene *scene, const yafaray_ParamMap *param_map);
 	YAFARAY_C_API_EXPORT yafaray_ResultFlags yafaray_defineSurfaceIntegrator(yafaray_Renderer *renderer, const yafaray_ParamMap *param_map);
 	YAFARAY_C_API_EXPORT yafaray_ResultFlags yafaray_defineVolumeIntegrator(yafaray_Renderer *renderer, const yafaray_Scene *scene, const yafaray_ParamMap *param_map);
 	YAFARAY_C_API_EXPORT yafaray_ResultFlags yafaray_createVolumeRegion(yafaray_Scene *scene, const char *name, const yafaray_ParamMap *param_map);
-	YAFARAY_C_API_EXPORT yafaray_ResultFlags yafaray_createRenderView(yafaray_Renderer *renderer, const char *name, const yafaray_ParamMap *param_map);
 	YAFARAY_C_API_EXPORT yafaray_ResultFlags yafaray_createOutput(yafaray_Film *film, const char *name, const yafaray_ParamMap *param_map);
-	YAFARAY_C_API_EXPORT void yafaray_setRenderNotifyViewCallback(yafaray_Film *film, yafaray_RenderNotifyViewCallback callback, void *callback_data);
 	YAFARAY_C_API_EXPORT void yafaray_setNotifyLayerCallback(yafaray_Film *film, yafaray_RenderNotifyLayerCallback callback, void *callback_data);
 	YAFARAY_C_API_EXPORT void yafaray_setPutPixelCallback(yafaray_Film *film, yafaray_RenderPutPixelCallback callback, void *callback_data);
 	YAFARAY_C_API_EXPORT void yafaray_setHighlightPixelCallback(yafaray_Film *film, yafaray_RenderHighlightPixelCallback callback, void *callback_data);
@@ -162,7 +159,6 @@ extern "C" {
 	/* The following functions return a char string where memory is allocated by libYafaRay itself. Do not free the char* directly with free, use "yafaray_destroyCharString" to free them instead to ensure proper deallocation. */
 	YAFARAY_C_API_EXPORT char *yafaray_getVersionString();
 	YAFARAY_C_API_EXPORT char *yafaray_getLayersTable(const yafaray_Film *film);
-	YAFARAY_C_API_EXPORT char *yafaray_getViewsTable(const yafaray_Renderer *renderer);
 	YAFARAY_C_API_EXPORT void yafaray_destroyCharString(char *string);
 
 

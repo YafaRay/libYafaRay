@@ -18,13 +18,11 @@
  *
  */
 
-#ifndef YAFARAY_RENDER_CALLBACKS_H
-#define YAFARAY_RENDER_CALLBACKS_H
+#ifndef LIBYAFARAY_RENDER_CALLBACKS_H
+#define LIBYAFARAY_RENDER_CALLBACKS_H
 
 struct RenderCallbacks final
 {
-	yafaray_RenderNotifyViewCallback notify_view_ = nullptr;
-	void *notify_view_data_ = nullptr;
 	yafaray_RenderNotifyLayerCallback notify_layer_ = nullptr;
 	void *notify_layer_data_ = nullptr;
 	yafaray_RenderPutPixelCallback put_pixel_ = nullptr;

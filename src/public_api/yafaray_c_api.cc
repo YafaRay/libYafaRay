@@ -58,7 +58,7 @@ void yafaray_destroyLogger(yafaray_Logger *logger)
 
 yafaray_Film *yafaray_createFilm(yafaray_Logger *logger, yafaray_Renderer *renderer, const char *name, const yafaray_ParamMap *param_map)
 {
-	auto [image_film, image_film_result]{yafaray::ImageFilm::factory(*reinterpret_cast<yafaray::Logger *>(logger), reinterpret_cast<yafaray::Renderer *>(renderer)->getRenderControl(), *reinterpret_cast<const yafaray::ParamMap *>(param_map))};
+	auto [image_film, image_film_result]{yafaray::ImageFilm::factory(*reinterpret_cast<yafaray::Logger *>(logger), reinterpret_cast<yafaray::Renderer *>(renderer)->getRenderControl(), name, *reinterpret_cast<const yafaray::ParamMap *>(param_map))};
 	return reinterpret_cast<yafaray_Film *>(image_film);
 }
 
@@ -329,10 +329,10 @@ yafaray_ResultFlags yafaray_createMaterial(yafaray_Scene *scene, size_t *id_obta
 	return static_cast<yafaray_ResultFlags>(creation_result.second.flags_.value());
 }
 
-yafaray_ResultFlags yafaray_createCamera(yafaray_Renderer *renderer, const char *name, const yafaray_ParamMap *param_map)
+yafaray_ResultFlags yafaray_defineCamera(yafaray_Film *film, const char *name, const yafaray_ParamMap *param_map)
 {
-	auto creation_result{reinterpret_cast<yafaray::Renderer *>(renderer)->createCamera(name, *reinterpret_cast<const yafaray::ParamMap *>(param_map))};
-	return static_cast<yafaray_ResultFlags>(creation_result.second.flags_.value());
+	auto creation_result{reinterpret_cast<yafaray::ImageFilm *>(film)->defineCamera(name, *reinterpret_cast<const yafaray::ParamMap *>(param_map))};
+	return static_cast<yafaray_ResultFlags>(creation_result.flags_.value());
 }
 
 yafaray_ResultFlags yafaray_defineBackground(yafaray_Scene *scene, const yafaray_ParamMap *param_map)
@@ -359,21 +359,10 @@ yafaray_ResultFlags yafaray_createVolumeRegion(yafaray_Scene *scene, const char 
 	return static_cast<yafaray_ResultFlags>(creation_result.second.flags_.value());
 }
 
-yafaray_ResultFlags yafaray_createRenderView(yafaray_Renderer *renderer, const char *name, const yafaray_ParamMap *param_map)
-{
-	auto creation_result{reinterpret_cast<yafaray::Renderer *>(renderer)->createRenderView(name, *reinterpret_cast<const yafaray::ParamMap *>(param_map))};
-	return static_cast<yafaray_ResultFlags>(creation_result.second.flags_.value());
-}
-
 yafaray_ResultFlags yafaray_createOutput(yafaray_Film *film, const char *name, const yafaray_ParamMap *param_map)
 {
 	auto creation_result{reinterpret_cast<yafaray::ImageFilm *>(film)->createOutput(name, *reinterpret_cast<const yafaray::ParamMap *>(param_map))};
 	return static_cast<yafaray_ResultFlags>(creation_result.second.flags_.value());
-}
-
-void yafaray_setRenderNotifyViewCallback(yafaray_Film *film, yafaray_RenderNotifyViewCallback callback, void *callback_data)
-{
-	reinterpret_cast<yafaray::ImageFilm *>(film)->setRenderNotifyViewCallback(callback, callback_data);
 }
 
 void yafaray_setNotifyLayerCallback(yafaray_Film *film, yafaray_RenderNotifyLayerCallback callback, void *callback_data)
@@ -567,21 +556,6 @@ char *yafaray_getVersionString()
 char *yafaray_getLayersTable(const yafaray_Film *film)
 {
 	return createCharString(reinterpret_cast<const yafaray::ImageFilm *>(film)->getLayers()->printExportedTable());
-}
-
-char *yafaray_getViewsTable(const yafaray_Renderer *renderer)
-{
-	if(renderer)
-	{
-		std::stringstream ss;
-		const auto &views = reinterpret_cast<const yafaray::Renderer *>(renderer)->getRenderViews();
-		for(const auto &view : views)
-		{
-			ss << view.name_ << '\n';
-		}
-		return createCharString(ss.str());
-	}
-	else return createCharString("");
 }
 
 void yafaray_destroyCharString(char *string)

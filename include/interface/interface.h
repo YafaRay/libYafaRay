@@ -41,7 +41,6 @@ class Background;
 class VolumeRegion;
 class Scene;
 class ImageOutput;
-class RenderView;
 class ParamMap;
 class ImageFilm;
 class Format;

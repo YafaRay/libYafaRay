@@ -65,9 +65,9 @@ class SppmIntegrator final : public MonteCarloIntegrator
 
 	public:
 		inline static std::string getClassName() { return "SppmIntegrator"; }
-		static std::pair<std::unique_ptr<SurfaceIntegrator>, ParamResult> factory(Logger &logger, RenderControl &render_control, const ParamMap &params);
+		static std::pair<std::unique_ptr<SurfaceIntegrator>, ParamResult> factory(Logger &logger, RenderControl &render_control, const std::string &name, const ParamMap &params);
 		static std::string printMeta(const std::vector<std::string> &excluded_params) { return Params::meta_.print(excluded_params); }
-		SppmIntegrator(RenderControl &render_control, Logger &logger, ParamResult &param_result, const ParamMap &param_map);
+		SppmIntegrator(RenderControl &render_control, Logger &logger, ParamResult &param_result, const std::string &name, const ParamMap &param_map);
 		[[nodiscard]] ParamMap getAsParamMap(bool only_non_default) const override;
 
 	private:
@@ -83,12 +83,11 @@ class SppmIntegrator final : public MonteCarloIntegrator
 			PARAM_DECL(int , search_num_, 10, "searchNum", "Now used to do initial radius estimate");
 			PARAM_DECL(bool , pm_ire_, false, "pmIRE", "Flag to say if using PM for initial radius estimate");
 		} params_;
-		[[nodiscard]] std::string getName() const override { return "SPPM"; }
 		bool render(FastRandom &fast_random, unsigned int object_index_highest, unsigned int material_index_highest) override;
 		/*! render a tile; only required by default implementation of render() */
 		bool renderTile(FastRandom &fast_random, std::vector<int> &correlative_sample_number, const RenderArea &a, int n_samples, int offset, bool adaptive, int thread_id, int aa_pass_number, unsigned int object_index_highest, unsigned int material_index_highest) override;
 		std::pair<Rgb, float> integrate(Ray &ray, FastRandom &fast_random, RandomGenerator &random_generator, std::vector<int> &correlative_sample_number, ColorLayers *color_layers, int thread_id, int ray_level, bool chromatic_enabled, float wavelength, int additional_depth, const RayDivision &ray_division, const PixelSamplingData &pixel_sampling_data, unsigned int object_index_highest, unsigned int material_index_highest) const override;
-		bool preprocess(FastRandom &fast_random, ImageFilm *image_film, const RenderView *render_view, const Scene &scene, const Renderer &renderer) override; //not used for now
+		bool preprocess(FastRandom &fast_random, ImageFilm *image_film, const Scene &scene, const Renderer &renderer) override; //not used for now
 		// not used now
 		void prePass(FastRandom &fast_random, int samples, int offset, bool adaptive) override;
 		/*! not used now, use traceGatherRay instead*/

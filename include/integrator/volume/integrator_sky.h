@@ -50,7 +50,7 @@ class SkyIntegrator : public VolumeIntegrator
 			PARAM_DECL(float , alpha_, 0.5f, "alpha", "Steepness of the exponential density");
 			PARAM_DECL(float , turbidity_, 3.f, "turbidity", "");
 		} params_;
-		bool preprocess(const RenderView *render_view, const Scene &scene, const Renderer &renderer) override;
+		bool preprocess(const Scene &scene, const Renderer &renderer) override;
 		// optical thickness, absorption, attenuation, extinction
 		Rgb transmittance(RandomGenerator &random_generator, const Ray &ray) const override;
 		// emission and in-scattering

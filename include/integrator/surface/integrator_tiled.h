@@ -44,7 +44,7 @@ class TiledIntegrator : public SurfaceIntegrator
 {
 	public:
 		inline static std::string getClassName() { return "TiledIntegrator"; }
-		TiledIntegrator(RenderControl &render_control, Logger &logger, ParamResult &param_result, const ParamMap &param_map) : SurfaceIntegrator{render_control, logger, param_result, param_map} { }
+		TiledIntegrator(RenderControl &render_control, Logger &logger, ParamResult &param_result, const std::string &name, const ParamMap &param_map) : SurfaceIntegrator{render_control, logger, param_result, name, param_map} { }
 		/*! Rendering prepasses to precalc suff in case needed */
 		virtual void prePass(FastRandom &fast_random, int samples, int offset, bool adaptive) { } //!< Called before the proper rendering of all the tiles starts
 		/*! do whatever is required to render the image; default implementation renders image in passes

@@ -49,9 +49,9 @@ struct PixelSamplingData;
 struct RayDivision;
 class Scene;
 class ImageFilm;
-class RenderView;
 class Accelerator;
 class FastRandom;
+class Light;
 
 class SurfaceIntegrator
 {
@@ -59,7 +59,8 @@ class SurfaceIntegrator
 	public:
 		inline static std::string getClassName() { return "SurfaceIntegrator"; }
 		[[nodiscard]] virtual Type type() const = 0;
-		static std::pair<std::unique_ptr<SurfaceIntegrator>, ParamResult> factory(Logger &logger, RenderControl &render_control, const ParamMap &param_map);
+		[[nodiscard]] std::string getName() const { return name_; }
+		static std::pair<std::unique_ptr<SurfaceIntegrator>, ParamResult> factory(Logger &logger, RenderControl &render_control, const std::string &name, const ParamMap &param_map);
 		[[nodiscard]] virtual ParamMap getAsParamMap(bool only_non_default) const;
 		virtual ~SurfaceIntegrator() = default;
 		/*! do whatever is required to render the image, if suitable for integrating whole image */
@@ -67,13 +68,17 @@ class SurfaceIntegrator
 		virtual std::pair<Rgb, float> integrate(Ray &ray, FastRandom &fast_random, RandomGenerator &random_generator, std::vector<int> &correlative_sample_number, ColorLayers *color_layers, int thread_id, int ray_level, bool chromatic_enabled, float wavelength, int additional_depth, const RayDivision &ray_division, const PixelSamplingData &pixel_sampling_data, unsigned int object_index_highest, unsigned int material_index_highest) const = 0; 	//!< chromatic_enabled indicates wether the full spectrum is calculated (true) or only a single wavelength (false). wavelength is the (normalized) wavelength being used when chromatic is false. The range is defined going from 400nm (0.0) to 700nm (1.0), although the widest range humans can perceive is ofteb given 380-780nm.
 		/*! gets called before the scene rendering (i.e. before first call to integrate)
 			\return false when preprocessing could not be done properly, true otherwise */
-		virtual bool preprocess(FastRandom &fast_random, ImageFilm *image_film, const RenderView *render_view, const Scene &scene, const Renderer &renderer);
+		virtual bool preprocess(FastRandom &fast_random, ImageFilm *image_film, const Scene &scene, const Renderer &renderer);
 		/*! allow the integrator to do some cleanup when an image is done
 		(possibly also important for multiframe rendering in the future)	*/
 		virtual void cleanup() { render_info_.clear(); aa_noise_info_.clear(); }
 		[[nodiscard]] std::string getRenderInfo() const { return render_info_; }
 		[[nodiscard]] std::string getAaNoiseInfo() const { return aa_noise_info_; }
-		[[nodiscard]] virtual std::string getName() const = 0;
+		std::vector<const Light *> getLights() const { return lights_visible_; }
+		const Light *getLight(size_t index) const { return lights_visible_[index]; }
+		std::vector<const Light *> getLightsEmittingCausticPhotons() const;
+		std::vector<const Light *> getLightsEmittingDiffusePhotons() const;
+		size_t numLights() const { return lights_visible_.size(); }
 
 	protected:
 		struct Type : public Enum<Type>
@@ -92,10 +97,11 @@ class SurfaceIntegrator
 		const struct Params
 		{
 			PARAM_INIT;
+			PARAM_DECL(std::string, light_names_, "", "light_names", "Selection of the scene lights to be used in the integration, separated by a semicolon. If empty, all lights will be included");
 			PARAM_DECL(bool, time_forced_, false, "time_forced", "");
 			PARAM_DECL(float, time_forced_value_, 0.f, "time_forced_value", "");
 		} params_;
-		SurfaceIntegrator(RenderControl &render_control, Logger &logger, ParamResult &param_result, const ParamMap &param_map) : params_{param_result, param_map}, render_control_{render_control}, logger_{logger} { }
+		SurfaceIntegrator(RenderControl &render_control, Logger &logger, ParamResult &param_result, const std::string &name, const ParamMap &param_map) : params_{param_result, param_map}, render_control_{render_control}, logger_{logger}, name_{name} { }
 
 		RenderControl &render_control_;
 		int num_threads_ = 1;
@@ -108,7 +114,6 @@ class SurfaceIntegrator
 		EdgeToonParams edge_toon_params_;
 		MaskParams mask_params_;
 		Bound<float> scene_bound_{};
-		const RenderView *render_view_ = nullptr;
 		const VolumeIntegrator *vol_integrator_ = nullptr;
 		const Camera *camera_ = nullptr;
 		const Background *background_ = nullptr;
@@ -119,6 +124,14 @@ class SurfaceIntegrator
 		std::string render_info_;
 		std::string aa_noise_info_;
 		Logger &logger_;
+
+	private:
+		std::map<std::string, const Light *> getFilteredLights(const Scene &scene, const std::string &light_filter_string) const;
+		std::vector<const Light *> getLightsVisible() const;
+
+		std::string name_{getClassName()};
+		std::map<std::string, const Light *> lights_map_filtered_;
+		std::vector<const Light *> lights_visible_;
 };
 
 struct ColorLayerAccum

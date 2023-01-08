@@ -37,7 +37,6 @@
 #include "sampler/sample_pdf1d.h"
 #include "render/render_data.h"
 #include "render/render_control.h"
-#include "render/render_view.h"
 #include "photon/photon_sample.h"
 #include "volume/handler/volume_handler.h"
 
@@ -73,7 +72,7 @@ ParamMap CausticPhotonIntegrator::getAsParamMap(bool only_non_default) const
 }
 
 //Constructor and destructor defined here to avoid issues with std::unique_ptr<Pdf1D> being Pdf1D incomplete in the header (forward declaration)
-CausticPhotonIntegrator::CausticPhotonIntegrator(RenderControl &render_control, Logger &logger, ParamResult &param_result, const ParamMap &param_map) : MonteCarloIntegrator(render_control, logger, param_result, param_map), params_{param_result, param_map}
+CausticPhotonIntegrator::CausticPhotonIntegrator(RenderControl &render_control, Logger &logger, ParamResult &param_result, const std::string &name, const ParamMap &param_map) : ParentClassType_t(render_control, logger, param_result, name, param_map), params_{param_result, param_map}
 {
 	caustic_map_ = std::make_unique<PhotonMap>(logger);
 	caustic_map_->setName("Caustic Photon Map");
@@ -249,7 +248,7 @@ bool CausticPhotonIntegrator::createCausticMap(FastRandom &fast_random)
 	caustic_map_->reserveMemory(n_caus_photons_);
 	caustic_map_->setNumThreadsPkDtree(num_threads_photons_);
 
-	const std::vector<const Light *> lights_caustic = render_view_->getLightsEmittingCausticPhotons();
+	const auto lights_caustic{getLightsEmittingCausticPhotons()};
 	if(!lights_caustic.empty())
 	{
 		const int num_lights_caustic = lights_caustic.size();
