@@ -262,7 +262,7 @@ void ImageFilm::init(RenderControl &render_control, const RenderView *render_vie
 		initLayersExportedImages();
 		for(auto &output : outputs_)
 		{
-			output.item_->init(getSize(), getExportedImageLayers(), render_view);
+			output.item_->init(getSize(), getExportedImageLayers(), render_view->getName());
 		}
 	}
 

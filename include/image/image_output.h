@@ -33,7 +33,6 @@
 
 namespace yafaray {
 
-class RenderView;
 class ColorLayers;
 class Format;
 template <typename T> class Items;
@@ -51,7 +50,7 @@ class ImageOutput final
 		[[nodiscard]] ParamMap getAsParamMap(bool only_non_default) const;
 		ImageOutput(Logger &logger, ParamResult &param_result, const ParamMap &param_map);
 		void flush(const RenderControl &render_control, const Timer &timer);
-		void init(const Size2i &size, const ImageLayers *exported_image_layers, const RenderView *render_view);
+		void init(const Size2i &size, const ImageLayers *exported_image_layers, const std::string &camera_name);
 		[[nodiscard]] std::string getName() const { return name_; }
 		std::string printBadge(const RenderControl &render_control, const Timer &timer) const;
 		std::unique_ptr<Image> generateBadgeImage(const RenderControl &render_control, const Timer &timer) const;
@@ -102,7 +101,7 @@ class ImageOutput final
 		float gamma_{params_.gamma_};
 		const DenoiseParams denoise_params_{params_.denoise_enabled_, params_.denoise_h_lum_, params_.denoise_h_col_, params_.denoise_mix_};
 		const ImageLayers *image_layers_ = nullptr;
-		const RenderView *render_view_ = nullptr;
+		std::string camera_name_;
 		Logger &logger_;
 		Badge badge_{
 			logger_,

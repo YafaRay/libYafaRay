@@ -18,16 +18,12 @@
  */
 
 #include "image/image_output.h"
-
-#include "color/color_layers.h"
 #include "scene/scene.h"
 #include "common/logger.h"
 #include "param/param.h"
 #include "common/layers.h"
 #include "common/file.h"
 #include "format/format.h"
-#include "render/render_view.h"
-#include "render/imagefilm.h"
 #include "image/image_manipulation.h"
 
 namespace yafaray {
@@ -124,10 +120,10 @@ std::unique_ptr<Image> ImageOutput::generateBadgeImage(const RenderControl &rend
 	return badge_.generateImage(image_manipulation::printDenoiseParams(denoise_params_), render_control, timer);
 }
 
-void ImageOutput::init(const Size2i &size, const ImageLayers *exported_image_layers, const RenderView *render_view)
+void ImageOutput::init(const Size2i &size, const ImageLayers *exported_image_layers, const std::string &camera_name)
 {
 	image_layers_ = exported_image_layers;
-	render_view_ = render_view;
+	camera_name_ = camera_name;
 	badge_.setImageSize(size);
 }
 
@@ -137,8 +133,7 @@ void ImageOutput::flush(const RenderControl &render_control, const Timer &timer)
 	std::string directory = path.getDirectory();
 	std::string base_name = path.getBaseName();
 	const std::string ext = path.getExtension();
-	const std::string view_name = render_view_->getName();
-	if(!view_name.empty()) base_name += " (view " + view_name + ")";
+	if(!camera_name_.empty()) base_name += " (" + camera_name_ + ")";
 	ParamMap params;
 	params["type"] = ext;
 	auto format{Format::factory(logger_, params).first};
@@ -147,10 +142,7 @@ void ImageOutput::flush(const RenderControl &render_control, const Timer &timer)
 	{
 		if(params_.multi_layer_ && format->supportsMultiLayer())
 		{
-			if(view_name == render_view_->getName())
-			{
-				saveImageFile(params_.image_path_, LayerDef::Combined, format.get(), render_control, timer); //This should not be necessary but Blender API seems to be limited and the API "load_from_file" function does not work (yet) with multilayered images, so I have to generate this extra combined pass file so it's displayed in the Blender window.
-			}
+			saveImageFile(params_.image_path_, LayerDef::Combined, format.get(), render_control, timer); //This should not be necessary but Blender API seems to be limited and the API "load_from_file" function does not work (yet) with multilayered images, so I have to generate this extra combined pass file so it's displayed in the Blender window.
 
 			if(!directory.empty()) directory += "/";
 			const std::string fname_pass = directory + base_name + " (" + "multilayer" + ")." + ext;
