@@ -207,7 +207,7 @@ class ImageFilm final
 			PARAM_DECL(int, height_, 240, "height", "Height of rendered image");
 			PARAM_DECL(int, start_x_, 0, "xstart", "x-offset (for cropped rendering)");
 			PARAM_DECL(int, start_y_, 0, "ystart", "y-offset (for cropped rendering)");
-			PARAM_ENUM_DECL(FilterType, filter_type_, FilterType::Box, "filter_type", "AA filter type");
+			PARAM_ENUM_DECL(FilterType, filter_type_, FilterType::Gauss, "filter_type", "AA filter type");
 			PARAM_DECL(int, tile_size_, 32, "tile_size", "Size of the render buckets or tiles");
 			PARAM_ENUM_DECL(ImageSplitter::TilesOrderType, tiles_order_, ImageSplitter::TilesOrderType::CentreRandom, "tiles_order", "Order of the render buckets or tiles");
 			PARAM_ENUM_DECL(AutoSaveParams::IntervalType, images_autosave_interval_type_, AutoSaveParams::IntervalType::None, "images_autosave_interval_type", "");

@@ -68,7 +68,7 @@ class ImageOutput final
 		{
 			PARAM_INIT;
 			PARAM_DECL(std::string, image_path_, "", "image_path", "");
-			PARAM_ENUM_DECL(ColorSpace, color_space_, ColorSpace::RawManualGamma, "color_space", "");
+			PARAM_ENUM_DECL(ColorSpace, color_space_, ColorSpace::Srgb, "color_space", "");
 			PARAM_DECL(float, gamma_, 1.f, "gamma", "");
 			PARAM_DECL(bool, alpha_channel_, false, "alpha_channel", "");
 			PARAM_DECL(bool, alpha_premultiply_, false, "alpha_premultiply", "");

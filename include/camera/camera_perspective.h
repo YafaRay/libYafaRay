@@ -71,7 +71,7 @@ class PerspectiveCamera : public Camera
 			PARAM_DECL(float, depth_of_field_distance_, 0.f, "dof_distance", "");
 			PARAM_DECL(float, bokeh_rotation_, 0.f, "bokeh_rotation", "");
 			PARAM_ENUM_DECL(BokehType, bokeh_type_, BokehType::Disk1, "bokeh_type", "");
-			PARAM_ENUM_DECL(BokehBias, bokeh_bias_, BokehBias::None, "bokeh_bias", "");
+			PARAM_ENUM_DECL(BokehBias, bokeh_bias_, BokehBias::Center, "bokeh_bias", "");
 		} params_;
 		CameraRay shootRay(float px, float py, const Uv<float> &uv) const override;
 		bool sampleLens() const override;

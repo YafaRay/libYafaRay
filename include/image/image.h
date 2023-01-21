@@ -91,7 +91,7 @@ class Image
 			PARAM_INIT;
 			PARAM_DECL(std::string, filename_, "", "filename", "File path when loading the image from a file. Leave blank when creating a new image from RAM");
 			PARAM_ENUM_DECL(Type, type_, Type::None, "type", getClassName() + " type (overriden by the loaded image type if '" + filename_meta_.name() + "' is used)");
-			PARAM_ENUM_DECL(ColorSpace, color_space_, ColorSpace::RawManualGamma, "color_space", "");
+			PARAM_ENUM_DECL(ColorSpace, color_space_, ColorSpace::Srgb, "color_space", "");
 			PARAM_DECL(float, gamma_, 1.f, "gamma", "");
 			PARAM_ENUM_DECL(Optimization, image_optimization_, Optimization::Optimized, "image_optimization", "");
 			PARAM_DECL(int, width_, 100, "width", "Image width (overriden by the loaded image type if '" + filename_meta_.name() + "' is used)");
