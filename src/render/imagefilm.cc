@@ -150,7 +150,10 @@ ParamMap ImageFilm::Params::getAsParamMap(bool only_non_default) const
 
 ParamMap ImageFilm::getAsParamMap(bool only_non_default) const
 {
-	return params_.getAsParamMap(only_non_default);
+	ParamMap result{params_.getAsParamMap(only_non_default)};
+	result.setParam(Params::computer_node_meta_, computer_node_);
+	result.setParam(Params::base_sampling_offset_meta_, base_sampling_offset_);
+	return result;
 }
 
 std::pair<ImageFilm *, ParamResult> ImageFilm::factory(Logger &logger, RenderControl &render_control, const std::string &name, const ParamMap &param_map)
@@ -878,9 +881,9 @@ bool ImageFilm::imageFilmLoad(const std::string &filename)
 		file.close();
 		return false;
 	}
-	//FIXME DAVID file.read<unsigned int>(params_.computer_node_);
-	//FIXME DAVID file.read<unsigned int>(params_.base_sampling_offset_);
-	file.read<unsigned int>(sampling_offset_);
+	file.read<int>(computer_node_);
+	file.read<int>(base_sampling_offset_);
+	file.read<int>(sampling_offset_);
 
 	int filmload_check_w;
 	file.read<int>(filmload_check_w);
@@ -1041,7 +1044,7 @@ void ImageFilm::imageFilmLoadAllInFolder(RenderControl &render_control)
 			}
 		}
 		if(sampling_offset_ < loaded_film->sampling_offset_) sampling_offset_ = loaded_film->sampling_offset_;
-		//FIXME DAVID if(params_.base_sampling_offset_ < loaded_film->params_.base_sampling_offset_) params_.base_sampling_offset_ = loaded_film->params_.base_sampling_offset_;
+		if(base_sampling_offset_ < loaded_film->base_sampling_offset_) base_sampling_offset_ = loaded_film->base_sampling_offset_;
 		if(logger_.isVerbose()) logger_.logVerbose("ImageFilm: loaded film '", film_file, "'");
 	}
 	if(any_film_loaded) render_control.setResumed();
@@ -1063,9 +1066,9 @@ bool ImageFilm::imageFilmSave(RenderControl &render_control)
 	File file(film_path);
 	file.open("wb");
 	file.append(std::string("YAF_FILMv4_0_0"));
-	file.append<unsigned int>(params_.computer_node_);
-	file.append<unsigned int>(params_.base_sampling_offset_);
-	file.append<unsigned int>(sampling_offset_);
+	file.append<int>(computer_node_);
+	file.append<int>(base_sampling_offset_);
+	file.append<int>(sampling_offset_);
 	file.append<int>(params_.width_);
 	file.append<int>(params_.height_);
 	file.append<int>(params_.start_x_);

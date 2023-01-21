@@ -106,7 +106,7 @@ class ImageFilm final
 		float getWeight(const Point2i &point) const { return weights_(point).getFloat(); }
 		bool getBackgroundResampling() const { return params_.background_resampling_; }
 		unsigned int getBaseSamplingOffset() const { return params_.base_sampling_offset_ + params_.computer_node_ * 100000; } //We give to each computer node a "reserved space" of 100,000 samples
-		unsigned int getSamplingOffset() const { return sampling_offset_; }
+		int getSamplingOffset() const { return sampling_offset_; }
 		void setSamplingOffset(unsigned int offset) { sampling_offset_ = offset; }
 		std::string getFilmSavePath() const { return film_load_save_.path_; }
 		void resetImagesAutoSaveTimer() { images_auto_save_params_.timer_ = 0.0; }
@@ -249,12 +249,14 @@ class ImageFilm final
 		void defineDependentLayers(); //!< This function generates the basic/auxiliary layers. Must be called *after* defining all render layers with the defineLayer function.
 
 		std::string name_{"Imagefilm"};
+		int computer_node_{params_.computer_node_};
+		int base_sampling_offset_{params_.base_sampling_offset_};
 		int n_pass_{1};
 		std::atomic<int> next_area_;
 		int area_cnt_{0}, completed_cnt_{0};
 		bool split_ = true;
 		bool cancel_ = false;
-		unsigned int sampling_offset_ = 0;	//To ensure sampling after loading the image film continues and does not repeat already done samples
+		int sampling_offset_{0}; //To ensure sampling after loading the image film continues and does not repeat already done samples
 		bool estimate_density_ = false;
 		int num_density_samples_ = 0;
 		Layers layers_;
