@@ -142,6 +142,7 @@ int main()
 		yafaray_setParamMapFloat(param_map, "upper_value", 0);
 		yafaray_setParamMapBool(param_map, "use_alpha", YAFARAY_BOOL_FALSE);
 	yafaray_addParamMapToList(param_map_list, param_map);
+	yafaray_clearParamMap(param_map);
 		yafaray_setParamMapString(param_map, "element", "shader_node");
 		yafaray_setParamMapString(param_map, "mapping", "cube");
 		yafaray_setParamMapString(param_map, "name", "map0");
@@ -182,6 +183,7 @@ int main()
 		yafaray_setParamMapFloat(param_map, "upper_value", 0);
 		yafaray_setParamMapBool(param_map, "use_alpha", YAFARAY_BOOL_FALSE);
 	yafaray_addParamMapToList(param_map_list, param_map);
+	yafaray_clearParamMap(param_map);
 		yafaray_setParamMapString(param_map, "element", "shader_node");
 		yafaray_setParamMapString(param_map, "mapping", "cube");
 		yafaray_setParamMapString(param_map, "name", "map0");
@@ -222,6 +224,7 @@ int main()
 		yafaray_setParamMapFloat(param_map, "upper_value", 0);
 		yafaray_setParamMapBool(param_map, "use_alpha", YAFARAY_BOOL_FALSE);
 	yafaray_addParamMapToList(param_map_list, param_map);
+	yafaray_clearParamMap(param_map);
 		yafaray_setParamMapString(param_map, "element", "shader_node");
 		yafaray_setParamMapString(param_map, "mapping", "cube");
 		yafaray_setParamMapString(param_map, "name", "map0");
@@ -262,6 +265,7 @@ int main()
 		yafaray_setParamMapFloat(param_map, "upper_value", 0);
 		yafaray_setParamMapBool(param_map, "use_alpha", YAFARAY_BOOL_FALSE);
 	yafaray_addParamMapToList(param_map_list, param_map);
+	yafaray_clearParamMap(param_map);
 		yafaray_setParamMapString(param_map, "element", "shader_node");
 		yafaray_setParamMapString(param_map, "mapping", "cube");
 		yafaray_setParamMapString(param_map, "name", "map0");
@@ -301,6 +305,7 @@ int main()
 		yafaray_setParamMapFloat(param_map, "upper_value", 0);
 		yafaray_setParamMapBool(param_map, "use_alpha", YAFARAY_BOOL_FALSE);
 	yafaray_addParamMapToList(param_map_list, param_map);
+	yafaray_clearParamMap(param_map);
 		yafaray_setParamMapString(param_map, "element", "shader_node");
 		yafaray_setParamMapString(param_map, "mapping", "cube");
 		yafaray_setParamMapString(param_map, "name", "map0");
@@ -340,6 +345,7 @@ int main()
 		yafaray_setParamMapFloat(param_map, "upper_value", 0);
 		yafaray_setParamMapBool(param_map, "use_alpha", YAFARAY_BOOL_FALSE);
 	yafaray_addParamMapToList(param_map_list, param_map);
+	yafaray_clearParamMap(param_map);
 		yafaray_setParamMapString(param_map, "element", "shader_node");
 		yafaray_setParamMapString(param_map, "mapping", "cube");
 		yafaray_setParamMapString(param_map, "name", "map0");
