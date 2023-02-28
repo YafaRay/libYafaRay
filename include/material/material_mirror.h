@@ -42,7 +42,7 @@ class MirrorMaterial final : public Material
 	public:
 		inline static std::string getClassName() { return "MirrorMaterial"; }
 		static std::pair<std::unique_ptr<Material>, ParamResult> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map, const std::list<ParamMap> &nodes_param_maps);
-		static std::string printMeta(const std::vector<std::string> &excluded_params) { return Params::meta_.print(excluded_params); }
+		static std::string printMeta(const std::vector<std::string> &excluded_params) { return class_meta::print<Params>(excluded_params); }
 		[[nodiscard]] ParamMap getAsParamMap(bool only_non_default) const override;
 		MirrorMaterial(Logger &logger, ParamResult &param_result, const ParamMap &param_map, const Items <Material> &materials);
 
@@ -50,7 +50,8 @@ class MirrorMaterial final : public Material
 		[[nodiscard]] Type type() const override { return Type::Mirror; }
 		const struct Params
 		{
-			PARAM_INIT_PARENT(ParentClassType_t);
+			Params(ParamResult &param_result, const ParamMap &param_map);
+			static std::map<std::string, const ParamMeta *> getParamMetaMap();
 			PARAM_DECL(Rgb, color_, Rgb{1.f}, "color", "");
 			PARAM_DECL(float , reflect_, 1.f, "reflect", "");
 		} params_;

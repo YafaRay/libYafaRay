@@ -85,7 +85,8 @@ class VolumeRegion
 		};
 		const struct Params
 		{
-			PARAM_INIT;
+			Params(ParamResult &param_result, const ParamMap &param_map);
+			static std::map<std::string, const ParamMeta *> getParamMetaMap();
 			PARAM_DECL(float, sigma_s_, 0.1f, "sigma_s", "");
 			PARAM_DECL(float, sigma_a_, 0.1f, "sigma_a", "");
 			PARAM_DECL(float, l_e_, 0.f, "l_e", "");

@@ -39,7 +39,7 @@ class BackgroundLight final : public Light
 	public:
 		inline static std::string getClassName() { return "BackgroundLight"; }
 		static std::pair<std::unique_ptr<Light>, ParamResult> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params);
-		static std::string printMeta(const std::vector<std::string> &excluded_params) { return Params::meta_.print(excluded_params); }
+		static std::string printMeta(const std::vector<std::string> &excluded_params) { return class_meta::print<Params>(excluded_params); }
 		[[nodiscard]] ParamMap getAsParamMap(bool only_non_default) const override;
 		BackgroundLight(Logger &logger, ParamResult &param_result, const ParamMap &param_map, const Items<Light> &lights);
 
@@ -47,7 +47,8 @@ class BackgroundLight final : public Light
 		[[nodiscard]] Type type() const override { return Type::Background; }
 		const struct Params
 		{
-			PARAM_INIT_PARENT(ParentClassType_t);
+			Params(ParamResult &param_result, const ParamMap &param_map);
+			static std::map<std::string, const ParamMeta *> getParamMetaMap();
 			PARAM_DECL(int, samples_, 16, "samples", "");
 			PARAM_DECL(bool, abs_intersect_, false, "abs_intersect", "");
 			PARAM_DECL(float, ibl_clamp_sampling_, false, "ibl_clamp_sampling", "A value higher than 0.f 'clamps' the light intersection colors to that value, to reduce light sampling noise at the expense of realism and inexact overall light (0.f disables clamping)");

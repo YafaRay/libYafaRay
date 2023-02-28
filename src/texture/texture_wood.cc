@@ -21,6 +21,21 @@
 
 namespace yafaray {
 
+std::map<std::string, const ParamMeta *> WoodTexture::Params::getParamMetaMap()
+{
+	auto param_meta_map{ParentClassType_t::Params::getParamMetaMap()};
+	PARAM_META(wood_type_);
+	PARAM_META(shape_);
+	PARAM_META(noise_type_);
+	PARAM_META(color_1_);
+	PARAM_META(color_2_);
+	PARAM_META(octaves_);
+	PARAM_META(turbulence_);
+	PARAM_META(size_);
+	PARAM_META(hard_);
+	return param_meta_map;
+}
+
 WoodTexture::Params::Params(ParamResult &param_result, const ParamMap &param_map)
 {
 	PARAM_ENUM_LOAD(wood_type_);
@@ -34,9 +49,10 @@ WoodTexture::Params::Params(ParamResult &param_result, const ParamMap &param_map
 	PARAM_LOAD(hard_);
 }
 
-ParamMap WoodTexture::Params::getAsParamMap(bool only_non_default) const
+ParamMap WoodTexture::getAsParamMap(bool only_non_default) const
 {
-	PARAM_SAVE_START;
+	auto param_map{ParentClassType_t::getAsParamMap(only_non_default)};
+	param_map.setParam("type", type().print());
 	PARAM_ENUM_SAVE(wood_type_);
 	PARAM_ENUM_SAVE(shape_);
 	PARAM_ENUM_SAVE(noise_type_);
@@ -46,27 +62,20 @@ ParamMap WoodTexture::Params::getAsParamMap(bool only_non_default) const
 	PARAM_SAVE(turbulence_);
 	PARAM_SAVE(size_);
 	PARAM_SAVE(hard_);
-	PARAM_SAVE_END;
-}
-
-ParamMap WoodTexture::getAsParamMap(bool only_non_default) const
-{
-	ParamMap result{ParentClassType_t::getAsParamMap(only_non_default)};
-	result.append(params_.getAsParamMap(only_non_default));
-	return result;
+	return param_map;
 }
 
 std::pair<std::unique_ptr<Texture>, ParamResult> WoodTexture::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map)
 {
-	auto param_result{Params::meta_.check(param_map, {"type"}, {"ramp_item_"})};
-	auto texture {std::make_unique<ThisClassType_t>(logger, param_result, param_map)};
+	auto param_result{class_meta::check<Params>(param_map, {"type"}, {"ramp_item_"})};
+	auto texture {std::make_unique<WoodTexture>(logger, param_result, param_map)};
 	if(param_result.notOk()) logger.logWarning(param_result.print<ThisClassType_t>(name, {"type"}));
 	return {std::move(texture), param_result};
 }
 
 WoodTexture::WoodTexture(Logger &logger, ParamResult &param_result, const ParamMap &param_map) : ParentClassType_t{logger, param_result, param_map}, params_{param_result, param_map}
 {
-	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + params_.getAsParamMap(true).print());
+	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + getAsParamMap(true).print());
 }
 
 float WoodTexture::getFloat(const Point3f &p, const MipMapParams *mipmap_params) const

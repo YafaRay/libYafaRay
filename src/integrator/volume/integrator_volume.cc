@@ -26,26 +26,27 @@
 
 namespace yafaray {
 
+std::map<std::string, const ParamMeta *> VolumeIntegrator::Params::getParamMetaMap()
+{
+	std::map<std::string, const ParamMeta *> param_meta_map;
+	return param_meta_map;
+}
+
 VolumeIntegrator::Params::Params(ParamResult &param_result, const ParamMap &param_map)
 {
 }
 
-ParamMap VolumeIntegrator::Params::getAsParamMap(bool only_non_default) const
-{
-	PARAM_SAVE_START;
-	PARAM_SAVE_END;
-}
-
 ParamMap VolumeIntegrator::getAsParamMap(bool only_non_default) const
 {
-	ParamMap result{params_.getAsParamMap(only_non_default)};
-	result.setParam("type", type().print());
-	return result;
+	ParamMap param_map;
+	param_map.setParam("type", type().print());
+	return param_map;
 }
 
 std::pair<std::unique_ptr<VolumeIntegrator>, ParamResult> VolumeIntegrator::factory(Logger &logger, const Items <VolumeRegion> &volume_regions, const ParamMap &param_map)
 {
-	const Type type{ClassMeta::preprocessParamMap<Type>(logger, getClassName(), param_map)};
+	if(logger.isDebug()) logger.logDebug("** " + getClassName() + "::factory 'raw' ParamMap contents:\n" + param_map.logContents());
+	const auto type{class_meta::getTypeFromParamMap<Type>(logger, getClassName(), param_map)};
 	switch(type.value())
 	{
 		case Type::Emission: return EmissionIntegrator::factory(logger, param_map, volume_regions);

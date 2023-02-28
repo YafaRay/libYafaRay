@@ -19,8 +19,8 @@
  *
  */
 
-#ifndef LIBYAFARAY_PARAM_METADATA_H
-#define LIBYAFARAY_PARAM_METADATA_H
+#ifndef LIBYAFARAY_PARAM_META_H
+#define LIBYAFARAY_PARAM_META_H
 
 #include "common/enum_map.h"
 #include "geometry/vector.h"
@@ -34,8 +34,9 @@ namespace yafaray {
 class ParamMeta
 {
 	public:
-		template<typename T> ParamMeta(std::string name, std::string desc, T default_value, std::map<std::string, const ParamMeta *> &map);
-		ParamMeta(std::string name, std::string desc, unsigned char default_value, std::map<std::string, const ParamMeta *> &map, const EnumMap<unsigned char> *enum_map);
+		ParamMeta() = default;
+		template<typename T> ParamMeta(std::string name, std::string desc, T default_value);
+		ParamMeta(std::string name, std::string desc, unsigned char default_value, const EnumMap<unsigned char> *enum_map);
 		template <typename T> [[nodiscard]] T getDefault() const { return std::get<T>(default_value_); }
 		template <typename T> [[nodiscard]] bool isDefault(const T &value) const { return value == std::get<T>(default_value_); }
 		[[nodiscard]] std::string name() const { return name_; }
@@ -44,6 +45,7 @@ class ParamMeta
 		[[nodiscard]] std::string print() const;
 		[[nodiscard]] bool isEnum() const { return map_ != nullptr;}
 		[[nodiscard]] bool enumContains(const std::string &str) const { return map_ ? (map_->find(str) != nullptr) : false;}
+		template <typename EnumType> [[nodiscard]] static std::array<ParamMeta, EnumType::Size> enumToParamMetaArray();
 
 	private:
 		std::string name_;
@@ -53,15 +55,13 @@ class ParamMeta
 };
 
 template<typename T>
-inline ParamMeta::ParamMeta(std::string name, std::string desc, T default_value, std::map<std::string, const ParamMeta *> &map) : name_{std::move(name)}, desc_{std::move(desc)}, default_value_{std::move(default_value)}
+inline ParamMeta::ParamMeta(std::string name, std::string desc, T default_value) : name_{std::move(name)}, desc_{std::move(desc)}, default_value_{std::move(default_value)}
 {
 	static_assert(!std::is_same<T, char>::value, "Enums (char type) cannot be constructed without specifying the EnumMap pointer");
-	map[name_] = this;
 }
 
-inline ParamMeta::ParamMeta(std::string name, std::string desc, unsigned char default_value, std::map<std::string, const ParamMeta *> &map, const EnumMap<unsigned char> *enum_map) : name_{std::move(name)}, desc_{std::move(desc)}, default_value_{default_value}, map_{enum_map}
+inline ParamMeta::ParamMeta(std::string name, std::string desc, unsigned char default_value, const EnumMap<unsigned char> *enum_map) : name_{std::move(name)}, desc_{std::move(desc)}, default_value_{default_value}, map_{enum_map}
 {
-	map[name_] = this;
 }
 
 inline std::string ParamMeta::print() const
@@ -80,6 +80,20 @@ inline std::string ParamMeta::print() const
 	return ss.str();
 }
 
+template <typename EnumType>
+inline std::array<ParamMeta, EnumType::Size> ParamMeta::enumToParamMetaArray()
+{
+	std::array<ParamMeta, EnumType::Size> result;
+	for(size_t index = 0; index < EnumType::Size; ++index)
+	{
+		const auto enum_entry{EnumType{static_cast<unsigned char>(index)}};
+		const std::string param_name{enum_entry.print()};
+		const std::string param_desc{enum_entry.printDescription()};
+		result[index] = ParamMeta{param_name, param_desc, std::string{}};
+	}
+	return result;
+}
+
 } //namespace yafaray
 
-#endif //LIBYAFARAY_PARAM_METADATA_H
+#endif //LIBYAFARAY_PARAM_META_H

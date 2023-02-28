@@ -31,7 +31,7 @@ class ExpDensityVolumeRegion final : public DensityVolumeRegion
 	public:
 		inline static std::string getClassName() { return "ExpDensityVolumeRegion"; }
 		static std::pair<std::unique_ptr<VolumeRegion>, ParamResult> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map);
-		static std::string printMeta(const std::vector<std::string> &excluded_params) { return Params::meta_.print(excluded_params); }
+		static std::string printMeta(const std::vector<std::string> &excluded_params) { return class_meta::print<Params>(excluded_params); }
 		[[nodiscard]] ParamMap getAsParamMap(bool only_non_default) const override;
 		ExpDensityVolumeRegion(Logger &logger, ParamResult &param_result, const ParamMap &param_map);
 
@@ -39,7 +39,8 @@ class ExpDensityVolumeRegion final : public DensityVolumeRegion
 		[[nodiscard]] Type type() const override { return Type::ExpDensity; }
 		const struct Params
 		{
-			PARAM_INIT_PARENT(ParentClassType_t);
+			Params(ParamResult &param_result, const ParamMap &param_map);
+			static std::map<std::string, const ParamMeta *> getParamMetaMap();
 			PARAM_DECL(float, a_, 1.f, "a", "");
 			PARAM_DECL(float, b_, 1.f, "b", "");
 		} params_;

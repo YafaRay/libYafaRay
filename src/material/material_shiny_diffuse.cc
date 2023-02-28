@@ -27,6 +27,26 @@
 
 namespace yafaray {
 
+std::map<std::string, const ParamMeta *> ShinyDiffuseMaterial::Params::getParamMetaMap()
+{
+	auto param_meta_map{ParentClassType_t::Params::getParamMetaMap()};
+	PARAM_META(diffuse_color_);
+	PARAM_META(mirror_color_);
+	PARAM_META(transparency_);
+	PARAM_META(translucency_);
+	PARAM_META(diffuse_reflect_);
+	PARAM_META(specular_reflect_);
+	PARAM_META(emit_);
+	PARAM_META(fresnel_effect_);
+	PARAM_META(ior_);
+	PARAM_META(transmit_filter_);
+	PARAM_META(diffuse_brdf_);
+	PARAM_META(sigma_);
+	const auto shaders_meta_map{shadersMeta<Params, ShaderNodeType>()};
+	param_meta_map.insert(shaders_meta_map.begin(), shaders_meta_map.end());
+	return param_meta_map;
+}
+
 ShinyDiffuseMaterial::Params::Params(ParamResult &param_result, const ParamMap &param_map)
 {
 	PARAM_LOAD(diffuse_color_);
@@ -41,12 +61,12 @@ ShinyDiffuseMaterial::Params::Params(ParamResult &param_result, const ParamMap &
 	PARAM_LOAD(transmit_filter_);
 	PARAM_ENUM_LOAD(diffuse_brdf_);
 	PARAM_LOAD(sigma_);
-	PARAM_SHADERS_LOAD;
 }
 
-ParamMap ShinyDiffuseMaterial::Params::getAsParamMap(bool only_non_default) const
+ParamMap ShinyDiffuseMaterial::getAsParamMap(bool only_non_default) const
 {
-	PARAM_SAVE_START;
+	auto param_map{ParentClassType_t::getAsParamMap(only_non_default)};
+	param_map.setParam("type", type().print());
 	PARAM_SAVE(diffuse_color_);
 	PARAM_SAVE(mirror_color_);
 	PARAM_SAVE(transparency_);
@@ -59,63 +79,58 @@ ParamMap ShinyDiffuseMaterial::Params::getAsParamMap(bool only_non_default) cons
 	PARAM_SAVE(transmit_filter_);
 	PARAM_ENUM_SAVE(diffuse_brdf_);
 	PARAM_SAVE(sigma_);
-	PARAM_SHADERS_SAVE;
-	PARAM_SAVE_END;
-}
-
-ParamMap ShinyDiffuseMaterial::getAsParamMap(bool only_non_default) const
-{
-	ParamMap result{ParentClassType_t::getAsParamMap(only_non_default)};
-	result.append(params_.getAsParamMap(only_non_default));
-	return result;
+	const auto shader_nodes_names{getShaderNodesNames<ThisClassType_t, ShaderNodeType>(shaders_, only_non_default)};
+	param_map.append(shader_nodes_names);
+	return param_map;
 }
 
 std::pair<std::unique_ptr<Material>, ParamResult> ShinyDiffuseMaterial::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map, const std::list<ParamMap> &nodes_param_maps)
 {
-	auto param_result{Params::meta_.check(param_map, {"type"}, {})};
-	auto material{std::make_unique<ThisClassType_t>(logger, param_result, param_map, scene.getMaterials())};
-	material->nodes_map_ = NodeMaterial::loadNodes(nodes_param_maps, scene, logger);
+	auto param_result{class_meta::check<Params>(param_map, {"type"}, {})};
+	param_result.merge(checkShadersParams<Params, ShaderNodeType>(param_map));
+	auto material{std::make_unique<ShinyDiffuseMaterial>(logger, param_result, param_map, scene.getMaterials())};
+	material->nodes_map_ = loadNodes(nodes_param_maps, scene, logger);
 	std::map<std::string, const ShaderNode *> root_nodes_map;
 	// Prepare our node list
 	for(size_t shader_index = 0; shader_index < material->shaders_.size(); ++shader_index)
 	{
-		root_nodes_map[ShaderNodeType{static_cast<unsigned char>(shader_index)}.print()] = nullptr;
+		root_nodes_map[ShaderNodeType{shader_index}.print()] = nullptr;
 	}
 	std::vector<const ShaderNode *> root_nodes_list;
-	if(!material->nodes_map_.empty()) NodeMaterial::parseNodes(param_map, root_nodes_list, root_nodes_map, material->nodes_map_, logger);
+	if(!material->nodes_map_.empty()) parseNodes(param_map, root_nodes_list, root_nodes_map, material->nodes_map_, logger);
 	for(size_t shader_index = 0; shader_index < material->shaders_.size(); ++shader_index)
 	{
-		material->shaders_[shader_index] = root_nodes_map[ShaderNodeType{static_cast<unsigned char>(shader_index)}.print()];
+		material->shaders_[shader_index] = root_nodes_map[ShaderNodeType{shader_index}.print()];
 	}
 	// solve nodes order
 	if(!root_nodes_list.empty())
 	{
-		const std::vector<const ShaderNode *> nodes_sorted = NodeMaterial::solveNodesOrder(root_nodes_list, material->nodes_map_, logger);
+		const auto nodes_sorted{solveNodesOrder(root_nodes_list, material->nodes_map_, logger)};
 		for(size_t shader_index = 0; shader_index < material->shaders_.size(); ++shader_index)
 		{
 			if(material->shaders_[shader_index])
 			{
-				if(ShaderNodeType{static_cast<unsigned char>(shader_index)}.isBump())
+				if(ShaderNodeType{shader_index}.isBump())
 				{
-					material->bump_nodes_ = NodeMaterial::getNodeList(material->shaders_[shader_index], nodes_sorted);
+					material->bump_nodes_ = getNodeList(material->shaders_[shader_index], nodes_sorted);
 				}
 				else
 				{
-					const std::vector<const ShaderNode *> shader_nodes_list = NodeMaterial::getNodeList(material->shaders_[shader_index], nodes_sorted);
+					const auto shader_nodes_list{getNodeList(material->shaders_[shader_index], nodes_sorted)};
 					material->color_nodes_.insert(material->color_nodes_.end(), shader_nodes_list.begin(), shader_nodes_list.end());
 				}
 			}
 		}
 	}
 	material->config();
-	if(param_result.notOk()) logger.logWarning(param_result.print<ShinyDiffuseMaterial>(name, {"type"}));
+	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + material->getAsParamMap(true).print());
+	if(param_result.notOk()) logger.logWarning(param_result.print<ThisClassType_t>(name, {"type"}));
 	return {std::move(material), param_result};
 }
 
 ShinyDiffuseMaterial::ShinyDiffuseMaterial(Logger &logger, ParamResult &param_result, const ParamMap &param_map, const Items <Material> &materials) :
 		ParentClassType_t{logger, param_result, param_map, materials}, params_{param_result, param_map}
 {
-	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + params_.getAsParamMap(true).print());
 	if(params_.emit_ > 0.f) bsdf_flags_ |= BsdfFlags{BsdfFlags::Emit};
 	if(params_.diffuse_brdf_ == DiffuseBrdf::OrenNayar) initOrenNayar(params_.sigma_);
 }

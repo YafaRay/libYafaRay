@@ -30,6 +30,20 @@
 
 namespace yafaray {
 
+std::map<std::string, const ParamMeta *> IesLight::Params::getParamMetaMap()
+{
+	auto param_meta_map{ParentClassType_t::Params::getParamMetaMap()};
+	PARAM_META(from_);
+	PARAM_META(to_);
+	PARAM_META(color_);
+	PARAM_META(power_);
+	PARAM_META(file_);
+	PARAM_META(samples_);
+	PARAM_META(soft_shadows_);
+	PARAM_META(cone_angle_);
+	return param_meta_map;
+}
+
 IesLight::Params::Params(ParamResult &param_result, const ParamMap &param_map)
 {
 	PARAM_LOAD(from_);
@@ -42,9 +56,10 @@ IesLight::Params::Params(ParamResult &param_result, const ParamMap &param_map)
 	PARAM_LOAD(cone_angle_);
 }
 
-ParamMap IesLight::Params::getAsParamMap(bool only_non_default) const
+ParamMap IesLight::getAsParamMap(bool only_non_default) const
 {
-	PARAM_SAVE_START;
+	auto param_map{ParentClassType_t::getAsParamMap(only_non_default)};
+	param_map.setParam("type", type().print());
 	PARAM_SAVE(from_);
 	PARAM_SAVE(to_);
 	PARAM_SAVE(color_);
@@ -53,20 +68,13 @@ ParamMap IesLight::Params::getAsParamMap(bool only_non_default) const
 	PARAM_SAVE(samples_);
 	PARAM_SAVE(soft_shadows_);
 	PARAM_SAVE(cone_angle_);
-	PARAM_SAVE_END;
-}
-
-ParamMap IesLight::getAsParamMap(bool only_non_default) const
-{
-	ParamMap result{ParentClassType_t::getAsParamMap(only_non_default)};
-	result.append(params_.getAsParamMap(only_non_default));
-	return result;
+	return param_map;
 }
 
 std::pair<std::unique_ptr<Light>, ParamResult> IesLight::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map)
 {
-	auto param_result{Params::meta_.check(param_map, {"type"}, {})};
-	auto light {std::make_unique<ThisClassType_t>(logger, param_result, param_map, scene.getLights())};
+	auto param_result{class_meta::check<Params>(param_map, {"type"}, {})};
+	auto light {std::make_unique<IesLight>(logger, param_result, param_map, scene.getLights())};
 	if(param_result.notOk()) logger.logWarning(param_result.print<ThisClassType_t>(name, {"type"}));
 	if(!light->isIesOk()) return {nullptr, ParamResult{YAFARAY_RESULT_ERROR_WHILE_CREATING}};
 	return {std::move(light), param_result};
@@ -77,7 +85,7 @@ IesLight::IesLight(Logger &logger, ParamResult &param_result, const ParamMap &pa
 		ies_data_{std::make_unique<IesData>()},
 		ies_ok_{ies_data_->parseIesFile(logger, params_.file_)}
 {
-	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + params_.getAsParamMap(true).print());
+	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + getAsParamMap(true).print());
 	if(ies_ok_)
 	{
 		ndir_ = (params_.from_ - params_.to_);

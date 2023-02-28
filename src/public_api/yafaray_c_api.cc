@@ -244,7 +244,7 @@ void yafaray_setParamMapString(yafaray_ParamMap *param_map, const char *name, co
 void yafaray_setParamMapBool(yafaray_ParamMap *param_map, const char *name, yafaray_Bool b)
 {
 	auto &params{*reinterpret_cast<yafaray::ParamMap *>(param_map)};
-	params[std::string(name)] = b;
+	params[std::string(name)] = (b == YAFARAY_BOOL_FALSE) ? false : true;
 }
 
 void yafaray_setParamMapInt(yafaray_ParamMap *param_map, const char *name, int i)

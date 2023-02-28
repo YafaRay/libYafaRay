@@ -37,14 +37,15 @@ class SpherePrimitive final : public Primitive
 	public:
 		inline static std::string getClassName() { return "CurveObject"; }
 		static std::pair<std::unique_ptr<Primitive>, ParamResult> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map, const PrimitiveObject &object);
-		static std::string printMeta(const std::vector<std::string> &excluded_params) { return Params::meta_.print(excluded_params); }
+		static std::string printMeta(const std::vector<std::string> &excluded_params) { return class_meta::print<Params>(excluded_params); }
 		[[nodiscard]] ParamMap getAsParamMap(bool only_non_default) const;
 		SpherePrimitive(Logger &logger, ParamResult &param_result, const ParamMap &param_map, size_t material_id, const PrimitiveObject &base_object);
 
 	private:
-		struct Params
+		const struct Params
 		{
-			PARAM_INIT;
+			Params(ParamResult &param_result, const ParamMap &param_map);
+			static std::map<std::string, const ParamMeta *> getParamMetaMap();
 			PARAM_DECL(Vec3f , center_, Vec3f{0.f}, "center", "");
 			PARAM_DECL(float , radius_, 1.f, "radius", "");
 			PARAM_DECL(std::string , material_name_, "", "material", "");

@@ -33,6 +33,15 @@
 
 namespace yafaray {
 
+std::map<std::string, const ParamMeta *> SurfaceIntegrator::Params::getParamMetaMap()
+{
+	std::map<std::string, const ParamMeta *> param_meta_map;
+	PARAM_META(light_names_);
+	PARAM_META(time_forced_);
+	PARAM_META(time_forced_value_);
+	return param_meta_map;
+}
+
 SurfaceIntegrator::Params::Params(ParamResult &param_result, const ParamMap &param_map)
 {
 	PARAM_LOAD(light_names_);
@@ -40,25 +49,19 @@ SurfaceIntegrator::Params::Params(ParamResult &param_result, const ParamMap &par
 	PARAM_LOAD(time_forced_value_);
 }
 
-ParamMap SurfaceIntegrator::Params::getAsParamMap(bool only_non_default) const
+ParamMap SurfaceIntegrator::getAsParamMap(bool only_non_default) const
 {
-	PARAM_SAVE_START;
+	ParamMap param_map;
 	PARAM_SAVE(light_names_);
 	PARAM_SAVE(time_forced_);
 	PARAM_SAVE(time_forced_value_);
-	PARAM_SAVE_END;
-}
-
-ParamMap SurfaceIntegrator::getAsParamMap(bool only_non_default) const
-{
-	ParamMap result{params_.getAsParamMap(only_non_default)};
-	result.setParam("type", type().print());
-	return result;
+	return param_map;
 }
 
 std::pair<std::unique_ptr<SurfaceIntegrator>, ParamResult> SurfaceIntegrator::factory(Logger &logger, RenderControl &render_control, const std::string &name, const ParamMap &param_map)
 {
-	const Type type{ClassMeta::preprocessParamMap<Type>(logger, getClassName(), param_map)};
+	if(logger.isDebug()) logger.logDebug("** " + getClassName() + "::factory 'raw' ParamMap contents:\n" + param_map.logContents());
+	const auto type{class_meta::getTypeFromParamMap<Type>(logger, getClassName(), param_map)};
 	switch(type.value())
 	{
 		case Type::Bidirectional:

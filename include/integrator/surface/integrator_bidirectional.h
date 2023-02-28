@@ -41,7 +41,7 @@ class BidirectionalIntegrator final : public TiledIntegrator
 	public:
 		inline static std::string getClassName() { return "BidirectionalIntegrator"; }
 		static std::pair<std::unique_ptr<SurfaceIntegrator>, ParamResult> factory(Logger &logger, RenderControl &render_control, const std::string &name, const ParamMap &param_map);
-		static std::string printMeta(const std::vector<std::string> &excluded_params) { return Params::meta_.print(excluded_params); }
+		static std::string printMeta(const std::vector<std::string> &excluded_params) { return class_meta::print<Params>(excluded_params); }
 		BidirectionalIntegrator(RenderControl &render_control, Logger &logger, ParamResult &param_result, const std::string &name, const ParamMap &param_map);
 		[[nodiscard]] ParamMap getAsParamMap(bool only_non_default) const override;
 
@@ -49,7 +49,8 @@ class BidirectionalIntegrator final : public TiledIntegrator
 		[[nodiscard]] Type type() const override { return Type::Bidirectional; }
 		const struct Params
 		{
-			PARAM_INIT_PARENT(ParentClassType_t);
+			Params(ParamResult &param_result, const ParamMap &param_map);
+			static std::map<std::string, const ParamMeta *> getParamMetaMap();
 			PARAM_DECL(bool, transparent_shadows_, false, "transpShad", "Use transparent shadows");
 			PARAM_DECL(int, shadow_depth_, 4, "shadowDepth", "Shadow depth for transparent shadows");
 			PARAM_DECL(bool, ao_, false, "do_AO", "Use ambient occlusion");

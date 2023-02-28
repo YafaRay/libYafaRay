@@ -32,6 +32,16 @@
 
 namespace yafaray {
 
+std::map<std::string, const ParamMeta *> BackgroundPortalLight::Params::getParamMetaMap()
+{
+	auto param_meta_map{ParentClassType_t::Params::getParamMetaMap()};
+	PARAM_META(samples_);
+	PARAM_META(object_name_);
+	PARAM_META(power_);
+	PARAM_META(ibl_clamp_sampling_);
+	return param_meta_map;
+}
+
 BackgroundPortalLight::Params::Params(ParamResult &param_result, const ParamMap &param_map)
 {
 	PARAM_LOAD(samples_);
@@ -40,28 +50,21 @@ BackgroundPortalLight::Params::Params(ParamResult &param_result, const ParamMap 
 	PARAM_LOAD(ibl_clamp_sampling_);
 }
 
-ParamMap BackgroundPortalLight::Params::getAsParamMap(bool only_non_default) const
-{
-	PARAM_SAVE_START;
-	PARAM_SAVE(samples_);
-	//PARAM_SAVE(object_name_);
-	PARAM_SAVE(power_);
-	PARAM_SAVE(ibl_clamp_sampling_);
-	PARAM_SAVE_END;
-}
-
 ParamMap BackgroundPortalLight::getAsParamMap(bool only_non_default) const
 {
-	ParamMap result{ParentClassType_t::getAsParamMap(only_non_default)};
-	result.append(params_.getAsParamMap(only_non_default));
-	result.setParam(Params::object_name_meta_, objects_.findNameFromId(object_id_).first);
-	return result;
+	auto param_map{ParentClassType_t::getAsParamMap(only_non_default)};
+	param_map.setParam("type", type().print());
+	param_map.setParam(Params::object_name_meta_, objects_.findNameFromId(object_id_).first);
+	PARAM_SAVE(samples_);
+	PARAM_SAVE(power_);
+	PARAM_SAVE(ibl_clamp_sampling_);
+	return param_map;
 }
 
 std::pair<std::unique_ptr<Light>, ParamResult> BackgroundPortalLight::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map)
 {
-	auto param_result{Params::meta_.check(param_map, {"type"}, {})};
-	auto light {std::make_unique<ThisClassType_t>(logger, param_result, name, param_map, scene.getObjects(), scene.getLights())};
+	auto param_result{class_meta::check<Params>(param_map, {"type"}, {})};
+	auto light {std::make_unique<BackgroundPortalLight>(logger, param_result, name, param_map, scene.getObjects(), scene.getLights())};
 	if(param_result.notOk()) logger.logWarning(param_result.print<ThisClassType_t>(name, {"type"}));
 	return {std::move(light), param_result};
 }
@@ -69,7 +72,7 @@ std::pair<std::unique_ptr<Light>, ParamResult> BackgroundPortalLight::factory(Lo
 BackgroundPortalLight::BackgroundPortalLight(Logger &logger, ParamResult &param_result, const std::string &name, const ParamMap &param_map, const Items<Object> &objects, const Items<Light> &lights):
 		ParentClassType_t{logger, param_result, param_map, Flags::None, lights}, params_{param_result, param_map}, objects_{objects}
 {
-	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + params_.getAsParamMap(true).print());
+	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + getAsParamMap(true).print());
 }
 
 void BackgroundPortalLight::initIs()

@@ -42,7 +42,7 @@ class AcceleratorKdTree final : public Accelerator
 	public:
 		inline static std::string getClassName() { return "AcceleratorKdTree"; }
 		static std::pair<std::unique_ptr<Accelerator>, ParamResult> factory(Logger &logger, const std::vector<const Primitive *> &primitives, const ParamMap &params);
-		static std::string printMeta(const std::vector<std::string> &excluded_params) { return Params::meta_.print(excluded_params); }
+		static std::string printMeta(const std::vector<std::string> &excluded_params) { return class_meta::print<Params>(excluded_params); }
 		AcceleratorKdTree(Logger &logger, ParamResult &param_result, const std::vector<const Primitive *> &primitives, const ParamMap &param_map);
 		~AcceleratorKdTree() override;
 
@@ -50,7 +50,8 @@ class AcceleratorKdTree final : public Accelerator
 		[[nodiscard]] Type type() const override { return Type::KdTreeOriginal; }
 		const struct Params
 		{
-			PARAM_INIT_PARENT(ParentClassType_t);
+			Params(ParamResult &param_result, const ParamMap &param_map);
+			static std::map<std::string, const ParamMeta *> getParamMetaMap();
 			PARAM_DECL(int, max_depth_, 0, "depth", "");
 			PARAM_DECL(int, max_leaf_size_, 1, "max_leaf_size_", "");
 			PARAM_DECL(float , cost_ratio_, 0.8f, "cost_ratio", "node traversal cost divided by primitive intersection cost");

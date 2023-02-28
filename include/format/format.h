@@ -43,7 +43,7 @@ class Format
 		inline static std::string getClassName() { return "Format"; }
 		[[nodiscard]] virtual ParamMap getAsParamMap(bool only_non_default) const;
 		static std::pair<std::unique_ptr<Format>, ParamResult> factory(Logger &logger, const ParamMap &param_map);
-		static std::string printMeta(const std::vector<std::string> &excluded_params) { return Params::meta_.print(excluded_params); }
+		static std::string printMeta(const std::vector<std::string> &excluded_params) { return class_meta::print<Params>(excluded_params); }
 		explicit Format(Logger &logger, ParamResult &param_result, const ParamMap &param_map) : params_{param_result, param_map}, logger_{logger} { }
 		virtual ~Format() = default;
 		virtual std::unique_ptr<Image> loadFromFile(const std::string &name, const Image::Optimization &optimization, const ColorSpace &color_space, float gamma) = 0;
@@ -67,7 +67,8 @@ class Format
 		[[nodiscard]] virtual Type type() const = 0;
 		const struct Params
 		{
-			PARAM_INIT;
+			Params(ParamResult &param_result, const ParamMap &param_map);
+			static std::map<std::string, const ParamMeta *> getParamMetaMap();
 		} params_;
 		bool grayscale_ = false; //!< Converts the information loaded from the texture RGB to grayscale to reduce memory usage for bump or mask textures, for example. Alpha is ignored in this case.
 		Logger &logger_;

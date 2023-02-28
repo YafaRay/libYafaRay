@@ -75,7 +75,8 @@ class Camera
 		};
 		const struct Params
 		{
-			PARAM_INIT;
+			Params(ParamResult &param_result, const ParamMap &param_map);
+			static std::map<std::string, const ParamMeta *> getParamMetaMap();
 			PARAM_DECL(Vec3f, from_, (Vec3f{{0, 1, 0}}), "from", "");
 			PARAM_DECL(Vec3f, to_, (Vec3f{{0, 0, 0}}), "to", "");
 			PARAM_DECL(Vec3f, up_, (Vec3f{{0, 1, 1}}), "up", "");

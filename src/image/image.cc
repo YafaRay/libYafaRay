@@ -27,6 +27,19 @@
 
 namespace yafaray {
 
+std::map<std::string, const ParamMeta *> Image::Params::getParamMetaMap()
+{
+	std::map<std::string, const ParamMeta *> param_meta_map;
+	PARAM_META(type_);
+	PARAM_META(filename_);
+	PARAM_META(color_space_);
+	PARAM_META(gamma_);
+	PARAM_META(image_optimization_);
+	PARAM_META(width_);
+	PARAM_META(height_);
+	return param_meta_map;
+}
+
 Image::Params::Params(ParamResult &param_result, const ParamMap &param_map)
 {
 	PARAM_ENUM_LOAD(type_);
@@ -38,9 +51,9 @@ Image::Params::Params(ParamResult &param_result, const ParamMap &param_map)
 	PARAM_LOAD(height_);
 }
 
-ParamMap Image::Params::getAsParamMap(bool only_non_default) const
+ParamMap Image::getAsParamMap(bool only_non_default) const
 {
-	PARAM_SAVE_START;
+	ParamMap param_map;
 	PARAM_ENUM_SAVE(type_);
 	PARAM_SAVE(filename_);
 	PARAM_ENUM_SAVE(color_space_);
@@ -48,18 +61,13 @@ ParamMap Image::Params::getAsParamMap(bool only_non_default) const
 	PARAM_ENUM_SAVE(image_optimization_);
 	PARAM_SAVE(width_);
 	PARAM_SAVE(height_);
-	PARAM_SAVE_END;
-}
-
-ParamMap Image::getAsParamMap(bool only_non_default) const
-{
-	return params_.getAsParamMap(only_non_default);
+	return param_map;
 }
 
 std::pair<std::unique_ptr<Image>, ParamResult> Image::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map)
 {
 	if(logger.isDebug()) logger.logDebug("**" + getClassName() + "::factory 'raw' ParamMap\n" + param_map.logContents());
-	auto param_result{Params::meta_.check(param_map, {}, {})};
+	auto param_result{class_meta::check<Params>(param_map, {}, {})};
 	std::string type_str;
 	param_map.getParam(Params::type_meta_, type_str);
 	const Type type{type_str};
@@ -99,7 +107,7 @@ std::pair<std::unique_ptr<Image>, ParamResult> Image::factory(Logger &logger, co
 	}
 	if(!image) image = Image::factory(params);
 	if(param_result.notOk()) logger.logWarning(param_result.print<Image>(name, {}));
-	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + image->params_.getAsParamMap(true).print());
+	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + image->getAsParamMap(true).print());
 	return {std::move(image), param_result};
 }
 

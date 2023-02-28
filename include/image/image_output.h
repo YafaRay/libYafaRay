@@ -46,7 +46,7 @@ class ImageOutput final
 		void setId(size_t id) { id_ = id; }
 		[[nodiscard]] size_t getId() const { return id_; }
 		static std::pair<std::unique_ptr<ImageOutput>, ParamResult> factory(Logger &logger, const std::string &name, const ParamMap &param_map);
-		static std::string printMeta(const std::vector<std::string> &excluded_params) { return Params::meta_.print(excluded_params); }
+		static std::string printMeta(const std::vector<std::string> &excluded_params) { return class_meta::print<Params>(excluded_params); }
 		[[nodiscard]] ParamMap getAsParamMap(bool only_non_default) const;
 		ImageOutput(Logger &logger, ParamResult &param_result, const ParamMap &param_map);
 		void flush(const RenderControl &render_control, const Timer &timer);
@@ -66,7 +66,8 @@ class ImageOutput final
 		};
 		const struct Params
 		{
-			PARAM_INIT;
+			Params(ParamResult &param_result, const ParamMap &param_map);
+			static std::map<std::string, const ParamMeta *> getParamMetaMap();
 			PARAM_DECL(std::string, image_path_, "", "image_path", "");
 			PARAM_ENUM_DECL(ColorSpace, color_space_, ColorSpace::Srgb, "color_space", "");
 			PARAM_DECL(float, gamma_, 1.f, "gamma", "");

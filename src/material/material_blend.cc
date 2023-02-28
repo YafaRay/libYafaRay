@@ -31,34 +31,40 @@
 
 namespace yafaray {
 
+std::map<std::string, const ParamMeta *> BlendMaterial::Params::getParamMetaMap()
+{
+	auto param_meta_map{ParentClassType_t::Params::getParamMetaMap()};
+	PARAM_META(material_1_name_);
+	PARAM_META(material_2_name_);
+	PARAM_META(blend_value_);
+	const auto shaders_meta_map{shadersMeta<Params, ShaderNodeType>()};
+	param_meta_map.insert(shaders_meta_map.begin(), shaders_meta_map.end());
+	return param_meta_map;
+}
+
 BlendMaterial::Params::Params(ParamResult &param_result, const ParamMap &param_map)
 {
 	PARAM_LOAD(material_1_name_);
 	PARAM_LOAD(material_2_name_);
 	PARAM_LOAD(blend_value_);
-	PARAM_SHADERS_LOAD;
-}
-
-ParamMap BlendMaterial::Params::getAsParamMap(bool only_non_default) const
-{
-	PARAM_SAVE_START;
-	PARAM_SAVE(material_1_name_);
-	PARAM_SAVE(material_2_name_);
-	PARAM_SAVE(blend_value_);
-	PARAM_SHADERS_SAVE;
-	PARAM_SAVE_END;
 }
 
 ParamMap BlendMaterial::getAsParamMap(bool only_non_default) const
 {
-	ParamMap result{ParentClassType_t::getAsParamMap(only_non_default)};
-	result.append(params_.getAsParamMap(only_non_default));
-	return result;
+	auto param_map{ParentClassType_t::getAsParamMap(only_non_default)};
+	param_map.setParam("type", type().print());
+	PARAM_SAVE(material_1_name_);
+	PARAM_SAVE(material_2_name_);
+	PARAM_SAVE(blend_value_);
+	const auto shader_nodes_names{getShaderNodesNames<ThisClassType_t, ShaderNodeType>(shaders_, only_non_default)};
+	param_map.append(shader_nodes_names);
+	return param_map;
 }
 
 std::pair<std::unique_ptr<Material>, ParamResult> BlendMaterial::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map, const std::list<ParamMap> &nodes_param_maps)
 {
-	auto param_result{Params::meta_.check(param_map, {"type"}, {})};
+	auto param_result{class_meta::check<Params>(param_map, {"type"}, {})};
+	param_result.merge(checkShadersParams<Params, ShaderNodeType>(param_map));
 	std::string mat_1_name;
 	if(param_map.getParam(Params::material_1_name_meta_.name(), mat_1_name).notOk()) return {nullptr, ParamResult{YAFARAY_RESULT_ERROR_WHILE_CREATING}};
 	const auto [mat_1_id, mat_1_error]{scene.getMaterial(mat_1_name)};
@@ -67,41 +73,42 @@ std::pair<std::unique_ptr<Material>, ParamResult> BlendMaterial::factory(Logger 
 	const auto [mat_2_id, mat_2_error]{scene.getMaterial(mat_2_name)};
 	if(mat_1_error.hasError() || mat_2_error.hasError()) return {nullptr, ParamResult{YAFARAY_RESULT_ERROR_WHILE_CREATING}};
 
-	auto material{std::make_unique<ThisClassType_t>(logger, param_result, param_map, mat_1_id, mat_2_id, scene.getMaterials())};
-	material->nodes_map_ = NodeMaterial::loadNodes(nodes_param_maps, scene, logger);
+	auto material{std::make_unique<BlendMaterial>(logger, param_result, param_map, mat_1_id, mat_2_id, scene.getMaterials())};
+	material->nodes_map_ = loadNodes(nodes_param_maps, scene, logger);
 	std::map<std::string, const ShaderNode *> root_nodes_map;
 	// Prepare our node list
 	for(size_t shader_index = 0; shader_index < material->shaders_.size(); ++shader_index)
 	{
-		root_nodes_map[ShaderNodeType{static_cast<unsigned char>(shader_index)}.print()] = nullptr;
+		root_nodes_map[ShaderNodeType{shader_index}.print()] = nullptr;
 	}
 	std::vector<const ShaderNode *> root_nodes_list;
-	if(!material->nodes_map_.empty()) NodeMaterial::parseNodes(param_map, root_nodes_list, root_nodes_map, material->nodes_map_, logger);
+	if(!material->nodes_map_.empty()) parseNodes(param_map, root_nodes_list, root_nodes_map, material->nodes_map_, logger);
 	for(size_t shader_index = 0; shader_index < material->shaders_.size(); ++shader_index)
 	{
-		material->shaders_[shader_index] = root_nodes_map[ShaderNodeType{static_cast<unsigned char>(shader_index)}.print()];
+		material->shaders_[shader_index] = root_nodes_map[ShaderNodeType{shader_index}.print()];
 	}
 	// solve nodes order
 	if(!root_nodes_list.empty())
 	{
-		const std::vector<const ShaderNode *> nodes_sorted = NodeMaterial::solveNodesOrder(root_nodes_list, material->nodes_map_, logger);
+		const auto nodes_sorted{solveNodesOrder(root_nodes_list, material->nodes_map_, logger)};
 		for(size_t shader_index = 0; shader_index < material->shaders_.size(); ++shader_index)
 		{
 			if(material->shaders_[shader_index])
 			{
-				if(ShaderNodeType{static_cast<unsigned char>(shader_index)}.isBump())
+				if(ShaderNodeType{shader_index}.isBump())
 				{
-					material->bump_nodes_ = NodeMaterial::getNodeList(material->shaders_[shader_index], nodes_sorted);
+					material->bump_nodes_ = getNodeList(material->shaders_[shader_index], nodes_sorted);
 				}
 				else
 				{
-					const std::vector<const ShaderNode *> shader_nodes_list = NodeMaterial::getNodeList(material->shaders_[shader_index], nodes_sorted);
+					const auto shader_nodes_list{getNodeList(material->shaders_[shader_index], nodes_sorted)};
 					material->color_nodes_.insert(material->color_nodes_.end(), shader_nodes_list.begin(), shader_nodes_list.end());
 				}
 			}
 		}
 	}
-	if(param_result.notOk()) logger.logWarning(param_result.print<BlendMaterial>(name, {"type"}));
+	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + material->getAsParamMap(true).print());
+	if(param_result.notOk()) logger.logWarning(param_result.print<ThisClassType_t>(name, {"type"}));
 	return {std::move(material), param_result};
 }
 
@@ -109,7 +116,6 @@ BlendMaterial::BlendMaterial(Logger &logger, ParamResult &param_result, const Pa
 		ParentClassType_t{logger, param_result, param_map, materials}, params_{param_result, param_map},
 		material_1_id_{material_1_id}, material_2_id_{material_2_id}, materials_{materials}
 {
-	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + params_.getAsParamMap(true).print());
 	blended_ior_ = (materials_.getById(material_1_id_).first->getMatIor() + materials_.getById(material_2_id_).first->getMatIor()) * 0.5f;
 	additional_depth_ = std::max(materials_.getById(material_1_id_).first->getAdditionalDepth(), materials_.getById(material_2_id_).first->getAdditionalDepth());
 }

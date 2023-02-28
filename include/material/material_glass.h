@@ -42,7 +42,7 @@ class GlassMaterial final : public NodeMaterial
 	public:
 		inline static std::string getClassName() { return "GlassMaterial"; }
 		static std::pair<std::unique_ptr<Material>, ParamResult> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map, const std::list<ParamMap> &nodes_param_maps);
-		static std::string printMeta(const std::vector<std::string> &excluded_params) { return Params::meta_.print(excluded_params); }
+		static std::string printMeta(const std::vector<std::string> &excluded_params) { return class_meta::print<Params>(excluded_params); }
 		[[nodiscard]] ParamMap getAsParamMap(bool only_non_default) const override;
 		GlassMaterial(Logger &logger, ParamResult &param_result, const ParamMap &param_map, const Items <Material> &materials);
 
@@ -62,7 +62,8 @@ class GlassMaterial final : public NodeMaterial
 		};
 		const struct Params
 		{
-			PARAM_INIT_PARENT(ParentClassType_t);
+			Params(ParamResult &param_result, const ParamMap &param_map);
+			static std::map<std::string, const ParamMeta *> getParamMetaMap();
 			PARAM_DECL(float, ior_, 1.4f, "IOR", "Index of refraction");
 			PARAM_DECL(Rgb, filter_color_, Rgb{1.f}, "filter_color", "");
 			PARAM_DECL(float, transmit_filter_, 0.f, "transmit_filter", "");
@@ -71,7 +72,7 @@ class GlassMaterial final : public NodeMaterial
 			PARAM_DECL(bool, fake_shadows_, false, "fake_shadows", "");
 			PARAM_DECL(Rgb, absorption_color_, Rgb{1.f}, "absorption", "");
 			PARAM_DECL(float, absorption_dist_, 1.f, "absorption_dist", "");
-			PARAM_SHADERS_DECL;
+			inline static const auto shader_node_names_meta_{ParamMeta::enumToParamMetaArray<ShaderNodeType>()};
 		} params_;
 		std::unique_ptr<const MaterialData> initBsdf(SurfacePoint &sp, const Camera *camera) const override;
 		Rgb eval(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3f &wo, const Vec3f &wl, BsdfFlags bsdfs, bool force_eval) const override {return Rgb(0.0);}

@@ -33,6 +33,17 @@
 
 namespace yafaray {
 
+std::map<std::string, const ParamMeta *> ObjectLight::Params::getParamMetaMap()
+{
+	auto param_meta_map{ParentClassType_t::Params::getParamMetaMap()};
+	PARAM_META(object_name_);
+	PARAM_META(color_);
+	PARAM_META(power_);
+	PARAM_META(samples_);
+	PARAM_META(double_sided_);
+	return param_meta_map;
+}
+
 ObjectLight::Params::Params(ParamResult &param_result, const ParamMap &param_map)
 {
 	PARAM_LOAD(object_name_);
@@ -42,29 +53,22 @@ ObjectLight::Params::Params(ParamResult &param_result, const ParamMap &param_map
 	PARAM_LOAD(double_sided_);
 }
 
-ParamMap ObjectLight::Params::getAsParamMap(bool only_non_default) const
+ParamMap ObjectLight::getAsParamMap(bool only_non_default) const
 {
-	PARAM_SAVE_START;
-	//PARAM_SAVE(object_name_);
+	auto param_map{ParentClassType_t::getAsParamMap(only_non_default)};
+	param_map.setParam("type", type().print());
+	param_map.setParam(Params::object_name_meta_, objects_.findNameFromId(object_id_).first);
 	PARAM_SAVE(color_);
 	PARAM_SAVE(power_);
 	PARAM_SAVE(samples_);
 	PARAM_SAVE(double_sided_);
-	PARAM_SAVE_END;
-}
-
-ParamMap ObjectLight::getAsParamMap(bool only_non_default) const
-{
-	ParamMap result{ParentClassType_t::getAsParamMap(only_non_default)};
-	result.append(params_.getAsParamMap(only_non_default));
-	result.setParam(Params::object_name_meta_, objects_.findNameFromId(object_id_).first);
-	return result;
+	return param_map;
 }
 
 std::pair<std::unique_ptr<Light>, ParamResult> ObjectLight::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map)
 {
-	auto param_result{Params::meta_.check(param_map, {"type"}, {})};
-	auto light {std::make_unique<ThisClassType_t>(logger, param_result, name, param_map, scene.getObjects(), scene.getLights())};
+	auto param_result{class_meta::check<Params>(param_map, {"type"}, {})};
+	auto light {std::make_unique<ObjectLight>(logger, param_result, name, param_map, scene.getObjects(), scene.getLights())};
 	if(param_result.notOk()) logger.logWarning(param_result.print<ThisClassType_t>(name, {"type"}));
 	return {std::move(light), param_result};
 }
@@ -72,7 +76,7 @@ std::pair<std::unique_ptr<Light>, ParamResult> ObjectLight::factory(Logger &logg
 ObjectLight::ObjectLight(Logger &logger, ParamResult &param_result, const std::string &name, const ParamMap &param_map, const Items<Object> &objects, const Items<Light> &lights):
 		ParentClassType_t{logger, param_result, param_map, Flags::None, lights}, params_{param_result, param_map}, objects_{objects}
 {
-	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + params_.getAsParamMap(true).print());
+	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + getAsParamMap(true).print());
 }
 
 void ObjectLight::initIs()

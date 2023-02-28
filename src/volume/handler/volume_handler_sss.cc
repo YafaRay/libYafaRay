@@ -26,29 +26,29 @@
 
 namespace yafaray {
 
+std::map<std::string, const ParamMeta *> SssVolumeHandler::Params::getParamMetaMap()
+{
+	auto param_meta_map{ParentClassType_t::Params::getParamMetaMap()};
+	PARAM_META(scatter_col_);
+	return param_meta_map;
+}
+
 SssVolumeHandler::Params::Params(ParamResult &param_result, const ParamMap &param_map)
 {
 	PARAM_LOAD(scatter_col_);
 }
 
-ParamMap SssVolumeHandler::Params::getAsParamMap(bool only_non_default) const
-{
-	PARAM_SAVE_START;
-	PARAM_SAVE(scatter_col_);
-	PARAM_SAVE_END;
-}
-
 ParamMap SssVolumeHandler::getAsParamMap(bool only_non_default) const
 {
-	ParamMap result{BeerVolumeHandler::getAsParamMap(only_non_default)};
-	result.append(params_.getAsParamMap(only_non_default));
-	return result;
+	ParamMap param_map{BeerVolumeHandler::getAsParamMap(only_non_default)};
+	PARAM_SAVE(scatter_col_);
+	return param_map;
 }
 
 std::pair<std::unique_ptr<VolumeHandler>, ParamResult> SssVolumeHandler::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map)
 {
-	auto param_result{Params::meta_.check(param_map, {"type"}, {})};
-	auto volume_handler {std::make_unique<ThisClassType_t>(logger, param_result, param_map)};
+	auto param_result{class_meta::check<Params>(param_map, {"type"}, {})};
+	auto volume_handler {std::make_unique<SssVolumeHandler>(logger, param_result, param_map)};
 	if(param_result.notOk()) logger.logWarning(param_result.print<ThisClassType_t>(name, {"type"}));
 	return {std::move(volume_handler), param_result};
 }
@@ -56,7 +56,7 @@ std::pair<std::unique_ptr<VolumeHandler>, ParamResult> SssVolumeHandler::factory
 SssVolumeHandler::SssVolumeHandler(Logger &logger, ParamResult &param_result, const ParamMap &param_map) :
 		ParentClassType_t{logger, param_result, param_map}, params_{param_result, param_map}
 {
-	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + params_.getAsParamMap(true).print());
+	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + getAsParamMap(true).print());
 }
 
 bool SssVolumeHandler::scatter(const Ray &ray, Ray &s_ray, PSample &s) const

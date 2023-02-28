@@ -24,6 +24,23 @@
 
 namespace yafaray {
 
+std::map<std::string, const ParamMeta *> TextureMapperNode::Params::getParamMetaMap()
+{
+	auto param_meta_map{ParentClassType_t::Params::getParamMetaMap()};
+	PARAM_META(texture_);
+	PARAM_META(transform_);
+	PARAM_META(scale_);
+	PARAM_META(offset_);
+	PARAM_META(do_scalar_);
+	PARAM_META(bump_strength_);
+	PARAM_META(proj_x_);
+	PARAM_META(proj_y_);
+	PARAM_META(proj_z_);
+	PARAM_META(texco_);
+	PARAM_META(mapping_);
+	return param_meta_map;
+}
+
 TextureMapperNode::Params::Params(ParamResult &param_result, const ParamMap &param_map)
 {
 	PARAM_LOAD(texture_);
@@ -39,10 +56,11 @@ TextureMapperNode::Params::Params(ParamResult &param_result, const ParamMap &par
 	PARAM_ENUM_LOAD(mapping_);
 }
 
-ParamMap TextureMapperNode::Params::getAsParamMap(bool only_non_default) const
+ParamMap TextureMapperNode::getAsParamMap(bool only_non_default) const
 {
-	PARAM_SAVE_START;
-	//PARAM_SAVE(texture_);
+	auto param_map{ParentClassType_t::getAsParamMap(only_non_default)};
+	param_map.setParam("type", type().print());
+	param_map.setParam(Params::texture_meta_, textures_.findNameFromId(texture_id_).first);
 	PARAM_SAVE(transform_);
 	PARAM_SAVE(scale_);
 	PARAM_SAVE(offset_);
@@ -53,20 +71,12 @@ ParamMap TextureMapperNode::Params::getAsParamMap(bool only_non_default) const
 	PARAM_SAVE(proj_z_);
 	PARAM_ENUM_SAVE(texco_);
 	PARAM_ENUM_SAVE(mapping_);
-	PARAM_SAVE_END;
-}
-
-ParamMap TextureMapperNode::getAsParamMap(bool only_non_default) const
-{
-	ParamMap result{ParentClassType_t::getAsParamMap(only_non_default)};
-	result.append(params_.getAsParamMap(only_non_default));
-	result.setParam(Params::texture_meta_, textures_.findNameFromId(texture_id_).first);
-	return result;
+	return param_map;
 }
 
 std::pair<std::unique_ptr<ShaderNode>, ParamResult> TextureMapperNode::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map)
 {
-	auto param_result{Params::meta_.check(param_map, {"type"}, {})};
+	auto param_result{class_meta::check<Params>(param_map, {"type"}, {})};
 	std::string texname;
 	if(param_map.getParam(Params::texture_meta_.name(), texname).notOk())
 	{
@@ -87,7 +97,7 @@ std::pair<std::unique_ptr<ShaderNode>, ParamResult> TextureMapperNode::factory(L
 TextureMapperNode::TextureMapperNode(Logger &logger, ParamResult &param_result, const ParamMap &param_map, const Items<Texture> &textures, size_t texture_id) :
 		ParentClassType_t{logger, param_result, param_map}, params_{param_result, param_map}, texture_id_{texture_id}, textures_{textures}
 {
-	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + params_.getAsParamMap(true).print());
+	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + getAsParamMap(true).print());
 	//logger.logParams(getAsParamMap(false).print()); //TEST CODE ONLY, REMOVE!!
 	const Texture *texture{textures_.getById(texture_id_).first};
 	if(texture->discrete())

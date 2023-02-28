@@ -34,7 +34,7 @@ class AngularCamera final : public Camera
 	public:
 		inline static std::string getClassName() { return "AngularCamera"; }
 		static std::pair<std::unique_ptr<Camera>, ParamResult> factory(Logger &logger, const std::string &name, const ParamMap &param_map);
-		static std::string printMeta(const std::vector<std::string> &excluded_params) { return Params::meta_.print(excluded_params); }
+		static std::string printMeta(const std::vector<std::string> &excluded_params) { return class_meta::print<Params>(excluded_params); }
 		[[nodiscard]] ParamMap getAsParamMap(bool only_non_default) const override;
 		AngularCamera(Logger &logger, ParamResult &param_result, const ParamMap &param_map);
 
@@ -59,7 +59,8 @@ class AngularCamera final : public Camera
 		[[nodiscard]] Type type() const override { return Type::Angular; }
 		const struct Params
 		{
-			PARAM_INIT_PARENT(ParentClassType_t);
+			Params(ParamResult &param_result, const ParamMap &param_map);
+			static std::map<std::string, const ParamMeta *> getParamMetaMap();
 			PARAM_DECL(float, angle_degrees_, 90.f, "angle", "");
 			PARAM_DECL(float, max_angle_degrees_, 0.f, "max_angle", "If not specified it uses the value from '" + angle_degrees_meta_.name() + "'");
 			PARAM_DECL(bool, circular_, true, "circular", "");

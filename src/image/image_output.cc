@@ -28,6 +28,34 @@
 
 namespace yafaray {
 
+std::map<std::string, const ParamMeta *> ImageOutput::Params::getParamMetaMap()
+{
+	std::map<std::string, const ParamMeta *> param_meta_map;
+	PARAM_META(image_path_);
+	PARAM_META(color_space_);
+	PARAM_META(gamma_);
+	PARAM_META(alpha_channel_);
+	PARAM_META(alpha_premultiply_);
+	PARAM_META(multi_layer_);
+	PARAM_META(denoise_enabled_);
+	PARAM_META(denoise_h_lum_);
+	PARAM_META(denoise_h_col_);
+	PARAM_META(denoise_mix_);
+	PARAM_META(logging_save_txt_);
+	PARAM_META(logging_save_html_);
+	PARAM_META(badge_position_);
+	PARAM_META(badge_draw_render_settings_);
+	PARAM_META(badge_draw_aa_noise_settings_);
+	PARAM_META(badge_author_);
+	PARAM_META(badge_title_);
+	PARAM_META(badge_contact_);
+	PARAM_META(badge_comment_);
+	PARAM_META(badge_icon_path_);
+	PARAM_META(badge_font_path_);
+	PARAM_META(badge_font_size_factor_);
+	return param_meta_map;
+}
+
 ImageOutput::Params::Params(ParamResult &param_result, const ParamMap &param_map)
 {
 	PARAM_LOAD(image_path_);
@@ -54,9 +82,9 @@ ImageOutput::Params::Params(ParamResult &param_result, const ParamMap &param_map
 	PARAM_LOAD(badge_font_size_factor_);
 }
 
-ParamMap ImageOutput::Params::getAsParamMap(bool only_non_default) const
+ParamMap ImageOutput::getAsParamMap(bool only_non_default) const
 {
-	PARAM_SAVE_START;
+	ParamMap param_map;
 	PARAM_SAVE(image_path_);
 	PARAM_ENUM_SAVE(color_space_);
 	PARAM_SAVE(gamma_);
@@ -79,18 +107,13 @@ ParamMap ImageOutput::Params::getAsParamMap(bool only_non_default) const
 	PARAM_SAVE(badge_icon_path_);
 	PARAM_SAVE(badge_font_path_);
 	PARAM_SAVE(badge_font_size_factor_);
-	PARAM_SAVE_END;
-}
-
-ParamMap ImageOutput::getAsParamMap(bool only_non_default) const
-{
-	return params_.getAsParamMap(only_non_default);
+	return param_map;
 }
 
 std::pair<std::unique_ptr<ImageOutput>, ParamResult> ImageOutput::factory(Logger &logger, const std::string &name, const ParamMap &param_map)
 {
 	if(logger.isDebug()) logger.logDebug("**" + getClassName() + "::factory 'raw' ParamMap\n" + param_map.logContents());
-	auto param_result{Params::meta_.check(param_map, {}, {})};
+	auto param_result{class_meta::check<Params>(param_map, {}, {})};
 	auto output {std::make_unique<ImageOutput>(logger, param_result, param_map)};
 	if(param_result.notOk()) logger.logWarning(param_result.print<ImageOutput>(name, {}));
 	return {std::move(output), param_result};
@@ -98,7 +121,7 @@ std::pair<std::unique_ptr<ImageOutput>, ParamResult> ImageOutput::factory(Logger
 
 ImageOutput::ImageOutput(Logger &logger, ParamResult &param_result, const ParamMap &param_map) : params_{param_result, param_map}, logger_{logger}
 {
-	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + params_.getAsParamMap(true).print());
+	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + getAsParamMap(true).print());
 	if(params_.color_space_ == ColorSpace::RawManualGamma)
 	{
 		//If the gamma is too close to 1.f, or negative, ignore gamma and do a pure linear RGB processing without gamma.

@@ -35,6 +35,19 @@
 
 namespace yafaray {
 
+std::map<std::string, const ParamMeta *> SppmIntegrator::Params::getParamMetaMap()
+{
+	auto param_meta_map{ParentClassType_t::Params::getParamMetaMap()};
+	PARAM_META(num_photons_);
+	PARAM_META(num_passes_);
+	PARAM_META(bounces_);
+	PARAM_META(times_);
+	PARAM_META(photon_radius_);
+	PARAM_META(search_num_);
+	PARAM_META(pm_ire_);
+	return param_meta_map;
+}
+
 SppmIntegrator::Params::Params(ParamResult &param_result, const ParamMap &param_map)
 {
 	PARAM_LOAD(num_photons_);
@@ -46,9 +59,10 @@ SppmIntegrator::Params::Params(ParamResult &param_result, const ParamMap &param_
 	PARAM_LOAD(pm_ire_);
 }
 
-ParamMap SppmIntegrator::Params::getAsParamMap(bool only_non_default) const
+ParamMap SppmIntegrator::getAsParamMap(bool only_non_default) const
 {
-	PARAM_SAVE_START;
+	auto param_map{ParentClassType_t::getAsParamMap(only_non_default)};
+	param_map.setParam("type", type().print());
 	PARAM_SAVE(num_photons_);
 	PARAM_SAVE(num_passes_);
 	PARAM_SAVE(bounces_);
@@ -56,27 +70,20 @@ ParamMap SppmIntegrator::Params::getAsParamMap(bool only_non_default) const
 	PARAM_SAVE(photon_radius_);
 	PARAM_SAVE(search_num_);
 	PARAM_SAVE(pm_ire_);
-	PARAM_SAVE_END;
-}
-
-ParamMap SppmIntegrator::getAsParamMap(bool only_non_default) const
-{
-	ParamMap result{ParentClassType_t::getAsParamMap(only_non_default)};
-	result.append(params_.getAsParamMap(only_non_default));
-	return result;
+	return param_map;
 }
 
 std::pair<std::unique_ptr<SurfaceIntegrator>, ParamResult> SppmIntegrator::factory(Logger &logger, RenderControl &render_control, const std::string &name, const ParamMap &param_map)
 {
-	auto param_result{Params::meta_.check(param_map, {"type"}, {})};
-	auto integrator {std::make_unique<ThisClassType_t>(render_control, logger, param_result, name, param_map)};
+	auto param_result{class_meta::check<Params>(param_map, {"type"}, {})};
+	auto integrator {std::make_unique<SppmIntegrator>(render_control, logger, param_result, name, param_map)};
 	if(param_result.notOk()) logger.logWarning(param_result.print<ThisClassType_t>(getClassName(), {"type"}));
 	return {std::move(integrator), param_result};
 }
 
 SppmIntegrator::SppmIntegrator(RenderControl &render_control, Logger &logger, ParamResult &param_result, const std::string &name, const ParamMap &param_map) : ParentClassType_t(render_control, logger, param_result, name, param_map), params_{param_result, param_map}
 {
-	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + params_.getAsParamMap(true).print());
+	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + getAsParamMap(true).print());
 	caustic_map_ = std::make_unique<PhotonMap>(logger);
 	caustic_map_->setName("Caustic Photon Map");
 	diffuse_map_ = std::make_unique<PhotonMap>(logger);

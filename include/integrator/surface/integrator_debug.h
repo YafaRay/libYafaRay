@@ -35,7 +35,7 @@ class DebugIntegrator final : public TiledIntegrator
 	public:
 		inline static std::string getClassName() { return "DebugIntegrator"; }
 		static std::pair<std::unique_ptr<SurfaceIntegrator>, ParamResult> factory(Logger &logger, RenderControl &render_control, const std::string &name, const ParamMap &params);
-		static std::string printMeta(const std::vector<std::string> &excluded_params) { return Params::meta_.print(excluded_params); }
+		static std::string printMeta(const std::vector<std::string> &excluded_params) { return class_meta::print<Params>(excluded_params); }
 		DebugIntegrator(RenderControl &render_control, Logger &logger, ParamResult &param_result, const std::string &name, const ParamMap &param_map);
 		[[nodiscard]] ParamMap getAsParamMap(bool only_non_default) const override;
 
@@ -57,7 +57,8 @@ class DebugIntegrator final : public TiledIntegrator
 		[[nodiscard]] Type type() const override { return Type::Debug; }
 		const struct Params
 		{
-			PARAM_INIT_PARENT(ParentClassType_t);
+			Params(ParamResult &param_result, const ParamMap &param_map);
+			static std::map<std::string, const ParamMeta *> getParamMetaMap();
 			PARAM_ENUM_DECL(DebugType, debug_type_, DebugType::N, "debugType", "");
 			PARAM_DECL(bool , show_pn_, false, "showPN", "");
 		} params_;

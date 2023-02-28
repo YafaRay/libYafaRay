@@ -110,7 +110,8 @@ class Texture
 		};
 		const struct Params
 		{
-			PARAM_INIT;
+			Params(ParamResult &param_result, const ParamMap &param_map);
+			static std::map<std::string, const ParamMeta *> getParamMetaMap();
 			PARAM_DECL(float, adj_mult_factor_red_, 1.f, "adj_mult_factor_red", "");
 			PARAM_DECL(float, adj_mult_factor_green_, 1.f, "adj_mult_factor_green", "");
 			PARAM_DECL(float, adj_mult_factor_blue_, 1.f, "adj_mult_factor_blue", "");

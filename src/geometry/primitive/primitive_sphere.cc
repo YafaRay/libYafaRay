@@ -18,13 +18,21 @@
  *      Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-
 #include "geometry/primitive/primitive_sphere.h"
 #include "geometry/surface.h"
 #include "param/param.h"
 #include "scene/scene.h"
 
 namespace yafaray {
+
+std::map<std::string, const ParamMeta *> SpherePrimitive::Params::getParamMetaMap()
+{
+	std::map<std::string, const ParamMeta *> param_meta_map;
+	PARAM_META(center_);
+	PARAM_META(radius_);
+	PARAM_META(material_name_);
+	return param_meta_map;
+}
 
 SpherePrimitive::Params::Params(ParamResult &param_result, const ParamMap &param_map)
 {
@@ -33,25 +41,19 @@ SpherePrimitive::Params::Params(ParamResult &param_result, const ParamMap &param
 	PARAM_LOAD(material_name_);
 }
 
-ParamMap SpherePrimitive::Params::getAsParamMap(bool only_non_default) const
+ParamMap SpherePrimitive::getAsParamMap(bool only_non_default) const
 {
-	PARAM_SAVE_START;
+	ParamMap param_map;
 	PARAM_SAVE(center_);
 	PARAM_SAVE(radius_);
 	PARAM_SAVE(material_name_);
-	PARAM_SAVE_END;
-}
-
-ParamMap SpherePrimitive::getAsParamMap(bool only_non_default) const
-{
-	ParamMap result{params_.getAsParamMap(only_non_default)};
-	return result;
+	return param_map;
 }
 
 std::pair<std::unique_ptr<Primitive>, ParamResult> SpherePrimitive::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map, const PrimitiveObject &object)
 {
 	if(logger.isDebug()) logger.logDebug("**" + getClassName() + "::factory 'raw' ParamMap\n" + param_map.logContents());
-	auto param_result{Params::meta_.check(param_map, {"type"}, {})};
+	auto param_result{class_meta::check<Params>(param_map, {"type"}, {})};
 	const Params params{param_result, param_map};
 	if(params.material_name_.empty()) return {nullptr, ParamResult{YAFARAY_RESULT_ERROR_WHILE_CREATING}};
 	const auto [material_id, material_error]{scene.getMaterial(params.material_name_)};
@@ -63,7 +65,7 @@ std::pair<std::unique_ptr<Primitive>, ParamResult> SpherePrimitive::factory(Logg
 
 SpherePrimitive::SpherePrimitive(Logger &logger, ParamResult &param_result, const ParamMap &param_map, size_t material_id, const PrimitiveObject &base_object) : params_{param_result, param_map}, base_object_{base_object}, material_id_{material_id}
 {
-	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + params_.getAsParamMap(true).print());
+	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + getAsParamMap(true).print());
 }
 
 Bound<float> SpherePrimitive::getBound() const

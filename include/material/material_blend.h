@@ -53,7 +53,7 @@ class BlendMaterial final : public NodeMaterial
 	public:
 		inline static std::string getClassName() { return "BlendMaterial"; }
 		static std::pair<std::unique_ptr<Material>, ParamResult> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map, const std::list<ParamMap> &nodes_param_maps);
-		static std::string printMeta(const std::vector<std::string> &excluded_params) { return Params::meta_.print(excluded_params); }
+		static std::string printMeta(const std::vector<std::string> &excluded_params) { return class_meta::print<Params>(excluded_params); }
 		[[nodiscard]] ParamMap getAsParamMap(bool only_non_default) const override;
 		BlendMaterial(Logger &logger, ParamResult &param_result, const ParamMap &param_map, size_t material_1_id, size_t material_2_id, const Items<Material> &materials);
 
@@ -70,11 +70,12 @@ class BlendMaterial final : public NodeMaterial
 		};
 		const struct Params
 		{
-			PARAM_INIT_PARENT(ParentClassType_t);
+			Params(ParamResult &param_result, const ParamMap &param_map);
+			static std::map<std::string, const ParamMeta *> getParamMetaMap();
 			PARAM_DECL(std::string, material_1_name_, "", "material1", "Name of the first material, must be specified or the blend material exits with an error");
 			PARAM_DECL(std::string, material_2_name_, "", "material2", "Name of the second material, must be specified or the blend material exits with an error");
 			PARAM_DECL(float, blend_value_, 0.5f, "blend_value", "");
-			PARAM_SHADERS_DECL;
+			inline static const auto shader_node_names_meta_{ParamMeta::enumToParamMetaArray<ShaderNodeType>()};
 		} params_;
 		std::unique_ptr<const MaterialData> initBsdf(SurfacePoint &sp, const Camera *camera) const override;
 		Rgb eval(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3f &wo, const Vec3f &wl, BsdfFlags bsdfs, bool force_eval) const override;

@@ -27,6 +27,16 @@
 
 namespace yafaray {
 
+std::map<std::string, const ParamMeta *> MeshObject::Params::getParamMetaMap()
+{
+	auto param_meta_map{ParentClassType_t::Params::getParamMetaMap()};
+	PARAM_META(num_faces_);
+	PARAM_META(num_vertices_);
+	PARAM_META(has_uv_);
+	PARAM_META(has_orco_);
+	return param_meta_map;
+}
+
 MeshObject::Params::Params(ParamResult &param_result, const ParamMap &param_map)
 {
 	PARAM_LOAD(num_faces_);
@@ -35,27 +45,21 @@ MeshObject::Params::Params(ParamResult &param_result, const ParamMap &param_map)
 	PARAM_LOAD(has_orco_);
 }
 
-ParamMap MeshObject::Params::getAsParamMap(bool only_non_default) const
+ParamMap MeshObject::getAsParamMap(bool only_non_default) const
 {
-	PARAM_SAVE_START;
+	auto param_map{ParentClassType_t::getAsParamMap(only_non_default)};
+	param_map.setParam("type", type().print());
 	PARAM_SAVE(num_faces_);
 	PARAM_SAVE(num_vertices_);
 	PARAM_SAVE(has_uv_);
 	PARAM_SAVE(has_orco_);
-	PARAM_SAVE_END;
-}
-
-ParamMap MeshObject::getAsParamMap(bool only_non_default) const
-{
-	ParamMap result{ParentClassType_t::getAsParamMap(only_non_default)};
-	result.append(params_.getAsParamMap(only_non_default));
-	return result;
+	return param_map;
 }
 
 std::pair<std::unique_ptr<MeshObject>, ParamResult> MeshObject::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map)
 {
-	auto param_result{Params::meta_.check(param_map, {"type"}, {})};
-	auto object{std::make_unique<ThisClassType_t>(param_result, param_map, scene.getObjects(), scene.getMaterials(), scene.getLights())};
+	auto param_result{class_meta::check<Params>(param_map, {"type"}, {})};
+	auto object{std::make_unique<MeshObject>(param_result, param_map, scene.getObjects(), scene.getMaterials(), scene.getLights())};
 	if(param_result.notOk()) logger.logWarning(param_result.print<ThisClassType_t>(name, {"type"}));
 	const auto [light, light_id, light_result]{scene.getLight(object->ParentClassType_t::params_.light_name_)};
 	object->setLight(light_id);
@@ -64,7 +68,7 @@ std::pair<std::unique_ptr<MeshObject>, ParamResult> MeshObject::factory(Logger &
 
 MeshObject::MeshObject(ParamResult &param_result, const ParamMap &param_map, const Items <Object> &objects, const Items<Material> &materials, const Items<Light> &lights) : ParentClassType_t{param_result, param_map, objects, materials, lights}, params_{param_result, param_map}
 {
-	//if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + params_.getAsParamMap(true).print());
+	//if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + getAsParamMap(true).print());
 	const int num_faces = calculateNumFaces();
 	faces_.reserve(num_faces);
 	if(params_.has_uv_) uv_values_.reserve(params_.num_vertices_);

@@ -44,7 +44,7 @@ class ObjectLight final : public Light
 	public:
 		inline static std::string getClassName() { return "ObjectLight"; }
 		static std::pair<std::unique_ptr<Light>, ParamResult> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params);
-		static std::string printMeta(const std::vector<std::string> &excluded_params) { return Params::meta_.print(excluded_params); }
+		static std::string printMeta(const std::vector<std::string> &excluded_params) { return class_meta::print<Params>(excluded_params); }
 		[[nodiscard]] ParamMap getAsParamMap(bool only_non_default) const override;
 		ObjectLight(Logger &logger, ParamResult &param_result, const std::string &name, const ParamMap &param_map, const Items<Object> &objects, const Items<Light> &lights);
 
@@ -52,7 +52,8 @@ class ObjectLight final : public Light
 		[[nodiscard]] Type type() const override { return Type::Object; }
 		const struct Params
 		{
-			PARAM_INIT_PARENT(ParentClassType_t);
+			Params(ParamResult &param_result, const ParamMap &param_map);
+			static std::map<std::string, const ParamMeta *> getParamMetaMap();
 			PARAM_DECL(std::string, object_name_, "", "object_name", "");
 			PARAM_DECL(Rgb, color_, Rgb{0.f}, "color", "");
 			PARAM_DECL(float, power_, 1.f, "power", "");

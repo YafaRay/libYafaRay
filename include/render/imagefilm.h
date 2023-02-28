@@ -65,7 +65,7 @@ class ImageFilm final
 		ImageFilm(Logger &logger, ParamResult &param_result, RenderControl &render_control, const std::string &name, const ParamMap &param_map);
 		~ImageFilm();
 		std::string getName() const { return name_; }
-		static std::string printMeta(const std::vector<std::string> &excluded_params) { return Params::meta_.print(excluded_params); }
+		static std::string printMeta(const std::vector<std::string> &excluded_params) { return class_meta::print<Params>(excluded_params); }
 		/*! Initialize imageFilm for new rendering, i.e. set pixels black etc */
 		void init(RenderControl &render_control);
 		/*! Prepare for next pass, i.e. reset area_cnt, check if pixels need resample...
@@ -182,7 +182,8 @@ class ImageFilm final
 		};
 		const struct Params
 		{
-			PARAM_INIT;
+			Params(ParamResult &param_result, const ParamMap &param_map);
+			static std::map<std::string, const ParamMeta *> getParamMetaMap();
 			PARAM_DECL(int, aa_passes_, 1, "AA_passes", "");
 			PARAM_DECL(int, aa_samples_, 1, "AA_minsamples", "Sample count for first pass");
 			PARAM_DECL(int, aa_inc_samples_, 1, "AA_inc_samples", "Sample count for additional passes");

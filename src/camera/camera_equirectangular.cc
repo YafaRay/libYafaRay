@@ -28,7 +28,7 @@ namespace yafaray {
 
 std::pair<std::unique_ptr<Camera>, ParamResult> EquirectangularCamera::factory(Logger &logger, const std::string &name, const ParamMap &param_map)
 {
-	auto param_result{Params::meta_.check(param_map, {"type"}, {})};
+	auto param_result{class_meta::check<Params>(param_map, {"type"}, {})};
 	auto camera {std::make_unique<EquirectangularCamera>(logger, param_result, param_map)};
 	if(param_result.notOk()) logger.logWarning(param_result.print<ThisClassType_t>(name, {"type"}));
 	return {std::move(camera), param_result};
@@ -36,7 +36,7 @@ std::pair<std::unique_ptr<Camera>, ParamResult> EquirectangularCamera::factory(L
 
 EquirectangularCamera::EquirectangularCamera(Logger &logger, ParamResult &param_result, const ParamMap &param_map) : ParentClassType_t{logger, param_result, param_map}
 {
-	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + params_.getAsParamMap(true).print());
+	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + getAsParamMap(true).print());
 	// Initialize camera specific plane coordinates
 	setAxis(cam_x_, cam_y_, cam_z_);
 }

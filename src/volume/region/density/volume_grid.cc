@@ -23,29 +23,30 @@
 
 namespace yafaray {
 
+std::map<std::string, const ParamMeta *> GridVolumeRegion::Params::getParamMetaMap()
+{
+	auto param_meta_map{ParentClassType_t::Params::getParamMetaMap()};
+	PARAM_META(density_file_);
+	return param_meta_map;
+}
+
 GridVolumeRegion::Params::Params(ParamResult &param_result, const ParamMap &param_map)
 {
 	PARAM_LOAD(density_file_);
 }
 
-ParamMap GridVolumeRegion::Params::getAsParamMap(bool only_non_default) const
-{
-	PARAM_SAVE_START;
-	PARAM_SAVE(density_file_);
-	PARAM_SAVE_END;
-}
-
 ParamMap GridVolumeRegion::getAsParamMap(bool only_non_default) const
 {
-	ParamMap result{ParentClassType_t::getAsParamMap(only_non_default)};
-	result.append(params_.getAsParamMap(only_non_default));
-	return result;
+	auto param_map{ParentClassType_t::getAsParamMap(only_non_default)};
+	param_map.setParam("type", type().print());
+	PARAM_SAVE(density_file_);
+	return param_map;
 }
 
 std::pair<std::unique_ptr<VolumeRegion>, ParamResult> GridVolumeRegion::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map)
 {
-	auto param_result{Params::meta_.check(param_map, {"type"}, {})};
-	auto volume_region {std::make_unique<ThisClassType_t>(logger, param_result, param_map)};
+	auto param_result{class_meta::check<Params>(param_map, {"type"}, {})};
+	auto volume_region {std::make_unique<GridVolumeRegion>(logger, param_result, param_map)};
 	if(param_result.notOk()) logger.logWarning(param_result.print<ThisClassType_t>(name, {"type"}));
 	return {std::move(volume_region), param_result};
 }
@@ -53,7 +54,7 @@ std::pair<std::unique_ptr<VolumeRegion>, ParamResult> GridVolumeRegion::factory(
 GridVolumeRegion::GridVolumeRegion(Logger &logger, ParamResult &param_result, const ParamMap &param_map) :
 		ParentClassType_t{logger, param_result, param_map}, params_{param_result, param_map}
 {
-	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + params_.getAsParamMap(true).print());
+	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + getAsParamMap(true).print());
 
 	std::ifstream input_stream;
 	input_stream.open(params_.density_file_);

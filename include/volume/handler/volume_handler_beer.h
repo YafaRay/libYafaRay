@@ -33,7 +33,7 @@ class BeerVolumeHandler : public VolumeHandler
 	public:
 		inline static std::string getClassName() { return "BeerVolumeHandler"; }
 		static std::pair<std::unique_ptr<VolumeHandler>, ParamResult> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map);
-		static std::string printMeta(const std::vector<std::string> &excluded_params) { return Params::meta_.print(excluded_params); }
+		static std::string printMeta(const std::vector<std::string> &excluded_params) { return class_meta::print<Params>(excluded_params); }
 		[[nodiscard]] ParamMap getAsParamMap(bool only_non_default) const override;
 		BeerVolumeHandler(Logger &logger, ParamResult &param_result, const ParamMap &param_map);
 
@@ -41,7 +41,8 @@ class BeerVolumeHandler : public VolumeHandler
 		[[nodiscard]] Type type() const override { return Type::Beer; }
 		const struct Params
 		{
-			PARAM_INIT_PARENT(ParentClassType_t);
+			Params(ParamResult &param_result, const ParamMap &param_map);
+			static std::map<std::string, const ParamMeta *> getParamMetaMap();
 			PARAM_DECL(Rgb, absorption_col_, Rgb{0.5f}, "absorption_col", "");
 			PARAM_DECL(float, absorption_dist_, 1.f, "absorption_dist", "");
 		} params_;

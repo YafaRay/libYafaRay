@@ -29,6 +29,18 @@
 
 namespace yafaray {
 
+std::map<std::string, const ParamMeta *> Background::Params::getParamMetaMap()
+{
+	std::map<std::string, const ParamMeta *> param_meta_map;
+	PARAM_META(power_);
+	PARAM_META(ibl_);
+	PARAM_META(ibl_samples_);
+	PARAM_META(with_caustic_);
+	PARAM_META(with_diffuse_);
+	PARAM_META(cast_shadows_);
+	return param_meta_map;
+}
+
 Background::Params::Params(ParamResult &param_result, const ParamMap &param_map)
 {
 	PARAM_LOAD(power_);
@@ -39,28 +51,22 @@ Background::Params::Params(ParamResult &param_result, const ParamMap &param_map)
 	PARAM_LOAD(cast_shadows_);
 }
 
-ParamMap Background::Params::getAsParamMap(bool only_non_default) const
+ParamMap Background::getAsParamMap(bool only_non_default) const
 {
-	PARAM_SAVE_START;
+	ParamMap param_map;
 	PARAM_SAVE(power_);
 	PARAM_SAVE(ibl_);
 	PARAM_SAVE(ibl_samples_);
 	PARAM_SAVE(with_caustic_);
 	PARAM_SAVE(with_diffuse_);
 	PARAM_SAVE(cast_shadows_);
-	PARAM_SAVE_END;
-}
-
-ParamMap Background::getAsParamMap(bool only_non_default) const
-{
-	ParamMap result{params_.getAsParamMap(only_non_default)};
-	result.setParam("type", type().print());
-	return result;
+	return param_map;
 }
 
 std::pair<std::unique_ptr<Background>, ParamResult> Background::factory(Logger &logger, const std::string &name, const ParamMap &param_map, const Items<Texture> &textures)
 {
-	const Type type{ClassMeta::preprocessParamMap<Type>(logger, getClassName(), param_map)};
+	if(logger.isDebug()) logger.logDebug("** " + getClassName() + "::factory 'raw' ParamMap contents:\n" + param_map.logContents());
+	const auto type{class_meta::getTypeFromParamMap<Type>(logger, getClassName(), param_map)};
 	switch(type.value())
 	{
 		case Type::DarkSky: return DarkSkyBackground::factory(logger, name, param_map);

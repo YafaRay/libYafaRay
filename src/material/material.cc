@@ -42,6 +42,24 @@
 
 namespace yafaray {
 
+std::map<std::string, const ParamMeta *> Material::Params::getParamMetaMap()
+{
+	std::map<std::string, const ParamMeta *> param_meta_map;
+	PARAM_META(receive_shadows_);
+	PARAM_META(flat_material_);
+	PARAM_META(visibility_);
+	PARAM_META(mat_pass_index_);
+	PARAM_META(additional_depth_);
+	PARAM_META(transparent_bias_factor_);
+	PARAM_META(transparent_bias_multiply_raydepth_);
+	PARAM_META(sampling_factor_);
+	PARAM_META(wireframe_amount_);
+	PARAM_META(wireframe_thickness_);
+	PARAM_META(wireframe_exponent_);
+	PARAM_META(wireframe_color_);
+	return param_meta_map;
+}
+
 Material::Params::Params(ParamResult &param_result, const ParamMap &param_map)
 {
 	PARAM_LOAD(receive_shadows_);
@@ -58,9 +76,9 @@ Material::Params::Params(ParamResult &param_result, const ParamMap &param_map)
 	PARAM_LOAD(wireframe_color_);
 }
 
-ParamMap Material::Params::getAsParamMap(bool only_non_default) const
+ParamMap Material::getAsParamMap(bool only_non_default) const
 {
-	PARAM_SAVE_START;
+	ParamMap param_map;
 	PARAM_SAVE(receive_shadows_);
 	PARAM_SAVE(flat_material_);
 	PARAM_ENUM_SAVE(visibility_);
@@ -73,19 +91,13 @@ ParamMap Material::Params::getAsParamMap(bool only_non_default) const
 	PARAM_SAVE(wireframe_thickness_);
 	PARAM_SAVE(wireframe_exponent_);
 	PARAM_SAVE(wireframe_color_);
-	PARAM_SAVE_END;
-}
-
-ParamMap Material::getAsParamMap(bool only_non_default) const
-{
-	ParamMap result{params_.getAsParamMap(only_non_default)};
-	result.setParam("type", type().print());
-	return result;
+	return param_map;
 }
 
 std::pair<std::unique_ptr<Material>, ParamResult> Material::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map, const std::list<ParamMap> &nodes_param_maps)
 {
-	const Type type{ClassMeta::preprocessParamMap<Type>(logger, getClassName(), param_map)};
+	if(logger.isDebug()) logger.logDebug("** " + getClassName() + "::factory 'raw' ParamMap contents:\n" + param_map.logContents());
+	const auto type{class_meta::getTypeFromParamMap<Type>(logger, getClassName(), param_map)};
 	std::pair<std::unique_ptr<Material>, ParamResult> result{nullptr, ParamResult{YAFARAY_RESULT_ERROR_WHILE_CREATING}};
 	switch(type.value())
 	{
@@ -107,7 +119,7 @@ std::pair<std::unique_ptr<Material>, ParamResult> Material::factory(Logger &logg
 Material::Material(Logger &logger, ParamResult &param_result, const ParamMap &param_map, const Items <Material> &materials) :
 		params_{param_result, param_map}, materials_{materials}, logger_{logger}
 {
-	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " " + getName() + " params_:\n" + params_.getAsParamMap(true).print());
+	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " " + getName() + " params_:\n" + getAsParamMap(true).print());
 }
 
 Material::~Material() = default; //Destructor definition done here and not in material.h to avoid compilation problems with std::unique_ptr

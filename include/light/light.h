@@ -128,7 +128,8 @@ class Light
 		};
 		const struct Params
 		{
-			PARAM_INIT;
+			Params(ParamResult &param_result, const ParamMap &param_map);
+			static std::map<std::string, const ParamMeta *> getParamMetaMap();
 			PARAM_DECL(bool, light_enabled_, true, "light_enabled", "Enable/disable light");
 			PARAM_DECL(bool, cast_shadows_, true, "cast_shadows", "Enable/disable if the light should cast direct shadows");
 			PARAM_DECL(bool, shoot_caustic_, true, "with_caustic", "Enable/disable if the light can shoot caustic photons (only for integrators using caustic photons)");

@@ -37,7 +37,7 @@ class TextureBackground final : public Background
 	public:
 		inline static std::string getClassName() { return "TextureBackground"; }
 		static std::pair<std::unique_ptr<Background>, ParamResult> factory(Logger &logger, const std::string &name, const ParamMap &params, const Items<Texture> &textures);
-		static std::string printMeta(const std::vector<std::string> &excluded_params) { return Params::meta_.print(excluded_params); }
+		static std::string printMeta(const std::vector<std::string> &excluded_params) { return class_meta::print<Params>(excluded_params); }
 		TextureBackground(Logger &logger, ParamResult &param_result, const ParamMap &param_map, size_t texture_id, const Items <Texture> &textures);
 		std::vector<std::pair<std::string, ParamMap>> getRequestedIblLights() const override;
 		bool usesIblBlur() const override { return ParentClassType_t::params_.ibl_ && params_.ibl_blur_ > 0.f; }
@@ -55,7 +55,8 @@ class TextureBackground final : public Background
 		[[nodiscard]] Type type() const override { return Type::Texture; }
 		const struct Params
 		{
-			PARAM_INIT_PARENT(ParentClassType_t);
+			Params(ParamResult &param_result, const ParamMap &param_map);
+			static std::map<std::string, const ParamMeta *> getParamMetaMap();
 			PARAM_DECL(float, rotation_, 0.f, "rotation", "");
 			PARAM_DECL(float, ibl_blur_, 0.f, "smartibl_blur", "");
 			PARAM_DECL(float, ibl_clamp_sampling_, 0.f, "ibl_clamp_sampling", "A value higher than 0.f 'clamps' the light intersection colors to that value, to reduce light sampling noise at the expense of realism and inexact overall light (0.f disables clamping)");

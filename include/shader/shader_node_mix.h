@@ -31,7 +31,7 @@ class MixNode : public ShaderNode
 	public:
 		inline static std::string getClassName() { return "MixNode"; }
 		static std::pair<std::unique_ptr<ShaderNode>, ParamResult> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map);
-		static std::string printMeta(const std::vector<std::string> &excluded_params) { return Params::meta_.print(excluded_params); }
+		static std::string printMeta(const std::vector<std::string> &excluded_params) { return class_meta::print<Params>(excluded_params); }
 		[[nodiscard]] ParamMap getAsParamMap(bool only_non_default) const override;
 		void eval(NodeTreeData &node_tree_data, const SurfacePoint &sp, const Camera *camera) const override;
 		MixNode(Logger &logger, ParamResult &param_result, const ParamMap &param_map);
@@ -67,7 +67,8 @@ class MixNode : public ShaderNode
 		[[nodiscard]] Type type() const override { return Type::Mix; }
 		const struct Params
 		{
-			PARAM_INIT_PARENT(ParentClassType_t);
+			Params(ParamResult &param_result, const ParamMap &param_map);
+			static std::map<std::string, const ParamMeta *> getParamMetaMap();
 			PARAM_DECL(std::string, input_1_, "", "input1", "");
 			PARAM_DECL(Rgba, color_1_, Rgba{0.f}, "color1", "");
 			PARAM_DECL(float, value_1_, 0.f, "value1", "");

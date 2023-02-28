@@ -40,7 +40,7 @@ class SunSkyBackground final : public Background
 	public:
 		inline static std::string getClassName() { return "SunSkyBackground"; }
 		static std::pair<std::unique_ptr<Background>, ParamResult> factory(Logger &logger, const std::string &name, const ParamMap &params);
-		static std::string printMeta(const std::vector<std::string> &excluded_params) { return Params::meta_.print(excluded_params); }
+		static std::string printMeta(const std::vector<std::string> &excluded_params) { return class_meta::print<Params>(excluded_params); }
 		SunSkyBackground(Logger &logger, ParamResult &param_result, const ParamMap &param_map);
 		std::vector<std::pair<std::string, ParamMap>> getRequestedIblLights() const override;
 
@@ -48,7 +48,8 @@ class SunSkyBackground final : public Background
 		[[nodiscard]] Type type() const override { return Type::SunSky; }
 		const struct Params
 		{
-			PARAM_INIT_PARENT(ParentClassType_t);
+			Params(ParamResult &param_result, const ParamMap &param_map);
+			static std::map<std::string, const ParamMeta *> getParamMetaMap();
 			PARAM_DECL(Vec3f, from_, (Vec3f{{1, 1, 1}}), "from", "same as sunlight, position interpreted as direction");
 			PARAM_DECL(float , turb_, 4.f, "turbidity", "turbidity of atmosphere");
 			PARAM_DECL(bool , add_sun_, false, "add_sun", "automatically add real sunlight");

@@ -24,6 +24,15 @@
 
 namespace yafaray {
 
+std::map<std::string, const ParamMeta *> CurveObject::Params::getParamMetaMap()
+{
+	auto param_meta_map{ParentClassType_t::Params::getParamMetaMap()};
+	PARAM_META(strand_start_);
+	PARAM_META(strand_end_);
+	PARAM_META(strand_shape_);
+	return param_meta_map;
+}
+
 CurveObject::Params::Params(ParamResult &param_result, const ParamMap &param_map)
 {
 	PARAM_LOAD(strand_start_);
@@ -31,26 +40,20 @@ CurveObject::Params::Params(ParamResult &param_result, const ParamMap &param_map
 	PARAM_LOAD(strand_shape_);
 }
 
-ParamMap CurveObject::Params::getAsParamMap(bool only_non_default) const
+ParamMap CurveObject::getAsParamMap(bool only_non_default) const
 {
-	PARAM_SAVE_START;
+	auto param_map{ParentClassType_t::getAsParamMap(only_non_default)};
+	param_map.setParam("type", type().print());
 	PARAM_SAVE(strand_start_);
 	PARAM_SAVE(strand_end_);
 	PARAM_SAVE(strand_shape_);
-	PARAM_SAVE_END;
-}
-
-ParamMap CurveObject::getAsParamMap(bool only_non_default) const
-{
-	ParamMap result{ParentClassType_t::getAsParamMap(only_non_default)};
-	result.append(params_.getAsParamMap(only_non_default));
-	return result;
+	return param_map;
 }
 
 std::pair<std::unique_ptr<CurveObject>, ParamResult> CurveObject::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map)
 {
-	auto param_result{Params::meta_.check(param_map, {"type"}, {})};
-	auto object{std::make_unique<ThisClassType_t>(param_result, param_map, scene.getObjects(), scene.getMaterials(), scene.getLights())};
+	auto param_result{class_meta::check<Params>(param_map, {"type"}, {})};
+	auto object{std::make_unique<CurveObject>(param_result, param_map, scene.getObjects(), scene.getMaterials(), scene.getLights())};
 	if(param_result.notOk()) logger.logWarning(param_result.print<ThisClassType_t>(name, {"type"}));
 	const auto [light, light_id, light_result]{scene.getLight(object->Object::params_.light_name_)};
 	object->setLight(light_id);
@@ -60,7 +63,7 @@ std::pair<std::unique_ptr<CurveObject>, ParamResult> CurveObject::factory(Logger
 CurveObject::CurveObject(ParamResult &param_result, const ParamMap &param_map, const Items <Object> &objects, const Items<Material> &materials, const Items<Light> &lights) :
 		ParentClassType_t{param_result, param_map, objects, materials, lights}, params_{param_result, param_map}
 {
-	//if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + params_.getAsParamMap(true).print());
+	//if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + getAsParamMap(true).print());
 }
 
 bool CurveObject::calculateObject(size_t material_id)

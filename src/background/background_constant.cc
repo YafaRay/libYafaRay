@@ -27,29 +27,30 @@
 
 namespace yafaray {
 
+std::map<std::string, const ParamMeta *> ConstantBackground::Params::getParamMetaMap()
+{
+	auto param_meta_map{ParentClassType_t::Params::getParamMetaMap()};
+	PARAM_META(color_);
+	return param_meta_map;
+}
+
 ConstantBackground::Params::Params(ParamResult &param_result, const ParamMap &param_map)
 {
 	PARAM_LOAD(color_);
 }
 
-ParamMap ConstantBackground::Params::getAsParamMap(bool only_non_default) const
-{
-	PARAM_SAVE_START;
-	PARAM_SAVE(color_);
-	PARAM_SAVE_END;
-}
-
 ParamMap ConstantBackground::getAsParamMap(bool only_non_default) const
 {
-	ParamMap result{ParentClassType_t::getAsParamMap(only_non_default)};
-	result.append(params_.getAsParamMap(only_non_default));
-	return result;
+	auto param_map{ParentClassType_t::getAsParamMap(only_non_default)};
+	param_map.setParam("type", type().print());
+	PARAM_SAVE(color_);
+	return param_map;
 }
 
 std::pair<std::unique_ptr<Background>, ParamResult> ConstantBackground::factory(Logger &logger, const std::string &name, const ParamMap &param_map)
 {
-	auto param_result{Params::meta_.check(param_map, {"type"}, {})};
-	auto background{std::make_unique<ThisClassType_t>(logger, param_result, param_map)};
+	auto param_result{class_meta::check<Params>(param_map, {"type"}, {})};
+	auto background{std::make_unique<ConstantBackground>(logger, param_result, param_map)};
 	if(param_result.notOk()) logger.logWarning(param_result.print<ThisClassType_t>(name, {"type"}));
 	return {std::move(background), param_result};
 }
@@ -57,7 +58,7 @@ std::pair<std::unique_ptr<Background>, ParamResult> ConstantBackground::factory(
 ConstantBackground::ConstantBackground(Logger &logger, ParamResult &param_result, const ParamMap &param_map) :
 		ParentClassType_t{logger, param_result, param_map}, params_{param_result, param_map}
 {
-	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + params_.getAsParamMap(true).print());
+	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + getAsParamMap(true).print());
 }
 
 Rgb ConstantBackground::eval(const Vec3f &dir, bool use_ibl_blur) const

@@ -32,7 +32,7 @@ class PrimitiveObject final : public Object
 
 	public:
 		PrimitiveObject(ParamResult &param_result, const ParamMap &param_map, const Items <Object> &objects, const Items<Material> &materials, const Items<Light> &lights);
-		static std::string printMeta(const std::vector<std::string> &excluded_params) { return Params::meta_.print(excluded_params); }
+		static std::string printMeta(const std::vector<std::string> &excluded_params) { return class_meta::print<Params>(excluded_params); }
 		void setPrimitive(std::unique_ptr<const Primitive> primitive) { primitive_ = std::move(primitive); }
 
 	protected:

@@ -27,6 +27,15 @@
 
 namespace yafaray {
 
+std::map<std::string, const ParamMeta *> PointLight::Params::getParamMetaMap()
+{
+	auto param_meta_map{ParentClassType_t::Params::getParamMetaMap()};
+	PARAM_META(from_);
+	PARAM_META(color_);
+	PARAM_META(power_);
+	return param_meta_map;
+}
+
 PointLight::Params::Params(ParamResult &param_result, const ParamMap &param_map)
 {
 	PARAM_LOAD(from_);
@@ -34,26 +43,20 @@ PointLight::Params::Params(ParamResult &param_result, const ParamMap &param_map)
 	PARAM_LOAD(power_);
 }
 
-ParamMap PointLight::Params::getAsParamMap(bool only_non_default) const
+ParamMap PointLight::getAsParamMap(bool only_non_default) const
 {
-	PARAM_SAVE_START;
+	auto param_map{ParentClassType_t::getAsParamMap(only_non_default)};
+	param_map.setParam("type", type().print());
 	PARAM_SAVE(from_);
 	PARAM_SAVE(color_);
 	PARAM_SAVE(power_);
-	PARAM_SAVE_END;
-}
-
-ParamMap PointLight::getAsParamMap(bool only_non_default) const
-{
-	ParamMap result{ParentClassType_t::getAsParamMap(only_non_default)};
-	result.append(params_.getAsParamMap(only_non_default));
-	return result;
+	return param_map;
 }
 
 std::pair<std::unique_ptr<Light>, ParamResult> PointLight::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map)
 {
-	auto param_result{Params::meta_.check(param_map, {"type"}, {})};
-	auto light {std::make_unique<ThisClassType_t>(logger, param_result, param_map, scene.getLights())};
+	auto param_result{class_meta::check<Params>(param_map, {"type"}, {})};
+	auto light {std::make_unique<PointLight>(logger, param_result, param_map, scene.getLights())};
 	if(param_result.notOk()) logger.logWarning(param_result.print<ThisClassType_t>(name, {"type"}));
 	return {std::move(light), param_result};
 }
@@ -61,7 +64,7 @@ std::pair<std::unique_ptr<Light>, ParamResult> PointLight::factory(Logger &logge
 PointLight::PointLight(Logger &logger, ParamResult &param_result, const ParamMap &param_map, const Items<Light> &lights):
 		ParentClassType_t{logger, param_result, param_map, Flags::Singular, lights}, params_{param_result, param_map}
 {
-	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + params_.getAsParamMap(true).print());
+	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + getAsParamMap(true).print());
 }
 
 std::tuple<bool, Ray, Rgb> PointLight::illuminate(const Point3f &surface_p, float time) const

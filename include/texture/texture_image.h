@@ -38,7 +38,7 @@ class ImageTexture final : public Texture
 	public:
 		inline static std::string getClassName() { return "ImageTexture"; }
 		static std::pair<std::unique_ptr<Texture>, ParamResult> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params);
-		static std::string printMeta(const std::vector<std::string> &excluded_params) { return Params::meta_.print(excluded_params); }
+		static std::string printMeta(const std::vector<std::string> &excluded_params) { return class_meta::print<Params>(excluded_params); }
 		[[nodiscard]] ParamMap getAsParamMap(bool only_non_default) const override;
 		ImageTexture(Logger &logger, ParamResult &param_result, const ParamMap &param_map, const Items<Image> &images, size_t image_id);
 
@@ -57,7 +57,8 @@ class ImageTexture final : public Texture
 		[[nodiscard]] Type type() const override { return Type::Image; }
 		const struct Params
 		{
-			PARAM_INIT_PARENT(ParentClassType_t);
+			Params(ParamResult &param_result, const ParamMap &param_map);
+			static std::map<std::string, const ParamMeta *> getParamMetaMap();
 			PARAM_ENUM_DECL(ClipMode, clip_mode_, ClipMode::Repeat, "clipping", "Clip mode");
 			PARAM_DECL(std::string , image_name_, false, "image_name", "");
 			PARAM_DECL(float , exposure_adjust_, 0.f, "exposure_adjust", "");

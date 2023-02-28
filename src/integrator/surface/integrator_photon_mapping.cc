@@ -37,6 +37,22 @@
 
 namespace yafaray {
 
+std::map<std::string, const ParamMeta *> PhotonIntegrator::Params::getParamMetaMap()
+{
+	auto param_meta_map{ParentClassType_t::Params::getParamMetaMap()};
+	PARAM_META(diffuse_);
+	PARAM_META(photons_diffuse_);
+	PARAM_META(diffuse_radius_);
+	PARAM_META(num_photons_diffuse_search_);
+	PARAM_META(final_gather_);
+	PARAM_META(fg_samples_);
+	PARAM_META(bounces_);
+	PARAM_META(fg_bounces_);
+	PARAM_META(gather_dist_);
+	PARAM_META(show_map_);
+	return param_meta_map;
+}
+
 PhotonIntegrator::Params::Params(ParamResult &param_result, const ParamMap &param_map)
 {
 	PARAM_LOAD(diffuse_);
@@ -52,9 +68,10 @@ PhotonIntegrator::Params::Params(ParamResult &param_result, const ParamMap &para
 	PARAM_LOAD(show_map_);
 }
 
-ParamMap PhotonIntegrator::Params::getAsParamMap(bool only_non_default) const
+ParamMap PhotonIntegrator::getAsParamMap(bool only_non_default) const
 {
-	PARAM_SAVE_START;
+	auto param_map{ParentClassType_t::getAsParamMap(only_non_default)};
+	param_map.setParam("type", type().print());
 	PARAM_SAVE(diffuse_);
 	PARAM_SAVE(photons_diffuse_);
 	PARAM_SAVE(diffuse_radius_);
@@ -65,19 +82,12 @@ ParamMap PhotonIntegrator::Params::getAsParamMap(bool only_non_default) const
 	PARAM_SAVE(fg_bounces_);
 	PARAM_SAVE(gather_dist_);
 	PARAM_SAVE(show_map_);
-	PARAM_SAVE_END;
-}
-
-ParamMap PhotonIntegrator::getAsParamMap(bool only_non_default) const
-{
-	ParamMap result{ParentClassType_t::getAsParamMap(only_non_default)};
-	result.append(params_.getAsParamMap(only_non_default));
-	return result;
+	return param_map;
 }
 
 std::pair<std::unique_ptr<SurfaceIntegrator>, ParamResult> PhotonIntegrator::factory(Logger &logger, RenderControl &render_control, const std::string &name, const ParamMap &param_map)
 {
-	auto param_result{Params::meta_.check(param_map, {"type"}, {})};
+	auto param_result{class_meta::check<Params>(param_map, {"type"}, {})};
 	auto integrator {std::make_unique<PhotonIntegrator>(render_control, logger, param_result, name, param_map)};
 	if(param_result.notOk()) logger.logWarning(param_result.print<ThisClassType_t>(getClassName(), {"type"}));
 	return {std::move(integrator), param_result};
@@ -134,7 +144,7 @@ void PhotonIntegrator::preGatherWorker(PreGatherData *gdata, float ds_rad, int n
 
 PhotonIntegrator::PhotonIntegrator(RenderControl &render_control, Logger &logger, ParamResult &param_result, const std::string &name, const ParamMap &param_map) : ParentClassType_t(render_control, logger, param_result, name, param_map), params_{param_result, param_map}
 {
-	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + params_.getAsParamMap(true).print());
+	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + getAsParamMap(true).print());
 	diffuse_map_ = std::make_unique<PhotonMap>(logger);
 	diffuse_map_->setName("Diffuse Photon Map");
 	radiance_map_ = std::make_unique<PhotonMap>(logger);

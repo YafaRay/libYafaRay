@@ -39,7 +39,7 @@ class MeshObject : public Object
 	public:
 		inline static std::string getClassName() { return "MeshObject"; }
 		static std::pair<std::unique_ptr<MeshObject>, ParamResult> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map);
-		static std::string printMeta(const std::vector<std::string> &excluded_params) { return Params::meta_.print(excluded_params); }
+		static std::string printMeta(const std::vector<std::string> &excluded_params) { return class_meta::print<Params>(excluded_params); }
 		[[nodiscard]] ParamMap getAsParamMap(bool only_non_default) const override;
 		MeshObject(ParamResult &param_result, const ParamMap &param_map, const Items <Object> &objects, const Items<Material> &materials, const Items<Light> &lights);
 		~MeshObject() override;
@@ -75,7 +75,8 @@ class MeshObject : public Object
 		[[nodiscard]] Type type() const override { return Type::Mesh; }
 		const struct Params
 		{
-			PARAM_INIT_PARENT(ParentClassType_t);
+			Params(ParamResult &param_result, const ParamMap &param_map);
+			static std::map<std::string, const ParamMeta *> getParamMetaMap();
 			PARAM_DECL(int , num_faces_, 0, "num_faces", "");
 			PARAM_DECL(int , num_vertices_, 0, "num_vertices", "");
 			PARAM_DECL(bool, has_uv_, false, "has_uv", "");

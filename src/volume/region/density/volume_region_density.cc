@@ -22,27 +22,27 @@
 
 namespace yafaray {
 
+std::map<std::string, const ParamMeta *> DensityVolumeRegion::Params::getParamMetaMap()
+{
+	auto param_meta_map{ParentClassType_t::Params::getParamMetaMap()};
+	return param_meta_map;
+}
+
 DensityVolumeRegion::Params::Params(ParamResult &param_result, const ParamMap &param_map)
 {
 }
 
-ParamMap DensityVolumeRegion::Params::getAsParamMap(bool only_non_default) const
-{
-	PARAM_SAVE_START;
-	PARAM_SAVE_END;
-}
-
 ParamMap DensityVolumeRegion::getAsParamMap(bool only_non_default) const
 {
-	ParamMap result{ParentClassType_t::getAsParamMap(only_non_default)};
-	result.append(params_.getAsParamMap(only_non_default));
-	return result;
+	auto param_map{ParentClassType_t::getAsParamMap(only_non_default)};
+	param_map.setParam("type", type().print());
+	return param_map;
 }
 
 DensityVolumeRegion::DensityVolumeRegion(Logger &logger, ParamResult &param_result, const ParamMap &param_map) :
 		ParentClassType_t{logger, param_result, param_map}, params_{param_result, param_map}
 {
-	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + params_.getAsParamMap(true).print());
+	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + getAsParamMap(true).print());
 }
 
 Rgb DensityVolumeRegion::tau(const Ray &ray, float step_size, float offset) const

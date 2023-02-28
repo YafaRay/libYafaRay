@@ -32,7 +32,7 @@ class PathIntegrator final : public CausticPhotonIntegrator
 	public:
 		inline static std::string getClassName() { return "PathIntegrator"; }
 		static std::pair<std::unique_ptr<SurfaceIntegrator>, ParamResult> factory(Logger &logger, RenderControl &render_control, const std::string &name, const ParamMap &params);
-		static std::string printMeta(const std::vector<std::string> &excluded_params) { return Params::meta_.print(excluded_params); }
+		static std::string printMeta(const std::vector<std::string> &excluded_params) { return class_meta::print<Params>(excluded_params); }
 		PathIntegrator(RenderControl &render_control, Logger &logger, ParamResult &param_result, const std::string &name, const ParamMap &param_map);
 		[[nodiscard]] ParamMap getAsParamMap(bool only_non_default) const override;
 
@@ -50,7 +50,8 @@ class PathIntegrator final : public CausticPhotonIntegrator
 		[[nodiscard]] Type type() const override { return Type::Path; }
 		const struct Params
 		{
-			PARAM_INIT_PARENT(ParentClassType_t);
+			Params(ParamResult &param_result, const ParamMap &param_map);
+			static std::map<std::string, const ParamMeta *> getParamMetaMap();
 			PARAM_DECL(int, path_samples_, 32, "path_samples", "Number of samples for Montecarlo raytracing");
 			PARAM_DECL(int, bounces_, 3, "bounces", "Max. path depth for Montecarlo raytracing");
 			PARAM_DECL(int, russian_roulette_min_bounces_, 0, "russian_roulette_min_bounces", "Minimum number of bounces where russian roulette is not applied. Afterwards russian roulette will be used until the maximum selected bounces. If min_bounces >= max_bounces, then no russian roulette takes place");

@@ -43,7 +43,7 @@ class GlossyMaterial final : public NodeMaterial
 	public:
 		inline static std::string getClassName() { return "GlossyMaterial"; }
 		static std::pair<std::unique_ptr<Material>, ParamResult> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map, const std::list<ParamMap> &nodes_param_maps);
-		static std::string printMeta(const std::vector<std::string> &excluded_params) { return Params::meta_.print(excluded_params); }
+		static std::string printMeta(const std::vector<std::string> &excluded_params) { return class_meta::print<Params>(excluded_params); }
 		[[nodiscard]] ParamMap getAsParamMap(bool only_non_default) const override;
 		GlossyMaterial(Logger &logger, ParamResult &param_result, const ParamMap &param_map, const Items <Material> &materials);
 
@@ -66,7 +66,8 @@ class GlossyMaterial final : public NodeMaterial
 		};
 		const struct Params
 		{
-			PARAM_INIT_PARENT(ParentClassType_t);
+			Params(ParamResult &param_result, const ParamMap &param_map);
+			static std::map<std::string, const ParamMeta *> getParamMetaMap();
 			PARAM_DECL(Rgb, glossy_color_, Rgb{1.f}, "color", "");
 			PARAM_DECL(Rgb, diffuse_color_, Rgb{1.f}, "diffuse_color", "");
 			PARAM_DECL(float, diffuse_reflect_, 0.f, "diffuse_reflect", "");
@@ -78,7 +79,7 @@ class GlossyMaterial final : public NodeMaterial
 			PARAM_DECL(float, exp_v_, 50.f, "exp_v", "");
 			PARAM_ENUM_DECL(DiffuseBrdf, diffuse_brdf_, DiffuseBrdf::Lambertian, "diffuse_brdf", "");
 			PARAM_DECL(float, sigma_, 0.1f, "sigma", "Oren-Nayar sigma factor, used if diffuse BRDF is set to Oren-Nayar");
-			PARAM_SHADERS_DECL;
+			inline static const auto shader_node_names_meta_{ParamMeta::enumToParamMetaArray<ShaderNodeType>()};
 		} params_;
 		std::unique_ptr<const MaterialData> initBsdf(SurfacePoint &sp, const Camera *camera) const override;
 		Rgb eval(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3f &wo, const Vec3f &wi, BsdfFlags bsdfs, bool force_eval) const override;

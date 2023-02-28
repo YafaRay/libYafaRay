@@ -35,6 +35,21 @@ namespace yafaray {
 /  A simple mix node, could be used to derive other math nodes
 / ========================================== */
 
+std::map<std::string, const ParamMeta *> MixNode::Params::getParamMetaMap()
+{
+	auto param_meta_map{ParentClassType_t::Params::getParamMetaMap()};
+	PARAM_META(input_1_);
+	PARAM_META(color_1_);
+	PARAM_META(value_1_);
+	PARAM_META(input_2_);
+	PARAM_META(color_2_);
+	PARAM_META(value_2_);
+	PARAM_META(input_factor_);
+	PARAM_META(factor_);
+	PARAM_META(blend_mode_);
+	return param_meta_map;
+}
+
 MixNode::Params::Params(ParamResult &param_result, const ParamMap &param_map)
 {
 	PARAM_LOAD(input_1_);
@@ -48,9 +63,10 @@ MixNode::Params::Params(ParamResult &param_result, const ParamMap &param_map)
 	PARAM_ENUM_LOAD(blend_mode_);
 }
 
-ParamMap MixNode::Params::getAsParamMap(bool only_non_default) const
+ParamMap MixNode::getAsParamMap(bool only_non_default) const
 {
-	PARAM_SAVE_START;
+	auto param_map{ParentClassType_t::getAsParamMap(only_non_default)};
+	param_map.setParam("type", type().print());
 	PARAM_SAVE(input_1_);
 	PARAM_SAVE(color_1_);
 	PARAM_SAVE(value_1_);
@@ -60,19 +76,12 @@ ParamMap MixNode::Params::getAsParamMap(bool only_non_default) const
 	PARAM_SAVE(input_factor_);
 	PARAM_SAVE(factor_);
 	PARAM_ENUM_SAVE(blend_mode_);
-	PARAM_SAVE_END;
-}
-
-ParamMap MixNode::getAsParamMap(bool only_non_default) const
-{
-	ParamMap result{ParentClassType_t::getAsParamMap(only_non_default)};
-	result.append(params_.getAsParamMap(only_non_default));
-	return result;
+	return param_map;
 }
 
 std::pair<std::unique_ptr<ShaderNode>, ParamResult> MixNode::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map)
 {
-	auto param_result{Params::meta_.check(param_map, {"type"}, {})};
+	auto param_result{class_meta::check<Params>(param_map, {"type"}, {})};
 	std::unique_ptr<ShaderNode> shader_node;
 	std::string blend_mode_str;
 	param_map.getParam(Params::blend_mode_meta_.name(), blend_mode_str);
@@ -98,7 +107,7 @@ std::pair<std::unique_ptr<ShaderNode>, ParamResult> MixNode::factory(Logger &log
 MixNode::MixNode(Logger &logger, ParamResult &param_result, const ParamMap &param_map) :
 		ParentClassType_t{logger, param_result, param_map}, params_{param_result, param_map}
 {
-	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + params_.getAsParamMap(true).print());
+	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + getAsParamMap(true).print());
 }
 
 void MixNode::eval(NodeTreeData &node_tree_data, const SurfacePoint &sp, const Camera *camera) const

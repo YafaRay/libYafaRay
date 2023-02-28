@@ -44,7 +44,7 @@ class PhotonIntegrator final : public CausticPhotonIntegrator
 	public:
 		inline static std::string getClassName() { return "PhotonIntegrator"; }
 		static std::pair<std::unique_ptr<SurfaceIntegrator>, ParamResult> factory(Logger &logger, RenderControl &render_control, const std::string &name, const ParamMap &params);
-		static std::string printMeta(const std::vector<std::string> &excluded_params) { return Params::meta_.print(excluded_params); }
+		static std::string printMeta(const std::vector<std::string> &excluded_params) { return class_meta::print<Params>(excluded_params); }
 		PhotonIntegrator(RenderControl &render_control, Logger &logger, ParamResult &param_result, const std::string &name, const ParamMap &param_map);
 		[[nodiscard]] ParamMap getAsParamMap(bool only_non_default) const override;
 
@@ -52,7 +52,8 @@ class PhotonIntegrator final : public CausticPhotonIntegrator
 		[[nodiscard]] Type type() const override { return Type::Photon; }
 		const struct Params
 		{
-			PARAM_INIT_PARENT(ParentClassType_t);
+			Params(ParamResult &param_result, const ParamMap &param_map);
+			static std::map<std::string, const ParamMeta *> getParamMetaMap();
 			PARAM_DECL(bool, diffuse_, true, "diffuse", "Enable/disable diffuse photon processing");
 			PARAM_DECL(int , photons_diffuse_, 100000, "diffuse_photons", "Number of diffuse photons");
 			PARAM_DECL(float, diffuse_radius_, 0.1f, "diffuse_radius", "Diffuse photons search radius");

@@ -31,6 +31,15 @@
 
 namespace yafaray {
 
+std::map<std::string, const ParamMeta *> LightMaterial::Params::getParamMetaMap()
+{
+	auto param_meta_map{ParentClassType_t::Params::getParamMetaMap()};
+	PARAM_META(color_);
+	PARAM_META(power_);
+	PARAM_META(double_sided_);
+	return param_meta_map;
+}
+
 LightMaterial::Params::Params(ParamResult &param_result, const ParamMap &param_map)
 {
 	PARAM_LOAD(color_);
@@ -38,34 +47,28 @@ LightMaterial::Params::Params(ParamResult &param_result, const ParamMap &param_m
 	PARAM_LOAD(double_sided_);
 }
 
-ParamMap LightMaterial::Params::getAsParamMap(bool only_non_default) const
+ParamMap LightMaterial::getAsParamMap(bool only_non_default) const
 {
-	PARAM_SAVE_START;
+	auto param_map{ParentClassType_t::getAsParamMap(only_non_default)};
+	param_map.setParam("type", type().print());
 	PARAM_SAVE(color_);
 	PARAM_SAVE(power_);
 	PARAM_SAVE(double_sided_);
-	PARAM_SAVE_END;
-}
-
-ParamMap LightMaterial::getAsParamMap(bool only_non_default) const
-{
-	ParamMap result{ParentClassType_t::getAsParamMap(only_non_default)};
-	result.append(params_.getAsParamMap(only_non_default));
-	return result;
+	return param_map;
 }
 
 std::pair<std::unique_ptr<Material>, ParamResult> LightMaterial::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map, const std::list<ParamMap> &nodes_param_maps)
 {
-	auto param_result{Params::meta_.check(param_map, {"type"}, {})};
-	auto material{std::make_unique<ThisClassType_t>(logger, param_result, param_map, scene.getMaterials())};
-	if(param_result.notOk()) logger.logWarning(param_result.print<LightMaterial>(name, {"type"}));
+	auto param_result{class_meta::check<Params>(param_map, {"type"}, {})};
+	auto material{std::make_unique<LightMaterial>(logger, param_result, param_map, scene.getMaterials())};
+	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + material->getAsParamMap(true).print());
+	if(param_result.notOk()) logger.logWarning(param_result.print<ThisClassType_t>(name, {"type"}));
 	return {std::move(material), param_result};
 }
 
 LightMaterial::LightMaterial(Logger &logger, ParamResult &param_result, const ParamMap &param_map, const Items <Material> &materials) :
 		ParentClassType_t{logger, param_result, param_map, materials}, params_{param_result, param_map}
 {
-	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + params_.getAsParamMap(true).print());
 	bsdf_flags_ = BsdfFlags::Emit;
 }
 

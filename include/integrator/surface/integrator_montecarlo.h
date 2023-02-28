@@ -36,12 +36,13 @@ class MonteCarloIntegrator: public TiledIntegrator
 
 	public:
 		inline static std::string getClassName() { return "MonteCarloIntegrator"; }
-		static std::string printMeta(const std::vector<std::string> &excluded_params) { return Params::meta_.print(excluded_params); }
+		static std::string printMeta(const std::vector<std::string> &excluded_params) { return class_meta::print<Params>(excluded_params); }
 
 	protected:
 		const struct Params
 		{
-			PARAM_INIT_PARENT(ParentClassType_t);
+			Params(ParamResult &param_result, const ParamMap &param_map);
+			static std::map<std::string, const ParamMeta *> getParamMetaMap();
 			PARAM_DECL(int, r_depth_, 5, "raydepth", "Ray depth");
 			PARAM_DECL(bool, transparent_shadows_, false, "transpShad", "Use transparent shadows");
 			PARAM_DECL(int, shadow_depth_, 4, "shadowDepth", "Shadow depth for transparent shadows");

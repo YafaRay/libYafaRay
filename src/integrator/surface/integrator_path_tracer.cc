@@ -33,6 +33,17 @@ namespace yafaray {
 
 class Pdf1D;
 
+std::map<std::string, const ParamMeta *> PathIntegrator::Params::getParamMetaMap()
+{
+	auto param_meta_map{ParentClassType_t::Params::getParamMetaMap()};
+	PARAM_META(path_samples_);
+	PARAM_META(bounces_);
+	PARAM_META(russian_roulette_min_bounces_);
+	PARAM_META(no_recursive_);
+	PARAM_META(caustic_type_);
+	return param_meta_map;
+}
+
 PathIntegrator::Params::Params(ParamResult &param_result, const ParamMap &param_map)
 {
 	PARAM_LOAD(path_samples_);
@@ -42,35 +53,29 @@ PathIntegrator::Params::Params(ParamResult &param_result, const ParamMap &param_
 	PARAM_ENUM_LOAD(caustic_type_);
 }
 
-ParamMap PathIntegrator::Params::getAsParamMap(bool only_non_default) const
+ParamMap PathIntegrator::getAsParamMap(bool only_non_default) const
 {
-	PARAM_SAVE_START;
+	auto param_map{ParentClassType_t::getAsParamMap(only_non_default)};
+	param_map.setParam("type", type().print());
 	PARAM_SAVE(path_samples_);
 	PARAM_SAVE(bounces_);
 	PARAM_SAVE(russian_roulette_min_bounces_);
 	PARAM_SAVE(no_recursive_);
 	PARAM_ENUM_SAVE(caustic_type_);
-	PARAM_SAVE_END;
-}
-
-ParamMap PathIntegrator::getAsParamMap(bool only_non_default) const
-{
-	ParamMap result{ParentClassType_t::getAsParamMap(only_non_default)};
-	result.append(params_.getAsParamMap(only_non_default));
-	return result;
+	return param_map;
 }
 
 std::pair<std::unique_ptr<SurfaceIntegrator>, ParamResult> PathIntegrator::factory(Logger &logger, RenderControl &render_control, const std::string &name, const ParamMap &param_map)
 {
-	auto param_result{Params::meta_.check(param_map, {"type"}, {})};
-	auto integrator {std::make_unique<ThisClassType_t>(render_control, logger, param_result, name, param_map)};
+	auto param_result{class_meta::check<Params>(param_map, {"type"}, {})};
+	auto integrator {std::make_unique<PathIntegrator>(render_control, logger, param_result, name, param_map)};
 	if(param_result.notOk()) logger.logWarning(param_result.print<ThisClassType_t>(getClassName(), {"type"}));
 	return {std::move(integrator), param_result};
 }
 
 PathIntegrator::PathIntegrator(RenderControl &render_control, Logger &logger, ParamResult &param_result, const std::string &name, const ParamMap &param_map) : ParentClassType_t(render_control, logger, param_result, name, param_map), params_{param_result, param_map}
 {
-	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + params_.getAsParamMap(true).print());
+	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + getAsParamMap(true).print());
 }
 
 bool PathIntegrator::preprocess(FastRandom &fast_random, ImageFilm *image_film, const Scene &scene, const Renderer &renderer)

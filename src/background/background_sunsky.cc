@@ -34,6 +34,24 @@ namespace yafaray {
 // based on the actual code by Brian Smits
 // and a thread on gamedev.net on skycolor algorithms
 
+std::map<std::string, const ParamMeta *> SunSkyBackground::Params::getParamMetaMap()
+{
+	auto param_meta_map{ParentClassType_t::Params::getParamMetaMap()};
+	PARAM_META(from_);
+	PARAM_META(turb_);
+	PARAM_META(add_sun_);
+	PARAM_META(sun_power_);
+	PARAM_META(background_light_);
+	PARAM_META(light_samples_);
+	PARAM_META(cast_shadows_sun_);
+	PARAM_META(a_var_);
+	PARAM_META(b_var_);
+	PARAM_META(c_var_);
+	PARAM_META(d_var_);
+	PARAM_META(e_var_);
+	return param_meta_map;
+}
+
 SunSkyBackground::Params::Params(ParamResult &param_result, const ParamMap &param_map)
 {
 	PARAM_LOAD(from_);
@@ -50,9 +68,10 @@ SunSkyBackground::Params::Params(ParamResult &param_result, const ParamMap &para
 	PARAM_LOAD(e_var_);
 }
 
-ParamMap SunSkyBackground::Params::getAsParamMap(bool only_non_default) const
+ParamMap SunSkyBackground::getAsParamMap(bool only_non_default) const
 {
-	PARAM_SAVE_START;
+	auto param_map{ParentClassType_t::getAsParamMap(only_non_default)};
+	param_map.setParam("type", type().print());
 	PARAM_SAVE(from_);
 	PARAM_SAVE(turb_);
 	PARAM_SAVE(add_sun_);
@@ -65,20 +84,13 @@ ParamMap SunSkyBackground::Params::getAsParamMap(bool only_non_default) const
 	PARAM_SAVE(c_var_);
 	PARAM_SAVE(d_var_);
 	PARAM_SAVE(e_var_);
-	PARAM_SAVE_END;
-}
-
-ParamMap SunSkyBackground::getAsParamMap(bool only_non_default) const
-{
-	ParamMap result{ParentClassType_t::getAsParamMap(only_non_default)};
-	result.append(params_.getAsParamMap(only_non_default));
-	return result;
+	return param_map;
 }
 
 std::pair<std::unique_ptr<Background>, ParamResult> SunSkyBackground::factory(Logger &logger, const std::string &name, const ParamMap &param_map)
 {
-	auto param_result{Params::meta_.check(param_map, {"type"}, {})};
-	auto background{std::make_unique<ThisClassType_t>(logger, param_result, param_map)};
+	auto param_result{class_meta::check<Params>(param_map, {"type"}, {})};
+	auto background{std::make_unique<SunSkyBackground>(logger, param_result, param_map)};
 	if(param_result.notOk()) logger.logWarning(param_result.print<ThisClassType_t>(name, {"type"}));
 	return {std::move(background), param_result};
 }
@@ -86,7 +98,7 @@ std::pair<std::unique_ptr<Background>, ParamResult> SunSkyBackground::factory(Lo
 SunSkyBackground::SunSkyBackground(Logger &logger, ParamResult &param_result, const ParamMap &param_map) :
 		ParentClassType_t{logger, param_result, param_map}, params_{param_result, param_map}
 {
-	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + params_.getAsParamMap(true).print());
+	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + getAsParamMap(true).print());
 	sun_dir_.normalize();
 	theta_s_ = math::acos(sun_dir_[Axis::Z]);
 	theta_2_ = theta_s_ * theta_s_;

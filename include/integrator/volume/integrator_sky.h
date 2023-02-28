@@ -36,7 +36,7 @@ class SkyIntegrator : public VolumeIntegrator
 	public:
 		inline static std::string getClassName() { return "SkyIntegrator"; }
 		static std::pair<std::unique_ptr<VolumeIntegrator>, ParamResult> factory(Logger &logger, const ParamMap &params);
-		static std::string printMeta(const std::vector<std::string> &excluded_params) { return Params::meta_.print(excluded_params); }
+		static std::string printMeta(const std::vector<std::string> &excluded_params) { return class_meta::print<Params>(excluded_params); }
 		SkyIntegrator(Logger &logger, ParamResult &param_result, const ParamMap &param_map);
 		[[nodiscard]] ParamMap getAsParamMap(bool only_non_default) const override;
 
@@ -44,7 +44,8 @@ class SkyIntegrator : public VolumeIntegrator
 		[[nodiscard]] Type type() const override { return Type::Sky; }
 		const struct Params
 		{
-			PARAM_INIT_PARENT(ParentClassType_t);
+			Params(ParamResult &param_result, const ParamMap &param_map);
+			static std::map<std::string, const ParamMeta *> getParamMetaMap();
 			PARAM_DECL(float , step_size_, 1.f, "stepSize", "");
 			PARAM_DECL(float , scale_, 0.1f, "sigma_t", "Actually it is the scale_ variable in the code. It's unclear what this parameter actually means in the code at the moment"); //"Beta in the paper, more or less the thickness coefficient");//FIXME DAVID: it seems to be unused in the code (using the scale_ variable instead for some reason?) or even worse, used with uninitialized values. Not sure why is this the case, but I'm removing its usage from the code completely for now
 			PARAM_DECL(float , alpha_, 0.5f, "alpha", "Steepness of the exponential density");

@@ -38,7 +38,7 @@ class SunLight final : public Light
 	public:
 		inline static std::string getClassName() { return "SunLight"; }
 		static std::pair<std::unique_ptr<Light>, ParamResult> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params);
-		static std::string printMeta(const std::vector<std::string> &excluded_params) { return Params::meta_.print(excluded_params); }
+		static std::string printMeta(const std::vector<std::string> &excluded_params) { return class_meta::print<Params>(excluded_params); }
 		[[nodiscard]] ParamMap getAsParamMap(bool only_non_default) const override;
 		SunLight(Logger &logger, ParamResult &param_result, const ParamMap &param_map, const Items<Light> &lights);
 
@@ -46,7 +46,8 @@ class SunLight final : public Light
 		[[nodiscard]] Type type() const override { return Type::Sun; }
 		const struct Params
 		{
-			PARAM_INIT_PARENT(ParentClassType_t);
+			Params(ParamResult &param_result, const ParamMap &param_map);
+			static std::map<std::string, const ParamMeta *> getParamMetaMap();
 			PARAM_DECL(Vec3f, direction_, (Vec3f{{0.f, 0.f, 1.f}}), "direction", "");
 			PARAM_DECL(Rgb, color_, Rgb{1.f}, "color", "");
 			PARAM_DECL(float, power_, 1.f, "power", "");

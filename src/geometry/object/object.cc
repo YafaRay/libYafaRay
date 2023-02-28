@@ -27,6 +27,19 @@
 
 namespace yafaray {
 
+std::map<std::string, const ParamMeta *> Object::Params::getParamMetaMap()
+{
+	std::map<std::string, const ParamMeta *> param_meta_map;
+	PARAM_META(light_name_);
+	PARAM_META(visibility_);
+	PARAM_META(is_base_object_);
+	PARAM_META(object_index_);
+	PARAM_META(motion_blur_bezier_);
+	PARAM_META(time_range_start_);
+	PARAM_META(time_range_end_);
+	return param_meta_map;
+}
+
 Object::Params::Params(ParamResult &param_result, const ParamMap &param_map)
 {
 	PARAM_LOAD(light_name_);
@@ -38,30 +51,23 @@ Object::Params::Params(ParamResult &param_result, const ParamMap &param_map)
 	PARAM_LOAD(time_range_end_);
 }
 
-ParamMap Object::Params::getAsParamMap(bool only_non_default) const
+ParamMap Object::getAsParamMap(bool only_non_default) const
 {
-	PARAM_SAVE_START;
-	//PARAM_SAVE(light_name_);
+	ParamMap param_map;
+	param_map.setParam(Params::light_name_meta_, lights_.findNameFromId(light_id_).first);
 	PARAM_ENUM_SAVE(visibility_);
 	PARAM_SAVE(is_base_object_);
 	PARAM_SAVE(object_index_);
 	PARAM_SAVE(motion_blur_bezier_);
 	PARAM_SAVE(time_range_start_);
 	PARAM_SAVE(time_range_end_);
-	PARAM_SAVE_END;
-}
-
-ParamMap Object::getAsParamMap(bool only_non_default) const
-{
-	ParamMap result{params_.getAsParamMap(only_non_default)};
-	result.setParam("type", type().print());
-	result.setParam(Params::light_name_meta_, lights_.findNameFromId(light_id_).first);
-	return result;
+	return param_map;
 }
 
 std::pair<std::unique_ptr<Object>, ParamResult> Object::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map)
 {
-	const Type type{ClassMeta::preprocessParamMap<Type>(logger, getClassName(), param_map)};
+	if(logger.isDebug()) logger.logDebug("** " + getClassName() + "::factory 'raw' ParamMap contents:\n" + param_map.logContents());
+	const auto type{class_meta::getTypeFromParamMap<Type>(logger, getClassName(), param_map)};
 	std::pair<std::unique_ptr<Object>, ParamResult> result {nullptr, ParamResult{YAFARAY_RESULT_ERROR_WHILE_CREATING}};
 	switch(type.value())
 	{
@@ -89,7 +95,7 @@ std::pair<std::unique_ptr<Object>, ParamResult> Object::factory(Logger &logger, 
 
 Object::Object(ParamResult &param_result, const ParamMap &param_map, const Items <Object> &objects, const Items<Material> &materials, const Items<Light> &lights) : params_{param_result, param_map}, objects_{objects}, materials_{materials}, lights_{lights}
 {
-	//if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + params_.getAsParamMap(true).print());
+	//if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + getAsParamMap(true).print());
 }
 
 void Object::setId(size_t id)

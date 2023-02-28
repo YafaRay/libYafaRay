@@ -31,27 +31,29 @@
 
 namespace yafaray {
 
+std::map<std::string, const ParamMeta *> NullMaterial::Params::getParamMetaMap()
+{
+	auto param_meta_map{ParentClassType_t::Params::getParamMetaMap()};
+	return param_meta_map;
+}
+
 NullMaterial::Params::Params(ParamResult &param_result, const ParamMap &param_map)
 {
 }
 
-ParamMap NullMaterial::Params::getAsParamMap(bool only_non_default) const
-{
-	PARAM_SAVE_START;
-	PARAM_SAVE_END;
-}
-
 ParamMap NullMaterial::getAsParamMap(bool only_non_default) const
 {
-	ParamMap result{ParentClassType_t::getAsParamMap(only_non_default)};
-	result.append(params_.getAsParamMap(only_non_default));
-	return result;
+	auto param_map{ParentClassType_t::getAsParamMap(only_non_default)};
+	param_map.setParam("type", type().print());
+	return param_map;
 }
 
 std::pair<std::unique_ptr<Material>, ParamResult> NullMaterial::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map, const std::list<ParamMap> &nodes_param_maps)
 {
-	auto param_result{Params::meta_.check(param_map, {"type"}, {})};
-	auto material{std::make_unique<ThisClassType_t>(logger, param_result, param_map, scene.getMaterials())};
+	auto param_result{class_meta::check<Params>(param_map, {"type"}, {})};
+	auto material{std::make_unique<NullMaterial>(logger, param_result, param_map, scene.getMaterials())};
+
+	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + material->getAsParamMap(true).print());
 	if(param_result.notOk()) logger.logWarning(param_result.print<ThisClassType_t>(name, {"type"}));
 	return {std::move(material), param_result};
 }
@@ -59,7 +61,6 @@ std::pair<std::unique_ptr<Material>, ParamResult> NullMaterial::factory(Logger &
 NullMaterial::NullMaterial(Logger &logger, ParamResult &param_result, const ParamMap &param_map, const Items <Material> &materials) :
 		ParentClassType_t{logger, param_result, param_map, materials}, params_{param_result, param_map}
 {
-	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + params_.getAsParamMap(true).print());
 }
 
 Rgb NullMaterial::sample(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3f &wo, Vec3f &wi, Sample &s, float &w, bool chromatic, float wavelength, const Camera *camera) const

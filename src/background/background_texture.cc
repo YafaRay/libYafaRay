@@ -28,6 +28,17 @@
 
 namespace yafaray {
 
+std::map<std::string, const ParamMeta *> TextureBackground::Params::getParamMetaMap()
+{
+	auto param_meta_map{ParentClassType_t::Params::getParamMetaMap()};
+	PARAM_META(rotation_);
+	PARAM_META(ibl_blur_);
+	PARAM_META(ibl_clamp_sampling_);
+	PARAM_META(projection_);
+	PARAM_META(texture_name_);
+	return param_meta_map;
+}
+
 TextureBackground::Params::Params(ParamResult &param_result, const ParamMap &param_map)
 {
 	PARAM_LOAD(rotation_);
@@ -37,27 +48,21 @@ TextureBackground::Params::Params(ParamResult &param_result, const ParamMap &par
 	PARAM_LOAD(texture_name_);
 }
 
-ParamMap TextureBackground::Params::getAsParamMap(bool only_non_default) const
+ParamMap TextureBackground::getAsParamMap(bool only_non_default) const
 {
-	PARAM_SAVE_START;
+	auto param_map{ParentClassType_t::getAsParamMap(only_non_default)};
+	param_map.setParam("type", type().print());
 	PARAM_SAVE(rotation_);
 	PARAM_SAVE(ibl_blur_);
 	PARAM_SAVE(ibl_clamp_sampling_);
 	PARAM_ENUM_SAVE(projection_);
 	PARAM_SAVE(texture_name_);
-	PARAM_SAVE_END;
-}
-
-ParamMap TextureBackground::getAsParamMap(bool only_non_default) const
-{
-	ParamMap result{ParentClassType_t::getAsParamMap(only_non_default)};
-	result.append(params_.getAsParamMap(only_non_default));
-	return result;
+	return param_map;
 }
 
 std::pair<std::unique_ptr<Background>, ParamResult> TextureBackground::factory(Logger &logger, const std::string &name, const ParamMap &param_map, const Items<Texture> &textures)
 {
-	auto param_result{Params::meta_.check(param_map, {"type"}, {})};
+	auto param_result{class_meta::check<Params>(param_map, {"type"}, {})};
 	std::string texname;
 	if(param_map.getParam(Params::texture_name_meta_, texname) == YAFARAY_RESULT_ERROR_TYPE_UNKNOWN_PARAM)
 	{
@@ -70,7 +75,7 @@ std::pair<std::unique_ptr<Background>, ParamResult> TextureBackground::factory(L
 		logger.logError(getClassName(), ": Texture '", texname, "' does not exist!");
 		return {nullptr, ParamResult{YAFARAY_RESULT_ERROR_WHILE_CREATING}};
 	}
-	auto background{std::make_unique<ThisClassType_t>(logger, param_result, param_map, tex_id, textures)};
+	auto background{std::make_unique<TextureBackground>(logger, param_result, param_map, tex_id, textures)};
 	if(param_result.notOk()) logger.logWarning(param_result.print<ThisClassType_t>(name, {"type"}));
 	return {std::move(background), param_result};
 }
@@ -78,7 +83,7 @@ std::pair<std::unique_ptr<Background>, ParamResult> TextureBackground::factory(L
 TextureBackground::TextureBackground(Logger &logger, ParamResult &param_result, const ParamMap &param_map, size_t texture_id, const Items <Texture> &textures) :
 		ParentClassType_t{logger, param_result, param_map}, params_{param_result, param_map}, texture_id_{texture_id}, textures_{textures}
 {
-	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + params_.getAsParamMap(true).print());
+	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + getAsParamMap(true).print());
 	sin_r_ = math::sin(math::num_pi<> * rotation_);
 	cos_r_ = math::cos(math::num_pi<> * rotation_);
 	if(params_.ibl_blur_ > 0.f)

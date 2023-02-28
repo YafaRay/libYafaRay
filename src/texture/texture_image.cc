@@ -33,6 +33,32 @@ namespace yafaray {
 
 const ImageTexture::EwaWeightLut ImageTexture::ewa_weight_lut_;
 
+std::map<std::string, const ParamMeta *> ImageTexture::Params::getParamMetaMap()
+{
+	auto param_meta_map{ParentClassType_t::Params::getParamMetaMap()};
+	PARAM_META(clip_mode_);
+	PARAM_META(image_name_);
+	PARAM_META(exposure_adjust_);
+	PARAM_META(normal_map_);
+	PARAM_META(xrepeat_);
+	PARAM_META(yrepeat_);
+	PARAM_META(cropmin_x_);
+	PARAM_META(cropmin_y_);
+	PARAM_META(cropmax_x_);
+	PARAM_META(cropmax_y_);
+	PARAM_META(rot_90_);
+	PARAM_META(even_tiles_);
+	PARAM_META(odd_tiles_);
+	PARAM_META(checker_dist_);
+	PARAM_META(use_alpha_);
+	PARAM_META(calc_alpha_);
+	PARAM_META(mirror_x_);
+	PARAM_META(mirror_y_);
+	PARAM_META(trilinear_level_bias_);
+	PARAM_META(ewa_max_anisotropy_);
+	return param_meta_map;
+}
+
 ImageTexture::Params::Params(ParamResult &param_result, const ParamMap &param_map)
 {
 	PARAM_ENUM_LOAD(clip_mode_);
@@ -57,11 +83,12 @@ ImageTexture::Params::Params(ParamResult &param_result, const ParamMap &param_ma
 	PARAM_LOAD(ewa_max_anisotropy_);
 }
 
-ParamMap ImageTexture::Params::getAsParamMap(bool only_non_default) const
+ParamMap ImageTexture::getAsParamMap(bool only_non_default) const
 {
-	PARAM_SAVE_START;
+	auto param_map{ParentClassType_t::getAsParamMap(only_non_default)};
+	param_map.setParam("type", type().print());
+	param_map.setParam(Params::image_name_meta_, images_.findNameFromId(image_id_).first);
 	PARAM_ENUM_SAVE(clip_mode_);
-	//PARAM_SAVE(image_name_);
 	PARAM_SAVE(exposure_adjust_);
 	PARAM_SAVE(normal_map_);
 	PARAM_SAVE(xrepeat_);
@@ -80,20 +107,12 @@ ParamMap ImageTexture::Params::getAsParamMap(bool only_non_default) const
 	PARAM_SAVE(mirror_y_);
 	PARAM_SAVE(trilinear_level_bias_);
 	PARAM_SAVE(ewa_max_anisotropy_);
-	PARAM_SAVE_END;
-}
-
-ParamMap ImageTexture::getAsParamMap(bool only_non_default) const
-{
-	ParamMap result{ParentClassType_t::getAsParamMap(only_non_default)};
-	result.append(params_.getAsParamMap(only_non_default));
-	result.setParam(Params::image_name_meta_, images_.findNameFromId(image_id_).first);
-	return result;
+	return param_map;
 }
 
 std::pair<std::unique_ptr<Texture>, ParamResult> ImageTexture::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map)
 {
-	auto param_result{Params::meta_.check(param_map, {"type"}, {"ramp_item_"})};
+	auto param_result{class_meta::check<Params>(param_map, {"type"}, {"ramp_item_"})};
 	std::string image_name;
 	param_map.getParam(Params::image_name_meta_, image_name);
 	if(image_name.empty())
@@ -107,14 +126,14 @@ std::pair<std::unique_ptr<Texture>, ParamResult> ImageTexture::factory(Logger &l
 		logger.logError("ImageTexture: Couldn't load image file, dropping texture.");
 		return {nullptr, ParamResult{YAFARAY_RESULT_ERROR_WHILE_CREATING}};
 	}
-	auto texture {std::make_unique<ThisClassType_t>(logger, param_result, param_map, scene.getImages(), image_id)};
+	auto texture {std::make_unique<ImageTexture>(logger, param_result, param_map, scene.getImages(), image_id)};
 	if(param_result.notOk()) logger.logWarning(param_result.print<ThisClassType_t>(name, {"type"}));
 	return {std::move(texture), param_result};
 }
 
 ImageTexture::ImageTexture(Logger &logger, ParamResult &param_result, const ParamMap &param_map, const Items<Image> &images, size_t image_id) : ParentClassType_t{logger, param_result, param_map}, params_{param_result, param_map}, image_id_{image_id}, images_{images}
 {
-	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + params_.getAsParamMap(true).print());
+	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + getAsParamMap(true).print());
 	const Image *image{images.getById(image_id_).first};
 	original_image_file_gamma_ = image->getGamma();
 	original_image_file_color_space_ = image->getColorSpace();

@@ -30,6 +30,19 @@
 
 namespace yafaray {
 
+std::map<std::string, const ParamMeta *> AreaLight::Params::getParamMetaMap()
+{
+	auto param_meta_map{ParentClassType_t::Params::getParamMetaMap()};
+	PARAM_META(corner_);
+	PARAM_META(point_1_);
+	PARAM_META(point_2_);
+	PARAM_META(color_);
+	PARAM_META(power_);
+	PARAM_META(samples_);
+	PARAM_META(object_name_);
+	return param_meta_map;
+}
+
 AreaLight::Params::Params(ParamResult &param_result, const ParamMap &param_map)
 {
 	PARAM_LOAD(corner_);
@@ -41,9 +54,10 @@ AreaLight::Params::Params(ParamResult &param_result, const ParamMap &param_map)
 	PARAM_LOAD(object_name_);
 }
 
-ParamMap AreaLight::Params::getAsParamMap(bool only_non_default) const
+ParamMap AreaLight::getAsParamMap(bool only_non_default) const
 {
-	PARAM_SAVE_START;
+	auto param_map{ParentClassType_t::getAsParamMap(only_non_default)};
+	param_map.setParam("type", type().print());
 	PARAM_SAVE(corner_);
 	PARAM_SAVE(point_1_);
 	PARAM_SAVE(point_2_);
@@ -51,20 +65,13 @@ ParamMap AreaLight::Params::getAsParamMap(bool only_non_default) const
 	PARAM_SAVE(power_);
 	PARAM_SAVE(samples_);
 	PARAM_SAVE(object_name_);
-	PARAM_SAVE_END;
-}
-
-ParamMap AreaLight::getAsParamMap(bool only_non_default) const
-{
-	ParamMap result{ParentClassType_t::getAsParamMap(only_non_default)};
-	result.append(params_.getAsParamMap(only_non_default));
-	return result;
+	return param_map;
 }
 
 std::pair<std::unique_ptr<Light>, ParamResult> AreaLight::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map)
 {
-	auto param_result{Params::meta_.check(param_map, {"type"}, {})};
-	auto light {std::make_unique<ThisClassType_t>(logger, param_result, param_map, scene.getLights())};
+	auto param_result{class_meta::check<Params>(param_map, {"type"}, {})};
+	auto light {std::make_unique<AreaLight>(logger, param_result, param_map, scene.getLights())};
 	if(param_result.notOk()) logger.logWarning(param_result.print<ThisClassType_t>(name, {"type"}));
 	return {std::move(light), param_result};
 }
@@ -72,7 +79,7 @@ std::pair<std::unique_ptr<Light>, ParamResult> AreaLight::factory(Logger &logger
 AreaLight::AreaLight(Logger &logger, ParamResult &param_result, const ParamMap &param_map, const Items<Light> &lights):
 		ParentClassType_t{logger, param_result, param_map, Flags::None, lights}, params_{param_result, param_map}
 {
-	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + params_.getAsParamMap(true).print());
+	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + getAsParamMap(true).print());
 }
 
 size_t AreaLight::init(const Scene &scene)

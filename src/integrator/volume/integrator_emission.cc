@@ -26,34 +26,34 @@
 
 namespace yafaray {
 
+std::map<std::string, const ParamMeta *> EmissionIntegrator::Params::getParamMetaMap()
+{
+	auto param_meta_map{ParentClassType_t::Params::getParamMetaMap()};
+	return param_meta_map;
+}
+
 EmissionIntegrator::Params::Params(ParamResult &param_result, const ParamMap &param_map)
 {
 }
 
-ParamMap EmissionIntegrator::Params::getAsParamMap(bool only_non_default) const
-{
-	PARAM_SAVE_START;
-	PARAM_SAVE_END;
-}
-
 ParamMap EmissionIntegrator::getAsParamMap(bool only_non_default) const
 {
-	ParamMap result{ParentClassType_t::getAsParamMap(only_non_default)};
-	result.append(params_.getAsParamMap(only_non_default));
-	return result;
+	auto param_map{ParentClassType_t::getAsParamMap(only_non_default)};
+	param_map.setParam("type", type().print());
+	return param_map;
 }
 
 std::pair<std::unique_ptr<VolumeIntegrator>, ParamResult> EmissionIntegrator::factory(Logger &logger, const ParamMap &param_map, const Items<VolumeRegion> &volume_regions)
 {
-	auto param_result{Params::meta_.check(param_map, {"type"}, {})};
-	auto integrator {std::make_unique<ThisClassType_t>(logger, param_result, param_map, volume_regions)};
+	auto param_result{class_meta::check<Params>(param_map, {"type"}, {})};
+	auto integrator {std::make_unique<EmissionIntegrator>(logger, param_result, param_map, volume_regions)};
 	if(param_result.notOk()) logger.logWarning(param_result.print<ThisClassType_t>(getClassName(), {"type"}));
 	return {std::move(integrator), param_result};
 }
 
 EmissionIntegrator::EmissionIntegrator(Logger &logger, ParamResult &param_result, const ParamMap &param_map, const Items<VolumeRegion> &volume_regions) : VolumeIntegrator(logger, param_result, param_map), params_{param_result, param_map}, volume_regions_{volume_regions}
 {
-	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + params_.getAsParamMap(true).print());
+	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + getAsParamMap(true).print());
 	//render_info_ += getClassName() + ": '" + params_.debug_type_.print() + "' | ";
 }
 

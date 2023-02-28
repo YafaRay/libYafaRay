@@ -49,6 +49,20 @@ namespace yafaray {
 #define BIDIR_DEBUG 0
 #define BIDIR_DO_LIGHTIMAGE 1
 
+std::map<std::string, const ParamMeta *> BidirectionalIntegrator::Params::getParamMetaMap()
+{
+	auto param_meta_map{ParentClassType_t::Params::getParamMetaMap()};
+	PARAM_META(transparent_shadows_);
+	PARAM_META(shadow_depth_);
+	PARAM_META(ao_);
+	PARAM_META(ao_samples_);
+	PARAM_META(ao_distance_);
+	PARAM_META(ao_color_);
+	PARAM_META(transparent_background_);
+	PARAM_META(transparent_background_refraction_);
+	return param_meta_map;
+}
+
 BidirectionalIntegrator::Params::Params(ParamResult &param_result, const ParamMap &param_map)
 {
 	PARAM_LOAD(transparent_shadows_);
@@ -61,9 +75,10 @@ BidirectionalIntegrator::Params::Params(ParamResult &param_result, const ParamMa
 	PARAM_LOAD(transparent_background_refraction_);
 }
 
-ParamMap BidirectionalIntegrator::Params::getAsParamMap(bool only_non_default) const
+ParamMap BidirectionalIntegrator::getAsParamMap(bool only_non_default) const
 {
-	PARAM_SAVE_START;
+	auto param_map{ParentClassType_t::getAsParamMap(only_non_default)};
+	param_map.setParam("type", type().print());
 	PARAM_SAVE(transparent_shadows_);
 	PARAM_SAVE(shadow_depth_);
 	PARAM_SAVE(ao_);
@@ -72,20 +87,13 @@ ParamMap BidirectionalIntegrator::Params::getAsParamMap(bool only_non_default) c
 	PARAM_SAVE(ao_color_);
 	PARAM_SAVE(transparent_background_);
 	PARAM_SAVE(transparent_background_refraction_);
-	PARAM_SAVE_END;
-}
-
-ParamMap BidirectionalIntegrator::getAsParamMap(bool only_non_default) const
-{
-	ParamMap result{ParentClassType_t::getAsParamMap(only_non_default)};
-	result.append(params_.getAsParamMap(only_non_default));
-	return result;
+	return param_map;
 }
 
 std::pair<std::unique_ptr<SurfaceIntegrator>, ParamResult> BidirectionalIntegrator::factory(Logger &logger, RenderControl &render_control, const std::string &name, const ParamMap &param_map)
 {
-	auto param_result{Params::meta_.check(param_map, {"type"}, {})};
-	auto integrator {std::make_unique<ThisClassType_t>(render_control, logger, param_result, name, param_map)};
+	auto param_result{class_meta::check<Params>(param_map, {"type"}, {})};
+	auto integrator {std::make_unique<BidirectionalIntegrator>(render_control, logger, param_result, name, param_map)};
 	if(param_result.notOk()) logger.logWarning(param_result.print<ThisClassType_t>(getClassName(), {"type"}));
 	return {std::move(integrator), param_result};
 }
@@ -187,7 +195,7 @@ BidirectionalIntegrator::PathData::PathData()
 
 BidirectionalIntegrator::BidirectionalIntegrator(RenderControl &render_control, Logger &logger, ParamResult &param_result, const std::string &name, const ParamMap &param_map) : ParentClassType_t{render_control, logger, param_result, name, param_map}, params_{param_result, param_map}
 {
-	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + params_.getAsParamMap(true).print());
+	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + getAsParamMap(true).print());
 }
 
 bool BidirectionalIntegrator::preprocess(FastRandom &fast_random, ImageFilm *image_film, const Scene &scene, const Renderer &renderer)

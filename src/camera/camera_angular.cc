@@ -26,6 +26,17 @@
 
 namespace yafaray {
 
+std::map<std::string, const ParamMeta *> AngularCamera::Params::getParamMetaMap()
+{
+	auto param_meta_map{ParentClassType_t::Params::getParamMetaMap()};
+	PARAM_META(angle_degrees_);
+	PARAM_META(max_angle_degrees_);
+	PARAM_META(circular_);
+	PARAM_META(mirrored_);
+	PARAM_META(projection_);
+	return param_meta_map;
+}
+
 AngularCamera::Params::Params(ParamResult &param_result, const ParamMap &param_map)
 {
 	PARAM_LOAD(angle_degrees_);
@@ -36,27 +47,21 @@ AngularCamera::Params::Params(ParamResult &param_result, const ParamMap &param_m
 	PARAM_ENUM_LOAD(projection_);
 }
 
-ParamMap AngularCamera::Params::getAsParamMap(bool only_non_default) const
+ParamMap AngularCamera::getAsParamMap(bool only_non_default) const
 {
-	PARAM_SAVE_START;
+	auto param_map{ParentClassType_t::getAsParamMap(only_non_default)};
+	param_map.setParam("type", type().print());
 	PARAM_SAVE(angle_degrees_);
 	PARAM_SAVE(max_angle_degrees_);
 	PARAM_SAVE(circular_);
 	PARAM_SAVE(mirrored_);
 	PARAM_ENUM_SAVE(projection_);
-	PARAM_SAVE_END;
-}
-
-ParamMap AngularCamera::getAsParamMap(bool only_non_default) const
-{
-	ParamMap result{ParentClassType_t::getAsParamMap(only_non_default)};
-	result.append(params_.getAsParamMap(only_non_default));
-	return result;
+	return param_map;
 }
 
 std::pair<std::unique_ptr<Camera>, ParamResult> AngularCamera::factory(Logger &logger, const std::string &name, const ParamMap &param_map)
 {
-	auto param_result{Params::meta_.check(param_map, {"type"}, {})};
+	auto param_result{class_meta::check<Params>(param_map, {"type"}, {})};
 	auto camera {std::make_unique<AngularCamera>(logger, param_result, param_map)};
 	if(param_result.notOk()) logger.logWarning(param_result.print<ThisClassType_t>(name, {"type"}));
 	return {std::move(camera), param_result};
@@ -65,7 +70,7 @@ std::pair<std::unique_ptr<Camera>, ParamResult> AngularCamera::factory(Logger &l
 AngularCamera::AngularCamera(Logger &logger, ParamResult &param_result, const ParamMap &param_map) :
 ParentClassType_t{logger, param_result, param_map}, params_{param_result, param_map}, angle_{params_.angle_degrees_ * math::div_pi_by_180<>}, max_radius_{params_.max_angle_degrees_ / params_.angle_degrees_}
 {
-	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + params_.getAsParamMap(true).print());
+	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + getAsParamMap(true).print());
 	if(params_.mirrored_) vright_ = -vright_;
 	// Initialize camera specific plane coordinates
 	setAxis(cam_x_, cam_y_, cam_z_);

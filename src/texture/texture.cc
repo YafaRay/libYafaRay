@@ -31,6 +31,25 @@
 
 namespace yafaray {
 
+std::map<std::string, const ParamMeta *> Texture::Params::getParamMetaMap()
+{
+	std::map<std::string, const ParamMeta *> param_meta_map;
+	PARAM_META(adj_mult_factor_red_);
+	PARAM_META(adj_mult_factor_green_);
+	PARAM_META(adj_mult_factor_blue_);
+	PARAM_META(adj_intensity_);
+	PARAM_META(adj_contrast_);
+	PARAM_META(adj_saturation_);
+	PARAM_META(adj_hue_degrees_);
+	PARAM_META(adj_clamp_);
+	PARAM_META(interpolation_type_);
+	PARAM_META(ramp_num_items_);
+	PARAM_META(ramp_color_mode_);
+	PARAM_META(ramp_interpolation_);
+	PARAM_META(ramp_hue_interpolation_);
+	return param_meta_map;
+}
+
 Texture::Params::Params(ParamResult &param_result, const ParamMap &param_map)
 {
 	PARAM_LOAD(adj_mult_factor_red_);
@@ -48,9 +67,9 @@ Texture::Params::Params(ParamResult &param_result, const ParamMap &param_map)
 	PARAM_ENUM_LOAD(ramp_hue_interpolation_);
 }
 
-ParamMap Texture::Params::getAsParamMap(bool only_non_default) const
+ParamMap Texture::getAsParamMap(bool only_non_default) const
 {
-	PARAM_SAVE_START;
+	ParamMap param_map;
 	PARAM_SAVE(adj_mult_factor_red_);
 	PARAM_SAVE(adj_mult_factor_green_);
 	PARAM_SAVE(adj_mult_factor_blue_);
@@ -64,33 +83,30 @@ ParamMap Texture::Params::getAsParamMap(bool only_non_default) const
 	PARAM_ENUM_SAVE(ramp_color_mode_);
 	PARAM_ENUM_SAVE(ramp_interpolation_);
 	PARAM_ENUM_SAVE(ramp_hue_interpolation_);
-	PARAM_SAVE_END;
-}
-
-ParamMap Texture::getAsParamMap(bool only_non_default) const
-{
-	ParamMap result{params_.getAsParamMap(only_non_default)};
-	result.setParam("type", type().print());
-	const std::vector<ColorRampItem> &ramp_items{color_ramp_->getRamp()};
-	for(size_t i = 0; i < ramp_items.size(); ++i)
+	if(color_ramp_)
 	{
-		std::stringstream param_name;
-		param_name << "ramp_item_" << i << "_color";
-		result.setParam(param_name.str(), ramp_items[i].color());
-		param_name.str("");
-		param_name.clear();
+		const std::vector<ColorRampItem> &ramp_items{color_ramp_->getRamp()};
+		for(size_t i = 0; i < ramp_items.size(); ++i)
+		{
+			std::stringstream param_name;
+			param_name << "ramp_item_" << i << "_color";
+			param_map.setParam(param_name.str(), ramp_items[i].color());
+			param_name.str("");
+			param_name.clear();
 
-		param_name << "ramp_item_" << i << "_position";
-		result.setParam(param_name.str(), ramp_items[i].position());
-		param_name.str("");
-		param_name.clear();
+			param_name << "ramp_item_" << i << "_position";
+			param_map.setParam(param_name.str(), ramp_items[i].position());
+			param_name.str("");
+			param_name.clear();
+		}
 	}
-	return result;
+	return param_map;
 }
 
 std::pair<std::unique_ptr<Texture>, ParamResult> Texture::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map)
 {
-	const Type type{ClassMeta::preprocessParamMap<Type>(logger, getClassName(), param_map)};
+	if(logger.isDebug()) logger.logDebug("** " + getClassName() + "::factory 'raw' ParamMap contents:\n" + param_map.logContents());
+	const auto type{class_meta::getTypeFromParamMap<Type>(logger, getClassName(), param_map)};
 	switch(type.value())
 	{
 		case Type::Blend: return BlendTexture::factory(logger, scene, name, param_map);

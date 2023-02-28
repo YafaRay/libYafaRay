@@ -25,34 +25,34 @@ namespace yafaray {
 /* even simpler RGB cube, goes r in x, g in y and b in z inside the unit cube.  */
 //-----------------------------------------------------------------------------------------
 
+std::map<std::string, const ParamMeta *> RgbCubeTexture::Params::getParamMetaMap()
+{
+	auto param_meta_map{ParentClassType_t::Params::getParamMetaMap()};
+	return param_meta_map;
+}
+
 RgbCubeTexture::Params::Params(ParamResult &param_result, const ParamMap &param_map)
 {
 }
 
-ParamMap RgbCubeTexture::Params::getAsParamMap(bool only_non_default) const
-{
-	PARAM_SAVE_START;
-	PARAM_SAVE_END;
-}
-
 ParamMap RgbCubeTexture::getAsParamMap(bool only_non_default) const
 {
-	ParamMap result{ParentClassType_t::getAsParamMap(only_non_default)};
-	result.append(params_.getAsParamMap(only_non_default));
-	return result;
+	auto param_map{ParentClassType_t::getAsParamMap(only_non_default)};
+	param_map.setParam("type", type().print());
+	return param_map;
 }
 
 std::pair<std::unique_ptr<Texture>, ParamResult> RgbCubeTexture::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map)
 {
-	auto param_result{Params::meta_.check(param_map, {"type"}, {"ramp_item_"})};
-	auto texture {std::make_unique<ThisClassType_t>(logger, param_result, param_map)};
+	auto param_result{class_meta::check<Params>(param_map, {"type"}, {"ramp_item_"})};
+	auto texture {std::make_unique<RgbCubeTexture>(logger, param_result, param_map)};
 	if(param_result.notOk()) logger.logWarning(param_result.print<ThisClassType_t>(name, {"type"}));
 	return {std::move(texture), param_result};
 }
 
 RgbCubeTexture::RgbCubeTexture(Logger &logger, ParamResult &param_result, const ParamMap &param_map) : ParentClassType_t{logger, param_result, param_map}, params_{param_result, param_map}
 {
-	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + params_.getAsParamMap(true).print());
+	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + getAsParamMap(true).print());
 }
 
 Rgba RgbCubeTexture::getColor(const Point3f &p, const MipMapParams *mipmap_params) const

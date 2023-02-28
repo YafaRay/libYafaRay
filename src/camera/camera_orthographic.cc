@@ -26,28 +26,29 @@
 
 namespace yafaray {
 
+std::map<std::string, const ParamMeta *> OrthographicCamera::Params::getParamMetaMap()
+{
+	auto param_meta_map{ParentClassType_t::Params::getParamMetaMap()};
+	PARAM_META(scale_);
+	return param_meta_map;
+}
+
 OrthographicCamera::Params::Params(ParamResult &param_result, const ParamMap &param_map)
 {
 	PARAM_LOAD(scale_);
 }
 
-ParamMap OrthographicCamera::Params::getAsParamMap(bool only_non_default) const
-{
-	PARAM_SAVE_START;
-	PARAM_SAVE(scale_);
-	PARAM_SAVE_END;
-}
-
 ParamMap OrthographicCamera::getAsParamMap(bool only_non_default) const
 {
-	ParamMap result{ParentClassType_t::getAsParamMap(only_non_default)};
-	result.append(params_.getAsParamMap(only_non_default));
-	return result;
+	auto param_map{ParentClassType_t::getAsParamMap(only_non_default)};
+	param_map.setParam("type", type().print());
+	PARAM_SAVE(scale_);
+	return param_map;
 }
 
 std::pair<std::unique_ptr<Camera>, ParamResult> OrthographicCamera::factory(Logger &logger, const std::string &name, const ParamMap &param_map)
 {
-	auto param_result{Params::meta_.check(param_map, {"type"}, {})};
+	auto param_result{class_meta::check<Params>(param_map, {"type"}, {})};
 	auto camera {std::make_unique<OrthographicCamera>(logger, param_result, param_map)};
 	if(param_result.notOk()) logger.logWarning(param_result.print<ThisClassType_t>(name, {"type"}));
 	return {std::move(camera), param_result};
@@ -55,7 +56,7 @@ std::pair<std::unique_ptr<Camera>, ParamResult> OrthographicCamera::factory(Logg
 
 OrthographicCamera::OrthographicCamera(Logger &logger, ParamResult &param_result, const ParamMap &param_map) : ParentClassType_t{logger, param_result, param_map}, params_{param_result, param_map}
 {
-	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + params_.getAsParamMap(true).print());
+	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + getAsParamMap(true).print());
 	// Initialize camera specific plane coordinates
 	setAxis(cam_x_, cam_y_, cam_z_);
 }

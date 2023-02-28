@@ -31,7 +31,7 @@ class SkyVolumeRegion final : public VolumeRegion
 	public:
 		inline static std::string getClassName() { return "SkyVolumeRegion"; }
 		static std::pair<std::unique_ptr<VolumeRegion>, ParamResult> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map);
-		static std::string printMeta(const std::vector<std::string> &excluded_params) { return Params::meta_.print(excluded_params); }
+		static std::string printMeta(const std::vector<std::string> &excluded_params) { return class_meta::print<Params>(excluded_params); }
 		[[nodiscard]] ParamMap getAsParamMap(bool only_non_default) const override;
 		SkyVolumeRegion(Logger &logger, ParamResult &param_result, const ParamMap &param_map);
 
@@ -39,7 +39,8 @@ class SkyVolumeRegion final : public VolumeRegion
 		[[nodiscard]] Type type() const override { return Type::Sky; }
 		const struct Params
 		{
-			PARAM_INIT_PARENT(ParentClassType_t);
+			Params(ParamResult &param_result, const ParamMap &param_map);
+			static std::map<std::string, const ParamMeta *> getParamMetaMap();
 			//FIXME DAVID: in SkyVolume some parameters from VolumeRegion are NOT used: s_a_ = Rgb(0.f); s_s_ = Rgb(0.f); g_ = 0.f;
 		} params_;
 		float p(const Vec3f &w_l, const Vec3f &w_s) const override;

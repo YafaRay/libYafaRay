@@ -32,6 +32,15 @@
 
 namespace yafaray {
 
+std::map<std::string, const ParamMeta *> BackgroundLight::Params::getParamMetaMap()
+{
+	auto param_meta_map{ParentClassType_t::Params::getParamMetaMap()};
+	PARAM_META(samples_);
+	PARAM_META(abs_intersect_);
+	PARAM_META(ibl_clamp_sampling_);
+	return param_meta_map;
+}
+
 BackgroundLight::Params::Params(ParamResult &param_result, const ParamMap &param_map)
 {
 	PARAM_LOAD(samples_);
@@ -39,26 +48,20 @@ BackgroundLight::Params::Params(ParamResult &param_result, const ParamMap &param
 	PARAM_LOAD(ibl_clamp_sampling_);
 }
 
-ParamMap BackgroundLight::Params::getAsParamMap(bool only_non_default) const
+ParamMap BackgroundLight::getAsParamMap(bool only_non_default) const
 {
-	PARAM_SAVE_START;
+	auto param_map{ParentClassType_t::getAsParamMap(only_non_default)};
+	param_map.setParam("type", type().print());
 	PARAM_SAVE(samples_);
 	PARAM_SAVE(abs_intersect_);
 	PARAM_SAVE(ibl_clamp_sampling_);
-	PARAM_SAVE_END;
-}
-
-ParamMap BackgroundLight::getAsParamMap(bool only_non_default) const
-{
-	ParamMap result{ParentClassType_t::getAsParamMap(only_non_default)};
-	result.append(params_.getAsParamMap(only_non_default));
-	return result;
+	return param_map;
 }
 
 std::pair<std::unique_ptr<Light>, ParamResult> BackgroundLight::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map)
 {
-	auto param_result{Params::meta_.check(param_map, {"type"}, {})};
-	auto light {std::make_unique<ThisClassType_t>(logger, param_result, param_map, scene.getLights())};
+	auto param_result{class_meta::check<Params>(param_map, {"type"}, {})};
+	auto light {std::make_unique<BackgroundLight>(logger, param_result, param_map, scene.getLights())};
 	if(param_result.notOk()) logger.logWarning(param_result.print<ThisClassType_t>(name, {"type"}));
 	return {std::move(light), param_result};
 }
@@ -66,7 +69,7 @@ std::pair<std::unique_ptr<Light>, ParamResult> BackgroundLight::factory(Logger &
 BackgroundLight::BackgroundLight(Logger &logger, ParamResult &param_result, const ParamMap &param_map, const Items<Light> &lights):
 		ParentClassType_t{logger, param_result, param_map, Flags::None, lights}, params_{param_result, param_map}
 {
-	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + params_.getAsParamMap(true).print());
+	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + getAsParamMap(true).print());
 }
 
 size_t BackgroundLight::init(const Scene &scene)

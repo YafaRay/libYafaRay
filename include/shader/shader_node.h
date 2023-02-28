@@ -52,6 +52,7 @@ class ShaderNode
 		ShaderNode(Logger &logger, ParamResult &param_result, const ParamMap &param_map);
 		virtual ~ShaderNode() = default;
 		unsigned int getId() const { return id_; }
+		std::string getName() const { return params_.name_; }
 		void setId(unsigned int id) const { id_ = id; } //It is set as "const" but it actually modifies the (mutable) id_
 		/*! evaluate the shader for given surface point; result has to be put on node_tree_data (using node_tree_data[ID]).
 			i know, could've passed const node_tree_data and have nodeResult_t return val, but this should be marginally
@@ -94,7 +95,8 @@ class ShaderNode
 		};
 		const struct Params
 		{
-			PARAM_INIT;
+			Params(ParamResult &param_result, const ParamMap &param_map);
+			static std::map<std::string, const ParamMeta *> getParamMetaMap();
 			PARAM_DECL(std::string, name_, "", "name", "Name of the shader node");
 			PARAM_DECL(std::string, element_, "shader_node", "element", "The element parameter in shader nodes must be set to 'shader node'");
 		} params_;

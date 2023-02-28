@@ -31,7 +31,7 @@ class LayerNode final : public ShaderNode
 	public:
 		inline static std::string getClassName() { return "LayerNode"; }
 		static std::pair<std::unique_ptr<ShaderNode>, ParamResult> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map);
-		static std::string printMeta(const std::vector<std::string> &excluded_params) { return Params::meta_.print(excluded_params); }
+		static std::string printMeta(const std::vector<std::string> &excluded_params) { return class_meta::print<Params>(excluded_params); }
 		[[nodiscard]] ParamMap getAsParamMap(bool only_non_default) const override;
 		LayerNode(Logger &logger, ParamResult &param_result, const ParamMap &param_map);
 
@@ -67,7 +67,8 @@ class LayerNode final : public ShaderNode
 		[[nodiscard]] Type type() const override { return Type::Layer; }
 		const struct Params
 		{
-			PARAM_INIT_PARENT(ParentClassType_t);
+			Params(ParamResult &param_result, const ParamMap &param_map);
+			static std::map<std::string, const ParamMeta *> getParamMetaMap();
 			PARAM_DECL(std::string, input_, "", "input", "");
 			PARAM_DECL(std::string, upper_layer_, "", "upper_layer", "");
 			PARAM_DECL(Rgba, upper_color_, Rgba{0.f}, "upper_color", "");

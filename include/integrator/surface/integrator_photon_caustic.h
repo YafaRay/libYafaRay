@@ -48,12 +48,13 @@ class CausticPhotonIntegrator: public MonteCarloIntegrator
 
 	public:
 		inline static std::string getClassName() { return "CausticPhotonIntegrator"; }
-		static std::string printMeta(const std::vector<std::string> &excluded_params) { return Params::meta_.print(excluded_params); }
+		static std::string printMeta(const std::vector<std::string> &excluded_params) { return class_meta::print<Params>(excluded_params); }
 
 	protected:
 		const struct Params
 		{
-			PARAM_INIT_PARENT(ParentClassType_t);
+			Params(ParamResult &param_result, const ParamMap &param_map);
+			static std::map<std::string, const ParamMeta *> getParamMetaMap();
 			PARAM_DECL(bool, use_photon_caustics_, false, "caustics", "Use photon caustics");
 			PARAM_DECL(int, n_caus_photons_, 500000, "caustic_photons", "Number of caustic photons to be shoot but it should be the target");
 			PARAM_DECL(int, n_caus_search_, 50, "caustic_mix", "Amount of caustic photons to be gathered in estimation");

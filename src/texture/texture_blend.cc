@@ -21,31 +21,33 @@
 
 namespace yafaray {
 
+std::map<std::string, const ParamMeta *> BlendTexture::Params::getParamMetaMap()
+{
+	auto param_meta_map{ParentClassType_t::Params::getParamMetaMap()};
+	PARAM_META(blend_type_);
+	PARAM_META(use_flip_axis_);
+	return param_meta_map;
+}
+
 BlendTexture::Params::Params(ParamResult &param_result, const ParamMap &param_map)
 {
 	PARAM_ENUM_LOAD(blend_type_);
 	PARAM_LOAD(use_flip_axis_);
 }
 
-ParamMap BlendTexture::Params::getAsParamMap(bool only_non_default) const
-{
-	PARAM_SAVE_START;
-	PARAM_ENUM_SAVE(blend_type_);
-	PARAM_SAVE(use_flip_axis_);
-	PARAM_SAVE_END;
-}
-
 ParamMap BlendTexture::getAsParamMap(bool only_non_default) const
 {
-	ParamMap result{ParentClassType_t::getAsParamMap(only_non_default)};
-	result.append(params_.getAsParamMap(only_non_default));
-	return result;
+	auto param_map{ParentClassType_t::getAsParamMap(only_non_default)};
+	param_map.setParam("type", type().print());
+	PARAM_ENUM_SAVE(blend_type_);
+	PARAM_SAVE(use_flip_axis_);
+	return param_map;
 }
 
 std::pair<std::unique_ptr<Texture>, ParamResult> BlendTexture::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map)
 {
-	auto param_result{Params::meta_.check(param_map, {"type"}, {"ramp_item_"})};
-	auto texture {std::make_unique<ThisClassType_t>(logger, param_result, param_map)};
+	auto param_result{class_meta::check<Params>(param_map, {"type"}, {"ramp_item_"})};
+	auto texture {std::make_unique<BlendTexture>(logger, param_result, param_map)};
 	if(param_result.notOk()) logger.logWarning(param_result.print<ThisClassType_t>(name, {"type"}));
 	return {std::move(texture), param_result};
 }
@@ -53,7 +55,7 @@ std::pair<std::unique_ptr<Texture>, ParamResult> BlendTexture::factory(Logger &l
 BlendTexture::BlendTexture(Logger &logger, ParamResult &param_result, const ParamMap &param_map) : ParentClassType_t{logger, param_result, param_map},
 																								  params_{param_result, param_map}
 {
-	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + params_.getAsParamMap(true).print());
+	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + getAsParamMap(true).print());
 }
 
 float BlendTexture::getFloat(const Point3f &p, const MipMapParams *mipmap_params) const

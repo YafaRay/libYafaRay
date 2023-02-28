@@ -52,7 +52,7 @@ class Image
 		void setId(size_t id) { id_ = id; }
 		[[nodiscard]] size_t getId() const { return id_; }
 		static std::pair<std::unique_ptr<Image>, ParamResult> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map);
-		static std::string printMeta(const std::vector<std::string> &excluded_params) { return Params::meta_.print(excluded_params); }
+		static std::string printMeta(const std::vector<std::string> &excluded_params) { return class_meta::print<Params>(excluded_params); }
 		struct Type : public Enum<Type>
 		{
 			using Enum::Enum;
@@ -88,7 +88,9 @@ class Image
 		};
 		const struct Params
 		{
-			PARAM_INIT;
+			Params() = default;
+			Params(ParamResult &param_result, const ParamMap &param_map);
+			static std::map<std::string, const ParamMeta *> getParamMetaMap();
 			PARAM_DECL(std::string, filename_, "", "filename", "File path when loading the image from a file. Leave blank when creating a new image from RAM");
 			PARAM_ENUM_DECL(Type, type_, Type::None, "type", getClassName() + " type (overriden by the loaded image type if '" + filename_meta_.name() + "' is used)");
 			PARAM_ENUM_DECL(ColorSpace, color_space_, ColorSpace::Srgb, "color_space", "");

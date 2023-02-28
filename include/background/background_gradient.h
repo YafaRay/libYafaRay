@@ -34,7 +34,7 @@ class GradientBackground final : public Background
 	public:
 		inline static std::string getClassName() { return "GradientBackground"; }
 		static std::pair<std::unique_ptr<Background>, ParamResult> factory(Logger &logger, const std::string &name, const ParamMap &params);
-		static std::string printMeta(const std::vector<std::string> &excluded_params) { return Params::meta_.print(excluded_params); }
+		static std::string printMeta(const std::vector<std::string> &excluded_params) { return class_meta::print<Params>(excluded_params); }
 		GradientBackground(Logger &logger, ParamResult &param_result, const ParamMap &param_map);
 		std::vector<std::pair<std::string, ParamMap>> getRequestedIblLights() const override;
 
@@ -42,7 +42,8 @@ class GradientBackground final : public Background
 		[[nodiscard]] Type type() const override { return Type::Gradient; }
 		const struct Params
 		{
-			PARAM_INIT_PARENT(ParentClassType_t);
+			Params(ParamResult &param_result, const ParamMap &param_map);
+			static std::map<std::string, const ParamMeta *> getParamMetaMap();
 			PARAM_DECL(Rgb, horizon_color_, Rgb{1.f}, "horizon_color", "");
 			PARAM_DECL(Rgb, zenith_color_, (Rgb{0.4f, 0.5f, 1.f}), "zenith_color", "");
 			PARAM_DECL(Rgb, horizon_ground_color_, Rgb{0.f}, "horizon_ground_color", "");

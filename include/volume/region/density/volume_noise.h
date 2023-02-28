@@ -34,7 +34,7 @@ class NoiseVolumeRegion final : public DensityVolumeRegion
 	public:
 		inline static std::string getClassName() { return "NoiseVolumeRegion"; }
 		static std::pair<std::unique_ptr<VolumeRegion>, ParamResult> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map);
-		static std::string printMeta(const std::vector<std::string> &excluded_params) { return Params::meta_.print(excluded_params); }
+		static std::string printMeta(const std::vector<std::string> &excluded_params) { return class_meta::print<Params>(excluded_params); }
 		[[nodiscard]] ParamMap getAsParamMap(bool only_non_default) const override;
 		NoiseVolumeRegion(Logger &logger, ParamResult &param_result, const ParamMap &param_map, const Items<Texture> &textures, size_t texture_id);
 
@@ -42,7 +42,8 @@ class NoiseVolumeRegion final : public DensityVolumeRegion
 		[[nodiscard]] Type type() const override { return Type::Noise; }
 		const struct Params
 		{
-			PARAM_INIT_PARENT(ParentClassType_t);
+			Params(ParamResult &param_result, const ParamMap &param_map);
+			static std::map<std::string, const ParamMeta *> getParamMetaMap();
 			PARAM_DECL(float, sharpness_, 1.f, "sharpness", "");
 			PARAM_DECL(float, density_, 1.f, "density", "");
 			PARAM_DECL(float, cover_, 1.f, "cover", "");

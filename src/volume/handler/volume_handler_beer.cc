@@ -24,31 +24,33 @@
 
 namespace yafaray {
 
+std::map<std::string, const ParamMeta *> BeerVolumeHandler::Params::getParamMetaMap()
+{
+	auto param_meta_map{ParentClassType_t::Params::getParamMetaMap()};
+	PARAM_META(absorption_col_);
+	PARAM_META(absorption_dist_);
+	return param_meta_map;
+}
+
 BeerVolumeHandler::Params::Params(ParamResult &param_result, const ParamMap &param_map)
 {
 	PARAM_LOAD(absorption_col_);
 	PARAM_LOAD(absorption_dist_);
 }
 
-ParamMap BeerVolumeHandler::Params::getAsParamMap(bool only_non_default) const
-{
-	PARAM_SAVE_START;
-	PARAM_SAVE(absorption_col_);
-	PARAM_SAVE(absorption_dist_);
-	PARAM_SAVE_END;
-}
-
 ParamMap BeerVolumeHandler::getAsParamMap(bool only_non_default) const
 {
-	ParamMap result{ParentClassType_t::getAsParamMap(only_non_default)};
-	result.append(params_.getAsParamMap(only_non_default));
-	return result;
+	auto param_map{ParentClassType_t::getAsParamMap(only_non_default)};
+	param_map.setParam("type", type().print());
+	PARAM_SAVE(absorption_col_);
+	PARAM_SAVE(absorption_dist_);
+	return param_map;
 }
 
 std::pair<std::unique_ptr<VolumeHandler>, ParamResult> BeerVolumeHandler::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map)
 {
-	auto param_result{Params::meta_.check(param_map, {"type"}, {})};
-	auto volume_handler {std::make_unique<ThisClassType_t>(logger, param_result, param_map)};
+	auto param_result{class_meta::check<Params>(param_map, {"type"}, {})};
+	auto volume_handler {std::make_unique<BeerVolumeHandler>(logger, param_result, param_map)};
 	if(param_result.notOk()) logger.logWarning(param_result.print<ThisClassType_t>(name, {"type"}));
 	return {std::move(volume_handler), param_result};
 }
@@ -56,7 +58,7 @@ std::pair<std::unique_ptr<VolumeHandler>, ParamResult> BeerVolumeHandler::factor
 BeerVolumeHandler::BeerVolumeHandler(Logger &logger, ParamResult &param_result, const ParamMap &param_map) :
 		ParentClassType_t{logger, param_result, param_map}, params_{param_result, param_map}
 {
-	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + params_.getAsParamMap(true).print());
+	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + getAsParamMap(true).print());
 	const float maxlog = math::log(1e38f);
 	sigma_a_.r_ = (params_.absorption_col_.r_ > 1e-38f) ? -math::log(params_.absorption_col_.r_) : maxlog;
 	sigma_a_.g_ = (params_.absorption_col_.g_ > 1e-38f) ? -math::log(params_.absorption_col_.g_) : maxlog;

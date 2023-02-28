@@ -25,26 +25,25 @@
 
 namespace yafaray {
 
+std::map<std::string, const ParamMeta *> Accelerator::Params::getParamMetaMap()
+{
+	return {};
+}
+
 Accelerator::Params::Params(ParamResult &param_result, const ParamMap &param_map)
 {
 }
 
-ParamMap Accelerator::Params::getAsParamMap(bool only_non_default) const
-{
-	PARAM_SAVE_START;
-	PARAM_SAVE_END;
-}
-
 ParamMap Accelerator::getAsParamMap(bool only_non_default) const
 {
-	ParamMap result{params_.getAsParamMap(only_non_default)};
-	result.setParam("type", type().print());
-	return result;
+	ParamMap param_map;
+	return param_map;
 }
 
 std::pair<std::unique_ptr<Accelerator>, ParamResult> Accelerator::factory(Logger &logger, const std::vector<const Primitive *> &primitives_list, const ParamMap &param_map)
 {
-	const Type type{ClassMeta::preprocessParamMap<Type>(logger, getClassName(), param_map)};
+	if(logger.isDebug()) logger.logDebug("** " + getClassName() + "::factory 'raw' ParamMap contents:\n" + param_map.logContents());
+	const auto type{class_meta::getTypeFromParamMap<Type>(logger, getClassName(), param_map)};
 	switch(type.value())
 	{
 		case Type::SimpleTest: return AcceleratorSimpleTest::factory(logger, primitives_list, param_map);

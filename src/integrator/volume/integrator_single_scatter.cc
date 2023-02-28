@@ -28,6 +28,15 @@
 
 namespace yafaray {
 
+std::map<std::string, const ParamMeta *> SingleScatterIntegrator::Params::getParamMetaMap()
+{
+	auto param_meta_map{ParentClassType_t::Params::getParamMetaMap()};
+	PARAM_META(step_size_);
+	PARAM_META(adaptive_);
+	PARAM_META(optimize_);
+	return param_meta_map;
+}
+
 SingleScatterIntegrator::Params::Params(ParamResult &param_result, const ParamMap &param_map)
 {
 	PARAM_LOAD(step_size_);
@@ -35,33 +44,27 @@ SingleScatterIntegrator::Params::Params(ParamResult &param_result, const ParamMa
 	PARAM_LOAD(optimize_);
 }
 
-ParamMap SingleScatterIntegrator::Params::getAsParamMap(bool only_non_default) const
+ParamMap SingleScatterIntegrator::getAsParamMap(bool only_non_default) const
 {
-	PARAM_SAVE_START;
+	auto param_map{ParentClassType_t::getAsParamMap(only_non_default)};
+	param_map.setParam("type", type().print());
 	PARAM_SAVE(step_size_);
 	PARAM_SAVE(adaptive_);
 	PARAM_SAVE(optimize_);
-	PARAM_SAVE_END;
-}
-
-ParamMap SingleScatterIntegrator::getAsParamMap(bool only_non_default) const
-{
-	ParamMap result{ParentClassType_t::getAsParamMap(only_non_default)};
-	result.append(params_.getAsParamMap(only_non_default));
-	return result;
+	return param_map;
 }
 
 std::pair<std::unique_ptr<VolumeIntegrator>, ParamResult> SingleScatterIntegrator::factory(Logger &logger, const ParamMap &param_map, const Items<VolumeRegion> &volume_regions)
 {
-	auto param_result{Params::meta_.check(param_map, {"type"}, {})};
-	auto integrator {std::make_unique<ThisClassType_t>(logger, param_result, param_map, volume_regions)};
+	auto param_result{class_meta::check<Params>(param_map, {"type"}, {})};
+	auto integrator {std::make_unique<SingleScatterIntegrator>(logger, param_result, param_map, volume_regions)};
 	if(param_result.notOk()) logger.logWarning(param_result.print<ThisClassType_t>(getClassName(), {"type"}));
 	return {std::move(integrator), param_result};
 }
 
 SingleScatterIntegrator::SingleScatterIntegrator(Logger &logger, ParamResult &param_result, const ParamMap &param_map, const Items<VolumeRegion> &volume_regions) : VolumeIntegrator(logger, param_result, param_map), params_{param_result, param_map}, volume_regions_{volume_regions}
 {
-	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + params_.getAsParamMap(true).print());
+	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + getAsParamMap(true).print());
 	logger_.logParams("SingleScatter: stepSize: ", params_.step_size_, " adaptive: ", params_.adaptive_, " optimize: ", params_.optimize_);
 }
 

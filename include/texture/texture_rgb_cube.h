@@ -35,7 +35,7 @@ class RgbCubeTexture final : public Texture
 	public:
 		inline static std::string getClassName() { return "RgbCubeTexture"; }
 		static std::pair<std::unique_ptr<Texture>, ParamResult> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params);
-		static std::string printMeta(const std::vector<std::string> &excluded_params) { return Params::meta_.print(excluded_params); }
+		static std::string printMeta(const std::vector<std::string> &excluded_params) { return class_meta::print<Params>(excluded_params); }
 		[[nodiscard]] ParamMap getAsParamMap(bool only_non_default) const override;
 		explicit RgbCubeTexture(Logger &logger, ParamResult &param_result, const ParamMap &param_map);
 
@@ -43,7 +43,8 @@ class RgbCubeTexture final : public Texture
 		[[nodiscard]] Type type() const override { return Type::RgbCube; }
 		const struct Params
 		{
-			PARAM_INIT_PARENT(ParentClassType_t);
+			Params(ParamResult &param_result, const ParamMap &param_map);
+			static std::map<std::string, const ParamMeta *> getParamMetaMap();
 		} params_;
 		Rgba getColor(const Point3f &p, const MipMapParams *mipmap_params) const override;
 		float getFloat(const Point3f &p, const MipMapParams *mipmap_params) const override;

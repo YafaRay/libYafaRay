@@ -34,6 +34,17 @@
 
 namespace yafaray {
 
+std::map<std::string, const ParamMeta *> Light::Params::getParamMetaMap()
+{
+	std::map<std::string, const ParamMeta *> param_meta_map;
+	PARAM_META(light_enabled_);
+	PARAM_META(cast_shadows_);
+	PARAM_META(shoot_caustic_);
+	PARAM_META(shoot_diffuse_);
+	PARAM_META(photon_only_);
+	return param_meta_map;
+}
+
 Light::Params::Params(ParamResult &param_result, const ParamMap &param_map)
 {
 	PARAM_LOAD(light_enabled_);
@@ -43,27 +54,21 @@ Light::Params::Params(ParamResult &param_result, const ParamMap &param_map)
 	PARAM_LOAD(photon_only_);
 }
 
-ParamMap Light::Params::getAsParamMap(bool only_non_default) const
+ParamMap Light::getAsParamMap(bool only_non_default) const
 {
-	PARAM_SAVE_START;
+	ParamMap param_map;
 	PARAM_SAVE(light_enabled_);
 	PARAM_SAVE(cast_shadows_);
 	PARAM_SAVE(shoot_caustic_);
 	PARAM_SAVE(shoot_diffuse_);
 	PARAM_SAVE(photon_only_);
-	PARAM_SAVE_END;
-}
-
-ParamMap Light::getAsParamMap(bool only_non_default) const
-{
-	ParamMap result{params_.getAsParamMap(only_non_default)};
-	result.setParam("type", type().print());
-	return result;
+	return param_map;
 }
 
 std::pair<std::unique_ptr<Light>, ParamResult> Light::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map)
 {
-	const Type type{ClassMeta::preprocessParamMap<Type>(logger, getClassName(), param_map)};
+	if(logger.isDebug()) logger.logDebug("** " + getClassName() + "::factory 'raw' ParamMap contents:\n" + param_map.logContents());
+	const auto type{class_meta::getTypeFromParamMap<Type>(logger, getClassName(), param_map)};
 	switch(type.value())
 	{
 		case Type::Area: return AreaLight::factory(logger, scene, name, param_map);

@@ -18,6 +18,5 @@
 
 target_sources(libyafaray4
 	PRIVATE
-		class_meta.cc
 		param.cc
 )

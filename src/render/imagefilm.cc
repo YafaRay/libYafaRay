@@ -40,6 +40,61 @@ namespace yafaray {
 
 typedef float FilterFunction_t(float dx, float dy);
 
+std::map<std::string, const ParamMeta *> ImageFilm::Params::getParamMetaMap()
+{
+	std::map<std::string, const ParamMeta *> param_meta_map;
+	PARAM_META(aa_passes_);
+	PARAM_META(aa_samples_);
+	PARAM_META(aa_inc_samples_);
+	PARAM_META(aa_threshold_);
+	PARAM_META(aa_resampled_floor_);
+	PARAM_META(aa_sample_multiplier_factor_);
+	PARAM_META(aa_light_sample_multiplier_factor_);
+	PARAM_META(aa_indirect_sample_multiplier_factor_);
+	PARAM_META(aa_detect_color_noise_);
+	PARAM_META(aa_dark_detection_type_);
+	PARAM_META(aa_dark_threshold_factor_);
+	PARAM_META(aa_variance_edge_size_);
+	PARAM_META(aa_variance_pixels_);
+	PARAM_META(aa_clamp_samples_);
+	PARAM_META(aa_clamp_indirect_);
+	PARAM_META(threads_);
+	PARAM_META(background_resampling_);
+	PARAM_META(base_sampling_offset_);
+	PARAM_META(computer_node_);
+	PARAM_META(aa_pixel_width_);
+	PARAM_META(width_);
+	PARAM_META(height_);
+	PARAM_META(start_x_);
+	PARAM_META(start_y_);
+	PARAM_META(filter_type_);
+	PARAM_META(tile_size_);
+	PARAM_META(tiles_order_);
+	PARAM_META(images_autosave_interval_type_);
+	PARAM_META(images_autosave_interval_passes_);
+	PARAM_META(images_autosave_interval_seconds_);
+	PARAM_META(film_load_save_mode_);
+	PARAM_META(film_load_save_path_);
+	PARAM_META(film_autosave_interval_type_);
+	PARAM_META(film_autosave_interval_passes_);
+	PARAM_META(film_autosave_interval_seconds_);
+	PARAM_META(layer_mask_obj_index_);
+	PARAM_META(layer_mask_mat_index_);
+	PARAM_META(layer_mask_invert);
+	PARAM_META(layer_mask_only_);
+	PARAM_META(layer_toon_edge_color_);
+	PARAM_META(layer_object_edge_thickness_);
+	PARAM_META(layer_object_edge_threshold_);
+	PARAM_META(layer_object_edge_smoothness_);
+	PARAM_META(layer_toon_pre_smooth_);
+	PARAM_META(layer_toon_quantization_);
+	PARAM_META(layer_toon_post_smooth_);
+	PARAM_META(layer_faces_edge_thickness_);
+	PARAM_META(layer_faces_edge_threshold_);
+	PARAM_META(layer_faces_edge_smoothness_);
+	return param_meta_map;
+}
+
 ImageFilm::Params::Params(ParamResult &param_result, const ParamMap &param_map)
 {
 	PARAM_LOAD(aa_passes_);
@@ -93,9 +148,11 @@ ImageFilm::Params::Params(ParamResult &param_result, const ParamMap &param_map)
 	PARAM_LOAD(layer_faces_edge_smoothness_);
 }
 
-ParamMap ImageFilm::Params::getAsParamMap(bool only_non_default) const
+ParamMap ImageFilm::getAsParamMap(bool only_non_default) const
 {
-	PARAM_SAVE_START;
+	ParamMap param_map;
+	param_map.setParam(Params::computer_node_meta_, computer_node_);
+	param_map.setParam(Params::base_sampling_offset_meta_, base_sampling_offset_);
 	PARAM_SAVE(aa_passes_);
 	PARAM_SAVE(aa_samples_);
 	PARAM_SAVE(aa_inc_samples_);
@@ -145,21 +202,13 @@ ParamMap ImageFilm::Params::getAsParamMap(bool only_non_default) const
 	PARAM_SAVE(layer_faces_edge_thickness_);
 	PARAM_SAVE(layer_faces_edge_threshold_);
 	PARAM_SAVE(layer_faces_edge_smoothness_);
-	PARAM_SAVE_END;
-}
-
-ParamMap ImageFilm::getAsParamMap(bool only_non_default) const
-{
-	ParamMap result{params_.getAsParamMap(only_non_default)};
-	result.setParam(Params::computer_node_meta_, computer_node_);
-	result.setParam(Params::base_sampling_offset_meta_, base_sampling_offset_);
-	return result;
+	return param_map;
 }
 
 std::pair<ImageFilm *, ParamResult> ImageFilm::factory(Logger &logger, RenderControl &render_control, const std::string &name, const ParamMap &param_map)
 {
 	if(logger.isDebug()) logger.logDebug("**" + getClassName() + "::factory 'raw' ParamMap\n" + param_map.logContents());
-	auto param_result{Params::meta_.check(param_map, {}, {})};
+	auto param_result{class_meta::check<Params>(param_map, {}, {})};
 	auto result {new ImageFilm(logger, param_result, render_control, name, param_map)};
 	if(param_result.notOk()) logger.logWarning(param_result.print<ImageFilm>("ImageFilm", {}));
 	return {std::move(result), param_result};
@@ -167,7 +216,7 @@ std::pair<ImageFilm *, ParamResult> ImageFilm::factory(Logger &logger, RenderCon
 
 ImageFilm::ImageFilm(Logger &logger, ParamResult &param_result, RenderControl &render_control, const std::string &name, const ParamMap &param_map) : params_{param_result, param_map}, logger_{logger}
 {
-	if(logger_.isDebug()) logger_.logDebug("**" + getClassName() + " params_:\n" + params_.getAsParamMap(true).print());
+	if(logger_.isDebug()) logger_.logDebug("**" + getClassName() + " params_:\n" + getAsParamMap(true).print());
 	if(params_.images_autosave_interval_type_ == AutoSaveParams::IntervalType::Pass) logger_.logInfo(getClassName(), ": ", "AutoSave partially rendered image every ", params_.images_autosave_interval_passes_, " passes");
 
 	if(params_.images_autosave_interval_type_ == AutoSaveParams::IntervalType::Time) logger_.logInfo(getClassName(), ": ", "AutoSave partially rendered image every ", params_.images_autosave_interval_seconds_, " seconds");
@@ -1016,7 +1065,7 @@ void ImageFilm::imageFilmLoadAllInFolder(RenderControl &render_control)
 	for(const auto &film_file : film_file_paths_list)
 	{
 		ParamResult param_result;
-		auto loaded_film = std::make_unique<ImageFilm>(logger_, param_result, render_control, film_file, params_.getAsParamMap(true));
+		auto loaded_film = std::make_unique<ImageFilm>(logger_, param_result, render_control, film_file, getAsParamMap(true));
 		if(!loaded_film->imageFilmLoad(film_file))
 		{
 			logger_.logWarning("ImageFilm: Could not load film file '", film_file, "'");

@@ -72,7 +72,8 @@ class Background
 		};
 		const struct Params
 		{
-			PARAM_INIT;
+			Params(ParamResult &param_result, const ParamMap &param_map);
+			static std::map<std::string, const ParamMeta *> getParamMetaMap();
 			PARAM_DECL(float, power_, 1.f, "power", "");
 			PARAM_DECL(bool , ibl_, false, "ibl", "");
 			PARAM_DECL(int, ibl_samples_, 16, "ibl_samples", "");

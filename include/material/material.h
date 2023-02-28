@@ -166,7 +166,8 @@ class Material
 		};
 		const struct Params
 		{
-			PARAM_INIT;
+			Params(ParamResult &param_result, const ParamMap &param_map);
+			static std::map<std::string, const ParamMeta *> getParamMetaMap();
 			PARAM_DECL(bool, receive_shadows_, true, "receive_shadows", "If true, objects with this material receive shadows from other objects");
 			PARAM_DECL(bool, flat_material_, false, "flat_material", "Flat Material is a special non-photorealistic material that does not multiply the surface color by the cosine of the angle with the light, as happens in real life. Also, if receive_shadows is disabled, this flat material does no longer self-shadow. For special applications only, for example to fill cross sections in architectural drawings.");
 			PARAM_ENUM_DECL(Visibility, visibility_, Visibility::Normal, "visibility", "");

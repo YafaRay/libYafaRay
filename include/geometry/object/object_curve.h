@@ -36,7 +36,7 @@ class CurveObject final : public MeshObject
 	public:
 		inline static std::string getClassName() { return "CurveObject"; }
 		static std::pair<std::unique_ptr<CurveObject>, ParamResult> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params);
-		static std::string printMeta(const std::vector<std::string> &excluded_params) { return Params::meta_.print(excluded_params); }
+		static std::string printMeta(const std::vector<std::string> &excluded_params) { return class_meta::print<Params>(excluded_params); }
 		[[nodiscard]] ParamMap getAsParamMap(bool only_non_default) const override;
 		CurveObject(ParamResult &param_result, const ParamMap &param_map, const Items<Object> &objects, const Items<Material> &materials, const Items<Light> &lights);
 
@@ -44,7 +44,8 @@ class CurveObject final : public MeshObject
 		[[nodiscard]] Type type() const override { return Type::Curve; }
 		const struct Params
 		{
-			PARAM_INIT_PARENT(ParentClassType_t);
+			Params(ParamResult &param_result, const ParamMap &param_map);
+			static std::map<std::string, const ParamMeta *> getParamMetaMap();
 			PARAM_DECL(float , strand_start_, 0.01f, "strand_start", "");
 			PARAM_DECL(float , strand_end_, 0.01f, "strand_end", "");
 			PARAM_DECL(float , strand_shape_, 0.f, "strand_shape", "");

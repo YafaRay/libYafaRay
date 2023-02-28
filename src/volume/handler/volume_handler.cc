@@ -23,26 +23,26 @@
 
 namespace yafaray {
 
+std::map<std::string, const ParamMeta *> VolumeHandler::Params::getParamMetaMap()
+{
+	std::map<std::string, const ParamMeta *> param_meta_map;
+	return param_meta_map;
+}
+
 VolumeHandler::Params::Params(ParamResult &param_result, const ParamMap &param_map)
 {
 }
 
-ParamMap VolumeHandler::Params::getAsParamMap(bool only_non_default) const
-{
-	PARAM_SAVE_START;
-	PARAM_SAVE_END;
-}
-
 ParamMap VolumeHandler::getAsParamMap(bool only_non_default) const
 {
-	ParamMap result{params_.getAsParamMap(only_non_default)};
-	result.setParam("type", type().print());
-	return result;
+	ParamMap param_map;
+	return param_map;
 }
 
 std::pair<std::unique_ptr<VolumeHandler>, ParamResult> VolumeHandler::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map)
 {
-	const Type type{ClassMeta::preprocessParamMap<Type>(logger, getClassName(), param_map)};
+	if(logger.isDebug()) logger.logDebug("** " + getClassName() + "::factory 'raw' ParamMap contents:\n" + param_map.logContents());
+	const auto type{class_meta::getTypeFromParamMap<Type>(logger, getClassName(), param_map)};
 	switch(type.value())
 	{
 		case Type::Beer: return BeerVolumeHandler::factory(logger, scene, name, param_map);
@@ -54,7 +54,7 @@ std::pair<std::unique_ptr<VolumeHandler>, ParamResult> VolumeHandler::factory(Lo
 VolumeHandler::VolumeHandler(Logger &logger, ParamResult &param_result, const ParamMap &param_map) :
 		params_{param_result, param_map}, logger_{logger}
 {
-	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + params_.getAsParamMap(true).print());
+	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + getAsParamMap(true).print());
 }
 
 } //namespace yafaray

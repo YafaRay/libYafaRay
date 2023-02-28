@@ -51,6 +51,9 @@ class NodeMaterial: public Material
 		/*! load nodes from parameter map list */
 		static std::map<std::string, std::unique_ptr<ShaderNode>> loadNodes(const std::list<ParamMap> &params_list, const Scene &scene, Logger &logger);
 		template <typename ShaderNodeType> static std::array<std::unique_ptr<ParamMeta>, ShaderNodeType::Size> initShaderNames(std::map<std::string, const ParamMeta *> &map);
+		template <typename NodeMaterialClass, typename ShaderNodeType> static ParamMap getShaderNodesNames(const std::array<const ShaderNode *, static_cast<size_t>(ShaderNodeType::Size)> &shader_nodes, bool only_non_default);
+		template <typename ParamsClass, typename ShaderNodeType> static std::map<std::string, const ParamMeta *> shadersMeta();
+		template <typename ParamsClass, typename ShaderNodeType> static ParamResult checkShadersParams(const ParamMap &param_map);
 
 		std::map<std::string, std::unique_ptr<ShaderNode>> nodes_map_;
 		std::vector<const ShaderNode *> color_nodes_, bump_nodes_;
@@ -67,6 +70,54 @@ inline std::array<std::unique_ptr<ParamMeta>, ShaderNodeType::Size> NodeMaterial
 		result[index] = std::make_unique<ParamMeta>(shader_node_type_name, shader_node_type.printDescription(), std::string{""}, map);
 	}
 	return result;
+}
+
+template <typename NodeMaterialClass, typename ShaderNodeType>
+inline ParamMap NodeMaterial::getShaderNodesNames(const std::array<const ShaderNode *, static_cast<size_t>(ShaderNodeType::Size)> &shader_nodes, bool only_non_default)
+{
+	ParamMap param_map;
+	for(size_t index = 0; index < shader_nodes.size(); ++index)
+	{
+		const std::string shader_node_type_name{ShaderNodeType{index}.print()};
+		if(shader_nodes[index])
+		{
+			param_map.setParam(shader_node_type_name, shader_nodes[index]->getName());
+		}
+		else if(!only_non_default)
+		{
+			param_map.setParam(shader_node_type_name, std::string{});
+		}
+	}
+	return param_map;
+}
+
+template <typename ParamsClass, typename ShaderNodeType>
+inline std::map<std::string, const ParamMeta *> NodeMaterial::shadersMeta()
+{
+	std::map<std::string, const ParamMeta *> param_meta_map;
+	for(size_t index = 0; index < ParamsClass::shader_node_names_meta_.size(); ++index)
+	{
+		const std::string shader_node_type_name{ShaderNodeType{index}.print()};
+		param_meta_map[shader_node_type_name] = &ParamsClass::shader_node_names_meta_[index];
+	}
+	return param_meta_map;
+}
+
+template <typename ParamsClass, typename ShaderNodeType>
+inline ParamResult NodeMaterial::checkShadersParams(const ParamMap &param_map)
+{
+	ParamResult param_result;
+	const auto shaders_meta_map{shadersMeta<ParamsClass, ShaderNodeType>()};
+	for(const auto &[shader_meta_name, shader_meta] : shaders_meta_map)
+	{
+		std::string shader_name;
+		if(param_map.getParam(shader_meta_name, shader_name) == YAFARAY_RESULT_ERROR_WRONG_PARAM_TYPE)
+		{
+			param_result.flags_ |= ResultFlags{YAFARAY_RESULT_ERROR_WRONG_PARAM_TYPE};
+			param_result.wrong_type_params_.emplace_back(shader_meta_name);
+		};
+	}
+	return param_result;
 }
 
 } //namespace yafaray

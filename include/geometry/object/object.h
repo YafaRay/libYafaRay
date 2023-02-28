@@ -91,7 +91,8 @@ class Object
 		};
 		const struct Params
 		{
-			PARAM_INIT;
+			Params(ParamResult &param_result, const ParamMap &param_map);
+			static std::map<std::string, const ParamMeta *> getParamMetaMap();
 			PARAM_DECL(std::string, light_name_, "", "light_name", "");
 			PARAM_ENUM_DECL(Visibility, visibility_, Visibility::Normal, "visibility", "");
 			PARAM_DECL(bool, is_base_object_, false, "is_base_object", "");

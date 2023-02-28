@@ -26,6 +26,23 @@
 
 namespace yafaray {
 
+std::map<std::string, const ParamMeta *> VolumeRegion::Params::getParamMetaMap()
+{
+	std::map<std::string, const ParamMeta *> param_meta_map;
+	PARAM_META(sigma_s_);
+	PARAM_META(sigma_a_);
+	PARAM_META(l_e_);
+	PARAM_META(g_);
+	PARAM_META(min_x_);
+	PARAM_META(min_y_);
+	PARAM_META(min_z_);
+	PARAM_META(max_x_);
+	PARAM_META(max_y_);
+	PARAM_META(max_z_);
+	PARAM_META(att_grid_scale_);
+	return param_meta_map;
+}
+
 VolumeRegion::Params::Params(ParamResult &param_result, const ParamMap &param_map)
 {
 	PARAM_LOAD(sigma_s_);
@@ -41,9 +58,9 @@ VolumeRegion::Params::Params(ParamResult &param_result, const ParamMap &param_ma
 	PARAM_LOAD(att_grid_scale_);
 }
 
-ParamMap VolumeRegion::Params::getAsParamMap(bool only_non_default) const
+ParamMap VolumeRegion::getAsParamMap(bool only_non_default) const
 {
-	PARAM_SAVE_START;
+	ParamMap param_map;
 	PARAM_SAVE(sigma_s_);
 	PARAM_SAVE(sigma_a_);
 	PARAM_SAVE(l_e_);
@@ -55,19 +72,13 @@ ParamMap VolumeRegion::Params::getAsParamMap(bool only_non_default) const
 	PARAM_SAVE(max_y_);
 	PARAM_SAVE(max_z_);
 	PARAM_SAVE(att_grid_scale_);
-	PARAM_SAVE_END;
-}
-
-ParamMap VolumeRegion::getAsParamMap(bool only_non_default) const
-{
-	ParamMap result{params_.getAsParamMap(only_non_default)};
-	result.setParam("type", type().print());
-	return result;
+	return param_map;
 }
 
 std::pair<std::unique_ptr<VolumeRegion>, ParamResult> VolumeRegion::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map)
 {
-	const Type type{ClassMeta::preprocessParamMap<Type>(logger, getClassName(), param_map)};
+	if(logger.isDebug()) logger.logDebug("** " + getClassName() + "::factory 'raw' ParamMap contents:\n" + param_map.logContents());
+	const auto type{class_meta::getTypeFromParamMap<Type>(logger, getClassName(), param_map)};
 	switch(type.value())
 	{
 		case Type::ExpDensity: return ExpDensityVolumeRegion::factory(logger, scene, name, param_map);

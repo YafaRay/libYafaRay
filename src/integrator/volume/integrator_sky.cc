@@ -26,6 +26,16 @@
 
 namespace yafaray {
 
+std::map<std::string, const ParamMeta *> SkyIntegrator::Params::getParamMetaMap()
+{
+	auto param_meta_map{ParentClassType_t::Params::getParamMetaMap()};
+	PARAM_META(step_size_);
+	PARAM_META(scale_);
+	PARAM_META(alpha_);
+	PARAM_META(turbidity_);
+	return param_meta_map;
+}
+
 SkyIntegrator::Params::Params(ParamResult &param_result, const ParamMap &param_map)
 {
 	PARAM_LOAD(step_size_);
@@ -34,34 +44,28 @@ SkyIntegrator::Params::Params(ParamResult &param_result, const ParamMap &param_m
 	PARAM_LOAD(turbidity_);
 }
 
-ParamMap SkyIntegrator::Params::getAsParamMap(bool only_non_default) const
+ParamMap SkyIntegrator::getAsParamMap(bool only_non_default) const
 {
-	PARAM_SAVE_START;
+	auto param_map{ParentClassType_t::getAsParamMap(only_non_default)};
+	param_map.setParam("type", type().print());
 	PARAM_SAVE(step_size_);
 	PARAM_SAVE(scale_);
 	PARAM_SAVE(alpha_);
 	PARAM_SAVE(turbidity_);
-	PARAM_SAVE_END;
-}
-
-ParamMap SkyIntegrator::getAsParamMap(bool only_non_default) const
-{
-	ParamMap result{ParentClassType_t::getAsParamMap(only_non_default)};
-	result.append(params_.getAsParamMap(only_non_default));
-	return result;
+	return param_map;
 }
 
 std::pair<std::unique_ptr<VolumeIntegrator>, ParamResult> SkyIntegrator::factory(Logger &logger, const ParamMap &param_map)
 {
-	auto param_result{Params::meta_.check(param_map, {"type"}, {})};
-	auto integrator {std::make_unique<ThisClassType_t>(logger, param_result, param_map)};
+	auto param_result{class_meta::check<Params>(param_map, {"type"}, {})};
+	auto integrator {std::make_unique<SkyIntegrator>(logger, param_result, param_map)};
 	if(param_result.notOk()) logger.logWarning(param_result.print<ThisClassType_t>(getClassName(), {"type"}));
 	return {std::move(integrator), param_result};
 }
 
 SkyIntegrator::SkyIntegrator(Logger &logger, ParamResult &param_result, const ParamMap &param_map) : VolumeIntegrator(logger, param_result, param_map), params_{param_result, param_map}
 {
-	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + params_.getAsParamMap(true).print());
+	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + getAsParamMap(true).print());
 
 	alpha_r_ = 0.1136f * params_.alpha_; // rayleigh, molecules
 	alpha_m_ = 0.8333f * params_.alpha_; // mie, haze

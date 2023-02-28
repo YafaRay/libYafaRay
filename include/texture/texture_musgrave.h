@@ -34,7 +34,7 @@ class MusgraveTexture final : public Texture
 	public:
 		inline static std::string getClassName() { return "MusgraveTexture"; }
 		static std::pair<std::unique_ptr<Texture>, ParamResult> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params);
-		static std::string printMeta(const std::vector<std::string> &excluded_params) { return Params::meta_.print(excluded_params); }
+		static std::string printMeta(const std::vector<std::string> &excluded_params) { return class_meta::print<Params>(excluded_params); }
 		[[nodiscard]] ParamMap getAsParamMap(bool only_non_default) const override;
 		MusgraveTexture(Logger &logger, ParamResult &param_result, const ParamMap &param_map);
 
@@ -53,7 +53,8 @@ class MusgraveTexture final : public Texture
 		[[nodiscard]] Type type() const override { return Type::Musgrave; }
 		const struct Params
 		{
-			PARAM_INIT_PARENT(ParentClassType_t);
+			Params(ParamResult &param_result, const ParamMap &param_map);
+			static std::map<std::string, const ParamMeta *> getParamMetaMap();
 			PARAM_ENUM_DECL(MusgraveType, musgrave_type_, MusgraveType::Fbm, "musgrave_type", "");
 			PARAM_ENUM_DECL(NoiseGenerator::NoiseType, noise_type_, NoiseGenerator::NoiseType::PerlinImproved, "noise_type", "");
 			PARAM_DECL(Rgb, color_1_, Rgb{0.f}, "color1", "");

@@ -26,6 +26,18 @@
 
 namespace yafaray {
 
+std::map<std::string, const ParamMeta *> PerspectiveCamera::Params::getParamMetaMap()
+{
+	auto param_meta_map{ParentClassType_t::Params::getParamMetaMap()};
+	PARAM_META(focal_distance_);
+	PARAM_META(aperture_);
+	PARAM_META(depth_of_field_distance_);
+	PARAM_META(bokeh_type_);
+	PARAM_META(bokeh_bias_);
+	PARAM_META(bokeh_rotation_);
+	return param_meta_map;
+}
+
 PerspectiveCamera::Params::Params(ParamResult &param_result, const ParamMap &param_map)
 {
 	PARAM_LOAD(focal_distance_);
@@ -36,28 +48,22 @@ PerspectiveCamera::Params::Params(ParamResult &param_result, const ParamMap &par
 	PARAM_LOAD(bokeh_rotation_);
 }
 
-ParamMap PerspectiveCamera::Params::getAsParamMap(bool only_non_default) const
+ParamMap PerspectiveCamera::getAsParamMap(bool only_non_default) const
 {
-	PARAM_SAVE_START;
+	auto param_map{ParentClassType_t::getAsParamMap(only_non_default)};
+	param_map.setParam("type", type().print());
 	PARAM_SAVE(focal_distance_);
 	PARAM_SAVE(aperture_);
 	PARAM_SAVE(depth_of_field_distance_);
 	PARAM_SAVE(bokeh_rotation_);
 	PARAM_ENUM_SAVE(bokeh_type_);
 	PARAM_ENUM_SAVE(bokeh_bias_);
-	PARAM_SAVE_END;
-}
-
-ParamMap PerspectiveCamera::getAsParamMap(bool only_non_default) const
-{
-	ParamMap result{ParentClassType_t::getAsParamMap(only_non_default)};
-	result.append(params_.getAsParamMap(only_non_default));
-	return result;
+	return param_map;
 }
 
 std::pair<std::unique_ptr<Camera>, ParamResult> PerspectiveCamera::factory(Logger &logger, const std::string &name, const ParamMap &param_map)
 {
-	auto param_result{Params::meta_.check(param_map, {"type"}, {})};
+	auto param_result{class_meta::check<Params>(param_map, {"type"}, {})};
 	auto camera {std::make_unique<PerspectiveCamera>(logger, param_result, param_map)};
 	if(param_result.notOk()) logger.logWarning(param_result.print<ThisClassType_t>(name, {"type"}));
 	return {std::move(camera), param_result};
@@ -66,7 +72,7 @@ std::pair<std::unique_ptr<Camera>, ParamResult> PerspectiveCamera::factory(Logge
 PerspectiveCamera::PerspectiveCamera(Logger &logger, ParamResult &param_result, const ParamMap &param_map) :
 		Camera{logger, param_result, param_map}, params_{param_result, param_map}
 {
-	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + params_.getAsParamMap(true).print());
+	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + getAsParamMap(true).print());
 
 	// Initialize camera specific plane coordinates
 	setAxis(cam_x_, cam_y_, cam_z_);

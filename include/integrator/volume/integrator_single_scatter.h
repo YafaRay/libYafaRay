@@ -39,7 +39,7 @@ class SingleScatterIntegrator final : public VolumeIntegrator
 	public:
 		inline static std::string getClassName() { return "SingleScatterIntegrator"; }
 		static std::pair<std::unique_ptr<VolumeIntegrator>, ParamResult> factory(Logger &logger, const ParamMap &param_map, const Items<VolumeRegion> &volume_regions);
-		static std::string printMeta(const std::vector<std::string> &excluded_params) { return Params::meta_.print(excluded_params); }
+		static std::string printMeta(const std::vector<std::string> &excluded_params) { return class_meta::print<Params>(excluded_params); }
 		SingleScatterIntegrator(Logger &logger, ParamResult &param_result, const ParamMap &param_map, const Items<VolumeRegion> &volume_regions);
 		[[nodiscard]] ParamMap getAsParamMap(bool only_non_default) const override;
 
@@ -47,7 +47,8 @@ class SingleScatterIntegrator final : public VolumeIntegrator
 		[[nodiscard]] Type type() const override { return Type::SingleScatter; }
 		const struct Params
 		{
-			PARAM_INIT_PARENT(ParentClassType_t);
+			Params(ParamResult &param_result, const ParamMap &param_map);
+			static std::map<std::string, const ParamMeta *> getParamMetaMap();
 			PARAM_DECL(float , step_size_, 1.f, "stepSize", "");
 			PARAM_DECL(bool , adaptive_, false, "adaptive", "");
 			PARAM_DECL(bool , optimize_, false, "optimize", "");

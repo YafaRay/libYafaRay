@@ -31,7 +31,7 @@ class GridVolumeRegion final : public DensityVolumeRegion
 	public:
 		inline static std::string getClassName() { return "GridVolumeRegion"; }
 		static std::pair<std::unique_ptr<VolumeRegion>, ParamResult> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map);
-		static std::string printMeta(const std::vector<std::string> &excluded_params) { return Params::meta_.print(excluded_params); }
+		static std::string printMeta(const std::vector<std::string> &excluded_params) { return class_meta::print<Params>(excluded_params); }
 		[[nodiscard]] ParamMap getAsParamMap(bool only_non_default) const override;
 		GridVolumeRegion(Logger &logger, ParamResult &param_result, const ParamMap &param_map);
 		~GridVolumeRegion() override;
@@ -40,7 +40,8 @@ class GridVolumeRegion final : public DensityVolumeRegion
 		[[nodiscard]] Type type() const override { return Type::Grid; }
 		const struct Params
 		{
-			PARAM_INIT_PARENT(ParentClassType_t);
+			Params(ParamResult &param_result, const ParamMap &param_map);
+			static std::map<std::string, const ParamMeta *> getParamMetaMap();
 			PARAM_DECL(std::string, density_file_, "", "density_file", "Path to the *.df3 density file (in POVRay density_file format)"); //For more information about the POVRay density_file format refer to: https://www.povray.org/documentation/view/3.6.1/374/
 			//FIXME DAVID: att_grid_scale_ not used
 		} params_;

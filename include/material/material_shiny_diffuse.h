@@ -54,7 +54,7 @@ class ShinyDiffuseMaterial final : public NodeMaterial
 	public:
 		inline static std::string getClassName() { return "ShinyDiffuseMaterial"; }
 		static std::pair<std::unique_ptr<Material>, ParamResult> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map, const std::list<ParamMap> &nodes_param_maps);
-		static std::string printMeta(const std::vector<std::string> &excluded_params) { return Params::meta_.print(excluded_params); }
+		static std::string printMeta(const std::vector<std::string> &excluded_params) { return class_meta::print<Params>(excluded_params); }
 		[[nodiscard]] ParamMap getAsParamMap(bool only_non_default) const override;
 		ShinyDiffuseMaterial(Logger &logger, ParamResult &param_result, const ParamMap &param_map, const Items <Material> &materials);
 
@@ -62,7 +62,7 @@ class ShinyDiffuseMaterial final : public NodeMaterial
 		[[nodiscard]] Type type() const override { return Type::ShinyDiffuse; }
 		struct ShaderNodeType : public Enum<ShaderNodeType>
 		{
-			enum : ValueType_t { Bump, Wireframe, Diffuse, Glossy, Transparency, Translucency, Ior, Mirror, SigmaOrenNayar, DiffuseReflect, MirrorColor, Size }; //Always leave the Size entry at the end!!
+			enum : ValueType_t { Bump, Wireframe, Diffuse, Transparency, Translucency, Ior, Mirror, SigmaOrenNayar, DiffuseReflect, MirrorColor, Size }; //Always leave the Size entry at the end!!
 			inline static const EnumMap<ValueType_t> map_{{
 					{"bump_shader", Bump, ""},
 					{"wireframe_shader", Wireframe, "Shader node for wireframe shading (float)"},
@@ -79,7 +79,8 @@ class ShinyDiffuseMaterial final : public NodeMaterial
 		};
 		const struct Params
 		{
-			PARAM_INIT_PARENT(ParentClassType_t);
+			Params(ParamResult &param_result, const ParamMap &param_map);
+			static std::map<std::string, const ParamMeta *> getParamMetaMap();
 			PARAM_DECL(Rgb, diffuse_color_, Rgb{1.f}, "color", "BSDF Diffuse component color");
 			PARAM_DECL(Rgb, mirror_color_, Rgb{1.f}, "mirror_color", "BSDF Mirror component color");
 			PARAM_DECL(float, transparency_, 0.f, "transparency", "BSDF Transparency component strength when not textured");
@@ -92,7 +93,7 @@ class ShinyDiffuseMaterial final : public NodeMaterial
 			PARAM_DECL(float, transmit_filter_, 1.f, "transmit_filter", "Determines how strong light passing through material gets tinted");
 			PARAM_ENUM_DECL(DiffuseBrdf, diffuse_brdf_, DiffuseBrdf::Lambertian, "diffuse_brdf", "");
 			PARAM_DECL(float, sigma_, 0.1f, "sigma", "Oren-Nayar sigma factor, used if diffuse BRDF is set to Oren-Nayar");
-			PARAM_SHADERS_DECL;
+			inline static const auto shader_node_names_meta_{ParamMeta::enumToParamMetaArray<ShaderNodeType>()};
 		} params_;
 		std::unique_ptr<const MaterialData> initBsdf(SurfacePoint &sp, const Camera *camera) const override;
 		Rgb eval(const MaterialData *mat_data, const SurfacePoint &sp, const Vec3f &wo, const Vec3f &wl, BsdfFlags bsdfs, bool force_eval) const override;

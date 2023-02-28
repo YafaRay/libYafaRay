@@ -96,7 +96,8 @@ class SurfaceIntegrator
 		};
 		const struct Params
 		{
-			PARAM_INIT;
+			Params(ParamResult &param_result, const ParamMap &param_map);
+			static std::map<std::string, const ParamMeta *> getParamMetaMap();
 			PARAM_DECL(std::string, light_names_, "", "light_names", "Selection of the scene lights to be used in the integration, separated by a semicolon. If empty, all lights will be included");
 			PARAM_DECL(bool, time_forced_, false, "time_forced", "");
 			PARAM_DECL(float, time_forced_value_, 0.f, "time_forced_value", "");

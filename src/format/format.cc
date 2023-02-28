@@ -59,27 +59,27 @@ const EnumMap<unsigned char> Format::Type::map_{{
 #endif // HAVE_TIFF
 }};
 
+std::map<std::string, const ParamMeta *> Format::Params::getParamMetaMap()
+{
+	std::map<std::string, const ParamMeta *> param_meta_map;
+	return param_meta_map;
+}
+
 Format::Params::Params(ParamResult &param_result, const ParamMap &param_map)
 {
 }
 
-ParamMap Format::Params::getAsParamMap(bool /*only_non_default*/) const
-{
-	PARAM_SAVE_START;
-	PARAM_SAVE_END;
-}
-
 ParamMap Format::getAsParamMap(bool only_non_default) const
 {
-	ParamMap result{params_.getAsParamMap(only_non_default)};
-	result.setParam("type", type().print());
-	return result;
+	ParamMap param_map;
+	return param_map;
 }
 
 std::pair<std::unique_ptr<Format>, ParamResult> Format::factory(Logger &logger, const ParamMap &param_map)
 {
-	const Type type{ClassMeta::preprocessParamMap<Type>(logger, getClassName(), param_map)};
-	auto param_result{Params::meta_.check(param_map, {"type"}, {})};
+	if(logger.isDebug()) logger.logDebug("** " + getClassName() + "::factory 'raw' ParamMap contents:\n" + param_map.logContents());
+	const auto type{class_meta::getTypeFromParamMap<Type>(logger, getClassName(), param_map)};
+	auto param_result{class_meta::check<Params>(param_map, {"type"}, {})};
 	std::unique_ptr<Format> format;
 	switch(type.value())
 	{

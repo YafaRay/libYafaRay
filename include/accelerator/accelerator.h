@@ -73,7 +73,8 @@ class Accelerator
 		[[nodiscard]] virtual Type type() const = 0;
 		const struct Params
 		{
-			PARAM_INIT;
+			Params(ParamResult &param_result, const ParamMap &param_map);
+			static std::map<std::string, const ParamMeta *> getParamMetaMap();
 		} params_;
 		Logger &logger_;
 		static constexpr inline float min_raydist_ = 0.00005f;

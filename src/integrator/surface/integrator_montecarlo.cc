@@ -39,6 +39,21 @@
 
 namespace yafaray {
 
+std::map<std::string, const ParamMeta *> MonteCarloIntegrator::Params::getParamMetaMap()
+{
+	auto param_meta_map{ParentClassType_t::Params::getParamMetaMap()};
+	PARAM_META(r_depth_);
+	PARAM_META(transparent_shadows_);
+	PARAM_META(shadow_depth_);
+	PARAM_META(ao_);
+	PARAM_META(ao_samples_);
+	PARAM_META(ao_distance_);
+	PARAM_META(ao_color_);
+	PARAM_META(transparent_background_);
+	PARAM_META(transparent_background_refraction_);
+	return param_meta_map;
+}
+
 MonteCarloIntegrator::Params::Params(ParamResult &param_result, const ParamMap &param_map)
 {
 	PARAM_LOAD(r_depth_);
@@ -52,9 +67,9 @@ MonteCarloIntegrator::Params::Params(ParamResult &param_result, const ParamMap &
 	PARAM_LOAD(transparent_background_refraction_);
 }
 
-ParamMap MonteCarloIntegrator::Params::getAsParamMap(bool only_non_default) const
+ParamMap MonteCarloIntegrator::getAsParamMap(bool only_non_default) const
 {
-	PARAM_SAVE_START;
+	auto param_map{ParentClassType_t::getAsParamMap(only_non_default)};
 	PARAM_SAVE(r_depth_);
 	PARAM_SAVE(transparent_shadows_);
 	PARAM_SAVE(shadow_depth_);
@@ -64,14 +79,7 @@ ParamMap MonteCarloIntegrator::Params::getAsParamMap(bool only_non_default) cons
 	PARAM_SAVE(ao_color_);
 	PARAM_SAVE(transparent_background_);
 	PARAM_SAVE(transparent_background_refraction_);
-	PARAM_SAVE_END;
-}
-
-ParamMap MonteCarloIntegrator::getAsParamMap(bool only_non_default) const
-{
-	ParamMap result{ParentClassType_t::getAsParamMap(only_non_default)};
-	result.append(params_.getAsParamMap(only_non_default));
-	return result;
+	return param_map;
 }
 
 //Constructor and destructor defined here to avoid issues with std::unique_ptr<Pdf1D> being Pdf1D incomplete in the header (forward declaration)

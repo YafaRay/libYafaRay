@@ -35,7 +35,7 @@ class PerspectiveCamera : public Camera
 	public:
 		inline static std::string getClassName() { return "PerspectiveCamera"; }
 		static std::pair<std::unique_ptr<Camera>, ParamResult> factory(Logger &logger, const std::string &name, const ParamMap &param_map);
-		static std::string printMeta(const std::vector<std::string> &excluded_params) { return Params::meta_.print(excluded_params); }
+		static std::string printMeta(const std::vector<std::string> &excluded_params) { return class_meta::print<Params>(excluded_params); }
 		[[nodiscard]] ParamMap getAsParamMap(bool only_non_default) const override;
 		PerspectiveCamera(Logger &logger, ParamResult &param_result, const ParamMap &param_map);
 
@@ -65,7 +65,8 @@ class PerspectiveCamera : public Camera
 		[[nodiscard]] Type type() const override { return Type::Perspective; }
 		const struct Params
 		{
-			PARAM_INIT_PARENT(ParentClassType_t);
+			Params(ParamResult &param_result, const ParamMap &param_map);
+			static std::map<std::string, const ParamMeta *> getParamMetaMap();
 			PARAM_DECL(float, focal_distance_, 1.f, "focal", "");
 			PARAM_DECL(float, aperture_, 0.f, "aperture", "");
 			PARAM_DECL(float, depth_of_field_distance_, 0.f, "dof_distance", "");

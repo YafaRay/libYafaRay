@@ -63,7 +63,7 @@ std::vector<const ShaderNode *> NodeMaterial::solveNodesOrder(const std::vector<
 	std::vector<const ShaderNode *> color_nodes_sorted;
 	for(const auto &root : roots)
 	{
-		const std::vector<const ShaderNode *> root_nodes = recursiveSolver(root);
+		const auto root_nodes{recursiveSolver(root)};
 		color_nodes_sorted.insert(color_nodes_sorted.end(), root_nodes.begin(), root_nodes.end());
 	}
 	if(shaders_table.size() != color_nodes_sorted.size())
@@ -83,7 +83,7 @@ std::vector<const ShaderNode *> NodeMaterial::solveNodesOrder(const std::vector<
 
 std::vector<const ShaderNode *> NodeMaterial::getNodeList(const ShaderNode *root, const std::vector<const ShaderNode *> &nodes_sorted)
 {
-	std::set<const ShaderNode *> in_tree = recursiveFinder(root);
+	const auto in_tree{recursiveFinder(root)};
 	std::vector<const ShaderNode *> nodes;
 	for(const auto &node : nodes_sorted)
 	{

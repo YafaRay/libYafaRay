@@ -42,6 +42,18 @@
 
 namespace yafaray {
 
+std::map<std::string, const ParamMeta *> CausticPhotonIntegrator::Params::getParamMetaMap()
+{
+	auto param_meta_map{ParentClassType_t::Params::getParamMetaMap()};
+	PARAM_META(use_photon_caustics_);
+	PARAM_META(n_caus_photons_);
+	PARAM_META(n_caus_search_);
+	PARAM_META(caus_radius_);
+	PARAM_META(caus_depth_);
+	PARAM_META(photon_map_processing_);
+	return param_meta_map;
+}
+
 CausticPhotonIntegrator::Params::Params(ParamResult &param_result, const ParamMap &param_map)
 {
 	PARAM_LOAD(use_photon_caustics_);
@@ -52,23 +64,17 @@ CausticPhotonIntegrator::Params::Params(ParamResult &param_result, const ParamMa
 	PARAM_ENUM_LOAD(photon_map_processing_);
 }
 
-ParamMap CausticPhotonIntegrator::Params::getAsParamMap(bool only_non_default) const
+ParamMap CausticPhotonIntegrator::getAsParamMap(bool only_non_default) const
 {
-	PARAM_SAVE_START;
+	auto param_map{ParentClassType_t::getAsParamMap(only_non_default)};
+	param_map.setParam("type", type().print());
 	PARAM_SAVE(use_photon_caustics_);
 	PARAM_SAVE(n_caus_photons_);
 	PARAM_SAVE(n_caus_search_);
 	PARAM_SAVE(caus_radius_);
 	PARAM_SAVE(caus_depth_);
 	PARAM_ENUM_SAVE(photon_map_processing_);
-	PARAM_SAVE_END;
-}
-
-ParamMap CausticPhotonIntegrator::getAsParamMap(bool only_non_default) const
-{
-	ParamMap result{ParentClassType_t::getAsParamMap(only_non_default)};
-	result.append(params_.getAsParamMap(only_non_default));
-	return result;
+	return param_map;
 }
 
 //Constructor and destructor defined here to avoid issues with std::unique_ptr<Pdf1D> being Pdf1D incomplete in the header (forward declaration)

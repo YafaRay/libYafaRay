@@ -24,6 +24,28 @@
 
 namespace yafaray {
 
+std::map<std::string, const ParamMeta *> LayerNode::Params::getParamMetaMap()
+{
+	auto param_meta_map{ParentClassType_t::Params::getParamMetaMap()};
+	PARAM_META(input_);
+	PARAM_META(upper_layer_);
+	PARAM_META(upper_color_);
+	PARAM_META(upper_value_);
+	PARAM_META(def_col_);
+	PARAM_META(colfac_);
+	PARAM_META(def_val_);
+	PARAM_META(valfac_);
+	PARAM_META(do_color_);
+	PARAM_META(do_scalar_);
+	PARAM_META(color_input_);
+	PARAM_META(use_alpha_);
+	PARAM_META(no_rgb_);
+	PARAM_META(stencil_);
+	PARAM_META(negative_);
+	PARAM_META(blend_mode_);
+	return param_meta_map;
+}
+
 LayerNode::Params::Params(ParamResult &param_result, const ParamMap &param_map)
 {
 	PARAM_LOAD(input_);
@@ -44,9 +66,10 @@ LayerNode::Params::Params(ParamResult &param_result, const ParamMap &param_map)
 	PARAM_ENUM_LOAD(blend_mode_);
 }
 
-ParamMap LayerNode::Params::getAsParamMap(bool only_non_default) const
+ParamMap LayerNode::getAsParamMap(bool only_non_default) const
 {
-	PARAM_SAVE_START;
+	auto param_map{ParentClassType_t::getAsParamMap(only_non_default)};
+	param_map.setParam("type", type().print());
 	PARAM_SAVE(input_);
 	PARAM_SAVE(upper_layer_);
 	PARAM_SAVE(upper_color_);
@@ -63,20 +86,13 @@ ParamMap LayerNode::Params::getAsParamMap(bool only_non_default) const
 	PARAM_SAVE(stencil_);
 	PARAM_SAVE(negative_);
 	PARAM_ENUM_SAVE(blend_mode_);
-	PARAM_SAVE_END;
-}
-
-ParamMap LayerNode::getAsParamMap(bool only_non_default) const
-{
-	ParamMap result{ParentClassType_t::getAsParamMap(only_non_default)};
-	result.append(params_.getAsParamMap(only_non_default));
-	return result;
+	return param_map;
 }
 
 std::pair<std::unique_ptr<ShaderNode>, ParamResult> LayerNode::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map)
 {
-	auto param_result{Params::meta_.check(param_map, {"type"}, {})};
-	auto shader_node {std::make_unique<ThisClassType_t>(logger, param_result, param_map)};
+	auto param_result{class_meta::check<Params>(param_map, {"type"}, {})};
+	auto shader_node {std::make_unique<LayerNode>(logger, param_result, param_map)};
 	if(param_result.notOk()) logger.logWarning(param_result.print<ThisClassType_t>(name, {"type"}));
 	return {std::move(shader_node), param_result};
 }
@@ -84,7 +100,7 @@ std::pair<std::unique_ptr<ShaderNode>, ParamResult> LayerNode::factory(Logger &l
 LayerNode::LayerNode(Logger &logger, ParamResult &param_result, const ParamMap &param_map) :
 		ParentClassType_t{logger, param_result, param_map}, params_{param_result, param_map}
 {
-	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + params_.getAsParamMap(true).print());
+	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + getAsParamMap(true).print());
 	//logger.logParams(getAsParamMap(false).print()); //TEST CODE ONLY, REMOVE!!
 	if(params_.no_rgb_) flags_ |= Flags{Flags::RgbToInt};
 	if(params_.stencil_) flags_ |= Flags{Flags::Stencil};
