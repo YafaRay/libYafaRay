@@ -54,7 +54,7 @@ class CoatedGlossyMaterial final : public NodeMaterial
 
 	private:
 		[[nodiscard]] Type type() const override { return Type::CoatedGlossy; }
-		struct ShaderNodeType : public Enum<ShaderNodeType>
+		struct ShaderNodeType : public Enum<ShaderNodeType, size_t>
 		{
 			enum : ValueType_t { Bump, Wireframe, Diffuse, Glossy, GlossyReflect, Exponent, Ior, Mirror, SigmaOrenNayar, DiffuseReflect, MirrorColor, Size }; //Always leave the Size entry at the end!!
 			inline static const EnumMap<ValueType_t> map_{{

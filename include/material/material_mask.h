@@ -57,7 +57,7 @@ class MaskMaterial final : public NodeMaterial
 
 	private:
 		[[nodiscard]] Type type() const override { return Type::Mask; }
-		struct ShaderNodeType : public Enum<ShaderNodeType>
+		struct ShaderNodeType : public Enum<ShaderNodeType, size_t>
 		{
 			enum : ValueType_t { Mask, Size }; //Always leave the Size entry at the end!!
 			inline static const EnumMap<ValueType_t> map_{{

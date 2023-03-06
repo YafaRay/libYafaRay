@@ -48,7 +48,7 @@ class GlassMaterial final : public NodeMaterial
 
 	private:
 		[[nodiscard]] Type type() const override { return Type::Glass; }
-		struct ShaderNodeType : public Enum<ShaderNodeType>
+		struct ShaderNodeType : public Enum<ShaderNodeType, size_t>
 		{
 			enum : ValueType_t { Bump, Wireframe, MirrorColor, FilterColor, Ior, Size }; //Always leave the Size entry at the end!!
 			inline static const EnumMap<ValueType_t> map_{{
