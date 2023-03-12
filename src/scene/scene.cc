@@ -165,7 +165,7 @@ std::pair<size_t, ParamResult> Scene::createImage(const std::string &name, const
 
 bool Scene::initObject(size_t object_id, size_t material_id)
 {
-	if(logger_.isDebug()) logger_.logDebug(getClassName(), "'", getName(), "'::initObject");
+	if(logger_.isDebug()) logger_.logDebug(getClassName(), " '", getName(), "'::initObject");
 	auto[object, object_result]{objects_.getById(object_id)};
 	const bool result{object->calculateObject(material_id)};
 	return result;
@@ -176,7 +176,7 @@ bool Scene::smoothVerticesNormals(size_t object_id, float angle)
 	auto [object, object_result]{objects_.getById(object_id)};
 	if(object_result == YAFARAY_RESULT_ERROR_NOT_FOUND)
 	{
-		logger_.logWarning(getClassName(), "'", getName(), "'::smoothVerticesNormals: object id '", object_id, "' not found, skipping...");
+		logger_.logWarning(getClassName(), " '", getName(), "'::smoothVerticesNormals: object id '", object_id, "' not found, skipping...");
 		return false;
 	}
 	if(object->hasVerticesNormals(0) && object->numVerticesNormals(0) == object->numVertices(0))
@@ -287,7 +287,7 @@ bool Scene::init()
 		const bool instance_primitives_result{instance->updatePrimitives(*this)};
 		if(!instance_primitives_result)
 		{
-			logger_.logWarning(getClassName(), "'", getName(), "': Instance id=", instance_id, " could not update primitives, maybe recursion problem...");
+			logger_.logWarning(getClassName(), " '", getName(), "': Instance id=", instance_id, " could not update primitives, maybe recursion problem...");
 			continue;
 		}
 		const auto instance_primitives{instance->getPrimitives()};
@@ -295,7 +295,7 @@ bool Scene::init()
 	}
 	if(primitives.empty())
 	{
-		logger_.logWarning(getClassName(), "'", getName(), "': Scene is empty...");
+		logger_.logWarning(getClassName(), " '", getName(), "': Scene is empty...");
 	}
 	for(auto &texture : textures_)
 	{
@@ -307,7 +307,7 @@ bool Scene::init()
 
 	accelerator_ = Accelerator::factory(logger_, primitives, params).first;
 	*scene_bound_ = accelerator_->getBound();
-	if(logger_.isVerbose()) logger_.logVerbose(getClassName(), "'", getName(), "': New scene bound is: ", "(", scene_bound_->a_[Axis::X], ", ", scene_bound_->a_[Axis::Y], ", ", scene_bound_->a_[Axis::Z], "), (", scene_bound_->g_[Axis::X], ", ", scene_bound_->g_[Axis::Y], ", ", scene_bound_->g_[Axis::Z], ")");
+	if(logger_.isVerbose()) logger_.logVerbose(getClassName(), " '", getName(), "': New scene bound is: ", "(", scene_bound_->a_[Axis::X], ", ", scene_bound_->a_[Axis::Y], ", ", scene_bound_->a_[Axis::Z], "), (", scene_bound_->g_[Axis::X], ", ", scene_bound_->g_[Axis::Y], ", ", scene_bound_->g_[Axis::Z], ")");
 
 	object_index_highest_ = 1;
 	for(const auto &[object, object_name, object_enabled] : objects_)
@@ -323,7 +323,7 @@ bool Scene::init()
 		if(material_index_highest_ < material_pass_index) material_index_highest_ = material_pass_index;
 	}
 
-	logger_.logInfo(getClassName(), "'", getName(), "': total scene dimensions: X=", scene_bound_->length(Axis::X), ", y=", scene_bound_->length(Axis::Y), ", z=", scene_bound_->length(Axis::Z), ", volume=", scene_bound_->vol());
+	logger_.logInfo(getClassName(), " '", getName(), "': total scene dimensions: X=", scene_bound_->length(Axis::X), ", y=", scene_bound_->length(Axis::Y), ", z=", scene_bound_->length(Axis::Z), ", volume=", scene_bound_->vol());
 
 	mipmap_interpolation_required_ = false;
 	for(size_t texture_id = 0; texture_id < textures_.size(); ++texture_id)
@@ -331,7 +331,7 @@ bool Scene::init()
 		const InterpolationType texture_interpolation_type{textures_.getById(texture_id).first->getInterpolationType()};
 		if(texture_interpolation_type == InterpolationType::Trilinear || texture_interpolation_type == InterpolationType::Ewa)
 		{
-			if(logger_.isVerbose()) logger_.logVerbose(getClassName(), "'", getName(), "': At least one texture using mipmaps interpolation, ray differentials will be enabled.");
+			if(logger_.isVerbose()) logger_.logVerbose(getClassName(), " '", getName(), "': At least one texture using mipmaps interpolation, ray differentials will be enabled.");
 			mipmap_interpolation_required_ = true;
 			break;
 		}

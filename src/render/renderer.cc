@@ -98,7 +98,7 @@ bool Renderer::render(ImageFilm &image_film, std::unique_ptr<ProgressBar> progre
 {
 	if(!surf_integrator_)
 	{
-		logger_.logError(getClassName(), "'", getName(), "': No surface integrator, bailing out...");
+		logger_.logError(getClassName(), " '", getName(), "': No surface integrator, bailing out...");
 		return false;
 	}
 
@@ -110,20 +110,20 @@ bool Renderer::render(ImageFilm &image_film, std::unique_ptr<ProgressBar> progre
 
 	if(!success)
 	{
-		logger_.logError(getClassName(), "'", getName(), "': Preprocessing process failed, exiting...");
+		logger_.logError(getClassName(), " '", getName(), "': Preprocessing process failed, exiting...");
 		return false;
 	}
 
 	if(shadow_bias_auto_) shadow_bias_ = Accelerator::shadowBias();
 	if(ray_min_dist_auto_) ray_min_dist_ = Accelerator::minRayDist();
-	logger_.logInfo(getClassName(), "'", getName(), "': Shadow Bias=", shadow_bias_, (shadow_bias_auto_ ? " (auto)" : ""), ", Ray Min Dist=", ray_min_dist_, (ray_min_dist_auto_ ? " (auto)" : ""));
+	logger_.logInfo(getClassName(), " '", getName(), "': Shadow Bias=", shadow_bias_, (shadow_bias_auto_ ? " (auto)" : ""), ", Ray Min Dist=", ray_min_dist_, (ray_min_dist_auto_ ? " (auto)" : ""));
 
 	render_control_.setDifferentialRaysEnabled(scene.mipMapInterpolationRequired());
 	render_control_.setStarted();
 	success = surf_integrator_->render(fast_random, scene.getObjectIndexHighest(), scene.getMaterialIndexHighest());
 	if(!success)
 	{
-		logger_.logError(getClassName(), "'", getName(), "': Rendering process failed, exiting...");
+		logger_.logError(getClassName(), " '", getName(), "': Rendering process failed, exiting...");
 		return false;
 	}
 	render_control_.setRenderInfo(surf_integrator_->getRenderInfo());

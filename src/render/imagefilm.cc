@@ -214,7 +214,7 @@ std::pair<ImageFilm *, ParamResult> ImageFilm::factory(Logger &logger, RenderCon
 	return {std::move(result), param_result};
 }
 
-ImageFilm::ImageFilm(Logger &logger, ParamResult &param_result, RenderControl &render_control, const std::string &name, const ParamMap &param_map) : params_{param_result, param_map}, logger_{logger}
+ImageFilm::ImageFilm(Logger &logger, ParamResult &param_result, RenderControl &render_control, const std::string &name, const ParamMap &param_map) : params_{param_result, param_map}, name_{name}, logger_{logger}
 {
 	if(logger_.isDebug()) logger_.logDebug("**" + getClassName() + " params_:\n" + getAsParamMap(true).print());
 	if(params_.images_autosave_interval_type_ == AutoSaveParams::IntervalType::Pass) logger_.logInfo(getClassName(), ": ", "AutoSave partially rendered image every ", params_.images_autosave_interval_passes_, " passes");
@@ -1260,7 +1260,7 @@ void ImageFilm::defineLayer(LayerDef::Type layer_type, Image::Type image_type, I
 {
 	if(layer_type == LayerDef::Disabled)
 	{
-		logger_.logWarning(getClassName(), "'", getName(), "': cannot create layer '", LayerDef::getName(layer_type), "' of unknown or disabled layer type");
+		logger_.logWarning(getClassName(), " '", getName(), "': cannot create layer '", LayerDef::getName(layer_type), "' of unknown or disabled layer type");
 		return;
 	}
 
@@ -1270,16 +1270,16 @@ void ImageFilm::defineLayer(LayerDef::Type layer_type, Image::Type image_type, I
 		   existing_layer->getImageType() == image_type &&
 		   existing_layer->getExportedImageType() == exported_image_type) return;
 
-		if(logger_.isDebug())logger_.logDebug(getClassName(), "'", getName(), "': had previously defined: ", existing_layer->print());
+		if(logger_.isDebug())logger_.logDebug(getClassName(), " '", getName(), "': had previously defined: ", existing_layer->print());
 		if(image_type == Image::Type::None && existing_layer->getImageType() != Image::Type::None)
 		{
-			if(logger_.isDebug())logger_.logDebug(getClassName(), "'", getName(), "': the layer '", LayerDef::getName(layer_type), "' had previously a defined internal image which cannot be removed.");
+			if(logger_.isDebug())logger_.logDebug(getClassName(), " '", getName(), "': the layer '", LayerDef::getName(layer_type), "' had previously a defined internal image which cannot be removed.");
 		}
 		else existing_layer->setImageType(image_type);
 
 		if(exported_image_type == Image::Type::None && existing_layer->getExportedImageType() != Image::Type::None)
 		{
-			if(logger_.isDebug())logger_.logDebug(getClassName(), "'", getName(), "': the layer '", LayerDef::getName(layer_type), "' was previously an exported layer and cannot be changed into an internal layer now.");
+			if(logger_.isDebug())logger_.logDebug(getClassName(), " '", getName(), "': the layer '", LayerDef::getName(layer_type), "' was previously an exported layer and cannot be changed into an internal layer now.");
 		}
 		else
 		{
@@ -1287,13 +1287,13 @@ void ImageFilm::defineLayer(LayerDef::Type layer_type, Image::Type image_type, I
 			existing_layer->setExportedImageName(exported_image_name);
 		}
 		existing_layer->setType(layer_type);
-		logger_.logInfo(getClassName(), "'", getName(), "': layer redefined: " + existing_layer->print());
+		logger_.logInfo(getClassName(), " '", getName(), "': layer redefined: " + existing_layer->print());
 	}
 	else
 	{
 		Layer new_layer(layer_type, image_type, exported_image_type, exported_image_name);
 		layers_.set(layer_type, new_layer);
-		logger_.logInfo(getClassName(), "'", getName(), "': layer defined: ", new_layer.print());
+		logger_.logInfo(getClassName(), " '", getName(), "': layer defined: ", new_layer.print());
 	}
 }
 
