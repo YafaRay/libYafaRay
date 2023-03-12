@@ -51,6 +51,12 @@ yafaray_Logger *yafaray_createLogger(yafaray_LoggerCallback logger_callback, voi
 	return reinterpret_cast<yafaray_Logger *>(logger);
 }
 
+void yafaray_setLoggerCallbacks(yafaray_Logger *logger, yafaray_LoggerCallback logger_callback, void *callback_data)
+{
+	auto yafaray_logger{reinterpret_cast<yafaray::Logger *>(logger)};
+	yafaray_logger->setCallback(logger_callback, callback_data);
+}
+
 void yafaray_destroyLogger(yafaray_Logger *logger)
 {
 	delete reinterpret_cast<yafaray::Logger *>(logger);

@@ -3,6 +3,7 @@
 LIBYAFARAY_4.0.0 {
     global:
         yafaray_createLogger;
+        yafaray_setLoggerCallbacks;
         yafaray_destroyLogger;
         yafaray_createFilm;
         yafaray_destroyFilm;

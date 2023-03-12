@@ -71,6 +71,7 @@ extern "C" {
 	/*YAFARAY_C_API_EXPORT yafaray_Scene *yafaray_createInterface(yafaray_InterfaceType interface_type, const char *exported_file_path, yafaray_LoggerCallback logger_callback, void *callback_data, yafaray_DisplayConsole display_console);
 	YAFARAY_C_API_EXPORT void yafaray_destroyInterface(yafaray_Scene *scene);*/
 	YAFARAY_C_API_EXPORT yafaray_Logger *yafaray_createLogger(yafaray_LoggerCallback logger_callback, void *callback_data, yafaray_DisplayConsole display_console);
+	YAFARAY_C_API_EXPORT void yafaray_setLoggerCallbacks(yafaray_Logger *logger, yafaray_LoggerCallback logger_callback, void *callback_data);
 	YAFARAY_C_API_EXPORT void yafaray_destroyLogger(yafaray_Logger *logger);
 	YAFARAY_C_API_EXPORT yafaray_Film *yafaray_createFilm(yafaray_Logger *logger, yafaray_Renderer *renderer, const char *name, const yafaray_ParamMap *param_map);
 	YAFARAY_C_API_EXPORT void yafaray_destroyFilm(yafaray_Film *film);
