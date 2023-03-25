@@ -116,7 +116,7 @@ void yafaray_destroyParamMapList(yafaray_ParamMapList *param_map_list)
 	delete reinterpret_cast<std::list<yafaray::ParamMap> *>(param_map_list);
 }
 
-yafaray_Renderer *yafaray_createRenderer(yafaray_Logger *logger, const yafaray_Scene *scene, const char *name, yafaray_DisplayConsole display_console, yafaray_ParamMap *param_map)
+yafaray_Renderer *yafaray_createRenderer(yafaray_Logger *logger, const yafaray_Scene *scene, const char *name, yafaray_DisplayConsole display_console, const yafaray_ParamMap *param_map)
 {
 	auto renderer{new yafaray::Renderer(*reinterpret_cast<yafaray::Logger *>(logger), name, *reinterpret_cast<const yafaray::Scene *>(scene), *reinterpret_cast<const yafaray::ParamMap *>(param_map), display_console)};
 	return reinterpret_cast<yafaray_Renderer *>(renderer);

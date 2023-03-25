@@ -82,7 +82,7 @@ extern "C" {
 	YAFARAY_C_API_EXPORT yafaray_ParamMapList *yafaray_createParamMapList();
 	YAFARAY_C_API_EXPORT void yafaray_clearParamMapList(yafaray_ParamMapList *param_map_list);
 	YAFARAY_C_API_EXPORT void yafaray_destroyParamMapList(yafaray_ParamMapList *param_map_list);
-	YAFARAY_C_API_EXPORT yafaray_Renderer *yafaray_createRenderer(yafaray_Logger *logger, const yafaray_Scene *scene, const char *name, yafaray_DisplayConsole display_console, yafaray_ParamMap *param_map);
+	YAFARAY_C_API_EXPORT yafaray_Renderer *yafaray_createRenderer(yafaray_Logger *logger, const yafaray_Scene *scene, const char *name, yafaray_DisplayConsole display_console, const yafaray_ParamMap *param_map);
 	YAFARAY_C_API_EXPORT void yafaray_destroyRenderer(yafaray_Renderer *renderer);
 	YAFARAY_C_API_EXPORT int yafaray_getFilmWidth(const yafaray_Film *film);
 	YAFARAY_C_API_EXPORT int yafaray_getFilmHeight(const yafaray_Film *film);
