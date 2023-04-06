@@ -52,9 +52,7 @@ class TiledIntegrator : public SurfaceIntegrator
 		bool render(FastRandom &fast_random, unsigned int object_index_highest, unsigned int material_index_highest) override;
 		/*! render a pass; only required by the default implementation of render() */
 		virtual bool renderPass(FastRandom &fast_random, std::vector<int> &correlative_sample_number, int samples, int offset, bool adaptive, int aa_pass_number, unsigned int object_index_highest, unsigned int material_index_highest);
-		/*! render a tile; only required by default implementation of render() */
 		virtual bool renderTile(FastRandom &fast_random, std::vector<int> &correlative_sample_number, const RenderArea &a, int n_samples, int offset, bool adaptive, int thread_id, int aa_pass_number, unsigned int object_index_highest, unsigned int material_index_highest);
-		bool renderTile(FastRandom &fast_random, std::vector<int> &correlative_sample_number, const RenderArea &a, int n_samples, int offset, bool adaptive, int thread_id, unsigned int object_index_highest, unsigned int material_index_highest) { return renderTile(fast_random, correlative_sample_number, a, n_samples, offset, adaptive, thread_id, 0, object_index_highest, material_index_highest); }
 		virtual void renderWorker(ThreadControl *control, FastRandom &fast_random, std::vector<int> &correlative_sample_number, int thread_id, int samples, int offset, bool adaptive, int aa_pass, unsigned int object_index_highest, unsigned int material_index_highest);
 		virtual void precalcDepths();
 		static void generateCommonLayers(ColorLayers *color_layers, const SurfacePoint &sp, const MaskParams &mask_params, unsigned int object_index_highest, unsigned int material_index_highest); //!< Generates render passes common to all integrators
