@@ -20,8 +20,8 @@
  *      Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  *
  */
-#ifndef YAFARAY_SURFACE_H
-#define YAFARAY_SURFACE_H
+#ifndef LIBYAFARAY_SURFACE_H
+#define LIBYAFARAY_SURFACE_H
 
 #include "geometry/vector.h"
 #include "geometry/primitive/primitive.h"
@@ -73,15 +73,15 @@ class SurfacePoint final
 		[[nodiscard]] std::array<Uv<float>, 2> getUVdifferentialsXY() const;
 		[[nodiscard]] std::unique_ptr<SurfaceDifferentials> calcSurfaceDifferentials(const RayDifferentials *ray_differentials) const;
 		[[nodiscard]] Rgb eval(const Vec3f &wo, const Vec3f &wl, BsdfFlags types, bool force_eval = false) const;
-		[[nodiscard]] Rgb sample(const Vec3f &wo, Vec3f &wi, Sample &s, float &w, bool chromatic, float wavelength, const Camera *camera) const;
+		[[nodiscard]] Rgb sample(const Vec3f &wo, Vec3f &wi, Sample &s, float &w, bool chromatic, float wavelength = 0.f, const Camera *camera = nullptr) const;
 		[[nodiscard]] Rgb sample(const Vec3f &wo, Vec3f *dir, Rgb &tcol, Sample &s, float *w, bool chromatic, float wavelength) const;
 		[[nodiscard]] float pdf(const Vec3f &wo, const Vec3f &wi, BsdfFlags bsdfs) const;
-		[[nodiscard]] Rgb getTransparency(const Vec3f &wo, const Camera *camera) const;
+		[[nodiscard]] Rgb getTransparency(const Vec3f &wo, const Camera *camera = nullptr) const;
 		[[nodiscard]] Specular getSpecular(int ray_level, const Vec3f &wo, bool chromatic, float wavelength) const;
-		[[nodiscard]] Rgb getReflectivity(FastRandom &fast_random, BsdfFlags flags, bool chromatic, float wavelength, const Camera *camera) const;
+		[[nodiscard]] Rgb getReflectivity(FastRandom &fast_random, BsdfFlags flags, bool chromatic, float wavelength = 0.f, const Camera *camera = nullptr) const;
 		[[nodiscard]] Rgb emit(const Vec3f &wo) const;
-		[[nodiscard]] float getAlpha(const Vec3f &wo, const Camera *camera) const;
-		[[nodiscard]] bool scatterPhoton(const Vec3f &wi, Vec3f &wo, PSample &s, bool chromatic, float wavelength, const Camera *camera) const;
+		[[nodiscard]] float getAlpha(const Vec3f &wo, const Camera *camera = nullptr) const;
+		[[nodiscard]] bool scatterPhoton(const Vec3f &wi, Vec3f &wo, PSample &s, bool chromatic, float wavelength = 0.f, const Camera *camera = nullptr) const;
 		[[nodiscard]] int getObjectIndex() const { if(primitive_) return primitive_->getObjectIndex(); else return 0; }
 		[[nodiscard]] size_t getObjectId() const { if(primitive_) return primitive_->getObjectId(); else return 0; }
 		[[nodiscard]] Rgb getObjectIndexAutoColor() const { if(primitive_) return primitive_->getObjectIndexAutoColor(); else return Rgb{0.f}; }

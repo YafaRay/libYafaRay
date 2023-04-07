@@ -28,7 +28,7 @@ int main()
 	yafaray_ParamMap *param_map = NULL;
 	yafaray_ParamMapList *param_map_list = NULL;
 	yafaray_Logger *logger = NULL;
-	yafaray_Renderer *renderer = NULL;
+	yafaray_SurfaceIntegrator *surface_integrator = NULL;
 	yafaray_Scene *scene = NULL;
 	yafaray_Film *film = NULL;
 	size_t material_id = 0;
@@ -457,27 +457,27 @@ int main()
 	yafaray_setParamMapString(param_map, "type", "constant");
 	yafaray_defineBackground(scene, param_map);
 
-	/* Creating renderer */
+	/* Creating surface integrator */
 	yafaray_clearParamMap(param_map);
-	renderer = yafaray_createRenderer(logger, scene, "renderer", YAFARAY_DISPLAY_CONSOLE_NORMAL, param_map);
+	surface_integrator = yafaray_createSurfaceIntegrator(logger, scene, "surface integrator", YAFARAY_DISPLAY_CONSOLE_NORMAL, param_map);
 
 	/* Creating surface integrator */
 	yafaray_clearParamMap(param_map);
 	yafaray_setParamMapInt(param_map, "raydepth", 2);
 	yafaray_setParamMapInt(param_map, "shadowDepth", 2);
 	yafaray_setParamMapString(param_map, "type", "directlighting");
-	yafaray_defineSurfaceIntegrator(renderer, param_map);
+	yafaray_defineSurfaceIntegrator(surface_integrator, param_map);
 
 	/* Setting up renderer, which is a prerequisite for rendering */
 	yafaray_clearParamMap(param_map);
-	yafaray_setupRender(scene, renderer, param_map);
+	yafaray_setupRender(scene, surface_integrator, param_map);
 
 	/* Creating film */
 	yafaray_clearParamMap(param_map);
 	yafaray_setParamMapInt(param_map, "width", 480);
 	yafaray_setParamMapInt(param_map, "height", 270);
 	yafaray_setParamMapInt(param_map, "AA_minsamples", 3);
-	film = yafaray_createFilm(logger, renderer, "film", param_map);
+	film = yafaray_createFilm(logger, surface_integrator, "film", param_map);
 
 	/* Setting up film layers */
 	yafaray_clearParamMap(param_map);
@@ -505,11 +505,11 @@ int main()
 	yafaray_createOutput(film, "output1_tga", param_map);
 
 	/* Rendering */
-	yafaray_render(renderer, film, scene, NULL, NULL, YAFARAY_DISPLAY_CONSOLE_NORMAL);
+	yafaray_render(surface_integrator, film, scene, NULL, NULL, YAFARAY_DISPLAY_CONSOLE_NORMAL);
 
 	/* Destruction/deallocation */
 	yafaray_destroyFilm(film);
-	yafaray_destroyRenderer(renderer);
+	yafaray_destroySurfaceIntegrator(surface_integrator);
 	yafaray_destroyScene(scene);
 	yafaray_destroyLogger(logger);
 	yafaray_destroyParamMapList(param_map_list);

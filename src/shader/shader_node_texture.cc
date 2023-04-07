@@ -206,11 +206,16 @@ std::pair<Point3f, Vec3f> TextureMapperNode::getCoords(const SurfacePoint &sp, c
 		case Coords::Uv: return { {{ sp.uv_.u_, sp.uv_.v_, 0.f }}, sp.ng_ };
 		case Coords::Orco: return { sp.orco_p_, sp.orco_ng_ };
 		case Coords::Transformed: return { params_.transform_ * sp.p_, params_.transform_ * sp.ng_ };  // apply 4x4 matrix of object for mapping also to true surface normals
-		case Coords::Window: return { camera->screenproject(sp.p_), sp.ng_ };
-		case Coords::Normal: {
-			const auto [cam_x, cam_y, cam_z] = camera->getAxes();
-			return {{{sp.n_ * cam_x, -sp.n_ * cam_y, 0.f}}, sp.ng_};
+		case Coords::Window:
+			if(camera) return { camera->screenproject(sp.p_), sp.ng_ };
+			else return { sp.p_, sp.ng_ };
+		case Coords::Normal:
+			if(camera)
+			{
+				const auto [cam_x, cam_y, cam_z] = camera->getAxes();
+				return {{{sp.n_ * cam_x, -sp.n_ * cam_y, 0.f}}, sp.ng_};
 			}
+			else return { sp.p_, sp.ng_ };
 		case Coords::Stick: // Not implemented yet use GLOB
 		case Coords::Stress: // Not implemented yet use GLOB
 		case Coords::Tangent: // Not implemented yet use GLOB

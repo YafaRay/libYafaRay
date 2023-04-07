@@ -53,7 +53,7 @@ class SingleScatterIntegrator final : public VolumeIntegrator
 			PARAM_DECL(bool , adaptive_, false, "adaptive", "");
 			PARAM_DECL(bool , optimize_, false, "optimize", "");
 		} params_;
-		bool preprocess(const Scene &scene, const Renderer &renderer) override;
+		bool preprocess(const Scene &scene, const SurfaceIntegrator &surf_integrator) override;
 		// optical thickness, absorption, attenuation, extinction
 		Rgb transmittance(RandomGenerator &random_generator, const Ray &ray) const override;
 		// emission and in-scattering

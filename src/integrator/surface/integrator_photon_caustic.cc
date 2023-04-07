@@ -39,6 +39,7 @@
 #include "render/render_control.h"
 #include "photon/photon_sample.h"
 #include "volume/handler/volume_handler.h"
+#include "common/sysinfo.h"
 
 namespace yafaray {
 
@@ -50,6 +51,7 @@ std::map<std::string, const ParamMeta *> CausticPhotonIntegrator::Params::getPar
 	PARAM_META(n_caus_search_);
 	PARAM_META(caus_radius_);
 	PARAM_META(caus_depth_);
+	PARAM_META(threads_photons_);
 	return param_meta_map;
 }
 
@@ -60,6 +62,7 @@ CausticPhotonIntegrator::Params::Params(ParamResult &param_result, const ParamMa
 	PARAM_LOAD(n_caus_search_);
 	PARAM_LOAD(caus_radius_);
 	PARAM_LOAD(caus_depth_);
+	PARAM_LOAD(threads_photons_);
 }
 
 ParamMap CausticPhotonIntegrator::getAsParamMap(bool only_non_default) const
@@ -71,11 +74,12 @@ ParamMap CausticPhotonIntegrator::getAsParamMap(bool only_non_default) const
 	PARAM_SAVE(n_caus_search_);
 	PARAM_SAVE(caus_radius_);
 	PARAM_SAVE(caus_depth_);
+	PARAM_SAVE(threads_photons_);
 	return param_map;
 }
 
 //Constructor and destructor defined here to avoid issues with std::unique_ptr<Pdf1D> being Pdf1D incomplete in the header (forward declaration)
-CausticPhotonIntegrator::CausticPhotonIntegrator(RenderControl &render_control, Logger &logger, ParamResult &param_result, const std::string &name, const ParamMap &param_map) : ParentClassType_t(render_control, logger, param_result, name, param_map), params_{param_result, param_map}
+CausticPhotonIntegrator::CausticPhotonIntegrator(Logger &logger, ParamResult &param_result, const std::string &name, const ParamMap &param_map) : ParentClassType_t(logger, param_result, name, param_map), params_{param_result, param_map}
 {
 	caustic_map_ = std::make_unique<PhotonMap>(logger);
 	caustic_map_->setName("Caustic Photon Map");
@@ -94,7 +98,7 @@ Rgb CausticPhotonIntegrator::causticPhotons(ColorLayers *color_layers, const Ray
 	return col;
 }
 
-void CausticPhotonIntegrator::causticWorker(FastRandom &fast_random, unsigned int &total_photons_shot, int thread_id, const Pdf1D *light_power_d_caustic, const std::vector<const Light *> &lights_caustic, int pb_step)
+void CausticPhotonIntegrator::causticWorker(RenderControl &render_control, FastRandom &fast_random, unsigned int &total_photons_shot, int thread_id, const Pdf1D *light_power_d_caustic, const std::vector<const Light *> &lights_caustic, int pb_step)
 {
 	bool done = false;
 	const int num_lights_caustic = lights_caustic.size();
@@ -144,7 +148,7 @@ void CausticPhotonIntegrator::causticWorker(FastRandom &fast_random, unsigned in
 		bool chromatic_enabled = true;
 		while(true)
 		{
-			std::tie(hit_curr, ray.tmax_) = accelerator_->intersect(ray, camera_);
+			std::tie(hit_curr, ray.tmax_) = accelerator_->intersect(ray);
 			if(!hit_curr) break;
 			// check for volumetric effects, based on the material from the previous photon bounce
 			Rgb transm(1.f);
@@ -177,7 +181,7 @@ void CausticPhotonIntegrator::causticWorker(FastRandom &fast_random, unsigned in
 
 			PSample sample(s_5, s_6, s_7, BsdfFlags::AllSpecular | BsdfFlags::Glossy | BsdfFlags::Filter | BsdfFlags::Dispersive, pcol, transm);
 			Vec3f wo;
-			bool scattered = hit_curr->scatterPhoton(wi, wo, sample, chromatic_enabled, wavelength, camera_);
+			bool scattered = hit_curr->scatterPhoton(wi, wo, sample, chromatic_enabled, wavelength);
 			if(!scattered) break; //photon was absorped.
 			pcol = sample.color_;
 			// hm...dispersive is not really a scattering qualifier like specular/glossy/diffuse or the special case filter...
@@ -205,8 +209,8 @@ void CausticPhotonIntegrator::causticWorker(FastRandom &fast_random, unsigned in
 		++curr;
 		if(curr % pb_step == 0)
 		{
-			render_control_.updateProgressBar();
-			if(render_control_.canceled()) { return; }
+			render_control.updateProgressBar();
+			if(render_control.canceled()) { return; }
 		}
 		done = (curr >= n_caus_photons_thread);
 	}
@@ -216,7 +220,7 @@ void CausticPhotonIntegrator::causticWorker(FastRandom &fast_random, unsigned in
 	caustic_map_->mutx_.unlock();
 }
 
-bool CausticPhotonIntegrator::createCausticMap(FastRandom &fast_random)
+bool CausticPhotonIntegrator::createCausticMap(RenderControl &render_control, FastRandom &fast_random)
 {
 	caustic_map_->clear();
 	caustic_map_->setNumPaths(0);
@@ -243,9 +247,9 @@ bool CausticPhotonIntegrator::createCausticMap(FastRandom &fast_random)
 		}
 
 		logger_.logInfo(getName(), ": Building caustics photon map...");
-		render_control_.initProgressBar(128, logger_.getConsoleLogColorsEnabled());
+		render_control.initProgressBar(128, logger_.getConsoleLogColorsEnabled());
 		const int pb_step = std::max(1, n_caus_photons_ / 128);
-		render_control_.setProgressBarTag("Building caustics photon map...");
+		render_control.setProgressBarTag("Building caustics photon map...");
 
 		unsigned int curr = 0;
 
@@ -255,18 +259,18 @@ bool CausticPhotonIntegrator::createCausticMap(FastRandom &fast_random)
 
 		std::vector<std::thread> threads;
 		threads.reserve(num_threads_photons_);
-		for(int i = 0; i < num_threads_photons_; ++i) threads.emplace_back(&CausticPhotonIntegrator::causticWorker, this, std::ref(fast_random), std::ref(curr), i, light_power_d_caustic.get(), lights_caustic, pb_step);
+		for(int i = 0; i < num_threads_photons_; ++i) threads.emplace_back(&CausticPhotonIntegrator::causticWorker, this, std::ref(render_control), std::ref(fast_random), std::ref(curr), i, light_power_d_caustic.get(), lights_caustic, pb_step);
 		for(auto &t : threads) t.join();
 
-		render_control_.setProgressBarAsDone();
-		render_control_.setProgressBarTag("Caustic photon map built.");
+		render_control.setProgressBarAsDone();
+		render_control.setProgressBarTag("Caustic photon map built.");
 		if(logger_.isVerbose()) logger_.logVerbose(getName(), ": Done.");
 		logger_.logInfo(getName(), ": Shot ", curr, " caustic photons from ", num_lights_caustic, " light(s).");
 		if(logger_.isVerbose()) logger_.logVerbose(getName(), ": Stored caustic photons: ", caustic_map_->nPhotons());
 
 		if(caustic_map_->nPhotons() > 0)
 		{
-			render_control_.setProgressBarTag("Building caustic photons kd-tree...");
+			render_control.setProgressBarTag("Building caustic photons kd-tree...");
 			caustic_map_->updateTree();
 			if(logger_.isVerbose()) logger_.logVerbose(getName(), ": Done.");
 		}
@@ -295,6 +299,23 @@ Rgb CausticPhotonIntegrator::estimateCausticPhotons(const SurfacePoint &sp, cons
 		sum *= 1.f / static_cast<float>(caustic_map->nPaths());
 	}
 	return sum;
+}
+
+int CausticPhotonIntegrator::setNumThreadsPhotons(int threads_photons)
+{
+	int result = threads_photons;
+	if(threads_photons == -1) //Automatic detection of number of threads supported by this system, taken from Blender. (DT)
+	{
+		if(logger_.isVerbose()) logger_.logVerbose("Automatic Detection of Threads for Photon Mapping: Active.");
+		result = sysinfo::getNumSystemThreads();
+		if(logger_.isVerbose()) logger_.logVerbose("Number of Threads supported for Photon Mapping: [", result, "].");
+	}
+	else
+	{
+		if(logger_.isVerbose()) logger_.logVerbose("Automatic Detection of Threads for Photon Mapping: Inactive.");
+	}
+	logger_.logParams("Renderer '", getName(), "' using for Photon Mapping [", result, "] Threads.");
+	return result;
 }
 
 } //namespace yafaray

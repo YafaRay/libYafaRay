@@ -36,7 +36,6 @@ class Scene;
 class ImageFilm;
 class Format;
 class SurfaceIntegrator;
-class VolumeIntegrator;
 class SurfacePoint;
 class Camera;
 class Light;
@@ -48,34 +47,16 @@ class Renderer final
 		inline static std::string getClassName() { return "Renderer"; }
 		Renderer(Logger &logger, const std::string &name, const Scene &scene, const ParamMap &param_map, ::yafaray_DisplayConsole display_console);
 		~Renderer();
-		void setNumThreads(int threads);
-		void setNumThreadsPhotons(int threads_photons);
 		std::string getName() const { return name_; }
 		bool render(ImageFilm &image_film, std::unique_ptr<ProgressBar> progress_bar, const Scene &scene);
-		int getNumThreads() const { return nthreads_; }
-		int getNumThreadsPhotons() const { return nthreads_photons_; }
-		RenderControl &getRenderControl() { return render_control_; }
-		bool setupSceneRenderParams(const ParamMap &param_map);
-		float getShadowBias() const { return shadow_bias_; }
-		bool isShadowBiasAuto() const { return shadow_bias_auto_; }
-		float getRayMinDist() const { return ray_min_dist_; }
-		bool isRayMinDistAuto() const { return ray_min_dist_auto_; }
-		ParamResult defineSurfaceIntegrator(const ParamMap &param_map);
-		ParamResult defineVolumeIntegrator(const Scene &scene, const ParamMap &param_map);
-		const VolumeIntegrator *getVolIntegrator() const { return vol_integrator_.get(); }
-		std::vector<const Light *> getLightsVisible() const;
 
 	private:
 		std::string name_{"Renderer"};
-		int nthreads_ = 1;
-		int nthreads_photons_ = 1;
 		float shadow_bias_ = 1.0e-4f;  //shadow bias to apply to shadows to avoid self-shadow artifacts
 		bool shadow_bias_auto_ = true; //enable automatic shadow bias calculation
 		float ray_min_dist_ = 1.0e-5f;  //ray minimum distance
 		bool ray_min_dist_auto_ = true;  //enable automatic ray minimum distance calculation
-		RenderControl render_control_;
 		std::unique_ptr<SurfaceIntegrator> surf_integrator_;
-		std::unique_ptr<VolumeIntegrator> vol_integrator_;
 		Logger &logger_;
 };
 

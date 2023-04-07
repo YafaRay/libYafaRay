@@ -22,5 +22,5 @@ target_sources(libyafaray4
 		imagesplitter.cc
 		progress_bar.cc
 		render_control.cc
-		renderer.cc
+		#renderer.cc
 )

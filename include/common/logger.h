@@ -78,8 +78,8 @@ class Logger final
 		bool getSaveStats() const { return !statsEmpty(); }
 		bool getConsoleLogColorsEnabled() const { return console_log_colors_enabled_; }
 
-		void saveTxtLog(const std::string &name, const Badge &badge, const RenderControl &render_control, const Timer &timer);
-		void saveHtmlLog(const std::string &name, const Badge &badge, const RenderControl &render_control, const Timer &timer);
+		void saveTxtLog(const std::string &name, const Badge &badge, const RenderControl &render_control);
+		void saveHtmlLog(const std::string &name, const Badge &badge, const RenderControl &render_control);
 		void clearMemoryLog();
 		void clearAll();
 

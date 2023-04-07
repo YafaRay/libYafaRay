@@ -33,7 +33,7 @@ extern "C" {
 	typedef struct yafaray_Scene yafaray_Scene;
 	typedef struct yafaray_ParamMap yafaray_ParamMap;
 	typedef struct yafaray_ParamMapList yafaray_ParamMapList;
-	typedef struct yafaray_Renderer yafaray_Renderer;
+	typedef struct yafaray_SurfaceIntegrator yafaray_SurfaceIntegrator;
 	typedef struct yafaray_Film yafaray_Film;
 
 	/* Basic enums */
@@ -73,7 +73,7 @@ extern "C" {
 	YAFARAY_C_API_EXPORT yafaray_Logger *yafaray_createLogger(yafaray_LoggerCallback logger_callback, void *callback_data, yafaray_DisplayConsole display_console);
 	YAFARAY_C_API_EXPORT void yafaray_setLoggerCallbacks(yafaray_Logger *logger, yafaray_LoggerCallback logger_callback, void *callback_data);
 	YAFARAY_C_API_EXPORT void yafaray_destroyLogger(yafaray_Logger *logger);
-	YAFARAY_C_API_EXPORT yafaray_Film *yafaray_createFilm(yafaray_Logger *logger, yafaray_Renderer *renderer, const char *name, const yafaray_ParamMap *param_map);
+	YAFARAY_C_API_EXPORT yafaray_Film *yafaray_createFilm(yafaray_Logger *logger, yafaray_SurfaceIntegrator *surface_integrator, const char *name, const yafaray_ParamMap *param_map);
 	YAFARAY_C_API_EXPORT void yafaray_destroyFilm(yafaray_Film *film);
 	YAFARAY_C_API_EXPORT yafaray_Scene *yafaray_createScene(yafaray_Logger *logger, const char *name, const yafaray_ParamMap *param_map);
 	YAFARAY_C_API_EXPORT void yafaray_destroyScene(yafaray_Scene *scene);
@@ -82,8 +82,8 @@ extern "C" {
 	YAFARAY_C_API_EXPORT yafaray_ParamMapList *yafaray_createParamMapList();
 	YAFARAY_C_API_EXPORT void yafaray_clearParamMapList(yafaray_ParamMapList *param_map_list);
 	YAFARAY_C_API_EXPORT void yafaray_destroyParamMapList(yafaray_ParamMapList *param_map_list);
-	YAFARAY_C_API_EXPORT yafaray_Renderer *yafaray_createRenderer(yafaray_Logger *logger, const yafaray_Scene *scene, const char *name, yafaray_DisplayConsole display_console, const yafaray_ParamMap *param_map);
-	YAFARAY_C_API_EXPORT void yafaray_destroyRenderer(yafaray_Renderer *renderer);
+	YAFARAY_C_API_EXPORT yafaray_SurfaceIntegrator *yafaray_createSurfaceIntegrator(yafaray_Logger *logger, const yafaray_Scene *scene, const char *name, const yafaray_ParamMap *param_map);
+	YAFARAY_C_API_EXPORT void yafaray_destroySurfaceIntegrator(yafaray_SurfaceIntegrator *surface_integrator);
 	YAFARAY_C_API_EXPORT int yafaray_getFilmWidth(const yafaray_Film *film);
 	YAFARAY_C_API_EXPORT int yafaray_getFilmHeight(const yafaray_Film *film);
 	YAFARAY_C_API_EXPORT yafaray_Bool yafaray_initObject(yafaray_Scene *scene, size_t object_id, size_t material_id);
@@ -122,8 +122,7 @@ extern "C" {
 	YAFARAY_C_API_EXPORT yafaray_ResultFlags yafaray_createMaterial(yafaray_Scene *scene, size_t *id_obtained, const char *name, const yafaray_ParamMap *param_map, const yafaray_ParamMapList *param_map_list_nodes);
 	YAFARAY_C_API_EXPORT yafaray_ResultFlags yafaray_defineCamera(yafaray_Film *film, const char *name, const yafaray_ParamMap *param_map);
 	YAFARAY_C_API_EXPORT yafaray_ResultFlags yafaray_defineBackground(yafaray_Scene *scene, const yafaray_ParamMap *param_map);
-	YAFARAY_C_API_EXPORT yafaray_ResultFlags yafaray_defineSurfaceIntegrator(yafaray_Renderer *renderer, const yafaray_ParamMap *param_map);
-	YAFARAY_C_API_EXPORT yafaray_ResultFlags yafaray_defineVolumeIntegrator(yafaray_Renderer *renderer, const yafaray_Scene *scene, const yafaray_ParamMap *param_map);
+	YAFARAY_C_API_EXPORT yafaray_ResultFlags yafaray_defineVolumeIntegrator(yafaray_SurfaceIntegrator *surface_integrator, const yafaray_Scene *scene, const yafaray_ParamMap *param_map);
 	YAFARAY_C_API_EXPORT yafaray_ResultFlags yafaray_createVolumeRegion(yafaray_Scene *scene, const char *name, const yafaray_ParamMap *param_map);
 	YAFARAY_C_API_EXPORT yafaray_ResultFlags yafaray_createOutput(yafaray_Film *film, const char *name, const yafaray_ParamMap *param_map);
 	YAFARAY_C_API_EXPORT void yafaray_setNotifyLayerCallback(yafaray_Film *film, yafaray_RenderNotifyLayerCallback callback, void *callback_data);
@@ -132,8 +131,8 @@ extern "C" {
 	YAFARAY_C_API_EXPORT void yafaray_setFlushAreaCallback(yafaray_Film *film, yafaray_RenderFlushAreaCallback callback, void *callback_data);
 	YAFARAY_C_API_EXPORT void yafaray_setFlushCallback(yafaray_Film *film, yafaray_RenderFlushCallback callback, void *callback_data);
 	YAFARAY_C_API_EXPORT void yafaray_setHighlightAreaCallback(yafaray_Film *film, yafaray_RenderHighlightAreaCallback callback, void *callback_data);
-	YAFARAY_C_API_EXPORT void yafaray_setupRender(yafaray_Scene *scene, yafaray_Renderer *renderer, const yafaray_ParamMap *param_map);
-	YAFARAY_C_API_EXPORT void yafaray_render(yafaray_Renderer *renderer, yafaray_Film *film, const yafaray_Scene *scene, yafaray_ProgressBarCallback monitor_callback, void *callback_data, yafaray_DisplayConsole progress_bar_display_console);
+	YAFARAY_C_API_EXPORT void yafaray_setupRender(yafaray_Scene *scene, yafaray_SurfaceIntegrator *surface_integrator, const yafaray_ParamMap *param_map);
+	YAFARAY_C_API_EXPORT void yafaray_render(yafaray_SurfaceIntegrator *surface_integrator, yafaray_Film *film, const yafaray_Scene *scene, yafaray_ProgressBarCallback monitor_callback, void *callback_data, yafaray_DisplayConsole progress_bar_display_console);
 	YAFARAY_C_API_EXPORT void yafaray_defineLayer(yafaray_Film *film, const yafaray_ParamMap *param_map);
 	YAFARAY_C_API_EXPORT void yafaray_enablePrintDateTime(yafaray_Logger *logger, yafaray_Bool value);
 	YAFARAY_C_API_EXPORT void yafaray_setConsoleVerbosityLevel(yafaray_Logger *logger, yafaray_LogLevel log_level);
@@ -145,7 +144,7 @@ extern "C" {
 	YAFARAY_C_API_EXPORT void yafaray_printParams(yafaray_Logger *logger, const char *msg);
 	YAFARAY_C_API_EXPORT void yafaray_printWarning(yafaray_Logger *logger, const char *msg);
 	YAFARAY_C_API_EXPORT void yafaray_printError(yafaray_Logger *logger, const char *msg);
-	YAFARAY_C_API_EXPORT void yafaray_cancelRendering(yafaray_Logger *logger, yafaray_Renderer *renderer);
+	YAFARAY_C_API_EXPORT void yafaray_cancelRendering(yafaray_Logger *logger, yafaray_Film *film);
 	YAFARAY_C_API_EXPORT void yafaray_setInputColorSpace(yafaray_ParamMap *param_map, const char *color_space_string, float gamma_val);
 	YAFARAY_C_API_EXPORT yafaray_ResultFlags yafaray_getImageId(yafaray_Scene *scene, const char *name, size_t *id_obtained);
 	YAFARAY_C_API_EXPORT yafaray_ResultFlags yafaray_createImage(yafaray_Scene *scene, const char *name, size_t *id_obtained, const yafaray_ParamMap *param_map);

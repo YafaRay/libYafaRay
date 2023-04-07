@@ -21,8 +21,6 @@
  */
 
 #include "render/imagefilm.h"
-
-#include <memory>
 #include "common/logger.h"
 #include "image/image_output.h"
 #include "format/format.h"
@@ -35,6 +33,8 @@
 #include "math/filter.h"
 #include "common/version_build_info.h"
 #include "image/image_manipulation.h"
+#include "integrator/surface/integrator_surface.h"
+#include "render/progress_bar.h"
 
 namespace yafaray {
 
@@ -43,21 +43,6 @@ typedef float FilterFunction_t(float dx, float dy);
 std::map<std::string, const ParamMeta *> ImageFilm::Params::getParamMetaMap()
 {
 	std::map<std::string, const ParamMeta *> param_meta_map;
-	PARAM_META(aa_passes_);
-	PARAM_META(aa_samples_);
-	PARAM_META(aa_inc_samples_);
-	PARAM_META(aa_threshold_);
-	PARAM_META(aa_resampled_floor_);
-	PARAM_META(aa_sample_multiplier_factor_);
-	PARAM_META(aa_light_sample_multiplier_factor_);
-	PARAM_META(aa_indirect_sample_multiplier_factor_);
-	PARAM_META(aa_detect_color_noise_);
-	PARAM_META(aa_dark_detection_type_);
-	PARAM_META(aa_dark_threshold_factor_);
-	PARAM_META(aa_variance_edge_size_);
-	PARAM_META(aa_variance_pixels_);
-	PARAM_META(aa_clamp_samples_);
-	PARAM_META(aa_clamp_indirect_);
 	PARAM_META(threads_);
 	PARAM_META(background_resampling_);
 	PARAM_META(base_sampling_offset_);
@@ -78,40 +63,11 @@ std::map<std::string, const ParamMeta *> ImageFilm::Params::getParamMetaMap()
 	PARAM_META(film_autosave_interval_type_);
 	PARAM_META(film_autosave_interval_passes_);
 	PARAM_META(film_autosave_interval_seconds_);
-	PARAM_META(layer_mask_obj_index_);
-	PARAM_META(layer_mask_mat_index_);
-	PARAM_META(layer_mask_invert);
-	PARAM_META(layer_mask_only_);
-	PARAM_META(layer_toon_edge_color_);
-	PARAM_META(layer_object_edge_thickness_);
-	PARAM_META(layer_object_edge_threshold_);
-	PARAM_META(layer_object_edge_smoothness_);
-	PARAM_META(layer_toon_pre_smooth_);
-	PARAM_META(layer_toon_quantization_);
-	PARAM_META(layer_toon_post_smooth_);
-	PARAM_META(layer_faces_edge_thickness_);
-	PARAM_META(layer_faces_edge_threshold_);
-	PARAM_META(layer_faces_edge_smoothness_);
 	return param_meta_map;
 }
 
 ImageFilm::Params::Params(ParamResult &param_result, const ParamMap &param_map)
 {
-	PARAM_LOAD(aa_passes_);
-	PARAM_LOAD(aa_samples_);
-	PARAM_LOAD(aa_inc_samples_);
-	PARAM_LOAD(aa_threshold_);
-	PARAM_LOAD(aa_resampled_floor_);
-	PARAM_LOAD(aa_sample_multiplier_factor_);
-	PARAM_LOAD(aa_light_sample_multiplier_factor_);
-	PARAM_LOAD(aa_indirect_sample_multiplier_factor_);
-	PARAM_LOAD(aa_detect_color_noise_);
-	PARAM_ENUM_LOAD(aa_dark_detection_type_);
-	PARAM_LOAD(aa_dark_threshold_factor_);
-	PARAM_LOAD(aa_variance_edge_size_);
-	PARAM_LOAD(aa_variance_pixels_);
-	PARAM_LOAD(aa_clamp_samples_);
-	PARAM_LOAD(aa_clamp_indirect_);
 	PARAM_LOAD(threads_);
 	PARAM_LOAD(background_resampling_);
 	PARAM_LOAD(base_sampling_offset_);
@@ -132,20 +88,6 @@ ImageFilm::Params::Params(ParamResult &param_result, const ParamMap &param_map)
 	PARAM_ENUM_LOAD(film_autosave_interval_type_);
 	PARAM_LOAD(film_autosave_interval_passes_);
 	PARAM_LOAD(film_autosave_interval_seconds_);
-	PARAM_LOAD(layer_mask_obj_index_);
-	PARAM_LOAD(layer_mask_mat_index_);
-	PARAM_LOAD(layer_mask_invert);
-	PARAM_LOAD(layer_mask_only_);
-	PARAM_LOAD(layer_toon_edge_color_);
-	PARAM_LOAD(layer_object_edge_thickness_);
-	PARAM_LOAD(layer_object_edge_threshold_);
-	PARAM_LOAD(layer_object_edge_smoothness_);
-	PARAM_LOAD(layer_toon_pre_smooth_);
-	PARAM_LOAD(layer_toon_quantization_);
-	PARAM_LOAD(layer_toon_post_smooth_);
-	PARAM_LOAD(layer_faces_edge_thickness_);
-	PARAM_LOAD(layer_faces_edge_threshold_);
-	PARAM_LOAD(layer_faces_edge_smoothness_);
 }
 
 ParamMap ImageFilm::getAsParamMap(bool only_non_default) const
@@ -153,21 +95,6 @@ ParamMap ImageFilm::getAsParamMap(bool only_non_default) const
 	ParamMap param_map;
 	param_map.setParam(Params::computer_node_meta_, computer_node_);
 	param_map.setParam(Params::base_sampling_offset_meta_, base_sampling_offset_);
-	PARAM_SAVE(aa_passes_);
-	PARAM_SAVE(aa_samples_);
-	PARAM_SAVE(aa_inc_samples_);
-	PARAM_SAVE(aa_threshold_);
-	PARAM_SAVE(aa_resampled_floor_);
-	PARAM_SAVE(aa_sample_multiplier_factor_);
-	PARAM_SAVE(aa_light_sample_multiplier_factor_);
-	PARAM_SAVE(aa_indirect_sample_multiplier_factor_);
-	PARAM_SAVE(aa_detect_color_noise_);
-	PARAM_ENUM_SAVE(aa_dark_detection_type_);
-	PARAM_SAVE(aa_dark_threshold_factor_);
-	PARAM_SAVE(aa_variance_edge_size_);
-	PARAM_SAVE(aa_variance_pixels_);
-	PARAM_SAVE(aa_clamp_samples_);
-	PARAM_SAVE(aa_clamp_indirect_);
 	PARAM_SAVE(threads_);
 	PARAM_SAVE(background_resampling_);
 	PARAM_SAVE(base_sampling_offset_);
@@ -188,33 +115,19 @@ ParamMap ImageFilm::getAsParamMap(bool only_non_default) const
 	PARAM_ENUM_SAVE(film_autosave_interval_type_);
 	PARAM_SAVE(film_autosave_interval_passes_);
 	PARAM_SAVE(film_autosave_interval_seconds_);
-	PARAM_SAVE(layer_mask_obj_index_);
-	PARAM_SAVE(layer_mask_mat_index_);
-	PARAM_SAVE(layer_mask_invert);
-	PARAM_SAVE(layer_mask_only_);
-	PARAM_SAVE(layer_toon_edge_color_);
-	PARAM_SAVE(layer_object_edge_thickness_);
-	PARAM_SAVE(layer_object_edge_threshold_);
-	PARAM_SAVE(layer_object_edge_smoothness_);
-	PARAM_SAVE(layer_toon_pre_smooth_);
-	PARAM_SAVE(layer_toon_quantization_);
-	PARAM_SAVE(layer_toon_post_smooth_);
-	PARAM_SAVE(layer_faces_edge_thickness_);
-	PARAM_SAVE(layer_faces_edge_threshold_);
-	PARAM_SAVE(layer_faces_edge_smoothness_);
 	return param_map;
 }
 
-std::pair<ImageFilm *, ParamResult> ImageFilm::factory(Logger &logger, RenderControl &render_control, const std::string &name, const ParamMap &param_map)
+std::pair<ImageFilm *, ParamResult> ImageFilm::factory(Logger &logger, const std::string &name, const ParamMap &param_map)
 {
 	if(logger.isDebug()) logger.logDebug("**" + getClassName() + "::factory 'raw' ParamMap\n" + param_map.logContents());
 	auto param_result{class_meta::check<Params>(param_map, {}, {})};
-	auto result {new ImageFilm(logger, param_result, render_control, name, param_map)};
+	auto result {new ImageFilm(logger, param_result, name, param_map)};
 	if(param_result.notOk()) logger.logWarning(param_result.print<ImageFilm>("ImageFilm", {}));
 	return {std::move(result), param_result};
 }
 
-ImageFilm::ImageFilm(Logger &logger, ParamResult &param_result, RenderControl &render_control, const std::string &name, const ParamMap &param_map) : params_{param_result, param_map}, name_{name}, logger_{logger}
+ImageFilm::ImageFilm(Logger &logger, ParamResult &param_result, const std::string &name, const ParamMap &param_map) : params_{param_result, param_map}, name_{name}, logger_{logger}
 {
 	if(logger_.isDebug()) logger_.logDebug("**" + getClassName() + " params_:\n" + getAsParamMap(true).print());
 	if(params_.images_autosave_interval_type_ == AutoSaveParams::IntervalType::Pass) logger_.logInfo(getClassName(), ": ", "AutoSave partially rendered image every ", params_.images_autosave_interval_passes_, " passes");
@@ -300,8 +213,11 @@ void ImageFilm::initLayersExportedImages()
 	}
 }
 
-void ImageFilm::init(RenderControl &render_control)
+void ImageFilm::init(const SurfaceIntegrator &surface_integrator)
 {
+	aa_noise_params_ = surface_integrator.getAaParameters();
+	edge_toon_params_ = surface_integrator.getEdgeToonParams();
+
 	defineBasicLayers();
 	defineDependentLayers();
 
@@ -334,7 +250,7 @@ void ImageFilm::init(RenderControl &render_control)
 	}
 	else area_cnt_ = 1;
 
-	render_control.initProgressBar(params_.width_ * params_.height_, logger_.getConsoleLogColorsEnabled());
+	render_control_.initProgressBar(params_.width_ * params_.height_, logger_.getConsoleLogColorsEnabled());
 
 	cancel_ = false;
 	completed_cnt_ = 0;
@@ -345,13 +261,13 @@ void ImageFilm::init(RenderControl &render_control)
 	resetImagesAutoSaveTimer();
 	resetFilmAutoSaveTimer();
 
-	timer_.addEvent("imagesAutoSaveTimer");
-	timer_.addEvent("filmAutoSaveTimer");
-	timer_.start("imagesAutoSaveTimer");
-	timer_.start("filmAutoSaveTimer");
+	render_control_.addTimerEvent("imagesAutoSaveTimer");
+	render_control_.addTimerEvent("filmAutoSaveTimer");
+	render_control_.startTimer("imagesAutoSaveTimer");
+	render_control_.startTimer("filmAutoSaveTimer");
 
-	if(film_load_save_.mode_ == FilmLoadSave::Mode::LoadAndSave) imageFilmLoadAllInFolder(render_control);	//Load all the existing Film in the images output folder, combining them together. It will load only the Film files with the same "base name" as the output image film (including file name, computer node name and frame) to allow adding samples to animations.
-	if(film_load_save_.mode_ == FilmLoadSave::Mode::LoadAndSave || film_load_save_.mode_ == FilmLoadSave::Mode::Save) imageFilmFileBackup(render_control); //If the imageFilm is set to Save, at the start rename the previous film file as a "backup" just in case the user has made a mistake and wants to get the previous film back.
+	if(film_load_save_.mode_ == FilmLoadSave::Mode::LoadAndSave) imageFilmLoadAllInFolder();	//Load all the existing Film in the images output folder, combining them together. It will load only the Film files with the same "base name" as the output image film (including file name, computer node name and frame) to allow adding samples to animations.
+	if(film_load_save_.mode_ == FilmLoadSave::Mode::LoadAndSave || film_load_save_.mode_ == FilmLoadSave::Mode::Save) imageFilmFileBackup(); //If the imageFilm is set to Save, at the start rename the previous film file as a "backup" just in case the user has made a mistake and wants to get the previous film back.
 
 	if(render_callbacks_.notify_layer_)
 	{
@@ -363,7 +279,33 @@ void ImageFilm::init(RenderControl &render_control)
 	}
 }
 
-int ImageFilm::nextPass(RenderControl &render_control, bool adaptive_aa, const std::string &integrator_name, const EdgeToonParams &edge_params, bool skip_nrender_layer)
+bool ImageFilm::render(std::unique_ptr<ProgressBar> progress_bar, const SurfaceIntegrator &surface_integrator, const Scene &scene)
+{
+	render_control_.setProgressBar(std::move(progress_bar));
+
+	FastRandom fast_random;
+	/*FIXME bool success = surface_integrator.preprocess(render_control_, fast_random, scene);
+	if(!success)
+	{
+		logger_.logError(getClassName(), " '", getName(), "': Preprocessing process failed, exiting...");
+		return false;
+	} */
+
+	//logger_.logInfo(getClassName(), " '", getName(), "': Shadow Bias=", shadow_bias_, (shadow_bias_auto_ ? " (auto)" : ""), ", Ray Min Dist=", ray_min_dist_, (ray_min_dist_auto_ ? " (auto)" : ""));
+	render_control_.setStarted();
+	bool success = surface_integrator.render(this, fast_random, scene.getObjectIndexHighest(), scene.getMaterialIndexHighest());
+	if(!success)
+	{
+		logger_.logError(getClassName(), " '", getName(), "': Rendering process failed, exiting...");
+		return false;
+	}
+	surface_integrator.cleanup(this);
+	flush(ImageFilm::All);
+	render_control_.setFinished();
+	return true;
+}
+
+int ImageFilm::nextPass(bool adaptive_aa, const std::string &integrator_name, const EdgeToonParams &edge_params, bool skip_nrender_layer)
 {
 	next_area_ = 0;
 	n_pass_++;
@@ -376,19 +318,19 @@ int ImageFilm::nextPass(RenderControl &render_control, bool adaptive_aa, const s
 
 	if(logger_.isDebug())logger_.logDebug("nPass=", n_pass_, " imagesAutoSavePassCounter=", images_auto_save_params_.pass_counter_, " filmAutoSavePassCounter=", film_load_save_.auto_save_.pass_counter_);
 
-	if(render_control.inProgress())
+	if(render_control_.inProgress())
 	{
 		if((images_auto_save_params_.interval_type_ == AutoSaveParams::IntervalType::Pass) && (images_auto_save_params_.pass_counter_ >= images_auto_save_params_.interval_passes_))
 		{
 			for(auto &output : outputs_)
 			{
-				if(output.item_) flush(render_control, All);
+				if(output.item_) flush(All);
 			}
 		}
 
 		if((film_load_save_.mode_ == FilmLoadSave::Mode::LoadAndSave || film_load_save_.mode_ == FilmLoadSave::Mode::Save) && (film_load_save_.auto_save_.interval_type_ == AutoSaveParams::IntervalType::Pass) && (film_load_save_.auto_save_.pass_counter_ >= film_load_save_.auto_save_.interval_passes_))
 		{
-			imageFilmSave(render_control);
+			imageFilmSave();
 				film_load_save_.auto_save_.pass_counter_ = 0;
 		}
 	}
@@ -397,14 +339,14 @@ int ImageFilm::nextPass(RenderControl &render_control, bool adaptive_aa, const s
 
 	if(n_pass_ == 0) flags_.fill(true);
 	else flags_.fill(false);
-	const int variance_half_edge = params_.aa_variance_edge_size_ / 2;
+	const int variance_half_edge = aa_noise_params_->variance_edge_size_ / 2;
 	auto combined_image{film_image_layers_(LayerDef::Combined).image_};
 
-	float aa_thresh_scaled = params_.aa_threshold_;
+	float aa_thresh_scaled = aa_threshold_calculated_;
 
 	int n_resample = 0;
 
-	if(adaptive_aa && params_.aa_threshold_ > 0.f)
+	if(adaptive_aa && aa_threshold_calculated_ > 0.f)
 	{
 		for(int y = 0; y < params_.height_; ++y)
 		{
@@ -432,33 +374,33 @@ int ImageFilm::nextPass(RenderControl &render_control, bool adaptive_aa, const s
 				const Rgba pix_col = combined_image->getColor({{x, y}}).normalized(weight);
 				const float pix_col_bri = pix_col.abscol2Bri();
 
-				if(params_.aa_dark_detection_type_ == AaNoiseParams::DarkDetectionType::Linear && params_.aa_dark_threshold_factor_ > 0.f)
+				if(aa_noise_params_->dark_detection_type_ == AaNoiseParams::DarkDetectionType::Linear && aa_noise_params_->dark_threshold_factor_ > 0.f)
 				{
-					if(params_.aa_dark_threshold_factor_ > 0.f) aa_thresh_scaled = params_.aa_threshold_ * ((1.f - params_.aa_dark_threshold_factor_) + (pix_col_bri * params_.aa_dark_threshold_factor_));
+					if(aa_noise_params_->dark_threshold_factor_ > 0.f) aa_thresh_scaled = aa_threshold_calculated_ * ((1.f - aa_noise_params_->dark_threshold_factor_) + (pix_col_bri * aa_noise_params_->dark_threshold_factor_));
 				}
-				else if(params_.aa_dark_detection_type_ == AaNoiseParams::DarkDetectionType::Curve)
+				else if(aa_noise_params_->dark_detection_type_ == AaNoiseParams::DarkDetectionType::Curve)
 				{
 					aa_thresh_scaled = darkThresholdCurveInterpolate(pix_col_bri);
 				}
 
-				if(pix_col.colorDifference(combined_image->getColor({{x + 1, y}}).normalized(weights_({{x + 1, y}}).getFloat()), params_.aa_detect_color_noise_) >= aa_thresh_scaled)
+				if(pix_col.colorDifference(combined_image->getColor({{x + 1, y}}).normalized(weights_({{x + 1, y}}).getFloat()), aa_noise_params_->detect_color_noise_) >= aa_thresh_scaled)
 				{
 					flags_.set({{x, y}}, true); flags_.set({{x + 1, y}}, true);
 				}
-				if(pix_col.colorDifference(combined_image->getColor({{x, y + 1}}).normalized(weights_({{x, y + 1}}).getFloat()), params_.aa_detect_color_noise_) >= aa_thresh_scaled)
+				if(pix_col.colorDifference(combined_image->getColor({{x, y + 1}}).normalized(weights_({{x, y + 1}}).getFloat()), aa_noise_params_->detect_color_noise_) >= aa_thresh_scaled)
 				{
 					flags_.set({{x, y}}, true); flags_.set({{x, y + 1}}, true);
 				}
-				if(pix_col.colorDifference(combined_image->getColor({{x + 1, y + 1}}).normalized(weights_({{x + 1, y + 1}}).getFloat()), params_.aa_detect_color_noise_) >= aa_thresh_scaled)
+				if(pix_col.colorDifference(combined_image->getColor({{x + 1, y + 1}}).normalized(weights_({{x + 1, y + 1}}).getFloat()), aa_noise_params_->detect_color_noise_) >= aa_thresh_scaled)
 				{
 					flags_.set({{x, y}}, true); flags_.set({{x + 1, y + 1}}, true);
 				}
-				if(x > 0 && pix_col.colorDifference(combined_image->getColor({{x - 1, y + 1}}).normalized(weights_({{x - 1, y + 1}}).getFloat()), params_.aa_detect_color_noise_) >= aa_thresh_scaled)
+				if(x > 0 && pix_col.colorDifference(combined_image->getColor({{x - 1, y + 1}}).normalized(weights_({{x - 1, y + 1}}).getFloat()), aa_noise_params_->detect_color_noise_) >= aa_thresh_scaled)
 				{
 					flags_.set({{x, y}}, true); flags_.set({{x - 1, y + 1}}, true);
 				}
 
-				if(params_.aa_variance_pixels_ > 0)
+				if(aa_noise_params_->variance_pixels_ > 0)
 				{
 					int variance_x = 0, variance_y = 0;//, pixelcount = 0;
 
@@ -473,7 +415,7 @@ int ImageFilm::nextPass(RenderControl &render_control, bool adaptive_aa, const s
 						const Rgba cx_0 = combined_image->getColor({{xi, y}}).normalized(weights_({{xi, y}}).getFloat());
 						const Rgba cx_1 = combined_image->getColor({{xi + 1, y}}).normalized(weights_({{xi + 1, y}}).getFloat());
 
-						if(cx_0.colorDifference(cx_1, params_.aa_detect_color_noise_) >= aa_thresh_scaled) ++variance_x;
+						if(cx_0.colorDifference(cx_1, aa_noise_params_->detect_color_noise_) >= aa_thresh_scaled) ++variance_x;
 					}
 
 					for(int yd = -variance_half_edge; yd < variance_half_edge - 1 ; ++yd)
@@ -485,10 +427,10 @@ int ImageFilm::nextPass(RenderControl &render_control, bool adaptive_aa, const s
 						const Rgba cy_0 = combined_image->getColor({{x, yi}}).normalized(weights_({{x, yi}}).getFloat());
 						const Rgba cy_1 = combined_image->getColor({{x, yi + 1}}).normalized(weights_({{x, yi + 1}}).getFloat());
 
-						if(cy_0.colorDifference(cy_1, params_.aa_detect_color_noise_) >= aa_thresh_scaled) ++variance_y;
+						if(cy_0.colorDifference(cy_1, aa_noise_params_->detect_color_noise_) >= aa_thresh_scaled) ++variance_y;
 					}
 
-					if(variance_x + variance_y >= params_.aa_variance_pixels_)
+					if(variance_x + variance_y >= aa_noise_params_->variance_pixels_)
 					{
 						for(int xd = -variance_half_edge; xd < variance_half_edge; ++xd)
 						{
@@ -534,20 +476,20 @@ int ImageFilm::nextPass(RenderControl &render_control, bool adaptive_aa, const s
 
 	if(render_callbacks_.flush_) render_callbacks_.flush_(render_callbacks_.flush_data_);
 
-	if(render_control.resumed()) pass_string << "Film loaded + ";
+	if(render_control_.resumed()) pass_string << "Film loaded + ";
 
-	pass_string << "Rendering pass " << n_pass_ << " of " << params_.aa_passes_ << ", resampling " << n_resample << " pixels.";
+	pass_string << "Rendering pass " << n_pass_ << " of " << aa_noise_params_->passes_ << ", resampling " << n_resample << " pixels.";
 
 	logger_.logInfo(integrator_name, ": ", pass_string.str());
 
-	render_control.initProgressBar(params_.width_ * params_.height_, logger_.getConsoleLogColorsEnabled());
-	render_control.setProgressBarTag(pass_string.str());
+	render_control_.initProgressBar(params_.width_ * params_.height_, logger_.getConsoleLogColorsEnabled());
+	render_control_.setProgressBarTag(pass_string.str());
 	completed_cnt_ = 0;
 
 	return n_resample;
 }
 
-bool ImageFilm::nextArea(const RenderControl &render_control, RenderArea &a)
+bool ImageFilm::nextArea(RenderArea &a)
 {
 	if(cancel_) return false;
 
@@ -589,7 +531,7 @@ bool ImageFilm::nextArea(const RenderControl &render_control, RenderArea &a)
 	return false;
 }
 
-void ImageFilm::finishArea(RenderControl &render_control, const RenderArea &a, const EdgeToonParams &edge_params)
+void ImageFilm::finishArea(const RenderArea &a, const EdgeToonParams &edge_params)
 {
 	std::lock_guard<std::mutex> lock_guard(out_mutex_);
 	const int end_x = a.x_ + a.w_ - params_.start_x_;
@@ -635,40 +577,40 @@ void ImageFilm::finishArea(RenderControl &render_control, const RenderArea &a, c
 
 	if(render_callbacks_.flush_area_) render_callbacks_.flush_area_(a.id_, a.x_, a.y_, end_x + params_.start_x_, end_y + params_.start_y_, render_callbacks_.flush_area_data_);
 
-	if(render_control.inProgress())
+	if(render_control_.inProgress())
 	{
-		timer_.stop("imagesAutoSaveTimer");
-		images_auto_save_params_.timer_ += timer_.getTime("imagesAutoSaveTimer");
+		render_control_.stopTimer("imagesAutoSaveTimer");
+		images_auto_save_params_.timer_ += render_control_.getTimerTime("imagesAutoSaveTimer");
 		if(images_auto_save_params_.timer_ < 0.f) resetImagesAutoSaveTimer(); //to solve some strange very negative value when using yafaray-xml, race condition somewhere?
-		timer_.start("imagesAutoSaveTimer");
+		render_control_.startTimer("imagesAutoSaveTimer");
 
-		timer_.stop("filmAutoSaveTimer");
-		film_load_save_.auto_save_.timer_ += timer_.getTime("filmAutoSaveTimer");
+		render_control_.stopTimer("filmAutoSaveTimer");
+		film_load_save_.auto_save_.timer_ += render_control_.getTimerTime("filmAutoSaveTimer");
 		if(film_load_save_.auto_save_.timer_ < 0.f) resetFilmAutoSaveTimer(); //to solve some strange very negative value when using yafaray-xml, race condition somewhere?
-		timer_.start("filmAutoSaveTimer");
+		render_control_.startTimer("filmAutoSaveTimer");
 
 		if((images_auto_save_params_.interval_type_ == AutoSaveParams::IntervalType::Time) && (images_auto_save_params_.timer_ > images_auto_save_params_.interval_seconds_))
 		{
 			if(logger_.isDebug())logger_.logDebug("imagesAutoSaveTimer=", images_auto_save_params_.timer_);
-			flush(render_control, All);
+			flush(All);
 			resetImagesAutoSaveTimer();
 		}
 
 		if((film_load_save_.mode_ == FilmLoadSave::Mode::LoadAndSave || film_load_save_.mode_ == FilmLoadSave::Mode::Save) && (film_load_save_.auto_save_.interval_type_ == AutoSaveParams::IntervalType::Time) && (film_load_save_.auto_save_.timer_ > film_load_save_.auto_save_.interval_seconds_))
 		{
 			if(logger_.isDebug())logger_.logDebug("filmAutoSaveTimer=", film_load_save_.auto_save_.timer_);
-			imageFilmSave(render_control);
+			imageFilmSave();
 			resetFilmAutoSaveTimer();
 		}
 	}
 
-	if(++completed_cnt_ == area_cnt_) render_control.setProgressBarAsDone();
-	else render_control.updateProgressBar(a.w_ * a.h_);
+	if(++completed_cnt_ == area_cnt_) render_control_.setProgressBarAsDone();
+	else render_control_.updateProgressBar(a.w_ * a.h_);
 }
 
-void ImageFilm::flush(RenderControl &render_control, Flags flags)
+void ImageFilm::flush(Flags flags)
 {
-	if(render_control.finished())
+	if(render_control_.finished())
 	{
 		logger_.logInfo("imageFilm: Flushing buffer (View '", getName(), "')...");
 	}
@@ -680,11 +622,11 @@ void ImageFilm::flush(RenderControl &render_control, Flags flags)
 	const Layers layers = layers_.getLayersWithImages();
 	if(layers.isDefined(LayerDef::DebugFacesEdges))
 	{
-		image_manipulation::generateDebugFacesEdges(film_image_layers_, 0, params_.width_, 0, params_.height_, false, getEdgeToonParams(), weights_);
+		image_manipulation::generateDebugFacesEdges(film_image_layers_, 0, params_.width_, 0, params_.height_, false, *edge_toon_params_, weights_);
 	}
 	if(layers.isDefinedAny({LayerDef::DebugObjectsEdges, LayerDef::Toon}))
 	{
-		image_manipulation::generateToonAndDebugObjectEdges(film_image_layers_, 0, params_.width_, 0, params_.height_, false, getEdgeToonParams(), weights_);
+		image_manipulation::generateToonAndDebugObjectEdges(film_image_layers_, 0, params_.width_, 0, params_.height_, false, *edge_toon_params_, weights_);
 	}
 	for(const auto &[layer_def, image_layer] : film_image_layers_)
 	{
@@ -717,11 +659,11 @@ void ImageFilm::flush(RenderControl &render_control, Flags flags)
 
 	if(render_callbacks_.flush_) render_callbacks_.flush_(render_callbacks_.flush_data_);
 
-	if(render_control.finished())
+	if(render_control_.finished())
 	{
 		std::stringstream ss;
-		ss << printRenderStats(render_control, timer_, Size2i{{params_.width_, params_.height_}});
-		ss << render_control.getAaNoiseInfo();
+		ss << printRenderStats(render_control_, Size2i{{params_.width_, params_.height_}});
+		ss << render_control_.getAaNoiseInfo();
 		logger_.logParams("--------------------------------------------------------------------------------");
 		for(std::string line; std::getline(ss, line, '\n');) if(line != "" && line != "\n") logger_.logParams(line);
 		logger_.logParams("--------------------------------------------------------------------------------");
@@ -734,30 +676,30 @@ void ImageFilm::flush(RenderControl &render_control, Flags flags)
 			std::stringstream pass_string;
 			pass_string << "Flushing output '" << output.name_ << "' and saving image files.";
 			logger_.logInfo(pass_string.str());
-			if(render_control.finished())
+			if(render_control_.finished())
 			{
 				std::stringstream ss;
-				ss << output.item_->printBadge(render_control, timer_);
+				ss << output.item_->printBadge(render_control_);
 				//logger_.logParams("--------------------------------------------------------------------------------");
 				for(std::string line; std::getline(ss, line, '\n');) if(line != "" && line != "\n") logger_.logParams(line);
 				//logger_.logParams("--------------------------------------------------------------------------------");
 			}
-			std::string old_tag{render_control.getProgressBarTag()};
-			render_control.setProgressBarTag(pass_string.str());
-			output.item_->flush(render_control, timer_);
-			render_control.setProgressBarTag(old_tag);
+			std::string old_tag{render_control_.getProgressBarTag()};
+			render_control_.setProgressBarTag(pass_string.str());
+			output.item_->flush(render_control_);
+			render_control_.setProgressBarTag(old_tag);
 		}
 	}
 
-	if(render_control.finished())
+	if(render_control_.finished())
 	{
 		if(film_load_save_.mode_ == FilmLoadSave::Mode::LoadAndSave || film_load_save_.mode_ == FilmLoadSave::Mode::Save)
 		{
-			imageFilmSave(render_control);
+			imageFilmSave();
 		}
 
-		timer_.stop("imagesAutoSaveTimer");
-		timer_.stop("filmAutoSaveTimer");
+		render_control_.stopTimer("imagesAutoSaveTimer");
+		render_control_.stopTimer("filmAutoSaveTimer");
 
 		logger_.clearMemoryLog();
 		if(logger_.isVerbose()) logger_.logVerbose("imageFilm: Done.");
@@ -766,7 +708,7 @@ void ImageFilm::flush(RenderControl &render_control, Flags flags)
 
 bool ImageFilm::doMoreSamples(const Point2i &point) const
 {
-	return params_.aa_threshold_ <= 0.f || flags_.get({{point[Axis::X] - params_.start_x_, point[Axis::Y] - params_.start_y_}});
+	return aa_threshold_calculated_ <= 0.f || flags_.get({{point[Axis::X] - params_.start_x_, point[Axis::Y] - params_.start_y_}});
 }
 
 /* CAUTION! Implemantation of this function needs to be thread safe for samples that
@@ -817,7 +759,7 @@ void ImageFilm::addSample(const Point2i &point, float dx, float dy, const Render
 			for(auto &[layer_def, image_layer] : film_image_layers_)
 			{
 				Rgba col = color_layers ? (*color_layers)(layer_def) : Rgba{0.f};
-				col.clampProportionalRgb(params_.aa_clamp_samples_);
+				col.clampProportionalRgb(aa_noise_params_->clamp_samples_);
 				image_layer.image_->addColor({{i - params_.start_x_, j - params_.start_y_}}, col * filter_wt);
 			}
 		}
@@ -1024,15 +966,15 @@ bool ImageFilm::imageFilmLoad(const std::string &filename)
 	return true;
 }
 
-void ImageFilm::imageFilmLoadAllInFolder(RenderControl &render_control)
+void ImageFilm::imageFilmLoadAllInFolder()
 {
 	std::stringstream pass_string;
 	pass_string << "Loading ImageFilm files";
 
 	logger_.logInfo(pass_string.str());
 
-	std::string old_tag{render_control.getProgressBarTag()};
-	render_control.setProgressBarTag(pass_string.str());
+	std::string old_tag{render_control_.getProgressBarTag()};
+	render_control_.setProgressBarTag(pass_string.str());
 
 	const Path path_image_output(film_load_save_.path_);
 	std::string dir = path_image_output.getDirectory();
@@ -1065,7 +1007,7 @@ void ImageFilm::imageFilmLoadAllInFolder(RenderControl &render_control)
 	for(const auto &film_file : film_file_paths_list)
 	{
 		ParamResult param_result;
-		auto loaded_film = std::make_unique<ImageFilm>(logger_, param_result, render_control, film_file, getAsParamMap(true));
+		auto loaded_film = std::make_unique<ImageFilm>(logger_, param_result, film_file, getAsParamMap(true));
 		if(!loaded_film->imageFilmLoad(film_file))
 		{
 			logger_.logWarning("ImageFilm: Could not load film file '", film_file, "'");
@@ -1096,11 +1038,11 @@ void ImageFilm::imageFilmLoadAllInFolder(RenderControl &render_control)
 		if(base_sampling_offset_ < loaded_film->base_sampling_offset_) base_sampling_offset_ = loaded_film->base_sampling_offset_;
 		if(logger_.isVerbose()) logger_.logVerbose("ImageFilm: loaded film '", film_file, "'");
 	}
-	if(any_film_loaded) render_control.setResumed();
-	render_control.setProgressBarTag(old_tag);
+	if(any_film_loaded) render_control_.setResumed();
+	render_control_.setProgressBarTag(old_tag);
 }
 
-bool ImageFilm::imageFilmSave(RenderControl &render_control)
+bool ImageFilm::imageFilmSave()
 {
 	bool result_ok = true;
 	std::stringstream pass_string;
@@ -1108,8 +1050,8 @@ bool ImageFilm::imageFilmSave(RenderControl &render_control)
 
 	logger_.logInfo(pass_string.str());
 
-	std::string old_tag{render_control.getProgressBarTag()};
-	render_control.setProgressBarTag(pass_string.str());
+	std::string old_tag{render_control_.getProgressBarTag()};
+	render_control_.setProgressBarTag(pass_string.str());
 
 	const std::string film_path = getFilmPath();
 	File file(film_path);
@@ -1175,19 +1117,19 @@ bool ImageFilm::imageFilmSave(RenderControl &render_control)
 		}
 	}
 	file.close();
-	render_control.setProgressBarTag(old_tag);
+	render_control_.setProgressBarTag(old_tag);
 	return result_ok;
 }
 
-void ImageFilm::imageFilmFileBackup(RenderControl &render_control) const
+void ImageFilm::imageFilmFileBackup()
 {
 	std::stringstream pass_string;
 	pass_string << "Creating backup of the previous ImageFilm file...";
 
 	logger_.logInfo(pass_string.str());
 
-	std::string old_tag{render_control.getProgressBarTag()};
-	render_control.setProgressBarTag(pass_string.str());
+	std::string old_tag{render_control_.getProgressBarTag()};
+	render_control_.setProgressBarTag(pass_string.str());
 
 	const std::string film_path = getFilmPath();
 	const std::string film_path_backup = film_path + "-previous.bak";
@@ -1199,17 +1141,17 @@ void ImageFilm::imageFilmFileBackup(RenderControl &render_control) const
 		if(!result_ok) logger_.logWarning("imageFilm: error during imageFilm file backup");
 	}
 
-	render_control.setProgressBarTag(old_tag);
+	render_control_.setProgressBarTag(old_tag);
 }
 
-std::string ImageFilm::printRenderStats(const RenderControl &render_control, const Timer &timer, const Size2i &size)
+std::string ImageFilm::printRenderStats(const RenderControl &render_control, const Size2i &size)
 {
 	std::stringstream ss;
 	ss << "\nYafaRay (" << buildinfo::getVersionString() << buildinfo::getBuildTypeSuffix() << ")" << " " << buildinfo::getBuildOs() << " " << buildinfo::getBuildArchitectureBits() << "bit (" << buildinfo::getBuildCompiler() << ")";
 	ss << std::setprecision(2);
 
-	double times = timer.getTimeNotStopping("rendert");
-	if(render_control.finished()) times = timer.getTime("rendert");
+	double times = render_control.getTimerTimeNotStopping("rendert");
+	if(render_control.finished()) times = render_control.getTimerTime("rendert");
 	int timem, timeh;
 	Timer::splitTime(times, &times, &timem, &timeh);
 	ss << " | " << size[Axis::X] << "x" << size[Axis::Y];
@@ -1227,8 +1169,8 @@ std::string ImageFilm::printRenderStats(const RenderControl &render_control, con
 	if(timem > 0) ss << " " << timem << "m";
 	ss << " " << times << "s";
 
-	times = timer.getTimeNotStopping("rendert") + timer.getTime("prepass");
-	if(render_control.finished()) times = timer.getTime("rendert") + timer.getTime("prepass");
+	times = render_control.getTimerTimeNotStopping("rendert") + render_control.getTimerTime("prepass");
+	if(render_control.finished()) times = render_control.getTimerTime("rendert") + render_control.getTimerTime("prepass");
 	Timer::splitTime(times, &times, &timem, &timeh);
 	ss << " | Total time:";
 	if(timeh > 0) ss << " " << timeh << "h";
@@ -1409,11 +1351,6 @@ void ImageFilm::setRenderHighlightAreaCallback(yafaray_RenderHighlightAreaCallba
 void ImageFilm::clearOutputs()
 {
 	outputs_.clear();
-}
-
-std::pair<size_t, ResultFlags> ImageFilm::getOutput(const std::string &name) const
-{
-	return outputs_.findIdFromName(name);
 }
 
 bool ImageFilm::disableOutput(const std::string &name)

@@ -133,14 +133,14 @@ ImageOutput::ImageOutput(Logger &logger, ParamResult &param_result, const ParamM
 	}
 }
 
-std::string ImageOutput::printBadge(const RenderControl &render_control, const Timer &timer) const
+std::string ImageOutput::printBadge(const RenderControl &render_control) const
 {
-	return badge_.print(image_manipulation::printDenoiseParams(denoise_params_), render_control, timer);
+	return badge_.print(image_manipulation::printDenoiseParams(denoise_params_), render_control);
 }
 
-std::unique_ptr<Image> ImageOutput::generateBadgeImage(const RenderControl &render_control, const Timer &timer) const
+std::unique_ptr<Image> ImageOutput::generateBadgeImage(const RenderControl &render_control) const
 {
-	return badge_.generateImage(image_manipulation::printDenoiseParams(denoise_params_), render_control, timer);
+	return badge_.generateImage(image_manipulation::printDenoiseParams(denoise_params_), render_control);
 }
 
 void ImageOutput::init(const Size2i &size, const ImageLayers *exported_image_layers, const std::string &camera_name)
@@ -150,7 +150,7 @@ void ImageOutput::init(const Size2i &size, const ImageLayers *exported_image_lay
 	badge_.setImageSize(size);
 }
 
-void ImageOutput::flush(const RenderControl &render_control, const Timer &timer)
+void ImageOutput::flush(const RenderControl &render_control)
 {
 	Path path(params_.image_path_);
 	std::string directory = path.getDirectory();
@@ -165,11 +165,11 @@ void ImageOutput::flush(const RenderControl &render_control, const Timer &timer)
 	{
 		if(params_.multi_layer_ && format->supportsMultiLayer())
 		{
-			saveImageFile(params_.image_path_, LayerDef::Combined, format.get(), render_control, timer); //This should not be necessary but Blender API seems to be limited and the API "load_from_file" function does not work (yet) with multilayered images, so I have to generate this extra combined pass file so it's displayed in the Blender window.
+			saveImageFile(params_.image_path_, LayerDef::Combined, format.get(), render_control); //This should not be necessary but Blender API seems to be limited and the API "load_from_file" function does not work (yet) with multilayered images, so I have to generate this extra combined pass file so it's displayed in the Blender window.
 
 			if(!directory.empty()) directory += "/";
 			const std::string fname_pass = directory + base_name + " (" + "multilayer" + ")." + ext;
-			saveImageFileMultiChannel(fname_pass, format.get(), render_control, timer);
+			saveImageFileMultiChannel(fname_pass, format.get(), render_control);
 
 			logger_.setImagePath(fname_pass); //to show the image in the HTML log output
 		}
@@ -181,7 +181,7 @@ void ImageOutput::flush(const RenderControl &render_control, const Timer &timer)
 				const std::string exported_image_name = image_layer.layer_.getExportedImageName();
 				if(layer_def == LayerDef::Combined)
 				{
-					saveImageFile(params_.image_path_, layer_def, format.get(), render_control, timer); //default imagehandler filename, when not using views nor passes and for reloading into Blender
+					saveImageFile(params_.image_path_, layer_def, format.get(), render_control); //default imagehandler filename, when not using views nor passes and for reloading into Blender
 					logger_.setImagePath(params_.image_path_); //to show the image in the HTML log output
 				}
 
@@ -191,7 +191,7 @@ void ImageOutput::flush(const RenderControl &render_control, const Timer &timer)
 					std::string fname_pass = directory + base_name + " [" + layer_type_name;
 					if(!exported_image_name.empty()) fname_pass += " - " + exported_image_name;
 					fname_pass += "]." + ext;
-					saveImageFile(fname_pass, layer_def, format.get(), render_control, timer);
+					saveImageFile(fname_pass, layer_def, format.get(), render_control);
 				}
 			}
 		}
@@ -199,12 +199,12 @@ void ImageOutput::flush(const RenderControl &render_control, const Timer &timer)
 	if(params_.logging_save_txt_)
 	{
 		std::string f_log_txt_name = directory + "/" + base_name + "_log.txt";
-		logger_.saveTxtLog(f_log_txt_name, badge_, render_control, timer);
+		logger_.saveTxtLog(f_log_txt_name, badge_, render_control);
 	}
 	if(params_.logging_save_html_)
 	{
 		std::string f_log_html_name = directory + "/" + base_name + "_log.html";
-		logger_.saveHtmlLog(f_log_html_name, badge_, render_control, timer);
+		logger_.saveHtmlLog(f_log_html_name, badge_, render_control);
 	}
 	if(logger_.getSaveStats())
 	{
@@ -213,7 +213,7 @@ void ImageOutput::flush(const RenderControl &render_control, const Timer &timer)
 	}
 }
 
-void ImageOutput::saveImageFile(const std::string &filename, LayerDef::Type layer_type, Format *format, const RenderControl &render_control, const Timer &timer)
+void ImageOutput::saveImageFile(const std::string &filename, LayerDef::Type layer_type, Format *format, const RenderControl &render_control)
 {
 	if(render_control.inProgress()) logger_.logInfo(name_, ": Autosaving partial render (", math::roundFloatPrecision(render_control.currentPassPercent(), 0.01), "% of pass ", render_control.currentPass(), " of ", render_control.totalPasses(), ") file as \"", filename, "\"...  ", image_manipulation::printDenoiseParams(denoise_params_));
 	else logger_.logInfo(name_, ": Saving file as \"", filename, "\"...  ", image_manipulation::printDenoiseParams(denoise_params_));
@@ -227,7 +227,7 @@ void ImageOutput::saveImageFile(const std::string &filename, LayerDef::Type laye
 
 	if(badge_.getPosition() != Badge::Position::None)
 	{
-		const auto badge_image{generateBadgeImage(render_control, timer)};
+		const auto badge_image{generateBadgeImage(render_control)};
 		auto badge_image_position{Image::Position::Bottom};
 		if(badge_.getPosition() == Badge::Position::Top) badge_image_position = Image::Position::Top;
 		image = image_manipulation::getComposedImage(logger_, image.get(), badge_image.get(), badge_image_position);
@@ -256,11 +256,11 @@ void ImageOutput::saveImageFile(const std::string &filename, LayerDef::Type laye
 	}
 }
 
-void ImageOutput::saveImageFileMultiChannel(const std::string &filename, Format *format, const RenderControl &render_control, const Timer &timer)
+void ImageOutput::saveImageFileMultiChannel(const std::string &filename, Format *format, const RenderControl &render_control)
 {
 	if(badge_.getPosition() != Badge::Position::None)
 	{
-		auto badge_image{generateBadgeImage(render_control, timer)};
+		auto badge_image{generateBadgeImage(render_control)};
 		auto badge_image_position{Image::Position::Bottom};
 		if(badge_.getPosition() == Badge::Position::Top) badge_image_position = Image::Position::Top;
 		ImageLayers image_layers_badge;

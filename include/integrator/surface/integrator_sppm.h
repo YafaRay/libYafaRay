@@ -65,9 +65,9 @@ class SppmIntegrator final : public MonteCarloIntegrator
 
 	public:
 		inline static std::string getClassName() { return "SppmIntegrator"; }
-		static std::pair<std::unique_ptr<SurfaceIntegrator>, ParamResult> factory(Logger &logger, RenderControl &render_control, const std::string &name, const ParamMap &params);
+		static std::pair<std::unique_ptr<SurfaceIntegrator>, ParamResult> factory(Logger &logger, const std::string &name, const ParamMap &params);
 		static std::string printMeta(const std::vector<std::string> &excluded_params) { return class_meta::print<Params>(excluded_params); }
-		SppmIntegrator(RenderControl &render_control, Logger &logger, ParamResult &param_result, const std::string &name, const ParamMap &param_map);
+		SppmIntegrator(Logger &logger, ParamResult &param_result, const std::string &name, const ParamMap &param_map);
 		[[nodiscard]] ParamMap getAsParamMap(bool only_non_default) const override;
 
 	private:
@@ -83,21 +83,22 @@ class SppmIntegrator final : public MonteCarloIntegrator
 			PARAM_DECL(float , photon_radius_, 1.f, "photonRadius", "Used to do initial radius estimate");
 			PARAM_DECL(int , search_num_, 10, "searchNum", "Now used to do initial radius estimate");
 			PARAM_DECL(bool , pm_ire_, false, "pmIRE", "Flag to say if using PM for initial radius estimate");
+			PARAM_DECL(int, threads_photons_, -1, "threads_photons", "Number of threads for photon mapping, -1 = auto detection");
 		} params_;
-		bool render(FastRandom &fast_random, unsigned int object_index_highest, unsigned int material_index_highest) override;
+		bool render(ImageFilm *image_film, FastRandom &fast_random, unsigned int object_index_highest, unsigned int material_index_highest) const override;
 		/*! render a tile; only required by default implementation of render() */
-		bool renderTile(FastRandom &fast_random, std::vector<int> &correlative_sample_number, const RenderArea &a, int n_samples, int offset, bool adaptive, int thread_id, int aa_pass_number, unsigned int object_index_highest, unsigned int material_index_highest) override;
-		std::pair<Rgb, float> integrate(Ray &ray, FastRandom &fast_random, RandomGenerator &random_generator, std::vector<int> &correlative_sample_number, ColorLayers *color_layers, int thread_id, int ray_level, bool chromatic_enabled, float wavelength, int additional_depth, const RayDivision &ray_division, const PixelSamplingData &pixel_sampling_data, unsigned int object_index_highest, unsigned int material_index_highest) const override;
-		bool preprocess(FastRandom &fast_random, ImageFilm *image_film, const Scene &scene, const Renderer &renderer) override; //not used for now
-		// not used now
-		void prePass(FastRandom &fast_random, int samples, int offset, bool adaptive) override;
+		bool renderTile(ImageFilm *image_film, FastRandom &fast_random, std::vector<int> &correlative_sample_number, const RenderArea &a, int n_samples, int offset, bool adaptive, int thread_id, int aa_pass_number, unsigned int object_index_highest, unsigned int material_index_highest, float aa_light_sample_multiplier, float aa_indirect_sample_multiplier) const override;
+		std::pair<Rgb, float> integrate(ImageFilm *image_film, Ray &ray, FastRandom &fast_random, RandomGenerator &random_generator, std::vector<int> &correlative_sample_number, ColorLayers *color_layers, int thread_id, int ray_level, bool chromatic_enabled, float wavelength, int additional_depth, const RayDivision &ray_division, const PixelSamplingData &pixel_sampling_data, unsigned int object_index_highest, unsigned int material_index_highest, float aa_light_sample_multiplier, float aa_indirect_sample_multiplier) const override;
+		void prePass(ImageFilm *image_film, FastRandom &fast_random, int samples, int offset, bool adaptive) const override;
 		/*! not used now, use traceGatherRay instead*/
 		/*! initializing the things that PPM uses such as initial radius */
-		void initializePpm();
+		void initializePpm(const ImageFilm *image_film);
 		/*! based on integrate method to do the gatering trace, need double-check deadly. */
-		GatherInfo traceGatherRay(Ray &ray, HitPoint &hp, FastRandom &fast_random, RandomGenerator &random_generator, ColorLayers *color_layers, int thread_id, int ray_level, bool chromatic_enabled, float wavelength, const RayDivision &ray_division, const PixelSamplingData &pixel_sampling_data, unsigned int object_index_highest, unsigned int material_index_highest);
-		void photonWorker(FastRandom &fast_random, unsigned int &total_photons_shot, int thread_id, int num_d_lights, const Pdf1D *light_power_d, const std::vector<const Light *> &tmplights, int pb_step);
+		GatherInfo traceGatherRay(Ray &ray, HitPoint &hp, FastRandom &fast_random, RandomGenerator &random_generator, ColorLayers *color_layers, int thread_id, int ray_level, const Camera *camera, bool chromatic_enabled, float wavelength, const RayDivision &ray_division, const PixelSamplingData &pixel_sampling_data, unsigned int object_index_highest, unsigned int material_index_highest) const;
+		void photonWorker(RenderControl &render_control, FastRandom &fast_random, unsigned int &total_photons_shot, int thread_id, int num_d_lights, const Pdf1D *light_power_d, const std::vector<const Light *> &tmplights, int pb_step) const;
+		[[nodiscard]] int setNumThreadsPhotons(int threads_photons);
 
+		const int num_threads_photons_{setNumThreadsPhotons(params_.threads_photons_)};
 		HashGrid photon_grid_; //!< the hashgrid for holding photons
 		bool pm_ire_{params_.pm_ire_}; // flag to  say if using PM for initial radius estimate
 		int n_photons_{params_.num_photons_}; //!< Number of photons to scatter

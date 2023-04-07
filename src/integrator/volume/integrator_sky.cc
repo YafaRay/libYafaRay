@@ -91,7 +91,7 @@ SkyIntegrator::SkyIntegrator(Logger &logger, ParamResult &param_result, const Pa
 	logger_.logParams("SkyIntegrator: b_m: ", b_m_, " b_r: ", b_r_);
 }
 
-bool SkyIntegrator::preprocess(const Scene &scene, const Renderer &renderer)
+bool SkyIntegrator::preprocess(const Scene &scene, const SurfaceIntegrator &surf_integrator)
 {
 	background_ = scene.getBackground();
 	return static_cast<bool>(background_);

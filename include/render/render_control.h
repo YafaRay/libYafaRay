@@ -49,8 +49,6 @@ class RenderControl final
 		float currentPassPercent() const;
 		std::string getRenderInfo() const { return render_info_; }
 		std::string getAaNoiseInfo() const { return aa_noise_info_; }
-		void setDifferentialRaysEnabled(bool value) { ray_differentials_enabled_ = value; }
-		bool getDifferentialRaysEnabled() const { return ray_differentials_enabled_; }
 		void setProgressBar(std::unique_ptr<ProgressBar> progress_bar);
 		void updateProgressBar(int steps_increment = 1);
 		void setProgressBarTag(const std::string &text);
@@ -59,6 +57,11 @@ class RenderControl final
 		void setProgressBarAsDone();
 		std::string getProgressBarTag() const;
 		int getProgressBarTotalSteps() const;
+		bool addTimerEvent(const std::string &event) { return timer_.addEvent(event); }
+		bool startTimer(const std::string &event) { return timer_.start(event); }
+		bool stopTimer(const std::string &event) { return timer_.stop(event); }
+		[[nodiscard]] double getTimerTime(const std::string &event) const { return timer_.getTime(event); }
+		[[nodiscard]] double getTimerTimeNotStopping(const std::string &event) const { return timer_.getTimeNotStopping(event); }
 
 	private:
 		bool render_in_progress_ = false;
@@ -70,7 +73,7 @@ class RenderControl final
 		float current_pass_percent_ = 0.f;
 		std::string render_info_;
 		std::string aa_noise_info_;
-		bool ray_differentials_enabled_ = false;  //!< By default, disable ray differential calculations. Only if at least one texture uses them, then enable differentials. This should avoid the (many) extra calculations when they are not necessary.
+		Timer timer_;
 		std::unique_ptr<ProgressBar> progress_bar_;
 		std::mutex mutx_;
 };

@@ -47,7 +47,7 @@ class Accelerator
 		virtual IntersectData intersectShadow(const Ray &ray, float t_max) const = 0;
 		virtual IntersectData intersectTransparentShadow(const Ray &ray, int max_depth, float dist, const Camera *camera) const = 0;
 		virtual Bound<float> getBound() const = 0;
-		std::pair<std::unique_ptr<const SurfacePoint>, float> intersect(const Ray &ray, const Camera *camera) const;
+		std::pair<std::unique_ptr<const SurfacePoint>, float> intersect(const Ray &ray, const Camera *camera = nullptr) const;
 		std::pair<bool, const Primitive *> isShadowed(const Ray &ray) const;
 		std::tuple<bool, Rgb, const Primitive *> isShadowedTransparentShadow(const Ray &ray, int max_depth, const Camera *camera) const;
 

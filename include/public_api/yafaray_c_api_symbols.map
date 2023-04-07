@@ -13,8 +13,8 @@ LIBYAFARAY_4.0.0 {
         yafaray_destroyParamMap;
         yafaray_createParamMapList;
         yafaray_destroyParamMapList;
-        yafaray_createRenderer;
-        yafaray_destroyRenderer;
+        yafaray_createSurfaceIntegrator;
+        yafaray_destroySurfaceIntegrator;
         yafaray_getFilmWidth;
         yafaray_getFilmHeight;
         yafaray_initObject;
@@ -54,7 +54,6 @@ LIBYAFARAY_4.0.0 {
         yafaray_createMaterial;
         yafaray_defineCamera;
         yafaray_defineBackground;
-        yafaray_defineSurfaceIntegrator;
         yafaray_defineVolumeIntegrator;
         yafaray_createVolumeRegion;
         yafaray_createOutput;

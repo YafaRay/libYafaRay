@@ -46,15 +46,15 @@ void monitorCallback(int steps_total, int steps_done, const char *tag, void *cal
 void loggerCallback(yafaray_LogLevel log_level, size_t datetime, const char *time_of_day, const char *description, void *callback_data);
 
 yafaray_Logger *logger = NULL;
-yafaray_Renderer *renderer = NULL;
+yafaray_SurfaceIntegrator *surface_integrator = NULL;
 
 #ifdef _WIN32
 BOOL WINAPI ctrlCHandler_global(DWORD signal)
 {
 	yafaray_printWarning(logger, "CTRL+C pressed, cancelling.\n");
-	if(renderer)
+	if(surface_integrator)
 	{
-		yafaray_cancelRendering(logger, renderer);
+		yafaray_cancelRendering(logger, surface_integrator);
 		return TRUE;
 	}
 	else exit(1);
@@ -63,7 +63,7 @@ BOOL WINAPI ctrlCHandler_global(DWORD signal)
 void ctrlCHandler_global(int signal)
 {
 	yafaray_printWarning(logger, "CTRL+C pressed, cancelling.\n");
-	if(renderer) yafaray_cancelRendering(logger, renderer);
+	if(surface_integrator) yafaray_cancelRendering(logger, surface_integrator);
 	else exit(1);
 }
 #endif
@@ -124,9 +124,9 @@ int main()
 	yafaray_setParamMapString(param_map, "scene_accelerator", "yafaray-kdtree-original");
 	scene = yafaray_createScene(logger, "scene", param_map);
 
-	/* Creating renderer */
+	/* Creating surface integrator */
 	yafaray_clearParamMap(param_map);
-	renderer = yafaray_createRenderer(logger, scene, "renderer", YAFARAY_DISPLAY_CONSOLE_NORMAL, param_map);
+	surface_integrator = yafaray_createSurfaceIntegrator(logger, scene, "surface integrator", YAFARAY_DISPLAY_CONSOLE_NORMAL, param_map);
 
 	/* Creating film */
 	yafaray_clearParamMap(param_map);
@@ -137,7 +137,7 @@ int main()
 	yafaray_setParamMapInt(param_map, "AA_minsamples", 50);
 	yafaray_setParamMapInt(param_map, "AA_passes", 2);
 	yafaray_setParamMapInt(param_map, "threads", -1);
-	film = yafaray_createFilm(logger, renderer, "film", param_map);
+	film = yafaray_createFilm(logger, surface_integrator, "film", param_map);
 
 	/* Creating film image outputs */
 	yafaray_clearParamMap(param_map);
@@ -260,24 +260,24 @@ int main()
 	yafaray_clearParamMap(param_map);
 	/*yafaray_setParamMapString(yi, "type", "directlighting");*/
 	yafaray_setParamMapString(param_map, "type", "photonmapping");
-	yafaray_defineSurfaceIntegrator(renderer, param_map);
+	yafaray_defineSurfaceIntegrator(surface_integrator, param_map);
 
 	/* Setting up render parameters */
 	yafaray_clearParamMap(param_map);
 	yafaray_setParamMapInt(param_map, "threads", -1);
 	yafaray_setParamMapInt(param_map, "threads_photons", -1);
-	yafaray_setupRender(scene, renderer, param_map);
+	yafaray_setupRender(scene, surface_integrator, param_map);
 
 	layers_string = yafaray_getLayersTable(film);
 	printf("** Layers defined:\n%s\n", layers_string);
 	yafaray_destroyCharString(layers_string);
 
 	/* Rendering */
-	yafaray_render(renderer, film, scene, monitorCallback, &total_steps, YAFARAY_DISPLAY_CONSOLE_NORMAL);
+	yafaray_render(surface_integrator, film, scene, monitorCallback, &total_steps, YAFARAY_DISPLAY_CONSOLE_NORMAL);
 	printf("END: total_steps = %d\n", total_steps);
 
 	/* Destruction/deallocation */
-	yafaray_destroyRenderer(renderer);
+	yafaray_destroySurfaceIntegrator(surface_integrator);
 	yafaray_destroyScene(scene);
 	yafaray_destroyFilm(film);
 	yafaray_destroyLogger(logger);

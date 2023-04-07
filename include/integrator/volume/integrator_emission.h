@@ -44,7 +44,7 @@ class EmissionIntegrator final : public VolumeIntegrator
 			Params(ParamResult &param_result, const ParamMap &param_map);
 			static std::map<std::string, const ParamMeta *> getParamMetaMap();
 		} params_;
-		bool preprocess(const Scene &scene, const Renderer &renderer) override { return true; }
+		bool preprocess(const Scene &scene, const SurfaceIntegrator &surf_integrator) override { return true; }
 		// optical thickness, absorption, attenuation, extinction
 		Rgb transmittance(RandomGenerator &random_generator, const Ray &ray) const override;
 		// emission part

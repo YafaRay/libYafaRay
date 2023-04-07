@@ -34,12 +34,12 @@ namespace yafaray {
 class Timer
 {
 	public:
-		bool addEvent(const std::string &name);
-		bool start(const std::string &name);
-		bool stop(const std::string &name);
-		bool reset(const std::string &name);
-		double getTime(const std::string &name) const;
-		double getTimeNotStopping(const std::string &name) const;
+		[[nodiscard]] bool addEvent(const std::string &name);
+		[[nodiscard]] bool start(const std::string &name);
+		[[nodiscard]] bool stop(const std::string &name);
+		[[nodiscard]] bool reset(const std::string &name);
+		[[nodiscard]] double getTime(const std::string &name) const;
+		[[nodiscard]] double getTimeNotStopping(const std::string &name) const;
 
 		static void splitTime(double t, double *secs, int *mins = nullptr, int *hours = nullptr, int *days = nullptr);
 

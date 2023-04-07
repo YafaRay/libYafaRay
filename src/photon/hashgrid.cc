@@ -87,7 +87,7 @@ void HashGrid::updateGrid()
 	//if(logger_.isVerbose()) logger_.logVerbose("HashGrid: there are ", notused, " enties not used!", std::endl;
 }
 
-unsigned int HashGrid::gather(const Point3f &p, FoundPhoton *found, unsigned int k, float sq_radius)
+unsigned int HashGrid::gather(const Point3f &p, FoundPhoton *found, unsigned int k, float sq_radius) const
 {
 	unsigned int count = 0;
 	float radius = math::sqrt(sq_radius);

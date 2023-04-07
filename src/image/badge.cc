@@ -48,13 +48,13 @@ std::string Badge::getFields() const
 	return ss_badge.str();
 }
 
-std::string Badge::getRenderInfo(const RenderControl &render_control, const Timer &timer) const
+std::string Badge::getRenderInfo(const RenderControl &render_control) const
 {
 	std::stringstream ss_badge;
 	ss_badge << "\nYafaRay (" << buildinfo::getVersionString() << buildinfo::getBuildTypeSuffix() << ")" << " " << buildinfo::getBuildOs() << " " << buildinfo::getBuildArchitectureBits() << "bit (" << buildinfo::getBuildCompiler() << ")";
 	ss_badge << std::setprecision(2);
-	double times = timer.getTimeNotStopping("rendert");
-	if(render_control.finished()) times = timer.getTime("rendert");
+	double times = render_control.getTimerTimeNotStopping("rendert");
+	if(render_control.finished()) times = render_control.getTimerTime("rendert");
 	int timem, timeh;
 	Timer::splitTime(times, &times, &timem, &timeh);
 	ss_badge << " | " << image_size_[Axis::X] << "x" << image_size_[Axis::Y];
@@ -72,8 +72,8 @@ std::string Badge::getRenderInfo(const RenderControl &render_control, const Time
 	if(timem > 0) ss_badge << " " << timem << "m";
 	ss_badge << " " << times << "s";
 
-	times = timer.getTimeNotStopping("rendert") + timer.getTime("prepass");
-	if(render_control.finished()) times = timer.getTime("rendert") + timer.getTime("prepass");
+	times = render_control.getTimerTimeNotStopping("rendert") + render_control.getTimerTime("prepass");
+	if(render_control.finished()) times = render_control.getTimerTime("rendert") + render_control.getTimerTime("prepass");
 	Timer::splitTime(times, &times, &timem, &timeh);
 	ss_badge << " | Total time:";
 	if(timeh > 0) ss_badge << " " << timeh << "h";
@@ -82,7 +82,7 @@ std::string Badge::getRenderInfo(const RenderControl &render_control, const Time
 	return ss_badge.str();
 }
 
-std::string Badge::print(const std::string &denoise_params, const RenderControl &render_control, const Timer &timer) const
+std::string Badge::print(const std::string &denoise_params, const RenderControl &render_control) const
 {
 	std::stringstream ss_badge;
 	ss_badge << getFields() << "\n";
@@ -92,12 +92,12 @@ std::string Badge::print(const std::string &denoise_params, const RenderControl 
 	return ss_badge.str();
 }
 
-std::unique_ptr<Image> Badge::generateImage(const std::string &denoise_params, const RenderControl &render_control, const Timer &timer) const
+std::unique_ptr<Image> Badge::generateImage(const std::string &denoise_params, const RenderControl &render_control) const
 {
 	if(position_ == Badge::Position::None) return nullptr;
 	std::stringstream ss_badge;
 	ss_badge << getFields();
-	ss_badge << getRenderInfo(render_control, timer);
+	ss_badge << getRenderInfo(render_control);
 	if(drawRenderSettings()) ss_badge << " | " << render_control.getRenderInfo();
 	if(drawAaNoiseSettings()) ss_badge << "\n" << render_control.getAaNoiseInfo();
 	if(!denoise_params.empty()) ss_badge << " | " << denoise_params;

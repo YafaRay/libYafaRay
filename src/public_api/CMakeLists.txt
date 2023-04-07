@@ -18,5 +18,5 @@
 
 target_sources(libyafaray4
 	PRIVATE
-		yafaray_c_api.cc
+		#yafaray_c_api.cc
 )

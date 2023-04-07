@@ -28,8 +28,7 @@ namespace yafaray {
 
 struct PreGatherData final
 {
-	explicit PreGatherData(RenderControl &render_control, PhotonMap *dm): render_control_{render_control}, diffuse_map_(dm), fetched_(0) {}
-	RenderControl &render_control_;
+	explicit PreGatherData(PhotonMap *dm) : diffuse_map_(dm), fetched_(0) {}
 	PhotonMap *diffuse_map_;
 	std::vector<RadData> rad_points_;
 	std::vector<Photon> radiance_vec_;
@@ -43,9 +42,9 @@ class PhotonIntegrator final : public CausticPhotonIntegrator
 
 	public:
 		inline static std::string getClassName() { return "PhotonIntegrator"; }
-		static std::pair<std::unique_ptr<SurfaceIntegrator>, ParamResult> factory(Logger &logger, RenderControl &render_control, const std::string &name, const ParamMap &params);
+		static std::pair<std::unique_ptr<SurfaceIntegrator>, ParamResult> factory(Logger &logger, const std::string &name, const ParamMap &params);
 		static std::string printMeta(const std::vector<std::string> &excluded_params) { return class_meta::print<Params>(excluded_params); }
-		PhotonIntegrator(RenderControl &render_control, Logger &logger, ParamResult &param_result, const std::string &name, const ParamMap &param_map);
+		PhotonIntegrator(Logger &logger, ParamResult &param_result, const std::string &name, const ParamMap &param_map);
 		[[nodiscard]] ParamMap getAsParamMap(bool only_non_default) const override;
 
 	private:
@@ -65,12 +64,12 @@ class PhotonIntegrator final : public CausticPhotonIntegrator
 			PARAM_DECL(float, gather_dist_, 0.2f, "fg_min_pathlen", "Minimum distance to terminate path tracing (unless gatherBounces is reached). If not specified it defaults to the value set in '" + diffuse_radius_meta_.name() + "'");
 			PARAM_DECL(bool, show_map_, false, "show_map", "Show radiance map");
 		} params_;
-		bool preprocess(FastRandom &fast_random, ImageFilm *image_film, const Scene &scene, const Renderer &renderer) override;
-		std::pair<Rgb, float> integrate(Ray &ray, FastRandom &fast_random, RandomGenerator &random_generator, std::vector<int> &correlative_sample_number, ColorLayers *color_layers, int thread_id, int ray_level, bool chromatic_enabled, float wavelength, int additional_depth, const RayDivision &ray_division, const PixelSamplingData &pixel_sampling_data, unsigned int object_index_highest, unsigned int material_index_highest) const override;
-		void diffuseWorker(FastRandom &fast_random, PreGatherData &pgdat, unsigned int &total_photons_shot, int thread_id, const Pdf1D *light_power_d, const std::vector<const Light *> &lights_diffuse, int pb_step);
-		Rgb finalGathering(FastRandom &fast_random, RandomGenerator &random_generator, std::vector<int> &correlative_sample_number, int thread_id, bool chromatic_enabled, float wavelength, const SurfacePoint &sp, const Vec3f &wo, const RayDivision &ray_division, const PixelSamplingData &pixel_sampling_data) const;
+		bool preprocess(RenderControl &render_control, FastRandom &fast_random, const Scene &scene) override;
+		std::pair<Rgb, float> integrate(ImageFilm *image_film, Ray &ray, FastRandom &fast_random, RandomGenerator &random_generator, std::vector<int> &correlative_sample_number, ColorLayers *color_layers, int thread_id, int ray_level, bool chromatic_enabled, float wavelength, int additional_depth, const RayDivision &ray_division, const PixelSamplingData &pixel_sampling_data, unsigned int object_index_highest, unsigned int material_index_highest, float aa_light_sample_multiplier, float aa_indirect_sample_multiplier) const override;
+		void diffuseWorker(RenderControl &render_control, FastRandom &fast_random, PreGatherData &pgdat, unsigned int &total_photons_shot, int thread_id, const Pdf1D *light_power_d, const std::vector<const Light *> &lights_diffuse, int pb_step);
+		Rgb finalGathering(FastRandom &fast_random, RandomGenerator &random_generator, std::vector<int> &correlative_sample_number, unsigned int base_sampling_offset, int thread_id, const Camera *camera, bool chromatic_enabled, float wavelength, float aa_light_sample_multiplier, float aa_indirect_sample_multiplier, const SurfacePoint &sp, const Vec3f &wo, const RayDivision &ray_division, const PixelSamplingData &pixel_sampling_data) const;
 		void enableDiffuse(const bool diffuse) { use_photon_diffuse_ = diffuse; }
-		static void preGatherWorker(PreGatherData *gdata, float ds_rad, int n_search);
+		static void preGatherWorker(RenderControl &render_control, PreGatherData *gdata, float ds_rad, int n_search);
 		static void photonMapKdTreeWorker(PhotonMap *photon_map);
 
 		bool use_photon_diffuse_{params_.diffuse_}; //!< enable/disable diffuse photon processing

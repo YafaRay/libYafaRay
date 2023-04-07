@@ -27,7 +27,8 @@
 #include "common/timer.h"
 #include "material/sample.h"
 #include "volume/handler/volume_handler.h"
-#include "render/renderer.h"
+#include "integrator/volume/integrator_volume.h"
+#include "render/imagefilm.h"
 
 namespace yafaray {
 
@@ -65,26 +66,26 @@ ParamMap PathIntegrator::getAsParamMap(bool only_non_default) const
 	return param_map;
 }
 
-std::pair<std::unique_ptr<SurfaceIntegrator>, ParamResult> PathIntegrator::factory(Logger &logger, RenderControl &render_control, const std::string &name, const ParamMap &param_map)
+std::pair<std::unique_ptr<SurfaceIntegrator>, ParamResult> PathIntegrator::factory(Logger &logger, const std::string &name, const ParamMap &param_map)
 {
 	auto param_result{class_meta::check<Params>(param_map, {"type"}, {})};
-	auto integrator {std::make_unique<PathIntegrator>(render_control, logger, param_result, name, param_map)};
+	auto integrator {std::make_unique<PathIntegrator>(logger, param_result, name, param_map)};
 	if(param_result.notOk()) logger.logWarning(param_result.print<ThisClassType_t>(getClassName(), {"type"}));
 	return {std::move(integrator), param_result};
 }
 
-PathIntegrator::PathIntegrator(RenderControl &render_control, Logger &logger, ParamResult &param_result, const std::string &name, const ParamMap &param_map) : ParentClassType_t(render_control, logger, param_result, name, param_map), params_{param_result, param_map}
+PathIntegrator::PathIntegrator(Logger &logger, ParamResult &param_result, const std::string &name, const ParamMap &param_map) : ParentClassType_t(logger, param_result, name, param_map), params_{param_result, param_map}
 {
 	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + getAsParamMap(true).print());
 }
 
-bool PathIntegrator::preprocess(FastRandom &fast_random, ImageFilm *image_film, const Scene &scene, const Renderer &renderer)
+bool PathIntegrator::preprocess(RenderControl &render_control, FastRandom &fast_random, const Scene &scene)
 {
-	bool success = SurfaceIntegrator::preprocess(fast_random, image_film, scene, renderer);
+	bool success = SurfaceIntegrator::preprocess(render_control, fast_random, scene);
 	std::stringstream set;
 
-	timer_->addEvent("prepass");
-	timer_->start("prepass");
+	render_control.addTimerEvent("prepass");
+	render_control.startTimer("prepass");
 
 	set << "Path Tracing  ";
 
@@ -97,7 +98,7 @@ bool PathIntegrator::preprocess(FastRandom &fast_random, ImageFilm *image_film, 
 
 	if(params_.caustic_type_.has(CausticType::Photon))
 	{
-		success = success && createCausticMap(fast_random);
+		success = success && createCausticMap(render_control, fast_random);
 	}
 
 	if(params_.caustic_type_ == CausticType::Path)
@@ -118,12 +119,12 @@ bool PathIntegrator::preprocess(FastRandom &fast_random, ImageFilm *image_film, 
 		set << n_caus_photons_ << " search=" << CausticPhotonIntegrator::params_.n_caus_search_ << " radius=" << CausticPhotonIntegrator::params_.caus_radius_ << " depth=" << CausticPhotonIntegrator::params_.caus_depth_ << "  ";
 	}
 
-	timer_->stop("prepass");
-	logger_.logInfo(getName(), ": Photonmap building time: ", std::fixed, std::setprecision(1), timer_->getTime("prepass"), "s", " (", num_threads_photons_, " thread(s))");
+	render_control.stopTimer("prepass");
+	logger_.logInfo(getName(), ": Photonmap building time: ", std::fixed, std::setprecision(1), render_control.getTimerTime("prepass"), "s", " (", num_threads_photons_, " thread(s))");
 
-	set << "| photon maps: " << std::fixed << std::setprecision(1) << timer_->getTime("prepass") << "s" << " [" << num_threads_photons_ << " thread(s)]";
+	set << "| photon maps: " << std::fixed << std::setprecision(1) << render_control.getTimerTime("prepass") << "s" << " [" << num_threads_photons_ << " thread(s)]";
 
-	render_info_ += set.str();
+	render_control.setRenderInfo(render_control.getRenderInfo() + set.str());
 
 	if(logger_.isVerbose())
 	{
@@ -133,14 +134,16 @@ bool PathIntegrator::preprocess(FastRandom &fast_random, ImageFilm *image_film, 
 	return success;
 }
 
-std::pair<Rgb, float> PathIntegrator::integrate(Ray &ray, FastRandom &fast_random, RandomGenerator &random_generator, std::vector<int> &correlative_sample_number, ColorLayers *color_layers, int thread_id, int ray_level, bool chromatic_enabled, float wavelength, int additional_depth, const RayDivision &ray_division, const PixelSamplingData &pixel_sampling_data, unsigned int object_index_highest, unsigned int material_index_highest) const
+std::pair<Rgb, float> PathIntegrator::integrate(ImageFilm *image_film, Ray &ray, FastRandom &fast_random, RandomGenerator &random_generator, std::vector<int> &correlative_sample_number, ColorLayers *color_layers, int thread_id, int ray_level, bool chromatic_enabled, float wavelength, int additional_depth, const RayDivision &ray_division, const PixelSamplingData &pixel_sampling_data, unsigned int object_index_highest, unsigned int material_index_highest, float aa_light_sample_multiplier, float aa_indirect_sample_multiplier) const
 {
 	static int calls = 0;
 	++calls;
 	Rgb col {0.f};
 	float alpha = 1.f;
 	float w = 0.f;
-	const auto [sp, tmax] = accelerator_->intersect(ray, camera_);
+	const auto base_sampling_offset{image_film->getBaseSamplingOffset()};
+	const auto camera{image_film->getCamera()};
+	const auto [sp, tmax] = accelerator_->intersect(ray, camera);
 	ray.tmax_ = tmax;
 	if(sp)
 	{
@@ -161,7 +164,7 @@ std::pair<Rgb, float> PathIntegrator::integrate(Ray &ray, FastRandom &fast_rando
 
 		if(mat_bsdfs.has(BsdfFlags::Diffuse))
 		{
-			col += estimateAllDirectLight(random_generator, color_layers, chromatic_enabled, wavelength, *sp, wo, ray_division, pixel_sampling_data);
+			col += estimateAllDirectLight(random_generator, color_layers, camera, chromatic_enabled, wavelength, aa_light_sample_multiplier, *sp, wo, ray_division, pixel_sampling_data);
 			if(params_.caustic_type_.has(CausticType::Photon))
 			{
 				col += causticPhotons(color_layers, ray, *sp, wo, aa_noise_params_.clamp_indirect_, caustic_map_.get(), CausticPhotonIntegrator::params_.caus_radius_, CausticPhotonIntegrator::params_.n_caus_search_);
@@ -199,16 +202,16 @@ std::pair<Rgb, float> PathIntegrator::integrate(Ray &ray, FastRandom &fast_rando
 				}
 				// do proper sampling now...
 				Sample s(s_1, s_2, path_flags);
-				scol = sp->sample(pwo, p_ray.dir_, s, w, chromatic_enabled, wavelength_dispersive, camera_);
+				scol = sp->sample(pwo, p_ray.dir_, s, w, chromatic_enabled, wavelength_dispersive, camera);
 				scol *= w;
 				throughput = scol;
 				p_ray.tmin_ = ray_min_dist_;
 				p_ray.tmax_ = -1.f;
 				p_ray.from_ = sp->p_;
-				std::tie(hit, p_ray.tmax_) = accelerator_->intersect(p_ray, camera_);
+				std::tie(hit, p_ray.tmax_) = accelerator_->intersect(p_ray, camera);
 				if(!hit) continue; //hit background
 				if(s.sampled_flags_ != BsdfFlags::None) pwo = -p_ray.dir_; //Fix for white dots in path tracing with shiny diffuse with transparent PNG texture and transparent shadows, especially in Win32, (precision?). Sometimes the first sampling does not take place and pRay.dir is not initialized, so before this change when that happened pwo = -pRay.dir was getting a random_generator non-initialized value! This fix makes that, if the first sample fails for some reason, pwo is not modified and the rest of the sampling continues with the same pwo value. FIXME: Question: if the first sample fails, should we continue as now or should we exit the loop with the "continue" command?
-				lcol = estimateOneDirectLight(random_generator, correlative_sample_number, thread_id, chromatic_enabled, wavelength_dispersive, *hit, pwo, offs, ray_division, pixel_sampling_data);
+				lcol = estimateOneDirectLight(random_generator, correlative_sample_number, base_sampling_offset, thread_id, camera, chromatic_enabled, wavelength_dispersive, *hit, pwo, offs, aa_light_sample_multiplier, ray_division, pixel_sampling_data);
 				const BsdfFlags mat_bsd_fs = hit->mat_data_->bsdf_flags_;
 				if(mat_bsd_fs.has(BsdfFlags::Emit))
 				{
@@ -238,7 +241,7 @@ std::pair<Rgb, float> PathIntegrator::integrate(Ray &ray, FastRandom &fast_rando
 
 					s.flags_ = BsdfFlags::All;
 
-					scol = hit->sample(pwo, p_ray.dir_, s, w, chromatic_enabled, wavelength_dispersive, camera_);
+					scol = hit->sample(pwo, p_ray.dir_, s, w, chromatic_enabled, wavelength_dispersive, camera);
 					scol *= w;
 					if(scol.isBlack()) break;
 					throughput *= scol;
@@ -246,12 +249,12 @@ std::pair<Rgb, float> PathIntegrator::integrate(Ray &ray, FastRandom &fast_rando
 					p_ray.tmin_ = ray_min_dist_;
 					p_ray.tmax_ = -1.f;
 					p_ray.from_ = hit->p_;
-					auto [intersect_sp, intersect_tmax] = accelerator_->intersect(p_ray, camera_);
+					auto [intersect_sp, intersect_tmax] = accelerator_->intersect(p_ray, camera);
 					if(!intersect_sp) break; //hit background
 					std::swap(hit, intersect_sp);
 					pwo = -p_ray.dir_;
 
-					if(mat_bsd_fs.has(BsdfFlags::Diffuse)) lcol = estimateOneDirectLight(random_generator, correlative_sample_number, thread_id, chromatic_enabled, wavelength_dispersive, *hit, pwo, offs, ray_division, pixel_sampling_data);
+					if(mat_bsd_fs.has(BsdfFlags::Diffuse)) lcol = estimateOneDirectLight(random_generator, correlative_sample_number, base_sampling_offset, thread_id, camera, chromatic_enabled, wavelength_dispersive, *hit, pwo, offs, aa_light_sample_multiplier, ray_division, pixel_sampling_data);
 					else lcol = Rgb(0.f);
 
 					if(mat_bsd_fs.has(BsdfFlags::Volumetric))
@@ -284,13 +287,13 @@ std::pair<Rgb, float> PathIntegrator::integrate(Ray &ray, FastRandom &fast_rando
 			}
 			col += path_col / n_samples;
 		}
-		const auto [raytrace_col, raytrace_alpha]{recursiveRaytrace(fast_random, random_generator, correlative_sample_number, color_layers, thread_id, ray_level + 1, chromatic_enabled, wavelength, ray, mat_bsdfs, *sp, wo, additional_depth, ray_division, pixel_sampling_data)};
+		const auto [raytrace_col, raytrace_alpha]{recursiveRaytrace(image_film, fast_random, random_generator, correlative_sample_number, color_layers, thread_id, ray_level + 1, chromatic_enabled, aa_light_sample_multiplier, aa_indirect_sample_multiplier, wavelength, ray, mat_bsdfs, *sp, wo, additional_depth, ray_division, pixel_sampling_data)};
 		col += raytrace_col;
 		alpha = raytrace_alpha;
 		if(color_layers)
 		{
 			generateCommonLayers(color_layers, *sp, mask_params_, object_index_highest, material_index_highest);
-			generateOcclusionLayers(color_layers, *accelerator_, chromatic_enabled, wavelength, ray_division, camera_, pixel_sampling_data, *sp, wo, MonteCarloIntegrator::params_.ao_samples_, shadow_bias_auto_, shadow_bias_, MonteCarloIntegrator::params_.ao_distance_, MonteCarloIntegrator::params_.ao_color_, MonteCarloIntegrator::params_.shadow_depth_);
+			generateOcclusionLayers(color_layers, *accelerator_, chromatic_enabled, wavelength, ray_division, camera, pixel_sampling_data, *sp, wo, MonteCarloIntegrator::params_.ao_samples_, SurfaceIntegrator::params_.shadow_bias_auto_, shadow_bias_, MonteCarloIntegrator::params_.ao_distance_, MonteCarloIntegrator::params_.ao_color_, MonteCarloIntegrator::params_.shadow_depth_);
 			if(Rgba *color_layer = color_layers->find(LayerDef::DebugObjectTime))
 			{
 				const float col_combined_gray = col.col2Bri();
@@ -306,7 +309,7 @@ std::pair<Rgb, float> PathIntegrator::integrate(Ray &ray, FastRandom &fast_rando
 
 	if(vol_integrator_)
 	{
-		applyVolumetricEffects(col, alpha, color_layers, ray, random_generator, vol_integrator_, MonteCarloIntegrator::params_.transparent_background_);
+		applyVolumetricEffects(col, alpha, color_layers, ray, random_generator, vol_integrator_.get(), MonteCarloIntegrator::params_.transparent_background_);
 	}
 	return {std::move(col), alpha};
 }

@@ -42,7 +42,7 @@ class HashGrid final
 		void clear(); //remove all the photons in the grid;
 		void updateGrid(); //build the hashgrid
 		void pushPhoton(Photon &&p);
-		unsigned int gather(const Point3f &p, FoundPhoton *found, unsigned int k, float sq_radius);
+		unsigned int gather(const Point3f &p, FoundPhoton *found, unsigned int k, float sq_radius) const;
 
 	private:
 		unsigned int hash(const int ix, const int iy, const int iz) const

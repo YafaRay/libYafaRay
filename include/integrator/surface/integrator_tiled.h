@@ -44,31 +44,23 @@ class TiledIntegrator : public SurfaceIntegrator
 {
 	public:
 		inline static std::string getClassName() { return "TiledIntegrator"; }
-		TiledIntegrator(RenderControl &render_control, Logger &logger, ParamResult &param_result, const std::string &name, const ParamMap &param_map) : SurfaceIntegrator{render_control, logger, param_result, name, param_map} { }
+		TiledIntegrator(Logger &logger, ParamResult &param_result, const std::string &name, const ParamMap &param_map) : SurfaceIntegrator{logger, param_result, name, param_map} { }
 		/*! Rendering prepasses to precalc suff in case needed */
-		virtual void prePass(FastRandom &fast_random, int samples, int offset, bool adaptive) { } //!< Called before the proper rendering of all the tiles starts
+		virtual void prePass(ImageFilm *image_film, FastRandom &fast_random, int samples, int offset, bool adaptive) const { } //!< Called before the proper rendering of all the tiles starts
 		/*! do whatever is required to render the image; default implementation renders image in passes
 		dividing each pass into tiles for multithreading. */
-		bool render(FastRandom &fast_random, unsigned int object_index_highest, unsigned int material_index_highest) override;
+		bool render(ImageFilm *image_film, FastRandom &fast_random, unsigned int object_index_highest, unsigned int material_index_highest) const override;
 		/*! render a pass; only required by the default implementation of render() */
-		virtual bool renderPass(FastRandom &fast_random, std::vector<int> &correlative_sample_number, int samples, int offset, bool adaptive, int aa_pass_number, unsigned int object_index_highest, unsigned int material_index_highest);
-		virtual bool renderTile(FastRandom &fast_random, std::vector<int> &correlative_sample_number, const RenderArea &a, int n_samples, int offset, bool adaptive, int thread_id, int aa_pass_number, unsigned int object_index_highest, unsigned int material_index_highest);
-		virtual void renderWorker(ThreadControl *control, FastRandom &fast_random, std::vector<int> &correlative_sample_number, int thread_id, int samples, int offset, bool adaptive, int aa_pass, unsigned int object_index_highest, unsigned int material_index_highest);
-		virtual void precalcDepths();
+		bool renderPass(ImageFilm *image_film, FastRandom &fast_random, std::vector<int> &correlative_sample_number, int samples, int offset, bool adaptive, int aa_pass_number, unsigned int object_index_highest, unsigned int material_index_highest, float aa_light_sample_multiplier, float aa_indirect_sample_multiplier) const;
+		virtual bool renderTile(ImageFilm *image_film, FastRandom &fast_random, std::vector<int> &correlative_sample_number, const RenderArea &a, int n_samples, int offset, bool adaptive, int thread_id, int aa_pass_number, unsigned int object_index_highest, unsigned int material_index_highest, float aa_light_sample_multiplier, float aa_indirect_sample_multiplier) const;
+		void renderWorker(ImageFilm *image_film, ThreadControl *control, FastRandom &fast_random, std::vector<int> &correlative_sample_number, int thread_id, int samples, int offset, bool adaptive, int aa_pass, unsigned int object_index_highest, unsigned int material_index_highest, float aa_light_sample_multiplier, float aa_indirect_sample_multiplier) const;
+		void precalcDepths(ImageFilm *image_film) const;
 		static void generateCommonLayers(ColorLayers *color_layers, const SurfacePoint &sp, const MaskParams &mask_params, unsigned int object_index_highest, unsigned int material_index_highest); //!< Generates render passes common to all integrators
 		static void generateOcclusionLayers(ColorLayers *color_layers, const Accelerator &accelerator, bool chromatic_enabled, float wavelength, const RayDivision &ray_division, const Camera *camera, const PixelSamplingData &pixel_sampling_data, const SurfacePoint &sp, const Vec3f &wo, int ao_samples, bool shadow_bias_auto, float shadow_bias, float ao_dist, const Rgb &ao_col, int transp_shadows_depth);
 		/*! Samples ambient occlusion for a given surface point */
 		static Rgb sampleAmbientOcclusion(const Accelerator &accelerator, bool chromatic_enabled, float wavelength, const SurfacePoint &sp, const Vec3f &wo, const RayDivision &ray_division, const Camera *camera, const PixelSamplingData &pixel_sampling_data, bool transparent_shadows, bool clay, int ao_samples, bool shadow_bias_auto, float shadow_bias, float ao_dist, const Rgb &ao_col, int transp_shadows_depth);
 		static void applyVolumetricEffects(Rgb &col, float &alpha, ColorLayers *color_layers, const Ray &ray, RandomGenerator &random_generator, const VolumeIntegrator *volume_integrator, bool transparent_background);
 		static std::pair<Rgb, float> background(const Ray &ray, ColorLayers *color_layers, bool transparent_background, bool transparent_refracted_background, const Background *background, int ray_level);
-
-	protected:
-		float i_aa_passes_; //!< Inverse of AA_passes used for depth map
-		float aa_sample_multiplier_ = 1.f;
-		float aa_light_sample_multiplier_ = 1.f;
-		float aa_indirect_sample_multiplier_ = 1.f;
-		float max_depth_; //!< Inverse of max depth from camera within the scene boundaries
-		float min_depth_; //!< Distance between camera and the closest object on the scene
 };
 
 } //namespace yafaray

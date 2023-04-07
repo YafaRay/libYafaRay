@@ -25,6 +25,7 @@
 #include "param/param.h"
 #include "accelerator/accelerator.h"
 #include "volume/region/volume_region.h"
+#include "integrator/surface/integrator_surface.h"
 
 namespace yafaray {
 
@@ -68,12 +69,12 @@ SingleScatterIntegrator::SingleScatterIntegrator(Logger &logger, ParamResult &pa
 	logger_.logParams("SingleScatter: stepSize: ", params_.step_size_, " adaptive: ", params_.adaptive_, " optimize: ", params_.optimize_);
 }
 
-bool SingleScatterIntegrator::preprocess(const Scene &scene, const Renderer &renderer)
+bool SingleScatterIntegrator::preprocess(const Scene &scene, const SurfaceIntegrator &surf_integrator)
 {
 	accelerator_ = scene.getAccelerator();
 	if(!accelerator_) return false;
 	logger_.logInfo("SingleScatter: Preprocessing...");
-	lights_ = renderer.getLightsVisible();
+	lights_ = surf_integrator.getLights();
 	if(params_.optimize_)
 	{
 		for(const auto &vr : volume_regions_)
@@ -107,7 +108,7 @@ bool SingleScatterIntegrator::preprocess(const Scene &scene, const Renderer &ren
 							if(light->diracLight())
 							{
 								auto[hit, light_ray, lcol]{light->illuminate(p, 0.f)}; //FIXME: what time to use?
-								light_ray.tmin_ = renderer.getShadowBias();
+								light_ray.tmin_ = surf_integrator.getShadowBias();
 								if(light_ray.tmax_ < 0.f) light_ray.tmax_ = 1e10f;  // infinitely distant light
 
 								// transmittance from the point p in the volume to the light (i.e. how much light reaches p)
@@ -135,7 +136,7 @@ bool SingleScatterIntegrator::preprocess(const Scene &scene, const Renderer &ren
 									ls.s_2_ = 0.5f; //(*state.random_generator)();
 
 									auto[hit, light_ray]{light->illumSample(p, ls, 0.f)}; //FIXME: what time to use?
-									light_ray.tmin_ = renderer.getShadowBias();
+									light_ray.tmin_ = surf_integrator.getShadowBias();
 									if(light_ray.tmax_ < 0.f) light_ray.tmax_ = 1e10f;  // infinitely distant light
 
 									// transmittance from the point p in the volume to the light (i.e. how much light reaches p)
