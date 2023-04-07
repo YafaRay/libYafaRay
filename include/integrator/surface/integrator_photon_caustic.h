@@ -30,18 +30,6 @@ namespace yafaray {
 
 class PhotonMap;
 
-struct PhotonMapProcessing : public Enum<PhotonMapProcessing>
-{
-	using Enum::Enum;
-	enum : ValueType_t { GenerateOnly, GenerateAndSave, Load, Reuse };
-	inline static const EnumMap<ValueType_t> map_{{
-			{"generate-only", GenerateOnly, ""},
-			{"generate-save", GenerateAndSave, ""},
-			{"load", Load, ""},
-			{"reuse-previous", Reuse, ""},
-		}};
-};
-
 class CausticPhotonIntegrator: public MonteCarloIntegrator
 {
 		using ThisClassType_t = CausticPhotonIntegrator; using ParentClassType_t = MonteCarloIntegrator;
@@ -60,7 +48,6 @@ class CausticPhotonIntegrator: public MonteCarloIntegrator
 			PARAM_DECL(int, n_caus_search_, 50, "caustic_mix", "Amount of caustic photons to be gathered in estimation");
 			PARAM_DECL(float, caus_radius_, 0.25f, "caustic_radius", "Caustic search radius for estimation");
 			PARAM_DECL(int, caus_depth_, 10, "caustic_depth", "Caustic photons max path depth");
-			PARAM_ENUM_DECL(PhotonMapProcessing, photon_map_processing_, PhotonMapProcessing::GenerateOnly, "photon_maps_processing", "");
 		} params_;
 		[[nodiscard]] ParamMap getAsParamMap(bool only_non_default) const override;
 		CausticPhotonIntegrator(RenderControl &render_control, Logger &logger, ParamResult &param_result, const std::string &name, const ParamMap &param_map);
@@ -75,7 +62,6 @@ class CausticPhotonIntegrator: public MonteCarloIntegrator
 
 		bool use_photon_caustics_{params_.use_photon_caustics_};
 		int n_caus_photons_{params_.n_caus_photons_}; //! Number of caustic photons (to be shoot but it should be the target
-		PhotonMapProcessing photon_map_processing_{params_.photon_map_processing_};
 		std::unique_ptr<PhotonMap> caustic_map_;
 };
 

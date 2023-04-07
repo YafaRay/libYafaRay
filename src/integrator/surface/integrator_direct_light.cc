@@ -74,16 +74,6 @@ bool DirectLightIntegrator::preprocess(FastRandom &fast_random, ImageFilm *image
 	{
 		success = success && createCausticMap(fast_random);
 		set << "\nCaustic photons=" << n_caus_photons_ << " search=" << CausticPhotonIntegrator::params_.n_caus_search_ << " radius=" << CausticPhotonIntegrator::params_.caus_radius_ << " depth=" << CausticPhotonIntegrator::params_.caus_depth_ << "  ";
-
-		if(photon_map_processing_ == PhotonMapProcessing::Load)
-		{
-			set << " (loading photon maps from file)";
-		}
-		else if(photon_map_processing_ == PhotonMapProcessing::Reuse)
-		{
-			set << " (reusing photon maps from memory)";
-		}
-		else if(photon_map_processing_ == PhotonMapProcessing::GenerateAndSave) set << " (saving photon maps to file)";
 	}
 
 	timer_->stop("prepass");

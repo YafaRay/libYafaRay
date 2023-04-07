@@ -50,7 +50,6 @@ std::map<std::string, const ParamMeta *> CausticPhotonIntegrator::Params::getPar
 	PARAM_META(n_caus_search_);
 	PARAM_META(caus_radius_);
 	PARAM_META(caus_depth_);
-	PARAM_META(photon_map_processing_);
 	return param_meta_map;
 }
 
@@ -61,7 +60,6 @@ CausticPhotonIntegrator::Params::Params(ParamResult &param_result, const ParamMa
 	PARAM_LOAD(n_caus_search_);
 	PARAM_LOAD(caus_radius_);
 	PARAM_LOAD(caus_depth_);
-	PARAM_ENUM_LOAD(photon_map_processing_);
 }
 
 ParamMap CausticPhotonIntegrator::getAsParamMap(bool only_non_default) const
@@ -73,7 +71,6 @@ ParamMap CausticPhotonIntegrator::getAsParamMap(bool only_non_default) const
 	PARAM_SAVE(n_caus_search_);
 	PARAM_SAVE(caus_radius_);
 	PARAM_SAVE(caus_depth_);
-	PARAM_ENUM_SAVE(photon_map_processing_);
 	return param_map;
 }
 
@@ -221,34 +218,6 @@ void CausticPhotonIntegrator::causticWorker(FastRandom &fast_random, unsigned in
 
 bool CausticPhotonIntegrator::createCausticMap(FastRandom &fast_random)
 {
-	if(photon_map_processing_ == PhotonMapProcessing::Load)
-	{
-		render_control_.setProgressBarTag("Loading caustic photon map from file...");
-		const std::string filename = image_film_->getFilmSavePath() + "_caustic.photonmap";
-		logger_.logInfo(getName(), ": Loading caustic photon map from: ", filename, ". If it does not match the scene you could have crashes and/or incorrect renders, USE WITH CARE!");
-		if(caustic_map_->load(filename))
-		{
-			if(logger_.isVerbose()) logger_.logVerbose(getName(), ": Caustic map loaded.");
-			return true;
-		}
-		else
-		{
-			photon_map_processing_ = PhotonMapProcessing::GenerateAndSave;
-			logger_.logWarning(getName(), ": photon map loading failed, changing to Generate and Save mode.");
-		}
-	}
-
-	if(photon_map_processing_ == PhotonMapProcessing::Reuse)
-	{
-		logger_.logInfo(getName(), ": Reusing caustics photon map from memory. If it does not match the scene you could have crashes and/or incorrect renders, USE WITH CARE!");
-		if(caustic_map_->nPhotons() == 0)
-		{
-			photon_map_processing_ = PhotonMapProcessing::GenerateOnly;
-			logger_.logWarning(getName(), ": One of the photon maps in memory was empty, they cannot be reused: changing to Generate mode.");
-		}
-		else return true;
-	}
-
 	caustic_map_->clear();
 	caustic_map_->setNumPaths(0);
 	caustic_map_->reserveMemory(n_caus_photons_);
@@ -300,14 +269,6 @@ bool CausticPhotonIntegrator::createCausticMap(FastRandom &fast_random)
 			render_control_.setProgressBarTag("Building caustic photons kd-tree...");
 			caustic_map_->updateTree();
 			if(logger_.isVerbose()) logger_.logVerbose(getName(), ": Done.");
-		}
-
-		if(photon_map_processing_ == PhotonMapProcessing::GenerateAndSave)
-		{
-			render_control_.setProgressBarTag("Saving caustic photon map to file...");
-			std::string filename = image_film_->getFilmSavePath() + "_caustic.photonmap";
-			logger_.logInfo(getName(), ": Saving caustic photon map to: ", filename);
-			if(caustic_map_->save(filename) && logger_.isVerbose()) logger_.logVerbose(getName(), ": Caustic map saved.");
 		}
 	}
 	else if(logger_.isVerbose()) logger_.logVerbose(getName(), ": No caustic source lights found, skiping caustic map building...");
